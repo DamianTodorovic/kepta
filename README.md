@@ -3,7 +3,7 @@
 </p>
 <h1 align="center">KEPTA — Behält, was zählt</h1>
 <p align="center">
-  <strong>Lokales Wissenssystem. Ohne Cloud. Ohne Abo. Ohne KI-Touch.</strong><br>
+  <strong>Lokales Wissenssystem. Ohne Cloud. Ohne Abo.</strong><br>
   Electron + React + Vite + Express. Privat auf deinem Gerät.
 </p>
 <p align="center">
