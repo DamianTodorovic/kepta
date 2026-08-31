@@ -25,7 +25,7 @@ function createWindow() {
     width: 1280,
     height: 840,
     title: "KEPTA",
-    icon: path.join(__dirname, 'build/icon.png'),
+    icon: app.isPackaged ? undefined : path.join(__dirname, 'build/icon.png'),
     backgroundColor: '#fcfcf9',
     titleBarStyle: 'hiddenInset',
     trafficLightPosition: { x: 14, y: 14 },
@@ -122,9 +122,7 @@ app.whenReady().then(async () => {
   try {
     const { createRequire } = await import('module');
     const require = createRequire(import.meta.url);
-    const serverPath = app.isPackaged 
-      ? path.join(process.resourcesPath, 'app', 'dist', 'server.cjs') 
-      : path.join(__dirname, 'dist', 'server.cjs');
+    const serverPath = path.join(__dirname, 'dist', 'server.cjs');
     
     console.log("Loading server from:", serverPath);
     require(serverPath);
