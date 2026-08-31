@@ -5,9 +5,13 @@ node_modules/
 
 # build
 dist/
-build/
 out/
 release/
+build/*
+!build/icon.icns
+!build/icon.png
+!build/icon.iconset
+!build/icon.iconset/**
 *.tsbuildinfo
 
 # os
