@@ -1,0 +1,17 @@
+{
+  "_comment": "KEPTA — MCP Config für Claude Desktop. Datei nach ~/Library/Application Support/Claude/claude_desktop_config.json kopieren (macOS) oder als mcp-config.json in diesem Projekt lassen. Passe 'cwd' / Pfad an deinen Checkout an.",
+  "mcpServers": {
+    "kepta": {
+      "command": "npx",
+      "args": ["tsx", "src/mcp-server.ts"],
+      "cwd": "/Users/damiantodorovic/Desktop/ki gehirn/kepta",
+      "env": {}
+    },
+    "kepta-built": {
+      "_comment": "Alternative nach 'npm run build:mcp' — ohne tsx, direkt Node auf gebuildettem CJS",
+      "command": "node",
+      "args": ["/Users/damiantodorovic/Desktop/ki gehirn/kepta/dist/mcp-server.cjs"],
+      "env": {}
+    }
+  }
+}

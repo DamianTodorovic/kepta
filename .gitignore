@@ -1,0 +1,51 @@
+# deps
+node_modules/
+.pnp/
+.pnp.js
+
+# build
+dist/
+build/
+out/
+release/
+*.tsbuildinfo
+
+# os
+.DS_Store
+Thumbs.db
+
+# logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# env & secrets
+.env
+.env.local
+.env.*.local
+*.pem
+*.key
+firebase-applet-config.json
+!firebase-applet-config.example.json
+
+# electron
+*.dmg
+*.blockmap
+*.zip
+*.snap
+*.AppImage
+*.exe
+
+# editor
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# caches
+.cache/
+.parcel-cache/
+project.tar.gz
+*.tar.gz

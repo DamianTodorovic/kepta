@@ -1,0 +1,160 @@
+{
+  "angeln": [
+    {
+      "title": "FangLotse Shop — Versand aus DE",
+      "content": "FangLotse Ausrüstung (anni80-1i.myshopify.com): Nur Angelbedarf von Lieferanten mit Versand aus Deutschland wählen. Rechtsrisiko vermeiden: kein Direktversand aus Fernost. Immer Tracking, 1-3 Tage Lieferzeit kommunizieren.",
+      "tags": [
+        "angeln",
+        "fanglotse",
+        "shop"
+      ]
+    },
+    {
+      "title": "Forelle — Köder & Technik",
+      "content": "Beste Köder: Spinner (Gr. 1-3), Wobbler 5-7cm, Bienenmaden am Spirolino. Standort: Strömungskanten, Gumpen, Wehr-Auslauf. Zeit: Dämmerung. Schnur: 0.18-0.22 mono, Vorfach fluorocarbon.",
+      "tags": [
+        "angeln",
+        "forelle",
+        "köder"
+      ]
+    },
+    {
+      "title": "Knoten — Clinch & Palomar",
+      "content": "Clinch: 5-7 Windungen, durch Schlaufe, befeuchten, festziehen. Palomar für Geflecht: doppelt legen, Knoten, Haken durch Schlaufe. Tragkraft >90% bei sauberer Ausführung.",
+      "tags": [
+        "angeln",
+        "knoten"
+      ]
+    }
+  ],
+  "dropshipping": [
+    {
+      "title": "§19 UStG Kleinunternehmer",
+      "content": "Einzelunternehmer Bad Liebenzell, Kleinunternehmer nach §19 UStG: Keine USt ausweisen, Hinweis in Rechnung/Shop: 'Als Kleinunternehmer im Sinne des §19 UStG wird keine Umsatzsteuer berechnet.' Grenze 2024: 22.000€ Vorjahr, 50.000€ lfd. Jahr.",
+      "tags": [
+        "dropshipping",
+        "recht",
+        "ustg"
+      ]
+    },
+    {
+      "title": "Shopify Rechtstexte Pflicht",
+      "content": "Impressum, Datenschutz, AGB, Widerruf, Versand & Zahlung — immer aktuell, Abmahnfalle. Adresse: Unterhaugstetter Str. 1, 75378 Bad Liebenzell. Kontakt, Registereintrag falls vorhanden.",
+      "tags": [
+        "shopify",
+        "recht"
+      ]
+    },
+    {
+      "title": "Lieferanten — Vertrauen statt Billig-Look",
+      "content": "Nur DE-Lager, Trackingpflicht, Retourenadresse DE, Lieferzeit 2-4 Tage realistisch angeben. Produktbilder ohne China-Wasserzeichen, Beschreibungen neu schreiben, Trust-Badges, Bewertungen moderieren.",
+      "tags": [
+        "dropshipping",
+        "lieferant",
+        "shop"
+      ]
+    }
+  ],
+  "ki": [
+    {
+      "title": "RAG — Retrieval Augmented Generation",
+      "content": "RAG: Dokumente chunken (400-500 Zeichen), embedden (z.B. nomic-embed-text via Ollama), in Vektorstore, bei Query Top-k holen, in Prompt injizieren. Hybrid: BM25 + Cosine via RRF fusionieren.",
+      "tags": [
+        "ki",
+        "rag"
+      ]
+    },
+    {
+      "title": "Ollama lokal — Setup",
+      "content": "brew install ollama; ollama pull llama3.2; ollama pull nomic-embed-text; ollama serve. In KEPTA Anbieter 'Ollama (lokal, kostenlos)' wählen, kein Key, Modell llama3.2, Base http://localhost:11434/v1.",
+      "tags": [
+        "ki",
+        "ollama"
+      ]
+    },
+    {
+      "title": "Prompt — Kontext nutzen",
+      "content": "System: 'Du bist KI Assistant mit Zugriff auf Knowledge Base. Antworte präzise, zitiere ID der genutzten Knoten. Wenn Kontext leer: allgemein antworten, aber Hinweis geben.'",
+      "tags": [
+        "ki",
+        "prompt"
+      ]
+    }
+  ],
+  "coding": [
+    {
+      "title": "TypeScript — Strict & Schnell",
+      "content": "tsconfig: strict, ES2022, bundler resolution. Vite HMR aus, tsc --noEmit im CI. Vermeide any, nutze satisfies, handle Errors via Result-Typ.",
+      "tags": [
+        "coding",
+        "typescript"
+      ]
+    },
+    {
+      "title": "Electron — Kipppunkt",
+      "content": "Electron 44, titleBar hiddenInset, getFreePort, Vite middleware im Dev, static im Prod. Shell.openExternal für Links, crashpad ignorieren.",
+      "tags": [
+        "coding",
+        "electron"
+      ]
+    }
+  ],
+  "studium": [
+    {
+      "title": "Lernmethode — Active Recall",
+      "content": "Karten erstellen: Frage auf Vorderseite, Antwort als Knoten. Täglich 20 Min Abruf, Lücken sofort als neuer Knoten speichern. Graph zeigt Lücken-Cluster.",
+      "tags": [
+        "studium",
+        "lernen"
+      ]
+    }
+  ],
+  "forschung": [
+    {
+      "title": "Quellen-Zitate — Vertrauen",
+      "content": "Jede Chat-Antwort liefert IDs der genutzten Knoten. In Arbeit: immer ID + Titel angeben, nachprüfbar. Zotero/DOI als Tag speichern.",
+      "tags": [
+        "forschung",
+        "quellen"
+      ]
+    }
+  ],
+  "business": [
+    {
+      "title": "Meeting → Tasks",
+      "content": "Nach jedem Meeting: Kernaussage extrahieren (Chat → Knoten), Tags meeting, owner, due. Automatisierung geplant: Agent erstellt Task aus Notiz.",
+      "tags": [
+        "business",
+        "meeting"
+      ]
+    }
+  ],
+  "kreativ": [
+    {
+      "title": "Schreiben — Show don't tell",
+      "content": "Szenen über 5 Sinne schreiben, Dialog trimmen, jede Behauptung beweisen. Knoten als Ideenspeicher: 1 Idee = 1 Knoten, Tags verbinden.",
+      "tags": [
+        "kreativ",
+        "schreiben"
+      ]
+    }
+  ],
+  "_base": [
+    {
+      "title": "Willkommen im KEPTA — Lokal & Privat",
+      "content": "Kein Login, keine Cloud. Alle Einträge liegen in ~/.ki-gehirn/memories.json. Backup via System → JSON Export. MCP teilt denselben Speicher mit Claude/Cursor.",
+      "tags": [
+        "start",
+        "system"
+      ]
+    },
+    {
+      "title": "Shortcuts",
+      "content": "⌘K Palette, ⌘N neuer Knoten, Suche fokussieren, Graph öffnen, Import. Top-k Regler steuert wie viele Knoten in den Chat gehen (Token sparen).",
+      "tags": [
+        "start",
+        "shortcuts"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,20 @@
+{
+  "appId": "app.kepta.desktop",
+  "productName": "KEPTA",
+  "directories": {
+    "output": "release"
+  },
+  "mac": {
+    "target": [
+      "dmg",
+      "zip"
+    ]
+  },
+  "asar": true,
+  "files": [
+    "dist/**/*",
+    "electron.js",
+    "package.json"
+  ],
+  "copyright": "Copyright © 2026 KEPTA"
+}

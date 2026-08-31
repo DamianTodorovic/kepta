@@ -1,0 +1,246 @@
+@import "tailwindcss";
+
+@variant dark (&:where(.dark, .dark *));
+
+/* ============================================================
+   PREMIUM MINIMAL — Second Brain
+   Inspiriert von Notion / Linear / Capacities / Reflect
+   Warm, ruhig, typografie-getrieben. Kein Neon, kein Sci-Fi.
+   Viel Whitespace, subtile Borders, weiche Schatten.
+   ============================================================ */
+
+:root {
+  --bg-base: #fcfcf9;
+  --bg-panel: #ffffff;
+  --bg-panel-solid: #ffffff;
+  --bg-inset: #f6f5f4;
+  --bg-inset-strong: #efeeec;
+  --border-subtle: rgba(15, 15, 15, 0.08);
+  --border-strong: rgba(15, 15, 15, 0.12);
+  --border-hover: rgba(15, 15, 15, 0.16);
+  --text-1: #0f0f0f;
+  --text-2: #6b6b6b;
+  --text-3: #9b9b9b;
+  --accent: #0f0f0f;
+  --accent-2: #2a2a2a;
+  --accent-soft: rgba(15, 15, 15, 0.06);
+  --accent-glow: transparent;
+  --on-accent: #ffffff;
+  --ok: #0e9f6e;
+  --ok-soft: rgba(14,159,110,0.10);
+  --warn: #d97706;
+  --warn-soft: rgba(217,119,6,0.10);
+  --grid-line: transparent;
+  --ambient-1: transparent;
+  --ambient-2: transparent;
+  --shadow-sm: 0 1px 2px rgba(0,0,0,0.04), 0 1px 1px rgba(0,0,0,0.03);
+  --shadow-md: 0 4px 12px rgba(0,0,0,0.06), 0 1px 3px rgba(0,0,0,0.05);
+  --shadow-lg: 0 12px 32px rgba(0,0,0,0.08), 0 4px 12px rgba(0,0,0,0.05);
+}
+
+.dark {
+  --bg-base: #0f0f0f;
+  --bg-panel: #171717;
+  --bg-panel-solid: #1c1c1c;
+  --bg-inset: #1f1f1f;
+  --bg-inset-strong: #262626;
+  --border-subtle: rgba(255, 255, 255, 0.08);
+  --border-strong: rgba(255, 255, 255, 0.12);
+  --border-hover: rgba(255, 255, 255, 0.16);
+  --text-1: #ededed;
+  --text-2: #a1a1a1;
+  --text-3: #6b6b6b;
+  --accent: #ededed;
+  --accent-2: #d4d4d4;
+  --accent-soft: rgba(255, 255, 255, 0.08);
+  --accent-glow: transparent;
+  --on-accent: #0f0f0f;
+  --ok: #10b981;
+  --ok-soft: rgba(16,185,129,0.14);
+  --warn: #f59e0b;
+  --warn-soft: rgba(245,158,11,0.14);
+  --grid-line: transparent;
+  --ambient-1: transparent;
+  --ambient-2: transparent;
+  --shadow-sm: 0 1px 2px rgba(0,0,0,0.20), 0 1px 1px rgba(0,0,0,0.18);
+  --shadow-md: 0 4px 16px rgba(0,0,0,0.28), 0 1px 4px rgba(0,0,0,0.22);
+  --shadow-lg: 0 16px 40px rgba(0,0,0,0.32), 0 4px 12px rgba(0,0,0,0.24);
+}
+
+* {
+  font-variant-ligatures: common-ligatures;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+body {
+  margin: 0;
+  background-color: var(--bg-base);
+  color: var(--text-1);
+  font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  font-feature-settings: "cv01","ss03";
+  letter-spacing: -0.011em;
+  transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+::selection {
+  background: var(--accent-soft);
+  color: var(--text-1);
+}
+
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: var(--border-strong);
+  border-radius: 999px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--text-3);
+}
+
+/* ---------- Typografie-Helfer ---------- */
+.hud-label {
+  font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  font-size: 11px;
+  letter-spacing: 0.04em;
+  text-transform: none;
+  color: var(--text-2);
+  font-weight: 500;
+}
+
+/* ---------- Panels ---------- */
+.hud-panel {
+  background: var(--bg-panel);
+  border: 1px solid var(--border-subtle);
+  box-shadow: var(--shadow-sm);
+}
+
+.hud-inset {
+  background: var(--bg-inset);
+  border: 1px solid var(--border-subtle);
+}
+
+.hud-input {
+  background: var(--bg-panel);
+  border: 1px solid var(--border-subtle);
+  color: var(--text-1);
+  transition: border-color 0.15s ease, box-shadow 0.15s ease, background 0.15s ease;
+}
+.hud-input::placeholder {
+  color: var(--text-3);
+}
+.hud-input:hover {
+  border-color: var(--border-strong);
+}
+.hud-input:focus {
+  outline: none;
+  border-color: var(--text-1);
+  box-shadow: 0 0 0 3px rgba(15,15,15,0.06);
+  background: var(--bg-panel-solid);
+}
+.dark .hud-input:focus {
+  border-color: rgba(255,255,255,0.20);
+  box-shadow: 0 0 0 3px rgba(255,255,255,0.08);
+}
+
+/* ---------- Cards — ruhig, weich, kein Glow ---------- */
+.hud-card {
+  position: relative;
+  background: var(--bg-panel);
+  border: 1px solid var(--border-subtle);
+  box-shadow: var(--shadow-sm);
+  transition: border-color 0.15s ease, box-shadow 0.15s ease, transform 0.15s ease;
+}
+.hud-card::before {
+  display: none;
+}
+.hud-card:hover {
+  border-color: var(--border-hover);
+  box-shadow: var(--shadow-md);
+  transform: translateY(-1px);
+}
+
+/* ---------- Buttons ---------- */
+.btn-primary {
+  background: var(--accent);
+  color: var(--on-accent);
+  font-weight: 500;
+  letter-spacing: -0.01em;
+  border: 1px solid transparent;
+  box-shadow: var(--shadow-sm);
+  transition: background 0.15s ease, transform 0.12s ease, box-shadow 0.15s ease, opacity 0.15s ease;
+}
+.btn-primary:hover {
+  background: var(--accent-2);
+  box-shadow: var(--shadow-md);
+}
+.btn-primary:active {
+  transform: scale(0.99);
+}
+.btn-primary:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
+.btn-ghost {
+  background: var(--bg-panel);
+  color: var(--text-1);
+  border: 1px solid var(--border-subtle);
+  font-weight: 500;
+  transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+}
+.btn-ghost:hover {
+  background: var(--bg-inset);
+  border-color: var(--border-strong);
+}
+.btn-ghost:active {
+  background: var(--bg-inset-strong);
+}
+
+/* ---------- Utilities ---------- */
+.text-gradient {
+  background: none;
+  -webkit-background-clip: initial;
+  background-clip: initial;
+  -webkit-text-fill-color: currentColor;
+  color: var(--text-1);
+}
+.border-gradient-b {
+  border-image: none;
+  border-bottom: 1px solid var(--border-subtle);
+}
+.grid-bg {
+  display: none;
+}
+.ambient-glow {
+  display: none;
+}
+.hud-scan {
+  position: relative;
+  overflow: hidden;
+}
+.hud-scan::after {
+  display: none;
+}
+.status-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 999px;
+  background: var(--ok);
+  box-shadow: 0 0 0 3px var(--ok-soft);
+}
+.hud-backdrop {
+  background: rgba(252,252,249,0.72);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+.dark .hud-backdrop {
+  background: rgba(15,15,15,0.64);
+}
