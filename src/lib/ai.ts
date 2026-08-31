@@ -10,8 +10,8 @@ export interface ProviderPreset {
   hint: string;
 }
 
-// Gemini, Ollama, Mistral, Groq, DeepSeek, OpenRouter, xAI usw. sprechen alle
-// das OpenAI Chat-Protokoll – dadurch funktioniert jedes KI-Modell, das es gibt.
+// Alle sprechen OpenAI-Protokoll — ein Key, jedes Modell nutzbar.
+// OpenRouter allein gibt Zugriff auf hunderte Modelle, die Direkt-Anbieter sind schneller/günstiger.
 export const PROVIDERS: ProviderPreset[] = [
   {
     id: 'openai',
@@ -20,7 +20,7 @@ export const PROVIDERS: ProviderPreset[] = [
     baseUrl: 'https://api.openai.com/v1',
     defaultModel: 'gpt-4o-mini',
     needsKey: true,
-    hint: 'Key von platform.openai.com',
+    hint: 'Key von platform.openai.com — gpt-4o, gpt-4o-mini, o1, o3',
   },
   {
     id: 'anthropic',
@@ -29,7 +29,7 @@ export const PROVIDERS: ProviderPreset[] = [
     baseUrl: 'https://api.anthropic.com',
     defaultModel: 'claude-sonnet-4-20250514',
     needsKey: true,
-    hint: 'Key von console.anthropic.com',
+    hint: 'Key von console.anthropic.com — Sonnet 4, Haiku 3.5, Opus 4',
   },
   {
     id: 'gemini',
@@ -38,7 +38,7 @@ export const PROVIDERS: ProviderPreset[] = [
     baseUrl: 'https://generativelanguage.googleapis.com/v1beta/openai',
     defaultModel: 'gemini-2.5-flash',
     needsKey: true,
-    hint: 'Key von aistudio.google.com',
+    hint: 'Key von aistudio.google.com — 2.5 Flash/Pro, 2.0 Flash',
   },
   {
     id: 'openrouter',
@@ -47,7 +47,7 @@ export const PROVIDERS: ProviderPreset[] = [
     baseUrl: 'https://openrouter.ai/api/v1',
     defaultModel: 'openai/gpt-4o-mini',
     needsKey: true,
-    hint: 'Ein Key für hunderte Modelle aller Anbieter',
+    hint: 'Ein Key für hunderte Modelle aller Anbieter — vielseitigste Wahl',
   },
   {
     id: 'mistral',
@@ -56,7 +56,7 @@ export const PROVIDERS: ProviderPreset[] = [
     baseUrl: 'https://api.mistral.ai/v1',
     defaultModel: 'mistral-large-latest',
     needsKey: true,
-    hint: 'Key von console.mistral.ai',
+    hint: 'Key von console.mistral.ai — Large 2, Small, Codestral',
   },
   {
     id: 'groq',
@@ -65,7 +65,7 @@ export const PROVIDERS: ProviderPreset[] = [
     baseUrl: 'https://api.groq.com/openai/v1',
     defaultModel: 'llama-3.3-70b-versatile',
     needsKey: true,
-    hint: 'Sehr schnelle Open-Source-Modelle',
+    hint: 'Sehr schnell — Llama 3.3, Mixtral, Gemma',
   },
   {
     id: 'deepseek',
@@ -74,7 +74,7 @@ export const PROVIDERS: ProviderPreset[] = [
     baseUrl: 'https://api.deepseek.com/v1',
     defaultModel: 'deepseek-chat',
     needsKey: true,
-    hint: 'Key von platform.deepseek.com',
+    hint: 'Key von platform.deepseek.com — V3, R1 Reasoner',
   },
   {
     id: 'xai',
@@ -83,7 +83,88 @@ export const PROVIDERS: ProviderPreset[] = [
     baseUrl: 'https://api.x.ai/v1',
     defaultModel: 'grok-3',
     needsKey: true,
-    hint: 'Key von console.x.ai',
+    hint: 'Key von console.x.ai — Grok 3 / Grok 3 mini',
+  },
+  {
+    id: 'perplexity',
+    label: 'Perplexity (Sonar)',
+    protocol: 'openai',
+    baseUrl: 'https://api.perplexity.ai',
+    defaultModel: 'sonar',
+    needsKey: true,
+    hint: 'Key von perplexity.ai — sonar, sonar-pro, mit Web-Suche',
+  },
+  {
+    id: 'together',
+    label: 'Together AI',
+    protocol: 'openai',
+    baseUrl: 'https://api.together.xyz/v1',
+    defaultModel: 'meta-llama/Meta-Llama-3.1-70B-Instruct-Turbo',
+    needsKey: true,
+    hint: 'Key von api.together.ai — alle Open-Source-Modelle günstig',
+  },
+  {
+    id: 'fireworks',
+    label: 'Fireworks AI',
+    protocol: 'openai',
+    baseUrl: 'https://api.fireworks.ai/inference/v1',
+    defaultModel: 'accounts/fireworks/models/llama-v3p1-405b-instruct',
+    needsKey: true,
+    hint: 'Key von fireworks.ai — Llama 405B, Qwen, DeepSeek schnell',
+  },
+  {
+    id: 'cohere',
+    label: 'Cohere',
+    protocol: 'openai',
+    baseUrl: 'https://api.cohere.com/compatibility/v1',
+    defaultModel: 'command-r-plus',
+    needsKey: true,
+    hint: 'Key von dashboard.cohere.com — Command R+, Embed v4',
+  },
+  {
+    id: 'cerebras',
+    label: 'Cerebras',
+    protocol: 'openai',
+    baseUrl: 'https://api.cerebras.ai/v1',
+    defaultModel: 'llama3.1-70b',
+    needsKey: true,
+    hint: 'Ultraschnell — Key von cerebras.ai, Llama 3.1 70B',
+  },
+  {
+    id: 'huggingface',
+    label: 'Hugging Face',
+    protocol: 'openai',
+    baseUrl: 'https://api-inference.huggingface.co/v1',
+    defaultModel: 'meta-llama/Meta-Llama-3-8B-Instruct',
+    needsKey: true,
+    hint: 'Key von huggingface.co — tausende Open-Source-Modelle',
+  },
+  {
+    id: 'novita',
+    label: 'Novita AI',
+    protocol: 'openai',
+    baseUrl: 'https://api.novita.ai/v3/openai',
+    defaultModel: 'meta-llama/llama-3.1-70b-instruct',
+    needsKey: true,
+    hint: 'Günstig — Key von novita.ai, alle Llama/Qwen',
+  },
+  {
+    id: 'github',
+    label: 'GitHub Models',
+    protocol: 'openai',
+    baseUrl: 'https://models.inference.ai.azure.com',
+    defaultModel: 'gpt-4o-mini',
+    needsKey: true,
+    hint: 'Key von github.com/marketplace/models — gpt-4o, Llama, Phi',
+  },
+  {
+    id: 'azure',
+    label: 'Azure OpenAI',
+    protocol: 'openai',
+    baseUrl: '',
+    defaultModel: 'gpt-4o',
+    needsKey: true,
+    hint: 'Deine Azure URL eintragen: https://{name}.openai.azure.com/openai/deployments/{id}',
   },
   {
     id: 'ollama',
@@ -110,7 +191,7 @@ export const PROVIDERS: ProviderPreset[] = [
     baseUrl: '',
     defaultModel: '',
     needsKey: false,
-    hint: 'Jede API, die das OpenAI-Format spricht (Together, Fireworks, vLLM, ...).',
+    hint: 'Jede API, die das OpenAI-Format spricht (vLLM, Jan, GPT4All, ...).',
   },
 ];
 
