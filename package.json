@@ -1,7 +1,7 @@
 {
   "name": "kepta",
   "private": false,
-  "version": "1.0.3",
+  "version": "1.0.4",
   "description": "KEPTA — Behält, was zählt. Lokales, privates Wissenssystem für Notizen, Chat und MCP — ohne Cloud.",
   "author": "KEPTA <hello@kepta.app>",
   "type": "module",

@@ -46,6 +46,68 @@ export function Settings() {
 
   const provider = providerById(settings.providerId);
 
+  // Auto-Erkennung für lokale Modelle: Ollama/LM Studio sofort + alle 12s + bei Fenster-Fokus
+  useEffect(() => {
+    const isLocal = !provider.needsKey || settings.baseUrl.includes('localhost') || settings.baseUrl.includes('127.0.0.1');
+    if (!isLocal) return;
+    let cancelled = false;
+    const silentLoad = async () => {
+      try {
+        const res = await fetch('/api/models', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            protocol: provider.protocol,
+            baseUrl: settings.baseUrl || provider.baseUrl,
+            apiKey: settings.apiKey === 'local' ? '' : settings.apiKey,
+          }),
+        });
+        const data = await res.json();
+        if (!cancelled && res.ok && Array.isArray(data.models)) {
+          setModels(prev => {
+            const next = (data.models as string[]).sort();
+            // nur updaten wenn sich Liste ändert, um Flackern zu vermeiden
+            if (prev.length === next.length && prev.every((v,i) => v === next[i])) return prev;
+            return next;
+          });
+          setModelError(null);
+        }
+      } catch { /* silent for auto-poll */ }
+    };
+    silentLoad();
+    const id = setInterval(silentLoad, 12000);
+    const onFocus = () => silentLoad();
+    window.addEventListener('focus', onFocus);
+    document.addEventListener('visibilitychange', onFocus);
+    return () => { cancelled = true; clearInterval(id); window.removeEventListener('focus', onFocus); document.removeEventListener('visibilitychange', onFocus); };
+  }, [settings.providerId, settings.baseUrl, provider.needsKey, provider.protocol]);
+
+  // Für Remote-Anbieter mit Key: einmalig beim Öffnen auto-laden (kein Polling, um Rate-Limits zu schonen)
+  useEffect(() => {
+    const isLocal = !provider.needsKey || settings.baseUrl.includes('localhost') || settings.baseUrl.includes('127.0.0.1');
+    if (isLocal) return;
+    if (!settings.apiKey || settings.apiKey === 'local') return;
+    let cancelled = false;
+    const loadOnce = async () => {
+      try {
+        const res = await fetch('/api/models', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ protocol: provider.protocol, baseUrl: settings.baseUrl || provider.baseUrl, apiKey: settings.apiKey }),
+        });
+        const data = await res.json();
+        if (!cancelled && res.ok && Array.isArray(data.models)) {
+          setModels((data.models as string[]).sort());
+          setModelError(null);
+        }
+      } catch { /* silent */ }
+    };
+    loadOnce();
+    const onFocus = () => loadOnce();
+    window.addEventListener('focus', onFocus);
+    return () => { cancelled = true; window.removeEventListener('focus', onFocus); };
+  }, [settings.providerId, settings.baseUrl, settings.apiKey, provider.needsKey, provider.protocol]);
+
   useEffect(() => {
     setSettings(loadAISettings());
   }, []);
@@ -261,6 +323,12 @@ export function Settings() {
                   )}
                   {modelError && (
                     <p className="text-xs mt-2" style={{ color: '#f87171' }}>{modelError}</p>
+                  )}
+                  {!provider.needsKey && models.length > 0 && (
+                    <p className="text-xs mt-2 flex items-center gap-1.5" style={{ color: 'var(--ok)' }}><CheckCircle2 className="w-3.5 h-3.5" /> {models.length} lokale Modelle verbunden — neue Downloads erscheinen automatisch (alle 12s + bei Fokus)</p>
+                  )}
+                  {!provider.needsKey && models.length === 0 && !loadingModels && !modelError && (
+                    <p className="text-xs mt-2 leading-relaxed" style={{ color: 'var(--text-3)' }}>Keine lokalen Modelle gefunden. Starte Ollama (`ollama serve` + `ollama pull llama3.2`) oder LM Studio — sie erscheinen hier sofort.</p>
                   )}
                 </div>
               </div>
