@@ -59,13 +59,13 @@
   "main": "electron.js",
   "productName": "KEPTA",
   "license": "MIT",
-  "homepage": "https://github.com/Damian2212/kepta#readme",
+  "homepage": "https://github.com/DamianTodorovic/kepta#readme",
   "repository": {
     "type": "git",
-    "url": "https://github.com/Damian2212/kepta.git"
+    "url": "https://github.com/DamianTodorovic/kepta.git"
   },
   "bugs": {
-    "url": "https://github.com/Damian2212/kepta/issues"
+    "url": "https://github.com/DamianTodorovic/kepta/issues"
   },
   "keywords": [
     "knowledge-base",

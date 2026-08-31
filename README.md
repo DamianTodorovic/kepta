@@ -7,9 +7,9 @@
   Electron + React + Vite + Express. Privat auf deinem Gerät.
 </p>
 <p align="center">
-  <a href="https://github.com/Damian2212/kepta/releases"><img alt="Release" src="https://img.shields.io/github/v/release/Damian2212/kepta?label=Download"></a>
+  <a href="https://github.com/DamianTodorovic/kepta/releases"><img alt="Release" src="https://img.shields.io/github/v/release/DamianTodorovic/kepta?label=Download"></a>
   <a href="LICENSE"><img alt="License MIT" src="https://img.shields.io/badge/License-MIT-black"></a>
-  <a href="https://github.com/Damian2212/kepta/issues"><img alt="Issues" src="https://img.shields.io/github/issues/Damian2212/kepta"></a>
+  <a href="https://github.com/DamianTodorovic/kepta/issues"><img alt="Issues" src="https://img.shields.io/github/issues/DamianTodorovic/kepta"></a>
   <img alt="Platform macOS" src="https://img.shields.io/badge/platform-macOS%20%7C%20Linux-lightgrey">
 </p>
 
@@ -23,7 +23,7 @@
 
 ## Download (empfohlen)
 
-1. Auf **[Releases](https://github.com/Damian2212/kepta/releases)** die neuste Version öffnen
+1. Auf **[Releases](https://github.com/DamianTodorovic/kepta/releases)** die neuste Version öffnen
 2. **macOS:** `KEPTA-1.0.0-arm64.dmg` laden → öffnen → in Programme ziehen  
    **Linux:** `*.snap` oder `linux-unpacked`  
    **Windows:** aus Source bauen (siehe unten)
@@ -34,7 +34,7 @@
 Voraussetzung: **Node 18+** und **npm**.
 
 ```bash
-git clone https://github.com/Damian2212/kepta.git
+git clone https://github.com/DamianTodorovic/kepta.git
 cd kepta
 npm install
 npm run dev        # startet Server + Vite (http://localhost:3000)
