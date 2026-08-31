@@ -129,7 +129,7 @@ export function OnboardingWizard({ open, onClose, onComplete }: Props) {
               <div className="flex items-center gap-2 hud-label"><User className="w-3.5 h-3.5" style={{color:'var(--accent)'}}/> Wer bist du?</div>
               <div>
                 <label className="hud-label block mb-2">Name (wie soll dich das Gehirn nennen?)</label>
-                <input value={name} onChange={e=>setName(e.target.value)} placeholder="z.B. Damian" autoFocus className="hud-input w-full rounded-xl px-4 py-3 text-sm" />
+                <input value={name} onChange={e=>setName(e.target.value)} placeholder="z.B. Alex" autoFocus className="hud-input w-full rounded-xl px-4 py-3 text-sm" />
               </div>
               <div>
                 <label className="hud-label block mb-2 flex items-center gap-2"><Target className="w-3.5 h-3.5"/> Dein Ziel mit dem Gehirn</label>

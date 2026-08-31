@@ -22,7 +22,7 @@ export interface DetectedAI {
 }
 
 export const USECASE_LABELS: Record<UseCase, { label: string; icon: string; desc: string }> = {
-  angeln: { label: 'Angeln & FangLotse', icon: '🎣', desc: 'Köder, Ruten, Spots, Shop-Wissen' },
+  angeln: { label: 'Angeln', icon: '🎣', desc: 'Köder, Ruten, Spots, Shop-Wissen' },
   dropshipping: { label: 'Dropshipping / E-Commerce', icon: '🛒', desc: 'Shopify, Lieferanten, §19 UStG' },
   ki: { label: 'KI & RAG', icon: '🤖', desc: 'Prompts, Embeddings, Ollama, Agents' },
   coding: { label: 'Coding', icon: '💻', desc: 'Code-Snippets, Debugging, Stack' },

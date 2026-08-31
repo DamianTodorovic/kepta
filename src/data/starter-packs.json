@@ -1,11 +1,10 @@
 {
   "angeln": [
     {
-      "title": "FangLotse Shop — Versand aus DE",
-      "content": "FangLotse Ausrüstung (anni80-1i.myshopify.com): Nur Angelbedarf von Lieferanten mit Versand aus Deutschland wählen. Rechtsrisiko vermeiden: kein Direktversand aus Fernost. Immer Tracking, 1-3 Tage Lieferzeit kommunizieren.",
+      "title": "Shop — Versand aus DE",
+      "content": "Beispiel Angelsport-Shop: Nur Angelbedarf von Lieferanten mit Versand aus Deutschland wählen. Rechtsrisiko vermeiden: kein Direktversand aus Fernost. Immer Tracking, 1-3 Tage Lieferzeit kommunizieren.",
       "tags": [
         "angeln",
-        "fanglotse",
         "shop"
       ]
     },
@@ -30,7 +29,7 @@
   "dropshipping": [
     {
       "title": "§19 UStG Kleinunternehmer",
-      "content": "Einzelunternehmer Bad Liebenzell, Kleinunternehmer nach §19 UStG: Keine USt ausweisen, Hinweis in Rechnung/Shop: 'Als Kleinunternehmer im Sinne des §19 UStG wird keine Umsatzsteuer berechnet.' Grenze 2024: 22.000€ Vorjahr, 50.000€ lfd. Jahr.",
+      "content": "Kleinunternehmer nach §19 UStG: Keine USt ausweisen, Hinweis in Rechnung/Shop: 'Als Kleinunternehmer im Sinne des §19 UStG wird keine Umsatzsteuer berechnet.' Grenze 2024: 22.000€ Vorjahr, 50.000€ lfd. Jahr.",
       "tags": [
         "dropshipping",
         "recht",
@@ -39,7 +38,7 @@
     },
     {
       "title": "Shopify Rechtstexte Pflicht",
-      "content": "Impressum, Datenschutz, AGB, Widerruf, Versand & Zahlung — immer aktuell, Abmahnfalle. Adresse: Unterhaugstetter Str. 1, 75378 Bad Liebenzell. Kontakt, Registereintrag falls vorhanden.",
+      "content": "Impressum, Datenschutz, AGB, Widerruf, Versand & Zahlung — immer aktuell, Abmahnfalle. Adresse: [Deine Firmenadresse]. Kontakt, Registereintrag falls vorhanden.",
       "tags": [
         "shopify",
         "recht"

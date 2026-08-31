@@ -2,9 +2,11 @@
   "appId": "app.kepta.desktop",
   "productName": "KEPTA",
   "directories": {
-    "output": "release"
+    "output": "release",
+    "buildResources": "build"
   },
   "mac": {
+    "icon": "build/icon.icns",
     "target": [
       "dmg",
       "zip"

@@ -25,6 +25,7 @@ function createWindow() {
     width: 1280,
     height: 840,
     title: "KEPTA",
+    icon: path.join(__dirname, 'build/icon.png'),
     backgroundColor: '#fcfcf9',
     titleBarStyle: 'hiddenInset',
     trafficLightPosition: { x: 14, y: 14 },
