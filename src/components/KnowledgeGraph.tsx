@@ -48,6 +48,8 @@ function tagOverlap(a: string[], b: string[]): number {
 export function KnowledgeGraph({ memories, onSelectMemory }: KnowledgeGraphProps) {
   const svgRef = useRef<SVGSVGElement>(null);
   const simTicks = useRef(0);
+  // Individuelle Positionierung: einmal verschobene Knoten bleiben gepinnt (Obsidian-Feel)
+  const pinnedRef = useRef<Set<string>>(new Set());
   const containerRef = useRef<HTMLDivElement>(null);
   const [filter, setFilter] = useState("");
   const [transform, setTransform] = useState({ x: 0, y: 0, k: 1 });
@@ -216,10 +218,10 @@ export function KnowledgeGraph({ memories, onSelectMemory }: KnowledgeGraphProps
           b.vx -= fx;
           b.vy -= fy;
         }
-        // gravity + integrate — der gezogene Knoten bleibt exakt unterm Zeiger
+        // gravity + integrate — gepinnte/gezogene Knoten bleiben exakt, wo sie sind
         nodes.forEach((orig) => {
           const n = next.get(orig.id)!;
-          if (dragging?.id === orig.id) { n.vx = 0; n.vy = 0; return; }
+          if (dragging?.id === orig.id || pinnedRef.current.has(orig.id)) { n.vx = 0; n.vy = 0; return; }
           if (gravity > 0) {
             n.vx += (cx - n.x) * gravity;
             n.vy += (cy - n.y) * gravity;
@@ -293,7 +295,14 @@ export function KnowledgeGraph({ memories, onSelectMemory }: KnowledgeGraphProps
     }
   }, [panning, dragging, transform.k, transform.x, transform.y]);
 
-  const onPointerUp = useCallback(() => { setPanning(null); setDragging(null); }, []);
+  const onPointerUp = useCallback(() => {
+    // Nach dem Loslassen sofort zur Ruhe kommen — kein Zurückschnappen des Clusters
+    if (dragging) {
+      setPositions((prev) => new Map([...prev].map(([id, n]) => [id, { ...n, vx: 0, vy: 0 }])));
+    }
+    setPanning(null);
+    setDragging(null);
+  }, [dragging]);
 
   // Typ-Farben (kohärent mit Karten-Badges WISSEN/EPISODE/ABLAUF) statt Tag-Regenbogen
   const TYPE_COLORS: Record<string, string> = {
@@ -419,6 +428,7 @@ export function KnowledgeGraph({ memories, onSelectMemory }: KnowledgeGraphProps
                   onPointerDown={(e) => {
                     e.stopPropagation();
                     (e.currentTarget as Element).setPointerCapture(e.pointerId);
+                    pinnedRef.current.add(m.id);
                     setDragging({ id: m.id, startX: e.clientX, startY: e.clientY, origX: pos.x, origY: pos.y });
                   }}
                   onPointerEnter={() => setHovered(m.id)}
