@@ -1,8 +1,8 @@
 {
   "name": "kepta",
   "private": false,
-  "version": "1.0.4",
-  "description": "KEPTA — Behält, was zählt. Lokales, privates Wissenssystem für Notizen, Chat und MCP — ohne Cloud.",
+  "version": "2.0.0",
+  "description": "KEPTA — Keeps what counts. Das lokale Gehirn für KI-Agenten: SQLite, hybride Suche, Wissensgraph, MCP 2026-07-28 — ohne Cloud.",
   "author": "KEPTA <hello@kepta.app>",
   "type": "module",
   "scripts": {

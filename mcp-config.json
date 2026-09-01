@@ -3,14 +3,19 @@
   "mcpServers": {
     "kepta": {
       "command": "npx",
-      "args": ["tsx", "src/mcp-server.ts"],
-      "cwd": "/Users/damiantodorovic/Desktop/ki gehirn/kepta",
+      "args": [
+        "tsx",
+        "src/mcp-server.ts"
+      ],
+      "cwd": "/ABSOLUTER/PFAD/ZU/kepta",
       "env": {}
     },
     "kepta-built": {
       "_comment": "Alternative nach 'npm run build:mcp' — ohne tsx, direkt Node auf gebuildettem CJS",
       "command": "node",
-      "args": ["/Users/damiantodorovic/Desktop/ki gehirn/kepta/dist/mcp-server.cjs"],
+      "args": [
+        "/ABSOLUTER/PFAD/ZU/kepta/dist/mcp-server.cjs"
+      ],
       "env": {}
     }
   }

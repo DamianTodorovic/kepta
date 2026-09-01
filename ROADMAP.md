@@ -10,7 +10,7 @@
 - [x] MCP-Server (stdio + HTTP) · Command Palette · Token-Budget · Web-Clipper
 - [x] Hybrid-Suche TF-IDF + BM25 (+ optionale Embeddings)
 
-## 🎯 v2.0 — SOTA-Agenten-Gehirn (2026-07-28-Standard)
+## 🎯 v2.0 — SOTA-Agenten-Gehirn (✅ released 2026-09-01)
 
 | Baustein | Ziel |
 |---|---|
@@ -27,9 +27,20 @@
 
 - **Verschlüsselung at rest** — benötigt native Bindings (SQLCipher) oder Feldverschlüsselung; ehrlich bewerten statt halb versprechen
 - **Git-basierte Memory-Versionierung** (Letta Context-Repositories-Stil) — jede Änderung als Commit in einem Bare-Repo neben der DB
-- **Reranking als Pflicht-Pfad** (Cross-Encoder via Ollama), heute optionaler Schalter
+- **Cross-Encoder-Reranking als Pflicht-Pfad** — Qwen3-Reranker-0.6B (arXiv:2506.05176) über die Top-20-RRF-Kandidaten, sobald Ollama-Rerank-API verfügbar
+- **Mem0-Write-Gate** (arXiv:2504.19413): LLM klassifiziert ADD/UPDATE/DELETE/NOOP beim Speichern statt nur Embedding-Dedup
+- **Bi-temporale Kanten** (arXiv:2501.13956): zusätzlich zu valid_from/valid_to auch ingested_at/invalidated_at auf Relationen
+- **Idle-Time-Konsolidierung** (Sleep-time Compute, arXiv:2504.13171): Hintergrundjob erzeugt Kontext-Prefixe (Contextual Retrieval, arXiv:2504.19754) und vorberechnete Fragen pro Memory
+- **Eval-Erweiterung**: LongMemEval-Teilmengen (Knowledge-Update + Abstention, arXiv:2410.10813) als Regressionssuite; bge-m3 tri-modale Vektoren
 - **Windows-CI-Build** (electron-builder win) — Windows aktuell build-from-source
-- **Evals ausbauen** — Precision@5-Subset erweitern Richtung LoCoMo/LongMemEval-Teilmengen
+- **A-MEM-Evolution** (arXiv:2502.12110): Nachbarn beim Insert aktualisieren (Beschreibungen/Tags refreshen)
+
+## 📚 Forschungs-Basis (Auswahl)
+
+- Mem0 — arXiv:2504.19413 · Zep/Graphiti — arXiv:2501.13956 · A-MEM — arXiv:2502.12110
+- Oblivion (Decay-Driven Activation) — arXiv:2604.00131 · Sleep-time Compute — arXiv:2504.13171
+- HippoRAG 2 — arXiv:2502.14802 · Late Chunking — arXiv:2409.04701 · Qwen3-Embedding — arXiv:2506.05176
+- LongMemEval — arXiv:2410.10813 · LoCoMo — arXiv:2402.17753 · Human-Inspired Memory (Microsoft) — arXiv:2605.08538
 
 ## ⛔ Anti-Roadmap (bewusst nicht tun)
 

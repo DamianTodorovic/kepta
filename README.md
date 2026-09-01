@@ -1,10 +1,10 @@
 <p align="center">
   <img src="public/kepta-logo.svg" width="88" height="88" alt="KEPTA Logo">
 </p>
-<h1 align="center">KEPTA — Behält, was zählt</h1>
+<h1 align="center">KEPTA — Keeps what counts</h1>
 <p align="center">
-  <strong>Lokales Wissenssystem. Ohne Cloud. Ohne Abo.</strong><br>
-  Electron + React + Vite + Express. Privat auf deinem Gerät.
+  <strong>The local brain for AI agents. No cloud. No subscription.</strong><br>
+  SQLite + hybrid retrieval + knowledge graph + MCP. All on your device.
 </p>
 <p align="center">
   <a href="https://github.com/DamianTodorovic/kepta/releases"><img alt="Release" src="https://img.shields.io/github/v/release/DamianTodorovic/kepta?label=Download"></a>
@@ -15,108 +15,124 @@
 
 ---
 
-**KEPTA** ist ein lokales Second Brain. Notizen, Wissen und Kategorien bleiben als Knoten auf deinem Gerät (`~/.kepta/memories.json` bzw. legacy `~/.ki-gehirn/`), werden mit hybrider Suche (TF-IDF + BM25 + Cosine) gefunden und per MCP + HTTP-API von jeder KI genutzt. Besonderheit: Jeder Download passt sich per Onboarding an dich an (Name, Fokus, lokale Modelle) und erweitert sich danach selbst (Inbox-Watcher + Auto-Learn).
+**KEPTA** is a local-first second brain that your AI agents actually share: one memory store exposed over **MCP** (stdio + Streamable HTTP, protocol `2026-07-28`) and a local HTTP API. It is built agent-native — not a notes app with an API bolted on:
 
-> Kein Login, keine Cloud. Keys bleiben in deinem `localStorage`.
+- **Memory types** — semantic (facts), episodic (events), procedural (how-tos)
+- **Temporal validity** — `valid_from`/`valid_to`, supersede chains, `memory_forget`; expired facts are down-ranked, not silently served
+- **Retention decay** (Oblivion, arXiv:2604.00131) — memories that are never accessed become less accessible, without deletion
+- **Hybrid retrieval** — SQLite FTS5 (BM25) + persistent chunk embeddings (Ollama) + entity match, fused via **Reciprocal Rank Fusion**
+- **Knowledge graph** — entities & relations (`[[Wiki-Links]]` become graph edges) across all memories
+- **Consolidation** — embedding-based duplicate detection; older copies get superseded, never deleted
+- **Obsidian interop** — Markdown + frontmatter import/export as first-class citizen
+
+> No login, no cloud. API keys stay in your `localStorage`. Your memory never leaves your device.
+
+**Eval (fixed corpus, 25 queries, lexical-only — no embeddings):** Hit@1 **76% → 92%** and Precision@5 **84% → 92%** versus the v1 substring search. Run it yourself: `npm run eval`. The remaining failures are cross-lingual/stemming cases ("Wissensgraph" vs "Knowledge Graph") — exactly what the vector path fixes when Ollama is running.
+
+### Why KEPTA instead of Obsidian (or Mem0)?
+
+| | Obsidian | Mem0 / Letta | **KEPTA** |
+|---|---|---|---|
+| Purpose | Human notes | Agent memory SDK/Docker | **Agent memory with a real GUI** |
+| Memory types / temporal validity | — | ✓ | **✓** |
+| MCP as first-class citizen | via plugins | ✓ | **✓ (stdio + Streamable HTTP, 8 typed tools)** |
+| Installable desktop app | ✓ | ✗ | **✓** |
+| Local-only, MIT | free, closed source | partly cloud | **✓** |
+
+Obsidian is a great editor for humans; its data model (markdown files) is its agent limit. KEPTA's data model *is* agent memory — and still speaks Markdown.
 
 ---
 
-## Download (empfohlen)
+## Download
 
-1. Auf **[Releases](https://github.com/DamianTodorovic/kepta/releases)** die neuste Version öffnen
-2. **macOS:** `KEPTA-1.0.0-arm64.dmg` laden → öffnen → in Programme ziehen  
-   **Linux:** `*.snap` oder `linux-unpacked`  
-   **Windows:** aus Source bauen (siehe unten)
-3. Starten. Beim ersten Start fragt der Wizard nach Name/Ziel und erkennt lokale Modelle (Ollama `11434`, LM Studio `1234`).
+1. Grab the latest from **[Releases](https://github.com/DamianTodorovic/kepta/releases)**
+2. **macOS:** `KEPTA-2.0.0-arm64.dmg` → open → drag to Applications · **Linux:** `*.snap` · **Windows:** build from source
+3. First start: the onboarding wizard asks for your name/goal and detects local models (Ollama `:11434`, LM Studio `:1234`).
 
-## Aus Source starten (Entwickler)
+## From source (developers)
 
-Voraussetzung: **Node 18+** und **npm**.
+Requires **Node 22.5+** (built-in `node:sqlite`) and **npm**.
 
 ```bash
 git clone https://github.com/DamianTodorovic/kepta.git
 cd kepta
 npm install
-npm run dev        # startet Server + Vite (http://localhost:3000)
-# in zweitem Terminal (optional Electron):
-npm run electron
+npm test           # vitest suite (42 tests: store, engine, mcp, obsidian, search)
+npm run eval       # retrieval eval vs. v1 baseline
+npm run dev        # server + Vite (http://localhost:3000)
+npm run electron   # second terminal: Electron shell
 ```
 
-Build für Produktion:
+Production build: `npm run build` (Vite + `dist/server.cjs` + `dist/mcp-server.cjs`), `npm run build:mac` for the DMG.
 
-```bash
-npm run build              # Vite + Express (dist/)
-npm run build:mac          # + DMG/ZIP nach release/ (macOS)
-npm start                  # nur Server: node dist/server.cjs (PORT=3000)
-```
+## MCP — one memory for every AI
 
-## Nutzung
+**MCP protocol `2026-07-28`** (stateless core, `server/discover`, legacy `2025-06-18`/`2024-11-05` compatible). Transports: **stdio** and **Streamable HTTP** (`POST /mcp` on the local server). 8 tools, all with typed schemas and structured outputs:
 
-- **Wissen:** Knoten anlegen, Tags vergeben, per Suche filtern. Drag&Drop für `PDF/MD/TXT/JSON` (2000-Zeichen Chunks), URL-Clipper (`POST /api/clip`), Inbox `~/.kepta/inbox` wird automatisch importiert (nach Import → `archiv/`).
-- **Suche:** Hybrid `cosine 0.5 + BM25 (k1=1.2,b=0.75)` — Schalter *Semantik* + *Top-k 1-20* + Tag-Filter. Cache (Index + LRU 64, TTL 60s) für <5ms bei 500 Knoten.
-- **Chat:** SSE-Stream `/api/chat/stream`, Token-Budget 1k–16k, Quellen-Chips, Stop-Button, Kosten-Schätzung. Auto-Learn (an/aus in System) extrahiert aus jeder Antwort >60 Zeichen einen Knoten (`auto-learn` Tag).
-- **Graph:** Force-Graph + `⌘K` Command Palette.
-- **System:** Import/Export JSON, Inbox-Status, Duplikat-Erkennung (Jaccard >82%).
+| Tool | Purpose |
+|---|---|
+| `memory_search` | hybrid retrieval (query, limit, tags, type, scope) with score components + expired/superseded flags |
+| `memory_save` | create/update, `[[wiki-links]]` → entities, optional type/scope/confidence/validity |
+| `memory_update` | patch a memory |
+| `memory_delete` | trash (default) or permanent |
+| `memory_list` | paginated listing, incl. trash |
+| `memory_graph` | entities & relations around a node |
+| `memory_consolidate` | duplicate detection (dry_run default) → supersede |
+| `memory_forget` | temporal invalidation: `expire` / `supersede` / `delete` |
 
-## MCP & HTTP-API — Ein Speicher für alle KIs
-
-Alle Zugänge teilen `~/.kepta/memories.json`:
-
-```
-┌──────────┐   ┌──────────────┐   ┌────────────────┐
-│  KEPTA   │   │  MCP stdio   │   │ Lokale HTTP-API│
-│   App    │──▶│  npx tsx     │──▶│ localhost:3000 │
-└──────────┘   └──────────────┘   └────────────────┘
-```
-
-**HTTP (CORS nur localhost, Rate-Limit 180/min, helmet):**
-`GET /api/health` · `GET /api/memories` (ETag) · `GET /api/memories/search?q=&limit=&tags=` · `POST /api/memory` · `POST /api/memories/import` · `POST /api/clip` (SSRF-block) · `POST /api/chat|/api/chat/stream` · `POST /api/models` · `GET /api/inbox/status`
-
-**MCP (stdio):** `memory_search {query,limit,tags}` · `memory_save {title,content,tags,id?}` · `memory_list {limit,offset}`
-
-Cursor / Claude Desktop `mcp.json`:
+Claude Desktop / Cursor (`mcp.json`):
 ```json
 {
   "mcpServers": {
     "kepta": {
-      "command": "npx",
-      "args": ["tsx", "src/mcp-server.ts"],
-      "cwd": "/ABSOLUTER/PFAD/ZU/kepta"
+      "command": "node",
+      "args": ["/ABSOLUTE/PATH/TO/kepta/dist/mcp-server.cjs"]
     }
   }
 }
 ```
-fertig gebaut: `node /ABSOLUTER/PFAD/ZU/kepta/dist/mcp-server.cjs`
 
-Schnelltest:
+HTTP quick check:
 ```bash
 curl http://localhost:3000/api/health | jq
-curl "http://localhost:3000/api/memories/search?q=angeln" | jq
+curl -X POST http://localhost:3000/mcp -H 'Content-Type: application/json' \
+  -d '{"jsonrpc":"2.0","id":1,"method":"server/discover"}' | jq
+curl -X POST http://localhost:3000/api/search -H 'Content-Type: application/json' \
+  -d '{"query":"deployment","topK":5}' | jq
 ```
 
-## Sicherheit
+Other endpoints: `GET /api/memories` (ETag, `?trash=1`) · `GET /api/memories/search?q=&limit=&tags=` · `POST /api/memory` · `POST /api/memories/import` (JSON backup) · `POST /api/import/markdown` (Obsidian vault) · `POST /api/export/markdown` (writes `.md` files to `~/.kepta/export/`) · `GET /api/graph` · `DELETE /api/memories/:id` (trash, `?permanent=1`) · `POST /api/memories/:id/restore` · `POST /api/clip` (SSRF-guarded) · `POST /api/chat|/api/chat/stream` · `POST /api/models` · `GET /api/inbox/status`
 
-Lokal-first, gehärtet: `helmet`, `express-rate-limit` (global 180/min, chat 20/min, clip 12/min), `express.json 1mb`, `CORS` nur `localhost`, SSRF-Block (private IPs, `169.254`, `file://`), XSS-Sanitize (`<script>`/`on*` strip), Path-Traversal Check (`isSafeFilename` + `startsWith(inbox)`), `ETag`+`compression`, Electron `nodeIntegration:false, contextIsolation:true, sandbox:true` + CSP. Keine Keys im Log. Siehe `server.ts` + `electron.js`.
+## Data & privacy
 
-## Daten
+- Memory: **`~/.kepta/kepta.db`** (SQLite, WAL) — automatic one-time migration with backup to `~/.kepta/backup/`
+- Vault export: `~/.kepta/export/` · Inbox: `~/.kepta/inbox/` (auto-import → `archive/`)
+- Nothing leaves the device. Optional Ollama embeddings run locally too.
+- Hardened: helmet, rate limits, localhost-only CORS, SSRF blocking, XSS sanitization, path-traversal checks, sandboxed Electron.
 
-- Standard: `~/.kepta/memories.json` (neu) — fällt zurück auf `~/.ki-gehirn/memories.json` (Bestand, wird automatisch erkannt)
-- Profil: `~/.kepta/profile.json` + Spiegel `localStorage:ki_gehirn_adaptive_profile` (Name/Ziel/Provider)
-- Inbox: `~/.kepta/inbox/` (+ `archiv/`)
-- Export: System → JSON Backup
+## Security
+
+Local-first, hardened: `helmet`, `express-rate-limit` (global 180/min, chat 20/min, clip 12/min), `express.json 1mb`, `CORS` only localhost, SSRF block (private IPs, `169.254`, `file://`), XSS sanitize, path-traversal checks, Electron `nodeIntegration:false, contextIsolation:true, sandbox:true` + CSP. No keys in logs.
 
 ## Entwicklung
 
 ```bash
-npm run lint          # tsc --noEmit
-npm run build         # Vite 3240 Module, vendor 440k + index 163k (gzip 47k)
+npm run lint          # tsc --noEmit (strict)
+npm test              # vitest
+npm run eval          # Precision@5 / Hit@1 / MRR
 ```
 
-Stack: Electron 44, React 19, Vite 6, Tailwind 4, Express 4, motion, react-markdown. Keine Cloud-SDKs im Runtime-Pfad.
+Stack: Electron 44, React 19, Vite 6, Tailwind 4, Express 4, SQLite (`node:sqlite`, FTS5). Keine Cloud-SDKs im Runtime-Pfad.
 
-## Lizenz
+---
 
-MIT — siehe [LICENSE](LICENSE). Logo `public/kepta-logo.svg` ist originale Vektorarbeit (keine Fremdrechte).
+# DE — Kurzversion
+
+**KEPTA** ist ein lokales Second Brain für dich **und** deine KI-Agenten: ein gemeinsames Gedächtnis (`~/.kepta/kepta.db`), erreichbar über MCP (stdio + Streamable HTTP, Protokoll `2026-07-28`) und eine lokale HTTP-API. Agenten können suchen, speichern, aktualisieren, vergessen (`memory_forget`), konsolidieren und den Wissensgraph lesen — mit typisierten Schemas statt Freitext-Grep.
+
+Kernfeatures: Memory-Typen (Wissen/Episoden/Abläufe), temporale Gültigkeit mit Ersetzungs-Ketten, Retention-Zerfall (vergessen ohne löschen), hybride Suche (FTS5-BM25 + persistente Embeddings via Ollama + Entitäten → RRF-Fusion), leichter Wissensgraph über `[[Wiki-Links]]`, Obsidian-Import/-Export (Markdown + Frontmatter), 20 KI-Provider + lokale Modelle, Onboarding-Wizard, Inbox-Auto-Import, URL-Clipper, Chat mit Quellen und Token-Budget.
+
+Eval (Fixkorpus, 25 Queries, rein lexikalisch): Hit@1 **76% → 92%**, Precision@5 **84% → 92%** gegenüber der v1-Suche — `npm run eval`. Voraussetzung Node 22.5+. Lizenz MIT.
 
 ---
 
