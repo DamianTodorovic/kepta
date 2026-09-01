@@ -128,6 +128,10 @@ export function Dashboard() {
         setShortcutsOpen((v) => !v);
       } else if (e.key === 'Escape') {
         setShortcutsOpen(false);
+      } else if ((e.metaKey || e.ctrlKey) && ['1', '2', '3', '4'].includes(e.key) && !typing) {
+        // Sheet verspricht ⌘1–4 — jetzt halten wir es auch (Finding B4)
+        e.preventDefault();
+        setCurrentView((['memories', 'chat', 'graph', 'settings'] as const)[Number(e.key) - 1]);
       }
     };
     window.addEventListener('keydown', onKey);
@@ -212,7 +216,33 @@ export function Dashboard() {
 
   // palette
   const [paletteOpen, setPaletteOpen] = useState(false);
+  // Adaptiver Wizard: öffnet sich automatisch NUR beim echten Erstbesuch.
+  // „Später“ wird persistiert — der Wizard kämpft nie gegen den Nutzer (Persona-Finding A1).
+  const wizardDismissed = (): boolean => {
+    try { return localStorage.getItem('ki_gehirn_wizard_dismissed') === '1'; } catch { return false; }
+  };
   const [wizardOpen, setWizardOpen] = useState(false);
+  const closeWizard = () => {
+    setWizardOpen(false);
+    try { localStorage.setItem('ki_gehirn_wizard_dismissed', '1'); } catch { /* ignore */ }
+  };
+  useEffect(() => {
+    try {
+      if (wizardDismissed()) return;
+      const p = loadProfile();
+      if (p?.hasCompletedOnboarding) return;
+      if (memories.length === 0) {
+        const timer = setTimeout(() => setWizardOpen(true), 600);
+        return () => clearTimeout(timer);
+      }
+      if (!p) {
+        const timer = setTimeout(() => setWizardOpen(true), 2500);
+        return () => clearTimeout(timer);
+      }
+    } catch {}
+    // Bewusst nur beim Mount + erstem Datenlayout — Dismiss-Speicher entscheidet dauerhaft
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [memories.length === 0]);
   const searchInputRef = useRef<HTMLInputElement>(null);
   const clipInputRef = useRef<HTMLInputElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -226,25 +256,6 @@ export function Dashboard() {
     const unsubscribe = subscribeMemories(setMemories);
     return unsubscribe;
   }, []);
-
-  // Adaptiver Wizard: öffne automatisch beim ersten Start (kein Profil oder 0 Knoten und noch nicht abgeschlossen)
-  useEffect(() => {
-    try {
-      const p = loadProfile();
-      if (!p || !p.hasCompletedOnboarding) {
-        // nur auto-öffnen wenn wirklich leer oder kein Profil
-        if (memories.length === 0) {
-          const timer = setTimeout(()=> setWizardOpen(true), 600);
-          return ()=> clearTimeout(timer);
-        }
-        // Profil fehlt aber Knoten vorhanden -> trotzdem nach 2s anbieten
-        if (!p) {
-          const timer = setTimeout(()=> setWizardOpen(true), 2500);
-          return ()=> clearTimeout(timer);
-        }
-      }
-    } catch {}
-  }, [memories.length]);
 
   useCommandPaletteHotkey(() => setPaletteOpen(true));
 
@@ -274,7 +285,12 @@ export function Dashboard() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const allTags = Array.from(new Set(memories.flatMap(m => m.tags))).sort() as string[];
+  // Tags nach Häufigkeit (Finding C2: Sidebar muss bei großen Basen sortiert zählen)
+  const allTags = useMemo(() => {
+    const counts = new Map<string, number>();
+    for (const m of memories) for (const t of m.tags) counts.set(t, (counts.get(t) ?? 0) + 1);
+    return [...counts.entries()].sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0])).map(([tag, count]) => ({ tag, count }));
+  }, [memories]);
 
   // --- Tag-gefilterte Basis ---
   const tagFiltered = useMemo(() => {
@@ -583,7 +599,7 @@ export function Dashboard() {
               <input
                 ref={searchInputRef}
                 type="text"
-                placeholder={semanticEnabled ? "Semantisch suchen... (TF-IDF · BM25 · Cosine) — ⌘K" : "Wissens-Index durchsuchen... (⌘K)"}
+                placeholder={semanticEnabled ? "Suche, die versteht, was du meinst… (⌘K für Befehle)" : "Wissens-Index durchsuchen... (⌘K)"}
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 onKeyDown={(e) => { if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "k") { e.preventDefault(); setPaletteOpen(true); } }}
@@ -629,7 +645,7 @@ export function Dashboard() {
                 className="btn-primary flex items-center gap-2 px-3.5 py-2 rounded-lg font-medium text-sm"
               >
                 <Plus className="w-4 h-4" />
-                <span className="hidden sm:inline">Neuer Knoten</span>
+                <span className="hidden sm:inline">Neue Notiz</span>
               </button>
             </div>
           </header>
@@ -763,16 +779,16 @@ export function Dashboard() {
               {duplicatePairs.length===0 ? (
                 <span className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg hud-inset" style={{color:'var(--ok)'}}><CheckCircle2 className="w-3.5 h-3.5" /> Wissensbasis sauber</span>
               ) : (
-                <span className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg" style={{background:'rgba(251,191,36,.14)', border:'1px solid rgba(251,191,36,.28)', color:'#d97706'}}>
+                <span className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg" style={{background:'rgba(251,191,36,.14)', border:'1px solid rgba(251,191,36,.28)', color:'#d97706'}} title="Nur ein Hinweis — es wird nichts gelöscht oder verändert. Duplikate kannst du per MCP memory_consolidate sicher zusammenführen.">
                   <AlertCircle className="w-3.5 h-3.5" /> {duplicatePairs.length} mögliche Duplikat{duplicatePairs.length>1?'e':''}
-                  <span className="hidden xl:inline" style={{color:'var(--text-3)'}}>· {duplicatePairs[0].reason}</span>
+                  <span className="hidden xl:inline" style={{color:'var(--text-3)'}}>· {duplicatePairs[0].reason} · nichts wird gelöscht</span>
                 </span>
               )}
               {duplicatePairs.length>0 && (
                 <button onClick={()=>{
                   const first = duplicatePairs[0];
                   if(first){ setEditingMemory(first.a); setIsEditorOpen(true); }
-                }} className="btn-ghost px-2.5 py-1.5 rounded-lg text-xs hidden sm:inline-flex">Prüfen</button>
+                }} className="btn-ghost px-2.5 py-1.5 rounded-lg text-xs hidden sm:inline-flex" title="Ähnlichste Paare im Editor ansehen — ohne Änderung">Ansehen</button>
               )}
             </div>
           </div>
@@ -1006,7 +1022,7 @@ export function Dashboard() {
 
       <CommandPalette open={paletteOpen} onClose={() => setPaletteOpen(false)} actions={paletteActions} />
 
-      <OnboardingWizard open={wizardOpen} onClose={() => setWizardOpen(false)} onComplete={() => setWizardOpen(false)} />
+      <OnboardingWizard open={wizardOpen} onClose={closeWizard} onComplete={closeWizard} />
       {/* Manueller Trigger falls Wizard geschlossen wurde */}
       {!wizardOpen && (()=>{ try{ const p=loadProfile(); if(!p?.hasCompletedOnboarding) return true; return false; } catch{ return false; }})() && (
         <button onClick={()=> setWizardOpen(true)} className="fixed bottom-4 right-4 z-40 btn-primary flex items-center gap-2 px-4 py-2.5 rounded-full shadow-xl" title="Adaptives Setup öffnen">

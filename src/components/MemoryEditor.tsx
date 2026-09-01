@@ -128,7 +128,7 @@ export function MemoryEditor({ memory, onSave, onClose, onDelete }: MemoryEditor
             </div>
             <div>
               <h2 className="text-lg font-semibold" style={{ color: 'var(--text-1)' }}>
-                {memory ? 'Knoten bearbeiten' : 'Neuer Knoten'}
+                {memory ? 'Notiz bearbeiten' : 'Neue Notiz'}
               </h2>
               <div className="hud-label mt-0.5">Wissens-Editor</div>
             </div>
@@ -197,7 +197,7 @@ export function MemoryEditor({ memory, onSave, onClose, onDelete }: MemoryEditor
             </div>
 
             <div className="flex-1 flex flex-col min-h-[240px]">
-              <div className="hud-label mb-2">Datenpayload</div>
+              <div className="hud-label mb-2">Inhalt</div>
               <textarea
                 placeholder="Wissen, Notizen, Code eingeben... [[Wiki-Links]] werden automatisch verknüpft."
                 value={content}

@@ -5,7 +5,7 @@ import { cn } from '../lib/utils';
 import { KeptaMark } from './KeptaMark';
 
 interface SidebarProps {
-  tags: string[];
+  tags: ({ tag: string; count: number })[];
   selectedTags: string[];
   onSelectTag: (tag: string) => void;
   onClearTags: () => void;
@@ -80,11 +80,13 @@ export function Sidebar({ tags, selectedTags, onSelectTag, onClearTags, currentV
           </div>
           <div className="flex-1 overflow-y-auto space-y-1 pr-1">
             {tags.slice(0, 40).map(tag => {
-              const active = selectedTags.includes(tag);
+              const name = typeof tag === 'string' ? tag : tag.tag;
+              const count = typeof tag === 'string' ? null : tag.count;
+              const active = selectedTags.includes(name);
               return (
                 <button
-                  key={tag}
-                  onClick={() => onSelectTag(tag)}
+                  key={name}
+                  onClick={() => onSelectTag(name)}
                   className="w-full flex items-center gap-2 px-2 py-1.5 rounded-md text-sm text-left transition-colors"
                   style={{
                     background: active ? 'var(--bg-inset-strong)' : 'transparent',
@@ -92,7 +94,10 @@ export function Sidebar({ tags, selectedTags, onSelectTag, onClearTags, currentV
                   }}
                 >
                   <Hash className="w-3.5 h-3.5 shrink-0 opacity-60" />
-                  <span className="truncate">{tag}</span>
+                  <span className="truncate flex-1">{name}</span>
+                  {count !== null && count > 1 && (
+                    <span className="text-[10px] px-1.5 py-0.5 rounded-full shrink-0" style={{ background: 'var(--bg-inset-strong)', color: 'var(--text-3)' }}>{count}</span>
+                  )}
                 </button>
               );
             })}
