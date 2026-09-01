@@ -53,3 +53,6 @@ firebase-applet-config.json
 .parcel-cache/
 project.tar.gz
 *.tar.gz
+
+# lokale Agent-Konfiguration
+.mcp.json
