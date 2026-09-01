@@ -44,6 +44,7 @@
 
 ## ⛔ Anti-Roadmap (bewusst nicht tun)
 
+- **Chat-Feature-Ausbau** — der Chat ist Test-Cockpit (Beweis-Modus: Retrieval trifft, Quellen sichtbar); der Alltag der Nutzer läuft über Claude Desktop/Cursor via MCP. Kein Feature-Magnet.
 - Cloud-Zwang, Accounts, Hosting — Kernversprechen bleibt „lokal & privat"
 - Eigene Modell-Infrastruktur — Ollama/LM Studio decken das ab
 - Social/Collaboration — Single-Player-Wert zuerst maximieren

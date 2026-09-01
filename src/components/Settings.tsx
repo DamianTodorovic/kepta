@@ -3,6 +3,7 @@ import { Key, ShieldCheck, Settings as SettingsIcon, Download, CheckCircle2, Ref
 import { motion } from 'motion/react';
 import { PROVIDERS, providerById, loadAISettings, saveAISettings, AISettings } from '../lib/ai';
 import { getMemoriesSync } from '../lib/store';
+import { SystemStatus } from './SystemStatus';
 
 type TabId = 'system' | 'mcp';
 
@@ -234,6 +235,7 @@ export function Settings() {
 
         {activeTab === 'system' && (
           <div className="space-y-10">
+            <SystemStatus />
             <form onSubmit={handleSave} className="space-y-6">
               <div className="space-y-5">
                 <div className="flex items-center gap-2">

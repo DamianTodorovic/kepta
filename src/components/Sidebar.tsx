@@ -22,7 +22,7 @@ export function Sidebar({ tags, selectedTags, onSelectTag, onClearTags, currentV
 
   const navItems = [
     { id: 'memories' as const, label: 'Wissen', icon: Database },
-    { id: 'chat' as const, label: 'Chat', icon: MessageSquare },
+    { id: 'chat' as const, label: 'Test-Cockpit', icon: MessageSquare },
     { id: 'graph' as const, label: 'Graph', icon: Network },
     { id: 'settings' as const, label: 'Einstellungen', icon: SettingsIcon },
   ];

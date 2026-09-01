@@ -289,7 +289,7 @@ export function Chat({ activeMemories, onSaveToBrain, onSaveToBrainWithMeta, isF
     const settingsLive = loadAISettings();
     const provLive = providerById(settingsLive.providerId);
     if (provLive.needsKey && !settingsLive.apiKey) {
-      setError(`Kein API Key für ${provLive.label} hinterlegt. Bitte unter System → Einstellungen eintragen.`);
+      setError(`Schnell-Setup (30 Sekunden): ① Links „System" → Einstellungen ② Provider wählen ③ API-Key eintragen ④ „Testanfrage" drücken — danach antwortet das Cockpit. Kein Key? Ollama lokal starten genügt auch (dann Modell „ollama/…" wählen).`);
       return;
     }
     if (!settingsLive.model) {

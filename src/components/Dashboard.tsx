@@ -891,7 +891,7 @@ export function Dashboard() {
                   ) : (
                     <span className="status-dot" />
                   )}
-                  {agentActive ? 'Gehirn synchronisiert sich' : semanticEnabled ? `Suche · ${chatMemories.length} im Retrieval` : 'Speicher synchron'}
+                  {agentActive ? 'Gehirn synchronisiert sich' : semanticEnabled ? `Suche · ${chatMemories.length} im Retrieval · MCP: /mcp · 8 Tools` : 'Speicher synchron · MCP: /mcp · 8 Tools'}
                 </div>
               </div>
 
