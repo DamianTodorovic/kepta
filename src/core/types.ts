@@ -21,6 +21,11 @@ export interface MemoryRecord {
   updatedAt: number;
   /** Papierkorb: Zeitpunkt des Löschens, null = aktiv */
   deletedAt: number | null;
+  // --- Retention (Oblivion, arXiv:2604.00131): Vergessen durch Zugänglichkeits-Zerfall ---
+  lastAccessAt: number | null;
+  accessCount: number;
+  /** 0..1 — wird verstärkt, wenn die Memory in Antworten genutzt wird */
+  utility: number;
 }
 
 export interface MemoryInput {

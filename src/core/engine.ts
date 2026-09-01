@@ -11,6 +11,19 @@ const SUPERSEDED_FACTOR = 0.4;
 const RECENCY_WINDOW_MS = 365 * 24 * 3600 * 1000;
 const RECENCY_MAX_BONUS = 0.15;
 
+// Oblivion (arXiv:2604.00131): Vergessen = Zugänglichkeits-Zerfall, nie Löschung.
+// R = 0.2 + 0.8·exp(−Δdays / ((U + F + ε)·T)) mit T = 90 Tage — Floor 0.2, damit
+// alte aber relevante Treffer nicht sterben (Relevanz kommt aus BM25/Vektor).
+const RETENTION_T_DAYS = 90;
+const RETENTION_FLOOR = 0.2;
+
+function retentionFactor(r: { lastAccessAt: number | null; accessCount: number; utility: number }, now: number): number {
+  const days = r.lastAccessAt ? (now - r.lastAccessAt) / (24 * 3600 * 1000) : 0;
+  const freq = Math.min(r.accessCount, 10);
+  const tau = (r.utility + freq + 0.1) * RETENTION_T_DAYS;
+  return RETENTION_FLOOR + (1 - RETENTION_FLOOR) * Math.exp(-days / tau);
+}
+
 interface ActiveMemory {
   record: MemoryRecord;
   titleLower: string;
@@ -155,6 +168,8 @@ export async function searchMemories(store: KeptaStore, params: SearchParams): P
     score *= 1 + recencyBonus;
     // Konfidenz-Gewichtung (0.5..1)
     score *= 0.5 + 0.5 * r.confidence;
+    // Retention (Oblivion): oft/aktuell Genutztes steigt, Vergessenes sinkt
+    score *= retentionFactor(r, now);
     // Temporal
     const expired = r.validTo !== null && r.validTo < now;
     const superseded = r.supersededBy !== null;
@@ -179,6 +194,8 @@ export async function searchMemories(store: KeptaStore, params: SearchParams): P
 
   hits.sort((a, b) => b.score - a.score || b.memory.updatedAt - a.memory.updatedAt);
   const top = hits.slice(0, limit);
+  // Zugriffs-Statistik für die Retention aktualisieren (fire-and-forget-semantisch, aber sync)
+  if (query && top.length > 0) store.recordAccess(top.map((h) => h.memory.id));
   return { hits: top, total: hits.length, query, usedVectors };
 }
 

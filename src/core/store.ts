@@ -91,7 +91,10 @@ export class KeptaStore {
         superseded_by TEXT,
         created_at INTEGER NOT NULL,
         updated_at INTEGER NOT NULL,
-        deleted_at INTEGER
+        deleted_at INTEGER,
+        last_access_at INTEGER,
+        access_count INTEGER NOT NULL DEFAULT 0,
+        utility REAL NOT NULL DEFAULT 0.5
       );
       CREATE INDEX IF NOT EXISTS idx_memories_scope ON memories(scope);
       CREATE INDEX IF NOT EXISTS idx_memories_type ON memories(type);
@@ -156,6 +159,19 @@ export class KeptaStore {
     if (!row) {
       this.db.prepare("INSERT INTO meta (key, value) VALUES ('schema_version', ?)").run(String(SCHEMA_VERSION));
     }
+    // Additive Spalten idempotent nachziehen (ALTER schlägt fehl, wenn vorhanden)
+    const columns = [
+      ["last_access_at", "INTEGER"],
+      ["access_count", "INTEGER NOT NULL DEFAULT 0"],
+      ["utility", "REAL NOT NULL DEFAULT 0.5"],
+    ] as const;
+    for (const [name, type] of columns) {
+      try {
+        this.db.exec(`ALTER TABLE memories ADD COLUMN ${name} ${type}`);
+      } catch {
+        // Spalte existiert bereits
+      }
+    }
   }
 
   close() {
@@ -186,11 +202,14 @@ export class KeptaStore {
       createdAt: Number(r.created_at),
       updatedAt: Number(r.updated_at),
       deletedAt: (r.deleted_at as number | null) ?? null,
+      lastAccessAt: (r.last_access_at as number | null) ?? null,
+      accessCount: Number(r.access_count ?? 0),
+      utility: Number(r.utility ?? 0.5),
     };
   }
 
   private static readonly COLS =
-    "id, scope, type, title, content, tags, confidence, valid_from, valid_to, superseded_by, created_at, updated_at, deleted_at";
+    "id, scope, type, title, content, tags, confidence, valid_from, valid_to, superseded_by, created_at, updated_at, deleted_at, last_access_at, access_count, utility";
 
   private getRow(id: string): Record<string, unknown> | undefined {
     return this.db.prepare(`SELECT ${KeptaStore.COLS} FROM memories WHERE id = ?`).get(id) as
@@ -255,11 +274,14 @@ export class KeptaStore {
       createdAt: input.createdAt ?? now,
       updatedAt: input.updatedAt ?? now,
       deletedAt: null,
+      lastAccessAt: null,
+      accessCount: 0,
+      utility: 0.5,
     };
     this.db
       .prepare(
-        `INSERT INTO memories (id, scope, type, title, content, tags, confidence, valid_from, valid_to, superseded_by, created_at, updated_at, deleted_at)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+        `INSERT INTO memories (id, scope, type, title, content, tags, confidence, valid_from, valid_to, superseded_by, created_at, updated_at, deleted_at, last_access_at, access_count, utility)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
       )
       .run(
         record.id,
@@ -274,7 +296,10 @@ export class KeptaStore {
         record.supersededBy,
         record.createdAt,
         record.updatedAt,
-        record.deletedAt
+        record.deletedAt,
+        record.lastAccessAt,
+        record.accessCount,
+        record.utility
       );
     return record;
   }
@@ -370,6 +395,30 @@ export class KeptaStore {
 
   supersedeMemory(oldId: string, newId: string | null): MemoryRecord | null {
     return this.updateMemory(oldId, { supersededBy: newId });
+  }
+
+  // ---------- Retention / Zugriffs-Statistik (Oblivion) ----------
+
+  /** Suchtreffer: Zugänglichkeit aktualisieren (Frequenz + zuletzt zugegriffen) */
+  recordAccess(ids: string[]): void {
+    if (ids.length === 0) return;
+    const now = Date.now();
+    const stmt = this.db.prepare("UPDATE memories SET last_access_at = ?, access_count = access_count + 1 WHERE id = ?");
+    this.db.exec("BEGIN");
+    try {
+      for (const id of new Set(ids)) stmt.run(now, id);
+      this.db.exec("COMMIT");
+    } catch (e) {
+      this.db.exec("ROLLBACK");
+      throw e;
+    }
+  }
+
+  /** Utility-Reinforcement: Memory hat zu einer Antwort beigetragen */
+  reinforceMemory(id: string, delta = 0.05): void {
+    this.db
+      .prepare("UPDATE memories SET utility = MAX(0, MIN(1, utility + ?)) WHERE id = ?")
+      .run(delta, id);
   }
 
   // ---------- Chunks & Embeddings ----------
@@ -485,20 +534,21 @@ export class KeptaStore {
     if (entity) {
       const start = this.getEntityByName(entity);
       if (!start) return { entities: [], relations: [] };
-      const frontier = new Set<number>([start.id]);
-      let current = [start.id];
+      const nodes = new Set<number>([start.id]);
+      const expanded = new Set<number>();
       const seenRel = new Set<number>();
       const relations: RelationRecord[] = [];
+      let frontierIds = [start.id];
       for (let d = 0; d < Math.max(1, depth); d++) {
-        if (current.length === 0) break;
-        const placeholders = current.map(() => "?").join(",");
+        if (frontierIds.length === 0) break;
+        const placeholders = frontierIds.map(() => "?").join(",");
         const rows = this.db
           .prepare(
             `SELECT id, source_id, target_id, relation, valid_from, valid_to, memory_id FROM relations
              WHERE source_id IN (${placeholders}) OR target_id IN (${placeholders})`
           )
-          .all(...current, ...current) as Record<string, unknown>[];
-        const nextEntities: number[] = [];
+          .all(...frontierIds, ...frontierIds) as Record<string, unknown>[];
+        const nextIds: number[] = [];
         for (const r of rows) {
           const rel: RelationRecord = {
             id: Number(r.id),
@@ -513,14 +563,14 @@ export class KeptaStore {
             seenRel.add(rel.id);
             relations.push(rel);
           }
-          frontier.add(rel.sourceId);
-          frontier.add(rel.targetId);
-          nextEntities.push(rel.sourceId, rel.targetId);
+          nodes.add(rel.sourceId);
+          nodes.add(rel.targetId);
+          nextIds.push(rel.sourceId, rel.targetId);
         }
-        current = [...new Set(nextEntities)].filter((id) => !frontier.has(id) || d === 0);
-        current = [...new Set(nextEntities)];
+        for (const id of frontierIds) expanded.add(id);
+        frontierIds = [...new Set(nextIds)].filter((id) => !expanded.has(id));
       }
-      const ids = [...frontier];
+      const ids = [...nodes];
       const placeholders = ids.map(() => "?").join(",");
       const entities = (
         this.db.prepare(`SELECT id, name FROM entities WHERE id IN (${placeholders})`).all(...ids) as Record<string, unknown>[]

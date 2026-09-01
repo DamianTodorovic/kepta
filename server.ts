@@ -6,6 +6,12 @@ import crypto from "crypto";
 import path from "path";
 import fs from "fs";
 import os from "os";
+import { KeptaStore } from "./src/core/store";
+import { migrateFromLegacyJson } from "./src/core/migrate";
+import { EmbeddingQueue } from "./src/core/embeddings";
+import { searchMemories as engineSearch, indexMemory } from "./src/core/engine";
+import { handleRpc, TOOLS as MCP_TOOLS, saveWithIndex } from "./src/core/mcp";
+import type { MemoryRecord as CoreMemory } from "./src/core/types";
 
 interface ChatRequest {
   providerId?: string;
@@ -17,97 +23,27 @@ interface ChatRequest {
   messages: { role: "user" | "assistant"; content: string }[];
 }
 
+// API-Form der Memories (kompatibel zum v1-Frontend: userId bleibt gesetzt)
 interface MemoryRecord {
   id: string;
   userId: string;
   title: string;
   content: string;
   tags: string[];
+  type?: string;
+  scope?: string;
+  confidence?: number;
+  validFrom?: number | null;
+  validTo?: number | null;
+  supersededBy?: string | null;
+  deletedAt?: number | null;
   createdAt: number;
   updatedAt: number;
 }
 
-// ---------- Lokaler Datei-Speicher (kein Limit, keine Cloud) ----------
+// ---------- Lokaler Speicher: SQLite (src/core), vorher JSON in ~/.kepta ----------
 
-const DATA_DIR = process.env.KEPTA_DATA_DIR || process.env.KI_GEHIRN_DATA_DIR || (()=>{ try{ const kepta=path.join(os.homedir(), ".kepta"); if (fs.existsSync(kepta)) return kepta; }catch{} return path.join(os.homedir(), ".ki-gehirn"); })();
-const DATA_FILE = path.join(DATA_DIR, "memories.json");
-
-// ---------- In-Memory Cache mit mtime-Check ----------
-let memoryCache: MemoryRecord[] | null = null;
-let memoryCacheMtimeMs = 0;
-let persistTimer: ReturnType<typeof setTimeout> | null = null;
-let pendingPersistData: MemoryRecord[] | null = null;
-
-function loadMemories(): MemoryRecord[] {
-  // Debounce-Pending hat Vorrang: noch nicht geflusht, aber Cache ist aktuell
-  if (pendingPersistData && memoryCache) {
-    return memoryCache;
-  }
-  try {
-    const stat = fs.statSync(DATA_FILE);
-    const mtime = stat.mtimeMs;
-    if (memoryCache !== null && mtime === memoryCacheMtimeMs) {
-      return memoryCache;
-    }
-    const raw = fs.readFileSync(DATA_FILE, "utf-8");
-    const data = JSON.parse(raw);
-    const memories: MemoryRecord[] = Array.isArray(data) ? data : [];
-    memoryCache = memories;
-    memoryCacheMtimeMs = mtime;
-    return memories;
-  } catch {
-    // Datei fehlt oder nicht lesbar -> leeres Array
-    if (memoryCache !== null) return memoryCache;
-    try {
-      const raw = fs.readFileSync(DATA_FILE, "utf-8");
-      const data = JSON.parse(raw);
-      const memories: MemoryRecord[] = Array.isArray(data) ? data : [];
-      memoryCache = memories;
-      try {
-        const stat = fs.statSync(DATA_FILE);
-        memoryCacheMtimeMs = stat.mtimeMs;
-      } catch {}
-      return memories;
-    } catch {
-      return [];
-    }
-  }
-}
-
-function flushPersist() {
-  if (!pendingPersistData) return;
-  const dataToWrite = pendingPersistData;
-  pendingPersistData = null;
-  persistTimer = null;
-  fs.mkdirSync(DATA_DIR, { recursive: true });
-  const tmp = DATA_FILE + ".tmp";
-  // atomic write: tmp + rename
-  fs.writeFileSync(tmp, JSON.stringify(dataToWrite, null, 2), "utf-8");
-  fs.renameSync(tmp, DATA_FILE);
-  try {
-    const stat = fs.statSync(DATA_FILE);
-    memoryCacheMtimeMs = stat.mtimeMs;
-  } catch {}
-  memoryCache = [...dataToWrite];
-}
-
-function persistMemories(memories: MemoryRecord[]) {
-  // sofort Cache aktualisieren
-  memoryCache = [...memories];
-  pendingPersistData = [...memories];
-  if (persistTimer) clearTimeout(persistTimer);
-  // debounce 120ms + atomic write
-  persistTimer = setTimeout(flushPersist, 120);
-}
-
-// für Tests/Graceful shutdown sofort flushen
-export function __flushMemoriesSync() {
-  if (persistTimer) {
-    clearTimeout(persistTimer);
-    persistTimer = null;
-  }
-  if (pendingPersistData) flushPersist();
-}
+const DATA_DIR = process.env.KEPTA_DATA_DIR || path.join(os.homedir(), ".kepta");
 
 function trimSlash(url: string) {
   return url.replace(/\/+$/, "");
@@ -176,74 +112,10 @@ function isSafeFilename(name: string): boolean {
 
 // ---------- Suche ----------
 
-function searchMemories(query: string, limit = 20, tagsFilter: string[] = []): MemoryRecord[] {
-  const q = query.trim().toLowerCase();
-  let results = loadMemories();
-  if (tagsFilter.length > 0) {
-    results = results.filter(m => tagsFilter.every(t => m.tags.includes(t)));
-  }
-  if (!q) return results.slice(0, limit);
-  const scored = results
-    .map(m => {
-      const hay = `${m.title} ${m.content} ${m.tags.join(" ")}`.toLowerCase();
-      let score = 0;
-      if (m.title.toLowerCase().includes(q)) score += 10;
-      if (hay.includes(q)) score += 5;
-      // Teilwort-Match
-      const words = q.split(/\s+/).filter(Boolean);
-      for (const w of words) if (hay.includes(w)) score += 1;
-      // Tag-Boost
-      for (const t of m.tags) if (t.toLowerCase().includes(q)) score += 3;
-      return { m, score };
-    })
-    .filter(x => x.score > 0)
-    .sort((a, b) => b.score - a.score || b.m.updatedAt - a.m.updatedAt)
-    .map(x => x.m);
-  return scored.slice(0, limit);
-}
+// (Echte Suche läuft über die Retrieval-Engine in src/core/engine.ts —
+//  ein Code-Pfad für UI, HTTP-API und MCP.)
 
-// ---------- MCP Tools Definition (für /api/mcp/tools + stdio) ----------
-
-const MCP_TOOLS = [
-  {
-    name: "memory_search",
-    description: "Durchsucht KEPTA (Titel, Inhalt, Tags). Gibt passende Erinnerungen/Knoten zurück.",
-    inputSchema: {
-      type: "object",
-      properties: {
-        query: { type: "string", description: "Suchbegriff (Volltext, case-insensitive)" },
-        limit: { type: "number", description: "Max. Ergebnisse (default 10, max 50)", default: 10 },
-        tags: { type: "array", items: { type: "string" }, description: "Optionaler Tag-Filter (AND)" },
-      },
-      required: ["query"],
-    },
-  },
-  {
-    name: "memory_save",
-    description: "Speichert einen neuen Knoten in KEPTA oder aktualisiert einen bestehenden (wenn id angegeben).",
-    inputSchema: {
-      type: "object",
-      properties: {
-        id: { type: "string", description: "Optionale ID zum Aktualisieren" },
-        title: { type: "string", description: "Titel des Knotens" },
-        content: { type: "string", description: "Inhalt / Notiz" },
-        tags: { type: "array", items: { type: "string" }, description: "Tags" },
-      },
-      required: ["title", "content"],
-    },
-  },
-  {
-    name: "memory_list",
-    description: "Listet alle Knoten (paginiert). Nützlich für Überblick.",
-    inputSchema: {
-      type: "object",
-      properties: {
-        limit: { type: "number", description: "Max. Ergebnisse (default 20)", default: 20 },
-        offset: { type: "number", description: "Offset", default: 0 },
-      },
-    },
-  },
-] as const;
+// ---------- MCP Tools: Definitionen aus src/core/mcp (8 Tools, mit outputSchema) ----------
 
 // ---------- Upstream-Chat ----------
 
@@ -350,6 +222,34 @@ async function startServer() {
   const app = express();
   const PORT = parseInt(process.env.PORT || "3000", 10);
 
+  // --- Core: SQLite-Store + Migration + Embedding-Queue ---
+  const store = new KeptaStore();
+  const migration = migrateFromLegacyJson(store);
+  if (!migration.skipped) {
+    console.log(`Migration: ${migration.migrated} Knoten aus memories.json übernommen (Backup: ${migration.backupPath ?? "keines"})`);
+  }
+  const embeddingQueue = new EmbeddingQueue(store);
+  embeddingQueue.start();
+
+  const toApi = (r: CoreMemory): MemoryRecord => ({
+    id: r.id,
+    userId: "local",
+    title: r.title,
+    content: r.content,
+    tags: r.tags,
+    type: r.type,
+    scope: r.scope,
+    confidence: r.confidence,
+    validFrom: r.validFrom,
+    validTo: r.validTo,
+    supersededBy: r.supersededBy,
+    deletedAt: r.deletedAt,
+    createdAt: r.createdAt,
+    updatedAt: r.updatedAt,
+  });
+  const allApiMemories = (): MemoryRecord[] => store.listMemories({ limit: 1000 }).map(toApi);
+
+
   // --- Security Headers (hardened) ---
   app.use(helmet({
     contentSecurityPolicy: false, // API only, no inline scripts needed
@@ -402,16 +302,18 @@ async function startServer() {
   });
 
   // --- Health ---
-
+  const activeCount = () => store.countMemories().active;
   app.get("/api/health", (_req, res) => {
     res.json({
       ok: true,
       status: "ok",
       name: "kepta",
-      version: "0.0.0",
+      version: "2.0.0",
       uptime: process.uptime(),
-      dataFile: DATA_FILE,
-      count: loadMemories().length,
+      dbPath: store.dbPath,
+      count: activeCount(),
+      embeddings: store.embeddingStats(),
+      mcp: { protocol: "2026-07-28", tools: MCP_TOOLS.length, http: "/mcp" },
       time: new Date().toISOString(),
     });
   });
@@ -487,15 +389,16 @@ async function startServer() {
       // Chunking 2000
       const chunks: string[] = [];
       let start=0; while(start<content.length){ let end=Math.min(start+2000, content.length); if(end<content.length){ const slice=content.slice(start,end); const br=Math.max(slice.lastIndexOf('\n\n'), slice.lastIndexOf('. ')); if(br>1100) end=start+br+1; } chunks.push(content.slice(start,end).trim()); start=end; }
-      const existing = loadMemories();
+      const existing = allApiMemories();
       for (let i=0;i<chunks.length;i++){
         const title = chunks.length===1 ? base : `${base} — Teil ${i+1}/${chunks.length}`;
-        const isDup = existing.some(m=> m.title===title && Math.abs(m.content.length-chunks[i].length)<20);
+        const chunkContent = sanitizeText(chunks[i], 50000)+`\n\n— Quelle: Inbox ${path.basename(resolved)} ${new Date().toLocaleString('de-DE')}`;
+        const isDup = existing.some(m=> m.title===title && Math.abs(m.content.length-chunkContent.length)<20);
         if (isDup) continue;
-        const rec: MemoryRecord = { id:`local-${Date.now()}-${Math.random().toString(36).slice(2,6)}`, userId:'local', title: sanitizeTitle(title) || base.slice(0,80), content: sanitizeText(chunks[i], 50000)+`\n\n— Quelle: Inbox ${path.basename(resolved)} ${new Date().toLocaleString('de-DE')}`, tags:['auto-import','inbox', ext.replace('.','')||'file'], createdAt:Date.now(), updatedAt:Date.now() };
-        existing.unshift(rec);
+        const created = store.createMemory({ title: sanitizeTitle(title) || base.slice(0,80), content: chunkContent, tags:['auto-import','inbox', ext.replace('.','')||'file'] });
+        indexMemory(store, created.id);
+        existing.unshift(toApi(created));
       }
-      persistMemories(existing);
       // nach Import Datei nach inbox/archiv verschieben
       try {
         const doneDir = path.join(INBOX_DIR, 'archiv');
@@ -534,14 +437,14 @@ async function startServer() {
     let files: string[] = [];
     try { files = fs.readdirSync(INBOX_DIR).filter(f=> !f.startsWith('.') && f!=='archiv').map(f=> path.join(INBOX_DIR,f)); } catch {}
     let imported = 0;
-    for (const f of files) { const before = loadMemories().length; await autoImportFile(f); const after = loadMemories().length; if (after>before) imported += (after-before); }
+    for (const f of files) { const before = activeCount(); await autoImportFile(f); const after = activeCount(); if (after>before) imported += (after-before); }
     res.json({ scanned: files.length, imported, inboxDir: INBOX_DIR });
   });
 
   // --- Speicher-API ---
 
   app.get("/api/memories", (req, res) => {
-    const memories = loadMemories();
+    const memories = allApiMemories();
     const body = JSON.stringify(memories);
     const hash = crypto.createHash("sha1").update(body).digest("hex");
     const etag = `"${hash}"`;
@@ -554,52 +457,48 @@ async function startServer() {
     res.send(body);
   });
 
-  // Dokumentierte Suche: GET /api/memories/search?q=...&limit=...&tags=tag1,tag2
-  app.get("/api/memories/search", (req, res) => {
+  // Dokumentierte Suche: GET /api/memories/search?q=...&limit=...&tags=tag1,tag2 — über die Core-Engine
+  app.get("/api/memories/search", async (req, res) => {
     const rawQ = typeof req.query.q === "string" ? req.query.q : typeof req.query.query === "string" ? req.query.query : "";
     const q = sanitizeText(rawQ, 200);
     const limitRaw = req.query.limit ? parseInt(String(req.query.limit), 10) : 20;
     const limit = Number.isFinite(limitRaw) ? Math.min(Math.max(limitRaw, 1), 50) : 20;
     const tagsRaw = typeof req.query.tags === "string" ? req.query.tags : "";
     const tags = tagsRaw ? sanitizeTags(tagsRaw.split(",").map(s => s.trim()).filter(Boolean)) : [];
-    const memories = searchMemories(q, limit, tags);
-    res.json({ query: q, count: memories.length, total: loadMemories().length, memories });
+    const result = await engineSearch(store, { query: q, limit, tags: tags.length > 0 ? tags : undefined });
+    res.json({
+      query: q,
+      count: result.hits.length,
+      total: result.total,
+      memories: result.hits.map(h => toApi(h.memory)),
+    });
   });
 
   function handleCreateOrUpdateMemory(req: express.Request, res: express.Response) {
     const body = req.body as Partial<MemoryRecord> & { tags?: unknown; title?: unknown; content?: unknown };
     // Hardened: Validierung + Sanitization + Limits
     if (body && JSON.stringify(body).length > 60000) return res.status(413).json({ error: "Payload zu groß (max 60k)" });
-    const memories = loadMemories();
-    if (memories.length > 5000 && !body.id) return res.status(429).json({ error: "Limit erreicht: max 5000 Knoten — bitte alte löschen" });
-    const now = Date.now();
+    if (activeCount() > 5000 && !body.id) return res.status(429).json({ error: "Limit erreicht: max 5000 Knoten — bitte alte löschen" });
+
+    const title = sanitizeTitle(body.title);
+    const content = sanitizeText(body.content, 50000);
 
     if (body.id) {
       if (typeof body.id !== "string" || body.id.length > 120 || !/^[\w\-.:]+$/.test(body.id)) return res.status(400).json({ error: "Ungültige ID" });
-      const idx = memories.findIndex(m => m.id === body.id);
-      if (idx < 0) return res.status(404).json({ error: "Knoten nicht gefunden" });
-      const patch: Partial<MemoryRecord> = {};
-      if (body.title !== undefined) patch.title = sanitizeTitle(body.title);
-      if (body.content !== undefined) patch.content = sanitizeText(body.content, 50000);
+      const patch: Record<string, unknown> = {};
+      if (body.title !== undefined) patch.title = title;
+      if (body.content !== undefined) patch.content = content;
       if (body.tags !== undefined) patch.tags = sanitizeTags(body.tags);
-      memories[idx] = { ...memories[idx], ...patch, updatedAt: now } as MemoryRecord;
-      persistMemories(memories);
-      return res.json({ memory: memories[idx] });
+      const updated = store.updateMemory(body.id, patch);
+      if (!updated) return res.status(404).json({ error: "Knoten nicht gefunden" });
+      if (body.content !== undefined) indexMemory(store, updated.id);
+      return res.json({ memory: toApi(updated) });
     }
 
-    const created: MemoryRecord = {
-      id: `local-${now}-${Math.random().toString(36).slice(2, 8)}`,
-      userId: "local",
-      title: sanitizeTitle(body.title) || "Ohne Titel",
-      content: sanitizeText(body.content, 50000) || "",
-      tags: sanitizeTags(body.tags),
-      createdAt: now,
-      updatedAt: now,
-    };
-    if (!created.title) created.title = "Ohne Titel";
-    if (created.content.length < 1) return res.status(400).json({ error: "Inhalt darf nicht leer sein" });
-    persistMemories([created, ...memories]);
-    return res.json({ memory: created });
+    if (!title && !content) return res.status(400).json({ error: "Titel oder Inhalt erforderlich" });
+    const created = store.createMemory({ title: title || "Ohne Titel", content, tags: sanitizeTags(body.tags) });
+    indexMemory(store, created.id);
+    return res.json({ memory: toApi(created) });
   }
 
   app.post("/api/memories", writeLimiter, handleCreateOrUpdateMemory);
@@ -609,9 +508,11 @@ async function startServer() {
   app.delete("/api/memories/:id", writeLimiter, (req, res) => {
     const id = String(req.params.id || "");
     if (!id || id.length > 120 || !/^[\w\-.:]+$/.test(id)) return res.status(400).json({ error: "Ungültige ID" });
-    const memories = loadMemories();
-    persistMemories(memories.filter(m => String(m.id) !== String(id)));
-    res.json({ ok: true });
+    // Default: Papierkorb. ?permanent=1 löscht endgültig.
+    if (req.query.permanent === "1" || req.query.permanent === "true") {
+      return res.json({ ok: store.purgeMemory(id), permanent: true });
+    }
+    res.json({ ok: store.trashMemory(id), permanent: false });
   });
 
   app.post("/api/memories/import", writeLimiter, express.json({ limit: "2mb" }), (req, res) => {
@@ -621,12 +522,11 @@ async function startServer() {
     }
     if (incoming.length > 5000) return res.status(413).json({ error: "Zu viele Knoten (max 5000)" });
 
-    const cleaned: MemoryRecord[] = incoming
+    const cleaned = incoming
       .filter(m => m && typeof m === "object")
       .slice(0, 5000)
       .map((m, i) => ({
         id: (typeof m.id === "string" && /^[\w\-.:]+$/.test(m.id)) ? m.id.slice(0,120) : `import-${Date.now()}-${i}`,
-        userId: "local",
         title: sanitizeTitle(m.title) || "Ohne Titel",
         content: sanitizeText(m.content, 50000) || "",
         tags: sanitizeTags(m.tags),
@@ -635,30 +535,35 @@ async function startServer() {
       })).filter(m=> m.content.length>0);
 
     if (mode === "replace") {
-      persistMemories(cleaned);
-      return res.json({ imported: cleaned.length, total: cleaned.length });
+      // Endgültig leeren (Papierkorb inklusive), dann Import
+      for (const m of store.listMemories({ limit: 1000, trash: true })) store.purgeMemory(m.id);
+      for (const m of store.listMemories({ limit: 1000 })) store.purgeMemory(m.id);
+      for (const m of cleaned) {
+        const created = store.createMemory(m);
+        indexMemory(store, created.id);
+      }
+      return res.json({ imported: cleaned.length, total: activeCount() });
     }
 
-    const existing = loadMemories();
-    const byId = new Map(existing.map(m => [m.id, m]));
     let imported = 0;
     for (const m of cleaned) {
-      const current = byId.get(m.id);
-      if (!current) {
-        byId.set(m.id, m);
-        imported++;
-      } else if (m.updatedAt > current.updatedAt) {
-        byId.set(m.id, m);
+      const current = store.getMemory(m.id);
+      if (!current || m.updatedAt > current.updatedAt) {
+        store.upsertMemory(m);
+        indexMemory(store, m.id);
         imported++;
       }
     }
-    const merged = Array.from(byId.values()).sort((a, b) => b.updatedAt - a.updatedAt);
-    persistMemories(merged);
-    res.json({ imported, total: merged.length });
+    res.json({ imported, total: activeCount() });
   });
 
   app.get("/api/storage-info", (_req, res) => {
-    res.json({ dataFile: DATA_FILE, count: loadMemories().length });
+    res.json({
+      dbPath: store.dbPath,
+      count: activeCount(),
+      trashed: store.countMemories().trashed,
+      embeddings: store.embeddingStats(),
+    });
   });
 
   // --- URL-Clipper: holt URL und extrahiert Titel + reinen Text ---
@@ -806,287 +711,99 @@ async function startServer() {
     }
   });
 
-  // POST /api/search  -> Hybrid-Suche serverseitig (TF-IDF + Cosine + BM25)
-  app.post("/api/search", chatLimiter, (req, res) => {
-    const { query, topK = 5, tags, ngram = 1, cosineWeight = 0.5 } = req.body as {
+  // POST /api/search  -> Retrieval-Engine (BM25 + Vektoren + Graph → RRF), ein Pfad für alles
+  app.post("/api/search", chatLimiter, async (req, res) => {
+    const { query, topK = 5, tags, type, scope } = req.body as {
       query?: string;
       topK?: number;
       tags?: string[];
-      ngram?: number;
-      cosineWeight?: number;
+      type?: string;
+      scope?: string;
     };
-    let memories = loadMemories();
-    // Tag-Filter optional
-    if (Array.isArray(tags) && tags.length > 0) {
-      memories = memories.filter(m => tags.every(t => (m.tags || []).includes(t)));
-    }
-    if (!query || !query.trim()) {
-      const sorted = [...memories].sort((a, b) => b.updatedAt - a.updatedAt).slice(0, Math.max(0, topK));
-      return res.json({
-        results: sorted.map(m => ({ memory: m, score: 1, cosineScore: 1, bm25Score: 1, rawBm25: 0, matchedTerms: [] })),
-        total: memories.length,
-        query: query || "",
-      });
-    }
-
-    // --- Minimaler In-Memory Hybrid (Spiegel von src/lib/semantic.ts, ohne Import) ---
-    const STOP_DE = new Set(["der","die","das","den","dem","des","ein","eine","einen","einem","einer","eines","und","oder","aber","wenn","dann","also","auch","noch","schon","nur","sehr","wie","was","wer","wo","wann","warum","wieso","weshalb","welche","welcher","welches","dass","ist","sind","war","waren","sein","hat","haben","hatte","hatten","wird","werden","wurde","wurden","kann","könnte","soll","sollen","muss","müssen","will","wollen","möchte","möchten","bei","mit","von","zu","zum","zur","im","am","an","auf","für","über","unter","vor","nach","zwischen","durch","gegen","ohne","um","aus","in","als","so","diese","dieser","dieses","diesen","diesem","jeder","jede","jedes","viele","vielen","mehr","weniger","hier","dort","da","dabei","damit","dazu","darauf","darüber","darunter","nicht","kein","keine","keinen","keinem","keiner","nichts","alles","etwas","man","es","er","sie","wir","ihr","mein","dein","sein","unser","euer"]);
-    const STOP_EN = new Set(["the","a","an","and","or","but","if","then","else","so","as","at","by","for","with","about","against","between","into","through","during","before","after","above","below","to","from","up","down","in","out","on","off","over","under","again","further","once","here","there","when","where","why","how","all","any","both","each","few","more","most","other","some","such","no","nor","not","only","own","same","than","too","very","can","will","just","don","should","now","is","are","was","were","be","been","being","has","have","had","do","does","did","am","isnt","arent","wasnt","hasnt","havent","hadnt","dont","doesnt","didnt","wont","wouldnt","shouldnt","cant","cannot","could","would","should","may","might","must","shall","this","that","these","those","i","me","my","myself","we","our","ours","you","your","yours","he","him","his","she","her","hers","it","its","they","them","their","what","which","who","whom"]);
-    const STOP = new Set<string>([...STOP_DE, ...STOP_EN]);
-    const tok = (text: string, n: number): string[] => {
-      if (!text) return [];
-      let t = text.toLowerCase().replace(/[^a-z0-9äöüß]+/g, " ");
-      const raw = t.split(/\s+/).filter(Boolean).filter(x => !STOP.has(x) && x.length > 1);
-      if (n <= 1) return raw;
-      const out = [...raw];
-      for (let nn = 2; nn <= n; nn++) for (let i = 0; i <= raw.length - nn; i++) out.push(raw.slice(i, i + nn).join("_"));
-      return out;
-    };
-    const tokMem = (m: MemoryRecord, n: number): string[] => {
-      const tt = tok(m.title || "", n);
-      const cc = tok(m.content || "", n);
-      const tg = (m.tags || []).flatMap(x => tok(x, n));
-      return [...tt, ...tt, ...cc, ...tg];
-    };
-    const qTokens = tok(String(query), Math.max(1, Math.min(3, ngram as number)));
-    if (qTokens.length === 0) {
-      const sorted = [...memories].sort((a, b) => b.updatedAt - a.updatedAt).slice(0, Math.max(0, topK));
-      return res.json({ results: sorted.map(m => ({ memory: m, score: 1, cosineScore: 1, bm25Score: 1, rawBm25: 0, matchedTerms: [] })), total: memories.length, query });
-    }
-    const docTokensList = memories.map(m => tokMem(m, Math.max(1, Math.min(3, ngram as number))));
-    const N = memories.length;
-    const avgDL = docTokensList.reduce((s, d) => s + d.length, 0) / Math.max(1, N);
-    const df = new Map<string, number>();
-    for (const toks of docTokensList) { const uniq = new Set(toks); for (const term of uniq) df.set(term, (df.get(term) || 0) + 1); }
-    const idfTfidf = new Map<string, number>();
-    const idfBm25 = new Map<string, number>();
-    for (const term of new Set([...qTokens, ...df.keys()])) {
-      const f = df.get(term) || 0;
-      idfTfidf.set(term, Math.log((N + 1) / (f + 1)) + 1);
-      idfBm25.set(term, Math.log((N - f + 0.5) / (f + 0.5) + 1));
-    }
-    const tfMap = (toks: string[]): Map<string, number> => {
-      const m = new Map<string, number>();
-      for (const t of toks) m.set(t, (m.get(t) || 0) + 1);
-      const len = toks.length || 1;
-      for (const [k, v] of m) m.set(k, v / len);
-      return m;
-    };
-    const cosine = (a: Map<string, number>, b: Map<string, number>): number => {
-      let dot = 0, na = 0, nb = 0;
-      const all = new Set<string>([...a.keys(), ...b.keys()]);
-      for (const k of all) { const av = a.get(k) || 0, bv = b.get(k) || 0; dot += av * bv; na += av * av; nb += bv * bv; }
-      return na === 0 || nb === 0 ? 0 : dot / (Math.sqrt(na) * Math.sqrt(nb));
-    };
-    const qTf = tfMap(qTokens);
-    const qVec = new Map<string, number>();
-    for (const [term, tf] of qTf) qVec.set(term, tf * (idfTfidf.get(term) || 1));
-    const cosines: number[] = [];
-    const rawBm25s: number[] = [];
-    const matchedList: string[][] = [];
-    const k1 = 1.2, b = 0.75;
-    docTokensList.forEach((toks, idx) => {
-      const tf = tfMap(toks);
-      const vec = new Map<string, number>();
-      for (const [term, v] of tf) vec.set(term, v * (idfTfidf.get(term) || 1));
-      cosines[idx] = cosine(vec, qVec);
-      const counts = new Map<string, number>();
-      for (const t of toks) counts.set(t, (counts.get(t) || 0) + 1);
-      let bm = 0; const matched: string[] = [];
-      const docLen = toks.length || 1;
-      for (const qt of qTokens) {
-        const tfRaw = counts.get(qt) || 0;
-        if (tfRaw > 0) matched.push(qt);
-        if (tfRaw === 0) continue;
-        const idf = idfBm25.get(qt) || 0;
-        bm += idf * ((tfRaw * (k1 + 1)) / (tfRaw + k1 * (1 - b + b * (docLen / avgDL))));
-      }
-      rawBm25s[idx] = bm;
-      matchedList[idx] = [...new Set(matched)];
+    const limit = Math.min(Math.max(Number(topK) || 5, 1), 100);
+    const result = await engineSearch(store, {
+      query: sanitizeText(query ?? "", 500),
+      limit,
+      tags: Array.isArray(tags) && tags.length > 0 ? sanitizeTags(tags) : undefined,
+      type: type === "semantic" || type === "episodic" || type === "procedural" ? type : undefined,
+      scope: typeof scope === "string" && scope ? scope : undefined,
     });
-    const minBm = Math.min(...rawBm25s);
-    const maxBm = Math.max(...rawBm25s);
-    const range = maxBm - minBm;
-    const normBm = rawBm25s.map(v => (range > 1e-9 ? (v - minBm) / range : v > 0 ? 1 : 0));
-    const cw = Math.max(0, Math.min(1, typeof cosineWeight === "number" ? cosineWeight : 0.5));
-    const results = memories.map((m, i) => ({
-      memory: m,
-      score: cw * (cosines[i] || 0) + (1 - cw) * (normBm[i] || 0),
-      cosineScore: cosines[i] || 0,
-      bm25Score: normBm[i] || 0,
-      rawBm25: rawBm25s[i] || 0,
-      matchedTerms: matchedList[i] || [],
-    }));
-    results.sort((a, b) => b.score - a.score || b.memory.updatedAt - a.memory.updatedAt);
-    const hasMatch = results.some(r => r.score > 1e-9);
-    const final = hasMatch ? results.filter(r => r.score > 1e-9).slice(0, Math.max(0, topK)) : [];
-    // Wenn kein Treffer aber Query vorhanden: leere Liste signalisiert Frontend, dass nichts relevant ist
-    // Dashboard entscheidet, ob Fallback auf alle angezeigt wird.
-    return res.json({ results: final, total: memories.length, query, hasMatch });
+    // Altes Response-Shape für das Frontend (cosineScore/bm25Score sind die Einzelbeine)
+    return res.json({
+      results: result.hits.map(h => ({
+        memory: toApi(h.memory),
+        score: h.score,
+        cosineScore: h.components.vectorSimilarity ?? 0,
+        bm25Score: h.components.bm25Rank !== null ? 1 / (h.components.bm25Rank + 1) : 0,
+        rawBm25: 0,
+        matchedTerms: h.matchedTerms,
+        expired: h.expired,
+        superseded: h.superseded,
+      })),
+      total: result.total,
+      query: result.query,
+      hasMatch: result.hits.length > 0,
+      usedVectors: result.usedVectors,
+    });
   });
 
-  // --- Lokale HTTP-API: MCP-kompatibel ---
-
-  // Tool-Liste (MCP discovery)
+  // --- MCP über HTTP ---
+  // Tool-Liste (Discovery)
   app.get("/api/mcp/tools", (_req, res) => {
-    res.json({ tools: MCP_TOOLS });
+    res.json({ tools: MCP_TOOLS, protocol: "2026-07-28" });
   });
-  // Alias: /api/tools
   app.get("/api/tools", (_req, res) => {
-    res.json({ tools: MCP_TOOLS });
+    res.json({ tools: MCP_TOOLS, protocol: "2026-07-28" });
   });
 
-  // Einheitlicher MCP-Handler für JSON-RPC ähnlich + plain JSON
-  function parseMcpBody(body: unknown): { query?: string; limit?: number; tags?: string[]; title?: string; content?: string; id?: string; name?: string; args?: Record<string, unknown> } {
-    const b = body as Record<string, unknown>;
-    if (!b || typeof b !== "object") return {};
-    // JSON-RPC: { jsonrpc:"2.0", method:"tools/call", params:{ name, arguments:{...}} }
-    if (b.params && typeof b.params === "object") {
-      const p = b.params as Record<string, unknown>;
-      if (p.arguments && typeof p.arguments === "object") {
-        return { name: p.name as string, args: p.arguments as Record<string, unknown>, ...(p.arguments as object) } as never;
-      }
-      return p as never;
-    }
-    if (b.arguments && typeof b.arguments === "object") {
-      return { name: b.name as string, args: b.arguments as Record<string, unknown>, ...(b.arguments as object) } as never;
-    }
-    return b as never;
-  }
+  const mcpCtx = { store, transport: "http" as const };
 
-  // POST /api/mcp/search  — kompatibel mit plain {query,limit} und JSON-RPC
-  app.post("/api/mcp/search", writeLimiter, (req, res) => {
-    const parsed = parseMcpBody(req.body);
-    const query = (parsed.query as string) || (req.body as { q?: string })?.q || "";
-    const limitRaw = parsed.limit ?? (req.body as { limit?: number })?.limit ?? 10;
-    const limit = Math.min(Math.max(parseInt(String(limitRaw), 10) || 10, 1), 50);
-    const tags: string[] = Array.isArray(parsed.tags) ? (parsed.tags as string[]) : [];
-    if (!query || typeof query !== "string" || !query.trim()) {
-      return res.status(400).json({ error: "query erforderlich", tools: MCP_TOOLS });
+  // Streamable HTTP (MCP 2026-07-28, stateless) — POST /mcp
+  app.post("/mcp", async (req, res) => {
+    const body = req.body as Record<string, unknown> | undefined;
+    if (!body || typeof body !== "object" || Array.isArray(body)) {
+      return res.status(400).json({ jsonrpc: "2.0", id: null, error: { code: -32600, message: "Ungültiger JSON-RPC-Request" } });
     }
-    const memories = searchMemories(query, limit, tags);
-    const isJsonRpc = (req.body as { jsonrpc?: string })?.jsonrpc === "2.0";
-    const payload = {
-      query,
-      count: memories.length,
-      memories: memories.map(m => ({ id: m.id, title: m.title, content: m.content, tags: m.tags, updatedAt: m.updatedAt })),
-    };
-    if (isJsonRpc) {
-      return res.json({ jsonrpc: "2.0", id: (req.body as { id?: unknown }).id ?? null, result: { content: [{ type: "text", text: JSON.stringify(payload, null, 2) }], ...payload } });
-    }
-    return res.json(payload);
-  });
-
-  // POST /api/mcp/save
-  app.post("/api/mcp/save", writeLimiter, (req, res) => {
-    const parsed = parseMcpBody(req.body);
-    const title = (parsed.title as string) || (req.body as { title?: string })?.title;
-    const content = (parsed.content as string) || (req.body as { content?: string })?.content;
-    const tags: string[] = Array.isArray(parsed.tags) ? (parsed.tags as string[]) : Array.isArray((req.body as { tags?: unknown }).tags) ? (req.body as { tags: string[] }).tags : [];
-    // Memory-ID nur aus Tool-Arguments, nicht aus JSON-RPC id (req.body.id)
-    const rawId = (parsed as Record<string, unknown>).id;
-    const id = typeof rawId === 'string' && rawId.trim() ? rawId.trim() : undefined;
-    if (!title || !content) {
-      return res.status(400).json({ error: "title und content erforderlich" });
-    }
-    const memories = loadMemories();
-    const now = Date.now();
-    const isJsonRpc = (req.body as { jsonrpc?: string })?.jsonrpc === "2.0";
-
-    if (id) {
-      const idx = memories.findIndex(m => m.id === id);
-      if (idx >= 0) {
-        memories[idx] = { ...memories[idx], title, content, tags: tags || memories[idx].tags, updatedAt: now };
-        persistMemories(memories);
-        const result = { memory: memories[idx] };
-        if (isJsonRpc) return res.json({ jsonrpc: "2.0", id: (req.body as { id?: unknown }).id ?? null, result: { content: [{ type: "text", text: `Gespeichert: ${memories[idx].id}` }], ...result } });
-        return res.json(result);
-      }
-    }
-
-    const created: MemoryRecord = {
-      id: id || `local-${now}-${Math.random().toString(36).slice(2, 8)}`,
-      userId: "local",
-      title,
-      content,
-      tags: tags || [],
-      createdAt: now,
-      updatedAt: now,
-    };
-    persistMemories([created, ...memories]);
-    const result = { memory: created };
-    if (isJsonRpc) return res.json({ jsonrpc: "2.0", id: (req.body as { id?: unknown }).id ?? null, result: { content: [{ type: "text", text: `Gespeichert: ${created.id}` }], ...result } });
-    return res.json(result);
-  });
-
-  // Generischer JSON-RPC Endpoint für MCP-Clients: POST /api/mcp
-  app.post("/api/mcp", (req, res) => {
-    const body = req.body as { jsonrpc?: string; id?: unknown; method?: string; params?: { name?: string; arguments?: Record<string, unknown> } };
-    const method = body.method;
-    const id = body.id ?? null;
-
-    if (method === "initialize") {
-      return res.json({
-        jsonrpc: "2.0", id,
-        result: {
-          protocolVersion: "2024-11-05",
-          capabilities: { tools: {} },
-          serverInfo: { name: "kepta", version: "0.0.0" },
-        },
+    try {
+      const reply = await handleRpc(mcpCtx, body as never);
+      if (!reply) return res.status(202).json({ accepted: true });
+      return res.json(reply);
+    } catch (e) {
+      return res.status(500).json({
+        jsonrpc: "2.0",
+        id: null,
+        error: { code: -32603, message: e instanceof Error ? e.message : String(e) },
       });
     }
-    if (method === "tools/list") {
-      return res.json({ jsonrpc: "2.0", id, result: { tools: MCP_TOOLS } });
+  });
+  app.get("/mcp", (_req, res) => {
+    res.status(405).json({ error: "Streamable HTTP: nur POST (stateless, keine SSE-Sitzung)" });
+  });
+
+  // Legacy-kompatible Hilfsrouten (plain JSON statt JSON-RPC) — dünne Wrapper über die Engine
+  app.post("/api/mcp/search", writeLimiter, async (req, res) => {
+    const { query, limit = 10, tags } = req.body as { query?: string; limit?: number; tags?: string[] };
+    if (!query || !query.trim()) return res.status(400).json({ error: "query erforderlich", tools: MCP_TOOLS });
+    const result = await engineSearch(store, {
+      query: String(query),
+      limit: Math.min(Math.max(parseInt(String(limit), 10) || 10, 1), 50),
+      tags: Array.isArray(tags) ? tags : undefined,
+    });
+    return res.json({
+      query,
+      count: result.hits.length,
+      memories: result.hits.map(h => ({ id: h.memory.id, title: h.memory.title, content: h.memory.content, tags: h.memory.tags, updatedAt: h.memory.updatedAt, expired: h.expired, superseded: h.superseded })),
+    });
+  });
+
+  app.post("/api/mcp/save", writeLimiter, async (req, res) => {
+    const body = req.body as Record<string, unknown>;
+    try {
+      const { created, record } = saveWithIndex(store, body);
+      return res.json({ memory: toApi(record), created });
+    } catch (e) {
+      return res.status(400).json({ error: e instanceof Error ? e.message : String(e) });
     }
-    if (method === "tools/call") {
-      const name = body.params?.name;
-      const args = body.params?.arguments || {};
-      if (name === "memory_search") {
-        const q = String((args as Record<string, unknown>).query || "");
-        const lim = Math.min(Math.max(parseInt(String((args as Record<string, unknown>).limit ?? 10), 10) || 10, 1), 50);
-        const tTags = Array.isArray((args as Record<string, unknown>).tags) ? (args as { tags: string[] }).tags : [];
-        if (!q.trim()) return res.json({ jsonrpc: "2.0", id, error: { code: -32602, message: "query erforderlich" } });
-        const memories = searchMemories(q, lim, tTags);
-        return res.json({
-          jsonrpc: "2.0", id,
-          result: { content: [{ type: "text", text: JSON.stringify({ query: q, count: memories.length, memories }, null, 2) }] },
-        });
-      }
-      if (name === "memory_save") {
-        const a = args as Record<string, unknown>;
-        const title = String(a.title || "");
-        const content = String(a.content || "");
-        if (!title || !content) return res.json({ jsonrpc: "2.0", id, error: { code: -32602, message: "title und content erforderlich" } });
-        const tags = Array.isArray(a.tags) ? (a.tags as string[]) : [];
-        const mid = a.id ? String(a.id) : undefined;
-        const memories = loadMemories();
-        const now = Date.now();
-        if (mid) {
-          const idx = memories.findIndex(m => m.id === mid);
-          if (idx >= 0) {
-            memories[idx] = { ...memories[idx], title, content, tags, updatedAt: now };
-            persistMemories(memories);
-            return res.json({ jsonrpc: "2.0", id, result: { content: [{ type: "text", text: `Aktualisiert: ${mid}` }] } });
-          }
-        }
-        const created: MemoryRecord = { id: mid || `local-${now}-${Math.random().toString(36).slice(2, 8)}`, userId: "local", title, content, tags, createdAt: now, updatedAt: now };
-        persistMemories([created, ...memories]);
-        return res.json({ jsonrpc: "2.0", id, result: { content: [{ type: "text", text: `Gespeichert: ${created.id}` }] } });
-      }
-      if (name === "memory_list") {
-        const a = args as Record<string, unknown>;
-        const lim = Math.min(Math.max(parseInt(String(a.limit ?? 20), 10) || 20, 1), 50);
-        const off = Math.max(parseInt(String(a.offset ?? 0), 10) || 0, 0);
-        const all = loadMemories();
-        const slice = all.slice(off, off + lim);
-        return res.json({ jsonrpc: "2.0", id, result: { content: [{ type: "text", text: JSON.stringify({ count: slice.length, total: all.length, memories: slice }, null, 2) }] } });
-      }
-      return res.json({ jsonrpc: "2.0", id, error: { code: -32601, message: `Unbekanntes Tool: ${name}` } });
-    }
-    if (method === "notifications/initialized") {
-      return res.json({ jsonrpc: "2.0", id, result: {} });
-    }
-    return res.json({ jsonrpc: "2.0", id, error: { code: -32601, message: `Unbekannte Methode: ${method}` } });
   });
 
   // --- Chat ---
@@ -1213,8 +930,8 @@ async function startServer() {
 
   app.listen(PORT, "0.0.0.0", () => {
     console.log(`Server running on http://0.0.0.0:${PORT}`);
-    console.log(`Speicher: ${DATA_FILE}`);
-    console.log(`API: http://localhost:${PORT}/api/health | /api/memories/search | /api/mcp/tools`);
+    console.log(`Speicher: ${store.dbPath} (SQLite) | Embeddings: ${JSON.stringify(store.embeddingStats())}`);
+    console.log(`API: http://localhost:${PORT}/api/health | /api/search | MCP: POST /mcp (2026-07-28, ${MCP_TOOLS.length} Tools)`);
     if (process.send) process.send('server-ready');
   });
 }
