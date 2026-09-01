@@ -378,6 +378,20 @@ export function KnowledgeGraph({ memories, onSelectMemory }: KnowledgeGraphProps
           onPointerUp={onPointerUp}
           onPointerLeave={onPointerUp}
         >
+          {/* Liquid Glass: Licht von oben-links, Typ-Tint, weiche Tiefe */}
+          <defs>
+            {(["semantic", "episodic", "procedural"] as const).map((t) => (
+              <radialGradient key={t} id={`glass-${t}`} cx="0.32" cy="0.28" r="1">
+                <stop offset="0%" stopColor="#ffffff" stopOpacity="0.92" />
+                <stop offset="35%" stopColor={TYPE_COLORS[t]} stopOpacity="0.55" />
+                <stop offset="100%" stopColor={TYPE_COLORS[t]} stopOpacity="0.30" />
+              </radialGradient>
+            ))}
+            <radialGradient id="glass-neutral" cx="0.32" cy="0.28" r="1">
+              <stop offset="0%" stopColor="#ffffff" stopOpacity="0.7" />
+              <stop offset="100%" stopColor="#9a9a9a" stopOpacity="0.3" />
+            </radialGradient>
+          </defs>
           <g transform={`translate(${transform.x},${transform.y}) scale(${transform.k})`}>
             {/* Edges — echt: gebogene Akzentpfade · Ähnlichkeit: fein gepunktet */}
             {edges.map((e, i) => {
@@ -439,14 +453,19 @@ export function KnowledgeGraph({ memories, onSelectMemory }: KnowledgeGraphProps
                 >
                   <circle
                     r={isHovered ? r + 3 : r}
-                    fill={fill}
-                    fillOpacity={dimmed ? 0.2 : isHovered ? 0.95 : 0.85}
-                    stroke={expired ? "var(--text-3)" : "var(--bg-panel-solid)"}
+                    fill={`url(#glass-${m.type && TYPE_COLORS[m.type] ? m.type : "neutral"})`}
+                    stroke="rgba(255,255,255,0.32)"
                     strokeDasharray={expired ? `${4 / Math.max(0.4, transform.k)} ${3 / Math.max(0.4, transform.k)}` : undefined}
-                    strokeWidth={2 / Math.max(0.4, transform.k) + 1}
-                    style={{ filter: isHovered ? "drop-shadow(0 0 10px var(--accent-glow))" : undefined }}
+                    strokeWidth={1.4 / Math.max(0.4, transform.k)}
+                    style={{ filter: isHovered ? "drop-shadow(0 0 12px var(--accent-glow))" : "drop-shadow(0 2px 6px rgba(0,0,0,0.20))" }}
                   />
-                  <circle r={Math.max(1.6, 2.2 / Math.max(0.4, transform.k))} fill="white" fillOpacity={0.95} />
+                  {/* Glass-Schein oben-links + Glanzpunkt */}
+                  <ellipse
+                    cx={-r * 0.22} cy={-r * 0.42} rx={r * 0.48} ry={r * 0.26}
+                    fill="white" fillOpacity={dimmed ? 0.1 : 0.32}
+                    transform="rotate(-22)"
+                  />
+                  <circle r={Math.max(1.6, 2 / Math.max(0.4, transform.k))} fill="white" fillOpacity={0.85} />
                   {showLabel && (
                     <text
                       x={0} y={r + fs + 2}
