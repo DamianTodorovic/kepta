@@ -172,9 +172,9 @@ export function KnowledgeGraph({ memories, onSelectMemory }: KnowledgeGraphProps
 
         const cx = dimensions.w / 2;
         const cy = dimensions.h / 2;
-        const kRep = 1400;
+        const kRep = 2600;
         const kAttr = 0.015;
-        const ideal = 110;
+        const ideal = 165;
         const damping = 0.85;
         const gravity = 0.012;
 
@@ -230,9 +230,14 @@ export function KnowledgeGraph({ memories, onSelectMemory }: KnowledgeGraphProps
       });
       raf = requestAnimationFrame(tick);
     };
-    // run with interval ~16ms for 3 seconds burst, then slower
-    const interval = setInterval(() => { if (!dragging) tick(); }, 16);
-    return () => { running = false; cancelAnimationFrame(raf); clearInterval(interval); };
+    // rAF-Loop (ruht bei Idle durch den dragging-Check und Browser-Throttling)
+    const loop = () => {
+      if (!running) return;
+      if (!dragging) tick();
+      raf = requestAnimationFrame(loop);
+    };
+    raf = requestAnimationFrame(loop);
+    return () => { running = false; cancelAnimationFrame(raf); };
   }, [edges, filtered.length, dimensions.w, dimensions.h, dragging, positions.size]);
 
   const zoom = useCallback((delta: number, cx?: number, cy?: number) => {
@@ -284,13 +289,33 @@ export function KnowledgeGraph({ memories, onSelectMemory }: KnowledgeGraphProps
 
   const onPointerUp = useCallback(() => { setPanning(null); setDragging(null); }, []);
 
-  // Determine node color by primary tag hue
-  const nodeFill = (m: Memory): string => {
-    if (m.tags.length === 0) return "var(--text-3)";
-    let hash = 0; for (let i = 0; i < m.tags[0].length; i++) hash = (hash * 31 + m.tags[0].charCodeAt(i)) >>> 0;
-    const hue = hash % 360;
-    return `hsl(${hue} 70% 62%)`;
+  // Typ-Farben (kohärent mit Karten-Badges WISSEN/EPISODE/ABLAUF) statt Tag-Regenbogen
+  const TYPE_COLORS: Record<string, string> = {
+    semantic: "#60a5fa",
+    episodic: "#a78bfa",
+    procedural: "#34d399",
   };
+  const nodeFill = (m: Memory): string => TYPE_COLORS[m.type ?? "semantic"] ?? "var(--text-3)";
+
+  // Verbindungsgrad bestimmt die Größe — Hubs sind sofort erkennbar
+  const degree = useMemo(() => {
+    const d = new Map<string, number>();
+    for (const e of edges) { d.set(e.source, (d.get(e.source) ?? 0) + 1); d.set(e.target, (d.get(e.target) ?? 0) + 1); }
+    return d;
+  }, [edges]);
+  const radiusOf = (m: Memory): number => Math.min(24, 7 + Math.log2(1 + (degree.get(m.id) ?? 0)) * 4.5);
+
+  // Nachbarschaft für Fokus-Modus
+  const neighborsOf = useMemo(() => {
+    const n = new Map<string, Set<string>>();
+    for (const e of edges) {
+      if (!n.has(e.source)) n.set(e.source, new Set());
+      if (!n.has(e.target)) n.set(e.target, new Set());
+      n.get(e.source)!.add(e.target);
+      n.get(e.target)!.add(e.source);
+    }
+    return n;
+  }, [edges]);
 
   if (memories.length === 0) {
     return (
@@ -339,19 +364,30 @@ export function KnowledgeGraph({ memories, onSelectMemory }: KnowledgeGraphProps
           onPointerLeave={onPointerUp}
         >
           <g transform={`translate(${transform.x},${transform.y}) scale(${transform.k})`}>
-            {/* Edges */}
+            {/* Edges — echt: gebogene Akzentpfade · Ähnlichkeit: fein gepunktet */}
             {edges.map((e, i) => {
               const a = positions.get(e.source);
               const b = positions.get(e.target);
               if (!a || !b) return null;
-              const isHighlighted = hovered === e.source || hovered === e.target;
+              const inFocus = !hovered || hovered === e.source || hovered === e.target;
+              const dim = hovered !== null && !inFocus;
+              const lit = hovered !== null && inFocus;
+              const dx = b.x - a.x, dy = b.y - a.y;
+              const len = Math.hypot(dx, dy) || 1;
+              const off = e.real ? Math.min(16, len * 0.12) : 0;
+              const cx2 = (a.x + b.x) / 2 - (dy / len) * off;
+              const cy2 = (a.y + b.y) / 2 + (dx / len) * off;
+              const k = transform.k;
               return (
-                <line
+                <path
                   key={`${e.source}-${e.target}-${i}`}
-                  x1={a.x} y1={a.y} x2={b.x} y2={b.y}
-                  stroke={isHighlighted ? "var(--accent)" : "var(--border-strong)"}
-                  strokeOpacity={isHighlighted ? 0.9 : 0.24 + e.strength * 0.28}
-                  strokeWidth={isHighlighted ? 2 : 1 + e.strength * 1.2}
+                  d={`M ${a.x} ${a.y} Q ${cx2} ${cy2} ${b.x} ${b.y}`}
+                  fill="none"
+                  stroke={dim ? "var(--border-strong)" : e.real ? "var(--accent)" : "var(--text-3)"}
+                  strokeOpacity={dim ? 0.05 : e.real ? (lit ? 0.95 : 0.55) : lit ? 0.5 : 0.13 + e.strength * 0.2}
+                  strokeWidth={(e.real ? 2 : 0.9) / Math.max(0.4, k)}
+                  strokeDasharray={e.real ? undefined : `${3 / Math.max(0.4, k)} ${5 / Math.max(0.4, k)}`}
+                  strokeLinecap="round"
                 />
               );
             })}
@@ -360,13 +396,20 @@ export function KnowledgeGraph({ memories, onSelectMemory }: KnowledgeGraphProps
               const pos = positions.get(m.id);
               if (!pos) return null;
               const isHovered = hovered === m.id;
+              const dimmed = hovered !== null && !isHovered && !neighborsOf.get(hovered)?.has(m.id);
+              const r = radiusOf(m);
               const fill = nodeFill(m);
+              const expired = m.validTo != null && m.validTo < Date.now();
+              const superseded = !!m.supersededBy;
+              const showLabel = isHovered || r > 12 || transform.k > 1.4;
+              const fs = Math.min(15, 11 / Math.max(0.4, transform.k));
               return (
                 <g
                   key={m.id}
                   data-node
                   transform={`translate(${pos.x},${pos.y})`}
                   className="cursor-pointer"
+                  opacity={dimmed ? 0.12 : superseded ? 0.55 : 1}
                   onPointerDown={(e) => {
                     e.stopPropagation();
                     (e.currentTarget as Element).setPointerCapture(e.pointerId);
@@ -377,35 +420,35 @@ export function KnowledgeGraph({ memories, onSelectMemory }: KnowledgeGraphProps
                   onClick={() => { if (!dragging || Math.hypot(pos.x - dragging.origX, pos.y - dragging.origY) < 5) onSelectMemory(m); }}
                 >
                   <circle
-                    r={isHovered ? pos.r + 4 : pos.r}
+                    r={isHovered ? r + 3 : r}
                     fill={fill}
-                    fillOpacity={isHovered ? 0.95 : 0.88}
-                    stroke="var(--bg-panel-solid)"
-                    strokeWidth={2}
-                    style={{ filter: isHovered ? "drop-shadow(0 0 8px var(--accent-glow))" : undefined }}
+                    fillOpacity={dimmed ? 0.2 : isHovered ? 0.95 : 0.85}
+                    stroke={expired ? "var(--text-3)" : "var(--bg-panel-solid)"}
+                    strokeDasharray={expired ? `${4 / Math.max(0.4, transform.k)} ${3 / Math.max(0.4, transform.k)}` : undefined}
+                    strokeWidth={2 / Math.max(0.4, transform.k) + 1}
+                    style={{ filter: isHovered ? "drop-shadow(0 0 10px var(--accent-glow))" : undefined }}
                   />
-                  {/* inner dot for accesibility */}
-                  <circle r={2.2} fill="white" fillOpacity={0.95} />
-                  {/* label */}
-                  {(isHovered || pos.r > 14) && (
+                  <circle r={Math.max(1.6, 2.2 / Math.max(0.4, transform.k))} fill="white" fillOpacity={0.95} />
+                  {showLabel && (
                     <text
-                      x={0} y={pos.r + 14}
+                      x={0} y={r + fs + 2}
                       textAnchor="middle"
-                      fontSize={isHovered ? 11 : 10}
+                      fontSize={fs}
                       fontWeight={isHovered ? 600 : 500}
                       fill="var(--text-1)"
-                      style={{ paintOrder: "stroke", stroke: "var(--bg-panel-solid)", strokeWidth: 3, strokeLinejoin: "round" as const }}
+                      opacity={dimmed ? 0.3 : 1}
+                      style={{ paintOrder: "stroke", stroke: "var(--bg-panel-solid)", strokeWidth: 3 / Math.max(0.4, transform.k), strokeLinejoin: "round" as const }}
                     >
                       {m.title.length > 22 ? m.title.slice(0, 22) + "…" : m.title || "Ohne Titel"}
                     </text>
                   )}
                   {isHovered && m.tags.length > 0 && (
                     <text
-                      x={0} y={pos.r + 26}
+                      x={0} y={r + fs * 2 + 4}
                       textAnchor="middle"
-                      fontSize={9}
+                      fontSize={fs * 0.85}
                       fill="var(--text-2)"
-                      style={{ paintOrder: "stroke", stroke: "var(--bg-panel-solid)", strokeWidth: 3 }}
+                      style={{ paintOrder: "stroke", stroke: "var(--bg-panel-solid)", strokeWidth: 3 / Math.max(0.4, transform.k) }}
                     >
                       {m.tags.slice(0, 3).join(" · ")}
                     </text>
@@ -416,8 +459,17 @@ export function KnowledgeGraph({ memories, onSelectMemory }: KnowledgeGraphProps
           </g>
         </svg>
 
-        <div className="absolute left-3 bottom-3 hud-panel rounded-lg px-2.5 py-1.5 hud-label pointer-events-none">
-          Ziehen: Knoten verschieben · Leere Fläche: Pan · Mausrad: Zoom
+        <div className="absolute left-3 bottom-3 hud-panel rounded-lg px-3 py-2 pointer-events-none space-y-1">
+          <div className="flex items-center gap-3 hud-label">
+            <span className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-full" style={{ background: '#60a5fa' }} /> Wissen</span>
+            <span className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-full" style={{ background: '#a78bfa' }} /> Episode</span>
+            <span className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-full" style={{ background: '#34d399' }} /> Ablauf</span>
+          </div>
+          <div className="flex items-center gap-3 hud-label">
+            <svg width="26" height="6"><line x1="0" y1="3" x2="26" y2="3" stroke="var(--accent)" strokeWidth="2" /></svg> echte Verbindung
+            <svg width="26" height="6"><line x1="0" y1="3" x2="26" y2="3" stroke="var(--text-3)" strokeWidth="1.5" strokeDasharray="3 4" /></svg> Ähnlichkeit
+          </div>
+          <div className="hud-label">Ziehen: Knoten verschieben · Leere Fläche: Pan · Mausrad: Zoom · Größe = Verbindungen</div>
         </div>
       </div>
     </div>
