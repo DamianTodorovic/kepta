@@ -47,6 +47,7 @@ function tagOverlap(a: string[], b: string[]): number {
 
 export function KnowledgeGraph({ memories, onSelectMemory }: KnowledgeGraphProps) {
   const svgRef = useRef<SVGSVGElement>(null);
+  const simTicks = useRef(0);
   const containerRef = useRef<HTMLDivElement>(null);
   const [filter, setFilter] = useState("");
   const [transform, setTransform] = useState({ x: 0, y: 0, k: 1 });
@@ -162,21 +163,23 @@ export function KnowledgeGraph({ memories, onSelectMemory }: KnowledgeGraphProps
     let running = true;
 
     const tick = () => {
-      if (!running || dragging) return;
+      if (!running) return;
+      simTicks.current += 1;
       setPositions((prev) => {
         const next = new Map<string, NodePos>();
         const nodes = Array.from(prev.values());
-        const idToIdx = new Map(nodes.map((n, i) => [n.id, i]));
         // copy
         nodes.forEach((n) => next.set(n.id, { ...n }));
 
         const cx = dimensions.w / 2;
         const cy = dimensions.h / 2;
         const kRep = 2600;
-        const kAttr = 0.015;
+        const kAttr = 0.018;
         const ideal = 165;
         const damping = 0.85;
-        const gravity = 0.012;
+        // Obsidian-Feel: Schwerkraft ordnet nur die ersten Sekunden — danach
+        // bleibt jeder Knoten, wo der Nutzer ihn hinlegt.
+        const gravity = 0.012 * Math.max(0, 1 - simTicks.current / 480);
 
         // repulsion O(n^2) — ok for <150 nodes
         for (let i = 0; i < nodes.length; i++) {
@@ -213,11 +216,14 @@ export function KnowledgeGraph({ memories, onSelectMemory }: KnowledgeGraphProps
           b.vx -= fx;
           b.vy -= fy;
         }
-        // gravity + integrate
+        // gravity + integrate — der gezogene Knoten bleibt exakt unterm Zeiger
         nodes.forEach((orig) => {
           const n = next.get(orig.id)!;
-          n.vx += (cx - n.x) * gravity;
-          n.vy += (cy - n.y) * gravity;
+          if (dragging?.id === orig.id) { n.vx = 0; n.vy = 0; return; }
+          if (gravity > 0) {
+            n.vx += (cx - n.x) * gravity;
+            n.vy += (cy - n.y) * gravity;
+          }
           n.vx *= damping;
           n.vy *= damping;
           n.x += n.vx;
@@ -230,10 +236,10 @@ export function KnowledgeGraph({ memories, onSelectMemory }: KnowledgeGraphProps
       });
       raf = requestAnimationFrame(tick);
     };
-    // rAF-Loop (ruht bei Idle durch den dragging-Check und Browser-Throttling)
+    // rAF-Loop — läuft auch beim Ziehen weiter, damit Verbundene elastisch mitwandern
     const loop = () => {
       if (!running) return;
-      if (!dragging) tick();
+      tick();
       raf = requestAnimationFrame(loop);
     };
     raf = requestAnimationFrame(loop);
