@@ -305,10 +305,22 @@ export function KnowledgeGraph({ memories, onSelectMemory }: KnowledgeGraphProps
   }, [dragging]);
 
   // Typ-Farben (kohärent mit Karten-Badges WISSEN/EPISODE/ABLAUF) statt Tag-Regenbogen
-  const TYPE_COLORS: Record<string, string> = {
+  // Typ-Farben — individuell anpassbar pro Gerät (localStorage)
+  const DEFAULT_TYPE_COLORS: Record<string, string> = {
     semantic: "#60a5fa",
     episodic: "#a78bfa",
     procedural: "#34d399",
+  };
+  const [customTypeColors, setCustomTypeColors] = useState<Record<string, string>>(() => {
+    try { return JSON.parse(localStorage.getItem("kepta_type_colors") || "{}"); } catch { return {}; }
+  });
+  const TYPE_COLORS = { ...DEFAULT_TYPE_COLORS, ...customTypeColors };
+  const setTypeColor = (t: string, c: string) => {
+    setCustomTypeColors((prev) => {
+      const next = { ...prev, [t]: c };
+      try { localStorage.setItem("kepta_type_colors", JSON.stringify(next)); } catch { /* ignore */ }
+      return next;
+    });
   };
   const nodeFill = (m: Memory): string => TYPE_COLORS[m.type ?? "semantic"] ?? "var(--text-3)";
 
@@ -354,6 +366,19 @@ export function KnowledgeGraph({ memories, onSelectMemory }: KnowledgeGraphProps
           />
         </div>
         <div className="hud-label hidden sm:block">{filtered.length} Knoten · {edges.length} Kanten</div>
+        <div className="flex items-center gap-1 ml-2" title="Knotenfarben individuell anpassen">
+          {(["semantic", "episodic", "procedural"] as const).map((t) => (
+            <input
+              key={t}
+              type="color"
+              value={TYPE_COLORS[t]}
+              onChange={(e) => setTypeColor(t, e.target.value)}
+              title={`Farbe: ${t === "semantic" ? "Wissen" : t === "episodic" ? "Episode" : "Ablauf"}`}
+              className="w-6 h-6 rounded cursor-pointer bg-transparent p-0"
+              style={{ border: "1px solid var(--border-subtle)" }}
+            />
+          ))}
+        </div>
         <div className="flex items-center gap-1 ml-auto">
           <button onClick={() => zoom(1)} className="btn-ghost p-2 rounded-lg" title="Hineinzoomen"><ZoomIn className="w-4 h-4" /></button>
           <button onClick={() => zoom(-1)} className="btn-ghost p-2 rounded-lg" title="Herauszoomen"><ZoomOut className="w-4 h-4" /></button>
@@ -382,9 +407,9 @@ export function KnowledgeGraph({ memories, onSelectMemory }: KnowledgeGraphProps
           <defs>
             {(["semantic", "episodic", "procedural"] as const).map((t) => (
               <radialGradient key={t} id={`glass-${t}`} cx="0.32" cy="0.28" r="1">
-                <stop offset="0%" stopColor="#ffffff" stopOpacity="0.92" />
-                <stop offset="35%" stopColor={TYPE_COLORS[t]} stopOpacity="0.55" />
-                <stop offset="100%" stopColor={TYPE_COLORS[t]} stopOpacity="0.30" />
+                <stop offset="0%" stopColor="#ffffff" stopOpacity="0.78" />
+                <stop offset="35%" stopColor={TYPE_COLORS[t]} stopOpacity="0.40" />
+                <stop offset="100%" stopColor={TYPE_COLORS[t]} stopOpacity="0.18" />
               </radialGradient>
             ))}
             <radialGradient id="glass-neutral" cx="0.32" cy="0.28" r="1">
@@ -454,16 +479,25 @@ export function KnowledgeGraph({ memories, onSelectMemory }: KnowledgeGraphProps
                   <circle
                     r={isHovered ? r + 3 : r}
                     fill={`url(#glass-${m.type && TYPE_COLORS[m.type] ? m.type : "neutral"})`}
-                    stroke="rgba(255,255,255,0.32)"
+                    stroke="rgba(255,255,255,0.45)"
                     strokeDasharray={expired ? `${4 / Math.max(0.4, transform.k)} ${3 / Math.max(0.4, transform.k)}` : undefined}
-                    strokeWidth={1.4 / Math.max(0.4, transform.k)}
-                    style={{ filter: isHovered ? "drop-shadow(0 0 12px var(--accent-glow))" : "drop-shadow(0 2px 6px rgba(0,0,0,0.20))" }}
+                    strokeWidth={1.2 / Math.max(0.4, transform.k)}
+                    style={{ filter: isHovered ? "drop-shadow(0 0 12px var(--accent-glow))" : "drop-shadow(0 3px 7px rgba(0,0,0,0.25))" }}
                   />
-                  {/* Glass-Schein oben-links + Glanzpunkt */}
+                  {/* Refraktions-Ring (leicht chromatisch, wie dicke Glasskante) */}
+                  <circle r={r * 0.84} fill="none" stroke="rgba(150,200,255,0.28)" strokeWidth={0.9 / Math.max(0.4, transform.k)} />
+                  {/* Gegenschatten unten (Linsen-Tiefe) */}
+                  <ellipse cx={0} cy={r * 0.58} rx={r * 0.62} ry={r * 0.26} fill="rgba(10,15,40,0.12)" />
+                  {/* Specular: heller Kantenbogen oben + Glass-Schein + Glanzpunkt */}
+                  <path
+                    d={`M ${-r * 0.68} ${-r * 0.42} A ${r * 0.86} ${r * 0.86} 0 0 1 ${r * 0.68} ${-r * 0.42}`}
+                    fill="none" stroke="white" strokeOpacity={dimmed ? 0.15 : 0.6}
+                    strokeWidth={1.6 / Math.max(0.4, transform.k)} strokeLinecap="round"
+                  />
                   <ellipse
-                    cx={-r * 0.22} cy={-r * 0.42} rx={r * 0.48} ry={r * 0.26}
-                    fill="white" fillOpacity={dimmed ? 0.1 : 0.32}
-                    transform="rotate(-22)"
+                    cx={-r * 0.2} cy={-r * 0.38} rx={r * 0.42} ry={r * 0.2}
+                    fill="white" fillOpacity={dimmed ? 0.08 : 0.4}
+                    transform="rotate(-24)"
                   />
                   <circle r={Math.max(1.6, 2 / Math.max(0.4, transform.k))} fill="white" fillOpacity={0.85} />
                   {showLabel && (
