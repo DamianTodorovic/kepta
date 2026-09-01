@@ -175,7 +175,6 @@ export function KnowledgeGraph({ memories, onSelectMemory }: KnowledgeGraphProps
         // gravity + integrate
         nodes.forEach((orig) => {
           const n = next.get(orig.id)!;
-          if (dragging && dragging.id === n.id) return;
           n.vx += (cx - n.x) * gravity;
           n.vy += (cy - n.y) * gravity;
           n.vx *= damping;
