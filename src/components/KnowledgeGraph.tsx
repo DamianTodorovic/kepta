@@ -321,7 +321,7 @@ export function KnowledgeGraph({ memories, onSelectMemory }: KnowledgeGraphProps
     return (
       <div className="flex-1 flex flex-col items-center justify-center p-8 text-center">
         <div className="hud-label mb-2">Wissens-Graph</div>
-        <p className="text-sm max-w-sm" style={{ color: "var(--text-2)" }}>Keine Knoten vorhanden. Erstelle zuerst Wissen – der Graph visualisiert Tags und Titel-Ähnlichkeit.</p>
+        <p className="text-sm max-w-sm" style={{ color: "var(--text-2)" }}>Keine Knoten vorhanden. Lege deine erste Notiz an — der Graph zeigt echte Verbindungen (Wiki-Links, Agenten) und Ähnlichkeiten.</p>
       </div>
     );
   }
@@ -417,7 +417,9 @@ export function KnowledgeGraph({ memories, onSelectMemory }: KnowledgeGraphProps
                   }}
                   onPointerEnter={() => setHovered(m.id)}
                   onPointerLeave={() => setHovered((h) => (h === m.id ? null : h))}
-                  onClick={() => { if (!dragging || Math.hypot(pos.x - dragging.origX, pos.y - dragging.origY) < 5) onSelectMemory(m); }}
+                  // UX (Persona-Feedback): Ziehen = explorieren/verschieben, ÖFFNEN nur per Doppelklick.
+                  // Ein Click-Handler hier würde nach jedem Drag feuern (dragging ist beim click schon null).
+                  onDoubleClick={() => onSelectMemory(m)}
                 >
                   <circle
                     r={isHovered ? r + 3 : r}
@@ -469,7 +471,7 @@ export function KnowledgeGraph({ memories, onSelectMemory }: KnowledgeGraphProps
             <svg width="26" height="6"><line x1="0" y1="3" x2="26" y2="3" stroke="var(--accent)" strokeWidth="2" /></svg> echte Verbindung
             <svg width="26" height="6"><line x1="0" y1="3" x2="26" y2="3" stroke="var(--text-3)" strokeWidth="1.5" strokeDasharray="3 4" /></svg> Ähnlichkeit
           </div>
-          <div className="hud-label">Ziehen: Knoten verschieben · Leere Fläche: Pan · Mausrad: Zoom · Größe = Verbindungen</div>
+          <div className="hud-label">Ziehen: Knoten verschieben · Doppelklick: Notiz öffnen · Mausrad: Zoom · Größe = Verbindungen</div>
         </div>
       </div>
     </div>
