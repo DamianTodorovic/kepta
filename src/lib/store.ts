@@ -31,7 +31,8 @@ async function doRefresh(): Promise<Memory[]> {
     try {
       const res = await fetch('/api/memories');
       const data = await res.json();
-      cache = Array.isArray(data.memories) ? data.memories : [];
+      // API liefert ein nacktes Array (ältere Clients erwarteten {memories:[]})
+      cache = Array.isArray(data) ? data : Array.isArray(data?.memories) ? data.memories : [];
     } catch {
       // Server nicht erreichbar -> Cache behalten
     }

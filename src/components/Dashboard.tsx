@@ -7,6 +7,8 @@ import { Settings } from './Settings';
 import { KnowledgeGraph } from './KnowledgeGraph';
 import { CommandPalette, useCommandPaletteHotkey, buildPaletteActions } from './CommandPalette';
 import { saveMemory, deleteMemory, subscribeMemories, refreshMemories } from '../lib/store';
+import { subscribeActivity } from '../lib/activity';
+import { useToast } from './ui/Toast';
 import { hybridSearch, type ScoredMemory } from '../lib/semantic';
 import { OnboardingWizard } from './OnboardingWizard';
 import { loadProfile } from '../lib/profile';
@@ -77,6 +79,7 @@ async function extractTextFromFile(file: File): Promise<string> {
 }
 
 export function Dashboard() {
+  const toast = useToast();
   const [memories, setMemories] = useState<Memory[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [debouncedSearchQuery, setDebouncedSearchQuery] = useState('');
@@ -103,6 +106,33 @@ export function Dashboard() {
     })();
     return () => { cancelled = true; };
   }, [trashOpen]);
+
+  // Erstes Laden: Skeletons statt leerem Grid
+  const [initialLoaded, setInitialLoaded] = useState(false);
+  useEffect(() => {
+    void refreshMemories().finally(() => setInitialLoaded(true));
+  }, []);
+
+  // Tastenkürzel: ⌘N = neuer Knoten, ? = Shortcuts-Sheet
+  const [shortcutsOpen, setShortcutsOpen] = useState(false);
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      const target = e.target as HTMLElement | null;
+      const typing = target && (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable);
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'n' && !typing) {
+        e.preventDefault();
+        setEditingMemory(null);
+        setIsEditorOpen(true);
+      } else if (e.key === '?' && !typing) {
+        e.preventDefault();
+        setShortcutsOpen((v) => !v);
+      } else if (e.key === 'Escape') {
+        setShortcutsOpen(false);
+      }
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, []);
 
   // Semantische Suche: Toggle + Top-k
   const [semanticEnabled, setSemanticEnabled] = useState<boolean>(() => {
@@ -218,6 +248,32 @@ export function Dashboard() {
 
   useCommandPaletteHotkey(() => setPaletteOpen(true));
 
+  // --- Activity-Stream: das Gehirn lebt — Agent-Aktionen live sehen ---
+  const [brainPulse, setBrainPulse] = useState(0);
+  const [agentActive, setAgentActive] = useState(false);
+  const agentIdleTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  useEffect(() => {
+    return subscribeActivity((evt) => {
+      setBrainPulse((p) => p + 1);
+      // Liste live aktualisieren, wenn sich der Speicher ändert (auch via MCP!)
+      if (evt.type === 'save' || evt.type === 'update' || evt.type === 'delete' || evt.type === 'consolidate') {
+        void refreshMemories();
+      }
+      if (evt.source === 'agent') {
+        setAgentActive(true);
+        if (agentIdleTimer.current) clearTimeout(agentIdleTimer.current);
+        agentIdleTimer.current = setTimeout(() => setAgentActive(false), 9000);
+        const t = evt.type === 'save' ? `Agent hat einen Knoten gespeichert${evt.title ? `: ${evt.title.slice(0, 48)}` : ''}`
+          : evt.type === 'update' ? 'Agent hat einen Knoten aktualisiert'
+          : evt.type === 'delete' ? 'Agent hat einen Knoten entfernt'
+          : evt.type === 'consolidate' ? 'Agent konsolidiert das Gedächtnis'
+          : null;
+        if (t) toast.push({ message: t, kind: 'info' });
+      }
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   const allTags = Array.from(new Set(memories.flatMap(m => m.tags))).sort() as string[];
 
   // --- Tag-gefilterte Basis ---
@@ -316,11 +372,29 @@ export function Dashboard() {
   };
 
   const handleDelete = async (id: string) => {
-    if (id) deleteMemory(id);
+    if (!id) return;
+    const victim = memories.find(m => m.id === id);
+    void deleteMemory(id);
     if (editingMemory?.id === id) {
       setIsEditorOpen(false);
       setEditingMemory(null);
     }
+    toast.push({
+      message: `„${(victim?.title || 'Knoten').slice(0, 40)}“ in den Papierkorb verschoben`,
+      kind: 'info',
+      action: {
+        label: 'Rückgängig',
+        onClick: async () => {
+          try {
+            await fetch(`/api/memories/${encodeURIComponent(id)}/restore`, { method: 'POST' });
+            void refreshMemories();
+            toast.push({ message: 'Wiederhergestellt', kind: 'success' });
+          } catch {
+            toast.push({ message: 'Wiederherstellen fehlgeschlagen', kind: 'warn' });
+          }
+        },
+      },
+    });
   };
 
   const copyContextForAI = () => {
@@ -793,16 +867,41 @@ export function Dashboard() {
                   )}
                 </div>
                 <div className="flex items-center gap-2 hud-label">
-                  <span className="status-dot" />
-                  {semanticEnabled ? `Suche · · ${chatMemories.length} im Retrieval` : 'Speicher synchron'}
+                  {agentActive ? (
+                    <>
+                      <span className="agent-dot" />
+                      <span style={{ color: 'var(--accent)' }}>AGENT AKTIV</span>
+                    </>
+                  ) : (
+                    <span className="status-dot" />
+                  )}
+                  {agentActive ? 'Gehirn synchronisiert sich' : semanticEnabled ? `Suche · ${chatMemories.length} im Retrieval` : 'Speicher synchron'}
                 </div>
               </div>
 
-              {displayedMemories.length === 0 ? (
+              {displayedMemories.length === 0 && !initialLoaded ? (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+                  {Array.from({ length: 8 }).map((_, i) => (
+                    <div key={i} className="card p-5 h-56 flex flex-col gap-3">
+                      <div className="skeleton h-3 w-16" />
+                      <div className="skeleton h-5 w-4/5" />
+                      <div className="skeleton h-3 w-full" />
+                      <div className="skeleton h-3 w-full" />
+                      <div className="skeleton h-3 w-2/3" />
+                      <div className="mt-auto flex gap-2">
+                        <div className="skeleton h-6 w-14 rounded-full" />
+                        <div className="skeleton h-6 w-12 rounded-full" />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : displayedMemories.length === 0 ? (
                 <div className="flex-1 flex flex-col items-center justify-center text-center">
                   <div className="w-20 h-20 hud-inset rounded-2xl flex items-center justify-center mb-5 relative overflow-hidden">
-                    <div className="absolute inset-0 opacity-60" style={{ transform: 'scale(0.55)' }}><BrainAnimationMini /></div>
-                    <Database className="w-7 h-7 relative z-10" style={{ color: 'var(--accent)' }} />
+                    <div className="absolute inset-0 opacity-60" style={{ transform: 'scale(0.55)' }}><BrainAnimationMini pulse={brainPulse} /></div>
+                    <motion.div key={brainPulse} initial={{ scale: 1.15 }} animate={{ scale: 1 }} transition={{ type: 'spring', damping: 12 }}>
+                      <Database className="w-7 h-7 relative z-10" style={{ color: 'var(--accent)' }} />
+                    </motion.div>
                   </div>
                   <h3 className="text-lg font-semibold mb-1.5" style={{ color: 'var(--text-1)' }}>Keine Knoten gefunden</h3>
                   <p className="text-sm max-w-sm mx-auto" style={{ color: 'var(--text-2)' }}>
@@ -925,19 +1024,68 @@ export function Dashboard() {
           />
         )}
       </AnimatePresence>
+      <ShortcutsSheet open={shortcutsOpen} onClose={() => setShortcutsOpen(false)} />
     </div>
   );
 }
 
-// Kleines statisches neuronales Ornament für den Empty-State.
-function BrainAnimationMini() {
+// Kleines statisches neuronales Ornament für den Empty-State — pulsiert bei Aktivität.
+function BrainAnimationMini({ pulse = 0 }: { pulse?: number }) {
   return (
-    <svg viewBox="0 0 100 100" className="w-full h-full" fill="none">
+    <svg viewBox="0 0 100 100" className="w-full h-full" fill="none" style={{ transform: pulse > 0 ? 'scale(1)' : undefined }}>
       <path d="M 50 15 C 30 15 15 25 15 45 C 15 60 25 75 40 85" stroke="var(--accent)" strokeWidth="2" strokeLinecap="round" opacity="0.6" />
       <path d="M 50 15 C 70 15 85 25 85 45 C 85 60 75 75 60 85" stroke="var(--accent-2)" strokeWidth="2" strokeLinecap="round" opacity="0.6" />
       <circle cx="30" cy="50" r="3" fill="var(--accent)" opacity="0.8" />
       <circle cx="70" cy="50" r="3" fill="var(--accent-2)" opacity="0.8" />
       <circle cx="50" cy="20" r="3" fill="var(--accent)" opacity="0.8" />
     </svg>
+  );
+}
+
+// Shortcuts-Cheat-Sheet (per „?“)
+const SHORTCUTS: { keys: string; action: string }[] = [
+  { keys: '⌘K', action: 'Command Palette — schnelle Aktionen & Suche' },
+  { keys: '⌘N', action: 'Neuer Wissensknoten' },
+  { keys: '?', action: 'Diese Übersicht' },
+  { keys: 'Esc', action: 'Dialog schließen' },
+  { keys: '⌘1–4', action: 'Ansicht wechseln (Index, Chat, Graph, System)' },
+];
+
+function ShortcutsSheet({ open, onClose }: { open: boolean; onClose: () => void }) {
+  return (
+    <AnimatePresence>
+      {open && (
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          className="fixed inset-0 z-50 flex items-center justify-center hud-backdrop"
+          onClick={onClose}
+        >
+          <motion.div
+            initial={{ opacity: 0, y: 12, scale: 0.97 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: 8, scale: 0.97 }}
+            transition={{ type: 'spring', damping: 24, stiffness: 300 }}
+            onClick={(e) => e.stopPropagation()}
+            className="w-full max-w-md rounded-2xl shadow-2xl p-6"
+            style={{ background: 'var(--bg-panel-solid)', border: '1px solid var(--border-subtle)' }}
+          >
+            <h3 className="text-base font-semibold mb-4" style={{ color: 'var(--text-1)' }}>Tastenkürzel</h3>
+            <ul className="space-y-2.5">
+              {SHORTCUTS.map((s) => (
+                <li key={s.keys} className="flex items-center justify-between gap-4">
+                  <span className="text-sm" style={{ color: 'var(--text-2)' }}>{s.action}</span>
+                  <kbd className="px-2 py-1 rounded-lg text-xs font-mono shrink-0" style={{ background: 'var(--bg-inset-strong)', border: '1px solid var(--border-subtle)', color: 'var(--text-1)' }}>
+                    {s.keys}
+                  </kbd>
+                </li>
+              ))}
+            </ul>
+            <p className="hud-label mt-4">Agenten nutzen dasselbe Gehirn über MCP — sieh die Aktivität live im Index.</p>
+          </motion.div>
+        </motion.div>
+      )}
+    </AnimatePresence>
   );
 }

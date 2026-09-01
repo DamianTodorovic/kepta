@@ -1,5 +1,6 @@
 import { AuthProvider } from './contexts/AuthContext';
 import { ThemeProvider } from './contexts/ThemeContext';
+import { ToastProvider } from './components/ui/Toast';
 import { Dashboard } from './components/Dashboard';
 
 // Premium minimal — kein Sci-Fi, nur Ruhe und Fokus
@@ -17,7 +18,9 @@ export default function App() {
   return (
     <ThemeProvider>
       <AuthProvider>
-        <AppContent />
+        <ToastProvider>
+          <AppContent />
+        </ToastProvider>
       </AuthProvider>
     </ThemeProvider>
   );

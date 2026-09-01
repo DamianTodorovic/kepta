@@ -250,6 +250,42 @@ async function startServer() {
   });
   const allApiMemories = (): MemoryRecord[] => store.listMemories({ limit: 1000 }).map(toApi);
 
+  // --- Activity Hub: das Gehirn lebt — SSE-Stream für UI ("Sieh deinen Agenten denken") ---
+  interface ActivityEvent {
+    type: "save" | "update" | "delete" | "search" | "consolidate";
+    source: "app" | "agent";
+    title?: string;
+    ts: number;
+  }
+  const activityClients = new Set<express.Response>();
+  const lastSearchPublish = { ts: 0 };
+  function publishActivity(evt: Omit<ActivityEvent, "ts">, opts: { throttleSearchMs?: number } = {}) {
+    if (evt.type === "search" && opts.throttleSearchMs) {
+      if (Date.now() - lastSearchPublish.ts < opts.throttleSearchMs) return;
+      lastSearchPublish.ts = Date.now();
+    }
+    const payload = `data: ${JSON.stringify({ ...evt, ts: Date.now() })}\n\n`;
+    for (const client of activityClients) {
+      try { client.write(payload); } catch { activityClients.delete(client); }
+    }
+  }
+  app.get("/api/activity", (req, res) => {
+    res.writeHead(200, {
+      "Content-Type": "text/event-stream",
+      "Cache-Control": "no-cache",
+      Connection: "keep-alive",
+    });
+    res.write(`data: ${JSON.stringify({ type: "save", source: "app", ts: Date.now(), hello: true })}\n\n`);
+    activityClients.add(res);
+    const heartbeat = setInterval(() => {
+      try { res.write(": hb\n\n"); } catch { /* ignore */ }
+    }, 15_000);
+    req.on("close", () => {
+      clearInterval(heartbeat);
+      activityClients.delete(res);
+    });
+  });
+
 
   // --- Security Headers (hardened) ---
   app.use(helmet({
@@ -490,15 +526,29 @@ async function startServer() {
       if (body.title !== undefined) patch.title = title;
       if (body.content !== undefined) patch.content = content;
       if (body.tags !== undefined) patch.tags = sanitizeTags(body.tags);
+      if (body.type !== undefined && ["semantic", "episodic", "procedural"].includes(String(body.type))) patch.type = body.type;
+      if (typeof body.confidence === "number") patch.confidence = Math.min(1, Math.max(0, body.confidence));
+      if (body.validFrom !== undefined) patch.validFrom = body.validFrom === null ? null : Number(body.validFrom) || null;
+      if (body.validTo !== undefined) patch.validTo = body.validTo === null ? null : Number(body.validTo) || null;
       const updated = store.updateMemory(body.id, patch);
       if (!updated) return res.status(404).json({ error: "Knoten nicht gefunden" });
       if (body.content !== undefined) indexMemory(store, updated.id);
+      publishActivity({ type: "update", source: "app", title: updated.title });
       return res.json({ memory: toApi(updated) });
     }
 
     if (!title && !content) return res.status(400).json({ error: "Titel oder Inhalt erforderlich" });
-    const created = store.createMemory({ title: title || "Ohne Titel", content, tags: sanitizeTags(body.tags) });
+    const created = store.createMemory({
+      title: title || "Ohne Titel",
+      content,
+      tags: sanitizeTags(body.tags),
+      type: ["semantic", "episodic", "procedural"].includes(String(body.type)) ? (body.type as never) : undefined,
+      confidence: typeof body.confidence === "number" ? Math.min(1, Math.max(0, body.confidence)) : undefined,
+      validFrom: body.validFrom === null || body.validFrom === undefined ? undefined : Number(body.validFrom) || undefined,
+      validTo: body.validTo === null || body.validTo === undefined ? undefined : Number(body.validTo) || undefined,
+    });
     indexMemory(store, created.id);
+    publishActivity({ type: "save", source: "app", title: created.title });
     return res.json({ memory: toApi(created) });
   }
 
@@ -511,9 +561,16 @@ async function startServer() {
     if (!id || id.length > 120 || !/^[\w\-.:]+$/.test(id)) return res.status(400).json({ error: "Ungültige ID" });
     // Default: Papierkorb. ?permanent=1 löscht endgültig.
     if (req.query.permanent === "1" || req.query.permanent === "true") {
-      return res.json({ ok: store.purgeMemory(id), permanent: true });
+      const purged = store.purgeMemory(id);
+      if (purged) publishActivity({ type: "delete", source: "app", title: id });
+      return res.json({ ok: purged, permanent: true });
     }
-    res.json({ ok: store.trashMemory(id), permanent: false });
+    const trashed = store.trashMemory(id);
+    if (trashed) {
+      const m = store.getMemory(id);
+      publishActivity({ type: "delete", source: "app", title: m?.title ?? id });
+    }
+    res.json({ ok: trashed, permanent: false });
   });
 
   // Wiederherstellen aus dem Papierkorb
@@ -793,6 +850,7 @@ async function startServer() {
       type: type === "semantic" || type === "episodic" || type === "procedural" ? type : undefined,
       scope: typeof scope === "string" && scope ? scope : undefined,
     });
+    publishActivity({ type: "search", source: "app", title: result.query }, { throttleSearchMs: 2500 });
     // Altes Response-Shape für das Frontend (cosineScore/bm25Score sind die Einzelbeine)
     return res.json({
       results: result.hits.map(h => ({
@@ -831,6 +889,17 @@ async function startServer() {
     }
     try {
       const reply = await handleRpc(mcpCtx, body as never);
+      // Activity: Agenten-Aktionen sichtbar machen
+      const rpcBody = body as { method?: string; params?: { name?: string; arguments?: Record<string, unknown> } };
+      if (rpcBody.method === "tools/call") {
+        const toolName = String(rpcBody.params?.name ?? "");
+        const args = rpcBody.params?.arguments ?? {};
+        if (toolName === "memory_save") publishActivity({ type: "save", source: "agent", title: String(args.title ?? "") });
+        else if (toolName === "memory_search") publishActivity({ type: "search", source: "agent", title: String(args.query ?? "") }, { throttleSearchMs: 4000 });
+        else if (toolName === "memory_delete" || toolName === "memory_forget") publishActivity({ type: "delete", source: "agent", title: String(args.id ?? "") });
+        else if (toolName === "memory_update") publishActivity({ type: "update", source: "agent", title: String(args.id ?? "") });
+        else if (toolName === "memory_consolidate") publishActivity({ type: "consolidate", source: "agent" });
+      }
       if (!reply) return res.status(202).json({ accepted: true });
       return res.json(reply);
     } catch (e) {
@@ -854,6 +923,7 @@ async function startServer() {
       limit: Math.min(Math.max(parseInt(String(limit), 10) || 10, 1), 50),
       tags: Array.isArray(tags) ? tags : undefined,
     });
+    publishActivity({ type: "search", source: "agent", title: String(query) }, { throttleSearchMs: 4000 });
     return res.json({
       query,
       count: result.hits.length,
@@ -865,6 +935,7 @@ async function startServer() {
     const body = req.body as Record<string, unknown>;
     try {
       const { created, record } = saveWithIndex(store, body);
+      publishActivity({ type: created ? "save" : "update", source: "agent", title: record.title });
       return res.json({ memory: toApi(record), created });
     } catch (e) {
       return res.status(400).json({ error: e instanceof Error ? e.message : String(e) });

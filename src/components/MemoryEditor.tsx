@@ -1,7 +1,26 @@
 import { useState, useEffect, KeyboardEvent, FormEvent } from 'react';
 import { Memory } from '../types';
 import { motion } from 'motion/react';
-import { X, Save, Trash2, Hash, Database } from 'lucide-react';
+import { X, Save, Trash2, Hash, Database, Brain, Clock, Zap } from 'lucide-react';
+
+type MemoryKind = 'semantic' | 'episodic' | 'procedural';
+
+const KINDS: { key: MemoryKind; label: string; hint: string }[] = [
+  { key: 'semantic', label: 'Wissen', hint: 'Fakten & Zusammenhänge' },
+  { key: 'episodic', label: 'Episode', hint: 'Ereignisse & Gespräche' },
+  { key: 'procedural', label: 'Ablauf', hint: 'How-tos & Prozesse' },
+];
+
+function toLocalDateInput(ts: number | null | undefined): string {
+  if (!ts) return '';
+  const d = new Date(ts);
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+}
+function fromLocalDateInput(v: string): number | null {
+  if (!v) return null;
+  const t = Date.parse(v + 'T12:00:00');
+  return Number.isNaN(t) ? null : t;
+}
 
 interface MemoryEditorProps {
   memory: Memory | null;
@@ -15,14 +34,36 @@ export function MemoryEditor({ memory, onSave, onClose, onDelete }: MemoryEditor
   const [content, setContent] = useState(memory?.content || '');
   const [tagsInput, setTagsInput] = useState('');
   const [tags, setTags] = useState<string[]>(memory?.tags || []);
+  const [kind, setKind] = useState<MemoryKind>(memory?.type || 'semantic');
+  const [confidence, setConfidence] = useState<number>(memory?.confidence ?? 1);
+  const [validFrom, setValidFrom] = useState<string>(toLocalDateInput(memory?.validFrom));
+  const [validTo, setValidTo] = useState<string>(toLocalDateInput(memory?.validTo));
+  const [showTemporal, setShowTemporal] = useState(!!(memory?.validFrom || memory?.validTo));
 
   useEffect(() => {
     if (memory) {
       setTitle(memory.title);
       setContent(memory.content);
       setTags(memory.tags);
+      setKind(memory.type || 'semantic');
+      setConfidence(memory.confidence ?? 1);
+      setValidFrom(toLocalDateInput(memory.validFrom));
+      setValidTo(toLocalDateInput(memory.validTo));
+      setShowTemporal(!!(memory.validFrom || memory.validTo));
     }
   }, [memory]);
+
+  // Desktop-Standard: Escape schließt den Editor
+  useEffect(() => {
+    const onKey = (e: Event): void => {
+      if ((e as globalThis.KeyboardEvent).key === 'Escape') {
+        e.stopPropagation();
+        onClose();
+      }
+    };
+    window.addEventListener('keydown', onKey, true);
+    return () => window.removeEventListener('keydown', onKey, true);
+  }, [onClose]);
 
   const handleAddTag = (e: KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Enter' || e.key === ',') {
@@ -51,7 +92,15 @@ export function MemoryEditor({ memory, onSave, onClose, onDelete }: MemoryEditor
       }
     }
 
-    onSave({ title, content, tags: finalTags });
+    onSave({
+      title,
+      content,
+      tags: finalTags,
+      type: kind,
+      confidence,
+      validFrom: fromLocalDateInput(validFrom),
+      validTo: fromLocalDateInput(validTo),
+    });
   };
 
   return (
@@ -121,10 +170,36 @@ export function MemoryEditor({ memory, onSave, onClose, onDelete }: MemoryEditor
               />
             </div>
 
-            <div className="flex-1 flex flex-col min-h-[300px]">
+            {/* Memory-Typ: segmented control */}
+            <div>
+              <div className="hud-label mb-2 flex items-center gap-1.5"><Brain className="w-3.5 h-3.5" /> Memory-Typ</div>
+              <div className="grid grid-cols-3 gap-1.5 p-1 rounded-xl hud-inset">
+                {KINDS.map((k) => (
+                  <button
+                    key={k.key}
+                    type="button"
+                    onClick={() => setKind(k.key)}
+                    className="px-3 py-2 rounded-lg text-sm font-medium transition-all"
+                    style={{
+                      background: kind === k.key ? 'var(--accent-soft)' : 'transparent',
+                      color: kind === k.key ? 'var(--accent)' : 'var(--text-2)',
+                      border: kind === k.key ? '1px solid var(--accent)' : '1px solid transparent',
+                    }}
+                    title={k.hint}
+                  >
+                    {k.label}
+                  </button>
+                ))}
+              </div>
+              <p className="text-xs mt-1.5 ml-1" style={{ color: 'var(--text-3)' }}>
+                {KINDS.find((k) => k.key === kind)?.hint}
+              </p>
+            </div>
+
+            <div className="flex-1 flex flex-col min-h-[240px]">
               <div className="hud-label mb-2">Datenpayload</div>
               <textarea
-                placeholder="Wissen, Notizen, Code eingeben..."
+                placeholder="Wissen, Notizen, Code eingeben... [[Wiki-Links]] werden automatisch verknüpft."
                 value={content}
                 onChange={(e) => setContent(e.target.value)}
                 className="hud-input flex-1 w-full resize-none rounded-xl p-5 text-sm leading-relaxed"
@@ -161,6 +236,50 @@ export function MemoryEditor({ memory, onSave, onClose, onDelete }: MemoryEditor
                   style={{ color: 'var(--text-1)' }}
                 />
               </div>
+            </div>
+
+            {/* Temporal & Konfidenz — zusammenklappbar */}
+            <div className="rounded-xl" style={{ border: '1px solid var(--border-subtle)' }}>
+              <button
+                type="button"
+                onClick={() => setShowTemporal((v) => !v)}
+                className="w-full flex items-center justify-between px-4 py-3 text-sm font-medium"
+                style={{ color: 'var(--text-2)' }}
+              >
+                <span className="flex items-center gap-2"><Clock className="w-4 h-4" style={{ color: 'var(--text-3)' }} /> Gültigkeit & Konfidenz</span>
+                <span style={{ color: 'var(--text-3)' }}>{showTemporal ? '−' : '+'}</span>
+              </button>
+              {showTemporal && (
+                <motion.div
+                  initial={{ opacity: 0, height: 0 }}
+                  animate={{ opacity: 1, height: 'auto' }}
+                  className="px-4 pb-4 flex flex-col gap-4 overflow-hidden"
+                >
+                  <div className="grid grid-cols-2 gap-3">
+                    <label className="flex flex-col gap-1.5">
+                      <span className="text-xs" style={{ color: 'var(--text-3)' }}>Gültig ab</span>
+                      <input type="date" value={validFrom} onChange={(e) => setValidFrom(e.target.value)} className="hud-input rounded-lg px-3 py-2 text-sm" />
+                    </label>
+                    <label className="flex flex-col gap-1.5">
+                      <span className="text-xs" style={{ color: 'var(--text-3)' }}>Gültig bis (leer = unbegrenzt)</span>
+                      <input type="date" value={validTo} onChange={(e) => setValidTo(e.target.value)} className="hud-input rounded-lg px-3 py-2 text-sm" />
+                    </label>
+                  </div>
+                  <label className="flex flex-col gap-1.5">
+                    <span className="text-xs flex items-center gap-1.5" style={{ color: 'var(--text-3)' }}>
+                      <Zap className="w-3 h-3" /> Konfidenz — {Math.round(confidence * 100)} % (wie verlässlich ist diese Erinnerung?)
+                    </span>
+                    <input
+                      type="range"
+                      min={0}
+                      max={100}
+                      value={Math.round(confidence * 100)}
+                      onChange={(e) => setConfidence(Number(e.target.value) / 100)}
+                      className="w-full accent-[var(--accent)]"
+                    />
+                  </label>
+                </motion.div>
+              )}
             </div>
           </div>
 

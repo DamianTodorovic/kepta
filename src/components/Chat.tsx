@@ -12,6 +12,7 @@ import {
   Square,
   Copy,
   Check,
+  CheckCircle2,
   Coins,
   Hash,
   FileText,
@@ -20,6 +21,16 @@ import {
 import ReactMarkdown from "react-markdown";
 import { ChatMessage, Memory } from "../types";
 import { loadAISettings, providerById } from "../lib/ai";
+
+/** Extrahiert Rohtext aus ReactMarkdown-Children (für Copy-Buttons). */
+function extractCodeText(node: unknown): string {
+  if (node === null || node === undefined || typeof node === "boolean") return "";
+  if (typeof node === "string" || typeof node === "number") return String(node);
+  if (Array.isArray(node)) return node.map(extractCodeText).join("");
+  const el = node as { props?: { children?: unknown } };
+  if (el.props && "children" in el.props) return extractCodeText(el.props.children);
+  return "";
+}
 import { hybridSearch } from "../lib/semantic";
 
 // Erweiterte Message mit Quellen / Token-Metadaten
@@ -82,6 +93,7 @@ export function Chat({ activeMemories, onSaveToBrain, onSaveToBrainWithMeta, isF
   const [error, setError] = useState<string | null>(null);
   const [tokenBudget, setTokenBudget] = useState<number>(DEFAULT_BUDGET);
   const [copiedId, setCopiedId] = useState<string | null>(null);
+  const [copiedCodeId, setCopiedCodeId] = useState<string | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const abortRef = useRef<AbortController | null>(null);
@@ -663,11 +675,28 @@ export function Chat({ activeMemories, onSaveToBrain, onSaveToBrainWithMeta, isF
                         }
                         return <code className="px-1.5 py-0.5 rounded font-mono text-xs" style={{ background: "var(--bg-inset-strong)", border: "1px solid var(--border-subtle)", color: "var(--accent)" }}>{children}</code>;
                       },
-                      pre: ({ children }) => (
-                        <pre className="my-3 p-3 rounded-xl overflow-x-auto text-xs leading-relaxed hud-inset" style={{ background: "var(--bg-inset)", border: "1px solid var(--border-subtle)" }}>
-                          {children}
-                        </pre>
-                      ),
+                      pre: ({ children }) => {
+                        const codeText = extractCodeText(children);
+                        return (
+                          <div className="relative group/code my-3">
+                            <pre className="p-3 pr-10 rounded-xl overflow-x-auto text-xs leading-relaxed hud-inset" style={{ background: "var(--bg-inset)", border: "1px solid var(--border-subtle)" }}>
+                              {children}
+                            </pre>
+                            <button
+                              onClick={() => {
+                                void navigator.clipboard?.writeText(codeText);
+                                setCopiedCodeId(msg.id);
+                                setTimeout(() => setCopiedCodeId((id) => (id === msg.id ? null : id)), 1600);
+                              }}
+                              className="absolute top-2 right-2 p-1.5 rounded-lg opacity-0 group-hover/code:opacity-100 transition-opacity"
+                              style={{ background: "var(--bg-inset-strong)", border: "1px solid var(--border-subtle)", color: copiedCodeId === msg.id ? "var(--ok)" : "var(--text-3)" }}
+                              title="Code kopieren"
+                            >
+                              {copiedCodeId === msg.id ? <CheckCircle2 className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
+                            </button>
+                          </div>
+                        );
+                      },
                       hr: () => <hr className="my-3" style={{ borderColor: "var(--border-subtle)" }} />,
                       strong: ({ children }) => <strong className="font-semibold" style={{ color: "var(--text-1)" }}>{children}</strong>,
                       em: ({ children }) => <em className="italic" style={{ color: "var(--text-1)" }}>{children}</em>,
