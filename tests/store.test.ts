@@ -1,0 +1,132 @@
+import { describe, it, expect, beforeEach } from "vitest";
+import { tmpdir } from "node:os";
+import path from "node:path";
+import fs from "node:fs";
+import { KeptaStore, float32ToBlob, blobToFloat32, normalizeTags } from "../src/core/store";
+
+function freshStore(): KeptaStore {
+  const dir = fs.mkdtempSync(path.join(tmpdir(), "kepta-test-"));
+  return new KeptaStore(path.join(dir, "test.db"));
+}
+
+describe("KeptaStore CRUD", () => {
+  let store: KeptaStore;
+  beforeEach(() => {
+    store = freshStore();
+  });
+
+  it("legt eine Memory an, liest und updated sie", () => {
+    const m = store.createMemory({ title: "Rust Backend", content: "Performance in Rust", tags: ["Rust", "Backend"] });
+    expect(m.id).toMatch(/^k-/);
+    expect(m.tags).toEqual(["rust", "backend"]);
+    expect(m.type).toBe("semantic");
+
+    const updated = store.updateMemory(m.id, { content: "Neuer Inhalt", type: "episodic" });
+    expect(updated?.content).toBe("Neuer Inhalt");
+    expect(updated?.type).toBe("episodic");
+    expect(updated?.updatedAt).toBeGreaterThanOrEqual(m.updatedAt);
+  });
+
+  it("Papierkorb: trash, restore, purge", () => {
+    const m = store.createMemory({ title: "Alt", content: "x" });
+    expect(store.trashMemory(m.id)).toBe(true);
+    expect(store.listMemories()).toHaveLength(0);
+    expect(store.listMemories({ trash: true })).toHaveLength(1);
+    expect(store.restoreMemory(m.id)).toBe(true);
+    expect(store.listMemories()).toHaveLength(1);
+    expect(store.purgeMemory(m.id)).toBe(true);
+    expect(store.getMemory(m.id)).toBeNull();
+  });
+
+  it("upsert: ohne id legt an, mit bestehender id updated", () => {
+    const a = store.upsertMemory({ title: "T", content: "C" });
+    expect(a.created).toBe(true);
+    const b = store.upsertMemory({ id: a.record.id, title: "T2", content: "C2" });
+    expect(b.created).toBe(false);
+    expect(b.record.title).toBe("T2");
+    expect(store.countMemories().active).toBe(1);
+  });
+
+  it("supersede verlinkt alte auf neue Memory", () => {
+    const old = store.createMemory({ title: "Wohnort", content: "Berlin" });
+    const neu = store.createMemory({ title: "Wohnort", content: "München", validFrom: Date.now() });
+    store.supersedeMemory(old.id, neu.id);
+    expect(store.getMemory(old.id)?.supersededBy).toBe(neu.id);
+  });
+
+  it("validiert Tags normalisiert und dedupliziert", () => {
+    expect(normalizeTags(["Rust", "rust!!", "RUST", "a", "ok-tag"])).toEqual(["rust", "ok-tag"]);
+  });
+
+  it("Content-Update invalidiert Chunks", () => {
+    const m = store.createMemory({ title: "T", content: "alter text" });
+    store.replaceChunks(m.id, ["alter text"]);
+    store.updateMemory(m.id, { content: "neuer text" });
+    expect(store.getChunks(m.id)).toHaveLength(0);
+  });
+});
+
+describe("Chunks & Embeddings", () => {
+  it("speichert und liest Float32-Embeddings roundtrip-sicher", () => {
+    const vec = new Float32Array([0.1, -0.5, 1.25, 0]);
+    const blob = float32ToBlob(vec);
+    const back = blobToFloat32(blob);
+    expect(Array.from(back)).toEqual(Array.from(vec));
+  });
+
+  it("chunksNeedingEmbedding liefert nur unversorgte", () => {
+    const store = freshStore();
+    const m = store.createMemory({ title: "T", content: "C" });
+    store.replaceChunks(m.id, ["chunk a", "chunk b"]);
+    let pending = store.chunksNeedingEmbedding();
+    expect(pending).toHaveLength(2);
+
+    store.setEmbedding(m.id, 0, new Float32Array([1, 2, 3]), "test-model");
+    pending = store.chunksNeedingEmbedding();
+    expect(pending).toHaveLength(1);
+    expect(pending[0]?.seq).toBe(1);
+
+    const all = store.allEmbeddableChunks();
+    expect(all).toHaveLength(1);
+    expect(all[0]?.model).toBe("test-model");
+    const stats = store.embeddingStats();
+    expect(stats).toEqual({ total: 2, embedded: 1, models: { "test-model": 1 } });
+  });
+});
+
+describe("Entities & Relations", () => {
+  it("linkt Entitäten idempotent und baut den Subgraph", () => {
+    const store = freshStore();
+    const a = store.createMemory({ title: "Projekt X", content: "..." });
+    store.linkEntities(a.id, ["Rust", "KEPTA"]);
+    store.linkEntities(a.id, ["Rust"]); // zweimal → keine Duplikate
+    const b = store.createMemory({ title: "Sprachen", content: "..." });
+    store.linkEntities(b.id, ["Rust", "Go"]);
+    store.addRelation("KEPTA", "Rust", "written_in", a.id);
+
+    const g = store.getGraph("kepta", 2);
+    expect(g.entities.map((e) => e.name).sort()).toEqual(["kepta", "rust"]);
+    expect(g.relations).toHaveLength(1);
+    expect(g.relations[0]?.relation).toBe("written_in");
+
+    const ids = store.memoryIdsForEntities([store.getEntityByName("rust")!.id]);
+    expect(ids).toEqual(new Set([a.id, b.id]));
+    expect(store.entityNamesForMemory(a.id).sort()).toEqual(["kepta", "rust"]);
+  });
+});
+
+describe("FTS", () => {
+  it("findet Treffer über FTS5, ignoriert Papierkorb, toleriert Syntax", () => {
+    const store = freshStore();
+    const a = store.createMemory({ title: "Rust Backend", content: "Speichersicherheit ohne Garbage Collector", tags: ["rust"] });
+    store.createMemory({ title: "Kochen", content: "Pasta mit Sauce", tags: [] });
+    const hits = store.ftsSearch("Speichersicherheit");
+    expect(hits.map((h) => h.id)).toContain(a.id);
+
+    store.trashMemory(a.id);
+    expect(store.ftsSearch("Speichersicherheit")).toHaveLength(0);
+
+    // FTS-Sonderzeichen dürfen nicht crashen
+    expect(() => store.ftsSearch('"NEAR(a b)')).not.toThrow();
+  });
+});
