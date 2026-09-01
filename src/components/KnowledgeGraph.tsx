@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState, useMemo, useCallback } from "react";
 import { Memory } from "../types";
-import { Search, Maximize2, ZoomIn, ZoomOut } from "lucide-react";
+import { Search, Maximize2, ZoomIn, ZoomOut, Clock } from "lucide-react";
 
 interface KnowledgeGraphProps {
   memories: Memory[];
@@ -58,6 +58,16 @@ export function KnowledgeGraph({ memories, onSelectMemory }: KnowledgeGraphProps
   const [panning, setPanning] = useState<{ sx: number; sy: number; ox: number; oy: number } | null>(null);
   const [hovered, setHovered] = useState<string | null>(null);
   const [dimensions, setDimensions] = useState({ w: 800, h: 500 });
+
+  // Zeitregler: „Zeig mir mein Wissen von …" — Gültigkeit zum gewählten Zeitpunkt
+  const [timeFilter, setTimeFilter] = useState<number | null>(null);
+  const timeRange = useMemo(() => {
+    const ts = memories.flatMap((m) => [m.validFrom, m.validTo, m.updatedAt].filter((t): t is number => typeof t === "number" && t > 0));
+    if (ts.length === 0) return null;
+    return { min: Math.min(...ts), max: Math.max(...ts) };
+  }, [memories]);
+  const inEffect = (m: Memory, at: number): boolean =>
+    (m.validFrom == null || m.validFrom <= at) && (m.validTo == null || m.validTo > at);
 
   // Echte Relationen aus der Graph-DB (Entities/Relations) laden
   const [graphApi, setGraphApi] = useState<GraphApi | null>(null);
@@ -379,6 +389,27 @@ export function KnowledgeGraph({ memories, onSelectMemory }: KnowledgeGraphProps
             />
           ))}
         </div>
+        {timeRange && (
+          <div className="flex items-center gap-2 ml-2" title="Zeitregler — Wissen zum gewählten Zeitpunkt">
+            <Clock className="w-3.5 h-3.5" style={{ color: "var(--text-3)" }} />
+            <input
+              type="range"
+              min={0} max={100} step={0.5}
+              value={timeFilter === null ? 100 : Math.max(0, Math.min(100, ((timeFilter - timeRange.min) / Math.max(1, timeRange.max - timeRange.min)) * 100))}
+              onChange={(e) => {
+                const v = Number(e.target.value);
+                setTimeFilter(v >= 100 ? null : Math.round(timeRange.min + ((timeRange.max - timeRange.min) * v) / 100));
+              }}
+              className="w-24 accent-[var(--accent)]"
+            />
+            <span className="hud-label whitespace-nowrap">
+              {timeFilter === null ? "Jetzt" : new Date(timeFilter).toLocaleDateString("de-DE", { month: "long", year: "numeric" })}
+            </span>
+            {timeFilter !== null && (
+              <button onClick={() => setTimeFilter(null)} className="btn-ghost px-1.5 py-0.5 rounded text-[10px]">Heute</button>
+            )}
+          </div>
+        )}
         <div className="flex items-center gap-1 ml-auto">
           <button onClick={() => zoom(1)} className="btn-ghost p-2 rounded-lg" title="Hineinzoomen"><ZoomIn className="w-4 h-4" /></button>
           <button onClick={() => zoom(-1)} className="btn-ghost p-2 rounded-lg" title="Herauszoomen"><ZoomOut className="w-4 h-4" /></button>
@@ -451,6 +482,7 @@ export function KnowledgeGraph({ memories, onSelectMemory }: KnowledgeGraphProps
               if (!pos) return null;
               const isHovered = hovered === m.id;
               const dimmed = hovered !== null && !isHovered && !neighborsOf.get(hovered)?.has(m.id);
+              const timeInactive = timeFilter !== null && !inEffect(m, timeFilter);
               const r = radiusOf(m);
               const fill = nodeFill(m);
               const expired = m.validTo != null && m.validTo < Date.now();
@@ -463,7 +495,7 @@ export function KnowledgeGraph({ memories, onSelectMemory }: KnowledgeGraphProps
                   data-node
                   transform={`translate(${pos.x},${pos.y})`}
                   className="cursor-pointer"
-                  opacity={dimmed ? 0.12 : superseded ? 0.55 : 1}
+                  opacity={timeInactive ? 0.05 : dimmed ? 0.12 : superseded ? 0.55 : 1}
                   onPointerDown={(e) => {
                     e.stopPropagation();
                     (e.currentTarget as Element).setPointerCapture(e.pointerId);
