@@ -112,6 +112,12 @@ export function Dashboard() {
   useEffect(() => {
     void refreshMemories().finally(() => setInitialLoaded(true));
   }, []);
+  // Fenster-Fokus: Agenten schreiben evtl. aus anderen Prozessen — auffrischen
+  useEffect(() => {
+    const onFocus = () => void refreshMemories();
+    window.addEventListener('focus', onFocus);
+    return () => window.removeEventListener('focus', onFocus);
+  }, []);
 
   // Tastenkürzel: ⌘N = neuer Knoten, ? = Shortcuts-Sheet
   const [shortcutsOpen, setShortcutsOpen] = useState(false);

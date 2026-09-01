@@ -250,7 +250,22 @@ async function startServer() {
   });
   const allApiMemories = (): MemoryRecord[] => store.listMemories({ limit: 1000 }).map(toApi);
 
-  // --- Activity Hub: das Gehirn lebt — SSE-Stream für UI ("Sieh deinen Agenten denken") ---
+  // --- DB-Change-Watcher: fremde Prozesse (MCP stdio, Claude Desktop, ZCode) ---
+  // schreiben direkt in die SQLite-DB ohne den Activity-Hub zu kennen. Die App
+  // pollt deshalb count+max(updated_at) und facht den SSE-Stream selbst an.
+  let lastDbFingerprint = "";
+  const dbWatcher = setInterval(() => {
+    try {
+      const row = store.db.prepare("SELECT COUNT(*) c, COALESCE(MAX(updated_at),0) m FROM memories").get() as { c: number; m: number };
+      const fp = `${row.c}:${row.m}`;
+      if (lastDbFingerprint && fp !== lastDbFingerprint) {
+        publishActivity({ type: row.c > parseInt(lastDbFingerprint) ? "save" : "update", source: "agent", title: "Gehirn wurde von außen aktualisiert" });
+      }
+      lastDbFingerprint = fp;
+    } catch { /* DB kurz gesperrt — nächster Tick */ }
+  }, 4000);
+  dbWatcher.unref();
+
   interface ActivityEvent {
     type: "save" | "update" | "delete" | "search" | "consolidate";
     source: "app" | "agent";
