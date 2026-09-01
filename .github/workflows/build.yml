@@ -26,7 +26,7 @@ jobs:
 
   release:
     if: startsWith(github.ref, 'refs/tags/v')
-    needs: lint-build
+    needs: lint-test-build
     runs-on: macos-latest
     permissions:
       contents: write
