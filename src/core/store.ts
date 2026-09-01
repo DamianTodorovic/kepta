@@ -255,6 +255,13 @@ export class KeptaStore {
     return row ? this.rowToRecord(row) : null;
   }
 
+  findByTitle(title: string): MemoryRecord | null {
+    const row = this.db
+      .prepare(`SELECT ${KeptaStore.COLS} FROM memories WHERE title = ? AND deleted_at IS NULL ORDER BY updated_at DESC LIMIT 1`)
+      .get(title.trim()) as Record<string, unknown> | undefined;
+    return row ? this.rowToRecord(row) : null;
+  }
+
   createMemory(input: MemoryInput): MemoryRecord {
     const now = Date.now();
     const id = input.id?.trim() || newId();

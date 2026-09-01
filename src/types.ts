@@ -13,6 +13,16 @@ export interface Memory {
   tags: string[];
   createdAt: number;
   updatedAt: number;
+  // v2-Felder (optional, vom Server geliefert)
+  type?: 'semantic' | 'episodic' | 'procedural';
+  scope?: string;
+  confidence?: number;
+  validFrom?: number | null;
+  validTo?: number | null;
+  supersededBy?: string | null;
+  deletedAt?: number | null;
+  lastAccessAt?: number | null;
+  accessCount?: number;
 }
 
 export interface ChatMessage {

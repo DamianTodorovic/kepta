@@ -11,6 +11,7 @@ import { migrateFromLegacyJson } from "./src/core/migrate";
 import { EmbeddingQueue } from "./src/core/embeddings";
 import { searchMemories as engineSearch, indexMemory } from "./src/core/engine";
 import { handleRpc, TOOLS as MCP_TOOLS, saveWithIndex } from "./src/core/mcp";
+import { importObsidianVault, memoryToMarkdown } from "./src/core/obsidian";
 import type { MemoryRecord as CoreMemory } from "./src/core/types";
 
 interface ChatRequest {
@@ -444,7 +445,7 @@ async function startServer() {
   // --- Speicher-API ---
 
   app.get("/api/memories", (req, res) => {
-    const memories = allApiMemories();
+    const memories = req.query.trash === "1" ? store.listMemories({ limit: 1000, trash: true }).map(toApi) : allApiMemories();
     const body = JSON.stringify(memories);
     const hash = crypto.createHash("sha1").update(body).digest("hex");
     const etag = `"${hash}"`;
@@ -515,6 +516,15 @@ async function startServer() {
     res.json({ ok: store.trashMemory(id), permanent: false });
   });
 
+  // Wiederherstellen aus dem Papierkorb
+  app.post("/api/memories/:id/restore", writeLimiter, (req, res) => {
+    const id = String(req.params.id || "");
+    if (!id || id.length > 120 || !/^[\w\-.:]+$/.test(id)) return res.status(400).json({ error: "Ungültige ID" });
+    const restored = store.restoreMemory(id);
+    if (!restored) return res.status(404).json({ error: "Nicht im Papierkorb gefunden" });
+    res.json({ ok: true, memory: toApi(store.getMemory(id)!) });
+  });
+
   app.post("/api/memories/import", writeLimiter, express.json({ limit: "2mb" }), (req, res) => {
     const { memories: incoming, mode } = req.body as { memories?: Partial<MemoryRecord>[]; mode?: "merge" | "replace" };
     if (!Array.isArray(incoming)) {
@@ -564,6 +574,61 @@ async function startServer() {
       trashed: store.countMemories().trashed,
       embeddings: store.embeddingStats(),
     });
+  });
+
+  // --- Wissensgraph (Entities + Relations) ---
+  app.get("/api/graph", (req, res) => {
+    const entity = typeof req.query.entity === "string" && req.query.entity.trim() ? req.query.entity.trim() : undefined;
+    const depthRaw = req.query.depth ? parseInt(String(req.query.depth), 10) : 2;
+    const depth = Number.isFinite(depthRaw) ? Math.min(Math.max(depthRaw, 1), 4) : 2;
+    const g = store.getGraph(entity, depth);
+    const nameById = new Map(g.entities.map((e) => [e.id, e.name]));
+    res.json({
+      entities: g.entities,
+      relations: g.relations
+        .filter((r) => nameById.has(r.sourceId) && nameById.has(r.targetId))
+        .map((r) => ({ id: r.id, source: nameById.get(r.sourceId)!, target: nameById.get(r.targetId)!, relation: r.relation, memoryId: r.memoryId })),
+      // entity → memory-IDs (für Graph-Rendering über Memories hinweg)
+      memoriesByEntity: Object.fromEntries(g.entities.map((e) => [e.name, [...store.memoryIdsForEntities([e.id])]])),
+    });
+  });
+
+  // --- Obsidian-Interop: Markdown-Import/-Export ---
+  app.post("/api/import/markdown", writeLimiter, express.json({ limit: "10mb" }), (req, res) => {
+    const { files, scope } = req.body as { files?: { name?: string; content?: string }[]; scope?: string };
+    if (!Array.isArray(files) || files.length === 0 || files.length > 5000) {
+      return res.status(400).json({ error: "files-Array (1..5000) erwartet" });
+    }
+    const mdFiles = files
+      .filter((f) => f && typeof f.content === "string")
+      .map((f) => ({ name: typeof f.name === "string" ? f.name.slice(0, 200) : "notiz.md", content: f.content as string }));
+    const summary = importObsidianVault(store, mdFiles, { scope: typeof scope === "string" && scope ? scope : undefined });
+    res.json(summary);
+  });
+
+  // Export: schreibt alle aktiven Memories als .md in ~/.kepta/export/<zeitstempel>/
+  app.post("/api/export/markdown", writeLimiter, (_req, res) => {
+    const memories = store.listMemories({ limit: 1000 });
+    if (memories.length === 0) return res.status(404).json({ error: "Keine Memories zu exportieren" });
+    const dir = path.join(DATA_DIR, "export", `kepta-export-${Date.now()}`);
+    try {
+      fs.mkdirSync(dir, { recursive: true });
+      const used = new Set<string>();
+      for (const m of memories) {
+        const { filename, markdown } = memoryToMarkdown(m);
+        let name = filename;
+        let i = 2;
+        while (used.has(name.toLowerCase())) {
+          name = filename.replace(/\.md$/, `-${i}.md`);
+          i++;
+        }
+        used.add(name.toLowerCase());
+        fs.writeFileSync(path.join(dir, name), markdown, "utf-8");
+      }
+      res.json({ exported: memories.length, path: dir });
+    } catch (e) {
+      res.status(500).json({ error: e instanceof Error ? e.message : "Export fehlgeschlagen" });
+    }
   });
 
   // --- URL-Clipper: holt URL und extrahiert Titel + reinen Text ---

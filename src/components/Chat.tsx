@@ -254,12 +254,16 @@ export function Chat({ activeMemories, onSaveToBrain, onSaveToBrainWithMeta, isF
       }
     } catch {}
     let prompt = profileLine + "Du bist der KI Assistant. Du hast Zugriff auf die persönliche Knowledge Base des Nutzers. Antworte basierend auf dem folgenden Kontext präzise und hilfreich. Zitiere wenn möglich die ID der genutzten Knoten.\n\n";
+    // Date-aware prompting (arXiv:2605.08538): Zeitanker reduzieren Temporal-Fehler deutlich
+    prompt += `[Heute: ${new Date().toLocaleDateString('de-DE', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}]\n\n`;
     if (mems.length === 0) {
       prompt += "(Aktuell sind keine Knoten geladen. Antworte allgemein.)\n";
     } else {
       prompt += `Kontext — ${mems.length} Knoten (Token-Budget ${tokenBudget}):\n\n`;
       mems.forEach((m) => {
-        prompt += `[ID: ${m.id} | KATEGORIEN: ${m.tags.join(", ")} | TITEL: ${m.title}]\n${m.content}\n\n`;
+        const validTo = m.validTo ? ` | GÜLTIG BIS: ${new Date(m.validTo).toLocaleDateString('de-DE')}${m.validTo < Date.now() ? ' (ABGELAUFEN)' : ''}` : "";
+        const superseded = m.supersededBy ? " | ERSETZT" : "";
+        prompt += `[ID: ${m.id} | KATEGORIEN: ${m.tags.join(", ")} | TITEL: ${m.title}${validTo}${superseded}]\n${m.content}\n\n`;
       });
     }
     return prompt;

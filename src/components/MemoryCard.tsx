@@ -15,6 +15,10 @@ interface MemoryCardProps {
 export const MemoryCard = memo(function MemoryCard({ memory, onClick, score, matchedTerms }: MemoryCardProps) {
   const pct = typeof score === "number" ? Math.round(score * 100) : null;
   const relevancy = pct !== null ? (pct > 65 ? 'hoch' : pct > 28 ? 'mittel' : 'niedrig') : null;
+  const now = Date.now();
+  const expired = memory.validTo != null && memory.validTo < now;
+  const superseded = !!memory.supersededBy;
+  const typeLabel = memory.type === 'episodic' ? 'EPISODE' : memory.type === 'procedural' ? 'ABLAUF' : memory.type === 'semantic' ? 'WISSEN' : null;
   return (
     <motion.div
       layout
@@ -43,6 +47,23 @@ export const MemoryCard = memo(function MemoryCard({ memory, onClick, score, mat
           <span className="text-[11px] font-medium tracking-wide" style={{ color: 'var(--text-3)' }}>
             {memory.tags[0]?.toUpperCase() || 'NOTIZ'}
           </span>
+          {typeLabel && (
+            <span
+              className="text-[10px] px-1.5 py-0.5 rounded-full border font-medium tracking-wide"
+              style={{ color: 'var(--text-2)', background: 'var(--bg-inset)', borderColor: 'var(--border-subtle)' }}
+            >
+              {typeLabel}
+            </span>
+          )}
+          {(expired || superseded) && (
+            <span
+              className="text-[10px] px-1.5 py-0.5 rounded-full border font-medium"
+              style={{ color: '#8a5a00', background: 'rgba(230,170,0,0.12)', borderColor: 'rgba(230,170,0,0.35)' }}
+              title={superseded ? 'Durch eine neuere Erinnerung ersetzt' : 'Gültigkeit abgelaufen'}
+            >
+              {superseded ? 'ERSETZT' : 'ABGELAUFEN'}
+            </span>
+          )}
           {pct !== null && matchedTerms && matchedTerms.length > 0 && (
             <span className="text-[11px] truncate max-w-[140px]" style={{ color: 'var(--text-3)' }}>
               · {matchedTerms.slice(0, 2).join(", ")}

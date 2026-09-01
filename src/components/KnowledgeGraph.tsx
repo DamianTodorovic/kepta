@@ -20,6 +20,12 @@ interface Edge {
   source: string;
   target: string;
   strength: number;
+  real?: boolean;
+}
+
+interface GraphApi {
+  relations: { source: string; target: string; relation: string; memoryId: string | null }[];
+  memoriesByEntity: Record<string, string[]>;
 }
 
 function titleSimilarity(a: string, b: string): number {
@@ -50,6 +56,20 @@ export function KnowledgeGraph({ memories, onSelectMemory }: KnowledgeGraphProps
   const [hovered, setHovered] = useState<string | null>(null);
   const [dimensions, setDimensions] = useState({ w: 800, h: 500 });
 
+  // Echte Relationen aus der Graph-DB (Entities/Relations) laden
+  const [graphApi, setGraphApi] = useState<GraphApi | null>(null);
+  useEffect(() => {
+    let cancelled = false;
+    void (async () => {
+      try {
+        const res = await fetch("/api/graph?depth=2");
+        const data = await res.json();
+        if (!cancelled && data && Array.isArray(data.relations)) setGraphApi(data as GraphApi);
+      } catch { /* Engine nicht erreichbar — heuristische Kanten bleiben */ }
+    })();
+    return () => { cancelled = true; };
+  }, [memories.length]);
+
   const filtered = useMemo(() => {
     if (!filter.trim()) return memories;
     const q = filter.toLowerCase();
@@ -58,10 +78,31 @@ export function KnowledgeGraph({ memories, onSelectMemory }: KnowledgeGraphProps
 
   const edges: Edge[] = useMemo(() => {
     const list: Edge[] = [];
+    const idSet = new Set(filtered.map((m) => m.id));
+    // Echte Kanten aus der Graph-DB: Memories, die an derselben Entität hängen
+    if (graphApi && Array.isArray(graphApi.relations)) {
+      const added = new Set<string>();
+      for (const rel of graphApi.relations) {
+        const memsA = (graphApi.memoriesByEntity?.[rel.source] ?? []).filter((id) => idSet.has(id));
+        const memsB = (graphApi.memoriesByEntity?.[rel.target] ?? []).filter((id) => idSet.has(id));
+        // Verbinde direkte: Memory→Memory über die relation, capped pro Relation
+        const pairs: [string, string][] = [];
+        for (const a of memsA) for (const b of memsB) { if (a !== b) pairs.push([a, b]); }
+        for (const [a, b] of pairs.slice(0, 24)) {
+          const key = a < b ? `${a}|${b}` : `${b}|${a}`;
+          if (added.has(key)) continue;
+          added.add(key);
+          list.push({ source: a, target: b, strength: 0.85, real: true });
+        }
+      }
+    }
+    const realPairs = new Set(list.map((e) => (e.source < e.target ? `${e.source}|${e.target}` : `${e.target}|${e.source}`)));
     for (let i = 0; i < filtered.length; i++) {
       for (let j = i + 1; j < filtered.length; j++) {
         const a = filtered[i];
         const b = filtered[j];
+        const key = a.id < b.id ? `${a.id}|${b.id}` : `${b.id}|${a.id}`;
+        if (realPairs.has(key)) continue;
         const tagScore = tagOverlap(a.tags, b.tags);
         const titleScore = titleSimilarity(a.title, b.title);
         const strength = Math.max(tagScore * 0.9, titleScore * 0.6);
@@ -70,7 +111,7 @@ export function KnowledgeGraph({ memories, onSelectMemory }: KnowledgeGraphProps
       }
     }
     return list.slice(0, 900);
-  }, [filtered]);
+  }, [filtered, graphApi]);
 
   // Initialize node positions
   useEffect(() => {

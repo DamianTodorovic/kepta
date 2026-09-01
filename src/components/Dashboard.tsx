@@ -6,12 +6,12 @@ import { Chat } from './Chat';
 import { Settings } from './Settings';
 import { KnowledgeGraph } from './KnowledgeGraph';
 import { CommandPalette, useCommandPaletteHotkey, buildPaletteActions } from './CommandPalette';
-import { saveMemory, deleteMemory, subscribeMemories } from '../lib/store';
+import { saveMemory, deleteMemory, subscribeMemories, refreshMemories } from '../lib/store';
 import { hybridSearch, type ScoredMemory } from '../lib/semantic';
 import { OnboardingWizard } from './OnboardingWizard';
 import { loadProfile } from '../lib/profile';
 import { Memory } from '../types';
-import { Search, Plus, Database, CheckCircle2, Copy, PanelLeftOpen, ScanSearch, UploadCloud, FileText, Globe, Loader2, Link2, AlertCircle, Sparkles, SlidersHorizontal } from 'lucide-react';
+import { Search, Plus, Database, CheckCircle2, Copy, PanelLeftOpen, ScanSearch, UploadCloud, FileText, Globe, Loader2, Link2, AlertCircle, Sparkles, SlidersHorizontal, Trash2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { cn } from '../lib/utils';
 
@@ -86,6 +86,23 @@ export function Dashboard() {
   const [isEditorOpen, setIsEditorOpen] = useState(false);
   const [copied, setCopied] = useState(false);
   const [isFocusMode, setIsFocusMode] = useState(false);
+
+  // Papierkorb
+  const [trashOpen, setTrashOpen] = useState(false);
+  const [trashedMemories, setTrashedMemories] = useState<Memory[]>([]);
+  const [trashCount, setTrashCount] = useState(0);
+  useEffect(() => {
+    if (!trashOpen) return;
+    let cancelled = false;
+    void (async () => {
+      try {
+        const res = await fetch('/api/memories?trash=1');
+        const data = await res.json();
+        if (!cancelled && Array.isArray(data.memories)) setTrashedMemories(data.memories as Memory[]);
+      } catch { /* ignore */ }
+    })();
+    return () => { cancelled = true; };
+  }, [trashOpen]);
 
   // Semantische Suche: Toggle + Top-k
   const [semanticEnabled, setSemanticEnabled] = useState<boolean>(() => {
@@ -209,7 +226,7 @@ export function Dashboard() {
     return memories.filter(m => selectedTags.every(t => m.tags.includes(t)));
   }, [memories, selectedTags]);
 
-  // --- Semantisches Ranking (hybridSearch) ---
+  // --- Semantisches Ranking (hybridSearch) — instant lokal, überholt von der Server-Engine ---
   const scoredResults: ScoredMemory[] | null = useMemo(() => {
     if (!semanticEnabled) return null;
     const q = debouncedSearchQuery.trim();
@@ -222,16 +239,41 @@ export function Dashboard() {
     }
   }, [tagFiltered, debouncedSearchQuery, semanticEnabled, topK]);
 
+  // --- Server-Engine (BM25 + Vektoren + Graph → RRF) lädt asynchron nach ---
+  const [serverScored, setServerScored] = useState<ScoredMemory[] | null>(null);
+  useEffect(() => {
+    const q = debouncedSearchQuery.trim();
+    if (!semanticEnabled || q.length < 2) {
+      setServerScored(null);
+      return;
+    }
+    let cancelled = false;
+    void (async () => {
+      try {
+        const res = await fetch('/api/search', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ query: q, topK: Math.max(topK, 20), tags: selectedTags.length > 0 ? selectedTags : undefined }),
+        });
+        const data = await res.json();
+        if (!cancelled) setServerScored(Array.isArray(data.results) ? (data.results as ScoredMemory[]) : []);
+      } catch {
+        if (!cancelled) setServerScored(null); // Server unerreichbar → lokales Ranking bleibt
+      }
+    })();
+    return () => { cancelled = true; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [debouncedSearchQuery, semanticEnabled, topK, JSON.stringify(selectedTags)]);
+  const effectiveScored = serverScored ?? scoredResults;
+
   // --- Angezeigte Karten ---
   const { displayedMemories, scoredForDisplay } = useMemo(() => {
-    // Semantik aktiv + Query vorhanden -> zeige gerankte Top-k
-    if (semanticEnabled && scoredResults !== null) {
+    // Semantik aktiv + Query vorhanden -> zeige gerankte Top-k (Server-Engine, Fallback lokal)
+    if (semanticEnabled && effectiveScored !== null) {
       const q = debouncedSearchQuery.trim();
       if (q.length >= 2) {
-        // Wenn hybridSearch Treffer hat -> diese zeigen (bereits Top-k)
-        // Wenn keine Treffer -> leere Liste (signalisiert „nichts relevant“)
-        if (scoredResults.length > 0) {
-          return { displayedMemories: scoredResults.map(r => r.memory), scoredForDisplay: scoredResults };
+        if (effectiveScored.length > 0) {
+          return { displayedMemories: effectiveScored.map(r => r.memory), scoredForDisplay: effectiveScored };
         }
         return { displayedMemories: [] as Memory[], scoredForDisplay: [] as ScoredMemory[] };
       }
@@ -243,16 +285,16 @@ export function Dashboard() {
       return { displayedMemories: filtered, scoredForDisplay: null as ScoredMemory[] | null };
     }
     return { displayedMemories: tagFiltered, scoredForDisplay: null as ScoredMemory[] | null };
-  }, [tagFiltered, scoredResults, semanticEnabled, debouncedSearchQuery]);
+  }, [tagFiltered, effectiveScored, semanticEnabled, debouncedSearchQuery]);
 
   // --- Automatisches Retrieval für Chat: Top-k relevante Knoten statt alle gefilterten ---
   const chatMemories: Memory[] = useMemo(() => {
     if (semanticEnabled) {
       const q = debouncedSearchQuery.trim();
       if (q.length >= 2) {
-        if (scoredResults && scoredResults.length > 0) return scoredResults.slice(0, topK).map(r => r.memory);
+        if (effectiveScored && effectiveScored.length > 0) return effectiveScored.slice(0, topK).map(r => r.memory);
         // Query vorhanden aber keine Treffer -> leerer Kontext (verhindert Halluzination mit irrelevanten Knoten)
-        if (scoredResults && scoredResults.length === 0) return [];
+        if (effectiveScored && effectiveScored.length === 0) return [];
       }
       // Keine Query -> neueste Top-k als Kontext (statt alle Knoten = Token-Sparmaßnahme)
       return [...tagFiltered].sort((a, b) => b.updatedAt - a.updatedAt).slice(0, topK);
@@ -261,7 +303,7 @@ export function Dashboard() {
     const q = debouncedSearchQuery.trim().toLowerCase();
     if (q) return tagFiltered.filter(m => m.title.toLowerCase().includes(q) || m.content.toLowerCase().includes(q));
     return tagFiltered;
-  }, [scoredResults, semanticEnabled, topK, tagFiltered, debouncedSearchQuery]);
+  }, [effectiveScored, semanticEnabled, topK, tagFiltered, debouncedSearchQuery]);
 
   const handleSave = async (memoryData: Partial<Memory>) => {
     if (editingMemory?.id) {
@@ -477,6 +519,20 @@ export function Dashboard() {
 
             <div className="flex items-center gap-2 shrink-0">
               <button
+                onClick={async () => {
+                  setTrashOpen((v) => !v);
+                  try {
+                    const res = await fetch('/api/storage-info');
+                    const data = await res.json();
+                    setTrashCount(typeof data.trashed === 'number' ? data.trashed : 0);
+                  } catch { /* ignore */ }
+                }}
+                className="btn-ghost hidden sm:flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-medium"
+                title="Papierkorb"
+              >
+                <Trash2 className="w-4 h-4" /> {trashCount > 0 ? `Papierkorb (${trashCount})` : 'Papierkorb'}
+              </button>
+              <button
                 onClick={() => setPaletteOpen(true)}
                 className="btn-ghost hidden sm:flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-medium"
                 title="Command Palette (⌘K)"
@@ -503,6 +559,41 @@ export function Dashboard() {
               </button>
             </div>
           </header>
+
+          {/* Papierkorb-Leiste */}
+          {trashOpen && (
+            <div className="px-6 py-3 shrink-0 overflow-auto" style={{ borderBottom: '1px solid var(--border-subtle)', background: 'var(--bg-inset)', maxHeight: '30vh' }}>
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-xs font-medium tracking-wide" style={{ color: 'var(--text-3)' }}>
+                  PAPIERKORB ({trashedMemories.length}) — gelöschte Knoten bleiben wiederherstellbar
+                </span>
+                <button onClick={() => setTrashOpen(false)} className="btn-ghost px-2 py-1 rounded text-xs">Schließen</button>
+              </div>
+              {trashedMemories.length === 0 ? (
+                <p className="text-xs" style={{ color: 'var(--text-3)' }}>Leer — keine gelöschten Knoten.</p>
+              ) : (
+                <ul className="space-y-1.5">
+                  {trashedMemories.map((m) => (
+                    <li key={m.id} className="flex items-center justify-between gap-3 text-sm">
+                      <span className="truncate" style={{ color: 'var(--text-2)' }}>{m.title || 'Ohne Titel'}</span>
+                      <button
+                        onClick={async () => {
+                          try {
+                            await fetch(`/api/memories/${encodeURIComponent(m.id)}/restore`, { method: 'POST' });
+                            setTrashedMemories((prev) => prev.filter((x) => x.id !== m.id));
+                            void refreshMemories();
+                          } catch { /* ignore */ }
+                        }}
+                        className="btn-ghost px-2 py-1 rounded text-xs shrink-0"
+                      >
+                        Wiederherstellen
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
+          )}
 
           {/* Semantik-Steuerung: Toggle + Top-k Regler */}
           <div className="px-6 py-3 flex flex-wrap items-center gap-4 shrink-0" style={{ borderBottom: '1px solid var(--border-subtle)' }}>
