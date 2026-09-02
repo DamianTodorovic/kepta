@@ -19,7 +19,29 @@ jobs:
           cache: npm
       - run: npm ci
       - run: npm run lint
-      - run: npm test
+      - name: Tests + Coverage (Gate)
+        run: npm run test:cov
+      - name: Retrieval-Eval (Hit@1)
+        run: npm run eval
+      - name: Coverage-Zusammenfassung (Job-Summary)
+        if: always()
+        run: |
+          if [ -f coverage/coverage-summary.json ]; then
+            node -e '
+              const c = require("./coverage/coverage-summary.json").total;
+              const row = (k) => `| ${k} | ${c[k].pct}% |`;
+              const md = [
+                "## 🧪 Test-Coverage",
+                "",
+                "| Metrik | Abdeckung |",
+                "|---|---|",
+                row("statements"), row("branches"), row("functions"), row("lines"),
+              ].join("\n");
+              require("fs").appendFileSync(process.env.GITHUB_STEP_SUMMARY, md + "\n");
+            '
+          else
+            echo "Kein coverage-summary.json (json-summary Reporter aktiv?)" >> "$GITHUB_STEP_SUMMARY"
+          fi
       - run: npm run build
       - name: Audit (high severity)
         run: npm audit --audit-level=high || true

@@ -2,6 +2,15 @@
 
 Alle Änderungen werden in dieser Datei dokumentiert. Format orientiert an [Keep a Changelog](https://keepachangelog.com/de/1.1.0/), Versionierung nach [SemVer](https://semver.org/).
 
+## [Unreleased]
+
+### Tests & Qualität
+- Test-Suite von 42 auf **231 Tests** ausgebaut; Gesamt-Coverage **~91 %** (Kern `src/core` **100 % der Funktionen**)
+- Vitest v8-Coverage mit Schwellen als **CI-Gate** (`npm run test:cov`) — Regressionen der Abdeckung brechen die CI
+- Neue Testabdeckung: `migrate.ts` (Legacy-JSON-Migration, vorher 0 %), `embeddings.ts` (Chunking/Cosine/Queue), `src/lib/*` unter jsdom (Provider, Profil, SSE, fetch-Client, Tokenizer), `server.ts` (HTTP + `/mcp` + Chat-Proxy via supertest), UI-Kernkomponenten (Testing-Library)
+- `server.ts`: `createApp(store)` als testbarer Export ausgelagert (Bootstrap/`listen` getrennt)
+- CI: `build.yml` um Coverage-Gate, Retrieval-Eval und GitHub-nativen Coverage-Job-Summary erweitert; Coverage-/CI-/Tests-Badges im README
+
 ## [2.0.0] — 2026-09-01
 
 Der SOTA-Release: KEPTA wird vom Notizspeicher zum vollwertigen Agenten-Gedächtnis.

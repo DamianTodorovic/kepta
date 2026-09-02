@@ -11,7 +11,7 @@ export default defineConfig({
     setupFiles: ["tests/setup.ui.ts"],
     coverage: {
       provider: "v8",
-      reporter: ["text", "html", "lcov"],
+      reporter: ["text", "html", "lcov", "json-summary"],
       // Nur die testbare Logik zählt in den Nenner — kein Build, keine reinen Typen, kein Electron-Bootstrap.
       // Bei Komponenten sind gezielt die getesteten gelistet (nicht die großen UI-Container
       // Dashboard/Chat/KnowledgeGraph, die separater E2E-Arbeit bedürfen).
