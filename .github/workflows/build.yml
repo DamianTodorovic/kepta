@@ -95,29 +95,55 @@ jobs:
             release/*.dmg
             release/*.zip
           generate_release_notes: true
-          # Ohne Apple-Zertifikat sind die Builds unsigniert — ohne diesen Hinweis
-          # scheitert jeder Nutzer beim Doppelklick an der Gatekeeper-Quarantäne.
-          body: |
-            ## 🍎 Erster Start unter macOS
+          # Eine gemeinsame Quelle für beide Release-Jobs (macOS und Linux), damit der
+          # Text nicht auseinanderdriftet und die Reihenfolge der Jobs egal ist.
+          body_path: .github/release-notes.md
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-            Diese Builds sind **nicht signiert und nicht notarisiert** (kein Apple-Entwicklerzertifikat).
-            macOS setzt heruntergeladene Dateien in Quarantäne und meldet beim Doppelklick
-            „kann nicht geöffnet werden, da der Entwickler nicht verifiziert werden kann".
-            Die App ist in Ordnung — es fehlt nur die Signatur.
-
-            Einmalig freigeben, danach startet sie normal:
-
-            1. **Rechtsklick** auf `KEPTA.app` → **Öffnen** → im Dialog erneut **Öffnen**
-            2. Alternativ: *Systemeinstellungen → Datenschutz & Sicherheit* → **Dennoch öffnen**
-
-            Oder im Terminal:
-
-            ```bash
-            xattr -dr com.apple.quarantine /Applications/KEPTA.app
-            ```
-
-            Selbst bauen: `npm install && npm run build:mac` erzeugt DMG und ZIP unter `release/`.
-
-            ---
+  # Linux-Pakete. Eigener Job statt zweitem Target im macOS-Job: AppImage und deb
+  # lassen sich auf einem macOS-Runner nicht bauen.
+  release-linux:
+    if: startsWith(github.ref, 'refs/tags/v')
+    needs: lint-test-build
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm run build
+      - name: Linux-Build (electron-builder, 2 Versuche)
+        run: |
+          set -o pipefail
+          ok=0
+          for i in 1 2; do
+            echo "=== build:linux Versuch $i ==="
+            if npm run build:linux -- --publish never 2>&1 | tee build-linux.log; then ok=1; break; fi
+            echo "Versuch $i fehlgeschlagen."
+            sleep 10
+          done
+          if [ "$ok" -ne 1 ]; then
+            echo "Build endgültig fehlgeschlagen — letzte 60 Zeilen als Annotationen:"
+            tail -60 build-linux.log | while IFS= read -r line; do
+              [ -n "$line" ] && echo "::error::$line"
+            done
+            exit 1
+          fi
+      - name: Artefakte prüfen
+        run: ls -la release/
+      - name: Upload artifacts
+        uses: softprops/action-gh-release@v1
+        with:
+          files: |
+            release/*.AppImage
+            release/*.deb
+          generate_release_notes: true
+          body_path: .github/release-notes.md
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

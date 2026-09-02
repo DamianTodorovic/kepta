@@ -2,6 +2,22 @@
 
 Alle Änderungen werden in dieser Datei dokumentiert. Format orientiert an [Keep a Changelog](https://keepachangelog.com/de/1.1.0/), Versionierung nach [SemVer](https://semver.org/).
 
+## [2.3.0] — 2026-09-03
+
+Vertriebs-Release: Bis 2.2.1 konnten nur Macs mit Apple Silicon die App herunterladen. Jetzt sind Intel-Macs und Linux dabei.
+
+### Neu
+- **Intel-Macs (x64):** `electron-builder.json` hatte keine `arch`-Angabe, gebaut wurde deshalb nur die Architektur des CI-Runners — arm64. Ab jetzt entstehen DMG und ZIP fuer `arm64` **und** `x64`.
+- **Linux:** AppImage und deb, jeweils fuer `x64` und `arm64`. Eigener Workflow-Job `release-linux` auf `ubuntu-latest`, da sich Linux-Pakete auf einem macOS-Runner nicht bauen lassen. Neues Skript `npm run build:linux`.
+- **Architektur im Dateinamen:** electron-builder haengt sie standardmaessig nur bei arm64 an — der Intel-Build hiesse blosz `KEPTA-2.3.0.dmg` und waere nicht unterscheidbar. `artifactName` erzwingt jetzt `KEPTA-<version>-<arch>.<ext>` fuer alle Pakete.
+
+### Fixes
+- **Falsches Plattform-Versprechen:** README und Badge kuendigten „macOS | Linux" und „DMG/snap" an; ein Linux-Paket gab es nie und snap war nie konfiguriert. README nennt jetzt exakt die Dateien, die es wirklich gibt, samt Erststart-Anleitung fuer Linux.
+
+### Dokumentation
+- Release-Notes liegen in `.github/release-notes.md` und werden von **beiden** Release-Jobs per `body_path` eingebunden — eine Quelle statt zwei driftender Kopien, und die Reihenfolge der Jobs ist damit egal.
+- Tabelle „Welche Datei brauche ich?" in README und Release-Notes, inklusive Hinweis, wie man die eigene Mac-Architektur feststellt.
+
 ## [2.2.1] — 2026-09-03
 
 Hotfix: 2.2.0 liess sich nicht starten. Wer 2.2.0 installiert hat, sollte auf 2.2.1 wechseln.

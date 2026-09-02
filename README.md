@@ -34,11 +34,23 @@ npm run dev        # http://localhost:3000
 npm run electron   # Desktop-Shell (optional)
 ```
 
-Fertige App: [Releases](https://github.com/DamianTodorovic/kepta/releases) (DMG/snap, Node ≥ 22.5). Agent anbinden:
+Fertige App: [Releases](https://github.com/DamianTodorovic/kepta/releases). Agent anbinden:
 
 ```json
 { "mcpServers": { "kepta": { "command": "node", "args": ["/PFAD/kepta/dist/mcp-server.cjs"] } } }
 ```
+
+### 📦 Welche Datei brauche ich?
+
+| Dein System | Datei |
+|---|---|
+| Mac mit Apple Silicon (M1–M4) | `KEPTA-<version>-arm64.dmg` |
+| Mac mit Intel-Prozessor | `KEPTA-<version>-x64.dmg` |
+| Linux (Intel/AMD), jede Distribution | `KEPTA-<version>-x64.AppImage` |
+| Linux (ARM), jede Distribution | `KEPTA-<version>-arm64.AppImage` |
+| Debian, Ubuntu, Mint | `KEPTA-<version>-x64.deb` bzw. `-arm64.deb` |
+
+Jede Datei trägt ihre Architektur im Namen. Im Zweifel beim Mac: Apple-Menü → *Über diesen Mac* — „Apple M…" heißt `arm64`, „Intel" heißt `x64`. Die Pakete bringen alles mit; Node ≥ 22.5 brauchst du nur zum Selbstbauen. Windows läuft derzeit nur über den Selbstbau — siehe [ROADMAP](ROADMAP.md).
 
 ### 🍎 Erster Start unter macOS
 
@@ -55,7 +67,22 @@ Alternativ im Terminal:
 xattr -dr com.apple.quarantine /Applications/KEPTA.app
 ```
 
-Wer der Binärdatei nicht vertrauen will, baut sie selbst: `npm install && npm run build:mac` erzeugt DMG und ZIP unter `release/`. Der Code ist MIT-lizenziert und vollständig einsehbar.
+### 🐧 Erster Start unter Linux
+
+**AppImage** — ausführbar machen und starten, keine Installation nötig:
+
+```bash
+chmod +x KEPTA-*-x64.AppImage
+./KEPTA-*-x64.AppImage
+```
+
+**deb** — für Debian, Ubuntu und Abkömmlinge:
+
+```bash
+sudo apt install ./KEPTA-*-x64.deb
+```
+
+Wer den Binärdateien nicht vertrauen will, baut selbst: `npm install && npm run build:mac` bzw. `npm run build:linux` erzeugt die Pakete unter `release/`. Der Code ist MIT-lizenziert und vollständig einsehbar.
 
 ## 🧪 Qualität & Tests
 
