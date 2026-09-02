@@ -21,13 +21,13 @@ export const MemoryCard = memo(function MemoryCard({ memory, onClick, score, mat
   const typeLabel = memory.type === 'episodic' ? 'EPISODE' : memory.type === 'procedural' ? 'ABLAUF' : memory.type === 'semantic' ? 'WISSEN' : null;
   return (
     <motion.div
-      layout
+      layout="position"
       initial={{ opacity: 0, y: 6 }}
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, y: 6 }}
       whileHover={{ y: -2 }}
       onClick={onClick}
-      className="card p-5 cursor-pointer flex flex-col h-56 overflow-hidden group relative"
+      className="card p-5 cursor-pointer grid grid-rows-[auto_1fr_auto] h-56 overflow-hidden group relative"
     >
       {pct !== null && (
         <div
@@ -42,8 +42,8 @@ export const MemoryCard = memo(function MemoryCard({ memory, onClick, score, mat
           {pct}%
         </div>
       )}
-      <div className="flex-1 min-h-0">
-        <div className="flex items-center gap-2 mb-2.5">
+      <div className="min-h-0 overflow-hidden">
+        <div className="flex items-center gap-2 mb-2.5 flex-wrap">
           <span className="text-[11px] font-medium tracking-wide" style={{ color: 'var(--text-3)' }}>
             {memory.tags[0]?.toUpperCase() || 'NOTIZ'}
           </span>
@@ -77,23 +77,23 @@ export const MemoryCard = memo(function MemoryCard({ memory, onClick, score, mat
           {memory.content}
         </p>
       </div>
-      <div className="mt-4 flex items-center justify-between gap-3 shrink-0">
-        <div className="flex flex-wrap gap-1.5 min-w-0">
+      <div className="self-end pt-4 flex items-center justify-between gap-3 min-w-0">
+        <div className="flex flex-nowrap gap-1.5 min-w-0 overflow-hidden">
           {memory.tags.slice(0, 3).map(tag => (
             <span
               key={tag}
-              className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium border"
+              className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium border shrink-0 max-w-[120px]"
               style={{ color: 'var(--text-2)', background: 'var(--bg-inset)', borderColor: 'var(--border-subtle)' }}
             >
-              <Hash className="w-3 h-3 opacity-50" />
-              {tag}
+              <Hash className="w-3 h-3 opacity-50 shrink-0" />
+              <span className="truncate">{tag}</span>
             </span>
           ))}
           {memory.tags.length > 3 && (
-            <span className="text-xs px-1.5 py-1" style={{ color: 'var(--text-3)' }}>+{memory.tags.length - 3}</span>
+            <span className="text-xs px-1.5 py-1 shrink-0" style={{ color: 'var(--text-3)' }}>+{memory.tags.length - 3}</span>
           )}
         </div>
-        <span className="text-xs shrink-0" style={{ color: 'var(--text-3)' }}>
+        <span className="text-xs shrink-0 whitespace-nowrap" style={{ color: 'var(--text-3)' }}>
           {formatDistanceToNow(new Date(memory.updatedAt), { addSuffix: true, locale: de })}
         </span>
       </div>
