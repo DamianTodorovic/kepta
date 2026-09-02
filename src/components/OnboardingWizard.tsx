@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { Sparkles, Check, ChevronRight, ChevronLeft, Cpu, Database, Search, Globe, FolderOpen, User, Target, Loader2, Plug, PartyPopper } from 'lucide-react';
 import { USECASE_LABELS, type UseCase, type DetectedAI, detectLocalAIs, suggestProvider, saveProfile, createDefaultProfile, type UserProfileAdaptive } from '../lib/profile';
+import { KeptaMark } from './KeptaMark';
 import { loadAISettings, saveAISettings, providerById } from '../lib/ai';
 import starterPacks from '../data/starter-packs.json';
 
@@ -114,7 +115,7 @@ export function OnboardingWizard({ open, onClose, onComplete }: Props) {
           {[1,2,3,4].map(i=> <div key={i} className="flex-1 rounded-full transition-all" style={{background: step>=i ? 'var(--accent)' : 'var(--bg-inset-strong)'}} />)}
         </div>
         <div className="px-6 pt-5 pb-3 flex items-center gap-3" style={{borderBottom:'1px solid var(--border-subtle)'}}>
-          <div className="w-9 h-9 rounded-lg flex items-center justify-center" style={{background:'var(--accent-soft)'}}><Sparkles className="w-4.5 h-4.5" style={{color:'var(--accent)'}} /></div>
+          <KeptaMark size={34} radius={8} />
           <div className="flex-1">
             <h2 className="font-semibold text-[15px]" style={{color:'var(--text-1)'}}>KEPTA einrichten</h2>
             <p className="text-xs mt-0.5" style={{color:'var(--text-2)'}}>Schritt {step} von 4 — eine Minute, danach passt sich KEPTA dir an.</p>

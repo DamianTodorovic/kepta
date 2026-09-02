@@ -4,6 +4,7 @@ import { motion } from 'motion/react';
 import { PROVIDERS, providerById, loadAISettings, saveAISettings, AISettings } from '../lib/ai';
 import { getMemoriesSync } from '../lib/store';
 import { SystemStatus } from './SystemStatus';
+import { KeptaMark } from './KeptaMark';
 
 type TabId = 'system' | 'mcp';
 
@@ -208,9 +209,7 @@ export function Settings() {
         className="hud-panel rounded-2xl p-6 md:p-8"
       >
         <div className="flex items-center gap-4 mb-6 pb-6" style={{ borderBottom: '1px solid var(--border-subtle)' }}>
-          <div className="w-12 h-12 hud-inset rounded-xl flex items-center justify-center">
-            <SettingsIcon className="w-6 h-6" style={{ color: 'var(--accent)' }} />
-          </div>
+          <KeptaMark size={40} radius={10} />
           <div>
             <h2 className="text-lg font-semibold" style={{ color: 'var(--text-1)' }}>Einstellungen</h2>
             <p className="text-sm mt-1" style={{ color: 'var(--text-2)' }}>KI-Anbindung, Daten &amp; MCP-Anbindung</p>

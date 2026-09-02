@@ -1,7 +1,10 @@
 import { useState, useEffect, KeyboardEvent, FormEvent } from 'react';
 import { Memory } from '../types';
 import { motion } from 'motion/react';
-import { X, Save, Trash2, Hash, Database, Brain, Clock, Zap } from 'lucide-react';
+import { formatDistanceToNow } from 'date-fns';
+import { de } from 'date-fns/locale';
+import { X, Save, Trash2, Hash, Brain, Clock, Zap } from 'lucide-react';
+import { KeptaMark } from './KeptaMark';
 
 type MemoryKind = 'semantic' | 'episodic' | 'procedural';
 
@@ -121,16 +124,25 @@ export function MemoryEditor({ memory, onSave, onClose, onDelete }: MemoryEditor
         className="relative w-full max-w-2xl h-full flex flex-col z-10 glass-strong"
         style={{ borderLeft: '1px solid var(--border-subtle)' }}
       >
-        <header className="flex items-center justify-between p-6 shrink-0" style={{ borderBottom: '1px solid var(--border-subtle)' }}>
+        <header className="flex items-center justify-between p-5 shrink-0" style={{ borderBottom: '1px solid var(--border-subtle)' }}>
           <div className="flex items-center gap-3">
-            <div className="w-9 h-9 hud-inset rounded-lg flex items-center justify-center">
-              <Database className="w-4 h-4" style={{ color: 'var(--accent)' }} />
-            </div>
+            <KeptaMark size={30} radius={8} />
             <div>
               <h2 className="text-[15px] font-semibold" style={{ color: 'var(--text-1)' }}>
                 {memory?.id ? 'Notiz bearbeiten' : 'Neue Notiz'}
               </h2>
-              <div className="hud-label mt-0.5">{memory?.id ? memory.id : 'Neuer Eintrag'}</div>
+              <div className="hud-label mt-0.5 flex items-center gap-1.5">
+                {memory?.id ? (
+                  <>
+                    <Clock className="w-3 h-3" />
+                    {KINDS.find(k => k.key === (memory.type || 'semantic'))?.label ?? 'Wissen'}
+                    {' · '}
+                    {formatDistanceToNow(new Date(memory.updatedAt), { addSuffix: true, locale: de })}
+                  </>
+                ) : (
+                  'Neuer Eintrag in deiner lokalen Wissensbasis'
+                )}
+              </div>
             </div>
           </div>
           <div className="flex items-center gap-2">

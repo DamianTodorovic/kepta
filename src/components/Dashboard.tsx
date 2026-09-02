@@ -12,6 +12,7 @@ import { useToast } from './ui/Toast';
 import { hybridSearch, type ScoredMemory } from '../lib/semantic';
 import { OnboardingWizard } from './OnboardingWizard';
 import { loadProfile } from '../lib/profile';
+import { KeptaMark } from './KeptaMark';
 import { Memory } from '../types';
 import { Search, Plus, Database, CheckCircle2, Copy, PanelLeftOpen, ScanSearch, UploadCloud, Globe, Loader2, AlertCircle, Sparkles, SlidersHorizontal, Trash2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
@@ -621,6 +622,10 @@ export function Dashboard() {
                 <PanelLeftOpen className="w-4.5 h-4.5" />
               </button>
             )}
+            <div className="flex items-center gap-2 shrink-0" style={{ color: 'var(--text-1)' }}>
+              <KeptaMark size={22} radius={6} />
+              <span className="hidden md:block font-semibold text-[13px] tracking-[-0.02em]">KEPTA</span>
+            </div>
             <div className="flex-1 max-w-xl relative group">
               <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 transition-colors" style={{ color: 'var(--text-3)' }} />
               <input
@@ -966,10 +971,8 @@ export function Dashboard() {
                 </div>
               ) : displayedMemories.length === 0 ? (
                 <div className="flex-1 flex flex-col items-center justify-center text-center">
-                  <div className="w-14 h-14 rounded-2xl flex items-center justify-center mb-4" style={{ background: 'var(--bg-inset)', border: '1px solid var(--border-subtle)' }}>
-                    <motion.div key={brainPulse} initial={{ scale: 1.12 }} animate={{ scale: 1 }} transition={{ type: 'spring', damping: 14 }}>
-                      <Database className="w-6 h-6" style={{ color: 'var(--text-3)' }} />
-                    </motion.div>
+                  <div className="w-16 h-16 rounded-2xl flex items-center justify-center mb-4" style={{ background: 'var(--bg-inset)', border: '1px solid var(--border-subtle)', boxShadow: 'inset 0 1px 0 var(--edge-light)' }}>
+                    <KeptaMark size={34} radius={8} />
                   </div>
                   <h3 className="text-[15px] font-semibold mb-1.5" style={{ color: 'var(--text-1)' }}>
                     {debouncedSearchQuery || selectedTags.length > 0 ? 'Keine Treffer' : 'Noch keine Einträge'}

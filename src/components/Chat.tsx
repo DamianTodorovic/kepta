@@ -20,6 +20,7 @@ import {
 } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import { ChatMessage, Memory } from "../types";
+import { KeptaMark } from "./KeptaMark";
 import { loadAISettings, saveAISettings, providerById, resolveAIConnection } from "../lib/ai";
 import { detectLocalAIs, type DetectedAI } from "../lib/profile";
 
@@ -541,8 +542,8 @@ export function Chat({ activeMemories, onSaveToBrain, onSaveToBrainWithMeta, isF
               <PanelLeftOpen className="w-5 h-5" />
             </button>
           )}
-          <div className="w-9 h-9 rounded-full flex items-center justify-center relative" style={{ background: "var(--accent-soft)", border: "1px solid var(--border-subtle)" }}>
-            <Bot className="w-4 h-4" style={{ color: "var(--accent)" }} />
+          <div className="w-9 h-9 rounded-xl flex items-center justify-center relative" style={{ background: "var(--accent-soft)", border: "1px solid var(--border-subtle)", boxShadow: "inset 0 1px 0 var(--edge-light)" }}>
+            <KeptaMark size={24} radius={6} />
             <span
               className="absolute -bottom-0.5 -right-0.5 status-dot"
               style={connection.state === "connected" ? undefined : { background: "var(--text-3)", boxShadow: "none" }}
@@ -669,8 +670,8 @@ export function Chat({ activeMemories, onSaveToBrain, onSaveToBrainWithMeta, isF
       <div ref={scrollContainerRef} className="flex-1 overflow-y-auto p-6 space-y-6 min-h-0">
         {messages.length === 0 && (
           <div className="flex flex-col items-center justify-center h-full text-center py-8">
-            <div className="w-14 h-14 rounded-2xl flex items-center justify-center mb-4" style={{ background: 'var(--bg-inset)', border: '1px solid var(--border-subtle)' }}>
-              <Bot className="w-6 h-6" style={{ color: 'var(--text-3)' }} />
+            <div className="w-16 h-16 rounded-2xl flex items-center justify-center mb-4" style={{ background: 'var(--bg-inset)', border: '1px solid var(--border-subtle)', boxShadow: 'inset 0 1px 0 var(--edge-light)' }}>
+              <KeptaMark size={34} radius={8} />
             </div>
             <div className="hud-label mb-2">Bereit</div>
             <p className="text-[13px] max-w-sm leading-relaxed" style={{ color: "var(--text-2)" }}>
