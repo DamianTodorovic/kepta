@@ -219,18 +219,8 @@ async function readFullAnswer(req: ChatRequest) {
 
 // ---------- Server ----------
 
-async function startServer() {
+export function createApp(store: KeptaStore) {
   const app = express();
-  const PORT = parseInt(process.env.PORT || "3000", 10);
-
-  // --- Core: SQLite-Store + Migration + Embedding-Queue ---
-  const store = new KeptaStore();
-  const migration = migrateFromLegacyJson(store);
-  if (!migration.skipped) {
-    console.log(`Migration: ${migration.migrated} Knoten aus memories.json übernommen (Backup: ${migration.backupPath ?? "keines"})`);
-  }
-  const embeddingQueue = new EmbeddingQueue(store);
-  embeddingQueue.start();
 
   const toApi = (r: CoreMemory): MemoryRecord => ({
     id: r.id,
@@ -1057,6 +1047,24 @@ async function startServer() {
     }
   });
 
+  return app;
+}
+
+// ---------- Bootstrap (Store, Queue, SPA-Serving, listen) ----------
+
+async function startServer() {
+  const PORT = parseInt(process.env.PORT || "3000", 10);
+
+  const store = new KeptaStore();
+  const migration = migrateFromLegacyJson(store);
+  if (!migration.skipped) {
+    console.log(`Migration: ${migration.migrated} Knoten aus memories.json übernommen (Backup: ${migration.backupPath ?? "keines"})`);
+  }
+  const embeddingQueue = new EmbeddingQueue(store);
+  embeddingQueue.start();
+
+  const app = createApp(store);
+
   // Vite middleware for development (only run when started with tsx)
   if (process.env.NODE_ENV !== "production" && !process.env.ELECTRON_RUN_AS_NODE) {
     try {
@@ -1087,4 +1095,7 @@ async function startServer() {
   });
 }
 
-startServer();
+// Nur automatisch starten, wenn direkt ausgeführt (nicht beim Import in Tests).
+if (process.env.KEPTA_NO_AUTOSTART !== "1") {
+  void startServer();
+}
