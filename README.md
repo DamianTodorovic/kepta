@@ -2,7 +2,7 @@
 <h1 align="center">KEPTA — Behält, was zählt</h1>
 <p align="center"><strong>Das lokale Gehirn für deine KI-Agenten. Ohne Cloud. Ohne Abo.</strong><br>SQLite + hybride Suche + Wissensgraph + MCP.</p>
 
-<p align="center"><a href="https://github.com/DamianTodorovic/kepta/releases"><img alt="Release" src="https://img.shields.io/github/v/release/DamianTodorovic/kepta?label=Download"></a> <a href="https://github.com/DamianTodorovic/kepta/actions/workflows/build.yml"><img alt="CI" src="https://github.com/DamianTodorovic/kepta/actions/workflows/build.yml/badge.svg"></a> <img alt="Coverage" src="https://img.shields.io/badge/coverage-91%25-brightgreen"> <img alt="Tests" src="https://img.shields.io/badge/tests-279%20passing-brightgreen"> <a href="LICENSE"><img alt="MIT" src="https://img.shields.io/badge/License-MIT-black"></a> <img alt="Platform" src="https://img.shields.io/badge/platform-macOS%20%7C%20Linux-lightgrey"></p>
+<p align="center"><a href="https://github.com/DamianTodorovic/kepta/releases"><img alt="Release" src="https://img.shields.io/github/v/release/DamianTodorovic/kepta?label=Download"></a> <a href="https://github.com/DamianTodorovic/kepta/actions/workflows/build.yml"><img alt="CI" src="https://github.com/DamianTodorovic/kepta/actions/workflows/build.yml/badge.svg"></a> <img alt="Coverage" src="https://img.shields.io/badge/coverage-91%25-brightgreen"> <img alt="Tests" src="https://img.shields.io/badge/tests-279%20passing-brightgreen"> <a href="LICENSE"><img alt="MIT" src="https://img.shields.io/badge/License-MIT-black"></a> <img alt="Platform" src="https://img.shields.io/badge/platform-macOS%20%7C%20Windows%20%7C%20Linux-lightgrey"></p>
 
 ## 🎬 So sieht KEPTA aus
 
@@ -44,13 +44,15 @@ Fertige App: [Releases](https://github.com/DamianTodorovic/kepta/releases). Agen
 
 | Dein System | Datei |
 |---|---|
-| Mac mit Apple Silicon (M1–M4) | `KEPTA-<version>-arm64.dmg` |
-| Mac mit Intel-Prozessor | `KEPTA-<version>-x64.dmg` |
-| Linux (Intel/AMD), jede Distribution | `KEPTA-<version>-x64.AppImage` |
-| Linux (ARM), jede Distribution | `KEPTA-<version>-arm64.AppImage` |
-| Debian, Ubuntu, Mint | `KEPTA-<version>-x64.deb` bzw. `-arm64.deb` |
+| Mac mit Apple Silicon (M1–M4) | `KEPTA-<version>-mac-arm64.dmg` |
+| Mac mit Intel-Prozessor | `KEPTA-<version>-mac-x64.dmg` |
+| Windows (Intel/AMD) | `KEPTA-<version>-win-x64.exe` |
+| Windows auf ARM | `KEPTA-<version>-win-arm64.exe` |
+| Linux (Intel/AMD), jede Distribution | `KEPTA-<version>-linux-x64.AppImage` |
+| Linux auf ARM | `KEPTA-<version>-linux-arm64.AppImage` |
+| Debian, Ubuntu, Mint | `KEPTA-<version>-linux-x64.deb` |
 
-Jede Datei trägt ihre Architektur im Namen. Im Zweifel beim Mac: Apple-Menü → *Über diesen Mac* — „Apple M…" heißt `arm64`, „Intel" heißt `x64`. Die Pakete bringen alles mit; Node ≥ 22.5 brauchst du nur zum Selbstbauen. Windows läuft derzeit nur über den Selbstbau — siehe [ROADMAP](ROADMAP.md).
+Jede Datei trägt Plattform und Architektur im Namen. Im Zweifel beim Mac: Apple-Menü → *Über diesen Mac* — „Apple M…" heißt `arm64`, „Intel" heißt `x64`. Die `.zip`-Dateien sind dieselben Programme ohne Installer. Die Pakete bringen alles mit; Node ≥ 22.5 brauchst du nur zum Selbstbauen.
 
 ### 🍎 Erster Start unter macOS
 
@@ -67,22 +69,26 @@ Alternativ im Terminal:
 xattr -dr com.apple.quarantine /Applications/KEPTA.app
 ```
 
+### 🪟 Erster Start unter Windows
+
+Auch der Windows-Installer ist nicht signiert. SmartScreen meldet beim ersten Start „Der Computer wurde durch Windows geschützt". Einmalig freigeben: **Weitere Informationen** → **Trotzdem ausführen**.
+
 ### 🐧 Erster Start unter Linux
 
 **AppImage** — ausführbar machen und starten, keine Installation nötig:
 
 ```bash
-chmod +x KEPTA-*-x64.AppImage
-./KEPTA-*-x64.AppImage
+chmod +x KEPTA-*-linux-x64.AppImage
+./KEPTA-*-linux-x64.AppImage
 ```
 
 **deb** — für Debian, Ubuntu und Abkömmlinge:
 
 ```bash
-sudo apt install ./KEPTA-*-x64.deb
+sudo apt install ./KEPTA-*-linux-x64.deb
 ```
 
-Wer den Binärdateien nicht vertrauen will, baut selbst: `npm install && npm run build:mac` bzw. `npm run build:linux` erzeugt die Pakete unter `release/`. Der Code ist MIT-lizenziert und vollständig einsehbar.
+Wer den Binärdateien nicht vertrauen will, baut selbst: `npm install && npm run build:mac`, `build:linux` oder `build:win` erzeugt die Pakete unter `release/`. Der Code ist MIT-lizenziert und vollständig einsehbar.
 
 ## 🧪 Qualität & Tests
 

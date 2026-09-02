@@ -2,13 +2,17 @@
 
 | Dein System | Datei |
 |---|---|
-| Mac mit Apple Silicon (M1–M4) | `KEPTA-<version>-arm64.dmg` |
-| Mac mit Intel-Prozessor | `KEPTA-<version>-x64.dmg` |
-| Linux (Intel/AMD), jede Distribution | `KEPTA-<version>-x64.AppImage` |
-| Linux (ARM), jede Distribution | `KEPTA-<version>-arm64.AppImage` |
-| Debian, Ubuntu, Mint | `KEPTA-<version>-x64.deb` bzw. `-arm64.deb` |
+| Mac mit Apple Silicon (M1–M4) | `KEPTA-<version>-mac-arm64.dmg` |
+| Mac mit Intel-Prozessor | `KEPTA-<version>-mac-x64.dmg` |
+| Windows (Intel/AMD) | `KEPTA-<version>-win-x64.exe` |
+| Windows auf ARM | `KEPTA-<version>-win-arm64.exe` |
+| Linux (Intel/AMD), jede Distribution | `KEPTA-<version>-linux-x64.AppImage` |
+| Linux auf ARM | `KEPTA-<version>-linux-arm64.AppImage` |
+| Debian, Ubuntu, Mint | `KEPTA-<version>-linux-x64.deb` |
 
-Jede Datei trägt ihre Architektur im Namen. Im Zweifel bei einem Mac: Apple-Menü → *Über diesen Mac*; steht dort „Apple M…", nimm `arm64`, bei „Intel" nimm `x64`. Die Pakete bringen alles mit — Node brauchst du nur zum Selbstbauen.
+Jede Datei trägt Plattform und Architektur im Namen. Im Zweifel beim Mac: Apple-Menü → *Über diesen Mac* — „Apple M…" heißt `arm64`, „Intel" heißt `x64`. Die `.zip`-Dateien sind dieselben Programme ohne Installer, für alle, die lieber selbst entpacken.
+
+Die Pakete bringen alles mit — Node brauchst du nur zum Selbstbauen.
 
 ## 🍎 Erster Start unter macOS
 
@@ -28,19 +32,26 @@ Oder im Terminal:
 xattr -dr com.apple.quarantine /Applications/KEPTA.app
 ```
 
+## 🪟 Erster Start unter Windows
+
+Auch der Windows-Installer ist **nicht signiert**. SmartScreen zeigt beim ersten Start
+„Der Computer wurde durch Windows geschützt".
+
+Einmalig freigeben: **Weitere Informationen** anklicken → **Trotzdem ausführen**.
+
 ## 🐧 Erster Start unter Linux
 
 **AppImage** — ausführbar machen und starten, keine Installation nötig:
 
 ```bash
-chmod +x KEPTA-*-x64.AppImage
-./KEPTA-*-x64.AppImage
+chmod +x KEPTA-*-linux-x64.AppImage
+./KEPTA-*-linux-x64.AppImage
 ```
 
 **deb** — für Debian, Ubuntu und Abkömmlinge:
 
 ```bash
-sudo apt install ./KEPTA-*-x64.deb
+sudo apt install ./KEPTA-*-linux-x64.deb
 ```
 
 ## 🔌 Agent anbinden (MCP)
@@ -52,6 +63,6 @@ Nach dem ersten Start steht der MCP-Server bereit. Konfiguration für Claude Des
 ```
 
 Alle Daten bleiben lokal in `~/.kepta/` — kein Konto, keine Cloud, keine Telemetrie.
-Selbst bauen: `npm install && npm run build:mac` bzw. `npm run build:linux`.
+Selbst bauen: `npm install && npm run build:mac`, `build:linux` oder `build:win`.
 
 ---

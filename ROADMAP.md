@@ -32,7 +32,6 @@
 - **Bi-temporale Kanten** (arXiv:2501.13956): zusätzlich zu valid_from/valid_to auch ingested_at/invalidated_at auf Relationen
 - **Idle-Time-Konsolidierung** (Sleep-time Compute, arXiv:2504.13171): Hintergrundjob erzeugt Kontext-Prefixe (Contextual Retrieval, arXiv:2504.19754) und vorberechnete Fragen pro Memory
 - **Eval-Erweiterung**: LongMemEval-Teilmengen (Knowledge-Update + Abstention, arXiv:2410.10813) als Regressionssuite; bge-m3 tri-modale Vektoren
-- **Windows-CI-Build** (electron-builder win) — Windows aktuell build-from-source
 - **A-MEM-Evolution** (arXiv:2502.12110): Nachbarn beim Insert aktualisieren (Beschreibungen/Tags refreshen)
 
 ## 📚 Forschungs-Basis (Auswahl)

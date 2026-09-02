@@ -1,7 +1,7 @@
 {
   "name": "kepta",
   "private": false,
-  "version": "2.3.0",
+  "version": "2.4.0",
   "description": "KEPTA — Keeps what counts. Das lokale Gehirn für KI-Agenten: SQLite, hybride Suche, Wissensgraph, MCP 2026-07-28 — ohne Cloud.",
   "author": "KEPTA <hello@kepta.app>",
   "type": "module",
@@ -20,7 +20,8 @@
     "test:watch": "vitest",
     "eval": "tsx scripts/eval.ts",
     "build:mac": "npm run build && electron-builder --mac --config electron-builder.json",
-    "build:linux": "npm run build && electron-builder --linux --config electron-builder.json"
+    "build:linux": "npm run build && electron-builder --linux --config electron-builder.json",
+    "build:win": "npm run build && electron-builder --win --config electron-builder.json"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.122.0",
