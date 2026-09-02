@@ -49,9 +49,14 @@ jobs:
   release:
     if: startsWith(github.ref, 'refs/tags/v')
     needs: lint-test-build
-    runs-on: macos-latest
+    runs-on: macos-15
+    timeout-minutes: 30
     permissions:
       contents: write
+    # Ohne Entwickler-Zertifikat: Signatur-Erkennung explizit aus — der Runner
+    # bricht sonst evtl. an der Keychain-Suche ab (lokal wird sauber übersprungen).
+    env:
+      CSC_IDENTITY_AUTO_DISCOVERY: "false"
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -60,15 +65,35 @@ jobs:
           cache: npm
       - run: npm ci
       - run: npm run build
-      # Kein `|| true`: ein fehlgeschlagener electron-builder-Build muss die CI rot machen
-      - run: npm run build:mac
+      # Kein `|| true`: ein fehlgeschlagener electron-builder-Build muss die CI rot machen.
+      # 2 Versuche gegen flüchtige Netzfehler (Electron-/Binär-Downloads); bei
+      # Endgültig-Fehler gehen die letzten Logzeilen als ::error::-Annotationen
+      # in die Job-Zusammenfassung — öffentlich lesbar für die Diagnose.
+      - name: macOS-Build (electron-builder, 2 Versuche)
+        run: |
+          set -o pipefail
+          ok=0
+          for i in 1 2; do
+            echo "=== build:mac Versuch $i ==="
+            if npm run build:mac -- --publish never 2>&1 | tee build-mac.log; then ok=1; break; fi
+            echo "Versuch $i fehlgeschlagen."
+            sleep 10
+          done
+          if [ "$ok" -ne 1 ]; then
+            echo "Build endgültig fehlgeschlagen — letzte 60 Zeilen als Annotationen:"
+            tail -60 build-mac.log | while IFS= read -r line; do
+              [ -n "$line" ] && echo "::error::$line"
+            done
+            exit 1
+          fi
+      - name: Artefakte prüfen
+        run: ls -la release/
       - name: Upload artifacts
         uses: softprops/action-gh-release@v1
         with:
           files: |
             release/*.dmg
             release/*.zip
-            release/*.snap
           generate_release_notes: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
