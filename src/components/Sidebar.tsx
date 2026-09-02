@@ -30,9 +30,9 @@ export function Sidebar({ tags, selectedTags, onSelectTag, onClearTags, currentV
   return (
     <div className={cn(
       "flex flex-col h-full shrink-0 transition-all duration-300 border-r",
-      isFocusMode ? "w-0 overflow-hidden border-none" : "w-60"
-    )} style={{ background: 'var(--bg-panel)', borderColor: 'var(--border-subtle)' }}>
-      <div className="h-[60px] px-4 flex items-center gap-2.5 shrink-0" style={{ borderBottom: '1px solid var(--border-subtle)' }}>
+      isFocusMode ? "w-0 overflow-hidden border-none" : "w-64"
+    )} style={{ background: 'var(--glass-panel)', backdropFilter: 'blur(22px) saturate(1.5)', WebkitBackdropFilter: 'blur(22px) saturate(1.5)', borderColor: 'var(--border-subtle)' }}>
+      <div className="h-[60px] px-4 flex items-center gap-2.5 shrink-0" style={{ borderBottom: '1px solid var(--border-subtle)', boxShadow: 'inset 0 1px 0 var(--edge-light)' }}>
         <KeptaMark size={26} radius={7} />
         <div className="min-w-0">
           <div className="font-semibold tracking-[-0.02em] text-[13.5px] leading-none" style={{ color: 'var(--text-1)' }}>

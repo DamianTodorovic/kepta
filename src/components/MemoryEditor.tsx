@@ -118,8 +118,8 @@ export function MemoryEditor({ memory, onSave, onClose, onDelete }: MemoryEditor
         animate={{ x: 0, opacity: 1 }}
         exit={{ x: '100%', opacity: 0.5 }}
         transition={{ type: 'spring', damping: 25, stiffness: 200 }}
-        className="relative w-full max-w-2xl h-full shadow-2xl flex flex-col z-10"
-        style={{ background: 'var(--bg-panel-solid)', borderLeft: '1px solid var(--border-subtle)' }}
+        className="relative w-full max-w-2xl h-full flex flex-col z-10 glass-strong"
+        style={{ borderLeft: '1px solid var(--border-subtle)' }}
       >
         <header className="flex items-center justify-between p-6 shrink-0" style={{ borderBottom: '1px solid var(--border-subtle)' }}>
           <div className="flex items-center gap-3">

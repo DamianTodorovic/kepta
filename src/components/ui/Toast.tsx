@@ -77,8 +77,7 @@ export function ToastProvider({ children }: { children: ReactNode }) {
                 animate={{ opacity: 1, y: 0, scale: 1 }}
                 exit={{ opacity: 0, y: 8, scale: 0.96 }}
                 transition={{ type: 'spring', damping: 24, stiffness: 320 }}
-                className="pointer-events-auto flex items-center gap-3 pl-3.5 pr-2 py-2.5 rounded-xl shadow-xl min-w-[260px] max-w-sm"
-                style={{ background: 'var(--bg-panel-solid)', border: '1px solid var(--border-subtle)' }}
+                className="pointer-events-auto flex items-center gap-3 pl-3.5 pr-2 py-2.5 rounded-xl min-w-[260px] max-w-sm glass-strong"
               >
                 <Icon className="w-4 h-4 shrink-0" style={{ color: ACCENTS[t.kind ?? 'info'] }} />
                 <span className="text-sm flex-1" style={{ color: 'var(--text-1)' }}>{t.message}</span>

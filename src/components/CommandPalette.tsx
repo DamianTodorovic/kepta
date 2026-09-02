@@ -66,7 +66,7 @@ export function CommandPalette({ open, onClose, actions }: CommandPaletteProps) 
   return (
     <div className="fixed inset-0 z-[70] flex items-start justify-center pt-[20vh] px-4">
       <div className="absolute inset-0 hud-backdrop" onClick={onClose} />
-      <div className="relative w-full max-w-xl hud-panel rounded-2xl shadow-2xl overflow-hidden flex flex-col" style={{ background: "var(--bg-panel-solid)", maxHeight: "min(64vh, 520px)" }}>
+      <div className="relative w-full max-w-xl glass-strong rounded-2xl overflow-hidden flex flex-col" style={{ maxHeight: "min(64vh, 520px)" }}>
         <div className="flex items-center gap-3 px-4 h-14 shrink-0" style={{ borderBottom: "1px solid var(--border-subtle)" }}>
           <Search className="w-4 h-4 shrink-0" style={{ color: "var(--text-3)" }} />
           <input

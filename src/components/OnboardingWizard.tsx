@@ -108,7 +108,7 @@ export function OnboardingWizard({ open, onClose, onComplete }: Props) {
     <div className="fixed inset-0 z-[80] flex items-center justify-center p-4">
       <motion.div initial={{opacity:0}} animate={{opacity:1}} exit={{opacity:0}} className="absolute inset-0 hud-backdrop" onClick={onClose} />
       <motion.div initial={{scale:0.96, opacity:0}} animate={{scale:1, opacity:1}} exit={{scale:0.96, opacity:0}}
-        className="relative w-full max-w-2xl max-h-[86vh] overflow-hidden rounded-2xl shadow-2xl flex flex-col" style={{background:'var(--bg-panel-solid)', border:'1px solid var(--border-subtle)'}}>
+        className="relative w-full max-w-2xl max-h-[86vh] overflow-hidden rounded-2xl glass-strong flex flex-col">
         {/* Progress */}
         <div className="h-1 w-full flex gap-1 p-1" style={{background:'var(--bg-inset)'}}>
           {[1,2,3,4].map(i=> <div key={i} className="flex-1 rounded-full transition-all" style={{background: step>=i ? 'var(--accent)' : 'var(--bg-inset-strong)'}} />)}

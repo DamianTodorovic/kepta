@@ -420,8 +420,14 @@ export function KnowledgeGraph({ memories, onSelectMemory }: KnowledgeGraphProps
 
       <div
         ref={containerRef}
-        className="flex-1 min-h-[420px] hud-inset rounded-xl overflow-hidden relative"
-        style={{ border: "1px solid var(--border-subtle)" }}
+        className="flex-1 min-h-[420px] rounded-xl overflow-hidden relative"
+        style={{
+          background: 'var(--glass-panel)',
+          backdropFilter: 'blur(14px) saturate(1.35)',
+          WebkitBackdropFilter: 'blur(14px) saturate(1.35)',
+          border: '1px solid var(--border-subtle)',
+          boxShadow: 'inset 0 1px 0 var(--edge-light), var(--shadow-sm)',
+        }}
       >
         <svg
           ref={svgRef}

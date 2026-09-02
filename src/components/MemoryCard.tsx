@@ -3,7 +3,7 @@ import { formatDistanceToNow } from 'date-fns';
 import { de } from 'date-fns/locale';
 import { Memory } from '../types';
 import { motion } from 'motion/react';
-import { Hash } from 'lucide-react';
+import { Hash, Brain, Clock, Zap } from 'lucide-react';
 
 interface MemoryCardProps {
   memory: Memory;
@@ -12,10 +12,10 @@ interface MemoryCardProps {
   matchedTerms?: string[];
 }
 
-const TYPE_LABELS: Record<string, string> = {
-  semantic: 'Wissen',
-  episodic: 'Episode',
-  procedural: 'Ablauf',
+const TYPE_META: Record<string, { label: string; icon: typeof Brain }> = {
+  semantic: { label: 'Wissen', icon: Brain },
+  episodic: { label: 'Episode', icon: Clock },
+  procedural: { label: 'Ablauf', icon: Zap },
 };
 
 export const MemoryCard = memo(function MemoryCard({ memory, onClick, score, matchedTerms }: MemoryCardProps) {
@@ -23,10 +23,10 @@ export const MemoryCard = memo(function MemoryCard({ memory, onClick, score, mat
   const now = Date.now();
   const expired = memory.validTo != null && memory.validTo < now;
   const superseded = !!memory.supersededBy;
-  const typeLabel = memory.type ? TYPE_LABELS[memory.type] ?? null : null;
-  const typeColor = memory.type
-    ? `var(--type-${memory.type})`
-    : null;
+  const meta = memory.type ? TYPE_META[memory.type] : undefined;
+  const typeLabel = meta?.label ?? null;
+  const TypeIcon = meta?.icon;
+  const typeColor = memory.type ? `var(--type-${memory.type})` : null;
 
   return (
     <motion.div
@@ -37,13 +37,23 @@ export const MemoryCard = memo(function MemoryCard({ memory, onClick, score, mat
       onClick={onClick}
       className="card p-4 cursor-pointer grid grid-rows-[auto_1fr_auto] h-52 overflow-hidden group relative rounded-xl"
     >
+      {/* Typ-Lichtkante oben: die Karte „färbt“ sich nach Knotentyp */}
+      {typeColor && (
+        <span
+          aria-hidden
+          className="absolute top-0 left-4 right-4 h-px"
+          style={{ background: `linear-gradient(90deg, transparent, color-mix(in srgb, ${typeColor} 55%, transparent), transparent)` }}
+        />
+      )}
+
       {/* Kopfzeile: Typ + Status */}
       <div className="flex items-center gap-2 mb-2.5 min-w-0">
         {typeLabel && (
           <span
-            className="badge-type"
-            style={{ color: typeColor ?? 'var(--text-2)', background: 'color-mix(in srgb, ' + typeColor + ' 9%, transparent)' }}
+            className="badge-type !gap-1 !py-0.5"
+            style={{ color: typeColor ?? 'var(--text-2)', background: `color-mix(in srgb, ${typeColor} 10%, transparent)` }}
           >
+            {TypeIcon && <TypeIcon className="w-3 h-3" />}
             {typeLabel}
           </span>
         )}
@@ -58,8 +68,7 @@ export const MemoryCard = memo(function MemoryCard({ memory, onClick, score, mat
         )}
         {pct !== null && (
           <span
-            className="ml-auto inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md text-[11px] font-medium tnum"
-            style={{ color: 'var(--text-2)', background: 'var(--bg-inset)', border: '1px solid var(--border-subtle)' }}
+            className="ml-auto inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md text-[11px] font-medium tnum chip"
             title={matchedTerms?.length ? `Getroffene Begriffe: ${matchedTerms.slice(0, 4).join(', ')}` : undefined}
           >
             {pct}%

@@ -13,7 +13,7 @@ import { hybridSearch, type ScoredMemory } from '../lib/semantic';
 import { OnboardingWizard } from './OnboardingWizard';
 import { loadProfile } from '../lib/profile';
 import { Memory } from '../types';
-import { Search, Plus, Database, CheckCircle2, Copy, PanelLeftOpen, ScanSearch, UploadCloud, Globe, Loader2, AlertCircle, Sparkles, Trash2 } from 'lucide-react';
+import { Search, Plus, Database, CheckCircle2, Copy, PanelLeftOpen, ScanSearch, UploadCloud, Globe, Loader2, AlertCircle, Sparkles, SlidersHorizontal, Trash2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { cn } from '../lib/utils';
 
@@ -298,6 +298,13 @@ export function Dashboard() {
     const counts = new Map<string, number>();
     for (const m of memories) for (const t of m.tags) counts.set(t, (counts.get(t) ?? 0) + 1);
     return [...counts.entries()].sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0])).map(([tag, count]) => ({ tag, count }));
+  }, [memories]);
+
+  // Typen-Verteilung für die Übersichtskacheln
+  const typeCounts = useMemo(() => {
+    const c = { semantic: 0, episodic: 0, procedural: 0 } as Record<string, number>;
+    for (const m of memories) if (m.type && c[m.type] !== undefined) c[m.type] += 1;
+    return c;
   }, [memories]);
 
   // --- Tag-gefilterte Basis ---
@@ -589,11 +596,11 @@ export function Dashboard() {
         toggleFocusMode={() => setIsFocusMode(!isFocusMode)}
       />
 
-      <main className="flex-1 flex flex-col min-w-0 overflow-hidden">
+      <main className="flex-1 flex flex-col min-w-0 overflow-hidden my-2.5 mr-2.5 panel rounded-2xl relative z-10">
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
-          className={cn("flex-1 flex flex-col h-full", currentView === 'memories' ? 'flex' : 'hidden')}
+          className={cn("flex-1 flex flex-col h-full min-h-0 rounded-2xl overflow-hidden", currentView === 'memories' ? 'flex' : 'hidden')}
         >
           <header className="h-14 px-5 flex items-center gap-3 shrink-0 border-gradient-b">
             {isFocusMode && (
@@ -857,6 +864,54 @@ export function Dashboard() {
 
           <div className="flex-1 overflow-y-auto px-5 py-4">
             <div className="max-w-6xl mx-auto h-full flex flex-col">
+              {/* Übersicht — das Gehirn auf einen Blick */}
+              <div className="grid grid-cols-2 lg:grid-cols-4 gap-2.5 mb-4 shrink-0">
+                <div className="stat-tile card !transform-none">
+                  <span className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0" style={{ background: 'var(--accent-soft)', boxShadow: 'inset 0 1px 0 var(--edge-light)' }}>
+                    <Database className="w-4 h-4" style={{ color: 'var(--accent)' }} />
+                  </span>
+                  <span className="min-w-0">
+                    <span className="block text-[17px] font-semibold leading-tight tnum" style={{ color: 'var(--text-1)' }}>{memories.length}</span>
+                    <span className="block text-[11px]" style={{ color: 'var(--text-3)' }}>Einträge im Index</span>
+                  </span>
+                </div>
+                <div className="stat-tile card !transform-none">
+                  <span className="w-8 h-8 rounded-lg flex flex-col items-center justify-center shrink-0 gap-[3px]" style={{ background: 'var(--bg-inset)', boxShadow: 'inset 0 1px 0 var(--edge-light)' }}>
+                    <span className="flex gap-[2px]">
+                      <span className="w-1.5 h-1.5 rounded-full" style={{ background: 'var(--type-semantic)' }} />
+                      <span className="w-1.5 h-1.5 rounded-full" style={{ background: 'var(--type-episodic)' }} />
+                      <span className="w-1.5 h-1.5 rounded-full" style={{ background: 'var(--type-procedural)' }} />
+                    </span>
+                  </span>
+                  <span className="min-w-0">
+                    <span className="block text-[12.5px] font-semibold leading-tight tnum truncate" style={{ color: 'var(--text-1)' }}>
+                      {typeCounts.semantic} · {typeCounts.episodic} · {typeCounts.procedural}
+                    </span>
+                    <span className="block text-[11px]" style={{ color: 'var(--text-3)' }}>Wissen · Episode · Ablauf</span>
+                  </span>
+                </div>
+                <div className="stat-tile card !transform-none">
+                  <span className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0" style={{ background: 'var(--bg-inset)', boxShadow: 'inset 0 1px 0 var(--edge-light)' }}>
+                    <SlidersHorizontal className="w-4 h-4" style={{ color: 'var(--text-2)' }} />
+                  </span>
+                  <span className="min-w-0">
+                    <span className="block text-[17px] font-semibold leading-tight tnum" style={{ color: 'var(--text-1)' }}>{allTags.length}</span>
+                    <span className="block text-[11px]" style={{ color: 'var(--text-3)' }}>Kategorien</span>
+                  </span>
+                </div>
+                <div className="stat-tile card !transform-none">
+                  <span className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0" style={{ background: agentActive ? 'var(--accent-soft)' : 'var(--ok-soft)', boxShadow: 'inset 0 1px 0 var(--edge-light)' }}>
+                    {agentActive ? <span className="agent-dot" /> : <CheckCircle2 className="w-4 h-4" style={{ color: 'var(--ok)' }} />}
+                  </span>
+                  <span className="min-w-0">
+                    <span className="block text-[12.5px] font-semibold leading-tight truncate" style={{ color: 'var(--text-1)' }}>
+                      {agentActive ? 'Agent arbeitet' : 'Synchron'}
+                    </span>
+                    <span className="block text-[11px]" style={{ color: 'var(--text-3)' }}>lokal · privat · MCP</span>
+                  </span>
+                </div>
+              </div>
+
               <div className="flex items-center justify-between mb-3 shrink-0">
                 <div className="flex items-center gap-2 text-[12px] tnum" style={{ color: 'var(--text-3)' }}>
                   {displayedMemories.length} von {tagFiltered.length} Einträgen
@@ -1052,8 +1107,7 @@ function ShortcutsSheet({ open, onClose }: { open: boolean; onClose: () => void 
             exit={{ opacity: 0, y: 8, scale: 0.97 }}
             transition={{ type: 'spring', damping: 24, stiffness: 300 }}
             onClick={(e) => e.stopPropagation()}
-            className="w-full max-w-md rounded-2xl shadow-2xl p-6"
-            style={{ background: 'var(--bg-panel-solid)', border: '1px solid var(--border-subtle)' }}
+            className="w-full max-w-md rounded-2xl p-6 glass-strong"
           >
             <h3 className="text-base font-semibold mb-4" style={{ color: 'var(--text-1)' }}>Tastenkürzel</h3>
             <ul className="space-y-2.5">
