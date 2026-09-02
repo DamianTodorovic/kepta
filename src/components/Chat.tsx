@@ -513,13 +513,16 @@ export function Chat({ activeMemories, onSaveToBrain, onSaveToBrainWithMeta, isF
             const tags = [...new Set([...tagsRaw.map((t:string)=> String(t).toLowerCase().replace(/[^a-z0-9-]/g,'')).filter(Boolean).slice(0,5), 'auto-learn'])].slice(0,6);
             const summary = parsed.summary ? String(parsed.summary).slice(0,2000) : accText.slice(0,1600);
             // Verhindere Duplikate: nur speichern wenn nicht fast identisch vorhanden
-            const existing = await fetch('/api/memories').then(r=>r.json()).then(d=>d.memories as any[]).catch(()=>[]);
-            const isDup = existing.some((m:any)=> m.content.slice(0,120)===summary.slice(0,120) || (m.title===title && Math.abs(m.content.length-summary.length)<20));
+            const existing: any[] = await fetch('/api/memories')
+              .then((r) => r.json())
+              .then((d) => (Array.isArray(d) ? d : Array.isArray(d?.memories) ? d.memories : []))
+              .catch(() => []);
+            const isDup = existing.some((m: any) => m.content?.slice(0, 120) === summary.slice(0, 120) || (m.title === title && Math.abs((m.content?.length ?? 0) - summary.length) < 20));
             if (isDup) return;
-            await fetch('/api/memory', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ title, content: summary + `\n\n— Quelle: Chat ${new Date().toLocaleString('de-DE')} — Modell ${prov.label}/${s.model}`, tags }) });
-            // kleines visuelles Feedback im Chat (optional)
-            // console.log('[auto-learn] gespeichert:', title);
-          } catch {}
+            await fetch('/api/memory', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ title, content: summary + `\n\n— Quelle: Chat ${new Date().toLocaleString('de-DE')} — Modell ${prov.label}/${s.model}`, tags }) });
+          } catch (e) {
+            console.warn('[auto-learn] Übersprungen:', e);
+          }
         })();
       }
     }
@@ -596,25 +599,25 @@ export function Chat({ activeMemories, onSaveToBrain, onSaveToBrainWithMeta, isF
         </div>
       </div>
 
-      {/* ---------- Token-Budget Regler ---------- */}
-      <div className="px-6 py-3 shrink-0 hud-inset border-b" style={{ borderColor: "var(--border-subtle)", background: "var(--bg-inset)" }}>
+      {/* ---------- Kontext & Budget ---------- */}
+      <div className="px-6 py-2.5 shrink-0 border-b" style={{ borderColor: "var(--border-subtle)", background: "var(--bg-inset)" }}>
         <div className="flex items-center gap-4">
           <div className="flex-1 min-w-0">
-            <div className="flex items-center justify-between mb-1.5">
+            <div className="flex items-center justify-between mb-1">
               <span className="hud-label flex items-center gap-1.5">
                 <Sparkles className="w-3 h-3" style={{ color: "var(--accent)" }} />
-                Token-Budget
+                Kontext &amp; Token-Budget
               </span>
-              <span className="text-xs font-mono flex items-center gap-2" style={{ color: "var(--text-1)" }}>
-                <span className="px-1.5 py-0.5 rounded text-[11px] font-semibold" style={{ background: "var(--accent-soft)", color: "var(--accent)", border: "1px solid var(--border-subtle)" }}>
+              <span className="text-[11px] flex items-center gap-2" style={{ color: "var(--text-2)" }}>
+                <span className="px-1.5 py-0.5 rounded-md text-[11px] font-semibold tnum" style={{ background: "var(--bg-panel)", border: "1px solid var(--border-subtle)", color: "var(--text-1)" }}>
                   {tokenBudget.toLocaleString("de-DE")}
                 </span>
-                <span className="hud-label normal-case tracking-normal text-[10px]">· {budgetedMemories.length} Knoten aktiv</span>
+                <span>· {budgetedMemories.length} Einträge aktiv</span>
               </span>
             </div>
-            <div className="relative h-6 flex items-center">
-              <div className="absolute left-0 right-0 h-2 rounded-full hud-inset overflow-hidden" style={{ background: "var(--bg-inset-strong)" }}>
-                <div className="h-full rounded-full transition-all" style={{ width: `${budgetPercent}%`, background: "linear-gradient(90deg, var(--accent), var(--accent-2))" }} />
+            <div className="relative h-5 flex items-center">
+              <div className="absolute left-0 right-0 h-1.5 rounded-full overflow-hidden" style={{ background: "var(--bg-inset-strong)" }}>
+                <div className="h-full rounded-full transition-all" style={{ width: `${budgetPercent}%`, background: "var(--accent)" }} />
               </div>
               <input
                 type="range"
@@ -623,23 +626,18 @@ export function Chat({ activeMemories, onSaveToBrain, onSaveToBrainWithMeta, isF
                 step={500}
                 value={tokenBudget}
                 onChange={(e) => setTokenBudget(parseInt(e.target.value, 10))}
-                className="relative w-full h-2 appearance-none bg-transparent accent-[var(--accent)] cursor-pointer
-                  [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-4 [&::-webkit-slider-thumb]:h-4 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-white [&::-webkit-slider-thumb]:border-2 [&::-webkit-slider-thumb]:border-[var(--accent)] [&::-webkit-slider-thumb]:shadow-md
-                  [&::-moz-range-thumb]:w-4 [&::-moz-range-thumb]:h-4 [&::-moz-range-thumb]:rounded-full [&::-moz-range-thumb]:bg-white [&::-moz-range-thumb]:border-2 [&::-moz-range-thumb]:border-[var(--accent)]"
+                className="relative w-full h-1.5 appearance-none bg-transparent accent-[var(--accent)] cursor-pointer
+                  [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-3.5 [&::-webkit-slider-thumb]:h-3.5 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-white [&::-webkit-slider-thumb]:border-2 [&::-webkit-slider-thumb]:border-[var(--accent)] [&::-webkit-slider-thumb]:shadow-sm
+                  [&::-moz-range-thumb]:w-3.5 [&::-moz-range-thumb]:h-3.5 [&::-moz-range-thumb]:rounded-full [&::-moz-range-thumb]:bg-white [&::-moz-range-thumb]:border-2 [&::-moz-range-thumb]:border-[var(--accent)]"
                 aria-label="Token Budget"
               />
             </div>
-            <div className="flex justify-between hud-label text-[9px] mt-1 opacity-70">
-              <span>{MIN_BUDGET.toLocaleString("de-DE")}</span>
-              <span>8k</span>
-              <span>{MAX_BUDGET.toLocaleString("de-DE")}</span>
-            </div>
             {budgetedMemories.length > 0 && (
-              <div className="flex flex-wrap gap-1 mt-2">
+              <div className="flex flex-wrap gap-1 mt-1.5">
                 {budgetedMemories.slice(0, 8).map((m) => (
                   <span
                     key={m.id}
-                    className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-medium border truncate max-w-[140px]"
+                    className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md text-[10.5px] font-medium border truncate max-w-[140px]"
                     style={{ background: budgetedIds.has(m.id) ? "var(--accent-soft)" : "var(--bg-panel)", borderColor: "var(--border-subtle)", color: "var(--text-2)" }}
                     title={`${m.title} — ${m.id}`}
                   >
@@ -648,23 +646,20 @@ export function Chat({ activeMemories, onSaveToBrain, onSaveToBrainWithMeta, isF
                   </span>
                 ))}
                 {budgetedMemories.length > 8 && (
-                  <span className="text-[10px] px-1.5 py-0.5 rounded hud-inset" style={{ color: "var(--text-3)" }}>
+                  <span className="text-[10.5px] px-1.5 py-0.5 rounded-md" style={{ color: "var(--text-3)" }}>
                     +{budgetedMemories.length - 8}
                   </span>
                 )}
               </div>
             )}
           </div>
-          <div className="hidden lg:flex flex-col items-end gap-1 text-xs min-w-[140px] shrink-0">
+          <div className="hidden lg:flex flex-col items-end gap-0.5 text-xs min-w-[130px] shrink-0">
             <span className="hud-label">Kosten-Schätzung</span>
-            <span className="font-mono text-sm" style={{ color: pricing.input === 0 ? "var(--ok)" : "var(--text-1)" }}>
+            <span className="mono text-[13px]" style={{ color: pricing.input === 0 ? "var(--ok)" : "var(--text-1)" }}>
               {estimatedCostNow}
             </span>
-            <span className="text-[10px] font-mono" style={{ color: "var(--text-3)" }}>
+            <span className="text-[10.5px] mono tnum" style={{ color: "var(--text-3)" }}>
               In ~{totalInputTokensEstimate} · Out ~{liveOutputTokens || "—"}
-            </span>
-            <span className="text-[10px]" style={{ color: "var(--text-3)" }}>
-              {provider.label} · ~{(totalInputTokensEstimate + (liveOutputTokens || 0)).toLocaleString("de-DE")} total
             </span>
           </div>
         </div>
@@ -674,20 +669,19 @@ export function Chat({ activeMemories, onSaveToBrain, onSaveToBrainWithMeta, isF
       <div ref={scrollContainerRef} className="flex-1 overflow-y-auto p-6 space-y-6 min-h-0">
         {messages.length === 0 && (
           <div className="flex flex-col items-center justify-center h-full text-center py-8">
-            <div className="w-40 h-40 opacity-70">
-              <BrainOrb />
+            <div className="w-14 h-14 rounded-2xl flex items-center justify-center mb-4" style={{ background: 'var(--bg-inset)', border: '1px solid var(--border-subtle)' }}>
+              <Bot className="w-6 h-6" style={{ color: 'var(--text-3)' }} />
             </div>
-            <div className="hud-label mb-2">Chat bereit</div>
-            <p className="text-sm max-w-sm" style={{ color: "var(--text-2)" }}>
-              Frag mich etwas zu deinen Einträgen — {budgetedMemories.length} von {activeMemories.length} Knoten sind im Budget ({tokenBudget.toLocaleString("de-DE")} Tokens) geladen.
+            <div className="hud-label mb-2">Bereit</div>
+            <p className="text-[13px] max-w-sm leading-relaxed" style={{ color: "var(--text-2)" }}>
+              Frag etwas zu deinen Einträgen — {budgetedMemories.length} von {activeMemories.length} sind im Budget ({tokenBudget.toLocaleString("de-DE")} Tokens).
             </p>
             <div className="mt-4 flex flex-wrap gap-2 justify-center max-w-md">
               {["Zusammenfassung", "Widersprüche finden", "Nächste Schritte", "Als Tabelle"].map((s) => (
                 <button
                   key={s}
                   onClick={() => setInput(s)}
-                  className="hud-inset px-3 py-1.5 rounded-full text-xs font-medium hover:!border-[var(--accent)] transition-colors"
-                  style={{ color: "var(--text-2)" }}
+                  className="chip hover:border-[var(--accent)] transition-colors cursor-pointer !py-1.5 !text-[12px]"
                 >
                   {s}
                 </button>
@@ -850,7 +844,7 @@ export function Chat({ activeMemories, onSaveToBrain, onSaveToBrainWithMeta, isF
                 <span className="typing-dot" />
                 <span className="typing-dot" />
               </span>
-              Synapsen feuern…
+              Antwortet…
             </div>
           </motion.div>
         )}
@@ -875,7 +869,7 @@ export function Chat({ activeMemories, onSaveToBrain, onSaveToBrainWithMeta, isF
             type="text"
             value={input}
             onChange={(e) => setInput(e.target.value)}
-            placeholder={isStreaming ? "Streamt… – Stop drücken zum Abbruch" : "Nachricht an das neuronale Netz…"}
+            placeholder={isStreaming ? "Antwort wird generiert — Stop zum Abbrechen" : "Nachricht schreiben…"}
             disabled={isStreaming}
             className="hud-input w-full rounded-xl py-3.5 pl-4 pr-[88px] text-sm disabled:opacity-60"
             aria-label="Chat Eingabe"
@@ -914,28 +908,3 @@ export function Chat({ activeMemories, onSaveToBrain, onSaveToBrainWithMeta, isF
   );
 }
 
-function BrainOrb() {
-  return (
-    <div className="relative w-full h-full flex items-center justify-center">
-      <motion.div
-        animate={{ scale: [1, 1.1, 1], opacity: [0.3, 0.55, 0.3] }}
-        transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" } as unknown as Record<string, unknown>}
-        className="absolute inset-0 rounded-full blur-3xl"
-        style={{ background: "radial-gradient(circle, var(--accent-glow), transparent 70%)" }}
-      />
-      <motion.div
-        animate={{ rotate: 360 }}
-        transition={{ duration: 24, repeat: Infinity, ease: "linear" } as unknown as Record<string, unknown>}
-        className="absolute w-32 h-32 rounded-full"
-        style={{ border: "1px dashed var(--border-strong)" }}
-      />
-      <motion.div
-        animate={{ rotate: -360 }}
-        transition={{ duration: 16, repeat: Infinity, ease: "linear" } as unknown as Record<string, unknown>}
-        className="absolute w-24 h-24 rounded-full"
-        style={{ border: "1px solid var(--accent-soft)" }}
-      />
-      <Bot className="w-8 h-8 relative z-10" style={{ color: "var(--accent)" }} />
-    </div>
-  );
-}

@@ -27,14 +27,16 @@ async function doRefresh(): Promise<Memory[]> {
   // Request-Dedup: wiederverwende pending promise
   if (pendingRefresh) return pendingRefresh;
   pendingRefresh = (async () => {
-    await migrateLegacyIfNeeded();
     try {
+      await migrateLegacyIfNeeded();
       const res = await fetch('/api/memories');
       const data = await res.json();
       // API liefert ein nacktes Array (ältere Clients erwarteten {memories:[]})
       cache = Array.isArray(data) ? data : Array.isArray(data?.memories) ? data.memories : [];
     } catch {
-      // Server nicht erreichbar -> Cache behalten
+      // Server nicht erreichbar (oder Storage defekt) -> Cache behalten.
+      // doRefresh verspricht: rejected NIE — so darf die Konvergenz einfach
+      // mit `void doRefresh()` feuern, ohne unhandled rejections zu riskieren.
     }
     notify();
     return cache;
@@ -136,9 +138,12 @@ export async function saveMemory(memoryData: Partial<Memory>): Promise<Memory | 
     await refreshMemories();
     return data.memory;
   } catch {
-    // Rollback bei Fehler (Optimistic Update revert)
+    // Rollback: optimistischen Stand zurücknehmen...
     cache = previous;
     notify();
+    // ...und danach auf den serverseitigen Stand konvergieren (der Snapshot
+    // könnte konkurrierende Agenten-Änderungen verdecken). doRefresh rejected nie.
+    void doRefresh();
     return null;
   }
 }
@@ -152,9 +157,10 @@ export async function deleteMemory(id: string): Promise<void> {
     await fetch(`/api/memories/${encodeURIComponent(id)}`, { method: 'DELETE' });
     await refreshMemories();
   } catch {
-    // Rollback bei Fehler
+    // Rollback: Snapshot zurücknehmen, dann auf Server-Stand konvergieren
     cache = previous;
     notify();
+    void doRefresh();
   }
 }
 

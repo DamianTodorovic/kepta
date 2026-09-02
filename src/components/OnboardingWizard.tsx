@@ -110,16 +110,16 @@ export function OnboardingWizard({ open, onClose, onComplete }: Props) {
       <motion.div initial={{scale:0.96, opacity:0}} animate={{scale:1, opacity:1}} exit={{scale:0.96, opacity:0}}
         className="relative w-full max-w-2xl max-h-[86vh] overflow-hidden rounded-2xl shadow-2xl flex flex-col" style={{background:'var(--bg-panel-solid)', border:'1px solid var(--border-subtle)'}}>
         {/* Progress */}
-        <div className="h-1.5 w-full flex gap-1 p-1" style={{background:'var(--bg-inset)'}}>
-          {[1,2,3,4].map(i=> <div key={i} className="flex-1 rounded-full transition-all" style={{background: step>=i ? 'linear-gradient(90deg, var(--accent), var(--accent-2))' : 'var(--border-subtle)', opacity: step>=i?1:0.5}} />)}
+        <div className="h-1 w-full flex gap-1 p-1" style={{background:'var(--bg-inset)'}}>
+          {[1,2,3,4].map(i=> <div key={i} className="flex-1 rounded-full transition-all" style={{background: step>=i ? 'var(--accent)' : 'var(--bg-inset-strong)'}} />)}
         </div>
         <div className="px-6 pt-5 pb-3 flex items-center gap-3" style={{borderBottom:'1px solid var(--border-subtle)'}}>
-          <div className="w-9 h-9 rounded-xl flex items-center justify-center" style={{background:'linear-gradient(135deg, var(--accent), var(--accent-2))'}}><Sparkles className="w-5 h-5 text-white" /></div>
+          <div className="w-9 h-9 rounded-lg flex items-center justify-center" style={{background:'var(--accent-soft)'}}><Sparkles className="w-4.5 h-4.5" style={{color:'var(--accent)'}} /></div>
           <div className="flex-1">
-            <h2 className="font-bold flex items-center gap-2" style={{color:'var(--text-1)'}}>Dein Gehirn passt sich dir an <span className="hud-label px-1.5 py-0.5 rounded" style={{background:'var(--accent-soft)', color:'var(--accent)', border:'1px solid var(--border-subtle)'}}>adaptiv</span></h2>
-            <p className="text-xs mt-0.5" style={{color:'var(--text-2)'}}>Schritt {step} von 4 — 30 Sekunden, danach ist es dein Unikat.</p>
+            <h2 className="font-semibold text-[15px]" style={{color:'var(--text-1)'}}>KEPTA einrichten</h2>
+            <p className="text-xs mt-0.5" style={{color:'var(--text-2)'}}>Schritt {step} von 4 — eine Minute, danach passt sich KEPTA dir an.</p>
           </div>
-          <span className="hud-label">{step}/4</span>
+          <span className="hud-label tnum">{step}/4</span>
         </div>
 
         <div className="flex-1 overflow-y-auto p-6">
@@ -204,7 +204,7 @@ export function OnboardingWizard({ open, onClose, onComplete }: Props) {
               <div className="hud-label flex items-center gap-2"><PartyPopper className="w-3.5 h-3.5" style={{color:'var(--accent)'}}/> Gleich fertig — dein Gehirn wird befüllt</div>
               <div className="hud-panel rounded-xl p-4 space-y-3">
                 <div className="flex gap-3">
-                  <div className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0" style={{background:'linear-gradient(135deg, var(--accent), var(--accent-2))'}}><User className="w-5 h-5 text-white"/></div>
+                  <div className="w-10 h-10 rounded-lg flex items-center justify-center shrink-0" style={{background:'var(--accent-soft)'}}><User className="w-4.5 h-4.5" style={{color:'var(--accent)'}}/></div>
                   <div>
                     <div className="text-sm font-semibold" style={{color:'var(--text-1)'}}>{name.trim()||'Du'} · {selected.map(s=>USECASE_LABELS[s].label).join(' · ') || 'Allgemein'}</div>
                     <div className="text-xs" style={{color:'var(--text-2)'}}>{goal || 'Ziel: Wissen sammeln & schneller antworten'}</div>
@@ -212,9 +212,9 @@ export function OnboardingWizard({ open, onClose, onComplete }: Props) {
                   </div>
                 </div>
                 <div className="grid grid-cols-3 gap-2 text-center">
-                  <div className="hud-inset rounded-xl p-2.5"><div className="text-lg font-bold" style={{color:'var(--accent)'}}>{starterPreview.length}</div><div className="hud-label">Knoten</div></div>
-                  <div className="hud-inset rounded-xl p-2.5"><div className="text-lg font-bold" style={{color:'var(--accent)'}}>{selected.length||1}</div><div className="hud-label">Bereiche</div></div>
-                  <div className="hud-inset rounded-xl p-2.5"><div className="text-lg font-bold" style={{color:'var(--ok)'}}>{detected?.filter(d=>d.available).length || 0}</div><div className="hud-label">KIs lokal</div></div>
+                  <div className="hud-inset rounded-lg p-2.5"><div className="text-lg font-semibold tnum" style={{color:'var(--text-1)'}}>{starterPreview.length}</div><div className="hud-label">Einträge</div></div>
+                  <div className="hud-inset rounded-lg p-2.5"><div className="text-lg font-semibold tnum" style={{color:'var(--text-1)'}}>{selected.length||1}</div><div className="hud-label">Bereiche</div></div>
+                  <div className="hud-inset rounded-lg p-2.5"><div className="text-lg font-semibold tnum" style={{color:'var(--ok)'}}>{detected?.filter(d=>d.available).length || 0}</div><div className="hud-label">KIs lokal</div></div>
                 </div>
                 <ul className="text-xs space-y-1.5" style={{color:'var(--text-2)'}}>
                   <li className="flex gap-2"><Check className="w-3.5 h-3.5 mt-0.5" style={{color:'var(--ok)'}}/> Starter-Pack wird als echte Knoten gespeichert (editier-/löschbar)</li>

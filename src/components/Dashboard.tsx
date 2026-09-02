@@ -13,7 +13,7 @@ import { hybridSearch, type ScoredMemory } from '../lib/semantic';
 import { OnboardingWizard } from './OnboardingWizard';
 import { loadProfile } from '../lib/profile';
 import { Memory } from '../types';
-import { Search, Plus, Database, CheckCircle2, Copy, PanelLeftOpen, ScanSearch, UploadCloud, FileText, Globe, Loader2, Link2, AlertCircle, Sparkles, SlidersHorizontal, Trash2 } from 'lucide-react';
+import { Search, Plus, Database, CheckCircle2, Copy, PanelLeftOpen, ScanSearch, UploadCloud, Globe, Loader2, AlertCircle, Sparkles, Trash2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { cn } from '../lib/utils';
 
@@ -101,7 +101,9 @@ export function Dashboard() {
       try {
         const res = await fetch('/api/memories?trash=1');
         const data = await res.json();
-        if (!cancelled && Array.isArray(data.memories)) setTrashedMemories(data.memories as Memory[]);
+        // API liefert ein nacktes Array — defensiv auch {memories:[]} akzeptieren
+        const list = Array.isArray(data) ? data : Array.isArray(data?.memories) ? data.memories : [];
+        if (!cancelled) setTrashedMemories(list as Memory[]);
       } catch { /* ignore */ }
     })();
     return () => { cancelled = true; };
@@ -384,13 +386,15 @@ export function Dashboard() {
   }, [effectiveScored, semanticEnabled, topK, tagFiltered, debouncedSearchQuery]);
 
   const handleSave = async (memoryData: Partial<Memory>) => {
-    if (editingMemory?.id) {
-      saveMemory({ ...memoryData, id: editingMemory.id });
+    const result = await saveMemory(
+      editingMemory?.id ? { ...memoryData, id: editingMemory.id } : memoryData
+    );
+    if (result === null) {
+      toast.push({ message: 'Speichern fehlgeschlagen — Änderungen wurden nicht übernommen.', kind: 'warn' });
     } else {
-      saveMemory(memoryData);
+      setIsEditorOpen(false);
+      setEditingMemory(null);
     }
-    setIsEditorOpen(false);
-    setEditingMemory(null);
   };
 
   const handleDelete = async (id: string) => {
@@ -421,9 +425,9 @@ export function Dashboard() {
 
   const copyContextForAI = () => {
     const contextText = chatMemories.map(m => (
-      `--- ${m.title} ---\\n${m.content}\\n`
-    )).join('\\n');
-    const prompt = `[CONTEXT]\\n${contextText}\\n[/CONTEXT]\\n\\nBitte nutze diesen Kontext für die Beantwortung meiner Fragen.`;
+      `--- ${m.title} ---\n${m.content}\n`
+    )).join('\n');
+    const prompt = `[CONTEXT]\n${contextText}\n[/CONTEXT]\n\nBitte nutze diesen Kontext für die Beantwortung meiner Fragen.`;
     navigator.clipboard.writeText(prompt);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
@@ -513,7 +517,7 @@ export function Dashboard() {
       const title: string = data.title || new URL(url).hostname;
       const content: string = data.content || "";
       const tags = ["clip", new URL(url).hostname.replace(/^www\./, "")];
-      await saveMemory({ title, content: `Quelle: ${data.url || url}\\n\\n${content}`, tags });
+      await saveMemory({ title, content: `Quelle: ${data.url || url}\n\n${content}`, tags });
       setClipOk(`„${title.slice(0, 48)}“ importiert`);
       setClipUrl("");
       setTimeout(() => setClipOk(null), 3000);
@@ -585,19 +589,20 @@ export function Dashboard() {
         toggleFocusMode={() => setIsFocusMode(!isFocusMode)}
       />
 
-      <main className="flex-1 flex flex-col min-w-0 overflow-hidden my-2 mr-2 hud-panel rounded-2xl">
+      <main className="flex-1 flex flex-col min-w-0 overflow-hidden">
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           className={cn("flex-1 flex flex-col h-full", currentView === 'memories' ? 'flex' : 'hidden')}
         >
-          <header className="h-16 px-6 flex items-center justify-between shrink-0 gap-4 border-gradient-b">
+          <header className="h-14 px-5 flex items-center gap-3 shrink-0 border-gradient-b">
             {isFocusMode && (
               <button
                 onClick={() => setIsFocusMode(false)}
                 className="btn-ghost p-2 rounded-lg"
+                aria-label="Seitenleiste einblenden"
               >
-                <PanelLeftOpen className="w-5 h-5" />
+                <PanelLeftOpen className="w-4.5 h-4.5" />
               </button>
             )}
             <div className="flex-1 max-w-xl relative group">
@@ -605,15 +610,15 @@ export function Dashboard() {
               <input
                 ref={searchInputRef}
                 type="text"
-                placeholder={semanticEnabled ? "Suche, die versteht, was du meinst… (⌘K für Befehle)" : "Wissens-Index durchsuchen... (⌘K)"}
+                placeholder="Suchen… (⌘K für Befehle)"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 onKeyDown={(e) => { if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "k") { e.preventDefault(); setPaletteOpen(true); } }}
-                className="hud-input w-full pl-9 pr-4 py-2.5 rounded-lg text-sm"
+                className="hud-input w-full pl-9 pr-4 py-2 rounded-lg text-sm"
               />
             </div>
 
-            <div className="flex items-center gap-2 shrink-0">
+            <div className="flex items-center gap-1.5 shrink-0">
               <button
                 onClick={async () => {
                   setTrashOpen((v) => !v);
@@ -623,54 +628,55 @@ export function Dashboard() {
                     setTrashCount(typeof data.trashed === 'number' ? data.trashed : 0);
                   } catch { /* ignore */ }
                 }}
-                className="btn-ghost hidden sm:flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-medium"
-                title="Papierkorb"
+                className="btn-ghost hidden sm:flex items-center gap-1.5 px-2.5 py-2 rounded-lg text-xs font-medium"
+                title="Papierkorb — gelöschte Einträge wiederherstellen"
               >
-                <Trash2 className="w-4 h-4" /> {trashCount > 0 ? `Papierkorb (${trashCount})` : 'Papierkorb'}
+                <Trash2 className="w-4 h-4" />
+                {trashCount > 0 && <span className="tnum">{trashCount}</span>}
               </button>
               <button
                 onClick={() => setPaletteOpen(true)}
-                className="btn-ghost hidden sm:flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-medium"
-                title="Command Palette (⌘K)"
+                className="btn-ghost hidden sm:flex items-center gap-1.5 px-2.5 py-2 rounded-lg text-xs font-medium"
+                title="Befehlspalette"
               >
-                <ScanSearch className="w-4 h-4" /> ⌘K
+                <ScanSearch className="w-4 h-4" /> <span className="kbd !py-px">⌘K</span>
               </button>
               <button
                 onClick={copyContextForAI}
-                className="btn-ghost flex items-center gap-2 px-3 py-2 rounded-lg font-medium text-sm"
-                title={`${chatMemories.length} Knoten im Retrieval-Kontext`}
+                className="btn-ghost flex items-center gap-1.5 px-2.5 py-2 rounded-lg font-medium text-xs"
+                title={`${chatMemories.length} Einträge im Chat-Kontext — als Prompt kopieren`}
               >
                 {copied ? <CheckCircle2 className="w-4 h-4" style={{ color: 'var(--ok)' }} /> : <Copy className="w-4 h-4" />}
-                <span className="hidden sm:inline">{copied ? 'Kontext kopiert' : `Kontext (${chatMemories.length})`}</span>
+                <span className="hidden sm:inline">{copied ? 'Kopiert' : `Kontext (${chatMemories.length})`}</span>
               </button>
               <button
                 onClick={() => {
                   setEditingMemory(null);
                   setIsEditorOpen(true);
                 }}
-                className="btn-primary flex items-center gap-2 px-3.5 py-2 rounded-lg font-medium text-sm"
+                className="btn-primary flex items-center gap-1.5 px-3 py-2 rounded-lg font-medium text-xs"
               >
                 <Plus className="w-4 h-4" />
-                <span className="hidden sm:inline">Neue Notiz</span>
+                <span className="hidden sm:inline">Neu</span>
               </button>
             </div>
           </header>
 
-          {/* Papierkorb-Leiste */}
+          {/* Papierkorb */}
           {trashOpen && (
-            <div className="px-6 py-3 shrink-0 overflow-auto" style={{ borderBottom: '1px solid var(--border-subtle)', background: 'var(--bg-inset)', maxHeight: '30vh' }}>
+            <div className="px-5 py-3 shrink-0 overflow-auto" style={{ borderBottom: '1px solid var(--border-subtle)', background: 'var(--bg-inset)', maxHeight: '30vh' }}>
               <div className="flex items-center justify-between mb-2">
-                <span className="text-xs font-medium tracking-wide" style={{ color: 'var(--text-3)' }}>
-                  PAPIERKORB ({trashedMemories.length}) — gelöschte Knoten bleiben wiederherstellbar
+                <span className="text-[12px] font-medium" style={{ color: 'var(--text-2)' }}>
+                  Papierkorb · {trashedMemories.length} gelöschte Einträge, wiederherstellbar
                 </span>
-                <button onClick={() => setTrashOpen(false)} className="btn-ghost px-2 py-1 rounded text-xs">Schließen</button>
+                <button onClick={() => setTrashOpen(false)} className="btn-ghost px-2 py-1 rounded-md text-[11px]">Schließen</button>
               </div>
               {trashedMemories.length === 0 ? (
-                <p className="text-xs" style={{ color: 'var(--text-3)' }}>Leer — keine gelöschten Knoten.</p>
+                <p className="text-xs" style={{ color: 'var(--text-3)' }}>Leer.</p>
               ) : (
-                <ul className="space-y-1.5">
+                <ul className="space-y-1">
                   {trashedMemories.map((m) => (
-                    <li key={m.id} className="flex items-center justify-between gap-3 text-sm">
+                    <li key={m.id} className="flex items-center justify-between gap-3 text-[13px]">
                       <span className="truncate" style={{ color: 'var(--text-2)' }}>{m.title || 'Ohne Titel'}</span>
                       <button
                         onClick={async () => {
@@ -680,7 +686,7 @@ export function Dashboard() {
                             void refreshMemories();
                           } catch { /* ignore */ }
                         }}
-                        className="btn-ghost px-2 py-1 rounded text-xs shrink-0"
+                        className="btn-ghost px-2 py-1 rounded-md text-[11px] shrink-0"
                       >
                         Wiederherstellen
                       </button>
@@ -691,143 +697,124 @@ export function Dashboard() {
             </div>
           )}
 
-          {/* Semantik-Steuerung: Toggle + Top-k Regler */}
-          <div className="px-6 py-3 flex flex-wrap items-center gap-4 shrink-0" style={{ borderBottom: '1px solid var(--border-subtle)' }}>
-            <label className="flex items-center gap-2 cursor-pointer select-none group">
+          {/* Werkzeugleiste: Suche-Modus, Kontextgröße, Quellen-Status */}
+          <div className="px-5 py-2.5 flex flex-wrap items-center gap-x-5 gap-y-2 shrink-0" style={{ borderBottom: '1px solid var(--border-subtle)' }}>
+            <label className="flex items-center gap-2 cursor-pointer select-none">
               <input
                 type="checkbox"
                 checked={semanticEnabled}
                 onChange={(e) => setSemanticEnabled(e.target.checked)}
                 className="sr-only"
               />
-              <span className={cn("relative inline-flex h-6 w-11 items-center rounded-full transition-colors border", semanticEnabled ? "border-transparent" : "border-[var(--border-subtle)]")} style={{ background: semanticEnabled ? 'var(--accent)' : 'var(--bg-inset)' }}>
-                <span className={cn("inline-block h-4 w-4 transform rounded-full bg-white shadow transition-transform", semanticEnabled ? "translate-x-6" : "translate-x-1")} />
-              </span>
-              <span className="flex items-center gap-1.5 text-sm font-medium" style={{ color: semanticEnabled ? 'var(--text-1)' : 'var(--text-2)' }}>
-                <Sparkles className="w-4 h-4" style={{ color: semanticEnabled ? 'var(--accent)' : 'var(--text-3)' }} />
-                Semantik
-                <span className="hidden sm:inline hud-label !text-[10px] px-1.5 py-0.5 rounded" style={{ background: semanticEnabled ? 'var(--accent-soft)' : 'var(--bg-inset)', color: semanticEnabled ? 'var(--accent)' : 'var(--text-3)', border: '1px solid var(--border-subtle)' }}>
-                  {semanticEnabled ? 'Intelligente Suche' : 'Keyword'}
-                </span>
+              <span className="switch" data-on={semanticEnabled}><span className="knob" /></span>
+              <span className="text-[13px] font-medium" style={{ color: semanticEnabled ? 'var(--text-1)' : 'var(--text-2)' }}>
+                Semantische Suche
               </span>
             </label>
 
-            <div className="flex items-center gap-3">
-              <span className="flex items-center gap-1.5 text-sm font-medium" style={{ color: 'var(--text-2)' }}>
-                <SlidersHorizontal className="w-4 h-4" style={{ color: 'var(--text-3)' }} />
-                Top-k
-              </span>
+            <div className="flex items-center gap-2">
+              <span className="text-[12.5px]" style={{ color: 'var(--text-2)' }}>Ergebnisse</span>
               <input
                 type="range"
                 min={1}
                 max={20}
                 value={topK}
                 onChange={(e) => setTopK(parseInt(e.target.value, 10))}
-                className="w-28 accent-[var(--accent)]"
-                title="Anzahl Knoten für Anzeige & Chat-Retrieval"
+                className="w-24"
+                title="Anzahl Einträge für Anzeige & Chat-Kontext"
               />
-              <span className="px-2 py-1 rounded-lg text-sm font-semibold hud-inset min-w-[2.2rem] text-center" style={{ color: 'var(--accent)' }}>{topK}</span>
-              <span className="hidden lg:inline text-xs" style={{ color: 'var(--text-3)' }}>für Anzeige & Chat-Retrieval</span>
+              <span className="chip tnum !px-1.5" title="Anzahl Einträge für Anzeige & Chat-Kontext">{topK}</span>
             </div>
 
-            {semanticEnabled && debouncedSearchQuery.trim().length >= 2 && (
-              <div className="ml-auto flex items-center gap-2 text-xs">
-                {scoredResults && scoredResults.length > 0 ? (
-                  <>
-                    <span className="hud-label hidden sm:inline-flex items-center gap-1.5" style={{ color: 'var(--text-2)' }}>
-                      <span className="w-2 h-2 rounded-full" style={{ background: 'var(--ok)' }} />
-                      {scoredResults.length} Treffer
-                      <span style={{ color: 'var(--text-3)' }}>·</span>
-                      Best: {Math.round(scoredResults[0].score * 100)}%
-                    </span>
-                    <span className="text-[11px] px-2 py-1 rounded-full hud-inset" style={{ color: 'var(--text-2)' }}>
-                      BM25 {Math.round(scoredResults[0].bm25Score * 100)}% · Cosine {Math.round(scoredResults[0].cosineScore * 100)}%
-                    </span>
-                  </>
-                ) : scoredResults && scoredResults.length === 0 ? (
-                  <span className="hud-label flex items-center gap-1.5" style={{ color: '#f87171' }}>
-                    <AlertCircle className="w-3.5 h-3.5" /> Keine semantischen Treffer
-                  </span>
-                ) : null}
-              </div>
-            )}
-
-            {!semanticEnabled && debouncedSearchQuery.trim() && (
-              <div className="ml-auto text-xs hud-label" style={{ color: 'var(--text-3)' }}>
-                Keyword-Filter: {displayedMemories.length} Treffer
-              </div>
-            )}
-          </div>
-
-          {/* Selbstlernend: Inbox-Watcher + Wissens-Verdichtung */}
-          <div className="px-6 py-3 flex flex-wrap items-center gap-3 shrink-0" style={{ borderBottom: '1px solid var(--border-subtle)', background: 'var(--bg-inset)' }}>
-            <div className="flex items-center gap-2.5 text-xs flex-1 min-w-[220px]">
-              <span className="w-7 h-7 rounded-lg flex items-center justify-center shrink-0" style={{ background: inbox?.watching ? 'var(--accent-soft)' : 'var(--bg-inset-strong)', border:'1px solid var(--border-subtle)' }}>
-                <UploadCloud className="w-3.5 h-3.5" style={{ color: inbox?.watching ? 'var(--accent)' : 'var(--text-3)' }} />
-              </span>
-              <div className="min-w-0">
-                <div className="flex items-center gap-1.5 flex-wrap">
-                  <span className="font-semibold" style={{color:'var(--text-1)'}}>Inbox</span>
-                  <span className="hud-label !text-[10px] px-1.5 py-0 rounded border truncate max-w-[260px]" style={{borderColor:'var(--border-subtle)', color:'var(--text-3)', background:'var(--bg-inset-strong)'}} title={inbox?.inboxDir || ''}>{inbox?.inboxDir ? inbox.inboxDir.replace(/^.*\.(ki-gehirn|kepta)/,'~/.ki-gehirn') : '~/.kepta/inbox'}</span>
-                  {inbox?.watching && <span className="w-1.5 h-1.5 rounded-full bg-[var(--ok)] animate-pulse" title="Watcher aktiv — Gehirn liest mit" />}
-                </div>
-                <div className="text-xs flex items-center gap-2 mt-0.5 flex-wrap" style={{color:'var(--text-3)'}}>
-                  <span>{inbox ? `${inbox.files.length} Datei(en) · ${inbox.archivCount} archiviert` : 'lädt…'}</span>
-                  {inbox && inbox.files.length>0 && <span className="truncate max-w-[180px]" style={{color:'var(--text-2)'}}>{inbox.files.slice(0,2).join(', ')}{inbox.files.length>2?` +${inbox.files.length-2}…`:''}</span>}
-                </div>
-              </div>
-            </div>
-            <button onClick={handleInboxScan} disabled={inboxScanBusy} className="btn-ghost flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium shrink-0" title="Inbox jetzt scannen und importieren">
-              {inboxScanBusy ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <ScanSearch className="w-3.5 h-3.5" />} Inbox scannen
-            </button>
-            <div className="hidden sm:block w-px h-8 self-center" style={{background:'var(--border-subtle)'}} />
-            <div className="flex items-center gap-2 text-xs shrink-0">
-              {duplicatePairs.length===0 ? (
-                <span className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg hud-inset" style={{color:'var(--ok)'}}><CheckCircle2 className="w-3.5 h-3.5" /> Wissensbasis sauber</span>
-              ) : (
-                <span className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg" style={{background:'rgba(251,191,36,.14)', border:'1px solid rgba(251,191,36,.28)', color:'#d97706'}} title="Nur ein Hinweis — es wird nichts gelöscht oder verändert. Duplikate kannst du per MCP memory_consolidate sicher zusammenführen.">
-                  <AlertCircle className="w-3.5 h-3.5" /> {duplicatePairs.length} mögliche Duplikat{duplicatePairs.length>1?'e':''}
-                  <span className="hidden xl:inline" style={{color:'var(--text-3)'}}>· {duplicatePairs[0].reason} · nichts wird gelöscht</span>
+            <div className="ml-auto flex items-center gap-2 text-xs">
+              {semanticEnabled && debouncedSearchQuery.trim().length >= 2 && scoredResults && scoredResults.length > 0 && (
+                <span
+                  className="chip tnum"
+                  title={`${scoredResults.length} Treffer · beste Übereinstimmung ${Math.round(scoredResults[0].score * 100)} % · BM25 ${Math.round(scoredResults[0].bm25Score * 100)} % · Vektor ${Math.round(scoredResults[0].cosineScore * 100)} %`}
+                >
+                  <span className="w-1.5 h-1.5 rounded-full" style={{ background: 'var(--ok)' }} />
+                  {scoredResults.length} Treffer · best {Math.round(scoredResults[0].score * 100)} %
                 </span>
               )}
-              {duplicatePairs.length>0 && (
-                <button onClick={()=>{
-                  const first = duplicatePairs[0];
-                  if(first){ setEditingMemory(first.a); setIsEditorOpen(true); }
-                }} className="btn-ghost px-2.5 py-1.5 rounded-lg text-xs hidden sm:inline-flex" title="Ähnlichste Paare im Editor ansehen — ohne Änderung">Ansehen</button>
+              {semanticEnabled && debouncedSearchQuery.trim().length >= 2 && scoredResults && scoredResults.length === 0 && (
+                <span className="chip" style={{ color: 'var(--warn)' }}>
+                  <AlertCircle className="w-3 h-3" /> Keine Treffer
+                </span>
+              )}
+              {!semanticEnabled && debouncedSearchQuery.trim() && (
+                <span className="chip tnum">{displayedMemories.length} Treffer</span>
+              )}
+
+              <span
+                className="chip"
+                title={inbox?.inboxDir ? `Inbox-Ordner: ${inbox.inboxDir}` : 'Inbox-Ordner beobachten'}
+              >
+                <UploadCloud className="w-3 h-3" style={{ color: inbox?.watching ? 'var(--ok)' : 'var(--text-3)' }} />
+                {inbox ? `${inbox.files.length} in Inbox` : 'Inbox…'}
+                <button
+                  onClick={handleInboxScan}
+                  disabled={inboxScanBusy}
+                  className="ml-0.5 -mr-1 px-1 rounded text-[10px] font-semibold hover:opacity-80 disabled:opacity-40"
+                  style={{ color: 'var(--accent)' }}
+                  title="Inbox jetzt scannen und importieren"
+                >
+                  {inboxScanBusy ? <Loader2 className="w-3 h-3 animate-spin" /> : 'Scan'}
+                </button>
+              </span>
+
+              {duplicatePairs.length === 0 ? (
+                <span className="chip hidden lg:inline-flex" title="Nichts zu tun — die Wissensbasis hat keine auffälligen Duplikate">
+                  <CheckCircle2 className="w-3 h-3" style={{ color: 'var(--ok)' }} /> Sauber
+                </span>
+              ) : (
+                <>
+                  <span
+                    className="chip"
+                    style={{ color: 'var(--warn)', background: 'var(--warn-soft)', borderColor: 'transparent' }}
+                    title="Nur ein Hinweis — es wird nichts gelöscht oder verändert. Duplikate kannst du per MCP memory_consolidate sicher zusammenführen."
+                  >
+                    <AlertCircle className="w-3 h-3" /> {duplicatePairs.length} Duplikat{duplicatePairs.length > 1 ? 'e' : ''}
+                  </span>
+                  <button
+                    onClick={() => {
+                      const first = duplicatePairs[0];
+                      if (first) { setEditingMemory(first.a); setIsEditorOpen(true); }
+                    }}
+                    className="btn-ghost px-2 py-1 rounded-md text-[11px] font-medium hidden sm:inline-block"
+                    title="Ähnlichste Paare im Editor ansehen — ohne Änderung"
+                  >
+                    Ansehen
+                  </button>
+                </>
               )}
             </div>
           </div>
 
-          {/* Import: Drag&Drop + URL-Clipper */}
-          <div className="px-6 pt-4 pb-0 shrink-0">
-            <div className="grid grid-cols-1 lg:grid-cols-[1.35fr_1fr] gap-3">
+          {/* Quellen: Datei-Import + URL-Clipper */}
+          <div className="px-5 py-3 shrink-0" style={{ borderBottom: '1px solid var(--border-subtle)' }}>
+            <div className="grid grid-cols-1 lg:grid-cols-[1.3fr_1fr] gap-2.5">
               {/* Drop-Zone */}
               <div
                 onDragOver={(e) => { e.preventDefault(); setDragOver(true); }}
                 onDragLeave={() => setDragOver(false)}
                 onDrop={onDrop}
                 className={cn(
-                  "group relative rounded-xl border-2 border-dashed p-4 flex items-center gap-4 transition-all",
-                  dragOver ? "bg-[var(--accent-soft)] border-[var(--accent)]" : "hud-inset hover:border-[color-mix(in_srgb,var(--accent)_28%,transparent)]"
+                  "group relative rounded-lg border border-dashed px-3.5 py-2.5 flex items-center gap-3 transition-colors",
+                  dragOver ? "border-[var(--accent)]" : ""
                 )}
+                style={{ background: dragOver ? 'var(--accent-soft)' : 'var(--bg-inset)', borderColor: dragOver ? 'var(--accent)' : 'var(--border-subtle)' }}
               >
-                <div className={cn("w-10 h-10 rounded-xl flex items-center justify-center shrink-0 transition-colors", dragOver ? "btn-primary" : "hud-panel")}>
-                  {importing ? <Loader2 className="w-5 h-5 animate-spin" style={{ color: dragOver ? undefined : "var(--accent)" }} /> : <UploadCloud className="w-5 h-5" style={{ color: dragOver ? undefined : "var(--accent)" }} />}
-                </div>
+                {importing ? <Loader2 className="w-4 h-4 animate-spin shrink-0" style={{ color: "var(--accent)" }} /> : <UploadCloud className="w-4 h-4 shrink-0" style={{ color: "var(--text-3)" }} />}
                 <div className="flex-1 min-w-0">
-                  <div className="text-sm font-medium" style={{ color: "var(--text-1)" }}>
-                    {importing ? "Importiere…" : dragOver ? "Ablegen zum Importieren" : "Dateien hierher ziehen"}
-                    <span className="hidden sm:inline font-normal" style={{ color: "var(--text-2)" }}> — PDF, MD, TXT, JSON · Chunking 2000 Zeichen</span>
+                  <div className="text-[13px] font-medium truncate" style={{ color: "var(--text-1)" }}>
+                    {importing ? "Importiere…" : dragOver ? "Loslassen zum Importieren" : "Dateien hierher ziehen"}
+                    <span className="hidden sm:inline font-normal" style={{ color: "var(--text-3)" }}> · PDF, MD, TXT, JSON</span>
                   </div>
-                  <div className="text-xs flex items-center gap-2" style={{ color: "var(--text-3)" }}>
-                    <FileText className="w-3 h-3" /> 1 Knoten pro 2000 Zeichen · Titel = Dateiname + Teil
-                    {importMsg && <span className="inline-flex items-center gap-1 ml-2" style={{ color: "var(--ok)" }}><CheckCircle2 className="w-3 h-3" />{importMsg}</span>}
-                    {importErr && <span className="inline-flex items-center gap-1 ml-2" style={{ color: "#f87171" }}><AlertCircle className="w-3 h-3" />{importErr}</span>}
-                  </div>
+                  {importMsg && <div className="text-[11px] mt-0.5 flex items-center gap-1" style={{ color: "var(--ok)" }}><CheckCircle2 className="w-3 h-3" />{importMsg}</div>}
+                  {importErr && <div className="text-[11px] mt-0.5 flex items-center gap-1" style={{ color: "var(--danger)" }}><AlertCircle className="w-3 h-3" />{importErr}</div>}
                 </div>
-                <label className="btn-ghost px-3 py-2 rounded-lg text-sm font-medium cursor-pointer shrink-0">
-                  Durchsuchen
+                <label className="btn-ghost px-2.5 py-1.5 rounded-md text-xs font-medium cursor-pointer shrink-0">
+                  Auswählen
                   <input
                     ref={fileInputRef}
                     type="file"
@@ -840,108 +827,95 @@ export function Dashboard() {
               </div>
 
               {/* URL-Clipper */}
-              <div className="hud-inset rounded-xl p-3 flex flex-col gap-2">
-                <div className="flex items-center gap-2 hud-label">
-                  <Globe className="w-3.5 h-3.5" style={{ color: "var(--accent)" }} /> URL-Clipper
-                  <span className="ml-auto hidden sm:inline-flex items-center gap-1 text-[10px] normal-case tracking-normal font-normal" style={{ color: "var(--text-3)" }}><Link2 className="w-3 h-3" /> POST /api/clip</span>
-                </div>
-                <div className="flex gap-2">
-                  <div className="relative flex-1">
-                    <Link2 className="w-3.5 h-3.5 absolute left-2.5 top-1/2 -translate-y-1/2" style={{ color: "var(--text-3)" }} />
-                    <input
-                      ref={clipInputRef}
-                      value={clipUrl}
-                      onChange={(e) => setClipUrl(e.target.value)}
-                      onKeyDown={(e) => { if (e.key === "Enter") handleClip(); }}
-                      placeholder="https://example.com/artikel …"
-                      className="hud-input w-full pl-8 pr-3 py-2.5 rounded-lg text-sm"
-                    />
-                  </div>
-                  <button
-                    onClick={handleClip}
-                    disabled={clipping || !clipUrl.trim()}
-                    className="btn-primary px-4 py-2.5 rounded-lg text-sm font-medium flex items-center gap-2 shrink-0 disabled:opacity-40"
-                  >
-                    {clipping ? <Loader2 className="w-4 h-4 animate-spin" /> : <Globe className="w-4 h-4" />}
-                    <span className="hidden sm:inline">URL importieren</span>
-                    <span className="sm:hidden">Import</span>
-                  </button>
-                </div>
-                {(clipErr || clipOk) && (
-                  <div className="text-xs flex items-center gap-1.5" style={{ color: clipErr ? "#f87171" : "var(--ok)" }}>
-                    {clipErr ? <AlertCircle className="w-3 h-3" /> : <CheckCircle2 className="w-3 h-3" />}
-                    {clipErr || clipOk}
-                  </div>
-                )}
+              <div className="rounded-lg flex items-center gap-2 px-3.5 py-2.5" style={{ background: 'var(--bg-inset)', border: '1px solid var(--border-subtle)' }}>
+                <Globe className="w-4 h-4 shrink-0" style={{ color: "var(--text-3)" }} />
+                <input
+                  ref={clipInputRef}
+                  value={clipUrl}
+                  onChange={(e) => setClipUrl(e.target.value)}
+                  onKeyDown={(e) => { if (e.key === "Enter") handleClip(); }}
+                  placeholder="URL einfügen und importieren…"
+                  className="flex-1 min-w-0 bg-transparent text-sm outline-none"
+                  style={{ color: "var(--text-1)" }}
+                />
+                <button
+                  onClick={handleClip}
+                  disabled={clipping || !clipUrl.trim()}
+                  className="btn-ghost px-2.5 py-1.5 rounded-md text-xs font-medium shrink-0 disabled:opacity-40"
+                >
+                  {clipping ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : 'Importieren'}
+                </button>
               </div>
             </div>
+            {(clipErr || clipOk) && (
+              <div className="text-[11px] flex items-center gap-1.5 mt-1.5" style={{ color: clipErr ? "var(--danger)" : "var(--ok)" }}>
+                {clipErr ? <AlertCircle className="w-3 h-3" /> : <CheckCircle2 className="w-3 h-3" />}
+                {clipErr || clipOk}
+              </div>
+            )}
           </div>
 
-          <div className="flex-1 overflow-y-auto p-6">
+          <div className="flex-1 overflow-y-auto px-5 py-4">
             <div className="max-w-6xl mx-auto h-full flex flex-col">
-              <div className="flex items-center justify-between mb-4 shrink-0">
-                <div className="flex items-center gap-2 hud-label">
-                  <ScanSearch className="w-3.5 h-3.5" style={{ color: 'var(--accent)' }} />
-                  {semanticEnabled && debouncedSearchQuery.trim().length >= 2 ? (
-                    <>Semantik // {String(displayedMemories.length).padStart(2, '0')} von {String(tagFiltered.length).padStart(2, '0')} Knoten · Top-{topK}</>
-                  ) : (
-                    <>Index // {String(displayedMemories.length).padStart(2, '0')} Knoten aktiv</>
-                  )}
+              <div className="flex items-center justify-between mb-3 shrink-0">
+                <div className="flex items-center gap-2 text-[12px] tnum" style={{ color: 'var(--text-3)' }}>
+                  {displayedMemories.length} von {tagFiltered.length} Einträgen
+                  {semanticEnabled && debouncedSearchQuery.trim().length >= 2 && ` · Top-${topK}`}
                 </div>
-                <div className="flex items-center gap-2 hud-label">
+                <div className="flex items-center gap-2 text-[12px]" style={{ color: 'var(--text-3)' }}>
                   {agentActive ? (
                     <>
                       <span className="agent-dot" />
-                      <span style={{ color: 'var(--accent)' }}>AGENT AKTIV</span>
+                      <span style={{ color: 'var(--accent)', fontWeight: 560 }}>Agent aktiv</span>
                     </>
                   ) : (
-                    <span className="status-dot" />
+                    <span className="status-dot" title="Lokaler Speicher synchron" />
                   )}
-                  {agentActive ? 'Gehirn synchronisiert sich' : semanticEnabled ? `Suche · ${chatMemories.length} im Retrieval · MCP: /mcp · 8 Tools` : 'Speicher synchron · MCP: /mcp · 8 Tools'}
                 </div>
               </div>
 
               {displayedMemories.length === 0 && !initialLoaded ? (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
                   {Array.from({ length: 8 }).map((_, i) => (
-                    <div key={i} className="card p-5 h-56 flex flex-col gap-3">
+                    <div key={i} className="card p-4 h-52 rounded-xl flex flex-col gap-3">
                       <div className="skeleton h-3 w-16" />
                       <div className="skeleton h-5 w-4/5" />
                       <div className="skeleton h-3 w-full" />
                       <div className="skeleton h-3 w-full" />
                       <div className="skeleton h-3 w-2/3" />
                       <div className="mt-auto flex gap-2">
-                        <div className="skeleton h-6 w-14 rounded-full" />
-                        <div className="skeleton h-6 w-12 rounded-full" />
+                        <div className="skeleton h-5 w-14 rounded-md" />
+                        <div className="skeleton h-5 w-12 rounded-md" />
                       </div>
                     </div>
                   ))}
                 </div>
               ) : displayedMemories.length === 0 ? (
                 <div className="flex-1 flex flex-col items-center justify-center text-center">
-                  <div className="w-20 h-20 hud-inset rounded-2xl flex items-center justify-center mb-5 relative overflow-hidden">
-                    <div className="absolute inset-0 opacity-60" style={{ transform: 'scale(0.55)' }}><BrainAnimationMini pulse={brainPulse} /></div>
-                    <motion.div key={brainPulse} initial={{ scale: 1.15 }} animate={{ scale: 1 }} transition={{ type: 'spring', damping: 12 }}>
-                      <Database className="w-7 h-7 relative z-10" style={{ color: 'var(--accent)' }} />
+                  <div className="w-14 h-14 rounded-2xl flex items-center justify-center mb-4" style={{ background: 'var(--bg-inset)', border: '1px solid var(--border-subtle)' }}>
+                    <motion.div key={brainPulse} initial={{ scale: 1.12 }} animate={{ scale: 1 }} transition={{ type: 'spring', damping: 14 }}>
+                      <Database className="w-6 h-6" style={{ color: 'var(--text-3)' }} />
                     </motion.div>
                   </div>
-                  <h3 className="text-lg font-semibold mb-1.5" style={{ color: 'var(--text-1)' }}>Keine Knoten gefunden</h3>
-                  <p className="text-sm max-w-sm mx-auto" style={{ color: 'var(--text-2)' }}>
+                  <h3 className="text-[15px] font-semibold mb-1.5" style={{ color: 'var(--text-1)' }}>
+                    {debouncedSearchQuery || selectedTags.length > 0 ? 'Keine Treffer' : 'Noch keine Einträge'}
+                  </h3>
+                  <p className="text-[13px] max-w-sm mx-auto leading-relaxed" style={{ color: 'var(--text-2)' }}>
                     {debouncedSearchQuery || selectedTags.length > 0
                       ? semanticEnabled && debouncedSearchQuery.trim().length >= 2
-                        ? `Keine semantischen Treffer für „${debouncedSearchQuery.trim().slice(0, 48)}“. Versuche andere Begriffe, erhöhe Top-k oder deaktiviere Semantik für Keyword-Suche.`
+                        ? `Nichts gefunden für „${debouncedSearchQuery.trim().slice(0, 48)}“. Versuche andere Begriffe, erhöhe die Ergebnisanzahl oder nutze die Keyword-Suche.`
                         : "Keine Einträge entsprechen den Suchkriterien."
-                      : "Dein neuronaler Index ist leer. Ziehe eine Datei herein, clippe eine URL oder erstelle deinen ersten Wissensknoten."}
+                      : "Ziehe Dateien hierher, importiere eine URL oder lege mit „Neu“ los — Agenten schreiben über MCP direkt in dieselbe Basis."}
                   </p>
                   {semanticEnabled && debouncedSearchQuery.trim().length >= 2 && displayedMemories.length === 0 && (
-                    <button onClick={() => setSemanticEnabled(false)} className="mt-4 btn-ghost px-4 py-2 rounded-xl text-sm font-medium">
-                      Auf Keyword-Suche wechseln
+                    <button onClick={() => setSemanticEnabled(false)} className="mt-4 btn-ghost px-3.5 py-2 rounded-lg text-[13px] font-medium">
+                      Zur Keyword-Suche wechseln
                     </button>
                   )}
                 </div>
               ) : (
                 <>
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
                     <AnimatePresence>
                       {paginatedMemories.map(memory => {
                         const scored = scoredMap.get(memory.id);
@@ -966,19 +940,19 @@ export function Dashboard() {
                       <div className="flex justify-center pt-6">
                         <button
                           onClick={() => setVisibleCount((c) => Math.min(c + PAGE_SIZE, displayedMemories.length))}
-                          className="btn-ghost px-5 py-2.5 rounded-xl text-sm font-medium"
+                          className="btn-ghost px-4 py-2 rounded-lg text-[13px] font-medium"
                         >
                           Mehr laden ({displayedMemories.length - visibleCount} weitere)
                         </button>
                       </div>
-                      <div className="text-center text-xs mt-2" style={{ color: 'var(--text-3)' }}>
-                        {paginatedMemories.length} von {displayedMemories.length} Knoten angezeigt
+                      <div className="text-center text-[11px] mt-2 tnum" style={{ color: 'var(--text-3)' }}>
+                        {paginatedMemories.length} von {displayedMemories.length} angezeigt
                       </div>
                     </>
                   )}
                   {visibleCount >= displayedMemories.length && displayedMemories.length > PAGE_SIZE && (
-                    <div className="text-center text-xs mt-4" style={{ color: 'var(--text-3)' }}>
-                      Alle {displayedMemories.length} Knoten angezeigt
+                    <div className="text-center text-[11px] mt-4 tnum" style={{ color: 'var(--text-3)' }}>
+                      Alle {displayedMemories.length} Einträge angezeigt
                     </div>
                   )}
                 </>
@@ -1004,12 +978,13 @@ export function Dashboard() {
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
-          className={cn("flex-1 flex flex-col h-full min-h-0 overflow-hidden p-4", currentView === 'graph' ? 'flex' : 'hidden')}
+          className={cn("flex-1 flex flex-col h-full min-h-0 overflow-hidden px-5 py-3", currentView === 'graph' ? 'flex' : 'hidden')}
         >
-          <div className="flex items-center gap-3 mb-3 shrink-0">
-            <div className="hud-label flex items-center gap-2"><ScanSearch className="w-3.5 h-3.5" style={{ color: "var(--accent)" }} /> Graph // {memories.length} Knoten</div>
-            <div className="ml-auto flex items-center gap-2">
-              <button onClick={() => setCurrentView("memories")} className="btn-ghost px-3 py-1.5 rounded-lg text-xs font-medium">Zurück zum Index</button>
+          <div className="flex items-center gap-3 mb-2 shrink-0">
+            <div className="text-[13px] font-medium" style={{ color: 'var(--text-1)' }}>Graph</div>
+            <div className="text-[12px] tnum" style={{ color: 'var(--text-3)' }}>{memories.length} Einträge · Verbindungen über Tags, Ähnlichkeit & Wissens-Entitäten</div>
+            <div className="ml-auto">
+              <button onClick={() => setCurrentView("memories")} className="btn-ghost px-2.5 py-1.5 rounded-md text-xs font-medium">Zurück zur Liste</button>
             </div>
           </div>
           <div className="flex-1 min-h-0">
@@ -1020,7 +995,7 @@ export function Dashboard() {
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
-          className={cn("flex-1 p-6 h-full overflow-y-auto", currentView === 'settings' ? 'block' : 'hidden')}
+          className={cn("flex-1 p-5 h-full overflow-y-auto", currentView === 'settings' ? 'block' : 'hidden')}
         >
           <Settings />
         </motion.div>
@@ -1048,19 +1023,6 @@ export function Dashboard() {
       </AnimatePresence>
       <ShortcutsSheet open={shortcutsOpen} onClose={() => setShortcutsOpen(false)} />
     </div>
-  );
-}
-
-// Kleines statisches neuronales Ornament für den Empty-State — pulsiert bei Aktivität.
-function BrainAnimationMini({ pulse = 0 }: { pulse?: number }) {
-  return (
-    <svg viewBox="0 0 100 100" className="w-full h-full" fill="none" style={{ transform: pulse > 0 ? 'scale(1)' : undefined }}>
-      <path d="M 50 15 C 30 15 15 25 15 45 C 15 60 25 75 40 85" stroke="var(--accent)" strokeWidth="2" strokeLinecap="round" opacity="0.6" />
-      <path d="M 50 15 C 70 15 85 25 85 45 C 85 60 75 75 60 85" stroke="var(--accent-2)" strokeWidth="2" strokeLinecap="round" opacity="0.6" />
-      <circle cx="30" cy="50" r="3" fill="var(--accent)" opacity="0.8" />
-      <circle cx="70" cy="50" r="3" fill="var(--accent-2)" opacity="0.8" />
-      <circle cx="50" cy="20" r="3" fill="var(--accent)" opacity="0.8" />
-    </svg>
   );
 }
 

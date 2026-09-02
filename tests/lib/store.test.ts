@@ -127,6 +127,38 @@ describe("saveMemory (optimistic + Rollback)", () => {
     expect(mod.getMemoriesSync()).toEqual([]); // Rollback
   });
 
+  it("rollt zurück und konvergiert danach auf den Server-Stand", async () => {
+    // POST schlägt fehl, der Konvergenz-GET liefert die serverseitige Wahrheit
+    const fetchMock = vi.fn(async (_url: string, init?: RequestInit) => {
+      if (init?.method === "POST") return jsonResponse({ error: "kaputt" }, false);
+      return jsonResponse([{ id: "srv-9", title: "Vom Server" }]);
+    });
+    vi.stubGlobal("fetch", fetchMock);
+    const mod = await freshModule();
+    const saved = await mod.saveMemory({ title: "Fehlerfall", content: "y" });
+    expect(saved).toBeNull();
+    await vi.advanceTimersByTimeAsync(50); // Follow-up-GET (Konvergenz) abwarten
+    expect(mod.getMemoriesSync()[0]?.id).toBe("srv-9");
+    expect(fetchMock).toHaveBeenCalledTimes(2); // 1× POST + 1× Konvergenz-GET
+  });
+
+  it("schluckt einen fehlschlagenden Konvergenz-Resync still", async () => {
+    // Alles offline UND localStorage gesteckt → doRefresh selbst rejected;
+    // das .catch in der Konvergenz darf keine Unhandled-Rejection werfen.
+    vi.stubGlobal("fetch", vi.fn(async () => {
+      throw new Error("offline");
+    }));
+    const spy = vi.spyOn(localStorage, "getItem").mockImplementationOnce(() => {
+      throw new Error("storage weg");
+    });
+    const mod = await freshModule();
+    const saved = await mod.saveMemory({ title: "x", content: "y" });
+    expect(saved).toBeNull();
+    await vi.advanceTimersByTimeAsync(50);
+    spy.mockRestore();
+    expect(mod.getMemoriesSync()).toEqual([]); // Rollback blieb erhalten
+  });
+
   it("aktualisiert einen bestehenden Eintrag optimistisch (isUpdate-Pfad)", async () => {
     const fetchMock = vi.fn(async (url: string) => {
       if (url === "/api/memories") return jsonResponse([{ id: "vorhanden", title: "Erst" }]);
@@ -183,6 +215,40 @@ describe("deleteMemory", () => {
     await p;
     // Rollback: Eintrag ist wieder da
     expect(mod.getMemoriesSync()).toHaveLength(1);
+  });
+
+  it("rollt bei Fehler zurück und konvergiert auf den Server-Stand", async () => {
+    // DELETE wirft (Fehlerpfad), der Konvergenz-GET liefert die Serverliste
+    const fetchMock = vi.fn(async (_url: string, init?: RequestInit) => {
+      if (init?.method === "DELETE") throw new Error("DELETE weg");
+      return jsonResponse([
+        { id: "bleibt", title: "Da" },
+        { id: "zweit", title: "Auch da" },
+      ]);
+    });
+    vi.stubGlobal("fetch", fetchMock);
+    const mod = await freshModule();
+    const p = mod.deleteMemory("bleibt");
+    await vi.advanceTimersByTimeAsync(50);
+    await p;
+    await vi.advanceTimersByTimeAsync(50); // Konvergenz-GET abwarten
+    const ids = mod.getMemoriesSync().map((m: { id: string }) => m.id);
+    expect(ids).toContain("bleibt");
+    expect(ids).toHaveLength(2);
+  });
+
+  it("schluckt einen fehlschlagenden Konvergenz-Resync nach Delete still", async () => {
+    vi.stubGlobal("fetch", vi.fn(async () => {
+      throw new Error("offline");
+    }));
+    const spy = vi.spyOn(localStorage, "getItem").mockImplementationOnce(() => {
+      throw new Error("storage weg");
+    });
+    const mod = await freshModule();
+    await mod.deleteMemory("x");
+    await vi.advanceTimersByTimeAsync(50);
+    spy.mockRestore();
+    expect(mod.getMemoriesSync()).toEqual([]);
   });
 });
 

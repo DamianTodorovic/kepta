@@ -7,13 +7,15 @@ import { SystemStatus } from './SystemStatus';
 
 type TabId = 'system' | 'mcp';
 
-const API_BASE = 'http://localhost:3000';
+// Immer der eigene Origin — die App läuft hinter Vite-Dev wie hinter dem
+// Electron-Server auf zufälligem Port gleich mit.
+const API_BASE = typeof window !== 'undefined' ? window.location.origin : '';
 const MCP_JSON_TSX = `{
   "mcpServers": {
     "kepta": {
       "command": "npx",
       "args": ["tsx", "src/mcp-server.ts"],
-      "cwd": "/ABSOLUTER/PFAD/ZU/ki-gehirn"
+      "cwd": "/PFAD/ZU/KEPTA-REPO"
     }
   }
 }`;
@@ -21,7 +23,7 @@ const MCP_JSON_BUILT = `{
   "mcpServers": {
     "kepta": {
       "command": "node",
-      "args": ["/ABSOLUTER/PFAD/ZU/ki-gehirn/dist/mcp-server.cjs"]
+      "args": ["/PFAD/ZU/KEPTA-REPO/dist/mcp-server.cjs"]
     }
   }
 }`;
@@ -210,8 +212,8 @@ export function Settings() {
             <SettingsIcon className="w-6 h-6" style={{ color: 'var(--accent)' }} />
           </div>
           <div>
-            <h2 className="text-xl font-bold" style={{ color: 'var(--text-1)' }}>System</h2>
-            <p className="text-sm mt-1" style={{ color: 'var(--text-2)' }}>Neural Link konfigurieren, Daten &amp; MCP</p>
+            <h2 className="text-lg font-semibold" style={{ color: 'var(--text-1)' }}>Einstellungen</h2>
+            <p className="text-sm mt-1" style={{ color: 'var(--text-2)' }}>KI-Anbindung, Daten &amp; MCP-Anbindung</p>
           </div>
         </div>
 
@@ -351,12 +353,12 @@ export function Settings() {
               <div className="rounded-xl p-4" style={{ background: 'var(--bg-inset)', border: '1px solid var(--border-subtle)' }}>
                 <div className="flex items-center justify-between gap-4">
                   <div className="flex items-center gap-3">
-                    <div className="w-9 h-9 rounded-xl flex items-center justify-center" style={{ background: autoLearn ? 'linear-gradient(135deg, var(--accent), var(--accent-2))' : 'var(--bg-inset-strong)', border:'1px solid var(--border-subtle)' }}>
-                      <Sparkles className="w-4 h-4" style={{ color: autoLearn ? 'white' : 'var(--text-3)' }} />
+                    <div className="w-9 h-9 rounded-lg flex items-center justify-center" style={{ background: autoLearn ? 'var(--accent-soft)' : 'var(--bg-inset-strong)', border: '1px solid var(--border-subtle)' }}>
+                      <Sparkles className="w-4 h-4" style={{ color: autoLearn ? 'var(--accent)' : 'var(--text-3)' }} />
                     </div>
                     <div>
-                      <div className="text-sm font-semibold" style={{color:'var(--text-1)'}}>Selbst-Erweiterung — immer mitlesen</div>
-                      <div className="text-xs" style={{color:'var(--text-2)'}}>Nach jeder Antwort automatisch Kernaussage als Knoten speichern (Tag <code>auto-learn</code>). Duplikate werden erkannt.</div>
+                      <div className="text-sm font-semibold" style={{color:'var(--text-1)'}}>Automatisch mitlernen</div>
+                      <div className="text-xs" style={{color:'var(--text-2)'}}>Nach jeder Chat-Antwort die Kernaussage als Eintrag sichern (Tag <code>auto-learn</code>). Duplikate werden erkannt.</div>
                     </div>
                   </div>
                   <label className="relative inline-flex h-6 w-11 items-center rounded-full transition-colors cursor-pointer shrink-0" style={{ background: autoLearn ? 'var(--accent)' : 'var(--bg-inset-strong)', border: autoLearn ? '1px solid transparent' : '1px solid var(--border-subtle)' }}>
@@ -401,7 +403,7 @@ export function Settings() {
               <div>
                 <p className="text-sm font-semibold" style={{ color: 'var(--text-1)' }}>Ein Gehirn für alle KIs</p>
                 <p className="text-xs mt-1 leading-relaxed" style={{ color: 'var(--text-2)' }}>
-                  Derselbe lokale Speicher (`~/.ki-gehirn/memories.json`) per HTTP-API und MCP-stdio — nutzbar aus Claude Desktop, Cursor, Zed, Windsurf, eigenen Scripts und Shortcuts.
+                  Derselbe lokale Speicher (<code>~/.kepta/kepta.db</code>, SQLite) per HTTP-API und MCP-stdio — nutzbar aus Claude Desktop, Cursor, Zed, Windsurf, eigenen Scripts und Shortcuts.
                 </p>
               </div>
             </div>
@@ -427,7 +429,7 @@ export function Settings() {
                 </a>
               </div>
               <p className="text-xs mt-2" style={{ color: 'var(--text-3)' }}>
-                Läuft via <code>npm run dev</code> auf Port 3000. CORS offen — lokale Tools brauchen keine Auth.
+                Läuft lokal ({API_BASE || 'dieser Origin'}). Der Server bindet standardmäßig nur an 127.0.0.1 — über <code>KEPTA_HOST</code> änderbar.
               </p>
             </div>
 
@@ -529,7 +531,7 @@ export function Settings() {
                   </button>
                 </div>
                 <p className="text-xs mt-3 leading-relaxed" style={{ color: 'var(--text-2)' }}>
-                  Inhalt = gleiche <code>mcpServers</code> wie oben. Platzhalter <code>/ABSOLUTER/PFAD/ZU/ki-gehirn</code> ersetzen (z. B. <code>{API_BASE.replace('http','')}</code> ist <em>nicht</em> der Pfad — nutze <code>pwd</code> im Terminal). Danach Claude Desktop neu starten.
+                  Inhalt = gleiche <code>mcpServers</code> wie oben. Platzhalter <code>/PFAD/ZU/KEPTA-REPO</code> ersetzen (den echten Pfad bekommst du mit <code>pwd</code> im Projektordner). Danach Claude Desktop neu starten.
                 </p>
                 <p className="text-xs mt-2 leading-relaxed" style={{ color: 'var(--text-2)' }}>
                   Im Root liegt außerdem <code>mcp-config.json</code> als fertiges Beispiel — direkt kopieren.

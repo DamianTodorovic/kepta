@@ -50,9 +50,9 @@ describe("MemoryCard", () => {
     expect(screen.getByText("ERSETZT")).toBeInTheDocument();
   });
 
-  it("zeigt Typ-Label ABLAUF für procedural", () => {
+  it("zeigt Typ-Label Ablauf für procedural", () => {
     render(<MemoryCard memory={mem({ type: "procedural" })} onClick={() => {}} />);
-    expect(screen.getByText("ABLAUF")).toBeInTheDocument();
+    expect(screen.getByText("Ablauf")).toBeInTheDocument();
   });
 
   it("fällt bei leerem Titel auf 'Ohne Titel' zurück", () => {

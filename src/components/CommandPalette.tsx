@@ -143,7 +143,7 @@ export function buildPaletteActions(opts: {
     { id: "new", label: "Neuer Knoten", desc: "Leeren Knoten im Editor öffnen", icon: <Plus className="w-4 h-4" />, hotkey: "N", keywords: "neu knoten erstellen", action: opts.onNewNode },
     { id: "graph", label: "Graph öffnen", desc: "Wissens-Graph anzeigen", icon: <Network className="w-4 h-4" />, keywords: "graph verbindungen kanten", action: opts.onGoGraph },
     { id: "memories", label: "Zum Wissens-Index", desc: "Alle Knoten anzeigen", icon: <Database className="w-4 h-4" />, keywords: "index übersicht", action: opts.onGoMemories },
-    { id: "chat", label: "Neural Link öffnen", desc: "Chat mit Kontext", icon: <MessageSquare className="w-4 h-4" />, keywords: "chat ai assistant", action: opts.onGoChat },
+    { id: "chat", label: "Chat öffnen", desc: "Fragen mit Kontext aus der Wissensbasis", icon: <MessageSquare className="w-4 h-4" />, keywords: "chat ai assistant", action: opts.onGoChat },
     { id: "settings", label: "System / Provider wechseln", desc: "KI-Anbieter und Modell wählen", icon: <SettingsIcon className="w-4 h-4" />, keywords: "einstellungen provider modell", action: opts.onGoSettings },
     { id: "import", label: "Datei importieren", desc: "PDF / MD / TXT / JSON per Dialog", icon: <FileUp className="w-4 h-4" />, keywords: "import datei upload drag drop", action: opts.onImportFileClick },
     { id: "url", label: "URL importieren", desc: "Fokus auf URL-Clipper setzen", icon: <Globe className="w-4 h-4" />, keywords: "url clipper web import", action: opts.onFocusUrl },

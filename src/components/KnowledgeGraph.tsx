@@ -246,7 +246,8 @@ export function KnowledgeGraph({ memories, onSelectMemory }: KnowledgeGraphProps
         });
         return next;
       });
-      raf = requestAnimationFrame(tick);
+      // Wichtig: tick scheduliert sich NICHT selbst — nur loop treibt die Kette.
+      // (Vorher forkten sich pro Frame neue tick-Ketten → CPU-Laufaway.)
     };
     // rAF-Loop — läuft auch beim Ziehen weiter, damit Verbundene elastisch mitwandern
     const loop = () => {
@@ -317,9 +318,9 @@ export function KnowledgeGraph({ memories, onSelectMemory }: KnowledgeGraphProps
   // Typ-Farben (kohärent mit Karten-Badges WISSEN/EPISODE/ABLAUF) statt Tag-Regenbogen
   // Typ-Farben — individuell anpassbar pro Gerät (localStorage)
   const DEFAULT_TYPE_COLORS: Record<string, string> = {
-    semantic: "#60a5fa",
-    episodic: "#a78bfa",
-    procedural: "#34d399",
+    semantic: "#3e63dd",
+    episodic: "#7048c9",
+    procedural: "#17945c",
   };
   const [customTypeColors, setCustomTypeColors] = useState<Record<string, string>>(() => {
     try { return JSON.parse(localStorage.getItem("kepta_type_colors") || "{}"); } catch { return {}; }
@@ -434,18 +435,16 @@ export function KnowledgeGraph({ memories, onSelectMemory }: KnowledgeGraphProps
           onPointerUp={onPointerUp}
           onPointerLeave={onPointerUp}
         >
-          {/* Liquid Glass: Licht von oben-links, Typ-Tint, weiche Tiefe */}
           <defs>
             {(["semantic", "episodic", "procedural"] as const).map((t) => (
               <radialGradient key={t} id={`glass-${t}`} cx="0.32" cy="0.28" r="1">
-                <stop offset="0%" stopColor="#ffffff" stopOpacity="0.78" />
-                <stop offset="35%" stopColor={TYPE_COLORS[t]} stopOpacity="0.40" />
-                <stop offset="100%" stopColor={TYPE_COLORS[t]} stopOpacity="0.18" />
+                <stop offset="0%" stopColor={TYPE_COLORS[t]} stopOpacity="0.92" />
+                <stop offset="100%" stopColor={TYPE_COLORS[t]} stopOpacity="0.62" />
               </radialGradient>
             ))}
             <radialGradient id="glass-neutral" cx="0.32" cy="0.28" r="1">
-              <stop offset="0%" stopColor="#ffffff" stopOpacity="0.7" />
-              <stop offset="100%" stopColor="#9a9a9a" stopOpacity="0.3" />
+              <stop offset="0%" stopColor="var(--text-3)" stopOpacity="0.7" />
+              <stop offset="100%" stopColor="var(--text-3)" stopOpacity="0.42" />
             </radialGradient>
           </defs>
           <g transform={`translate(${transform.x},${transform.y}) scale(${transform.k})`}>
@@ -511,27 +510,14 @@ export function KnowledgeGraph({ memories, onSelectMemory }: KnowledgeGraphProps
                   <circle
                     r={isHovered ? r + 3 : r}
                     fill={`url(#glass-${m.type && TYPE_COLORS[m.type] ? m.type : "neutral"})`}
-                    stroke="rgba(255,255,255,0.45)"
+                    stroke={isHovered ? "var(--accent)" : "rgba(255,255,255,0.35)"}
                     strokeDasharray={expired ? `${4 / Math.max(0.4, transform.k)} ${3 / Math.max(0.4, transform.k)}` : undefined}
-                    strokeWidth={1.2 / Math.max(0.4, transform.k)}
-                    style={{ filter: isHovered ? "drop-shadow(0 0 12px var(--accent-glow))" : "drop-shadow(0 3px 7px rgba(0,0,0,0.25))" }}
+                    strokeWidth={(isHovered ? 1.8 : 1.1) / Math.max(0.4, transform.k)}
+                    style={{ filter: isHovered ? "drop-shadow(0 2px 8px rgba(0,0,0,0.22))" : "drop-shadow(0 1px 3px rgba(0,0,0,0.14))" }}
                   />
-                  {/* Refraktions-Ring (leicht chromatisch, wie dicke Glasskante) */}
-                  <circle r={r * 0.84} fill="none" stroke="rgba(150,200,255,0.28)" strokeWidth={0.9 / Math.max(0.4, transform.k)} />
-                  {/* Gegenschatten unten (Linsen-Tiefe) */}
-                  <ellipse cx={0} cy={r * 0.58} rx={r * 0.62} ry={r * 0.26} fill="rgba(10,15,40,0.12)" />
-                  {/* Specular: heller Kantenbogen oben + Glass-Schein + Glanzpunkt */}
-                  <path
-                    d={`M ${-r * 0.68} ${-r * 0.42} A ${r * 0.86} ${r * 0.86} 0 0 1 ${r * 0.68} ${-r * 0.42}`}
-                    fill="none" stroke="white" strokeOpacity={dimmed ? 0.15 : 0.6}
-                    strokeWidth={1.6 / Math.max(0.4, transform.k)} strokeLinecap="round"
-                  />
-                  <ellipse
-                    cx={-r * 0.2} cy={-r * 0.38} rx={r * 0.42} ry={r * 0.2}
-                    fill="white" fillOpacity={dimmed ? 0.08 : 0.4}
-                    transform="rotate(-24)"
-                  />
-                  <circle r={Math.max(1.6, 2 / Math.max(0.4, transform.k))} fill="white" fillOpacity={0.85} />
+                  {isHovered && (
+                    <circle r={r + 7} fill="none" stroke="var(--accent)" strokeOpacity={0.3} strokeWidth={1 / Math.max(0.4, transform.k)} />
+                  )}
                   {showLabel && (
                     <text
                       x={0} y={r + fs + 2}
@@ -564,9 +550,9 @@ export function KnowledgeGraph({ memories, onSelectMemory }: KnowledgeGraphProps
 
         <div className="absolute left-3 bottom-3 hud-panel rounded-lg px-3 py-2 pointer-events-none space-y-1">
           <div className="flex items-center gap-3 hud-label">
-            <span className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-full" style={{ background: '#60a5fa' }} /> Wissen</span>
-            <span className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-full" style={{ background: '#a78bfa' }} /> Episode</span>
-            <span className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-full" style={{ background: '#34d399' }} /> Ablauf</span>
+            <span className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-full" style={{ background: '#3e63dd' }} /> Wissen</span>
+            <span className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-full" style={{ background: '#7048c9' }} /> Episode</span>
+            <span className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-full" style={{ background: '#17945c' }} /> Ablauf</span>
           </div>
           <div className="flex items-center gap-3 hud-label">
             <svg width="26" height="6"><line x1="0" y1="3" x2="26" y2="3" stroke="var(--accent)" strokeWidth="2" /></svg> echte Verbindung

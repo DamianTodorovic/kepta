@@ -127,22 +127,21 @@ export function MemoryEditor({ memory, onSave, onClose, onDelete }: MemoryEditor
               <Database className="w-4 h-4" style={{ color: 'var(--accent)' }} />
             </div>
             <div>
-              <h2 className="text-lg font-semibold" style={{ color: 'var(--text-1)' }}>
-                {memory ? 'Notiz bearbeiten' : 'Neue Notiz'}
+              <h2 className="text-[15px] font-semibold" style={{ color: 'var(--text-1)' }}>
+                {memory?.id ? 'Notiz bearbeiten' : 'Neue Notiz'}
               </h2>
-              <div className="hud-label mt-0.5">Wissens-Editor</div>
+              <div className="hud-label mt-0.5">{memory?.id ? memory.id : 'Neuer Eintrag'}</div>
             </div>
           </div>
           <div className="flex items-center gap-2">
-            {onDelete && (
+            {onDelete && memory?.id && (
               <button
                 type="button"
                 onClick={onDelete}
-                className="p-2 rounded-lg transition-colors hover:bg-red-500/10"
-                style={{ color: '#f87171' }}
-                title="Löschen"
+                className="btn-danger-ghost p-2 rounded-lg"
+                title="In den Papierkorb verschieben"
               >
-                <Trash2 className="w-5 h-5" />
+                <Trash2 className="w-4.5 h-4.5" />
               </button>
             )}
             <button
@@ -207,7 +206,7 @@ export function MemoryEditor({ memory, onSave, onClose, onDelete }: MemoryEditor
             </div>
 
             <div className="pt-2">
-              <div className="hud-label mb-2">Synapsen / Kategorien</div>
+              <div className="hud-label mb-2">Tags</div>
               <div className="hud-input flex flex-wrap gap-2 items-center p-2 rounded-xl">
                 {tags.map(tag => (
                   <span
@@ -283,11 +282,11 @@ export function MemoryEditor({ memory, onSave, onClose, onDelete }: MemoryEditor
             </div>
           </div>
 
-          <footer className="p-6 shrink-0 flex items-center justify-between" style={{ borderTop: '1px solid var(--border-subtle)' }}>
-            <span className="hud-label">Speichern schreibt in lokalen Index</span>
+          <footer className="p-5 shrink-0 flex items-center justify-between" style={{ borderTop: '1px solid var(--border-subtle)' }}>
+            <span className="hud-label">Alles bleibt lokal auf diesem Gerät</span>
             <button
               type="submit"
-              className="btn-primary flex items-center gap-2 px-6 py-2.5 rounded-xl"
+              className="btn-primary flex items-center gap-2 px-5 py-2 rounded-lg text-[13px] font-medium"
             >
               <Save className="w-4 h-4" />
               Speichern

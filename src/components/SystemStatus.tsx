@@ -146,8 +146,8 @@ export function SystemStatus() {
           </button>
         </div>
         <div className="text-[11px] mt-1.5" style={{ color: 'var(--text-3)' }}>
-          Oder HTTP: <code>POST http://localhost:3000/mcp</code> (JSON-RPC, Protokoll 2026-07-28)
-          <button onClick={() => copy('url', 'http://localhost:3000/mcp')} className="ml-1.5 underline" style={{ color: 'var(--accent)' }}>kopieren</button>
+          Oder HTTP: <code>POST {typeof window !== 'undefined' ? window.location.origin : ''}/mcp</code> (JSON-RPC, Protokoll 2026-07-28)
+          <button onClick={() => copy('url', `${typeof window !== 'undefined' ? window.location.origin : ''}/mcp`)} className="ml-1.5 underline" style={{ color: 'var(--accent)' }}>kopieren</button>
         </div>
       </div>
     </div>
