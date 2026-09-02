@@ -33,6 +33,7 @@
   --accent-2: #3355c4;
   --accent-soft: rgba(62, 99, 221, 0.08);
   --accent-soft-2: rgba(62, 99, 221, 0.14);
+  --accent-glow: rgba(62, 99, 221, 0.35);
   --on-accent: #ffffff;
 
   /* Semantik */
@@ -75,6 +76,7 @@
   --accent-2: #8598ec;
   --accent-soft: rgba(110, 134, 232, 0.13);
   --accent-soft-2: rgba(110, 134, 232, 0.20);
+  --accent-glow: rgba(110, 134, 232, 0.40);
   --on-accent: #0e0e12;
 
   --ok: #2fba77;
