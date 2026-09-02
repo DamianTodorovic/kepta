@@ -1,8 +1,12 @@
 // @vitest-environment jsdom
 import { describe, it, expect, beforeEach } from "vitest";
-import { PROVIDERS, providerById, loadAISettings, saveAISettings, type AISettings } from "../../src/lib/ai";
+import { PROVIDERS, providerById, loadAISettings, saveAISettings, resolveAIConnection, type AISettings } from "../../src/lib/ai";
 
 const SETTINGS_KEY = "ki_gehirn_ai_settings";
+
+function settings(over: Partial<AISettings> = {}): AISettings {
+  return { providerId: "openai", apiKey: "", baseUrl: "", model: "gpt-4o-mini", ...over };
+}
 
 beforeEach(() => {
   localStorage.clear();
@@ -55,5 +59,44 @@ describe("loadAISettings / saveAISettings", () => {
   it("fällt bei kaputtem JSON auf Default zurück", () => {
     localStorage.setItem(SETTINGS_KEY, "{ kaputt ]");
     expect(loadAISettings().providerId).toBe(PROVIDERS[0].id);
+  });
+});
+
+describe("resolveAIConnection", () => {
+  const openai = providerById("openai"); // needsKey = true
+  const ollama = providerById("ollama"); // needsKey = false
+
+  it("Cloud-Provider MIT Key → connected (nicht lokal)", () => {
+    const c = resolveAIConnection(settings({ providerId: "openai", apiKey: "sk-test", model: "gpt-4o-mini" }), openai, null);
+    expect(c.state).toBe("connected");
+    if (c.state === "connected") {
+      expect(c.label).toBe(openai.label);
+      expect(c.model).toBe("gpt-4o-mini");
+      expect(c.local).toBe(false);
+    }
+  });
+
+  it("Cloud-Provider OHNE Key → disconnected (der Screenshot-Fall)", () => {
+    const c = resolveAIConnection(settings({ providerId: "openai", apiKey: "", model: "gpt-4o-mini" }), openai, null);
+    expect(c.state).toBe("disconnected");
+  });
+
+  it("lokaler Provider + Server erreichbar → connected & local", () => {
+    const c = resolveAIConnection(settings({ providerId: "ollama", apiKey: "", model: "llama3.2" }), ollama, true);
+    expect(c.state).toBe("connected");
+    if (c.state === "connected") {
+      expect(c.label).toBe(ollama.label);
+      expect(c.local).toBe(true);
+    }
+  });
+
+  it("lokaler Provider + Server NICHT erreichbar → disconnected", () => {
+    expect(resolveAIConnection(settings({ providerId: "ollama", model: "llama3.2" }), ollama, false).state).toBe("disconnected");
+    expect(resolveAIConnection(settings({ providerId: "ollama", model: "llama3.2" }), ollama, null).state).toBe("disconnected");
+  });
+
+  it("kein Modell → disconnected, egal welcher Provider", () => {
+    expect(resolveAIConnection(settings({ providerId: "openai", apiKey: "sk-x", model: "" }), openai, null).state).toBe("disconnected");
+    expect(resolveAIConnection(settings({ providerId: "ollama", model: "  " }), ollama, true).state).toBe("disconnected");
   });
 });

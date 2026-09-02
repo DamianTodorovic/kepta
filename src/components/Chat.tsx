@@ -20,7 +20,8 @@ import {
 } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import { ChatMessage, Memory } from "../types";
-import { loadAISettings, providerById } from "../lib/ai";
+import { loadAISettings, saveAISettings, providerById, resolveAIConnection } from "../lib/ai";
+import { detectLocalAIs, type DetectedAI } from "../lib/profile";
 
 /** Extrahiert Rohtext aus ReactMarkdown-Children (für Copy-Buttons). */
 function extractCodeText(node: unknown): string {
@@ -101,6 +102,47 @@ export function Chat({ activeMemories, onSaveToBrain, onSaveToBrainWithMeta, isF
   const settings = loadAISettings();
   const provider = providerById(settings.providerId);
   const pricing = getPricing(provider.id);
+
+  // ---------- Echter KI-Verbindungsstatus + lokale Erkennung ----------
+  // localReachable: null = noch nicht geprobt, true/false nach Probe des lokalen Servers.
+  const [localReachable, setLocalReachable] = useState<boolean | null>(null);
+  const [detectedLocal, setDetectedLocal] = useState<DetectedAI | null>(null);
+  const [connectHint, setConnectHint] = useState(0); // erzwingt Re-Render nach Provider-Wechsel
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      // Lokale KIs erkennen (Ollama/LM Studio) — kurzer, nicht-blockierender Probe.
+      const found = await detectLocalAIs().catch(() => [] as DetectedAI[]);
+      if (cancelled) return;
+      const available = found.find((d) => d.available && d.models.length > 0) ?? found.find((d) => d.available) ?? null;
+      setDetectedLocal(available);
+      // Ist der aktuell gewählte Provider ein lokaler? Dann dessen Erreichbarkeit bestimmen.
+      const cur = providerById(loadAISettings().providerId);
+      if (!cur.needsKey) {
+        const match = found.find((d) => d.id === cur.id);
+        setLocalReachable(!!match?.available);
+      } else {
+        setLocalReachable(null);
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [connectHint]);
+
+  // Ein-Klick-Verbinden: erkannte lokale KI als Provider setzen.
+  const connectLocal = useCallback((d: DetectedAI) => {
+    const prov = providerById(d.id);
+    const s = loadAISettings();
+    saveAISettings({
+      ...s,
+      providerId: prov.id,
+      baseUrl: prov.baseUrl,
+      model: d.models[0] || prov.defaultModel || s.model,
+    });
+    setConnectHint((n) => n + 1); // Re-Probe + Re-Render
+  }, []);
+
+  const connection = resolveAIConnection(settings, provider, localReachable);
 
   // ---------- HybridSearch Retrieval Cache (30s TTL) ----------
   const retrievalCacheRef = useRef<Map<string, { ts: number; ranked: Memory[]; sig: string }>>(new Map());
@@ -498,7 +540,11 @@ export function Chat({ activeMemories, onSaveToBrain, onSaveToBrainWithMeta, isF
           )}
           <div className="w-9 h-9 rounded-full flex items-center justify-center relative" style={{ background: "var(--accent-soft)", border: "1px solid var(--border-subtle)" }}>
             <Bot className="w-4 h-4" style={{ color: "var(--accent)" }} />
-            <span className="absolute -bottom-0.5 -right-0.5 status-dot" />
+            <span
+              className="absolute -bottom-0.5 -right-0.5 status-dot"
+              style={connection.state === "connected" ? undefined : { background: "var(--text-3)", boxShadow: "none" }}
+              title={connection.state === "connected" ? "KI verbunden" : "Keine KI verbunden"}
+            />
           </div>
           <div>
             <h2 className="font-semibold text-sm flex items-center gap-1.5" style={{ color: "var(--text-1)" }}>
@@ -506,8 +552,27 @@ export function Chat({ activeMemories, onSaveToBrain, onSaveToBrainWithMeta, isF
               {isStreaming && <span className="inline-flex items-center gap-1 text-[10px] font-normal px-1.5 py-0.5 rounded hud-inset" style={{ color: "var(--accent)" }}><span className="w-1.5 h-1.5 rounded-full bg-[var(--accent)] animate-pulse" /> streamt…</span>}
             </h2>
             <div className="hud-label mt-0.5 flex items-center gap-1.5">
-              {settings.model ? `${provider.label} · ${settings.model}` : "Kein Modell konfiguriert"}
-              {pricing.input === 0 && <span className="px-1 py-0 rounded text-[9px] border" style={{ borderColor: "var(--border-subtle)", color: "var(--ok)" }}>lokal</span>}
+              {connection.state === "connected" ? (
+                <>
+                  <span>{connection.label} · {connection.model}</span>
+                  {connection.local && <span className="px-1 py-0 rounded text-[9px] border" style={{ borderColor: "var(--border-subtle)", color: "var(--ok)" }}>lokal</span>}
+                </>
+              ) : (
+                <>
+                  <span style={{ color: "var(--text-3)" }}>Keine KI verbunden</span>
+                  {detectedLocal && (
+                    <button
+                      onClick={() => connectLocal(detectedLocal)}
+                      className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] border transition-colors hover:opacity-80"
+                      style={{ borderColor: "var(--border-subtle)", color: "var(--accent)", background: "var(--accent-soft)" }}
+                      title={`${detectedLocal.label} lokal erkannt — als KI verbinden`}
+                    >
+                      <Sparkles className="w-2.5 h-2.5" />
+                      {detectedLocal.label.replace(/\s*\(.*\)$/, "")} verbinden
+                    </button>
+                  )}
+                </>
+              )}
             </div>
           </div>
         </div>

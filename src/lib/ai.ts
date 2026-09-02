@@ -220,3 +220,34 @@ export function saveAISettings(s: AISettings) {
 export function providerById(id: string): ProviderPreset {
   return PROVIDERS.find(p => p.id === id) || PROVIDERS[0];
 }
+
+// ---------- Verbindungsstatus (ehrlich: nur "connected", wenn wirklich nutzbar) ----------
+
+export type AIConnection =
+  | { state: 'connected'; label: string; model: string; local: boolean }
+  | { state: 'disconnected' };
+
+/**
+ * Bestimmt den echten Verbindungsstatus aus Settings + Provider + optionalem
+ * Local-Probe-Ergebnis. Cloud-Provider gelten nur mit API-Key als verbunden,
+ * lokale Provider (needsKey=false) nur, wenn ihr Server erreichbar ist.
+ * `localReachable`: true/false nach Probe, null = noch nicht geprobt.
+ */
+export function resolveAIConnection(
+  settings: AISettings,
+  provider: ProviderPreset,
+  localReachable: boolean | null
+): AIConnection {
+  const model = settings.model?.trim();
+  if (!model) return { state: 'disconnected' };
+
+  if (provider.needsKey) {
+    return settings.apiKey?.trim()
+      ? { state: 'connected', label: provider.label, model, local: false }
+      : { state: 'disconnected' };
+  }
+  // Lokaler / kein-Key-Provider: verbunden nur bei erreichbarem Server.
+  return localReachable === true
+    ? { state: 'connected', label: provider.label, model, local: true }
+    : { state: 'disconnected' };
+}
