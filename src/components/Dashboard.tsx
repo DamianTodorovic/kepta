@@ -307,6 +307,13 @@ export function Dashboard() {
     return c;
   }, [memories]);
 
+  // Begrüßung nach Tageszeit + Name aus dem adaptiven Profil
+  const greeting = (() => {
+    const h = new Date().getHours();
+    return h < 5 ? 'Gute Nacht' : h < 11 ? 'Guten Morgen' : h < 18 ? 'Guten Tag' : 'Guten Abend';
+  })();
+  const profileName = (() => { try { return loadProfile()?.displayName || ''; } catch { return ''; } })();
+
   // --- Tag-gefilterte Basis ---
   const tagFiltered = useMemo(() => {
     if (selectedTags.length === 0) return memories;
@@ -866,6 +873,16 @@ export function Dashboard() {
 
           <div className="flex-1 overflow-y-auto px-5 py-4">
             <div className="max-w-6xl mx-auto h-full flex flex-col">
+              {/* Persönlicher Kopf — Datum + Stand */}
+              <div className="mb-4 shrink-0">
+                <h1 className="text-[21px] font-bold tracking-[-0.02em]" style={{ color: 'var(--text-1)' }}>
+                  {greeting}{profileName ? `, ${profileName}` : ''}
+                </h1>
+                <p className="text-[13px] mt-0.5" style={{ color: 'var(--text-2)' }}>
+                  {new Date().toLocaleDateString('de-DE', { weekday: 'long', day: 'numeric', month: 'long' })} · {memories.length} {memories.length === 1 ? 'Eintrag' : 'Einträge'} bereit{agentActive ? ' · Agent arbeitet gerade' : ''}
+                </p>
+              </div>
+
               {/* Übersicht — das Gehirn auf einen Blick */}
               <div className="grid grid-cols-2 lg:grid-cols-4 gap-2.5 mb-4 shrink-0">
                 <div className="stat-tile card !transform-none">

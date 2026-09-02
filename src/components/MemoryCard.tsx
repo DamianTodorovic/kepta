@@ -37,12 +37,12 @@ export const MemoryCard = memo(function MemoryCard({ memory, onClick, score, mat
       onClick={onClick}
       className="card p-4 cursor-pointer grid grid-rows-[auto_1fr_auto] h-52 overflow-hidden group relative rounded-xl"
     >
-      {/* Typ-Lichtkante oben: die Karte „färbt“ sich nach Knotentyp */}
+      {/* Typ-Grat links: die Karte färbt sich nach Knotentyp */}
       {typeColor && (
         <span
           aria-hidden
-          className="absolute top-0 left-4 right-4 h-px"
-          style={{ background: `linear-gradient(90deg, transparent, color-mix(in srgb, ${typeColor} 55%, transparent), transparent)` }}
+          className="absolute left-0 top-3.5 bottom-3.5 w-[3px] rounded-full"
+          style={{ background: `linear-gradient(180deg, ${typeColor}, color-mix(in srgb, ${typeColor} 25%, transparent))` }}
         />
       )}
 

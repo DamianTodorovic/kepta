@@ -19,6 +19,18 @@ interface SidebarProps {
   onOpenSetup?: () => void;
 }
 
+/* Die Sidebar ist bewusst IMMER dunkel (wie bei Slack/Linear) — sie bildet
+   den Kontrast-Rahmen um die Inhaltsfläche und macht die App sofort
+   wiedererkennbar, unabhängig vom Theme. */
+const SIDEBAR_BG = 'linear-gradient(180deg, rgba(17, 20, 31, 0.94), rgba(10, 12, 19, 0.97))';
+const TEXT_STRONG = '#eef0f8';
+const TEXT_MUTED = 'rgba(226, 229, 242, 0.55)';
+const TEXT_FAINT = 'rgba(226, 229, 242, 0.34)';
+const LINE = 'rgba(255, 255, 255, 0.07)';
+const SURFACE = 'rgba(255, 255, 255, 0.055)';
+const SURFACE_STRONG = 'rgba(255, 255, 255, 0.10)';
+const ACCENT_LIGHT = '#a5b4f5';
+
 export function Sidebar({ tags, selectedTags, onSelectTag, onClearTags, currentView, onNavigate, totalMemories, isFocusMode, toggleFocusMode, showSetup, onOpenSetup }: SidebarProps) {
   const { user } = useAuth();
   const { isDark, toggle: toggleTheme } = useTheme();
@@ -32,22 +44,24 @@ export function Sidebar({ tags, selectedTags, onSelectTag, onClearTags, currentV
 
   return (
     <div className={cn(
-      "flex flex-col h-full shrink-0 transition-all duration-300 border-r",
+      "flex flex-col h-full shrink-0 transition-all duration-300",
       isFocusMode ? "w-0 overflow-hidden border-none" : "w-64"
-    )} style={{ background: 'var(--glass-panel)', backdropFilter: 'blur(22px) saturate(1.5)', WebkitBackdropFilter: 'blur(22px) saturate(1.5)', borderColor: 'var(--border-subtle)' }}>
-      <div className="h-[60px] px-4 flex items-center gap-2.5 shrink-0" style={{ borderBottom: '1px solid var(--border-subtle)', boxShadow: 'inset 0 1px 0 var(--edge-light)' }}>
+    )} style={{ background: SIDEBAR_BG, backdropFilter: 'blur(24px) saturate(1.4)', WebkitBackdropFilter: 'blur(24px) saturate(1.4)', borderRight: `1px solid ${LINE}` }}>
+      {/* Marke */}
+      <div className="h-[64px] px-4 flex items-center gap-2.5 shrink-0" style={{ borderBottom: `1px solid ${LINE}` }}>
         <KeptaMark size={26} radius={7} />
         <div className="min-w-0">
-          <div className="font-semibold tracking-[-0.02em] text-[13.5px] leading-none" style={{ color: 'var(--text-1)' }}>
+          <div className="font-semibold tracking-[-0.02em] text-[13.5px] leading-none" style={{ color: TEXT_STRONG }}>
             KEPTA
           </div>
-          <div className="text-[11px] mt-1 tnum" style={{ color: 'var(--text-3)' }}>
+          <div className="text-[11px] mt-1 tnum" style={{ color: TEXT_FAINT }}>
             {totalMemories} {totalMemories === 1 ? 'Eintrag' : 'Einträge'}
           </div>
         </div>
       </div>
 
-      <div className="px-2 py-3">
+      {/* Navigation */}
+      <div className="px-2.5 py-3">
         <div className="space-y-0.5">
           {navItems.map(item => {
             const active = currentView === item.id;
@@ -55,16 +69,15 @@ export function Sidebar({ tags, selectedTags, onSelectTag, onClearTags, currentV
               <button
                 key={item.id}
                 onClick={() => onNavigate(item.id)}
-                className={cn(
-                  "w-full flex items-center gap-2.5 px-2.5 py-[7px] rounded-lg text-[13.5px] transition-colors text-left",
-                )}
+                className="w-full flex items-center gap-2.5 px-2.5 py-[7px] rounded-lg text-[13.5px] transition-colors text-left"
                 style={{
-                  background: active ? 'var(--accent-soft)' : 'transparent',
-                  color: active ? 'var(--accent)' : 'var(--text-2)',
-                  fontWeight: active ? 590 : 480,
+                  background: active ? 'rgba(123, 146, 236, 0.17)' : 'transparent',
+                  color: active ? ACCENT_LIGHT : TEXT_MUTED,
+                  fontWeight: active ? 600 : 490,
+                  boxShadow: active ? 'inset 0 1px 0 rgba(255,255,255,0.08)' : undefined,
                 }}
               >
-                <item.icon className="w-4 h-4 shrink-0" style={{ color: active ? 'var(--accent)' : 'var(--text-3)' }} />
+                <item.icon className="w-4 h-4 shrink-0" style={{ color: active ? ACCENT_LIGHT : TEXT_FAINT }} />
                 <span className="flex-1">{item.label}</span>
               </button>
             );
@@ -72,12 +85,13 @@ export function Sidebar({ tags, selectedTags, onSelectTag, onClearTags, currentV
         </div>
       </div>
 
+      {/* Tags */}
       {tags.length > 0 && (
-        <div className="flex-1 min-h-0 px-2 py-2 overflow-hidden flex flex-col">
+        <div className="flex-1 min-h-0 px-2.5 py-2 overflow-hidden flex flex-col">
           <div className="flex items-center justify-between px-2 mb-1.5">
-            <span className="label-caps">Tags</span>
+            <span className="text-[10.5px] font-semibold tracking-[0.09em] uppercase" style={{ color: TEXT_FAINT }}>Tags</span>
             {selectedTags.length > 0 && (
-              <button onClick={onClearTags} className="text-[11px] hover:underline" style={{ color: 'var(--accent)' }}>Zurücksetzen</button>
+              <button onClick={onClearTags} className="text-[11px] hover:underline" style={{ color: ACCENT_LIGHT }}>Zurücksetzen</button>
             )}
           </div>
           <div className="flex-1 overflow-y-auto space-y-px pr-1">
@@ -91,14 +105,14 @@ export function Sidebar({ tags, selectedTags, onSelectTag, onClearTags, currentV
                   onClick={() => onSelectTag(name)}
                   className="w-full flex items-center gap-2 px-2 py-[5px] rounded-md text-[13px] text-left transition-colors"
                   style={{
-                    background: active ? 'var(--bg-inset-strong)' : 'transparent',
-                    color: active ? 'var(--text-1)' : 'var(--text-2)',
+                    background: active ? SURFACE_STRONG : 'transparent',
+                    color: active ? TEXT_STRONG : TEXT_MUTED,
                   }}
                 >
-                  <Hash className="w-3.5 h-3.5 shrink-0 opacity-50" />
+                  <Hash className="w-3.5 h-3.5 shrink-0" style={{ color: TEXT_FAINT }} />
                   <span className="truncate flex-1">{name}</span>
                   {count !== null && count > 1 && (
-                    <span className="text-[10.5px] tnum px-1.5 py-px rounded-md shrink-0" style={{ background: 'var(--bg-inset-strong)', color: 'var(--text-3)' }}>{count}</span>
+                    <span className="text-[10.5px] tnum px-1.5 py-px rounded-md shrink-0" style={{ background: SURFACE, color: TEXT_FAINT }}>{count}</span>
                   )}
                 </button>
               );
@@ -107,15 +121,16 @@ export function Sidebar({ tags, selectedTags, onSelectTag, onClearTags, currentV
         </div>
       )}
 
-      <div className="p-2 space-y-2" style={{ borderTop: '1px solid var(--border-subtle)' }}>
+      {/* Fußzeile */}
+      <div className="p-2.5 space-y-2" style={{ borderTop: `1px solid ${LINE}` }}>
         {user && (
-          <div className="px-2 py-2 rounded-lg flex items-center gap-2.5" style={{ background: 'var(--bg-inset)' }}>
-            <div className="w-7 h-7 rounded-full flex items-center justify-center text-[11px] font-semibold" style={{ background: 'var(--accent)', color: 'var(--on-accent)' }}>
-              {((user.displayName || user.email || 'L').slice(0,1).toUpperCase())}
+          <div className="px-2 py-2 rounded-lg flex items-center gap-2.5" style={{ background: SURFACE }}>
+            <div className="w-7 h-7 rounded-full flex items-center justify-center text-[11px] font-semibold" style={{ background: 'linear-gradient(180deg, rgba(123,146,236,0.95), rgba(90,110,210,0.95))', color: '#0c0e15' }}>
+              {((user.displayName || user.email || 'L').slice(0, 1).toUpperCase())}
             </div>
             <div className="min-w-0 flex-1">
-              <div className="text-[13px] truncate font-medium" style={{ color: 'var(--text-1)' }}>{user.displayName || user.email || 'Lokal'}</div>
-              <div className="text-[11px] truncate" style={{ color: 'var(--text-3)' }}>Lokal · privat</div>
+              <div className="text-[13px] truncate font-medium" style={{ color: TEXT_STRONG }}>{user.displayName || user.email || 'Lokal'}</div>
+              <div className="text-[11px] truncate" style={{ color: TEXT_FAINT }}>Lokal · privat</div>
             </div>
           </div>
         )}
@@ -124,7 +139,7 @@ export function Sidebar({ tags, selectedTags, onSelectTag, onClearTags, currentV
             <button
               onClick={onOpenSetup}
               className="w-8 h-8 flex items-center justify-center rounded-lg shrink-0"
-              style={{ background: 'var(--accent-soft)', border: '1px solid var(--border-subtle)', color: 'var(--accent)' }}
+              style={{ background: 'rgba(123, 146, 236, 0.17)', border: '1px solid rgba(123, 146, 236, 0.3)', color: ACCENT_LIGHT }}
               aria-label="Einrichtung öffnen"
               title="Einrichtung öffnen"
             >
@@ -134,7 +149,7 @@ export function Sidebar({ tags, selectedTags, onSelectTag, onClearTags, currentV
           <button
             onClick={toggleTheme}
             className="flex-1 flex items-center justify-center gap-1.5 h-8 rounded-lg text-[12px] font-medium"
-            style={{ background: 'var(--bg-inset)', border: '1px solid var(--border-subtle)', color: 'var(--text-2)' }}
+            style={{ background: SURFACE, border: `1px solid ${LINE}`, color: TEXT_MUTED }}
             aria-label="Thema wechseln"
           >
             {isDark ? <Sun className="w-3.5 h-3.5" /> : <Moon className="w-3.5 h-3.5" />}
@@ -143,7 +158,7 @@ export function Sidebar({ tags, selectedTags, onSelectTag, onClearTags, currentV
           <button
             onClick={toggleFocusMode}
             className="w-8 h-8 flex items-center justify-center rounded-lg"
-            style={{ background: 'var(--bg-inset)', border: '1px solid var(--border-subtle)', color: 'var(--text-2)' }}
+            style={{ background: SURFACE, border: `1px solid ${LINE}`, color: TEXT_MUTED }}
             aria-label="Fokus"
             title="Seitenleiste ausblenden"
           >
