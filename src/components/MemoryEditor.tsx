@@ -3,7 +3,8 @@ import { Memory } from '../types';
 import { motion } from 'motion/react';
 import { formatDistanceToNow } from 'date-fns';
 import { de } from 'date-fns/locale';
-import { X, FloppyDisk as Save, Trash as Trash2, Hash, Brain, Clock, Lightning as Zap } from "@phosphor-icons/react";
+import { Brain } from "@phosphor-icons/react";
+import { X, Save, Trash2, Hash, Clock, Zap } from "../lib/icons";
 import { KeptaMark } from './KeptaMark';
 
 type MemoryKind = 'semantic' | 'episodic' | 'procedural';

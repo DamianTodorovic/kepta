@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState, useMemo, useCallback } from "react";
 import { Memory } from "../types";
-import { MagnifyingGlass as Search, CornersOut as Maximize2, MagnifyingGlassPlus as ZoomIn, MagnifyingGlassMinus as ZoomOut, Clock } from "@phosphor-icons/react";
+import { Search, Maximize2, ZoomIn, ZoomOut, Clock } from "../lib/icons";
 
 interface KnowledgeGraphProps {
   memories: Memory[];

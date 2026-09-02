@@ -1,9 +1,11 @@
 import { memo } from 'react';
+import type { IconWeight } from '@phosphor-icons/react';
 import { formatDistanceToNow } from 'date-fns';
 import { de } from 'date-fns/locale';
 import { Memory } from '../types';
 import { motion } from 'motion/react';
-import { Hash, Brain, Clock, Lightning as Zap } from "@phosphor-icons/react";
+import { Brain } from "@phosphor-icons/react";
+import { Hash, Clock, Zap } from "../lib/icons";
 
 interface MemoryCardProps {
   memory: Memory;
@@ -12,7 +14,7 @@ interface MemoryCardProps {
   matchedTerms?: string[];
 }
 
-const TYPE_META: Record<string, { label: string; icon: typeof Brain }> = {
+const TYPE_META: Record<string, { label: string; icon: React.ComponentType<{ className?: string; style?: React.CSSProperties; weight?: IconWeight }> }> = {
   semantic: { label: 'Wissen', icon: Brain },
   episodic: { label: 'Episode', icon: Clock },
   procedural: { label: 'Ablauf', icon: Zap },

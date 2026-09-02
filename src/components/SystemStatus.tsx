@@ -1,6 +1,6 @@
 // System-Status — die App legt offen, was funktioniert und was fehlt (statt „funktioniert nicht"-Rätsel).
 import { useEffect, useState } from 'react';
-import { CheckCircle as CheckCircle2, XCircle, Copy, Check, PaperPlaneRight as Send, CircleNotch as Loader2 } from "@phosphor-icons/react";
+import { CheckCircle2, XCircle, Copy, Check, Send, Loader2 } from "../lib/icons";
 import { PROVIDERS, providerById, loadAISettings } from '../lib/ai';
 
 interface Health {

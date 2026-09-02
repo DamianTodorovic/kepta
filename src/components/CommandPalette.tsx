@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, useMemo } from "react";
-import { MagnifyingGlass as Search, Plus, Database, ChatCircle as MessageSquare, GearSix as SettingsIcon, Graph as Network, Command, Sparkle as Sparkles, Globe, UploadSimple as FileUp } from "@phosphor-icons/react";
+import { Search, Plus, Database, MessageSquare, SettingsIcon, Network, Sparkles, Globe, FileUp } from "../lib/icons";
 
 export interface PaletteAction {
   id: string;
@@ -77,7 +77,7 @@ export function CommandPalette({ open, onClose, actions }: CommandPaletteProps) 
             className="flex-1 bg-transparent outline-none text-sm placeholder:text-[var(--text-3)]"
             style={{ color: "var(--text-1)" }}
           />
-          <span className="hud-label hidden sm:inline-flex items-center gap-1 hud-inset px-2 py-1 rounded-md"><Command className="w-3 h-3" />K</span>
+          <span className="hud-label hidden sm:inline-flex items-center gap-1 hud-inset px-2 py-1 rounded-md"><span className="kbd !px-1 !py-0">⌘</span>K</span>
         </div>
 
         <div ref={listRef} className="overflow-y-auto flex-1 p-2 space-y-1">

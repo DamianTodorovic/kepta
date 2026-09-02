@@ -14,7 +14,7 @@ import { OnboardingWizard } from './OnboardingWizard';
 import { loadProfile } from '../lib/profile';
 import { KeptaMark } from './KeptaMark';
 import { Memory } from '../types';
-import { MagnifyingGlass as Search, Plus, Database, CheckCircle as CheckCircle2, Copy, SidebarSimple as PanelLeftOpen, Scan as ScanSearch, CloudArrowUp as UploadCloud, Globe, CircleNotch as Loader2, WarningCircle as AlertCircle, Sparkle as Sparkles, SlidersHorizontal, Trash as Trash2 } from "@phosphor-icons/react";
+import { Search, Plus, Database, CheckCircle2, Copy, PanelLeftOpen, ScanSearch, UploadCloud, Globe, Loader2, AlertCircle, Sparkles, SlidersHorizontal, Trash2 } from "../lib/icons";
 import { motion, AnimatePresence } from 'motion/react';
 import { cn } from '../lib/utils';
 

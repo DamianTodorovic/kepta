@@ -1,4 +1,5 @@
-import { Hash, ChatCircle as MessageSquare, GearSix as SettingsIcon, Brain, Moon, Sun, SidebarSimple as PanelLeftClose, Graph as Network, Sparkle as Sparkles } from "@phosphor-icons/react";
+import { Brain } from "@phosphor-icons/react";
+import { Hash, MessageSquare, SettingsIcon, Moon, Sun, PanelLeftClose, Network, Sparkles } from "../lib/icons";
 import { useAuth } from '../contexts/AuthContext';
 import { useTheme } from '../contexts/ThemeContext';
 import { cn } from '../lib/utils';
