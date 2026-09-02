@@ -2,6 +2,18 @@
 
 Alle Änderungen werden in dieser Datei dokumentiert. Format orientiert an [Keep a Changelog](https://keepachangelog.com/de/1.1.0/), Versionierung nach [SemVer](https://semver.org/).
 
+## [2.2.1] — 2026-09-03
+
+Hotfix: 2.2.0 liess sich nicht starten. Wer 2.2.0 installiert hat, sollte auf 2.2.1 wechseln.
+
+### Fixes
+- **App startet wieder (Regression aus 2.2.0):** In `electron.js` stand `srv.address.port` statt `srv.address().port`. `address` ist eine Methode — als Eigenschaft gelesen liefert sie `undefined`. `getFreePort()` hat daraufhin nicht abgelehnt, sondern `undefined` aufgeloest, wodurch der `catch`-Zweig nie griff und dabei den Standardport 3000 ueberschrieb. Zwei Zeilen spaeter warf `serverPort.toString()` einen `TypeError`, und zwar **ausserhalb** des `try`-Blocks — `createWindow()` wurde deshalb nie erreicht. Symptom: Der Prozess lief, aber ohne Fenster, ohne belegten Port und ohne Absturzbericht.
+- **Startsequenz gehaertet:** `getFreePort()` lehnt jetzt ab, wenn kein Port ermittelbar ist; der `catch`-Zweig stellt den Standardport 3000 tatsaechlich wieder her; vor `process.env.PORT` prueft `Number.isInteger` auf einen brauchbaren Wert, und `String(...)` ersetzt `.toString()`. Ein fehlender Port kann die App damit nicht mehr fensterlos machen.
+
+### Tests
+- Neu: `tests/electron.test.ts` mit 5 Regressionstests. Da `electron.js` als ESM-Einstiegspunkt beim Import die App starten wuerde, loest der Test `getFreePort()` aus der **echten Quelldatei** heraus und fuehrt sie gegen das echte `net`-Modul aus — geprueft wird der ausgelieferte Code, keine Kopie. Dazu Wachen gegen den Eigenschaftszugriff `.address.port` und fuer den 3000-Fallback.
+- Gesamtstand: **279 Tests** (vorher 274), Coverage-Gate unveraendert gruen, Retrieval-Eval unveraendert (Hit@1 92 %, Precision@5 92 %).
+
 ## [2.2.0] — 2026-09-02
 
 Security- & Robustheits-Release: Code-Review-Fixes an Server, Core, Electron und Protokoll.
