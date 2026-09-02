@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, useMemo } from "react";
-import { Search, Plus, Database, MessageSquare, Settings as SettingsIcon, Network, Command, Sparkles, Globe, FileUp } from "lucide-react";
+import { MagnifyingGlass as Search, Plus, Database, ChatCircle as MessageSquare, GearSix as SettingsIcon, Graph as Network, Command, Sparkle as Sparkles, Globe, UploadSimple as FileUp } from "@phosphor-icons/react";
 
 export interface PaletteAction {
   id: string;

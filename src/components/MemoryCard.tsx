@@ -3,7 +3,7 @@ import { formatDistanceToNow } from 'date-fns';
 import { de } from 'date-fns/locale';
 import { Memory } from '../types';
 import { motion } from 'motion/react';
-import { Hash, Brain, Clock, Zap } from 'lucide-react';
+import { Hash, Brain, Clock, Lightning as Zap } from "@phosphor-icons/react";
 
 interface MemoryCardProps {
   memory: Memory;
@@ -53,7 +53,7 @@ export const MemoryCard = memo(function MemoryCard({ memory, onClick, score, mat
             className="badge-type !gap-1 !py-0.5"
             style={{ color: typeColor ?? 'var(--text-2)', background: `color-mix(in srgb, ${typeColor} 10%, transparent)` }}
           >
-            {TypeIcon && <TypeIcon className="w-3 h-3" />}
+            {TypeIcon && <TypeIcon className="w-3 h-3" weight="duotone" />}
             {typeLabel}
           </span>
         )}

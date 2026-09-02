@@ -1,4 +1,4 @@
-import { Hash, MessageSquare, Settings as SettingsIcon, Database, Moon, Sun, PanelLeftClose, Network, Sparkles } from 'lucide-react';
+import { Hash, ChatCircle as MessageSquare, GearSix as SettingsIcon, Database, Moon, Sun, SidebarSimple as PanelLeftClose, Graph as Network, Sparkle as Sparkles } from "@phosphor-icons/react";
 import { useAuth } from '../contexts/AuthContext';
 import { useTheme } from '../contexts/ThemeContext';
 import { cn } from '../lib/utils';
@@ -77,7 +77,7 @@ export function Sidebar({ tags, selectedTags, onSelectTag, onClearTags, currentV
                   boxShadow: active ? 'inset 0 1px 0 rgba(255,255,255,0.08)' : undefined,
                 }}
               >
-                <item.icon className="w-4 h-4 shrink-0" style={{ color: active ? ACCENT_LIGHT : TEXT_FAINT }} />
+                <item.icon className="w-4 h-4 shrink-0" weight="duotone" style={{ color: active ? ACCENT_LIGHT : TEXT_FAINT }} />
                 <span className="flex-1">{item.label}</span>
               </button>
             );

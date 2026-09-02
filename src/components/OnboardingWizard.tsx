@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { Sparkles, Check, ChevronRight, ChevronLeft, Cpu, Database, Search, Globe, FolderOpen, User, Target, Loader2, Plug, PartyPopper } from 'lucide-react';
+import { Sparkle as Sparkles, Check, CaretRight as ChevronRight, CaretLeft as ChevronLeft, Cpu, Database, MagnifyingGlass as Search, Globe, FolderOpen, User, Target, CircleNotch as Loader2, Plug, Confetti as PartyPopper } from "@phosphor-icons/react";
 import { USECASE_LABELS, type UseCase, type DetectedAI, detectLocalAIs, suggestProvider, saveProfile, createDefaultProfile, type UserProfileAdaptive } from '../lib/profile';
 import { KeptaMark } from './KeptaMark';
 import { loadAISettings, saveAISettings, providerById } from '../lib/ai';

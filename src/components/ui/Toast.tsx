@@ -2,7 +2,7 @@
 // useToast().push({ message, kind?, action?: { label, onClick } })
 import { createContext, useCallback, useContext, useMemo, useRef, useState, type ReactNode } from 'react';
 import { AnimatePresence, motion } from 'motion/react';
-import { CheckCircle2, Info, AlertTriangle, X } from 'lucide-react';
+import { CheckCircle as CheckCircle2, Info, Warning as AlertTriangle, X } from "@phosphor-icons/react";
 
 export interface ToastAction {
   label: string;

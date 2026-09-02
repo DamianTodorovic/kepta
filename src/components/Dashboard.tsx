@@ -14,7 +14,7 @@ import { OnboardingWizard } from './OnboardingWizard';
 import { loadProfile } from '../lib/profile';
 import { KeptaMark } from './KeptaMark';
 import { Memory } from '../types';
-import { Search, Plus, Database, CheckCircle2, Copy, PanelLeftOpen, ScanSearch, UploadCloud, Globe, Loader2, AlertCircle, Sparkles, SlidersHorizontal, Trash2 } from 'lucide-react';
+import { MagnifyingGlass as Search, Plus, Database, CheckCircle as CheckCircle2, Copy, SidebarSimple as PanelLeftOpen, Scan as ScanSearch, CloudArrowUp as UploadCloud, Globe, CircleNotch as Loader2, WarningCircle as AlertCircle, Sparkle as Sparkles, SlidersHorizontal, Trash as Trash2 } from "@phosphor-icons/react";
 import { motion, AnimatePresence } from 'motion/react';
 import { cn } from '../lib/utils';
 
@@ -892,7 +892,7 @@ export function Dashboard() {
               <div className="grid grid-cols-2 lg:grid-cols-4 gap-2.5 mb-4 shrink-0">
                 <div className="stat-tile card !transform-none">
                   <span className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0" style={{ background: 'var(--accent-soft)', boxShadow: 'inset 0 1px 0 var(--edge-light)' }}>
-                    <Database className="w-4 h-4" style={{ color: 'var(--accent)' }} />
+                    <Database className="w-4 h-4" weight="duotone" style={{ color: 'var(--accent)' }} />
                   </span>
                   <span className="min-w-0">
                     <span className="block text-[17px] font-semibold leading-tight tnum" style={{ color: 'var(--text-1)' }}>{memories.length}</span>
@@ -916,7 +916,7 @@ export function Dashboard() {
                 </div>
                 <div className="stat-tile card !transform-none">
                   <span className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0" style={{ background: 'var(--bg-inset)', boxShadow: 'inset 0 1px 0 var(--edge-light)' }}>
-                    <SlidersHorizontal className="w-4 h-4" style={{ color: 'var(--text-2)' }} />
+                    <SlidersHorizontal className="w-4 h-4" weight="duotone" style={{ color: 'var(--text-2)' }} />
                   </span>
                   <span className="min-w-0">
                     <span className="block text-[17px] font-semibold leading-tight tnum" style={{ color: 'var(--text-1)' }}>{allTags.length}</span>

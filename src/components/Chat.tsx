@@ -1,23 +1,6 @@
 import { useState, useRef, useEffect, useMemo, useCallback, FormEvent } from "react";
 import { motion } from "motion/react";
-import {
-  Send,
-  Bot,
-  User as UserIcon,
-  Loader2,
-  AlertTriangle,
-  Database,
-  Trash2,
-  PanelLeftOpen,
-  Square,
-  Copy,
-  Check,
-  CheckCircle2,
-  Coins,
-  Hash,
-  FileText,
-  Sparkles,
-} from "lucide-react";
+import { PaperPlaneRight as Send, Robot as Bot, User as UserIcon, CircleNotch as Loader2, Warning as AlertTriangle, Database, Trash as Trash2, SidebarSimple as PanelLeftOpen, Square, Copy, Check, CheckCircle as CheckCircle2, Coins, Hash, FileText, Sparkle as Sparkles } from "@phosphor-icons/react";
 import ReactMarkdown from "react-markdown";
 import { ChatMessage, Memory } from "../types";
 import { KeptaMark } from "./KeptaMark";

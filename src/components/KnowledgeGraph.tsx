@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState, useMemo, useCallback } from "react";
 import { Memory } from "../types";
-import { Search, Maximize2, ZoomIn, ZoomOut, Clock } from "lucide-react";
+import { MagnifyingGlass as Search, CornersOut as Maximize2, MagnifyingGlassPlus as ZoomIn, MagnifyingGlassMinus as ZoomOut, Clock } from "@phosphor-icons/react";
 
 interface KnowledgeGraphProps {
   memories: Memory[];

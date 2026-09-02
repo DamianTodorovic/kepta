@@ -1,5 +1,5 @@
 import { useState, useEffect, FormEvent } from 'react';
-import { Key, ShieldCheck, Settings as SettingsIcon, Download, CheckCircle2, RefreshCw, Cpu, HardDriveDownload, Server, Plug, Copy, Terminal, Braces, Globe, Search, Save, Layers, ExternalLink, Sparkles } from 'lucide-react';
+import { Key, ShieldCheck, GearSix as SettingsIcon, DownloadSimple as Download, CheckCircle as CheckCircle2, ArrowsClockwise as RefreshCw, Cpu, HardDrives as HardDriveDownload, HardDrives as Server, Plug, Copy, TerminalWindow as Terminal, BracketsCurly as Braces, Globe, MagnifyingGlass as Search, FloppyDisk as Save, Stack as Layers, ArrowSquareOut as ExternalLink, Sparkle as Sparkles } from "@phosphor-icons/react";
 import { motion } from 'motion/react';
 import { PROVIDERS, providerById, loadAISettings, saveAISettings, AISettings } from '../lib/ai';
 import { getMemoriesSync } from '../lib/store';
