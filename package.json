@@ -1,7 +1,7 @@
 {
   "name": "kepta",
   "private": false,
-  "version": "2.2.0",
+  "version": "2.2.1",
   "description": "KEPTA — Keeps what counts. Das lokale Gehirn für KI-Agenten: SQLite, hybride Suche, Wissensgraph, MCP 2026-07-28 — ohne Cloud.",
   "author": "KEPTA <hello@kepta.app>",
   "type": "module",
