@@ -594,6 +594,8 @@ export function Dashboard() {
         totalMemories={memories.length}
         isFocusMode={isFocusMode}
         toggleFocusMode={() => setIsFocusMode(!isFocusMode)}
+        showSetup={(() => { try { const p = loadProfile(); return !p?.hasCompletedOnboarding; } catch { return false; } })()}
+        onOpenSetup={() => setWizardOpen(true)}
       />
 
       <main className="flex-1 flex flex-col min-w-0 overflow-hidden my-2.5 mr-2.5 panel rounded-2xl relative z-10">
@@ -1059,12 +1061,6 @@ export function Dashboard() {
       <CommandPalette open={paletteOpen} onClose={() => setPaletteOpen(false)} actions={paletteActions} />
 
       <OnboardingWizard open={wizardOpen} onClose={closeWizard} onComplete={closeWizard} />
-      {/* Manueller Trigger falls Wizard geschlossen wurde */}
-      {!wizardOpen && (()=>{ try{ const p=loadProfile(); if(!p?.hasCompletedOnboarding) return true; return false; } catch{ return false; }})() && (
-        <button onClick={()=> setWizardOpen(true)} className="fixed bottom-4 right-4 z-40 btn-primary flex items-center gap-2 px-4 py-2.5 rounded-full shadow-xl" title="Adaptives Setup öffnen">
-          <Sparkles className="w-4 h-4"/> Anpassen
-        </button>
-      )}
 
       <AnimatePresence>
         {isEditorOpen && (

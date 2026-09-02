@@ -1,4 +1,4 @@
-import { Hash, MessageSquare, Settings as SettingsIcon, Database, Moon, Sun, PanelLeftClose, Network } from 'lucide-react';
+import { Hash, MessageSquare, Settings as SettingsIcon, Database, Moon, Sun, PanelLeftClose, Network, Sparkles } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { useTheme } from '../contexts/ThemeContext';
 import { cn } from '../lib/utils';
@@ -14,9 +14,12 @@ interface SidebarProps {
   totalMemories: number;
   isFocusMode: boolean;
   toggleFocusMode: () => void;
+  /** Ersteinrichtung noch nicht abgeschlossen → dezentes Setup-Icon in der Fußzeile */
+  showSetup?: boolean;
+  onOpenSetup?: () => void;
 }
 
-export function Sidebar({ tags, selectedTags, onSelectTag, onClearTags, currentView, onNavigate, totalMemories, isFocusMode, toggleFocusMode }: SidebarProps) {
+export function Sidebar({ tags, selectedTags, onSelectTag, onClearTags, currentView, onNavigate, totalMemories, isFocusMode, toggleFocusMode, showSetup, onOpenSetup }: SidebarProps) {
   const { user } = useAuth();
   const { isDark, toggle: toggleTheme } = useTheme();
 
@@ -117,6 +120,17 @@ export function Sidebar({ tags, selectedTags, onSelectTag, onClearTags, currentV
           </div>
         )}
         <div className="flex items-center gap-1">
+          {showSetup && onOpenSetup && (
+            <button
+              onClick={onOpenSetup}
+              className="w-8 h-8 flex items-center justify-center rounded-lg shrink-0"
+              style={{ background: 'var(--accent-soft)', border: '1px solid var(--border-subtle)', color: 'var(--accent)' }}
+              aria-label="Einrichtung öffnen"
+              title="Einrichtung öffnen"
+            >
+              <Sparkles className="w-3.5 h-3.5" />
+            </button>
+          )}
           <button
             onClick={toggleTheme}
             className="flex-1 flex items-center justify-center gap-1.5 h-8 rounded-lg text-[12px] font-medium"
