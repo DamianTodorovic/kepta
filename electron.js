@@ -14,8 +14,14 @@ function getFreePort() {
   return new Promise((resolve, reject) => {
     const srv = createServer();
     srv.listen(0, () => {
-      const port = srv.address.port;
-      srv.close(() => resolve(port));
+      // address() ist eine Methode. Als Eigenschaft gelesen liefert sie undefined,
+      // und der Aufrufer arbeitet ab da mit einem Port, den es nicht gibt.
+      const addr = srv.address();
+      const port = addr && typeof addr === 'object' ? addr.port : null;
+      srv.close(() => {
+        if (port) resolve(port);
+        else reject(new Error('Kein freier Port ermittelbar'));
+      });
     });
     srv.on('error', reject);
   });
@@ -112,11 +118,15 @@ app.whenReady().then(async () => {
   try {
     serverPort = await getFreePort();
   } catch (e) {
-    console.log("Could not find free port, using default");
+    // Fallback muss den Standard wirklich wiederherstellen: ein leerer Port hier
+    // liess frueher process.env.PORT werfen — ausserhalb des try, ohne Fenster.
+    console.log('Kein freier Port ermittelbar, nutze Standard 3000:', e?.message);
+    serverPort = 3000;
   }
+  if (!Number.isInteger(serverPort) || serverPort <= 0) serverPort = 3000;
 
   // Set environment variables for the server
-  process.env.PORT = serverPort.toString();
+  process.env.PORT = String(serverPort);
   // Produktion erst ab gepackter App — im Dev-Modus darf der Server die Vite-Middleware nutzen
   if (app.isPackaged) process.env.NODE_ENV = 'production';
 
