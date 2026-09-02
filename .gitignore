@@ -56,3 +56,6 @@ project.tar.gz
 
 # lokale Agent-Konfiguration
 .mcp.json
+
+# coverage
+coverage/
