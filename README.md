@@ -48,9 +48,9 @@ Fertige App: [Releases](https://github.com/DamianTodorovic/kepta/releases). Agen
 | Mac mit Intel-Prozessor | `KEPTA-<version>-mac-x64.dmg` |
 | Windows (Intel/AMD) | `KEPTA-<version>-win-x64.exe` |
 | Windows auf ARM | `KEPTA-<version>-win-arm64.exe` |
-| Linux (Intel/AMD), jede Distribution | `KEPTA-<version>-linux-x64.AppImage` |
+| Linux (Intel/AMD), jede Distribution | `KEPTA-<version>-linux-x86_64.AppImage` |
 | Linux auf ARM | `KEPTA-<version>-linux-arm64.AppImage` |
-| Debian, Ubuntu, Mint | `KEPTA-<version>-linux-x64.deb` |
+| Debian, Ubuntu, Mint | `KEPTA-<version>-linux-amd64.deb` |
 
 Jede Datei trägt Plattform und Architektur im Namen. Im Zweifel beim Mac: Apple-Menü → *Über diesen Mac* — „Apple M…" heißt `arm64`, „Intel" heißt `x64`. Die `.zip`-Dateien sind dieselben Programme ohne Installer. Die Pakete bringen alles mit; Node ≥ 22.5 brauchst du nur zum Selbstbauen.
 
@@ -78,14 +78,14 @@ Auch der Windows-Installer ist nicht signiert. SmartScreen meldet beim ersten St
 **AppImage** — ausführbar machen und starten, keine Installation nötig:
 
 ```bash
-chmod +x KEPTA-*-linux-x64.AppImage
-./KEPTA-*-linux-x64.AppImage
+chmod +x KEPTA-*-linux-x86_64.AppImage
+./KEPTA-*-linux-x86_64.AppImage
 ```
 
 **deb** — für Debian, Ubuntu und Abkömmlinge:
 
 ```bash
-sudo apt install ./KEPTA-*-linux-x64.deb
+sudo apt install ./KEPTA-*-linux-amd64.deb
 ```
 
 Wer den Binärdateien nicht vertrauen will, baut selbst: `npm install && npm run build:mac`, `build:linux` oder `build:win` erzeugt die Pakete unter `release/`. Der Code ist MIT-lizenziert und vollständig einsehbar.
