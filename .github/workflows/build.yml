@@ -95,5 +95,29 @@ jobs:
             release/*.dmg
             release/*.zip
           generate_release_notes: true
+          # Ohne Apple-Zertifikat sind die Builds unsigniert — ohne diesen Hinweis
+          # scheitert jeder Nutzer beim Doppelklick an der Gatekeeper-Quarantäne.
+          body: |
+            ## 🍎 Erster Start unter macOS
+
+            Diese Builds sind **nicht signiert und nicht notarisiert** (kein Apple-Entwicklerzertifikat).
+            macOS setzt heruntergeladene Dateien in Quarantäne und meldet beim Doppelklick
+            „kann nicht geöffnet werden, da der Entwickler nicht verifiziert werden kann".
+            Die App ist in Ordnung — es fehlt nur die Signatur.
+
+            Einmalig freigeben, danach startet sie normal:
+
+            1. **Rechtsklick** auf `KEPTA.app` → **Öffnen** → im Dialog erneut **Öffnen**
+            2. Alternativ: *Systemeinstellungen → Datenschutz & Sicherheit* → **Dennoch öffnen**
+
+            Oder im Terminal:
+
+            ```bash
+            xattr -dr com.apple.quarantine /Applications/KEPTA.app
+            ```
+
+            Selbst bauen: `npm install && npm run build:mac` erzeugt DMG und ZIP unter `release/`.
+
+            ---
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
