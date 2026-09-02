@@ -1,4 +1,4 @@
-import { Hash, ChatCircle as MessageSquare, GearSix as SettingsIcon, Database, Moon, Sun, SidebarSimple as PanelLeftClose, Graph as Network, Sparkle as Sparkles } from "@phosphor-icons/react";
+import { Hash, ChatCircle as MessageSquare, GearSix as SettingsIcon, Brain, Moon, Sun, SidebarSimple as PanelLeftClose, Graph as Network, Sparkle as Sparkles } from "@phosphor-icons/react";
 import { useAuth } from '../contexts/AuthContext';
 import { useTheme } from '../contexts/ThemeContext';
 import { cn } from '../lib/utils';
@@ -36,7 +36,8 @@ export function Sidebar({ tags, selectedTags, onSelectTag, onClearTags, currentV
   const { isDark, toggle: toggleTheme } = useTheme();
 
   const navItems = [
-    { id: 'memories' as const, label: 'Wissen', icon: Database },
+    // Wissen = Gehirn (Outline, wie vom Nutzer vorgegeben) statt Datenbank-Zylinder
+    { id: 'memories' as const, label: 'Wissen', icon: Brain, weight: 'regular' as const },
     { id: 'chat' as const, label: 'Chat', icon: MessageSquare },
     { id: 'graph' as const, label: 'Graph', icon: Network },
     { id: 'settings' as const, label: 'Einstellungen', icon: SettingsIcon },
@@ -77,7 +78,7 @@ export function Sidebar({ tags, selectedTags, onSelectTag, onClearTags, currentV
                   boxShadow: active ? 'inset 0 1px 0 rgba(255,255,255,0.08)' : undefined,
                 }}
               >
-                <item.icon className="w-4 h-4 shrink-0" weight="duotone" style={{ color: active ? ACCENT_LIGHT : TEXT_FAINT }} />
+                <item.icon className="w-4 h-4 shrink-0" weight={item.weight ?? 'duotone'} style={{ color: active ? ACCENT_LIGHT : TEXT_FAINT }} />
                 <span className="flex-1">{item.label}</span>
               </button>
             );
