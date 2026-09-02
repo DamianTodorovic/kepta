@@ -46,8 +46,9 @@ Fertige App: [Releases](https://github.com/DamianTodorovic/kepta/releases). Agen
 |---|---|
 | Mac mit Apple Silicon (M1–M4) | `KEPTA-<version>-mac-arm64.dmg` |
 | Mac mit Intel-Prozessor | `KEPTA-<version>-mac-x64.dmg` |
-| Windows (Intel/AMD) | `KEPTA-<version>-win-x64.exe` |
-| Windows auf ARM | `KEPTA-<version>-win-arm64.exe` |
+| **Windows — im Zweifel dieses** | `KEPTA-<version>-win.exe` (enthält beide Architekturen) |
+| Windows (Intel/AMD), kleinere Datei | `KEPTA-<version>-win-x64.exe` |
+| Windows auf ARM, kleinere Datei | `KEPTA-<version>-win-arm64.exe` |
 | Linux (Intel/AMD), jede Distribution | `KEPTA-<version>-linux-x86_64.AppImage` |
 | Linux auf ARM | `KEPTA-<version>-linux-arm64.AppImage` |
 | Debian, Ubuntu, Mint | `KEPTA-<version>-linux-amd64.deb` |
