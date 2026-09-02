@@ -6,12 +6,14 @@ import crypto from "crypto";
 import path from "path";
 import fs from "fs";
 import os from "os";
+import dns from "dns";
 import { KeptaStore } from "./src/core/store";
 import { migrateFromLegacyJson } from "./src/core/migrate";
 import { EmbeddingQueue } from "./src/core/embeddings";
 import { searchMemories as engineSearch, indexMemory } from "./src/core/engine";
 import { handleRpc, TOOLS as MCP_TOOLS, saveWithIndex } from "./src/core/mcp";
 import { importObsidianVault, memoryToMarkdown } from "./src/core/obsidian";
+import { APP_VERSION } from "./src/core/version";
 import type { MemoryRecord as CoreMemory } from "./src/core/types";
 
 interface ChatRequest {
@@ -51,18 +53,25 @@ function trimSlash(url: string) {
 }
 
 // ---------- Security Hardening Helpers ----------
+// Basis aller Speicherpfade: NUL-/Steuerzeichen bereinigen + Länge begrenzen.
+// KEIN HTML-Stripping hier — das Frontend rendert Inhalte über react-markdown
+// (kein dangerouslySetInnerHTML), heuristisches Strippen von "javascript:" oder
+// "on*=" zerstört legitime Code-Beispiele in Memories.
 function sanitizeText(input: unknown, maxLen = 50000): string {
   if (typeof input !== "string") return "";
-  // Entferne Null-Bytes und Steuerzeichen außer \n \r \t
   let s = input.replace(/\0/g, "").replace(/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/g, "");
-  // Strip <script> tags und event handlers (XSS)
-  s = s.replace(/<script[\s\S]*?>[\s\S]*?<\/script>/gi, "");
-  s = s.replace(/on\w+\s*=\s*("[^"]*"|'[^']*'|[^\s>]+)/gi, "");
-  // Entferne weitere gefährliche Tags komplett wenn onerror etc übrig
-  s = s.replace(/<[^>]*\bon\w+[^>]*>/gi, (m)=> m.replace(/on\w+\s*=\s*("[^"]*"|'[^']*'|[^\s>]+)/gi, ""));
-  s = s.replace(/javascript:\s*/gi, "");
   if (s.length > maxLen) s = s.slice(0, maxLen);
   return s.trim();
+}
+// Zusätzliche HTML-/Event-Handler-Entschärfung NUR für Roh-HTML-Ingeste
+// (URL-Clipper: fremde HTML-Seiten werden zu Text konvertiert).
+function sanitizeHtmlText(input: unknown, maxLen = 50000): string {
+  let s = sanitizeText(input, maxLen);
+  s = s.replace(/<script[\s\S]*?>[\s\S]*?<\/script>/gi, "");
+  s = s.replace(/on\w+\s*=\s*("[^"]*"|'[^']*'|[^\s>]+)/gi, "");
+  s = s.replace(/<[^>]*\bon\w+[^>]*>/gi, (m) => m.replace(/on\w+\s*=\s*("[^"]*"|'[^']*'|[^\s>]+)/gi, ""));
+  s = s.replace(/javascript:\s*/gi, "");
+  return s;
 }
 function sanitizeTitle(input: unknown): string {
   return sanitizeText(input, 200).replace(/[\r\n]+/g, " ").trim();
@@ -77,31 +86,110 @@ function sanitizeTags(input: unknown): string[] {
   }
   return [...new Set(out)];
 }
-function isPrivateHost(hostname: string): boolean {
-  const h = hostname.toLowerCase();
-  if (h === "localhost" || h === "127.0.0.1" || h === "::1" || h === "0.0.0.0") return true;
-  if (/^10\./.test(h)) return true;
-  if (/^192\.168\./.test(h)) return true;
-  if (/^172\.(1[6-9]|2\d|3[0-1])\./.test(h)) return true;
-  if (/^169\.254\./.test(h)) return true; // link-local / AWS metadata
-  if (/^0\./.test(h)) return true;
-  if (h.endsWith(".local") || h.endsWith(".internal") || h === "metadata.google.internal" || h === "metadata.google") return true;
+// ---------- SSRF-Schutz für den URL-Clipper ----------
+
+// IPv4-Literal in allen Schreibweisen (dotted, hex, oktal, reine Dezimalzahl)
+// zur kanonischen dotted-Quad-Form normieren — "2130706433" ist 127.0.0.1.
+function normalizeIpv4(host: string): string | null {
+  const parts = host.split(".");
+  if (parts.length === 4) {
+    const nums = parts.map((p) => {
+      if (/^0[xX][0-9a-fA-F]+$/.test(p)) return parseInt(p, 16);
+      if (/^0[0-7]+$/.test(p)) return parseInt(p, 8);
+      if (/^\d+$/.test(p)) return parseInt(p, 10);
+      return NaN;
+    });
+    if (nums.some((n) => !Number.isFinite(n) || n < 0 || n > 255)) return null;
+    return nums.join(".");
+  }
+  let n: number;
+  if (/^0[xX][0-9a-fA-F]+$/.test(host)) n = parseInt(host, 16);
+  else if (/^\d+$/.test(host)) n = parseInt(host, 10);
+  else return null;
+  if (!Number.isFinite(n) || n < 0 || n > 0xffffffff) return null;
+  return [(n >>> 24) & 255, (n >>> 16) & 255, (n >>> 8) & 255, n & 255].join(".");
+}
+
+// IPv6 in 8 16-bit-Gruppen zerlegen (null bei ungültiger Form)
+function ipv6Groups(ip: string): number[] | null {
+  const parts = ip.toLowerCase().split("::");
+  if (parts.length > 2) return null;
+  const head = parts[0] ? parts[0].split(":") : [];
+  const tail = parts.length === 2 && parts[1] ? parts[1].split(":") : [];
+  const fill = 8 - head.length - tail.length;
+  if (fill < 0) return null;
+  const groups: number[] = [];
+  for (const g of [...head, ...Array<string>(fill).fill("0"), ...tail]) {
+    if (!/^[0-9a-f]{1,4}$/.test(g)) return null;
+    groups.push(parseInt(g, 16));
+  }
+  return groups.length === 8 ? groups : null;
+}
+
+/** IP-Literal (v4/v6, kanonische Form) gegen Loopback/Privat/Link-Local/CGNAT/Unique-Local prüfen. */
+function isPrivateIp(ip: string): boolean {
+  if (/^\d{1,3}(\.\d{1,3}){3}$/.test(ip)) {
+    const [a, b] = ip.split(".").map(Number);
+    if (a === 127 || a === 10 || a === 0) return true;
+    if (a === 192 && b === 168) return true;
+    if (a === 172 && b >= 16 && b <= 31) return true;
+    if (a === 169 && b === 254) return true; // link-local / AWS metadata
+    if (a === 100 && b >= 64 && b <= 127) return true; // CGNAT 100.64/10
+    return false;
+  }
+  const g = ipv6Groups(ip);
+  if (!g) return false;
+  if (g.every((x) => x === 0)) return true; // :: (unspecified)
+  if (g.slice(0, 7).every((x) => x === 0) && g[7] === 1) return true; // ::1 loopback
+  // IPv4-mapped IPv6 (::ffff:a.b.c.d) → auf die gemappte IPv4 prüfen
+  if (g.slice(0, 5).every((x) => x === 0) && g[5] === 0xffff) {
+    return isPrivateIp(`${g[6]! >> 8}.${g[6]! & 255}.${g[7]! >> 8}.${g[7]! & 255}`);
+  }
+  const h = g[0]!;
+  if (h >= 0xfe80 && h <= 0xfebf) return true; // fe80::/10 link-local
+  if (h >= 0xfc00 && h <= 0xfdff) return true; // fc00::/7 unique local
   return false;
 }
-function isSafeUrl(raw: string): { ok: boolean; reason?: string; url?: URL } {
+
+/** Host-String (ohne Klammern) auf private Ziele prüfen — IP-Literale normiert, Namen erst via DNS. */
+function isPrivateHostname(rawHost: string): boolean {
+  const host = rawHost.toLowerCase().replace(/\.$/, "");
+  if (host === "localhost" || host.endsWith(".localhost")) return true;
+  if (host.endsWith(".local") || host.endsWith(".internal") || host === "metadata.google" || host === "metadata.google.internal") return true;
+  const v4 = normalizeIpv4(host);
+  if (v4) return isPrivateIp(v4);
+  if (host.includes(":")) return isPrivateIp(host);
+  return false; // echter DNS-Name → assertPublicDnsHost prüft alle aufgelösten IPs
+}
+
+function parseSafeUrl(raw: string): { ok: boolean; reason?: string; url?: URL } {
   try {
+    if (raw.length > 2048) return { ok: false, reason: "URL zu lang" };
     const u = new URL(raw);
     if (!["http:", "https:"].includes(u.protocol)) return { ok: false, reason: "Nur http/https erlaubt" };
-    if (isPrivateHost(u.hostname)) return { ok: false, reason: "Private Hosts blockiert (SSRF Schutz)" };
     if (u.username || u.password) return { ok: false, reason: "Auth in URL nicht erlaubt" };
-    // Blocke ungewöhnliche Ports (nur 80,443,3000-9000 erlaubt)
-    if (u.port && !["", "80", "443", "3000","3001","5173","8080","8000","9000"].includes(u.port) && parseInt(u.port,10) < 1024) {
-      // Erlaube trotzdem, aber logge — für Sicherheit blocken wir nur private
-    }
-    if (raw.length > 2048) return { ok: false, reason: "URL zu lang" };
+    // URL.hostname normiert IPv4/IPv6-Literale bereits (WHATWG); zusätzlich Strings prüfen
+    const host = u.hostname.replace(/^\[/, "").replace(/\]$/, "");
+    if (isPrivateHostname(host)) return { ok: false, reason: "Private Hosts blockiert (SSRF Schutz)" };
     return { ok: true, url: u };
   } catch {
     return { ok: false, reason: "Ungültige URL" };
+  }
+}
+
+// DNS-Auflösung: ALLE IPs eines Hosts (v4+v6) gegen private Bereiche prüfen —
+// schließt DNS-Rebinding auf Loopback/Intranet und exotische Literal-Schreibweisen aus.
+async function assertPublicDnsHost(u: URL): Promise<void> {
+  const host = u.hostname.replace(/^\[/, "").replace(/\]$/, "");
+  let addrs: { address: string; family: number }[];
+  try {
+    addrs = await dns.promises.lookup(host, { all: true, verbatim: true });
+  } catch {
+    throw new Error("Host nicht auflösbar (DNS)");
+  }
+  if (addrs.length === 0) throw new Error("Host nicht auflösbar (DNS)");
+  for (const a of addrs) {
+    if (isPrivateIp(a.address)) throw new Error("Private Hosts blockiert (SSRF Schutz)");
   }
 }
 function isSafeFilename(name: string): boolean {
@@ -198,11 +286,12 @@ async function* streamUpstreamDeltas(res: Response): AsyncGenerator<string> {
   }
 }
 
-async function readFullAnswer(req: ChatRequest) {
+async function readFullAnswer(req: ChatRequest, signal?: AbortSignal) {
   const res = await fetch(upstreamUrl(req), {
     method: "POST",
     headers: buildUpstreamHeaders(req),
     body: JSON.stringify(buildUpstreamBody(req, false)),
+    signal,
   });
   const data = await res.json();
   if (!res.ok) {
@@ -238,20 +327,34 @@ export function createApp(store: KeptaStore) {
     createdAt: r.createdAt,
     updatedAt: r.updatedAt,
   });
-  const allApiMemories = (): MemoryRecord[] => store.listMemories({ limit: 1000 }).map(toApi);
+  const allApiMemories = (): MemoryRecord[] => listAllMemories().map(toApi);
+  // Vollständige Liste via Paginierung — listMemories deckelt pro Seite, damit Export,
+  // Trash-Listung und Replace-Import bei großen Gehirnen nichts still abschneiden.
+  function listAllMemories(opts: { trash?: boolean } = {}): CoreMemory[] {
+    const out: CoreMemory[] = [];
+    const pageSize = 1000;
+    for (let offset = 0; ; offset += pageSize) {
+      const page = store.listMemories({ limit: pageSize, offset, ...opts });
+      out.push(...page);
+      if (page.length < pageSize) break;
+    }
+    return out;
+  }
 
   // --- DB-Change-Watcher: fremde Prozesse (MCP stdio, Claude Desktop, ZCode) ---
   // schreiben direkt in die SQLite-DB ohne den Activity-Hub zu kennen. Die App
   // pollt deshalb count+max(updated_at) und facht den SSE-Stream selbst an.
-  let lastDbFingerprint = "";
+  let lastDbCount: number | null = null;
+  let lastDbUpdatedAt: number | null = null;
   const dbWatcher = setInterval(() => {
     try {
       const row = store.db.prepare("SELECT COUNT(*) c, COALESCE(MAX(updated_at),0) m FROM memories").get() as { c: number; m: number };
-      const fp = `${row.c}:${row.m}`;
-      if (lastDbFingerprint && fp !== lastDbFingerprint) {
-        publishActivity({ type: row.c > parseInt(lastDbFingerprint) ? "save" : "update", source: "agent", title: "Gehirn wurde von außen aktualisiert" });
+      // Separater Zustand statt parseInt auf einem kombinierten Fingerprint-String
+      if (lastDbCount !== null && (row.c !== lastDbCount || row.m !== lastDbUpdatedAt)) {
+        publishActivity({ type: row.c > lastDbCount ? "save" : "update", source: "agent", title: "Gehirn wurde von außen aktualisiert" });
       }
-      lastDbFingerprint = fp;
+      lastDbCount = row.c;
+      lastDbUpdatedAt = row.m;
     } catch { /* DB kurz gesperrt — nächster Tick */ }
   }, 4000);
   dbWatcher.unref();
@@ -301,10 +404,6 @@ export function createApp(store: KeptaStore) {
   }));
   app.disable("x-powered-by");
   app.use(compression());
-  // Limit payload — 1mb default, 50mb war viel zu groß (DoS)
-  app.use(express.json({ limit: "1mb" }));
-  // Für /api/memories/import und /api/memory mit größeren Batches separat höheres Limit via Route-Middleware
-  app.use(express.urlencoded({ limit: "1mb", extended: false }));
 
   // Rate Limiting — schützt vor Brute-Force / DoS
   const globalLimiter = rateLimit({ windowMs: 60_000, max: 180, standardHeaders: true, legacyHeaders: false, message: { error: "Zu viele Anfragen — bitte kurz warten." } });
@@ -343,14 +442,87 @@ export function createApp(store: KeptaStore) {
     next();
   });
 
-  // --- Health ---
   const activeCount = () => store.countMemories().active;
+
+  // --- Import-Routen VOR dem globalen Body-Limit registrieren (P1: Reihenfolge) ---
+  // express.json überspringt bereits geparste Bodies — daher greift das globale
+  // 1mb-Limit unten auf diesen Requests nicht mehr, und große Backups (bis 2mb)
+  // bzw. Markdown-Batches (bis 10mb) werden nicht schon global mit 413 abgewiesen.
+  function handleMemoriesImport(req: express.Request, res: express.Response) {
+    const { memories: incoming, mode } = req.body as { memories?: Partial<MemoryRecord>[]; mode?: "merge" | "replace" };
+    if (!Array.isArray(incoming)) {
+      return res.status(400).json({ error: "Keine gültige Backup-Datei (memories-Array erwartet)" });
+    }
+    if (incoming.length > 5000) return res.status(413).json({ error: "Zu viele Knoten (max 5000)" });
+
+    const cleaned = incoming
+      .filter(m => m && typeof m === "object")
+      .slice(0, 5000)
+      .map((m, i) => ({
+        id: (typeof m.id === "string" && /^[\w\-.:]+$/.test(m.id)) ? m.id.slice(0,120) : `import-${Date.now()}-${i}`,
+        title: sanitizeTitle(m.title) || "Ohne Titel",
+        content: sanitizeText(m.content, 50000) || "",
+        tags: sanitizeTags(m.tags),
+        createdAt: typeof m.createdAt === "number" && m.createdAt > 0 ? m.createdAt : Date.now(),
+        updatedAt: typeof m.updatedAt === "number" && m.updatedAt > 0 ? m.updatedAt : Date.now(),
+      })).filter(m=> m.content.length>0);
+
+    if (mode === "replace") {
+      // Endgültig leeren (Papierkorb inklusive), dann Import — vollständig listen, nicht gekappt
+      for (const m of listAllMemories({ trash: true })) store.purgeMemory(m.id);
+      for (const m of listAllMemories()) store.purgeMemory(m.id);
+      // Doppelte IDs innerhalb der Backup-Datei: letzte Variante gewinnt (createMemory wirft sonst)
+      const byId = new Map<string, (typeof cleaned)[number]>();
+      for (const m of cleaned) byId.set(m.id, m);
+      try {
+        for (const m of byId.values()) {
+          const created = store.createMemory(m);
+          indexMemory(store, created.id);
+        }
+      } catch {
+        return res.status(409).json({ error: "Import fehlgeschlagen: Konflikt bei Knoten-IDs" });
+      }
+      return res.json({ imported: byId.size, total: activeCount() });
+    }
+
+    let imported = 0;
+    for (const m of cleaned) {
+      const current = store.getMemory(m.id);
+      if (!current || m.updatedAt > current.updatedAt) {
+        // m.createdAt/updatedAt bleiben erhalten (upsertMemory reicht sie durch)
+        store.upsertMemory(m);
+        indexMemory(store, m.id);
+        imported++;
+      }
+    }
+    res.json({ imported, total: activeCount() });
+  }
+  app.post("/api/memories/import", writeLimiter, express.json({ limit: "2mb" }), handleMemoriesImport);
+
+  function handleMarkdownImport(req: express.Request, res: express.Response) {
+    const { files, scope } = req.body as { files?: { name?: string; content?: string }[]; scope?: string };
+    if (!Array.isArray(files) || files.length === 0 || files.length > 5000) {
+      return res.status(400).json({ error: "files-Array (1..5000) erwartet" });
+    }
+    const mdFiles = files
+      .filter((f) => f && typeof f.content === "string")
+      .map((f) => ({ name: typeof f.name === "string" ? f.name.slice(0, 200) : "notiz.md", content: f.content as string }));
+    const summary = importObsidianVault(store, mdFiles, { scope: typeof scope === "string" && scope ? scope : undefined });
+    res.json(summary);
+  }
+  app.post("/api/import/markdown", writeLimiter, express.json({ limit: "10mb" }), handleMarkdownImport);
+
+  // Globales Payload-Limit für alle übrigen Routen (1mb — 50mb war viel zu groß, DoS)
+  app.use(express.json({ limit: "1mb" }));
+  app.use(express.urlencoded({ limit: "1mb", extended: false }));
+
+  // --- Health ---
   app.get("/api/health", (_req, res) => {
     res.json({
       ok: true,
       status: "ok",
       name: "kepta",
-      version: "2.0.0",
+      version: APP_VERSION,
       uptime: process.uptime(),
       dbPath: store.dbPath,
       count: activeCount(),
@@ -486,7 +658,7 @@ export function createApp(store: KeptaStore) {
   // --- Speicher-API ---
 
   app.get("/api/memories", (req, res) => {
-    const memories = req.query.trash === "1" ? store.listMemories({ limit: 1000, trash: true }).map(toApi) : allApiMemories();
+    const memories = req.query.trash === "1" ? listAllMemories({ trash: true }).map(toApi) : allApiMemories();
     const body = JSON.stringify(memories);
     const hash = crypto.createHash("sha1").update(body).digest("hex");
     const etag = `"${hash}"`;
@@ -587,47 +759,8 @@ export function createApp(store: KeptaStore) {
     res.json({ ok: true, memory: toApi(store.getMemory(id)!) });
   });
 
-  app.post("/api/memories/import", writeLimiter, express.json({ limit: "2mb" }), (req, res) => {
-    const { memories: incoming, mode } = req.body as { memories?: Partial<MemoryRecord>[]; mode?: "merge" | "replace" };
-    if (!Array.isArray(incoming)) {
-      return res.status(400).json({ error: "Keine gültige Backup-Datei (memories-Array erwartet)" });
-    }
-    if (incoming.length > 5000) return res.status(413).json({ error: "Zu viele Knoten (max 5000)" });
-
-    const cleaned = incoming
-      .filter(m => m && typeof m === "object")
-      .slice(0, 5000)
-      .map((m, i) => ({
-        id: (typeof m.id === "string" && /^[\w\-.:]+$/.test(m.id)) ? m.id.slice(0,120) : `import-${Date.now()}-${i}`,
-        title: sanitizeTitle(m.title) || "Ohne Titel",
-        content: sanitizeText(m.content, 50000) || "",
-        tags: sanitizeTags(m.tags),
-        createdAt: typeof m.createdAt === "number" && m.createdAt > 0 ? m.createdAt : Date.now(),
-        updatedAt: typeof m.updatedAt === "number" && m.updatedAt > 0 ? m.updatedAt : Date.now(),
-      })).filter(m=> m.content.length>0);
-
-    if (mode === "replace") {
-      // Endgültig leeren (Papierkorb inklusive), dann Import
-      for (const m of store.listMemories({ limit: 1000, trash: true })) store.purgeMemory(m.id);
-      for (const m of store.listMemories({ limit: 1000 })) store.purgeMemory(m.id);
-      for (const m of cleaned) {
-        const created = store.createMemory(m);
-        indexMemory(store, created.id);
-      }
-      return res.json({ imported: cleaned.length, total: activeCount() });
-    }
-
-    let imported = 0;
-    for (const m of cleaned) {
-      const current = store.getMemory(m.id);
-      if (!current || m.updatedAt > current.updatedAt) {
-        store.upsertMemory(m);
-        indexMemory(store, m.id);
-        imported++;
-      }
-    }
-    res.json({ imported, total: activeCount() });
-  });
+  // (POST /api/memories/import ist mit eigenem 2mb-Body-Parser oben registriert,
+  //  bevor das globale 1mb-Limit greift — siehe P1-Kommentar dort.)
 
   app.get("/api/storage-info", (_req, res) => {
     res.json({
@@ -656,21 +789,11 @@ export function createApp(store: KeptaStore) {
   });
 
   // --- Obsidian-Interop: Markdown-Import/-Export ---
-  app.post("/api/import/markdown", writeLimiter, express.json({ limit: "10mb" }), (req, res) => {
-    const { files, scope } = req.body as { files?: { name?: string; content?: string }[]; scope?: string };
-    if (!Array.isArray(files) || files.length === 0 || files.length > 5000) {
-      return res.status(400).json({ error: "files-Array (1..5000) erwartet" });
-    }
-    const mdFiles = files
-      .filter((f) => f && typeof f.content === "string")
-      .map((f) => ({ name: typeof f.name === "string" ? f.name.slice(0, 200) : "notiz.md", content: f.content as string }));
-    const summary = importObsidianVault(store, mdFiles, { scope: typeof scope === "string" && scope ? scope : undefined });
-    res.json(summary);
-  });
+  // (POST /api/import/markdown ist mit eigenem 10mb-Body-Parser oben registriert.)
 
   // Export: schreibt alle aktiven Memories als .md in ~/.kepta/export/<zeitstempel>/
   app.post("/api/export/markdown", writeLimiter, (_req, res) => {
-    const memories = store.listMemories({ limit: 1000 });
+    const memories = listAllMemories();
     if (memories.length === 0) return res.status(404).json({ error: "Keine Memories zu exportieren" });
     const dir = path.join(DATA_DIR, "export", `kepta-export-${Date.now()}`);
     try {
@@ -699,31 +822,49 @@ export function createApp(store: KeptaStore) {
     if (!url || typeof url !== "string" || url.length > 2048) {
       return res.status(400).json({ error: "URL fehlt oder zu lang" });
     }
-    const safe = isSafeUrl(url);
+    const safe = parseSafeUrl(url);
     if (!safe.ok) return res.status(400).json({ error: safe.reason });
-    let parsed = safe.url!;
     try {
-      const controller = new AbortController();
-      const timeout = setTimeout(() => controller.abort(), 10000);
-      const r = await fetch(parsed.toString(), {
-        headers: {
-          "User-Agent": "KEPTA-Clipper/1.0 (+https://kepta.local)",
-          Accept: "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
-        },
-        signal: controller.signal,
-      });
-      clearTimeout(timeout);
-      if (!r.ok) return res.status(502).json({ error: `Fetch fehlgeschlagen (${r.status})` });
-      const contentType = r.headers.get("content-type") || "";
-      if (contentType && !/(text\/html|application\/xhtml|text\/plain|application\/xml)/i.test(contentType)) {
-        // Erlaube trotzdem, aber limitiert — viele Seiten liefern falschen CT
+      // Redirects MANUELL folgen: jeder Hop wird erneut voll geprüft
+      // (Protokoll, Credentials, IP-Literal, DNS) — max. 5 Hops.
+      const MAX_REDIRECTS = 5;
+      let current = safe.url!;
+      let response: Response | null = null;
+      for (let hop = 0; hop <= MAX_REDIRECTS; hop++) {
+        await assertPublicDnsHost(current);
+        const controller = new AbortController();
+        const timeout = setTimeout(() => controller.abort(), 10000);
+        try {
+          response = await fetch(current.toString(), {
+            headers: {
+              "User-Agent": "KEPTA-Clipper/1.0 (+https://kepta.local)",
+              Accept: "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+            },
+            signal: controller.signal,
+            redirect: "manual",
+          });
+        } finally {
+          clearTimeout(timeout); // auch bei Fehlern/Abort aufräumen
+        }
+        if ([301, 302, 303, 307, 308].includes(response.status)) {
+          if (hop === MAX_REDIRECTS) return res.status(508).json({ error: "Zu viele Redirects (max 5)" });
+          const loc = response.headers.get("location");
+          if (!loc) return res.status(502).json({ error: "Redirect ohne Ziel" });
+          const next = parseSafeUrl(new URL(loc, current).toString());
+          if (!next.ok) return res.status(400).json({ error: next.reason });
+          current = next.url!;
+          continue;
+        }
+        break;
       }
-      const rawHtml = await r.text();
+      if (!response) return res.status(502).json({ error: "Fetch fehlgeschlagen" });
+      if (!response.ok) return res.status(502).json({ error: `Fetch fehlgeschlagen (${response.status})` });
+      const rawHtml = await response.text();
       if (rawHtml.length > 600000) return res.status(413).json({ error: "Seite zu groß (max 600k)" });
       const html = rawHtml;
 
       const titleMatch = html.match(/<title[^>]*>([\s\S]*?)<\/title>/i);
-      const rawTitle = titleMatch ? titleMatch[1].trim() : parsed.hostname;
+      const rawTitle = titleMatch ? titleMatch[1].trim() : current.hostname;
 
       let text = html
         .replace(/<script[\s\S]*?<\/script>/gi, " ")
@@ -767,14 +908,19 @@ export function createApp(store: KeptaStore) {
         .trim()
         .slice(0, 50000);
 
-      const title = sanitizeTitle(rawTitle.replace(/\s+/g, " ").replace(/&[a-zA-Z0-9#]+;/g, (m) => entities[m] || m).trim().slice(0, 300)) || sanitizeTitle(parsed.hostname).slice(0,80) || "Import";
+      const title = sanitizeTitle(rawTitle.replace(/\s+/g, " ").replace(/&[a-zA-Z0-9#]+;/g, (m) => entities[m] || m).trim().slice(0, 300)) || sanitizeTitle(current.hostname).slice(0,80) || "Import";
       if (!text) return res.status(422).json({ error: "Kein Text extrahierbar" });
       const safeTitle = sanitizeTitle(title);
-      const safeText = sanitizeText(text, 50000);
-      res.json({ title: safeTitle, content: safeText, url: parsed.toString() });
+      // Roh-HTML-Ingest: zusätzlich Event-Handler-/javascript:-Reste entfernen
+      const safeText = sanitizeHtmlText(text, 50000);
+      res.json({ title: safeTitle, content: safeText, url: current.toString() });
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : String(err);
       if (msg.includes("abort")) return res.status(504).json({ error: "Timeout beim Laden der URL" });
+      // SSRF-Blockaden und DNS-Fehlschläge sind Client-Fehler (400), keine 500
+      if (msg.startsWith("Private Hosts blockiert") || msg.includes("nicht auflösbar")) {
+        return res.status(400).json({ error: msg });
+      }
       res.status(500).json({ error: msg || "Clip fehlgeschlagen" });
     }
   });
@@ -890,7 +1036,9 @@ export function createApp(store: KeptaStore) {
   app.post("/mcp", async (req, res) => {
     const body = req.body as Record<string, unknown> | undefined;
     if (!body || typeof body !== "object" || Array.isArray(body)) {
-      return res.status(400).json({ jsonrpc: "2.0", id: null, error: { code: -32600, message: "Ungültiger JSON-RPC-Request" } });
+      // JSON-Array = Batch-Request: MCP 2026-07-28 hat Batching gestrichen →
+      // einzelnes Error-Objekt statt stiller 200/leerer Antwort
+      return res.status(400).json({ jsonrpc: "2.0", id: null, error: { code: -32600, message: "Batching nicht unterstützt (MCP 2026-07-28 hat Batching gestrichen)" } });
     }
     try {
       const reply = await handleRpc(mcpCtx, body as never);
@@ -952,22 +1100,29 @@ export function createApp(store: KeptaStore) {
   // Streaming: leitet die Antwort als SSE an den Client weiter
   app.post("/api/chat/stream", chatLimiter, async (req, res) => {
     const body = req.body as ChatRequest;
-    // Hardened: Validierung
-    if (!body || typeof body !== "object") { try{ res.writeHead(400); res.end(JSON.stringify({error:"Ungültiger Body"})); }catch{} return; }
-    if (body.messages && (!Array.isArray(body.messages) || body.messages.length > 40)) { try{ res.writeHead(400); res.end(JSON.stringify({error:"Zu viele Messages (max 40)"})); }catch{} return; }
-    if (body.system && typeof body.system === "string" && body.system.length > 60000) { try{ res.writeHead(413); res.end(JSON.stringify({error:"System-Prompt zu groß"})); }catch{} return; }
-    if (body.model && typeof body.model === "string" && body.model.length > 200) { try{ res.writeHead(400); res.end(JSON.stringify({error:"Modell-Name zu lang"})); }catch{} return; }
+    // Hardened: Validierung — messages ist Pflichtfeld (sonst TypeError im Upstream-Body)
+    if (!body || typeof body !== "object" || !Array.isArray(body.messages)) {
+      return res.status(400).json({ error: "Messages-Array erforderlich" });
+    }
+    if (body.messages.length > 40) return res.status(400).json({ error: "Zu viele Messages (max 40)" });
+    if (body.system && typeof body.system === "string" && body.system.length > 60000) return res.status(413).json({ error: "System-Prompt zu groß" });
+    if (body.model && typeof body.model === "string" && body.model.length > 200) return res.status(400).json({ error: "Modell-Name zu lang" });
     res.writeHead(200, {
       "Content-Type": "text/event-stream",
       "Cache-Control": "no-cache",
       Connection: "keep-alive",
     });
 
+    const controller = new AbortController();
+    // Client-Disconnect bricht den Upstream-Request ab (kein weiterlaufender Token-Stream)
+    req.on("close", () => controller.abort());
+
     try {
       const upstream = await fetch(upstreamUrl(body), {
         method: "POST",
         headers: buildUpstreamHeaders(body),
         body: JSON.stringify(buildUpstreamBody(body, true)),
+        signal: controller.signal,
       });
 
       if (!upstream.ok || !upstream.body) {
@@ -980,29 +1135,38 @@ export function createApp(store: KeptaStore) {
       }
 
       for await (const delta of streamUpstreamDeltas(upstream)) {
+        if (res.destroyed) return; // Client weg — Upstream bricht via AbortController ab
         res.write(`data: ${JSON.stringify({ text: delta })}\n\n`);
       }
-      res.write("data: [DONE]\n\n");
+      if (!res.destroyed) res.write("data: [DONE]\n\n");
       res.end();
     } catch (error: unknown) {
       const msg = error instanceof Error ? error.message : "Verbindungsfehler";
-      res.write(`data: ${JSON.stringify({ error: msg })}\n\n`);
-      res.write("data: [DONE]\n\n");
-      res.end();
+      if (!res.destroyed) {
+        try {
+          res.write(`data: ${JSON.stringify({ error: msg })}\n\n`);
+          res.write("data: [DONE]\n\n");
+          res.end();
+        } catch { /* Socket bereits zu */ }
+      }
     }
   });
 
   // Nicht-Streaming-Fallback
   app.post("/api/chat", chatLimiter, async (req, res) => {
     const body = req.body as ChatRequest;
-    if (!body || typeof body !== "object") return res.status(400).json({ error: "Ungültiger Body" });
-    if (body.messages && (!Array.isArray(body.messages) || body.messages.length > 40)) return res.status(400).json({ error: "Zu viele Messages (max 40)" });
+    if (!body || typeof body !== "object" || !Array.isArray(body.messages)) return res.status(400).json({ error: "Messages-Array erforderlich" });
+    if (body.messages.length > 40) return res.status(400).json({ error: "Zu viele Messages (max 40)" });
     if (body.system && typeof body.system === "string" && body.system.length > 60000) return res.status(413).json({ error: "System-Prompt zu groß" });
     if (body.model && typeof body.model === "string" && body.model.length > 200) return res.status(400).json({ error: "Modell-Name zu lang" });
+    const controller = new AbortController();
+    // Client-Disconnect bricht auch den blockierenden Upstream-Call ab
+    req.on("close", () => controller.abort());
     try {
-      const text = await readFullAnswer(body);
+      const text = await readFullAnswer(body, controller.signal);
       res.json({ text });
     } catch (error: unknown) {
+      if (res.destroyed) return;
       console.error("Chat API Error:", error);
       const msg = error instanceof Error ? error.message : "Interner Serverfehler";
       res.status(500).json({ error: msg });
@@ -1052,8 +1216,20 @@ export function createApp(store: KeptaStore) {
 
 // ---------- Bootstrap (Store, Queue, SPA-Serving, listen) ----------
 
+// dist-Ordner ermitteln: im gebündelten Server liegt index.html neben server.cjs (dist/),
+// im tsx-Dev-Lauf unter <cwd>/dist.
+function resolveDistDir(): string {
+  try {
+    if (typeof __dirname === "string" && fs.existsSync(path.join(__dirname, "server.cjs"))) return __dirname;
+  } catch { /* tsx-ESM: kein __dirname */ }
+  return path.join(process.cwd(), "dist");
+}
+
 async function startServer() {
   const PORT = parseInt(process.env.PORT || "3000", 10);
+  // Default nur Loopback — die API hat keine Auth (Memories lesen/löschen, Chat-Proxy
+  // mit API-Keys). Bindung an alle Interfaces nur bewusst via KEPTA_HOST.
+  const HOST = process.env.KEPTA_HOST || "127.0.0.1";
 
   const store = new KeptaStore();
   const migration = migrateFromLegacyJson(store);
@@ -1065,8 +1241,16 @@ async function startServer() {
 
   const app = createApp(store);
 
-  // Vite middleware for development (only run when started with tsx)
-  if (process.env.NODE_ENV !== "production" && !process.env.ELECTRON_RUN_AS_NODE) {
+  // Vite-Dev-Middleware: der tsx-Dev-Server (`npm run dev`) nutzt sie immer —
+  // das gebündelte dist/server.cjs (`npm start`, Electron) dagegen nur, wenn KEIN
+  // Build vorliegt und nicht in Produktion. Sonst liefert `npm start` ohne gesetztes
+  // NODE_ENV fälschlich den Vite-Dev-Server statt des statischen dist.
+  const runningFromSource = /\.[cm]?tsx?$/.test(process.argv[1] ?? "");
+  const devAllowed = process.env.NODE_ENV !== "production" && !process.env.ELECTRON_RUN_AS_NODE;
+  const distDir = resolveDistDir();
+  const hasBuiltApp = fs.existsSync(path.join(distDir, "index.html"));
+  let spaServed = false;
+  if (devAllowed && (runningFromSource || !hasBuiltApp)) {
     try {
       const { createServer: createViteServer } = await import("vite");
       const vite = await createViteServer({
@@ -1074,24 +1258,31 @@ async function startServer() {
         appType: "spa",
       });
       app.use(vite.middlewares);
-    } catch (_e) {
-      console.log("Vite skipped in prod");
+      spaServed = true;
+    } catch {
+      // Vite in dieser Umgebung nicht verfügbar (z.B. gepackte App) → statischer Fallback
     }
-  } else {
-    const distPath = __dirname;
-    app.use(express.static(distPath));
+  }
+  if (!spaServed) {
+    app.use(express.static(distDir));
     app.get('*', (req, res) => {
       // API-Routen nicht überschreiben
-      if (req.path.startsWith("/api/")) return res.status(404).json({ error: "Not found" });
-      res.sendFile(path.join(distPath, 'index.html'));
+      if (req.path.startsWith("/api/") || req.path === "/mcp") return res.status(404).json({ error: "Not found" });
+      res.sendFile(path.join(distDir, 'index.html'));
     });
   }
 
-  app.listen(PORT, "0.0.0.0", () => {
-    console.log(`Server running on http://0.0.0.0:${PORT}`);
+  const server = app.listen(PORT, HOST, () => {
+    console.log(`Server running on http://${HOST}:${PORT}${HOST === "127.0.0.1" ? "" : "  (alle Interfaces — KEPTA_HOST ist explizit gesetzt)"}`);
     console.log(`Speicher: ${store.dbPath} (SQLite) | Embeddings: ${JSON.stringify(store.embeddingStats())}`);
     console.log(`API: http://localhost:${PORT}/api/health | /api/search | MCP: POST /mcp (2026-07-28, ${MCP_TOOLS.length} Tools)`);
     if (process.send) process.send('server-ready');
+  });
+  // Listen-Fehler sauber behandeln — z. B. EADDRINUSE durch getFreePort-TOCTOU in der
+  // Electron-Shell: klare Logausgabe statt unbehandeltem Crash-Dialog.
+  server.on("error", (err: NodeJS.ErrnoException) => {
+    console.error(`Server-Listen-Fehler (${err.code ?? "unbekannt"}): ${err.message}`);
+    process.exit(1);
   });
 }
 

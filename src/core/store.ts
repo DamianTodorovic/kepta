@@ -220,7 +220,10 @@ export class KeptaStore {
   // ---------- CRUD ----------
 
   listMemories(opts: ListOptions = {}): MemoryRecord[] {
-    const limit = Math.min(Math.max(opts.limit ?? 100, 1), 1000);
+    // Kappe 5000 = Server-Limit für aktive Knoten (server.ts), damit Export/Import
+    // bei vollem Gehirn nicht still abschneiden. Vollständigkeit sichern Aufrufer
+    // über Paginierung (offset), nicht über einen höheren Einzel-Page-Limit.
+    const limit = Math.min(Math.max(opts.limit ?? 100, 1), 5000);
     const offset = Math.max(opts.offset ?? 0, 0);
     const where: string[] = [];
     const params: (string | number)[] = [];
@@ -235,8 +238,10 @@ export class KeptaStore {
       params.push(opts.scope);
     }
     if (opts.tag) {
-      where.push("tags LIKE ?");
-      params.push(`%"${opts.tag.toLowerCase()}"%`);
+      // LIKE-Wildcards im Tag escapen (% _ \ ") — sonst matcht z.B. "a_b" auch "axb"
+      const escaped = opts.tag.toLowerCase().replace(/[\\%_"]/g, (c) => `\\${c}`);
+      where.push("tags LIKE ? ESCAPE '\\'");
+      params.push(`%"${escaped}"%`);
     }
     const sql = `SELECT ${KeptaStore.COLS} FROM memories WHERE ${where.join(" AND ")} ORDER BY updated_at DESC LIMIT ? OFFSET ?`;
     params.push(limit, offset);
@@ -324,6 +329,8 @@ export class KeptaStore {
           confidence: input.confidence,
           validFrom: input.validFrom,
           validTo: input.validTo,
+          // Import/Resync dürfen Zeitstempel aus der Quelle erhalten (optionaler Parameter)
+          updatedAt: input.updatedAt,
         });
         // updateMemory kann bei rein identischen Daten nicht null liefern, aber defensiv bleiben
         return { record: updated ?? existing, created: false };
@@ -374,8 +381,9 @@ export class KeptaStore {
       params.push(patch.supersededBy);
     }
     if (sets.length === 0) return this.rowToRecord(row);
+    // Explizites updatedAt (Import/Resync) gewinnt — sonst "jetzt"
     sets.push("updated_at = ?");
-    params.push(Date.now());
+    params.push(patch.updatedAt ?? Date.now());
     params.push(id);
     this.db.prepare(`UPDATE memories SET ${sets.join(", ")} WHERE id = ?`).run(...params);
     // Content-Änderung macht Chunks + Embeddings obsolet
@@ -462,11 +470,16 @@ export class KeptaStore {
       .run(float32ToBlob(embedding), model, memoryId, seq);
   }
 
-  /** Chunks ohne Embedding (für die Hintergrund-Queue) */
-  chunksNeedingEmbedding(limit = 64): { memoryId: string; seq: number; text: string }[] {
-    const rows = this.db
-      .prepare("SELECT memory_id, seq, text FROM chunks WHERE embedding IS NULL LIMIT ?")
-      .all(limit) as Record<string, unknown>[];
+  /** Chunks ohne Embedding oder mit veraltetem Modell (für die Hintergrund-Queue) */
+  chunksNeedingEmbedding(limit = 64, model?: string): { memoryId: string; seq: number; text: string }[] {
+    // Mit Modell-Argument zählt auch ein Modell-Mismatch als "braucht Embedding" —
+    // sonst werden Chunks nach einem Modellwechsel nie neu eingebettet.
+    const sql = model
+      ? "SELECT memory_id, seq, text FROM chunks WHERE embedding IS NULL OR embedding_model IS NULL OR embedding_model <> ? LIMIT ?"
+      : "SELECT memory_id, seq, text FROM chunks WHERE embedding IS NULL LIMIT ?";
+    const rows = (
+      model ? this.db.prepare(sql).all(model, limit) : this.db.prepare(sql).all(limit)
+    ) as Record<string, unknown>[];
     return rows.map((r) => ({ memoryId: String(r.memory_id), seq: Number(r.seq), text: String(r.text) }));
   }
 
@@ -624,10 +637,11 @@ export class KeptaStore {
   // ---------- FTS ----------
 
   ftsSearch(query: string, limit = 50): { id: string; bm25: number }[] {
-    // FTS5-Syntax des Users entschärfen: Anführungszeichen pro Term
+    // FTS5-Syntax des Users entschärfen: Anführungszeichen pro Term.
+    // Unicode-Klassen statt a-z0-9: kyrillische/CJK-Zeichen dürfen nicht weggefiltert werden.
     const terms = query
       .toLowerCase()
-      .replace(/[^a-z0-9äöüß\s]/g, " ")
+      .replace(/[^\p{L}\p{N}\s]/gu, " ")
       .split(/\s+/)
       .filter((t) => t.length > 1)
       .slice(0, 12);

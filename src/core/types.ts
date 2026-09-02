@@ -52,6 +52,8 @@ export interface MemoryPatch {
   validFrom?: number | null;
   validTo?: number | null;
   supersededBy?: string | null;
+  /** Explizit gesetzter Zeitstempel (Import/Resync) statt "jetzt" — nur für interne Pfade */
+  updatedAt?: number;
 }
 
 export interface ListOptions {

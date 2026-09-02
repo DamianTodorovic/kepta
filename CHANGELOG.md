@@ -2,6 +2,44 @@
 
 Alle Änderungen werden in dieser Datei dokumentiert. Format orientiert an [Keep a Changelog](https://keepachangelog.com/de/1.1.0/), Versionierung nach [SemVer](https://semver.org/).
 
+## [2.2.0] — 2026-09-02
+
+Security- & Robustheits-Release: Code-Review-Fixes an Server, Core, Electron und Protokoll.
+
+### Security
+- **Bind-Adresse:** der Server lauscht jetzt nur auf `127.0.0.1` statt `0.0.0.0` (die API hat keine Auth); Override bewusst via `KEPTA_HOST`
+- **SSRF-Schutz (URL-Clipper):** IP-Literale in allen Schreibweisen (Dezimal/Hex/Oktal/IPv4-mapped IPv6) werden normiert geprüft, DNS wird via `node:dns` aufgelöst und ALLE resultierenden IPs (v4+v6) gegen Loopback/Privat/Link-Local/CGNAT/Unique-Local geprüft; Redirects werden manuell gefolgt (max. 5 Hops, jeder Hop voll geprüft); toter Port-Check entfernt; `clearTimeout` im `finally`
+- **Body-Limit-Reihenfolge:** Import-Routen sind jetzt vor dem globalen 1mb-Limit registriert — `/api/memories/import` (2mb) und `/api/import/markdown` (10mb) werfen für große Backups kein 413 mehr; das globale 1mb-Limit bleibt für alle übrigen Routen aktiv
+- **Chat-Proxy:** fehlendes `messages`-Array → sauberes 400 statt TypeError; Client-Disconnect bricht den Upstream-Request ab (AbortController)
+
+### Retrieval & Embeddings
+- **Embedding-Modellmix behoben:** der Vektorvergleich läuft nur noch zwischen Query und Chunks desselben Modells; nach einem Modellwechsel wählt `chunksNeedingEmbedding` Modell-Mismatches und die Hintergrund-Queue re-embeddet (nicht blockierend)
+- FTS-Tokenizer nutzt Unicode-Klassen (`\p{L}\p{N}`) — kyrillische und CJK-Queries finden jetzt Treffer
+
+### Server & Core
+- **Store-Kappe 1000 → 5000:** `/api/memories`, Markdown-Export und Replace-Import listen vollständig (Paginierung statt stiller Abschneidung bei >1000 Knoten)
+- Replace-Import mit doppelten IDs antwortet sauber mit 409 statt 500; doppelte IDs in Backups werden dedupliziert
+- Tag-Filter escaped LIKE-Wildcards (`%`, `_`, `\`) mit `ESCAPE`-Klausel — `a_b` matcht nicht mehr `axb` (API + MCP `memory_list`)
+- MCP-Protokoll (2026-07-28): fehlendes `jsonrpc`-Feld wird toleriert, falscher Wert → `-32600`; Notifications für unbekannte Methoden bleiben unbeantwortet; Batch-Requests → ein Error-Objekt (Batching wurde in 2026-07-28 gestrichen); nicht-numerisches `limit` → sauberer Default statt NaN
+- Import behält `createdAt`/`updatedAt` aus der Backup-Datei (optionaler Timestamp-Parameter); Obsidian-Resync überspringt unveränderte Notizen, statt das Frontmatter-Datum zu überschreiben
+- Sanitizing entschärft: Steuerzeichen/NUL werden überall bereinigt, HTML-Stripping nur noch beim Roh-HTML-Ingest (URL-Clipper) — Code-Beispiele in Memories bleiben unversehrt (Frontend rendert via react-markdown)
+- DB-Change-Watcher vergleicht Zähler/Zeitstempel getrennt statt `parseInt` auf einem Fingerprint-String
+- `npm start` ohne `NODE_ENV` liefert jetzt zuverlässig das statische `dist/` statt des Vite-Dev-Servers (Vite nur noch ohne Build und außerhalb der Produktion)
+- MCP-stdio: Antworten werden serialisiert auf stdout geschrieben (Verarbeitung bleibt parallel)
+- Listen-Fehler (z. B. EADDRINUSE) beenden den Server mit klarer Logausgabe
+
+### Electron
+- Server startet VOR dem Fenster; Lade-Logik pollt `/api/health` (30 s statt blindem 5×-TCP-Retry)
+- CSP ohne `'unsafe-inline'` für Scripts im gepackten Build (dist/index.html hat keine Inline-Scripts); Dev-Modus mit Vite-Refresh bleibt funktionsfähig
+- `NODE_ENV=production` nur noch für gepackte Apps
+
+### Wartbarkeit
+- Neue Versions-Quelle `src/core/version.ts` (v2.2.0): Health-Endpoint, MCP `SERVER_INFO` und package.json teilen sich `APP_VERSION` (Test gegen Drift)
+- Build-Only-Dependencies (vite, @vitejs/plugin-react, @tailwindcss/vite, tailwindcss, autoprefixer) in `devDependencies` — das gepackte App-Bundle braucht sie zur Laufzeit nicht
+- CI: Release-Job auf Node 22, `electron-builder`-Build bricht die CI bei Fehlern (kein `|| true` mehr)
+- `src/lib/semantic.ts`: Embedding-Suche POSTet den Bestand in Batches (max 100 Items bzw. ~700k Zeichen pro Request) statt alles in einem Payload
+- Dokumentation aufgeräumt (AGENTS.md, README, `.env.example` mit den wirklich gelesenen Variablen, AI-Studio-Reste entfernt); Testsuite: 270 Tests
+
 ## [2.1.0] — 2026-09-02
 
 ### Fixes (UI)

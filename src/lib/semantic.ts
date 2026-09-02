@@ -355,6 +355,41 @@ export async function fetchEmbeddings(
   }
 }
 
+// Batching-Limits: der Server akzeptiert max 1MB pro Request — deshalb nicht alle
+// Memories in einem POST, sondern in Häppchen (max 100 Items bzw. ~700k Zeichen).
+const EMBED_MAX_BATCH_ITEMS = 100;
+const EMBED_MAX_BATCH_CHARS = 700_000;
+
+function splitEmbedBatches(inputs: string[]): string[][] {
+  const batches: string[][] = [];
+  let cur: string[] = [];
+  let chars = 0;
+  for (const t of inputs) {
+    if (cur.length >= EMBED_MAX_BATCH_ITEMS || (cur.length > 0 && chars + t.length > EMBED_MAX_BATCH_CHARS)) {
+      batches.push(cur);
+      cur = [];
+      chars = 0;
+    }
+    cur.push(t);
+    chars += t.length;
+  }
+  if (cur.length) batches.push(cur);
+  return batches;
+}
+
+/** fetchEmbeddings in Batches — große Korpora werden auf mehrere Requests verteilt. */
+async function fetchEmbeddingsBatched(inputs: string[], model?: string): Promise<number[][] | null> {
+  const batches = splitEmbedBatches(inputs);
+  const out: number[][] = [];
+  for (const batch of batches) {
+    const part = await fetchEmbeddings(batch, model);
+    // Ein fehlgeschlagener Batch → Gesamtfallback (TF-IDF), keine halben Ergebnisse
+    if (!part || part.length !== batch.length) return null;
+    out.push(...part);
+  }
+  return out;
+}
+
 /** Hybrid mit Embeddings: kombiniert Embedding-Cosine (0.5) + TF-IDF Cosine (0.25) + BM25 (0.25). Fallback rein lokal. */
 export async function hybridSearchWithEmbeddings(
   memories: Memory[],
@@ -367,7 +402,8 @@ export async function hybridSearchWithEmbeddings(
   if (!query.trim() || memories.length === 0) return localResults.slice(0, topK);
 
   const allInputs = [query, ...memories.map(m => `${m.title}\n${m.content}\n${m.tags.join(" ")}`)];
-  const embs = await fetchEmbeddings(allInputs, embeddingModel);
+  // In Batches teilen — sonst POSTet jede Suche den kompletten Bestand in einem Request
+  const embs = await fetchEmbeddingsBatched(allInputs, embeddingModel);
   if (!embs || embs.length !== allInputs.length) {
     return localResults.slice(0, topK);
   }

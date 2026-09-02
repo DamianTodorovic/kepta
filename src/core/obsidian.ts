@@ -2,6 +2,7 @@
 // Import: Vault-Dateien → Memories (+ Wiki-Links → Entitäten/Relationen)
 // Export: Memories → .md-Dateien mit Frontmatter
 import type { KeptaStore } from "./store";
+import { normalizeTags } from "./store";
 import type { MemoryInput, MemoryRecord, MemoryType } from "./types";
 import { indexMemory } from "./engine";
 
@@ -141,6 +142,18 @@ export function importMarkdownFile(store: KeptaStore, file: MarkdownFile, opts: 
   // Ohne ID: Dedup über exakten Titel (Obsidian-Resync aktualisiert statt doppelt)
   const byTitle = existing ? null : store.findByTitle(input.title);
   if (byTitle) input.id = byTitle.id;
+  const current = existing ?? byTitle;
+  // Resync-Schutz: eine unveränderte Notiz nicht anfassen — sonst überschreibt jeder
+  // Import das Frontmatter-Datum (updated_at = jetzt) und der Vault-Resync verschleiert,
+  // was sich wirklich geändert hat.
+  if (
+    current &&
+    current.title === input.title &&
+    current.content === input.content &&
+    JSON.stringify(current.tags) === JSON.stringify(normalizeTags(input.tags))
+  ) {
+    return { status: "skipped", record: current };
+  }
   const { record, created } = store.upsertMemory(input);
   indexMemory(store, record.id);
 

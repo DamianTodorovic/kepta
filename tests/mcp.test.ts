@@ -3,7 +3,8 @@ import { tmpdir } from "node:os";
 import path from "node:path";
 import fs from "node:fs";
 import { KeptaStore } from "../src/core/store";
-import { handleRpc, TOOLS, LATEST_PROTOCOL_VERSION, extractWikiLinks, negotiateVersion, type JsonRpcRequest, type JsonRpcResponse } from "../src/core/mcp";
+import { handleRpc, TOOLS, LATEST_PROTOCOL_VERSION, SERVER_INFO, extractWikiLinks, negotiateVersion, type JsonRpcRequest, type JsonRpcResponse } from "../src/core/mcp";
+import { APP_VERSION } from "../src/core/version";
 
 interface ToolResult {
   content: { type: string; text: string }[];
@@ -48,7 +49,8 @@ describe("MCP-Protokoll", () => {
 
   it("server/discover liefert Server-Info + alle Tools (stateless core)", async () => {
     const res = asResult(await rpc(store, "server/discover"));
-    expect(res.serverInfo).toEqual({ name: "kepta", title: "KEPTA — Agent Memory", version: "2.0.0" });
+    expect(res.serverInfo).toEqual({ name: "kepta", title: "KEPTA — Agent Memory", version: APP_VERSION });
+    expect(SERVER_INFO.version).toBe(APP_VERSION);
     const tools = res.tools as typeof TOOLS;
     expect(tools).toHaveLength(8);
     for (const t of tools) {
@@ -75,6 +77,33 @@ describe("MCP-Protokoll", () => {
     expect(asError(await rpc(store, "nope/xyz")).code).toBe(-32601);
     const silent = await handleRpc({ store, transport: "stdio" }, { jsonrpc: "2.0", method: "notifications/initialized" });
     expect(silent).toBeNull();
+  });
+
+  it("fehlendes jsonrpc-Feld wird als 2.0 behandelt, falscher Wert → -32600", async () => {
+    // fehlend → tolerieren (ältere Clients)
+    const ok = await handleRpc({ store, transport: "stdio" }, { id: 1, method: "ping" } as JsonRpcRequest);
+    expect(asResult(ok)).toEqual({});
+    // falscher Wert → Invalid Request
+    const bad = await handleRpc({ store, transport: "stdio" }, { jsonrpc: "1.0", id: 2, method: "ping" } as unknown as JsonRpcRequest);
+    expect(asError(bad).code).toBe(-32600);
+  });
+
+  it("Notification für unbekannte Methode → KEINE Response (null statt Error mit id:null)", async () => {
+    const silent = await handleRpc({ store, transport: "stdio" }, { jsonrpc: "2.0", method: "nope/notification" });
+    expect(silent).toBeNull();
+  });
+
+  it("memory_search mit nicht-numerischem limit nutzt sauberen Default 10 statt NaN", async () => {
+    for (let i = 0; i < 3; i++) store.createMemory({ title: `Rust Treffer ${i}`, content: "Speichersicherheit" });
+    const res = asTool(await rpc(store, "tools/call", { name: "memory_search", arguments: { query: "Speichersicherheit", limit: "kaputt" } }));
+    const hits = res.structuredContent.hits as unknown[];
+    expect(hits.length).toBeGreaterThan(0); // NaN würde alle Treffer filtern
+  });
+
+  it("memory_list mit nicht-numerischem limit/offset fällt auf Defaults zurück", async () => {
+    store.createMemory({ title: "L", content: "x" });
+    const res = asTool(await rpc(store, "tools/call", { name: "memory_list", arguments: { limit: "quatsch", offset: "quatsch" } }));
+    expect((res.structuredContent.memories as unknown[]).length).toBe(1);
   });
 });
 

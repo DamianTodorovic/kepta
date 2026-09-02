@@ -8,16 +8,30 @@ const __dirname = path.dirname(__filename);
 let mainWindow;
 let serverPort = 3000;
 let serverFailed = false;
+let serverError = null;
 
 function getFreePort() {
   return new Promise((resolve, reject) => {
     const srv = createServer();
     srv.listen(0, () => {
-      const port = srv.address().port;
+      const port = srv.address.port;
       srv.close(() => resolve(port));
     });
     srv.on('error', reject);
   });
+}
+
+// Health-Poll auf /api/health statt rohem TCP: der Server braucht nach dem require
+// einen Moment für listen; die API antwortet erst, wenn er wirklich bedienbar ist.
+async function waitForServer(retries = 30) {
+  for (let i = 0; i < retries; i++) {
+    try {
+      const res = await fetch(`http://127.0.0.1:${serverPort}/api/health`);
+      if (res.ok) return true;
+    } catch { /* noch nicht bereit — weiter pollen */ }
+    await new Promise((r) => setTimeout(r, 1000));
+  }
+  return false;
 }
 
 function createWindow() {
@@ -43,7 +57,6 @@ function createWindow() {
   });
 
   // Hardened: nur http://localhost:* erlauben
-  const allowedOrigins = new Set();
   const isAllowedUrl = (url) => {
     try {
       const u = new URL(url);
@@ -72,23 +85,22 @@ function createWindow() {
   session.defaultSession.setPermissionRequestHandler((_wc, _permission, callback) => callback(false));
   session.defaultSession.setPermissionCheckHandler(() => false);
 
-  // Kein neues Fenster via window.open für fremde Origins
   mainWindow.once('ready-to-show', () => mainWindow.show());
 
-  let retries = 5;
-  const loadApp = () => {
-    mainWindow.loadURL(`http://localhost:${serverPort}`).catch((err) => {
-      if (serverFailed) return;
-      console.log('Failed to load URL, retrying...', err);
-      if (retries > 0) {
-        retries--;
-        setTimeout(loadApp, 1000);
-      } else {
-        mainWindow.loadURL(`data:text/html,<html><body style="font-family:Inter,sans-serif;padding:2rem;background:#fcfcf9;color:#0f0f0f"><h1>Verbindungsfehler</h1><p>Die App konnte nicht geladen werden. Bitte starte sie neu.</p></body></html>`);
-      }
-    });
+  // Geduldig warten: Server-Start (Store-Migration, Port-Bind) darf dauern —
+  // 30 s statt 5 s, danach Fehlerseite statt weißem Fenster.
+  const loadApp = async () => {
+    const ok = serverFailed ? false : await waitForServer(30);
+    if (ok) {
+      mainWindow.loadURL(`http://127.0.0.1:${serverPort}`).catch(() => { /* Error-Page unten */ });
+      return;
+    }
+    const details = serverError
+      ? `<pre style="background:#f6f5f4;padding:1rem;border-radius:10px;overflow:auto">${String(serverError.stack || serverError.message).slice(0,4000)}</pre>`
+      : '<p>Der Hintergrund-Server ist nicht rechtzeitig bereit.</p>';
+    mainWindow.loadURL(`data:text/html,<html><body style="font-family:Inter,sans-serif;padding:2rem;background:#fcfcf9;color:#0f0f0f"><h1>Verbindungsfehler</h1><p>Die App konnte nicht geladen werden. Bitte starte sie neu.</p>${details}</body></html>`);
   };
-  
+
   loadApp();
 
   mainWindow.on('closed', () => {
@@ -105,35 +117,41 @@ app.whenReady().then(async () => {
 
   // Set environment variables for the server
   process.env.PORT = serverPort.toString();
-  process.env.NODE_ENV = 'production';
+  // Produktion erst ab gepackter App — im Dev-Modus darf der Server die Vite-Middleware nutzen
+  if (app.isPackaged) process.env.NODE_ENV = 'production';
 
-  // Hardened: Content-Security-Policy via Electron session
+  // Hardened: Content-Security-Policy via Electron session.
+  // Gepackt: dist/index.html enthält keine Inline-Scripts → script-src 'self'.
+  // Dev: Vite injiziert React-Refresh als Inline-Script → dort 'unsafe-inline' nötig.
+  const scriptSrc = app.isPackaged
+    ? "'self' http://localhost:* http://127.0.0.1:*"
+    : "'self' 'unsafe-inline' http://localhost:* http://127.0.0.1:*";
   session.defaultSession.webRequest.onHeadersReceived((details, callback) => {
     callback({
       responseHeaders: {
         ...details.responseHeaders,
-        'Content-Security-Policy': ["default-src 'self' http://localhost:* http://127.0.0.1:* data:; script-src 'self' 'unsafe-inline' http://localhost:* http://127.0.0.1:*; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com data:; img-src 'self' data: http://localhost:* http://127.0.0.1:* https:; connect-src 'self' http://localhost:* http://127.0.0.1:* https://api.openai.com https://api.anthropic.com https://generativelanguage.googleapis.com https://api.mistral.ai https://api.groq.com https://api.deepseek.com https://api.x.ai https://api.openrouter.ai;"],
+        'Content-Security-Policy': [`default-src 'self' http://localhost:* http://127.0.0.1:* data:; script-src ${scriptSrc}; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com data:; img-src 'self' data: http://localhost:* http://127.0.0.1:* https:; connect-src 'self' http://localhost:* http://127.0.0.1:* https://api.openai.com https://api.anthropic.com https://generativelanguage.googleapis.com https://api.mistral.ai https://api.groq.com https://api.deepseek.com https://api.x.ai https://api.openrouter.ai;`],
       },
     });
   });
 
-  createWindow();
-
+  // Server VOR dem Fenster starten: require bündelt/initialisiert synchron,
+  // listen läuft asynchron — das Fenster pollt oben auf /api/health.
   try {
     const { createRequire } = await import('module');
     const require = createRequire(import.meta.url);
     const serverPath = path.join(__dirname, 'dist', 'server.cjs');
-    
+
     console.log("Loading server from:", serverPath);
     require(serverPath);
     console.log("Server started in main process via require");
   } catch (err) {
     serverFailed = true;
+    serverError = err;
     console.error("Failed to start server", err);
-    if (mainWindow) {
-      mainWindow.loadURL(`data:text/html,<html><body style="font-family:Inter,sans-serif;padding:2rem;background:#fcfcf9;color:#0f0f0f"><h1>Server Error</h1><p>Der Hintergrund-Server konnte nicht gestartet werden.</p><pre style="background:#f6f5f4;padding:1rem;border-radius:10px;overflow:auto">${String(err.stack || err.message).slice(0,4000)}</pre></body></html>`);
-    }
   }
+
+  createWindow();
 
   app.on('activate', () => {
     if (mainWindow === null) {

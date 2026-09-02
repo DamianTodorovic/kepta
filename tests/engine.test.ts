@@ -4,6 +4,7 @@ import path from "node:path";
 import fs from "node:fs";
 import { KeptaStore } from "../src/core/store";
 import { searchMemories, indexMemory, consolidateMemories, findDuplicateForNew } from "../src/core/engine";
+import { DEFAULT_EMBED_MODEL } from "../src/core/embeddings";
 
 function freshStore(): KeptaStore {
   const dir = fs.mkdtempSync(path.join(tmpdir(), "kepta-engine-"));
@@ -23,7 +24,9 @@ function fakeVec(text: string): Float32Array {
 }
 
 // engine.embedQuery läuft über Ollama — für Tests injecten wir Vektoren direkt in die Chunks.
-function seedEmbeddings(store: KeptaStore, model = "fake-model") {
+// Standardmäßig mit dem AKTUELLEN Modell (DEFAULT_EMBED_MODEL) — nur Chunks desselben
+// Modells fließen in den Vektorvergleich ein (Modellmix-Schutz).
+function seedEmbeddings(store: KeptaStore, model = DEFAULT_EMBED_MODEL) {
   const pending = store.chunksNeedingEmbedding(500);
   for (const c of pending) store.setEmbedding(c.memoryId, c.seq, fakeVec(c.text), model);
 }
@@ -98,6 +101,30 @@ describe("searchMemories (RRF-Fusion)", () => {
     expect(res.hits.length).toBeGreaterThan(0);
     // mindestens ein Treffer hat einen Vektor-Rang (Vektor-Bein aktiv)
     expect(res.hits.some((h) => h.components.vectorRank !== null && h.components.vectorRank !== undefined)).toBe(true);
+    expect(res.usedVectors).toBe(true);
+    vi.unstubAllGlobals();
+  });
+
+  it("ignoriert Chunks mit fremdem Embedding-Modell statt unsinnige Scores zu bauen", async () => {
+    // Simulierter Modellwechsel: Chunks tragen das ALTE Modell — der Query-Vektor
+    // entsteht mit DEFAULT_EMBED_MODEL. Vektorvergleich darf dann nicht passieren.
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async (_url: string, init?: { body?: string }) => {
+        const body = JSON.parse(init?.body ?? "{}") as { input: string[] };
+        const embeddings = body.input.map((t) => Array.from(fakeVec(t)));
+        return { ok: true, status: 200, json: async () => ({ embeddings }) } as unknown as Response;
+      })
+    );
+    const fresh = freshStore();
+    const a = fresh.createMemory({ title: "Rust Backend", content: "Speichersicherheit und Performance" });
+    indexMemory(fresh, a.id);
+    seedEmbeddings(fresh, "altes-modell"); // Modell-Mismatch
+    const res = await searchMemories(fresh, { query: "Speichersicherheit", limit: 5 });
+    expect(res.usedVectors).toBe(false);
+    expect(res.hits.every((h) => h.components.vectorRank === null)).toBe(true);
+    // Die Queue wählt den Mismatch — nach dem Re-Embedden mit dem neuen Modell wäre das Bein wieder aktiv
+    expect(fresh.chunksNeedingEmbedding(64, DEFAULT_EMBED_MODEL).length).toBeGreaterThan(0);
     vi.unstubAllGlobals();
   });
 });
@@ -182,7 +209,7 @@ describe("findDuplicateForNew", () => {
     const store = freshStore();
     const m = store.createMemory({ title: "Docker Setup", content: "Läuft über Docker" });
     store.replaceChunks(m.id, ["Docker Setup"]);
-    store.setEmbedding(m.id, 0, Float32Array.from(FIXED), "fake"); // identischer Vektor → sim 1
+    store.setEmbedding(m.id, 0, Float32Array.from(FIXED), DEFAULT_EMBED_MODEL); // identischer Vektor → sim 1
     stubQueryVec(FIXED);
     const warn = await findDuplicateForNew(store, "Docker", "Setup");
     expect(warn?.existingId).toBe(m.id);
@@ -193,7 +220,16 @@ describe("findDuplicateForNew", () => {
     const store = freshStore();
     const m = store.createMemory({ title: "Kochen", content: "Pasta" });
     store.replaceChunks(m.id, ["Kochen"]);
-    store.setEmbedding(m.id, 0, Float32Array.from([0, 1, 0, 0]), "fake"); // orthogonal → sim 0
+    store.setEmbedding(m.id, 0, Float32Array.from([0, 1, 0, 0]), DEFAULT_EMBED_MODEL); // orthogonal → sim 0
+    stubQueryVec(FIXED);
+    expect(await findDuplicateForNew(store, "Docker", "Setup")).toBeNull();
+  });
+
+  it("ignoriert Chunks mit fremdem Modell (kein Cross-Modell-Duplikat)", async () => {
+    const store = freshStore();
+    const m = store.createMemory({ title: "Docker Setup", content: "Läuft über Docker" });
+    store.replaceChunks(m.id, ["Docker Setup"]);
+    store.setEmbedding(m.id, 0, Float32Array.from(FIXED), "altes-modell"); // Modell-Mismatch
     stubQueryVec(FIXED);
     expect(await findDuplicateForNew(store, "Docker", "Setup")).toBeNull();
   });

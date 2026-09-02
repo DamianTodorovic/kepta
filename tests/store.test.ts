@@ -47,6 +47,19 @@ describe("KeptaStore CRUD", () => {
     expect(store.countMemories().active).toBe(1);
   });
 
+  it("upsert erhält übergebenes updatedAt (Import darf Zeitstempel mitbringen)", () => {
+    const a = store.upsertMemory({ title: "T", content: "C", createdAt: 1000, updatedAt: 2000 });
+    expect(a.created).toBe(true);
+    expect(a.record.createdAt).toBe(1000);
+    expect(a.record.updatedAt).toBe(2000);
+    const b = store.upsertMemory({ id: a.record.id, title: "T2", content: "C2", updatedAt: 3000 });
+    expect(b.created).toBe(false);
+    expect(b.record.updatedAt).toBe(3000);
+    // Ohne explizites updatedAt gilt weiterhin "jetzt"
+    const c = store.upsertMemory({ id: a.record.id, title: "T3", content: "C3" });
+    expect(c.record.updatedAt).toBeGreaterThan(3000);
+  });
+
   it("supersede verlinkt alte auf neue Memory", () => {
     const old = store.createMemory({ title: "Wohnort", content: "Berlin" });
     const neu = store.createMemory({ title: "Wohnort", content: "München", validFrom: Date.now() });
@@ -92,6 +105,21 @@ describe("Chunks & Embeddings", () => {
     const stats = store.embeddingStats();
     expect(stats).toEqual({ total: 2, embedded: 1, models: { "test-model": 1 } });
   });
+
+  it("chunksNeedingEmbedding wählt Modell-Mismatch (Re-Embed nach Modellwechsel)", () => {
+    const store = freshStore();
+    const m = store.createMemory({ title: "T", content: "C" });
+    store.replaceChunks(m.id, ["chunk a"]);
+    store.setEmbedding(m.id, 0, new Float32Array([1, 2, 3]), "altes-modell");
+    // Ohne Modell-Argument: nur fehlende Embeddings
+    expect(store.chunksNeedingEmbedding(64)).toHaveLength(0);
+    // Mit dem aktuellen Modell: der fremde Chunk muss neu eingebettet werden
+    const mismatch = store.chunksNeedingEmbedding(64, "neues-modell");
+    expect(mismatch).toHaveLength(1);
+    expect(mismatch[0]?.seq).toBe(0);
+    // Mit dem passenden Modell: nichts zu tun
+    expect(store.chunksNeedingEmbedding(64, "altes-modell")).toHaveLength(0);
+  });
 });
 
 describe("Entities & Relations", () => {
@@ -128,6 +156,37 @@ describe("FTS", () => {
 
     // FTS-Sonderzeichen dürfen nicht crashen
     expect(() => store.ftsSearch('"NEAR(a b)')).not.toThrow();
+  });
+
+  it("findet kyrillische und CJK Queries (Unicode-Tokenizer)", () => {
+    const store = freshStore();
+    const ru = store.createMemory({ title: "Контейнер", content: "привет мир docker" });
+    const zh = store.createMemory({ title: "Tests", content: "测试 容器化 dokumentiert" });
+    expect(store.ftsSearch("привет").map((h) => h.id)).toContain(ru.id);
+    // CJK-Term muss die Tokenizer-Regex überleben (vorher: Regex löschte ihn komplett)
+    expect(store.ftsSearch("测试").map((h) => h.id)).toContain(zh.id);
+  });
+});
+
+describe("Tag-Filter (LIKE-Escape)", () => {
+  it("matcht Underscore im Tag als Literal, nicht als Wildcard", () => {
+    const store = freshStore();
+    const a = store.createMemory({ title: "A", content: "x", tags: ["a_b"] });
+    store.createMemory({ title: "B", content: "y", tags: ["axb"] });
+    const hits = store.listMemories({ tag: "a_b" });
+    expect(hits).toHaveLength(1);
+    expect(hits[0]?.id).toBe(a.id);
+    // Prozent im Suchbegriff matcht ebenso nicht als Wildcard
+    expect(store.listMemories({ tag: "a%" })).toHaveLength(0);
+  });
+
+  it("Paginierung via offset liefert alle Seiten (Kappe pro Seite, nicht gesamt)", () => {
+    const store = freshStore();
+    for (let i = 0; i < 25; i++) store.createMemory({ title: `M${i}`, content: "x" });
+    const page1 = store.listMemories({ limit: 10, offset: 0 });
+    const page2 = store.listMemories({ limit: 10, offset: 10 });
+    const page3 = store.listMemories({ limit: 10, offset: 20 });
+    expect(new Set([...page1, ...page2, ...page3].map((m) => m.id)).size).toBe(25);
   });
 });
 

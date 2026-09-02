@@ -2,8 +2,10 @@ import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import fs from "node:fs";
+import dns from "node:dns";
 import request from "supertest";
 import { KeptaStore } from "../src/core/store";
+import { APP_VERSION } from "../src/core/version";
 
 // server.ts startet beim Import normalerweise automatisch — mit KEPTA_NO_AUTOSTART=1
 // wird nur createApp exportiert, ohne Port zu binden.
@@ -111,16 +113,41 @@ describe("POST /mcp (JSON-RPC)", () => {
     expect(res.body.result.structuredContent.created).toBe(true);
   });
 
-  it("ungültiger Body → 400 mit JSON-RPC-Fehler", async () => {
-    const res = await request(app).post("/mcp").send([]);
+  it("ungültiger Body (Batch-Array) → 400 mit Batching-Hinweis", async () => {
+    // MCP 2026-07-28 hat Batching gestrichen → einzelnes Error-Objekt -32600
+    const res = await request(app).post("/mcp").send([{ jsonrpc: "2.0", id: 1, method: "ping" }]);
     expect(res.status).toBe(400);
     expect(res.body.error.code).toBe(-32600);
+    expect(res.body.error.message).toContain("Batching");
+  });
+
+  it("fehlendes jsonrpc-Feld wird toleriert, falscher Wert → -32600", async () => {
+    const ok = await request(app).post("/mcp").send({ id: 1, method: "ping" });
+    expect(ok.status).toBe(200);
+    expect(ok.body.result).toEqual({});
+    const bad = await request(app).post("/mcp").send({ jsonrpc: "1.0", id: 2, method: "ping" });
+    expect(bad.body.error.code).toBe(-32600);
   });
 
   it("Notification (ohne id) → 202 accepted", async () => {
     const res = await request(app).post("/mcp").send({ jsonrpc: "2.0", method: "notifications/initialized" });
     expect(res.status).toBe(202);
     expect(res.body.accepted).toBe(true);
+  });
+
+  it("Notification für unbekannte Methode → 202, kein JSON-RPC-Error mit id:null", async () => {
+    const res = await request(app).post("/mcp").send({ jsonrpc: "2.0", method: "nope/notification" });
+    expect(res.status).toBe(202);
+    expect(res.body.accepted).toBe(true);
+  });
+
+  it("tools/call memory_search mit String-limit liefert Default-Verhalten (kein NaN)", async () => {
+    await request(app).post("/api/memories").send({ title: "Rust", content: "Speichersicherheit" });
+    const res = await request(app).post("/mcp").send({
+      jsonrpc: "2.0", id: 7, method: "tools/call",
+      params: { name: "memory_search", arguments: { query: "Speichersicherheit", limit: "kaputt" } },
+    });
+    expect(res.body.result.structuredContent.count).toBeGreaterThan(0);
   });
 
   it("GET /mcp → 405 (nur POST erlaubt)", async () => {
@@ -418,8 +445,18 @@ describe("Chat-Proxy (Provider gemockt)", () => {
 
 describe("Clip-Route", () => {
   const realFetch = globalThis.fetch;
+  let lookupSpy: ReturnType<typeof vi.spyOn>;
+
+  beforeEach(() => {
+    // DNS mocken: Tests dürfen nicht vom Netz abhängen; der Clipper löst jeden
+    // Public-Host via dns.promises.lookup auf (SSRF-Schutz).
+    lookupSpy = vi.spyOn(dns.promises, "lookup").mockResolvedValue([
+      { address: "93.184.216.34", family: 4 },
+    ] as never);
+  });
   afterEach(() => {
     globalThis.fetch = realFetch;
+    lookupSpy.mockRestore();
   });
 
   it("POST /api/clip ohne URL → 400", async () => {
@@ -429,6 +466,44 @@ describe("Clip-Route", () => {
 
   it("POST /api/clip mit unsicherer URL → 400", async () => {
     const res = await request(app).post("/api/clip").send({ url: "file:///etc/passwd" });
+    expect(res.status).toBe(400);
+  });
+
+  it("POST /api/clip blockt Loopback in allen Literal-Schreibweisen (SSRF)", async () => {
+    // Dezimal-IP, Hex-Form, Oktal und IPv4-mapped IPv6 — alle sind 127.0.0.1
+    for (const url of ["http://2130706433/", "http://0x7f000001/", "http://0177.0.0.1/", "http://[::ffff:127.0.0.1]/", "http://127.0.0.1:3000/"]) {
+      const res = await request(app).post("/api/clip").send({ url });
+      expect(res.status).toBe(400);
+      expect(res.body.error).toContain("SSRF");
+    }
+  });
+
+  it("POST /api/clip blockt Hosts, deren DNS eine private IP liefert", async () => {
+    lookupSpy.mockResolvedValue([{ address: "10.0.0.5", family: 4 }] as never);
+    const res = await request(app).post("/api/clip").send({ url: "https://intranet.example.com/" });
+    expect(res.status).toBe(400);
+    expect(res.body.error).toContain("SSRF");
+  });
+
+  it("POST /api/clip prüft jeden Redirect-Hop und blockt Ziele mit privatem Host", async () => {
+    let calls = 0;
+    globalThis.fetch = (async () => {
+      calls++;
+      return {
+        ok: true,
+        status: 302,
+        headers: { get: () => "http://127.0.0.1/admin" },
+        text: async () => "",
+      } as unknown as Response;
+    }) as unknown as typeof fetch;
+    const res = await request(app).post("/api/clip").send({ url: "https://example.com/redirect" });
+    expect(res.status).toBe(400);
+    expect(calls).toBe(1); // zweiter Hop wird vor dem Fetch abgelehnt
+  });
+
+  it("POST /api/clip mit nicht auflösbarem Host → 400 statt 500", async () => {
+    lookupSpy.mockRejectedValue(new Error("getaddrinfo ENOTFOUND kaputt.example") as never);
+    const res = await request(app).post("/api/clip").send({ url: "https://kaputt.example/" });
     expect(res.status).toBe(400);
   });
 
@@ -449,3 +524,113 @@ describe("Clip-Route", () => {
 
 
 
+
+
+describe("Import: Body-Limits, Vollständigkeit, Zeitstempel", () => {
+  it("akzeptiert Import-Payload >1MB (2mb-Limit der Route, globales 1mb-Limit greift nicht)", async () => {
+    const big = "x".repeat(1_200_000);
+    const res = await request(app)
+      .post("/api/memories/import")
+      .set("Content-Type", "application/json")
+      .send({ memories: [{ title: "Groß", content: big }], mode: "merge" });
+    expect(res.status).toBe(200);
+    expect(res.body.imported).toBe(1);
+  });
+
+  it("weist Import-Payload über dem 2mb-Limit mit 413 ab", async () => {
+    const big = "x".repeat(2_500_000);
+    const res = await request(app)
+      .post("/api/memories/import")
+      .set("Content-Type", "application/json")
+      .send({ memories: [{ title: "Zu groß", content: big }] });
+    expect(res.status).toBe(413);
+  });
+
+  it("akzeptiert Markdown-Import >2MB (10mb-Limit der Route)", async () => {
+    const files = [1, 2, 3].map((i) => ({ name: `note-${i}.md`, content: `# Notiz ${i}\n\n${"Inhalt. ".repeat(350_000)}` }));
+    const res = await request(app)
+      .post("/api/import/markdown")
+      .set("Content-Type", "application/json")
+      .send({ files });
+    expect(res.status).toBe(200);
+    expect(res.body.imported).toBe(3);
+  });
+
+  it("globales 1mb-Limit bleibt für normale Routen aktiv (413)", async () => {
+    const res = await request(app)
+      .post("/api/memories")
+      .set("Content-Type", "application/json")
+      .send({ title: "X", content: "x".repeat(1_500_000) });
+    expect(res.status).toBe(413);
+  });
+
+  it("Replace-Import mit doppelten IDs → 200 (dedupliziert) statt 500", async () => {
+    const res = await request(app).post("/api/memories/import").send({
+      memories: [
+        { id: "k-dup", title: "Erste", content: "a" },
+        { id: "k-dup", title: "Zweite", content: "b" },
+      ],
+      mode: "replace",
+    });
+    expect(res.status).toBe(200);
+    expect(res.body.imported).toBe(1);
+    expect(res.body.total).toBe(1);
+  });
+
+  it("Merge-Import erhält createdAt/updatedAt aus der Backup-Datei", async () => {
+    const then = Date.now() - 100_000;
+    await request(app).post("/api/memories/import").send({
+      memories: [{ title: "Historisch", content: "x", createdAt: then, updatedAt: then }],
+    });
+    const list = await request(app).get("/api/memories");
+    const m = list.body.find((r: { title: string }) => r.title === "Historisch");
+    expect(m.updatedAt).toBe(then);
+    expect(m.createdAt).toBe(then);
+  });
+
+  it("listet auch >1000 Knoten vollständig (Liste und Export)", async () => {
+    for (let i = 0; i < 1100; i++) store.createMemory({ title: `Bulk ${i}`, content: "kurz" });
+    const list = await request(app).get("/api/memories");
+    expect(list.status).toBe(200);
+    expect(list.body).toHaveLength(1100);
+    const exp = await request(app).post("/api/export/markdown").send({});
+    expect(exp.status).toBe(200);
+    expect(exp.body.exported).toBe(1100);
+  });
+});
+
+describe("Sanitize: Code bleibt lesbar, Steuerzeichen werden bereinigt", () => {
+  it("POST /api/memories erhält legitimen Code-Beispiel-Inhalt", async () => {
+    const code = 'Beispiel: <a href="javascript:void(0)">klick</a> mit onclick="alert(1)" — nur Demo-Code';
+    const post = await request(app).post("/api/memories").send({ title: "Code-Notiz", content: code });
+    expect(post.status).toBe(200);
+    expect(post.body.memory.content).toBe(code);
+  });
+
+  it("NUL-Bytes und Steuerzeichen werden trotzdem entfernt", async () => {
+    const post = await request(app).post("/api/memories").send({ title: "Steuer", content: "sauber\u0000\u0001inhalt" });
+    expect(post.status).toBe(200);
+    expect(post.body.memory.content).not.toMatch(/[\u0000\u0001]/);
+    expect(post.body.memory.content).toContain("sauber");
+    expect(post.body.memory.content).toContain("inhalt");
+  });
+});
+
+describe("Chat-Validierung", () => {
+  it("POST /api/chat/stream ohne messages → 400 statt TypeError", async () => {
+    const res = await request(app).post("/api/chat/stream").send({ protocol: "openai" });
+    expect(res.status).toBe(400);
+  });
+
+  it("POST /api/chat ohne messages → 400", async () => {
+    const res = await request(app).post("/api/chat").send({ protocol: "openai" });
+    expect(res.status).toBe(400);
+  });
+});
+
+describe("Version (eine Quelle)", () => {
+  it("/api/health liefert die package.json-Version", async () => {
+    const res = await request(app).get("/api/health");
+    expect(res.body.version).toBe(APP_VERSION);
+  });
+});

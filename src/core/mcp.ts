@@ -5,10 +5,11 @@ import type { KeptaStore } from "./store";
 import type { MemoryType, SearchParams } from "./types";
 import { searchMemories, indexMemory, consolidateMemories } from "./engine";
 import { chunkText } from "./embeddings";
+import { APP_VERSION } from "./version";
 
 export const PROTOCOL_VERSIONS = ["2026-07-28", "2025-06-18", "2024-11-05"] as const;
 export const LATEST_PROTOCOL_VERSION = "2026-07-28";
-export const SERVER_INFO = { name: "kepta", title: "KEPTA — Agent Memory", version: "2.0.0" };
+export const SERVER_INFO = { name: "kepta", title: "KEPTA — Agent Memory", version: APP_VERSION };
 
 export interface JsonRpcRequest {
   jsonrpc?: string;
@@ -278,6 +279,13 @@ export function extractWikiLinks(text: string): string[] {
 
 // ---------- Tool-Ausführung ----------
 
+/** Zahlen-Argument robust parsen: NaN/ungültige Strings → sauberer Default statt NaN-Propagation. */
+function toInt(v: unknown, def: number, min: number, max: number): number {
+  const n = typeof v === "number" ? v : Number(v);
+  if (!Number.isFinite(n)) return def;
+  return Math.min(Math.max(Math.trunc(n), min), max);
+}
+
 function memoryToOut(r: ReturnType<KeptaStore["getMemory"]>): Record<string, unknown> {
   if (!r) throw new Error("Memory nicht gefunden");
   return {
@@ -331,7 +339,8 @@ export async function callTool(store: KeptaStore, name: string, args: Record<str
         if (!args.query || !String(args.query).trim()) throw new Error("query erforderlich");
         const params: SearchParams = {
           query: String(args.query ?? ""),
-          limit: args.limit !== undefined ? Number(args.limit) : 10,
+          // Nicht-numerisches limit → sauberer Default 10 statt NaN (NaN filtert alles weg)
+          limit: toInt(args.limit, 10, 1, 100),
           tags: Array.isArray(args.tags) ? (args.tags as string[]) : undefined,
           type: (args.type as MemoryType | undefined) ?? undefined,
           scope: args.scope ? String(args.scope) : undefined,
@@ -385,10 +394,11 @@ export async function callTool(store: KeptaStore, name: string, args: Record<str
       }
       case "memory_list": {
         const opts = {
-          limit: args.limit !== undefined ? Math.min(Math.max(Number(args.limit), 1), 200) : 20,
-          offset: args.offset !== undefined ? Math.max(Number(args.offset), 0) : 0,
+          limit: toInt(args.limit, 20, 1, 200),
+          offset: toInt(args.offset, 0, 0, Number.MAX_SAFE_INTEGER),
           type: (args.type as MemoryType | undefined) ?? undefined,
-          tag: args.tag ? String(args.tag) : undefined,
+          // lower-case + LIKE-Escaping passiert im Store (tags LIKE mit ESCAPE-Klausel)
+          tag: args.tag ? String(args.tag).toLowerCase() : undefined,
           scope: args.scope ? String(args.scope) : undefined,
           trash: args.trash === true,
         };
@@ -403,7 +413,7 @@ export async function callTool(store: KeptaStore, name: string, args: Record<str
       }
       case "memory_graph": {
         const entity = args.entity ? String(args.entity) : undefined;
-        const depth = args.depth !== undefined ? Math.min(Math.max(Number(args.depth), 1), 4) : 2;
+        const depth = toInt(args.depth, 2, 1, 4);
         const g = store.getGraph(entity, depth);
         const nameById = new Map(g.entities.map((e) => [e.id, e.name]));
         const structured = {
@@ -478,6 +488,16 @@ export async function handleRpc(ctx: McpContext, req: JsonRpcRequest): Promise<J
   const method = req.method ?? "";
   const metaVersion = (req._meta as { protocolVersion?: string } | undefined)?.protocolVersion;
 
+  // Fehlendes jsonrpc-Feld tolerant als "2.0" behandeln (ältere Clients),
+  // ein explizit falscher Wert ist ein Invalid Request (-32600).
+  if (req.jsonrpc !== undefined && req.jsonrpc !== "2.0") {
+    return {
+      jsonrpc: "2.0",
+      id,
+      error: { code: -32600, message: `Ungültige jsonrpc-Version: ${String(req.jsonrpc)} (erwartet "2.0")` },
+    };
+  }
+
   if (method === "initialize") {
     const requested = (req.params as { protocolVersion?: string } | undefined)?.protocolVersion ?? metaVersion;
     return {
@@ -516,6 +536,8 @@ export async function handleRpc(ctx: McpContext, req: JsonRpcRequest): Promise<J
     const result = await callTool(ctx.store, name, args);
     return { jsonrpc: "2.0", id, result: result as unknown as Record<string, unknown> };
   }
+  // Notifications (ohne id) für unbekannte Methoden: KEINE Response (JSON-RPC 2.0)
+  if (id === null) return null;
   return {
     jsonrpc: "2.0",
     id,

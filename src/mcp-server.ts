@@ -23,9 +23,16 @@ store.db.exec("PRAGMA wal_checkpoint(PASSIVE)");
 
 const ctx = { store, transport: "stdio" as const };
 
+// Antworten SERIELL auf stdout schreiben: Verarbeitung (handleRpc) bleibt parallel,
+// aber die Writes dürfen sich nicht verschränken — sonst können parallele Antworten
+// in falscher Reihenfolge bzw. interleaved beim Client landen.
+let writeQueue: Promise<void> = Promise.resolve();
 function write(res: JsonRpcResponse | null) {
   if (!res) return;
-  process.stdout.write(JSON.stringify(res) + "\n");
+  const payload = JSON.stringify(res) + "\n";
+  writeQueue = writeQueue.then(
+    () => new Promise<void>((done) => process.stdout.write(payload, () => done()))
+  );
 }
 
 const rl = readline.createInterface({ input: process.stdin, crlfDelay: Infinity });
@@ -33,9 +40,9 @@ const rl = readline.createInterface({ input: process.stdin, crlfDelay: Infinity 
 rl.on("line", (line) => {
   const trimmed = line.trim();
   if (!trimmed) return;
-  let req: JsonRpcRequest;
+  let parsed: unknown;
   try {
-    req = JSON.parse(trimmed) as JsonRpcRequest;
+    parsed = JSON.parse(trimmed);
   } catch (e) {
     write({
       jsonrpc: "2.0",
@@ -44,6 +51,17 @@ rl.on("line", (line) => {
     });
     return;
   }
+  // Batch-Request (JSON-Array): MCP 2026-07-28 hat Batching gestrichen —
+  // als einzelner Invalid-Request-Fehler beantworten statt still zu schlucken.
+  if (Array.isArray(parsed)) {
+    write({
+      jsonrpc: "2.0",
+      id: null,
+      error: { code: -32600, message: "Batching nicht unterstützt (MCP 2026-07-28 hat Batching gestrichen)" },
+    });
+    return;
+  }
+  const req = parsed as JsonRpcRequest;
   void handleRpc(ctx, req)
     .then(write)
     .catch((e) => {

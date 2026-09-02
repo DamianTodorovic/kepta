@@ -99,12 +99,25 @@ describe("Roundtrip Export → Import", () => {
     expect(second.imported).toBe(0);
   });
 
-  it("Re-Import unveränderter Dateien zählt als updated", () => {
-    const files = [{ name: "wieder.md", content: "---\ntitle: Wieder\n---\nInhalt" }];
+  it("Re-Import unveränderter Dateien wird übersprungen (Frontmatter-Datum bleibt)", () => {
+    const files = [{ name: "wieder.md", content: "---\ntitle: Wieder\nupdated: 2026-01-01T00:00:00.000Z\n---\nInhalt" }];
     expect(importObsidianVault(store, files).imported).toBe(1);
     const again = importObsidianVault(store, files);
-    expect(again.updated).toBe(1);
+    expect(again.skipped).toBe(1);
+    expect(again.updated).toBe(0);
     expect(again.imported).toBe(0);
+    // Das Frontmatter-updated wurde nicht auf "jetzt" verschoben
+    expect(store.findByTitle("Wieder")?.updatedAt).toBe(Date.parse("2026-01-01T00:00:00.000Z"));
+  });
+
+  it("Re-Import mit geändertem Inhalt aktualisiert und erhält das Frontmatter-Datum", () => {
+    const v1 = [{ name: "aenderung.md", content: "---\ntitle: Änderung\nupdated: 2026-03-01T00:00:00.000Z\n---\nAlter Stand" }];
+    expect(importObsidianVault(store, v1).imported).toBe(1);
+    const v2 = [{ name: "aenderung.md", content: "---\ntitle: Änderung\nupdated: 2026-04-01T00:00:00.000Z\n---\nNeuer Stand" }];
+    const res = importObsidianVault(store, v2);
+    expect(res.updated).toBe(1);
+    // updatedAt kommt aus dem Frontmatter, nicht aus "jetzt" (upsert reicht den Timestamp durch)
+    expect(store.findByTitle("Änderung")?.updatedAt).toBe(Date.parse("2026-04-01T00:00:00.000Z"));
   });
 
   it("fängt Fehler pro Datei ab und sammelt sie in errors", () => {

@@ -164,7 +164,9 @@ export class EmbeddingQueue {
     if (this.running) return 0;
     this.running = true;
     try {
-      const pending = this.store.chunksNeedingEmbedding(this.opts.batchSize);
+      // Modell-Argument mitgeben: nach einem Modellwechsel werden Chunks mit
+      // altem Modell-Mismatch ebenfalls neu eingebettet (nicht blockierend, Queue im Hintergrund)
+      const pending = this.store.chunksNeedingEmbedding(this.opts.batchSize, this.opts.model);
       if (pending.length === 0) return 0;
       const res = await embedTexts(
         pending.map((c) => c.text),

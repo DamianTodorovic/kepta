@@ -139,4 +139,30 @@ describe("hybridSearchWithEmbeddings", () => {
     const res = await hybridSearchWithEmbeddings(corpus, "", 2);
     expect(res.length).toBeLessThanOrEqual(2);
   });
+
+  it("teilt große Korpora auf mehrere Embedding-Requests auf (Payload <1MB)", async () => {
+    const big = Array.from({ length: 150 }, (_, i) => mem(`b${i}`, `Doc ${i}`, `Inhalt ${i}`));
+    const calls: number[] = [];
+    vi.stubGlobal("fetch", vi.fn(async (_url: string, init?: { body?: string }) => {
+      const body = JSON.parse(init?.body ?? "{}") as { input: string[] };
+      calls.push(body.input.length);
+      return { ok: true, json: async () => ({ embeddings: body.input.map(() => [1, 0]) }) } as unknown as Response;
+    }));
+    const res = await hybridSearchWithEmbeddings(big, "Doc 1", 5);
+    // 1 Query + 150 Docs → 151 Inputs → Batches von max 100
+    expect(calls).toEqual([100, 51]);
+    expect(res.length).toBeGreaterThan(0);
+  });
+
+  it("fällt auf lokale Suche zurück, wenn ein Batch scheitert", async () => {
+    const big = Array.from({ length: 150 }, (_, i) => mem(`c${i}`, `D ${i}`, `x ${i}`));
+    let call = 0;
+    vi.stubGlobal("fetch", vi.fn(async () => {
+      call++;
+      if (call > 1) return { ok: false } as Response; // zweiter Batch schlägt fehl
+      return { ok: true, json: async () => ({ embeddings: Array.from({ length: 100 }, () => [1, 0]) }) } as unknown as Response;
+    }));
+    const res = await hybridSearchWithEmbeddings(big, "D 1", 5);
+    expect(res.length).toBeGreaterThan(0); // TF-IDF-Fallback greift
+  });
 });

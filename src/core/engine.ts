@@ -85,7 +85,7 @@ export async function searchMemories(store: KeptaStore, params: SearchParams): P
         .filter((id) => byId.has(id))
     : [];
 
-  // --- Bein 2: Vektor-KNN (nur wenn Embeddings existieren) ---
+  // --- Bein 2: Vektor-KNN (nur wenn Embeddings des aktuellen Modells existieren) ---
   let vectorRanked: string[] = [];
   let queryVector: Float32Array | null = null;
   let usedVectors = false;
@@ -93,7 +93,11 @@ export async function searchMemories(store: KeptaStore, params: SearchParams): P
   if (query) {
     queryVector = await embedQuery(query);
     if (queryVector) {
-      const chunks = store.allEmbeddableChunks();
+      // Nur Chunks desselben Embedding-Modells sind vergleichbar — der Query-Vektor
+      // entsteht mit DEFAULT_EMBED_MODEL; fremde Modelle würden unsinnige Cosine-Werte
+      // liefern. Nach Modellwechsel füllt die Queue (chunksNeedingEmbedding mit
+      // Modell-Mismatch) die Lücke, bis dahin läuft die Suche rein lexikalisch.
+      const chunks = store.allEmbeddableChunks().filter((c) => c.model === DEFAULT_EMBED_MODEL);
       const bestPerMemory = new Map<string, number>();
       for (const c of chunks) {
         if (!byId.has(c.memoryId)) continue;
@@ -148,8 +152,9 @@ export async function searchMemories(store: KeptaStore, params: SearchParams): P
   }
 
   // --- Boosts + Filter + Hits ---
+  // Unicode-Klassen: Matched-Terms dürfen auch kyrillisch/CJK sein
   const queryTerms = queryLower
-    .split(/[^a-z0-9äöüß]+/)
+    .split(/[^\p{L}\p{N}]+/u)
     .filter((t) => t.length > 1);
 
   const hits: SearchHit[] = [];
@@ -246,23 +251,26 @@ export async function consolidateMemories(
   const active = loadActive(store);
   const candidates: ConsolidationCandidate[] = [];
 
-  // Embedding-Dubletten: Centroid pro Memory vergleichen
+  // Embedding-Dubletten: Centroid pro Memory+Modell vergleichen — Cosine nur zwischen
+  // identischen Modellen (Cross-Modell-Vektoren erzeugen Schein-Dubletten).
   const chunks = store.allEmbeddableChunks();
-  const centroids = new Map<string, { vec: Float32Array; count: number }>();
+  const centroids = new Map<string, { model: string; vec: Float32Array; count: number }>();
   for (const c of chunks) {
     if (!active.some((m) => m.record.id === c.memoryId)) continue;
     const prev = centroids.get(c.memoryId);
     if (!prev) {
-      centroids.set(c.memoryId, { vec: Float32Array.from(c.embedding), count: 1 });
-    } else {
+      centroids.set(c.memoryId, { model: c.model, vec: Float32Array.from(c.embedding), count: 1 });
+    } else if (prev.model === c.model) {
       const n = prev.count + 1;
       for (let i = 0; i < prev.vec.length; i++) prev.vec[i] = (prev.vec[i]! * prev.count + c.embedding[i]!) / n;
       prev.count = n;
     }
+    // Chunk mit anderem Modell als der bisherige Centroid: ignorieren (Queue re-embeddet)
   }
   const centroidList = [...centroids.entries()];
   for (let i = 0; i < centroidList.length; i++) {
     for (let j = i + 1; j < centroidList.length; j++) {
+      if (centroidList[i]![1].model !== centroidList[j]![1].model) continue;
       const sim = cosineSimilarity(centroidList[i]![1].vec, centroidList[j]![1].vec);
       if (sim >= threshold) {
         const a = centroidList[i]![0];
@@ -332,7 +340,8 @@ export async function findDuplicateForNew(
 ): Promise<DuplicateWarning | null> {
   const vec = await embedQuery(`${title}\n${content}`);
   if (!vec) return null;
-  const chunks = store.allEmbeddableChunks();
+  // Nur Chunks des aktuellen Modells — Query-Vektor und Chunk-Vektor müssen gleiche Räume teilen
+  const chunks = store.allEmbeddableChunks().filter((c) => c.model === DEFAULT_EMBED_MODEL);
   const best = new Map<string, number>();
   for (const c of chunks) {
     const sim = cosineSimilarity(vec, c.embedding);
