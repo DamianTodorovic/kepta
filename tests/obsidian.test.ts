@@ -98,4 +98,34 @@ describe("Roundtrip Export → Import", () => {
     const second = importObsidianVault(store, files);
     expect(second.imported).toBe(0);
   });
+
+  it("Re-Import unveränderter Dateien zählt als updated", () => {
+    const files = [{ name: "wieder.md", content: "---\ntitle: Wieder\n---\nInhalt" }];
+    expect(importObsidianVault(store, files).imported).toBe(1);
+    const again = importObsidianVault(store, files);
+    expect(again.updated).toBe(1);
+    expect(again.imported).toBe(0);
+  });
+
+  it("fängt Fehler pro Datei ab und sammelt sie in errors", () => {
+    // Erzwingt einen Fehler in importMarkdownFile über einen werfenden upsertMemory-Stub.
+    const original = store.upsertMemory.bind(store);
+    let calls = 0;
+    store.upsertMemory = ((input: never) => {
+      calls++;
+      if (calls === 1) throw new Error("Simulierter DB-Fehler");
+      return original(input);
+    }) as typeof store.upsertMemory;
+    const files = [
+      { name: "kaputt.md", content: "Inhalt der kracht" },
+      { name: "heil.md", content: "Inhalt der klappt" },
+    ];
+    const res = importObsidianVault(store, files);
+    expect(res.errors.length).toBe(1);
+    expect(res.errors[0]).toContain("kaputt.md");
+    expect(res.skipped).toBeGreaterThanOrEqual(1);
+    expect(res.imported).toBe(1); // die heile Datei kommt durch
+    // Stub zurücksetzen
+    store.upsertMemory = original;
+  });
 });

@@ -3,7 +3,7 @@ import { tmpdir } from "node:os";
 import path from "node:path";
 import fs from "node:fs";
 import { KeptaStore } from "../src/core/store";
-import { handleRpc, TOOLS, LATEST_PROTOCOL_VERSION, type JsonRpcRequest, type JsonRpcResponse } from "../src/core/mcp";
+import { handleRpc, TOOLS, LATEST_PROTOCOL_VERSION, extractWikiLinks, negotiateVersion, type JsonRpcRequest, type JsonRpcResponse } from "../src/core/mcp";
 
 interface ToolResult {
   content: { type: string; text: string }[];
@@ -148,5 +148,73 @@ describe("MCP-Tools", () => {
       arguments: { title: "Chunking-Test", content: "Ein sehr langer Inhalt. ".repeat(200) },
     });
     expect(store.chunksNeedingEmbedding(100).length).toBeGreaterThan(1);
+  });
+
+  it("memory_consolidate liefert dryRun-Kandidaten strukturiert", async () => {
+    await rpc(store, "tools/call", { name: "memory_save", arguments: { title: "Server Passwort", content: "geheim eins" } });
+    await rpc(store, "tools/call", { name: "memory_save", arguments: { title: "Server Passwort", content: "geheim eins" } });
+    const res = asTool(await rpc(store, "tools/call", { name: "memory_consolidate", arguments: { dryRun: true } }));
+    const sc = res.structuredContent as { dryRun: boolean; applied: number; candidates: unknown[] };
+    expect(sc.dryRun).toBe(true);
+    expect(sc.applied).toBe(0);
+    expect(Array.isArray(sc.candidates)).toBe(true);
+  });
+
+  it("memory_forget mode=supersede markiert die Memory als ersetzt", async () => {
+    const saved = asTool(await rpc(store, "tools/call", { name: "memory_save", arguments: { title: "Alt", content: "x" } }));
+    const id = (saved.structuredContent.memory as { id: string }).id;
+    const res = asTool(await rpc(store, "tools/call", { name: "memory_forget", arguments: { id, mode: "supersede" } }));
+    expect((res.structuredContent as { forgotten: boolean }).forgotten).toBe(true);
+  });
+
+  it("memory_forget mode=delete verschiebt in den Papierkorb", async () => {
+    const saved = asTool(await rpc(store, "tools/call", { name: "memory_save", arguments: { title: "Weg", content: "y" } }));
+    const id = (saved.structuredContent.memory as { id: string }).id;
+    await rpc(store, "tools/call", { name: "memory_forget", arguments: { id, mode: "delete" } });
+    const trash = asTool(await rpc(store, "tools/call", { name: "memory_list", arguments: { trash: true } }));
+    expect(trash.structuredContent.count).toBe(1);
+  });
+
+  it("memory_forget mit unbekanntem mode → isError", async () => {
+    const saved = asTool(await rpc(store, "tools/call", { name: "memory_save", arguments: { title: "M", content: "z" } }));
+    const id = (saved.structuredContent.memory as { id: string }).id;
+    const res = asTool(await rpc(store, "tools/call", { name: "memory_forget", arguments: { id, mode: "quatsch" } }));
+    expect(res.isError).toBe(true);
+    expect(res.content[0]?.text).toContain("mode");
+  });
+
+  it("memory_forget auf unbekannte id → isError", async () => {
+    const res = asTool(await rpc(store, "tools/call", { name: "memory_forget", arguments: { id: "gibts-nicht", mode: "expire" } }));
+    expect(res.isError).toBe(true);
+  });
+
+  it("unbekanntes Tool → isError mit passender Meldung", async () => {
+    const res = asTool(await rpc(store, "tools/call", { name: "memory_zauberei", arguments: {} }));
+    expect(res.isError).toBe(true);
+    expect(res.content[0]?.text).toContain("Unbekanntes Tool");
+  });
+});
+
+describe("extractWikiLinks", () => {
+  it("extrahiert, normalisiert kleingeschrieben und dedupliziert", () => {
+    expect(extractWikiLinks("siehe [[Docker]] und [[Traefik]] plus [[docker]]")).toEqual(["docker", "traefik"]);
+  });
+  it("respektiert Alias-Syntax [[Ziel|Anzeige]]", () => {
+    expect(extractWikiLinks("[[KEPTA|das Gehirn]]")).toEqual(["kepta"]);
+  });
+  it("kein Link → leeres Array", () => {
+    expect(extractWikiLinks("nur normaler Text")).toEqual([]);
+  });
+});
+
+describe("negotiateVersion", () => {
+  it("bekannte Version bleibt erhalten", () => {
+    expect(negotiateVersion("2026-07-28")).toBe("2026-07-28");
+    expect(negotiateVersion("2024-11-05")).toBe("2024-11-05");
+  });
+  it("unbekannte Version oder Nicht-String → latest", () => {
+    expect(negotiateVersion("1999-01-01")).toBe(LATEST_PROTOCOL_VERSION);
+    expect(negotiateVersion(undefined)).toBe(LATEST_PROTOCOL_VERSION);
+    expect(negotiateVersion(42)).toBe(LATEST_PROTOCOL_VERSION);
   });
 });

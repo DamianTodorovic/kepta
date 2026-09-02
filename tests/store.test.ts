@@ -2,7 +2,7 @@ import { describe, it, expect, beforeEach } from "vitest";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import fs from "node:fs";
-import { KeptaStore, float32ToBlob, blobToFloat32, normalizeTags } from "../src/core/store";
+import { KeptaStore, float32ToBlob, blobToFloat32, normalizeTags, defaultDataDir, defaultDbPath, newId } from "../src/core/store";
 
 function freshStore(): KeptaStore {
   const dir = fs.mkdtempSync(path.join(tmpdir(), "kepta-test-"));
@@ -128,5 +128,74 @@ describe("FTS", () => {
 
     // FTS-Sonderzeichen dürfen nicht crashen
     expect(() => store.ftsSearch('"NEAR(a b)')).not.toThrow();
+  });
+});
+
+describe("Store Utilities & Lebenszyklus", () => {
+  it("findByTitle findet aktive Memory, ignoriert Papierkorb", () => {
+    const store = freshStore();
+    const m = store.createMemory({ title: "Einzigartig", content: "x" });
+    expect(store.findByTitle("Einzigartig")?.id).toBe(m.id);
+    store.trashMemory(m.id);
+    expect(store.findByTitle("Einzigartig")).toBeNull();
+  });
+
+  it("recordAccess erhöht access_count und setzt last_access", () => {
+    const store = freshStore();
+    const m = store.createMemory({ title: "T", content: "C" });
+    store.recordAccess([m.id, m.id]); // Set dedupliziert
+    const row = store.db.prepare("SELECT access_count, last_access_at FROM memories WHERE id = ?").get(m.id) as {
+      access_count: number;
+      last_access_at: number | null;
+    };
+    expect(row.access_count).toBe(1);
+    expect(row.last_access_at).not.toBeNull();
+  });
+
+  it("reinforceMemory erhöht utility, gedeckelt auf [0,1]", () => {
+    const store = freshStore();
+    const m = store.createMemory({ title: "T", content: "C" });
+    store.reinforceMemory(m.id, 0.3);
+    let u = (store.db.prepare("SELECT utility FROM memories WHERE id = ?").get(m.id) as { utility: number }).utility;
+    expect(u).toBeCloseTo(0.8, 6); // 0.5 + 0.3
+    store.reinforceMemory(m.id, 5); // Überlauf wird gedeckelt
+    u = (store.db.prepare("SELECT utility FROM memories WHERE id = ?").get(m.id) as { utility: number }).utility;
+    expect(u).toBe(1);
+  });
+
+  it("getGraph ohne Entität liefert den globalen Graph", () => {
+    const store = freshStore();
+    const a = store.createMemory({ title: "A", content: "..." });
+    store.linkEntities(a.id, ["rust", "kepta"]);
+    store.addRelation("kepta", "rust", "written_in", a.id);
+    const g = store.getGraph(); // kein Argument → globaler Zweig (Z. 587-602)
+    expect(g.entities.length).toBeGreaterThanOrEqual(2);
+    expect(g.relations.length).toBeGreaterThanOrEqual(1);
+  });
+
+  it("close schließt die Datenbank ohne Fehler", () => {
+    const store = freshStore();
+    expect(() => store.close()).not.toThrow();
+  });
+});
+
+describe("Pfad- und ID-Helfer", () => {
+  it("defaultDataDir respektiert KEPTA_DATA_DIR", () => {
+    const prev = process.env.KEPTA_DATA_DIR;
+    process.env.KEPTA_DATA_DIR = "/tmp/kepta-custom";
+    expect(defaultDataDir()).toBe("/tmp/kepta-custom");
+    if (prev === undefined) delete process.env.KEPTA_DATA_DIR;
+    else process.env.KEPTA_DATA_DIR = prev;
+  });
+
+  it("defaultDbPath endet auf kepta.db", () => {
+    expect(defaultDbPath().endsWith("kepta.db")).toBe(true);
+  });
+
+  it("newId erzeugt eindeutige k-präfixierte IDs", () => {
+    const a = newId();
+    const b = newId();
+    expect(a).toMatch(/^k-/);
+    expect(a).not.toBe(b);
   });
 });
