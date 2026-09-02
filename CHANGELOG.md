@@ -15,6 +15,13 @@ Windows kommt dazu. Damit sind alle gaengigen Systeme abgedeckt — vorher war W
 - README-Badge nennt jetzt macOS, Windows und Linux — vorher fehlte Windows trotz vorhandener Absicht.
 - ROADMAP: Der Punkt „Windows-CI-Build" ist erledigt und daher aus den Folgearbeiten entfernt.
 
+### Dokumentation korrigiert
+- Die Dateinamen in README und Release-Notes stimmten fuer Linux nicht: electron-builder
+  normalisiert `${arch}` je Zielformat — `x64` wird bei deb zu `amd64` und bei AppImage zu
+  `x86_64`. Dokumentiert waren `-x64.deb` und `-x64.AppImage`, also Dateien, die es gar
+  nicht gibt. Aufgefallen beim Abgleich mit den echten Artefakten aus dem 2.3.0-Build;
+  die Tabellen nennen jetzt die tatsaechlichen Namen.
+
 ## [2.3.0] — 2026-09-03
 
 Vertriebs-Release: Bis 2.2.1 konnten nur Macs mit Apple Silicon die App herunterladen. Jetzt sind Intel-Macs und Linux dabei.

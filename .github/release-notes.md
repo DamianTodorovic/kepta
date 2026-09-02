@@ -6,9 +6,9 @@
 | Mac mit Intel-Prozessor | `KEPTA-<version>-mac-x64.dmg` |
 | Windows (Intel/AMD) | `KEPTA-<version>-win-x64.exe` |
 | Windows auf ARM | `KEPTA-<version>-win-arm64.exe` |
-| Linux (Intel/AMD), jede Distribution | `KEPTA-<version>-linux-x64.AppImage` |
+| Linux (Intel/AMD), jede Distribution | `KEPTA-<version>-linux-x86_64.AppImage` |
 | Linux auf ARM | `KEPTA-<version>-linux-arm64.AppImage` |
-| Debian, Ubuntu, Mint | `KEPTA-<version>-linux-x64.deb` |
+| Debian, Ubuntu, Mint | `KEPTA-<version>-linux-amd64.deb` |
 
 Jede Datei trägt Plattform und Architektur im Namen. Im Zweifel beim Mac: Apple-Menü → *Über diesen Mac* — „Apple M…" heißt `arm64`, „Intel" heißt `x64`. Die `.zip`-Dateien sind dieselben Programme ohne Installer, für alle, die lieber selbst entpacken.
 
@@ -44,14 +44,14 @@ Einmalig freigeben: **Weitere Informationen** anklicken → **Trotzdem ausführe
 **AppImage** — ausführbar machen und starten, keine Installation nötig:
 
 ```bash
-chmod +x KEPTA-*-linux-x64.AppImage
-./KEPTA-*-linux-x64.AppImage
+chmod +x KEPTA-*-linux-x86_64.AppImage
+./KEPTA-*-linux-x86_64.AppImage
 ```
 
 **deb** — für Debian, Ubuntu und Abkömmlinge:
 
 ```bash
-sudo apt install ./KEPTA-*-linux-x64.deb
+sudo apt install ./KEPTA-*-linux-amd64.deb
 ```
 
 ## 🔌 Agent anbinden (MCP)
