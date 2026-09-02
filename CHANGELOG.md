@@ -2,6 +2,19 @@
 
 Alle Änderungen werden in dieser Datei dokumentiert. Format orientiert an [Keep a Changelog](https://keepachangelog.com/de/1.1.0/), Versionierung nach [SemVer](https://semver.org/).
 
+## [2.4.0] — 2026-09-03
+
+Windows kommt dazu. Damit sind alle gaengigen Systeme abgedeckt — vorher war Windows nur ueber den Selbstbau erreichbar.
+
+### Neu
+- **Windows:** NSIS-Installer und ZIP fuer `x64` und `arm64`, gebaut im neuen Job `release-windows` auf `windows-latest`. Der Installer laesst den Zielordner waehlen und installiert pro Benutzer, ohne Administratorrechte.
+- **Plattform im Dateinamen:** Das Schema heisst jetzt `KEPTA-<version>-<plattform>-<arch>.<ext>`. Ohne die Plattform waeren `KEPTA-<version>-x64.zip` von macOS und von Windows namensgleich gewesen und haetten sich im Release **gegenseitig ueberschrieben** — gefunden beim Hinzufuegen des Windows-Jobs, bevor es jemanden getroffen hat.
+- **Erststart-Anleitung fuer Windows** in Release-Notes und README: Der Installer ist ebenfalls unsigniert, SmartScreen blockiert den ersten Start.
+
+### Geaendert
+- README-Badge nennt jetzt macOS, Windows und Linux — vorher fehlte Windows trotz vorhandener Absicht.
+- ROADMAP: Der Punkt „Windows-CI-Build" ist erledigt und daher aus den Folgearbeiten entfernt.
+
 ## [2.3.0] — 2026-09-03
 
 Vertriebs-Release: Bis 2.2.1 konnten nur Macs mit Apple Silicon die App herunterladen. Jetzt sind Intel-Macs und Linux dabei.
