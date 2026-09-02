@@ -2,10 +2,14 @@
 
 Alle Änderungen werden in dieser Datei dokumentiert. Format orientiert an [Keep a Changelog](https://keepachangelog.com/de/1.1.0/), Versionierung nach [SemVer](https://semver.org/).
 
-## [Unreleased]
+## [2.1.0] — 2026-09-02
+
+### Fixes (UI)
+- **Chat-Header:** zeigt jetzt den echten KI-Verbindungsstatus statt fälschlich „OpenAI (GPT) · gpt-4o-mini". Ohne verbundene KI → „Keine KI verbunden" (grauer Status-Dot). Lokale KI (Ollama/LM Studio) wird automatisch erkannt und per Ein-Klick verbunden (neue Funktion `resolveAIConnection`, 5 Unit-Tests).
+- **Wissens-Karten:** Tag-Footer überlappt den Inhaltstext nicht mehr — `MemoryCard` auf 3-Zeilen-Grid umgestellt, Layout-Animation entschärft (`layout="position"`).
 
 ### Tests & Qualität
-- Test-Suite von 42 auf **231 Tests** ausgebaut; Gesamt-Coverage **~91 %** (Kern `src/core` **100 % der Funktionen**)
+- Test-Suite von 42 auf **236 Tests** ausgebaut; Gesamt-Coverage **~91 %** (Kern `src/core` **100 % der Funktionen**)
 - Vitest v8-Coverage mit Schwellen als **CI-Gate** (`npm run test:cov`) — Regressionen der Abdeckung brechen die CI
 - Neue Testabdeckung: `migrate.ts` (Legacy-JSON-Migration, vorher 0 %), `embeddings.ts` (Chunking/Cosine/Queue), `src/lib/*` unter jsdom (Provider, Profil, SSE, fetch-Client, Tokenizer), `server.ts` (HTTP + `/mcp` + Chat-Proxy via supertest), UI-Kernkomponenten (Testing-Library)
 - `server.ts`: `createApp(store)` als testbarer Export ausgelagert (Bootstrap/`listen` getrennt)
