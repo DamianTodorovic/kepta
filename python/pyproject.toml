@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "kepta"
-version = "0.1.0"
+version = "0.1.1"
 description = "Python-Client für KEPTA — das lokale Gedächtnis für KI-Agenten. Ohne Cloud, ohne Konto."
 readme = "README.md"
 requires-python = ">=3.9"

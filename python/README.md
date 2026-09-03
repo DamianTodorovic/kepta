@@ -19,11 +19,25 @@ kepta = KeptaClient()          # findet die laufende Instanz von allein
 
 kepta.save("Rezept Carbonara", "Guanciale, Pecorino, Eigelb. Keine Sahne.", tags=["kochen"])
 
-for hit in kepta.search("was koche ich mit Nudeln"):
+for hit in kepta.search("carbonara ohne sahne"):
     print(f"{hit.score:.2f}  {hit.memory.title}")
 ```
 
-Das Wort *Nudeln* steht in der Notiz nicht. Gefunden wird sie trotzdem — die Suche kombiniert Volltext, Vektoren und Wissensgraph per Reciprocal Rank Fusion.
+## Wie gesucht wird
+
+Drei Spuren, zusammengefuehrt per Reciprocal Rank Fusion: **Volltext** (BM25), **Vektoren** und **Wissensgraph**.
+
+Volltext und Graph laufen sofort. Die Vektor-Spur findet auch, was anders formuliert ist als gefragt — dafuer braucht sie ein lokales Embedding-Modell:
+
+```bash
+ollama pull nomic-embed-text
+```
+
+Erst damit findet `search("was koche ich mit Nudeln")` das Carbonara-Rezept, in dem das Wort *Nudeln* gar nicht vorkommt. Fehlt das Modell, bleibt `hit.vector_score` auf `0.0` und die Suche rein lexikalisch — kein Fehler, nur weniger Treffer bei umschriebenen Fragen. Woran du es siehst:
+
+```python
+kepta.health()["embeddings"]     # {'total': 128, 'embedded': 128, ...} — oder ueberall 0
+```
 
 ## Warum das interessant ist
 
