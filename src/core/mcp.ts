@@ -336,7 +336,7 @@ export async function callTool(store: KeptaStore, name: string, args: Record<str
   try {
     switch (name) {
       case "memory_search": {
-        if (!args.query || !String(args.query).trim()) throw new Error("query erforderlich");
+        if (!args.query || !String(args.query).trim()) throw new Error("a query is required");
         const params: SearchParams = {
           query: String(args.query ?? ""),
           // Nicht-numerisches limit → sauberer Default 10 statt NaN (NaN filtert alles weg)
@@ -453,10 +453,10 @@ export async function callTool(store: KeptaStore, name: string, args: Record<str
           store.trashMemory(id);
           return { content: [{ type: "text", text: `Moved to the trash: ${id}` }], structuredContent: { forgotten: true, mode } };
         }
-        throw new Error(`Unbekannter mode: ${mode}`);
+        throw new Error(`Unknown mode: ${mode}`);
       }
       default:
-        throw Object.assign(new Error(`Unbekanntes Tool: ${name}`), { code: -32601 });
+        throw Object.assign(new Error(`Unknown tool: ${name}`), { code: -32601 });
     }
   } catch (e) {
     const msg = e instanceof Error ? e.message : String(e);
@@ -541,6 +541,6 @@ export async function handleRpc(ctx: McpContext, req: JsonRpcRequest): Promise<J
   return {
     jsonrpc: "2.0",
     id,
-    error: { code: -32601, message: `Unbekannte Methode: ${method}` },
+    error: { code: -32601, message: `Unknown method: ${method}` },
   };
 }

@@ -2,6 +2,43 @@
 
 All notable changes are documented in this file. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and versioning follows [SemVer](https://semver.org/).
 
+## [2.6.2] — 2026-09-03
+
+Found by auditing every feature against a fresh install rather than trusting the
+feature list.
+
+### Fixed
+- **The HTTP API silently dropped `scope` and `supersededBy`.** Both belong to the
+  data model and MCP has always accepted them, but the REST handler validates
+  against an allowlist that did not include them. A client sending
+  `scope: "agent:coder"` got a memory scoped `local` back, with no error. Both
+  fields are now accepted on create and update, with the scope normalised to 64
+  characters and the id checked like every other id.
+- **Migration read only one of the two file shapes.** The legacy store is a bare
+  array; the backup export writes `{ memories: [...] }`. Putting a backup where the
+  legacy file belongs migrated zero nodes — while still reporting that a backup had
+  been made. Both shapes are read now.
+- Fourteen German strings survived the 2.6.0 translation, in places the running app
+  never shows: HTTP error bodies, MCP error messages, two zoom tooltips and the
+  graph filter placeholder. My earlier scan looked at rendered text; these live in
+  attributes and error paths. Found with an exhaustive search over string literals.
+
+### Changed
+- The inbox archive folder is called `archive` instead of `archiv`. Where `archiv`
+  already exists it stays in use, so nothing that was archived moves or disappears.
+  `/api/inbox/status` returns `archiveCount` and keeps `archivCount` for now.
+
+### Tests
+- **330 tests.** Four for the two API fields, one for the migration shape.
+
+### Verified, not assumed
+Everything below was exercised against a fresh instance: the 23 HTTP routes, all
+8 MCP tools over `POST /mcp` including protocol hardening, Obsidian import and
+export, the inbox watcher, embeddings through Ollama, duplicate consolidation,
+temporal expiry and supersede chains, trash and restore, migration and its
+idempotence, the chat proxy blocking and streaming, auto-learn end to end through
+the shipped parser, six SSRF cases, the command palette and the theme switch.
+
 ## [2.6.1] — 2026-09-03
 
 Filler words no longer decide what you find.

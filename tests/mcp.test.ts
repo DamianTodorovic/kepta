@@ -220,7 +220,7 @@ describe("MCP-Tools", () => {
   it("unbekanntes Tool → isError mit passender Meldung", async () => {
     const res = asTool(await rpc(store, "tools/call", { name: "memory_zauberei", arguments: {} }));
     expect(res.isError).toBe(true);
-    expect(res.content[0]?.text).toContain("Unbekanntes Tool");
+    expect(res.content[0]?.text).toContain("Unknown tool");
   });
 });
 

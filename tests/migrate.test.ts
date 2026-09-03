@@ -151,3 +151,16 @@ describe("migrateFromLegacyJson", () => {
     expect(res.migrated).toBe(0);
   });
 });
+
+describe("migrateFromLegacyJson: Dateiformate", () => {
+  it("liest auch ein Objekt mit memories-Array", () => {
+    // Der Backup-Export schreibt {memories:[...]}, der Legacy-Speicher ein nacktes
+    // Array. Wer ein Backup an die Legacy-Stelle legt, bekam vorher stillschweigend
+    // null Knoten — inklusive Erfolgsmeldung ueber das angelegte Backup.
+    writeLegacy({ memories: [{ id: "x1", title: "Aus Backup", content: "Inhalt", tags: [] }] });
+    const store = freshStore();
+    const res = migrateFromLegacyJson(store);
+    expect(res.migrated).toBe(1);
+    expect(store.listMemories().map((m) => m.title)).toContain("Aus Backup");
+  });
+});

@@ -69,7 +69,13 @@ export function migrateFromLegacyJson(store: KeptaStore): MigrationResult {
   let memories: LegacyMemory[] = [];
   try {
     const parsed = JSON.parse(raw);
+    // Der Legacy-Speicher ist ein nacktes Array, der Backup-Export schreibt
+    // {memories:[...]}. Wer ein Backup an die Legacy-Stelle legt, bekam sonst
+    // stillschweigend null Knoten — samt Meldung ueber das angelegte Backup.
     if (Array.isArray(parsed)) memories = parsed;
+    else if (parsed && Array.isArray((parsed as { memories?: unknown }).memories)) {
+      memories = (parsed as { memories: LegacyMemory[] }).memories;
+    }
   } catch {
     memories = [];
   }
