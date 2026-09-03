@@ -456,6 +456,29 @@ export function createApp(store: KeptaStore) {
   // express.json überspringt bereits geparste Bodies — daher greift das globale
   // 1mb-Limit unten auf diesen Requests nicht mehr, und große Backups (bis 2mb)
   // bzw. Markdown-Batches (bis 10mb) werden nicht schon global mit 413 abgewiesen.
+  /**
+   * Obergrenze aktiver Knoten. Schuetzt vor davonlaufenden Agenten-Schreibvorgaengen.
+   * Ueber KEPTA_MAX_ACTIVE einstellbar; bei jedem Aufruf gelesen, damit ein Betreiber
+   * sie ohne Neustart aendern kann.
+   */
+  function maxActiveMemories(): number {
+    const v = Number(process.env.KEPTA_MAX_ACTIVE);
+    return Number.isFinite(v) && v > 0 ? Math.floor(v) : 5000;
+  }
+
+  /**
+   * Ein Backup wird nie abgewiesen — sonst verliert jemand beim Wiederherstellen
+   * Daten. Wer aber darueber liegt, soll es hier erfahren und nicht erst, wenn das
+   * Anlegen der naechsten einzelnen Notiz mit 429 scheitert.
+   */
+  function grenzHinweis(): { warning?: string } {
+    const max = maxActiveMemories();
+    const ist = activeCount();
+    return ist > max
+      ? { warning: `${ist} active nodes exceed the limit of ${max}. Existing notes stay searchable, but creating new single notes is refused until you delete some.` }
+      : {};
+  }
+
   function handleMemoriesImport(req: express.Request, res: express.Response) {
     const { memories: incoming, mode } = req.body as { memories?: Partial<MemoryRecord>[]; mode?: "merge" | "replace" };
     if (!Array.isArray(incoming)) {
@@ -490,7 +513,7 @@ export function createApp(store: KeptaStore) {
       } catch {
         return res.status(409).json({ error: "Import failed: conflicting node ids" });
       }
-      return res.json({ imported: byId.size, total: activeCount() });
+      return res.json({ imported: byId.size, total: activeCount(), ...grenzHinweis() });
     }
 
     let imported = 0;
@@ -503,7 +526,7 @@ export function createApp(store: KeptaStore) {
         imported++;
       }
     }
-    res.json({ imported, total: activeCount() });
+    res.json({ imported, total: activeCount(), ...grenzHinweis() });
   }
   app.post("/api/memories/import", writeLimiter, express.json({ limit: "2mb" }), handleMemoriesImport);
 
@@ -724,7 +747,7 @@ export function createApp(store: KeptaStore) {
     const body = req.body as Partial<MemoryRecord> & { tags?: unknown; title?: unknown; content?: unknown };
     // Hardened: Validierung + Sanitization + Limits
     if (body && JSON.stringify(body).length > 60000) return res.status(413).json({ error: "Payload too large (max 60k)" });
-    if (activeCount() > 5000 && !body.id) return res.status(429).json({ error: "Limit reached: max 5000 nodes — please delete some old ones" });
+    if (activeCount() > maxActiveMemories() && !body.id) return res.status(429).json({ error: `Limit reached: ${activeCount()} active nodes, maximum is ${maxActiveMemories()} — please delete some first` });
 
     const title = sanitizeTitle(body.title);
     const content = sanitizeText(body.content, 50000);

@@ -14,7 +14,7 @@ Use the KEPTA MCP tools as your persistent memory, across sessions:
 ## Project layout
 - App: repo root (React + Express + Electron — server `server.ts`, core `src/core/`, UI `src/components/`, tests `tests/`, Electron `electron.js`, data `~/.kepta/kepta.db`)
 - Python client: `python/` (stdlib only, published to PyPI as `kepta`)
-- Quality gates before every commit: `npx tsc --noEmit` (0 errors) + `npx vitest run` (330 tests) + `npm run build` (green, `dist` free of inline scripts) + `npm run eval` (Hit@1 ≥ 92 %) — verify UX changes in the browser as well.
+- Quality gates before every commit: `npx tsc --noEmit` (0 errors) + `npx vitest run` (333 tests) + `npm run build` (green, `dist` free of inline scripts) + `npm run eval` (Hit@1 ≥ 92 %) — verify UX changes in the browser as well.
 - Language: documentation and code comments in English. Reply to the user in the language they write in — the maintainer writes German.
 - UX standard: "brutally good" — test from the persona's perspective, no jargon labels.
 
