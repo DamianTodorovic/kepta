@@ -2,6 +2,36 @@
 
 All notable changes are documented in this file. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and versioning follows [SemVer](https://semver.org/).
 
+## [2.6.1] — 2026-09-03
+
+Filler words no longer decide what you find.
+
+### Fixed
+- **Query stopwords entered the BM25 leg.** `ftsSearch` split the query and OR-ed
+  every token longer than one character, so a note matched merely for containing
+  "with" or "die" — and through RRF fusion that borrowed rank displaced the real
+  answer. Measured on an 18-note corpus, the query *"what do I cook with pasta"*
+  returned "RAG — retrieval augmented generation" and "New laptop — 64 GB" above
+  the carbonara recipe, because both contain "with". After the fix the recipe
+  moves from fourth place to second and the two unrelated notes drop out of the
+  top results.
+- A query made only of stopwords still searches, using the original words. A
+  silent search would be worse than an imprecise one.
+
+### Changed
+- The bilingual stopword list moved from `src/lib/semantic.ts` to
+  `src/core/stopwords.ts`. It lived in the browser path only, which is exactly
+  why the engine never applied it. Both paths now share one source, so they
+  cannot drift apart again.
+
+### Tests
+- `tests/core/stopwords.test.ts` (9 tests) and two regression tests at search
+  level in `tests/store.test.ts`: filler words must not produce hits, and a
+  query of nothing but filler words must still return something. **325 tests.**
+- Retrieval eval unchanged at Hit@1 92 %, Precision@5 92 % — the fixed corpus
+  uses short keyword queries, where stopwords barely occur. The defect showed
+  itself only on natural-language questions, which is why the eval never caught it.
+
 ## [2.6.0] — 2026-09-03
 
 The interface speaks English.

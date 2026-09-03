@@ -158,6 +158,29 @@ describe("FTS", () => {
     expect(() => store.ftsSearch('"NEAR(a b)')).not.toThrow();
   });
 
+  it("laesst Fuellwoerter nicht zu Treffern werden", () => {
+    // Regression: Die Anfrage wurde ungefiltert zerlegt, also matchte eine Notiz
+    // allein deshalb, weil sie "with" enthielt. Ueber die RRF-Fusion verdraengte
+    // sie damit den eigentlichen Treffer.
+    const store = freshStore();
+    const laptop = store.createMemory({ title: "New laptop", content: "The M4 with 64 GB of memory", tags: [] });
+    const rezept = store.createMemory({ title: "Carbonara", content: "Guanciale, pecorino, egg yolk", tags: [] });
+
+    const ids = store.ftsSearch("what do I cook with carbonara").map((h) => h.id);
+    expect(ids).toContain(rezept.id);
+    expect(ids).not.toContain(laptop.id);
+
+    // Das Inhaltswort allein findet die Notiz weiterhin
+    expect(store.ftsSearch("laptop").map((h) => h.id)).toContain(laptop.id);
+  });
+
+  it("sucht weiter, wenn die Anfrage nur aus Fuellwoertern besteht", () => {
+    // Lieber ungenaue Treffer als eine stumme Suche.
+    const store = freshStore();
+    const m = store.createMemory({ title: "Was ist das", content: "Eine Notiz ueber das Was", tags: [] });
+    expect(store.ftsSearch("was ist das").map((h) => h.id)).toContain(m.id);
+  });
+
   it("findet kyrillische und CJK Queries (Unicode-Tokenizer)", () => {
     const store = freshStore();
     const ru = store.createMemory({ title: "Контейнер", content: "привет мир docker" });

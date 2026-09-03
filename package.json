@@ -1,7 +1,7 @@
 {
   "name": "kepta",
   "private": false,
-  "version": "2.6.0",
+  "version": "2.6.1",
   "description": "KEPTA — Keeps what matters. A local brain for AI agents: SQLite, hybrid retrieval, knowledge graph, MCP 2026-07-28 — no cloud.",
   "author": "KEPTA <hello@kepta.app>",
   "type": "module",

@@ -6,7 +6,7 @@
 
 > **Hinweis.** Diese Seite ist auf Deutsch — **die Oberfläche der App ist seit 2.6.0 englisch.** Deutsche Notizen funktionieren weiterhin: Die Suche kennt deutsche und englische Stoppwörter.
 
-<p align="center"><a href="https://github.com/DamianTodorovic/kepta/releases"><img alt="Release" src="https://img.shields.io/github/v/release/DamianTodorovic/kepta?label=Download"></a> <a href="https://github.com/DamianTodorovic/kepta/actions/workflows/build.yml"><img alt="CI" src="https://github.com/DamianTodorovic/kepta/actions/workflows/build.yml/badge.svg"></a> <a href="https://pypi.org/project/kepta/"><img alt="PyPI" src="https://img.shields.io/pypi/v/kepta?label=pip%20install%20kepta"></a> <img alt="Coverage" src="https://img.shields.io/badge/coverage-91%25-brightgreen"> <img alt="Tests" src="https://img.shields.io/badge/tests-314%20passing-brightgreen"> <a href="LICENSE"><img alt="MIT" src="https://img.shields.io/badge/License-MIT-black"></a> <img alt="Platform" src="https://img.shields.io/badge/platform-macOS%20%7C%20Windows%20%7C%20Linux-lightgrey"></p>
+<p align="center"><a href="https://github.com/DamianTodorovic/kepta/releases"><img alt="Release" src="https://img.shields.io/github/v/release/DamianTodorovic/kepta?label=Download"></a> <a href="https://github.com/DamianTodorovic/kepta/actions/workflows/build.yml"><img alt="CI" src="https://github.com/DamianTodorovic/kepta/actions/workflows/build.yml/badge.svg"></a> <a href="https://pypi.org/project/kepta/"><img alt="PyPI" src="https://img.shields.io/pypi/v/kepta?label=pip%20install%20kepta"></a> <img alt="Coverage" src="https://img.shields.io/badge/coverage-91%25-brightgreen"> <img alt="Tests" src="https://img.shields.io/badge/tests-325%20passing-brightgreen"> <a href="LICENSE"><img alt="MIT" src="https://img.shields.io/badge/License-MIT-black"></a> <img alt="Platform" src="https://img.shields.io/badge/platform-macOS%20%7C%20Windows%20%7C%20Linux-lightgrey"></p>
 
 ## 🎬 So sieht KEPTA aus
 
@@ -121,6 +121,7 @@ Ohne Ollama läuft alles rein lexikalisch weiter — die Vektor-Spur entfällt, 
 <summary><strong>Suchen &amp; Abrufen</strong></summary>
 
 - **Hybride Suche**: FTS5-BM25 + Vektor-KNN + Entitäts-Treffer, per RRF fusioniert
+- **Füllwörter werden aus der Anfrage entfernt**, deutsch wie englisch — eine Notiz gewinnt keinen Rang mehr allein dadurch, dass sie *mit* oder *with* enthält
 - **Persistente Embeddings** über Ollama (`nomic-embed-text`), Hintergrund-Queue statt Neuberechnung pro Anfrage
 - **Temporale Gewichtung**: abgelaufen ×0.5, ersetzt ×0.4
 - **Semantische Suche** abschaltbar, **Top-k** per Regler einstellbar
@@ -338,11 +339,11 @@ Wer den Binärdateien nicht vertrauen will, baut selbst: `npm install && npm run
 
 ## 🧪 Qualität & Tests
 
-**314 Tests**, Gesamt-Coverage **~91 %** (Kern `src/core` **100 % der Funktionen**). Vitest + v8-Coverage mit Schwellen als CI-Gate — jeder Commit, der die Abdeckung senkt, lässt die CI rot werden.
+**325 Tests**, Gesamt-Coverage **~91 %** (Kern `src/core` **100 % der Funktionen**). Vitest + v8-Coverage mit Schwellen als CI-Gate — jeder Commit, der die Abdeckung senkt, lässt die CI rot werden.
 
 ```bash
 npm run lint       # tsc --noEmit (Typecheck)
-npm test           # 314 Tests (vitest)
+npm test           # 325 Tests (vitest)
 npm run test:cov   # Tests + Coverage-Gate
 npm run eval       # Retrieval-Qualität (Hit@1)
 ```

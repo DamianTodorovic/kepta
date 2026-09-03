@@ -15,6 +15,7 @@ import type {
   RelationRecord,
   ChunkRecord,
 } from "./types";
+import { contentTerms } from "./stopwords";
 
 const SCHEMA_VERSION = 1;
 const VALID_TYPES: MemoryType[] = ["semantic", "episodic", "procedural"];
@@ -638,13 +639,10 @@ export class KeptaStore {
 
   ftsSearch(query: string, limit = 50): { id: string; bm25: number }[] {
     // FTS5-Syntax des Users entschärfen: Anführungszeichen pro Term.
-    // Unicode-Klassen statt a-z0-9: kyrillische/CJK-Zeichen dürfen nicht weggefiltert werden.
-    const terms = query
-      .toLowerCase()
-      .replace(/[^\p{L}\p{N}\s]/gu, " ")
-      .split(/\s+/)
-      .filter((t) => t.length > 1)
-      .slice(0, 12);
+    // contentTerms wirft zusätzlich Füllwörter weg — ohne das matchte eine Notiz
+    // allein deshalb, weil sie "with" oder "die" enthält, bekam dadurch einen
+    // BM25-Rang und verdrängte über die RRF-Fusion den eigentlichen Treffer.
+    const terms = contentTerms(query);
     if (terms.length === 0) return [];
     const match = terms.map((t) => `"${t}"`).join(" OR ");
     try {
