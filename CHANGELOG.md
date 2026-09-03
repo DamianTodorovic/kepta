@@ -1,192 +1,191 @@
 # Changelog
 
-Alle Änderungen werden in dieser Datei dokumentiert. Format orientiert an [Keep a Changelog](https://keepachangelog.com/de/1.1.0/), Versionierung nach [SemVer](https://semver.org/).
+All notable changes are documented in this file. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and versioning follows [SemVer](https://semver.org/).
 
 ## [2.5.1] — 2026-09-03
 
-Auto-Learn laeuft nicht mehr ungefragt.
+Auto-learn no longer runs without being asked.
 
-### Geaendert (bewusste Verhaltensaenderung)
-- **Auto-Learn ist jetzt Opt-in.** Bis 2.5.0 war es voreingestellt aktiv (`!== 'false'`),
-  obwohl es pro Chat-Antwort einen zweiten Modellaufruf ausloest — bei Cloud-Anbietern
-  also zusaetzliche Kosten, denen niemand bewusst zugestimmt hatte. Jetzt `=== 'true'`.
-  Wer es in 2.5.0 genutzt hat, schaltet es unter *Einstellungen* wieder ein.
-- **Damit es trotzdem gefunden wird:** Beim ersten Mal, wenn eine Antwort lernbar
-  gewesen waere, blendet KEPTA einmalig einen Hinweis ein — mit einem Knopf, der die
-  Funktion direkt einschaltet. Danach nie wieder (`ki_gehirn_autolearn_hint`).
+### Changed (deliberate behaviour change)
+- **Auto-learn is now opt-in.** Up to 2.5.0 it was on by default (`!== 'false'`), even
+  though it fires a second model call per chat answer — with a cloud provider that means
+  costs nobody had knowingly agreed to. It is now `=== 'true'`. Anyone who used it in
+  2.5.0 can switch it back on under *Settings*.
+- **So that it is still discoverable:** the first time an answer would have been
+  learnable, KEPTA shows a one-off hint — with a button that turns the feature on right
+  there. Never again after that (`ki_gehirn_autolearn_hint`).
 
 ### Tests
-- `isAutoLearnEnabled` und `shouldShowHint` als reine Funktionen mit injizierter
-  Lese-Schnittstelle, dadurch ohne Browser-Speicher testbar. **314 Tests** (vorher 307).
+- `isAutoLearnEnabled` and `shouldShowHint` are pure functions with an injected read
+  interface, which makes them testable without browser storage. **314 tests** (was 307).
 
 ## [2.5.0] — 2026-09-03
 
-Auto-Learn funktioniert wieder — und sagt jetzt, wenn es das nicht tut.
+Auto-learn works again — and now says so when it doesn't.
 
 ### Fixes
-- **Auto-Learn scheiterte bei Reasoning-Modellen still.** Die Extraktion schnitt vom
-  ersten `{` bis zum letzten `}`. Modelle wie Qwen3 oder DeepSeek-R1 stellen ihrer
-  Antwort einen `<think>`-Block oder Prosa voran; enthielt der Klammern, griff der
-  Ausschnitt daneben und `JSON.parse` warf. Der Fehler landete ausschliesslich in
-  `console.warn` — die Funktion warb mit „Gehirn erweitert sich selbst" und tat nichts.
-  Jetzt: Reasoning-Bloecke entfernen, dann das erste **vollstaendig balancierte**
-  Objekt lesen, Klammern in Zeichenketten und maskierte Anfuehrungszeichen beachten.
-- **Kein Zeitlimit.** Der Hintergrundaufruf lief unbegrenzt. Auf einer Maschine mit
-  einem 12-GB-Reasoning-Modell gemessen: **2 min 40 s fuer fuenf Tokens** — der Aufruf
-  kam nie zurueck. Jetzt bricht er nach 45 Sekunden ab.
-- **Fehlschlaege waren unsichtbar.** Erfolg und Abbruch erscheinen jetzt als Hinweis,
-  mit Grund und Handlungsempfehlung.
+- **Auto-learn failed silently with reasoning models.** Extraction sliced from the first
+  `{` to the last `}`. Models like Qwen3 or DeepSeek-R1 prepend a `<think>` block or prose
+  to their answer; if that contained braces, the slice grabbed the wrong span and
+  `JSON.parse` threw. The error went nowhere but `console.warn` — the feature advertised
+  "the brain extends itself" and did nothing. Now: strip reasoning blocks, then read the
+  first **fully balanced** object, respecting braces inside strings and escaped quotes.
+- **No time limit.** The background call ran unbounded. Measured on a machine with a 12 GB
+  reasoning model: **2 min 40 s for five tokens** — the call never came back. It now aborts
+  after 45 seconds.
+- **Failures were invisible.** Success and abort now both surface as a notification, with
+  the reason and what to do about it.
 
-### Neu
-- **Eigenes Extraktions-Modell** (`extractModel`, optional): Fuer Titel und drei Tags
-  reicht ein 3B-Modell, das in Sekunden antwortet. Leer lassen nutzt weiterhin das
-  Chat-Modell. Einstellbar unter *Einstellungen → Automatisch mitlernen*.
-- Auto-Learn ist erstmals im README dokumentiert — bisher stand die Funktion nirgends,
-  obwohl sie ungefragt lief.
+### Added
+- **Separate extraction model** (`extractModel`, optional): a 3B model that answers in
+  seconds is plenty for a title and three tags. Leaving it empty keeps using the chat
+  model. Configurable under *Settings → Learn automatically*.
+- Auto-learn is documented in the README for the first time — until now the feature
+  appeared nowhere, despite running unasked.
 
 ### Tests
-- Neu: `src/lib/autolearn.ts` als testbares Modul, `tests/lib/autolearn.test.ts` mit
-  **28 Tests** gegen Reasoning-Bloecke, Klammern in Zeichenketten, maskierte
-  Anfuehrungszeichen, unvollstaendiges JSON und Tag-Normalisierung.
-- Gesamtstand: **307 Tests** (vorher 279), `autolearn.ts` bei 100 % der Funktionen.
+- New: `src/lib/autolearn.ts` as a testable module, `tests/lib/autolearn.test.ts` with
+  **28 tests** covering reasoning blocks, braces inside strings, escaped quotes,
+  incomplete JSON and tag normalisation.
+- Overall: **307 tests** (was 279), `autolearn.ts` at 100 % of functions.
 
 ## [2.4.0] — 2026-09-03
 
-Windows kommt dazu. Damit sind alle gaengigen Systeme abgedeckt — vorher war Windows nur ueber den Selbstbau erreichbar.
+Windows joins in. That covers every common system — before this, Windows was only reachable by building it yourself.
 
-### Neu
-- **Windows:** NSIS-Installer und ZIP fuer `x64` und `arm64`, gebaut im neuen Job `release-windows` auf `windows-latest`. Der Installer laesst den Zielordner waehlen und installiert pro Benutzer, ohne Administratorrechte.
-- **Plattform im Dateinamen:** Das Schema heisst jetzt `KEPTA-<version>-<plattform>-<arch>.<ext>`. Ohne die Plattform waeren `KEPTA-<version>-x64.zip` von macOS und von Windows namensgleich gewesen und haetten sich im Release **gegenseitig ueberschrieben** — gefunden beim Hinzufuegen des Windows-Jobs, bevor es jemanden getroffen hat.
-- **Erststart-Anleitung fuer Windows** in Release-Notes und README: Der Installer ist ebenfalls unsigniert, SmartScreen blockiert den ersten Start.
+### Added
+- **Windows:** NSIS installer and ZIP for `x64` and `arm64`, built by the new `release-windows` job on `windows-latest`. The installer lets you pick the target folder and installs per user, without administrator rights.
+- **Platform in the filename:** the scheme is now `KEPTA-<version>-<platform>-<arch>.<ext>`. Without the platform, `KEPTA-<version>-x64.zip` from macOS and from Windows would have been identically named and would have **overwritten each other** in the release — found while adding the Windows job, before it hit anyone.
+- **First-launch instructions for Windows** in the release notes and README: the installer is unsigned too, and SmartScreen blocks the first run.
 
-### Geaendert
-- README-Badge nennt jetzt macOS, Windows und Linux — vorher fehlte Windows trotz vorhandener Absicht.
-- ROADMAP: Der Punkt „Windows-CI-Build" ist erledigt und daher aus den Folgearbeiten entfernt.
+### Changed
+- The README badge now names macOS, Windows and Linux — Windows was missing despite the intent being there.
+- ROADMAP: "Windows CI build" is done and therefore removed from the follow-up work.
 
-### Dokumentation korrigiert
-- Die Dateinamen in README und Release-Notes stimmten fuer Linux nicht: electron-builder
-  normalisiert `${arch}` je Zielformat — `x64` wird bei deb zu `amd64` und bei AppImage zu
-  `x86_64`. Dokumentiert waren `-x64.deb` und `-x64.AppImage`, also Dateien, die es gar
-  nicht gibt. Aufgefallen beim Abgleich mit den echten Artefakten aus dem 2.3.0-Build;
-  die Tabellen nennen jetzt die tatsaechlichen Namen.
+### Documentation corrected
+- The filenames in the README and release notes were wrong for Linux: electron-builder
+  normalises `${arch}` per target format — `x64` becomes `amd64` for deb and `x86_64` for
+  AppImage. What was documented, `-x64.deb` and `-x64.AppImage`, were files that do not
+  exist. Noticed while comparing against the real artifacts from the 2.3.0 build; the
+  tables now name what is actually produced.
 
 ## [2.3.0] — 2026-09-03
 
-Vertriebs-Release: Bis 2.2.1 konnten nur Macs mit Apple Silicon die App herunterladen. Jetzt sind Intel-Macs und Linux dabei.
+A distribution release: up to 2.2.1 only Apple Silicon Macs could download the app. Intel Macs and Linux are now included.
 
-### Neu
-- **Intel-Macs (x64):** `electron-builder.json` hatte keine `arch`-Angabe, gebaut wurde deshalb nur die Architektur des CI-Runners — arm64. Ab jetzt entstehen DMG und ZIP fuer `arm64` **und** `x64`.
-- **Linux:** AppImage und deb, jeweils fuer `x64` und `arm64`. Eigener Workflow-Job `release-linux` auf `ubuntu-latest`, da sich Linux-Pakete auf einem macOS-Runner nicht bauen lassen. Neues Skript `npm run build:linux`.
-- **Architektur im Dateinamen:** electron-builder haengt sie standardmaessig nur bei arm64 an — der Intel-Build hiesse blosz `KEPTA-2.3.0.dmg` und waere nicht unterscheidbar. `artifactName` erzwingt jetzt `KEPTA-<version>-<arch>.<ext>` fuer alle Pakete.
+### Added
+- **Intel Macs (x64):** `electron-builder.json` had no `arch` entry, so only the CI runner's own architecture was built — arm64. From now on DMG and ZIP are produced for `arm64` **and** `x64`.
+- **Linux:** AppImage and deb, each for `x64` and `arm64`. A separate workflow job `release-linux` on `ubuntu-latest`, because Linux packages cannot be built on a macOS runner. New script `npm run build:linux`.
+- **Architecture in the filename:** electron-builder only appends it for arm64 by default — the Intel build would have been plain `KEPTA-2.3.0.dmg` and indistinguishable. `artifactName` now enforces `KEPTA-<version>-<arch>.<ext>` for every package.
 
 ### Fixes
-- **Falsches Plattform-Versprechen:** README und Badge kuendigten „macOS | Linux" und „DMG/snap" an; ein Linux-Paket gab es nie und snap war nie konfiguriert. README nennt jetzt exakt die Dateien, die es wirklich gibt, samt Erststart-Anleitung fuer Linux.
+- **A false platform promise:** the README and badge announced "macOS | Linux" and "DMG/snap"; a Linux package never existed and snap was never configured. The README now names exactly the files that do exist, including first-launch instructions for Linux.
 
-### Dokumentation
-- Release-Notes liegen in `.github/release-notes.md` und werden von **beiden** Release-Jobs per `body_path` eingebunden — eine Quelle statt zwei driftender Kopien, und die Reihenfolge der Jobs ist damit egal.
-- Tabelle „Welche Datei brauche ich?" in README und Release-Notes, inklusive Hinweis, wie man die eigene Mac-Architektur feststellt.
+### Documentation
+- The release notes live in `.github/release-notes.md` and are pulled in by **both** release jobs via `body_path` — one source instead of two drifting copies, which also makes the job order irrelevant.
+- A "Which file do I need?" table in the README and release notes, including how to work out your own Mac's architecture.
 
 ## [2.2.1] — 2026-09-03
 
-Hotfix: 2.2.0 liess sich nicht starten. Wer 2.2.0 installiert hat, sollte auf 2.2.1 wechseln.
+Hotfix: 2.2.0 would not start. Anyone on 2.2.0 should move to 2.2.1.
 
 ### Fixes
-- **App startet wieder (Regression aus 2.2.0):** In `electron.js` stand `srv.address.port` statt `srv.address().port`. `address` ist eine Methode — als Eigenschaft gelesen liefert sie `undefined`. `getFreePort()` hat daraufhin nicht abgelehnt, sondern `undefined` aufgeloest, wodurch der `catch`-Zweig nie griff und dabei den Standardport 3000 ueberschrieb. Zwei Zeilen spaeter warf `serverPort.toString()` einen `TypeError`, und zwar **ausserhalb** des `try`-Blocks — `createWindow()` wurde deshalb nie erreicht. Symptom: Der Prozess lief, aber ohne Fenster, ohne belegten Port und ohne Absturzbericht.
-- **Startsequenz gehaertet:** `getFreePort()` lehnt jetzt ab, wenn kein Port ermittelbar ist; der `catch`-Zweig stellt den Standardport 3000 tatsaechlich wieder her; vor `process.env.PORT` prueft `Number.isInteger` auf einen brauchbaren Wert, und `String(...)` ersetzt `.toString()`. Ein fehlender Port kann die App damit nicht mehr fensterlos machen.
+- **The app starts again (regression from 2.2.0):** `electron.js` read `srv.address.port` instead of `srv.address().port`. `address` is a method — read as a property it yields `undefined`. `getFreePort()` therefore did not reject but resolved `undefined`, so the `catch` branch never ran and overwrote the default port 3000 on the way. Two lines later `serverPort.toString()` threw a `TypeError`, and it did so **outside** the `try` block — which meant `createWindow()` was never reached. Symptom: the process ran, but with no window, no bound port and no crash report.
+- **Startup sequence hardened:** `getFreePort()` now rejects when no port can be determined; the `catch` branch genuinely restores the default port 3000; `Number.isInteger` checks for a usable value before `process.env.PORT`, and `String(...)` replaces `.toString()`. A missing port can no longer leave the app windowless.
 
 ### Tests
-- Neu: `tests/electron.test.ts` mit 5 Regressionstests. Da `electron.js` als ESM-Einstiegspunkt beim Import die App starten wuerde, loest der Test `getFreePort()` aus der **echten Quelldatei** heraus und fuehrt sie gegen das echte `net`-Modul aus — geprueft wird der ausgelieferte Code, keine Kopie. Dazu Wachen gegen den Eigenschaftszugriff `.address.port` und fuer den 3000-Fallback.
-- Gesamtstand: **279 Tests** (vorher 274), Coverage-Gate unveraendert gruen, Retrieval-Eval unveraendert (Hit@1 92 %, Precision@5 92 %).
+- New: `tests/electron.test.ts` with 5 regression tests. Since `electron.js` is an ESM entry point that would launch the app on import, the test extracts `getFreePort()` from the **real source file** and runs it against the real `net` module — what is tested is the shipped code, not a copy. Plus guards against the `.address.port` property access and for the 3000 fallback.
+- Overall: **279 tests** (was 274), coverage gate still green, retrieval eval unchanged (Hit@1 92 %, Precision@5 92 %).
 
 ## [2.2.0] — 2026-09-02
 
-Security- & Robustheits-Release: Code-Review-Fixes an Server, Core, Electron und Protokoll.
+A security and robustness release: code-review fixes across the server, core, Electron and protocol.
 
 ### Security
-- **Bind-Adresse:** der Server lauscht jetzt nur auf `127.0.0.1` statt `0.0.0.0` (die API hat keine Auth); Override bewusst via `KEPTA_HOST`
-- **SSRF-Schutz (URL-Clipper):** IP-Literale in allen Schreibweisen (Dezimal/Hex/Oktal/IPv4-mapped IPv6) werden normiert geprüft, DNS wird via `node:dns` aufgelöst und ALLE resultierenden IPs (v4+v6) gegen Loopback/Privat/Link-Local/CGNAT/Unique-Local geprüft; Redirects werden manuell gefolgt (max. 5 Hops, jeder Hop voll geprüft); toter Port-Check entfernt; `clearTimeout` im `finally`
-- **Body-Limit-Reihenfolge:** Import-Routen sind jetzt vor dem globalen 1mb-Limit registriert — `/api/memories/import` (2mb) und `/api/import/markdown` (10mb) werfen für große Backups kein 413 mehr; das globale 1mb-Limit bleibt für alle übrigen Routen aktiv
-- **Chat-Proxy:** fehlendes `messages`-Array → sauberes 400 statt TypeError; Client-Disconnect bricht den Upstream-Request ab (AbortController)
+- **Bind address:** the server now listens on `127.0.0.1` only, instead of `0.0.0.0` (the API has no auth); deliberate override via `KEPTA_HOST`
+- **SSRF protection (URL clipper):** IP literals in every notation (decimal/hex/octal/IPv4-mapped IPv6) are normalised before checking, DNS is resolved via `node:dns` and ALL resulting IPs (v4 and v6) are checked against loopback/private/link-local/CGNAT/unique-local; redirects are followed manually (max. 5 hops, every hop fully checked); a dead port check was removed; `clearTimeout` in `finally`
+- **Body limit ordering:** import routes are now registered before the global 1 MB limit — `/api/memories/import` (2 MB) and `/api/import/markdown` (10 MB) no longer throw a 413 for large backups; the global 1 MB limit stays active for every other route
+- **Chat proxy:** a missing `messages` array now yields a clean 400 instead of a TypeError; a client disconnect aborts the upstream request (AbortController)
 
-### Retrieval & Embeddings
-- **Embedding-Modellmix behoben:** der Vektorvergleich läuft nur noch zwischen Query und Chunks desselben Modells; nach einem Modellwechsel wählt `chunksNeedingEmbedding` Modell-Mismatches und die Hintergrund-Queue re-embeddet (nicht blockierend)
-- FTS-Tokenizer nutzt Unicode-Klassen (`\p{L}\p{N}`) — kyrillische und CJK-Queries finden jetzt Treffer
+### Retrieval & embeddings
+- **Embedding model mixing fixed:** vector comparison now only happens between the query and chunks from the same model; after a model switch, `chunksNeedingEmbedding` picks up the mismatches and the background queue re-embeds them (non-blocking)
+- The FTS tokenizer uses Unicode classes (`\p{L}\p{N}`) — Cyrillic and CJK queries now return hits
 
-### Server & Core
-- **Store-Kappe 1000 → 5000:** `/api/memories`, Markdown-Export und Replace-Import listen vollständig (Paginierung statt stiller Abschneidung bei >1000 Knoten)
-- Replace-Import mit doppelten IDs antwortet sauber mit 409 statt 500; doppelte IDs in Backups werden dedupliziert
-- Tag-Filter escaped LIKE-Wildcards (`%`, `_`, `\`) mit `ESCAPE`-Klausel — `a_b` matcht nicht mehr `axb` (API + MCP `memory_list`)
-- MCP-Protokoll (2026-07-28): fehlendes `jsonrpc`-Feld wird toleriert, falscher Wert → `-32600`; Notifications für unbekannte Methoden bleiben unbeantwortet; Batch-Requests → ein Error-Objekt (Batching wurde in 2026-07-28 gestrichen); nicht-numerisches `limit` → sauberer Default statt NaN
-- Import behält `createdAt`/`updatedAt` aus der Backup-Datei (optionaler Timestamp-Parameter); Obsidian-Resync überspringt unveränderte Notizen, statt das Frontmatter-Datum zu überschreiben
-- Sanitizing entschärft: Steuerzeichen/NUL werden überall bereinigt, HTML-Stripping nur noch beim Roh-HTML-Ingest (URL-Clipper) — Code-Beispiele in Memories bleiben unversehrt (Frontend rendert via react-markdown)
-- DB-Change-Watcher vergleicht Zähler/Zeitstempel getrennt statt `parseInt` auf einem Fingerprint-String
-- `npm start` ohne `NODE_ENV` liefert jetzt zuverlässig das statische `dist/` statt des Vite-Dev-Servers (Vite nur noch ohne Build und außerhalb der Produktion)
-- MCP-stdio: Antworten werden serialisiert auf stdout geschrieben (Verarbeitung bleibt parallel)
-- Listen-Fehler (z. B. EADDRINUSE) beenden den Server mit klarer Logausgabe
+### Server & core
+- **Store cap 1000 → 5000:** `/api/memories`, Markdown export and replace-import now list completely (pagination instead of silently truncating above 1000 nodes)
+- A replace-import with duplicate IDs answers cleanly with 409 instead of 500; duplicate IDs in backups are deduplicated
+- The tag filter escapes LIKE wildcards (`%`, `_`, `\`) with an `ESCAPE` clause — `a_b` no longer matches `axb` (API and MCP `memory_list`)
+- MCP protocol (2026-07-28): a missing `jsonrpc` field is tolerated, a wrong value gives `-32600`; notifications for unknown methods stay unanswered; batch requests return a single error object (batching was dropped in 2026-07-28); a non-numeric `limit` falls back to a clean default instead of NaN
+- Import preserves `createdAt`/`updatedAt` from the backup file (optional timestamp parameter); an Obsidian resync skips unchanged notes instead of overwriting the frontmatter date
+- Sanitising relaxed: control characters and NUL are cleaned everywhere, HTML stripping now only on raw HTML ingest (URL clipper) — code samples in memories survive intact (the frontend renders via react-markdown)
+- The DB change watcher compares counters and timestamps separately instead of running `parseInt` over a fingerprint string
+- `npm start` without `NODE_ENV` now reliably serves the static `dist/` instead of the Vite dev server (Vite only without a build and outside production)
+- MCP stdio: responses are written to stdout serialised (processing stays parallel)
+- Listen errors (e.g. EADDRINUSE) terminate the server with a clear log line
 
 ### Electron
-- Server startet VOR dem Fenster; Lade-Logik pollt `/api/health` (30 s statt blindem 5×-TCP-Retry)
-- CSP ohne `'unsafe-inline'` für Scripts im gepackten Build (dist/index.html hat keine Inline-Scripts); Dev-Modus mit Vite-Refresh bleibt funktionsfähig
-- `NODE_ENV=production` nur noch für gepackte Apps
+- The server starts BEFORE the window; the loading logic polls `/api/health` (30 s instead of a blind 5× TCP retry)
+- CSP without `'unsafe-inline'` for scripts in the packaged build (`dist/index.html` has no inline scripts); dev mode with Vite refresh keeps working
+- `NODE_ENV=production` only for packaged apps
 
-### Wartbarkeit
-- Neue Versions-Quelle `src/core/version.ts` (v2.2.0): Health-Endpoint, MCP `SERVER_INFO` und package.json teilen sich `APP_VERSION` (Test gegen Drift)
-- Build-Only-Dependencies (vite, @vitejs/plugin-react, @tailwindcss/vite, tailwindcss, autoprefixer) in `devDependencies` — das gepackte App-Bundle braucht sie zur Laufzeit nicht
-- CI: Release-Job auf Node 22, `electron-builder`-Build bricht die CI bei Fehlern (kein `|| true` mehr)
-- `src/lib/semantic.ts`: Embedding-Suche POSTet den Bestand in Batches (max 100 Items bzw. ~700k Zeichen pro Request) statt alles in einem Payload
-- Dokumentation aufgeräumt (AGENTS.md, README, `.env.example` mit den wirklich gelesenen Variablen, AI-Studio-Reste entfernt); Testsuite: 270 Tests
+### Maintainability
+- New version source `src/core/version.ts` (v2.2.0): the health endpoint, MCP `SERVER_INFO` and package.json share `APP_VERSION` (with a test against drift)
+- Build-only dependencies (vite, @vitejs/plugin-react, @tailwindcss/vite, tailwindcss, autoprefixer) moved to `devDependencies` — the packaged app bundle does not need them at runtime
+- CI: release job on Node 22, and an `electron-builder` build failure now fails CI (no more `|| true`)
+- `src/lib/semantic.ts`: embedding search POSTs the corpus in batches (max 100 items or ~700k characters per request) instead of one payload
+- Documentation tidied (AGENTS.md, README, `.env.example` listing the variables actually read, AI Studio leftovers removed); test suite: 270 tests
 
 ## [2.1.0] — 2026-09-02
 
 ### Fixes (UI)
-- **Chat-Header:** zeigt jetzt den echten KI-Verbindungsstatus statt fälschlich „OpenAI (GPT) · gpt-4o-mini". Ohne verbundene KI → „Keine KI verbunden" (grauer Status-Dot). Lokale KI (Ollama/LM Studio) wird automatisch erkannt und per Ein-Klick verbunden (neue Funktion `resolveAIConnection`, 5 Unit-Tests).
-- **Wissens-Karten:** Tag-Footer überlappt den Inhaltstext nicht mehr — `MemoryCard` auf 3-Zeilen-Grid umgestellt, Layout-Animation entschärft (`layout="position"`).
+- **Chat header:** now shows the real AI connection status instead of falsely claiming "OpenAI (GPT) · gpt-4o-mini". With no AI connected → "No AI connected" (grey status dot). Local AI (Ollama/LM Studio) is detected automatically and connected in one click (new function `resolveAIConnection`, 5 unit tests).
+- **Knowledge cards:** the tag footer no longer overlaps the body text — `MemoryCard` moved to a 3-row grid, layout animation toned down (`layout="position"`).
 
-### Tests & Qualität
-- Test-Suite von 42 auf **236 Tests** ausgebaut; Gesamt-Coverage **~91 %** (Kern `src/core` **100 % der Funktionen**)
-- Vitest v8-Coverage mit Schwellen als **CI-Gate** (`npm run test:cov`) — Regressionen der Abdeckung brechen die CI
-- Neue Testabdeckung: `migrate.ts` (Legacy-JSON-Migration, vorher 0 %), `embeddings.ts` (Chunking/Cosine/Queue), `src/lib/*` unter jsdom (Provider, Profil, SSE, fetch-Client, Tokenizer), `server.ts` (HTTP + `/mcp` + Chat-Proxy via supertest), UI-Kernkomponenten (Testing-Library)
-- `server.ts`: `createApp(store)` als testbarer Export ausgelagert (Bootstrap/`listen` getrennt)
-- CI: `build.yml` um Coverage-Gate, Retrieval-Eval und GitHub-nativen Coverage-Job-Summary erweitert; Coverage-/CI-/Tests-Badges im README
+### Tests & quality
+- Test suite grown from 42 to **236 tests**; overall coverage **~91 %** (core `src/core` at **100 % of functions**)
+- Vitest v8 coverage with thresholds as a **CI gate** (`npm run test:cov`) — coverage regressions break CI
+- New coverage: `migrate.ts` (legacy JSON migration, previously 0 %), `embeddings.ts` (chunking/cosine/queue), `src/lib/*` under jsdom (providers, profile, SSE, fetch client, tokenizer), `server.ts` (HTTP + `/mcp` + chat proxy via supertest), core UI components (Testing Library)
+- `server.ts`: `createApp(store)` extracted as a testable export (bootstrap and `listen` separated)
+- CI: `build.yml` extended with the coverage gate, retrieval eval and a GitHub-native coverage job summary; coverage/CI/tests badges in the README
 
 ## [2.0.0] — 2026-09-01
 
-Der SOTA-Release: KEPTA wird vom Notizspeicher zum vollwertigen Agenten-Gedächtnis.
+The SOTA release: KEPTA goes from a note store to a full agent memory.
 
-### Storage (Breaking: JSON → SQLite)
-- SQLite via `node:sqlite` (kein nativer Build, FTS5 inklusive), WAL-Modus, Datei `~/.kepta/kepta.db`
-- Automatische, idempotente Migration aus `memories.json` mit Backup nach `~/.kepta/backup/`
-- Memory-Modell v2: `scope` (user/agent/session), `type` (semantic/episodic/procedural), `confidence`, `valid_from`/`valid_to`, `superseded_by`, `deleted_at` (Papierkorb statt Hard-Delete), Retention-Spalten (`last_access_at`, `access_count`, `utility`)
-- Entitäten + Relationen (leichter Wissensgraph) mit eigener Gültigkeit
+### Storage (breaking: JSON → SQLite)
+- SQLite via `node:sqlite` (no native build, FTS5 included), WAL mode, file `~/.kepta/kepta.db`
+- Automatic, idempotent migration from `memories.json` with a backup to `~/.kepta/backup/`
+- Memory model v2: `scope` (user/agent/session), `type` (semantic/episodic/procedural), `confidence`, `valid_from`/`valid_to`, `superseded_by`, `deleted_at` (trash instead of hard delete), retention columns (`last_access_at`, `access_count`, `utility`)
+- Entities and relations (a lightweight knowledge graph) with their own validity
 
 ### Retrieval
-- Eine Engine für UI, HTTP-API und MCP (vorher 3 duplizierte Suchpfade; Agenten bekamen die schlechteste Suche)
-- Pipeline: FTS5-BM25 + Vektor-KNN (persistente Chunk-Embeddings, Float32-BLOBs) + Entity-Match → RRF-Fusion (k=60) → Recency/Konfidenz-Boosts → temporale Abwertung (abgelaufen ×0.5, ersetzt ×0.4) → Oblivion-Retention-Faktor
-- Embedding-Hintergrund-Queue via Ollama (`nomic-embed-text` Default, konfigurierbar); ohne Ollama läuft alles rein lexikalisch
-- Konsolidierung: Dubletten über Embedding-Ähnlichkeit (≥0.92) + lexikalischer Fallback → supersede statt löschen
+- One engine for the UI, the HTTP API and MCP (previously 3 duplicated search paths; agents got the worst search)
+- Pipeline: FTS5 BM25 + vector KNN (persistent chunk embeddings, Float32 BLOBs) + entity match → RRF fusion (k=60) → recency/confidence boosts → temporal downweighting (expired ×0.5, superseded ×0.4) → Oblivion retention factor
+- Embedding background queue via Ollama (`nomic-embed-text` by default, configurable); without Ollama everything runs purely lexically
+- Consolidation: duplicates by embedding similarity (≥0.92) plus a lexical fallback → supersede rather than delete
 
 ### MCP
-- Protokoll `2026-07-28` (stateless core, `server/discover`, `_meta`-Versioning), kompatibel zu `2025-06-18` und `2024-11-05`
-- 8 Tools mit `outputSchema` + `structuredContent`: `memory_search`, `memory_save`, `memory_update`, `memory_delete`, `memory_list`, `memory_graph`, `memory_consolidate`, `memory_forget`
-- Neuer Transport: Streamable HTTP (`POST /mcp`) neben stdio
-- `[[Wiki-Links]]` beim Speichern → Entitäten + `mentions`-Relationen
+- Protocol `2026-07-28` (stateless core, `server/discover`, `_meta` versioning), compatible with `2025-06-18` and `2024-11-05`
+- 8 tools with `outputSchema` + `structuredContent`: `memory_search`, `memory_save`, `memory_update`, `memory_delete`, `memory_list`, `memory_graph`, `memory_consolidate`, `memory_forget`
+- New transport: Streamable HTTP (`POST /mcp`) alongside stdio
+- `[[Wiki links]]` on save → entities plus `mentions` relations
 
 ### Interop & UI
-- Obsidian-Import (Markdown + YAML-Frontmatter, Wiki-Links → Graph) und -Export (`.md`-Dateien nach `~/.kepta/export/`)
-- Dashboard-Suche jetzt gegen die Server-Engine (lokal instant, Server asynchron); Papierkorb-Ansicht mit Wiederherstellen
-- MemoryCard: Typ-Badges + ABGELAUFEN/ERSETZT-Marker; KnowledgeGraph nutzt echte Relationen
-- Chat: date-aware Prompting (Heute-Datum + Gültigkeits-Marker im Kontext)
+- Obsidian import (Markdown + YAML frontmatter, wiki links → graph) and export (`.md` files to `~/.kepta/export/`)
+- Dashboard search now runs against the server engine (instant locally, server asynchronously); trash view with restore
+- MemoryCard: type badges plus EXPIRED/SUPERSEDED markers; KnowledgeGraph uses real relations
+- Chat: date-aware prompting (today's date and validity markers in the context)
 
-### Qualität
-- TypeScript `strict: true`; 42 vitest-Tests (Store, Engine, MCP-Protokoll, Obsidian-Interop, Suche)
-- CI: Node 22, `npm test` + `npm audit` im Build-Job
-- Eval-Harness (`npm run eval`): Fixkorpus mit 25 Queries → Hit@1 76% → 92%, Precision@5 84% → 92% (vs. v1-Substring-Suche, rein lexikalisch)
+### Quality
+- TypeScript `strict: true`; 42 vitest tests (store, engine, MCP protocol, Obsidian interop, search)
+- CI: Node 22, `npm test` + `npm audit` in the build job
+- Eval harness (`npm run eval`): fixed corpus of 25 queries → Hit@1 76 % → 92 %, Precision@5 84 % → 92 % (against the v1 substring search, purely lexical)
 
-### Entfernt
-- Tote `firebase`-Dependency (AuthContext war bereits lokaler No-Op-Stub) und Firestore-Reste
-- Doppeltes Lockfile (`bun.lock`), Repo-Artefakt `project.tar.gz`
-- Duplizierte Suchimplementierungen in `server.ts`/`mcp-server.ts`
+### Removed
+- The dead `firebase` dependency (AuthContext was already a local no-op stub) and Firestore leftovers
+- A duplicate lockfile (`bun.lock`) and the repo artifact `project.tar.gz`
+- Duplicated search implementations in `server.ts` and `mcp-server.ts`
 
 ## [1.0.0 – 1.0.4] — 2026-08-31
 
-- Erste öffentliche Version: lokale Knoten mit Tags, hybride TF-IDF+BM25-Suche, 20 KI-Provider + Ollama/LM Studio, SSE-Streaming, MCP-stdio-Server (3 Tools), JSON-Export, Inbox-Watcher, URL-Clipper, Onboarding-Wizard, macOS-DMG + Linux-snap.
+- First public version: local nodes with tags, hybrid TF-IDF + BM25 search, 20 AI providers plus Ollama/LM Studio, SSE streaming, MCP stdio server (3 tools), JSON export, inbox watcher, URL clipper, onboarding wizard, macOS DMG and Linux snap.

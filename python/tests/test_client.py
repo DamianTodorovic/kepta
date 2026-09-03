@@ -157,7 +157,7 @@ def test_graph(client):
 
 def test_fehler_bei_nicht_erreichbarem_server():
     c = KeptaClient("http://127.0.0.1:9")  # Port 9 nimmt keine Verbindungen an
-    with pytest.raises(KeptaError, match="nicht erreichbar"):
+    with pytest.raises(KeptaError, match="unreachable"):
         c.health()
     assert c.is_alive() is False
 

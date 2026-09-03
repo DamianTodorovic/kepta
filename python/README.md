@@ -1,101 +1,103 @@
 # kepta
 
-**Python-Client für [KEPTA](https://github.com/DamianTodorovic/kepta) — dem lokalen Gedächtnis für KI-Agenten.**
+**Python client for [KEPTA](https://github.com/DamianTodorovic/kepta) — local memory for AI agents.**
 
-Deine Agenten vergessen dich nach jedem Gespräch. KEPTA behebt das — mit einer SQLite-Datei auf deinem Rechner. Kein Konto, keine Cloud, keine Telemetrie.
+Your agents forget you after every conversation. KEPTA fixes that — with a SQLite file on your own machine. No account, no cloud, no telemetry.
 
-Dieses Paket ist der **Client, nicht die App**. KEPTA läuft als Desktop-Anwendung auf demselben Gerät; hier verbindest du dich damit.
+This package is the **client, not the app**. KEPTA runs as a desktop application on the same device; here you connect to it.
 
 ```bash
 pip install kepta
 ```
 
-## In dreißig Sekunden
+## In thirty seconds
 
 ```python
 from kepta import KeptaClient
 
-kepta = KeptaClient()          # findet die laufende Instanz von allein
+kepta = KeptaClient()          # finds the running instance on its own
 
-kepta.save("Rezept Carbonara", "Guanciale, Pecorino, Eigelb. Keine Sahne.", tags=["kochen"])
+kepta.save("Carbonara", "Guanciale, pecorino, egg yolk. No cream.", tags=["cooking"])
 
-for hit in kepta.search("carbonara ohne sahne"):
+for hit in kepta.search("carbonara without cream"):
     print(f"{hit.score:.2f}  {hit.memory.title}")
 ```
 
-## Wie gesucht wird
+## How search works
 
-Drei Spuren, zusammengefuehrt per Reciprocal Rank Fusion: **Volltext** (BM25), **Vektoren** und **Wissensgraph**.
+Three tracks, fused by Reciprocal Rank Fusion: **full text** (BM25), **vectors** and the **knowledge graph**.
 
-Volltext und Graph laufen sofort. Die Vektor-Spur findet auch, was anders formuliert ist als gefragt — dafuer braucht sie ein lokales Embedding-Modell:
+Full text and graph work immediately. The vector track also finds what is worded differently from the question — for that it needs a local embedding model:
 
 ```bash
 ollama pull nomic-embed-text
 ```
 
-Erst damit findet `search("was koche ich mit Nudeln")` das Carbonara-Rezept, in dem das Wort *Nudeln* gar nicht vorkommt. Fehlt das Modell, bleibt `hit.vector_score` auf `0.0` und die Suche rein lexikalisch — kein Fehler, nur weniger Treffer bei umschriebenen Fragen. Woran du es siehst:
+Only then does `search("what do I cook with pasta")` find the carbonara recipe, which does not contain the word *pasta* at all. Without the model, `hit.vector_score` stays at `0.0` and search remains lexical — not an error, just fewer hits on paraphrased questions. How to tell:
 
 ```python
-kepta.health()["embeddings"]     # {'total': 128, 'embedded': 128, ...} — oder ueberall 0
+kepta.health()["embeddings"]     # {'total': 128, 'embedded': 128, ...} — or zeros everywhere
 ```
 
-## Warum das interessant ist
+## Why this is interesting
 
-**Dasselbe Gedächtnis wie deine Agenten.** Claude Desktop und Cursor sprechen über MCP mit derselben Datenbank. Was dein Python-Skript schreibt, weiß Claude in der nächsten Antwort.
+**The same memory as your agents.** Claude Desktop and Cursor talk to the same database over MCP. What your Python script writes, Claude knows in its next answer.
 
-**Erinnerungen altern.** Jede hat Typ, Gültigkeit und Konfidenz. Zieht jemand um, verdrängt die neue Adresse die alte — die alte bleibt als Historie und fällt im Ranking ab. Widersprüche stapeln sich nicht.
+**Memories age.** Each one has a type, a validity window and a confidence score. When someone moves house, the new address supersedes the old one — the old one stays as history and drops in the ranking. Contradictions do not pile up.
 
 ```python
-alt = kepta.save("Wohnort", "Alex wohnt in Hamburg.")
-kepta.update(alt.id, valid_to=1788400000000)      # abgelaufen ab diesem Zeitpunkt
-kepta.save("Wohnort aktuell", "Alex wohnt jetzt in Leipzig.")
+old = kepta.save("Home", "Alex lives in Hamburg.")
+kepta.update(old.id, valid_to=1788400000000)      # expired from this point on
+kepta.save("Home, current", "Alex now lives in Leipzig.")
 
 m = kepta.list()[0]
-m.is_expired, m.is_superseded                      # Zustand direkt am Objekt
+m.is_expired, m.is_superseded                      # state right on the object
 ```
 
-**Keine Abhängigkeiten.** Nur die Standardbibliothek. Ein Gedächtnis, das Privatsphäre verspricht, sollte keinen fremden Code in deinen Prozess holen.
+**No dependencies.** Standard library only. A memory that promises privacy should not pull foreign code into your process.
 
-## Die Verbindung finden
+## Finding the connection
 
-`KeptaClient()` sucht in dieser Reihenfolge:
+`KeptaClient()` looks in this order:
 
-1. Umgebungsvariable `KEPTA_URL`
-2. `~/.kepta/endpoint.json` — die Adressdatei, die KEPTA beim Start schreibt
-3. `http://127.0.0.1:3000` als Rückfall für den Entwicklungsmodus
+1. Environment variable `KEPTA_URL`
+2. `~/.kepta/endpoint.json` — the address file KEPTA writes on startup
+3. `http://127.0.0.1:3000` as a fallback for development mode
 
-Schritt 2 ist der wichtige: Die gepackte App wählt einen zufälligen Port. Explizit geht natürlich auch:
+Step 2 is the important one: the packaged app picks a random port. Being explicit works too, of course:
 
 ```python
 kepta = KeptaClient("http://127.0.0.1:52341")
 ```
 
-Läuft nichts, bekommst du keinen kryptischen Netzwerkfehler, sondern einen Satz, der sagt, was zu tun ist:
+If nothing is running you do not get a cryptic network error but a sentence that says what to do:
 
 ```python
 if not kepta.is_alive():
-    print("KEPTA läuft nicht — App starten oder KEPTA_URL setzen.")
+    print("KEPTA is not running — start the app or set KEPTA_URL.")
 ```
 
-## Was der Client kann
+## What the client can do
 
-| Methode | Zweck |
+| Method | Purpose |
 |---|---|
-| `health()` · `is_alive()` | Status, Version, Anzahl Knoten |
-| `list(trash=False)` | Alle Erinnerungen oder den Papierkorb |
-| `search(query, top_k, tags, type, scope)` | Hybride Suche mit temporaler Gewichtung |
-| `save(title, content, …)` | Anlegen — Typ, Tags, Konfidenz, Gültigkeit |
-| `update(id, **felder)` | Ändern; `valid_to=` statt `validTo=` |
-| `delete(id, permanent=False)` | Papierkorb, auf Wunsch endgültig |
-| `restore(id)` | Aus dem Papierkorb zurückholen |
-| `graph()` | Entitäten und Relationen |
+| `health()` · `is_alive()` | Status, version, node count |
+| `list(trash=False)` | All memories, or the trash |
+| `search(query, top_k, tags, type, scope)` | Hybrid retrieval with temporal weighting |
+| `save(title, content, …)` | Create — type, tags, confidence, validity |
+| `update(id, **fields)` | Change; use `valid_to=` rather than `validTo=` |
+| `delete(id, permanent=False)` | Trash, or permanently if you insist |
+| `restore(id)` | Bring it back from the trash |
+| `graph()` | Entities and relations |
 
-`Memory` und `SearchHit` sind eingefrorene Dataclasses mit Typannotationen. `SearchHit` zeigt neben dem Gesamtwert auch die Einzelspuren `vector_score` und `lexical_score`.
+`Memory` and `SearchHit` are frozen dataclasses with type annotations. Alongside the overall score, `SearchHit` exposes the individual tracks as `vector_score` and `lexical_score`.
 
-## KEPTA installieren
+## Installing KEPTA
 
-Die App gibt es für macOS, Windows und Linux unter [Releases](https://github.com/DamianTodorovic/kepta/releases) — jeweils Intel und ARM. MIT-Lizenz, kostenlos.
+The app is available for macOS, Windows and Linux under [Releases](https://github.com/DamianTodorovic/kepta/releases) — Intel and ARM in each case. MIT licensed, free.
 
-## Lizenz
+Note: the documentation is English, but **the desktop UI is currently German only**. This client, the HTTP API and MCP are language-neutral.
+
+## License
 
 MIT
