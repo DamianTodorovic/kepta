@@ -208,6 +208,33 @@ Der Chat existiert, um Retrieval zu beweisen. Der Alltag läuft über MCP.
 
 </details>
 
+## 🏢 KEPTA Enterprise — in Vorbereitung
+
+> **Alles oben Genannte bleibt frei. Dauerhaft.** Keine Funktion, die je in der Community-Ausgabe war, wandert in eine kommerzielle. Der Strich bewegt sich nur in eine Richtung.
+
+Es gibt einen Punkt, an dem lokales Gedächtnis aufhört, eine Privatsache zu sein: sobald eine **zweite Person** im Spiel ist — eine Kollegin, eine Mandantin, eine Prüferin. Dann reicht es nicht, dass die Daten den Rechner nicht verlassen. Man muss es **belegen** können.
+
+Genau da setzt KEPTA Enterprise an. Der Grundsatz dahinter ist bewusst als Regel formuliert, nicht als Feature-Liste, damit auch künftige Funktionen vorhersagbar zugeordnet sind:
+
+> Was ein Einzelner für sich selbst tut, ist frei.
+> Was eine Organisation gegenüber Dritten verantworten muss, ist kommerziell.
+
+**Woran gearbeitet wird**
+
+| | |
+|---|---|
+| **Mehrere Arbeitsplätze** | Geteiltes und getrenntes Gedächtnis, Mandantentrennung, Ende-zu-Ende-verschlüsselte Replikation zwischen den Geräten einer Kanzlei — ohne fremden Server |
+| **Nachweisbarkeit** | Manipulationsfestes Zugriffsprotokoll, erzwungene Löschfristen mit Löschnachweis, Ausgangsprotokoll: was ging wann an welches Modell |
+| **Vertrauensinfrastruktur** | Verschlüsselung im Ruhezustand, signierte und notarisierte Installer, maschinenlesbare SBOM, TOM-Dokumentation |
+| **Verbindlichkeit** | Zugesicherte Reaktionszeiten, benannter Ansprechpartner, Quellcode-Hinterlegung beim Treuhänder |
+| **Wirtschaftlichkeit** | Kosten-Dashboard: eingesparte Tokens und Euro je Arbeitsplatz — die Rechnung, die lokales Gedächtnis erst rechtfertigt |
+
+**Für wen** — Kanzleien, Praxen, Steuerberatungen, Forschungsgruppen und Ingenieurbüros im DACH-Raum. Überall dort, wo KI mit Gedächtnis gebraucht wird und die Daten das Haus nicht verlassen dürfen.
+
+**Warum der Kern trotzdem offen bleibt** — wer belegen muss, dass nichts abfließt, soll das nachlesen können statt es zu glauben. Der geprüfte Kern ist mehr wert als ein Versprechen. Fällt der Anbieter aus, arbeitet der Kunde mit dem MIT-Kern weiter; bei proprietärer Software wäre an dieser Stelle Schluss.
+
+**Interesse?** Öffne ein [Issue](https://github.com/DamianTodorovic/kepta/issues) mit dem Label `enterprise` oder schreib an `hello@kepta.app`. Der Preis wird mit den ersten Pilotkunden festgelegt, nicht vorher am Schreibtisch erfunden. Ein Termin steht noch nicht fest — was fehlt, sind keine Ideen, sondern Gespräche mit Leuten, die das wirklich brauchen.
+
 ## ⚡ Quick-Start
 
 ```bash
