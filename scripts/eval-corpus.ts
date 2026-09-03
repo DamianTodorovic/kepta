@@ -23,8 +23,8 @@ const DAY = 24 * 3600 * 1000;
 export const CORPUS: EvalMemory[] = [
   { id: "m01", title: "Server Deployment", content: "Die Produktions-App läuft auf Hetzner CPX31, Deploy via PM2 und GitHub Actions. Domain kepta.app über Cloudflare.", tags: ["devops", "server"] },
   { id: "m02", title: "Datenbank Auswahl", content: "PostgreSQL 17 für die Hauptdatenbank, Redis für Sessions und Caching. Backups täglich 3 Uhr.", tags: ["datenbank", "devops"] },
-  { id: "m03", title: "Wohnort", content: "Damian wohnt in Berlin Mitte.", tags: ["personal"], updatedAt: EVAL_NOW - 400 * DAY },
-  { id: "m04", title: "Wohnort aktuell", content: "Damian ist im August 2026 nach München umgezogen, Wohnort jetzt München Schwabing.", tags: ["personal"], updatedAt: EVAL_NOW - 30 * DAY },
+  { id: "m03", title: "Wohnort", content: "Alex wohnt in Hamburg Altona.", tags: ["personal"], updatedAt: EVAL_NOW - 400 * DAY },
+  { id: "m04", title: "Wohnort aktuell", content: "Alex ist im August 2026 nach Leipzig umgezogen, Wohnort jetzt Leipzig Suedvorstadt.", tags: ["personal"], updatedAt: EVAL_NOW - 30 * DAY },
   { id: "m05", title: "Rust Projekt Skeleton", content: "Axum Webserver mit Tokio Runtime, Fehlerbehandlung über anyhow und thiserror.", tags: ["rust", "web"] },
   { id: "m06", title: "Rezept Carbonara", content: "Spaghetti Carbonara: Guanciale, Pecorino Romano, Eigelb, schwarzer Pfeffer. Kein Sahne!", tags: ["kochen", "rezept"] },
   { id: "m07", title: "Steuerabgabe Termin", content: "Umsatzsteuererklärung muss bis 31. Juli 2026 abgegeben werden.", tags: ["finanzen", " Deadlines"], validTo: EVAL_NOW - 30 * DAY },
@@ -43,7 +43,7 @@ export const CORPUS: EvalMemory[] = [
   { id: "m20", title: "Impfpass", content: "Tetanus-Auffrischung war 2019, nächste fällig 2029. Grippeimpfung jährlich im Oktober.", tags: ["gesundheit"] },
   { id: "m21", title: "Go vs Rust Entscheidung", content: "Für das CLI-Tool bleibt Rust, Go wurde verworfen weil Cross-Compilation zwar einfacher, aber Generics fehlen.", tags: ["rust", "go", "entscheidung"] },
   { id: "m22", title: "Autoversicherung", content: "Kfz-Versicherung bei HUK24, VW Golf, Kennzahl 4711, jährlich kündbar zum 31.12.", tags: ["auto", "finanzen"] },
-  { id: "m23", title: "Auto Werkstatt", content: "Vertragswerkstatt Auto Eder in München-Pasing, Ansprechpartner Herr Kilic, Terminvereinbarung online.", tags: ["auto"] },
+  { id: "m23", title: "Auto Werkstatt", content: "Vertragswerkstatt Nordring in Leipzig-Plagwitz, Terminvereinbarung online, Ersatzwagen auf Anfrage.", tags: ["auto"] },
   { id: "m24", title: "Sperrmüll Abholung", content: "Sperrmüll-Termin war am 15. Mai 2026, abgeschlossen.", tags: ["haushalt"], validTo: EVAL_NOW - 100 * DAY },
   { id: "m25", title: "Keller Renovierung", content: "Keller wird im Oktober 2026 renoviert, Handwerker Anton Bauer, Kostenvoranschlag 8500 Euro.", tags: ["haushalt"] },
   { id: "m26", title: "LLM Kontext", content: "Kontextfenster: GPT-5 400k Tokens, Claude Sonnet 1M, Gemini 2M. RAG reduziert Kosten um 90 Prozent.", tags: ["ki", "llm"] },
@@ -56,7 +56,7 @@ export const CORPUS: EvalMemory[] = [
 export const QUERIES: EvalQuery[] = [
   { query: "Wo läuft die Produktion?", relevant: ["m01"] },
   { query: "Welche Datenbank nutzen wir?", relevant: ["m02"] },
-  { query: "Wo wohnt Damian gerade?", relevant: ["m04"] },
+  { query: "Wo wohnt Alex gerade?", relevant: ["m04"] },
   { query: "Umsatzsteuer Frist", relevant: ["m08"] },
   { query: "Wie ist die hybride Suche implementiert?", relevant: ["m14"] },
   { query: "Welche Embedding-Modelle lokal?", relevant: ["m13"] },

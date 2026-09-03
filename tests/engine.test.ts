@@ -63,13 +63,13 @@ describe("searchMemories (RRF-Fusion)", () => {
   });
 
   it("markiert abgelaufene und ersetzte Memories und stuft sie herab", async () => {
-    store.createMemory({ title: "Wohnort", content: "Berlin Mitte", validTo: Date.now() - 1000, updatedAt: 9000 });
-    store.createMemory({ title: "Wohnort aktuell", content: "München Schwabing", validFrom: Date.now(), updatedAt: 8000 });
+    store.createMemory({ title: "Wohnort", content: "Hamburg Altona", validTo: Date.now() - 1000, updatedAt: 9000 });
+    store.createMemory({ title: "Wohnort aktuell", content: "Leipzig Suedvorstadt", validFrom: Date.now(), updatedAt: 8000 });
     seedEmbeddings(store);
 
     const res = await searchMemories(store, { query: "Wohnort" });
-    const expired = res.hits.find((h) => h.memory.content.includes("Berlin"));
-    const fresh = res.hits.find((h) => h.memory.content.includes("München"));
+    const expired = res.hits.find((h) => h.memory.content.includes("Hamburg"));
+    const fresh = res.hits.find((h) => h.memory.content.includes("Leipzig"));
     expect(expired?.expired).toBe(true);
     expect(fresh?.expired).toBe(false);
     // Abgelaufene wird trotz neuerem updatedAt durch Temporal-Faktor herabgestuft

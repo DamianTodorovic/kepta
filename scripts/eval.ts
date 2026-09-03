@@ -84,7 +84,7 @@ async function main() {
       updatedAt: m.updatedAt ?? now - 60 * 24 * 3600 * 1000,
     });
   }
-  // Temporale Kette: m03 (Berlin) wird durch m04 (München) ersetzt
+  // Temporale Kette: m03 (Hamburg) wird durch m04 (Leipzig) ersetzt
   store.supersedeMemory("m03", "m04");
   // Duplikat-Paar m16/m17 bleibt — Engine-Konsolidierung würde es finden
 
