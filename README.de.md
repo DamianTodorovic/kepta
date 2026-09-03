@@ -70,6 +70,11 @@ Kein Dienst dazwischen, kein Konto, keine Telemetrie. Der Server lauscht ausschl
 
 ## 🔍 Wie die Suche entscheidet
 
+<p align="center"><img src="docs/how-search-decides.gif" alt="Eine Anfrage faechert sich in Volltext, Vektor-KNN und Wissensgraph auf; die drei Rangfolgen verschmelzen per RRF, Abgelaufenes und Ersetztes wird abgewertet, ein Treffer bleibt oben" width="900"></p>
+
+<sub>Drei Sucher bewerten denselben Bestand unterschiedlich. RRF entscheidet über Ränge statt über Rohwerte — so kann keine Spur allein dadurch gewinnen, dass sie größere Zahlen liefert. Die genaue Fassung:</sub>
+
+
 ```mermaid
 flowchart TD
   Q(["Anfrage"]) --> A["FTS5 · BM25<br/>lexikalisch"]
