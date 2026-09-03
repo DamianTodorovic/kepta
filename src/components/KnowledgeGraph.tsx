@@ -372,7 +372,7 @@ export function KnowledgeGraph({ memories, onSelectMemory }: KnowledgeGraphProps
           <input
             value={filter}
             onChange={(e) => setFilter(e.target.value)}
-            placeholder="Graph filtern…"
+            placeholder="Filter the graph…"
             className="hud-input w-full pl-8 pr-3 py-2 rounded-lg text-sm"
           />
         </div>
@@ -412,8 +412,8 @@ export function KnowledgeGraph({ memories, onSelectMemory }: KnowledgeGraphProps
           </div>
         )}
         <div className="flex items-center gap-1 ml-auto">
-          <button onClick={() => zoom(1)} className="btn-ghost p-2 rounded-lg" title="Hineinzoomen"><ZoomIn className="w-4 h-4" /></button>
-          <button onClick={() => zoom(-1)} className="btn-ghost p-2 rounded-lg" title="Herauszoomen"><ZoomOut className="w-4 h-4" /></button>
+          <button onClick={() => zoom(1)} className="btn-ghost p-2 rounded-lg" title="Zoom in"><ZoomIn className="w-4 h-4" /></button>
+          <button onClick={() => zoom(-1)} className="btn-ghost p-2 rounded-lg" title="Zoom out"><ZoomOut className="w-4 h-4" /></button>
           <button onClick={fitView} className="btn-ghost p-2 rounded-lg" title="Reset the view"><Maximize2 className="w-4 h-4" /></button>
         </div>
       </div>
