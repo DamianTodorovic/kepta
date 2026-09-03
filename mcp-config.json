@@ -7,14 +7,14 @@
         "tsx",
         "src/mcp-server.ts"
       ],
-      "cwd": "/ABSOLUTER/PFAD/ZU/kepta",
+      "cwd": "/ABSOLUTE/PATH/TO/kepta",
       "env": {}
     },
     "kepta-built": {
       "_comment": "Alternative nach 'npm run build:mcp' — ohne tsx, direkt Node auf gebuildettem CJS",
       "command": "node",
       "args": [
-        "/ABSOLUTER/PFAD/ZU/kepta/dist/mcp-server.cjs"
+        "/ABSOLUTE/PATH/TO/kepta/dist/mcp-server.cjs"
       ],
       "env": {}
     }
