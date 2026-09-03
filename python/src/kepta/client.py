@@ -124,7 +124,12 @@ class KeptaClient:
 
     >>> kepta = KeptaClient()
     >>> kepta.save("Rezept Carbonara", "Guanciale, Pecorino, Eigelb.", tags=["kochen"])
-    >>> [h.memory.title for h in kepta.search("was koche ich mit Nudeln")]
+    >>> [h.memory.title for h in kepta.search("carbonara ohne sahne")]
+
+    Die Suche verbindet Volltext, Vektoren und Wissensgraph. Die Vektor-Spur
+    braucht ein lokales Embedding-Modell (``ollama pull nomic-embed-text``);
+    ohne das Modell bleibt ``SearchHit.vector_score`` auf 0.0 und es wird rein
+    lexikalisch gesucht.
     """
 
     def __init__(self, url: str | None = None, timeout: float = 20.0) -> None:
