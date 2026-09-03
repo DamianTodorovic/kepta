@@ -1,51 +1,55 @@
 <p align="center"><img src="public/kepta-logo.svg" width="88" alt="KEPTA"></p>
-<h1 align="center">KEPTA — Behält, was zählt</h1>
-<p align="center"><strong>Das lokale Gehirn für deine KI-Agenten. Ohne Cloud. Ohne Abo.</strong><br>SQLite + hybride Suche + Wissensgraph + MCP.</p>
+<h1 align="center">KEPTA — Keeps what matters</h1>
+<p align="center"><strong>A local brain for your AI agents. No cloud. No subscription.</strong><br>SQLite + hybrid retrieval + knowledge graph + MCP.</p>
 
-<p align="center"><a href="https://github.com/DamianTodorovic/kepta/releases"><img alt="Release" src="https://img.shields.io/github/v/release/DamianTodorovic/kepta?label=Download"></a> <a href="https://github.com/DamianTodorovic/kepta/actions/workflows/build.yml"><img alt="CI" src="https://github.com/DamianTodorovic/kepta/actions/workflows/build.yml/badge.svg"></a> <img alt="Coverage" src="https://img.shields.io/badge/coverage-91%25-brightgreen"> <img alt="Tests" src="https://img.shields.io/badge/tests-314%20passing-brightgreen"> <a href="LICENSE"><img alt="MIT" src="https://img.shields.io/badge/License-MIT-black"></a> <img alt="Platform" src="https://img.shields.io/badge/platform-macOS%20%7C%20Windows%20%7C%20Linux-lightgrey"></p>
+<p align="center"><strong>English</strong> · <a href="README.de.md">🇩🇪 Deutsch</a></p>
 
-## 🎬 So sieht KEPTA aus
+<p align="center"><a href="https://github.com/DamianTodorovic/kepta/releases"><img alt="Release" src="https://img.shields.io/github/v/release/DamianTodorovic/kepta?label=Download"></a> <a href="https://github.com/DamianTodorovic/kepta/actions/workflows/build.yml"><img alt="CI" src="https://github.com/DamianTodorovic/kepta/actions/workflows/build.yml/badge.svg"></a> <a href="https://pypi.org/project/kepta/"><img alt="PyPI" src="https://img.shields.io/pypi/v/kepta?label=pip%20install%20kepta"></a> <img alt="Coverage" src="https://img.shields.io/badge/coverage-91%25-brightgreen"> <img alt="Tests" src="https://img.shields.io/badge/tests-314%20passing-brightgreen"> <a href="LICENSE"><img alt="MIT" src="https://img.shields.io/badge/License-MIT-black"></a> <img alt="Platform" src="https://img.shields.io/badge/platform-macOS%20%7C%20Windows%20%7C%20Linux-lightgrey"></p>
 
-<p align="center"><img src="docs/demo.gif" alt="Suche in KEPTA: aus 30 Einträgen wird durch die Eingabe „carbonara" ein Treffer, der sich im Editor öffnet" width="900"></p>
+> **Note on language.** The documentation is English. **The desktop UI is currently German only** — an English UI is planned but not shipped. The MCP tools, the HTTP API and the Python client are language-neutral, so agents work fine either way.
 
-<sub>Tippen, filtern, öffnen — 30 Einträge werden zu einem Treffer. Aufgenommen aus Version 2.4.0.</sub>
+## 🎬 What it looks like
 
-| Index & hybride Suche | Wissensgraph |
+<p align="center"><img src="docs/demo.gif" alt="Searching in KEPTA: typing carbonara narrows 30 entries down to one hit, which opens in the editor" width="900"></p>
+
+<sub>Type, filter, open — 30 entries become one hit. Recorded from version 2.4.0.</sub>
+
+| Index & hybrid search | Knowledge graph |
 |---|---|
 | ![Index](docs/screenshots/01-index.png) | ![Graph](docs/screenshots/03-graph.png) |
-| **Editor — Typ, Gültigkeit, Konfidenz** | **Einrichtung — Themen & Starter-Pack** |
-| ![Editor](docs/screenshots/04-editor.png) | ![Einrichtung](docs/screenshots/05-einrichtung.png) |
+| **Editor — type, validity, confidence** | **Setup — topics & starter pack** |
+| ![Editor](docs/screenshots/04-editor.png) | ![Setup](docs/screenshots/05-einrichtung.png) |
 
-<sub>Aufnahmen aus Version 2.4.0 mit dem Demo-Korpus aus <code>scripts/eval-corpus.ts</code>.</sub>
+<sub>Recorded from version 2.4.0 using the demo corpus in <code>scripts/eval-corpus.ts</code>.</sub>
 
-## 🎯 Use Cases
+## 🎯 What it's for
 
-1. **Ein Gehirn für alle KI-Tools** — Claude Desktop, Cursor & Co. teilen dieselbe Wissensbasis per MCP. Was ein Agent lernt, weiß der nächste sofort.
-2. **Agenten klug halten statt verrotten lassen** — Typ, Gültigkeit, Konfidenz; Widersprüche werden ersetzt (ERSETZT-Kette), Abgelaufenes markiert.
-3. **Second Brain** — Notizen/Projekte/Wissen semantisch auffindbar („was koche ich mit Nudeln" findet das Rezept, sobald `ollama pull nomic-embed-text` einmal gelaufen ist; ohne Embedding-Modell sucht KEPTA rein lexikalisch weiter).
-4. **Wissen ohne Friction** — Dateien reinziehen (PDF/MD/TXT), URLs clippen, Inbox-Ordner beobachten, Chat-Antworten speichern.
-5. **Obsidian-Brücke** — Vault-Import/-Export (Markdown+Frontmatter); `[[Wiki-Links]]` werden zu Graph-Kanten.
-6. **Privat** — alles lokal in `~/.kepta/`, MIT, kein Konto.
-7. **Recherche** — Wissensgraph mit echten Verbindungen, Duplikat-Erkennung, Papierkorb mit Undo.
-8. **Dev-Setup in 2 Minuten** — MCP-Config kopieren, `POST /mcp` (2026-07-28, 8 Tools), HTTP-API, `npm run eval` (Hit@1 92 %).
+1. **One brain for every AI tool** — Claude Desktop, Cursor and anything else that speaks MCP share the same knowledge base. What one agent learns, the next one already knows.
+2. **Keep agents sharp instead of letting them rot** — every memory carries a type, a validity window and a confidence score. Contradictions supersede each other; expired facts are flagged, not silently served.
+3. **A second brain** — notes, projects and knowledge found by meaning. Ask *"what do I cook with pasta"* and the carbonara recipe comes back, once `ollama pull nomic-embed-text` has run. Without an embedding model, search stays lexical and still works.
+4. **Capture without friction** — drag in files (PDF/MD/TXT), clip URLs, watch an inbox folder, save chat answers.
+5. **Obsidian bridge** — vault import and export (Markdown + frontmatter); `[[wiki links]]` become graph edges.
+6. **Private** — everything lives in `~/.kepta/`. MIT licensed, no account.
+7. **Research** — a knowledge graph with real edges, duplicate detection, and a trash can with undo.
+8. **Two-minute dev setup** — copy the MCP config, `POST /mcp` (protocol 2026-07-28, 8 tools), HTTP API, `npm run eval` (Hit@1 92 %).
 
-## 🏗️ Wie es zusammenhängt
+## 🏗️ How it fits together
 
 ```mermaid
 flowchart LR
-  subgraph Clients["KI-Clients"]
+  subgraph Clients["AI clients"]
     CD["Claude Desktop"]
     CU["Cursor"]
-    XX["weitere MCP-Clients"]
+    XX["any MCP client"]
   end
-  subgraph App["KEPTA — alles auf deinem Rechner"]
-    UI["Desktop-App<br/>React 19 + Electron"]
-    SRV["HTTP-Server<br/>23 Routen"]
-    MCP["MCP-Server<br/>stdio + POST /mcp"]
-    ENG["Retrieval-Engine<br/>ein Codepfad für alle"]
+  subgraph App["KEPTA — all on your machine"]
+    UI["Desktop app<br/>React 19 + Electron"]
+    SRV["HTTP server<br/>23 routes"]
+    MCP["MCP server<br/>stdio + POST /mcp"]
+    ENG["Retrieval engine<br/>one code path for all"]
     ST[("SQLite + FTS5<br/>~/.kepta/kepta.db")]
   end
-  OLL["Ollama / LM Studio<br/>optional, lokal"]
+  OLL["Ollama / LM Studio<br/>optional, local"]
   CD --> MCP
   CU --> MCP
   XX --> MCP
@@ -53,142 +57,142 @@ flowchart LR
   SRV --> ENG
   MCP --> ENG
   ENG --> ST
-  ENG -. Embeddings .-> OLL
+  ENG -. embeddings .-> OLL
 ```
 
-Kein Dienst dazwischen, kein Konto, keine Telemetrie. Der Server lauscht ausschließlich auf `127.0.0.1`.
+No service in between, no account, no telemetry. The server binds to `127.0.0.1` and nothing else.
 
-## 🔍 Wie die Suche entscheidet
+## 🔍 How search decides
 
 ```mermaid
 flowchart TD
-  Q(["Anfrage"]) --> A["FTS5 · BM25<br/>lexikalisch"]
-  Q --> B["Vektor-KNN<br/>persistente Chunk-Embeddings"]
-  Q --> C["Entitäts-Treffer<br/>aus dem Graphen"]
-  A --> RRF["RRF-Fusion · k=60"]
+  Q(["Query"]) --> A["FTS5 · BM25<br/>lexical"]
+  Q --> B["Vector KNN<br/>persistent chunk embeddings"]
+  Q --> C["Entity match<br/>from the graph"]
+  A --> RRF["RRF fusion · k=60"]
   B --> RRF
   C --> RRF
-  RRF --> BO["Recency- & Konfidenz-Boost"]
-  BO --> T{"zeitlicher Zustand?"}
-  T -->|abgelaufen| X5["Score × 0.5"]
-  T -->|ersetzt| X4["Score × 0.4"]
-  T -->|gültig| OKK["unverändert"]
-  X5 --> RET["Oblivion-Retention"]
+  RRF --> BO["Recency & confidence boost"]
+  BO --> T{"temporal state?"}
+  T -->|expired| X5["score × 0.5"]
+  T -->|superseded| X4["score × 0.4"]
+  T -->|valid| OKK["unchanged"]
+  X5 --> RET["Oblivion retention"]
   X4 --> RET
   OKK --> RET
-  RET --> OUT(["Top-k Ergebnisse"])
+  RET --> OUT(["Top-k results"])
 ```
 
-Ohne Ollama läuft alles rein lexikalisch weiter — die Vektor-Spur entfällt, die Suche funktioniert.
+Without Ollama the vector track drops out and everything continues lexically. Search degrades; it does not break.
 
-## 🧩 Alle Funktionen
+## 🧩 Every feature
 
 <details open>
-<summary><strong>Erfassen &amp; Speichern</strong></summary>
+<summary><strong>Capture &amp; store</strong></summary>
 
-- Notizen anlegen, bearbeiten, löschen — **Papierkorb statt Hard-Delete**, mit Wiederherstellen
-- **Memory-Typen**: `semantic` (Fakten), `episodic` (Ereignisse), `procedural` (Abläufe)
-- **Scope**: `user`, `agent`, `session` — trennt, wem eine Erinnerung gehört
-- **Konfidenz** 0–1, frei vergebbare Tags, automatisch erkannte Entitäten
-- **Zeitliche Gültigkeit**: `valid_from` / `valid_to`, abgelaufene Einträge werden markiert statt verschwiegen
-- **Ersetzungsketten** (`superseded_by`): Widersprüche verdrängen einander, die Historie bleibt
-- **Dateien** per Drag &amp; Drop: PDF, MD, TXT, JSON — Chunking bei 2000 Zeichen
-- **URL-Clipper** mit SSRF-Schutz (IP-Literale in allen Schreibweisen, DNS-Auflösung, Redirect-Prüfung)
-- **Auto-Learn** (standardmäßig **aus**): Auf Wunsch sichert KEPTA nach jeder Chat-Antwort die Kernaussage als Knoten (Tag `auto-learn`). Beim ersten Mal, wenn eine Antwort lernbar gewesen wäre, weist KEPTA einmalig darauf hin — mit Knopf zum Einschalten. Optionales kleines Extraktionsmodell, 45-Sekunden-Limit, Erfolg **und** Fehlschlag werden gemeldet
-- **Inbox-Ordner** wird überwacht und automatisch eingelesen
-- **Obsidian-Vault-Import**: Markdown + YAML-Frontmatter, `[[Wiki-Links]]` werden zu Graph-Kanten
-- **Markdown-Export** nach `~/.kepta/export/`
-- **Migration** aus der Vorgängerversion (`memories.json`) — idempotent, mit Backup
+- Create, edit and delete notes — **trash instead of hard delete**, with restore
+- **Memory types**: `semantic` (facts), `episodic` (events), `procedural` (how-to)
+- **Scope**: `user`, `agent`, `session` — separates who a memory belongs to
+- **Confidence** 0–1, free-form tags, automatically extracted entities
+- **Temporal validity**: `valid_from` / `valid_to`. Expired entries are marked, never quietly hidden
+- **Supersede chains** (`superseded_by`): contradictions displace each other and the history survives
+- **Files** by drag and drop: PDF, MD, TXT, JSON — chunked at 2000 characters
+- **URL clipper** with SSRF protection (IP literals in every notation, DNS resolution, every redirect hop checked)
+- **Auto-learn** (**off** by default): on request, KEPTA saves the key point of each chat answer as a node (tag `auto-learn`). The first time an answer would have been learnable, it says so once — with a button to switch it on. Optional small extraction model, 45-second limit, and both success **and** failure are reported
+- **Inbox folder** watched and ingested automatically
+- **Obsidian vault import**: Markdown + YAML frontmatter, `[[wiki links]]` become graph edges
+- **Markdown export** to `~/.kepta/export/`
+- **Migration** from the previous version (`memories.json`) — idempotent, with a backup
 
 </details>
 
 <details open>
-<summary><strong>Suchen &amp; Abrufen</strong></summary>
+<summary><strong>Search &amp; retrieval</strong></summary>
 
-- **Hybride Suche**: FTS5-BM25 + Vektor-KNN + Entitäts-Treffer, per RRF fusioniert
-- **Persistente Embeddings** über Ollama (`nomic-embed-text`), Hintergrund-Queue statt Neuberechnung pro Anfrage
-- **Temporale Gewichtung**: abgelaufen ×0.5, ersetzt ×0.4
-- **Semantische Suche** abschaltbar, **Top-k** per Regler einstellbar
-- **Ein Codepfad** für Oberfläche, HTTP-API und MCP — Agenten bekommen dieselbe Qualität wie du
-- **Eval-Harness**: `npm run eval` misst Hit@1 und Precision@5 gegen ein Fixkorpus
-
-</details>
-
-<details open>
-<summary><strong>Wissensgraph</strong></summary>
-
-- Entitäten und Relationen aus `[[Wiki-Links]]` und automatischer Extraktion
-- Kraftgerichtete Darstellung, Zoom, Knoten verschiebbar
-- **Zeitregler** — zeigt den Wissensstand zu einem gewählten Zeitpunkt
-- Farbcodierung nach Memory-Typ, Knotengröße nach Verbindungen
-- Unterscheidung zwischen echter Verbindung und bloßer Ähnlichkeit
-- Doppelklick öffnet die Notiz
+- **Hybrid retrieval**: FTS5 BM25 + vector KNN + entity match, fused with Reciprocal Rank Fusion
+- **Persistent embeddings** via Ollama (`nomic-embed-text`), computed by a background queue instead of re-embedding on every query
+- **Temporal weighting**: expired ×0.5, superseded ×0.4
+- **Semantic search** can be switched off, **top-k** is a slider
+- **One code path** for the UI, the HTTP API and MCP — agents get exactly the quality you get
+- **Eval harness**: `npm run eval` measures Hit@1 and Precision@5 against a fixed corpus
 
 </details>
 
 <details open>
-<summary><strong>Pflege &amp; Konsolidierung</strong></summary>
+<summary><strong>Knowledge graph</strong></summary>
 
-- **Duplikat-Erkennung** über Embedding-Ähnlichkeit (≥ 0.92), lexikalischer Fallback ohne Ollama
-- **Konsolidierung** ersetzt statt zu löschen — nichts geht verloren
-- **Auto-Tagging** neuer Einträge
-- **Episodische Erinnerungen** entstehen aus Chat-Verläufen
+- Entities and relations from `[[wiki links]]` and automatic extraction
+- Force-directed layout, zoom, draggable nodes
+- **Time slider** — shows what was known at a chosen point in time
+- Colour by memory type, node size by number of connections
+- Tells a real connection apart from mere similarity
+- Double-click opens the note
 
 </details>
 
 <details open>
-<summary><strong>Agenten-Anbindung (MCP)</strong></summary>
+<summary><strong>Maintenance &amp; consolidation</strong></summary>
 
-Protokoll `2026-07-28`, abwärtskompatibel zu `2025-06-18` und `2024-11-05`. Zwei Transporte: **stdio** und **Streamable HTTP** (`POST /mcp`). Alle acht Werkzeuge liefern `outputSchema` und `structuredContent`.
+- **Duplicate detection** by embedding similarity (≥ 0.92), with a lexical fallback when Ollama is absent
+- **Consolidation supersedes instead of deleting** — nothing is lost
+- **Auto-tagging** of new entries
+- **Episodic memories** grow out of chat history
 
-| Werkzeug | Zweck |
+</details>
+
+<details open>
+<summary><strong>Agent interface (MCP)</strong></summary>
+
+Protocol `2026-07-28`, backwards compatible with `2025-06-18` and `2024-11-05`. Two transports: **stdio** and **Streamable HTTP** (`POST /mcp`). All eight tools ship an `outputSchema` and return `structuredContent`.
+
+| Tool | Purpose |
 |---|---|
-| `memory_search` | Hybride Suche mit temporaler Gewichtung |
-| `memory_save` | Neu anlegen, inkl. Typ, Scope, Gültigkeit |
-| `memory_update` | Bestehende Erinnerung ändern |
-| `memory_delete` | In den Papierkorb verschieben |
-| `memory_list` | Filtern nach Typ, Scope, Tags |
-| `memory_graph` | Entitäten und Relationen abfragen |
-| `memory_consolidate` | Duplikate finden und zusammenführen |
-| `memory_forget` | Ablaufen lassen (`expire`) oder ersetzen (`supersede`) |
+| `memory_search` | Hybrid retrieval with temporal weighting |
+| `memory_save` | Create, including type, scope and validity |
+| `memory_update` | Change an existing memory |
+| `memory_delete` | Move to trash |
+| `memory_list` | Filter by type, scope, tags |
+| `memory_graph` | Query entities and relations |
+| `memory_consolidate` | Find and merge duplicates |
+| `memory_forget` | Expire or supersede |
 
 </details>
 
 <details>
-<summary><strong>Chat-Cockpit</strong> — Beweis-Modus, kein Feature-Magnet</summary>
+<summary><strong>Chat cockpit</strong> — a proving ground, not a feature magnet</summary>
 
-- **20 Anbieter-Presets**: Ollama, LM Studio, OpenAI, Anthropic, Gemini, Mistral, Groq, DeepSeek, xAI, Perplexity, Together, Fireworks, Cohere, Cerebras, HuggingFace, Novita, OpenRouter, GitHub Models, Azure, eigener Endpunkt
-- **Modell-Erkennung** für Ollama und LM Studio per Klick, ohne Schlüssel
-- **SSE-Streaming** mit Stop-Taste, Markdown-Rendering
-- **Quellen-Zitate**: jede Antwort zeigt, welche Erinnerungen sie benutzt hat
-- **Datumsbewusstes Prompting** — das heutige Datum und Gültigkeits-Marker gehen in den Kontext
-- **Token-Budget** sichtbar
+- **20 provider presets**: Ollama, LM Studio, OpenAI, Anthropic, Gemini, Mistral, Groq, DeepSeek, xAI, Perplexity, Together, Fireworks, Cohere, Cerebras, HuggingFace, Novita, OpenRouter, GitHub Models, Azure, custom endpoint
+- **Model discovery** for Ollama and LM Studio in one click, no key required
+- **SSE streaming** with a stop button, Markdown rendering
+- **Source citations**: every answer shows which memories it used
+- **Date-aware prompting** — today's date and validity markers go into the context
+- **Token budget** visible
 
-Der Chat existiert, um Retrieval zu beweisen. Der Alltag läuft über MCP.
-
-</details>
-
-<details>
-<summary><strong>Oberfläche</strong></summary>
-
-- **Command Palette** (⌘K) für alles ohne Maus
-- **Tag-Filter** mit Zählern, Mehrfachauswahl
-- **Hell/Dunkel** und **Fokus-Modus**
-- **Einrichtungs-Assistent** mit thematischem Starter-Pack
-- **System-Status**: erkennt lokale KIs, prüft Speicher, zeigt Diagnose
-- **Aktivitäts-Feed** über `/api/activity`
-- Duplikat-Banner mit Direktsprung
+The chat exists to prove retrieval works. Day-to-day use runs through MCP.
 
 </details>
 
 <details>
-<summary><strong>HTTP-API — 23 Routen</strong></summary>
+<summary><strong>Interface</strong></summary>
 
-| Bereich | Routen |
+- **Command palette** (⌘K) for everything without the mouse
+- **Tag filter** with counts and multi-select
+- **Light/dark** and **focus mode**
+- **Setup wizard** with a themed starter pack
+- **System status**: detects local AI, checks storage, shows diagnostics
+- **Activity feed** via `/api/activity`
+- Duplicate banner with a jump link
+
+</details>
+
+<details>
+<summary><strong>HTTP API — 23 routes</strong></summary>
+
+| Area | Routes |
 |---|---|
-| Erinnerungen | `/api/memories`, `/api/memories/:id`, `/api/memories/:id/restore`, `/api/memories/search`, `/api/memories/import`, `/api/memory` |
-| Suche &amp; Graph | `/api/search`, `/api/graph`, `/api/embed` |
-| Import &amp; Export | `/api/import/markdown`, `/api/export/markdown`, `/api/clip` |
+| Memories | `/api/memories`, `/api/memories/:id`, `/api/memories/:id/restore`, `/api/memories/search`, `/api/memories/import`, `/api/memory` |
+| Search &amp; graph | `/api/search`, `/api/graph`, `/api/embed` |
+| Import &amp; export | `/api/import/markdown`, `/api/export/markdown`, `/api/clip` |
 | Inbox | `/api/inbox/status`, `/api/inbox/scan` |
 | Chat | `/api/chat`, `/api/chat/stream`, `/api/models` |
 | MCP | `POST /mcp`, `/api/mcp/tools`, `/api/mcp/search`, `/api/mcp/save`, `/api/tools` |
@@ -197,137 +201,154 @@ Der Chat existiert, um Retrieval zu beweisen. Der Alltag läuft über MCP.
 </details>
 
 <details>
-<summary><strong>Privatsphäre &amp; Härtung</strong></summary>
+<summary><strong>Privacy &amp; hardening</strong></summary>
 
-- Alle Daten in `~/.kepta/` — eine SQLite-Datei, die dir gehört
-- Server bindet **nur auf `127.0.0.1`** (Override bewusst über `KEPTA_HOST`)
-- **SSRF-Schutz** im URL-Clipper: normalisierte IP-Prüfung, DNS-Auflösung, jeder Redirect-Hop geprüft
-- **Content-Security-Policy** in der Electron-Session, `nodeIntegration` aus, Sandbox an
-- Rate-Limiting, Helmet, Eingabevalidierung auf allen Routen
-- Kein Konto, keine Telemetrie, kein Phone-Home
-- Ohne konfigurierte KI verlässt kein Byte den Rechner
+- All data in `~/.kepta/` — one SQLite file that belongs to you
+- The server binds to **`127.0.0.1` only** (deliberate override via `KEPTA_HOST`)
+- **SSRF protection** in the URL clipper: normalised IP checks, DNS resolution, every redirect hop verified
+- **Content Security Policy** in the Electron session, `nodeIntegration` off, sandbox on
+- Rate limiting, Helmet, input validation on every route
+- No account, no telemetry, no phone-home
+- With no AI configured, not a single byte leaves the machine
 
 </details>
 
-## 🏢 KEPTA Enterprise — in Vorbereitung
+## 🐍 Python client
 
-> **Alles oben Genannte bleibt frei. Dauerhaft.** Keine Funktion, die je in der Community-Ausgabe war, wandert in eine kommerzielle. Der Strich bewegt sich nur in eine Richtung.
+```bash
+pip install kepta
+```
 
-Es gibt einen Punkt, an dem lokales Gedächtnis aufhört, eine Privatsache zu sein: sobald eine **zweite Person** im Spiel ist — eine Kollegin, eine Mandantin, eine Prüferin. Dann reicht es nicht, dass die Daten den Rechner nicht verlassen. Man muss es **belegen** können.
+```python
+from kepta import KeptaClient
 
-Genau da setzt KEPTA Enterprise an. Der Grundsatz dahinter ist bewusst als Regel formuliert, nicht als Feature-Liste, damit auch künftige Funktionen vorhersagbar zugeordnet sind:
+kepta = KeptaClient()          # finds the running instance on its own
 
-> Was ein Einzelner für sich selbst tut, ist frei.
-> Was eine Organisation gegenüber Dritten verantworten muss, ist kommerziell.
+kepta.save("Carbonara", "Guanciale, pecorino, egg yolk. No cream.", tags=["cooking"])
 
-**Woran gearbeitet wird**
+for hit in kepta.search("carbonara without cream"):
+    print(f"{hit.score:.2f}  {hit.memory.title}")
+```
+
+Standard library only, no dependencies. It discovers the running app through `~/.kepta/endpoint.json`, so the random port a packaged build picks is not your problem. Details: [python/README.md](python/README.md) · [PyPI](https://pypi.org/project/kepta/)
+
+## 🏢 KEPTA Enterprise — in preparation
+
+> **Everything above stays free. Permanently.** No feature that has ever been in the community edition will move into a commercial one. The line only ever moves in one direction.
+
+There is a point where local memory stops being a private matter: the moment a **second person** is involved — a colleague, a client, an auditor. At that point it is no longer enough that the data never leaves the machine. You have to be able to **prove** it.
+
+That is where KEPTA Enterprise starts. The principle is written as a rule rather than a feature list, so that future features land predictably on one side or the other:
+
+> What an individual does for themselves is free.
+> What an organisation must answer for to third parties is commercial.
+
+**What is being worked on**
 
 | | |
 |---|---|
-| **Mehrere Arbeitsplätze** | Geteiltes und getrenntes Gedächtnis, Mandantentrennung, Ende-zu-Ende-verschlüsselte Replikation zwischen den Geräten einer Kanzlei — ohne fremden Server |
-| **Nachweisbarkeit** | Manipulationsfestes Zugriffsprotokoll, erzwungene Löschfristen mit Löschnachweis, Ausgangsprotokoll: was ging wann an welches Modell |
-| **Vertrauensinfrastruktur** | Verschlüsselung im Ruhezustand, signierte und notarisierte Installer, maschinenlesbare SBOM, TOM-Dokumentation |
-| **Verbindlichkeit** | Zugesicherte Reaktionszeiten, benannter Ansprechpartner, Quellcode-Hinterlegung beim Treuhänder |
-| **Wirtschaftlichkeit** | Kosten-Dashboard: eingesparte Tokens und Euro je Arbeitsplatz — die Rechnung, die lokales Gedächtnis erst rechtfertigt |
+| **Multiple workstations** | Shared and separated memory, tenant isolation, end-to-end encrypted replication between the devices of one firm — without a foreign server |
+| **Provability** | Tamper-evident access log, enforced deletion deadlines with proof of deletion, egress log: what went to which model, and when |
+| **Trust infrastructure** | Encryption at rest, signed and notarised installers, machine-readable SBOM, documented technical and organisational measures |
+| **Commitment** | Guaranteed response times, a named contact, source code escrow |
+| **Economics** | Cost dashboard: tokens and euros saved per workstation — the arithmetic that justifies local memory in the first place |
 
-**Für wen** — Kanzleien, Praxen, Steuerberatungen, Forschungsgruppen und Ingenieurbüros im DACH-Raum. Überall dort, wo KI mit Gedächtnis gebraucht wird und die Daten das Haus nicht verlassen dürfen.
+**Who for** — law firms, medical practices, tax advisors, research groups and engineering offices. Anywhere AI with memory is needed and the data is not allowed to leave the building.
 
-**Warum der Kern trotzdem offen bleibt** — wer belegen muss, dass nichts abfließt, soll das nachlesen können statt es zu glauben. Der geprüfte Kern ist mehr wert als ein Versprechen. Fällt der Anbieter aus, arbeitet der Kunde mit dem MIT-Kern weiter; bei proprietärer Software wäre an dieser Stelle Schluss.
+**Why the core stays open anyway** — anyone who has to prove that nothing leaks should be able to read it rather than believe it. An audited core is worth more than a promise. And if the vendor disappears, the customer keeps working with the MIT core; with proprietary software that would be the end of the road.
 
-**Interesse?** Öffne ein [Issue](https://github.com/DamianTodorovic/kepta/issues) mit dem Label `enterprise` oder schreib an `hello@kepta.app`. Der Preis wird mit den ersten Pilotkunden festgelegt, nicht vorher am Schreibtisch erfunden. Ein Termin steht noch nicht fest — was fehlt, sind keine Ideen, sondern Gespräche mit Leuten, die das wirklich brauchen.
+**Interested?** Open an [issue](https://github.com/DamianTodorovic/kepta/issues) labelled `enterprise`, or write to `hello@kepta.app`. Pricing will be set with the first pilot customers, not invented at a desk beforehand. There is no date yet — what is missing is not ideas but conversations with people who actually need this.
 
-## ⚡ Quick-Start
+## ⚡ Quick start
 
 ```bash
 git clone https://github.com/DamianTodorovic/kepta.git && cd kepta
 npm install && npm test && npm run eval
 npm run dev        # http://localhost:3000
-npm run electron   # Desktop-Shell (optional)
+npm run electron   # desktop shell (optional)
 ```
 
-Fertige App: [Releases](https://github.com/DamianTodorovic/kepta/releases). Agent anbinden:
+Prebuilt app: [Releases](https://github.com/DamianTodorovic/kepta/releases). Connect an agent:
 
 ```json
-{ "mcpServers": { "kepta": { "command": "node", "args": ["/PFAD/kepta/dist/mcp-server.cjs"] } } }
+{ "mcpServers": { "kepta": { "command": "node", "args": ["/PATH/kepta/dist/mcp-server.cjs"] } } }
 ```
 
-### 📦 Welche Datei brauche ich?
+### 📦 Which file do I need?
 
-| Dein System | Datei |
+| Your system | File |
 |---|---|
-| Mac mit Apple Silicon (M1–M4) | `KEPTA-<version>-mac-arm64.dmg` |
-| Mac mit Intel-Prozessor | `KEPTA-<version>-mac-x64.dmg` |
-| **Windows — im Zweifel dieses** | `KEPTA-<version>-win.exe` (enthält beide Architekturen) |
-| Windows (Intel/AMD), kleinere Datei | `KEPTA-<version>-win-x64.exe` |
-| Windows auf ARM, kleinere Datei | `KEPTA-<version>-win-arm64.exe` |
-| Linux (Intel/AMD), jede Distribution | `KEPTA-<version>-linux-x86_64.AppImage` |
-| Linux auf ARM | `KEPTA-<version>-linux-arm64.AppImage` |
+| Mac with Apple Silicon (M1–M4) | `KEPTA-<version>-mac-arm64.dmg` |
+| Mac with an Intel processor | `KEPTA-<version>-mac-x64.dmg` |
+| **Windows — take this one if unsure** | `KEPTA-<version>-win.exe` (contains both architectures) |
+| Windows (Intel/AMD), smaller file | `KEPTA-<version>-win-x64.exe` |
+| Windows on ARM, smaller file | `KEPTA-<version>-win-arm64.exe` |
+| Linux (Intel/AMD), any distribution | `KEPTA-<version>-linux-x86_64.AppImage` |
+| Linux on ARM | `KEPTA-<version>-linux-arm64.AppImage` |
 | Debian, Ubuntu, Mint | `KEPTA-<version>-linux-amd64.deb` |
 
-Jede Datei trägt Plattform und Architektur im Namen. Im Zweifel beim Mac: Apple-Menü → *Über diesen Mac* — „Apple M…" heißt `arm64`, „Intel" heißt `x64`. Die `.zip`-Dateien sind dieselben Programme ohne Installer. Die Pakete bringen alles mit; Node ≥ 22.5 brauchst du nur zum Selbstbauen.
+Every file carries its platform and architecture in the name. On a Mac, if you are unsure: Apple menu → *About This Mac* — "Apple M…" means `arm64`, "Intel" means `x64`. The `.zip` files are the same programs without an installer. The packages are self-contained; you only need Node ≥ 22.5 to build them yourself.
 
-### 🍎 Erster Start unter macOS
+### 🍎 First launch on macOS
 
-KEPTA wird ohne Apple-Entwicklerzertifikat gebaut — die Releases sind **nicht signiert und nicht notarisiert**. macOS setzt heruntergeladene Dateien deshalb in Quarantäne und meldet beim Doppelklick sinngemäß „kann nicht geöffnet werden, da der Entwickler nicht verifiziert werden kann". Die App ist in Ordnung; es fehlt nur die Signatur.
+KEPTA is built without an Apple developer certificate — the releases are **neither signed nor notarised**. macOS therefore quarantines the download and reports something like "cannot be opened because the developer cannot be verified". The app is fine; the signature is what is missing.
 
-Einmalig freigeben, danach startet sie normal:
+Approve it once and it starts normally from then on:
 
-1. **Rechtsklick** auf `KEPTA.app` im Programme-Ordner → **Öffnen** → im Dialog erneut **Öffnen**.
-2. Falls das nicht angeboten wird: *Systemeinstellungen → Datenschutz & Sicherheit* → bei der Meldung zu KEPTA auf **Dennoch öffnen**.
+1. **Right-click** `KEPTA.app` in Applications → **Open** → **Open** again in the dialog.
+2. If that is not offered: *System Settings → Privacy & Security* → find the KEPTA message and click **Open Anyway**.
 
-Alternativ im Terminal:
+Or in the terminal:
 
 ```bash
 xattr -dr com.apple.quarantine /Applications/KEPTA.app
 ```
 
-### 🪟 Erster Start unter Windows
+### 🪟 First launch on Windows
 
-Auch der Windows-Installer ist nicht signiert. SmartScreen meldet beim ersten Start „Der Computer wurde durch Windows geschützt". Einmalig freigeben: **Weitere Informationen** → **Trotzdem ausführen**.
+The Windows installer is unsigned too. SmartScreen will say "Windows protected your PC" on first launch. Approve it once: **More info** → **Run anyway**.
 
-### 🐧 Erster Start unter Linux
+### 🐧 First launch on Linux
 
-**AppImage** — ausführbar machen und starten, keine Installation nötig:
+**AppImage** — make it executable and run it, no installation needed:
 
 ```bash
 chmod +x KEPTA-*-linux-x86_64.AppImage
 ./KEPTA-*-linux-x86_64.AppImage
 ```
 
-**deb** — für Debian, Ubuntu und Abkömmlinge:
+**deb** — for Debian, Ubuntu and derivatives:
 
 ```bash
 sudo apt install ./KEPTA-*-linux-amd64.deb
 ```
 
-Wer den Binärdateien nicht vertrauen will, baut selbst: `npm install && npm run build:mac`, `build:linux` oder `build:win` erzeugt die Pakete unter `release/`. Der Code ist MIT-lizenziert und vollständig einsehbar.
+If you would rather not trust the binaries, build them yourself: `npm install && npm run build:mac`, `build:linux` or `build:win` produces the packages under `release/`. The code is MIT licensed and open to read.
 
-## 🧪 Qualität & Tests
+## 🧪 Quality & tests
 
-**314 Tests**, Gesamt-Coverage **~91 %** (Kern `src/core` **100 % der Funktionen**). Vitest + v8-Coverage mit Schwellen als CI-Gate — jeder Commit, der die Abdeckung senkt, lässt die CI rot werden.
+**314 tests**, overall coverage **~91 %** (core `src/core` at **100 % of functions**). Vitest with v8 coverage and thresholds as a CI gate — any commit that lowers coverage turns CI red.
 
 ```bash
-npm run lint       # tsc --noEmit (Typecheck)
-npm test           # 314 Tests (vitest)
-npm run test:cov   # Tests + Coverage-Gate
-npm run eval       # Retrieval-Qualität (Hit@1)
+npm run lint       # tsc --noEmit (typecheck)
+npm test           # 314 tests (vitest)
+npm run test:cov   # tests + coverage gate
+npm run eval       # retrieval quality (Hit@1)
 ```
 
-| Schicht | Abdeckung | testet |
+| Layer | Coverage | What it covers |
 |---|---|---|
-| `src/core` (Engine, Store, MCP, Migration) | ~98 % / **100 % Funcs** | Datenmodell, Suche, Konsolidierung, MCP-Protokoll |
-| `src/lib` (Browser-Logik) | ~92 % | Provider-Presets, Profil, SSE, fetch-Client, Tokenizer |
-| `server.ts` (HTTP + `/mcp`) | ~80 % | REST-Routen, MCP, Chat-Proxy, Import/Export |
-| `src/components` (UI) | Kernkomponenten | Karten, Toast, Command-Palette |
+| `src/core` (engine, store, MCP, migration) | ~98 % / **100 % funcs** | data model, search, consolidation, MCP protocol |
+| `src/lib` (browser logic) | ~92 % | provider presets, profile, SSE, fetch client, tokenizer |
+| `server.ts` (HTTP + `/mcp`) | ~80 % | REST routes, MCP, chat proxy, import/export |
+| `src/components` (UI) | core components | cards, toast, command palette |
 
-Tests liegen in `tests/`, gespiegelt zur Quellstruktur. Neue Features nach TDD (RED → GREEN → REFACTOR).
+Tests live in `tests/`, mirroring the source layout. New features follow TDD (RED → GREEN → REFACTOR).
 
-## 🧠 Warum KEPTA?
+## 🧠 Why KEPTA?
 
-Obsidian ist großartig für Menschen — aber Markdown ist kein Gedächtnis (keine Typen, Gültigkeit, kein MCP). Mem0/Letta sind SDKs ohne GUI. **KEPTA ist beides**: agent-native Memory-Schicht mit Desktop-App, lokal, MIT. Eval: Hit@1 **76 % → 92 %** vs. v1 (`npm run eval`).
+Obsidian is excellent for humans — but Markdown is not a memory: no types, no validity, no MCP. Mem0 and Letta are SDKs without a GUI. **KEPTA is both**: an agent-native memory layer with a desktop app, local, MIT. Eval: Hit@1 **76 % → 92 %** against v1 (`npm run eval`).
 
-Rollen-Logik: der **Test-Cockpit**-Chat beweist das Retrieval — der Alltag läuft über MCP. [ROADMAP](ROADMAP.md) · [CHANGELOG](CHANGELOG.md)
+The division of roles: the **chat cockpit** proves retrieval works — daily use runs through MCP. [ROADMAP](ROADMAP.md) · [CHANGELOG](CHANGELOG.md)
 
-*EN — local-first brain for AI agents: shared MCP memory (2026-07-28, 8 typed tools), hybrid retrieval with persistent embeddings, knowledge graph, temporal validity, Obsidian interop. MIT, no cloud.*
-
-**KEPTA** — gebaut für Fokus. Behält, was zählt.
+**KEPTA** — built for focus. Keeps what matters.

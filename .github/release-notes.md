@@ -1,69 +1,93 @@
-## 📦 Welche Datei brauche ich?
+## 📦 Which file do I need?
 
-| Dein System | Datei |
+| Your system | File |
 |---|---|
-| Mac mit Apple Silicon (M1–M4) | `KEPTA-<version>-mac-arm64.dmg` |
-| Mac mit Intel-Prozessor | `KEPTA-<version>-mac-x64.dmg` |
-| **Windows — im Zweifel dieses** | `KEPTA-<version>-win.exe` (enthält beide Architekturen) |
-| Windows (Intel/AMD), kleinere Datei | `KEPTA-<version>-win-x64.exe` |
-| Windows auf ARM, kleinere Datei | `KEPTA-<version>-win-arm64.exe` |
-| Linux (Intel/AMD), jede Distribution | `KEPTA-<version>-linux-x86_64.AppImage` |
-| Linux auf ARM | `KEPTA-<version>-linux-arm64.AppImage` |
+| Mac with Apple Silicon (M1–M4) | `KEPTA-<version>-mac-arm64.dmg` |
+| Mac with an Intel processor | `KEPTA-<version>-mac-x64.dmg` |
+| **Windows — take this one if unsure** | `KEPTA-<version>-win.exe` (contains both architectures) |
+| Windows (Intel/AMD), smaller file | `KEPTA-<version>-win-x64.exe` |
+| Windows on ARM, smaller file | `KEPTA-<version>-win-arm64.exe` |
+| Linux (Intel/AMD), any distribution | `KEPTA-<version>-linux-x86_64.AppImage` |
+| Linux on ARM | `KEPTA-<version>-linux-arm64.AppImage` |
 | Debian, Ubuntu, Mint | `KEPTA-<version>-linux-amd64.deb` |
 
-Jede Datei trägt Plattform und Architektur im Namen. Im Zweifel beim Mac: Apple-Menü → *Über diesen Mac* — „Apple M…" heißt `arm64`, „Intel" heißt `x64`. Die `.zip`-Dateien sind dieselben Programme ohne Installer, für alle, die lieber selbst entpacken.
+Every file carries its platform and architecture in the name. On a Mac, if you are unsure: Apple menu → *About This Mac* — "Apple M…" means `arm64`, "Intel" means `x64`. The `.zip` files are the same programs without an installer.
 
-Die Pakete bringen alles mit — Node brauchst du nur zum Selbstbauen.
+The packages are self-contained — you only need Node to build them yourself.
 
-## 🍎 Erster Start unter macOS
+> **Note.** The documentation is English; **the desktop UI is currently German only.** MCP, the HTTP API and the Python client are language-neutral.
 
-Diese Builds sind **nicht signiert und nicht notarisiert** (kein Apple-Entwicklerzertifikat).
-macOS setzt heruntergeladene Dateien in Quarantäne und meldet beim Doppelklick
-„kann nicht geöffnet werden, da der Entwickler nicht verifiziert werden kann".
-Die App ist in Ordnung — es fehlt nur die Signatur.
+## 🍎 First launch on macOS
 
-Einmalig freigeben, danach startet sie normal:
+These builds are **neither signed nor notarised** (no Apple developer certificate).
+macOS quarantines the download and reports "cannot be opened because the developer
+cannot be verified". The app is fine — the signature is what is missing.
 
-1. **Rechtsklick** auf `KEPTA.app` → **Öffnen** → im Dialog erneut **Öffnen**
-2. Alternativ: *Systemeinstellungen → Datenschutz & Sicherheit* → **Dennoch öffnen**
+Approve it once and it starts normally from then on:
 
-Oder im Terminal:
+1. **Right-click** `KEPTA.app` → **Open** → **Open** again in the dialog
+2. Or: *System Settings → Privacy & Security* → **Open Anyway**
+
+Or in the terminal:
 
 ```bash
 xattr -dr com.apple.quarantine /Applications/KEPTA.app
 ```
 
-## 🪟 Erster Start unter Windows
+## 🪟 First launch on Windows
 
-Auch der Windows-Installer ist **nicht signiert**. SmartScreen zeigt beim ersten Start
-„Der Computer wurde durch Windows geschützt".
+The Windows installer is **unsigned** too. SmartScreen shows "Windows protected your PC"
+on first launch.
 
-Einmalig freigeben: **Weitere Informationen** anklicken → **Trotzdem ausführen**.
+Approve it once: click **More info** → **Run anyway**.
 
-## 🐧 Erster Start unter Linux
+## 🐧 First launch on Linux
 
-**AppImage** — ausführbar machen und starten, keine Installation nötig:
+**AppImage** — make it executable and run it, no installation needed:
 
 ```bash
 chmod +x KEPTA-*-linux-x86_64.AppImage
 ./KEPTA-*-linux-x86_64.AppImage
 ```
 
-**deb** — für Debian, Ubuntu und Abkömmlinge:
+**deb** — for Debian, Ubuntu and derivatives:
 
 ```bash
 sudo apt install ./KEPTA-*-linux-amd64.deb
 ```
 
-## 🔌 Agent anbinden (MCP)
+## 🔌 Connect an agent (MCP)
 
-Nach dem ersten Start steht der MCP-Server bereit. Konfiguration für Claude Desktop, Cursor & Co.:
+The MCP server is ready after the first launch. Configuration for Claude Desktop, Cursor and friends:
 
 ```json
-{ "mcpServers": { "kepta": { "command": "node", "args": ["/PFAD/kepta/dist/mcp-server.cjs"] } } }
+{ "mcpServers": { "kepta": { "command": "node", "args": ["/PATH/kepta/dist/mcp-server.cjs"] } } }
 ```
 
-Alle Daten bleiben lokal in `~/.kepta/` — kein Konto, keine Cloud, keine Telemetrie.
-Selbst bauen: `npm install && npm run build:mac`, `build:linux` oder `build:win`.
+## 🐍 Python
+
+```bash
+pip install kepta
+```
+
+All data stays local in `~/.kepta/` — no account, no cloud, no telemetry.
+Build it yourself: `npm install && npm run build:mac`, `build:linux` or `build:win`.
 
 ---
+
+<details>
+<summary>🇩🇪 Deutsch — welche Datei brauche ich?</summary>
+
+| Dein System | Datei |
+|---|---|
+| Mac mit Apple Silicon (M1–M4) | `KEPTA-<version>-mac-arm64.dmg` |
+| Mac mit Intel-Prozessor | `KEPTA-<version>-mac-x64.dmg` |
+| **Windows — im Zweifel dieses** | `KEPTA-<version>-win.exe` (enthält beide Architekturen) |
+| Linux (Intel/AMD) | `KEPTA-<version>-linux-x86_64.AppImage` |
+| Debian, Ubuntu, Mint | `KEPTA-<version>-linux-amd64.deb` |
+
+Die Builds sind **nicht signiert**. macOS: Rechtsklick auf `KEPTA.app` → **Öffnen** → erneut **Öffnen**, oder `xattr -dr com.apple.quarantine /Applications/KEPTA.app`. Windows: **Weitere Informationen** → **Trotzdem ausführen**. Linux-AppImage: `chmod +x` und starten.
+
+Alle Daten bleiben lokal in `~/.kepta/`. Ausführliche Anleitung: [README.de.md](https://github.com/DamianTodorovic/kepta/blob/main/README.de.md)
+
+</details>

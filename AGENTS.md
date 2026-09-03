@@ -1,20 +1,22 @@
-# AGENTS.md — Arbeitsregeln für KI-Agenten in diesem Workspace
+# AGENTS.md — working rules for AI agents in this workspace
 
-## Dein Gedächtnis: KEPTA (MCP-Server „kepta")
-Nutze die KEPTA-MCP-Tools als dein persistentes Gedächtnis — über Sitzungen hinweg:
+## Your memory: KEPTA (MCP server `kepta`)
+Use the KEPTA MCP tools as your persistent memory, across sessions:
 
-- **Session-Start**: `memory_search` mit dem aktuellen Thema, bevor du fragst oder doppelt arbeitest. Zusätzlich `memory_list { type: "procedural" }` für Projekt-Abläufe.
-- **Session-Ende / wichtige Erkenntnisse**: `memory_save` — Entscheide selbst den Typ:
-  - `semantic` = Fakten & Architektur (z. B. „KEPTA v2.2 nutzt node:sqlite, kein better-sqlite3")
-  - `episodic` = Ereignisse (z. B. „Persona-Test fand Wizard-Re-Trigger-Bug")
-  - `procedural` = Abläufe, die wiederholt werden (z. B. „Release: npm test → eval → build → tag v*")
-- **Veraltetes Wissen**: `memory_forget { mode: "supersede" }` oder `expire` — niemals widersprechende Knoten gleichgültig daneben speichern.
-- Tags setzen: `kepta`, `projekt`, plus Themen-Tag. `confidence` ehrlich (verifiziert=1.0, Vermutung=0.5).
+- **Session start**: `memory_search` on the current topic, before asking or redoing work. Also `memory_list { type: "procedural" }` for project procedures.
+- **Session end / important findings**: `memory_save` — pick the type yourself:
+  - `semantic` = facts and architecture (e.g. "KEPTA v2.2 uses node:sqlite, not better-sqlite3")
+  - `episodic` = events (e.g. "persona test found the wizard re-trigger bug")
+  - `procedural` = repeatable procedures (e.g. "release: npm test → eval → build → tag v*")
+- **Outdated knowledge**: `memory_forget { mode: "supersede" }` or `expire` — never park a contradicting node indifferently beside the old one.
+- Set tags: `kepta`, `project`, plus a topic tag. Set `confidence` honestly (verified = 1.0, guess = 0.5).
 
-## Projekt-Layout
-- App: Repo-Root (React+Express+Electron — Server `server.ts`, Core `src/core/`, UI `src/components/`, Tests `tests/`, Electron `electron.js`, Daten `~/.kepta/kepta.db`)
-- Quality-Gates vor jedem Commit: `npx tsc --noEmit` (0 Fehler) + `npx vitest run` (274 Tests) + `npm run build` (grün, dist ohne Inline-Scripts) + `npm run eval` (Hit@1 ≥ 92 %) — UX-Änderungen zusätzlich im Browser verifizieren.
-- Sprache: Deutsch mit dem Nutzer. UX-Anspruch: „brutal gut" (Persona-Perspektive testen, keine Fachjargon-Labels).
+## Project layout
+- App: repo root (React + Express + Electron — server `server.ts`, core `src/core/`, UI `src/components/`, tests `tests/`, Electron `electron.js`, data `~/.kepta/kepta.db`)
+- Python client: `python/` (stdlib only, published to PyPI as `kepta`)
+- Quality gates before every commit: `npx tsc --noEmit` (0 errors) + `npx vitest run` (314 tests) + `npm run build` (green, `dist` free of inline scripts) + `npm run eval` (Hit@1 ≥ 92 %) — verify UX changes in the browser as well.
+- Language: documentation and code comments in English. Reply to the user in the language they write in — the maintainer writes German.
+- UX standard: "brutally good" — test from the persona's perspective, no jargon labels.
 
-## Rollen-Logik
-Der KEPTA-Chat ist Test-Cockpit (Beweis-Modus). Produkt = Memory-Layer für Claude Desktop/Cursor via MCP (`POST /mcp`, 8 Tools, Protokoll 2026-07-28).
+## Division of roles
+The KEPTA chat is a test cockpit (proving mode). The product is the memory layer for Claude Desktop and Cursor via MCP (`POST /mcp`, 8 tools, protocol 2026-07-28).

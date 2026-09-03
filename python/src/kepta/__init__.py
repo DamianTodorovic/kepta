@@ -1,16 +1,16 @@
-"""KEPTA — lokales Gedächtnis für KI-Agenten, von Python aus.
+"""KEPTA — local memory for AI agents, from Python.
 
-Dieses Paket ist der Client, nicht die App. KEPTA selbst läuft als Desktop-App
-auf demselben Rechner; hier verbindest du dich damit.
+This package is the client, not the app. KEPTA itself runs as a desktop app on
+the same machine; here you connect to it.
 
     from kepta import KeptaClient
 
-    kepta = KeptaClient()          # findet die laufende Instanz von allein
-    kepta.save("Wohnort", "Alex wohnt in Hamburg.", tags=["personal"])
-    for hit in kepta.search("wo wohnt Alex"):
+    kepta = KeptaClient()          # finds the running instance on its own
+    kepta.save("Home", "Alex lives in Hamburg.", tags=["personal"])
+    for hit in kepta.search("where does Alex live"):
         print(hit.memory.title, hit.score)
 
-Alles bleibt auf dem Gerät: Der Server lauscht nur auf 127.0.0.1.
+Everything stays on the device: the server listens on 127.0.0.1 only.
 """
 
 from .client import (
@@ -36,4 +36,4 @@ __all__ = [
     "__version__",
 ]
 
-__version__ = "0.1.1"
+__version__ = "0.1.2"

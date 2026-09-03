@@ -1,49 +1,50 @@
-# 🗺️ KEPTA Roadmap — v2.0 und darüber hinaus
+# 🗺️ KEPTA Roadmap — v2.0 and beyond
 
-> Stand: September 2026 · Ersetzt die `WHITE-SPACE-ANALYSE.md` (v1.0-Analyse, deren Quick Wins und Big Bets sind umgesetzt).
+> As of September 2026 · Replaces `WHITE-SPACE-ANALYSE.md` (the v1.0 analysis, whose quick wins and big bets are all shipped).
 
-## ✅ Erreicht in v1.x (aus der White-Space-Analyse)
+## ✅ Done in v1.x (from the white-space analysis)
 
-- [x] Backup-Import (JSON) · Streaming-Antworten + Stop · Markdown-Rendering
-- [x] Ollama-/LM-Studio-Modell-Discovery · Quellen-Zitate im Chat
-- [x] Speicher-Engine außerhalb localStorage (`memories.json`, atomare Writes)
-- [x] MCP-Server (stdio + HTTP) · Command Palette · Token-Budget · Web-Clipper
-- [x] Hybrid-Suche TF-IDF + BM25 (+ optionale Embeddings)
+- [x] Backup import (JSON) · streaming answers + stop · Markdown rendering
+- [x] Ollama and LM Studio model discovery · source citations in chat
+- [x] Storage engine outside localStorage (`memories.json`, atomic writes)
+- [x] MCP server (stdio + HTTP) · command palette · token budget · web clipper
+- [x] Hybrid search TF-IDF + BM25 (+ optional embeddings)
 
-## 🎯 v2.0 — SOTA-Agenten-Gehirn (✅ released 2026-09-01)
+## 🎯 v2.0 — a state-of-the-art agent brain (✅ released 2026-09-01)
 
-| Baustein | Ziel |
+| Building block | Goal |
 |---|---|
-| **Storage** | SQLite (`node:sqlite`) mit FTS5: Papierkorb statt Hard-Delete, Memory-Typen (semantic/episodic/procedural), Scope (user/agent/session), temporale Gültigkeit (`valid_from`/`valid_to`), Superseded-Ketten |
-| **Vektoren** | Persistente Chunk-Embeddings via Ollama (`nomic-embed-text`), Embedding-on-Write-Queue statt Re-Embedding pro Suchanfrage |
-| **Retrieval** | FTS5-BM25 + Vektor-KNN + Entity-Match → RRF-Fusion → Recency-Boost + Temporal-Filter → optionaler Reranker. **Ein** Code-Pfad für UI, HTTP-API und MCP |
-| **Knowledge Graph** | Entities + Relations (aus `[[Wiki-Links]]` und Auto-Extraktion), Graph-Ansicht auf echten Kanten |
-| **MCP** | Protokoll 2026-07-28 (stateless core, `server/discover`, `_meta`-Versioning) mit Legacy-Kompatibilität; 8 Tools mit `outputSchema`/`structuredContent`; Streamable HTTP + stdio |
-| **Lifecycle** | Auto-Konsolidierung (Embedding-Duplikate, Konflikt-/Superseded-Erkennung), Auto-Tagging, episodic Memory aus Chats |
-| **Interop** | Obsidian-Vault-Import (Frontmatter + Wiki-Links) und Markdown-Export |
-| **Qualität** | `strict`-TypeScript, vitest-Tests (Storage/Engine/MCP/Interop), CI mit Test-Job + Audit |
+| **Storage** | SQLite (`node:sqlite`) with FTS5: trash instead of hard delete, memory types (semantic/episodic/procedural), scope (user/agent/session), temporal validity (`valid_from`/`valid_to`), supersede chains |
+| **Vectors** | Persistent chunk embeddings via Ollama (`nomic-embed-text`), an embed-on-write queue instead of re-embedding per query |
+| **Retrieval** | FTS5 BM25 + vector KNN + entity match → RRF fusion → recency boost + temporal filter → optional reranker. **One** code path for UI, HTTP API and MCP |
+| **Knowledge graph** | Entities and relations (from `[[wiki links]]` and auto-extraction), a graph view built on real edges |
+| **MCP** | Protocol 2026-07-28 (stateless core, `server/discover`, `_meta` versioning) with legacy compatibility; 8 tools with `outputSchema`/`structuredContent`; Streamable HTTP + stdio |
+| **Lifecycle** | Auto-consolidation (embedding duplicates, conflict and supersede detection), auto-tagging, episodic memory from chats |
+| **Interop** | Obsidian vault import (frontmatter + wiki links) and Markdown export |
+| **Quality** | `strict` TypeScript, vitest tests (storage/engine/MCP/interop), CI with a test job and audit |
 
-## 🔭 Danach (bewusst geplante Folgearbeiten)
+## 🔭 Next (deliberately planned follow-up work)
 
-- **Verschlüsselung at rest** — benötigt native Bindings (SQLCipher) oder Feldverschlüsselung; ehrlich bewerten statt halb versprechen
-- **Git-basierte Memory-Versionierung** (Letta Context-Repositories-Stil) — jede Änderung als Commit in einem Bare-Repo neben der DB
-- **Cross-Encoder-Reranking als Pflicht-Pfad** — Qwen3-Reranker-0.6B (arXiv:2506.05176) über die Top-20-RRF-Kandidaten, sobald Ollama-Rerank-API verfügbar
-- **Mem0-Write-Gate** (arXiv:2504.19413): LLM klassifiziert ADD/UPDATE/DELETE/NOOP beim Speichern statt nur Embedding-Dedup
-- **Bi-temporale Kanten** (arXiv:2501.13956): zusätzlich zu valid_from/valid_to auch ingested_at/invalidated_at auf Relationen
-- **Idle-Time-Konsolidierung** (Sleep-time Compute, arXiv:2504.13171): Hintergrundjob erzeugt Kontext-Prefixe (Contextual Retrieval, arXiv:2504.19754) und vorberechnete Fragen pro Memory
-- **Eval-Erweiterung**: LongMemEval-Teilmengen (Knowledge-Update + Abstention, arXiv:2410.10813) als Regressionssuite; bge-m3 tri-modale Vektoren
-- **A-MEM-Evolution** (arXiv:2502.12110): Nachbarn beim Insert aktualisieren (Beschreibungen/Tags refreshen)
+- **English UI** — the documentation is English, the app is not. Extracting the strings and adding a language switch is the largest remaining accessibility gap for non-German users
+- **Encryption at rest** — needs native bindings (SQLCipher) or field-level encryption; to be assessed honestly rather than half-promised
+- **Git-based memory versioning** (in the style of Letta context repositories) — every change as a commit in a bare repo next to the DB
+- **Cross-encoder reranking as a required path** — Qwen3-Reranker-0.6B (arXiv:2506.05176) over the top-20 RRF candidates, once an Ollama rerank API exists
+- **Mem0 write gate** (arXiv:2504.19413): an LLM classifies ADD/UPDATE/DELETE/NOOP on save instead of embedding dedup alone
+- **Bi-temporal edges** (arXiv:2501.13956): `ingested_at`/`invalidated_at` on relations in addition to `valid_from`/`valid_to`
+- **Idle-time consolidation** (sleep-time compute, arXiv:2504.13171): a background job produces context prefixes (contextual retrieval, arXiv:2504.19754) and precomputed questions per memory
+- **Eval expansion**: LongMemEval subsets (knowledge update + abstention, arXiv:2410.10813) as a regression suite; bge-m3 tri-modal vectors
+- **A-MEM evolution** (arXiv:2502.12110): update neighbours on insert (refresh descriptions and tags)
 
-## 📚 Forschungs-Basis (Auswahl)
+## 📚 Research basis (selection)
 
 - Mem0 — arXiv:2504.19413 · Zep/Graphiti — arXiv:2501.13956 · A-MEM — arXiv:2502.12110
-- Oblivion (Decay-Driven Activation) — arXiv:2604.00131 · Sleep-time Compute — arXiv:2504.13171
-- HippoRAG 2 — arXiv:2502.14802 · Late Chunking — arXiv:2409.04701 · Qwen3-Embedding — arXiv:2506.05176
-- LongMemEval — arXiv:2410.10813 · LoCoMo — arXiv:2402.17753 · Human-Inspired Memory (Microsoft) — arXiv:2605.08538
+- Oblivion (decay-driven activation) — arXiv:2604.00131 · Sleep-time compute — arXiv:2504.13171
+- HippoRAG 2 — arXiv:2502.14802 · Late chunking — arXiv:2409.04701 · Qwen3-Embedding — arXiv:2506.05176
+- LongMemEval — arXiv:2410.10813 · LoCoMo — arXiv:2402.17753 · Human-inspired memory (Microsoft) — arXiv:2605.08538
 
-## ⛔ Anti-Roadmap (bewusst nicht tun)
+## ⛔ Anti-roadmap (deliberately not doing)
 
-- **Chat-Feature-Ausbau** — der Chat ist Test-Cockpit (Beweis-Modus: Retrieval trifft, Quellen sichtbar); der Alltag der Nutzer läuft über Claude Desktop/Cursor via MCP. Kein Feature-Magnet.
-- Cloud-Zwang, Accounts, Hosting — Kernversprechen bleibt „lokal & privat"
-- Eigene Modell-Infrastruktur — Ollama/LM Studio decken das ab
-- Social/Collaboration — Single-Player-Wert zuerst maximieren
+- **Growing the chat into a product** — the chat is a test cockpit (proving mode: retrieval hits, sources visible); day-to-day use runs through Claude Desktop or Cursor via MCP. Not a feature magnet.
+- Forced cloud, accounts, hosting — the core promise stays "local and private"
+- Our own model infrastructure — Ollama and LM Studio cover it
+- Social and collaboration features — maximise single-player value first

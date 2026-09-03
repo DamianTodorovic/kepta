@@ -1,8 +1,8 @@
-"""Python-Client für ein lokal laufendes KEPTA.
+"""Python client for a locally running KEPTA.
 
-KEPTA selbst ist eine Desktop-App (Electron). Dieses Paket installiert sie nicht —
-es spricht mit der HTTP-API der laufenden Instanz, damit Python-Agenten dasselbe
-Gedächtnis nutzen wie Claude Desktop oder Cursor.
+KEPTA itself is a desktop app (Electron). This package does not install it — it
+talks to the HTTP API of the running instance, so that Python agents use the same
+memory as Claude Desktop or Cursor.
 """
 
 from __future__ import annotations
@@ -24,21 +24,21 @@ ENDPOINT_FILE = "endpoint.json"
 
 
 class KeptaError(RuntimeError):
-    """KEPTA war nicht erreichbar oder hat einen Fehler zurückgegeben."""
+    """KEPTA was unreachable or returned an error."""
 
 
 def data_dir() -> Path:
-    """Datenverzeichnis von KEPTA. `KEPTA_DATA_DIR` hat Vorrang, sonst ~/.kepta."""
+    """KEPTA's data directory. `KEPTA_DATA_DIR` wins, otherwise ~/.kepta."""
     override = os.environ.get("KEPTA_DATA_DIR")
     return Path(override) if override else Path.home() / ".kepta"
 
 
 def discover_url() -> str:
-    """Findet die laufende Instanz.
+    """Find the running instance.
 
-    Reihenfolge: `KEPTA_URL`, dann die Adressdatei, die der Server beim Start
-    schreibt, sonst der Entwicklungs-Standardport. Die gepackte App wählt einen
-    zufälligen Port — ohne die Datei wäre sie nicht auffindbar.
+    In order: `KEPTA_URL`, then the address file the server writes on startup,
+    otherwise the development default port. A packaged build picks a random port,
+    so without that file it could not be found at all.
     """
     env = os.environ.get("KEPTA_URL")
     if env:
@@ -55,7 +55,7 @@ def discover_url() -> str:
 
 @dataclass(frozen=True)
 class Memory:
-    """Eine Erinnerung. Zeitstempel sind Millisekunden seit Epoch."""
+    """A memory. Timestamps are milliseconds since the epoch."""
 
     id: str
     title: str
@@ -73,12 +73,12 @@ class Memory:
 
     @property
     def is_expired(self) -> bool:
-        """Gültigkeit abgelaufen? Solche Treffer wertet KEPTA im Ranking ab."""
+        """Past its validity window? KEPTA downweights such hits when ranking."""
         return self.valid_to is not None and self.valid_to < time.time() * 1000
 
     @property
     def is_superseded(self) -> bool:
-        """Wurde durch eine neuere Erinnerung ersetzt."""
+        """Superseded by a newer memory."""
         return bool(self.superseded_by)
 
     @classmethod
@@ -102,7 +102,7 @@ class Memory:
 
 @dataclass(frozen=True)
 class SearchHit:
-    """Ein Suchtreffer mit den Einzelwerten der Suchspuren."""
+    """A search hit, with the individual scores of each retrieval track."""
 
     memory: Memory
     score: float
@@ -120,16 +120,15 @@ class SearchHit:
 
 
 class KeptaClient:
-    """Sprechverbindung zu einer laufenden KEPTA-Instanz.
+    """A speaking connection to a running KEPTA instance.
 
     >>> kepta = KeptaClient()
-    >>> kepta.save("Rezept Carbonara", "Guanciale, Pecorino, Eigelb.", tags=["kochen"])
-    >>> [h.memory.title for h in kepta.search("carbonara ohne sahne")]
+    >>> kepta.save("Carbonara", "Guanciale, pecorino, egg yolk.", tags=["cooking"])
+    >>> [h.memory.title for h in kepta.search("carbonara without cream")]
 
-    Die Suche verbindet Volltext, Vektoren und Wissensgraph. Die Vektor-Spur
-    braucht ein lokales Embedding-Modell (``ollama pull nomic-embed-text``);
-    ohne das Modell bleibt ``SearchHit.vector_score`` auf 0.0 und es wird rein
-    lexikalisch gesucht.
+    Search combines full text, vectors and the knowledge graph. The vector track
+    needs a local embedding model (``ollama pull nomic-embed-text``); without it
+    ``SearchHit.vector_score`` stays at 0.0 and search is purely lexical.
     """
 
     def __init__(self, url: str | None = None, timeout: float = 20.0) -> None:
@@ -153,28 +152,28 @@ class KeptaClient:
                 return json.loads(raw) if raw else None
         except HTTPError as e:
             detail = e.read().decode("utf-8", "replace")[:400]
-            raise KeptaError(f"{method} {path} scheiterte ({e.code}): {detail}") from e
+            raise KeptaError(f"{method} {path} failed ({e.code}): {detail}") from e
         except (URLError, TimeoutError) as e:
             raise KeptaError(
-                f"KEPTA unter {self.url} nicht erreichbar. Läuft die App? "
-                f"Alternativ KEPTA_URL setzen. Ursache: {e}"
+                f"KEPTA at {self.url} is unreachable. Is the app running? "
+                f"Otherwise set KEPTA_URL. Cause: {e}"
             ) from e
 
-    # ---------- Lesen ----------
+    # ---------- Reading ----------
 
     def health(self) -> dict[str, Any]:
-        """Statusabfrage — Version, Anzahl Knoten, Pfad der Datenbank."""
+        """Status — version, node count, database path."""
         return self._request("GET", "/api/health")
 
     def is_alive(self) -> bool:
-        """True, wenn eine Instanz antwortet."""
+        """True when an instance answers."""
         try:
             return bool(self.health().get("ok"))
         except KeptaError:
             return False
 
     def list(self, *, trash: bool = False) -> list[Memory]:
-        """Alle Erinnerungen. Mit `trash=True` stattdessen den Papierkorb."""
+        """Every memory. With `trash=True`, the trash instead."""
         data = self._request("GET", "/api/memories", params={"trash": "1" if trash else None})
         return [Memory.from_api(d) for d in (data or [])]
 
@@ -187,7 +186,7 @@ class KeptaClient:
         type: MemoryType | None = None,
         scope: str | None = None,
     ) -> list[SearchHit]:
-        """Hybride Suche: Volltext, Vektoren und Wissensgraph, per RRF verschmolzen."""
+        """Hybrid retrieval: full text, vectors and knowledge graph, fused by RRF."""
         body: dict[str, Any] = {"query": query, "topK": max(1, min(int(top_k), 100))}
         if tags:
             body["tags"] = list(tags)
@@ -199,10 +198,10 @@ class KeptaClient:
         return [SearchHit.from_api(d) for d in (data or {}).get("results", [])]
 
     def graph(self) -> dict[str, Any]:
-        """Entitäten und Relationen des Wissensgraphen."""
+        """Entities and relations of the knowledge graph."""
         return self._request("GET", "/api/graph")
 
-    # ---------- Schreiben ----------
+    # ---------- Writing ----------
 
     def save(
         self,
@@ -215,7 +214,7 @@ class KeptaClient:
         valid_from: int | None = None,
         valid_to: int | None = None,
     ) -> Memory:
-        """Legt eine Erinnerung an."""
+        """Create a memory."""
         body: dict[str, Any] = {"title": title, "content": content}
         if tags is not None:
             body["tags"] = list(tags)
@@ -231,7 +230,7 @@ class KeptaClient:
         return Memory.from_api((data or {}).get("memory") or data or {})
 
     def update(self, memory_id: str, **patch: Any) -> Memory:
-        """Ändert Felder einer Erinnerung. Schlüssel wie bei `save`."""
+        """Change fields of a memory. Same keys as `save`."""
         mapping = {"valid_from": "validFrom", "valid_to": "validTo"}
         body: dict[str, Any] = {"id": memory_id}
         for key, value in patch.items():
@@ -240,13 +239,13 @@ class KeptaClient:
         return Memory.from_api((data or {}).get("memory") or {})
 
     def delete(self, memory_id: str, *, permanent: bool = False) -> bool:
-        """In den Papierkorb. Mit `permanent=True` endgültig — nicht umkehrbar."""
+        """Move to trash. With `permanent=True` it is gone for good — no undo."""
         data = self._request(
             "DELETE", f"/api/memories/{memory_id}", params={"permanent": "1" if permanent else None}
         )
         return bool((data or {}).get("ok"))
 
     def restore(self, memory_id: str) -> bool:
-        """Holt eine Erinnerung aus dem Papierkorb zurück."""
+        """Bring a memory back out of the trash."""
         data = self._request("POST", f"/api/memories/{memory_id}/restore")
         return bool((data or {}).get("ok", True))
