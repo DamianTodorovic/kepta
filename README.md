@@ -6,13 +6,13 @@
 
 ## 🎬 So sieht KEPTA aus
 
-**Demo-Video:** [`docs/demo.webm`](docs/demo.webm)
-
 | Index & hybride Suche | Wissensgraph |
 |---|---|
 | ![Index](docs/screenshots/01-index.png) | ![Graph](docs/screenshots/03-graph.png) |
-| **Editor (Typ, Gültigkeit, Konfidenz)** | **System-Status (Setup-Diagnose)** |
-| ![Editor](docs/screenshots/04-editor.png) | ![Status](docs/screenshots/05-system-status.png) |
+| **Editor — Typ, Gültigkeit, Konfidenz** | **Einrichtung — Themen & Starter-Pack** |
+| ![Editor](docs/screenshots/04-editor.png) | ![Einrichtung](docs/screenshots/05-einrichtung.png) |
+
+<sub>Aufnahmen aus Version 2.4.0 mit dem Demo-Korpus aus <code>scripts/eval-corpus.ts</code>.</sub>
 
 ## 🎯 Use Cases
 
