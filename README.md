@@ -20,6 +20,12 @@
 
 <sub>Recorded from version 2.6.0 on a demo corpus. No real data — every entry was made up for these shots.</sub>
 
+### Knowledge that has a date
+
+<p align="center"><img src="docs/graph-time.gif" alt="The knowledge graph with the time slider: dragging back to November 2025 dims every note that did not exist yet, leaving only the two that did" width="900"></p>
+
+<sub>The time slider answers a question most note apps cannot: <em>what did I know in November?</em> Every memory carries a validity window, so the graph can be replayed. The dimmed nodes are not deleted — they simply were not true yet.</sub>
+
 ## 🎯 What it's for
 
 1. **One brain for every AI tool** — Claude Desktop, Cursor and anything else that speaks MCP share the same knowledge base. What one agent learns, the next one already knows.

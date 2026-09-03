@@ -22,6 +22,12 @@
 
 <sub>Aufnahmen aus Version 2.6.0 mit erfundenen Demo-Daten — nichts davon ist echt. Die Oberfläche ist englisch.</sub>
 
+### Wissen mit Datum
+
+<p align="center"><img src="docs/graph-time.gif" alt="Der Wissensgraph mit Zeitregler: zurück auf November 2025 verdunkelt jede Notiz, die es damals noch nicht gab" width="900"></p>
+
+<sub>Der Zeitregler beantwortet, was die meisten Notiz-Apps nicht können: <em>Was wusste ich im November?</em> Jede Erinnerung trägt eine Gültigkeit, der Graph lässt sich damit zurückspulen. Die abgedunkelten Knoten sind nicht gelöscht — sie waren nur noch nicht wahr.</sub>
+
 ## 🎯 Use Cases
 
 1. **Ein Gehirn für alle KI-Tools** — Claude Desktop, Cursor & Co. teilen dieselbe Wissensbasis per MCP. Was ein Agent lernt, weiß der nächste sofort.
