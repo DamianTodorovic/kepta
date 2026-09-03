@@ -34,6 +34,12 @@ function seedEmbeddings(store: KeptaStore, model = DEFAULT_EMBED_MODEL) {
 describe("searchMemories (RRF-Fusion)", () => {
   let store: KeptaStore;
   beforeEach(() => {
+    // embedQuery ruft Ollama ueber fetch. Ohne Stub haengt das Ergebnis davon ab,
+    // ob auf dem Rechner nomic-embed-text installiert ist: auf CI (kein Ollama)
+    // gruen, auf einem Entwicklerrechner, der der README gefolgt ist, rot.
+    // Standard ist deshalb "kein Embedding-Dienst"; Tests, die das Vektor-Bein
+    // brauchen, stubben fetch selbst.
+    vi.stubGlobal("fetch", vi.fn(async () => ({ ok: false, status: 503, json: async () => ({}) })));
     store = freshStore();
     const a = store.createMemory({ title: "Rust Backend", content: "Speichersicherheit und Performance ohne Garbage Collector", tags: ["rust"], updatedAt: 1000 });
     const b = store.createMemory({ title: "Kochen", content: "Spaghetti Carbonara mit Pecorino", tags: ["kochen"], updatedAt: 2000 });
@@ -41,6 +47,7 @@ describe("searchMemories (RRF-Fusion)", () => {
     for (const id of [a.id, b.id, c.id]) indexMemory(store, id);
     seedEmbeddings(store);
   });
+  afterEach(() => vi.unstubAllGlobals());
 
   it("rankt lexikalisch relevantes vorder", async () => {
     const res = await searchMemories(store, { query: "Speichersicherheit Rust", limit: 5 });
