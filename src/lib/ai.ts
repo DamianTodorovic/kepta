@@ -200,6 +200,12 @@ export interface AISettings {
   apiKey: string;
   baseUrl: string;
   model: string;
+  /**
+   * Optionales, kleines Modell nur für Auto-Learn. Leer = dasselbe wie `model`.
+   * Grosse Reasoning-Modelle brauchen für Titel und drei Tags Minuten pro Antwort;
+   * ein 3B-Modell erledigt das in Sekunden.
+   */
+  extractModel?: string;
 }
 
 const SETTINGS_KEY = 'ki_gehirn_ai_settings';
