@@ -6,6 +6,10 @@ import {
   shouldLearn,
   buildExtractPrompt,
   AUTO_LEARN_TIMEOUT_MS,
+  isAutoLearnEnabled,
+  shouldShowHint,
+  AUTOLEARN_KEY,
+  AUTOLEARN_HINT_KEY,
 } from "../../src/lib/autolearn";
 
 // Hintergrund: Auto-Learn schnitt bisher stur vom ersten "{" bis zum letzten "}".
@@ -147,6 +151,43 @@ describe("buildExtractPrompt", () => {
 
   it("begrenzt sehr lange Antworten", () => {
     expect(buildExtractPrompt("x".repeat(20000)).length).toBeLessThan(6000);
+  });
+});
+
+describe("isAutoLearnEnabled — Opt-in", () => {
+  const read = (v: Record<string, string>) => (k: string) => v[k] ?? null;
+
+  it("ist ohne Einstellung AUS", () => {
+    // Bewusst Opt-in: die Funktion loest pro Antwort einen zweiten Modellaufruf aus.
+    expect(isAutoLearnEnabled(read({}))).toBe(false);
+  });
+
+  it("ist bei 'true' an", () => {
+    expect(isAutoLearnEnabled(read({ [AUTOLEARN_KEY]: "true" }))).toBe(true);
+  });
+
+  it("ist bei 'false' aus", () => {
+    expect(isAutoLearnEnabled(read({ [AUTOLEARN_KEY]: "false" }))).toBe(false);
+  });
+
+  it("ist bei Unsinn aus", () => {
+    expect(isAutoLearnEnabled(read({ [AUTOLEARN_KEY]: "vielleicht" }))).toBe(false);
+  });
+});
+
+describe("shouldShowHint", () => {
+  const read = (v: Record<string, string>) => (k: string) => v[k] ?? null;
+
+  it("zeigt den Hinweis, solange Auto-Learn aus und ungesehen ist", () => {
+    expect(shouldShowHint(read({}))).toBe(true);
+  });
+
+  it("zeigt ihn nicht erneut, wenn er gesehen wurde", () => {
+    expect(shouldShowHint(read({ [AUTOLEARN_HINT_KEY]: "seen" }))).toBe(false);
+  });
+
+  it("zeigt ihn nicht, wenn Auto-Learn bereits an ist", () => {
+    expect(shouldShowHint(read({ [AUTOLEARN_KEY]: "true" }))).toBe(false);
   });
 });
 

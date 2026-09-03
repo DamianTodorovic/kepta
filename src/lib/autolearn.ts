@@ -10,6 +10,28 @@
 /** Obergrenze für den Hintergrundaufruf. Ohne Limit hängt er bei langsamen lokalen Modellen. */
 export const AUTO_LEARN_TIMEOUT_MS = 45_000;
 
+export const AUTOLEARN_KEY = "ki_gehirn_autolearn";
+export const AUTOLEARN_HINT_KEY = "ki_gehirn_autolearn_hint";
+
+/** Leseschnittstelle auf den Speicher — als Parameter, damit die Logik ohne Browser testbar bleibt. */
+export type StorageReader = (key: string) => string | null;
+
+/**
+ * Auto-Learn ist **Opt-in**: Es löst pro Chat-Antwort einen zweiten Modellaufruf aus,
+ * bei Cloud-Anbietern also zusätzliche Kosten. So etwas schaltet man bewusst ein.
+ */
+export function isAutoLearnEnabled(read: StorageReader): boolean {
+  return read(AUTOLEARN_KEY) === "true";
+}
+
+/**
+ * Einmaliger Hinweis, damit die Funktion trotz Opt-in entdeckt wird:
+ * nur wenn sie aus ist und der Hinweis noch nie gezeigt wurde.
+ */
+export function shouldShowHint(read: StorageReader): boolean {
+  return !isAutoLearnEnabled(read) && read(AUTOLEARN_HINT_KEY) !== "seen";
+}
+
 /** Bis hierher wird die Antwort an das Extraktionsmodell übergeben. */
 const MAX_ANSWER_CHARS = 4000;
 
