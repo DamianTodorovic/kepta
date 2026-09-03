@@ -185,7 +185,7 @@ export function OnboardingWizard({ open, onClose, onComplete }: Props) {
                       <span className={`w-2.5 h-2.5 rounded-full ${d.available ? 'bg-emerald-500' : 'bg-zinc-400'}`} style={{boxShadow: d.available ? '0 0 8px var(--ok)' : undefined}}/>
                       <div className="flex-1 min-w-0">
                         <div className="text-sm font-medium" style={{color:'var(--text-1)'}}>{d.label} {d.available ? '· available' : '· not found'}</div>
-                        <div className="text-xs truncate" style={{color:'var(--text-3)'}}>{d.models.length ? d.models.slice(0,4).join(', ') + (d.models.length>4?` +${d.models.length-4}`:'') : d.available ? 'keine Modelle geladen (ollama pull ...)' : 'nicht installiert'}</div>
+                        <div className="text-xs truncate" style={{color:'var(--text-3)'}}>{d.models.length ? d.models.slice(0,4).join(', ') + (d.models.length>4?` +${d.models.length-4}`:'') : d.available ? 'keine Modelle geladen (ollama pull ...)' : 'not installed'}</div>
                       </div>
                       {d.available && <span className="text-xs hud-label px-1.5 py-1 rounded hud-inset" style={{color:'var(--ok)'}}>{d.latencyMs}ms</span>}
                     </div>

@@ -51,6 +51,34 @@ describe("/api/memories CRUD", () => {
     expect(res.body).toHaveLength(0);
   });
 
+  it("POST setzt scope — die HTTP-Route ignorierte das Feld, MCP konnte es laengst", async () => {
+    const res = await request(app).post("/api/memories").send({ title: "Scope", content: "x", scope: "agent:coder" });
+    expect(res.status).toBe(200);
+    expect(res.body.memory.scope).toBe("agent:coder");
+  });
+
+  it("POST begrenzt einen unsinnig langen scope", async () => {
+    const res = await request(app).post("/api/memories").send({ title: "Scope", content: "x", scope: "a".repeat(200) });
+    expect(res.status).toBe(200);
+    expect(res.body.memory.scope.length).toBeLessThanOrEqual(64);
+  });
+
+  it("POST setzt supersededBy beim Aendern", async () => {
+    const alt = await request(app).post("/api/memories").send({ title: "Alte Adresse", content: "Hamburg" });
+    const neu = await request(app).post("/api/memories").send({ title: "Neue Adresse", content: "Leipzig" });
+    const res = await request(app).post("/api/memories").send({ id: alt.body.memory.id, supersededBy: neu.body.memory.id });
+    expect(res.status).toBe(200);
+    expect(res.body.memory.supersededBy).toBe(neu.body.memory.id);
+  });
+
+  it("POST loest eine Ersetzung wieder auf (supersededBy: null)", async () => {
+    const alt = await request(app).post("/api/memories").send({ title: "A", content: "x" });
+    const neu = await request(app).post("/api/memories").send({ title: "B", content: "y" });
+    await request(app).post("/api/memories").send({ id: alt.body.memory.id, supersededBy: neu.body.memory.id });
+    const res = await request(app).post("/api/memories").send({ id: alt.body.memory.id, supersededBy: null });
+    expect(res.body.memory.supersededBy).toBeNull();
+  });
+
   it("POST legt eine Memory an und GET findet sie", async () => {
     const post = await request(app).post("/api/memories").send({ title: "Server-Test", content: "Inhalt", tags: ["api"] });
     expect(post.status).toBe(200);

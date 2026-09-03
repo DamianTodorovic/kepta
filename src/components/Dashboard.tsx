@@ -176,7 +176,7 @@ export function Dashboard() {
   const [clipOk, setClipOk] = useState<string | null>(null);
 
   // Inbox Auto-Import — Gehirn liest immer mit (File-Watcher)
-  const [inbox, setInbox] = useState<{ inboxDir?: string; files: string[]; archivCount: number; watching: boolean } | null>(null);
+  const [inbox, setInbox] = useState<{ inboxDir?: string; files: string[]; archiveCount: number; watching: boolean } | null>(null);
   const [inboxScanBusy, setInboxScanBusy] = useState(false);
   const refreshInbox = useCallback(async ()=>{
     try { const r = await fetch('/api/inbox/status'); if(r.ok) setInbox(await r.json()); } catch {}
@@ -190,7 +190,7 @@ export function Dashboard() {
       setImportMsg(`Inbox: ${d.scanned} files scanned, ${d.imported} nodes imported`);
       setTimeout(()=> setImportMsg(null), 3000);
       refreshInbox();
-    } catch { setImportErr('Inbox-Scan fehlgeschlagen'); setTimeout(()=> setImportErr(null), 2500); }
+    } catch { setImportErr('Inbox scan failed'); setTimeout(()=> setImportErr(null), 2500); }
     finally { setInboxScanBusy(false); }
   };
 
@@ -502,7 +502,7 @@ export function Dashboard() {
       setTimeout(() => setImportMsg(null), 3500);
     } catch (e: unknown) {
       const msg = e instanceof Error ? e.message : String(e);
-      setImportErr(msg || "Import fehlgeschlagen");
+      setImportErr(msg || "Import failed");
       setTimeout(() => setImportErr(null), 3500);
     } finally {
       setImporting(false);
@@ -528,7 +528,7 @@ export function Dashboard() {
         body: JSON.stringify({ url }),
       });
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error || "Clip fehlgeschlagen");
+      if (!res.ok) throw new Error(data.error || "Clip failed");
       const title: string = data.title || new URL(url).hostname;
       const content: string = data.content || "";
       const tags = ["clip", new URL(url).hostname.replace(/^www\./, "")];
@@ -1101,7 +1101,7 @@ export function Dashboard() {
 const SHORTCUTS: { keys: string; action: string }[] = [
   { keys: '⌘K', action: 'Command palette — quick actions and search' },
   { keys: '⌘N', action: 'New knowledge node' },
-  { keys: '?', action: 'Diese Übersicht' },
+  { keys: '?', action: 'This overview' },
   { keys: 'Esc', action: 'Close dialog' },
   { keys: '⌘1–4', action: 'Ansicht wechseln (Index, Chat, Graph, System)' },
 ];

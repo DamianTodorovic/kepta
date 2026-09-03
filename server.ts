@@ -510,7 +510,7 @@ export function createApp(store: KeptaStore) {
   function handleMarkdownImport(req: express.Request, res: express.Response) {
     const { files, scope } = req.body as { files?: { name?: string; content?: string }[]; scope?: string };
     if (!Array.isArray(files) || files.length === 0 || files.length > 5000) {
-      return res.status(400).json({ error: "files-Array (1..5000) erwartet" });
+      return res.status(400).json({ error: "a files array (1..5000) is required" });
     }
     const mdFiles = files
       .filter((f) => f && typeof f.content === "string")
@@ -621,9 +621,11 @@ export function createApp(store: KeptaStore) {
         indexMemory(store, created.id);
         existing.unshift(toApi(created));
       }
-      // nach Import Datei nach inbox/archiv verschieben
+      // Nach dem Import wandert die Datei ins Archiv. Der Ordner hiess frueher
+      // "archiv"; wo er existiert, bleibt er in Benutzung, damit bereits
+      // archivierte Dateien nicht ploetzlich woanders liegen.
       try {
-        const doneDir = path.join(INBOX_DIR, 'archiv');
+        const doneDir = archiveDir();
         fs.mkdirSync(doneDir, { recursive: true });
         fs.renameSync(resolved, path.join(doneDir, path.basename(resolved)));
       } catch {}
@@ -647,12 +649,19 @@ export function createApp(store: KeptaStore) {
   }
   startInboxWatcher();
 
+  /** Archivordner der Inbox. Neu: "archive". Wo noch "archiv" liegt, bleibt es dabei. */
+  function archiveDir(): string {
+    const alt = path.join(INBOX_DIR, 'archiv');
+    try { if (fs.existsSync(alt)) return alt; } catch { /* nicht lesbar — dann eben der neue */ }
+    return path.join(INBOX_DIR, 'archive');
+  }
+
   app.get('/api/inbox/status', (_req,res)=>{
     let files: string[] = [];
-    try { files = fs.readdirSync(INBOX_DIR).filter(f=> !f.startsWith('.') && f!=='archiv'); } catch {}
-    let archiv = 0;
-    try { archiv = fs.readdirSync(path.join(INBOX_DIR,'archiv')).length; } catch {}
-    res.json({ inboxDir: INBOX_DIR, files, archivCount: archiv, watching: !!inboxWatcher, lastScan: inboxLastScan });
+    try { files = fs.readdirSync(INBOX_DIR).filter(f=> !f.startsWith('.') && f!=='archiv' && f!=='archive'); } catch {}
+    let archived = 0;
+    try { archived = fs.readdirSync(archiveDir()).length; } catch {}
+    res.json({ inboxDir: INBOX_DIR, files, archiveCount: archived, archivCount: archived, watching: !!inboxWatcher, lastScan: inboxLastScan });
   });
   app.post('/api/inbox/scan', writeLimiter, async (_req,res)=>{
     inboxLastScan = Date.now();
@@ -696,6 +705,21 @@ export function createApp(store: KeptaStore) {
     });
   });
 
+  /** Scope auf eine handhabbare Form bringen: "user", "agent:coder", "session:abc". */
+  function sanitizeScope(v: unknown): string | null {
+    if (v === null) return null;
+    if (typeof v !== "string") return null;
+    const s = v.trim().toLowerCase().replace(/[^\w:.-]/g, "").slice(0, 64);
+    return s || null;
+  }
+
+  /** Fremd-ID pruefen (gleiche Regel wie in den Routen), sonst null. */
+  function sanitizeId(v: unknown): string | null {
+    if (v === null) return null;
+    if (typeof v !== "string") return null;
+    return v.length <= 120 && /^[\w\-.:]+$/.test(v) ? v : null;
+  }
+
   function handleCreateOrUpdateMemory(req: express.Request, res: express.Response) {
     const body = req.body as Partial<MemoryRecord> & { tags?: unknown; title?: unknown; content?: unknown };
     // Hardened: Validierung + Sanitization + Limits
@@ -715,6 +739,11 @@ export function createApp(store: KeptaStore) {
       if (typeof body.confidence === "number") patch.confidence = Math.min(1, Math.max(0, body.confidence));
       if (body.validFrom !== undefined) patch.validFrom = body.validFrom === null ? null : Number(body.validFrom) || null;
       if (body.validTo !== undefined) patch.validTo = body.validTo === null ? null : Number(body.validTo) || null;
+      // scope und supersededBy konnte bisher nur MCP setzen, obwohl beide zum
+      // Datenmodell gehoeren. Ein Client ueber HTTP schickte sie und bekam
+      // stillschweigend nichts.
+      if (body.scope !== undefined) patch.scope = sanitizeScope(body.scope);
+      if (body.supersededBy !== undefined) patch.supersededBy = sanitizeId(body.supersededBy);
       const updated = store.updateMemory(body.id, patch);
       if (!updated) return res.status(404).json({ error: "Node not found" });
       if (body.content !== undefined) indexMemory(store, updated.id);
@@ -731,6 +760,7 @@ export function createApp(store: KeptaStore) {
       confidence: typeof body.confidence === "number" ? Math.min(1, Math.max(0, body.confidence)) : undefined,
       validFrom: body.validFrom === null || body.validFrom === undefined ? undefined : Number(body.validFrom) || undefined,
       validTo: body.validTo === null || body.validTo === undefined ? undefined : Number(body.validTo) || undefined,
+      scope: body.scope === undefined ? undefined : (sanitizeScope(body.scope) ?? undefined),
     });
     indexMemory(store, created.id);
     publishActivity({ type: "save", source: "app", title: created.title });
@@ -820,7 +850,7 @@ export function createApp(store: KeptaStore) {
       }
       res.json({ exported: memories.length, path: dir });
     } catch (e) {
-      res.status(500).json({ error: e instanceof Error ? e.message : "Export fehlgeschlagen" });
+      res.status(500).json({ error: e instanceof Error ? e.message : "Export failed" });
     }
   });
 
@@ -855,9 +885,9 @@ export function createApp(store: KeptaStore) {
           clearTimeout(timeout); // auch bei Fehlern/Abort aufräumen
         }
         if ([301, 302, 303, 307, 308].includes(response.status)) {
-          if (hop === MAX_REDIRECTS) return res.status(508).json({ error: "Zu viele Redirects (max 5)" });
+          if (hop === MAX_REDIRECTS) return res.status(508).json({ error: "Too many redirects (max 5)" });
           const loc = response.headers.get("location");
-          if (!loc) return res.status(502).json({ error: "Redirect ohne Ziel" });
+          if (!loc) return res.status(502).json({ error: "Redirect without a target" });
           const next = parseSafeUrl(new URL(loc, current).toString());
           if (!next.ok) return res.status(400).json({ error: next.reason });
           current = next.url!;
@@ -865,10 +895,10 @@ export function createApp(store: KeptaStore) {
         }
         break;
       }
-      if (!response) return res.status(502).json({ error: "Fetch fehlgeschlagen" });
-      if (!response.ok) return res.status(502).json({ error: `Fetch fehlgeschlagen (${response.status})` });
+      if (!response) return res.status(502).json({ error: "Fetch failed" });
+      if (!response.ok) return res.status(502).json({ error: `Fetch failed (${response.status})` });
       const rawHtml = await response.text();
-      if (rawHtml.length > 600000) return res.status(413).json({ error: "Seite zu groß (max 600k)" });
+      if (rawHtml.length > 600000) return res.status(413).json({ error: "Page too large (max 600k)" });
       const html = rawHtml;
 
       const titleMatch = html.match(/<title[^>]*>([\s\S]*?)<\/title>/i);
@@ -917,7 +947,7 @@ export function createApp(store: KeptaStore) {
         .slice(0, 50000);
 
       const title = sanitizeTitle(rawTitle.replace(/\s+/g, " ").replace(/&[a-zA-Z0-9#]+;/g, (m) => entities[m] || m).trim().slice(0, 300)) || sanitizeTitle(current.hostname).slice(0,80) || "Import";
-      if (!text) return res.status(422).json({ error: "Kein Text extrahierbar" });
+      if (!text) return res.status(422).json({ error: "No extractable text" });
       const safeTitle = sanitizeTitle(title);
       // Roh-HTML-Ingest: zusätzlich Event-Handler-/javascript:-Reste entfernen
       const safeText = sanitizeHtmlText(text, 50000);
@@ -945,7 +975,7 @@ export function createApp(store: KeptaStore) {
     };
     const rawInput = input ?? inputs ?? prompt;
     if (rawInput === undefined || (Array.isArray(rawInput) && rawInput.length === 0) || (typeof rawInput === "string" && !rawInput.trim())) {
-      return res.status(400).json({ error: "Kein Input für Embedding angegeben" });
+      return res.status(400).json({ error: "No input given for embedding" });
     }
     const texts: string[] = Array.isArray(rawInput) ? rawInput : [rawInput];
     const modelName = model || OLLAMA_EMBED_MODEL;
@@ -977,16 +1007,16 @@ export function createApp(store: KeptaStore) {
         });
         if (!rr.ok) {
           const errText = await rr.text().catch(() => "");
-          throw new Error(errText || `Ollama Fehler ${rr.status}`);
+          throw new Error(errText || `Ollama error ${rr.status}`);
         }
         const jd: any = await rr.json();
         if (Array.isArray(jd.embedding)) embeddings.push(jd.embedding);
-        else throw new Error("Ungültige Embedding-Antwort");
+        else throw new Error("Invalid embedding response");
       }
       return res.json({ embeddings, model: modelName });
     } catch (e: any) {
       // Ollama nicht erreichbar -> dem Frontend signalisieren, damit es auf TF-IDF zurückfällt
-      return res.status(502).json({ error: e.message || "Ollama nicht erreichbar", embeddings: null });
+      return res.status(502).json({ error: e.message || "Ollama is unreachable", embeddings: null });
     }
   });
 
@@ -1044,7 +1074,7 @@ export function createApp(store: KeptaStore) {
     if (!body || typeof body !== "object" || Array.isArray(body)) {
       // JSON-Array = Batch-Request: MCP 2026-07-28 hat Batching gestrichen →
       // einzelnes Error-Objekt statt stiller 200/leerer Antwort
-      return res.status(400).json({ jsonrpc: "2.0", id: null, error: { code: -32600, message: "Batching nicht unterstützt (MCP 2026-07-28 hat Batching gestrichen)" } });
+      return res.status(400).json({ jsonrpc: "2.0", id: null, error: { code: -32600, message: "Batching is not supported (MCP 2026-07-28 removed it)" } });
     }
     try {
       const reply = await handleRpc(mcpCtx, body as never);
@@ -1070,13 +1100,13 @@ export function createApp(store: KeptaStore) {
     }
   });
   app.get("/mcp", (_req, res) => {
-    res.status(405).json({ error: "Streamable HTTP: nur POST (stateless, keine SSE-Sitzung)" });
+    res.status(405).json({ error: "Streamable HTTP: POST only (stateless, no SSE session)" });
   });
 
   // Legacy-kompatible Hilfsrouten (plain JSON statt JSON-RPC) — dünne Wrapper über die Engine
   app.post("/api/mcp/search", writeLimiter, async (req, res) => {
     const { query, limit = 10, tags } = req.body as { query?: string; limit?: number; tags?: string[] };
-    if (!query || !query.trim()) return res.status(400).json({ error: "query erforderlich", tools: MCP_TOOLS });
+    if (!query || !query.trim()) return res.status(400).json({ error: "a query is required", tools: MCP_TOOLS });
     const result = await engineSearch(store, {
       query: String(query),
       limit: Math.min(Math.max(parseInt(String(limit), 10) || 10, 1), 50),
@@ -1108,7 +1138,7 @@ export function createApp(store: KeptaStore) {
     const body = req.body as ChatRequest;
     // Hardened: Validierung — messages ist Pflichtfeld (sonst TypeError im Upstream-Body)
     if (!body || typeof body !== "object" || !Array.isArray(body.messages)) {
-      return res.status(400).json({ error: "Messages-Array erforderlich" });
+      return res.status(400).json({ error: "a messages array is required" });
     }
     if (body.messages.length > 40) return res.status(400).json({ error: "Too many messages (max 40)" });
     if (body.system && typeof body.system === "string" && body.system.length > 60000) return res.status(413).json({ error: "System prompt too large" });
@@ -1133,7 +1163,7 @@ export function createApp(store: KeptaStore) {
 
       if (!upstream.ok || !upstream.body) {
         const errText = await upstream.text();
-        let message = `API-Fehler (${upstream.status})`;
+        let message = `API error (${upstream.status})`;
         try { message = JSON.parse(errText)?.error?.message || message; } catch { /* ignore */ }
         res.write(`data: ${JSON.stringify({ error: message })}\n\n`);
         res.write("data: [DONE]\n\n");
@@ -1161,7 +1191,7 @@ export function createApp(store: KeptaStore) {
   // Nicht-Streaming-Fallback
   app.post("/api/chat", chatLimiter, async (req, res) => {
     const body = req.body as ChatRequest;
-    if (!body || typeof body !== "object" || !Array.isArray(body.messages)) return res.status(400).json({ error: "Messages-Array erforderlich" });
+    if (!body || typeof body !== "object" || !Array.isArray(body.messages)) return res.status(400).json({ error: "a messages array is required" });
     if (body.messages.length > 40) return res.status(400).json({ error: "Too many messages (max 40)" });
     if (body.system && typeof body.system === "string" && body.system.length > 60000) return res.status(413).json({ error: "System prompt too large" });
     if (body.model && typeof body.model === "string" && body.model.length > 200) return res.status(400).json({ error: "Model name too long" });

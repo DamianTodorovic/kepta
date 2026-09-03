@@ -174,7 +174,7 @@ export async function importMemories(
     body: JSON.stringify({ memories, mode }),
   });
   const data = await res.json();
-  if (!res.ok) throw new Error(data.error || 'Import fehlgeschlagen');
+  if (!res.ok) throw new Error(data.error || 'Import failed');
   await refreshMemories();
   return data;
 }

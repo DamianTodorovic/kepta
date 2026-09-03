@@ -511,7 +511,7 @@ export function Chat({ activeMemories, onSaveToBrain, onSaveToBrainWithMeta, isF
               method:'POST', headers:{'Content-Type':'application/json'}, signal: ctl.signal,
               body: JSON.stringify({ providerId: prov.id, protocol: prov.protocol, baseUrl: s.baseUrl || prov.baseUrl, apiKey: s.apiKey, model, system:'You extract knowledge. Reply with JSON only.', messages:[{role:'user', content: buildExtractPrompt(accText)}] })
             });
-            if (!r.ok) throw new Error(`Extraktion fehlgeschlagen (HTTP ${r.status})`);
+            if (!r.ok) throw new Error(`Extraction failed (HTTP ${r.status})`);
             const j = await r.json();
             const node = parseNode(String(j.text ?? ''), accText.slice(0, 1600));
             if (!node) throw new Error('The model returned no usable JSON');

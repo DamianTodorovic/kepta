@@ -4,7 +4,7 @@
 
 <p align="center"><strong>English</strong> · <a href="README.de.md">🇩🇪 Deutsch</a></p>
 
-<p align="center"><a href="https://github.com/DamianTodorovic/kepta/releases"><img alt="Release" src="https://img.shields.io/github/v/release/DamianTodorovic/kepta?label=Download"></a> <a href="https://github.com/DamianTodorovic/kepta/actions/workflows/build.yml"><img alt="CI" src="https://github.com/DamianTodorovic/kepta/actions/workflows/build.yml/badge.svg"></a> <a href="https://pypi.org/project/kepta/"><img alt="PyPI" src="https://img.shields.io/pypi/v/kepta?label=pip%20install%20kepta"></a> <img alt="Coverage" src="https://img.shields.io/badge/coverage-91%25-brightgreen"> <img alt="Tests" src="https://img.shields.io/badge/tests-325%20passing-brightgreen"> <a href="LICENSE"><img alt="MIT" src="https://img.shields.io/badge/License-MIT-black"></a> <img alt="Platform" src="https://img.shields.io/badge/platform-macOS%20%7C%20Windows%20%7C%20Linux-lightgrey"></p>
+<p align="center"><a href="https://github.com/DamianTodorovic/kepta/releases"><img alt="Release" src="https://img.shields.io/github/v/release/DamianTodorovic/kepta?label=Download"></a> <a href="https://github.com/DamianTodorovic/kepta/actions/workflows/build.yml"><img alt="CI" src="https://github.com/DamianTodorovic/kepta/actions/workflows/build.yml/badge.svg"></a> <a href="https://pypi.org/project/kepta/"><img alt="PyPI" src="https://img.shields.io/pypi/v/kepta?label=pip%20install%20kepta"></a> <img alt="Coverage" src="https://img.shields.io/badge/coverage-91%25-brightgreen"> <img alt="Tests" src="https://img.shields.io/badge/tests-330%20passing-brightgreen"> <a href="LICENSE"><img alt="MIT" src="https://img.shields.io/badge/License-MIT-black"></a> <img alt="Platform" src="https://img.shields.io/badge/platform-macOS%20%7C%20Windows%20%7C%20Linux-lightgrey"></p>
 
 ## 🎬 What it looks like
 
@@ -337,11 +337,11 @@ If you would rather not trust the binaries, build them yourself: `npm install &&
 
 ## 🧪 Quality & tests
 
-**325 tests**, overall coverage **~91 %** (core `src/core` at **100 % of functions**). Vitest with v8 coverage and thresholds as a CI gate — any commit that lowers coverage turns CI red.
+**330 tests**, overall coverage **~91 %** (core `src/core` at **100 % of functions**). Vitest with v8 coverage and thresholds as a CI gate — any commit that lowers coverage turns CI red.
 
 ```bash
 npm run lint       # tsc --noEmit (typecheck)
-npm test           # 325 tests (vitest)
+npm test           # 330 tests (vitest)
 npm run test:cov   # tests + coverage gate
 npm run eval       # retrieval quality (Hit@1)
 ```

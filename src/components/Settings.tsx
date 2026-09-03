@@ -264,7 +264,7 @@ export function Settings() {
                 <div>
                   <label className="flex items-center gap-2 hud-label mb-2">
                     <Key className="w-3.5 h-3.5" />
-                    API Key {provider.needsKey ? '' : '(für lokale Anbieter nicht nötig)'}
+                    API Key {provider.needsKey ? '' : '(not needed for local providers)'}
                   </label>
                   <input
                     type="password"
