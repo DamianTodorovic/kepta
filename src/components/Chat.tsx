@@ -6,6 +6,8 @@ import { ChatMessage, Memory } from "../types";
 import { KeptaMark } from "./KeptaMark";
 import { loadAISettings, saveAISettings, providerById, resolveAIConnection } from "../lib/ai";
 import { detectLocalAIs, type DetectedAI } from "../lib/profile";
+import { shouldLearn, buildExtractPrompt, parseNode, AUTO_LEARN_TIMEOUT_MS } from "../lib/autolearn";
+import { useToast } from "./ui/Toast";
 
 /** Extrahiert Rohtext aus ReactMarkdown-Children (für Copy-Buttons). */
 function extractCodeText(node: unknown): string {
@@ -72,6 +74,7 @@ const DEFAULT_BUDGET = 4000;
 const RETRIEVAL_TTL_MS = 30_000;
 
 export function Chat({ activeMemories, onSaveToBrain, onSaveToBrainWithMeta, isFocusMode, onToggleFocus }: ChatProps) {
+  const toast = useToast();
   const [messages, setMessages] = useState<ExtendedChatMessage[]>([]);
   const [input, setInput] = useState("");
   const [isStreaming, setIsStreaming] = useState(false);
@@ -471,41 +474,48 @@ export function Chat({ activeMemories, onSaveToBrain, onSaveToBrainWithMeta, isF
       abortRef.current = null;
       // ── Selbst-Erweiterung: immer mitlesen & automatisch speichern ──
       const autoLearnEnabled = (()=>{ try{ return localStorage.getItem('ki_gehirn_autolearn') !== 'false'; }catch{ return true; }})();
-      if (autoLearnEnabled && accText && accText.length > 40) {
-        // Hintergrund-Extraktion: Titel/Tags via KI, dann auto-save (best effort, nicht blockierend)
+      if (autoLearnEnabled && shouldLearn(accText)) {
+        // Hintergrund-Extraktion, blockiert die Oberfläche nie. Scheitert sie, sagt
+        // KEPTA das — stilles Verschlucken machte die Funktion früher unsichtbar wirkungslos.
         (async ()=>{
+          const s = loadAISettings();
+          const prov = providerById(s.providerId);
+          if (!s.model) return;
+          // Eigenes, kleines Extraktionsmodell bevorzugen: für Titel und drei Tags
+          // braucht es kein grosses Reasoning-Modell, das Minuten pro Antwort kostet.
+          const model = (s.extractModel || '').trim() || s.model;
+          const ctl = new AbortController();
+          const timer = setTimeout(() => ctl.abort(), AUTO_LEARN_TIMEOUT_MS);
           try {
-            const s = loadAISettings();
-            const prov = providerById(s.providerId);
-            // Nur wenn Modell konfiguriert und nicht zu kurz
-            if (!s.model) return;
-            if (accText.length < 60 && !accText.includes('\n')) return;
-            // Extrahiere Kernaussage via kleinem Prompt (nutzt gleiches Modell, kurzer Call)
-            const extractPrompt = `Extrahiere aus folgender KI-Antwort einen Wissens-Knoten. Antworte NUR als JSON {"title":"kurzer Titel max 60 Zeichen","tags":["tag1","tag2"],"summary":"kompakte Zusammenfassung 2-4 Sätze, kein Floskel"}.\n\nAntwort:\n${accText.slice(0,4000)}`;
             const r = await fetch('/api/chat', {
-              method:'POST', headers:{'Content-Type':'application/json'},
-              body: JSON.stringify({ providerId: prov.id, protocol: prov.protocol, baseUrl: s.baseUrl || prov.baseUrl, apiKey: s.apiKey, model: s.model, system:'Du extrahierst Wissen. Antworte nur JSON.', messages:[{role:'user', content: extractPrompt}] })
+              method:'POST', headers:{'Content-Type':'application/json'}, signal: ctl.signal,
+              body: JSON.stringify({ providerId: prov.id, protocol: prov.protocol, baseUrl: s.baseUrl || prov.baseUrl, apiKey: s.apiKey, model, system:'Du extrahierst Wissen. Antworte nur JSON.', messages:[{role:'user', content: buildExtractPrompt(accText)}] })
             });
-            if (!r.ok) return;
+            if (!r.ok) throw new Error(`Extraktion fehlgeschlagen (HTTP ${r.status})`);
             const j = await r.json();
-            const txt = (j.text||'').trim();
-            const jsonStr = txt.slice(txt.indexOf('{'), txt.lastIndexOf('}')+1);
-            if (!jsonStr) return;
-            const parsed = JSON.parse(jsonStr);
-            const title = (parsed.title||'Auto-Knoten').slice(0,80);
-            const tagsRaw = Array.isArray(parsed.tags) ? parsed.tags : [];
-            const tags = [...new Set([...tagsRaw.map((t:string)=> String(t).toLowerCase().replace(/[^a-z0-9-]/g,'')).filter(Boolean).slice(0,5), 'auto-learn'])].slice(0,6);
-            const summary = parsed.summary ? String(parsed.summary).slice(0,2000) : accText.slice(0,1600);
-            // Verhindere Duplikate: nur speichern wenn nicht fast identisch vorhanden
+            const node = parseNode(String(j.text ?? ''), accText.slice(0, 1600));
+            if (!node) throw new Error('Modell lieferte kein verwertbares JSON');
+
+            // Duplikate vermeiden — fast gleicher Inhalt oder gleicher Titel bei ähnlicher Länge
             const existing: any[] = await fetch('/api/memories')
               .then((r) => r.json())
               .then((d) => (Array.isArray(d) ? d : Array.isArray(d?.memories) ? d.memories : []))
               .catch(() => []);
-            const isDup = existing.some((m: any) => m.content?.slice(0, 120) === summary.slice(0, 120) || (m.title === title && Math.abs((m.content?.length ?? 0) - summary.length) < 20));
+            const isDup = existing.some((m: any) => m.content?.slice(0, 120) === node.summary.slice(0, 120) || (m.title === node.title && Math.abs((m.content?.length ?? 0) - node.summary.length) < 20));
             if (isDup) return;
-            await fetch('/api/memory', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ title, content: summary + `\n\n— Quelle: Chat ${new Date().toLocaleString('de-DE')} — Modell ${prov.label}/${s.model}`, tags }) });
+
+            const save = await fetch('/api/memory', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ title: node.title, content: node.summary + `\n\n— Quelle: Chat ${new Date().toLocaleString('de-DE')} — Modell ${prov.label}/${model}`, tags: node.tags }) });
+            if (!save.ok) throw new Error(`Speichern fehlgeschlagen (HTTP ${save.status})`);
+            toast.push({ message: `Gelernt: ${node.title}`, kind: 'success' });
           } catch (e) {
+            const aborted = e instanceof DOMException && e.name === 'AbortError';
+            const grund = aborted
+              ? `Modell brauchte länger als ${Math.round(AUTO_LEARN_TIMEOUT_MS / 1000)} s — in den Einstellungen ein kleineres Extraktionsmodell wählen`
+              : e instanceof Error ? e.message : 'unbekannter Fehler';
             console.warn('[auto-learn] Übersprungen:', e);
+            toast.push({ message: `Auto-Learn übersprungen: ${grund}`, kind: 'warn', duration: 6000 });
+          } finally {
+            clearTimeout(timer);
           }
         })();
       }

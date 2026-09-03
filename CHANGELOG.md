@@ -2,6 +2,37 @@
 
 Alle Änderungen werden in dieser Datei dokumentiert. Format orientiert an [Keep a Changelog](https://keepachangelog.com/de/1.1.0/), Versionierung nach [SemVer](https://semver.org/).
 
+## [2.5.0] — 2026-09-03
+
+Auto-Learn funktioniert wieder — und sagt jetzt, wenn es das nicht tut.
+
+### Fixes
+- **Auto-Learn scheiterte bei Reasoning-Modellen still.** Die Extraktion schnitt vom
+  ersten `{` bis zum letzten `}`. Modelle wie Qwen3 oder DeepSeek-R1 stellen ihrer
+  Antwort einen `<think>`-Block oder Prosa voran; enthielt der Klammern, griff der
+  Ausschnitt daneben und `JSON.parse` warf. Der Fehler landete ausschliesslich in
+  `console.warn` — die Funktion warb mit „Gehirn erweitert sich selbst" und tat nichts.
+  Jetzt: Reasoning-Bloecke entfernen, dann das erste **vollstaendig balancierte**
+  Objekt lesen, Klammern in Zeichenketten und maskierte Anfuehrungszeichen beachten.
+- **Kein Zeitlimit.** Der Hintergrundaufruf lief unbegrenzt. Auf einer Maschine mit
+  einem 12-GB-Reasoning-Modell gemessen: **2 min 40 s fuer fuenf Tokens** — der Aufruf
+  kam nie zurueck. Jetzt bricht er nach 45 Sekunden ab.
+- **Fehlschlaege waren unsichtbar.** Erfolg und Abbruch erscheinen jetzt als Hinweis,
+  mit Grund und Handlungsempfehlung.
+
+### Neu
+- **Eigenes Extraktions-Modell** (`extractModel`, optional): Fuer Titel und drei Tags
+  reicht ein 3B-Modell, das in Sekunden antwortet. Leer lassen nutzt weiterhin das
+  Chat-Modell. Einstellbar unter *Einstellungen → Automatisch mitlernen*.
+- Auto-Learn ist erstmals im README dokumentiert — bisher stand die Funktion nirgends,
+  obwohl sie standardmaessig aktiv ist.
+
+### Tests
+- Neu: `src/lib/autolearn.ts` als testbares Modul, `tests/lib/autolearn.test.ts` mit
+  **28 Tests** gegen Reasoning-Bloecke, Klammern in Zeichenketten, maskierte
+  Anfuehrungszeichen, unvollstaendiges JSON und Tag-Normalisierung.
+- Gesamtstand: **307 Tests** (vorher 279), `autolearn.ts` bei 100 % der Funktionen.
+
 ## [2.4.0] — 2026-09-03
 
 Windows kommt dazu. Damit sind alle gaengigen Systeme abgedeckt — vorher war Windows nur ueber den Selbstbau erreichbar.

@@ -2,6 +2,7 @@ import { useState, useEffect, FormEvent } from 'react';
 import { Key, ShieldCheck, SettingsIcon, Download, CheckCircle2, RefreshCw, Cpu, HardDriveDownload, Server, Plug, Copy, Terminal, Braces, Globe, Search, Save, Layers, ExternalLink, Sparkles } from "../lib/icons";
 import { motion } from 'motion/react';
 import { PROVIDERS, providerById, loadAISettings, saveAISettings, AISettings } from '../lib/ai';
+import { AUTO_LEARN_TIMEOUT_MS } from '../lib/autolearn';
 import { getMemoriesSync } from '../lib/store';
 import { SystemStatus } from './SystemStatus';
 import { KeptaMark } from './KeptaMark';
@@ -42,6 +43,8 @@ export function Settings() {
   const [modelError, setModelError] = useState<string | null>(null);
   const [autoLearn, setAutoLearn] = useState<boolean>(()=>{ try{ return localStorage.getItem('ki_gehirn_autolearn') !== 'false'; }catch{ return true; }});
   const [autoLearnSaved, setAutoLearnSaved] = useState(false);
+  const [extractModel, setExtractModel] = useState<string>(()=>{ try{ return loadAISettings().extractModel ?? ''; }catch{ return ''; }});
+  const [extractSaved, setExtractSaved] = useState(false);
 
   // --- MCP-Tab state ---
   const [copied, setCopied] = useState<string | null>(null);
@@ -366,7 +369,26 @@ export function Settings() {
                   </label>
                 </div>
                 {autoLearnSaved && <div className="text-xs mt-2 flex items-center gap-1.5" style={{color:'var(--ok)'}}><CheckCircle2 className="w-3.5 h-3.5"/> {autoLearn ? 'Auto-Learn aktiv — Gehirn erweitert sich selbst' : 'Auto-Learn deaktiviert'}</div>}
-                <p className="text-xs mt-2 leading-relaxed" style={{color:'var(--text-3)'}}>Schalter in <code>localStorage ki_gehirn_autolearn</code>. Bei jeder KI-Antwort &gt;60 Zeichen läuft im Hintergrund ein kurzer Extract-Call (gleiches Modell) und speichert <code>title/tags/summary</code> als neuen Knoten.</p>
+                {autoLearn && (
+                  <div className="mt-4 pt-4" style={{ borderTop: '1px solid var(--border-subtle)' }}>
+                    <label className="text-xs font-semibold block mb-1.5" style={{color:'var(--text-1)'}}>Extraktions-Modell <span style={{color:'var(--text-3)'}}>— optional</span></label>
+                    <input
+                      type="text"
+                      value={extractModel}
+                      onChange={(e) => setExtractModel(e.target.value)}
+                      onBlur={() => { const s = loadAISettings(); saveAISettings({ ...s, extractModel: extractModel.trim() }); setExtractSaved(true); setTimeout(()=>setExtractSaved(false),1800); }}
+                      placeholder="z. B. llama3.2:3b — leer lassen = Chat-Modell"
+                      className="w-full text-sm rounded-lg px-3 py-2"
+                      style={{ background: 'var(--bg-inset-strong)', border: '1px solid var(--border-subtle)', color: 'var(--text-1)' }}
+                    />
+                    {extractSaved && <div className="text-xs mt-1.5 flex items-center gap-1.5" style={{color:'var(--ok)'}}><CheckCircle2 className="w-3.5 h-3.5"/> Gespeichert</div>}
+                    <p className="text-xs mt-2 leading-relaxed" style={{color:'var(--text-3)'}}>
+                      Für Titel und drei Tags reicht ein kleines Modell. Grosse Reasoning-Modelle brauchen dafür Minuten pro Antwort und liefern oft kein sauberes JSON — dann bricht Auto-Learn nach {Math.round(AUTO_LEARN_TIMEOUT_MS/1000)} Sekunden ab und sagt es dir.
+                    </p>
+                  </div>
+                )}
+
+                <p className="text-xs mt-2 leading-relaxed" style={{color:'var(--text-3)'}}>Schalter in <code>localStorage ki_gehirn_autolearn</code>. Bei jeder KI-Antwort ab 60 Zeichen läuft im Hintergrund ein kurzer Extract-Call und speichert <code>title/tags/summary</code> als neuen Knoten. Erfolg und Fehlschlag werden als Hinweis eingeblendet.</p>
               </div>
 
               <div>
