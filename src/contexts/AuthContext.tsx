@@ -14,7 +14,7 @@ interface AuthContextType {
 const localUser: UserProfile = {
   uid: 'local',
   email: null,
-  displayName: 'Lokal',
+  displayName: 'Local',
   photoURL: null,
 };
 

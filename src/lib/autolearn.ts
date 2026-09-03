@@ -124,10 +124,10 @@ export function shouldLearn(answer: string): boolean {
 
 export function buildExtractPrompt(answer: string): string {
   return (
-    'Extrahiere aus folgender KI-Antwort einen Wissens-Knoten. Antworte NUR als JSON ' +
-    '{"title":"kurzer Titel max 60 Zeichen","tags":["tag1","tag2"],' +
-    '"summary":"kompakte Zusammenfassung 2-4 Sätze, keine Floskeln"}. ' +
-    "Kein Vorwort, keine Erklärung, kein Markdown-Codeblock.\n\nAntwort:\n" +
+    'Extract one knowledge node from the following AI answer. Reply ONLY as JSON ' +
+    '{"title":"short title, max 60 characters","tags":["tag1","tag2"],' +
+    '"summary":"a compact summary, 2-4 sentences, no filler"}. ' +
+    "No preamble, no explanation, no Markdown code fence.\n\nAnswer:\n" +
     answer.slice(0, MAX_ANSWER_CHARS)
   );
 }

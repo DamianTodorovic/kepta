@@ -1,7 +1,6 @@
 import { memo } from 'react';
 import type { IconWeight } from '@phosphor-icons/react';
 import { formatDistanceToNow } from 'date-fns';
-import { de } from 'date-fns/locale';
 import { Memory } from '../types';
 import { motion } from 'motion/react';
 import { Brain } from "@phosphor-icons/react";
@@ -15,9 +14,9 @@ interface MemoryCardProps {
 }
 
 const TYPE_META: Record<string, { label: string; icon: React.ComponentType<{ className?: string; style?: React.CSSProperties; weight?: IconWeight }> }> = {
-  semantic: { label: 'Wissen', icon: Brain },
-  episodic: { label: 'Episode', icon: Clock },
-  procedural: { label: 'Ablauf', icon: Zap },
+  semantic: { label: 'Fact', icon: Brain },
+  episodic: { label: 'Event', icon: Clock },
+  procedural: { label: 'How-to', icon: Zap },
 };
 
 export const MemoryCard = memo(function MemoryCard({ memory, onClick, score, matchedTerms }: MemoryCardProps) {
@@ -63,9 +62,9 @@ export const MemoryCard = memo(function MemoryCard({ memory, onClick, score, mat
           <span
             className="badge-type"
             style={{ color: 'var(--warn)', background: 'var(--warn-soft)' }}
-            title={superseded ? 'Durch eine neuere Erinnerung ersetzt' : 'Gültigkeit abgelaufen'}
+            title={superseded ? 'Superseded by a newer memory' : 'Validity expired'}
           >
-            {superseded ? 'ERSETZT' : 'ABGELAUFEN'}
+            {superseded ? 'SUPERSEDED' : 'EXPIRED'}
           </span>
         )}
         {pct !== null && (
@@ -81,7 +80,7 @@ export const MemoryCard = memo(function MemoryCard({ memory, onClick, score, mat
       {/* Inhalt */}
       <div className="min-h-0 overflow-hidden">
         <h3 className="font-semibold leading-snug line-clamp-2 text-[14.5px] tracking-[-0.01em] text-[var(--text-1)]">
-          {memory.title || 'Ohne Titel'}
+          {memory.title || 'Untitled'}
         </h3>
         <p className="text-[13px] line-clamp-3 leading-[1.55] mt-1.5 text-[var(--text-2)]">
           {memory.content}
@@ -111,7 +110,7 @@ export const MemoryCard = memo(function MemoryCard({ memory, onClick, score, mat
           )}
         </div>
         <span className="text-[11px] shrink-0 whitespace-nowrap tnum" style={{ color: 'var(--text-3)' }}>
-          {formatDistanceToNow(new Date(memory.updatedAt), { addSuffix: true, locale: de })}
+          {formatDistanceToNow(new Date(memory.updatedAt), { addSuffix: true })}
         </span>
       </div>
     </motion.div>

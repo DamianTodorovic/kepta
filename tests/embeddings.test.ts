@@ -139,7 +139,7 @@ describe("embedTexts / embedQuery / ollamaAvailable", () => {
     stubEmbedFetch({ countMismatch: true });
     const res = await embedTexts(["a"]);
     expect(res.ok).toBe(false);
-    expect(res.error).toContain("passt nicht");
+    expect(res.error).toContain("does not match");
   });
 
   it("Netzwerkfehler → ok:false mit Message", async () => {

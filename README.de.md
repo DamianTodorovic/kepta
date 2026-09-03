@@ -4,21 +4,23 @@
 
 <p align="center"><a href="README.md">🇬🇧 English</a> · <strong>Deutsch</strong></p>
 
+> **Hinweis.** Diese Seite ist auf Deutsch — **die Oberfläche der App ist seit 2.6.0 englisch.** Deutsche Notizen funktionieren weiterhin: Die Suche kennt deutsche und englische Stoppwörter.
+
 <p align="center"><a href="https://github.com/DamianTodorovic/kepta/releases"><img alt="Release" src="https://img.shields.io/github/v/release/DamianTodorovic/kepta?label=Download"></a> <a href="https://github.com/DamianTodorovic/kepta/actions/workflows/build.yml"><img alt="CI" src="https://github.com/DamianTodorovic/kepta/actions/workflows/build.yml/badge.svg"></a> <a href="https://pypi.org/project/kepta/"><img alt="PyPI" src="https://img.shields.io/pypi/v/kepta?label=pip%20install%20kepta"></a> <img alt="Coverage" src="https://img.shields.io/badge/coverage-91%25-brightgreen"> <img alt="Tests" src="https://img.shields.io/badge/tests-314%20passing-brightgreen"> <a href="LICENSE"><img alt="MIT" src="https://img.shields.io/badge/License-MIT-black"></a> <img alt="Platform" src="https://img.shields.io/badge/platform-macOS%20%7C%20Windows%20%7C%20Linux-lightgrey"></p>
 
 ## 🎬 So sieht KEPTA aus
 
 <p align="center"><img src="docs/demo.gif" alt="Suche in KEPTA: aus 30 Einträgen wird durch die Eingabe „carbonara" ein Treffer, der sich im Editor öffnet" width="900"></p>
 
-<sub>Tippen, filtern, öffnen — 30 Einträge werden zu einem Treffer. Aufgenommen aus Version 2.4.0.</sub>
+<sub>Tippen, filtern, öffnen — aus 18 Einträgen wird ein Treffer. Aufgenommen aus Version 2.6.0. Die Oberfläche ist englisch.</sub>
 
 | Index & hybride Suche | Wissensgraph |
 |---|---|
 | ![Index](docs/screenshots/01-index.png) | ![Graph](docs/screenshots/03-graph.png) |
 | **Editor — Typ, Gültigkeit, Konfidenz** | **Einrichtung — Themen & Starter-Pack** |
-| ![Editor](docs/screenshots/04-editor.png) | ![Einrichtung](docs/screenshots/05-einrichtung.png) |
+| ![Editor](docs/screenshots/04-editor.png) | ![Einrichtung](docs/screenshots/05-setup.png) |
 
-<sub>Aufnahmen aus Version 2.4.0 mit dem Demo-Korpus aus <code>scripts/eval-corpus.ts</code>.</sub>
+<sub>Aufnahmen aus Version 2.6.0 mit erfundenen Demo-Daten — nichts davon ist echt. Die Oberfläche ist englisch.</sub>
 
 ## 🎯 Use Cases
 

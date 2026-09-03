@@ -276,7 +276,7 @@ export class KeptaStore {
       id,
       scope: input.scope ?? "local",
       type: input.type && VALID_TYPES.includes(input.type) ? input.type : "semantic",
-      title: cleanText(input.title, 200) || "Ohne Titel",
+      title: cleanText(input.title, 200) || "Untitled",
       content: cleanText(input.content, 200_000),
       tags: normalizeTags(input.tags),
       confidence: clampConfidence(input.confidence),
@@ -346,7 +346,7 @@ export class KeptaStore {
     const params: (string | number | null)[] = [];
     if (patch.title !== undefined) {
       sets.push("title = ?");
-      params.push(cleanText(patch.title, 200) || "Ohne Titel");
+      params.push(cleanText(patch.title, 200) || "Untitled");
     }
     if (patch.content !== undefined) {
       sets.push("content = ?");

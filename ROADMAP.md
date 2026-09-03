@@ -23,9 +23,16 @@
 | **Interop** | Obsidian vault import (frontmatter + wiki links) and Markdown export |
 | **Quality** | `strict` TypeScript, vitest tests (storage/engine/MCP/interop), CI with a test job and audit |
 
+## ✅ v2.6.0 — English interface (released 2026-09-03)
+
+Every user-facing string, the MCP tool descriptions, the starter pack and the
+native date controls are English. German survives where it is a feature, not a
+default: the search stopword list stays bilingual, so German notes keep working.
+A language switch back to German is possible later — the strings would need
+extracting into a catalogue first.
+
 ## 🔭 Next (deliberately planned follow-up work)
 
-- **English UI** — the documentation is English, the app is not. Extracting the strings and adding a language switch is the largest remaining accessibility gap for non-German users
 - **Encryption at rest** — needs native bindings (SQLCipher) or field-level encryption; to be assessed honestly rather than half-promised
 - **Git-based memory versioning** (in the style of Letta context repositories) — every change as a commit in a bare repo next to the DB
 - **Cross-encoder reranking as a required path** — Qwen3-Reranker-0.6B (arXiv:2506.05176) over the top-20 RRF candidates, once an Ollama rerank API exists

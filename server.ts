@@ -164,32 +164,40 @@ function isPrivateHostname(rawHost: string): boolean {
 
 function parseSafeUrl(raw: string): { ok: boolean; reason?: string; url?: URL } {
   try {
-    if (raw.length > 2048) return { ok: false, reason: "URL zu lang" };
+    if (raw.length > 2048) return { ok: false, reason: "URL too long" };
     const u = new URL(raw);
-    if (!["http:", "https:"].includes(u.protocol)) return { ok: false, reason: "Nur http/https erlaubt" };
-    if (u.username || u.password) return { ok: false, reason: "Auth in URL nicht erlaubt" };
+    if (!["http:", "https:"].includes(u.protocol)) return { ok: false, reason: "Only http and https are allowed" };
+    if (u.username || u.password) return { ok: false, reason: "Credentials in the URL are not allowed" };
     // URL.hostname normiert IPv4/IPv6-Literale bereits (WHATWG); zusätzlich Strings prüfen
     const host = u.hostname.replace(/^\[/, "").replace(/\]$/, "");
-    if (isPrivateHostname(host)) return { ok: false, reason: "Private Hosts blockiert (SSRF Schutz)" };
+    if (isPrivateHostname(host)) return { ok: false, reason: "Private hosts are blocked (SSRF protection)" };
     return { ok: true, url: u };
   } catch {
-    return { ok: false, reason: "Ungültige URL" };
+    return { ok: false, reason: "Invalid URL" };
   }
 }
 
 // DNS-Auflösung: ALLE IPs eines Hosts (v4+v6) gegen private Bereiche prüfen —
 // schließt DNS-Rebinding auf Loopback/Intranet und exotische Literal-Schreibweisen aus.
+/**
+ * Fehler, die der Aufrufer verursacht hat: blockierter Host, nicht aufloesbarer
+ * Name. Eigene Klasse statt Textvergleich im catch — sonst entscheidet der
+ * Wortlaut einer Meldung ueber den HTTP-Status, und eine Uebersetzung macht aus
+ * einem 400 still ein 500.
+ */
+class ClipClientError extends Error {}
+
 async function assertPublicDnsHost(u: URL): Promise<void> {
   const host = u.hostname.replace(/^\[/, "").replace(/\]$/, "");
   let addrs: { address: string; family: number }[];
   try {
     addrs = await dns.promises.lookup(host, { all: true, verbatim: true });
   } catch {
-    throw new Error("Host nicht auflösbar (DNS)");
+    throw new ClipClientError("Host could not be resolved (DNS)");
   }
-  if (addrs.length === 0) throw new Error("Host nicht auflösbar (DNS)");
+  if (addrs.length === 0) throw new ClipClientError("Host could not be resolved (DNS)");
   for (const a of addrs) {
-    if (isPrivateIp(a.address)) throw new Error("Private Hosts blockiert (SSRF Schutz)");
+    if (isPrivateIp(a.address)) throw new ClipClientError("Private hosts are blocked (SSRF protection)");
   }
 }
 function isSafeFilename(name: string): boolean {
@@ -295,7 +303,7 @@ async function readFullAnswer(req: ChatRequest, signal?: AbortSignal) {
   });
   const data = await res.json();
   if (!res.ok) {
-    throw new Error(data?.error?.message || `API-Fehler (${res.status})`);
+    throw new Error(data?.error?.message || `API error (${res.status})`);
   }
   if (req.protocol === "anthropic") {
     return (data?.content || [])
@@ -351,7 +359,7 @@ export function createApp(store: KeptaStore) {
       const row = store.db.prepare("SELECT COUNT(*) c, COALESCE(MAX(updated_at),0) m FROM memories").get() as { c: number; m: number };
       // Separater Zustand statt parseInt auf einem kombinierten Fingerprint-String
       if (lastDbCount !== null && (row.c !== lastDbCount || row.m !== lastDbUpdatedAt)) {
-        publishActivity({ type: row.c > lastDbCount ? "save" : "update", source: "agent", title: "Gehirn wurde von außen aktualisiert" });
+        publishActivity({ type: row.c > lastDbCount ? "save" : "update", source: "agent", title: "The brain was updated from outside" });
       }
       lastDbCount = row.c;
       lastDbUpdatedAt = row.m;
@@ -406,7 +414,7 @@ export function createApp(store: KeptaStore) {
   app.use(compression());
 
   // Rate Limiting — schützt vor Brute-Force / DoS
-  const globalLimiter = rateLimit({ windowMs: 60_000, max: 180, standardHeaders: true, legacyHeaders: false, message: { error: "Zu viele Anfragen — bitte kurz warten." } });
+  const globalLimiter = rateLimit({ windowMs: 60_000, max: 180, standardHeaders: true, legacyHeaders: false, message: { error: "Too many requests — please wait a moment." } });
   const chatLimiter = rateLimit({ windowMs: 60_000, max: 20, standardHeaders: true, legacyHeaders: false, message: { error: "Chat Rate-Limit: max 20/min" } });
   const clipLimiter = rateLimit({ windowMs: 60_000, max: 12, standardHeaders: true, legacyHeaders: false, message: { error: "Clip Rate-Limit: max 12/min" } });
   const writeLimiter = rateLimit({ windowMs: 60_000, max: 60, standardHeaders: true, legacyHeaders: false, message: { error: "Schreib-Limit: max 60/min" } });
@@ -451,16 +459,16 @@ export function createApp(store: KeptaStore) {
   function handleMemoriesImport(req: express.Request, res: express.Response) {
     const { memories: incoming, mode } = req.body as { memories?: Partial<MemoryRecord>[]; mode?: "merge" | "replace" };
     if (!Array.isArray(incoming)) {
-      return res.status(400).json({ error: "Keine gültige Backup-Datei (memories-Array erwartet)" });
+      return res.status(400).json({ error: "Not a valid backup file (a memories array was expected)" });
     }
-    if (incoming.length > 5000) return res.status(413).json({ error: "Zu viele Knoten (max 5000)" });
+    if (incoming.length > 5000) return res.status(413).json({ error: "Too many nodes (max 5000)" });
 
     const cleaned = incoming
       .filter(m => m && typeof m === "object")
       .slice(0, 5000)
       .map((m, i) => ({
         id: (typeof m.id === "string" && /^[\w\-.:]+$/.test(m.id)) ? m.id.slice(0,120) : `import-${Date.now()}-${i}`,
-        title: sanitizeTitle(m.title) || "Ohne Titel",
+        title: sanitizeTitle(m.title) || "Untitled",
         content: sanitizeText(m.content, 50000) || "",
         tags: sanitizeTags(m.tags),
         createdAt: typeof m.createdAt === "number" && m.createdAt > 0 ? m.createdAt : Date.now(),
@@ -480,7 +488,7 @@ export function createApp(store: KeptaStore) {
           indexMemory(store, created.id);
         }
       } catch {
-        return res.status(409).json({ error: "Import fehlgeschlagen: Konflikt bei Knoten-IDs" });
+        return res.status(409).json({ error: "Import failed: conflicting node ids" });
       }
       return res.json({ imported: byId.size, total: activeCount() });
     }
@@ -546,7 +554,7 @@ export function createApp(store: KeptaStore) {
     try {
       // Hardened: size limit + sanitize
       const body = req.body as Record<string,unknown>;
-      if (body && JSON.stringify(body).length > 10000) return res.status(413).json({ error: "Profil zu groß (max 10k)" });
+      if (body && JSON.stringify(body).length > 10000) return res.status(413).json({ error: "Profile too large (max 10k)" });
       const safe: Record<string,string> = {};
       for (const [k,v] of Object.entries(body || {})) {
         if (typeof v === "string") safe[k] = sanitizeText(v, 2000);
@@ -557,7 +565,7 @@ export function createApp(store: KeptaStore) {
       fs.writeFileSync(PROFILE_FILE, JSON.stringify(safe, null, 2), "utf-8");
       res.json({ ok: true });
     } catch (e:any) {
-      res.status(500).json({ error: "Profil konnte nicht gespeichert werden" });
+      res.status(500).json({ error: "The profile could not be saved" });
     }
   });
 
@@ -691,14 +699,14 @@ export function createApp(store: KeptaStore) {
   function handleCreateOrUpdateMemory(req: express.Request, res: express.Response) {
     const body = req.body as Partial<MemoryRecord> & { tags?: unknown; title?: unknown; content?: unknown };
     // Hardened: Validierung + Sanitization + Limits
-    if (body && JSON.stringify(body).length > 60000) return res.status(413).json({ error: "Payload zu groß (max 60k)" });
-    if (activeCount() > 5000 && !body.id) return res.status(429).json({ error: "Limit erreicht: max 5000 Knoten — bitte alte löschen" });
+    if (body && JSON.stringify(body).length > 60000) return res.status(413).json({ error: "Payload too large (max 60k)" });
+    if (activeCount() > 5000 && !body.id) return res.status(429).json({ error: "Limit reached: max 5000 nodes — please delete some old ones" });
 
     const title = sanitizeTitle(body.title);
     const content = sanitizeText(body.content, 50000);
 
     if (body.id) {
-      if (typeof body.id !== "string" || body.id.length > 120 || !/^[\w\-.:]+$/.test(body.id)) return res.status(400).json({ error: "Ungültige ID" });
+      if (typeof body.id !== "string" || body.id.length > 120 || !/^[\w\-.:]+$/.test(body.id)) return res.status(400).json({ error: "Invalid id" });
       const patch: Record<string, unknown> = {};
       if (body.title !== undefined) patch.title = title;
       if (body.content !== undefined) patch.content = content;
@@ -708,15 +716,15 @@ export function createApp(store: KeptaStore) {
       if (body.validFrom !== undefined) patch.validFrom = body.validFrom === null ? null : Number(body.validFrom) || null;
       if (body.validTo !== undefined) patch.validTo = body.validTo === null ? null : Number(body.validTo) || null;
       const updated = store.updateMemory(body.id, patch);
-      if (!updated) return res.status(404).json({ error: "Knoten nicht gefunden" });
+      if (!updated) return res.status(404).json({ error: "Node not found" });
       if (body.content !== undefined) indexMemory(store, updated.id);
       publishActivity({ type: "update", source: "app", title: updated.title });
       return res.json({ memory: toApi(updated) });
     }
 
-    if (!title && !content) return res.status(400).json({ error: "Titel oder Inhalt erforderlich" });
+    if (!title && !content) return res.status(400).json({ error: "A title or content is required" });
     const created = store.createMemory({
-      title: title || "Ohne Titel",
+      title: title || "Untitled",
       content,
       tags: sanitizeTags(body.tags),
       type: ["semantic", "episodic", "procedural"].includes(String(body.type)) ? (body.type as never) : undefined,
@@ -735,7 +743,7 @@ export function createApp(store: KeptaStore) {
 
   app.delete("/api/memories/:id", writeLimiter, (req, res) => {
     const id = String(req.params.id || "");
-    if (!id || id.length > 120 || !/^[\w\-.:]+$/.test(id)) return res.status(400).json({ error: "Ungültige ID" });
+    if (!id || id.length > 120 || !/^[\w\-.:]+$/.test(id)) return res.status(400).json({ error: "Invalid id" });
     // Default: Papierkorb. ?permanent=1 löscht endgültig.
     if (req.query.permanent === "1" || req.query.permanent === "true") {
       const purged = store.purgeMemory(id);
@@ -753,9 +761,9 @@ export function createApp(store: KeptaStore) {
   // Wiederherstellen aus dem Papierkorb
   app.post("/api/memories/:id/restore", writeLimiter, (req, res) => {
     const id = String(req.params.id || "");
-    if (!id || id.length > 120 || !/^[\w\-.:]+$/.test(id)) return res.status(400).json({ error: "Ungültige ID" });
+    if (!id || id.length > 120 || !/^[\w\-.:]+$/.test(id)) return res.status(400).json({ error: "Invalid id" });
     const restored = store.restoreMemory(id);
-    if (!restored) return res.status(404).json({ error: "Nicht im Papierkorb gefunden" });
+    if (!restored) return res.status(404).json({ error: "Not found in the trash" });
     res.json({ ok: true, memory: toApi(store.getMemory(id)!) });
   });
 
@@ -794,7 +802,7 @@ export function createApp(store: KeptaStore) {
   // Export: schreibt alle aktiven Memories als .md in ~/.kepta/export/<zeitstempel>/
   app.post("/api/export/markdown", writeLimiter, (_req, res) => {
     const memories = listAllMemories();
-    if (memories.length === 0) return res.status(404).json({ error: "Keine Memories zu exportieren" });
+    if (memories.length === 0) return res.status(404).json({ error: "No memories to export" });
     const dir = path.join(DATA_DIR, "export", `kepta-export-${Date.now()}`);
     try {
       fs.mkdirSync(dir, { recursive: true });
@@ -820,7 +828,7 @@ export function createApp(store: KeptaStore) {
   app.post("/api/clip", clipLimiter, async (req, res) => {
     const { url } = req.body as { url?: string };
     if (!url || typeof url !== "string" || url.length > 2048) {
-      return res.status(400).json({ error: "URL fehlt oder zu lang" });
+      return res.status(400).json({ error: "URL missing or too long" });
     }
     const safe = parseSafeUrl(url);
     if (!safe.ok) return res.status(400).json({ error: safe.reason });
@@ -916,12 +924,10 @@ export function createApp(store: KeptaStore) {
       res.json({ title: safeTitle, content: safeText, url: current.toString() });
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : String(err);
-      if (msg.includes("abort")) return res.status(504).json({ error: "Timeout beim Laden der URL" });
-      // SSRF-Blockaden und DNS-Fehlschläge sind Client-Fehler (400), keine 500
-      if (msg.startsWith("Private Hosts blockiert") || msg.includes("nicht auflösbar")) {
-        return res.status(400).json({ error: msg });
-      }
-      res.status(500).json({ error: msg || "Clip fehlgeschlagen" });
+      if (msg.includes("abort")) return res.status(504).json({ error: "Timed out while loading the URL" });
+      // SSRF-Blockaden und DNS-Fehlschlaege sind Client-Fehler (400), keine 500
+      if (err instanceof ClipClientError) return res.status(400).json({ error: msg });
+      res.status(500).json({ error: msg || "Clip failed" });
     }
   });
 
@@ -1104,9 +1110,9 @@ export function createApp(store: KeptaStore) {
     if (!body || typeof body !== "object" || !Array.isArray(body.messages)) {
       return res.status(400).json({ error: "Messages-Array erforderlich" });
     }
-    if (body.messages.length > 40) return res.status(400).json({ error: "Zu viele Messages (max 40)" });
-    if (body.system && typeof body.system === "string" && body.system.length > 60000) return res.status(413).json({ error: "System-Prompt zu groß" });
-    if (body.model && typeof body.model === "string" && body.model.length > 200) return res.status(400).json({ error: "Modell-Name zu lang" });
+    if (body.messages.length > 40) return res.status(400).json({ error: "Too many messages (max 40)" });
+    if (body.system && typeof body.system === "string" && body.system.length > 60000) return res.status(413).json({ error: "System prompt too large" });
+    if (body.model && typeof body.model === "string" && body.model.length > 200) return res.status(400).json({ error: "Model name too long" });
     res.writeHead(200, {
       "Content-Type": "text/event-stream",
       "Cache-Control": "no-cache",
@@ -1156,9 +1162,9 @@ export function createApp(store: KeptaStore) {
   app.post("/api/chat", chatLimiter, async (req, res) => {
     const body = req.body as ChatRequest;
     if (!body || typeof body !== "object" || !Array.isArray(body.messages)) return res.status(400).json({ error: "Messages-Array erforderlich" });
-    if (body.messages.length > 40) return res.status(400).json({ error: "Zu viele Messages (max 40)" });
-    if (body.system && typeof body.system === "string" && body.system.length > 60000) return res.status(413).json({ error: "System-Prompt zu groß" });
-    if (body.model && typeof body.model === "string" && body.model.length > 200) return res.status(400).json({ error: "Modell-Name zu lang" });
+    if (body.messages.length > 40) return res.status(400).json({ error: "Too many messages (max 40)" });
+    if (body.system && typeof body.system === "string" && body.system.length > 60000) return res.status(413).json({ error: "System prompt too large" });
+    if (body.model && typeof body.model === "string" && body.model.length > 200) return res.status(400).json({ error: "Model name too long" });
     const controller = new AbortController();
     // Client-Disconnect bricht auch den blockierenden Upstream-Call ab
     req.on("close", () => controller.abort());
@@ -1187,7 +1193,7 @@ export function createApp(store: KeptaStore) {
       const url = protocol === "anthropic" ? `${base}/v1/models` : `${base}/models`;
       const r = await fetch(url, { headers });
       const data = await r.json() as { error?: { message?: string }; data?: unknown[]; models?: unknown[] };
-      if (!r.ok) throw new Error(data?.error?.message || `API-Fehler (${r.status})`);
+      if (!r.ok) throw new Error(data?.error?.message || `API error (${r.status})`);
       let models = ((data?.data || data?.models || []) as unknown[])
         .map((m: unknown) => (m as { id?: string; name?: string }).id || (m as { name?: string }).name)
         .filter(Boolean) as string[];
@@ -1234,7 +1240,7 @@ async function startServer() {
   const store = new KeptaStore();
   const migration = migrateFromLegacyJson(store);
   if (!migration.skipped) {
-    console.log(`Migration: ${migration.migrated} Knoten aus memories.json übernommen (Backup: ${migration.backupPath ?? "keines"})`);
+    console.log(`Migration: ${migration.migrated} nodes taken over from memories.json (backup: ${migration.backupPath ?? "none"})`);
   }
   const embeddingQueue = new EmbeddingQueue(store);
   embeddingQueue.start();
@@ -1273,7 +1279,7 @@ async function startServer() {
   }
 
   const server = app.listen(PORT, HOST, () => {
-    console.log(`Server running on http://${HOST}:${PORT}${HOST === "127.0.0.1" ? "" : "  (alle Interfaces — KEPTA_HOST ist explizit gesetzt)"}`);
+    console.log(`Server running on http://${HOST}:${PORT}${HOST === "127.0.0.1" ? "" : "  (all interfaces — KEPTA_HOST is set explicitly)"}`);
     console.log(`Speicher: ${store.dbPath} (SQLite) | Embeddings: ${JSON.stringify(store.embeddingStats())}`);
     console.log(`API: http://localhost:${PORT}/api/health | /api/search | MCP: POST /mcp (2026-07-28, ${MCP_TOOLS.length} Tools)`);
     // Adresse hinterlegen, damit fremde Clients die App finden: die gepackte App
@@ -1289,7 +1295,7 @@ async function startServer() {
   // Listen-Fehler sauber behandeln — z. B. EADDRINUSE durch getFreePort-TOCTOU in der
   // Electron-Shell: klare Logausgabe statt unbehandeltem Crash-Dialog.
   server.on("error", (err: NodeJS.ErrnoException) => {
-    console.error(`Server-Listen-Fehler (${err.code ?? "unbekannt"}): ${err.message}`);
+    console.error(`Server listen error (${err.code ?? "unknown"}): ${err.message}`);
     process.exit(1);
   });
 }

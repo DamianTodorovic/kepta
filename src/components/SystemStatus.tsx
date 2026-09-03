@@ -18,7 +18,7 @@ function Row({ ok, label, detail, fix }: { ok: boolean; label: string; detail: s
       <div className="min-w-0">
         <div className="text-sm font-medium" style={{ color: 'var(--text-1)' }}>{label}</div>
         <div className="text-xs mt-0.5" style={{ color: 'var(--text-2)' }}>{detail}</div>
-        {!ok && fix && <div className="text-xs mt-1 font-medium" style={{ color: '#d97706' }}>So fixst du es: {fix}</div>}
+        {!ok && fix && <div className="text-xs mt-1 font-medium" style={{ color: '#d97706' }}>How to fix it: {fix}</div>}
       </div>
     </div>
   );
@@ -66,10 +66,10 @@ export function SystemStatus() {
       const res = await fetch('/api/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ providerId: s.providerId, protocol: prov.protocol, baseUrl: s.baseUrl || prov.baseUrl, apiKey: s.apiKey, model: s.model, messages: [{ role: 'user', content: 'Antworte nur: OK' }] }),
+        body: JSON.stringify({ providerId: s.providerId, protocol: prov.protocol, baseUrl: s.baseUrl || prov.baseUrl, apiKey: s.apiKey, model: s.model, messages: [{ role: 'user', content: 'Reply only: OK' }] }),
       });
       const data = await res.json();
-      setTestResult(res.ok ? { ok: true, msg: `Modell antwortet: „${String(data.text ?? '').trim().slice(0, 40)}"` } : { ok: false, msg: String(data.error ?? `HTTP ${res.status}`) });
+      setTestResult(res.ok ? { ok: true, msg: `Model answers: “${String(data.text ?? '').trim().slice(0, 40)}”` } : { ok: false, msg: String(data.error ?? `HTTP ${res.status}`) });
     } catch (e) {
       setTestResult({ ok: false, msg: e instanceof Error ? e.message : 'Verbindungsfehler' });
     } finally {
@@ -77,55 +77,55 @@ export function SystemStatus() {
     }
   };
 
-  const mcpJson = JSON.stringify({ mcpServers: { kepta: { command: 'node', args: ['<KEPTA-PFAD>/dist/mcp-server.cjs'] } } }, null, 2);
+  const mcpJson = JSON.stringify({ mcpServers: { kepta: { command: 'node', args: ['<KEPTA-PATH>/dist/mcp-server.cjs'] } } }, null, 2);
   const coverage = health && health.embeddings.total > 0 ? Math.round((health.embeddings.embedded / health.embeddings.total) * 100) : 0;
 
   return (
     <div className="rounded-2xl p-5" style={{ border: '1px solid var(--border-subtle)', background: 'var(--bg-inset)' }}>
       <div className="flex items-center justify-between mb-2">
         <div>
-          <h3 className="text-base font-semibold" style={{ color: 'var(--text-1)' }}>System-Status</h3>
-          <p className="text-xs mt-0.5" style={{ color: 'var(--text-3)' }}>Was funktioniert — und was fehlt, damit alles funktioniert.</p>
+          <h3 className="text-base font-semibold" style={{ color: 'var(--text-1)' }}>System status</h3>
+          <p className="text-xs mt-0.5" style={{ color: 'var(--text-3)' }}>What works — and what is missing for everything to work.</p>
         </div>
       </div>
 
       <div className="divide-y" style={{ borderColor: 'var(--border-subtle)' }}>
         <Row
           ok={!!health?.ok}
-          label="Gehirn (SQLite + Engine)"
-          detail={health ? `${health.count} Knoten · ${health.dbPath} · MCP ${health.mcp.protocol} (${health.mcp.tools} Tools, ${health.mcp.http})` : 'Server nicht erreichbar — läuft die App?'}
-          fix="App über npm run dev bzw. die Desktop-App starten."
+          label="Brain (SQLite + engine)"
+          detail={health ? `${health.count} nodes · ${health.dbPath} · MCP ${health.mcp.protocol} (${health.mcp.tools} tools, ${health.mcp.http})` : 'Server unreachable — is the app running?'}
+          fix="Start the app with npm run dev, or the desktop app."
         />
         <Row
           ok={keyOk}
           label={`Provider: ${prov.label}`}
-          detail={keyOk ? 'API-Key hinterlegt.' : 'Kein API-Key — der Test-Cockpit-Chat kann so nicht antworten. Die Agenten via MCP brauchen das nicht!'}
-          fix={'Links „System“ → Einstellungen → Provider wählen → Key eintragen.'}
+          detail={keyOk ? 'API-Key hinterlegt.' : 'No API key — the test cockpit chat cannot answer. Agents over MCP do not need one.'}
+          fix={'“System” on the left → Settings → pick a provider → enter a key.'}
         />
         <Row
           ok={modelOk}
-          label="Modell gewählt"
-          detail={modelOk ? `Aktiv: ${s.model}` : 'Kein Modell gesetzt.'}
-          fix="Einstellungen → Modell aus der Liste laden/auswählen."
+          label="Model selected"
+          detail={modelOk ? `Active: ${s.model}` : 'No model set.'}
+          fix="Settings → load and pick a model from the list."
         />
         <Row
           ok={ollama === true}
           label="Ollama / Embeddings (optional)"
-          detail={ollama === true ? 'Ollama erreichbar — Vektorsuche aktiv.' : 'Nicht erreichbar — Suche läuft trotzdem rein lexikalisch (92 % Hit@1 im Eval), mit Vektoren auch sprachübergreifend stark.'}
-          fix="Ollama installieren und starten: ollama pull nomic-embed-text && ollama serve"
+          detail={ollama === true ? 'Ollama reachable — vector search active.' : 'Unreachable — search still runs purely lexically (92 % Hit@1 in the eval); with vectors it is strong across languages too.'}
+          fix="Install and start Ollama: ollama pull nomic-embed-text && ollama serve"
         />
         <Row
           ok={!!health && health.count > 0}
-          label="Wissensbestand"
-          detail={health && health.count > 0 ? `${health.count} Knoten migriert/vorhanden · Embedding-Coverage ${coverage} %` : '0 Knoten — importiere Notizen oder lass einen Agenten speichern.'}
-          fix="Dateien ins Index-Fenster ziehen oder Obsidian-Import nutzen (POST /api/import/markdown)."
+          label="Knowledge base"
+          detail={health && health.count > 0 ? `${health.count} nodes migrated or present · embedding coverage ${coverage} %` : '0 nodes — import notes, or let an agent save something.'}
+          fix="Drag files into the index window, or use the Obsidian import (POST /api/import/markdown)."
         />
       </div>
 
       <div className="flex items-center gap-2 mt-3">
         <button onClick={runTest} disabled={testing} className="btn-primary flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium">
           {testing ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
-          Testanfrage senden
+          Send a test request
         </button>
         {testResult && (
           <span className="text-xs font-medium" style={{ color: testResult.ok ? 'var(--ok)' : '#d97706' }}>
@@ -137,17 +137,17 @@ export function SystemStatus() {
       <div className="mt-4 rounded-xl p-3" style={{ background: 'var(--bg-panel-solid)', border: '1px dashed var(--border-subtle)' }}>
         <div className="flex items-center justify-between gap-3">
           <div className="min-w-0">
-            <div className="text-xs font-semibold" style={{ color: 'var(--text-1)' }}>Dein Gehirn für Claude Desktop / Cursor</div>
+            <div className="text-xs font-semibold" style={{ color: 'var(--text-1)' }}>Your brain for Claude Desktop and Cursor</div>
             <code className="text-[11px] block truncate mt-1" style={{ color: 'var(--text-3)' }}>{mcpJson.replaceAll('\n', ' ')}</code>
           </div>
           <button onClick={() => copy('mcp', mcpJson)} className="btn-ghost flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs shrink-0">
             {copied === 'mcp' ? <Check className="w-3.5 h-3.5" style={{ color: 'var(--ok)' }} /> : <Copy className="w-3.5 h-3.5" />}
-            {copied === 'mcp' ? 'Kopiert' : 'Konfig kopieren'}
+            {copied === 'mcp' ? 'Copied' : 'Copy config'}
           </button>
         </div>
         <div className="text-[11px] mt-1.5" style={{ color: 'var(--text-3)' }}>
-          Oder HTTP: <code>POST {typeof window !== 'undefined' ? window.location.origin : ''}/mcp</code> (JSON-RPC, Protokoll 2026-07-28)
-          <button onClick={() => copy('url', `${typeof window !== 'undefined' ? window.location.origin : ''}/mcp`)} className="ml-1.5 underline" style={{ color: 'var(--accent)' }}>kopieren</button>
+          Or HTTP: <code>POST {typeof window !== 'undefined' ? window.location.origin : ''}/mcp</code> (JSON-RPC, protocol 2026-07-28)
+          <button onClick={() => copy('url', `${typeof window !== 'undefined' ? window.location.origin : ''}/mcp`)} className="ml-1.5 underline" style={{ color: 'var(--accent)' }}>copy</button>
         </div>
       </div>
     </div>

@@ -20,7 +20,7 @@ export const PROVIDERS: ProviderPreset[] = [
     baseUrl: 'https://api.openai.com/v1',
     defaultModel: 'gpt-4o-mini',
     needsKey: true,
-    hint: 'Key von platform.openai.com — gpt-4o, gpt-4o-mini, o1, o3',
+    hint: 'Key from platform.openai.com — gpt-4o, gpt-4o-mini, o1, o3',
   },
   {
     id: 'anthropic',
@@ -29,7 +29,7 @@ export const PROVIDERS: ProviderPreset[] = [
     baseUrl: 'https://api.anthropic.com',
     defaultModel: 'claude-sonnet-4-20250514',
     needsKey: true,
-    hint: 'Key von console.anthropic.com — Sonnet 4, Haiku 3.5, Opus 4',
+    hint: 'Key from console.anthropic.com — Sonnet 4, Haiku 3.5, Opus 4',
   },
   {
     id: 'gemini',
@@ -38,16 +38,16 @@ export const PROVIDERS: ProviderPreset[] = [
     baseUrl: 'https://generativelanguage.googleapis.com/v1beta/openai',
     defaultModel: 'gemini-2.5-flash',
     needsKey: true,
-    hint: 'Key von aistudio.google.com — 2.5 Flash/Pro, 2.0 Flash',
+    hint: 'Key from aistudio.google.com — 2.5 Flash/Pro, 2.0 Flash',
   },
   {
     id: 'openrouter',
-    label: 'OpenRouter (alle Modelle)',
+    label: 'OpenRouter (every model)',
     protocol: 'openai',
     baseUrl: 'https://openrouter.ai/api/v1',
     defaultModel: 'openai/gpt-4o-mini',
     needsKey: true,
-    hint: 'Ein Key für hunderte Modelle aller Anbieter — vielseitigste Wahl',
+    hint: 'One key for hundreds of models from every provider — the most flexible choice',
   },
   {
     id: 'mistral',
@@ -56,7 +56,7 @@ export const PROVIDERS: ProviderPreset[] = [
     baseUrl: 'https://api.mistral.ai/v1',
     defaultModel: 'mistral-large-latest',
     needsKey: true,
-    hint: 'Key von console.mistral.ai — Large 2, Small, Codestral',
+    hint: 'Key from console.mistral.ai — Large 2, Small, Codestral',
   },
   {
     id: 'groq',
@@ -74,7 +74,7 @@ export const PROVIDERS: ProviderPreset[] = [
     baseUrl: 'https://api.deepseek.com/v1',
     defaultModel: 'deepseek-chat',
     needsKey: true,
-    hint: 'Key von platform.deepseek.com — V3, R1 Reasoner',
+    hint: 'Key from platform.deepseek.com — V3, R1 reasoner',
   },
   {
     id: 'xai',
@@ -83,7 +83,7 @@ export const PROVIDERS: ProviderPreset[] = [
     baseUrl: 'https://api.x.ai/v1',
     defaultModel: 'grok-3',
     needsKey: true,
-    hint: 'Key von console.x.ai — Grok 3 / Grok 3 mini',
+    hint: 'Key from console.x.ai — Grok 3 and Grok 3 mini',
   },
   {
     id: 'perplexity',
@@ -92,7 +92,7 @@ export const PROVIDERS: ProviderPreset[] = [
     baseUrl: 'https://api.perplexity.ai',
     defaultModel: 'sonar',
     needsKey: true,
-    hint: 'Key von perplexity.ai — sonar, sonar-pro, mit Web-Suche',
+    hint: 'Key from perplexity.ai — sonar, sonar-pro, with web search',
   },
   {
     id: 'together',
@@ -101,7 +101,7 @@ export const PROVIDERS: ProviderPreset[] = [
     baseUrl: 'https://api.together.xyz/v1',
     defaultModel: 'meta-llama/Meta-Llama-3.1-70B-Instruct-Turbo',
     needsKey: true,
-    hint: 'Key von api.together.ai — alle Open-Source-Modelle günstig',
+    hint: 'Key from api.together.ai — every open-source model, cheaply',
   },
   {
     id: 'fireworks',
@@ -110,7 +110,7 @@ export const PROVIDERS: ProviderPreset[] = [
     baseUrl: 'https://api.fireworks.ai/inference/v1',
     defaultModel: 'accounts/fireworks/models/llama-v3p1-405b-instruct',
     needsKey: true,
-    hint: 'Key von fireworks.ai — Llama 405B, Qwen, DeepSeek schnell',
+    hint: 'Key from fireworks.ai — Llama 405B, Qwen, DeepSeek, fast',
   },
   {
     id: 'cohere',
@@ -119,7 +119,7 @@ export const PROVIDERS: ProviderPreset[] = [
     baseUrl: 'https://api.cohere.com/compatibility/v1',
     defaultModel: 'command-r-plus',
     needsKey: true,
-    hint: 'Key von dashboard.cohere.com — Command R+, Embed v4',
+    hint: 'Key from dashboard.cohere.com — Command R+, Embed v4',
   },
   {
     id: 'cerebras',
@@ -128,7 +128,7 @@ export const PROVIDERS: ProviderPreset[] = [
     baseUrl: 'https://api.cerebras.ai/v1',
     defaultModel: 'llama3.1-70b',
     needsKey: true,
-    hint: 'Ultraschnell — Key von cerebras.ai, Llama 3.1 70B',
+    hint: 'Extremely fast — key from cerebras.ai, Llama 3.1 70B',
   },
   {
     id: 'huggingface',
@@ -137,7 +137,7 @@ export const PROVIDERS: ProviderPreset[] = [
     baseUrl: 'https://api-inference.huggingface.co/v1',
     defaultModel: 'meta-llama/Meta-Llama-3-8B-Instruct',
     needsKey: true,
-    hint: 'Key von huggingface.co — tausende Open-Source-Modelle',
+    hint: 'Key from huggingface.co — thousands of open-source models',
   },
   {
     id: 'novita',
@@ -146,7 +146,7 @@ export const PROVIDERS: ProviderPreset[] = [
     baseUrl: 'https://api.novita.ai/v3/openai',
     defaultModel: 'meta-llama/llama-3.1-70b-instruct',
     needsKey: true,
-    hint: 'Günstig — Key von novita.ai, alle Llama/Qwen',
+    hint: 'Cheap — key from novita.ai, all the Llama and Qwen models',
   },
   {
     id: 'github',
@@ -155,7 +155,7 @@ export const PROVIDERS: ProviderPreset[] = [
     baseUrl: 'https://models.inference.ai.azure.com',
     defaultModel: 'gpt-4o-mini',
     needsKey: true,
-    hint: 'Key von github.com/marketplace/models — gpt-4o, Llama, Phi',
+    hint: 'Key from github.com/marketplace/models — gpt-4o, Llama, Phi',
   },
   {
     id: 'azure',
@@ -164,34 +164,34 @@ export const PROVIDERS: ProviderPreset[] = [
     baseUrl: '',
     defaultModel: 'gpt-4o',
     needsKey: true,
-    hint: 'Deine Azure URL eintragen: https://{name}.openai.azure.com/openai/deployments/{id}',
+    hint: 'Enter your Azure URL: https://{name}.openai.azure.com/openai/deployments/{id}',
   },
   {
     id: 'ollama',
-    label: 'Ollama (lokal, kostenlos)',
+    label: 'Ollama (local, free)',
     protocol: 'openai',
     baseUrl: 'http://localhost:11434/v1',
     defaultModel: 'llama3.2',
     needsKey: false,
-    hint: 'Läuft komplett offline auf deinem Mac. Modell per "ollama pull llama3.2" laden.',
+    hint: 'Runs entirely offline on your machine. Pull a model with "ollama pull llama3.2".',
   },
   {
     id: 'lmstudio',
-    label: 'LM Studio (lokal)',
+    label: 'LM Studio (local)',
     protocol: 'openai',
     baseUrl: 'http://localhost:1234/v1',
     defaultModel: '',
     needsKey: false,
-    hint: 'LM Studio mit lokalem Server starten.',
+    hint: 'Start LM Studio with its local server enabled.',
   },
   {
     id: 'custom',
-    label: 'Eigener Endpunkt (OpenAI-kompatibel)',
+    label: 'Custom endpoint (OpenAI-compatible)',
     protocol: 'openai',
     baseUrl: '',
     defaultModel: '',
     needsKey: false,
-    hint: 'Jede API, die das OpenAI-Format spricht (vLLM, Jan, GPT4All, ...).',
+    hint: 'Any API that speaks the OpenAI format (vLLM, Jan, GPT4All, …).',
   },
 ];
 

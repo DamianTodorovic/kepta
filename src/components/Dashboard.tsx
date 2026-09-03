@@ -74,7 +74,7 @@ async function extractTextFromFile(file: File): Promise<string> {
       return candidate.replace(/(\S)\n(\S)/g, "$1 $2").replace(/\s+/g, " ").replace(/\n{3,}/g, "\n\n").slice(0, 60000);
     }
     const filtered = raw.replace(/[^\x09\x0A\x0D\x20-\x7EÄÖÜäöüß\p{L}\p{N}\p{P}\p{Z}]/gu, " ").replace(/\s+/g, " ").trim().slice(0, 60000);
-    return filtered || `[PDF: ${file.name} – kein extrahierbarer Text, Rohgröße ${file.size} Bytes]`;
+    return filtered || `[PDF: ${file.name} – no extractable text, raw size ${file.size} bytes]`;
   }
   return await file.text();
 }
@@ -122,7 +122,7 @@ export function Dashboard() {
     return () => window.removeEventListener('focus', onFocus);
   }, []);
 
-  // Tastenkürzel: ⌘N = neuer Knoten, ? = Shortcuts-Sheet
+  // Shortcuts: ⌘N = neuer Knoten, ? = Shortcuts-Sheet
   const [shortcutsOpen, setShortcutsOpen] = useState(false);
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -147,7 +147,7 @@ export function Dashboard() {
     return () => window.removeEventListener('keydown', onKey);
   }, []);
 
-  // Semantische Suche: Toggle + Top-k
+  // Semantic search: Toggle + Top-k
   const [semanticEnabled, setSemanticEnabled] = useState<boolean>(() => {
     try { const v = localStorage.getItem('ki_gehirn_semantic'); return v === null ? true : v !== 'false'; } catch { return true; }
   });
@@ -187,14 +187,14 @@ export function Dashboard() {
     try {
       const r = await fetch('/api/inbox/scan', {method:'POST'});
       const d = await r.json();
-      setImportMsg(`Inbox: ${d.scanned} Dateien gescannt, ${d.imported} Knoten importiert`);
+      setImportMsg(`Inbox: ${d.scanned} files scanned, ${d.imported} nodes imported`);
       setTimeout(()=> setImportMsg(null), 3000);
       refreshInbox();
     } catch { setImportErr('Inbox-Scan fehlgeschlagen'); setTimeout(()=> setImportErr(null), 2500); }
     finally { setInboxScanBusy(false); }
   };
 
-  // Self-Expansion: Duplikat-Erkennung (Titel/Content-Ähnlichkeit)
+  // Self-Expansion: Duplikat-Erkennung (Titel/Content-Similarity)
   const duplicatePairs = useMemo(()=>{
     if (memories.length < 2) return [] as {a:Memory,b:Memory,reason:string}[];
     const out:{a:Memory,b:Memory,reason:string}[]=[];
@@ -215,7 +215,7 @@ export function Dashboard() {
           let inter=0; for(const w of wa) if(wb.has(w)) inter++;
           const uni = wa.size+wb.size - inter;
           const jacc = uni? inter/uni : 0;
-          if(jacc>0.82){ out.push({a,b,reason:`Sehr ähnlich (${Math.round(jacc*100)}% Wort-Overlap)`}); seen.add(key); }
+          if(jacc>0.82){ out.push({a,b,reason:`Very similar (${Math.round(jacc*100)}% word overlap)`}); seen.add(key); }
         }
       }
       if(out.length>=8) break;
@@ -226,7 +226,7 @@ export function Dashboard() {
   // palette
   const [paletteOpen, setPaletteOpen] = useState(false);
   // Adaptiver Wizard: öffnet sich automatisch NUR beim echten Erstbesuch.
-  // „Später“ wird persistiert — der Wizard kämpft nie gegen den Nutzer (Persona-Finding A1).
+  // „Later“ wird persistiert — der Wizard kämpft nie gegen den Nutzer (Persona-Finding A1).
   const wizardDismissed = (): boolean => {
     try { return localStorage.getItem('ki_gehirn_wizard_dismissed') === '1'; } catch { return false; }
   };
@@ -283,10 +283,10 @@ export function Dashboard() {
         setAgentActive(true);
         if (agentIdleTimer.current) clearTimeout(agentIdleTimer.current);
         agentIdleTimer.current = setTimeout(() => setAgentActive(false), 9000);
-        const t = evt.type === 'save' ? `Agent hat einen Knoten gespeichert${evt.title ? `: ${evt.title.slice(0, 48)}` : ''}`
-          : evt.type === 'update' ? 'Agent hat einen Knoten aktualisiert'
-          : evt.type === 'delete' ? 'Agent hat einen Knoten entfernt'
-          : evt.type === 'consolidate' ? 'Agent konsolidiert das Gedächtnis'
+        const t = evt.type === 'save' ? `An agent saved a node${evt.title ? `: ${evt.title.slice(0, 48)}` : ''}`
+          : evt.type === 'update' ? 'An agent updated a node'
+          : evt.type === 'delete' ? 'An agent removed a node'
+          : evt.type === 'consolidate' ? 'An agent is consolidating the memory'
           : null;
         if (t) toast.push({ message: t, kind: 'info' });
       }
@@ -311,7 +311,7 @@ export function Dashboard() {
   // Begrüßung nach Tageszeit + Name aus dem adaptiven Profil
   const greeting = (() => {
     const h = new Date().getHours();
-    return h < 5 ? 'Gute Nacht' : h < 11 ? 'Guten Morgen' : h < 18 ? 'Guten Tag' : 'Guten Abend';
+    return h < 5 ? 'Good night' : h < 11 ? 'Good morning' : h < 18 ? 'Good afternoon' : 'Good evening';
   })();
   const profileName = (() => { try { return loadProfile()?.displayName || ''; } catch { return ''; } })();
 
@@ -405,7 +405,7 @@ export function Dashboard() {
       editingMemory?.id ? { ...memoryData, id: editingMemory.id } : memoryData
     );
     if (result === null) {
-      toast.push({ message: 'Speichern fehlgeschlagen — Änderungen wurden nicht übernommen.', kind: 'warn' });
+      toast.push({ message: 'Save failed — your changes were not applied.', kind: 'warn' });
     } else {
       setIsEditorOpen(false);
       setEditingMemory(null);
@@ -421,17 +421,17 @@ export function Dashboard() {
       setEditingMemory(null);
     }
     toast.push({
-      message: `„${(victim?.title || 'Knoten').slice(0, 40)}“ in den Papierkorb verschoben`,
+      message: `“${(victim?.title || 'Node').slice(0, 40)}” moved to the trash`,
       kind: 'info',
       action: {
-        label: 'Rückgängig',
+        label: 'Undo',
         onClick: async () => {
           try {
             await fetch(`/api/memories/${encodeURIComponent(id)}/restore`, { method: 'POST' });
             void refreshMemories();
             toast.push({ message: 'Wiederhergestellt', kind: 'success' });
           } catch {
-            toast.push({ message: 'Wiederherstellen fehlgeschlagen', kind: 'warn' });
+            toast.push({ message: 'Restore failed', kind: 'warn' });
           }
         },
       },
@@ -442,7 +442,7 @@ export function Dashboard() {
     const contextText = chatMemories.map(m => (
       `--- ${m.title} ---\n${m.content}\n`
     )).join('\n');
-    const prompt = `[CONTEXT]\n${contextText}\n[/CONTEXT]\n\nBitte nutze diesen Kontext für die Beantwortung meiner Fragen.`;
+    const prompt = `[CONTEXT]\n${contextText}\n[/CONTEXT]\n\nPlease use this context when answering my questions.`;
     navigator.clipboard.writeText(prompt);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
@@ -452,7 +452,7 @@ export function Dashboard() {
     setEditingMemory({
       id: '',
       userId: 'local',
-      title: 'Neuer Assistant-Knoten',
+      title: 'New assistant node',
       content: content,
       tags: ['ai-log'],
       createdAt: Date.now(),
@@ -477,7 +477,7 @@ export function Dashboard() {
   const processFiles = useCallback(async (files: FileList | File[]) => {
     const list = Array.from(files).filter((f) => /\.(pdf|md|txt|json)$/i.test(f.name) || f.type.startsWith("text/") || f.type === "application/json" || f.type === "application/pdf");
     if (list.length === 0) {
-      setImportErr("Keine unterstützten Dateien (PDF, MD, TXT, JSON).");
+      setImportErr("No supported files (PDF, MD, TXT, JSON).");
       setTimeout(() => setImportErr(null), 3000);
       return;
     }
@@ -498,7 +498,7 @@ export function Dashboard() {
           totalNodes++;
         }
       }
-      setImportMsg(`${totalNodes} Knoten aus ${list.length} Datei(en) importiert.`);
+      setImportMsg(`Imported ${totalNodes} nodes from ${list.length} file(s).`);
       setTimeout(() => setImportMsg(null), 3500);
     } catch (e: unknown) {
       const msg = e instanceof Error ? e.message : String(e);
@@ -631,7 +631,7 @@ export function Dashboard() {
               <input
                 ref={searchInputRef}
                 type="text"
-                placeholder="Suchen… (⌘K für Befehle)"
+                placeholder="Search… (⌘K for commands)"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 onKeyDown={(e) => { if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "k") { e.preventDefault(); setPaletteOpen(true); } }}
@@ -650,7 +650,7 @@ export function Dashboard() {
                   } catch { /* ignore */ }
                 }}
                 className="btn-ghost hidden sm:flex items-center gap-1.5 px-2.5 py-2 rounded-lg text-xs font-medium"
-                title="Papierkorb — gelöschte Einträge wiederherstellen"
+                title="Trash — restore deleted entries"
               >
                 <Trash2 className="w-4 h-4" />
                 {trashCount > 0 && <span className="tnum">{trashCount}</span>}
@@ -665,10 +665,10 @@ export function Dashboard() {
               <button
                 onClick={copyContextForAI}
                 className="btn-ghost flex items-center gap-1.5 px-2.5 py-2 rounded-lg font-medium text-xs"
-                title={`${chatMemories.length} Einträge im Chat-Kontext — als Prompt kopieren`}
+                title={`${chatMemories.length} entries in the chat context — copy as a prompt`}
               >
                 {copied ? <CheckCircle2 className="w-4 h-4" style={{ color: 'var(--ok)' }} /> : <Copy className="w-4 h-4" />}
-                <span className="hidden sm:inline">{copied ? 'Kopiert' : `Kontext (${chatMemories.length})`}</span>
+                <span className="hidden sm:inline">{copied ? 'Copied' : `Context (${chatMemories.length})`}</span>
               </button>
               <button
                 onClick={() => {
@@ -678,7 +678,7 @@ export function Dashboard() {
                 className="btn-primary flex items-center gap-1.5 px-3 py-2 rounded-lg font-medium text-xs"
               >
                 <Plus className="w-4 h-4" />
-                <span className="hidden sm:inline">Neu</span>
+                <span className="hidden sm:inline">New</span>
               </button>
             </div>
           </header>
@@ -688,17 +688,17 @@ export function Dashboard() {
             <div className="px-5 py-3 shrink-0 overflow-auto" style={{ borderBottom: '1px solid var(--border-subtle)', background: 'var(--bg-inset)', maxHeight: '30vh' }}>
               <div className="flex items-center justify-between mb-2">
                 <span className="text-[12px] font-medium" style={{ color: 'var(--text-2)' }}>
-                  Papierkorb · {trashedMemories.length} gelöschte Einträge, wiederherstellbar
+                  Trash · {trashedMemories.length} deleted entries, all restorable
                 </span>
-                <button onClick={() => setTrashOpen(false)} className="btn-ghost px-2 py-1 rounded-md text-[11px]">Schließen</button>
+                <button onClick={() => setTrashOpen(false)} className="btn-ghost px-2 py-1 rounded-md text-[11px]">Close</button>
               </div>
               {trashedMemories.length === 0 ? (
-                <p className="text-xs" style={{ color: 'var(--text-3)' }}>Leer.</p>
+                <p className="text-xs" style={{ color: 'var(--text-3)' }}>Empty.</p>
               ) : (
                 <ul className="space-y-1">
                   {trashedMemories.map((m) => (
                     <li key={m.id} className="flex items-center justify-between gap-3 text-[13px]">
-                      <span className="truncate" style={{ color: 'var(--text-2)' }}>{m.title || 'Ohne Titel'}</span>
+                      <span className="truncate" style={{ color: 'var(--text-2)' }}>{m.title || 'Untitled'}</span>
                       <button
                         onClick={async () => {
                           try {
@@ -709,7 +709,7 @@ export function Dashboard() {
                         }}
                         className="btn-ghost px-2 py-1 rounded-md text-[11px] shrink-0"
                       >
-                        Wiederherstellen
+                        Restore
                       </button>
                     </li>
                   ))}
@@ -729,12 +729,12 @@ export function Dashboard() {
               />
               <span className="switch" data-on={semanticEnabled}><span className="knob" /></span>
               <span className="text-[13px] font-medium" style={{ color: semanticEnabled ? 'var(--text-1)' : 'var(--text-2)' }}>
-                Semantische Suche
+                Semantic search
               </span>
             </label>
 
             <div className="flex items-center gap-2">
-              <span className="text-[12.5px]" style={{ color: 'var(--text-2)' }}>Ergebnisse</span>
+              <span className="text-[12.5px]" style={{ color: 'var(--text-2)' }}>Results</span>
               <input
                 type="range"
                 min={1}
@@ -742,33 +742,33 @@ export function Dashboard() {
                 value={topK}
                 onChange={(e) => setTopK(parseInt(e.target.value, 10))}
                 className="w-24"
-                title="Anzahl Einträge für Anzeige & Chat-Kontext"
+                title="Number of entries for display and chat context"
               />
-              <span className="chip tnum !px-1.5" title="Anzahl Einträge für Anzeige & Chat-Kontext">{topK}</span>
+              <span className="chip tnum !px-1.5" title="Number of entries for display and chat context">{topK}</span>
             </div>
 
             <div className="ml-auto flex items-center gap-2 text-xs">
               {semanticEnabled && debouncedSearchQuery.trim().length >= 2 && scoredResults && scoredResults.length > 0 && (
                 <span
                   className="chip tnum"
-                  title={`${scoredResults.length} Treffer · beste Übereinstimmung ${Math.round(scoredResults[0].score * 100)} % · BM25 ${Math.round(scoredResults[0].bm25Score * 100)} % · Vektor ${Math.round(scoredResults[0].cosineScore * 100)} %`}
+                  title={`${scoredResults.length} hits · best match ${Math.round(scoredResults[0].score * 100)} % · BM25 ${Math.round(scoredResults[0].bm25Score * 100)} % · vector ${Math.round(scoredResults[0].cosineScore * 100)} %`}
                 >
                   <span className="w-1.5 h-1.5 rounded-full" style={{ background: 'var(--ok)' }} />
-                  {scoredResults.length} Treffer · best {Math.round(scoredResults[0].score * 100)} %
+                  {scoredResults.length} {scoredResults.length === 1 ? 'hit' : 'hits'} · best {Math.round(scoredResults[0].score * 100)} %
                 </span>
               )}
               {semanticEnabled && debouncedSearchQuery.trim().length >= 2 && scoredResults && scoredResults.length === 0 && (
                 <span className="chip" style={{ color: 'var(--warn)' }}>
-                  <AlertCircle className="w-3 h-3" /> Keine Treffer
+                  <AlertCircle className="w-3 h-3" /> No matches
                 </span>
               )}
               {!semanticEnabled && debouncedSearchQuery.trim() && (
-                <span className="chip tnum">{displayedMemories.length} Treffer</span>
+                <span className="chip tnum">{displayedMemories.length} {displayedMemories.length === 1 ? 'hit' : 'hits'}</span>
               )}
 
               <span
                 className="chip"
-                title={inbox?.inboxDir ? `Inbox-Ordner: ${inbox.inboxDir}` : 'Inbox-Ordner beobachten'}
+                title={inbox?.inboxDir ? `Inbox folder: ${inbox.inboxDir}` : 'Watch the inbox folder'}
               >
                 <UploadCloud className="w-3 h-3" style={{ color: inbox?.watching ? 'var(--ok)' : 'var(--text-3)' }} />
                 {inbox ? `${inbox.files.length} in Inbox` : 'Inbox…'}
@@ -777,24 +777,24 @@ export function Dashboard() {
                   disabled={inboxScanBusy}
                   className="ml-0.5 -mr-1 px-1 rounded text-[10px] font-semibold hover:opacity-80 disabled:opacity-40"
                   style={{ color: 'var(--accent)' }}
-                  title="Inbox jetzt scannen und importieren"
+                  title="Scan the inbox now and import"
                 >
                   {inboxScanBusy ? <Loader2 className="w-3 h-3 animate-spin" /> : 'Scan'}
                 </button>
               </span>
 
               {duplicatePairs.length === 0 ? (
-                <span className="chip hidden lg:inline-flex" title="Nichts zu tun — die Wissensbasis hat keine auffälligen Duplikate">
-                  <CheckCircle2 className="w-3 h-3" style={{ color: 'var(--ok)' }} /> Sauber
+                <span className="chip hidden lg:inline-flex" title="Nothing to do — the knowledge base has no obvious duplicates">
+                  <CheckCircle2 className="w-3 h-3" style={{ color: 'var(--ok)' }} /> Clean
                 </span>
               ) : (
                 <>
                   <span
                     className="chip"
                     style={{ color: 'var(--warn)', background: 'var(--warn-soft)', borderColor: 'transparent' }}
-                    title="Nur ein Hinweis — es wird nichts gelöscht oder verändert. Duplikate kannst du per MCP memory_consolidate sicher zusammenführen."
+                    title="Just a hint — nothing is deleted or changed. You can merge duplicates safely with MCP memory_consolidate."
                   >
-                    <AlertCircle className="w-3 h-3" /> {duplicatePairs.length} Duplikat{duplicatePairs.length > 1 ? 'e' : ''}
+                    <AlertCircle className="w-3 h-3" /> {duplicatePairs.length} duplicate{duplicatePairs.length > 1 ? 's' : ''}
                   </span>
                   <button
                     onClick={() => {
@@ -802,9 +802,9 @@ export function Dashboard() {
                       if (first) { setEditingMemory(first.a); setIsEditorOpen(true); }
                     }}
                     className="btn-ghost px-2 py-1 rounded-md text-[11px] font-medium hidden sm:inline-block"
-                    title="Ähnlichste Paare im Editor ansehen — ohne Änderung"
+                    title="View the most similar pairs in the editor — nothing changes"
                   >
-                    Ansehen
+                    View
                   </button>
                 </>
               )}
@@ -828,14 +828,14 @@ export function Dashboard() {
                 {importing ? <Loader2 className="w-4 h-4 animate-spin shrink-0" style={{ color: "var(--accent)" }} /> : <UploadCloud className="w-4 h-4 shrink-0" style={{ color: "var(--text-3)" }} />}
                 <div className="flex-1 min-w-0">
                   <div className="text-[13px] font-medium truncate" style={{ color: "var(--text-1)" }}>
-                    {importing ? "Importiere…" : dragOver ? "Loslassen zum Importieren" : "Dateien hierher ziehen"}
+                    {importing ? "Importiere…" : dragOver ? "Drop to import" : "Drag files here"}
                     <span className="hidden sm:inline font-normal" style={{ color: "var(--text-3)" }}> · PDF, MD, TXT, JSON</span>
                   </div>
                   {importMsg && <div className="text-[11px] mt-0.5 flex items-center gap-1" style={{ color: "var(--ok)" }}><CheckCircle2 className="w-3 h-3" />{importMsg}</div>}
                   {importErr && <div className="text-[11px] mt-0.5 flex items-center gap-1" style={{ color: "var(--danger)" }}><AlertCircle className="w-3 h-3" />{importErr}</div>}
                 </div>
                 <label className="btn-ghost px-2.5 py-1.5 rounded-md text-xs font-medium cursor-pointer shrink-0">
-                  Auswählen
+                  Choose
                   <input
                     ref={fileInputRef}
                     type="file"
@@ -855,7 +855,7 @@ export function Dashboard() {
                   value={clipUrl}
                   onChange={(e) => setClipUrl(e.target.value)}
                   onKeyDown={(e) => { if (e.key === "Enter") handleClip(); }}
-                  placeholder="URL einfügen und importieren…"
+                  placeholder="Paste a URL and import…"
                   className="flex-1 min-w-0 bg-transparent text-sm outline-none"
                   style={{ color: "var(--text-1)" }}
                 />
@@ -864,7 +864,7 @@ export function Dashboard() {
                   disabled={clipping || !clipUrl.trim()}
                   className="btn-ghost px-2.5 py-1.5 rounded-md text-xs font-medium shrink-0 disabled:opacity-40"
                 >
-                  {clipping ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : 'Importieren'}
+                  {clipping ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : 'Import'}
                 </button>
               </div>
             </div>
@@ -884,7 +884,7 @@ export function Dashboard() {
                   {greeting}{profileName ? `, ${profileName}` : ''}
                 </h1>
                 <p className="text-[13px] mt-0.5" style={{ color: 'var(--text-2)' }}>
-                  {new Date().toLocaleDateString('de-DE', { weekday: 'long', day: 'numeric', month: 'long' })} · {memories.length} {memories.length === 1 ? 'Eintrag' : 'Einträge'} bereit{agentActive ? ' · Agent arbeitet gerade' : ''}
+                  {new Date().toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long' })} · {memories.length} {memories.length === 1 ? 'entry' : 'entries'} ready{agentActive ? '  · an agent is working right now' : ''}
                 </p>
               </div>
 
@@ -896,7 +896,7 @@ export function Dashboard() {
                   </span>
                   <span className="min-w-0">
                     <span className="block text-[17px] font-semibold leading-tight tnum" style={{ color: 'var(--text-1)' }}>{memories.length}</span>
-                    <span className="block text-[11px]" style={{ color: 'var(--text-3)' }}>Einträge im Index</span>
+                    <span className="block text-[11px]" style={{ color: 'var(--text-3)' }}>entries in the index</span>
                   </span>
                 </div>
                 <div className="stat-tile card !transform-none">
@@ -911,7 +911,7 @@ export function Dashboard() {
                     <span className="block text-[12.5px] font-semibold leading-tight tnum truncate" style={{ color: 'var(--text-1)' }}>
                       {typeCounts.semantic} · {typeCounts.episodic} · {typeCounts.procedural}
                     </span>
-                    <span className="block text-[11px]" style={{ color: 'var(--text-3)' }}>Wissen · Episode · Ablauf</span>
+                    <span className="block text-[11px]" style={{ color: 'var(--text-3)' }}>Facts · events · how-tos</span>
                   </span>
                 </div>
                 <div className="stat-tile card !transform-none">
@@ -920,7 +920,7 @@ export function Dashboard() {
                   </span>
                   <span className="min-w-0">
                     <span className="block text-[17px] font-semibold leading-tight tnum" style={{ color: 'var(--text-1)' }}>{allTags.length}</span>
-                    <span className="block text-[11px]" style={{ color: 'var(--text-3)' }}>Kategorien</span>
+                    <span className="block text-[11px]" style={{ color: 'var(--text-3)' }}>Categories</span>
                   </span>
                 </div>
                 <div className="stat-tile card !transform-none">
@@ -929,26 +929,26 @@ export function Dashboard() {
                   </span>
                   <span className="min-w-0">
                     <span className="block text-[12.5px] font-semibold leading-tight truncate" style={{ color: 'var(--text-1)' }}>
-                      {agentActive ? 'Agent arbeitet' : 'Synchron'}
+                      {agentActive ? 'Agent working' : 'In sync'}
                     </span>
-                    <span className="block text-[11px]" style={{ color: 'var(--text-3)' }}>lokal · privat · MCP</span>
+                    <span className="block text-[11px]" style={{ color: 'var(--text-3)' }}>local · private · MCP</span>
                   </span>
                 </div>
               </div>
 
               <div className="flex items-center justify-between mb-3 shrink-0">
                 <div className="flex items-center gap-2 text-[12px] tnum" style={{ color: 'var(--text-3)' }}>
-                  {displayedMemories.length} von {tagFiltered.length} Einträgen
+                  {displayedMemories.length} of {tagFiltered.length} entries
                   {semanticEnabled && debouncedSearchQuery.trim().length >= 2 && ` · Top-${topK}`}
                 </div>
                 <div className="flex items-center gap-2 text-[12px]" style={{ color: 'var(--text-3)' }}>
                   {agentActive ? (
                     <>
                       <span className="agent-dot" />
-                      <span style={{ color: 'var(--accent)', fontWeight: 560 }}>Agent aktiv</span>
+                      <span style={{ color: 'var(--accent)', fontWeight: 560 }}>Agent active</span>
                     </>
                   ) : (
-                    <span className="status-dot" title="Lokaler Speicher synchron" />
+                    <span className="status-dot" title="Local storage in sync" />
                   )}
                 </div>
               </div>
@@ -975,18 +975,18 @@ export function Dashboard() {
                     <KeptaMark size={34} radius={8} />
                   </div>
                   <h3 className="text-[15px] font-semibold mb-1.5" style={{ color: 'var(--text-1)' }}>
-                    {debouncedSearchQuery || selectedTags.length > 0 ? 'Keine Treffer' : 'Noch keine Einträge'}
+                    {debouncedSearchQuery || selectedTags.length > 0 ? 'No matches' : 'No entries yet'}
                   </h3>
                   <p className="text-[13px] max-w-sm mx-auto leading-relaxed" style={{ color: 'var(--text-2)' }}>
                     {debouncedSearchQuery || selectedTags.length > 0
                       ? semanticEnabled && debouncedSearchQuery.trim().length >= 2
-                        ? `Nichts gefunden für „${debouncedSearchQuery.trim().slice(0, 48)}“. Versuche andere Begriffe, erhöhe die Ergebnisanzahl oder nutze die Keyword-Suche.`
-                        : "Keine Einträge entsprechen den Suchkriterien."
-                      : "Ziehe Dateien hierher, importiere eine URL oder lege mit „Neu“ los — Agenten schreiben über MCP direkt in dieselbe Basis."}
+                        ? `Nothing found for “${debouncedSearchQuery.trim().slice(0, 48)}”. Try different terms, raise the result count, or switch to keyword search.`
+                        : "No entries match the search criteria."
+                      : "Drop files here, import a URL, or start with “New” — agents write into the very same base over MCP."}
                   </p>
                   {semanticEnabled && debouncedSearchQuery.trim().length >= 2 && displayedMemories.length === 0 && (
                     <button onClick={() => setSemanticEnabled(false)} className="mt-4 btn-ghost px-3.5 py-2 rounded-lg text-[13px] font-medium">
-                      Zur Keyword-Suche wechseln
+                      Switch to keyword search
                     </button>
                   )}
                 </div>
@@ -1029,7 +1029,7 @@ export function Dashboard() {
                   )}
                   {visibleCount >= displayedMemories.length && displayedMemories.length > PAGE_SIZE && (
                     <div className="text-center text-[11px] mt-4 tnum" style={{ color: 'var(--text-3)' }}>
-                      Alle {displayedMemories.length} Einträge angezeigt
+                      All {displayedMemories.length} entries shown
                     </div>
                   )}
                 </>
@@ -1059,9 +1059,9 @@ export function Dashboard() {
         >
           <div className="flex items-center gap-3 mb-2 shrink-0">
             <div className="text-[13px] font-medium" style={{ color: 'var(--text-1)' }}>Graph</div>
-            <div className="text-[12px] tnum" style={{ color: 'var(--text-3)' }}>{memories.length} Einträge · Verbindungen über Tags, Ähnlichkeit & Wissens-Entitäten</div>
+            <div className="text-[12px] tnum" style={{ color: 'var(--text-3)' }}>{memories.length} entries · connected through tags, similarity and knowledge entities</div>
             <div className="ml-auto">
-              <button onClick={() => setCurrentView("memories")} className="btn-ghost px-2.5 py-1.5 rounded-md text-xs font-medium">Zurück zur Liste</button>
+              <button onClick={() => setCurrentView("memories")} className="btn-ghost px-2.5 py-1.5 rounded-md text-xs font-medium">Back to the list</button>
             </div>
           </div>
           <div className="flex-1 min-h-0">
@@ -1099,10 +1099,10 @@ export function Dashboard() {
 
 // Shortcuts-Cheat-Sheet (per „?“)
 const SHORTCUTS: { keys: string; action: string }[] = [
-  { keys: '⌘K', action: 'Command Palette — schnelle Aktionen & Suche' },
-  { keys: '⌘N', action: 'Neuer Wissensknoten' },
+  { keys: '⌘K', action: 'Command palette — quick actions and search' },
+  { keys: '⌘N', action: 'New knowledge node' },
   { keys: '?', action: 'Diese Übersicht' },
-  { keys: 'Esc', action: 'Dialog schließen' },
+  { keys: 'Esc', action: 'Close dialog' },
   { keys: '⌘1–4', action: 'Ansicht wechseln (Index, Chat, Graph, System)' },
 ];
 
@@ -1125,7 +1125,7 @@ function ShortcutsSheet({ open, onClose }: { open: boolean; onClose: () => void 
             onClick={(e) => e.stopPropagation()}
             className="w-full max-w-md rounded-2xl p-6 glass-strong"
           >
-            <h3 className="text-base font-semibold mb-4" style={{ color: 'var(--text-1)' }}>Tastenkürzel</h3>
+            <h3 className="text-base font-semibold mb-4" style={{ color: 'var(--text-1)' }}>Shortcuts</h3>
             <ul className="space-y-2.5">
               {SHORTCUTS.map((s) => (
                 <li key={s.keys} className="flex items-center justify-between gap-4">
@@ -1136,7 +1136,7 @@ function ShortcutsSheet({ open, onClose }: { open: boolean; onClose: () => void 
                 </li>
               ))}
             </ul>
-            <p className="hud-label mt-4">Agenten nutzen dasselbe Gehirn über MCP — sieh die Aktivität live im Index.</p>
+            <p className="hud-label mt-4">Agents use the same brain over MCP — watch the activity live in the index.</p>
           </motion.div>
         </motion.div>
       )}

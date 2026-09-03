@@ -15,8 +15,6 @@ Every file carries its platform and architecture in the name. On a Mac, if you a
 
 The packages are self-contained — you only need Node to build them yourself.
 
-> **Note.** The documentation is English; **the desktop UI is currently German only.** MCP, the HTTP API and the Python client are language-neutral.
-
 ## 🍎 First launch on macOS
 
 These builds are **neither signed nor notarised** (no Apple developer certificate).

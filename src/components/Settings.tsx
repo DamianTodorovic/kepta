@@ -17,7 +17,7 @@ const MCP_JSON_TSX = `{
     "kepta": {
       "command": "npx",
       "args": ["tsx", "src/mcp-server.ts"],
-      "cwd": "/PFAD/ZU/KEPTA-REPO"
+      "cwd": "/PATH/TO/KEPTA-REPO"
     }
   }
 }`;
@@ -25,7 +25,7 @@ const MCP_JSON_BUILT = `{
   "mcpServers": {
     "kepta": {
       "command": "node",
-      "args": ["/PFAD/ZU/KEPTA-REPO/dist/mcp-server.cjs"]
+      "args": ["/PATH/TO/KEPTA-REPO/dist/mcp-server.cjs"]
     }
   }
 }`;
@@ -89,7 +89,7 @@ export function Settings() {
     return () => { cancelled = true; clearInterval(id); window.removeEventListener('focus', onFocus); document.removeEventListener('visibilitychange', onFocus); };
   }, [settings.providerId, settings.baseUrl, provider.needsKey, provider.protocol]);
 
-  // Für Remote-Anbieter mit Key: einmalig beim Öffnen auto-laden (kein Polling, um Rate-Limits zu schonen)
+  // Für Remote-Anbieter mit Key: einmalig beim Open auto-laden (kein Polling, um Rate-Limits zu schonen)
   useEffect(() => {
     const isLocal = !provider.needsKey || settings.baseUrl.includes('localhost') || settings.baseUrl.includes('127.0.0.1');
     if (isLocal) return;
@@ -170,9 +170,9 @@ export function Settings() {
         }),
       });
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error || 'Fehler beim Laden der Modelle');
+      if (!res.ok) throw new Error(data.error || 'Could not load the models');
       setModels(data.models || []);
-      if (!data.models?.length) setModelError('Keine Modelle gefunden. Läuft der Dienst?');
+      if (!data.models?.length) setModelError('No models found. Is the service running?');
     } catch (err: unknown) {
       setModelError(err instanceof Error ? err.message : String(err));
     } finally {
@@ -214,8 +214,8 @@ export function Settings() {
         <div className="flex items-center gap-4 mb-6 pb-6" style={{ borderBottom: '1px solid var(--border-subtle)' }}>
           <KeptaMark size={40} radius={10} />
           <div>
-            <h2 className="text-lg font-semibold" style={{ color: 'var(--text-1)' }}>Einstellungen</h2>
-            <p className="text-sm mt-1" style={{ color: 'var(--text-2)' }}>KI-Anbindung, Daten &amp; MCP-Anbindung</p>
+            <h2 className="text-lg font-semibold" style={{ color: 'var(--text-1)' }}>Settings</h2>
+            <p className="text-sm mt-1" style={{ color: 'var(--text-2)' }}>AI connection, data and MCP</p>
           </div>
         </div>
 
@@ -226,7 +226,7 @@ export function Settings() {
             className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg text-sm font-medium transition-colors ${activeTab === 'system' ? 'bg-white dark:bg-zinc-800 shadow-sm' : ''}`}
             style={{ color: activeTab === 'system' ? 'var(--text-1)' : 'var(--text-2)' }}
           >
-            <Cpu className="w-4 h-4" /> KI &amp; Daten
+            <Cpu className="w-4 h-4" /> AI &amp; data
           </button>
           <button
             onClick={() => setActiveTab('mcp')}
@@ -244,11 +244,11 @@ export function Settings() {
               <div className="space-y-5">
                 <div className="flex items-center gap-2">
                   <Cpu className="w-4 h-4" style={{ color: 'var(--accent)' }} />
-                  <h3 className="hud-label !text-[11px]" style={{ color: 'var(--text-1)' }}>Künstliche Intelligenz</h3>
+                  <h3 className="hud-label !text-[11px]" style={{ color: 'var(--text-1)' }}>Artificial intelligence</h3>
                 </div>
 
                 <div>
-                  <label className="hud-label block mb-2">Anbieter</label>
+                  <label className="hud-label block mb-2">Provider</label>
                   <select
                     value={settings.providerId}
                     onChange={(e) => selectProvider(e.target.value)}
@@ -270,18 +270,18 @@ export function Settings() {
                     type="password"
                     value={settings.apiKey === 'local' ? '' : settings.apiKey}
                     onChange={(e) => update({ apiKey: e.target.value })}
-                    placeholder={provider.needsKey ? 'Key einfügen...' : 'leer lassen'}
+                    placeholder={provider.needsKey ? 'Paste key…' : 'leave empty'}
                     disabled={!provider.needsKey}
                     className={inputClass}
                   />
                   <p className="text-xs mt-2" style={{ color: 'var(--text-3)' }}>
-                    Der Key wird nur lokal auf deinem Gerät gespeichert und direkt an den Anbieter gesendet.
+                    The key is stored locally on your device and sent straight to the provider.
                   </p>
                 </div>
 
                 <div>
                   <label className="hud-label block mb-2">
-                    API Endpunkt {provider.id === 'custom' ? '(erforderlich)' : '(optional überschreibbar)'}
+                    API endpoint {provider.id === 'custom' ? '(required)' : '(optional override)'}
                   </label>
                   <input
                     type="text"
@@ -293,7 +293,7 @@ export function Settings() {
                 </div>
 
                 <div>
-                  <label className="hud-label block mb-2">Modell</label>
+                  <label className="hud-label block mb-2">Model</label>
                   <div className="flex gap-2">
                     <input
                       type="text"
@@ -308,10 +308,10 @@ export function Settings() {
                       onClick={loadModels}
                       disabled={loadingModels}
                       className="btn-ghost shrink-0 flex items-center gap-2 px-4 rounded-xl text-sm font-medium"
-                      title="Verfügbare Modelle vom Anbieter laden"
+                      title="Load available models from the provider"
                     >
                       <RefreshCw className={`w-4 h-4 ${loadingModels ? 'animate-spin' : ''}`} />
-                      Laden
+                      Load
                     </button>
                   </div>
                   <datalist id="model-list">
@@ -334,7 +334,7 @@ export function Settings() {
                     <p className="text-xs mt-2 flex items-center gap-1.5" style={{ color: 'var(--ok)' }}><CheckCircle2 className="w-3.5 h-3.5" /> {models.length} lokale Modelle verbunden — neue Downloads erscheinen automatisch (alle 12s + bei Fokus)</p>
                   )}
                   {!provider.needsKey && models.length === 0 && !loadingModels && !modelError && (
-                    <p className="text-xs mt-2 leading-relaxed" style={{ color: 'var(--text-3)' }}>Keine lokalen Modelle gefunden. Starte Ollama (`ollama serve` + `ollama pull llama3.2`) oder LM Studio — sie erscheinen hier sofort.</p>
+                    <p className="text-xs mt-2 leading-relaxed" style={{ color: 'var(--text-3)' }}>No local models found. Start Ollama (`ollama serve` + `ollama pull llama3.2`) or LM Studio — they show up here immediately.</p>
                   )}
                 </div>
               </div>
@@ -346,7 +346,7 @@ export function Settings() {
                 {saved ? (
                   <><ShieldCheck className="w-5 h-5" /> <span>Konfiguration gespeichert</span></>
                 ) : (
-                  'Speichern'
+                  'Save'
                 )}
               </button>
             </form>
@@ -359,8 +359,8 @@ export function Settings() {
                       <Sparkles className="w-4 h-4" style={{ color: autoLearn ? 'var(--accent)' : 'var(--text-3)' }} />
                     </div>
                     <div>
-                      <div className="text-sm font-semibold" style={{color:'var(--text-1)'}}>Automatisch mitlernen</div>
-                      <div className="text-xs" style={{color:'var(--text-2)'}}>Nach jeder Chat-Antwort die Kernaussage als Eintrag sichern (Tag <code>auto-learn</code>). Duplikate werden erkannt.</div>
+                      <div className="text-sm font-semibold" style={{color:'var(--text-1)'}}>Learn automatically</div>
+                      <div className="text-xs" style={{color:'var(--text-2)'}}>Save the key point of every chat answer as an entry (tagged <code>auto-learn</code>). Duplicates are detected.</div>
                     </div>
                   </div>
                   <label className="relative inline-flex h-6 w-11 items-center rounded-full transition-colors cursor-pointer shrink-0" style={{ background: autoLearn ? 'var(--accent)' : 'var(--bg-inset-strong)', border: autoLearn ? '1px solid transparent' : '1px solid var(--border-subtle)' }}>
@@ -368,36 +368,36 @@ export function Settings() {
                     <span className={`inline-block h-4 w-4 transform rounded-full bg-white shadow transition-transform ${autoLearn ? 'translate-x-6' : 'translate-x-1'}`} />
                   </label>
                 </div>
-                {autoLearnSaved && <div className="text-xs mt-2 flex items-center gap-1.5" style={{color:'var(--ok)'}}><CheckCircle2 className="w-3.5 h-3.5"/> {autoLearn ? 'Auto-Learn aktiv — Gehirn erweitert sich selbst' : 'Auto-Learn deaktiviert'}</div>}
+                {autoLearnSaved && <div className="text-xs mt-2 flex items-center gap-1.5" style={{color:'var(--ok)'}}><CheckCircle2 className="w-3.5 h-3.5"/> {autoLearn ? 'Auto-learn active — the brain extends itself' : 'Auto-Learn deaktiviert'}</div>}
                 {autoLearn && (
                   <div className="mt-4 pt-4" style={{ borderTop: '1px solid var(--border-subtle)' }}>
-                    <label className="text-xs font-semibold block mb-1.5" style={{color:'var(--text-1)'}}>Extraktions-Modell <span style={{color:'var(--text-3)'}}>— optional</span></label>
+                    <label className="text-xs font-semibold block mb-1.5" style={{color:'var(--text-1)'}}>Extraction model <span style={{color:'var(--text-3)'}}>— optional</span></label>
                     <input
                       type="text"
                       value={extractModel}
                       onChange={(e) => setExtractModel(e.target.value)}
                       onBlur={() => { const s = loadAISettings(); saveAISettings({ ...s, extractModel: extractModel.trim() }); setExtractSaved(true); setTimeout(()=>setExtractSaved(false),1800); }}
-                      placeholder="z. B. llama3.2:3b — leer lassen = Chat-Modell"
+                      placeholder="e.g. llama3.2:3b — empty = the chat model"
                       className="w-full text-sm rounded-lg px-3 py-2"
                       style={{ background: 'var(--bg-inset-strong)', border: '1px solid var(--border-subtle)', color: 'var(--text-1)' }}
                     />
                     {extractSaved && <div className="text-xs mt-1.5 flex items-center gap-1.5" style={{color:'var(--ok)'}}><CheckCircle2 className="w-3.5 h-3.5"/> Gespeichert</div>}
                     <p className="text-xs mt-2 leading-relaxed" style={{color:'var(--text-3)'}}>
-                      Für Titel und drei Tags reicht ein kleines Modell. Grosse Reasoning-Modelle brauchen dafür Minuten pro Antwort und liefern oft kein sauberes JSON — dann bricht Auto-Learn nach {Math.round(AUTO_LEARN_TIMEOUT_MS/1000)} Sekunden ab und sagt es dir.
+                      A small model is plenty for a title and three tags. Large reasoning models take minutes per answer and often return no clean JSON — auto-learn then gives up after {Math.round(AUTO_LEARN_TIMEOUT_MS/1000)} seconds and tells you so.
                     </p>
                   </div>
                 )}
 
-                <p className="text-xs mt-2 leading-relaxed" style={{color:'var(--text-3)'}}>Schalter in <code>localStorage ki_gehirn_autolearn</code>. Bei jeder KI-Antwort ab 60 Zeichen läuft im Hintergrund ein kurzer Extract-Call und speichert <code>title/tags/summary</code> als neuen Knoten. Erfolg und Fehlschlag werden als Hinweis eingeblendet.</p>
+                <p className="text-xs mt-2 leading-relaxed" style={{color:'var(--text-3)'}}>The switch lives in <code>localStorage ki_gehirn_autolearn</code>. For every AI answer of 60 characters or more, a short extraction call runs in the background and saves <code>title/tags/summary</code> as a new node. Both success and failure are reported as a notification.</p>
               </div>
 
               <div>
                 <div className="flex items-center gap-2 mb-4">
                   <HardDriveDownload className="w-4 h-4" style={{ color: 'var(--accent)' }} />
-                  <h3 className="hud-label !text-[11px]" style={{ color: 'var(--text-1)' }}>Datenverwaltung</h3>
+                  <h3 className="hud-label !text-[11px]" style={{ color: 'var(--text-1)' }}>Data management</h3>
                 </div>
                 <p className="text-sm mb-4" style={{ color: 'var(--text-2)' }}>
-                  Lade alle Speicherknoten als JSON-Backup herunter. Deine Daten liegen ausschließlich auf diesem Gerät.
+                  Download every memory node as a JSON backup. Your data lives on this device and nowhere else.
                 </p>
                 <button
                   onClick={handleExport}
@@ -406,7 +406,7 @@ export function Settings() {
                   {exported ? (
                     <><CheckCircle2 className="w-5 h-5" style={{ color: 'var(--ok)' }} /> <span style={{ color: 'var(--ok)' }}>Backup erstellt</span></>
                   ) : (
-                    <><Download className="w-5 h-5" /> JSON Backup herunterladen</>
+                    <><Download className="w-5 h-5" /> Download JSON backup</>
                   )}
                 </button>
               </div>
@@ -422,9 +422,9 @@ export function Settings() {
                 <Plug className="w-5 h-5 text-white" />
               </div>
               <div>
-                <p className="text-sm font-semibold" style={{ color: 'var(--text-1)' }}>Ein Gehirn für alle KIs</p>
+                <p className="text-sm font-semibold" style={{ color: 'var(--text-1)' }}>One brain for every AI</p>
                 <p className="text-xs mt-1 leading-relaxed" style={{ color: 'var(--text-2)' }}>
-                  Derselbe lokale Speicher (<code>~/.kepta/kepta.db</code>, SQLite) per HTTP-API und MCP-stdio — nutzbar aus Claude Desktop, Cursor, Zed, Windsurf, eigenen Scripts und Shortcuts.
+                  The same local store (<code>~/.kepta/kepta.db</code>, SQLite) over the HTTP API and MCP stdio — usable from Claude Desktop, Cursor, Zed, Windsurf, your own scripts and shortcuts.
                 </p>
               </div>
             </div>
@@ -433,24 +433,24 @@ export function Settings() {
             <div>
               <div className="flex items-center gap-2 mb-3">
                 <Server className="w-4 h-4" style={{ color: 'var(--accent)' }} />
-                <h3 className="hud-label !text-[11px]" style={{ color: 'var(--text-1)' }}>Lokaler Server</h3>
+                <h3 className="hud-label !text-[11px]" style={{ color: 'var(--text-1)' }}>Local server</h3>
                 <span className="ml-auto flex items-center gap-1.5 text-xs" style={{ color: health?.ok ? 'var(--ok)' : 'var(--text-3)' }}>
                   <span className="w-2 h-2 rounded-full" style={{ background: health?.ok ? 'var(--ok)' : healthError ? '#f87171' : 'var(--text-3)' }} />
-                  {health?.ok ? `online · ${health.count ?? 0} Knoten` : healthError ? 'offline' : 'prüfe...'}
+                  {health?.ok ? `online · ${health.count ?? 0} nodes` : healthError ? 'offline' : 'checking…'}
                 </span>
               </div>
               <div className="hud-inset rounded-xl p-3 flex items-center gap-3">
                 <Globe className="w-4 h-4 shrink-0" style={{ color: 'var(--text-2)' }} />
                 <code className="text-sm font-mono flex-1 truncate" style={{ color: 'var(--text-1)' }}>{API_BASE}</code>
-                <button onClick={() => copy(API_BASE, 'base')} className="btn-ghost p-2 rounded-lg shrink-0" title="Kopieren">
+                <button onClick={() => copy(API_BASE, 'base')} className="btn-ghost p-2 rounded-lg shrink-0" title="Copy">
                   {copied === 'base' ? <CheckCircle2 className="w-4 h-4" style={{ color: 'var(--ok)' }} /> : <Copy className="w-4 h-4" />}
                 </button>
-                <a href={`${API_BASE}/api/health`} target="_blank" rel="noreferrer" className="btn-ghost p-2 rounded-lg shrink-0" title="Health öffnen">
+                <a href={`${API_BASE}/api/health`} target="_blank" rel="noreferrer" className="btn-ghost p-2 rounded-lg shrink-0" title="Open health">
                   <ExternalLink className="w-4 h-4" />
                 </a>
               </div>
               <p className="text-xs mt-2" style={{ color: 'var(--text-3)' }}>
-                Läuft lokal ({API_BASE || 'dieser Origin'}). Der Server bindet standardmäßig nur an 127.0.0.1 — über <code>KEPTA_HOST</code> änderbar.
+                Running locally ({API_BASE || 'this origin'}). By default the server binds to 127.0.0.1 only — change that with <code>KEPTA_HOST</code>.
               </p>
             </div>
 
@@ -462,19 +462,19 @@ export function Settings() {
               </div>
               <div className="space-y-2">
                 {[
-                  { m: 'GET', p: '/api/health', d: 'Health-Check', c: `curl ${API_BASE}/api/health` },
-                  { m: 'GET', p: '/api/memories', d: 'Alle Knoten', c: `curl ${API_BASE}/api/memories` },
-                  { m: 'GET', p: '/api/memories/search?q=...&limit=20', d: 'Volltext-Suche', c: `curl "${API_BASE}/api/memories/search?q=ollama&limit=5"` },
-                  { m: 'POST', p: '/api/memory', d: 'Speichern (Alias)', c: `curl -X POST ${API_BASE}/api/memory -H "Content-Type: application/json" -d '{"title":"T","content":"C","tags":["a"]}'` },
+                  { m: 'GET', p: '/api/health', d: 'Health check', c: `curl ${API_BASE}/api/health` },
+                  { m: 'GET', p: '/api/memories', d: 'All nodes', c: `curl ${API_BASE}/api/memories` },
+                  { m: 'GET', p: '/api/memories/search?q=...&limit=20', d: 'Full-text search', c: `curl "${API_BASE}/api/memories/search?q=ollama&limit=5"` },
+                  { m: 'POST', p: '/api/memory', d: 'Save (alias)', c: `curl -X POST ${API_BASE}/api/memory -H "Content-Type: application/json" -d '{"title":"T","content":"C","tags":["a"]}'` },
                   { m: 'POST', p: '/api/mcp/search', d: 'MCP search (plain / JSON-RPC)', c: `curl -X POST ${API_BASE}/api/mcp/search -H "Content-Type: application/json" -d '{"query":"rezept","limit":3}'` },
                   { m: 'POST', p: '/api/mcp/save', d: 'MCP save', c: `curl -X POST ${API_BASE}/api/mcp/save -H "Content-Type: application/json" -d '{"title":"T","content":"C","tags":[]}'` },
-                  { m: 'GET', p: '/api/mcp/tools', d: 'Tool-Liste', c: `curl ${API_BASE}/api/mcp/tools` },
+                  { m: 'GET', p: '/api/mcp/tools', d: 'Tool list', c: `curl ${API_BASE}/api/mcp/tools` },
                 ].map(e => (
                   <div key={e.p} className="hud-inset rounded-xl px-3 py-2.5 flex items-center gap-3">
                     <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded shrink-0 ${e.m === 'GET' ? 'bg-emerald-500 text-white' : 'bg-sky-500 text-white'}`}>{e.m}</span>
                     <code className="text-xs font-mono flex-1 truncate" style={{ color: 'var(--text-1)' }}>{e.p}</code>
                     <span className="text-xs hidden sm:block shrink-0" style={{ color: 'var(--text-3)' }}>{e.d}</span>
-                    <button onClick={() => copy(e.c, e.p)} className="btn-ghost p-1.5 rounded-lg shrink-0" title="curl kopieren">
+                    <button onClick={() => copy(e.c, e.p)} className="btn-ghost p-1.5 rounded-lg shrink-0" title="Copy the curl command">
                       {copied === e.p ? <CheckCircle2 className="w-3.5 h-3.5" style={{ color: 'var(--ok)' }} /> : <Copy className="w-3.5 h-3.5" />}
                     </button>
                   </div>
@@ -490,9 +490,9 @@ export function Settings() {
               </div>
               <div className="grid gap-2">
                 {[
-                  { icon: Search, name: 'memory_search', desc: 'Sucht Titel / Inhalt / Tags', schema: '{ query: string, limit?: number, tags?: string[] }' },
-                  { icon: Save, name: 'memory_save', desc: 'Speichert oder aktualisiert Knoten', schema: '{ title: string, content: string, tags?: string[], id?: string }' },
-                  { icon: Layers, name: 'memory_list', desc: 'Listet alle Knoten paginiert', schema: '{ limit?: number, offset?: number }' },
+                  { icon: Search, name: 'memory_search', desc: 'Searches titles, content and tags', schema: '{ query: string, limit?: number, tags?: string[] }' },
+                  { icon: Save, name: 'memory_save', desc: 'Creates or updates a node', schema: '{ title: string, content: string, tags?: string[], id?: string }' },
+                  { icon: Layers, name: 'memory_list', desc: 'Lists every node, paginated', schema: '{ limit?: number, offset?: number }' },
                 ].map(t => (
                   <div key={t.name} className="hud-inset rounded-xl px-3 py-2.5 flex gap-3">
                     <t.icon className="w-4 h-4 mt-0.5 shrink-0" style={{ color: 'var(--accent)' }} />
@@ -514,21 +514,21 @@ export function Settings() {
               </div>
               <div className="hud-inset rounded-xl overflow-hidden">
                 <div className="flex items-center justify-between px-3 py-2" style={{ borderBottom: '1px solid var(--border-subtle)' }}>
-                  <span className="text-xs font-mono" style={{ color: 'var(--text-3)' }}>mcp.json (Projekt-Root)</span>
+                  <span className="text-xs font-mono" style={{ color: 'var(--text-3)' }}>mcp.json (project root)</span>
                   <button onClick={() => copy(MCP_JSON_TSX, 'mcp-tsx')} className="btn-ghost flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs">
-                    {copied === 'mcp-tsx' ? <><CheckCircle2 className="w-3.5 h-3.5" style={{ color: 'var(--ok)' }} /> Kopiert</> : <><Copy className="w-3.5 h-3.5" /> Kopieren</>}
+                    {copied === 'mcp-tsx' ? <><CheckCircle2 className="w-3.5 h-3.5" style={{ color: 'var(--ok)' }} /> Copied</> : <><Copy className="w-3.5 h-3.5" /> Copy</>}
                   </button>
                 </div>
                 <pre className="p-3 text-xs font-mono overflow-x-auto leading-relaxed" style={{ color: 'var(--text-1)' }}>{MCP_JSON_TSX}</pre>
               </div>
               <p className="text-xs mt-2 leading-relaxed" style={{ color: 'var(--text-3)' }}>
-                Bei Cursor: Settings → Features → MCP. Bei Zed: <code>settings.json → experimental.mcp</code>. Alternative ohne <code>tsx</code> (nach <code>npm run build:mcp</code>):
+                In Cursor: Settings → Features → MCP. In Zed: <code>settings.json → experimental.mcp</code>. Without <code>tsx</code> (after <code>npm run build:mcp</code>):
               </p>
               <div className="hud-inset rounded-xl overflow-hidden mt-2">
                 <div className="flex items-center justify-between px-3 py-2" style={{ borderBottom: '1px solid var(--border-subtle)' }}>
                   <span className="text-xs font-mono" style={{ color: 'var(--text-3)' }}>mcp.json (built)</span>
                   <button onClick={() => copy(MCP_JSON_BUILT, 'mcp-built')} className="btn-ghost flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs">
-                    {copied === 'mcp-built' ? <><CheckCircle2 className="w-3.5 h-3.5" style={{ color: 'var(--ok)' }} /> Kopiert</> : <><Copy className="w-3.5 h-3.5" /> Kopieren</>}
+                    {copied === 'mcp-built' ? <><CheckCircle2 className="w-3.5 h-3.5" style={{ color: 'var(--ok)' }} /> Copied</> : <><Copy className="w-3.5 h-3.5" /> Copy</>}
                   </button>
                 </div>
                 <pre className="p-3 text-xs font-mono overflow-x-auto leading-relaxed" style={{ color: 'var(--text-1)' }}>{MCP_JSON_BUILT}</pre>
@@ -543,7 +543,7 @@ export function Settings() {
               </div>
               <div className="hud-inset rounded-xl p-3">
                 <p className="text-xs leading-relaxed" style={{ color: 'var(--text-2)' }}>
-                  Config-Datei (macOS):
+                  Config file (macOS):
                 </p>
                 <div className="flex items-center gap-2 mt-2 hud-inset rounded-lg px-3 py-2">
                   <code className="text-xs font-mono flex-1 truncate" style={{ color: 'var(--text-1)' }}>{CLAUDE_PATH}</code>
@@ -552,10 +552,10 @@ export function Settings() {
                   </button>
                 </div>
                 <p className="text-xs mt-3 leading-relaxed" style={{ color: 'var(--text-2)' }}>
-                  Inhalt = gleiche <code>mcpServers</code> wie oben. Platzhalter <code>/PFAD/ZU/KEPTA-REPO</code> ersetzen (den echten Pfad bekommst du mit <code>pwd</code> im Projektordner). Danach Claude Desktop neu starten.
+                  Content = the same <code>mcpServers</code> as above. Replace the placeholder <code>/PATH/TO/KEPTA-REPO</code> (get the real path with <code>pwd</code> in the project folder). Then restart Claude Desktop.
                 </p>
                 <p className="text-xs mt-2 leading-relaxed" style={{ color: 'var(--text-2)' }}>
-                  Im Root liegt außerdem <code>mcp-config.json</code> als fertiges Beispiel — direkt kopieren.
+                  The repo root also holds <code>mcp-config.json</code> as a ready-made example — copy it straight in.
                 </p>
               </div>
             </div>
@@ -564,7 +564,7 @@ export function Settings() {
             <div>
               <div className="flex items-center gap-2 mb-3">
                 <Terminal className="w-4 h-4" style={{ color: 'var(--accent)' }} />
-                <h3 className="hud-label !text-[11px]" style={{ color: 'var(--text-1)' }}>Schnelltest (curl)</h3>
+                <h3 className="hud-label !text-[11px]" style={{ color: 'var(--text-1)' }}>Quick test (curl)</h3>
               </div>
               <div className="hud-inset rounded-xl overflow-hidden">
                 <div className="flex items-center justify-between px-3 py-2" style={{ borderBottom: '1px solid var(--border-subtle)' }}>
@@ -573,7 +573,7 @@ export function Settings() {
                     onClick={() => copy(`curl ${API_BASE}/api/health | jq\ncurl "${API_BASE}/api/memories/search?q=hallo&limit=3" | jq\ncurl -X POST ${API_BASE}/api/memory -H "Content-Type: application/json" -d '{"title":"Test","content":"Via API","tags":["api"]}' | jq`, 'curl')}
                     className="btn-ghost flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs"
                   >
-                    {copied === 'curl' ? <><CheckCircle2 className="w-3.5 h-3.5" style={{ color: 'var(--ok)' }} /> Kopiert</> : <><Copy className="w-3.5 h-3.5" /> Kopieren</>}
+                    {copied === 'curl' ? <><CheckCircle2 className="w-3.5 h-3.5" style={{ color: 'var(--ok)' }} /> Copied</> : <><Copy className="w-3.5 h-3.5" /> Copy</>}
                   </button>
                 </div>
                 <pre className="p-3 text-xs font-mono overflow-x-auto leading-relaxed" style={{ color: 'var(--text-1)' }}>{`curl ${API_BASE}/api/health | jq
@@ -585,7 +585,7 @@ curl -X POST ${API_BASE}/api/memory \\
             </div>
 
             <p className="text-xs text-center leading-relaxed" style={{ color: 'var(--text-3)' }}>
-              Docs &amp; mehr Beispiele: siehe <code>README.md → MCP &amp; API</code> und <code>mcp-config.json</code> im Projekt-Root.
+              Docs and more examples: see <code>README.md → MCP &amp; API</code> and <code>mcp-config.json</code> in the project root.
             </p>
           </div>
         )}

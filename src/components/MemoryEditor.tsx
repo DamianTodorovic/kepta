@@ -2,7 +2,6 @@ import { useState, useEffect, KeyboardEvent, FormEvent } from 'react';
 import { Memory } from '../types';
 import { motion } from 'motion/react';
 import { formatDistanceToNow } from 'date-fns';
-import { de } from 'date-fns/locale';
 import { Brain } from "@phosphor-icons/react";
 import { X, Save, Trash2, Hash, Clock, Zap } from "../lib/icons";
 import { KeptaMark } from './KeptaMark';
@@ -10,9 +9,9 @@ import { KeptaMark } from './KeptaMark';
 type MemoryKind = 'semantic' | 'episodic' | 'procedural';
 
 const KINDS: { key: MemoryKind; label: string; hint: string }[] = [
-  { key: 'semantic', label: 'Wissen', hint: 'Fakten & Zusammenhänge' },
-  { key: 'episodic', label: 'Episode', hint: 'Ereignisse & Gespräche' },
-  { key: 'procedural', label: 'Ablauf', hint: 'How-tos & Prozesse' },
+  { key: 'semantic', label: 'Fact', hint: 'Facts & connections' },
+  { key: 'episodic', label: 'Event', hint: 'Events & conversations' },
+  { key: 'procedural', label: 'How-to', hint: 'Procedures & processes' },
 ];
 
 function toLocalDateInput(ts: number | null | undefined): string {
@@ -130,18 +129,18 @@ export function MemoryEditor({ memory, onSave, onClose, onDelete }: MemoryEditor
             <KeptaMark size={30} radius={8} />
             <div>
               <h2 className="text-[15px] font-semibold" style={{ color: 'var(--text-1)' }}>
-                {memory?.id ? 'Notiz bearbeiten' : 'Neue Notiz'}
+                {memory?.id ? 'Edit note' : 'New note'}
               </h2>
               <div className="hud-label mt-0.5 flex items-center gap-1.5">
                 {memory?.id ? (
                   <>
                     <Clock className="w-3 h-3" />
-                    {KINDS.find(k => k.key === (memory.type || 'semantic'))?.label ?? 'Wissen'}
+                    {KINDS.find(k => k.key === (memory.type || 'semantic'))?.label ?? 'Fact'}
                     {' · '}
-                    {formatDistanceToNow(new Date(memory.updatedAt), { addSuffix: true, locale: de })}
+                    {formatDistanceToNow(new Date(memory.updatedAt), { addSuffix: true })}
                   </>
                 ) : (
-                  'Neuer Eintrag in deiner lokalen Wissensbasis'
+                  'A new entry in your local knowledge base'
                 )}
               </div>
             </div>
@@ -152,7 +151,7 @@ export function MemoryEditor({ memory, onSave, onClose, onDelete }: MemoryEditor
                 type="button"
                 onClick={onDelete}
                 className="btn-danger-ghost p-2 rounded-lg"
-                title="In den Papierkorb verschieben"
+                title="Move to trash"
               >
                 <Trash2 className="w-4.5 h-4.5" />
               </button>
@@ -170,10 +169,10 @@ export function MemoryEditor({ memory, onSave, onClose, onDelete }: MemoryEditor
         <form onSubmit={handleSubmit} className="flex-1 flex flex-col min-h-0 overflow-y-auto">
           <div className="p-8 flex-1 flex flex-col gap-6">
             <div>
-              <div className="hud-label mb-2">Bezeichnung</div>
+              <div className="hud-label mb-2">Title</div>
               <input
                 type="text"
-                placeholder="Titel des Eintrags"
+                placeholder="Title of this entry"
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
                 className="w-full text-3xl font-bold focus:outline-none bg-transparent pb-2 placeholder:text-[var(--text-3)]"
@@ -184,7 +183,7 @@ export function MemoryEditor({ memory, onSave, onClose, onDelete }: MemoryEditor
 
             {/* Memory-Typ: segmented control */}
             <div>
-              <div className="hud-label mb-2 flex items-center gap-1.5"><Brain className="w-3.5 h-3.5" /> Memory-Typ</div>
+              <div className="hud-label mb-2 flex items-center gap-1.5"><Brain className="w-3.5 h-3.5" /> Memory type</div>
               <div className="grid grid-cols-3 gap-1.5 p-1 rounded-xl hud-inset">
                 {KINDS.map((k) => (
                   <button
@@ -209,9 +208,9 @@ export function MemoryEditor({ memory, onSave, onClose, onDelete }: MemoryEditor
             </div>
 
             <div className="flex-1 flex flex-col min-h-[240px]">
-              <div className="hud-label mb-2">Inhalt</div>
+              <div className="hud-label mb-2">Content</div>
               <textarea
-                placeholder="Wissen, Notizen, Code eingeben... [[Wiki-Links]] werden automatisch verknüpft."
+                placeholder="Knowledge, notes, code… [[wiki links]] are connected automatically."
                 value={content}
                 onChange={(e) => setContent(e.target.value)}
                 className="hud-input flex-1 w-full resize-none rounded-xl p-5 text-sm leading-relaxed"
@@ -240,7 +239,7 @@ export function MemoryEditor({ memory, onSave, onClose, onDelete }: MemoryEditor
                 ))}
                 <input
                   type="text"
-                  placeholder={tags.length === 0 ? "Tippen und Enter drücken..." : ""}
+                  placeholder={tags.length === 0 ? "Type and press Enter…" : ""}
                   value={tagsInput}
                   onChange={(e) => setTagsInput(e.target.value)}
                   onKeyDown={handleAddTag}
@@ -250,7 +249,7 @@ export function MemoryEditor({ memory, onSave, onClose, onDelete }: MemoryEditor
               </div>
             </div>
 
-            {/* Temporal & Konfidenz — zusammenklappbar */}
+            {/* Temporal & confidence — collapsible */}
             <div className="rounded-xl" style={{ border: '1px solid var(--border-subtle)' }}>
               <button
                 type="button"
@@ -258,7 +257,7 @@ export function MemoryEditor({ memory, onSave, onClose, onDelete }: MemoryEditor
                 className="w-full flex items-center justify-between px-4 py-3 text-sm font-medium"
                 style={{ color: 'var(--text-2)' }}
               >
-                <span className="flex items-center gap-2"><Clock className="w-4 h-4" style={{ color: 'var(--text-3)' }} /> Gültigkeit & Konfidenz</span>
+                <span className="flex items-center gap-2"><Clock className="w-4 h-4" style={{ color: 'var(--text-3)' }} /> Validity & confidence</span>
                 <span style={{ color: 'var(--text-3)' }}>{showTemporal ? '−' : '+'}</span>
               </button>
               {showTemporal && (
@@ -269,17 +268,17 @@ export function MemoryEditor({ memory, onSave, onClose, onDelete }: MemoryEditor
                 >
                   <div className="grid grid-cols-2 gap-3">
                     <label className="flex flex-col gap-1.5">
-                      <span className="text-xs" style={{ color: 'var(--text-3)' }}>Gültig ab</span>
+                      <span className="text-xs" style={{ color: 'var(--text-3)' }}>Valid from</span>
                       <input type="date" value={validFrom} onChange={(e) => setValidFrom(e.target.value)} className="hud-input rounded-lg px-3 py-2 text-sm" />
                     </label>
                     <label className="flex flex-col gap-1.5">
-                      <span className="text-xs" style={{ color: 'var(--text-3)' }}>Gültig bis (leer = unbegrenzt)</span>
+                      <span className="text-xs" style={{ color: 'var(--text-3)' }}>Valid until (empty = unlimited)</span>
                       <input type="date" value={validTo} onChange={(e) => setValidTo(e.target.value)} className="hud-input rounded-lg px-3 py-2 text-sm" />
                     </label>
                   </div>
                   <label className="flex flex-col gap-1.5">
                     <span className="text-xs flex items-center gap-1.5" style={{ color: 'var(--text-3)' }}>
-                      <Zap className="w-3 h-3" /> Konfidenz — {Math.round(confidence * 100)} % (wie verlässlich ist diese Erinnerung?)
+                      <Zap className="w-3 h-3" /> Confidence — {Math.round(confidence * 100)} % (how reliable is this memory?)
                     </span>
                     <input
                       type="range"
@@ -296,13 +295,13 @@ export function MemoryEditor({ memory, onSave, onClose, onDelete }: MemoryEditor
           </div>
 
           <footer className="p-5 shrink-0 flex items-center justify-between" style={{ borderTop: '1px solid var(--border-subtle)' }}>
-            <span className="hud-label">Alles bleibt lokal auf diesem Gerät</span>
+            <span className="hud-label">Everything stays local on this device</span>
             <button
               type="submit"
               className="btn-primary flex items-center gap-2 px-5 py-2 rounded-lg text-[13px] font-medium"
             >
               <Save className="w-4 h-4" />
-              Speichern
+              Save
             </button>
           </footer>
         </form>

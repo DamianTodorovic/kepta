@@ -15,7 +15,7 @@ import readline from "node:readline";
 const store = new KeptaStore();
 const migration = migrateFromLegacyJson(store);
 if (!migration.skipped) {
-  console.error(`[kepta MCP] Migration: ${migration.migrated} Knoten aus memories.json übernommen (Backup: ${migration.backupPath ?? "keines"})`);
+  console.error(`[kepta MCP] Migration: ${migration.migrated} nodes taken over from memories.json (backup: ${migration.backupPath ?? "none"})`);
 }
 const queue = new EmbeddingQueue(store);
 queue.start();
@@ -57,7 +57,7 @@ rl.on("line", (line) => {
     write({
       jsonrpc: "2.0",
       id: null,
-      error: { code: -32600, message: "Batching nicht unterstützt (MCP 2026-07-28 hat Batching gestrichen)" },
+      error: { code: -32600, message: "Batching is not supported (MCP 2026-07-28 removed it)" },
     });
     return;
   }

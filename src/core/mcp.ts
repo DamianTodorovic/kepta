@@ -84,17 +84,17 @@ const searchOutSchema = {
 export const TOOLS = [
   {
     name: "memory_search",
-    title: "Memory durchsuchen",
+    title: "Search memory",
     description:
-      "Hybrid-Suche (BM25 + Vektoren + Wissensgraph) im KEPTA-Gedächtnis. Abgelaufene/ersetzte Erinnerungen sind markiert (expired/superseded).",
+      "Hybrid retrieval (BM25 + vectors + knowledge graph) over KEPTA memory. Expired and superseded memories are flagged as such.",
     inputSchema: {
       type: "object",
       properties: {
-        query: opt(stringSchema("Suchanfrage (natürliche Sprache)")),
-        limit: opt({ type: "integer", description: "Max. Treffer (1-100, default 10)", default: 10 }),
-        tags: opt({ type: "array", items: { type: "string" }, description: "Tag-Filter (UND)" }),
+        query: opt(stringSchema("Search query, in natural language")),
+        limit: opt({ type: "integer", description: "Max hits (1-100, default 10)", default: 10 }),
+        tags: opt({ type: "array", items: { type: "string" }, description: "Tag filter (AND)" }),
         type: opt({ type: "string", enum: ["semantic", "episodic", "procedural"] }),
-        scope: opt(stringSchema("Scope-Filter, z.B. agent:coder oder session:abc")),
+        scope: opt(stringSchema("Scope filter, e.g. agent:coder or session:abc")),
       },
       required: ["query"],
     },
@@ -102,21 +102,21 @@ export const TOOLS = [
   },
   {
     name: "memory_save",
-    title: "Memory speichern",
+    title: "Save memory",
     description:
-      "Speichert einen Wissensknoten (oder aktualisiert bei id). [[Wiki-Links]] im Text werden als Entitäten verknüpft.",
+      "Saves a knowledge node, or updates one when id is given. [[Wiki links]] in the text become linked entities.",
     inputSchema: {
       type: "object",
       properties: {
-        id: opt(stringSchema("Bestehende ID zum Aktualisieren")),
-        title: opt(stringSchema("Titel")),
-        content: opt(stringSchema("Inhalt")),
+        id: opt(stringSchema("Existing id, to update instead of create")),
+        title: opt(stringSchema("Title")),
+        content: opt(stringSchema("Content")),
         tags: opt({ type: "array", items: { type: "string" } }),
-        type: opt({ type: "string", enum: ["semantic", "episodic", "procedural"], description: "semantic=Wissen, episodic=Ereignis, procedural=Ablauf" }),
-        scope: opt(stringSchema("user/agent/session-Scope, default local")),
+        type: opt({ type: "string", enum: ["semantic", "episodic", "procedural"], description: "semantic=fact, episodic=event, procedural=how-to" }),
+        scope: opt(stringSchema("user/agent/session scope, default local")),
         confidence: opt({ type: "number", description: "0..1" }),
-        validFrom: opt({ type: "integer", description: "Epoch-ms" }),
-        validTo: opt({ type: "integer", description: "Epoch-ms" }),
+        validFrom: opt({ type: "integer", description: "epoch milliseconds" }),
+        validTo: opt({ type: "integer", description: "epoch milliseconds" }),
       },
       required: ["title", "content"],
     },
@@ -132,12 +132,12 @@ export const TOOLS = [
   },
   {
     name: "memory_update",
-    title: "Memory aktualisieren",
-    description: "Aktualisiert Felder einer bestehenden Memory (Patch).",
+    title: "Update memory",
+    description: "Updates fields of an existing memory (patch).",
     inputSchema: {
       type: "object",
       properties: {
-        id: opt(stringSchema("ID der Memory")),
+        id: opt(stringSchema("Id of the memory")),
         title: opt({ type: "string" }),
         content: opt({ type: "string" }),
         tags: opt({ type: "array", items: { type: "string" } }),
@@ -152,13 +152,13 @@ export const TOOLS = [
   },
   {
     name: "memory_delete",
-    title: "Memory löschen",
-    description: "Verschiebt eine Memory in den Papierkorb (default) oder löscht endgültig (permanent).",
+    title: "Delete memory",
+    description: "Moves a memory to the trash (default), or deletes it for good (permanent).",
     inputSchema: {
       type: "object",
       properties: {
-        id: opt(stringSchema("ID der Memory")),
-        permanent: opt({ type: "boolean", description: "true = endgültig löschen", default: false }),
+        id: opt(stringSchema("Id of the memory")),
+        permanent: opt({ type: "boolean", description: "true = delete permanently", default: false }),
       },
       required: ["id"],
     },
@@ -166,8 +166,8 @@ export const TOOLS = [
   },
   {
     name: "memory_list",
-    title: "Memory auflisten",
-    description: "Listet Memories (paginiert, filterbar).",
+    title: "List memories",
+    description: "Lists memories, paginated and filterable.",
     inputSchema: {
       type: "object",
       properties: {
@@ -176,7 +176,7 @@ export const TOOLS = [
         type: opt({ type: "string", enum: ["semantic", "episodic", "procedural"] }),
         tag: opt({ type: "string" }),
         scope: opt({ type: "string" }),
-        trash: opt({ type: "boolean", description: "Papierkorb statt aktive Memories", default: false }),
+        trash: opt({ type: "boolean", description: "Trash instead of active memories", default: false }),
       },
     },
     outputSchema: {
@@ -187,13 +187,13 @@ export const TOOLS = [
   },
   {
     name: "memory_graph",
-    title: "Wissensgraph",
-    description: "Entitäten und Relationen um eine Entität (oder der Gesamtgraph, gekappt).",
+    title: "Knowledge graph",
+    description: "Entities and relations around one entity, or the whole graph, capped.",
     inputSchema: {
       type: "object",
       properties: {
-        entity: opt(stringSchema("Entitätsname (optional)")),
-        depth: opt({ type: "integer", description: "Graph-Tiefe 1-4, default 2" }),
+        entity: opt(stringSchema("Entity name (optional)")),
+        depth: opt({ type: "integer", description: "Graph depth 1-4, default 2" }),
       },
     },
     outputSchema: {
@@ -214,13 +214,13 @@ export const TOOLS = [
   },
   {
     name: "memory_consolidate",
-    title: "Gedächtnis konsolidieren",
-    description: "Findet Dubletten/Widersprüche (Embedding-Ähnlichkeit) und markiert ohne dryRun die ältere Kopie als ersetzt.",
+    title: "Consolidate memory",
+    description: "Finds duplicates and contradictions by embedding similarity; without dryRun it marks the older copy as superseded.",
     inputSchema: {
       type: "object",
       properties: {
-        dryRun: opt({ type: "boolean", description: "true = nur Vorschläge (default)", default: true }),
-        threshold: opt({ type: "number", description: "Ähnlichkeitsschwelle 0..1, default 0.92" }),
+        dryRun: opt({ type: "boolean", description: "true = suggestions only (default)", default: true }),
+        threshold: opt({ type: "number", description: "Similarity threshold 0..1, default 0.92" }),
       },
     },
     outputSchema: {
@@ -247,16 +247,16 @@ export const TOOLS = [
   },
   {
     name: "memory_forget",
-    title: "Vergessen",
+    title: "Forget",
     description:
-      "Temporale Invalidierung: expire setzt valid_to auf jetzt, supersede markiert die Memory als durch supersedeBy ersetzt, delete verschiebt in den Papierkorb.",
+      "Temporal invalidation: expire sets valid_to to now, supersede marks the memory as replaced by supersedeBy, delete moves it to the trash.",
     inputSchema: {
       type: "object",
       properties: {
-        id: opt(stringSchema("ID der Memory")),
-        mode: opt({ type: "string", enum: ["expire", "supersede", "delete"], description: "default expire" }),
-        validTo: opt({ type: "integer", description: "nur mode=expire, default jetzt" }),
-        supersedeBy: opt(stringSchema("nur mode=supersede: ID der Nachfolge-Memory")),
+        id: opt(stringSchema("Id of the memory")),
+        mode: opt({ type: "string", enum: ["expire", "supersede", "delete"], description: "default: expire" }),
+        validTo: opt({ type: "integer", description: "mode=expire only, defaults to now" }),
+        supersedeBy: opt(stringSchema("mode=supersede only: id of the successor memory")),
       },
       required: ["id"],
     },
@@ -287,7 +287,7 @@ function toInt(v: unknown, def: number, min: number, max: number): number {
 }
 
 function memoryToOut(r: ReturnType<KeptaStore["getMemory"]>): Record<string, unknown> {
-  if (!r) throw new Error("Memory nicht gefunden");
+  if (!r) throw new Error("Memory not found");
   return {
     id: r.id,
     title: r.title,
@@ -308,7 +308,7 @@ function memoryToOut(r: ReturnType<KeptaStore["getMemory"]>): Record<string, unk
 export function saveWithIndex(store: KeptaStore, args: Record<string, unknown>): { created: boolean; record: NonNullable<ReturnType<KeptaStore["getMemory"]>> } {
   const title = String(args.title ?? "");
   const content = String(args.content ?? "");
-  if (!title.trim() || !content.trim()) throw new Error("title und content erforderlich");
+  if (!title.trim() || !content.trim()) throw new Error("title and content are required");
   const input = {
     id: args.id ? String(args.id) : undefined,
     title,
@@ -375,7 +375,7 @@ export async function callTool(store: KeptaStore, name: string, args: Record<str
           if (args[k] !== undefined) patch[k] = args[k];
         }
         const updated = store.updateMemory(id, patch);
-        if (!updated) throw new Error(`Memory nicht gefunden: ${id}`);
+        if (!updated) throw new Error(`Memory not found: ${id}`);
         if (patch.content !== undefined) indexMemory(store, id);
         const structured = { updated: true, memory: memoryToOut(store.getMemory(id)) };
         return { content: [{ type: "text", text: JSON.stringify(structured, null, 2) }], structuredContent: structured };
@@ -385,12 +385,12 @@ export async function callTool(store: KeptaStore, name: string, args: Record<str
         const permanent = args.permanent === true;
         if (permanent) {
           const purged = store.purgeMemory(id);
-          if (!purged) throw new Error(`Memory nicht gefunden: ${id}`);
-          return { content: [{ type: "text", text: `Endgültig gelöscht: ${id}` }], structuredContent: { purged: true, trashed: false } };
+          if (!purged) throw new Error(`Memory not found: ${id}`);
+          return { content: [{ type: "text", text: `Permanently deleted: ${id}` }], structuredContent: { purged: true, trashed: false } };
         }
         const trashed = store.trashMemory(id);
-        if (!trashed) throw new Error(`Memory nicht gefunden oder bereits gelöscht: ${id}`);
-        return { content: [{ type: "text", text: `In Papierkorb verschoben: ${id}` }], structuredContent: { trashed: true, purged: false } };
+        if (!trashed) throw new Error(`Memory not found, or already deleted: ${id}`);
+        return { content: [{ type: "text", text: `Moved to the trash: ${id}` }], structuredContent: { trashed: true, purged: false } };
       }
       case "memory_list": {
         const opts = {
@@ -439,10 +439,10 @@ export async function callTool(store: KeptaStore, name: string, args: Record<str
       case "memory_forget": {
         const id = String(args.id ?? "");
         const mode = args.mode ? String(args.mode) : "expire";
-        if (!store.getMemory(id)) throw new Error(`Memory nicht gefunden: ${id}`);
+        if (!store.getMemory(id)) throw new Error(`Memory not found: ${id}`);
         if (mode === "expire") {
           store.updateMemory(id, { validTo: typeof args.validTo === "number" ? args.validTo : Date.now() });
-          return { content: [{ type: "text", text: `Abgelaufen gesetzt: ${id}` }], structuredContent: { forgotten: true, mode } };
+          return { content: [{ type: "text", text: `Marked as expired: ${id}` }], structuredContent: { forgotten: true, mode } };
         }
         if (mode === "supersede") {
           const by = args.supersedeBy ? String(args.supersedeBy) : null;
@@ -451,7 +451,7 @@ export async function callTool(store: KeptaStore, name: string, args: Record<str
         }
         if (mode === "delete") {
           store.trashMemory(id);
-          return { content: [{ type: "text", text: `In Papierkorb verschoben: ${id}` }], structuredContent: { forgotten: true, mode } };
+          return { content: [{ type: "text", text: `Moved to the trash: ${id}` }], structuredContent: { forgotten: true, mode } };
         }
         throw new Error(`Unbekannter mode: ${mode}`);
       }
@@ -461,7 +461,7 @@ export async function callTool(store: KeptaStore, name: string, args: Record<str
   } catch (e) {
     const msg = e instanceof Error ? e.message : String(e);
     return {
-      content: [{ type: "text", text: `Fehler: ${msg}` }],
+      content: [{ type: "text", text: `Error: ${msg}` }],
       structuredContent: { error: msg },
       isError: true,
     };
@@ -494,7 +494,7 @@ export async function handleRpc(ctx: McpContext, req: JsonRpcRequest): Promise<J
     return {
       jsonrpc: "2.0",
       id,
-      error: { code: -32600, message: `Ungültige jsonrpc-Version: ${String(req.jsonrpc)} (erwartet "2.0")` },
+      error: { code: -32600, message: `Invalid jsonrpc version: ${String(req.jsonrpc)} (expected "2.0")` },
     };
   }
 

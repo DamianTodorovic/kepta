@@ -5,6 +5,11 @@ import { createServer } from 'net';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
+// Die Oberflaeche ist englisch — native Steuerelemente muessen mitziehen.
+// Ohne diese Zeile erbt Chromium die Systemsprache, und <input type="date">
+// zeigt auf einem deutschen Mac "tt.mm.jjjj" mitten in einer englischen Maske.
+app.commandLine.appendSwitch('lang', 'en-US');
+
 let mainWindow;
 let serverPort = 3000;
 let serverFailed = false;
@@ -20,7 +25,7 @@ function getFreePort() {
       const port = addr && typeof addr === 'object' ? addr.port : null;
       srv.close(() => {
         if (port) resolve(port);
-        else reject(new Error('Kein freier Port ermittelbar'));
+        else reject(new Error('Could not determine a free port'));
       });
     });
     srv.on('error', reject);
@@ -103,8 +108,8 @@ function createWindow() {
     }
     const details = serverError
       ? `<pre style="background:#f6f5f4;padding:1rem;border-radius:10px;overflow:auto">${String(serverError.stack || serverError.message).slice(0,4000)}</pre>`
-      : '<p>Der Hintergrund-Server ist nicht rechtzeitig bereit.</p>';
-    mainWindow.loadURL(`data:text/html,<html><body style="font-family:Inter,sans-serif;padding:2rem;background:#fcfcf9;color:#0f0f0f"><h1>Verbindungsfehler</h1><p>Die App konnte nicht geladen werden. Bitte starte sie neu.</p>${details}</body></html>`);
+      : '<p>The background server did not become ready in time.</p>';
+    mainWindow.loadURL(`data:text/html,<html><body style="font-family:Inter,sans-serif;padding:2rem;background:#fcfcf9;color:#0f0f0f"><h1>Connection error</h1><p>The app could not be loaded. Please restart it.</p>${details}</body></html>`);
   };
 
   loadApp();
@@ -120,7 +125,7 @@ app.whenReady().then(async () => {
   } catch (e) {
     // Fallback muss den Standard wirklich wiederherstellen: ein leerer Port hier
     // liess frueher process.env.PORT werfen — ausserhalb des try, ohne Fenster.
-    console.log('Kein freier Port ermittelbar, nutze Standard 3000:', e?.message);
+    console.log('Could not determine a free port, falling back to 3000:', e?.message);
     serverPort = 3000;
   }
   if (!Number.isInteger(serverPort) || serverPort <= 0) serverPort = 3000;

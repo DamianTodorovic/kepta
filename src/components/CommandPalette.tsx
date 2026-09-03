@@ -73,7 +73,7 @@ export function CommandPalette({ open, onClose, actions }: CommandPaletteProps) 
             ref={inputRef}
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            placeholder="Befehl oder Suche… (z.B. Graph, Neuer Knoten, Einstellungen)"
+            placeholder="Command or search… (e.g. graph, new node, settings)"
             className="flex-1 bg-transparent outline-none text-sm placeholder:text-[var(--text-3)]"
             style={{ color: "var(--text-1)" }}
           />
@@ -82,7 +82,7 @@ export function CommandPalette({ open, onClose, actions }: CommandPaletteProps) 
 
         <div ref={listRef} className="overflow-y-auto flex-1 p-2 space-y-1">
           {filtered.length === 0 && (
-            <div className="py-10 text-center text-sm" style={{ color: "var(--text-2)" }}>Keine Treffer für „{query}“</div>
+            <div className="py-10 text-center text-sm" style={{ color: "var(--text-2)" }}>No matches for “{query}”</div>
           )}
           {filtered.map((a, i) => (
             <button
@@ -104,9 +104,9 @@ export function CommandPalette({ open, onClose, actions }: CommandPaletteProps) 
         </div>
 
         <div className="px-3 py-2 flex items-center gap-3 hud-label shrink-0" style={{ borderTop: "1px solid var(--border-subtle)" }}>
-          <span className="flex items-center gap-1"><span className="hud-inset px-1 py-0.5 rounded text-[10px]">↑↓</span> Navigieren</span>
-          <span className="flex items-center gap-1"><span className="hud-inset px-1 py-0.5 rounded text-[10px]">↵</span> Öffnen</span>
-          <span className="flex items-center gap-1"><span className="hud-inset px-1 py-0.5 rounded text-[10px]">ESC</span> Schließen</span>
+          <span className="flex items-center gap-1"><span className="hud-inset px-1 py-0.5 rounded text-[10px]">↑↓</span> Navigate</span>
+          <span className="flex items-center gap-1"><span className="hud-inset px-1 py-0.5 rounded text-[10px]">↵</span> Open</span>
+          <span className="flex items-center gap-1"><span className="hud-inset px-1 py-0.5 rounded text-[10px]">ESC</span> Close</span>
         </div>
       </div>
     </div>
@@ -139,14 +139,14 @@ export function buildPaletteActions(opts: {
   onFocusUrl: () => void;
 }): PaletteAction[] {
   return [
-    { id: "search", label: "Suche im Index", desc: "Wissens-Index durchsuchen", icon: <Search className="w-4 h-4" />, keywords: "suche finden filter", action: opts.onFocusSearch },
-    { id: "new", label: "Neuer Knoten", desc: "Leeren Knoten im Editor öffnen", icon: <Plus className="w-4 h-4" />, hotkey: "N", keywords: "neu knoten erstellen", action: opts.onNewNode },
-    { id: "graph", label: "Graph öffnen", desc: "Wissens-Graph anzeigen", icon: <Network className="w-4 h-4" />, keywords: "graph verbindungen kanten", action: opts.onGoGraph },
-    { id: "memories", label: "Zum Wissens-Index", desc: "Alle Knoten anzeigen", icon: <Database className="w-4 h-4" />, keywords: "index übersicht", action: opts.onGoMemories },
-    { id: "chat", label: "Chat öffnen", desc: "Fragen mit Kontext aus der Wissensbasis", icon: <MessageSquare className="w-4 h-4" />, keywords: "chat ai assistant", action: opts.onGoChat },
-    { id: "settings", label: "System / Provider wechseln", desc: "KI-Anbieter und Modell wählen", icon: <SettingsIcon className="w-4 h-4" />, keywords: "einstellungen provider modell", action: opts.onGoSettings },
-    { id: "import", label: "Datei importieren", desc: "PDF / MD / TXT / JSON per Dialog", icon: <FileUp className="w-4 h-4" />, keywords: "import datei upload drag drop", action: opts.onImportFileClick },
-    { id: "url", label: "URL importieren", desc: "Fokus auf URL-Clipper setzen", icon: <Globe className="w-4 h-4" />, keywords: "url clipper web import", action: opts.onFocusUrl },
-    { id: "extract", label: "Kernaussage extrahieren", desc: "Hinweis: im Chat bei einer Antwort verfügbar", icon: <Sparkles className="w-4 h-4" />, keywords: "kernaussage ki extraktion", action: () => { opts.onGoChat(); } },
+    { id: "search", label: "Search the index", desc: "Search the knowledge index", icon: <Search className="w-4 h-4" />, keywords: "search find filter", action: opts.onFocusSearch },
+    { id: "new", label: "New node", desc: "Open an empty node in the editor", icon: <Plus className="w-4 h-4" />, hotkey: "N", keywords: "neu knoten erstellen", action: opts.onNewNode },
+    { id: "graph", label: "Open graph", desc: "Show the knowledge graph", icon: <Network className="w-4 h-4" />, keywords: "graph verbindungen kanten", action: opts.onGoGraph },
+    { id: "memories", label: "To the knowledge index", desc: "Show every node", icon: <Database className="w-4 h-4" />, keywords: "index overview", action: opts.onGoMemories },
+    { id: "chat", label: "Open chat", desc: "Ask with context from the knowledge base", icon: <MessageSquare className="w-4 h-4" />, keywords: "chat ai assistant", action: opts.onGoChat },
+    { id: "settings", label: "Switch system or provider", desc: "Choose an AI provider and model", icon: <SettingsIcon className="w-4 h-4" />, keywords: "settings provider model", action: opts.onGoSettings },
+    { id: "import", label: "Import a file", desc: "PDF / MD / TXT / JSON via a dialog", icon: <FileUp className="w-4 h-4" />, keywords: "import file upload drag drop", action: opts.onImportFileClick },
+    { id: "url", label: "Import a URL", desc: "Focus the URL clipper", icon: <Globe className="w-4 h-4" />, keywords: "url clipper web import", action: opts.onFocusUrl },
+    { id: "extract", label: "Extract the key point", desc: "Note: available in chat once an answer exists", icon: <Sparkles className="w-4 h-4" />, keywords: "kernaussage ki extraktion", action: () => { opts.onGoChat(); } },
   ];
 }

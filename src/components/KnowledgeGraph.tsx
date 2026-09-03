@@ -307,7 +307,7 @@ export function KnowledgeGraph({ memories, onSelectMemory }: KnowledgeGraphProps
   }, [panning, dragging, transform.k, transform.x, transform.y]);
 
   const onPointerUp = useCallback(() => {
-    // Nach dem Loslassen sofort zur Ruhe kommen — kein Zurückschnappen des Clusters
+    // Nach dem Loslassen sofort zur Ruhe kommen — kein Backschnappen des Clusters
     if (dragging) {
       setPositions((prev) => new Map([...prev].map(([id, n]) => [id, { ...n, vx: 0, vy: 0 }])));
     }
@@ -358,8 +358,8 @@ export function KnowledgeGraph({ memories, onSelectMemory }: KnowledgeGraphProps
   if (memories.length === 0) {
     return (
       <div className="flex-1 flex flex-col items-center justify-center p-8 text-center">
-        <div className="hud-label mb-2">Wissens-Graph</div>
-        <p className="text-sm max-w-sm" style={{ color: "var(--text-2)" }}>Keine Knoten vorhanden. Lege deine erste Notiz an — der Graph zeigt echte Verbindungen (Wiki-Links, Agenten) und Ähnlichkeiten.</p>
+        <div className="hud-label mb-2">Knowledge graph</div>
+        <p className="text-sm max-w-sm" style={{ color: "var(--text-2)" }}>No nodes yet. Create your first note — the graph shows real connections (wiki links, agents) and similarities.</p>
       </div>
     );
   }
@@ -376,22 +376,22 @@ export function KnowledgeGraph({ memories, onSelectMemory }: KnowledgeGraphProps
             className="hud-input w-full pl-8 pr-3 py-2 rounded-lg text-sm"
           />
         </div>
-        <div className="hud-label hidden sm:block">{filtered.length} Knoten · {edges.length} Kanten</div>
-        <div className="flex items-center gap-1 ml-2" title="Knotenfarben individuell anpassen">
+        <div className="hud-label hidden sm:block">{filtered.length} nodes · {edges.length} edges</div>
+        <div className="flex items-center gap-1 ml-2" title="Customise node colours">
           {(["semantic", "episodic", "procedural"] as const).map((t) => (
             <input
               key={t}
               type="color"
               value={TYPE_COLORS[t]}
               onChange={(e) => setTypeColor(t, e.target.value)}
-              title={`Farbe: ${t === "semantic" ? "Wissen" : t === "episodic" ? "Episode" : "Ablauf"}`}
+              title={`Colour: ${t === "semantic" ? "Fact" : t === "episodic" ? "Event" : "How-to"}`}
               className="w-6 h-6 rounded cursor-pointer bg-transparent p-0"
               style={{ border: "1px solid var(--border-subtle)" }}
             />
           ))}
         </div>
         {timeRange && (
-          <div className="flex items-center gap-2 ml-2" title="Zeitregler — Wissen zum gewählten Zeitpunkt">
+          <div className="flex items-center gap-2 ml-2" title="Time slider — knowledge at the chosen moment">
             <Clock className="w-3.5 h-3.5" style={{ color: "var(--text-3)" }} />
             <input
               type="range"
@@ -404,17 +404,17 @@ export function KnowledgeGraph({ memories, onSelectMemory }: KnowledgeGraphProps
               className="w-24 accent-[var(--accent)]"
             />
             <span className="hud-label whitespace-nowrap">
-              {timeFilter === null ? "Jetzt" : new Date(timeFilter).toLocaleDateString("de-DE", { month: "long", year: "numeric" })}
+              {timeFilter === null ? "Now" : new Date(timeFilter).toLocaleDateString("en-GB", { month: "long", year: "numeric" })}
             </span>
             {timeFilter !== null && (
-              <button onClick={() => setTimeFilter(null)} className="btn-ghost px-1.5 py-0.5 rounded text-[10px]">Heute</button>
+              <button onClick={() => setTimeFilter(null)} className="btn-ghost px-1.5 py-0.5 rounded text-[10px]">Today</button>
             )}
           </div>
         )}
         <div className="flex items-center gap-1 ml-auto">
           <button onClick={() => zoom(1)} className="btn-ghost p-2 rounded-lg" title="Hineinzoomen"><ZoomIn className="w-4 h-4" /></button>
           <button onClick={() => zoom(-1)} className="btn-ghost p-2 rounded-lg" title="Herauszoomen"><ZoomOut className="w-4 h-4" /></button>
-          <button onClick={fitView} className="btn-ghost p-2 rounded-lg" title="Ansicht zurücksetzen"><Maximize2 className="w-4 h-4" /></button>
+          <button onClick={fitView} className="btn-ghost p-2 rounded-lg" title="Reset the view"><Maximize2 className="w-4 h-4" /></button>
         </div>
       </div>
 
@@ -456,7 +456,7 @@ export function KnowledgeGraph({ memories, onSelectMemory }: KnowledgeGraphProps
             </radialGradient>
           </defs>
           <g transform={`translate(${transform.x},${transform.y}) scale(${transform.k})`}>
-            {/* Edges — echt: gebogene Akzentpfade · Ähnlichkeit: fein gepunktet */}
+            {/* Edges — echt: gebogene Akzentpfade · Similarity: fein gepunktet */}
             {edges.map((e, i) => {
               const a = positions.get(e.source);
               const b = positions.get(e.target);
@@ -549,7 +549,7 @@ export function KnowledgeGraph({ memories, onSelectMemory }: KnowledgeGraphProps
                       opacity={dimmed ? 0.3 : 1}
                       style={{ paintOrder: "stroke", stroke: "var(--bg-panel-solid)", strokeWidth: 3 / Math.max(0.4, transform.k), strokeLinejoin: "round" as const }}
                     >
-                      {m.title.length > 22 ? m.title.slice(0, 22) + "…" : m.title || "Ohne Titel"}
+                      {m.title.length > 22 ? m.title.slice(0, 22) + "…" : m.title || "Untitled"}
                     </text>
                   )}
                   {isHovered && m.tags.length > 0 && (
@@ -571,15 +571,15 @@ export function KnowledgeGraph({ memories, onSelectMemory }: KnowledgeGraphProps
 
         <div className="absolute left-3 bottom-3 hud-panel rounded-lg px-3 py-2 pointer-events-none space-y-1">
           <div className="flex items-center gap-3 hud-label">
-            <span className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-full" style={{ background: '#3e63dd' }} /> Wissen</span>
-            <span className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-full" style={{ background: '#7048c9' }} /> Episode</span>
-            <span className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-full" style={{ background: '#17945c' }} /> Ablauf</span>
+            <span className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-full" style={{ background: '#3e63dd' }} /> Facts</span>
+            <span className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-full" style={{ background: '#7048c9' }} /> Events</span>
+            <span className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-full" style={{ background: '#17945c' }} /> How-tos</span>
           </div>
           <div className="flex items-center gap-3 hud-label">
-            <svg width="26" height="6"><line x1="0" y1="3" x2="26" y2="3" stroke="var(--accent)" strokeWidth="2" /></svg> echte Verbindung
-            <svg width="26" height="6"><line x1="0" y1="3" x2="26" y2="3" stroke="var(--text-3)" strokeWidth="1.5" strokeDasharray="3 4" /></svg> Ähnlichkeit
+            <svg width="26" height="6"><line x1="0" y1="3" x2="26" y2="3" stroke="var(--accent)" strokeWidth="2" /></svg> real connection
+            <svg width="26" height="6"><line x1="0" y1="3" x2="26" y2="3" stroke="var(--text-3)" strokeWidth="1.5" strokeDasharray="3 4" /></svg> Similarity
           </div>
-          <div className="hud-label">Ziehen: Knoten verschieben · Doppelklick: Notiz öffnen · Mausrad: Zoom · Größe = Verbindungen</div>
+          <div className="hud-label">Drag: move a node · Double-click: open the note · Wheel: zoom · Size = connections</div>
         </div>
       </div>
     </div>

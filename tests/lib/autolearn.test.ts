@@ -146,7 +146,7 @@ describe("buildExtractPrompt", () => {
   it("enthaelt die Antwort und fordert reines JSON", () => {
     const p = buildExtractPrompt("Carbonara ohne Sahne.");
     expect(p).toContain("Carbonara ohne Sahne.");
-    expect(p).toMatch(/NUR als JSON/i);
+    expect(p).toMatch(/ONLY as JSON/i);
   });
 
   it("begrenzt sehr lange Antworten", () => {

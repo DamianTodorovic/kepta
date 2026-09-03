@@ -94,7 +94,7 @@ export function ToastProvider({ children }: { children: ReactNode }) {
                   onClick={() => dismiss(t.id)}
                   className="p-1 rounded-md opacity-40 hover:opacity-80 transition-opacity shrink-0"
                   style={{ color: 'var(--text-2)' }}
-                  aria-label="Schließen"
+                  aria-label="Close"
                 >
                   <X className="w-3.5 h-3.5" />
                 </button>
@@ -109,6 +109,6 @@ export function ToastProvider({ children }: { children: ReactNode }) {
 
 export function useToast(): ToastContextValue {
   const ctx = useContext(ToastContext);
-  if (!ctx) throw new Error('useToast muss innerhalb von ToastProvider verwendet werden');
+  if (!ctx) throw new Error('useToast must be used inside a ToastProvider');
   return ctx;
 }

@@ -59,7 +59,7 @@ describe("ToastProvider / useToast", () => {
       </ToastProvider>
     );
     await userEvent.click(screen.getByText("zeigen"));
-    await userEvent.click(screen.getByLabelText("Schließen"));
+    await userEvent.click(screen.getByLabelText("Close"));
     expect(screen.queryByText("Weg damit")).not.toBeInTheDocument();
   });
 

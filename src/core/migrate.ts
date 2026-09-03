@@ -83,7 +83,7 @@ export function migrateFromLegacyJson(store: KeptaStore): MigrationResult {
       id: typeof m.id === "string" && m.id.trim() ? m.id.trim() : undefined,
       scope: "local",
       type: "semantic",
-      title: title || "Ohne Titel",
+      title: title || "Untitled",
       content,
       tags: Array.isArray(m.tags) ? (m.tags as string[]) : [],
       createdAt: typeof m.createdAt === "number" ? m.createdAt : undefined,

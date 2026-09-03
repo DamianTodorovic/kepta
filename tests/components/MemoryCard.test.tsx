@@ -42,21 +42,21 @@ describe("MemoryCard", () => {
 
   it("markiert abgelaufene Memories", () => {
     render(<MemoryCard memory={mem({ validTo: Date.now() - 10000 })} onClick={() => {}} />);
-    expect(screen.getByText("ABGELAUFEN")).toBeInTheDocument();
+    expect(screen.getByText("EXPIRED")).toBeInTheDocument();
   });
 
   it("markiert ersetzte Memories", () => {
     render(<MemoryCard memory={mem({ supersededBy: "m2" })} onClick={() => {}} />);
-    expect(screen.getByText("ERSETZT")).toBeInTheDocument();
+    expect(screen.getByText("SUPERSEDED")).toBeInTheDocument();
   });
 
   it("zeigt Typ-Label Ablauf für procedural", () => {
     render(<MemoryCard memory={mem({ type: "procedural" })} onClick={() => {}} />);
-    expect(screen.getByText("Ablauf")).toBeInTheDocument();
+    expect(screen.getByText("How-to")).toBeInTheDocument();
   });
 
   it("fällt bei leerem Titel auf 'Ohne Titel' zurück", () => {
     render(<MemoryCard memory={mem({ title: "" })} onClick={() => {}} />);
-    expect(screen.getByText("Ohne Titel")).toBeInTheDocument();
+    expect(screen.getByText("Untitled")).toBeInTheDocument();
   });
 });

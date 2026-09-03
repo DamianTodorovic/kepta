@@ -81,7 +81,7 @@ export async function embedTexts(inputs: string[], model: string = DEFAULT_EMBED
     const data = (await res.json()) as { embeddings?: number[][] };
     const vecs = (data.embeddings ?? []).map((e) => Float32Array.from(e));
     if (vecs.length !== inputs.length) {
-      return { ok: false, embeddings: [], model, error: "Embedding-Anzahl passt nicht" };
+      return { ok: false, embeddings: [], model, error: "Embedding count does not match" };
     }
     return { ok: true, embeddings: vecs, model };
   } catch (e) {
@@ -173,7 +173,7 @@ export class EmbeddingQueue {
         this.opts.model
       );
       if (!res.ok) {
-        this.lastError = res.error ?? "unbekannter Fehler";
+        this.lastError = res.error ?? "unknown error";
         return 0;
       }
       this.lastError = null;
@@ -193,7 +193,7 @@ export class EmbeddingQueue {
     this.store.replaceChunks(memoryId, texts);
     const res = await embedTexts(texts, this.opts.model);
     if (!res.ok) {
-      this.lastError = res.error ?? "unbekannter Fehler";
+      this.lastError = res.error ?? "unknown error";
       return false;
     }
     texts.forEach((_, seq) => {

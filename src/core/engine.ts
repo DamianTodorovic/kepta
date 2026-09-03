@@ -239,7 +239,7 @@ function jaccard(a: string[], b: string[]): number {
 }
 
 /**
- * Findet Dubletten: (a) Embedding-Ähnlichkeit > threshold, (b) Fallback Titel+Tags-Überlappung.
+ * Findet Dubletten: (a) Embedding-Similarity > threshold, (b) Fallback Titel+Tags-Überlappung.
  * Ohne dryRun werden ältere Memories als ersetzt markiert (supersede), nicht gelöscht.
  */
 export async function consolidateMemories(

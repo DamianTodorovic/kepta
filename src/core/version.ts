@@ -1,3 +1,3 @@
-// EINZIGE Quelle für die App-Version — Health-Endpoint (/api/health), MCP SERVER_INFO
-// und package.json müssen übereinstimmen (Test: tests/version.test.ts).
-export const APP_VERSION = "2.5.1";
+// The ONE source of the app version — the health endpoint (/api/health), MCP
+// SERVER_INFO and package.json must agree (guarded by tests/version.test.ts).
+export const APP_VERSION = "2.6.0";
