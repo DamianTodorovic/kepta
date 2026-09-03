@@ -2,6 +2,35 @@
 
 All notable changes are documented in this file. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and versioning follows [SemVer](https://semver.org/).
 
+## [2.6.3] — 2026-09-04
+
+Found by loading a fresh clone with 6,500 notes and watching what happens.
+
+### Fixed
+- **The 5,000-node limit applied to one route and not the other.** Creating a
+  single note was refused with 429 above the limit, but `/api/memories/import`
+  sailed past it without a word — 6,500 nodes went in with HTTP 200. A person
+  could cross the line through a supported path and only learn about it later,
+  when the next note they typed was rejected with "please delete some old ones".
+  Import is still never refused, because refusing a backup restore loses data.
+  It now returns a `warning` naming the actual count and limit.
+- The refusal message quoted a hard-coded 5,000 even when the real count and the
+  configured limit were different. It now states both.
+
+### Changed
+- The limit is `KEPTA_MAX_ACTIVE`, read per request so an operator can change it
+  without a restart. Default unchanged at 5,000. It was three separate literal
+  5,000s in the code, each meaning something different.
+
+### Measured, not assumed
+At 6,500 nodes nothing is hidden: `/api/memories` returns all 6,500, the Markdown
+export writes 6,500 files, and search stays at 162 ms. At 2,000 nodes search runs
+at a 31 ms median.
+
+### Tests
+- Three for the limit: import warns when it crosses, stays silent when it does
+  not, and the refusal names the real numbers. **333 tests.**
+
 ## [2.6.2] — 2026-09-03
 
 Found by auditing every feature against a fresh install rather than trusting the

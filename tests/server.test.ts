@@ -119,6 +119,47 @@ describe("/api/memories CRUD", () => {
   });
 });
 
+describe("Grenze fuer aktive Knoten", () => {
+  it("Import warnt, wenn er den Bestand ueber die Grenze hebt", async () => {
+    // Ein Backup darf nie abgewiesen werden — sonst verliert jemand beim
+    // Wiederherstellen Daten. Aber er muss erfahren, dass er darueber liegt,
+    // statt es erst zu merken, wenn das Anlegen einer einzelnen Notiz scheitert.
+    const viele = Array.from({ length: 12 }, (_, i) => ({
+      id: `grenze-${i}`, title: `Knoten ${i}`, content: `Inhalt ${i}`,
+    }));
+    vi.stubEnv("KEPTA_MAX_ACTIVE", "5");
+    const res = await request(app).post("/api/memories/import").send({ memories: viele });
+    vi.unstubAllEnvs();
+    expect(res.status).toBe(200);
+    expect(res.body.imported).toBe(12);
+    expect(res.body.warning).toMatch(/5/);
+  });
+
+  it("Import ohne Ueberschreitung warnt nicht", async () => {
+    const res = await request(app).post("/api/memories/import").send({
+      memories: [{ id: "grenze-ok", title: "Einer", content: "x" }],
+    });
+    expect(res.status).toBe(200);
+    expect(res.body.warning).toBeUndefined();
+  });
+
+  it("Einzelanlage nennt die tatsaechliche Grenze", async () => {
+    // Erst ueber die Grenze bringen — bei leerem Bestand greift keine.
+    await request(app).post("/api/memories/import").send({
+      memories: [
+        { id: "voll-1", title: "A", content: "x" },
+        { id: "voll-2", title: "B", content: "y" },
+        { id: "voll-3", title: "C", content: "z" },
+      ],
+    });
+    vi.stubEnv("KEPTA_MAX_ACTIVE", "1");
+    const res = await request(app).post("/api/memories").send({ title: "Zu viel", content: "x" });
+    vi.unstubAllEnvs();
+    expect(res.status).toBe(429);
+    expect(res.body.error).toMatch(/3 active nodes, maximum is 1/);
+  });
+});
+
 describe("POST /mcp (JSON-RPC)", () => {
   it("initialize verhandelt die Protokollversion", async () => {
     const res = await request(app).post("/mcp").send({ jsonrpc: "2.0", id: 1, method: "initialize", params: { protocolVersion: "2026-07-28" } });
