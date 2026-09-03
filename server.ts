@@ -1276,6 +1276,14 @@ async function startServer() {
     console.log(`Server running on http://${HOST}:${PORT}${HOST === "127.0.0.1" ? "" : "  (alle Interfaces — KEPTA_HOST ist explizit gesetzt)"}`);
     console.log(`Speicher: ${store.dbPath} (SQLite) | Embeddings: ${JSON.stringify(store.embeddingStats())}`);
     console.log(`API: http://localhost:${PORT}/api/health | /api/search | MCP: POST /mcp (2026-07-28, ${MCP_TOOLS.length} Tools)`);
+    // Adresse hinterlegen, damit fremde Clients die App finden: die gepackte App
+    // läuft auf einem zufälligen Port, ohne diese Datei wäre sie unauffindbar.
+    try {
+      fs.writeFileSync(
+        path.join(DATA_DIR, "endpoint.json"),
+        JSON.stringify({ url: `http://127.0.0.1:${PORT}`, port: PORT, pid: process.pid, startedAt: new Date().toISOString() }, null, 2),
+      );
+    } catch { /* nicht schreibbar — Clients nutzen dann KEPTA_URL oder den Standardport */ }
     if (process.send) process.send('server-ready');
   });
   // Listen-Fehler sauber behandeln — z. B. EADDRINUSE durch getFreePort-TOCTOU in der
