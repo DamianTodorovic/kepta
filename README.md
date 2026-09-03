@@ -70,7 +70,7 @@ No service in between, no account, no telemetry. The server binds to `127.0.0.1`
 
 <p align="center"><img src="docs/how-search-decides.gif" alt="One query fans out into BM25 full text, vector KNN and the knowledge graph; the three rankings fuse with RRF, expired and superseded memories are downweighted, and one result surfaces" width="900"></p>
 
-<sub>Three retrievers rank the same corpus differently. RRF settles it on ranks rather than raw scores, so one track cannot dominate by having a bigger number. The precise version:</sub>
+<sub>Real output from an 18-note corpus, not a mock-up. For the query <em>Roman cooking</em> the vector track ranked Cacio e pepe first while full text and the graph ranked Carbonara first; RRF settled it by 0.0004. Note that RRF works on ranks, so one track cannot win simply by producing bigger numbers. The precise version:</sub>
 
 
 ```mermaid
