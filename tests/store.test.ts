@@ -61,8 +61,8 @@ describe("KeptaStore CRUD", () => {
   });
 
   it("supersede verlinkt alte auf neue Memory", () => {
-    const old = store.createMemory({ title: "Wohnort", content: "Berlin" });
-    const neu = store.createMemory({ title: "Wohnort", content: "München", validFrom: Date.now() });
+    const old = store.createMemory({ title: "Wohnort", content: "Hamburg" });
+    const neu = store.createMemory({ title: "Wohnort", content: "Leipzig", validFrom: Date.now() });
     store.supersedeMemory(old.id, neu.id);
     expect(store.getMemory(old.id)?.supersededBy).toBe(neu.id);
   });

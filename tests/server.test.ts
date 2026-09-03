@@ -178,9 +178,9 @@ describe("Diverse Routen", () => {
   });
 
   it("POST /api/profile speichert, GET liest zurück", async () => {
-    await request(app).post("/api/profile").send({ displayName: "Damian" });
+    await request(app).post("/api/profile").send({ displayName: "Alex" });
     const res = await request(app).get("/api/profile");
-    expect(res.body.displayName).toBe("Damian");
+    expect(res.body.displayName).toBe("Alex");
   });
 });
 

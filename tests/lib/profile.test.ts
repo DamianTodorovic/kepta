@@ -31,9 +31,9 @@ describe("loadProfile / saveProfile", () => {
   it("speichert und lädt ein Profil (roundtrip)", () => {
     // saveProfile spiegelt an /api/profile → fetch stubben, damit kein echter Call passiert
     vi.stubGlobal("fetch", vi.fn(async () => ({ ok: true }) as Response));
-    const p = { ...createDefaultProfile(), displayName: "Damian" };
+    const p = { ...createDefaultProfile(), displayName: "Alex" };
     saveProfile(p);
-    expect(loadProfile()?.displayName).toBe("Damian");
+    expect(loadProfile()?.displayName).toBe("Alex");
   });
 
   it("liefert null ohne gespeichertes Profil", () => {
