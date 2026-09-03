@@ -41,7 +41,7 @@ export function Settings() {
   const [models, setModels] = useState<string[]>([]);
   const [loadingModels, setLoadingModels] = useState(false);
   const [modelError, setModelError] = useState<string | null>(null);
-  const [autoLearn, setAutoLearn] = useState<boolean>(()=>{ try{ return localStorage.getItem('ki_gehirn_autolearn') !== 'false'; }catch{ return true; }});
+  const [autoLearn, setAutoLearn] = useState<boolean>(()=>{ try{ return localStorage.getItem('ki_gehirn_autolearn') === 'true'; }catch{ return false; }});
   const [autoLearnSaved, setAutoLearnSaved] = useState(false);
   const [extractModel, setExtractModel] = useState<string>(()=>{ try{ return loadAISettings().extractModel ?? ''; }catch{ return ''; }});
   const [extractSaved, setExtractSaved] = useState(false);

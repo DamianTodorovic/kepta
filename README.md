@@ -2,7 +2,7 @@
 <h1 align="center">KEPTA — Behält, was zählt</h1>
 <p align="center"><strong>Das lokale Gehirn für deine KI-Agenten. Ohne Cloud. Ohne Abo.</strong><br>SQLite + hybride Suche + Wissensgraph + MCP.</p>
 
-<p align="center"><a href="https://github.com/DamianTodorovic/kepta/releases"><img alt="Release" src="https://img.shields.io/github/v/release/DamianTodorovic/kepta?label=Download"></a> <a href="https://github.com/DamianTodorovic/kepta/actions/workflows/build.yml"><img alt="CI" src="https://github.com/DamianTodorovic/kepta/actions/workflows/build.yml/badge.svg"></a> <img alt="Coverage" src="https://img.shields.io/badge/coverage-91%25-brightgreen"> <img alt="Tests" src="https://img.shields.io/badge/tests-307%20passing-brightgreen"> <a href="LICENSE"><img alt="MIT" src="https://img.shields.io/badge/License-MIT-black"></a> <img alt="Platform" src="https://img.shields.io/badge/platform-macOS%20%7C%20Windows%20%7C%20Linux-lightgrey"></p>
+<p align="center"><a href="https://github.com/DamianTodorovic/kepta/releases"><img alt="Release" src="https://img.shields.io/github/v/release/DamianTodorovic/kepta?label=Download"></a> <a href="https://github.com/DamianTodorovic/kepta/actions/workflows/build.yml"><img alt="CI" src="https://github.com/DamianTodorovic/kepta/actions/workflows/build.yml/badge.svg"></a> <img alt="Coverage" src="https://img.shields.io/badge/coverage-91%25-brightgreen"> <img alt="Tests" src="https://img.shields.io/badge/tests-314%20passing-brightgreen"> <a href="LICENSE"><img alt="MIT" src="https://img.shields.io/badge/License-MIT-black"></a> <img alt="Platform" src="https://img.shields.io/badge/platform-macOS%20%7C%20Windows%20%7C%20Linux-lightgrey"></p>
 
 ## 🎬 So sieht KEPTA aus
 
@@ -94,7 +94,7 @@ Ohne Ollama läuft alles rein lexikalisch weiter — die Vektor-Spur entfällt, 
 - **Ersetzungsketten** (`superseded_by`): Widersprüche verdrängen einander, die Historie bleibt
 - **Dateien** per Drag &amp; Drop: PDF, MD, TXT, JSON — Chunking bei 2000 Zeichen
 - **URL-Clipper** mit SSRF-Schutz (IP-Literale in allen Schreibweisen, DNS-Auflösung, Redirect-Prüfung)
-- **Auto-Learn**: Nach jeder Chat-Antwort sichert KEPTA die Kernaussage als Knoten (Tag `auto-learn`). Abschaltbar, mit optionalem kleinem Extraktionsmodell und 45-Sekunden-Limit — Erfolg **und** Fehlschlag werden sichtbar gemeldet
+- **Auto-Learn** (standardmäßig **aus**): Auf Wunsch sichert KEPTA nach jeder Chat-Antwort die Kernaussage als Knoten (Tag `auto-learn`). Beim ersten Mal, wenn eine Antwort lernbar gewesen wäre, weist KEPTA einmalig darauf hin — mit Knopf zum Einschalten. Optionales kleines Extraktionsmodell, 45-Sekunden-Limit, Erfolg **und** Fehlschlag werden gemeldet
 - **Inbox-Ordner** wird überwacht und automatisch eingelesen
 - **Obsidian-Vault-Import**: Markdown + YAML-Frontmatter, `[[Wiki-Links]]` werden zu Graph-Kanten
 - **Markdown-Export** nach `~/.kepta/export/`
@@ -304,11 +304,11 @@ Wer den Binärdateien nicht vertrauen will, baut selbst: `npm install && npm run
 
 ## 🧪 Qualität & Tests
 
-**307 Tests**, Gesamt-Coverage **~91 %** (Kern `src/core` **100 % der Funktionen**). Vitest + v8-Coverage mit Schwellen als CI-Gate — jeder Commit, der die Abdeckung senkt, lässt die CI rot werden.
+**314 Tests**, Gesamt-Coverage **~91 %** (Kern `src/core` **100 % der Funktionen**). Vitest + v8-Coverage mit Schwellen als CI-Gate — jeder Commit, der die Abdeckung senkt, lässt die CI rot werden.
 
 ```bash
 npm run lint       # tsc --noEmit (Typecheck)
-npm test           # 307 Tests (vitest)
+npm test           # 314 Tests (vitest)
 npm run test:cov   # Tests + Coverage-Gate
 npm run eval       # Retrieval-Qualität (Hit@1)
 ```

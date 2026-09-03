@@ -6,7 +6,7 @@ import { ChatMessage, Memory } from "../types";
 import { KeptaMark } from "./KeptaMark";
 import { loadAISettings, saveAISettings, providerById, resolveAIConnection } from "../lib/ai";
 import { detectLocalAIs, type DetectedAI } from "../lib/profile";
-import { shouldLearn, buildExtractPrompt, parseNode, AUTO_LEARN_TIMEOUT_MS } from "../lib/autolearn";
+import { shouldLearn, buildExtractPrompt, parseNode, AUTO_LEARN_TIMEOUT_MS, isAutoLearnEnabled, shouldShowHint, AUTOLEARN_KEY, AUTOLEARN_HINT_KEY } from "../lib/autolearn";
 import { useToast } from "./ui/Toast";
 
 /** Extrahiert Rohtext aus ReactMarkdown-Children (für Copy-Buttons). */
@@ -473,7 +473,27 @@ export function Chat({ activeMemories, onSaveToBrain, onSaveToBrainWithMeta, isF
       setIsStreaming(false);
       abortRef.current = null;
       // ── Selbst-Erweiterung: immer mitlesen & automatisch speichern ──
-      const autoLearnEnabled = (()=>{ try{ return localStorage.getItem('ki_gehirn_autolearn') !== 'false'; }catch{ return true; }})();
+      const read = (k: string) => { try { return localStorage.getItem(k); } catch { return null; } };
+      const autoLearnEnabled = isAutoLearnEnabled(read);
+
+      // Opt-in, aber auffindbar: Einmal darauf hinweisen, wenn diese Antwort
+      // lernbar gewesen waere — mit Knopf, der es direkt einschaltet.
+      if (!autoLearnEnabled && shouldLearn(accText) && shouldShowHint(read)) {
+        try { localStorage.setItem(AUTOLEARN_HINT_KEY, 'seen'); } catch { /* Speicher gesperrt — Hinweis kommt dann erneut */ }
+        toast.push({
+          message: 'KEPTA kann solche Antworten automatisch als Wissen sichern.',
+          kind: 'info',
+          duration: 9000,
+          action: {
+            label: 'Einschalten',
+            onClick: () => {
+              try { localStorage.setItem(AUTOLEARN_KEY, 'true'); } catch { /* ignorieren */ }
+              toast.push({ message: 'Auto-Learn ist an — ab der nächsten Antwort.', kind: 'success' });
+            },
+          },
+        });
+      }
+
       if (autoLearnEnabled && shouldLearn(accText)) {
         // Hintergrund-Extraktion, blockiert die Oberfläche nie. Scheitert sie, sagt
         // KEPTA das — stilles Verschlucken machte die Funktion früher unsichtbar wirkungslos.
