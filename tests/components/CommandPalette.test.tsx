@@ -27,7 +27,7 @@ describe("CommandPalette", () => {
 
   it("filtert nach Eingabe", async () => {
     render(<CommandPalette open onClose={() => {}} actions={actions()} />);
-    const input = screen.getByPlaceholderText(/Befehl oder Suche/);
+    const input = screen.getByPlaceholderText(/Command or search/);
     await userEvent.type(input, "graph");
     expect(screen.getByText("Graph öffnen")).toBeInTheDocument();
     expect(screen.queryByText("Neuer Knoten")).not.toBeInTheDocument();
@@ -35,8 +35,8 @@ describe("CommandPalette", () => {
 
   it("zeigt Leermeldung ohne Treffer", async () => {
     render(<CommandPalette open onClose={() => {}} actions={actions()} />);
-    await userEvent.type(screen.getByPlaceholderText(/Befehl oder Suche/), "zzz-nichts");
-    expect(screen.getByText(/Keine Treffer/)).toBeInTheDocument();
+    await userEvent.type(screen.getByPlaceholderText(/Command or search/), "zzz-nichts");
+    expect(screen.getByText(/No matches/)).toBeInTheDocument();
   });
 
   it("führt Aktion per Klick aus und schließt", async () => {

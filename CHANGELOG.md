@@ -2,6 +2,42 @@
 
 All notable changes are documented in this file. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and versioning follows [SemVer](https://semver.org/).
 
+## [2.6.0] — 2026-09-03
+
+The interface speaks English.
+
+### Changed
+- **Every user-facing string is English.** The desktop UI, the MCP tool titles and
+  descriptions that agents read, server error messages, the onboarding wizard, the
+  starter pack and the notifications. Roughly 300 strings across 20 files.
+- **Native controls follow.** `app.commandLine.appendSwitch('lang', 'en-US')` in
+  `electron.js`: without it Chromium inherits the system language and a date field
+  renders "tt.mm.jjjj" in the middle of an English form on a German Mac.
+- **Dates and numbers** now format with `en-GB` instead of `de-DE`, and relative
+  times drop the `date-fns` German locale.
+- **The starter pack was rewritten**, not machine-translated. Its welcome node also
+  pointed at `~/.ki-gehirn/memories.json` — a path that has not existed since 2.0.
+  It now names `~/.kepta/kepta.db`.
+- The card badge for a semantic memory reads **Fact**, not "Knowledge" — the sidebar
+  already uses Knowledge for the index view, and two different things sharing one
+  word in the same screen is a bug in the wording.
+
+### Fixed
+- **A translated message could change an HTTP status.** The clip route decided
+  400-versus-500 by matching German substrings in the error text (`"nicht auflösbar"`).
+  Renaming the message silently turned DNS failures into 500s — caught by the test
+  suite during this change. Status now hangs on a `ClipClientError` type, so no
+  wording can move it again.
+
+### Unchanged on purpose
+- **The search stopword list stays bilingual.** German notes keep working; the eval
+  runs on a German corpus and still scores Hit@1 92 %, Precision@5 92 %.
+- German documentation lives on in [README.de.md](README.de.md).
+
+### Tests
+- 314 tests green. Seven asserted on German UI strings and were updated with the
+  strings they cover.
+
 ## [2.5.1] — 2026-09-03
 
 Auto-learn no longer runs without being asked.

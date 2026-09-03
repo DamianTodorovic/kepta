@@ -22,14 +22,14 @@ export interface DetectedAI {
 }
 
 export const USECASE_LABELS: Record<UseCase, { label: string; icon: string; desc: string }> = {
-  angeln: { label: 'Angeln', icon: '🎣', desc: 'Köder, Ruten, Spots, Shop-Wissen' },
-  dropshipping: { label: 'Dropshipping / E-Commerce', icon: '🛒', desc: 'Shopify, Lieferanten, §19 UStG' },
-  ki: { label: 'KI & RAG', icon: '🤖', desc: 'Prompts, Embeddings, Ollama, Agents' },
-  coding: { label: 'Coding', icon: '💻', desc: 'Code-Snippets, Debugging, Stack' },
-  studium: { label: 'Studium / Lernen', icon: '📚', desc: 'Zusammenfassungen, Prüfungen' },
-  forschung: { label: 'Forschung', icon: '🔬', desc: 'Paper, Zitate, Quellen' },
-  business: { label: 'Business & Produktivität', icon: '📈', desc: 'Meetings, Projekte, Tasks' },
-  kreativ: { label: 'Kreativ & Schreiben', icon: '✨', desc: 'Ideen, Texte, Story' },
+  angeln: { label: 'Fishing', icon: '🎣', desc: 'Bait, rods, spots, shop knowledge' },
+  dropshipping: { label: 'Dropshipping / e-commerce', icon: '🛒', desc: 'Shopify, suppliers, VAT rules' },
+  ki: { label: 'AI & RAG', icon: '🤖', desc: 'Prompts, embeddings, Ollama, agents' },
+  coding: { label: 'Coding', icon: '💻', desc: 'Snippets, debugging, your stack' },
+  studium: { label: 'Study & learning', icon: '📚', desc: 'Summaries, exams' },
+  forschung: { label: 'Research', icon: '🔬', desc: 'Papers, citations, sources' },
+  business: { label: 'Business & productivity', icon: '📈', desc: 'Meetings, projects, tasks' },
+  kreativ: { label: 'Creative & writing', icon: '✨', desc: 'Ideas, drafts, story' },
 };
 
 const PROFILE_KEY = 'ki_gehirn_adaptive_profile';
@@ -67,8 +67,8 @@ export function createDefaultProfile(): UserProfileAdaptive {
 export async function detectLocalAIs(): Promise<DetectedAI[]> {
   const results: DetectedAI[] = [];
   const checks: { id: string; label: string; url: string; parse: (j:any)=>string[] }[] = [
-    { id: 'ollama', label: 'Ollama (lokal, kostenlos)', url: 'http://localhost:11434/api/tags', parse: (j)=> (j.models||[]).map((m:any)=>m.name||m.model).filter(Boolean) },
-    { id: 'lmstudio', label: 'LM Studio (lokal)', url: 'http://localhost:1234/v1/models', parse: (j)=> (j.data||j.models||[]).map((m:any)=>m.id||m.name).filter(Boolean) },
+    { id: 'ollama', label: 'Ollama (local, free)', url: 'http://localhost:11434/api/tags', parse: (j)=> (j.models||[]).map((m:any)=>m.name||m.model).filter(Boolean) },
+    { id: 'lmstudio', label: 'LM Studio (local)', url: 'http://localhost:1234/v1/models', parse: (j)=> (j.data||j.models||[]).map((m:any)=>m.id||m.name).filter(Boolean) },
   ];
   for (const c of checks) {
     const t0 = Date.now();

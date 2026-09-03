@@ -20,7 +20,7 @@ function make(majesticonsName: string) {
   // Der Name wird beim Modul-Load gegen das Dataset geprüft — Tippfehler
   // fliegen sofort, nicht erst zur Laufzeit.
   if (!(majesticonsName in majesticonsData.icons)) {
-    throw new Error(`Majesticons: Icon „${majesticonsName}" existiert nicht`);
+    throw new Error(`Majesticons: icon "${majesticonsName}" does not exist`);
   }
   return function Majesticon({ className, style }: IconProps) {
     return (

@@ -46,8 +46,8 @@ const PRICING: Record<string, { input: number; output: number; label: string }> 
   groq: { input: 0.00005, output: 0.00008, label: "Groq" },
   deepseek: { input: 0.00014, output: 0.00028, label: "DeepSeek" },
   xai: { input: 0.005, output: 0.015, label: "xAI Grok" },
-  ollama: { input: 0, output: 0, label: "Ollama (lokal)" },
-  lmstudio: { input: 0, output: 0, label: "LM Studio (lokal)" },
+  ollama: { input: 0, output: 0, label: "Ollama (local)" },
+  lmstudio: { input: 0, output: 0, label: "LM Studio (local)" },
   custom: { input: 0.0002, output: 0.0008, label: "Custom" },
 };
 
@@ -62,7 +62,7 @@ function getPricing(providerId: string) {
 
 function formatCost(inputTok: number, outputTok: number, providerId: string): string {
   const p = getPricing(providerId);
-  if (p.input === 0 && p.output === 0) return "kostenlos (lokal)";
+  if (p.input === 0 && p.output === 0) return "free (local)";
   const cost = (inputTok / 1000) * p.input + (outputTok / 1000) * p.output;
   if (cost < 0.01) return `$${cost.toFixed(4)}`;
   return `$${cost.toFixed(3)}`;
@@ -288,22 +288,22 @@ export function Chat({ activeMemories, onSaveToBrain, onSaveToBrainWithMeta, isF
       if (raw) {
         const p = JSON.parse(raw);
         const name = p.displayName ? `Name: ${p.displayName}. ` : "";
-        const cases = Array.isArray(p.useCases) && p.useCases.length ? `Fokus: ${p.useCases.join(', ')}. ` : "";
+        const cases = Array.isArray(p.useCases) && p.useCases.length ? `Focus: ${p.useCases.join(', ')}. ` : "";
         const goal = p.goal ? `Ziel: ${p.goal}. ` : "";
-        const note = p.customNote ? `Hinweis: ${p.customNote}. ` : "";
+        const note = p.customNote ? `Note: ${p.customNote}. ` : "";
         if (name || cases || goal || note) profileLine = `[Nutzerprofil] ${name}${cases}${goal}${note}Passe Antwort-Stil und Beispiele daran an.\n\n`;
       }
     } catch {}
-    let prompt = profileLine + "Du bist der KI Assistant. Du hast Zugriff auf die persönliche Knowledge Base des Nutzers. Antworte basierend auf dem folgenden Kontext präzise und hilfreich. Zitiere wenn möglich die ID der genutzten Knoten.\n\n";
+    let prompt = profileLine + "You are the AI assistant. You have access to the user's personal knowledge base. Answer precisely and helpfully, based on the context below. Cite the id of every node you use where you can.\n\n";
     // Date-aware prompting (arXiv:2605.08538): Zeitanker reduzieren Temporal-Fehler deutlich
-    prompt += `[Heute: ${new Date().toLocaleDateString('de-DE', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}]\n\n`;
+    prompt += `[Today: ${new Date().toLocaleDateString('en-GB', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}]\n\n`;
     if (mems.length === 0) {
       prompt += "(Aktuell sind keine Knoten geladen. Antworte allgemein.)\n";
     } else {
-      prompt += `Kontext — ${mems.length} Knoten (Token-Budget ${tokenBudget}):\n\n`;
+      prompt += `Context — ${mems.length} nodes (token budget ${tokenBudget}):\n\n`;
       mems.forEach((m) => {
-        const validTo = m.validTo ? ` | GÜLTIG BIS: ${new Date(m.validTo).toLocaleDateString('de-DE')}${m.validTo < Date.now() ? ' (ABGELAUFEN)' : ''}` : "";
-        const superseded = m.supersededBy ? " | ERSETZT" : "";
+        const validTo = m.validTo ? ` | VALID UNTIL: ${new Date(m.validTo).toLocaleDateString('en-GB')}${m.validTo < Date.now() ? ' (EXPIRED)' : ''}` : "";
+        const superseded = m.supersededBy ? " | SUPERSEDED" : "";
         prompt += `[ID: ${m.id} | KATEGORIEN: ${m.tags.join(", ")} | TITEL: ${m.title}${validTo}${superseded}]\n${m.content}\n\n`;
       });
     }
@@ -318,11 +318,11 @@ export function Chat({ activeMemories, onSaveToBrain, onSaveToBrainWithMeta, isF
     const settingsLive = loadAISettings();
     const provLive = providerById(settingsLive.providerId);
     if (provLive.needsKey && !settingsLive.apiKey) {
-      setError(`Schnell-Setup (30 Sekunden): ① Links „System" → Einstellungen ② Provider wählen ③ API-Key eintragen ④ „Testanfrage" drücken — danach antwortet das Cockpit. Kein Key? Ollama lokal starten genügt auch (dann Modell „ollama/…" wählen).`);
+      setError(`Quick setup (30 seconds): ① "System" on the left → Settings ② pick a provider ③ enter an API key ④ press "Test request" — the cockpit answers after that. No key? Starting Ollama locally is enough too (then pick a model named "ollama/…").`);
       return;
     }
     if (!settingsLive.model) {
-      setError("Kein Modell festgelegt. Bitte unter System → Einstellungen ein Modell wählen.");
+      setError("No model set. Pick one under System → Settings.");
       return;
     }
 
@@ -381,7 +381,7 @@ export function Chat({ activeMemories, onSaveToBrain, onSaveToBrainWithMeta, isF
 
       if (!res.ok || !res.body) {
         // Versuche JSON-Fehler zu lesen bevor SSE
-        let msg = `API-Fehler (${res.status})`;
+        let msg = `API error (${res.status})`;
         try {
           const txt = await res.text();
           const j = JSON.parse(txt);
@@ -440,7 +440,7 @@ export function Chat({ activeMemories, onSaveToBrain, onSaveToBrainWithMeta, isF
       // finalisieren – falls gar kein Text kam
       if (!accText) {
         setMessages((prev) => prev.filter((m) => m.id !== assistantId));
-        throw new Error("Keine Antwort erhalten (leerer Stream).");
+        throw new Error("No answer received (empty stream).");
       } else {
         const finalOut = estimateTokens(accText);
         const finalCost = formatCost(placeholder.inputTokens || 0, finalOut, provLive.id);
@@ -467,7 +467,7 @@ export function Chat({ activeMemories, onSaveToBrain, onSaveToBrainWithMeta, isF
           // behalte partiellen Text + Fehlerhinweis
           setMessages((prev) => prev.map((m) => (m.id === assistantId ? { ...m, content: accText } : m)));
         }
-        setError(msg || "Unbekannter Fehler beim Streaming");
+        setError(msg || "Unknown error while streaming");
       }
     } finally {
       setIsStreaming(false);
@@ -481,14 +481,14 @@ export function Chat({ activeMemories, onSaveToBrain, onSaveToBrainWithMeta, isF
       if (!autoLearnEnabled && shouldLearn(accText) && shouldShowHint(read)) {
         try { localStorage.setItem(AUTOLEARN_HINT_KEY, 'seen'); } catch { /* Speicher gesperrt — Hinweis kommt dann erneut */ }
         toast.push({
-          message: 'KEPTA kann solche Antworten automatisch als Wissen sichern.',
+          message: 'KEPTA can save answers like this as knowledge automatically.',
           kind: 'info',
           duration: 9000,
           action: {
             label: 'Einschalten',
             onClick: () => {
               try { localStorage.setItem(AUTOLEARN_KEY, 'true'); } catch { /* ignorieren */ }
-              toast.push({ message: 'Auto-Learn ist an — ab der nächsten Antwort.', kind: 'success' });
+              toast.push({ message: 'Auto-learn is on — from the next answer.', kind: 'success' });
             },
           },
         });
@@ -509,12 +509,12 @@ export function Chat({ activeMemories, onSaveToBrain, onSaveToBrainWithMeta, isF
           try {
             const r = await fetch('/api/chat', {
               method:'POST', headers:{'Content-Type':'application/json'}, signal: ctl.signal,
-              body: JSON.stringify({ providerId: prov.id, protocol: prov.protocol, baseUrl: s.baseUrl || prov.baseUrl, apiKey: s.apiKey, model, system:'Du extrahierst Wissen. Antworte nur JSON.', messages:[{role:'user', content: buildExtractPrompt(accText)}] })
+              body: JSON.stringify({ providerId: prov.id, protocol: prov.protocol, baseUrl: s.baseUrl || prov.baseUrl, apiKey: s.apiKey, model, system:'You extract knowledge. Reply with JSON only.', messages:[{role:'user', content: buildExtractPrompt(accText)}] })
             });
             if (!r.ok) throw new Error(`Extraktion fehlgeschlagen (HTTP ${r.status})`);
             const j = await r.json();
             const node = parseNode(String(j.text ?? ''), accText.slice(0, 1600));
-            if (!node) throw new Error('Modell lieferte kein verwertbares JSON');
+            if (!node) throw new Error('The model returned no usable JSON');
 
             // Duplikate vermeiden — fast gleicher Inhalt oder gleicher Titel bei ähnlicher Länge
             const existing: any[] = await fetch('/api/memories')
@@ -524,16 +524,16 @@ export function Chat({ activeMemories, onSaveToBrain, onSaveToBrainWithMeta, isF
             const isDup = existing.some((m: any) => m.content?.slice(0, 120) === node.summary.slice(0, 120) || (m.title === node.title && Math.abs((m.content?.length ?? 0) - node.summary.length) < 20));
             if (isDup) return;
 
-            const save = await fetch('/api/memory', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ title: node.title, content: node.summary + `\n\n— Quelle: Chat ${new Date().toLocaleString('de-DE')} — Modell ${prov.label}/${model}`, tags: node.tags }) });
-            if (!save.ok) throw new Error(`Speichern fehlgeschlagen (HTTP ${save.status})`);
+            const save = await fetch('/api/memory', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ title: node.title, content: node.summary + `\n\n— Source: chat ${new Date().toLocaleString('en-GB')} — model ${prov.label}/${model}`, tags: node.tags }) });
+            if (!save.ok) throw new Error(`Save failed (HTTP ${save.status})`);
             toast.push({ message: `Gelernt: ${node.title}`, kind: 'success' });
           } catch (e) {
             const aborted = e instanceof DOMException && e.name === 'AbortError';
             const grund = aborted
-              ? `Modell brauchte länger als ${Math.round(AUTO_LEARN_TIMEOUT_MS / 1000)} s — in den Einstellungen ein kleineres Extraktionsmodell wählen`
-              : e instanceof Error ? e.message : 'unbekannter Fehler';
-            console.warn('[auto-learn] Übersprungen:', e);
-            toast.push({ message: `Auto-Learn übersprungen: ${grund}`, kind: 'warn', duration: 6000 });
+              ? `The model took longer than ${Math.round(AUTO_LEARN_TIMEOUT_MS / 1000)} s — pick a smaller extraction model in Settings`
+              : e instanceof Error ? e.message : 'unknown error';
+            console.warn('[auto-learn] skipped:', e);
+            toast.push({ message: `Auto-learn skipped: ${grund}`, kind: 'warn', duration: 6000 });
           } finally {
             clearTimeout(timer);
           }
@@ -551,7 +551,7 @@ export function Chat({ activeMemories, onSaveToBrain, onSaveToBrainWithMeta, isF
       <div className="px-6 py-4 flex items-center justify-between z-10 border-gradient-b shrink-0" style={{ borderBottom: "1px solid var(--border-subtle)" }}>
         <div className="flex items-center gap-3">
           {isFocusMode && (
-            <button onClick={onToggleFocus} className="btn-ghost p-1.5 -ml-2 rounded-lg" aria-label="Fokus verlassen">
+            <button onClick={onToggleFocus} className="btn-ghost p-1.5 -ml-2 rounded-lg" aria-label="Leave focus mode">
               <PanelLeftOpen className="w-5 h-5" />
             </button>
           )}
@@ -560,7 +560,7 @@ export function Chat({ activeMemories, onSaveToBrain, onSaveToBrainWithMeta, isF
             <span
               className="absolute -bottom-0.5 -right-0.5 status-dot"
               style={connection.state === "connected" ? undefined : { background: "var(--text-3)", boxShadow: "none" }}
-              title={connection.state === "connected" ? "KI verbunden" : "Keine KI verbunden"}
+              title={connection.state === "connected" ? "AI connected" : "No AI connected"}
             />
           </div>
           <div>
@@ -572,20 +572,20 @@ export function Chat({ activeMemories, onSaveToBrain, onSaveToBrainWithMeta, isF
               {connection.state === "connected" ? (
                 <>
                   <span>{connection.label} · {connection.model}</span>
-                  {connection.local && <span className="px-1 py-0 rounded text-[9px] border" style={{ borderColor: "var(--border-subtle)", color: "var(--ok)" }}>lokal</span>}
+                  {connection.local && <span className="px-1 py-0 rounded text-[9px] border" style={{ borderColor: "var(--border-subtle)", color: "var(--ok)" }}>local</span>}
                 </>
               ) : (
                 <>
-                  <span style={{ color: "var(--text-3)" }}>Keine KI verbunden</span>
+                  <span style={{ color: "var(--text-3)" }}>No AI connected</span>
                   {detectedLocal && (
                     <button
                       onClick={() => connectLocal(detectedLocal)}
                       className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] border transition-colors hover:opacity-80"
                       style={{ borderColor: "var(--border-subtle)", color: "var(--accent)", background: "var(--accent-soft)" }}
-                      title={`${detectedLocal.label} lokal erkannt — als KI verbinden`}
+                      title={`${detectedLocal.label} detected locally — connect it`}
                     >
                       <Sparkles className="w-2.5 h-2.5" />
-                      {detectedLocal.label.replace(/\s*\(.*\)$/, "")} verbinden
+                      {detectedLocal.label.replace(/\s*\(.*\)$/, "")} — connect
                     </button>
                   )}
                 </>
@@ -595,14 +595,14 @@ export function Chat({ activeMemories, onSaveToBrain, onSaveToBrainWithMeta, isF
         </div>
         <div className="flex items-center gap-2 sm:gap-4 text-xs font-medium">
           <div className="flex items-center gap-1.5" style={{ color: "var(--text-2)" }}>
-            <span className="hud-label hidden sm:inline">Kontext:</span>
+            <span className="hud-label hidden sm:inline">Context:</span>
             <span className="px-2 py-1 rounded hud-inset flex items-center gap-1" style={{ color: "var(--accent)" }}>
               <Hash className="w-3 h-3" />
               {budgetedMemories.length}/{activeMemories.length}
             </span>
           </div>
           <div className="hidden sm:flex items-center gap-1.5 px-2 py-1 rounded hud-inset hud-label">
-            <FileText className="w-3 h-3" /> ~{totalInputTokensEstimate.toLocaleString("de-DE")} Tokens
+            <FileText className="w-3 h-3" /> ~{totalInputTokensEstimate.toLocaleString("en-GB")} tokens
           </div>
           <div className="hidden md:flex items-center gap-1.5 px-2 py-1 rounded hud-inset hud-label" title={`Input ${totalInputTokensEstimate} · Output ~${liveOutputTokens || 0} · ${estimatedCostNow}`}>
             <Coins className="w-3 h-3" /> {estimatedCostNow}
@@ -620,13 +620,13 @@ export function Chat({ activeMemories, onSaveToBrain, onSaveToBrainWithMeta, isF
             <div className="flex items-center justify-between mb-1">
               <span className="hud-label flex items-center gap-1.5">
                 <Sparkles className="w-3 h-3" style={{ color: "var(--accent)" }} />
-                Kontext &amp; Token-Budget
+                Context &amp; token budget
               </span>
               <span className="text-[11px] flex items-center gap-2" style={{ color: "var(--text-2)" }}>
                 <span className="px-1.5 py-0.5 rounded-md text-[11px] font-semibold tnum" style={{ background: "var(--bg-panel)", border: "1px solid var(--border-subtle)", color: "var(--text-1)" }}>
-                  {tokenBudget.toLocaleString("de-DE")}
+                  {tokenBudget.toLocaleString("en-GB")}
                 </span>
-                <span>· {budgetedMemories.length} Einträge aktiv</span>
+                <span>· {budgetedMemories.length} entries active</span>
               </span>
             </div>
             <div className="relative h-5 flex items-center">
@@ -668,7 +668,7 @@ export function Chat({ activeMemories, onSaveToBrain, onSaveToBrainWithMeta, isF
             )}
           </div>
           <div className="hidden lg:flex flex-col items-end gap-0.5 text-xs min-w-[130px] shrink-0">
-            <span className="hud-label">Kosten-Schätzung</span>
+            <span className="hud-label">Cost estimate</span>
             <span className="mono text-[13px]" style={{ color: pricing.input === 0 ? "var(--ok)" : "var(--text-1)" }}>
               {estimatedCostNow}
             </span>
@@ -686,12 +686,12 @@ export function Chat({ activeMemories, onSaveToBrain, onSaveToBrainWithMeta, isF
             <div className="w-16 h-16 rounded-2xl flex items-center justify-center mb-4" style={{ background: 'var(--bg-inset)', border: '1px solid var(--border-subtle)', boxShadow: 'inset 0 1px 0 var(--edge-light)' }}>
               <KeptaMark size={34} radius={8} />
             </div>
-            <div className="hud-label mb-2">Bereit</div>
+            <div className="hud-label mb-2">Ready</div>
             <p className="text-[13px] max-w-sm leading-relaxed" style={{ color: "var(--text-2)" }}>
-              Frag etwas zu deinen Einträgen — {budgetedMemories.length} von {activeMemories.length} sind im Budget ({tokenBudget.toLocaleString("de-DE")} Tokens).
+              Ask something about your entries — {budgetedMemories.length} of {activeMemories.length} fit the budget ({tokenBudget.toLocaleString("en-GB")} tokens).
             </p>
             <div className="mt-4 flex flex-wrap gap-2 justify-center max-w-md">
-              {["Zusammenfassung", "Widersprüche finden", "Nächste Schritte", "Als Tabelle"].map((s) => (
+              {["Summarise", "Find contradictions", "Next steps", "As a table"].map((s) => (
                 <button
                   key={s}
                   onClick={() => setInput(s)}
@@ -763,7 +763,7 @@ export function Chat({ activeMemories, onSaveToBrain, onSaveToBrainWithMeta, isF
                               }}
                               className="absolute top-2 right-2 p-1.5 rounded-lg opacity-0 group-hover/code:opacity-100 transition-opacity"
                               style={{ background: "var(--bg-inset-strong)", border: "1px solid var(--border-subtle)", color: copiedCodeId === msg.id ? "var(--ok)" : "var(--text-3)" }}
-                              title="Code kopieren"
+                              title="Copy code"
                             >
                               {copiedCodeId === msg.id ? <CheckCircle2 className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
                             </button>
@@ -812,7 +812,7 @@ export function Chat({ activeMemories, onSaveToBrain, onSaveToBrainWithMeta, isF
                   )}
                   <div className="flex flex-wrap items-center gap-2 text-[10px] font-mono" style={{ color: "var(--text-3)" }}>
                     {typeof msg.inputTokens === "number" && <span className="inline-flex items-center gap-1"><Hash className="w-3 h-3" /> In {msg.inputTokens}</span>}
-                    {typeof msg.outputTokens === "number" && <span className="inline-flex items-center gap-1">→ {msg.outputTokens} Tokens</span>}
+                    {typeof msg.outputTokens === "number" && <span className="inline-flex items-center gap-1">→ {msg.outputTokens} tokens</span>}
                     {msg.costLabel && <span className="inline-flex items-center gap-1"><Coins className="w-3 h-3" /> {msg.costLabel}</span>}
                     <span>{new Date(msg.timestamp).toLocaleTimeString("de-DE", { hour: "2-digit", minute: "2-digit" })}</span>
                   </div>
@@ -823,7 +823,7 @@ export function Chat({ activeMemories, onSaveToBrain, onSaveToBrainWithMeta, isF
                       style={{ color: "var(--text-2)" }}
                     >
                       {copiedId === msg.id ? <Check className="w-3 h-3" style={{ color: "var(--ok)" }} /> : <Copy className="w-3 h-3" />}
-                      {copiedId === msg.id ? "Kopiert" : "Kopieren"}
+                      {copiedId === msg.id ? "Copied" : "Copy"}
                     </button>
                     <button
                       onClick={() => {
@@ -838,7 +838,7 @@ export function Chat({ activeMemories, onSaveToBrain, onSaveToBrainWithMeta, isF
                       className="flex items-center gap-1.5 text-[11px] font-medium px-2 py-1 rounded hud-inset hover:!border-[color-mix(in_srgb,var(--accent)_45%,transparent)] transition-all"
                       style={{ color: "var(--text-2)" }}
                     >
-                      <Database className="w-3 h-3" style={{ color: "var(--accent)" }} /> Als Knoten speichern
+                      <Database className="w-3 h-3" style={{ color: "var(--accent)" }} /> Save as a node
                     </button>
                   </div>
                 </div>
@@ -867,9 +867,9 @@ export function Chat({ activeMemories, onSaveToBrain, onSaveToBrainWithMeta, isF
           <div className="flex items-start gap-3 p-4 rounded-xl text-sm" style={{ background: "rgba(239,68,68,0.08)", border: "1px solid rgba(239,68,68,0.25)", color: "#f87171" }}>
             <AlertTriangle className="w-5 h-5 shrink-0 mt-0.5" />
             <div className="flex-1">
-              <div className="font-medium">Fehler</div>
+              <div className="font-medium">Error</div>
               <div className="opacity-90 break-words">{error}</div>
-              <button onClick={() => setError(null)} className="mt-2 text-xs underline opacity-80 hover:opacity-100">Schließen</button>
+              <button onClick={() => setError(null)} className="mt-2 text-xs underline opacity-80 hover:opacity-100">Close</button>
             </div>
           </div>
         )}
@@ -883,7 +883,7 @@ export function Chat({ activeMemories, onSaveToBrain, onSaveToBrainWithMeta, isF
             type="text"
             value={input}
             onChange={(e) => setInput(e.target.value)}
-            placeholder={isStreaming ? "Antwort wird generiert — Stop zum Abbrechen" : "Nachricht schreiben…"}
+            placeholder={isStreaming ? "Generating an answer — Stop to cancel" : "Nachricht schreiben…"}
             disabled={isStreaming}
             className="hud-input w-full rounded-xl py-3.5 pl-4 pr-[88px] text-sm disabled:opacity-60"
             aria-label="Chat Eingabe"
@@ -913,9 +913,9 @@ export function Chat({ activeMemories, onSaveToBrain, onSaveToBrainWithMeta, isF
         </form>
         <div className="max-w-4xl mx-auto mt-2 flex justify-between text-[10px] font-mono" style={{ color: "var(--text-3)" }}>
           <span className="hud-label normal-case tracking-normal text-[10px] flex items-center gap-1">
-            <FileText className="w-3 h-3" /> {budgetedMemories.length} Knoten im Prompt · ~{contextTokens.toLocaleString("de-DE")} Prompt-Tokens
+            <FileText className="w-3 h-3" /> {budgetedMemories.length} nodes in the prompt · ~{contextTokens.toLocaleString("en-GB")} prompt tokens
           </span>
-          <span className="hidden sm:inline">Enter senden · Shift+Enter Umbruch · Budget regelt Top-k</span>
+          <span className="hidden sm:inline">Enter to send · Shift+Enter for a new line · the budget controls top-k</span>
         </div>
       </div>
     </div>

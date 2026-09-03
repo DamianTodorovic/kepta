@@ -8,4 +8,4 @@
 
 Never commit a secret. The old `KI-Gehirn` branding is gone — use `KEPTA`.
 
-The docs are English; the desktop UI is still German. Translation help is welcome — see [issues](https://github.com/DamianTodorovic/kepta/issues).
+Docs, UI strings and code comments are English. Keep new user-facing text in English — and do not put a translatable string in a place where code branches on its wording; that turns a translation into a behaviour change.

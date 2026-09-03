@@ -1,5 +1,5 @@
 {
-  "_comment": "KEPTA — MCP Config für Claude Desktop. Datei nach ~/Library/Application Support/Claude/claude_desktop_config.json kopieren (macOS) oder als mcp-config.json in diesem Projekt lassen. Passe 'cwd' / Pfad an deinen Checkout an.",
+  "_comment": "KEPTA — MCP config for Claude Desktop. Copy this file to ~/Library/Application Support/Claude/claude_desktop_config.json (macOS), or leave it here as mcp-config.json. Adjust 'cwd' and the path to match your checkout.",
   "mcpServers": {
     "kepta": {
       "command": "npx",

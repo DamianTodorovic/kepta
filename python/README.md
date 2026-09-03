@@ -96,8 +96,6 @@ if not kepta.is_alive():
 
 The app is available for macOS, Windows and Linux under [Releases](https://github.com/DamianTodorovic/kepta/releases) — Intel and ARM in each case. MIT licensed, free.
 
-Note: the documentation is English, but **the desktop UI is currently German only**. This client, the HTTP API and MCP are language-neutral.
-
 ## License
 
 MIT

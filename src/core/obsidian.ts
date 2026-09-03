@@ -82,7 +82,7 @@ function sanitizeFilename(title: string): string {
     title
       .replace(/[\\/:*?"<>|\x00-\x1F]/g, "")
       .trim()
-      .slice(0, 100) || "Ohne Titel"
+      .slice(0, 100) || "Untitled"
   );
 }
 
@@ -119,7 +119,7 @@ export function memoryToMarkdown(record: MemoryRecord): { filename: string; mark
 export function importMarkdownFile(store: KeptaStore, file: MarkdownFile, opts: { scope?: string } = {}): { status: "imported" | "updated" | "skipped"; record: MemoryRecord } {
   const { meta, body } = parseFrontmatter(file.content);
   const baseName = file.name.replace(/\.md$/i, "").trim();
-  const title = typeof meta.title === "string" && meta.title.trim() ? meta.title.trim() : baseName || "Ohne Titel";
+  const title = typeof meta.title === "string" && meta.title.trim() ? meta.title.trim() : baseName || "Untitled";
   const content = body.trim() || title;
   const tags = Array.isArray(meta.tags) ? (meta.tags as string[]).filter((t): t is string => typeof t === "string") : [];
 

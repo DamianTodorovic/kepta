@@ -1,6 +1,6 @@
 import { Memory } from '../types';
 
-// Alle Knoten liegen jetzt serverseitig in ~/.ki-gehirn/memories.json
+// All nodes liegen jetzt serverseitig in ~/.ki-gehirn/memories.json
 // (kein localStorage-Limit mehr). Der alte localStorage-Bestand wird
 // einmalig automatisch migriert.
 
@@ -108,7 +108,7 @@ export async function saveMemory(memoryData: Partial<Memory>): Promise<Memory | 
   const optimisticMemory: Memory = {
     id: optimisticId,
     userId: (memoryData.userId as string) || 'local',
-    title: memoryData.title || 'Ohne Titel',
+    title: memoryData.title || 'Untitled',
     content: memoryData.content || '',
     tags: memoryData.tags || [],
     createdAt: (memoryData.createdAt as number) || now,

@@ -1,97 +1,97 @@
 {
   "angeln": [
     {
-      "title": "Shop — Versand aus DE",
-      "content": "Beispiel Angelsport-Shop: Nur Angelbedarf von Lieferanten mit Versand aus Deutschland wählen. Rechtsrisiko vermeiden: kein Direktversand aus Fernost. Immer Tracking, 1-3 Tage Lieferzeit kommunizieren.",
+      "title": "Shop — shipping from within the EU",
+      "content": "Example tackle shop: only stock fishing gear from suppliers who ship from inside the EU. Avoids the legal risk of direct shipping from the Far East. Always provide tracking, and communicate a 1-3 day delivery time.",
       "tags": [
-        "angeln",
+        "fishing",
         "shop"
       ]
     },
     {
-      "title": "Forelle — Köder & Technik",
-      "content": "Beste Köder: Spinner (Gr. 1-3), Wobbler 5-7cm, Bienenmaden am Spirolino. Standort: Strömungskanten, Gumpen, Wehr-Auslauf. Zeit: Dämmerung. Schnur: 0.18-0.22 mono, Vorfach fluorocarbon.",
+      "title": "Trout — bait and technique",
+      "content": "Best baits: spinners (size 1-3), 5-7 cm crankbaits, wax worms on a bubble float. Where: current edges, deep pools, below a weir. When: dawn and dusk. Line: 0.18-0.22 mono, fluorocarbon leader.",
       "tags": [
-        "angeln",
-        "forelle",
-        "köder"
+        "fishing",
+        "trout",
+        "bait"
       ]
     },
     {
-      "title": "Knoten — Clinch & Palomar",
-      "content": "Clinch: 5-7 Windungen, durch Schlaufe, befeuchten, festziehen. Palomar für Geflecht: doppelt legen, Knoten, Haken durch Schlaufe. Tragkraft >90% bei sauberer Ausführung.",
+      "title": "Knots — clinch and palomar",
+      "content": "Clinch: 5-7 turns, back through the loop, wet it, pull tight. Palomar for braid: double the line, tie the knot, pass the hook through the loop. Over 90 % of line strength when tied cleanly.",
       "tags": [
-        "angeln",
-        "knoten"
+        "fishing",
+        "knots"
       ]
     }
   ],
   "dropshipping": [
     {
-      "title": "§19 UStG Kleinunternehmer",
-      "content": "Kleinunternehmer nach §19 UStG: Keine USt ausweisen, Hinweis in Rechnung/Shop: 'Als Kleinunternehmer im Sinne des §19 UStG wird keine Umsatzsteuer berechnet.' Grenze 2024: 22.000€ Vorjahr, 50.000€ lfd. Jahr.",
+      "title": "Small-business VAT exemption (§19 UStG, Germany)",
+      "content": "Under §19 UStG you charge no VAT, and must state on invoices and in the shop: 'Als Kleinunternehmer im Sinne des §19 UStG wird keine Umsatzsteuer berechnet.' Thresholds for 2024: EUR 22,000 in the previous year, EUR 50,000 in the current one. Check the equivalent rule in your own country.",
       "tags": [
         "dropshipping",
-        "recht",
-        "ustg"
+        "legal",
+        "vat"
       ]
     },
     {
-      "title": "Shopify Rechtstexte Pflicht",
-      "content": "Impressum, Datenschutz, AGB, Widerruf, Versand & Zahlung — immer aktuell, Abmahnfalle. Adresse: [Deine Firmenadresse]. Kontakt, Registereintrag falls vorhanden.",
+      "title": "Shopify — mandatory legal pages",
+      "content": "Imprint, privacy policy, terms, right of withdrawal, shipping and payment — keep them current. In Germany, stale pages invite cease-and-desist letters. Address: [your company address]. Contact details and company register entry where applicable.",
       "tags": [
         "shopify",
-        "recht"
+        "legal"
       ]
     },
     {
-      "title": "Lieferanten — Vertrauen statt Billig-Look",
-      "content": "Nur DE-Lager, Trackingpflicht, Retourenadresse DE, Lieferzeit 2-4 Tage realistisch angeben. Produktbilder ohne China-Wasserzeichen, Beschreibungen neu schreiben, Trust-Badges, Bewertungen moderieren.",
+      "title": "Suppliers — trust beats cheap",
+      "content": "Warehouse in your own region, tracking required, returns address local, delivery time stated realistically at 2-4 days. Product images without foreign watermarks, descriptions rewritten in your own words, trust badges, reviews moderated.",
       "tags": [
         "dropshipping",
-        "lieferant",
+        "supplier",
         "shop"
       ]
     }
   ],
   "ki": [
     {
-      "title": "RAG — Retrieval Augmented Generation",
-      "content": "RAG: Dokumente chunken (400-500 Zeichen), embedden (z.B. nomic-embed-text via Ollama), in Vektorstore, bei Query Top-k holen, in Prompt injizieren. Hybrid: BM25 + Cosine via RRF fusionieren.",
+      "title": "RAG — retrieval augmented generation",
+      "content": "RAG: chunk documents (400-500 characters), embed them (e.g. nomic-embed-text via Ollama), store the vectors, fetch the top-k at query time and inject them into the prompt. Hybrid: fuse BM25 and cosine with RRF.",
       "tags": [
-        "ki",
+        "ai",
         "rag"
       ]
     },
     {
-      "title": "Ollama lokal — Setup",
-      "content": "brew install ollama; ollama pull llama3.2; ollama pull nomic-embed-text; ollama serve. In KEPTA Anbieter 'Ollama (lokal, kostenlos)' wählen, kein Key, Modell llama3.2, Base http://localhost:11434/v1.",
+      "title": "Ollama locally — setup",
+      "content": "brew install ollama; ollama pull llama3.2; ollama pull nomic-embed-text; ollama serve. In KEPTA pick the provider 'Ollama (local, free)', no key, model llama3.2, base http://localhost:11434/v1.",
       "tags": [
-        "ki",
+        "ai",
         "ollama"
       ]
     },
     {
-      "title": "Prompt — Kontext nutzen",
-      "content": "System: 'Du bist KI Assistant mit Zugriff auf Knowledge Base. Antworte präzise, zitiere ID der genutzten Knoten. Wenn Kontext leer: allgemein antworten, aber Hinweis geben.'",
+      "title": "Prompting — use the context",
+      "content": "System: 'You are an AI assistant with access to a knowledge base. Answer precisely and cite the id of every node you used. If the context is empty, answer generally but say so.'",
       "tags": [
-        "ki",
+        "ai",
         "prompt"
       ]
     }
   ],
   "coding": [
     {
-      "title": "TypeScript — Strict & Schnell",
-      "content": "tsconfig: strict, ES2022, bundler resolution. Vite HMR aus, tsc --noEmit im CI. Vermeide any, nutze satisfies, handle Errors via Result-Typ.",
+      "title": "TypeScript — strict and fast",
+      "content": "tsconfig: strict, ES2022, bundler resolution. Vite HMR off, tsc --noEmit in CI. Avoid any, use satisfies, handle errors through a Result type.",
       "tags": [
         "coding",
         "typescript"
       ]
     },
     {
-      "title": "Electron — Kipppunkt",
-      "content": "Electron 44, titleBar hiddenInset, getFreePort, Vite middleware im Dev, static im Prod. Shell.openExternal für Links, crashpad ignorieren.",
+      "title": "Electron — the tipping points",
+      "content": "Electron 44, titleBar hiddenInset, getFreePort, Vite middleware in dev and static files in production. shell.openExternal for links, ignore crashpad noise.",
       "tags": [
         "coding",
         "electron"
@@ -100,28 +100,28 @@
   ],
   "studium": [
     {
-      "title": "Lernmethode — Active Recall",
-      "content": "Karten erstellen: Frage auf Vorderseite, Antwort als Knoten. Täglich 20 Min Abruf, Lücken sofort als neuer Knoten speichern. Graph zeigt Lücken-Cluster.",
+      "title": "Study method — active recall",
+      "content": "Make cards: question on the front, answer as a node. 20 minutes of recall daily, and save every gap immediately as a new node. The graph shows you where the gaps cluster.",
       "tags": [
-        "studium",
-        "lernen"
+        "study",
+        "learning"
       ]
     }
   ],
   "forschung": [
     {
-      "title": "Quellen-Zitate — Vertrauen",
-      "content": "Jede Chat-Antwort liefert IDs der genutzten Knoten. In Arbeit: immer ID + Titel angeben, nachprüfbar. Zotero/DOI als Tag speichern.",
+      "title": "Source citations — trust",
+      "content": "Every chat answer returns the ids of the nodes it used. In written work, always give id plus title so a reader can check it. Store Zotero keys or DOIs as tags.",
       "tags": [
-        "forschung",
-        "quellen"
+        "research",
+        "sources"
       ]
     }
   ],
   "business": [
     {
-      "title": "Meeting → Tasks",
-      "content": "Nach jedem Meeting: Kernaussage extrahieren (Chat → Knoten), Tags meeting, owner, due. Automatisierung geplant: Agent erstellt Task aus Notiz.",
+      "title": "Meeting → tasks",
+      "content": "After every meeting: extract the key point (chat → node), tag it meeting, owner, due. Planned: an agent that creates the task straight from the note.",
       "tags": [
         "business",
         "meeting"
@@ -130,18 +130,18 @@
   ],
   "kreativ": [
     {
-      "title": "Schreiben — Show don't tell",
-      "content": "Szenen über 5 Sinne schreiben, Dialog trimmen, jede Behauptung beweisen. Knoten als Ideenspeicher: 1 Idee = 1 Knoten, Tags verbinden.",
+      "title": "Writing — show, don't tell",
+      "content": "Write scenes through all five senses, trim the dialogue, prove every claim. Use nodes as an idea store: one idea, one node, connected by tags.",
       "tags": [
-        "kreativ",
-        "schreiben"
+        "creative",
+        "writing"
       ]
     }
   ],
   "_base": [
     {
-      "title": "Willkommen im KEPTA — Lokal & Privat",
-      "content": "Kein Login, keine Cloud. Alle Einträge liegen in ~/.ki-gehirn/memories.json. Backup via System → JSON Export. MCP teilt denselben Speicher mit Claude/Cursor.",
+      "title": "Welcome to KEPTA — local and private",
+      "content": "No login, no cloud. Everything lives in ~/.kepta/kepta.db on this machine. Back it up through System → JSON export. MCP shares the very same store with Claude and Cursor.",
       "tags": [
         "start",
         "system"
@@ -149,7 +149,7 @@
     },
     {
       "title": "Shortcuts",
-      "content": "⌘K Palette, ⌘N neuer Knoten, Suche fokussieren, Graph öffnen, Import. Top-k Regler steuert wie viele Knoten in den Chat gehen (Token sparen).",
+      "content": "⌘K palette, ⌘N new node, focus the search, open the graph, import. The top-k slider controls how many nodes go into the chat — that is where you save tokens.",
       "tags": [
         "start",
         "shortcuts"

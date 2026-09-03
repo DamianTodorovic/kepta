@@ -74,7 +74,7 @@ export function OnboardingWizard({ open, onClose, onComplete }: Props) {
       // Profil speichern
       const profile: UserProfileAdaptive = {
         ...createDefaultProfile(),
-        displayName: name.trim() || 'Du',
+        displayName: name.trim() || 'You',
         useCases: selected,
         goal: goal.trim(),
         customNote: customNote.trim(),
@@ -94,10 +94,10 @@ export function OnboardingWizard({ open, onClose, onComplete }: Props) {
         const r = await fetch('/api/memory', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(n) });
         if (r.ok) imported++;
       }
-      setImportResult(`${imported} Knoten für dich erstellt`);
+      setImportResult(`${imported} nodes created for you`);
       setTimeout(()=> onComplete(profile, imported), 900);
     } catch (e:any) {
-      setImportResult(e.message||'Fehler');
+      setImportResult(e.message||'Error');
     } finally { setImporting(false); }
   };
 
@@ -117,8 +117,8 @@ export function OnboardingWizard({ open, onClose, onComplete }: Props) {
         <div className="px-6 pt-5 pb-3 flex items-center gap-3" style={{borderBottom:'1px solid var(--border-subtle)'}}>
           <KeptaMark size={34} radius={8} />
           <div className="flex-1">
-            <h2 className="font-semibold text-[15px]" style={{color:'var(--text-1)'}}>KEPTA einrichten</h2>
-            <p className="text-xs mt-0.5" style={{color:'var(--text-2)'}}>Schritt {step} von 4 — eine Minute, danach passt sich KEPTA dir an.</p>
+            <h2 className="font-semibold text-[15px]" style={{color:'var(--text-1)'}}>Set up KEPTA</h2>
+            <p className="text-xs mt-0.5" style={{color:'var(--text-2)'}}>Step {step} of 4 — one minute, and KEPTA adapts to you.</p>
           </div>
           <span className="hud-label tnum">{step}/4</span>
         </div>
@@ -127,25 +127,25 @@ export function OnboardingWizard({ open, onClose, onComplete }: Props) {
           <AnimatePresence mode="wait">
           {step===1 && (
             <motion.div key="s1" initial={{x:20, opacity:0}} animate={{x:0, opacity:1}} exit={{x:-20, opacity:0}} className="space-y-5">
-              <div className="flex items-center gap-2 hud-label"><User className="w-3.5 h-3.5" style={{color:'var(--accent)'}}/> Wer bist du?</div>
+              <div className="flex items-center gap-2 hud-label"><User className="w-3.5 h-3.5" style={{color:'var(--accent)'}}/> Who are you?</div>
               <div>
-                <label className="hud-label block mb-2">Name (wie soll dich das Gehirn nennen?)</label>
-                <input value={name} onChange={e=>setName(e.target.value)} placeholder="z.B. Alex" autoFocus className="hud-input w-full rounded-xl px-4 py-3 text-sm" />
+                <label className="hud-label block mb-2">Name (what should KEPTA call you?)</label>
+                <input value={name} onChange={e=>setName(e.target.value)} placeholder="e.g. Alex" autoFocus className="hud-input w-full rounded-xl px-4 py-3 text-sm" />
               </div>
               <div>
-                <label className="hud-label block mb-2 flex items-center gap-2"><Target className="w-3.5 h-3.5"/> Dein Ziel mit dem Gehirn</label>
-                <input value={goal} onChange={e=>setGoal(e.target.value)} placeholder="z.B. Angelshop skalieren, Klausuren rocken, KI-Projekte bauen" className="hud-input w-full rounded-xl px-4 py-3 text-sm" />
-                <p className="text-xs mt-2" style={{color:'var(--text-3)'}}>Wird in den System-Prompt eingewoben — Antworten passen sich deinem Ziel an.</p>
+                <label className="hud-label block mb-2 flex items-center gap-2"><Target className="w-3.5 h-3.5"/> What you want from KEPTA</label>
+                <input value={goal} onChange={e=>setGoal(e.target.value)} placeholder="e.g. scale my shop, ace my exams, build AI projects" className="hud-input w-full rounded-xl px-4 py-3 text-sm" />
+                <p className="text-xs mt-2" style={{color:'var(--text-3)'}}>Woven into the system prompt — answers adapt to your goal.</p>
               </div>
               <div className="hud-inset rounded-xl p-3 flex gap-3">
                 <div className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0" style={{background:'var(--accent-soft)'}}><Plug className="w-4 h-4" style={{color:'var(--accent)'}}/></div>
-                <p className="text-xs leading-relaxed" style={{color:'var(--text-2)'}}>Gleich scannt das Gehirn lokal welche KIs du installiert hast (Ollama, LM Studio). Kein Key, keine Cloud — nur localhost-Pings.</p>
+                <p className="text-xs leading-relaxed" style={{color:'var(--text-2)'}}>Next, KEPTA scans locally for the AI you have installed (Ollama, LM Studio). No key, no cloud — just localhost pings.</p>
               </div>
             </motion.div>
           )}
           {step===2 && (
             <motion.div key="s2" initial={{x:20, opacity:0}} animate={{x:0, opacity:1}} exit={{x:-20, opacity:0}} className="space-y-4">
-              <div className="hud-label flex items-center gap-2"><Database className="w-3.5 h-3.5" style={{color:'var(--accent)'}}/> Wofür nutzt du dein Gehirn? (max 4)</div>
+              <div className="hud-label flex items-center gap-2"><Database className="w-3.5 h-3.5" style={{color:'var(--accent)'}}/> What will you use KEPTA for? (max 4)</div>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                 {(Object.keys(USECASE_LABELS) as UseCase[]).map(uc=>{
                   const info = USECASE_LABELS[uc];
@@ -163,28 +163,28 @@ export function OnboardingWizard({ open, onClose, onComplete }: Props) {
                 })}
               </div>
               <div className="hud-inset rounded-xl p-3">
-                <div className="hud-label mb-2">Vorschau Starter-Pack für dich: {starterPreview.length} Knoten</div>
+                <div className="hud-label mb-2">Starter pack preview for you: {starterPreview.length} nodes</div>
                 <div className="flex flex-wrap gap-1.5 max-h-28 overflow-y-auto">
                   {starterPreview.map(n=> <span key={n.title} className="px-2 py-1 rounded-lg text-xs hud-inset" style={{color:'var(--text-2)'}}>{n.title}</span>)}
                 </div>
               </div>
               <div>
-                <label className="hud-label block mb-2">Noch etwas Besonderes? (optional)</label>
-                <input value={customNote} onChange={e=>setCustomNote(e.target.value)} placeholder="z.B. Fokus auf Karpfen, Next.js, Bio-Klausur..." className="hud-input w-full rounded-xl px-4 py-2.5 text-sm" />
+                <label className="hud-label block mb-2">Anything else worth knowing? (optional)</label>
+                <input value={customNote} onChange={e=>setCustomNote(e.target.value)} placeholder="e.g. carp fishing, Next.js, biology exam…" className="hud-input w-full rounded-xl px-4 py-2.5 text-sm" />
               </div>
             </motion.div>
           )}
           {step===3 && (
             <motion.div key="s3" initial={{x:20, opacity:0}} animate={{x:0, opacity:1}} exit={{x:-20, opacity:0}} className="space-y-4">
-              <div className="hud-label flex items-center gap-2"><Cpu className="w-3.5 h-3.5" style={{color:'var(--accent)'}}/> Deine KIs — lokal erkannt</div>
-              {scanning && <div className="hud-inset rounded-xl p-6 flex items-center gap-3"><Loader2 className="w-5 h-5 animate-spin" style={{color:'var(--accent)'}}/><span className="text-sm" style={{color:'var(--text-2)'}}>Scanne localhost:11434 und :1234…</span></div>}
+              <div className="hud-label flex items-center gap-2"><Cpu className="w-3.5 h-3.5" style={{color:'var(--accent)'}}/> Your AI — detected locally</div>
+              {scanning && <div className="hud-inset rounded-xl p-6 flex items-center gap-3"><Loader2 className="w-5 h-5 animate-spin" style={{color:'var(--accent)'}}/><span className="text-sm" style={{color:'var(--text-2)'}}>Scanning localhost:11434 and :1234…</span></div>}
               {!scanning && detected && (
                 <div className="space-y-2">
                   {detected.map(d=>(
                     <div key={d.id} className="hud-inset rounded-xl p-3 flex items-center gap-3" style={{borderColor: d.available ? 'color-mix(in srgb, var(--ok) 35%, var(--border-subtle))' : undefined}}>
                       <span className={`w-2.5 h-2.5 rounded-full ${d.available ? 'bg-emerald-500' : 'bg-zinc-400'}`} style={{boxShadow: d.available ? '0 0 8px var(--ok)' : undefined}}/>
                       <div className="flex-1 min-w-0">
-                        <div className="text-sm font-medium" style={{color:'var(--text-1)'}}>{d.label} {d.available ? '· verfügbar' : '· nicht gefunden'}</div>
+                        <div className="text-sm font-medium" style={{color:'var(--text-1)'}}>{d.label} {d.available ? '· available' : '· not found'}</div>
                         <div className="text-xs truncate" style={{color:'var(--text-3)'}}>{d.models.length ? d.models.slice(0,4).join(', ') + (d.models.length>4?` +${d.models.length-4}`:'') : d.available ? 'keine Modelle geladen (ollama pull ...)' : 'nicht installiert'}</div>
                       </div>
                       {d.available && <span className="text-xs hud-label px-1.5 py-1 rounded hud-inset" style={{color:'var(--ok)'}}>{d.latencyMs}ms</span>}
@@ -192,40 +192,40 @@ export function OnboardingWizard({ open, onClose, onComplete }: Props) {
                   ))}
                   <div className="rounded-xl p-3" style={{background:'var(--accent-soft)', border:'1px solid var(--border-subtle)'}}>
                     <p className="text-xs leading-relaxed" style={{color:'var(--text-2)'}}>
-                      <strong style={{color:'var(--text-1)'}}>Empfehlung:</strong> {suggestProvider(detected)==='ollama' ? 'Ollama gefunden — Gehirn nutzt es kostenlos & offline.' : suggestProvider(detected)==='lmstudio' ? 'LM Studio gefunden — wird als Provider gesetzt.' : 'Keine lokale KI gefunden — du kannst später Ollama installieren oder einen Cloud-Key eintragen. Gehirn funktioniert trotzdem mit Starter-Pack.'}
+                      <strong style={{color:'var(--text-1)'}}>Recommendation:</strong> {suggestProvider(detected)==='ollama' ? 'Ollama found — KEPTA uses it, free and offline.' : suggestProvider(detected)==='lmstudio' ? 'LM Studio found — set as the provider.' : 'No local AI found — you can install Ollama later or enter a cloud key. KEPTA works anyway, with the starter pack.'}
                     </p>
                   </div>
-                  <button onClick={()=>{setScanning(true); detectLocalAIs().then(d=>{setDetected(d); setScanning(false);});}} className="btn-ghost w-full py-2 rounded-xl text-sm">Erneut scannen</button>
+                  <button onClick={()=>{setScanning(true); detectLocalAIs().then(d=>{setDetected(d); setScanning(false);});}} className="btn-ghost w-full py-2 rounded-xl text-sm">Scan again</button>
                 </div>
               )}
             </motion.div>
           )}
           {step===4 && (
             <motion.div key="s4" initial={{x:20, opacity:0}} animate={{x:0, opacity:1}} exit={{x:-20, opacity:0}} className="space-y-4">
-              <div className="hud-label flex items-center gap-2"><PartyPopper className="w-3.5 h-3.5" style={{color:'var(--accent)'}}/> Gleich fertig — dein Gehirn wird befüllt</div>
+              <div className="hud-label flex items-center gap-2"><PartyPopper className="w-3.5 h-3.5" style={{color:'var(--accent)'}}/> Almost there — filling your brain</div>
               <div className="hud-panel rounded-xl p-4 space-y-3">
                 <div className="flex gap-3">
                   <div className="w-10 h-10 rounded-lg flex items-center justify-center shrink-0" style={{background:'var(--accent-soft)'}}><User className="w-4.5 h-4.5" style={{color:'var(--accent)'}}/></div>
                   <div>
-                    <div className="text-sm font-semibold" style={{color:'var(--text-1)'}}>{name.trim()||'Du'} · {selected.map(s=>USECASE_LABELS[s].label).join(' · ') || 'Allgemein'}</div>
-                    <div className="text-xs" style={{color:'var(--text-2)'}}>{goal || 'Ziel: Wissen sammeln & schneller antworten'}</div>
+                    <div className="text-sm font-semibold" style={{color:'var(--text-1)'}}>{name.trim()||'You'} · {selected.map(s=>USECASE_LABELS[s].label).join(' · ') || 'General'}</div>
+                    <div className="text-xs" style={{color:'var(--text-2)'}}>{goal || 'Goal: collect knowledge and answer faster'}</div>
                     {customNote && <div className="text-xs mt-1" style={{color:'var(--text-3)'}}>“{customNote}”</div>}
                   </div>
                 </div>
                 <div className="grid grid-cols-3 gap-2 text-center">
-                  <div className="hud-inset rounded-lg p-2.5"><div className="text-lg font-semibold tnum" style={{color:'var(--text-1)'}}>{starterPreview.length}</div><div className="hud-label">Einträge</div></div>
-                  <div className="hud-inset rounded-lg p-2.5"><div className="text-lg font-semibold tnum" style={{color:'var(--text-1)'}}>{selected.length||1}</div><div className="hud-label">Bereiche</div></div>
-                  <div className="hud-inset rounded-lg p-2.5"><div className="text-lg font-semibold tnum" style={{color:'var(--ok)'}}>{detected?.filter(d=>d.available).length || 0}</div><div className="hud-label">KIs lokal</div></div>
+                  <div className="hud-inset rounded-lg p-2.5"><div className="text-lg font-semibold tnum" style={{color:'var(--text-1)'}}>{starterPreview.length}</div><div className="hud-label">entries</div></div>
+                  <div className="hud-inset rounded-lg p-2.5"><div className="text-lg font-semibold tnum" style={{color:'var(--text-1)'}}>{selected.length||1}</div><div className="hud-label">Areas</div></div>
+                  <div className="hud-inset rounded-lg p-2.5"><div className="text-lg font-semibold tnum" style={{color:'var(--ok)'}}>{detected?.filter(d=>d.available).length || 0}</div><div className="hud-label">Local AI</div></div>
                 </div>
                 <ul className="text-xs space-y-1.5" style={{color:'var(--text-2)'}}>
-                  <li className="flex gap-2"><Check className="w-3.5 h-3.5 mt-0.5" style={{color:'var(--ok)'}}/> Starter-Pack wird als echte Knoten gespeichert (editier-/löschbar)</li>
+                  <li className="flex gap-2"><Check className="w-3.5 h-3.5 mt-0.5" style={{color:'var(--ok)'}}/> The starter pack is saved as real nodes — editable and deletable</li>
                   <li className="flex gap-2"><Check className="w-3.5 h-3.5 mt-0.5" style={{color:'var(--ok)'}}/> Provider automatisch konfiguriert ({detected ? suggestProvider(detected) : '...' })</li>
-                  <li className="flex gap-2"><Check className="w-3.5 h-3.5 mt-0.5" style={{color:'var(--ok)'}}/> Profil lokal gespeichert — jede Antwort passt sich deinem Ziel an</li>
+                  <li className="flex gap-2"><Check className="w-3.5 h-3.5 mt-0.5" style={{color:'var(--ok)'}}/> Profile saved locally — every answer adapts to your goal</li>
                 </ul>
               </div>
               <div className="hud-inset rounded-xl p-3 flex gap-3">
                 <Globe className="w-4 h-4 mt-0.5 shrink-0" style={{color:'var(--text-3)'}}/>
-                <p className="text-xs leading-relaxed" style={{color:'var(--text-2)'}}>Danach: Dateien droppen oder `Post /api/clip` — Gehirn lernt weiter. Anderer Nutzer auf anderem Mac sieht hier komplett andere Vorschläge.</p>
+                <p className="text-xs leading-relaxed" style={{color:'var(--text-2)'}}>After this: drop files or POST /api/clip — KEPTA keeps learning. Another person on another machine sees entirely different suggestions here.</p>
               </div>
               {importResult && <div className="rounded-xl p-3 text-sm text-center" style={{background:'color-mix(in srgb, var(--ok) 12%, transparent)', border:'1px solid color-mix(in srgb, var(--ok) 30%, transparent)', color:'var(--ok)'}}>{importResult}</div>}
             </motion.div>
@@ -234,14 +234,14 @@ export function OnboardingWizard({ open, onClose, onComplete }: Props) {
         </div>
 
         <div className="p-4 flex items-center justify-between" style={{borderTop:'1px solid var(--border-subtle)'}}>
-          <button onClick={()=> step>1 ? setStep((s=> (s-1) as Step)) : onClose()} className="btn-ghost px-4 py-2 rounded-xl text-sm flex items-center gap-2"><ChevronLeft className="w-4 h-4"/>{step===1 ? 'Später' : 'Zurück'}</button>
+          <button onClick={()=> step>1 ? setStep((s=> (s-1) as Step)) : onClose()} className="btn-ghost px-4 py-2 rounded-xl text-sm flex items-center gap-2"><ChevronLeft className="w-4 h-4"/>{step===1 ? 'Later' : 'Back'}</button>
           {step<4 ? (
             <button onClick={()=> setStep((s=> (s+1) as Step))} disabled={(step===1 && !name.trim()) || (step===2 && selected.length===0)} className="btn-primary px-6 py-2.5 rounded-xl text-sm flex items-center gap-2 disabled:opacity-40">
-              Weiter <ChevronRight className="w-4 h-4"/>
+              Next <ChevronRight className="w-4 h-4"/>
             </button>
           ) : (
             <button onClick={handleFinish} disabled={importing} className="btn-primary px-6 py-2.5 rounded-xl text-sm flex items-center gap-2">
-              {importing ? <><Loader2 className="w-4 h-4 animate-spin"/> Befülle Gehirn…</> : <><Sparkles className="w-4 h-4"/> Gehirn erstellen · {starterPreview.length} Knoten</>}
+              {importing ? <><Loader2 className="w-4 h-4 animate-spin"/> Filling your brain…</> : <><Sparkles className="w-4 h-4"/> Create my brain · {starterPreview.length} nodes</>}
             </button>
           )}
         </div>

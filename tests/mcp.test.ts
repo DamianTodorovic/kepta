@@ -168,7 +168,7 @@ describe("MCP-Tools", () => {
   it("Fehler in tools/call → isError:true (kein JSON-RPC-Error)", async () => {
     const res = asTool(await rpc(store, "tools/call", { name: "memory_search", arguments: {} }));
     expect(res.isError).toBe(true);
-    expect(res.content[0]?.text).toContain("Fehler");
+    expect(res.content[0]?.text).toContain("Error");
   });
 
   it("memory_save indiziert Chunks für die Vektor-Suche", async () => {

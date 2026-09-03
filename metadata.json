@@ -1,4 +1,4 @@
 {
   "name": "KEPTA",
-  "description": "Ein zentraler Wissensspeicher für KI-Kontext, um Informationen effizient zu verwalten und Token-Kosten bei LLMs zu sparen."
+  "description": "A central knowledge store for AI context — manage information efficiently and cut the token cost of every LLM call."
 }

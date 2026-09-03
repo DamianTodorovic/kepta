@@ -6,21 +6,19 @@
 
 <p align="center"><a href="https://github.com/DamianTodorovic/kepta/releases"><img alt="Release" src="https://img.shields.io/github/v/release/DamianTodorovic/kepta?label=Download"></a> <a href="https://github.com/DamianTodorovic/kepta/actions/workflows/build.yml"><img alt="CI" src="https://github.com/DamianTodorovic/kepta/actions/workflows/build.yml/badge.svg"></a> <a href="https://pypi.org/project/kepta/"><img alt="PyPI" src="https://img.shields.io/pypi/v/kepta?label=pip%20install%20kepta"></a> <img alt="Coverage" src="https://img.shields.io/badge/coverage-91%25-brightgreen"> <img alt="Tests" src="https://img.shields.io/badge/tests-314%20passing-brightgreen"> <a href="LICENSE"><img alt="MIT" src="https://img.shields.io/badge/License-MIT-black"></a> <img alt="Platform" src="https://img.shields.io/badge/platform-macOS%20%7C%20Windows%20%7C%20Linux-lightgrey"></p>
 
-> **Note on language.** The documentation is English. **The desktop UI is currently German only** — an English UI is planned but not shipped. The MCP tools, the HTTP API and the Python client are language-neutral, so agents work fine either way.
-
 ## 🎬 What it looks like
 
 <p align="center"><img src="docs/demo.gif" alt="Searching in KEPTA: typing carbonara narrows 30 entries down to one hit, which opens in the editor" width="900"></p>
 
-<sub>Type, filter, open — 30 entries become one hit. Recorded from version 2.4.0.</sub>
+<sub>Type, filter, open — 18 entries narrow to one hit. Recorded from version 2.6.0.</sub>
 
 | Index & hybrid search | Knowledge graph |
 |---|---|
 | ![Index](docs/screenshots/01-index.png) | ![Graph](docs/screenshots/03-graph.png) |
 | **Editor — type, validity, confidence** | **Setup — topics & starter pack** |
-| ![Editor](docs/screenshots/04-editor.png) | ![Setup](docs/screenshots/05-einrichtung.png) |
+| ![Editor](docs/screenshots/04-editor.png) | ![Setup](docs/screenshots/05-setup.png) |
 
-<sub>Recorded from version 2.4.0 using the demo corpus in <code>scripts/eval-corpus.ts</code>.</sub>
+<sub>Recorded from version 2.6.0 on a demo corpus. No real data — every entry was made up for these shots.</sub>
 
 ## 🎯 What it's for
 

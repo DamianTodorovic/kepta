@@ -38,10 +38,10 @@ export function Sidebar({ tags, selectedTags, onSelectTag, onClearTags, currentV
 
   const navItems = [
     // Wissen = Gehirn (Outline, wie vom Nutzer vorgegeben) statt Datenbank-Zylinder
-    { id: 'memories' as const, label: 'Wissen', icon: Brain, weight: 'regular' as const },
+    { id: 'memories' as const, label: 'Knowledge', icon: Brain, weight: 'regular' as const },
     { id: 'chat' as const, label: 'Chat', icon: MessageSquare },
     { id: 'graph' as const, label: 'Graph', icon: Network },
-    { id: 'settings' as const, label: 'Einstellungen', icon: SettingsIcon },
+    { id: 'settings' as const, label: 'Settings', icon: SettingsIcon },
   ];
 
   return (
@@ -57,7 +57,7 @@ export function Sidebar({ tags, selectedTags, onSelectTag, onClearTags, currentV
             KEPTA
           </div>
           <div className="text-[11px] mt-1 tnum" style={{ color: TEXT_FAINT }}>
-            {totalMemories} {totalMemories === 1 ? 'Eintrag' : 'Einträge'}
+            {totalMemories} {totalMemories === 1 ? 'entry' : 'entries'}
           </div>
         </div>
       </div>
@@ -93,7 +93,7 @@ export function Sidebar({ tags, selectedTags, onSelectTag, onClearTags, currentV
           <div className="flex items-center justify-between px-2 mb-1.5">
             <span className="text-[10.5px] font-semibold tracking-[0.09em] uppercase" style={{ color: TEXT_FAINT }}>Tags</span>
             {selectedTags.length > 0 && (
-              <button onClick={onClearTags} className="text-[11px] hover:underline" style={{ color: ACCENT_LIGHT }}>Zurücksetzen</button>
+              <button onClick={onClearTags} className="text-[11px] hover:underline" style={{ color: ACCENT_LIGHT }}>Reset</button>
             )}
           </div>
           <div className="flex-1 overflow-y-auto space-y-px pr-1">
@@ -131,8 +131,8 @@ export function Sidebar({ tags, selectedTags, onSelectTag, onClearTags, currentV
               {((user.displayName || user.email || 'L').slice(0, 1).toUpperCase())}
             </div>
             <div className="min-w-0 flex-1">
-              <div className="text-[13px] truncate font-medium" style={{ color: TEXT_STRONG }}>{user.displayName || user.email || 'Lokal'}</div>
-              <div className="text-[11px] truncate" style={{ color: TEXT_FAINT }}>Lokal · privat</div>
+              <div className="text-[13px] truncate font-medium" style={{ color: TEXT_STRONG }}>{user.displayName || user.email || 'Local'}</div>
+              <div className="text-[11px] truncate" style={{ color: TEXT_FAINT }}>Local · private</div>
             </div>
           </div>
         )}
@@ -142,8 +142,8 @@ export function Sidebar({ tags, selectedTags, onSelectTag, onClearTags, currentV
               onClick={onOpenSetup}
               className="w-8 h-8 flex items-center justify-center rounded-lg shrink-0"
               style={{ background: 'rgba(123, 146, 236, 0.17)', border: '1px solid rgba(123, 146, 236, 0.3)', color: ACCENT_LIGHT }}
-              aria-label="Einrichtung öffnen"
-              title="Einrichtung öffnen"
+              aria-label="Open setup"
+              title="Open setup"
             >
               <Sparkles className="w-3.5 h-3.5" />
             </button>
@@ -152,16 +152,16 @@ export function Sidebar({ tags, selectedTags, onSelectTag, onClearTags, currentV
             onClick={toggleTheme}
             className="flex-1 flex items-center justify-center gap-1.5 h-8 rounded-lg text-[12px] font-medium"
             style={{ background: SURFACE, border: `1px solid ${LINE}`, color: TEXT_MUTED }}
-            aria-label="Thema wechseln"
+            aria-label="Switch theme"
           >
             {isDark ? <Sun className="w-3.5 h-3.5" /> : <Moon className="w-3.5 h-3.5" />}
-            <span className="hidden sm:inline">{isDark ? 'Hell' : 'Dunkel'}</span>
+            <span className="hidden sm:inline">{isDark ? 'Light' : 'Dark'}</span>
           </button>
           <button
             onClick={toggleFocusMode}
             className="w-8 h-8 flex items-center justify-center rounded-lg"
             style={{ background: SURFACE, border: `1px solid ${LINE}`, color: TEXT_MUTED }}
-            aria-label="Fokus"
+            aria-label="Focus mode"
             title="Seitenleiste ausblenden"
           >
             <PanelLeftClose className="w-3.5 h-3.5" />
