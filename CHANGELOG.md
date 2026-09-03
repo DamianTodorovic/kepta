@@ -2,6 +2,23 @@
 
 Alle Änderungen werden in dieser Datei dokumentiert. Format orientiert an [Keep a Changelog](https://keepachangelog.com/de/1.1.0/), Versionierung nach [SemVer](https://semver.org/).
 
+## [2.5.1] — 2026-09-03
+
+Auto-Learn laeuft nicht mehr ungefragt.
+
+### Geaendert (bewusste Verhaltensaenderung)
+- **Auto-Learn ist jetzt Opt-in.** Bis 2.5.0 war es voreingestellt aktiv (`!== 'false'`),
+  obwohl es pro Chat-Antwort einen zweiten Modellaufruf ausloest — bei Cloud-Anbietern
+  also zusaetzliche Kosten, denen niemand bewusst zugestimmt hatte. Jetzt `=== 'true'`.
+  Wer es in 2.5.0 genutzt hat, schaltet es unter *Einstellungen* wieder ein.
+- **Damit es trotzdem gefunden wird:** Beim ersten Mal, wenn eine Antwort lernbar
+  gewesen waere, blendet KEPTA einmalig einen Hinweis ein — mit einem Knopf, der die
+  Funktion direkt einschaltet. Danach nie wieder (`ki_gehirn_autolearn_hint`).
+
+### Tests
+- `isAutoLearnEnabled` und `shouldShowHint` als reine Funktionen mit injizierter
+  Lese-Schnittstelle, dadurch ohne Browser-Speicher testbar. **314 Tests** (vorher 307).
+
 ## [2.5.0] — 2026-09-03
 
 Auto-Learn funktioniert wieder — und sagt jetzt, wenn es das nicht tut.
@@ -20,26 +37,18 @@ Auto-Learn funktioniert wieder — und sagt jetzt, wenn es das nicht tut.
 - **Fehlschlaege waren unsichtbar.** Erfolg und Abbruch erscheinen jetzt als Hinweis,
   mit Grund und Handlungsempfehlung.
 
-### Geaendert (bewusste Verhaltensaenderung)
-- **Auto-Learn ist jetzt Opt-in.** Vorher war es voreingestellt aktiv (`!== 'false'`),
-  obwohl es pro Chat-Antwort einen zweiten Modellaufruf ausloest — bei Cloud-Anbietern
-  also zusaetzliche Kosten, die niemand bewusst zugestimmt hatte. Jetzt `=== 'true'`.
-- **Damit es trotzdem gefunden wird:** Beim ersten Mal, wenn eine Antwort lernbar
-  gewesen waere, blendet KEPTA einmalig einen Hinweis ein — mit Knopf, der die Funktion
-  direkt einschaltet. Danach nie wieder (`ki_gehirn_autolearn_hint`).
-
 ### Neu
 - **Eigenes Extraktions-Modell** (`extractModel`, optional): Fuer Titel und drei Tags
   reicht ein 3B-Modell, das in Sekunden antwortet. Leer lassen nutzt weiterhin das
   Chat-Modell. Einstellbar unter *Einstellungen → Automatisch mitlernen*.
 - Auto-Learn ist erstmals im README dokumentiert — bisher stand die Funktion nirgends,
-  obwohl sie standardmaessig aktiv ist.
+  obwohl sie ungefragt lief.
 
 ### Tests
 - Neu: `src/lib/autolearn.ts` als testbares Modul, `tests/lib/autolearn.test.ts` mit
-  **35 Tests** gegen Reasoning-Bloecke, Klammern in Zeichenketten, maskierte
+  **28 Tests** gegen Reasoning-Bloecke, Klammern in Zeichenketten, maskierte
   Anfuehrungszeichen, unvollstaendiges JSON und Tag-Normalisierung.
-- Gesamtstand: **314 Tests** (vorher 279), `autolearn.ts` bei 100 % der Funktionen.
+- Gesamtstand: **307 Tests** (vorher 279), `autolearn.ts` bei 100 % der Funktionen.
 
 ## [2.4.0] — 2026-09-03
 
