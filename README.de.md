@@ -72,7 +72,7 @@ Kein Dienst dazwischen, kein Konto, keine Telemetrie. Der Server lauscht ausschl
 
 <p align="center"><img src="docs/how-search-decides.gif" alt="Eine Anfrage faechert sich in Volltext, Vektor-KNN und Wissensgraph auf; die drei Rangfolgen verschmelzen per RRF, Abgelaufenes und Ersetztes wird abgewertet, ein Treffer bleibt oben" width="900"></p>
 
-<sub>Drei Sucher bewerten denselben Bestand unterschiedlich. RRF entscheidet über Ränge statt über Rohwerte — so kann keine Spur allein dadurch gewinnen, dass sie größere Zahlen liefert. Die genaue Fassung:</sub>
+<sub>Echte Ausgabe aus einem Bestand von 18 Notizen, kein Entwurf. Für die Anfrage <em>Roman cooking</em> setzte die Vektor-Spur Cacio e pepe an die erste Stelle, Volltext und Graph dagegen Carbonara; RRF entschied mit 0,0004 Abstand. RRF rechnet mit Rängen — keine Spur gewinnt allein dadurch, dass sie größere Zahlen liefert. Die genaue Fassung:</sub>
 
 
 ```mermaid
