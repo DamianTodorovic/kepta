@@ -96,6 +96,8 @@ if not kepta.is_alive():
 
 The app is available for macOS, Windows and Linux under [Releases](https://github.com/DamianTodorovic/kepta/releases) — Intel and ARM in each case. MIT licensed, free.
 
+Since 2.6.0 the desktop interface is English. German notes keep working: the search stopword list covers both languages.
+
 ## License
 
 MIT
