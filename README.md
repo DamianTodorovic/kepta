@@ -413,7 +413,7 @@ Tests live in `tests/`, mirroring the source layout. New features follow TDD (RE
 
 ## 🧠 Why KEPTA?
 
-Obsidian is excellent for humans — but Markdown is not a memory: no types, no validity, no MCP. Mem0 and Letta are SDKs without a GUI. **KEPTA is both**: an agent-native memory layer with a desktop app, local, MIT. Eval: Hit@1 **76 % → 92 %** against v1 (`npm run eval`).
+Obsidian is excellent for humans — but Markdown is not a memory: no types, no validity, no MCP. Mem0 and Letta are SDKs without a GUI. **KEPTA is both**: an agent-native memory layer with a desktop app, local, MIT. Eval: Hit@1 **92 %** on a 30-note, 25-query corpus (`npm run eval`); the v1 substring search scored 76 %. Measured honestly, the fusion does not earn that number on its own — `npm run ablation` shows BM25 alone reaching the same 92 %. What fusion adds is coverage: 25 of 25 queries return something instead of 23.
 
 The division of roles: the **chat cockpit** proves retrieval works — daily use runs through MCP. [ROADMAP](ROADMAP.md) · [CHANGELOG](CHANGELOG.md)
 

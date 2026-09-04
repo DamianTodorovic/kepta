@@ -2,6 +2,38 @@
 
 All notable changes are documented in this file. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and versioning follows [SemVer](https://semver.org/).
 
+## [2.6.13] — 2026-09-04
+
+### Added
+- **`npm run ablation`** — measures what each retrieval leg actually contributes.
+  `SearchParams.tracks` can switch the BM25, vector and graph legs off
+  individually; omitted, all three run, so nothing changes in normal use.
+
+### Changed
+- **The headline retrieval number was attributed to the wrong thing.** README and
+  launch copy said 92 % Hit@1 for "three engines fused with Reciprocal Rank
+  Fusion". The ablation says otherwise, on our own corpus:
+
+  ```
+  BM25 alone        92 % Hit@1   MRR 0.92   23/25 queries return a hit
+  Vector alone      92 %         MRR 0.93   25/25
+  Graph alone        8 %         MRR 0.08    2/25
+  All three (RRF)   92 %         MRR 0.93   25/25
+  ```
+
+  Fusion adds **zero** percentage points on Hit@1 here. What it does add is
+  coverage — two more queries return anything at all — and MRR 0.93 against 0.92.
+  The graph leg is near-useless on this corpus because the corpus has almost no
+  entities in it, which is a property of the corpus, not a verdict on the graph.
+
+  This does not mean the fusion is worthless. It means our corpus is too small
+  and too easy to tell the legs apart, and that a number we were quoting could
+  not carry the claim attached to it. Both READMEs now say so, and the number now
+  comes with the command that reproduces it.
+
+### Tests
+388, up from 384.
+
 ## [2.6.12] — 2026-09-04
 
 Both fixes below came from putting the launch copy in front of ten adversarial

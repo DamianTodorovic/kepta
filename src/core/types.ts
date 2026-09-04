@@ -99,6 +99,12 @@ export interface SearchParams {
   scope?: MemoryScope;
   /** Nur Memories, die nach diesem Zeitpunkt gültig wurden */
   validSince?: number;
+  /**
+   * Einzelne Retrieval-Beine abschalten — für Ablationsmessungen.
+   * Fehlt die Angabe, laufen alle drei. Produktiv wird das nicht gesetzt;
+   * es existiert, damit sich belegen lässt, was die Fusion tatsächlich beiträgt.
+   */
+  tracks?: { bm25?: boolean; vector?: boolean; entity?: boolean };
 }
 
 export interface SearchHit {

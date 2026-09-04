@@ -77,8 +77,16 @@ export async function searchMemories(store: KeptaStore, params: SearchParams): P
     return true;
   };
 
+  // Fehlende Angabe = alles an. Ablation schaltet gezielt ab, ohne das
+  // Normalverhalten zu beruehren.
+  const beine = {
+    bm25: params.tracks?.bm25 ?? true,
+    vector: params.tracks?.vector ?? true,
+    entity: params.tracks?.entity ?? true,
+  };
+
   // --- Bein 1: FTS5-BM25 ---
-  const bm25Ranked: string[] = query
+  const bm25Ranked: string[] = query && beine.bm25
     ? store
         .ftsSearch(query, 100)
         .map((h) => h.id)
@@ -90,7 +98,7 @@ export async function searchMemories(store: KeptaStore, params: SearchParams): P
   let queryVector: Float32Array | null = null;
   let usedVectors = false;
   const vectorSim = new Map<string, number>();
-  if (query) {
+  if (query && beine.vector) {
     queryVector = await embedQuery(query);
     if (queryVector) {
       // Nur Chunks desselben Embedding-Modells sind vergleichbar — der Query-Vektor
@@ -117,7 +125,7 @@ export async function searchMemories(store: KeptaStore, params: SearchParams): P
 
   // --- Bein 3: Entity-Match ---
   let entityRanked: string[] = [];
-  if (query) {
+  if (query && beine.entity) {
     const mentions = entityMentionsInQuery(store, queryLower);
     if (mentions.length > 0) {
       const entityIds = mentions
