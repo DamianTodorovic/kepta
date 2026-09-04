@@ -658,7 +658,7 @@ export function Dashboard() {
               <button
                 onClick={() => setPaletteOpen(true)}
                 className="btn-ghost hidden sm:flex items-center gap-1.5 px-2.5 py-2 rounded-lg text-xs font-medium"
-                title="Befehlspalette"
+                title="Command palette"
               >
                 <ScanSearch className="w-4 h-4" /> <span className="kbd !py-px">⌘K</span>
               </button>

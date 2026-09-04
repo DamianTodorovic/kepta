@@ -6,11 +6,11 @@
 
 <p align="center"><a href="https://github.com/DamianTodorovic/kepta/releases"><img alt="Release" src="https://img.shields.io/github/v/release/DamianTodorovic/kepta?label=Download"></a> <a href="https://github.com/DamianTodorovic/kepta/actions/workflows/build.yml"><img alt="CI" src="https://github.com/DamianTodorovic/kepta/actions/workflows/build.yml/badge.svg"></a> <a href="https://pypi.org/project/kepta/"><img alt="PyPI" src="https://img.shields.io/pypi/v/kepta?label=pip%20install%20kepta"></a> <img alt="Coverage" src="https://img.shields.io/badge/coverage-91%25-brightgreen"> <img alt="Tests" src="https://img.shields.io/badge/tests-333%20passing-brightgreen"> <a href="LICENSE"><img alt="MIT" src="https://img.shields.io/badge/License-MIT-black"></a> <img alt="Platform" src="https://img.shields.io/badge/platform-macOS%20%7C%20Windows%20%7C%20Linux-lightgrey"></p>
 
-## 🎬 What it looks like
+## 🎬 The whole app in one pass
 
-<p align="center"><img src="docs/demo.gif" alt="Searching in KEPTA: typing carbonara narrows 30 entries down to one hit, which opens in the editor" width="900"></p>
+<p align="center"><img src="docs/demo.gif" alt="A tour of KEPTA: searching, opening a note in the editor, creating one, moving it to the trash and restoring it, the knowledge graph with its time slider, the chat cockpit, the MCP settings, the command palette and the light/dark switch" width="900"></p>
 
-<sub>Type, filter, open — 18 entries narrow to one hit. Recorded from version 2.6.0.</sub>
+<sub>A full pass through the app: search, the editor with type and validity, creating a note, the trash with restore, the knowledge graph and its time slider, the chat cockpit, the MCP endpoints, the command palette and the theme switch. Recorded from version 2.6.3 on invented demo data.</sub>
 
 | Index & hybrid search | Knowledge graph |
 |---|---|
