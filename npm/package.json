@@ -1,6 +1,6 @@
 {
   "name": "kepta-mcp",
-  "version": "2.6.14",
+  "version": "2.6.15",
   "description": "Local memory for AI agents over MCP. One SQLite file on your own machine \u2014 no cloud, no account.",
   "keywords": [
     "mcp",

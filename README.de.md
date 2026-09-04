@@ -79,7 +79,7 @@
 5. **Obsidian-Brücke** — Vault-Import/-Export (Markdown+Frontmatter); `[[Wiki-Links]]` werden zu Graph-Kanten.
 6. **Privat** — alles lokal in `~/.kepta/`, MIT, kein Konto.
 7. **Recherche** — Wissensgraph mit echten Verbindungen, Duplikat-Erkennung, Papierkorb mit Undo.
-8. **Dev-Setup in 2 Minuten** — MCP-Config kopieren, `POST /mcp` (2026-07-28, 8 Tools), HTTP-API, `npm run eval` (Hit@1 92 %).
+8. **Dev-Setup in 2 Minuten** — MCP-Config kopieren, `POST /mcp` (2026-07-28, 8 Tools), HTTP-API, `npm run eval` (Hit@1 62 %) und `npm run ablation` (was jedes Retrieval-Bein beiträgt).
 
 ## 🏗️ Wie es zusammenhängt
 
@@ -416,7 +416,7 @@ Tests liegen in `tests/`, gespiegelt zur Quellstruktur. Neue Features nach TDD (
 
 ## 🧠 Warum KEPTA?
 
-Obsidian ist großartig für Menschen — aber Markdown ist kein Gedächtnis (keine Typen, Gültigkeit, kein MCP). Mem0/Letta sind SDKs ohne GUI. **KEPTA ist beides**: agent-native Memory-Schicht mit Desktop-App, lokal, MIT. Eval: Hit@1 **92 %** auf 30 Notizen und 25 Anfragen (`npm run eval`); die v1-Teilstringsuche kam auf 76 %. Ehrlich gemessen trägt die Fusion diese Zahl nicht allein — `npm run ablation` zeigt, dass BM25 für sich dieselben 92 % erreicht. Was die Fusion beisteuert, ist Abdeckung: 25 von 25 Anfragen liefern einen Treffer statt 23.
+Obsidian ist großartig für Menschen — aber Markdown ist kein Gedächtnis (keine Typen, Gültigkeit, kein MCP). Mem0/Letta sind SDKs ohne GUI. **KEPTA ist beides**: agent-native Memory-Schicht mit Desktop-App, lokal, MIT. Eval auf 58 Notizen und 45 Anfragen in fünf Kategorien (`npm run eval`): Hit@1 **62 %** für die Engine, **51 %** für die v1-Teilstringsuche, die sie ersetzt hat. `npm run ablation` schlüsselt es nach Beinen auf — die volle Fusion erreicht **64 %** gegen 62 % für BM25 allein und beantwortet alle 45 Anfragen statt 36. Korpus, Anfragen und Ablation liegen im Repo; wer den Zahlen misstraut, lässt sie selbst laufen.
 
 Rollen-Logik: der **Test-Cockpit**-Chat beweist das Retrieval — der Alltag läuft über MCP. [ROADMAP](ROADMAP.md) · [CHANGELOG](CHANGELOG.md)
 

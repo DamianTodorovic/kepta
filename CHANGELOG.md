@@ -2,6 +2,32 @@
 
 All notable changes are documented in this file. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and versioning follows [SemVer](https://semver.org/).
 
+## [2.6.15] — 2026-09-05
+
+### Fixed
+- **The README still quoted the old corpus.** Rebuilding the evaluation in 2.6.14
+  changed it from 30 notes and 25 queries to 58 and 45 — and made it harder. The
+  documentation kept claiming `Hit@1 92 %`, which was true of the corpus that no
+  longer exists. On the current one `npm run eval` reports **62 %** for the
+  engine and **51 %** for the v1 substring search it replaced, and
+  `npm run ablation` puts full fusion at **64 %** against 62 % for BM25 alone.
+
+  Nobody lied; the documentation simply lagged the measurement. That is exactly
+  the kind of number that gets found in a comment thread, so a test now compares
+  the corpus sizes named in both READMEs against the corpus itself, and refuses
+  any Hit@1 figure of 92 % — both failure modes checked against the guard.
+
+### Added
+- `Dockerfile` — directories such as Glama start MCP servers through one and
+  check that they answer introspection. Built from this repo's source rather than
+  the published package, so the check tests what is here. The first attempt did
+  not answer: `VOLUME` creates `/data` as root while the process runs as `node`,
+  and startup died on "unable to open database file". Five tests hold that in
+  place, including the order of `chown` and `USER`.
+
+### Tests
+399, up from 393.
+
 ## [2.6.14] — 2026-09-04
 
 The evaluation could not answer the question it was built to answer, so it was

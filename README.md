@@ -77,7 +77,7 @@
 5. **Obsidian bridge** — vault import and export (Markdown + frontmatter); `[[wiki links]]` become graph edges.
 6. **Private** — everything lives in `~/.kepta/`. MIT licensed, no account.
 7. **Research** — a knowledge graph with real edges, duplicate detection, and a trash can with undo.
-8. **Two-minute dev setup** — copy the MCP config, `POST /mcp` (protocol 2026-07-28, 8 tools), HTTP API, `npm run eval` (Hit@1 92 %).
+8. **Two-minute dev setup** — copy the MCP config, `POST /mcp` (protocol 2026-07-28, 8 tools), HTTP API, `npm run eval` (Hit@1 62 %) and `npm run ablation` (what each retrieval leg contributes).
 
 ## 🏗️ How it fits together
 
@@ -414,7 +414,7 @@ Tests live in `tests/`, mirroring the source layout. New features follow TDD (RE
 
 ## 🧠 Why KEPTA?
 
-Obsidian is excellent for humans — but Markdown is not a memory: no types, no validity, no MCP. Mem0 and Letta are SDKs without a GUI. **KEPTA is both**: an agent-native memory layer with a desktop app, local, MIT. Eval: Hit@1 **92 %** on a 30-note, 25-query corpus (`npm run eval`); the v1 substring search scored 76 %. Measured honestly, the fusion does not earn that number on its own — `npm run ablation` shows BM25 alone reaching the same 92 %. What fusion adds is coverage: 25 of 25 queries return something instead of 23.
+Obsidian is excellent for humans — but Markdown is not a memory: no types, no validity, no MCP. Mem0 and Letta are SDKs without a GUI. **KEPTA is both**: an agent-native memory layer with a desktop app, local, MIT. Eval on a 58-note, 45-query corpus across five query categories (`npm run eval`): Hit@1 **62 %** for the engine, **51 %** for the v1 substring search it replaced. `npm run ablation` breaks it down per leg — full fusion reaches **64 %** against 62 % for BM25 alone, and answers all 45 queries instead of 36. The corpus, the queries and the ablation are all in the repository, so you can disagree with the numbers by rerunning them.
 
 The division of roles: the **chat cockpit** proves retrieval works — daily use runs through MCP. [ROADMAP](ROADMAP.md) · [CHANGELOG](CHANGELOG.md)
 
