@@ -77,7 +77,7 @@ export function SystemStatus() {
     }
   };
 
-  const mcpJson = JSON.stringify({ mcpServers: { kepta: { command: 'npx', args: ['-y', 'kepta'] } } }, null, 2);
+  const mcpJson = JSON.stringify({ mcpServers: { kepta: { command: 'npx', args: ['-y', 'kepta-mcp'] } } }, null, 2);
   const coverage = health && health.embeddings.total > 0 ? Math.round((health.embeddings.embedded / health.embeddings.total) * 100) : 0;
 
   return (

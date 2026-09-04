@@ -269,10 +269,10 @@ Der Chat existiert, um Retrieval zu beweisen. Der Alltag läuft über MCP.
 ## 📦 npm-Paket — der MCP-Server für sich allein
 
 ```bash
-npx -y kepta
+npx -y kepta-mcp
 ```
 
-Das ist die ganze Installation: eine Datei, 20 kB, keine Abhängigkeiten. Damit bekommt ein Agent ein Gedächtnis **ohne die Desktop-App** — dieselbe `~/.kepta/kepta.db`, du kannst also ohne Fenster anfangen und es später dazunehmen oder beides nebeneinander betreiben. Braucht Node 22.5 oder neuer, denn erst dort gibt es `node:sqlite`. Details: [npm/README.md](npm/README.md) · [npm](https://www.npmjs.com/package/kepta)
+Das ist die ganze Installation: eine Datei, 20 kB, keine Abhängigkeiten. Damit bekommt ein Agent ein Gedächtnis **ohne die Desktop-App** — dieselbe `~/.kepta/kepta.db`, du kannst also ohne Fenster anfangen und es später dazunehmen oder beides nebeneinander betreiben. Braucht Node 22.5 oder neuer, denn erst dort gibt es `node:sqlite`. Details: [npm/README.md](npm/README.md) · [npm](https://www.npmjs.com/package/kepta-mcp)
 
 ## 🐍 Python-Client
 
@@ -327,10 +327,10 @@ Genau da setzt KEPTA Enterprise an. Der Grundsatz dahinter ist bewusst als Regel
 **Mit Claude Desktop oder Cursor verbinden.** Ein Textblock in eine Datei. Kein Pfad, nichts zu bauen — `npx` holt den Server beim ersten Mal selbst:
 
 ```json
-{ "mcpServers": { "kepta": { "command": "npx", "args": ["-y", "kepta"] } } }
+{ "mcpServers": { "kepta": { "command": "npx", "args": ["-y", "kepta-mcp"] } } }
 ```
 
-Das ist die ganze Verbindung, und sie funktioniert auch ohne die Desktop-App: `npx -y kepta` gibt einem Agenten für sich genommen ein Gedächtnis, in derselben `~/.kepta/kepta.db`, die auch die App benutzt. Wer nicht möchte, dass npx bei jedem Start in der Registry nachsieht, installiert einmal `npm i -g kepta` und schreibt stattdessen `"command": "kepta"`. Die Fassung mit dem Pfad deines eigenen Checkouts steht in der App unter *Einstellungen → MCP / API*, mit Kopierknopf.
+Das ist die ganze Verbindung, und sie funktioniert auch ohne die Desktop-App: `npx -y kepta-mcp` gibt einem Agenten für sich genommen ein Gedächtnis, in derselben `~/.kepta/kepta.db`, die auch die App benutzt. Wer nicht möchte, dass npx bei jedem Start in der Registry nachsieht, installiert einmal `npm i -g kepta-mcp` und schreibt stattdessen `"command": "kepta"`. Die Fassung mit dem Pfad deines eigenen Checkouts steht in der App unter *Einstellungen → MCP / API*, mit Kopierknopf.
 
 **Lieber aus dem Quelltext starten.** Braucht Node 22.5 oder neuer:
 

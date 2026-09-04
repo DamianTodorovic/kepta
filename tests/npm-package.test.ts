@@ -47,7 +47,11 @@ describe("npm-Paket: das Bundle", () => {
 });
 
 describe("npm-Paket: die package.json", () => {
-  it("verweist mit bin auf die gebaute Datei", () => {
+  it("heisst kepta-mcp, installiert aber den Befehl kepta", () => {
+    // npm lehnt den blanken Namen "kepta" ab: zu aehnlich zu "keytar". Der
+    // Paketname ist damit npm-Buerokratie — der Befehl, den Leute tippen und der
+    // in jeder MCP-Konfiguration steht, heisst weiterhin kepta.
+    expect(paket.name).toBe("kepta-mcp");
     expect(paket.bin).toEqual({ kepta: "bin/kepta.js" });
     expect(fs.existsSync(binPfad)).toBe(true);
   });

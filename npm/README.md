@@ -1,4 +1,4 @@
-# kepta
+# kepta-mcp
 
 **Local memory for AI agents, over MCP.** One SQLite file on your own machine — no cloud, no account, no subscription.
 
@@ -11,7 +11,7 @@ Add this to your MCP client's configuration. Nothing to clone, nothing to build:
 ```json
 {
   "mcpServers": {
-    "kepta": { "command": "npx", "args": ["-y", "kepta"] }
+    "kepta": { "command": "npx", "args": ["-y", "kepta-mcp"] }
   }
 }
 ```
@@ -52,6 +52,8 @@ This package is the MCP server on its own — enough for an agent, with no windo
 The **desktop app** for macOS, Windows and Linux adds a UI, the knowledge graph with its time slider, file and Obsidian import, and a chat: [Releases](https://github.com/DamianTodorovic/kepta/releases).
 
 For Python there is `pip install kepta`.
+
+The package is called `kepta-mcp` because npm refuses the bare name `kepta` as too close to an existing package. The command it installs is `kepta`.
 
 Both share the same `~/.kepta/kepta.db`. What one writes, the others see.
 

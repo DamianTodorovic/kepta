@@ -3,7 +3,7 @@
   "mcpServers": {
     "kepta": {
       "command": "npx",
-      "args": ["-y", "kepta"],
+      "args": ["-y", "kepta-mcp"],
       "env": {}
     }
   }
