@@ -2,7 +2,7 @@
 
 All notable changes are documented in this file. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and versioning follows [SemVer](https://semver.org/).
 
-## [Unreleased]
+## [2.6.9] — 2026-09-04
 
 ### Changed
 - **One tag now publishes everything.** `publish.yml` runs on `v*` tags and

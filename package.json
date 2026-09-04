@@ -1,8 +1,8 @@
 {
   "name": "kepta",
   "private": true,
-  "version": "2.6.8",
-  "description": "KEPTA — Keeps what matters. A local brain for AI agents: SQLite, hybrid retrieval, knowledge graph, MCP 2026-07-28 — no cloud.",
+  "version": "2.6.9",
+  "description": "KEPTA \u2014 Keeps what matters. A local brain for AI agents: SQLite, hybrid retrieval, knowledge graph, MCP 2026-07-28 \u2014 no cloud.",
   "author": "KEPTA <hello@kepta.app>",
   "type": "module",
   "scripts": {
