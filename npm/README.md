@@ -39,6 +39,15 @@ Protocol `2026-07-28`, backwards compatible with `2025-06-18` and `2024-11-05`. 
 
 Each entry carries a validity window and a confidence score. Move house, and the new address supersedes the old one: the old is downweighted to 40 % and kept as history rather than deleted. Expired facts drop to 50 %. Your agent stops answering with things that stopped being true.
 
+## Docker
+
+```bash
+docker build -t kepta-mcp .
+docker run --rm -i -v kepta-data:/data kepta-mcp
+```
+
+The server speaks stdio, so `-i` is required. The database lives in the `kepta-data` volume and survives restarts.
+
 ## Requirements
 
 **Node 22.13 or newer.** The package has no dependencies at all — it uses `node:sqlite`, which arrived in 22.5.
