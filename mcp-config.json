@@ -3,14 +3,14 @@
   "mcpServers": {
     "kepta": {
       "command": "npx",
-      "args": ["-y", "kepta"],
+      "args": ["-y", "kepta-mcp"],
       "env": {}
     }
   },
   "_alternatives": {
     "_comment": "Only needed in special cases — the block above covers normal use.",
     "kepta-installed": {
-      "_comment": "After 'npm i -g kepta': starts instantly, no registry lookup.",
+      "_comment": "After 'npm i -g kepta-mcp': starts instantly, no registry lookup.",
       "command": "kepta",
       "args": [],
       "env": {}

@@ -8,7 +8,9 @@ Found while packaging the MCP server for npm — by doing the one thing a new us
 does first: starting the app and their agent at the same time.
 
 ### Added
-- **`npx -y kepta`** — the MCP server as an npm package. One file, 20 kB, no
+- **`npx -y kepta-mcp`** — the MCP server as an npm package. It is called
+  `kepta-mcp` because npm rejects the bare name `kepta` as too similar to the
+  existing `keytar`; the command it installs is still `kepta`. One file, 20 kB, no
   dependencies at all, because the bundle needs nothing but Node built-ins. It
   gives an agent a memory without the desktop app, on the same
   `~/.kepta/kepta.db`. Needs Node 22.5, which is when `node:sqlite` arrived.

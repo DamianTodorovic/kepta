@@ -18,7 +18,7 @@ const MCP_JSON_NPX = `{
   "mcpServers": {
     "kepta": {
       "command": "npx",
-      "args": ["-y", "kepta"]
+      "args": ["-y", "kepta-mcp"]
     }
   }
 }`;

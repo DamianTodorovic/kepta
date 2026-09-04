@@ -267,10 +267,10 @@ The chat exists to prove retrieval works. Day-to-day use runs through MCP.
 ## 📦 npm package — the MCP server on its own
 
 ```bash
-npx -y kepta
+npx -y kepta-mcp
 ```
 
-That is the entire installation: one file, 20 kB, no dependencies. It gives an agent a memory **without the desktop app** — same `~/.kepta/kepta.db`, so you can start headless and add the window later, or run both side by side. Needs Node 22.5 or newer, because that is when `node:sqlite` arrived. Details: [npm/README.md](npm/README.md) · [npm](https://www.npmjs.com/package/kepta)
+That is the entire installation: one file, 20 kB, no dependencies. It gives an agent a memory **without the desktop app** — same `~/.kepta/kepta.db`, so you can start headless and add the window later, or run both side by side. Needs Node 22.5 or newer, because that is when `node:sqlite` arrived. Details: [npm/README.md](npm/README.md) · [npm](https://www.npmjs.com/package/kepta-mcp)
 
 ## 🐍 Python client
 
@@ -325,10 +325,10 @@ That is where KEPTA Enterprise starts. The principle is written as a rule rather
 **Connect it to Claude Desktop or Cursor.** One block of text into one file. No path, nothing to build — `npx` fetches the server the first time it is needed:
 
 ```json
-{ "mcpServers": { "kepta": { "command": "npx", "args": ["-y", "kepta"] } } }
+{ "mcpServers": { "kepta": { "command": "npx", "args": ["-y", "kepta-mcp"] } } }
 ```
 
-That is the whole connection, and it works without the desktop app: `npx -y kepta` gives an agent a memory on its own, in the same `~/.kepta/kepta.db` the app uses. If you would rather not have npx check the registry on every start, install it once with `npm i -g kepta` and use `"command": "kepta"` instead. The version with your own checkout path is in the app under *Settings → MCP / API*, with a copy button.
+That is the whole connection, and it works without the desktop app: `npx -y kepta-mcp` gives an agent a memory on its own, in the same `~/.kepta/kepta.db` the app uses. If you would rather not have npx check the registry on every start, install it once with `npm i -g kepta-mcp` and use `"command": "kepta"` instead. The version with your own checkout path is in the app under *Settings → MCP / API*, with a copy button.
 
 **Run it from source instead.** Needs Node 22.5 or newer:
 
