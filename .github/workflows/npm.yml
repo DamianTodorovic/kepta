@@ -6,10 +6,9 @@ name: npm
 # pypi.yml es fuer PyPI tut. Es gibt kein Geheimnis, das gestohlen, geloggt
 # oder versehentlich weitergegeben werden koennte.
 #
-# Einmalige Einrichtung — die erste Veroeffentlichung muss von Hand kommen,
-# weil npm einen Trusted Publisher nur fuer ein existierendes Paket kennt:
-#   1. npm login && npm run build:npm && cd npm && npm publish --access public
-#   2. npmjs.com -> Paket kepta -> Settings -> Trusted Publisher:
+# Einmalige Einrichtung — 2.6.4 wurde von Hand veroeffentlicht, weil npm einen
+# Trusted Publisher nur fuer ein bereits existierendes Paket kennt. Ab jetzt:
+#   npmjs.com -> Paket kepta-mcp -> Settings -> Trusted Publisher:
 #        Organization/User: DamianTodorovic
 #        Repository:        kepta
 #        Workflow filename: npm.yml
