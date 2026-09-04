@@ -59,6 +59,11 @@ export function newId(): string {
   return `k-${Date.now().toString(36)}-${crypto.randomBytes(4).toString("hex")}`;
 }
 
+/** Blockierendes Warten — der Store-Konstruktor ist synchron, ein Timer liefe nie. */
+function kurzSchlafen(ms: number): void {
+  Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, ms);
+}
+
 // ---------- Store ----------
 
 export class KeptaStore {
@@ -69,10 +74,43 @@ export class KeptaStore {
     fs.mkdirSync(path.dirname(dbPath), { recursive: true });
     this.dbPath = dbPath;
     this.db = new DatabaseSync(dbPath);
-    this.db.exec("PRAGMA journal_mode = WAL");
+    // Wartezeit zuerst: busy_timeout wirkt erst ab der naechsten Anweisung.
     this.db.exec("PRAGMA busy_timeout = 5000");
+    this.walEinschalten();
     this.db.exec("PRAGMA foreign_keys = ON");
     this.migrate();
+  }
+
+  /**
+   * WAL ist eine Eigenschaft der Datei, nicht der Verbindung: hat ein Prozess sie
+   * gesetzt, gilt sie fuer alle weiteren. Fuer journal_mode ruft SQLite aber keinen
+   * Busy-Handler auf — busy_timeout hilft hier nicht, der Aufruf wirft sofort
+   * "database is locked". Beim ersten gemeinsamen Start von Desktop-App und
+   * MCP-Server starb daran jeder zweite Versuch, bevor auch nur ein Werkzeug lief.
+   *
+   * Also kurz erneut versuchen, und im Zweifel ohne WAL weiterarbeiten: langsamer
+   * bei parallelem Zugriff, aber benutzbar. Ein harter Abbruch waere schlimmer als
+   * die schlechtere Betriebsart — zumal der andere Prozess WAL ohnehin gerade setzt.
+   */
+  private walEinschalten(): void {
+    for (let versuch = 0; versuch < 20; versuch++) {
+      if (this.journalModus() === "wal") return;
+      try {
+        this.db.exec("PRAGMA journal_mode = WAL");
+        return;
+      } catch {
+        kurzSchlafen(25);
+      }
+    }
+  }
+
+  private journalModus(): string {
+    try {
+      const zeile = this.db.prepare("PRAGMA journal_mode").get() as { journal_mode?: string } | undefined;
+      return String(zeile?.journal_mode ?? "").toLowerCase();
+    } catch {
+      return "";
+    }
   }
 
   private migrate() {

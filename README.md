@@ -264,6 +264,14 @@ The chat exists to prove retrieval works. Day-to-day use runs through MCP.
 
 </details>
 
+## 📦 npm package — the MCP server on its own
+
+```bash
+npx -y kepta
+```
+
+That is the entire installation: one file, 20 kB, no dependencies. It gives an agent a memory **without the desktop app** — same `~/.kepta/kepta.db`, so you can start headless and add the window later, or run both side by side. Needs Node 22.5 or newer, because that is when `node:sqlite` arrived. Details: [npm/README.md](npm/README.md) · [npm](https://www.npmjs.com/package/kepta)
+
 ## 🐍 Python client
 
 ```bash

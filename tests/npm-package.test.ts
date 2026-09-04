@@ -52,8 +52,12 @@ describe("npm-Paket: die package.json", () => {
     expect(fs.existsSync(binPfad)).toBe(true);
   });
 
-  it("veroeffentlicht nur Binary und README", () => {
-    expect(paket.files).toEqual(["bin/kepta.js", "README.md"]);
+  it("veroeffentlicht Binary, README und Lizenz — sonst nichts", () => {
+    expect(paket.files).toEqual(["bin/kepta.js", "README.md", "LICENSE"]);
+    // Die Lizenz muss auch wirklich daliegen, sonst behauptet das Paket ein MIT,
+    // dessen Text niemand mitbekommt.
+    expect(fs.existsSync(path.join(wurzel, "npm", "LICENSE"))).toBe(true);
+    expect(paket.license).toBe("MIT");
   });
 
   it("verlangt Node 22.5 — davor gibt es node:sqlite nicht", () => {

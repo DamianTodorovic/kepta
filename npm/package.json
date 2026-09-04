@@ -1,6 +1,6 @@
 {
   "name": "kepta",
-  "version": "2.6.3",
+  "version": "2.6.4",
   "description": "Local memory for AI agents over MCP. One SQLite file on your own machine \u2014 no cloud, no account.",
   "keywords": [
     "mcp",
@@ -33,7 +33,8 @@
   },
   "files": [
     "bin/kepta.js",
-    "README.md"
+    "README.md",
+    "LICENSE"
   ],
   "engines": {
     "node": ">=22.5.0"
