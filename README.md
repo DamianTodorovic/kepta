@@ -356,18 +356,19 @@ Every file carries its platform and architecture in the name. On a Mac, if you a
 
 ### 🍎 First launch on macOS
 
-KEPTA is built without an Apple developer certificate — the releases are **neither signed nor notarised**. macOS therefore quarantines the download and reports something like "cannot be opened because the developer cannot be verified". The app is fine; the signature is what is missing.
+KEPTA is built without an Apple developer certificate, so the releases are **not notarised**. macOS quarantines the download and says the developer cannot be verified. The app is fine; what is missing is a certificate that costs 99 EUR a year.
 
-Approve it once and it starts normally from then on:
-
-1. **Right-click** `KEPTA.app` in Applications → **Open** → **Open** again in the dialog.
-2. If that is not offered: *System Settings → Privacy & Security* → find the KEPTA message and click **Open Anyway**.
-
-Or in the terminal:
+The fastest way through, and the one that works on every macOS version:
 
 ```bash
 xattr -dr com.apple.quarantine /Applications/KEPTA.app
 ```
+
+Without the terminal: **System Settings → Privacy & Security**, scroll down to the message about KEPTA, click **Open Anyway**, and confirm with your password. Once, then never again.
+
+> Older guides say to right-click the app and choose *Open*. Apple removed that route in macOS 15 — on current systems it does nothing. Use one of the two above.
+
+The app bundle itself **is** signed, ad-hoc. That is not notarisation and does not remove the warning, but it does decide which warning you get: macOS treats KEPTA as an ordinary unsigned app you can approve, rather than a damaged one it refuses outright.
 
 ### 🪟 First launch on Windows
 

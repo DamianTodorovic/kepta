@@ -80,5 +80,6 @@
     "electron.js",
     "package.json"
   ],
-  "copyright": "Copyright © 2026 KEPTA"
+  "copyright": "Copyright © 2026 KEPTA",
+  "afterPack": "scripts/adhoc-sign.cjs"
 }

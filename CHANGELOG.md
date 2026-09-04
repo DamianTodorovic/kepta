@@ -2,6 +2,41 @@
 
 All notable changes are documented in this file. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and versioning follows [SemVer](https://semver.org/).
 
+## [2.6.10] — 2026-09-04
+
+### Fixed
+- **The macOS builds were not signed at all — not even ad-hoc.** The bundle
+  shipped without a `_CodeSignature` directory; its only signature was the
+  linker-signed one inside the Electron binary, still carrying
+  `Identifier=Electron`. `codesign --verify` failed on it outright.
+
+  That is worse than unsigned. macOS then tends to report "KEPTA is damaged and
+  can't be opened" instead of "developer cannot be verified" — and *damaged* has
+  no "Open Anyway". Anyone downloading the app met a message that reads like a
+  corrupt file or malware, with no way forward. 26 downloads across 21 releases
+  is the shape of that.
+
+  `CSC_IDENTITY_AUTO_DISCOVERY=false` in CI switched off certificate discovery
+  and, with it, signing. The build now signs the bundle ad-hoc in an `afterPack`
+  step and verifies the result, failing the build if verification does not pass.
+  Measured on a real build: `Identifier=app.kepta.desktop`, `_CodeSignature`
+  present, `codesign --verify --deep --strict` reports *valid on disk* and
+  *satisfies its Designated Requirement*.
+
+  This is not notarisation and the Gatekeeper warning stays — that needs the
+  99 EUR certificate. What changes is which warning you get: one you can approve,
+  instead of a flat refusal.
+
+- **The first-launch instructions told people to do something that no longer
+  works.** "Right-click → Open" was removed by Apple in macOS 15; on current
+  systems it does nothing. README, German README and the release notes now lead
+  with `xattr -dr com.apple.quarantine`, which works on every version, and name
+  System Settings as the route without a terminal.
+
+### Tests
+380, up from 370. The new ones hold the signing step in place and refuse a
+right-click instruction that is not marked as obsolete.
+
 ## [2.6.9] — 2026-09-04
 
 ### Changed

@@ -358,18 +358,19 @@ Jede Datei trägt Plattform und Architektur im Namen. Im Zweifel beim Mac: Apple
 
 ### 🍎 Erster Start unter macOS
 
-KEPTA wird ohne Apple-Entwicklerzertifikat gebaut — die Releases sind **nicht signiert und nicht notarisiert**. macOS setzt heruntergeladene Dateien deshalb in Quarantäne und meldet beim Doppelklick sinngemäß „kann nicht geöffnet werden, da der Entwickler nicht verifiziert werden kann". Die App ist in Ordnung; es fehlt nur die Signatur.
+KEPTA wird ohne Apple-Entwicklerzertifikat gebaut, die Releases sind also **nicht notarisiert**. macOS setzt den Download in Quarantäne und meldet, der Entwickler lasse sich nicht verifizieren. Die App ist in Ordnung; was fehlt, ist ein Zertifikat für 99 € im Jahr.
 
-Einmalig freigeben, danach startet sie normal:
-
-1. **Rechtsklick** auf `KEPTA.app` im Programme-Ordner → **Öffnen** → im Dialog erneut **Öffnen**.
-2. Falls das nicht angeboten wird: *Systemeinstellungen → Datenschutz & Sicherheit* → bei der Meldung zu KEPTA auf **Dennoch öffnen**.
-
-Alternativ im Terminal:
+Der schnellste Weg, und der einzige, der auf jeder macOS-Version funktioniert:
 
 ```bash
 xattr -dr com.apple.quarantine /Applications/KEPTA.app
 ```
+
+Ohne Terminal: **Systemeinstellungen → Datenschutz & Sicherheit**, nach unten zur Meldung über KEPTA scrollen, **Dennoch öffnen** klicken und mit deinem Passwort bestätigen. Einmal, danach nie wieder.
+
+> Ältere Anleitungen raten zum Rechtsklick auf die App und *Öffnen*. Diesen Weg hat Apple mit macOS 15 entfernt — auf aktuellen Systemen passiert dabei nichts. Nimm einen der beiden oben.
+
+Das App-Bündel **ist** signiert, ad hoc. Das ersetzt keine Notarisierung und macht die Warnung nicht weg, aber es entscheidet, *welche* Warnung kommt: macOS behandelt KEPTA als gewöhnliche unsignierte App, die man freigeben kann — statt als beschädigte, die es rundheraus ablehnt.
 
 ### 🪟 Erster Start unter Windows
 

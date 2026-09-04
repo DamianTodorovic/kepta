@@ -17,20 +17,21 @@ The packages are self-contained — you only need Node to build them yourself.
 
 ## 🍎 First launch on macOS
 
-These builds are **neither signed nor notarised** (no Apple developer certificate).
-macOS quarantines the download and reports "cannot be opened because the developer
-cannot be verified". The app is fine — the signature is what is missing.
+These builds are **not notarised** (that needs an Apple developer certificate at
+99 EUR a year). macOS quarantines the download and says the developer cannot be
+verified. The app is fine.
 
-Approve it once and it starts normally from then on:
-
-1. **Right-click** `KEPTA.app` → **Open** → **Open** again in the dialog
-2. Or: *System Settings → Privacy & Security* → **Open Anyway**
-
-Or in the terminal:
+The fastest way through, and the one that works on every macOS version:
 
 ```bash
 xattr -dr com.apple.quarantine /Applications/KEPTA.app
 ```
+
+Without the terminal: **System Settings → Privacy & Security** → scroll to the
+KEPTA message → **Open Anyway**. Once, then never again.
+
+Note: right-clicking the app and choosing *Open* no longer works — Apple removed
+that route in macOS 15.
 
 ## 🪟 First launch on Windows
 
@@ -84,7 +85,7 @@ Build it yourself: `npm install && npm run build:mac`, `build:linux` or `build:w
 | Linux (Intel/AMD) | `KEPTA-<version>-linux-x86_64.AppImage` |
 | Debian, Ubuntu, Mint | `KEPTA-<version>-linux-amd64.deb` |
 
-Die Builds sind **nicht signiert**. macOS: Rechtsklick auf `KEPTA.app` → **Öffnen** → erneut **Öffnen**, oder `xattr -dr com.apple.quarantine /Applications/KEPTA.app`. Windows: **Weitere Informationen** → **Trotzdem ausführen**. Linux-AppImage: `chmod +x` und starten.
+Die Builds sind **nicht notarisiert**. macOS: `xattr -dr com.apple.quarantine /Applications/KEPTA.app`, oder *Systemeinstellungen → Datenschutz & Sicherheit* → **Dennoch öffnen**. Der Rechtsklick-Weg funktioniert seit macOS 15 nicht mehr. Windows: **Weitere Informationen** → **Trotzdem ausführen**. Linux-AppImage: `chmod +x` und starten.
 
 Alle Daten bleiben lokal in `~/.kepta/`. Ausführliche Anleitung: [README.de.md](https://github.com/DamianTodorovic/kepta/blob/main/README.de.md)
 
