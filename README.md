@@ -72,6 +72,7 @@
 1. **One brain for every AI tool** — Claude Desktop, Cursor and anything else that speaks MCP share the same knowledge base. What one agent learns, the next one already knows.
 2. **Keep agents sharp instead of letting them rot** — every memory carries a type, a validity window and a confidence score. Contradictions supersede each other; expired facts are flagged, not silently served.
 3. **A second brain** — notes, projects and knowledge found by meaning. Ask *"what do I cook with pasta"* and the carbonara recipe comes back, once `ollama pull nomic-embed-text` has run. Without an embedding model, search stays lexical and still works.
+   **Measured caveat, September 2026:** that example works in English and does not work in German. On a four-note check (`npm run embed:sprachtest`) the default model answers 4 of 4 English paraphrase questions and 1 of 4 of the same questions translated into German. The implementation is not at fault — normalised cosine, 768 dimensions — the default model is English-centric. If your notes are German, expect lexical search to carry most of the weight until you switch to a multilingual model such as `bge-m3`.
 4. **Capture without friction** — drag in files (PDF/MD/TXT), clip URLs, watch an inbox folder, save chat answers.
 5. **Obsidian bridge** — vault import and export (Markdown + frontmatter); `[[wiki links]]` become graph edges.
 6. **Private** — everything lives in `~/.kepta/`. MIT licensed, no account.

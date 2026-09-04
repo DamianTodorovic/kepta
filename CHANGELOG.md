@@ -2,6 +2,54 @@
 
 All notable changes are documented in this file. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and versioning follows [SemVer](https://semver.org/).
 
+## [2.6.14] — 2026-09-04
+
+The evaluation could not answer the question it was built to answer, so it was
+rebuilt. Then it answered a question nobody had asked.
+
+### Changed
+- **The eval corpus can now tell the retrieval legs apart.** It was 30 notes and
+  25 queries phrased in the same words as the notes — conditions under which BM25
+  cannot lose and the measurement cannot inform. It is now 58 notes and 45
+  queries across five labelled categories: lexical, paraphrase, graph, temporal
+  and distractor. Notes are linked through `[[wiki links]]`, so the graph leg has
+  something to work with, and distractors share vocabulary with queries that do
+  not mean them.
+
+  With a corpus that can separate them, fusion earns its keep after all:
+
+  ```
+  BM25 alone       62 % Hit@1   MRR 0.65   36/45 queries return a hit
+  Vector alone     58 %         MRR 0.66   45/45
+  Graph alone      11 %         MRR 0.11    5/45
+  All three (RRF)  64 %         MRR 0.70   45/45
+  ```
+
+  +2 points and full coverage. On distractor queries it goes from 0 % to 25 %.
+  `npm run ablation` prints this and the per-category table.
+
+### Found while measuring
+- **Semantic search does not work in German with the default model.** The
+  paraphrase category scores 10 % with the vector leg on or off. That is not a
+  KEPTA bug: cosine is normalised, vectors are unit length, dimensions and model
+  are right. It is the model. `npm run embed:sprachtest` puts four notes and four
+  paraphrase questions to `nomic-embed-text` in both languages:
+
+  ```
+  English  4/4 correct
+  German   1/4 correct
+  ```
+
+  The README's own example — *"what do I cook with pasta"* finds the carbonara
+  recipe — works in English and fails in German. Both READMEs now say so, and
+  point to a multilingual model such as `bge-m3` for German notes. Two other
+  explanations were tested and ruled out first: nomic's `search_query:` /
+  `search_document:` prefixes changed nothing, and the vectors are already
+  normalised.
+
+### Tests
+388.
+
 ## [2.6.13] — 2026-09-04
 
 ### Added

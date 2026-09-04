@@ -73,7 +73,8 @@
 
 1. **Ein Gehirn für alle KI-Tools** — Claude Desktop, Cursor & Co. teilen dieselbe Wissensbasis per MCP. Was ein Agent lernt, weiß der nächste sofort.
 2. **Agenten klug halten statt verrotten lassen** — Typ, Gültigkeit, Konfidenz; Widersprüche werden ersetzt (ERSETZT-Kette), Abgelaufenes markiert.
-3. **Second Brain** — Notizen/Projekte/Wissen semantisch auffindbar („was koche ich mit Nudeln" findet das Rezept, sobald `ollama pull nomic-embed-text` einmal gelaufen ist; ohne Embedding-Modell sucht KEPTA rein lexikalisch weiter).
+3. **Second Brain** — Notizen, Projekte und Wissen dem Sinn nach auffindbar, sobald `ollama pull nomic-embed-text` einmal gelaufen ist; ohne Embedding-Modell sucht KEPTA rein lexikalisch weiter.
+   **Gemessene Einschränkung, September 2026:** Ausgerechnet das Beispiel „was koche ich mit Nudeln" funktioniert **auf Englisch, nicht auf Deutsch**. Bei einer Vier-Notizen-Probe (`npm run embed:sprachtest`) beantwortet das Standardmodell 4 von 4 englischen Umschreibungen richtig und 1 von 4 derselben Fragen auf Deutsch. Die Umsetzung ist nicht schuld — normalisierter Kosinus, 768 Dimensionen —, das Standardmodell ist englischlastig. Bei deutschen Notizen trägt die lexikalische Suche daher den Großteil, bis du auf ein mehrsprachiges Modell wie `bge-m3` wechselst.
 4. **Wissen ohne Friction** — Dateien reinziehen (PDF/MD/TXT), URLs clippen, Inbox-Ordner beobachten, Chat-Antworten speichern.
 5. **Obsidian-Brücke** — Vault-Import/-Export (Markdown+Frontmatter); `[[Wiki-Links]]` werden zu Graph-Kanten.
 6. **Privat** — alles lokal in `~/.kepta/`, MIT, kein Konto.
