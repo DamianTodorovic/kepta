@@ -316,11 +316,13 @@ Genau da setzt KEPTA Enterprise an. Der Grundsatz dahinter ist bewusst als Regel
 
 **Du willst es einfach benutzen.** Lade unter [Releases](https://github.com/DamianTodorovic/kepta/releases) die Datei für dein System und öffne sie. Welche das ist, steht in der Tabelle darunter. Beim ersten Start braucht es einen zusätzlichen Klick, weil die App nicht signiert ist — das ist weiter unten für jedes System erklärt.
 
-**Mit Claude Desktop oder Cursor verbinden.** Ein Textblock in eine Datei. Die fertige Fassung mit deinem eigenen Pfad steht in der App unter *Einstellungen → MCP / API*, mit Kopierknopf:
+**Mit Claude Desktop oder Cursor verbinden.** Ein Textblock in eine Datei. Kein Pfad, nichts zu bauen — `npx` holt den Server beim ersten Mal selbst:
 
 ```json
-{ "mcpServers": { "kepta": { "command": "node", "args": ["/PFAD/kepta/dist/mcp-server.cjs"] } } }
+{ "mcpServers": { "kepta": { "command": "npx", "args": ["-y", "kepta"] } } }
 ```
+
+Das ist die ganze Verbindung, und sie funktioniert auch ohne die Desktop-App: `npx -y kepta` gibt einem Agenten für sich genommen ein Gedächtnis, in derselben `~/.kepta/kepta.db`, die auch die App benutzt. Wer nicht möchte, dass npx bei jedem Start in der Registry nachsieht, installiert einmal `npm i -g kepta` und schreibt stattdessen `"command": "kepta"`. Die Fassung mit dem Pfad deines eigenen Checkouts steht in der App unter *Einstellungen → MCP / API*, mit Kopierknopf.
 
 **Lieber aus dem Quelltext starten.** Braucht Node 22.5 oder neuer:
 

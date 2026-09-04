@@ -12,15 +12,17 @@ type TabId = 'system' | 'mcp';
 // Immer der eigene Origin — die App läuft hinter Vite-Dev wie hinter dem
 // Electron-Server auf zufälligem Port gleich mit.
 const API_BASE = typeof window !== 'undefined' ? window.location.origin : '';
-const MCP_JSON_TSX = `{
+// Der Normalfall: npx holt das veroeffentlichte Paket. Kein Pfad, den jemand
+// falsch abtippen kann — der haeufigste Grund, warum die Verbindung nicht steht.
+const MCP_JSON_NPX = `{
   "mcpServers": {
     "kepta": {
       "command": "npx",
-      "args": ["tsx", "src/mcp-server.ts"],
-      "cwd": "/PATH/TO/KEPTA-REPO"
+      "args": ["-y", "kepta"]
     }
   }
 }`;
+// Fuer alle, die aus dem eigenen Checkout starten wollen.
 const MCP_JSON_BUILT = `{
   "mcpServers": {
     "kepta": {
@@ -515,14 +517,14 @@ export function Settings() {
               <div className="hud-inset rounded-xl overflow-hidden">
                 <div className="flex items-center justify-between px-3 py-2" style={{ borderBottom: '1px solid var(--border-subtle)' }}>
                   <span className="text-xs font-mono" style={{ color: 'var(--text-3)' }}>mcp.json (project root)</span>
-                  <button onClick={() => copy(MCP_JSON_TSX, 'mcp-tsx')} className="btn-ghost flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs">
-                    {copied === 'mcp-tsx' ? <><CheckCircle2 className="w-3.5 h-3.5" style={{ color: 'var(--ok)' }} /> Copied</> : <><Copy className="w-3.5 h-3.5" /> Copy</>}
+                  <button onClick={() => copy(MCP_JSON_NPX, 'mcp-npx')} className="btn-ghost flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs">
+                    {copied === 'mcp-npx' ? <><CheckCircle2 className="w-3.5 h-3.5" style={{ color: 'var(--ok)' }} /> Copied</> : <><Copy className="w-3.5 h-3.5" /> Copy</>}
                   </button>
                 </div>
-                <pre className="p-3 text-xs font-mono overflow-x-auto leading-relaxed" style={{ color: 'var(--text-1)' }}>{MCP_JSON_TSX}</pre>
+                <pre className="p-3 text-xs font-mono overflow-x-auto leading-relaxed" style={{ color: 'var(--text-1)' }}>{MCP_JSON_NPX}</pre>
               </div>
               <p className="text-xs mt-2 leading-relaxed" style={{ color: 'var(--text-3)' }}>
-                In Cursor: Settings → Features → MCP. In Zed: <code>settings.json → experimental.mcp</code>. Without <code>tsx</code> (after <code>npm run build:mcp</code>):
+                In Cursor: Settings → Features → MCP. In Zed: <code>settings.json → experimental.mcp</code>. Nothing to build — <code>npx</code> fetches the server on first use. From your own checkout instead (after <code>npm run build:mcp</code>):
               </p>
               <div className="hud-inset rounded-xl overflow-hidden mt-2">
                 <div className="flex items-center justify-between px-3 py-2" style={{ borderBottom: '1px solid var(--border-subtle)' }}>
