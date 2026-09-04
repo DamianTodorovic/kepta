@@ -637,7 +637,7 @@ export function createApp(store: KeptaStore) {
       const existing = allApiMemories();
       for (let i=0;i<chunks.length;i++){
         const title = chunks.length===1 ? base : `${base} — Teil ${i+1}/${chunks.length}`;
-        const chunkContent = sanitizeText(chunks[i], 50000)+`\n\n— Quelle: Inbox ${path.basename(resolved)} ${new Date().toLocaleString('de-DE')}`;
+        const chunkContent = sanitizeText(chunks[i], 50000)+`\n\n— Source: inbox ${path.basename(resolved)} ${new Date().toLocaleString('en-GB')}`;
         const isDup = existing.some(m=> m.title===title && Math.abs(m.content.length-chunkContent.length)<20);
         if (isDup) continue;
         const created = store.createMemory({ title: sanitizeTitle(title) || base.slice(0,80), content: chunkContent, tags:['auto-import','inbox', ext.replace('.','')||'file'] });
