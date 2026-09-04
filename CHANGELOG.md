@@ -2,6 +2,30 @@
 
 All notable changes are documented in this file. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and versioning follows [SemVer](https://semver.org/).
 
+## [Unreleased]
+
+### Changed
+- **One tag now publishes everything.** `publish.yml` runs on `v*` tags and
+  releases the npm package and the MCP registry entry, both over OIDC — no
+  tokens, and none of the browser confirmations that shipping 2.6.4 through
+  2.6.8 needed half a dozen times. The desktop artifacts continue to come from
+  `build.yml` on the same tag, independently.
+
+  `npm.yml` is gone. Two workflows that can both run `npm publish` are a trap:
+  npm's Trusted Publishing binds to exactly one workflow filename, so the other
+  path fails silently. A test now asserts there is exactly one.
+
+  The workflow refuses to publish when the tag and the four version fields
+  disagree, and waits for the new npm version to become visible before asking
+  the registry to verify ownership — the registry reads `mcpName` from the
+  published package, and would otherwise reject the entry on a propagation
+  delay.
+
+### Tests
+370, up from 361. Nine of them parse every workflow file and check the
+publishing order, because a workflow with a typo does not fail — it simply never
+runs, and nobody notices until someone asks where the release is.
+
 ## [2.6.8] — 2026-09-04
 
 ### Fixed

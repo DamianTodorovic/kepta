@@ -2,7 +2,7 @@
   "name": "kepta",
   "private": true,
   "version": "2.6.8",
-  "description": "KEPTA \u2014 Keeps what matters. A local brain for AI agents: SQLite, hybrid retrieval, knowledge graph, MCP 2026-07-28 \u2014 no cloud.",
+  "description": "KEPTA — Keeps what matters. A local brain for AI agents: SQLite, hybrid retrieval, knowledge graph, MCP 2026-07-28 — no cloud.",
   "author": "KEPTA <hello@kepta.app>",
   "type": "module",
   "scripts": {
@@ -73,7 +73,8 @@
     "typescript": "~5.8.2",
     "vite": "^6.2.3",
     "vitest": "^4.1.11",
-    "wait-on": "^9.1.0"
+    "wait-on": "^9.1.0",
+    "yaml": "^2.9.0"
   },
   "main": "electron.js",
   "productName": "KEPTA",

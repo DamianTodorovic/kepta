@@ -1,0 +1,106 @@
+name: Publish
+
+# Ein Tag, alles draussen: npm-Paket und Eintrag in der offiziellen MCP-Registry.
+# Beides ueber OIDC, ohne Token und ohne Bestaetigungsklicks.
+#
+# Die Desktop-Artefakte baut build.yml, ebenfalls auf v*-Tags — die beiden
+# Workflows laufen unabhaengig nebeneinander.
+#
+# EINMALIGE EINRICHTUNG auf npmjs.com (sonst scheitert der npm-Schritt):
+#   Paket kepta-mcp -> Settings -> Trusted Publisher
+#     Organization/User: DamianTodorovic
+#     Repository:        kepta
+#     Workflow filename: publish.yml      <-- genau diese Datei
+#     Environment:       npm
+# Fuer die MCP-Registry ist nichts einzurichten: sie vertraut dem OIDC-Zertifikat
+# von GitHub, weil der Namensraum io.github.DamianTodorovic diesem Konto gehoert.
+
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    environment: npm
+    permissions:
+      contents: read
+      # Erlaubt das OIDC-Zertifikat. Ohne diese Zeile scheitern beide Uploads.
+      id-token: write
+
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22.x"
+          registry-url: "https://registry.npmjs.org"
+
+      - name: Abhaengigkeiten
+        run: npm ci
+
+      # Ein Tag, der nicht zur Version im Repo passt, veroeffentlicht sonst still
+      # die falsche Fassung. Lieber hier abbrechen als in der Registry aufraeumen.
+      - name: Tag und Versionen muessen uebereinstimmen
+        run: |
+          TAG="${GITHUB_REF#refs/tags/v}"
+          APP=$(node -p "require('./package.json').version")
+          PKG=$(node -p "require('./npm/package.json').version")
+          SRV=$(node -p "require('./server.json').version")
+          SRVPKG=$(node -p "require('./server.json').packages[0].version")
+          echo "Tag=$TAG app=$APP npm=$PKG server=$SRV serverPkg=$SRVPKG"
+          if [ -n "$TAG" ] && [ "$TAG" != "$APP" ]; then
+            echo "::error::Tag v$TAG passt nicht zu package.json ($APP)"; exit 1
+          fi
+          for v in "$PKG" "$SRV" "$SRVPKG"; do
+            if [ "$v" != "$APP" ]; then
+              echo "::error::Versionen laufen auseinander: app=$APP, gefunden=$v"; exit 1
+            fi
+          done
+
+      # Nicht veroeffentlichen, was nicht getestet ist. Die Tests pruefen auch
+      # server.json gegen das MCP-Schema und den mcpName-Besitznachweis.
+      - name: Tests
+        run: npm test
+
+      - name: npm-Paket bauen
+        run: npm run build:npm
+
+      - name: Inhalt zeigen
+        working-directory: npm
+        run: npm pack --dry-run
+
+      # Trusted Publishing braucht eine npm-CLI, die OIDC spricht.
+      - name: npm aktualisieren
+        run: npm install -g npm@latest
+
+      - name: Auf npm veroeffentlichen
+        working-directory: npm
+        run: npm publish --access public
+        # Kein NODE_AUTH_TOKEN — die Anmeldung laeuft ueber Trusted Publishing.
+
+      # Die Registry prueft den Besitz, indem sie das npm-Paket abruft und dessen
+      # mcpName liest. Ist die neue Version dort noch nicht sichtbar, schlaegt sie
+      # fehl — deshalb warten statt hoffen.
+      - name: Auf npm-Verbreitung warten
+        run: |
+          VERSION=$(node -p "require('./npm/package.json').version")
+          for i in $(seq 1 30); do
+            LATEST=$(curl -sf "https://registry.npmjs.org/kepta-mcp" | node -p "JSON.parse(require('fs').readFileSync(0,'utf8'))['dist-tags'].latest" 2>/dev/null || echo "")
+            echo "Versuch $i: npm meldet '$LATEST', erwartet '$VERSION'"
+            [ "$LATEST" = "$VERSION" ] && exit 0
+            sleep 10
+          done
+          echo "::error::kepta-mcp@$VERSION ist nach 5 Minuten nicht auf npm sichtbar"; exit 1
+
+      - name: mcp-publisher holen
+        run: |
+          curl -fL "https://github.com/modelcontextprotocol/registry/releases/latest/download/mcp-publisher_linux_amd64.tar.gz" \
+            | tar xz mcp-publisher
+          chmod +x mcp-publisher
+
+      - name: An der MCP-Registry anmelden
+        run: ./mcp-publisher login github-oidc
+
+      - name: In die MCP-Registry eintragen
+        run: ./mcp-publisher publish
