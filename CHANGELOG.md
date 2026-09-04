@@ -2,6 +2,47 @@
 
 All notable changes are documented in this file. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and versioning follows [SemVer](https://semver.org/).
 
+## [2.6.4] — 2026-09-04
+
+Found while packaging the MCP server for npm — by doing the one thing a new user
+does first: starting the app and their agent at the same time.
+
+### Added
+- **`npx -y kepta`** — the MCP server as an npm package. One file, 20 kB, no
+  dependencies at all, because the bundle needs nothing but Node built-ins. It
+  gives an agent a memory without the desktop app, on the same
+  `~/.kepta/kepta.db`. Needs Node 22.5, which is when `node:sqlite` arrived.
+  This replaces the worst step in the setup: an absolute path to a file you had
+  to build yourself, which no client reports as wrong — it simply never appears.
+
+### Fixed
+- **Two processes opening the same database at once could kill one of them.**
+  `PRAGMA journal_mode = WAL` needs an exclusive lock, and SQLite does not call
+  the busy handler for it, so `busy_timeout` could not help: the second process
+  got "database is locked" and died before serving a single tool. On a first-ever
+  start with the app and the MCP server coming up together, **7 of 12 attempts
+  failed**. The switch now retries briefly and, if it still cannot get the lock,
+  continues without WAL — slower under concurrent access, but usable, and the
+  other process is setting WAL for the file anyway. **20 of 20** simultaneous
+  cold starts now come up clean.
+  This was never an npm problem. It was in the store all along, and it hit
+  exactly the promise the README makes: one database for every tool.
+- `busy_timeout` is set before the statements that can block, not after.
+- One German string left over from the interface translation: `Verbindungsfehler`
+  in the system status.
+
+### Changed
+- README, `mcp.json`, `mcp-config.json` and the config block inside the app all
+  show the `npx` one-liner instead of a path into your own checkout.
+- The root package is `private` — the Electron app cannot be published to npm by
+  accident. Only `npm/` is publishable.
+
+### Tests
+345, up from 333. The new ones guard what the eye does not catch: exactly one
+shebang in line 1 of the bundle (a second one, in line 2, is a syntax error — the
+package installed cleanly and started for nobody), zero foreign dependencies,
+valid syntax, and a second process opening the database while a first one writes.
+
 ## [2.6.3] — 2026-09-04
 
 Found by loading a fresh clone with 6,500 notes and watching what happens.
