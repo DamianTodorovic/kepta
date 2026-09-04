@@ -71,13 +71,13 @@ export function SystemStatus() {
       const data = await res.json();
       setTestResult(res.ok ? { ok: true, msg: `Model answers: “${String(data.text ?? '').trim().slice(0, 40)}”` } : { ok: false, msg: String(data.error ?? `HTTP ${res.status}`) });
     } catch (e) {
-      setTestResult({ ok: false, msg: e instanceof Error ? e.message : 'Verbindungsfehler' });
+      setTestResult({ ok: false, msg: e instanceof Error ? e.message : 'Connection error' });
     } finally {
       setTesting(false);
     }
   };
 
-  const mcpJson = JSON.stringify({ mcpServers: { kepta: { command: 'node', args: ['<KEPTA-PATH>/dist/mcp-server.cjs'] } } }, null, 2);
+  const mcpJson = JSON.stringify({ mcpServers: { kepta: { command: 'npx', args: ['-y', 'kepta'] } } }, null, 2);
   const coverage = health && health.embeddings.total > 0 ? Math.round((health.embeddings.embedded / health.embeddings.total) * 100) : 0;
 
   return (

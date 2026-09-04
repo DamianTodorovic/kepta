@@ -1,8 +1,8 @@
 {
   "name": "kepta",
-  "private": false,
+  "private": true,
   "version": "2.6.3",
-  "description": "KEPTA — Keeps what matters. A local brain for AI agents: SQLite, hybrid retrieval, knowledge graph, MCP 2026-07-28 — no cloud.",
+  "description": "KEPTA \u2014 Keeps what matters. A local brain for AI agents: SQLite, hybrid retrieval, knowledge graph, MCP 2026-07-28 \u2014 no cloud.",
   "author": "KEPTA <hello@kepta.app>",
   "type": "module",
   "scripts": {
@@ -21,7 +21,8 @@
     "eval": "tsx scripts/eval.ts",
     "build:mac": "npm run build && electron-builder --mac --config electron-builder.json",
     "build:linux": "npm run build && electron-builder --linux --config electron-builder.json",
-    "build:win": "npm run build && electron-builder --win --config electron-builder.json"
+    "build:win": "npm run build && electron-builder --win --config electron-builder.json",
+    "build:npm": "node scripts/build-npm.mjs"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.122.0",

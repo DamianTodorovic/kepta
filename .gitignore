@@ -65,3 +65,7 @@ __pycache__/
 *.egg-info/
 .pytest_cache/
 *.py[cod]
+
+# npm-Paket: Bundle wird gebaut (npm run build:npm), nicht eingecheckt
+npm/bin/
+npm/*.tgz

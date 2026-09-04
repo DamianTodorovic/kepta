@@ -1,0 +1,41 @@
+{
+  "name": "kepta",
+  "version": "2.6.3",
+  "description": "Local memory for AI agents over MCP. One SQLite file on your own machine \u2014 no cloud, no account.",
+  "keywords": [
+    "mcp",
+    "model-context-protocol",
+    "memory",
+    "ai",
+    "agents",
+    "claude",
+    "cursor",
+    "local-first",
+    "privacy",
+    "knowledge-graph",
+    "rag",
+    "sqlite"
+  ],
+  "license": "MIT",
+  "author": "KEPTA",
+  "homepage": "https://github.com/DamianTodorovic/kepta",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/DamianTodorovic/kepta.git",
+    "directory": "npm"
+  },
+  "bugs": {
+    "url": "https://github.com/DamianTodorovic/kepta/issues"
+  },
+  "type": "commonjs",
+  "bin": {
+    "kepta": "bin/kepta.js"
+  },
+  "files": [
+    "bin/kepta.js",
+    "README.md"
+  ],
+  "engines": {
+    "node": ">=22.5.0"
+  }
+}

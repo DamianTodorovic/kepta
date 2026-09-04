@@ -1,21 +1,24 @@
 {
-  "_comment": "KEPTA — MCP config for Claude Desktop. Copy this file to ~/Library/Application Support/Claude/claude_desktop_config.json (macOS), or leave it here as mcp-config.json. Adjust 'cwd' and the path to match your checkout.",
+  "_comment": "KEPTA — MCP config for Claude Desktop. Copy the mcpServers block into ~/Library/Application Support/Claude/claude_desktop_config.json (macOS) or %APPDATA%\\Claude\\claude_desktop_config.json (Windows), then restart Claude Desktop.",
   "mcpServers": {
     "kepta": {
       "command": "npx",
-      "args": [
-        "tsx",
-        "src/mcp-server.ts"
-      ],
-      "cwd": "/ABSOLUTE/PATH/TO/kepta",
+      "args": ["-y", "kepta"],
+      "env": {}
+    }
+  },
+  "_alternatives": {
+    "_comment": "Only needed in special cases — the block above covers normal use.",
+    "kepta-installed": {
+      "_comment": "After 'npm i -g kepta': starts instantly, no registry lookup.",
+      "command": "kepta",
+      "args": [],
       "env": {}
     },
-    "kepta-built": {
-      "_comment": "Alternative nach 'npm run build:mcp' — ohne tsx, direkt Node auf gebuildettem CJS",
+    "kepta-from-source": {
+      "_comment": "Your own checkout after 'npm run build:mcp'. Replace the path.",
       "command": "node",
-      "args": [
-        "/ABSOLUTE/PATH/TO/kepta/dist/mcp-server.cjs"
-      ],
+      "args": ["/ABSOLUTE/PATH/TO/kepta/dist/mcp-server.cjs"],
       "env": {}
     }
   }

@@ -314,11 +314,13 @@ That is where KEPTA Enterprise starts. The principle is written as a rule rather
 
 **Just want to use it.** Download the file for your system from [Releases](https://github.com/DamianTodorovic/kepta/releases) and open it. The table below says which one. First launch needs one extra click because the app is not code-signed — that is explained per system further down.
 
-**Connect it to Claude Desktop or Cursor.** One block of text into one file. The ready-made version with your own path is in the app under *Settings → MCP / API*, with a copy button:
+**Connect it to Claude Desktop or Cursor.** One block of text into one file. No path, nothing to build — `npx` fetches the server the first time it is needed:
 
 ```json
-{ "mcpServers": { "kepta": { "command": "node", "args": ["/PATH/kepta/dist/mcp-server.cjs"] } } }
+{ "mcpServers": { "kepta": { "command": "npx", "args": ["-y", "kepta"] } } }
 ```
+
+That is the whole connection, and it works without the desktop app: `npx -y kepta` gives an agent a memory on its own, in the same `~/.kepta/kepta.db` the app uses. If you would rather not have npx check the registry on every start, install it once with `npm i -g kepta` and use `"command": "kepta"` instead. The version with your own checkout path is in the app under *Settings → MCP / API*, with a copy button.
 
 **Run it from source instead.** Needs Node 22.5 or newer:
 
