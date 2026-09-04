@@ -1,6 +1,8 @@
 <p align="center"><img src="public/kepta-logo.svg" width="88" alt="KEPTA"></p>
 <h1 align="center">KEPTA — Behält, was zählt</h1>
-<p align="center"><strong>Das lokale Gehirn für deine KI-Agenten. Ohne Cloud. Ohne Abo.</strong><br>SQLite + hybride Suche + Wissensgraph + MCP.</p>
+<p align="center"><strong>Dein KI-Assistent vergisst dich nach jedem Gespräch.<br>KEPTA behält es — auf deinem eigenen Rechner, in einer Datei.</strong></p>
+
+<p align="center"><sub>Open Source · ohne Cloud · ohne Konto · ohne Abo<br>SQLite · hybride Suche · Wissensgraph · MCP</sub></p>
 
 <p align="center"><a href="README.md">🇬🇧 English</a> · <strong>Deutsch</strong></p>
 
@@ -27,6 +29,45 @@
 <p align="center"><img src="docs/graph-time.gif" alt="Der Wissensgraph mit Zeitregler: zurück auf November 2025 verdunkelt jede Notiz, die es damals noch nicht gab" width="900"></p>
 
 <sub>Der Zeitregler beantwortet, was die meisten Notiz-Apps nicht können: <em>Was wusste ich im November?</em> Jede Erinnerung trägt eine Gültigkeit, der Graph lässt sich damit zurückspulen. Die abgedunkelten Knoten sind nicht gelöscht — sie waren nur noch nicht wahr.</sub>
+
+## 🙋 Neu hier? Fang damit an
+
+**Das Problem.** Du benutzt ChatGPT, Claude oder etwas Ähnliches. Du erklärst dein Projekt, deinen Kunden, wie du Dinge gern hast. Am nächsten Tag öffnest du einen neuen Chat, und er weiß nichts davon. Also erklärst du es wieder. Und wieder.
+
+**Was KEPTA ist.** Ein kleines Programm, das auf deinem eigenen Rechner läuft und sich diese Dinge für dich merkt. Dein Assistent kann selbst darin nachschlagen und Neues hineinschreiben. Nichts geht irgendwohin — die Notizen liegen in einer einzigen Datei bei dir, wie ein Dokument.
+
+**Wie sich das im Alltag anfühlt.** Du sagst Claude, er solle sich merken, dass dein Kunde quartalsweise abrechnet. Zwei Wochen später, in einem völlig neuen Chat, fragst du nach der Rechnung — er weiß es bereits. Du legst ein PDF in einen Ordner, und dein Assistent kann daraus zitieren. Du ziehst um, und die alte Adresse kommt nicht mehr zurück.
+
+**Ist das etwas für dich?**
+
+- Du nutzt oft einen KI-Assistenten und wiederholst dich ständig → ja.
+- Du willst, dass das, was du ihm erzählst, auf deinem Rechner bleibt → ja.
+- Du suchst eine Notiz-App zum Selberschreiben → eher nicht. KEPTA ist dafür gebaut, dass dein *Assistent* sie benutzt.
+
+### Muss ich Entwickler sein?
+
+**Um die App zu benutzen — nein.** Datei für dein System herunterladen, öffnen, fertig. Es ist ein ganz normales Fenster: eine Liste, ein Suchfeld, eine Einstellungsseite. Welche Datei du brauchst, steht weiter unten.
+
+**Um sie mit Claude Desktop oder Cursor zu verbinden — ein bisschen.** Du fügst einen kurzen Textblock in eine Konfigurationsdatei ein. Der Block steht fertig zum Kopieren unter *Einstellungen → MCP / API*. Wer so etwas noch nie gemacht hat, sollte sich für diesen einen Schritt zehn Minuten nehmen.
+
+**Für die klügere Suche — freiwillig.** KEPTA sucht auch ohne alles einwandfrei. Installierst du [Ollama](https://ollama.com) — ein kostenloser Download —, findet es zusätzlich Notizen, die dasselbe mit anderen Worten sagen.
+
+<details>
+<summary><strong>Die Fachwörter auf dieser Seite, in normaler Sprache</strong></summary>
+
+| Wort | Was es hier bedeutet |
+|---|---|
+| **Agent** | Ein KI-Programm, das Werkzeuge benutzen kann statt nur zu antworten — etwa Claude Desktop oder Cursor. |
+| **MCP** | Eine vereinbarte Sprache, in der solche Programme mit Werkzeugen reden. KEPTA spricht sie, deshalb können diese Assistenten deine Notizen lesen und schreiben. |
+| **SQLite** | Eine Datenbank, die einfach eine Datei auf der Festplatte ist. Nichts zu starten, nichts anzumelden; du kannst sie kopieren wie ein Foto. |
+| **Embedding / Vektor** | In Zahlen übersetzter Text, damit ein Rechner erkennt, dass „Autowerkstatt" und „Garage" fast dasselbe meinen. |
+| **BM25 / Volltext** | Klassische Stichwortsuche: Sie findet die Wörter, die du wirklich getippt hast. |
+| **Wissensgraph** | Deine Notizen untereinander verknüpft, wie `[[Links]]` in einem Wiki. |
+| **RRF** | Die Formel, die die drei Suchen oben zu einer Rangfolge zusammenführt. |
+| **Local-first** | Alles passiert auf deinem Rechner. Kein Upload, kein Konto, kein Abo. |
+| **Open Source / MIT** | Der gesamte Quelltext ist öffentlich und frei nutzbar. Du kannst nachlesen, was passiert, statt es mir zu glauben. |
+
+</details>
 
 ## 🎯 Use Cases
 
@@ -271,19 +312,23 @@ Genau da setzt KEPTA Enterprise an. Der Grundsatz dahinter ist bewusst als Regel
 
 **Interesse?** Öffne ein [Issue](https://github.com/DamianTodorovic/kepta/issues) mit dem Label `enterprise` oder schreib an `hello@kepta.app`. Der Preis wird mit den ersten Pilotkunden festgelegt, nicht vorher am Schreibtisch erfunden. Ein Termin steht noch nicht fest — was fehlt, sind keine Ideen, sondern Gespräche mit Leuten, die das wirklich brauchen.
 
-## ⚡ Quick-Start
+## ⚡ Loslegen
+
+**Du willst es einfach benutzen.** Lade unter [Releases](https://github.com/DamianTodorovic/kepta/releases) die Datei für dein System und öffne sie. Welche das ist, steht in der Tabelle darunter. Beim ersten Start braucht es einen zusätzlichen Klick, weil die App nicht signiert ist — das ist weiter unten für jedes System erklärt.
+
+**Mit Claude Desktop oder Cursor verbinden.** Ein Textblock in eine Datei. Die fertige Fassung mit deinem eigenen Pfad steht in der App unter *Einstellungen → MCP / API*, mit Kopierknopf:
+
+```json
+{ "mcpServers": { "kepta": { "command": "node", "args": ["/PFAD/kepta/dist/mcp-server.cjs"] } } }
+```
+
+**Lieber aus dem Quelltext starten.** Braucht Node 22.5 oder neuer:
 
 ```bash
 git clone https://github.com/DamianTodorovic/kepta.git && cd kepta
 npm install && npm test && npm run eval
 npm run dev        # http://localhost:3000
 npm run electron   # Desktop-Shell (optional)
-```
-
-Fertige App: [Releases](https://github.com/DamianTodorovic/kepta/releases). Agent anbinden:
-
-```json
-{ "mcpServers": { "kepta": { "command": "node", "args": ["/PFAD/kepta/dist/mcp-server.cjs"] } } }
 ```
 
 ### 📦 Welche Datei brauche ich?

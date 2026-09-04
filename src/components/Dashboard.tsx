@@ -532,7 +532,7 @@ export function Dashboard() {
       const title: string = data.title || new URL(url).hostname;
       const content: string = data.content || "";
       const tags = ["clip", new URL(url).hostname.replace(/^www\./, "")];
-      await saveMemory({ title, content: `Quelle: ${data.url || url}\n\n${content}`, tags });
+      await saveMemory({ title, content: `Source: ${data.url || url}\n\n${content}`, tags });
       setClipOk(`„${title.slice(0, 48)}“ importiert`);
       setClipUrl("");
       setTimeout(() => setClipOk(null), 3000);
