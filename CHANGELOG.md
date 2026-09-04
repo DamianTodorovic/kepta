@@ -2,6 +2,28 @@
 
 All notable changes are documented in this file. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and versioning follows [SemVer](https://semver.org/).
 
+## [2.6.11] — 2026-09-04
+
+### Fixed
+- **The macOS builds of 2.6.10 never got built.** The signing step added in that
+  version threw on a logging line: it read the return value of `execFileSync`
+  (stdout) as if it were stderr, got `null`, and called `.match` on it. The mac
+  job died; Windows and Linux went through. The 2.6.10 release therefore has no
+  `.dmg` and no mac `.zip` — **use 2.6.11 on macOS**.
+
+  The signing itself was never the problem, and the test suite could not see the
+  difference: it checked the script as *text*. There is now a test that actually
+  runs the hook against a real `.app` bundle and verifies the result with
+  `codesign`. Both failure modes — the null read and removing the signing call —
+  were checked against it.
+
+  Verified on the finished artifacts of a full local build, both architectures:
+  `Identifier=app.kepta.desktop`, `_CodeSignature` present, `codesign --verify
+  --deep --strict` clean inside both DMGs.
+
+### Tests
+384, up from 380.
+
 ## [2.6.10] — 2026-09-04
 
 ### Fixed

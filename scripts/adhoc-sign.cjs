@@ -13,7 +13,7 @@
 // Notarisierung: die Gatekeeper-Warnung bleibt, aber sie wird zur normalen,
 // ueberwindbaren Warnung.
 const path = require("node:path");
-const { execFileSync } = require("node:child_process");
+const { execFileSync, spawnSync } = require("node:child_process");
 
 exports.default = async function adhocSign(context) {
   if (context.electronPlatformName !== "darwin") return;
@@ -25,11 +25,13 @@ exports.default = async function adhocSign(context) {
   // Nicht signieren und hoffen: pruefen. Ein Buendel mit kaputter Signatur ist
   // schlimmer als eines ohne, deshalb bricht der Build hier lieber ab.
   execFileSync("codesign", ["--verify", "--deep", "--strict", app], { stdio: "inherit" });
-  // codesign schreibt seine Beschreibung auf stderr, nicht auf stdout.
-  const info = execFileSync("codesign", ["-dv", "--verbose=2", app], {
-    encoding: "utf8",
-    stdio: ["ignore", "ignore", "pipe"],
-  });
-  const zeile = [/Identifier=\S+/, /Signature=\S+/].map((r) => (info.match(r) ?? ["?"])[0]).join(" ");
+  // codesign schreibt seine Beschreibung auf stderr. execFileSync liefert aber
+  // stdout — mit stdio ["ignore","ignore","pipe"] also null. Genau daran ist der
+  // Build einmal gestorben: an der Protokollzeile, nicht am Signieren.
+  const beschreibung = spawnSync("codesign", ["-dv", "--verbose=2", app], { encoding: "utf8" });
+  const info = beschreibung.stderr ?? "";
+  const zeile = [/Identifier=\S+/, /Signature=\S+/]
+    .map((r) => (info.match(r) ?? ["?"])[0])
+    .join(" ");
   console.log("  geprueft:", zeile);
 };
