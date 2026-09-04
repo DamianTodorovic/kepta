@@ -1,9 +1,9 @@
 {
   "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
-  "name": "io.github.damiantodorovic/kepta",
-  "title": "KEPTA — Agent Memory",
-  "description": "Local memory for AI agents. One SQLite file on your machine — no cloud, no account.",
-  "version": "2.6.5",
+  "name": "io.github.DamianTodorovic/kepta",
+  "title": "KEPTA \u2014 Agent Memory",
+  "description": "Local memory for AI agents. One SQLite file on your machine \u2014 no cloud, no account.",
+  "version": "2.6.6",
   "websiteUrl": "https://github.com/DamianTodorovic/kepta",
   "repository": {
     "url": "https://github.com/DamianTodorovic/kepta",
@@ -13,9 +13,11 @@
     {
       "registryType": "npm",
       "identifier": "kepta-mcp",
-      "version": "2.6.5",
+      "version": "2.6.6",
       "runtimeHint": "npx",
-      "transport": { "type": "stdio" }
+      "transport": {
+        "type": "stdio"
+      }
     }
   ]
 }

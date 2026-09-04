@@ -46,6 +46,17 @@ describe("MCP-Registry: der Besitznachweis", () => {
     expect(npmPaket.mcpName).toBe(server.name);
   });
 
+  it("nennt den GitHub-Nutzer buchstabengenau so wie das Repository", () => {
+    // Die Registry vergleicht den Namensraum zeichengenau: "io.github.damiantodorovic"
+    // wurde mit 403 abgelehnt, obwohl GitHub-Namen sonst gross-/kleinschreibungsblind
+    // sind. Der Repository-Pfad ist die einzige Quelle im Repo, die die richtige
+    // Schreibweise kennt — also wird dagegen geprueft.
+    const url: string = npmPaket.repository?.url ?? "";
+    const besitzer = url.match(/github\.com\/([^/]+)\//)?.[1];
+    expect(besitzer).toBeTruthy();
+    expect(server.name).toBe(`io.github.${besitzer}/kepta`);
+  });
+
   it("verweist auf das Paket, das wirklich veroeffentlicht wird", () => {
     const paket = server.packages[0];
     expect(paket.registryType).toBe("npm");

@@ -272,7 +272,7 @@ Der Chat existiert, um Retrieval zu beweisen. Der Alltag läuft über MCP.
 npx -y kepta-mcp
 ```
 
-Das ist die ganze Installation: eine Datei, 20 kB, keine Abhängigkeiten. Damit bekommt ein Agent ein Gedächtnis **ohne die Desktop-App** — dieselbe `~/.kepta/kepta.db`, du kannst also ohne Fenster anfangen und es später dazunehmen oder beides nebeneinander betreiben. Braucht Node 22.5 oder neuer, denn erst dort gibt es `node:sqlite`. Details: [npm/README.md](npm/README.md) · [npm](https://www.npmjs.com/package/kepta-mcp)
+Das ist die ganze Installation: eine Datei, 20 kB, keine Abhängigkeiten. Damit bekommt ein Agent ein Gedächtnis **ohne die Desktop-App** — dieselbe `~/.kepta/kepta.db`, du kannst also ohne Fenster anfangen und es später dazunehmen oder beides nebeneinander betreiben. Braucht Node 22.5 oder neuer, denn erst dort gibt es `node:sqlite`. Eingetragen in der [offiziellen MCP-Registry](https://registry.modelcontextprotocol.io) als `io.github.DamianTodorovic/kepta`. Details: [npm/README.md](npm/README.md) · [npm](https://www.npmjs.com/package/kepta-mcp)
 
 ## 🐍 Python-Client
 

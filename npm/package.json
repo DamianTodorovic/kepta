@@ -1,6 +1,6 @@
 {
   "name": "kepta-mcp",
-  "version": "2.6.5",
+  "version": "2.6.6",
   "description": "Local memory for AI agents over MCP. One SQLite file on your own machine \u2014 no cloud, no account.",
   "keywords": [
     "mcp",
@@ -39,5 +39,5 @@
   "engines": {
     "node": ">=22.5.0"
   },
-  "mcpName": "io.github.damiantodorovic/kepta"
+  "mcpName": "io.github.DamianTodorovic/kepta"
 }

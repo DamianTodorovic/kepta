@@ -2,6 +2,33 @@
 
 All notable changes are documented in this file. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and versioning follows [SemVer](https://semver.org/).
 
+## [2.6.6] — 2026-09-04
+
+### Added
+- **KEPTA is listed in the official MCP registry** as
+  `io.github.DamianTodorovic/kepta` — the place where people go looking for MCP
+  servers on purpose rather than by accident. `server.json` declares the entry;
+  the npm package proves ownership through its `mcpName` field.
+
+### Fixed
+- The registry compares the GitHub namespace **byte for byte**:
+  `io.github.damiantodorovic` was refused with 403 although GitHub usernames are
+  otherwise case-blind. Since the ownership proof lives inside a published npm
+  package and published versions are immutable, correcting it cost a version.
+  A test now derives the correct spelling from the repository URL — the only
+  place in the repo that knows it — so this cannot happen twice.
+
+### Tests
+352, up from 345. Seven new ones hold the registry entry together: the schema
+(validated against a local copy of the official one, so the test needs no
+network), the 100-character description limit, the reverse-DNS name, the
+ownership field, the package reference, the namespace spelling, and the single
+version across four files. Each was checked against its own failure case.
+
+## [2.6.5] — 2026-09-04
+
+Superseded within the hour by 2.6.6 — see above for why.
+
 ## [2.6.4] — 2026-09-04
 
 Found while packaging the MCP server for npm — by doing the one thing a new user
