@@ -8,11 +8,11 @@
 
 <p align="center"><a href="https://github.com/DamianTodorovic/kepta/releases"><img alt="Release" src="https://img.shields.io/github/v/release/DamianTodorovic/kepta?label=Download"></a> <a href="https://github.com/DamianTodorovic/kepta/actions/workflows/build.yml"><img alt="CI" src="https://github.com/DamianTodorovic/kepta/actions/workflows/build.yml/badge.svg"></a> <a href="https://pypi.org/project/kepta/"><img alt="PyPI" src="https://img.shields.io/pypi/v/kepta?label=pip%20install%20kepta"></a> <img alt="Coverage" src="https://img.shields.io/badge/coverage-91%25-brightgreen"> <img alt="Tests" src="https://img.shields.io/badge/tests-333%20passing-brightgreen"> <a href="LICENSE"><img alt="MIT" src="https://img.shields.io/badge/License-MIT-black"></a> <img alt="Platform" src="https://img.shields.io/badge/platform-macOS%20%7C%20Windows%20%7C%20Linux-lightgrey"></p>
 
-## 🎬 So sieht KEPTA aus
+## 🎬 Die ganze App in einem Durchgang
 
-<p align="center"><img src="docs/demo.gif" alt="Suche in KEPTA: aus 30 Einträgen wird durch die Eingabe „carbonara" ein Treffer, der sich im Editor öffnet" width="900"></p>
+<p align="center"><img src="docs/demo.gif" alt="Rundgang durch KEPTA: Suchen, Notiz im Editor oeffnen, neue anlegen, in den Papierkorb und zurueck, Wissensgraph mit Zeitregler, Chat-Cockpit, MCP-Einstellungen, Befehlspalette und Hell/Dunkel" width="900"></p>
 
-<sub>Tippen, filtern, öffnen — aus 18 Einträgen wird ein Treffer. Aufgenommen aus Version 2.6.0. Die Oberfläche ist englisch.</sub>
+<sub>Ein kompletter Durchgang: Suche, Editor mit Typ und Gültigkeit, Notiz anlegen, Papierkorb mit Wiederherstellen, Wissensgraph samt Zeitregler, Chat-Cockpit, MCP-Endpunkte, Befehlspalette und Hell/Dunkel. Aufgenommen aus Version 2.6.3 mit erfundenen Demo-Daten. Die Oberfläche ist englisch.</sub>
 
 | Index & hybride Suche | Wissensgraph |
 |---|---|

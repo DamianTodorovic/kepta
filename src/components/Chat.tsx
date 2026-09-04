@@ -883,7 +883,7 @@ export function Chat({ activeMemories, onSaveToBrain, onSaveToBrainWithMeta, isF
             type="text"
             value={input}
             onChange={(e) => setInput(e.target.value)}
-            placeholder={isStreaming ? "Generating an answer — Stop to cancel" : "Nachricht schreiben…"}
+            placeholder={isStreaming ? "Generating an answer — Stop to cancel" : "Write a message…"}
             disabled={isStreaming}
             className="hud-input w-full rounded-xl py-3.5 pl-4 pr-[88px] text-sm disabled:opacity-60"
             aria-label="Chat Eingabe"
@@ -904,8 +904,8 @@ export function Chat({ activeMemories, onSaveToBrain, onSaveToBrainWithMeta, isF
               type="submit"
               disabled={!input.trim() || isStreaming}
               className="btn-primary h-full w-10 flex items-center justify-center rounded-lg disabled:opacity-40"
-              title="Senden (Enter)"
-              aria-label="Senden"
+              title="Send (Enter)"
+              aria-label="Send"
             >
               <Send className="w-4 h-4" />
             </button>

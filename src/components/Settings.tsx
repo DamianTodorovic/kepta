@@ -299,7 +299,7 @@ export function Settings() {
                       type="text"
                       value={settings.model}
                       onChange={(e) => update({ model: e.target.value })}
-                      placeholder="z.B. gpt-4o-mini"
+                      placeholder="e.g. gpt-4o-mini"
                       className={inputClass}
                       list="model-list"
                     />
