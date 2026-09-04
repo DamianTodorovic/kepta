@@ -2,6 +2,25 @@
 
 All notable changes are documented in this file. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and versioning follows [SemVer](https://semver.org/).
 
+## [2.6.8] — 2026-09-04
+
+### Fixed
+- **Consolidation could point a live memory at a dead one.** `pickKeep` ranks by
+  `updatedAt`, and superseding a memory sets `updatedAt` — so a memory that had
+  just been retired outranked its live duplicate and was chosen as the one to
+  keep. The live note would then be downweighted to 40 % with a successor that
+  was itself already superseded: a chain into nothing, and a note that quietly
+  stops winning searches it should win.
+
+  Consolidation now only considers memories that are not superseded, and the
+  apply step checks both sides — a successor that is itself retired is refused.
+  Found while cleaning a real database of 45 notes: the reversed pair showed up
+  in the dry run, and only the existing guard on the duplicate side kept it from
+  landing.
+
+### Tests
+361, up from 358.
+
 ## [2.6.7] — 2026-09-04
 
 ### Fixed

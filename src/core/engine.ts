@@ -248,7 +248,13 @@ export async function consolidateMemories(
 ): Promise<ConsolidationResult> {
   const threshold = opts.threshold ?? 0.92;
   const dryRun = opts.dryRun ?? true;
-  const active = loadActive(store);
+  // Nur lebende Memories aufraeumen. Bereits ersetzte liegen als Verlauf da; sie
+  // erneut zu vergleichen ist nicht nur ueberfluessig, sondern gefaehrlich:
+  // pickKeep bewertet nach updatedAt, und das Ersetzen selbst setzt updatedAt frisch.
+  // Eine tote Memory gewann dadurch als "behalten" — und eine lebende Dublette zeigte
+  // anschliessend auf sie. Ergebnis: die lebende Notiz auf 40 % heruntergewichtet,
+  // mit einem Nachfolger, der selbst ausgemustert ist.
+  const active = loadActive(store).filter((m) => !m.record.supersededBy);
   const candidates: ConsolidationCandidate[] = [];
 
   // Embedding-Dubletten: Centroid pro Memory+Modell vergleichen — Cosine nur zwischen
@@ -308,7 +314,11 @@ export async function consolidateMemories(
   let applied = 0;
   if (!dryRun) {
     for (const c of candidates) {
-      if (store.getMemory(c.duplicateId) && !store.getMemory(c.duplicateId)?.supersededBy) {
+      // Beide Seiten pruefen: der Nachfolger darf nicht selbst ausgemustert sein,
+      // sonst entsteht eine Kette ins Leere.
+      const dublette = store.getMemory(c.duplicateId);
+      const nachfolger = store.getMemory(c.keepId);
+      if (dublette && !dublette.supersededBy && nachfolger && !nachfolger.supersededBy) {
         store.supersedeMemory(c.duplicateId, c.keepId);
         applied++;
       }
