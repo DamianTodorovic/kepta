@@ -43,8 +43,9 @@ describe("MCP-Protokoll", () => {
   it("initialize verhandelt 2026-07-28 und Legacy-Versionen", async () => {
     expect(asResult(await rpc(store, "initialize", { protocolVersion: "2026-07-28" })).protocolVersion).toBe("2026-07-28");
     expect(asResult(await rpc(store, "initialize", { protocolVersion: "2024-11-05" })).protocolVersion).toBe("2024-11-05");
-    // Unbekannte Version → latest
-    expect(asResult(await rpc(store, "initialize", { protocolVersion: "1999-01-01" })).protocolVersion).toBe(LATEST_PROTOCOL_VERSION);
+    // Unbekannte Version → nie neuer als erfragt, sonst bricht der Client ab
+    expect(asResult(await rpc(store, "initialize", { protocolVersion: "1999-01-01" })).protocolVersion).toBe("2024-11-05");
+    expect(asResult(await rpc(store, "initialize", { protocolVersion: "2025-03-26" })).protocolVersion).toBe("2024-11-05");
   });
 
   it("server/discover liefert Server-Info + alle Tools (stateless core)", async () => {
@@ -241,9 +242,14 @@ describe("negotiateVersion", () => {
     expect(negotiateVersion("2026-07-28")).toBe("2026-07-28");
     expect(negotiateVersion("2024-11-05")).toBe("2024-11-05");
   });
-  it("unbekannte Version oder Nicht-String → latest", () => {
-    expect(negotiateVersion("1999-01-01")).toBe(LATEST_PROTOCOL_VERSION);
-    expect(negotiateVersion(undefined)).toBe(LATEST_PROTOCOL_VERSION);
-    expect(negotiateVersion(42)).toBe(LATEST_PROTOCOL_VERSION);
+  it("antwortet nie neuer als erfragt — sonst steigt der Client aus", () => {
+    // Dieser Test hielt frueher das Gegenteil fest: jede unbekannte Anfrage sollte
+    // die neueste Version bekommen. Genau daran scheiterte Claude Desktop.
+    expect(negotiateVersion("1999-01-01")).toBe("2024-11-05");
+    expect(negotiateVersion(undefined)).toBe("2024-11-05");
+    expect(negotiateVersion(42)).toBe("2024-11-05");
+  });
+  it("nur ein Client aus der Zukunft bekommt unsere neueste", () => {
+    expect(negotiateVersion("2099-01-01")).toBe(LATEST_PROTOCOL_VERSION);
   });
 });

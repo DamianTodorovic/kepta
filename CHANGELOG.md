@@ -2,6 +2,27 @@
 
 All notable changes are documented in this file. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and versioning follows [SemVer](https://semver.org/).
 
+## [2.6.7] — 2026-09-04
+
+### Fixed
+- **Claude Desktop could not start KEPTA at all.** The client asked for an older
+  protocol version, and the server answered with its newest —
+  `Server's protocol version is not supported: 2026-07-28` — so the connection
+  was refused before a single tool was offered. Version negotiation now never
+  answers with something newer than what was asked for: it picks the highest
+  supported version that is not newer than the request, and only a client newer
+  than everything we know gets our latest. A client older than everything we
+  support gets our oldest, which is at least the nearest thing it might accept.
+
+  The old test asserted the broken behaviour as if it were correct
+  ("unknown version → latest"), which is why 352 green tests said nothing. It
+  now asserts the rule that matters: never newer than asked. Checked against
+  eight requested versions on the built binary, including the `2025-03-26` that
+  Claude Desktop actually sends.
+
+### Tests
+358, up from 352.
+
 ## [2.6.6] — 2026-09-04
 
 ### Added

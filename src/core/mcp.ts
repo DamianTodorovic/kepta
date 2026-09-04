@@ -470,11 +470,36 @@ export async function callTool(store: KeptaStore, name: string, args: Record<str
 
 // ---------- Protokoll-Handling ----------
 
+// Absteigend sortiert, damit "die hoechste, die passt" ein find() ist. Die
+// Versionen sind Datumsangaben in YYYY-MM-DD — lexikografisch vergleichen genuegt.
+const VERSIONEN_ABSTEIGEND = [...PROTOCOL_VERSIONS].sort().reverse();
+const AELTESTE_PROTOCOL_VERSION = VERSIONEN_ABSTEIGEND[VERSIONEN_ABSTEIGEND.length - 1];
+
+/**
+ * Waehlt die Protokollversion fuer die Antwort auf initialize.
+ *
+ * Frueher lief jede unbekannte Anfrage auf die neueste Version hinaus. Fuer einen
+ * Client, der etwas Aelteres spricht, ist das die eine Antwort, mit der er nichts
+ * anfangen kann: Claude Desktop bat um 2025-03-26, bekam 2026-07-28 und brach ab
+ * mit "Server's protocol version is not supported". KEPTA war damit fuer den
+ * verbreitetsten MCP-Client unbenutzbar.
+ *
+ * Richtig ist, nie ueber das hinauszugehen, wonach gefragt wurde: die hoechste
+ * unterstuetzte Version, die nicht neuer ist als die erfragte. Nur wenn der Client
+ * neuer ist als alles, was wir kennen, bieten wir unsere neueste an — herunter-
+ * handeln kann er dann selbst.
+ */
 export function negotiateVersion(requested: unknown): string {
-  if (typeof requested === "string" && (PROTOCOL_VERSIONS as readonly string[]).includes(requested)) {
-    return requested;
+  if (typeof requested !== "string" || requested === "") {
+    // Ohne Angabe ist der Client nicht regelkonform. Die aelteste unterstuetzte
+    // Version versteht dann noch am ehesten jemand.
+    return AELTESTE_PROTOCOL_VERSION;
   }
-  return LATEST_PROTOCOL_VERSION;
+  if ((PROTOCOL_VERSIONS as readonly string[]).includes(requested)) return requested;
+  // Ist der Client aelter als alles, was wir kennen, gibt es nichts, was er sicher
+  // versteht. Dann ist unsere aelteste die naechstgelegene und beste Chance —
+  // die neueste anzubieten hiesse, die Ablehnung zu garantieren.
+  return VERSIONEN_ABSTEIGEND.find((v) => v <= requested) ?? AELTESTE_PROTOCOL_VERSION;
 }
 
 export interface McpContext {
