@@ -1,6 +1,6 @@
 # kepta-mcp
 
-**Local memory for AI agents, over MCP.** One SQLite file on your own machine — no cloud, no account, no subscription.
+**Local memory for AI agents, over MCP.** One SQLite file on your own machine — no cloud, no account, no subscription. The store is never synced anywhere; what an agent then puts into a prompt travels wherever that agent's model runs.
 
 Your assistant forgets you after every chat. KEPTA remembers: Claude Desktop, Cursor and any other client that speaks the Model Context Protocol read and write the same memory, and it never leaves your computer.
 
@@ -41,7 +41,7 @@ Each entry carries a validity window and a confidence score. Move house, and the
 
 ## Requirements
 
-**Node 22.5 or newer.** The package has no dependencies at all — it uses `node:sqlite`, which arrived in 22.5.
+**Node 22.13 or newer.** The package has no dependencies at all — it uses `node:sqlite`, which arrived in 22.5.
 
 Search works immediately. Install [Ollama](https://ollama.com) and `ollama pull nomic-embed-text` if you also want it to find notes that say the same thing in different words.
 

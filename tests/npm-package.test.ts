@@ -64,8 +64,13 @@ describe("npm-Paket: die package.json", () => {
     expect(paket.license).toBe("MIT");
   });
 
-  it("verlangt Node 22.5 — davor gibt es node:sqlite nicht", () => {
-    expect((paket.engines as Record<string, string>).node).toBe(">=22.5.0");
+  it("verlangt Node 22.13 — davor liegt node:sqlite hinter einem Flag", () => {
+    // node:sqlite kam zwar in 22.5.0, aber nur hinter --experimental-sqlite.
+    // Ohne Flag erst ab 22.13.0 / 23.4.0 (Node-Doku, doc/api/sqlite.md).
+    // Mit ">=22.5.0" installierte das Paket auf 22.5–22.12 sauber und stuerzte
+    // dann beim Import ab — ein Fehler, den npm nicht abfaengt, weil engines
+    // nur warnt.
+    expect((paket.engines as Record<string, string>).node).toBe(">=22.13.0");
   });
 
   it("deklariert keine Abhaengigkeiten", () => {

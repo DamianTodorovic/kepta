@@ -105,7 +105,7 @@ flowchart LR
   ENG -. embeddings .-> OLL
 ```
 
-No service in between, no account, no telemetry. The server binds to `127.0.0.1` and nothing else.
+No service in between, no account, no telemetry. The server binds to `127.0.0.1` unless you set `KEPTA_HOST` yourself. Your memories are stored only in that SQLite file — there is no server of mine for them to reach. The one path where data does leave is the app's optional chat: if you enter a key for OpenAI, Anthropic or another provider, what you send that provider goes to them. It is off until you add a key, and the memory store is never synced anywhere.
 
 ## 🔍 How search decides
 
@@ -270,7 +270,7 @@ The chat exists to prove retrieval works. Day-to-day use runs through MCP.
 npx -y kepta-mcp
 ```
 
-That is the entire installation: one file, 20 kB, no dependencies. It gives an agent a memory **without the desktop app** — same `~/.kepta/kepta.db`, so you can start headless and add the window later, or run both side by side. Needs Node 22.5 or newer, because that is when `node:sqlite` arrived. Listed in the [official MCP registry](https://registry.modelcontextprotocol.io) as `io.github.DamianTodorovic/kepta`. Details: [npm/README.md](npm/README.md) · [npm](https://www.npmjs.com/package/kepta-mcp)
+That is the entire installation: one file, 20 kB, no dependencies. It gives an agent a memory **without the desktop app** — same `~/.kepta/kepta.db`, so you can start headless and add the window later, or run both side by side. Needs Node 22.13 or newer, because that is when `node:sqlite` arrived. Listed in the [official MCP registry](https://registry.modelcontextprotocol.io) as `io.github.DamianTodorovic/kepta`. Details: [npm/README.md](npm/README.md) · [npm](https://www.npmjs.com/package/kepta-mcp)
 
 ## 🐍 Python client
 
@@ -330,7 +330,7 @@ That is where KEPTA Enterprise starts. The principle is written as a rule rather
 
 That is the whole connection, and it works without the desktop app: `npx -y kepta-mcp` gives an agent a memory on its own, in the same `~/.kepta/kepta.db` the app uses. If you would rather not have npx check the registry on every start, install it once with `npm i -g kepta-mcp` and use `"command": "kepta"` instead. The version with your own checkout path is in the app under *Settings → MCP / API*, with a copy button.
 
-**Run it from source instead.** Needs Node 22.5 or newer:
+**Run it from source instead.** Needs Node 22.13 or newer:
 
 ```bash
 git clone https://github.com/DamianTodorovic/kepta.git && cd kepta
@@ -352,7 +352,7 @@ npm run electron   # desktop shell (optional)
 | Linux on ARM | `KEPTA-<version>-linux-arm64.AppImage` |
 | Debian, Ubuntu, Mint | `KEPTA-<version>-linux-amd64.deb` |
 
-Every file carries its platform and architecture in the name. On a Mac, if you are unsure: Apple menu → *About This Mac* — "Apple M…" means `arm64`, "Intel" means `x64`. The `.zip` files are the same programs without an installer. The packages are self-contained; you only need Node ≥ 22.5 to build them yourself.
+Every file carries its platform and architecture in the name. On a Mac, if you are unsure: Apple menu → *About This Mac* — "Apple M…" means `arm64`, "Intel" means `x64`. The `.zip` files are the same programs without an installer. The packages are self-contained; you only need Node ≥ 22.13 to build them yourself.
 
 ### 🍎 First launch on macOS
 

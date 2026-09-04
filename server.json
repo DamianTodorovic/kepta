@@ -3,7 +3,7 @@
   "name": "io.github.DamianTodorovic/kepta",
   "title": "KEPTA \u2014 Agent Memory",
   "description": "Local memory for AI agents. One SQLite file on your machine \u2014 no cloud, no account.",
-  "version": "2.6.11",
+  "version": "2.6.12",
   "websiteUrl": "https://github.com/DamianTodorovic/kepta",
   "repository": {
     "url": "https://github.com/DamianTodorovic/kepta",
@@ -13,7 +13,7 @@
     {
       "registryType": "npm",
       "identifier": "kepta-mcp",
-      "version": "2.6.11",
+      "version": "2.6.12",
       "runtimeHint": "npx",
       "transport": {
         "type": "stdio"

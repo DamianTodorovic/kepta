@@ -107,7 +107,7 @@ flowchart LR
   ENG -. Embeddings .-> OLL
 ```
 
-Kein Dienst dazwischen, kein Konto, keine Telemetrie. Der Server lauscht ausschließlich auf `127.0.0.1`.
+Kein Dienst dazwischen, kein Konto, keine Telemetrie. Der Server lauscht auf `127.0.0.1`, solange du nicht selbst `KEPTA_HOST` setzt. Deine Notizen liegen ausschließlich in dieser SQLite-Datei — es gibt keinen Server von mir, den sie erreichen könnten. Der eine Weg, auf dem doch Daten hinausgehen, ist der optionale Chat der App: Wer dort einen Schlüssel für OpenAI, Anthropic oder einen anderen Anbieter einträgt, schickt diesem Anbieter, was er ihm schickt. Ohne Schlüssel passiert das nicht, und der Speicher selbst wird nirgendwohin abgeglichen.
 
 ## 🔍 Wie die Suche entscheidet
 
@@ -272,7 +272,7 @@ Der Chat existiert, um Retrieval zu beweisen. Der Alltag läuft über MCP.
 npx -y kepta-mcp
 ```
 
-Das ist die ganze Installation: eine Datei, 20 kB, keine Abhängigkeiten. Damit bekommt ein Agent ein Gedächtnis **ohne die Desktop-App** — dieselbe `~/.kepta/kepta.db`, du kannst also ohne Fenster anfangen und es später dazunehmen oder beides nebeneinander betreiben. Braucht Node 22.5 oder neuer, denn erst dort gibt es `node:sqlite`. Eingetragen in der [offiziellen MCP-Registry](https://registry.modelcontextprotocol.io) als `io.github.DamianTodorovic/kepta`. Details: [npm/README.md](npm/README.md) · [npm](https://www.npmjs.com/package/kepta-mcp)
+Das ist die ganze Installation: eine Datei, 20 kB, keine Abhängigkeiten. Damit bekommt ein Agent ein Gedächtnis **ohne die Desktop-App** — dieselbe `~/.kepta/kepta.db`, du kannst also ohne Fenster anfangen und es später dazunehmen oder beides nebeneinander betreiben. Braucht Node 22.13 oder neuer, denn erst dort gibt es `node:sqlite`. Eingetragen in der [offiziellen MCP-Registry](https://registry.modelcontextprotocol.io) als `io.github.DamianTodorovic/kepta`. Details: [npm/README.md](npm/README.md) · [npm](https://www.npmjs.com/package/kepta-mcp)
 
 ## 🐍 Python-Client
 
@@ -332,7 +332,7 @@ Genau da setzt KEPTA Enterprise an. Der Grundsatz dahinter ist bewusst als Regel
 
 Das ist die ganze Verbindung, und sie funktioniert auch ohne die Desktop-App: `npx -y kepta-mcp` gibt einem Agenten für sich genommen ein Gedächtnis, in derselben `~/.kepta/kepta.db`, die auch die App benutzt. Wer nicht möchte, dass npx bei jedem Start in der Registry nachsieht, installiert einmal `npm i -g kepta-mcp` und schreibt stattdessen `"command": "kepta"`. Die Fassung mit dem Pfad deines eigenen Checkouts steht in der App unter *Einstellungen → MCP / API*, mit Kopierknopf.
 
-**Lieber aus dem Quelltext starten.** Braucht Node 22.5 oder neuer:
+**Lieber aus dem Quelltext starten.** Braucht Node 22.13 oder neuer:
 
 ```bash
 git clone https://github.com/DamianTodorovic/kepta.git && cd kepta
@@ -354,7 +354,7 @@ npm run electron   # Desktop-Shell (optional)
 | Linux auf ARM | `KEPTA-<version>-linux-arm64.AppImage` |
 | Debian, Ubuntu, Mint | `KEPTA-<version>-linux-amd64.deb` |
 
-Jede Datei trägt Plattform und Architektur im Namen. Im Zweifel beim Mac: Apple-Menü → *Über diesen Mac* — „Apple M…" heißt `arm64`, „Intel" heißt `x64`. Die `.zip`-Dateien sind dieselben Programme ohne Installer. Die Pakete bringen alles mit; Node ≥ 22.5 brauchst du nur zum Selbstbauen.
+Jede Datei trägt Plattform und Architektur im Namen. Im Zweifel beim Mac: Apple-Menü → *Über diesen Mac* — „Apple M…" heißt `arm64`, „Intel" heißt `x64`. Die `.zip`-Dateien sind dieselben Programme ohne Installer. Die Pakete bringen alles mit; Node ≥ 22.13 brauchst du nur zum Selbstbauen.
 
 ### 🍎 Erster Start unter macOS
 

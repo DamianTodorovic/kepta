@@ -2,6 +2,31 @@
 
 All notable changes are documented in this file. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and versioning follows [SemVer](https://semver.org/).
 
+## [2.6.12] — 2026-09-04
+
+Both fixes below came from putting the launch copy in front of ten adversarial
+reviewers. Neither was a wording problem.
+
+### Fixed
+- **The package declared the wrong Node version and would crash after a clean
+  install.** `engines` said `>=22.5.0` because that is when `node:sqlite`
+  appeared — but it appeared behind `--experimental-sqlite`. Node's own docs put
+  the unflagged release at 22.13.0 / 23.4.0. On Node 22.5 through 22.12 the
+  install succeeded and the first `require("node:sqlite")` threw. `engines` only
+  warns, so npm let it through. Now `>=22.13.0`.
+
+- **The privacy claim was stronger than the code.** The README said "the server
+  binds to 127.0.0.1 and nothing else", while `server.ts` reads
+  `process.env.KEPTA_HOST || "127.0.0.1"`, and `src/lib/ai.ts` carries thirteen
+  external provider endpoints for the desktop chat. Both READMEs now say what is
+  actually true: the store is never synced anywhere and there is no server of
+  ours to reach, the bind address holds unless you set `KEPTA_HOST` yourself, and
+  the optional chat sends whatever you send it to the provider whose key you
+  entered.
+
+  The promise is not weaker for being exact. It is the difference between a claim
+  that survives a packet capture and one that does not.
+
 ## [2.6.11] — 2026-09-04
 
 ### Fixed
