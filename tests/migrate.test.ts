@@ -39,9 +39,20 @@ afterEach(() => {
 });
 
 describe("legacyJsonPaths", () => {
-  it("stellt KEPTA_DATA_DIR/memories.json an erste Stelle und liefert die Fallback-Pfade", () => {
+  // Frueher standen die Home-Pfade zusaetzlich in der Liste. Eine frisch
+  // angelegte Datenbank in einem eigenen Datenverzeichnis sog damit die
+  // Altnotizen aus dem Home auf — aufgefallen beim npm-Test, als 34 fremde
+  // Eintraege in einer leeren Instanz auftauchten.
+  it("sucht bei gesetztem KEPTA_DATA_DIR ausschliesslich dort — kein Rueckgriff aufs Home", () => {
     const paths = legacyJsonPaths();
-    expect(paths[0]).toBe(path.join(dir, "memories.json"));
+    expect(paths).toEqual([path.join(dir, "memories.json")]);
+    expect(paths.some((p) => p.includes(".kepta"))).toBe(false);
+    expect(paths.some((p) => p.includes(".ki-gehirn"))).toBe(false);
+  });
+
+  it("faellt ohne KEPTA_DATA_DIR weiterhin auf die Home-Pfade zurueck", () => {
+    delete process.env.KEPTA_DATA_DIR;
+    const paths = legacyJsonPaths();
     expect(paths.some((p) => p.endsWith(path.join(".kepta", "memories.json")))).toBe(true);
     expect(paths.some((p) => p.endsWith(path.join(".ki-gehirn", "memories.json")))).toBe(true);
   });

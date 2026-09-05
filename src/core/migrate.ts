@@ -21,13 +21,21 @@ export interface MigrationResult {
   backupPath: string | null;
 }
 
+/**
+ * Wer KEPTA_DATA_DIR ausdrücklich setzt, meint dieses Verzeichnis — und nur
+ * dieses. Vorher wurde zusätzlich im Home gesucht, sodass eine frisch
+ * angelegte Datenbank stillschweigend die Altnotizen aus ~/.kepta oder
+ * ~/.ki-gehirn aufsog. Fuer eine Kanzlei, die Mandanten ueber getrennte
+ * Datenverzeichnisse trennt, waere das ein Uebersprung zwischen Mandaten;
+ * beim Testen holt es fremde Daten in den Lauf. Ohne gesetztes
+ * KEPTA_DATA_DIR bleiben die Home-Pfade wie bisher.
+ */
 export function legacyJsonPaths(): string[] {
+  const datenVerzeichnis = process.env.KEPTA_DATA_DIR;
+  if (datenVerzeichnis) return [path.join(datenVerzeichnis, "memories.json")];
+
   const home = os.homedir();
-  return [
-    process.env.KEPTA_DATA_DIR ? path.join(process.env.KEPTA_DATA_DIR, "memories.json") : "",
-    path.join(home, ".kepta", "memories.json"),
-    path.join(home, ".ki-gehirn", "memories.json"),
-  ].filter(Boolean);
+  return [path.join(home, ".kepta", "memories.json"), path.join(home, ".ki-gehirn", "memories.json")];
 }
 
 export function migrateFromLegacyJson(store: KeptaStore): MigrationResult {
