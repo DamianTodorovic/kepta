@@ -38,6 +38,7 @@ describe("memory core boundary (src/core)", () => {
       "mcp.ts",
       "migrate.ts",
       "obsidian.ts",
+      "praxissync.ts",
       "stopwords.ts",
       "store.ts",
       "types.ts",
