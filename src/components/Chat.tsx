@@ -792,7 +792,7 @@ export function Chat({ activeMemories, onSaveToBrain, onSaveToBrainWithMeta, isF
                   {msg.sources && msg.sources.length > 0 && (
                     <div className="flex flex-wrap gap-1.5 items-center">
                       <span className="hud-label text-[9px] flex items-center gap-1">
-                        <Hash className="w-3 h-3" /> Quellen:
+                        <Hash className="w-3 h-3" /> Sources:
                       </span>
                       {msg.sources.slice(0, 6).map((s) => (
                         <span
