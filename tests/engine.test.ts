@@ -282,6 +282,8 @@ describe("writeGate — ADD/UPDATE/DELETE/NOOP", () => {
   it("ADD ohne ähnliche Erinnerung; LLM-Entscheidung wird gefolgt", async () => {
     const store = freshStore();
     store.createMemory({ id: "vorh", title: "Server Passwort", content: "hunter2" });
+    indexMemory(store, "vorh");
+    for (const c of store.chunksNeedingEmbedding(50)) store.setEmbedding(c.memoryId, c.seq, new Float32Array([1, 0, 0]), "fake");
     const ask = vi.fn(async (prompt: string) => {
       if (prompt.includes("hunter2")) return '{"decision":"UPDATE","reason":"aktueller"}';
       return '{"decision":"ADD"}';
