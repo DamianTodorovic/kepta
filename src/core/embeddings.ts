@@ -1,6 +1,7 @@
 // Embeddings via Ollama (/api/embed) — persistente Chunk-Vektoren + Hintergrund-Queue.
 // Ohne Ollama läuft KEPTA weiterhin rein lexikalisch (FTS5-BM25), alles optional.
 import type { KeptaStore } from "./store";
+import type { AuditSink } from "./extensions";
 
 export const DEFAULT_EMBED_MODEL = process.env.KEPTA_EMBED_MODEL || "nomic-embed-text";
 
@@ -66,10 +67,29 @@ export interface EmbedResult {
   error?: string;
 }
 
-export async function embedTexts(inputs: string[], model: string = DEFAULT_EMBED_MODEL): Promise<EmbedResult> {
+export async function embedTexts(
+  inputs: string[],
+  model: string = DEFAULT_EMBED_MODEL,
+  audit?: AuditSink,
+  baseUrlOverride?: string
+): Promise<EmbedResult> {
+  const base = (baseUrlOverride ?? ollamaBaseUrl()).replace(/\/+$/, "");
+  let host = "";
+  try {
+    host = new URL(base).hostname;
+  } catch {
+    host = base;
+  }
+  if (audit && !["127.0.0.1", "localhost", "::1"].includes(host)) {
+    try {
+      audit.emit({ at: new Date().toISOString(), actorId: "kepta-core", action: "egress", detail: { host, model, count: inputs.length } });
+    } catch {
+      // egress journal must never break embeddings
+    }
+  }
   if (inputs.length === 0) return { ok: true, embeddings: [], model };
   try {
-    const res = await fetch(`${ollamaBaseUrl()}/api/embed`, {
+    const res = await fetch(`${base}/api/embed`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ model, input: inputs }),

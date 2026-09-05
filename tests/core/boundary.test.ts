@@ -34,6 +34,7 @@ describe("memory core boundary (src/core)", () => {
     expect(names).toEqual([
       "embeddings.ts",
       "engine.ts",
+      "extensions.ts",
       "mcp.ts",
       "migrate.ts",
       "obsidian.ts",

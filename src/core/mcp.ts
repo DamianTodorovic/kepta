@@ -333,7 +333,13 @@ export function saveWithIndex(store: KeptaStore, args: Record<string, unknown>):
 }
 
 export async function callTool(store: KeptaStore, name: string, args: Record<string, unknown>): Promise<{ content: unknown[]; structuredContent: Record<string, unknown>; isError?: boolean }> {
+  const audit = (action: Parameters<typeof store["audit"]>[0], target?: string) => store.audit(action, target);
   try {
+    if (name === "memory_search") audit("search", String(args.query ?? ""));
+    else if (name === "memory_save") audit("write", String(args.title ?? ""));
+    else if (name === "memory_update") audit("update", String(args.id ?? ""));
+    else if (name === "memory_delete" || name === "memory_forget") audit("delete", String(args.id ?? ""));
+    else if (name === "memory_list" || name === "memory_graph") audit("read", name);
     switch (name) {
       case "memory_search": {
         if (!args.query || !String(args.query).trim()) throw new Error("a query is required");

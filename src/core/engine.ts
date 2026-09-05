@@ -205,6 +205,14 @@ export async function searchMemories(store: KeptaStore, params: SearchParams): P
     });
   }
 
+  // PolicyGate: letzte Instanz vor der Rueckgabe (nach RRF + Boosts)
+  const actor = store.extensions.identity.current();
+  const kept = store.extensions.policy.filterResults(actor, hits.map((h) => h.memory));
+  if (kept.length !== hits.length) {
+    const keep = new Set(kept.map((r) => r.id));
+    for (let i = hits.length - 1; i >= 0; i--) if (!keep.has(hits[i]!.memory.id)) hits.splice(i, 1);
+  }
+
   hits.sort((a, b) => b.score - a.score || b.memory.updatedAt - a.memory.updatedAt);
   const top = hits.slice(0, limit);
   // Zugriffs-Statistik für die Retention aktualisieren (fire-and-forget-semantisch, aber sync)

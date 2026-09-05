@@ -16,6 +16,7 @@ import type {
   ChunkRecord,
 } from "./types";
 import { contentTerms } from "./stopwords";
+import { defaultExtensions, type KeptaExtensions, type AuditAction } from "./extensions";
 
 const SCHEMA_VERSION = 1;
 const VALID_TYPES: MemoryType[] = ["semantic", "episodic", "procedural"];
@@ -69,8 +70,9 @@ function kurzSchlafen(ms: number): void {
 export class KeptaStore {
   readonly db: DatabaseSync;
   readonly dbPath: string;
+  readonly extensions: KeptaExtensions;
 
-  constructor(dbPath: string = defaultDbPath()) {
+  constructor(dbPath: string = defaultDbPath(), extensions: KeptaExtensions = defaultExtensions()) {
     fs.mkdirSync(path.dirname(dbPath), { recursive: true });
     this.dbPath = dbPath;
     this.db = new DatabaseSync(dbPath);
@@ -78,7 +80,11 @@ export class KeptaStore {
     this.db.exec("PRAGMA busy_timeout = 5000");
     this.walEinschalten();
     this.db.exec("PRAGMA foreign_keys = ON");
+    this.extensions = extensions;
     this.migrate();
+    // Encryption seam: a provider returning a key would decrypt the store at
+    // open time. The local default returns null → open as-is (no crypto here).
+    void this.extensions.keys.keyFor(dbPath).catch(() => undefined);
   }
 
   /**
@@ -217,6 +223,18 @@ export class KeptaStore {
     this.db.close();
   }
 
+  private actor(): { actorId: string; scope: string } {
+    return this.extensions.identity.current();
+  }
+
+  audit(action: AuditAction, target?: string, detail?: Record<string, unknown>): void {
+    try {
+      this.extensions.audit.emit({ at: new Date().toISOString(), actorId: this.actor().actorId, action, target, detail });
+    } catch {
+      // audit must never break the memory
+    }
+  }
+
   // ---------- Mapping ----------
 
   private rowToRecord(r: Record<string, unknown>): MemoryRecord {
@@ -296,7 +314,11 @@ export class KeptaStore {
 
   getMemory(id: string): MemoryRecord | null {
     const row = this.getRow(id);
-    return row ? this.rowToRecord(row) : null;
+    if (!row) return null;
+    const record = this.rowToRecord(row);
+    if (!this.extensions.policy.canRead(this.actor(), { id: record.id, scope: record.scope, type: record.type })) return null;
+    this.audit("read", record.id);
+    return record;
   }
 
   findByTitle(title: string): MemoryRecord | null {
@@ -309,11 +331,14 @@ export class KeptaStore {
   createMemory(input: MemoryInput): MemoryRecord {
     const now = Date.now();
     const id = input.id?.trim() || newId();
+    if (!this.extensions.policy.canWrite(this.actor(), { id, scope: input.scope ?? this.actor().scope, type: input.type ?? "semantic" })) {
+      throw new Error("Schreiben verweigert (PolicyGate)");
+    }
     const existing = this.getRow(id);
     if (existing) throw new Error(`Memory existiert bereits: ${id}`);
     const record: MemoryRecord = {
       id,
-      scope: input.scope ?? "local",
+      scope: input.scope ?? this.actor().scope,
       type: input.type && VALID_TYPES.includes(input.type) ? input.type : "semantic",
       title: cleanText(input.title, 200) || "Untitled",
       content: cleanText(input.content, 200_000),
@@ -352,6 +377,7 @@ export class KeptaStore {
         record.accessCount,
         record.utility
       );
+    this.audit("write", record.id);
     return record;
   }
 
@@ -424,15 +450,21 @@ export class KeptaStore {
     sets.push("updated_at = ?");
     params.push(patch.updatedAt ?? Date.now());
     params.push(id);
+    if (!this.extensions.policy.canWrite(this.actor(), { id, scope: String(row.scope), type: String(row.type) })) {
+      throw new Error("Write denied (PolicyGate)");
+    }
     this.db.prepare(`UPDATE memories SET ${sets.join(", ")} WHERE id = ?`).run(...params);
     // Content-Änderung macht Chunks + Embeddings obsolet
     if (patch.content !== undefined) this.db.prepare("DELETE FROM chunks WHERE memory_id = ?").run(id);
+    this.audit("update", id);
     return this.getMemory(id);
   }
 
   trashMemory(id: string): boolean {
     const res = this.db.prepare("UPDATE memories SET deleted_at = ? WHERE id = ? AND deleted_at IS NULL").run(Date.now(), id);
-    return Number(res.changes) > 0;
+    const ok = Number(res.changes) > 0;
+    if (ok) this.audit("delete", id);
+    return ok;
   }
 
   restoreMemory(id: string): boolean {
@@ -442,7 +474,9 @@ export class KeptaStore {
 
   purgeMemory(id: string): boolean {
     const res = this.db.prepare("DELETE FROM memories WHERE id = ?").run(id);
-    return Number(res.changes) > 0;
+    const ok = Number(res.changes) > 0;
+    if (ok) this.audit("delete", id);
+    return ok;
   }
 
   // ---------- Superseding (temporale Invalidierung) ----------
