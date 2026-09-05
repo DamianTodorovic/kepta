@@ -22,14 +22,12 @@ interface SidebarProps {
 
 /* Die Sidebar ist bewusst IMMER dunkel (wie bei Slack/Linear) — sie bildet
    den Kontrast-Rahmen um die Inhaltsfläche und macht die App sofort
-   wiedererkennbar, unabhängig vom Theme. */
-const SIDEBAR_BG = 'linear-gradient(180deg, rgba(17, 20, 31, 0.94), rgba(10, 12, 19, 0.97))';
+   wiedererkennbar, unabhängig vom Theme. Materie liegt in .sidebar-glass. */
 const TEXT_STRONG = '#eef0f8';
 const TEXT_MUTED = 'rgba(226, 229, 242, 0.55)';
 const TEXT_FAINT = 'rgba(226, 229, 242, 0.34)';
 const LINE = 'rgba(255, 255, 255, 0.07)';
 const SURFACE = 'rgba(255, 255, 255, 0.055)';
-const SURFACE_STRONG = 'rgba(255, 255, 255, 0.10)';
 const ACCENT_LIGHT = '#a5b4f5';
 
 export function Sidebar({ tags, selectedTags, onSelectTag, onClearTags, currentView, onNavigate, totalMemories, isFocusMode, toggleFocusMode, showSetup, onOpenSetup }: SidebarProps) {
@@ -46,9 +44,9 @@ export function Sidebar({ tags, selectedTags, onSelectTag, onClearTags, currentV
 
   return (
     <div className={cn(
-      "flex flex-col h-full shrink-0 transition-all duration-300",
+      "sidebar-glass flex flex-col h-full shrink-0 transition-all duration-300",
       isFocusMode ? "w-0 overflow-hidden border-none" : "w-64"
-    )} style={{ background: SIDEBAR_BG, backdropFilter: 'blur(24px) saturate(1.4)', WebkitBackdropFilter: 'blur(24px) saturate(1.4)', borderRight: `1px solid ${LINE}` }}>
+    )}>
       {/* Marke */}
       <div className="h-[64px] px-4 flex items-center gap-2.5 shrink-0" style={{ borderBottom: `1px solid ${LINE}` }}>
         <KeptaMark size={26} radius={7} />
@@ -71,12 +69,11 @@ export function Sidebar({ tags, selectedTags, onSelectTag, onClearTags, currentV
               <button
                 key={item.id}
                 onClick={() => onNavigate(item.id)}
-                className="w-full flex items-center gap-2.5 px-2.5 py-[7px] rounded-lg text-[13.5px] transition-colors text-left"
+                data-active={active}
+                className="sidebar-nav-btn w-full flex items-center gap-2.5 px-2.5 py-[7px] rounded-lg text-[13.5px] text-left"
                 style={{
-                  background: active ? 'rgba(123, 146, 236, 0.17)' : 'transparent',
                   color: active ? ACCENT_LIGHT : TEXT_MUTED,
                   fontWeight: active ? 600 : 490,
-                  boxShadow: active ? 'inset 0 1px 0 rgba(255,255,255,0.08)' : undefined,
                 }}
               >
                 <item.icon className="w-4 h-4 shrink-0" weight={item.weight ?? 'duotone'} style={{ color: active ? ACCENT_LIGHT : TEXT_FAINT }} />
@@ -105,9 +102,9 @@ export function Sidebar({ tags, selectedTags, onSelectTag, onClearTags, currentV
                 <button
                   key={name}
                   onClick={() => onSelectTag(name)}
-                  className="w-full flex items-center gap-2 px-2 py-[5px] rounded-md text-[13px] text-left transition-colors"
+                  data-active={active}
+                  className="sidebar-tag-btn w-full flex items-center gap-2 px-2 py-[5px] rounded-md text-[13px] text-left"
                   style={{
-                    background: active ? SURFACE_STRONG : 'transparent',
                     color: active ? TEXT_STRONG : TEXT_MUTED,
                   }}
                 >
