@@ -37,6 +37,17 @@ function write(res: JsonRpcResponse | null) {
 
 const rl = readline.createInterface({ input: process.stdin, crlfDelay: Infinity });
 
+// Exit only after every pending response has been written — async tool calls
+// (search embeddings, duplicate checks) must never be lost on stdin close.
+let pending = 0;
+let stdinClosed = false;
+function finishIfDrained(): void {
+  if (stdinClosed && pending === 0) {
+    store.close();
+    process.exit(0);
+  }
+}
+
 rl.on("line", (line) => {
   const trimmed = line.trim();
   if (!trimmed) return;
@@ -62,6 +73,7 @@ rl.on("line", (line) => {
     return;
   }
   const req = parsed as JsonRpcRequest;
+  pending++;
   void handleRpc(ctx, req)
     .then(write)
     .catch((e) => {
@@ -70,12 +82,16 @@ rl.on("line", (line) => {
         id: (req.id as string | number | null) ?? null,
         error: { code: -32603, message: e instanceof Error ? e.message : String(e) },
       });
+    })
+    .finally(() => {
+      pending--;
+      finishIfDrained();
     });
 });
 
 rl.on("close", () => {
-  store.close();
-  process.exit(0);
+  stdinClosed = true;
+  finishIfDrained();
 });
 
 console.error(`[kepta MCP] stdio ready — ${SERVER_INFO.name} v${SERVER_INFO.version} — db: ${store.dbPath}`);

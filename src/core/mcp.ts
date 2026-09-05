@@ -3,7 +3,7 @@
 // (2025-06-18, 2024-11-05). Alle Tools liefern structuredContent mit outputSchema.
 import type { KeptaStore } from "./store";
 import type { MemoryType, SearchParams } from "./types";
-import { searchMemories, indexMemory, consolidateMemories } from "./engine";
+import { searchMemories, indexMemory, consolidateMemories, findDuplicateForNew } from "./engine";
 import { chunkText } from "./embeddings";
 import { APP_VERSION } from "./version";
 
@@ -362,7 +362,8 @@ export async function callTool(store: KeptaStore, name: string, args: Record<str
       }
       case "memory_save": {
         const { created, record } = saveWithIndex(store, args);
-        const structured = { created, memory: memoryToOut(record), duplicateWarning: null };
+        const duplicate = await findDuplicateForNew(store, String(args.title ?? ""), String(args.content ?? ""));
+        const structured = { created, memory: memoryToOut(record), duplicateWarning: duplicate };
         return {
           content: [{ type: "text", text: JSON.stringify(structured, null, 2) }],
           structuredContent: structured,
@@ -447,7 +448,7 @@ export async function callTool(store: KeptaStore, name: string, args: Record<str
         if (mode === "supersede") {
           const by = args.supersedeBy ? String(args.supersedeBy) : null;
           store.supersedeMemory(id, by);
-          return { content: [{ type: "text", text: `Ersetzt markiert: ${id}` }], structuredContent: { forgotten: true, mode } };
+          return { content: [{ type: "text", text: `Superseded marked: ${id}` }], structuredContent: { forgotten: true, mode } };
         }
         if (mode === "delete") {
           store.trashMemory(id);

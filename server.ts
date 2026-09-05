@@ -245,7 +245,7 @@ function buildUpstreamHeaders(req: ChatRequest): Record<string, string> {
   } else {
     if (req.apiKey) headers["Authorization"] = `Bearer ${req.apiKey}`;
     if (req.providerId === "openrouter") {
-      headers["HTTP-Referer"] = "ki-gehirn-local";
+      headers["HTTP-Referer"] = "kepta-local";
       headers["X-Title"] = "KEPTA";
     }
   }
@@ -689,7 +689,7 @@ export function createApp(store: KeptaStore) {
   app.post('/api/inbox/scan', writeLimiter, async (_req,res)=>{
     inboxLastScan = Date.now();
     let files: string[] = [];
-    try { files = fs.readdirSync(INBOX_DIR).filter(f=> !f.startsWith('.') && f!=='archiv').map(f=> path.join(INBOX_DIR,f)); } catch {}
+    try { files = fs.readdirSync(INBOX_DIR).filter(f=> !f.startsWith('.') && f!=='archiv' && f!=='archive').map(f=> path.join(INBOX_DIR,f)); } catch {}
     let imported = 0;
     for (const f of files) { const before = activeCount(); await autoImportFile(f); const after = activeCount(); if (after>before) imported += (after-before); }
     res.json({ scanned: files.length, imported, inboxDir: INBOX_DIR });
@@ -1254,7 +1254,7 @@ export function createApp(store: KeptaStore) {
       // Ollama: Modelle zusätzlich über die native API laden
       if (base.includes(":11434")) {
         try {
-          const tags = await fetch("http://localhost:11434/api/tags");
+          const tags = await fetch(`${(process.env.KEPTA_OLLAMA_URL || process.env.OLLAMA_HOST || "http://localhost:11434").replace(/\/+$/, "")}/api/tags`);
           if (tags.ok) {
             const tagData = await tags.json() as { models?: { name?: string }[] };
             const ollamaModels = (tagData?.models || []).map((m) => m.name).filter(Boolean) as string[];

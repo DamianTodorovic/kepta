@@ -589,6 +589,15 @@ A security and robustness release: code-review fixes across the server, core, El
 - `src/lib/semantic.ts`: embedding search POSTs the corpus in batches (max 100 items or ~700k characters per request) instead of one payload
 - Documentation tidied (AGENTS.md, README, `.env.example` listing the variables actually read, AI Studio leftovers removed); test suite: 270 tests
 
+## [2.0.3] — 2026-09-01
+- Liquid-Glass-Knoten im Wissensgraph, individuelles Positionieren (Pinning), Zeitregler, Farb-Picker
+
+## [2.0.2] — 2026-09-01
+- Fremde Agent-Schreibprozesse (MCP) erscheinen sofort in der App (DB-Change-Watcher + SSE)
+
+## [2.0.1] — 2026-09-01
+- CI-Fix: Release-Job Needs-Referenz; v2.0.1-Tag fuer frische DMG
+
 ## [2.1.0] — 2026-09-02
 
 ### Fixes (UI)
