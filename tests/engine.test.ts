@@ -3,7 +3,7 @@ import { tmpdir } from "node:os";
 import path from "node:path";
 import fs from "node:fs";
 import { KeptaStore } from "../src/core/store";
-import { searchMemories, indexMemory, consolidateMemories, findDuplicateForNew, writeGate, writeGateEnabled, gateDecision } from "../src/core/engine";
+import { searchMemories, indexMemory, consolidateMemories, findDuplicateForNew, writeGate, writeGateEnabled, gateDecision, localRerankScore } from "../src/core/engine";
 import { DEFAULT_EMBED_MODEL } from "../src/core/embeddings";
 
 function freshStore(): KeptaStore {
@@ -423,5 +423,54 @@ describe("writeGate-Verdrahtung (F2) — gateDecision/writeGateEnabled", () => {
     const store = freshStore();
     const gate = await gateDecision(store, "Ganz neu", "Fremdes Thema", vi.fn(async () => '{"decision":"NOOP"}'));
     expect(gate?.decision).toBe("ADD");
+  });
+});
+
+describe("F3 — lokales Reranking", () => {
+  afterEach(() => {
+    vi.unstubAllGlobals();
+    vi.unstubAllEnvs();
+  });
+
+  it("Rerank-Dreher: exakte Phrase im Titel überholt den BM25-Rang-1-Treffer", async () => {
+    vi.stubGlobal("fetch", vi.fn(async () => ({ ok: false, status: 503, json: async () => ({}) })));
+    const store = freshStore();
+    // b hat die Terme häufiger (BM25-Rang 1), a trägt die exakte Phrase im Titel
+    const a = store.createMemory({ title: "Umsatzsteuer frist für die aktuellen Server", content: "umsatzsteuer frist nochmal erwähnt" });
+    const b = store.createMemory({ title: "Wichtige Notizen", content: "umsatzsteuer und frist getrennt, umsatzsteuer frist doppelt für Frequenz" });
+    indexMemory(store, a.id);
+    indexMemory(store, b.id);
+
+    const res = await searchMemories(store, { query: "umsatzsteuer frist" });
+    const ha = res.hits.find((h) => h.memory.id === a.id);
+    const hb = res.hits.find((h) => h.memory.id === b.id);
+    expect(ha && hb).toBeTruthy();
+    expect(ha!.components.rerankScore!).toBeGreaterThan(hb!.components.rerankScore!);
+    expect(res.hits[0]!.memory.id).toBe(a.id);
+  });
+
+  it("components.rerankScore liegt in 0..1; leere Query liefert null", async () => {
+    vi.stubGlobal("fetch", vi.fn(async () => ({ ok: false, status: 503, json: async () => ({}) })));
+    const store = freshStore();
+    const m = store.createMemory({ title: "Rust Backend", content: "Speichersicherheit und Performance" });
+    indexMemory(store, m.id);
+    seedEmbeddings(store);
+
+    const res = await searchMemories(store, { query: "speichersicherheit" });
+    expect(res.hits.length).toBeGreaterThan(0);
+    for (const h of res.hits) {
+      expect(h.components.rerankScore).not.toBeNull();
+      expect(h.components.rerankScore!).toBeGreaterThanOrEqual(0);
+      expect(h.components.rerankScore!).toBeLessThanOrEqual(1);
+    }
+    const leere = await searchMemories(store, { query: "", limit: 2 });
+    for (const h of leere.hits) expect(h.components.rerankScore).toBeNull();
+  });
+
+  it("Tag-Treffer erhöht den Rerank-Score (Unit: localRerankScore)", () => {
+    const base = { title: "Deploy", content: "Ausrollen der Anwendung" };
+    const ohne = localRerankScore("devops", { ...base, tags: ["kueche"] }) ?? 0;
+    const mit = localRerankScore("devops", { ...base, tags: ["devops"] }) ?? 0;
+    expect(mit).toBeGreaterThan(ohne);
   });
 });

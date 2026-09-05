@@ -10,6 +10,8 @@ const EXPIRED_FACTOR = 0.5;
 const SUPERSEDED_FACTOR = 0.4;
 const RECENCY_WINDOW_MS = 365 * 24 * 3600 * 1000;
 const RECENCY_MAX_BONUS = 0.15;
+// F3: Rerank-Boost ist bewusst kleiner als ein Bein-Sprung — die Fusion bleibt Basis
+const RERANK_MAX_BOOST = 0.25;
 
 // Oblivion (arXiv:2604.00131): Vergessen = Zugänglichkeits-Zerfall, nie Löschung.
 // R = 0.2 + 0.8·exp(−Δdays / ((U + F + ε)·T)) mit T = 90 Tage — Floor 0.2, damit
@@ -17,8 +19,61 @@ const RECENCY_MAX_BONUS = 0.15;
 const RETENTION_T_DAYS = 90;
 const RETENTION_FLOOR = 0.2;
 
-function retentionFactor(r: { lastAccessAt: number | null; accessCount: number; utility: number }, now: number): number {
-  const days = r.lastAccessAt ? (now - r.lastAccessAt) / (24 * 3600 * 1000) : 0;
+// ---------- F3: lokales Reranking (deterministisch, ohne Netz) ----------
+
+/** Leichtes Stemming für de/en: Strippt einmal die häufigste Endung. */
+function stemme(w: string): string {
+  return w.replace(/(ung|en|er|es|em|e|s|n)$/, "");
+}
+
+/**
+ * Bewertet (Query, Knoten) direkt: Term-Coverage im Content (Stem-/Präfix-Match),
+ * Title-Coverage, exakter Phrase-Treffer und Tag-Treffer — zu einem 0..1-Score.
+ * Die RRF-Fusion bleibt die Rang-Basis; dieser Score verschiebt als moderater
+ * Boost spürbar relevante Treffer und wird als components.rerankScore offengelegt.
+ * null = keine Query (Recency-Liste) — kein Reranking.
+ */
+export function localRerankScore(
+  query: string,
+  r: { title: string; content: string; tags: string[] }
+): number | null {
+  const q = query.trim().toLowerCase();
+  if (!q) return null;
+  const terms = q.split(/[^\p{L}\p{N}]+/u).filter((t) => t.length > 1);
+  if (terms.length === 0) return null;
+
+  const titleSet = new Set(
+    r.title.toLowerCase().split(/[^\p{L}\p{N}]+/u).filter(Boolean).map(stemme)
+  );
+  const contentSet = new Set(
+    r.content.toLowerCase().split(/[^\p{L}\p{N}]+/u).filter(Boolean).map(stemme)
+  );
+  const tagSet = new Set(r.tags.map((t) => stemme(t.toLowerCase())));
+
+  let cov = 0;
+  for (const t of terms) {
+    const st = stemme(t);
+    if (contentSet.has(st) || titleSet.has(st)) {
+      cov += 1;
+    } else if (st.length >= 4 && [...contentSet, ...titleSet].some((d) => d.startsWith(st) || st.startsWith(d))) {
+      cov += 0.6;
+    }
+  }
+  const coverage = cov / terms.length;
+
+  let titleCov = 0;
+  for (const t of terms) if (titleSet.has(stemme(t))) titleCov += 1;
+  titleCov = Math.min(titleCov / terms.length, 1);
+
+  const phraseInContent = r.content.toLowerCase().includes(q);
+  const phraseInTitle = r.title.toLowerCase().includes(q);
+  const tagHit = terms.some((t) => tagSet.has(stemme(t)));
+
+  const score = coverage * 0.6 + titleCov * 0.2 + (phraseInContent ? 0.15 : 0) + (phraseInTitle ? 0.25 : 0) + (tagHit ? 0.1 : 0);
+  return Math.max(0, Math.min(1, score));
+}
+
+function retentionFactor(r: { lastAccessAt: number | null; accessCount: number; utility: number }, now: number): number {  const days = r.lastAccessAt ? (now - r.lastAccessAt) / (24 * 3600 * 1000) : 0;
   const freq = Math.min(r.accessCount, 10);
   const tau = (r.utility + freq + 0.1) * RETENTION_T_DAYS;
   return RETENTION_FLOOR + (1 - RETENTION_FLOOR) * Math.exp(-days / tau);
@@ -196,6 +251,9 @@ export async function searchMemories(store: KeptaStore, params: SearchParams): P
     const superseded = r.supersededBy !== null;
     if (expired) score *= EXPIRED_FACTOR;
     if (superseded) score *= SUPERSEDED_FACTOR;
+    // F3: lokales Reranking — bewertet (Query, Knoten) direkt statt über Bein-Ränge
+    const rerank = localRerankScore(query, r);
+    if (rerank !== null) score *= 1 + rerank * RERANK_MAX_BOOST;
 
     const matchedTerms = queryTerms.filter((t) => m.titleLower.includes(t) || m.contentLower.includes(t));
     hits.push({
@@ -206,6 +264,7 @@ export async function searchMemories(store: KeptaStore, params: SearchParams): P
         vectorRank: entry?.vectorRank ?? null,
         entityRank: entry?.entityRank ?? null,
         vectorSimilarity: vectorSim.get(id) ?? null,
+        rerankScore: rerank,
       },
       matchedTerms,
       expired,

@@ -118,6 +118,8 @@ export interface SearchHit {
     vectorRank: number | null;
     entityRank: number | null;
     vectorSimilarity: number | null;
+    /** F3: lokales Reranking (0..1), null bei leerer Query */
+    rerankScore: number | null;
   };
   matchedTerms: string[];
   /** Zeitlich abgelaufen (valid_to in der Vergangenheit) — herabgestuft, nicht versteckt */
