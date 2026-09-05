@@ -277,3 +277,99 @@ describe("asOf — Zeitreise-Suche", () => {
     expect(store.getMemory(m.id)?.accessCount).toBeGreaterThan(0);
   });
 });
+
+describe("writeGate — ADD/UPDATE/DELETE/NOOP", () => {
+  afterEach(() => vi.unstubAllGlobals());
+
+  /**
+   * Deterministischer Doppelgänger-Kandidat: Chunk-Vektoren hart geseedet — mit
+   * DEM Modell-Label, auf dem findDuplicateForNew filtert (Modellmix-Schutz).
+   * Ein fremdes Label hier würde die Chunks stumm machen (Regression aus der
+   * ersten writeGate-Spec-Runde: Modell "fake" statt DEFAULT_EMBED_MODEL).
+   */
+  function kandidatStore(): KeptaStore {
+    const store = freshStore();
+    const m = store.createMemory({ id: "vorh", title: "Server Passwort", content: "hunter2" });
+    indexMemory(store, m.id);
+    for (const c of store.chunksNeedingEmbedding(50)) {
+      store.setEmbedding(c.memoryId, c.seq, new Float32Array([1, 0, 0]), DEFAULT_EMBED_MODEL);
+    }
+    return store;
+  }
+
+  /**
+   * fetch antwortet für JEDEN Embedding-Aufruf mit einem festen Vektor. Der Stub
+   * muss greifen, BEVOR irgendein Embedding-Pfad läuft — sonst fängt der Store auf
+   * einem Entwicklerrechner mit echtem Ollama echte 768-dim-Vektoren ein, und
+   * cosineSimilarity(3-dim, 768-dim) = 0 (Längen-Mismatch) kippt jede Erwartung.
+   */
+  function stubEmbed(vec: number[]): void {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async (_url: unknown, init?: { body?: string }) => {
+        const body = JSON.parse(init?.body ?? "{}") as { input: string[] };
+        return {
+          ok: true,
+          status: 200,
+          json: async () => ({ embeddings: body.input.map(() => vec) }),
+        } as unknown as Response;
+      })
+    );
+  }
+
+  it("UPDATE gegen die ähnlichste bestehende — LLM-Entscheidung wird gefolgt", async () => {
+    const store = kandidatStore();
+    stubEmbed([1, 0, 0]);
+    const ask = vi.fn(async (prompt: string) =>
+      prompt.includes("hunter2") ? '{"decision":"UPDATE","reason":"aktueller"}' : '{"decision":"ADD"}'
+    );
+    const res = await writeGate(store, "Server Passwort neu", "hunter3", ask);
+    expect(res.decision).toBe("UPDATE");
+    expect(res.targetId).toBe("vorh");
+    expect(res.reason).toBe("aktueller");
+    expect(ask).toHaveBeenCalledTimes(1);
+  });
+
+  it("ADD: kein Embedding-Dienst — Gate fällt auf, ohne zu blockieren", async () => {
+    const store = freshStore();
+    vi.stubGlobal("fetch", vi.fn(async () => ({ ok: false, status: 503, json: async () => ({}) })));
+    const ask = vi.fn(async () => '{"decision":"UPDATE"}');
+    const res = await writeGate(store, "Ganz neu", "Fremdes Thema", ask);
+    expect(res.decision).toBe("ADD");
+    expect(ask).not.toHaveBeenCalled();
+  });
+
+  it("ADD: Embedder erreichbar, aber nichts Ähnliches vorhanden — Gate fällt auf", async () => {
+    const store = kandidatStore();
+    stubEmbed([0, 1, 0]); // orthogonal zu den Chunk-Vektoren → Ähnlichkeit 0
+    const ask = vi.fn(async () => '{"decision":"UPDATE"}');
+    const res = await writeGate(store, "Ganz neu", "Fremdes Thema", ask);
+    expect(res.decision).toBe("ADD");
+    expect(ask).not.toHaveBeenCalled();
+  });
+
+  it("DELETE und NOOP folgen der LLM-Antwort", async () => {
+    const store = kandidatStore();
+    stubEmbed([1, 0, 0]);
+    const del = await writeGate(store, "Server Passwort", "hunter2", async () => '{"decision":"DELETE","reason":"müll"}');
+    expect(del.decision).toBe("DELETE"); // löscht die NEUE Erinnerung — kein targetId nötig
+    const noop = await writeGate(store, "Server Passwort", "hunter2", async () => '{"decision":"NOOP","reason":"identisch"}');
+    expect(noop.decision).toBe("NOOP");
+  });
+
+  it("kaputte LLM-Antwort und unbekannte Entscheidung degradieren zu ADD", async () => {
+    const store = kandidatStore();
+    stubEmbed([1, 0, 0]);
+    const kaputt = await writeGate(store, "Server Passwort", "x", async () => "kein json hier");
+    expect(kaputt.decision).toBe("ADD");
+    expect(kaputt.reason).toContain("gate nicht auswertbar");
+    const unbekannt = await writeGate(store, "Server Passwort", "x", async () => '{"decision":"REPLACE"}');
+    expect(unbekannt.decision).toBe("ADD");
+  });
+
+  it("findDuplicateForNew: Kandidat unter der 0,92-Schwelle → null", async () => {
+    const store = kandidatStore();
+    stubEmbed([1, 0, 1]); // Cosine zu [1,0,0] ≈ 0,71 < 0,92
+    expect(await findDuplicateForNew(store, "Server Passwort", "hunter3")).toBeNull();
+  });
+});
