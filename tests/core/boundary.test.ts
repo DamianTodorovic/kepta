@@ -46,16 +46,36 @@ describe("memory core boundary (src/core)", () => {
     ]);
   });
 
-  it("imports only node built-ins and its own modules", () => {
+  // A relative specifier is not automatically an own module: "../lib/ai" starts
+  // with "../" and reaches the sixteen third-party providers. Testing the prefix
+  // therefore proves nothing — the specifier has to be resolved, and the result
+  // has to land inside src/core.
+  function escapesCore(file: string, spec: string): boolean {
+    if (spec.startsWith("node:")) return false;
+    if (!spec.startsWith(".")) return true; // runtime package
+    const resolved = path.resolve(path.dirname(file), spec);
+    return resolved !== CORE_DIR && !resolved.startsWith(CORE_DIR + path.sep);
+  }
+
+  it("imports only node built-ins and files inside src/core", () => {
     const violations: string[] = [];
     for (const file of coreFiles) {
       for (const spec of importSpecifiers(file)) {
-        const isBuiltIn = spec.startsWith("node:");
-        const isOwnModule = spec.startsWith("./") || spec.startsWith("../");
-        if (!isBuiltIn && !isOwnModule) violations.push(`${path.basename(file)} → ${spec}`);
+        if (escapesCore(file, spec)) violations.push(`${path.basename(file)} → ${spec}`);
       }
     }
     expect(violations).toEqual([]);
+  });
+
+  it("actually catches an import that leaves the core (guard against a green no-op)", () => {
+    const probe = path.join(CORE_DIR, "engine.ts");
+    // The exact violation that used to slip through: relative, yet outside src/core.
+    expect(escapesCore(probe, "../lib/ai")).toBe(true);
+    expect(escapesCore(probe, "../../src/lib/ai")).toBe(true);
+    expect(escapesCore(probe, "openai")).toBe(true);
+    // ...while the legitimate cases stay allowed.
+    expect(escapesCore(probe, "./store")).toBe(false);
+    expect(escapesCore(probe, "node:crypto")).toBe(false);
   });
 
   it("contains no network endpoints outside localhost", () => {
