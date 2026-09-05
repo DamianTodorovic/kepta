@@ -3,6 +3,10 @@ import { defineConfig } from "vitest/config";
 export default defineConfig({
   test: {
     include: ["tests/**/*.test.ts", "tests/**/*.test.tsx"],
+    // CI-hang-proof: SQLite-Datei-Tests + parallele Worker kollidieren auf
+    // GitHub-Runnern (extensions.test.ts hing endlos). Ein Fork, sequenziell.
+    pool: "forks",
+    poolOptions: { forks: { singleFork: true } },
     testTimeout: 20_000,
     // Default-Umgebung node (src/core, server.ts).
     // src/lib ist Browser-Code → die betroffenen Testdateien setzen oben
