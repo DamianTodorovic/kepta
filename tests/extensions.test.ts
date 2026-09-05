@@ -4,6 +4,7 @@ import path from "node:path";
 import fs from "node:fs";
 import {
   defaultExtensions,
+  defaultAuditDir,
   type KeptaExtensions,
   type AuditEvent,
   type ActorContext,
@@ -46,6 +47,18 @@ describe("defaultExtensions", () => {
     await expect(ext.retention.onDelete(["x"])).resolves.toEqual({ proof: null });
   });
 
+  it("Replication-Default: push/pull sind no-ops; defaultAuditDir folgt KEPTA_DATA_DIR", async () => {
+    const ext = defaultExtensions();
+    await expect(ext.replication.push("2026-01-01T00:00:00Z")).resolves.toBeUndefined();
+    await expect(ext.replication.pull("2026-01-01T00:00:00Z")).resolves.toBeUndefined();
+    const saved = process.env.KEPTA_DATA_DIR;
+    process.env.KEPTA_DATA_DIR = "/tmp/kepta-audit-env";
+    expect(defaultAuditDir()).toBe("/tmp/kepta-audit-env");
+    delete process.env.KEPTA_DATA_DIR;
+    expect(defaultAuditDir().endsWith(path.join(".kepta", "").replace(/\/$/, "")) || defaultAuditDir().includes(".kepta")).toBe(true);
+    if (saved !== undefined) process.env.KEPTA_DATA_DIR = saved;
+  });
+
   it("PolicyGate-Standard verändert Store-Verhalten nicht (Create/Read/List identisch)", () => {
     const store = storeWith(); // Community-Standard
     const m = store.createMemory({ title: "T", content: "C" });
@@ -84,7 +97,7 @@ describe("PolicyGate wird aufgerufen", () => {
     };
     const guarded2 = storeWith({ policy: gate2 });
     guarded2.createMemory({ id: "ok2", title: "A", content: "aa aa" });
-    guarded2.createMemory({ id: "nein2", title: "B", content: "bb bb" });
+    guarded2.createMemory({ id: "nein2", title: "B", content: "aa bb" }); // matcht die Suche, wird gefiltert
     expect(guarded2.getMemory("ok2")?.id).toBe("ok2");
     expect(guarded2.getMemory("nein2")).toBeNull();
     expect(gate2.canRead).toHaveBeenCalled();
@@ -175,5 +188,57 @@ describe("RetentionPolicy-Steckplatz", () => {
     expect(fällig).toEqual(["alt-1"]);
     expect(await store.extensions.retention.onDelete(fällig)).toEqual({ proof: "beweis:alt-1" });
     expect(store.getMemory(m.id)).not.toBeNull(); // nichts automatisch gelöscht
+  });
+});
+
+describe("LocalFileAuditSink (echtes Journal)", () => {
+  it("schreibt append-only JSONL in KEPTA_DATA_DIR", async () => {
+    const dir = freshDir();
+    const { LocalFileAuditSink } = await import("../src/core/extensions");
+    const sink = new LocalFileAuditSink(path.join(dir, "audit.jsonl"));
+    sink.emit({ at: new Date().toISOString(), actorId: "local", action: "write", target: "a" });
+    sink.emit({ at: new Date().toISOString(), actorId: "local", action: "egress", detail: { host: "remote.example" } });
+    // queue ist intern — kurz abwarten
+    await new Promise((r) => setTimeout(r, 80));
+    const lines = fs.readFileSync(path.join(dir, "audit.jsonl"), "utf-8").trim().split("\n");
+    expect(lines).toHaveLength(2);
+    const parsed = lines.map((l) => JSON.parse(l));
+    expect(parsed[0]!.action).toBe("write");
+    expect(parsed[1]!.action).toBe("egress");
+    // Journal-Fehler brechen nichts
+    const broken = new LocalFileAuditSink("/proc/kepta-impossible/audit.jsonl");
+    expect(() => broken.emit({ at: new Date().toISOString(), actorId: "local", action: "read" })).not.toThrow();
+    await new Promise((r) => setTimeout(r, 60));
+  });
+});
+
+describe("Perfekt-Kanten (100 % Funktionen)", () => {
+  it("findDuplicateForNew: ohne erreichbaren Embedder null statt Fehler", async () => {
+    const { findDuplicateForNew } = await import("../src/core/engine");
+    const orig = globalThis.fetch;
+    globalThis.fetch = (async () => ({ ok: false, status: 503 })) as unknown as typeof fetch;
+    try {
+      await expect(findDuplicateForNew(storeWith(), "Titel", "Inhalt")).resolves.toBeNull();
+    } finally {
+      globalThis.fetch = orig;
+    }
+  });
+
+  it("KeyProvider darf werfen — Store öffnet trotzdem (Catch-Pfad)", () => {
+    const dir = freshDir();
+    const throwing = { ...defaultExtensions(), keys: { keyFor: async () => { throw new Error("kein Schlüssel"); } } };
+    const store = new KeptaStore(path.join(dir, "t.db"), throwing);
+    expect(store.countMemories().active).toBe(0);
+  });
+
+  it("kurzSchlafen: WAL-Retry bei exklusivem Lock degradiert sauber auf no-WAL", () => {
+    const dir = freshDir();
+    const dbPath = path.join(dir, "race.db");
+    const holder = new KeptaStore(dbPath);
+    holder.db.exec("BEGIN EXCLUSIVE");
+    const second = new KeptaStore(dbPath); // journal_mode schlägt fehl → Retries → kurzSchlafen → no-WAL-Fallback
+    holder.db.exec("ROLLBACK"); // Lock lösen — der Konstruktor hat den Retry-Pfad schon durchlaufen
+    second.createMemory({ title: "Nach dem Lock", content: "x" });
+    expect(second.getMemory(second.listMemories()[0]!.id)?.title).toBe("Nach dem Lock");
   });
 });

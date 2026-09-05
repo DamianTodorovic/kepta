@@ -73,7 +73,7 @@ import fs from "node:fs";
 import path from "node:path";
 import os from "node:os";
 
-function defaultAuditDir(): string {
+export function defaultAuditDir(): string {
   const env = process.env.KEPTA_DATA_DIR;
   return env ?? path.join(os.homedir(), ".kepta");
 }
