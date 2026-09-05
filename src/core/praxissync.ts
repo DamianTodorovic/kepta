@@ -289,8 +289,4 @@ export class PraxissyncJournal {
     }
   }
 
-  private lastEntry(): SyncJournalEntry | null {
-    const all = this.entries();
-    return all.length > 0 ? all[all.length - 1]! : null;
-  }
 }
