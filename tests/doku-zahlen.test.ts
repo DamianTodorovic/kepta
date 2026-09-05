@@ -11,6 +11,50 @@ const wurzel = process.cwd();
 const lies = (p: string) => fs.readFileSync(path.join(wurzel, p), "utf-8");
 const dateien = ["README.md", "README.de.md"];
 
+// Nachtrag: der Waechter deckte nur die Korpuszahlen ab. Waehrenddessen
+// behaupteten beide READMEs "333 Tests" (es waren 463) und "20 kB" (es sind
+// 74). Dieselbe Sorte Drift, nur an anderer Stelle — also hier mit abgedeckt.
+describe("Dokumentation: Testanzahl und Paketgroesse driften nicht weg", () => {
+  // Statisch gezaehlte it/test-Aufrufe liegen leicht unter der Laufzeitzahl,
+  // weil it.each mehrere Faelle erzeugt. Deshalb Toleranz statt Gleichheit.
+  function statischeTestanzahl(): number {
+    let summe = 0;
+    const lauf = (dir: string) => {
+      for (const e of fs.readdirSync(dir, { withFileTypes: true })) {
+        const p = path.join(dir, e.name);
+        if (e.isDirectory()) lauf(p);
+        else if (e.name.endsWith(".test.ts")) {
+          summe += (fs.readFileSync(p, "utf-8").match(/^\s*(?:it|test)(?:\.\w+)?\(/gm) ?? []).length;
+        }
+      }
+    };
+    lauf(path.join(wurzel, "tests"));
+    return summe;
+  }
+
+  it.each(dateien)("%s nennt eine Testanzahl, die zur Wirklichkeit passt", (datei) => {
+    const genannt = [...lies(datei).matchAll(/\*\*(\d+)\s+(?:tests|Tests)\*\*/g)].map((m) => Number(m[1]));
+    expect(genannt.length, `${datei} nennt gar keine Testanzahl mehr`).toBeGreaterThan(0);
+    const echt = statischeTestanzahl();
+    for (const zahl of genannt) {
+      // 15 % Spielraum: die Doku darf nachhinken, aber nicht um ein Drittel.
+      expect(Math.abs(zahl - echt) / echt, `${datei}: behauptet ${zahl}, gezaehlt ${echt}`).toBeLessThan(0.15);
+    }
+  });
+
+  it.each(dateien)("%s nennt keine Paketgroesse, die um mehr als die Haelfte danebenliegt", (datei) => {
+    const gebaut = path.join(wurzel, "npm", "bin", "kepta.js");
+    if (!fs.existsSync(gebaut)) return; // ohne Build nichts zu vergleichen
+    const echtKb = fs.statSync(gebaut).size / 1024;
+    for (const kb of [...lies(datei).matchAll(/(\d+)\s*kB/g)].map((m) => Number(m[1]))) {
+      expect(
+        Math.abs(kb - echtKb) / echtKb,
+        `${datei}: behauptet ${kb} kB, echt ${Math.round(echtKb)} kB`
+      ).toBeLessThan(0.5);
+    }
+  });
+});
+
 describe("Dokumentation: Korpusgroessen stimmen mit dem Korpus ueberein", () => {
   it.each(dateien)("%s nennt die richtige Zahl an Notizen und Anfragen", (datei) => {
     const t = lies(datei);

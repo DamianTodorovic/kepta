@@ -276,7 +276,7 @@ The chat exists to prove retrieval works. Day-to-day use runs through MCP.
 npx -y kepta-mcp
 ```
 
-That is the entire installation: one file, 20 kB, no dependencies. It gives an agent a memory **without the desktop app** — same `~/.kepta/kepta.db`, so you can start headless and add the window later, or run both side by side. Needs Node 22.13 or newer, because that is when `node:sqlite` arrived. Listed in the [official MCP registry](https://registry.modelcontextprotocol.io) as `io.github.DamianTodorovic/kepta`. Details: [npm/README.md](npm/README.md) · [npm](https://www.npmjs.com/package/kepta-mcp)
+That is the entire installation: one file, 74 kB, no dependencies. It gives an agent a memory **without the desktop app** — same `~/.kepta/kepta.db`, so you can start headless and add the window later, or run both side by side. Needs Node 22.13 or newer, because that is when `node:sqlite` arrived. Listed in the [official MCP registry](https://registry.modelcontextprotocol.io) as `io.github.DamianTodorovic/kepta`. Details: [npm/README.md](npm/README.md) · [npm](https://www.npmjs.com/package/kepta-mcp)
 
 ## 🐍 Python client
 
@@ -399,11 +399,11 @@ If you would rather not trust the binaries, build them yourself: `npm install &&
 
 ## 🧪 Quality & tests
 
-**333 tests**, overall coverage **~91 %** (core `src/core` at **100 % of functions**). Vitest with v8 coverage and thresholds as a CI gate — any commit that lowers coverage turns CI red.
+**463 tests**, overall coverage **~91 %** (core `src/core` at **100 % of functions**). Vitest with v8 coverage and thresholds as a CI gate — any commit that lowers coverage turns CI red.
 
 ```bash
 npm run lint       # tsc --noEmit (typecheck)
-npm test           # 333 tests (vitest)
+npm test           # 463 tests (vitest)
 npm run test:cov   # tests + coverage gate
 npm run eval       # retrieval quality (Hit@1)
 ```

@@ -278,7 +278,7 @@ Der Chat existiert, um Retrieval zu beweisen. Der Alltag läuft über MCP.
 npx -y kepta-mcp
 ```
 
-Das ist die ganze Installation: eine Datei, 20 kB, keine Abhängigkeiten. Damit bekommt ein Agent ein Gedächtnis **ohne die Desktop-App** — dieselbe `~/.kepta/kepta.db`, du kannst also ohne Fenster anfangen und es später dazunehmen oder beides nebeneinander betreiben. Braucht Node 22.13 oder neuer, denn erst dort gibt es `node:sqlite`. Eingetragen in der [offiziellen MCP-Registry](https://registry.modelcontextprotocol.io) als `io.github.DamianTodorovic/kepta`. Details: [npm/README.md](npm/README.md) · [npm](https://www.npmjs.com/package/kepta-mcp)
+Das ist die ganze Installation: eine Datei, 74 kB, keine Abhängigkeiten. Damit bekommt ein Agent ein Gedächtnis **ohne die Desktop-App** — dieselbe `~/.kepta/kepta.db`, du kannst also ohne Fenster anfangen und es später dazunehmen oder beides nebeneinander betreiben. Braucht Node 22.13 oder neuer, denn erst dort gibt es `node:sqlite`. Eingetragen in der [offiziellen MCP-Registry](https://registry.modelcontextprotocol.io) als `io.github.DamianTodorovic/kepta`. Details: [npm/README.md](npm/README.md) · [npm](https://www.npmjs.com/package/kepta-mcp)
 
 ## 🐍 Python-Client
 
@@ -401,11 +401,11 @@ Wer den Binärdateien nicht vertrauen will, baut selbst: `npm install && npm run
 
 ## 🧪 Qualität & Tests
 
-**333 Tests**, Gesamt-Coverage **~91 %** (Kern `src/core` **100 % der Funktionen**). Vitest + v8-Coverage mit Schwellen als CI-Gate — jeder Commit, der die Abdeckung senkt, lässt die CI rot werden.
+**463 Tests**, Gesamt-Coverage **~91 %** (Kern `src/core` **100 % der Funktionen**). Vitest + v8-Coverage mit Schwellen als CI-Gate — jeder Commit, der die Abdeckung senkt, lässt die CI rot werden.
 
 ```bash
 npm run lint       # tsc --noEmit (Typecheck)
-npm test           # 333 Tests (vitest)
+npm test           # 463 Tests (vitest)
 npm run test:cov   # Tests + Coverage-Gate
 npm run eval       # Retrieval-Qualität (Hit@1)
 ```
