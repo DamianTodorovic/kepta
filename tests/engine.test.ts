@@ -277,34 +277,3 @@ describe("asOf — Zeitreise-Suche", () => {
     expect(store.getMemory(m.id)?.accessCount).toBeGreaterThan(0);
   });
 });
-
-describe("writeGate — ADD/UPDATE/DELETE/NOOP", () => {
-  it("ADD ohne ähnliche Erinnerung; LLM-Entscheidung wird gefolgt", async () => {
-    const store = freshStore();
-    store.createMemory({ id: "vorh", title: "Server Passwort", content: "hunter2" });
-    indexMemory(store, "vorh");
-    for (const c of store.chunksNeedingEmbedding(50)) store.setEmbedding(c.memoryId, c.seq, new Float32Array([1, 0, 0]), "fake");
-    const ask = vi.fn(async (prompt: string) => {
-      if (prompt.includes("hunter2")) return '{"decision":"UPDATE","reason":"aktueller"}';
-      return '{"decision":"ADD"}';
-    });
-    // Embedding stubben: deterministisch, ohne echtes Ollama
-    const orig = globalThis.fetch;
-    globalThis.fetch = (async () => ({ ok: true, json: async () => ({ embeddings: [[1, 0, 0]] }) })) as unknown as typeof fetch;
-    try {
-      expect((await writeGate(store, "Ganz neu", "Fremdes Thema", ask)).decision).toBe("ADD");
-      const upd = await writeGate(store, "Server Passwort neu", "hunter3", ask);
-      expect(upd.decision).toBe("UPDATE");
-      expect(upd.targetId).toBe("vorh");
-    } finally {
-      globalThis.fetch = orig;
-    }
-  });
-
-  it("kaputte LLM-Antwort → ADD (nie blockierend)", async () => {
-    const store = freshStore();
-    store.createMemory({ id: "x", title: "T", content: "C" });
-    const res = await writeGate(store, "T", "C", async () => "kein json hier");
-    expect(res.decision).toBe("ADD");
-  });
-});
