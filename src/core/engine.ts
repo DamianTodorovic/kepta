@@ -3,7 +3,7 @@
 // (Recency, Konfidenz, Temporal-Abwertung) → Top-k. Ohne Vektoren rein lexikalisch stark.
 import type { KeptaStore } from "./store";
 import type { MemoryRecord, MemoryType, SearchHit, SearchResult, SearchParams } from "./types";
-import { chunkText, embedQuery, cosineSimilarity, DEFAULT_EMBED_MODEL } from "./embeddings";
+import { chunkText, embedQuery, cosineSimilarity, ollamaBaseUrl, DEFAULT_EMBED_MODEL } from "./embeddings";
 
 const RRF_K = 60;
 const EXPIRED_FACTOR = 0.5;
@@ -450,4 +450,46 @@ export async function writeGate(
   } catch (e) {
     return { decision: "ADD", reason: `gate nicht auswertbar: ${e instanceof Error ? e.message : String(e)}` };
   }
+}
+
+// ---------- F2-Verdrahtung: Write-Gate als Opt-in ----------
+
+/** Das Gate ist ein Opt-in: ausschließlich KEPTA_WRITE_GATE=on schaltet es frei. */
+export function writeGateEnabled(): boolean {
+  return process.env.KEPTA_WRITE_GATE === "on";
+}
+
+/**
+ * Das Frage-Backend des Gates: das lokale LLM via Ollama /api/chat (loopback-only).
+ * Fehler fliegen als Exception — writeGate fängt sie und degradiert zu ADD.
+ */
+export async function localGateAsk(prompt: string): Promise<string> {
+  const res = await fetch(`${ollamaBaseUrl()}/api/chat`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      model: process.env.KEPTA_WRITE_GATE_MODEL || "llama3.2",
+      messages: [{ role: "user", content: prompt }],
+      stream: false,
+    }),
+    signal: AbortSignal.timeout(60_000),
+  });
+  if (!res.ok) throw new Error(`Ollama ${res.status}`);
+  const data = (await res.json()) as { message?: { content?: string } };
+  return data.message?.content ?? "";
+}
+
+/**
+ * Einheitliche Gate-Entscheidung für alle Save-Pfade (MCP memory_save, HTTP POST
+ * /api/memories): null = Gate aus (Speichern wie bisher), sonst ADD/UPDATE/DELETE/
+ * NOOP des lokalen LLM — die Pfade wenden die Entscheidung einheitlich an.
+ */
+export async function gateDecision(
+  store: KeptaStore,
+  title: string,
+  content: string,
+  ask: (prompt: string) => Promise<string> = localGateAsk
+): Promise<WriteGateResult | null> {
+  if (!writeGateEnabled()) return null;
+  return writeGate(store, title, content, ask);
 }

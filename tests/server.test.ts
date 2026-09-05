@@ -5,6 +5,8 @@ import fs from "node:fs";
 import dns from "node:dns";
 import request from "supertest";
 import { KeptaStore } from "../src/core/store";
+import { indexMemory } from "../src/core/engine";
+import { DEFAULT_EMBED_MODEL } from "../src/core/embeddings";
 import { APP_VERSION } from "../src/core/version";
 
 // server.ts startet beim Import normalerweise automatisch — mit KEPTA_NO_AUTOSTART=1
@@ -701,5 +703,69 @@ describe("Version (eine Quelle)", () => {
   it("/api/health liefert die package.json-Version", async () => {
     const res = await request(app).get("/api/health");
     expect(res.body.version).toBe(APP_VERSION);
+  });
+});
+
+describe("POST /api/memories mit Write-Gate (F2)", () => {
+  afterEach(() => {
+    vi.unstubAllGlobals();
+    delete process.env.KEPTA_WRITE_GATE;
+  });
+
+  function stubOllama(decision: string, vec: number[] = [1, 0, 0]): void {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async (url: unknown, init?: { body?: string }) => {
+        const u = String(url);
+        if (u.endsWith("/api/chat")) {
+          return { ok: true, status: 200, json: async () => ({ message: { content: `{"decision":"${decision}","reason":"test"}` } }) } as unknown as Response;
+        }
+        if (u.endsWith("/api/embed")) {
+          const body = JSON.parse(init?.body ?? "{}") as { input: string[] };
+          return { ok: true, status: 200, json: async () => ({ embeddings: body.input.map(() => vec) }) } as unknown as Response;
+        }
+        return { ok: false, status: 404, json: async () => ({}) } as unknown as Response;
+      })
+    );
+  }
+
+  function seedKandidat(): void {
+    const m = store.createMemory({ id: "vorh", title: "Server Passwort", content: "hunter2" });
+    indexMemory(store, m.id);
+    for (const c of store.chunksNeedingEmbedding(50)) {
+      store.setEmbedding(c.memoryId, c.seq, new Float32Array([1, 0, 0]), DEFAULT_EMBED_MODEL);
+    }
+  }
+
+  it("UPDATE: Gate lenkt auf den bestehenden Knoten um — kein Duplikat", async () => {
+    process.env.KEPTA_WRITE_GATE = "on";
+    seedKandidat();
+    stubOllama("UPDATE");
+    const res = await request(app).post("/api/memories").send({ title: "Server Passwort neu", content: "hunter3" });
+    expect(res.status).toBe(200);
+    expect(res.body.gateOutcome).toBe("updated");
+    expect(res.body.memory.id).toBe("vorh");
+    expect(res.body.memory.title).toBe("Server Passwort neu");
+    expect(res.body.writeGate.decision).toBe("UPDATE");
+    expect(store.countMemories().active).toBe(1);
+  });
+
+  it("NOOP: Speichern verweigert (200 mit gateOutcome=rejected, kein memory)", async () => {
+    process.env.KEPTA_WRITE_GATE = "on";
+    seedKandidat();
+    stubOllama("NOOP");
+    const res = await request(app).post("/api/memories").send({ title: "Server Passwort", content: "hunter2" });
+    expect(res.status).toBe(200);
+    expect(res.body.gateOutcome).toBe("rejected");
+    expect(res.body.memory).toBeUndefined();
+    expect(store.countMemories().active).toBe(1);
+  });
+
+  it("Gate aus: normales Verhalten ohne Gate-Felder", async () => {
+    const res = await request(app).post("/api/memories").send({ title: "Ganz neu", content: "Fremdes Thema" });
+    expect(res.status).toBe(200);
+    expect(res.body.memory.title).toBe("Ganz neu");
+    expect(res.body.gateOutcome).toBeUndefined();
+    expect(res.body.writeGate).toBeUndefined();
   });
 });

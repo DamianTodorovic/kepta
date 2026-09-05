@@ -1,9 +1,11 @@
-import { describe, it, expect, beforeEach } from "vitest";
+import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import fs from "node:fs";
 import { KeptaStore } from "../src/core/store";
 import { handleRpc, TOOLS, LATEST_PROTOCOL_VERSION, SERVER_INFO, extractWikiLinks, negotiateVersion, type JsonRpcRequest, type JsonRpcResponse } from "../src/core/mcp";
+import { indexMemory } from "../src/core/engine";
+import { DEFAULT_EMBED_MODEL } from "../src/core/embeddings";
 import { APP_VERSION } from "../src/core/version";
 
 interface ToolResult {
@@ -251,5 +253,114 @@ describe("negotiateVersion", () => {
   });
   it("nur ein Client aus der Zukunft bekommt unsere neueste", () => {
     expect(negotiateVersion("2099-01-01")).toBe(LATEST_PROTOCOL_VERSION);
+  });
+});
+
+describe("memory_save mit Write-Gate (F2)", () => {
+  let store: KeptaStore;
+  beforeEach(() => {
+    store = freshStore();
+  });
+  afterEach(() => {
+    vi.unstubAllGlobals();
+    vi.unstubAllEnvs();
+  });
+
+  // Ollama doppelt gestubbt: /api/embed → fester Vektor, /api/chat → LLM-JSON.
+  // Stub VOR jedem Save-Ruf installieren — sonst fängt ein Entwicklerrechner
+  // mit echtem Ollama echte 768-dim-Vektoren und die Erwartungen kippen.
+  function stubOllama(decision: string, vec: number[] = [1, 0, 0]): void {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async (url: unknown, init?: { body?: string }) => {
+        const u = String(url);
+        if (u.endsWith("/api/chat")) {
+          return {
+            ok: true,
+            status: 200,
+            json: async () => ({ message: { content: `{"decision":"${decision}","reason":"test"}` } }),
+          } as unknown as Response;
+        }
+        if (u.endsWith("/api/embed")) {
+          const body = JSON.parse(init?.body ?? "{}") as { input: string[] };
+          return { ok: true, status: 200, json: async () => ({ embeddings: body.input.map(() => vec) }) } as unknown as Response;
+        }
+        return { ok: false, status: 404, json: async () => ({}) } as unknown as Response;
+      })
+    );
+  }
+
+  function seedKandidat(): void {
+    const m = store.createMemory({ id: "vorh", title: "Server Passwort", content: "hunter2" });
+    indexMemory(store, m.id);
+    for (const c of store.chunksNeedingEmbedding(50)) {
+      store.setEmbedding(c.memoryId, c.seq, new Float32Array([1, 0, 0]), DEFAULT_EMBED_MODEL);
+    }
+  }
+
+  it("UPDATE: Gate lenkt memory_save auf den bestehenden Knoten um — kein Duplikat entsteht", async () => {
+    vi.stubEnv("KEPTA_WRITE_GATE", "on");
+    seedKandidat();
+    stubOllama("UPDATE");
+    const res = asTool(await rpc(store, "tools/call", { name: "memory_save", arguments: { title: "Server Passwort neu", content: "hunter3" } }));
+    const sc = res.structuredContent as { created: boolean; gateOutcome: string; memory: { id: string; title: string }; writeGate: { decision: string } };
+    expect(sc.created).toBe(false);
+    expect(sc.gateOutcome).toBe("updated");
+    expect(sc.memory.id).toBe("vorh");
+    expect(sc.memory.title).toBe("Server Passwort neu");
+    expect(sc.writeGate.decision).toBe("UPDATE");
+    expect(store.countMemories().active).toBe(1);
+  });
+
+  it("NOOP: Speichern verweigert — kein neuer Knoten, bestehender bleibt", async () => {
+    vi.stubEnv("KEPTA_WRITE_GATE", "on");
+    seedKandidat();
+    stubOllama("NOOP");
+    const res = asTool(await rpc(store, "tools/call", { name: "memory_save", arguments: { title: "Server Passwort", content: "hunter2" } }));
+    const sc = res.structuredContent as { created: boolean; gateOutcome: string; memory: unknown; writeGate: { decision: string } };
+    expect(sc.created).toBe(false);
+    expect(sc.gateOutcome).toBe("rejected");
+    expect(sc.memory).toBeNull();
+    expect(sc.writeGate.decision).toBe("NOOP");
+    expect(store.countMemories().active).toBe(1);
+  });
+
+  it("DELETE: wie NOOP — nichts gespeichert, Grund im Antworttext", async () => {
+    vi.stubEnv("KEPTA_WRITE_GATE", "on");
+    seedKandidat();
+    stubOllama("DELETE");
+    const res = asTool(await rpc(store, "tools/call", { name: "memory_save", arguments: { title: "Server Passwort", content: "hunter2" } }));
+    expect((res.structuredContent as { gateOutcome: string }).gateOutcome).toBe("rejected");
+    expect(store.countMemories().active).toBe(1);
+  });
+
+  it("ADD trotz aktivem Gate: normal gespeichert, gateOutcome=created", async () => {
+    vi.stubEnv("KEPTA_WRITE_GATE", "on");
+    stubOllama("ADD", [0, 1, 0]); // orthogonal — nichts Ähnliches vorhanden
+    const res = asTool(await rpc(store, "tools/call", { name: "memory_save", arguments: { title: "Ganz neu", content: "Fremdes Thema" } }));
+    const sc = res.structuredContent as { created: boolean; gateOutcome: string; memory: { title: string } };
+    expect(sc.created).toBe(true);
+    expect(sc.gateOutcome).toBe("created");
+    expect(sc.memory.title).toBe("Ganz neu");
+  });
+
+  it("Gate aus (default): altes Verhalten, keine Gate-Felder im Ergebnis", async () => {
+    vi.stubEnv("KEPTA_WRITE_GATE", "off");
+    const res = asTool(await rpc(store, "tools/call", { name: "memory_save", arguments: { title: "Noch neu", content: "Anderes Thema" } }));
+    const sc = res.structuredContent as { created: boolean; gateOutcome?: string; writeGate?: unknown };
+    expect(sc.created).toBe(true);
+    expect(sc.gateOutcome).toBeUndefined();
+    expect(sc.writeGate).toBeUndefined();
+  });
+
+  it("explizites Update via id umgeht das Gate (der Agent entscheidet selbst)", async () => {
+    vi.stubEnv("KEPTA_WRITE_GATE", "on");
+    seedKandidat();
+    stubOllama("NOOP"); // würde ohne id-Gate ablehnen
+    const res = asTool(await rpc(store, "tools/call", { name: "memory_save", arguments: { id: "vorh", title: "Server Passwort X", content: "hunter4" } }));
+    const sc = res.structuredContent as { created: boolean; memory: { id: string } };
+    expect(sc.created).toBe(false);
+    expect(sc.memory.id).toBe("vorh");
+    expect((store.getMemory("vorh")?.title) ?? "").toBe("Server Passwort X");
   });
 });

@@ -3,7 +3,7 @@ import { tmpdir } from "node:os";
 import path from "node:path";
 import fs from "node:fs";
 import { KeptaStore } from "../src/core/store";
-import { searchMemories, indexMemory, consolidateMemories, findDuplicateForNew, writeGate } from "../src/core/engine";
+import { searchMemories, indexMemory, consolidateMemories, findDuplicateForNew, writeGate, writeGateEnabled, gateDecision } from "../src/core/engine";
 import { DEFAULT_EMBED_MODEL } from "../src/core/embeddings";
 
 function freshStore(): KeptaStore {
@@ -371,5 +371,57 @@ describe("writeGate — ADD/UPDATE/DELETE/NOOP", () => {
     const store = kandidatStore();
     stubEmbed([1, 0, 1]); // Cosine zu [1,0,0] ≈ 0,71 < 0,92
     expect(await findDuplicateForNew(store, "Server Passwort", "hunter3")).toBeNull();
+  });
+});
+
+describe("writeGate-Verdrahtung (F2) — gateDecision/writeGateEnabled", () => {
+  afterEach(() => {
+    vi.unstubAllGlobals();
+    vi.unstubAllEnvs();
+  });
+
+  it("writeGateEnabled: Opt-in ausschließlich mit KEPTA_WRITE_GATE=on", () => {
+    vi.stubEnv("KEPTA_WRITE_GATE", "");
+    expect(writeGateEnabled()).toBe(false);
+    vi.stubEnv("KEPTA_WRITE_GATE", "1");
+    expect(writeGateEnabled()).toBe(false); // kein Truthy-Loch — bewusst nur "on"
+    vi.stubEnv("KEPTA_WRITE_GATE", "on");
+    expect(writeGateEnabled()).toBe(true);
+  });
+
+  it("gateDecision: Gate aus → null, ask wird nie gerufen (Verhalten wie bisher)", async () => {
+    vi.stubEnv("KEPTA_WRITE_GATE", "off");
+    const store = freshStore();
+    const ask = vi.fn(async () => '{"decision":"DELETE"}');
+    expect(await gateDecision(store, "T", "C", ask)).toBeNull();
+    expect(ask).not.toHaveBeenCalled();
+  });
+
+  it("gateDecision: Gate an → Entscheidung des lokalen LLM (hier UPDATE)", async () => {
+    vi.stubEnv("KEPTA_WRITE_GATE", "on");
+    const store = freshStore();
+    const m = store.createMemory({ id: "vorh2", title: "Server Passwort", content: "hunter2" });
+    indexMemory(store, m.id);
+    for (const c of store.chunksNeedingEmbedding(50)) {
+      store.setEmbedding(c.memoryId, c.seq, new Float32Array([1, 0, 0]), DEFAULT_EMBED_MODEL);
+    }
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async (_url: unknown, init?: { body?: string }) => {
+        const body = JSON.parse(init?.body ?? "{}") as { input: string[] };
+        return { ok: true, status: 200, json: async () => ({ embeddings: body.input.map(() => [1, 0, 0]) }) } as unknown as Response;
+      })
+    );
+    const gate = await gateDecision(store, "Server Passwort neu", "hunter3", vi.fn(async () => '{"decision":"UPDATE","reason":"aktueller"}'));
+    expect(gate?.decision).toBe("UPDATE");
+    expect(gate?.targetId).toBe("vorh2");
+  });
+
+  it("gateDecision: Gate an, kein Embedding-Dienst → ADD-Fallback (nie blockierend)", async () => {
+    vi.stubEnv("KEPTA_WRITE_GATE", "on");
+    vi.stubGlobal("fetch", vi.fn(async () => ({ ok: false, status: 503, json: async () => ({}) })));
+    const store = freshStore();
+    const gate = await gateDecision(store, "Ganz neu", "Fremdes Thema", vi.fn(async () => '{"decision":"NOOP"}'));
+    expect(gate?.decision).toBe("ADD");
   });
 });

@@ -3,7 +3,7 @@
 // (2025-06-18, 2024-11-05). Alle Tools liefern structuredContent mit outputSchema.
 import type { KeptaStore } from "./store";
 import type { MemoryType, SearchParams } from "./types";
-import { searchMemories, indexMemory, consolidateMemories, findDuplicateForNew } from "./engine";
+import { searchMemories, indexMemory, consolidateMemories, findDuplicateForNew, gateDecision, writeGateEnabled } from "./engine";
 import { chunkText } from "./embeddings";
 import { APP_VERSION } from "./version";
 
@@ -124,8 +124,17 @@ export const TOOLS = [
       type: "object",
       properties: {
         created: { type: "boolean" },
-        memory: memoryOutSchema,
+        memory: { ...memoryOutSchema, type: ["object", "null"] }, // rejected → null
         duplicateWarning: { type: ["object", "null"], properties: { existingId: { type: "string" }, similarity: { type: "number" } } },
+        gateOutcome: { enum: ["created", "updated", "rejected", null] },
+        writeGate: {
+          type: ["object", "null"],
+          properties: {
+            decision: { type: "string", enum: ["ADD", "UPDATE", "DELETE", "NOOP"] },
+            reason: { type: "string" },
+            targetId: { type: "string" },
+          },
+        },
       },
       required: ["created", "memory"],
     },
@@ -368,9 +377,35 @@ export async function callTool(store: KeptaStore, name: string, args: Record<str
         return { content: [{ type: "text", text: JSON.stringify(structured, null, 2) }], structuredContent: structured };
       }
       case "memory_save": {
+        // F2: Write-Gate (Opt-in KEPTA_WRITE_GATE=on) — nur für NEUE Knoten;
+        // ein explizites Update via id ist die Entscheidung des Agenten selbst.
+        const gate = args.id === undefined
+          ? await gateDecision(store, String(args.title ?? ""), String(args.content ?? ""))
+          : null;
+        if (gate && gate.decision === "UPDATE" && gate.targetId) {
+          // Als Update des bestehenden Knoten ausführen — upsert hält
+          // Wiki-Links/Entities konsistent, created ist false.
+          const viaGate = saveWithIndex(store, { ...args, id: gate.targetId });
+          const structured = {
+            created: viaGate.created,
+            gateOutcome: "updated",
+            memory: memoryToOut(viaGate.record),
+            writeGate: gate,
+          };
+          return { content: [{ type: "text", text: JSON.stringify(structured, null, 2) }], structuredContent: structured };
+        }
+        if (gate && (gate.decision === "NOOP" || gate.decision === "DELETE")) {
+          const structured = { created: false, gateOutcome: "rejected", memory: null, writeGate: gate };
+          return { content: [{ type: "text", text: JSON.stringify(structured, null, 2) }], structuredContent: structured };
+        }
         const { created, record } = saveWithIndex(store, args);
         const duplicate = await findDuplicateForNew(store, String(args.title ?? ""), String(args.content ?? ""));
-        const structured = { created, memory: memoryToOut(record), duplicateWarning: duplicate };
+        const structured = {
+          created,
+          memory: memoryToOut(record),
+          duplicateWarning: duplicate,
+          ...(writeGateEnabled() ? { gateOutcome: "created", writeGate: gate } : {}),
+        };
         return {
           content: [{ type: "text", text: JSON.stringify(structured, null, 2) }],
           structuredContent: structured,

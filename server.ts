@@ -10,7 +10,7 @@ import dns from "dns";
 import { KeptaStore } from "./src/core/store";
 import { migrateFromLegacyJson } from "./src/core/migrate";
 import { EmbeddingQueue } from "./src/core/embeddings";
-import { searchMemories as engineSearch, indexMemory } from "./src/core/engine";
+import { searchMemories as engineSearch, indexMemory, gateDecision, writeGateEnabled } from "./src/core/engine";
 import { handleRpc, TOOLS as MCP_TOOLS, saveWithIndex } from "./src/core/mcp";
 import { importObsidianVault, memoryToMarkdown } from "./src/core/obsidian";
 import { APP_VERSION } from "./src/core/version";
@@ -743,7 +743,7 @@ export function createApp(store: KeptaStore) {
     return v.length <= 120 && /^[\w\-.:]+$/.test(v) ? v : null;
   }
 
-  function handleCreateOrUpdateMemory(req: express.Request, res: express.Response) {
+  async function handleCreateOrUpdateMemory(req: express.Request, res: express.Response) {
     const body = req.body as Partial<MemoryRecord> & { tags?: unknown; title?: unknown; content?: unknown };
     // Hardened: Validierung + Sanitization + Limits
     if (body && JSON.stringify(body).length > 60000) return res.status(413).json({ error: "Payload too large (max 60k)" });
@@ -775,6 +775,25 @@ export function createApp(store: KeptaStore) {
     }
 
     if (!title && !content) return res.status(400).json({ error: "A title or content is required" });
+    // F2: Write-Gate (Opt-in KEPTA_WRITE_GATE=on) — nur für NEUE Knoten; ein
+    // Update via body.id ist die Entscheidung des Clients selbst.
+    const gate = await gateDecision(store, title, content);
+    if (gate && gate.decision === "UPDATE" && gate.targetId) {
+      const updated = store.updateMemory(gate.targetId, {
+        title,
+        content,
+        ...(body.tags !== undefined ? { tags: sanitizeTags(body.tags) } : {}),
+      });
+      if (updated) {
+        indexMemory(store, gate.targetId);
+        publishActivity({ type: "update", source: "app", title: updated.title });
+        return res.json({ memory: toApi(updated), gateOutcome: "updated", writeGate: gate });
+      }
+      // Zielknoten zwischenzeitlich verschwunden → normal neu anlegen
+    }
+    if (gate && (gate.decision === "NOOP" || gate.decision === "DELETE")) {
+      return res.json({ gateOutcome: "rejected", writeGate: gate });
+    }
     const created = store.createMemory({
       title: title || "Untitled",
       content,
@@ -787,7 +806,7 @@ export function createApp(store: KeptaStore) {
     });
     indexMemory(store, created.id);
     publishActivity({ type: "save", source: "app", title: created.title });
-    return res.json({ memory: toApi(created) });
+    return res.json({ memory: toApi(created), ...(writeGateEnabled() ? { gateOutcome: "created", writeGate: gate } : {}) });
   }
 
   app.post("/api/memories", writeLimiter, handleCreateOrUpdateMemory);
