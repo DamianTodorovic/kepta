@@ -415,7 +415,9 @@ export function Dashboard() {
   const handleDelete = async (id: string) => {
     if (!id) return;
     const victim = memories.find(m => m.id === id);
-    void deleteMemory(id);
+    // Sofort aus dem Grid nehmen — der Refresh kam früher erst mit dem nächsten
+    // Event, die gelöschte Karte stand sichtbar im Raum (Funktionsbefund 5.9.).
+    void deleteMemory(id).then(() => void refreshMemories());
     if (editingMemory?.id === id) {
       setIsEditorOpen(false);
       setEditingMemory(null);
@@ -719,7 +721,7 @@ export function Dashboard() {
           )}
 
           {/* Werkzeugleiste: Suche-Modus, Kontextgröße, Quellen-Status */}
-          <div className="px-5 py-2.5 flex flex-wrap items-center gap-x-5 gap-y-2 shrink-0" style={{ borderBottom: '1px solid var(--border-subtle)' }}>
+          <div className="px-5 py-3 flex flex-wrap items-center gap-x-6 gap-y-2 shrink-0" style={{ borderBottom: '1px solid var(--border-subtle)' }}>
             <label className="flex items-center gap-2 cursor-pointer select-none">
               <input
                 type="checkbox"
@@ -812,21 +814,17 @@ export function Dashboard() {
             </div>
           </div>
 
-          {/* Quellen: Datei-Import + URL-Clipper */}
+          {/* Quellen: Datei-Import + URL-Clipper — eine Fläche, eine Geste */}
           <div className="px-5 py-3 shrink-0" style={{ borderBottom: '1px solid var(--border-subtle)' }}>
-            <div className="grid grid-cols-1 lg:grid-cols-[1.3fr_1fr] gap-2.5">
-              {/* Drop-Zone */}
-              <div
-                onDragOver={(e) => { e.preventDefault(); setDragOver(true); }}
-                onDragLeave={() => setDragOver(false)}
-                onDrop={onDrop}
-                className={cn(
-                  "group relative rounded-lg border border-dashed px-3.5 py-2.5 flex items-center gap-3 transition-colors",
-                  dragOver ? "border-[var(--accent)]" : ""
-                )}
-                style={{ background: dragOver ? 'var(--accent-soft)' : 'var(--bg-inset)', borderColor: dragOver ? 'var(--accent)' : 'var(--border-subtle)' }}
-              >
-                {importing ? <Loader2 className="w-4 h-4 animate-spin shrink-0" style={{ color: "var(--accent)" }} /> : <UploadCloud className="w-4 h-4 shrink-0" style={{ color: "var(--text-3)" }} />}
+            <div
+              onDragOver={(e) => { e.preventDefault(); setDragOver(true); }}
+              onDragLeave={() => setDragOver(false)}
+              onDrop={onDrop}
+              className="import-band"
+              data-drag={dragOver}
+            >
+              <div className="flex-1 flex items-center gap-3 px-4 py-3">
+                {importing ? <Loader2 className="w-4 h-4 animate-spin shrink-0" style={{ color: "var(--accent)" }} /> : <UploadCloud className="w-4 h-4 shrink-0" style={{ color: dragOver ? "var(--accent)" : "var(--text-3)" }} />}
                 <div className="flex-1 min-w-0">
                   <div className="text-[13px] font-medium truncate" style={{ color: "var(--text-1)" }}>
                     {importing ? "Importing…" : dragOver ? "Drop to import" : "Drag files here"}
@@ -835,7 +833,7 @@ export function Dashboard() {
                   {importMsg && <div className="text-[11px] mt-0.5 flex items-center gap-1" style={{ color: "var(--ok)" }}><CheckCircle2 className="w-3 h-3" />{importMsg}</div>}
                   {importErr && <div className="text-[11px] mt-0.5 flex items-center gap-1" style={{ color: "var(--danger)" }}><AlertCircle className="w-3 h-3" />{importErr}</div>}
                 </div>
-                <label className="btn-ghost px-2.5 py-1.5 rounded-md text-xs font-medium cursor-pointer shrink-0">
+                <label className="btn-ghost px-3 py-1.5 text-xs font-medium cursor-pointer shrink-0">
                   Choose
                   <input
                     ref={fileInputRef}
@@ -847,9 +845,8 @@ export function Dashboard() {
                   />
                 </label>
               </div>
-
-              {/* URL-Clipper */}
-              <div className="rounded-lg flex items-center gap-2 px-3.5 py-2.5" style={{ background: 'var(--bg-inset)', border: '1px solid var(--border-subtle)' }}>
+              <div className="import-divider hidden md:block" />
+              <div className="flex-1 hidden md:flex items-center gap-2.5 px-4 py-3">
                 <Globe className="w-4 h-4 shrink-0" style={{ color: "var(--text-3)" }} />
                 <input
                   ref={clipInputRef}
@@ -863,7 +860,7 @@ export function Dashboard() {
                 <button
                   onClick={handleClip}
                   disabled={clipping || !clipUrl.trim()}
-                  className="btn-ghost px-2.5 py-1.5 rounded-md text-xs font-medium shrink-0 disabled:opacity-40"
+                  className="btn-ghost px-3 py-1.5 text-xs font-medium shrink-0 disabled:opacity-40"
                 >
                   {clipping ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : 'Import'}
                 </button>

@@ -246,7 +246,7 @@ export function Settings() {
               <div className="space-y-5">
                 <div className="flex items-center gap-2">
                   <Cpu className="w-4 h-4" style={{ color: 'var(--accent)' }} />
-                  <h3 className="hud-label !text-[11px]" style={{ color: 'var(--text-1)' }}>Artificial intelligence</h3>
+                  <h3 className="settings-h" style={{ color: 'var(--text-1)' }}>Artificial intelligence</h3>
                 </div>
 
                 <div>
@@ -396,7 +396,7 @@ export function Settings() {
               <div>
                 <div className="flex items-center gap-2 mb-4">
                   <HardDriveDownload className="w-4 h-4" style={{ color: 'var(--accent)' }} />
-                  <h3 className="hud-label !text-[11px]" style={{ color: 'var(--text-1)' }}>Data management</h3>
+                  <h3 className="settings-h" style={{ color: 'var(--text-1)' }}>Data management</h3>
                 </div>
                 <p className="text-sm mb-4" style={{ color: 'var(--text-2)' }}>
                   Download every memory node as a JSON backup. Your data lives on this device and nowhere else.
@@ -435,7 +435,7 @@ export function Settings() {
             <div>
               <div className="flex items-center gap-2 mb-3">
                 <Server className="w-4 h-4" style={{ color: 'var(--accent)' }} />
-                <h3 className="hud-label !text-[11px]" style={{ color: 'var(--text-1)' }}>Local server</h3>
+                <h3 className="settings-h" style={{ color: 'var(--text-1)' }}>Local server</h3>
                 <span className="ml-auto flex items-center gap-1.5 text-xs" style={{ color: health?.ok ? 'var(--ok)' : 'var(--text-3)' }}>
                   <span className="w-2 h-2 rounded-full" style={{ background: health?.ok ? 'var(--ok)' : healthError ? '#f87171' : 'var(--text-3)' }} />
                   {health?.ok ? `online · ${health.count ?? 0} nodes` : healthError ? 'offline' : 'checking…'}
@@ -460,7 +460,7 @@ export function Settings() {
             <div>
               <div className="flex items-center gap-2 mb-3">
                 <Layers className="w-4 h-4" style={{ color: 'var(--accent)' }} />
-                <h3 className="hud-label !text-[11px]" style={{ color: 'var(--text-1)' }}>HTTP Endpoints</h3>
+                <h3 className="settings-h" style={{ color: 'var(--text-1)' }}>HTTP Endpoints</h3>
               </div>
               <div className="space-y-2">
                 {[
@@ -473,7 +473,7 @@ export function Settings() {
                   { m: 'GET', p: '/api/mcp/tools', d: 'Tool list', c: `curl ${API_BASE}/api/mcp/tools` },
                 ].map(e => (
                   <div key={e.p} className="hud-inset rounded-xl px-3 py-2.5 flex items-center gap-3">
-                    <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded shrink-0 ${e.m === 'GET' ? 'bg-emerald-500 text-white' : 'bg-sky-500 text-white'}`}>{e.m}</span>
+                    <span className="method-badge" data-method={e.m}>{e.m}</span>
                     <code className="text-xs font-mono flex-1 truncate" style={{ color: 'var(--text-1)' }}>{e.p}</code>
                     <span className="text-xs hidden sm:block shrink-0" style={{ color: 'var(--text-3)' }}>{e.d}</span>
                     <button onClick={() => copy(e.c, e.p)} className="btn-ghost p-1.5 rounded-lg shrink-0" title="Copy the curl command">
@@ -488,7 +488,7 @@ export function Settings() {
             <div>
               <div className="flex items-center gap-2 mb-3">
                 <Braces className="w-4 h-4" style={{ color: 'var(--accent)' }} />
-                <h3 className="hud-label !text-[11px]" style={{ color: 'var(--text-1)' }}>MCP Tools</h3>
+                <h3 className="settings-h" style={{ color: 'var(--text-1)' }}>MCP Tools</h3>
               </div>
               <div className="grid gap-2">
                 {[
@@ -512,7 +512,7 @@ export function Settings() {
             <div>
               <div className="flex items-center gap-2 mb-3">
                 <Terminal className="w-4 h-4" style={{ color: 'var(--accent)' }} />
-                <h3 className="hud-label !text-[11px]" style={{ color: 'var(--text-1)' }}>mcp.json — Cursor / Zed / Windsurf</h3>
+                <h3 className="settings-h" style={{ color: 'var(--text-1)' }}>mcp.json — Cursor / Zed / Windsurf</h3>
               </div>
               <div className="hud-inset rounded-xl overflow-hidden">
                 <div className="flex items-center justify-between px-3 py-2" style={{ borderBottom: '1px solid var(--border-subtle)' }}>
@@ -541,7 +541,7 @@ export function Settings() {
             <div>
               <div className="flex items-center gap-2 mb-3">
                 <Plug className="w-4 h-4" style={{ color: 'var(--accent)' }} />
-                <h3 className="hud-label !text-[11px]" style={{ color: 'var(--text-1)' }}>Claude Desktop</h3>
+                <h3 className="settings-h" style={{ color: 'var(--text-1)' }}>Claude Desktop</h3>
               </div>
               <div className="hud-inset rounded-xl p-3">
                 <p className="text-xs leading-relaxed" style={{ color: 'var(--text-2)' }}>
@@ -566,7 +566,7 @@ export function Settings() {
             <div>
               <div className="flex items-center gap-2 mb-3">
                 <Terminal className="w-4 h-4" style={{ color: 'var(--accent)' }} />
-                <h3 className="hud-label !text-[11px]" style={{ color: 'var(--text-1)' }}>Quick test (curl)</h3>
+                <h3 className="settings-h" style={{ color: 'var(--text-1)' }}>Quick test (curl)</h3>
               </div>
               <div className="hud-inset rounded-xl overflow-hidden">
                 <div className="flex items-center justify-between px-3 py-2" style={{ borderBottom: '1px solid var(--border-subtle)' }}>

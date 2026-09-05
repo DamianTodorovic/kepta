@@ -690,12 +690,12 @@ export function Chat({ activeMemories, onSaveToBrain, onSaveToBrainWithMeta, isF
             <p className="text-[13px] max-w-sm leading-relaxed" style={{ color: "var(--text-2)" }}>
               Ask something about your entries — {budgetedMemories.length} of {activeMemories.length} fit the budget ({tokenBudget.toLocaleString("en-GB")} tokens).
             </p>
-            <div className="mt-4 flex flex-wrap gap-2 justify-center max-w-md">
+            <div className="mt-5 flex flex-wrap gap-2 justify-center max-w-md">
               {["Summarise", "Find contradictions", "Next steps", "As a table"].map((s) => (
                 <button
                   key={s}
                   onClick={() => setInput(s)}
-                  className="chip hover:border-[var(--accent)] transition-colors cursor-pointer !py-1.5 !text-[12px]"
+                  className="suggestion-pill cursor-pointer"
                 >
                   {s}
                 </button>
