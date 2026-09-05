@@ -69,3 +69,6 @@ __pycache__/
 # npm-Paket: Bundle wird gebaut (npm run build:npm), nicht eingecheckt
 npm/bin/
 npm/*.tgz
+
+# Foerderantraege — persoenliche Unterlagen, gehoeren nicht ins oeffentliche Repo
+antraege/
