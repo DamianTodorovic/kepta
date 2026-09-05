@@ -8,13 +8,13 @@
 
 > **Hinweis.** Diese Seite ist auf Deutsch — **die Oberfläche der App ist seit 2.6.0 englisch.** Deutsche Notizen funktionieren weiterhin: Die Suche kennt deutsche und englische Stoppwörter.
 
-<p align="center"><a href="https://github.com/DamianTodorovic/kepta/releases"><img alt="Release" src="https://img.shields.io/github/v/release/DamianTodorovic/kepta?label=Download"></a> <a href="https://github.com/DamianTodorovic/kepta/actions/workflows/build.yml"><img alt="CI" src="https://github.com/DamianTodorovic/kepta/actions/workflows/build.yml/badge.svg"></a> <a href="https://www.npmjs.com/package/kepta-mcp"><img alt="npm" src="https://img.shields.io/npm/v/kepta-mcp?label=npx%20kepta-mcp"></a> <a href="https://pypi.org/project/kepta/"><img alt="PyPI" src="https://img.shields.io/pypi/v/kepta?label=pip%20install%20kepta"></a> <img alt="Coverage" src="https://img.shields.io/badge/coverage-91%25-brightgreen"> <img alt="Tests" src="https://img.shields.io/badge/tests-345%20passing-brightgreen"> <a href="LICENSE"><img alt="MIT" src="https://img.shields.io/badge/License-MIT-black"></a> <img alt="Platform" src="https://img.shields.io/badge/platform-macOS%20%7C%20Windows%20%7C%20Linux-lightgrey"></p>
+<p align="center"><a href="https://github.com/DamianTodorovic/kepta/releases"><img alt="Release" src="https://img.shields.io/github/v/release/DamianTodorovic/kepta?label=Download"></a> <a href="https://github.com/DamianTodorovic/kepta/actions/workflows/build.yml"><img alt="CI" src="https://github.com/DamianTodorovic/kepta/actions/workflows/build.yml/badge.svg"></a> <a href="https://www.npmjs.com/package/kepta-mcp"><img alt="npm" src="https://img.shields.io/npm/v/kepta-mcp?label=npx%20kepta-mcp"></a> <a href="https://pypi.org/project/kepta/"><img alt="PyPI" src="https://img.shields.io/pypi/v/kepta?label=pip%20install%20kepta"></a> <img alt="Coverage" src="https://img.shields.io/badge/coverage-92%25-brightgreen"> <img alt="Tests" src="https://img.shields.io/badge/tests-458%20passing-brightgreen"> <a href="LICENSE"><img alt="MIT" src="https://img.shields.io/badge/License-MIT-black"></a> <img alt="Platform" src="https://img.shields.io/badge/platform-macOS%20%7C%20Windows%20%7C%20Linux-lightgrey"></p>
 
 ## 🎬 Die ganze App in einem Durchgang
 
 <p align="center"><img src="docs/demo.gif" alt="Rundgang durch KEPTA: Suchen, Notiz im Editor oeffnen, neue anlegen, in den Papierkorb und zurueck, Wissensgraph mit Zeitregler, Chat-Cockpit, MCP-Einstellungen, Befehlspalette und Hell/Dunkel" width="900"></p>
 
-<sub>Ein kompletter Durchgang: Suche, Editor mit Typ und Gültigkeit, Notiz anlegen, Papierkorb mit Wiederherstellen, Wissensgraph samt Zeitregler, Chat-Cockpit, MCP-Endpunkte, Befehlspalette und Hell/Dunkel. Aufgenommen aus Version 2.6.3 mit erfundenen Demo-Daten. Die Oberfläche ist englisch.</sub>
+<sub>Ein kompletter Durchgang: Suche, Editor mit Typ und Gültigkeit, Notiz anlegen, Papierkorb mit Wiederherstellen, Wissensgraph samt Zeitregler, Chat-Cockpit, MCP-Endpunkte, Befehlspalette und Hell/Dunkel. Aufgenommen aus Version 2.6.15 mit erfundenen Demo-Daten — das Onyx-Interface. Die Oberfläche ist englisch.</sub>
 
 | Index & hybride Suche | Wissensgraph |
 |---|---|
@@ -22,13 +22,13 @@
 | **Editor — Typ, Gültigkeit, Konfidenz** | **Einrichtung — Themen & Starter-Pack** |
 | ![Editor](docs/screenshots/04-editor.png) | ![Einrichtung](docs/screenshots/05-setup.png) |
 
-<sub>Aufnahmen aus Version 2.6.0 mit erfundenen Demo-Daten — nichts davon ist echt. Die Oberfläche ist englisch.</sub>
+<sub>Aufnahmen aus Version 2.6.15 — das Onyx-Interface — mit erfundenen Demo-Daten — nichts davon ist echt. Die Oberfläche ist englisch.</sub>
 
 ### Wissen mit Datum
 
-<p align="center"><img src="docs/graph-time.gif" alt="Der Wissensgraph mit Zeitregler: zurück auf November 2025 verdunkelt jede Notiz, die es damals noch nicht gab" width="900"></p>
+<p align="center"><img src="docs/graph-time.gif" alt="Der Wissensgraph mit Zeitregler: zurück durch die Zeit verdunkelt jede Notiz, die zu dem Moment noch nicht existierte" width="900"></p>
 
-<sub>Der Zeitregler beantwortet, was die meisten Notiz-Apps nicht können: <em>Was wusste ich im November?</em> Jede Erinnerung trägt eine Gültigkeit, der Graph lässt sich damit zurückspulen. Die abgedunkelten Knoten sind nicht gelöscht — sie waren nur noch nicht wahr.</sub>
+<sub>Der Zeitregler beantwortet, was die meisten Notiz-Apps nicht können: <em>Was wusste ich damals?</em> Jede Erinnerung trägt eine Gültigkeit, der Graph lässt sich damit zurückspulen. Die abgedunkelten Knoten sind nicht gelöscht — sie waren nur noch nicht wahr.</sub>
 
 ## 🙋 Neu hier? Fang damit an
 
@@ -155,6 +155,7 @@ Ohne Ollama läuft alles rein lexikalisch weiter — die Vektor-Spur entfällt, 
 - **Inbox-Ordner** wird überwacht und automatisch eingelesen
 - **Obsidian-Vault-Import**: Markdown + YAML-Frontmatter, `[[Wiki-Links]]` werden zu Graph-Kanten
 - **Markdown-Export** nach `~/.kepta/export/`
+- **Praxis-Sync** — einen Memory-Scope zwischen den eigenen Geräten verschieben: als **AES-256-GCM-verschlüsseltes Bundle** (Key aus einer Passphrase, scrypt). Jede Übertragung landet in einem manipulationssicheren Hash-Ketten-Mitschnitt (`~/.kepta/sync-journal.jsonl`) — der nachprüfbare Beweis, was zwischen Geräten gewandert ist, ohne dass der Inhalt unterwegs lesbar ist
 - **Migration** aus der Vorgängerversion (`memories.json`) — idempotent, mit Backup
 
 </details>
@@ -163,6 +164,8 @@ Ohne Ollama läuft alles rein lexikalisch weiter — die Vektor-Spur entfällt, 
 <summary><strong>Suchen &amp; Abrufen</strong></summary>
 
 - **Hybride Suche**: FTS5-BM25 + Vektor-KNN + Entitäts-Treffer, per RRF fusioniert
+- **Lokales Reranking**: ein deterministischer Reranker (Begriffsabdeckung, Phrasen, Titel, Tags) verfeinert die fusionierte Rangfolge, sichtbar als `rerankScore` — ohne Netz, immer aktiv
+- **Zeitreise-Suche** (`asOf`): frag, was zu jedem Zeitpunkt bekannt war — in der HTTP-API und MCP `memory_search`
 - **Füllwörter werden aus der Anfrage entfernt**, deutsch wie englisch — eine Notiz gewinnt keinen Rang mehr allein dadurch, dass sie *mit* oder *with* enthält
 - **Persistente Embeddings** über Ollama (`nomic-embed-text`), Hintergrund-Queue statt Neuberechnung pro Anfrage
 - **Temporale Gewichtung**: abgelaufen ×0.5, ersetzt ×0.4
@@ -198,6 +201,8 @@ Ohne Ollama läuft alles rein lexikalisch weiter — die Vektor-Spur entfällt, 
 <summary><strong>Agenten-Anbindung (MCP)</strong></summary>
 
 Protokoll `2026-07-28`, abwärtskompatibel zu `2025-06-18` und `2024-11-05`. Zwei Transporte: **stdio** und **Streamable HTTP** (`POST /mcp`). Alle acht Werkzeuge liefern `outputSchema` und `structuredContent`.
+
+**Write-Gate (Opt-in).** Mit `KEPTA_WRITE_GATE=on` fragt `memory_save` vor dem Speichern einer *neuen* Erinnerung das lokale LLM: ADD, UPDATE (überschreibt den ähnlichsten bestehenden Knoten statt ein Duplikat anzulegen), DELETE oder NOOP. Ohne erreichbares lokales LLM fällt alles sicher auf ADD zurück — das Gate blockiert nie.
 
 | Werkzeug | Zweck |
 |---|---|

@@ -6,13 +6,13 @@
 
 <p align="center"><strong>English</strong> · <a href="README.de.md">🇩🇪 Deutsch</a></p>
 
-<p align="center"><a href="https://github.com/DamianTodorovic/kepta/releases"><img alt="Release" src="https://img.shields.io/github/v/release/DamianTodorovic/kepta?label=Download"></a> <a href="https://github.com/DamianTodorovic/kepta/actions/workflows/build.yml"><img alt="CI" src="https://github.com/DamianTodorovic/kepta/actions/workflows/build.yml/badge.svg"></a> <a href="https://www.npmjs.com/package/kepta-mcp"><img alt="npm" src="https://img.shields.io/npm/v/kepta-mcp?label=npx%20kepta-mcp"></a> <a href="https://pypi.org/project/kepta/"><img alt="PyPI" src="https://img.shields.io/pypi/v/kepta?label=pip%20install%20kepta"></a> <img alt="Coverage" src="https://img.shields.io/badge/coverage-91%25-brightgreen"> <img alt="Tests" src="https://img.shields.io/badge/tests-345%20passing-brightgreen"> <a href="LICENSE"><img alt="MIT" src="https://img.shields.io/badge/License-MIT-black"></a> <img alt="Platform" src="https://img.shields.io/badge/platform-macOS%20%7C%20Windows%20%7C%20Linux-lightgrey"></p>
+<p align="center"><a href="https://github.com/DamianTodorovic/kepta/releases"><img alt="Release" src="https://img.shields.io/github/v/release/DamianTodorovic/kepta?label=Download"></a> <a href="https://github.com/DamianTodorovic/kepta/actions/workflows/build.yml"><img alt="CI" src="https://github.com/DamianTodorovic/kepta/actions/workflows/build.yml/badge.svg"></a> <a href="https://www.npmjs.com/package/kepta-mcp"><img alt="npm" src="https://img.shields.io/npm/v/kepta-mcp?label=npx%20kepta-mcp"></a> <a href="https://pypi.org/project/kepta/"><img alt="PyPI" src="https://img.shields.io/pypi/v/kepta?label=pip%20install%20kepta"></a> <img alt="Coverage" src="https://img.shields.io/badge/coverage-92%25-brightgreen"> <img alt="Tests" src="https://img.shields.io/badge/tests-458%20passing-brightgreen"> <a href="LICENSE"><img alt="MIT" src="https://img.shields.io/badge/License-MIT-black"></a> <img alt="Platform" src="https://img.shields.io/badge/platform-macOS%20%7C%20Windows%20%7C%20Linux-lightgrey"></p>
 
 ## 🎬 The whole app in one pass
 
 <p align="center"><img src="docs/demo.gif" alt="A tour of KEPTA: searching, opening a note in the editor, creating one, moving it to the trash and restoring it, the knowledge graph with its time slider, the chat cockpit, the MCP settings, the command palette and the light/dark switch" width="900"></p>
 
-<sub>A full pass through the app: search, the editor with type and validity, creating a note, the trash with restore, the knowledge graph and its time slider, the chat cockpit, the MCP endpoints, the command palette and the theme switch. Recorded from version 2.6.3 on invented demo data.</sub>
+<sub>A full pass through the app: search, the editor with type and validity, creating a note, the trash with restore, the knowledge graph and its time slider, the chat cockpit, the MCP endpoints, the command palette and the theme switch. Recorded from version 2.6.15 on invented demo data — the Onyx interface.</sub>
 
 | Index & hybrid search | Knowledge graph |
 |---|---|
@@ -20,13 +20,13 @@
 | **Editor — type, validity, confidence** | **Setup — topics & starter pack** |
 | ![Editor](docs/screenshots/04-editor.png) | ![Setup](docs/screenshots/05-setup.png) |
 
-<sub>Recorded from version 2.6.0 on a demo corpus. No real data — every entry was made up for these shots.</sub>
+<sub>Recorded from version 2.6.15 — the Onyx interface — on a demo corpus. No real data — every entry was made up for these shots.</sub>
 
 ### Knowledge that has a date
 
-<p align="center"><img src="docs/graph-time.gif" alt="The knowledge graph with the time slider: dragging back to November 2025 dims every note that did not exist yet, leaving only the two that did" width="900"></p>
+<p align="center"><img src="docs/graph-time.gif" alt="The knowledge graph with the time slider: dragging back through time dims every note that did not exist yet at that moment" width="900"></p>
 
-<sub>The time slider answers a question most note apps cannot: <em>what did I know in November?</em> Every memory carries a validity window, so the graph can be replayed. The dimmed nodes are not deleted — they simply were not true yet.</sub>
+<sub>The time slider answers a question most note apps cannot: <em>what did I know back then?</em> Every memory carries a validity window, so the graph can be replayed. The dimmed nodes are not deleted — they simply were not true yet.</sub>
 
 ## 🙋 New here? Start with this
 
@@ -153,6 +153,7 @@ Without Ollama the vector track drops out and everything continues lexically. Se
 - **Inbox folder** watched and ingested automatically
 - **Obsidian vault import**: Markdown + YAML frontmatter, `[[wiki links]]` become graph edges
 - **Markdown export** to `~/.kepta/export/`
+- **Praxis-Sync** — move a memory scope between your own devices as an **AES-256-GCM-encrypted bundle** (key derived from a passphrase, scrypt). Every transfer is recorded in a tamper-evident hash-chained ledger (`~/.kepta/sync-journal.jsonl`): the inspectable proof of what moved between devices, without the content ever being readable in transit
 - **Migration** from the previous version (`memories.json`) — idempotent, with a backup
 
 </details>
@@ -161,6 +162,8 @@ Without Ollama the vector track drops out and everything continues lexically. Se
 <summary><strong>Search &amp; retrieval</strong></summary>
 
 - **Hybrid retrieval**: FTS5 BM25 + vector KNN + entity match, fused with Reciprocal Rank Fusion
+- **Local reranking**: a deterministic reranker (term coverage, phrase hits, title, tags) refines the fused ranking and is exposed as `rerankScore` — no network, always on
+- **Time-travel search** (`asOf`): ask what was known at any moment — available in the HTTP API and MCP `memory_search`
 - **Stopwords removed from the query** in both German and English, so a note does not gain rank merely by containing *with* or *die*
 - **Persistent embeddings** via Ollama (`nomic-embed-text`), computed by a background queue instead of re-embedding on every query
 - **Temporal weighting**: expired ×0.5, superseded ×0.4
@@ -196,6 +199,8 @@ Without Ollama the vector track drops out and everything continues lexically. Se
 <summary><strong>Agent interface (MCP)</strong></summary>
 
 Protocol `2026-07-28`, backwards compatible with `2025-06-18` and `2024-11-05`. Two transports: **stdio** and **Streamable HTTP** (`POST /mcp`). All eight tools ship an `outputSchema` and return `structuredContent`.
+
+**Write gate (opt-in).** With `KEPTA_WRITE_GATE=on`, `memory_save` consults the local LLM before storing a *new* memory: ADD, UPDATE (rewrites the closest existing node instead of creating a duplicate), DELETE or NOOP. Without a reachable local LLM it always degrades to ADD — the gate can never block you.
 
 | Tool | Purpose |
 |---|---|
