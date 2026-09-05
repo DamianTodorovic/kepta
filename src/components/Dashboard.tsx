@@ -14,7 +14,7 @@ import { OnboardingWizard } from './OnboardingWizard';
 import { loadProfile } from '../lib/profile';
 import { KeptaMark } from './KeptaMark';
 import { Memory } from '../types';
-import { Search, Plus, Database, CheckCircle2, Copy, PanelLeftOpen, ScanSearch, UploadCloud, Globe, Loader2, AlertCircle, Sparkles, SlidersHorizontal, Trash2 } from "../lib/icons";
+import { Search, Plus, CheckCircle2, Copy, PanelLeftOpen, ScanSearch, UploadCloud, Globe, Loader2, AlertCircle, Sparkles, Trash2 } from "../lib/icons";
 import { motion, AnimatePresence } from 'motion/react';
 import { cn } from '../lib/utils';
 
@@ -688,7 +688,7 @@ export function Dashboard() {
             <div className="px-5 py-3 shrink-0 overflow-auto" style={{ borderBottom: '1px solid var(--border-subtle)', background: 'var(--bg-inset)', maxHeight: '30vh' }}>
               <div className="flex items-center justify-between mb-2">
                 <span className="text-[12px] font-medium" style={{ color: 'var(--text-2)' }}>
-                  Trash · {trashedMemories.length} deleted entries, all restorable
+                  Trash — {trashedMemories.length} deleted entries, all restorable
                 </span>
                 <button onClick={() => setTrashOpen(false)} className="btn-ghost px-2 py-1 rounded-md text-[11px]">Close</button>
               </div>
@@ -754,7 +754,8 @@ export function Dashboard() {
                   title={`${scoredResults.length} hits · best match ${Math.round(scoredResults[0].score * 100)} % · BM25 ${Math.round(scoredResults[0].bm25Score * 100)} % · vector ${Math.round(scoredResults[0].cosineScore * 100)} %`}
                 >
                   <span className="w-1.5 h-1.5 rounded-full" style={{ background: 'var(--ok)' }} />
-                  {scoredResults.length} {scoredResults.length === 1 ? 'hit' : 'hits'} · best {Math.round(scoredResults[0].score * 100)} %
+                  <span>{scoredResults.length} {scoredResults.length === 1 ? 'hit' : 'hits'}</span>
+                  <span style={{ color: 'var(--text-3)' }}>best {Math.round(scoredResults[0].score * 100)} %</span>
                 </span>
               )}
               {semanticEnabled && debouncedSearchQuery.trim().length >= 2 && scoredResults && scoredResults.length === 0 && (
@@ -829,7 +830,7 @@ export function Dashboard() {
                 <div className="flex-1 min-w-0">
                   <div className="text-[13px] font-medium truncate" style={{ color: "var(--text-1)" }}>
                     {importing ? "Importing…" : dragOver ? "Drop to import" : "Drag files here"}
-                    <span className="hidden sm:inline font-normal" style={{ color: "var(--text-3)" }}> · PDF, MD, TXT, JSON</span>
+                    <span className="hidden sm:inline font-normal" style={{ color: "var(--text-3)" }}> — PDF, MD, TXT, JSON</span>
                   </div>
                   {importMsg && <div className="text-[11px] mt-0.5 flex items-center gap-1" style={{ color: "var(--ok)" }}><CheckCircle2 className="w-3 h-3" />{importMsg}</div>}
                   {importErr && <div className="text-[11px] mt-0.5 flex items-center gap-1" style={{ color: "var(--danger)" }}><AlertCircle className="w-3 h-3" />{importErr}</div>}
@@ -878,68 +879,50 @@ export function Dashboard() {
 
           <div className="flex-1 overflow-y-auto px-5 py-4">
             <div className="max-w-6xl mx-auto h-full flex flex-col">
-              {/* Persönlicher Kopf — Datum + Stand */}
+              {/* Persönlicher Kopf — Datum als Zeile, Aussage als Display */}
               <div className="mb-4 shrink-0">
-                <h1 className="text-[21px] font-bold tracking-[-0.02em]" style={{ color: 'var(--text-1)' }}>
+                <h1 className="display">
                   {greeting}{profileName ? `, ${profileName}` : ''}
                 </h1>
-                <p className="text-[13px] mt-0.5" style={{ color: 'var(--text-2)' }}>
-                  {new Date().toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long' })} · {memories.length} {memories.length === 1 ? 'entry' : 'entries'} ready{agentActive ? '  · an agent is working right now' : ''}
+                <p className="text-[13px] mt-1" style={{ color: 'var(--text-2)' }}>
+                  {new Date().toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long' })}
+                  {agentActive ? ' — an agent is working right now' : ''}
                 </p>
               </div>
 
-              {/* Übersicht — das Gehirn auf einen Blick */}
-              <div className="grid grid-cols-2 lg:grid-cols-4 gap-2.5 mb-4 shrink-0">
-                <div className="stat-tile card !transform-none">
-                  <span className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0" style={{ background: 'var(--accent-soft)', boxShadow: 'inset 0 1px 0 var(--edge-light)' }}>
-                    <Database className="w-4 h-4" weight="duotone" style={{ color: 'var(--accent)' }} />
-                  </span>
-                  <span className="min-w-0">
-                    <span className="block text-[17px] font-semibold leading-tight tnum" style={{ color: 'var(--text-1)' }}>{memories.length}</span>
-                    <span className="block text-[11px]" style={{ color: 'var(--text-3)' }}>entries in the index</span>
-                  </span>
+              {/* Übersicht — der Index-Streifen: eine dominante Zahl, leise Zweitgrößen */}
+              <div className="index-strip mb-4 shrink-0 flex-wrap gap-y-3">
+                <div className="index-cell" style={{ flex: '0 1 auto' }}>
+                  <span className="num-hero">{memories.length}</span>
+                  <span className="k">{memories.length === 1 ? 'entry in the index' : 'entries in the index'}</span>
                 </div>
-                <div className="stat-tile card !transform-none">
-                  <span className="w-8 h-8 rounded-lg flex flex-col items-center justify-center shrink-0 gap-[3px]" style={{ background: 'var(--bg-inset)', boxShadow: 'inset 0 1px 0 var(--edge-light)' }}>
-                    <span className="flex gap-[2px]">
-                      <span className="w-1.5 h-1.5 rounded-full" style={{ background: 'var(--type-semantic)' }} />
-                      <span className="w-1.5 h-1.5 rounded-full" style={{ background: 'var(--type-episodic)' }} />
-                      <span className="w-1.5 h-1.5 rounded-full" style={{ background: 'var(--type-procedural)' }} />
-                    </span>
+                <div className="index-cell">
+                  <span className="v" style={{ gap: 10 }}>
+                    <span style={{ color: 'var(--type-semantic)' }}>{typeCounts.semantic}</span>
+                    <span style={{ color: 'var(--type-episodic)' }}>{typeCounts.episodic}</span>
+                    <span style={{ color: 'var(--type-procedural)' }}>{typeCounts.procedural}</span>
                   </span>
-                  <span className="min-w-0">
-                    <span className="block text-[12.5px] font-semibold leading-tight tnum truncate" style={{ color: 'var(--text-1)' }}>
-                      {typeCounts.semantic} · {typeCounts.episodic} · {typeCounts.procedural}
-                    </span>
-                    <span className="block text-[11px]" style={{ color: 'var(--text-3)' }}>Facts · events · how-tos</span>
-                  </span>
+                  <span className="k">facts, events, how-tos</span>
                 </div>
-                <div className="stat-tile card !transform-none">
-                  <span className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0" style={{ background: 'var(--bg-inset)', boxShadow: 'inset 0 1px 0 var(--edge-light)' }}>
-                    <SlidersHorizontal className="w-4 h-4" weight="duotone" style={{ color: 'var(--text-2)' }} />
-                  </span>
-                  <span className="min-w-0">
-                    <span className="block text-[17px] font-semibold leading-tight tnum" style={{ color: 'var(--text-1)' }}>{allTags.length}</span>
-                    <span className="block text-[11px]" style={{ color: 'var(--text-3)' }}>Categories</span>
-                  </span>
+                <div className="index-cell">
+                  <span className="v">{allTags.length}</span>
+                  <span className="k">categories</span>
                 </div>
-                <div className="stat-tile card !transform-none">
-                  <span className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0" style={{ background: agentActive ? 'var(--accent-soft)' : 'var(--ok-soft)', boxShadow: 'inset 0 1px 0 var(--edge-light)' }}>
-                    {agentActive ? <span className="agent-dot" /> : <CheckCircle2 className="w-4 h-4" style={{ color: 'var(--ok)' }} />}
+                <div className="index-cell ml-auto">
+                  <span className="v">
+                    {agentActive ? <span className="agent-dot" /> : <span className="status-dot" />}
+                    {agentActive ? 'Agent working' : 'In sync'}
                   </span>
-                  <span className="min-w-0">
-                    <span className="block text-[12.5px] font-semibold leading-tight truncate" style={{ color: 'var(--text-1)' }}>
-                      {agentActive ? 'Agent working' : 'In sync'}
-                    </span>
-                    <span className="block text-[11px]" style={{ color: 'var(--text-3)' }}>local · private · MCP</span>
-                  </span>
+                  <span className="k">local, private, MCP</span>
                 </div>
               </div>
 
               <div className="flex items-center justify-between mb-3 shrink-0">
-                <div className="flex items-center gap-2 text-[12px] tnum" style={{ color: 'var(--text-3)' }}>
-                  {displayedMemories.length} of {tagFiltered.length} entries
-                  {semanticEnabled && debouncedSearchQuery.trim().length >= 2 && ` · Top-${topK}`}
+                <div className="flex items-center gap-2.5 text-[12px] tnum" style={{ color: 'var(--text-3)' }}>
+                  <span>{displayedMemories.length} of {tagFiltered.length} entries</span>
+                  {semanticEnabled && debouncedSearchQuery.trim().length >= 2 && (
+                    <span className="chip !py-px">Top {topK}</span>
+                  )}
                 </div>
                 <div className="flex items-center gap-2 text-[12px]" style={{ color: 'var(--text-3)' }}>
                   {agentActive ? (
@@ -996,11 +979,14 @@ export function Dashboard() {
                     <AnimatePresence>
                       {paginatedMemories.map(memory => {
                         const scored = scoredMap.get(memory.id);
+                        // Server-Scores sind rohe RRF-Werte (~0,02) — als Prozent wären sie Unsinn.
+                        // Prozent nur bei der lokalen Fusion (0..1) zeigen.
+                        const pct = serverScored ? undefined : scored?.score;
                         return (
                           <MemoryCard
                             key={memory.id}
                             memory={memory}
-                            score={scored?.score}
+                            score={pct}
                             matchedTerms={scored?.matchedTerms}
                             onClick={() => {
                               setEditingMemory(memory);

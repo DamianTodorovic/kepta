@@ -66,8 +66,8 @@ export function CommandPalette({ open, onClose, actions }: CommandPaletteProps) 
   return (
     <div className="fixed inset-0 z-[70] flex items-start justify-center pt-[20vh] px-4">
       <div className="absolute inset-0 hud-backdrop" onClick={onClose} />
-      <div className="relative w-full max-w-xl glass-strong rounded-2xl overflow-hidden flex flex-col" style={{ maxHeight: "min(64vh, 520px)" }}>
-        <div className="flex items-center gap-3 px-4 h-14 shrink-0" style={{ borderBottom: "1px solid var(--border-subtle)" }}>
+      <div className="relative w-full max-w-xl palette-lens flex flex-col" style={{ maxHeight: "min(64vh, 520px)" }}>
+        <div className="flex items-center gap-3 px-5 h-14 shrink-0" style={{ borderBottom: "1px solid var(--border-subtle)" }}>
           <Search className="w-4 h-4 shrink-0" style={{ color: "var(--text-3)" }} />
           <input
             ref={inputRef}
@@ -77,10 +77,10 @@ export function CommandPalette({ open, onClose, actions }: CommandPaletteProps) 
             className="flex-1 bg-transparent outline-none text-sm placeholder:text-[var(--text-3)]"
             style={{ color: "var(--text-1)" }}
           />
-          <span className="hud-label hidden sm:inline-flex items-center gap-1 hud-inset px-2 py-1 rounded-md"><span className="kbd !px-1 !py-0">⌘</span>K</span>
+          <span className="hud-label hidden sm:inline-flex items-center gap-1"><span className="kbd">⌘</span>K</span>
         </div>
 
-        <div ref={listRef} className="overflow-y-auto flex-1 p-2 space-y-1">
+        <div ref={listRef} className="overflow-y-auto flex-1 py-2 space-y-0.5">
           {filtered.length === 0 && (
             <div className="py-10 text-center text-sm" style={{ color: "var(--text-2)" }}>No matches for “{query}”</div>
           )}
@@ -88,25 +88,26 @@ export function CommandPalette({ open, onClose, actions }: CommandPaletteProps) 
             <button
               key={a.id}
               data-idx={i}
+              data-active={i === idx}
               onMouseEnter={() => setIdx(i)}
               onClick={() => { onClose(); a.action(); }}
-              className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-left transition-colors ${i === idx ? "hud-inset" : "hover:bg-[var(--bg-inset)]"}`}
+              className="palette-row w-full text-left"
               style={{ color: i === idx ? "var(--text-1)" : "var(--text-2)" }}
             >
-              <span className="w-8 h-8 rounded-lg hud-inset flex items-center justify-center shrink-0" style={{ color: i === idx ? "var(--accent)" : "var(--text-2)" }}>{a.icon}</span>
+              <span className="shrink-0 flex items-center justify-center" style={{ color: i === idx ? "var(--accent)" : "var(--text-3)" }}>{a.icon}</span>
               <span className="flex-1 min-w-0">
                 <span className="block text-sm font-medium truncate">{a.label}</span>
                 {a.desc && <span className="block text-xs truncate" style={{ color: "var(--text-3)" }}>{a.desc}</span>}
               </span>
-              {a.hotkey && <span className="hud-label hidden sm:block hud-inset px-1.5 py-1 rounded-md">{a.hotkey}</span>}
+              {a.hotkey && <span className="kbd shrink-0">{a.hotkey}</span>}
             </button>
           ))}
         </div>
 
-        <div className="px-3 py-2 flex items-center gap-3 hud-label shrink-0" style={{ borderTop: "1px solid var(--border-subtle)" }}>
-          <span className="flex items-center gap-1"><span className="hud-inset px-1 py-0.5 rounded text-[10px]">↑↓</span> Navigate</span>
-          <span className="flex items-center gap-1"><span className="hud-inset px-1 py-0.5 rounded text-[10px]">↵</span> Open</span>
-          <span className="flex items-center gap-1"><span className="hud-inset px-1 py-0.5 rounded text-[10px]">ESC</span> Close</span>
+        <div className="px-4 py-2.5 flex items-center gap-4 hud-label shrink-0" style={{ borderTop: "1px solid var(--border-subtle)" }}>
+          <span className="flex items-center gap-1.5"><span className="kbd !py-px">↑↓</span> Navigate</span>
+          <span className="flex items-center gap-1.5"><span className="kbd !py-px">↵</span> Open</span>
+          <span className="flex items-center gap-1.5"><span className="kbd !py-px">ESC</span> Close</span>
         </div>
       </div>
     </div>

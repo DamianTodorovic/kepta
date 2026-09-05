@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect, useMemo, useCallback, FormEvent } from "react";
 import { motion } from "motion/react";
-import { Send, Bot, UserIcon, Loader2, AlertTriangle, Database, Trash2, PanelLeftOpen, Square, Copy, Check, CheckCircle2, Coins, Hash, FileText, Sparkles } from "../lib/icons";
+import { Send, AlertTriangle, Database, Trash2, PanelLeftOpen, Square, Copy, Check, CheckCircle2, Coins, Hash, FileText, Sparkles } from "../lib/icons";
 import ReactMarkdown from "react-markdown";
 import { ChatMessage, Memory } from "../types";
 import { KeptaMark } from "./KeptaMark";
@@ -571,7 +571,7 @@ export function Chat({ activeMemories, onSaveToBrain, onSaveToBrainWithMeta, isF
             <div className="hud-label mt-0.5 flex items-center gap-1.5">
               {connection.state === "connected" ? (
                 <>
-                  <span>{connection.label} · {connection.model}</span>
+                  <span>{connection.label} — {connection.model}</span>
                   {connection.local && <span className="px-1 py-0 rounded text-[9px] border" style={{ borderColor: "var(--border-subtle)", color: "var(--ok)" }}>local</span>}
                 </>
               ) : (
@@ -707,21 +707,16 @@ export function Chat({ activeMemories, onSaveToBrain, onSaveToBrainWithMeta, isF
         {messages.map((msg) => (
           <motion.div
             key={msg.id}
-            initial={{ opacity: 0, y: 8 }}
-            animate={{ opacity: 1, y: 0 }}
-            className={`flex gap-4 ${msg.role === "user" ? "flex-row-reverse" : ""}`}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 0.18 }}
+            className={`flex ${msg.role === "user" ? "justify-end" : ""}`}
           >
-            <div
-              className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 ${msg.role === "user" ? "btn-primary" : "hud-inset"}`}
-            >
-              {msg.role === "user" ? <UserIcon className="w-4 h-4" /> : <Bot className="w-4 h-4" style={{ color: "var(--accent)" }} />}
-            </div>
-
-            <div className={`max-w-[86%] sm:max-w-[80%] rounded-2xl p-4 text-sm leading-relaxed ${msg.role === "user" ? "btn-primary rounded-tr-sm" : "hud-panel rounded-tl-sm"}`}>
-              {msg.role === "user" ? (
-                <div className="whitespace-pre-wrap break-words">{msg.content}</div>
-              ) : (
-                <div className="prose prose-sm max-w-none break-words" style={{ color: "var(--text-1)" }}>
+            {msg.role === "user" ? (
+              <div className="msg-user whitespace-pre-wrap break-words">{msg.content}</div>
+            ) : (
+              <div className="msg-ai w-full">
+                <div className="chat-prose prose prose-sm max-w-none break-words" style={{ color: "var(--text-1)" }}>
                   <ReactMarkdown
                     components={{
                       h1: ({ children }) => <h1 className="text-base font-bold mt-3 mb-2" style={{ color: "var(--text-1)" }}>{children}</h1>,
@@ -784,10 +779,9 @@ export function Chat({ activeMemories, onSaveToBrain, onSaveToBrainWithMeta, isF
                     <span className="inline-block w-2 h-4 ml-0.5 align-middle animate-pulse rounded-sm" style={{ background: "var(--accent)" }} />
                   )}
                 </div>
-              )}
 
-              {/* Quellen-Chips + Metadaten nur für Assistant */}
-              {msg.role === "assistant" && (
+                {/* Quellen-Chips + Metadaten nur für Assistant */}
+                {msg.role === "assistant" && (
                 <div className="mt-3 space-y-2">
                   {msg.sources && msg.sources.length > 0 && (
                     <div className="flex flex-wrap gap-1.5 items-center">
@@ -842,24 +836,20 @@ export function Chat({ activeMemories, onSaveToBrain, onSaveToBrainWithMeta, isF
                     </button>
                   </div>
                 </div>
-              )}
-            </div>
+                )}
+              </div>
+            )}
           </motion.div>
         ))}
 
         {isStreaming && messages[messages.length - 1]?.role !== "assistant" && (
-          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex gap-4">
-            <div className="w-8 h-8 rounded-lg hud-inset flex items-center justify-center shrink-0">
-              <Loader2 className="w-4 h-4 animate-spin" style={{ color: "var(--accent)" }} />
-            </div>
-            <div className="hud-panel rounded-2xl rounded-tl-sm p-4 flex items-center gap-2 text-sm" style={{ color: "var(--text-2)" }}>
-              <span className="flex items-center gap-1">
-                <span className="typing-dot" />
-                <span className="typing-dot" />
-                <span className="typing-dot" />
-              </span>
-              Thinking…
-            </div>
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="msg-ai flex items-center gap-2 text-sm" style={{ color: "var(--text-2)" }}>
+            <span className="flex items-center gap-1">
+              <span className="typing-dot" />
+              <span className="typing-dot" />
+              <span className="typing-dot" />
+            </span>
+            Thinking…
           </motion.div>
         )}
 
@@ -885,10 +875,10 @@ export function Chat({ activeMemories, onSaveToBrain, onSaveToBrainWithMeta, isF
             onChange={(e) => setInput(e.target.value)}
             placeholder={isStreaming ? "Generating an answer — Stop to cancel" : "Write a message…"}
             disabled={isStreaming}
-            className="hud-input w-full rounded-xl py-3.5 pl-4 pr-[88px] text-sm disabled:opacity-60"
+            className="composer w-full py-3 pl-4 pr-[92px] text-sm disabled:opacity-60 bg-transparent"
             aria-label="Chat Eingabe"
           />
-          <div className="absolute right-2 top-2 bottom-2 flex items-center gap-1">
+          <div className="absolute right-2 top-1.5 bottom-1.5 flex items-center gap-1">
             {isStreaming ? (
               <button
                 type="button"
@@ -903,7 +893,7 @@ export function Chat({ activeMemories, onSaveToBrain, onSaveToBrainWithMeta, isF
             <button
               type="submit"
               disabled={!input.trim() || isStreaming}
-              className="btn-primary h-full w-10 flex items-center justify-center rounded-lg disabled:opacity-40"
+              className="btn-primary h-9 w-10 flex items-center justify-center disabled:opacity-40"
               title="Send (Enter)"
               aria-label="Send"
             >
@@ -911,11 +901,17 @@ export function Chat({ activeMemories, onSaveToBrain, onSaveToBrainWithMeta, isF
             </button>
           </div>
         </form>
-        <div className="max-w-4xl mx-auto mt-2 flex justify-between text-[10px] font-mono" style={{ color: "var(--text-3)" }}>
-          <span className="hud-label normal-case tracking-normal text-[10px] flex items-center gap-1">
-            <FileText className="w-3 h-3" /> {budgetedMemories.length} nodes in the prompt · ~{contextTokens.toLocaleString("en-GB")} prompt tokens
+        <div className="max-w-4xl mx-auto mt-2 flex justify-between items-center text-[10px]" style={{ color: "var(--text-3)" }}>
+          <span className="hud-label normal-case tracking-normal text-[10px] flex items-center gap-3">
+            <span className="flex items-center gap-1">
+              <FileText className="w-3 h-3" /> {budgetedMemories.length} nodes in the prompt
+            </span>
+            <span className="tnum">~{contextTokens.toLocaleString("en-GB")} tokens</span>
           </span>
-          <span className="hidden sm:inline">Enter to send · Shift+Enter for a new line · the budget controls top-k</span>
+          <span className="hidden sm:inline-flex items-center gap-3">
+            <span className="flex items-center gap-1"><span className="kbd !py-px">Enter</span> send</span>
+            <span className="flex items-center gap-1"><span className="kbd !py-px">⇧ Enter</span> new line</span>
+          </span>
         </div>
       </div>
     </div>

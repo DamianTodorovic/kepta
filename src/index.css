@@ -62,6 +62,26 @@
 
   --font-ui: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
   --font-mono: ui-monospace, "SF Mono", SFMono-Regular, Menlo, Consolas, monospace;
+
+  /* Radius als Hierarchie — nichts teilt sich einen Radius */
+  --r-panel: 20px;
+  --r-card: 14px;
+  --r-btn: 10px;
+  --r-chip: 7px;
+  --r-badge: 5px;
+
+  /* Bewegung antwortet, sie performt nicht */
+  --ease-apple: cubic-bezier(0.2, 0.8, 0.2, 1);
+  --dur-fast: 120ms;
+  --dur: 200ms;
+
+  /* Graph-Glas: auf hellem Grund dichter, sonst versinkt der Knoten im Papier */
+  --node-hi: 0.5;
+  --node-mid: 0.66;
+  --node-low: 0.4;
+  --node-rim: rgba(30, 45, 110, 0.32);
+  --node-shine: rgba(255, 255, 255, 0.95);
+  --node-shade: rgba(10, 15, 40, 0.16);
 }
 
 .dark {
@@ -106,6 +126,13 @@
   --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.34);
   --shadow-md: 0 4px 16px rgba(0, 0, 0, 0.38), 0 1px 4px rgba(0, 0, 0, 0.30);
   --shadow-lg: 0 22px 56px rgba(0, 0, 0, 0.5), 0 6px 16px rgba(0, 0, 0, 0.36);
+
+  --node-hi: 0.78;
+  --node-mid: 0.40;
+  --node-low: 0.18;
+  --node-rim: rgba(150, 200, 255, 0.28);
+  --node-shine: rgba(255, 255, 255, 0.6);
+  --node-shade: rgba(10, 15, 40, 0.12);
 }
 
 * {
@@ -177,6 +204,23 @@ body {
   letter-spacing: 0.02em;
   color: var(--text-2);
 }
+/* Display-Zeile des Index: die eine große, ruhige Aussage pro Ansicht */
+.display {
+  font-size: 24px;
+  line-height: 1.15;
+  font-weight: 680;
+  letter-spacing: -0.022em;
+  color: var(--text-1);
+}
+/* Dominante Zahl des Index-Streifens — das Messbare hat eine Stimme */
+.num-hero {
+  font-size: 26px;
+  line-height: 1;
+  font-weight: 660;
+  letter-spacing: -0.02em;
+  font-variant-numeric: tabular-nums;
+  color: var(--text-1);
+}
 
 /* ---------- Glas-Materie ---------- */
 .glass {
@@ -213,6 +257,7 @@ body {
   backdrop-filter: blur(22px) saturate(1.5);
   -webkit-backdrop-filter: blur(22px) saturate(1.5);
   border: 1px solid var(--border-subtle);
+  border-radius: var(--r-panel);
   box-shadow: inset 0 1px 0 var(--edge-light), var(--shadow-sm);
 }
 .inset, .hud-inset {
@@ -228,8 +273,9 @@ body {
   backdrop-filter: blur(18px) saturate(1.45);
   -webkit-backdrop-filter: blur(18px) saturate(1.45);
   border: 1px solid var(--border-subtle);
+  border-radius: var(--r-card);
   box-shadow: inset 0 1px 0 var(--edge-light), var(--shadow-sm);
-  transition: border-color 0.16s ease, box-shadow 0.22s cubic-bezier(0.2, 0.8, 0.2, 1), transform 0.22s cubic-bezier(0.2, 0.8, 0.2, 1);
+  transition: border-color 0.16s var(--ease-apple), box-shadow 0.22s var(--ease-apple), transform 0.22s var(--ease-apple);
 }
 .card:hover, .hud-card:hover {
   border-color: var(--border-hover);
@@ -243,10 +289,117 @@ body {
   transform: translateY(0) scale(0.995);
 }
 
+/* Index-Streifen — das Gehirn auf einen Blick. Keine vier identischen
+   Kärtchen: eine dominante Zahl, die übrigen Werte als leise Zweitgrößen,
+   getrennt durch Haarlinien statt Kästen. */
+.index-strip {
+  display: flex;
+  align-items: stretch;
+  gap: 22px;
+  padding: 14px 18px;
+  border-radius: var(--r-card);
+  background: var(--glass);
+  backdrop-filter: blur(18px) saturate(1.45);
+  -webkit-backdrop-filter: blur(18px) saturate(1.45);
+  border: 1px solid var(--border-subtle);
+  box-shadow: inset 0 1px 0 var(--edge-light), var(--shadow-sm);
+}
+.index-cell {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 2px;
+  min-width: 0;
+  padding-left: 22px;
+  border-left: 1px solid var(--border-subtle);
+}
+.index-cell:first-child {
+  padding-left: 0;
+  border-left: none;
+}
+.index-cell .k { font-size: 11px; color: var(--text-3); }
+.index-cell .v {
+  font-size: 15px;
+  font-weight: 620;
+  letter-spacing: -0.01em;
+  font-variant-numeric: tabular-nums;
+  color: var(--text-1);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+/* Chat — die Antwort ist Prosa, die Frage eine kleine Glasklinge */
+.chat-prose {
+  max-width: 68ch;
+  line-height: 1.65;
+  font-size: 14px;
+}
+.msg-user {
+  margin-left: auto;
+  max-width: min(78%, 58ch);
+  padding: 9px 14px;
+  border-radius: 16px 16px 4px 16px;
+  background: linear-gradient(180deg, color-mix(in srgb, var(--accent) 88%, white 12%), var(--accent));
+  color: var(--on-accent);
+  font-size: 14px;
+  line-height: 1.55;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.24), var(--shadow-sm);
+}
+.msg-ai {
+  max-width: 100%;
+  padding-left: 14px;
+  border-left: 2px solid var(--border-strong);
+}
+/* Composer: die Eingabe als flache Linse mit Lichtkante */
+.composer {
+  background: var(--glass-strong);
+  backdrop-filter: blur(24px) saturate(1.55);
+  -webkit-backdrop-filter: blur(24px) saturate(1.55);
+  border: 1px solid var(--border-subtle);
+  border-radius: 16px;
+  box-shadow: inset 0 1px 0 var(--edge-light), var(--shadow-md);
+  transition: border-color 0.16s var(--ease-apple), box-shadow 0.16s var(--ease-apple);
+}
+.composer:focus-within {
+  border-color: color-mix(in srgb, var(--accent) 45%, var(--border-subtle));
+  box-shadow: inset 0 1px 0 var(--edge-light), 0 0 0 3px var(--accent-soft), var(--shadow-md);
+}
+.composer:focus { outline: none; }
+.composer::placeholder { color: var(--text-3); }
+
+/* Befehlspalette — eine Linse über allem, Raycast-Distanz */
+.palette-lens {
+  background: var(--glass-strong);
+  backdrop-filter: blur(30px) saturate(1.7);
+  -webkit-backdrop-filter: blur(30px) saturate(1.7);
+  border: 1px solid var(--border-strong);
+  border-radius: 18px;
+  box-shadow: inset 0 1px 0 var(--edge-light), var(--shadow-lg);
+  overflow: hidden;
+}
+.palette-row {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  min-height: 42px;
+  padding: 0 14px;
+  border-radius: 10px;
+  margin: 0 6px;
+  font-size: 13.5px;
+  color: var(--text-1);
+  transition: background 0.1s var(--ease-apple);
+}
+.palette-row[data-active="true"] {
+  background: var(--accent-soft-2);
+  box-shadow: inset 0 1px 0 var(--edge-light);
+}
+
 /* ---------- Inputs ---------- */
 .hud-input {
   background: var(--bg-inset);
   border: 1px solid var(--border-subtle);
+  border-radius: var(--r-btn);
   color: var(--text-1);
   transition: border-color 0.12s ease, box-shadow 0.12s ease, background 0.12s ease;
 }
@@ -266,6 +419,7 @@ input[type="checkbox"], input[type="radio"] { accent-color: var(--accent); }
 /* ---------- Buttons — Glas mit Lichtkante ---------- */
 .btn-primary {
   position: relative;
+  border-radius: var(--r-btn);
   background: linear-gradient(180deg, color-mix(in srgb, var(--accent) 92%, white 8%), var(--accent));
   color: var(--on-accent);
   font-weight: 580;
@@ -285,6 +439,7 @@ input[type="checkbox"], input[type="radio"] { accent-color: var(--accent); }
   background: var(--bg-inset);
   color: var(--text-1);
   border: 1px solid var(--border-subtle);
+  border-radius: var(--r-btn);
   font-weight: 540;
   transition: background 0.12s ease, border-color 0.12s ease, color 0.12s ease, transform 0.08s ease;
 }
@@ -333,7 +488,7 @@ button:focus-visible, a:focus-visible, [role="button"]:focus-visible,
   align-items: center;
   gap: 4px;
   padding: 2px 8px;
-  border-radius: 7px;
+  border-radius: var(--r-chip);
   font-size: 11px;
   font-weight: 560;
   background: var(--bg-inset);
@@ -345,7 +500,7 @@ button:focus-visible, a:focus-visible, [role="button"]:focus-visible,
   display: inline-flex;
   align-items: center;
   padding: 1px 7px;
-  border-radius: 6px;
+  border-radius: var(--r-badge);
   font-size: 10px;
   font-weight: 620;
   letter-spacing: 0.05em;

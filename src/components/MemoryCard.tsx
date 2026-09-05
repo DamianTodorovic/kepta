@@ -32,11 +32,8 @@ export const MemoryCard = memo(function MemoryCard({ memory, onClick, score, mat
   return (
     <motion.div
       layout="position"
-      initial={{ opacity: 0, y: 6 }}
-      animate={{ opacity: 1, y: 0 }}
-      exit={{ opacity: 0, y: 6 }}
       onClick={onClick}
-      className="card p-4 cursor-pointer grid grid-rows-[auto_1fr_auto] h-52 overflow-hidden group relative rounded-xl"
+      className="card p-4 cursor-pointer grid grid-rows-[auto_1fr_auto] h-52 overflow-hidden group relative"
     >
       {/* Typ-Grat links: die Karte färbt sich nach Knotentyp */}
       {typeColor && (
@@ -47,13 +44,10 @@ export const MemoryCard = memo(function MemoryCard({ memory, onClick, score, mat
         />
       )}
 
-      {/* Kopfzeile: Typ + Status */}
-      <div className="flex items-center gap-2 mb-2.5 min-w-0">
+      {/* Kopfzeile: Typ leise, Warnstufen laut, Zeit als Anker rechts */}
+      <div className="flex items-center gap-2 mb-2 min-w-0">
         {typeLabel && (
-          <span
-            className="badge-type !gap-1 !py-0.5"
-            style={{ color: typeColor ?? 'var(--text-2)', background: `color-mix(in srgb, ${typeColor} 10%, transparent)` }}
-          >
+          <span className="inline-flex items-center gap-1 text-[11px] font-medium" style={{ color: typeColor ?? 'var(--text-2)' }}>
             {TypeIcon && <TypeIcon className="w-3 h-3" weight="duotone" />}
             {typeLabel}
           </span>
@@ -69,7 +63,8 @@ export const MemoryCard = memo(function MemoryCard({ memory, onClick, score, mat
         )}
         {pct !== null && (
           <span
-            className="ml-auto inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md text-[11px] font-medium tnum chip"
+            className="ml-auto inline-flex items-center gap-1.5 text-[11px] font-medium tnum"
+            style={{ color: 'var(--accent)' }}
             title={matchedTerms?.length ? `Getroffene Begriffe: ${matchedTerms.slice(0, 4).join(', ')}` : undefined}
           >
             {pct}%
@@ -77,12 +72,12 @@ export const MemoryCard = memo(function MemoryCard({ memory, onClick, score, mat
         )}
       </div>
 
-      {/* Inhalt */}
+      {/* Inhalt — der Titel trägt die Karte */}
       <div className="min-h-0 overflow-hidden">
-        <h3 className="font-semibold leading-snug line-clamp-2 text-[14.5px] tracking-[-0.01em] text-[var(--text-1)]">
+        <h3 className="font-semibold leading-snug line-clamp-2 text-[15px] tracking-[-0.012em] text-[var(--text-1)]">
           {memory.title || 'Untitled'}
         </h3>
-        <p className="text-[13px] line-clamp-3 leading-[1.55] mt-1.5 text-[var(--text-2)]">
+        <p className="text-[13px] line-clamp-3 leading-[1.6] mt-1.5 text-[var(--text-2)]">
           {memory.content}
         </p>
       </div>

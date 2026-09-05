@@ -436,18 +436,19 @@ export function KnowledgeGraph({ memories, onSelectMemory }: KnowledgeGraphProps
           onPointerUp={onPointerUp}
           onPointerLeave={onPointerUp}
         >
-          {/* Liquid Glass: Licht von oben-links, Typ-Tint, weiche Tiefe */}
+          {/* Liquid Glass: Licht von oben-links, Typ-Tint, weiche Tiefe —
+              Opazitäten kommen aus dem Theme (heller Grund braucht dichteres Glas) */}
           <defs>
             {(["semantic", "episodic", "procedural"] as const).map((t) => (
               <radialGradient key={t} id={`glass-${t}`} cx="0.32" cy="0.28" r="1">
-                <stop offset="0%" stopColor="#ffffff" stopOpacity="0.78" />
-                <stop offset="35%" stopColor={TYPE_COLORS[t]} stopOpacity="0.40" />
-                <stop offset="100%" stopColor={TYPE_COLORS[t]} stopOpacity="0.18" />
+                <stop offset="0%" stopColor="#ffffff" style={{ stopOpacity: "var(--node-hi)" }} />
+                <stop offset="35%" stopColor={TYPE_COLORS[t]} style={{ stopOpacity: "var(--node-mid)" }} />
+                <stop offset="100%" stopColor={TYPE_COLORS[t]} style={{ stopOpacity: "var(--node-low)" }} />
               </radialGradient>
             ))}
             <radialGradient id="glass-neutral" cx="0.32" cy="0.28" r="1">
-              <stop offset="0%" stopColor="#ffffff" stopOpacity="0.7" />
-              <stop offset="100%" stopColor="#9a9a9a" stopOpacity="0.3" />
+              <stop offset="0%" stopColor="#ffffff" style={{ stopOpacity: "var(--node-hi)" }} />
+              <stop offset="100%" stopColor="#9a9a9a" style={{ stopOpacity: "var(--node-low)" }} />
             </radialGradient>
           </defs>
           <g transform={`translate(${transform.x},${transform.y}) scale(${transform.k})`}>
@@ -519,9 +520,9 @@ export function KnowledgeGraph({ memories, onSelectMemory }: KnowledgeGraphProps
                     style={{ filter: isHovered ? "drop-shadow(0 0 12px var(--accent-glow))" : "drop-shadow(0 3px 7px rgba(0,0,0,0.25))" }}
                   />
                   {/* Refraktions-Ring (leicht chromatisch, wie dicke Glasskante) */}
-                  <circle r={r * 0.84} fill="none" stroke="rgba(150,200,255,0.28)" strokeWidth={0.9 / Math.max(0.4, transform.k)} />
+                  <circle r={r * 0.84} fill="none" stroke="var(--node-rim)" strokeWidth={0.9 / Math.max(0.4, transform.k)} />
                   {/* Gegenschatten unten (Linsen-Tiefe) */}
-                  <ellipse cx={0} cy={r * 0.58} rx={r * 0.62} ry={r * 0.26} fill="rgba(10,15,40,0.12)" />
+                  <ellipse cx={0} cy={r * 0.58} rx={r * 0.62} ry={r * 0.26} fill="var(--node-shade)" />
                   {/* Specular: heller Kantenbogen oben + Glass-Schein + Glanzpunkt */}
                   <path
                     d={`M ${-r * 0.68} ${-r * 0.42} A ${r * 0.86} ${r * 0.86} 0 0 1 ${r * 0.68} ${-r * 0.42}`}

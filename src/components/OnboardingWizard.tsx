@@ -109,15 +109,16 @@ export function OnboardingWizard({ open, onClose, onComplete }: Props) {
     <div className="fixed inset-0 z-[80] flex items-center justify-center p-4">
       <motion.div initial={{opacity:0}} animate={{opacity:1}} exit={{opacity:0}} className="absolute inset-0 hud-backdrop" onClick={onClose} />
       <motion.div initial={{scale:0.96, opacity:0}} animate={{scale:1, opacity:1}} exit={{scale:0.96, opacity:0}}
-        className="relative w-full max-w-2xl max-h-[86vh] overflow-hidden rounded-2xl glass-strong flex flex-col">
+        transition={{ ease: [0.2, 0.8, 0.2, 1], duration: 0.28 }}
+        className="relative w-full max-w-2xl max-h-[86vh] overflow-hidden palette-lens flex flex-col">
         {/* Progress */}
         <div className="h-1 w-full flex gap-1 p-1" style={{background:'var(--bg-inset)'}}>
           {[1,2,3,4].map(i=> <div key={i} className="flex-1 rounded-full transition-all" style={{background: step>=i ? 'var(--accent)' : 'var(--bg-inset-strong)'}} />)}
         </div>
-        <div className="px-6 pt-5 pb-3 flex items-center gap-3" style={{borderBottom:'1px solid var(--border-subtle)'}}>
-          <KeptaMark size={34} radius={8} />
+        <div className="px-7 pt-6 pb-4 flex items-center gap-3.5" style={{borderBottom:'1px solid var(--border-subtle)'}}>
+          <KeptaMark size={38} radius={9} />
           <div className="flex-1">
-            <h2 className="font-semibold text-[15px]" style={{color:'var(--text-1)'}}>Set up KEPTA</h2>
+            <h2 className="text-[16px] font-semibold tracking-[-0.015em]" style={{color:'var(--text-1)'}}>Set up KEPTA</h2>
             <p className="text-xs mt-0.5" style={{color:'var(--text-2)'}}>Step {step} of 4 — one minute, and KEPTA adapts to you.</p>
           </div>
           <span className="hud-label tnum">{step}/4</span>
@@ -184,7 +185,7 @@ export function OnboardingWizard({ open, onClose, onComplete }: Props) {
                     <div key={d.id} className="hud-inset rounded-xl p-3 flex items-center gap-3" style={{borderColor: d.available ? 'color-mix(in srgb, var(--ok) 35%, var(--border-subtle))' : undefined}}>
                       <span className={`w-2.5 h-2.5 rounded-full ${d.available ? 'bg-emerald-500' : 'bg-zinc-400'}`} style={{boxShadow: d.available ? '0 0 8px var(--ok)' : undefined}}/>
                       <div className="flex-1 min-w-0">
-                        <div className="text-sm font-medium" style={{color:'var(--text-1)'}}>{d.label} {d.available ? '· available' : '· not found'}</div>
+                        <div className="text-sm font-medium" style={{color:'var(--text-1)'}}>{d.label} {d.available ? '— available' : '— not found'}</div>
                         <div className="text-xs truncate" style={{color:'var(--text-3)'}}>{d.models.length ? d.models.slice(0,4).join(', ') + (d.models.length>4?` +${d.models.length-4}`:'') : d.available ? 'no models loaded (ollama pull ...)' : 'not installed'}</div>
                       </div>
                       {d.available && <span className="text-xs hud-label px-1.5 py-1 rounded hud-inset" style={{color:'var(--ok)'}}>{d.latencyMs}ms</span>}
@@ -207,7 +208,7 @@ export function OnboardingWizard({ open, onClose, onComplete }: Props) {
                 <div className="flex gap-3">
                   <div className="w-10 h-10 rounded-lg flex items-center justify-center shrink-0" style={{background:'var(--accent-soft)'}}><User className="w-4.5 h-4.5" style={{color:'var(--accent)'}}/></div>
                   <div>
-                    <div className="text-sm font-semibold" style={{color:'var(--text-1)'}}>{name.trim()||'You'} · {selected.map(s=>USECASE_LABELS[s].label).join(' · ') || 'General'}</div>
+                    <div className="text-sm font-semibold" style={{color:'var(--text-1)'}}>{name.trim()||'You'} — {selected.map(s=>USECASE_LABELS[s].label).join(', ') || 'General'}</div>
                     <div className="text-xs" style={{color:'var(--text-2)'}}>{goal || 'Goal: collect knowledge and answer faster'}</div>
                     {customNote && <div className="text-xs mt-1" style={{color:'var(--text-3)'}}>“{customNote}”</div>}
                   </div>
@@ -241,7 +242,7 @@ export function OnboardingWizard({ open, onClose, onComplete }: Props) {
             </button>
           ) : (
             <button onClick={handleFinish} disabled={importing} className="btn-primary px-6 py-2.5 rounded-xl text-sm flex items-center gap-2">
-              {importing ? <><Loader2 className="w-4 h-4 animate-spin"/> Filling your brain…</> : <><Sparkles className="w-4 h-4"/> Create my brain · {starterPreview.length} nodes</>}
+              {importing ? <><Loader2 className="w-4 h-4 animate-spin"/> Filling your brain…</> : <><Sparkles className="w-4 h-4"/> Create my brain — {starterPreview.length} nodes</>}
             </button>
           )}
         </div>
