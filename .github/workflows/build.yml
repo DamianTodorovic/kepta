@@ -20,7 +20,8 @@ jobs:
       - run: npm ci
       - run: npm run lint
       - name: Tests + Coverage (Gate)
-        run: npm run test:cov
+        run: npm run test:cov -- --reporter=basic
+        timeout-minutes: 12
       - name: Retrieval-Eval (Hit@1)
         run: npm run eval
       - name: Coverage-Zusammenfassung (Job-Summary)
