@@ -205,8 +205,13 @@ describe("LocalFileAuditSink (echtes Journal)", () => {
     const parsed = lines.map((l) => JSON.parse(l));
     expect(parsed[0]!.action).toBe("write");
     expect(parsed[1]!.action).toBe("egress");
-    // Journal-Fehler brechen nichts
-    const broken = new LocalFileAuditSink("/proc/kepta-impossible/audit.jsonl");
+    // Journal-Fehler brechen nichts. Fehlpfad bewusst NICHT unter /proc: dort
+    // hängt fs.mkdirSync auf Linux (procfs) endlos und blockiert synchron den
+    // Event-Loop — der GitHub-CI-Hänger vom September 2026. Stattdessen eine
+    // Datei als "Verzeichnis": mkdir/append failen überall sofort (EEXIST/ENOTDIR).
+    const blocker = path.join(dir, "blocker");
+    fs.writeFileSync(blocker, "x");
+    const broken = new LocalFileAuditSink(path.join(blocker, "audit.jsonl"));
     expect(() => broken.emit({ at: new Date().toISOString(), actorId: "local", action: "read" })).not.toThrow();
     await new Promise((r) => setTimeout(r, 60));
   });

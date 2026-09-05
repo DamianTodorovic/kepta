@@ -3,12 +3,12 @@ import { defineConfig } from "vitest/config";
 export default defineConfig({
   test: {
     include: ["tests/**/*.test.ts", "tests/**/*.test.tsx"],
-    // CI-hang-proof: SQLite-Datei-Tests + parallele Worker kollidieren auf
-    // GitHub-Runnern (extensions.test.ts hing endlos). Ein Fork, sequenziell.
+    // Forks-Pool (nicht Threads) — SQLite/Datei-Tests laufen isoliert pro Prozess.
+    // Der GitHub-CI-Hänger (Sept. 2026) war NICHT die Poolwahl: fs.mkdirSync auf
+    // einem /proc-Pfad im Audit-Test blockiert auf procfs endlos synchron (Test
+    // behoben). singleFork entfiel: vitest 4 hat poolOptions entfernt.
     // @ts-ignore — vitest-Typen unterscheiden sich zwischen Versionen
     pool: "forks",
-    // @ts-ignore
-    poolOptions: { forks: { singleFork: true } },
     testTimeout: 20_000,
     // Default-Umgebung node (src/core, server.ts).
     // src/lib ist Browser-Code → die betroffenen Testdateien setzen oben
