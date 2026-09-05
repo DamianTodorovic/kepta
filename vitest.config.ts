@@ -5,7 +5,9 @@ export default defineConfig({
     include: ["tests/**/*.test.ts", "tests/**/*.test.tsx"],
     // CI-hang-proof: SQLite-Datei-Tests + parallele Worker kollidieren auf
     // GitHub-Runnern (extensions.test.ts hing endlos). Ein Fork, sequenziell.
+    // @ts-ignore — vitest-Typen unterscheiden sich zwischen Versionen
     pool: "forks",
+    // @ts-ignore
     poolOptions: { forks: { singleFork: true } },
     testTimeout: 20_000,
     // Default-Umgebung node (src/core, server.ts).
