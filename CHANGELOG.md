@@ -2,6 +2,58 @@
 
 All notable changes are documented in this file. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and versioning follows [SemVer](https://semver.org/).
 
+## [2.6.16] — 2026-09-05
+
+The wave-1 white-space features ship, and the interface is rebuilt: dark mode is
+true onyx with a champagne accent instead of blue.
+
+### Added
+- **Time-travel search** — `asOf` on `memory_search` and `POST /api/search`: ask
+  what was known at any moment. Time-travelled queries never count as access.
+- **Write gate** (Mem0, arXiv:2504.19413) — opt-in via `KEPTA_WRITE_GATE=on`:
+  the local LLM classifies each *new* memory as ADD/UPDATE/DELETE/NOOP on both
+  save paths (MCP `memory_save` and `POST /api/memories`). UPDATE rewrites the
+  closest existing node instead of creating a duplicate; an unreachable LLM
+  always degrades to ADD, so the gate can never block.
+- **Local reranking** — a deterministic reranker (term coverage, phrase hits,
+  title, tags) refines the fused ranking as a bounded boost and is exposed as
+  `components.rerankScore`. Eval-neutral on Hit@1, structurally stronger on
+  phrase-style queries; the seam for a future cross-encoder.
+- **Praxis-Sync** — move a memory scope between your own devices as an
+  AES-256-GCM bundle (scrypt passphrase, mandant/patient separation, idempotent
+  import), with every transfer recorded in a tamper-evident hash-chained ledger
+  (`~/.kepta/sync-journal.jsonl`).
+- **Encryption-at-rest evaluation** — `npm run eval:crypto` +
+  `docs/encryption-eval.md`: three reproducible findings (plaintext DB/WAL,
+  `PRAGMA key` silently does nothing on node:sqlite, the KeyProvider seam costs
+  ~0 ms) and an honest recommendation.
+- **Graph controls** — the time slider and the three type colour pickers are
+  redesigned; each type colour now applies app-wide (graph nodes, card ridges,
+  type labels, index numbers) via the `--type-*` variables.
+
+### Changed
+- **The interface: Onyx.** Dark mode is true black (`#030304`) with warm-white
+  text and a champagne accent — no blue cast. Light mode is warm porcelain. A
+  radius hierarchy replaces the one-radius-fits-all, the dashboard has a serif
+  display line and a single index strip instead of four identical cards, chat
+  answers are prose on a hairline ridge, the command palette is a lens, and the
+  graph glass adapts to the theme.
+- **Repository documentation** re-recorded: new screenshots, a new demo GIF and
+  a new graph-time GIF from 2.6.15 (the old ones showed the blue interface from
+  2.6.0/2.6.3), badges corrected (458 tests, 92 % coverage), ROADMAP gained the
+  wave-1 section.
+
+### Fixed
+- **The CI coverage gate no longer hangs.** Root cause was a test touching
+  `/proc`: `fs.mkdirSync` on procfs blocks the event loop synchronously and
+  forever on Linux, so no vitest timeout could ever fire. The fail-fast test
+  uses a file as the parent directory now.
+- **Trashed nodes stayed visible in the grid** until some later refresh — the
+  delete path refreshes the list immediately now.
+
+### Tests
+458, up from 427. `src/core` holds 100 % function coverage.
+
 ## [2.6.15] — 2026-09-05
 
 ### Fixed
