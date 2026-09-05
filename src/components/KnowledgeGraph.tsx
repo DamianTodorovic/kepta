@@ -322,7 +322,17 @@ export function KnowledgeGraph({ memories, onSelectMemory }: KnowledgeGraphProps
     try { return JSON.parse(localStorage.getItem("kepta_type_colors") || "{}"); } catch { return {}; }
   });
   const TYPE_COLORS = { ...DEFAULT_TYPE_COLORS, ...customTypeColors };
+  // Eine Typ-Farbe wirkt APP-WEIT: beim Laden die gespeicherten Farben auf die
+  // CSS-Variablen heben — Karten-Grat, Typ-Label und Index-Zahlen folgen dann
+  // denselben Farben wie die Graph-Knoten (eine Farbe = eine Funktion).
+  useEffect(() => {
+    (Object.keys(customTypeColors) as string[]).forEach((t) => {
+      document.documentElement.style.setProperty(`--type-${t}`, customTypeColors[t]);
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
   const setTypeColor = (t: string, c: string) => {
+    document.documentElement.style.setProperty(`--type-${t}`, c);
     setCustomTypeColors((prev) => {
       const next = { ...prev, [t]: c };
       try { localStorage.setItem("kepta_type_colors", JSON.stringify(next)); } catch { /* ignore */ }
@@ -373,21 +383,21 @@ export function KnowledgeGraph({ memories, onSelectMemory }: KnowledgeGraphProps
           />
         </div>
         <div className="hud-label hidden sm:block">{filtered.length} nodes · {edges.length} edges</div>
-        <div className="flex items-center gap-1 ml-2" title="Customise node colours">
+        <div className="flex items-center gap-1.5 ml-2" title="Node colours — each colour tints its type across the graph, cards and index">
           {(["semantic", "episodic", "procedural"] as const).map((t) => (
             <input
               key={t}
               type="color"
               value={TYPE_COLORS[t]}
               onChange={(e) => setTypeColor(t, e.target.value)}
-              title={`Colour: ${t === "semantic" ? "Fact" : t === "episodic" ? "Event" : "How-to"}`}
-              className="w-6 h-6 rounded cursor-pointer bg-transparent p-0"
-              style={{ border: "1px solid var(--border-subtle)" }}
+              title={`Colour: ${t === "semantic" ? "Facts" : t === "episodic" ? "Events" : "How-tos"} — tints the nodes, their card ridge and the index numbers`}
+              className="graph-swatch"
+              style={{ color: TYPE_COLORS[t] }}
             />
           ))}
         </div>
         {timeRange && (
-          <div className="flex items-center gap-2 ml-2" title="Time slider — knowledge at the chosen moment">
+          <div className="flex items-center gap-2.5 ml-3" title="Time slider — knowledge at the chosen moment">
             <Clock className="w-3.5 h-3.5" style={{ color: "var(--text-3)" }} />
             <input
               type="range"
@@ -397,9 +407,10 @@ export function KnowledgeGraph({ memories, onSelectMemory }: KnowledgeGraphProps
                 const v = Number(e.target.value);
                 setTimeFilter(v >= 100 ? null : Math.round(timeRange.min + ((timeRange.max - timeRange.min) * v) / 100));
               }}
-              className="w-24 accent-[var(--accent)]"
+              className="graph-time"
+              aria-label="Time of the knowledge shown"
             />
-            <span className="hud-label whitespace-nowrap">
+            <span className="hud-label whitespace-nowrap tnum" style={timeFilter !== null ? { color: "var(--accent)" } : undefined}>
               {timeFilter === null ? "Now" : new Date(timeFilter).toLocaleDateString("en-GB", { month: "long", year: "numeric" })}
             </span>
             {timeFilter !== null && (
