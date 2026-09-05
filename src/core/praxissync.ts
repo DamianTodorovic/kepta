@@ -21,8 +21,44 @@ const KDF_SALT_BYTES = 16;
 const KEY_LEN = 32;
 const IV_BYTES = 12;
 
-function deriveKey(passphrase: string, salt: Buffer): Buffer {
-  return crypto.scryptSync(passphrase, salt, KEY_LEN, { N: 16384, r: 8, p: 1 });
+/**
+ * Das Bundle ist ausdrücklich dafür gebaut, Mitlesen zu überstehen — dann ist
+ * der KDF die einzige Verteidigung, und die Passphrase wählt ein Mensch.
+ * N = 2^17 statt Nodes altem Vorgabewert 2^14: achtmal teurer je Rateversuch.
+ * scrypt braucht dafür 128 * N * r ≈ 134 MB, also muss maxmem hoch, sonst wirft
+ * scryptSync bereits ab N = 2^15.
+ */
+export const KDF_CURRENT: KdfParams = { name: "scrypt", N: 131072, r: 8, p: 1 };
+/** Vor 2.6.17 geschriebene Bundles tragen kein kdf-Feld und benutzen diese Werte. */
+const KDF_LEGACY: KdfParams = { name: "scrypt", N: 16384, r: 8, p: 1 };
+
+export interface KdfParams {
+  name: "scrypt";
+  N: number;
+  r: number;
+  p: number;
+}
+
+/** Eine kurze Passphrase macht jeden KDF wertlos — hier wird hart abgelehnt. */
+export const MIN_PASSPHRASE_LENGTH = 12;
+
+function assertPassphrase(passphrase: unknown): asserts passphrase is string {
+  if (typeof passphrase !== "string" || passphrase.length < MIN_PASSPHRASE_LENGTH) {
+    throw new Error(
+      `Passphrase zu kurz: mindestens ${MIN_PASSPHRASE_LENGTH} Zeichen — das Bundle enthält Mandantendaten und ist zum Versand gedacht`
+    );
+  }
+}
+
+function deriveKey(passphrase: string, salt: Buffer, kdf: KdfParams = KDF_CURRENT): Buffer {
+  if (kdf.name !== "scrypt") throw new Error(`Unbekanntes KDF-Verfahren: ${String(kdf.name)}`);
+  return crypto.scryptSync(passphrase, salt, KEY_LEN, {
+    N: kdf.N,
+    r: kdf.r,
+    p: kdf.p,
+    // 128 * N * r plus Reserve; ohne das wirft scryptSync ab N = 2^15.
+    maxmem: 256 * kdf.N * kdf.r,
+  });
 }
 
 function payloadHashOf(payload: string): string {
@@ -41,6 +77,8 @@ export interface SyncBundle {
   iv: string;
   ciphertext: string;
   authTag: string;
+  /** Fehlt bei Bundles vor 2.6.17 — dann gelten die alten scrypt-Werte. */
+  kdf?: KdfParams;
 }
 
 export interface ExportOptions {
@@ -62,9 +100,10 @@ export function exportBundle(store: KeptaStore, opts: ExportOptions): SyncBundle
     .listMemories()
     .filter((m) => m.scope === scope && !m.supersededBy && m.deletedAt === null);
   const payload = JSON.stringify({ memories: records });
+  assertPassphrase(opts.passphrase);
   const salt = crypto.randomBytes(KDF_SALT_BYTES);
   const iv = crypto.randomBytes(IV_BYTES);
-  const cipher = crypto.createCipheriv("aes-256-gcm", deriveKey(opts.passphrase, salt), iv);
+  const cipher = crypto.createCipheriv("aes-256-gcm", deriveKey(opts.passphrase, salt, KDF_CURRENT), iv);
   const ciphertext = Buffer.concat([cipher.update(payload, "utf-8"), cipher.final()]);
   const bundle: SyncBundle = {
     format: PRAXISSYNC_FORMAT,
@@ -78,6 +117,7 @@ export function exportBundle(store: KeptaStore, opts: ExportOptions): SyncBundle
     iv: iv.toString("base64"),
     ciphertext: ciphertext.toString("base64"),
     authTag: cipher.getAuthTag().toString("base64"),
+    kdf: { ...KDF_CURRENT },
   };
   opts.journal?.record({ direction: "export", peer: bundle.sender, scope, count: records.length, payloadHash: bundle.payloadHash });
   return bundle;
@@ -102,9 +142,11 @@ export interface ImportResult {
  */
 export function importBundle(store: KeptaStore, bundle: SyncBundle, opts: ImportOptions): ImportResult {
   if (bundle.format !== PRAXISSYNC_FORMAT) throw new Error(`Unbekanntes Bundle-Format: ${String(bundle.format)}`);
+  // Beim Import wird die Mindestlänge NICHT erzwungen: sonst wären ältere
+  // Bundles mit kurzer Passphrase unlesbar. Die Härtung greift beim Export.
   const decipher = crypto.createDecipheriv(
     "aes-256-gcm",
-    deriveKey(opts.passphrase, Buffer.from(bundle.salt, "base64")),
+    deriveKey(opts.passphrase, Buffer.from(bundle.salt, "base64"), bundle.kdf ?? KDF_LEGACY),
     Buffer.from(bundle.iv, "base64")
   );
   decipher.setAuthTag(Buffer.from(bundle.authTag, "base64"));
@@ -201,8 +243,24 @@ export class PraxissyncJournal {
     }
   }
 
+  /** Prüft die gesamte Kette. Leerer Mitschnitt gilt als unversehrt. */
+  verify(): boolean {
+    return verifyJournal(this.entries());
+  }
+
   record(input: SyncJournalInput): SyncJournalEntry {
-    const prev = this.lastEntry();
+    // Ohne diese Prüfung heilt sich jede Manipulation selbst weg: der neue
+    // Eintrag verkettet sich an den bereits kaputten Stand, und ab da sieht die
+    // Kette wieder stimmig aus. Ein Beweismittel, das man unbemerkt reparieren
+    // kann, ist keins — deshalb bricht hier ab, statt weiterzuschreiben.
+    const bestehende = this.entries();
+    if (bestehende.length > 0 && !verifyJournal(bestehende)) {
+      throw new Error(
+        `Paketmitschnitt ist gebrochen (${this.file}) — die Kette wurde nachträglich verändert. ` +
+          `Die Datei muss archiviert und bewusst neu begonnen werden; ein Anhängen würde die Manipulation verdecken.`
+      );
+    }
+    const prev = bestehende.length > 0 ? bestehende[bestehende.length - 1]! : null;
     const entry: Omit<SyncJournalEntry, "hash"> = {
       seq: prev ? prev.seq + 1 : 1,
       at: new Date().toISOString(),
