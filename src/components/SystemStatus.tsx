@@ -99,7 +99,7 @@ export function SystemStatus() {
         <Row
           ok={keyOk}
           label={`Provider: ${prov.label}`}
-          detail={keyOk ? 'API-Key hinterlegt.' : 'No API key — the test cockpit chat cannot answer. Agents over MCP do not need one.'}
+          detail={keyOk ? 'API key stored.' : 'No API key — the test cockpit chat cannot answer. Agents over MCP do not need one.'}
           fix={'“System” on the left → Settings → pick a provider → enter a key.'}
         />
         <Row

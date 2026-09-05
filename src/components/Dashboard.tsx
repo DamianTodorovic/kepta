@@ -206,9 +206,9 @@ export function Dashboard() {
         const key = `${a.id}|${b.id}`;
         if(seen.has(key)) continue;
         const ta=norm(a.title), tb=norm(b.title);
-        if(ta && ta===tb){ out.push({a,b,reason:'Gleicher Titel'}); seen.add(key); continue; }
+        if(ta && ta===tb){ out.push({a,b,reason:'Same title'}); seen.add(key); continue; }
         const ca=a.content.slice(0,160).toLowerCase(), cb=b.content.slice(0,160).toLowerCase();
-        if(ca && ca===cb && a.content.length>30){ out.push({a,b,reason:'Gleicher Inhalt (Prefix)'}); seen.add(key); continue; }
+        if(ca && ca===cb && a.content.length>30){ out.push({a,b,reason:'Same content (prefix)'}); seen.add(key); continue; }
         // Jaccard auf Worten für nahe Duplikate
         if (a.content.length>80 && b.content.length>80){
           const wa=new Set(ca.split(/\s+/).filter(Boolean)), wb=new Set(cb.split(/\s+/).filter(Boolean));
@@ -429,7 +429,7 @@ export function Dashboard() {
           try {
             await fetch(`/api/memories/${encodeURIComponent(id)}/restore`, { method: 'POST' });
             void refreshMemories();
-            toast.push({ message: 'Wiederhergestellt', kind: 'success' });
+            toast.push({ message: 'Restored', kind: 'success' });
           } catch {
             toast.push({ message: 'Restore failed', kind: 'warn' });
           }
@@ -617,7 +617,7 @@ export function Dashboard() {
               <button
                 onClick={() => setIsFocusMode(false)}
                 className="btn-ghost p-2 rounded-lg"
-                aria-label="Seitenleiste einblenden"
+                aria-label="Show sidebar"
               >
                 <PanelLeftOpen className="w-4.5 h-4.5" />
               </button>
@@ -828,7 +828,7 @@ export function Dashboard() {
                 {importing ? <Loader2 className="w-4 h-4 animate-spin shrink-0" style={{ color: "var(--accent)" }} /> : <UploadCloud className="w-4 h-4 shrink-0" style={{ color: "var(--text-3)" }} />}
                 <div className="flex-1 min-w-0">
                   <div className="text-[13px] font-medium truncate" style={{ color: "var(--text-1)" }}>
-                    {importing ? "Importiere…" : dragOver ? "Drop to import" : "Drag files here"}
+                    {importing ? "Importing…" : dragOver ? "Drop to import" : "Drag files here"}
                     <span className="hidden sm:inline font-normal" style={{ color: "var(--text-3)" }}> · PDF, MD, TXT, JSON</span>
                   </div>
                   {importMsg && <div className="text-[11px] mt-0.5 flex items-center gap-1" style={{ color: "var(--ok)" }}><CheckCircle2 className="w-3 h-3" />{importMsg}</div>}
@@ -1019,11 +1019,11 @@ export function Dashboard() {
                           onClick={() => setVisibleCount((c) => Math.min(c + PAGE_SIZE, displayedMemories.length))}
                           className="btn-ghost px-4 py-2 rounded-lg text-[13px] font-medium"
                         >
-                          Mehr laden ({displayedMemories.length - visibleCount} weitere)
+                          Load more ({displayedMemories.length - visibleCount} more)
                         </button>
                       </div>
                       <div className="text-center text-[11px] mt-2 tnum" style={{ color: 'var(--text-3)' }}>
-                        {paginatedMemories.length} von {displayedMemories.length} angezeigt
+                        {paginatedMemories.length} von {displayedMemories.length} shown
                       </div>
                     </>
                   )}
@@ -1103,7 +1103,7 @@ const SHORTCUTS: { keys: string; action: string }[] = [
   { keys: '⌘N', action: 'New knowledge node' },
   { keys: '?', action: 'This overview' },
   { keys: 'Esc', action: 'Close dialog' },
-  { keys: '⌘1–4', action: 'Ansicht wechseln (Index, Chat, Graph, System)' },
+  { keys: '⌘1–4', action: 'Switch view (Index, Chat, Graph, System)' },
 ];
 
 function ShortcutsSheet({ open, onClose }: { open: boolean; onClose: () => void }) {

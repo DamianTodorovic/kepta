@@ -325,7 +325,7 @@ export function Settings() {
                       onChange={(e) => e.target.value && update({ model: e.target.value })}
                       className={inputClass + " mt-2"}
                     >
-                      <option value="">Geladene Modelle auswählen ({models.length})...</option>
+                      <option value="">Loaded models ({models.length})...</option>
                       {models.map(m => <option key={m} value={m}>{m}</option>)}
                     </select>
                   )}
@@ -333,7 +333,7 @@ export function Settings() {
                     <p className="text-xs mt-2" style={{ color: '#f87171' }}>{modelError}</p>
                   )}
                   {!provider.needsKey && models.length > 0 && (
-                    <p className="text-xs mt-2 flex items-center gap-1.5" style={{ color: 'var(--ok)' }}><CheckCircle2 className="w-3.5 h-3.5" /> {models.length} lokale Modelle verbunden — neue Downloads erscheinen automatisch (alle 12s + bei Fokus)</p>
+                    <p className="text-xs mt-2 flex items-center gap-1.5" style={{ color: 'var(--ok)' }}><CheckCircle2 className="w-3.5 h-3.5" /> {models.length} local models connected — new downloads appear automatically (every 12s + on focus)</p>
                   )}
                   {!provider.needsKey && models.length === 0 && !loadingModels && !modelError && (
                     <p className="text-xs mt-2 leading-relaxed" style={{ color: 'var(--text-3)' }}>No local models found. Start Ollama (`ollama serve` + `ollama pull llama3.2`) or LM Studio — they show up here immediately.</p>
@@ -370,7 +370,7 @@ export function Settings() {
                     <span className={`inline-block h-4 w-4 transform rounded-full bg-white shadow transition-transform ${autoLearn ? 'translate-x-6' : 'translate-x-1'}`} />
                   </label>
                 </div>
-                {autoLearnSaved && <div className="text-xs mt-2 flex items-center gap-1.5" style={{color:'var(--ok)'}}><CheckCircle2 className="w-3.5 h-3.5"/> {autoLearn ? 'Auto-learn active — the brain extends itself' : 'Auto-Learn deaktiviert'}</div>}
+                {autoLearnSaved && <div className="text-xs mt-2 flex items-center gap-1.5" style={{color:'var(--ok)'}}><CheckCircle2 className="w-3.5 h-3.5"/> {autoLearn ? 'Auto-learn active — the brain extends itself' : 'Auto-learn off'}</div>}
                 {autoLearn && (
                   <div className="mt-4 pt-4" style={{ borderTop: '1px solid var(--border-subtle)' }}>
                     <label className="text-xs font-semibold block mb-1.5" style={{color:'var(--text-1)'}}>Extraction model <span style={{color:'var(--text-3)'}}>— optional</span></label>
@@ -383,7 +383,7 @@ export function Settings() {
                       className="w-full text-sm rounded-lg px-3 py-2"
                       style={{ background: 'var(--bg-inset-strong)', border: '1px solid var(--border-subtle)', color: 'var(--text-1)' }}
                     />
-                    {extractSaved && <div className="text-xs mt-1.5 flex items-center gap-1.5" style={{color:'var(--ok)'}}><CheckCircle2 className="w-3.5 h-3.5"/> Gespeichert</div>}
+                    {extractSaved && <div className="text-xs mt-1.5 flex items-center gap-1.5" style={{color:'var(--ok)'}}><CheckCircle2 className="w-3.5 h-3.5"/> Saved</div>}
                     <p className="text-xs mt-2 leading-relaxed" style={{color:'var(--text-3)'}}>
                       A small model is plenty for a title and three tags. Large reasoning models take minutes per answer and often return no clean JSON — auto-learn then gives up after {Math.round(AUTO_LEARN_TIMEOUT_MS/1000)} seconds and tells you so.
                     </p>
@@ -406,7 +406,7 @@ export function Settings() {
                   className="btn-ghost flex items-center justify-center gap-2 px-6 py-2.5 rounded-xl font-medium w-full"
                 >
                   {exported ? (
-                    <><CheckCircle2 className="w-5 h-5" style={{ color: 'var(--ok)' }} /> <span style={{ color: 'var(--ok)' }}>Backup erstellt</span></>
+                    <><CheckCircle2 className="w-5 h-5" style={{ color: 'var(--ok)' }} /> <span style={{ color: 'var(--ok)' }}>Backup created</span></>
                   ) : (
                     <><Download className="w-5 h-5" /> Download JSON backup</>
                   )}

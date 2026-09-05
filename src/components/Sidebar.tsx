@@ -162,7 +162,7 @@ export function Sidebar({ tags, selectedTags, onSelectTag, onClearTags, currentV
             className="w-8 h-8 flex items-center justify-center rounded-lg"
             style={{ background: SURFACE, border: `1px solid ${LINE}`, color: TEXT_MUTED }}
             aria-label="Focus mode"
-            title="Seitenleiste ausblenden"
+            title="Hide sidebar"
           >
             <PanelLeftClose className="w-3.5 h-3.5" />
           </button>

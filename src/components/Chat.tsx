@@ -187,7 +187,7 @@ export function Chat({ activeMemories, onSaveToBrain, onSaveToBrainWithMeta, isF
     let used = 0;
     const picked: Memory[] = [];
     for (const m of sorted) {
-      const chunk = `[ID: ${m.id} | KATEGORIEN: ${m.tags.join(", ")} | TITEL: ${m.title}]\n${m.content}\n\n`;
+      const chunk = `[ID: ${m.id} | TAGS: ${m.tags.join(", ")} | TITEL: ${m.title}]\n${m.content}\n\n`;
       const tok = estimateTokens(chunk);
       if (picked.length === 0) {
         // immer mindestens 1 Knoten wenn vorhanden
@@ -205,7 +205,7 @@ export function Chat({ activeMemories, onSaveToBrain, onSaveToBrainWithMeta, isF
     if (used < availableForMemories) {
       for (const m of sorted) {
         if (picked.find((p) => p.id === m.id)) continue;
-        const chunk = `[ID: ${m.id} | KATEGORIEN: ${m.tags.join(", ")} | TITEL: ${m.title}]\n${m.content}\n\n`;
+        const chunk = `[ID: ${m.id} | TAGS: ${m.tags.join(", ")} | TITEL: ${m.title}]\n${m.content}\n\n`;
         const tok = estimateTokens(chunk);
         if (used + tok <= availableForMemories) {
           picked.push(m);
@@ -289,22 +289,22 @@ export function Chat({ activeMemories, onSaveToBrain, onSaveToBrainWithMeta, isF
         const p = JSON.parse(raw);
         const name = p.displayName ? `Name: ${p.displayName}. ` : "";
         const cases = Array.isArray(p.useCases) && p.useCases.length ? `Focus: ${p.useCases.join(', ')}. ` : "";
-        const goal = p.goal ? `Ziel: ${p.goal}. ` : "";
+        const goal = p.goal ? `Goal: ${p.goal}. ` : "";
         const note = p.customNote ? `Note: ${p.customNote}. ` : "";
-        if (name || cases || goal || note) profileLine = `[Nutzerprofil] ${name}${cases}${goal}${note}Passe Antwort-Stil und Beispiele daran an.\n\n`;
+        if (name || cases || goal || note) profileLine = `[User profile] ${name}${cases}${goal}${note}Passe Antwort-Stil und Beispiele daran an.\n\n`;
       }
     } catch {}
     let prompt = profileLine + "You are the AI assistant. You have access to the user's personal knowledge base. Answer precisely and helpfully, based on the context below. Cite the id of every node you use where you can.\n\n";
     // Date-aware prompting (arXiv:2605.08538): Zeitanker reduzieren Temporal-Fehler deutlich
     prompt += `[Today: ${new Date().toLocaleDateString('en-GB', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}]\n\n`;
     if (mems.length === 0) {
-      prompt += "(Aktuell sind keine Knoten geladen. Antworte allgemein.)\n";
+      prompt += "(No nodes are loaded right now. Answer from general knowledge.)\n";
     } else {
       prompt += `Context — ${mems.length} nodes (token budget ${tokenBudget}):\n\n`;
       mems.forEach((m) => {
         const validTo = m.validTo ? ` | VALID UNTIL: ${new Date(m.validTo).toLocaleDateString('en-GB')}${m.validTo < Date.now() ? ' (EXPIRED)' : ''}` : "";
         const superseded = m.supersededBy ? " | SUPERSEDED" : "";
-        prompt += `[ID: ${m.id} | KATEGORIEN: ${m.tags.join(", ")} | TITEL: ${m.title}${validTo}${superseded}]\n${m.content}\n\n`;
+        prompt += `[ID: ${m.id} | TAGS: ${m.tags.join(", ")} | TITEL: ${m.title}${validTo}${superseded}]\n${m.content}\n\n`;
       });
     }
     return prompt;
@@ -453,7 +453,7 @@ export function Chat({ activeMemories, onSaveToBrain, onSaveToBrainWithMeta, isF
         if (accText) {
           const outTok = estimateTokens(accText);
           const cost = formatCost(placeholder.inputTokens || 0, outTok, provLive.id);
-          setMessages((prev) => prev.map((m) => (m.id === assistantId ? { ...m, content: accText + "\n\n— _abgebrochen_", outputTokens: outTok, costLabel: cost } : m)));
+          setMessages((prev) => prev.map((m) => (m.id === assistantId ? { ...m, content: accText + "\n\n— _aborted_", outputTokens: outTok, costLabel: cost } : m)));
         } else {
           setMessages((prev) => prev.filter((m) => m.id !== assistantId));
         }
@@ -485,7 +485,7 @@ export function Chat({ activeMemories, onSaveToBrain, onSaveToBrainWithMeta, isF
           kind: 'info',
           duration: 9000,
           action: {
-            label: 'Einschalten',
+            label: 'Turn on',
             onClick: () => {
               try { localStorage.setItem(AUTOLEARN_KEY, 'true'); } catch { /* ignorieren */ }
               toast.push({ message: 'Auto-learn is on — from the next answer.', kind: 'success' });
@@ -526,7 +526,7 @@ export function Chat({ activeMemories, onSaveToBrain, onSaveToBrainWithMeta, isF
 
             const save = await fetch('/api/memory', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ title: node.title, content: node.summary + `\n\n— Source: chat ${new Date().toLocaleString('en-GB')} — model ${prov.label}/${model}`, tags: node.tags }) });
             if (!save.ok) throw new Error(`Save failed (HTTP ${save.status})`);
-            toast.push({ message: `Gelernt: ${node.title}`, kind: 'success' });
+            toast.push({ message: `Learned: ${node.title}`, kind: 'success' });
           } catch (e) {
             const aborted = e instanceof DOMException && e.name === 'AbortError';
             const grund = aborted
@@ -566,7 +566,7 @@ export function Chat({ activeMemories, onSaveToBrain, onSaveToBrainWithMeta, isF
           <div>
             <h2 className="font-semibold text-sm flex items-center gap-1.5" style={{ color: "var(--text-1)" }}>
               Chat
-              {isStreaming && <span className="inline-flex items-center gap-1 text-[10px] font-normal px-1.5 py-0.5 rounded hud-inset" style={{ color: "var(--accent)" }}><span className="w-1.5 h-1.5 rounded-full bg-[var(--accent)] animate-pulse" /> streamt…</span>}
+              {isStreaming && <span className="inline-flex items-center gap-1 text-[10px] font-normal px-1.5 py-0.5 rounded hud-inset" style={{ color: "var(--accent)" }}><span className="w-1.5 h-1.5 rounded-full bg-[var(--accent)] animate-pulse" /> streaming…</span>}
             </h2>
             <div className="hud-label mt-0.5 flex items-center gap-1.5">
               {connection.state === "connected" ? (
@@ -607,7 +607,7 @@ export function Chat({ activeMemories, onSaveToBrain, onSaveToBrainWithMeta, isF
           <div className="hidden md:flex items-center gap-1.5 px-2 py-1 rounded hud-inset hud-label" title={`Input ${totalInputTokensEstimate} · Output ~${liveOutputTokens || 0} · ${estimatedCostNow}`}>
             <Coins className="w-3 h-3" /> {estimatedCostNow}
           </div>
-          <button onClick={clearChat} className="btn-ghost p-1.5 rounded-lg hover:!border-red-500/40" title="Chat leeren" aria-label="Chat leeren">
+          <button onClick={clearChat} className="btn-ghost p-1.5 rounded-lg hover:!border-red-500/40" title="Clear chat" aria-label="Clear chat">
             <Trash2 className="w-4 h-4" />
           </button>
         </div>
@@ -829,7 +829,7 @@ export function Chat({ activeMemories, onSaveToBrain, onSaveToBrainWithMeta, isF
                       onClick={() => {
                         if (onSaveToBrainWithMeta) {
                           // Versuche Titel aus erster Zeile zu extrahieren
-                          const firstLine = msg.content.split("\n").find((l) => l.trim().length > 6)?.slice(0, 80) || "KI-Antwort";
+                          const firstLine = msg.content.split("\n").find((l) => l.trim().length > 6)?.slice(0, 80) || "AI answer";
                           onSaveToBrainWithMeta({ title: firstLine.replace(/^#+\s*/, ""), content: msg.content, tags: ["ai-log", "chat"] });
                         } else {
                           onSaveToBrain?.(msg.content);
@@ -858,7 +858,7 @@ export function Chat({ activeMemories, onSaveToBrain, onSaveToBrainWithMeta, isF
                 <span className="typing-dot" />
                 <span className="typing-dot" />
               </span>
-              Antwortet…
+              Thinking…
             </div>
           </motion.div>
         )}
@@ -895,7 +895,7 @@ export function Chat({ activeMemories, onSaveToBrain, onSaveToBrainWithMeta, isF
                 onClick={handleStop}
                 className="h-full px-3 flex items-center gap-1.5 rounded-lg font-medium text-xs"
                 style={{ background: "rgba(239,68,68,0.12)", border: "1px solid rgba(239,68,68,0.3)", color: "#f87171" }}
-                title="Antwort stoppen (Abort)"
+                title="Stop answer (abort)"
               >
                 <Square className="w-3.5 h-3.5 fill-current" /> Stop
               </button>

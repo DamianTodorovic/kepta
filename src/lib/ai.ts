@@ -65,7 +65,7 @@ export const PROVIDERS: ProviderPreset[] = [
     baseUrl: 'https://api.groq.com/openai/v1',
     defaultModel: 'llama-3.3-70b-versatile',
     needsKey: true,
-    hint: 'Sehr schnell — Llama 3.3, Mixtral, Gemma',
+    hint: 'Very fast — Llama 3.3, Mixtral, Gemma',
   },
   {
     id: 'deepseek',

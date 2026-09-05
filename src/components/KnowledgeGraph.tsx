@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState, useMemo, useCallback } from "react";
 import { Memory } from "../types";
+import { existsAt, graphTimeRange } from "../lib/graphTime";
 import { Search, Maximize2, ZoomIn, ZoomOut, Clock } from "../lib/icons";
 
 interface KnowledgeGraphProps {
@@ -59,15 +60,9 @@ export function KnowledgeGraph({ memories, onSelectMemory }: KnowledgeGraphProps
   const [hovered, setHovered] = useState<string | null>(null);
   const [dimensions, setDimensions] = useState({ w: 800, h: 500 });
 
-  // Zeitregler: „Zeig mir mein Wissen von …" — Gültigkeit zum gewählten Zeitpunkt
+  // Time slider: "show my knowledge as of ..." — validity at the selected point
   const [timeFilter, setTimeFilter] = useState<number | null>(null);
-  const timeRange = useMemo(() => {
-    const ts = memories.flatMap((m) => [m.validFrom, m.validTo, m.updatedAt].filter((t): t is number => typeof t === "number" && t > 0));
-    if (ts.length === 0) return null;
-    return { min: Math.min(...ts), max: Math.max(...ts) };
-  }, [memories]);
-  const inEffect = (m: Memory, at: number): boolean =>
-    (m.validFrom == null || m.validFrom <= at) && (m.validTo == null || m.validTo > at);
+  const timeRange = useMemo(() => graphTimeRange(memories), [memories]);
 
   // Echte Relationen aus der Graph-DB (Entities/Relations) laden
   const [graphApi, setGraphApi] = useState<GraphApi | null>(null);
@@ -489,7 +484,7 @@ export function KnowledgeGraph({ memories, onSelectMemory }: KnowledgeGraphProps
               if (!pos) return null;
               const isHovered = hovered === m.id;
               const dimmed = hovered !== null && !isHovered && !neighborsOf.get(hovered)?.has(m.id);
-              const timeInactive = timeFilter !== null && !inEffect(m, timeFilter);
+              const timeInactive = timeFilter !== null && !existsAt(m, timeFilter);
               const r = radiusOf(m);
               const fill = nodeFill(m);
               const expired = m.validTo != null && m.validTo < Date.now();
