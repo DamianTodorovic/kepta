@@ -311,11 +311,12 @@ export function KnowledgeGraph({ memories, onSelectMemory }: KnowledgeGraphProps
   }, [dragging]);
 
   // Typ-Farben (kohärent mit Karten-Badges WISSEN/EPISODE/ABLAUF) statt Tag-Regenbogen
-  // Typ-Farben — individuell anpassbar pro Gerät (localStorage)
+  // Typ-Farben — individuell anpassbar pro Gerät (localStorage).
+  // Onyx-Palette: Sand-Gold, Mauve, Salbei — edel statt Primärblau.
   const DEFAULT_TYPE_COLORS: Record<string, string> = {
-    semantic: "#3e63dd",
-    episodic: "#7048c9",
-    procedural: "#17945c",
+    semantic: "#c9b785",
+    episodic: "#b6a0c9",
+    procedural: "#8fbf9f",
   };
   const [customTypeColors, setCustomTypeColors] = useState<Record<string, string>>(() => {
     try { return JSON.parse(localStorage.getItem("kepta_type_colors") || "{}"); } catch { return {}; }
@@ -567,9 +568,9 @@ export function KnowledgeGraph({ memories, onSelectMemory }: KnowledgeGraphProps
 
         <div className="absolute left-3 bottom-3 hud-panel rounded-lg px-3 py-2 pointer-events-none space-y-1">
           <div className="flex items-center gap-3 hud-label">
-            <span className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-full" style={{ background: '#3e63dd' }} /> Facts</span>
-            <span className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-full" style={{ background: '#7048c9' }} /> Events</span>
-            <span className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-full" style={{ background: '#17945c' }} /> How-tos</span>
+            <span className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-full" style={{ background: DEFAULT_TYPE_COLORS.semantic }} /> Facts</span>
+            <span className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-full" style={{ background: DEFAULT_TYPE_COLORS.episodic }} /> Events</span>
+            <span className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-full" style={{ background: DEFAULT_TYPE_COLORS.procedural }} /> How-tos</span>
           </div>
           <div className="flex items-center gap-3 hud-label">
             <svg width="26" height="6"><line x1="0" y1="3" x2="26" y2="3" stroke="var(--accent)" strokeWidth="2" /></svg> real connection

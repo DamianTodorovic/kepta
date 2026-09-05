@@ -22,13 +22,14 @@ interface SidebarProps {
 
 /* Die Sidebar ist bewusst IMMER dunkel (wie bei Slack/Linear) — sie bildet
    den Kontrast-Rahmen um die Inhaltsfläche und macht die App sofort
-   wiedererkennbar, unabhängig vom Theme. Materie liegt in .sidebar-glass. */
-const TEXT_STRONG = '#eef0f8';
-const TEXT_MUTED = 'rgba(226, 229, 242, 0.55)';
-const TEXT_FAINT = 'rgba(226, 229, 242, 0.34)';
-const LINE = 'rgba(255, 255, 255, 0.07)';
-const SURFACE = 'rgba(255, 255, 255, 0.055)';
-const ACCENT_LIGHT = '#a5b4f5';
+   wiedererkennbar, unabhängig vom Theme. Materie liegt in .sidebar-glass.
+   Onyx-Palette: warm-weißer Text, Champagner-Akzent, neutrale Flächen. */
+const TEXT_STRONG = '#f2f0e9';
+const TEXT_MUTED = 'rgba(233, 228, 216, 0.55)';
+const TEXT_FAINT = 'rgba(233, 228, 216, 0.32)';
+const LINE = 'rgba(255, 255, 255, 0.06)';
+const SURFACE = 'rgba(255, 255, 255, 0.05)';
+const ACCENT_LIGHT = '#d8c69a';
 
 export function Sidebar({ tags, selectedTags, onSelectTag, onClearTags, currentView, onNavigate, totalMemories, isFocusMode, toggleFocusMode, showSetup, onOpenSetup }: SidebarProps) {
   const { user } = useAuth();
@@ -124,7 +125,7 @@ export function Sidebar({ tags, selectedTags, onSelectTag, onClearTags, currentV
       <div className="p-2.5 space-y-2" style={{ borderTop: `1px solid ${LINE}` }}>
         {user && (
           <div className="px-2 py-2 rounded-lg flex items-center gap-2.5" style={{ background: SURFACE }}>
-            <div className="w-7 h-7 rounded-full flex items-center justify-center text-[11px] font-semibold" style={{ background: 'linear-gradient(180deg, rgba(123,146,236,0.95), rgba(90,110,210,0.95))', color: '#0c0e15' }}>
+            <div className="w-7 h-7 rounded-full flex items-center justify-center text-[11px] font-semibold" style={{ background: 'linear-gradient(180deg, rgba(212,194,144,0.95), rgba(150,128,82,0.95))', color: '#171309' }}>
               {((user.displayName || user.email || 'L').slice(0, 1).toUpperCase())}
             </div>
             <div className="min-w-0 flex-1">
@@ -138,7 +139,7 @@ export function Sidebar({ tags, selectedTags, onSelectTag, onClearTags, currentV
             <button
               onClick={onOpenSetup}
               className="w-8 h-8 flex items-center justify-center rounded-lg shrink-0"
-              style={{ background: 'rgba(123, 146, 236, 0.17)', border: '1px solid rgba(123, 146, 236, 0.3)', color: ACCENT_LIGHT }}
+              style={{ background: 'rgba(212, 194, 144, 0.13)', border: '1px solid rgba(216, 198, 154, 0.28)', color: ACCENT_LIGHT }}
               aria-label="Open setup"
               title="Open setup"
             >
