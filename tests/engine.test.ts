@@ -286,10 +286,17 @@ describe("writeGate — ADD/UPDATE/DELETE/NOOP", () => {
       if (prompt.includes("hunter2")) return '{"decision":"UPDATE","reason":"aktueller"}';
       return '{"decision":"ADD"}';
     });
-    expect((await writeGate(store, "Ganz neu", "Fremdes Thema", ask)).decision).toBe("ADD");
-    const upd = await writeGate(store, "Server Passwort neu", "hunter3", ask);
-    expect(upd.decision).toBe("UPDATE");
-    expect(upd.targetId).toBe("vorh");
+    // Embedding stubben: deterministisch, ohne echtes Ollama
+    const orig = globalThis.fetch;
+    globalThis.fetch = (async () => ({ ok: true, json: async () => ({ embeddings: [[1, 0, 0]] }) })) as unknown as typeof fetch;
+    try {
+      expect((await writeGate(store, "Ganz neu", "Fremdes Thema", ask)).decision).toBe("ADD");
+      const upd = await writeGate(store, "Server Passwort neu", "hunter3", ask);
+      expect(upd.decision).toBe("UPDATE");
+      expect(upd.targetId).toBe("vorh");
+    } finally {
+      globalThis.fetch = orig;
+    }
   });
 
   it("kaputte LLM-Antwort → ADD (nie blockierend)", async () => {
