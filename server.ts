@@ -1045,12 +1045,13 @@ export function createApp(store: KeptaStore) {
 
   // POST /api/search  -> Retrieval-Engine (BM25 + Vektoren + Graph → RRF), ein Pfad für alles
   app.post("/api/search", chatLimiter, async (req, res) => {
-    const { query, topK = 5, tags, type, scope } = req.body as {
+    const { query, topK = 5, tags, type, scope, asOf } = req.body as {
       query?: string;
       topK?: number;
       tags?: string[];
       type?: string;
       scope?: string;
+      asOf?: number;
     };
     const limit = Math.min(Math.max(Number(topK) || 5, 1), 100);
     const result = await engineSearch(store, {
@@ -1059,6 +1060,7 @@ export function createApp(store: KeptaStore) {
       tags: Array.isArray(tags) && tags.length > 0 ? sanitizeTags(tags) : undefined,
       type: type === "semantic" || type === "episodic" || type === "procedural" ? type : undefined,
       scope: typeof scope === "string" && scope ? scope : undefined,
+      asOf: typeof asOf === "number" && Number.isFinite(asOf) ? asOf : undefined,
     });
     publishActivity({ type: "search", source: "app", title: result.query }, { throttleSearchMs: 2500 });
     // Altes Response-Shape für das Frontend (cosineScore/bm25Score sind die Einzelbeine)

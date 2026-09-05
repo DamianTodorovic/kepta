@@ -99,6 +99,8 @@ export interface SearchParams {
   scope?: MemoryScope;
   /** Nur Memories, die nach diesem Zeitpunkt gültig wurden */
   validSince?: number;
+  /** Zeitreise: Suchstand zu diesem Zeitpunkt (Epoch-ms). Ohne Angabe = jetzt. */
+  asOf?: number;
   /**
    * Einzelne Retrieval-Beine abschalten — für Ablationsmessungen.
    * Fehlt die Angabe, laufen alle drei. Produktiv wird das nicht gesetzt;

@@ -350,6 +350,7 @@ export async function callTool(store: KeptaStore, name: string, args: Record<str
           tags: Array.isArray(args.tags) ? (args.tags as string[]) : undefined,
           type: (args.type as MemoryType | undefined) ?? undefined,
           scope: args.scope ? String(args.scope) : undefined,
+          asOf: args.asOf !== undefined ? Number(args.asOf) : undefined,
         };
         const res = await searchMemories(store, params);
         const structured = {

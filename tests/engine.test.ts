@@ -3,7 +3,7 @@ import { tmpdir } from "node:os";
 import path from "node:path";
 import fs from "node:fs";
 import { KeptaStore } from "../src/core/store";
-import { searchMemories, indexMemory, consolidateMemories, findDuplicateForNew } from "../src/core/engine";
+import { searchMemories, indexMemory, consolidateMemories, findDuplicateForNew, writeGate } from "../src/core/engine";
 import { DEFAULT_EMBED_MODEL } from "../src/core/embeddings";
 
 function freshStore(): KeptaStore {
@@ -247,5 +247,55 @@ describe("findDuplicateForNew", () => {
       throw new Error("Ollama down");
     }));
     expect(await findDuplicateForNew(store, "x", "y")).toBeNull();
+  });
+});
+
+describe("asOf — Zeitreise-Suche", () => {
+  it("zeigt nur den Wissensstand zum gefragten Zeitpunkt", async () => {
+    const store = freshStore();
+    store.createMemory({ id: "alt", title: "Wohnort", content: "Berlin Mitte", createdAt: Date.parse("2025-01-01"), updatedAt: Date.parse("2025-01-01") });
+    store.createMemory({ id: "neu", title: "Wohnort", content: "München Schwabing", createdAt: Date.parse("2026-06-01"), updatedAt: Date.parse("2026-06-01") });
+    store.supersedeMemory("alt", "neu");
+
+    const vergangenheit = await searchMemories(store, { query: "Wohnort", asOf: Date.parse("2025-06-01") });
+    expect(vergangenheit.hits.map((h) => h.memory.id)).toContain("alt");
+    expect(vergangenheit.hits.map((h) => h.memory.id)).not.toContain("neu");
+
+    const jetzt = await searchMemories(store, { query: "Wohnort" });
+    expect(jetzt.hits.map((h) => h.memory.id)).toContain("neu");
+    // Ersetzte bleiben sichtbar, aber deutlich herabgestuft (×0.4) — neu gewinnt
+    expect(jetzt.hits[0]?.memory.id).toBe("neu");
+    expect(jetzt.hits.find((h) => h.memory.id === "alt")?.superseded).toBe(true);
+  });
+
+  it("Zeitreise zählt keine Zugriffe (Retention bleibt echt)", async () => {
+    const store = freshStore();
+    const m = store.createMemory({ title: "Zauberwort Quux", content: "x" });
+    await searchMemories(store, { query: "Zauberwort", asOf: Date.parse("2020-01-01") });
+    expect(store.getMemory(m.id)?.accessCount).toBe(0);
+    await searchMemories(store, { query: "Zauberwort" });
+    expect(store.getMemory(m.id)?.accessCount).toBeGreaterThan(0);
+  });
+});
+
+describe("writeGate — ADD/UPDATE/DELETE/NOOP", () => {
+  it("ADD ohne ähnliche Erinnerung; LLM-Entscheidung wird gefolgt", async () => {
+    const store = freshStore();
+    store.createMemory({ id: "vorh", title: "Server Passwort", content: "hunter2" });
+    const ask = vi.fn(async (prompt: string) => {
+      if (prompt.includes("hunter2")) return '{"decision":"UPDATE","reason":"aktueller"}';
+      return '{"decision":"ADD"}';
+    });
+    expect((await writeGate(store, "Ganz neu", "Fremdes Thema", ask)).decision).toBe("ADD");
+    const upd = await writeGate(store, "Server Passwort neu", "hunter3", ask);
+    expect(upd.decision).toBe("UPDATE");
+    expect(upd.targetId).toBe("vorh");
+  });
+
+  it("kaputte LLM-Antwort → ADD (nie blockierend)", async () => {
+    const store = freshStore();
+    store.createMemory({ id: "x", title: "T", content: "C" });
+    const res = await writeGate(store, "T", "C", async () => "kein json hier");
+    expect(res.decision).toBe("ADD");
   });
 });

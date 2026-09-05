@@ -61,7 +61,9 @@ export async function searchMemories(store: KeptaStore, params: SearchParams): P
   const query = (params.query || "").trim();
   const limit = Math.min(Math.max(params.limit ?? 10, 1), 100);
   const queryLower = query.toLowerCase();
-  const now = Date.now();
+  // Zeitreise (asOf): „now“ ist dann der gefragte Zeitpunkt — Zeitregler für ALLE Zugänge
+  const now = params.asOf ?? Date.now();
+  const timeTravel = params.asOf !== undefined;
   const active = loadActive(store);
   const byId = new Map(active.map((m) => [m.record.id, m]));
 
@@ -74,6 +76,12 @@ export async function searchMemories(store: KeptaStore, params: SearchParams): P
       if (!tags.every((t) => r.tags.includes(t))) return false;
     }
     if (params.validSince && r.validFrom !== null && r.validFrom < params.validSince) return false;
+    // Zeitreise: Notizen, die zum Zeitpunkt noch nicht existierten oder schon abgelaufen waren, ausblenden
+    if (timeTravel) {
+      const start = r.validFrom ?? r.createdAt;
+      if (start !== null && start > now) return false;
+      if (r.validTo !== null && r.validTo <= now) return false;
+    }
     return true;
   };
 
@@ -184,7 +192,7 @@ export async function searchMemories(store: KeptaStore, params: SearchParams): P
     // Retention (Oblivion): oft/aktuell Genutztes steigt, Vergessenes sinkt
     score *= retentionFactor(r, now);
     // Temporal
-    const expired = r.validTo !== null && r.validTo < now;
+    const expired = !timeTravel && r.validTo !== null && r.validTo < now;
     const superseded = r.supersededBy !== null;
     if (expired) score *= EXPIRED_FACTOR;
     if (superseded) score *= SUPERSEDED_FACTOR;
@@ -216,7 +224,8 @@ export async function searchMemories(store: KeptaStore, params: SearchParams): P
   hits.sort((a, b) => b.score - a.score || b.memory.updatedAt - a.memory.updatedAt);
   const top = hits.slice(0, limit);
   // Zugriffs-Statistik für die Retention aktualisieren (fire-and-forget-semantisch, aber sync)
-  if (query && top.length > 0) store.recordAccess(top.map((h) => h.memory.id));
+  // Retention nur für Gegenwarts-Suchen zählen — Zeitreise verfälscht die Statistik nicht
+  if (query && !timeTravel && top.length > 0) store.recordAccess(top.map((h) => h.memory.id));
   return { hits: top, total: hits.length, query, usedVectors };
 }
 
@@ -387,3 +396,58 @@ export async function findDuplicateForNew(
 
 export type { MemoryType, SearchHit, SearchResult, SearchParams };
 export { DEFAULT_EMBED_MODEL };
+
+// ---------- Write-Gate (F2): lokales LLM entscheidet ADD/UPDATE/DELETE/NOOP ----------
+
+export type WriteDecision = "ADD" | "UPDATE" | "DELETE" | "NOOP";
+
+export interface WriteGateResult {
+  decision: WriteDecision;
+  /** Bei UPDATE/DELETE: ID des betroffenen bestehenden Knotens */
+  targetId?: string;
+  reason?: string;
+}
+
+/**
+ * Klassifiziert einen neuen Knoten gegen die ähnlichsten bestehenden:
+ * ADD (neu), UPDATE (ersetzt bestehenden), DELETE (Müll), NOOP (schon vorhanden).
+ * Ohne erreichbares lokales LLM → ADD (Verhalten wie bisher, nie blockierend).
+ */
+export async function writeGate(
+  store: KeptaStore,
+  title: string,
+  content: string,
+  ask: (prompt: string) => Promise<string>
+): Promise<WriteGateResult> {
+  const dup = await findDuplicateForNew(store, title, content);
+  if (!dup) return { decision: "ADD", reason: "keine ähnliche Erinnerung" };
+  const existing = store.getMemory(dup.existingId);
+  if (!existing) return { decision: "ADD" };
+  const prompt = [
+    "Entscheide, wie eine neue Erinnerung behandelt wird. Antworte NUR mit einem JSON-Objekt:",
+    '{"decision":"ADD|UPDATE|DELETE|NOOP","reason":"<kurz>"}',
+    "ADD = neues Wissen. UPDATE = ersetzt die bestehende (aktueller/genauer). DELETE = die neue ist Müll. NOOP = bereits identisch vorhanden.",
+    "",
+    `Bestehende Erinnerung (${dup.existingId}, Ähnlichkeit ${dup.similarity.toFixed(2)}):`,
+    `Titel: ${existing.title}`,
+    `Inhalt: ${existing.content.slice(0, 500)}`,
+    "",
+    `Neue Erinnerung:`,
+    `Titel: ${title}`,
+    `Inhalt: ${content.slice(0, 500)}`,
+  ].join("\n");
+  let raw = "";
+  try {
+    raw = await ask(prompt);
+    const match = raw.match(/\{[\s\S]*\}/);
+    if (!match) throw new Error("kein JSON in Antwort");
+    const parsed = JSON.parse(match[0]!) as { decision?: string; reason?: string };
+    const decision = parsed.decision?.toUpperCase();
+    if (decision === "UPDATE") return { decision: "UPDATE", targetId: dup.existingId, reason: parsed.reason };
+    if (decision === "DELETE") return { decision: "DELETE", reason: parsed.reason };
+    if (decision === "NOOP") return { decision: "NOOP", reason: parsed.reason };
+    return { decision: "ADD", reason: parsed.reason };
+  } catch (e) {
+    return { decision: "ADD", reason: `gate nicht auswertbar: ${e instanceof Error ? e.message : String(e)}` };
+  }
+}
