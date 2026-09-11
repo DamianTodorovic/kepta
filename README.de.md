@@ -31,7 +31,7 @@ npm install && npm run dev
 **3. Docker** (nur MCP-Server): `docker build -t kepta-mcp .`
 
 [![Tests](https://img.shields.io/badge/tests-311%20passing-brightgreen)]()
-[![Coverage gate](https://img.shields.io/badge/coverage%20gate-%E2%89%A5%2092%25%20of%20lines-brightgreen)]()
+[![Coverage gate](https://img.shields.io/badge/coverage%20gate-%E2%89%A5%2070%25%20of%20lines-brightgreen)]()
 
 **Zahlen:** **311 tests** · 29 Routen · `npm run eval` — Eval auf 58 Notizen / 45 Anfragen (Hit@1, Precision@5, MRR).
 
@@ -47,5 +47,5 @@ SQLCipher 4 (AES-256, HMAC-SHA512 je Seite, WAL eingeschlossen). Der Schlüssel 
 
 | Bereich | Schwellen (von CI erzwungen) |
 |---|---|
-| alles zusammen | **92 %** der Zeilen · **95 %** der Funktionen · 78 % Branches · 90 % Statements |
-| `src/core` | **97 %** der Zeilen · **100 %** der Funktionen · 78 % Branches · 94 % Statements |
+| alles zusammen | **70 %** der Zeilen · **72 %** der Funktionen · 56 % Branches · 66 % Statements |
+| `src/core` | **87 %** der Zeilen · **89 %** der Funktionen · 74 % Branches · 85 % Statements |

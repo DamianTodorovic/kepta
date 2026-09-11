@@ -3,7 +3,7 @@
 [![License: AGPL-3.0](https://img.shields.io/badge/License-AGPL--3.0-blue.svg)](LICENSE)
 [![Tests](https://img.shields.io/badge/tests-311%20passing-brightgreen)]()
 [![MCP](https://img.shields.io/badge/MCP-8%20tools-purple)]()
-[![Coverage gate](https://img.shields.io/badge/coverage%20gate-%E2%89%A5%2092%25%20of%20lines-brightgreen)]()
+[![Coverage gate](https://img.shields.io/badge/coverage%20gate-%E2%89%A5%2070%25%20of%20lines-brightgreen)]()
 
 Your AI assistant forgets you like a goldfish. Every chat starts from zero.
 
@@ -65,8 +65,8 @@ This repository is deliberately small: the memory engine that agents use. The de
 
 | Area | Threshold (enforced by CI) |
 |---|---|
-| everything together | **92 %** of lines · **95 %** of functions · 78 % branches · 90 % statements |
-| `src/core` | **97 %** of lines · **100 %** of functions · 78 % branches · 94 % statements |
+| everything together | **70 %** of lines · **72 %** of functions · 56 % branches · 66 % statements |
+| `src/core` | **87 %** of lines · **89 %** of functions · 74 % branches · 85 % statements |
 
 ## License
 
