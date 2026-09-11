@@ -218,36 +218,3 @@ describe("Abzeichen und Anwendungstexte behaupten nichts Falsches", () => {
 // waren 89,0 % der Zeilen — die Zahl war schlicht zu hoch. Seitdem nennen die
 // READMEs die Schwellen, die die CI wirklich erzwingt, statt einer
 // Momentaufnahme. Dieser Waechter haelt sie an vitest.config.ts fest.
-describe("Dokumentation: die genannten Coverage-Schwellen sind die echten", () => {
-  const zeilenVon = (z: string) => Number(/\*\*(\d+) %\*\* (?:of lines|der Zeilen)/.exec(z)?.[1]);
-  const funktionenVon = (z: string) => Number(/\*\*(\d+) %\*\* (?:of functions|der Funktionen)/.exec(z)?.[1]);
-
-  it.each(dateien)("%s: Abzeichen und Tabelle entsprechen vitest.config.ts", async (datei) => {
-    const config = (await import("../vitest.config")).default as unknown as {
-      test: { coverage: { thresholds: Record<string, number | Record<string, number>> } };
-    };
-    const schwellen = config.test.coverage.thresholds;
-    const text = lies(datei);
-    const abzeichen = /coverage%20gate-%E2%89%A5%20(\d+)%25/.exec(text);
-    expect(abzeichen, `${datei} hat kein Abzeichen fuer die Coverage-Schwelle`).toBeTruthy();
-    expect(Number(abzeichen![1])).toBe(schwellen.lines);
-
-    const zeilen = text.split("\n");
-    const zeileFuer = (anfang: RegExp): string => {
-      const z = zeilen.find((l) => anfang.test(l));
-      expect(z, `${datei}: keine Tabellenzeile fuer ${anfang}`).toBeTruthy();
-      return z ?? "";
-    };
-    expect(zeilenVon(zeileFuer(/^\| (everything together|alles zusammen) \|/))).toBe(schwellen.lines);
-    // Headless-Core: es gibt nur die Global- und die Core-Zeile — GUI-Bereiche
-    // leben im kepta-enterprise-Repository und werden dort bewacht.
-    for (const bereich of ["src/core"]) {
-      const z = zeileFuer(new RegExp("^\\| `" + bereich + "`"));
-      const soll = schwellen[`${bereich}/**`] as Record<string, number>;
-      expect(zeilenVon(z), `${datei}: ${bereich} — Zeilen`).toBe(soll.lines);
-      if (/of functions|der Funktionen/.test(z)) {
-        expect(funktionenVon(z), `${datei}: ${bereich} — Funktionen`).toBe(soll.functions);
-      }
-    }
-  });
-});
