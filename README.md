@@ -79,7 +79,7 @@ docker run -e KEPTA_DB_KEY=<64-hex> -v kepta-data:/data kepta-mcp
 | 🔗 **MCP-first** | 8 Tools, ein Codepfad für API und MCP — Agenten bekommen dieselbe Qualität wie die App |
 | 📄 **Datei-Import** | PDF (pdf.js mit CMaps), Markdown mit `[[Wiki-Links]]`, TXT, JSON |
 | 🔒 **Verschlüsselung** | Datenbank-Datei und WAL vollständig verschlüsselt; Schlüssel im OS-Schlüsselbund (macOS Keychain / Windows DPAPI / Linux Secret Service) |
-| 📊 **Eval** | Hit@1, Precision@5, MRR auf 58 Notizen / 45 Anfragen; Ablation-Test je Retrieval-Bein |
+| 📊 **Eval** | `npm run eval` auf einem Fixkorpus: 58 notes / 45 queries, Hit@1 + Precision@5 + MRR | Hit@1, Precision@5, MRR auf 58 Notizen / 45 Anfragen; Ablation-Test je Retrieval-Bein |
 
 ---
 
@@ -144,6 +144,14 @@ Die Wissensbasis liegt in einer SQLCipher-4-Datenbank: AES-256, HMAC-SHA512 übe
 **310 Tests** mit Vitest und v8-Coverage. Die Coverage-Schwellen sind ein CI-Gate: Ein Commit, der unter eine Schwelle fällt, wird rot. Dazu: eigener Retrieval-Eval (Hit@1, Precision@5, MRR) mit Fixkorpus, Ablation-Test je Retrieval-Bein, Verschlüsselungs-Eval, Boundary-Test auf der Kern-Architektur.
 
 ---
+
+
+## Coverage thresholds (enforced by CI)
+
+| Area | Lines | Functions | Branches | Statements |
+|---|---|---|---|---|
+| everything together | **70 %** | **72 %** | **56 %** | **66 %** |
+| `src/core` | **87 %** | **89 %** | **74 %** | **85 %** |
 
 ## 📄 Lizenz
 
