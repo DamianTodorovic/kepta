@@ -1,4 +1,4 @@
-<p align="center"><img src="https://img.shields.io/badge/version-2.11.0-blue" alt="v2.11.0"> <img src="https://img.shields.io/badge/license-AGPL--3.0-blue" alt="AGPL-3.0"> <img src="https://img.shields.io/badge/tests-319%20passing-brightgreen" alt="tests"> <img src="https://img.shields.io/badge/coverage%20gate-%E2%89%A5%2089%25%20of%20lines-brightgreen" alt="coverage"> <img src="https://img.shields.io/badge/platform-macOS%20%7C%20Windows%20%7C%20Linux-lightgrey" alt="platform"> <img src="https://img.shields.io/badge/encryption-SQLCipher%204-green" alt="encrypted"></p>
+<p align="center"><img src="https://img.shields.io/badge/version-2.11.0-blue" alt="v2.11.0"> <img src="https://img.shields.io/badge/license-AGPL--3.0-blue" alt="AGPL-3.0"> <img src="https://img.shields.io/badge/tests-310%20passing-brightgreen" alt="tests"> <img src="https://img.shields.io/badge/coverage%20gate-%E2%89%A5%2070%25%20of%20lines-brightgreen" alt="coverage"> <img src="https://img.shields.io/badge/platform-macOS%20%7C%20Windows%20%7C%20Linux-lightgrey" alt="platform"> <img src="https://img.shields.io/badge/encryption-SQLCipher%204-green" alt="encrypted"></p>
 
 # KEPTA Core
 
@@ -83,7 +83,7 @@ docker run -e KEPTA_DB_KEY=<64-hex> -v kepta-data:/data kepta-mcp
 
 ---
 
-## 🖥️ HTTP-API (33 Routen)
+## 🖥️ HTTP-API (29 Routen)
 
 | Bereich | Routen |
 |---|---|
@@ -120,13 +120,13 @@ Keine Abhängigkeiten. Nur die Python-Standardbibliothek.
 
 ```
 src/core/           Memory-Engine (Store, Suche, Verschlüsselung, MCP-Protokoll)
-server.ts           HTTP-API (Express, 33 Routen)
+server.ts           HTTP-API (Express, 29 Routen)
 src/mcp-server.ts   MCP-stdio-Server (npx kepta-mcp)
 npm/                npm-Paket-Quelle (kepta-mcp)
 Dockerfile          Docker-Container (MCP-Server)
 python/             Python-Client (PyPI: kepta)
 scripts/            Eval, Benchmark, Reparatur
-tests/              319 Tests, Coverage-Gate ≥ 89 % Lines
+tests/              310 Tests, Coverage-Gate ≥ 89 % Lines
 ```
 
 **Ein Codepfad** für HTTP-API und MCP-Server — Agenten bekommen dieselben Ergebnisse wie direkte API-Aufrufe.
@@ -141,7 +141,7 @@ Die Wissensbasis liegt in einer SQLCipher-4-Datenbank: AES-256, HMAC-SHA512 übe
 
 ## 🧪 Qualität
 
-**319 Tests** mit Vitest und v8-Coverage. Die Coverage-Schwellen sind ein CI-Gate: Ein Commit, der unter eine Schwelle fällt, wird rot. Dazu: eigener Retrieval-Eval (Hit@1, Precision@5, MRR) mit Fixkorpus, Ablation-Test je Retrieval-Bein, Verschlüsselungs-Eval, Boundary-Test auf der Kern-Architektur.
+**310 Tests** mit Vitest und v8-Coverage. Die Coverage-Schwellen sind ein CI-Gate: Ein Commit, der unter eine Schwelle fällt, wird rot. Dazu: eigener Retrieval-Eval (Hit@1, Precision@5, MRR) mit Fixkorpus, Ablation-Test je Retrieval-Bein, Verschlüsselungs-Eval, Boundary-Test auf der Kern-Architektur.
 
 ---
 
