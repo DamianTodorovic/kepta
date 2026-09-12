@@ -90,7 +90,7 @@ jobs:
           # OIDC-Flow ueberhaupt erst (ohne ihn kommt ENEEDAUTH).
           rm -f "${NPM_CONFIG_USERCONFIG:?NPM_CONFIG_USERCONFIG fehlt}"
           unset NODE_AUTH_TOKEN
-          npm publish --provenance --access public --loglevel silly
+          npm publish --provenance --access public
         # Kein NODE_AUTH_TOKEN — die Anmeldung laeuft ueber Trusted Publishing.
 
       # Die Registry prueft den Besitz, indem sie das npm-Paket abruft und dessen
