@@ -44,7 +44,7 @@ export const SEITE_HTML = `<!doctype html>
     <nav id="tags" aria-label="Tags"></nav>
     <div class="sidebar-foot">
       <button id="lock" class="lock" type="button" title="Encryption and recovery key">Checking encryption…</button>
-      <button class="upsell" type="button" data-pro=""><span class="upsell-kicker">KEPTA Enterprise</span><span class="upsell-text">Your memory as a graph, drag &amp; drop import and a chat with it — in a native desktop app.</span><span class="upsell-cta">Try it free for 14 days →</span></button>
+      <button class="upsell" type="button" data-pro=""><span class="upsell-kicker">KEPTA Enterprise</span><span class="upsell-text">Your memory as a graph, drag &amp; drop import and a chat with it — in a native desktop app.</span></button>
     </div>
   </aside>
   <main class="main">
@@ -82,7 +82,7 @@ export const SEITE_HTML = `<!doctype html>
     <section data-feature="app"><h3>A native app</h3><p>macOS, Windows and Linux in a hardened shell, with a command palette (⌘K), focus mode, a setup assistant and a system status that finds local AI by itself.</p></section>
     <section data-feature="trust"><h3>Private by design</h3><p>No account, no telemetry, no cloud. The license key is checked offline — KEPTA never phones home.</p></section>
   </div>
-  <div class="ent-trial"><strong>14-day free trial with every feature.</strong> No account, no internet. Then a license key — for yourself, your practice or your whole team.</div>
+  <div class="ent-trial"><strong>No account, no internet.</strong> One offline license key — for yourself, your practice or your whole team.</div>
   <div class="actions">
     <a class="btn primary" href="https://www.linkedin.com/in/damian-todorovic-244235434" target="_blank" rel="noopener noreferrer">Get KEPTA Enterprise</a>
     <a class="btn" href="https://github.com/DamianTodorovic/kepta#-kepta-enterprise--the-full-desktop-app" target="_blank" rel="noopener noreferrer">Compare Core and Enterprise</a>
@@ -133,7 +133,6 @@ button{font:inherit;color:inherit;cursor:pointer}
 .upsell:focus-visible,.hint:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
 .upsell-kicker{color:var(--accent);font-weight:700;font-size:13px}
 .upsell-text{color:var(--muted);font-size:12px;line-height:1.45}
-.upsell-cta{font-weight:600;font-size:12px;margin-top:5px}
 .badge{flex:none;font-size:10px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;padding:2px 8px;border-radius:999px;color:var(--accent);border:1px solid rgba(216,199,156,.45);background:rgba(216,199,156,.08)}
 .nav.pro{color:var(--muted)}
 .nav.pro:hover{color:var(--text)}

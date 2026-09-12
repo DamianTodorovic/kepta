@@ -61,7 +61,6 @@ describe("die Seite der Core-Oberfläche", () => {
       ["one undo for the batch", "one undo for the batch"],
       ["command palette (⌘K)", "command palette (⌘K)"],
       ["focus mode", "Focus mode"],
-      ["14-day free trial", "14-day free trial"],
       ["never phones home", "never phones home"],
     ];
     for (const [seite, tabelle] of belege) {
