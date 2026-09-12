@@ -41,7 +41,9 @@ random bytes; SQLite reports "file is not a database".
 
 **Keep a copy of the key.** It never leaves the keychain on its own; if the
 keychain is lost (a fresh system, a new Windows account), a restored
-`kepta.db` cannot be opened. Store the key in a password manager:
+`kepta.db` cannot be opened. Store the key in a password manager — the easiest
+way is the interface (`npx kepta-mcp ui`): click *Encrypted at rest* in the
+sidebar → *Show recovery key* → *Copy*. Or from a terminal:
 
 - macOS: `security find-generic-password -s app.kepta.database -a kepta -w`
 - Linux: `secret-tool lookup service app.kepta.database account kepta`

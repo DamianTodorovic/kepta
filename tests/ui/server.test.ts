@@ -9,6 +9,7 @@ import os from "node:os";
 import path from "node:path";
 import { KeptaStore } from "../../src/core/store";
 import { APP_VERSION } from "../../src/core/version";
+import { defaultExtensions } from "../../src/core/extensions";
 import {
   starteOberflaeche,
   leseUiArgumente,
@@ -162,6 +163,33 @@ describe("Notizen", () => {
     expect((await anfrage("DELETE", "/api/notes/gibt-es-nicht")).status).toBe(404);
     expect((await anfrage("PATCH", `/api/notes/${note.id}`, { body: {} })).status).toBe(404);
     expect((await anfrage("GET", "/api/gibt-es-nicht")).status).toBe(404);
+  });
+});
+
+describe("Wiederherstellungsschlüssel", () => {
+  it("gibt es nur für eine verschlüsselte Datei, nur mit Token — und liefert den echten Schlüssel", async () => {
+    expect((await anfrage("POST", "/api/recovery-key", { body: {} })).status).toBe(404);
+    const SCHLUESSEL = Buffer.alloc(32, 0x42);
+    let fragen = 0;
+    const verschluesselt = new KeptaStore(path.join(fs.mkdtempSync(path.join(os.tmpdir(), "kepta-ui-")), "enc.db"), {
+      ...defaultExtensions(),
+      keys: { ablage: "Test-Bund", keyFor: () => { fragen++; if (fragen > 2) throw new Error("Keychain locked"); return SCHLUESSEL; } },
+    });
+    const alt = ui;
+    ui = await starteOberflaeche(verschluesselt, { port: 0 });
+    try {
+      expect((await anfrage("POST", "/api/recovery-key", { body: {}, ohneToken: true })).status).toBe(403);
+      const r = await anfrage("POST", "/api/recovery-key", { body: {} });
+      expect(r.json).toEqual({ key: "42".repeat(32), storedIn: "Test-Bund" });
+      expect(r.headers["cache-control"]).toBe("no-store");
+      const gesperrt = await anfrage("POST", "/api/recovery-key", { body: {} });
+      expect(gesperrt.status).toBe(500);
+      expect(gesperrt.json.error).toContain("Keychain locked");
+    } finally {
+      await ui.close();
+      verschluesselt.close();
+      ui = alt;
+    }
   });
 });
 

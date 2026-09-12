@@ -1,4 +1,4 @@
-<p align="center"><img src="https://img.shields.io/badge/version-2.11.0-blue" alt="v2.11.0"> <img src="https://img.shields.io/badge/license-AGPL--3.0-blue" alt="AGPL-3.0"> <img src="https://img.shields.io/badge/tests-338%20passing-brightgreen" alt="tests"> <img src="https://img.shields.io/badge/coverage%20gate-%E2%89%A5%2070%25%20of%20lines-brightgreen" alt="coverage gate"> <img src="https://img.shields.io/badge/platform-macOS%20%7C%20Windows%20%7C%20Linux-lightgrey" alt="platform"> <img src="https://img.shields.io/badge/encryption-SQLCipher%204-green" alt="encrypted"> <a href="https://www.linkedin.com/in/damian-todorovic-244235434"><img src="https://img.shields.io/badge/LinkedIn-Damian%20Todorovic-0A66C2?logo=linkedin&logoColor=white" alt="Damian Todorovic on LinkedIn"></a></p>
+<p align="center"><img src="https://img.shields.io/badge/version-2.11.0-blue" alt="v2.11.0"> <img src="https://img.shields.io/badge/license-AGPL--3.0-blue" alt="AGPL-3.0"> <img src="https://img.shields.io/badge/tests-340%20passing-brightgreen" alt="tests"> <img src="https://img.shields.io/badge/coverage%20gate-%E2%89%A5%2070%25%20of%20lines-brightgreen" alt="coverage gate"> <img src="https://img.shields.io/badge/platform-macOS%20%7C%20Windows%20%7C%20Linux-lightgrey" alt="platform"> <img src="https://img.shields.io/badge/encryption-SQLCipher%204-green" alt="encrypted"> <a href="https://www.linkedin.com/in/damian-todorovic-244235434"><img src="https://img.shields.io/badge/LinkedIn-Damian%20Todorovic-0A66C2?logo=linkedin&logoColor=white" alt="Damian Todorovic on LinkedIn"></a></p>
 
 # KEPTA Core
 
@@ -41,21 +41,85 @@ This repository is the **open core** (AGPL-3.0): the memory engine, the MCP serv
 
 <sub>KEPTA Enterprise 2.11 on an invented demo corpus — nothing in these shots is real.</sub>
 
-| | KEPTA Core<br><sub>this repository</sub> | KEPTA Enterprise<br><sub>desktop app</sub> |
+**Every feature, side by side.** ✅ available · **API** / **MCP** in the core for agents and scripts, without a screen for it · — only in KEPTA Enterprise
+
+| Feature | KEPTA Core | KEPTA Enterprise |
 |---|:---:|:---:|
-| Encrypted knowledge base — SQLCipher 4, key in the OS keychain | ✅ | ✅ |
-| Hybrid search — BM25 + vectors + graph, fused and reranked | ✅ | ✅ |
-| MCP server for Claude Desktop, Cursor and every MCP client | ✅ | ✅ |
-| HTTP API and Python client | ✅ | ✅ |
-| A good interface for your memory — browse, search, edit, trash (`npx -y kepta-mcp ui`, in your browser) | ✅ | ✅ |
-| **Native desktop app** for macOS, Windows and Linux | — | ✅ |
-| **Knowledge graph you can explore** — Force layout and Tree view, a time slider back to any day; 3 000 nodes and 9 500 edges at 60 fps | — | ✅ |
-| **Drag & drop import** — PDF, Markdown, text; Obsidian vaults; web pages with one paste | — | ✅ |
-| **Scan this computer** — opt-in, with a preview before a single file is read | — | ✅ |
-| **Duplicate review, trash with restore, command palette** (⌘K) | — | ✅ |
-| **Chat cockpit** with the model you choose — local (Ollama, LM Studio) or cloud | — | ✅ |
-| **Praxis-Sync** — move knowledge between your own devices as an encrypted bundle | — | ✅ |
-| **Setup assistant and system status** that tell you what works and what is missing | — | ✅ |
+| **Security & privacy** | | |
+| Encrypted at rest — SQLCipher 4, AES-256 and an HMAC-SHA512 over every page, the WAL included | ✅ | ✅ |
+| The key is created and kept in the OS keychain automatically — nothing to type, agents never see it | ✅ | ✅ |
+| Recovery key in one click, ready for your password manager | ✅ | ✅ |
+| Settings — the AI key included — live inside the encrypted file | ✅ | ✅ |
+| Loopback only (`127.0.0.1`), no account, no telemetry — nothing leaves your machine unless you pick a cloud AI | ✅ | ✅ |
+| Rate limiting, Helmet and input validation on every route | ✅ | ✅ |
+| Hardened desktop shell — no Node in the window, sandbox, Content Security Policy | — | ✅ |
+| **Notes** | | |
+| Create, edit, delete — trash with restore | ✅ | ✅ |
+| Four kinds of knowledge — fact, event, how-to, document — assigned by readable rules that state their reason | ✅ | ✅ |
+| Sort existing notes by kind afterwards, with a preview first | API | ✅ |
+| Tags, confidence 0–1, automatically extracted entities | ✅ | ✅ |
+| Scopes — user, agent, session — so a memory knows whom it belongs to | API · MCP | API · MCP |
+| Validity windows — expired notes are marked, never quietly hidden | ✅ | ✅ |
+| Supersede chains — a new fact displaces the old one, the history stays | ✅ | ✅ |
+| Migration from the old `memories.json` — idempotent, with a backup | ✅ | ✅ |
+| **Search** | | |
+| Hybrid retrieval — BM25 full text + vectors + entities, fused with Reciprocal Rank Fusion | ✅ | ✅ |
+| Local reranking — term coverage, phrases, title, tags; no network | ✅ | ✅ |
+| Relevance first — results ranked, the best hit on top | ✅ | ✅ |
+| Time-travel search — what was known at any moment (`asOf`) | API · MCP | API · MCP |
+| Persistent embeddings via Ollama, computed by a background queue | ✅ | ✅ |
+| Temporal weighting — expired ×0.5, superseded ×0.4 | ✅ | ✅ |
+| Stopwords in German and English | ✅ | ✅ |
+| Semantic search switch and a result slider from 5 to all | — | ✅ |
+| One code path for interface, HTTP API and MCP — agents get the quality you get | ✅ | ✅ |
+| Retrieval eval — `npm run eval` measures Hit@1, Precision@5 and MRR | ✅ | ✅ |
+| **Capture & import** | | |
+| Drag & drop files — PDF with the character maps of embedded fonts, Markdown, text, JSON — chunked | — | ✅ |
+| Inbox folder, watched and imported automatically | API | ✅ |
+| Obsidian vault import — frontmatter kept, `[[wiki links]]` become graph edges | API | ✅ |
+| JSON import of whole note sets | API | ✅ |
+| Re-read files imported with an older extraction — counts first, writes after you confirm | API | ✅ |
+| URL clipper — SSRF-protected, strips navigation lines and cookie banners | — | ✅ |
+| Scan this computer — opt-in, preview first; keys, credentials, browser profiles and wallets stay blocked | — | ✅ |
+| Auto-learn — save the key point of a chat answer (off by default) | — | ✅ |
+| Markdown export to a folder | API | ✅ |
+| Praxis-Sync — move a scope between your own devices as an AES-256-GCM bundle, with a hash-chained ledger | API | ✅ |
+| **Knowledge graph** | | |
+| Entities and relations from `[[wiki links]]` and automatic extraction | API · MCP | ✅ |
+| Interactive graph with two views — Force (physics) and Tree (dendrogram); nodes glide between them | — | ✅ |
+| Unbounded canvas — 3 000 nodes and 9 500 edges at 60 fps; zoom, pan, drag, fit-to-view | — | ✅ |
+| Time slider — the graph as it stood on any day | — | ✅ |
+| Colour by kind, size by connections, real links told apart from mere similarity; double-click opens the note | — | ✅ |
+| **Maintenance** | | |
+| Duplicate detection — embedding similarity ≥ 0.92, lexical fallback without Ollama | MCP | ✅ |
+| Consolidation supersedes instead of deleting — nothing is lost | MCP | ✅ |
+| Duplicate review — groups side by side, keep the richest copy in one click, one undo for the batch | — | ✅ |
+| Episodic memories grow out of chat history | — | ✅ |
+| Activity feed | API | ✅ |
+| **Agents (MCP)** | | |
+| MCP 2026-07-28, compatible with 2025-06-18 and 2024-11-05 — stdio and Streamable HTTP | ✅ | ✅ |
+| Eight tools — search, save, update, delete, list, graph, consolidate, forget — with `outputSchema` and `structuredContent` | ✅ | ✅ |
+| Write gate (opt-in) — a local LLM decides ADD, UPDATE, DELETE or NOOP before a new memory is stored | ✅ | ✅ |
+| npm package `kepta-mcp`, listed in the official MCP registry | ✅ | ✅ |
+| Python client — `pip install kepta`, standard library only | ✅ | ✅ |
+| **Chat cockpit** | | |
+| 20 provider presets — Ollama, LM Studio, OpenAI, Anthropic, Gemini, Mistral, Groq, DeepSeek, xAI and more | — | ✅ |
+| Model discovery for Ollama and LM Studio in one click | — | ✅ |
+| Streaming with a stop button, Markdown rendering | — | ✅ |
+| Source citations — every answer shows which memories it used | — | ✅ |
+| Date-aware prompting and a visible token budget | — | ✅ |
+| **Interface** | | |
+| An interface for your memory — browse by kind and tag, search, read, write, trash | ✅ in your browser | ✅ native app |
+| Native desktop app for macOS, Windows and Linux | — | ✅ |
+| Light and dark | ✅ | ✅ |
+| Keyboard first — shortcuts; in Enterprise also a command palette (⌘K) | ✅ | ✅ |
+| Tag filter with counts | ✅ | ✅ |
+| Knowledge list with readable previews, source chips, part badges, *Open file*, grouping by file, kind or period | — | ✅ |
+| Focus mode and text size (100 / 115 / 130 %) | — | ✅ |
+| Setup assistant with a starter pack | — | ✅ |
+| System status — detects local AI, checks storage, shows diagnostics | — | ✅ |
+| **Price** | | |
+| License | free · AGPL-3.0 | 14-day free trial, then a license key checked offline |
 
 **Try it for 14 days — full functionality, no account, no internet.** After the trial a license key unlocks it, checked offline on your machine; KEPTA never phones home. For yourself, your practice or your whole team: **[write to me on LinkedIn](https://www.linkedin.com/in/damian-todorovic-244235434)** and I'll get you set up.
 
@@ -183,7 +247,7 @@ The knowledge base is a SQLCipher 4 database: AES-256, an HMAC-SHA512 over every
 
 ## 🧪 Quality
 
-**338 tests** with Vitest and v8 coverage. The coverage thresholds are a CI gate: a commit that falls below one of them turns CI red. On top: a retrieval eval (Hit@1, Precision@5, MRR) on a fixed corpus, an ablation test per retrieval leg, an encryption eval and a boundary test on the core architecture.
+**340 tests** with Vitest and v8 coverage. The coverage thresholds are a CI gate: a commit that falls below one of them turns CI red. On top: a retrieval eval (Hit@1, Precision@5, MRR) on a fixed corpus, an ablation test per retrieval leg, an encryption eval and a boundary test on the core architecture.
 
 ### Coverage thresholds (enforced by CI)
 

@@ -27,7 +27,7 @@ export const SEITE_HTML = `<!doctype html>
     <div class="section-label">Tags</div>
     <nav id="tags" aria-label="Tags"></nav>
     <div class="sidebar-foot">
-      <div id="lock" class="lock" role="status">Checking encryption…</div>
+      <button id="lock" class="lock" type="button" title="Encryption and recovery key">Checking encryption…</button>
       <a class="upsell" href="https://github.com/DamianTodorovic/kepta#-kepta-enterprise--the-full-desktop-app" target="_blank" rel="noopener noreferrer">Knowledge graph, drag &amp; drop import, chat and sync<strong>KEPTA Enterprise →</strong></a>
     </div>
   </aside>
@@ -74,7 +74,11 @@ button{font:inherit;color:inherit;cursor:pointer}
 .t-semantic{--c:var(--t-semantic)}.t-episodic{--c:var(--t-episodic)}.t-procedural{--c:var(--t-procedural)}.t-reference{--c:var(--t-reference)}
 .hash{color:var(--muted);width:8px}
 .sidebar-foot{margin-top:auto;display:flex;flex-direction:column;gap:10px;padding:16px 4px 0}
-.lock{font-size:12px;padding:9px 11px;border-radius:10px;border:1px solid var(--line);display:flex;align-items:center;gap:8px}
+.lock{font-size:12px;padding:9px 11px;border-radius:10px;border:1px solid var(--line);display:flex;align-items:center;gap:8px;background:transparent;width:100%;text-align:left}
+.lock:hover{border-color:var(--accent)}
+.lock:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.section-title{font-size:15px;margin:22px 0 4px}
+.key{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:15px;word-spacing:.4em;background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:14px;line-height:1.8;margin:12px 0;user-select:all;overflow-wrap:anywhere}
 .lock::before{content:"";width:8px;height:8px;border-radius:50%;background:var(--warn);flex:none}
 .lock.ok::before{background:var(--ok)}
 .upsell{display:flex;flex-direction:column;gap:3px;text-decoration:none;color:var(--muted);font-size:12px;padding:12px;border-radius:12px;background:linear-gradient(135deg,rgba(216,199,156,.16),rgba(157,184,227,.08));border:1px solid var(--line)}
@@ -231,7 +235,48 @@ export const SEITE_JS = String.raw`
     var lock = $('lock');
     lock.className = 'lock' + (e.aktiv ? ' ok' : '');
     lock.textContent = e.aktiv ? 'Encrypted at rest' : 'Not encrypted';
-    lock.title = e.aktiv ? ('SQLCipher 4, AES-256' + (e.ablage ? ' — key in ' + e.ablage : '')) : (e.hinweis || 'The knowledge base file is not encrypted.');
+    lock.title = 'Encryption and recovery key';
+  }
+
+  function wo(ablage) {
+    if (!ablage) return '';
+    if (ablage === 'KEPTA_DB_KEY') return ' Its key comes from the KEPTA_DB_KEY variable.';
+    if (ablage === 'Windows DPAPI') return ' Its key is protected by Windows DPAPI.';
+    return ' Its key lives in the ' + ablage + '.';
+  }
+  function gruppen(hex) { return (hex.match(/.{1,8}/g) || []).join(' '); }
+
+  // Encryption and the recovery key: show it once, copy it, keep it in a
+  // password manager. Nobody needs it day to day.
+  function verschluesselung() {
+    var s = state.status;
+    if (!s) return;
+    var e = s.encryption;
+    var feld = h('div');
+    function knopf() { return h('button', { class: 'btn', type: 'button', onclick: zeigen }, 'Show recovery key'); }
+    function zeigen() {
+      api('/api/recovery-key', { method: 'POST', body: {} }).then(function (d) {
+        var roh = d.key;
+        feld.textContent = '';
+        feld.appendChild(h('div', { class: 'key', 'aria-label': 'Recovery key', text: gruppen(roh) }));
+        feld.appendChild(h('div', { class: 'row' },
+          h('button', { class: 'btn primary', type: 'button', onclick: function () {
+            navigator.clipboard.writeText(roh).then(function () { toast('Recovery key copied — paste it into your password manager.'); }, function () { toast('Copying failed — select the key instead.', true); });
+          } }, 'Copy'),
+          h('button', { class: 'btn ghost', type: 'button', onclick: function () { feld.textContent = ''; feld.appendChild(knopf()); } }, 'Hide')));
+      }).catch(function (err) { toast(err.message, true); });
+    }
+    feld.appendChild(knopf());
+    drawer(h('div', {},
+      h('div', { class: 'panel-head' }, h('strong', { text: 'Encryption at rest' }),
+        h('button', { class: 'btn icon close', type: 'button', 'aria-label': 'Close', onclick: schliessen }, '×')),
+      e.aktiv
+        ? h('div', {},
+            h('p', { class: 'content', text: 'Your knowledge base is encrypted on this computer — SQLCipher 4, AES-256.' + wo(e.ablage) + ' You and your agents never need it: KEPTA fetches the key by itself.' }),
+            h('h3', { class: 'section-title', text: 'Recovery key' }),
+            h('p', { class: 'muted', text: 'Keep one copy in your password manager. It is the only way to open your knowledge base, or a backup of it, on a new computer. Never share it.' }),
+            feld)
+        : h('p', { class: 'content', text: e.hinweis || 'The knowledge base file is not encrypted.' })));
   }
 
   function loadStatus() { return api('/api/status').then(function (s) { state.status = s; renderSidebar(); }); }
@@ -367,8 +412,8 @@ export const SEITE_JS = String.raw`
     var d = new Date(ms);
     return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
   }
-  // Eigenes Datumsfeld statt <input type=date>: dessen Platzhalter folgt der
-  // Sprache des Systems ("tt.mm.jjjj" auf einem deutschen Mac), nicht der Seite.
+  // Our own date field instead of <input type=date>: its placeholder follows the
+  // language of the system ("tt.mm.jjjj" on a German Mac), not the page.
   function ausDatum(v) {
     v = v.trim();
     if (!v) return null;
@@ -446,9 +491,9 @@ export const SEITE_JS = String.raw`
 
   function theme(t) {
     document.documentElement.setAttribute('data-theme', t);
-    try { localStorage.setItem('kepta-core-theme', t); } catch (e) { /* privates Fenster */ }
+    try { localStorage.setItem('kepta-core-theme', t); } catch (e) { /* private window */ }
   }
-  try { var gemerkt = localStorage.getItem('kepta-core-theme'); if (gemerkt) theme(gemerkt); } catch (e) { /* privates Fenster */ }
+  try { var gemerkt = localStorage.getItem('kepta-core-theme'); if (gemerkt) theme(gemerkt); } catch (e) { /* private window */ }
   $('theme').addEventListener('click', function () { theme(document.documentElement.getAttribute('data-theme') === 'dark' ? 'light' : 'dark'); });
 
   var timer = null;
@@ -458,6 +503,7 @@ export const SEITE_JS = String.raw`
     timer = setTimeout(function () { state.query = v; state.tag = null; load(true); }, 220);
   });
   $('new').addEventListener('click', function () { openEditor(null); });
+  $('lock').addEventListener('click', verschluesselung);
   $('more').addEventListener('click', function () { load(false); });
   $('drawer').addEventListener('click', function (ev) { if (ev.target === $('drawer')) schliessen(); });
   document.addEventListener('keydown', function (ev) {

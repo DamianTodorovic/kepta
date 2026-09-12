@@ -377,6 +377,20 @@ export class KeptaStore {
     return (this.db.prepare("SELECT count(*) AS n FROM einstellungen").get() as { n: number }).n;
   }
 
+  /**
+   * Der Wiederherstellungsschluessel: derselbe 256-Bit-Schluessel, mit dem die
+   * Datei verschluesselt ist, als Hex. Fuer den Knopf "Recovery key" in der
+   * Oberflaeche — wer ihn im Passwort-Manager hat, oeffnet die Wissensbasis und
+   * ihre Sicherungen auch auf einem neuen Rechner (KEPTA_DB_KEY oder zurueck in
+   * den Schluesselbund). Im Alltag braucht ihn niemand: Store und MCP-Server
+   * holen den Schluessel selbst. Null, wenn die Datei nicht verschluesselt ist.
+   */
+  wiederherstellungsSchluessel(): string | null {
+    if (!this.verschluesselung.aktiv) return null;
+    const schluessel = this.extensions.keys.keyFor(this.dbPath);
+    return schluessel ? Buffer.from(schluessel).toString("hex") : null;
+  }
+
   close() {
     this.db.close();
   }

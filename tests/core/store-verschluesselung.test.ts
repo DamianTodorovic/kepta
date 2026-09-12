@@ -286,6 +286,17 @@ describe("Einstellungen in der Datenbank", () => {
   });
 });
 
+describe("Wiederherstellungsschluessel", () => {
+  it("ist der Schluessel der Datei als Hex — und fehlt bei einer Klartext-Datei", () => {
+    const s = new KeptaStore(neuerPfad(), mit(SCHLUESSEL));
+    expect(s.wiederherstellungsSchluessel()).toBe(SCHLUESSEL.toString("hex"));
+    s.close();
+    const klar = new KeptaStore(neuerPfad());
+    expect(klar.wiederherstellungsSchluessel()).toBeNull();
+    klar.close();
+  });
+});
+
 describe("istKlartextDatenbank", () => {
   it("erkennt den SQLite-Kopf — fehlende, leere und kurze Dateien sind es nicht", () => {
     const d = neuerOrdner();

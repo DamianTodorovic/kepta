@@ -240,6 +240,17 @@ async function bearbeite(req: http.IncomingMessage, res: http.ServerResponse, ct
     });
   }
 
+  if (pfad === "/api/recovery-key" && methode === "POST") {
+    let schluessel: string | null;
+    try {
+      schluessel = store.wiederherstellungsSchluessel();
+    } catch (e) {
+      throw new AnfrageFehler(500, `The key could not be read: ${e instanceof Error ? e.message : String(e)}`);
+    }
+    if (!schluessel) throw new AnfrageFehler(404, "The knowledge base is not encrypted — there is no recovery key.");
+    return antworte(res, 200, { key: schluessel, storedIn: store.verschluesselung.ablage ?? null });
+  }
+
   if (einzeln) {
     const id = decodeURIComponent(einzeln[1]);
     const vorhanden = store.getMemory(id);

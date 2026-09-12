@@ -13,6 +13,11 @@ All notable changes are documented in this file. The format follows [Keep a Chan
   listens on loopback only, checks the host of every request and needs a
   per-session token for every change, so no other website can touch your notes.
 
+- **Recovery key in one click.** In the browser interface, *Encrypted at rest*
+  in the sidebar shows the recovery key with a *Copy* button — paste it into a
+  password manager once, no terminal needed. Day to day nobody needs it: the
+  store and the MCP server fetch the key from the keychain by themselves.
+
 ### Changed
 - **The npm package `kepta-mcp` is AGPL-3.0-or-later**, like the repository it is
   built from; until 2.10 it said MIT while the source said AGPL. The Python
