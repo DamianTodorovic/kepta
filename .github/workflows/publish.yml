@@ -89,6 +89,12 @@ jobs:
           # Also: beide Spuren entfernen, dann bleibt nur Trusted Publishing.
           rm -f "${NPM_CONFIG_USERCONFIG:?NPM_CONFIG_USERCONFIG fehlt}"
           unset NODE_AUTH_TOKEN
+          echo "npm-Version: $(npm --version)"
+          if [ -n "${ACTIONS_ID_TOKEN_REQUEST_URL:-}" ]; then
+            echo "OIDC-URL ist gesetzt (id-token: write wirkt)"
+          else
+            echo "OIDC-URL FEHLT — der Runner gibt kein OIDC-Zertifikat"
+          fi
           npm publish --access public
         # Kein NODE_AUTH_TOKEN — die Anmeldung laeuft ueber Trusted Publishing.
 
