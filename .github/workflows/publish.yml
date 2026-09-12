@@ -43,7 +43,13 @@ jobs:
       # die falsche Fassung. Lieber hier abbrechen als in der Registry aufraeumen.
       - name: Tag und Versionen muessen uebereinstimmen
         run: |
-          TAG="${GITHUB_REF#refs/tags/v}"
+          # Nur bei Tag-Pushes pruefen; bei workflow_dispatch ist GITHUB_REF
+          # ein Branch (refs/heads/main) und wuerde sonst Muell in TAG hintenlassen.
+          if [ "$GITHUB_REF_TYPE" = "tag" ]; then
+            TAG="${GITHUB_REF#refs/tags/v}"
+          else
+            TAG=""
+          fi
           APP=$(node -p "require('./package.json').version")
           PKG=$(node -p "require('./npm/package.json').version")
           SRV=$(node -p "require('./server.json').version")
