@@ -96,8 +96,8 @@ export const SEITE_HTML = `<!doctype html>
 `;
 
 export const SEITE_CSS = String.raw`
-:root{--bg:#141a1f;--panel:#1b232b;--panel2:#232d36;--line:rgba(230,233,225,.12);--text:#e6e9e1;--muted:#a3ada9;--accent:#c24b3b;--accent-ink:#f7efe7;--danger:#d06a58;--ok:#7fb08a;--warn:#cfa45e;--t-semantic:#8aa6c4;--t-episodic:#b78ca6;--t-procedural:#8fb894;--t-reference:#c4a077;--radius:12px;--shadow:0 14px 40px rgba(0,0,0,.45);color-scheme:dark}
-[data-theme=light]{--bg:#d7dad3;--panel:#eff1ea;--panel2:#e3e6de;--line:rgba(34,48,60,.15);--text:#22303c;--muted:#51616d;--accent:#9c2b1f;--accent-ink:#f7f2e9;--danger:#a03a2c;--ok:#3e6b4f;--warn:#8a5a16;--t-semantic:#33506b;--t-episodic:#6d4257;--t-procedural:#3e5c42;--t-reference:#6b4a32;--shadow:0 12px 32px rgba(20,28,34,.16);color-scheme:light}
+:root{--bg:#070708;--panel:#0e0e0f;--panel2:#161617;--line:rgba(255,255,255,.09);--text:#eaeae8;--muted:#9b9992;--accent:#c04a39;--accent-ink:#f7efe7;--danger:#d06a58;--ok:#7fb08a;--warn:#cfa45e;--t-semantic:#96a7bd;--t-episodic:#b08ca4;--t-procedural:#8fb89a;--t-reference:#c2a283;--radius:12px;--shadow:0 14px 40px rgba(0,0,0,.5);color-scheme:dark}
+[data-theme=light]{--bg:#e9e9e7;--panel:#f4f4f2;--panel2:#e2e2e0;--line:rgba(20,20,20,.13);--text:#232526;--muted:#5b5e60;--accent:#9c2b1f;--accent-ink:#f7f2e9;--danger:#a03a2c;--ok:#3e6b4f;--warn:#8a5a16;--t-semantic:#3f5a78;--t-episodic:#74455f;--t-procedural:#41604a;--t-reference:#75563c;--shadow:0 12px 32px rgba(20,20,20,.14);color-scheme:light}
 *{box-sizing:border-box}
 [hidden]{display:none!important}
 html,body{margin:0;height:100%}
@@ -179,7 +179,7 @@ a.btn{display:inline-flex;align-items:center;text-decoration:none;color:var(--te
 .card{position:relative;background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);padding:16px 16px 14px 19px;cursor:pointer;display:flex;flex-direction:column;gap:8px;min-height:172px;transition:border-color .12s ease,background .12s ease}
 .card::before{content:"";position:absolute;left:0;top:14px;bottom:14px;width:3px;border-radius:3px;background:var(--c,var(--muted))}
 .card:hover{border-color:color-mix(in srgb,var(--text) 32%,transparent)}
-.card h3{margin:0;font-size:16px;line-height:1.3}
+.card h3{margin:0;font-size:16px;line-height:1.3;font-family:Charter,"Iowan Old Style",Palatino,Georgia,serif;font-weight:600}
 .excerpt{margin:0;color:var(--muted);flex:1;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
 .card-top,.card-foot{display:flex;align-items:center;gap:8px}
 .card-foot{justify-content:space-between}
