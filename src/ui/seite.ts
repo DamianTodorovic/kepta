@@ -173,13 +173,13 @@ a.btn{display:inline-flex;align-items:center;text-decoration:none;color:var(--te
 .btn.danger{color:var(--danger)}
 .btn.icon{width:42px;padding:0;display:grid;place-items:center;font-size:18px}
 .btn:focus-visible,.nav:focus-visible,.card:focus-visible,.seg:focus-visible,.tagchip:focus-visible,.wikilink:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
-.head h1{font-family:Charter,"Iowan Old Style",Palatino,Georgia,serif;font-weight:600;font-size:34px;margin:18px 0 2px;letter-spacing:-.005em}
+.head h1{font-family:Charter,"Iowan Old Style",Palatino,Georgia,serif;font-weight:600;font-size:clamp(30px,4vw,44px);margin:20px 0 2px;letter-spacing:-.005em;text-wrap:balance}
 .muted{color:var(--muted)}.small{font-size:12px}.pad{padding:24px 2px}
-.list{display:grid;grid-template-columns:repeat(auto-fill,minmax(270px,1fr));gap:14px;margin-top:18px}
-.card{position:relative;background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);padding:16px 16px 14px 19px;cursor:pointer;display:flex;flex-direction:column;gap:8px;min-height:172px;transition:border-color .12s ease,background .12s ease}
+.list{display:flex;flex-direction:column;border-top:1px solid var(--line);margin-top:16px}
+.card{position:relative;background:transparent;border:0;border-bottom:1px solid var(--line);padding:16px 10px;cursor:pointer;display:flex;flex-direction:column;gap:6px;transition:background .12s ease}
 .card::before{content:"";position:absolute;left:0;top:14px;bottom:14px;width:3px;border-radius:3px;background:var(--c,var(--muted))}
-.card:hover{border-color:color-mix(in srgb,var(--text) 32%,transparent)}
-.card h3{margin:0;font-size:16px;line-height:1.3;font-family:Charter,"Iowan Old Style",Palatino,Georgia,serif;font-weight:600}
+.card:hover{background:var(--panel2)}
+.card h3{margin:0;font-size:17px;line-height:1.24;font-family:Charter,"Iowan Old Style",Palatino,Georgia,serif;font-weight:600;text-wrap:balance}
 .excerpt{margin:0;color:var(--muted);flex:1;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
 .card-top,.card-foot{display:flex;align-items:center;gap:8px}
 .card-foot{justify-content:space-between}
