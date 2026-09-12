@@ -13,6 +13,7 @@
     "build": "esbuild server.ts --bundle --platform=node --format=cjs --packages=external --sourcemap --outfile=dist/server.cjs && npm run build:mcp && node -e \"require('fs').cpSync('node_modules/pdfjs-dist/cmaps','dist/cmaps',{recursive:true})\"",
     "build:mcp": "esbuild src/mcp-server.ts --bundle --platform=node --format=cjs --packages=external --outfile=dist/mcp-server.cjs",
     "mcp": "tsx src/mcp-server.ts",
+    "ui": "tsx src/mcp-server.ts ui",
     "lint": "tsc --noEmit",
     "test": "vitest run",
     "test:cov": "vitest run --coverage",

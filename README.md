@@ -1,4 +1,4 @@
-<p align="center"><img src="https://img.shields.io/badge/version-2.11.0-blue" alt="v2.11.0"> <img src="https://img.shields.io/badge/license-AGPL--3.0-blue" alt="AGPL-3.0"> <img src="https://img.shields.io/badge/tests-317%20passing-brightgreen" alt="tests"> <img src="https://img.shields.io/badge/coverage%20gate-%E2%89%A5%2070%25%20of%20lines-brightgreen" alt="coverage gate"> <img src="https://img.shields.io/badge/platform-macOS%20%7C%20Windows%20%7C%20Linux-lightgrey" alt="platform"> <img src="https://img.shields.io/badge/encryption-SQLCipher%204-green" alt="encrypted"> <a href="https://www.linkedin.com/in/damian-todorovic-244235434"><img src="https://img.shields.io/badge/LinkedIn-Damian%20Todorovic-0A66C2?logo=linkedin&logoColor=white" alt="Damian Todorovic on LinkedIn"></a></p>
+<p align="center"><img src="https://img.shields.io/badge/version-2.11.0-blue" alt="v2.11.0"> <img src="https://img.shields.io/badge/license-AGPL--3.0-blue" alt="AGPL-3.0"> <img src="https://img.shields.io/badge/tests-338%20passing-brightgreen" alt="tests"> <img src="https://img.shields.io/badge/coverage%20gate-%E2%89%A5%2070%25%20of%20lines-brightgreen" alt="coverage gate"> <img src="https://img.shields.io/badge/platform-macOS%20%7C%20Windows%20%7C%20Linux-lightgrey" alt="platform"> <img src="https://img.shields.io/badge/encryption-SQLCipher%204-green" alt="encrypted"> <a href="https://www.linkedin.com/in/damian-todorovic-244235434"><img src="https://img.shields.io/badge/LinkedIn-Damian%20Todorovic-0A66C2?logo=linkedin&logoColor=white" alt="Damian Todorovic on LinkedIn"></a></p>
 
 # KEPTA Core
 
@@ -47,6 +47,7 @@ This repository is the **open core** (AGPL-3.0): the memory engine, the MCP serv
 | Hybrid search — BM25 + vectors + graph, fused and reranked | ✅ | ✅ |
 | MCP server for Claude Desktop, Cursor and every MCP client | ✅ | ✅ |
 | HTTP API and Python client | ✅ | ✅ |
+| A good interface for your memory — browse, search, edit, trash (`npx -y kepta-mcp ui`, in your browser) | ✅ | ✅ |
 | **Native desktop app** for macOS, Windows and Linux | — | ✅ |
 | **Knowledge graph you can explore** — Force layout and Tree view, a time slider back to any day; 3 000 nodes and 9 500 edges at 60 fps | — | ✅ |
 | **Drag & drop import** — PDF, Markdown, text; Obsidian vaults; web pages with one paste | — | ✅ |
@@ -76,6 +77,14 @@ This repository is the **open core** (AGPL-3.0): the memory engine, the MCP serv
 ```
 
 8 tools: `memory_search`, `memory_save`, `memory_update`, `memory_delete`, `memory_list`, `memory_graph`, `memory_consolidate`, `memory_forget`.
+
+### Your memory in the browser
+
+```bash
+npx -y kepta-mcp ui
+```
+
+Opens **KEPTA Core** in your browser on `http://127.0.0.1:4747` — the same encrypted knowledge base your agents write to, now one click away. Browse by kind and tag, search ranked by relevance, open a note and follow its `[[links]]`, write and edit notes with their kind, tags and validity, move them to the trash and bring them back, dark or light. Nothing to install, nothing leaves your machine, and only your own browser tab can change anything. `--port` picks another port, `--no-open` keeps the browser closed.
 
 ### HTTP API
 
@@ -153,7 +162,8 @@ No dependencies — only the Python standard library.
 ```
 src/core/           memory engine (store, search, encryption, MCP protocol)
 server.ts           HTTP API (Express, 29 routes)
-src/mcp-server.ts   MCP stdio server (npx kepta-mcp)
+src/mcp-server.ts   MCP stdio server (npx kepta-mcp) and the browser interface (npx kepta-mcp ui)
+src/ui/             the interface: a small local server and one page, no framework, no CDN
 npm/                source of the npm package (kepta-mcp)
 Dockerfile          container for the MCP server
 python/             Python client (PyPI: kepta)
@@ -173,7 +183,7 @@ The knowledge base is a SQLCipher 4 database: AES-256, an HMAC-SHA512 over every
 
 ## 🧪 Quality
 
-**317 tests** with Vitest and v8 coverage. The coverage thresholds are a CI gate: a commit that falls below one of them turns CI red. On top: a retrieval eval (Hit@1, Precision@5, MRR) on a fixed corpus, an ablation test per retrieval leg, an encryption eval and a boundary test on the core architecture.
+**338 tests** with Vitest and v8 coverage. The coverage thresholds are a CI gate: a commit that falls below one of them turns CI red. On top: a retrieval eval (Hit@1, Precision@5, MRR) on a fixed corpus, an ablation test per retrieval leg, an encryption eval and a boundary test on the core architecture.
 
 ### Coverage thresholds (enforced by CI)
 

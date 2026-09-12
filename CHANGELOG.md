@@ -4,6 +4,15 @@ All notable changes are documented in this file. The format follows [Keep a Chan
 
 ## [2.11.0] — 2026-09-11
 
+### Added
+- **KEPTA Core in your browser: `npx -y kepta-mcp ui`.** A local interface on
+  `http://127.0.0.1:4747` for the same encrypted knowledge base the agents use:
+  browse by kind and tag, search ranked by relevance, open notes and follow
+  their `[[links]]`, write and edit notes with kind, tags and validity, trash
+  and restore, dark and light. No framework, no CDN, no new dependency; it
+  listens on loopback only, checks the host of every request and needs a
+  per-session token for every change, so no other website can touch your notes.
+
 ### Changed
 - **The npm package `kepta-mcp` is AGPL-3.0-or-later**, like the repository it is
   built from; until 2.10 it said MIT while the source said AGPL. The Python

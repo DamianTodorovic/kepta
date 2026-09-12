@@ -20,6 +20,14 @@ For Claude Desktop that file is `~/Library/Application Support/Claude/claude_des
 
 That is the whole setup. The memory lives in `~/.kepta/kepta.db` and is created on first use.
 
+## Your memory in the browser
+
+```bash
+npx -y kepta-mcp ui
+```
+
+Opens KEPTA Core on `http://127.0.0.1:4747`: browse by kind and tag, search ranked by relevance, read notes and follow their `[[links]]`, write and edit notes, trash and restore them — on the same encrypted file your agents use. `--port 5000` picks another port, `--no-open` keeps the browser closed.
+
 ## The eight tools your agent gets
 
 | Tool | What it does |
