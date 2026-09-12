@@ -198,7 +198,7 @@ button.tagchip:hover{color:var(--text)}
 .row.two>*{flex:1}
 .drawer{position:fixed;inset:0;background:rgba(0,0,0,.45);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);display:flex;justify-content:flex-end;z-index:10}
 .drawer[hidden]{display:none}
-.drawer-panel{width:min(580px,100%);height:100%;overflow:auto;background:var(--panel);border-left:1px solid var(--line);padding:22px 28px;box-shadow:var(--shadow);animation:rein .18s ease}
+.drawer-panel{width:min(580px,100%);overscroll-behavior:contain;height:100%;overflow:auto;background:var(--panel);border-left:1px solid var(--line);padding:22px 28px;box-shadow:var(--shadow);animation:rein .18s ease}
 @keyframes rein{from{transform:translateX(24px);opacity:0}to{transform:none;opacity:1}}
 .panel-head{display:flex;align-items:center;gap:10px}
 .panel-head .close{margin-left:auto}
