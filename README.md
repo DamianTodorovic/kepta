@@ -37,8 +37,8 @@ This repository is the **open core** (AGPL-3.0): the memory engine, the MCP serv
 | The index — everything you know, grouped by kind | The knowledge graph — every note a node, every link an edge |
 |---|---|
 | ![KEPTA Enterprise: the index](docs/enterprise/01-index.png) | ![KEPTA Enterprise: the knowledge graph](docs/enterprise/03-graph.png) |
-| **The editor — kinds of knowledge, `[[links]]`, validity** | **Set up in a minute — your words, not a menu** |
-| ![KEPTA Enterprise: the editor](docs/enterprise/04-editor.png) | ![KEPTA Enterprise: the setup assistant](docs/enterprise/05-setup.png) |
+| **The editor — kinds of knowledge, `[[links]]`, validity** | **Settings — system status, encryption at rest, Device Sync** |
+| ![KEPTA Enterprise: the editor](docs/enterprise/04-editor.png) | ![KEPTA Enterprise: the settings with the system status](docs/enterprise/05-setup.png) |
 
 <sub>KEPTA Enterprise 2.11 on an invented demo corpus — nothing in these shots is real.</sub>
 

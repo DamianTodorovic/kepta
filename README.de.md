@@ -16,8 +16,8 @@ KEPTA ändert das — **lokal**. Eine verschlüsselte SQLite-Datei auf deinem Re
 | Der Index — alles, was du weißt, nach Art geordnet | Der Wissensgraph — jede Notiz ein Knoten, jeder Link eine Kante |
 |---|---|
 | ![KEPTA Enterprise: der Index](docs/enterprise/01-index.png) | ![KEPTA Enterprise: der Wissensgraph](docs/enterprise/03-graph.png) |
-| **Der Editor — Wissensart, `[[Links]]`, Gültigkeit** | **In einer Minute eingerichtet — deine Worte, kein Menü** |
-| ![KEPTA Enterprise: der Editor](docs/enterprise/04-editor.png) | ![KEPTA Enterprise: der Einrichtungsassistent](docs/enterprise/05-setup.png) |
+| **Der Editor — Wissensart, `[[Links]]`, Gültigkeit** | **Einstellungen — Systemstatus, Verschlüsselung, Device Sync** |
+| ![KEPTA Enterprise: der Editor](docs/enterprise/04-editor.png) | ![KEPTA Enterprise: die Einstellungen mit dem Systemstatus](docs/enterprise/05-setup.png) |
 
 <sub>KEPTA Enterprise 2.11 mit einem erfundenen Demo-Korpus — nichts auf diesen Bildern ist echt. Die Oberfläche ist englisch.</sub>
 

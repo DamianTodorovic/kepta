@@ -21,7 +21,7 @@ All notable changes are documented in this file. The format follows [Keep a Chan
 - **KEPTA Enterprise, one click away.** The browser interface shows what the
   desktop app adds — the knowledge graph, import, chat with your memory,
   duplicate review — in the sidebar and behind *Enterprise* in the top bar,
-  with the 14-day free trial and how to get it. A note with `[[links]]`, an
+  and how to get it. A note with `[[links]]`, an
   empty knowledge base and a search offer the matching feature. Nothing pops
   up on its own.
 
