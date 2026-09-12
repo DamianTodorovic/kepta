@@ -120,9 +120,9 @@ This repository is the **open core** (AGPL-3.0): the memory engine, the MCP serv
 | Setup assistant with a starter pack | — | ✅ |
 | System status — detects local AI, checks storage, shows diagnostics | — | ✅ |
 | **Price** | | |
-| License | free · AGPL-3.0 | 14-day free trial, then a license key checked offline |
+| License | free · AGPL-3.0 | a license key, checked offline |
 
-**Try it for 14 days — full functionality, no account, no internet.** After the trial a license key unlocks it, checked offline on your machine; KEPTA never phones home. For yourself, your practice or your whole team: **[write to me on LinkedIn](https://www.linkedin.com/in/damian-todorovic-244235434)** and I'll get you set up.
+**One license key, checked offline on your machine — no account, no internet.** KEPTA never phones home. For yourself, your practice or your whole team: **[write to me on LinkedIn](https://www.linkedin.com/in/damian-todorovic-244235434)** and I'll get you set up.
 
 ---
 

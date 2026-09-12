@@ -99,9 +99,9 @@ KEPTA ändert das — **lokal**. Eine verschlüsselte SQLite-Datei auf deinem Re
 | Einrichtungsassistent mit Startpaket | — | ✅ |
 | Systemstatus — erkennt lokale KI, prüft den Speicher, zeigt Diagnosen | — | ✅ |
 | **Preis** | | |
-| Lizenz | kostenlos · AGPL-3.0 | 14 Tage kostenlos testen, danach ein offline geprüfter Lizenzschlüssel |
+| Lizenz | kostenlos · AGPL-3.0 | ein offline geprüfter Lizenzschlüssel |
 
-**14 Tage kostenlos testen — voller Funktionsumfang, kein Konto, kein Internet.** Danach schaltet ein Lizenzschlüssel die App frei, geprüft offline auf deinem Rechner; KEPTA ruft nirgends an. Für dich, deine Praxis oder dein ganzes Team: **[schreib mir auf LinkedIn](https://www.linkedin.com/in/damian-todorovic-244235434)**.
+**Ein Lizenzschlüssel, offline auf deinem Rechner geprüft — kein Konto, kein Internet.** KEPTA ruft nirgends an. Für dich, deine Praxis oder dein ganzes Team: **[schreib mir auf LinkedIn](https://www.linkedin.com/in/damian-todorovic-244235434)**.
 
 ## ⚡ Schnellstart
 
