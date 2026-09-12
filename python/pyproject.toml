@@ -9,7 +9,7 @@ description = "Python client for KEPTA — local memory for AI agents. No cloud,
 readme = "README.md"
 requires-python = ">=3.9"
 license = { text = "MIT" }
-authors = [{ name = "KEPTA", email = "hello@kepta.app" }]
+authors = [{ name = "Damian Todorovic" }]
 keywords = ["memory", "ai", "agents", "mcp", "local-first", "privacy", "knowledge-graph", "rag"]
 classifiers = [
   "Development Status :: 4 - Beta",
