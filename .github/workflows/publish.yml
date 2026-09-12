@@ -76,7 +76,14 @@ jobs:
 
       - name: Auf npm veroeffentlichen
         working-directory: npm
-        run: npm publish --access public
+        run: |
+          # setup-node hinterlaesst ein .npmrc mit einem authToken-Platzhalter und
+          # exportiert NODE_AUTH_TOKEN. Findet npm dort einen Token, versucht es
+          # KEINE OIDC-Anmeldung mehr und schickt den Muell an die Registry (404).
+          # Also: beide Spuren entfernen, dann bleibt nur Trusted Publishing.
+          rm -f "${NPM_CONFIG_USERCONFIG:?NPM_CONFIG_USERCONFIG fehlt}"
+          unset NODE_AUTH_TOKEN
+          npm publish --access public
         # Kein NODE_AUTH_TOKEN — die Anmeldung laeuft ueber Trusted Publishing.
 
       # Die Registry prueft den Besitz, indem sie das npm-Paket abruft und dessen
