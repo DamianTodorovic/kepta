@@ -75,7 +75,9 @@ describe("die Seite", () => {
   it("liefert Stil, Skript und Symbol mit dem richtigen Typ", async () => {
     expect((await anfrage("GET", "/app.css")).headers["content-type"]).toMatch(/text\/css/);
     expect((await anfrage("GET", "/app.js")).headers["content-type"]).toMatch(/javascript/);
-    expect((await anfrage("GET", "/favicon.svg")).headers["content-type"]).toBe("image/svg+xml");
+    const symbol = await anfrage("GET", "/favicon.svg");
+    expect(symbol.headers["content-type"]).toBe("image/svg+xml");
+    expect(symbol.text).toContain("M176 176 V336");
     expect((await anfrage("GET", "/gibt-es-nicht")).status).toBe(404);
     expect((await anfrage("POST", "/")).status).toBe(404);
   });

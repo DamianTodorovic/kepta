@@ -7,7 +7,16 @@
 // als Text eingesetzt (textContent), nie als HTML: eine Notiz, die ein Agent
 // geschrieben hat, kann auf der Seite nichts ausführen.
 
-export const FAVICON_SVG = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><rect width="64" height="64" rx="15" fill="#121214"/><path d="M22 15v34M22 35l17-20M29 29l12 20" stroke="#d8c79c" stroke-width="6" stroke-linecap="round" stroke-linejoin="round" fill="none"/><circle cx="47" cy="17" r="4.5" fill="#d8c79c"/></svg>`;
+// Das offizielle KEPTA-Logo — dieselbe Datei wie public/kepta-logo.svg in
+// KEPTA Enterprise und docs/kepta-logo.svg hier; ein Test hält beide gleich.
+export const FAVICON_SVG = `<svg width="512" height="512" viewBox="0 0 512 512" fill="none" xmlns="http://www.w3.org/2000/svg">
+<title>KEPTA — Keeps what matters</title>
+<desc>KEPTA wordmark — dark square with a K monogram and a dot</desc>
+<rect width="512" height="512" rx="112" fill="#fcfcf9"/>
+<rect x="96" y="96" width="320" height="320" rx="72" fill="#0f0f0f"/>
+<path d="M176 176 V336 M176 256 L288 176 M176 256 L288 336" stroke="white" stroke-width="22" stroke-linecap="round" stroke-linejoin="round"/>
+<circle cx="332" cy="180" r="18" fill="white"/>
+</svg>`;
 
 export const SEITE_HTML = `<!doctype html>
 <html lang="en" data-theme="dark">
@@ -22,19 +31,27 @@ export const SEITE_HTML = `<!doctype html>
 <body>
 <div class="app">
   <aside class="sidebar">
-    <div class="brand"><img src="/favicon.svg" alt="" width="30" height="30"><div><div class="brand-name">KEPTA</div><div class="brand-sub">Core __KEPTA_VERSION__</div></div></div>
+    <div class="brand"><svg class="mark" width="32" height="32" viewBox="0 0 32 32" fill="none" role="img" aria-label="KEPTA"><rect width="32" height="32" rx="9" fill="#0f0f0f"/><path d="M11 9.5 V22.5 M11 16 L18.2 9.5 M11 16 L18.2 22.5" stroke="#fff" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"/><circle cx="21.2" cy="9.8" r="1.7" fill="#fff"/></svg><div><div class="brand-name">KEPTA</div><div class="brand-sub">Core __KEPTA_VERSION__</div></div></div>
     <nav id="views" aria-label="Views"></nav>
+    <div class="section-label">In KEPTA Enterprise</div>
+    <nav class="pro-list" aria-label="Only in KEPTA Enterprise">
+      <button class="nav pro" type="button" data-pro="graph"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="6" cy="6" r="2.5"/><circle cx="18" cy="8" r="2.5"/><circle cx="10" cy="18" r="2.5"/><path d="M8.4 6.4 15.5 7.6M6.8 8.4l2.4 7.2M16.6 10.1 11.7 16.2"/></svg><span class="nav-label">Knowledge graph</span><svg class="lock-ico" viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg></button>
+      <button class="nav pro" type="button" data-pro="import"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 15V4M7.5 8.5 12 4l4.5 4.5M5 15v3.5A1.5 1.5 0 0 0 6.5 20h11a1.5 1.5 0 0 0 1.5-1.5V15"/></svg><span class="nav-label">Import &amp; scan</span><svg class="lock-ico" viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg></button>
+      <button class="nav pro" type="button" data-pro="chat"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 12a7.5 7.5 0 0 1-10.9 6.7L4 20l1.4-4.6A7.5 7.5 0 1 1 20 12Z"/></svg><span class="nav-label">Chat with your memory</span><svg class="lock-ico" viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg></button>
+      <button class="nav pro" type="button" data-pro="duplicates"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="8" y="8" width="12" height="12" rx="2"/><path d="M16 5.5V5a1 1 0 0 0-1-1H5a1 1 0 0 0-1 1v10a1 1 0 0 0 1 1h.5"/></svg><span class="nav-label">Duplicate review</span><svg class="lock-ico" viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg></button>
+    </nav>
     <div class="section-label">Tags</div>
     <nav id="tags" aria-label="Tags"></nav>
     <div class="sidebar-foot">
       <button id="lock" class="lock" type="button" title="Encryption and recovery key">Checking encryption…</button>
-      <a class="upsell" href="https://github.com/DamianTodorovic/kepta#-kepta-enterprise--the-full-desktop-app" target="_blank" rel="noopener noreferrer">Knowledge graph, drag &amp; drop import, chat and sync<strong>KEPTA Enterprise →</strong></a>
+      <button class="upsell" type="button" data-pro=""><span class="upsell-kicker">KEPTA Enterprise</span><span class="upsell-text">Your memory as a graph, drag &amp; drop import and a chat with it — in a native desktop app.</span><span class="upsell-cta">Try it free for 14 days →</span></button>
     </div>
   </aside>
   <main class="main">
     <header class="topbar">
       <label class="search"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg><input id="q" type="search" placeholder="Search your memory  —  press /" autocomplete="off" spellcheck="false" aria-label="Search your memory"></label>
       <button id="new" class="btn primary" type="button">New note</button>
+      <button class="btn pro-btn" type="button" data-pro="">✦ Enterprise</button>
       <button id="theme" class="btn icon" type="button" aria-label="Switch between dark and light">◐</button>
     </header>
     <section class="head"><h1 id="heading">All notes</h1><p id="sub" class="muted"></p></section>
@@ -44,6 +61,35 @@ export const SEITE_HTML = `<!doctype html>
 </div>
 <div id="drawer" class="drawer" hidden><div class="drawer-panel" id="panel" role="dialog" aria-modal="true" aria-label="Note"></div></div>
 <div id="toast" class="toast" role="status" hidden></div>
+<template id="enterprise">
+<div class="ent">
+  <div class="panel-head"><span class="badge">KEPTA Enterprise</span><button class="btn icon close" type="button" aria-label="Close" data-close>×</button></div>
+  <svg class="ent-art" viewBox="0 0 520 200" role="img" aria-label="A knowledge graph: notes as coloured dots, their links as lines">
+    <path class="e" d="M260 100 150 60M260 100 170 150M260 100 350 55M260 100 370 150M260 100 222 30M150 60 90 110M90 110 58 42M90 110 120 176M170 150 120 176M350 55 468 40M350 55 440 100M370 150 440 100M440 100 478 162"/>
+    <path class="e sim" d="M150 60 222 30M370 150 300 178M170 150 300 178"/>
+    <circle class="k1" cx="260" cy="100" r="11"/><circle class="k2" cx="150" cy="60" r="7"/><circle class="k3" cx="170" cy="150" r="7"/><circle class="k4" cx="350" cy="55" r="7"/>
+    <circle class="k1" cx="370" cy="150" r="8"/><circle class="k1" cx="90" cy="110" r="6"/><circle class="k2" cx="440" cy="100" r="7"/><circle class="k3" cx="222" cy="30" r="5"/>
+    <circle class="k4" cx="300" cy="178" r="5"/><circle class="k4" cx="58" cy="42" r="5"/><circle class="k1" cx="468" cy="40" r="5"/><circle class="k3" cx="478" cy="162" r="6"/><circle class="k2" cx="120" cy="176" r="5"/>
+    <text x="278" y="104">Project Atlas</text><text x="128" y="44">Kickoff</text><text x="362" y="44">Staging server</text><text x="384" y="154">Backup schedule</text>
+  </svg>
+  <h2 class="panel-title">The full desktop app for your memory</h2>
+  <p class="ent-lead">KEPTA Enterprise opens this same encrypted file — your notes, your key and your agents are already there. Nothing to move.</p>
+  <div class="ent-grid">
+    <section data-feature="graph"><h3>Knowledge graph</h3><p>Every note a node, every [[link]] an edge. Force and Tree views, a time slider back to any day, 3 000 nodes at 60 fps.</p></section>
+    <section data-feature="import"><h3>Import &amp; scan</h3><p>Drag &amp; drop PDFs, Markdown, text and JSON. Import an Obsidian vault with its links, clip a web page, or scan this computer — with a preview first.</p></section>
+    <section data-feature="chat"><h3>Chat with your memory</h3><p>Ask with the model you choose — 20 providers, from Ollama and LM Studio to Anthropic and OpenAI. Every answer shows which notes it used.</p></section>
+    <section data-feature="duplicates"><h3>Duplicate review</h3><p>Near-duplicates side by side: keep the richest copy in one click, with one undo for the batch. The history stays.</p></section>
+    <section data-feature="app"><h3>A native app</h3><p>macOS, Windows and Linux in a hardened shell, with a command palette (⌘K), focus mode, a setup assistant and a system status that finds local AI by itself.</p></section>
+    <section data-feature="trust"><h3>Private by design</h3><p>No account, no telemetry, no cloud. The license key is checked offline — KEPTA never phones home.</p></section>
+  </div>
+  <div class="ent-trial"><strong>14-day free trial with every feature.</strong> No account, no internet. Then a license key — for yourself, your practice or your whole team.</div>
+  <div class="actions">
+    <a class="btn primary" href="https://www.linkedin.com/in/damian-todorovic-244235434" target="_blank" rel="noopener noreferrer">Get KEPTA Enterprise</a>
+    <a class="btn" href="https://github.com/DamianTodorovic/kepta#-kepta-enterprise--the-full-desktop-app" target="_blank" rel="noopener noreferrer">Compare Core and Enterprise</a>
+  </div>
+  <p class="muted small">“Get KEPTA Enterprise” opens LinkedIn: write to Damian Todorovic, who builds KEPTA, for your trial or a license.</p>
+</div>
+</template>
 <script src="/app.js"></script>
 </body>
 </html>
@@ -81,9 +127,39 @@ button{font:inherit;color:inherit;cursor:pointer}
 .key{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:15px;word-spacing:.4em;background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:14px;line-height:1.8;margin:12px 0;user-select:all;overflow-wrap:anywhere}
 .lock::before{content:"";width:8px;height:8px;border-radius:50%;background:var(--warn);flex:none}
 .lock.ok::before{background:var(--ok)}
-.upsell{display:flex;flex-direction:column;gap:3px;text-decoration:none;color:var(--muted);font-size:12px;padding:12px;border-radius:12px;background:linear-gradient(135deg,rgba(216,199,156,.16),rgba(157,184,227,.08));border:1px solid var(--line)}
-.upsell strong{color:var(--accent);font-size:13px}
+.mark{flex:none}
+.upsell{display:flex;flex-direction:column;gap:3px;width:100%;text-align:left;padding:13px;border-radius:12px;background:linear-gradient(135deg,rgba(216,199,156,.18),rgba(157,184,227,.08));border:1px solid rgba(216,199,156,.3)}
 .upsell:hover{border-color:var(--accent)}
+.upsell:focus-visible,.hint:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.upsell-kicker{color:var(--accent);font-weight:700;font-size:13px}
+.upsell-text{color:var(--muted);font-size:12px;line-height:1.45}
+.upsell-cta{font-weight:600;font-size:12px;margin-top:5px}
+.badge{flex:none;font-size:10px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;padding:2px 8px;border-radius:999px;color:var(--accent);border:1px solid rgba(216,199,156,.45);background:rgba(216,199,156,.08)}
+.nav.pro{color:var(--muted)}
+.nav.pro:hover{color:var(--text)}
+.nav.pro svg{flex:none;width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.nav.pro>svg:first-child{margin:0 -4px}
+.nav.pro .lock-ico{width:13px;height:13px;opacity:.65}
+.pro-btn{color:var(--accent);border-color:rgba(216,199,156,.5)}
+.pro-btn:hover{background:rgba(216,199,156,.1)}
+a.btn{display:inline-flex;align-items:center;text-decoration:none;color:var(--text)}
+.hint{display:flex;align-items:center;gap:10px;width:100%;margin-top:16px;padding:11px 13px;border-radius:12px;border:1px dashed rgba(216,199,156,.45);background:rgba(216,199,156,.05);color:var(--muted);font-size:13px;text-align:left}
+.hint:hover{color:var(--text);border-style:solid}
+.list .hint{grid-column:1/-1;margin-top:4px}
+.ent-art{display:block;width:100%;height:auto;margin:16px 0 6px;border-radius:14px;border:1px solid var(--line);background:radial-gradient(circle at 50% 50%,rgba(216,199,156,.12),transparent 70%),var(--panel2)}
+.ent-art .e{fill:none;stroke:rgba(216,199,156,.45);stroke-width:1.4}
+.ent-art .sim{stroke-dasharray:4 5;opacity:.75}
+.ent-art circle{stroke:var(--panel2);stroke-width:2}
+.ent-art .k1{fill:var(--t-semantic)}.ent-art .k2{fill:var(--t-episodic)}.ent-art .k3{fill:var(--t-procedural)}.ent-art .k4{fill:var(--t-reference)}
+.ent-art text{fill:var(--muted);font-size:11px}
+.ent-lead{font-size:15px;line-height:1.6;margin:0 0 16px}
+.ent-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.ent-grid section{background:var(--panel2);border:1px solid var(--line);border-radius:12px;padding:12px 14px;transition:border-color .2s ease}
+.ent-grid section.focus{border-color:var(--accent);box-shadow:inset 0 0 0 1px var(--accent)}
+.ent-grid h3{margin:0 0 4px;font-size:14px}
+.ent-grid p{margin:0;color:var(--muted);font-size:13px;line-height:1.5}
+.ent-trial{margin-top:14px;padding:12px 14px;border-radius:12px;font-size:13px;line-height:1.5;background:linear-gradient(135deg,rgba(216,199,156,.16),rgba(157,184,227,.08));border:1px solid rgba(216,199,156,.3)}
+@media (max-width:560px){.ent-grid{grid-template-columns:1fr}}
 .main{overflow:auto;padding:0 30px 44px}
 .topbar{position:sticky;top:0;z-index:2;display:flex;gap:10px;align-items:center;padding:16px 0;background:linear-gradient(var(--bg) 72%,transparent)}
 .search{flex:1;display:flex;align-items:center;gap:10px;background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:0 14px;height:46px}
@@ -213,6 +289,22 @@ export const SEITE_JS = String.raw`
   }
   function chip(type) { return h('span', { class: 'chip t-' + type, text: TYPES[type] || type }); }
 
+  // KEPTA Enterprise: what the desktop app adds. It opens from the sidebar, the
+  // top bar or a hint that fits the moment — never by itself.
+  function enterprise(feature) {
+    drawer($('enterprise').content.cloneNode(true));
+    var p = $('panel');
+    var zu = p.querySelector('[data-close]');
+    zu.addEventListener('click', schliessen);
+    zu.focus({ preventScroll: true });
+    var ziel = feature ? p.querySelector('[data-feature="' + feature + '"]') : null;
+    if (ziel) { ziel.classList.add('focus'); ziel.scrollIntoView({ block: 'center' }); }
+  }
+  function hinweis(text, feature) {
+    return h('button', { class: 'hint', type: 'button', onclick: function () { enterprise(feature); } },
+      h('span', { class: 'badge', text: 'Enterprise' }), h('span', { text: text }));
+  }
+
   function renderSidebar() {
     var s = state.status;
     if (!s) return;
@@ -313,7 +405,8 @@ export const SEITE_JS = String.raw`
         h('button', { class: 'btn', type: 'button', onclick: function () {
           navigator.clipboard.writeText(snippet).then(function () { toast('Copied.'); }, function () { toast('Copying failed — select the text instead.', true); });
         } }, 'Copy configuration'),
-        h('button', { class: 'btn primary', type: 'button', onclick: function () { openEditor(null); } }, 'Write the first note')));
+        h('button', { class: 'btn primary', type: 'button', onclick: function () { openEditor(null); } }, 'Write the first note')),
+      hinweis('Already have documents? KEPTA Enterprise imports PDFs, Markdown and Obsidian vaults by drag & drop.', 'import'));
   }
 
   function load(reset) {
@@ -342,6 +435,7 @@ export const SEITE_JS = String.raw`
           fill.style.width = Math.max(8, Math.round(hit.score / top * 100)) + '%';
           list.appendChild(card(hit.note, h('div', { class: 'score', title: 'Relevance' }, fill)));
         });
+        list.appendChild(hinweis('Ask these notes a question — the chat in KEPTA Enterprise answers from your memory and names its sources.', 'chat'));
       }).catch(function (e) { toast(e.message, true); });
     }
     var pfad = '/api/notes?view=' + state.view + '&offset=' + state.offset + '&limit=' + PAGE + (state.tag ? '&tag=' + encodeURIComponent(state.tag) : '');
@@ -390,6 +484,9 @@ export const SEITE_JS = String.raw`
     api('/api/notes/' + encodeURIComponent(id)).then(function (d) {
       var n = d.note;
       var geloescht = !!n.deletedAt;
+      var ziele = {};
+      (n.content.match(/\[\[([^\]]+)\]\]/g) || []).forEach(function (m) { ziele[m.slice(2, -2).trim().toLowerCase()] = true; });
+      var verweise = Object.keys(ziele).length;
       var gueltig = n.validFrom || n.validTo ? 'Valid ' + (n.validFrom ? 'from ' + datum(n.validFrom) + ' ' : '') + (n.validTo ? 'until ' + datum(n.validTo) : '') : null;
       drawer(h('div', {},
         h('div', { class: 'panel-head' }, chip(n.type), h('span', { class: 'muted small', text: 'Updated ' + ago(n.updatedAt) + ' · created ' + datum(n.createdAt) }),
@@ -400,6 +497,7 @@ export const SEITE_JS = String.raw`
         geloescht ? h('p', { class: 'validity', text: 'In the trash since ' + datum(n.deletedAt) + '.' }) : null,
         inhaltMitLinks(n.content),
         n.tags.length ? h('div', { class: 'tags' }, n.tags.map(function (t) { return h('button', { class: 'tagchip', type: 'button', onclick: function () { schliessen(); setTag(t); } }, '#' + t); })) : null,
+        verweise && !geloescht ? hinweis('Links to ' + verweise + (verweise === 1 ? ' other note' : ' other notes') + ' — see them as a knowledge graph in KEPTA Enterprise.', 'graph') : null,
         h('div', { class: 'actions' },
           geloescht ? h('button', { class: 'btn primary', type: 'button', onclick: function () { restore(n.id); } }, 'Restore')
             : h('button', { class: 'btn primary', type: 'button', onclick: function () { openEditor(n); } }, 'Edit'),
@@ -505,6 +603,9 @@ export const SEITE_JS = String.raw`
   $('new').addEventListener('click', function () { openEditor(null); });
   $('lock').addEventListener('click', verschluesselung);
   $('more').addEventListener('click', function () { load(false); });
+  Array.prototype.forEach.call(document.querySelectorAll('[data-pro]'), function (b) {
+    b.addEventListener('click', function () { enterprise(b.getAttribute('data-pro')); });
+  });
   $('drawer').addEventListener('click', function (ev) { if (ev.target === $('drawer')) schliessen(); });
   document.addEventListener('keydown', function (ev) {
     var tippt = /INPUT|TEXTAREA/.test(document.activeElement ? document.activeElement.tagName : '');

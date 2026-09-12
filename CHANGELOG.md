@@ -18,7 +18,16 @@ All notable changes are documented in this file. The format follows [Keep a Chan
   password manager once, no terminal needed. Day to day nobody needs it: the
   store and the MCP server fetch the key from the keychain by themselves.
 
+- **KEPTA Enterprise, one click away.** The browser interface shows what the
+  desktop app adds — the knowledge graph, import, chat with your memory,
+  duplicate review — in the sidebar and behind *Enterprise* in the top bar,
+  with the 14-day free trial and how to get it. A note with `[[links]]`, an
+  empty knowledge base and a search offer the matching feature. Nothing pops
+  up on its own.
+
 ### Changed
+- **The browser interface shows the real KEPTA logo** — in the tab and in the
+  sidebar, the same marks as KEPTA Enterprise — instead of a redrawn one.
 - **The npm package `kepta-mcp` is AGPL-3.0-or-later**, like the repository it is
   built from; until 2.10 it said MIT while the source said AGPL. The Python
   client stays MIT — it only speaks to the HTTP API and should be free to embed
