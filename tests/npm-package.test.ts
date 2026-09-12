@@ -58,10 +58,13 @@ describe("npm-Paket: die package.json", () => {
 
   it("veroeffentlicht Binary, README und Lizenz — sonst nichts", () => {
     expect(paket.files).toEqual(["bin/kepta.js", "README.md", "LICENSE"]);
-    // Die Lizenz muss auch wirklich daliegen, sonst behauptet das Paket ein MIT,
-    // dessen Text niemand mitbekommt.
+    // Die Lizenz muss auch wirklich daliegen, sonst behauptet das Paket eine
+    // Lizenz, deren Text niemand mitbekommt. Und es ist dieselbe wie im Repo:
+    // das Paket IST der Kern — bis 2.10 stand hier MIT, waehrend das Repo
+    // AGPL trug.
     expect(fs.existsSync(path.join(wurzel, "npm", "LICENSE"))).toBe(true);
-    expect(paket.license).toBe("MIT");
+    expect(paket.license).toBe("AGPL-3.0-or-later");
+    expect(fs.readFileSync(path.join(wurzel, "npm", "LICENSE"), "utf-8")).toBe(fs.readFileSync(path.join(wurzel, "LICENSE"), "utf-8"));
   });
 
   it("verlangt Node 22.13 — die gepruefte Untergrenze", () => {

@@ -8,7 +8,7 @@
 
 KEPTA is a local memory for AI assistants. Documents, decisions and client knowledge go into an encrypted knowledge base on your own computer — and your assistant (Claude Desktop, Cursor, any MCP client) recalls it as if it had never forgotten.
 
-This repository is the **open core** (AGPL-3.0): the memory engine, the MCP server, the HTTP API and the Python client. The full desktop application is **[KEPTA Enterprise](#-kepta-enterprise--the-full-desktop-app)**.
+This repository is the **open core** (AGPL-3.0): the memory engine, the MCP server, the HTTP API — and the Python client, which is MIT so any Python project can embed it. The full desktop application is **[KEPTA Enterprise](#-kepta-enterprise--the-full-desktop-app)**.
 
 ```
 ┌──────────────────────────────────────────────────────────────────────────┐
@@ -190,7 +190,7 @@ KEPTA is built by **Damian Todorovic**. Questions, ideas, a license for your tea
 
 ## 📄 License
 
-[AGPL-3.0-or-later](LICENSE). **KEPTA Enterprise** — the desktop app with the graphical interface, the knowledge graph, the machine scan and Praxis-Sync — is commercial software and licensed separately. Commercial licensing of the core on request.
+[AGPL-3.0-or-later](LICENSE). **KEPTA Enterprise** — the desktop app with the graphical interface, the knowledge graph, the machine scan and Praxis-Sync — is commercial software and licensed separately. The npm package `kepta-mcp` carries the same AGPL as this repository; the Python client under `python/` is MIT. Commercial licensing of the core on request — [write to me on LinkedIn](https://www.linkedin.com/in/damian-todorovic-244235434).
 
 ---
 

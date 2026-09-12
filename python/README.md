@@ -92,11 +92,9 @@ if not kepta.is_alive():
 
 `Memory` and `SearchHit` are frozen dataclasses with type annotations. Alongside the overall score, `SearchHit` exposes the individual tracks as `vector_score` and `lexical_score`.
 
-## Installing KEPTA
+## The server behind it
 
-The app is available for macOS, Windows and Linux under [Releases](https://github.com/DamianTodorovic/kepta/releases) — Intel and ARM in each case. MIT licensed, free.
-
-The desktop interface is English by default; since 2.10 a switch under *Settings → Display* offers German for the main surfaces. German notes work either way: the search stopword list covers both languages.
+The client talks to the KEPTA HTTP API on your own machine — start it from the [open core](https://github.com/DamianTodorovic/kepta) (`npm run dev`), or run **KEPTA Enterprise**, the desktop app for macOS, Windows and Linux with the knowledge graph, drag & drop import and a chat cockpit (14-day free trial — [write to me on LinkedIn](https://www.linkedin.com/in/damian-todorovic-244235434)). German notes work as well as English ones: the search stopword list covers both languages.
 
 ## License
 

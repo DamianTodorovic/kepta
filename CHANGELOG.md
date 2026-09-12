@@ -4,6 +4,12 @@ All notable changes are documented in this file. The format follows [Keep a Chan
 
 ## [2.11.0] — 2026-09-11
 
+### Changed
+- **The npm package `kepta-mcp` is AGPL-3.0-or-later**, like the repository it is
+  built from; until 2.10 it said MIT while the source said AGPL. The Python
+  client stays MIT — it only speaks to the HTTP API and should be free to embed
+  anywhere. A commercial license for the core is available.
+
 ### Added
 - **The knowledge base is encrypted on disk.** `kepta.db` is stored in the
   SQLCipher 4 format (AES-256, an HMAC-SHA512 over every page) through SQLite3

@@ -6,7 +6,7 @@ Dein KI-Assistent vergisst alles. Jeder Chat beginnt bei null.
 
 KEPTA ändert das — **lokal**. Eine verschlüsselte SQLite-Datei auf deinem Rechner. Keine Cloud, kein Konto, keine Telemetrie. Dein Assistent liest und schreibt sie über **MCP** (Claude Desktop, Cursor, jeder MCP-Client) oder eine kleine **HTTP-API**.
 
-> **Dies ist der offene Kern** (AGPL-3.0): Memory-Engine, MCP-Server, HTTP-API, Python-Client. Die vollständige Desktop-Anwendung ist **KEPTA Enterprise** — siehe unten. English: [README.md](README.md).
+> **Dies ist der offene Kern** (AGPL-3.0): Memory-Engine, MCP-Server, HTTP-API — dazu der Python-Client unter MIT, damit ihn jedes Python-Projekt einbauen kann. Die vollständige Desktop-Anwendung ist **KEPTA Enterprise** — siehe unten. English: [README.md](README.md).
 
 ## 🚀 KEPTA Enterprise — die ganze Desktop-App
 
@@ -76,4 +76,4 @@ KEPTA baut **Damian Todorovic**. Fragen, Ideen, eine Lizenz für dein Team — o
 
 ## 📄 Lizenz
 
-[AGPL-3.0-or-later](LICENSE). **KEPTA Enterprise** — die Desktop-App mit grafischer Oberfläche, Wissensgraph, Rechner-Scan und Praxis-Sync — ist kommerzielle Software und separat lizenziert. Kommerzielle Lizenzierung des Kerns auf Anfrage.
+[AGPL-3.0-or-later](LICENSE). **KEPTA Enterprise** — die Desktop-App mit grafischer Oberfläche, Wissensgraph, Rechner-Scan und Praxis-Sync — ist kommerzielle Software und separat lizenziert. Das npm-Paket `kepta-mcp` trägt dieselbe AGPL wie dieses Repository; der Python-Client unter `python/` ist MIT. Kommerzielle Lizenzierung des Kerns auf Anfrage — [schreib mir auf LinkedIn](https://www.linkedin.com/in/damian-todorovic-244235434).

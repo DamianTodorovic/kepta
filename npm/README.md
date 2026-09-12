@@ -70,4 +70,4 @@ Both share the same `~/.kepta/kepta.db`. What one writes, the others see.
 
 ## License
 
-MIT — the whole source is at [github.com/DamianTodorovic/kepta](https://github.com/DamianTodorovic/kepta).
+[AGPL-3.0-or-later](https://github.com/DamianTodorovic/kepta/blob/main/LICENSE) — the same license as the source at [github.com/DamianTodorovic/kepta](https://github.com/DamianTodorovic/kepta). Using the server for your own agents is free and needs nothing from you. If you change it and offer it to others — as a service, too — share your changes under the same license. A commercial license is available: [write to me on LinkedIn](https://www.linkedin.com/in/damian-todorovic-244235434).

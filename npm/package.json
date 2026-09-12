@@ -16,7 +16,7 @@
     "rag",
     "sqlite"
   ],
-  "license": "MIT",
+  "license": "AGPL-3.0-or-later",
   "author": "KEPTA",
   "homepage": "https://github.com/DamianTodorovic/kepta",
   "repository": {
