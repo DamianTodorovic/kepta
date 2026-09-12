@@ -1,35 +1,68 @@
-<p align="center"><img src="https://img.shields.io/badge/version-2.11.0-blue" alt="v2.11.0"> <img src="https://img.shields.io/badge/license-AGPL--3.0-blue" alt="AGPL-3.0"> <img src="https://img.shields.io/badge/tests-310%20passing-brightgreen" alt="tests"> <img src="https://img.shields.io/badge/coverage%20gate-%E2%89%A5%2089%25%20of%20lines-brightgreen" alt="coverage"> <img src="https://img.shields.io/badge/platform-macOS%20%7C%20Windows%20%7C%20Linux-lightgrey" alt="platform"> <img src="https://img.shields.io/badge/encryption-SQLCipher%204-green" alt="encrypted"></p>
+<p align="center"><img src="https://img.shields.io/badge/version-2.11.0-blue" alt="v2.11.0"> <img src="https://img.shields.io/badge/license-AGPL--3.0-blue" alt="AGPL-3.0"> <img src="https://img.shields.io/badge/tests-317%20passing-brightgreen" alt="tests"> <img src="https://img.shields.io/badge/coverage%20gate-%E2%89%A5%2070%25%20of%20lines-brightgreen" alt="coverage gate"> <img src="https://img.shields.io/badge/platform-macOS%20%7C%20Windows%20%7C%20Linux-lightgrey" alt="platform"> <img src="https://img.shields.io/badge/encryption-SQLCipher%204-green" alt="encrypted"> <a href="https://www.linkedin.com/in/damian-todorovic-244235434"><img src="https://img.shields.io/badge/LinkedIn-Damian%20Todorovic-0A66C2?logo=linkedin&logoColor=white" alt="Damian Todorovic on LinkedIn"></a></p>
 
 # KEPTA Core
 
-## Dein KI-Assistent vergisst alles. Jeder Chat beginnt bei null.
+## Your AI assistant forgets everything. Every chat starts from zero.
 
-**KEPTA ändert das — lokal, verschlüsselt, ohne Cloud.**
+**KEPTA fixes that — locally, encrypted, without a cloud.**
 
-KEPTA ist ein lokales Gedächtnis für KI-Assistenten: Alle Dokumente, Entscheidungen und Kundeninformationen wandern in eine verschlüsselte Wissensbasis auf deinem eigenen Rechner — und dein Assistent (Claude Desktop, Cursor, jeder MCP-Client) kann sie abrufen, als hätte er nie etwas vergessen.
+KEPTA is a local memory for AI assistants. Documents, decisions and client knowledge go into an encrypted knowledge base on your own computer — and your assistant (Claude Desktop, Cursor, any MCP client) recalls it as if it had never forgotten.
+
+This repository is the **open core** (AGPL-3.0): the memory engine, the MCP server, the HTTP API and the Python client. The full desktop application is **[KEPTA Enterprise](#-kepta-enterprise--the-full-desktop-app)**.
 
 ```
 ┌──────────────────────────────────────────────────────────────────────────┐
-│  Dein Rechner                                                            │
+│  Your computer                                                           │
 │                                                                          │
 │  ┌─────────────┐     MCP / HTTP API     ┌─────────────────────────────┐ │
 │  │ Claude      │◄──────────────────────►│                             │ │
 │  │ Desktop     │                        │   KEPTA                     │ │
-│  │             │                        │   verschlüsselte Wissens-   │ │
-│  │ Cursor      │     ┌────────────┐    │   basis (SQLCipher 4)       │ │
+│  │             │                        │   encrypted knowledge       │ │
+│  │ Cursor      │     ┌────────────┐    │   base (SQLCipher 4)        │ │
 │  │             │     │ kepta-mcp  │    │   ~/.kepta/kepta.db         │ │
-│  │ dein Code   │◄───►│            │    │                             │ │
+│  │ your code   │◄───►│            │    │                             │ │
 │  └─────────────┘     └────────────┘    └─────────────────────────────┘ │
 │                                                                          │
-│  Kein Abo. Kein Konto. Keine Telemetrie. Keine Cloud.                   │
+│  No subscription. No account. No telemetry. No cloud.                   │
 └──────────────────────────────────────────────────────────────────────────┘
 ```
 
 ---
 
-## ⚡ Schnellstart
+## 🚀 KEPTA Enterprise — the full desktop app
 
-### MCP-Server (Claude Desktop, Cursor)
+**The engine in this repository is what your agents talk to. KEPTA Enterprise is what _you_ work in.** A native app for macOS, Windows and Linux that turns the same encrypted knowledge base into a second brain you can see, search, shape and trust — every document, every decision, every connection, on your own machine.
+
+| The index — everything you know, grouped by kind | The knowledge graph — every note a node, every link an edge |
+|---|---|
+| ![KEPTA Enterprise: the index](docs/enterprise/01-index.png) | ![KEPTA Enterprise: the knowledge graph](docs/enterprise/03-graph.png) |
+| **The editor — kinds of knowledge, `[[links]]`, validity** | **Set up in a minute — your words, not a menu** |
+| ![KEPTA Enterprise: the editor](docs/enterprise/04-editor.png) | ![KEPTA Enterprise: the setup assistant](docs/enterprise/05-setup.png) |
+
+<sub>KEPTA Enterprise 2.11 on an invented demo corpus — nothing in these shots is real.</sub>
+
+| | KEPTA Core<br><sub>this repository</sub> | KEPTA Enterprise<br><sub>desktop app</sub> |
+|---|:---:|:---:|
+| Encrypted knowledge base — SQLCipher 4, key in the OS keychain | ✅ | ✅ |
+| Hybrid search — BM25 + vectors + graph, fused and reranked | ✅ | ✅ |
+| MCP server for Claude Desktop, Cursor and every MCP client | ✅ | ✅ |
+| HTTP API and Python client | ✅ | ✅ |
+| **Native desktop app** for macOS, Windows and Linux | — | ✅ |
+| **Knowledge graph you can explore** — Force layout and Tree view, a time slider back to any day; 3 000 nodes and 9 500 edges at 60 fps | — | ✅ |
+| **Drag & drop import** — PDF, Markdown, text; Obsidian vaults; web pages with one paste | — | ✅ |
+| **Scan this computer** — opt-in, with a preview before a single file is read | — | ✅ |
+| **Duplicate review, trash with restore, command palette** (⌘K) | — | ✅ |
+| **Chat cockpit** with the model you choose — local (Ollama, LM Studio) or cloud | — | ✅ |
+| **Praxis-Sync** — move knowledge between your own devices as an encrypted bundle | — | ✅ |
+| **Setup assistant and system status** that tell you what works and what is missing | — | ✅ |
+
+**Try it for 14 days — full functionality, no account, no internet.** After the trial a license key unlocks it, checked offline on your machine; KEPTA never phones home. For yourself, your practice or your whole team: **[write to me on LinkedIn](https://www.linkedin.com/in/damian-todorovic-244235434)** and I'll get you set up.
+
+---
+
+## ⚡ Quick start
+
+### MCP server (Claude Desktop, Cursor)
 
 ```json
 {
@@ -42,63 +75,62 @@ KEPTA ist ein lokales Gedächtnis für KI-Assistenten: Alle Dokumente, Entscheid
 }
 ```
 
-8 Tools: `memory_search`, `memory_save`, `memory_update`, `memory_delete`, `memory_list`, `memory_graph`, `memory_consolidate`, `memory_forget`.
+8 tools: `memory_search`, `memory_save`, `memory_update`, `memory_delete`, `memory_list`, `memory_graph`, `memory_consolidate`, `memory_forget`.
 
-### HTTP-API
+### HTTP API
 
 ```bash
 git clone https://github.com/DamianTodorovic/kepta.git
 cd kepta && npm install && npm run dev
 # → http://127.0.0.1:3000
 
-# Notiz speichern
+# save a note
 curl -s localhost:3000/api/memory -H 'Content-Type: application/json' \
-  -d '{"title":"Client Müller","content":"Quartalsweise Abrechnung.","tags":["client"]}'
+  -d '{"title":"Client Miller","content":"Billed quarterly.","tags":["client"]}'
 
-# Suchen
-curl -s "localhost:3000/api/memories/search?q=how+does+müller+bill"
+# search
+curl -s "localhost:3000/api/memories/search?q=how+does+miller+pay"
 ```
 
-### Docker (nur MCP-Server)
+### Docker (MCP server only)
 
 ```bash
 docker build -t kepta-mcp .
-docker run -e KEPTA_DB_KEY=<64-hex> -v kepta-data:/data kepta-mcp
+docker run -i -e KEPTA_DB_KEY=<64-hex> -v kepta-data:/data kepta-mcp
 ```
 
 ---
 
-## ✨ Was drin ist
+## ✨ What's inside
 
 | | |
 |---|---|
-| 🔍 **Hybride Suche** | BM25-Volltext + Vektorähnlichkeit (Ollama) + Wissensgraph, per RRF fusioniert, mit lokalem Reranking |
-| 🔐 **Verschlüsselt at rest** | SQLCipher 4 (AES-256 + HMAC-SHA512 je Seite, WAL eingeschlossen), Schlüssel im OS-Schlüsselbund |
-| 🕐 **Zeitreise** | Bi-temporale Gültigkeit: `valid_from`/`valid_to`, `asOf`-Abfrage („Was wusste ich am 3. März?") |
-| ♻️ **Ersetzung statt Widerspruch** | Neue Fakten verdrängen alte (`superseded_by`), die Historie bleibt |
-| 🔗 **MCP-first** | 8 Tools, ein Codepfad für API und MCP — Agenten bekommen dieselbe Qualität wie die App |
-| 📄 **Datei-Import** | PDF (pdf.js mit CMaps), Markdown mit `[[Wiki-Links]]`, TXT, JSON |
-| 🔒 **Verschlüsselung** | Datenbank-Datei und WAL vollständig verschlüsselt; Schlüssel im OS-Schlüsselbund (macOS Keychain / Windows DPAPI / Linux Secret Service) |
-| 📊 **Eval** | `npm run eval` auf einem Fixkorpus: 58 notes / 45 queries, Hit@1 + Precision@5 + MRR | Hit@1, Precision@5, MRR auf 58 Notizen / 45 Anfragen; Ablation-Test je Retrieval-Bein |
+| 🔍 **Hybrid search** | BM25 full text + vector similarity (Ollama) + knowledge graph, fused with RRF, with local reranking |
+| 🔐 **Encrypted at rest** | SQLCipher 4: AES-256 and an HMAC-SHA512 over every page, the WAL included; the key lives in the OS keychain (macOS Keychain, Windows DPAPI, Linux Secret Service) |
+| 🕐 **Time travel** | Validity windows (`valid_from` / `valid_to`) and `asOf` queries — "what did I know on 3 March?" |
+| ♻️ **Superseded, not contradicted** | New facts replace old ones (`superseded_by`); the history stays |
+| 🔗 **MCP first** | 8 tools, one code path for the API and MCP — agents get the same quality as the app |
+| 📄 **File import** | PDF (pdf.js with character maps), Markdown with `[[wiki links]]`, text, JSON |
+| 📊 **Eval** | `npm run eval` on a fixed corpus of 58 notes / 45 queries: Hit@1, Precision@5, MRR, plus an ablation test per retrieval leg |
 
 ---
 
-## 🖥️ HTTP-API (29 Routen)
+## 🖥️ HTTP API (29 routes)
 
-| Bereich | Routen |
+| Area | Routes |
 |---|---|
 | Memories | `GET/POST /api/memories`, `GET /api/memories/:id`, `POST /api/memory`, `DELETE /api/memories/:id`, `POST /api/memories/:id/restore`, `POST /api/memories/bulk-delete`, `POST /api/memories/bulk-restore`, `POST /api/memories/reclassify` |
-| Suche | `GET /api/memories/search`, `POST /api/search` |
-| Import/Export | `POST /api/import/markdown`, `POST /api/export/markdown` |
-| Verschlüsselung | `GET /api/health` (inkl. `encryption`-Status), `POST /api/repair/imports` |
+| Search | `GET /api/memories/search`, `POST /api/search` |
+| Import / export | `POST /api/import/markdown`, `POST /api/export/markdown` |
+| Encryption & repair | `GET /api/health` (including the `encryption` status), `POST /api/repair/imports` |
 | MCP | `POST /mcp`, `GET /mcp`, `GET /api/mcp/tools`, `POST /api/mcp/search`, `POST /api/mcp/save` |
 | System | `GET /api/settings`, `PUT /api/settings`, `GET /api/storage-info`, `GET /api/activity` |
 
-Alle Routen nur auf `127.0.0.1`, Rate-Limiting, Helmet, Eingabevalidierung.
+Every route listens on `127.0.0.1` only, with rate limiting, Helmet and input validation.
 
 ---
 
-## 🐍 Python-Client
+## 🐍 Python client
 
 ```bash
 pip install kepta
@@ -112,53 +144,56 @@ for hit in kepta.search("carbonara without cream"):
     print(f"{hit.score:.2f}  {hit.memory.title}")
 ```
 
-Keine Abhängigkeiten. Nur die Python-Standardbibliothek.
+No dependencies — only the Python standard library.
 
 ---
 
-## 🏗️ Architektur
+## 🏗️ Architecture
 
 ```
-src/core/           Memory-Engine (Store, Suche, Verschlüsselung, MCP-Protokoll)
-server.ts           HTTP-API (Express, 29 Routen)
-src/mcp-server.ts   MCP-stdio-Server (npx kepta-mcp)
-npm/                npm-Paket-Quelle (kepta-mcp)
-Dockerfile          Docker-Container (MCP-Server)
-python/             Python-Client (PyPI: kepta)
-scripts/            Eval, Benchmark, Reparatur
-tests/              310 Tests, Coverage-Gate ≥ 89 % Lines
+src/core/           memory engine (store, search, encryption, MCP protocol)
+server.ts           HTTP API (Express, 29 routes)
+src/mcp-server.ts   MCP stdio server (npx kepta-mcp)
+npm/                source of the npm package (kepta-mcp)
+Dockerfile          container for the MCP server
+python/             Python client (PyPI: kepta)
+scripts/            eval, benchmark, repair
+tests/              Vitest suite with CI-enforced coverage thresholds
 ```
 
-**Ein Codepfad** für HTTP-API und MCP-Server — Agenten bekommen dieselben Ergebnisse wie direkte API-Aufrufe.
+**One code path** for the HTTP API and the MCP server — agents get the same results as direct API calls.
 
 ---
 
-## 🔐 Verschlüsselung
+## 🔐 Encryption
 
-Die Wissensbasis liegt in einer SQLCipher-4-Datenbank: AES-256, HMAC-SHA512 über jede Seite, WAL eingeschlossen. Der Schlüssel (256 Bit Zufall) liegt im Betriebssystem-Schlüsselbund — macOS Keychain, Windows DPAPI oder Linux Secret Service. Auf Servern ohne Schlüsselbund: `KEPTA_DB_KEY` als 64-stelliger Hex-String.
-
----
-
-## 🧪 Qualität
-
-**310 Tests** mit Vitest und v8-Coverage. Die Coverage-Schwellen sind ein CI-Gate: Ein Commit, der unter eine Schwelle fällt, wird rot. Dazu: eigener Retrieval-Eval (Hit@1, Precision@5, MRR) mit Fixkorpus, Ablation-Test je Retrieval-Bein, Verschlüsselungs-Eval, Boundary-Test auf der Kern-Architektur.
+The knowledge base is a SQLCipher 4 database: AES-256, an HMAC-SHA512 over every page, the WAL included. The key — 256 random bits — lives in the operating system's keychain: the macOS Keychain, Windows DPAPI or the Linux Secret Service. On servers without a keychain, set `KEPTA_DB_KEY` to 64 hexadecimal characters. What it covers, what it does not, and how to keep a copy of the key: [SECURITY.md](SECURITY.md).
 
 ---
 
+## 🧪 Quality
 
-## Coverage thresholds (enforced by CI)
+**317 tests** with Vitest and v8 coverage. The coverage thresholds are a CI gate: a commit that falls below one of them turns CI red. On top: a retrieval eval (Hit@1, Precision@5, MRR) on a fixed corpus, an ablation test per retrieval leg, an encryption eval and a boundary test on the core architecture.
+
+### Coverage thresholds (enforced by CI)
 
 | Area | Lines | Functions | Branches | Statements |
 |---|---|---|---|---|
 | everything together | **70 %** | **72 %** | **56 %** | **66 %** |
 | `src/core` | **87 %** | **89 %** | **74 %** | **85 %** |
 
-## 📄 Lizenz
+---
 
-[AGPL-3.0-or-later](LICENSE). Die Desktop-Anwendung (grafische Oberfläche, Wissensgraph, Rechner-Scan, Sync) ist die kommerzielle KEPTA Enterprise und separat lizenziert.
+## 👋 Who builds KEPTA
+
+KEPTA is built by **Damian Todorovic**. Questions, ideas, a license for your team — or you simply want to follow where this is going: **[find me on LinkedIn](https://www.linkedin.com/in/damian-todorovic-244235434)**.
+
+## 📄 License
+
+[AGPL-3.0-or-later](LICENSE). **KEPTA Enterprise** — the desktop app with the graphical interface, the knowledge graph, the machine scan and Praxis-Sync — is commercial software and licensed separately. Commercial licensing of the core on request.
 
 ---
 
 <p align="center">
-  <sub>KEPTA Core — der offene Kern. Kein Abo, kein Konto, keine Ausreden.</sub>
+  <sub>KEPTA Core — the open heart of KEPTA. No subscription, no account, no excuses.</sub>
 </p>
