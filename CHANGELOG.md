@@ -28,6 +28,10 @@ All notable changes are documented in this file. The format follows [Keep a Chan
 ### Changed
 - **The browser interface shows the real KEPTA logo** — in the tab and in the
   sidebar, the same marks as KEPTA Enterprise — instead of a redrawn one.
+- **Praxis-Sync is now called Device Sync** — in the README and in the activity
+  feed of the HTTP API, which reads `Device Sync: 3 imported` instead of a
+  German line. The bundle format stays the same, so bundles exported earlier
+  still import.
 - **The npm package `kepta-mcp` is AGPL-3.0-or-later**, like the repository it is
   built from; until 2.10 it said MIT while the source said AGPL. The Python
   client stays MIT — it only speaks to the HTTP API and should be free to embed

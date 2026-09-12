@@ -63,7 +63,7 @@ KEPTA ändert das — **lokal**. Eine verschlüsselte SQLite-Datei auf deinem Re
 | Diesen Rechner durchsuchen — freiwillig, mit Vorschau; Schlüssel, Zugangsdaten, Browserprofile und Wallets bleiben gesperrt | — | ✅ |
 | Auto-Lernen — den Kern einer Chat-Antwort speichern (standardmäßig aus) | — | ✅ |
 | Markdown-Export in einen Ordner | API | ✅ |
-| Praxis-Sync — einen Scope zwischen den eigenen Geräten verschieben, als AES-256-GCM-Bundle mit Hash-Ketten-Protokoll | API | ✅ |
+| Device Sync — einen Scope zwischen den eigenen Geräten verschieben, als AES-256-GCM-Bundle mit Hash-Ketten-Protokoll | API | ✅ |
 | **Wissensgraph** | | |
 | Entitäten und Beziehungen aus `[[Wiki-Links]]` und automatischer Erkennung | API · MCP | ✅ |
 | Interaktiver Graph mit zwei Ansichten — Kräfte-Layout und Baum (Dendrogramm); die Knoten gleiten hinüber | — | ✅ |
@@ -148,4 +148,4 @@ KEPTA baut **Damian Todorovic**. Fragen, Ideen, eine Lizenz für dein Team — o
 
 ## 📄 Lizenz
 
-[AGPL-3.0-or-later](LICENSE). **KEPTA Enterprise** — die Desktop-App mit grafischer Oberfläche, Wissensgraph, Rechner-Scan und Praxis-Sync — ist kommerzielle Software und separat lizenziert. Das npm-Paket `kepta-mcp` trägt dieselbe AGPL wie dieses Repository; der Python-Client unter `python/` ist MIT. Kommerzielle Lizenzierung des Kerns auf Anfrage — [schreib mir auf LinkedIn](https://www.linkedin.com/in/damian-todorovic-244235434).
+[AGPL-3.0-or-later](LICENSE). **KEPTA Enterprise** — die Desktop-App mit grafischer Oberfläche, Wissensgraph, Rechner-Scan und Device Sync — ist kommerzielle Software und separat lizenziert. Das npm-Paket `kepta-mcp` trägt dieselbe AGPL wie dieses Repository; der Python-Client unter `python/` ist MIT. Kommerzielle Lizenzierung des Kerns auf Anfrage — [schreib mir auf LinkedIn](https://www.linkedin.com/in/damian-todorovic-244235434).

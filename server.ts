@@ -812,7 +812,7 @@ export function createApp(store: KeptaStore) {
       const peer = typeof req.body?.peer === "string" && req.body.peer ? String(req.body.peer).slice(0, 80) : undefined;
       const ergebnis = importBundle(store, bundle, { passphrase, peer, journal: syncJournal });
       if (ergebnis.imported > 0) {
-        publishActivity({ type: "save", source: "app", title: `Praxis-Sync: ${ergebnis.imported} uebernommen` });
+        publishActivity({ type: "save", source: "app", title: `Device Sync: ${ergebnis.imported} imported` });
       }
       res.json({ ok: true, ...ergebnis });
     } catch (e) {

@@ -84,7 +84,7 @@ This repository is the **open core** (AGPL-3.0): the memory engine, the MCP serv
 | Scan this computer — opt-in, preview first; keys, credentials, browser profiles and wallets stay blocked | — | ✅ |
 | Auto-learn — save the key point of a chat answer (off by default) | — | ✅ |
 | Markdown export to a folder | API | ✅ |
-| Praxis-Sync — move a scope between your own devices as an AES-256-GCM bundle, with a hash-chained ledger | API | ✅ |
+| Device Sync — move a scope between your own devices as an AES-256-GCM bundle, with a hash-chained ledger | API | ✅ |
 | **Knowledge graph** | | |
 | Entities and relations from `[[wiki links]]` and automatic extraction | API · MCP | ✅ |
 | Interactive graph with two views — Force (physics) and Tree (dendrogram); nodes glide between them | — | ✅ |
@@ -265,7 +265,7 @@ KEPTA is built by **Damian Todorovic**. Questions, ideas, a license for your tea
 
 ## 📄 License
 
-[AGPL-3.0-or-later](LICENSE). **KEPTA Enterprise** — the desktop app with the graphical interface, the knowledge graph, the machine scan and Praxis-Sync — is commercial software and licensed separately. The npm package `kepta-mcp` carries the same AGPL as this repository; the Python client under `python/` is MIT. Commercial licensing of the core on request — [write to me on LinkedIn](https://www.linkedin.com/in/damian-todorovic-244235434).
+[AGPL-3.0-or-later](LICENSE). **KEPTA Enterprise** — the desktop app with the graphical interface, the knowledge graph, the machine scan and Device Sync — is commercial software and licensed separately. The npm package `kepta-mcp` carries the same AGPL as this repository; the Python client under `python/` is MIT. Commercial licensing of the core on request — [write to me on LinkedIn](https://www.linkedin.com/in/damian-todorovic-244235434).
 
 ---
 

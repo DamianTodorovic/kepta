@@ -33,7 +33,7 @@ random bytes; SQLite reports "file is not a database".
 - Files outside the database: the inbox folder, `profile.json`,
   `scan-config.json`, the audit and sync journals (`*.jsonl`) and
   `endpoint.json`. Exports you make yourself (Markdown export) are plaintext;
-  Praxis-Sync bundles are encrypted separately with their own passphrase.
+  Device Sync bundles are encrypted separately with their own passphrase.
 - Plaintext left behind by versions before 2.11: backups and snapshots of the
   old file, and blocks an SSD has not overwritten yet. Delete old backups, and
   use full-disk encryption (FileVault, BitLocker, LUKS) — it covers everything
