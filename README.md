@@ -122,7 +122,7 @@ This repository is the **open core** (AGPL-3.0): the memory engine, the MCP serv
 | **Price** | | |
 | License | free · AGPL-3.0 | a license key, checked offline |
 
-**One license key, checked offline on your machine — no account, no internet.** KEPTA never phones home. For yourself, your practice or your whole team: **[write to me on LinkedIn](https://www.linkedin.com/in/damian-todorovic-244235434)** and I'll get you set up.
+**One license key, checked offline on your machine — no account, no internet.** KEPTA never phones home. For yourself, your practice or your whole team: **[write to me on LinkedIn](https://www.linkedin.com/in/damian-todorovic-244235434)** and I'll get you set up. The installers are at **[kepta-enterprise-releases](https://github.com/DamianTodorovic/kepta-enterprise-releases/releases/latest)**.
 
 ---
 

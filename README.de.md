@@ -101,7 +101,7 @@ KEPTA ändert das — **lokal**. Eine verschlüsselte SQLite-Datei auf deinem Re
 | **Preis** | | |
 | Lizenz | kostenlos · AGPL-3.0 | ein offline geprüfter Lizenzschlüssel |
 
-**Ein Lizenzschlüssel, offline auf deinem Rechner geprüft — kein Konto, kein Internet.** KEPTA ruft nirgends an. Für dich, deine Praxis oder dein ganzes Team: **[schreib mir auf LinkedIn](https://www.linkedin.com/in/damian-todorovic-244235434)**.
+**Ein Lizenzschlüssel, offline auf deinem Rechner geprüft — kein Konto, kein Internet.** KEPTA ruft nirgends an. Für dich, deine Praxis oder dein ganzes Team: **[schreib mir auf LinkedIn](https://www.linkedin.com/in/damian-todorovic-244235434)**. Die Installer liegen unter **[kepta-enterprise-releases](https://github.com/DamianTodorovic/kepta-enterprise-releases/releases/latest)**.
 
 ## ⚡ Schnellstart
 
