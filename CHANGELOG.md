@@ -2,7 +2,7 @@
 
 All notable changes are documented in this file. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and versioning follows [SemVer](https://semver.org/).
 
-## [Unreleased]
+## [2.12.0] — 2026-09-14
 
 ### Changed
 - **Notes look like notes.** The browser interface renders Markdown — headings,
