@@ -4,7 +4,7 @@
 // Vorschauen ohne YAML, Markdown-Zeichen und Vorlagen-Platzhalter. Bis 2.11
 // standen Rauten, Sternchen, „---“ und „{{date}}“ roh auf jeder Karte.
 import { describe, it, expect } from "vitest";
-import { zeile, zerlege, anzeige, detail, istPfad, verschoenere, alsText } from "../../src/ui/markdown";
+import { zeile, zerlege, anzeige, detail, istPfad, verschoenere, alsText, ausschnitt, begriffMuster } from "../../src/ui/markdown";
 
 const text = (v: string) => ({ t: "text", v });
 
@@ -168,6 +168,24 @@ describe("was die Detailansicht bekommt", () => {
     for (const muster of ["**a ", "[[b ", "`c ", "_d ", "<e ", "{{f ", "| g "]) detail("gross", muster.repeat(50_000));
     detail("zeilen", "- x\n".repeat(50_000));
     expect(Date.now() - start).toBeLessThan(4000);
+  });
+});
+
+describe("Suchergebnisse", () => {
+  it("zeigen einen Ausschnitt um den ersten Treffer — ohne Markdown", () => {
+    const text = "Einleitung ohne Bezug. ".repeat(12) + "Das **Backup** läuft nachts um 02:00 und bleibt 30 Tage.";
+    const a = ausschnitt("Server", text, ["backup"]);
+    expect(a.startsWith("…")).toBe(true);
+    expect(a).toContain("Backup läuft nachts");
+    expect(a).not.toContain("**");
+    expect(ausschnitt("Kurz", "Backup am Anfang.", ["backup"])).toBe("Backup am Anfang.");
+    expect(ausschnitt("Ohne", "Nichts passt hier.", ["zebra"])).toBe("Nichts passt hier.");
+  });
+
+  it("nehmen Suchbegriffe wörtlich — ein Punkt ist ein Punkt", () => {
+    expect(begriffMuster(["a.b", "(x"])!.test("a.b")).toBe(true);
+    expect(begriffMuster(["a.b"])!.test("axb")).toBe(false);
+    expect(begriffMuster(["", "x"])).toBeNull();
   });
 });
 

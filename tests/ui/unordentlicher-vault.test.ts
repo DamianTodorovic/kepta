@@ -123,6 +123,15 @@ describe("ein unordentlicher Vault in KEPTA Core", () => {
     expect(note.body[1].c).toContainEqual({ t: "wiki", ziel: "Lumen & Co.", v: "Lumen" });
   });
 
+  it("Suchtreffer zeigen einen sauberen Ausschnitt und welche Begriffe passten", async () => {
+    importObsidianVault(store, VAULT);
+    const r = (await anfrage("GET", "/api/search?q=relaunch")).json;
+    expect(r.hits[0].note.displayTitle).toBe("Kickoff Projekt Atlas");
+    expect(r.hits[0].matchedTerms).toContain("relaunch");
+    expect(r.hits[0].snippet).toContain("Relaunch");
+    for (const roh of ROH) expect(r.hits[0].snippet).not.toContain(roh);
+  });
+
   it("ein erneuter Import verdoppelt nichts — auch nicht Notizen mit dem alten Ordnerpfad als Titel", () => {
     store.createMemory({ title: "Anleitungen/drucker_einrichten", content: "alt" });
     expect(importObsidianVault(store, VAULT)).toMatchObject({ imported: VAULT.length - 1, updated: 1 });

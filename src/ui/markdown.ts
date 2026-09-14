@@ -448,6 +448,32 @@ export function anzeige(titel: string, inhalt: string, zerlegt: Zerlegt = zerleg
   return { displayTitle, path: pfad, preview, template };
 }
 
+/** Die Suchbegriffe als ein Muster — wörtlich genommen, nur an Wortanfängen. */
+export function begriffMuster(begriffe: string[]): RegExp | null {
+  const t = [...new Set(begriffe.map((b) => b.trim().toLowerCase()).filter((b) => b.length >= 2))]
+    .slice(0, 12)
+    .map((b) => b.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"));
+  return t.length ? new RegExp(`(?<![\\p{L}\\p{N}])(?:${t.join("|")})`, "iu") : null;
+}
+
+/** Ein Ausschnitt um den ersten Treffer — damit ein Suchergebnis zeigt, warum es passt. */
+export function ausschnitt(titel: string, inhalt: string, begriffe: string[]): string {
+  const z = zerlege(inhalt, 60_000);
+  const muster = begriffMuster(begriffe);
+  const text = z.bloecke.map(blockText).join(" ").replace(/\s+/g, " ").trim();
+  const m = muster ? muster.exec(text) : null;
+  // Steht der Treffer ohnehin vorn, ist die normale Vorschau der beste Ausschnitt.
+  if (!m || m.index < 60) return anzeige(titel, inhalt, z).preview;
+  const leer = text.lastIndexOf(" ", m.index - 50);
+  const start = leer < 0 ? 0 : leer + 1;
+  let aus = text.slice(start, start + VORSCHAU);
+  if (start + VORSCHAU < text.length) {
+    const wort = aus.lastIndexOf(" ");
+    aus = (wort > VORSCHAU * 0.6 ? aus.slice(0, wort) : aus).replace(/[\s,;:·—-]+$/, "") + "…";
+  }
+  return "…" + aus;
+}
+
 /** Alles für die Detailansicht: Blöcke ohne die doppelte Titelzeile, Eigenschaften, Herkunft. */
 export function detail(titel: string, inhalt: string): Anzeige & { body: Block[]; properties: [string, string][]; source: string | null } {
   const z = zerlege(inhalt);

@@ -1,5 +1,5 @@
 <p align="center"><img src="docs/kepta-logo.svg" width="88" alt="KEPTA"></p>
-<p align="center"><img src="https://img.shields.io/badge/version-2.11.0-blue" alt="v2.11.0"> <img src="https://img.shields.io/badge/license-AGPL--3.0-blue" alt="AGPL-3.0"> <img src="https://img.shields.io/badge/tests-386%20passing-brightgreen" alt="tests"> <img src="https://img.shields.io/badge/coverage%20gate-%E2%89%A5%2070%25%20of%20lines-brightgreen" alt="coverage gate"> <img src="https://img.shields.io/badge/platform-macOS%20%7C%20Windows%20%7C%20Linux-lightgrey" alt="platform"> <img src="https://img.shields.io/badge/encryption-SQLCipher%204-green" alt="encrypted"> <a href="https://www.linkedin.com/in/damian-todorovic-244235434"><img src="https://img.shields.io/badge/LinkedIn-Damian%20Todorovic-0A66C2?logo=linkedin&logoColor=white" alt="Damian Todorovic on LinkedIn"></a></p>
+<p align="center"><img src="https://img.shields.io/badge/version-2.11.0-blue" alt="v2.11.0"> <img src="https://img.shields.io/badge/license-AGPL--3.0-blue" alt="AGPL-3.0"> <img src="https://img.shields.io/badge/tests-389%20passing-brightgreen" alt="tests"> <img src="https://img.shields.io/badge/coverage%20gate-%E2%89%A5%2070%25%20of%20lines-brightgreen" alt="coverage gate"> <img src="https://img.shields.io/badge/platform-macOS%20%7C%20Windows%20%7C%20Linux-lightgrey" alt="platform"> <img src="https://img.shields.io/badge/encryption-SQLCipher%204-green" alt="encrypted"> <a href="https://www.linkedin.com/in/damian-todorovic-244235434"><img src="https://img.shields.io/badge/LinkedIn-Damian%20Todorovic-0A66C2?logo=linkedin&logoColor=white" alt="Damian Todorovic on LinkedIn"></a></p>
 
 # KEPTA Core
 
@@ -30,6 +30,17 @@ This repository is the **open core** (AGPL-3.0): the memory engine, the MCP serv
 
 ---
 
+## ⚡ Two commands
+
+```bash
+npx -y kepta-mcp setup   # connects Claude Desktop, Claude Code, Cursor, Windsurf and VS Code
+npx -y kepta-mcp ui      # your memory in the browser — watch your AI use it, live
+```
+
+Then tell your AI something worth keeping — and watch it arrive. Details in the [Quick start](#-quick-start).
+
+---
+
 ## 🚀 KEPTA Enterprise — the full desktop app
 
 **The engine in this repository is what your agents talk to. KEPTA Enterprise is what _you_ work in.** A native app for macOS, Windows and Linux that turns the same encrypted knowledge base into a second brain you can see, search, shape and trust — every document, every decision, every connection, on your own machine.
@@ -57,7 +68,7 @@ This repository is the **open core** (AGPL-3.0): the memory engine, the MCP serv
 | **Notes** | | |
 | Create, edit, delete — trash with restore | ✅ | ✅ |
 | Four kinds of knowledge — fact, event, how-to, document — assigned by readable rules that state their reason | ✅ | ✅ |
-| Sort existing notes by kind afterwards, with a preview first | API | ✅ |
+| Sort existing notes by kind afterwards, with a preview first | ✅ | ✅ |
 | Tags, confidence 0–1, automatically extracted entities | ✅ | ✅ |
 | Scopes — user, agent, session — so a memory knows whom it belongs to | API · MCP | API · MCP |
 | Validity windows — expired notes are marked, never quietly hidden | ✅ | ✅ |
@@ -96,12 +107,13 @@ This repository is the **open core** (AGPL-3.0): the memory engine, the MCP serv
 | Consolidation supersedes instead of deleting — nothing is lost | MCP | ✅ |
 | Duplicate review — groups side by side, keep the richest copy in one click, one undo for the batch | — | ✅ |
 | Episodic memories grow out of chat history | — | ✅ |
-| Activity feed | API | ✅ |
+| Activity feed | ✅ live, with the name of the AI app | ✅ |
 | **Agents (MCP)** | | |
 | MCP 2026-07-28, compatible with 2025-06-18 and 2024-11-05 — stdio and Streamable HTTP | ✅ | ✅ |
 | Eight tools — search, save, update, delete, list, graph, consolidate, forget — with `outputSchema` and `structuredContent` | ✅ | ✅ |
 | Write gate (opt-in) — a local LLM decides ADD, UPDATE, DELETE or NOOP before a new memory is stored | ✅ | ✅ |
 | npm package `kepta-mcp`, listed in the official MCP registry | ✅ | ✅ |
+| Connect Claude Desktop, Claude Code, Cursor, Windsurf and VS Code in one step — `npx kepta-mcp setup` or one click | ✅ | MCP block to copy |
 | Python client — `pip install kepta`, standard library only | ✅ | ✅ |
 | **Chat cockpit** | | |
 | 20 provider presets — Ollama, LM Studio, OpenAI, Anthropic, Gemini, Mistral, Groq, DeepSeek, xAI and more | — | ✅ |
@@ -115,7 +127,8 @@ This repository is the **open core** (AGPL-3.0): the memory engine, the MCP serv
 | Light and dark | ✅ | ✅ |
 | Keyboard first — shortcuts; in Enterprise also a command palette (⌘K) | ✅ | ✅ |
 | Tag filter with counts | ✅ | ✅ |
-| Knowledge list with readable previews, source chips, part badges, *Open file*, grouping by file, kind or period | — | ✅ |
+| Knowledge list with readable titles and previews | ✅ | ✅ |
+| Source chips, part badges, *Open file*, grouping by file, kind or period | — | ✅ |
 | Focus mode and text size (100 / 115 / 130 %) | — | ✅ |
 | Setup assistant with a starter pack | — | ✅ |
 | System status — detects local AI, checks storage, shows diagnostics | — | ✅ |
@@ -254,7 +267,7 @@ The knowledge base is a SQLCipher 4 database: AES-256, an HMAC-SHA512 over every
 
 ## 🧪 Quality
 
-**386 tests** with Vitest and v8 coverage. The coverage thresholds are a CI gate: a commit that falls below one of them turns CI red. On top: a retrieval eval (Hit@1, Precision@5, MRR) on a fixed corpus, an ablation test per retrieval leg, an encryption eval and a boundary test on the core architecture.
+**389 tests** with Vitest and v8 coverage. The coverage thresholds are a CI gate: a commit that falls below one of them turns CI red. On top: a retrieval eval (Hit@1, Precision@5, MRR) on a fixed corpus, an ablation test per retrieval leg, an encryption eval and a boundary test on the core architecture.
 
 ### Coverage thresholds (enforced by CI)
 

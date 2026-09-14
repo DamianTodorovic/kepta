@@ -20,6 +20,13 @@ All notable changes are documented in this file. The format follows [Keep a Chan
   until now a whole vault landed as facts. Titles are the file name without
   folders, as in Obsidian, so `[[links]]` find them; a re-import finds notes
   stored under the old folder title instead of duplicating them.
+- **Search results show why they match** — a snippet around the first hit,
+  with the search terms marked.
+- **Works in a narrow window.** When there is no room for the sidebar, the
+  views, *Activity* and *Connect* sit in one row under the search field.
+- **KEPTA Enterprise, quietly.** No locked entries in the sidebar, no banner,
+  no button in the top bar and no hints in the middle of your work any more —
+  one link at the bottom of the sidebar shows what the desktop app adds.
 
 ### Added
 - **Watch your AI use its memory.** The browser interface lists the AI apps

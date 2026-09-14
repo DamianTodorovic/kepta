@@ -1,5 +1,5 @@
 <p align="center"><img src="docs/kepta-logo.svg" width="88" alt="KEPTA"></p>
-<p align="center"><img src="https://img.shields.io/badge/tests-386%20passing-brightgreen" alt="Tests"> <img src="https://img.shields.io/badge/coverage%20gate-%E2%89%A5%2070%25%20der%20Zeilen-brightgreen" alt="Coverage-Gate"> <img src="https://img.shields.io/badge/Verschl%C3%BCsselung-SQLCipher%204-green" alt="verschlüsselt"> <a href="https://www.linkedin.com/in/damian-todorovic-244235434"><img src="https://img.shields.io/badge/LinkedIn-Damian%20Todorovic-0A66C2?logo=linkedin&logoColor=white" alt="Damian Todorovic auf LinkedIn"></a></p>
+<p align="center"><img src="https://img.shields.io/badge/tests-389%20passing-brightgreen" alt="Tests"> <img src="https://img.shields.io/badge/coverage%20gate-%E2%89%A5%2070%25%20der%20Zeilen-brightgreen" alt="Coverage-Gate"> <img src="https://img.shields.io/badge/Verschl%C3%BCsselung-SQLCipher%204-green" alt="verschlüsselt"> <a href="https://www.linkedin.com/in/damian-todorovic-244235434"><img src="https://img.shields.io/badge/LinkedIn-Damian%20Todorovic-0A66C2?logo=linkedin&logoColor=white" alt="Damian Todorovic auf LinkedIn"></a></p>
 
 # KEPTA Core — deutsches Readme
 
@@ -8,6 +8,15 @@ Dein KI-Assistent vergisst alles. Jeder Chat beginnt bei null.
 KEPTA ändert das — **lokal**. Eine verschlüsselte SQLite-Datei auf deinem Rechner. Keine Cloud, kein Konto, keine Telemetrie. Dein Assistent liest und schreibt sie über **MCP** (Claude Desktop, Cursor, jeder MCP-Client) oder eine kleine **HTTP-API**.
 
 > **Dies ist der offene Kern** (AGPL-3.0): Memory-Engine, MCP-Server, HTTP-API — dazu der Python-Client unter MIT, damit ihn jedes Python-Projekt einbauen kann. Die vollständige Desktop-Anwendung ist **KEPTA Enterprise** — siehe unten. English: [README.md](README.md).
+
+## ⚡ Zwei Befehle
+
+```bash
+npx -y kepta-mcp setup   # verbindet Claude Desktop, Claude Code, Cursor, Windsurf und VS Code
+npx -y kepta-mcp ui      # dein Gedächtnis im Browser — sieh live zu, wie deine KI es nutzt
+```
+
+Dann sag deiner KI etwas, das sie behalten soll — und sieh zu, wie es ankommt. Mehr im [Schnellstart](#-schnellstart).
 
 ## 🚀 KEPTA Enterprise — die ganze Desktop-App
 
@@ -36,7 +45,7 @@ KEPTA ändert das — **lokal**. Eine verschlüsselte SQLite-Datei auf deinem Re
 | **Notizen** | | |
 | Anlegen, bearbeiten, löschen — Papierkorb mit Wiederherstellen | ✅ | ✅ |
 | Vier Wissensarten — Fakt, Ereignis, Anleitung, Dokument — nach lesbaren Regeln mit Begründung zugeordnet | ✅ | ✅ |
-| Bestehende Notizen nachträglich nach Art sortieren, mit Vorschau | API | ✅ |
+| Bestehende Notizen nachträglich nach Art sortieren, mit Vorschau | ✅ | ✅ |
 | Tags, Konfidenz 0–1, automatisch erkannte Entitäten | ✅ | ✅ |
 | Scopes — Nutzer, Agent, Sitzung — damit eine Erinnerung weiß, wem sie gehört | API · MCP | API · MCP |
 | Gültigkeitsfenster — Abgelaufenes wird markiert, nie still versteckt | ✅ | ✅ |
@@ -75,12 +84,13 @@ KEPTA ändert das — **lokal**. Eine verschlüsselte SQLite-Datei auf deinem Re
 | Konsolidierung ersetzt statt zu löschen — nichts geht verloren | MCP | ✅ |
 | Duplikat-Prüfung — Gruppen nebeneinander, die reichste Fassung mit einem Klick behalten, ein Rückgängig für alles | — | ✅ |
 | Episodische Erinnerungen wachsen aus dem Chatverlauf | — | ✅ |
-| Aktivitäts-Feed | API | ✅ |
+| Aktivitäts-Feed | ✅ live, mit dem Namen der KI-App | ✅ |
 | **Agenten (MCP)** | | |
 | MCP 2026-07-28, kompatibel mit 2025-06-18 und 2024-11-05 — stdio und Streamable HTTP | ✅ | ✅ |
 | Acht Werkzeuge — suchen, speichern, ändern, löschen, auflisten, Graph, konsolidieren, vergessen — mit `outputSchema` und `structuredContent` | ✅ | ✅ |
 | Schreib-Schleuse (optional) — ein lokales LLM entscheidet ADD, UPDATE, DELETE oder NOOP, bevor Neues gespeichert wird | ✅ | ✅ |
 | npm-Paket `kepta-mcp`, eingetragen in der offiziellen MCP-Registry | ✅ | ✅ |
+| Claude Desktop, Claude Code, Cursor, Windsurf und VS Code in einem Schritt verbinden — `npx kepta-mcp setup` oder ein Klick | ✅ | MCP-Block zum Kopieren |
 | Python-Client — `pip install kepta`, nur Standardbibliothek | ✅ | ✅ |
 | **Chat-Cockpit** | | |
 | 20 Anbieter-Vorlagen — Ollama, LM Studio, OpenAI, Anthropic, Gemini, Mistral, Groq, DeepSeek, xAI und mehr | — | ✅ |
@@ -94,7 +104,8 @@ KEPTA ändert das — **lokal**. Eine verschlüsselte SQLite-Datei auf deinem Re
 | Hell und dunkel | ✅ | ✅ |
 | Mit der Tastatur — Kürzel; in Enterprise zusätzlich eine Befehlspalette (⌘K) | ✅ | ✅ |
 | Tag-Filter mit Zählern | ✅ | ✅ |
-| Wissensliste mit lesbarer Vorschau, Quellen-Chips, Teil-Angaben, *Open file*, Gruppierung nach Datei, Art oder Zeitraum | — | ✅ |
+| Wissensliste mit lesbaren Titeln und Vorschauen | ✅ | ✅ |
+| Quellen-Chips, Teil-Angaben, *Open file*, Gruppierung nach Datei, Art oder Zeitraum | — | ✅ |
 | Fokus-Modus und Textgröße (100 / 115 / 130 %) | — | ✅ |
 | Einrichtungsassistent mit Startpaket | — | ✅ |
 | Systemstatus — erkennt lokale KI, prüft den Speicher, zeigt Diagnosen | — | ✅ |
@@ -129,7 +140,7 @@ npm install && npm run dev
 
 **4. Docker** (nur MCP-Server): `docker build -t kepta-mcp .`
 
-**Zahlen:** **386 Tests** · 29 Routen · `npm run eval` — Eval auf 58 Notizen / 45 Anfragen (Hit@1, Precision@5, MRR).
+**Zahlen:** **389 Tests** · 29 Routen · `npm run eval` — Eval auf 58 Notizen / 45 Anfragen (Hit@1, Precision@5, MRR).
 
 ## 🔐 Verschlüsselt auf der Platte
 

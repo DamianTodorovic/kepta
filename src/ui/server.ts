@@ -22,7 +22,7 @@ import { klassifiziere } from "../core/klassifikation";
 import { saveWithIndex } from "../core/mcp";
 import { APP_VERSION } from "../core/version";
 import { SEITE_HTML, SEITE_CSS, SEITE_JS, FAVICON_SVG } from "./seite";
-import { anzeige, detail } from "./markdown";
+import { anzeige, detail, ausschnitt } from "./markdown";
 import { letzteAktivitaet, agenten, anzeigeName, type Aktivitaet } from "../aktivitaet";
 import { finde, verbinde, standardUmgebung, type Umgebung } from "../einrichtung";
 
@@ -322,7 +322,14 @@ async function bearbeite(req: http.IncomingMessage, res: http.ServerResponse, ct
     return antworte(res, 200, {
       query: q,
       total: ergebnis.total,
-      hits: ergebnis.hits.map((h) => ({ note: alsNotiz(h.memory), score: h.score, matchedTerms: h.matchedTerms, expired: h.expired, superseded: h.superseded })),
+      hits: ergebnis.hits.map((h) => ({
+        note: alsNotiz(h.memory),
+        score: h.score,
+        matchedTerms: h.matchedTerms,
+        expired: h.expired,
+        superseded: h.superseded,
+        snippet: ausschnitt(h.memory.title, h.memory.content, h.matchedTerms),
+      })),
     });
   }
 

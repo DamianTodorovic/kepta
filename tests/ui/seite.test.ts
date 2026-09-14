@@ -37,14 +37,15 @@ describe("die Seite der Core-Oberfläche", () => {
     expect(SEITE_HTML).toContain('<circle cx="21.2" cy="9.8" r="1.7" fill="#fff"/>');
   });
 
-  it("wirbt für Enterprise: Seitenleiste, Kopfzeile und passende Hinweise öffnen dieselbe Seite", () => {
+  it("erwähnt Enterprise leise: ein Link unten in der Seitenleiste — keine gesperrten Einträge, keine eingestreuten Hinweise", () => {
+    // Bis 2.11 standen vier gesperrte Enterprise-Einträge in der Seitenleiste,
+    // dazu ein Werbekasten, ein Knopf in der Kopfzeile und Hinweise mitten in
+    // der Arbeit. Core soll für sich überzeugen; Enterprise ist einen Klick entfernt.
     expect(vorlage).toContain(LINKEDIN);
     expect(vorlage).toContain(VERGLEICH);
-    const ausloeser = [...SEITE_HTML.matchAll(/data-pro="([^"]*)"/g)].map((m) => m[1]);
-    expect(ausloeser).toEqual(["graph", "import", "chat", "duplicates", "", ""]);
-    for (const f of ausloeser.filter(Boolean)) expect(vorlage).toContain(`data-feature="${f}"`);
-    // im richtigen Moment: eine Notiz mit Links, die leere Wissensbasis, Suchergebnisse
-    for (const f of ["graph", "import", "chat"]) expect(SEITE_JS).toContain(`, '${f}')`);
+    expect([...SEITE_HTML.matchAll(/data-pro="([^"]*)"/g)].map((m) => m[1])).toEqual([""]);
+    expect(SEITE_HTML).not.toMatch(/lock-ico|class="upsell"|pro-btn/);
+    expect(SEITE_JS).not.toMatch(/hinweis\(|class: 'hint'/);
   });
 
   it("verspricht nur, was die Vergleichstabelle der README belegt", () => {

@@ -35,27 +35,20 @@ export const SEITE_HTML = `<!doctype html>
     <nav id="views" aria-label="Views"></nav>
     <div class="section-label">AI apps</div>
     <nav id="agents" aria-label="AI apps"></nav>
-    <div class="section-label">In KEPTA Enterprise</div>
-    <nav class="pro-list" aria-label="Only in KEPTA Enterprise">
-      <button class="nav pro" type="button" data-pro="graph"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="6" cy="6" r="2.5"/><circle cx="18" cy="8" r="2.5"/><circle cx="10" cy="18" r="2.5"/><path d="M8.4 6.4 15.5 7.6M6.8 8.4l2.4 7.2M16.6 10.1 11.7 16.2"/></svg><span class="nav-label">Knowledge graph</span><svg class="lock-ico" viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg></button>
-      <button class="nav pro" type="button" data-pro="import"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 15V4M7.5 8.5 12 4l4.5 4.5M5 15v3.5A1.5 1.5 0 0 0 6.5 20h11a1.5 1.5 0 0 0 1.5-1.5V15"/></svg><span class="nav-label">Import &amp; scan</span><svg class="lock-ico" viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg></button>
-      <button class="nav pro" type="button" data-pro="chat"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 12a7.5 7.5 0 0 1-10.9 6.7L4 20l1.4-4.6A7.5 7.5 0 1 1 20 12Z"/></svg><span class="nav-label">Chat with your memory</span><svg class="lock-ico" viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg></button>
-      <button class="nav pro" type="button" data-pro="duplicates"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="8" y="8" width="12" height="12" rx="2"/><path d="M16 5.5V5a1 1 0 0 0-1-1H5a1 1 0 0 0-1 1v10a1 1 0 0 0 1 1h.5"/></svg><span class="nav-label">Duplicate review</span><svg class="lock-ico" viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg></button>
-    </nav>
     <div class="section-label">Tags</div>
     <nav id="tags" aria-label="Tags"></nav>
     <div class="sidebar-foot">
       <button id="lock" class="lock" type="button" title="Encryption and recovery key">Checking encryption…</button>
-      <button class="upsell" type="button" data-pro=""><span class="upsell-kicker">KEPTA Enterprise</span><span class="upsell-text">Your memory as a graph, drag &amp; drop import and a chat with it — in a native desktop app.</span></button>
+      <button class="quiet-pro" type="button" data-pro="">KEPTA Enterprise — the desktop app <span aria-hidden="true">›</span></button>
     </div>
   </aside>
   <main class="main">
     <header class="topbar">
       <label class="search"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg><input id="q" type="search" placeholder="Search your memory  —  press /" autocomplete="off" spellcheck="false" aria-label="Search your memory"></label>
       <button id="new" class="btn primary" type="button">New note</button>
-      <button class="btn pro-btn" type="button" data-pro="">✦ Enterprise</button>
       <button id="theme" class="btn icon" type="button" aria-label="Switch between dark and light">◐</button>
     </header>
+    <nav id="mobil" class="mobil" aria-label="Views and AI apps"></nav>
     <section class="head"><h1 id="heading">All notes</h1><p id="sub" class="muted"></p></section>
     <section id="notice" class="notice" hidden></section>
     <section id="list" class="list" aria-live="polite"></section>
@@ -131,23 +124,11 @@ button{font:inherit;color:inherit;cursor:pointer}
 .lock::before{content:"";width:8px;height:8px;border-radius:50%;background:var(--warn);flex:none}
 .lock.ok::before{background:var(--accent)}
 .mark{flex:none}
-.upsell{display:flex;flex-direction:column;gap:3px;width:100%;text-align:left;padding:13px;border-radius:10px;background:color-mix(in srgb,var(--accent) 7%,var(--panel));border:1px solid color-mix(in srgb,var(--accent) 28%,transparent)}
-.upsell:hover{border-color:var(--accent)}
-.upsell:focus-visible,.hint:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
-.upsell-kicker{color:var(--accent);font-weight:700;font-size:13px}
-.upsell-text{color:var(--muted);font-size:12px;line-height:1.45}
+.quiet-pro{border:0;background:transparent;padding:4px 8px;color:var(--muted);font-size:12px;text-align:left}
+.quiet-pro:hover{color:var(--text)}
+.quiet-pro:focus-visible{outline:2px solid var(--accent);outline-offset:2px;border-radius:6px}
 .badge{flex:none;font-size:10px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;padding:2px 8px;border-radius:999px;color:var(--accent);border:1px solid color-mix(in srgb,var(--accent) 42%,transparent);background:color-mix(in srgb,var(--accent) 8%,transparent)}
-.nav.pro{color:var(--muted)}
-.nav.pro:hover{color:var(--text)}
-.nav.pro svg{flex:none;width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
-.nav.pro>svg:first-child{margin:0 -4px}
-.nav.pro .lock-ico{width:13px;height:13px;opacity:.65}
-.pro-btn{color:var(--accent);border-color:color-mix(in srgb,var(--accent) 46%,transparent)}
-.pro-btn:hover{background:color-mix(in srgb,var(--accent) 10%,transparent)}
 a.btn{display:inline-flex;align-items:center;text-decoration:none;color:var(--text)}
-.hint{display:flex;align-items:center;gap:10px;width:100%;margin-top:16px;padding:11px 13px;border-radius:10px;border:1px dashed color-mix(in srgb,var(--accent) 42%,transparent);background:color-mix(in srgb,var(--accent) 6%,transparent);color:var(--muted);font-size:13px;text-align:left}
-.hint:hover{color:var(--text);border-style:solid}
-.list .hint{grid-column:1/-1;margin-top:4px}
 .ent-art{display:block;width:100%;height:auto;margin:16px 0 6px;border-radius:12px;border:1px solid var(--line);background:radial-gradient(circle at 50% 50%,color-mix(in srgb,var(--accent) 12%,transparent),transparent 70%),var(--panel2)}
 .ent-art .e{fill:none;stroke:color-mix(in srgb,var(--accent) 46%,transparent);stroke-width:1.4}
 .ent-art .sim{stroke-dasharray:4 5;opacity:.75}
@@ -300,7 +281,13 @@ textarea.input{resize:vertical;line-height:1.55}
 .meldung.ok{border-color:color-mix(in srgb,var(--ok) 50%,transparent);color:var(--ok)}
 .meldung.fehler{border-color:color-mix(in srgb,var(--danger) 50%,transparent);color:var(--danger)}
 .cmd{background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:12px 14px;font:13px ui-monospace,SFMono-Regular,Menlo,monospace;margin:8px 0;overflow:auto}
-@media (max-width:820px){.app{grid-template-columns:1fr}.sidebar{display:none}.main{padding:0 14px 30px}}
+.mobil{display:none}
+.mobil button{flex:none;display:inline-flex;align-items:center;gap:7px;height:34px;padding:0 12px;border-radius:999px;border:1px solid var(--line);background:var(--panel);color:var(--muted);font-size:13px;white-space:nowrap}
+.mobil button.active{color:var(--text);border-color:var(--accent)}
+.mobil button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.mobil .count{font-size:11px}
+mark.hl{background:color-mix(in srgb,var(--accent) 24%,transparent);color:inherit;border-radius:3px;padding:0 1px}
+@media (max-width:820px){.app{grid-template-columns:1fr}.sidebar{display:none}.main{padding:0 14px 30px}.mobil{display:flex;gap:6px;overflow-x:auto;padding:0 0 8px;scrollbar-width:none}}
 `;
 
 export const SEITE_JS = String.raw`
@@ -364,8 +351,8 @@ export const SEITE_JS = String.raw`
   }
   function chip(type) { return h('span', { class: 'chip t-' + type, text: TYPES[type] || type }); }
 
-  // KEPTA Enterprise: what the desktop app adds. It opens from the sidebar, the
-  // top bar or a hint that fits the moment — never by itself.
+  // KEPTA Enterprise: what the desktop app adds. It opens from one quiet link
+  // at the bottom of the sidebar — never by itself, never in the middle of work.
   function enterprise(feature) {
     drawer($('enterprise').content.cloneNode(true));
     var p = $('panel');
@@ -375,9 +362,20 @@ export const SEITE_JS = String.raw`
     var ziel = feature ? p.querySelector('[data-feature="' + feature + '"]') : null;
     if (ziel) { ziel.classList.add('focus'); ziel.scrollIntoView({ block: 'center' }); }
   }
-  function hinweis(text, feature) {
-    return h('button', { class: 'hint', type: 'button', onclick: function () { enterprise(feature); } },
-      h('span', { class: 'badge', text: 'Enterprise' }), h('span', { text: text }));
+  // Search terms in a result, marked — built from text nodes, never HTML.
+  function markiert(el, text, begriffe) {
+    var t = (begriffe || []).filter(function (b) { return b && b.length >= 2; }).map(function (b) { return b.replace(/[-.*+?^$(){}|[\]\\]/g, '\\$&'); });
+    if (!t.length) { el.textContent = text; return el; }
+    var re = new RegExp('(' + t.join('|') + ')', 'gi');
+    var zuletzt = 0;
+    var m;
+    while ((m = re.exec(text))) {
+      if (m.index > zuletzt) el.appendChild(document.createTextNode(text.slice(zuletzt, m.index)));
+      el.appendChild(h('mark', { class: 'hl', text: m[0] }));
+      zuletzt = re.lastIndex;
+    }
+    if (zuletzt < text.length) el.appendChild(document.createTextNode(text.slice(zuletzt)));
+    return el;
   }
 
   function renderSidebar() {
@@ -398,6 +396,7 @@ export const SEITE_JS = String.raw`
       tags.appendChild(h('button', { class: 'nav' + (state.tag === t.tag ? ' active' : ''), type: 'button', onclick: function () { setTag(t.tag); } },
         h('span', { class: 'hash', text: '#' }), h('span', { class: 'nav-label', text: t.tag }), h('span', { class: 'count', text: String(t.count) })));
     });
+    renderMobil();
     var e = s.encryption;
     var lock = $('lock');
     lock.className = 'lock' + (e.aktiv ? ' ok' : '');
@@ -458,13 +457,15 @@ export const SEITE_JS = String.raw`
     return [v[1], state.view === 'trash' ? 'Deleted notes wait here until you restore them.' : ''];
   }
 
-  function card(note, extra) {
+  function card(note, extra, treffer) {
     var abgelaufen = note.validTo && note.validTo < Date.now();
     var c = h('article', { class: 'card t-' + note.type, 'data-id': note.id, tabindex: '0', onclick: function () { openNote(note.id); }, onkeydown: function (ev) { if (ev.key === 'Enter') openNote(note.id); } },
       h('div', { class: 'card-top' }, chip(note.type), note.template ? h('span', { class: 'flag', text: 'Template' }) : null, note.supersededBy ? h('span', { class: 'flag', text: 'Superseded' }) : null, abgelaufen ? h('span', { class: 'flag', text: 'Expired' }) : null),
-      h('h3', { text: note.displayTitle || note.title }),
+      markiert(h('h3'), note.displayTitle || note.title, treffer && treffer.terms),
       note.path ? h('div', { class: 'path', title: note.path, text: note.path }) : null,
-      h('p', { class: 'excerpt' + (note.preview ? '' : ' none'), text: note.preview || (note.template ? 'An empty template.' : 'No text yet.') }),
+      (treffer && treffer.snippet) || note.preview
+        ? markiert(h('p', { class: 'excerpt' }), (treffer && treffer.snippet) || note.preview, treffer && treffer.terms)
+        : h('p', { class: 'excerpt none', text: note.template ? 'An empty template.' : 'No text yet.' }),
       h('div', { class: 'card-foot' },
         h('div', { class: 'tags' }, note.tags.slice(0, 3).map(function (t) { return h('span', { class: 'tagchip', text: '#' + t }); })),
         h('span', { class: 'muted small', text: ago(note.updatedAt) })));
@@ -478,8 +479,7 @@ export const SEITE_JS = String.raw`
       h('p', { class: 'muted', text: 'Connect an AI app and it starts remembering: what you decided, how things work, who is who. Every note stays encrypted on this computer.' }),
       h('div', { class: 'row' },
         h('button', { class: 'btn primary', type: 'button', onclick: verbinden }, 'Connect an AI app'),
-        h('button', { class: 'btn', type: 'button', onclick: function () { openEditor(null); } }, 'Write the first note')),
-      hinweis('Already have documents? KEPTA Enterprise imports PDFs, Markdown and Obsidian vaults by drag & drop.', 'import'));
+        h('button', { class: 'btn', type: 'button', onclick: function () { openEditor(null); } }, 'Write the first note')));
   }
 
   // AI apps: which ones use KEPTA and what they do. The MCP server is another
@@ -515,6 +515,26 @@ export const SEITE_JS = String.raw`
     box.appendChild(h('button', { class: 'nav connect', type: 'button', onclick: verbinden },
       h('span', { class: 'plus', text: '+' }), h('span', { class: 'nav-label', text: liste.length ? 'Connect another app' : 'Connect an AI app' })));
   }
+  // Narrow windows have no room for the sidebar: views, activity and Connect
+  // then sit in one row under the search field.
+  function renderMobil() {
+    var box = $('mobil');
+    var s = state.status;
+    if (!s) return;
+    var agenten = (state.agenten || []).length;
+    var zeichen = JSON.stringify([s.notes, s.types, state.view, state.tag, !!state.query, agenten]);
+    if (zeichen === box.getAttribute('data-stand')) return;
+    box.setAttribute('data-stand', zeichen);
+    box.textContent = '';
+    VIEWS.forEach(function (v) {
+      var n = v[0] === 'all' ? s.notes.active : v[0] === 'trash' ? s.notes.trashed : (s.types[v[0]] || 0);
+      if (v[0] !== 'all' && !n) return;
+      var aktiv = state.view === v[0] && !state.tag && !state.query;
+      box.appendChild(h('button', { class: aktiv ? 'active' : null, type: 'button', 'aria-current': aktiv ? 'page' : null, onclick: function () { setView(v[0]); } }, v[1], h('span', { class: 'count', text: String(n) })));
+    });
+    if (agenten) box.appendChild(h('button', { class: state.view === 'activity' && !state.query ? 'active' : null, type: 'button', onclick: function () { setView('activity'); } }, 'Activity'));
+    box.appendChild(h('button', { type: 'button', onclick: verbinden }, '+ Connect'));
+  }
   function eintrag(e) {
     var ziel = null;
     if (e.text) ziel = e.noteId
@@ -539,6 +559,7 @@ export const SEITE_JS = String.raw`
         state.eintraege = neu.concat(state.eintraege).slice(0, 50);
       }
       renderAgenten();
+      renderMobil();
       if (!neu.length) return;
       if (state.view === 'activity' && !state.query) load(true);
       if (erstes) return;
@@ -687,9 +708,8 @@ export const SEITE_JS = String.raw`
         d.hits.forEach(function (hit) {
           var fill = h('span');
           fill.style.width = Math.max(8, Math.round(hit.score / top * 100)) + '%';
-          list.appendChild(card(hit.note, h('div', { class: 'score', title: 'Relevance' }, fill)));
+          list.appendChild(card(hit.note, h('div', { class: 'score', title: 'Relevance' }, fill), { snippet: hit.snippet, terms: hit.matchedTerms }));
         });
-        list.appendChild(hinweis('Ask these notes a question — the chat in KEPTA Enterprise answers from your memory and names its sources.', 'chat'));
       }).catch(function (e) { toast(e.message, true); });
     }
     if (state.view === 'activity') {
@@ -776,9 +796,6 @@ export const SEITE_JS = String.raw`
     api('/api/notes/' + encodeURIComponent(id)).then(function (d) {
       var n = d.note;
       var geloescht = !!n.deletedAt;
-      var ziele = {};
-      (n.content.match(/\[\[([^\]]+)\]\]/g) || []).forEach(function (m) { ziele[m.slice(2, -2).trim().toLowerCase()] = true; });
-      var verweise = Object.keys(ziele).length;
       var gueltig = n.validFrom || n.validTo ? 'Valid ' + (n.validFrom ? 'from ' + datum(n.validFrom) + ' ' : '') + (n.validTo ? 'until ' + datum(n.validTo) : '') : null;
       drawer(h('div', {},
         h('div', { class: 'panel-head' }, chip(n.type), h('span', { class: 'muted small', text: 'Updated ' + ago(n.updatedAt) + ' · created ' + datum(n.createdAt) }),
@@ -792,7 +809,6 @@ export const SEITE_JS = String.raw`
         markdown(n.body, h('div', { class: 'content md' })),
         n.source ? h('p', { class: 'muted small source', text: 'Source: ' + n.source }) : null,
         n.tags.length ? h('div', { class: 'tags' }, n.tags.map(function (t) { return h('button', { class: 'tagchip', type: 'button', onclick: function () { schliessen(); setTag(t); } }, '#' + t); })) : null,
-        verweise && !geloescht ? hinweis('Links to ' + verweise + (verweise === 1 ? ' other note' : ' other notes') + ' — see them as a knowledge graph in KEPTA Enterprise.', 'graph') : null,
         h('div', { class: 'actions' },
           geloescht ? h('button', { class: 'btn primary', type: 'button', onclick: function () { restore(n.id); } }, 'Restore')
             : h('button', { class: 'btn primary', type: 'button', onclick: function () { openEditor(n); } }, 'Edit'),
