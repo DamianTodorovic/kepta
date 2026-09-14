@@ -9,7 +9,7 @@
 
 KEPTA is a local memory for AI assistants. Documents, decisions and client knowledge go into an encrypted knowledge base on your own computer — and your assistant (Claude Desktop, Cursor, any MCP client) recalls it as if it had never forgotten.
 
-This repository is the **open core** (AGPL-3.0): the memory engine, the MCP server, the HTTP API — and the Python client, which is MIT so any Python project can embed it. The full desktop application is **[KEPTA Enterprise](#-kepta-enterprise--the-full-desktop-app)**.
+This repository is the **open core** (AGPL-3.0): the memory engine, the MCP server, the HTTP API — and the Python client, which is MIT so any Python project can embed it. The full desktop application is **[KEPTA Pro](#-kepta-pro--the-full-desktop-app)**.
 
 ```
 ┌──────────────────────────────────────────────────────────────────────────┐
@@ -41,21 +41,32 @@ Then tell your AI something worth keeping — and watch it arrive. Details in th
 
 ---
 
-## 🚀 KEPTA Enterprise — the full desktop app
+## 🚀 KEPTA — one engine, three tiers
 
-**The engine in this repository is what your agents talk to. KEPTA Enterprise is what _you_ work in.** A native app for macOS, Windows and Linux that turns the same encrypted knowledge base into a second brain you can see, search, shape and trust — every document, every decision, every connection, on your own machine.
+**KEPTA is one product family around one engine.** The engine in this repository is what your agents talk to — free and open source, forever. The desktop app, **KEPTA Pro**, is what _you_ work in. Teams and organizations get the same app with more control on top.
 
-| The index — everything you know, grouped by kind | The knowledge graph — every note a node, every link an edge |
+| Tier | For | Price | What it includes |
+|---|---|---|---|
+| **Core** | Developers & AI agents | **€0**, open source, forever | This repository: the memory engine, encryption, hybrid search, MCP, HTTP API, Python client, CLI, browser UI |
+| **Pro** | Individuals & power users | **€120/year** (or €12/month) | The desktop experience on the same engine: knowledge graph, chat with your memory, dossiers, Today, privacy shield, imports, device sync |
+| **Business** | Teams, practices & firms | **€25/user/month**, billed yearly | Everything in Pro, plus team memory: shared knowledge, workspaces, roles, admin console (in development) |
+| **Enterprise** | Organizations | **Price by agreement** — shaped to your company's size and revenue | Everything in Business, plus SSO, central policies, MDM/air-gapped deployment, security documentation and support (in development) |
+
+Core is never crippled to sell Pro — the best memory engine we can build is the free one. **What we sell is how you use it.**
+
+### KEPTA Pro — the full desktop app A native app for macOS, Windows and Linux that turns the same encrypted knowledge base into a second brain you can see, search, shape and trust — every document, every decision, every connection, on your own machine.
+
+| Today — what changed since your last visit, and what needs a look | Activity — which AI app reads and writes what, live |
 |---|---|
-| ![KEPTA Enterprise: the index](docs/enterprise/01-index.png) | ![KEPTA Enterprise: the knowledge graph](docs/enterprise/03-graph.png) |
-| **The editor — kinds of knowledge, `[[links]]`, validity** | **Settings — system status, encryption at rest, Device Sync** |
-| ![KEPTA Enterprise: the editor](docs/enterprise/04-editor.png) | ![KEPTA Enterprise: the settings with the system status](docs/enterprise/05-setup.png) |
+| ![KEPTA Pro: Today, with two notes that disagree side by side](docs/enterprise/07-today.png) | ![KEPTA Pro: Claude and Cursor at work, live](docs/enterprise/09-activity.png) |
+| **Privacy shield — what a cloud AI would get to see** | **The knowledge graph — every note a node, every link an edge** |
+| ![KEPTA Pro: the privacy shield turning personal data into placeholders](docs/enterprise/11-privacy.png) | ![KEPTA Pro: the knowledge graph](docs/enterprise/03-graph.png) |
 
-<sub>KEPTA Enterprise 2.11 on an invented demo corpus — nothing in these shots is real.</sub>
+<sub>KEPTA Pro 2.13 on an invented demo corpus — nothing in these shots is real. Claude and Cursor worked on it through the MCP server of this repository.</sub>
 
-**Every feature, side by side.** ✅ available · **API** / **MCP** in the core for agents and scripts, without a screen for it · — only in KEPTA Enterprise
+**Every feature, side by side.** ✅ available · **API** / **MCP** in the core for agents and scripts, without a screen for it · — only in KEPTA Pro
 
-| Feature | KEPTA Core | KEPTA Enterprise |
+| Feature | KEPTA Core | KEPTA Pro |
 |---|:---:|:---:|
 | **Security & privacy** | | |
 | Encrypted at rest — SQLCipher 4, AES-256 and an HMAC-SHA512 over every page, the WAL included | ✅ | ✅ |
@@ -125,7 +136,7 @@ Then tell your AI something worth keeping — and watch it arrive. Details in th
 | An interface for your memory — browse by kind and tag, search, read, write, trash | ✅ in your browser | ✅ native app |
 | Native desktop app for macOS, Windows and Linux | — | ✅ |
 | Light and dark | ✅ | ✅ |
-| Keyboard first — shortcuts; in Enterprise also a command palette (⌘K) | ✅ | ✅ |
+| Keyboard first — shortcuts; in Pro also a command palette (⌘K) | ✅ | ✅ |
 | Tag filter with counts | ✅ | ✅ |
 | Knowledge list with readable titles and previews | ✅ | ✅ |
 | Source chips, part badges, *Open file*, grouping by file, kind or period | — | ✅ |
@@ -284,7 +295,7 @@ KEPTA is built by **Damian Todorovic**. Questions, ideas, a license for your tea
 
 ## 📄 License
 
-[AGPL-3.0-or-later](LICENSE). **KEPTA Enterprise** — the desktop app with the graphical interface, the knowledge graph, the machine scan and Device Sync — is commercial software and licensed separately. The npm package `kepta-mcp` carries the same AGPL as this repository; the Python client under `python/` is MIT. Commercial licensing of the core on request — [write to me on LinkedIn](https://www.linkedin.com/in/damian-todorovic-244235434).
+[AGPL-3.0-or-later](LICENSE). **KEPTA Pro** (€120/year) is the desktop app on top of this engine — the knowledge graph, the chat, the machine scan and the polished experience. **KEPTA Business** (€25/user/month) adds team memory for practices and firms, **KEPTA Enterprise** is licensed by agreement, shaped to your organization's size and revenue. The npm package `kepta-mcp` carries the same AGPL as this repository; the Python client under `python/` is MIT. Licenses and questions — [write to me on LinkedIn](https://www.linkedin.com/in/damian-todorovic-244235434).
 
 ---
 

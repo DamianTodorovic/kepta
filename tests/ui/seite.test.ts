@@ -8,7 +8,7 @@ import fs from "node:fs";
 import { SEITE_HTML, SEITE_CSS, SEITE_JS, FAVICON_SVG } from "../../src/ui/seite";
 
 const LINKEDIN = "https://www.linkedin.com/in/damian-todorovic-244235434";
-const VERGLEICH = "https://github.com/DamianTodorovic/kepta#-kepta-enterprise--the-full-desktop-app";
+const VERGLEICH = "https://github.com/DamianTodorovic/kepta#-kepta-pro--the-full-desktop-app";
 const lies = (datei: string) => fs.readFileSync(new URL(`../../${datei}`, import.meta.url), "utf8");
 const vorlage = /<template id="enterprise">([\s\S]*?)<\/template>/.exec(SEITE_HTML)?.[1] ?? "";
 
@@ -37,7 +37,7 @@ describe("die Seite der Core-Oberfläche", () => {
     expect(SEITE_HTML).toContain('<circle cx="21.2" cy="9.8" r="1.7" fill="#fff"/>');
   });
 
-  it("erwähnt Enterprise leise: ein Link unten in der Seitenleiste — keine gesperrten Einträge, keine eingestreuten Hinweise", () => {
+  it("erwähnt Pro leise: ein Link unten in der Seitenleiste — keine gesperrten Einträge, keine eingestreuten Hinweise", () => {
     // Bis 2.11 standen vier gesperrte Enterprise-Einträge in der Seitenleiste,
     // dazu ein Werbekasten, ein Knopf in der Kopfzeile und Hinweise mitten in
     // der Arbeit. Core soll für sich überzeugen; Enterprise ist einen Klick entfernt.

@@ -8,7 +8,7 @@
 // geschrieben hat, kann auf der Seite nichts ausführen.
 
 // Das offizielle KEPTA-Logo — dieselbe Datei wie public/kepta-logo.svg in
-// KEPTA Enterprise und docs/kepta-logo.svg hier; ein Test hält beide gleich.
+// KEPTA Pro und docs/kepta-logo.svg hier; ein Test hält beide gleich.
 export const FAVICON_SVG = `<svg width="512" height="512" viewBox="0 0 512 512" fill="none" xmlns="http://www.w3.org/2000/svg">
 <title>KEPTA — Keeps what matters</title>
 <desc>KEPTA wordmark — dark square with a K monogram and a dot</desc>
@@ -39,7 +39,7 @@ export const SEITE_HTML = `<!doctype html>
     <nav id="tags" aria-label="Tags"></nav>
     <div class="sidebar-foot">
       <button id="lock" class="lock" type="button" title="Encryption and recovery key">Checking encryption…</button>
-      <button class="quiet-pro" type="button" data-pro="">KEPTA Enterprise — the desktop app <span aria-hidden="true">›</span></button>
+      <button class="quiet-pro" type="button" data-pro="">KEPTA Pro — the desktop app <span aria-hidden="true">›</span></button>
     </div>
   </aside>
   <main class="main">
@@ -59,7 +59,7 @@ export const SEITE_HTML = `<!doctype html>
 <div id="toast" class="toast" role="status" hidden></div>
 <template id="enterprise">
 <div class="ent">
-  <div class="panel-head"><span class="badge">KEPTA Enterprise</span><button class="btn icon close" type="button" aria-label="Close" data-close>×</button></div>
+  <div class="panel-head"><span class="badge">KEPTA Pro</span><button class="btn icon close" type="button" aria-label="Close" data-close>×</button></div>
   <svg class="ent-art" viewBox="0 0 520 200" role="img" aria-label="A knowledge graph: notes as coloured dots, their links as lines">
     <path class="e" d="M260 100 150 60M260 100 170 150M260 100 350 55M260 100 370 150M260 100 222 30M150 60 90 110M90 110 58 42M90 110 120 176M170 150 120 176M350 55 468 40M350 55 440 100M370 150 440 100M440 100 478 162"/>
     <path class="e sim" d="M150 60 222 30M370 150 300 178M170 150 300 178"/>
@@ -69,7 +69,7 @@ export const SEITE_HTML = `<!doctype html>
     <text x="278" y="104">Project Atlas</text><text x="128" y="44">Kickoff</text><text x="362" y="44">Staging server</text><text x="384" y="154">Backup schedule</text>
   </svg>
   <h2 class="panel-title">The full desktop app for your memory</h2>
-  <p class="ent-lead">KEPTA Enterprise opens this same encrypted file — your notes, your key and your agents are already there. Nothing to move.</p>
+  <p class="ent-lead">KEPTA Pro opens this same encrypted file — your notes, your key and your agents are already there. Nothing to move.</p>
   <div class="ent-grid">
     <section data-feature="graph"><h3>Knowledge graph</h3><p>Every note a node, every [[link]] an edge. Force and Tree views, a time slider back to any day, 3 000 nodes at 60 fps.</p></section>
     <section data-feature="import"><h3>Import &amp; scan</h3><p>Drag &amp; drop PDFs, Markdown, text and JSON. Import an Obsidian vault with its links, clip a web page, or scan this computer — with a preview first.</p></section>
@@ -78,12 +78,12 @@ export const SEITE_HTML = `<!doctype html>
     <section data-feature="app"><h3>A native app</h3><p>macOS, Windows and Linux in a hardened shell, with a command palette (⌘K), focus mode, a setup assistant and a system status that finds local AI by itself.</p></section>
     <section data-feature="trust"><h3>Private by design</h3><p>No account, no telemetry, no cloud. The license key is checked offline — KEPTA never phones home.</p></section>
   </div>
-  <div class="ent-trial"><strong>No account, no internet.</strong> One offline license key — for yourself, your practice or your whole team.</div>
+  <div class="ent-trial"><strong>No account, no internet.</strong> One offline license key — €120/year for KEPTA Pro, €25/user/month for teams (KEPTA Business), price by agreement for organizations (KEPTA Enterprise).</div>
   <div class="actions">
-    <a class="btn primary" href="https://www.linkedin.com/in/damian-todorovic-244235434" target="_blank" rel="noopener noreferrer">Get KEPTA Enterprise</a>
-    <a class="btn" href="https://github.com/DamianTodorovic/kepta#-kepta-enterprise--the-full-desktop-app" target="_blank" rel="noopener noreferrer">Compare Core and Enterprise</a>
+    <a class="btn primary" href="https://www.linkedin.com/in/damian-todorovic-244235434" target="_blank" rel="noopener noreferrer">Get KEPTA Pro</a>
+    <a class="btn" href="https://github.com/DamianTodorovic/kepta#-kepta-pro--the-full-desktop-app" target="_blank" rel="noopener noreferrer">Compare Core and Pro</a>
   </div>
-  <p class="muted small">“Get KEPTA Enterprise” opens LinkedIn: write to Damian Todorovic, who builds KEPTA, for a license.</p>
+  <p class="muted small">“Get KEPTA Pro” opens LinkedIn: write to Damian Todorovic, who builds KEPTA, for your license. Online checkout is coming.</p>
 </div>
 </template>
 <script src="/app.js"></script>
@@ -351,7 +351,7 @@ export const SEITE_JS = String.raw`
   }
   function chip(type) { return h('span', { class: 'chip t-' + type, text: TYPES[type] || type }); }
 
-  // KEPTA Enterprise: what the desktop app adds. It opens from one quiet link
+  // KEPTA Pro: what the desktop app adds. It opens from one quiet link
   // at the bottom of the sidebar — never by itself, never in the middle of work.
   function enterprise(feature) {
     drawer($('enterprise').content.cloneNode(true));
