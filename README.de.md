@@ -1,5 +1,5 @@
 <p align="center"><img src="docs/kepta-logo.svg" width="88" alt="KEPTA"></p>
-<p align="center"><img src="https://img.shields.io/badge/tests-368%20passing-brightgreen" alt="Tests"> <img src="https://img.shields.io/badge/coverage%20gate-%E2%89%A5%2070%25%20der%20Zeilen-brightgreen" alt="Coverage-Gate"> <img src="https://img.shields.io/badge/Verschl%C3%BCsselung-SQLCipher%204-green" alt="verschlüsselt"> <a href="https://www.linkedin.com/in/damian-todorovic-244235434"><img src="https://img.shields.io/badge/LinkedIn-Damian%20Todorovic-0A66C2?logo=linkedin&logoColor=white" alt="Damian Todorovic auf LinkedIn"></a></p>
+<p align="center"><img src="https://img.shields.io/badge/tests-386%20passing-brightgreen" alt="Tests"> <img src="https://img.shields.io/badge/coverage%20gate-%E2%89%A5%2070%25%20der%20Zeilen-brightgreen" alt="Coverage-Gate"> <img src="https://img.shields.io/badge/Verschl%C3%BCsselung-SQLCipher%204-green" alt="verschlüsselt"> <a href="https://www.linkedin.com/in/damian-todorovic-244235434"><img src="https://img.shields.io/badge/LinkedIn-Damian%20Todorovic-0A66C2?logo=linkedin&logoColor=white" alt="Damian Todorovic auf LinkedIn"></a></p>
 
 # KEPTA Core — deutsches Readme
 
@@ -105,7 +105,7 @@ KEPTA ändert das — **lokal**. Eine verschlüsselte SQLite-Datei auf deinem Re
 
 ## ⚡ Schnellstart
 
-**1. MCP-Server** (Claude Desktop / Cursor / jeder MCP-Client):
+**1. Mit deinen KI-Apps verbinden:** `npx -y kepta-mcp setup` findet Claude Desktop, Claude Code, Cursor, Windsurf und VS Code und trägt KEPTA dort ein — es fragt je App (`--yes` verbindet alle), sichert jede Datei, die es ändert, und lässt alle anderen Einträge stehen. Jeder andere MCP-Client:
 
 ```json
 {
@@ -118,7 +118,7 @@ KEPTA ändert das — **lokal**. Eine verschlüsselte SQLite-Datei auf deinem Re
 }
 ```
 
-**2. Dein Gedächtnis im Browser:** `npx -y kepta-mcp ui` öffnet **KEPTA Core** auf `http://127.0.0.1:4747` — dieselbe verschlüsselte Wissensbasis, in die deine Agenten schreiben. Nach Art und Tag stöbern, nach Relevanz suchen, Notizen samt `[[Links]]` öffnen, schreiben und bearbeiten (Art, Tags, Gültigkeit), in den Papierkorb legen und zurückholen, hell oder dunkel. Nichts zu installieren, nichts verlässt den Rechner.
+**2. Dein Gedächtnis im Browser:** `npx -y kepta-mcp ui` öffnet **KEPTA Core** auf `http://127.0.0.1:4747` — dieselbe verschlüsselte Wissensbasis, in die deine Agenten schreiben. Nach Art und Tag stöbern, nach Relevanz suchen, Notizen samt `[[Links]]` öffnen, schreiben und bearbeiten (Art, Tags, Gültigkeit), in den Papierkorb legen und zurückholen, hell oder dunkel. Und live zusehen, welche KI-App was gespeichert, geändert oder nachgeschlagen hat — während du mit ihr sprichst. Nichts zu installieren, nichts verlässt den Rechner.
 
 **3. HTTP-API:**
 
@@ -129,7 +129,7 @@ npm install && npm run dev
 
 **4. Docker** (nur MCP-Server): `docker build -t kepta-mcp .`
 
-**Zahlen:** **368 Tests** · 29 Routen · `npm run eval` — Eval auf 58 Notizen / 45 Anfragen (Hit@1, Precision@5, MRR).
+**Zahlen:** **386 Tests** · 29 Routen · `npm run eval` — Eval auf 58 Notizen / 45 Anfragen (Hit@1, Precision@5, MRR).
 
 ## 🔐 Verschlüsselt auf der Platte
 

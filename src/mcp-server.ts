@@ -6,13 +6,16 @@
  *
  * Start:  npx tsx src/mcp-server.ts   |   node dist/mcp-server.cjs
  * Oberflaeche im Browser:  npx kepta-mcp ui [--port 4747] [--no-open]
+ * Mit Claude, Cursor & Co. verbinden:  npx kepta-mcp setup [--yes]
  */
 import { KeptaStore, defaultDataDir } from "./core/store";
 import { defaultExtensions } from "./core/extensions";
 import { schluesselbundKeyProvider } from "./core/schluessel";
 import { migrateFromLegacyJson } from "./core/migrate";
 import { EmbeddingQueue } from "./core/embeddings";
-import { handleRpc, SERVER_INFO, type JsonRpcRequest, type JsonRpcResponse } from "./core/mcp";
+import { handleRpc, SERVER_INFO, type JsonRpcRequest, type JsonRpcResponse, type McpContext } from "./core/mcp";
+import { protokolliereEreignis } from "./aktivitaet";
+import { einrichten, standardUmgebung } from "./einrichtung";
 import readline from "node:readline";
 import { starteOberflaeche, oeffneImBrowser, leseUiArgumente } from "./ui/server";
 
@@ -41,7 +44,9 @@ function starteMcp(): void {
   queue.start();
   store.db.exec("PRAGMA wal_checkpoint(PASSIVE)");
 
-  const ctx = { store, transport: "stdio" as const };
+  // Die Oberfläche (npx kepta-mcp ui) zeigt live, was die Agenten tun — der Weg
+  // führt über die gemeinsame Datenbank, siehe src/aktivitaet.ts.
+  const ctx: McpContext = { store, transport: "stdio", melde: (e) => protokolliereEreignis(store, e) };
 
   // Antworten SERIELL auf stdout schreiben: Verarbeitung (handleRpc) bleibt parallel,
   // aber die Writes dürfen sich nicht verschränken — sonst können parallele Antworten
@@ -145,6 +150,22 @@ if (process.argv[2] === "ui") {
     console.error(`[kepta] ${e instanceof Error ? e.message : String(e)}`);
     process.exit(1);
   });
+} else if (process.argv[2] === "setup") {
+  // `npx kepta-mcp setup [--yes]`: KEPTA in Claude, Cursor & Co. eintragen.
+  const rl = process.stdin.isTTY ? readline.createInterface({ input: process.stdin, output: process.stdout }) : null;
+  einrichten(process.argv.slice(3), standardUmgebung(), {
+    schreibe: (s) => process.stdout.write(s),
+    frage: rl ? (f) => new Promise<string>((ok) => rl.question(f, ok)) : undefined,
+  }).then(
+    (code) => {
+      rl?.close();
+      process.exit(code);
+    },
+    (e: unknown) => {
+      console.error(`[kepta] ${e instanceof Error ? e.message : String(e)}`);
+      process.exit(1);
+    }
+  );
 } else {
   starteMcp();
 }

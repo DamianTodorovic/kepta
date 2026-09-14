@@ -1,5 +1,5 @@
 <p align="center"><img src="docs/kepta-logo.svg" width="88" alt="KEPTA"></p>
-<p align="center"><img src="https://img.shields.io/badge/version-2.11.0-blue" alt="v2.11.0"> <img src="https://img.shields.io/badge/license-AGPL--3.0-blue" alt="AGPL-3.0"> <img src="https://img.shields.io/badge/tests-368%20passing-brightgreen" alt="tests"> <img src="https://img.shields.io/badge/coverage%20gate-%E2%89%A5%2070%25%20of%20lines-brightgreen" alt="coverage gate"> <img src="https://img.shields.io/badge/platform-macOS%20%7C%20Windows%20%7C%20Linux-lightgrey" alt="platform"> <img src="https://img.shields.io/badge/encryption-SQLCipher%204-green" alt="encrypted"> <a href="https://www.linkedin.com/in/damian-todorovic-244235434"><img src="https://img.shields.io/badge/LinkedIn-Damian%20Todorovic-0A66C2?logo=linkedin&logoColor=white" alt="Damian Todorovic on LinkedIn"></a></p>
+<p align="center"><img src="https://img.shields.io/badge/version-2.11.0-blue" alt="v2.11.0"> <img src="https://img.shields.io/badge/license-AGPL--3.0-blue" alt="AGPL-3.0"> <img src="https://img.shields.io/badge/tests-386%20passing-brightgreen" alt="tests"> <img src="https://img.shields.io/badge/coverage%20gate-%E2%89%A5%2070%25%20of%20lines-brightgreen" alt="coverage gate"> <img src="https://img.shields.io/badge/platform-macOS%20%7C%20Windows%20%7C%20Linux-lightgrey" alt="platform"> <img src="https://img.shields.io/badge/encryption-SQLCipher%204-green" alt="encrypted"> <a href="https://www.linkedin.com/in/damian-todorovic-244235434"><img src="https://img.shields.io/badge/LinkedIn-Damian%20Todorovic-0A66C2?logo=linkedin&logoColor=white" alt="Damian Todorovic on LinkedIn"></a></p>
 
 # KEPTA Core
 
@@ -128,7 +128,13 @@ This repository is the **open core** (AGPL-3.0): the memory engine, the MCP serv
 
 ## ⚡ Quick start
 
-### MCP server (Claude Desktop, Cursor)
+### Connect your AI apps
+
+```bash
+npx -y kepta-mcp setup
+```
+
+Finds Claude Desktop, Claude Code, Cursor, Windsurf and VS Code on your computer and adds KEPTA to them. It asks per app (`--yes` connects all of them), keeps a backup of every file it changes and leaves every other entry alone. Any other MCP client:
 
 ```json
 {
@@ -149,7 +155,7 @@ This repository is the **open core** (AGPL-3.0): the memory engine, the MCP serv
 npx -y kepta-mcp ui
 ```
 
-Opens **KEPTA Core** in your browser on `http://127.0.0.1:4747` — the same encrypted knowledge base your agents write to, now one click away. Browse by kind and tag, search ranked by relevance, open a note and follow its `[[links]]`, write and edit notes with their kind, tags and validity, move them to the trash and bring them back, dark or light. Nothing to install, nothing leaves your machine, and only your own browser tab can change anything. `--port` picks another port, `--no-open` keeps the browser closed.
+Opens **KEPTA Core** in your browser on `http://127.0.0.1:4747` — the same encrypted knowledge base your agents write to, now one click away. Browse by kind and tag, search ranked by relevance, open a note and follow its `[[links]]`, write and edit notes with their kind, tags and validity, move them to the trash and bring them back, dark or light. And watch your AI apps at work: which one saved, updated or looked up what — live, while you talk to it. Nothing to install, nothing leaves your machine, and only your own browser tab can change anything. `--port` picks another port, `--no-open` keeps the browser closed.
 
 ### HTTP API
 
@@ -248,7 +254,7 @@ The knowledge base is a SQLCipher 4 database: AES-256, an HMAC-SHA512 over every
 
 ## 🧪 Quality
 
-**368 tests** with Vitest and v8 coverage. The coverage thresholds are a CI gate: a commit that falls below one of them turns CI red. On top: a retrieval eval (Hit@1, Precision@5, MRR) on a fixed corpus, an ablation test per retrieval leg, an encryption eval and a boundary test on the core architecture.
+**386 tests** with Vitest and v8 coverage. The coverage thresholds are a CI gate: a commit that falls below one of them turns CI red. On top: a retrieval eval (Hit@1, Precision@5, MRR) on a fixed corpus, an ablation test per retrieval leg, an encryption eval and a boundary test on the core architecture.
 
 ### Coverage thresholds (enforced by CI)
 

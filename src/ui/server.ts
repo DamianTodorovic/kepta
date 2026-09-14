@@ -23,6 +23,8 @@ import { saveWithIndex } from "../core/mcp";
 import { APP_VERSION } from "../core/version";
 import { SEITE_HTML, SEITE_CSS, SEITE_JS, FAVICON_SVG } from "./seite";
 import { anzeige, detail } from "./markdown";
+import { letzteAktivitaet, agenten, anzeigeName, type Aktivitaet } from "../aktivitaet";
+import { finde, verbinde, standardUmgebung, type Umgebung } from "../einrichtung";
 
 const TYPEN: readonly MemoryType[] = ["semantic", "episodic", "procedural", "reference"];
 export const MAX_KOERPER = 1024 * 1024;
@@ -99,6 +101,35 @@ export function neuEinordnen(store: KeptaStore, anwenden: boolean): { einordnung
     if (anwenden) store.updateMemory(m.id, { type: neu, updatedAt: m.updatedAt });
   }
   return { einordnung: { total: alle.length, changed: vorher.length, before, after, into, examples }, vorher };
+}
+
+/** Ein Eintrag der Aktivität für die Seite: lesbarer Name, Titel wie auf der Karte. */
+export function alsAktivitaet(store: KeptaStore, e: Aktivitaet) {
+  const notiz = e.memoryId ? store.getMemory(e.memoryId) : null;
+  const lebt = notiz && !notiz.deletedAt ? notiz : null;
+  return {
+    id: e.id,
+    at: e.at,
+    who: anzeigeName(e.client),
+    tool: e.tool,
+    text: lebt ? anzeige(lebt.title, lebt.content).displayTitle : e.text,
+    noteId: lebt ? lebt.id : null,
+    count: e.count,
+  };
+}
+
+/** Die Agenten, zusammengefasst nach dem Namen, den die Seite zeigt. */
+export function agentenFuerSeite(store: KeptaStore): { who: string; lastSeen: number; calls: number }[] {
+  const nachName = new Map<string, { who: string; lastSeen: number; calls: number }>();
+  for (const a of agenten(store)) {
+    const who = anzeigeName(a.client);
+    const da = nachName.get(who);
+    if (da) {
+      da.calls += a.calls;
+      da.lastSeen = Math.max(da.lastSeen, a.lastSeen);
+    } else nachName.set(who, { who, lastSeen: a.lastSeen, calls: a.calls });
+  }
+  return [...nachName.values()].sort((x, y) => y.lastSeen - x.lastSeen);
 }
 
 /** Was vor dem letzten Neu-Einordnen galt — genug, um es zurückzunehmen. */
@@ -235,6 +266,8 @@ interface Kontext {
   origins: Set<string>;
   /** Das letzte Neu-Einordnen, solange es sich zurücknehmen lässt. */
   rueckgaengig: Vorher[] | null;
+  /** Wo Claude, Cursor & Co. ihre Einstellungen haben — in Tests ein Temp-Ordner. */
+  umgebung: Umgebung;
 }
 
 async function bearbeite(req: http.IncomingMessage, res: http.ServerResponse, ctx: Kontext): Promise<void> {
@@ -311,6 +344,20 @@ async function bearbeite(req: http.IncomingMessage, res: http.ServerResponse, ct
     ctx.rueckgaengig = vorher.length ? vorher : null;
     return antworte(res, 200, { ...einordnung, applied: true, undo: vorher.length > 0 });
   }
+  // Was die Agenten tun — der MCP-Server schreibt es in die Datenbank (src/aktivitaet.ts).
+  if (pfad === "/api/activity" && methode === "GET") {
+    const nach = zahl(url.searchParams.get("after"), 0, 0, Number.MAX_SAFE_INTEGER);
+    return antworte(res, 200, { entries: letzteAktivitaet(store, nach, 50).map((e) => alsAktivitaet(store, e)), agents: agentenFuerSeite(store) });
+  }
+
+  // KEPTA mit Claude, Cursor & Co. verbinden (src/einrichtung.ts).
+  if (pfad === "/api/clients" && methode === "GET") return antworte(res, 200, { clients: finde(ctx.umgebung) });
+  const verbinden = /^\/api\/clients\/([\w-]{1,40})\/connect$/.exec(pfad);
+  if (verbinden && methode === "POST") {
+    const r = verbinde(verbinden[1], ctx.umgebung);
+    return antworte(res, r.ok ? 200 : 400, { ...r, error: r.ok ? undefined : r.message, clients: finde(ctx.umgebung) });
+  }
+
   if (pfad === "/api/reclassify/undo" && methode === "POST") {
     const liste = ctx.rueckgaengig;
     if (!liste) throw new AnfrageFehler(409, "There is nothing to undo.");
@@ -377,9 +424,9 @@ function lausche(server: http.Server, port: number): Promise<void> {
 }
 
 /** Startet die Oberfläche. Ist der Wunschport belegt, nimmt sie einen freien. */
-export async function starteOberflaeche(store: KeptaStore, opts: { port?: number } = {}): Promise<Oberflaeche> {
+export async function starteOberflaeche(store: KeptaStore, opts: { port?: number; umgebung?: Umgebung } = {}): Promise<Oberflaeche> {
   const token = crypto.randomBytes(24).toString("hex");
-  const ctx: Kontext = { store, token, hosts: new Set(), origins: new Set(), rueckgaengig: null };
+  const ctx: Kontext = { store, token, hosts: new Set(), origins: new Set(), rueckgaengig: null, umgebung: opts.umgebung ?? standardUmgebung() };
   const server = http.createServer((req, res) => {
     bearbeite(req, res, ctx).catch((e: unknown) => {
       if (e instanceof AnfrageFehler) antworte(res, e.status, { error: e.message });

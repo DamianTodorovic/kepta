@@ -33,6 +33,8 @@ export const SEITE_HTML = `<!doctype html>
   <aside class="sidebar">
     <div class="brand"><svg class="mark" width="32" height="32" viewBox="0 0 32 32" fill="none" role="img" aria-label="KEPTA"><rect width="32" height="32" rx="9" fill="#0f0f0f"/><path d="M11 9.5 V22.5 M11 16 L18.2 9.5 M11 16 L18.2 22.5" stroke="#fff" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"/><circle cx="21.2" cy="9.8" r="1.7" fill="#fff"/></svg><div><div class="brand-name">KEPTA</div><div class="brand-sub">Core __KEPTA_VERSION__</div></div></div>
     <nav id="views" aria-label="Views"></nav>
+    <div class="section-label">AI apps</div>
+    <nav id="agents" aria-label="AI apps"></nav>
     <div class="section-label">In KEPTA Enterprise</div>
     <nav class="pro-list" aria-label="Only in KEPTA Enterprise">
       <button class="nav pro" type="button" data-pro="graph"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="6" cy="6" r="2.5"/><circle cx="18" cy="8" r="2.5"/><circle cx="10" cy="18" r="2.5"/><path d="M8.4 6.4 15.5 7.6M6.8 8.4l2.4 7.2M16.6 10.1 11.7 16.2"/></svg><span class="nav-label">Knowledge graph</span><svg class="lock-ico" viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg></button>
@@ -271,6 +273,33 @@ textarea.input{resize:vertical;line-height:1.55}
 .examples li{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
 .ex-title{flex:1;min-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .ex-move{display:inline-flex;align-items:center;gap:6px;white-space:nowrap}
+.agent-dot{background:var(--muted)}
+.agent-dot.live{background:var(--ok);animation:puls 2s infinite}
+@keyframes puls{0%{box-shadow:0 0 0 0 color-mix(in srgb,var(--ok) 55%,transparent)}70%{box-shadow:0 0 0 6px transparent}100%{box-shadow:0 0 0 0 transparent}}
+.dot.t-activity{background:transparent;box-shadow:inset 0 0 0 1.5px var(--ok)}
+.nav.connect{color:var(--muted)}
+.nav.connect:hover{color:var(--text)}
+.plus{width:8px;text-align:center;font-weight:700;line-height:1}
+.timeline{grid-column:1/-1;display:flex;flex-direction:column;gap:2px;max-width:760px}
+.act{display:flex;gap:12px;align-items:flex-start;padding:10px 12px;border-radius:10px;border:1px solid transparent}
+.act:hover{background:var(--panel)}
+.act.fresh,.card.fresh{animation:frisch 2.6s ease}
+@keyframes frisch{0%{background:color-mix(in srgb,var(--ok) 16%,var(--panel));border-color:color-mix(in srgb,var(--ok) 45%,transparent)}100%{}}
+.act-dot{width:8px;height:8px;border-radius:50%;margin-top:7px;flex:none;background:var(--muted)}
+.act-dot.t-write{background:var(--accent)}.act-dot.t-search{background:var(--t-semantic)}.act-dot.t-connect{background:var(--ok)}
+.act-body{display:flex;flex-direction:column;gap:2px;min-width:0;overflow-wrap:anywhere}
+.clients{display:flex;flex-direction:column;gap:8px;margin:6px 0 4px}
+.client{display:flex;align-items:center;gap:12px;flex-wrap:wrap;padding:12px 14px;border:1px solid var(--line);border-radius:10px;background:var(--panel2)}
+.client.off{opacity:.55}
+.client-name{flex:1;display:flex;flex-direction:column;gap:2px;min-width:150px}
+.client-state{font-size:12px;color:var(--muted)}
+.client-state.ok{color:var(--ok)}
+.client .btn{height:34px;padding:0 14px}
+.hint-text{flex-basis:100%;margin:0;overflow-wrap:anywhere}
+.meldung{margin:0 0 4px;padding:10px 12px;border-radius:10px;font-size:13px;border:1px solid var(--line)}
+.meldung.ok{border-color:color-mix(in srgb,var(--ok) 50%,transparent);color:var(--ok)}
+.meldung.fehler{border-color:color-mix(in srgb,var(--danger) 50%,transparent);color:var(--danger)}
+.cmd{background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:12px 14px;font:13px ui-monospace,SFMono-Regular,Menlo,monospace;margin:8px 0;overflow:auto}
 @media (max-width:820px){.app{grid-template-columns:1fr}.sidebar{display:none}.main{padding:0 14px 30px}}
 `;
 
@@ -281,7 +310,7 @@ export const SEITE_JS = String.raw`
   var TYPES = { semantic: 'Fact', episodic: 'Event', procedural: 'How-to', reference: 'Document' };
   var VIEWS = [['all', 'All notes'], ['semantic', 'Facts'], ['episodic', 'Events'], ['procedural', 'How-tos'], ['reference', 'Documents'], ['trash', 'Trash']];
   var PAGE = 60;
-  var state = { view: 'all', tag: null, query: '', offset: 0, status: null };
+  var state = { view: 'all', tag: null, query: '', offset: 0, status: null, agenten: [], eintraege: [], letzte: 0 };
   function $(id) { return document.getElementById(id); }
 
   function h(tag, attrs) {
@@ -424,13 +453,14 @@ export const SEITE_JS = String.raw`
   function heading() {
     if (state.query) return ['Results for “' + state.query + '”', ''];
     if (state.tag) return ['#' + state.tag, 'Notes with this tag'];
+    if (state.view === 'activity') return ['Activity', 'What your AI apps read and write in your memory — as it happens.'];
     var v = VIEWS.filter(function (x) { return x[0] === state.view; })[0];
     return [v[1], state.view === 'trash' ? 'Deleted notes wait here until you restore them.' : ''];
   }
 
   function card(note, extra) {
     var abgelaufen = note.validTo && note.validTo < Date.now();
-    var c = h('article', { class: 'card t-' + note.type, tabindex: '0', onclick: function () { openNote(note.id); }, onkeydown: function (ev) { if (ev.key === 'Enter') openNote(note.id); } },
+    var c = h('article', { class: 'card t-' + note.type, 'data-id': note.id, tabindex: '0', onclick: function () { openNote(note.id); }, onkeydown: function (ev) { if (ev.key === 'Enter') openNote(note.id); } },
       h('div', { class: 'card-top' }, chip(note.type), note.template ? h('span', { class: 'flag', text: 'Template' }) : null, note.supersededBy ? h('span', { class: 'flag', text: 'Superseded' }) : null, abgelaufen ? h('span', { class: 'flag', text: 'Expired' }) : null),
       h('h3', { text: note.displayTitle || note.title }),
       note.path ? h('div', { class: 'path', title: note.path, text: note.path }) : null,
@@ -443,17 +473,125 @@ export const SEITE_JS = String.raw`
   }
 
   function leer() {
-    var snippet = '{\n  "mcpServers": {\n    "kepta": { "command": "npx", "args": ["-y", "kepta-mcp"] }\n  }\n}';
     return h('div', { class: 'empty' },
       h('h2', { text: 'Your memory is empty — for now.' }),
-      h('p', { class: 'muted', text: 'Connect an AI agent and it starts remembering. Add this to Claude Desktop, Cursor or any MCP client:' }),
-      h('pre', { text: snippet }),
+      h('p', { class: 'muted', text: 'Connect an AI app and it starts remembering: what you decided, how things work, who is who. Every note stays encrypted on this computer.' }),
       h('div', { class: 'row' },
-        h('button', { class: 'btn', type: 'button', onclick: function () {
-          navigator.clipboard.writeText(snippet).then(function () { toast('Copied.'); }, function () { toast('Copying failed — select the text instead.', true); });
-        } }, 'Copy configuration'),
-        h('button', { class: 'btn primary', type: 'button', onclick: function () { openEditor(null); } }, 'Write the first note')),
+        h('button', { class: 'btn primary', type: 'button', onclick: verbinden }, 'Connect an AI app'),
+        h('button', { class: 'btn', type: 'button', onclick: function () { openEditor(null); } }, 'Write the first note')),
       hinweis('Already have documents? KEPTA Enterprise imports PDFs, Markdown and Obsidian vaults by drag & drop.', 'import'));
+  }
+
+  // AI apps: which ones use KEPTA and what they do. The MCP server is another
+  // process — it writes each call to the database, and the page asks every
+  // three seconds what is new. A note an agent saves shows up while you watch.
+  var VERBEN = { memory_save: 'saved', memory_update: 'updated', memory_search: 'searched for', memory_delete: 'moved to the trash', memory_forget: 'marked as outdated', memory_list: 'looked through your notes', memory_graph: 'looked at how notes link', memory_consolidate: 'checked for duplicates', connect: 'connected' };
+  var LIVE = 5 * 60 * 1000;
+  function kurz(ms) {
+    var s = (Date.now() - ms) / 1000;
+    if (s < 3600) return Math.max(1, Math.round(s / 60)) + 'm';
+    if (s < 86400) return Math.round(s / 3600) + 'h';
+    return Math.round(s / 86400) + 'd';
+  }
+  function renderAgenten() {
+    var box = $('agents');
+    var liste = state.agenten || [];
+    // Only rebuild when something visible changed — the page asks every three
+    // seconds, and a rebuild in the middle of a click would swallow it.
+    var zeichen = JSON.stringify([liste.slice(0, 5).map(function (a) { return [a.who, a.calls, Date.now() - a.lastSeen < LIVE ? 'now' : kurz(a.lastSeen)]; }), state.view === 'activity' && !state.query]);
+    if (zeichen === box.getAttribute('data-stand')) return;
+    box.setAttribute('data-stand', zeichen);
+    box.textContent = '';
+    liste.slice(0, 5).forEach(function (a) {
+      var live = Date.now() - a.lastSeen < LIVE;
+      box.appendChild(h('button', { class: 'nav', type: 'button', title: a.calls + (a.calls === 1 ? ' call' : ' calls') + ', last ' + ago(a.lastSeen), onclick: function () { setView('activity'); } },
+        h('span', { class: 'dot agent-dot' + (live ? ' live' : '') }), h('span', { class: 'nav-label', text: a.who }), h('span', { class: 'count', text: live ? 'now' : kurz(a.lastSeen) })));
+    });
+    if (liste.length) {
+      var aktiv = state.view === 'activity' && !state.query;
+      box.appendChild(h('button', { class: 'nav' + (aktiv ? ' active' : ''), type: 'button', 'aria-current': aktiv ? 'page' : null, onclick: function () { setView('activity'); } },
+        h('span', { class: 'dot t-activity' }), h('span', { class: 'nav-label', text: 'Activity' })));
+    }
+    box.appendChild(h('button', { class: 'nav connect', type: 'button', onclick: verbinden },
+      h('span', { class: 'plus', text: '+' }), h('span', { class: 'nav-label', text: liste.length ? 'Connect another app' : 'Connect an AI app' })));
+  }
+  function eintrag(e) {
+    var ziel = null;
+    if (e.text) ziel = e.noteId
+      ? h('button', { class: 'wikilink', type: 'button', onclick: function () { openNote(e.noteId); } }, e.text)
+      : h('strong', { text: e.tool === 'memory_search' ? '“' + e.text + '”' : e.text });
+    var art = e.tool === 'memory_search' ? 'search' : e.tool === 'connect' ? 'connect' : /^memory_(save|update|delete|forget)$/.test(e.tool) ? 'write' : 'read';
+    return h('div', { class: 'act' + (e.frisch ? ' fresh' : '') },
+      h('span', { class: 'act-dot t-' + art }),
+      h('div', { class: 'act-body' },
+        h('div', {}, h('strong', { text: e.who }), ' ' + (VERBEN[e.tool] || e.tool.replace(/^memory_/, '').replace(/_/g, ' ')) + (ziel ? ' ' : ''), ziel,
+          e.tool === 'memory_search' && e.count !== null ? h('span', { class: 'muted', text: ' · ' + e.count + (e.count === 1 ? ' note' : ' notes') }) : null),
+        h('span', { class: 'muted small', text: ago(e.at) })));
+  }
+  function holeAktivitaet(erstes) {
+    return api('/api/activity?after=' + state.letzte).then(function (d) {
+      state.agenten = d.agents;
+      var neu = d.entries;
+      state.eintraege.forEach(function (e) { e.frisch = false; });
+      if (neu.length) {
+        state.letzte = neu[0].id;
+        if (!erstes) neu.forEach(function (e) { e.frisch = true; });
+        state.eintraege = neu.concat(state.eintraege).slice(0, 50);
+      }
+      renderAgenten();
+      if (!neu.length) return;
+      if (state.view === 'activity' && !state.query) load(true);
+      if (erstes) return;
+      var schreibend = neu.filter(function (e) { return /^memory_(save|update|delete|forget)$/.test(e.tool); });
+      if (!schreibend.length) return;
+      var e = schreibend[0];
+      toast(e.who + ' ' + VERBEN[e.tool] + (e.text ? ' “' + e.text + '”' : '') + (schreibend.length > 1 ? ' — and ' + (schreibend.length - 1) + ' more' : '') + '.');
+      loadStatus();
+      var oben = document.querySelector('.main').scrollTop < 240;
+      if (state.view === 'activity' || state.query || !oben) return;
+      load(true).then(function () {
+        schreibend.forEach(function (x) {
+          var karte = x.noteId && document.querySelector('.card[data-id="' + CSS.escape(x.noteId) + '"]');
+          if (karte) karte.classList.add('fresh');
+        });
+      });
+    }).catch(function () { /* the next round tries again */ });
+  }
+
+  // Connecting an app: KEPTA finds Claude Desktop, Claude Code, Cursor,
+  // Windsurf and VS Code and adds itself to their MCP settings — with a
+  // backup of the old file (src/einrichtung.ts).
+  function verbinden() {
+    var liste = h('div', { class: 'clients' }, h('p', { class: 'muted', text: 'Looking for AI apps on this computer…' }));
+    var befehl = 'npx -y kepta-mcp setup';
+    drawer(h('div', {},
+      h('div', { class: 'panel-head' }, h('strong', { text: 'Connect an AI app' }),
+        h('button', { class: 'btn icon close', type: 'button', 'aria-label': 'Close', onclick: schliessen }, '×')),
+      h('p', { class: 'content', text: 'KEPTA adds itself to the MCP settings of the app — with a backup of the old file right next to it. Nothing else in the file changes.' }),
+      liste,
+      h('h3', { class: 'section-title', text: 'From a terminal' }),
+      h('pre', { class: 'cmd', text: befehl }),
+      h('div', { class: 'row' }, h('button', { class: 'btn', type: 'button', onclick: function () {
+        navigator.clipboard.writeText(befehl).then(function () { toast('Copied.'); }, function () { toast('Copying failed — select the command instead.', true); });
+      } }, 'Copy command')),
+      h('p', { class: 'muted small', text: 'Any other MCP app: add a server with the command npx and the arguments -y kepta-mcp.' })));
+    function zeige(clients, meldung) {
+      liste.textContent = '';
+      if (meldung) liste.appendChild(h('p', { class: 'meldung ' + (meldung.ok ? 'ok' : 'fehler'), role: 'status', text: meldung.message }));
+      clients.forEach(function (c) {
+        var zustand = c.connected ? 'Connected' : c.installed ? 'Not connected yet' : 'Not installed';
+        liste.appendChild(h('div', { class: 'client' + (c.installed ? '' : ' off') },
+          h('div', { class: 'client-name' }, h('strong', { text: c.name }), h('span', { class: 'client-state' + (c.connected ? ' ok' : ''), text: zustand })),
+          c.canConnect ? h('button', { class: 'btn primary', type: 'button', onclick: function (ev) {
+            ev.currentTarget.disabled = true;
+            api('/api/clients/' + encodeURIComponent(c.id) + '/connect', { method: 'POST', body: {} })
+              .then(function (d) { zeige(d.clients, d); })
+              .catch(function (err) { zeige(clients, { ok: false, message: err.message }); });
+          } }, 'Connect') : null,
+          c.installed && !c.connected && !c.canConnect && c.hint ? h('p', { class: 'muted small hint-text', text: c.hint }) : null));
+      });
+    }
+    api('/api/clients').then(function (d) { zeige(d.clients); }).catch(function (err) { zeige([], { ok: false, message: err.message }); });
   }
 
   // Sorting by kind: a vault imported before 2.12 landed entirely as facts.
@@ -531,6 +669,7 @@ export const SEITE_JS = String.raw`
     $('heading').textContent = hd[0];
     $('sub').textContent = hd[1];
     renderSidebar();
+    renderAgenten();
     zeigeHinweisEinordnung();
     if (reset) list.textContent = '';
     if (state.query) {
@@ -552,6 +691,17 @@ export const SEITE_JS = String.raw`
         });
         list.appendChild(hinweis('Ask these notes a question — the chat in KEPTA Enterprise answers from your memory and names its sources.', 'chat'));
       }).catch(function (e) { toast(e.message, true); });
+    }
+    if (state.view === 'activity') {
+      more.hidden = true;
+      list.textContent = '';
+      list.appendChild(state.eintraege.length
+        ? h('div', { class: 'timeline' }, state.eintraege.map(eintrag))
+        : h('div', { class: 'empty' },
+            h('h2', { text: 'No AI app has used KEPTA yet.' }),
+            h('p', { class: 'muted', text: 'Connect Claude, Cursor or another MCP app — every note it saves or looks up shows up here as it happens.' }),
+            h('div', { class: 'row' }, h('button', { class: 'btn primary', type: 'button', onclick: verbinden }, 'Connect an AI app'))));
+      return Promise.resolve();
     }
     var pfad = '/api/notes?view=' + state.view + '&offset=' + state.offset + '&limit=' + PAGE + (state.tag ? '&tag=' + encodeURIComponent(state.tag) : '');
     return api(pfad).then(function (d) {
@@ -759,6 +909,7 @@ export const SEITE_JS = String.raw`
     else if (ev.key === 'n' && !tippt && $('drawer').hidden) { ev.preventDefault(); openEditor(null); }
   });
 
-  loadStatus().then(function () { load(true); einordnungPruefen(); }).catch(function (e) { toast('KEPTA is not reachable: ' + e.message, true); });
+  loadStatus().then(function () { load(true); einordnungPruefen(); holeAktivitaet(true); }).catch(function (e) { toast('KEPTA is not reachable: ' + e.message, true); });
+  setInterval(function () { if (!document.hidden) holeAktivitaet(false); }, 3000);
 })();
 `;

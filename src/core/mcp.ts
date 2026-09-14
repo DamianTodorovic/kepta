@@ -545,10 +545,48 @@ export function negotiateVersion(requested: unknown): string {
   return VERSIONEN_ABSTEIGEND.find((v) => v <= requested) ?? AELTESTE_PROTOCOL_VERSION;
 }
 
+/** Was ein Zuhörer vom MCP-Server erfährt: wer sich verbindet und welches Werkzeug lief. */
+export type McpEreignis =
+  | { art: "verbunden"; client: McpContext["client"] }
+  | {
+      art: "werkzeug";
+      client: McpContext["client"];
+      name: string;
+      args: Record<string, unknown>;
+      ergebnis: { structuredContent?: Record<string, unknown>; isError?: boolean };
+    };
+
 export interface McpContext {
   store: KeptaStore;
   /** Server-Kontext für Status-Infos */
   transport: "stdio" | "http";
+  /** Wer verbunden ist — aus initialize (clientInfo). Über stdio genau ein Client je Prozess. */
+  client?: { name?: string; title?: string; version?: string };
+  /**
+   * Hört mit, was Agenten tun — die Oberfläche von KEPTA Core zeigt es live an.
+   * Ohne Zuhörer ändert sich nichts; ein Fehler darin bricht keinen Aufruf.
+   */
+  melde?: (e: McpEreignis) => void;
+}
+
+function melde(ctx: McpContext, e: McpEreignis): void {
+  if (!ctx.melde) return;
+  try {
+    ctx.melde(e);
+  } catch {
+    // ein Zuhörer darf den MCP-Server nie aufhalten
+  }
+}
+
+/** Nur die drei Textfelder aus clientInfo — alles andere bleibt draußen. */
+function leseClient(info: unknown): McpContext["client"] | undefined {
+  if (!info || typeof info !== "object") return undefined;
+  const aus: NonNullable<McpContext["client"]> = {};
+  for (const k of ["name", "title", "version"] as const) {
+    const v = (info as Record<string, unknown>)[k];
+    if (typeof v === "string") aus[k] = v.slice(0, 100);
+  }
+  return Object.keys(aus).length ? aus : undefined;
 }
 
 export async function handleRpc(ctx: McpContext, req: JsonRpcRequest): Promise<JsonRpcResponse | null> {
@@ -566,8 +604,13 @@ export async function handleRpc(ctx: McpContext, req: JsonRpcRequest): Promise<J
     };
   }
 
+  // Zustandslose Clients (2026-07-28) nennen sich in _meta statt in initialize.
+  if (!ctx.client) ctx.client = leseClient((req._meta as { clientInfo?: unknown } | undefined)?.clientInfo);
+
   if (method === "initialize") {
     const requested = (req.params as { protocolVersion?: string } | undefined)?.protocolVersion ?? metaVersion;
+    ctx.client = leseClient((req.params as { clientInfo?: unknown } | undefined)?.clientInfo) ?? ctx.client;
+    melde(ctx, { art: "verbunden", client: ctx.client });
     return {
       jsonrpc: "2.0",
       id,
@@ -602,6 +645,7 @@ export async function handleRpc(ctx: McpContext, req: JsonRpcRequest): Promise<J
     const name = String(p.name ?? "");
     const args = (p.arguments ?? {}) as Record<string, unknown>;
     const result = await callTool(ctx.store, name, args);
+    melde(ctx, { art: "werkzeug", client: ctx.client, name, args, ergebnis: result });
     return { jsonrpc: "2.0", id, result: result as unknown as Record<string, unknown> };
   }
   // Notifications (ohne id) für unbekannte Methoden: KEINE Response (JSON-RPC 2.0)

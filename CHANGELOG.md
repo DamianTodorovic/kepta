@@ -22,6 +22,17 @@ All notable changes are documented in this file. The format follows [Keep a Chan
   stored under the old folder title instead of duplicating them.
 
 ### Added
+- **Watch your AI use its memory.** The browser interface lists the AI apps
+  that use KEPTA — with a live dot while one is active — and an *Activity*
+  view: who saved, updated or searched what, as it happens. When Claude saves
+  a note, it appears on the page while you watch. The MCP server records the
+  last 500 calls in the same encrypted file; nothing leaves the computer.
+- **`npx -y kepta-mcp setup`** finds Claude Desktop, Claude Code, Cursor,
+  Windsurf and VS Code and adds KEPTA to them — asking per app, or all at once
+  with `--yes`. It keeps a backup of every file it changes, leaves every other
+  entry alone and never touches a file that is not plain JSON. Claude Code gets
+  KEPTA through its own `claude mcp add`. The same is one click in the browser
+  interface: *Connect an AI app*.
 - **Sort by kind in one click.** When notes look filed under the wrong kind,
   the interface says so once, shows before and after with examples, re-sorts
   on request without touching the modified date, and offers one undo.
