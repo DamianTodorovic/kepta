@@ -55,6 +55,7 @@ export const SEITE_HTML = `<!doctype html>
       <button id="theme" class="btn icon" type="button" aria-label="Switch between dark and light">◐</button>
     </header>
     <section class="head"><h1 id="heading">All notes</h1><p id="sub" class="muted"></p></section>
+    <section id="notice" class="notice" hidden></section>
     <section id="list" class="list" aria-live="polite"></section>
     <button id="more" class="btn ghost more" type="button" hidden>Load more</button>
   </main>
@@ -220,6 +221,56 @@ textarea.input{resize:vertical;line-height:1.55}
 .form-error{color:var(--danger);min-height:1em;margin:0;font-size:13px}
 .toast{position:fixed;bottom:22px;left:50%;transform:translateX(-50%);background:var(--panel);border:1px solid var(--line);padding:10px 16px;border-radius:10px;box-shadow:var(--shadow);z-index:20}
 .toast.error{border-color:var(--danger);color:var(--danger)}
+.path{font:11px/1.4 ui-monospace,SFMono-Regular,Menlo,monospace;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;margin-top:-4px}
+.panel-path{margin:0 0 8px}
+.excerpt.none{font-style:italic;opacity:.75}
+.notice{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-top:14px;padding:10px 12px 10px 16px;border-radius:10px;border:1px solid var(--line);background:var(--panel);font-size:13px}
+.notice span{flex:1;min-width:220px}
+.notice .btn{height:32px;padding:0 12px}
+.md{white-space:normal}
+.md p,.md li,.md td,.md th{white-space:pre-wrap}
+.md h3,.md h4,.md h5,.md h6{font-family:Charter,"Iowan Old Style",Palatino,Georgia,serif;font-weight:600;line-height:1.3;margin:22px 0 8px}
+.md h3{font-size:21px}.md h4{font-size:18px}.md h5,.md h6{font-size:16px}
+.md>:first-child{margin-top:0}
+.md code{font:13px ui-monospace,SFMono-Regular,Menlo,monospace;background:var(--panel2);border:1px solid var(--line);border-radius:5px;padding:1px 5px}
+.md pre{background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:12px 14px;overflow:auto;margin:0 0 14px}
+.md pre code{border:0;padding:0;background:none;white-space:pre}
+.md hr{border:0;border-top:1px solid var(--line);margin:18px 0}
+.md a{color:var(--accent);text-underline-offset:3px;overflow-wrap:anywhere}
+.md mark{background:color-mix(in srgb,var(--warn) 30%,transparent);color:inherit;border-radius:3px;padding:0 2px}
+.md del{opacity:.6}
+.mdlist{list-style:none;padding:0;margin:0 0 12px}
+.mdlist li{display:flex;gap:9px;align-items:baseline;margin:3px 0}
+.mdlist li.d1{padding-left:22px}.mdlist li.d2{padding-left:44px}.mdlist li.d3{padding-left:66px}
+.mdlist .mk{color:var(--muted);min-width:1.1em;text-align:right;font-variant-numeric:tabular-nums;flex:none}
+.mdlist input{margin:0;accent-color:var(--accent);flex:none;transform:translateY(2px)}
+.mdlist li.done>span{color:var(--muted);text-decoration:line-through}
+.md blockquote{margin:0 0 14px;padding:10px 14px;border-left:3px solid var(--line);color:var(--muted)}
+.md blockquote.callout{--c:var(--muted);border-radius:0 10px 10px 0;background:var(--panel2);color:var(--text);border-left-color:var(--c)}
+.callout.c-info{--c:var(--t-semantic)}.callout.c-ok{--c:var(--ok)}.callout.c-warn{--c:var(--warn)}.callout.c-bad{--c:var(--danger)}
+.callout-title{display:block;margin-bottom:4px;color:var(--c)}
+.md blockquote>:last-child{margin-bottom:0}
+.tablewrap{overflow-x:auto;margin:0 0 14px;border:1px solid var(--line);border-radius:10px}
+.md table{border-collapse:collapse;width:100%;font-size:14px;overflow-wrap:normal}
+.md th,.md td{padding:7px 11px;border-bottom:1px solid var(--line);text-align:left;vertical-align:top}
+.md th{background:var(--panel2);font-weight:600}
+.md tr:last-child td{border-bottom:0}
+.ph{font:12px ui-monospace,SFMono-Regular,Menlo,monospace;color:var(--muted);border:1px dashed color-mix(in srgb,var(--muted) 60%,transparent);border-radius:5px;padding:0 5px}
+.embed{color:var(--muted);border:1px solid var(--line);border-radius:5px;padding:0 6px;font-size:13px}
+.mdtag{border:0;background:var(--panel2);color:var(--muted);border-radius:5px;padding:0 5px;font-size:13px}
+.mdtag:hover{color:var(--text)}
+.mdtag:focus-visible,.md a:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.props{display:grid;grid-template-columns:max-content 1fr;gap:4px 14px;margin:12px 0 0;font-size:13px;padding:10px 12px;border:1px solid var(--line);border-radius:10px;background:var(--panel2)}
+.props dt{color:var(--muted)}.props dd{margin:0;overflow-wrap:anywhere}
+.source{margin:-6px 0 14px;overflow-wrap:anywhere}
+.kinds{width:100%;border-collapse:collapse;margin:8px 0 4px;font-size:14px}
+.kinds th,.kinds td{padding:8px 4px;border-bottom:1px solid var(--line);text-align:left}
+.kinds th{color:var(--muted);font-weight:600;font-size:12px}
+.kinds .n{text-align:right;font-variant-numeric:tabular-nums}
+.examples{list-style:none;padding:0;margin:6px 0 0;display:flex;flex-direction:column;gap:8px;font-size:13px}
+.examples li{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.ex-title{flex:1;min-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ex-move{display:inline-flex;align-items:center;gap:6px;white-space:nowrap}
 @media (max-width:820px){.app{grid-template-columns:1fr}.sidebar{display:none}.main{padding:0 14px 30px}}
 `;
 
@@ -274,10 +325,6 @@ export const SEITE_JS = String.raw`
     return 'just now';
   }
   function datum(ms) { return new Date(ms).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }); }
-  function excerpt(t) {
-    var x = t.replace(/\[\[([^\]]+)\]\]/g, '$1').replace(/\s+/g, ' ').trim();
-    return x.length > 180 ? x.slice(0, 177) + '…' : x;
-  }
   function toast(msg, fehler) {
     var t = $('toast');
     t.textContent = msg;
@@ -384,9 +431,10 @@ export const SEITE_JS = String.raw`
   function card(note, extra) {
     var abgelaufen = note.validTo && note.validTo < Date.now();
     var c = h('article', { class: 'card t-' + note.type, tabindex: '0', onclick: function () { openNote(note.id); }, onkeydown: function (ev) { if (ev.key === 'Enter') openNote(note.id); } },
-      h('div', { class: 'card-top' }, chip(note.type), note.supersededBy ? h('span', { class: 'flag', text: 'Superseded' }) : null, abgelaufen ? h('span', { class: 'flag', text: 'Expired' }) : null),
-      h('h3', { text: note.title }),
-      h('p', { class: 'excerpt', text: excerpt(note.content) }),
+      h('div', { class: 'card-top' }, chip(note.type), note.template ? h('span', { class: 'flag', text: 'Template' }) : null, note.supersededBy ? h('span', { class: 'flag', text: 'Superseded' }) : null, abgelaufen ? h('span', { class: 'flag', text: 'Expired' }) : null),
+      h('h3', { text: note.displayTitle || note.title }),
+      note.path ? h('div', { class: 'path', title: note.path, text: note.path }) : null,
+      h('p', { class: 'excerpt' + (note.preview ? '' : ' none'), text: note.preview || (note.template ? 'An empty template.' : 'No text yet.') }),
       h('div', { class: 'card-foot' },
         h('div', { class: 'tags' }, note.tags.slice(0, 3).map(function (t) { return h('span', { class: 'tagchip', text: '#' + t }); })),
         h('span', { class: 'muted small', text: ago(note.updatedAt) })));
@@ -408,6 +456,73 @@ export const SEITE_JS = String.raw`
       hinweis('Already have documents? KEPTA Enterprise imports PDFs, Markdown and Obsidian vaults by drag & drop.', 'import'));
   }
 
+  // Sorting by kind: a vault imported before 2.12 landed entirely as facts.
+  // KEPTA offers once to read the notes again — with a preview first and one
+  // click back.
+  var MEHRZAHL = { semantic: ['fact', 'facts'], episodic: ['event', 'events'], procedural: ['how-to', 'how-tos'], reference: ['document', 'documents'] };
+  function anzahl(n, typ) { var w = MEHRZAHL[typ] || [typ, typ]; return n + ' ' + (n === 1 ? w[0] : w[1]); }
+  function einordnungPruefen() {
+    return api('/api/reclassify').then(function (e) { state.einordnung = e; zeigeHinweisEinordnung(); }).catch(function () { /* the list works without it */ });
+  }
+  function abgelehnt(n) {
+    try {
+      if (n !== undefined) localStorage.setItem('kepta-core-reclassify', String(n));
+      return localStorage.getItem('kepta-core-reclassify');
+    } catch (e) { return null; }
+  }
+  function zeigeHinweisEinordnung() {
+    var box = $('notice');
+    var e = state.einordnung;
+    var zeigen = !!(e && e.changed > 0 && state.view === 'all' && !state.tag && !state.query && abgelehnt() !== String(e.changed));
+    box.hidden = !zeigen;
+    box.textContent = '';
+    if (!zeigen) return;
+    var ziele = Object.keys(e.into).sort(function (a, b) { return e.into[b] - e.into[a]; }).map(function (t) { return anzahl(e.into[t], t); });
+    box.appendChild(h('span', { text: 'KEPTA would sort ' + (e.changed === 1 ? 'one note' : e.changed + ' notes') + ' into a better kind — ' + ziele.join(', ') + '.' }));
+    box.appendChild(h('button', { class: 'btn', type: 'button', onclick: einordnen }, 'Review'));
+    box.appendChild(h('button', { class: 'btn ghost', type: 'button', onclick: function () { abgelehnt(e.changed); box.hidden = true; } }, 'Not now'));
+  }
+  function einordnen() {
+    var e = state.einordnung;
+    if (!e) return;
+    function zu() { return h('button', { class: 'btn icon close', type: 'button', 'aria-label': 'Close', onclick: schliessen }, '×'); }
+    function anwenden() {
+      api('/api/reclassify', { method: 'POST', body: {} }).then(function (d) {
+        state.einordnung = null;
+        zeigeHinweisEinordnung();
+        drawer(h('div', {},
+          h('div', { class: 'panel-head' }, h('strong', { text: 'Sorted' }), zu()),
+          h('p', { class: 'content', text: (d.changed === 1 ? 'One note has' : d.changed + ' notes have') + ' a new kind. Nothing else changed.' }),
+          h('div', { class: 'actions' },
+            h('button', { class: 'btn primary', type: 'button', onclick: schliessen }, 'Done'),
+            d.undo ? h('button', { class: 'btn ghost', type: 'button', onclick: zurueck }, 'Undo') : null)));
+        return Promise.all([loadStatus(), load(true)]);
+      }).catch(function (err) { toast(err.message, true); });
+    }
+    function zurueck() {
+      api('/api/reclassify/undo', { method: 'POST', body: {} }).then(function (d) {
+        schliessen();
+        toast('Undone — ' + (d.restored === 1 ? 'one note is' : d.restored + ' notes are') + ' back as before.');
+        return Promise.all([loadStatus(), load(true)]).then(einordnungPruefen);
+      }).catch(function (err) { toast(err.message, true); });
+    }
+    drawer(h('div', {},
+      h('div', { class: 'panel-head' }, h('strong', { text: 'Sort notes by kind' }), zu()),
+      h('p', { class: 'content', text: 'KEPTA reads each note again and files it as a fact, an event, a how-to or a document. Titles, text, tags and dates stay exactly as they are.' }),
+      h('table', { class: 'kinds' },
+        h('thead', {}, h('tr', {}, h('th', { text: 'Kind' }), h('th', { class: 'n', text: 'Now' }), h('th', { class: 'n', text: 'After' }))),
+        h('tbody', {}, Object.keys(TYPES).map(function (t) {
+          return h('tr', {}, h('td', {}, chip(t)), h('td', { class: 'n', text: String(e.before[t] || 0) }), h('td', { class: 'n', text: String(e.after[t] || 0) }));
+        }))),
+      e.examples.length ? h('h3', { class: 'section-title', text: 'For example' }) : null,
+      h('ul', { class: 'examples' }, e.examples.map(function (x) {
+        return h('li', {}, h('span', { class: 'ex-title', text: x.title }), h('span', { class: 'ex-move' }, chip(x.from), h('span', { class: 'muted', text: '→' }), chip(x.to)));
+      })),
+      h('div', { class: 'actions' },
+        h('button', { class: 'btn primary', type: 'button', onclick: anwenden }, 'Sort ' + (e.changed === 1 ? 'one note' : e.changed + ' notes')),
+        h('button', { class: 'btn ghost', type: 'button', onclick: schliessen }, 'Cancel'))));
+  }
+
   function load(reset) {
     if (reset) state.offset = 0;
     var list = $('list');
@@ -416,6 +531,7 @@ export const SEITE_JS = String.raw`
     $('heading').textContent = hd[0];
     $('sub').textContent = hd[1];
     renderSidebar();
+    zeigeHinweisEinordnung();
     if (reset) list.textContent = '';
     if (state.query) {
       more.hidden = true;
@@ -458,25 +574,52 @@ export const SEITE_JS = String.raw`
     if (f) f.focus();
   }
 
-  function inhaltMitLinks(text) {
-    var box = h('div', { class: 'content' });
-    text.split(/\n{2,}/).forEach(function (absatz) {
-      var p = h('p');
-      var re = /\[\[([^\]]+)\]\]/g;
-      var last = 0;
-      var m;
-      while ((m = re.exec(absatz))) {
-        if (m.index > last) p.appendChild(document.createTextNode(absatz.slice(last, m.index)));
-        p.appendChild(wikilink(m[1]));
-        last = re.lastIndex;
+  // The text arrives as a tree from the server (src/ui/markdown.ts). Only
+  // elements with textContent are built here — never HTML — and links lead
+  // only to http(s) and mailto, in a new tab.
+  var CALLOUTS = { note: 'info', info: 'info', abstract: 'info', summary: 'info', tldr: 'info', todo: 'info', tip: 'ok', hint: 'ok', important: 'ok', success: 'ok', check: 'ok', done: 'ok', warning: 'warn', caution: 'warn', attention: 'warn', question: 'warn', help: 'warn', faq: 'warn', failure: 'bad', fail: 'bad', missing: 'bad', danger: 'bad', error: 'bad', bug: 'bad' };
+  var AUSZEICHNUNG = { b: 'strong', i: 'em', s: 'del', mark: 'mark' };
+  function inline(el, teile) {
+    (teile || []).forEach(function (x) {
+      if (x.t === 'text') el.appendChild(document.createTextNode(x.v));
+      else if (AUSZEICHNUNG[x.t]) el.appendChild(inline(h(AUSZEICHNUNG[x.t]), x.c));
+      else if (x.t === 'code') el.appendChild(h('code', { text: x.v }));
+      else if (x.t === 'link') el.appendChild(/^(https?:|mailto:)/i.test(x.href) ? h('a', { href: x.href, target: '_blank', rel: 'noopener noreferrer' }, x.v) : document.createTextNode(x.v));
+      else if (x.t === 'wiki') el.appendChild(wikilink(x.ziel, x.v));
+      else if (x.t === 'embed') el.appendChild(h('span', { class: 'embed', title: 'Embedded file', text: x.v }));
+      else if (x.t === 'ph') el.appendChild(h('span', { class: 'ph', title: 'Template placeholder', text: x.v }));
+      else if (x.t === 'tag') el.appendChild(h('button', { class: 'mdtag', type: 'button', onclick: function () { suche(x.v); } }, '#' + x.v));
+    });
+    return el;
+  }
+  function markdown(bloecke, box) {
+    (bloecke || []).forEach(function (b) {
+      if (b.t === 'h') box.appendChild(inline(h('h' + Math.min(6, b.ebene + 2)), b.c));
+      else if (b.t === 'p') box.appendChild(inline(h('p'), b.c));
+      else if (b.t === 'hr') box.appendChild(h('hr'));
+      else if (b.t === 'code') box.appendChild(h('pre', {}, h('code', { text: b.v })));
+      else if (b.t === 'list') box.appendChild(h('ul', { class: 'mdlist' }, b.punkte.map(function (p) {
+        var marke = p.done === null
+          ? h('span', { class: 'mk', 'aria-hidden': 'true', text: p.nr || '•' })
+          : h('input', { type: 'checkbox', disabled: true, checked: p.done, 'aria-label': p.done ? 'Done' : 'Open' });
+        return h('li', { class: 'd' + p.tiefe + (p.done ? ' done' : '') }, marke, inline(h('span'), p.c));
+      })));
+      else if (b.t === 'quote') {
+        var art = b.art ? (CALLOUTS[b.art] || 'plain') : null;
+        var q = h('blockquote', { class: art ? 'callout c-' + art : null });
+        if (art) q.appendChild(inline(h('strong', { class: 'callout-title' }), b.titel.length ? b.titel : [{ t: 'text', v: b.art.charAt(0).toUpperCase() + b.art.slice(1) }]));
+        box.appendChild(markdown(b.blocks, q));
+      } else if (b.t === 'table') {
+        box.appendChild(h('div', { class: 'tablewrap' }, h('table', {},
+          h('thead', {}, h('tr', {}, b.kopf.map(function (c) { return inline(h('th'), c); }))),
+          h('tbody', {}, b.zeilen.map(function (r) { return h('tr', {}, r.map(function (c) { return inline(h('td'), c); })); })))));
       }
-      if (last < absatz.length) p.appendChild(document.createTextNode(absatz.slice(last)));
-      box.appendChild(p);
     });
     return box;
   }
-  function wikilink(ziel) {
-    return h('button', { class: 'wikilink', type: 'button', onclick: function () { schliessen(); $('q').value = ziel; state.query = ziel; state.tag = null; load(true); } }, ziel);
+  function suche(text) { schliessen(); $('q').value = text; state.query = text; state.tag = null; load(true); }
+  function wikilink(ziel, v) {
+    return h('button', { class: 'wikilink', type: 'button', onclick: function () { suche(ziel); } }, v || ziel);
   }
 
   function openNote(id) {
@@ -490,11 +633,14 @@ export const SEITE_JS = String.raw`
       drawer(h('div', {},
         h('div', { class: 'panel-head' }, chip(n.type), h('span', { class: 'muted small', text: 'Updated ' + ago(n.updatedAt) + ' · created ' + datum(n.createdAt) }),
           h('button', { class: 'btn icon close', type: 'button', 'aria-label': 'Close', onclick: schliessen }, '×')),
-        h('h2', { class: 'panel-title', text: n.title }),
+        h('h2', { class: 'panel-title', text: n.displayTitle || n.title }),
+        n.path ? h('p', { class: 'path panel-path', title: 'Stored under this name', text: n.path }) : null,
         gueltig ? h('p', { class: 'validity', text: gueltig.trim() }) : null,
         n.supersededBy ? h('p', { class: 'validity', text: 'Superseded by a newer note.' }) : null,
         geloescht ? h('p', { class: 'validity', text: 'In the trash since ' + datum(n.deletedAt) + '.' }) : null,
-        inhaltMitLinks(n.content),
+        n.properties && n.properties.length ? h('dl', { class: 'props' }, n.properties.map(function (p) { return [h('dt', { text: p[0] }), h('dd', { text: p[1] })]; })) : null,
+        markdown(n.body, h('div', { class: 'content md' })),
+        n.source ? h('p', { class: 'muted small source', text: 'Source: ' + n.source }) : null,
         n.tags.length ? h('div', { class: 'tags' }, n.tags.map(function (t) { return h('button', { class: 'tagchip', type: 'button', onclick: function () { schliessen(); setTag(t); } }, '#' + t); })) : null,
         verweise && !geloescht ? hinweis('Links to ' + verweise + (verweise === 1 ? ' other note' : ' other notes') + ' — see them as a knowledge graph in KEPTA Enterprise.', 'graph') : null,
         h('div', { class: 'actions' },
@@ -574,7 +720,7 @@ export const SEITE_JS = String.raw`
   function trash(n) {
     api('/api/notes/' + encodeURIComponent(n.id), { method: 'DELETE' }).then(function () {
       schliessen();
-      toast('“' + n.title + '” moved to the trash.');
+      toast('“' + (n.displayTitle || n.title) + '” moved to the trash.');
       return Promise.all([loadStatus(), load(true)]);
     }).catch(function (e) { toast(e.message, true); });
   }
@@ -613,6 +759,6 @@ export const SEITE_JS = String.raw`
     else if (ev.key === 'n' && !tippt && $('drawer').hidden) { ev.preventDefault(); openEditor(null); }
   });
 
-  loadStatus().then(function () { load(true); }).catch(function (e) { toast('KEPTA is not reachable: ' + e.message, true); });
+  loadStatus().then(function () { load(true); einordnungPruefen(); }).catch(function (e) { toast('KEPTA is not reachable: ' + e.message, true); });
 })();
 `;

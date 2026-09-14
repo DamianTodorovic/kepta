@@ -118,8 +118,14 @@ export function memoryToMarkdown(record: MemoryRecord): { filename: string; mark
 /** Importiert eine Markdown-Datei (Obsidian-Notiz) als Memory. */
 export function importMarkdownFile(store: KeptaStore, file: MarkdownFile, opts: { scope?: string } = {}): { status: "imported" | "updated" | "skipped"; record: MemoryRecord } {
   const { meta, body } = parseFrontmatter(file.content);
-  const baseName = file.name.replace(/\.md$/i, "").trim();
-  const title = typeof meta.title === "string" && meta.title.trim() ? meta.title.trim() : baseName || "Untitled";
+  // Obsidian zeigt und verlinkt eine Notiz über ihren Dateinamen ohne Ordner:
+  // „Projekte/Atlas/Kickoff.md“ heißt dort „Kickoff“, und [[Kickoff]] findet
+  // sie. Bis 2.11 wurde der ganze Pfad zum Titel. Ein Titel aus einer Vorlage
+  // („{{date}}“) ist keiner.
+  const pfadName = file.name.replace(/\.md$/i, "").trim();
+  const baseName = pfadName.split(/[\\/]/).pop()!.trim();
+  const metaTitel = typeof meta.title === "string" && !/\{\{|<%/.test(meta.title) ? meta.title.trim() : "";
+  const title = metaTitel || baseName || "Untitled";
   const content = body.trim() || title;
   const tags = Array.isArray(meta.tags) ? (meta.tags as string[]).filter((t): t is string => typeof t === "string") : [];
 
@@ -127,7 +133,10 @@ export function importMarkdownFile(store: KeptaStore, file: MarkdownFile, opts: 
   const input: MemoryInput = {
     id: keptaId,
     scope: opts.scope ?? (typeof meta.scope === "string" ? meta.scope : "local"),
-    type: (["semantic", "episodic", "procedural", "reference"] as const).includes(meta.type as MemoryType) ? (meta.type as MemoryType) : "semantic",
+    // Ohne gültigen Typ im Frontmatter entscheiden die Regeln im Store. Bis 2.11
+    // stand hier "semantic" — ein ganzer Vault landete als „Fakt“, auch jede
+    // Anleitung und jedes Protokoll.
+    type: (["semantic", "episodic", "procedural", "reference"] as const).includes(meta.type as MemoryType) ? (meta.type as MemoryType) : undefined,
     title,
     content,
     tags,
@@ -140,7 +149,8 @@ export function importMarkdownFile(store: KeptaStore, file: MarkdownFile, opts: 
 
   const existing = input.id ? store.getMemory(input.id) : null;
   // Ohne ID: Dedup über exakten Titel (Obsidian-Resync aktualisiert statt doppelt)
-  const byTitle = existing ? null : store.findByTitle(input.title);
+  // — auch über den alten Pfad-Titel aus 2.11, damit ein Resync nichts verdoppelt.
+  const byTitle = existing ? null : (store.findByTitle(input.title) ?? (pfadName !== input.title ? store.findByTitle(pfadName) : null));
   if (byTitle) input.id = byTitle.id;
   const current = existing ?? byTitle;
   // Resync-Schutz: eine unveränderte Notiz nicht anfassen — sonst überschreibt jeder

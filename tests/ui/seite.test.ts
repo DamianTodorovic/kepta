@@ -76,6 +76,15 @@ describe("die Seite der Core-Oberfläche", () => {
     expect(SEITE_JS).not.toMatch(/setAttribute\(['"]style/);
   });
 
+  it("baut Markdown nur aus Elementen — Links nur nach http(s) und mailto, Karten mit lesbarem Titel", () => {
+    expect(SEITE_JS).toContain("/^(https?:|mailto:)/i.test(x.href)");
+    expect(SEITE_JS).toContain("target: '_blank', rel: 'noopener noreferrer'");
+    expect(SEITE_JS).toContain("note.displayTitle");
+    expect(SEITE_JS).toContain("markdown(n.body");
+    // die alte Rohtext-Vorschau ist weg
+    expect(SEITE_JS).not.toContain("excerpt(");
+  });
+
   it("ist englisch", () => {
     const sichtbar = [...SEITE_HTML.replace(/<[^>]+>/g, "\n").split("\n"), ...[...SEITE_JS.matchAll(/'([^'\\]{4,})'/g)].map((m) => m[1])];
     const deutsch = /[äöüÄÖÜß]|\b(und|oder|nicht|Notiz|Suche|Datei|Papierkorb|Speichern|Abbrechen)\b/;

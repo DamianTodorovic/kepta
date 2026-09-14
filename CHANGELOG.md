@@ -2,6 +2,30 @@
 
 All notable changes are documented in this file. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and versioning follows [SemVer](https://semver.org/).
 
+## [Unreleased]
+
+### Changed
+- **Notes look like notes.** The browser interface renders Markdown — headings,
+  lists and task lists, tables, code, Obsidian callouts, highlights, links and
+  `[[links]]`. The page builds it element by element, never as HTML, so the
+  strict CSP stays and no note can run anything. Cards show a clean preview
+  without YAML front matter, Markdown marks or template placeholders.
+- **Readable titles.** A note stored under a file path or a slug shows the
+  title from its front matter, its own first heading or a tidied file name;
+  the path stays as a small hint.
+- **Templates are recognised.** Notes with `{{date}}` or Templater `<% %>`
+  placeholders carry a *Template* label, and the placeholders show as such.
+- **The Obsidian import files notes by their content.** Without a `type` in the
+  front matter the rules decide between fact, event, how-to and document —
+  until now a whole vault landed as facts. Titles are the file name without
+  folders, as in Obsidian, so `[[links]]` find them; a re-import finds notes
+  stored under the old folder title instead of duplicating them.
+
+### Added
+- **Sort by kind in one click.** When notes look filed under the wrong kind,
+  the interface says so once, shows before and after with examples, re-sorts
+  on request without touching the modified date, and offers one undo.
+
 ## [2.11.0] — 2026-09-11
 
 ### Added

@@ -18,9 +18,11 @@ import type { AddressInfo } from "node:net";
 import type { KeptaStore } from "../core/store";
 import type { MemoryRecord, MemoryType } from "../core/types";
 import { searchMemories } from "../core/engine";
+import { klassifiziere } from "../core/klassifikation";
 import { saveWithIndex } from "../core/mcp";
 import { APP_VERSION } from "../core/version";
 import { SEITE_HTML, SEITE_CSS, SEITE_JS, FAVICON_SVG } from "./seite";
+import { anzeige, detail } from "./markdown";
 
 const TYPEN: readonly MemoryType[] = ["semantic", "episodic", "procedural", "reference"];
 export const MAX_KOERPER = 1024 * 1024;
@@ -39,7 +41,7 @@ export class AnfrageFehler extends Error {
   }
 }
 
-/** Was die Seite von einer Notiz sieht — ohne interne Zähler. */
+/** Was die Seite von einer Notiz sieht — ohne interne Zähler, mit lesbarem Titel und Vorschau. */
 export function alsNotiz(m: MemoryRecord) {
   return {
     id: m.id,
@@ -54,7 +56,56 @@ export function alsNotiz(m: MemoryRecord) {
     createdAt: m.createdAt,
     updatedAt: m.updatedAt,
     deletedAt: m.deletedAt,
+    ...anzeige(m.title, m.content),
   };
+}
+
+/** Die Detailansicht: dazu der Text als Markdown-Baum, Eigenschaften und Herkunft. */
+export function alsDetail(m: MemoryRecord) {
+  return { ...alsNotiz(m), ...detail(m.title, m.content) };
+}
+
+export interface Einordnung {
+  total: number;
+  changed: number;
+  before: Record<string, number>;
+  after: Record<string, number>;
+  /** Wohin die geänderten Notizen wandern — „180 How-tos, 34 Events“. */
+  into: Record<string, number>;
+  examples: { title: string; from: MemoryType; to: MemoryType }[];
+}
+
+/**
+ * Ordnet alle aktiven Notizen nach den Regeln neu ein: ohne `anwenden` nur als
+ * Vorschau. Gibt die alten Typen zurück, damit ein Klick es rückgängig macht.
+ * Das Änderungsdatum bleibt — die Notizen wurden ja nicht bearbeitet.
+ */
+export function neuEinordnen(store: KeptaStore, anwenden: boolean): { einordnung: Einordnung; vorher: Vorher[] } {
+  const before: Record<string, number> = {};
+  const after: Record<string, number> = {};
+  const into: Record<string, number> = {};
+  const examples: Einordnung["examples"] = [];
+  const vorher: Vorher[] = [];
+  const alle = alleAktiven(store);
+  for (const m of alle) {
+    before[m.type] = (before[m.type] ?? 0) + 1;
+    const quelle = /—\s*Source:\s*(\S.*)$/m.exec(m.content)?.[1]?.trim();
+    const neu = klassifiziere({ title: m.title, content: m.content, tags: m.tags, quelle }).typ;
+    after[neu] = (after[neu] ?? 0) + 1;
+    if (neu === m.type) continue;
+    into[neu] = (into[neu] ?? 0) + 1;
+    vorher.push({ id: m.id, type: m.type, updatedAt: m.updatedAt });
+    if (examples.length < 8) examples.push({ title: anzeige(m.title, m.content).displayTitle, from: m.type, to: neu });
+    if (anwenden) store.updateMemory(m.id, { type: neu, updatedAt: m.updatedAt });
+  }
+  return { einordnung: { total: alle.length, changed: vorher.length, before, after, into, examples }, vorher };
+}
+
+/** Was vor dem letzten Neu-Einordnen galt — genug, um es zurückzunehmen. */
+export interface Vorher {
+  id: string;
+  type: MemoryType;
+  updatedAt: number;
 }
 
 /** Alle aktiven Notizen, seitenweise — für die Zähler der Seitenleiste. */
@@ -182,6 +233,8 @@ interface Kontext {
   token: string;
   hosts: Set<string>;
   origins: Set<string>;
+  /** Das letzte Neu-Einordnen, solange es sich zurücknehmen lässt. */
+  rueckgaengig: Vorher[] | null;
 }
 
 async function bearbeite(req: http.IncomingMessage, res: http.ServerResponse, ctx: Kontext): Promise<void> {
@@ -251,6 +304,22 @@ async function bearbeite(req: http.IncomingMessage, res: http.ServerResponse, ct
     return antworte(res, 200, { key: schluessel, storedIn: store.verschluesselung.ablage ?? null });
   }
 
+  // Wissensarten neu einordnen: erst die Vorschau, dann ein Klick — und einer zurück.
+  if (pfad === "/api/reclassify" && methode === "GET") return antworte(res, 200, neuEinordnen(store, false).einordnung);
+  if (pfad === "/api/reclassify" && methode === "POST") {
+    const { einordnung, vorher } = neuEinordnen(store, true);
+    ctx.rueckgaengig = vorher.length ? vorher : null;
+    return antworte(res, 200, { ...einordnung, applied: true, undo: vorher.length > 0 });
+  }
+  if (pfad === "/api/reclassify/undo" && methode === "POST") {
+    const liste = ctx.rueckgaengig;
+    if (!liste) throw new AnfrageFehler(409, "There is nothing to undo.");
+    ctx.rueckgaengig = null;
+    let zurueck = 0;
+    for (const a of liste) if (store.getMemory(a.id) && store.updateMemory(a.id, { type: a.type, updatedAt: a.updatedAt })) zurueck++;
+    return antworte(res, 200, { restored: zurueck });
+  }
+
   if (einzeln) {
     const id = decodeURIComponent(einzeln[1]);
     const vorhanden = store.getMemory(id);
@@ -260,7 +329,7 @@ async function bearbeite(req: http.IncomingMessage, res: http.ServerResponse, ct
       store.restoreMemory(id);
       return antworte(res, 200, { note: alsNotiz(store.getMemory(id)!) });
     }
-    if (methode === "GET") return antworte(res, 200, { note: alsNotiz(vorhanden) });
+    if (methode === "GET") return antworte(res, 200, { note: alsDetail(vorhanden) });
     if (methode === "DELETE") {
       store.trashMemory(id);
       return antworte(res, 200, { ok: true });
@@ -310,7 +379,7 @@ function lausche(server: http.Server, port: number): Promise<void> {
 /** Startet die Oberfläche. Ist der Wunschport belegt, nimmt sie einen freien. */
 export async function starteOberflaeche(store: KeptaStore, opts: { port?: number } = {}): Promise<Oberflaeche> {
   const token = crypto.randomBytes(24).toString("hex");
-  const ctx: Kontext = { store, token, hosts: new Set(), origins: new Set() };
+  const ctx: Kontext = { store, token, hosts: new Set(), origins: new Set(), rueckgaengig: null };
   const server = http.createServer((req, res) => {
     bearbeite(req, res, ctx).catch((e: unknown) => {
       if (e instanceof AnfrageFehler) antworte(res, e.status, { error: e.message });
