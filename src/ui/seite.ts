@@ -83,7 +83,7 @@ export const SEITE_HTML = `<!doctype html>
     <a class="btn primary" href="https://www.linkedin.com/in/damian-todorovic-244235434" target="_blank" rel="noopener noreferrer">Get KEPTA Pro</a>
     <a class="btn" href="https://github.com/DamianTodorovic/kepta#-kepta-pro--the-full-desktop-app" target="_blank" rel="noopener noreferrer">Compare Core and Pro</a>
   </div>
-  <p class="muted small">“Get KEPTA Pro” opens LinkedIn: write to Damian Todorovic, who builds KEPTA, for your license. Online checkout is coming.</p>
+  <p class="muted small">“Get KEPTA Pro” opens LinkedIn: write to Damian Todorovic, who builds KEPTA, for your license.</p>
 </div>
 </template>
 <script src="/app.js"></script>
