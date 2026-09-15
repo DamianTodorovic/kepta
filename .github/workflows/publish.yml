@@ -93,6 +93,15 @@ jobs:
           npm publish --provenance --access public
         # Kein NODE_AUTH_TOKEN — die Anmeldung laeuft ueber Trusted Publishing.
 
+      - name: OIDC-Debug bei Fehlschlag
+        if: failure()
+        run: |
+          # npm schreibt den OIDC-Handschlag nur in die Debug-Logs — hier Zeilen
+          # zu Exchange/Provenance, mit Geheimnis-Zeilen ausgefiltert.
+          grep -iE "oidc|exchange|provenance|ENEEDAUTH" /home/runner/.npm/_logs/*.log 2>/dev/null \
+            | grep -viE "authorization|bearer|\"token\"" | tail -50 || echo "keine Debug-Log-Zeilen gefunden"
+        # Kein NODE_AUTH_TOKEN — die Anmeldung laeuft ueber Trusted Publishing.
+
       # Die Registry prueft den Besitz, indem sie das npm-Paket abruft und dessen
       # mcpName liest. Ist die neue Version dort noch nicht sichtbar, schlaegt sie
       # fehl — deshalb warten statt hoffen.
