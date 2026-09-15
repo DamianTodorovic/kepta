@@ -1,0 +1,54 @@
+# Temporäre Diagnose für Trusted-Publishing (wird nach dem Befund entfernt).
+# Hohlt den GitHub-OIDC-Token mit npm-Registry-Audience, zeigt die Claims und
+# fragt den Exchange-Endpunkt von npmjs.com — ohne zu publizieren. Läuft auf
+# workflow_dispatch und endet IMMER grün (Befunde stehen im Log).
+name: OIDC-Diagnose
+on:
+  workflow_dispatch:
+
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+  diagnose:
+    runs-on: ubuntu-latest
+    environment: npm
+    steps:
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22.x"
+      - name: Umgebung + npm-Version
+        run: |
+          echo "npm: $(npm --version)"
+          echo "GITHUB_WORKFLOW_REF: $GITHUB_WORKFLOW_REF"
+          echo "GITHUB_REF: $GITHUB_REF"
+      - name: OIDC-Token holen und Claims dekodieren
+        run: |
+          TOKEN=$(curl -s -H "Authorization: Bearer $ACTIONS_ID_TOKEN_REQUEST_TOKEN" \
+            "$ACTIONS_ID_TOKEN_REQUEST_URL&audience=npm:registry.npmjs.org" | node -p "JSON.parse(require('fs').readFileSync(0,'utf8')).value")
+          if [ -z "$TOKEN" ]; then echo "KEIN OIDC-TOKEN EMPFANGEN"; exit 0; fi
+          CLAIMS=$(echo "$TOKEN" | cut -d. -f2 | tr '_-' '/+' | awk '{l=length($0)%4; if(l)print $0 substr("====",l+1); else print $0}')
+          echo "=== OIDC-Claims (relevant) ==="
+          echo "$CLAIMS" | base64 -d 2>/dev/null | node -e "
+            let s='';process.stdin.on('data',d=>s+=d).on('end',()=>{
+              try{const c=JSON.parse(s);
+                for(const k of ['iss','aud','repository_owner','repository','workflow','workflow_ref','job_workflow_ref','environment','ref','sha'])
+                  console.log(k+': '+JSON.stringify(c[k]));
+              }catch(e){console.log('Claims-Nutzlast:',s.slice(0,600))}
+            })"
+          echo "=== Exchange-Endpunkt von npmjs.com ==="
+          curl -s -o /tmp/exchange.json -w "HTTP %{http_code}\n" \
+            -X POST "https://registry.npmjs.org/-/npm/v1/oidc/token/exchange/package/kepta-mcp" \
+            -H "Content-Type: application/json" \
+            -H "Authorization: Bearer $TOKEN" \
+            -d '{"data":{"audience":"npm:registry.npmjs.org"}}' || true
+          node -e "
+            const fs=require('fs');
+            try{const d=JSON.parse(fs.readFileSync('/tmp/exchange.json','utf8'));
+              const schluessel=Object.keys(d);
+              console.log('Antwort-Felder:', JSON.stringify(schluessel));
+              if(d.token) console.log('token: ERHALTEN (Länge '+d.token.length+', nicht ausgegeben)');
+              else console.log('Antwort-Körper:', JSON.stringify(d).slice(0,500));
+            }catch(e){console.log('Antwort (roh):', fs.readFileSync('/tmp/exchange.json','utf8').slice(0,500))}
+          "
