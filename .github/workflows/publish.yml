@@ -19,6 +19,11 @@ on:
   push:
     tags: ["v*"]
   workflow_dispatch:
+    inputs:
+      modus:
+        description: "'test' = nur OIDC-Exchange prüfen, nichts veröffentlichen"
+        required: false
+        default: ""
 
 jobs:
   publish:
@@ -37,6 +42,7 @@ jobs:
           registry-url: "https://registry.npmjs.org"
 
       - name: Abhaengigkeiten
+        if: github.event.inputs.modus != 'test'
         run: npm ci
 
       # Ein Tag, der nicht zur Version im Repo passt, veroeffentlicht sonst still
@@ -64,23 +70,45 @@ jobs:
             fi
           done
 
+      # Nur-OIDC-Test (workflow_dispatch mit modus=test): holt den Token und
+      # fragt den Exchange-Endpunkt von npmjs.com — endet immer grün.
+      - name: Nur-OIDC-Test
+        if: github.event.inputs.modus == 'test'
+        run: |
+          TOKEN=$(curl -s -H "Authorization: Bearer $ACTIONS_ID_TOKEN_REQUEST_TOKEN" \
+            "$ACTIONS_ID_TOKEN_REQUEST_URL&audience=npm:registry.npmjs.org" | node -p "JSON.parse(require('fs').readFileSync(0,'utf8')).value")
+          curl -s -o /tmp/exchange.json -w "Exchange: HTTP %{http_code}\n" \
+            -X POST "https://registry.npmjs.org/-/npm/v1/oidc/token/exchange/package/kepta-mcp" \
+            -H "Content-Type: application/json" -H "Authorization: Bearer $TOKEN" \
+            -d '{"data":{"audience":"npm:registry.npmjs.org"}}' || true
+          node -e "
+            const fs=require('fs');
+            try{const d=JSON.parse(fs.readFileSync('/tmp/exchange.json','utf8'));
+              console.log(d.token ? 'ERGEBNIS: Exchange ERTEILT Token — Konfiguration greift!' : 'ERGEBNIS: ' + JSON.stringify(d).slice(0,300));
+            }catch(e){console.log('Antwort roh:', fs.readFileSync('/tmp/exchange.json','utf8').slice(0,300))}"
+
       # Nicht veroeffentlichen, was nicht getestet ist. Die Tests pruefen auch
       # server.json gegen das MCP-Schema und den mcpName-Besitznachweis.
       - name: Tests
+        if: github.event.inputs.modus != 'test'
         run: npm test
 
       - name: npm-Paket bauen
+        if: github.event.inputs.modus != 'test'
         run: npm run build:npm
 
       - name: Inhalt zeigen
+        if: github.event.inputs.modus != 'test'
         working-directory: npm
         run: npm pack --dry-run
 
       # Trusted Publishing braucht eine npm-CLI, die OIDC spricht.
       - name: npm aktualisieren
+        if: github.event.inputs.modus != 'test'
         run: npm install -g npm@latest
 
       - name: Auf npm veroeffentlichen
+        if: github.event.inputs.modus != 'test'
         working-directory: npm
         run: |
           # setup-node hinterlaesst ein .npmrc mit einem authToken-Platzhalter und
