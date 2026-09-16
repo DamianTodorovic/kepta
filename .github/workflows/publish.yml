@@ -110,16 +110,29 @@ jobs:
       - name: Auf npm veroeffentlichen
         if: github.event.inputs.modus != 'test'
         working-directory: npm
+        env:
+          # Ein Granular-Access-Token (npmjs.com -> Access Tokens, read-write,
+          # nur kepta-mcp) als Repo-Secret NODE_AUTH_TOKEN schaltet den
+          # zuverlaessigen Token-Weg frei — der Registry-Exchange fuer Trusted
+          # Publishing blieb npm-seitig bei 404 "package not found", obwohl der
+          # Eintrag gespeichert war (3 Tage verifiziert). Beide Wege bleiben drin:
+          # Token da? Token-Weg. Sonst Trusted Publishing ueber OIDC.
+          NODE_AUTH_TOKEN: ${{ secrets.NODE_AUTH_TOKEN }}
         run: |
-          # setup-node hinterlaesst ein .npmrc mit einem authToken-Platzhalter und
-          # exportiert NODE_AUTH_TOKEN. Findet npm dort einen Token, versucht es
-          # KEINE OIDC-Anmeldung mehr und schickt den Muell an die Registry (404).
-          # Also: beide Spuren entfernen — und der --provenance-Flag triggert den
-          # OIDC-Flow ueberhaupt erst (ohne ihn kommt ENEEDAUTH).
-          rm -f "${NPM_CONFIG_USERCONFIG:?NPM_CONFIG_USERCONFIG fehlt}"
-          unset NODE_AUTH_TOKEN
-          npm publish --provenance --access public
-        # Kein NODE_AUTH_TOKEN — die Anmeldung laeuft ueber Trusted Publishing.
+          if [ -n "$NODE_AUTH_TOKEN" ]; then
+            echo "Publish-Modus: Granular-Access-Token (NODE_AUTH_TOKEN gesetzt)"
+            npm publish --provenance --access public
+          else
+            # setup-node hinterlaesst ein .npmrc mit einem authToken-Platzhalter und
+            # exportiert NODE_AUTH_TOKEN. Findet npm dort einen Token, versucht es
+            # KEINE OIDC-Anmeldung mehr und schickt den Muell an die Registry (404).
+            # Also: beide Spuren entfernen — und der --provenance-Flag triggert den
+            # OIDC-Flow ueberhaupt erst (ohne ihn kommt ENEEDAUTH).
+            rm -f "${NPM_CONFIG_USERCONFIG:?NPM_CONFIG_USERCONFIG fehlt}"
+            unset NODE_AUTH_TOKEN
+            npm publish --provenance --access public
+            echo "Publish-Modus: Trusted Publishing (OIDC)"
+          fi
 
       - name: OIDC-Debug bei Fehlschlag
         if: failure()
