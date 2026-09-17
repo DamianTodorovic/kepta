@@ -51,6 +51,7 @@ describe("memory core boundary (src/core)", () => {
       "schluessel.ts",
       "stopwords.ts",
       "store.ts",
+      "synonyme.ts",
       "types.ts",
       "version.ts",
     ]);

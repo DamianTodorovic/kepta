@@ -4,6 +4,7 @@
 import type { KeptaStore } from "./store";
 import type { MemoryRecord, MemoryType, SearchHit, SearchResult, SearchParams } from "./types";
 import { chunkText, embedQuery, cosineSimilarity, ollamaBaseUrl, DEFAULT_EMBED_MODEL } from "./embeddings";
+import { erweitereQuery } from "./synonyme";
 
 const RRF_K = 60;
 /**
@@ -151,7 +152,11 @@ function entityMentionsInQuery(store: KeptaStore, queryLower: string): string[] 
 
 /** Berechnet alle Beinheiten und fusioniert via Reciprocal Rank Fusion. */
 export async function searchMemories(store: KeptaStore, params: SearchParams): Promise<SearchResult> {
-  const query = (params.query || "").trim();
+  // Query-Erweiterung (deutsch <-> englisch): „Wie oft wird gesichert?" muss
+  // auch die Notiz „Backup schedule" finden. Die Erweiterung haengt Synonyme
+  // AN die Query — alle Beine (BM25, Vektor, Reranking) profitieren; das
+  // Original bleibt vorne, damit Snippets und Anzeige dem Nutzer folgen.
+  const query = erweitereQuery((params.query || "").trim());
   const limit = Math.min(Math.max(params.limit ?? 10, 1), MAX_SEARCH_LIMIT);
   const queryLower = query.toLowerCase();
   // Zeitreise (asOf): „now“ ist dann der gefragte Zeitpunkt — Zeitregler für ALLE Zugänge
