@@ -16,6 +16,12 @@ All notable changes are documented in this file. The format follows [Keep a Chan
   the server (GHSA-4mjr-xmp4-gh2g) or slip past the array limit
   (GHSA-x5fp-wj9c-mxmx).
 
+### Changed
+- **Ask in German, find English notes — and the other way round.** The query
+  is expanded with the other language's terms before the search runs
+  (`src/synonyme.ts`). On the eval corpus (58 notes, 45 queries) Hit@1 goes
+  from 51.1 % to 71.1 % and Precision@5 from 62.2 % to 81.1 %.
+
 ## [2.12.0] — 2026-09-14
 
 ### Changed
