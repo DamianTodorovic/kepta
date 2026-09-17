@@ -198,8 +198,10 @@ describe("LocalFileAuditSink (echtes Journal)", () => {
     const sink = new LocalFileAuditSink(path.join(dir, "audit.jsonl"));
     sink.emit({ at: new Date().toISOString(), actorId: "local", action: "write", target: "a" });
     sink.emit({ at: new Date().toISOString(), actorId: "local", action: "egress", detail: { host: "remote.example" } });
-    // queue ist intern — kurz abwarten
-    await new Promise((r) => setTimeout(r, 80));
+    // Deterministisch auf die interne Schreib-Queue warten — eine feste Wartezeit
+    // war ein CI-Rennen: auf dem Runner war 80 ms manchmal zu kurz, die Datei
+    // noch leer ("expected [''] to have a length of 2").
+    await sink.flush();
     const lines = fs.readFileSync(path.join(dir, "audit.jsonl"), "utf-8").trim().split("\n");
     expect(lines).toHaveLength(2);
     const parsed = lines.map((l) => JSON.parse(l));
@@ -213,7 +215,7 @@ describe("LocalFileAuditSink (echtes Journal)", () => {
     fs.writeFileSync(blocker, "x");
     const broken = new LocalFileAuditSink(path.join(blocker, "audit.jsonl"));
     expect(() => broken.emit({ at: new Date().toISOString(), actorId: "local", action: "read" })).not.toThrow();
-    await new Promise((r) => setTimeout(r, 60));
+    await broken.flush();
   });
 });
 

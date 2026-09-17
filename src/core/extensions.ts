@@ -67,6 +67,10 @@ export class FileAuditSink {
       .then(() => fs.promises.appendFile(this.file, JSON.stringify(event) + "\n", "utf-8"))
       .catch(() => undefined);
   }
+  /** Wartet, bis alle eingereichten Einträge wirklich in der Datei stehen. */
+  flush(): Promise<void> {
+    return this.queue;
+  }
 }
 
 import fs from "node:fs";
