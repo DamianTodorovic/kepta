@@ -12,6 +12,9 @@ All notable changes are documented in this file. The format follows [Keep a Chan
   browser could write a note into the knowledge base through a form. The
   browser interface (`npx kepta-mcp ui`) was already protected. Local pages,
   AI apps over MCP and scripts work as before.
+- express 4.22.3 with qs 6.16.0: a crafted query string can no longer stall
+  the server (GHSA-4mjr-xmp4-gh2g) or slip past the array limit
+  (GHSA-x5fp-wj9c-mxmx).
 
 ## [2.12.0] — 2026-09-14
 
