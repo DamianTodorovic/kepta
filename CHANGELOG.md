@@ -2,6 +2,17 @@
 
 All notable changes are documented in this file. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and versioning follows [SemVer](https://semver.org/).
 
+## [Unreleased]
+
+### Security
+- **The HTTP API answers this computer only.** Requests whose `Host` header
+  does not name this computer are refused — a website using DNS rebinding
+  could otherwise read the notes — and so are requests from any other website
+  that would change something: before, an ordinary web page open in the
+  browser could write a note into the knowledge base through a form. The
+  browser interface (`npx kepta-mcp ui`) was already protected. Local pages,
+  AI apps over MCP and scripts work as before.
+
 ## [2.12.0] — 2026-09-14
 
 ### Changed

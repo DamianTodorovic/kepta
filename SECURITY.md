@@ -2,12 +2,12 @@
 
 ## Reporting
 
-Please report vulnerabilities through a private issue or by email to the owner. No public exploit before a fix exists.
+Please report vulnerabilities privately through GitHub: [Security → Report a vulnerability](https://github.com/DamianTodorovic/kepta/security/advisories/new). No public exploit before a fix exists.
 
 ## Hardening in place
 
+- Only this computer: the HTTP API refuses requests whose `Host` header does not name this machine (DNS rebinding) and requests from other websites that would change anything (cross-site requests); the browser interface (`npx kepta-mcp ui`) additionally requires its own session token for every change
 - helmet, rate limiting, 1 MB JSON cap, CORS restricted to localhost, SSRF blocking, XSS sanitising, path-traversal checks, ETag + compression
-- Electron: `nodeIntegration: false`, `contextIsolation: true`, `sandbox: true`, CSP
 
 ## Encryption at rest
 

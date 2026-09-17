@@ -21,6 +21,7 @@ import { exportBundle, importBundle, PraxissyncJournal, type SyncBundle } from "
 import { APP_VERSION } from "./src/core/version";
 import { klassifiziere, istUnbrauchbar, htmlZuText, entferneNaviZeilen } from "./src/core/klassifikation";
 import type { MemoryRecord as CoreMemory } from "./src/core/types";
+import { nurDieserRechner } from "./src/herkunft";
 
 
 // API-Form der Memories (kompatibel zum v1-Frontend: userId bleibt gesetzt)
@@ -142,6 +143,9 @@ export function uebernimmSettingsDatei(store: KeptaStore, datei: string): number
 
 export function createApp(store: KeptaStore) {
   const app = express();
+  // Only this computer — not a website open in a browser on it (src/herkunft.ts).
+  // First of all, so that no route registered below can be reached around it.
+  app.use(nurDieserRechner({ bindHost: process.env.KEPTA_HOST }));
 
   const toApi = (r: CoreMemory): MemoryRecord => ({
     id: r.id,

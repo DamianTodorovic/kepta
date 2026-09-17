@@ -1,5 +1,5 @@
 <p align="center"><img src="docs/kepta-logo.svg" width="88" alt="KEPTA"></p>
-<p align="center"><img src="https://img.shields.io/badge/version-2.12.0-blue" alt="v2.12.0"> <img src="https://img.shields.io/badge/license-AGPL--3.0-blue" alt="AGPL-3.0"> <img src="https://img.shields.io/badge/tests-389%20passing-brightgreen" alt="tests"> <img src="https://img.shields.io/badge/coverage%20gate-%E2%89%A5%2070%25%20of%20lines-brightgreen" alt="coverage gate"> <img src="https://img.shields.io/badge/platform-macOS%20%7C%20Windows%20%7C%20Linux-lightgrey" alt="platform"> <img src="https://img.shields.io/badge/encryption-SQLCipher%204-green" alt="encrypted"> <a href="https://www.linkedin.com/in/damian-todorovic-244235434"><img src="https://img.shields.io/badge/LinkedIn-Damian%20Todorovic-0A66C2?logo=linkedin&logoColor=white" alt="Damian Todorovic on LinkedIn"></a></p>
+<p align="center"><img src="https://img.shields.io/badge/version-2.12.0-blue" alt="v2.12.0"> <img src="https://img.shields.io/badge/license-AGPL--3.0-blue" alt="AGPL-3.0"> <img src="https://img.shields.io/badge/tests-394%20passing-brightgreen" alt="tests"> <img src="https://img.shields.io/badge/coverage%20gate-%E2%89%A5%2070%25%20of%20lines-brightgreen" alt="coverage gate"> <img src="https://img.shields.io/badge/platform-macOS%20%7C%20Windows%20%7C%20Linux-lightgrey" alt="platform"> <img src="https://img.shields.io/badge/encryption-SQLCipher%204-green" alt="encrypted"> <a href="https://www.linkedin.com/in/damian-todorovic-244235434"><img src="https://img.shields.io/badge/LinkedIn-Damian%20Todorovic-0A66C2?logo=linkedin&logoColor=white" alt="Damian Todorovic on LinkedIn"></a></p>
 
 # KEPTA Core
 
@@ -41,7 +41,7 @@ Then tell your AI something worth keeping — and watch it arrive. Details in th
 
 ---
 
-## 🚀 KEPTA — one engine, three tiers
+## 🚀 KEPTA — one engine, four tiers
 
 **KEPTA is one product family around one engine.** The engine in this repository is what your agents talk to — free and open source, forever. The desktop app, **KEPTA Pro**, is what _you_ work in. Teams and organizations get the same app with more control on top.
 
@@ -54,7 +54,9 @@ Then tell your AI something worth keeping — and watch it arrive. Details in th
 
 Core is never crippled to sell Pro — the best memory engine we can build is the free one. **What we sell is how you use it.**
 
-### KEPTA Pro — the full desktop app A native app for macOS, Windows and Linux that turns the same encrypted knowledge base into a second brain you can see, search, shape and trust — every document, every decision, every connection, on your own machine.
+### KEPTA Pro — the full desktop app
+
+A native app for macOS and Windows that turns the same encrypted knowledge base into a second brain you can see, search, shape and trust — every document, every decision, every connection, on your own machine.
 
 | Today — what changed since your last visit, and what needs a look | Activity — which AI app reads and writes what, live |
 |---|---|
@@ -278,7 +280,7 @@ The knowledge base is a SQLCipher 4 database: AES-256, an HMAC-SHA512 over every
 
 ## 🧪 Quality
 
-**389 tests** with Vitest and v8 coverage. The coverage thresholds are a CI gate: a commit that falls below one of them turns CI red. On top: a retrieval eval (Hit@1, Precision@5, MRR) on a fixed corpus, an ablation test per retrieval leg, an encryption eval and a boundary test on the core architecture.
+**394 tests** with Vitest and v8 coverage. The coverage thresholds are a CI gate: a commit that falls below one of them turns CI red. On top: a retrieval eval (Hit@1, Precision@5, MRR) on a fixed corpus, an ablation test per retrieval leg, an encryption eval and a boundary test on the core architecture.
 
 ### Coverage thresholds (enforced by CI)
 

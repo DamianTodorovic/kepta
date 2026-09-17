@@ -1,5 +1,5 @@
 <p align="center"><img src="docs/kepta-logo.svg" width="88" alt="KEPTA"></p>
-<p align="center"><img src="https://img.shields.io/badge/tests-389%20passing-brightgreen" alt="Tests"> <img src="https://img.shields.io/badge/coverage%20gate-%E2%89%A5%2070%25%20der%20Zeilen-brightgreen" alt="Coverage-Gate"> <img src="https://img.shields.io/badge/Verschl%C3%BCsselung-SQLCipher%204-green" alt="verschlüsselt"> <a href="https://www.linkedin.com/in/damian-todorovic-244235434"><img src="https://img.shields.io/badge/LinkedIn-Damian%20Todorovic-0A66C2?logo=linkedin&logoColor=white" alt="Damian Todorovic auf LinkedIn"></a></p>
+<p align="center"><img src="https://img.shields.io/badge/tests-394%20passing-brightgreen" alt="Tests"> <img src="https://img.shields.io/badge/coverage%20gate-%E2%89%A5%2070%25%20der%20Zeilen-brightgreen" alt="Coverage-Gate"> <img src="https://img.shields.io/badge/Verschl%C3%BCsselung-SQLCipher%204-green" alt="verschlüsselt"> <a href="https://www.linkedin.com/in/damian-todorovic-244235434"><img src="https://img.shields.io/badge/LinkedIn-Damian%20Todorovic-0A66C2?logo=linkedin&logoColor=white" alt="Damian Todorovic auf LinkedIn"></a></p>
 
 # KEPTA Core — deutsches Readme
 
@@ -18,7 +18,7 @@ npx -y kepta-mcp ui      # dein Gedächtnis im Browser — sieh live zu, wie dei
 
 Dann sag deiner KI etwas, das sie behalten soll — und sieh zu, wie es ankommt. Mehr im [Schnellstart](#-schnellstart).
 
-## 🚀 KEPTA — eine Engine, drei Stufen
+## 🚀 KEPTA — eine Engine, vier Stufen
 
 **KEPTA ist eine Produktfamilie um eine Engine.** Die Engine in diesem Repository ist, womit deine Agenten sprechen — gratis und Open Source, für immer. Die Desktop-App, **KEPTA Pro**, ist, worin _du_ arbeitest. Teams und Organisationen bekommen dieselbe App mit mehr Kontrolle darüber.
 
@@ -31,7 +31,9 @@ Dann sag deiner KI etwas, das sie behalten soll — und sieh zu, wie es ankommt.
 
 Am Core wird nichts kaputtgekürzt, um Pro zu verkaufen — die beste Memory-Engine, die wir bauen können, ist die freie. **Verkauft wird, wie du sie einsetzt.**
 
-### KEPTA Pro — die ganze Desktop-App Eine native App für macOS, Windows und Linux, die dieselbe verschlüsselte Wissensbasis in ein zweites Gehirn verwandelt, das du sehen, durchsuchen, ordnen und dem du vertrauen kannst — jedes Dokument, jede Entscheidung, jede Verbindung, auf deinem eigenen Rechner.
+### KEPTA Pro — die ganze Desktop-App
+
+Eine native App für macOS und Windows, die dieselbe verschlüsselte Wissensbasis in ein zweites Gehirn verwandelt, das du sehen, durchsuchen, ordnen und dem du vertrauen kannst — jedes Dokument, jede Entscheidung, jede Verbindung, auf deinem eigenen Rechner.
 
 | Today — was seit deinem letzten Besuch passiert ist und was einen Blick braucht | Activity — welche KI-App was liest und schreibt, live |
 |---|---|
@@ -151,7 +153,7 @@ npm install && npm run dev
 
 **4. Docker** (nur MCP-Server): `docker build -t kepta-mcp .`
 
-**Zahlen:** **389 Tests** · 29 Routen · `npm run eval` — Eval auf 58 Notizen / 45 Anfragen (Hit@1, Precision@5, MRR).
+**Zahlen:** **394 Tests** · 29 Routen · `npm run eval` — Eval auf 58 Notizen / 45 Anfragen (Hit@1, Precision@5, MRR).
 
 ## 🔐 Verschlüsselt auf der Platte
 
