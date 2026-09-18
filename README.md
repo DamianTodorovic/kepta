@@ -44,7 +44,7 @@ Then tell your AI something worth keeping — and watch it arrive. Details in th
 |---|---|---|---|
 | **Core** | Developers & AI agents | **€0**, open source, forever | This repository: the memory engine, encryption, hybrid search, MCP, HTTP API, Python client, CLI, browser UI |
 | **Pro** | Individuals & power users | **€120/year** (or €12/month) | The desktop experience on the same engine: knowledge graph, chat with your memory, dossiers, Today, privacy shield, imports, device sync |
-| **Business** | Teams, practices & firms | **€25/user/month**, billed yearly | Everything in Pro, plus team memory: shared knowledge, workspaces, roles, admin console (in development) |
+| **Business** | Teams, practices & firms | **€25/user/month**, billed yearly — **pre-order price** | Everything in Pro, plus team memory: shared knowledge, workspaces, roles, admin console — ships next; pre-orders lock in this price |
 | **Enterprise** | Organizations | **Price by agreement** — shaped to your company's size and revenue | Everything in Business, plus SSO, central policies, MDM/air-gapped deployment, security documentation and support (in development) |
 
 Core is never crippled to sell Pro — the best memory engine we can build is the free one. **What we sell is how you use it.**
@@ -292,7 +292,7 @@ KEPTA is built by **Damian Todorovic**. Questions, ideas, a license for your tea
 
 ## 📄 License
 
-[AGPL-3.0-or-later](LICENSE). **KEPTA Pro** (€12/month, €120/year) is the desktop app on top of this engine — the knowledge graph, the chat, the machine scan, the privacy shield, the audit log and the polished experience. **KEPTA Business** (€25/user/month) adds team memory for practices and firms, **KEPTA Enterprise** is licensed by agreement, shaped to your organization's size and revenue. The npm package `kepta-mcp` carries the same AGPL as this repository; the Python client under `python/` is MIT. Licenses and questions — [write to me on LinkedIn](https://www.linkedin.com/in/damian-todorovic-244235434).
+[AGPL-3.0-or-later](LICENSE). **KEPTA Pro** (€12/month, €120/year) is the desktop app on top of this engine — the knowledge graph, the chat, the machine scan, the privacy shield, the audit log and the polished experience. **KEPTA Business** (€25/user/month, pre-order) adds team memory for practices and firms once it ships, **KEPTA Enterprise** is licensed by agreement, shaped to your organization's size and revenue. The npm package `kepta-mcp` carries the same AGPL as this repository; the Python client under `python/` is MIT. Licenses and questions — [write to me on LinkedIn](https://www.linkedin.com/in/damian-todorovic-244235434).
 
 **What this repository is — and what it is not.** This open core is the memory engine: storage, retrieval, MCP. The product people pay for is the app on top — and it stays proprietary on purpose. Forks under AGPL are legitimate; presenting a fork as KEPTA is not: the **KEPTA name, the KEPTA branding and the KEPTA Pro releases belong to Damian Todorovic**. Fork it, build with it, ship your own product from it — under a different name, with the AGPL obligations intact (your changes stay open, including over a network). Private notes never leave KEPTA over MCP, in the app and in this core alike.
 
