@@ -2,6 +2,13 @@
 
 All notable changes are documented in this file. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and versioning follows [SemVer](https://semver.org/).
 
+## [2.13.3] — 2026-09-18
+
+### Added
+- **Setup erkennt mehr KI-Apps:** Gemini CLI, Cline und Roo Code werden jetzt
+  per Auto-Connect verbunden; Zed, Codex CLI, Continue und jeder andere
+  MCP-Client bekommen den exakten Konfigurations-Schnipsel zum Einfügen.
+
 ## [2.13.2] — 2026-09-18
 
 ### Security
