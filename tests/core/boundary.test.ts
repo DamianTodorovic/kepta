@@ -46,6 +46,9 @@ describe("memory core boundary (src/core)", () => {
       // Die Reparatur-Planung (alte Binärmuell-Chunks durch frische Extraktion
       // ersetzen) ist reine Kernlogik — das Schreiben macht der Server.
       "reparatur.ts",
+      // Der eine Sanitizer für alle Wege (2.13.2-Parität mit der App): dieselbe
+      // Text-/Tag-Filter-Logik für Store und Server — reine Stringlogik.
+      "sanitize.ts",
       // Der Datenbankschluessel und der Schluesselbund des Systems gehoeren in
       // den Kern: der Store braucht ihn, bevor er die Datei auch nur liest.
       "schluessel.ts",

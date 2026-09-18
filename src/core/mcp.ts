@@ -275,7 +275,7 @@ export const TOOLS = [
 
 // ---------- Wiki-Links → Entitäten ----------
 
-const WIKI_LINK_RE = /\[\[([^\[\]]{2,80})\]\]/g;
+const WIKI_LINK_RE = /\[\[([^[\]]{2,80})\]\]/g;
 
 export function extractWikiLinks(text: string): string[] {
   const out: string[] = [];
@@ -341,6 +341,18 @@ export function saveWithIndex(store: KeptaStore, args: Record<string, unknown>):
   return { created, record: store.getMemory(record.id)! };
 }
 
+/**
+ * Privatheits-Floor: eine Notiz mit scope "private" verlässt KEPTA nie über
+ * MCP — egal welcher Client fragt und egal, ob sie per scope-Argument
+ * angefragt wird. Die App trägt darüber hinaus die volle MCP-Wache (Privacy-
+ * Schild, Audit-Protokoll, Aktivitäts-Meldung); dieser Floor ist das
+ * Grundversprechen, das auch der freie Kern hält, wenn App und kepta-mcp
+ * dieselbe Datenbank teilen.
+ */
+function ohnePrivate<T>(liste: T[], scopeVon: (m: T) => string | undefined): T[] {
+  return liste.filter((m) => scopeVon(m) !== "private");
+}
+
 export async function callTool(store: KeptaStore, name: string, args: Record<string, unknown>): Promise<{ content: unknown[]; structuredContent: Record<string, unknown>; isError?: boolean }> {
   const audit = (action: Parameters<typeof store["audit"]>[0], target?: string) => store.audit(action, target);
   try {
@@ -362,11 +374,12 @@ export async function callTool(store: KeptaStore, name: string, args: Record<str
           asOf: args.asOf !== undefined ? Number(args.asOf) : undefined,
         };
         const res = await searchMemories(store, params);
+        const hits = ohnePrivate(res.hits, (h) => h.memory.scope);
         const structured = {
           query: res.query,
-          count: res.hits.length,
+          count: hits.length,
           usedVectors: res.usedVectors,
-          hits: res.hits.map((h) => ({
+          hits: hits.map((h) => ({
             ...memoryToOut(h.memory),
             score: h.score,
             expired: h.expired,
@@ -445,7 +458,8 @@ export async function callTool(store: KeptaStore, name: string, args: Record<str
           scope: args.scope ? String(args.scope) : undefined,
           trash: args.trash === true,
         };
-        const memories = store.listMemories(opts);
+        // Privatheits-Floor: auch ein explizites scope:"private" liefert nichts zurück.
+        const memories = ohnePrivate(store.listMemories(opts), (m) => m.scope);
         const total = store.countMemories();
         const structured = {
           count: memories.length,

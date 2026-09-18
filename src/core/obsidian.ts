@@ -87,7 +87,7 @@ function sanitizeFilename(title: string): string {
 }
 
 function yamlStr(s: string): string {
-  return /[:"'\[\]{}]/.test(s) ? `"${s.replace(/"/g, '\\"')}"` : s;
+  return /[:"'[\]{}]/.test(s) ? `"${s.replace(/"/g, '\\"')}"` : s;
 }
 
 /** Exportiert eine Memory als Markdown mit Frontmatter. */
@@ -168,7 +168,7 @@ export function importMarkdownFile(store: KeptaStore, file: MarkdownFile, opts: 
   indexMemory(store, record.id);
 
   // Wiki-Links → Entitäten; Notiz-Titel referenziert die Link-Ziele
-  const links = [...content.matchAll(/\[\[([^\[\]]{2,80})\]\]/g)].map((m) => m[1]!.split("|")[0]!.trim().toLowerCase()).filter(Boolean);
+  const links = [...content.matchAll(/\[\[([^[\]]{2,80})\]\]/g)].map((m) => m[1]!.split("|")[0]!.trim().toLowerCase()).filter(Boolean);
   const uniqueLinks = [...new Set(links)];
   if (uniqueLinks.length > 0) {
     store.linkEntities(record.id, uniqueLinks);

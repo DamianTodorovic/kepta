@@ -154,10 +154,13 @@ export class EmbeddingQueue {
   lastError: string | null = null;
   processed = 0;
 
+  private store: KeptaStore;
+
   constructor(
-    private store: KeptaStore,
+    store: KeptaStore,
     opts: EmbeddingQueueOptions = {}
   ) {
+    this.store = store;
     this.opts = {
       intervalMs: opts.intervalMs ?? 15_000,
       batchSize: opts.batchSize ?? 32,

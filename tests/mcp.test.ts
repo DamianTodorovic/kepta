@@ -116,6 +116,23 @@ describe("MCP-Tools", () => {
     store = freshStore();
   });
 
+  it("Privatheits-Floor: private Notizen verlassen KEPTA nie über MCP — auch nicht per scope-Anfrage", async () => {
+    store.createMemory({ title: "Offen zugänglich", content: "Normale Notiz", tags: ["offen"] });
+    store.createMemory({ title: "Privat!", content: "Steuer-ID 12345", scope: "private" });
+
+    const search = asTool(await rpc(store, "tools/call", { name: "memory_search", arguments: { query: "Steuer-ID" } }));
+    expect(search.structuredContent.count).toBe(0);
+    // Der Agent fragt explizit nach dem privaten Scope — der Floor hält trotzdem:
+    const listPrivat = asTool(await rpc(store, "tools/call", { name: "memory_list", arguments: { scope: "private" } }));
+    expect((listPrivat.structuredContent.memories as unknown[]).length).toBe(0);
+    // Offene Notizen bleiben sichtbar:
+    const list = asTool(await rpc(store, "tools/call", { name: "memory_list", arguments: {} }));
+    expect((list.structuredContent.memories as { title: string }[]).map((m) => m.title)).toEqual(["Offen zugänglich"]);
+    // Und in der Suche bleibt sie auffindbar:
+    const searchOffen = asTool(await rpc(store, "tools/call", { name: "memory_search", arguments: { query: "Normale Notiz" } }));
+    expect(searchOffen.structuredContent.count).toBe(1);
+  });
+
   it("memory_save → structuredContent mit Memory, memory_search findet sie", async () => {
     const saved = asTool(
       await rpc(store, "tools/call", {

@@ -25,6 +25,10 @@ import type {
 } from "./types";
 import { contentTerms } from "./stopwords";
 import { defaultExtensions, type KeptaExtensions, type AuditAction } from "./extensions";
+// Ein Sanitizer für alle Wege: dieselben Regeln wie die App, am selben Ort gepflegt.
+import { sanitizeText as cleanText, sanitizeTags as normalizeTags } from "./sanitize";
+// Öffentliche Fassung unter dem alten Namen für Abnehmer (obsidian.ts, Tests).
+export { sanitizeTags as normalizeTags } from "./sanitize";
 
 const SCHEMA_VERSION = 1;
 const VALID_TYPES: MemoryType[] = ["semantic", "episodic", "procedural", "reference"];
@@ -41,23 +45,7 @@ export function defaultDbPath(): string {
 
 // ---------- Normalisierung (kleiner Spiegel der Server-Sanitizer) ----------
 
-export function normalizeTags(input: unknown): string[] {
-  if (!Array.isArray(input)) return [];
-  const out: string[] = [];
-  for (const t of input) {
-    if (typeof t !== "string") continue;
-    const tag = t.toLowerCase().trim().replace(/[^a-z0-9\-_äöüß]/g, "").slice(0, 30);
-    if (tag.length >= 2 && out.length < 12) out.push(tag);
-  }
-  return [...new Set(out)];
-}
-
-function cleanText(input: unknown, maxLen: number): string {
-  if (typeof input !== "string") return "";
-  let s = input.replace(/\0/g, "").replace(/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/g, "");
-  if (s.length > maxLen) s = s.slice(0, maxLen);
-  return s.trim();
-}
+// ---------- Normalisierung: siehe src/core/sanitize.ts (der eine Sanitizer für alle Wege) ----------
 
 function clampConfidence(v: unknown): number {
   const n = typeof v === "number" && Number.isFinite(v) ? v : 1;

@@ -2,6 +2,24 @@
 
 All notable changes are documented in this file. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and versioning follows [SemVer](https://semver.org/).
 
+## [2.13.2] — 2026-09-18
+
+### Security
+- **Private notes never leave KEPTA over MCP — now also in the open core.** A
+  note with scope `private` is filtered from `memory_search` and `memory_list`,
+  even when a client explicitly asks for scope `private`. (The desktop app
+  carries the full MCP guard on top: privacy shield, audit log, activity.)
+
+### Changed
+- Core parity with the 2.13.2 app: one shared sanitizer (`src/core/sanitize.ts`)
+  for store and server, version alignment across app, npm package and server
+  registry entry, and the freemium framing in the README (the app never locks —
+  the free plan runs with daily limits, Pro removes them).
+
+### Fixed
+- Unnecessary regex escapes in the wiki-link matchers (obsidian, mcp) and the
+  embedding queue's constructor (erasable syntax, TS 5.9-friendly).
+
 ## [Unreleased]
 
 ### Security
