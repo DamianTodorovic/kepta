@@ -1,31 +1,26 @@
 <p align="center"><img src="docs/kepta-logo.svg" width="88" alt="KEPTA"></p>
-<p align="center"><img src="https://img.shields.io/badge/version-2.13.2-blue" alt="v2.13.2"> <img src="https://img.shields.io/badge/license-AGPL--3.0-blue" alt="AGPL-3.0"> <img src="https://img.shields.io/badge/tests-400%20passing-brightgreen" alt="tests"> <img src="https://img.shields.io/badge/coverage%20gate-%E2%89%A5%2070%25%20of%20lines-brightgreen" alt="coverage gate"> <img src="https://img.shields.io/badge/platform-macOS%20%7C%20Windows%20%7C%20Linux-lightgrey" alt="platform"> <img src="https://img.shields.io/badge/encryption-SQLCipher%204-green" alt="encrypted"> <a href="https://www.linkedin.com/in/damian-todorovic-244235434"><img src="https://img.shields.io/badge/LinkedIn-Damian%20Todorovic-0A66C2?logo=linkedin&logoColor=white" alt="Damian Todorovic on LinkedIn"></a></p>
+<p align="center"><img src="https://img.shields.io/badge/version-2.13.2-blue" alt="v2.13.2"> <img src="https://img.shields.io/badge/license-AGPL--3.0-blue" alt="AGPL-3.0"> <img src="https://img.shields.io/badge/tests-404%20passing-brightgreen" alt="tests"> <img src="https://img.shields.io/badge/coverage%20gate-%E2%89%A5%2070%25%20of%20lines-brightgreen" alt="coverage gate"> <img src="https://img.shields.io/badge/platform-macOS%20%7C%20Windows%20%7C%20Linux-lightgrey" alt="platform"> <img src="https://img.shields.io/badge/encryption-SQLCipher%204-green" alt="encrypted"> <a href="https://www.linkedin.com/in/damian-todorovic-244235434"><img src="https://img.shields.io/badge/LinkedIn-Damian%20Todorovic-0A66C2?logo=linkedin&logoColor=white" alt="Damian Todorovic on LinkedIn"></a></p>
 
 # KEPTA Core
 
 ## Your AI assistant forgets everything. Every chat starts from zero.
 
-**KEPTA fixes that — locally, encrypted, without a cloud.**
+**KEPTA is the fix: one local, encrypted memory that every assistant reads and writes — Claude Desktop, Cursor, Gemini CLI, Cline, any MCP client, and scripts over HTTP. No cloud. No account. One file you own.**
 
 KEPTA is a local memory for AI assistants. Documents, decisions and client knowledge go into an encrypted knowledge base on your own computer — and your assistant (Claude Desktop, Cursor, any MCP client) recalls it as if it had never forgotten.
 
 This repository is the **open core** (AGPL-3.0): the memory engine, the MCP server, the HTTP API — and the Python client, which is MIT so any Python project can embed it. The full desktop application is **[KEPTA Pro](#-kepta-pro--the-full-desktop-app)**.
 
-```
-┌──────────────────────────────────────────────────────────────────────────┐
-│  Your computer                                                           │
-│                                                                          │
-│  ┌─────────────┐     MCP / HTTP API     ┌─────────────────────────────┐ │
-│  │ Claude      │◄──────────────────────►│                             │ │
-│  │ Desktop     │                        │   KEPTA                     │ │
-│  │             │                        │   encrypted knowledge       │ │
-│  │ Cursor      │     ┌────────────┐    │   base (SQLCipher 4)        │ │
-│  │             │     │ kepta-mcp  │    │   ~/.kepta/kepta.db         │ │
-│  │ your code   │◄───►│            │    │                             │ │
-│  └─────────────┘     └────────────┘    └─────────────────────────────┘ │
-│                                                                          │
-│  No subscription. No account. No telemetry. No cloud.                   │
-└──────────────────────────────────────────────────────────────────────────┘
+```mermaid
+flowchart LR
+  subgraph Apps["Your AI apps — any of them"]
+    A["Claude Desktop"]
+    B["Cursor · Gemini CLI<br/>Cline · Codex · Zed · …"]
+    C["Your scripts"]
+  end
+  K["keptа-mcp<br/>MCP stdio + browser UI"]
+  E[("KEPTA — one encrypted file<br/>SQLCipher 4 · ~/.kepta/kepta.db")]
+  A & B & C --> K --> E
 ```
 
 ---
@@ -280,7 +275,7 @@ The knowledge base is a SQLCipher 4 database: AES-256, an HMAC-SHA512 over every
 
 ## 🧪 Quality
 
-**400 tests** with Vitest and v8 coverage. The coverage thresholds are a CI gate: a commit that falls below one of them turns CI red. On top: a retrieval eval (Hit@1, Precision@5, MRR) on a fixed corpus, an ablation test per retrieval leg, an encryption eval and a boundary test on the core architecture.
+**404 tests** with Vitest and v8 coverage. The coverage thresholds are a CI gate: a commit that falls below one of them turns CI red. On top: a retrieval eval (Hit@1, Precision@5, MRR) on a fixed corpus, an ablation test per retrieval leg, an encryption eval and a boundary test on the core architecture.
 
 ### Coverage thresholds (enforced by CI)
 
