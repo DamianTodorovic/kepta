@@ -1,0 +1,112 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>KEPTA — Keeps what matters</title>
+<meta name="description" content="KEPTA Pro — local-first, encrypted memory for AI assistants. One encrypted file on your computer. No cloud. No account. MCP for every AI client.">
+<style>
+  :root { --steel:#24313f; --ink:#141b22; --paper:#f6f4ef; --wax:#8e2f2f; --muted:#5b6672; }
+  * { box-sizing:border-box; }
+  body { margin:0; background:var(--paper); color:var(--ink); font:16px/1.65 Georgia, 'Times New Roman', serif; }
+  .wrap { max-width:880px; margin:0 auto; padding:0 24px; }
+  header { background:var(--steel); color:#fff; padding:64px 0 56px; }
+  header h1 { font-size:44px; margin:0 0 12px; letter-spacing:.5px; }
+  header p.sub { color:#c8d2dc; font-size:20px; margin:0 0 28px; }
+  .badge { display:inline-block; border:1px solid #4a5b6c; color:#c8d2dc; border-radius:3px; padding:2px 10px; font-size:13px; margin-right:8px; font-family:Helvetica, Arial, sans-serif; }
+  h2 { font-size:26px; margin:48px 0 12px; border-bottom:2px solid var(--steel); padding-bottom:6px; }
+  h3 { font-size:18px; margin:24px 0 6px; }
+  p, li { color:#232c35; }
+  .cards { display:grid; grid-template-columns:repeat(auto-fit,minmax(240px,1fr)); gap:16px; margin:24px 0; }
+  .card { background:#fff; border:1px solid #d8d3c8; border-radius:4px; padding:18px 20px; }
+  .card b { display:block; margin-bottom:6px; }
+  table { border-collapse:collapse; width:100%; margin:16px 0; background:#fff; }
+  th, td { border:1px solid #d8d3c8; padding:10px 14px; text-align:left; font-size:15px; }
+  th { background:var(--steel); color:#fff; font-family:Helvetica, Arial, sans-serif; font-weight:600; }
+  .wax { color:var(--wax); font-weight:bold; }
+  .price { font-size:24px; }
+  footer { margin:56px 0 40px; color:var(--muted); font-size:14px; border-top:1px solid #d8d3c8; padding-top:16px; }
+  a { color:var(--steel); }
+  .legal h3 { border-top:1px solid #d8d3c8; padding-top:24px; }
+</style>
+</head>
+<body>
+<header>
+  <div class="wrap">
+    <span class="badge">Local-first</span><span class="badge">Encrypted at rest</span><span class="badge">No cloud · No account</span><span class="badge">MCP</span>
+    <h1>KEPTA</h1>
+    <p class="sub">Your AI assistant forgets you after every chat. KEPTA remembers — on your own computer, in one encrypted file.</p>
+    <p style="margin:0"><em>Not a notes app. A memory your AI reads.</em></p>
+  </div>
+</header>
+
+<div class="wrap">
+  <h2>What KEPTA does</h2>
+  <div class="cards">
+    <div class="card"><b>Encrypted at rest</b>Your entire memory lives in one SQLCipher-encrypted database. The key never leaves your machine's keychain.</div>
+    <div class="card"><b>Hybrid retrieval</b>BM25 full-text + vector search + knowledge graph, fused and re-ranked locally. Relevant answers, not keyword soup.</div>
+    <div class="card"><b>Works with every AI</b>KEPTA ships an MCP server — Claude Desktop, Claude Code, Cursor, Windsurf, VS Code, Gemini CLI, Cline, Roo Code and any MCP client can read and write your memory.</div>
+    <div class="card"><b>Private by design</b>Private notes never leave the app — they are invisible even to connected AI clients. No telemetry, no cloud, no account.</div>
+  </div>
+
+  <h2>Pricing</h2>
+  <table>
+    <tr><th>Plan</th><th>Price</th><th>What you get</th></tr>
+    <tr><td><b>Free</b></td><td class="price">€0</td><td>Everything local, generous daily limits on AI-facing features. The app never locks your data.</td></tr>
+    <tr><td><b>Pro</b></td><td class="price">€12 / month<br>or €120 / year</td><td>Unlimited use of all AI-facing features (chat with your memory, clipping, scanning, dossiers, audit, import). Buy from inside the app.</td></tr>
+    <tr><td><b>Business</b></td><td class="price">€25 / seat / month</td><td>Team memory for shared machines and practice workflows. Pre-order — shipping first to waiting teams.</td></tr>
+    <tr><td><b>Enterprise</b></td><td class="price">on request</td><td>Managed licenses (MDM), org policies, priority support. <a href="mailto:damian2212todi@gmail.com">Contact us</a>.</td></tr>
+  </table>
+  <p>Licenses are verified offline — KEPTA does not phone home. Buying is handled by Paddle.com, our Merchant of Record, which processes payment and EU VAT.</p>
+
+  <h2>Download</h2>
+  <p>KEPTA Pro for macOS (Apple silicon &amp; Intel) and Windows is available from the
+  <a href="https://github.com/DamianTodorovic/kepta-enterprise-releases/releases">releases page</a>.
+  The open-source core lives at <a href="https://github.com/DamianTodorovic/kepta">github.com/DamianTodorovic/kepta</a> (AGPL-3.0).</p>
+
+  <div class="legal">
+  <h2>Terms of Service</h2>
+  <p><em>Last updated: 19 September 2026</em></p>
+  <h3>1. The product</h3>
+  <p>KEPTA is desktop software (the “App”) developed by Damian Todorovic (“we”, “us”). The App stores information locally on your computer in an encrypted database. We never receive, host, or process the contents of your memory database.</p>
+  <h3>2. Licenses</h3>
+  <p>The Free plan may be used without charge. A paid license (Pro, Business) is granted per user and, for Business, per seat, is non-transferable unless we agree otherwise, and remains valid indefinitely for the version(s) current during an active subscription period. Subscription plans renew automatically until cancelled.</p>
+  <h3>3. Payment</h3>
+  <p>Payments, invoicing, and EU VAT are handled by our Merchant of Record, Paddle.com Market Limited. Prices are shown in euro and include applicable taxes where required.</p>
+  <h3>4. No warranty</h3>
+  <p>The App is provided “as is”. While we test carefully (1,400+ automated tests), we do not warrant that the App will be error-free. To the maximum extent permitted by law we exclude liability for indirect or consequential damages. Nothing in these terms limits liability where doing so would be unlawful.</p>
+  <h3>5. Your data</h3>
+  <p>Your memory database is yours. Uninstalling the App does not delete your data; you may export or delete it at any time from within the App. We have no technical ability to read your data.</p>
+  <h3>6. Changes</h3>
+  <p>We may update these terms; material changes will be announced on this page with a new “last updated” date.</p>
+
+  <h2>Privacy Notice</h2>
+  <p><em>Last updated: 19 September 2026</em></p>
+  <h3>What we collect</h3>
+  <p><span class="wax">Nothing.</span> The App runs locally and does not contain analytics, telemetry, or tracking. It does not send your data anywhere. There is no account and no server that could receive it.</p>
+  <h3>Purchases</h3>
+  <p>When you buy a license, Paddle.com (Merchant of Record) processes your payment data under its own
+  <a href="https://www.paddle.com/legal/privacy">privacy policy</a>. We receive only your name and email address for license delivery and support.</p>
+  <h3>License verification</h3>
+  <p>License keys are verified offline using cryptographic signatures on your device. No verification request leaves your computer.</p>
+  <h3>Contact</h3>
+  <p>For privacy questions: <a href="mailto:damian2212todi@gmail.com">damian2212todi@gmail.com</a></p>
+
+  <h2>Refund Policy</h2>
+  <p><em>Last updated: 19 September 2026</em></p>
+  <h3>14-day money-back guarantee</h3>
+  <p>If KEPTA is not right for you, write to <a href="mailto:damian2212todi@gmail.com">damian2212todi@gmail.com</a> within 14 days of purchase and we will refund you in full — no questions asked.</p>
+  <h3>Subscriptions</h3>
+  <p>You can cancel a subscription at any time; it then ends at the close of the current billing period. Refunds within the guarantee window above cover the most recent payment.</p>
+  <h3>How refunds are processed</h3>
+  <p>Refunds are issued via Paddle.com to the original payment method, typically within 5–10 business days.</p>
+  </div>
+
+  <footer>
+    KEPTA — Damian Todorovic, Germany · <a href="mailto:damian2212todi@gmail.com">damian2212todi@gmail.com</a> ·
+    Code: <a href="https://github.com/DamianTodorovic/kepta">github.com/DamianTodorovic/kepta</a> (AGPL-3.0) ·
+    KEPTA Pro is proprietary software. This page is not affiliated with Anthropic, Google, Cursor or any AI vendor.
+  </footer>
+</div>
+</body>
+</html>
