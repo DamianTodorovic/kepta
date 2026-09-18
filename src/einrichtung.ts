@@ -1,18 +1,21 @@
 // KEPTA mit den KI-Apps verbinden, die schon auf dem Rechner sind.
 //
 // `npx kepta-mcp setup` und der Knopf „Connect“ in der Oberfläche teilen
-// diesen Code. Er findet Claude Desktop, Claude Code, Cursor, Windsurf und
-// VS Code, sieht nach, ob KEPTA dort schon eingetragen ist, und trägt es ein —
-// mit einer Sicherung der alten Datei daneben. Andere Einträge bleiben, wie
-// sie sind; eine Datei, die kein reines JSON ist, wird nie überschrieben.
-// Claude Code bekommt KEPTA über seinen eigenen Befehl (`claude mcp add`),
-// weil es seine Datei ständig selbst neu schreibt.
+// diesen Code. Er findet Claude Desktop, Claude Code, Cursor, Windsurf,
+// VS Code, Gemini CLI, Cline und Roo Code, sieht nach, ob KEPTA dort schon
+// eingetragen ist, und trägt es ein — mit einer Sicherung der alten Datei
+// daneben. Andere Einträge bleiben, wie sie sind; eine Datei, die kein reines
+// JSON ist, wird nie überschrieben. Claude Code bekommt KEPTA über seinen
+// eigenen Befehl (`claude mcp add`), weil es seine Datei ständig selbst neu
+// schreibt. Für jede weitere KI, die MCP spricht (Zed, Codex CLI, Continue,
+// …), liefert er den exakten Schnipsel zum Einfügen — schreiben wir dort
+// nicht selbst, weil sich ihre Formate zu schnell bewegen.
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import { spawnSync } from "node:child_process";
 
-export type ClientId = "claude-desktop" | "claude-code" | "cursor" | "windsurf" | "vscode";
+export type ClientId = "claude-desktop" | "claude-code" | "cursor" | "windsurf" | "vscode" | "gemini" | "cline" | "roo";
 
 export interface Befehlsergebnis {
   status: number | null;
@@ -31,7 +34,8 @@ export interface Umgebung {
 }
 
 export interface ClientStatus {
-  id: ClientId;
+  /** Eine ClientId für Auto-Connect-Apps; eine Kennung ("zed", "codex-cli", …) für geführte. */
+  id: ClientId | string;
   name: string;
   installed: boolean;
   connected: boolean;
@@ -77,6 +81,10 @@ function dateien(u: Umgebung): Datei[] {
     datei("cursor", "Cursor", path.join(u.home, ".cursor"), "mcp.json"),
     datei("windsurf", "Windsurf", path.join(u.home, ".codeium", "windsurf"), "mcp_config.json"),
     datei("vscode", "VS Code", path.join(programme, "Code", "User"), "mcp.json", "servers", { type: "stdio", ...EINTRAG }),
+    datei("gemini", "Gemini CLI", path.join(u.home, ".gemini"), "settings.json"),
+    // VS-Code-Erweiterungen: die Konfiguration sitzt tief im globalStorage der Erweiterung.
+    datei("cline", "Cline", path.join(programme, "Code", "User", "globalStorage", "saoudrizwan.claude-dev", "settings"), "cline_mcp_settings.json"),
+    datei("roo", "Roo Code", path.join(programme, "Code", "User", "globalStorage", "rooveterinaryinc.roo-cline", "settings"), "mcp_settings.json"),
   ];
 }
 
@@ -141,7 +149,58 @@ export function finde(u: Umgebung): ClientStatus[] {
     canConnect: !connected && hatBefehl,
     hint: connected || hatBefehl ? undefined : `Run this in a terminal: ${CLAUDE_CODE_BEFEHL}`,
   });
+  aus.push(...gefuehrteKlienten(u));
   return aus;
+}
+
+/**
+ * KI-Apps ohne sicheren Schreib-Weg von außen: ihre Konfigurationsformate
+ * bewegen sich zu schnell (Zed), sind kein JSON (Codex: TOML, Continue: YAML)
+ * oder sitzen in IDE-internen Speichern. KEPTA schreibt dort nichts — sie
+ * bekommen den exakten Schnipsel zum Einfügen. So läuft KEPTA mit jeder KI,
+ * die MCP spricht, ohne jemals eine fremde Datei zu riskieren.
+ */
+function gefuehrteKlienten(u: Umgebung): ClientStatus[] {
+  const zedDatei = u.plattform === "win32" ? path.join(u.appdata ?? path.join(u.home, "AppData", "Roaming"), "Zed", "settings.json") : path.join(u.home, ".config", "zed", "settings.json");
+  const zedInstalliert = fs.existsSync(path.dirname(zedDatei));
+  return [
+    {
+      id: "zed",
+      name: "Zed",
+      installed: zedInstalliert,
+      connected: false,
+      config: zedDatei,
+      canConnect: false,
+      hint: `Paste into "context_servers" in ${zedDatei}: {"kepta": {"source": "custom", "command": "${EINTRAG.command}", "args": ${JSON.stringify(EINTRAG.args)}}}`,
+    },
+    {
+      id: "codex-cli",
+      name: "Codex CLI",
+      installed: fs.existsSync(path.join(u.home, ".codex")),
+      connected: false,
+      config: path.join(u.home, ".codex", "config.toml"),
+      canConnect: false,
+      hint: `Paste into ${path.join(u.home, ".codex", "config.toml")}: [mcp_servers.kepta] command = "${EINTRAG.command}" args = [${EINTRAG.args.map((a) => `"${a}"`).join(", ")}]`,
+    },
+    {
+      id: "continue",
+      name: "Continue",
+      installed: fs.existsSync(path.join(u.home, ".continue")),
+      connected: false,
+      config: path.join(u.home, ".continue", "config.yaml"),
+      canConnect: false,
+      hint: `Paste into ${path.join(u.home, ".continue", "config.yaml")}: mcpServers:\n  - name: kepta\n    type: stdio\n    command: ${EINTRAG.command}\n    args: [${EINTRAG.args.map((a) => `"${a}"`).join(", ")}]`,
+    },
+    {
+      id: "any-mcp",
+      name: "Any other MCP client",
+      installed: true,
+      connected: false,
+      config: "",
+      canConnect: false,
+      hint: `Add a stdio MCP server anywhere it fits: command "${EINTRAG.command}", args ${JSON.stringify(EINTRAG.args)}. Or use the HTTP API directly (POST /api/search, /api/memories).`,
+    },
+  ];
 }
 
 function stempel(d: Date): string {

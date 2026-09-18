@@ -33,7 +33,7 @@ This repository is the **open core** (AGPL-3.0): the memory engine, the MCP serv
 ## ⚡ Two commands
 
 ```bash
-npx -y kepta-mcp setup   # connects Claude Desktop, Claude Code, Cursor, Windsurf and VS Code
+npx -y kepta-mcp setup   # connects Claude Desktop, Claude Code, Cursor, Windsurf, VS Code, Gemini CLI, Cline and Roo Code
 npx -y kepta-mcp ui      # your memory in the browser — watch your AI use it, live
 ```
 
@@ -126,7 +126,7 @@ A native app for macOS and Windows that turns the same encrypted knowledge base 
 | Eight tools — search, save, update, delete, list, graph, consolidate, forget — with `outputSchema` and `structuredContent` | ✅ | ✅ |
 | Write gate (opt-in) — a local LLM decides ADD, UPDATE, DELETE or NOOP before a new memory is stored | ✅ | ✅ |
 | npm package `kepta-mcp`, listed in the official MCP registry | ✅ | ✅ |
-| Connect Claude Desktop, Claude Code, Cursor, Windsurf and VS Code in one step — `npx kepta-mcp setup` or one click | ✅ | MCP block to copy |
+| Connect Claude Desktop, Claude Code, Cursor, Windsurf, VS Code, Gemini CLI, Cline and Roo Code in one step — `npx kepta-mcp setup` or one click | ✅ | MCP block to copy |
 | Python client — `pip install kepta`, standard library only | ✅ | ✅ |
 | **Chat cockpit** | | |
 | 20 provider presets — Ollama, LM Studio, OpenAI, Anthropic, Gemini, Mistral, Groq, DeepSeek, xAI and more | — | ✅ |
@@ -160,7 +160,7 @@ A native app for macOS and Windows that turns the same encrypted knowledge base 
 npx -y kepta-mcp setup
 ```
 
-Finds Claude Desktop, Claude Code, Cursor, Windsurf and VS Code on your computer and adds KEPTA to them. It asks per app (`--yes` connects all of them), keeps a backup of every file it changes and leaves every other entry alone. Any other MCP client:
+Finds Claude Desktop, Claude Code, Cursor, Windsurf, VS Code, Gemini CLI, Cline and Roo Code on your computer and adds KEPTA to them. It asks per app (`--yes` connects all of them), keeps a backup of every file it changes and leaves every other entry alone. Zed, Codex CLI and Continue get the exact snippet to paste (their config formats move too fast to write from outside). Any other MCP client:
 
 ```json
 {

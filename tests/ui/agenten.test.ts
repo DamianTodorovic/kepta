@@ -68,7 +68,7 @@ describe("Agenten in der Oberfläche", () => {
   it("/api/clients zeigt die Apps — Connect trägt KEPTA ein, nur mit Sitzungs-Token", async () => {
     fs.mkdirSync(path.join(home, ".cursor"), { recursive: true });
     const liste = (await anfrage("GET", "/api/clients")).json.clients;
-    expect(liste.map((c: { id: string }) => c.id)).toEqual(["claude-desktop", "claude-code", "cursor", "windsurf", "vscode"]);
+    expect(liste.map((c: { id: string }) => c.id)).toEqual(["claude-desktop", "claude-code", "cursor", "windsurf", "vscode", "gemini", "cline", "roo", "zed", "codex-cli", "continue", "any-mcp"]);
     expect(liste.find((c: { id: string }) => c.id === "cursor")).toMatchObject({ installed: true, connected: false, canConnect: true });
     expect((await anfrage("POST", "/api/clients/cursor/connect", { body: {}, ohneToken: true })).status).toBe(403);
     const r = await anfrage("POST", "/api/clients/cursor/connect", { body: {} });

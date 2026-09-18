@@ -85,6 +85,37 @@ describe("KEPTA mit KI-Apps verbinden", () => {
     schreib(path.join(home, ".claude.json"), { projects: { "/x": { mcpServers: { kepta: {} } } } });
     expect(status(mac(), "claude-code")).toMatchObject({ installed: true, connected: true, canConnect: false });
   });
+  it("Gemini CLI über ~/.gemini/settings.json — gleiche mcpServers-Struktur, Auto-Connect", () => {
+    schreib(path.join(home, ".gemini", "settings.json"), { theme: "auto", mcpServers: { other: { command: "x" } } });
+    expect(status(mac(), "gemini")).toMatchObject({ installed: true, connected: false, canConnect: true });
+    expect(verbinde("gemini", mac())).toMatchObject({ ok: true });
+    expect(lies(path.join(home, ".gemini", "settings.json"))).toEqual({ theme: "auto", mcpServers: { other: { command: "x" }, kepta: { command: "npx", args: ["-y", "kepta-mcp"] } } });
+  });
+
+  it("Cline und Roo Code: die Konfiguration sitzt tief im globalStorage der VS-Code-Erweiterung", () => {
+    const clineOrdner = path.join(home, "Library", "Application Support", "Code", "User", "globalStorage", "saoudrizwan.claude-dev", "settings");
+    const rooOrdner = path.join(home, "Library", "Application Support", "Code", "User", "globalStorage", "rooveterinaryinc.roo-cline", "settings");
+    fs.mkdirSync(clineOrdner, { recursive: true });
+    fs.mkdirSync(rooOrdner, { recursive: true });
+    expect(status(mac(), "cline").config).toBe(path.join(clineOrdner, "cline_mcp_settings.json"));
+    expect(status(mac(), "roo").config).toBe(path.join(rooOrdner, "mcp_settings.json"));
+    expect(verbinde("cline", mac())).toMatchObject({ ok: true });
+    expect(lies(path.join(clineOrdner, "cline_mcp_settings.json"))).toEqual({ mcpServers: { kepta: { command: "npx", args: ["-y", "kepta-mcp"] } } });
+    expect(status({ home, plattform: "win32", appdata: path.join(home, "AD"), claude: () => null }, "cline").config).toBe(
+      path.join(home, "AD", "Code", "User", "globalStorage", "saoudrizwan.claude-dev", "settings", "cline_mcp_settings.json")
+    );
+  });
+
+  it("jede weitere KI bekommt den exakten Schnipsel — Zed, Codex CLI, Continue, generisch", () => {
+    const alle = finde(mac());
+    const zed = alle.find((c) => c.id === "zed")!;
+    expect(zed.canConnect).toBe(false);
+    expect(zed.hint).toContain("context_servers");
+    expect(zed.hint).toContain("kepta-mcp");
+    expect(alle.find((c) => c.id === "codex-cli")!.hint).toContain("[mcp_servers.kepta]");
+    expect(alle.find((c) => c.id === "continue")!.hint).toContain("mcpServers:");
+    expect(alle.find((c) => c.id === "any-mcp")!.hint).toContain("HTTP API");
+  });
 
   it("setup fragt je App und trägt nur ein, was bejaht wurde — mit --yes ohne Fragen", async () => {
     fs.mkdirSync(path.join(home, ".cursor"), { recursive: true });
