@@ -16,6 +16,7 @@ import { EmbeddingQueue } from "./core/embeddings";
 import { handleRpc, SERVER_INFO, type JsonRpcRequest, type JsonRpcResponse, type McpContext } from "./core/mcp";
 import { protokolliereEreignis } from "./aktivitaet";
 import { einrichten, standardUmgebung } from "./einrichtung";
+import { importChatgptKommando } from "./core/chatgpt-import";
 import readline from "node:readline";
 import { starteOberflaeche, oeffneImBrowser, leseUiArgumente } from "./ui/server";
 
@@ -143,6 +144,25 @@ async function starteUi(argumente: string[]): Promise<void> {
   };
   process.on("SIGINT", ende);
   process.on("SIGTERM", ende);
+}
+
+/**
+ * `npx kepta import chatgpt <pfad>`: den ChatGPT-Datenexport in Memories
+ * verwandeln — die Kompatibilitätsfalle. Läuft auf derselben verschlüsselten
+ * Datenbank wie UI und MCP-Server.
+ */
+if (process.argv[2] === "import") {
+  const store = oeffneStore();
+  let code: number;
+  try {
+    code = importChatgptKommando(store, process.argv.slice(3));
+  } catch (e) {
+    console.error(`[kepta] ${e instanceof Error ? e.message : String(e)}`);
+    code = 1;
+  } finally {
+    store.close();
+  }
+  process.exit(code);
 }
 
 if (process.argv[2] === "ui") {

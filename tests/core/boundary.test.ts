@@ -32,6 +32,9 @@ describe("memory core boundary (src/core)", () => {
   it("contains exactly the known core files (no silent additions)", () => {
     const names = coreFiles.map((f) => path.basename(f)).sort();
     expect(names).toEqual([
+      // ChatGPT-Export-Importer (Kompatibilitaetsfalle): gleiche Grenze wie der
+      // Rest des Kerns — nur Node-Bordmittel, Store/Engine, kein Netz, keine UI.
+      "chatgpt-import.ts",
       "embeddings.ts",
       "engine.ts",
       "extensions.ts",
