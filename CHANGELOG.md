@@ -2,6 +2,16 @@
 
 All notable changes are documented in this file. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and versioning follows [SemVer](https://semver.org/).
 
+## [2.13.4] — 2026-09-20
+
+### Added
+- **ChatGPT-Import (die Kompatibilitätsfalle):** `npx kepta import chatgpt
+  <entpackter-Export-Ordner>` verwandelt den ChatGPT-Datenexport in Memories —
+  nur user-Nachrichten (die Quelle der Wahrheit über den Nutzer), Assistant-
+  Antworten werden gezählt, aber nicht gespeichert. Deterministische IDs machen
+  den Re-Import idempotent (aktualisiert statt verdoppelt); Zeitstempel der
+  Nachrichten werden zu gültig-ab übernommen.
+
 ## [2.13.3] — 2026-09-18
 
 ### Added
