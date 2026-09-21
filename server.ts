@@ -44,7 +44,11 @@ interface MemoryRecord {
 
 // ---------- Lokaler Speicher: SQLite (src/core), vorher JSON in ~/.kepta ----------
 
-const DATA_DIR = process.env.KEPTA_DATA_DIR || path.join(os.homedir(), ".kepta");
+const DATA_DIR_ROH = process.env.KEPTA_DATA_DIR || path.join(os.homedir(), ".kepta");
+const DATA_DIR = path.resolve(DATA_DIR_ROH);
+if (!DATA_DIR.startsWith(os.homedir()) && !DATA_DIR.startsWith(os.tmpdir())) {
+  throw new Error(`KEPTA_DATA_DIR must live under your home or temp - got: ${DATA_DIR}`);
+}
 
 function trimSlash(url: string) {
   return url.replace(/\/+$/, "");
@@ -519,7 +523,10 @@ export function createApp(store: KeptaStore) {
         if (!resolved.startsWith(path.resolve(INBOX_DIR) + path.sep)) return;
         if (inboxQueue.has(resolved)) return;
         inboxQueue.add(resolved);
-        setTimeout(()=>{ inboxQueue.delete(resolved); if (fs.existsSync(resolved)) autoImportFile(resolved); }, 800);
+        setTimeout(()=>{ inboxQueue.delete(resolved);
+          const geprueft = path.resolve(resolved);
+          if (!geprueft.startsWith(path.resolve(INBOX_DIR) + path.sep) || !fs.existsSync(geprueft)) return;
+          autoImportFile(geprueft); }, 800);
       });
     } catch {}
   }
@@ -553,15 +560,14 @@ export function createApp(store: KeptaStore) {
   app.get("/api/memories", (req, res) => {
     const memories = req.query.trash === "1" ? listAllMemories({ trash: true }).map(toApi) : allApiMemories();
     const body = JSON.stringify(memories);
-    const hash = crypto.createHash("sha1").update(body).digest("hex");
+    const hash = crypto.createHash("sha256").update(body).digest("hex");
     const etag = `"${hash}"`;
     res.setHeader("ETag", etag);
     res.setHeader("Cache-Control", "private, max-age=0, must-revalidate");
     if (req.headers["if-none-match"] === etag) {
       return res.status(304).end();
     }
-    res.setHeader("Content-Type", "application/json");
-    res.send(body);
+    res.json(memories);
   });
 
   // Dokumentierte Suche: GET /api/memories/search?q=...&limit=...&tags=tag1,tag2 — über die Core-Engine

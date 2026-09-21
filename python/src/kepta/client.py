@@ -14,7 +14,7 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, Iterable, Literal
 from urllib.error import HTTPError, URLError
-from urllib.parse import urlencode
+from urllib.parse import urlparse, urlencode
 from urllib.request import Request, urlopen
 
 MemoryType = Literal["semantic", "episodic", "procedural"]
@@ -144,6 +144,9 @@ class KeptaClient:
             if cleaned:
                 target += "?" + urlencode(cleaned)
         data = json.dumps(body).encode("utf-8") if body is not None else None
+        allowed = urlparse(target).hostname
+        if allowed not in ("127.0.0.1", "localhost", "::1"):
+            raise KeptaError(f"KEPTA refuses to talk to {allowed!r} - the client only speaks to the local app.")
         req = Request(target, data=data, method=method)
         req.add_header("Content-Type", "application/json")
         try:

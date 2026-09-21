@@ -12,6 +12,7 @@
 // (Das Original-Export-Archiv ist eine ZIP — erst entpacken; der Runner liest
 // bewusst ohne ZIP-Abhängigkeit, das npm-Bundle erlaubt nur eine.)
 import fs from "node:fs";
+import os from "node:os";
 import path from "node:path";
 import type { KeptaStore } from "./store";
 import { normalizeTags } from "./store";
@@ -165,9 +166,21 @@ export function importChatgptKommando(store: KeptaStore, argumente: string[]): n
     console.error("Bitte erst entpacken und den Ordner angeben (der Importer liest bewusst ohne ZIP-Abhängigkeit).");
     return 2;
   }
+  // Nur REGISTRIERTE Wurzeln sind erlaubt: das Home-Verzeichnis oder der
+  // System-Temp. Der relative Anteil wird path-relativ geprüft (kein startsWith,
+  // das „/home/x-anderer" fälschlich durchließe), sondern über path.relative:
+  const aufgeloest = path.resolve(datei);
+  const wurzeln = [os.homedir(), os.tmpdir()].map((w) => path.resolve(w));
+  const erlaubt = wurzeln.some((w) => {
+    const rel = path.relative(w, aufgeloest);
+    return rel !== "" && !rel.startsWith("..") && !path.isAbsolute(rel);
+  });
+  if (!erlaubt) {
+    throw new Error(`Only import from a path under your home or temp - got: ${aufgeloest}`);
+  }
   let daten: unknown;
   try {
-    daten = JSON.parse(fs.readFileSync(datei, "utf8"));
+    daten = JSON.parse(fs.readFileSync(aufgeloest, "utf8"));
   } catch (e) {
     console.error(`conversations.json nicht lesbar unter ${datei}: ${e instanceof Error ? e.message : String(e)}`);
     return 2;

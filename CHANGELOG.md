@@ -2,6 +2,24 @@
 
 All notable changes are documented in this file. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and versioning follows [SemVer](https://semver.org/).
 
+## [2.13.10] — 2026-09-21
+
+### Added
+- **Das Erlebnis-CLI:** fünf Befehle fürs Terminal, auf derselben
+  verschlüsselten Datenbank — `npx kepta-mcp remember "…"` (Typ und Tags
+  setzt die Klassifikations-Regeln, nicht „alles Fakt"), `recall "Frage"`
+  (Top-Treffer mit Typ, Alter und Tags), `timeline "Thema"` (alt → neu),
+  `contradict` (Widersprüche/Duplikate als dry-run), `stats` (Notizen,
+  Verschlüsselungsstatus, Graph-Kanten, Top-Tags).
+
+### Fixed
+- **`recall` blieb stumm:** die CLI-Kommandos fielen im Dispatcher durch, der
+  MCP-Server startete mit, und das asynchrone `recall` wurde vom Abbruch des
+  (nun konkurrierenden) Servers geköpft, bevor es antworten konnte. Die
+  Kommando-Zweige sind jetzt exklusiv verkettet, `process.exit()` wartet auf
+  den stdout-Drain — abgesichert durch einen Test, der das echte Bundle mit
+  echtem `argv` fährt.
+
 ## [2.13.9] — 2026-09-21
 
 ### Fixed

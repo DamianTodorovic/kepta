@@ -1,5 +1,5 @@
 <p align="center"><img src="docs/kepta-logo.svg" width="88" alt="KEPTA"></p>
-<p align="center"><img src="https://img.shields.io/badge/version-2.13.4-blue" alt="v2.13.4"> <img src="https://img.shields.io/badge/license-AGPL--3.0-blue" alt="AGPL-3.0"> <img src="https://img.shields.io/badge/tests-427%20passing-brightgreen" alt="tests"> <img src="https://img.shields.io/badge/coverage%20gate-%E2%89%A5%2070%25%20of%20lines-brightgreen" alt="coverage gate"> <img src="https://img.shields.io/badge/platform-macOS%20%7C%20Windows%20%7C%20Linux-lightgrey" alt="platform"> <img src="https://img.shields.io/badge/encryption-SQLCipher%204-green" alt="encrypted"> <a href="https://www.linkedin.com/in/damian-todorovic-244235434"><img src="https://img.shields.io/badge/LinkedIn-Damian%20Todorovic-0A66C2?logo=linkedin&logoColor=white" alt="Damian Todorovic on LinkedIn"></a></p>
+<p align="center"><img src="https://img.shields.io/badge/version-2.13.4-blue" alt="v2.13.4"> <img src="https://img.shields.io/badge/license-AGPL--3.0-blue" alt="AGPL-3.0"> <img src="https://img.shields.io/badge/tests-434%20passing-brightgreen" alt="tests"> <img src="https://img.shields.io/badge/coverage%20gate-%E2%89%A5%2070%25%20of%20lines-brightgreen" alt="coverage gate"> <img src="https://img.shields.io/badge/platform-macOS%20%7C%20Windows%20%7C%20Linux-lightgrey" alt="platform"> <img src="https://img.shields.io/badge/encryption-SQLCipher%204-green" alt="encrypted"> <a href="https://www.linkedin.com/in/damian-todorovic-244235434"><img src="https://img.shields.io/badge/LinkedIn-Damian%20Todorovic-0A66C2?logo=linkedin&logoColor=white" alt="Damian Todorovic on LinkedIn"></a></p>
 
 # KEPTA Core
 
@@ -32,6 +32,7 @@ npx -y kepta-mcp demo    # 60 seconds: a throwaway demo memory, graph included �
 npx -y kepta-mcp setup   # connects Claude Desktop, Claude Code, Cursor, Windsurf, VS Code, Gemini CLI, Cline and Roo Code
 npx -y kepta-mcp ui      # your real memory in the browser — watch your AI use it, live
 npx -y kepta import chatgpt <export-folder>   # bring your ChatGPT history with you (export → extract → import)
+npx -y kepta-mcp stats        # the terminal experience: remember, recall, timeline, contradict
 ```
 
 Then tell your AI something worth keeping — and watch it arrive. Details in the [Quick start](#-quick-start).
@@ -108,6 +109,7 @@ A native app for macOS and Windows that turns the same encrypted knowledge base 
 | **Knowledge graph** | | |
 | Entities and relations from `[[wiki links]]` and automatic extraction | API · MCP | ✅ |
 | Read-only knowledge graph — notes as nodes, [[links]] as edges (solid), similar notes connected (dashed), drag and click | ✅ | — |
+| Terminal experience — `remember`, `recall`, `timeline`, `contradict`, `stats` on the encrypted database | ✅ | ✅ (desktop app) |
 | Interactive graph with two views — Force (physics) and Tree (dendrogram); nodes glide between them | — | ✅ |
 | Unbounded canvas — 3 000 nodes and 9 500 edges at 60 fps; zoom, pan, drag, fit-to-view | — | ✅ |
 | Time slider — the graph as it stood on any day | — | ✅ |
@@ -277,7 +279,7 @@ The knowledge base is a SQLCipher 4 database: AES-256, an HMAC-SHA512 over every
 
 ## 🧪 Quality
 
-**427 tests** with Vitest and v8 coverage. The coverage thresholds are a CI gate: a commit that falls below one of them turns CI red. On top: a retrieval eval (Hit@1, Precision@5, MRR) on a fixed corpus, an ablation test per retrieval leg, an encryption eval and a boundary test on the core architecture.
+**434 tests** with Vitest and v8 coverage. The coverage thresholds are a CI gate: a commit that falls below one of them turns CI red. On top: a retrieval eval (Hit@1, Precision@5, MRR) on a fixed corpus, an ablation test per retrieval leg, an encryption eval and a boundary test on the core architecture.
 
 ### Coverage thresholds (enforced by CI)
 

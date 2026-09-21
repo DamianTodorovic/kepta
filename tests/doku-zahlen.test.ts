@@ -8,7 +8,11 @@ import { CORPUS, QUERIES } from "../scripts/eval-corpus";
 // Genau so entsteht die Sorte Falschaussage, die einem in einem Kommentarfeld
 // um die Ohren fliegt: niemand luegt, die Doku hinkt nur nach.
 const wurzel = process.cwd();
-const lies = (p: string) => fs.readFileSync(path.join(wurzel, p), "utf-8");
+const lies = (p: string) => {
+  const aufgeloest = path.resolve(wurzel, p);
+  if (!aufgeloest.startsWith(wurzel + path.sep)) throw new Error(`Unexpected file: ${p}`);
+  return fs.readFileSync(aufgeloest, "utf-8");
+};
 const dateien = ["README.md", "README.de.md"];
 
 // Nachtrag: der Waechter deckte nur die Korpuszahlen ab. Waehrenddessen

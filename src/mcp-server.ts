@@ -18,6 +18,7 @@ import { protokolliereEreignis } from "./aktivitaet";
 import { einrichten, standardUmgebung } from "./einrichtung";
 import { importChatgptKommando } from "./core/chatgpt-import";
 import { starteDemo } from "./demo";
+import { erlebnisKommando } from "./cli-erlebnis";
 import readline from "node:readline";
 import { starteOberflaeche, oeffneImBrowser, leseUiArgumente } from "./ui/server";
 
@@ -148,10 +149,32 @@ async function starteUi(argumente: string[]): Promise<void> {
 }
 
 /**
- * `npx kepta demo`: Wegwerf-Demodatenbank mit Kanzlei-Korpus, Oberfläche
+ * Das Erlebnis-CLI: remember / recall / timeline / contradict / stats.
+ * Läuft auf derselben verschlüsselten Datenbank wie UI und MCP-Server.
+ */
+if (process.argv[2] === "remember" || process.argv[2] === "recall" || process.argv[2] === "timeline" || process.argv[2] === "contradict" || process.argv[2] === "stats") {
+  const store = oeffneStore();
+  erlebnisKommando(store, process.argv[2], process.argv.slice(3)).then(
+    async (code) => {
+      store.close();
+      // stdout ist auf Pipes asynchron — ohne Drain würde process.exit() die
+      // Ausgabe abschneiden (beobachtet bei recall nach await).
+      await new Promise<void>((ok) => process.stdout.write("", () => ok()));
+      process.exit(code);
+    },
+    (e: unknown) => {
+      console.error(`[kepta] ${e instanceof Error ? e.message : String(e)}`);
+      store.close();
+      process.exit(1);
+    }
+  );
+}
+
+/**
+ * `npx kepta-mcp demo`: Wegwerf-Demodatenbank mit Kanzlei-Korpus, Oberfläche
  * öffnet sich — die 60-Sekunden-Führung, ohne die echte Datei zu berühren.
  */
-if (process.argv[2] === "demo") {
+else if (process.argv[2] === "demo") {
   starteDemo(process.argv.slice(3)).then(
     (code) => process.exit(code),
     (e: unknown) => {
@@ -166,7 +189,7 @@ if (process.argv[2] === "demo") {
  * verwandeln — die Kompatibilitätsfalle. Läuft auf derselben verschlüsselten
  * Datenbank wie UI und MCP-Server.
  */
-if (process.argv[2] === "import") {
+else if (process.argv[2] === "import") {
   const store = oeffneStore();
   let code: number;
   try {
@@ -178,9 +201,7 @@ if (process.argv[2] === "import") {
     store.close();
   }
   process.exit(code);
-}
-
-if (process.argv[2] === "ui") {
+} else if (process.argv[2] === "ui") {
   starteUi(process.argv.slice(3)).catch((e: unknown) => {
     console.error(`[kepta] ${e instanceof Error ? e.message : String(e)}`);
     process.exit(1);

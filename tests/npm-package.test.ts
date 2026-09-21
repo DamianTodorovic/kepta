@@ -95,3 +95,26 @@ describe("npm-Paket: das Wurzelpaket", () => {
     expect(app.private).toBe(true);
   });
 });
+
+describe("npm-Paket: das Erlebnis-CLI im echten Bundle", () => {
+  // Regressions-Wache fuer den 2.13.10-Dispatch-Bug: die CLI-Zweige fielen
+  // durch, der MCP-Server startete mit, und recall (async) starb stumm, bevor
+  // seine Ausgabe landete. Nur der echte Prozess mit echtem argv zeigt das.
+  it("remember + recall runden im eigenen Prozess ab — keine stumme Ausgabe, kein MCP-Fallback", () => {
+    const daten = fs.mkdtempSync(path.join(wurzel, ".tmp-cli-"));
+    try {
+      const umgebung = { ...process.env, KEPTA_DATA_DIR: daten, KEPTA_DB_KEY: "a".repeat(64) };
+      const laufen = (args: string[]) =>
+        execFileSync(process.execPath, [binPfad, ...args], { env: umgebung, stdio: "pipe", encoding: "utf-8" });
+      const gemerkt = laufen(["remember", "Mandant Berger: Frist zum 3. Oktober 2026"]);
+      expect(gemerkt).toContain("✓ remembered");
+      const erinnert = laufen(["recall", "Frist Mandant Berger"]);
+      expect(erinnert).toContain("1 match");
+      expect(erinnert).toContain("Mandant Berger");
+      // Und der MCP-Server darf für CLI-Kommandos nie mitstarten:
+      expect(erinnert).not.toContain("stdio ready");
+    } finally {
+      fs.rmSync(daten, { recursive: true, force: true });
+    }
+  }, 60_000);
+});

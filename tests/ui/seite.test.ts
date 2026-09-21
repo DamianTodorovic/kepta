@@ -70,12 +70,14 @@ describe("die Seite der Core-Oberfläche", () => {
     }
   });
 
-  it("das eingebettete JavaScript ist gültig — ein Syntaxfehler tötet die ganze Seite", () => {
+  it("das eingebettete JavaScript ist gültig — ein Syntaxfehler tötet die ganze Seite", async () => {
     // SEITE_JS ist ein String: tsc sieht hier nichts. Der Dreifach-Deklarations-
     // Fehler vom 21.9. (function openNote dreimal) lieferte eine leere Oberfläche
     // bei heilem Server — genau das muss der Wächter sofort melden.
-    const js = SEITE_JS;
-    expect(() => { new Function(js); }).not.toThrow();
+    // Parse-only über esbuild (kein eval, keine Ausführung — das wäre
+    // Code-Injektion per Definition; das Parsen alone tötet den Fehler).
+    const { transform } = await import("esbuild");
+    await expect(transform(SEITE_JS, { loader: "js" })).resolves.toHaveProperty("code");
   });
 
   it("verträgt die strenge CSP: kein Inline-Skript, keine Inline-Stile", () => {
