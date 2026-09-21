@@ -19,6 +19,10 @@ export interface GraphKnoten {
 export interface GraphKante {
   quelle: string;
   ziel: string;
+  /** true = [[Link]] (durchgezogen); false = Ähnlichkeit (gestrichelt). */
+  real: boolean;
+  /** 0..1 — Kantenstärke für die Kürzung und spätere Darstellung. */
+  staerke: number;
 }
 
 export interface GraphDaten {
@@ -26,6 +30,70 @@ export interface GraphDaten {
   edges: GraphKante[];
   /** [[Verweise]] insgesamt, auch auf Nicht-Knoten (Kontrollzahl). */
   verweise: number;
+}
+
+// ---------- Ähnlichkeits-Kanten (Port aus KEPTA Pro, graphLayout.ts) ----------
+// Invertierter Index über Tags + Titelwörter; nur Paare mit einem gemeinsamen
+// Begriff werden bewertet (tagOverlap * 0.9 vs. titleSimilarity * 0.6,
+// Schwellwert 0.24). [[Links]] sind immer echte Kanten und überleben jede
+// Kürzung — die schwächsten Ähnlichkeiten fallen zuerst.
+function tagOverlap(a: readonly string[], b: readonly string[]): number {
+  if (a.length === 0 || b.length === 0) return 0;
+  const sa = new Set(a.map((t) => t.toLowerCase()));
+  let inter = 0;
+  for (const t of b) if (sa.has(t.toLowerCase())) inter++;
+  return inter / Math.min(a.length, b.length);
+}
+
+function titleSimilarity(a: string, b: string): number {
+  const wa = new Set(a.toLowerCase().split(/\W+/).filter((w) => w.length > 2));
+  const wb = new Set(b.toLowerCase().split(/\W+/).filter((w) => w.length > 2));
+  if (wa.size === 0 || wb.size === 0) return 0;
+  let inter = 0;
+  wa.forEach((w) => { if (wb.has(w)) inter++; });
+  return inter / Math.min(wa.size, wb.size);
+}
+
+export interface AehnlichkeitsOptionen {
+  maxBucket?: number;
+  maxAehnlichkeitsKanten?: number;
+}
+
+function aehnlichkeitsKanten(notizen: { id: string; titel: string; tags: string[] }[], opts: AehnlichkeitsOptionen = {}): GraphKante[] {
+  const maxBucket = opts.maxBucket ?? 60;
+  const maxKanten = opts.maxAehnlichkeitsKanten ?? Math.min(12_000, Math.max(1200, notizen.length * 6));
+  const index = new Map<string, string[]>();
+  const lege = (begriff: string, id: string) => {
+    const bucket = index.get(begriff);
+    if (bucket) bucket.push(id); else index.set(begriff, [id]);
+  };
+  const byId = new Map(notizen.map((n) => [n.id, n]));
+  for (const n of notizen) {
+    for (const t of n.tags) { const s = t.toLowerCase().trim(); if (s) lege(`#${s}`, n.id); }
+    for (const w of n.titel.toLowerCase().split(/\W+/)) if (w.length > 2) lege(w, n.id);
+  }
+  const bewertet = new Set<string>();
+  const kandidaten: GraphKante[] = [];
+  const schluessel = (a: string, b: string) => (a < b ? `${a}|${b}` : `${b}|${a}`);
+  for (const bucket of index.values()) {
+    if (bucket.length < 2 || bucket.length > maxBucket) continue;
+    for (let i = 0; i < bucket.length; i++) {
+      for (let j = i + 1; j < bucket.length; j++) {
+        const k = schluessel(bucket[i]!, bucket[j]!);
+        if (bewertet.has(k)) continue;
+        bewertet.add(k);
+        const a = byId.get(bucket[i]!)!;
+        const b = byId.get(bucket[j]!)!;
+        const tagScore = tagOverlap(a.tags, b.tags);
+        const titleScore = titleSimilarity(a.titel, b.titel);
+        const staerke = Math.max(tagScore * 0.9, titleScore * 0.6);
+        if (staerke > 0.24) kandidaten.push({ quelle: a.id, ziel: b.id, real: false, staerke });
+        else if (tagScore > 0 && titleScore > 0.15) kandidaten.push({ quelle: a.id, ziel: b.id, real: false, staerke: 0.3 });
+      }
+    }
+  }
+  kandidaten.sort((a, b) => b.staerke - a.staerke);
+  return kandidaten.slice(0, maxKanten);
 }
 
 const LINK_RE = /\[\[([^\[\]]{2,80})\]\]/g;
@@ -42,7 +110,7 @@ export function baueGraph(store: KeptaStore, maxKnoten = 400): GraphDaten {
     const t = n.title.trim().toLowerCase();
     if (t && !titelZuId.has(t)) titelZuId.set(t, n.id);
   }
-  const nodes = notizen.map((n) => ({ id: n.id, titel: n.title, type: n.type, grad: 0 }));
+  const nodes = notizen.map((n) => ({ id: n.id, titel: n.title, type: n.type, grad: 0, tags: n.tags }));
   const grad = new Map<string, number>();
   const kanten: GraphKante[] = [];
   const gesehen = new Set<string>();
@@ -59,14 +127,22 @@ export function baueGraph(store: KeptaStore, maxKnoten = 400): GraphDaten {
       const k = n.id < ziel ? n.id + "\u0000" + ziel : ziel + "\u0000" + n.id;
       if (gesehen.has(k)) continue;
       gesehen.add(k);
-      kanten.push({ quelle: n.id, ziel });
+      kanten.push({ quelle: n.id, ziel, real: true, staerke: 0.85 });
       grad.set(n.id, (grad.get(n.id) ?? 0) + 1);
       grad.set(ziel, (grad.get(ziel) ?? 0) + 1);
     }
   }
+  const echte = new Set(kanten.map((k) => (k.quelle < k.ziel ? `${k.quelle}|${k.ziel}` : `${k.ziel}|${k.quelle}`)));
+  const aehnlich = aehnlichkeitsKanten(nodes.map((n) => ({ id: n.id, titel: n.titel, tags: n.tags }))).filter(
+    (k) => !echte.has(k.quelle < k.ziel ? `${k.quelle}|${k.ziel}` : `${k.ziel}|${k.quelle}`)
+  );
+  for (const k of aehnlich) {
+    grad.set(k.quelle, (grad.get(k.quelle) ?? 0) + 1);
+    grad.set(k.ziel, (grad.get(k.ziel) ?? 0) + 1);
+  }
   return {
-    nodes: nodes.map((n) => ({ ...n, grad: grad.get(n.id) ?? 0 })),
-    edges: kanten,
+    nodes: nodes.map((n) => ({ id: n.id, titel: n.titel, type: n.type, grad: grad.get(n.id) ?? 0 })),
+    edges: [...kanten, ...aehnlich],
     verweise,
   };
 }

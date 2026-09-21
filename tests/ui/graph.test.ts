@@ -13,8 +13,8 @@ let store: KeptaStore;
 let ui: Oberflaeche;
 let dir: string;
 
-function notiz(titel: string, inhalt: string): void {
-  store.createMemory({ title: titel, content: inhalt });
+function notiz(titel: string, inhalt: string, tags: string[] = []): void {
+  store.createMemory({ title: titel, content: inhalt, tags });
 }
 
 beforeEach(async () => {
@@ -94,5 +94,47 @@ describe("kraftLayout (serverseitiges Force-Layout)", () => {
   it("leerer Graph → leeres Layout (kein Crash)", async () => {
     const { kraftLayout } = await import("../../src/ui/graph");
     expect(kraftLayout({ nodes: [], edges: [], verweise: 0 }, 900, 500)).toEqual([]);
+  });
+});
+
+describe("Ähnlichkeits-Kanten (Port aus Pro)", () => {
+  it("gleiche Tags + ähnlicher Titel → gestrichelte Kante (real: false)", () => {
+    notiz("Mandant Weber Akte", "Quartalsabrechnung, Wartestufe.", ["mandant", "weber"]);
+    notiz("Mandant Weber Rechnung", "Rechnung Q3 vorbereitet.", ["mandant", "weber"]);
+    notiz("Völlig anderes Thema", "Der einzige Satz ohne Berührung.", ["island"]);
+    const g = baueGraph(store);
+    const aehnlich = g.edges.filter((e) => !e.real);
+    expect(aehnlich.length).toBe(1);
+    expect(aehnlich[0]!.staerke).toBeGreaterThan(0.24);
+    expect(g.edges.filter((e) => e.real).length).toBe(0);
+  });
+
+  it("[[Link]] gewinnt: das Paar bekommt eine echte Kante, nicht zwei", () => {
+    notiz("Deploy Runbook", "Siehe [[Deploy Runbook Details]].", ["deploy"]);
+    notiz("Deploy Runbook Details", "Der Ablauf Schritt für Schritt.", ["deploy"]);
+    const g = baueGraph(store);
+    const paare = g.edges.filter((e) => e.real);
+    expect(paare.length).toBe(1);
+    // Keine zusätzliche Ähnlichkeits-Kante für dasselbe Paar:
+    expect(g.edges.length).toBe(1);
+    expect(g.edges.every((e) => e.real)).toBe(true);
+  });
+
+  it("keine Berührung → keine Ähnlichkeits-Kante (kein gemeinsames Titelwort, keine geteilten Tags)", () => {
+    notiz("Gartenbewaesserung", "Der Bewässerungsplan fürs Hochbeet.", ["garten"]);
+    notiz("Quantenchromatographie", "Die Trennung der Isotope.", ["chemie"]);
+    const g = baueGraph(store);
+    expect(g.edges.length).toBe(0);
+  });
+
+  it("kraftLayout ordnet verbundene Knoten anhand der kombinierten Kanten", async () => {
+    const { kraftLayout } = await import("../../src/ui/graph");
+    notiz("X Hub", "Siehe [[X A]] und [[X B]].", ["hub"]);
+    notiz("X A", "Erster Anhang.", ["hub"]);
+    notiz("X B", "Zweiter Anhang.", ["hub"]);
+    const g = baueGraph(store);
+    expect(g.edges.length).toBeGreaterThanOrEqual(2);
+    const layout = kraftLayout(g, 900, 500);
+    expect(layout.length).toBe(3);
   });
 });

@@ -826,13 +826,18 @@ export const SEITE_JS = String.raw`
       var farben = { semantic: stil.getPropertyValue('--t-semantic').trim() || '#888', episodic: stil.getPropertyValue('--t-episodic').trim() || '#a08', procedural: stil.getPropertyValue('--t-procedural').trim() || '#8a8', reference: stil.getPropertyValue('--t-reference').trim() || '#a86' };
       var knoten = g.nodes;
       var byId = {}; knoten.forEach(function (k) { byId[k.id] = k; });
-      var kanten = g.edges.map(function (e) { return [byId[e.quelle], byId[e.ziel]]; }).filter(function (p) { return p[0] && p[1]; });
+      var kanten = g.edges.map(function (e) { return [byId[e.quelle], byId[e.ziel], e.real]; }).filter(function (p) { return p[0] && p[1]; });
       function radius(k) { return 5 + Math.min(9, k.grad * 1.4); }
       function zeichne() {
         ctx.clearRect(0, 0, g.breite, g.hoehe);
-        ctx.strokeStyle = 'rgba(128,128,128,0.3)';
         ctx.lineWidth = 1;
-        kanten.forEach(function (k) { ctx.beginPath(); ctx.moveTo(k[0].x, k[0].y); ctx.lineTo(k[1].x, k[1].y); ctx.stroke(); });
+        // Similarities first (fine dashes), then the real [[links]] on top (solid).
+        ctx.strokeStyle = 'rgba(128,128,128,0.22)';
+        ctx.setLineDash([3, 4]);
+        kanten.filter(function (k) { return !k[2]; }).forEach(function (k) { ctx.beginPath(); ctx.moveTo(k[0].x, k[0].y); ctx.lineTo(k[1].x, k[1].y); ctx.stroke(); });
+        ctx.setLineDash([]);
+        ctx.strokeStyle = 'rgba(160,160,160,0.55)';
+        kanten.filter(function (k) { return k[2]; }).forEach(function (k) { ctx.beginPath(); ctx.moveTo(k[0].x, k[0].y); ctx.lineTo(k[1].x, k[1].y); ctx.stroke(); });
         knoten.forEach(function (k) {
           ctx.fillStyle = farben[k.type] || '#888';
           ctx.beginPath();
@@ -871,7 +876,10 @@ export const SEITE_JS = String.raw`
       };
       canvas.style.cursor = 'grab';
 
-      var fuss = h('p', { class: 'muted pad', text: knoten.length + ' notes · ' + kanten.length + ' links (' + g.verweise + ' references, resolved where both notes exist).' });
+      var echt = kanten.filter(function (k) { return k[2]; }).length;
+      var fuss = h('p', { class: 'muted pad' },
+        knoten.length + ' notes · ' + echt + ' links (solid) · ' + (kanten.length - echt) + ' similarities (dashed)',
+        h('br'), h('span', { class: 'muted small', text: g.verweise + ' [[references]] in total, resolved where both notes exist.' }));
       list.appendChild(fuss);
     }).catch(function (e) { toast(e.message, true); });
   }

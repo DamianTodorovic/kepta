@@ -2,7 +2,13 @@
 
 All notable changes are documented in this file. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and versioning follows [SemVer](https://semver.org/).
 
-## [2.13.7] — 2026-09-21
+## [2.13.8] — 2026-09-21
+
+### Added
+- **Ähnlichkeits-Kanten im Graph:** Notizen mit geteilten Tags oder
+  ähnlichen Titeln werden gestrichelt verbunden (dieselbe Heuristik wie in
+  KEPTA Pro — [[Links]] bleiben die durchgezogenen echten Kanten und überleben
+  jede Kürzung). Die Legende im Graph-Tab zählt beide Sorten.
 
 ### Fixed
 - **Der Graph war unsichtbar:** die Knoten wurden gezeichnet, bevor das Canvas
