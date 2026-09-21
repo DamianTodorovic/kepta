@@ -2,6 +2,15 @@
 
 All notable changes are documented in this file. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and versioning follows [SemVer](https://semver.org/).
 
+## [2.13.9] — 2026-09-21
+
+### Fixed
+- **Die Oberfläche war ganz leer (nicht nur der Graph):** in das eingebaute
+  Seiten-JavaScript hatten sich drei übereinanderliegende `function openNote`
+  Deklarationen eingeschlichen — ein Syntaxfehler, der das gesamte Frontend
+  tötete, während der Server heil weiterlief. Neu im Wächter-Test: das
+  eingebettete JavaScript muss als Code parsen, nicht nur als String.
+
 ## [2.13.8] — 2026-09-21
 
 ### Added

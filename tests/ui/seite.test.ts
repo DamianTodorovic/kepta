@@ -70,6 +70,14 @@ describe("die Seite der Core-Oberfläche", () => {
     }
   });
 
+  it("das eingebettete JavaScript ist gültig — ein Syntaxfehler tötet die ganze Seite", () => {
+    // SEITE_JS ist ein String: tsc sieht hier nichts. Der Dreifach-Deklarations-
+    // Fehler vom 21.9. (function openNote dreimal) lieferte eine leere Oberfläche
+    // bei heilem Server — genau das muss der Wächter sofort melden.
+    const js = SEITE_JS;
+    expect(() => { new Function(js); }).not.toThrow();
+  });
+
   it("verträgt die strenge CSP: kein Inline-Skript, keine Inline-Stile", () => {
     expect(SEITE_HTML).not.toMatch(/<script>(?!\s*<\/script>)[^<]/);
     expect(SEITE_HTML).not.toMatch(/\sstyle="/);

@@ -884,7 +884,7 @@ export const SEITE_JS = String.raw`
     }).catch(function (e) { toast(e.message, true); });
   }
 
-  function openNote(id) {  function openNote(id) {  function openNote(id) {
+  function openNote(id) {
     api('/api/notes/' + encodeURIComponent(id)).then(function (d) {
       var n = d.note;
       var geloescht = !!n.deletedAt;
