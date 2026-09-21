@@ -70,3 +70,51 @@ export function baueGraph(store: KeptaStore, maxKnoten = 400): GraphDaten {
     verweise,
   };
 }
+
+// ── Kraft-Layout (pure, testbar): Start auf einem Kreis, 280 Ticks Abstoßung +
+// Kantensfedern + Zentrierung. Liefert x/y je Knoten — die Ansicht zeichnet nur.
+export interface LayoutKnoten extends GraphKnoten {
+  x: number;
+  y: number;
+}
+
+export function kraftLayout(g: GraphDaten, breite: number, hoehe: number, ticks = 280): LayoutKnoten[] {
+  const knoten: LayoutKnoten[] = g.nodes.map((n, i) => {
+    const winkel = (i / Math.max(1, g.nodes.length)) * 2 * Math.PI;
+    return { ...n, x: breite / 2 + Math.cos(winkel) * breite * 0.36, y: hoehe / 2 + Math.sin(winkel) * hoehe * 0.36, vx: 0, vy: 0, fixiert: false } as LayoutKnoten & { vx: number; vy: number; fixiert: boolean };
+  });
+  const byId = new Map(knoten.map((k) => [k.id, k]));
+  const kanten = g.edges
+    .map((e) => [byId.get(e.quelle), byId.get(e.ziel)] as const)
+    .filter((p): p is [LayoutKnoten, LayoutKnoten] => p[0] !== undefined && p[1] !== undefined);
+  for (let tick = 0; tick < ticks; tick++) {
+    for (let i = 0; i < knoten.length; i++) {
+      const a = knoten[i] as LayoutKnoten & { vx: number; vy: number };
+      a.vx = (a.x - breite / 2) * 0.012;
+      a.vy = (a.y - hoehe / 2) * 0.012;
+      for (let j = i + 1; j < knoten.length; j++) {
+        const b = knoten[j] as LayoutKnoten & { vx: number; vy: number };
+        const dx = a.x - b.x, dy = a.y - b.y;
+        const d = Math.sqrt(dx * dx + dy * dy) + 0.01;
+        const kraft = 2600 / (d * d);
+        a.vx += (dx / d) * kraft; a.vy += (dy / d) * kraft;
+        b.vx -= (dx / d) * kraft; b.vy -= (dy / d) * kraft;
+      }
+    }
+    for (const [u, v] of kanten) {
+      const dx = u.x - v.x, dy = u.y - v.y;
+      const d = Math.sqrt(dx * dx + dy * dy) + 0.01;
+      const kraft = (d - 110) * 0.015;
+      (u as LayoutKnoten & { vx: number; vy: number }).vx -= (dx / d) * kraft;
+      (u as LayoutKnoten & { vx: number; vy: number }).vy -= (dy / d) * kraft;
+      (v as LayoutKnoten & { vx: number; vy: number }).vx += (dx / d) * kraft;
+      (v as LayoutKnoten & { vx: number; vy: number }).vy += (dy / d) * kraft;
+    }
+    for (const k of knoten) {
+      const kk = k as LayoutKnoten & { vx: number; vy: number };
+      k.x = Math.max(30, Math.min(breite - 30, k.x + Math.max(-14, Math.min(14, kk.vx))));
+      k.y = Math.max(26, Math.min(hoehe - 26, k.y + Math.max(-14, Math.min(14, kk.vy))));
+    }
+  }
+  return knoten.map((k) => ({ id: k.id, titel: k.titel, type: k.type, grad: k.grad, x: Math.round(k.x * 10) / 10, y: Math.round(k.y * 10) / 10 }));
+}

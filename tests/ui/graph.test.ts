@@ -72,3 +72,27 @@ describe("/api/graph", () => {
     expect(g.edges).toEqual([]);
   });
 });
+
+describe("kraftLayout (serverseitiges Force-Layout)", () => {
+  it("alle Knoten innerhalb der Grenzen, ohne NaN, Kanten-Endpunkte existieren", async () => {
+    const { kraftLayout } = await import("../../src/ui/graph");
+    notiz("Alpha", "Siehe [[Beta]].");
+    notiz("Beta", "Rückverweis auf [[Alpha]].");
+    const g = baueGraph(store);
+    const layout = kraftLayout(g, 900, 500);
+    expect(layout.length).toBe(2);
+    for (const k of layout) {
+      expect(Number.isFinite(k.x)).toBe(true);
+      expect(Number.isFinite(k.y)).toBe(true);
+      expect(k.x).toBeGreaterThanOrEqual(30);
+      expect(k.x).toBeLessThanOrEqual(870);
+      expect(k.y).toBeGreaterThanOrEqual(26);
+      expect(k.y).toBeLessThanOrEqual(474);
+    }
+  });
+
+  it("leerer Graph → leeres Layout (kein Crash)", async () => {
+    const { kraftLayout } = await import("../../src/ui/graph");
+    expect(kraftLayout({ nodes: [], edges: [], verweise: 0 }, 900, 500)).toEqual([]);
+  });
+});

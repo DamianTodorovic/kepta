@@ -2,6 +2,15 @@
 
 All notable changes are documented in this file. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and versioning follows [SemVer](https://semver.org/).
 
+## [2.13.7] — 2026-09-21
+
+### Fixed
+- **Der Graph war unsichtbar:** die Knoten wurden gezeichnet, bevor das Canvas
+  im Dokument hing — die Themen-Farben ließen sich nicht auflösen, schwarz auf
+  schwarz. Jetzt misst die Ansicht nach dem Einfügen und holt das Kraft-Layout
+  passend zur Breite vom Server (`/api/graph?width=…&height=…` — das Layout ist
+  serverseitig gerechnet und in tests/ui/graph.test.ts abgesichert).
+
 ## [2.13.6] — 2026-09-21
 
 ### Added

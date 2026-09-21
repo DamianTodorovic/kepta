@@ -23,7 +23,7 @@ import { saveWithIndex } from "../core/mcp";
 import { APP_VERSION } from "../core/version";
 import { SEITE_HTML, SEITE_CSS, SEITE_JS, FAVICON_SVG } from "./seite";
 import { anzeige, detail, ausschnitt } from "./markdown";
-import { baueGraph } from "./graph";
+import { baueGraph, kraftLayout } from "./graph";
 import { letzteAktivitaet, agenten, anzeigeName, type Aktivitaet } from "../aktivitaet";
 import { finde, verbinde, standardUmgebung, type Umgebung } from "../einrichtung";
 
@@ -334,7 +334,13 @@ async function bearbeite(req: http.IncomingMessage, res: http.ServerResponse, ct
     });
   }
 
-  if (pfad === "/api/graph" && methode === "GET") return antworte(res, 200, baueGraph(store));
+  if (pfad === "/api/graph" && methode === "GET") {
+    const breite = Math.max(320, Math.min(2400, Number(url.searchParams.get("width")) || 900));
+    const hoehe = Math.max(320, Math.min(1600, Number(url.searchParams.get("height")) || Math.round(breite * 0.55)));
+    const g = baueGraph(store);
+    const nodes = kraftLayout(g, breite, hoehe);
+    return antworte(res, 200, { nodes, edges: g.edges, verweise: g.verweise, breite, hoehe });
+  }
 
   if (pfad === "/api/recovery-key" && methode === "POST") {
     let schluessel: string | null;
