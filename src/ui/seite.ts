@@ -71,7 +71,7 @@ export const SEITE_HTML = `<!doctype html>
   <h2 class="panel-title">The full desktop app for your memory</h2>
   <p class="ent-lead">KEPTA Pro opens this same encrypted file — your notes, your key and your agents are already there. Nothing to move.</p>
   <div class="ent-grid">
-    <section data-feature="graph"><h3>Knowledge graph</h3><p>Every note a node, every [[link]] an edge. Force and Tree views, a time slider back to any day, 3 000 nodes at 60 fps.</p></section>
+    <section data-feature="graph"><h3>Knowledge graph</h3><p>Every note a node, every [[link]] an edge — the core UI draws it read-only: drag a node, click one to open it. Force and Tree views, a time slider back to any day, 3 000 nodes at 60 fps — that lives in KEPTA Pro.</p></section>
     <section data-feature="import"><h3>Import &amp; scan</h3><p>Drag &amp; drop PDFs, Markdown, text and JSON. Import an Obsidian vault with its links, clip a web page, or scan this computer — with a preview first.</p></section>
     <section data-feature="chat"><h3>Chat with your memory</h3><p>Ask with the model you choose — 20 providers, from Ollama and LM Studio to Anthropic and OpenAI. Every answer shows which notes it used.</p></section>
     <section data-feature="duplicates"><h3>Duplicate review</h3><p>Near-duplicates side by side: keep the richest copy in one click, with one undo for the batch. The history stays.</p></section>
@@ -115,6 +115,8 @@ button{font:inherit;color:inherit;cursor:pointer}
 .dot.t-trash{background:transparent;box-shadow:inset 0 0 0 1.5px var(--muted)}
 .t-semantic{--c:var(--t-semantic)}.t-episodic{--c:var(--t-episodic)}.t-procedural{--c:var(--t-procedural)}.t-reference{--c:var(--t-reference)}
 .hash{color:var(--muted);width:8px}
+.graph-wrap{padding:6px 2px;border:1px solid var(--line);border-radius:12px;background:var(--panel);overflow:hidden}
+.graph-wrap canvas{display:block}
 .sidebar-foot{margin-top:auto;display:flex;flex-direction:column;gap:10px;padding:16px 4px 0}
 .lock{font-size:12px;padding:9px 11px;border-radius:8px;border:1px solid var(--line);display:flex;align-items:center;gap:8px;background:transparent;width:100%;text-align:left}
 .lock:hover{border-color:var(--accent)}
@@ -295,7 +297,7 @@ export const SEITE_JS = String.raw`
   'use strict';
   var TOKEN = document.querySelector('meta[name="kepta-token"]').content;
   var TYPES = { semantic: 'Fact', episodic: 'Event', procedural: 'How-to', reference: 'Document' };
-  var VIEWS = [['all', 'All notes'], ['semantic', 'Facts'], ['episodic', 'Events'], ['procedural', 'How-tos'], ['reference', 'Documents'], ['trash', 'Trash']];
+  var VIEWS = [['all', 'All notes'], ['graph', 'Graph'], ['semantic', 'Facts'], ['episodic', 'Events'], ['procedural', 'How-tos'], ['reference', 'Documents'], ['trash', 'Trash']];
   var PAGE = 60;
   var state = { view: 'all', tag: null, query: '', offset: 0, status: null, agenten: [], eintraege: [], letzte: 0 };
   function $(id) { return document.getElementById(id); }
@@ -453,6 +455,7 @@ export const SEITE_JS = String.raw`
     if (state.query) return ['Results for “' + state.query + '”', ''];
     if (state.tag) return ['#' + state.tag, 'Notes with this tag'];
     if (state.view === 'activity') return ['Activity', 'What your AI apps read and write in your memory — as it happens.'];
+    if (state.view === 'graph') return ['Knowledge graph', 'Every note a node, every [[link]] an edge — drag a node, click one to open it.'];
     var v = VIEWS.filter(function (x) { return x[0] === state.view; })[0];
     return [v[1], state.view === 'trash' ? 'Deleted notes wait here until you restore them.' : ''];
   }
@@ -712,6 +715,7 @@ export const SEITE_JS = String.raw`
         });
       }).catch(function (e) { toast(e.message, true); });
     }
+    if (state.view === 'graph') { renderGraphView(); return; }
     if (state.view === 'activity') {
       more.hidden = true;
       list.textContent = '';
@@ -790,6 +794,127 @@ export const SEITE_JS = String.raw`
   function suche(text) { schliessen(); $('q').value = text; state.query = text; state.tag = null; load(true); }
   function wikilink(ziel, v) {
     return h('button', { class: 'wikilink', type: 'button', onclick: function () { suche(ziel); } }, v || ziel);
+  }
+
+  // ---- Knowledge graph (read-only): notes as nodes, [[links]] as edges. ----
+  // Force layout, precomputed (280 ticks synchronously - at rest by the time
+  // you see it), canvas with devicePixelRatio, drag moves a node, a click
+  // opens the note. No time slider: that lives in KEPTA Pro.
+  var TYP_FARBEN = { semantic: '--t-semantic', episodic: '--t-episodic', procedural: '--t-procedural', reference: '--t-reference' };
+  function farbe(type) { return TYP_FARBEN[type] || '--muted'; }
+
+  function renderGraphView() {
+    var list = $('list');
+    list.textContent = '';
+    more.hidden = true;
+    list.appendChild(h('p', { class: 'muted pad', text: 'Loading graph…' }));
+    api('/api/graph').then(function (g) {
+      if (state.view !== 'graph') return;
+      list.textContent = '';
+      if (!g.nodes.length) {
+        list.appendChild(h('p', { class: 'muted pad', text: 'No notes to graph yet. Write a note with a [[link]] to another note - or let an AI app save one.' }));
+        return;
+      }
+      list.appendChild(graphCanvas(g));
+      var fuss = h('p', { class: 'muted pad', text: g.nodes.length + ' notes · ' + g.edges.length + ' links (' + g.verweise + ' references, resolved where both notes exist).' });
+      list.appendChild(fuss);
+    }).catch(function (e) { toast(e.message, true); });
+  }
+
+  function graphCanvas(g) {
+    var breite = Math.max(320, ($('list').clientWidth || 900) - 8);
+    var hoehe = Math.min(640, Math.max(380, Math.round(breite * 0.55)));
+    var wrap = h('div', { class: 'graph-wrap' });
+    var canvas = document.createElement('canvas');
+    canvas.width = breite * (window.devicePixelRatio || 1);
+    canvas.height = hoehe * (window.devicePixelRatio || 1);
+    canvas.style.width = breite + 'px';
+    canvas.style.height = hoehe + 'px';
+    canvas.setAttribute('role', 'img');
+    canvas.setAttribute('aria-label', g.nodes.length + ' notes as nodes, ' + g.edges.length + ' links as edges');
+    wrap.appendChild(canvas);
+    var ctx = canvas.getContext('2d');
+    ctx.scale(window.devicePixelRatio || 1, window.devicePixelRatio || 1);
+
+    // Start on a circle; forces: pairwise repulsion (damped), edge springs, centering.
+    var knoten = g.nodes.map(function (n, i) {
+      var winkel = (i / g.nodes.length) * 2 * Math.PI;
+      return { id: n.id, titel: n.titel, type: n.type, grad: n.grad, x: breite / 2 + Math.cos(winkel) * breite * 0.36, y: hoehe / 2 + Math.sin(winkel) * hoehe * 0.36, vx: 0, vy: 0, fixiert: false };
+    });
+    var byId = {}; knoten.forEach(function (k) { byId[k.id] = k; });
+    var kanten = g.edges.map(function (e) { return [byId[e.quelle], byId[e.ziel]]; }).filter(function (p) { return p[0] && p[1]; });
+    for (var tick = 0; tick < 280; tick++) {
+      for (var i = 0; i < knoten.length; i++) {
+        var a = knoten[i];
+        a.fx = (a.x - breite / 2) * 0.012; a.fy = (a.y - hoehe / 2) * 0.012;
+        for (var j = i + 1; j < knoten.length; j++) {
+          var b = knoten[j];
+          var dx = a.x - b.x, dy = a.y - b.y;
+          var d2 = dx * dx + dy * dy + 0.01;
+          var kraft = 2600 / d2;
+          var d = Math.sqrt(d2);
+          a.vx += (dx / d) * kraft; a.vy += (dy / d) * kraft;
+          b.vx -= (dx / d) * kraft; b.vy -= (dy / d) * kraft;
+        }
+      }
+      kanten.forEach(function (k) {
+        var dx = k[0].x - k[1].x, dy = k[0].y - k[1].y;
+        var d = Math.sqrt(dx * dx + dy * dy) + 0.01;
+        var kraft = (d - 110) * 0.015;
+        k[0].vx -= (dx / d) * kraft; k[0].vy -= (dy / d) * kraft;
+        k[1].vx += (dx / d) * kraft; k[1].vy += (dy / d) * kraft;
+      });
+      knoten.forEach(function (k) {
+        if (k.fixiert) { k.vx = 0; k.vy = 0; return; }
+        k.x += Math.max(-14, Math.min(14, k.vx)); k.y += Math.max(-14, Math.min(14, k.vy));
+        k.x = Math.max(30, Math.min(breite - 30, k.x)); k.y = Math.max(26, Math.min(hoehe - 26, k.y));
+        k.vx *= 0.82; k.vy *= 0.82;
+      });
+    }
+    function radius(k) { return 5 + Math.min(9, k.grad * 1.4); }
+    function zeichne() {
+      ctx.clearRect(0, 0, breite, hoehe);
+      ctx.strokeStyle = 'rgba(128,128,128,0.28)';
+      ctx.lineWidth = 1;
+      kanten.forEach(function (k) { ctx.beginPath(); ctx.moveTo(k[0].x, k[0].y); ctx.lineTo(k[1].x, k[1].y); ctx.stroke(); });
+      knoten.forEach(function (k) {
+        ctx.fillStyle = getComputedStyle(canvas).getPropertyValue(farbe(k.type)).trim() || '#888';
+        ctx.beginPath();
+        ctx.arc(k.x, k.y, radius(k), 0, 2 * Math.PI);
+        ctx.fill();
+        if (k.grad >= 4) {
+          ctx.fillStyle = 'rgba(160,160,160,0.9)';
+          ctx.font = '10px sans-serif';
+          ctx.fillText(k.titel.slice(0, 22), k.x + radius(k) + 3, k.y + 3);
+        }
+      });
+    }
+    zeichne();
+
+    // Drag holds and moves a node; a click (barely any movement) opens it.
+    var gezogen = null, bewegt = 0;
+    function pos(ev) {
+      var r = canvas.getBoundingClientRect();
+      var quelle = ev.touches ? ev.touches[0] : ev;
+      return { x: quelle.clientX - r.left, y: quelle.clientY - r.top };
+    }
+    function treffer(p) { return knoten.filter(function (k) { var dx = p.x - k.x, dy = p.y - k.y; return dx * dx + dy * dy <= Math.pow(radius(k) + 5, 2); })[0] || null; }
+    canvas.addEventListener('pointerdown', function (ev) {
+      gezogen = treffer(pos(ev)); bewegt = 0;
+      if (gezogen) { gezogen.fixiert = true; canvas.setPointerCapture(ev.pointerId); }
+    });
+    canvas.addEventListener('pointermove', function (ev) {
+      if (!gezogen) return;
+      var p = pos(ev);
+      bewegt += Math.abs(p.x - gezogen.x) + Math.abs(p.y - gezogen.y);
+      gezogen.x = Math.max(30, Math.min(breite - 30, p.x)); gezogen.y = Math.max(26, Math.min(hoehe - 26, p.y));
+      zeichne();
+    });
+    canvas.addEventListener('pointerup', function (ev) {
+      if (gezogen) { gezogen.fixiert = false; if (bewegt < 6) openNote(gezogen.id); gezogen = null; zeichne(); }
+    });
+    canvas.style.cursor = 'grab';
+    return wrap;
   }
 
   function openNote(id) {

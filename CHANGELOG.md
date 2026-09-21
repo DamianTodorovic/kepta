@@ -2,6 +2,14 @@
 
 All notable changes are documented in this file. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and versioning follows [SemVer](https://semver.org/).
 
+## [2.13.5] — 2026-09-21
+
+### Added
+- **Wissensgraph in der Core-Oberfläche:** die Ansicht „Graph" zeichnet Notizen
+  als Knoten und [[Links]] als Kanten (read-only, Kraft-Layout vorberechnet,
+  Knoten ziehen, Klick öffnet die Notiz) — der Vergleich mit gratis
+  Graph-Tools hört auf zu sticheln. Neu: `GET /api/graph`.
+
 ## [2.13.4] — 2026-09-20
 
 ### Added

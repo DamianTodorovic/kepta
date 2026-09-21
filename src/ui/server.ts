@@ -23,6 +23,7 @@ import { saveWithIndex } from "../core/mcp";
 import { APP_VERSION } from "../core/version";
 import { SEITE_HTML, SEITE_CSS, SEITE_JS, FAVICON_SVG } from "./seite";
 import { anzeige, detail, ausschnitt } from "./markdown";
+import { baueGraph } from "./graph";
 import { letzteAktivitaet, agenten, anzeigeName, type Aktivitaet } from "../aktivitaet";
 import { finde, verbinde, standardUmgebung, type Umgebung } from "../einrichtung";
 
@@ -332,6 +333,8 @@ async function bearbeite(req: http.IncomingMessage, res: http.ServerResponse, ct
       })),
     });
   }
+
+  if (pfad === "/api/graph" && methode === "GET") return antworte(res, 200, baueGraph(store));
 
   if (pfad === "/api/recovery-key" && methode === "POST") {
     let schluessel: string | null;

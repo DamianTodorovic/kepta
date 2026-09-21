@@ -1,5 +1,5 @@
 <p align="center"><img src="docs/kepta-logo.svg" width="88" alt="KEPTA"></p>
-<p align="center"><img src="https://img.shields.io/badge/version-2.13.4-blue" alt="v2.13.4"> <img src="https://img.shields.io/badge/license-AGPL--3.0-blue" alt="AGPL-3.0"> <img src="https://img.shields.io/badge/tests-414%20passing-brightgreen" alt="tests"> <img src="https://img.shields.io/badge/coverage%20gate-%E2%89%A5%2070%25%20of%20lines-brightgreen" alt="coverage gate"> <img src="https://img.shields.io/badge/platform-macOS%20%7C%20Windows%20%7C%20Linux-lightgrey" alt="platform"> <img src="https://img.shields.io/badge/encryption-SQLCipher%204-green" alt="encrypted"> <a href="https://www.linkedin.com/in/damian-todorovic-244235434"><img src="https://img.shields.io/badge/LinkedIn-Damian%20Todorovic-0A66C2?logo=linkedin&logoColor=white" alt="Damian Todorovic on LinkedIn"></a></p>
+<p align="center"><img src="https://img.shields.io/badge/version-2.13.4-blue" alt="v2.13.4"> <img src="https://img.shields.io/badge/license-AGPL--3.0-blue" alt="AGPL-3.0"> <img src="https://img.shields.io/badge/tests-418%20passing-brightgreen" alt="tests"> <img src="https://img.shields.io/badge/coverage%20gate-%E2%89%A5%2070%25%20of%20lines-brightgreen" alt="coverage gate"> <img src="https://img.shields.io/badge/platform-macOS%20%7C%20Windows%20%7C%20Linux-lightgrey" alt="platform"> <img src="https://img.shields.io/badge/encryption-SQLCipher%204-green" alt="encrypted"> <a href="https://www.linkedin.com/in/damian-todorovic-244235434"><img src="https://img.shields.io/badge/LinkedIn-Damian%20Todorovic-0A66C2?logo=linkedin&logoColor=white" alt="Damian Todorovic on LinkedIn"></a></p>
 
 # KEPTA Core
 
@@ -43,7 +43,7 @@ Then tell your AI something worth keeping — and watch it arrive. Details in th
 
 | Tier | For | Price | What it includes |
 |---|---|---|---|
-| **Core** | Developers & AI agents | **€0**, open source, forever | This repository: the memory engine, encryption, hybrid search, MCP, HTTP API, Python client, CLI, browser UI, ChatGPT import |
+| **Core** | Developers & AI agents | **€0**, open source, forever | This repository: the memory engine, encryption, hybrid search, MCP, HTTP API, Python client, CLI, browser UI with a read-only knowledge graph, ChatGPT import |
 | **Pro** | Individuals & power users | **€12/month or €120/year**, self-serve in the app | The desktop experience on the same engine: knowledge graph, chat with your memory, dossiers, Today, privacy shield, imports, device sync |
 | **Enterprise** | Teams, practices & organizations | **By agreement** | Everything in Pro, plus team memory (shared knowledge, workspaces, roles, admin console), SSO, central policies, MDM/air-gapped deployment, security documentation and support |
 
@@ -106,6 +106,7 @@ A native app for macOS and Windows that turns the same encrypted knowledge base 
 | Device Sync — move a scope between your own devices as an AES-256-GCM bundle, with a hash-chained ledger | API | ✅ |
 | **Knowledge graph** | | |
 | Entities and relations from `[[wiki links]]` and automatic extraction | API · MCP | ✅ |
+| Read-only knowledge graph — notes as nodes, [[links]] as edges, drag and click | ✅ | — |
 | Interactive graph with two views — Force (physics) and Tree (dendrogram); nodes glide between them | — | ✅ |
 | Unbounded canvas — 3 000 nodes and 9 500 edges at 60 fps; zoom, pan, drag, fit-to-view | — | ✅ |
 | Time slider — the graph as it stood on any day | — | ✅ |
@@ -275,7 +276,7 @@ The knowledge base is a SQLCipher 4 database: AES-256, an HMAC-SHA512 over every
 
 ## 🧪 Quality
 
-**414 tests** with Vitest and v8 coverage. The coverage thresholds are a CI gate: a commit that falls below one of them turns CI red. On top: a retrieval eval (Hit@1, Precision@5, MRR) on a fixed corpus, an ablation test per retrieval leg, an encryption eval and a boundary test on the core architecture.
+**418 tests** with Vitest and v8 coverage. The coverage thresholds are a CI gate: a commit that falls below one of them turns CI red. On top: a retrieval eval (Hit@1, Precision@5, MRR) on a fixed corpus, an ablation test per retrieval leg, an encryption eval and a boundary test on the core architecture.
 
 ### Coverage thresholds (enforced by CI)
 

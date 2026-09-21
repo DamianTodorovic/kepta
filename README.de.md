@@ -1,5 +1,5 @@
 <p align="center"><img src="docs/kepta-logo.svg" width="88" alt="KEPTA"></p>
-<p align="center"><img src="https://img.shields.io/badge/tests-414%20passing-brightgreen" alt="Tests"> <img src="https://img.shields.io/badge/coverage%20gate-%E2%89%A5%2070%25%20der%20Zeilen-brightgreen" alt="Coverage-Gate"> <img src="https://img.shields.io/badge/Verschl%C3%BCsselung-SQLCipher%204-green" alt="verschlüsselt"> <a href="https://www.linkedin.com/in/damian-todorovic-244235434"><img src="https://img.shields.io/badge/LinkedIn-Damian%20Todorovic-0A66C2?logo=linkedin&logoColor=white" alt="Damian Todorovic auf LinkedIn"></a></p>
+<p align="center"><img src="https://img.shields.io/badge/tests-418%20passing-brightgreen" alt="Tests"> <img src="https://img.shields.io/badge/coverage%20gate-%E2%89%A5%2070%25%20der%20Zeilen-brightgreen" alt="Coverage-Gate"> <img src="https://img.shields.io/badge/Verschl%C3%BCsselung-SQLCipher%204-green" alt="verschlüsselt"> <a href="https://www.linkedin.com/in/damian-todorovic-244235434"><img src="https://img.shields.io/badge/LinkedIn-Damian%20Todorovic-0A66C2?logo=linkedin&logoColor=white" alt="Damian Todorovic auf LinkedIn"></a></p>
 
 # KEPTA Core — deutsches Readme
 
@@ -24,7 +24,7 @@ Dann sag deiner KI etwas, das sie behalten soll — und sieh zu, wie es ankommt.
 
 | Stufe | Für | Preis | Was drin ist |
 |---|---|---|---|
-| **Core** | Entwickler & KI-Agenten | **0 €**, Open Source, für immer | Dieses Repository: Memory-Engine, Verschlüsselung, Hybrid-Suche, MCP, HTTP-API, Python-Client, CLI, Browser-UI, ChatGPT-Import |
+| **Core** | Entwickler & KI-Agenten | **0 €**, Open Source, für immer | Dieses Repository: Memory-Engine, Verschlüsselung, Hybrid-Suche, MCP, HTTP-API, Python-Client, CLI, Browser-UI mit Nur-lesen-Wissensgraph, ChatGPT-Import |
 | **Pro** | Einzelpersonen & Power User | **12 €/Monat oder 120 €/Jahr**, direkt in der App | Das Desktop-Erlebnis auf derselben Engine: Wissensgraph, Chat mit deinem Gedächtnis, Dossiers, Today, Privacy-Shield, Importe, Device-Sync |
 | **Enterprise** | Teams, Praxen & Organisationen | **Nach Absprache** | Alles aus Pro, plus Team-Gedächtnis (geteiltes Wissen, Workspaces, Rollen, Admin-Konsole), SSO, zentrale Richtlinien, MDM-/Air-gapped-Ausrollung, Security-Dokumentation und Support |
 
@@ -87,6 +87,7 @@ Eine native App für macOS und Windows, die dieselbe verschlüsselte Wissensbasi
 | Device Sync — einen Scope zwischen den eigenen Geräten verschieben, als AES-256-GCM-Bundle mit Hash-Ketten-Protokoll | API | ✅ |
 | **Wissensgraph** | | |
 | Entitäten und Beziehungen aus `[[Wiki-Links]]` und automatischer Erkennung | API · MCP | ✅ |
+| Nur-lesen-Wissensgraph — Notizen als Knoten, [[Links]] als Kanten, ziehen und klicken | ✅ | — |
 | Interaktiver Graph mit zwei Ansichten — Kräfte-Layout und Baum (Dendrogramm); die Knoten gleiten hinüber | — | ✅ |
 | Unbegrenzte Fläche — 3 000 Knoten und 9 500 Kanten bei 60 fps; zoomen, verschieben, ziehen, alles einpassen | — | ✅ |
 | Zeitregler — der Graph, wie er an jedem Tag aussah | — | ✅ |
@@ -152,7 +153,7 @@ npm install && npm run dev
 
 **4. Docker** (nur MCP-Server): `docker build -t kepta-mcp .`
 
-**Zahlen:** **414 Tests** · 29 Routen · `npm run eval` — Eval auf 58 Notizen / 45 Anfragen (Hit@1, Precision@5, MRR).
+**Zahlen:** **418 Tests** · 29 Routen · `npm run eval` — Eval auf 58 Notizen / 45 Anfragen (Hit@1, Precision@5, MRR).
 
 ## 🔐 Verschlüsselt auf der Platte
 

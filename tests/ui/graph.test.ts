@@ -1,0 +1,74 @@
+// Der Wissensgraph der Core-Oberfläche: Datenlayer (Notizen → Knoten, [[Links]]
+// → Kanten) und der /api/graph-Endpunkt. Kanten nur zwischen existierenden
+// Notizen, keine Selbst-Kanten, Dedup, Zähler für unverarbeitete Verweise.
+import { describe, it, expect, beforeEach, afterEach } from "vitest";
+import fs from "node:fs";
+import os from "node:os";
+import path from "node:path";
+import { KeptaStore } from "../../src/core/store";
+import { baueGraph } from "../../src/ui/graph";
+import { starteOberflaeche, type Oberflaeche } from "../../src/ui/server";
+
+let store: KeptaStore;
+let ui: Oberflaeche;
+let dir: string;
+
+function notiz(titel: string, inhalt: string): void {
+  store.createMemory({ title: titel, content: inhalt });
+}
+
+beforeEach(async () => {
+  dir = fs.mkdtempSync(path.join(os.tmpdir(), "kepta-graph-"));
+  store = new KeptaStore(path.join(dir, "t.db"));
+  ui = await starteOberflaeche(store, { port: 0 });
+});
+afterEach(async () => {
+  await ui.close();
+  store.close();
+});
+
+describe("baueGraph", () => {
+  it("Notiz-Knoten, [[Link]]-Kanten auf existierende Titel, Dedup, keine Selbst-Kanten", () => {
+    notiz("Hetzner", "Die Produktion läuft auf [[Hetzner]]-Servern. Siehe auch [[Hetzner]] und [[Datenbank]].");
+    notiz("Datenbank", "PostgreSQL 16 auf [[Hetzner]].");
+    notiz("Freitext", "Ein [[Geistertitel]] verweist ins Leere.");
+    const g = baueGraph(store);
+    expect(g.nodes.map((n) => n.titel).sort()).toEqual(["Datenbank", "Freitext", "Hetzner"]);
+    // Hetzner↔Datenbank: zwei [[Links]] (Hin + Rück), aber als EINE ungerichtete Kante dedupliziert.
+    expect(g.edges.length).toBe(1);
+    // Keine Selbst-Kante: [[Hetzner]] in der Hetzner-Notiz selbst zählt als Verweis, keine Kante.
+    expect(g.verweise).toBe(5);
+    const hetzner = g.nodes.find((n) => n.titel === "Hetzner")!;
+    expect(hetzner.grad).toBeGreaterThanOrEqual(1);
+  });
+
+  it("Groß-/Kleinschreibung im [[Link]] löst auf; Teil vor | gewinnt", () => {
+    notiz("Deploy", "Deploy nur via [[deploy-Runbuch|Runbook]].");
+    notiz("deploy-runbuch", "Der Runbook-Inhalt.");
+    const g = baueGraph(store);
+    expect(g.edges.length).toBe(1);
+    const ids = [g.edges[0]!.quelle, g.edges[0]!.ziel].sort();
+    const deploy = g.nodes.find((n) => n.titel === "Deploy")!;
+    expect(ids).toContain(deploy.id);
+  });
+});
+
+describe("/api/graph", () => {
+  it("liefert nodes/edges/verweise als JSON", async () => {
+    notiz("Alpha", "Siehe [[Beta]] und [[Alpha]] selbst.");
+    notiz("Beta", "Rückverweis auf [[Alpha]].");
+    const res = await fetch(`${ui.url.replace(/\/$/, "")}/api/graph`);
+    expect(res.status).toBe(200);
+    const g = await res.json();
+    expect(g.nodes.length).toBe(2);
+    expect(g.edges.length).toBe(1);
+    expect(g.verweise).toBeGreaterThanOrEqual(2);
+  });
+
+  it("leerer Store → leere Arrays (kein Crash)", async () => {
+    const res = await fetch(`${ui.url.replace(/\/$/, "")}/api/graph`);
+    const g = await res.json();
+    expect(g.nodes).toEqual([]);
+    expect(g.edges).toEqual([]);
+  });
+});
