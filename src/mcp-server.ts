@@ -17,6 +17,7 @@ import { handleRpc, SERVER_INFO, type JsonRpcRequest, type JsonRpcResponse, type
 import { protokolliereEreignis } from "./aktivitaet";
 import { einrichten, standardUmgebung } from "./einrichtung";
 import { importChatgptKommando } from "./core/chatgpt-import";
+import { starteDemo } from "./demo";
 import readline from "node:readline";
 import { starteOberflaeche, oeffneImBrowser, leseUiArgumente } from "./ui/server";
 
@@ -144,6 +145,20 @@ async function starteUi(argumente: string[]): Promise<void> {
   };
   process.on("SIGINT", ende);
   process.on("SIGTERM", ende);
+}
+
+/**
+ * `npx kepta demo`: Wegwerf-Demodatenbank mit Kanzlei-Korpus, Oberfläche
+ * öffnet sich — die 60-Sekunden-Führung, ohne die echte Datei zu berühren.
+ */
+if (process.argv[2] === "demo") {
+  starteDemo(process.argv.slice(3)).then(
+    (code) => process.exit(code),
+    (e: unknown) => {
+      console.error(`[kepta] ${e instanceof Error ? e.message : String(e)}`);
+      process.exit(1);
+    }
+  );
 }
 
 /**

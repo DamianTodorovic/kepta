@@ -2,6 +2,14 @@
 
 All notable changes are documented in this file. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and versioning follows [SemVer](https://semver.org/).
 
+## [2.13.6] — 2026-09-21
+
+### Added
+- **`npx kepta demo`:** die 60-Sekunden-Führung — eine Wegwerf-Demodatenbank
+  im temporären Verzeichnis (fasst die echte Datei nie an), ein fiktiver
+  Kanzlei-Korpus mit [[Verknüpfungen]], die Oberfläche öffnet sich mit
+  gefülltem Graphen. Sieht man es erst, versteht man es sofort.
+
 ## [2.13.5] — 2026-09-21
 
 ### Added
