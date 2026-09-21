@@ -2,6 +2,16 @@
 
 All notable changes are documented in this file. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and versioning follows [SemVer](https://semver.org/).
 
+## [2.13.11] — 2026-09-21
+
+### Fixed
+- **Graph-Zähler zählt, was gezeichnet wird:** die Beschriftung des
+  Wissensgraphen nannte alle Kanten der API, gezeichnet werden aber nur
+  Kanten mit beiden Enden im Bild — die Zählung passt sich jetzt der
+  Leinwand an statt der Rohdaten.
+- **esbuild 0.28.2** (nur Entwicklungswerkzeug): räumt das Dependabot-
+  Finding „arbitrary file read im Dev-Server" weg (LOW, Windows-only).
+
 ## [2.13.10] — 2026-09-21
 
 ### Added

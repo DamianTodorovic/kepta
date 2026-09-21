@@ -819,7 +819,7 @@ export const SEITE_JS = String.raw`
       canvas.height = g.hoehe * (window.devicePixelRatio || 1);
       canvas.style.width = g.breite + 'px';
       canvas.style.height = g.hoehe + 'px';
-      canvas.setAttribute('aria-label', g.nodes.length + ' notes as nodes, ' + g.edges.length + ' links as edges');
+      canvas.setAttribute('aria-label', 'Knowledge graph');
       var ctx = canvas.getContext('2d');
       ctx.setTransform(window.devicePixelRatio || 1, 0, 0, window.devicePixelRatio || 1, 0, 0);
       var stil = getComputedStyle(canvas);
@@ -827,6 +827,10 @@ export const SEITE_JS = String.raw`
       var knoten = g.nodes;
       var byId = {}; knoten.forEach(function (k) { byId[k.id] = k; });
       var kanten = g.edges.map(function (e) { return [byId[e.quelle], byId[e.ziel], e.real]; }).filter(function (p) { return p[0] && p[1]; });
+      // Count what is actually drawn, not what the API sent: edges with a
+      // missing endpoint (beyond the maxKnoten window) are silently dropped
+      // by the filter above, and the header should never outcount the canvas.
+      canvas.setAttribute('aria-label', knoten.length + ' notes as nodes, ' + kanten.length + ' links as edges');
       function radius(k) { return 5 + Math.min(9, k.grad * 1.4); }
       function zeichne() {
         ctx.clearRect(0, 0, g.breite, g.hoehe);
