@@ -12,7 +12,7 @@ KEPTA ändert das — **lokal**. Eine verschlüsselte SQLite-Datei auf deinem Re
 ## ⚡ Erst sehen, dann verbinden
 
 ```bash
-npx -y kepta demo        # 60 Sekunden: eine Wegwerf-Demo mit Graph — fasst nichts von dir an
+npx -y kepta-mcp demo    # 60 Sekunden: eine Wegwerf-Demo mit Graph — fasst nichts von dir an
 npx -y kepta-mcp setup   # verbindet Claude Desktop, Claude Code, Cursor, Windsurf, VS Code, Gemini CLI, Cline und Roo Code
 npx -y kepta-mcp ui      # dein echtes Gedächtnis im Browser — sieh live zu, wie deine KI es nutzt
 npx -y kepta import chatgpt <export-ordner>   # bring deine ChatGPT-Historie mit (Export → entpacken → import)

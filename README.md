@@ -28,7 +28,7 @@ flowchart LR
 ## ⚡ See it first, connect it second
 
 ```bash
-npx -y kepta demo        # 60 seconds: a throwaway demo memory, graph included — touches nothing of yours
+npx -y kepta-mcp demo    # 60 seconds: a throwaway demo memory, graph included — touches nothing of yours
 npx -y kepta-mcp setup   # connects Claude Desktop, Claude Code, Cursor, Windsurf, VS Code, Gemini CLI, Cline and Roo Code
 npx -y kepta-mcp ui      # your real memory in the browser — watch your AI use it, live
 npx -y kepta import chatgpt <export-folder>   # bring your ChatGPT history with you (export → extract → import)

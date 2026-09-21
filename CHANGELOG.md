@@ -5,7 +5,7 @@ All notable changes are documented in this file. The format follows [Keep a Chan
 ## [2.13.6] — 2026-09-21
 
 ### Added
-- **`npx kepta demo`:** die 60-Sekunden-Führung — eine Wegwerf-Demodatenbank
+- **`npx kepta-mcp demo`:** die 60-Sekunden-Führung — eine Wegwerf-Demodatenbank
   im temporären Verzeichnis (fasst die echte Datei nie an), ein fiktiver
   Kanzlei-Korpus mit [[Verknüpfungen]], die Oberfläche öffnet sich mit
   gefülltem Graphen. Sieht man es erst, versteht man es sofort.
