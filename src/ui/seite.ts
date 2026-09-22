@@ -78,7 +78,7 @@ export const SEITE_HTML = `<!doctype html>
     <section data-feature="app"><h3>A native app</h3><p>macOS, Windows and Linux in a hardened shell, with a command palette (⌘K), focus mode, a setup assistant and a system status that finds local AI by itself.</p></section>
     <section data-feature="trust"><h3>Private by design</h3><p>No account, no telemetry, no cloud. The license key is checked offline — KEPTA never phones home.</p></section>
   </div>
-  <div class="ent-trial"><strong>No account, no internet.</strong> One offline license key — €120/year for KEPTA Pro, €25/user/month for teams (KEPTA Business), price by agreement for organizations (KEPTA Enterprise).</div>
+  <div class="ent-trial"><strong>No account, no internet.</strong> One offline license key — €12/month or €120/year for KEPTA Pro, price by agreement for organizations (KEPTA Enterprise).</div>
   <div class="actions">
     <a class="btn primary" href="https://www.linkedin.com/in/damian-todorovic-244235434" target="_blank" rel="noopener noreferrer">Get KEPTA Pro</a>
     <a class="btn" href="https://github.com/DamianTodorovic/kepta#-kepta-pro--the-full-desktop-app" target="_blank" rel="noopener noreferrer">Compare Core and Pro</a>
@@ -115,7 +115,7 @@ button{font:inherit;color:inherit;cursor:pointer}
 .dot.t-trash{background:transparent;box-shadow:inset 0 0 0 1.5px var(--muted)}
 .t-semantic{--c:var(--t-semantic)}.t-episodic{--c:var(--t-episodic)}.t-procedural{--c:var(--t-procedural)}.t-reference{--c:var(--t-reference)}
 .hash{color:var(--muted);width:8px}
-.graph-wrap{padding:6px 2px;border:1px solid var(--line);border-radius:12px;background:var(--panel);overflow:hidden}
+.graph-wrap{grid-column:1/-1;max-width:1100px;padding:6px 2px;border:1px solid var(--line);border-radius:12px;background:var(--panel);overflow:hidden}
 .graph-wrap canvas{display:block}
 .sidebar-foot{margin-top:auto;display:flex;flex-direction:column;gap:10px;padding:16px 4px 0}
 .lock{font-size:12px;padding:9px 11px;border-radius:8px;border:1px solid var(--line);display:flex;align-items:center;gap:8px;background:transparent;width:100%;text-align:left}
@@ -448,7 +448,7 @@ export const SEITE_JS = String.raw`
   }
 
   function loadStatus() { return api('/api/status').then(function (s) { state.status = s; renderSidebar(); }); }
-  function setView(v) { state.view = v; state.tag = null; state.query = ''; $('q').value = ''; load(true); }
+  function setView(v) { state.view = v; state.tag = null; state.query = ''; $('q').value = ''; try { history.replaceState(null, '', '#' + v); } catch (e) { /* file: URL */ } load(true); }
   function setTag(t) { state.tag = state.tag === t ? null : t; state.view = 'all'; state.query = ''; $('q').value = ''; load(true); }
 
   function heading() {
@@ -805,7 +805,6 @@ export const SEITE_JS = String.raw`
     var list = $('list');
     list.textContent = '';
     more.hidden = true;
-    list.appendChild(h('p', { class: 'muted pad', text: 'Loading graph…' }));
     // Erst einsetzen (unsichtbar), DANN Breite messen, DANN Positionen holen:
     var wrap = h('div', { class: 'graph-wrap' }, h('canvas', { 'aria-label': 'Knowledge graph', role: 'img' }));
     wrap.firstChild.style.display = 'block';
@@ -1021,6 +1020,12 @@ export const SEITE_JS = String.raw`
     else if (ev.key === 'n' && !tippt && $('drawer').hidden) { ev.preventDefault(); openEditor(null); }
   });
 
+  // A #hash can name the opening view — the demo opens on #graph.
+  var start = (location.hash || '').replace('#', '');
+  if (start === 'activity' || VIEWS.some(function (v) { return v[0] === start; })) {
+    state.view = start;
+    try { history.replaceState(null, '', '#' + start); } catch (e) { /* file: URL */ }
+  }
   loadStatus().then(function () { load(true); einordnungPruefen(); holeAktivitaet(true); }).catch(function (e) { toast('KEPTA is not reachable: ' + e.message, true); });
   setInterval(function () { if (!document.hidden) holeAktivitaet(false); }, 3000);
 })();

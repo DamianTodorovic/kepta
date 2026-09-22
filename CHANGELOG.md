@@ -2,6 +2,30 @@
 
 All notable changes are documented in this file. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and versioning follows [SemVer](https://semver.org/).
 
+## [2.13.13] — 2026-09-22
+
+### Changed
+- **The demo opens on the graph.** `npx kepta-mcp demo` now lands in the
+  browser with `#graph` (the surface understands a `#view` hash), and the
+  graph spans the full content width instead of sitting in a 320 px list
+  tile. The demo corpus grew from 10 to 33 notes — the fictional tax firm
+  „Steiner & Kollegen" with clients, deadlines, DATEV, a live contradiction
+  (Hoffmann filing deadline vs. extension) and an expired note, so graph,
+  search, contradiction and the time slider all have something real to show
+  on the first screen.
+
+### Fixed
+- **Force layout stopped drifting into a corner.** The tick loop applied
+  each edge force to only one endpoint (the counter-force landed on a not
+  yet initialized velocity and was discarded), so the graph's center of
+  mass walked into the bottom-right corner on wide canvases. Forces are
+  now applied symmetrically; the graph centers at any size.
+- **The Pro panel names the current pricing** — €12/month or €120/year for
+  KEPTA Pro, price by agreement for organizations (KEPTA Enterprise). The
+  stale "€25/user/month for teams (KEPTA Business)" line is gone.
+- **The graph view no longer leaves a permanent "Loading graph…" label**
+  above the canvas.
+
 ## [2.13.12] — 2026-09-22
 
 ### Changed

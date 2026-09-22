@@ -133,9 +133,9 @@ export async function starteDemoShow(argumente: string[]): Promise<number> {
   }
   const ui = await starteOberflaeche(store, { port: 0 });
   sag(`   the same database is now open at ${ui.url}`);
-  sag("   drag the graph, pull the time slider, open the contradictions.");
+  sag("   it opens on the graph — drag a node, try the search, pull the time slider.");
   sag("   For your real memory: npx kepta-mcp setup");
-  oeffneImBrowser(ui.url);
+  oeffneImBrowser(ui.url + "#graph");
   await new Promise<void>((ok) => {
     const ende = () => {
       void ui.close().finally(() => {

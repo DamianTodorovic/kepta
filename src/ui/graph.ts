@@ -164,10 +164,18 @@ export function kraftLayout(g: GraphDaten, breite: number, hoehe: number, ticks 
     .map((e) => [byId.get(e.quelle), byId.get(e.ziel)] as const)
     .filter((p): p is [LayoutKnoten, LayoutKnoten] => p[0] !== undefined && p[1] !== undefined);
   for (let tick = 0; tick < ticks; tick++) {
+    // Kräfte symmetrisch: erst alle Geschwindigkeiten auf die Zentrierung
+    // setzen, DANN Abstoßung und Federn auf BEIDE Enden wirken lassen. (Bisher
+    // landete die Gegenkraft auf noch nicht initialisierten Geschwindigkeiten
+    // und wurde im selben Tick verworfen — der Schwerpunkt wanderte in eine
+    // Ecke, sobald die Leinwand breiter war als die alte 320er-Kachel.)
+    for (const k of knoten) {
+      const kk = k as LayoutKnoten & { vx: number; vy: number };
+      kk.vx = (k.x - breite / 2) * 0.012;
+      kk.vy = (k.y - hoehe / 2) * 0.012;
+    }
     for (let i = 0; i < knoten.length; i++) {
       const a = knoten[i] as LayoutKnoten & { vx: number; vy: number };
-      a.vx = (a.x - breite / 2) * 0.012;
-      a.vy = (a.y - hoehe / 2) * 0.012;
       for (let j = i + 1; j < knoten.length; j++) {
         const b = knoten[j] as LayoutKnoten & { vx: number; vy: number };
         const dx = a.x - b.x, dy = a.y - b.y;
