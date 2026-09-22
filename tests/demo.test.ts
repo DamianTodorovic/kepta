@@ -7,6 +7,7 @@ import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import { demoKorpus, demoDatenbank } from "../src/demo";
+import { starteDemoShow } from "../src/demo-show";
 import { KeptaStore } from "../src/core/store";
 import { baueGraph } from "../src/ui/graph";
 
@@ -45,5 +46,31 @@ describe("demoDatenbank", () => {
   it("zweiter Aufruf auf demselben Pfad wirft nicht — aber der Demo-Lauf nutzt je einen frischen Pfad", () => {
     const db = path.join(fs.mkdtempSync(path.join(os.tmpdir(), "demo-")), "demo.db");
     expect(() => demoDatenbank(db)).not.toThrow();
+  });
+});
+
+
+describe("demo-show", () => {
+  it("spielt alle Beats: Klassifikation, Widerspruch, Zeitreise, verschlüsselte Wegwerf-DB — ohne undefined", async () => {
+    const log: string[] = [];
+    const original = console.log;
+    console.log = (t: string = "") => { log.push(t); };
+    try {
+      const code = await starteDemoShow(["--fast"]);
+      expect(code).toBe(0);
+    } finally {
+      console.log = original;
+    }
+    const text = log.join("\n");
+    expect(text).toContain("A fact walks in");
+    expect(text).toContain("KEPTA decided: type");
+    expect(text).toContain("Weber billing rhythm (updated)");
+    expect(text).toContain("contradiction pair(s)");
+    expect(text).toContain("now points to its replacement");
+    expect(text).toContain("30 days ago");
+    expect(text).toContain("MONTHLY");
+    expect(text).toContain("encrypted: yes");
+    expect(text).not.toContain("undefined");
+    expect(text).not.toContain("→ \"?\"");
   });
 });

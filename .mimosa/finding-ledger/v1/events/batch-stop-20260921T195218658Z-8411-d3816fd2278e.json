@@ -1,0 +1,36 @@
+{
+  "schemaVersion": "mimosa-finding-ledger-batch/v1",
+  "batchId": "stop-20260921T195218658Z-8411-d3816fd2278e",
+  "runId": "20260921T195218658Z-8411-d3816fd2278e",
+  "runStatus": "completed",
+  "coverage": {
+    "status": "complete",
+    "reasons": []
+  },
+  "source": {
+    "component": "zcode-hook",
+    "operationId": "Stop"
+  },
+  "revision": "d2b4b12250b52ed6dd4b7f5a7e34f78204c24821",
+  "diffHash": "c24eeaf427feac90faf39d4d08893e0f629de5c261dce6dc2c723d746867e6a5",
+  "rulesVersion": "unavailable",
+  "sessionHash": "b5508f614f5e703ce28fdc7576a8cfbf612e19933f80b557414d2dad279c0782",
+  "reportRef": ".mimosa/reports/task-review-sess_b9591fd4-91ea-4fab-9530-40dddb763d73-20260921T195218658Z-8411-d3816fd2278e.json",
+  "events": [],
+  "observedFindingIds": [
+    "mimosa-a1e03fc17b8291e2270a70cd"
+  ],
+  "verifiedFiles": [
+    {
+      "file": "src/mcp-server.ts",
+      "direct": "complete",
+      "projectContext": "partial"
+    },
+    {
+      "file": "tests/npm-package.test.ts",
+      "direct": "complete",
+      "projectContext": "partial"
+    }
+  ],
+  "recordedAt": "2026-09-21T19:52:18.844Z"
+}

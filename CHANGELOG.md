@@ -2,6 +2,19 @@
 
 All notable changes are documented in this file. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and versioning follows [SemVer](https://semver.org/).
 
+## [2.13.12] — 2026-09-22
+
+### Changed
+- **`npx kepta-mcp demo` is now a show, not a page.** A 90-second story plays
+  in the terminal — and every beat is real product code on a throwaway
+  database: a fact walks in and the classification rules decide its type and
+  tags, the memory answers a question with sources, the client changes their
+  mind and the contradiction surfaces on demand, the supersede chain keeps
+  both versions, the time slider proves what the file said 30 days ago, and
+  the throwaway file is encrypted (AES-256 with a per-run throwaway key —
+  no keychain contact). At the end the same database opens in the browser.
+  `--fast` plays without pauses (that is the mode the tests drive).
+
 ## [2.13.11] — 2026-09-21
 
 ### Fixed
