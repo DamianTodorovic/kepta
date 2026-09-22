@@ -216,6 +216,13 @@ describe("Abzeichen und Anwendungstexte behaupten nichts Falsches", () => {
     expect(lies("CHANGELOG.md"), `CHANGELOG.md hat keinen Abschnitt "## [${version}]"`).toContain(`## [${version}]`);
   });
 
+  it("README.md zeigt die Version aus package.json als Badge", () => {
+    // Nachtrag 22.9.2026: das Badge zeigte 2.13.4, die Pakete waren bei 2.13.11 —
+    // dieselbe Sorte Drift wie die Testzahlen, nur ohne Waechter.
+    const version = (JSON.parse(lies("package.json")) as { version: string }).version;
+    expect(lies("README.md"), `README.md-Badge zeigt nicht ${version}`).toContain(`badge/version-${version}-blue`);
+  });
+
 });
 
 // Nachtrag 10.9.2026: "Gesamt-Coverage ~91 %" stand in den READMEs, gemessen
