@@ -74,3 +74,6 @@ npm/*.tgz
 
 # Foerderantraege — persoenliche Unterlagen, gehoeren nicht ins oeffentliche Repo
 antraege/
+
+# Lokales KI-Plugin-Verzeichnis (Mimosa) — nie ins Repo
+.mimosa/
