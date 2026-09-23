@@ -1,5 +1,5 @@
 <p align="center"><img src="docs/kepta-logo.svg" width="88" alt="KEPTA"></p>
-<p align="center"><img src="https://img.shields.io/badge/version-2.13.13-blue" alt="v2.13.13"> <img src="https://img.shields.io/badge/license-AGPL--3.0-blue" alt="AGPL-3.0"> <img src="https://img.shields.io/badge/tests-437%20passing-brightgreen" alt="tests"> <img src="https://img.shields.io/badge/coverage%20gate-%E2%89%A5%2070%25%20of%20lines-brightgreen" alt="coverage gate"> <img src="https://img.shields.io/badge/platform-macOS%20%7C%20Windows%20%7C%20Linux-lightgrey" alt="platform"> <img src="https://img.shields.io/badge/encryption-SQLCipher%204-green" alt="encrypted"> <a href="https://www.linkedin.com/in/damian-todorovic-244235434"><img src="https://img.shields.io/badge/LinkedIn-Damian%20Todorovic-0A66C2?logo=linkedin&logoColor=white" alt="Damian Todorovic on LinkedIn"></a></p>
+<p align="center"><img src="https://img.shields.io/badge/version-2.13.14-blue" alt="v2.13.14"> <img src="https://img.shields.io/badge/license-AGPL--3.0-blue" alt="AGPL-3.0"> <img src="https://img.shields.io/badge/tests-437%20passing-brightgreen" alt="tests"> <img src="https://img.shields.io/badge/coverage%20gate-%E2%89%A5%2070%25%20of%20lines-brightgreen" alt="coverage gate"> <img src="https://img.shields.io/badge/platform-macOS%20%7C%20Windows%20%7C%20Linux-lightgrey" alt="platform"> <img src="https://img.shields.io/badge/encryption-SQLCipher%204-green" alt="encrypted"> <a href="https://www.linkedin.com/in/damian-todorovic-244235434"><img src="https://img.shields.io/badge/LinkedIn-Damian%20Todorovic-0A66C2?logo=linkedin&logoColor=white" alt="Damian Todorovic on LinkedIn"></a></p>
 
 # KEPTA Core
 
@@ -27,8 +27,11 @@ flowchart LR
 
 ## ⚡ See it first, connect it second
 
+**The desktop app first:** [Download KEPTA Pro](https://github.com/DamianTodorovic/kepta-pro-releases/releases/latest) — every download starts with **one free Pro day** (24 hours, every tool, unlimited, no card, no account, no key), then it runs free with daily limits and never locks.
+
+Or headless, right in your agents:
+
 ```bash
-npx -y kepta-mcp demo    # 60 seconds: a throwaway demo memory, graph included — touches nothing of yours
 npx -y kepta-mcp setup   # connects Claude Desktop, Claude Code, Cursor, Windsurf, VS Code, Gemini CLI, Cline and Roo Code
 npx -y kepta-mcp ui      # your real memory in the browser — watch your AI use it, live
 npx -y kepta import chatgpt <export-folder>   # bring your ChatGPT history with you (export → extract → import)
@@ -135,7 +138,7 @@ A native app for macOS and Windows that turns the same encrypted knowledge base 
 | Date-aware prompting and a visible token budget | — | ✅ |
 | **Interface** | | |
 | An interface for your memory — browse by kind and tag, search, read, write, trash | ✅ in your browser | ✅ native app |
-| Native desktop app for macOS, Windows and Linux | — | ✅ |
+| Native desktop app for macOS and Windows | — | ✅ |
 | Light and dark | ✅ | ✅ |
 | Keyboard first — shortcuts; in Pro also a command palette (⌘K) | ✅ | ✅ |
 | Tag filter with counts | ✅ | ✅ |
@@ -147,7 +150,7 @@ A native app for macOS and Windows that turns the same encrypted knowledge base 
 | **Price** | | |
 | License | free · AGPL-3.0 | proprietary · free plan with daily limits, Pro removes them |
 
-**KEPTA Pro never locks — and it never phones home.** The app runs as a free plan with generous daily limits on the Pro tools — and a license key removes them, validated **offline** on your machine: no account, no internet, no trial timer. Pro is 12 €/month or 120 €/year, self-serve from inside the app (checkout by Paddle, our Merchant of Record); Enterprise — team memory, SSO, MDM, security documentation — is shaped personally: **[write to me on LinkedIn](https://www.linkedin.com/in/damian-todorovic-244235434)**. The installers are at **[kepta-pro-releases](https://github.com/DamianTodorovic/kepta-pro-releases/releases/latest)**.
+**KEPTA Pro never locks — and it never phones home.** The app runs as a free plan with generous daily limits on the Pro tools — and a license key removes them, validated **offline** on your machine: no account, no internet, no trial timer. Pro is 12 €/month or 120 €/year, bought from inside the app — the Upgrade button always points to the current way to buy (while the self-serve checkout is in its final review, that is a direct line to **[me on LinkedIn](https://www.linkedin.com/in/damian-todorovic-244235434)**); Enterprise — team memory, SSO, MDM, security documentation — is shaped personally. The installers are at **[kepta-pro-releases](https://github.com/DamianTodorovic/kepta-pro-releases/releases/latest)**.
 
 ---
 

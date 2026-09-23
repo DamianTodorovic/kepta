@@ -94,7 +94,7 @@ if not kepta.is_alive():
 
 ## The server behind it
 
-The client talks to the KEPTA HTTP API on your own machine — start it from the [open core](https://github.com/DamianTodorovic/kepta) (`npm run dev`), or run **KEPTA Enterprise**, the desktop app for macOS, Windows and Linux with the knowledge graph, drag & drop import and a chat cockpit ([write to me on LinkedIn](https://www.linkedin.com/in/damian-todorovic-244235434) for a license). German notes work as well as English ones: the search stopword list covers both languages.
+The client talks to the KEPTA HTTP API on your own machine — start it from the [open core](https://github.com/DamianTodorovic/kepta) (`npm run dev`), or run **KEPTA Pro**, the desktop app for macOS and Windows with the knowledge graph, drag & drop import and a chat cockpit. Every download starts with one free Pro day, then it runs free with daily limits and never locks; a license (€12/month or €120/year) removes the limits ([write to me on LinkedIn](https://www.linkedin.com/in/damian-todorovic-244235434) — or reach the buy button inside the app). German notes work as well as English ones: the search stopword list covers both languages.
 
 ## License
 

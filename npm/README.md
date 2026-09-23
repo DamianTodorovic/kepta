@@ -68,7 +68,7 @@ Search works immediately. Install [Ollama](https://ollama.com) and `ollama pull 
 
 This package is the MCP server on its own — enough for an agent, with no window.
 
-**KEPTA Enterprise** is the full desktop app for macOS, Windows and Linux on top of this same encrypted memory: the knowledge graph with Force and Tree views and a time slider, drag & drop import for PDFs, Markdown, Obsidian vaults and web pages, a scan of your own computer with a preview first, and a chat cockpit with the model you choose. One license key, checked offline. Want it? [Write to me on LinkedIn](https://www.linkedin.com/in/damian-todorovic-244235434).
+**KEPTA Pro** is the full desktop app for macOS and Windows on top of this same encrypted memory: the knowledge graph with Force and Tree views and a time slider, drag & drop import for PDFs, Markdown, Obsidian vaults and web pages, a scan of your own computer with a preview first, and a chat cockpit with the model you choose. **Every download starts with one free Pro day** — 24 hours with every tool unlimited, no card, no account, no key — then it runs free with daily limits and never locks. Pro is €12/month or €120/year, bought from inside the app. Enterprise for organizations (team memory, SSO, MDM): [write to me on LinkedIn](https://www.linkedin.com/in/damian-todorovic-244235434).
 
 For Python there is `pip install kepta`.
 

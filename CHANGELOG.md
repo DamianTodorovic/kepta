@@ -2,6 +2,17 @@
 
 All notable changes are documented in this file. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and versioning follows [SemVer](https://semver.org/).
 
+## [2.13.14] — 2026-09-23
+
+### Changed
+- **The README leads with the download.** The funnel is now: see the app →
+  download it (one free Pro day included) → connect agents. The throwaway
+  demo command is no longer advertised (it stays in the package for
+  developers). The desktop app is named correctly everywhere (KEPTA Pro,
+  macOS and Windows — no Linux builds exist), and the buy path reflects
+  reality: the Upgrade button points to the current way to buy while the
+  self-serve checkout is in its final review.
+
 ## [2.13.13] — 2026-09-22
 
 ### Changed
