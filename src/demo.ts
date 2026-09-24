@@ -1,9 +1,10 @@
 // `npx kepta demo` — die 60-Sekunden-Führung.
 //
 // Legt eine WEGWERF-Demodatenbank im temporären Verzeichnis an (niemals die
-// echte Datei unter ~/.kepta), füllt sie mit einem fiktiven Kanzlei-Korpus
-// samt [[Verknüpfungen]] — damit gleich der Graph zeigt, was los ist — und
-// öffnet die Oberfläche. Jeder Aufruf ist frisch: der Ordner wird neu
+// echte Datei unter ~/.kepta) und füllt sie mit einem fiktiven Kanzlei-Korpus
+// samt [[Verknüpfungen]]. KEPTA Core hat keine eigene Oberfläche mehr — der
+// Lauf zeigt die Kennzahlen und den Weg zur kostenlosen Desktop-App, die
+// dieselbe Datei öffnet. Jeder Aufruf ist frisch: der Ordner wird neu
 // gebaut, alter Demo-Inhalt bleibt nie liegen.
 import fs from "node:fs";
 import os from "node:os";
@@ -11,7 +12,6 @@ import path from "node:path";
 import { KeptaStore } from "./core/store";
 import { indexMemory } from "./core/engine";
 import { baueGraph } from "./ui/graph";
-import { starteOberflaeche, oeffneImBrowser } from "./ui/server";
 
 interface DemoNotiz {
   type: "semantic" | "episodic" | "procedural" | "reference";
@@ -105,29 +105,17 @@ export function demoDatenbank(dbPfad: string, jetzt = Date.now()): { anzahl: num
   }
 }
 
-/** `npx kepta demo`: Wegwerf-DB bauen, Oberfläche öffnen, bis Ctrl+C laufen. */
-export async function starteDemo(argumente: string[]): Promise<number> {
+/** `npx kepta demo`: Wegwerf-DB bauen, Kennzahlen zeigen, Weg zur App zeigen. */
+export async function starteDemo(): Promise<number> {
   const ordner = fs.mkdtempSync(path.join(os.tmpdir(), "kepta-demo-"));
   const dbPfad = path.join(ordner, "kepta.db");
   const kennzahlen = demoDatenbank(dbPfad);
-  const store = new KeptaStore(dbPfad);
-  const ui = await starteOberflaeche(store, { port: 0 });
   console.log(`KEPTA demo — a throwaway database, throw it away freely.`);
   console.log(`  ${kennzahlen.anzahl} notes · ${kennzahlen.knoten} graph nodes · ${kennzahlen.kanten} links`);
   console.log(`  database: ${dbPfad}`);
-  console.log(`KEPTA Core is running at ${ui.url}`);
-  console.log("It opens on the graph — then try the search. Press Ctrl+C to stop; the demo data is gone with it.");
-  oeffneImBrowser(ui.url + "#graph");
-  await new Promise<void>((ok) => {
-    const ende = () => {
-      void ui.close().finally(() => {
-        store.close();
-        ok();
-      });
-    };
-    process.on("SIGINT", ende);
-    process.on("SIGTERM", ende);
-  });
+  console.log("KEPTA Core has no browser UI of its own — the interface is the free desktop app.");
+  console.log("KEPTA Pro is free: one free Pro day with every download, then daily limits, never locks.");
+  console.log("  https://github.com/DamianTodorovic/kepta-pro-releases/releases/latest");
   try { fs.rmSync(ordner, { recursive: true, force: true }); } catch { /* Temp darf bleiben */ }
   return 0;
 }

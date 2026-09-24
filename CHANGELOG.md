@@ -2,6 +2,11 @@
 
 All notable changes are documented in this file. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and versioning follows [SemVer](https://semver.org/).
 
+## [2.13.17] — 2026-09-24
+
+### Removed
+- **The browser UI is gone from KEPTA Core.** The interface is the free desktop app (KEPTA Pro) — one file, one download, one free Pro day with every install. `npx kepta-mcp ui` now points there instead of serving a second-rate page; the demo ends with the same pointer. The graph builder stays (API + CLI).
+
 ## [2.13.16] — 2026-09-24
 
 ### Fixed

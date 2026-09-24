@@ -7,10 +7,8 @@ import os from "node:os";
 import path from "node:path";
 import { KeptaStore } from "../../src/core/store";
 import { baueGraph } from "../../src/ui/graph";
-import { starteOberflaeche, type Oberflaeche } from "../../src/ui/server";
 
 let store: KeptaStore;
-let ui: Oberflaeche;
 let dir: string;
 
 function notiz(titel: string, inhalt: string, tags: string[] = []): void {
@@ -20,10 +18,8 @@ function notiz(titel: string, inhalt: string, tags: string[] = []): void {
 beforeEach(async () => {
   dir = fs.mkdtempSync(path.join(os.tmpdir(), "kepta-graph-"));
   store = new KeptaStore(path.join(dir, "t.db"));
-  ui = await starteOberflaeche(store, { port: 0 });
 });
-afterEach(async () => {
-  await ui.close();
+afterEach(() => {
   store.close();
 });
 
@@ -50,26 +46,6 @@ describe("baueGraph", () => {
     const ids = [g.edges[0]!.quelle, g.edges[0]!.ziel].sort();
     const deploy = g.nodes.find((n) => n.titel === "Deploy")!;
     expect(ids).toContain(deploy.id);
-  });
-});
-
-describe("/api/graph", () => {
-  it("liefert nodes/edges/verweise als JSON", async () => {
-    notiz("Alpha", "Siehe [[Beta]] und [[Alpha]] selbst.");
-    notiz("Beta", "Rückverweis auf [[Alpha]].");
-    const res = await fetch(`${ui.url.replace(/\/$/, "")}/api/graph`);
-    expect(res.status).toBe(200);
-    const g = await res.json();
-    expect(g.nodes.length).toBe(2);
-    expect(g.edges.length).toBe(1);
-    expect(g.verweise).toBeGreaterThanOrEqual(2);
-  });
-
-  it("leerer Store → leere Arrays (kein Crash)", async () => {
-    const res = await fetch(`${ui.url.replace(/\/$/, "")}/api/graph`);
-    const g = await res.json();
-    expect(g.nodes).toEqual([]);
-    expect(g.edges).toEqual([]);
   });
 });
 

@@ -20,14 +20,12 @@ import { searchMemories } from "./core/engine";
 import { recall, contradict, stats, type Statistik } from "./cli-erlebnis";
 import { schluesselbundKeyProvider } from "./core/schluessel";
 import { defaultExtensions } from "./core/extensions";
-import { starteOberflaeche, oeffneImBrowser } from "./ui/server";
 
 const SCHLAF = (ms: number) => new Promise<void>((ok) => setTimeout(ok, ms));
 const TAGE = 86_400_000;
 
 export async function starteDemoShow(argumente: string[]): Promise<number> {
   const schnell = argumente.includes("--fast") || process.env.KEPTA_DEMO_FAST === "1";
-  const ohneUi = argumente.includes("--no-ui") || schnell;
   const beat = () => (schnell ? Promise.resolve() : SCHLAF(850));
   const sag = (text = "") => console.log(text);
 
@@ -123,29 +121,12 @@ export async function starteDemoShow(argumente: string[]): Promise<number> {
   sag("   no cloud. no account. every MCP client reads the same file.");
   await beat();
 
-  // ── Finale: die Oberfläche auf derselben Datenbank ──
+  // ── Finale: der Weg zur kostenlosen App ──
   sag("── Your turn ─────────────────────────────────────────────────");
-  if (ohneUi) {
-    sag("   (--fast: UI skipped)");
-    store.close();
-    try { fs.rmSync(ordner, { recursive: true, force: true }); } catch { /* Temp darf bleiben */ }
-    return 0;
-  }
-  const ui = await starteOberflaeche(store, { port: 0 });
-  sag(`   the same database is now open at ${ui.url}`);
-  sag("   it opens on the graph — drag a node, try the search, pull the time slider.");
-  sag("   For your real memory: npx kepta-mcp setup");
-  oeffneImBrowser(ui.url + "#graph");
-  await new Promise<void>((ok) => {
-    const ende = () => {
-      void ui.close().finally(() => {
-        store.close();
-        ok();
-      });
-    };
-    process.on("SIGINT", ende);
-    process.on("SIGTERM", ende);
-  });
+  store.close();
   try { fs.rmSync(ordner, { recursive: true, force: true }); } catch { /* Temp darf bleiben */ }
+  sag("   KEPTA Core has no browser UI of its own — the interface is the free desktop app.");
+  sag("   KEPTA Pro is free: one free Pro day with every download, then daily limits, never locks.");
+  sag("   https://github.com/DamianTodorovic/kepta-pro-releases/releases/latest");
   return 0;
 }

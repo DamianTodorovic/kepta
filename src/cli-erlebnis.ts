@@ -15,7 +15,6 @@ import { searchMemories } from "./core/engine";
 import { consolidateMemories } from "./core/engine";
 import { klassifiziere } from "./core/klassifikation";
 import { baueGraph } from "./ui/graph";
-import { status } from "./ui/server";
 
 const GEWICHT = "\x1b[1m";
 const GRAU = "\x1b[2m";
@@ -109,15 +108,27 @@ export interface Statistik {
 }
 
 export function stats(store: KeptaStore): Statistik {
-  const st = status(store);
+  // Die Statistik zählt nur aktive (nicht gelöschte) Notizen — dieselbe Regel
+  // wie store.countMemories, hier über die Liste, weil Typen und Tags je Notiz
+  // gebraucht werden. (Früher aus ui/server importiert; die Core-UI ist weg.)
+  const alle = store.listMemories({ limit: 10_000 });
+  const typen: Record<string, number> = {};
+  const tags = new Map<string, number>();
+  for (const m of alle) {
+    typen[m.type] = (typen[m.type] ?? 0) + 1;
+    for (const t of m.tags) tags.set(t, (tags.get(t) ?? 0) + 1);
+  }
   const g = baueGraph(store);
   return {
     notizen: store.countMemories(),
-    typen: st.types,
-    topTags: st.tags,
+    typen,
+    topTags: [...tags.entries()]
+      .sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]))
+      .slice(0, 30)
+      .map(([tag, count]) => ({ tag, count })),
     graphKnoten: g.nodes.length,
     graphKanten: g.edges.filter((e) => e.real).length,
-    verschluesselt: st.encryption.aktiv,
+    verschluesselt: store.verschluesselung.aktiv,
   };
 }
 

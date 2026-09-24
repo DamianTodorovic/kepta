@@ -1,5 +1,5 @@
 <p align="center"><img src="docs/kepta-logo.svg" width="88" alt="KEPTA"></p>
-<p align="center"><img src="https://img.shields.io/badge/version-2.13.16-blue" alt="v2.13.16"> <img src="https://img.shields.io/badge/license-AGPL--3.0-blue" alt="AGPL-3.0"> <img src="https://img.shields.io/badge/tests-437%20passing-brightgreen" alt="tests"> <img src="https://img.shields.io/badge/coverage%20gate-%E2%89%A5%2070%25%20of%20lines-brightgreen" alt="coverage gate"> <img src="https://img.shields.io/badge/platform-macOS%20%7C%20Windows%20%7C%20Linux-lightgrey" alt="platform"> <img src="https://img.shields.io/badge/encryption-SQLCipher%204-green" alt="encrypted"> <a href="https://www.linkedin.com/in/damian-todorovic-244235434"><img src="https://img.shields.io/badge/LinkedIn-Damian%20Todorovic-0A66C2?logo=linkedin&logoColor=white" alt="Damian Todorovic on LinkedIn"></a></p>
+<p align="center"><img src="https://img.shields.io/badge/version-2.13.17-blue" alt="v2.13.17"> <img src="https://img.shields.io/badge/license-AGPL--3.0-blue" alt="AGPL-3.0"> <img src="https://img.shields.io/badge/tests-437%20passing-brightgreen" alt="tests"> <img src="https://img.shields.io/badge/coverage%20gate-%E2%89%A5%2070%25%20of%20lines-brightgreen" alt="coverage gate"> <img src="https://img.shields.io/badge/platform-macOS%20%7C%20Windows%20%7C%20Linux-lightgrey" alt="platform"> <img src="https://img.shields.io/badge/encryption-SQLCipher%204-green" alt="encrypted"> <a href="https://www.linkedin.com/in/damian-todorovic-244235434"><img src="https://img.shields.io/badge/LinkedIn-Damian%20Todorovic-0A66C2?logo=linkedin&logoColor=white" alt="Damian Todorovic on LinkedIn"></a></p>
 
 # KEPTA Core
 
@@ -18,7 +18,7 @@ flowchart LR
     B["Cursor · Gemini CLI<br/>Cline · Codex · Zed · …"]
     C["Your scripts"]
   end
-  K["keptа-mcp<br/>MCP stdio + browser UI"]
+  K["keptа-mcp<br/>MCP stdio server"]
   E[("KEPTA — one encrypted file<br/>SQLCipher 4 · ~/.kepta/kepta.db")]
   A & B & C --> K --> E
 ```
@@ -33,7 +33,6 @@ Or headless, right in your agents:
 
 ```bash
 npx -y kepta-mcp setup   # connects Claude Desktop, Claude Code, Cursor, Windsurf, VS Code, Gemini CLI, Cline and Roo Code
-npx -y kepta-mcp ui      # your real memory in the browser — watch your AI use it, live
 npx -y kepta import chatgpt <export-folder>   # bring your ChatGPT history with you (export → extract → import)
 npx -y kepta-mcp stats        # the terminal experience: remember, recall, timeline, contradict
 ```
@@ -48,7 +47,7 @@ Then tell your AI something worth keeping — and watch it arrive. Details in th
 
 | Tier | For | Price | What it includes |
 |---|---|---|---|
-| **Core** | Developers & AI agents | **€0**, open source, forever | This repository: the memory engine, encryption, hybrid search, MCP, HTTP API, Python client, CLI, browser UI with a read-only knowledge graph, ChatGPT import |
+| **Core** | Developers & AI agents | **€0**, open source, forever | This repository: the memory engine, encryption, hybrid search, MCP, HTTP API, Python client, CLI, ChatGPT import |
 | **Pro** | Individuals & power users | **€12/month or €120/year**, self-serve in the app — every download starts with one free Pro day | The desktop experience on the same engine: knowledge graph, chat with your memory, dossiers, Today, privacy shield, imports, device sync |
 | **Enterprise** | Teams, practices & organizations | **By agreement** | Everything in Pro, plus team memory (shared knowledge, workspaces, roles, admin console), SSO, central policies, MDM/air-gapped deployment, security documentation and support |
 
@@ -137,7 +136,7 @@ A native app for macOS and Windows that turns the same encrypted knowledge base 
 | Source citations — every answer shows which memories it used | — | ✅ |
 | Date-aware prompting and a visible token budget | — | ✅ |
 | **Interface** | | |
-| An interface for your memory — browse by kind and tag, search, read, write, trash | ✅ in your browser | ✅ native app |
+| An interface for your memory — browse by kind and tag, search, read, write, trash | — | ✅ native app |
 | Native desktop app for macOS and Windows | — | ✅ |
 | Light and dark | ✅ | ✅ |
 | Keyboard first — shortcuts; in Pro also a command palette (⌘K) | ✅ | ✅ |
@@ -176,14 +175,6 @@ Finds Claude Desktop, Claude Code, Cursor, Windsurf, VS Code, Gemini CLI, Cline 
 ```
 
 8 tools: `memory_search`, `memory_save`, `memory_update`, `memory_delete`, `memory_list`, `memory_graph`, `memory_consolidate`, `memory_forget`.
-
-### Your memory in the browser
-
-```bash
-npx -y kepta-mcp ui
-```
-
-Opens **KEPTA Core** in your browser on `http://127.0.0.1:4747` — the same encrypted knowledge base your agents write to, now one click away. Browse by kind and tag, search ranked by relevance, open a note and follow its `[[links]]`, write and edit notes with their kind, tags and validity, move them to the trash and bring them back, dark or light. And watch your AI apps at work: which one saved, updated or looked up what — live, while you talk to it. Nothing to install, nothing leaves your machine, and only your own browser tab can change anything. `--port` picks another port, `--no-open` keeps the browser closed.
 
 ### HTTP API
 
@@ -263,8 +254,8 @@ No dependencies — only the Python standard library.
 ```
 src/core/           memory engine (store, search, encryption, MCP protocol)
 server.ts           HTTP API (Express, 29 routes)
-src/mcp-server.ts   MCP stdio server (npx kepta-mcp) and the browser interface (npx kepta-mcp ui)
-src/ui/             the interface: a small local server and one page, no framework, no CDN
+src/mcp-server.ts   MCP stdio server (npx kepta-mcp) and the CLI (npx kepta)
+src/ui/graph.ts     the graph builder behind the API and the CLI (no UI — the interface is the desktop app)
 npm/                source of the npm package (kepta-mcp)
 Dockerfile          container for the MCP server
 python/             Python client (PyPI: kepta)

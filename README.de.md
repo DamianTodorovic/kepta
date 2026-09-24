@@ -17,7 +17,6 @@ Oder kopflos, direkt in deinen Agenten:
 
 ```bash
 npx -y kepta-mcp setup   # verbindet Claude Desktop, Claude Code, Cursor, Windsurf, VS Code, Gemini CLI, Cline und Roo Code
-npx -y kepta-mcp ui      # dein echtes Gedächtnis im Browser — sieh live zu, wie deine KI es nutzt
 npx -y kepta import chatgpt <export-ordner>   # bring deine ChatGPT-Historie mit (Export → entpacken → import)
 npx -y kepta-mcp stats        # das Terminal-Erlebnis: remember, recall, timeline, contradict
 ```
@@ -30,7 +29,7 @@ Dann sag deiner KI etwas, das sie behalten soll — und sieh zu, wie es ankommt.
 
 | Stufe | Für | Preis | Was drin ist |
 |---|---|---|---|
-| **Core** | Entwickler & KI-Agenten | **0 €**, Open Source, für immer | Dieses Repository: Memory-Engine, Verschlüsselung, Hybrid-Suche, MCP, HTTP-API, Python-Client, CLI, Browser-UI mit Nur-lesen-Wissensgraph, ChatGPT-Import |
+| **Core** | Entwickler & KI-Agenten | **0 €**, Open Source, für immer | Dieses Repository: Memory-Engine, Verschlüsselung, Hybrid-Suche, MCP, HTTP-API, Python-Client, CLI, ChatGPT-Import |
 | **Pro** | Einzelpersonen & Power User | **12 €/Monat oder 120 €/Jahr** — jeder Download startet mit einem Gratis-Pro-Tag | Das Desktop-Erlebnis auf derselben Engine: Wissensgraph, Chat mit deinem Gedächtnis, Dossiers, Today, Privacy-Shield, Importe, Device-Sync |
 | **Enterprise** | Teams, Praxen & Organisationen | **Nach Absprache** | Alles aus Pro, plus Team-Gedächtnis (geteiltes Wissen, Workspaces, Rollen, Admin-Konsole), SSO, zentrale Richtlinien, MDM-/Air-gapped-Ausrollung, Security-Dokumentation und Support |
 
@@ -149,8 +148,7 @@ Eine native App für macOS und Windows, die dieselbe verschlüsselte Wissensbasi
 }
 ```
 
-**2. Dein Gedächtnis im Browser:** `npx -y kepta-mcp ui` öffnet **KEPTA Core** auf `http://127.0.0.1:4747` — dieselbe verschlüsselte Wissensbasis, in die deine Agenten schreiben. Nach Art und Tag stöbern, nach Relevanz suchen, Notizen samt `[[Links]]` öffnen, schreiben und bearbeiten (Art, Tags, Gültigkeit), in den Papierkorb legen und zurückholen, hell oder dunkel. Und live zusehen, welche KI-App was gespeichert, geändert oder nachgeschlagen hat — während du mit ihr sprichst. Nichts zu installieren, nichts verlässt den Rechner.
-
+**2. Deine KI verbinden:** `
 **3. HTTP-API:**
 
 ```bash

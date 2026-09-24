@@ -20,7 +20,6 @@ import { importChatgptKommando } from "./core/chatgpt-import";
 import { starteDemoShow } from "./demo-show";
 import { erlebnisKommando } from "./cli-erlebnis";
 import readline from "node:readline";
-import { starteOberflaeche, oeffneImBrowser, leseUiArgumente } from "./ui/server";
 
 /** Derselbe Schluessel wie in der App: aus dem Schluesselbund des Systems. */
 function oeffneStore(): KeptaStore {
@@ -126,28 +125,15 @@ function starteMcp(): void {
 }
 
 /**
- * `npx kepta-mcp ui`: die Oberflaeche von KEPTA Core im Browser, auf derselben
- * verschluesselten Datenbank. Laeuft, bis man sie mit Ctrl+C beendet.
+ * `npx kepta-mcp ui`: KEPTA Core hat keine eigene Oberfläche mehr — die
+ * einzige ist die kostenlose Desktop-App. Der Befehl existiert weiter, damit
+ * alte Anleitungen und Muskelerinnerungen nicht ins Leere laufen: er zeigt
+ * den Weg dorthin statt einer Seite.
  */
-async function starteUi(argumente: string[]): Promise<void> {
-  const { port, oeffnen } = leseUiArgumente(argumente);
-  const store = oeffneStore();
-  const ui = await starteOberflaeche(store, { port });
-  const v = store.verschluesselung;
-  console.log(`KEPTA Core ${SERVER_INFO.version} is running at ${ui.url}`);
-  console.log(`${store.dbPath} — ${v.aktiv ? "encrypted" : `NOT encrypted${v.hinweis ? `: ${v.hinweis}` : ""}`}`);
-  console.log("This surface is the headless developer core. The full desktop app (KEPTA Pro) is free — one free Pro day with every download, never locks:");
+function uiHinweis(): void {
+  console.log("KEPTA Core has no browser UI of its own — the interface is the free desktop app.");
+  console.log("KEPTA Pro is free: one free Pro day with every download, then daily limits, never locks. Same encrypted file, nothing to move.");
   console.log("  https://github.com/DamianTodorovic/kepta-pro-releases/releases/latest");
-  console.log("Press Ctrl+C to stop.");
-  if (oeffnen) oeffneImBrowser(ui.url);
-  const ende = () => {
-    void ui.close().finally(() => {
-      store.close();
-      process.exit(0);
-    });
-  };
-  process.on("SIGINT", ende);
-  process.on("SIGTERM", ende);
 }
 
 /**
@@ -204,10 +190,9 @@ else if (process.argv[2] === "import") {
   }
   process.exit(code);
 } else if (process.argv[2] === "ui") {
-  starteUi(process.argv.slice(3)).catch((e: unknown) => {
-    console.error(`[kepta] ${e instanceof Error ? e.message : String(e)}`);
-    process.exit(1);
-  });
+  uiHinweis();
+  // Kein process.exit: Node läuft natürlich aus, damit die Pipe die kurze
+  // Nachricht vollständig flushen kann (stdio-Drain-Falle).
 } else if (process.argv[2] === "setup") {
   // `npx kepta-mcp setup [--yes]`: KEPTA in Claude, Cursor & Co. eintragen.
   const rl = process.stdin.isTTY ? readline.createInterface({ input: process.stdin, output: process.stdout }) : null;
