@@ -27,7 +27,7 @@ flowchart LR
 
 ## ⚡ See it first, connect it second
 
-**The desktop app first:** [Download KEPTA Pro](https://github.com/DamianTodorovic/kepta-pro-releases/releases/latest) — every download starts with **one free Pro day** (24 hours, every tool, unlimited, no card, no account, no key), then it runs free with daily limits and never locks.
+**The desktop app first:** [Download KEPTA Core](https://github.com/DamianTodorovic/kepta-pro-releases/releases/latest) — every download starts with **one free Pro day** (24 hours, every tool, unlimited, no card, no account, no key), then it runs free with daily limits and never locks.
 
 Or headless, right in your agents:
 
@@ -43,12 +43,12 @@ Then tell your AI something worth keeping — and watch it arrive. Details in th
 
 ## 🚀 KEPTA — one engine, three tiers
 
-**KEPTA is one product family around one engine.** The engine in this repository is what your agents talk to — free and open source, forever. The desktop app, **KEPTA Pro**, is what _you_ work in. Teams and organizations get the same app with more control on top.
+**KEPTA is one product family around one engine.** The engine in this repository is what your agents talk to — free and open source, forever. The desktop app is **KEPTA Core**: the free download, what _you_ work in. **KEPTA Pro** is the license key that removes its daily limits. Teams and organizations get the same app with more control on top.
 
 | Tier | For | Price | What it includes |
 |---|---|---|---|
-| **Core** | Developers & AI agents | **€0**, open source, forever | This repository: the memory engine, encryption, hybrid search, MCP, HTTP API, Python client, CLI, ChatGPT import |
-| **Pro** | Individuals & power users | **€12/month or €120/year**, self-serve in the app — every download starts with one free Pro day | The desktop experience on the same engine: knowledge graph, chat with your memory, dossiers, Today, privacy shield, imports, device sync |
+| **Core** | Everyone — download and use | **€0**, forever | The free desktop app (macOS & Windows): knowledge graph, chat with your memory, dossiers, Today, privacy shield — **one free Pro day with every download**, then daily limits; it never locks. This repository is the engine inside it, headless for agents: encryption, hybrid search, MCP, HTTP API, Python client, CLI, ChatGPT import |
+| **Pro** | Individuals & power users | **€12/month or €120/year**, one offline license key bought in the app | The same app with the daily limits removed: chat, clipper, computer scan, dossiers, audit export — everything, unlimited |
 | **Enterprise** | Teams, practices & organizations | **By agreement** | Everything in Pro, plus team memory (shared knowledge, workspaces, roles, admin console), SSO, central policies, MDM/air-gapped deployment, security documentation and support |
 
 Core is never crippled to sell Pro — the best memory engine we can build is the free one. **What we sell is how you use it.**
@@ -147,9 +147,9 @@ A native app for macOS and Windows that turns the same encrypted knowledge base 
 | Setup assistant with a starter pack | — | ✅ |
 | System status — detects local AI, checks storage, shows diagnostics | — | ✅ |
 | **Price** | | |
-| License | free · AGPL-3.0 | proprietary · free plan with daily limits, Pro removes them |
+| License | free · AGPL-3.0 | proprietary · Core runs with daily limits, the Pro key removes them |
 
-**KEPTA Pro never locks — and it never phones home.** The app runs as a free plan with generous daily limits on the Pro tools — and a license key removes them, validated **offline** on your machine: no account, no internet, no trial timer. Pro is 12 €/month or 120 €/year, bought from inside the app — the Upgrade button always points to the current way to buy (while the self-serve checkout is in its final review, that is a direct line to **[me on LinkedIn](https://www.linkedin.com/in/damian-todorovic-244235434)**); Enterprise — team memory, SSO, MDM, security documentation — is shaped personally. The installers are at **[kepta-pro-releases](https://github.com/DamianTodorovic/kepta-pro-releases/releases/latest)**.
+**KEPTA Core never locks — and it never phones home.** The app runs with generous daily limits on the Pro tools — and the Pro license key removes them, validated **offline** on your machine: no account, no internet, no trial timer. Pro is 12 €/month or 120 €/year, bought from inside the app — the Upgrade button always points to the current way to buy (while the self-serve checkout is in its final review, that is a direct line to **[me on LinkedIn](https://www.linkedin.com/in/damian-todorovic-244235434)**); Enterprise — team memory, SSO, MDM, security documentation — is shaped personally. The installers are at **[kepta-pro-releases](https://github.com/DamianTodorovic/kepta-pro-releases/releases/latest)**.
 
 ---
 
@@ -292,7 +292,7 @@ KEPTA is built by **Damian Todorovic**. Questions, ideas, a license for your tea
 
 ## 📄 License
 
-[AGPL-3.0-or-later](LICENSE). **KEPTA Pro** (€12/month, €120/year, self-serve in the app — every download starts with one free Pro day, then the app runs free with daily limits and never locks — the limits are sealed against restarts, clock tricks and even wiping the database (App 2.13.7)) is the desktop app on top of this engine — the knowledge graph, the chat, the machine scan, the privacy shield, the audit log and the polished experience. **KEPTA Enterprise** is licensed by agreement: everything in Pro, plus team memory for practices and firms, SSO, MDM and security documentation, shaped to your organization. The npm package `kepta-mcp` carries the same AGPL as this repository; the Python client under `python/` is MIT. Licenses and questions — [write to me on LinkedIn](https://www.linkedin.com/in/damian-todorovic-244235434).
+[AGPL-3.0-or-later](LICENSE). **KEPTA Core** is the free desktop app on top of this engine — the knowledge graph, the chat, the machine scan, the privacy shield, the audit log and the polished experience: every download starts with one free Pro day, then it runs with daily limits and never locks — the limits are sealed against restarts, clock tricks and even wiping the database (App 2.13.7). **KEPTA Pro** is the license key that removes those limits (€12/month, €120/year, bought in the app). **KEPTA Enterprise** is licensed by agreement: everything in Pro, plus team memory for practices and firms, SSO, MDM and security documentation, shaped to your organization. The npm package `kepta-mcp` carries the same AGPL as this repository; the Python client under `python/` is MIT. Licenses and questions — [write to me on LinkedIn](https://www.linkedin.com/in/damian-todorovic-244235434).
 
 **What this repository is — and what it is not.** This open core is the memory engine: storage, retrieval, MCP. The product people pay for is the app on top — and it stays proprietary on purpose. Forks under AGPL are legitimate; presenting a fork as KEPTA is not: the **KEPTA name, the KEPTA branding and the KEPTA Pro releases belong to Damian Todorovic**. Fork it, build with it, ship your own product from it — under a different name, with the AGPL obligations intact (your changes stay open, including over a network). Private notes never leave KEPTA over MCP, in the app and in this core alike.
 
