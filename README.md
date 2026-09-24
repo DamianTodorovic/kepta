@@ -227,11 +227,13 @@ docker run -i -e KEPTA_DB_KEY=<64-hex> -v kepta-data:/data kepta-mcp
 
 | Area | Routes |
 |---|---|
-| Memories | `GET/POST /api/memories`, `GET /api/memories/:id`, `POST /api/memory`, `DELETE /api/memories/:id`, `POST /api/memories/:id/restore`, `POST /api/memories/bulk-delete`, `POST /api/memories/bulk-restore`, `POST /api/memories/reclassify` |
-| Search | `GET /api/memories/search`, `POST /api/search` |
+| Memories | `GET/POST /api/memories`, `POST /api/memory`, `DELETE /api/memories/:id`, `POST /api/memories/:id/restore`, `POST /api/memories/bulk-delete`, `POST /api/memories/bulk-restore`, `POST /api/memories/reclassify`, `POST /api/memories/import` |
+| Search & graph | `GET /api/memories/search`, `POST /api/search`, `GET /api/graph` |
 | Import / export | `POST /api/import/markdown`, `POST /api/export/markdown` |
+| Inbox | `GET /api/inbox/status`, `POST /api/inbox/scan` |
+| Device Sync | `POST /api/sync/export`, `POST /api/sync/import`, `GET /api/sync/journal` |
 | Encryption & repair | `GET /api/health` (including the `encryption` status), `POST /api/repair/imports` |
-| MCP | `POST /mcp`, `GET /mcp`, `GET /api/mcp/tools`, `POST /api/mcp/search`, `POST /api/mcp/save` |
+| MCP | `POST /mcp`, `GET /mcp`, `GET /api/mcp/tools`, `POST /api/mcp/search`, `POST /api/mcp/save`, `GET /api/tools`, `POST /api/embed` |
 | System | `GET /api/settings`, `PUT /api/settings`, `GET /api/storage-info`, `GET /api/activity` |
 
 Every route listens on `127.0.0.1` only, with rate limiting, Helmet and input validation.

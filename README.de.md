@@ -11,8 +11,11 @@ KEPTA ändert das — **lokal**. Eine verschlüsselte SQLite-Datei auf deinem Re
 
 ## ⚡ Erst sehen, dann verbinden
 
+**Zuerst die Desktop-App:** [KEPTA Pro herunterladen](https://github.com/DamianTodorovic/kepta-pro-releases/releases/latest) — jeder Download startet mit **einem Gratis-Pro-Tag** (24 Stunden, alle Werkzeuge, ohne Limiten, ohne Karte, ohne Konto, ohne Schlüssel), danach läuft sie gratis mit Tageslimiten und sperrt nie.
+
+Oder kopflos, direkt in deinen Agenten:
+
 ```bash
-npx -y kepta-mcp demo    # 60 Sekunden: eine Wegwerf-Demo mit Graph — fasst nichts von dir an
 npx -y kepta-mcp setup   # verbindet Claude Desktop, Claude Code, Cursor, Windsurf, VS Code, Gemini CLI, Cline und Roo Code
 npx -y kepta-mcp ui      # dein echtes Gedächtnis im Browser — sieh live zu, wie deine KI es nutzt
 npx -y kepta import chatgpt <export-ordner>   # bring deine ChatGPT-Historie mit (Export → entpacken → import)
@@ -28,7 +31,7 @@ Dann sag deiner KI etwas, das sie behalten soll — und sieh zu, wie es ankommt.
 | Stufe | Für | Preis | Was drin ist |
 |---|---|---|---|
 | **Core** | Entwickler & KI-Agenten | **0 €**, Open Source, für immer | Dieses Repository: Memory-Engine, Verschlüsselung, Hybrid-Suche, MCP, HTTP-API, Python-Client, CLI, Browser-UI mit Nur-lesen-Wissensgraph, ChatGPT-Import |
-| **Pro** | Einzelpersonen & Power User | **12 €/Monat oder 120 €/Jahr**, direkt in der App | Das Desktop-Erlebnis auf derselben Engine: Wissensgraph, Chat mit deinem Gedächtnis, Dossiers, Today, Privacy-Shield, Importe, Device-Sync |
+| **Pro** | Einzelpersonen & Power User | **12 €/Monat oder 120 €/Jahr** — jeder Download startet mit einem Gratis-Pro-Tag | Das Desktop-Erlebnis auf derselben Engine: Wissensgraph, Chat mit deinem Gedächtnis, Dossiers, Today, Privacy-Shield, Importe, Device-Sync |
 | **Enterprise** | Teams, Praxen & Organisationen | **Nach Absprache** | Alles aus Pro, plus Team-Gedächtnis (geteiltes Wissen, Workspaces, Rollen, Admin-Konsole), SSO, zentrale Richtlinien, MDM-/Air-gapped-Ausrollung, Security-Dokumentation und Support |
 
 Am Core wird nichts kaputtgekürzt, um Pro zu verkaufen — die beste Memory-Engine, die wir bauen können, ist die freie. **Verkauft wird, wie du sie einsetzt.**
@@ -129,7 +132,7 @@ Eine native App für macOS und Windows, die dieselbe verschlüsselte Wissensbasi
 | **Preis** | | |
 | Lizenz | kostenlos · AGPL-3.0 | ein offline geprüfter Lizenzschlüssel |
 
-**Ein Lizenzschlüssel, offline auf deinem Rechner geprüft — kein Konto, kein Internet.** KEPTA ruft nirgends an. Pro kostet 12 €/Monat oder 120 €/Jahr und wird direkt in der App gekauft (Checkout von Paddle, unserem Merchant of Record); Enterprise — Team-Gedächtnis, SSO, MDM, Security-Dokumentation — wird persönlich zugeschnitten: **[schreib mir auf LinkedIn](https://www.linkedin.com/in/damian-todorovic-244235434)**. Die Installer liegen unter **[kepta-pro-releases](https://github.com/DamianTodorovic/kepta-pro-releases/releases/latest)**.
+**Ein Lizenzschlüssel, offline auf deinem Rechner geprüft — kein Konto, kein Internet.** KEPTA ruft nirgends an. Pro kostet 12 €/Monat oder 120 €/Jahr und wird direkt in der App gekauft — der Upgrade-Knopf zeigt immer auf den aktuell lebenden Weg (solange der Selbstbedienungs-Checkout in der Schlussprüfung ist, ist das die direkte Linie zu **[mir auf LinkedIn](https://www.linkedin.com/in/damian-todorovic-244235434)**); Enterprise — Team-Gedächtnis, SSO, MDM, Security-Dokumentation — wird persönlich zugeschnitten. Die Installer liegen unter **[kepta-pro-releases](https://github.com/DamianTodorovic/kepta-pro-releases/releases/latest)**.
 
 ## ⚡ Schnellstart
 
@@ -176,4 +179,4 @@ KEPTA baut **Damian Todorovic**. Fragen, Ideen, eine Lizenz für dein Team — o
 
 ## 📄 Lizenz
 
-[AGPL-3.0-or-later](LICENSE). **KEPTA Pro** (12 €/Monat, 120 €/Jahr, direkt in der App gekauft) ist die Desktop-App auf dieser Engine — Wissensgraph, Chat, Rechner-Scan und das polierte Erlebnis. **KEPTA Enterprise** wird nach Absprache lizenziert: alles aus Pro, plus Team-Gedächtnis für Praxen und Kanzleien, SSO, MDM und Security-Dokumentation — passend zu deiner Organisation. Das npm-Paket `kepta-mcp` trägt dieselbe AGPL wie dieses Repository; der Python-Client unter `python/` ist MIT. Lizenzen und Fragen — [schreib mir auf LinkedIn](https://www.linkedin.com/in/damian-todorovic-244235434).
+[AGPL-3.0-or-later](LICENSE). **KEPTA Pro** (12 €/Monat, 120 €/Jahr, direkt in der App gekauft — jeder Download startet mit einem Gratis-Pro-Tag, danach läuft die App gratis mit Tageslimiten und sperrt nie; die Limiten sind versiegelt gegen Neustarts, Uhr-Tricks und sogar das Löschen von Datenbank und Schlüsselbund (App 2.13.7)) ist die Desktop-App auf dieser Engine — Wissensgraph, Chat, Rechner-Scan, Privacy-Shield, Audit-Log und das polierte Erlebnis. **KEPTA Enterprise** wird nach Absprache lizenziert: alles aus Pro, plus Team-Gedächtnis für Praxen und Kanzleien, SSO, MDM und Security-Dokumentation — passend zu deiner Organisation. Das npm-Paket `kepta-mcp` trägt dieselbe AGPL wie dieses Repository; der Python-Client unter `python/` ist MIT. Lizenzen und Fragen — [schreib mir auf LinkedIn](https://www.linkedin.com/in/damian-todorovic-244235434).
