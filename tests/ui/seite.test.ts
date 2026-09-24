@@ -9,6 +9,7 @@ import { SEITE_HTML, SEITE_CSS, SEITE_JS, FAVICON_SVG } from "../../src/ui/seite
 
 const LINKEDIN = "https://www.linkedin.com/in/damian-todorovic-244235434";
 const VERGLEICH = "https://github.com/DamianTodorovic/kepta#-kepta-pro--the-full-desktop-app";
+const RELEASES = "https://github.com/DamianTodorovic/kepta-pro-releases/releases/latest";
 const lies = (datei: string) => fs.readFileSync(new URL(`../../${datei}`, import.meta.url), "utf8");
 const vorlage = /<template id="enterprise">([\s\S]*?)<\/template>/.exec(SEITE_HTML)?.[1] ?? "";
 
@@ -18,9 +19,9 @@ describe("die Seite der Core-Oberfläche", () => {
     expect(SEITE_HTML.match(/__KEPTA_VERSION__/g)).toHaveLength(1);
   });
 
-  it("lädt nichts von fremden Servern — nur Links zu LinkedIn und zum Vergleich, in einem neuen Tab", () => {
+  it("lädt nichts von fremden Servern — nur die Download-, Vergleichs- und LinkedIn-Links, in einem neuen Tab", () => {
     const quellen = [...SEITE_HTML.matchAll(/(?:src|href)="([^"]+)"/g)].map((m) => m[1]);
-    expect(quellen.filter((q) => /^https?:/.test(q))).toEqual([LINKEDIN, VERGLEICH]);
+    expect(quellen.filter((q) => /^https?:/.test(q))).toEqual([RELEASES, RELEASES, VERGLEICH, LINKEDIN]);
     for (const a of SEITE_HTML.match(/<a [^>]*href="https?:[^>]*>/g) ?? []) {
       expect(a).toContain('target="_blank"');
       expect(a).toContain('rel="noopener noreferrer"');
@@ -37,12 +38,27 @@ describe("die Seite der Core-Oberfläche", () => {
     expect(SEITE_HTML).toContain('<circle cx="21.2" cy="9.8" r="1.7" fill="#fff"/>');
   });
 
-  it("erwähnt Pro leise: ein Link unten in der Seitenleiste — keine gesperrten Einträge, keine eingestreuten Hinweise", () => {
-    // Bis 2.11 standen vier gesperrte Enterprise-Einträge in der Seitenleiste,
-    // dazu ein Werbekasten, ein Knopf in der Kopfzeile und Hinweise mitten in
-    // der Arbeit. Core soll für sich überzeugen; Enterprise ist einen Klick entfernt.
-    expect(vorlage).toContain(LINKEDIN);
-    expect(vorlage).toContain(VERGLEICH);
+  it("der Pro-Funnel ist laut: ein dauerhaftes Download-Banner über der Liste — aber nie gesperrte Einträge", () => {
+    // Damian 24.9.: Nutzer landeten in der schlichten Kern-UI und erfuhren nie,
+    // dass die volle Desktop-App kostenlos ist. Der Funnel ist jetzt das Banner
+    // über der Liste (mit Download-Link und Pro-Tag-Versprechen), nicht mehr
+    // nur der stille Knopf in der Sidebar-Fußzeile. Gesperrte Einträge bleiben
+    // verboten — der Core sperrt und nagelt nichts zu.
+    const banner = /<section class="pro-banner"[^>]*>([\s\S]*?)<\/section>/.exec(SEITE_HTML)?.[1] ?? "";
+    expect(banner).toContain("This is the headless core — the developer surface");
+    expect(banner).toContain("one free Pro day with every download");
+    expect(banner).toContain("it never locks");
+    expect(banner).toContain(RELEASES);
+    // die "verspricht nur"-Beweise: das Banner darf nur Behauptungen machen,
+    // die die README belegt
+    const readme = lies("README.md");
+    expect(readme).toContain("one free Pro day");
+    expect(readme).toContain("never locks");
+    // das Panel nennt die echten Plattformen (keine Linux-Builds im Release)
+    expect(vorlage).toContain("macOS and Windows in a hardened shell");
+    expect(vorlage).not.toContain("macOS, Windows and Linux");
+    expect(vorlage).toContain("One free Pro day with every download");
+    // der stille Seitenleisten-Knopf bleibt als zweiter Weg bestehen
     expect([...SEITE_HTML.matchAll(/data-pro="([^"]*)"/g)].map((m) => m[1])).toEqual([""]);
     expect(SEITE_HTML).not.toMatch(/lock-ico|class="upsell"|pro-btn/);
     expect(SEITE_JS).not.toMatch(/hinweis\(|class: 'hint'/);

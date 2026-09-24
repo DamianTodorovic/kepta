@@ -136,6 +136,8 @@ async function starteUi(argumente: string[]): Promise<void> {
   const v = store.verschluesselung;
   console.log(`KEPTA Core ${SERVER_INFO.version} is running at ${ui.url}`);
   console.log(`${store.dbPath} — ${v.aktiv ? "encrypted" : `NOT encrypted${v.hinweis ? `: ${v.hinweis}` : ""}`}`);
+  console.log("This surface is the headless developer core. The full desktop app (KEPTA Pro) is free — one free Pro day with every download, never locks:");
+  console.log("  https://github.com/DamianTodorovic/kepta-pro-releases/releases/latest");
   console.log("Press Ctrl+C to stop.");
   if (oeffnen) oeffneImBrowser(ui.url);
   const ende = () => {

@@ -49,6 +49,10 @@ export const SEITE_HTML = `<!doctype html>
       <button id="theme" class="btn icon" type="button" aria-label="Switch between dark and light">◐</button>
     </header>
     <nav id="mobil" class="mobil" aria-label="Views and AI apps"></nav>
+    <section class="pro-banner" role="note" aria-label="KEPTA Pro — the full desktop app is free">
+      <p><strong>This is the headless core — the developer surface.</strong> The full desktop app is KEPTA Pro, and it is free: <strong>one free Pro day with every download</strong>, then it runs free with daily limits — it never locks. Same encrypted file, nothing to move.</p>
+      <a class="btn primary" href="https://github.com/DamianTodorovic/kepta-pro-releases/releases/latest" target="_blank" rel="noopener noreferrer">Download KEPTA Pro — free</a>
+    </section>
     <section class="head"><h1 id="heading">All notes</h1><p id="sub" class="muted"></p></section>
     <section id="notice" class="notice" hidden></section>
     <section id="list" class="list" aria-live="polite"></section>
@@ -75,14 +79,15 @@ export const SEITE_HTML = `<!doctype html>
     <section data-feature="import"><h3>Import &amp; scan</h3><p>Drag &amp; drop PDFs, Markdown, text and JSON. Import an Obsidian vault with its links, clip a web page, or scan this computer — with a preview first.</p></section>
     <section data-feature="chat"><h3>Chat with your memory</h3><p>Ask with the model you choose — 20 providers, from Ollama and LM Studio to Anthropic and OpenAI. Every answer shows which notes it used.</p></section>
     <section data-feature="duplicates"><h3>Duplicate review</h3><p>Near-duplicates side by side: keep the richest copy in one click, with one undo for the batch. The history stays.</p></section>
-    <section data-feature="app"><h3>A native app</h3><p>macOS, Windows and Linux in a hardened shell, with a command palette (⌘K), focus mode, a setup assistant and a system status that finds local AI by itself.</p></section>
+    <section data-feature="app"><h3>A native app</h3><p>macOS and Windows in a hardened shell, with a command palette (⌘K), focus mode, a setup assistant and a system status that finds local AI by itself.</p></section>
     <section data-feature="trust"><h3>Private by design</h3><p>No account, no telemetry, no cloud. The license key is checked offline — KEPTA never phones home.</p></section>
   </div>
-  <div class="ent-trial"><strong>No account, no internet.</strong> One offline license key — €12/month or €120/year for KEPTA Pro, price by agreement for organizations (KEPTA Enterprise).</div>
+  <div class="ent-trial"><strong>One free Pro day with every download</strong> — 24 hours with every tool, no card, no account, no key. Then it runs free with daily limits and never locks; a license (€12/month or €120/year) removes the limits.</div>
   <div class="actions">
-    <a class="btn primary" href="https://www.linkedin.com/in/damian-todorovic-244235434" target="_blank" rel="noopener noreferrer">Get KEPTA Pro</a>
+    <a class="btn primary" href="https://github.com/DamianTodorovic/kepta-pro-releases/releases/latest" target="_blank" rel="noopener noreferrer">Download KEPTA Pro — free</a>
     <a class="btn" href="https://github.com/DamianTodorovic/kepta#-kepta-pro--the-full-desktop-app" target="_blank" rel="noopener noreferrer">Compare Core and Pro</a>
   </div>
+  <p class="ent-contact">Teams and organizations (KEPTA Enterprise): <a href="https://www.linkedin.com/in/damian-todorovic-244235434" target="_blank" rel="noopener noreferrer">write to me on LinkedIn</a>.</p>
   <p class="muted small">“Get KEPTA Pro” opens LinkedIn: write to Damian Todorovic, who builds KEPTA, for your license.</p>
 </div>
 </template>
@@ -159,6 +164,11 @@ a.btn{display:inline-flex;align-items:center;text-decoration:none;color:var(--te
 .btn.danger{color:var(--danger)}
 .btn.icon{width:42px;padding:0;display:grid;place-items:center;font-size:18px}
 .btn:focus-visible,.nav:focus-visible,.card:focus-visible,.seg:focus-visible,.tagchip:focus-visible,.wikilink:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.pro-banner{display:flex;align-items:center;gap:14px;flex-wrap:wrap;margin:0 0 6px;padding:13px 16px;border:1px solid var(--accent);border-radius:var(--radius);background:var(--panel2)}
+.pro-banner p{margin:0;font-size:13.5px;line-height:1.5;color:var(--text);flex:1 1 320px}
+.pro-banner .btn{margin-left:auto}
+.ent-contact{margin:12px 0 0;font-size:12.5px;color:var(--muted)}
+.ent-contact a{color:var(--text)}
 .head h1{font-family:Charter,"Iowan Old Style",Palatino,Georgia,serif;font-weight:600;font-size:34px;margin:18px 0 2px;letter-spacing:-.005em}
 .muted{color:var(--muted)}.small{font-size:12px}.pad{padding:24px 2px}
 .list{display:grid;grid-template-columns:repeat(auto-fill,minmax(270px,1fr));gap:14px;margin-top:18px}

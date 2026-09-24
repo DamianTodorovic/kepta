@@ -2,6 +2,11 @@
 
 All notable changes are documented in this file. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and versioning follows [SemVer](https://semver.org/).
 
+## [2.13.15] — 2026-09-24
+
+### Changed
+- **The core UI funnels to the desktop app.** A persistent banner above the list states plainly what this surface is (the headless developer core) and that the full desktop app is free — one free Pro day with every download, then daily limits, never locks — with the download link right there. The Pro panel no longer promises a Linux build (releases ship macOS and Windows) and leads with the download; the `ui` command prints the same pointer on start.
+
 ## [2.13.14] — 2026-09-23
 
 ### Changed
