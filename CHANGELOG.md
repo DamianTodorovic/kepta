@@ -2,7 +2,10 @@
 
 All notable changes are documented in this file. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and versioning follows [SemVer](https://semver.org/).
 
-## [2.13.15] — 2026-09-24
+## [2.13.16] — 2026-09-24
+
+### Fixed
+- **The version string drifted: the UI and /api/health reported 2.13.12 since 2.13.13.** The embedded app version (src/core/version.ts) was never bumped alongside package.json — the promised parity guard (tests/version.test.ts) did not exist. It does now: one test holds all five places (package.json, server.json ×2, npm/package.json, version.ts) to the same number.
 
 ### Changed
 - **The core UI funnels to the desktop app.** A persistent banner above the list states plainly what this surface is (the headless developer core) and that the full desktop app is free — one free Pro day with every download, then daily limits, never locks — with the download link right there. The Pro panel no longer promises a Linux build (releases ship macOS and Windows) and leads with the download; the `ui` command prints the same pointer on start.
