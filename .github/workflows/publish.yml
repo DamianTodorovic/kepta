@@ -121,7 +121,7 @@ jobs:
         run: |
           if [ -n "$NODE_AUTH_TOKEN" ]; then
             echo "Publish-Modus: Granular-Access-Token (NODE_AUTH_TOKEN gesetzt)"
-            npm publish --provenance --access public
+            npm publish --provenance --access public 2>&1 | tee /tmp/npm-publish.log
           else
             # setup-node hinterlaesst ein .npmrc mit einem authToken-Platzhalter und
             # exportiert NODE_AUTH_TOKEN. Findet npm dort einen Token, versucht es
@@ -130,8 +130,13 @@ jobs:
             # OIDC-Flow ueberhaupt erst (ohne ihn kommt ENEEDAUTH).
             rm -f "${NPM_CONFIG_USERCONFIG:?NPM_CONFIG_USERCONFIG fehlt}"
             unset NODE_AUTH_TOKEN
-            npm publish --provenance --access public
+            npm publish --provenance --access public 2>&1 | tee /tmp/npm-publish.log
             echo "Publish-Modus: Trusted Publishing (OIDC)"
+          fi
+          # Idempotenz: Bei Re-Runs (z. B. wenn nur der Registry-Schritt scheiterte)
+          # ist die Version schon live — E409 ist dann Erfolg, kein Abbruch.
+          if grep -qE "cannot publish over|You cannot publish over|E409" /tmp/npm-publish.log; then
+            echo "Version ist bereits auf npm — E409 als Erfolg gewertet, es geht mit der Registry weiter."
           fi
 
       - name: OIDC-Debug bei Fehlschlag
@@ -164,7 +169,26 @@ jobs:
           chmod +x mcp-publisher
 
       - name: An der MCP-Registry anmelden
-        run: ./mcp-publisher login github-oidc
+        run: |
+          # Transiente TLS-Timeouts der Registry (24.9.) — dreimal versuchen.
+          ok=""
+          for versuch in 1 2 3; do
+            if ./mcp-publisher login github-oidc; then ok=1; break; fi
+            echo "Login-Versuch $versuch fehlgeschlagen — 10 s Pause, dann nochmal."
+            sleep 10
+          done
+          [ -n "$ok" ] || exit 1
 
       - name: In die MCP-Registry eintragen
-        run: ./mcp-publisher publish
+        run: |
+          # Schon registriert (z. B. nach einem Re-Run) ist kein Fehler.
+          if ./mcp-publisher publish > /tmp/registry-publish.log 2>&1; then
+            echo "Registry-Eintrag aktualisiert."
+          else
+            cat /tmp/registry-publish.log
+            if grep -qiE "already|conflict|409" /tmp/registry-publish.log; then
+              echo "Version bereits in der Registry — ok."
+            else
+              exit 1
+            fi
+          fi
