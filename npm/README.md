@@ -20,6 +20,20 @@ For Claude Desktop that file is `~/Library/Application Support/Claude/claude_des
 
 That is the whole setup. The memory lives in `~/.kepta/kepta.db` and is created on first use.
 
+```text
+  your agents                     your apps
+┌──────────────┐    MCP    ┌────────────────────┐
+│ Claude       ├──────────►│  kepta-mcp         │
+│ Cursor       │           │  8 tools           │
+│ Gemini CLI   │   HTTP    │  local server      │
+│ your scripts ├──────────►│  hybrid retrieval  │
+└──────────────┘           └─────────┬──────────┘
+                                     │
+                     one encrypted file, your machine
+                     ~/.kepta/kepta.db
+                     SQLCipher 4 · AES-256 · no cloud
+```
+
 ## The eight tools your agent gets
 
 | Tool | What it does |
