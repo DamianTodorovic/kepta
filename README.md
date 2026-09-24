@@ -9,18 +9,31 @@
 
 KEPTA is a local memory for AI assistants. Documents, decisions and client knowledge go into an encrypted knowledge base on your own computer — and your assistant (Claude Desktop, Cursor, any MCP client) recalls it as if it had never forgotten.
 
-This repository is the **open core** (AGPL-3.0): the memory engine, the MCP server, the HTTP API — and the Python client, which is MIT so any Python project can embed it. The full desktop application is **[KEPTA Pro](#-kepta-pro--the-full-desktop-app)**.
+This repository is the **open core** (AGPL-3.0): the memory engine, the MCP server, the HTTP API — and the Python client, which is MIT so any Python project can embed it. The full desktop application is **[KEPTA Core](#kepta-core--the-full-desktop-app)** — free, with one free Pro day built in.
 
 ```mermaid
 flowchart LR
-  subgraph Apps["Your AI apps — any of them"]
-    A["Claude Desktop"]
-    B["Cursor · Gemini CLI<br/>Cline · Codex · Zed · …"]
+  subgraph Apps["Your AI apps — every client, one memory"]
+    direction TB
+    A["Claude Desktop · Claude Code"]
+    B["Cursor · Gemini CLI<br/>Cline · Codex · Zed"]
     C["Your scripts"]
   end
-  K["keptа-mcp<br/>MCP stdio server"]
-  E[("KEPTA — one encrypted file<br/>SQLCipher 4 · ~/.kepta/kepta.db")]
-  A & B & C --> K --> E
+  subgraph KEPTA["KEPTA Core — this repository"]
+    direction TB
+    M["MCP server<br/>8 tools · stdio + Streamable HTTP"]
+    G["HTTP API · 29 routes<br/>Python client · CLI"]
+    E["Memory engine<br/>hybrid retrieval: FTS5 + vectors + graph<br/>RRF fusion → local rerank"]
+  end
+  D[("One encrypted file<br/>SQLCipher 4 · AES-256<br/>~/.kepta/kepta.db")]
+  K["OS keychain<br/>the key never leaves"]
+  A --> M
+  B --> M
+  C --> G
+  G --> E
+  M --> E
+  E --> D
+  D -.-> K
 ```
 
 ---
@@ -45,6 +58,14 @@ Then tell your AI something worth keeping — and watch it arrive. Details in th
 
 **KEPTA is one product family around one engine.** The engine in this repository is what your agents talk to — free and open source, forever. The desktop app is **KEPTA Core**: the free download, what _you_ work in. **KEPTA Pro** is the license key that removes its daily limits. Teams and organizations get the same app with more control on top.
 
+```mermaid
+flowchart LR
+  D["Download KEPTA Core<br/>€0 — the whole app"] --> PD["First 24 h: one free Pro day<br/>every tool, unlimited"]
+  PD --> L["Then: daily limits<br/>it never locks"]
+  L -->|"license key<br/>€12/month or €120/year"| P["KEPTA Pro<br/>limits removed"]
+  P -.->|"teams · SSO · MDM"| E["KEPTA Enterprise<br/>by agreement"]
+```
+
 | Tier | For | Price | What it includes |
 |---|---|---|---|
 | **Core** | Everyone — download and use | **€0**, forever | The free desktop app (macOS & Windows): knowledge graph, chat with your memory, dossiers, Today, privacy shield — **one free Pro day with every download**, then daily limits; it never locks. This repository is the engine inside it, headless for agents: encryption, hybrid search, MCP, HTTP API, Python client, CLI, ChatGPT import |
@@ -53,7 +74,7 @@ Then tell your AI something worth keeping — and watch it arrive. Details in th
 
 Core is never crippled to sell Pro — the best memory engine we can build is the free one. **What we sell is how you use it.**
 
-### KEPTA Pro — the full desktop app
+### KEPTA Core — the full desktop app
 
 A native app for macOS and Windows that turns the same encrypted knowledge base into a second brain you can see, search, shape and trust — every document, every decision, every connection, on your own machine.
 
@@ -211,6 +232,25 @@ docker run -i -e KEPTA_DB_KEY=<64-hex> -v kepta-data:/data kepta-mcp
 | 🔗 **MCP first** | 8 tools, one code path for the API and MCP — agents get the same quality as the app |
 | 📄 **File import** | PDF (pdf.js with character maps), Markdown with `[[wiki links]]`, text, JSON |
 | 📊 **Eval** | `npm run eval` on a fixed corpus of 58 notes / 45 queries: Hit@1, Precision@5, MRR, plus an ablation test per retrieval leg |
+
+### How a query finds its answer
+
+```mermaid
+flowchart TD
+  Q(["Your query"]) --> A["FTS5 · BM25<br/>lexical search"]
+  Q --> B["Vector KNN<br/>local embeddings (Ollama)"]
+  Q --> C["Entity match<br/>knowledge graph"]
+  A --> R["Reciprocal Rank Fusion<br/>k = 60"]
+  B --> R
+  C --> R
+  R --> BO["Recency + confidence boost"]
+  BO --> T{"Temporal state?"}
+  T -->|expired| X5["score × 0.5"]
+  T -->|superseded| X4["score × 0.4"]
+  T -->|valid| K1["unchanged"]
+  X5 & X4 & K1 --> R2["Local reranker<br/>term coverage · phrases · title · tags<br/>max boost +0.25 — no network"]
+  R2 --> OUT(["Top-k, ranked by relevance"])
+```
 
 ---
 

@@ -27,6 +27,14 @@ Dann sag deiner KI etwas, das sie behalten soll — und sieh zu, wie es ankommt.
 
 **KEPTA ist eine Produktfamilie um eine Engine.** Die Engine in diesem Repository ist, womit deine Agenten sprechen — gratis und Open Source, für immer. Die Desktop-App ist **KEPTA Core**: der Gratis-Download, worin _du_ arbeitest. **KEPTA Pro** ist der Lizenzschlüssel, der ihre Tageslimiten entfernt. Teams und Organisationen bekommen dieselbe App mit mehr Kontrolle darüber.
 
+```mermaid
+flowchart LR
+  D["KEPTA Core herunterladen<br/>0 € — die ganze App"] --> PD["Erste 24 h: ein Gratis-Pro-Tag<br/>alle Werkzeuge, ohne Limiten"]
+  PD --> L["Danach: Tageslimiten<br/>sie sperrt nie"]
+  L -->|"Lizenzschlüssel<br/>12 €/Monat oder 120 €/Jahr"| P["KEPTA Pro<br/>Limiten entfernt"]
+  P -.->|"Teams · SSO · MDM"| E["KEPTA Enterprise<br/>nach Absprache"]
+```
+
 | Stufe | Für | Preis | Was drin ist |
 |---|---|---|---|
 | **Core** | Alle — herunterladen und loslegen | **0 €**, für immer | Die kostenlose Desktop-App (macOS & Windows): Wissensgraph, Chat mit deinem Gedächtnis, Dossiers, Today, Privacy-Shield — **ein Gratis-Pro-Tag mit jedem Download**, danach Tageslimiten; sie sperrt nie. Dieses Repository ist die Engine darin, kopflos für Agenten: Verschlüsselung, Hybrid-Suche, MCP, HTTP-API, Python-Client, CLI, ChatGPT-Import |
@@ -35,7 +43,51 @@ Dann sag deiner KI etwas, das sie behalten soll — und sieh zu, wie es ankommt.
 
 Am Core wird nichts kaputtgekürzt, um Pro zu verkaufen — die beste Memory-Engine, die wir bauen können, ist die freie. **Verkauft wird, wie du sie einsetzt.**
 
-### KEPTA Pro — die ganze Desktop-App
+### Wie eine Anfrage ihre Antwort findet
+
+```mermaid
+flowchart TD
+  Q(["Deine Anfrage"]) --> A["FTS5 · BM25<br/>lexikalische Suche"]
+  Q --> B["Vektor-KNN<br/>lokale Embeddings (Ollama)"]
+  Q --> C["Entitäten-Treffer<br/>Wissensgraph"]
+  A --> R["Reciprocal Rank Fusion<br/>k = 60"]
+  B --> R
+  C --> R
+  R --> BO["Recency- + Konfidenz-Boost"]
+  BO --> T{"Temporaler Zustand?"}
+  T -->|abgelaufen| X5["Score × 0,5"]
+  T -->|ersetzt| X4["Score × 0,4"]
+  T -->|gültig| K1["unverändert"]
+  X5 & X4 & K1 --> R2["Lokales Reranking<br/>Begriffsabdeckung · Phrasen · Titel · Tags<br/>max. Boost +0,25 — kein Netzwerk"]
+  R2 --> OUT(["Top-k, sortiert nach Relevanz"])
+```
+
+```mermaid
+flowchart LR
+  subgraph Apps["Deine KI-Apps — jeder Client, ein Gedächtnis"]
+    direction TB
+    A["Claude Desktop · Claude Code"]
+    B["Cursor · Gemini CLI<br/>Cline · Codex · Zed"]
+    C["Deine Skripte"]
+  end
+  subgraph KEPTA["KEPTA Core — dieses Repository"]
+    direction TB
+    M["MCP-Server<br/>8 Tools · stdio + Streamable HTTP"]
+    G["HTTP-API · 29 Routen<br/>Python-Client · CLI"]
+    E["Memory-Engine<br/>Hybrid-Retrieval: FTS5 + Vektoren + Graph<br/>RRF-Fusion → lokales Reranking"]
+  end
+  D[("Eine verschlüsselte Datei<br/>SQLCipher 4 · AES-256<br/>~/.kepta/kepta.db")]
+  K["OS-Schlüsselbund<br/>der Schlüssel verlässt den Rechner nie"]
+  A --> M
+  B --> M
+  C --> G
+  G --> E
+  M --> E
+  E --> D
+  D -.-> K
+```
+
+### KEPTA Core — die ganze Desktop-App
 
 Eine native App für macOS und Windows, die dieselbe verschlüsselte Wissensbasis in ein zweites Gehirn verwandelt, das du sehen, durchsuchen, ordnen und dem du vertrauen kannst — jedes Dokument, jede Entscheidung, jede Verbindung, auf deinem eigenen Rechner.
 
