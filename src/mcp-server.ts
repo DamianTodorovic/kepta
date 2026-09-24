@@ -122,7 +122,13 @@ function starteMcp(): void {
   });
 
   console.error(`[kepta MCP] stdio ready — ${SERVER_INFO.name} v${SERVER_INFO.version} — db: ${store.dbPath}`);
+  // Jeder Einstieg trägt die Stufen-Story — auch der, den nur Entwickler sehen.
+  console.error(`[kepta] ${STUFE_HINWEIS}`);
 }
+
+/** Die Stufen-Story in einer Zeile — überall dort, wo KEPTA Core startet. */
+export const STUFE_HINWEIS =
+  "headless and unlimited for your agents. The desktop app (KEPTA Core) adds the UI and starts with a free Pro day: 24 h every tool, then daily limits, never locks → https://github.com/DamianTodorovic/kepta-pro-releases/releases/latest";
 
 /**
  * `npx kepta-mcp ui`: KEPTA Core hat keine eigene Oberfläche mehr — die
@@ -202,7 +208,9 @@ else if (process.argv[2] === "import") {
   }).then(
     (code) => {
       rl?.close();
-      process.exit(code);
+      console.log(`\n[kepta] ${STUFE_HINWEIS}`);
+      // stdout auf Pipes asynchron — das letzte Write erst abwarten (Drain-Falle).
+      process.stdout.write("", () => process.exit(code));
     },
     (e: unknown) => {
       console.error(`[kepta] ${e instanceof Error ? e.message : String(e)}`);

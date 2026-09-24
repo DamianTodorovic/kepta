@@ -193,6 +193,7 @@ export async function erlebnisKommando(store: KeptaStore, befehl: string, rest: 
         console.log(`  graph: ${s.graphKnoten} nodes · ${s.graphKanten} [[links]]`);
         const tags = s.topTags.slice(0, 6).map((t) => `#${t.tag} (${t.count})`).join("  ");
         console.log(`  top tags: ${tags || "—"}`);
+        console.log(farbe(GRAU, `  headless core — unlimited for agents. The desktop app (KEPTA Core) starts with a free Pro day: https://github.com/DamianTodorovic/kepta-pro-releases/releases/latest`));
         return 0;
       }
       default:
