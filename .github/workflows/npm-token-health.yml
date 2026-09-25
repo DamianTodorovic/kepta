@@ -1,0 +1,35 @@
+name: npm-Token-Gesundheit
+
+# Der 25.9.-Vorfall: das Repo-Secret NODE_AUTH_TOKEN lief still ab — der
+# naechste v*-Publish scheiterte mit kryptischem E404, nachdem Code, Tests
+# und Versionen alle gruen waren. Dieser Healthcheck prueft WOECHENTLICH,
+# ob der Token noch schreibt, und faellt ROT mit klarer Anleitung, BEVOR
+# ein Release davon abhaengt. Fail-Mails erreichen Damian sofort — genau
+# der Fruehwarnkanal, den es hier sonst nicht gibt.
+
+on:
+  schedule:
+    - cron: "0 9 * * 1"
+  workflow_dispatch:
+
+jobs:
+  health:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22.x"
+          registry-url: "https://registry.npmjs.org"
+
+      - name: Token gegen npm pruefen
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NODE_AUTH_TOKEN }}
+        run: |
+          if [ -z "$NODE_AUTH_TOKEN" ]; then
+            echo "NODE_AUTH_TOKEN nicht gesetzt — Publish laeuft ueber Trusted Publishing (OIDC). Nichts zu pruefen."
+            exit 0
+          fi
+          WER=$(npm whoami 2>/dev/null) && echo "Token gueltig (npm-User: $WER)" || {
+            echo "::error::NODE_AUTH_TOKEN ist ungueltig oder abgelaufen. Fix (2 min): 1) npmjs.com -> Access Tokens -> neuer Granular-Token (read-write, nur kepta-mcp, Ablaufdatum NOTIEREN). 2) GitHub: DamianTodorovic/kepta -> Settings -> Secrets -> Actions -> NODE_AUTH_TOKEN ersetzen. 3) Fertig — der naechste v*-Publish geht wieder durch."
+            exit 1
+          }
