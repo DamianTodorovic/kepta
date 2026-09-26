@@ -19,3 +19,14 @@ jobs:
       - name: Coverage gate
         run: npm run test:cov
       - run: npm run build
+      # Der Python-Client ist ein verteiltes Artefakt (PyPI) — seine Tests
+      # (Stub-Server, keine Live-App nötig) liefen bis 26.9. nirgends. Jetzt
+      # hüten sie dieselbe CI wie den Rest.
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Python-Client-Tests
+        run: |
+          pip install -e ./python
+          pip install pytest
+          pytest python/tests -q
