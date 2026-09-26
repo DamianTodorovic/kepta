@@ -63,10 +63,29 @@ export function macSchluesselbund(ausf: Ausfuehren = standardAusfuehren): Schlue
       }
     },
     ablegen(hex) {
-      // Einmalig beim Anlegen steht der Schlüssel kurz in der Argumentliste —
-      // security liest ein neues Passwort nicht von stdin. Sehen kann das nur ein
-      // Prozess desselben Kontos, der den Schlüsselbund ohnehin fragen dürfte.
-      ausf("/usr/bin/security", ["add-generic-password", "-U", "-s", DIENST, "-a", KONTO, "-l", "KEPTA database key", "-w", hex]);
+      // Der Schlüssel steht in der Argumentliste — sehbar nur für Prozesse
+      // desselben Kontos, die den Schlüsselbund ohnehin fragen dürften
+      // (security liest sein Passwort nicht von stdin: der Prompt verlangt
+      // zweimaliges Tippen). Das ist die dokumentierte, bewusste Schwächung.
+      //
+      // Ohne -U: existiert der Eintrag schon, scheitert das Anlegen (Exit 45) —
+      // und genau das ist der Lebensretter. Ein blinder Update hat am 22.9.
+      // den echten Schlüssel einer laufenden Installation überschrieben,
+      // weil ein fehlerhafter Leseversuch (Keychain-ACL, hängendes security)
+      // wie „noch kein Eintrag“ aussah. Anlegen ja — Überschreiben nie.
+      // (Der 2.13.4-Fix aus der App, am 26.9. in den Kern portiert — das
+      // npm-Paket öffnet dieselbe Datenbank und trug die Gefahr bis dahin.)
+      try {
+        ausf("/usr/bin/security", ["add-generic-password", "-s", DIENST, "-a", KONTO, "-l", "KEPTA database key", "-w", hex]);
+      } catch (e) {
+        if (exitCode(e) === 45) {
+          throw new Error(
+            "A key entry already exists in the macOS Keychain but could not be read — refusing to overwrite it. " +
+              `Restore the original key with: security add-generic-password -s ${DIENST} -a ${KONTO} -w <key>`,
+          );
+        }
+        throw e;
+      }
     },
   };
 }
@@ -159,6 +178,17 @@ export function holeOderErzeugeSchluessel(
   if (vorhanden) {
     if (!istSchluessel(vorhanden)) throw new Error(`The entry in the ${bund.name} is not a KEPTA key.`);
     return Buffer.from(vorhanden, "hex");
+  }
+  // Zweiter Leseversuch, BEVOR etwas angelegt wird: Ein flüchtiger Lesefehler
+  // (Keychain-ACL, hängendes security, gesperrter Bund) darf nie wie „noch
+  // kein Eintrag“ aussehen — sonst überschreibt das Anlegen den echten
+  // Schlüssel (22.9. genau so eine Datenkatastrophe ausgelöst und über die
+  // Recovery gerettet). Findet der zweite Versuch einen Schlüssel, ist das
+  // der echte — keine Neuerzeugung.
+  const zweiterVersuch = bund.lesen();
+  if (zweiterVersuch) {
+    if (!istSchluessel(zweiterVersuch)) throw new Error(`The entry in the ${bund.name} is not a KEPTA key.`);
+    return Buffer.from(zweiterVersuch, "hex");
   }
   const neu = zufall(32).toString("hex");
   bund.ablegen(neu);

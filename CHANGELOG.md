@@ -2,6 +2,15 @@
 
 All notable changes are documented in this file. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and versioning follows [SemVer](https://semver.org/).
 
+## [2.13.21] — 2026-09-26
+
+### Fixed
+- **Three 2.13.4-era fixes from the app that never reached the open core (found in the 26.9. line-by-line audit):**
+  - **The keychain write no longer overwrites.** The macOS path still used `security add-generic-password -U` — the exact trigger of the 22.9. keychain disaster: a failed read (ACL, hung security) looked like "no entry", and the next write destroyed the real key, making the whole knowledge base undecryptable. Now: no `-U`, exit 45 refuses to overwrite with recovery instructions, and a second read attempt runs before anything is created.
+  - **The sync export paginates.** A blind `listMemories()` capped the "full export" at 100 notes — silently incomplete beyond that (found on 22.9.: 100 of 3,644). Now: paged at 5,000 until everything is out.
+  - **Retrieval considers up to 5,000 active memories** (was 500), matching the app — with more than 500 notes the headless engine searched a truncated set.
+- First tests for the sync export/import in this repo (pagination + full roundtrip).
+
 ## [2.13.20] — 2026-09-25
 
 ### Changed

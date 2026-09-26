@@ -12,7 +12,7 @@ import path from "node:path";
 import type { KeptaStore } from "./store";
 import { indexMemory } from "./engine";
 import { defaultAuditDir } from "./extensions";
-import type { MemoryType } from "./types";
+import type { MemoryRecord, MemoryType } from "./types";
 
 export const PRAXISSYNC_FORMAT = "kepta-praxissync";
 export const PRAXISSYNC_VERSION = 1;
@@ -96,9 +96,19 @@ export interface ExportOptions {
  */
 export function exportBundle(store: KeptaStore, opts: ExportOptions): SyncBundle {
   const scope = opts.scope ?? "local";
-  const records = store
-    .listMemories()
-    .filter((m) => m.scope === scope && !m.supersededBy && m.deletedAt === null);
+  // Paginiert lesen: ein blindes listMemories() nahm die Voreinstellung von
+  // 100 Notizen — ein „Voll-Export“ war still unvollständig (22.9. im
+  // Notfall-Rettungslauf gefunden: 100 von 3.644; der 2.13.4-Fix der App
+  // kam am 26.9. in den Kern — das npm-Paket exportierte bis dahin genau
+  // so still unvollständig).
+  const records: MemoryRecord[] = [];
+  for (let offset = 0; ; offset += 5000) {
+    const seite = store.listMemories({ limit: 5000, offset });
+    for (const m of seite) {
+      if (m.scope === scope && !m.supersededBy && m.deletedAt === null) records.push(m);
+    }
+    if (seite.length < 5000) break;
+  }
   const payload = JSON.stringify({ memories: records });
   assertPassphrase(opts.passphrase);
   const salt = crypto.randomBytes(KDF_SALT_BYTES);

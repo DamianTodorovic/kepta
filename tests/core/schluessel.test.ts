@@ -78,10 +78,16 @@ describe("macOS: security", () => {
     expect(() => macSchluesselbund(ausf).lesen()).toThrow("exit 51");
   });
 
-  it("legt ab und ueberschreibt einen alten Eintrag (-U)", () => {
+  it("legt an, OHNE zu überschreiben — kein -U mehr (22.9.-Lebensretter)", () => {
     const { ausf, aufrufe } = aufzeichner();
     macSchluesselbund(ausf).ablegen(SCHLUESSEL);
-    expect(aufrufe[0].argumente).toEqual(expect.arrayContaining(["add-generic-password", "-U", "-s", DIENST, "-a", KONTO, "-w", SCHLUESSEL]));
+    expect(aufrufe[0].argumente).toEqual(expect.arrayContaining(["add-generic-password", "-s", DIENST, "-a", KONTO, "-w", SCHLUESSEL]));
+    expect(aufrufe[0].argumente).not.toContain("-U");
+  });
+
+  it("Exit 45 (Eintrag existiert, Lesen schlug fehl) verweigert das Überschreiben mit Wegweiser", () => {
+    const { ausf } = aufzeichner([fehlerMitCode(45)]);
+    expect(() => macSchluesselbund(ausf).ablegen(SCHLUESSEL)).toThrow(/refusing to overwrite/);
   });
 });
 
@@ -162,6 +168,25 @@ describe("holeOderErzeugeSchluessel", () => {
   it("nimmt einen vorhandenen Schluessel und lehnt einen fremden Eintrag ab", () => {
     expect(holeOderErzeugeSchluessel(speicherBund(SCHLUESSEL), {}).toString("hex")).toBe(SCHLUESSEL);
     expect(() => holeOderErzeugeSchluessel(speicherBund("kein-schluessel"), {})).toThrow("not a KEPTA key");
+  });
+
+  it("erster Leseversuch leer, zweiter findet den Schluessel: kein Anlegen, kein Überschreiben", () => {
+    // 22.9.-Lebensretter: ein flüchtiger Lesefehler darf nie wie „noch kein
+    // Eintrag“ aussehen. Der zweite Versuch findet den echten Schlüssel —
+    // dann darf ablegen() nie angerufen werden.
+    let leseAufrufe = 0;
+    const bund = {
+      name: "macOS Keychain",
+      lesen() {
+        leseAufrufe += 1;
+        return leseAufrufe >= 2 ? SCHLUESSEL : null;
+      },
+      ablegen() {
+        throw new Error("ABLEGEN DARF NICHT PASSIEREN — der echte Schlüssel wurde im zweiten Leseversuch gefunden");
+      },
+    };
+    expect(holeOderErzeugeSchluessel(bund, {}).toString("hex")).toBe(SCHLUESSEL);
+    expect(leseAufrufe).toBe(2);
   });
 
   it("erzeugt einen neuen, legt ihn ab und liest ihn gegen", () => {

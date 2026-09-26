@@ -126,7 +126,7 @@ interface ActiveMemory {
 
 function loadActive(store: KeptaStore): ActiveMemory[] {
   const out: ActiveMemory[] = [];
-  const limit = 500;
+  const limit = 5000;
   for (let offset = 0; ; offset += limit) {
     const page = store.listMemories({ limit, offset });
     for (const record of page) {
