@@ -13,6 +13,8 @@ the same machine; here you connect to it.
 Everything stays on the device: the server listens on 127.0.0.1 only.
 """
 
+from importlib.metadata import PackageNotFoundError, version as _package_version
+
 from .client import (
     DEFAULT_URL,
     KeptaClient,
@@ -36,4 +38,11 @@ __all__ = [
     "__version__",
 ]
 
-__version__ = "0.1.3"
+# Eine Version, EINE Quelle: pyproject.toml. Die hart codierte Zahl driftete
+# still von 0.1.3 nach 0.1.7 auseinander (26.9.-Lektion — dieselbe Klasse wie
+# die stehengebliebene version.ts). Seitdem liest der Client sie aus den
+# Paket-Metadaten; der Fallback gilt nur für einen unverpackten Quellbaum.
+try:
+    __version__ = _package_version("kepta")
+except PackageNotFoundError:
+    __version__ = "0.0.0.dev0"

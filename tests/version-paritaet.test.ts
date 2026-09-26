@@ -31,3 +31,23 @@ describe("Versions-Parität: eine Zahl an fünf Stellen", () => {
     expect(readme).toContain(`version-${APP_VERSION}-blue`);
   });
 });
+
+// 26.9.-Lektion: das Python-Paket trug eine zweite, hart codierte Version
+// (python/src/kepta/__init__.py stand auf 0.1.3, während pyproject 0.1.7
+// baute). Zwei Regeln verhindern die Wiederholung: pyproject nennt eine
+// gültige semver-Zahl, und __init__.py codiert GAR KEINE Version mehr hart —
+// sie kommt aus den Paket-Metadaten (importlib.metadata).
+describe("Versions-Parität: das Python-Paket hat keine zweite Version", () => {
+  it("python/pyproject.toml nennt eine gültige semver-Version", () => {
+    const pyproject = fs.readFileSync(path.join(wurzel, "python", "pyproject.toml"), "utf8");
+    const version = /^version\s*=\s*"(\d+\.\d+\.\d+)"/m.exec(pyproject);
+    expect(version, "pyproject.toml: keine version-Zeile im Format x.y.z").toBeTruthy();
+    expect(version![1]).toMatch(/^\d+\.\d+\.\d+$/);
+  });
+
+  it("python/src/kepta/__init__.py codiert keine Version mehr hart", () => {
+    const init = fs.readFileSync(path.join(wurzel, "python", "src", "kepta", "__init__.py"), "utf8");
+    expect(init).not.toMatch(/^__version__\s*=\s*"\d+\.\d+\.\d+"/m);
+    expect(init).toContain('importlib.metadata');
+  });
+});
