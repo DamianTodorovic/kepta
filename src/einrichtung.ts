@@ -288,7 +288,7 @@ export async function einrichten(
     io.schreibe("\nNo AI app found. Add this to any MCP client:\n" + JSON.stringify({ mcpServers: { kepta: EINTRAG } }, null, 2) + "\n");
   }
   if (verbunden || liste.some((c) => c.connected)) {
-    io.schreibe("\nNow ask your AI: “Remember that I prefer short answers.” — and watch it arrive: npx -y kepta-mcp ui\n");
+    io.schreibe("\nNow ask your AI: “Remember that I prefer short answers.” — the free desktop app shows what it remembered: https://github.com/DamianTodorovic/kepta-pro-releases/releases/latest\n");
   }
   return fehler ? 1 : 0;
 }

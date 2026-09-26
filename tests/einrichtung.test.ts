@@ -137,7 +137,7 @@ describe("KEPTA mit KI-Apps verbinden", () => {
     text = "";
     expect(await einrichten(["--yes"], mac(), { schreibe: (s) => (text += s) })).toBe(0);
     expect(lies(claudeDesktop()).mcpServers.kepta).toBeTruthy();
-    expect(text).toContain("npx -y kepta-mcp ui");
+    expect(text).toContain("the free desktop app shows what it remembered");
   });
 
   it("setup ohne Terminal und ohne --yes ändert nichts; ohne jede App zeigt es den Block zum Einfügen", async () => {
