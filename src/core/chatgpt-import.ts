@@ -155,7 +155,7 @@ export function importChatgptKommando(store: KeptaStore, argumente: string[]): n
     console.error("ChatGPT → Einstellungen → Datenkontrolle → Daten exportieren → ZIP entpacken → diesen Ordner angeben.");
     return 2;
   }
-  if (positionell[0] !== quelle || positionell.length > 1) {
+  if (positionell.length > 1) {
     console.error(`Unbekannte Import-Quelle: ${positionell.join(" ")} — aktuell unterstützt: chatgpt.`);
     return 2;
   }
