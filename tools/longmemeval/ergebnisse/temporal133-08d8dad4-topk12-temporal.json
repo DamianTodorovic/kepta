@@ -1,0 +1,1389 @@
+{
+  "bericht": {
+    "datum": "2026-09-24T20:44:57.100Z",
+    "kepta_version": "2.13.9",
+    "commit": "4f298ed",
+    "modell": "llama3.2:3b",
+    "ollama_version": "0.34.2",
+    "datensatz": "temporal-133.json",
+    "datensatz_sha256": "0156b6da4134d6b3a01e1a47de867fa1ec4e5f175d4ca29ba25fcced2cf57f1a",
+    "fragen": 133,
+    "topk": 12,
+    "ingest": {
+      "sessions": 0,
+      "notizen": 0,
+      "uebersprungen": 61629,
+      "ohneDatum": 0
+    },
+    "genauigkeit_gesamt": 0.22932330827067668,
+    "pro_faehigkeit": [
+      {
+        "faehigkeit": "information_extraction",
+        "n": 0,
+        "genauigkeit": 0
+      },
+      {
+        "faehigkeit": "multi_session_reasoning",
+        "n": 0,
+        "genauigkeit": 0
+      },
+      {
+        "faehigkeit": "temporal_reasoning",
+        "n": 133,
+        "genauigkeit": 0.22932330827067668
+      },
+      {
+        "faehigkeit": "knowledge_updates",
+        "n": 0,
+        "genauigkeit": 0
+      },
+      {
+        "faehigkeit": "abstention",
+        "n": 0,
+        "genauigkeit": 0
+      }
+    ],
+    "abstention_quote_leer": 0,
+    "judge_parse_fehler": 0,
+    "judge_aufrufe": 1441,
+    "verbatim_quote": 0.13533834586466165,
+    "judge_prompt_version": 1,
+    "used_vectors": false,
+    "vektoren_eingebettet": null,
+    "zeitsplit": false,
+    "temporal": true,
+    "laufzeit_ms": 2900068
+  },
+  "fragen": [
+    {
+      "question_id": "gpt4_59149c77",
+      "typ": "temporal-reasoning",
+      "faehigkeit": "temporal_reasoning",
+      "urteil": "nein",
+      "treffer": 12,
+      "trefferIndex": null,
+      "verbatim": false,
+      "judge_aufrufe": 13
+    },
+    {
+      "question_id": "gpt4_f49edff3",
+      "typ": "temporal-reasoning",
+      "faehigkeit": "temporal_reasoning",
+      "urteil": "nein",
+      "treffer": 12,
+      "trefferIndex": null,
+      "verbatim": false,
+      "judge_aufrufe": 13
+    },
+    {
+      "question_id": "71017276",
+      "typ": "temporal-reasoning",
+      "faehigkeit": "temporal_reasoning",
+      "urteil": "nein",
+      "treffer": 12,
+      "trefferIndex": null,
+      "verbatim": false,
+      "judge_aufrufe": 13
+    },
+    {
+      "question_id": "b46e15ed",
+      "typ": "temporal-reasoning",
+      "faehigkeit": "temporal_reasoning",
+      "urteil": "nein",
+      "treffer": 12,
+      "trefferIndex": null,
+      "verbatim": false,
+      "judge_aufrufe": 13
+    },
+    {
+      "question_id": "gpt4_fa19884c",
+      "typ": "temporal-reasoning",
+      "faehigkeit": "temporal_reasoning",
+      "urteil": "nein",
+      "treffer": 12,
+      "trefferIndex": null,
+      "verbatim": false,
+      "judge_aufrufe": 13
+    },
+    {
+      "question_id": "0bc8ad92",
+      "typ": "temporal-reasoning",
+      "faehigkeit": "temporal_reasoning",
+      "urteil": "teilweise",
+      "treffer": 12,
+      "trefferIndex": null,
+      "verbatim": false,
+      "judge_aufrufe": 13
+    },
+    {
+      "question_id": "af082822",
+      "typ": "temporal-reasoning",
+      "faehigkeit": "temporal_reasoning",
+      "urteil": "nein",
+      "treffer": 12,
+      "trefferIndex": null,
+      "verbatim": false,
+      "judge_aufrufe": 13
+    },
+    {
+      "question_id": "gpt4_4929293a",
+      "typ": "temporal-reasoning",
+      "faehigkeit": "temporal_reasoning",
+      "urteil": "ja",
+      "treffer": 12,
+      "trefferIndex": null,
+      "verbatim": true,
+      "judge_aufrufe": 0
+    },
+    {
+      "question_id": "gpt4_b5700ca9",
+      "typ": "temporal-reasoning",
+      "faehigkeit": "temporal_reasoning",
+      "urteil": "nein",
+      "treffer": 12,
+      "trefferIndex": null,
+      "verbatim": false,
+      "judge_aufrufe": 13
+    },
+    {
+      "question_id": "9a707b81",
+      "typ": "temporal-reasoning",
+      "faehigkeit": "temporal_reasoning",
+      "urteil": "nein",
+      "treffer": 12,
+      "trefferIndex": null,
+      "verbatim": false,
+      "judge_aufrufe": 13
+    },
+    {
+      "question_id": "gpt4_1d4ab0c9",
+      "typ": "temporal-reasoning",
+      "faehigkeit": "temporal_reasoning",
+      "urteil": "nein",
+      "treffer": 12,
+      "trefferIndex": null,
+      "verbatim": false,
+      "judge_aufrufe": 13
+    },
+    {
+      "question_id": "gpt4_e072b769",
+      "typ": "temporal-reasoning",
+      "faehigkeit": "temporal_reasoning",
+      "urteil": "teilweise",
+      "treffer": 12,
+      "trefferIndex": null,
+      "verbatim": false,
+      "judge_aufrufe": 13
+    },
+    {
+      "question_id": "0db4c65d",
+      "typ": "temporal-reasoning",
+      "faehigkeit": "temporal_reasoning",
+      "urteil": "nein",
+      "treffer": 12,
+      "trefferIndex": null,
+      "verbatim": false,
+      "judge_aufrufe": 13
+    },
+    {
+      "question_id": "gpt4_1d80365e",
+      "typ": "temporal-reasoning",
+      "faehigkeit": "temporal_reasoning",
+      "urteil": "teilweise",
+      "treffer": 12,
+      "trefferIndex": null,
+      "verbatim": false,
+      "judge_aufrufe": 13
+    },
+    {
+      "question_id": "gpt4_7f6b06db",
+      "typ": "temporal-reasoning",
+      "faehigkeit": "temporal_reasoning",
+      "urteil": "nein",
+      "treffer": 12,
+      "trefferIndex": null,
+      "verbatim": false,
+      "judge_aufrufe": 12
+    },
+    {
+      "question_id": "gpt4_6dc9b45b",
+      "typ": "temporal-reasoning",
+      "faehigkeit": "temporal_reasoning",
+      "urteil": "nein",
+      "treffer": 12,
+      "trefferIndex": null,
+      "verbatim": false,
+      "judge_aufrufe": 13
+    },
+    {
+      "question_id": "gpt4_8279ba02",
+      "typ": "temporal-reasoning",
+      "faehigkeit": "temporal_reasoning",
+      "urteil": "nein",
+      "treffer": 12,
+      "trefferIndex": null,
+      "verbatim": false,
+      "judge_aufrufe": 13
+    },
+    {
+      "question_id": "gpt4_18c2b244",
+      "typ": "temporal-reasoning",
+      "faehigkeit": "temporal_reasoning",
+      "urteil": "nein",
+      "treffer": 12,
+      "trefferIndex": null,
+      "verbatim": false,
+      "judge_aufrufe": 12
+    },
+    {
+      "question_id": "gpt4_a1b77f9c",
+      "typ": "temporal-reasoning",
+      "faehigkeit": "temporal_reasoning",
+      "urteil": "nein",
+      "treffer": 12,
+      "trefferIndex": null,
+      "verbatim": false,
+      "judge_aufrufe": 13
+    },
+    {
+      "question_id": "gpt4_1916e0ea",
+      "typ": "temporal-reasoning",
+      "faehigkeit": "temporal_reasoning",
+      "urteil": "nein",
+      "treffer": 12,
+      "trefferIndex": null,
+      "verbatim": false,
+      "judge_aufrufe": 13
+    },
+    {
+      "question_id": "gpt4_7a0daae1",
+      "typ": "temporal-reasoning",
+      "faehigkeit": "temporal_reasoning",
+      "urteil": "nein",
+      "treffer": 12,
+      "trefferIndex": null,
+      "verbatim": false,
+      "judge_aufrufe": 13
+    },
+    {
+      "question_id": "gpt4_468eb063",
+      "typ": "temporal-reasoning",
+      "faehigkeit": "temporal_reasoning",
+      "urteil": "nein",
+      "treffer": 12,
+      "trefferIndex": null,
+      "verbatim": false,
+      "judge_aufrufe": 13
+    },
+    {
+      "question_id": "gpt4_7abb270c",
+      "typ": "temporal-reasoning",
+      "faehigkeit": "temporal_reasoning",
+      "urteil": "nein",
+      "treffer": 12,
+      "trefferIndex": null,
+      "verbatim": false,
+      "judge_aufrufe": 12
+    },
+    {
+      "question_id": "gpt4_1e4a8aeb",
+      "typ": "temporal-reasoning",
+      "faehigkeit": "temporal_reasoning",
+      "urteil": "teilweise",
+      "treffer": 12,
+      "trefferIndex": null,
+      "verbatim": false,
+      "judge_aufrufe": 13
+    },
+    {
+      "question_id": "gpt4_4fc4f797",
+      "typ": "temporal-reasoning",
+      "faehigkeit": "temporal_reasoning",
+      "urteil": "nein",
+      "treffer": 12,
+      "trefferIndex": null,
+      "verbatim": false,
+      "judge_aufrufe": 13
+    },
+    {
+      "question_id": "4dfccbf7",
+      "typ": "temporal-reasoning",
+      "faehigkeit": "temporal_reasoning",
+      "urteil": "nein",
+      "treffer": 12,
+      "trefferIndex": null,
+      "verbatim": false,
+      "judge_aufrufe": 13
+    },
+    {
+      "question_id": "gpt4_61e13b3c",
+      "typ": "temporal-reasoning",
+      "faehigkeit": "temporal_reasoning",
+      "urteil": "teilweise",
+      "treffer": 12,
+      "trefferIndex": null,
+      "verbatim": false,
+      "judge_aufrufe": 13
+    },
+    {
+      "question_id": "gpt4_45189cb4",
+      "typ": "temporal-reasoning",
+      "faehigkeit": "temporal_reasoning",
+      "urteil": "nein",
+      "treffer": 12,
+      "trefferIndex": null,
+      "verbatim": false,
+      "judge_aufrufe": 12
+    },
+    {
+      "question_id": "2ebe6c90",
+      "typ": "temporal-reasoning",
+      "faehigkeit": "temporal_reasoning",
+      "urteil": "nein",
+      "treffer": 12,
+      "trefferIndex": null,
+      "verbatim": false,
+      "judge_aufrufe": 13
+    },
+    {
+      "question_id": "gpt4_e061b84f",
+      "typ": "temporal-reasoning",
+      "faehigkeit": "temporal_reasoning",
+      "urteil": "nein",
+      "treffer": 12,
+      "trefferIndex": null,
+      "verbatim": false,
+      "judge_aufrufe": 12
+    },
+    {
+      "question_id": "370a8ff4",
+      "typ": "temporal-reasoning",
+      "faehigkeit": "temporal_reasoning",
+      "urteil": "nein",
+      "treffer": 12,
+      "trefferIndex": null,
+      "verbatim": false,
+      "judge_aufrufe": 13
+    },
+    {
+      "question_id": "gpt4_d6585ce8",
+      "typ": "temporal-reasoning",
+      "faehigkeit": "temporal_reasoning",
+      "urteil": "nein",
+      "treffer": 12,
+      "trefferIndex": null,
+      "verbatim": false,
+      "judge_aufrufe": 12
+    },
+    {
+      "question_id": "gpt4_4ef30696",
+      "typ": "temporal-reasoning",
+      "faehigkeit": "temporal_reasoning",
+      "urteil": "nein",
+      "treffer": 12,
+      "trefferIndex": null,
+      "verbatim": false,
+      "judge_aufrufe": 13
+    },
+    {
+      "question_id": "gpt4_ec93e27f",
+      "typ": "temporal-reasoning",
+      "faehigkeit": "temporal_reasoning",
+      "urteil": "ja",
+      "treffer": 12,
+      "trefferIndex": null,
+      "verbatim": true,
+      "judge_aufrufe": 0
+    },
+    {
+      "question_id": "6e984301",
+      "typ": "temporal-reasoning",
+      "faehigkeit": "temporal_reasoning",
+      "urteil": "nein",
+      "treffer": 12,
+      "trefferIndex": null,
+      "verbatim": false,
+      "judge_aufrufe": 13
+    },
+    {
+      "question_id": "8077ef71",
+      "typ": "temporal-reasoning",
+      "faehigkeit": "temporal_reasoning",
+      "urteil": "nein",
+      "treffer": 12,
+      "trefferIndex": null,
+      "verbatim": false,
+      "judge_aufrufe": 13
+    },
+    {
+      "question_id": "gpt4_f420262c",
+      "typ": "temporal-reasoning",
+      "faehigkeit": "temporal_reasoning",
+      "urteil": "nein",
+      "treffer": 12,
+      "trefferIndex": null,
+      "verbatim": false,
+      "judge_aufrufe": 12
+    },
+    {
+      "question_id": "gpt4_8e165409",
+      "typ": "temporal-reasoning",
+      "faehigkeit": "temporal_reasoning",
+      "urteil": "teilweise",
+      "treffer": 12,
+      "trefferIndex": null,
+      "verbatim": false,
+      "judge_aufrufe": 13
+    },
+    {
+      "question_id": "gpt4_74aed68e",
+      "typ": "temporal-reasoning",
+      "faehigkeit": "temporal_reasoning",
+      "urteil": "teilweise",
+      "treffer": 12,
+      "trefferIndex": null,
+      "verbatim": false,
+      "judge_aufrufe": 13
+    },
+    {
+      "question_id": "bcbe585f",
+      "typ": "temporal-reasoning",
+      "faehigkeit": "temporal_reasoning",
+      "urteil": "nein",
+      "treffer": 12,
+      "trefferIndex": null,
+      "verbatim": false,
+      "judge_aufrufe": 13
+    },
+    {
+      "question_id": "gpt4_21adecb5",
+      "typ": "temporal-reasoning",
+      "faehigkeit": "temporal_reasoning",
+      "urteil": "nein",
+      "treffer": 12,
+      "trefferIndex": null,
+      "verbatim": false,
+      "judge_aufrufe": 13
+    },
+    {
+      "question_id": "5e1b23de",
+      "typ": "temporal-reasoning",
+      "faehigkeit": "temporal_reasoning",
+      "urteil": "nein",
+      "treffer": 12,
+      "trefferIndex": null,
+      "verbatim": false,
+      "judge_aufrufe": 13
+    },
+    {
+      "question_id": "gpt4_98f46fc6",
+      "typ": "temporal-reasoning",
+      "faehigkeit": "temporal_reasoning",
+      "urteil": "teilweise",
+      "treffer": 12,
+      "trefferIndex": null,
+      "verbatim": false,
+      "judge_aufrufe": 12
+    },
+    {
+      "question_id": "gpt4_af6db32f",
+      "typ": "temporal-reasoning",
+      "faehigkeit": "temporal_reasoning",
+      "urteil": "nein",
+      "treffer": 12,
+      "trefferIndex": null,
+      "verbatim": false,
+      "judge_aufrufe": 13
+    },
+    {
+      "question_id": "eac54adc",
+      "typ": "temporal-reasoning",
+      "faehigkeit": "temporal_reasoning",
+      "urteil": "nein",
+      "treffer": 12,
+      "trefferIndex": null,
+      "verbatim": false,
+      "judge_aufrufe": 13
+    },
+    {
+      "question_id": "gpt4_7ddcf75f",
+      "typ": "temporal-reasoning",
+      "faehigkeit": "temporal_reasoning",
+      "urteil": "teilweise",
+      "treffer": 12,
+      "trefferIndex": null,
+      "verbatim": false,
+      "judge_aufrufe": 13
+    },
+    {
+      "question_id": "gpt4_a2d1d1f6",
+      "typ": "temporal-reasoning",
+      "faehigkeit": "temporal_reasoning",
+      "urteil": "nein",
+      "treffer": 12,
+      "trefferIndex": null,
+      "verbatim": false,
+      "judge_aufrufe": 13
+    },
+    {
+      "question_id": "gpt4_85da3956",
+      "typ": "temporal-reasoning",
+      "faehigkeit": "temporal_reasoning",
+      "urteil": "nein",
+      "treffer": 12,
+      "trefferIndex": null,
+      "verbatim": false,
+      "judge_aufrufe": 13
+    },
+    {
+      "question_id": "gpt4_b0863698",
+      "typ": "temporal-reasoning",
+      "faehigkeit": "temporal_reasoning",
+      "urteil": "nein",
+      "treffer": 12,
+      "trefferIndex": null,
+      "verbatim": false,
+      "judge_aufrufe": 13
+    },
+    {
+      "question_id": "gpt4_68e94287",
+      "typ": "temporal-reasoning",
+      "faehigkeit": "temporal_reasoning",
+      "urteil": "teilweise",
+      "treffer": 12,
+      "trefferIndex": null,
+      "verbatim": false,
+      "judge_aufrufe": 13
+    },
+    {
+      "question_id": "gpt4_e414231e",
+      "typ": "temporal-reasoning",
+      "faehigkeit": "temporal_reasoning",
+      "urteil": "nein",
+      "treffer": 12,
+      "trefferIndex": null,
+      "verbatim": false,
+      "judge_aufrufe": 13
+    },
+    {
+      "question_id": "gpt4_7ca326fa",
+      "typ": "temporal-reasoning",
+      "faehigkeit": "temporal_reasoning",
+      "urteil": "nein",
+      "treffer": 12,
+      "trefferIndex": null,
+      "verbatim": false,
+      "judge_aufrufe": 12
+    },
+    {
+      "question_id": "gpt4_7bc6cf22",
+      "typ": "temporal-reasoning",
+      "faehigkeit": "temporal_reasoning",
+      "urteil": "teilweise",
+      "treffer": 12,
+      "trefferIndex": null,
+      "verbatim": false,
+      "judge_aufrufe": 13
+    },
+    {
+      "question_id": "2ebe6c92",
+      "typ": "temporal-reasoning",
+      "faehigkeit": "temporal_reasoning",
+      "urteil": "nein",
+      "treffer": 12,
+      "trefferIndex": null,
+      "verbatim": false,
+      "judge_aufrufe": 12
+    },
+    {
+      "question_id": "gpt4_e061b84g",
+      "typ": "temporal-reasoning",
+      "faehigkeit": "temporal_reasoning",
+      "urteil": "nein",
+      "treffer": 12,
+      "trefferIndex": null,
+      "verbatim": false,
+      "judge_aufrufe": 12
+    },
+    {
+      "question_id": "71017277",
+      "typ": "temporal-reasoning",
+      "faehigkeit": "temporal_reasoning",
+      "urteil": "nein",
+      "treffer": 12,
+      "trefferIndex": null,
+      "verbatim": false,
+      "judge_aufrufe": 12
+    },
+    {
+      "question_id": "b46e15ee",
+      "typ": "temporal-reasoning",
+      "faehigkeit": "temporal_reasoning",
+      "urteil": "nein",
+      "treffer": 12,
+      "trefferIndex": null,
+      "verbatim": false,
+      "judge_aufrufe": 12
+    },
+    {
+      "question_id": "gpt4_d6585ce9",
+      "typ": "temporal-reasoning",
+      "faehigkeit": "temporal_reasoning",
+      "urteil": "nein",
+      "treffer": 12,
+      "trefferIndex": null,
+      "verbatim": false,
+      "judge_aufrufe": 12
+    },
+    {
+      "question_id": "gpt4_1e4a8aec",
+      "typ": "temporal-reasoning",
+      "faehigkeit": "temporal_reasoning",
+      "urteil": "nein",
+      "treffer": 12,
+      "trefferIndex": null,
+      "verbatim": false,
+      "judge_aufrufe": 12
+    },
+    {
+      "question_id": "gpt4_f420262d",
+      "typ": "temporal-reasoning",
+      "faehigkeit": "temporal_reasoning",
+      "urteil": "nein",
+      "treffer": 12,
+      "trefferIndex": null,
+      "verbatim": false,
+      "judge_aufrufe": 12
+    },
+    {
+      "question_id": "gpt4_59149c78",
+      "typ": "temporal-reasoning",
+      "faehigkeit": "temporal_reasoning",
+      "urteil": "nein",
+      "treffer": 12,
+      "trefferIndex": null,
+      "verbatim": false,
+      "judge_aufrufe": 12
+    },
+    {
+      "question_id": "gpt4_e414231f",
+      "typ": "temporal-reasoning",
+      "faehigkeit": "temporal_reasoning",
+      "urteil": "ja",
+      "treffer": 12,
+      "trefferIndex": null,
+      "verbatim": true,
+      "judge_aufrufe": 0
+    },
+    {
+      "question_id": "gpt4_4929293b",
+      "typ": "temporal-reasoning",
+      "faehigkeit": "temporal_reasoning",
+      "urteil": "nein",
+      "treffer": 12,
+      "trefferIndex": null,
+      "verbatim": false,
+      "judge_aufrufe": 12
+    },
+    {
+      "question_id": "gpt4_468eb064",
+      "typ": "temporal-reasoning",
+      "faehigkeit": "temporal_reasoning",
+      "urteil": "nein",
+      "treffer": 12,
+      "trefferIndex": null,
+      "verbatim": false,
+      "judge_aufrufe": 12
+    },
+    {
+      "question_id": "gpt4_fa19884d",
+      "typ": "temporal-reasoning",
+      "faehigkeit": "temporal_reasoning",
+      "urteil": "nein",
+      "treffer": 12,
+      "trefferIndex": null,
+      "verbatim": false,
+      "judge_aufrufe": 12
+    },
+    {
+      "question_id": "9a707b82",
+      "typ": "temporal-reasoning",
+      "faehigkeit": "temporal_reasoning",
+      "urteil": "nein",
+      "treffer": 12,
+      "trefferIndex": null,
+      "verbatim": false,
+      "judge_aufrufe": 12
+    },
+    {
+      "question_id": "eac54add",
+      "typ": "temporal-reasoning",
+      "faehigkeit": "temporal_reasoning",
+      "urteil": "nein",
+      "treffer": 12,
+      "trefferIndex": null,
+      "verbatim": false,
+      "judge_aufrufe": 12
+    },
+    {
+      "question_id": "4dfccbf8",
+      "typ": "temporal-reasoning",
+      "faehigkeit": "temporal_reasoning",
+      "urteil": "nein",
+      "treffer": 12,
+      "trefferIndex": null,
+      "verbatim": false,
+      "judge_aufrufe": 12
+    },
+    {
+      "question_id": "0bc8ad93",
+      "typ": "temporal-reasoning",
+      "faehigkeit": "temporal_reasoning",
+      "urteil": "nein",
+      "treffer": 12,
+      "trefferIndex": null,
+      "verbatim": false,
+      "judge_aufrufe": 12
+    },
+    {
+      "question_id": "6e984302",
+      "typ": "temporal-reasoning",
+      "faehigkeit": "temporal_reasoning",
+      "urteil": "nein",
+      "treffer": 12,
+      "trefferIndex": null,
+      "verbatim": false,
+      "judge_aufrufe": 12
+    },
+    {
+      "question_id": "gpt4_8279ba03",
+      "typ": "temporal-reasoning",
+      "faehigkeit": "temporal_reasoning",
+      "urteil": "nein",
+      "treffer": 12,
+      "trefferIndex": null,
+      "verbatim": false,
+      "judge_aufrufe": 12
+    },
+    {
+      "question_id": "gpt4_b5700ca0",
+      "typ": "temporal-reasoning",
+      "faehigkeit": "temporal_reasoning",
+      "urteil": "nein",
+      "treffer": 12,
+      "trefferIndex": null,
+      "verbatim": false,
+      "judge_aufrufe": 12
+    },
+    {
+      "question_id": "gpt4_68e94288",
+      "typ": "temporal-reasoning",
+      "faehigkeit": "temporal_reasoning",
+      "urteil": "nein",
+      "treffer": 12,
+      "trefferIndex": null,
+      "verbatim": false,
+      "judge_aufrufe": 12
+    },
+    {
+      "question_id": "gpt4_2655b836",
+      "typ": "temporal-reasoning",
+      "faehigkeit": "temporal_reasoning",
+      "urteil": "teilweise",
+      "treffer": 12,
+      "trefferIndex": null,
+      "verbatim": false,
+      "judge_aufrufe": 12
+    },
+    {
+      "question_id": "gpt4_2487a7cb",
+      "typ": "temporal-reasoning",
+      "faehigkeit": "temporal_reasoning",
+      "urteil": "nein",
+      "treffer": 12,
+      "trefferIndex": null,
+      "verbatim": false,
+      "judge_aufrufe": 12
+    },
+    {
+      "question_id": "gpt4_76048e76",
+      "typ": "temporal-reasoning",
+      "faehigkeit": "temporal_reasoning",
+      "urteil": "ja",
+      "treffer": 12,
+      "trefferIndex": null,
+      "verbatim": true,
+      "judge_aufrufe": 0
+    },
+    {
+      "question_id": "gpt4_2312f94c",
+      "typ": "temporal-reasoning",
+      "faehigkeit": "temporal_reasoning",
+      "urteil": "ja",
+      "treffer": 12,
+      "trefferIndex": null,
+      "verbatim": true,
+      "judge_aufrufe": 0
+    },
+    {
+      "question_id": "0bb5a684",
+      "typ": "temporal-reasoning",
+      "faehigkeit": "temporal_reasoning",
+      "urteil": "teilweise",
+      "treffer": 12,
+      "trefferIndex": null,
+      "verbatim": false,
+      "judge_aufrufe": 13
+    },
+    {
+      "question_id": "08f4fc43",
+      "typ": "temporal-reasoning",
+      "faehigkeit": "temporal_reasoning",
+      "urteil": "teilweise",
+      "treffer": 12,
+      "trefferIndex": null,
+      "verbatim": false,
+      "judge_aufrufe": 13
+    },
+    {
+      "question_id": "2c63a862",
+      "typ": "temporal-reasoning",
+      "faehigkeit": "temporal_reasoning",
+      "urteil": "nein",
+      "treffer": 12,
+      "trefferIndex": null,
+      "verbatim": false,
+      "judge_aufrufe": 13
+    },
+    {
+      "question_id": "gpt4_385a5000",
+      "typ": "temporal-reasoning",
+      "faehigkeit": "temporal_reasoning",
+      "urteil": "ja",
+      "treffer": 12,
+      "trefferIndex": null,
+      "verbatim": true,
+      "judge_aufrufe": 0
+    },
+    {
+      "question_id": "2a1811e2",
+      "typ": "temporal-reasoning",
+      "faehigkeit": "temporal_reasoning",
+      "urteil": "teilweise",
+      "treffer": 12,
+      "trefferIndex": null,
+      "verbatim": false,
+      "judge_aufrufe": 13
+    },
+    {
+      "question_id": "bbf86515",
+      "typ": "temporal-reasoning",
+      "faehigkeit": "temporal_reasoning",
+      "urteil": "teilweise",
+      "treffer": 12,
+      "trefferIndex": null,
+      "verbatim": false,
+      "judge_aufrufe": 13
+    },
+    {
+      "question_id": "gpt4_5dcc0aab",
+      "typ": "temporal-reasoning",
+      "faehigkeit": "temporal_reasoning",
+      "urteil": "nein",
+      "treffer": 12,
+      "trefferIndex": null,
+      "verbatim": false,
+      "judge_aufrufe": 12
+    },
+    {
+      "question_id": "gpt4_0b2f1d21",
+      "typ": "temporal-reasoning",
+      "faehigkeit": "temporal_reasoning",
+      "urteil": "nein",
+      "treffer": 12,
+      "trefferIndex": null,
+      "verbatim": false,
+      "judge_aufrufe": 13
+    },
+    {
+      "question_id": "f0853d11",
+      "typ": "temporal-reasoning",
+      "faehigkeit": "temporal_reasoning",
+      "urteil": "nein",
+      "treffer": 12,
+      "trefferIndex": null,
+      "verbatim": false,
+      "judge_aufrufe": 13
+    },
+    {
+      "question_id": "gpt4_6ed717ea",
+      "typ": "temporal-reasoning",
+      "faehigkeit": "temporal_reasoning",
+      "urteil": "teilweise",
+      "treffer": 12,
+      "trefferIndex": null,
+      "verbatim": false,
+      "judge_aufrufe": 12
+    },
+    {
+      "question_id": "gpt4_70e84552",
+      "typ": "temporal-reasoning",
+      "faehigkeit": "temporal_reasoning",
+      "urteil": "ja",
+      "treffer": 12,
+      "trefferIndex": null,
+      "verbatim": true,
+      "judge_aufrufe": 0
+    },
+    {
+      "question_id": "a3838d2b",
+      "typ": "temporal-reasoning",
+      "faehigkeit": "temporal_reasoning",
+      "urteil": "nein",
+      "treffer": 12,
+      "trefferIndex": null,
+      "verbatim": false,
+      "judge_aufrufe": 12
+    },
+    {
+      "question_id": "gpt4_93159ced",
+      "typ": "temporal-reasoning",
+      "faehigkeit": "temporal_reasoning",
+      "urteil": "nein",
+      "treffer": 12,
+      "trefferIndex": null,
+      "verbatim": false,
+      "judge_aufrufe": 13
+    },
+    {
+      "question_id": "gpt4_2d58bcd6",
+      "typ": "temporal-reasoning",
+      "faehigkeit": "temporal_reasoning",
+      "urteil": "ja",
+      "treffer": 12,
+      "trefferIndex": 3,
+      "verbatim": false,
+      "judge_aufrufe": 4
+    },
+    {
+      "question_id": "gpt4_65aabe59",
+      "typ": "temporal-reasoning",
+      "faehigkeit": "temporal_reasoning",
+      "urteil": "ja",
+      "treffer": 12,
+      "trefferIndex": null,
+      "verbatim": true,
+      "judge_aufrufe": 0
+    },
+    {
+      "question_id": "982b5123",
+      "typ": "temporal-reasoning",
+      "faehigkeit": "temporal_reasoning",
+      "urteil": "nein",
+      "treffer": 12,
+      "trefferIndex": null,
+      "verbatim": false,
+      "judge_aufrufe": 13
+    },
+    {
+      "question_id": "b9cfe692",
+      "typ": "temporal-reasoning",
+      "faehigkeit": "temporal_reasoning",
+      "urteil": "nein",
+      "treffer": 12,
+      "trefferIndex": null,
+      "verbatim": false,
+      "judge_aufrufe": 13
+    },
+    {
+      "question_id": "gpt4_4edbafa2",
+      "typ": "temporal-reasoning",
+      "faehigkeit": "temporal_reasoning",
+      "urteil": "nein",
+      "treffer": 12,
+      "trefferIndex": null,
+      "verbatim": false,
+      "judge_aufrufe": 12
+    },
+    {
+      "question_id": "c8090214",
+      "typ": "temporal-reasoning",
+      "faehigkeit": "temporal_reasoning",
+      "urteil": "nein",
+      "treffer": 12,
+      "trefferIndex": null,
+      "verbatim": false,
+      "judge_aufrufe": 13
+    },
+    {
+      "question_id": "gpt4_483dd43c",
+      "typ": "temporal-reasoning",
+      "faehigkeit": "temporal_reasoning",
+      "urteil": "teilweise",
+      "treffer": 12,
+      "trefferIndex": null,
+      "verbatim": false,
+      "judge_aufrufe": 12
+    },
+    {
+      "question_id": "e4e14d04",
+      "typ": "temporal-reasoning",
+      "faehigkeit": "temporal_reasoning",
+      "urteil": "teilweise",
+      "treffer": 12,
+      "trefferIndex": null,
+      "verbatim": false,
+      "judge_aufrufe": 13
+    },
+    {
+      "question_id": "c9f37c46",
+      "typ": "temporal-reasoning",
+      "faehigkeit": "temporal_reasoning",
+      "urteil": "teilweise",
+      "treffer": 12,
+      "trefferIndex": null,
+      "verbatim": false,
+      "judge_aufrufe": 13
+    },
+    {
+      "question_id": "gpt4_2c50253f",
+      "typ": "temporal-reasoning",
+      "faehigkeit": "temporal_reasoning",
+      "urteil": "ja",
+      "treffer": 12,
+      "trefferIndex": null,
+      "verbatim": true,
+      "judge_aufrufe": 0
+    },
+    {
+      "question_id": "dcfa8644",
+      "typ": "temporal-reasoning",
+      "faehigkeit": "temporal_reasoning",
+      "urteil": "nein",
+      "treffer": 12,
+      "trefferIndex": null,
+      "verbatim": false,
+      "judge_aufrufe": 13
+    },
+    {
+      "question_id": "gpt4_b4a80587",
+      "typ": "temporal-reasoning",
+      "faehigkeit": "temporal_reasoning",
+      "urteil": "nein",
+      "treffer": 12,
+      "trefferIndex": null,
+      "verbatim": false,
+      "judge_aufrufe": 13
+    },
+    {
+      "question_id": "gpt4_9a159967",
+      "typ": "temporal-reasoning",
+      "faehigkeit": "temporal_reasoning",
+      "urteil": "ja",
+      "treffer": 12,
+      "trefferIndex": null,
+      "verbatim": true,
+      "judge_aufrufe": 0
+    },
+    {
+      "question_id": "cc6d1ec1",
+      "typ": "temporal-reasoning",
+      "faehigkeit": "temporal_reasoning",
+      "urteil": "nein",
+      "treffer": 12,
+      "trefferIndex": null,
+      "verbatim": false,
+      "judge_aufrufe": 13
+    },
+    {
+      "question_id": "gpt4_8c8961ae",
+      "typ": "temporal-reasoning",
+      "faehigkeit": "temporal_reasoning",
+      "urteil": "nein",
+      "treffer": 12,
+      "trefferIndex": null,
+      "verbatim": false,
+      "judge_aufrufe": 12
+    },
+    {
+      "question_id": "gpt4_d9af6064",
+      "typ": "temporal-reasoning",
+      "faehigkeit": "temporal_reasoning",
+      "urteil": "ja",
+      "treffer": 12,
+      "trefferIndex": null,
+      "verbatim": true,
+      "judge_aufrufe": 0
+    },
+    {
+      "question_id": "gpt4_7de946e7",
+      "typ": "temporal-reasoning",
+      "faehigkeit": "temporal_reasoning",
+      "urteil": "ja",
+      "treffer": 12,
+      "trefferIndex": null,
+      "verbatim": true,
+      "judge_aufrufe": 0
+    },
+    {
+      "question_id": "d01c6aa8",
+      "typ": "temporal-reasoning",
+      "faehigkeit": "temporal_reasoning",
+      "urteil": "nein",
+      "treffer": 12,
+      "trefferIndex": null,
+      "verbatim": false,
+      "judge_aufrufe": 12
+    },
+    {
+      "question_id": "993da5e2",
+      "typ": "temporal-reasoning",
+      "faehigkeit": "temporal_reasoning",
+      "urteil": "nein",
+      "treffer": 12,
+      "trefferIndex": null,
+      "verbatim": false,
+      "judge_aufrufe": 13
+    },
+    {
+      "question_id": "a3045048",
+      "typ": "temporal-reasoning",
+      "faehigkeit": "temporal_reasoning",
+      "urteil": "nein",
+      "treffer": 12,
+      "trefferIndex": null,
+      "verbatim": false,
+      "judge_aufrufe": 13
+    },
+    {
+      "question_id": "gpt4_d31cdae3",
+      "typ": "temporal-reasoning",
+      "faehigkeit": "temporal_reasoning",
+      "urteil": "nein",
+      "treffer": 12,
+      "trefferIndex": null,
+      "verbatim": false,
+      "judge_aufrufe": 12
+    },
+    {
+      "question_id": "gpt4_cd90e484",
+      "typ": "temporal-reasoning",
+      "faehigkeit": "temporal_reasoning",
+      "urteil": "nein",
+      "treffer": 12,
+      "trefferIndex": null,
+      "verbatim": false,
+      "judge_aufrufe": 13
+    },
+    {
+      "question_id": "gpt4_88806d6e",
+      "typ": "temporal-reasoning",
+      "faehigkeit": "temporal_reasoning",
+      "urteil": "ja",
+      "treffer": 12,
+      "trefferIndex": null,
+      "verbatim": true,
+      "judge_aufrufe": 0
+    },
+    {
+      "question_id": "gpt4_4cd9eba1",
+      "typ": "temporal-reasoning",
+      "faehigkeit": "temporal_reasoning",
+      "urteil": "nein",
+      "treffer": 12,
+      "trefferIndex": null,
+      "verbatim": false,
+      "judge_aufrufe": 13
+    },
+    {
+      "question_id": "gpt4_93f6379c",
+      "typ": "temporal-reasoning",
+      "faehigkeit": "temporal_reasoning",
+      "urteil": "ja",
+      "treffer": 12,
+      "trefferIndex": null,
+      "verbatim": true,
+      "judge_aufrufe": 0
+    },
+    {
+      "question_id": "b29f3365",
+      "typ": "temporal-reasoning",
+      "faehigkeit": "temporal_reasoning",
+      "urteil": "teilweise",
+      "treffer": 12,
+      "trefferIndex": null,
+      "verbatim": false,
+      "judge_aufrufe": 13
+    },
+    {
+      "question_id": "gpt4_2f56ae70",
+      "typ": "temporal-reasoning",
+      "faehigkeit": "temporal_reasoning",
+      "urteil": "ja",
+      "treffer": 12,
+      "trefferIndex": null,
+      "verbatim": true,
+      "judge_aufrufe": 0
+    },
+    {
+      "question_id": "6613b389",
+      "typ": "temporal-reasoning",
+      "faehigkeit": "temporal_reasoning",
+      "urteil": "nein",
+      "treffer": 12,
+      "trefferIndex": null,
+      "verbatim": false,
+      "judge_aufrufe": 13
+    },
+    {
+      "question_id": "gpt4_78cf46a3",
+      "typ": "temporal-reasoning",
+      "faehigkeit": "temporal_reasoning",
+      "urteil": "nein",
+      "treffer": 12,
+      "trefferIndex": null,
+      "verbatim": false,
+      "judge_aufrufe": 13
+    },
+    {
+      "question_id": "gpt4_0a05b494",
+      "typ": "temporal-reasoning",
+      "faehigkeit": "temporal_reasoning",
+      "urteil": "nein",
+      "treffer": 12,
+      "trefferIndex": null,
+      "verbatim": false,
+      "judge_aufrufe": 12
+    },
+    {
+      "question_id": "gpt4_1a1dc16d",
+      "typ": "temporal-reasoning",
+      "faehigkeit": "temporal_reasoning",
+      "urteil": "ja",
+      "treffer": 12,
+      "trefferIndex": null,
+      "verbatim": true,
+      "judge_aufrufe": 0
+    },
+    {
+      "question_id": "gpt4_2f584639",
+      "typ": "temporal-reasoning",
+      "faehigkeit": "temporal_reasoning",
+      "urteil": "teilweise",
+      "treffer": 12,
+      "trefferIndex": null,
+      "verbatim": false,
+      "judge_aufrufe": 12
+    },
+    {
+      "question_id": "gpt4_213fd887",
+      "typ": "temporal-reasoning",
+      "faehigkeit": "temporal_reasoning",
+      "urteil": "teilweise",
+      "treffer": 12,
+      "trefferIndex": null,
+      "verbatim": false,
+      "judge_aufrufe": 12
+    },
+    {
+      "question_id": "gpt4_5438fa52",
+      "typ": "temporal-reasoning",
+      "faehigkeit": "temporal_reasoning",
+      "urteil": "nein",
+      "treffer": 12,
+      "trefferIndex": null,
+      "verbatim": false,
+      "judge_aufrufe": 13
+    },
+    {
+      "question_id": "gpt4_c27434e8",
+      "typ": "temporal-reasoning",
+      "faehigkeit": "temporal_reasoning",
+      "urteil": "ja",
+      "treffer": 12,
+      "trefferIndex": null,
+      "verbatim": true,
+      "judge_aufrufe": 0
+    },
+    {
+      "question_id": "gpt4_fe651585",
+      "typ": "temporal-reasoning",
+      "faehigkeit": "temporal_reasoning",
+      "urteil": "ja",
+      "treffer": 12,
+      "trefferIndex": null,
+      "verbatim": true,
+      "judge_aufrufe": 0
+    },
+    {
+      "question_id": "8c18457d",
+      "typ": "temporal-reasoning",
+      "faehigkeit": "temporal_reasoning",
+      "urteil": "nein",
+      "treffer": 12,
+      "trefferIndex": null,
+      "verbatim": false,
+      "judge_aufrufe": 13
+    },
+    {
+      "question_id": "gpt4_70e84552_abs",
+      "typ": "temporal-reasoning",
+      "faehigkeit": "temporal_reasoning",
+      "urteil": "nein",
+      "treffer": 12,
+      "trefferIndex": null,
+      "verbatim": false,
+      "judge_aufrufe": 12
+    },
+    {
+      "question_id": "gpt4_93159ced_abs",
+      "typ": "temporal-reasoning",
+      "faehigkeit": "temporal_reasoning",
+      "urteil": "nein",
+      "treffer": 12,
+      "trefferIndex": null,
+      "verbatim": false,
+      "judge_aufrufe": 13
+    },
+    {
+      "question_id": "982b5123_abs",
+      "typ": "temporal-reasoning",
+      "faehigkeit": "temporal_reasoning",
+      "urteil": "nein",
+      "treffer": 12,
+      "trefferIndex": null,
+      "verbatim": false,
+      "judge_aufrufe": 12
+    },
+    {
+      "question_id": "c8090214_abs",
+      "typ": "temporal-reasoning",
+      "faehigkeit": "temporal_reasoning",
+      "urteil": "nein",
+      "treffer": 12,
+      "trefferIndex": null,
+      "verbatim": false,
+      "judge_aufrufe": 13
+    },
+    {
+      "question_id": "gpt4_c27434e8_abs",
+      "typ": "temporal-reasoning",
+      "faehigkeit": "temporal_reasoning",
+      "urteil": "nein",
+      "treffer": 12,
+      "trefferIndex": null,
+      "verbatim": false,
+      "judge_aufrufe": 12
+    },
+    {
+      "question_id": "gpt4_fe651585_abs",
+      "typ": "temporal-reasoning",
+      "faehigkeit": "temporal_reasoning",
+      "urteil": "nein",
+      "treffer": 12,
+      "trefferIndex": null,
+      "verbatim": false,
+      "judge_aufrufe": 12
+    }
+  ]
+}
