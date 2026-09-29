@@ -9,6 +9,8 @@ KEPTA ändert das — **lokal**. Eine verschlüsselte SQLite-Datei auf deinem Re
 
 > **Dies ist der quelloffene Kern** (BUSL-1.1 — jede Zeile öffentlich, Übergang in AGPL-3.0-or-later vier Jahre nach jedem Release): Memory-Engine, MCP-Server, HTTP-API — dazu der Python-Client unter MIT, damit ihn jedes Python-Projekt einbauen kann. Die vollständige Desktop-Anwendung ist **KEPTA Pro** — siehe unten. English: [README.md](README.md).
 
+Fragen, Security-Feedback oder Benchmark-Kritik? → **[Discussions](https://github.com/DamianTodorovic/kepta/discussions)**
+
 ## ⚡ Erst sehen, dann verbinden
 
 **Zuerst die Desktop-App:** [KEPTA Core herunterladen](https://github.com/DamianTodorovic/kepta-releases/releases/latest) — jeder Download startet mit **einem Gratis-Pro-Tag** (24 Stunden, alle Werkzeuge, ohne Limiten, ohne Karte, ohne Konto, ohne Schlüssel), danach läuft sie gratis mit Tageslimiten und sperrt nie.

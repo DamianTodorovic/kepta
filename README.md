@@ -11,6 +11,8 @@ KEPTA is a local memory for AI assistants. Documents, decisions and client knowl
 
 This repository is the **source-available core** (BUSL-1.1 — every line public, converts to AGPL-3.0-or-later four years after each release): the memory engine, the MCP server, the HTTP API — and the Python client, which is MIT so any Python project can embed it. The full desktop application is **[KEPTA Core](#kepta-core--the-full-desktop-app)** — free, with one free Pro day built in.
 
+Questions, security feedback or benchmark critique? → **[Discussions](https://github.com/DamianTodorovic/kepta/discussions)**
+
 ```mermaid
 flowchart LR
   subgraph Apps["Your AI apps — every client, one memory"]

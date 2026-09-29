@@ -5,6 +5,7 @@
 3. New logic follows TDD (RED → GREEN → REFACTOR); tests live in `tests/`, mirroring the source layout
 4. Do not lower the coverage gate — `npm run test:cov` has to pass without threshold errors
 5. Open a PR with a description, and a screenshot for UI changes
+6. Found a bug? Open an issue. Questions, ideas, security-model critique? Open a [discussion](https://github.com/DamianTodorovic/kepta/discussions).
 
 Never commit a secret. The old `KI-Gehirn` branding is gone — use `KEPTA`.
 
