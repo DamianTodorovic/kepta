@@ -11,7 +11,7 @@ KEPTA ändert das — **lokal**. Eine verschlüsselte SQLite-Datei auf deinem Re
 
 ## ⚡ Erst sehen, dann verbinden
 
-**Zuerst die Desktop-App:** [KEPTA Core herunterladen](https://github.com/DamianTodorovic/kepta-pro-releases/releases/latest) — jeder Download startet mit **einem Gratis-Pro-Tag** (24 Stunden, alle Werkzeuge, ohne Limiten, ohne Karte, ohne Konto, ohne Schlüssel), danach läuft sie gratis mit Tageslimiten und sperrt nie.
+**Zuerst die Desktop-App:** [KEPTA Core herunterladen](https://github.com/DamianTodorovic/kepta-releases/releases/latest) — jeder Download startet mit **einem Gratis-Pro-Tag** (24 Stunden, alle Werkzeuge, ohne Limiten, ohne Karte, ohne Konto, ohne Schlüssel), danach läuft sie gratis mit Tageslimiten und sperrt nie.
 
 Oder kopflos, direkt in deinen Agenten:
 
@@ -183,7 +183,7 @@ Eine native App für macOS und Windows, die dieselbe verschlüsselte Wissensbasi
 | **Preis** | | |
 | Lizenz | kostenlos · BUSL-1.1 (quelloffen) | ein offline geprüfter Lizenzschlüssel |
 
-**Ein Lizenzschlüssel, offline auf deinem Rechner geprüft — kein Konto, kein Internet.** KEPTA ruft nirgends an. Pro kostet 12 €/Monat oder 120 €/Jahr und wird direkt in der App gekauft — der Upgrade-Knopf zeigt immer auf den aktuell lebenden Weg (solange der Selbstbedienungs-Checkout in der Schlussprüfung ist, ist das die direkte Linie zu **[mir auf LinkedIn](https://www.linkedin.com/in/damian-todorovic-244235434)**); Enterprise — Team-Gedächtnis, SSO, MDM, Security-Dokumentation — wird persönlich zugeschnitten. Die Installer liegen unter **[kepta-pro-releases](https://github.com/DamianTodorovic/kepta-pro-releases/releases/latest)**.
+**Ein Lizenzschlüssel, offline auf deinem Rechner geprüft — kein Konto, kein Internet.** KEPTA ruft nirgends an. Pro kostet 12 €/Monat oder 120 €/Jahr und wird direkt in der App gekauft — der Upgrade-Knopf zeigt immer auf den aktuell lebenden Weg (solange der Selbstbedienungs-Checkout in der Schlussprüfung ist, ist das die direkte Linie zu **[mir auf LinkedIn](https://www.linkedin.com/in/damian-todorovic-244235434)**); Enterprise — Team-Gedächtnis, SSO, MDM, Security-Dokumentation — wird persönlich zugeschnitten. Die Installer liegen unter **[kepta-releases](https://github.com/DamianTodorovic/kepta-releases/releases/latest)**.
 
 ## ⚡ Schnellstart
 

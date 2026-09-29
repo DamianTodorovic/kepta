@@ -40,7 +40,7 @@ flowchart LR
 
 ## ⚡ See it first, connect it second
 
-**The desktop app first:** [Download KEPTA Core](https://github.com/DamianTodorovic/kepta-pro-releases/releases/latest) — every download starts with **one free Pro day** (24 hours, every tool, unlimited, no card, no account, no key), then it runs free with daily limits and never locks.
+**The desktop app first:** [Download KEPTA Core](https://github.com/DamianTodorovic/kepta-releases/releases/latest) — every download starts with **one free Pro day** (24 hours, every tool, unlimited, no card, no account, no key), then it runs free with daily limits and never locks.
 
 Or headless, right in your agents:
 
@@ -170,7 +170,7 @@ A native app for macOS and Windows that turns the same encrypted knowledge base 
 | **Price** | | |
 | License | free · BUSL-1.1 (source available) | proprietary · Core runs with daily limits, the Pro key removes them |
 
-**KEPTA Core never locks — and it never phones home.** The app runs with generous daily limits on the Pro tools — and the Pro license key removes them, validated **offline** on your machine: no account, no internet, no trial timer. Pro is 12 €/month or 120 €/year, bought from inside the app — the Upgrade button always points to the current way to buy (while the self-serve checkout is in its final review, that is a direct line to **[me on LinkedIn](https://www.linkedin.com/in/damian-todorovic-244235434)**); Enterprise — team memory, SSO, MDM, security documentation — is shaped personally. The installers are at **[kepta-pro-releases](https://github.com/DamianTodorovic/kepta-pro-releases/releases/latest)**.
+**KEPTA Core never locks — and it never phones home.** The app runs with generous daily limits on the Pro tools — and the Pro license key removes them, validated **offline** on your machine: no account, no internet, no trial timer. Pro is 12 €/month or 120 €/year, bought from inside the app — the Upgrade button always points to the current way to buy (while the self-serve checkout is in its final review, that is a direct line to **[me on LinkedIn](https://www.linkedin.com/in/damian-todorovic-244235434)**); Enterprise — team memory, SSO, MDM, security documentation — is shaped personally. The installers are at **[kepta-releases](https://github.com/DamianTodorovic/kepta-releases/releases/latest)**.
 
 ---
 
