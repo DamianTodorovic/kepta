@@ -120,6 +120,11 @@ jobs:
           NODE_AUTH_TOKEN: ${{ secrets.NODE_AUTH_TOKEN }}
         run: |
           set -o pipefail
+          VERSION=$(node -p "require('./package.json').version")
+          if curl -sf "https://registry.npmjs.org/kepta-mcp/$VERSION" > /dev/null; then
+            echo "::notice::kepta-mcp@$VERSION ist bereits auf npm — nichts zu tun (Workflow läuft grün durch)."
+            exit 0
+          fi
           if [ -n "$NODE_AUTH_TOKEN" ]; then
             echo "Publish-Modus: Granular-Access-Token (NODE_AUTH_TOKEN gesetzt)"
             # Fail fast mit klarer Ursache statt kryptischem 404 auf PUT und
@@ -162,13 +167,17 @@ jobs:
       - name: Auf npm-Verbreitung warten
         run: |
           VERSION=$(node -p "require('./npm/package.json').version")
-          for i in $(seq 1 30); do
+          for i in $(seq 1 60); do
             LATEST=$(curl -sf "https://registry.npmjs.org/kepta-mcp" | node -p "JSON.parse(require('fs').readFileSync(0,'utf8'))['dist-tags'].latest" 2>/dev/null || echo "")
             echo "Versuch $i: npm meldet '$LATEST', erwartet '$VERSION'"
-            [ "$LATEST" = "$VERSION" ] && exit 0
+            # Der dist-tag kann laggen — die Versions-URL ist der harte Beweis:
+            if [ "$LATEST" = "$VERSION" ] || curl -sf "https://registry.npmjs.org/kepta-mcp/$VERSION" > /dev/null; then
+              echo "kepta-mcp@$VERSION ist auf npm sichtbar."
+              exit 0
+            fi
             sleep 10
           done
-          echo "::error::kepta-mcp@$VERSION ist nach 5 Minuten nicht auf npm sichtbar"; exit 1
+          echo "::error::kepta-mcp@$VERSION ist nach 10 Minuten nicht auf npm sichtbar"; exit 1
 
       - name: mcp-publisher holen
         run: |
