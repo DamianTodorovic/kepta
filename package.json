@@ -1,8 +1,8 @@
 {
   "name": "kepta",
-  "version": "2.13.21",
+  "version": "2.13.22",
   "description": "Local-first memory for AI agents — encrypted SQLite store, hybrid search, MCP server, HTTP API.",
-  "license": "AGPL-3.0-or-later",
+  "license": "BUSL-1.1",
   "type": "module",
   "engines": {
     "node": ">=22.13"

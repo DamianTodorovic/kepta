@@ -2,6 +2,11 @@
 
 All notable changes are documented in this file. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and versioning follows [SemVer](https://semver.org/).
 
+## [2.13.22] — 2026-09-29
+
+### Changed
+- **The license is now Business Source License 1.1 (BUSL-1.1)** — replacing AGPL-3.0-or-later. Every line stays public; production use inside your own organization on your own hardware is always allowed; **offering the engine (or a modified version) to third parties as a hosted or managed service is reserved** for a commercial license. Each version converts to AGPL-3.0-or-later four years after its release. The Python client under `python/` stays MIT.
+
 ## [2.13.21] — 2026-09-26
 
 ### Fixed

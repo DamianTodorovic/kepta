@@ -1,6 +1,6 @@
 {
   "name": "kepta-mcp",
-  "version": "2.13.21",
+  "version": "2.13.22",
   "description": "Local memory for AI agents over MCP. One SQLite file on your own machine — no cloud, no account.",
   "keywords": [
     "mcp",
@@ -16,7 +16,7 @@
     "rag",
     "sqlite"
   ],
-  "license": "AGPL-3.0-or-later",
+  "license": "BUSL-1.1",
   "author": "KEPTA",
   "homepage": "https://github.com/DamianTodorovic/kepta",
   "repository": {

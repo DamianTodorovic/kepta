@@ -1,4 +1,4 @@
-// Der Praxis-Sync lebt im npm-Paket (AGPL) — und hatte bis 26.9. keine Tests
+// Der Praxis-Sync lebt im npm-Paket (BUSL) — und hatte bis 26.9. keine Tests
 // in diesem Repo. Der Export kappte still bei 100 Notizen (22.9.-Fund,
 // 2.13.4-Fix der App, hier portiert); dieser Wächter hält die Pagination fest.
 import { describe, expect, it } from "vitest";

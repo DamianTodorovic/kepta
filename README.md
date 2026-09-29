@@ -1,5 +1,5 @@
 <p align="center"><img src="docs/kepta-logo.svg" width="88" alt="KEPTA"></p>
-<p align="center"><img src="https://img.shields.io/badge/version-2.13.21-blue" alt="v2.13.21"> <img src="https://img.shields.io/badge/license-AGPL--3.0-blue" alt="AGPL-3.0"> <img src="https://img.shields.io/badge/tests-388%20passing-brightgreen" alt="tests"> <img src="https://img.shields.io/badge/coverage%20gate-%E2%89%A5%2070%25%20of%20lines-brightgreen" alt="coverage gate"> <img src="https://img.shields.io/badge/platform-macOS%20%7C%20Windows%20%7C%20Linux-lightgrey" alt="platform"> <img src="https://img.shields.io/badge/encryption-SQLCipher%204-green" alt="encrypted"> <a href="https://www.linkedin.com/in/damian-todorovic-244235434"><img src="https://img.shields.io/badge/LinkedIn-Damian%20Todorovic-0A66C2?logo=linkedin&logoColor=white" alt="Damian Todorovic on LinkedIn"></a></p>
+<p align="center"><img src="https://img.shields.io/badge/version-2.13.22-blue" alt="v2.13.21"> <img src="https://img.shields.io/badge/license-BUSL--1.1-blue" alt="BUSL-1.1"> <img src="https://img.shields.io/badge/tests-388%20passing-brightgreen" alt="tests"> <img src="https://img.shields.io/badge/coverage%20gate-%E2%89%A5%2070%25%20of%20lines-brightgreen" alt="coverage gate"> <img src="https://img.shields.io/badge/platform-macOS%20%7C%20Windows%20%7C%20Linux-lightgrey" alt="platform"> <img src="https://img.shields.io/badge/encryption-SQLCipher%204-green" alt="encrypted"> <a href="https://www.linkedin.com/in/damian-todorovic-244235434"><img src="https://img.shields.io/badge/LinkedIn-Damian%20Todorovic-0A66C2?logo=linkedin&logoColor=white" alt="Damian Todorovic on LinkedIn"></a></p>
 
 # KEPTA Core
 
@@ -9,7 +9,7 @@
 
 KEPTA is a local memory for AI assistants. Documents, decisions and client knowledge go into an encrypted knowledge base on your own computer — and your assistant (Claude Desktop, Cursor, any MCP client) recalls it as if it had never forgotten.
 
-This repository is the **open core** (AGPL-3.0): the memory engine, the MCP server, the HTTP API — and the Python client, which is MIT so any Python project can embed it. The full desktop application is **[KEPTA Core](#kepta-core--the-full-desktop-app)** — free, with one free Pro day built in.
+This repository is the **source-available core** (BUSL-1.1 — every line public, converts to AGPL-3.0-or-later four years after each release): the memory engine, the MCP server, the HTTP API — and the Python client, which is MIT so any Python project can embed it. The full desktop application is **[KEPTA Core](#kepta-core--the-full-desktop-app)** — free, with one free Pro day built in.
 
 ```mermaid
 flowchart LR
@@ -168,7 +168,7 @@ A native app for macOS and Windows that turns the same encrypted knowledge base 
 | Setup assistant with a starter pack | — | ✅ |
 | System status — detects local AI, checks storage, shows diagnostics | — | ✅ |
 | **Price** | | |
-| License | free · AGPL-3.0 | proprietary · Core runs with daily limits, the Pro key removes them |
+| License | free · BUSL-1.1 (source available) | proprietary · Core runs with daily limits, the Pro key removes them |
 
 **KEPTA Core never locks — and it never phones home.** The app runs with generous daily limits on the Pro tools — and the Pro license key removes them, validated **offline** on your machine: no account, no internet, no trial timer. Pro is 12 €/month or 120 €/year, bought from inside the app — the Upgrade button always points to the current way to buy (while the self-serve checkout is in its final review, that is a direct line to **[me on LinkedIn](https://www.linkedin.com/in/damian-todorovic-244235434)**); Enterprise — team memory, SSO, MDM, security documentation — is shaped personally. The installers are at **[kepta-pro-releases](https://github.com/DamianTodorovic/kepta-pro-releases/releases/latest)**.
 
@@ -338,9 +338,9 @@ KEPTA is built by **Damian Todorovic**. Questions, ideas, a license for your tea
 
 ## 📄 License
 
-[AGPL-3.0-or-later](LICENSE). **KEPTA Core** is the free desktop app on top of this engine — the knowledge graph, the chat, the machine scan, the privacy shield, the audit log and the polished experience: every download starts with one free Pro day, then it runs with daily limits and never locks — the limits are sealed against restarts, clock tricks and even wiping the database (App 2.13.7). **KEPTA Pro** is the license key that removes those limits (€12/month, €120/year, bought in the app). **KEPTA Enterprise** is licensed by agreement: everything in Pro, plus team memory for practices and firms, SSO, MDM and security documentation, shaped to your organization. The npm package `kepta-mcp` carries the same AGPL as this repository; the Python client under `python/` is MIT. Licenses and questions — [write to me on LinkedIn](https://www.linkedin.com/in/damian-todorovic-244235434).
+[BUSL 1.1](LICENSE) — every line public, production use inside your own organization always allowed, offering it as a hosted service is reserved, and each version converts to AGPL-3.0-or-later four years after release. **KEPTA Core** is the free desktop app on top of this engine — the knowledge graph, the chat, the machine scan, the privacy shield, the audit log and the polished experience: every download starts with one free Pro day, then it runs with daily limits and never locks — the limits are sealed against restarts, clock tricks and even wiping the database (App 2.13.7). **KEPTA Pro** is the license key that removes those limits (€12/month, €120/year, bought in the app). **KEPTA Enterprise** is licensed by agreement: everything in Pro, plus team memory for practices and firms, SSO, MDM and security documentation, shaped to your organization. The npm package `kepta-mcp` carries the same license as this repository; the Python client under `python/` stays MIT so any Python project can embed it. Licenses and questions — [write to me on LinkedIn](https://www.linkedin.com/in/damian-todorovic-244235434).
 
-**What this repository is — and what it is not.** This open core is the memory engine: storage, retrieval, MCP. The product people pay for is the app on top — and it stays proprietary on purpose. Forks under AGPL are legitimate; presenting a fork as KEPTA is not: the **KEPTA name, the KEPTA branding and the KEPTA Pro releases belong to Damian Todorovic**. Fork it, build with it, ship your own product from it — under a different name, with the AGPL obligations intact (your changes stay open, including over a network). Private notes never leave KEPTA over MCP, in the app and in this core alike.
+**What this repository is — and what it is not.** This open core is the memory engine: storage, retrieval, MCP. The product people pay for is the app on top — and it stays proprietary on purpose. Forks are legitimate; presenting a fork as KEPTA is not: the **KEPTA name, the KEPTA branding and the KEPTA Pro releases belong to Damian Todorovic**. Fork it, build with it, ship your own product from it — under a different name, without offering this engine as a hosted service, and with every change you make becoming AGPL-3.0-or-later when the version's Change Date arrives. Private notes never leave KEPTA over MCP, in the app and in this core alike.
 
 ---
 

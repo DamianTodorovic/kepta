@@ -63,7 +63,7 @@ describe("npm-Paket: die package.json", () => {
     // das Paket IST der Kern — bis 2.10 stand hier MIT, waehrend das Repo
     // AGPL trug.
     expect(fs.existsSync(path.join(wurzel, "npm", "LICENSE"))).toBe(true);
-    expect(paket.license).toBe("AGPL-3.0-or-later");
+    expect(paket.license).toBe("BUSL-1.1");
     expect(fs.readFileSync(path.join(wurzel, "npm", "LICENSE"), "utf-8")).toBe(fs.readFileSync(path.join(wurzel, "LICENSE"), "utf-8"));
   });
 

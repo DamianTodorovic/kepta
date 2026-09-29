@@ -7,7 +7,7 @@ Dein KI-Assistent vergisst alles. Jeder Chat beginnt bei null.
 
 KEPTA ändert das — **lokal**. Eine verschlüsselte SQLite-Datei auf deinem Rechner, die **jede** KI liest und schreibt: Claude Desktop, Cursor, Gemini CLI, Cline, jeder MCP-Client — und Skripte über eine kleine **HTTP-API**. Keine Cloud, kein Konto, keine Telemetrie. Eine Datei, die dir gehört.
 
-> **Dies ist der offene Kern** (AGPL-3.0): Memory-Engine, MCP-Server, HTTP-API — dazu der Python-Client unter MIT, damit ihn jedes Python-Projekt einbauen kann. Die vollständige Desktop-Anwendung ist **KEPTA Pro** — siehe unten. English: [README.md](README.md).
+> **Dies ist der quelloffene Kern** (BUSL-1.1 — jede Zeile öffentlich, Übergang in AGPL-3.0-or-later vier Jahre nach jedem Release): Memory-Engine, MCP-Server, HTTP-API — dazu der Python-Client unter MIT, damit ihn jedes Python-Projekt einbauen kann. Die vollständige Desktop-Anwendung ist **KEPTA Pro** — siehe unten. English: [README.md](README.md).
 
 ## ⚡ Erst sehen, dann verbinden
 
@@ -181,7 +181,7 @@ Eine native App für macOS und Windows, die dieselbe verschlüsselte Wissensbasi
 | Einrichtungsassistent mit Startpaket | — | ✅ |
 | Systemstatus — erkennt lokale KI, prüft den Speicher, zeigt Diagnosen | — | ✅ |
 | **Preis** | | |
-| Lizenz | kostenlos · AGPL-3.0 | ein offline geprüfter Lizenzschlüssel |
+| Lizenz | kostenlos · BUSL-1.1 (quelloffen) | ein offline geprüfter Lizenzschlüssel |
 
 **Ein Lizenzschlüssel, offline auf deinem Rechner geprüft — kein Konto, kein Internet.** KEPTA ruft nirgends an. Pro kostet 12 €/Monat oder 120 €/Jahr und wird direkt in der App gekauft — der Upgrade-Knopf zeigt immer auf den aktuell lebenden Weg (solange der Selbstbedienungs-Checkout in der Schlussprüfung ist, ist das die direkte Linie zu **[mir auf LinkedIn](https://www.linkedin.com/in/damian-todorovic-244235434)**); Enterprise — Team-Gedächtnis, SSO, MDM, Security-Dokumentation — wird persönlich zugeschnitten. Die Installer liegen unter **[kepta-pro-releases](https://github.com/DamianTodorovic/kepta-pro-releases/releases/latest)**.
 
@@ -229,4 +229,4 @@ KEPTA baut **Damian Todorovic**. Fragen, Ideen, eine Lizenz für dein Team — o
 
 ## 📄 Lizenz
 
-[AGPL-3.0-or-later](LICENSE). **KEPTA Core** ist die kostenlose Desktop-App auf dieser Engine — Wissensgraph, Chat, Rechner-Scan, Privacy-Shield, Audit-Log und das polierte Erlebnis: jeder Download startet mit einem Gratis-Pro-Tag, danach läuft sie mit Tageslimiten und sperrt nie; die Limiten sind versiegelt gegen Neustarts, Uhr-Tricks und sogar das Löschen von Datenbank und Schlüsselbund (App 2.13.7). **KEPTA Pro** ist der Lizenzschlüssel, der die Limiten entfernt (12 €/Monat, 120 €/Jahr, gekauft in der App). **KEPTA Enterprise** wird nach Absprache lizenziert: alles aus Pro, plus Team-Gedächtnis für Praxen und Kanzleien, SSO, MDM und Security-Dokumentation — passend zu deiner Organisation. Das npm-Paket `kepta-mcp` trägt dieselbe AGPL wie dieses Repository; der Python-Client unter `python/` ist MIT. Lizenzen und Fragen — [schreib mir auf LinkedIn](https://www.linkedin.com/in/damian-todorovic-244235434).
+[BUSL 1.1](LICENSE) — jede Zeile öffentlich, Produktivnutzung in der eigenen Organisation immer erlaubt, Anbieten als gehosteter Service ist vorbehalten, und jede Version geht vier Jahre nach Release in AGPL-3.0-or-later über. **KEPTA Core** ist die kostenlose Desktop-App auf dieser Engine — Wissensgraph, Chat, Rechner-Scan, Privacy-Shield, Audit-Log und das polierte Erlebnis: jeder Download startet mit einem Gratis-Pro-Tag, danach läuft sie mit Tageslimiten und sperrt nie; die Limiten sind versiegelt gegen Neustarts, Uhr-Tricks und sogar das Löschen von Datenbank und Schlüsselbund (App 2.13.7). **KEPTA Pro** ist der Lizenzschlüssel, der die Limiten entfernt (12 €/Monat, 120 €/Jahr, gekauft in der App). **KEPTA Enterprise** wird nach Absprache lizenziert: alles aus Pro, plus Team-Gedächtnis für Praxen und Kanzleien, SSO, MDM und Security-Dokumentation — passend zu deiner Organisation. Das npm-Paket `kepta-mcp` trägt dieselbe Lizenz wie dieses Repository; der Python-Client unter `python/` bleibt MIT, damit ihn jedes Python-Projekt einbauen kann. Lizenzen und Fragen — [schreib mir auf LinkedIn](https://www.linkedin.com/in/damian-todorovic-244235434).
