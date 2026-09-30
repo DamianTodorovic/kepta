@@ -141,11 +141,50 @@ function loadActive(store: KeptaStore): ActiveMemory[] {
   return out;
 }
 
-function entityMentionsInQuery(store: KeptaStore, queryLower: string): string[] {
+// ---------- Such-Cache ----------
+// loadActive/allEmbeddableChunks/getGraph sind die teuren Voll-Läufe je Abfrage —
+// bei 100k Erinnerungen dominierten sie die Latenz (p95 7,2 s, Record in
+// tools/latenz/). Sie cachen jetzt pro Store an der datenGeneration, die per
+// Trigger bei JEDER Mutation an memories/chunks/entities/relations steigt —
+// jede Schreiboperation (auch direkte DB-Zugriffe wie Importe) invalidiert
+// selbst. Verbraucher dürfen die gelieferten Objekte nur lesen, nicht ändern.
+const aktiverCache = new WeakMap<KeptaStore, { generation: number; aktiv: ActiveMemory[]; byId: Map<string, ActiveMemory> }>();
+function aktiveErinnerungen(store: KeptaStore): { aktiv: ActiveMemory[]; byId: Map<string, ActiveMemory> } {
+  const generation = store.datenGeneration();
+  const eintrag = aktiverCache.get(store);
+  if (eintrag && eintrag.generation === generation) return eintrag;
+  const aktiv = loadActive(store);
+  const byId = new Map(aktiv.map((m) => [m.record.id, m]));
+  const frisch = { generation, aktiv, byId };
+  aktiverCache.set(store, frisch);
+  return frisch;
+}
+
+const chunkCache = new WeakMap<KeptaStore, { generation: number; chunks: ReturnType<KeptaStore["allEmbeddableChunks"]> }>();
+function embeddbareChunks(store: KeptaStore): ReturnType<KeptaStore["allEmbeddableChunks"]> {
+  const generation = store.datenGeneration();
+  const eintrag = chunkCache.get(store);
+  if (eintrag && eintrag.generation === generation) return eintrag.chunks;
+  const chunks = store.allEmbeddableChunks();
+  chunkCache.set(store, { generation, chunks });
+  return chunks;
+}
+
+const graphCache = new WeakMap<KeptaStore, { generation: number; namen: string[] }>();
+function graphNamen(store: KeptaStore): string[] {
+  const generation = store.datenGeneration();
+  const eintrag = graphCache.get(store);
+  if (eintrag && eintrag.generation === generation) return eintrag.namen;
   const { entities } = store.getGraph(undefined, 1);
+  const namen = entities.map((e) => e.name);
+  graphCache.set(store, { generation, namen });
+  return namen;
+}
+
+function entityMentionsInQuery(store: KeptaStore, queryLower: string): string[] {
   const mentions: string[] = [];
-  for (const e of entities) {
-    if (e.name.length >= 3 && queryLower.includes(e.name)) mentions.push(e.name);
+  for (const name of graphNamen(store)) {
+    if (name.length >= 3 && queryLower.includes(name)) mentions.push(name);
   }
   return mentions;
 }
@@ -162,8 +201,7 @@ export async function searchMemories(store: KeptaStore, params: SearchParams): P
   // Zeitreise (asOf): „now“ ist dann der gefragte Zeitpunkt — Zeitregler für ALLE Zugänge
   const now = params.asOf ?? Date.now();
   const timeTravel = params.asOf !== undefined;
-  const active = loadActive(store);
-  const byId = new Map(active.map((m) => [m.record.id, m]));
+  const { aktiv: active, byId } = aktiveErinnerungen(store);
 
   const filters = (m: ActiveMemory): boolean => {
     const r = m.record;
@@ -219,7 +257,7 @@ export async function searchMemories(store: KeptaStore, params: SearchParams): P
       // entsteht mit DEFAULT_EMBED_MODEL; fremde Modelle würden unsinnige Cosine-Werte
       // liefern. Nach Modellwechsel füllt die Queue (chunksNeedingEmbedding mit
       // Modell-Mismatch) die Lücke, bis dahin läuft die Suche rein lexikalisch.
-      const chunks = store.allEmbeddableChunks().filter((c) => c.model === DEFAULT_EMBED_MODEL);
+      const chunks = embeddbareChunks(store).filter((c) => c.model === DEFAULT_EMBED_MODEL);
       const bestPerMemory = new Map<string, number>();
       for (const c of chunks) {
         if (!byId.has(c.memoryId)) continue;
@@ -341,7 +379,26 @@ export async function searchMemories(store: KeptaStore, params: SearchParams): P
   const top = hits.slice(0, limit);
   // Zugriffs-Statistik für die Retention aktualisieren (fire-and-forget-semantisch, aber sync)
   // Retention nur für Gegenwarts-Suchen zählen — Zeitreise verfälscht die Statistik nicht
-  if (query && !timeTravel && top.length > 0) store.recordAccess(top.map((h) => h.memory.id));
+  if (query && !timeTravel && top.length > 0) {
+    store.recordAccess(top.map((h) => h.memory.id));
+    // recordAccess hebt die Generation bewusst NICHT (Trigger-WHEN: nur inhaltliche
+    // Updates zählen) — sonst invalidiert die Suche sich selbst und der Cache ist
+    // tot. Damit der Cache trotzdem exakt frisch bleibt, patchen wir die neuen
+    // Zugriffsstände direkt in die gecachten Records (wirkt ab der nächsten Suche —
+    // identisch zum Verhalten ohne Cache).
+    const eintrag = aktiverCache.get(store);
+    if (eintrag && eintrag.generation === store.datenGeneration()) {
+      const jetzt = Date.now();
+      const imCache = new Map(eintrag.aktiv.map((a) => [a.record.id, a]));
+      for (const h of top) {
+        const m = imCache.get(h.memory.id);
+        if (m) {
+          m.record.lastAccessAt = jetzt;
+          m.record.accessCount += 1;
+        }
+      }
+    }
+  }
   return { hits: top, total: hits.length, query, usedVectors };
 }
 
@@ -395,12 +452,12 @@ export async function consolidateMemories(
   // Eine tote Memory gewann dadurch als "behalten" — und eine lebende Dublette zeigte
   // anschliessend auf sie. Ergebnis: die lebende Notiz auf 40 % heruntergewichtet,
   // mit einem Nachfolger, der selbst ausgemustert ist.
-  const active = loadActive(store).filter((m) => !m.record.supersededBy);
+  const active = aktiveErinnerungen(store).aktiv.filter((m) => !m.record.supersededBy);
   const candidates: ConsolidationCandidate[] = [];
 
   // Embedding-Dubletten: Centroid pro Memory+Modell vergleichen — Cosine nur zwischen
   // identischen Modellen (Cross-Modell-Vektoren erzeugen Schein-Dubletten).
-  const chunks = store.allEmbeddableChunks();
+  const chunks = embeddbareChunks(store);
   const centroids = new Map<string, { model: string; vec: Float32Array; count: number }>();
   for (const c of chunks) {
     if (!active.some((m) => m.record.id === c.memoryId)) continue;
@@ -492,7 +549,7 @@ export async function findDuplicateForNew(
   const vec = await embedQuery(`${title}\n${content}`);
   if (!vec) return null;
   // Nur Chunks des aktuellen Modells — Query-Vektor und Chunk-Vektor müssen gleiche Räume teilen
-  const chunks = store.allEmbeddableChunks().filter((c) => c.model === DEFAULT_EMBED_MODEL);
+  const chunks = embeddbareChunks(store).filter((c) => c.model === DEFAULT_EMBED_MODEL);
   const best = new Map<string, number>();
   for (const c of chunks) {
     const sim = cosineSimilarity(vec, c.embedding);

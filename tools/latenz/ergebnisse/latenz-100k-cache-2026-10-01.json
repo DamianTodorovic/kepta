@@ -1,0 +1,33 @@
+{
+  "datum": "2026-09-30T22:34:57.533Z",
+  "hardware": {
+    "modell": "Apple M4",
+    "kerne": 10,
+    "ramGB": 16,
+    "node": "v26.8.1"
+  },
+  "konfiguration": {
+    "erinnerungen": 100000,
+    "abfragen": 300,
+    "vektorChunks": 20000,
+    "vektorDimension": 768,
+    "embedder": "lokaler Stub (deterministisch, 768 dim) — Engine-Pfad inklusive, Modellwartezeit nicht",
+    "verschluesselung": "aus (Default-Extensions, Klartext) — misst die Engine, nicht die Krypto",
+    "schreibpfad": "saveWithIndex (Produkt-Pfad: Chunks + FTS5 + Graph) in Transaktionen zu 1.000",
+    "suchpfad": "searchMemories() inkl. loadActive aller aktiven Erinnerungen je Abfrage + Reranking"
+  },
+  "ingest": {
+    "produktPfadProSekunde": 5082,
+    "produktPfadMs": 19678,
+    "rohPfadCreateMemoryProSekunde": 20325
+  },
+  "suche": {
+    "p50": 83.1,
+    "p95": 94.84,
+    "p99": 100.83,
+    "mittel": 84.51,
+    "n": 299,
+    "mitVektoren": 299
+  },
+  "dbMB": 188
+}

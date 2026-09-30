@@ -2,7 +2,7 @@
   "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
   "name": "io.github.DamianTodorovic/kepta",
   "title": "KEPTA — the memory for AI systems",
-  "description": "Local, encrypted memory for AI — hybrid retrieval (full text + vectors + graph), 8 MCP tools, one file you own. Free, no account, no cloud.",
+  "description": "Local encrypted memory for AI: hybrid search, 8 MCP tools, one file you own. Free, no cloud.",
   "version": "2.13.22",
   "websiteUrl": "https://github.com/DamianTodorovic/kepta",
   "repository": {

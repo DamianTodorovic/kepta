@@ -710,6 +710,75 @@ export class KeptaStore {
       .run(float32ToBlob(embedding), model, memoryId, seq);
   }
 
+  // Daten-Generation: JEDE Mutation an memories/chunks/entities/relations/
+  // memory_entities hebt den Zähler. Der Suchpfad cacht daran (engine.ts) —
+  // Trigger statt Methoden-Audit, damit auch direkte DB-Schreibzugriffe
+  // (Importe, Reparaturen, Migrationen) den Cache zuverlässig invalidieren.
+  // Bewusst LAZY: der Konstruktor muss auch auf einer exklusiv gesperrten DB
+  // sauber öffnen (kurzSchlafen-Degrade, tests/extensions.test.ts) — dort darf
+  // migrate() nichts schreiben. Schlägt das Setup fehl, versucht es der
+  // nächste datenGeneration()-Aufruf wieder; der Sicherungs-Bump unten
+  // invalidiert dann jeden vor der Aufsetzung gebauten Cache.
+  private generationBereit = false;
+
+  private midiereDatenGeneration(): void {
+    if (this.generationBereit) return;
+    try {
+      this.db.exec(`
+        INSERT OR IGNORE INTO meta (key, value) VALUES ('daten_generation', '0');
+        CREATE TRIGGER IF NOT EXISTS daten_gen_memories_i AFTER INSERT ON memories BEGIN
+          UPDATE meta SET value = CAST(value AS INTEGER) + 1 WHERE key = 'daten_generation'; END;
+        CREATE TRIGGER IF NOT EXISTS daten_gen_memories_u AFTER UPDATE ON memories
+        WHEN NEW.title IS NOT OLD.title OR NEW.content IS NOT OLD.content
+          OR NEW.tags IS NOT OLD.tags OR NEW.type IS NOT OLD.type OR NEW.scope IS NOT OLD.scope
+          OR NEW.confidence IS NOT OLD.confidence OR NEW.valid_from IS NOT OLD.valid_from
+          OR NEW.valid_to IS NOT OLD.valid_to OR NEW.superseded_by IS NOT OLD.superseded_by
+          OR NEW.deleted_at IS NOT OLD.deleted_at OR NEW.updated_at IS NOT OLD.updated_at
+          OR NEW.utility IS NOT OLD.utility
+        BEGIN
+          UPDATE meta SET value = CAST(value AS INTEGER) + 1 WHERE key = 'daten_generation'; END;
+        CREATE TRIGGER IF NOT EXISTS daten_gen_memories_d AFTER DELETE ON memories BEGIN
+          UPDATE meta SET value = CAST(value AS INTEGER) + 1 WHERE key = 'daten_generation'; END;
+        CREATE TRIGGER IF NOT EXISTS daten_gen_chunks_i AFTER INSERT ON chunks BEGIN
+          UPDATE meta SET value = CAST(value AS INTEGER) + 1 WHERE key = 'daten_generation'; END;
+        CREATE TRIGGER IF NOT EXISTS daten_gen_chunks_u AFTER UPDATE ON chunks BEGIN
+          UPDATE meta SET value = CAST(value AS INTEGER) + 1 WHERE key = 'daten_generation'; END;
+        CREATE TRIGGER IF NOT EXISTS daten_gen_chunks_d AFTER DELETE ON chunks BEGIN
+          UPDATE meta SET value = CAST(value AS INTEGER) + 1 WHERE key = 'daten_generation'; END;
+        CREATE TRIGGER IF NOT EXISTS daten_gen_entities_i AFTER INSERT ON entities BEGIN
+          UPDATE meta SET value = CAST(value AS INTEGER) + 1 WHERE key = 'daten_generation'; END;
+        CREATE TRIGGER IF NOT EXISTS daten_gen_entities_u AFTER UPDATE ON entities BEGIN
+          UPDATE meta SET value = CAST(value AS INTEGER) + 1 WHERE key = 'daten_generation'; END;
+        CREATE TRIGGER IF NOT EXISTS daten_gen_entities_d AFTER DELETE ON entities BEGIN
+          UPDATE meta SET value = CAST(value AS INTEGER) + 1 WHERE key = 'daten_generation'; END;
+        CREATE TRIGGER IF NOT EXISTS daten_gen_mem_ent_i AFTER INSERT ON memory_entities BEGIN
+          UPDATE meta SET value = CAST(value AS INTEGER) + 1 WHERE key = 'daten_generation'; END;
+        CREATE TRIGGER IF NOT EXISTS daten_gen_mem_ent_d AFTER DELETE ON memory_entities BEGIN
+          UPDATE meta SET value = CAST(value AS INTEGER) + 1 WHERE key = 'daten_generation'; END;
+        CREATE TRIGGER IF NOT EXISTS daten_gen_relations_i AFTER INSERT ON relations BEGIN
+          UPDATE meta SET value = CAST(value AS INTEGER) + 1 WHERE key = 'daten_generation'; END;
+        CREATE TRIGGER IF NOT EXISTS daten_gen_relations_u AFTER UPDATE ON relations BEGIN
+          UPDATE meta SET value = CAST(value AS INTEGER) + 1 WHERE key = 'daten_generation'; END;
+        CREATE TRIGGER IF NOT EXISTS daten_gen_relations_d AFTER DELETE ON relations BEGIN
+          UPDATE meta SET value = CAST(value AS INTEGER) + 1 WHERE key = 'daten_generation'; END;
+        UPDATE meta SET value = CAST(CAST(value AS INTEGER) + 1 AS TEXT) WHERE key = 'daten_generation';
+      `);
+      this.generationBereit = true;
+    } catch {
+      // DB gesperrt o. ä. — Cache läuft bis zur Aufsetzung mit konstanter
+      // Generation; bei gesperrter DB kann ohnehin niemand schreiben.
+    }
+  }
+
+  /** Zähler aller Daten-Mutationen (Trigger-gespeist) — Cache-Schlüssel des Suchpfads. */
+  datenGeneration(): number {
+    this.midiereDatenGeneration();
+    const row = this.db.prepare("SELECT value FROM meta WHERE key = 'daten_generation'").get() as
+      | { value: string }
+      | undefined;
+    return Number(row?.value ?? 0);
+  }
+
   /** Chunks ohne Embedding oder mit veraltetem Modell (für die Hintergrund-Queue) */
   chunksNeedingEmbedding(limit = 64, model?: string): { memoryId: string; seq: number; text: string }[] {
     // Mit Modell-Argument zählt auch ein Modell-Mismatch als "braucht Embedding" —

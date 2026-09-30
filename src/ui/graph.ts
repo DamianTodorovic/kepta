@@ -32,7 +32,7 @@ export interface GraphDaten {
   verweise: number;
 }
 
-// ---------- Ähnlichkeits-Kanten (Port aus KEPTA Pro, graphLayout.ts) ----------
+// ---------- Ähnlichkeits-Kanten (Ähnlichkeit als gestrichelte Kanten) ----------
 // Invertierter Index über Tags + Titelwörter; nur Paare mit einem gemeinsamen
 // Begriff werden bewertet (tagOverlap * 0.9 vs. titleSimilarity * 0.6,
 // Schwellwert 0.24). [[Links]] sind immer echte Kanten und überleben jede
