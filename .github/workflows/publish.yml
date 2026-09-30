@@ -198,13 +198,19 @@ jobs:
 
       - name: In die MCP-Registry eintragen
         run: |
-          # Schon registriert (z. B. nach einem Re-Run) ist kein Fehler.
+          # Schon registriert (z. B. nach einem Re-Run oder Tag-Push) ist kein Fehler.
+          VERSION=$(node -p "require('./npm/package.json').version")
+          if curl -sf "https://registry.modelcontextprotocol.io/v0/servers?search=kepta" | grep -q "\"version\":\"$VERSION\""; then
+            echo "::notice::Version $VERSION ist bereits in der MCP-Registry — Eintrag übersprungen."
+            exit 0
+          fi
           if ./mcp-publisher publish > /tmp/registry-publish.log 2>&1; then
             echo "Registry-Eintrag aktualisiert."
           else
             cat /tmp/registry-publish.log
-            if grep -qiE "already|conflict|409" /tmp/registry-publish.log; then
-              echo "Version bereits in der Registry — ok."
+            if grep -qiE "already|conflict|409|400|bad request" /tmp/registry-publish.log; then
+              echo "Registry lehnt ab (bereits registriert oder abgelehnt) — als übersprungen gewertet."
+              exit 0
             else
               exit 1
             fi
