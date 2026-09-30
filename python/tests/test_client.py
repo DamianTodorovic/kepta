@@ -53,6 +53,12 @@ class Stub(BaseHTTPRequestHandler):
             ]})
         if self.path.endswith("/restore"):
             return self._send({"ok": True})
+        if self.path.startswith("/api/mcp/consolidate"):
+            return self._send({"dryRun": body.get("dryRun", True), "applied": 1,
+                               "candidates": [{"keepId": "m1", "duplicateId": "m2",
+                                               "similarity": 0.95, "reason": "embedding"}]})
+        if self.path.startswith("/api/mcp/forget"):
+            return self._send({"forgotten": True, "mode": body.get("mode", "expire")})
         if self.path.startswith("/api/memories"):
             return self._send({"memory": {"id": body.get("id", "neu"), "title": body.get("title", ""),
                                           "content": body.get("content", ""), "tags": body.get("tags", []),
@@ -153,6 +159,64 @@ def test_restore(client):
 
 def test_graph(client):
     assert client.graph() == {"entities": [], "relations": []}
+
+
+# ---------- Parität mit den 8 MCP-Tools ----------
+
+MCP_TOOLS = {
+    "memory_search": "search",
+    "memory_save": "save",
+    "memory_update": "update",
+    "memory_delete": "delete",
+    "memory_list": "list",
+    "memory_graph": "graph",
+    "memory_consolidate": "consolidate",
+    "memory_forget": "forget",
+}
+
+
+def test_client_hat_fuer_jedes_mcp_tool_eine_methode():
+    for tool, methode in MCP_TOOLS.items():
+        assert callable(getattr(KeptaClient, methode, None)), f"{tool} hat keine Methode .{methode}()"
+
+
+def test_consolidate_dry_run_ist_standard(client):
+    ergebnis = client.consolidate()
+    assert ergebnis["dryRun"] is True and ergebnis["applied"] == 1
+    assert CALLS[-1][1] == "/api/mcp/consolidate"
+    assert CALLS[-1][2] == {"dryRun": True}
+
+
+def test_consolidate_anwenden_mit_schwelle(client):
+    ergebnis = client.consolidate(dry_run=False, threshold=0.8)
+    assert ergebnis["dryRun"] is False
+    assert CALLS[-1][2] == {"dryRun": False, "threshold": 0.8}
+    assert ergebnis["candidates"][0]["keepId"] == "m1"
+
+
+def test_consolidate_klemmt_schwelle(client):
+    client.consolidate(threshold=5)
+    assert CALLS[-1][2]["threshold"] == 1.0
+
+
+def test_forget_standard_ist_expire(client):
+    ergebnis = client.forget("m1")
+    assert ergebnis == {"forgotten": True, "mode": "expire"}
+    assert CALLS[-1][1] == "/api/mcp/forget"
+    assert CALLS[-1][2] == {"id": "m1", "mode": "expire"}
+
+
+def test_forget_supersede_mit_nachfolger(client):
+    ergebnis = client.forget("m1", mode="supersede", supersede_by="m2")
+    assert ergebnis["mode"] == "supersede"
+    assert CALLS[-1][2] == {"id": "m1", "mode": "supersede", "supersedeBy": "m2"}
+
+
+def test_forget_delete_und_valid_to(client):
+    client.forget("m1", mode="delete")
+    assert CALLS[-1][2] == {"id": "m1", "mode": "delete"}
+    client.forget("m1", valid_to=42)
+    assert CALLS[-1][2] == {"id": "m1", "mode": "expire", "validTo": 42}
 
 
 def test_fehler_bei_nicht_erreichbarem_server():

@@ -24,7 +24,7 @@ flowchart LR
   subgraph KEPTA["KEPTA — this repository"]
     direction TB
     M["MCP server<br/>8 tools · stdio + Streamable HTTP"]
-    G["HTTP API · 29 routes<br/>Python client · CLI"]
+    G["HTTP API · 31 routes<br/>Python client · CLI"]
     E["Memory engine<br/>hybrid retrieval: FTS5 + vectors + graph<br/>RRF fusion → local rerank"]
   end
   D[("One encrypted file<br/>SQLCipher 4 · AES-256<br/>~/.kepta/kepta.db")]
@@ -59,7 +59,7 @@ KEPTA is not a feature inside one app — it is a memory layer that outlives eve
 | Door | What uses it |
 |---|---|
 | **MCP** — 8 tools, stdio + Streamable HTTP | Every MCP client: Claude, Cursor, Gemini CLI, Cline, Codex, Zed, your own agents |
-| **HTTP API** — 29 routes, loopback only | Scripts, cron jobs, agent teams, automations |
+| **HTTP API** — 31 routes, loopback only | Scripts, cron jobs, agent teams, automations |
 | **Python** — `pip install kepta`, standard library only | Any Python project, embedded |
 
 **Free means free:** €0, forever, unlimited — no account, no daily limits, no key, nothing locked. The best memory engine we can build is the free one; that is the point.
@@ -148,7 +148,7 @@ flowchart TD
 
 ---
 
-## 🖥️ HTTP API (29 routes)
+## 🖥️ HTTP API (31 routes)
 
 | Area | Routes |
 |---|---|
@@ -187,7 +187,7 @@ No dependencies — only the Python standard library.
 
 ```
 src/core/           memory engine (store, search, encryption, MCP protocol)
-server.ts           HTTP API (Express, 29 routes)
+server.ts           HTTP API (Express, 31 routes)
 src/mcp-server.ts   MCP stdio server (npx kepta-mcp) and the CLI (npx kepta)
 src/ui/graph.ts     the graph builder behind the API and the CLI (no UI — the interface is your AI client)
 npm/                source of the npm package (kepta-mcp)

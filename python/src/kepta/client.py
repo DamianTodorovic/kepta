@@ -17,7 +17,9 @@ from urllib.error import HTTPError, URLError
 from urllib.parse import urlparse, urlencode
 from urllib.request import Request, urlopen
 
-MemoryType = Literal["semantic", "episodic", "procedural"]
+MemoryType = Literal["semantic", "episodic", "procedural", "reference"]
+
+ForgetMethod = Literal["expire", "supersede", "delete"]
 
 DEFAULT_URL = "http://127.0.0.1:3000"
 ENDPOINT_FILE = "endpoint.json"
@@ -252,3 +254,37 @@ class KeptaClient:
         """Bring a memory back out of the trash."""
         data = self._request("POST", f"/api/memories/{memory_id}/restore")
         return bool((data or {}).get("ok", True))
+
+    # ---------- Maintenance (parity with the MCP tools) ----------
+
+    def consolidate(self, *, dry_run: bool = True, threshold: float | None = None) -> dict[str, Any]:
+        """Find duplicates and contradictions by embedding similarity.
+
+        With ``dry_run=False`` the older copy of each duplicate pair is marked
+        superseded — the history stays, nothing is deleted.
+        """
+        body: dict[str, Any] = {"dryRun": dry_run}
+        if threshold is not None:
+            body["threshold"] = max(0.0, min(1.0, float(threshold)))
+        return self._request("POST", "/api/mcp/consolidate", body)
+
+    def forget(
+        self,
+        memory_id: str,
+        *,
+        mode: ForgetMethod = "expire",
+        valid_to: int | None = None,
+        supersede_by: str | None = None,
+    ) -> dict[str, Any]:
+        """Forget a memory the way the ``memory_forget`` tool does.
+
+        ``expire`` closes the validity window (default, reversible via
+        ``update(valid_to=...)``), ``supersede`` marks it replaced by
+        ``supersede_by``, ``delete`` moves it to the trash.
+        """
+        body: dict[str, Any] = {"id": memory_id, "mode": mode}
+        if valid_to is not None:
+            body["validTo"] = valid_to
+        if supersede_by is not None:
+            body["supersedeBy"] = supersede_by
+        return self._request("POST", "/api/mcp/forget", body)

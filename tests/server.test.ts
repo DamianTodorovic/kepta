@@ -325,3 +325,63 @@ describe("Version (eine Quelle)", () => {
     expect(res.body.version).toBe(APP_VERSION);
   });
 });
+
+describe("/api/mcp/consolidate — MCP-Parität über HTTP", () => {
+  it("dryRun (Standard) liefert Kandidaten, ohne etwas zu ändern", async () => {
+    await request(app).post("/api/memory").send({ title: "Backup-Zeit", content: "Jeden Sonntag 03:00 sichert der Server." });
+    await request(app).post("/api/memory").send({ title: "Backup-Zeit", content: "Jeden Sonntag 03:00 sichert der Server." });
+    const res = await request(app).post("/api/mcp/consolidate").send({});
+    expect(res.status).toBe(200);
+    expect(res.body.dryRun).toBe(true);
+    expect(Array.isArray(res.body.candidates)).toBe(true);
+    expect(res.body.applied).toBe(0);
+  });
+
+  it("dryRun:false ersetzt das ältere Duplikat statt es zu löschen", async () => {
+    const erste = await request(app).post("/api/memory").send({ title: "Frist Miller", content: "Quartalsrechnung bis Ende Monat." });
+    await request(app).post("/api/memory").send({ title: "Frist Miller", content: "Quartalsrechnung bis Ende Monat." });
+    const res = await request(app).post("/api/mcp/consolidate").send({ dryRun: false, threshold: 0.8 });
+    expect(res.status).toBe(200);
+    expect(res.body.dryRun).toBe(false);
+    if (res.body.applied > 0) {
+      const original = store.getMemory(erste.body.memory.id);
+      expect(original?.supersededBy).toBeTruthy();
+    }
+  });
+});
+
+describe("/api/mcp/forget — das memory_forget-Werkzeug über HTTP", () => {
+  it("Standard ist expire: valid_to wird gesetzt, die Notiz bleibt lesbar", async () => {
+    const angelegt = await request(app).post("/api/memory").send({ title: "Alte Preisliste", content: "Gültig bis Widerruf." });
+    const id = angelegt.body.memory.id;
+    const res = await request(app).post("/api/mcp/forget").send({ id });
+    expect(res.status).toBe(200);
+    expect(res.body).toEqual({ forgotten: true, mode: "expire" });
+    expect(store.getMemory(id)?.validTo).toBeGreaterThan(0);
+  });
+
+  it("supersede verdrahtet den Nachfolger", async () => {
+    const alt = await request(app).post("/api/memory").send({ title: "Adresse", content: "Altstadt 1." });
+    const neu = await request(app).post("/api/memory").send({ title: "Adresse", content: "Neustadt 2." });
+    const res = await request(app).post("/api/mcp/forget").send({ id: alt.body.memory.id, mode: "supersede", supersedeBy: neu.body.memory.id });
+    expect(res.status).toBe(200);
+    expect(store.getMemory(alt.body.memory.id)?.supersededBy).toBe(neu.body.memory.id);
+  });
+
+  it("delete verschiebt in den Papierkorb", async () => {
+    const angelegt = await request(app).post("/api/memory").send({ title: "Weg damit", content: "Papierkorb-Test." });
+    const id = angelegt.body.memory.id;
+    const res = await request(app).post("/api/mcp/forget").send({ id, mode: "delete" });
+    expect(res.status).toBe(200);
+    expect(res.body.mode).toBe("delete");
+    expect(store.getMemory(id)?.deletedAt).toBeGreaterThan(0);
+  });
+
+  it("unbekannte id → 404, unbekannter Modus → 400", async () => {
+    const weg = await request(app).post("/api/mcp/forget").send({ id: "gibts-nicht" });
+    expect(weg.status).toBe(404);
+    const angelegt = await request(app).post("/api/memory").send({ title: "x", content: "y" });
+    const falsch = await request(app).post("/api/mcp/forget").send({ id: angelegt.body.memory.id, mode: "verbrennen" });
+    expect(falsch.status).toBe(400);
+  });
+});

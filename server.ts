@@ -14,7 +14,7 @@ import { schluesselbundKeyProvider } from "./src/core/schluessel";
 import { planeImportReparatur, mitFrist } from "./src/core/reparatur";
 import { migrateFromLegacyJson } from "./src/core/migrate";
 import { EmbeddingQueue } from "./src/core/embeddings";
-import { searchMemories as engineSearch, indexMemory, gateDecision, writeGateEnabled, MAX_SEARCH_LIMIT } from "./src/core/engine";
+import { searchMemories as engineSearch, indexMemory, gateDecision, writeGateEnabled, MAX_SEARCH_LIMIT, consolidateMemories } from "./src/core/engine";
 import { handleRpc, TOOLS as MCP_TOOLS, saveWithIndex } from "./src/core/mcp";
 import { importObsidianVault, memoryToMarkdown } from "./src/core/obsidian";
 import { exportBundle, importBundle, PraxissyncJournal, type SyncBundle } from "./src/core/praxissync";
@@ -1260,6 +1260,46 @@ export function createApp(store: KeptaStore) {
       const { created, record } = saveWithIndex(store, body);
       publishActivity({ type: created ? "save" : "update", source: "agent", title: record.title });
       return res.json({ memory: toApi(record), created });
+    } catch (e) {
+      return res.status(400).json({ error: e instanceof Error ? e.message : String(e) });
+    }
+  });
+
+  app.post("/api/mcp/consolidate", writeLimiter, async (req, res) => {
+    const body = req.body as { dryRun?: boolean; threshold?: number };
+    try {
+      const result = await consolidateMemories(store, {
+        dryRun: body.dryRun !== false,
+        threshold: typeof body.threshold === "number" ? body.threshold : undefined,
+      });
+      publishActivity({ type: "consolidate", source: "agent", title: `dryRun=${result.dryRun} applied=${result.applied}` });
+      return res.json({
+        dryRun: result.dryRun,
+        applied: result.applied,
+        candidates: result.candidates.map((c) => ({ keepId: c.keepId, duplicateId: c.duplicateId, similarity: c.similarity, reason: c.reason })),
+      });
+    } catch (e) {
+      return res.status(400).json({ error: e instanceof Error ? e.message : String(e) });
+    }
+  });
+
+  app.post("/api/mcp/forget", writeLimiter, async (req, res) => {
+    const body = req.body as { id?: string; mode?: string; validTo?: number; supersedeBy?: string };
+    const id = String(body.id ?? "");
+    const mode = body.mode ? String(body.mode) : "expire";
+    try {
+      if (!store.getMemory(id)) return res.status(404).json({ error: `Memory not found: ${id}` });
+      if (mode === "expire") {
+        store.updateMemory(id, { validTo: typeof body.validTo === "number" ? body.validTo : Date.now() });
+      } else if (mode === "supersede") {
+        store.supersedeMemory(id, body.supersedeBy ? String(body.supersedeBy) : null);
+      } else if (mode === "delete") {
+        store.trashMemory(id);
+      } else {
+        return res.status(400).json({ error: `Unknown mode: ${mode}` });
+      }
+      publishActivity({ type: "delete", source: "agent", title: id });
+      return res.json({ forgotten: true, mode });
     } catch (e) {
       return res.status(400).json({ error: e instanceof Error ? e.message : String(e) });
     }

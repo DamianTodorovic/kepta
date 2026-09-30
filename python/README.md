@@ -89,6 +89,8 @@ if not kepta.is_alive():
 | `delete(id, permanent=False)` | Trash, or permanently if you insist |
 | `restore(id)` | Bring it back from the trash |
 | `graph()` | Entities and relations |
+| `consolidate(dry_run=True, threshold=None)` | Duplicates and contradictions; `dry_run=False` supersedes the older copy |
+| `forget(id, mode="expire", valid_to=None, supersede_by=None)` | The `memory_forget` tool: expire, supersede or trash |
 
 `Memory` and `SearchHit` are frozen dataclasses with type annotations. Alongside the overall score, `SearchHit` exposes the individual tracks as `vector_score` and `lexical_score`.
 

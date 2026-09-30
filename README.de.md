@@ -28,7 +28,7 @@ KEPTA ist kein Feature in einer App — es ist eine Gedächtnis-Schicht, die jed
 | Tür | Wer sie nutzt |
 |---|---|
 | **MCP** — 8 Tools, stdio + Streamable HTTP | Jeder MCP-Client: Claude, Cursor, Gemini CLI, Cline, Codex, Zed, deine eigenen Agenten |
-| **HTTP-API** — 29 Routen, nur Loopback | Skripte, Cron-Jobs, Agenten-Teams, Automatisierungen |
+| **HTTP-API** — 31 Routen, nur Loopback | Skripte, Cron-Jobs, Agenten-Teams, Automatisierungen |
 | **Python** — `pip install kepta`, nur Standardbibliothek | Jedes Python-Projekt, eingebettet |
 
 **Frei heißt frei:** 0 €, für immer, ohne Limiten — kein Konto, keine Tageslimiten, kein Schlüssel, nichts gesperrt. Die beste Memory-Engine, die wir bauen können, ist die freie; genau das ist der Punkt.
@@ -60,7 +60,7 @@ npm install && npm run dev
 
 **4. Docker** (nur MCP-Server): `docker build -t kepta-mcp .`
 
-**Zahlen:** **388 Tests** · 29 Routen · `npm run eval` — Eval auf 58 Notizen / 45 Anfragen (Hit@1, Precision@5, MRR).
+**Zahlen:** **388 Tests** · 31 Routen · `npm run eval` — Eval auf 58 Notizen / 45 Anfragen (Hit@1, Precision@5, MRR).
 
 ## 🔍 Wie eine Anfrage ihre Antwort findet
 
