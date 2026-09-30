@@ -4,6 +4,10 @@ All notable changes are documented in this file. The format follows [Keep a Chan
 
 ## [Unreleased]
 
+### Added
+- **MCP tool parity over HTTP**: `POST /api/mcp/consolidate` and `POST /api/mcp/forget` mirror the `memory_consolidate` and `memory_forget` executors (29 → 31 routes). The Python client gained `consolidate()` and `forget()`, a `reference` memory type, and a parity test pinning all 8 MCP tool names to client methods — every AI in every language gets the full tool set.
+- `tools/latenz/bench.ts` — a public latency benchmark: fills the store through the product write path and measures `searchMemories()` percentiles (p50/p95/p99) at controlled memory counts, with a deterministic 768-dim stub embedder so the vector path is measured without a GPU.
+
 ### Changed
 - **There are no tiers inside the memory anymore.** KEPTA is the local, encrypted memory for AI systems — free, €0, forever, unlimited: no account, no daily limits, no key. Everything that makes the memory smart lives in this open engine. Teams and organizations get **KEPTA Enterprise by request** (team memory, central policies, MDM, organisation-wide audit) — coordination is the only thing ever charged for. The proprietary desktop app and the Pro tier are discontinued.
 - All Pro/App references removed from code and docs: the MCP/CLI/demo/setup entry points no longer point to a desktop app or a Pro day; READMEs (EN/DE), npm and Python package READMEs rebuilt around the one-engine story; the old app screenshots left the repository.
