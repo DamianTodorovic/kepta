@@ -1,15 +1,15 @@
 <p align="center"><img src="docs/kepta-logo.svg" width="88" alt="KEPTA"></p>
-<p align="center"><img src="https://img.shields.io/badge/version-2.13.22-blue" alt="v2.13.21"> <img src="https://img.shields.io/badge/license-BUSL--1.1-blue" alt="BUSL-1.1"> <img src="https://img.shields.io/badge/tests-388%20passing-brightgreen" alt="tests"> <img src="https://img.shields.io/badge/coverage%20gate-%E2%89%A5%2070%25%20of%20lines-brightgreen" alt="coverage gate"> <img src="https://img.shields.io/badge/platform-macOS%20%7C%20Windows%20%7C%20Linux-lightgrey" alt="platform"> <img src="https://img.shields.io/badge/encryption-SQLCipher%204-green" alt="encrypted"> <a href="https://www.linkedin.com/in/damian-todorovic-244235434"><img src="https://img.shields.io/badge/LinkedIn-Damian%20Todorovic-0A66C2?logo=linkedin&logoColor=white" alt="Damian Todorovic on LinkedIn"></a></p>
+<p align="center"><img src="https://img.shields.io/badge/version-2.13.22-blue" alt="v2.13.22"> <img src="https://img.shields.io/badge/license-BUSL--1.1-blue" alt="BUSL-1.1"> <img src="https://img.shields.io/badge/tests-388%20passing-brightgreen" alt="tests"> <img src="https://img.shields.io/badge/coverage%20gate-%E2%89%A5%2070%25%20of%20lines-brightgreen" alt="coverage gate"> <img src="https://img.shields.io/badge/platform-macOS%20%7C%20Windows%20%7C%20Linux-lightgrey" alt="platform"> <img src="https://img.shields.io/badge/encryption-SQLCipher%204-green" alt="encrypted"> <a href="https://www.linkedin.com/in/damian-todorovic-244235434"><img src="https://img.shields.io/badge/LinkedIn-Damian%20Todorovic-0A66C2?logo=linkedin&logoColor=white" alt="Damian Todorovic on LinkedIn"></a></p>
 
-# KEPTA Core
+# KEPTA — the memory for AI systems
 
-## Your AI assistant forgets everything. Every chat starts from zero.
+## Your AI forgets everything. Every chat starts from zero.
 
-**KEPTA is the fix: one local, encrypted memory that every assistant reads and writes — Claude Desktop, Cursor, Gemini CLI, Cline, any MCP client, and scripts over HTTP. No cloud. No account. One file you own.**
+**KEPTA is the fix: one local, encrypted memory that every AI reads and writes — Claude, Cursor, Gemini CLI, Cline, any MCP client, and scripts over HTTP. No cloud. No account. One file you own.**
 
-KEPTA is a local memory for AI assistants. Documents, decisions and client knowledge go into an encrypted knowledge base on your own computer — and your assistant (Claude Desktop, Cursor, any MCP client) recalls it as if it had never forgotten.
+Everything an AI system learns goes into an encrypted knowledge base on your own computer — and every AI recalls it in milliseconds, however long the context grows. Documents, decisions, client knowledge, whole chat histories: remembered, linked, contradicted, superseded — never lost.
 
-This repository is the **source-available core** (BUSL-1.1 — every line public, converts to AGPL-3.0-or-later four years after each release): the memory engine, the MCP server, the HTTP API — and the Python client, which is MIT so any Python project can embed it. The full desktop application is **[KEPTA Core](#kepta-core--the-full-desktop-app)** — free, with one free Pro day built in.
+This repository is the **source-available core** (BUSL-1.1 — every line public, converts to AGPL-3.0-or-later four years after each release): the memory engine, the MCP server, the HTTP API — and the Python client, which is MIT so any Python project can embed it. **Everything that makes the memory smart lives in this free engine. There are no tiers inside the memory — nothing is held back to sell anything.**
 
 Questions, security feedback or benchmark critique? → **[Discussions](https://github.com/DamianTodorovic/kepta/discussions)**
 
@@ -21,7 +21,7 @@ flowchart LR
     B["Cursor · Gemini CLI<br/>Cline · Codex · Zed"]
     C["Your scripts"]
   end
-  subgraph KEPTA["KEPTA Core — this repository"]
+  subgraph KEPTA["KEPTA — this repository"]
     direction TB
     M["MCP server<br/>8 tools · stdio + Streamable HTTP"]
     G["HTTP API · 29 routes<br/>Python client · CLI"]
@@ -40,11 +40,7 @@ flowchart LR
 
 ---
 
-## ⚡ See it first, connect it second
-
-**The desktop app first:** [Download KEPTA Core](https://github.com/DamianTodorovic/kepta-releases/releases/latest) — every download starts with **one free Pro day** (24 hours, every tool, unlimited, no card, no account, no key), then it runs free with daily limits and never locks.
-
-Or headless, right in your agents:
+## ⚡ One command, every AI client
 
 ```bash
 npx -y kepta-mcp setup   # connects Claude Desktop, Claude Code, Cursor, Windsurf, VS Code, Gemini CLI, Cline and Roo Code
@@ -56,123 +52,19 @@ Then tell your AI something worth keeping — and watch it arrive. Details in th
 
 ---
 
-## 🚀 KEPTA — one engine, three tiers
+## 🧠 One engine. Free. For every AI.
 
-**KEPTA is one product family around one engine.** The engine in this repository is what your agents talk to — free and open source, forever. The desktop app is **KEPTA Core**: the free download, what _you_ work in. **KEPTA Pro** is the license key that removes its daily limits. Teams and organizations get the same app with more control on top.
+KEPTA is not a feature inside one app — it is a memory layer that outlives every model, every app and every context window. Three doors lead into the same encrypted file:
 
-```mermaid
-flowchart LR
-  D["Download KEPTA Core<br/>€0 — the whole app"] --> PD["First 24 h: one free Pro day<br/>every tool, unlimited"]
-  PD --> L["Then: daily limits<br/>it never locks"]
-  L -->|"license key<br/>€12/month or €120/year"| P["KEPTA Pro<br/>limits removed"]
-  P -.->|"teams · SSO · MDM"| E["KEPTA Enterprise<br/>by agreement"]
-```
-
-| Tier | For | Price | What it includes |
-|---|---|---|---|
-| **Core** | Everyone — download and use | **€0**, forever | The free desktop app (macOS & Windows): knowledge graph, chat with your memory, dossiers, Today, privacy shield — **one free Pro day with every download**, then daily limits; it never locks. This repository is the engine inside it, headless for agents: encryption, hybrid search, MCP, HTTP API, Python client, CLI, ChatGPT import |
-| **Pro** | Individuals & power users | **€12/month or €120/year**, one offline license key bought in the app | The same app with the daily limits removed: chat, clipper, computer scan, dossiers, audit export — everything, unlimited |
-| **Enterprise** | Teams, practices & organizations | **By agreement** | Everything in Pro, plus team memory (shared knowledge, workspaces, roles, admin console), SSO, central policies, MDM/air-gapped deployment, security documentation and support |
-
-Core is never crippled to sell Pro — the best memory engine we can build is the free one. **What we sell is how you use it.**
-
-### KEPTA Core — the full desktop app
-
-A native app for macOS and Windows that turns the same encrypted knowledge base into a second brain you can see, search, shape and trust — every document, every decision, every connection, on your own machine.
-
-| Today — what changed since your last visit, and what needs a look | Activity — which AI app reads and writes what, live |
+| Door | What uses it |
 |---|---|
-| ![KEPTA Pro: Today, with two notes that disagree side by side](docs/enterprise/07-today.png) | ![KEPTA Pro: Claude and Cursor at work, live](docs/enterprise/09-activity.png) |
-| **Privacy shield — what a cloud AI would get to see** | **The knowledge graph — every note a node, every link an edge** |
-| ![KEPTA Pro: the privacy shield turning personal data into placeholders](docs/enterprise/11-privacy.png) | ![KEPTA Pro: the knowledge graph](docs/enterprise/03-graph.png) |
+| **MCP** — 8 tools, stdio + Streamable HTTP | Every MCP client: Claude, Cursor, Gemini CLI, Cline, Codex, Zed, your own agents |
+| **HTTP API** — 29 routes, loopback only | Scripts, cron jobs, agent teams, automations |
+| **Python** — `pip install kepta`, standard library only | Any Python project, embedded |
 
-<sub>KEPTA Pro 2.13 on an invented demo corpus — nothing in these shots is real. Claude and Cursor worked on it through the MCP server of this repository.</sub>
+**Free means free:** €0, forever, unlimited — no account, no daily limits, no key, nothing locked. The best memory engine we can build is the free one; that is the point.
 
-**Every feature, side by side.** ✅ available · **API** / **MCP** in the core for agents and scripts, without a screen for it · — only in KEPTA Pro
-
-| Feature | KEPTA Core | KEPTA Pro |
-|---|:---:|:---:|
-| **Security & privacy** | | |
-| Encrypted at rest — SQLCipher 4, AES-256 and an HMAC-SHA512 over every page, the WAL included | ✅ | ✅ |
-| The key is created and kept in the OS keychain automatically — nothing to type, agents never see it | ✅ | ✅ |
-| Recovery key in one click, ready for your password manager | ✅ | ✅ |
-| Settings — the AI key included — live inside the encrypted file | ✅ | ✅ |
-| Loopback only (`127.0.0.1`), no account, no telemetry — nothing leaves your machine unless you pick a cloud AI | ✅ | ✅ |
-| Rate limiting, Helmet and input validation on every route | ✅ | ✅ |
-| Hardened desktop shell — no Node in the window, sandbox, Content Security Policy | — | ✅ |
-| **Notes** | | |
-| Create, edit, delete — trash with restore | ✅ | ✅ |
-| Four kinds of knowledge — fact, event, how-to, document — assigned by readable rules that state their reason | ✅ | ✅ |
-| Sort existing notes by kind afterwards, with a preview first | ✅ | ✅ |
-| Tags, confidence 0–1, automatically extracted entities | ✅ | ✅ |
-| Scopes — user, agent, session — so a memory knows whom it belongs to | API · MCP | API · MCP |
-| Validity windows — expired notes are marked, never quietly hidden | ✅ | ✅ |
-| Supersede chains — a new fact displaces the old one, the history stays | ✅ | ✅ |
-| Migration from the old `memories.json` — idempotent, with a backup | ✅ | ✅ |
-| **Search** | | |
-| Hybrid retrieval — BM25 full text + vectors + entities, fused with Reciprocal Rank Fusion | ✅ | ✅ |
-| Local reranking — term coverage, phrases, title, tags; no network | ✅ | ✅ |
-| Relevance first — results ranked, the best hit on top | ✅ | ✅ |
-| Time-travel search — what was known at any moment (`asOf`) | API · MCP | API · MCP |
-| Persistent embeddings via Ollama, computed by a background queue | ✅ | ✅ |
-| Temporal weighting — expired ×0.5, superseded ×0.4 | ✅ | ✅ |
-| Stopwords in German and English | ✅ | ✅ |
-| Semantic search switch and a result slider from 5 to all | — | ✅ |
-| One code path for interface, HTTP API and MCP — agents get the quality you get | ✅ | ✅ |
-| Retrieval eval — `npm run eval` measures Hit@1, Precision@5 and MRR | ✅ | ✅ |
-| **Capture & import** | | |
-| Drag & drop files — PDF with the character maps of embedded fonts, Markdown, text, JSON — chunked | — | ✅ |
-| Inbox folder, watched and imported automatically | API | ✅ |
-| Obsidian vault import — frontmatter kept, `[[wiki links]]` become graph edges | API | ✅ |
-| JSON import of whole note sets | API | ✅ |
-| Re-read files imported with an older extraction — counts first, writes after you confirm | API | ✅ |
-| URL clipper — SSRF-protected, strips navigation lines and cookie banners | — | ✅ |
-| Scan this computer — opt-in, preview first; keys, credentials, browser profiles and wallets stay blocked | — | ✅ |
-| Auto-learn — save the key point of a chat answer (off by default) | — | ✅ |
-| Markdown export to a folder | API | ✅ |
-| Device Sync — move a scope between your own devices as an AES-256-GCM bundle, with a hash-chained ledger | API | ✅ |
-| **Knowledge graph** | | |
-| Entities and relations from `[[wiki links]]` and automatic extraction | API · MCP | ✅ |
-| Read-only knowledge graph — notes as nodes, [[links]] as edges (solid), similar notes connected (dashed), drag and click | ✅ | — |
-| Terminal experience — `remember`, `recall`, `timeline`, `contradict`, `stats` on the encrypted database | ✅ | ✅ (desktop app) |
-| Interactive graph with two views — Force (physics) and Tree (dendrogram); nodes glide between them | — | ✅ |
-| Unbounded canvas — 3 000 nodes and 9 500 edges at 60 fps; zoom, pan, drag, fit-to-view | — | ✅ |
-| Time slider — the graph as it stood on any day | — | ✅ |
-| Colour by kind, size by connections, real links told apart from mere similarity; double-click opens the note | — | ✅ |
-| **Maintenance** | | |
-| Duplicate detection — embedding similarity ≥ 0.92, lexical fallback without Ollama | MCP | ✅ |
-| Consolidation supersedes instead of deleting — nothing is lost | MCP | ✅ |
-| Duplicate review — groups side by side, keep the richest copy in one click, one undo for the batch | — | ✅ |
-| Episodic memories grow out of chat history | — | ✅ |
-| Activity feed | ✅ live, with the name of the AI app | ✅ |
-| **Agents (MCP)** | | |
-| MCP 2026-07-28, compatible with 2025-06-18 and 2024-11-05 — stdio and Streamable HTTP | ✅ | ✅ |
-| Eight tools — search, save, update, delete, list, graph, consolidate, forget — with `outputSchema` and `structuredContent` | ✅ | ✅ |
-| Write gate (opt-in) — a local LLM decides ADD, UPDATE, DELETE or NOOP before a new memory is stored | ✅ | ✅ |
-| npm package `kepta-mcp`, listed in the official MCP registry | ✅ | ✅ |
-| Connect Claude Desktop, Claude Code, Cursor, Windsurf, VS Code, Gemini CLI, Cline and Roo Code in one step — `npx kepta-mcp setup` or one click | ✅ | MCP block to copy |
-| Python client — `pip install kepta`, standard library only | ✅ | ✅ |
-| **Chat cockpit** | | |
-| 20 provider presets — Ollama, LM Studio, OpenAI, Anthropic, Gemini, Mistral, Groq, DeepSeek, xAI and more | — | ✅ |
-| Model discovery for Ollama and LM Studio in one click | — | ✅ |
-| Streaming with a stop button, Markdown rendering | — | ✅ |
-| Source citations — every answer shows which memories it used | — | ✅ |
-| Date-aware prompting and a visible token budget | — | ✅ |
-| **Interface** | | |
-| An interface for your memory — browse by kind and tag, search, read, write, trash | — | ✅ native app |
-| Native desktop app for macOS and Windows | — | ✅ |
-| Light and dark | ✅ | ✅ |
-| Keyboard first — shortcuts; in Pro also a command palette (⌘K) | ✅ | ✅ |
-| Tag filter with counts | ✅ | ✅ |
-| Knowledge list with readable titles and previews | ✅ | ✅ |
-| Source chips, part badges, *Open file*, grouping by file, kind or period | — | ✅ |
-| Focus mode and text size (100 / 115 / 130 %) | — | ✅ |
-| Setup assistant with a starter pack | — | ✅ |
-| System status — detects local AI, checks storage, shows diagnostics | — | ✅ |
-| **Price** | | |
-| License | free · BUSL-1.1 (source available) | proprietary · Core runs with daily limits, the Pro key removes them |
-
-**KEPTA Core never locks — and it never phones home.** The app runs with generous daily limits on the Pro tools — and the Pro license key removes them, validated **offline** on your machine: no account, no internet, no trial timer. Pro is 12 €/month or 120 €/year, bought from inside the app — the Upgrade button always points to the current way to buy (while the self-serve checkout is in its final review, that is a direct line to **[me on LinkedIn](https://www.linkedin.com/in/damian-todorovic-244235434)**); Enterprise — team memory, SSO, MDM, security documentation — is shaped personally. The installers are at **[kepta-releases](https://github.com/DamianTodorovic/kepta-releases/releases/latest)**.
+**Teams and organizations** — shared team memory, central policies, MDM, organisation-wide audit — get **KEPTA Enterprise by request**. Coordination is the only thing we ever charge for; memory quality never is. → [write to me on LinkedIn](https://www.linkedin.com/in/damian-todorovic-244235434)
 
 ---
 
@@ -231,7 +123,7 @@ docker run -i -e KEPTA_DB_KEY=<64-hex> -v kepta-data:/data kepta-mcp
 | 🔐 **Encrypted at rest** | SQLCipher 4: AES-256 and an HMAC-SHA512 over every page, the WAL included; the key lives in the OS keychain (macOS Keychain, Windows DPAPI, Linux Secret Service) |
 | 🕐 **Time travel** | Validity windows (`valid_from` / `valid_to`) and `asOf` queries — "what did I know on 3 March?" |
 | ♻️ **Superseded, not contradicted** | New facts replace old ones (`superseded_by`); the history stays |
-| 🔗 **MCP first** | 8 tools, one code path for the API and MCP — agents get the same quality as the app |
+| 🔗 **MCP first** | 8 tools, one code path for the API and MCP — agents get the same quality as any client |
 | 📄 **File import** | PDF (pdf.js with character maps), Markdown with `[[wiki links]]`, text, JSON |
 | 📊 **Eval** | `npm run eval` on a fixed corpus of 58 notes / 45 queries: Hit@1, Precision@5, MRR, plus an ablation test per retrieval leg |
 
@@ -297,11 +189,12 @@ No dependencies — only the Python standard library.
 src/core/           memory engine (store, search, encryption, MCP protocol)
 server.ts           HTTP API (Express, 29 routes)
 src/mcp-server.ts   MCP stdio server (npx kepta-mcp) and the CLI (npx kepta)
-src/ui/graph.ts     the graph builder behind the API and the CLI (no UI — the interface is the desktop app)
+src/ui/graph.ts     the graph builder behind the API and the CLI (no UI — the interface is your AI client)
 npm/                source of the npm package (kepta-mcp)
 Dockerfile          container for the MCP server
 python/             Python client (PyPI: kepta)
 scripts/            eval, benchmark, repair
+tools/              benchmark harnesses (LongMemEval, latency)
 tests/              Vitest suite with CI-enforced coverage thresholds
 ```
 
@@ -336,16 +229,16 @@ The published score is **37.0 %**, up from the **29.2 %** baseline we published 
 
 ## 👋 Who builds KEPTA
 
-KEPTA is built by **Damian Todorovic**. Questions, ideas, a license for your team — or you simply want to follow where this is going: **[find me on LinkedIn](https://www.linkedin.com/in/damian-todorovic-244235434)**.
+KEPTA is built by **Damian Todorovic** and **Emil Wagner** — a small team from Germany, shipping in public. Questions, ideas, Enterprise for your team — or you simply want to follow where this is going: **[find us on LinkedIn](https://www.linkedin.com/in/damian-todorovic-244235434)**.
 
 ## 📄 License
 
-[BUSL 1.1](LICENSE) — every line public, production use inside your own organization always allowed, offering it as a hosted service is reserved, and each version converts to AGPL-3.0-or-later four years after release. **KEPTA Core** is the free desktop app on top of this engine — the knowledge graph, the chat, the machine scan, the privacy shield, the audit log and the polished experience: every download starts with one free Pro day, then it runs with daily limits and never locks — the limits are sealed against restarts, clock tricks and even wiping the database (App 2.13.7). **KEPTA Pro** is the license key that removes those limits (€12/month, €120/year, bought in the app). **KEPTA Enterprise** is licensed by agreement: everything in Pro, plus team memory for practices and firms, SSO, MDM and security documentation, shaped to your organization. The npm package `kepta-mcp` carries the same license as this repository; the Python client under `python/` stays MIT so any Python project can embed it. Licenses and questions — [write to me on LinkedIn](https://www.linkedin.com/in/damian-todorovic-244235434).
+[BUSL 1.1](LICENSE) — every line public, production use inside your own organization always allowed, offering it as a hosted service is reserved, and each version converts to AGPL-3.0-or-later four years after release. **The npm package `kepta-mcp` carries the same license as this repository; the Python client under `python/` stays MIT** so any Python project can embed it. KEPTA Enterprise for teams and organizations is licensed by agreement — [write to me on LinkedIn](https://www.linkedin.com/in/damian-todorovic-244235434).
 
-**What this repository is — and what it is not.** This source-available core is the memory engine: storage, retrieval, MCP. The product people pay for is the app on top — and it stays proprietary on purpose. Forks are legitimate; presenting a fork as KEPTA is not: the **KEPTA name, the KEPTA branding and the KEPTA Pro releases belong to Damian Todorovic**. Fork it, build with it, ship your own product from it — under a different name, without offering this engine as a hosted service, and with every change you make becoming AGPL-3.0-or-later when the version's Change Date arrives. Private notes never leave KEPTA over MCP, in the app and in this core alike.
+**What this repository is — and what it is not.** This source-available core is the memory engine: storage, retrieval, MCP — free, for every AI. Forks are legitimate; presenting a fork as KEPTA is not: the **KEPTA name and the KEPTA branding belong to Damian Todorovic**. Fork it, build with it, ship your own product from it — under a different name, without offering this engine as a hosted service, and with every change you make becoming AGPL-3.0-or-later when the version's Change Date arrives. Private notes never leave KEPTA over MCP.
 
 ---
 
 <p align="center">
-  <sub>KEPTA Core — the open heart of KEPTA. No subscription, no account, no excuses.</sub>
+  <sub>KEPTA — the best place to store knowledge for AI. Local, encrypted, free. No subscription, no account, no excuses.</sub>
 </p>

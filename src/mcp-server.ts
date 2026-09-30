@@ -122,24 +122,16 @@ function starteMcp(): void {
   });
 
   console.error(`[kepta MCP] stdio ready — ${SERVER_INFO.name} v${SERVER_INFO.version} — db: ${store.dbPath}`);
-  // Jeder Einstieg trägt die Stufen-Story — auch der, den nur Entwickler sehen.
-  console.error(`[kepta] ${STUFE_HINWEIS}`);
 }
 
-/** Die Stufen-Story in einer Zeile — überall dort, wo KEPTA Core startet. */
-export const STUFE_HINWEIS =
-  "headless and unlimited for your agents. The desktop app (KEPTA Core) adds the UI and starts with a free Pro day: 24 h every tool, then daily limits, never locks → https://github.com/DamianTodorovic/kepta-pro-releases/releases/latest";
-
 /**
- * `npx kepta-mcp ui`: KEPTA Core hat keine eigene Oberfläche mehr — die
- * einzige ist die kostenlose Desktop-App. Der Befehl existiert weiter, damit
- * alte Anleitungen und Muskelerinnerungen nicht ins Leere laufen: er zeigt
- * den Weg dorthin statt einer Seite.
+ * `npx kepta-mcp ui`: KEPTA ist headless — es lebt im KI-Klienten (MCP) und
+ * hat weder App noch Browser-Oberfläche. Der Befehl bleibt für alte
+ * Anleitungen bestehen und zeigt den einen richtigen Weg: setup.
  */
 function uiHinweis(): void {
-  console.log("KEPTA Core has no browser UI of its own — the interface is the free desktop app.");
-  console.log("KEPTA Pro is free: one free Pro day with every download, then daily limits, never locks. Same encrypted file, nothing to move.");
-  console.log("  https://github.com/DamianTodorovic/kepta-pro-releases/releases/latest");
+  console.log("KEPTA is headless — it lives inside your AI client via MCP, no app, no UI.");
+  console.log("To connect it: npx -y kepta-mcp setup");
 }
 
 /**
@@ -208,7 +200,7 @@ else if (process.argv[2] === "import") {
   }).then(
     (code) => {
       rl?.close();
-      console.log(`\n[kepta] ${STUFE_HINWEIS}`);
+      console.log(`\n[kepta] local, encrypted and unlimited for your agents — no account, no cloud.`);
       // stdout auf Pipes asynchron — das letzte Write erst abwarten (Drain-Falle).
       process.stdout.write("", () => process.exit(code));
     },

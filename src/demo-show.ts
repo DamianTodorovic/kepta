@@ -121,12 +121,11 @@ export async function starteDemoShow(argumente: string[]): Promise<number> {
   sag("   no cloud. no account. every MCP client reads the same file.");
   await beat();
 
-  // ── Finale: der Weg zur kostenlosen App ──
+  // ── Finale: der Weg in den eigenen KI-Klienten ──
   sag("── Your turn ─────────────────────────────────────────────────");
   store.close();
   try { fs.rmSync(ordner, { recursive: true, force: true }); } catch { /* Temp darf bleiben */ }
-  sag("   KEPTA Core has no browser UI of its own — the interface is the free desktop app.");
-  sag("   KEPTA Pro is free: one free Pro day with every download, then daily limits, never locks.");
-  sag("   https://github.com/DamianTodorovic/kepta-pro-releases/releases/latest");
+  sag("   KEPTA is headless — it lives inside your AI client via MCP, no app, no UI.");
+  sag("   To connect it: npx -y kepta-mcp setup");
   return 0;
 }

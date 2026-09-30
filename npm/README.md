@@ -70,11 +70,11 @@ The knowledge base is encrypted on disk (SQLCipher 4 format, AES-256). The key i
 
 Search works immediately. Install [Ollama](https://ollama.com) and `ollama pull nomic-embed-text` if you also want it to find notes that say the same thing in different words.
 
-## The app and the Python client
+## The Python client and the HTTP API
 
 This package is the MCP server on its own — enough for an agent, with no window.
 
-**KEPTA Core** is the free desktop app for macOS and Windows on top of this same encrypted memory: the knowledge graph with Force and Tree views and a time slider, drag & drop import for PDFs, Markdown, Obsidian vaults and web pages, a scan of your own computer with a preview first, and a chat cockpit with the model you choose. **Every download starts with one free Pro day** — 24 hours with every tool unlimited, no card, no account, no key — then it runs with daily limits and never locks. **KEPTA Pro is the license key** that removes those limits: €12/month or €120/year, bought from inside the app. Enterprise for organizations (team memory, SSO, MDM): [write to me on LinkedIn](https://www.linkedin.com/in/damian-todorovic-244235434).
+**KEPTA is one local, encrypted memory for every AI — €0, forever, no account, no limits.** This package is the headless door for agents (MCP); the [open core](https://github.com/DamianTodorovic/kepta) adds the HTTP API, the Python client and the CLI on the same encrypted file. Teams and organizations that want shared team memory, central policies and MDM get **KEPTA Enterprise by request**: [write to me on LinkedIn](https://www.linkedin.com/in/damian-todorovic-244235434).
 
 For Python there is `pip install kepta`.
 

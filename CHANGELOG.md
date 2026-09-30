@@ -2,6 +2,12 @@
 
 All notable changes are documented in this file. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and versioning follows [SemVer](https://semver.org/).
 
+## [Unreleased]
+
+### Changed
+- **There are no tiers inside the memory anymore.** KEPTA is the local, encrypted memory for AI systems — free, €0, forever, unlimited: no account, no daily limits, no key. Everything that makes the memory smart lives in this open engine. Teams and organizations get **KEPTA Enterprise by request** (team memory, central policies, MDM, organisation-wide audit) — coordination is the only thing ever charged for. The proprietary desktop app and the Pro tier are discontinued.
+- All Pro/App references removed from code and docs: the MCP/CLI/demo/setup entry points no longer point to a desktop app or a Pro day; READMEs (EN/DE), npm and Python package READMEs rebuilt around the one-engine story; the old app screenshots left the repository.
+
 ## [2.13.22] — 2026-09-29
 
 ### Changed

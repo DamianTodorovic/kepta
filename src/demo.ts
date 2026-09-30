@@ -113,9 +113,8 @@ export async function starteDemo(): Promise<number> {
   console.log(`KEPTA demo — a throwaway database, throw it away freely.`);
   console.log(`  ${kennzahlen.anzahl} notes · ${kennzahlen.knoten} graph nodes · ${kennzahlen.kanten} links`);
   console.log(`  database: ${dbPfad}`);
-  console.log("KEPTA Core has no browser UI of its own — the interface is the free desktop app.");
-  console.log("KEPTA Pro is free: one free Pro day with every download, then daily limits, never locks.");
-  console.log("  https://github.com/DamianTodorovic/kepta-pro-releases/releases/latest");
+  console.log("KEPTA is headless — it lives inside your AI client via MCP, no app, no UI.");
+  console.log("To connect it: npx -y kepta-mcp setup");
   try { fs.rmSync(ordner, { recursive: true, force: true }); } catch { /* Temp darf bleiben */ }
   return 0;
 }
