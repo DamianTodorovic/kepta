@@ -181,6 +181,32 @@ function graphNamen(store: KeptaStore): string[] {
   return namen;
 }
 
+// Vektor-Spur vorgerechnet: Chunk-Normen werden pro Generation EINMAL gebildet,
+// die Suche rechnet dann nur noch dot(a, b) / (normA · normB) — das spart die
+// doppelte Norm-Arbeit pro Chunk bei jeder Abfrage (bei 20k×768-dim-Chunks der
+// größte einzelne Kostenblock der warmen Suche).
+interface SuchVektoren {
+  liste: ReturnType<KeptaStore["allEmbeddableChunks"]>;
+  normen: Float32Array;
+}
+const vektorCache = new WeakMap<KeptaStore, { generation: number; spur: SuchVektoren }>();
+function suchVektoren(store: KeptaStore): SuchVektoren {
+  const generation = store.datenGeneration();
+  const eintrag = vektorCache.get(store);
+  if (eintrag && eintrag.generation === generation) return eintrag.spur;
+  const liste = store.allEmbeddableChunks().filter((c) => c.model === DEFAULT_EMBED_MODEL);
+  const normen = new Float32Array(liste.length);
+  for (let j = 0; j < liste.length; j++) {
+    const b = liste[j]!.embedding;
+    let nb = 0;
+    for (let i = 0; i < b.length; i++) nb += b[i]! * b[i]!;
+    normen[j] = Math.sqrt(nb);
+  }
+  const spur = { liste, normen };
+  vektorCache.set(store, { generation, spur });
+  return spur;
+}
+
 function entityMentionsInQuery(store: KeptaStore, queryLower: string): string[] {
   const mentions: string[] = [];
   for (const name of graphNamen(store)) {
@@ -253,15 +279,25 @@ export async function searchMemories(store: KeptaStore, params: SearchParams): P
   if (query && beine.vector) {
     queryVector = await embedQuery(query);
     if (queryVector) {
-      // Nur Chunks desselben Embedding-Modells sind vergleichbar — der Query-Vektor
-      // entsteht mit DEFAULT_EMBED_MODEL; fremde Modelle würden unsinnige Cosine-Werte
-      // liefern. Nach Modellwechsel füllt die Queue (chunksNeedingEmbedding mit
-      // Modell-Mismatch) die Lücke, bis dahin läuft die Suche rein lexikalisch.
-      const chunks = embeddbareChunks(store).filter((c) => c.model === DEFAULT_EMBED_MODEL);
+      // Vorgerechnete Spur (Chunk-Liste gefiltert auf das Abfragemodell + Normen
+      // je Chunk, einmal pro Generation). Nur Chunks desselben Embedding-Modells
+      // sind vergleichbar — der Query-Vektor entsteht mit DEFAULT_EMBED_MODEL;
+      // fremde Modelle würden unsinnige Cosine-Werte liefern.
+      const spur = suchVektoren(store);
+      const liste = spur.liste;
+      const normen = spur.normen;
+      // Query-Norm einmal je Abfrage
+      let na = 0;
+      for (let i = 0; i < queryVector.length; i++) na += queryVector[i]! * queryVector[i]!;
+      const normA = Math.sqrt(na);
       const bestPerMemory = new Map<string, number>();
-      for (const c of chunks) {
+      for (let j = 0; j < liste.length; j++) {
+        const c = liste[j]!;
         if (!byId.has(c.memoryId)) continue;
-        const sim = cosineSimilarity(queryVector, c.embedding);
+        const b = c.embedding;
+        let dot = 0;
+        for (let i = 0; i < b.length; i++) dot += queryVector[i]! * b[i]!;
+        const sim = normA > 0 && normen[j]! > 0 ? dot / (normA * normen[j]!) : 0;
         const prev = bestPerMemory.get(c.memoryId);
         if (prev === undefined || sim > prev) bestPerMemory.set(c.memoryId, sim);
       }
