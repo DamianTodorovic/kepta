@@ -18,16 +18,19 @@ Läuft mit `npx tsx tools/latenz/bench.ts --n 100000 --out ergebnisse/latenz-100
 | 1.10.2026 | **mit Such-Cache** (`latenz-100k-cache-2026-10-01.json`) | 100k | 83,1 ms | 94,8 ms | 100,8 ms | 5.102/s |
 | 1.10.2026 | Cache + vorgerechnete Vektornormen (`latenz-100k-cache2-2026-10-01.json`) | 100k | 72,0 ms | 85,0 ms | 92,4 ms | — |
 | 1.10.2026 | **1 Million Erinnerungen** (`latenz-1m-2026-10-01.json`) | 1.000.000 | 641,7 ms | **782,8 ms** | 837,4 ms | 3.618/s |
+| 1.10.2026 | **AND-first-FTS** 100k (`latenz-100k-fts-2026-10-01.json`) | 100k | **46,6 ms** | 87,6 ms | 94,0 ms | — |
+| 1.10.2026 | **AND-first-FTS** 1 Mio (`latenz-1m-fts-2026-10-01.json`) | 1.000.000 | **276,5 ms** | 672,5 ms | 729,3 ms | — |
 
-Roh-Pfad (`createMemory`) über alle Läufe: 10,1k–21,5k Erinnerungen/s. DB bei 1 Mio: 1,23 GB.
+Roh-Pfad (`createMemory`) über alle Läufe: 10,1k–21,5k Erinnerungen/s. DB bei 1 Mio: 1,23 GB. Retrieval-Qualität ist von allen Optimierungen unberührt: Hit@1 51,1 % lexikalisch / 71,1 % mit Vektoren — identisch vor und nach jedem Schritt (`npm run eval`).
 
-## Wo die verbleibenden Millisekunden liegen (1-Mio-Befund)
+## Wo die verbleibenden Millisekunden liegen (1-Mio-Befund nach AND-first-FTS)
 
-1. **FTS-bm25 dominiert bei 1 Mio:** die Suche matcht per OR über alle Stems und bildet bm25 über ALLE Treffer — auf dem synthetischen Bench-Korpus ein Worst-Case, denn jedes Dokument teilt denselben 12-Wort-Vokabular (in echter Zipf-Verteilung sind Terme viel seltener). Hebel: FTS-Scan begrenzen (Top-Term-Strategie) oder zwei-phasig (cheap-Match, dann Rangbildung auf der Spitzengruppe).
-2. **Cache-Aufbau bei 1 Mio: 383 s einmalig pro Generation** — für Server mit häufigen Schreibvorgängen ist die nächste Stufe Delta-Pflege (Neue/Geänderte in den Cache patchen statt vollständiger Neuaufbau).
-3. Kosinus-Spur ist mit vorgerechneten Normen klein (20k Chunks konstant); Rerank über 500 Kandidaten konstant.
+1. **Median 276,5 ms** — der AND-Schnitt hat den typischen Fall 2,3× beschleunigt und die Retrieval-Qualität byte-identisch gehalten (Eval vor/nach). 
+2. **Der p95-Schwanz (672 ms):** dünne AND-Schnitte zahlen den vollen OR-Scan doppelt — auf dem Bench-Korpus ein Worst-Case, denn jedes Dokument teilt denselben 12-Wort-Vokabular (in echter Zipf-Verteilung sind Terme viel seltener). Hebel: OR-Fallback mit begrenzter Scan-Tiefe (FTS5 bietet das nicht nativ — eigener Posting-Cursor) oder Quorum-Matching (`NEAR`/K-of-N), beides Retrieval-Verhalten → nur mit Eval-Gegenprobe.
+3. **Cache-Aufbau bei 1 Mio: 398 s einmalig pro Generation** — für Server mit häufigen Schreibvorgängen ist Delta-Pflege (Write-Pfade patchen den Cache, Trigger bleibt Sicherheitsnetz) die nächste Architekturstufe.
+4. Kosinus-Spur klein (Normen vorgerechnet, 20k Chunks konstant); Rerank über 500 Kandidaten konstant.
 
-Ehrliche Einordnung: Die < 50 ms-Zahl bei 1 Mio braucht die Hebel 1+2 — sie ist mit dem jetzigen Stand **nicht** erreicht und wird nicht behauptet, bevor der Record im Repo liegt.
+Ehrliche Einordnung: Die < 50 ms-Zahl bei 1 Mio ist **nicht erreicht** und wird nicht behauptet, bevor der Record im Repo liegt. Stand: 276,5 ms (Median) / 672,5 ms (p95).
 
 ## Der Hebel: Such-Cache an der datenGeneration
 

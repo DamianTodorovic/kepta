@@ -952,16 +952,29 @@ export class KeptaStore {
     // BM25-Rang und verdrängte über die RRF-Fusion den eigentlichen Treffer.
     const terms = contentTerms(query);
     if (terms.length === 0) return [];
-    const match = terms.map((t) => `"${t}"`).join(" OR ");
-    try {
-      const rows = this.db
+    // Zwei-phasig: AND-Schnitt zuerst (bei Mehr-Wort-Queries winzig — FTS5
+    // schneidet die kleinste Posting-Liste), OR nur wenn AND dünner als das
+    // Limit bleibt. Bei 1 Mio Erinnerungen kostet der reine OR-Scan über die
+    // bm25-Rangbildung der Term-Union sonst Hunderte ms je Abfrage. Die
+    // Merge-Rangbildung bleibt sauber: bm25-Werte sind korpusweit vergleichbar
+    // (negativ, relevanter = kleiner), also wird vereint und nach Wert sortiert.
+    const frage = (joiner: string) =>
+      this.db
         .prepare(
           `SELECT m.id, bm25(memories_fts) AS rank
            FROM memories_fts JOIN memories m ON m.rid = memories_fts.rowid
            WHERE memories_fts MATCH ? AND m.deleted_at IS NULL
            ORDER BY rank LIMIT ?`
         )
-        .all(match, limit) as Record<string, unknown>[];
+        .all(terms.map((t) => `"${t}"`).join(joiner), limit) as Record<string, unknown>[];
+    try {
+      let rows = frage(" AND ");
+      if (rows.length < limit && terms.length > 1) {
+        const gesehen = new Set(rows.map((r) => String(r.id)));
+        rows = [...rows, ...frage(" OR ").filter((r) => !gesehen.has(String(r.id)))];
+        rows.sort((a, b) => Number(a.rank) - Number(b.rank));
+        rows = rows.slice(0, limit);
+      }
       return rows.map((r) => ({ id: String(r.id), bm25: Number(r.rank) }));
     } catch {
       return [];
