@@ -38,7 +38,7 @@ function sseAntwort(stuecke: string[], opts: { fehler?: string } = {}): Response
 
 let anfragen: { url: string; body: Record<string, unknown> }[];
 
-function stubFetch(over: { stuecke?: string[]; status?: number; fehlerText?: string; sseFehler?: string } = {}) {
+function stubFetch(over: { stuecke?: string[]; status?: number; fehlerText?: string; sseFehler?: string; suchAntwort?: unknown } = {}) {
   anfragen = [];
   vi.stubGlobal("fetch", vi.fn(async (url: string, init?: RequestInit) => {
     anfragen.push({ url, body: init?.body ? JSON.parse(String(init.body)) : {} });
@@ -47,6 +47,10 @@ function stubFetch(over: { stuecke?: string[]; status?: number; fehlerText?: str
         return new Response(JSON.stringify({ error: over.fehlerText ?? "kaputt" }), { status: over.status });
       }
       return sseAntwort(over.stuecke ?? ["Hallo", " Welt"], { fehler: over.sseFehler });
+    }
+    if (url.includes("/api/search")) {
+      // Paket 3: die Engine-Antwort mit Spuren-Herkunft — ohne Stub fällt der Chat aufs lokale Ranking zurück.
+      return new Response(JSON.stringify(over.suchAntwort ?? {}), { status: 200, headers: { "Content-Type": "application/json" } });
     }
     return new Response("{}", { status: 200 });
   }));
@@ -350,5 +354,56 @@ describe("Chat: der leere Zustand", () => {
     const { container } = zeige();
     // Mit hinterlegtem Anbieter steht dort dessen Name samt Modell.
     expect(container.textContent).toMatch(/gpt-4o-mini|OpenAI/i);
+  });
+});
+
+describe("Chat: das ganze Gehirn (Paket 3)", () => {
+  const suchTreffer = {
+    results: [
+      { memory: { id: "engine-1", userId: "local", title: "EngineTreffer", content: "Der Atlas startet im Oktober.", tags: [], createdAt: 1, updatedAt: 1 }, score: 0.4, cosineScore: 0.8, bm25Score: 0.2, rawBm25: 0, matchedTerms: [], tracks: { bm25: 0, vektor: 1, graph: null, similarity: 0.8 } },
+    ],
+    total: 1,
+  };
+
+  async function stelleFrageUndWarte(user: ReturnType<typeof userEvent.setup>, container: HTMLElement) {
+    await frage(user, "Wann startet Atlas?");
+    // Der Debounce (300 ms) schickt die Eingabe an die Engine — der Test wartet auf ihn.
+    await waitFor(() => expect(anfragen.some((a) => a.url.includes("/api/search"))).toBe(true));
+    await waitFor(() => expect(container.textContent).toMatch(/Hallo Welt/));
+  }
+
+  it("fragt die Server-Engine mit Suchtiefe und Spuren-Schaltern aus den Einstellungen", async () => {
+    const user = userEvent.setup();
+    localStorage.setItem("ki_gehirn_such_tiefe", "12");
+    localStorage.setItem("ki_gehirn_spur_bm25", "0"); // BM25 abgestellt — der Request muss das sagen
+    stubFetch({ suchAntwort: suchTreffer });
+    const { container } = zeige();
+    await stelleFrageUndWarte(user, container);
+    const such = anfragen.find((a) => a.url.includes("/api/search"));
+    expect(such, "kein Engine-Call").toBeTruthy();
+    expect(such!.body).toMatchObject({ query: "Wann startet Atlas?", topK: 12, tracks: { bm25: false, vector: true, entity: true } });
+    // Das ganze Gehirn: der Engine-Treffer ist im Prompt, obwohl er NICHT unter den aktiven Notizen liegt.
+    const stream = anfragen.find((a) => a.url.includes("/stream"))!;
+    expect(JSON.stringify(stream.body)).toMatch(/EngineTreffer/);
+  });
+
+  it("zeigt die Spuren-Herkunft an den Quellen und den Warm-Zustand nach der Engine-Antwort", async () => {
+    const user = userEvent.setup();
+    stubFetch({ suchAntwort: suchTreffer });
+    const { container } = zeige();
+    await stelleFrageUndWarte(user, container);
+    expect(container.textContent).toMatch(/bm25 #1/);
+    expect(container.textContent).toMatch(/vector #2/);
+    expect(container.textContent).not.toMatch(/graph #/);
+    expect(container.textContent).toMatch(/Brain warm — answer in \d+ ms/);
+  });
+
+  it("wenn die Engine nichts liefert, ordnet das lokale Ranking weiter — nichts bricht", async () => {
+    const user = userEvent.setup();
+    stubFetch({ suchAntwort: {} }); // kein results-Feld
+    const { container } = zeige({ activeMemories: [note({ title: "LokaleNotiz" })] });
+    await stelleFrageUndWarte(user, container);
+    expect(container.textContent).toMatch(/LokaleNotiz/); // Kontext bleibt gefüllt
+    expect(container.textContent).not.toMatch(/Brain warming up/); // nach leerer Antwort kein Warten mehr
   });
 });

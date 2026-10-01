@@ -19,11 +19,12 @@ function extractCodeText(node: unknown): string {
   if (el.props && "children" in el.props) return extractCodeText(el.props.children);
   return "";
 }
-import { hybridSearch } from "../lib/semantic";
+import { hybridSearch, type ScoredMemory } from "../lib/semantic";
+import { useSuchPrefs } from "../lib/searchPrefs";
 
 // Erweiterte Message mit Quellen / Token-Metadaten
 type ExtendedChatMessage = ChatMessage & {
-  sources?: { id: string; title: string }[];
+  sources?: { id: string; title: string; tracks?: ScoredMemory["tracks"] }[];
   /** What the privacy shield kept from a cloud model for this answer. */
   shield?: { text: string; privateNotes: number; provider: string };
   inputTokens?: number;
@@ -75,6 +76,13 @@ const MIN_BUDGET = 1000;
 const MAX_BUDGET = 16000;
 const DEFAULT_BUDGET = 4000;
 const RETRIEVAL_TTL_MS = 30_000;
+/** Kurzer Aufschub, damit die Engine nicht bei jedem Tastenschlag befragt wird. */
+const SERVER_DEBOUNCE_MS = 300;
+
+/** Hat eines der drei Beine den Treffer gesehen? Für die Herkunfts-Badges der Quellen. */
+function spurenSichtbar(tracks: NonNullable<ScoredMemory["tracks"]> | undefined): boolean {
+  return !!tracks && (tracks.bm25 !== null || tracks.vektor !== null || tracks.graph !== null);
+}
 
 export function Chat({ activeMemories, onSaveToBrain, onSaveToBrainWithMeta, isFocusMode, onToggleFocus }: ChatProps) {
   const toast = useToast();
@@ -135,6 +143,71 @@ export function Chat({ activeMemories, onSaveToBrain, onSaveToBrainWithMeta, isF
 
   const connection = resolveAIConnection(settings, provider, localReachable);
 
+  // ---------- Such-Präferenzen (Paket 3): Suchtiefe + Spuren gelten auch im Chat ----------
+  const [suchPrefs] = useSuchPrefs();
+
+  // ---------- Server-Engine: das GANZE Gehirn befragen, nicht nur das Dashboard-Vorfiltern ----------
+  // Der Chat schickt die Eingabe an POST /api/search (BM25 + Vektoren + Graph → RRF) und
+  // bekommt je Treffer die Spuren-Herkunft mit. Scheitert der Call oder findet nichts,
+  // ordnet das lokale Ranking (hybridSearch über die aktiven Notizen) weiter — ehrlicher
+  // Fallback statt stiller Behauptung.
+  const [serverRanked, setServerRanked] = useState<ScoredMemory[] | null>(null);
+  const [serverQuery, setServerQuery] = useState<string | null>(null);
+  const [entprellt, setEntprellt] = useState("");
+  const [gehirnWaermt, setGehirnWaermt] = useState(false);
+  const [gehirnWarm, setGehirnWarm] = useState(false);
+  const [suchDauerMs, setSuchDauerMs] = useState<number | null>(null);
+
+  useEffect(() => {
+    const t = setTimeout(() => setEntprellt(input.trim()), SERVER_DEBOUNCE_MS);
+    return () => clearTimeout(t);
+  }, [input]);
+
+  useEffect(() => {
+    const q = entprellt;
+    if (q.length < 2) {
+      setServerRanked(null);
+      setServerQuery(null);
+      return;
+    }
+    let cancelled = false;
+    if (!gehirnWarm) setGehirnWaermt(true);
+    void (async () => {
+      const start = performance.now();
+      try {
+        const res = await fetch("/api/search", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            query: q,
+            topK: suchPrefs.tiefe,
+            // Die Spuren-Schalter der Einstellungen reisen mit — was der Nutzer
+            // im Dashboard abstellt, gilt auch, wenn der Chat das Gehirn fragt.
+            tracks: { bm25: suchPrefs.spurBm25, vector: suchPrefs.spurVektor, entity: suchPrefs.spurGraph },
+          }),
+        });
+        const data = await res.json();
+        if (cancelled) return;
+        const hits = Array.isArray(data?.results) ? (data.results as ScoredMemory[]) : null;
+        setServerRanked(hits && hits.length > 0 ? hits : null);
+        setServerQuery(hits && hits.length > 0 ? q : null);
+        setSuchDauerMs(Math.round(performance.now() - start));
+        setGehirnWarm(true);
+        setGehirnWaermt(false);
+      } catch {
+        if (!cancelled) {
+          setServerRanked(null);
+          setServerQuery(null);
+        }
+      }
+    })();
+    return () => { cancelled = true; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [entprellt, suchPrefs.tiefe, suchPrefs.spurBm25, suchPrefs.spurVektor, suchPrefs.spurGraph]);
+
+  /** Der Server-Rang zählt nur für die Eingabe, die ihn angefragt hat. */
+  const serverReihenfolge = serverRanked && serverQuery !== null && serverQuery === entprellt ? serverRanked : null;
+
   // ---------- HybridSearch Retrieval Cache (30s TTL) ----------
   const retrievalCacheRef = useRef<Map<string, { ts: number; ranked: Memory[]; sig: string }>>(new Map());
   const getRankedMemories = useCallback(
@@ -180,9 +253,17 @@ export function Chat({ activeMemories, onSaveToBrain, onSaveToBrainWithMeta, isF
 
   // ---------- Token-Budget → welche Memories in den Prompt ----------
   const budgetedMemories = useMemo(() => {
-    if (activeMemories.length === 0) return [];
-    // Cache-aware Ranking: hybridSearch mit 30s TTL statt reiner Aktualität
-    const sorted = getRankedMemories(input, activeMemories);
+    if (activeMemories.length === 0 && !serverReihenfolge) return [];
+    // Reihenfolge: die Server-Engine (ganzes Gehirn, Paket 3) wenn vorhanden —
+    // sonst das lokale hybridSearch-Ranking mit 30s TTL.
+    let sorted: Memory[];
+    if (serverReihenfolge) {
+      const gesehen = new Set(serverReihenfolge.map((r) => r.memory.id));
+      const rest = activeMemories.filter((m) => !gesehen.has(m.id)).sort((a, b) => b.updatedAt - a.updatedAt);
+      sorted = [...serverReihenfolge.map((r) => r.memory), ...rest];
+    } else {
+      sorted = getRankedMemories(input, activeMemories);
+    }
     const inputTokens = estimateTokens(input);
     const baseSystemTokens = 90;
     const reserve = 500;
@@ -218,9 +299,16 @@ export function Chat({ activeMemories, onSaveToBrain, onSaveToBrainWithMeta, isF
       }
     }
     return picked;
-  }, [activeMemories, tokenBudget, input, getRankedMemories]);
+  }, [activeMemories, tokenBudget, input, getRankedMemories, serverReihenfolge]);
 
   const budgetedIds = useMemo(() => new Set(budgetedMemories.map((m) => m.id)), [budgetedMemories]);
+
+  /** Spuren-Herkunft je Knoten aus dem letzten Server-Ranking — für die Quellen-Badges. */
+  const serverTracks = useMemo(() => {
+    const map = new Map<string, NonNullable<ScoredMemory["tracks"]>>();
+    if (serverRanked) for (const r of serverRanked) if (r.tracks) map.set(r.memory.id, r.tracks);
+    return map;
+  }, [serverRanked]);
 
   const contextTokens = useMemo(() => {
     const ctxText = budgetedMemories.map((m) => `${m.title}\n${m.content}`).join("\n\n");
@@ -343,6 +431,34 @@ export function Chat({ activeMemories, onSaveToBrain, onSaveToBrainWithMeta, isF
       return;
     }
 
+    // Paket 3: die Frage geht zuerst ans GANZE Gehirn — die Engine (BM25 + Vektoren +
+    // Graph) ordnet mit der Suchtiefe und den Spuren-Schaltern aus den Einstellungen.
+    // Scheitert der Call, ordnet das lokale Ranking weiter (ehrlicher Fallback).
+    const sucheStart = performance.now();
+    let engineTreffer: ScoredMemory[] | null = null;
+    try {
+      const suchRes = await fetch("/api/search", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          query: trimmed,
+          topK: suchPrefs.tiefe,
+          tracks: { bm25: suchPrefs.spurBm25, vector: suchPrefs.spurVektor, entity: suchPrefs.spurGraph },
+        }),
+      });
+      const suchData = await suchRes.json();
+      if (Array.isArray(suchData?.results) && suchData.results.length > 0) engineTreffer = suchData.results as ScoredMemory[];
+    } catch {
+      // Server unerreichbar — die Antwort fällt auf das lokale Ranking zurück.
+    }
+    if (engineTreffer) {
+      setSuchDauerMs(Math.round(performance.now() - sucheStart));
+      setGehirnWarm(true);
+      setGehirnWaermt(false);
+    }
+    const engineTracks = new Map<string, NonNullable<ScoredMemory["tracks"]>>();
+    for (const r of engineTreffer ?? []) if (r.tracks) engineTracks.set(r.memory.id, r.tracks);
+
     const userMsg: ExtendedChatMessage = {
       id: Date.now().toString(),
       role: "user",
@@ -353,7 +469,13 @@ export function Chat({ activeMemories, onSaveToBrain, onSaveToBrainWithMeta, isF
     // Private notes stay home when the model runs in the cloud — the server
     // enforces it as well; leaving them out here keeps the sources honest.
     const lokal = istLokaleAdresse(settingsLive.baseUrl || provLive.baseUrl);
-    const kontext = lokal ? budgetedMemories : budgetedMemories.filter((m) => m.scope !== "private");
+    // Die Engine-Treffer führen, der budgetierte Kontext füllt den Rest —
+    // die Knotenanzahl bleibt auf dem budgetierten Stand.
+    const engineIds = new Set((engineTreffer ?? []).map((r) => r.memory.id));
+    const reihenfolge = engineTreffer
+      ? [...engineTreffer.map((r) => r.memory), ...budgetedMemories.filter((m) => !engineIds.has(m.id))].slice(0, Math.max(budgetedMemories.length, engineIds.size))
+      : budgetedMemories;
+    const kontext = lokal ? reihenfolge : reihenfolge.filter((m) => m.scope !== "private");
     const systemPrompt = buildSystemPrompt(kontext);
     const apiMessages = [...messages, userMsg].map((m) => ({
       role: m.role,
@@ -362,7 +484,7 @@ export function Chat({ activeMemories, onSaveToBrain, onSaveToBrainWithMeta, isF
 
     // placeholder für Streaming
     const assistantId = (Date.now() + 1).toString();
-    const sourcesForTurn = kontext.map((m) => ({ id: m.id, title: m.title }));
+    const sourcesForTurn = kontext.map((m) => ({ id: m.id, title: m.title, tracks: engineTracks.get(m.id) ?? serverTracks.get(m.id) }));
     const placeholder: ExtendedChatMessage = {
       id: assistantId,
       role: "assistant",
@@ -628,6 +750,18 @@ export function Chat({ activeMemories, onSaveToBrain, onSaveToBrainWithMeta, isF
           </div>
         </div>
         <div className="flex items-center gap-2 sm:gap-4 text-xs font-medium">
+          {/* Such-Cache-Status (Paket 3): der Chat misst die eigene Engine-Anfrage —
+              das Delta-Cache-Signal aus Paket 2 gilt hier genauso wie im Dashboard. */}
+          {gehirnWaermt && (
+            <span className="chip hidden sm:inline-flex" title="The search cache is being built once — from now on, every write only patches it.">
+              <span className="agent-dot" /> Brain warming up…
+            </span>
+          )}
+          {gehirnWarm && !gehirnWaermt && suchDauerMs !== null && (
+            <span className="chip tnum hidden sm:inline-flex" title="Search cache warm — the time is the chat's last brain query as measured by the app.">
+              <span className="status-dot" /> Brain warm — answer in {suchDauerMs} ms
+            </span>
+          )}
           <div className="flex items-center gap-1.5" style={{ color: "var(--text-2)" }}>
             <span className="hud-label hidden sm:inline">Context:</span>
             <span className="px-2 py-1 rounded hud-inset flex items-center gap-1" style={{ color: "var(--accent)" }}>
@@ -825,12 +959,23 @@ export function Chat({ activeMemories, onSaveToBrain, onSaveToBrainWithMeta, isF
                       {msg.sources.slice(0, 6).map((s) => (
                         <span
                           key={s.id}
-                          className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-medium border"
+                          className="inline-flex flex-col items-start px-2 py-0.5 rounded-lg text-[10px] font-medium border max-w-[180px]"
                           style={{ background: "var(--accent-soft)", borderColor: "var(--border-subtle)", color: "var(--text-1)" }}
                           title={s.id}
                         >
-                          <FileText className="w-3 h-3" style={{ color: "var(--accent)" }} />
-                          {s.title.length > 18 ? s.title.slice(0, 18) + "…" : s.title}
+                          <span className="inline-flex items-center gap-1 max-w-full">
+                            <FileText className="w-3 h-3 shrink-0" style={{ color: "var(--accent)" }} />
+                            <span className="truncate">{s.title.length > 18 ? s.title.slice(0, 18) + "…" : s.title}</span>
+                          </span>
+                          {/* Herkunfts-Badge (Paket 3): welches Bein (BM25/Vektor/Graph) den
+                              Knoten wo im Ranking sah — dieselbe Wahrheit wie auf der Karte. */}
+                          {spurenSichtbar(s.tracks) && (
+                            <span className="flex flex-wrap gap-1 font-mono text-[8.5px] font-normal leading-none">
+                              {s.tracks!.bm25 !== null && <span style={{ color: "var(--accent)" }}>bm25 #{s.tracks!.bm25 + 1}</span>}
+                              {s.tracks!.vektor !== null && <span style={{ color: "var(--accent)" }}>vector #{s.tracks!.vektor + 1}</span>}
+                              {s.tracks!.graph !== null && <span style={{ color: "var(--accent)" }}>graph #{s.tracks!.graph + 1}</span>}
+                            </span>
+                          )}
                         </span>
                       ))}
                       {msg.sources.length > 6 && (
