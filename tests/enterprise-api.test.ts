@@ -210,6 +210,14 @@ describe("Today, Widersprüche, Dossier", () => {
     expect((await request(app).get("/api/briefing")).body.contradictions).toEqual([]);
   });
 
+  it("„Everything“-Fenster: since=0 heißt die ganze Geschichte, nicht der 24h-Default (Paket 3)", async () => {
+    store.createMemory({ title: "Urgestein", content: "alt", type: "semantic", createdAt: 5, updatedAt: 5 });
+    const alles = (await request(app).get("/api/briefing?since=0")).body;
+    expect(alles.created.total).toBe(1); // ohne den Fix liefe since=0 auf den 24h-Default und meldete 0
+    const heute = (await request(app).get("/api/briefing?since=" + (Date.now() + 1000))).body;
+    expect(heute.created.total).toBe(0);
+  });
+
   it("„beides stimmt“ merkt sich das Paar", async () => {
     const a = store.createMemory({ title: "A", content: "The license costs 1.200 € per year.", type: "semantic" });
     const b = store.createMemory({ title: "B", content: "The license costs 1500 EUR per year.", type: "semantic" });

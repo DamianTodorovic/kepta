@@ -26,7 +26,9 @@ export function mountBriefing(app: express.Express, ctx: AppKontext): void {
 
   app.get("/api/briefing", (req, res) => {
     const seit = Number(req.query.since);
-    res.json(briefing(store, { seit: Number.isFinite(seit) && seit > 0 ? seit : Date.now() - 86_400_000, widersprueche: aktuelleWidersprueche().slice(0, 10) }));
+    // Paket 3 (Today 2.0): since=0 ist das „Everything“-Fenster der Zeitmaschine —
+    // es darf NICHT auf den 24h-Default fallen (der gilt nur für fehlenden Müll).
+    res.json(briefing(store, { seit: Number.isFinite(seit) && seit >= 0 ? seit : Date.now() - 86_400_000, widersprueche: aktuelleWidersprueche().slice(0, 10) }));
   });
 
   app.post("/api/contradictions/resolve", ctx.limiter.write, (req, res) => {
