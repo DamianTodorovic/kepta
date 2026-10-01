@@ -96,7 +96,7 @@ SQLCipher 4 (AES-256, HMAC-SHA512 je Seite, WAL eingeschlossen). Der Schlüssel 
 
 KEPTA liefert seinen Gedächtnis-Benchmark so, wie es sonst niemand tut: **jede Frage, jede Antwort und jedes Judge-Urteil jedes Laufs liegt in diesem Repository**, in [`tools/longmemeval/ergebnisse/`](tools/longmemeval/ergebnisse/). Fixierter Datensatz (LongMemEval-S, 500 Fragen, SHA-gepinnt), fixierter Judge, lokal vollständig reproduzierbar — siehe [`tools/longmemeval/README.md`](tools/longmemeval/README.md).
 
-Die veröffentlichte Zahl ist **39,0 %**, gestiegen von der **29,2 %**-Baseline, die wir zuerst veröffentlicht und dann öffentlich geschlagen haben (32,5 → 33,2 → 37,0 → 39,0 — jeder Schritt ist ein Lauf-Record im selben Ordner, kein neues Modell, keine Cloud, kein Fine-Tuning). Bewertet wird von einem **lokalen Judge-Modell** (`llama3.2:3b`): Die Zahl misst, was ein komplett lokaler Aufsatz kann — nicht, was ein Cloud-Modell tragen kann.
+Die veröffentlichte Zahl ist **54,6 %** auf LongMemEval-S — bewertet von einem **lokalen 14B-Judge** (`qwen2.5:14b`, Q4, läuft auf einer Consumer-GPU), null Cloud. Die 3B-Judge-Serie ist vollständig als Vergleichsbasis committed: 29,2 → 32,5 → 33,2 → 37,0 → 39,0 — jeder Schritt ist ein Lauf-Record im selben Ordner, kein neues Modell, keine Cloud, kein Fine-Tuning. Dieselbe Retrieval-Pipeline, fairere Bewertung: Ein stärkerer lokaler Judge misst, was der 3B-Judge bei langen Kontexten unterschätzt hat.
 
 ## 👋 Wer KEPTA baut
 

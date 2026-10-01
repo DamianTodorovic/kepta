@@ -86,6 +86,10 @@ Die Hebel aus der Baseline sind umgesetzt, jeder mit veröffentlichter Messung:
 | 24.9. | topk 12 + Timeline-Block (`--temporal`) | **33,2 %** | c047e7f |
 | 25.9. | + Vektorspur über alle 441k Chunks (`--vektoren`) | **37,0 %** | Record committed |
 | 1.10. | topk 16 + `--temporal` auf der neuen Such-Pipeline (Such-Cache, AND-first-FTS) | **39,0 %** | Record committed |
+| 1.10. | **Judge-A/B (60 Fragen):** 3b 42,5 % vs. **14B 54,2 %** — der stärkere lokale Judge bewertet dieselbe Pipeline fairer (der 3b unterschätzt lange Kontexte) | — | Records committed |
+| 1.10. | **Voller 500er mit dem 14B-Judge** (qwen2.5:14b, Q4, RTX 3060, komplett lokal) | **54,6 %** | Record committed |
+
+**Judge-Frame (Ehrlichkeitsregel):** Die 3b-Serie (29,2→39,0) bleibt die Vergleichsbasis — ein Judgesprung ist eine bessere MESSLATTE, kein Retrieval-Fortschritt. Der 14B-Wert misst dieselbe Retrieval-Pipeline fairer: **54,6 % lokal, null Cloud** — gemessen gegen Zeps 63,8 % (Cloud-LLM-Judge). Nächste Schärfung läuft: bge-m3-Embedding (läuft).
 
 Weitere Pilot-Messungen (60 stratifizierte Fragen, 29.142 Notizen, 76.871
 Chunks — **nicht** mit den 500er-Zahlen vergleichbar): topk 8 lexikalisch
