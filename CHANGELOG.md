@@ -2,6 +2,11 @@
 
 All notable changes are documented in this file. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and versioning follows [SemVer](https://semver.org/).
 
+## [3.1.0] — 2026-10-02
+
+### Added
+- **The npm package is embeddable**: `kepta-mcp` now exports the engine (`KeptaStore`, `searchMemories`, `saveWithIndex`, `consolidateMemories`) through a library entry — same one-dependency guarantee, the CLI/MCP binary is unchanged. This is the surface KEPTA Enterprise builds on.
+
 ## [3.0.0] — 2026-10-01
 
 ### Added

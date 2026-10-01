@@ -25,6 +25,42 @@ await build({
 // Genau ein Shebang, und zwar in Zeile 1. Die Quelle bringt selbst einen mit;
 // ein per banner ergaenzter zweiter landete in Zeile 2, wo "#!" ein Syntaxfehler
 // ist — das Paket liess sich installieren und startete bei niemandem.
+// Zweiter Entry: die Engine als BIBLIOTHEK (exportiert, startet nichts).
+// KEPTA Enterprise bindet die Engine über genau diese Fläche an.
+const engineZiel = path.resolve("npm/engine-entry.cjs");
+await build({
+  entryPoints: ["npm/engine-entry.ts"],
+  bundle: true,
+  platform: "node",
+  format: "cjs",
+  target: "node22",
+  outfile: engineZiel,
+  legalComments: "none",
+  external: [...ERLAUBT],
+});
+
+// Build-Zeit-Smoke: die Symbole müssen require-bar sein und die Engine muss
+// einen Store öffnen, ohne einen Server zu starten.
+const { createRequire } = await import("node:module");
+const erfordere = createRequire(import.meta.url);
+const engine = erfordere(engineZiel);
+const symbole = ["KeptaStore", "searchMemories", "saveWithIndex", "consolidateMemories", "DEFAULT_EMBED_MODEL"];
+const fehlend = symbole.filter((s) => engine[s] === undefined);
+if (fehlend.length) {
+  console.error("engine-entry exportiert nicht:", fehlend.join(", "));
+  process.exit(1);
+}
+const smokeDir = fs.mkdtempSync(path.join(path.dirname(engineZiel), "smoke-"));
+const smokeStore = new engine.KeptaStore(path.join(smokeDir, "smoke.db"));
+smokeStore.createMemory({ title: "Build-Smoke", content: "Engine-Entry funktioniert." });
+if (smokeStore.listMemories().length !== 1) {
+  console.error("Engine-Smoke fehlgeschlagen: Store funktioniert nicht.");
+  process.exit(1);
+}
+smokeStore.close();
+fs.rmSync(smokeDir, { recursive: true, force: true });
+console.log("engine-entry.cjs gebaut und geraucht:", symbole.join(", "));
+
 const zeilen = fs.readFileSync(ziel, "utf8").split("\n");
 const ohne = zeilen.filter((z) => !z.startsWith("#!"));
 fs.writeFileSync(ziel, "#!/usr/bin/env node\n" + ohne.join("\n"));

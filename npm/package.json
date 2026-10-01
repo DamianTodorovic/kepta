@@ -1,6 +1,6 @@
 {
   "name": "kepta-mcp",
-  "version": "3.0.0",
+  "version": "3.1.0",
   "description": "Local memory for AI agents over MCP. One SQLite file on your own machine — no cloud, no account.",
   "keywords": [
     "mcp",
@@ -42,5 +42,11 @@
   "engines": {
     "node": ">=22.13.0"
   },
-  "mcpName": "io.github.DamianTodorovic/kepta"
+  "mcpName": "io.github.DamianTodorovic/kepta",
+  "main": "engine-entry.cjs",
+  "exports": {
+    ".": "./engine-entry.cjs",
+    "./bin": "./bin/kepta.js",
+    "./package.json": "./package.json"
+  }
 }
