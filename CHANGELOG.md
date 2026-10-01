@@ -2,7 +2,7 @@
 
 All notable changes are documented in this file. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and versioning follows [SemVer](https://semver.org/).
 
-## [Unreleased]
+## [3.0.0] — 2026-10-01
 
 ### Added
 - **Search cache keyed on a trigger-fed data generation** — the retrieval path no longer materializes every active memory, every chunk vector and the whole graph on each query. Trigger invalidation covers every write path (including raw SQL imports); access-statistics updates patch the cache in place instead of invalidating it. At 100,000 memories this takes search p95 from **7.16 s to 94.8 ms** (76×), and product-path ingest from 2,530 to 5,102 memories/s. Public series in [`tools/latenz/`](tools/latenz/).

@@ -3,7 +3,7 @@
   "name": "io.github.DamianTodorovic/kepta",
   "title": "KEPTA — the memory for AI systems",
   "description": "Local encrypted memory for AI: hybrid search, 8 MCP tools, one file you own. Free, no cloud.",
-  "version": "2.13.22",
+  "version": "3.0.0",
   "websiteUrl": "https://github.com/DamianTodorovic/kepta",
   "repository": {
     "url": "https://github.com/DamianTodorovic/kepta",
@@ -13,7 +13,7 @@
     {
       "registryType": "npm",
       "identifier": "kepta-mcp",
-      "version": "2.13.22",
+      "version": "3.0.0",
       "runtimeHint": "npx",
       "transport": {
         "type": "stdio"
