@@ -8,4 +8,5 @@ export { KeptaStore } from "../src/core/store.js";
 export { searchMemories, consolidateMemories, indexMemory, MAX_SEARCH_LIMIT } from "../src/core/engine.js";
 export { saveWithIndex, TOOLS } from "../src/core/mcp.js";
 export { DEFAULT_EMBED_MODEL, cosineSimilarity } from "../src/core/embeddings.js";
+export { defaultExtensions, PLAINTEXT_KEY } from "../src/core/extensions.js";
 export { APP_VERSION } from "../src/core/version.js";

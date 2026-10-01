@@ -2,6 +2,11 @@
 
 All notable changes are documented in this file. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and versioning follows [SemVer](https://semver.org/).
 
+## [3.1.1] — 2026-10-02
+
+### Added
+- `defaultExtensions` and `PLAINTEXT_KEY` are exported from the library entry — embedders configure per-store encryption keys (this is what KEPTA Enterprise uses for per-tenant keys).
+
 ## [3.1.0] — 2026-10-02
 
 ### Added

@@ -34,9 +34,11 @@ __export(engine_entry_exports, {
   DEFAULT_EMBED_MODEL: () => DEFAULT_EMBED_MODEL,
   KeptaStore: () => KeptaStore,
   MAX_SEARCH_LIMIT: () => MAX_SEARCH_LIMIT,
+  PLAINTEXT_KEY: () => PLAINTEXT_KEY,
   TOOLS: () => TOOLS,
   consolidateMemories: () => consolidateMemories,
   cosineSimilarity: () => cosineSimilarity,
+  defaultExtensions: () => defaultExtensions,
   indexMemory: () => indexMemory,
   saveWithIndex: () => saveWithIndex,
   searchMemories: () => searchMemories
@@ -2099,7 +2101,7 @@ function pickKeep(store, a, b) {
 }
 
 // src/core/version.ts
-var APP_VERSION = "3.1.0";
+var APP_VERSION = "3.1.1";
 
 // src/core/mcp.ts
 var PROTOCOL_VERSIONS = ["2026-07-28", "2025-06-18", "2024-11-05"];
@@ -2377,9 +2379,11 @@ var AELTESTE_PROTOCOL_VERSION = VERSIONEN_ABSTEIGEND[VERSIONEN_ABSTEIGEND.length
   DEFAULT_EMBED_MODEL,
   KeptaStore,
   MAX_SEARCH_LIMIT,
+  PLAINTEXT_KEY,
   TOOLS,
   consolidateMemories,
   cosineSimilarity,
+  defaultExtensions,
   indexMemory,
   saveWithIndex,
   searchMemories
