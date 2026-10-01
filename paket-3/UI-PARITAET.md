@@ -45,17 +45,17 @@ Entscheidung: **keine neue Route** — `GET /api/briefing` wird erweitert (`supe
 
 | Funktion | Angezeigt | Einstellbar | Status | UI-Zuordnung |
 |---|---|---|---|---|
-| Widersprüche erkennen | ✓ | — | **UI vorhanden** | `lib/widersprueche.ts` → `TodayView` „Needs a look“ (mit Auflösung), `DossierView` „To check“ (Text) |
-| Widerspruchs-Auflösung „neuere Version gilt“ | ✓ | ✓ (Knopf) | **UI vorhanden** | `TodayView` (Keep the newer/older) — Dossier 2.0 zieht nach |
-| **Today 2.0: Zeitfenster-Slider (heute/7/30/alles)** | ✓ | ✓ | **heute gebaut** (Schritt 1) | `TodayView`-Regler → `since` am `/api/briefing`-Abruf |
-| **Today 2.0: abgelöste Knoten (superseded_by) konsolidiert** | ✓ | — | **heute gebaut** (Schritt 1) | Briefing `superseded` (mit „replaced by“) → `TodayView`-Abschnitt „What changed“ |
-| **Today 2.0: gelöschte Knoten (Papierkorb) konsolidiert** | ✓ | — | **heute gebaut** (Schritt 1) | Briefing `deleted` → `TodayView`-Abschnitt „What changed“ |
-| **Dossier 2.0: Auflösung je Widerspruchs-Karte** | ✓ | ✓ | **heute gebaut** (Schritt 2) | `DossierView`-Karte: „Newer wins“ / „Both hold — cap the older“ / „Edit“ |
-| **Dossier 2.0: Gültigkeitsfenster setzen** | ✓ | ✓ | **heute gebaut** (Schritt 2) | Resolve-Route `window:true` → `validTo` der älteren Notiz = Zeitpunkt der neueren + Paar markiert |
-| **Chat: Suche über das ganze Gehirn (Server-Engine)** | ✓ | ✓ (via Suchtiefe) | **heute gebaut** (Schritt 3) | `Chat` ruft `POST /api/search` mit der Eingabe — nicht mehr nur das Dashboard-Vorfiltern |
-| **Chat: Suchtiefe + Spuren-Schalter gelten im Chat** | ✓ (im Request) | ✓ (Settings) | **heute gebaut** (Schritt 3) | `useSuchPrefs` → `topK: tiefe`, `tracks` an jeden Chat-Such-Call |
-| **Chat: Quellen-Herkunft (bm25/vektor/graph-Rang)** | ✓ | — | **heute gebaut** (Schritt 3) | Quellen-Chips je Antwort mit Herkunfts-Badges aus dem Search-Response |
-| **Chat: Suchdauer + „Brain warm“** | ✓ | — | **heute gebaut** (Schritt 3) | Warm-Chip im Chat-Kopf (Muster wie Dashboard) |
+| Widersprüche erkennen | ✓ | — | **UI vorhanden** | `lib/widersprueche.ts` → `TodayView` „Needs a look“ (mit Auflösung), `DossierView` „To check“ (Karte, Schritt 2) |
+| Widerspruchs-Auflösung „neuere Version gilt“ | ✓ | ✓ (Knopf) | **UI vorhanden** | `TodayView` (Keep the newer/older) und `DossierView`-Karte „Newer wins“ (Schritt 2) |
+| **Today 2.0: Zeitfenster-Slider (heute/7/30/alles)** | ✓ | ✓ | **gebaut** (Schritt 1, 69ee29c) | `TodayView`-Regler (5 Stufen inkl. gewohntem „Last visit“) → `since` am `/api/briefing`-Abruf |
+| **Today 2.0: abgelöste Knoten (superseded_by) konsolidiert** | ✓ | — | **gebaut** (Schritt 1, 69ee29c) | Briefing `superseded` (mit „replaced by“) → `TodayView`-Abschnitt „What changed“, Nachfolger als Klickziel |
+| **Today 2.0: gelöschte Knoten (Papierkorb) konsolidiert** | ✓ | — | **gebaut** (Schritt 1, 69ee29c) | Briefing `deleted` → `TodayView`-Abschnitt „What changed“ mit Verweis auf den Papierkorb |
+| **Dossier 2.0: Auflösung je Widerspruchs-Karte** | ✓ | ✓ | **gebaut** (Schritt 2, a5bdd7b) | `DossierView`-Karte: „Newer wins“ / „Both hold — cap the older“ / „Edit“ (Editor via `onEditMemory`) |
+| **Dossier 2.0: Gültigkeitsfenster setzen** | ✓ | ✓ | **gebaut** (Schritt 2, a5bdd7b) | Resolve-Route `window:true` → `validTo` der älteren Notiz = Zeitpunkt der neueren + Paar markiert (Vertragstest) |
+| **Chat: Suche über das ganze Gehirn (Server-Engine)** | ✓ | ✓ (via Suchtiefe) | **gebaut** (Schritt 3, aff99a6) | `Chat` befragt `POST /api/search` bei jeder Frage (Engine-Treffer führen den Kontext) + 300-ms-Debounce-Vorschau beim Tippen |
+| **Chat: Suchtiefe + Spuren-Schalter gelten im Chat** | ✓ (im Request, Test belegt) | ✓ (Settings) | **gebaut** (Schritt 3, aff99a6) | `useSuchPrefs` → `topK: tiefe`, `tracks` an jeden Chat-Such-Call |
+| **Chat: Quellen-Herkunft (bm25/vektor/graph-Rang)** | ✓ | — | **gebaut** (Schritt 3, aff99a6) | Quellen-Chips je Antwort mit Herkunfts-Badges aus dem Search-Response |
+| **Chat: Suchdauer + „Brain warm“** | ✓ | — | **gebaut** (Schritt 3, aff99a6) | Warm-Chip im Chat-Kopf, gemessen an der eigenen Engine-Anfrage |
 | Gültigkeitsfenster (validFrom/validTo) editieren | ✓ | ✓ | **UI vorhanden** | `MemoryEditor` (Temporal-Abschnitt) |
 | Zeitreise (Graph-Zeitregler) | ✓ | ✓ | **UI vorhanden** | `KnowledgeGraph` + `graphTime.ts` |
 | Suchtiefe/Spuren/Treffer (PAKET 2) | ✓ | ✓ | **UI vorhanden** | Settings + Dashboard, geteilt über `searchPrefs` |
@@ -65,3 +65,6 @@ Entscheidung: **keine neue Route** — `GET /api/briefing` wird erweitert (`supe
 ## Wachstums-Protokoll
 
 - **Schritt 0:** Inventar-Analyse + Erst-Tabelle. Keine neue Route nötig für Today (Briefing wird additiv erweitert); Resolve-Route bekommt `window:true` (Schritt 2); Chat bekommt den Engine-Call (Schritt 3). 1613 Tests.
+- **Schritt 1 (69ee29c):** Today 2.0. `src/lib/briefing.ts` liefert `superseded` (mit `supersededBy`-id + Nachfolger-Titel via LEFT JOIN) und `deleted` (Papierkorb-Bewegungen im Fenster); Kategorien sind disjunkt (eine abgelöste Notiz zählt nicht doppelt als „geändert“). `TodayView` bekommt den Zeitmaschinen-Slider (5 Stufen: Last visit / Today / 7 days / 30 days / Everything — `FENSTER` + `fensterSeit`), den konsolidierten Abschnitt „What changed“ (new · updated · replaced mit Nachfolger-Klick · deleted mit Weg zum Papierkorb), Kopf-Chips für replaced/deleted und dynamische Untertitel. Sonderfall „Everything“: „geändert“ = `updated_at > created_at + 999` (echte Änderung nach der Erstellung), statt der leeren Menge `created_at <= 0`. 1617 Tests.
+- **Schritt 2 (a5bdd7b):** Dossier 2.0. `POST /api/contradictions/resolve` versteht jetzt `window:true`: die ältere Notiz bekommt `validTo = updatedAt` der neueren (nur wenn kein Fenster existiert und das Ende nach dem Beginn liegt — nichts erfunden, Antwort sagt `window: null`), das Paar wird als „beide richtig“ markiert und kommt nicht wieder (Vertragstests in `tests/enterprise-api.test.ts`). `DossierView` zeigt je Widerspruch eine Karte mit drei Entscheidungen — „Newer wins“, „Both hold — cap the older“, „Edit“ (öffnet den Editor über den neuen `onEditMemory`-Prop aus dem Dashboard); ohne ids (alter Server-Stand) bleibt die ehrliche Textzeile ohne Aktionen. 1622 Tests.
+- **Schritt 3 (aff99a6):** Chat mit vollem Gedächtnis. `Chat.tsx` befragt bei jeder Frage die Engine (`POST /api/search`) mit der Suchtiefe und den drei Spuren-Schaltern aus `lib/searchPrefs` — das ganze Gehirn statt nur des Dashboard-Vorfilterns; Engine-Treffer führen den Prompt-Kontext an (Knotenanzahl bleibt budgetiert), bei leerer Antwort oder unerreichbarem Server ordnet das lokale `hybridSearch` weiter. Die Quellen-Chips je Antwort tragen die Herkunfts-Badges (`bm25 #n · vector #n · graph #n`, dieselbe Wahrheit wie auf der MemoryCard), der Chat-Kopf zeigt die gemessene Suchdauer und den „Brain warm“-Zustand. Zusätzlich: ein 300-ms-Debounce-Ranking live beim Tippen (Vorschau-Kontext), das Senden befragt die Engine garantiert selbst — die Eingabe wird beim Absenden geleert, der Debounce allein würde nicht liefern. 1625 Tests.
