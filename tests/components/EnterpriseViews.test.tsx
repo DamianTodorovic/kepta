@@ -228,6 +228,89 @@ describe("Dossier", () => {
     await user.click(screen.getByRole("button", { name: /Create dossier/ }));
     await screen.findByText("Tell KEPTA who or what the dossier is about.");
   });
+
+  it("löst Widersprüche im Fluss: neuerer gilt, beide gültig mit Fenster, oder der Editor", async () => {
+    const user = userEvent.setup();
+    const mitKarten = {
+      ...dossier,
+      contradictions: [
+        { key: "nw|old", about: "launch date", newer: { id: "nw", title: "A", value: "01.10.2026" }, older: { id: "old", title: "B", value: "15.10.2026" } },
+      ],
+    };
+    const aufrufe = stubFetch({
+      "/api/dossier/suggestions": { body: { tags: [], topics: [{ name: "Atlas", count: 2 }] } },
+      "/api/dossier?": { body: mitKarten },
+      "/api/contradictions/resolve": { body: { ok: true } },
+    });
+    const editiert = vi.fn();
+    mitToast(<DossierView onOpenMemory={vi.fn()} onEditMemory={editiert} />);
+    await user.click(await screen.findByRole("button", { name: "Atlas" }));
+    const karte = await screen.findByTestId("dossier-contradiction");
+    expect(within(karte).getByText("01.10.2026")).toBeTruthy();
+
+    await user.click(within(karte).getByRole("button", { name: "Newer wins" }));
+    await within(karte).findByText("Done — “B” is marked as replaced by “A”."); // erledigt, Karte beruhigt
+    expect(JSON.parse(String(aufrufe.find((a) => a.url === "/api/contradictions/resolve")!.init!.body))).toEqual({ keep: "nw", drop: "old" });
+
+    cleanup();
+    const aufrufe2 = stubFetch({
+      "/api/dossier/suggestions": { body: { tags: [], topics: [{ name: "Atlas", count: 2 }] } },
+      "/api/dossier?": { body: mitKarten },
+      "/api/contradictions/resolve": { body: { ok: true } },
+    });
+    mitToast(<DossierView onOpenMemory={vi.fn()} onEditMemory={editiert} />);
+    await user.click(await screen.findByRole("button", { name: "Atlas" }));
+    const karte2 = await screen.findByTestId("dossier-contradiction");
+    await user.click(within(karte2).getByRole("button", { name: "Both hold — cap the older" }));
+    await within(karte2).findByText("Both hold — “B” now ends where “A” begins.");
+    expect(JSON.parse(String(aufrufe2.filter((a) => a.url === "/api/contradictions/resolve").at(-1)!.init!.body))).toEqual({ keep: "nw", drop: "old", window: true });
+
+    cleanup();
+    stubFetch({
+      "/api/dossier/suggestions": { body: { tags: [], topics: [{ name: "Atlas", count: 2 }] } },
+      "/api/dossier?": { body: mitKarten },
+      "/api/contradictions/resolve": { body: { ok: true } },
+    });
+    mitToast(<DossierView onOpenMemory={vi.fn()} onEditMemory={editiert} />);
+    await user.click(await screen.findByRole("button", { name: "Atlas" }));
+    const karte3 = await screen.findByTestId("dossier-contradiction");
+    await user.click(within(karte3).getByRole("button", { name: "Edit" }));
+    expect(editiert).toHaveBeenCalledWith("nw");
+  });
+
+  it("ein Fehler bei der Auflösung wird gesagt, nicht verschluckt", async () => {
+    const user = userEvent.setup();
+    const mitKarten = {
+      ...dossier,
+      contradictions: [
+        { key: "nw|old", about: "launch date", newer: { id: "nw", title: "A", value: "01.10.2026" }, older: { id: "old", title: "B", value: "15.10.2026" } },
+      ],
+    };
+    stubFetch({
+      "/api/dossier/suggestions": { body: { tags: [], topics: [{ name: "Atlas", count: 2 }] } },
+      "/api/dossier?": { body: mitKarten },
+      "/api/contradictions/resolve": { status: 400, body: { error: "Pick the two notes that disagree." } },
+    });
+    mitToast(<DossierView onOpenMemory={vi.fn()} />);
+    await user.click(await screen.findByRole("button", { name: "Atlas" }));
+    const karte = await screen.findByTestId("dossier-contradiction");
+    await user.click(within(karte).getByRole("button", { name: "Newer wins" }));
+    await within(karte).findByText("That did not work: Pick the two notes that disagree.");
+  });
+
+  it("ohne ids (alter Server-Stand) bleibt die ehrliche Textzeile ohne Aktionen — Edit öffnet den Editor für die neuere", async () => {
+    const user = userEvent.setup();
+    const editiert = vi.fn();
+    stubFetch({
+      "/api/dossier/suggestions": { body: { tags: [], topics: [{ name: "Atlas", count: 2 }] } },
+      "/api/dossier?": { body: dossier },
+    });
+    mitToast(<DossierView onOpenMemory={vi.fn()} onEditMemory={editiert} />);
+    await user.click(await screen.findByRole("button", { name: "Atlas" }));
+    const karte = await screen.findByTestId("dossier-contradiction");
+    expect(within(karte).queryByRole("button", { name: "Newer wins" })).toBeNull();
+    expect(within(karte).getByText(/in A, but/)).toBeTruthy();
+  });
 });
 
 describe("Aktivität und Prüfprotokoll", () => {

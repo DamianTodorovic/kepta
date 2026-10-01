@@ -5,6 +5,13 @@ import { FileText, Copy, Check, Save, Loader2, AlertTriangle } from '../lib/icon
 import { useToast } from './ui/Toast';
 
 interface Eintrag { id: string; title: string; sentence: string; at: number }
+/** Ein Widerspruch im Dossier — mit ids, wenn der Server sie liefert (tut er). */
+interface WiderspruchKarte {
+  key: string;
+  about: string;
+  newer: { id?: string; title: string; value: string };
+  older: { id?: string; title: string; value: string };
+}
 interface Dossier {
   topic: string;
   total: number;
@@ -14,7 +21,7 @@ interface Dossier {
   howtos: Eintrag[];
   documents: Eintrag[];
   todos: { id: string; title: string; text: string }[];
-  contradictions: { key: string; about: string; newer: { title: string; value: string }; older: { title: string; value: string } }[];
+  contradictions: WiderspruchKarte[];
   related: { tag: string; count: number }[];
   first: number | null;
   last: number | null;
@@ -42,7 +49,7 @@ function Liste({ titel, eintraege, mitDatum, onOpen }: { titel: string; eintraeg
   );
 }
 
-export function DossierView({ onOpenMemory }: { onOpenMemory: (id: string) => void }) {
+export function DossierView({ onOpenMemory, onEditMemory }: { onOpenMemory: (id: string) => void; onEditMemory?: (id: string) => void }) {
   const toast = useToast();
   const [eingabe, setEingabe] = useState('');
   const [daten, setDaten] = useState<Dossier | null>(null);
@@ -51,6 +58,31 @@ export function DossierView({ onOpenMemory }: { onOpenMemory: (id: string) => vo
   const [vorschlaege, setVorschlaege] = useState<Vorschlaege | null>(null);
   const [kopiert, setKopiert] = useState(false);
   const [gespeichert, setGespeichert] = useState(false);
+  /** Was mit einem Widerspruch geschehen ist — ehrlich auch im Fehlerfall. */
+  const [entschieden, setEntschieden] = useState<Record<string, string>>({});
+
+  /** Paket 3: die Auflösung passiert direkt an der Karte — über die bestehende Resolve-Route. */
+  const loese = async (w: WiderspruchKarte, aktion: 'newer' | 'window') => {
+    if (!w.newer.id || !w.older.id) return;
+    const body = aktion === 'newer' ? { keep: w.newer.id, drop: w.older.id } : { keep: w.newer.id, drop: w.older.id, window: true };
+    try {
+      const r = await fetch('/api/contradictions/resolve', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body),
+      });
+      const d = await r.json().catch(() => ({}));
+      if (!r.ok) throw new Error((d as { error?: string }).error ?? `HTTP ${r.status}`);
+      setEntschieden((p) => ({
+        ...p,
+        [w.key]: aktion === 'newer'
+          ? `Done — “${w.older.title}” is marked as replaced by “${w.newer.title}”.`
+          : `Both hold — “${w.older.title}” now ends where “${w.newer.title}” begins.`,
+      }));
+    } catch (e) {
+      setEntschieden((p) => ({ ...p, [w.key]: `That did not work: ${e instanceof Error ? e.message : String(e)}` }));
+    }
+  };
 
   useEffect(() => {
     let vorbei = false;
@@ -191,13 +223,43 @@ export function DossierView({ onOpenMemory }: { onOpenMemory: (id: string) => vo
               <h3 className="text-[13px] font-semibold mb-2 flex items-center gap-1.5" style={{ color: 'var(--text-1)' }}>
                 <AlertTriangle className="w-3.5 h-3.5" style={{ color: 'var(--warn)' }} /> To check
               </h3>
-              <ul className="space-y-1.5">
+              {/* Paket 3: die Auflösung passiert im Fluss — je Karte drei Entscheidungen.
+                  Ohne ids (alter Server-Stand) bleibt es bei der ehrlichen Textzeile. */}
+              <div className="space-y-3">
                 {daten.contradictions.map((w) => (
-                  <li key={w.key} className="text-[13px]" style={{ color: 'var(--text-2)' }}>
-                    {w.about ? `“${w.about}”: ` : ''}<strong>{w.newer.value}</strong> in {w.newer.title}, but <strong>{w.older.value}</strong> in {w.older.title}
-                  </li>
+                  <div key={w.key} className="hud-inset rounded-xl p-4" data-testid="dossier-contradiction">
+                    <div className="text-[13px] mb-2 flex items-center gap-2" style={{ color: 'var(--text-1)' }}>
+                      Two notes disagree{w.about ? ` about “${w.about}”` : ''}.
+                    </div>
+                    <div className="grid sm:grid-cols-2 gap-2 text-[13px]" style={{ color: 'var(--text-2)' }}>
+                      {([['Newer', w.newer], ['Older', w.older]] as const).map(([label, s]) => (
+                        <div key={label}>
+                          <span className="text-[11px] mr-1" style={{ color: 'var(--text-3)' }}>{label}</span>
+                          <strong style={{ color: 'var(--text-1)' }}>{s.value}</strong> in{' '}
+                          {s.id ? (
+                            <button onClick={() => onOpenMemory(s.id!)} className="hover:underline underline-offset-2" style={{ color: 'var(--text-1)' }}>{s.title}</button>
+                          ) : s.title}
+                        </div>
+                      ))}
+                    </div>
+                    {entschieden[w.key] ? (
+                      <p role="status" className="text-[12.5px] mt-3" style={{ color: 'var(--ok)' }}>{entschieden[w.key]}</p>
+                    ) : w.newer.id && w.older.id ? (
+                      <div className="flex flex-wrap gap-2 mt-3">
+                        <button onClick={() => void loese(w, 'newer')} className="btn-primary px-3 py-1.5 rounded-lg text-[12.5px] font-medium">Newer wins</button>
+                        <button onClick={() => void loese(w, 'window')} className="btn-ghost px-3 py-1.5 rounded-lg text-[12.5px]" title="Both stay valid — the older note ends where the newer one began.">Both hold — cap the older</button>
+                        {onEditMemory && (
+                          <button onClick={() => onEditMemory(w.newer.id!)} className="btn-ghost px-3 py-1.5 rounded-lg text-[12.5px]">Edit</button>
+                        )}
+                      </div>
+                    ) : (
+                      <p className="text-[13px] mt-2" style={{ color: 'var(--text-2)' }}>
+                        <strong style={{ color: 'var(--text-1)' }}>{w.newer.value}</strong> in {w.newer.title}, but <strong style={{ color: 'var(--text-1)' }}>{w.older.value}</strong> in {w.older.title}
+                      </p>
+                    )}
+                  </div>
                 ))}
-              </ul>
+              </div>
             </section>
           )}
           {daten.related.length > 0 && (

@@ -10,6 +10,7 @@ import fs from "node:fs";
 import request from "supertest";
 import { KeptaStore } from "../src/core/store";
 import { saveWithIndex } from "../src/core/mcp";
+import { paarSchluessel } from "../src/lib/widersprueche";
 import { protokolliere as aktivitaet } from "../src/lib/aktivitaet";
 
 process.env.KEPTA_NO_AUTOSTART = "1";
@@ -216,6 +217,38 @@ describe("Today, Widersprüche, Dossier", () => {
     await request(app).post("/api/contradictions/resolve").send({ keep: a.id, drop: b.id, both: true });
     expect((await request(app).get("/api/briefing")).body.contradictions).toEqual([]);
     expect(store.getMemory(b.id)!.supersededBy).toBeNull();
+  });
+
+  it("„beide gültig mit Fenster“ schließt das Fenster der älteren Notiz und markiert das Paar", async () => {
+    const aeltere = store.createMemory({ title: "Old price", content: "The plan costs 1.200 € per year.", type: "semantic", createdAt: 1000, updatedAt: 1000 });
+    const neuere = store.createMemory({ title: "New price", content: "The plan costs 1500 EUR per year.", type: "semantic" });
+    const r = await request(app).post("/api/contradictions/resolve").send({ keep: neuere.id, drop: aeltere.id, window: true });
+    expect(r.body.ok).toBe(true);
+    // Das Fenster endet dort, wo die neuere Notiz beginnt.
+    expect(r.body.window).toBe(neuere.updatedAt);
+    const geaendert = store.getMemory(aeltere.id)!;
+    expect(geaendert.validTo).toBe(neuere.updatedAt);
+    expect(geaendert.supersededBy).toBeNull(); // beide bleiben gültig — niemand wird abgelöst
+    // Das Paar kommt als Widerspruch nicht wieder.
+    expect((await request(app).get("/api/briefing")).body.contradictions).toEqual([]);
+  });
+
+  it("„Fenster setzen“ erfindet nichts: vorhandenes Fenster bleibt, unmögliches wird nicht gesetzt", async () => {
+    const aeltere = store.createMemory({ title: "Old note", content: "The plan costs 1.200 € per year.", type: "semantic" });
+    const neuere = store.createMemory({ title: "New note", content: "The plan costs 1500 EUR per year.", type: "semantic" });
+    store.updateMemory(aeltere.id, { validTo: 555 });
+    let r = await request(app).post("/api/contradictions/resolve").send({ keep: neuere.id, drop: aeltere.id, window: true });
+    expect(r.body).toEqual({ ok: true, window: null });
+    expect(store.getMemory(aeltere.id)!.validTo).toBe(555); // unangetastet
+    // Unmögliches Fenster: das Ende läge VOR dem Beginn der älteren Notiz.
+    const frueh = store.createMemory({ title: "Early", content: "The plan costs 900 € per year.", type: "semantic", createdAt: 5, updatedAt: 5 });
+    const spaet = store.createMemory({ title: "Late", content: "The plan costs 800 EUR per year.", type: "semantic", createdAt: 10, updatedAt: 10, validFrom: 10 });
+    r = await request(app).post("/api/contradictions/resolve").send({ keep: frueh.id, drop: spaet.id, window: true });
+    expect(r.body).toEqual({ ok: true, window: null }); // nichts erfunden, Paar trotzdem beruhigt
+    expect(store.getMemory(spaet.id)!.validTo).toBeNull();
+    // Genau dieses Paar kommt nicht wieder — die übrigen Kreuz-Paare des Test-Bestands bleiben unberührt.
+    const liste = (await request(app).get("/api/briefing")).body.contradictions as { key: string }[];
+    expect(liste.some((w) => w.key === paarSchluessel(frueh.id, spaet.id))).toBe(false);
   });
 
   it("Dossier mit Markdown und Vorschlägen", async () => {

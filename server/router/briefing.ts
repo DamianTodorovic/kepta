@@ -30,7 +30,7 @@ export function mountBriefing(app: express.Express, ctx: AppKontext): void {
   });
 
   app.post("/api/contradictions/resolve", ctx.limiter.write, (req, res) => {
-    const b = (req.body ?? {}) as { keep?: unknown; drop?: unknown; both?: unknown };
+    const b = (req.body ?? {}) as { keep?: unknown; drop?: unknown; both?: unknown; window?: unknown };
     const keep = typeof b.keep === "string" ? b.keep : "";
     const drop = typeof b.drop === "string" ? b.drop : "";
     if (!keep || !drop || keep === drop || !store.getMemory(keep) || !store.getMemory(drop)) return res.status(400).json({ error: "Pick the two notes that disagree." });
@@ -38,6 +38,31 @@ export function mountBriefing(app: express.Express, ctx: AppKontext): void {
       merkeOk(store, paarSchluessel(keep, drop));
       protokolliere(store, { actor: werIst(req), action: "keep both", target: `${titelVon(keep)} · ${titelVon(drop)}` });
       return res.json({ ok: true });
+    }
+    // Paket 3 (Dossier 2.0): „Beide gültig — Fenster setzen“. Die ältere Notiz
+    // gilt bis zu dem Zeitpunkt, an dem die neuere entstand; das Paar kommt
+    // als Widerspruch nicht wieder. Ein vorhandenes Fenster wird nicht
+    // angetastet, ein unmögliches (Ende vor Beginn) nicht erfunden — die
+    // Antwort sagt ehrlich, was geschehen ist.
+    if (b.window === true) {
+      const neuere = store.getMemory(keep)!;
+      const aeltere = store.getMemory(drop)!;
+      const start = aeltere.validFrom ?? aeltere.createdAt;
+      const bis = neuere.updatedAt;
+      let gesetzt: number | null = null;
+      if (!aeltere.validTo && bis > start) {
+        const gepatcht = store.updateMemory(drop, { validTo: bis });
+        if (gepatcht) gesetzt = bis;
+      }
+      merkeOk(store, paarSchluessel(keep, drop));
+      ctx.publishActivity({ type: "update", source: "app", title: titelVon(drop) });
+      protokolliere(store, {
+        actor: werIst(req),
+        action: "keep both (window)",
+        target: `${titelVon(keep)} · ${titelVon(drop)}`,
+        detail: gesetzt ? `older note now holds until ${new Date(gesetzt).toISOString()}` : "pair marked as both right — no window set",
+      });
+      return res.json({ ok: true, window: gesetzt });
     }
     store.supersedeMemory(drop, keep);
     ctx.publishActivity({ type: "update", source: "app", title: titelVon(drop) });

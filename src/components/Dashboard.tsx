@@ -1561,7 +1561,7 @@ export function Dashboard() {
           animate={{ opacity: 1 }}
           className={cn("flex-1 px-5 h-full overflow-y-auto", currentView === 'dossier' ? 'block' : 'hidden')}
         >
-          <DossierView onOpenMemory={oeffneNotiz} />
+          <DossierView onOpenMemory={oeffneNotiz} onEditMemory={(id) => { const m = memories.find((x) => x.id === id); if (m) { setEditingMemory(m); setIsEditorOpen(true); } }} />
         </motion.div>
 
         <motion.div
