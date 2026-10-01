@@ -13,6 +13,7 @@ build/*
 !build/icon.png
 !build/icon.iconset
 !build/icon.iconset/**
+!build/icon.svg
 *.tsbuildinfo
 
 # os

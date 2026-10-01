@@ -1,0 +1,8 @@
+<svg width="1024" height="1024" viewBox="0 0 1024 1024" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- KeptaMark (src/components/KeptaMark.tsx) auf der Apple-Big-Sur-Icon-Grid:
+       Kachel 824x824 bei (100,100), Radius 185,4 — Dock-taugliche Proportionen,
+       Geometrie des K exakt aus der Komponente skaliert (Faktor 25,75). -->
+  <rect x="100" y="100" width="824" height="824" rx="185.4" fill="#0f0f0f"/>
+  <path d="M383.25 344.6 V679.4 M383.25 512 L568.65 344.6 M383.25 512 L568.65 679.4" stroke="white" stroke-width="48.9" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle cx="645.9" cy="352.35" r="43.8" fill="white"/>
+</svg>
