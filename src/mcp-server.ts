@@ -20,6 +20,7 @@ import { importChatgptKommando } from "./core/chatgpt-import";
 import { starteDemoShow } from "./demo-show";
 import { erlebnisKommando } from "./cli-erlebnis";
 import readline from "node:readline";
+import { starteOberflaeche, oeffneImBrowser, leseUiArgumente } from "./ui/server";
 
 /** Derselbe Schluessel wie in der App: aus dem Schluesselbund des Systems. */
 function oeffneStore(): KeptaStore {
@@ -130,8 +131,28 @@ function starteMcp(): void {
  * Anleitungen bestehen und zeigt den einen richtigen Weg: setup.
  */
 function uiHinweis(): void {
-  console.log("KEPTA is headless — it lives inside your AI client via MCP, no app, no UI.");
-  console.log("To connect it: npx -y kepta-mcp setup");
+  const { port, oeffnen } = leseUiArgumente(process.argv.slice(3));
+  const store = oeffneStore();
+  starteOberflaeche(store, { port })
+    .then((ui) => {
+      const v = store.verschluesselung;
+      console.log(`KEPTA ${SERVER_INFO.version} is running at ${ui.url}`);
+      console.log(`${store.dbPath} — ${v.aktiv ? "encrypted" : `NOT encrypted${v.hinweis ? `: ${v.hinweis}` : ""}`}`);
+      console.log("Press Ctrl+C to stop.");
+      if (oeffnen) oeffneImBrowser(ui.url);
+      const ende = () => {
+        void ui.close().finally(() => {
+          store.close();
+          process.exit(0);
+        });
+      };
+      process.on("SIGINT", ende);
+      process.on("SIGTERM", ende);
+    })
+    .catch((e: unknown) => {
+      console.error(`[kepta] ${e instanceof Error ? e.message : String(e)}`);
+      process.exit(1);
+    });
 }
 
 /**
