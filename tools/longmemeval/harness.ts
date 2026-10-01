@@ -325,12 +325,40 @@ export function timelineBlock(
   ].filter(Boolean).join("\n");
 }
 
+/**
+ * HyDE-lite: die Frage wird vom lokalen Modell in 1–2 kurze AUSSAGESÄTZE
+ * umgeschrieben — so würde ein Dokument formulieren, das die Antwort enthält.
+ * Multi-Session-Fragen scheitern oft am Wortlaut-Abstand zwischen Frage und
+ * Beleg; die Aussagesätze schließen genau diese Lücke. Die zusätzlichen
+ * Treffer sind ADDITIV (wie beim Zeitsplit) — die Vollfrage-Rankings bleiben
+ * vorne, nichts wird verdrängt.
+ */
+export const HYDE_PROMPT = `Rewrite the question as 1-2 short declarative sentences that a document containing the answer would state. Reply only with the sentences, nothing else.
+
+QUESTION: {frage}`;
+
+export async function erweitereFrage(frage: string, rufen: (prompt: string) => Promise<string>): Promise<string[]> {
+  let roh: string;
+  try {
+    roh = await rufen(HYDE_PROMPT.replace("{frage}", frage));
+  } catch {
+    return []; // Eine gescheiterte Erweiterung darf die Frage nie blockieren.
+  }
+  return [...new Set(
+    roh
+      .split(/\n+/)
+      .map((z) => z.replace(/^[-*\d.)\s]+/, "").trim())
+      .filter((z) => z.split(/\s+/).length >= 4 && /[a-z]{5,}/i.test(z))
+  )].slice(0, 2);
+}
+
 export async function beantworte(
   store: KeptaStore,
   frage: LongMemEvalFrage,
   topk = 8,
   zeitsplit = false,
-  temporal = false
+  temporal = false,
+  erweiterungen: string[] = []
 ): Promise<AntwortErgebnis> {
   const such = await searchMemories(store, { query: frage.question, limit: topk });
   if (such.hits.length === 0) return { antwort: "", treffer: 0, usedVectors: such.usedVectors, hitKontexte: [], hitTitel: [] };
@@ -341,6 +369,19 @@ export async function beantworte(
     const gesehen = new Set(hits.map((h) => h.memory.id));
     for (const teil of zerlegeZeitfrage(frage.question)) {
       const s = await searchMemories(store, { query: teil, limit: 5 });
+      for (const h of s.hits) {
+        if (gesehen.has(h.memory.id)) continue;
+        gesehen.add(h.memory.id);
+        hits.push(h);
+      }
+    }
+  }
+  // HyDE-Erweiterungen: derselbe additive Weg wie der Zeitsplit — Aussagesätze
+  // schließen den Wortlaut-Abstand zwischen Frage und Beleg, verdrängen nichts.
+  if (erweiterungen.length > 0) {
+    const gesehen = new Set(hits.map((h) => h.memory.id));
+    for (const satz of erweiterungen) {
+      const s = await searchMemories(store, { query: satz, limit: 5 });
       for (const h of s.hits) {
         if (gesehen.has(h.memory.id)) continue;
         gesehen.add(h.memory.id);
@@ -515,6 +556,8 @@ export interface Bericht {
   zeitsplit: boolean;
   /** Zeitfragen bekamen den Timeline-Block (Memory-Daten + Spannen) vorne. */
   temporal: boolean;
+  hyde: boolean;
+  hyde_erweiterungen: number;
   laufzeit_ms: number;
 }
 
@@ -549,7 +592,7 @@ async function hauptprogramm(): Promise<void> {
   const args = process.argv.slice(2);
   const pfad = args.find((a) => !a.startsWith("--"));
   if (!pfad) {
-    console.error("Aufruf: npx tsx tools/longmemeval/harness.ts <datensatz> [--analyse] [--limit N] [--topk K] [--modell NAME] [--store PFAD] [--ohne-judge] [--vektoren] [--zeitsplit] [--temporal]");
+    console.error("Aufruf: npx tsx tools/longmemeval/harness.ts <datensatz> [--analyse] [--limit N] [--topk K] [--modell NAME] [--store PFAD] [--ohne-judge] [--vektoren] [--zeitsplit] [--temporal] [--hyde]");
     process.exit(2);
   }
   const zahl = (name: string, standard: number): number => {
@@ -565,6 +608,7 @@ async function hauptprogramm(): Promise<void> {
   const mitVektoren = args.includes("--vektoren");
   const mitZeitsplit = args.includes("--zeitsplit");
   const mitTemporal = args.includes("--temporal");
+  const mitHyde = args.includes("--hyde");
 
   const start = Date.now();
   const fragen = ladeDatensatz(pfad).slice(0, limit);
@@ -609,11 +653,14 @@ async function hauptprogramm(): Promise<void> {
   let parseFehler = 0;
   let verbatim = 0;
   let judgeAufrufe = 0;
+  let hydeErweiterungen = 0;
   let usedVectorsIrgendwann = false;
   for (const [i, frage] of fragen.entries()) {
     const zeile: FrageErgebnis = { question_id: frage.question_id, typ: frage.question_type, faehigkeit: faehigkeitVon(frage.question_type), urteil: null, treffer: 0, trefferIndex: null, verbatim: false, judge_aufrufe: 0 };
     try {
-      const a = await beantworte(store, frage, topk, mitZeitsplit, mitTemporal);
+      const erweiterungen = mitHyde ? await erweitereFrage(frage.question, standardOllama(modell)) : [];
+      hydeErweiterungen += erweiterungen.length;
+      const a = await beantworte(store, frage, topk, mitZeitsplit, mitTemporal, erweiterungen);
       zeile.treffer = a.treffer;
       usedVectorsIrgendwann ||= a.usedVectors;
       if (!a.antwort) {
@@ -691,6 +738,8 @@ async function hauptprogramm(): Promise<void> {
     vektoren_eingebettet: vektorenEingebettet,
     zeitsplit: mitZeitsplit,
     temporal: mitTemporal,
+    hyde: mitHyde,
+    hyde_erweiterungen: mitHyde ? hydeErweiterungen : 0,
     laufzeit_ms: Date.now() - start,
   };
   const ziel = path.join("tools", "longmemeval", "ergebnisse", `longmemeval-${new Date().toISOString().slice(0, 10)}-${bericht.datensatz_sha256.slice(0, 8)}.json`);
