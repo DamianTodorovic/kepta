@@ -30,16 +30,26 @@ export function mountSearch(app: express.Express, ctx: AppKontext): void {
 
   // POST /api/search -> Retrieval-Engine (BM25 + Vektoren + Graph → RRF)
   app.post("/api/search", ctx.limiter.chat, async (req, res) => {
-    const { query, topK = 5, tags, type, scope, asOf } = bodyOf<{
+    const { query, topK = 5, tags, type, scope, asOf, tracks } = bodyOf<{
       query?: string;
       topK?: number;
       tags?: string[];
       type?: string;
       scope?: string;
       asOf?: number;
+      tracks?: { bm25?: boolean; vector?: boolean; entity?: boolean };
     }>(req);
     // "Alles zu diesem Thema" muss auch alles bedeuten duerfen.
     const limit = Math.min(Math.max(Number(topK) || 5, 1), MAX_SEARCH_LIMIT);
+    // Die Spuren-Schalter der App (Paket 2, UI-Parität) kommen hier durch —
+    // ohne Angabe laufen alle drei Beine (Engine-Verhalten unverändert).
+    const beine = tracks && typeof tracks === "object"
+      ? {
+          bm25: tracks.bm25 !== false,
+          vector: tracks.vector !== false,
+          entity: tracks.entity !== false,
+        }
+      : undefined;
     const result = await engineSearch(store, {
       query: sanitizeText(query ?? "", 500),
       limit,
@@ -47,6 +57,7 @@ export function mountSearch(app: express.Express, ctx: AppKontext): void {
       type: type === "semantic" || type === "episodic" || type === "procedural" || type === "reference" ? type : undefined,
       scope: typeof scope === "string" && scope ? scope : undefined,
       asOf: typeof asOf === "number" && Number.isFinite(asOf) ? asOf : undefined,
+      tracks: beine,
     });
     ctx.publishActivity({ type: "search", source: "app", title: result.query }, { throttleSearchMs: 2500 });
     // Altes Response-Shape für das Frontend (cosineScore/bm25Score sind die Einzelbeine).

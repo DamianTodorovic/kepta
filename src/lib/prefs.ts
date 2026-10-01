@@ -13,6 +13,11 @@ export const PREF_KEYS = [
   'ki_gehirn_semantic',
   'ki_gehirn_topK',
   'ki_gehirn_wizard_dismissed',
+  // Paket 2 — Such-Parität: Suchtiefe + Spuren-Schalter wandern mit in die DB.
+  'ki_gehirn_such_tiefe',
+  'ki_gehirn_spur_bm25',
+  'ki_gehirn_spur_vektor',
+  'ki_gehirn_spur_graph',
 ] as const;
 
 export function prefsObjekt(): Record<string, string> {

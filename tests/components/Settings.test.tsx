@@ -28,6 +28,53 @@ beforeEach(() => {
 });
 afterEach(() => { vi.unstubAllGlobals(); vi.restoreAllMocks(); });
 
+describe("Settings: Suche (Paket 2 — UI-Funktionsparität)", () => {
+  it("zeigt den Such-Abschnitt mit Suchtiefe (Default 16), Spuren-Schaltern und Treffer-Regler", () => {
+    const { container } = render(<Settings />);
+    expect(container.textContent).toMatch(/Search depth \(top-k\)/);
+    expect(container.textContent).toMatch(/Retrieval tracks/);
+    for (const spur of ["BM25", "Vectors", "Graph"]) {
+      expect(screen.getByRole("checkbox", { name: `Track ${spur}` })).toBeTruthy();
+    }
+    expect(screen.getByLabelText(/Results shown/)).toBeTruthy();
+    const tiefe = screen.getByLabelText(/Search depth/) as HTMLInputElement;
+    expect(Number(tiefe.value)).toBe(16);
+  });
+
+  it("schreibt die Suchtiefe in die geteilten Präferenzen (Slider 5–32)", async () => {
+    const { container } = render(<Settings />);
+    const tiefe = screen.getByLabelText(/Search depth/) as HTMLInputElement;
+    // React-Wert-Tracker: über den nativen Setter setzen, sonst sieht React
+    // keine Änderung und das onChange feuert nicht.
+    const wertSetter = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, "value")!.set!;
+    wertSetter.call(tiefe, "32");
+    tiefe.dispatchEvent(new Event("input", { bubbles: true }));
+    await waitFor(() => expect(localStorage.getItem("ki_gehirn_such_tiefe")).toBe("32"));
+    expect(container.textContent).toMatch(/32/);
+  });
+
+  it("schaltet eine Spur ab — der Schalter landet in den geteilten Präferenzen", async () => {
+    const user = userEvent.setup();
+    render(<Settings />);
+    const graph = screen.getByRole("checkbox", { name: "Track Graph" }) as HTMLInputElement;
+    expect(graph.checked).toBe(true);
+    await user.click(graph);
+    await waitFor(() => expect(localStorage.getItem("ki_gehirn_spur_graph")).toBe("0"));
+    expect((screen.getByRole("checkbox", { name: "Track Graph" }) as HTMLInputElement).checked).toBe(false);
+  });
+
+  it("der Treffer-Regler schreibt denselben Schlüssel wie der Dashboard-Regler", async () => {
+    render(<Settings />);
+    const regler = screen.getByLabelText(/Results shown/) as HTMLInputElement;
+    expect(Number(regler.max)).toBeGreaterThan(0);
+    // Auf die letzte Stufe ("All", Wert 0) stellen:
+    const wertSetter = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, "value")!.set!;
+    wertSetter.call(regler, String(Number(regler.max)));
+    regler.dispatchEvent(new Event("input", { bubbles: true }));
+    await waitFor(() => expect(localStorage.getItem("ki_gehirn_topK")).toBe("0"));
+  });
+});
+
 describe("Settings: die drei Reiter", () => {
   it("startet im System-Reiter", () => {
     render(<Settings />);
@@ -128,9 +175,10 @@ describe("Settings: Modelle", () => {
 describe("Settings: Selbstlernen", () => {
   it("merkt sich den Schalter", async () => {
     const user = userEvent.setup();
-    const { container } = render(<Settings />);
-    const schalter = container.querySelector('input[type="checkbox"]') as HTMLInputElement;
-    expect(schalter).not.toBeNull();
+    render(<Settings />);
+    // Fest über den Namen statt "erste Checkbox" — seit Paket 2 hat der
+    // Such-Abschnitt seine eigenen Schalter weiter oben auf der Fläche.
+    const schalter = screen.getByRole("checkbox", { name: /Auto-learn/i });
     await user.click(schalter);
     await waitFor(() => expect(localStorage.getItem("ki_gehirn_autolearn")).toBe("true"));
     await user.click(schalter);

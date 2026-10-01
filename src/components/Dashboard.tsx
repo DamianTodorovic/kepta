@@ -18,6 +18,7 @@ import { saveMemory, deleteMemory, subscribeMemories, refreshMemories, deleteMem
 import { subscribeActivity } from '../lib/activity';
 import { useToast } from './ui/Toast';
 import { hybridSearch, type ScoredMemory } from '../lib/semantic';
+import { useSuchPrefs, leseTreffer, normalisiereTreffer, schreibeTreffer, SUCH_PREFS_EVENT, RESULT_STOPS } from '../lib/searchPrefs';
 import { OnboardingWizard } from './OnboardingWizard';
 import { DuplicatesPanel, loadDismissed } from './DuplicatesPanel';
 import { MachineScan } from './MachineScan';
@@ -36,11 +37,10 @@ import { cn } from '../lib/utils';
 type ViewKey = 'memories' | 'today' | 'chat' | 'graph' | 'dossier' | 'activity' | 'team' | 'settings';
 
 /**
- * Stufen des Ergebnisreglers. Die letzte Stufe (0) heisst "alles": frueher war
- * bei 20 Schluss, ohne jeden Hinweis darauf, dass mehr zum Thema da waere.
+ * Was "alles" gegenueber der Engine bedeutet — dieselbe Grenze wie im Kern.
+ * Die Stufen des Ergebnisreglers (5..250..0) leben in lib/searchPrefs —
+ * die Einstellungen zeigen denselben Regler und schreiben dieselben Schlüssel.
  */
-const RESULT_STOPS = [5, 10, 20, 50, 100, 250, 0] as const;
-/** Was "alles" gegenueber der Engine bedeutet — dieselbe Grenze wie im Kern. */
 const ALL_RESULTS = 10_000;
 /**
  * Der Chat bekommt weiterhin nur eine Handvoll Knoten. Der Regler steuert die
@@ -254,19 +254,29 @@ export function Dashboard() {
   const [semanticEnabled, setSemanticEnabled] = useState<boolean>(() => {
     try { const v = localStorage.getItem('ki_gehirn_semantic'); return v === null ? true : v !== 'false'; } catch { return true; }
   });
-  const [topK, setTopK] = useState<number>(() => {
-    try {
-      const v = parseInt(localStorage.getItem('ki_gehirn_topK') || '5', 10);
-      // Altbestand: frueher konnte hier jede Zahl 1..20 stehen — auf die naechste Stufe heben.
-      if (!Number.isFinite(v)) return 5;
-      if (v === 0) return 0;
-      return RESULT_STOPS.find((s) => s !== 0 && s >= v) ?? 5;
-    } catch { return 5; }
-  });
+  // Der Ergebnisregler lebt in lib/searchPrefs — die Einstellungen zeigen
+  // denselben Regler; beide Flächen synchronisieren sich live über das Event.
+  const [topK, setTopKState] = useState<number>(leseTreffer);
+  const setTopK = useCallback((v: number) => {
+    setTopKState(normalisiereTreffer(v));
+    schreibeTreffer(v);
+  }, []);
+  useEffect(() => {
+    const on = () => setTopKState(leseTreffer());
+    window.addEventListener(SUCH_PREFS_EVENT, on);
+    return () => window.removeEventListener(SUCH_PREFS_EVENT, on);
+  }, []);
+  // Suchtiefe + Spuren-Schalter (Paket 2): aus den Einstellungen, an jeden Search-Call.
+  const [suchPrefs, setzeSuchPrefs] = useSuchPrefs();
   /** Was die Suche wirklich anfordert — 0 ("All") heisst: so viel, wie es gibt. */
   const effectiveLimit = topK === 0 ? ALL_RESULTS : topK;
+  /**
+   * Der Request-topk: nie unter der eingestellten Suchtiefe. Die Engine
+   * fusioniert ihre drei Beine in dieser Tiefe — ANGEZEIGT wird der Stand
+   * des Ergebnisreglers; tiefer zu suchen schneidet nichts ab, es verfeinert.
+   */
+  const anfrageLimit = topK === 0 ? ALL_RESULTS : Math.max(effectiveLimit, suchPrefs.tiefe);
   useEffect(() => { try { localStorage.setItem('ki_gehirn_semantic', String(semanticEnabled)); } catch { /* ignore */ } }, [semanticEnabled]); spiegelePrefs();
-  useEffect(() => { try { localStorage.setItem('ki_gehirn_topK', String(topK)); } catch { /* ignore */ } }, [topK]); spiegelePrefs();
 
   // 180ms Debounce für Suche — vermeidet hybridSearch bei jedem Keystroke
   useEffect(() => {
@@ -501,7 +511,14 @@ export function Dashboard() {
         const res = await fetch('/api/search', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ query: q, topK: effectiveLimit, tags: selectedTags.length > 0 ? selectedTags : undefined }),
+          // Paket 2 (UI-Parität): die Such-Einstellungen reisen mit jedem Call —
+          // Suchtiefe (topk) und die drei Spuren (engine: params.tracks).
+          body: JSON.stringify({
+            query: q,
+            topK: anfrageLimit,
+            tags: selectedTags.length > 0 ? selectedTags : undefined,
+            tracks: { bm25: suchPrefs.spurBm25, vector: suchPrefs.spurVektor, entity: suchPrefs.spurGraph },
+          }),
         });
         const data = await res.json();
         if (!cancelled) {
@@ -517,7 +534,7 @@ export function Dashboard() {
     })();
     return () => { cancelled = true; };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [debouncedSearchQuery, semanticEnabled, effectiveLimit, JSON.stringify(selectedTags)]);
+  }, [debouncedSearchQuery, semanticEnabled, anfrageLimit, suchPrefs.spurBm25, suchPrefs.spurVektor, suchPrefs.spurGraph, JSON.stringify(selectedTags)]);
   const effectiveScored = serverScored ?? scoredResults;
 
   // --- Angezeigte Karten ---

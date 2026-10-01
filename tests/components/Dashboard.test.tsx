@@ -7,6 +7,7 @@ import { AuthProvider } from "../../src/contexts/AuthContext";
 import { ThemeProvider } from "../../src/contexts/ThemeContext";
 import { ToastProvider } from "../../src/components/ui/Toast";
 import { installiereLeinwand, installiereResizeObserver, installiereZeiger } from "../helfer/canvas";
+import { schreibeSuchPrefs } from "../../src/lib/searchPrefs";
 import type { Memory } from "../../src/types";
 
 // Der echte PDF-Parser (pdf.js) braucht ein valides Dokument — die Tests
@@ -393,6 +394,53 @@ describe("Dashboard: Kontext kopieren", () => {
     expect(knopf, "kein Kontext-Knopf").toBeTruthy();
     await user.click(knopf!);
     await waitFor(() => expect(schreibe).toHaveBeenCalled());
+  });
+});
+
+describe("Dashboard: Such-Einstellungen stecken im Request (Paket 2 — Einstellung → Request-Parameter sichtbar)", () => {
+  it("sendet Suchtiefe und Spuren-Schalter an jeden Search-Call", async () => {
+    const user = userEvent.setup();
+    let letzteAnfrage: { topK?: number; tracks?: { bm25?: boolean; vector?: boolean; entity?: boolean } } | null = null;
+    vi.stubGlobal("fetch", vi.fn(async (url: string, init?: RequestInit) => {
+      if (url.includes("/api/license")) return new Response(JSON.stringify({ licensed: true }), { status: 200 });
+      if (url.includes("/api/search")) {
+        letzteAnfrage = init?.body ? JSON.parse(String(init.body)) : null;
+        return new Response(JSON.stringify({ results: [], total: 0 }), { status: 200 });
+      }
+      if (url.includes("/api/memories")) return new Response(JSON.stringify(notizen), { status: 200 });
+      if (url.includes("/api/inbox/status")) return new Response(JSON.stringify({ files: [], watching: true }), { status: 200 });
+      return new Response("{}", { status: 200 });
+    }));
+    await zeige([note({ title: "Docker" })]);
+    // So schreibt der Such-Abschnitt in den Einstellungen (topk 32, BM25 aus):
+    await act(async () => {
+      schreibeSuchPrefs({ tiefe: 32, spurBm25: false, spurVektor: true, spurGraph: true });
+    });
+    await user.type(screen.getByPlaceholderText(/Search…/), "docker");
+    await waitFor(() => {
+      expect(letzteAnfrage).not.toBeNull();
+      expect(letzteAnfrage!.topK).toBe(32);
+      expect(letzteAnfrage!.tracks).toEqual({ bm25: false, vector: true, entity: true });
+    }, { timeout: 4000 });
+  });
+
+  it("hat die Suchtiefe standardmäßig nicht unter 16, ohne dass etwas eingestellt wurde", async () => {
+    const user = userEvent.setup();
+    let letzteAnfrage: { topK?: number } | null = null;
+    vi.stubGlobal("fetch", vi.fn(async (url: string, init?: RequestInit) => {
+      if (url.includes("/api/license")) return new Response(JSON.stringify({ licensed: true }), { status: 200 });
+      if (url.includes("/api/search")) {
+        letzteAnfrage = init?.body ? JSON.parse(String(init.body)) : null;
+        return new Response(JSON.stringify({ results: [], total: 0 }), { status: 200 });
+      }
+      if (url.includes("/api/memories")) return new Response(JSON.stringify(notizen), { status: 200 });
+      if (url.includes("/api/inbox/status")) return new Response(JSON.stringify({ files: [], watching: true }), { status: 200 });
+      return new Response("{}", { status: 200 });
+    }));
+    await zeige([note({ title: "Docker" })]);
+    await user.type(screen.getByPlaceholderText(/Search…/), "docker");
+    await waitFor(() => expect(letzteAnfrage).not.toBeNull(), { timeout: 4000 });
+    expect(letzteAnfrage!.topK).toBeGreaterThanOrEqual(16);
   });
 });
 

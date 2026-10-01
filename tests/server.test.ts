@@ -732,6 +732,24 @@ describe("Embed & Search (fetch gemockt)", () => {
     }
   });
 
+  it("POST /api/search nimmt die Spuren-Schalter entgegen (Paket 2: UI-Parität)", async () => {
+    const angelegt = await request(app).post("/api/memories").send({ title: "Rust Backend", content: "Speichersicherheit beim Backup" });
+    const id = ((angelegt.body.memory ?? angelegt.body) as { id: string }).id;
+    // Der Graph-Strang wird über Entity-Verknüpfungen gefüllt — wie es der
+    // Obsidian-Import tut. So ist der Test auch ohne Embedding-Modell deterministisch.
+    store.linkEntities(id, ["Rust"]);
+    // Alle Beine: BM25 sieht den Treffer.
+    const alle = await request(app).post("/api/search").send({ query: "rust", topK: 5 });
+    expect(alle.status).toBe(200);
+    expect(alle.body.results[0].tracks.bm25).not.toBeNull();
+    // BM25 aus — das Bein hat den Treffer nicht gesehen, der Graph-Strang schon.
+    const ohneBm25 = await request(app).post("/api/search").send({ query: "rust", topK: 5, tracks: { bm25: false, vector: true, entity: true } });
+    expect(ohneBm25.status).toBe(200);
+    expect(ohneBm25.body.results.length).toBeGreaterThan(0);
+    expect(ohneBm25.body.results[0].tracks.bm25).toBeNull();
+    expect(ohneBm25.body.results[0].tracks.graph).not.toBeNull();
+  });
+
   it("POST /api/chat/stream mit ungültigem Body → 400", async () => {
     const res = await request(app).post("/api/chat/stream").send({ messages: new Array(50).fill({ role: "user", content: "x" }) });
     expect(res.status).toBe(400);

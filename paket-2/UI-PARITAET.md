@@ -28,9 +28,9 @@ Health-Quelle: `/api/health` (`server/router/system.ts`) liefert `version` (3.1.
 
 | Kern-Fähigkeit | Angezeigt | Einstellbar | Status | UI-Zuordnung |
 |---|---|---|---|---|
-| Suchtiefe topk (Engine 5–32, Default 16) | — | — | **heute gebaut** (Paket 2, Schritt 3) | war nur API/Ergebnis-Regler; wird Settings-Such-Abschnitt + an jeden Search-Call |
-| Spuren (BM25 / Vektoren / Graph) einzeln an/aus | — | — | **heute gebaut** (Paket 2, Schritt 3) | Engine `params.tracks` existierte ohne UI; Settings-Schalter + Router-Durchleitung |
-| Treffer-Anzahl (5 bis alle) | ✓ (Trefferzahl-Chip) | ✓ (Ergebnis-Regler) | **UI vorhanden** | Dashboard-Werkzeugleiste „Results“ (RESULT_STOPS bis „All“) |
+| Suchtiefe topk (Engine 5–32, Default 16) | ✓ (Wert am Regler) | ✓ (Slider 5–32, Default 16) | **UI vorhanden** (Paket 2, Schritt 3) | Settings „Search → Search depth (top-k)“ + `lib/searchPrefs` → an jeden Search-Call (`topK = max(Anzeige, Tiefe)`) |
+| Spuren (BM25 / Vektoren / Graph) einzeln an/aus | ✓ (Schalter-Stand) | ✓ (drei Schalter) | **UI vorhanden** (Paket 2, Schritt 3) | Settings „Search → Retrieval tracks“ → `tracks` im Request, Router reicht an Engine-`params.tracks` durch |
+| Treffer-Anzahl (5 bis alle) | ✓ (Trefferzahl-Chip) | ✓ (zwei synchronisierte Regler) | **UI vorhanden** | Dashboard-Werkzeugleiste UND Settings „Search → Results shown“ — derselbe Schlüssel, live synchronisiert |
 | Spuren-Herkunft je Treffer (bm25Rank/vectorRank/entityRank) | — | n/a (Anzeige-Eigenschaft) | **heute gebaut** (Paket 2, Schritt 2) | steckt in `SearchHit.components`, Router gab sie nicht ans Frontend; wird Treffer-Badges |
 | Suchdauer in ms + Such-Cache („Gehirn warm“) | — | n/a | **heute gebaut** (Paket 2, Schritt 2) | Frontend stoppt die Anfrage; Delta-Cache (Kern 3.1.1) wird als Status sichtbar |
 | Semantische Suche an/aus (lokal + Server) | ✓ | ✓ | **UI vorhanden** | Dashboard-Toggle „Semantic search“ |
@@ -58,4 +58,6 @@ Health-Quelle: `/api/health` (`server/router/system.ts`) liefert `version` (3.1.
 
 ## Wachstums-Protokoll
 
-- **Schritt 1 (dieser Stand):** Inventar + Erst-Tabelle. Vier „heute gebaut“-Zeilen markieren die Bauaufträge der Schritte 2–4.
+- **Schritt 1:** Inventar + Erst-Tabelle. Vier „heute gebaut“-Zeilen markieren die Bauaufträge der Schritte 2–4.
+- **Schritt 2:** Spuren-Herkunft je Treffer (`tracks` im Search-Response, Badges auf der Karte), Suchdauer in ms, „Gehirn warm“-Chip im Dashboard. 1605 Tests.
+- **Schritt 3:** Settings-Such-Abschnitt (Suchtiefe-Slider 5–32/Default 16, drei Spuren-Schalter, Treffer-Regler) — geteilt über `lib/searchPrefs`, Preferences spiegeln in die DB, Parameter sind im Request-Vertragstest belegt. 1612 Tests. (Nebenbefund: der Auto-Learn-Schalter hat jetzt ein aria-label; der alte „erste Checkbox“-Test wäre sonst auf die Such-Schalter gelaufen.)

@@ -11,6 +11,7 @@ import { getZoom, setZoom as speichereZoom, wendeZoomAn } from '../lib/uiText';
 import { sendJson } from '../lib/api';
 import { PrivacyShield } from './PrivacyShield';
 import { ConnectApps } from './ConnectApps';
+import { useSuchPrefs, leseTreffer, normalisiereTreffer, schreibeTreffer, SUCH_PREFS_EVENT, RESULT_STOPS, SUCH_TIEFE_MIN, SUCH_TIEFE_MAX, SUCH_TIEFE_DEFAULT } from '../lib/searchPrefs';
 
 /** Was die Import-Reparatur gefunden (Vorschau) oder getan hat (fertig). */
 type ReparaturStand = {
@@ -68,6 +69,21 @@ export function Settings() {
   const [zoom, setZoomState] = useState<number>(getZoom());
 
   const setZoom = (z: number) => { setZoomState(z); speichereZoom(z); wendeZoomAn(); };
+
+  // --- Suche (Paket 2 — UI-Parität): Suchtiefe, Spuren, Treffer ---
+  const [suchPrefs, setzeSuchPrefs] = useSuchPrefs();
+  const [treffer, setTrefferState] = useState<number>(leseTreffer);
+  const setzeTreffer = (v: number) => {
+    setTrefferState(normalisiereTreffer(v));
+    schreibeTreffer(v);
+  };
+  // Der Dashboard-Regler schreibt dieselben Schlüssel — live nachziehen.
+  useEffect(() => {
+    const on = () => setTrefferState(leseTreffer());
+    window.addEventListener(SUCH_PREFS_EVENT, on);
+    window.addEventListener('storage', on);
+    return () => { window.removeEventListener(SUCH_PREFS_EVENT, on); window.removeEventListener('storage', on); };
+  }, []);
 
   // --- System-Tab state (bestehend) ---
   const [settings, setSettings] = useState<AISettings>(loadAISettings());
@@ -400,6 +416,95 @@ export function Settings() {
           <div className="space-y-10">
             <SystemStatus />
             <PrivacyShield />
+
+            {/* Suche (Paket 2 — UI-Funktionsparität): was die Engine tut, ist
+                hier einstellbar — Suchtiefe, die drei Spuren, Treffer-Anzahl.
+                Jede Änderung geht mit dem nächsten Search-Call raus. */}
+            <div>
+              <div className="flex items-center gap-2 mb-4">
+                <Search className="w-4 h-4" style={{ color: 'var(--accent)' }} />
+                <h3 className="settings-h" style={{ color: 'var(--text-1)' }}>Search</h3>
+              </div>
+              <div className="space-y-5">
+                <div>
+                  <label className="text-xs block mb-1.5" htmlFor="such-tiefe" style={{ color: 'var(--text-3)' }}>
+                    Search depth (top-k) · <span className="tnum">{suchPrefs.tiefe}</span>
+                  </label>
+                  <input
+                    id="such-tiefe"
+                    type="range"
+                    min={SUCH_TIEFE_MIN}
+                    max={SUCH_TIEFE_MAX}
+                    step={1}
+                    value={suchPrefs.tiefe}
+                    onChange={(e) => setzeSuchPrefs({ ...suchPrefs, tiefe: parseInt(e.target.value, 10) })}
+                    className="w-full"
+                    aria-label="Search depth (top-k)"
+                    title="How deep the engine searches across all three tracks before ranking. Deeper costs a little time, finds more at the edge."
+                  />
+                  <div className="text-xs mt-1.5" style={{ color: 'var(--text-3)' }}>
+                    The engine fuses BM25, vectors and the knowledge graph to this depth — a value of {SUCH_TIEFE_MIN}–{SUCH_TIEFE_MAX} ({SUCH_TIEFE_DEFAULT} by default).
+                  </div>
+                </div>
+
+                <div>
+                  <span className="text-xs block mb-2" style={{ color: 'var(--text-3)' }}>Retrieval tracks</span>
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                    {([
+                      ['spurBm25', 'BM25', 'Lexical full-text (FTS5) — exact words win'],
+                      ['spurVektor', 'Vectors', 'Semantic similarity across languages'],
+                      ['spurGraph', 'Graph', 'Mentions of knowledge entities (people, projects, systems)'],
+                    ] as const).map(([key, label, beschreibung]) => {
+                      const an = suchPrefs[key];
+                      return (
+                        <label key={key} className="flex items-center gap-2 cursor-pointer select-none">
+                          <input
+                            type="checkbox"
+                            className="sr-only"
+                            checked={an}
+                            onChange={(e) => setzeSuchPrefs({ ...suchPrefs, [key]: e.target.checked })}
+                            aria-label={`Track ${label}`}
+                          />
+                          <span className="switch" data-on={an}><span className="knob" /></span>
+                          <span>
+                            <span className="text-[13px] font-medium block" style={{ color: an ? 'var(--text-1)' : 'var(--text-2)' }}>{label}</span>
+                            <span className="text-[11px] block" style={{ color: 'var(--text-3)' }}>{beschreibung}</span>
+                          </span>
+                        </label>
+                      );
+                    })}
+                  </div>
+                  <div className="text-xs mt-1.5" style={{ color: 'var(--text-3)' }}>
+                    Switching a track off removes its voice from the ranking — useful to see what each track contributes.
+                  </div>
+                </div>
+
+                <div>
+                  <label className="text-xs block mb-1.5" htmlFor="such-treffer" style={{ color: 'var(--text-3)' }}>
+                    Results shown · <span className="tnum">{treffer === 0 ? 'All' : treffer}</span>
+                  </label>
+                  <div className="flex items-center gap-2">
+                    <input
+                      id="such-treffer"
+                      type="range"
+                      min={0}
+                      max={RESULT_STOPS.length - 1}
+                      step={1}
+                      value={Math.max(0, RESULT_STOPS.indexOf(treffer as (typeof RESULT_STOPS)[number]))}
+                      onChange={(e) => setzeTreffer(RESULT_STOPS[parseInt(e.target.value, 10)] ?? 5)}
+                      className="flex-1"
+                      aria-label="Results shown"
+                      title="How many hits the index shows. The last step shows everything that matches."
+                    />
+                    <span className="chip tnum !px-2">{treffer === 0 ? 'All' : treffer}</span>
+                  </div>
+                  <div className="text-xs mt-1.5" style={{ color: 'var(--text-3)' }}>
+                    Same control as the toolbar above the list — both move together.
+                  </div>
+                </div>
+              </div>
+            </div>
+
             <form onSubmit={handleSave} className="space-y-6">
               <div className="space-y-5">
                 <div className="flex items-center gap-2">
@@ -524,7 +629,7 @@ export function Settings() {
                     </div>
                   </div>
                   <label className="relative inline-flex h-6 w-11 items-center rounded-full transition-colors cursor-pointer shrink-0" style={{ background: autoLearn ? 'var(--accent)' : 'var(--bg-inset-strong)', border: autoLearn ? '1px solid transparent' : '1px solid var(--border-subtle)' }}>
-                    <input type="checkbox" checked={autoLearn} onChange={e=>{ const v=e.target.checked; setAutoLearn(v); localStorage.setItem('ki_gehirn_autolearn', String(v)); setAutoLearnSaved(true); setTimeout(()=>setAutoLearnSaved(false),1800); }} className="sr-only" />
+                    <input type="checkbox" aria-label="Auto-learn" checked={autoLearn} onChange={e=>{ const v=e.target.checked; setAutoLearn(v); localStorage.setItem('ki_gehirn_autolearn', String(v)); setAutoLearnSaved(true); setTimeout(()=>setAutoLearnSaved(false),1800); }} className="sr-only" />
                     <span className={`inline-block h-4 w-4 transform rounded-full bg-white shadow transition-transform ${autoLearn ? 'translate-x-6' : 'translate-x-1'}`} />
                   </label>
                 </div>
