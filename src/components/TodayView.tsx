@@ -1,7 +1,7 @@
 // Today: what happened since your last visit, what needs a look, what is due.
 // Read straight from the local database — no AI involved, nothing leaves the
 // computer, ready the moment the view opens.
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { formatDistanceToNow } from 'date-fns';
 import { AlertTriangle, CheckCircle2, Bot, Clock, RefreshCw } from '../lib/icons';
 
@@ -12,6 +12,9 @@ export interface Briefing {
   since: number;
   created: { total: number; bySource: { who: string; count: number }[]; notes: Kurz[] };
   changed: { total: number; notes: Kurz[] };
+  /** Ab Today 2.0 (Paket 3): die Wahrheitsbewegung im Fenster — optional, damit ältere Stubs nicht brechen. */
+  superseded?: { total: number; notes: (Kurz & { supersededBy: string; replacedBy?: string })[] };
+  deleted?: { total: number; notes: Kurz[] };
   expiring: (Kurz & { validTo: number })[];
   expired: (Kurz & { validTo: number })[];
   todos: { total: number; items: { id: string; title: string; text: string }[] };
@@ -21,6 +24,27 @@ export interface Briefing {
 
 export const LETZTER_BESUCH = 'kepta_last_today';
 const TAG = 86_400_000;
+
+/**
+ * Zeitmaschine (Paket 3): die Fenster, die Today überblicken kann. „Last visit“
+ * ist der gewohnte Blick (Gespeichertes von besuchSeit), danach die Stufen aus
+ * dem Masterplan — „Everything“ läuft mit since=0 über die ganze Geschichte.
+ */
+export const FENSTER = [
+  { label: 'Last visit', ms: -1, text: 'since your last visit' },
+  { label: 'Today', ms: TAG, text: 'in the last 24 hours' },
+  { label: '7 days', ms: 7 * TAG, text: 'in the last 7 days' },
+  { label: '30 days', ms: 30 * TAG, text: 'in the last 30 days' },
+  { label: 'Everything', ms: 0, text: 'in all the time KEPTA remembers' },
+] as const;
+
+/** Fensterstart als Zeitstempel: letzter Besuch (<0), fixe Spanne oder „alles“ (0). */
+export function fensterSeit(index: number, besuch: number, jetzt: number): number {
+  const f = FENSTER[Math.min(Math.max(index, 0), FENSTER.length - 1)]!;
+  if (f.ms < 0) return besuch;
+  if (f.ms === 0) return 0;
+  return jetzt - f.ms;
+}
 
 /** When Today was last opened — a day ago the first time. Stores now for the next visit. */
 export function besuchSeit(jetzt = Date.now()): number {
@@ -77,6 +101,15 @@ function Abschnitt({ titel, zahl, children }: { titel: string; zahl?: number; ch
   );
 }
 
+/** Die Kategorie einer Bewegung: neu, aktualisiert, abgelöst, gelöscht. */
+function ArtTag({ children }: { children: React.ReactNode }) {
+  return (
+    <span className="text-[10px] px-1.5 py-0.5 rounded-md shrink-0 translate-y-[-1px]" style={{ background: 'var(--bg-inset-strong)', color: 'var(--text-3)' }}>
+      {children}
+    </span>
+  );
+}
+
 interface Props {
   aktiv: boolean;
   onOpenMemory: (id: string) => void;
@@ -84,10 +117,13 @@ interface Props {
 }
 
 export function TodayView({ aktiv, onOpenMemory, onGo }: Props) {
-  const [seit] = useState(() => besuchSeit());
+  const [besuch] = useState(() => besuchSeit());
+  const [fenster, setFenster] = useState(0);
   const [daten, setDaten] = useState<Briefing | null>(null);
   const [fehler, setFehler] = useState<string | null>(null);
   const [erledigt, setErledigt] = useState<Record<string, string>>({});
+
+  const seit = useMemo(() => fensterSeit(fenster, besuch, Date.now()), [fenster, besuch]);
 
   const laden = useCallback(async () => {
     setFehler(null);
@@ -121,18 +157,25 @@ export function TodayView({ aktiv, onOpenMemory, onGo }: Props) {
   };
 
   const jetzt = new Date();
+  const fensterInfo = FENSTER[fenster]!;
+  // Untertitel: beim gewohnten Blick die gemessene Spanne, sonst der Fenstertext.
+  const untertitel = fenster === 0 ? `what happened since ${vor(seit)}` : `what happened ${fensterInfo.text}`;
+  const abgeloest = daten?.superseded ?? { total: 0, notes: [] };
+  const geloescht = daten?.deleted ?? { total: 0, notes: [] };
   return (
     <div className="max-w-3xl mx-auto py-6" data-testid="today-view">
       <header className="mb-6">
         <h1 className="display">{gruss(jetzt.getHours())}</h1>
         <p className="text-sm mt-1" style={{ color: 'var(--text-2)' }}>
-          {jetzt.toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long' })} · what happened since {vor(seit)}
+          {jetzt.toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long' })} · {untertitel}
         </p>
         {daten && (
           <div className="flex flex-wrap gap-2 mt-4">
             {[
               [daten.created.total, daten.created.total === 1 ? 'new note' : 'new notes'],
               [daten.changed.total, 'changed'],
+              ...(abgeloest.total > 0 ? [[abgeloest.total, 'replaced'] as const] : []),
+              ...(geloescht.total > 0 ? [[geloescht.total, 'deleted'] as const] : []),
               [daten.todos.total, daten.todos.total === 1 ? 'open to-do' : 'open to-dos'],
               [daten.contradictions.length, 'to check'],
             ].map(([n, text]) => (
@@ -142,6 +185,26 @@ export function TodayView({ aktiv, onOpenMemory, onGo }: Props) {
             ))}
           </div>
         )}
+        {/* Zeitmaschine: das Fenster, in das Today hineinsieht. */}
+        <div className="mt-4" data-testid="today-zeitfenster">
+          <input
+            type="range"
+            min={0}
+            max={FENSTER.length - 1}
+            step={1}
+            value={fenster}
+            onChange={(e) => setFenster(parseInt(e.target.value, 10))}
+            className="w-full h-1.5 appearance-none bg-transparent accent-[var(--accent)] cursor-pointer
+              [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-3.5 [&::-webkit-slider-thumb]:h-3.5 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-white [&::-webkit-slider-thumb]:border-2 [&::-webkit-slider-thumb]:border-[var(--accent)] [&::-webkit-slider-thumb]:shadow-sm
+              [&::-moz-range-thumb]:w-3.5 [&::-moz-range-thumb]:h-3.5 [&::-moz-range-thumb]:rounded-full [&::-moz-range-thumb]:bg-white [&::-moz-range-thumb]:border-2 [&::-moz-range-thumb]:border-[var(--accent)]"
+            aria-label="Time window"
+          />
+          <div className="flex justify-between mt-1">
+            {FENSTER.map((f, i) => (
+              <span key={f.label} className="text-[10px]" style={i === fenster ? { color: 'var(--text-1)', fontWeight: 600 } : { color: 'var(--text-3)' }}>{f.label}</span>
+            ))}
+          </div>
+        </div>
       </header>
 
       {fehler && (
@@ -187,9 +250,9 @@ export function TodayView({ aktiv, onOpenMemory, onGo }: Props) {
             </Abschnitt>
           )}
 
-          <Abschnitt titel="Since your last visit" zahl={daten.created.total + daten.changed.total}>
-            {daten.created.total === 0 && daten.changed.total === 0 ? (
-              <p className="text-sm" style={{ color: 'var(--text-3)' }}>Nothing new since your last visit.</p>
+          <Abschnitt titel="What changed" zahl={daten.created.total + daten.changed.total + abgeloest.total + geloescht.total}>
+            {daten.created.total === 0 && daten.changed.total === 0 && abgeloest.total === 0 && geloescht.total === 0 ? (
+              <p className="text-sm" style={{ color: 'var(--text-3)' }}>Nothing new {fensterInfo.text}.</p>
             ) : (
               <>
                 {daten.created.bySource.length > 0 && (
@@ -198,14 +261,50 @@ export function TodayView({ aktiv, onOpenMemory, onGo }: Props) {
                     {daten.changed.total > 0 ? ` · ${daten.changed.total} changed` : ''}
                   </p>
                 )}
+                {/* Konsolidiert (Paket 3): jede Bewegung der Wahrheit in ihrer Kategorie —
+                    neu, aktualisiert, abgelöst (mit Nachfolger als Klickziel), gelöscht. */}
                 <ul className="space-y-1.5">
-                  {[...daten.created.notes, ...daten.changed.notes].map((n) => (
-                    <li key={`${n.id}-${n.at}`} className="text-[13px] flex items-baseline gap-2">
+                  {daten.created.notes.map((n) => (
+                    <li key={`new-${n.id}-${n.at}`} className="text-[13px] flex items-baseline gap-2">
+                      <ArtTag>new</ArtTag>
                       <Titel id={n.id} title={n.title} onOpen={onOpenMemory} />
                       <span className="text-[11px]" style={{ color: 'var(--text-3)' }}>{n.by ? `by ${n.by} · ` : ''}{vor(n.at)}</span>
                     </li>
                   ))}
+                  {daten.changed.notes.map((n) => (
+                    <li key={`upd-${n.id}-${n.at}`} className="text-[13px] flex items-baseline gap-2">
+                      <ArtTag>updated</ArtTag>
+                      <Titel id={n.id} title={n.title} onOpen={onOpenMemory} />
+                      <span className="text-[11px]" style={{ color: 'var(--text-3)' }}>{vor(n.at)}</span>
+                    </li>
+                  ))}
+                  {abgeloest.notes.map((n) => (
+                    <li key={`sup-${n.id}-${n.at}`} className="text-[13px] flex items-baseline gap-2">
+                      <ArtTag>replaced</ArtTag>
+                      <span style={{ color: 'var(--text-3)' }}>{n.title}</span>
+                      <span className="text-[11px]" style={{ color: 'var(--text-3)' }}>
+                        → replaced by{' '}
+                        <button onClick={() => onOpenMemory(n.supersededBy)} className="hover:underline underline-offset-2" style={{ color: 'var(--accent)' }}>
+                          {n.replacedBy || n.supersededBy.slice(0, 8)}
+                        </button>
+                      </span>
+                    </li>
+                  ))}
+                  {geloescht.notes.map((n) => (
+                    <li key={`del-${n.id}-${n.at}`} className="text-[13px] flex items-baseline gap-2">
+                      <ArtTag>deleted</ArtTag>
+                      <span style={{ color: 'var(--text-3)' }}>{n.title}</span>
+                      <span className="text-[11px]" style={{ color: 'var(--text-3)' }}>in the trash — restore it there</span>
+                    </li>
+                  ))}
                 </ul>
+                {(() => {
+                  const gezeigt = daten.created.notes.length + daten.changed.notes.length + abgeloest.notes.length + geloescht.notes.length;
+                  const alles = daten.created.total + daten.changed.total + abgeloest.total + geloescht.total;
+                  return alles > gezeigt ? (
+                    <p className="text-[11px] mt-2" style={{ color: 'var(--text-3)' }}>and {alles - gezeigt} more</p>
+                  ) : null;
+                })()}
               </>
             )}
           </Abschnitt>
@@ -272,7 +371,7 @@ export function TodayView({ aktiv, onOpenMemory, onGo }: Props) {
             )}
           </Abschnitt>
 
-          {daten.contradictions.length === 0 && daten.todos.total === 0 && daten.created.total === 0 && (
+          {daten.contradictions.length === 0 && daten.todos.total === 0 && daten.created.total === 0 && daten.changed.total === 0 && abgeloest.total === 0 && geloescht.total === 0 && (
             <p className="text-sm flex items-center gap-2" style={{ color: 'var(--ok)' }}>
               <CheckCircle2 className="w-4 h-4" /> All quiet. Nothing needs you right now.
             </p>

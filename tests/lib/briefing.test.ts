@@ -73,10 +73,41 @@ describe("Today", () => {
     expect(pruefnotizen(store).map((p) => p.title).sort()).toEqual(["Backup A", "Backup B"]);
   });
 
+  it("konsolidiert die Wahrheitsbewegung: abgelöste (mit Nachfolger) und gelöschte Notizen im Fenster", () => {
+    const alt = store.createMemory({ title: "Plan old", content: "a", createdAt: SEIT - TAG, updatedAt: SEIT - TAG });
+    const neu = store.createMemory({ title: "Plan new", content: "b", createdAt: SEIT + 100, updatedAt: SEIT + 100 });
+    const dahin = store.createMemory({ title: "Gone", content: "c", createdAt: SEIT - TAG, updatedAt: SEIT - TAG });
+    store.supersedeMemory(alt.id, neu.id); // updated_at springt auf jetzt → im Fenster
+    store.trashMemory(dahin.id);
+    const b = briefing(store, { seit: SEIT, jetzt: JETZT });
+    expect(b.superseded.total).toBe(1);
+    expect(b.superseded.notes[0]).toEqual(expect.objectContaining({ id: alt.id, title: "Plan old", supersededBy: neu.id, replacedBy: "Plan new" }));
+    expect(b.deleted.total).toBe(1);
+    expect(b.deleted.notes[0]).toEqual(expect.objectContaining({ id: dahin.id, title: "Gone" }));
+    // Wiederauferstanden: restore löscht deleted_at → keine gelöschte Spur mehr.
+    store.restoreMemory(dahin.id);
+    expect(briefing(store, { seit: SEIT, jetzt: JETZT }).deleted.total).toBe(0);
+  });
+
+  it("im „Alles“-Fenster ist eine Änderung eine nach der Erstellung — und Kategorien bleiben disjunkt", () => {
+    const alt = store.createMemory({ title: "Old", content: "a", createdAt: 1000, updatedAt: 1000 });
+    store.createMemory({ title: "Touched", content: "b", createdAt: 2000, updatedAt: 5000 });
+    const neu = store.createMemory({ title: "Newer", content: "c", createdAt: 6000, updatedAt: 6000 });
+    store.supersedeMemory(alt.id, neu.id); // berührt „Old“ — zählt aber nur als abgelöst, nicht auch als geändert
+    const b = briefing(store, { seit: 0, jetzt: JETZT });
+    expect(b.created.total).toBe(3);
+    expect(b.changed.total).toBe(1);
+    expect(b.changed.notes.map((n) => n.title)).toEqual(["Touched"]);
+    expect(b.superseded.total).toBe(1);
+    expect(b.superseded.notes[0]).toEqual(expect.objectContaining({ title: "Old", supersededBy: neu.id, replacedBy: "Newer" }));
+  });
+
   it("ein leerer Bestand ergibt ein leeres Briefing — ohne dass je eine KI-App verbunden war", () => {
     expect(briefing(store, { seit: 0 })).toMatchObject({
       created: { total: 0, bySource: [], notes: [] },
       changed: { total: 0, notes: [] },
+      superseded: { total: 0, notes: [] },
+      deleted: { total: 0, notes: [] },
       expiring: [],
       expired: [],
       todos: { total: 0, items: [] },

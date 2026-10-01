@@ -25,6 +25,10 @@ export interface Briefing {
   since: number;
   created: { total: number; bySource: { who: string; count: number }[]; notes: Kurz[] };
   changed: { total: number; notes: Kurz[] };
+  /** Notes a newer version has replaced in the window — the truth moved on. */
+  superseded: { total: number; notes: (Kurz & { supersededBy: string; replacedBy?: string })[] };
+  /** Notes deleted (now in the trash) inside the window. */
+  deleted: { total: number; notes: Kurz[] };
   expiring: (Kurz & { validTo: number })[];
   expired: (Kurz & { validTo: number })[];
   todos: { total: number; items: Aufgabe[] };
@@ -97,10 +101,38 @@ export function briefing(store: KeptaStore, opts: { seit: number; jetzt?: number
     quellen.set(wer, (quellen.get(wer) ?? 0) + 1);
   }
 
-  const geaendertZahl = (db.prepare("SELECT COUNT(*) AS n FROM memories WHERE deleted_at IS NULL AND created_at <= ? AND updated_at > ?").get(seit, seit) as { n: number }).n;
+  const geaendertZahl = (db.prepare("SELECT COUNT(*) AS n FROM memories WHERE deleted_at IS NULL AND superseded_by IS NULL AND created_at <= ? AND updated_at > ?").get(seit, seit) as { n: number }).n;
   const geaendert = db
-    .prepare("SELECT id, title, type, updated_at AS at FROM memories WHERE deleted_at IS NULL AND created_at <= ? AND updated_at > ? ORDER BY updated_at DESC LIMIT 12")
+    .prepare("SELECT id, title, type, updated_at AS at FROM memories WHERE deleted_at IS NULL AND superseded_by IS NULL AND created_at <= ? AND updated_at > ? ORDER BY updated_at DESC LIMIT 12")
     .all(seit, seit) as Zeile[];
+
+  // Abgeloeste: eine neuere Version hat diese Notiz ueberholt (superseded_by).
+  // Geloeschte: im Fenster in den Papierkorb gewandert. „Alles“ (seit 0) ist
+  // auch ein Fenster — die Filter laufen dann einfach ab dem Urknall.
+  // Die Kategorien bleiben disjunkt: eine abgeloeste Notiz steht unter
+  // „abgeloest“, nicht auch noch als „geaendert“ (der Abloesungs-Markierer
+  // Toucht sie schliesslich).
+  const fensterStart = Math.max(seit, 0);
+  const abgeloestZahl = (db.prepare("SELECT COUNT(*) AS n FROM memories WHERE deleted_at IS NULL AND superseded_by IS NOT NULL AND updated_at > ?").get(fensterStart) as { n: number }).n;
+  const abgeloest = db
+    .prepare(
+      "SELECT m.id, m.title, m.type, m.updated_at AS at, m.superseded_by AS supersededBy, s.title AS replacedBy FROM memories m LEFT JOIN memories s ON s.id = m.superseded_by WHERE m.deleted_at IS NULL AND m.superseded_by IS NOT NULL AND m.updated_at > ? ORDER BY m.updated_at DESC LIMIT 12"
+    )
+    .all(fensterStart) as (Zeile & { supersededBy: string; replacedBy?: string })[];
+  const geloeschtZahl = (db.prepare("SELECT COUNT(*) AS n FROM memories WHERE deleted_at IS NOT NULL AND deleted_at > ?").get(fensterStart) as { n: number }).n;
+  const geloescht = db
+    .prepare("SELECT id, title, type, deleted_at AS at FROM memories WHERE deleted_at IS NOT NULL AND deleted_at > ? ORDER BY deleted_at DESC LIMIT 12")
+    .all(fensterStart) as Zeile[];
+
+  // Im „Alles“-Fenster ist jede Notiz „neu“ (created_at > 0) — eine Änderung
+  // ist dort eine, die NACH der Erstellung kam, nicht eine nach dem Fensterstart.
+  const alles = seit <= 0;
+  const geaendertZahlFenster = alles
+    ? (db.prepare("SELECT COUNT(*) AS n FROM memories WHERE deleted_at IS NULL AND superseded_by IS NULL AND updated_at > created_at + 999").get() as { n: number }).n
+    : geaendertZahl;
+  const geaendertNotizen = alles
+    ? (db.prepare("SELECT id, title, type, updated_at AS at FROM memories WHERE deleted_at IS NULL AND superseded_by IS NULL AND updated_at > created_at + 999 ORDER BY updated_at DESC LIMIT 12").all() as Zeile[])
+    : geaendert;
 
   const TAG = 86_400_000;
   const gueltig = (von: number, bis: number) =>
@@ -137,7 +169,9 @@ export function briefing(store: KeptaStore, opts: { seit: number; jetzt?: number
       bySource: [...quellen].map(([who, count]) => ({ who, count })).sort((a, b) => b.count - a.count),
       notes: neu.slice(0, 12).map((z) => kurz(z, vonApp.get(z.id))),
     },
-    changed: { total: geaendertZahl, notes: geaendert.map((z) => kurz(z)) },
+    changed: { total: geaendertZahlFenster, notes: geaendertNotizen.map((z) => kurz(z)) },
+    superseded: { total: abgeloestZahl, notes: abgeloest.map((z) => ({ ...kurz(z), supersededBy: z.supersededBy, ...(z.replacedBy ? { replacedBy: z.replacedBy } : {}) })) },
+    deleted: { total: geloeschtZahl, notes: geloescht.map((z) => kurz(z)) },
     expiring: gueltig(jetzt, jetzt + 14 * TAG),
     expired: gueltig(jetzt - 7 * TAG, jetzt),
     todos: { total: aufgabenGesamt, items: aufgaben },

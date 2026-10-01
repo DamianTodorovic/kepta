@@ -4,7 +4,7 @@
 // Widersprüchen zum Auflösen, das Dossier, die KI-Aktivität mit Audit-Log, das
 // Verbinden von Apps und der Privatsphäre-Schild. Der Server ist nachgebildet.
 import { describe, it, expect, vi, afterEach, beforeEach } from "vitest";
-import { render, screen, waitFor, within, cleanup } from "@testing-library/react";
+import { render, screen, waitFor, within, cleanup, fireEvent } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { ToastProvider } from "../../src/components/ui/Toast";
 import { TodayView, besuchSeit, gruss, LETZTER_BESUCH, type Briefing } from "../../src/components/TodayView";
@@ -118,6 +118,41 @@ describe("Today", () => {
     await user.click(screen.getAllByRole("button", { name: "Keep the older" })[0]!);
     await screen.findByText("That did not work: Pick the two notes that disagree.");
     expect(JSON.parse(String(aufrufe.find((a) => a.url === "/api/contradictions/resolve")!.init!.body))).toEqual({ keep: "a", drop: "b", both: false });
+  });
+
+  it("Zeitmaschine: der Regler holt das Briefing mit dem gewählten Fenster neu — bis hin zu „Everything“", async () => {
+    const aufrufe = stubFetch({ "/api/briefing": { body: briefing() } });
+    mitToast(<TodayView aktiv onOpenMemory={vi.fn()} onGo={vi.fn()} />);
+    await screen.findByText("Needs a look");
+    const regler = screen.getByRole("slider", { name: "Time window" });
+    fireEvent.change(regler, { target: { value: "2" } }); // 7 Tage
+    await waitFor(() => {
+      const seit = Number(new URLSearchParams(aufrufe.at(-1)!.url.split("?")[1]).get("since"));
+      expect(seit).toBeGreaterThan(Date.now() - 8 * TAG);
+      expect(seit).toBeLessThanOrEqual(Date.now() - 7 * TAG + 5000);
+    });
+    fireEvent.change(regler, { target: { value: "4" } }); // Everything
+    await screen.findByText(/in all the time KEPTA remembers/);
+    expect(new URLSearchParams(aufrufe.at(-1)!.url.split("?")[1]).get("since")).toBe("0");
+  });
+
+  it("konsolidiert die Wahrheitsbewegung: abgelöst mit Nachfolger-Klick, gelöscht mit Weg zum Papierkorb", async () => {
+    const bewegt = briefing();
+    bewegt.superseded = { total: 1, notes: [{ id: "s1", title: "Old plan", type: "semantic", at: Date.now() - 45_000, supersededBy: "succ", replacedBy: "The successor" }] };
+    bewegt.deleted = { total: 1, notes: [{ id: "d1", title: "Scratch", type: "semantic", at: Date.now() - 50_000 }] };
+    const aufrufe = stubFetch({ "/api/briefing": { body: bewegt } });
+    const oeffne = vi.fn();
+    mitToast(<TodayView aktiv onOpenMemory={oeffne} onGo={vi.fn()} />);
+    await screen.findByText("Needs a look");
+    expect(screen.getByText("Old plan")).toBeTruthy();
+    await userEvent.setup().click(screen.getByRole("button", { name: "The successor" }));
+    expect(oeffne).toHaveBeenCalledWith("succ");
+    expect(screen.getByText("Scratch")).toBeTruthy();
+    expect(screen.getByText(/in the trash — restore it there/)).toBeTruthy();
+    // Kopf-Chip, Kategorie-Tag und „replaced by“ zeigen die Bewegung mehrfach an.
+    expect(screen.getAllByText(/replaced/).length).toBeGreaterThanOrEqual(2);
+    expect(screen.getAllByText(/deleted/).length).toBeGreaterThanOrEqual(2);
+    expect(aufrufe.filter((a) => a.url.startsWith("/api/briefing")).length).toBeGreaterThan(0);
   });
 
   it("ein ruhiger Tag — und ein Fehler mit „Try again“", async () => {
