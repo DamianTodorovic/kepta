@@ -523,6 +523,49 @@ describe("Dashboard: Suche mit der Server-Engine", () => {
     await user.type(screen.getByPlaceholderText(/Search…/), "quantenphysik");
     await waitFor(() => expect(container.textContent).toMatch(/No matches/i), { timeout: 4000 });
   });
+
+  it("zeigt nach der ersten Antwort, dass das Gehirn warm ist (Paket 2: Such-Cache sichtbar)", async () => {
+    const user = userEvent.setup();
+    vi.stubGlobal("fetch", vi.fn(async (url: string) => {
+      if (url.includes("/api/license")) return new Response(JSON.stringify({ licensed: true }), { status: 200 });
+      if (url.includes("/api/search")) return new Response(JSON.stringify({ results: [], total: 0 }), { status: 200 });
+      if (url.includes("/api/memories")) return new Response(JSON.stringify(notizen), { status: 200 });
+      if (url.includes("/api/inbox/status")) return new Response(JSON.stringify({ files: [], watching: true }), { status: 200 });
+      return new Response("{}", { status: 200 });
+    }));
+    const { container } = await zeige([note({ title: "Docker" })]);
+    // Vor der ersten Antwort wärmt sich das Gehirn — spätestens danach ist es warm.
+    await user.type(screen.getByPlaceholderText(/Search…/), "docker");
+    await waitFor(() => expect(container.textContent).toMatch(/Brain warm — answer in \d+ ms/), { timeout: 4000 });
+  });
+
+  it("zeigt je Treffer die Spuren-Herkunft (Paket 2: welches Bein die Notiz sah)", async () => {
+    const user = userEvent.setup();
+    vi.stubGlobal("fetch", vi.fn(async (url: string) => {
+      if (url.includes("/api/license")) return new Response(JSON.stringify({ licensed: true }), { status: 200 });
+      if (url.includes("/api/search")) {
+        return new Response(JSON.stringify({
+          results: [{
+            memory: note({ title: "Docker Fallback" }),
+            score: 0.9, cosineScore: 0.8, bm25Score: 0.5, rawBm25: 0,
+            matchedTerms: ["docker"], expired: false, superseded: false,
+            tracks: { bm25: 0, vektor: 2, graph: null, similarity: 0.8 },
+          }],
+          total: 1,
+        }), { status: 200 });
+      }
+      if (url.includes("/api/memories")) return new Response(JSON.stringify(notizen), { status: 200 });
+      if (url.includes("/api/inbox/status")) return new Response(JSON.stringify({ files: [], watching: true }), { status: 200 });
+      return new Response("{}", { status: 200 });
+    }));
+    const { container } = await zeige([note({ title: "Docker" })]);
+    await user.type(screen.getByPlaceholderText(/Search…/), "docker");
+    await waitFor(() => expect(container.textContent).toMatch(/Found via/), { timeout: 4000 });
+    expect(container.textContent).toMatch(/bm25 #1/);
+    expect(container.textContent).toMatch(/vector #3/);
+    // Das Graph-Bein hat den Treffer nicht gesehen — kein Badge, kein Lügenfeld.
+    expect(container.textContent).not.toMatch(/graph #/);
+  });
 });
 
 describe("Dashboard: Gruppierungen und Vorschau", () => {

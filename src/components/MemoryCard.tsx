@@ -13,6 +13,12 @@ interface MemoryCardProps {
   onClick: () => void;
   score?: number;
   matchedTerms?: string[];
+  /**
+   * Spuren-Herkunft aus der Server-Engine (Paket 2): an welcher Position sah
+   * jedes Retrieval-Bein (BM25/Vektor/Graph) diesen Treffer. Fehlt das Feld,
+   * stammen die Karten aus dem lokalen Sofort-Ranking — dann keine Badges.
+   */
+  herkunft?: { bm25: number | null; vektor: number | null; graph: number | null };
 }
 
 const TYPE_META: Record<string, { label: string; icon: React.ComponentType<{ className?: string; style?: React.CSSProperties; weight?: IconWeight }> }> = {
@@ -22,7 +28,7 @@ const TYPE_META: Record<string, { label: string; icon: React.ComponentType<{ cla
   procedural: { label: 'How-to', icon: Zap },
 };
 
-export const MemoryCard = memo(function MemoryCard({ memory, onClick, score, matchedTerms }: MemoryCardProps) {
+export const MemoryCard = memo(function MemoryCard({ memory, onClick, score, matchedTerms, herkunft }: MemoryCardProps) {
   const toast = useToast();
   const pct = typeof score === "number" ? Math.round(score * 100) : null;
   const now = Date.now();
@@ -64,6 +70,14 @@ export const MemoryCard = memo(function MemoryCard({ memory, onClick, score, mat
         <h3>{memory.title || 'Untitled'}</h3>
         <p>{lesetext || memory.content}</p>
         <div className="row-body-foot">
+          {herkunft && (herkunft.bm25 !== null || herkunft.vektor !== null || herkunft.graph !== null) && (
+            <span className="row-quiet inline-flex items-center gap-1 tnum" title="Where the search found this note — the position in each retrieval track (BM25, vectors, knowledge graph). null means that track did not see it.">
+              <span>Found via</span>
+              {herkunft.bm25 !== null && <span style={{ color: 'var(--accent)' }}>bm25 #{herkunft.bm25 + 1}</span>}
+              {herkunft.vektor !== null && <span style={{ color: 'var(--accent)' }}>vector #{herkunft.vektor + 1}</span>}
+              {herkunft.graph !== null && <span style={{ color: 'var(--accent)' }}>graph #{herkunft.graph + 1}</span>}
+            </span>
+          )}
           {chunk && (
             <span className="row-quiet tnum" title={`Part ${chunk.nr} of ${chunk.von} — this file was imported in chunks`}>
               {chunk.nr}/{chunk.von}

@@ -49,7 +49,10 @@ export function mountSearch(app: express.Express, ctx: AppKontext): void {
       asOf: typeof asOf === "number" && Number.isFinite(asOf) ? asOf : undefined,
     });
     ctx.publishActivity({ type: "search", source: "app", title: result.query }, { throttleSearchMs: 2500 });
-    // Altes Response-Shape für das Frontend (cosineScore/bm25Score sind die Einzelbeine)
+    // Altes Response-Shape für das Frontend (cosineScore/bm25Score sind die Einzelbeine).
+    // Neu (Paket 2): je Treffer die Spuren-Herkunft — welcher Retrieval-Strang
+    // (BM25/Vektor/Graph) den Treffer wo im Ranking sah. Die Ränge kommen aus
+    // SearchHit.components; null heißt „dieses Bein hat den Treffer nicht gesehen“.
     return res.json({
       results: result.hits.map(h => ({
         memory: toApi(h.memory),
@@ -60,6 +63,12 @@ export function mountSearch(app: express.Express, ctx: AppKontext): void {
         matchedTerms: h.matchedTerms,
         expired: h.expired,
         superseded: h.superseded,
+        tracks: {
+          bm25: h.components.bm25Rank,
+          vektor: h.components.vectorRank,
+          graph: h.components.entityRank,
+          similarity: h.components.vectorSimilarity,
+        },
       })),
       total: result.total,
       query: result.query,

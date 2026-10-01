@@ -717,6 +717,21 @@ describe("Embed & Search (fetch gemockt)", () => {
     expect(res.body.hasMatch).toBe(true);
   });
 
+  it("POST /api/search nennt je Treffer die Spuren-Herkunft (Paket 2: die UI braucht die Bein-Ränge)", async () => {
+    await request(app).post("/api/memories").send({ title: "Rust Backend", content: "Speichersicherheit beim Backup" });
+    const res = await request(app).post("/api/search").send({ query: "Speichersicherheit", topK: 5 });
+    expect(res.status).toBe(200);
+    const erster = res.body.results[0];
+    expect(erster).toHaveProperty("tracks");
+    // Der BM25-Strang hat den Treffer gesehen — sein Rang ist eine Zahl ab 0.
+    expect(typeof erster.tracks.bm25).toBe("number");
+    expect(erster.tracks.bm25).toBeGreaterThanOrEqual(0);
+    // Die anderen Beine sind immer da — null heißt „hat die Notiz nicht gesehen“.
+    for (const bein of ["vektor", "graph", "similarity"] as const) {
+      expect(erster.tracks).toHaveProperty(bein);
+    }
+  });
+
   it("POST /api/chat/stream mit ungültigem Body → 400", async () => {
     const res = await request(app).post("/api/chat/stream").send({ messages: new Array(50).fill({ role: "user", content: "x" }) });
     expect(res.status).toBe(400);

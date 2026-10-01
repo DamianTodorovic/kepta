@@ -125,6 +125,12 @@ export interface ScoredMemory {
   bm25Score: number;
   rawBm25: number;
   matchedTerms: string[];
+  /**
+   * Spuren-Herkunft aus der Server-Engine (Paket 2): Welcher Retrieval-Strang
+   * sah den Treffer, und an welcher Position? null = dieses Bein lief nichts
+   * oder fand die Notiz nicht. Das lokale Ranking füllt das Feld nicht.
+   */
+  tracks?: { bm25: number | null; vektor: number | null; graph: number | null; similarity: number | null };
 }
 
 export interface HybridSearchOptions extends TokenizeOptions {

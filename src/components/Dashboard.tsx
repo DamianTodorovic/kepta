@@ -477,6 +477,15 @@ export function Dashboard() {
   const [serverScored, setServerScored] = useState<ScoredMemory[] | null>(null);
   /** Wie viele Treffer es INSGESAMT gab — auch die, die das Limit abschneidet. */
   const [serverTotal, setServerTotal] = useState<number | null>(null);
+  /**
+   * Der Such-Cache des Kerns (3.1.1): nach dem ersten Zugriff ist das Gehirn
+   * warm — Delta-Writes patchen den Cache, statt ihn neu aufzubauen. Die App
+   * kennt den ersten Request-Zeitpunkt: vor der ersten Antwort wärmt sich das
+   * Gehirn, danach zeigt sie die zuletzt gemessene Antwortzeit.
+   */
+  const [gehirnWaermt, setGehirnWaermt] = useState(false);
+  const [gehirnWarm, setGehirnWarm] = useState(false);
+  const [suchDauerMs, setSuchDauerMs] = useState<number | null>(null);
   useEffect(() => {
     const q = debouncedSearchQuery.trim();
     if (!semanticEnabled || q.length < 2) {
@@ -485,7 +494,9 @@ export function Dashboard() {
       return;
     }
     let cancelled = false;
+    if (!gehirnWarm) setGehirnWaermt(true);
     void (async () => {
+      const start = performance.now();
       try {
         const res = await fetch('/api/search', {
           method: 'POST',
@@ -496,6 +507,9 @@ export function Dashboard() {
         if (!cancelled) {
           setServerScored(Array.isArray(data.results) ? (data.results as ScoredMemory[]) : []);
           setServerTotal(typeof data.total === 'number' ? data.total : null);
+          setSuchDauerMs(Math.round(performance.now() - start));
+          setGehirnWarm(true);
+          setGehirnWaermt(false);
         }
       } catch {
         if (!cancelled) { setServerScored(null); setServerTotal(null); } // Server unerreichbar → lokales Ranking bleibt
@@ -836,12 +850,17 @@ export function Dashboard() {
     // Server-Scores sind rohe RRF-Werte (~0,02) — als Prozent wären sie Unsinn.
     // Prozent nur bei der lokalen Fusion (0..1) zeigen.
     const pct = serverScored ? undefined : scored?.score;
+    // Spuren-Herkunft: nur die Server-Engine kennt die Bein-Ränge.
+    const herkunft = scored?.tracks
+      ? { bm25: scored.tracks.bm25, vektor: scored.tracks.vektor, graph: scored.tracks.graph }
+      : undefined;
     return (
       <MemoryCard
         key={memory.id}
         memory={memory}
         score={pct}
         matchedTerms={scored?.matchedTerms}
+        herkunft={herkunft}
         onClick={() => setVorschauMemory(memory)}
       />
     );
@@ -1123,6 +1142,20 @@ export function Dashboard() {
             </div>
 
             <div className="ml-auto flex items-center gap-2 text-xs">
+              {/* Such-Cache-Status: der Kern baut den Suchindex beim ersten
+                  Zugriff einmal auf und patcht ihn danach nur noch — die App
+                  misst die Antwortzeit und zeigt, wenn das Gehirn warm ist. */}
+              {gehirnWaermt && (
+                <span className="chip" title="The search cache is being built once — from now on, every write only patches it.">
+                  <span className="agent-dot" /> Brain warming up…
+                </span>
+              )}
+              {gehirnWarm && !gehirnWaermt && (
+                <span className="chip tnum" title="Search cache warm — every write patches it instead of rebuilding. The time is the last search as measured by the app.">
+                  <span className="status-dot" />
+                  Brain warm — answer in {suchDauerMs ?? 0} ms
+                </span>
+              )}
               {/* Die Zahl muss zu den gezeigten Karten passen: hier stand vorher das
                   LOKALE Ranking (150 Treffer), waehrend die Liste daneben die 261
                   Treffer der Server-Engine zeigte. Zwei Zahlen fuer dieselbe Sache. */}
