@@ -1,0 +1,922 @@
+@import "tailwindcss";
+
+@variant dark (&:where(.dark, .dark *));
+
+/* ============================================================
+   KEPTA Design-System — „Die Akte"
+   Materie aus dem Berufsalltag der Geheimnisträger: der graue
+   Aktendeckel, Tinte auf Papier, und eine einzige warme Farbe —
+   Siegellack, das Zeichen des Versiegelten. Flächen liegen flach,
+   Linien strukturieren wie ein Register, die aktive Stelle trägt
+   einen Registerlaschen-Strich. Eine Serif (Charter) trägt die
+   Überschriften, die UI bleibt stille Sans.
+   ============================================================ */
+
+:root {
+  /* Flächen — Aktenblatt, neutral und matt */
+  --bg-base: #e9e9e7;
+  --bg-ambient-1: rgba(34, 48, 60, 0.04);
+  --bg-ambient-2: rgba(156, 43, 31, 0.025);
+  --glass: rgba(240, 242, 235, 0.78);
+  --glass-strong: rgba(246, 247, 242, 0.9);
+  --glass-panel: rgba(238, 240, 233, 0.7);
+  --bg-panel: #eff1ea;
+  --bg-panel-solid: #f0f2eb;
+  --bg-inset: rgba(34, 48, 60, 0.055);
+  --bg-inset-strong: rgba(34, 48, 60, 0.1);
+
+  /* Linien — Tinte auf Papier */
+  --border-subtle: rgba(34, 48, 60, 0.14);
+  --border-strong: rgba(34, 48, 60, 0.24);
+  --border-hover: rgba(34, 48, 60, 0.34);
+  --edge-light: rgba(255, 255, 255, 0.65);
+
+  /* Text — Tinte */
+  --text-1: #232526;
+  --text-2: #5b5e60;
+  --text-3: #8d9092;
+
+  /* Akzent — Siegellack: nur für Versiegeltes, Aktives, Primäres */
+  --accent: #9c2b1f;
+  --accent-2: #7e2117;
+  --accent-soft: rgba(156, 43, 31, 0.08);
+  --accent-soft-2: rgba(156, 43, 31, 0.16);
+  --accent-glow: rgba(156, 43, 31, 0.3);
+  --on-accent: #f7f2e9;
+
+  /* Semantik — Archivtinten */
+  --ok: #3e6b4f;
+  --ok-soft: rgba(62, 107, 79, 0.12);
+  --warn: #8a5a16;
+  --warn-soft: rgba(138, 90, 22, 0.12);
+  --danger: #a03a2c;
+  --danger-soft: rgba(160, 58, 44, 0.1);
+
+  /* Knotentypen — Archivtinten, kühl gelesen */
+  --type-semantic: #33506b;
+  --type-episodic: #6d4257;
+  --type-procedural: #3e5c42;
+  --type-reference: #6b4a32;
+
+  /* Schatten liegen flach auf dem Tisch, nichts schwebt */
+  --shadow-sm: 0 1px 2px rgba(20, 28, 34, 0.08);
+  --shadow-md: 0 2px 8px rgba(20, 28, 34, 0.1);
+  --shadow-lg: 0 12px 32px rgba(20, 28, 34, 0.18);
+
+  --font-ui: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --font-display: "Charter", "Iowan Old Style", "Palatino", Georgia, "Times New Roman", serif;
+  --font-mono: ui-monospace, "SF Mono", SFMono-Regular, Menlo, Consolas, monospace;
+
+  /* Radius — Aktendeckel-Kanten, kompakt */
+  --r-panel: 14px;
+  --r-card: 12px;
+  --r-btn: 7px;
+  --r-chip: 4px;
+  --r-badge: 3px;
+
+  --ease-apple: cubic-bezier(0.2, 0.8, 0.2, 1);
+  --dur-fast: 120ms;
+  --dur: 200ms;
+
+  /* Graph-Knoten: Tinte statt Glas */
+  --node-hi: 0.5;
+  --node-mid: 0.66;
+  --node-low: 0.4;
+  --node-rim: rgba(34, 48, 60, 0.4);
+  --node-shine: rgba(240, 242, 235, 0.9);
+  --node-shade: rgba(20, 28, 34, 0.18);
+}
+
+.dark {
+  /* Der Aktenschrank nachts — echtes Schwarz, neutral, kein Blaustich */
+  --bg-base: #070708;
+  --bg-ambient-1: rgba(195, 74, 57, 0.025);
+  --bg-ambient-2: rgba(255, 255, 255, 0.02);
+  --glass: rgba(16, 16, 18, 0.85);
+  --glass-strong: rgba(21, 21, 23, 0.95);
+  --glass-panel: rgba(13, 13, 14, 0.72);
+  --bg-panel: #101012;
+  --bg-panel-solid: #121214;
+  --bg-inset: rgba(255, 255, 255, 0.045);
+  --bg-inset-strong: rgba(255, 255, 255, 0.085);
+
+  --border-subtle: rgba(255, 255, 255, 0.08);
+  --border-strong: rgba(255, 255, 255, 0.15);
+  --border-hover: rgba(255, 255, 255, 0.24);
+  --edge-light: rgba(255, 255, 255, 0.05);
+
+  --text-1: #eaeae8;
+  --text-2: #9b9992;
+  --text-3: #66645e;
+
+  --accent: #c04a39;
+  --accent-2: #d05a47;
+  --accent-soft: rgba(194, 75, 59, 0.12);
+  --accent-soft-2: rgba(194, 75, 59, 0.22);
+  --accent-glow: rgba(194, 75, 59, 0.34);
+  --on-accent: #f7efe7;
+
+  --ok: #7fb08a;
+  --ok-soft: rgba(127, 176, 138, 0.13);
+  --warn: #cfa45e;
+  --warn-soft: rgba(207, 164, 94, 0.13);
+  --danger: #d06a58;
+  --danger-soft: rgba(208, 106, 88, 0.13);
+
+  --type-semantic: #96a7bd;
+  --type-episodic: #b08ca4;
+  --type-procedural: #8fb89a;
+  --type-reference: #c2a283;
+
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.4);
+  --shadow-md: 0 2px 10px rgba(0, 0, 0, 0.45);
+  --shadow-lg: 0 14px 40px rgba(0, 0, 0, 0.55);
+
+  --node-hi: 0.72;
+  --node-mid: 0.4;
+  --node-low: 0.18;
+  --node-rim: rgba(230, 233, 225, 0.24);
+  --node-shine: rgba(230, 233, 225, 0.7);
+  --node-shade: rgba(0, 0, 0, 0.35);
+}
+
+* {
+  font-variant-ligatures: common-ligatures;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+:root { color-scheme: light; }
+.dark { color-scheme: dark; }
+
+body {
+  margin: 0;
+  background-color: var(--bg-base);
+  color: var(--text-1);
+  font-family: var(--font-ui);
+  font-size: 14px;
+  letter-spacing: -0.008em;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+  transition: background-color 0.18s ease, color 0.18s ease;
+}
+
+/* Jedes Eingabefeld bekommt einen sichtbaren Fokus — auch wenn der
+   Wrapper keinen focus-within-Ring trägt (Interface Guidelines). */
+input:focus-visible,
+textarea:focus-visible,
+select:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+}
+
+/* Ambienter Grund: ein Hauch Tinte unten, ein Hauch Siegel oben — kaum da */
+#root, .app-ambient {
+  position: relative;
+  min-height: 100vh;
+}
+#root::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  background:
+    radial-gradient(1000px 560px at 10% -8%, var(--bg-ambient-1), transparent 60%),
+    radial-gradient(800px 500px at 98% 106%, var(--bg-ambient-2), transparent 58%);
+  z-index: 0;
+}
+
+::selection {
+  background: var(--accent-soft-2);
+  color: var(--text-1);
+}
+
+::-webkit-scrollbar { width: 8px; height: 8px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb {
+  background: var(--border-strong);
+  border-radius: 999px;
+  background-clip: padding-box;
+  border: 2px solid transparent;
+}
+::-webkit-scrollbar-thumb:hover { background: var(--text-3); }
+
+/* ---------- Typografie ---------- */
+.label {
+  font-size: 11px;
+  font-weight: 590;
+  letter-spacing: 0.01em;
+  color: var(--text-2);
+}
+/* Keine Versalien-Labels: das Register spricht in normaler Schrift,
+   die Hierarchie kommt aus Größe und Tinte */
+.label-caps {
+  font-size: 11px;
+  font-weight: 620;
+  letter-spacing: 0.01em;
+  text-transform: none;
+  color: var(--text-2);
+}
+.mono { font-family: var(--font-mono); font-size: 12px; }
+.tnum { font-variant-numeric: tabular-nums; }
+.hud-label {
+  font-size: 11px;
+  font-weight: 590;
+  letter-spacing: 0.01em;
+  color: var(--text-2);
+}
+/* Display-Zeile: Charter mit Akten-Verlässlichkeit */
+.display {
+  font-family: var(--font-display);
+  font-size: clamp(30px, 3.4vw, 44px);
+  line-height: 1.16;
+  font-weight: 600;
+  letter-spacing: -0.005em;
+  color: var(--text-1);
+  text-wrap: balance;
+}
+/* Dominante Zahl des Registers — Ziffern wie in ein Protokoll gesetzt */
+.num-hero {
+  font-family: var(--font-display);
+  font-size: 28px;
+  line-height: 1;
+  font-weight: 600;
+  letter-spacing: 0;
+  font-variant-numeric: tabular-nums;
+  color: var(--text-1);
+}
+
+/* ---------- Flächen — Pappe und Papier, kein Glas ---------- */
+.glass {
+  background: var(--glass);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  border: 1px solid var(--border-subtle);
+  box-shadow: var(--shadow-sm);
+}
+.glass-strong {
+  background: var(--glass-strong);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border: 1px solid var(--border-subtle);
+  box-shadow: var(--shadow-md);
+}
+
+/* Sidebar: der Rücken des Aktenschrankes — immer Stahl, immer dunkel,
+   egal ob das Blatt daneben im Tag- oder Nachtmodus liegt. */
+.sidebar-glass {
+  background: linear-gradient(180deg, #0c0c0d, #060607);
+  border-right: 1px solid rgba(255, 255, 255, 0.07);
+  box-shadow: inset 1px 0 0 rgba(255, 255, 255, 0.03);
+}
+
+.panel, .hud-panel {
+  background: var(--glass-panel);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--r-panel);
+  box-shadow: var(--shadow-sm);
+}
+.inset, .hud-inset {
+  background: var(--bg-inset);
+  border: 1px solid var(--border-subtle);
+}
+
+/* Kartentitel in Serif: jede Notiz liest sich wie ein Dokumentkopf */
+.card h3, .hud-card h3 {
+  font-family: var(--font-display);
+  font-weight: 600;
+  letter-spacing: 0.002em;
+}
+  text-wrap: balance;
+
+/* Karten — Aktenblätter: flach, haarlinien-getrennt. Hover vertieft
+   nur die Tinte, nichts hebt ab. */
+.card, .hud-card {
+  position: relative;
+  background: var(--glass);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--r-card);
+  box-shadow: var(--shadow-sm);
+  transition: border-color 0.16s var(--ease-apple), background 0.16s var(--ease-apple), box-shadow 0.22s var(--ease-apple);
+}
+.card:hover, .hud-card:hover {
+  border-color: var(--border-hover);
+  background: var(--glass-strong);
+  box-shadow: var(--shadow-md);
+}
+.card:active, .hud-card:active {
+  background: var(--glass);
+}
+
+/* Index-Streifen — die Registerzeile: Werte stehen in einer Zeile,
+   getrennt durch Haarlinien wie Spalten eines Protokolls. */
+.index-strip {
+  display: flex;
+  align-items: stretch;
+  gap: 22px;
+  padding: 12px 4px;
+  border-radius: 0;
+  background: transparent;
+  border: none;
+  border-top: 1px solid var(--border-subtle);
+  border-bottom: 1px solid var(--border-subtle);
+}
+.index-cell {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 2px;
+  min-width: 0;
+  padding-left: 22px;
+  border-left: 1px solid var(--border-subtle);
+}
+.index-cell:first-child {
+  padding-left: 0;
+  border-left: none;
+}
+.index-cell .k { font-size: 11px; color: var(--text-3); }
+.index-cell .v {
+  font-size: 15px;
+  font-weight: 620;
+  letter-spacing: -0.01em;
+  font-variant-numeric: tabular-nums;
+  color: var(--text-1);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+/* Chat — die Antwort ist Prosa am Blattrand, die Frage ein Karton-Zettel */
+.chat-prose {
+  max-width: 68ch;
+  line-height: 1.65;
+  font-size: 14px;
+}
+.msg-user {
+  margin-left: auto;
+  max-width: min(78%, 58ch);
+  padding: 9px 14px;
+  border-radius: var(--r-btn);
+  background: var(--accent);
+  color: var(--on-accent);
+  font-size: 14px;
+  line-height: 1.55;
+  box-shadow: var(--shadow-sm);
+}
+.msg-ai {
+  max-width: 100%;
+  padding-left: 14px;
+  border-left: 2px solid var(--border-strong);
+}
+/* Composer: ein Aktenblatt mit klarer Kante; Fokus zieht Tinte nach */
+.composer {
+  background: var(--glass-strong);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--r-panel);
+  box-shadow: var(--shadow-sm);
+  transition: border-color 0.16s var(--ease-apple), box-shadow 0.16s var(--ease-apple);
+}
+.composer:focus-within {
+  border-color: color-mix(in srgb, var(--accent) 50%, var(--border-subtle));
+  box-shadow: 0 0 0 3px var(--accent-soft), var(--shadow-sm);
+}
+.composer:focus { outline: none; }
+.composer::placeholder { color: var(--text-3); }
+
+/* Befehlspalette — ein Blatt über dem Register */
+.palette-lens {
+  background: var(--glass-strong);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--r-panel);
+  box-shadow: var(--shadow-lg);
+  overflow: hidden;
+}
+.palette-row {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  min-height: 42px;
+  padding: 0 14px;
+  border-radius: var(--r-btn);
+  margin: 0 6px;
+  font-size: 13.5px;
+  color: var(--text-1);
+  transition: background 0.1s var(--ease-apple);
+}
+.palette-row[data-active="true"] {
+  background: var(--accent-soft-2);
+  box-shadow: inset 2px 0 0 var(--accent);
+}
+
+/* ---------- Inputs ---------- */
+.hud-input {
+  background: var(--bg-inset);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--r-btn);
+  color: var(--text-1);
+  transition: border-color 0.12s ease, box-shadow 0.12s ease, background 0.12s ease;
+}
+.hud-input::placeholder { color: var(--text-3); }
+.hud-input:hover { border-color: var(--border-strong); }
+.hud-input:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-soft);
+  background: var(--bg-panel);
+}
+.hud-input:disabled { opacity: 0.55; }
+
+/* Native Selects: explizite Farben (Windows-Dark-Mode-Regel) */
+select {
+  background-color: var(--bg-panel);
+  color: var(--text-1);
+}
+
+input[type="range"] { accent-color: var(--accent); cursor: pointer; }
+input[type="checkbox"], input[type="radio"] { accent-color: var(--accent); }
+
+/* ---------- Buttons — Karton mit Tintendruck ---------- */
+.btn-primary {
+  position: relative;
+  border-radius: 999px;
+  background: var(--accent);
+  color: var(--on-accent);
+  font-weight: 600;
+  letter-spacing: -0.006em;
+  border: 1px solid color-mix(in srgb, var(--accent) 80%, black 20%);
+  box-shadow: var(--shadow-sm);
+  transition: background 0.12s ease, transform 0.08s ease, box-shadow 0.12s ease, opacity 0.12s ease;
+}
+.btn-primary:hover {
+  background: var(--accent-2);
+  box-shadow: var(--shadow-md);
+}
+.btn-primary:active { transform: scale(0.96); }
+.btn-primary:disabled { opacity: 0.45; cursor: not-allowed; transform: none; box-shadow: none; }
+
+.btn-ghost {
+  background: var(--bg-inset);
+  color: var(--text-1);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--r-btn);
+  font-weight: 540;
+  transition: background 0.12s ease, border-color 0.12s ease, color 0.12s ease, transform 0.08s ease;
+}
+.btn-ghost:hover { background: var(--bg-inset-strong); border-color: var(--border-strong); }
+.btn-ghost:active { transform: scale(0.985); }
+
+.btn-danger-ghost {
+  background: transparent;
+  color: var(--danger);
+  border: 1px solid var(--border-subtle);
+  font-weight: 540;
+  transition: background 0.12s ease, border-color 0.12s ease;
+}
+.btn-danger-ghost:hover { background: var(--danger-soft); border-color: color-mix(in srgb, var(--danger) 30%, transparent); }
+
+.btn-primary, .btn-ghost, .btn-danger-ghost { cursor: pointer; }
+/* Fokus: ein Siegelroter Ring für alles Tastatur-fokussierbare */
+.btn-primary:focus-visible, .btn-ghost:focus-visible, .btn-danger-ghost:focus-visible,
+button:focus-visible, a:focus-visible, [role="button"]:focus-visible,
+.switch:focus-visible, summary:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+.hud-input:focus-visible { outline: none; }
+
+/* Sidebar-Navigation: Registerlaschen — die aktive Stelle trägt einen
+   Siegelroten Strich am linken Blattrand (kein Layout-Shift). */
+.sidebar-nav-btn, .sidebar-tag-btn {
+  border: 1px solid transparent;
+  transition: background 0.14s ease, color 0.14s ease, border-color 0.14s ease, box-shadow 0.14s ease;
+}
+.sidebar-nav-btn:hover, .sidebar-tag-btn:hover { background: rgba(255, 255, 255, 0.045); }
+.sidebar-nav-btn[data-active="true"] {
+  background: rgba(255, 255, 255, 0.07);
+  box-shadow: inset 2px 0 0 var(--accent);
+}
+.sidebar-nav-btn[data-active="true"]:hover { background: rgba(255, 255, 255, 0.1); }
+.sidebar-tag-btn[data-active="true"] { background: rgba(255, 255, 255, 0.09); }
+
+/* ---------- Abschnitte ---------- */
+
+/* Abschnittstitel (Settings/Editor): ruhige Stärke */
+.settings-h {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  font-weight: 620;
+  letter-spacing: -0.008em;
+  color: var(--text-1);
+}
+.settings-h svg { color: var(--accent); }
+
+/* HTTP-Method-Badge: Stempel aus Tinte */
+.method-badge {
+  font-size: 10px;
+  font-weight: 680;
+  letter-spacing: 0.06em;
+  padding: 2px 7px;
+  border-radius: var(--r-badge);
+  border: 1px solid var(--border-strong);
+  background: var(--bg-inset);
+  color: var(--text-2);
+  font-family: var(--font-mono);
+  flex-shrink: 0;
+}
+.method-badge[data-method="POST"] { color: var(--accent); border-color: color-mix(in srgb, var(--accent) 40%, transparent); }
+
+/* Import-Band: eine Fläche, die bei Drag ihre Kante siegelt */
+.import-band {
+  display: flex;
+  align-items: stretch;
+  border-radius: var(--r-card);
+  background: var(--bg-inset);
+  border: 1px dashed var(--border-strong);
+  overflow: hidden;
+  transition: border-color 0.16s var(--ease-apple), background 0.16s var(--ease-apple), box-shadow 0.16s var(--ease-apple);
+}
+.import-band[data-drag="true"] {
+  border-color: var(--accent);
+  border-style: solid;
+  background: var(--accent-soft);
+  box-shadow: 0 0 0 3px var(--accent-soft-2);
+}
+.import-band > * { min-width: 0; }
+.import-divider { width: 1px; background: var(--border-subtle); margin: 8px 14px; flex-shrink: 0; }
+
+/* Vorschlags-Pills: Kartonzettel */
+.suggestion-pill {
+  padding: 7px 14px;
+  border-radius: 999px;
+  font-size: 12.5px;
+  font-weight: 550;
+  background: var(--bg-inset);
+  border: 1px solid var(--border-subtle);
+  color: var(--text-2);
+  transition: background 0.14s var(--ease-apple), color 0.14s var(--ease-apple), border-color 0.14s var(--ease-apple);
+}
+.suggestion-pill:hover {
+  background: var(--accent-soft);
+  border-color: color-mix(in srgb, var(--accent) 35%, transparent);
+  color: var(--text-1);
+}
+
+/* Toasts — Kartonzettel mit klarer Kante */
+.toast-lens {
+  border-radius: var(--r-panel);
+  background: var(--glass-strong);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border: 1px solid var(--border-strong);
+  box-shadow: var(--shadow-lg);
+}
+
+/* Graph: Typ-Farbwähler als Tintenpunkte */
+.graph-swatch {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 22px;
+  height: 22px;
+  padding: 0;
+  border-radius: 999px;
+  border: 1px solid var(--border-strong);
+  background: transparent;
+  cursor: pointer;
+  transition: transform 0.14s var(--ease-apple), box-shadow 0.14s var(--ease-apple), border-color 0.14s var(--ease-apple);
+}
+.graph-swatch::-webkit-color-swatch-wrapper { padding: 2px; }
+.graph-swatch::-webkit-color-swatch { border-radius: 999px; border: none; }
+.graph-swatch::-moz-color-swatch { border-radius: 999px; border: none; }
+.graph-swatch:hover {
+  transform: scale(1.14);
+  border-color: var(--edge-light);
+  box-shadow: 0 0 0 3px color-mix(in srgb, currentColor 22%, transparent);
+}
+.graph-swatch:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+/* Graph: Zeit-Regler als feine Tintenlinie mit Siegel-Linse */
+.graph-time {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 132px;
+  height: 16px;
+  background: transparent;
+  cursor: pointer;
+}
+.graph-time::-webkit-slider-runnable-track {
+  height: 2px;
+  border-radius: 2px;
+  background: linear-gradient(90deg, var(--accent-soft-2), var(--border-strong));
+}
+.graph-time::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 14px;
+  height: 14px;
+  border-radius: 999px;
+  background: var(--accent);
+  border: 1px solid color-mix(in srgb, var(--accent) 60%, black 40%);
+  box-shadow: var(--shadow-sm);
+  margin-top: -6px;
+  transition: transform 0.12s var(--ease-apple);
+}
+.graph-time::-webkit-slider-thumb:hover { transform: scale(1.18); }
+.graph-time::-moz-range-track { height: 2px; border-radius: 2px; background: var(--border-strong); }
+.graph-time::-moz-range-thumb {
+  width: 13px;
+  height: 13px;
+  border-radius: 999px;
+  background: var(--accent);
+  border: 1px solid var(--edge-light);
+}
+.graph-time:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+/* Datumsgenaue Zeitauswahl neben dem Regler — passt zur Kopfzeile. */
+.graph-datum {
+  width: 128px;
+  height: 26px;
+  padding: 0 8px;
+  background: var(--inset, rgba(255, 255, 255, 0.05));
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  color: var(--text-1);
+  font-family: inherit;
+  font-size: 12px;
+  cursor: pointer;
+}
+.graph-datum:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.graph-datum::-webkit-calendar-picker-indicator { filter: invert(0.7); cursor: pointer; }
+
+/* ---------- Chips & Badges — kleine Tintenstücke ---------- */
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 8px;
+  border-radius: var(--r-chip);
+  font-size: 11px;
+  font-weight: 560;
+  background: var(--bg-inset);
+  border: 1px solid var(--border-subtle);
+  color: var(--text-2);
+}
+.badge-type {
+  display: inline-flex;
+  align-items: center;
+  padding: 1px 7px;
+  border-radius: var(--r-badge);
+  font-size: 10px;
+  font-weight: 640;
+  letter-spacing: 0.05em;
+}
+.kbd {
+  display: inline-flex;
+  align-items: center;
+  padding: 1px 6px;
+  border-radius: 4px;
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  background: var(--bg-inset);
+  border: 1px solid var(--border-subtle);
+  border-bottom-width: 2px;
+  color: var(--text-2);
+}
+
+/* Status-Punkte */
+.status-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 999px;
+  background: var(--ok);
+  box-shadow: 0 0 0 3px var(--ok-soft);
+}
+.agent-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 999px;
+  background: var(--accent);
+  animation: agent-pulse 1.2s ease-in-out infinite;
+}
+@keyframes agent-pulse {
+  0%, 100% { box-shadow: 0 0 0 0 var(--accent-glow); transform: scale(1); }
+  50% { box-shadow: 0 0 0 6px var(--accent-soft); transform: scale(1.2); }
+}
+
+/* Switch */
+.switch {
+  position: relative;
+  display: inline-flex;
+  height: 20px;
+  width: 34px;
+  align-items: center;
+  border-radius: 999px;
+  background: var(--bg-inset-strong);
+  border: 1px solid var(--border-subtle);
+  transition: background 0.15s ease, border-color 0.15s ease;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+.switch[data-on="true"] {
+  background: var(--accent);
+  border-color: color-mix(in srgb, var(--accent) 80%, black 20%);
+}
+.switch .knob {
+  display: inline-block;
+  height: 14px;
+  width: 14px;
+  border-radius: 999px;
+  background: #fff;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+  transition: transform 0.15s ease;
+  transform: translateX(2px);
+}
+.switch[data-on="true"] .knob { transform: translateX(15px); }
+
+/* ---------- Overlays ---------- */
+.hud-backdrop {
+  background: color-mix(in srgb, var(--bg-base) 60%, transparent);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+
+/* ---------- Skeletons ---------- */
+.skeleton {
+  position: relative;
+  overflow: hidden;
+  background: var(--bg-inset);
+  border-radius: 6px;
+}
+.skeleton::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  transform: translateX(-100%);
+  background: linear-gradient(90deg, transparent, var(--bg-inset-strong), transparent);
+  animation: skeleton-shimmer 1.5s infinite;
+}
+@keyframes skeleton-shimmer { 100% { transform: translateX(100%); } }
+
+/* ---------- Chat-Prosa ---------- */
+.typing-dot {
+  display: inline-block;
+  width: 5px;
+  height: 5px;
+  border-radius: 999px;
+  background: var(--text-3);
+  margin-right: 3px;
+  animation: typing-bounce 1.1s infinite ease-in-out;
+}
+.typing-dot:nth-child(2) { animation-delay: 0.15s; }
+.typing-dot:nth-child(3) { animation-delay: 0.3s; }
+@keyframes typing-bounce {
+  0%, 60%, 100% { transform: translateY(0); opacity: 0.45; }
+  30% { transform: translateY(-3px); opacity: 1; }
+}
+
+/* Stat-Kacheln der Index-Ansicht */
+.stat-tile {
+  border-radius: var(--r-card);
+  padding: 10px 14px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+
+/* ---------- Alt-Klassen (Rückwärtskompatibilität) ---------- */
+.text-gradient { color: var(--text-1); }
+.border-gradient-b { border-bottom: 1px solid var(--border-subtle); }
+.grid-bg, .ambient-glow { display: none; }
+.hud-scan::after { display: none; }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+  .card:hover, .hud-card:hover, .btn-primary:active, .btn-ghost:active { transform: none; }
+}
+
+/* ---------- Der Aktentisch — Registerzeilen statt Karten-Raster ----------
+   Eine Notiz ist eine Zeile: Typ-Standarte links, Akte in der Mitte,
+   Register-Meta rechts. Haarlinien trennen, nichts schwebt. */
+.ledger {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 16px;
+}
+.row-entry {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 16px 16px 14px;
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--r-card);
+  background: var(--glass);
+  transition: border-color 0.16s var(--ease-apple), background 0.16s var(--ease-apple);
+  /* Große Basen: Off-Screen-Karten überspringen Layout und Paint komplett.
+     Ohne das liefet jeder Ansichtswechsel ein Layout über alle ~165.000
+     Layout-Objekte des Bestands (~1,1 s Blockade im Hauptthread). */
+  content-visibility: auto;
+  contain-intrinsic-size: auto 132px;
+}
+.row-entry:hover { border-color: var(--border-hover); background: var(--glass-strong); }
+.row-entry:active { transform: scale(0.995); transition-duration: 80ms; }
+.row-type {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11.5px;
+  font-weight: 620;
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+}
+.row-body { min-width: 0; }
+.row-body h3 {
+  font-family: var(--font-display);
+  font-size: 17px;
+  font-weight: 600;
+  line-height: 1.24;
+  margin: 0 0 3px;
+  text-wrap: balance;
+}
+.row-body p {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.55;
+  color: var(--text-2);
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.row-body-foot { display: flex; align-items: center; gap: 8px; margin-top: 8px; flex-wrap: wrap; }
+.row-quiet {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 11px;
+  color: var(--text-3);
+  padding: 2px 7px;
+  border: 1px solid var(--border-subtle);
+  border-radius: 4px;
+  background: var(--bg-inset);
+  cursor: inherit;
+}
+button.row-quiet { cursor: pointer; }
+.row-stamp {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  padding: 2px 7px;
+  border: 1.5px solid;
+  border-radius: 3px;
+  background: transparent;
+}
+.row-meta {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  border-top: 1px solid var(--border-subtle);
+  padding-top: 10px;
+}
+.row-pct { font-family: var(--font-display); font-size: 15px; font-weight: 600; color: var(--accent); }
+.row-tags { display: flex; flex-wrap: wrap; gap: 5px; justify-content: flex-start; min-width: 0; overflow: hidden; }
+.row-tag { display: inline-flex; align-items: center; gap: 3px; font-size: 11px; color: var(--text-2); }
+.row-time { font-size: 11px; color: var(--text-3); white-space: nowrap; margin-left: auto; }
+
+/* ---------- Apple-Segmented Control ----------
+   Eine verbundene Wahlschiene: alle Optionen teilen sich eine Fläche,
+   das aktive Segment liegt als erhabenes Blatt darauf. Wer einmal ein
+   iPhone benutzt hat, kennt das — null Lernkosten. */
+.apple-seg {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  padding: 3px;
+  border-radius: 10px;
+  background: var(--bg-inset);
+  border: 1px solid var(--border-subtle);
+}
+.apple-seg-btn {
+  padding: 5px 12px;
+  border-radius: 7px;
+  border: 0;
+  background: transparent;
+  color: var(--text-2);
+  transition: background 0.16s var(--ease-apple), color 0.16s var(--ease-apple), box-shadow 0.16s var(--ease-apple);
+}
+.apple-seg-btn:hover { color: var(--text-1); }
+.apple-seg-btn[data-on="true"] {
+  background: var(--bg-panel-solid);
+  color: var(--text-1);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.35), inset 0 1px 0 var(--edge-light);
+}
+.apple-seg-btn:disabled { opacity: 0.45; }

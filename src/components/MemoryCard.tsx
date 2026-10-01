@@ -1,0 +1,142 @@
+import { memo } from 'react';
+type IconWeight = 'thin' | 'light' | 'regular' | 'bold' | 'fill' | 'duotone';
+import { formatDistanceToNow } from 'date-fns';
+import { Memory } from '../types';
+import { motion } from 'motion/react';
+import { Brain } from "../lib/icons";
+import { Hash, Clock, Zap, FileText, ExternalLink, Lock } from "../lib/icons";
+import { inhaltOhneQuelle, oeffneQuelle, parseChunkTitel, parseQuelle } from '../lib/quelle';
+import { useToast } from './ui/Toast';
+
+interface MemoryCardProps {
+  memory: Memory;
+  onClick: () => void;
+  score?: number;
+  matchedTerms?: string[];
+}
+
+const TYPE_META: Record<string, { label: string; icon: React.ComponentType<{ className?: string; style?: React.CSSProperties; weight?: IconWeight }> }> = {
+  semantic: { label: 'Fact', icon: Brain },
+  episodic: { label: 'Event', icon: Clock },
+  reference: { label: 'Document', icon: FileText },
+  procedural: { label: 'How-to', icon: Zap },
+};
+
+export const MemoryCard = memo(function MemoryCard({ memory, onClick, score, matchedTerms }: MemoryCardProps) {
+  const toast = useToast();
+  const pct = typeof score === "number" ? Math.round(score * 100) : null;
+  const now = Date.now();
+  const expired = memory.validTo != null && memory.validTo < now;
+  const superseded = !!memory.supersededBy;
+  const meta = memory.type ? TYPE_META[memory.type] : undefined;
+  const typeLabel = meta?.label ?? null;
+  const TypeIcon = meta?.icon;
+  const typeColor = memory.type ? `var(--type-${memory.type})` : null;
+  // Woher die Notiz stammt und ob sie Teil eines mehrteiligen Imports ist —
+  // beides steht in Titel/Content (Konvention der Import-Wege).
+  const quelle = parseQuelle(memory);
+  const chunk = parseChunkTitel(memory.title);
+  const lesetext = inhaltOhneQuelle(memory.content);
+
+  return (
+    <motion.div
+      layout="position"
+      onClick={onClick}
+      className="row-entry cursor-pointer group relative"
+    >
+      {/* Farbstreich links: der Typ färbt den Kartenrand */}
+      {typeColor && (
+        <span
+          aria-hidden
+          className="absolute left-0 top-3 bottom-3 w-[4px]"
+          style={{ background: `linear-gradient(180deg, ${typeColor}, color-mix(in srgb, ${typeColor} 30%, transparent))`, borderRadius: 2 }}
+        />
+      )}
+
+      {/* Typ-Standarte: Glyph + Name in der Farbe des Wissensorts */}
+      <span className="row-type" style={{ color: typeColor ?? 'var(--text-2)' }}>
+        {TypeIcon && <TypeIcon className="w-3.5 h-3.5 shrink-0" weight="duotone" />}
+        <span className="row-type-label">{typeLabel}</span>
+      </span>
+
+      {/* Die Akte selbst: Titel in Serif, darunter der bereinigte Text */}
+      <div className="row-body">
+        <h3>{memory.title || 'Untitled'}</h3>
+        <p>{lesetext || memory.content}</p>
+        <div className="row-body-foot">
+          {chunk && (
+            <span className="row-quiet tnum" title={`Part ${chunk.nr} of ${chunk.von} — this file was imported in chunks`}>
+              {chunk.nr}/{chunk.von}
+            </span>
+          )}
+          {(expired || superseded) && (
+            <span
+              className="row-stamp"
+              style={{ color: 'var(--warn)', borderColor: 'var(--warn)' }}
+              title={superseded ? 'Superseded by a newer memory' : 'Validity expired'}
+            >
+              {superseded ? 'SUPERSEDED' : 'EXPIRED'}
+            </span>
+          )}
+          {memory.scope === 'private' && (
+            <span className="row-quiet inline-flex items-center gap-1" title="Private — never shown to AI apps or cloud AI">
+              <Lock className="w-3 h-3" /> Private
+            </span>
+          )}
+          {quelle && (
+            <button
+              onClick={async (e) => {
+                e.stopPropagation();
+                const ok = await oeffneQuelle(quelle);
+                if (!ok) {
+                  toast.push({
+                    message: quelle.art === 'url'
+                      ? 'Link could not be opened.'
+                      : 'File could not be opened — it may have moved or been deleted.',
+                    kind: 'warn',
+                  });
+                }
+              }}
+              className="row-quiet hover:!border-[var(--accent)]"
+              style={{ color: 'var(--text-2)' }}
+              title={quelle.art === 'datei'
+                ? `Open file: ${quelle.pfad}`
+                : quelle.art === 'url'
+                  ? `Open link: ${quelle.url}`
+                  : `Imported from inbox: ${quelle.name}`}
+            >
+              {quelle.art === 'url'
+                ? <ExternalLink className="w-2.5 h-2.5 opacity-60 shrink-0" />
+                : <FileText className="w-2.5 h-2.5 opacity-60 shrink-0" />}
+              <span className="truncate">{quelle.name}</span>
+            </button>
+          )}
+        </div>
+      </div>
+
+      {/* Register-Meta rechts: Treffer, Tags, Alter */}
+      <div className="row-meta">
+        {pct !== null && (
+          <span
+            className="row-pct tnum"
+            title={matchedTerms?.length ? `Getroffene Begriffe: ${matchedTerms.slice(0, 4).join(', ')}` : undefined}
+          >
+            {pct}%
+          </span>
+        )}
+        <div className="row-tags">
+          {memory.tags.slice(0, 3).map(tag => (
+            <span key={tag} className="row-tag"><Hash className="w-2.5 h-2.5 opacity-50 shrink-0" />{tag}</span>
+          ))}
+          {memory.tags.length > 3 && (
+            <span className="row-quiet tnum">+{memory.tags.length - 3}</span>
+          )}
+          {pct !== null && matchedTerms && matchedTerms.length > 0 && (
+            <span className="row-quiet truncate max-w-[130px]">{matchedTerms.slice(0, 2).join(', ')}</span>
+          )}
+        </div>
+        <span className="row-time tnum">{formatDistanceToNow(new Date(memory.updatedAt), { addSuffix: true })}</span>
+      </div>
+    </motion.div>
+  );
+});

@@ -1,0 +1,183 @@
+// @vitest-environment jsdom
+import { describe, it, expect, vi, beforeEach } from "vitest";
+import { render, screen, waitFor } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
+import { Sidebar } from "../../src/components/Sidebar";
+import { AuthProvider } from "../../src/contexts/AuthContext";
+import { ThemeProvider } from "../../src/contexts/ThemeContext";
+
+beforeEach(() => { localStorage.clear(); });
+
+type Props = React.ComponentProps<typeof Sidebar>;
+function zeige(over: Partial<Props> = {}) {
+  const props: Props = {
+    tags: [{ tag: "kanzlei", count: 12 }, { tag: "steuer", count: 3 }, { tag: "einzeln", count: 1 }],
+    selectedTags: [],
+    onSelectTag: vi.fn(),
+    onClearTags: vi.fn(),
+    currentView: "memories",
+    onNavigate: vi.fn(),
+    totalMemories: 42,
+    isFocusMode: false,
+    toggleFocusMode: vi.fn(),
+    ...over,
+  };
+  const view = render(
+    <AuthProvider><ThemeProvider><Sidebar {...props} /></ThemeProvider></AuthProvider>
+  );
+  return { ...view, props };
+}
+
+describe("Sidebar: Navigation", () => {
+  it("bietet die vier Ansichten an", () => {
+    zeige();
+    for (const label of ["Knowledge", "Chat", "Graph", "Settings"]) {
+      expect(screen.getByRole("button", { name: new RegExp(`^${label}$`) })).toBeTruthy();
+    }
+  });
+
+  it("meldet einen Wechsel zurueck", async () => {
+    const user = userEvent.setup();
+    const { props } = zeige();
+    await user.click(screen.getByRole("button", { name: /^Graph$/ }));
+    expect(props.onNavigate).toHaveBeenCalledWith("graph");
+  });
+
+  it("markiert die aktive Ansicht", () => {
+    const { container } = zeige({ currentView: "chat" });
+    const aktiv = [...container.querySelectorAll("button[data-active='true']")].map((b) => b.textContent?.trim());
+    expect(aktiv).toContain("Chat");
+    expect(aktiv).not.toContain("Knowledge");
+  });
+});
+
+describe("Sidebar: Zaehlung und Tags", () => {
+  it("zaehlt Eintraege im Singular und Plural", () => {
+    const { unmount } = zeige({ totalMemories: 1 });
+    expect(screen.getByText("1 entry")).toBeTruthy();
+    unmount();
+    zeige({ totalMemories: 42 });
+    expect(screen.getByText("42 entries")).toBeTruthy();
+  });
+
+  it("zeigt Tags mit ihrer Haeufigkeit", () => {
+    zeige();
+    expect(screen.getByRole("button", { name: /kanzlei/ })).toBeTruthy();
+    expect(screen.getByText("12")).toBeTruthy();
+  });
+
+  it("laesst die Zahl bei einem einzelnen Vorkommen weg", () => {
+    const { container } = zeige();
+    const einzeln = [...container.querySelectorAll("button")].find((b) => /einzeln/.test(b.textContent ?? ""));
+    expect(einzeln?.textContent?.trim()).toBe("einzeln");
+  });
+
+  it("meldet die Auswahl eines Tags", async () => {
+    const user = userEvent.setup();
+    const { props } = zeige();
+    await user.click(screen.getByRole("button", { name: /kanzlei/ }));
+    expect(props.onSelectTag).toHaveBeenCalledWith("kanzlei");
+  });
+
+  it("zeigt 'Reset' nur bei getroffener Auswahl", async () => {
+    const user = userEvent.setup();
+    const { unmount } = zeige();
+    expect(screen.queryByRole("button", { name: /Reset/ })).toBeNull();
+    unmount();
+    const { props } = zeige({ selectedTags: ["kanzlei"] });
+    await user.click(screen.getByRole("button", { name: /Reset/ }));
+    expect(props.onClearTags).toHaveBeenCalled();
+  });
+
+  it("blendet den Tag-Bereich ohne Tags ganz aus", () => {
+    zeige({ tags: [] });
+    expect(screen.queryByText("Tags")).toBeNull();
+  });
+});
+
+describe("Sidebar: viele Tags", () => {
+  // Befund: die Liste schnitt bei 40 Tags ab, ohne das zu sagen. Wer viel Wissen
+  // hat, sah den Rest schlicht nicht — dieselbe Sorte stiller Deckel wie
+  // frueher bei der Suche.
+  const viele = Array.from({ length: 120 }, (_, i) => ({ tag: `thema${i}`, count: 120 - i }));
+
+  it("sagt, wenn nicht alle Tags gezeigt werden", () => {
+    zeige({ tags: viele });
+    expect(screen.getByText(/more/i)).toBeTruthy();
+  });
+
+  it("laesst den Rest aufklappen", async () => {
+    const user = userEvent.setup();
+    const { container } = zeige({ tags: viele });
+    const vorher = [...container.querySelectorAll("button")].filter((b) => /^thema\d+/.test(b.textContent ?? "")).length;
+    await user.click(screen.getByText(/more/i));
+    await waitFor(() => {
+      const nachher = [...container.querySelectorAll("button")].filter((b) => /^thema\d+/.test(b.textContent ?? "")).length;
+      expect(nachher).toBeGreaterThan(vorher);
+    });
+  });
+
+  it("sagt bei wenigen Tags nichts von 'mehr'", () => {
+    zeige();
+    expect(screen.queryByText(/more/i)).toBeNull();
+  });
+});
+
+describe("Sidebar: Fusszeile", () => {
+  it("zeigt den Free-Plan mit Upgrade-Hinweis — gesperrt wird nie", () => {
+    zeige();
+    expect(screen.getByText(/KEPTA Core/)).toBeTruthy();
+    expect(screen.getByText(/Upgrade to Pro/)).toBeTruthy();
+    // Der Plan-Wechsel lebt in der Fusszeile — die Version bleibt dieselbe:
+    expect(screen.getAllByText(/KEPTA/).length).toBeGreaterThan(0);
+  });
+
+  it("zeigt die Stufe der Lizenz in der Fusszeile", () => {
+    zeige({ licensee: "Sarah Mandel", licenseNumber: "0007", licenseEdition: "business", licenseSeats: 5 });
+    // Die interne Edition „business“ zeigt KEPTA Enterprise — die öffentliche
+    // Stufe Business gibt es nicht mehr (Team-Features sind Enterprise).
+    expect(screen.getByText(/KEPTA Enterprise/)).toBeTruthy();
+    expect(screen.getByText(/Licensed to Sarah Mandel/)).toBeTruthy();
+    zeige({ licensee: "Sarah Mandel", licenseNumber: "0007", licenseEdition: "pro" });
+    expect(screen.getByText(/KEPTA Pro/)).toBeTruthy();
+  });
+
+  it("zeigt in der Fusszeile NIE eine Versionsnummer (Damian, 25.9.)", () => {
+    zeige();
+    expect(screen.queryByText(/\d+\.\d+\.\d+/)).toBeNull();
+    zeige({ licensee: "Sarah Mandel", licenseNumber: "0007", licenseEdition: "pro" });
+    expect(screen.queryByText(/\d+\.\d+\.\d+/)).toBeNull();
+  });
+
+  it("schaltet das Thema um", async () => {
+    const user = userEvent.setup();
+    zeige();
+    const knopf = screen.getByRole("button", { name: /Switch theme/i });
+    const vorher = knopf.textContent;
+    await user.click(knopf);
+    await waitFor(() => expect(screen.getByRole("button", { name: /Switch theme/i }).textContent).not.toBe(vorher));
+  });
+
+  it("schaltet den Fokusmodus", async () => {
+    const user = userEvent.setup();
+    const { props } = zeige();
+    await user.click(screen.getByRole("button", { name: /Focus mode/i }));
+    expect(props.toggleFocusMode).toHaveBeenCalled();
+  });
+
+  it("zeigt den Einrichtungs-Knopf nur, wenn die Ersteinrichtung offen ist", async () => {
+    const user = userEvent.setup();
+    const { unmount } = zeige();
+    expect(screen.queryByRole("button", { name: /Open setup/i })).toBeNull();
+    unmount();
+    const onOpenSetup = vi.fn();
+    zeige({ showSetup: true, onOpenSetup });
+    await user.click(screen.getByRole("button", { name: /Open setup/i }));
+    expect(onOpenSetup).toHaveBeenCalled();
+  });
+
+  it("klappt im Fokusmodus auf Breite null zusammen", () => {
+    const { container } = zeige({ isFocusMode: true });
+    expect(container.firstElementChild?.className).toMatch(/w-0/);
+  });
+});

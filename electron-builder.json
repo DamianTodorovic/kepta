@@ -1,0 +1,50 @@
+{
+  "appId": "app.kepta.desktop",
+  "productName": "KEPTA",
+  "directories": {
+    "output": "release",
+    "buildResources": "build"
+  },
+  "mac": {
+    "icon": "build/icon.icns",
+    "category": "public.app-category.productivity",
+    "artifactName": "${productName}-${version}-mac-${arch}.${ext}",
+    "target": [
+      "dmg",
+      "zip"
+    ]
+  },
+  "linux": {
+    "icon": "build/icon.png",
+    "category": "Utility",
+    "maintainer": "Damian Todorovic",
+    "artifactName": "${productName}-${version}-linux-${arch}.${ext}",
+    "target": [
+      "AppImage",
+      "deb"
+    ]
+  },
+  "win": {
+    "icon": "build/icon.png",
+    "artifactName": "${productName}-${version}-win-${arch}.${ext}",
+    "target": [
+      "nsis",
+      "zip"
+    ]
+  },
+  "nsis": {
+    "oneClick": false,
+    "allowToChangeInstallationDirectory": true,
+    "perMachine": false,
+    "deleteAppDataOnUninstall": false
+  },
+  "asar": true,
+  "files": [
+    "dist/**/*",
+    "!**/*.map",
+    "electron.js",
+    "package.json"
+  ],
+  "copyright": "Copyright © 2026 Damian Todorovic",
+  "afterPack": "scripts/adhoc-sign.cjs"
+}

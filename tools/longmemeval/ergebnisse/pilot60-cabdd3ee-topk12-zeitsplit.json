@@ -1,0 +1,658 @@
+{
+  "bericht": {
+    "datum": "2026-09-24T10:37:57.515Z",
+    "kepta_version": "2.13.8",
+    "commit": "2d6dc38",
+    "modell": "llama3.2:3b",
+    "ollama_version": "0.34.2",
+    "datensatz": "pilot-60-stratifiziert.json",
+    "datensatz_sha256": "cabdd3ee85313b4ff0f191843bf5d118f6e12ed601436fd8476486768ccb4a0d",
+    "fragen": 60,
+    "topk": 12,
+    "ingest": {
+      "sessions": 0,
+      "notizen": 0,
+      "uebersprungen": 29142,
+      "ohneDatum": 0
+    },
+    "genauigkeit_gesamt": 0.35,
+    "pro_faehigkeit": [
+      {
+        "faehigkeit": "information_extraction",
+        "n": 20,
+        "genauigkeit": 0.6
+      },
+      {
+        "faehigkeit": "multi_session_reasoning",
+        "n": 10,
+        "genauigkeit": 0
+      },
+      {
+        "faehigkeit": "temporal_reasoning",
+        "n": 10,
+        "genauigkeit": 0.1
+      },
+      {
+        "faehigkeit": "knowledge_updates",
+        "n": 10,
+        "genauigkeit": 0.5
+      },
+      {
+        "faehigkeit": "abstention",
+        "n": 0,
+        "genauigkeit": 0
+      }
+    ],
+    "abstention_quote_leer": 0,
+    "judge_parse_fehler": 0,
+    "judge_aufrufe": 521,
+    "verbatim_quote": 0.26666666666666666,
+    "judge_prompt_version": 1,
+    "used_vectors": true,
+    "vektoren_eingebettet": null,
+    "zeitsplit": true,
+    "laufzeit_ms": 930490
+  },
+  "fragen": [
+    {
+      "question_id": "e47becba",
+      "typ": "single-session-user",
+      "faehigkeit": "information_extraction",
+      "urteil": "ja",
+      "treffer": 12,
+      "trefferIndex": null,
+      "verbatim": true,
+      "judge_aufrufe": 0
+    },
+    {
+      "question_id": "118b2229",
+      "typ": "single-session-user",
+      "faehigkeit": "information_extraction",
+      "urteil": "ja",
+      "treffer": 12,
+      "trefferIndex": null,
+      "verbatim": true,
+      "judge_aufrufe": 0
+    },
+    {
+      "question_id": "51a45a95",
+      "typ": "single-session-user",
+      "faehigkeit": "information_extraction",
+      "urteil": "ja",
+      "treffer": 12,
+      "trefferIndex": null,
+      "verbatim": true,
+      "judge_aufrufe": 0
+    },
+    {
+      "question_id": "58bf7951",
+      "typ": "single-session-user",
+      "faehigkeit": "information_extraction",
+      "urteil": "ja",
+      "treffer": 12,
+      "trefferIndex": null,
+      "verbatim": true,
+      "judge_aufrufe": 0
+    },
+    {
+      "question_id": "1e043500",
+      "typ": "single-session-user",
+      "faehigkeit": "information_extraction",
+      "urteil": "ja",
+      "treffer": 12,
+      "trefferIndex": null,
+      "verbatim": true,
+      "judge_aufrufe": 0
+    },
+    {
+      "question_id": "c5e8278d",
+      "typ": "single-session-user",
+      "faehigkeit": "information_extraction",
+      "urteil": "ja",
+      "treffer": 12,
+      "trefferIndex": null,
+      "verbatim": true,
+      "judge_aufrufe": 0
+    },
+    {
+      "question_id": "6ade9755",
+      "typ": "single-session-user",
+      "faehigkeit": "information_extraction",
+      "urteil": "nein",
+      "treffer": 12,
+      "trefferIndex": null,
+      "verbatim": false,
+      "judge_aufrufe": 12
+    },
+    {
+      "question_id": "6f9b354f",
+      "typ": "single-session-user",
+      "faehigkeit": "information_extraction",
+      "urteil": "nein",
+      "treffer": 12,
+      "trefferIndex": null,
+      "verbatim": false,
+      "judge_aufrufe": 12
+    },
+    {
+      "question_id": "58ef2f1c",
+      "typ": "single-session-user",
+      "faehigkeit": "information_extraction",
+      "urteil": "nein",
+      "treffer": 12,
+      "trefferIndex": null,
+      "verbatim": false,
+      "judge_aufrufe": 12
+    },
+    {
+      "question_id": "f8c5f88b",
+      "typ": "single-session-user",
+      "faehigkeit": "information_extraction",
+      "urteil": "teilweise",
+      "treffer": 12,
+      "trefferIndex": null,
+      "verbatim": false,
+      "judge_aufrufe": 12
+    },
+    {
+      "question_id": "0a995998",
+      "typ": "multi-session",
+      "faehigkeit": "multi_session_reasoning",
+      "urteil": "nein",
+      "treffer": 12,
+      "trefferIndex": null,
+      "verbatim": false,
+      "judge_aufrufe": 12
+    },
+    {
+      "question_id": "6d550036",
+      "typ": "multi-session",
+      "faehigkeit": "multi_session_reasoning",
+      "urteil": "nein",
+      "treffer": 12,
+      "trefferIndex": null,
+      "verbatim": false,
+      "judge_aufrufe": 12
+    },
+    {
+      "question_id": "gpt4_59c863d7",
+      "typ": "multi-session",
+      "faehigkeit": "multi_session_reasoning",
+      "urteil": "nein",
+      "treffer": 12,
+      "trefferIndex": null,
+      "verbatim": false,
+      "judge_aufrufe": 12
+    },
+    {
+      "question_id": "b5ef892d",
+      "typ": "multi-session",
+      "faehigkeit": "multi_session_reasoning",
+      "urteil": "nein",
+      "treffer": 12,
+      "trefferIndex": null,
+      "verbatim": false,
+      "judge_aufrufe": 12
+    },
+    {
+      "question_id": "e831120c",
+      "typ": "multi-session",
+      "faehigkeit": "multi_session_reasoning",
+      "urteil": "nein",
+      "treffer": 14,
+      "trefferIndex": null,
+      "verbatim": false,
+      "judge_aufrufe": 14
+    },
+    {
+      "question_id": "3a704032",
+      "typ": "multi-session",
+      "faehigkeit": "multi_session_reasoning",
+      "urteil": "nein",
+      "treffer": 12,
+      "trefferIndex": null,
+      "verbatim": false,
+      "judge_aufrufe": 12
+    },
+    {
+      "question_id": "gpt4_d84a3211",
+      "typ": "multi-session",
+      "faehigkeit": "multi_session_reasoning",
+      "urteil": "nein",
+      "treffer": 12,
+      "trefferIndex": null,
+      "verbatim": false,
+      "judge_aufrufe": 12
+    },
+    {
+      "question_id": "aae3761f",
+      "typ": "multi-session",
+      "faehigkeit": "multi_session_reasoning",
+      "urteil": "nein",
+      "treffer": 12,
+      "trefferIndex": null,
+      "verbatim": false,
+      "judge_aufrufe": 12
+    },
+    {
+      "question_id": "gpt4_f2262a51",
+      "typ": "multi-session",
+      "faehigkeit": "multi_session_reasoning",
+      "urteil": "nein",
+      "treffer": 12,
+      "trefferIndex": null,
+      "verbatim": false,
+      "judge_aufrufe": 12
+    },
+    {
+      "question_id": "dd2973ad",
+      "typ": "multi-session",
+      "faehigkeit": "multi_session_reasoning",
+      "urteil": "nein",
+      "treffer": 12,
+      "trefferIndex": null,
+      "verbatim": false,
+      "judge_aufrufe": 12
+    },
+    {
+      "question_id": "8a2466db",
+      "typ": "single-session-preference",
+      "faehigkeit": null,
+      "urteil": "ja",
+      "treffer": 12,
+      "trefferIndex": 0,
+      "verbatim": false,
+      "judge_aufrufe": 1
+    },
+    {
+      "question_id": "06878be2",
+      "typ": "single-session-preference",
+      "faehigkeit": null,
+      "urteil": "nein",
+      "treffer": 12,
+      "trefferIndex": null,
+      "verbatim": false,
+      "judge_aufrufe": 12
+    },
+    {
+      "question_id": "75832dbd",
+      "typ": "single-session-preference",
+      "faehigkeit": null,
+      "urteil": "teilweise",
+      "treffer": 12,
+      "trefferIndex": null,
+      "verbatim": false,
+      "judge_aufrufe": 12
+    },
+    {
+      "question_id": "0edc2aef",
+      "typ": "single-session-preference",
+      "faehigkeit": null,
+      "urteil": "ja",
+      "treffer": 12,
+      "trefferIndex": 1,
+      "verbatim": false,
+      "judge_aufrufe": 2
+    },
+    {
+      "question_id": "35a27287",
+      "typ": "single-session-preference",
+      "faehigkeit": null,
+      "urteil": "nein",
+      "treffer": 12,
+      "trefferIndex": null,
+      "verbatim": false,
+      "judge_aufrufe": 12
+    },
+    {
+      "question_id": "32260d93",
+      "typ": "single-session-preference",
+      "faehigkeit": null,
+      "urteil": "nein",
+      "treffer": 12,
+      "trefferIndex": null,
+      "verbatim": false,
+      "judge_aufrufe": 12
+    },
+    {
+      "question_id": "195a1a1b",
+      "typ": "single-session-preference",
+      "faehigkeit": null,
+      "urteil": "teilweise",
+      "treffer": 12,
+      "trefferIndex": null,
+      "verbatim": false,
+      "judge_aufrufe": 12
+    },
+    {
+      "question_id": "afdc33df",
+      "typ": "single-session-preference",
+      "faehigkeit": null,
+      "urteil": "nein",
+      "treffer": 12,
+      "trefferIndex": null,
+      "verbatim": false,
+      "judge_aufrufe": 12
+    },
+    {
+      "question_id": "caf03d32",
+      "typ": "single-session-preference",
+      "faehigkeit": null,
+      "urteil": "nein",
+      "treffer": 12,
+      "trefferIndex": null,
+      "verbatim": false,
+      "judge_aufrufe": 12
+    },
+    {
+      "question_id": "54026fce",
+      "typ": "single-session-preference",
+      "faehigkeit": null,
+      "urteil": "nein",
+      "treffer": 12,
+      "trefferIndex": null,
+      "verbatim": false,
+      "judge_aufrufe": 12
+    },
+    {
+      "question_id": "gpt4_59149c77",
+      "typ": "temporal-reasoning",
+      "faehigkeit": "temporal_reasoning",
+      "urteil": "nein",
+      "treffer": 15,
+      "trefferIndex": null,
+      "verbatim": false,
+      "judge_aufrufe": 15
+    },
+    {
+      "question_id": "gpt4_f49edff3",
+      "typ": "temporal-reasoning",
+      "faehigkeit": "temporal_reasoning",
+      "urteil": "nein",
+      "treffer": 20,
+      "trefferIndex": null,
+      "verbatim": false,
+      "judge_aufrufe": 18
+    },
+    {
+      "question_id": "71017276",
+      "typ": "temporal-reasoning",
+      "faehigkeit": "temporal_reasoning",
+      "urteil": "nein",
+      "treffer": 14,
+      "trefferIndex": null,
+      "verbatim": false,
+      "judge_aufrufe": 14
+    },
+    {
+      "question_id": "b46e15ed",
+      "typ": "temporal-reasoning",
+      "faehigkeit": "temporal_reasoning",
+      "urteil": "nein",
+      "treffer": 17,
+      "trefferIndex": null,
+      "verbatim": false,
+      "judge_aufrufe": 17
+    },
+    {
+      "question_id": "gpt4_fa19884c",
+      "typ": "temporal-reasoning",
+      "faehigkeit": "temporal_reasoning",
+      "urteil": "nein",
+      "treffer": 18,
+      "trefferIndex": null,
+      "verbatim": false,
+      "judge_aufrufe": 18
+    },
+    {
+      "question_id": "0bc8ad92",
+      "typ": "temporal-reasoning",
+      "faehigkeit": "temporal_reasoning",
+      "urteil": "nein",
+      "treffer": 12,
+      "trefferIndex": null,
+      "verbatim": false,
+      "judge_aufrufe": 12
+    },
+    {
+      "question_id": "af082822",
+      "typ": "temporal-reasoning",
+      "faehigkeit": "temporal_reasoning",
+      "urteil": "nein",
+      "treffer": 13,
+      "trefferIndex": null,
+      "verbatim": false,
+      "judge_aufrufe": 13
+    },
+    {
+      "question_id": "gpt4_4929293a",
+      "typ": "temporal-reasoning",
+      "faehigkeit": "temporal_reasoning",
+      "urteil": "ja",
+      "treffer": 15,
+      "trefferIndex": null,
+      "verbatim": true,
+      "judge_aufrufe": 0
+    },
+    {
+      "question_id": "gpt4_b5700ca9",
+      "typ": "temporal-reasoning",
+      "faehigkeit": "temporal_reasoning",
+      "urteil": "nein",
+      "treffer": 12,
+      "trefferIndex": null,
+      "verbatim": false,
+      "judge_aufrufe": 12
+    },
+    {
+      "question_id": "9a707b81",
+      "typ": "temporal-reasoning",
+      "faehigkeit": "temporal_reasoning",
+      "urteil": "nein",
+      "treffer": 12,
+      "trefferIndex": null,
+      "verbatim": false,
+      "judge_aufrufe": 12
+    },
+    {
+      "question_id": "6a1eabeb",
+      "typ": "knowledge-update",
+      "faehigkeit": "knowledge_updates",
+      "urteil": "nein",
+      "treffer": 12,
+      "trefferIndex": null,
+      "verbatim": false,
+      "judge_aufrufe": 12
+    },
+    {
+      "question_id": "6aeb4375",
+      "typ": "knowledge-update",
+      "faehigkeit": "knowledge_updates",
+      "urteil": "ja",
+      "treffer": 12,
+      "trefferIndex": null,
+      "verbatim": true,
+      "judge_aufrufe": 0
+    },
+    {
+      "question_id": "830ce83f",
+      "typ": "knowledge-update",
+      "faehigkeit": "knowledge_updates",
+      "urteil": "nein",
+      "treffer": 12,
+      "trefferIndex": null,
+      "verbatim": false,
+      "judge_aufrufe": 12
+    },
+    {
+      "question_id": "852ce960",
+      "typ": "knowledge-update",
+      "faehigkeit": "knowledge_updates",
+      "urteil": "ja",
+      "treffer": 12,
+      "trefferIndex": null,
+      "verbatim": true,
+      "judge_aufrufe": 0
+    },
+    {
+      "question_id": "945e3d21",
+      "typ": "knowledge-update",
+      "faehigkeit": "knowledge_updates",
+      "urteil": "nein",
+      "treffer": 12,
+      "trefferIndex": null,
+      "verbatim": false,
+      "judge_aufrufe": 12
+    },
+    {
+      "question_id": "d7c942c3",
+      "typ": "knowledge-update",
+      "faehigkeit": "knowledge_updates",
+      "urteil": "nein",
+      "treffer": 12,
+      "trefferIndex": null,
+      "verbatim": false,
+      "judge_aufrufe": 12
+    },
+    {
+      "question_id": "71315a70",
+      "typ": "knowledge-update",
+      "faehigkeit": "knowledge_updates",
+      "urteil": "ja",
+      "treffer": 12,
+      "trefferIndex": null,
+      "verbatim": true,
+      "judge_aufrufe": 0
+    },
+    {
+      "question_id": "89941a93",
+      "typ": "knowledge-update",
+      "faehigkeit": "knowledge_updates",
+      "urteil": "nein",
+      "treffer": 12,
+      "trefferIndex": null,
+      "verbatim": false,
+      "judge_aufrufe": 12
+    },
+    {
+      "question_id": "ce6d2d27",
+      "typ": "knowledge-update",
+      "faehigkeit": "knowledge_updates",
+      "urteil": "ja",
+      "treffer": 12,
+      "trefferIndex": null,
+      "verbatim": true,
+      "judge_aufrufe": 0
+    },
+    {
+      "question_id": "9ea5eabc",
+      "typ": "knowledge-update",
+      "faehigkeit": "knowledge_updates",
+      "urteil": "ja",
+      "treffer": 12,
+      "trefferIndex": null,
+      "verbatim": true,
+      "judge_aufrufe": 0
+    },
+    {
+      "question_id": "7161e7e2",
+      "typ": "single-session-assistant",
+      "faehigkeit": "information_extraction",
+      "urteil": "nein",
+      "treffer": 12,
+      "trefferIndex": null,
+      "verbatim": false,
+      "judge_aufrufe": 12
+    },
+    {
+      "question_id": "c4f10528",
+      "typ": "single-session-assistant",
+      "faehigkeit": "information_extraction",
+      "urteil": "ja",
+      "treffer": 12,
+      "trefferIndex": null,
+      "verbatim": true,
+      "judge_aufrufe": 0
+    },
+    {
+      "question_id": "89527b6b",
+      "typ": "single-session-assistant",
+      "faehigkeit": "information_extraction",
+      "urteil": "nein",
+      "treffer": 12,
+      "trefferIndex": null,
+      "verbatim": false,
+      "judge_aufrufe": 12
+    },
+    {
+      "question_id": "e9327a54",
+      "typ": "single-session-assistant",
+      "faehigkeit": "information_extraction",
+      "urteil": "nein",
+      "treffer": 12,
+      "trefferIndex": null,
+      "verbatim": false,
+      "judge_aufrufe": 12
+    },
+    {
+      "question_id": "4c36ccef",
+      "typ": "single-session-assistant",
+      "faehigkeit": "information_extraction",
+      "urteil": "ja",
+      "treffer": 12,
+      "trefferIndex": null,
+      "verbatim": true,
+      "judge_aufrufe": 0
+    },
+    {
+      "question_id": "6ae235be",
+      "typ": "single-session-assistant",
+      "faehigkeit": "information_extraction",
+      "urteil": "teilweise",
+      "treffer": 12,
+      "trefferIndex": null,
+      "verbatim": false,
+      "judge_aufrufe": 12
+    },
+    {
+      "question_id": "7e00a6cb",
+      "typ": "single-session-assistant",
+      "faehigkeit": "information_extraction",
+      "urteil": "ja",
+      "treffer": 12,
+      "trefferIndex": null,
+      "verbatim": true,
+      "judge_aufrufe": 0
+    },
+    {
+      "question_id": "1903aded",
+      "typ": "single-session-assistant",
+      "faehigkeit": "information_extraction",
+      "urteil": "nein",
+      "treffer": 12,
+      "trefferIndex": null,
+      "verbatim": false,
+      "judge_aufrufe": 12
+    },
+    {
+      "question_id": "ceb54acb",
+      "typ": "single-session-assistant",
+      "faehigkeit": "information_extraction",
+      "urteil": "ja",
+      "treffer": 12,
+      "trefferIndex": 0,
+      "verbatim": false,
+      "judge_aufrufe": 1
+    },
+    {
+      "question_id": "f523d9fe",
+      "typ": "single-session-assistant",
+      "faehigkeit": "information_extraction",
+      "urteil": "ja",
+      "treffer": 12,
+      "trefferIndex": null,
+      "verbatim": true,
+      "judge_aufrufe": 0
+    }
+  ]
+}

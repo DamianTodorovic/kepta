@@ -1,0 +1,20 @@
+{
+  "_base": [
+    {
+      "title": "Welcome to KEPTA — local and private",
+      "content": "No login, no cloud. Everything lives in ~/.kepta/kepta.db on this machine. Back it up through System → JSON export. MCP shares the very same store with Claude and Cursor.",
+      "tags": [
+        "start",
+        "system"
+      ]
+    },
+    {
+      "title": "Shortcuts",
+      "content": "⌘K palette, ⌘N new node, focus the search, open the graph, import. The top-k slider controls how many nodes go into the chat — that is where you save tokens.",
+      "tags": [
+        "start",
+        "shortcuts"
+      ]
+    }
+  ]
+}

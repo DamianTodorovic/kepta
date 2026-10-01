@@ -1,0 +1,7 @@
+node_modules
+dist
+release
+npm/bin
+.git
+docs/demo.gif
+*.log

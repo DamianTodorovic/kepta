@@ -1,0 +1,156 @@
+{
+  "bericht": {
+    "datum": "2026-09-21T21:40:04.623Z",
+    "kepta_version": "2.13.2",
+    "commit": "648aadb",
+    "modell": "llama3.2:3b",
+    "ollama_version": "0.34.2",
+    "datensatz": "longmemeval_s",
+    "datensatz_sha256": "08d8dad4be43ee2049a22ff5674eb86725d0ce5ff434cde2627e5e8e7e117894",
+    "fragen": 10,
+    "topk": 8,
+    "ingest": {
+      "sessions": 494,
+      "notizen": 5160,
+      "uebersprungen": 0,
+      "ohneDatum": 0
+    },
+    "genauigkeit_gesamt": 0.65,
+    "pro_faehigkeit": [
+      {
+        "faehigkeit": "information_extraction",
+        "n": 10,
+        "genauigkeit": 0.65
+      },
+      {
+        "faehigkeit": "multi_session_reasoning",
+        "n": 0,
+        "genauigkeit": 0
+      },
+      {
+        "faehigkeit": "temporal_reasoning",
+        "n": 0,
+        "genauigkeit": 0
+      },
+      {
+        "faehigkeit": "knowledge_updates",
+        "n": 0,
+        "genauigkeit": 0
+      },
+      {
+        "faehigkeit": "abstention",
+        "n": 0,
+        "genauigkeit": 0
+      }
+    ],
+    "abstention_quote_leer": 0,
+    "judge_parse_fehler": 0,
+    "judge_aufrufe": 32,
+    "verbatim_quote": 0.6,
+    "judge_prompt_version": 1,
+    "used_vectors": false,
+    "laufzeit_ms": 33636
+  },
+  "fragen": [
+    {
+      "question_id": "e47becba",
+      "typ": "single-session-user",
+      "faehigkeit": "information_extraction",
+      "urteil": "ja",
+      "treffer": 8,
+      "trefferIndex": null,
+      "verbatim": true,
+      "judge_aufrufe": 0
+    },
+    {
+      "question_id": "118b2229",
+      "typ": "single-session-user",
+      "faehigkeit": "information_extraction",
+      "urteil": "ja",
+      "treffer": 8,
+      "trefferIndex": null,
+      "verbatim": true,
+      "judge_aufrufe": 0
+    },
+    {
+      "question_id": "51a45a95",
+      "typ": "single-session-user",
+      "faehigkeit": "information_extraction",
+      "urteil": "ja",
+      "treffer": 8,
+      "trefferIndex": null,
+      "verbatim": true,
+      "judge_aufrufe": 0
+    },
+    {
+      "question_id": "58bf7951",
+      "typ": "single-session-user",
+      "faehigkeit": "information_extraction",
+      "urteil": "nein",
+      "treffer": 8,
+      "trefferIndex": null,
+      "verbatim": false,
+      "judge_aufrufe": 8
+    },
+    {
+      "question_id": "1e043500",
+      "typ": "single-session-user",
+      "faehigkeit": "information_extraction",
+      "urteil": "ja",
+      "treffer": 8,
+      "trefferIndex": null,
+      "verbatim": true,
+      "judge_aufrufe": 0
+    },
+    {
+      "question_id": "c5e8278d",
+      "typ": "single-session-user",
+      "faehigkeit": "information_extraction",
+      "urteil": "ja",
+      "treffer": 8,
+      "trefferIndex": null,
+      "verbatim": true,
+      "judge_aufrufe": 0
+    },
+    {
+      "question_id": "6ade9755",
+      "typ": "single-session-user",
+      "faehigkeit": "information_extraction",
+      "urteil": "nein",
+      "treffer": 8,
+      "trefferIndex": null,
+      "verbatim": false,
+      "judge_aufrufe": 8
+    },
+    {
+      "question_id": "6f9b354f",
+      "typ": "single-session-user",
+      "faehigkeit": "information_extraction",
+      "urteil": "ja",
+      "treffer": 8,
+      "trefferIndex": null,
+      "verbatim": true,
+      "judge_aufrufe": 0
+    },
+    {
+      "question_id": "58ef2f1c",
+      "typ": "single-session-user",
+      "faehigkeit": "information_extraction",
+      "urteil": "nein",
+      "treffer": 8,
+      "trefferIndex": null,
+      "verbatim": false,
+      "judge_aufrufe": 8
+    },
+    {
+      "question_id": "f8c5f88b",
+      "typ": "single-session-user",
+      "faehigkeit": "information_extraction",
+      "urteil": "teilweise",
+      "treffer": 8,
+      "trefferIndex": null,
+      "verbatim": false,
+      "judge_aufrufe": 8
+    }
+  ]
+}

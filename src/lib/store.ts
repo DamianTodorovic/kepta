@@ -1,0 +1,259 @@
+import { Memory } from '../types';
+
+// All nodes liegen jetzt serverseitig in ~/.ki-gehirn/memories.json
+// (kein localStorage-Limit mehr). Der alte localStorage-Bestand wird
+// einmalig automatisch migriert.
+
+const LEGACY_KEY = 'ki_gehirn_memories';
+const MIGRATED_KEY = 'ki_gehirn_memories_migrated_v2';
+
+const listeners = new Set<(memories: Memory[]) => void>();
+let cache: Memory[] = [];
+
+// ---------- Performance: Request-Dedup + 300ms Debounce für refresh ----------
+let pendingRefresh: Promise<Memory[]> | null = null;
+// Der ETag der letzten geladenen Antwort — Grundlage für If-None-Match (304).
+// Jeder eigene Schreibvorgang wirft ihn weg: der nächste Refresh lädt dann
+// garantiert den neuen Bestand, statt sich auf einen alten ETag zu verlassen.
+let etag: string | null = null;
+function etagVergessen(): void {
+  etag = null;
+}
+let debounceTimer: ReturnType<typeof setTimeout> | null = null;
+const debounceWaiters: Array<{ resolve: (v: Memory[]) => void; reject: (e: unknown) => void }> = [];
+
+function notify() {
+  listeners.forEach(fn => fn(cache));
+}
+
+export function getMemoriesSync(): Memory[] {
+  return cache;
+}
+
+async function doRefresh(): Promise<Memory[]> {
+  // Request-Dedup: wiederverwende pending promise
+  if (pendingRefresh) return pendingRefresh;
+  pendingRefresh = (async () => {
+    try {
+      await migrateLegacyIfNeeded();
+      // ETag-Sparen: Der Server berechnet über den ganzen Bestand einen ETag.
+      // Ohne If-None-Match kamen bei JEDEM Refresh (Start, Fensterfokus,
+      // Agent-Ereignis) die vollen ~7,5 MB zurück, die der Renderer dann
+      // parsen und in den State schieben musste — bei 3.000+ Notizen ein
+      // spürbarer Ruck, und der GC-Druck machte die ganze Oberfläche träge.
+      // Mit ETag antwortet der Server bei unverändertem Bestand mit 304 und
+      // leerem Körper: kein Transfer, kein Parse, kein Re-Render.
+      const res = await fetch('/api/memories', etag ? { headers: { 'If-None-Match': etag } } : undefined);
+      // Defensiv gelesen: ältere Test-Mocks bauen Responses ohne status/headers.
+      if ((res as { status?: number }).status === 304) {
+        // Bestand unverändert — Cache behalten, die Oberfläche nicht anfassen.
+        return cache;
+      }
+      const neuesEtag = res.headers?.get?.('etag') ?? null;
+      const data = await res.json();
+      // API liefert ein nacktes Array (ältere Clients erwarteten {memories:[]})
+      cache = Array.isArray(data) ? data : Array.isArray(data?.memories) ? data.memories : [];
+      etag = neuesEtag;
+    } catch {
+      // Server nicht erreichbar (oder Storage defekt) -> Cache behalten.
+      // doRefresh verspricht: rejected NIE — so darf die Konvergenz einfach
+      // mit `void doRefresh()` feuern, ohne unhandled rejections zu riskieren.
+    }
+    notify();
+    return cache;
+  })();
+  try {
+    return await pendingRefresh;
+  } finally {
+    pendingRefresh = null;
+  }
+}
+
+export function refreshMemories(): Promise<Memory[]> {
+  // Dedup: laufende Anfrage wiederverwenden
+  if (pendingRefresh) return pendingRefresh;
+  // Debounce 300ms: sammle parallele Aufrufe
+  if (debounceTimer) {
+    return new Promise<Memory[]>((resolve, reject) => {
+      debounceWaiters.push({ resolve, reject });
+    });
+  }
+  return new Promise<Memory[]>((resolve, reject) => {
+    debounceWaiters.push({ resolve, reject });
+    debounceTimer = setTimeout(async () => {
+      debounceTimer = null;
+      const waiters = debounceWaiters.splice(0, debounceWaiters.length);
+      try {
+        const result = await doRefresh();
+        waiters.forEach(w => w.resolve(result));
+      } catch (e) {
+        waiters.forEach(w => w.reject(e));
+      }
+    }, 300);
+  });
+}
+
+async function migrateLegacyIfNeeded() {
+  if (localStorage.getItem(MIGRATED_KEY)) return;
+  localStorage.setItem(MIGRATED_KEY, '1');
+  try {
+    const raw = localStorage.getItem(LEGACY_KEY);
+    if (!raw) return;
+    const legacy = JSON.parse(raw) as Memory[];
+    if (!Array.isArray(legacy) || legacy.length === 0) return;
+    await fetch('/api/memories/import', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ memories: legacy, mode: 'merge' }),
+    });
+  } catch {
+    // Migration darf den Betrieb nie blockieren
+  }
+}
+
+export function subscribeMemories(callback: (memories: Memory[]) => void): () => void {
+  listeners.add(callback);
+  callback(cache);
+  void refreshMemories();
+  return () => {
+    listeners.delete(callback);
+  };
+}
+
+export async function saveMemory(memoryData: Partial<Memory>): Promise<Memory | null> {
+  etagVergessen();
+  // Optimistic Update: sofort in Cache einfügen/aktualisieren
+  const previous = [...cache];
+  const now = Date.now();
+  const optimisticId = memoryData.id || `optimistic-${now}-${Math.random().toString(36).slice(2, 6)}`;
+  const isUpdate = !!memoryData.id && cache.some(m => m.id === memoryData.id);
+  const optimisticMemory: Memory = {
+    id: optimisticId,
+    userId: (memoryData.userId as string) || 'local',
+    title: memoryData.title || 'Untitled',
+    content: memoryData.content || '',
+    tags: memoryData.tags || [],
+    createdAt: (memoryData.createdAt as number) || now,
+    updatedAt: now,
+    ...(memoryData as object),
+  } as Memory;
+  // force optimistic id + timestamp (avoid TS duplicate property error)
+  optimisticMemory.id = optimisticId;
+  optimisticMemory.updatedAt = now;
+
+  if (isUpdate) {
+    cache = cache.map(m => (m.id === memoryData.id ? { ...m, ...memoryData, updatedAt: now } as Memory : m));
+  } else {
+    cache = [optimisticMemory, ...cache];
+  }
+  notify();
+
+  try {
+    const res = await fetch('/api/memories', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(memoryData),
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error);
+    // Server-Antwort abgleichen: optimistischen Eintrag durch echte Daten ersetzen (Debounce 300ms)
+    await refreshMemories();
+    return data.memory;
+  } catch {
+    // Rollback: optimistischen Stand zurücknehmen...
+    cache = previous;
+    notify();
+    // ...und danach auf den serverseitigen Stand konvergieren (der Snapshot
+    // könnte konkurrierende Agenten-Änderungen verdecken). doRefresh rejected nie.
+    void doRefresh();
+    return null;
+  }
+}
+
+export async function deleteMemory(id: string): Promise<void> {
+  etagVergessen();
+  // Optimistic Update: sofort aus Cache entfernen
+  const previous = [...cache];
+  cache = cache.filter(m => m.id !== id);
+  notify();
+  try {
+    await fetch(`/api/memories/${encodeURIComponent(id)}`, { method: 'DELETE' });
+    await refreshMemories();
+  } catch {
+    // Rollback: Snapshot zurücknehmen, dann auf Server-Stand konvergieren
+    cache = previous;
+    notify();
+    void doRefresh();
+  }
+}
+
+/**
+ * Viele Notizen auf einmal in den Papierkorb — EIN Aufruf.
+ *
+ * Einzeln geloescht scheiterte das Aufraeumen von Duplikaten an der
+ * Schreibdrossel des Servers (60/min): die ersten sechzig verschwanden, alles
+ * Weitere bekam einen 429, und weil der Fehler verworfen wurde, meldete die
+ * Oberflaeche trotzdem Erfolg.
+ *
+ * Gibt die Kennungen zurueck, die wirklich im Papierkorb gelandet sind — nur
+ * die lassen sich sinnvoll wieder zurueckholen.
+ */
+export async function deleteMemories(ids: string[]): Promise<{
+  deleted: number; ids: string[] }> {
+  etagVergessen();
+  if (ids.length === 0) return { deleted: 0, ids: [] };
+  const weg = new Set(ids);
+  const previous = [...cache];
+  cache = cache.filter((m) => !weg.has(m.id));
+  notify();
+  try {
+    const res = await fetch('/api/memories/bulk-delete', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ ids }),
+    });
+    if (!res.ok) throw new Error(`bulk-delete: ${res.status}`);
+    const daten = (await res.json()) as { deleted?: number; ids?: string[] };
+    await refreshMemories();
+    return { deleted: daten.deleted ?? 0, ids: daten.ids ?? [] };
+  } catch {
+    cache = previous;
+    notify();
+    void doRefresh();
+    return { deleted: 0, ids: [] };
+  }
+}
+
+/** Das Gegenstueck zu deleteMemories — holt eine ganze Aufraeumaktion zurueck. */
+export async function restoreMemories(ids: string[]): Promise<number> {
+  etagVergessen();
+  if (ids.length === 0) return 0;
+  try {
+    const res = await fetch('/api/memories/bulk-restore', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ ids }),
+    });
+    if (!res.ok) return 0;
+    const daten = (await res.json()) as { restored?: number };
+    await refreshMemories();
+    return daten.restored ?? 0;
+  } catch {
+    return 0;
+  }
+}
+
+export async function importMemories(
+  memories: Partial<Memory>[],
+  mode: 'merge' | 'replace'
+): Promise<{ imported: number; total: number }> {
+  const res = await fetch('/api/memories/import', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ memories, mode }),
+  });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.error || 'Import failed');
+  await refreshMemories();
+  return data;
+}
