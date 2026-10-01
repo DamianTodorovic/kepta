@@ -83,7 +83,7 @@ console.log(`[latenz] Stub-Ollama auf ${process.env.KEPTA_OLLAMA_URL} (${DIM} di
 
 // ---------- Imports erst nach Env-Setzung ----------
 const { KeptaStore } = await import("../../src/core/store.js");
-const { searchMemories } = await import("../../src/core/engine.js");
+const { searchMemories, aktiviereSuchCacheDelta } = await import("../../src/core/engine.js");
 const { saveWithIndex } = await import("../../src/core/mcp.js");
 const { DEFAULT_EMBED_MODEL } = await import("../../src/core/embeddings.js");
 
@@ -111,6 +111,7 @@ const SATZ = (n: number) => {
 const ordner = fs.mkdtempSync(path.join(os.tmpdir(), "kepta-latenz-"));
 const dbPfad = path.join(ordner, "kepta.db");
 const store = new KeptaStore(dbPfad);
+aktiviereSuchCacheDelta(store); // Cache wächst mit dem Ingest — der erste Suchlauf zahlt keinen Volllauf
 
 // ---------- Phase A: Ingest über den Produkt-Pfad ----------
 // Bewusst OHNE äußere Transaktion: indexMemory() → replaceChunks() führt selbst

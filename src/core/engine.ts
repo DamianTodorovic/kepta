@@ -148,15 +148,75 @@ function loadActive(store: KeptaStore): ActiveMemory[] {
 // Trigger bei JEDER Mutation an memories/chunks/entities/relations steigt —
 // jede Schreiboperation (auch direkte DB-Zugriffe wie Importe) invalidiert
 // selbst. Verbraucher dürfen die gelieferten Objekte nur lesen, nicht ändern.
+export const suchCacheStatistik = { vollaufbauten: 0, deltapatches: 0 };
+
 const aktiverCache = new WeakMap<KeptaStore, { generation: number; aktiv: ActiveMemory[]; byId: Map<string, ActiveMemory> }>();
+const deltaRegistriert = new WeakSet<KeptaStore>();
+
+/**
+ * Meldet den Such-Cache am Store an: Jede Memory-Mutation wird als Delta
+ * in den bestehenden Cache gepatcht (anstatt den Volllauf zu erzwingen).
+ * Der Generation-Trigger bleibt das Sicherheitsnetz für Wege ohne Meldung
+ * (Roh-SQL, Importe) — dann erkennt der Generation-Vergleich den Verfall
+ * und baut voll neu.
+ */
+function registriereDelta(store: KeptaStore): void {
+  if (deltaRegistriert.has(store)) return;
+  deltaRegistriert.add(store);
+  store.onMemorieAenderung((id) => {
+    let eintrag = aktiverCache.get(store);
+    if (!eintrag) {
+      // Warmer Start: nur wenn DIESE Zeile die einzige aktive ist (Datenbank war
+      // leer), beginnt der Cache hier und wächst mit jedem Write — der erste
+      // Suchlauf zahlt dann keinen Volllauf. Bei vorgefüllter DB: ignorieren,
+      // der Volllauf beim ersten Suchlauf ist korrekt.
+      if (store.countMemories().active !== 1) return;
+      eintrag = { generation: 0, aktiv: [], byId: new Map() };
+      aktiverCache.set(store, eintrag);
+    }
+    const frisch = store.getMemory(id);
+    if (!frisch || frisch.deletedAt !== null) {
+      eintrag.aktiv = eintrag.aktiv.filter((m) => m.record.id !== id);
+      eintrag.byId.delete(id);
+    } else {
+      const neu: ActiveMemory = {
+        record: frisch,
+        titleLower: frisch.title.toLowerCase(),
+        contentLower: frisch.content.toLowerCase(),
+      };
+      const alt = eintrag.byId.get(id);
+      if (alt) Object.assign(alt, neu); // In-place: Referenzen laufender Antworten bleiben gültig
+      else {
+        eintrag.aktiv.push(neu);
+        eintrag.byId.set(id, neu);
+      }
+    }
+    suchCacheStatistik.deltapatches += 1;
+    eintrag.generation = store.memGeneration(); // Write → Trigger hat schon gezählt
+  });
+}
+
+/**
+ * Meldet den Such-Cache VOR dem ersten Write am Store an — damit der Cache
+ * beim Ingest mitwächst und der erste Suchlauf keinen Volllauf zahlt.
+ * Aufrufpunkte: direkt nach `new KeptaStore(...)` (server.ts, Bench). Wer es
+ * nicht aufruft, zahlt den Volllauf beim ersten Suchlauf — Korrektheit bleibt
+ * durch das Trigger-Sicherheitsnetz in jedem Fall gewährleistet.
+ */
+export function aktiviereSuchCacheDelta(store: KeptaStore): void {
+  registriereDelta(store);
+}
+
 function aktiveErinnerungen(store: KeptaStore): { aktiv: ActiveMemory[]; byId: Map<string, ActiveMemory> } {
-  const generation = store.datenGeneration();
+  registriereDelta(store);
+  const generation = store.memGeneration();
   const eintrag = aktiverCache.get(store);
   if (eintrag && eintrag.generation === generation) return eintrag;
   const aktiv = loadActive(store);
   const byId = new Map(aktiv.map((m) => [m.record.id, m]));
   const frisch = { generation, aktiv, byId };
   aktiverCache.set(store, frisch);
+  suchCacheStatistik.vollaufbauten += 1;
   return frisch;
 }
 
@@ -423,7 +483,7 @@ export async function searchMemories(store: KeptaStore, params: SearchParams): P
     // Zugriffsstände direkt in die gecachten Records (wirkt ab der nächsten Suche —
     // identisch zum Verhalten ohne Cache).
     const eintrag = aktiverCache.get(store);
-    if (eintrag && eintrag.generation === store.datenGeneration()) {
+    if (eintrag && eintrag.generation === store.memGeneration()) {
       const jetzt = Date.now();
       const imCache = new Map(eintrag.aktiv.map((a) => [a.record.id, a]));
       for (const h of top) {

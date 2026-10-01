@@ -545,6 +545,7 @@ export class KeptaStore {
         record.utility
       );
     this.audit("write", record.id);
+    this.meldeMemorie(record.id);
     return record;
   }
 
@@ -624,6 +625,7 @@ export class KeptaStore {
     // Content-Änderung macht Chunks + Embeddings obsolet
     if (patch.content !== undefined) this.db.prepare("DELETE FROM chunks WHERE memory_id = ?").run(id);
     this.audit("update", id);
+    this.meldeMemorie(id);
     return this.getMemory(id);
   }
 
@@ -631,18 +633,22 @@ export class KeptaStore {
     const res = this.db.prepare("UPDATE memories SET deleted_at = ? WHERE id = ? AND deleted_at IS NULL").run(Date.now(), id);
     const ok = Number(res.changes) > 0;
     if (ok) this.audit("delete", id);
+    if (ok) this.meldeMemorie(id);
     return ok;
   }
 
   restoreMemory(id: string): boolean {
     const res = this.db.prepare("UPDATE memories SET deleted_at = NULL WHERE id = ? AND deleted_at IS NOT NULL").run(id);
-    return Number(res.changes) > 0;
+    const ok = Number(res.changes) > 0;
+    if (ok) this.meldeMemorie(id);
+    return ok;
   }
 
   purgeMemory(id: string): boolean {
     const res = this.db.prepare("DELETE FROM memories WHERE id = ?").run(id);
     const ok = Number(res.changes) > 0;
     if (ok) this.audit("delete", id);
+    if (ok) this.meldeMemorie(id);
     return ok;
   }
 
@@ -726,8 +732,10 @@ export class KeptaStore {
     try {
       this.db.exec(`
         INSERT OR IGNORE INTO meta (key, value) VALUES ('daten_generation', '0');
+        INSERT OR IGNORE INTO meta (key, value) VALUES ('mem_generation', '0');
         CREATE TRIGGER IF NOT EXISTS daten_gen_memories_i AFTER INSERT ON memories BEGIN
-          UPDATE meta SET value = CAST(value AS INTEGER) + 1 WHERE key = 'daten_generation'; END;
+          UPDATE meta SET value = CAST(value AS INTEGER) + 1 WHERE key = 'daten_generation';
+          UPDATE meta SET value = CAST(value AS INTEGER) + 1 WHERE key = 'mem_generation'; END;
         CREATE TRIGGER IF NOT EXISTS daten_gen_memories_u AFTER UPDATE ON memories
         WHEN NEW.title IS NOT OLD.title OR NEW.content IS NOT OLD.content
           OR NEW.tags IS NOT OLD.tags OR NEW.type IS NOT OLD.type OR NEW.scope IS NOT OLD.scope
@@ -736,9 +744,11 @@ export class KeptaStore {
           OR NEW.deleted_at IS NOT OLD.deleted_at OR NEW.updated_at IS NOT OLD.updated_at
           OR NEW.utility IS NOT OLD.utility
         BEGIN
-          UPDATE meta SET value = CAST(value AS INTEGER) + 1 WHERE key = 'daten_generation'; END;
+          UPDATE meta SET value = CAST(value AS INTEGER) + 1 WHERE key = 'daten_generation';
+          UPDATE meta SET value = CAST(value AS INTEGER) + 1 WHERE key = 'mem_generation'; END;
         CREATE TRIGGER IF NOT EXISTS daten_gen_memories_d AFTER DELETE ON memories BEGIN
-          UPDATE meta SET value = CAST(value AS INTEGER) + 1 WHERE key = 'daten_generation'; END;
+          UPDATE meta SET value = CAST(value AS INTEGER) + 1 WHERE key = 'daten_generation';
+          UPDATE meta SET value = CAST(value AS INTEGER) + 1 WHERE key = 'mem_generation'; END;
         CREATE TRIGGER IF NOT EXISTS daten_gen_chunks_i AFTER INSERT ON chunks BEGIN
           UPDATE meta SET value = CAST(value AS INTEGER) + 1 WHERE key = 'daten_generation'; END;
         CREATE TRIGGER IF NOT EXISTS daten_gen_chunks_u AFTER UPDATE ON chunks BEGIN
@@ -777,6 +787,37 @@ export class KeptaStore {
       | { value: string }
       | undefined;
     return Number(row?.value ?? 0);
+  }
+
+  /**
+   * Zähler NUR der memories-Mutationen — Cache-Schlüssel des Erinnerungs-Caches.
+   * Getrennt von datenGeneration, damit Chunk-/Graph-Writes (z. B. Embedding-
+   * Nachschub) den teuren Erinnerungs-Cache nicht werfen.
+   */
+  memGeneration(): number {
+    this.midiereDatenGeneration();
+    const row = this.db.prepare("SELECT value FROM meta WHERE key = 'mem_generation'").get() as
+      | { value: string }
+      | undefined;
+    return Number(row?.value ?? 0);
+  }
+
+  // ---------- Such-Cache-Delta ----------
+  // Der Suchpfad (engine.ts) cacht die aktiven Erinnerungen an der Generation.
+  // Statt bei jedem Write den teuren Volllauf zu erzwingen, meldet der Store
+  // hier jede Memory-Mutation mit ihrer ID — die Engine patcht ihren Cache
+  // deltafisch. Der Trigger bleibt als SICHERHEITSNETZ: Schreibzugriffe, die
+  // keine Meldung absetzen (Roh-SQL, Importe), schieben die Generation weiter,
+  // ohne zu patchen — der Generation-Vergleich erkennt das und baut voll neu.
+  private memorieZuhörer = new Set<(id: string) => void>();
+
+  onMemorieAenderung(fn: (id: string) => void): () => void {
+    this.memorieZuhörer.add(fn);
+    return () => this.memorieZuhörer.delete(fn);
+  }
+
+  private meldeMemorie(id: string): void {
+    for (const fn of this.memorieZuhörer) fn(id);
   }
 
   /** Chunks ohne Embedding oder mit veraltetem Modell (für die Hintergrund-Queue) */

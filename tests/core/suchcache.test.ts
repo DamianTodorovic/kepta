@@ -3,7 +3,7 @@ import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import { KeptaStore } from "../../src/core/store";
-import { searchMemories } from "../../src/core/engine";
+import { searchMemories, suchCacheStatistik } from "../../src/core/engine";
 
 // Such-Cache-Audit: der Cache in engine.ts hängt an der datenGeneration
 // (Trigger auf memories/chunks/entities/relations). Diese Tests stellen sicher,
@@ -81,5 +81,41 @@ describe("Such-Cache-Invalidierung über die datenGeneration", () => {
     expect(store.datenGeneration()).toBeGreaterThan(basis + 1);
     store.trashMemory(notiz.id);
     expect(store.datenGeneration()).toBeGreaterThan(basis + 2);
+  });
+
+  it("Delta-Pflege: normale Writes patchen den Cache, OHNE den Volllauf zu erzwingen", async () => {
+    store.createMemory({ title: "Basis", content: "Der erste Datensatz im Cache." });
+    await treffer("Basis"); // Cache bauen
+    const vor = suchCacheStatistik.vollaufbauten;
+    const patches = suchCacheStatistik.deltapatches;
+
+    store.createMemory({ title: "Delta-Neu", content: "Kommt per Delta in den Cache." });
+    expect(await treffer("Delta-Neu")).toContain("Delta-Neu");
+    expect(suchCacheStatistik.vollaufbauten).toBe(vor); // kein Neuaufbau!
+    expect(suchCacheStatistik.deltapatches).toBeGreaterThan(patches);
+
+    const notiz = store.getMemory(store.listMemories().find((m) => m.title === "Delta-Neu")!.id)!;
+    store.updateMemory(notiz.id, { content: "Delta-geänderter Inhalt." });
+    expect(await treffer("Delta-geändert")).toContain("Delta-Neu");
+    store.trashMemory(notiz.id);
+    expect(await treffer("Delta-geändert")).not.toContain("Delta-Neu");
+    store.restoreMemory(notiz.id);
+    expect(await treffer("Delta-geändert")).toContain("Delta-Neu");
+    store.supersedeMemory(notiz.id, null);
+    const liste = await searchMemories(store, { query: "Delta-geändert", limit: 10 });
+    expect(liste.hits.every((h) => h.memory.id !== notiz.id || h.memory.supersededBy === null)).toBe(true);
+    expect(suchCacheStatistik.vollaufbauten).toBe(vor); // durchgehend gepatcht
+  });
+
+  it("Sicherheitsnetz: Roh-SQL ohne Meldung erzwingt den Volllauf (Generation-Verfall)", async () => {
+    store.createMemory({ title: "Anker", content: "Der Anker-Datensatz für den Cache." });
+    await treffer("Anker");
+    const vor = suchCacheStatistik.vollaufbauten;
+    store.db.exec(
+      `INSERT INTO memories (id, scope, type, title, content, tags, created_at, updated_at)
+       VALUES ('roh-2', 'user', 'semantic', 'Roh ohne Meldung', 'Direkt per SQL, kein Listener sieht das.', '[]', ${Date.now()}, ${Date.now()})`
+    );
+    expect(await treffer("Roh ohne Meldung")).toContain("Roh ohne Meldung");
+    expect(suchCacheStatistik.vollaufbauten).toBe(vor + 1); // Sicherheitsnetz griff
   });
 });

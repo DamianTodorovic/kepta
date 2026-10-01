@@ -14,7 +14,7 @@ import { schluesselbundKeyProvider } from "./src/core/schluessel";
 import { planeImportReparatur, mitFrist } from "./src/core/reparatur";
 import { migrateFromLegacyJson } from "./src/core/migrate";
 import { EmbeddingQueue } from "./src/core/embeddings";
-import { searchMemories as engineSearch, indexMemory, gateDecision, writeGateEnabled, MAX_SEARCH_LIMIT, consolidateMemories } from "./src/core/engine";
+import { searchMemories as engineSearch, indexMemory, gateDecision, writeGateEnabled, MAX_SEARCH_LIMIT, consolidateMemories, aktiviereSuchCacheDelta } from "./src/core/engine";
 import { handleRpc, TOOLS as MCP_TOOLS, saveWithIndex } from "./src/core/mcp";
 import { importObsidianVault, memoryToMarkdown } from "./src/core/obsidian";
 import { exportBundle, importBundle, PraxissyncJournal, type SyncBundle } from "./src/core/praxissync";
@@ -1335,6 +1335,7 @@ async function startServer() {
 
   // Der Schluessel liegt im Schluesselbund des Systems (schluessel.ts).
   const store = new KeptaStore(undefined, { ...defaultExtensions(), keys: schluesselbundKeyProvider(DATA_DIR) });
+  aktiviereSuchCacheDelta(store); // Such-Cache wächst mit jedem Write — kein Volllauf nach dem Start
   const migration = migrateFromLegacyJson(store);
   if (!migration.skipped) {
     console.log(`Migration: ${migration.migrated} nodes taken over from memories.json (backup: ${migration.backupPath ?? "none"})`);
