@@ -75,9 +75,10 @@ if (!lizenz) {
   console.error("App läuft, aber die Lizenz-API antwortete nicht — bitte Fenster prüfen.");
   process.exit(1);
 }
-const stufe = { pro: "KEPTA Pro", business: "KEPTA Business", enterprise: "KEPTA Enterprise" }[lizenz.edition] ?? "KEPTA";
 console.log(`\nInstalliert: KEPTA ${version} (${process.arch})`);
-console.log(`Anzeige in der App: ${stufe} · Licensed to ${lizenz.licensee ?? "—"} · Nr. ${lizenz.number ?? "—"}`);
+// Branding 3.1.1: schlicht KEPTA — die Lizenz schlägt nur noch nüchtern an
+// (Schlüssel aktiv ja/nein), keine Stufen- und Nummern-Anzeige mehr.
+console.log(`Anzeige in der App: KEPTA · Schlüssel ${lizenz.licensed ? "aktiv" : "kein Schlüssel"}`);
 if (!lizenz.licensed) {
   console.error("ACHTUNG: Die App meldet keine gültige Lizenz — Lizenzschlüssel prüfen (License Studio / Ausgestellt-Liste).");
   process.exit(1);
