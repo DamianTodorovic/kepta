@@ -41,8 +41,8 @@ Health-Quelle: `/api/health` (`server/router/system.ts`) liefert `version` (3.1.
 | Gültigkeitsfenster (validFrom/validTo) | ✓ (Graph-Zeitregler reagiert) | ✓ (Datumsfelder im Editor) | **UI vorhanden** | `MemoryEditor` (Temporal-Abschnitt) |
 | Sync/Import (Dateien, URL, Rechner-Scan, Inbox, Obsidian, PraxisSync) | ✓ | ✓ | **UI vorhanden** | Import-Band, `MachineScan`, Inbox-Scan, `PraxisSync` |
 | Verschlüsselungs-Status (SQLCipher, Keychain-Ablage) | ✓ | n/a (Sicherheitszustand, kein Bedienobjekt) | **UI vorhanden** | `SystemStatus`-Zeile + `RecoveryKey` |
-| Embedding-Modell + Zähler | teilweise (Abdeckung %) | — | **heute gebaut** (Paket 2, Schritt 4: Modell + Zähler im Dashboard) | `/api/health` `embeddings.models`; war nur `SystemStatus`-Abdeckung |
-| Health „Gehirn-Status“ (Version, Zähler, Verschlüsselung) | teilweise (nur Settings) | — | **heute gebaut** (Paket 2, Schritt 4) | wird Dashboard-Statusstreifen aus `/api/health` |
+| Embedding-Modell + Zähler | ✓ (Modellname + Vektor-Zähler) | n/a (Modellwahl am Anbieter, siehe AI-Abschnitt) | **UI vorhanden** (Paket 2, Schritt 4) | Dashboard „Gehirn-Status“-Streifen: `/api/health` `embeddings.models` |
+| Health „Gehirn-Status“ (Version, Zähler, Verschlüsselung) | ✓ (Version, Knoten-Zähler, Verschlüsselung mit Ablage) | — | **UI vorhanden** (Paket 2, Schritt 4) | Dashboard-Statusstreifen aus `/api/health` (zuvor nur `SystemStatus` in Settings) |
 | Trash/Restore | ✓ (Zähler) | ✓ (Restore-Knopf) | **UI vorhanden** | Dashboard-Papierkorb |
 | Onboarding | ✓ | ✓ (später/vollständig, Neuaufruf über Seitenleiste) | **UI vorhanden** | `OnboardingWizard` (adaptiv, Dismiss persistiert) |
 | Privacy-Shield | ✓ | ✓ | **UI vorhanden** | `PrivacyShield` in Settings |
@@ -61,3 +61,4 @@ Health-Quelle: `/api/health` (`server/router/system.ts`) liefert `version` (3.1.
 - **Schritt 1:** Inventar + Erst-Tabelle. Vier „heute gebaut“-Zeilen markieren die Bauaufträge der Schritte 2–4.
 - **Schritt 2:** Spuren-Herkunft je Treffer (`tracks` im Search-Response, Badges auf der Karte), Suchdauer in ms, „Gehirn warm“-Chip im Dashboard. 1605 Tests.
 - **Schritt 3:** Settings-Such-Abschnitt (Suchtiefe-Slider 5–32/Default 16, drei Spuren-Schalter, Treffer-Regler) — geteilt über `lib/searchPrefs`, Preferences spiegeln in die DB, Parameter sind im Request-Vertragstest belegt. 1612 Tests. (Nebenbefund: der Auto-Learn-Schalter hat jetzt ein aria-label; der alte „erste Checkbox“-Test wäre sonst auf die Such-Schalter gelaufen.)
+- **Schritt 4:** Dashboard „Gehirn-Status“: Version 3.1.1, Knoten-Zähler, Verschlüsselung samt Schlüssel-Ablage, Embedding-Modell + Vektor-Zähler — `/api/health` ist jetzt auf der Kernfläche sichtbar. 1613 Tests.

@@ -30,7 +30,7 @@ import { parseQuelle, oeffneQuelle, type Quelle } from '../lib/quelle';
 import { pdfTextAusBuffer } from '../lib/pdfText';
 import { TYP_LABELS } from '../lib/graphHierarchy';
 import { t, wendeZoomAn } from '../lib/uiText';
-import { Search, Plus, CheckCircle2, Copy, PanelLeftOpen, ScanSearch, UploadCloud, Globe, Loader2, AlertCircle, Sparkles, Trash2, HardDriveDownload, FileText, ExternalLink } from "../lib/icons";
+import { Search, Plus, CheckCircle2, Copy, PanelLeftOpen, ScanSearch, UploadCloud, Globe, Loader2, AlertCircle, Sparkles, Trash2, HardDriveDownload, FileText, ExternalLink, ShieldCheck } from "../lib/icons";
 import { motion, AnimatePresence } from 'motion/react';
 import { cn } from '../lib/utils';
 
@@ -388,11 +388,49 @@ export function Dashboard() {
 
   useCommandPaletteHotkey(() => setPaletteOpen(true));
 
+  // --- Gehirn-Status (Paket 2): was /api/health weiß, steht auf der Fläche ---
+  // Version, Erinnerungs-Zähler, Verschlüsselung (mit Schlüssel-Ablage) und
+  // das Embedding-Modell samt Zähler — kein API-only-Wissen mehr.
+  interface GehirnStatus {
+    version: string | null;
+    count: number;
+    verschluesselt: boolean;
+    hatVerschluesselung: boolean;
+    ablage: string | null;
+    embedModelle: { name: string; anzahl: number }[];
+    embedTotal: number;
+    embedEmbedded: number;
+  }
+  const [gehirn, setGehirn] = useState<GehirnStatus | null>(null);
+  useEffect(() => {
+    let cancelled = false;
+    void (async () => {
+      try {
+        const r = await fetch('/api/health');
+        const d = await r.json();
+        if (cancelled || !d || typeof d !== 'object') return;
+        const e = (d.embeddings ?? {}) as Record<string, unknown>;
+        const v = (d.encryption ?? {}) as Record<string, unknown>;
+        const modelle = (e.models ?? {}) as Record<string, unknown>;
+        setGehirn({
+          version: typeof d.version === 'string' ? d.version : null,
+          count: typeof d.count === 'number' ? d.count : 0,
+          hatVerschluesselung: typeof d.encryption === 'object' && d.encryption !== null,
+          verschluesselt: v.aktiv === true,
+          ablage: typeof v.ablage === 'string' ? v.ablage : null,
+          embedTotal: typeof e.total === 'number' ? e.total : 0,
+          embedEmbedded: typeof e.embedded === 'number' ? e.embedded : 0,
+          embedModelle: Object.entries(modelle).map(([name, anzahl]) => ({ name, anzahl: Number(anzahl) })),
+        });
+      } catch { /* der Server meldet sich, wenn er bereit ist */ }
+    })();
+    return () => { cancelled = true; };
+  }, []);
+
   // --- Activity-Stream: das Gehirn lebt — Agent-Aktionen live sehen ---
   const [brainPulse, setBrainPulse] = useState(0);
   const [agentActive, setAgentActive] = useState(false);
-  const agentIdleTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
-  useEffect(() => {
+  const agentIdleTimer = useRef<ReturnType<typeof setTimeout> | null>(null);  useEffect(() => {
     return subscribeActivity((evt) => {
       setBrainPulse((p) => p + 1);
       // Liste live aktualisieren, wenn sich der Speicher ändert (auch via MCP!)
@@ -1345,6 +1383,43 @@ export function Dashboard() {
                   <span className="k">local, private, MCP</span>
                 </div>
               </div>
+
+              {/* Gehirn-Status (Paket 2): der Kern legt Rechenschaft ab — Version,
+                  Erinnerungs-Zähler, Verschlüsselung samt Schlüssel-Ablage und das
+                  Embedding-Modell mit seinem Zähler. Was /api/health weiß, steht hier. */}
+              {gehirn && (
+                <div className="mb-4 shrink-0 flex flex-wrap items-center gap-2 text-[11.5px]" data-testid="gehirn-status">
+                  {gehirn.version && (
+                    <span className="chip" title="The running version — also reported over MCP and /api/health.">
+                      KEPTA {gehirn.version}
+                    </span>
+                  )}
+                  <span className="chip tnum" title="Active nodes in the local database.">
+                    {gehirn.count} {gehirn.count === 1 ? 'node' : 'nodes'} in the brain
+                  </span>
+                  {gehirn.hatVerschluesselung && (
+                    <span
+                      className="chip"
+                      style={gehirn.verschluesselt ? { color: 'var(--ok)' } : { color: 'var(--warn)' }}
+                      title={gehirn.verschluesselt
+                        ? `The knowledge base file is encrypted (AES-256)${gehirn.ablage ? ` — key in the ${gehirn.ablage}` : ''}.`
+                        : 'The knowledge base file is not encrypted.'}
+                    >
+                      <ShieldCheck className="w-3 h-3" />
+                      {gehirn.verschluesselt ? 'Encrypted' : 'Not encrypted'}
+                    </span>
+                  )}
+                  {(gehirn.embedModelle.length > 0 || gehirn.embedTotal > 0) && (
+                    <span
+                      className="chip tnum"
+                      title="The embedding model behind vector search and how many of the text chunks carry its vectors."
+                    >
+                      Embeddings: {gehirn.embedModelle.map((m) => `${m.name} ${m.anzahl}`).join(' · ')}
+                      {gehirn.embedModelle.length === 0 ? `${gehirn.embedEmbedded}/${gehirn.embedTotal} embedded` : ''}
+                    </span>
+                  )}
+                </div>
+              )}
 
               <div className="flex items-center justify-between mb-3 shrink-0">
                 <div className="flex items-center gap-2.5 text-[12px] tnum" style={{ color: 'var(--text-3)' }}>

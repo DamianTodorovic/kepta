@@ -444,6 +444,29 @@ describe("Dashboard: Such-Einstellungen stecken im Request (Paket 2 — Einstell
   });
 });
 
+describe("Dashboard: Gehirn-Status (Paket 2 — Health auf der Fläche)", () => {
+  it("zeigt Version, Erinnerungs-Zähler, Verschlüsselung und Embedding-Modell aus /api/health", async () => {
+    vi.stubGlobal("fetch", vi.fn(async (url: string) => {
+      if (url.includes("/api/license")) return new Response(JSON.stringify({ licensed: true }), { status: 200 });
+      if (url.includes("/api/health")) return new Response(JSON.stringify({
+        ok: true, version: "3.1.1", count: 42, dbPath: "/x",
+        embeddings: { total: 10, embedded: 8, models: { "nomic-embed-text": 8 } },
+        encryption: { aktiv: true, ablage: "macOS Keychain" },
+        mcp: { protocol: "2026-07-28", tools: 8, http: "/mcp" },
+      }), { status: 200 });
+      if (url.includes("/api/memories")) return new Response(JSON.stringify(notizen), { status: 200 });
+      if (url.includes("/api/inbox/status")) return new Response(JSON.stringify({ files: [], watching: true }), { status: 200 });
+      return new Response("{}", { status: 200 });
+    }));
+    const { container } = await zeige([note()]);
+    const status = container.querySelector('[data-testid="gehirn-status"]');
+    await waitFor(() => expect(status?.textContent).toMatch(/KEPTA 3\.1\.1/), { timeout: 3000 });
+    expect(status!.textContent).toMatch(/42 nodes in the brain/);
+    expect(status!.textContent).toMatch(/Encrypted/);
+    expect(status!.textContent).toMatch(/nomic-embed-text 8/);
+  });
+});
+
 describe("Dashboard: Tastatur", () => {
   it("wechselt die Ansichten mit Befehlstaste und Ziffer", async () => {
     const user = userEvent.setup();
