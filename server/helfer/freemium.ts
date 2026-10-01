@@ -84,7 +84,7 @@ export function mountFreemium(app: import("express").Express, ctx: AppKontext): 
     res.setHeader("X-KEPTA-Remaining", String(Math.max(0, regel.limit - verbrauchtHeute - 1)));
     if (verbrauchtHeute >= regel.limit) {
       return res.status(429).json({
-        error: `Daily free limit reached (${regel.limit} ${regel.beschreibung}/day on the free plan). Activate KEPTA Pro for unlimited use.`,
+        error: `Daily free limit reached (${regel.limit} ${regel.beschreibung}/day on the free plan). Activate a key for unlimited use.`,
         feature: regel.feature,
         limit: regel.limit,
         upgradeUrl: UPGRADE_URL,

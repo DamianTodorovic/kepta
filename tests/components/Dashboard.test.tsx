@@ -117,7 +117,7 @@ describe("Dashboard: Lizenz", () => {
       return new Response("{}", { status: 200 });
     }));
     await zeige([]);
-    await waitFor(() => expect(screen.getByText("Upgrade to Pro")).toBeTruthy());
+    await waitFor(() => expect(screen.getByText("A key removes the limits")).toBeTruthy());
     // Die App ist da — kein Sperrbildschirm:
     expect(screen.getByRole("button", { name: /^Knowledge$/ })).toBeTruthy();
     expect(document.body.textContent).not.toMatch(/trial/i);

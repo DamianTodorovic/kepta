@@ -599,8 +599,7 @@ export function Settings() {
                     <div className="text-sm" style={{ color: 'var(--text-2)' }}>
                       {orgInfo.licensee && (
                         <p className="mb-2">
-                          Licensed to <strong style={{ color: 'var(--text-1)' }}>{orgInfo.licensee}</strong>
-                          {orgInfo.edition && <> · {orgInfo.edition === 'business' || orgInfo.edition === 'enterprise' ? 'KEPTA Enterprise' : 'KEPTA Pro'}</>}
+                          <strong style={{ color: 'var(--text-1)' }}>{orgInfo.licensee}</strong>
                           {orgInfo.edition === 'business' && orgInfo.seats ? <> · {orgInfo.seats} seats</> : null}
                           {orgInfo.edition === 'enterprise' && <> · scope per agreement</>}
                         </p>

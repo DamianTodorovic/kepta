@@ -383,10 +383,10 @@ describe("Seitenleiste", () => {
     render(<AuthProvider><ThemeProvider><Sidebar {...basis} protagAktiv protagRestMs={3 * 3600_000} /></ThemeProvider></AuthProvider>);
     // Stufen-Modell (Damian 24.9.): ohne Schlüssel heißt die App KEPTA Core —
     // auch während des Pro-Tags; der Countdown steht in der zweiten Zeile.
-    expect(screen.getByText(/KEPTA Core/)).toBeTruthy();
-    expect(screen.getByText("Pro day · 3 h left")).toBeTruthy();
+    expect(screen.getAllByText(/^KEPTA$/).length).toBeGreaterThan(0);
+    expect(screen.getByText("Unlimited day · 3 h left")).toBeTruthy();
     cleanup();
     render(<AuthProvider><ThemeProvider><Sidebar {...basis} /></ThemeProvider></AuthProvider>);
-    expect(screen.getByText(/KEPTA Core/)).toBeTruthy();
+    expect(screen.getAllByText(/^KEPTA$/).length).toBeGreaterThan(0);
   });
 });

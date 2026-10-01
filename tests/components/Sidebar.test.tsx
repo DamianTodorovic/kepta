@@ -126,20 +126,20 @@ describe("Sidebar: viele Tags", () => {
 describe("Sidebar: Fusszeile", () => {
   it("zeigt den Free-Plan mit Upgrade-Hinweis — gesperrt wird nie", () => {
     zeige();
-    expect(screen.getByText(/KEPTA Core/)).toBeTruthy();
-    expect(screen.getByText(/Upgrade to Pro/)).toBeTruthy();
+    expect(screen.getAllByText(/^KEPTA$/).length).toBeGreaterThan(0);
+    expect(screen.getByText(/A key removes the limits/)).toBeTruthy();
     // Der Plan-Wechsel lebt in der Fusszeile — die Version bleibt dieselbe:
     expect(screen.getAllByText(/KEPTA/).length).toBeGreaterThan(0);
   });
 
-  it("zeigt die Stufe der Lizenz in der Fusszeile", () => {
+  it("zeigt schlicht KEPTA — mit Schlüssel nur den Namen, ohne Stufen-Claim", () => {
     zeige({ licensee: "Sarah Mandel", licenseNumber: "0007", licenseEdition: "business", licenseSeats: 5 });
-    // Die interne Edition „business“ zeigt KEPTA Enterprise — die öffentliche
-    // Stufe Business gibt es nicht mehr (Team-Features sind Enterprise).
-    expect(screen.getByText(/KEPTA Enterprise/)).toBeTruthy();
-    expect(screen.getByText(/Licensed to Sarah Mandel/)).toBeTruthy();
+    // Branding 3.1.1: keine Stufen-/Lizenz-Anzeige mehr — schlicht KEPTA,
+    // darunter nur der Name (ohne "Licensed to") und die Seats.
+    expect(screen.getAllByText(/^KEPTA$/).length).toBeGreaterThan(0);
+    expect(screen.getByText(/Sarah Mandel/)).toBeTruthy();
     zeige({ licensee: "Sarah Mandel", licenseNumber: "0007", licenseEdition: "pro" });
-    expect(screen.getByText(/KEPTA Pro/)).toBeTruthy();
+    expect(screen.getAllByText(/^KEPTA$/).length).toBeGreaterThan(0);
   });
 
   it("zeigt in der Fusszeile NIE eine Versionsnummer (Damian, 25.9.)", () => {

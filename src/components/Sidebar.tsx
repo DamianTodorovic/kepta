@@ -189,35 +189,31 @@ export function Sidebar({ tags, selectedTags, onSelectTag, onClearTags, currentV
           style={{ background: SURFACE, border: '1px solid rgba(255, 255, 255, 0.04)', cursor: licensee ? 'default' : 'pointer' }}
           onClick={() => { if (!licensee && onUpgrade) onUpgrade(); }}
           role={licensee ? undefined : 'button'}
-          aria-label={licensee ? undefined : 'Upgrade to KEPTA Pro'}
+          aria-label={licensee ? undefined : 'KEPTA'}
         >
           <KeptaMark size={24} radius={6} />
           <div className="min-w-0 flex-1">
             <div className="text-[12.5px] truncate font-semibold tracking-[0.01em]" style={{ color: TEXT_STRONG }}>
-              {/* Die interne Edition „business“ (Schlüsselformat v3.1) wird als KEPTA
-                  Enterprise angezeigt — die öffentliche Stufe Business gibt es nicht
-                  mehr; Team-Features sind Enterprise. Stufen-Modell (Damian, 24.9.):
-                  ohne Schlüssel heißt die App KEPTA Core — der Pro-Tag (24 h alle
-                  Werkzeuge offen) gehört zu Core, danach die Tageslimiten. KEPTA Pro
-                  ist der Schlüssel-Zustand: Licensed to … */}
-              {/* Die Version steht bewusst NICHT in der Sidebar (Damian, 25.9.) —
-                  sie bleibt über Systemstatus und /api/health abrufbar. */}
-              {licenseEdition === 'business' || licenseEdition === 'enterprise' ? 'KEPTA Enterprise' : licensee ? 'KEPTA Pro' : 'KEPTA Core'}
+              {/* Branding 3.1.1: schlicht KEPTA — keine Stufen-Anzeige mehr. Der
+                  Lizenz-Mechanismus bleibt unverändert im Hintergrund; die Version
+                  steht bewusst NICHT in der Sidebar (Damian, 25.9.) — sie bleibt
+                  über Systemstatus und /api/health abrufbar (3.1.1). */}
+              {'KEPTA'}
             </div>
             <div
               className="text-[11px] truncate"
               style={{ color: licensee ? TEXT_FAINT : ACCENT_LIGHT }}
               title={licensee
-                ? `License no. ${licenseNumber ?? '—'}${licenseSeats && licenseSeats > 1 ? ` · ${licenseSeats} seats` : ''} · local · private · encrypted`
+                ? `${licenseSeats && licenseSeats > 1 ? `${licenseSeats} seats · ` : ''}local · private · encrypted`
                 : protagAktiv
-                  ? 'Your first day is fully Pro — no limits. After that: the free plan with daily limits, and it never locks.'
-                  : 'Daily limits on Pro tools — click to upgrade'}
+                  ? 'Your first day is unlimited — no limits. After that: the free plan with daily limits, and it never locks.'
+                  : 'Daily limits on some tools — a key removes them'}
             >
               {licensee
-                ? `Licensed to ${licensee}`
+                ? licensee
                 : protagAktiv
-                  ? `Pro day · ${protagRestMs != null ? formatProtagRest(protagRestMs) : 'no limits'} left`
-                  : 'Upgrade to Pro'}
+                  ? `Unlimited day · ${protagRestMs != null ? formatProtagRest(protagRestMs) : 'no limits'} left`
+                  : 'A key removes the limits'}
             </div>
           </div>
         </div>

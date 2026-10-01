@@ -26,23 +26,23 @@ describe("ProUpgrade", () => {
   it("sperrt nichts — es überzeugt: Vorteile, Kauf-Weg, und kein Trial-Wort", () => {
     render(<ProUpgrade onClose={() => undefined} onActivated={() => undefined} upgradeUrl="https://buy.paddle.com/kepta-pro" checkoutLive />);
     expect(screen.getByText(/The free plan carries generous daily limits/)).toBeTruthy();
-    expect(screen.getByRole("link", { name: /Buy KEPTA Pro/ }).getAttribute("href")).toBe("https://buy.paddle.com/kepta-pro");
+    expect(screen.getByRole("link", { name: /Buy a key — everything unlimited/ }).getAttribute("href")).toBe("https://buy.paddle.com/kepta-pro");
     expect(document.body.textContent).not.toMatch(/trial/i);
   });
 
   it("ohne live Checkout (Paddle in Prüfung) führt der Kaufen-Knopf auf LinkedIn — niemals auf eine tote Adresse", () => {
     render(<ProUpgrade onClose={() => undefined} onActivated={() => undefined} upgradeUrl="https://kepta.pro/upgrade" />);
-    const kontakt = screen.getByRole("link", { name: /Get KEPTA Pro — write to Damian on LinkedIn/ });
+    const kontakt = screen.getByRole("link", { name: /Get a key — write to Damian on LinkedIn/ });
     expect(kontakt.getAttribute("href")).toBe("https://www.linkedin.com/in/damian-todorovic-244235434");
-    expect(screen.queryByRole("link", { name: /Buy KEPTA Pro/ })).toBeNull();
+    expect(screen.queryByRole("link", { name: /Buy a key — everything unlimited/ })).toBeNull();
     // Die Aktivierung bleibt daneben voll erhalten.
     expect(screen.getByPlaceholderText("e.g. Sarah Mandel")).toBeTruthy();
   });
 
   it("mit live Checkout gibt es keinen LinkedIn-Kauf-Knopf daneben", () => {
     render(<ProUpgrade onClose={() => undefined} onActivated={() => undefined} upgradeUrl="https://buy.paddle.com/kepta-pro" checkoutLive />);
-    expect(screen.getByRole("link", { name: /Buy KEPTA Pro/ })).toBeTruthy();
-    expect(screen.queryByRole("link", { name: /Get KEPTA Pro — write to Damian on LinkedIn/ })).toBeNull();
+    expect(screen.getByRole("link", { name: /Buy a key — everything unlimited/ })).toBeTruthy();
+    expect(screen.queryByRole("link", { name: /Get a key — write to Damian on LinkedIn/ })).toBeNull();
   });
 
   it("zeigt für Business/Enterprise den persönlichen Weg — LinkedIn, nicht eine Adresse, die es nicht gibt", () => {

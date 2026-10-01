@@ -68,13 +68,13 @@ export function ProUpgrade({ onClose, onActivated, revoked = false, upgradeUrl, 
     >
       <motion.div
         initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }}
-        role="dialog" aria-label="Upgrade to KEPTA Pro"
+        role="dialog" aria-label="KEPTA"
         className="w-full max-w-md rounded-2xl p-7"
         style={{ background: "var(--bg-base, #0b0b0c)", border: "1px solid rgba(255,255,255,0.08)", boxShadow: "0 24px 60px rgba(0,0,0,0.45)" }}
       >
         <div className="flex items-center gap-3 mb-5">
           <KeptaMark size={28} radius={7} />
-          <span className="text-[13px] font-semibold tracking-[0.14em]" style={{ color: "var(--text-1)" }}>KEPTA Pro</span>
+          <span className="text-[13px] font-semibold tracking-[0.14em]" style={{ color: "var(--text-1)" }}>KEPTA</span>
           <button
             onClick={onClose}
             className="ml-auto w-7 h-7 rounded-lg text-[13px] flex items-center justify-center"
@@ -88,8 +88,8 @@ export function ProUpgrade({ onClose, onActivated, revoked = false, upgradeUrl, 
         <h1 className="text-[19px] font-semibold" style={{ color: "var(--text-1)" }}>Everything unlimited, quietly.</h1>
         <p className="text-[12.5px] mt-1.5 mb-4 leading-[1.6]" style={{ color: "var(--text-2)" }}>
           {protagRestMs != null && protagRestMs > 0
-            ? `Your Pro day is on — everything is unlimited for roughly ${Math.max(1, Math.round(protagRestMs / 3600000))} h. When it ends, the free plan keeps running with daily limits, and KEPTA never locks. Pro keeps the day from ending.`
-            : "The free plan carries generous daily limits. Pro removes them — chat, clipper, computer scan, dossiers, audit export, all of it. Still no account, no telemetry: the key is checked offline."}
+            ? `Your unlimited day is on — everything is unlimited for roughly ${Math.max(1, Math.round(protagRestMs / 3600000))} h. When it ends, the free plan keeps running with daily limits, and KEPTA never locks.`
+            : "The free plan carries generous daily limits. A key removes them — chat, clipper, computer scan, dossiers, audit export, all of it. Still no account, no telemetry: the key is checked offline."}
         </p>
 
         <ul className="space-y-1.5 text-[12px] mb-5" style={{ color: "var(--text-3)" }}>
@@ -109,12 +109,12 @@ export function ProUpgrade({ onClose, onActivated, revoked = false, upgradeUrl, 
         {checkoutLive && upgradeUrl ? (
           <a href={upgradeUrl} target="_blank" rel="noopener noreferrer"
             className="btn-primary block w-full py-2.5 rounded-lg text-sm font-medium text-center mb-4">
-            Buy KEPTA Pro — 12 €/month or 120 €/year
+            Buy a key — everything unlimited
           </a>
         ) : (
           <a href={LINKEDIN} target="_blank" rel="noopener noreferrer"
             className="btn-primary block w-full py-2.5 rounded-lg text-sm font-medium text-center mb-4">
-            Get KEPTA Pro — write to Damian on LinkedIn
+            Get a key — write to Damian on LinkedIn
           </a>
         )}
 

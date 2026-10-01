@@ -149,7 +149,7 @@ export function Dashboard() {
         if (!localStorage.getItem('ki_gehirn_protag_ende')) {
           localStorage.setItem('ki_gehirn_protag_ende', '1');
           toast.push({
-            message: 'Your Pro day is over — KEPTA keeps running, free, with daily limits. Pro removes them: €12/month or €120/year.',
+            message: 'Your unlimited day is over — KEPTA keeps running, free, with daily limits. A key removes them.',
             kind: 'info',
           });
         }
