@@ -223,7 +223,7 @@ The knowledge base is a SQLCipher 4 database: AES-256, an HMAC-SHA512 over every
 
 KEPTA ships its memory benchmark the way nobody else does: **every question, every answer and every judge verdict of every run is committed to this repository**, in [`tools/longmemeval/ergebnisse/`](tools/longmemeval/ergebnisse/). Fixed dataset (LongMemEval-S, 500 questions, SHA-pinned), fixed judge, fully reproducible locally — see [`tools/longmemeval/README.md`](tools/longmemeval/README.md).
 
-The published score is **37.0 %**, up from the **29.2 %** baseline we published first and beat in public (32.5 → 33.2 → 37.0 — every step is a run record in the same folder, no new model, no cloud, no fine-tuning). The answering model is a local `llama3.2:3b`: the score measures what a fully local setup can do, not what a cloud model can carry.
+The published score is **39.0 %**, up from the **29.2 %** baseline we published first and beat in public (32.5 → 33.2 → 37.0 → 39.0 — every step is a run record in the same folder, no new model, no cloud, no fine-tuning). Everything is **graded by a local judge model** (`llama3.2:3b`): the score measures what a fully local setup can do, not what a cloud model can carry.
 
 ---
 

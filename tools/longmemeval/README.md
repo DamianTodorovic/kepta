@@ -85,6 +85,7 @@ Die Hebel aus der Baseline sind umgesetzt, jeder mit veröffentlichter Messung:
 | 24.9. | topk 12 | **32,5 %** | 2d6dc38 |
 | 24.9. | topk 12 + Timeline-Block (`--temporal`) | **33,2 %** | c047e7f |
 | 25.9. | + Vektorspur über alle 441k Chunks (`--vektoren`) | **37,0 %** | Record committed |
+| 1.10. | topk 16 + `--temporal` auf der neuen Such-Pipeline (Such-Cache, AND-first-FTS) | **39,0 %** | Record committed |
 
 Weitere Pilot-Messungen (60 stratifizierte Fragen, 29.142 Notizen, 76.871
 Chunks — **nicht** mit den 500er-Zahlen vergleichbar): topk 8 lexikalisch
