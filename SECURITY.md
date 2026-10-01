@@ -6,7 +6,7 @@ Please report vulnerabilities privately through GitHub: [Security → Report a v
 
 ## Hardening in place
 
-- Only this computer: the HTTP API refuses requests whose `Host` header does not name this machine (DNS rebinding) and requests from other websites that would change anything (cross-site requests); the browser interface (`npx kepta-mcp ui`) additionally requires its own session token for every change
+- Only this computer: the HTTP API refuses requests whose `Host` header does not name this machine (DNS rebinding) and requests from other websites that would change anything (cross-site requests); changes additionally require the write gate to pass when enabled
 - helmet, rate limiting, 1 MB JSON cap, CORS restricted to localhost, SSRF blocking, XSS sanitising, path-traversal checks, ETag + compression
 
 ## Encryption at rest
@@ -42,8 +42,7 @@ random bytes; SQLite reports "file is not a database".
 **Keep a copy of the key.** It never leaves the keychain on its own; if the
 keychain is lost (a fresh system, a new Windows account), a restored
 `kepta.db` cannot be opened. Store the key in a password manager — the easiest
-way is the interface (`npx kepta-mcp ui`): click *Encrypted at rest* in the
-sidebar → *Show recovery key* → *Copy*. Or from a terminal:
+way is from a terminal:
 
 - macOS: `security find-generic-password -s app.kepta.database -a kepta -w`
 - Linux: `secret-tool lookup service app.kepta.database account kepta`
@@ -57,4 +56,4 @@ Scope: the local server on `localhost:3000`, the file watcher on `~/.kepta/inbox
 
 ## Not in scope
 
-The release binaries are **not code-signed or notarised**. That is a known and documented gap, not a vulnerability — see the release notes for how to approve the app on first launch.
+KEPTA ships as source and npm package — nothing to code-sign; whatever you run, you can read.

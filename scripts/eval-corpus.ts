@@ -43,7 +43,7 @@ export const CORPUS: EvalMemory[] = [
   { id: "m08", title: "Steuerabgabe verlängert", content: "Frist der Umsatzsteuererklärung wurde auf 30. September 2026 verlängert, Steuerberater Weber kümmert sich.", tags: ["finanzen"] },
   { id: "m09", title: "Buchhaltungssoftware", content: "Lexoffice wird für Rechnungen genutzt, API-Token im Passwort-Manager.", tags: ["finanzen", "tools"] },
   { id: "m10", title: "Passwort Manager", content: "Bitwarden Vault, Master-Prompt 2FA via Yubikey. Notfall-Kit im Bankschließfach.", tags: ["security", "tools"] },
-  { id: "m11", title: "KEPTA Architektur", content: "KEPTA ist eine lokale Electron-App: React Frontend, Express Server, SQLite Speicher, MCP-Server für Agenten.", tags: ["kepta", "architektur"] },
+  { id: "m11", title: "KEPTA Architektur", content: "KEPTA ist ein lokaler Server: Express HTTP-API, verschlüsselter SQLite-Speicher, MCP-Server für Agenten.", tags: ["kepta", "architektur"] },
   { id: "m12", title: "MCP Protokoll", content: "Model Context Protocol 2026-07-28: stateless core, server/discover, Streamable HTTP Transport, strukturierte Tool-Outputs.", tags: ["mcp", "standards"] },
   { id: "m13", title: "Embedding Modelle", content: "nomic-embed-text für lokale Embeddings via Ollama, 1024 Dimensionen, 8k Kontext. Alternative: bge-m3 multilingual.", tags: ["ki", "embeddings"] },
   { id: "m14", title: "Suche Implementierung", content: "Hybride Suche: BM25 aus FTS5 plus Vektor-KNN, fusioniert mit Reciprocal Rank Fusion k=60, Reranking via Cross-Encoder optional.", tags: ["kepta", "suche"] },

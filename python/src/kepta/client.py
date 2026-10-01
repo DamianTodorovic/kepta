@@ -1,8 +1,8 @@
 """Python client for a locally running KEPTA.
 
-KEPTA itself is a desktop app (Electron). This package does not install it — it
-talks to the HTTP API of the running instance, so that Python agents use the same
-memory as Claude Desktop or Cursor.
+KEPTA itself is a local server (Node.js) with an HTTP API on 127.0.0.1. This
+package does not install it — it talks to the running instance, so that Python
+agents use the same memory as Claude Desktop or Cursor.
 """
 
 from __future__ import annotations
@@ -148,7 +148,7 @@ class KeptaClient:
         data = json.dumps(body).encode("utf-8") if body is not None else None
         allowed = urlparse(target).hostname
         if allowed not in ("127.0.0.1", "localhost", "::1"):
-            raise KeptaError(f"KEPTA refuses to talk to {allowed!r} - the client only speaks to the local app.")
+            raise KeptaError(f"KEPTA refuses to talk to {allowed!r} - the client only speaks to the local server.")
         req = Request(target, data=data, method=method)
         req.add_header("Content-Type", "application/json")
         try:
@@ -160,7 +160,7 @@ class KeptaClient:
             raise KeptaError(f"{method} {path} failed ({e.code}): {detail}") from e
         except (URLError, TimeoutError) as e:
             raise KeptaError(
-                f"KEPTA at {self.url} is unreachable. Is the app running? "
+                f"KEPTA at {self.url} is unreachable. Is the server running? "
                 f"Otherwise set KEPTA_URL. Cause: {e}"
             ) from e
 

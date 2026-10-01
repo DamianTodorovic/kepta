@@ -4,7 +4,7 @@
 
 Your agents forget you after every conversation. KEPTA fixes that — with a SQLite file on your own machine. No account, no cloud, no telemetry.
 
-This package is the **client, not the app**. KEPTA runs as a desktop application on the same device; here you connect to it.
+This package is the **client, not the app**. KEPTA runs as a local server on the same device; here you connect to it.
 
 ```bash
 pip install kepta
@@ -64,7 +64,7 @@ m.is_expired, m.is_superseded                      # state right on the object
 2. `~/.kepta/endpoint.json` — the address file KEPTA writes on startup
 3. `http://127.0.0.1:3000` as a fallback for development mode
 
-Step 2 is the important one: the packaged app picks a random port. Being explicit works too, of course:
+Step 2 is the important one: a packaged server picks a random port. Being explicit works too, of course:
 
 ```python
 kepta = KeptaClient("http://127.0.0.1:52341")
@@ -74,7 +74,7 @@ If nothing is running you do not get a cryptic network error but a sentence that
 
 ```python
 if not kepta.is_alive():
-    print("KEPTA is not running — start the app or set KEPTA_URL.")
+    print("KEPTA is not running — start the server (npm run dev) or set KEPTA_URL.")
 ```
 
 ## What the client can do

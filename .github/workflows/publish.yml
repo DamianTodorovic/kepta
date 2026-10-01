@@ -3,7 +3,6 @@ name: Publish
 # Ein Tag, alles draussen: npm-Paket und Eintrag in der offiziellen MCP-Registry.
 # Beides ueber OIDC, ohne Token und ohne Bestaetigungsklicks.
 #
-# Die Desktop-Artefakte baut build.yml, ebenfalls auf v*-Tags — die beiden
 # Workflows laufen unabhaengig nebeneinander.
 #
 # EINMALIGE EINRICHTUNG auf npmjs.com (sonst scheitert der npm-Schritt):

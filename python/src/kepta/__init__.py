@@ -1,7 +1,7 @@
 """KEPTA — local memory for AI agents, from Python.
 
-This package is the client, not the app. KEPTA itself runs as a desktop app on
-the same machine; here you connect to it.
+This package is the client, not the server. KEPTA itself runs locally on the
+same machine (MCP server or HTTP API on 127.0.0.1); here you connect to it.
 
     from kepta import KeptaClient
 

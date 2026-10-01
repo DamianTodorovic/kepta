@@ -66,7 +66,7 @@ The server speaks stdio, so `-i` is required. The database lives in the `kepta-d
 
 **Node 22.13 or newer.** The package has one dependency: SQLite with encryption (`better-sqlite3-multiple-ciphers`), which npm installs prebuilt for Node 22, 24 and 26 on macOS, Windows and Linux — elsewhere it needs a C++ toolchain to build.
 
-The knowledge base is encrypted on disk (SQLCipher 4 format, AES-256). The key is created on the first start and kept in the system keychain — macOS Keychain, Windows DPAPI or the Linux Secret Service (`secret-tool`); the desktop app uses the same one. Without a keychain, set `KEPTA_DB_KEY` to 64 hexadecimal characters. Keep a copy of the key: without it a restored database cannot be opened. [SECURITY.md](https://github.com/DamianTodorovic/kepta/blob/main/SECURITY.md#encryption-at-rest) shows how.
+The knowledge base is encrypted on disk (SQLCipher 4 format, AES-256). The key is created on the first start and kept in the system keychain — macOS Keychain, Windows DPAPI or the Linux Secret Service (`secret-tool`); the local server uses the same one. Without a keychain, set `KEPTA_DB_KEY` to 64 hexadecimal characters. Keep a copy of the key: without it a restored database cannot be opened. [SECURITY.md](https://github.com/DamianTodorovic/kepta/blob/main/SECURITY.md#encryption-at-rest) shows how.
 
 Search works immediately. Install [Ollama](https://ollama.com) and `ollama pull nomic-embed-text` if you also want it to find notes that say the same thing in different words.
 

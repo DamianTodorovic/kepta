@@ -181,7 +181,7 @@ export async function erlebnisKommando(store: KeptaStore, befehl: string, rest: 
         }
         console.log(farbe(GELB, `${anzahl} candidates (dry-run — nothing changed):`));
         widersprueche.slice(0, 20).forEach((w) => console.log(`  ${w.a} ${farbe(GRAU, "↔")} ${w.b} ${farbe(GRAU, `· ${w.grund}`)}`));
-        console.log(farbe(GRAU, "\n  Resolve in the UI (npx kepta-mcp ui) — one click each."));
+        console.log(farbe(GRAU, "\n  Resolve via the consolidate tool (memory_consolidate with dry_run=false) — one call each."));
         return 0;
       }
       case "stats": {
