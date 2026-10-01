@@ -21,7 +21,8 @@ import crypto from "node:crypto";
 import fs from "node:fs";
 import path from "node:path";
 import { KeptaStore } from "../../src/core/store";
-import { schluesselbundFuer, holeOderErzeugeSchluessel, istSchluessel, type SchluesselbundZiel } from "../../src/core/schluessel";
+import { holeOderErzeugeSchluessel, istSchluessel } from "../../src/core/schluessel";
+import { zielSchluesselbund, type SchluesselbundZiel } from "./plan-schluesselbund";
 
 export const PROBETAG_LAENGE_MS = 24 * 60 * 60 * 1000;
 
@@ -74,7 +75,7 @@ function zustandsSchluessel(datenordner: string): Buffer | null {
   if (process.env.KEPTA_ENCRYPTION === "off") return null;
   // Dasselbe Muster wie beim Datenbankschlüssel: zweimal lesen, bevor etwas
   // angelegt wird; anlegen ja, überschreiben nie (22.9.-Lektion).
-  const bund = schluesselbundFuer(process.platform, datenordner, undefined, PLAN_ZIEL);
+  const bund = zielSchluesselbund(PLAN_ZIEL, process.platform, datenordner);
   if (!bund) return null; // kein Schlüsselbund (Server) → Zustand bleibt im Klartext der DB
   const vorhanden = bund.lesen();
   if (vorhanden && istSchluessel(vorhanden)) {
@@ -244,7 +245,7 @@ export function liesAnker(datenordner: string): AnkerWert | null {
     // bleibt als Beweisort aktiv.
     roh = null;
   } else {
-    const bund = schluesselbundFuer(process.platform, datenordner, undefined, ANKER_ZIEL);
+    const bund = zielSchluesselbund(ANKER_ZIEL, process.platform, datenordner);
     if (bund) {
       try {
         roh = bund.lesen();
@@ -282,7 +283,7 @@ export function sichereAnker(datenordner: string, start: number, verfallen: bool
 
   // Schlüsselbund-Anker: derselbe Vertrag (hermetische Modi berühren ihn nie).
   if (process.env.KEPTA_PLAN_KEY || process.env.KEPTA_ENCRYPTION === "off") return;
-  const bund = schluesselbundFuer(process.platform, datenordner, undefined, ANKER_ZIEL);
+  const bund = zielSchluesselbund(ANKER_ZIEL, process.platform, datenordner);
   if (!bund) return;
   try {
     const roh = bund.lesen();

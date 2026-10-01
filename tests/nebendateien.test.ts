@@ -9,8 +9,8 @@ import {
   journalZeile,
   journalLesen,
   nebendateiSchluessel,
+  VerschlussteAuditDatei,
 } from "../src/core/nebendateien";
-import { FileAuditSink } from "../src/core/extensions";
 
 const schlüssel = () => crypto.randomBytes(32);
 
@@ -121,11 +121,11 @@ describe("Verschlüsselte Journalzeilen", () => {
   });
 });
 
-describe("FileAuditSink mit Schlüssel", () => {
+describe("VerschlussteAuditDatei mit Schlüssel", () => {
   it("Schreibt keine Klartext-Ereignisse mehr auf die Platte", async () => {
     const dir = ordner();
     const pfad = path.join(dir, "audit.jsonl");
-    const sink = new FileAuditSink(pfad, schlüssel());
+    const sink = new VerschlussteAuditDatei(pfad, schlüssel());
     sink.emit({ at: Date.now(), actor: "lokal", action: "memory_save", target: "k-1", detail: "Streng geheim" } as never);
     await new Promise((r) => setTimeout(r, 120));
     const roh = fs.readFileSync(pfad, "utf8").trim();
@@ -133,7 +133,7 @@ describe("FileAuditSink mit Schlüssel", () => {
     expect(roh.includes("Streng geheim")).toBe(false);
     // Klartext-Modus (null) bleibt für Werkzeuge verfügbar
     const pfad2 = path.join(dir, "audit2.jsonl");
-    new FileAuditSink(pfad2, null).emit({ at: 1, actor: "a", action: "x", target: null, detail: null } as never);
+    new VerschlussteAuditDatei(pfad2, null).emit({ at: 1, actor: "a", action: "x", target: null, detail: null } as never);
     await new Promise((r) => setTimeout(r, 120));
     expect(fs.readFileSync(pfad2, "utf8")).toContain('"action":"x"');
   });

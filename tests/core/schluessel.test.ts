@@ -78,19 +78,16 @@ describe("macOS: security", () => {
     expect(() => macSchluesselbund(ausf).lesen()).toThrow("exit 51");
   });
 
-  it("legt ohne -U an — existiert der Eintrag, wird mit Exit 45 NICHT überschrieben", () => {
-    // 22.9.: -U hat den echten Schlüssel einer laufenden Installation
-    // überschrieben, weil ein fehlerhafter Leseversuch wie „noch kein Eintrag“
-    // aussah. Anlegen ja — Überschreiben nie.
+  it("legt an, OHNE zu überschreiben — kein -U mehr (22.9.-Lebensretter)", () => {
     const { ausf, aufrufe } = aufzeichner();
     macSchluesselbund(ausf).ablegen(SCHLUESSEL);
-    expect(aufrufe[0].argumente).toEqual(["add-generic-password", "-s", DIENST, "-a", KONTO, "-l", "KEPTA database key", "-w", SCHLUESSEL]);
+    expect(aufrufe[0].argumente).toEqual(expect.arrayContaining(["add-generic-password", "-s", DIENST, "-a", KONTO, "-w", SCHLUESSEL]));
     expect(aufrufe[0].argumente).not.toContain("-U");
   });
 
-  it("Duplikat (Exit 45) wirft mit Rettungshinweis, statt still zu überschreiben", () => {
+  it("Exit 45 (Eintrag existiert, Lesen schlug fehl) verweigert das Überschreiben mit Wegweiser", () => {
     const { ausf } = aufzeichner([fehlerMitCode(45)]);
-    expect(() => macSchluesselbund(ausf).ablegen(SCHLUESSEL)).toThrow("refusing to overwrite");
+    expect(() => macSchluesselbund(ausf).ablegen(SCHLUESSEL)).toThrow(/refusing to overwrite/);
   });
 });
 
@@ -173,6 +170,25 @@ describe("holeOderErzeugeSchluessel", () => {
     expect(() => holeOderErzeugeSchluessel(speicherBund("kein-schluessel"), {})).toThrow("not a KEPTA key");
   });
 
+  it("erster Leseversuch leer, zweiter findet den Schluessel: kein Anlegen, kein Überschreiben", () => {
+    // 22.9.-Lebensretter: ein flüchtiger Lesefehler darf nie wie „noch kein
+    // Eintrag“ aussehen. Der zweite Versuch findet den echten Schlüssel —
+    // dann darf ablegen() nie angerufen werden.
+    let leseAufrufe = 0;
+    const bund = {
+      name: "macOS Keychain",
+      lesen() {
+        leseAufrufe += 1;
+        return leseAufrufe >= 2 ? SCHLUESSEL : null;
+      },
+      ablegen() {
+        throw new Error("ABLEGEN DARF NICHT PASSIEREN — der echte Schlüssel wurde im zweiten Leseversuch gefunden");
+      },
+    };
+    expect(holeOderErzeugeSchluessel(bund, {}).toString("hex")).toBe(SCHLUESSEL);
+    expect(leseAufrufe).toBe(2);
+  });
+
   it("erzeugt einen neuen, legt ihn ab und liest ihn gegen", () => {
     const bund = speicherBund(null);
     const schluessel = holeOderErzeugeSchluessel(bund, {}, () => Buffer.alloc(32, 7));
@@ -183,22 +199,6 @@ describe("holeOderErzeugeSchluessel", () => {
   it("verschluckt der Schluesselbund den neuen Schluessel, wird NICHT verschluesselt", () => {
     // Sonst waere die Wissensbasis mit einem Schluessel verschlossen, den niemand mehr hat.
     expect(() => holeOderErzeugeSchluessel(speicherBund(null, true), {}, () => Buffer.alloc(32, 7))).toThrow("could not be read back");
-  });
-
-  it("erster Lesefehler, zweiter Lesefund: der gefundene Schlüssel wird genommen, NICHT neu erzeugt", () => {
-    // 22.9.: ein flüchtiger Lesefehler darf nie wie „kein Eintrag“ wirken —
-    // sonst überschreibt das Anlegen den echten Schlüssel. Der Zweitversuch
-    // entscheidet.
-    const bund = speicherBund(null);
-    const echtes = speicherBund(null);
-    let aufrufe = 0;
-    const fluechtig: Schluesselbund = {
-      name: "flüchtig",
-      lesen() { aufrufe += 1; if (aufrufe === 1) return null; return SCHLUESSEL; },
-      ablegen(hex) { echtes.inhalt = hex; throw new Error("darf nicht aufgerufen werden"); },
-    };
-    expect(holeOderErzeugeSchluessel(fluechtig, {}).toString("hex")).toBe(SCHLUESSEL);
-    expect(echtes.inhalt).toBeNull();
   });
 
   it("erzeugt echte Zufallsschluessel, wenn niemand einen vorgibt", () => {

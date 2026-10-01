@@ -12,7 +12,6 @@ import path from "node:path";
 import type { KeptaStore } from "./store";
 import { indexMemory } from "./engine";
 import { defaultAuditDir } from "./extensions";
-import { journalLesen, journalZeile } from "./nebendateien";
 import type { MemoryRecord, MemoryType } from "./types";
 
 export const PRAXISSYNC_FORMAT = "kepta-praxissync";
@@ -99,7 +98,9 @@ export function exportBundle(store: KeptaStore, opts: ExportOptions): SyncBundle
   const scope = opts.scope ?? "local";
   // Paginiert lesen: ein blindes listMemories() nahm die Voreinstellung von
   // 100 Notizen — ein „Voll-Export“ war still unvollständig (22.9. im
-  // Notfall-Rettungslauf gefunden: 100 von 3.644).
+  // Notfall-Rettungslauf gefunden: 100 von 3.644; der 2.13.4-Fix der App
+  // kam am 26.9. in den Kern — das npm-Paket exportierte bis dahin genau
+  // so still unvollständig).
   const records: MemoryRecord[] = [];
   for (let offset = 0; ; offset += 5000) {
     const seite = store.listMemories({ limit: 5000, offset });
@@ -242,12 +243,9 @@ export function verifyJournal(entries: SyncJournalEntry[]): boolean {
 
 export class PraxissyncJournal {
   private file: string;
-  /** Nicht-null: jede Zeile verschlüsselt (derselbe Schlüssel wie die Wissensbasis). null = Klartext (Tests, KEPTA_ENCRYPTION=off). */
-  private schluessel: Buffer | null;
 
-  constructor(file: string = path.join(defaultAuditDir(), "sync-journal.jsonl"), schluessel: Buffer | null = null) {
+  constructor(file: string = path.join(defaultAuditDir(), "sync-journal.jsonl")) {
     this.file = file;
-    this.schluessel = schluessel;
     try {
       fs.mkdirSync(path.dirname(this.file), { recursive: true });
     } catch {
@@ -255,13 +253,9 @@ export class PraxissyncJournal {
     }
   }
 
-  /** Prüft die gesamte Kette. Leerer Mitschnitt gilt als unversehrt; ein Mitschnitt, der sich nicht entschlüsseln lässt, ist gebrochen. */
+  /** Prüft die gesamte Kette. Leerer Mitschnitt gilt als unversehrt. */
   verify(): boolean {
-    try {
-      return verifyJournal(this.entries());
-    } catch {
-      return false;
-    }
+    return verifyJournal(this.entries());
   }
 
   record(input: SyncJournalInput): SyncJournalEntry {
@@ -288,14 +282,21 @@ export class PraxissyncJournal {
       prevHash: prev ? prev.hash : null,
     };
     const full: SyncJournalEntry = { ...entry, hash: entryHash(entry) };
-    fs.appendFileSync(this.file, journalZeile(full, this.schluessel) + "\n", "utf-8");
+    fs.appendFileSync(this.file, JSON.stringify(full) + "\n", "utf-8");
     return full;
   }
 
   entries(): SyncJournalEntry[] {
-    // Eine kaputte verschlüsselte Zeile wirft — Manipulationsverdacht, kein
-    // Grund still zu heilen. Nur eine fehlende Datei ist leer.
-    return journalLesen<SyncJournalEntry>(this.file, this.schluessel);
+    try {
+      return fs
+        .readFileSync(this.file, "utf-8")
+        .trim()
+        .split("\n")
+        .filter(Boolean)
+        .map((line) => JSON.parse(line) as SyncJournalEntry);
+    } catch {
+      return [];
+    }
   }
 
 }

@@ -5,18 +5,6 @@ import type { AuditSink } from "./extensions";
 
 export const DEFAULT_EMBED_MODEL = process.env.KEPTA_EMBED_MODEL || "nomic-embed-text";
 
-/**
- * Kontext-Fenster des Embedders, per Umgebung absenkbar (26.9., Embedding-A/B):
- * Ollama alloziert pro Input den vollen Kontext-Puffer — ein 8k-Modell (bge-m3,
- * arctic) lief bei Default mit ~2 Chunks/s, weil die Evaluation-Chunks nur
- * ~500 Token tragen. num_ctx=2048 deckt sie vollständig ab und lief das 13-fache
- * Tempo. Ohne env: kein options-Feld, exakt das alte Verhalten.
- */
-export function embedKontext(): number | null {
-  const v = Number(process.env.KEPTA_EMBED_CTX);
-  return Number.isFinite(v) && v >= 512 && v <= 32768 ? v : null;
-}
-
 export function ollamaBaseUrl(): string {
   return (process.env.KEPTA_OLLAMA_URL || "http://127.0.0.1:11434").replace(/\/+$/, "");
 }
@@ -104,7 +92,7 @@ export async function embedTexts(
     const res = await fetch(`${base}/api/embed`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ model, input: inputs, ...(embedKontext() ? { options: { num_ctx: embedKontext() } } : {}) }),
+      body: JSON.stringify({ model, input: inputs }),
       signal: AbortSignal.timeout(30_000),
     });
     if (!res.ok) {
@@ -165,6 +153,7 @@ export class EmbeddingQueue {
   private opts: Required<Omit<EmbeddingQueueOptions, "immediate">>;
   lastError: string | null = null;
   processed = 0;
+
   private store: KeptaStore;
 
   constructor(

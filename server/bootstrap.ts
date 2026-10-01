@@ -11,6 +11,7 @@ import { teamPolicy, editionAusStore } from "../src/lib/team";
 import { schluesselbundKeyProvider } from "../src/core/schluessel";
 import { migrateFromLegacyJson } from "../src/core/migrate";
 import { EmbeddingQueue } from "../src/core/embeddings";
+import { aktiviereSuchCacheDelta } from "../src/core/engine";
 import { TOOLS as MCP_TOOLS } from "../src/core/mcp";
 import { createApp } from "./app";
 import { resolveDistDir } from "./helfer/pfad";
@@ -42,6 +43,9 @@ export async function startServer() {
   }
   const embeddingQueue = new EmbeddingQueue(store);
   embeddingQueue.start();
+  // Kern 3.1.x: der Such-Cache wächst mit jedem Write delta-basiert weiter —
+  // derselbe Aufruf wie im Kern-Server (server.ts: aktiviereSuchCacheDelta).
+  aktiviereSuchCacheDelta(store);
 
   // Der Pro-Tag: die echte App (Electron-Hülle, npm start) sichert den
   // Erststart — 24 h volle Pro-Werkzeuge, dann Free mit Tageslimiten. Tests

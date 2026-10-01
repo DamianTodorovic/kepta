@@ -1,3 +1,16 @@
+## [3.1.1] — 2026-10-01
+
+### Changed
+- **The app runs on the open core 3.1.1** (build package 1 of the app master plan). `src/core/**` was lifted from kepta-core 3.1.1: search cache keyed on a trigger-fed data generation with delta maintenance (`aktiviereSuchCacheDelta` wired at bootstrap), AND-first FTS, engine/library exports — the engine is identical with the core repository (~/kepta-core, no local forks).
+- **Branding is simply KEPTA.** The "KEPTA Pro" claims ("Licensed to …", upgrade banners, Pro pricing) left the UI; the license mechanism itself stays untouched.
+- Version parity 3.1.1 across package.json, server.json, npm package and the core version module.
+- The License Studio tools directory was restored from history (tests/license-studio*.ts had lost their subject in the copy).
+
+### Fixed
+- The encrypted app-side sync journal and audit-file sinks (K1.-encrypted, same key as the knowledge base) now live in the app layer as documented app variants of the core classes (`VerschlusstesSyncJournal` / `VerschlussteAuditDatei`) — the open core 3.1.x writes these files in plaintext.
+- `saveWithIndex` keeps the app-era explicit-timestamp pass-through (LongMemEval ingest), documented as an app extension against core 3.1.1.
+- The Plan-State keychain adapter (`server/helfer/plan-schluesselbund.ts`) keeps the separate `app.kepta.plan` entries after core 3.1.x removed the target parameter from `schluesselbundFuer`.
+
 ## [2.13.14] — 2026-09-26
 
 ### Fixed

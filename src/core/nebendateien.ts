@@ -16,7 +16,10 @@
 //  - KEPTA_ENCRYPTION=off schaltet dies wie die Datenbank ab (Werkzeug-Modus).
 import crypto from "node:crypto";
 import fs from "node:fs";
+import path from "node:path";
 import { holeOderErzeugeSchluessel, schluesselbundFuer, standardAusfuehren, type Ausfuehren } from "./schluessel";
+import { PraxissyncJournal, verifyJournal, type SyncJournalEntry } from "./praxissync";
+import { defaultAuditDir, type AuditEvent } from "./extensions";
 
 const MAGIE = "KEPTA-NEBEN1\n";
 const ZEILEN_PRÄFIX = "K1.";
@@ -148,4 +151,111 @@ export function journalLesen<T>(pfad: string, schluessel: Buffer | null): T[] {
     }
   }
   return raus;
+}
+
+// ---------- App-Varianten der Kern-Journale (verschlüsselt) ----------
+//
+// Der offene Kern (3.1.x) schreibt Sync-Mitschnitt und Audit-Datei als
+// Klartext-JSONL (PraxissyncJournal / FileAuditSink). Die App hält an der
+// Kanzlei-Regel fest: Sync-Metadaten und Audit-Zeilen liegen verschlüsselt
+// auf der Platte (journalZeile/journalLesen, derselbe 256-Bit-Schlüssel wie
+// die Wissensbasis). Die Hash-Kette ist Zeichen für Zeichen die Kern-Logik
+// (src/core/praxissync.ts, entryHash/verifyJournal) — nur der Platten-IO
+// läuft hier verschlüsselt. Bewusst KEIN Kern-Fork: der Kern bleibt 1:1.
+
+function journalEintragsHash(e: Omit<SyncJournalEntry, "hash">): string {
+  // 1:1 die Kern-Formel (entryHash in praxissync.ts) — sonst würde
+  // verifyJournal aus dem Kern die App-Zeilen verwerfen.
+  return crypto.createHash("sha256").update(JSON.stringify(e)).digest("hex");
+}
+
+/** Form des Kern-Record-Eingangs (praxissync.ts, dort nicht exportiert). */
+export type SyncJournalEingang = { direction: "export" | "import"; peer: string; scope: string; count: number; payloadHash: string };
+
+/**
+ * App-Variante des Kern-PraxissyncJournal: derselbe Paketmitschnitt mit
+ * derselben Hash-Kette — aber jede Zeile verschlüsselt. `null`-Schlüssel
+ * (= KEPTA_ENCRYPTION=off) schreibt Klartext wie der Kern. Erbt vom
+ * Kern-Journal, damit exportBundle/importBundle es annehmen.
+ */
+export class VerschlusstesSyncJournal extends PraxissyncJournal {
+  /** Nicht-null: jede Zeile verschlüsselt (derselbe Schlüssel wie die Wissensbasis). null = Klartext (Tests, KEPTA_ENCRYPTION=off). */
+  private schluessel: Buffer | null;
+  /** Spiegel des privaten Basis-Felds `file` — die Subklasse braucht den Pfad für ihren verschlüsselten IO. */
+  private pfad: string;
+
+  constructor(file: string, schluessel: Buffer | null = null) {
+    super(file);
+    this.pfad = file;
+    this.schluessel = schluessel;
+  }
+
+  /** Prüft die gesamte Kette. Leerer Mitschnitt gilt als unversehrt; ein Mitschnitt, der sich nicht entschlüsseln lässt, ist gebrochen. */
+  override verify(): boolean {
+    try {
+      return verifyJournal(this.entries());
+    } catch {
+      return false;
+    }
+  }
+
+  override record(input: SyncJournalEingang): SyncJournalEntry {
+    // 1:1 die Kern-Logik: erst die bestehende Kette prüfen — eine gebrochene
+    // Kette heilt sich nie still weg (Manipulationsverdacht bricht ab).
+    const bestehende = this.entries();
+    if (bestehende.length > 0 && !verifyJournal(bestehende)) {
+      throw new Error(
+        `Paketmitschnitt ist gebrochen (${this.pfad}) — die Kette wurde nachträglich verändert. ` +
+          `Die Datei muss archiviert und bewusst neu begonnen werden; ein Anhängen würde die Manipulation verdecken.`
+      );
+    }
+    const prev = bestehende.length > 0 ? bestehende[bestehende.length - 1]! : null;
+    const entry: Omit<SyncJournalEntry, "hash"> = {
+      seq: prev ? prev.seq + 1 : 1,
+      at: new Date().toISOString(),
+      direction: input.direction,
+      peer: input.peer,
+      scope: input.scope,
+      count: input.count,
+      payloadHash: input.payloadHash,
+      prevHash: prev ? prev.hash : null,
+    };
+    const full: SyncJournalEntry = { ...entry, hash: journalEintragsHash(entry) };
+    fs.appendFileSync(this.pfad, journalZeile(full, this.schluessel) + "\n", "utf-8");
+    return full;
+  }
+
+  override entries(): SyncJournalEntry[] {
+    // Eine kaputte verschlüsselte Zeile wirft — Manipulationsverdacht, kein
+    // Grund still zu heilen. Nur eine fehlende Datei ist leer.
+    return journalLesen<SyncJournalEntry>(this.pfad, this.schluessel);
+  }
+}
+
+/**
+ * App-Variante des Kern-FileAuditSink: die Audit-Zeile geht verschlüsselt auf
+ * die Platte (K1.-Präfix). `null`-Schlüssel schreibt Klartext wie der Kern.
+ */
+export class VerschlussteAuditDatei {
+  private file: string;
+  private queue: Promise<void> = Promise.resolve();
+  private schluessel: Buffer | null;
+  constructor(file: string = path.join(defaultAuditDir(), "audit.jsonl"), schluessel: Buffer | null = null) {
+    this.file = file;
+    this.schluessel = schluessel;
+    try {
+      fs.mkdirSync(path.dirname(this.file), { recursive: true });
+    } catch {
+      // journal failures must never break the memory
+    }
+  }
+  emit(event: AuditEvent): void {
+    this.queue = this.queue
+      .then(() => fs.promises.appendFile(this.file, journalZeile(event, this.schluessel) + "\n", "utf-8"))
+      .catch(() => undefined);
+  }
+  /** Wartet, bis alle eingereichten Einträge wirklich in der Datei stehen. */
+  flush(): Promise<void> {
+    return this.queue;
+  }
 }

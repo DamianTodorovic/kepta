@@ -54,11 +54,8 @@ export interface AuditSink {
 export class FileAuditSink {
   private file: string;
   private queue: Promise<void> = Promise.resolve();
-  /** Nicht-null: jede Zeile verschlüsselt (derselbe Schlüssel wie die Wissensbasis). null = Klartext. */
-  private schluessel: Buffer | null;
-  constructor(file?: string, schluessel: Buffer | null = null) {
+  constructor(file?: string) {
     this.file = file ?? path.join(defaultAuditDir(), "audit.jsonl");
-    this.schluessel = schluessel;
     try {
       fs.mkdirSync(path.dirname(this.file), { recursive: true });
     } catch {
@@ -67,15 +64,18 @@ export class FileAuditSink {
   }
   emit(event: AuditEvent): void {
     this.queue = this.queue
-      .then(() => fs.promises.appendFile(this.file, journalZeile(event, this.schluessel) + "\n", "utf-8"))
+      .then(() => fs.promises.appendFile(this.file, JSON.stringify(event) + "\n", "utf-8"))
       .catch(() => undefined);
+  }
+  /** Wartet, bis alle eingereichten Einträge wirklich in der Datei stehen. */
+  flush(): Promise<void> {
+    return this.queue;
   }
 }
 
 import fs from "node:fs";
 import path from "node:path";
 import os from "node:os";
-import { journalZeile } from "./nebendateien";
 
 export function defaultAuditDir(): string {
   const env = process.env.KEPTA_DATA_DIR;

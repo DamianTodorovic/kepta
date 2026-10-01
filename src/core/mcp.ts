@@ -328,8 +328,10 @@ export function saveWithIndex(store: KeptaStore, args: Record<string, unknown>):
     confidence: typeof args.confidence === "number" ? args.confidence : undefined,
     validFrom: typeof args.validFrom === "number" ? args.validFrom : undefined,
     validTo: typeof args.validTo === "number" ? args.validTo : undefined,
-    // Explizite Zeitstempel (Benchmark-/Importpfade): gelten nur bei Neu-Anlage;
-    // der Update-Zweig von upsertMemory nimmt sie aus dem Patch nicht an.
+    // App-Erweiterung gegenüber dem offenen Kern 3.1.x (dort entfernt):
+    // Explizite Zeitstempel (Benchmark-/Importpfade, LongMemEval-Ingest):
+    // gelten nur bei Neu-Anlage; der Update-Zweig von upsertMemory nimmt
+    // sie aus dem Patch nicht an. Bewacht durch tests/longmemeval.test.ts.
     createdAt: typeof args.createdAt === "number" ? args.createdAt : undefined,
     updatedAt: typeof args.updatedAt === "number" ? args.updatedAt : undefined,
   };
@@ -348,9 +350,10 @@ export function saveWithIndex(store: KeptaStore, args: Record<string, unknown>):
 /**
  * Privatheits-Floor: eine Notiz mit scope "private" verlässt KEPTA nie über
  * MCP — egal welcher Client fragt und egal, ob sie per scope-Argument
- * angefragt wird. Die MCP-Wache (src/lib/mcpwache.ts) baut darüber auf: Schild,
- * Audit, Aktivität. Der Floor ist das Grundversprechen, das der Kern auch
- * allein hält, wenn App und kepta-mcp dieselbe Datenbank teilen.
+ * angefragt wird. Die App trägt darüber hinaus die volle MCP-Wache (Privacy-
+ * Schild, Audit-Protokoll, Aktivitäts-Meldung); dieser Floor ist das
+ * Grundversprechen, das auch der freie Kern hält, wenn App und kepta-mcp
+ * dieselbe Datenbank teilen.
  */
 function ohnePrivate<T>(liste: T[], scopeVon: (m: T) => string | undefined): T[] {
   return liste.filter((m) => scopeVon(m) !== "private");
@@ -461,6 +464,7 @@ export async function callTool(store: KeptaStore, name: string, args: Record<str
           scope: args.scope ? String(args.scope) : undefined,
           trash: args.trash === true,
         };
+        // Privatheits-Floor: auch ein explizites scope:"private" liefert nichts zurück.
         const memories = ohnePrivate(store.listMemories(opts), (m) => m.scope);
         const total = store.countMemories();
         const structured = {

@@ -19,16 +19,6 @@ import type { KeyProvider } from "./extensions";
 export const DIENST = "app.kepta.database";
 export const KONTO = "kepta";
 
-/** Ein zweites Ziel im selben Bund (z. B. der Plan-Zustand) — andere Dienst-/Konto-Marker. */
-export interface SchluesselbundZiel {
-  dienst: string;
-  konto: string;
-  /** macOS/Linux: sichtbares Label. */
-  label?: string;
-  /** Windows: Dateiname neben der Datenbank (Default: database-key.dpapi). */
-  datei?: string;
-}
-
 export type Ausfuehren = (
   befehl: string,
   argumente: string[],
@@ -60,47 +50,44 @@ function exitCode(e: unknown): number | undefined {
   return (e as { status?: number }).status;
 }
 
-/** macOS: /usr/bin/security endet mit Exit-Code 44, wenn es den Eintrag nicht gibt, und mit 45, wenn er schon existiert. */
-export function macSchluesselbund(ausf: Ausfuehren = standardAusfuehren, ziel: SchluesselbundZiel = { dienst: DIENST, konto: KONTO, label: "KEPTA database key" }): Schluesselbund {
+/** macOS: /usr/bin/security endet mit Exit-Code 44, wenn es den Eintrag nicht gibt. */
+export function macSchluesselbund(ausf: Ausfuehren = standardAusfuehren): Schluesselbund {
   return {
     name: "macOS Keychain",
     lesen() {
       try {
-        return ausf("/usr/bin/security", ["find-generic-password", "-s", ziel.dienst, "-a", ziel.konto, "-w"]).trim() || null;
+        return ausf("/usr/bin/security", ["find-generic-password", "-s", DIENST, "-a", KONTO, "-w"]).trim() || null;
       } catch (e) {
         if (exitCode(e) === 44) return null;
         throw e;
       }
     },
     ablegen(hex) {
-      // Der Schluessel steht in der Argumentliste — sehbar nur fuer Prozesse
-      // desselben Kontos, die den Schluesselbund ohnehin fragen duerfen
+      // Der Schlüssel steht in der Argumentliste — sehbar nur für Prozesse
+      // desselben Kontos, die den Schlüsselbund ohnehin fragen dürften
       // (security liest sein Passwort nicht von stdin: der Prompt verlangt
-      // zweimaliges Tippen). Das ist die dokumentierte, bewusste Schwaechung.
+      // zweimaliges Tippen). Das ist die dokumentierte, bewusste Schwächung.
       //
       // Ohne -U: existiert der Eintrag schon, scheitert das Anlegen (Exit 45) —
       // und genau das ist der Lebensretter. Ein blinder Update hat am 22.9.
-      // den echten Schluessel einer laufenden Installation ueberschrieben,
-      // weil ein fehlerhafter Leseversuch (Keychain-ACL, haengendes security)
-      // wie „noch kein Eintrag“ aussah. Anlegen ja — Ueberschreiben nie.
+      // den echten Schlüssel einer laufenden Installation überschrieben,
+      // weil ein fehlerhafter Leseversuch (Keychain-ACL, hängendes security)
+      // wie „noch kein Eintrag“ aussah. Anlegen ja — Überschreiben nie.
+      // (Der 2.13.4-Fix aus der App, am 26.9. in den Kern portiert — das
+      // npm-Paket öffnet dieselbe Datenbank und trug die Gefahr bis dahin.)
       try {
-        ausf("/usr/bin/security", ["add-generic-password", "-s", ziel.dienst, "-a", ziel.konto, "-l", ziel.label ?? "KEPTA key", "-w", hex]);
+        ausf("/usr/bin/security", ["add-generic-password", "-s", DIENST, "-a", KONTO, "-l", "KEPTA database key", "-w", hex]);
       } catch (e) {
         if (exitCode(e) === 45) {
           throw new Error(
-            `A key entry already exists in the ${bundName()} but could not be read — refusing to overwrite it. ` +
-              `Restore the original key from your recovery key (Settings → System status → Show recovery key) ` +
-              `with: security add-generic-password -s ${ziel.dienst} -a ${ziel.konto} -w <key>`,
+            "A key entry already exists in the macOS Keychain but could not be read — refusing to overwrite it. " +
+              `Restore the original key with: security add-generic-password -s ${DIENST} -a ${KONTO} -w <key>`,
           );
         }
         throw e;
       }
     },
   };
-}
-
-function bundName(): string {
-  return "macOS Keychain";
 }
 
 /**
@@ -134,12 +121,12 @@ export function windowsSchluesselbund(datei: string, ausf: Ausfuehren = standard
 }
 
 /** Linux: Secret Service (GNOME Keyring, KWallet) über secret-tool — Exit-Code 1, wenn es nichts gibt. */
-export function linuxSchluesselbund(ausf: Ausfuehren = standardAusfuehren, ziel: SchluesselbundZiel = { dienst: DIENST, konto: KONTO, label: "KEPTA database key" }): Schluesselbund {
+export function linuxSchluesselbund(ausf: Ausfuehren = standardAusfuehren): Schluesselbund {
   return {
     name: "Secret Service",
     lesen() {
       try {
-        return ausf("secret-tool", ["lookup", "service", ziel.dienst, "account", ziel.konto]).trim() || null;
+        return ausf("secret-tool", ["lookup", "service", DIENST, "account", KONTO]).trim() || null;
       } catch (e) {
         if (exitCode(e) === 1) return null;
         if ((e as { code?: string }).code === "ENOENT") {
@@ -152,7 +139,7 @@ export function linuxSchluesselbund(ausf: Ausfuehren = standardAusfuehren, ziel:
     },
     ablegen(hex) {
       // secret-tool liest das Geheimnis von stdin — es erscheint in keiner Argumentliste.
-      ausf("secret-tool", [`store`, `--label=${ziel.label ?? "KEPTA key"}`, "service", ziel.dienst, "account", ziel.konto], { input: hex });
+      ausf("secret-tool", ["store", "--label=KEPTA database key", "service", DIENST, "account", KONTO], { input: hex });
     },
   };
 }
@@ -161,12 +148,10 @@ export function schluesselbundFuer(
   plattform: string,
   datenordner: string,
   ausf: Ausfuehren = standardAusfuehren,
-  ziel?: SchluesselbundZiel,
 ): Schluesselbund | null {
-  const z = ziel ?? { dienst: DIENST, konto: KONTO, label: "KEPTA database key", datei: "database-key.dpapi" };
-  if (plattform === "darwin") return macSchluesselbund(ausf, z);
-  if (plattform === "win32") return windowsSchluesselbund(path.join(datenordner, z.datei ?? "database-key.dpapi"), ausf);
-  if (plattform === "linux") return linuxSchluesselbund(ausf, z);
+  if (plattform === "darwin") return macSchluesselbund(ausf);
+  if (plattform === "win32") return windowsSchluesselbund(path.join(datenordner, "database-key.dpapi"), ausf);
+  if (plattform === "linux") return linuxSchluesselbund(ausf);
   return null;
 }
 
@@ -194,11 +179,11 @@ export function holeOderErzeugeSchluessel(
     if (!istSchluessel(vorhanden)) throw new Error(`The entry in the ${bund.name} is not a KEPTA key.`);
     return Buffer.from(vorhanden, "hex");
   }
-  // Zweiter Leseversuch, BEVOR etwas angelegt wird: Ein fluechtiger Lesefehler
-  // (Keychain-ACL, haengendes security, gesperrter Bund) darf nie wie „noch
-  // kein Eintrag“ aussehen — sonst ueberschreibt das Anlegen den echten
-  // Schluessel (22.9. genau so eine Datenkatastrophe ausgelöst und über die
-  // Recovery gerettet). Findet der zweite Versuch einen Schluessel, ist das
+  // Zweiter Leseversuch, BEVOR etwas angelegt wird: Ein flüchtiger Lesefehler
+  // (Keychain-ACL, hängendes security, gesperrter Bund) darf nie wie „noch
+  // kein Eintrag“ aussehen — sonst überschreibt das Anlegen den echten
+  // Schlüssel (22.9. genau so eine Datenkatastrophe ausgelöst und über die
+  // Recovery gerettet). Findet der zweite Versuch einen Schlüssel, ist das
   // der echte — keine Neuerzeugung.
   const zweiterVersuch = bund.lesen();
   if (zweiterVersuch) {

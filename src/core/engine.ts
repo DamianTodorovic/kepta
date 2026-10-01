@@ -4,6 +4,7 @@
 import type { KeptaStore } from "./store";
 import type { MemoryRecord, MemoryType, SearchHit, SearchResult, SearchParams } from "./types";
 import { chunkText, embedQuery, cosineSimilarity, ollamaBaseUrl, DEFAULT_EMBED_MODEL } from "./embeddings";
+import { erweitereQuery } from "./synonyme";
 
 const RRF_K = 60;
 /**
@@ -48,25 +49,6 @@ const VECTOR_BAND = 0.86;
  * ueber eigene Beine und bleiben unberuehrt, die Suche wird also nie blind.
  */
 const VECTOR_FLOOR = 0.58;
-
-/**
- * A/B-Tuning ueber die Umgebung (26.9., Band-Tuning-Hebel der Messreihe): Der
- * Eval-Runner kann KEPTA_VECTOR_BAND / KEPTA_VECTOR_FLOOR setzen, ohne die
- * Produkt-Konstanten anzufassen. Ohne env gilt exakt der alte Wert — der
- * Default-Verhalten ist damit bitidentisch. Gueltige Bereiche sind absichtlich
- * eng: Band 0.5-1, Floor 0.3-0.9; alles andere (auch Unsinn wie "abc") faellt
- * lautlos auf den Default zurueck, damit kein Test/Produktpfad durch einen
- * schlechten env-Wert kippen kann.
- */
-export function vektorBandGrenze(): number {
-  const v = Number(process.env.KEPTA_VECTOR_BAND);
-  return Number.isFinite(v) && v >= 0.5 && v <= 1 ? v : VECTOR_BAND;
-}
-
-export function vektorFloorGrenze(): number {
-  const v = Number(process.env.KEPTA_VECTOR_FLOOR);
-  return Number.isFinite(v) && v >= 0.3 && v <= 0.9 ? v : VECTOR_FLOOR;
-}
 // F3: Rerank-Boost ist bewusst kleiner als ein Bein-Sprung — die Fusion bleibt Basis
 const RERANK_MAX_BOOST = 0.25;
 
@@ -142,16 +124,7 @@ interface ActiveMemory {
   contentLower: string;
 }
 
-/**
- * Aktiver Bestand pro Store, gültig bis zur nächsten Bestandsänderung
- * (store.memoriesVersion). Ohne Cache liest jede Suche die volle Tabelle neu —
- * bei 200.000 Notizen waren das Sekunden je Frage (Benchmark-Pilot 21.9.).
- */
-const aktiverBestandCache = new WeakMap<KeptaStore, { version: number; daten: ActiveMemory[] }>();
-
 function loadActive(store: KeptaStore): ActiveMemory[] {
-  const cache = aktiverBestandCache.get(store);
-  if (cache && cache.version === store.memoriesVersion) return cache.daten;
   const out: ActiveMemory[] = [];
   const limit = 5000;
   for (let offset = 0; ; offset += limit) {
@@ -165,78 +138,156 @@ function loadActive(store: KeptaStore): ActiveMemory[] {
     }
     if (page.length < limit) break;
   }
-  aktiverBestandCache.set(store, { version: store.memoriesVersion, daten: out });
   return out;
 }
 
-function entityMentionsInQuery(store: KeptaStore, queryLower: string): string[] {
+// ---------- Such-Cache ----------
+// loadActive/allEmbeddableChunks/getGraph sind die teuren Voll-Läufe je Abfrage —
+// bei 100k Erinnerungen dominierten sie die Latenz (p95 7,2 s, Record in
+// tools/latenz/). Sie cachen jetzt pro Store an der datenGeneration, die per
+// Trigger bei JEDER Mutation an memories/chunks/entities/relations steigt —
+// jede Schreiboperation (auch direkte DB-Zugriffe wie Importe) invalidiert
+// selbst. Verbraucher dürfen die gelieferten Objekte nur lesen, nicht ändern.
+export const suchCacheStatistik = { vollaufbauten: 0, deltapatches: 0 };
+
+const aktiverCache = new WeakMap<KeptaStore, { generation: number; aktiv: ActiveMemory[]; byId: Map<string, ActiveMemory> }>();
+const deltaRegistriert = new WeakSet<KeptaStore>();
+
+/**
+ * Meldet den Such-Cache am Store an: Jede Memory-Mutation wird als Delta
+ * in den bestehenden Cache gepatcht (anstatt den Volllauf zu erzwingen).
+ * Der Generation-Trigger bleibt das Sicherheitsnetz für Wege ohne Meldung
+ * (Roh-SQL, Importe) — dann erkennt der Generation-Vergleich den Verfall
+ * und baut voll neu.
+ */
+function registriereDelta(store: KeptaStore): void {
+  if (deltaRegistriert.has(store)) return;
+  deltaRegistriert.add(store);
+  store.onMemorieAenderung((id) => {
+    let eintrag = aktiverCache.get(store);
+    if (!eintrag) {
+      // Warmer Start: nur wenn DIESE Zeile die einzige aktive ist (Datenbank war
+      // leer), beginnt der Cache hier und wächst mit jedem Write — der erste
+      // Suchlauf zahlt dann keinen Volllauf. Bei vorgefüllter DB: ignorieren,
+      // der Volllauf beim ersten Suchlauf ist korrekt.
+      if (store.countMemories().active !== 1) return;
+      eintrag = { generation: 0, aktiv: [], byId: new Map() };
+      aktiverCache.set(store, eintrag);
+    }
+    const frisch = store.getMemory(id);
+    if (!frisch || frisch.deletedAt !== null) {
+      eintrag.aktiv = eintrag.aktiv.filter((m) => m.record.id !== id);
+      eintrag.byId.delete(id);
+    } else {
+      const neu: ActiveMemory = {
+        record: frisch,
+        titleLower: frisch.title.toLowerCase(),
+        contentLower: frisch.content.toLowerCase(),
+      };
+      const alt = eintrag.byId.get(id);
+      if (alt) Object.assign(alt, neu); // In-place: Referenzen laufender Antworten bleiben gültig
+      else {
+        eintrag.aktiv.push(neu);
+        eintrag.byId.set(id, neu);
+      }
+    }
+    suchCacheStatistik.deltapatches += 1;
+    eintrag.generation = store.memGeneration(); // Write → Trigger hat schon gezählt
+  });
+}
+
+/**
+ * Meldet den Such-Cache VOR dem ersten Write am Store an — damit der Cache
+ * beim Ingest mitwächst und der erste Suchlauf keinen Volllauf zahlt.
+ * Aufrufpunkte: direkt nach `new KeptaStore(...)` (server.ts, Bench). Wer es
+ * nicht aufruft, zahlt den Volllauf beim ersten Suchlauf — Korrektheit bleibt
+ * durch das Trigger-Sicherheitsnetz in jedem Fall gewährleistet.
+ */
+export function aktiviereSuchCacheDelta(store: KeptaStore): void {
+  registriereDelta(store);
+}
+
+function aktiveErinnerungen(store: KeptaStore): { aktiv: ActiveMemory[]; byId: Map<string, ActiveMemory> } {
+  registriereDelta(store);
+  const generation = store.memGeneration();
+  const eintrag = aktiverCache.get(store);
+  if (eintrag && eintrag.generation === generation) return eintrag;
+  const aktiv = loadActive(store);
+  const byId = new Map(aktiv.map((m) => [m.record.id, m]));
+  const frisch = { generation, aktiv, byId };
+  aktiverCache.set(store, frisch);
+  suchCacheStatistik.vollaufbauten += 1;
+  return frisch;
+}
+
+const chunkCache = new WeakMap<KeptaStore, { generation: number; chunks: ReturnType<KeptaStore["allEmbeddableChunks"]> }>();
+function embeddbareChunks(store: KeptaStore): ReturnType<KeptaStore["allEmbeddableChunks"]> {
+  const generation = store.datenGeneration();
+  const eintrag = chunkCache.get(store);
+  if (eintrag && eintrag.generation === generation) return eintrag.chunks;
+  const chunks = store.allEmbeddableChunks();
+  chunkCache.set(store, { generation, chunks });
+  return chunks;
+}
+
+const graphCache = new WeakMap<KeptaStore, { generation: number; namen: string[] }>();
+function graphNamen(store: KeptaStore): string[] {
+  const generation = store.datenGeneration();
+  const eintrag = graphCache.get(store);
+  if (eintrag && eintrag.generation === generation) return eintrag.namen;
   const { entities } = store.getGraph(undefined, 1);
+  const namen = entities.map((e) => e.name);
+  graphCache.set(store, { generation, namen });
+  return namen;
+}
+
+// Vektor-Spur vorgerechnet: Chunk-Normen werden pro Generation EINMAL gebildet,
+// die Suche rechnet dann nur noch dot(a, b) / (normA · normB) — das spart die
+// doppelte Norm-Arbeit pro Chunk bei jeder Abfrage (bei 20k×768-dim-Chunks der
+// größte einzelne Kostenblock der warmen Suche).
+interface SuchVektoren {
+  liste: ReturnType<KeptaStore["allEmbeddableChunks"]>;
+  normen: Float32Array;
+}
+const vektorCache = new WeakMap<KeptaStore, { generation: number; spur: SuchVektoren }>();
+function suchVektoren(store: KeptaStore): SuchVektoren {
+  const generation = store.datenGeneration();
+  const eintrag = vektorCache.get(store);
+  if (eintrag && eintrag.generation === generation) return eintrag.spur;
+  const liste = store.allEmbeddableChunks().filter((c) => c.model === DEFAULT_EMBED_MODEL);
+  const normen = new Float32Array(liste.length);
+  for (let j = 0; j < liste.length; j++) {
+    const b = liste[j]!.embedding;
+    let nb = 0;
+    for (let i = 0; i < b.length; i++) nb += b[i]! * b[i]!;
+    normen[j] = Math.sqrt(nb);
+  }
+  const spur = { liste, normen };
+  vektorCache.set(store, { generation, spur });
+  return spur;
+}
+
+function entityMentionsInQuery(store: KeptaStore, queryLower: string): string[] {
   const mentions: string[] = [];
-  for (const e of entities) {
-    if (e.name.length >= 3 && queryLower.includes(e.name)) mentions.push(e.name);
+  for (const name of graphNamen(store)) {
+    if (name.length >= 3 && queryLower.includes(name)) mentions.push(name);
   }
   return mentions;
 }
 
 /** Berechnet alle Beinheiten und fusioniert via Reciprocal Rank Fusion. */
-// ---------- Vektor-Cache ----------
-// Die Vektorspur verglich den Query-Vektor mit ALLEN Chunks der Wissensbasis.
-// Vorher holte sie die Chunks bei JEDER Suche frisch aus SQLite — 11 799 Zeilen
-// samt Embedding-BLOBs (rund 36 MB Kopierarbeit pro Suche). Weil better-sqlite3
-// synchron arbeitet und der Server im Hauptprozess der App laeuft, fror das
-// Fenster unter Agenten-Last fuer Sekunden ein. Der Cache haelt die Chunks im
-// Speicher und laedt neu, wenn sich die Tabelle aendert — erkannt an einem
-// billigen Fingerprint (Zeilen, maximale rowid, Summen ueber seq und
-// Blob-Laengen; length(blob) liest nur den Datensatz-Kopf, nicht die Blobs).
-// Nach jeder Schreib-Welle zahlt also genau EINE Suche den Neuaufbau, alle
-// anderen laufen ohne Datenbank-Zugriff auf die Embeddings.
-
-interface CachedChunk { memoryId: string; seq: number; embedding: Float32Array; model: string }
-
-interface CacheEintrag { version: number; daten: CachedChunk[] }
-
-// Pro Store-Instanz (Tests bauen mehrere im selben Prozess — ein globaler
-// Cache wuerde Bestaende zwischen Stores vermischen).
-const cacheNachStore = new WeakMap<KeptaStore, CacheEintrag>();
-
-/** Chunk-Liste fuer die Vektorspur — aus dem Cache, nur bei Aenderungen frisch. */
-function embeddableChunksGecached(store: KeptaStore): CachedChunk[] {
-  const eintrag = cacheNachStore.get(store);
-  if (eintrag && eintrag.version === store.chunksVersion) return eintrag.daten;
-  const daten = store.allEmbeddableChunks().map((c) => ({ memoryId: c.memoryId, seq: c.seq, embedding: c.embedding, model: c.model }));
-  cacheNachStore.set(store, { version: store.chunksVersion, daten });
-  return daten;
-}
-
-// ---------- Query-Embedding-LRU ----------
-// Dieselbe Frage hintereinander (Suche im UI, Chat-Nachfrage, Agenten-Retry)
-// embeddete jedes Mal neu — ein HTTP-Rundlauf zu Ollama. Eine kleine LRU haelt
-// die letzten Vektoren; die Chat-Quelle wiederholt sich erfahrungsgemaess.
-const queryVectorCache = new Map<string, Float32Array>();
-const QUERY_CACHE_MAX = 32;
-
-async function queryVectorGecached(query: string): Promise<Float32Array | null> {
-  const treffer = queryVectorCache.get(query);
-  if (treffer) return treffer;
-  const vektor = await embedQuery(query);
-  if (!vektor) return null;
-  if (queryVectorCache.size >= QUERY_CACHE_MAX) {
-    const aeltester = queryVectorCache.keys().next().value;
-    if (aeltester !== undefined) queryVectorCache.delete(aeltester);
-  }
-  queryVectorCache.set(query, vektor);
-  return vektor;
-}
-
 export async function searchMemories(store: KeptaStore, params: SearchParams): Promise<SearchResult> {
-  const query = (params.query || "").trim();
+  // Query-Erweiterung (deutsch <-> englisch): „Wie oft wird gesichert?" muss
+  // auch die Notiz „Backup schedule" finden. Die Erweiterung haengt Synonyme
+  // AN die Query — alle Beine (BM25, Vektor, Reranking) profitieren; das
+  // Original bleibt vorne, damit Snippets und Anzeige dem Nutzer folgen.
+  const query = erweitereQuery((params.query || "").trim());
   const limit = Math.min(Math.max(params.limit ?? 10, 1), MAX_SEARCH_LIMIT);
   const queryLower = query.toLowerCase();
   // Zeitreise (asOf): „now“ ist dann der gefragte Zeitpunkt — Zeitregler für ALLE Zugänge
   const now = params.asOf ?? Date.now();
   const timeTravel = params.asOf !== undefined;
-  const active = loadActive(store);
-  const byId = new Map(active.map((m) => [m.record.id, m]));
+  const { aktiv: active, byId } = aktiveErinnerungen(store);
 
   const filters = (m: ActiveMemory): boolean => {
     const r = m.record;
@@ -286,17 +337,27 @@ export async function searchMemories(store: KeptaStore, params: SearchParams): P
   let usedVectors = false;
   const vectorSim = new Map<string, number>();
   if (query && beine.vector) {
-    queryVector = await queryVectorGecached(query);
+    queryVector = await embedQuery(query);
     if (queryVector) {
-      // Nur Chunks desselben Embedding-Modells sind vergleichbar — der Query-Vektor
-      // entsteht mit DEFAULT_EMBED_MODEL; fremde Modelle würden unsinnige Cosine-Werte
-      // liefern. Nach Modellwechsel füllt die Queue (chunksNeedingEmbedding mit
-      // Modell-Mismatch) die Lücke, bis dahin läuft die Suche rein lexikalisch.
-      const chunks = embeddableChunksGecached(store).filter((c) => c.model === DEFAULT_EMBED_MODEL);
+      // Vorgerechnete Spur (Chunk-Liste gefiltert auf das Abfragemodell + Normen
+      // je Chunk, einmal pro Generation). Nur Chunks desselben Embedding-Modells
+      // sind vergleichbar — der Query-Vektor entsteht mit DEFAULT_EMBED_MODEL;
+      // fremde Modelle würden unsinnige Cosine-Werte liefern.
+      const spur = suchVektoren(store);
+      const liste = spur.liste;
+      const normen = spur.normen;
+      // Query-Norm einmal je Abfrage
+      let na = 0;
+      for (let i = 0; i < queryVector.length; i++) na += queryVector[i]! * queryVector[i]!;
+      const normA = Math.sqrt(na);
       const bestPerMemory = new Map<string, number>();
-      for (const c of chunks) {
+      for (let j = 0; j < liste.length; j++) {
+        const c = liste[j]!;
         if (!byId.has(c.memoryId)) continue;
-        const sim = cosineSimilarity(queryVector, c.embedding);
+        const b = c.embedding;
+        let dot = 0;
+        for (let i = 0; i < b.length; i++) dot += queryVector[i]! * b[i]!;
+        const sim = normA > 0 && normen[j]! > 0 ? dot / (normA * normen[j]!) : 0;
         const prev = bestPerMemory.get(c.memoryId);
         if (prev === undefined || sim > prev) bestPerMemory.set(c.memoryId, sim);
       }
@@ -307,7 +368,7 @@ export async function searchMemories(store: KeptaStore, params: SearchParams): P
         for (const [id, sim] of bestPerMemory) vectorSim.set(id, sim);
         let bestSim = 0;
         for (const sim of bestPerMemory.values()) if (sim > bestSim) bestSim = sim;
-        const untergrenze = Math.max(vektorFloorGrenze(), bestSim * vektorBandGrenze());
+        const untergrenze = Math.max(VECTOR_FLOOR, bestSim * VECTOR_BAND);
         vectorRanked = [...bestPerMemory.entries()]
           .filter(([, sim]) => sim >= untergrenze)
           .sort((a, b) => b[1] - a[1])
@@ -414,7 +475,26 @@ export async function searchMemories(store: KeptaStore, params: SearchParams): P
   const top = hits.slice(0, limit);
   // Zugriffs-Statistik für die Retention aktualisieren (fire-and-forget-semantisch, aber sync)
   // Retention nur für Gegenwarts-Suchen zählen — Zeitreise verfälscht die Statistik nicht
-  if (query && !timeTravel && top.length > 0) store.recordAccess(top.map((h) => h.memory.id));
+  if (query && !timeTravel && top.length > 0) {
+    store.recordAccess(top.map((h) => h.memory.id));
+    // recordAccess hebt die Generation bewusst NICHT (Trigger-WHEN: nur inhaltliche
+    // Updates zählen) — sonst invalidiert die Suche sich selbst und der Cache ist
+    // tot. Damit der Cache trotzdem exakt frisch bleibt, patchen wir die neuen
+    // Zugriffsstände direkt in die gecachten Records (wirkt ab der nächsten Suche —
+    // identisch zum Verhalten ohne Cache).
+    const eintrag = aktiverCache.get(store);
+    if (eintrag && eintrag.generation === store.memGeneration()) {
+      const jetzt = Date.now();
+      const imCache = new Map(eintrag.aktiv.map((a) => [a.record.id, a]));
+      for (const h of top) {
+        const m = imCache.get(h.memory.id);
+        if (m) {
+          m.record.lastAccessAt = jetzt;
+          m.record.accessCount += 1;
+        }
+      }
+    }
+  }
   return { hits: top, total: hits.length, query, usedVectors };
 }
 
@@ -468,14 +548,12 @@ export async function consolidateMemories(
   // Eine tote Memory gewann dadurch als "behalten" — und eine lebende Dublette zeigte
   // anschliessend auf sie. Ergebnis: die lebende Notiz auf 40 % heruntergewichtet,
   // mit einem Nachfolger, der selbst ausgemustert ist.
-  const active = loadActive(store).filter((m) => !m.record.supersededBy);
+  const active = aktiveErinnerungen(store).aktiv.filter((m) => !m.record.supersededBy);
   const candidates: ConsolidationCandidate[] = [];
 
   // Embedding-Dubletten: Centroid pro Memory+Modell vergleichen — Cosine nur zwischen
   // identischen Modellen (Cross-Modell-Vektoren erzeugen Schein-Dubletten).
-  // Duplikatvergleiche profitieren ebenfalls vom Cache — consolidate lädt sonst
-  // bei jedem Aufruf die volle Tabelle mit BLOBs.
-  const chunks = embeddableChunksGecached(store);
+  const chunks = embeddbareChunks(store);
   const centroids = new Map<string, { model: string; vec: Float32Array; count: number }>();
   for (const c of chunks) {
     if (!active.some((m) => m.record.id === c.memoryId)) continue;
@@ -567,7 +645,7 @@ export async function findDuplicateForNew(
   const vec = await embedQuery(`${title}\n${content}`);
   if (!vec) return null;
   // Nur Chunks des aktuellen Modells — Query-Vektor und Chunk-Vektor müssen gleiche Räume teilen
-  const chunks = embeddableChunksGecached(store).filter((c) => c.model === DEFAULT_EMBED_MODEL);
+  const chunks = embeddbareChunks(store).filter((c) => c.model === DEFAULT_EMBED_MODEL);
   const best = new Map<string, number>();
   for (const c of chunks) {
     const sim = cosineSimilarity(vec, c.embedding);

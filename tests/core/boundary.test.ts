@@ -32,6 +32,9 @@ describe("memory core boundary (src/core)", () => {
   it("contains exactly the known core files (no silent additions)", () => {
     const names = coreFiles.map((f) => path.basename(f)).sort();
     expect(names).toEqual([
+      // Kern 3.1.x: ChatGPT-Export-Import (App-Stand) und Synonym-Erweiterung
+      // der Suche sind Kern-Dateien.
+      "chatgpt-import.ts",
       "embeddings.ts",
       "engine.ts",
       "extensions.ts",
@@ -62,6 +65,7 @@ describe("memory core boundary (src/core)", () => {
       "sperrliste.ts",
       "stopwords.ts",
       "store.ts",
+      "synonyme.ts",
       "types.ts",
       "version.ts",
     ]);

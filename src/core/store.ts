@@ -25,8 +25,7 @@ import type {
 } from "./types";
 import { contentTerms } from "./stopwords";
 import { defaultExtensions, type KeptaExtensions, type AuditAction } from "./extensions";
-// Ein Sanitizer für alle Wege: dieselben Regeln wie der Server (server.ts), am
-// selben Ort gepflegt — früher waren es zwei Spiegel, die auseinanderdriften konnten.
+// Ein Sanitizer für alle Wege: dieselben Regeln wie die App, am selben Ort gepflegt.
 import { sanitizeText as cleanText, sanitizeTags as normalizeTags } from "./sanitize";
 // Öffentliche Fassung unter dem alten Namen für Abnehmer (obsidian.ts, Tests).
 export { sanitizeTags as normalizeTags } from "./sanitize";
@@ -44,7 +43,9 @@ export function defaultDbPath(): string {
   return path.join(defaultDataDir(), "kepta.db");
 }
 
-// ---------- Normalisierung: siehe src/core/sanitize.ts ----------
+// ---------- Normalisierung (kleiner Spiegel der Server-Sanitizer) ----------
+
+// ---------- Normalisierung: siehe src/core/sanitize.ts (der eine Sanitizer für alle Wege) ----------
 
 function clampConfidence(v: unknown): number {
   const n = typeof v === "number" && Number.isFinite(v) ? v : 1;
@@ -78,21 +79,6 @@ export class KeptaStore {
   readonly dbPath: string;
   readonly extensions: KeptaExtensions;
   readonly verschluesselung: Verschluesselung;
-  /**
-   * Zählt jede Änderung an der chunks-Tabelle (ersetzen, einbetten, löschen).
-   * Der Vektor-Cache der Engine (engine.ts) hängt daran: eine Zahl zu vergleichen
-   * ist billiger, als die Tabelle zu scannen — und sie trifft auch den Fall
-   * "gleiche Zeile, neuer Inhalt" (Re-Embedding nach Modellwechsel), den ein
-   * Aggregat-Fingerprint verfehlen würde.
-   */
-  chunksVersion = 0;
-
-  /**
-   * Zähler für Änderungen am aktiven Bestand (Anlegen, Ändern, Trash, Restore,
-   * Purge, Supersede). Der Engine-Cache für loadActive hängt daran — chunksVersion
-   * reicht nicht, weil createMemory noch ohne Chunks die aktive Liste ändert.
-   */
-  memoriesVersion = 0;
 
   constructor(dbPath: string = defaultDbPath(), extensions: KeptaExtensions = defaultExtensions()) {
     fs.mkdirSync(path.dirname(dbPath), { recursive: true });
@@ -559,7 +545,7 @@ export class KeptaStore {
         record.utility
       );
     this.audit("write", record.id);
-    this.memoriesVersion++;
+    this.meldeMemorie(record.id);
     return record;
   }
 
@@ -637,41 +623,32 @@ export class KeptaStore {
     }
     this.db.prepare(`UPDATE memories SET ${sets.join(", ")} WHERE id = ?`).run(...params);
     // Content-Änderung macht Chunks + Embeddings obsolet
-    if (patch.content !== undefined) {
-      this.chunksVersion++;
-      this.db.prepare("DELETE FROM chunks WHERE memory_id = ?").run(id);
-    }
+    if (patch.content !== undefined) this.db.prepare("DELETE FROM chunks WHERE memory_id = ?").run(id);
     this.audit("update", id);
-    this.memoriesVersion++;
+    this.meldeMemorie(id);
     return this.getMemory(id);
   }
 
   trashMemory(id: string): boolean {
     const res = this.db.prepare("UPDATE memories SET deleted_at = ? WHERE id = ? AND deleted_at IS NULL").run(Date.now(), id);
     const ok = Number(res.changes) > 0;
-    if (ok) {
-      this.audit("delete", id);
-      this.memoriesVersion++;
-    }
+    if (ok) this.audit("delete", id);
+    if (ok) this.meldeMemorie(id);
     return ok;
   }
 
   restoreMemory(id: string): boolean {
     const res = this.db.prepare("UPDATE memories SET deleted_at = NULL WHERE id = ? AND deleted_at IS NOT NULL").run(id);
     const ok = Number(res.changes) > 0;
-    if (ok) this.memoriesVersion++;
+    if (ok) this.meldeMemorie(id);
     return ok;
   }
 
   purgeMemory(id: string): boolean {
-    // ON DELETE CASCADE nimmt die Chunks mit — der Vektor-Cache muss neu.
-    this.chunksVersion++;
     const res = this.db.prepare("DELETE FROM memories WHERE id = ?").run(id);
     const ok = Number(res.changes) > 0;
-    if (ok) {
-      this.audit("delete", id);
-      this.memoriesVersion++;
-    }
+    if (ok) this.audit("delete", id);
+    if (ok) this.meldeMemorie(id);
     return ok;
   }
 
@@ -708,7 +685,6 @@ export class KeptaStore {
   // ---------- Chunks & Embeddings ----------
 
   replaceChunks(memoryId: string, texts: string[]): void {
-    this.chunksVersion++;
     this.db.exec("BEGIN");
     try {
       this.db.prepare("DELETE FROM chunks WHERE memory_id = ?").run(memoryId);
@@ -735,10 +711,113 @@ export class KeptaStore {
   }
 
   setEmbedding(memoryId: string, seq: number, embedding: Float32Array, model: string): void {
-    this.chunksVersion++;
     this.db
       .prepare("UPDATE chunks SET embedding = ?, embedding_model = ? WHERE memory_id = ? AND seq = ?")
       .run(float32ToBlob(embedding), model, memoryId, seq);
+  }
+
+  // Daten-Generation: JEDE Mutation an memories/chunks/entities/relations/
+  // memory_entities hebt den Zähler. Der Suchpfad cacht daran (engine.ts) —
+  // Trigger statt Methoden-Audit, damit auch direkte DB-Schreibzugriffe
+  // (Importe, Reparaturen, Migrationen) den Cache zuverlässig invalidieren.
+  // Bewusst LAZY: der Konstruktor muss auch auf einer exklusiv gesperrten DB
+  // sauber öffnen (kurzSchlafen-Degrade, tests/extensions.test.ts) — dort darf
+  // migrate() nichts schreiben. Schlägt das Setup fehl, versucht es der
+  // nächste datenGeneration()-Aufruf wieder; der Sicherungs-Bump unten
+  // invalidiert dann jeden vor der Aufsetzung gebauten Cache.
+  private generationBereit = false;
+
+  private midiereDatenGeneration(): void {
+    if (this.generationBereit) return;
+    try {
+      this.db.exec(`
+        INSERT OR IGNORE INTO meta (key, value) VALUES ('daten_generation', '0');
+        INSERT OR IGNORE INTO meta (key, value) VALUES ('mem_generation', '0');
+        CREATE TRIGGER IF NOT EXISTS daten_gen_memories_i AFTER INSERT ON memories BEGIN
+          UPDATE meta SET value = CAST(value AS INTEGER) + 1 WHERE key = 'daten_generation';
+          UPDATE meta SET value = CAST(value AS INTEGER) + 1 WHERE key = 'mem_generation'; END;
+        CREATE TRIGGER IF NOT EXISTS daten_gen_memories_u AFTER UPDATE ON memories
+        WHEN NEW.title IS NOT OLD.title OR NEW.content IS NOT OLD.content
+          OR NEW.tags IS NOT OLD.tags OR NEW.type IS NOT OLD.type OR NEW.scope IS NOT OLD.scope
+          OR NEW.confidence IS NOT OLD.confidence OR NEW.valid_from IS NOT OLD.valid_from
+          OR NEW.valid_to IS NOT OLD.valid_to OR NEW.superseded_by IS NOT OLD.superseded_by
+          OR NEW.deleted_at IS NOT OLD.deleted_at OR NEW.updated_at IS NOT OLD.updated_at
+          OR NEW.utility IS NOT OLD.utility
+        BEGIN
+          UPDATE meta SET value = CAST(value AS INTEGER) + 1 WHERE key = 'daten_generation';
+          UPDATE meta SET value = CAST(value AS INTEGER) + 1 WHERE key = 'mem_generation'; END;
+        CREATE TRIGGER IF NOT EXISTS daten_gen_memories_d AFTER DELETE ON memories BEGIN
+          UPDATE meta SET value = CAST(value AS INTEGER) + 1 WHERE key = 'daten_generation';
+          UPDATE meta SET value = CAST(value AS INTEGER) + 1 WHERE key = 'mem_generation'; END;
+        CREATE TRIGGER IF NOT EXISTS daten_gen_chunks_i AFTER INSERT ON chunks BEGIN
+          UPDATE meta SET value = CAST(value AS INTEGER) + 1 WHERE key = 'daten_generation'; END;
+        CREATE TRIGGER IF NOT EXISTS daten_gen_chunks_u AFTER UPDATE ON chunks BEGIN
+          UPDATE meta SET value = CAST(value AS INTEGER) + 1 WHERE key = 'daten_generation'; END;
+        CREATE TRIGGER IF NOT EXISTS daten_gen_chunks_d AFTER DELETE ON chunks BEGIN
+          UPDATE meta SET value = CAST(value AS INTEGER) + 1 WHERE key = 'daten_generation'; END;
+        CREATE TRIGGER IF NOT EXISTS daten_gen_entities_i AFTER INSERT ON entities BEGIN
+          UPDATE meta SET value = CAST(value AS INTEGER) + 1 WHERE key = 'daten_generation'; END;
+        CREATE TRIGGER IF NOT EXISTS daten_gen_entities_u AFTER UPDATE ON entities BEGIN
+          UPDATE meta SET value = CAST(value AS INTEGER) + 1 WHERE key = 'daten_generation'; END;
+        CREATE TRIGGER IF NOT EXISTS daten_gen_entities_d AFTER DELETE ON entities BEGIN
+          UPDATE meta SET value = CAST(value AS INTEGER) + 1 WHERE key = 'daten_generation'; END;
+        CREATE TRIGGER IF NOT EXISTS daten_gen_mem_ent_i AFTER INSERT ON memory_entities BEGIN
+          UPDATE meta SET value = CAST(value AS INTEGER) + 1 WHERE key = 'daten_generation'; END;
+        CREATE TRIGGER IF NOT EXISTS daten_gen_mem_ent_d AFTER DELETE ON memory_entities BEGIN
+          UPDATE meta SET value = CAST(value AS INTEGER) + 1 WHERE key = 'daten_generation'; END;
+        CREATE TRIGGER IF NOT EXISTS daten_gen_relations_i AFTER INSERT ON relations BEGIN
+          UPDATE meta SET value = CAST(value AS INTEGER) + 1 WHERE key = 'daten_generation'; END;
+        CREATE TRIGGER IF NOT EXISTS daten_gen_relations_u AFTER UPDATE ON relations BEGIN
+          UPDATE meta SET value = CAST(value AS INTEGER) + 1 WHERE key = 'daten_generation'; END;
+        CREATE TRIGGER IF NOT EXISTS daten_gen_relations_d AFTER DELETE ON relations BEGIN
+          UPDATE meta SET value = CAST(value AS INTEGER) + 1 WHERE key = 'daten_generation'; END;
+        UPDATE meta SET value = CAST(CAST(value AS INTEGER) + 1 AS TEXT) WHERE key = 'daten_generation';
+      `);
+      this.generationBereit = true;
+    } catch {
+      // DB gesperrt o. ä. — Cache läuft bis zur Aufsetzung mit konstanter
+      // Generation; bei gesperrter DB kann ohnehin niemand schreiben.
+    }
+  }
+
+  /** Zähler aller Daten-Mutationen (Trigger-gespeist) — Cache-Schlüssel des Suchpfads. */
+  datenGeneration(): number {
+    this.midiereDatenGeneration();
+    const row = this.db.prepare("SELECT value FROM meta WHERE key = 'daten_generation'").get() as
+      | { value: string }
+      | undefined;
+    return Number(row?.value ?? 0);
+  }
+
+  /**
+   * Zähler NUR der memories-Mutationen — Cache-Schlüssel des Erinnerungs-Caches.
+   * Getrennt von datenGeneration, damit Chunk-/Graph-Writes (z. B. Embedding-
+   * Nachschub) den teuren Erinnerungs-Cache nicht werfen.
+   */
+  memGeneration(): number {
+    this.midiereDatenGeneration();
+    const row = this.db.prepare("SELECT value FROM meta WHERE key = 'mem_generation'").get() as
+      | { value: string }
+      | undefined;
+    return Number(row?.value ?? 0);
+  }
+
+  // ---------- Such-Cache-Delta ----------
+  // Der Suchpfad (engine.ts) cacht die aktiven Erinnerungen an der Generation.
+  // Statt bei jedem Write den teuren Volllauf zu erzwingen, meldet der Store
+  // hier jede Memory-Mutation mit ihrer ID — die Engine patcht ihren Cache
+  // deltafisch. Der Trigger bleibt als SICHERHEITSNETZ: Schreibzugriffe, die
+  // keine Meldung absetzen (Roh-SQL, Importe), schieben die Generation weiter,
+  // ohne zu patchen — der Generation-Vergleich erkennt das und baut voll neu.
+  private memorieZuhörer = new Set<(id: string) => void>();
+
+  onMemorieAenderung(fn: (id: string) => void): () => void {
+    this.memorieZuhörer.add(fn);
+    return () => this.memorieZuhörer.delete(fn);
+  }
+
+  private meldeMemorie(id: string): void {
+    for (const fn of this.memorieZuhörer) fn(id);
   }
 
   /** Chunks ohne Embedding oder mit veraltetem Modell (für die Hintergrund-Queue) */
@@ -914,16 +993,29 @@ export class KeptaStore {
     // BM25-Rang und verdrängte über die RRF-Fusion den eigentlichen Treffer.
     const terms = contentTerms(query);
     if (terms.length === 0) return [];
-    const match = terms.map((t) => `"${t}"`).join(" OR ");
-    try {
-      const rows = this.db
+    // Zwei-phasig: AND-Schnitt zuerst (bei Mehr-Wort-Queries winzig — FTS5
+    // schneidet die kleinste Posting-Liste), OR nur wenn AND dünner als das
+    // Limit bleibt. Bei 1 Mio Erinnerungen kostet der reine OR-Scan über die
+    // bm25-Rangbildung der Term-Union sonst Hunderte ms je Abfrage. Die
+    // Merge-Rangbildung bleibt sauber: bm25-Werte sind korpusweit vergleichbar
+    // (negativ, relevanter = kleiner), also wird vereint und nach Wert sortiert.
+    const frage = (joiner: string) =>
+      this.db
         .prepare(
           `SELECT m.id, bm25(memories_fts) AS rank
            FROM memories_fts JOIN memories m ON m.rid = memories_fts.rowid
            WHERE memories_fts MATCH ? AND m.deleted_at IS NULL
            ORDER BY rank LIMIT ?`
         )
-        .all(match, limit) as Record<string, unknown>[];
+        .all(terms.map((t) => `"${t}"`).join(joiner), limit) as Record<string, unknown>[];
+    try {
+      let rows = frage(" AND ");
+      if (rows.length < limit && terms.length > 1) {
+        const gesehen = new Set(rows.map((r) => String(r.id)));
+        rows = [...rows, ...frage(" OR ").filter((r) => !gesehen.has(String(r.id)))];
+        rows.sort((a, b) => Number(a.rank) - Number(b.rank));
+        rows = rows.slice(0, limit);
+      }
       return rows.map((r) => ({ id: String(r.id), bm25: Number(r.rank) }));
     } catch {
       return [];

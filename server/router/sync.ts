@@ -9,9 +9,9 @@
 import os from "os";
 import path from "path";
 import express from "express";
-import { exportBundle, importBundle, PraxissyncJournal, type SyncBundle } from "../../src/core/praxissync";
+import { exportBundle, importBundle, type SyncBundle } from "../../src/core/praxissync";
 import { bodyOf } from "../helfer/body";
-import { nebendateiSchluessel } from "../../src/core/nebendateien";
+import { nebendateiSchluessel, VerschlusstesSyncJournal } from "../../src/core/nebendateien";
 import type { AppKontext } from "../kontext";
 
 export function mountSync(app: express.Express, ctx: AppKontext): void {
@@ -19,7 +19,7 @@ export function mountSync(app: express.Express, ctx: AppKontext): void {
   // Der Paketmitschnitt nenntpeer, Umfang und Zeitpunkt jedes Syncs — Metadaten,
   // die in einer Kanzlei nichts auf der Platte zu suchen haben. Derselbe
   // Schlüssel wie die Wissensbasis; die Hash-Kette wird nach der Entschlüsselung geprüft.
-  const syncJournal = new PraxissyncJournal(path.join(ctx.datenOrdner, "sync-journal.jsonl"), nebendateiSchluessel(ctx.datenOrdner));
+  const syncJournal = new VerschlusstesSyncJournal(path.join(ctx.datenOrdner, "sync-journal.jsonl"), nebendateiSchluessel(ctx.datenOrdner));
 
   function passphraseAus(body: unknown): string {
     const p = (body as { passphrase?: unknown } | null)?.passphrase;
