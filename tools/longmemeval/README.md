@@ -90,6 +90,7 @@ Die Hebel aus der Baseline sind umgesetzt, jeder mit veröffentlichter Messung:
 | 1.10. | **Voller 500er mit dem 14B-Judge** (qwen2.5:14b, Q4, RTX 3060, komplett lokal) | **54,6 %** | Record committed |
 | 1.10. | **Embedder-A/B: bge-m3 im eigenen Store** (500er, 3B-Judge — direkt vergleichbar mit 39,0) | **38,0 %** | A/B-Record — **nomic bleibt** (arctic-Muster: der Wechsel zahlt nicht) |
 | 1.10. | **+ HyDE-lite** (500er, 14B-Judge — direkt vergleichbar mit 54,6; 569 Erweiterungen erzeugt) | **55,0 %** | Neue Bestmarke — der Wortlaut-Abstand zwischen Frage und Beleg schließt sich |
+| 2.10. | **MAX: topk 32 + Zeitsplit + HyDE + `--temporal`** (500er, 14B-Judge, RTX 3060, komplett lokal) | **61,5 %** | Neue Bestmarke — 96 % des Cloud-Judge-Wertes von Zep (63,8 %), ohne eine einzige Byte Cloud |
 
 **Judge-Frame (Ehrlichkeitsregel):** Die 3b-Serie (29,2→39,0) bleibt die Vergleichsbasis — ein Judgesprung ist eine bessere MESSLATTE, kein Retrieval-Fortschritt. Der 14B-Wert misst dieselbe Retrieval-Pipeline fairer: **54,6 % lokal, null Cloud** — gemessen gegen Zeps 63,8 % (Cloud-LLM-Judge). Nächste Schärfung läuft: bge-m3-Embedding (läuft).
 
