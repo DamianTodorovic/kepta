@@ -2159,7 +2159,7 @@ function pickKeep(store, a, b) {
 }
 
 // src/core/version.ts
-var APP_VERSION = "3.1.2";
+var APP_VERSION = "3.2.0";
 
 // src/core/mcp.ts
 var PROTOCOL_VERSIONS = ["2026-07-28", "2025-06-18", "2024-11-05"];
