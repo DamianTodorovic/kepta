@@ -15,15 +15,22 @@ Knowledge-Updates, Abstention („das weiß ich nicht" erkennen).
    Quellverweis `session_id` in der Notiz. Determinismus: Memory-ID = Hash aus
    `session_id#turn`, Dedup per Turn — ein zweiter Lauf ändert nichts.
 2. **Antworten:** Jede Frage läuft durch den EINEN Suchpfad (FTS5-BM25 + Vektoren +
-   Graph → RRF → Boosts), die Top-k-Notizen bilden den Antwortkontext. Orakel-
-   Felder (`answer_session_ids`) werden NIE gelesen; der Runner warnt, wenn der
+   Graph → RRF → Boosts), die Top-k-Notizen bilden den Antwortkontext. **Es antwortet
+   kein Generator-LLM** — die Treffer werden als nummerierter Kontext weitergegeben.
+   Orakel-Felder (`answer_session_ids`) werden NIE gelesen; der Runner warnt, wenn der
    Datensatz sie trägt.
 3. **Richten:** Ein lokales LLM (Ollama, gleiche Maschine) bewertet Kontext gegen
-   Referenz — ja/nein/teilweise, pro Frage. **Modell fixiert: `llama3.2:3b`**,
+   Referenz — **gemessen wird Kontext-Suffizienz** („does the CONTEXT alone contain the
+   information needed"), nicht eine generierte Antwort. Urteil ja/nein/teilweise pro
+   Frage, **teilweise zählt als halber Punkt** — die Genauigkeit ist kein Ja-Anteil.
+   **Modell fixiert: `llama3.2:3b`**,
    Temperatur 0. Judge-Prompt committed (`JUDGE_PROMPT`, Version 1), ändert sich
    nur mit Versionsbump. Abstention-Fragen werden **umgekehrt gewertet**: liefert
    der Suchpfad nichts, kann die Assistenz korrekt verzichten (Punkt); enthält der
    Kontext „eine Antwort", halluziniert sie (kein Punkt).
+   Deterministischer Vorweg: Steht die Referenz wörtlich in einem Treffer, zählt das
+   als Ja **ohne Judge-Aufruf** (`verbatimTreffer`, Anteil im Record als
+   `verbatim_quote` — im 61,5-%-Lauf 29,8 %).
 4. **Report:** Genauigkeit gesamt + pro Fähigkeit, Abstention-Leer-Quote,
    Judge-Parse-Fehler — JSON in `ergebnisse/` mit Datum, Modell (+Ollama-Version),
    KEPTA-Version, Commit, Top-k und Datensatz-SHA-256. Nichts wird behauptet, was
@@ -32,8 +39,9 @@ Knowledge-Updates, Abstention („das weiß ich nicht" erkennen).
 ## Stand (21.9.2026): Pipeline komplett, erste Zahl steht aus
 
 - `harness.ts` — alle drei Phasen implementiert (Ingest/Antworten/Judge) + Report;
-  9 Tests in `tests/longmemeval.test.ts`; End-to-End-Smoke mit echtem Ollama-Judge
-  verifiziert.
+  14 Tests in `tests/longmemeval.test.ts` (Wertung, Judge-Parser, Verbatim-Pfad,
+  Fragen-Slices, Zeit-Hebel, Datensatz-Laden — ohne Ollama, ohne Download);
+  End-to-End-Smoke mit echtem Ollama-Judge verifiziert.
 - `lade-datensatz.mjs` — Download von der offiziellen Hugging-Face-Quelle
   (`xiaowu0162/LongMemEval`), SHA-256 wird ausgegeben; der Datensatz landet in
   `datensatz/` (gitignored) und wird **nicht** ins Repo committed.
@@ -90,10 +98,29 @@ Die Hebel aus der Baseline sind umgesetzt, jeder mit veröffentlichter Messung:
 | 1.10. | **Voller 500er mit dem 14B-Judge** (qwen2.5:14b, Q4, RTX 3060, komplett lokal) | **54,6 %** | Record committed |
 | 1.10. | **Embedder-A/B: bge-m3 im eigenen Store** (500er, 3B-Judge — direkt vergleichbar mit 39,0) | **38,0 %** | A/B-Record — **nomic bleibt** (arctic-Muster: der Wechsel zahlt nicht) |
 | 1.10. | **+ HyDE-lite** (500er, 14B-Judge — direkt vergleichbar mit 54,6; 569 Erweiterungen erzeugt) | **55,0 %** | Neue Bestmarke — der Wortlaut-Abstand zwischen Frage und Beleg schließt sich |
-| 2.10. | **MAX: topk 32 + Zeitsplit + HyDE + `--temporal`** (500er, 14B-Judge, RTX 3060, komplett lokal) | **61,5 %** | Neue Bestmarke — 96 % des Cloud-Judge-Wertes von Zep (63,8 %), ohne eine einzige Byte Cloud |
+| 2.10. | **MAX: topk 32 + Zeitsplit + HyDE + `--temporal`** (500er, 14B-Judge, RTX 3060, komplett lokal) | **61,5 %** | Neue Bestmarke — Kontext-Suffizienz, lokal gerichtet (kein End-to-End-Wert, siehe Judge-Frame) |
 | 2.10. | **A/B: topk 32 + HyDE + `--temporal` OHNE Zeitsplit** (500er, 14B-Judge — direkt vergleichbar mit 61,5) | **61,1 %** | Der Zeitsplit-Hebel ist isoliert: +0,4 — die Bestmarke bleibt 61,5 % |
 
-**Judge-Frame (Ehrlichkeitsregel):** Die 3b-Serie (29,2→39,0) bleibt die Vergleichsbasis — ein Judgesprung ist eine bessere MESSLATTE, kein Retrieval-Fortschritt. Der 14B-Wert misst dieselbe Retrieval-Pipeline fairer: **61,5 % lokal, null Cloud** — gemessen gegen Zeps 63,8 % (Cloud-LLM-Judge). bge-m3-Embedding ist geprüft (38,0 % gegen 39,0 — **nomic bleibt**, A/B-Record).
+**Judge-Frame (Ehrlichkeitsregel):** Die 3b-Serie (29,2→39,0) bleibt die Vergleichsbasis — ein Judgesprung ist eine bessere MESSLATTE, kein Retrieval-Fortschritt. Der 14B-Wert misst dieselbe Retrieval-Pipeline fairer: **61,5 % lokal, null Cloud**. **Was die Zahl ist:** Kontext-Suffizienz, gerichtet von qwen2.5:14b (Temperatur 0, Prompt v1), halbe Punkte für `teilweise`, und 29,8 % der Fragen ohne Judge-Aufruf durch den Wörtlich-Treffer entschieden. Zeps veröffentlichte 63,8 % sind **End-to-End-Antwortgenauigkeit** einer Generierungspipeline, gerichtet von einem Cloud-LLM — verwandte Evidenz, nicht dieselbe Metrik; wer beide Zahlen nebeneinanderstellt, muss diesen Unterschied dazuschreiben. bge-m3-Embedding ist geprüft (38,0 % gegen 39,0 — **nomic bleibt**, A/B-Record).
+
+**Kein Holdout — die Serie ist in-sample.** Jeder Hebel (topk 8→12→16→32, `--temporal`,
+`--zeitsplit`, HyDE, Vektor-Band/Floor, Judge-Größe 3b→14b) wurde auf denselben 500 Fragen
+bzw. Pilot-Teilmengen davon ausgewählt (`pilot-10-fragen-*`, `pilot60-cabdd3ee-*`,
+`temporal133-*`, `judge-ab-pilot60-*`). 61,5 % ist damit ein **optimistisch verzerrter
+In-Sample-Wert**, kein generalisierungsfähiger Messwert. Die Records im Ordner belegen
+die Auswahl eins zu eins — das ist der Stand, nicht eine Schönfärberei davon.
+Folgen, die man mitlesen sollte:
+- Die Zeitsplit-Differenz 61,5 % vs. 61,1 % sind **2 Punkte bei n=500** — das ist Rauschen,
+  kein Nachweis. Der Hebel bleibt trotzdem stehen, weil er unabhängig begründet ist.
+- **Abstention wurde nie geübt:** der LongMemEval-S-Split enthält keine solchen Fragen
+  (`abstention: n 0`, `abstention_quote_leer: 0`), obwohl die umgekehrte Wertung existiert.
+  Das ist eine Eigenschaft des Splits, kein Bug — aber die Fähigkeit bleibt unbelegt.
+- Seit diesem Stand kennt der Runner `--offset N` (neu) neben `--limit N`: Tuning auf
+  `--offset 0`, die eingefrorene Konfiguration danach auf dem unberührten Rest
+  (`--offset 400` für die letzten 100). Slice-Läufe bekommen `-offsetN` im Record-Namen und
+  schreiben `offset` ins JSON, damit ein Teillauf nie einen Gesamtlauf überschreibt oder
+  für einen gehalten wird. Ein echter Holdout-Lauf steht noch aus — er ist die einzige
+  Zahl, die 61,5 % ersetzen dürfte.
 
 Weitere Pilot-Messungen (60 stratifizierte Fragen, 29.142 Notizen, 76.871
 Chunks — **nicht** mit den 500er-Zahlen vergleichbar): topk 8 lexikalisch
@@ -106,16 +133,21 @@ sie verdrängt bei engem topk die exakten Treffer · topk 12 35,0 % ·
 | Flag | Wirkung |
 |---|---|
 | `--topk K` | Breite der Retrieval (12 hat sich gegen 8 durchgesetzt) |
+| `--limit N` | nur die ersten N Fragen (Pilotläufe) |
+| `--offset N` | N Fragen am Anfang überspringen — der Holdout-Slice: Tuning auf `--offset 0`, eingefrorene Konfiguration auf dem Rest |
 | `--vektoren` | bettet alle Chunks über die Produkt-Embedding-Queue ein; ohne Ollama lexikalisch |
 | `--zeitsplit` | Zeitfragen werden in Ereignis-Teilfragen zerlegt, Treffer nur ergänzend |
 | `--temporal` | Zeitfragen bekommen einen Timeline-Block (Memory-Daten, Abstände, Spanne) vorangestellt |
 
 ### Nächste Hebel
 
-1. Temporal-Tiefe: die Timeline deckt nur geretrieviewte Memories ab — wenn die
+1. **Holdout vor nächstem Hebel:** Konfiguration einfrieren (topk 32 + Zeitsplit +
+   HyDE + `--temporal`, 14B-Judge), dann `--offset 400` auf den unberührten letzten
+   100 Fragen laufen lassen. Erst dieser Wert darf öffentlich neben die 61,5 %.
+2. Temporal-Tiefe: die Timeline deckt nur geretrieviewte Memories ab — wenn die
    Retrieval ein Ereignis verpasst, ist die Spanne falsch. Kandidat: Zeitsplit +
    Timeline kombiniert (messung offen).
-2. Vektor-Band-Feintuning (Band/Floor der Engine), erst wenn die Vektorspur
+3. Vektor-Band-Feintuning (Band/Floor der Engine), erst wenn die Vektorspur
    netto gewinnt.
-3. Jede Verbesserung wird mit vollem 500er-Lauf und per-question Record
+4. Jede Verbesserung wird mit vollem 500er-Lauf und per-question Record
    veröffentlicht — die Serie ist das Asset.

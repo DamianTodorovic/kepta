@@ -1,5 +1,5 @@
 <p align="center"><img src="docs/kepta-logo.svg" width="88" alt="KEPTA"></p>
-<p align="center"><img src="https://img.shields.io/badge/version-3.1.2-blue" alt="v3.1.2"> <img src="https://img.shields.io/badge/license-BUSL--1.1-blue" alt="BUSL-1.1"> <img src="https://img.shields.io/badge/tests-425%20passing-brightgreen" alt="tests"> <img src="https://img.shields.io/badge/coverage%20gate-%E2%89%A5%2070%25%20of%20lines-brightgreen" alt="coverage gate"> <img src="https://img.shields.io/badge/platform-macOS%20%7C%20Windows%20%7C%20Linux-lightgrey" alt="platform"> <img src="https://img.shields.io/badge/encryption-SQLCipher%204-green" alt="encrypted"> <a href="https://www.linkedin.com/in/damian-todorovic-244235434"><img src="https://img.shields.io/badge/LinkedIn-Damian%20Todorovic-0A66C2?logo=linkedin&logoColor=white" alt="Damian Todorovic on LinkedIn"></a></p>
+<p align="center"><img src="https://img.shields.io/badge/version-3.1.2-blue" alt="v3.1.2"> <img src="https://img.shields.io/badge/license-BUSL--1.1-blue" alt="BUSL-1.1"> <img src="https://img.shields.io/badge/tests-466%20passing-brightgreen" alt="tests"> <img src="https://img.shields.io/badge/coverage%20gate-%E2%89%A5%2070%25%20of%20lines-brightgreen" alt="coverage gate"> <img src="https://img.shields.io/badge/platform-macOS%20%7C%20Windows%20%7C%20Linux-lightgrey" alt="platform"> <img src="https://img.shields.io/badge/encryption-SQLCipher%204-green" alt="encrypted"> <a href="https://www.linkedin.com/in/damian-todorovic-244235434"><img src="https://img.shields.io/badge/LinkedIn-Damian%20Todorovic-0A66C2?logo=linkedin&logoColor=white" alt="Damian Todorovic on LinkedIn"></a></p>
 
 # KEPTA — the memory for AI systems
 
@@ -166,7 +166,7 @@ flowchart TD
 | Inbox | `GET /api/inbox/status`, `POST /api/inbox/scan` |
 | Device Sync | `POST /api/sync/export`, `POST /api/sync/import`, `GET /api/sync/journal` |
 | Encryption & repair | `GET /api/health` (including the `encryption` status), `POST /api/repair/imports` |
-| MCP | `POST /mcp`, `GET /mcp`, `GET /api/mcp/tools`, `POST /api/mcp/search`, `POST /api/mcp/save`, `GET /api/tools`, `POST /api/embed` |
+| MCP | `POST /mcp`, `GET /mcp`, `GET /api/mcp/tools`, `POST /api/mcp/search`, `POST /api/mcp/save`, `POST /api/mcp/consolidate`, `POST /api/mcp/forget`, `GET /api/tools`, `POST /api/embed` |
 | System | `GET /api/settings`, `PUT /api/settings`, `GET /api/storage-info`, `GET /api/activity` |
 
 Every route listens on `127.0.0.1` only, with rate limiting, Helmet and input validation.
@@ -218,7 +218,7 @@ The knowledge base is a SQLCipher 4 database: AES-256, an HMAC-SHA512 over every
 
 ## 🧪 Quality
 
-**425 tests** with Vitest and v8 coverage. The coverage thresholds are a CI gate: a commit that falls below one of them turns CI red. On top: a retrieval eval (Hit@1, Precision@5, MRR) on a fixed corpus, an ablation test per retrieval leg, an encryption eval and a boundary test on the core architecture.
+**466 tests** with Vitest and v8 coverage. The coverage thresholds are a CI gate: a commit that falls below one of them turns CI red. On top: a retrieval eval (Hit@1, Precision@5, MRR) on a fixed corpus, an ablation test per retrieval leg, an encryption eval and a boundary test on the core architecture.
 
 ### Coverage thresholds (enforced by CI)
 
@@ -239,7 +239,9 @@ Median search times on the same laptop (Apple M4), every run committed in [`tool
 
 KEPTA ships its memory benchmark the way nobody else does: **every question, every answer and every judge verdict of every run is committed to this repository**, in [`tools/longmemeval/ergebnisse/`](tools/longmemeval/ergebnisse/). Fixed dataset (LongMemEval-S, 500 questions, SHA-pinned), fixed judge, fully reproducible locally — see [`tools/longmemeval/README.md`](tools/longmemeval/README.md).
 
-The published score is **61.5 %** on LongMemEval-S — graded by a **local 14B judge** (`qwen2.5:14b`, Q4, runs on a consumer GPU), zero cloud. The 3B-judge series is fully committed as the continuity baseline: 29.2 → 32.5 → 33.2 → 37.0 → 39.0 — every step is a run record in the same folder, no new model, no cloud, no fine-tuning. Same retrieval pipeline, fairer grading: a stronger local judge measures what the 3B judge under-scored on long contexts. The 14B-judge chain on that same pipeline: 54.6 → 55.0 (HyDE-lite) → **61.5** (topk 32 + time-split + HyDE) — 96 % of Zep's cloud-judged 63.8 %, with zero cloud.
+The published score is **61.5 %** on LongMemEval-S — graded by a **local 14B judge** (`qwen2.5:14b`, Q4, runs on a consumer GPU), zero cloud. The 3B-judge series is fully committed as the continuity baseline: 29.2 → 32.5 → 33.2 → 37.0 → 39.0 — every step is a run record in the same folder, no new model, no cloud, no fine-tuning. Same retrieval pipeline, fairer grading: a stronger local judge measures what the 3B judge under-scored on long contexts. The 14B-judge chain on that same pipeline: 54.6 → 55.0 (HyDE-lite) → **61.5** (topk 32 + time-split + HyDE).
+
+**What that number measures — read this before comparing it to anyone else's.** It is **context sufficiency**, not end-to-end answer accuracy: a local judge (qwen2.5:14b, temperature 0, prompt v1) grades whether the *retrieved contexts* contain the reference answer. There is no generator LLM in the loop, a `PARTIAL` verdict counts as half a point, and 29.8 % of the questions in this run were settled by a deterministic verbatim match without any judge call at all. Zep's published 63.8 % is answer accuracy of a full generation pipeline judged by a cloud LLM — related evidence, **not the same metric**. And one more caveat, stated plainly: every lever in the series (topk, `--temporal`, `--zeitsplit`, HyDE, judge size) was selected on these same 500 questions, so 61.5 % is an in-sample figure biased upward; an untouched holdout split has not been run yet. The raw per-question records are the point of publishing all this — check us, including this framing.
 
 ---
 
@@ -249,7 +251,7 @@ KEPTA is built by **Damian Todorovic** and **Emil Wagner** — a small team from
 
 ## 📄 License
 
-[BUSL 1.1](LICENSE) — every line public, production use inside your own organization always allowed, offering it as a hosted service is reserved, and each version converts to AGPL-3.0-or-later four years after release. **The npm package `kepta-mcp` carries the same license as this repository; the Python client under `python/` stays MIT** so any Python project can embed it. KEPTA Enterprise for teams and organizations is licensed by agreement — [write to me on LinkedIn](https://www.linkedin.com/in/damian-todorovic-244235434).
+[BUSL 1.1](LICENSE) — source-available, not OSI-approved open source: every line public, production use inside your own organization always allowed, offering it as a hosted service is reserved, and each version converts to AGPL-3.0-or-later four years after release. **The npm package `kepta-mcp` carries the same license as this repository; the Python client under `python/` stays MIT** so any Python project can embed it. KEPTA Enterprise for teams and organizations is licensed by agreement — [write to me on LinkedIn](https://www.linkedin.com/in/damian-todorovic-244235434).
 
 **What this repository is — and what it is not.** This source-available core is the memory engine: storage, retrieval, MCP — free, for every AI. Forks are legitimate; presenting a fork as KEPTA is not: the **KEPTA name and the KEPTA branding belong to Damian Todorovic**. Fork it, build with it, ship your own product from it — under a different name, without offering this engine as a hosted service, and with every change you make becoming AGPL-3.0-or-later when the version's Change Date arrives. Private notes never leave KEPTA over MCP.
 

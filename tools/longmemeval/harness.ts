@@ -6,7 +6,8 @@
 // wird NICHT ins Repo committed — nur sein SHA-256 landet im Ergebnis-JSON.
 //
 // Aufruf:  npx tsx tools/longmemeval/harness.ts <datensatz> [--analyse]
-//          [--limit N] [--topk K] [--modell NAME] [--store PFAD] [--ohne-judge]
+//          [--limit N] [--offset N] [--topk K] [--modell NAME] [--store PFAD]
+//          [--ohne-judge] [--vektoren] [--zeitsplit] [--temporal] [--hyde]
 
 import fs from "node:fs";
 import os from "node:os";
@@ -84,6 +85,19 @@ export function ladeDatensatz(pfad: string): LongMemEvalFrage[] {
   const kaputt = fragen.filter((f) => !f.question_id || !f.question || !f.answer);
   if (kaputt.length > 0) throw new Error(`${kaputt.length} Fragen ohne question_id/question/answer.`);
   return fragen;
+}
+
+/**
+ * Die Fragen, die dieser Lauf beantwortet: [offset, offset + limit).
+ *
+ * Bisher war `--limit` die einzige Scheibe und schnitt immer die ERSTEN N
+ * ab — egal wie oft man topk, HyDE oder den Judge wechselte, die Auswahl traf
+ * immer denselben Anfang. Ein Holdout braucht aber den Rest: Konfiguration auf
+ * Slice A festlegen, dann Slice B anfassen. Die Scheibe ist rein und getrennt
+ * getestet, weil genau hier ein Lauf sonst still die falschen Fragen richtet.
+ */
+export function frageScheibe<T>(fragen: T[], offset: number, limit: number): T[] {
+  return fragen.slice(offset, offset + limit);
 }
 
 /** Release- und Doku-Format auf die eine interne Form bringen. */
@@ -540,6 +554,8 @@ export interface Bericht {
   datensatz: string;
   datensatz_sha256: string;
   fragen: number;
+  /** Übersprungene Fragen am Anfang des Splits (`--offset`) — 0 ist der volle Split. Ohne dieses Feld wäre ein Slice-Lauf nicht von einem Gesamtlauf zu unterscheiden. */
+  offset: number;
   topk: number;
   ingest: IngestErgebnis;
   genauigkeit_gesamt: number;
@@ -592,7 +608,7 @@ async function hauptprogramm(): Promise<void> {
   const args = process.argv.slice(2);
   const pfad = args.find((a) => !a.startsWith("--"));
   if (!pfad) {
-    console.error("Aufruf: npx tsx tools/longmemeval/harness.ts <datensatz> [--analyse] [--limit N] [--topk K] [--modell NAME] [--store PFAD] [--ohne-judge] [--vektoren] [--zeitsplit] [--temporal] [--hyde]");
+    console.error("Aufruf: npx tsx tools/longmemeval/harness.ts <datensatz> [--analyse] [--limit N] [--offset N] [--topk K] [--modell NAME] [--store PFAD] [--ohne-judge] [--vektoren] [--zeitsplit] [--temporal] [--hyde]");
     process.exit(2);
   }
   const zahl = (name: string, standard: number): number => {
@@ -601,6 +617,10 @@ async function hauptprogramm(): Promise<void> {
     return Number.isFinite(v) && v > 0 ? v : standard;
   };
   const limit = zahl("--limit", Infinity);
+  // --offset reserviert Fragen: Tuning laeuft auf --offset 0, die eingefrorene
+  // Konfiguration danach auf dem Rest. Ohne diesen Flag schneidet --limit immer
+  // denselben Anfang ab — dann ist jede Messung in-sample.
+  const offset = zahl("--offset", 0);
   const topk = zahl("--topk", 8);
   const modell = args.includes("--modell") ? args[args.indexOf("--modell") + 1] : JUDGE_MODELL_STANDARD;
   const ohneJudge = args.includes("--ohne-judge");
@@ -611,9 +631,11 @@ async function hauptprogramm(): Promise<void> {
   const mitHyde = args.includes("--hyde");
 
   const start = Date.now();
-  const fragen = ladeDatensatz(pfad).slice(0, limit);
+  const alleFragen = ladeDatensatz(pfad);
+  const fragen = frageScheibe(alleFragen, offset, limit);
   const verteilung = analysiere(fragen);
   console.log(`Datensatz: ${pfad}`);
+  console.log(`Slice: Fragen ${offset + 1}–${offset + fragen.length} von ${alleFragen.length}${offset === 0 && fragen.length === alleFragen.length ? " (voll)" : ""}`);
   console.log(`Fragen: ${verteilung.fragen} · Sessions: ${verteilung.sessionsGesamt} · mit Orakel-Feldern: ${verteilung.oracleFelderVorhanden}`);
   for (const f of FAEHIGKEITEN) console.log(`  ${f}: ${verteilung.proFaehigkeit[f]}`);
   if (nurAnalyse) return;
@@ -725,6 +747,7 @@ async function hauptprogramm(): Promise<void> {
     datensatz: path.basename(pfad),
     datensatz_sha256: datensatzHash(pfad),
     fragen: fragen.length,
+    offset,
     topk,
     ingest: ingestErgebnis,
     genauigkeit_gesamt: genauigkeit,
@@ -742,7 +765,10 @@ async function hauptprogramm(): Promise<void> {
     hyde_erweiterungen: mitHyde ? hydeErweiterungen : 0,
     laufzeit_ms: Date.now() - start,
   };
-  const ziel = path.join("tools", "longmemeval", "ergebnisse", `longmemeval-${new Date().toISOString().slice(0, 10)}-${bericht.datensatz_sha256.slice(0, 8)}.json`);
+  // Ein Holdout-Lauf darf nicht den Tuning-Lauf desselben Tags ueberschreiben —
+  // sonst verliert ausgerechnet die unberührte Messung ihren Beleg.
+  const scheibenFragment = offset > 0 ? `-offset${offset}` : "";
+  const ziel = path.join("tools", "longmemeval", "ergebnisse", `longmemeval-${new Date().toISOString().slice(0, 10)}-${bericht.datensatz_sha256.slice(0, 8)}${scheibenFragment}.json`);
   fs.mkdirSync(path.dirname(ziel), { recursive: true });
   fs.writeFileSync(ziel, JSON.stringify({ bericht, fragen: ergebnisse }, null, 2));
   console.log(`\nGenauigkeit: ${(genauigkeit * 100).toFixed(1)} % (${gerichtet.length}/${fragen.length} gerichtet) · Leer: ${leer} · Verbatim-Ja: ${verbatim} · Judge-Aufrufe: ${judgeAufrufe} · Parse-Fehler: ${parseFehler}`);

@@ -1,5 +1,5 @@
 {
-  "$comment": "This file is auto-generated from docs/reference/api/openapi.yaml. Do not edit manually. Run 'make generate-schema' to update.",
+  "$comment": "Vendored copy of the MCP registry server schema (2025-12-11). Not generated from this repository — there is no docs/reference/api/openapi.yaml and no Makefile here; edit by hand if the registry schema changes.",
   "$id": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
   "$ref": "#/definitions/ServerDetail",
   "$schema": "http://json-schema.org/draft-07/schema#",

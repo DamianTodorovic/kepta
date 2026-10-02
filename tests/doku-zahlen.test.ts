@@ -300,7 +300,165 @@ describe("Abzeichen und Anwendungstexte behaupten nichts Falsches", () => {
 
 });
 
-// Nachtrag 10.9.2026: "Gesamt-Coverage ~91 %" stand in den READMEs, gemessen
-// waren 89,0 % der Zeilen — die Zahl war schlicht zu hoch. Seitdem nennen die
-// READMEs die Schwellen, die die CI wirklich erzwingt, statt einer
-// Momentaufnahme. Dieser Waechter haelt sie an vitest.config.ts fest.
+// Nachtrag 2.10.2026: die Wurzel-READMEs sind nicht die einzige Doku, die eine
+// Zahl in die Welt setzt. tools/longmemeval/README.md behauptete "9 Tests in
+// tests/longmemeval.test.ts" — die Datei existierte nie, und dieser Waechter sah
+// sie nicht, weil er nur README.md/README.de.md kannte. Also: auch die
+// Werkzeug-Dokus werden jetzt gelesen, und die lauteste Zahl des Repos
+// (61,5 %) haengt an ihrem Record statt an einem Absatz, den niemand mehr liest.
+
+describe("Dokumentation: Werkzeug-Dokus verweisen nur auf echte Tests", () => {
+  const werkzeugDokus = (): string[] =>
+    fs
+      .readdirSync(path.join(wurzel, "tools"), { withFileTypes: true })
+      .filter((eintrag) => eintrag.isDirectory())
+      .map((eintrag) => path.join("tools", eintrag.name, "README.md"))
+      .filter((pfad) => fs.existsSync(path.join(wurzel, pfad)));
+
+  /** Statische it()/test()-Aufrufe — fuer eine einzelne Datei ohne it.each exakt. */
+  function zaehleTests(dateiPfad: string): number {
+    const quelle = lies(dateiPfad);
+    return [...quelle.matchAll(/^\s*(?:it|test)(?:\.\w+)?\(/gm)].length;
+  }
+
+  it("es gibt ueberhaupt Werkzeug-Dokus, sonst prueft das hier nichts", () => {
+    expect(werkzeugDokus().length).toBeGreaterThan(0);
+  });
+
+  it.each(werkzeugDokus())("%s: jedes genannte Testfile existiert, jede Zahl stimmt", (datei) => {
+    for (const treffer of lies(datei).matchAll(/(?:(\d+)\s+)?Tests? in \[?`?(tests\/[\w./-]+\.test\.ts)`?\]?/g)) {
+      const pfad = treffer[2];
+      const zahl = treffer[1] ? Number(treffer[1]) : null;
+      expect(fs.existsSync(path.join(wurzel, pfad)), `${datei} verweist auf ${pfad} — die Datei gibt es nicht`).toBe(true);
+      if (zahl !== null) {
+        expect(zaehleTests(pfad), `${datei} behauptet ${zahl} Tests in ${pfad}, dort stehen ${zaehleTests(pfad)}`).toBe(zahl);
+      }
+    }
+  });
+
+  it("die Werkzeuge haben testbare Dateien, die der Waechter oben wirklich sieht", () => {
+    // Ohne diesen Anker lief der obige Durchlauf still ins Leere, sobald jemand
+    // das Verweisformat in einer Doku aendert — und die Phantomdatei waere wieder
+    // unerwaehnt. tools/latenz nennt suchcache, tools/longmemeval die Harness.
+    const genannt = werkzeugDokus().flatMap((datei) =>
+      [...lies(datei).matchAll(/(tests\/[\w./-]+\.test\.ts)/g)].map((m) => m[1])
+    );
+    expect(new Set(genannt).size).toBeGreaterThanOrEqual(2);
+    for (const pfad of genannt) {
+      expect(fs.existsSync(path.join(wurzel, pfad)), `${pfad} wird in einer Werkzeug-Doku genannt und fehlt`).toBe(true);
+    }
+  });
+});
+
+describe("Dokumentation: der LongMemEval-Wert haengt an seinem Record", () => {
+  type Spur = { datei: string; genauigkeit: number; verbatim: number; fragen: number };
+
+  /**
+   * Der beste Lauf ueber den VOLLEN Split — die Zahl, die in den READMEs stehen
+   * muss. Der groesste Fragenwert entscheidet, nicht eine eingetippte 500: die
+   * 10-Fragen-Pilotserie liegt mit 65 % ueber dem 500er-Besten und waere ohne
+   * diese Beschraenkung die Referenz.
+   */
+  function besterRecord(): Spur {
+    const ordner = path.join(wurzel, "tools", "longmemeval", "ergebnisse");
+    const laeufe: Spur[] = [];
+    for (const name of fs.readdirSync(ordner).filter((f) => f.endsWith(".json"))) {
+      const { bericht } = JSON.parse(lies(path.join("tools", "longmemeval", "ergebnisse", name))) as {
+        bericht?: { genauigkeit_gesamt?: unknown; verbatim_quote?: unknown; fragen?: unknown };
+      };
+      const genauigkeit = Number(bericht?.["genauigkeit_gesamt"]);
+      const fragen = Number(bericht?.["fragen"]);
+      if (!Number.isFinite(genauigkeit) || !Number.isFinite(fragen) || fragen <= 0) continue;
+      const verbatim = Number(bericht?.["verbatim_quote"]);
+      laeufe.push({ datei: name, genauigkeit, fragen, verbatim: Number.isFinite(verbatim) ? verbatim : 0 });
+    }
+    expect(laeufe.length, "kein Record in tools/longmemeval/ergebnisse — woher nimmt die Doku dann 61,5 %?").toBeGreaterThan(0);
+    const voll = Math.max(...laeufe.map((lauf) => lauf.fragen));
+    return laeufe.filter((lauf) => lauf.fragen === voll).sort((a, b) => b.genauigkeit - a.genauigkeit)[0];
+  }
+
+  /** 0.615 -> ["61.5", "61,5"] — beide Schreibweisen sind in den READMEs erlaubt. */
+  const schreibweisen = (wert: number): string[] => {
+    const punkt = (wert * 100).toFixed(1);
+    return [punkt, punkt.replace(".", ",")];
+  };
+
+  const prozentFester = (form: string): RegExp => new RegExp(`${form.replace(".", "\\.")}\\s*%`);
+
+  it.each(dateien)("%s nennt den Bestwert und die Verbatim-Quote aus dem Record", (datei) => {
+    const record = besterRecord();
+    const inhalt = lies(datei);
+    const forms = schreibweisen(record.genauigkeit);
+    expect(
+      forms.some((form) => prozentFester(form).test(inhalt)),
+      `${datei} nennt keinen der Bestwerte ${forms.join(" / ")} % — Referenz ist der volle Lauf ${record.datei}`
+    ).toBe(true);
+    const quote = schreibweisen(record.verbatim);
+    expect(
+      quote.some((form) => prozentFester(form).test(inhalt)),
+      `${datei} behaelt ${quote.join(" / ")} % Wörtlich-Treffer vor, der Record (${record.datei}) sagt etwas anderes`
+    ).toBe(true);
+  });
+
+  it.each(dateien)("%s rahmt die Zahl, statt sie gegen Zep zu setzen", (datei) => {
+    // Der Reiz an "96 % von Zep" war, dass er zwei verschiedene Metriken
+    // gleichklingen liess. Die READMEs nennen Zep weiterhin — aber nur noch mit
+    // dem Unterschied dabei, und mit dem In-Sample-Einwand.
+    const inhalt = lies(datei);
+    expect(inhalt, `${datei} sagt nicht, was die 61,5 % messen`).toMatch(/context sufficiency|Kontext-Suffizienz/i);
+    expect(inhalt, `${datei} verschweigt, dass kein Generator-LLM antwortet`).toMatch(/no generator LLM|kein Generator-LLM/i);
+    expect(inhalt, `${datei} verschweigt das In-Sample-Tuning`).toMatch(/in-sample/i);
+    for (const zeile of inhalt.split("\n")) {
+      if (!zeile.includes("63.8") && !zeile.includes("63,8")) continue;
+      expect(
+        zeile,
+        "Zeile nennt Zeps 63,8 %, ohne den Metrikunterschied dazu — ein Vergleich ohne Rahmen ist die Behauptung von WP 4"
+      ).toMatch(/not the same metric|nicht dieselbe Metrik/);
+    }
+  });
+
+  it("tools/longmemeval/README.md steht der Holdout-Einwand", () => {
+    const inhalt = lies(path.join("tools", "longmemeval", "README.md"));
+    expect(inhalt, "Die Eval-Doku erwaehnt nicht, dass jeder Hebel auf dem Testset gewaehlt wurde").toMatch(/Kein Holdout/i);
+    expect(inhalt, "Die Eval-Doku erwaehnt den umgekehrten Abstention-Fall nicht").toMatch(/abstention/i);
+    expect(inhalt, "Der Runner hat --offset, die Doku nicht").toMatch(/`--offset/);
+  });
+});
+
+// Nachtrag 2.10.2026: in einer CHANGELOG-Zeile stand ein Befehl, dessen letztes
+// "a" ein kyrillisches war — für das Auge identisch, beim Kopieren ein
+// Kommando, das nicht existiert. Nach dem dritten Artefakt dieser Sorte (zuvor
+// CJK in einem Kommentar) ist die Frage nicht "kann das passieren", sondern
+// "wer schaut nachts drauf". Markdown-Dokus sind der Text, den Nutzer
+// kopieren — also diese Dateien, ohne Ausnahmen.
+describe("Dokumentation: keine Fremdalphabet-Artefakte", () => {
+  // Umlaute und ß sind lateinisch und erlaubt; Kyrillisch, Han und Kana waren in
+  // diesem Repo bisher immer ein Tipp-Artefakt.
+  const artefakt = /\p{Script=Cyrillic}|\p{Script=Han}|\p{Script=Hiragana}|\p{Script=Katakana}/u;
+  const dokumente = [
+    "README.md",
+    "README.de.md",
+    "CHANGELOG.md",
+    "SECURITY.md",
+    "LICENSE",
+    "tools/longmemeval/README.md",
+    "tools/latenz/README.md",
+  ];
+
+  it("die Doku-Liste ist nicht leer gelaufen", () => {
+    for (const datei of dokumente) expect(fs.existsSync(path.join(wurzel, datei)), `${datei} fehlt`).toBe(true);
+  });
+
+  it.each(dokumente)("%s enthaelt keine Zeichen aus einem Fremdalphabet", (datei) => {
+    const funde = lies(datei)
+      .split("\n")
+      .flatMap((zeile, i) => {
+        const treffer = zeile.match(artefakt);
+        return treffer ? [`${i + 1}: ${treffer[0]}`] : [];
+      });
+    expect(
+      funde.length === 0,
+      `${datei} hat Zeilen mit fremdem Alphabet (${funde.join(", ")}) — kopierbarer Text darf kein Zeichen enthalten, das nicht zum Alphabet gehört`
+    ).toBe(true);
+  });
+});

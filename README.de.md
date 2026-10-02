@@ -1,5 +1,5 @@
 <p align="center"><img src="docs/kepta-logo.svg" width="88" alt="KEPTA"></p>
-<p align="center"><img src="https://img.shields.io/badge/tests-425%20passing-brightgreen" alt="Tests"> <img src="https://img.shields.io/badge/coverage%20gate-%E2%89%A5%2070%25%20der%20Zeilen-brightgreen" alt="Coverage-Gate"> <img src="https://img.shields.io/badge/Verschl%C3%BCsselung-SQLCipher%204-green" alt="verschlüsselt"> <a href="https://www.linkedin.com/in/damian-todorovic-244235434"><img src="https://img.shields.io/badge/LinkedIn-Damian%20Todorovic-0A66C2?logo=linkedin&logoColor=white" alt="Damian Todorovic auf LinkedIn"></a></p>
+<p align="center"><img src="https://img.shields.io/badge/tests-466%20passing-brightgreen" alt="Tests"> <img src="https://img.shields.io/badge/coverage%20gate-%E2%89%A5%2070%25%20der%20Zeilen-brightgreen" alt="Coverage-Gate"> <img src="https://img.shields.io/badge/Verschl%C3%BCsselung-SQLCipher%204-green" alt="verschlüsselt"> <a href="https://www.linkedin.com/in/damian-todorovic-244235434"><img src="https://img.shields.io/badge/LinkedIn-Damian%20Todorovic-0A66C2?logo=linkedin&logoColor=white" alt="Damian Todorovic auf LinkedIn"></a></p>
 
 # KEPTA — das Gedächtnis für KI-Systeme (deutsches Readme)
 
@@ -7,7 +7,7 @@ Deine KI vergisst alles. Jeder Chat beginnt bei null.
 
 KEPTA ändert das — **lokal**. Eine verschlüsselte SQLite-Datei auf deinem Rechner, die **jede** KI liest und schreibt: Claude Desktop, Cursor, Gemini CLI, Cline, jeder MCP-Client — und Skripte über eine kleine **HTTP-API**. Keine Cloud, kein Konto, keine Telemetrie. Eine Datei, die dir gehört.
 
-> **Dies ist der quelloffene Kern** (BUSL-1.1 — jede Zeile öffentlich, Übergang in AGPL-3.0-or-later vier Jahre nach jedem Release): Memory-Engine, MCP-Server, HTTP-API — dazu der Python-Client unter MIT, damit ihn jedes Python-Projekt einbauen kann. **Alles, was das Gedächtnis klüger macht, liegt in dieser freien Engine — innerhalb des Gedächtnisses gibt es keine Stufen, nichts wird zurückgehalten, um etwas zu verkaufen.** English: [README.md](README.md).
+> **Dies ist der source-available Kern** (BUSL-1.1 — jede Zeile öffentlich, aber kein OSI-zertifiziertes Open Source; Übergang in AGPL-3.0-or-later vier Jahre nach jedem Release): Memory-Engine, MCP-Server, HTTP-API — dazu der Python-Client unter MIT, damit ihn jedes Python-Projekt einbauen kann. **Alles, was das Gedächtnis klüger macht, liegt in dieser Engine — gratis, unbegrenzt, und innerhalb des Gedächtnisses gibt es keine Stufen, nichts wird zurückgehalten, um etwas zu verkaufen.** English: [README.md](README.md).
 
 Fragen, Security-Feedback oder Benchmark-Kritik? → **[Discussions](https://github.com/DamianTodorovic/kepta/discussions)**
 
@@ -66,7 +66,7 @@ npm install && npm run dev
 
 **4. Docker** (nur MCP-Server): `docker build -t kepta-mcp .`
 
-**Zahlen:** **425 Tests** · 31 Routen · `npm run eval` — Eval auf 58 Notizen / 45 Anfragen (Hit@1, Precision@5, MRR).
+**Zahlen:** **466 Tests** · 31 Routen · `npm run eval` — Eval auf 58 Notizen / 45 Anfragen (Hit@1, Precision@5, MRR).
 
 ## 🔍 Wie eine Anfrage ihre Antwort findet
 
@@ -110,7 +110,9 @@ Median-Suchzeiten auf demselben Laptop (Apple M4), jeder Lauf committed in [`too
 
 KEPTA liefert seinen Gedächtnis-Benchmark so, wie es sonst niemand tut: **jede Frage, jede Antwort und jedes Judge-Urteil jedes Laufs liegt in diesem Repository**, in [`tools/longmemeval/ergebnisse/`](tools/longmemeval/ergebnisse/). Fixierter Datensatz (LongMemEval-S, 500 Fragen, SHA-gepinnt), fixierter Judge, lokal vollständig reproduzierbar — siehe [`tools/longmemeval/README.md`](tools/longmemeval/README.md).
 
-Die veröffentlichte Zahl ist **61,5 %** auf LongMemEval-S — bewertet von einem **lokalen 14B-Judge** (`qwen2.5:14b`, Q4, läuft auf einer Consumer-GPU), null Cloud. Die 3B-Judge-Serie ist vollständig als Vergleichsbasis committed: 29,2 → 32,5 → 33,2 → 37,0 → 39,0 — jeder Schritt ist ein Lauf-Record im selben Ordner, kein neues Modell, keine Cloud, kein Fine-Tuning. Dieselbe Retrieval-Pipeline, fairere Bewertung: Ein stärkerer lokaler Judge misst, was der 3B-Judge bei langen Kontexten unterschätzt hat. Die 14B-Judge-Kette auf derselben Pipeline: 54,6 → 55,0 (HyDE-lite) → **61,5** (topk 32 + Zeitsplit + HyDE) — 96 % des Cloud-Judge-Wertes von Zep (63,8 %), ohne eine einzige Byte Cloud.
+Die veröffentlichte Zahl ist **61,5 %** auf LongMemEval-S — bewertet von einem **lokalen 14B-Judge** (`qwen2.5:14b`, Q4, läuft auf einer Consumer-GPU), null Cloud. Die 3B-Judge-Serie ist vollständig als Vergleichsbasis committed: 29,2 → 32,5 → 33,2 → 37,0 → 39,0 — jeder Schritt ist ein Lauf-Record im selben Ordner, kein neues Modell, keine Cloud, kein Fine-Tuning. Dieselbe Retrieval-Pipeline, fairere Bewertung: Ein stärkerer lokaler Judge misst, was der 3B-Judge bei langen Kontexten unterschätzt hat. Die 14B-Judge-Kette auf derselben Pipeline: 54,6 → 55,0 (HyDE-lite) → **61,5** (topk 32 + Zeitsplit + HyDE).
+
+**Was diese Zahl misst — das ist der Vergleichspunkt, bevor jemand sie gegen eine andere rechnet.** Es ist **Kontext-Suffizienz**, keine End-to-End-Antwortgenauigkeit: Ein lokaler Judge (qwen2.5:14b, Temperatur 0, Prompt v1) bewertet, ob die *geretrieften Kontexte* die Referenzantwort enthalten. Es arbeitet kein Generator-LLM mit, ein `TEILWEISE`-Urteil zählt als halber Punkt, und 29,8 % der Fragen dieses Laufs entschied ein deterministischer Wörtlich-Treffer — ohne jeden Judge-Aufruf. Zeps veröffentlichte 63,8 % sind Antwortgenauigkeit einer vollen Generierungspipeline, gerichtet von einem Cloud-Judge: verwandte Evidenz, **nicht dieselbe Metrik**. Und die Einschränkung, offen ausgesprochen: Jeder Hebel der Serie (topk, `--temporal`, `--zeitsplit`, HyDE, Judge-Größe) wurde auf denselben 500 Fragen gewählt, die 61,5 % sind also ein In-Sample-Wert nach oben verzerrt; ein unberührter Holdout-Split steht aus. Genau deshalb liegen die Rohdaten je Frage im Repo — prüft uns, auch an dieser Einordnung.
 
 ## 👋 Wer KEPTA baut
 
@@ -118,4 +120,4 @@ KEPTA bauen **Damian Todorovic** und **Emil Wagner** — ein kleines Team aus De
 
 ## 📄 Lizenz
 
-[BUSL 1.1](LICENSE) — jede Zeile öffentlich, Produktivnutzung in der eigenen Organisation immer erlaubt, Anbieten als gehosteter Service ist vorbehalten, und jede Version geht vier Jahre nach Release in AGPL-3.0-or-later über. **Das npm-Paket `kepta-mcp` trägt dieselbe Lizenz wie dieses Repository; der Python-Client unter `python/` bleibt MIT**, damit ihn jedes Python-Projekt einbauen kann. KEPTA Enterprise für Teams und Organisationen wird nach Absprache lizenziert — [schreib mir auf LinkedIn](https://www.linkedin.com/in/damian-todorovic-244235434).
+[BUSL 1.1](LICENSE) — source-available, kein OSI-zertifiziertes Open Source: jede Zeile öffentlich, Produktivnutzung in der eigenen Organisation immer erlaubt, Anbieten als gehosteter Service ist vorbehalten, und jede Version geht vier Jahre nach Release in AGPL-3.0-or-later über. **Das npm-Paket `kepta-mcp` trägt dieselbe Lizenz wie dieses Repository; der Python-Client unter `python/` bleibt MIT**, damit ihn jedes Python-Projekt einbauen kann. KEPTA Enterprise für Teams und Organisationen wird nach Absprache lizenziert — [schreib mir auf LinkedIn](https://www.linkedin.com/in/damian-todorovic-244235434).
