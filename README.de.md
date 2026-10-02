@@ -1,5 +1,5 @@
 <p align="center"><img src="docs/kepta-logo.svg" width="88" alt="KEPTA"></p>
-<p align="center"><img src="https://img.shields.io/badge/tests-400%20passing-brightgreen" alt="Tests"> <img src="https://img.shields.io/badge/coverage%20gate-%E2%89%A5%2070%25%20der%20Zeilen-brightgreen" alt="Coverage-Gate"> <img src="https://img.shields.io/badge/Verschl%C3%BCsselung-SQLCipher%204-green" alt="verschlüsselt"> <a href="https://www.linkedin.com/in/damian-todorovic-244235434"><img src="https://img.shields.io/badge/LinkedIn-Damian%20Todorovic-0A66C2?logo=linkedin&logoColor=white" alt="Damian Todorovic auf LinkedIn"></a></p>
+<p align="center"><img src="https://img.shields.io/badge/tests-402%20passing-brightgreen" alt="Tests"> <img src="https://img.shields.io/badge/coverage%20gate-%E2%89%A5%2070%25%20der%20Zeilen-brightgreen" alt="Coverage-Gate"> <img src="https://img.shields.io/badge/Verschl%C3%BCsselung-SQLCipher%204-green" alt="verschlüsselt"> <a href="https://www.linkedin.com/in/damian-todorovic-244235434"><img src="https://img.shields.io/badge/LinkedIn-Damian%20Todorovic-0A66C2?logo=linkedin&logoColor=white" alt="Damian Todorovic auf LinkedIn"></a></p>
 
 # KEPTA — das Gedächtnis für KI-Systeme (deutsches Readme)
 
@@ -20,6 +20,12 @@ npx -y kepta-mcp stats        # das Terminal-Erlebnis: remember, recall, timelin
 ```
 
 Dann sag deiner KI etwas, das sie behalten soll — und sieh zu, wie es ankommt. Mehr im [Schnellstart](#-schnellstart).
+
+## 🖥️ Oder lad die Desktop-App
+
+KEPTA gibt es als echte Desktop-App — dieselbe Engine mit ganzer Oberfläche: Memory-Browser, Hybridsuche mit Spuren-Herkunft, Wissensgraph, Zeitreise, Dossiers und ein Chat, der das Gedächtnis liest. Die DMG für deinen Mac liegt im [neuesten Release](https://github.com/DamianTodorovic/kepta/releases/latest) (Apple Silicon oder Intel), reinziehen in „Programme", einmal Rechtsklick → **Öffnen** — macOS fragt ein einziges Mal nach (ad-hoc-signiert), dann nie wieder.
+
+Die App ist gratis wie alles in diesem Repository. KEPTA Enterprise (Team- und Mandanten-Gedächtnis, Audit-Kette, Menschenschleuse, Point-in-Time-Recovery) wird nach Absprache lizenziert — [schreib mir auf LinkedIn](https://www.linkedin.com/in/damian-todorovic-244235434).
 
 ## 🧠 Eine Engine. Frei. Für jede KI.
 
@@ -60,7 +66,7 @@ npm install && npm run dev
 
 **4. Docker** (nur MCP-Server): `docker build -t kepta-mcp .`
 
-**Zahlen:** **400 Tests** · 31 Routen · `npm run eval` — Eval auf 58 Notizen / 45 Anfragen (Hit@1, Precision@5, MRR).
+**Zahlen:** **402 Tests** · 31 Routen · `npm run eval` — Eval auf 58 Notizen / 45 Anfragen (Hit@1, Precision@5, MRR).
 
 ## 🔍 Wie eine Anfrage ihre Antwort findet
 
@@ -91,6 +97,10 @@ SQLCipher 4 (AES-256, HMAC-SHA512 je Seite, WAL eingeschlossen). Der Schlüssel 
 |---|---|
 | alles zusammen | **70 %** der Zeilen · **72 %** der Funktionen · 56 % Branches · 66 % Statements |
 | `src/core` | **87 %** der Zeilen · **89 %** der Funktionen · 74 % Branches · 85 % Statements |
+
+### Latenz — gemessen, öffentlich
+
+Median-Suchzeiten auf demselben Laptop (Apple M4), jeder Lauf committed in [`tools/latenz/ergebnisse/`](tools/latenz/ergebnisse/): **46,6 ms** Median bei 100.000 Erinnerungen (p95 87,6 ms), **276,5 ms** Median bei **1.000.000 Erinnerungen**, und ein warmer Such-Cache **0,74 s** nach dem Einspeisen einer Million Notizen. Durchgehend verschlüsselt.
 
 ### Benchmark-Rekord — LongMemEval-S, vollständig öffentlich
 

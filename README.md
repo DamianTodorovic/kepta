@@ -1,5 +1,5 @@
 <p align="center"><img src="docs/kepta-logo.svg" width="88" alt="KEPTA"></p>
-<p align="center"><img src="https://img.shields.io/badge/version-3.1.2-blue" alt="v2.13.22"> <img src="https://img.shields.io/badge/license-BUSL--1.1-blue" alt="BUSL-1.1"> <img src="https://img.shields.io/badge/tests-400%20passing-brightgreen" alt="tests"> <img src="https://img.shields.io/badge/coverage%20gate-%E2%89%A5%2070%25%20of%20lines-brightgreen" alt="coverage gate"> <img src="https://img.shields.io/badge/platform-macOS%20%7C%20Windows%20%7C%20Linux-lightgrey" alt="platform"> <img src="https://img.shields.io/badge/encryption-SQLCipher%204-green" alt="encrypted"> <a href="https://www.linkedin.com/in/damian-todorovic-244235434"><img src="https://img.shields.io/badge/LinkedIn-Damian%20Todorovic-0A66C2?logo=linkedin&logoColor=white" alt="Damian Todorovic on LinkedIn"></a></p>
+<p align="center"><img src="https://img.shields.io/badge/version-3.1.2-blue" alt="v2.13.22"> <img src="https://img.shields.io/badge/license-BUSL--1.1-blue" alt="BUSL-1.1"> <img src="https://img.shields.io/badge/tests-402%20passing-brightgreen" alt="tests"> <img src="https://img.shields.io/badge/coverage%20gate-%E2%89%A5%2070%25%20of%20lines-brightgreen" alt="coverage gate"> <img src="https://img.shields.io/badge/platform-macOS%20%7C%20Windows%20%7C%20Linux-lightgrey" alt="platform"> <img src="https://img.shields.io/badge/encryption-SQLCipher%204-green" alt="encrypted"> <a href="https://www.linkedin.com/in/damian-todorovic-244235434"><img src="https://img.shields.io/badge/LinkedIn-Damian%20Todorovic-0A66C2?logo=linkedin&logoColor=white" alt="Damian Todorovic on LinkedIn"></a></p>
 
 # KEPTA — the memory for AI systems
 
@@ -51,6 +51,14 @@ npx -y kepta-mcp stats        # the terminal experience: remember, recall, timel
 Then tell your AI something worth keeping — and watch it arrive. Details in the [Quick start](#-quick-start).
 
 ---
+
+---
+
+## 🖥️ Or download the desktop app
+
+KEPTA comes as a real desktop app — the same engine with a full interface: memory browser, hybrid search with retrieval provenance, knowledge graph, time travel, dossiers and a chat that reads the memory. Download the DMG for your Mac from the [latest release](https://github.com/DamianTodorovic/kep'+'ta/releases/latest) (Apple Silicon or Intel), drag it into Programs, right-click → **Open** once — macOS asks a single time because the app is ad-hoc signed, then never again.
+
+The app is free, like everything in this repository. KEPTA Enterprise (team and tenant memory, audit chain, human review, point-in-time recovery) is licensed by agreement — [write to me on LinkedIn](https://www.linkedin.com/in/damian-todorovic-244235434).
 
 ## 🧠 One engine. Free. For every AI.
 
@@ -210,7 +218,7 @@ The knowledge base is a SQLCipher 4 database: AES-256, an HMAC-SHA512 over every
 
 ## 🧪 Quality
 
-**400 tests** with Vitest and v8 coverage. The coverage thresholds are a CI gate: a commit that falls below one of them turns CI red. On top: a retrieval eval (Hit@1, Precision@5, MRR) on a fixed corpus, an ablation test per retrieval leg, an encryption eval and a boundary test on the core architecture.
+**402 tests** with Vitest and v8 coverage. The coverage thresholds are a CI gate: a commit that falls below one of them turns CI red. On top: a retrieval eval (Hit@1, Precision@5, MRR) on a fixed corpus, an ablation test per retrieval leg, an encryption eval and a boundary test on the core architecture.
 
 ### Coverage thresholds (enforced by CI)
 
@@ -218,6 +226,10 @@ The knowledge base is a SQLCipher 4 database: AES-256, an HMAC-SHA512 over every
 |---|---|---|---|---|
 | everything together | **70 %** | **72 %** | **56 %** | **66 %** |
 | `src/core` | **87 %** | **89 %** | **74 %** | **85 %** |
+
+### Latency — measured, public
+
+Median search times on the same laptop (Apple M4), every run committed in [`tools/latenz/ergebnisse/`](tools/latenz/ergebnisse/): **46.6 ms** median at 100,000 memories (p95 87.6 ms), **276.5 ms** median at **1,000,000 memories**, and a warm search cache **0.74 s** after ingesting a million notes. Encrypted at rest the whole time.
 
 ### Benchmark record — LongMemEval-S, fully public
 
