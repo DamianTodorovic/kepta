@@ -223,7 +223,7 @@ The knowledge base is a SQLCipher 4 database: AES-256, an HMAC-SHA512 over every
 
 KEPTA ships its memory benchmark the way nobody else does: **every question, every answer and every judge verdict of every run is committed to this repository**, in [`tools/longmemeval/ergebnisse/`](tools/longmemeval/ergebnisse/). Fixed dataset (LongMemEval-S, 500 questions, SHA-pinned), fixed judge, fully reproducible locally — see [`tools/longmemeval/README.md`](tools/longmemeval/README.md).
 
-The published score is **54.6 %** on LongMemEval-S — graded by a **local 14B judge** (`qwen2.5:14b`, Q4, runs on a consumer GPU), zero cloud. The 3B-judge series is fully committed as the continuity baseline: 29.2 → 32.5 → 33.2 → 37.0 → 39.0 — every step is a run record in the same folder, no new model, no cloud, no fine-tuning. Same retrieval pipeline, fairer grading: a stronger local judge measures what the 3B judge under-scored on long contexts.
+The published score is **61.5 %** on LongMemEval-S — graded by a **local 14B judge** (`qwen2.5:14b`, Q4, runs on a consumer GPU), zero cloud. The 3B-judge series is fully committed as the continuity baseline: 29.2 → 32.5 → 33.2 → 37.0 → 39.0 — every step is a run record in the same folder, no new model, no cloud, no fine-tuning. Same retrieval pipeline, fairer grading: a stronger local judge measures what the 3B judge under-scored on long contexts. The 14B-judge chain on that same pipeline: 54.6 → 55.0 (HyDE-lite) → **61.5** (topk 32 + time-split + HyDE) — 96 % of Zep's cloud-judged 63.8 %, with zero cloud.
 
 ---
 

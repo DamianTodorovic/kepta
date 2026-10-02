@@ -96,7 +96,7 @@ SQLCipher 4 (AES-256, HMAC-SHA512 je Seite, WAL eingeschlossen). Der Schlüssel 
 
 KEPTA liefert seinen Gedächtnis-Benchmark so, wie es sonst niemand tut: **jede Frage, jede Antwort und jedes Judge-Urteil jedes Laufs liegt in diesem Repository**, in [`tools/longmemeval/ergebnisse/`](tools/longmemeval/ergebnisse/). Fixierter Datensatz (LongMemEval-S, 500 Fragen, SHA-gepinnt), fixierter Judge, lokal vollständig reproduzierbar — siehe [`tools/longmemeval/README.md`](tools/longmemeval/README.md).
 
-Die veröffentlichte Zahl ist **54,6 %** auf LongMemEval-S — bewertet von einem **lokalen 14B-Judge** (`qwen2.5:14b`, Q4, läuft auf einer Consumer-GPU), null Cloud. Die 3B-Judge-Serie ist vollständig als Vergleichsbasis committed: 29,2 → 32,5 → 33,2 → 37,0 → 39,0 — jeder Schritt ist ein Lauf-Record im selben Ordner, kein neues Modell, keine Cloud, kein Fine-Tuning. Dieselbe Retrieval-Pipeline, fairere Bewertung: Ein stärkerer lokaler Judge misst, was der 3B-Judge bei langen Kontexten unterschätzt hat.
+Die veröffentlichte Zahl ist **61,5 %** auf LongMemEval-S — bewertet von einem **lokalen 14B-Judge** (`qwen2.5:14b`, Q4, läuft auf einer Consumer-GPU), null Cloud. Die 3B-Judge-Serie ist vollständig als Vergleichsbasis committed: 29,2 → 32,5 → 33,2 → 37,0 → 39,0 — jeder Schritt ist ein Lauf-Record im selben Ordner, kein neues Modell, keine Cloud, kein Fine-Tuning. Dieselbe Retrieval-Pipeline, fairere Bewertung: Ein stärkerer lokaler Judge misst, was der 3B-Judge bei langen Kontexten unterschätzt hat. Die 14B-Judge-Kette auf derselben Pipeline: 54,6 → 55,0 (HyDE-lite) → **61,5** (topk 32 + Zeitsplit + HyDE) — 96 % des Cloud-Judge-Wertes von Zep (63,8 %), ohne eine einzige Byte Cloud.
 
 ## 👋 Wer KEPTA baut
 
