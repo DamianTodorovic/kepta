@@ -2,6 +2,11 @@
 
 All notable changes are documented in this file. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and versioning follows [SemVer](https://semver.org/).
 
+## [3.1.2] — 2026-10-02
+
+### Changed
+- `npx kepta-mcp ui` no longer starts a browser interface — KEPTA is headless by design and the old browser UI is not a product. The command now prints the one right way (`npx kepta-mcp setup`); the UI code dropped out of the shipped bundle entirely.
+
 ## [3.1.1] — 2026-10-02
 
 ### Added

@@ -20,7 +20,6 @@ import { importChatgptKommando } from "./core/chatgpt-import";
 import { starteDemoShow } from "./demo-show";
 import { erlebnisKommando } from "./cli-erlebnis";
 import readline from "node:readline";
-import { starteOberflaeche, oeffneImBrowser, leseUiArgumente } from "./ui/server";
 
 /** Derselbe Schluessel wie in der App: aus dem Schluesselbund des Systems. */
 function oeffneStore(): KeptaStore {
@@ -127,32 +126,16 @@ function starteMcp(): void {
 
 /**
  * `npx kepta-mcp ui`: KEPTA ist headless — es lebt im KI-Klienten (MCP) und
- * hat weder App noch Browser-Oberfläche. Der Befehl bleibt für alte
- * Anleitungen bestehen und zeigt den einen richtigen Weg: setup.
+ * hat bewusst KEINE Browser-Oberfläche (die alte Browser-UI ist seit dem
+ * Pivot kein Produkt mehr). Der Befehl bleibt für alte Anleitungen bestehen
+ * und zeigt den einen richtigen Weg: setup.
  */
 function uiHinweis(): void {
-  const { port, oeffnen } = leseUiArgumente(process.argv.slice(3));
-  const store = oeffneStore();
-  starteOberflaeche(store, { port })
-    .then((ui) => {
-      const v = store.verschluesselung;
-      console.log(`KEPTA ${SERVER_INFO.version} is running at ${ui.url}`);
-      console.log(`${store.dbPath} — ${v.aktiv ? "encrypted" : `NOT encrypted${v.hinweis ? `: ${v.hinweis}` : ""}`}`);
-      console.log("Press Ctrl+C to stop.");
-      if (oeffnen) oeffneImBrowser(ui.url);
-      const ende = () => {
-        void ui.close().finally(() => {
-          store.close();
-          process.exit(0);
-        });
-      };
-      process.on("SIGINT", ende);
-      process.on("SIGTERM", ende);
-    })
-    .catch((e: unknown) => {
-      console.error(`[kepta] ${e instanceof Error ? e.message : String(e)}`);
-      process.exit(1);
-    });
+  console.log(`KEPTA has no browser interface — it lives inside your AI client via MCP.
+
+  Next step:  npx kepta-mcp setup
+
+The desktop console is KEPTA Enterprise (by agreement — see the website).`);
 }
 
 /**
