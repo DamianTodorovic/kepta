@@ -12,16 +12,6 @@ export function sanitizeText(input: unknown, maxLen = 50000): string {
   return s.trim();
 }
 
-/** Zusätzliche HTML-/Event-Handler-Entschärfung NUR für Roh-HTML-Ingeste (URL-Clipper: fremde HTML-Seiten werden zu Text konvertiert). */
-export function sanitizeHtmlText(input: unknown, maxLen = 50000): string {
-  let s = sanitizeText(input, maxLen);
-  s = s.replace(/<script[\s\S]*?>[\s\S]*?<\/script>/gi, "");
-  s = s.replace(/on\w+\s*=\s*("[^"]*"|'[^']*'|[^\s>]+)/gi, "");
-  s = s.replace(/<[^>]*\bon\w+[^>]*>/gi, (m) => m.replace(/on\w+\s*=\s*("[^"]*"|'[^']*'|[^\s>]+)/gi, ""));
-  s = s.replace(/javascript:\s*/gi, "");
-  return s;
-}
-
 /** Titel: wie Text, aber einzeilig und kurz. */
 export function sanitizeTitle(input: unknown): string {
   return sanitizeText(input, 200).replace(/[\r\n]+/g, " ").trim();

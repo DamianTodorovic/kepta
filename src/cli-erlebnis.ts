@@ -110,7 +110,7 @@ export interface Statistik {
 export function stats(store: KeptaStore): Statistik {
   // Die Statistik zählt nur aktive (nicht gelöschte) Notizen — dieselbe Regel
   // wie store.countMemories, hier über die Liste, weil Typen und Tags je Notiz
-  // gebraucht werden. (Früher aus ui/server importiert; die Core-UI ist weg.)
+  // gebraucht werden.
   const alle = store.listMemories({ limit: 10_000 });
   const typen: Record<string, number> = {};
   const tags = new Map<string, number>();

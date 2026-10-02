@@ -6,8 +6,6 @@ import crypto from "crypto";
 import path from "path";
 import fs from "fs";
 import os from "os";
-import dns from "dns";
-import { spawn } from "child_process";
 import { KeptaStore } from "./src/core/store";
 import { defaultExtensions } from "./src/core/extensions";
 import { schluesselbundKeyProvider } from "./src/core/schluessel";
@@ -18,6 +16,7 @@ import { searchMemories as engineSearch, indexMemory, gateDecision, writeGateEna
 import { handleRpc, TOOLS as MCP_TOOLS, saveWithIndex } from "./src/core/mcp";
 import { importObsidianVault, memoryToMarkdown } from "./src/core/obsidian";
 import { exportBundle, importBundle, PraxissyncJournal, type SyncBundle } from "./src/core/praxissync";
+import { sanitizeText, sanitizeTitle, sanitizeTags } from "./src/core/sanitize";
 import { APP_VERSION } from "./src/core/version";
 import { klassifiziere, istUnbrauchbar, htmlZuText, entferneNaviZeilen } from "./src/core/klassifikation";
 import type { MemoryRecord as CoreMemory } from "./src/core/types";
@@ -55,39 +54,10 @@ function trimSlash(url: string) {
 }
 
 // ---------- Security Hardening Helpers ----------
-// Basis aller Speicherpfade: NUL-/Steuerzeichen bereinigen + Länge begrenzen.
-// KEIN HTML-Stripping hier — das Frontend rendert Inhalte über react-markdown
-// (kein dangerouslySetInnerHTML), heuristisches Strippen von "javascript:" oder
-// "on*=" zerstört legitime Code-Beispiele in Memories.
-function sanitizeText(input: unknown, maxLen = 50000): string {
-  if (typeof input !== "string") return "";
-  let s = input.replace(/\0/g, "").replace(/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/g, "");
-  if (s.length > maxLen) s = s.slice(0, maxLen);
-  return s.trim();
-}
-// Zusätzliche HTML-/Event-Handler-Entschärfung NUR für Roh-HTML-Ingeste
-// (URL-Clipper: fremde HTML-Seiten werden zu Text konvertiert).
-function sanitizeHtmlText(input: unknown, maxLen = 50000): string {
-  let s = sanitizeText(input, maxLen);
-  s = s.replace(/<script[\s\S]*?>[\s\S]*?<\/script>/gi, "");
-  s = s.replace(/on\w+\s*=\s*("[^"]*"|'[^']*'|[^\s>]+)/gi, "");
-  s = s.replace(/<[^>]*\bon\w+[^>]*>/gi, (m) => m.replace(/on\w+\s*=\s*("[^"]*"|'[^']*'|[^\s>]+)/gi, ""));
-  s = s.replace(/javascript:\s*/gi, "");
-  return s;
-}
-function sanitizeTitle(input: unknown): string {
-  return sanitizeText(input, 200).replace(/[\r\n]+/g, " ").trim();
-}
-function sanitizeTags(input: unknown): string[] {
-  if (!Array.isArray(input)) return [];
-  const out: string[] = [];
-  for (const t of input) {
-    if (typeof t !== "string") continue;
-    let tag = t.toLowerCase().trim().replace(/[^a-z0-9\-_äöüß]/g, "").slice(0, 30);
-    if (tag && tag.length >= 2 && out.length < 12) out.push(tag);
-  }
-  return [...new Set(out)];
-}
+// Die eine Text-/Tag-/Titel-Filterfassung liegt in src/core/sanitize.ts — von
+// dort holen sich Server, Store und MCP dieselben Regeln (früher gepflegt jeder
+// seinen eigenen Spiegel; zwei davon drifteten auseinander).
+
 function isSafeFilename(name: string): boolean {
   if (!name || name.length > 180) return false;
   if (name.includes("..") || name.includes("/") || name.includes("\\") || name.startsWith(".")) return false;
@@ -264,7 +234,6 @@ export function createApp(store: KeptaStore) {
   // Rate Limiting — schützt vor Brute-Force / DoS
   const globalLimiter = rateLimit({ windowMs: 60_000, max: 180, standardHeaders: true, legacyHeaders: false, message: { error: "Too many requests — please wait a moment." } });
   const chatLimiter = rateLimit({ windowMs: 60_000, max: 20, standardHeaders: true, legacyHeaders: false, message: { error: "Chat Rate-Limit: max 20/min" } });
-  const clipLimiter = rateLimit({ windowMs: 60_000, max: 12, standardHeaders: true, legacyHeaders: false, message: { error: "Clip Rate-Limit: max 12/min" } });
   // Wie viele Notizen ein Sammelaufruf hoechstens anfassen darf. Gross genug
   // fuer jede Aufraeumaktion, klein genug, dass ein verirrter Aufruf nicht die
   // ganze Wissensbasis in einem Rutsch bewegt.
@@ -893,13 +862,6 @@ export function createApp(store: KeptaStore) {
     }
   });
 
-  // --- URL-Clipper: holt URL und extrahiert Titel + reinen Text ---
-  // Eine notierte Datei mit dem OS-Standardprogramm öffnen — der Weg zurück
-  // zur Original-PDF/-HTML/-Datei, die der Scan oder der Drop eingelesen hat.
-  // Doppelte Absicherung: der Server lauscht ohnehin nur auf 127.0.0.1, und
-  // hier gelten dieselben Grenzen wie beim Rechner-Scan — absolut, vorhanden,
-  // eine DATEI, unter dem Home-Verzeichnis.
-
   // CMaps für den clientseitigen PDF-Import (pdf.js) — offline, ohne CDN.
   const cmapQuellen = [path.join(serverVerzeichnis(), "cmaps"), path.join(process.cwd(), "node_modules", "pdfjs-dist", "cmaps")];
   for (const quelle of cmapQuellen) {
@@ -1305,13 +1267,8 @@ export function createApp(store: KeptaStore) {
     }
   });
 
-  // --- Chat ---
-
-  // Streaming: leitet die Antwort als SSE an den Client weiter
-
-  // Nicht-Streaming-Fallback
-
-  // Verfügbare Modelle eines Anbieters abrufen
+  // Chat-Proxy, SSE-Streaming und Anbieter-Modelle sind Wege der Desktop-App —
+  // der headlose Kern hat kein LLM-Proxy und deshalb keine dieser Routen.
 
   return app;
 }
