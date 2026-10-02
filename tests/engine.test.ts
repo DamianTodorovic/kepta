@@ -196,6 +196,29 @@ describe("consolidateMemories", () => {
     expect(dry.candidates).toHaveLength(0);
     expect(dry.applied).toBe(0);
   });
+
+  it("lässt ausgenommene IDs außer Betracht — weder Kandidat noch Supersede", async () => {
+    const store = freshStore();
+    // Zwei private Dubletten (gleicher Titel, leere Tags → titleSim 1.0) und eine
+    // offene Dublette. Der Agenten-Floor nimmt die privaten IDs aus dem Pool; ohne
+    // Ausnahme würde er sie melden und ohne dryRun sogar ersetzen.
+    const p1 = store.createMemory({ title: "Geheime Praxisrechnung", content: "eins", scope: "private", createdAt: 1, updatedAt: 1 });
+    const p2 = store.createMemory({ title: "Geheime Praxisrechnung", content: "zwei länger", scope: "private", createdAt: 2, updatedAt: 2 });
+    const o1 = store.createMemory({ title: "Offene Praxisrechnung", content: "eins", createdAt: 3, updatedAt: 3 });
+    const o2 = store.createMemory({ title: "Offene Praxisrechnung", content: "zwei länger", createdAt: 4, updatedAt: 4 });
+    const ausnehmen = new Set([p1.id, p2.id]);
+
+    const dry = await consolidateMemories(store, { dryRun: true, ausnehmen });
+    expect(dry.candidates.find((c) => c.keepId === p1.id || c.duplicateId === p1.id)).toBeUndefined();
+    expect(dry.candidates.find((c) => c.keepId === p2.id || c.duplicateId === p2.id)).toBeUndefined();
+    expect(dry.candidates.find((c) => c.reason === "title+tags")).toBeDefined();
+
+    const applied = await consolidateMemories(store, { dryRun: false, ausnehmen });
+    expect(applied.applied).toBeGreaterThan(0);
+    expect(store.getMemory(p1.id)?.supersededBy).toBeNull();
+    expect(store.getMemory(p2.id)?.supersededBy).toBeNull();
+    expect(store.getMemory(o1.id)?.supersededBy ?? store.getMemory(o2.id)?.supersededBy).toBeTruthy();
+  });
 });
 
 describe("findDuplicateForNew", () => {

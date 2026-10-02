@@ -895,6 +895,28 @@ var KeptaStore = class _KeptaStore {
     const trashed = this.db.prepare("SELECT COUNT(*) c FROM memories WHERE deleted_at IS NOT NULL").get().c;
     return { active, trashed };
   }
+  /**
+   * Grundmenge des Privatheits-Floors: die IDs aller Notizen, die der Besitzer in
+   * der App als privat markiert hat (scope = 'private') — auch die im Papierkorb.
+   * Gelöschte mitzuzählen ist kein Detail: "wird noch 30 Tage im Papierkorb
+   * gehalten" ist eine Aufbewahrung, keine Freigabe an Agenten, und ein Titel einer
+   * privat gelöschten Notiz lebt als Graph-Entität weiter (siehe memory_graph).
+   * Endgültig purgierte Knoten fehlen hier, haben aber auch nichts mehr zu zeigen.
+   *
+   * Ein einziger indizierter Scan (idx_memories_scope) statt seitenweisem
+   * listMemories(): ein Vollbestand-Durchlauf mit Limit würde private Notizen
+   * still verschlucken und der Floor gelte lückenhaft — genau die 22.9.-Fehler-
+   * klasse beim Geräte-Sync (100 von 3.644). Bewusst ohne audit("read"): der
+   * Filter ist die Suche nach dem Auszuschließenden, kein Lesen der Notiz.
+   */
+  privateMemoryIds() {
+    const zeilen = this.db.prepare("SELECT id FROM memories WHERE scope = 'private'").all();
+    return new Set(zeilen.map((z) => z.id));
+  }
+  /** Dieselbe Grenze wie privateMemoryIds(), aber über den Primärschlüssel — für Einzelfragen. */
+  istPrivat(id) {
+    return this.db.prepare("SELECT 1 FROM memories WHERE id = ? AND scope = 'private'").get(id) !== void 0;
+  }
   getMemory(id) {
     const row = this.getRow(id);
     if (!row) return null;
@@ -1305,6 +1327,23 @@ var KeptaStore = class _KeptaStore {
       `SELECT e.name FROM entities e JOIN memory_entities me ON me.entity_id = e.id WHERE me.memory_id = ?`
     ).all(memoryId);
     return rows.map((r) => String(r.name));
+  }
+  /**
+   * entity_id → Träger-Notizen, in einem Query. memoryIdsForEntities() kann nur die
+   * Sammelmenge; den Graphen filtert der Privatheits-Floor aber Knoten für Knoten,
+   * und das dürften 500 Einzelabfragen sein (LIMIT 500 im ganzen Graphen).
+   */
+  memoryIdsByEntity(entityIds) {
+    const map = /* @__PURE__ */ new Map();
+    if (entityIds.length === 0) return map;
+    const placeholders = entityIds.map(() => "?").join(",");
+    const rows = this.db.prepare(`SELECT entity_id, memory_id FROM memory_entities WHERE entity_id IN (${placeholders})`).all(...entityIds);
+    for (const r of rows) {
+      const Liste = map.get(r.entity_id);
+      if (Liste) Liste.push(String(r.memory_id));
+      else map.set(r.entity_id, [String(r.memory_id)]);
+    }
+    return map;
   }
   // ---------- FTS ----------
   ftsSearch(query, limit = 50) {
@@ -2030,7 +2069,7 @@ function jaccard(a, b) {
 async function consolidateMemories(store, opts = {}) {
   const threshold = opts.threshold ?? 0.92;
   const dryRun = opts.dryRun ?? true;
-  const active = aktiveErinnerungen(store).aktiv.filter((m) => !m.record.supersededBy);
+  const active = aktiveErinnerungen(store).aktiv.filter((m) => !m.record.supersededBy && !opts.ausnehmen?.has(m.record.id));
   const candidates = [];
   const chunks = embeddbareChunks(store);
   const centroids = /* @__PURE__ */ new Map();

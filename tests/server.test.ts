@@ -5,7 +5,7 @@ import fs from "node:fs";
 import dns from "node:dns";
 import request from "supertest";
 import { KeptaStore } from "../src/core/store";
-import { indexMemory } from "../src/core/engine";
+import { indexMemory, consolidateMemories } from "../src/core/engine";
 import { DEFAULT_EMBED_MODEL } from "../src/core/embeddings";
 import { APP_VERSION } from "../src/core/version";
 
@@ -383,5 +383,92 @@ describe("/api/mcp/forget — das memory_forget-Werkzeug über HTTP", () => {
     const angelegt = await request(app).post("/api/memory").send({ title: "x", content: "y" });
     const falsch = await request(app).post("/api/mcp/forget").send({ id: angelegt.body.memory.id, mode: "verbrennen" });
     expect(falsch.status).toBe(400);
+  });
+});
+
+describe("Privatheits-Floor über HTTP: Agentenwege gefiltert, Besitzerwege offen", () => {
+  async function legeNotiz(title: string, content: string, scope?: string) {
+    return request(app).post("/api/memory").send(scope ? { title, content, scope } : { title, content });
+  }
+
+  it("POST /api/mcp/search liefert privaten Inhalt nicht an Agenten", async () => {
+    await legeNotiz("Steuerklausur", "Die Steuer-ID des Mandanten ist 998877", "private");
+    await legeNotiz("Offener Fahrplan", "Nächste Woche Release");
+
+    const privat = await request(app).post("/api/mcp/search").send({ query: "Steuer-ID 998877" });
+    expect(privat.status).toBe(200);
+    expect(privat.body.count).toBe(0);
+    expect(privat.body.memories).toEqual([]);
+
+    const offen = await request(app).post("/api/mcp/search").send({ query: "Release Fahrplan" });
+    expect(offen.body.count).toBeGreaterThan(0);
+    expect((offen.body.memories as { title: string }[]).map((m) => m.title)).toContain("Offener Fahrplan");
+    // Leerlauf-Schutz: die private Notiz ist im Index und findet sich auf dem
+    // Besitzerweg — der Agentenweg filtert sie also heraus, statt sie zu verpassen.
+    const besitzer = await request(app).get("/api/memories/search?q=998877");
+    expect((besitzer.body.memories as { title: string }[]).map((m) => m.title)).toContain("Steuerklausur");
+  });
+
+  it("POST /api/mcp/consolidate fasst private Dupletten nicht an", async () => {
+    const privaten = [
+      String((await legeNotiz("Private Praxisrechnung", "Identischer Textblock", "private")).body.memory.id),
+      String((await legeNotiz("Private Praxisrechnung", "Identischer Textblock länger", "private")).body.memory.id),
+    ];
+    await legeNotiz("Offene Praxisrechnung", "Identischer Textblock");
+    await legeNotiz("Offene Praxisrechnung", "Identischer Textblock länger");
+
+    const res = await request(app).post("/api/mcp/consolidate").send({ dryRun: false });
+    expect(res.status).toBe(200);
+    expect(privaten.length).toBe(2);
+    for (const k of res.body.candidates as { keepId: string; duplicateId: string }[]) {
+      expect(privaten).not.toContain(k.keepId);
+      expect(privaten).not.toContain(k.duplicateId);
+    }
+    expect(res.body.applied).toBeGreaterThan(0);
+    for (const id of privaten) expect(store.getMemory(id)?.supersededBy).toBeNull();
+    // Dieselbe Engine, gleicher Bestand, ohne den Floor: die private Duplette wäre
+    // ein Kandidat gewesen — sonst prüft dieser Test nur leere Mengen.
+    const ohneFloor = await consolidateMemories(store, { dryRun: true });
+    expect(ohneFloor.candidates.some((c) => privaten.includes(c.keepId) || privaten.includes(c.duplicateId))).toBe(true);
+  });
+
+  it("POST /api/mcp/forget: private Notiz antwortet byte-identisch wie eine unbekannte id", async () => {
+    const angelegt = await legeNotiz("Geheime Vollmacht", "Unterschrift", "private");
+    const id = angelegt.body.memory.id as string;
+
+    const privat = await request(app).post("/api/mcp/forget").send({ id });
+    const unbekannt = await request(app).post("/api/mcp/forget").send({ id: "gibts-nicht" });
+    expect(privat.status).toBe(unbekannt.status);
+    expect(privat.body).toEqual({ error: `Memory not found: ${id}` });
+    expect(store.getMemory(id)?.deletedAt).toBeNull();
+    expect(store.getMemory(id)?.validTo).toBeNull();
+  });
+
+  it("POST /api/mcp/save überschreibt keine private Notiz — 404 mit dem Wortlaut einer unbekannten id", async () => {
+    const angelegt = await legeNotiz("Geheime Konten", "IBAN 666", "private");
+    const id = String(angelegt.body.memory.id);
+
+    const res = await request(app).post("/api/mcp/save").send({ id, title: "Geheime Konten", content: "überschrieben" });
+    expect(res.status).toBe(404);
+    expect(res.body).toEqual({ error: `Memory not found: ${id}` });
+    expect(store.getMemory(id)?.content).toBe("IBAN 666");
+
+    const neu = await request(app).post("/api/mcp/save").send({ title: "Offene Konten", content: "IBAN 777" });
+    expect(neu.status).toBe(200);
+    expect(neu.body.created).toBe(true);
+  });
+
+  it("Besitzerwege bleiben ungefiltert — die App sonst blind wäre", async () => {
+    const angelegt = await legeNotiz("Geheime Vollmacht", "Unterschrift", "private");
+    // /api/memory verknüpft keine Entitäten (das tut saveWithIndex im MCP-Pfad),
+    // der Graph-Beleg braucht den Link also von der Store-Seite aus.
+    store.linkEntities(String(angelegt.body.memory.id), ["geheime vollmacht"]);
+
+    const liste = await request(app).get("/api/memories");
+    expect((liste.body as { scope: string }[]).some((m) => m.scope === "private")).toBe(true);
+    const suche = await request(app).get("/api/memories/search?q=Unterschrift");
+    expect(suche.body.memories.length).toBeGreaterThan(0);
+    const graph = await request(app).get("/api/graph");
+    expect((graph.body.entities as { name: string }[]).map((e) => e.name)).toContain("geheime vollmacht");
   });
 });

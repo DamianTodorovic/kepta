@@ -13,7 +13,7 @@ import { planeImportReparatur, mitFrist } from "./src/core/reparatur";
 import { migrateFromLegacyJson } from "./src/core/migrate";
 import { EmbeddingQueue } from "./src/core/embeddings";
 import { searchMemories as engineSearch, indexMemory, gateDecision, writeGateEnabled, MAX_SEARCH_LIMIT, consolidateMemories, aktiviereSuchCacheDelta } from "./src/core/engine";
-import { handleRpc, TOOLS as MCP_TOOLS, saveWithIndex } from "./src/core/mcp";
+import { handleRpc, TOOLS as MCP_TOOLS, saveWithIndex, ohnePrivate, aussenVor, zeigerFürAgenten } from "./src/core/mcp";
 import { importObsidianVault, memoryToMarkdown } from "./src/core/obsidian";
 import { exportBundle, importBundle, PraxissyncJournal, type SyncBundle } from "./src/core/praxissync";
 import { sanitizeText, sanitizeTitle, sanitizeTags } from "./src/core/sanitize";
@@ -1199,7 +1199,9 @@ export function createApp(store: KeptaStore) {
     res.status(405).json({ error: "Streamable HTTP: POST only (stateless, no SSE session)" });
   });
 
-  // Legacy-kompatible Hilfsrouten (plain JSON statt JSON-RPC) — dünne Wrapper über die Engine
+  // Legacy-kompatible Hilfsrouten (plain JSON statt JSON-RPC) — dünne Wrapper über die Engine.
+  // Agentenkanal wie POST /mcp: der Privatheits-Floor gilt hier genauso, sonst wäre
+  // "MCP tool parity over HTTP" genau die Lücke im Versprechen (WP 1).
   app.post("/api/mcp/search", writeLimiter, async (req, res) => {
     const { query, limit = 10, tags } = req.body as { query?: string; limit?: number; tags?: string[] };
     if (!query || !query.trim()) return res.status(400).json({ error: "a query is required", tools: MCP_TOOLS });
@@ -1208,20 +1210,27 @@ export function createApp(store: KeptaStore) {
       limit: Math.min(Math.max(parseInt(String(limit), 10) || 10, 1), 50),
       tags: Array.isArray(tags) ? tags : undefined,
     });
+    const treffer = ohnePrivate(result.hits, (h) => h.memory.scope);
     publishActivity({ type: "search", source: "agent", title: String(query) }, { throttleSearchMs: 4000 });
     return res.json({
       query,
-      count: result.hits.length,
-      memories: result.hits.map(h => ({ id: h.memory.id, title: h.memory.title, content: h.memory.content, tags: h.memory.tags, updatedAt: h.memory.updatedAt, expired: h.expired, superseded: h.superseded })),
+      count: treffer.length,
+      memories: treffer.map(h => ({ id: h.memory.id, title: h.memory.title, content: h.memory.content, tags: h.memory.tags, updatedAt: h.memory.updatedAt, expired: h.expired, superseded: h.superseded })),
     });
   });
 
   app.post("/api/mcp/save", writeLimiter, async (req, res) => {
     const body = req.body as Record<string, unknown>;
     try {
+      // wie memory_save: eine private id wird nicht angefasst, schon gar nicht
+      // zurückgegeben — saveWithIndex würde den privaten Knoten überschreiben und
+      // seinen Inhalt in die Antwort schreiben.
+      const id = body.id !== undefined ? String(body.id) : "";
+      const verweigert = id ? aussenVor(store, id, `Memory not found: ${id}`) : null;
+      if (verweigert) return res.status(404).json({ error: verweigert.message });
       const { created, record } = saveWithIndex(store, body);
       publishActivity({ type: created ? "save" : "update", source: "agent", title: record.title });
-      return res.json({ memory: toApi(record), created });
+      return res.json({ memory: { ...toApi(record), supersededBy: zeigerFürAgenten(store, record.supersededBy) }, created });
     } catch (e) {
       return res.status(400).json({ error: e instanceof Error ? e.message : String(e) });
     }
@@ -1233,6 +1242,7 @@ export function createApp(store: KeptaStore) {
       const result = await consolidateMemories(store, {
         dryRun: body.dryRun !== false,
         threshold: typeof body.threshold === "number" ? body.threshold : undefined,
+        ausnehmen: store.privateMemoryIds(),
       });
       publishActivity({ type: "consolidate", source: "agent", title: `dryRun=${result.dryRun} applied=${result.applied}` });
       return res.json({
@@ -1250,11 +1260,18 @@ export function createApp(store: KeptaStore) {
     const id = String(body.id ?? "");
     const mode = body.mode ? String(body.mode) : "expire";
     try {
+      const verweigert = aussenVor(store, id, `Memory not found: ${id}`);
+      if (verweigert) return res.status(404).json({ error: verweigert.message });
       if (!store.getMemory(id)) return res.status(404).json({ error: `Memory not found: ${id}` });
       if (mode === "expire") {
         store.updateMemory(id, { validTo: typeof body.validTo === "number" ? body.validTo : Date.now() });
       } else if (mode === "supersede") {
-        store.supersedeMemory(id, body.supersedeBy ? String(body.supersedeBy) : null);
+        const by = body.supersedeBy ? String(body.supersedeBy) : null;
+        if (by) {
+          const nachfolger = aussenVor(store, by, `Memory not found: ${by}`);
+          if (nachfolger) return res.status(404).json({ error: nachfolger.message });
+        }
+        store.supersedeMemory(id, by);
       } else if (mode === "delete") {
         store.trashMemory(id);
       } else {

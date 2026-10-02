@@ -535,10 +535,13 @@ function jaccard(a: string[], b: string[]): number {
 /**
  * Findet Dubletten: (a) Embedding-Similarity > threshold, (b) Fallback Titel+Tags-Überlappung.
  * Ohne dryRun werden ältere Memories als ersetzt markiert (supersede), nicht gelöscht.
+ * `ausnehmen` blendet IDs vollständig aus — sie erscheinen weder als Kandidat, noch
+ * werden sie ersetzt. Der Agenten-Floor nutzt das für private Notizen: melden und
+ * anwenden sind derselbe Pool, sonst wäre ein dryRun sicher und der Klick danach nicht.
  */
 export async function consolidateMemories(
   store: KeptaStore,
-  opts: { dryRun?: boolean; threshold?: number } = {}
+  opts: { dryRun?: boolean; threshold?: number; ausnehmen?: Set<string> } = {}
 ): Promise<ConsolidationResult> {
   const threshold = opts.threshold ?? 0.92;
   const dryRun = opts.dryRun ?? true;
@@ -548,7 +551,7 @@ export async function consolidateMemories(
   // Eine tote Memory gewann dadurch als "behalten" — und eine lebende Dublette zeigte
   // anschliessend auf sie. Ergebnis: die lebende Notiz auf 40 % heruntergewichtet,
   // mit einem Nachfolger, der selbst ausgemustert ist.
-  const active = aktiveErinnerungen(store).aktiv.filter((m) => !m.record.supersededBy);
+  const active = aktiveErinnerungen(store).aktiv.filter((m) => !m.record.supersededBy && !opts.ausnehmen?.has(m.record.id));
   const candidates: ConsolidationCandidate[] = [];
 
   // Embedding-Dubletten: Centroid pro Memory+Modell vergleichen — Cosine nur zwischen
@@ -636,7 +639,11 @@ export interface DuplicateWarning {
   similarity: number;
 }
 
-/** Schnelle Prüfung beim Speichern: ähnelt der neue Inhalt einer bestehenden Memory? */
+/**
+ * Schnelle Prüfung beim Speichern: ähnelt der neue Inhalt einer bestehenden Memory?
+ * Agentenweg — die beiden Aufrufer (Dupletten-Warnung und Write-Gate) antworten
+ * direkt an den Agenten, deshalb sind private Notizen hier herausgerechnet.
+ */
 export async function findDuplicateForNew(
   store: KeptaStore,
   title: string,
@@ -660,7 +667,14 @@ export async function findDuplicateForNew(
       bestId = id;
     }
   }
-  return bestId && bestSim >= 0.92 ? { existingId: bestId, similarity: bestSim } : null;
+  if (!bestId || bestSim < 0.92) return null;
+  // Privatheits-Floor, und zwar hier statt bei den Aufrufern: beide Wege, die auf
+  // diese Prüfung folgen, enden bei einem Agenten — die Dupletten-Warnung nennt die
+  // id, und das Write-Gate schreibt sie in seinen Prompt-Grundtext. Beides würde
+  // privaten Inhalt (oder zumindest seine Existenz) in den Agentenkanal tragen, und
+  // ein UPDATE des Gates überschriebe obendrein die private Notiz des Besitzers.
+  if (store.istPrivat(bestId)) return null;
+  return { existingId: bestId, similarity: bestSim };
 }
 
 export type { MemoryType, SearchHit, SearchResult, SearchParams };
