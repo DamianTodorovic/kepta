@@ -136,6 +136,20 @@ def test_save_klemmt_konfidenz_in_den_bereich(client):
     assert CALLS[-1][2]["confidence"] == 0.0
 
 
+def test_scope_default_ist_local_wie_beim_server():
+    # Ohne Scope schreibt der Server "local" (createMemory -> SINGLE_LOCAL_USER).
+    # "user" stand nur in diesem Modell — ein Round-Trip widersprach sich selbst.
+    assert Memory(id="m1", title="t", content="c").scope == "local"
+    assert Memory.from_api({"id": "m1", "title": "t", "content": "c"}).scope == "local"
+    # Nennt der Server einen Scope, gewinnt er.
+    assert Memory.from_api({"id": "m1", "title": "t", "content": "c", "scope": "agent"}).scope == "agent"
+
+
+def test_save_ueberlaesst_den_scope_dem_server(client):
+    client.save("t", "c")
+    assert "scope" not in CALLS[-1][2]
+
+
 def test_update_uebersetzt_schluessel_nach_camelcase(client):
     client.update("m1", valid_to=123, tags=["x"])
     body = CALLS[-1][2]

@@ -57,14 +57,19 @@ def discover_url() -> str:
 
 @dataclass(frozen=True)
 class Memory:
-    """A memory. Timestamps are milliseconds since the epoch."""
+    """A memory. Timestamps are milliseconds since the epoch.
+
+    `scope` defaults to "local" — the value the server itself assigns when a
+    save arrives without one, so a locally built Memory and a round-tripped one
+    agree.
+    """
 
     id: str
     title: str
     content: str
     tags: list[str] = field(default_factory=list)
     type: MemoryType = "semantic"
-    scope: str = "user"
+    scope: str = "local"
     confidence: float | None = None
     valid_from: int | None = None
     valid_to: int | None = None
@@ -91,7 +96,7 @@ class Memory:
             content=str(d.get("content", "")),
             tags=list(d.get("tags") or []),
             type=d.get("type") or "semantic",
-            scope=d.get("scope") or "user",
+            scope=d.get("scope") or "local",
             confidence=d.get("confidence"),
             valid_from=d.get("validFrom"),
             valid_to=d.get("validTo"),

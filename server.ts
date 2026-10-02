@@ -379,6 +379,7 @@ export function createApp(store: KeptaStore) {
       dbPath: store.dbPath,
       count: activeCount(),
       embeddings: store.embeddingStats(),
+      fts: store.ftsStatus(),
       encryption: store.verschluesselung,
       mcp: { protocol: "2026-07-28", tools: MCP_TOOLS.length, http: "/mcp" },
       time: new Date().toISOString(),
@@ -425,6 +426,23 @@ export function createApp(store: KeptaStore) {
   let inboxLastScan = 0;
   const inboxQueue = new Set<string>();
 
+  /**
+   * Fallback-Extraktion für PDFs, wenn pdf.js nicht kann: schabt (text)-Show-
+   * Operatoren aus den Rohbytes. Bewusst nur Fallback — die Ausgabe ist Müll,
+   * wo pdf.js sauber liefert (Glyph-Namen, Hex-Strings, eingebettete Fonts).
+   */
+  async function pdfAusRohbytes(datei: string): Promise<string> {
+    const str = (await fs.promises.readFile(datei)).toString("utf-8");
+    const paren: string[] = [];
+    const re = /\(([^()]{2,}?)\)/g;
+    let m: RegExpExecArray | null;
+    while ((m = re.exec(str)) !== null) {
+      const s = m[1].replace(/\\n/g, "\n").replace(/\\\(/g, "(").replace(/\\\)/g, ")").replace(/\\\\/g, "\\");
+      if (s.length > 2 && /[\p{L}\p{N}]/u.test(s)) paren.push(s);
+    }
+    return paren.join("\n").trim() || str.replace(/[^\x20-\x7EÄÖÜäöüß\s]/g, " ").trim();
+  }
+
   async function autoImportFile(filePath: string) {
     try {
       // Hardened: nur Dateien innerhalb INBOX_DIR, kein Path-Traversal
@@ -433,24 +451,23 @@ export function createApp(store: KeptaStore) {
       if (!resolved.startsWith(inboxResolved + path.sep) && resolved !== inboxResolved) return;
       const baseName = path.basename(resolved);
       if (!isSafeFilename(baseName)) return;
-      const stat = fs.statSync(resolved);
-      if (!stat.isFile() || stat.size > 20_000_000) return;
+      // Nutzerdateien werden nie synchron gelesen — dieselbe Regel, die textAus()
+      // seit 2.10.3 formuliert; der Inbox-Watcher lief ihr bisher zuwider.
+      const stat = await fs.promises.stat(resolved).catch(() => null);
+      if (!stat?.isFile() || stat.size > 20_000_000) return;
       const ext = path.extname(resolved).toLowerCase();
       if (!['.txt','.md','.json','.pdf','.csv'].includes(ext) && stat.size>500000) return;
       let content = '';
       if (ext === '.pdf') {
-        const raw = fs.readFileSync(resolved);
-        // einfache Extraktion wie Dashboard: suche (text) und hex
-        const str = raw.toString('utf-8');
-        const paren: string[] = [];
-        const re = /\(([^()]{2,}?)\)/g; let m: RegExpExecArray | null;
-        while ((m = re.exec(str)) !== null) {
-          let s = m[1].replace(/\\n/g,'\n').replace(/\\\(/g,'(').replace(/\\\)/g,')').replace(/\\\\/g,'\\');
-          if (s.length>2 && /[\p{L}\p{N}]/u.test(s)) paren.push(s);
-        }
-        content = paren.join('\n').trim().slice(0,50000) || str.replace(/[^\x20-\x7EÄÖÜäöüß\s]/g,' ').slice(0,50000);
+        // pdf.js ist der Extraktor — derselbe, den die Repair-Route benutzt. Die
+        // Byte-Regex war ein zweiter und erzeugte genau den Glyph-Namen-und-
+        // Binärblock-Müll, den /api/repair/imports danach wieder aufräumen
+        // musste: der Inbox-Pfad produzierte, was der Reparatur-Pfad heilte.
+        // Fallback bleibt, weil pdf.js ein dynamisch geladenes ESM-Paket ist und
+        // an einer 20-MB-Inbox-Datei mehr scheitern kann als an einer Textdatei.
+        content = ((await textAusPdf(resolved).catch(() => "")) || (await pdfAusRohbytes(resolved))).slice(0, 50000);
       } else {
-        content = fs.readFileSync(resolved, 'utf-8').slice(0,50000);
+        content = (await fs.promises.readFile(resolved, 'utf-8')).slice(0,50000);
         if (ext==='.json') {
           try { const j=JSON.parse(content); content = Array.isArray(j) ? JSON.stringify(j,null,2).slice(0,50000) : content; } catch {}
         }

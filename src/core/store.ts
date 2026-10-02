@@ -79,6 +79,8 @@ export class KeptaStore {
   readonly dbPath: string;
   readonly extensions: KeptaExtensions;
   readonly verschluesselung: Verschluesselung;
+  /** Letzter FTS-Ausfall, wie er auftrat; null, solange der Index heil ist. */
+  private ftsPanne: { at: string; fehler: string } | null = null;
 
   constructor(dbPath: string = defaultDbPath(), extensions: KeptaExtensions = defaultExtensions()) {
     fs.mkdirSync(path.dirname(dbPath), { recursive: true });
@@ -1061,9 +1063,30 @@ export class KeptaStore {
         rows = rows.slice(0, limit);
       }
       return rows.map((r) => ({ id: String(r.id), bm25: Number(r.rank) }));
-    } catch {
+    } catch (e) {
+      // Degradation bleibt gewollt: Vektor- und Graph-Bein liefern weiter, eine
+      // kaputte Wortspur darf die Suche nicht killen. Unsichtbar darf sie aber
+      // nicht sein — die Terme sind vorqualifiziert und auf \p{L}\p{N} reduziert
+      // (stopwords.ts), Syntaxfehler durch Nutzereingaben sind damit praktisch
+      // ausgeschlossen. Was hier also schlägt, ist ein echter Defekt: korrupter
+      // Index, gesperrte DB, Query-Bug.
+      //
+      // Zwei Abnehmer, weil einer nicht reicht: audit für die Organisation mit
+      // Journal, ftsPanne für /api/health — der Sink im freien Kern ist ein Noop,
+      // audit allein sähe niemand.
+      this.ftsPanne = { at: new Date().toISOString(), fehler: e instanceof Error ? e.message : String(e) };
+      this.audit("search", "fts", { fehler: this.ftsPanne.fehler });
       return [];
     }
+  }
+
+  /**
+   * Zustand der Wortspur für Statusanzeigen. `ok: true` heißt nicht "Index
+   * gefüllt", sondern nur: die letzte Suche blieb fehlerfrei. Eine Panne wird
+   * nie zurückgesetzt — die letzte ist die, die jemand sehen soll.
+   */
+  ftsStatus(): { ok: true } | { ok: false; at: string; fehler: string } {
+    return this.ftsPanne ? { ok: false, ...this.ftsPanne } : { ok: true };
   }
 }
 

@@ -526,6 +526,8 @@ function kurzSchlafen(ms) {
 }
 var KeptaStore = class _KeptaStore {
   constructor(dbPath = defaultDbPath(), extensions = defaultExtensions()) {
+    /** Letzter FTS-Ausfall, wie er auftrat; null, solange der Index heil ist. */
+    this.ftsPanne = null;
     // Daten-Generation: JEDE Mutation an memories/chunks/entities/relations/
     // memory_entities hebt den Zähler. Der Suchpfad cacht daran (engine.ts) —
     // Trigger statt Methoden-Audit, damit auch direkte DB-Schreibzugriffe
@@ -1364,9 +1366,19 @@ var KeptaStore = class _KeptaStore {
         rows = rows.slice(0, limit);
       }
       return rows.map((r) => ({ id: String(r.id), bm25: Number(r.rank) }));
-    } catch {
+    } catch (e) {
+      this.ftsPanne = { at: (/* @__PURE__ */ new Date()).toISOString(), fehler: e instanceof Error ? e.message : String(e) };
+      this.audit("search", "fts", { fehler: this.ftsPanne.fehler });
       return [];
     }
+  }
+  /**
+   * Zustand der Wortspur für Statusanzeigen. `ok: true` heißt nicht "Index
+   * gefüllt", sondern nur: die letzte Suche blieb fehlerfrei. Eine Panne wird
+   * nie zurückgesetzt — die letzte ist die, die jemand sehen soll.
+   */
+  ftsStatus() {
+    return this.ftsPanne ? { ok: false, ...this.ftsPanne } : { ok: true };
   }
 };
 function float32ToBlob(vec) {
@@ -1755,6 +1767,7 @@ var VECTOR_FLOOR = 0.58;
 var RERANK_MAX_BOOST = 0.25;
 var RETENTION_T_DAYS = 90;
 var RETENTION_FLOOR = 0.2;
+var ENTITAET_MIN_LAENGE = 3;
 function stemme(w) {
   return w.replace(/(ung|en|er|es|em|e|s|n)$/, "");
 }
@@ -1866,13 +1879,19 @@ function embeddbareChunks(store) {
   chunkCache.set(store, { generation, chunks });
   return chunks;
 }
+function regexFlucht(s) {
+  return s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+function wortGrenzenMuster(name) {
+  return new RegExp(`(^|[^\\p{L}\\p{N}])${regexFlucht(name)}($|[^\\p{L}\\p{N}])`, "u");
+}
 var graphCache = /* @__PURE__ */ new WeakMap();
 function graphNamen(store) {
   const generation = store.datenGeneration();
   const eintrag = graphCache.get(store);
   if (eintrag && eintrag.generation === generation) return eintrag.namen;
   const { entities } = store.getGraph(void 0, 1);
-  const namen = entities.map((e) => e.name);
+  const namen = entities.map((e) => e.name).filter((name) => name.length >= ENTITAET_MIN_LAENGE).map((name) => ({ name, muster: wortGrenzenMuster(name) }));
   graphCache.set(store, { generation, namen });
   return namen;
 }
@@ -1895,8 +1914,8 @@ function suchVektoren(store) {
 }
 function entityMentionsInQuery(store, queryLower) {
   const mentions = [];
-  for (const name of graphNamen(store)) {
-    if (name.length >= 3 && queryLower.includes(name)) mentions.push(name);
+  for (const { name, muster } of graphNamen(store)) {
+    if (queryLower.includes(name) && muster.test(queryLower)) mentions.push(name);
   }
   return mentions;
 }

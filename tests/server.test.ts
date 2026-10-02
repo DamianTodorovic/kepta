@@ -44,6 +44,17 @@ describe("GET /api/health", () => {
     expect(res.body.mcp.tools).toBeGreaterThan(0);
     // Ohne Schluessel (Tests) sagt der Status das auch.
     expect(res.body.encryption).toEqual({ aktiv: false });
+    // Ein ausgefallener BM25-Bein ist der einzige Grund, den Kern und App nicht
+    // selbst bemerken — darum steht er im Status, nicht nur im Journal.
+    expect(res.body.fts).toEqual({ ok: true });
+  });
+
+  it("zeigt einen FTS-Ausfall, statt ihn zu verschlucken", async () => {
+    store.db.exec("DROP TABLE memories_fts");
+    store.ftsSearch("irgendwas");
+    const res = await request(app).get("/api/health");
+    expect(res.body.fts.ok).toBe(false);
+    expect(res.body.fts.fehler).toMatch(/no such table/);
   });
 });
 
@@ -470,5 +481,54 @@ describe("Privatheits-Floor über HTTP: Agentenwege gefiltert, Besitzerwege offe
     expect(suche.body.memories.length).toBeGreaterThan(0);
     const graph = await request(app).get("/api/graph");
     expect((graph.body.entities as { name: string }[]).map((e) => e.name)).toContain("geheime vollmacht");
+  });
+});
+
+describe("Inbox-Import: ein PDF-Extraktor, und zwar derselbe wie überall", () => {
+  function legeInbox(datei: string, inhalt: string | Buffer): string {
+    const pfad = path.join(dir, "inbox", datei);
+    fs.writeFileSync(pfad, inhalt);
+    return pfad;
+  }
+
+  it("Textdatei wird importiert und wandert ins Archiv", async () => {
+    const pfad = legeInbox("backup.txt", "Sonntags 03:00 läuft das Backup.");
+    const res = await request(app).post("/api/inbox/scan");
+    expect(res.status).toBe(200);
+    expect(res.body.imported).toBe(1);
+    const liste = await request(app).get("/api/memories");
+    expect(
+      (liste.body as { title: string; content: string }[]).some(
+        (m) => m.title === "backup" && m.content.includes("Sonntags 03:00")
+      )
+    ).toBe(true);
+    expect(fs.existsSync(pfad)).toBe(false);
+    expect(fs.existsSync(path.join(dir, "inbox", "archive", "backup.txt"))).toBe(true);
+  });
+
+  it("unlesbares PDF fällt auf die Rohbyte-Schicht zurück, statt die Inbox zu blockieren", async () => {
+    // Absichtlich kein gültiges PDF: pdf.js wirft, die Fallback-Schicht muss den
+    // (text)-Operator trotzdem finden. Vor WP 16 war diese Schicht die primäre
+    // Extraktion und lieferte den Müll, den /api/repair/imports danach
+    // wegräumen durfte — dieselbe Datei, zwei Extraktoren, ein Kreisverkehr.
+    legeInbox("kratz.pdf", Buffer.from("%PDF-1.4\n(Steuerbescheid 2026) Tj\n%%EOF", "utf-8"));
+    const res = await request(app).post("/api/inbox/scan");
+    expect(res.status).toBe(200);
+    expect(res.body.imported).toBe(1);
+    const liste = await request(app).get("/api/memories");
+    expect((liste.body as { content: string }[]).some((m) => m.content.includes("Steuerbescheid 2026"))).toBe(true);
+  });
+
+  it("der Inbox-Pfad hat keinen zweiten PDF-Extraktor und liest nie synchron", () => {
+    // Kein runtime-belegbarer Weg, pdf.js-Ausgabe von Regex-Ausgabe zu
+    // unterscheiden, ohne eine echte PDF-Binärdatei einzubetten — also wird der
+    // Code selbst gepinnt: textAusPdf ist der Primärpfad, readFileSync ist raus.
+    const quelle = fs.readFileSync(path.join(process.cwd(), "server.ts"), "utf-8");
+    const anfang = quelle.indexOf("async function autoImportFile");
+    const autoImport = quelle.slice(anfang, quelle.indexOf("function startInboxWatcher"));
+    expect(anfang).toBeGreaterThan(-1);
+    expect(autoImport).toContain("textAusPdf(resolved)");
+    expect(autoImport).not.toMatch(/readFileSync/);
+    expect(autoImport).not.toMatch(/statSync/);
   });
 });

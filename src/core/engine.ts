@@ -58,6 +58,17 @@ const RERANK_MAX_BOOST = 0.25;
 const RETENTION_T_DAYS = 90;
 const RETENTION_FLOOR = 0.2;
 
+/**
+ * Ab welcher Länge ein Entitätsname als Erwähnung in einer Query zählt.
+ *
+ * Namen unter drei Zeichen sind Buchstabenfolgen, die fast immer zufällig in
+ * einem Wort stecken: "art" matched in "start", "ki" in "Dackl". linkEntities
+ * lässt ab zwei Zeichen zu (store.ts) — Speichern und Lesen sind hier bewusst
+ * verschieden: ein Kurzname darf an einer Notiz hängen, aber nicht das Ranking
+ * ganzer Themen bestimmen.
+ */
+const ENTITAET_MIN_LAENGE = 3;
+
 // ---------- F3: lokales Reranking (deterministisch, ohne Netz) ----------
 
 /** Leichtes Stemming für de/en: Strippt einmal die häufigste Endung. */
@@ -230,13 +241,38 @@ function embeddbareChunks(store: KeptaStore): ReturnType<KeptaStore["allEmbeddab
   return chunks;
 }
 
-const graphCache = new WeakMap<KeptaStore, { generation: number; namen: string[] }>();
-function graphNamen(store: KeptaStore): string[] {
+interface EntitaetsName {
+  name: string;
+  /** Auf Wortgrenzen kompiliert: "art" matcht nicht mehr in "start". */
+  muster: RegExp;
+}
+
+/** Der Name kommt aus Nutzer- und Modelltext — vor dem Regex-Bau escapen. */
+function regexFlucht(s: string): string {
+  return s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
+function wortGrenzenMuster(name: string): RegExp {
+  return new RegExp(`(^|[^\\p{L}\\p{N}])${regexFlucht(name)}($|[^\\p{L}\\p{N}])`, "u");
+}
+
+/**
+ * Die Wortspur-Entitäten, einmal pro Generation gebaut — Namen samt
+ * vorkompiliertem Wortgrenzen-Muster. Kompilierung gehört in den Cache, weil
+ * sonst pro Query über alle Entitätsnamen ein Regex-Bau entsteht; bei einer
+ * Datenbank mit tausenden Entitäten wäre das genau der Kostenblock, den der
+ * Cache abschalten soll.
+ */
+const graphCache = new WeakMap<KeptaStore, { generation: number; namen: EntitaetsName[] }>();
+function graphNamen(store: KeptaStore): EntitaetsName[] {
   const generation = store.datenGeneration();
   const eintrag = graphCache.get(store);
   if (eintrag && eintrag.generation === generation) return eintrag.namen;
   const { entities } = store.getGraph(undefined, 1);
-  const namen = entities.map((e) => e.name);
+  const namen = entities
+    .map((e) => e.name)
+    .filter((name) => name.length >= ENTITAET_MIN_LAENGE)
+    .map((name) => ({ name, muster: wortGrenzenMuster(name) }));
   graphCache.set(store, { generation, namen });
   return namen;
 }
@@ -269,8 +305,11 @@ function suchVektoren(store: KeptaStore): SuchVektoren {
 
 function entityMentionsInQuery(store: KeptaStore, queryLower: string): string[] {
   const mentions: string[] = [];
-  for (const name of graphNamen(store)) {
-    if (name.length >= 3 && queryLower.includes(name)) mentions.push(name);
+  for (const { name, muster } of graphNamen(store)) {
+    // includes ist Vorfilter, nicht Entscheidung: ein Wortgrenzen-Treffer setzt
+    // voraus, dass der Name zusammenhängend in der Query steht. Das erhält den
+    // schnellen Pfad der alten Fassung und verwirft nur die Zufallstreffer.
+    if (queryLower.includes(name) && muster.test(queryLower)) mentions.push(name);
   }
   return mentions;
 }

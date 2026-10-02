@@ -345,7 +345,7 @@ export function saveWithIndex(store: KeptaStore, args: Record<string, unknown>):
 /**
  * Privatheits-Floor: eine Notiz mit scope "private" verlässt KEPTA nie über den
  * **Agentenkanal** — also über die acht MCP-Werkzeuge (stdio), über `POST /mcp`
- * und über die drei HTTP-Spiegel `/api/mcp/search|consolidate|forget`, die laut
+ * und über die vier HTTP-Spiegel `/api/mcp/search|save|consolidate|forget`, die laut
  * Changelog genau „MCP tool parity over HTTP" sind. Bis 3.1.2 galt der Floor nur
  * für memory_search und memory_list; Graph, Consolidate und die id-Wege lieferten
  * private Titel, IDs und Dupletten aus — das Versprechen war transportabhängig.

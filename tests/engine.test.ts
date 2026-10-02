@@ -93,6 +93,33 @@ describe("searchMemories (RRF-Fusion)", () => {
     expect(res.hits.find((h) => h.memory.id === m.id)?.components.entityRank).not.toBeNull();
   });
 
+  // Alle drei Tests schalten Wort- und Vektor-Bein per Ablation ab: gemessen wird
+  // ausschließlich, wen das Entitäts-Bein hochzieht.
+  it("Entitäts-Bein matcht auf Wortgrenzen, nicht als Substring", async () => {
+    const m = store.createMemory({ title: "Farblehre", content: "Die drei Grundtöne der Malerei" });
+    store.linkEntities(m.id, ["art"]);
+    // "art" steckt in "Neustart" — als nacktes Substring hätte die Notiz einen Rang bekommen.
+    expect((await searchMemories(store, { query: "Neustart", tracks: { bm25: false, vector: false } })).hits).toHaveLength(0);
+    const treffer = await searchMemories(store, { query: "art", tracks: { bm25: false, vector: false } });
+    expect(treffer.hits.find((h) => h.memory.id === m.id)?.components.entityRank).not.toBeNull();
+  });
+
+  it("Entitäten unter der Längen-Schwelle bleiben außerhalb der Wortspur", async () => {
+    const m = store.createMemory({ title: "Kürzel", content: "Das Kürzel des Altprojekts" });
+    store.linkEntities(m.id, ["ki"]);
+    // Die Kante muss wirklich existieren — sonst bewiese der Test nichts.
+    expect(store.getEntityByName("ki")).not.toBeNull();
+    expect((await searchMemories(store, { query: "ki", tracks: { bm25: false, vector: false } })).hits).toHaveLength(0);
+  });
+
+  it("Sonderzeichen im Entitätsname sind Literale, kein Regex", async () => {
+    const m = store.createMemory({ title: "Altbestand", content: "Ein C++ Dienst von 2019" });
+    store.linkEntities(m.id, ["c++"]);
+    // Un escaped wäre "c++" kein Muster, sondern ein Syntaxfehler ("nothing to repeat").
+    const res = await searchMemories(store, { query: "wer kennt noch c++", tracks: { bm25: false, vector: false } });
+    expect(res.hits.find((h) => h.memory.id === m.id)?.components.entityRank).not.toBeNull();
+  });
+
   it("Vektor-Bein trägt bei, wenn embedQuery einen Vektor liefert (fetch gemockt)", async () => {
     // embedQuery ruft Ollama; wir liefern fakeVec(query) zurück, sodass die
     // Query zu den mit fakeVec geseedeten Chunks passt und das Vektor-Bein greift.
