@@ -15,7 +15,7 @@ export default defineConfig({
       reporter: ["text", "html", "lcov", "json-summary"],
       // Der Headless-Core ist das ganze Repo: Engine, Verschluesselung,
       // MCP-Server und der Memory-API-Server. GUI-/Browser-Glue existiert hier
-      // nicht (die Desktop-App lebt im kepta-enterprise-Repository).
+      // nicht (die Desktop-App lebt im kepta-app-Repository).
       include: [
         "src/core/**",
         "server.ts",

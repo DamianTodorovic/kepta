@@ -223,6 +223,81 @@ describe("Abzeichen und Anwendungstexte behaupten nichts Falsches", () => {
     expect(lies("README.md"), `README.md-Badge zeigt nicht ${version}`).toContain(`badge/version-${version}-blue`);
   });
 
+  it("die READMEs nennen die Coverage-Schwellen aus vitest.config.ts", async () => {
+    // Der Kommentar am Ende dieser Datei versprach seit 10.9. einen Waechter fuer
+    // die Schwellen — geschrieben wurde er nie, und "coverage 92 %" stand
+    // monatelang in den READMEs. Jetzt wirklich: verglichen wird mit dem
+    // importierten Config-Objekt, nicht mit einer zweiten Regex-Paraphrase davon.
+    const cfg = (await import("../vitest.config")).default as {
+      test?: {
+        coverage?: {
+          thresholds?: {
+            lines?: number;
+            functions?: number;
+            branches?: number;
+            statements?: number;
+            "src/core/**"?: { lines?: number; functions?: number; branches?: number; statements?: number };
+          };
+        };
+      };
+    };
+    const schw = cfg.test?.coverage?.thresholds;
+    if (!schw) throw new Error("vitest.config.ts hat keine Coverage-Schwellen mehr — Waechter anpassen");
+    const kern = schw["src/core/**"];
+    if (!kern) throw new Error("vitest.config.ts hat keine src/core-Schwellen mehr — Waechter anpassen");
+    const arten = ["lines", "functions", "branches", "statements"] as const;
+    const mass = [
+      ...arten.map((k) => ({ bereich: "alles zusammen", k, wert: Number(schw[k]) })),
+      ...arten.map((k) => ({ bereich: "src/core", k, wert: Number(kern[k]) })),
+    ];
+    // Eine fehlende Spalte würde als NaN laufen und dann eine RegExp nach "NaN %"
+    // erzeugen — die Meldung fuehrt in die Irre, weil sie dem README die Schuld gibt.
+    for (const m of mass) {
+      expect(Number.isFinite(m.wert), `vitest.config.ts liefert fuer ${m.bereich}/${m.k} keine Zahl`).toBe(true);
+    }
+    for (const datei of dateien) {
+      const inhalt = lies(datei);
+      for (const m of mass) {
+        expect(
+          new RegExp(`${m.wert}\\s*%`).test(inhalt),
+          `${datei} nennt die Schwelle ${m.wert} % (${m.bereich}, ${m.k}) nicht mehr`
+        ).toBe(true);
+      }
+      // Und der Scope: diese Zahlen gelten nur fuer den gemessenen Teil des Repos.
+      expect(inhalt, `${datei} erklaert nicht, was ueberhaupt gemessen wird`).toMatch(/src\/core\/\*\*[^|]*server\.ts/);
+    }
+  });
+
+  it("jede Cache-Sekunde in den READMEs liegt als Record in tools/latenz/ergebnisse", () => {
+    // "warmer Such-Cache 0,74 s" stand in beiden READMEs und in keinem JSON —
+    // damit verletzte die Seite genau die Regel, die tools/latenz/README.md
+    // selbst aufstellt. Der Waechter gilt nicht rueckwirkend fuer CHANGELOG
+    // (Geschichte), aber fuer alles, was neu behauptet wird.
+    const ordner = path.join(wurzel, "tools", "latenz", "ergebnisse");
+    const belegteSekunden = new Set<string>();
+    for (const datei of fs.readdirSync(ordner).filter((f) => f.endsWith(".json"))) {
+      const record = JSON.parse(lies(path.join("tools", "latenz", "ergebnisse", datei))) as {
+        suche?: { warmupErsteAbfrageMs?: unknown };
+      };
+      const w = record.suche?.warmupErsteAbfrageMs;
+      if (typeof w === "number") belegteSekunden.add((w / 1000).toFixed(2));
+    }
+    const cacheZeile = /cache|ingest|einspeisen/i;
+    for (const datei of dateien) {
+      for (const zeile of lies(datei).split("\n")) {
+        if (!cacheZeile.test(zeile)) continue;
+        for (const sekunde of zeile.matchAll(/(\d+(?:[.,]\d+)?)\s?s\b/g)) {
+          const wert = Number(sekunde[1].replace(",", "."));
+          const gemeldet = Number.isFinite(wert) ? wert.toFixed(2) : "";
+          expect(
+            belegteSekunden.has(gemeldet),
+            `${datei} behauptet ${sekunde[0]} am Such-Cache, ohne dass ein Record in tools/latenz/ergebnisse diese Warmup-Zahl haelt`
+          ).toBe(true);
+        }
+      }
+    }
+  });
+
 });
 
 // Nachtrag 10.9.2026: "Gesamt-Coverage ~91 %" stand in den READMEs, gemessen

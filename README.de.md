@@ -1,5 +1,5 @@
 <p align="center"><img src="docs/kepta-logo.svg" width="88" alt="KEPTA"></p>
-<p align="center"><img src="https://img.shields.io/badge/tests-423%20passing-brightgreen" alt="Tests"> <img src="https://img.shields.io/badge/coverage%20gate-%E2%89%A5%2070%25%20der%20Zeilen-brightgreen" alt="Coverage-Gate"> <img src="https://img.shields.io/badge/Verschl%C3%BCsselung-SQLCipher%204-green" alt="verschlüsselt"> <a href="https://www.linkedin.com/in/damian-todorovic-244235434"><img src="https://img.shields.io/badge/LinkedIn-Damian%20Todorovic-0A66C2?logo=linkedin&logoColor=white" alt="Damian Todorovic auf LinkedIn"></a></p>
+<p align="center"><img src="https://img.shields.io/badge/tests-425%20passing-brightgreen" alt="Tests"> <img src="https://img.shields.io/badge/coverage%20gate-%E2%89%A5%2070%25%20der%20Zeilen-brightgreen" alt="Coverage-Gate"> <img src="https://img.shields.io/badge/Verschl%C3%BCsselung-SQLCipher%204-green" alt="verschlüsselt"> <a href="https://www.linkedin.com/in/damian-todorovic-244235434"><img src="https://img.shields.io/badge/LinkedIn-Damian%20Todorovic-0A66C2?logo=linkedin&logoColor=white" alt="Damian Todorovic auf LinkedIn"></a></p>
 
 # KEPTA — das Gedächtnis für KI-Systeme (deutsches Readme)
 
@@ -66,7 +66,7 @@ npm install && npm run dev
 
 **4. Docker** (nur MCP-Server): `docker build -t kepta-mcp .`
 
-**Zahlen:** **423 Tests** · 31 Routen · `npm run eval` — Eval auf 58 Notizen / 45 Anfragen (Hit@1, Precision@5, MRR).
+**Zahlen:** **425 Tests** · 31 Routen · `npm run eval` — Eval auf 58 Notizen / 45 Anfragen (Hit@1, Precision@5, MRR).
 
 ## 🔍 Wie eine Anfrage ihre Antwort findet
 
@@ -95,12 +95,16 @@ SQLCipher 4 (AES-256, HMAC-SHA512 je Seite, WAL eingeschlossen). Der Schlüssel 
 
 | Bereich | Schwellen |
 |---|---|
-| alles zusammen | **70 %** der Zeilen · **72 %** der Funktionen · 56 % Branches · 66 % Statements |
-| `src/core` | **87 %** der Zeilen · **89 %** der Funktionen · 74 % Branches · 85 % Statements |
+| alles zusammen im Coverage-Scope | **70 %** der Zeilen · **72 %** der Funktionen · **56 %** Branches · **66 %** Statements |
+| `src/core` | **87 %** der Zeilen · **89 %** der Funktionen · **74 %** Branches · **85 %** Statements |
+
+Gemessen wird `src/core/**` plus `server.ts` (`vitest.config.ts`) — der headless Kern,
+also das Produkt. `tools/`, `scripts/`, `npm/` und `python/` haben eigene Suiten, aber
+keine Schwelle; sie stecken nicht in diesen Prozentzahlen.
 
 ### Latenz — gemessen, öffentlich
 
-Median-Suchzeiten auf demselben Laptop (Apple M4), jeder Lauf committed in [`tools/latenz/ergebnisse/`](tools/latenz/ergebnisse/): **46,6 ms** Median bei 100.000 Erinnerungen (p95 87,6 ms), **276,5 ms** Median bei **1.000.000 Erinnerungen**, und ein warmer Such-Cache **0,74 s** nach dem Einspeisen einer Million Notizen. Durchgehend verschlüsselt.
+Median-Suchzeiten auf demselben Laptop (Apple M4), jeder Lauf committed in [`tools/latenz/ergebnisse/`](tools/latenz/ergebnisse/): **46,6 ms** Median bei 100.000 Erinnerungen (p95 87,6 ms), **276,5 ms** Median bei **1.000.000 Erinnerungen**. Durchgehend verschlüsselt.
 
 ### Benchmark-Rekord — LongMemEval-S, vollständig öffentlich
 

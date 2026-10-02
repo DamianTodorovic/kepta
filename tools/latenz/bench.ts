@@ -178,18 +178,22 @@ for (let i = 0; i < QUERIES; i++) {
 }
 
 // ---------- Phase B: Suchen über DEN einen Suchpfad ----------
-async function messeSuchen(label: string): Promise<Record<string, number | boolean>> {
+async function messeSuchen(label: string): Promise<Record<string, number | boolean | null>> {
   const t0 = Date.now();
   const latenz: number[] = [];
   let mitVektoren = 0;
+  // Der erste Aufruf traegt den kalten Cache-Aufbau — der ist die Zahl, die beim
+  // Delta-Cache interessiert. Bisher wurde sie nur auf die Konsole geschrieben und
+  // dann verworfen, und zitierbare Warmup-Zahlen standen damit in keinem Record.
+  let warmupErsteAbfrageMs: number | null = null;
   for (let i = 0; i < QUERIES; i++) {
     const s0 = performance.now();
     const res = await searchMemories(store, { query: abfragen[i], limit: 10 });
     latenz.push(performance.now() - s0);
     if (res.usedVectors) mitVektoren++;
     if (i === 0) {
-      const warmupMs = Date.now() - t0;
-      console.log(`  [${label}] Warmup (inkl. first-load) ${warmupMs} ms`);
+      warmupErsteAbfrageMs = Date.now() - t0;
+      console.log(`  [${label}] Warmup (inkl. first-load) ${warmupErsteAbfrageMs} ms`);
       latenz.length = 0; // Warmup fliegt raus
       mitVektoren = 0;
     }
@@ -198,7 +202,7 @@ async function messeSuchen(label: string): Promise<Record<string, number | boole
   const p = (q: number) => Number(latenz[Math.min(latenz.length - 1, Math.floor(q * latenz.length))].toFixed(2));
   const mittel = Number((latenz.reduce((a, b) => a + b, 0) / latenz.length).toFixed(2));
   console.log(`  [${label}] n=${latenz.length} p50=${p(0.5)} p95=${p(0.95)} p99=${p(0.99)} ms (Mittel ${mittel}) · mit Vektoren: ${mitVektoren}/${latenz.length}`);
-  return { p50: p(0.5), p95: p(0.95), p99: p(0.99), mittel, n: latenz.length, mitVektoren };
+  return { p50: p(0.5), p95: p(0.95), p99: p(0.99), mittel, n: latenz.length, mitVektoren, warmupErsteAbfrageMs };
 }
 
 console.log(`[latenz] Suche: ${QUERIES} Abfragen über searchMemories() …`);

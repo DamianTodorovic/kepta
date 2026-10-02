@@ -22,13 +22,13 @@ Läuft mit `npx tsx tools/latenz/bench.ts --n 100000 --out ergebnisse/latenz-100
 | 1.10.2026 | **AND-first-FTS** 1 Mio (`latenz-1m-fts-2026-10-01.json`) | 1.000.000 | **276,5 ms** | 672,5 ms | 729,3 ms | — |
 | 1.10.2026 | **+ Delta-Cache-Pflege** 1 Mio (`latenz-1m-delta-2026-10-01.json`) | 1.000.000 | 256,5 ms | 649,4 ms | 715,9 ms | — |
 
-**Der Delta-Durchbruch:** Der Cache-Aufbau nach dem Ingest kollabierte von **359,4 s auf 0,74 s** — der Such-Cache wächst jetzt mit jedem Write mit (`aktiviereSuchCacheDelta(store)` nach dem Store-Aufbau; Store-Methoden melden jede Memory-Mutation, die Engine patcht deltafisch). Der SQLite-Trigger bleibt als Sicherheitsnetz: Wege ohne Meldung (Roh-SQL, Importe) verschieben die Generation ohne Patch → Volllauf-Fallback. Serverbetrieb mit häufigen Writes zahlt damit nie einen 6-Minuten-Neuaufbau.
+**Der Delta-Durchbruch:** Der Cache-Aufbau nach dem Ingest kollabierte von **359,4 s auf 0,74 s** (Warmup-Zahl aus dem Konsolen-Log des 1-Mio-Laufs, **kein committed Record** — `bench.ts` schreibt sie seit diesem Stand als `suche.warmupErsteAbfrageMs` ins JSON) — der Such-Cache wächst jetzt mit jedem Write mit (`aktiviereSuchCacheDelta(store)` nach dem Store-Aufbau; Store-Methoden melden jede Memory-Mutation, die Engine patcht deltafisch). Der SQLite-Trigger bleibt als Sicherheitsnetz: Wege ohne Meldung (Roh-SQL, Importe) verschieben die Generation ohne Patch → Volllauf-Fallback. Serverbetrieb mit häufigen Writes zahlt damit nie einen 6-Minuten-Neuaufbau.
 
 ## Wo die verbleibenden Millisekunden liegen (1-Mio-Befund nach AND-first-FTS)
 
 1. **Median 276,5 ms** — der AND-Schnitt hat den typischen Fall 2,3× beschleunigt und die Retrieval-Qualität byte-identisch gehalten (Eval vor/nach). 
 2. **Der p95-Schwanz (672 ms):** dünne AND-Schnitte zahlen den vollen OR-Scan doppelt — auf dem Bench-Korpus ein Worst-Case, denn jedes Dokument teilt denselben 12-Wort-Vokabular (in echter Zipf-Verteilung sind Terme viel seltener). Hebel: OR-Fallback mit begrenzter Scan-Tiefe (FTS5 bietet das nicht nativ — eigener Posting-Cursor) oder Quorum-Matching (`NEAR`/K-of-N), beides Retrieval-Verhalten → nur mit Eval-Gegenprobe.
-3. **Cache-Aufbau bei 1 Mio: GELÖST (Delta-Pflege)** — 398 s → 0,74 s, weil der Cache mit jedem Write mitwächst; der Trigger-Generation-Vergleich bleibt als Sicherheitsnetz für unbemeldete Schreibwege (Roh-SQL, Importe).
+3. **Cache-Aufbau bei 1 Mio: GELÖST (Delta-Pflege)** — 398 s → 0,74 s (Konsolen-Warmup, kein committed Record), weil der Cache mit jedem Write mitwächst; der Trigger-Generation-Vergleich bleibt als Sicherheitsnetz für unbemeldete Schreibwege (Roh-SQL, Importe).
 4. Kosinus-Spur klein (Normen vorgerechnet, 20k Chunks konstant); Rerank über 500 Kandidaten konstant.
 
 Ehrliche Einordnung: Die < 50 ms-Zahl bei 1 Mio ist **nicht erreicht** und wird nicht behauptet, bevor der Record im Repo liegt. Stand: 276,5 ms (Median) / 672,5 ms (p95).
