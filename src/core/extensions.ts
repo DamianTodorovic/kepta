@@ -15,13 +15,6 @@ export interface MemoryRef {
   type: string;
 }
 
-/** Minimal handle on a memory without loading the full record. */
-export interface MemoryRef {
-  id: string;
-  scope: string;
-  type: string;
-}
-
 /** May this actor read/write? Local default: always yes. */
 export interface PolicyGate {
   canRead(actor: ActorContext, ref: MemoryRef): boolean;
@@ -41,15 +34,21 @@ export interface AuditEvent {
   detail?: Record<string, unknown>;
 }
 
-/** Journal sink — free edition ships a real local journal, not a noop. */
+/**
+ * Journal sink — the seam an organisation plugs into. Local default: NOOP_SINK,
+ * which means the core writes no journal at all. A plaintext list of titles and
+ * access patterns beside an SQLCipher file would undo the promise the database
+ * is there to keep; a host that wants a journal passes one in (SECURITY.md,
+ * "Audit").
+ */
 export interface AuditSink {
   emit(event: AuditEvent): void;
 }
 
 /**
- * Local default: append-only JSONL journal at ~/.kepta/audit.jsonl.
- * Every read, write and (potential) network egress is on the record —
- * proof you can hand to a client, not a promise.
+ * Ready-made sink for hosts that do want the journal: append-only JSONL, by
+ * default at ~/.kepta/audit.jsonl — plaintext next to the encrypted database.
+ * Deliberately not wired by defaultExtensions().
  */
 export class FileAuditSink {
   private file: string;
@@ -152,7 +151,9 @@ export const MANUAL_TRASH: RetentionPolicy = {
 
 /**
  * The free-edition set. Everything behaves exactly like KEPTA before these
- * hooks existed — the seams are the feature, not the implementations.
+ * hooks existed — the seams are the feature, not the implementations. Audit is
+ * the one seam whose default writes nothing: a local install keeps no plaintext
+ * journal of who read what (SECURITY.md, "Audit").
  */
 export function defaultExtensions(): KeptaExtensions {
   return {

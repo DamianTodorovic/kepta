@@ -30,9 +30,10 @@ random bytes; SQLite reports "file is not a database".
   keychain for the key the same way KEPTA does.
 - A running KEPTA: the local API (`127.0.0.1`, no authentication) serves the
   decrypted knowledge to programs on the same machine, as before.
-- Files outside the database: the inbox folder, `profile.json`,
-  `scan-config.json`, the audit and sync journals (`*.jsonl`) and
-  `endpoint.json`. Exports you make yourself (Markdown export) are plaintext;
+- Files outside the database: the inbox folder, `profile.json`, the sync
+  journal (`*.jsonl`) and `endpoint.json`. A host that wires the optional
+  `LocalFileAuditSink` adds a plaintext `audit.jsonl` to that list — see
+  "Audit" below. Exports you make yourself (Markdown export) are plaintext;
   Device Sync bundles are encrypted separately with their own passphrase.
 - Plaintext left behind by versions before 2.11: backups and snapshots of the
   old file, and blocks an SSD has not overwritten yet. Delete old backups, and
@@ -52,7 +53,40 @@ To restore on a new machine, put the key back before the first start — macOS:
 `security add-generic-password -s app.kepta.database -a kepta -w <key>` — or
 start KEPTA once with `KEPTA_DB_KEY=<key>`.
 
-Scope: the local server on `localhost:3000`, the file watcher on `~/.kepta/inbox`, and MCP over stdio.
+Scope: the local server on `localhost:3000` including `POST /mcp`, the file watcher on `~/.kepta/inbox`, and MCP over stdio.
+
+## Scope "private" — disclosure default, not access control
+
+A memory saved with `scope: "private"` never reaches an agent: not the eight MCP
+tools over stdio, not `POST /mcp`, not the four HTTP mirrors
+`/api/mcp/{search,save,consolidate,forget}`. On those channels a private note is
+indistinguishable from one that does not exist — same wording, same status code,
+also when an agent was handed the id some other way.
+
+The owner channels are deliberately not filtered: `GET /api/memories`,
+`GET /api/memories/search`, `POST /api/search`, `GET /api/graph`, export and
+Device Sync. The same routes feed the desktop app, where the owner reads and
+searches their own private notes — filtering below that line would make the app
+blind. "private" is therefore an agent/owner separation, **not** protection
+against a local process: anything running as your user can open the database
+with the system key and see everything, private included. Same boundary as
+"Encryption at rest" above.
+
+## Audit
+
+`store.audit()` fires on read, write, update, delete, search, export and egress.
+Inside the core it only reaches `KeptaExtensions.audit`, and the free default is
+`NOOP_SINK`: the core writes no journal. A plaintext list of titles and access
+patterns sitting next to an SQLCipher database would weaken exactly the promise
+the database exists to keep.
+
+Journals are the host's decision, and the seam is public:
+
+- `LocalFileAuditSink` (append-only JSONL, plaintext — see "Files outside the
+  database" above). Pass it as `extensions.audit` when constructing a `KeptaStore`.
+- The desktop app keeps its audit chain in the encrypted database instead, one
+  hash over the previous entry per row; the enterprise deployment writes
+  per-tenant JSONL chains. Both consume this same event shape.
 
 ## Not in scope
 
