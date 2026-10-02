@@ -1,7 +1,7 @@
 // KEPTA Core — Typen für Storage & Retrieval (React-frei, Node-only)
 
 export type MemoryType = "semantic" | "episodic" | "procedural" | "reference";
-export type MemoryScope = string; // "local" | "user:<id>" | "agent:<id>" | "session:<id>"
+export type MemoryScope = string; // "local" | "user:<id>" | "agent:<id>" | "session:<id>" | "private" (bleibt dem Besitzer vorbehalten, siehe Privatheits-Floor in mcp.ts)
 
 export interface MemoryRecord {
   id: string;

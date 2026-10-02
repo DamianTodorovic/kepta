@@ -2191,7 +2191,7 @@ var TOOLS = [
   {
     name: "memory_search",
     title: "Search memory",
-    description: "Hybrid retrieval (BM25 + vectors + knowledge graph) over KEPTA memory. Expired and superseded memories are flagged as such.",
+    description: "Hybrid retrieval (BM25 + vectors + knowledge graph) over KEPTA memory. Expired and superseded memories are flagged as such; memories the owner marked private never appear here.",
     inputSchema: {
       type: "object",
       properties: {
@@ -2217,7 +2217,7 @@ var TOOLS = [
         content: opt(stringSchema("Content")),
         tags: opt({ type: "array", items: { type: "string" } }),
         type: opt({ type: "string", enum: ["semantic", "episodic", "procedural", "reference"], description: "semantic=fact, episodic=event, procedural=how-to, reference=imported document" }),
-        scope: opt(stringSchema("user/agent/session scope, default local")),
+        scope: opt(stringSchema('Scope, default "local". "private" keeps the memory out of every agent channel \u2014 search, list, graph, consolidate, id lookups \u2014 while the owner still sees it in the app.')),
         confidence: opt({ type: "number", description: "0..1" }),
         validFrom: opt({ type: "integer", description: "epoch milliseconds" }),
         validTo: opt({ type: "integer", description: "epoch milliseconds" })
@@ -2281,7 +2281,7 @@ var TOOLS = [
   {
     name: "memory_list",
     title: "List memories",
-    description: "Lists memories, paginated and filterable.",
+    description: "Lists memories, paginated and filterable. Private ones are never listed, not even when scope is asked for explicitly.",
     inputSchema: {
       type: "object",
       properties: {
