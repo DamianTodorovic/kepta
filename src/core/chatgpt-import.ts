@@ -8,7 +8,7 @@
 // gespeichert. IDs sind deterministisch (chatgpt:<conversation>:<node>), damit
 // ein erneuter Import aktualisiert statt verdoppelt — Re-Import ist idempotent.
 //
-// Aufruf: npx kepta import chatgpt <conversations.json | entpackter-Export-Ordner>
+// Aufruf: npx -y kepta-mcp import chatgpt <conversations.json | entpackter-Export-Ordner>
 // (Das Original-Export-Archiv ist eine ZIP — erst entpacken; der Runner liest
 // bewusst ohne ZIP-Abhängigkeit, das npm-Bundle erlaubt nur eine.)
 import fs from "node:fs";
@@ -151,7 +151,7 @@ export function importChatgptKommando(store: KeptaStore, argumente: string[]): n
   if (positionell[0] === "chatgpt") positionell.shift();
   const quelle = positionell[0];
   if (!quelle) {
-    console.error("Aufruf: npx kepta import chatgpt <conversations.json | export-ordner> [--dry-run]");
+    console.error("Aufruf: npx -y kepta-mcp import chatgpt <conversations.json | export-ordner> [--dry-run]");
     console.error("ChatGPT → Einstellungen → Datenkontrolle → Daten exportieren → ZIP entpacken → diesen Ordner angeben.");
     return 2;
   }

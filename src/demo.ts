@@ -1,4 +1,4 @@
-// `npx kepta demo` — die 60-Sekunden-Führung.
+// `npx -y kepta-mcp demo` — die 60-Sekunden-Führung.
 //
 // Legt eine WEGWERF-Demodatenbank im temporären Verzeichnis an (niemals die
 // echte Datei unter ~/.kepta) und füllt sie mit einem fiktiven Kanzlei-Korpus
@@ -105,7 +105,7 @@ export function demoDatenbank(dbPfad: string, jetzt = Date.now()): { anzahl: num
   }
 }
 
-/** `npx kepta demo`: Wegwerf-DB bauen, Kennzahlen zeigen, Weg zur App zeigen. */
+/** `npx -y kepta-mcp demo`: Wegwerf-DB bauen, Kennzahlen zeigen, Weg zur App zeigen. */
 export async function starteDemo(): Promise<number> {
   const ordner = fs.mkdtempSync(path.join(os.tmpdir(), "kepta-demo-"));
   const dbPfad = path.join(ordner, "kepta.db");

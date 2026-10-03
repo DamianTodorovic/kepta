@@ -175,7 +175,7 @@ else if (process.argv[2] === "demo") {
 }
 
 /**
- * `npx kepta import chatgpt <pfad>`: den ChatGPT-Datenexport in Memories
+ * `npx -y kepta-mcp import chatgpt <pfad>`: den ChatGPT-Datenexport in Memories
  * verwandeln — die Kompatibilitätsfalle. Läuft auf derselben verschlüsselten
  * Datenbank wie UI und MCP-Server.
  */

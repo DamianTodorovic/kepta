@@ -24,6 +24,7 @@ The audit pass on this repository, done as fixes rather than as notes. Every ite
 - **Dead weight out:** ~2,000 lines of abandoned browser-UI code, a duplicated HTML sanitizer in `server.ts`, unused imports and limiter remains.
 
 ### Fixed
+- **A copy-paste command that 404s.** Both READMEs, the usage line the CLI prints when ChatGPT-Import is called without a path, and three source comments sent users to the importer through a package named `kepta`. That package does not exist on npm — the repository root is `private`, the published name is `kepta-mcp` — so the command broke at exactly the moment someone copied it (`npm error 404 Not Found - GET https://registry.npmjs.org/kepta`). The working spelling — `npx -y kepta-mcp` with the same arguments — is now in all nine places, and `tests/doku-zahlen.test.ts` rejects any `npx` target in the documentation and sources that a fresh machine cannot install. `473 → 474 tests`.
 - A look-alike character from a foreign alphabet had slipped into a command name in this file (`kepta stats`, with a Cyrillic letter where the final Latin "a" belongs) — invisible when reading, broken when copied. The copyable documentation files are now scanned for characters outside the alphabets they use.
 
 ## [3.1.2] — 2026-10-02
@@ -216,7 +217,7 @@ The audit pass on this repository, done as fixes rather than as notes. Every ite
 ## [2.13.4] — 2026-09-20
 
 ### Added
-- **ChatGPT-Import (die Kompatibilitätsfalle):** `npx kepta import chatgpt
+- **ChatGPT-Import (die Kompatibilitätsfalle):** `npx -y kepta-mcp import chatgpt
   <entpackter-Export-Ordner>` verwandelt den ChatGPT-Datenexport in Memories —
   nur user-Nachrichten (die Quelle der Wahrheit über den Nutzer), Assistant-
   Antworten werden gezählt, aber nicht gespeichert. Deterministische IDs machen

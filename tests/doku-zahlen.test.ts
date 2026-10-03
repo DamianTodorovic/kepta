@@ -576,3 +576,53 @@ describe("Dokumentation: Messbedingungen und Committens stehen so im Text, wie d
     }
   });
 });
+// README und die Fehlermeldung der CLI selbst nannten `npx -y kepta import
+// chatgpt …`. Das Paket `kepta` existiert auf npm nicht (Root ist "private",
+// veröffentlicht ist `kepta-mcp`) — der Befehl war also kopierbar und scheiterte
+// beim Kopieren mit einem 404. Befehle in der Doku müssen den Namen tragen, unter
+// dem das Ding wirklich zu holen ist.
+describe("Doku und Meldungen: npx ruft nur das veröffentlichte Paket", () => {
+  const ordner = ["src", "scripts", "npm", "python", "tools"];
+  const Quelldateien = () => {
+    const funde: string[] = [];
+    const sammle = (ordnerRelativ: string) => {
+      const absolut = path.join(wurzel, ordnerRelativ);
+      if (!fs.existsSync(absolut)) return;
+      for (const eintrag of fs.readdirSync(absolut, { withFileTypes: true })) {
+        if (eintrag.name === "node_modules" || eintrag.name === "dist") continue;
+        const pfad = path.join(ordnerRelativ, eintrag.name);
+        if (eintrag.isDirectory()) sammle(pfad);
+        else if (/\.(md|ts|mjs|py)$/.test(eintrag.name)) funde.push(pfad);
+      }
+    };
+    for (const o of ordner) sammle(o);
+    for (const md of ["README.md", "README.de.md", "CHANGELOG.md", "SECURITY.md"]) {
+      if (fs.existsSync(path.join(wurzel, md))) funde.push(md);
+    }
+    return funde.sort();
+  };
+
+  it("jeder npx-Aufruf heisst kepta-mcp (oder ein Tool, das es wirklich gibt)", () => {
+    const erlaubt = new Set(["kepta-mcp", "tsx", "vitest", "eslint", "typescript"]);
+    const befunde: string[] = [];
+    const dateien = Quelldateien();
+    expect(dateien.length, "keine Doku-/Quelldateien gefunden — Waechter ins Leere").toBeGreaterThan(10);
+    for (const datei of dateien) {
+      const text = lies(datei);
+      // Zwei Lesarten, damit ein deutscher Prosa-Satz ("damit npx dieselbe
+      // Fassung installiert") nicht als Befehl durchgeht: der Befehl steht nach
+      // `npx -y`, oder er nennt ein kepta-* Paket.
+      const Muster = [/(?:^|[`'"\s])npx\s+-y\s+([a-z][a-z0-9._-]*)/g, /(?:^|[`'"\s])npx\s+(kepta[a-z-]*)/g];
+      for (const muster of Muster) {
+        for (const m of text.matchAll(muster)) {
+          const name = m[1];
+          if (erlaubt.has(name)) continue;
+          const start = (m.index ?? 0) + m[0].indexOf(m[1]);
+          const zeile = text.slice(0, start).split("\n").length;
+          befunde.push(`${datei}:${zeile} → npx ${name}`);
+        }
+      }
+    }
+    expect(befunde, `npx nennt ein Paket, das so nicht installiert werden kann (${befunde.join(", ")})`).toEqual([]);
+  });
+});
