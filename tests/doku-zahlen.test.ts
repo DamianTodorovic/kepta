@@ -462,3 +462,82 @@ describe("Dokumentation: keine Fremdalphabet-Artefakte", () => {
     ).toBe(true);
   });
 });
+
+// Nachtrag 3.10.2026: der Faktenaudit auf der oeffentlichen Seite fand zwei
+// Saetze, die genau die Regel brachen, die das Repo sonst selbst aufstellt.
+// "Encrypted at rest the whole time" stand UEBER den Latenz-Records, deren
+// eigenes Feld konfiguration.verschluesselung sagt "aus (…Klartext)". Und
+// "every question, every answer … is committed" — die committeten Zeilen haben
+// die Schluessel question_id, typ, faehigkeit, urteil, treffer, trefferIndex,
+// verbatim, judge_aufrufe. Kein Frage-Text, kein Antwort-Text. Beide Saetze
+// waren nicht erfunden, sie waren nur zu breit. Deshalb jetzt: Waechter, die
+// den Anspruch an das Feld in den Records haengen.
+describe("Dokumentation: Messbedingungen und Committens stehen so im Text, wie die Records sie haben", () => {
+  const latenzOrdner = path.join(wurzel, "tools", "latenz", "ergebnisse");
+  const latenzRecords = (): string[] =>
+    fs.readdirSync(latenzOrdner).filter((f) => f.endsWith(".json")).map((f) => path.join("tools", "latenz", "ergebnisse", f));
+
+  const verschluesselungAus = latenzRecords().filter((pfad) => {
+    const record = JSON.parse(lies(pfad)) as { konfiguration?: { verschluesselung?: unknown } };
+    return String(record.konfiguration?.verschluesselung ?? "").toLowerCase().startsWith("aus");
+  });
+
+  it("die Latenz-Records messen weiterhin unverschluesselt — sonst ist der Waechter unterfluessig", () => {
+    // Schliesst die Luecke in die andere Richtung: dreht jemand die Verschluesselung
+    // in den Records an, muss die Doku das zeigen duerfen, ohne dass hier still
+    // eine Behauptung "wieder stimmt".
+    expect(latenzRecords().length).toBeGreaterThan(0);
+    expect(verschluesselungAus.length).toBe(latenzRecords().length);
+  });
+
+  it.each(dateien)("%s verschweigt nicht, dass die Latenzlaeufe ohne Verschlüsselung gemessen wurden", (datei) => {
+    const inhalt = lies(datei);
+    const abschnitt = inhalt.split(/^###\s+/m).find((block) => /^Latenz|^Latency/m.test(block)) ?? "";
+    expect(abschnitt.length, `${datei} hat keinen Latenz-Abschnitt mehr`).toBeGreaterThan(0);
+    expect(
+      abschnitt,
+      `${datei}: die Records sagen konfiguration.verschluesselung = "aus", der Text behauptet verschluesselte Laeufe`
+    ).not.toMatch(/encrypted at rest the whole time|durchgehend verschlüsselt\.|verschlüsselt gemessen|encrypted the whole time/i);
+    expect(
+      abschnitt,
+      `${datei}: der Latenz-Abschnitt verweist nicht auf konfiguration.verschluesselung, wo er die Bedingung nennt`
+    ).toMatch(/konfiguration\.verschluesselung/);
+    expect(
+      abschnitt,
+      `${datei}: der Latenz-Abschnitt nennt nicht, dass ohne Verschlüsselung gemessen wurde`
+    ).toMatch(/encryption switched off|mit ausgeschalteter Verschlüsselung/i);
+  });
+
+  it.each(dateien)("%s behauptet nicht, Frage- oder Antworttext liege im Repo", (datei) => {
+    const inhalt = lies(datei);
+    const abschnitt =
+      inhalt.split(/^###\s+/m).find((block) => /^Benchmark/i.test(block)) ?? "";
+    expect(abschnitt.length, `${datei} hat keinen Benchmark-Abschnitt mehr`).toBeGreaterThan(0);
+    expect(
+      abschnitt,
+      `${datei}: die committeten Zeilen tragen keinen Antwort-Text — "every answer / jede Antwort" ist zu viel`
+    ).not.toMatch(/every (?:question, )?every answer|every answer[^.\n]{0,40}committed|jede Antwort[^.]{0,40}liegt|jede Frage, jede Antwort/i);
+    expect(
+      abschnitt,
+      `${datei}: der Abschnitt sagt nicht, woher Frage- und Antworttext kommen`
+    ).toMatch(/upstream|Upstream/);
+  });
+
+  it("die committeten Felder sind die, die der Text aufzaehlt", () => {
+    // Der Text nennt seine Felder beim Namen. Statt Prosa zu parsen: die wahre
+    // Schluesselmenge der Records festhalten, damit ein Umbau der Zeilen hier
+    // anzeigt, dass beide READMEs mitgezogen werden muessen.
+    const ordner = path.join(wurzel, "tools", "longmemeval", "ergebnisse");
+    const beste = fs
+      .readdirSync(ordner)
+      .filter((f) => f.endsWith(".json"))
+      .map((f) => ({ name: f, inhalt: JSON.parse(lies(path.join("tools", "longmemeval", "ergebnisse", f))) as { bericht?: { genauigkeit_gesamt?: number }; fragen?: Record<string, unknown>[] } }))
+      .sort((a, b) => (b.inhalt.bericht?.genauigkeit_gesamt ?? 0) - (a.inhalt.bericht?.genauigkeit_gesamt ?? 0))[0];
+    expect(beste, "kein LongMemEval-Record gefunden").toBeTruthy();
+    const schluessel = Object.keys(beste.inhalt.fragen?.[0] ?? {}).sort();
+    expect(schluessel).toEqual(["faehigkeit", "judge_aufrufe", "question_id", "treffer", "trefferIndex", "typ", "urteil", "verbatim"]);
+    for (const feld of ["antwort", "frage_text", "content", "answer"]) {
+      expect(schluessel, `Records tragen plötzlich ein Feld "${feld}" — Text der READMEs pruefen`).not.toContain(feld);
+    }
+  });
+});

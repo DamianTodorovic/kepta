@@ -1,5 +1,5 @@
 <p align="center"><img src="docs/kepta-logo.svg" width="88" alt="KEPTA"></p>
-<p align="center"><img src="https://img.shields.io/badge/version-3.2.0-blue" alt="v3.2.0"> <img src="https://img.shields.io/badge/license-BUSL--1.1-blue" alt="BUSL-1.1"> <img src="https://img.shields.io/badge/tests-466%20passing-brightgreen" alt="tests"> <img src="https://img.shields.io/badge/coverage%20gate-%E2%89%A5%2070%25%20of%20lines-brightgreen" alt="coverage gate"> <img src="https://img.shields.io/badge/platform-macOS%20%7C%20Windows%20%7C%20Linux-lightgrey" alt="platform"> <img src="https://img.shields.io/badge/encryption-SQLCipher%204-green" alt="encrypted"> <a href="https://www.linkedin.com/in/damian-todorovic-244235434"><img src="https://img.shields.io/badge/LinkedIn-Damian%20Todorovic-0A66C2?logo=linkedin&logoColor=white" alt="Damian Todorovic on LinkedIn"></a></p>
+<p align="center"><img src="https://img.shields.io/badge/version-3.2.0-blue" alt="v3.2.0"> <img src="https://img.shields.io/badge/license-BUSL--1.1-blue" alt="BUSL-1.1"> <img src="https://img.shields.io/badge/tests-472%20passing-brightgreen" alt="tests"> <img src="https://img.shields.io/badge/coverage%20gate-%E2%89%A5%2070%25%20of%20lines-brightgreen" alt="coverage gate"> <img src="https://img.shields.io/badge/platform-macOS%20%7C%20Windows%20%7C%20Linux-lightgrey" alt="platform"> <img src="https://img.shields.io/badge/encryption-SQLCipher%204-green" alt="encrypted"> <a href="https://www.linkedin.com/in/damian-todorovic-244235434"><img src="https://img.shields.io/badge/LinkedIn-Damian%20Todorovic-0A66C2?logo=linkedin&logoColor=white" alt="Damian Todorovic on LinkedIn"></a></p>
 
 # KEPTA — the memory for AI systems
 
@@ -133,7 +133,7 @@ docker run -i -e KEPTA_DB_KEY=<64-hex> -v kepta-data:/data kepta-mcp
 | ♻️ **Superseded, not contradicted** | New facts replace old ones (`superseded_by`); the history stays |
 | 🔗 **MCP first** | 8 tools, one code path for the API and MCP — agents get the same quality as any client |
 | 📄 **File import** | PDF (pdf.js with character maps), Markdown with `[[wiki links]]`, text, JSON |
-| 📊 **Eval** | `npm run eval` on a fixed corpus of 58 notes / 45 queries: Hit@1, Precision@5, MRR, plus an ablation test per retrieval leg |
+| 📊 **Eval** | `npm run eval` on a fixed corpus of 58 notes / 45 queries: Hit@1, Precision@5, MRR — lexical only, offline, deterministic. `npx tsx scripts/ablation.ts` measures each retrieval leg against the others on the same corpus, with embeddings from a local Ollama |
 
 ### How a query finds its answer
 
@@ -218,7 +218,7 @@ The knowledge base is a SQLCipher 4 database: AES-256, an HMAC-SHA512 over every
 
 ## 🧪 Quality
 
-**466 tests** with Vitest and v8 coverage. The coverage thresholds are a CI gate: a commit that falls below one of them turns CI red. On top: a retrieval eval (Hit@1, Precision@5, MRR) on a fixed corpus, an ablation test per retrieval leg, an encryption eval and a boundary test on the core architecture.
+**472 tests** with Vitest and v8 coverage. The coverage thresholds are a CI gate: a commit that falls below one of them turns CI red. On top: a retrieval eval (Hit@1, Precision@5, MRR) on a fixed corpus, an ablation test per retrieval leg, an encryption eval and a boundary test on the core architecture.
 
 ### Coverage thresholds (enforced by CI)
 
@@ -233,11 +233,11 @@ suites but no threshold, so they are not inside these percentages.
 
 ### Latency — measured, public
 
-Median search times on the same laptop (Apple M4), every run committed in [`tools/latenz/ergebnisse/`](tools/latenz/ergebnisse/): **46.6 ms** median at 100,000 memories (p95 87.6 ms), **276.5 ms** median at **1,000,000 memories**. Encrypted at rest the whole time.
+Median search times on one laptop (Apple M4), every run committed in [`tools/latenz/ergebnisse/`](tools/latenz/ergebnisse/): **46.6 ms** median at 100,000 memories (p95 87.6 ms), **276.5 ms** median at **1,000,000 memories**. Both runs measure the engine with encryption switched off and a deterministic stub embedder — the records say so themselves, in `konfiguration.verschluesselung` and `konfiguration.embedder`. The file on disk is always SQLCipher-4 encrypted; the crypto cost is just not inside these two medians.
 
 ### Benchmark record — LongMemEval-S, fully public
 
-KEPTA ships its memory benchmark the way nobody else does: **every question, every answer and every judge verdict of every run is committed to this repository**, in [`tools/longmemeval/ergebnisse/`](tools/longmemeval/ergebnisse/). Fixed dataset (LongMemEval-S, 500 questions, SHA-pinned), fixed judge, fully reproducible locally — see [`tools/longmemeval/README.md`](tools/longmemeval/README.md).
+KEPTA ships its memory benchmark as raw per-question records instead of a headline number: **every run commits all 500 questions to this repository**, in [`tools/longmemeval/ergebnisse/`](tools/longmemeval/ergebnisse/) — each with its id, type and skill, the judge's verdict, how many notes retrieval returned, which of the retrieved contexts settled it, and whether the reference answer appeared verbatim. The question and answer *text* is not in the repo: it comes from the pinned upstream dataset, whose SHA-256 every record carries. Fixed dataset (LongMemEval-S, 500 questions, SHA-pinned), fixed judge, fully reproducible locally — see [`tools/longmemeval/README.md`](tools/longmemeval/README.md).
 
 The published score is **61.5 %** on LongMemEval-S — graded by a **local 14B judge** (`qwen2.5:14b`, Q4, runs on a consumer GPU), zero cloud. The 3B-judge series is fully committed as the continuity baseline: 29.2 → 32.5 → 33.2 → 37.0 → 39.0 — every step is a run record in the same folder, no new model, no cloud, no fine-tuning. Same retrieval pipeline, fairer grading: a stronger local judge measures what the 3B judge under-scored on long contexts. The 14B-judge chain on that same pipeline: 54.6 → 55.0 (HyDE-lite) → **61.5** (topk 32 + time-split + HyDE).
 

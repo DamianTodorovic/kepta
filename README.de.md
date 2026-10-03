@@ -1,5 +1,5 @@
 <p align="center"><img src="docs/kepta-logo.svg" width="88" alt="KEPTA"></p>
-<p align="center"><img src="https://img.shields.io/badge/tests-466%20passing-brightgreen" alt="Tests"> <img src="https://img.shields.io/badge/coverage%20gate-%E2%89%A5%2070%25%20der%20Zeilen-brightgreen" alt="Coverage-Gate"> <img src="https://img.shields.io/badge/Verschl%C3%BCsselung-SQLCipher%204-green" alt="verschlüsselt"> <a href="https://www.linkedin.com/in/damian-todorovic-244235434"><img src="https://img.shields.io/badge/LinkedIn-Damian%20Todorovic-0A66C2?logo=linkedin&logoColor=white" alt="Damian Todorovic auf LinkedIn"></a></p>
+<p align="center"><img src="https://img.shields.io/badge/tests-472%20passing-brightgreen" alt="Tests"> <img src="https://img.shields.io/badge/coverage%20gate-%E2%89%A5%2070%25%20der%20Zeilen-brightgreen" alt="Coverage-Gate"> <img src="https://img.shields.io/badge/Verschl%C3%BCsselung-SQLCipher%204-green" alt="verschlüsselt"> <a href="https://www.linkedin.com/in/damian-todorovic-244235434"><img src="https://img.shields.io/badge/LinkedIn-Damian%20Todorovic-0A66C2?logo=linkedin&logoColor=white" alt="Damian Todorovic auf LinkedIn"></a></p>
 
 # KEPTA — das Gedächtnis für KI-Systeme (deutsches Readme)
 
@@ -66,7 +66,7 @@ npm install && npm run dev
 
 **4. Docker** (nur MCP-Server): `docker build -t kepta-mcp .`
 
-**Zahlen:** **466 Tests** · 31 Routen · `npm run eval` — Eval auf 58 Notizen / 45 Anfragen (Hit@1, Precision@5, MRR).
+**Zahlen:** **472 Tests** · 31 Routen · `npm run eval` — Eval auf 58 Notizen / 45 Anfragen (Hit@1, Precision@5, MRR).
 
 ## 🔍 Wie eine Anfrage ihre Antwort findet
 
@@ -104,11 +104,11 @@ keine Schwelle; sie stecken nicht in diesen Prozentzahlen.
 
 ### Latenz — gemessen, öffentlich
 
-Median-Suchzeiten auf demselben Laptop (Apple M4), jeder Lauf committed in [`tools/latenz/ergebnisse/`](tools/latenz/ergebnisse/): **46,6 ms** Median bei 100.000 Erinnerungen (p95 87,6 ms), **276,5 ms** Median bei **1.000.000 Erinnerungen**. Durchgehend verschlüsselt.
+Median-Suchzeiten auf einem Laptop (Apple M4), jeder Lauf committed in [`tools/latenz/ergebnisse/`](tools/latenz/ergebnisse/): **46,6 ms** Median bei 100.000 Erinnerungen (p95 87,6 ms), **276,5 ms** Median bei **1.000.000 Erinnerungen**. Beide Läufe messen die Engine mit ausgeschalteter Verschlüsselung und einem deterministischen Stub-Embedder — die Records sagen das selbst, in `konfiguration.verschluesselung` und `konfiguration.embedder`. Die Datei auf der Platte ist durchgehend SQLCipher-4-verschlüsselt; nur die Krypto-Kosten stecken in diesen beiden Medianen nicht.
 
-### Benchmark-Rekord — LongMemEval-S, vollständig öffentlich
+### Benchmark-Protokoll — LongMemEval-S, vollständig öffentlich
 
-KEPTA liefert seinen Gedächtnis-Benchmark so, wie es sonst niemand tut: **jede Frage, jede Antwort und jedes Judge-Urteil jedes Laufs liegt in diesem Repository**, in [`tools/longmemeval/ergebnisse/`](tools/longmemeval/ergebnisse/). Fixierter Datensatz (LongMemEval-S, 500 Fragen, SHA-gepinnt), fixierter Judge, lokal vollständig reproduzierbar — siehe [`tools/longmemeval/README.md`](tools/longmemeval/README.md).
+KEPTA liefert seinen Gedächtnis-Benchmark als Rohdaten je Frage statt als Zahl: **jeder Lauf committed alle 500 Fragen in diesem Repository**, in [`tools/longmemeval/ergebnisse/`](tools/longmemeval/ergebnisse/) — je mit id, Typ und Fähigkeit, dem Judge-Urteil, der Zahl der geprüften Notizen, dem Kontext, der das Urteil gemacht hat, und dem Wörtlich-Treffer der Referenzantwort. Frage- und Antwort-*Text* liegen nicht im Repo: der kommt aus dem festgeschriebenen Upstream-Datensatz, dessen SHA-256 jeder Record trägt. Fixierter Datensatz (LongMemEval-S, 500 Fragen, SHA-gepinnt), fixierter Judge, lokal vollständig reproduzierbar — siehe [`tools/longmemeval/README.md`](tools/longmemeval/README.md).
 
 Die veröffentlichte Zahl ist **61,5 %** auf LongMemEval-S — bewertet von einem **lokalen 14B-Judge** (`qwen2.5:14b`, Q4, läuft auf einer Consumer-GPU), null Cloud. Die 3B-Judge-Serie ist vollständig als Vergleichsbasis committed: 29,2 → 32,5 → 33,2 → 37,0 → 39,0 — jeder Schritt ist ein Lauf-Record im selben Ordner, kein neues Modell, keine Cloud, kein Fine-Tuning. Dieselbe Retrieval-Pipeline, fairere Bewertung: Ein stärkerer lokaler Judge misst, was der 3B-Judge bei langen Kontexten unterschätzt hat. Die 14B-Judge-Kette auf derselben Pipeline: 54,6 → 55,0 (HyDE-lite) → **61,5** (topk 32 + Zeitsplit + HyDE).
 
