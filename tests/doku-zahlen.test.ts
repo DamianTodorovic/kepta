@@ -540,4 +540,39 @@ describe("Dokumentation: Messbedingungen und Committens stehen so im Text, wie d
       expect(schluessel, `Records tragen plötzlich ein Feld "${feld}" — Text der READMEs pruefen`).not.toContain(feld);
     }
   });
+
+  it("jede Ingest-Zahl in der Doku steht in einem committeten Latenz-Record", () => {
+    // Der 3.0.0-Eintrag nannte "2,530 → 5,102 memories/s". 2,530 steht in einem
+    // Record, 5,102 in keinem — die drei 100k-Laeufe lesen 5,082, 5,136 und 5,268.
+    // So geboren: eine Zahl, die einmal gestimmt hat, wird zum Durchschnitt
+    // rundgemacht und ueberlebt den Lauf, der sie erzeugt hat.
+    const formate = (n: number) => [String(n), n.toLocaleString("en-US")];
+    const erlaubt = new Set<string>();
+    for (const pfad of latenzRecords()) {
+      const record = JSON.parse(lies(pfad)) as {
+        ingest?: Record<string, number>;
+        konfiguration?: { erinnerungen?: number };
+      };
+      for (const wert of Object.values(record.ingest ?? {})) for (const f of formate(wert)) erlaubt.add(f);
+      for (const f of formate(record.konfiguration?.erinnerungen ?? -1)) erlaubt.add(f);
+    }
+    expect(erlaubt.size, "keine Ingest-Werte in den Latenz-Records — Waechter ins Leere").toBeGreaterThan(0);
+
+    for (const datei of [...dateien, "CHANGELOG.md"]) {
+      const ohneRecord = lies(datei)
+        .split("\n")
+        .flatMap((zeile, i) =>
+          /ingest|memories\/s|notes\/s|Notizen\/s/i.test(zeile)
+            ? [...zeile.matchAll(/\b\d{1,3}(?:,\d{3})+\b/g)]
+                .map((m) => m[0])
+                .filter((z) => !erlaubt.has(z))
+                .map((z) => `${i + 1}: ${z}`)
+            : []
+        );
+      expect(
+        ohneRecord,
+        `${datei} nennt Durchsatz-Zahlen, die in keinem Record stehen (${ohneRecord.join(", ")}) — Zahl aus einem Record holen oder streichen`
+      ).toEqual([]);
+    }
+  });
 });
