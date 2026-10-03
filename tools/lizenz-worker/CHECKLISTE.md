@@ -27,8 +27,8 @@ Paddle Billing liefert **keinen fertigen Checkout-Link** ohne einen von zwei Weg
 
 **Support-Text-Vorschlag (englisch, kopieren/reichen):**
 > Hi Paddle team, I'm building KEPTA — a local-first encrypted memory app for
-> AI assistants (desktop application for macOS/Windows, AGPL core, public repo
-> at github.com/DamianTodorovic/kepta). I'd like to request access to Hosted
+> AI assistants (desktop application for macOS/Windows, BUSL-1.1 source-available
+> core, public repo at github.com/DamianTodorovic/kepta). I'd like to request access to Hosted
 > Checkouts so customers can buy a license directly from inside the desktop
 > app without a marketing website. Thanks!
 

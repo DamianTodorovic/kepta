@@ -1,6 +1,6 @@
 # KEPTA — Security & Enterprise Deployment Notes
 
-*For procurement, IT departments and security review. Version 2.13, September 2026.*
+*For procurement, IT departments and security review. App 3.1.2, October 2026.*
 *German-speaking organizations: the same content applies verbatim — the architecture has no cloud component to audit.*
 
 ## 1. Where the data lives
@@ -64,9 +64,9 @@ Enterprise editions (`business`, `enterprise`) are encoded in the signed license
 
 ## 6. Supply chain and updates
 
-- Installers are ad-hoc signed and published with **SHA-256 checksums** in the public releases repository.
-- Source maps are excluded from every package; shipped code is minified bundles.
-- The engine (all retrieval, storage, MCP code) is **AGPL-3.0 open source** and auditable; the desktop application is proprietary.
+- Installers are ad-hoc signed. The public release carries the macOS arm64/x64 DMGs and zips together with electron-builder's `latest-mac.yml`, whose **SHA-512 digests** are the published integrity values — there are no separate checksum files, and no Windows or Linux installer is published.
+- Source maps never ship: the app build excludes `**/*.map` (`electron-builder.json`), and neither the app bundle nor the npm artifacts contain a `sourceMappingURL`. The app's server bundle is minified.
+- The engine (all retrieval, storage, MCP code) is **source-available under BUSL-1.1** and auditable — every line readable, running it free including in production, each release converting to AGPL-3.0-or-later four years after release. It is deliberately not called open source: BUSL-1.1 is not an OSI-approved licence. The desktop application is proprietary.
 
 ## 7. Contact
 

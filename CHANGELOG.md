@@ -1,3 +1,8 @@
+## [Unreleased]
+
+### Fixed
+- **The supply-chain section named hashes, a licence and a version that do not match the repository.** `SECURITY-ENTERPRISE.md` promised installers published with **SHA-256 checksums** — what the public release actually carries is electron-builder's `latest-mac.yml` with **SHA-512** digests, no separate checksum files, and macOS arm64/x64 as the only installers that exist. The same document called the engine "**AGPL-3.0 open source**"; the engine is BUSL-1.1 source-available, which is not an OSI-approved open-source licence, and each release converts to AGPL-3.0-or-later four years after release. That label had also survived in `THIRD-PARTY-NOTICES.md` — including a licence-history line with the wrong dates, while the registry reads MIT 2.6.4–2.10.3, AGPL-3.0-or-later 2.12.0–2.13.21, BUSL-1.1 from 2.13.22 — and in `.github/FUNDING.yml`, and in the Paddle support blurb in `tools/lizenz-worker/CHECKLISTE.md`, which is text meant to be copied into a ticket. "Source maps are excluded from every package; shipped code is minified bundles" now names where each is true: `!**/*.map` in `electron-builder.json`, no `sourceMappingURL` in the app or npm artifacts, minification on the app's server bundle. The document's own stamp said "Version 2.13, September 2026" while the app is 3.1.2.
+
 ## [3.1.2] — 2026-10-02
 
 The app becomes publicly downloadable — and this finishes the release cut the previous commit started: `3.1.2` landed in `package.json` alone, while the version module, `server.json` and the npm package still carried 3.1.1 and `package-lock.json` had drifted to 2.13.14. Four tests were red on exactly that (`version`, `mcp-registry`, `npm-package`, `doku-zahlen`); the number is one again at every place.
