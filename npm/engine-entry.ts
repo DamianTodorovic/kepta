@@ -1,6 +1,6 @@
 /**
  * Bibliothekseinstieg des npm-Pakets: exportiert die Engine, OHNE den
- * MCP-Server zu starten (der bin-Einstieg kep ta.js macht das — dieser Entry
+ * MCP-Server zu starten (der bin-Einstieg kepta.js macht das — dieser Entry
  * hier macht nichts außer zu exportieren). KEPTA Enterprise bindet die
  * Engine über genau diese Fläche an — der Vertragstest dort erzwingt es.
  */

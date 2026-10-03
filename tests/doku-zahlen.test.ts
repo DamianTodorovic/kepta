@@ -581,6 +581,11 @@ describe("Dokumentation: Messbedingungen und Committens stehen so im Text, wie d
 // veröffentlicht ist `kepta-mcp`) — der Befehl war also kopierbar und scheiterte
 // beim Kopieren mit einem 404. Befehle in der Doku müssen den Namen tragen, unter
 // dem das Ding wirklich zu holen ist.
+// Zweite Regel desselben Fehlers: das veröffentlichte Paket hiesst richtig, wird
+// aber im Text auseinandergeschrieben (`npx kep ta-mcp setup`). Genau so steht es
+// im live veröffentlichten GitHub-Release v3.1.2 — ein kopierbarer Befehl, der ins
+// Leere führt. Ein zerrissener Name ist ausserdem ein zerrissener Pfad (`~/kep
+// ta-enterprise/`) und eine ins Leere laufende URL (`pypi.org/project/kep ta`).
 describe("Doku und Meldungen: npx ruft nur das veröffentlichte Paket", () => {
   const ordner = ["src", "scripts", "npm", "python", "tools"];
   const Quelldateien = () => {
@@ -607,6 +612,7 @@ describe("Doku und Meldungen: npx ruft nur das veröffentlichte Paket", () => {
     const befunde: string[] = [];
     const dateien = Quelldateien();
     expect(dateien.length, "keine Doku-/Quelldateien gefunden — Waechter ins Leere").toBeGreaterThan(10);
+    const zeileVon = (text: string, index: number) => text.slice(0, index).split("\n").length;
     for (const datei of dateien) {
       const text = lies(datei);
       // Zwei Lesarten, damit ein deutscher Prosa-Satz ("damit npx dieselbe
@@ -617,12 +623,16 @@ describe("Doku und Meldungen: npx ruft nur das veröffentlichte Paket", () => {
         for (const m of text.matchAll(muster)) {
           const name = m[1];
           if (erlaubt.has(name)) continue;
-          const start = (m.index ?? 0) + m[0].indexOf(m[1]);
-          const zeile = text.slice(0, start).split("\n").length;
-          befunde.push(`${datei}:${zeile} → npx ${name}`);
+          befunde.push(`${datei}:${zeileVon(text, (m.index ?? 0) + m[0].indexOf(m[1]))} → npx ${name}`);
         }
       }
+      for (const m of text.matchAll(/\bkep[ \t]+ta\b/gi)) {
+        befunde.push(`${datei}:${zeileVon(text, m.index ?? 0)} → "${m[0]}" — Paket-, Pfad- und URL-Teile sind ein Wort`);
+      }
     }
-    expect(befunde, `npx nennt ein Paket, das so nicht installiert werden kann (${befunde.join(", ")})`).toEqual([]);
+    expect(
+      befunde,
+      `Befehle und Namen müssen so dastehen, wie sie funktionieren (${befunde.join(", ")}) — npx nur mit veröffentlichtem Paket, kein auseinandergezogener Name`
+    ).toEqual([]);
   });
 });
