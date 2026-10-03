@@ -4,9 +4,9 @@
 
 <p align="center"><sub>Desktop app · no cloud · no account · encrypted at rest<br>SQLite · hybrid retrieval · knowledge graph · MCP</sub></p>
 
-<p align="center"><a href="https://github.com/DamianTodorovic/kepta-pro-releases/releases/latest"><img alt="Release" src="https://img.shields.io/github/v/release/DamianTodorovic/kepta-pro-releases?label=Download"></a> <a href="https://github.com/DamianTodorovic/kepta-enterprise/actions/workflows/build.yml"><img alt="CI" src="https://github.com/DamianTodorovic/kepta-enterprise/actions/workflows/build.yml/badge.svg"></a> <a href="LICENSE"><img alt="License" src="https://img.shields.io/badge/license-Proprietary-black"></a> <img alt="Coverage gate" src="https://img.shields.io/badge/coverage%20gate-%E2%89%A5%2089%25%20of%20lines-brightgreen"> <img alt="Tests" src="https://img.shields.io/badge/tests-1569%20passing-brightgreen"> <img alt="Platform" src="https://img.shields.io/badge/platform-macOS%20%7C%20Windows-lightgrey"></p>
+<p align="center"><a href="https://github.com/DamianTodorovic/kepta/releases/latest"><img alt="Download" src="https://img.shields.io/github/v/release/DamianTodorovic/kepta?label=Download"></a> <a href="https://github.com/DamianTodorovic/kepta/actions/workflows/ci.yml"><img alt="Engine CI" src="https://github.com/DamianTodorovic/kepta/actions/workflows/ci.yml/badge.svg"></a> <a href="LICENSE"><img alt="License" src="https://img.shields.io/badge/license-Proprietary-black"></a> <img alt="Coverage gate" src="https://img.shields.io/badge/coverage%20gate-%E2%89%A5%2089%25%20of%20lines-brightgreen"> <img alt="Tests" src="https://img.shields.io/badge/tests-1629%20passing-brightgreen"> <img alt="Platform" src="https://img.shields.io/badge/platform-macOS%20%7C%20Windows-lightgrey"></p>
 
-<p align="center"><sub>The memory engine underneath is open source (AGPL-3.0): <a href="https://github.com/DamianTodorovic/kepta">DamianTodorovic/kepta</a> — the headless core with the MCP server. This repository is the full desktop application.</sub></p>
+<p align="center"><sub>The memory engine underneath is source-available (BUSL-1.1, converts to AGPL-3.0-or-later after four years): <a href="https://github.com/DamianTodorovic/kepta">DamianTodorovic/kepta</a> — the headless core with the MCP server. This repository is the full desktop application.</sub></p>
 
 ## 🎬 Watch your knowledge grow
 
@@ -98,7 +98,7 @@ Every memory carries a validity window, so the graph can be replayed: pull the t
 - Create, edit and delete notes — **trash instead of hard delete**, with restore
 - **Memory types**: `semantic` (facts), `episodic` (events), `procedural` (how-to), `reference` (imported documents). Assigned by rule when the caller says nothing — with a stated reason like "3 numbered steps found". Rules, not a model: they run offline, they are readable, and they are tested. Existing notes can be sorted afterwards from Settings → Data, with a preview first
 - **Scope**: `user`, `agent`, `session` — separates who a memory belongs to
-- **Private notes** — one switch in the editor: a private note is never shown to an AI app and never sent to a cloud model — in the app *and* in the open core
+- **Private notes** — one switch in the editor: a private note is never shown to an AI app and never sent to a cloud model — in the app *and* in the source-available core
 - **Confidence** 0–1, free-form tags, automatically extracted entities
 - **Temporal validity**: `valid_from` / `valid_to`. Expired entries are marked, never quietly hidden
 - **Supersede chains** (`superseded_by`): contradictions displace each other and the history survives
@@ -309,7 +309,7 @@ flowchart TD
 
 One query, three searches: full text finds the words you typed, the vector search finds what they *mean*, the graph contributes notes connected to named entities. RRF merges the three rankings — it works on ranks, so one track cannot win simply by producing bigger numbers. A deterministic reranker (term coverage, phrase hits, title, tags) refines the result and is exposed as `rerankScore`. Without Ollama the vector track drops out and everything continues lexically. Search degrades; it does not break.
 
-## 📦 The MCP server on its own — the open core
+## 📦 The MCP server on its own — the source-available core
 
 ```bash
 npx -y kepta-mcp
@@ -317,7 +317,7 @@ npx -y kepta-mcp
 
 That is the entire installation: one file and one dependency — SQLite with encryption, which npm installs prebuilt. It gives an agent a memory **without the desktop app** — same `~/.kepta/kepta.db`, same keychain key, so you can start headless and add the window later, or run both side by side. Needs Node 22.13 or newer. Listed in the [official MCP registry](https://registry.modelcontextprotocol.io) as `io.github.DamianTodorovic/kepta`.
 
-The npm package is maintained in the open-source core repository: [DamianTodorovic/kepta](https://github.com/DamianTodorovic/kepta) · [npm](https://www.npmjs.com/package/kepta-mcp)
+The npm package is maintained in the source-available core repository: [DamianTodorovic/kepta](https://github.com/DamianTodorovic/kepta) · [npm](https://www.npmjs.com/package/kepta-mcp)
 
 ## 🐍 Python client
 
@@ -343,9 +343,9 @@ Standard library only, no dependencies. It discovers the running app through `~/
 KEPTA Pro is the **proprietary** license-key edition of the app; this repository is private.
 
 - **Every download comes with one free Pro day.** A fresh install runs 24 hours with every Pro tool, unlimited — no panel, no account, no key. Then the app stays **KEPTA Core**: the same features with generous **daily limits**, never a locked window. The limits are **tamper-evident**: counters and the trial day live in a sealed, authenticated state in the encrypted database plus a first-start anchor kept in two independent local proof places (the keychain and a hidden anchor file outside the data folder) — an app restart resets nothing, a rolled-back clock forfeits the day, and editing, forging or deleting the state (even together with the database) is detected by consensus and costs the trial day, never the data. All of it stays on the machine; nothing phones home. When a limit is reached, the app answers with the upgrade path, never with a lock.
-- **Pro removes the limits.** One license key — issued per buyer, carrying a license number and bound to the buyer's name, which KEPTA shows in the app (*Licensed to …*). It is validated **offline** against a signature; nothing leaves the machine to check it. A key that is passed on can be revoked: its number goes on the list inside the app, and from the next update on that key stops unlocking anything.
-- **Enterprise stays personal.** Team memory (shared knowledge, workspaces, roles), SSO, central policies, MDM/air-gapped deployment and everything regulated professions need is sold with a conversation — one tier, shaped per organization. The managed configuration keeps working exactly as documented in [SECURITY-ENTERPRISE.md](SECURITY-ENTERPRISE.md): the license is pre-provisioned and validated offline as always.
-- **The data is never hostage.** The knowledge base file stays on disk, encrypted, and readable by the open-source engine — with or without a key.
+- **Pro removes the limits.** One license key — issued per buyer, carrying a license number and bound to the buyer's name, which KEPTA shows in the sidebar (the name alone, without a tier label since 3.1.1). It is validated **offline** against a signature; nothing leaves the machine to check it. A key that is passed on can be revoked: its number goes on the list inside the app, and from the next update on that key stops unlocking anything.
+- **Enterprise stays personal.** Team memory ships as the enforcement layer (licensed team scopes, roles, per-tenant isolation in KEPTA Enterprise), central policies ship as the managed configuration documented in [SECURITY-ENTERPRISE.md](SECURITY-ENTERPRISE.md), and the enterprise build runs on your own hardware — air-gapped if you need it. Sold as roadmap, not built yet: SSO (SAML/OIDC), the workspaces UI and MDM enrolment. One tier, shaped per organization; the license is pre-provisioned and validated offline as always.
+- **The data is never hostage.** The knowledge base file stays on disk, encrypted, and readable by the source-available engine — with or without a key.
 
 **Buying Pro** — the Upgrade panel in the app shows the current way to buy; the button always points to the live path (while the self-serve checkout is in its final review, that is a direct message to [me on LinkedIn](https://www.linkedin.com/in/damian-todorovic-244235434)). **Enterprise** — [write to me on LinkedIn](https://www.linkedin.com/in/damian-todorovic-244235434).
 
@@ -354,9 +354,9 @@ KEPTA Pro is the **proprietary** license-key edition of the app; this repository
 The icon series embeds glyphs from **Solar** (CC BY 4.0, by 480 Design) and
 **Tabler Icons** (MIT). Full list: [THIRD-PARTY-NOTICES.md](THIRD-PARTY-NOTICES.md).
 
-## 🧠 The open core
+## 🧠 The source-available core
 
-The engine underneath this app is open source — **AGPL-3.0**, at [DamianTodorovic/kepta](https://github.com/DamianTodorovic/kepta): storage with encryption at rest, hybrid retrieval with the reranker, the MCP server with all eight tools, and the HTTP API for the memory endpoints. Same database format, same keychain key, one code path for the quality of search.
+The engine underneath this app is source-available — **BUSL-1.1**, at [DamianTodorovic/kepta](https://github.com/DamianTodorovic/kepta) (each release converts to AGPL-3.0-or-later after four years): storage with encryption at rest, hybrid retrieval with the reranker, the MCP server with all eight tools, and the HTTP API for the memory endpoints. Same database format, same keychain key, one code path for the quality of search.
 
 That is deliberate, not a giveaway: anyone who has to prove that nothing leaks should be able to *read* it rather than believe it. An auditable core is worth more than a promise. And if the vendor disappears one day, the customer keeps working with the core; with closed software that would be the end of the road. The app is the complete window on top — graph views, editor, clipper, machine scan, chat cockpit, Device Sync — for people who want the whole product rather than a protocol.
 
@@ -417,11 +417,11 @@ If you would rather not trust the binaries, build them yourself: `npm install &&
 
 ## 🧪 Quality & tests
 
-**1569 tests**, run with Vitest and v8 coverage. The coverage thresholds are a CI gate: a commit that falls below any of them turns CI red — and so does a README that names the wrong number of tests, because `npm run test:cov` ends by comparing it with the run.
+**1629 tests**, run with Vitest and v8 coverage. The coverage thresholds are a hard gate: a commit that falls below any of them fails the run — and so does a README that names the wrong number of tests, because `npm run test:cov` ends by comparing it with the run.
 
 ```bash
 npm run lint       # typecheck (tsc) + ESLint — 0 errors required
-npm test           # 1569 tests (vitest)
+npm test           # 1629 tests (vitest)
 npm run test:cov   # tests + coverage gate + test count in the README
 npm run eval       # retrieval quality (Hit@1)
 ```

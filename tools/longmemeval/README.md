@@ -110,3 +110,52 @@ sie verdrängt bei engem topk die exakten Treffer · topk 12 35,0 % ·
    netto gewinnt.
 3. Jede Verbesserung wird mit vollem 500er-Lauf und per-question Record
    veröffentlicht — die Serie ist das Asset.
+
+## Stand (1.10.2026): 61,5 % — und der größte Sprung kam vom Richter
+
+Alle Läufe unterhalb sind 500-Fragen-Läufe, jeder mit Per-Frage-Record im
+öffentlichen Core-Repo unter `tools/longmemeval/ergebnisse/`:
+
+| Datum | Konfiguration | Richter | LongMemEval-S (500) |
+|---|---|---|---|
+| 22.9. | lexikalisch, topk 8 | llama3.2:3b | 29,2 % |
+| 24.9. | topk 12 | llama3.2:3b | 32,5 % |
+| 24.9. | topk 12 + `--temporal` | llama3.2:3b | 33,2 % |
+| 25.9. | + Vektorspur (`--vektoren`) | llama3.2:3b | 37,0 % |
+| 1.10. | topk 16, Vektorspur | llama3.2:3b | 39,0 % |
+| 1.10. | **dieselbe Engine, nur der Richter getauscht** | qwen2.5:14b-instruct | **54,6 %** |
+| 1.10. | + HyDE | qwen2.5:14b-instruct | 55,0 % |
+| 1.10. | + topk 32 | qwen2.5:14b-instruct | 61,1 % |
+| 1.10. | + `--zeitsplit` | qwen2.5:14b-instruct | **61,5 %** |
+
+**Was die Serie zeigt:** Der einzelne größte Sprung ist keine Retrieval-
+Änderung, sondern das Judge-Modell — 39,0 % mit `llama3.2:3b` gegen 54,6 % mit
+`qwen2.5:14b-instruct` bei identischer Engine. Der A/B auf 60 geschichteten
+Fragen weist es isoliert aus: 42,5 % → 54,2 % (+11,7 pp),
+`judge-ab-pilot60-3b.json` gegen `judge-ab-pilot60-14b.json`. Wer eine Zahl aus
+dieser Serie vergleicht, vergleicht immer auch den Richter.
+
+**Was 61,5 % heißt:** 202 `ja`, 211 `teilweise`, 87 `nein` — ein halber Punkt
+für eine teilweise richtige Antwort. Streng binär (nur `ja`) sind es **40,4 %**.
+Pro Fähigkeit: information_extraction 126 → 84,9 % · multi_session_reasoning
+133 → 50,4 % · temporal_reasoning 133 → 45,5 % · knowledge_updates 78 → 76,9 % ·
+abstention 0 (der Split enthält keine).
+
+**Der Lauf selbst:** `qwen2.5:14b-instruct-q4_K_M`, Ollama 0.33.2, Temperatur 0,
+topk 32, HyDE (569 Erweiterungen), `--zeitsplit` + `--temporal`, Vektorspur an,
+Datensatz `longmemeval_s` SHA-256 `08d8dad4…`, KEPTA 2.13.22, 10.376
+Judge-Aufrufe, 0 Parse-Fehler, 98 min Laufzeit.
+Record: `longmemeval-2026-10-01-08d8dad4-topk32-hyde-zeitsplit-14b.json`.
+
+**Drei Grenzen, die dazugehören:**
+
+1. **In-sample.** Die Schalter (topk, HyDE, Band/Floor) sind auf demselben Split
+   getuned, auf dem gemessen wird. Der Runner im öffentlichen Core-Repo hat seit
+   dem Audit `--offset`, das einen Holdout abschneidet — gelaufen ist der noch
+   nicht. Diese App-Kopie kennt das Flag noch nicht; die Messreihe läuft auf dem
+   Core-Stand.
+2. **Vektorspur an.** `used_vectors: true`; ohne laufenden Embedder fällt die
+   Antwort auf die lexikalische Spur zurück, und die liegt deutlich niedriger.
+3. **Kontext-Suffizienz, kein Leaderboard.** Bewertet wird, ob der gerufene
+   Kontext die Antwort trägt — lokal, ohne Generator-LLM. Das ist nicht die
+   End-to-End-Genauigkeit, mit der Vendor-Benchmarks vergleichen.

@@ -1,6 +1,6 @@
 # Encryption at rest (F5) — what is on the disk
 
-As of 11 September 2026 (2.11.0) · Evidence: `tests/encryption-eval.test.ts`, `tests/core/store-verschluesselung.test.ts` · Measurement: `npm run eval:crypto`
+As of 11 September 2026 (2.11.0), re-measured 3 October 2026 on 3.1.2 · Evidence: `tests/encryption-eval.test.ts`, `tests/core/store-verschluesselung.test.ts` · Measurement: `npm run eval:crypto`
 
 ## The question
 
@@ -34,15 +34,21 @@ asked but never awaited. Since 2.11 the answer is yes.
 | 4 | A wrong key opens nothing and changes nothing (the file's hash is unchanged); a missing key on an encrypted file stops the start instead of opening an empty brain. | `store-verschluesselung.test.ts` |
 | 5 | An existing plaintext base is converted only when KEPTA has it to itself; every table keeps its rows, the integrity check says "ok", the search finds everything. If another program has the file open, the file stays as it was and the status says why. | `store-verschluesselung.test.ts` |
 | 6 | A program that still held the old file open during the conversion finds only zeros afterwards — it cannot keep writing to an orphaned plaintext file. | `store-verschluesselung.test.ts` |
-| 7 | Cost on this machine: opening 0.48 ms without a key, 0.59 ms with it (median of 30); converting 2,000 notes (1.3 MB) takes 28 ms. | `eval:crypto` [3], [4] |
+| 7 | Cost on this machine: opening 0.5 ms without a key, 0.6–0.65 ms with it (median of 30); converting 2,000 notes (1.3 MB) takes 39 ms. The 11.9. run measured 0.48/0.59 ms and 28 ms — the difference is machine load, not the cipher. | `eval:crypto` [3], [4] |
 
 ## Limits (honest)
 
 - **Same user account:** malware, or anyone using your logged-in account, can
   ask the keychain for the key exactly as KEPTA does.
 - **A running KEPTA** serves decrypted knowledge over its local API, as before.
-- **Files next to the database** — inbox, `profile.json`, `scan-config.json`,
-  the journals — are still plaintext.
+- **Files next to the database:** since 2.13.4 `profile.json`,
+  `scan-config.json` and the sync journal use the same key as the knowledge
+  base (AES-256-GCM per file or per line — `src/core/nebendateien.ts`;
+  plaintext files from older versions are read and re-encrypted on the next
+  write). Two deliberate exceptions stay readable: `endpoint.json` (port, PID,
+  start time — no secret, and how local tools find the server) and the inbox
+  folder (files the user put there themselves, like the Markdown export).
+  Exports the user makes are plaintext by design.
 - **Remnants from before 2.11:** old backups, snapshots and SSD blocks of the
   plaintext file. Full-disk encryption (FileVault, BitLocker, LUKS) covers them;
   it is still the recommended layer underneath.

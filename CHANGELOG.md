@@ -1,3 +1,21 @@
+## [3.1.2] — 2026-10-02
+
+The app becomes publicly downloadable — and this finishes the release cut the previous commit started: `3.1.2` landed in `package.json` alone, while the version module, `server.json` and the npm package still carried 3.1.1 and `package-lock.json` had drifted to 2.13.14. Four tests were red on exactly that (`version`, `mcp-registry`, `npm-package`, `doku-zahlen`); the number is one again at every place.
+
+### Added
+- **Search section in Settings** (build package 2). Retrieval depth, the three retrieval tracks and the result count are settable in the UI and travel with every search call — no config file needed.
+- **Trace provenance per hit, measured search time, and a "brain warm" indicator** (package 2). Each hit names which leg saw it; the dashboard measures the response time itself and shows the core's delta cache as a state instead of an invisible speedup.
+- **Brain status on the dashboard** (package 2): version, node counters, encryption with its key storage, embedding model and vector counters — `/api/health` is now visible on the main surface.
+- **Today 2.0** (package 3): the time-machine slider and a consolidated truth movement — new, updated, superseded (with successor), deleted.
+- **Dossier 2.0** (package 3): contradictions resolve in the flow (newer wins, both-valid windows, editor); the resolve route grew a `window: true` option.
+- **Chat with full memory** (package 3): the engine question carries retrieval depth and track switches, hits get source-provenance badges, the answer pane shows search duration and warm state.
+- **The real KEPTA mark as app icon** — `build/icon.icns` built from the KeptaMark geometry on the Big Sur grid, replacing the generic electron.icns.
+
+### Fixed
+- **`since=0` is the time machine's "everything" window.** The briefing route no longer drops an explicit 0 onto the 24-hour default.
+- **The app's own coverage gate was red since 3.1.1.** `src/core/**` demands 100 % function coverage, and the core lift left four functions never executed: `aktiviereSuchCacheDelta` (called only from the bootstrap, which tests do not run), the unsubscribe closure of `onMemorieAenderung`, and `VerschlussteAuditDatei.flush()` together with its swallowed-error branch. Three tests cover them now, and the audit-file test awaits `flush()` instead of sleeping 120 ms and hoping. The run: 1,629 tests over 105 files, `npm run test:cov` green including `doku-check`.
+- **The documentation said things the repository does not support.** The npm package inside this repo still claimed MIT while the core is BUSL-1.1 (package, `npm/LICENSE`, `npm/README.md` and the test that pins them moved together); the app's `LICENSE` was titled "KEPTA Enterprise" and pointed at an AGPL core; the download and CI badges named `kepta-pro-releases` and `kepta-enterprise`, neither of which exists on GitHub (both 404) — they now name the public core repository, which is where the DMGs and the working CI actually are; the security document still called `profile.json`, `scan-config.json` and the journals plaintext although they have carried the database key since 2.13.4; and the LongMemEval runner README stopped at 37,0 % (25.9.) although the 1.10. series reached 61,5 % — it now carries the whole series, the judge A/B (+11,7 pp with the engine untouched), the strict-binary 40,4 % reading and the in-sample caveat. `aktiviereSuchCacheDelta`, the tier-free sidebar branding and the license number's disappearance from the UI are checked against the code, not remembered.
+
 ## [3.1.1] — 2026-10-01
 
 ### Changed
@@ -7,7 +25,7 @@
 - The License Studio tools directory was restored from history (tests/license-studio*.ts had lost their subject in the copy).
 
 ### Fixed
-- The encrypted app-side sync journal and audit-file sinks (K1.-encrypted, same key as the knowledge base) now live in the app layer as documented app variants of the core classes (`VerschlusstesSyncJournal` / `VerschlussteAuditDatei`) — the open core 3.1.x writes these files in plaintext.
+- The encrypted sync journal and audit-file sinks (K1.-encrypted, same key as the knowledge base) exist in the app layer as documented app variants of the core classes (`VerschlusstesSyncJournal` / `VerschlussteAuditDatei`, `src/core/nebendateien.ts`) — the source-available core 3.1.x writes these files in plaintext. They are the seam an integrator wires and are covered by `tests/nebendateien.test.ts`; the app's own running audit trail is the sealed log inside the encrypted database (`src/lib/pruefprotokoll.ts`), not one of these files.
 - `saveWithIndex` keeps the app-era explicit-timestamp pass-through (LongMemEval ingest), documented as an app extension against core 3.1.1.
 - The Plan-State keychain adapter (`server/helfer/plan-schluesselbund.ts`) keeps the separate `app.kepta.plan` entries after core 3.1.x removed the target parameter from `schluesselbundFuer`.
 

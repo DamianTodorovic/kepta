@@ -70,4 +70,4 @@ Both share the same `~/.kepta/kepta.db`. What one writes, the others see.
 
 ## License
 
-MIT — the whole source is at [github.com/DamianTodorovic/kepta](https://github.com/DamianTodorovic/kepta).
+BUSL-1.1 — the whole source is at [github.com/DamianTodorovic/kepta](https://github.com/DamianTodorovic/kepta). Running this server for your own agents on your own hardware is free; offering it to third parties as a hosted or managed service needs a separate commercial license, and each version converts to AGPL-3.0-or-later four years after its release.

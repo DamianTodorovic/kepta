@@ -1,21 +1,50 @@
-MIT License
+Business Source License 1.1
 
-Copyright (c) 2026 KEPTA
+Parameters
 
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
+Licensor:             Damian Todorovic
+Licensed Work:        KEPTA (the memory engine, the MCP server and the
+                      HTTP API, including the npm package "kepta-mcp")
+Additional Use Grant: You may make use of the Licensed Work for any purpose
+                      except offering it — or a modified version of it — to
+                      third parties as a hosted, managed or paid service.
+                      Running the Licensed Work inside your own organization,
+                      on your own hardware, for your own benefit is always
+                      allowed, including production use.
+Change Date:          Four years from the date each version of the Licensed
+                      Work was first publicly published.
+Change License:       GNU Affero General Public License v3.0 or later
+                      (AGPL-3.0-or-later)
 
-The above copyright notice and this permission notice shall be included in all
-copies or substantial portions of the Software.
+Terms
 
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-SOFTWARE.
+The Licensor hereby grants you the right to copy, modify, create derivative
+works, redistribute, and make non-production use of the Licensed Work. An
+additional use right is granted under the Additional Use Grant above, subject
+to the terms and conditions of this Business Source License.
+
+Use, redistribution, and other acts not permitted under the Additional Use
+Grant or this Business Source License require a separate commercial license
+from the Licensor.
+
+Each version of the Licensed Work converts to the Change License on the
+applicable Change Date. After that date, the version is available under the
+Change License and this Business Source License no longer applies to it.
+
+The Licensor grants you the rights contained in this license provided that
+you do not circumvent the technical measures protecting the Licensed Work,
+and provided that you comply with the terms above.
+
+THE LICENSOR MAKES NO REPRESENTATIONS OR WARRANTIES, EXPRESS OR IMPLIED. BY
+WAY OF NON-EXHAUSTIVE EXAMPLE: THERE ARE NO WARRANTIES OF MERCHANTABILITY OR
+FITNESS FOR A PARTICULAR PURPOSE. USE AT YOUR OWN RISK. THE LICENSOR SHALL NOT
+BE LIABLE FOR DAMAGES, INCLUDING ANY GENERAL, SPECIAL, INCIDENTAL OR
+CONSEQUENTIAL DAMAGES ARISING OUT OF THE USE OR INABILITY TO USE THE LICENSED
+WORK.
+
+This Business Source License is not an Open Source license. However, the
+Change License (as printed above) is an Open Source license.
+
+This license is based on Business Source License 1.1 (MPL-2.0-licensed text
+by MariaDB Corporation), used under the Creative Commons Attribution-ShareAlike
+license.

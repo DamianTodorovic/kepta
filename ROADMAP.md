@@ -67,7 +67,7 @@ KEPTA's interface is English, one language done properly.
 
 | Feature | What shipped |
 |---|---|
-| **Name and number** | Activation stays name and key, offline; the sidebar shows *Licensed to …*, the license number sits in its tooltip |
+| **Name and number** | Activation stays name and key, offline, and every key carries a license number. Since 3.1.1 the sidebar shows the licensee's name with no tier label — the number itself is no longer on screen (it travels with the license state and the activation answer) |
 | **Revocation** | A revoked license number no longer unlocks KEPTA from the next update on — also where it was already activated |
 | **Copy buttons** | Chat, recovery key, system status and the MCP block copy again |
 
@@ -80,12 +80,13 @@ KEPTA's interface is English, one language done properly.
 | **Dossier** | Everything about a person, a project or a topic on one page — copy as Markdown or keep as a note |
 | **AI apps** | Connect Claude Desktop, Claude Code, Cursor, Windsurf and VS Code in one click; live activity with names; a sealed, checkable audit log |
 | **Privacy** | The privacy shield before cloud models and for AI apps; private notes |
-| **Tiers and deployment (2.13.1)** | Licenses carry the tier and seats; import of ChatGPT and Claude history; managed deployment with central policies; Windows installers. (2.13.3 folded the public Business tier into Enterprise — team memory ships with Enterprise.) |
+| **Tiers and deployment (2.13.1)** | Licenses carry the tier and seats; import of ChatGPT and Claude history; centrally managed policies the app enforces (`src/lib/richtlinien.ts`: `chat_cloud`, `machine_scan`, `privacy_shield`); Windows installers. (2.13.3 folded the public Business tier into Enterprise — team memory ships with Enterprise. SSO, the workspaces UI and MDM enrolment did not: they are sold as roadmap, see README.) |
 | **This computer only (2.13.2)** | The HTTP server refuses foreign `Host` headers and write requests from other websites |
+| **Files next to the database (2.13.4)** | `profile.json`, `scan-config.json` and the sync journal get the same 256-bit key as the knowledge base (AES-256-GCM, `src/core/nebendateien.ts`); older plaintext files are read and re-encrypted on the next write. Readable by design: `endpoint.json` (no secret, it is how local tools find the port) and the inbox with the user's own source files |
 
 ## 🔭 Next (deliberately planned follow-up work)
 
-- **Encrypting the files next to the database** — inbox, profile, scan settings and the journals are still plaintext (SECURITY.md lists them)
+- **Encrypting the files next to the database** — done in 2.13.4 for the settings and the journals (see the v2.13 table); what is left is the sealed audit *file* sink: it ships as the encrypted `VerschlussteAuditDatei` class in `src/core/nebendateien.ts` and is tested, but the running app keeps its audit trail in the database, so nothing wires the file sink yet
 - **Git-based memory versioning** (in the style of Letta context repositories) — every change as a commit in a bare repo next to the DB
 - **Cross-encoder reranking as a required path** — Qwen3-Reranker-0.6B (arXiv:2506.05176) over the top-20 RRF candidates, once an Ollama rerank API exists; the deterministic local reranker already ships as the seam
 - **Bi-temporal edges** (arXiv:2501.13956): `ingested_at`/`invalidated_at` on relations in addition to `valid_from`/`valid_to`

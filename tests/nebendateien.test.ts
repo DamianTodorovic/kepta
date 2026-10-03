@@ -125,16 +125,43 @@ describe("VerschlussteAuditDatei mit Schlüssel", () => {
   it("Schreibt keine Klartext-Ereignisse mehr auf die Platte", async () => {
     const dir = ordner();
     const pfad = path.join(dir, "audit.jsonl");
-    const sink = new VerschlussteAuditDatei(pfad, schlüssel());
+    const s = schlüssel();
+    const sink = new VerschlussteAuditDatei(pfad, s);
     sink.emit({ at: Date.now(), actor: "lokal", action: "memory_save", target: "k-1", detail: "Streng geheim" } as never);
-    await new Promise((r) => setTimeout(r, 120));
+    await sink.flush();
     const roh = fs.readFileSync(pfad, "utf8").trim();
     expect(roh.startsWith("K1.")).toBe(true);
     expect(roh.includes("Streng geheim")).toBe(false);
+
+    // Mehr Einträge nacheinander: flush() wartet die ganze Schlange ab, die
+    // Reihenfolge bleibt die der Meldungen, und keine Zeile ist Klartext.
+    sink.emit({ at: 2, actor: "lokal", action: "b", target: null, detail: "zweite" } as never);
+    sink.emit({ at: 3, actor: "lokal", action: "c", target: null, detail: "dritte" } as never);
+    await sink.flush();
+    const zeilen = fs.readFileSync(pfad, "utf8").trim().split("\n");
+    expect(zeilen).toHaveLength(3);
+    expect(zeilen.every((z) => z.startsWith("K1."))).toBe(true);
+    expect(journalLesen(pfad, s).map((e) => (e as { action: string }).action)).toEqual(["memory_save", "b", "c"]);
+
     // Klartext-Modus (null) bleibt für Werkzeuge verfügbar
     const pfad2 = path.join(dir, "audit2.jsonl");
-    new VerschlussteAuditDatei(pfad2, null).emit({ at: 1, actor: "a", action: "x", target: null, detail: null } as never);
-    await new Promise((r) => setTimeout(r, 120));
+    const klar = new VerschlussteAuditDatei(pfad2, null);
+    klar.emit({ at: 1, actor: "a", action: "x", target: null, detail: null } as never);
+    await klar.flush();
     expect(fs.readFileSync(pfad2, "utf8")).toContain('"action":"x"');
+  });
+
+  it("Ein kaputter Audit-Pfad wirft nicht — ein sink darf nie die Memory brechen", async () => {
+    const dir = ordner();
+    const pfad = path.join(dir, "audit.jsonl");
+    const sink = new VerschlussteAuditDatei(pfad, schlüssel());
+    sink.emit({ at: 1, actor: "a", action: "vorher", target: null, detail: null } as never);
+    await sink.flush();
+
+    // Ordner nach der Konstruktion entfernen: die nächsten Appends schlagen fehl.
+    fs.rmSync(dir, { recursive: true, force: true });
+    expect(() => sink.emit({ at: 2, actor: "b", action: "nachher", target: null, detail: null } as never)).not.toThrow();
+    await expect(sink.flush()).resolves.toBeUndefined();
+    expect(fs.existsSync(pfad)).toBe(false);
   });
 });

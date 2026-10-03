@@ -58,10 +58,11 @@ describe("npm-Paket: die package.json", () => {
 
   it("veroeffentlicht Binary, README und Lizenz — sonst nichts", () => {
     expect(paket.files).toEqual(["bin/kepta.js", "README.md", "LICENSE"]);
-    // Die Lizenz muss auch wirklich daliegen, sonst behauptet das Paket ein MIT,
-    // dessen Text niemand mitbekommt.
+    // Die Lizenz muss auch wirklich daliegen, sonst behauptet das Paket eine
+    // Lizenz, deren Text niemand mitbekommt. BUSL-1.1 seit 2.13.22 — das npm-
+    // Paket ist der Kern, und der Kern ist source-available, nicht MIT.
     expect(fs.existsSync(path.join(wurzel, "npm", "LICENSE"))).toBe(true);
-    expect(paket.license).toBe("MIT");
+    expect(paket.license).toBe("BUSL-1.1");
   });
 
   it("verlangt Node 22.13 — die gepruefte Untergrenze", () => {

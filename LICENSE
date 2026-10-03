@@ -1,5 +1,5 @@
-KEPTA Enterprise
-================
+KEPTA Desktop App
+=================
 
 Copyright (c) 2026 Damian Todorovic. Alle Rechte vorbehalten.
 
@@ -7,5 +7,7 @@ Dieses Repository enthaelt proprietären Quellcode (die KEPTA-Desktop-
 anwendung und ihre Profi-Funktionen). Keine Veroeffentlichung, keine
 Weitergabe, keine Bearbeitung ohne ausdrueckliche schriftliche Genehmigung.
 
-Der offene Kern von KEPTA (Memory-Engine, MCP-Server, HTTP-API) steht
-unter der AGPL-3.0 und lebt hier: https://github.com/DamianTodorovic/kepta
+Der Quelltext des Kerns von KEPTA (Memory-Engine, MCP-Server, HTTP-API)
+ist unter der Business Source License 1.1 veroeffentlicht (waehrend vier
+Jahren source-available, danach AGPL-3.0-or-later) und lebt hier:
+https://github.com/DamianTodorovic/kepta
