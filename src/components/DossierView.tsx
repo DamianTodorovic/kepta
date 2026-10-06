@@ -49,7 +49,9 @@ function Liste({ titel, eintraege, mitDatum, onOpen }: { titel: string; eintraeg
   );
 }
 
-export function DossierView({ onOpenMemory, onEditMemory }: { onOpenMemory: (id: string) => void; onEditMemory?: (id: string) => void }) {
+interface DossierThema { text: string; nr: number }
+
+export function DossierView({ onOpenMemory, onEditMemory, dossierThema }: { onOpenMemory: (id: string) => void; onEditMemory?: (id: string) => void; /** von außen gesetzt: das Dossier, das offen sein soll (Klick auf ein Konzept im Graphen). `nr` unterscheidet zwei Klicks auf denselben Begriff. */ dossierThema?: DossierThema }) {
   const toast = useToast();
   const [eingabe, setEingabe] = useState('');
   const [daten, setDaten] = useState<Dossier | null>(null);
@@ -113,6 +115,15 @@ export function DossierView({ onOpenMemory, onEditMemory }: { onOpenMemory: (id:
   };
 
   const absenden = (e: FormEvent) => { e.preventDefault(); void erstelle(eingabe); };
+
+  // Von außen gesetzt (Klick auf ein Konzept im Graphen): dieses Dossier soll
+  // offen sein. Die Objekt-Identität ist das Signal — wer zweimal auf denselben
+  // Begriff klickt, nachdem er von Hand etwas anderes tippte, sieht wieder den
+  // Begriff und nicht die letzte Eingabe.
+  useEffect(() => {
+    if (dossierThema) void erstelle(dossierThema.text);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [dossierThema]);
 
   const kopieren = async () => {
     if (!daten) return;

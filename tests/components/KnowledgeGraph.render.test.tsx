@@ -1083,6 +1083,96 @@ describe("Im Baum steht die Hierarchie hinter dem Inhalt", () => {
   });
 });
 
+describe("Ein Klick auf ein Begriff öffnet sein Dossier", () => {
+  // Ein Konzept ist kein Blatt, das man aufblättert — es ist eine Person, eine
+  // Firma, ein Thema. Was man darüber weiß, steht im Dossier. Der kürzeste Weg
+  // dorthin führt über den Punkt im Bild.
+
+  const kl = (typ: string, x: number, y: number) =>
+    new (globalThis as unknown as { PointerEvent: typeof PointerEvent }).PointerEvent(typ, {
+      bubbles: true, cancelable: true, clientX: x, clientY: y, pointerId: 1,
+    });
+
+  async function klickeKnoten(container: HTMLElement, suche: (t: string) => boolean) {
+    const c = container.querySelector('[data-testid="graph-canvas"]') as HTMLCanvasElement;
+    const rahmen = leinwand.letzterRahmen();
+    let tx = 0, ty = 0, k = 1;
+    for (const a of rahmen) {
+      if (a.op === "translate") { tx = Number(a.args[0]); ty = Number(a.args[1]); }
+      if (a.op === "scale") { k = Number(a.args[0]); break; }
+    }
+    const texte = rahmen.filter((a) => a.op === "fillText").map((a) => ({ text: String(a.args[0]), x: Number(a.args[1]), y: Number(a.args[2]) }));
+    const knoten = rahmen.filter((a) => a.op === "arc").map((a) => ({ x: Number(a.args[0]), y: Number(a.args[1]), r: Number(a.args[2]) }));
+    const etikett = texte.find((t) => suche(t.text));
+    expect(etikett, `Kein Etikett passt. Gemalt: ${JSON.stringify(texte.map((t) => t.text))}`).toBeDefined();
+    const n = knoten.find((x) => Math.abs(x.x + x.r + 3 - etikett!.x) < 0.01 && Math.abs(x.y - etikett!.y) < 0.01);
+    expect(n, "Kein Knoten trägt das Etikett").toBeDefined();
+    const sx = n!.x * k + tx, sy = n!.y * k + ty;
+    await act(async () => {
+      c.setPointerCapture?.(1);
+      c.dispatchEvent(kl("pointerdown", sx, sy));
+      c.dispatchEvent(kl("pointerup", sx, sy));
+      await new Promise((r) => setTimeout(r, 60));
+    });
+  }
+
+  async function zeichneMitBegriff(onSelectConcept?: (name: string) => void) {
+    const a = note({ id: "n1", title: "Quarterly filing draft", tags: ["client"] });
+    const b = note({ id: "n2", title: "Filing deadline changed", tags: ["client"] });
+    vi.stubGlobal("fetch", vi.fn(async () => new Response(JSON.stringify({
+      relations: [],
+      memoriesByEntity: { "nordwind logistics": ["n1", "n2"] },
+    }), { status: 200 })));
+    const onSelect = vi.fn();
+    const view = render(
+      <KnowledgeGraph memories={[a, b]} onSelectMemory={onSelect} onSelectConcept={onSelectConcept} />
+    );
+    await act(async () => { await new Promise((r) => setTimeout(r, 120)); });
+    await bilder(12);
+    return { ...view, onSelect };
+  }
+
+  it("nennt der Fläche das Begriff beim Klick", async () => {
+    const gewaehlt = vi.fn();
+    const { container } = await zeichneMitBegriff(gewaehlt);
+    await klickeKnoten(container, (t) => t.startsWith("nordwind logisti"));
+    expect(gewaehlt, "Der Klick aufs Begriff kam nicht an.").not.toHaveBeenCalledWith(undefined);
+    expect(gewaehlt).toHaveBeenCalledWith("nordwind logistics");
+  });
+
+  it("lässt eine Notiz beim Klick in Ruhe — die öffnet erst der Doppelklick", async () => {
+    const gewaehlt = vi.fn();
+    const { container, onSelect } = await zeichneMitBegriff(gewaehlt);
+    // Ein Titel, kein Etikett rechts neben einem Knoten: Notizen sitzen unter
+    // ihrem Knoten. Also über die Notizknoten selbst fahren — der mittlere
+    // Treffer ist sicher, wenn man die Titelposition spiegelverkehrt nutzt.
+    const c = container.querySelector('[data-testid="graph-canvas"]') as HTMLCanvasElement;
+    const rahmen = leinwand.letzterRahmen();
+    let tx = 0, ty = 0, k = 1;
+    for (const a of rahmen) {
+      if (a.op === "translate") { tx = Number(a.args[0]); ty = Number(a.args[1]); }
+      if (a.op === "scale") { k = Number(a.args[0]); break; }
+    }
+    const titel = rahmen
+      .filter((a) => a.op === "fillText")
+      .map((a) => ({ text: String(a.args[0]), x: Number(a.args[1]), y: Number(a.args[2]) }))
+      .find((t) => t.text === "Filing deadline changed");
+    expect(titel, "Kein Notiztitel wurde gemalt").toBeDefined();
+    // Der Titel sitzt mit der Oberkante zwei Einheiten unter dem Knotenrand;
+    // die Mitte des Etiketts liegt auf der Knoten-x-Achse.
+    const sx = titel!.x * k + tx;
+    const sy = (titel!.y - 9) * k + ty;
+    await act(async () => {
+      c.setPointerCapture?.(1);
+      c.dispatchEvent(kl("pointerdown", sx, sy));
+      c.dispatchEvent(kl("pointerup", sx, sy));
+      await new Promise((r) => setTimeout(r, 60));
+    });
+    expect(gewaehlt, "Ein Klick auf eine Notiz darf kein Dossier öffnen").not.toHaveBeenCalled();
+    expect(onSelect, "Ein blosser Klick heftet nicht an und öffnet nicht").not.toHaveBeenCalled();
+  });
+});
+
 describe("Ein gehaltener Begriff sagt, was er ist", () => {
   // Das Gerüst ist auf 16 Zeichen gekürzt — sonst läuft ein langer Ebenenname
   // in die Titelspalte hinein. Nur: wer über einem Begriff steht, will genau

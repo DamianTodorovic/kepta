@@ -18,6 +18,7 @@ import {
   reheat,
   nurEchteKanten,
   kantZaehlung,
+  ENTITAETS_PRAEFIX,
   type LayoutEdge,
   type LayoutNode,
   type Simulation,
@@ -39,6 +40,13 @@ const ANSICHT_KEY = "kepta_graph_view";
 interface KnowledgeGraphProps {
   memories: Memory[];
   onSelectMemory: (m: Memory) => void;
+  /**
+   * Ein Klick auf ein Konzept. Ein begriff ist kein blatt, das man
+   * aufblättert — er ist eine person, eine firma, ein thema, und was man
+   * darüber weiß, steht im dossier. deshalb hier, und nicht ein weiterer
+   * knopf in einer leiste.
+   */
+  onSelectConcept?: (name: string) => void;
 }
 
 interface GraphApi {
@@ -141,7 +149,7 @@ const ZUG_SCHWELLE_PX = 4;
  * einem Ref (kein Render pro Bild) und das Bild auf einer Leinwand; die Welt ist
  * so gross, wie sie sein muss, und der Ausschnitt richtet sich nach ihr.
  */
-export function KnowledgeGraph({ memories, onSelectMemory , sichtbar = true }: KnowledgeGraphProps & { sichtbar?: boolean }) {
+export function KnowledgeGraph({ memories, onSelectMemory, onSelectConcept, sichtbar = true }: KnowledgeGraphProps & { sichtbar?: boolean }) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
   const [filter, setFilter] = useState("");
@@ -1350,13 +1358,20 @@ export function KnowledgeGraph({ memories, onSelectMemory , sichtbar = true }: K
       gezogen.vx = 0;
       gezogen.vy = 0;
       if (bewegt) setAngeheftet(zaehleAngeheftet());
+      // ein blosser Klick auf ein konzept öffnet sein dossier — für die notiz
+      // gilt das nicht, die öffnet erst der doppelklick und bleibt beim
+      // einfachen klick liegen, wo sie war.
+      if (!bewegt && gezogen.id.startsWith(ENTITAETS_PRAEFIX)) {
+        const name = strukturKnotenRef.current.get(gezogen.id)?.label;
+        if (name) onSelectConcept?.(name);
+      }
     }
     zugRef.current = null;
     draggingRef.current = null;
     panRef.current = null;
     zeichneNoetig.current = true;
     setGreift(false);
-  }, []);
+  }, [onSelectConcept]);
 
   /**
    * Verlaesst der Zeiger die Flaeche, muss auch die Hervorhebung enden. Vorher
@@ -1664,15 +1679,14 @@ export function KnowledgeGraph({ memories, onSelectMemory , sichtbar = true }: K
           style={{
             width: "100%",
             height: "100%",
-            // Gerüst-Knoten (Konzept im Feld, Ebene im Baum) sind nie etwas, das
-            // man öffnet — der Zeiger verspricht eine Aktion nur bei echten
-            // Notizen, deren Doppelklick öffnet. Alles andere fühlt sich nach
-            // Schwenken an, und Schwenken ist es auch.
+            // Ein Konzept öffnet beim Klick sein dossier — der Zeiger sagt es.
+            // Die übrigen Gerüstknoten (typ, tag-gruppe, wurzel) sind nur
+            // wege, kein inhalt: sie versprechen nichts und bleiben greifbar.
             cursor:
               greift
                 ? "grabbing"
                 : hovered
-                  ? (istStruktur(hovered) ? "grab" : "pointer")
+                  ? (hovered.startsWith(ENTITAETS_PRAEFIX) ? "pointer" : "grab")
                   : "grab",
           }}
           onPointerDown={onPointerDown}

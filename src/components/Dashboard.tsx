@@ -110,6 +110,8 @@ export function Dashboard() {
   const [debouncedSearchQuery, setDebouncedSearchQuery] = useState('');
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const [currentView, setCurrentView] = useState<ViewKey>('memories');
+  /** Das Dossier, das von außen geöffnet wurde — ein Klick im Graphen. */
+  const [dossierThema, setDossierThema] = useState<{ text: string; nr: number } | undefined>(undefined);
   const [editingMemory, setEditingMemory] = useState<Memory | null>(null);
   const [isEditorOpen, setIsEditorOpen] = useState(false);
   // Klick auf eine Karte oeffnet die lesbare Vorschau — der Editor kommt nur
@@ -1554,7 +1556,12 @@ export function Dashboard() {
             </div>
           </div>
           <div className="flex-1 min-h-0">
-            <KnowledgeGraph memories={memories} sichtbar={currentView === 'graph'} onSelectMemory={(m) => { setEditingMemory(m); setIsEditorOpen(true); }} />
+            <KnowledgeGraph
+              memories={memories}
+              sichtbar={currentView === 'graph'}
+              onSelectMemory={(m) => { setEditingMemory(m); setIsEditorOpen(true); }}
+              onSelectConcept={(name) => { setDossierThema({ text: name, nr: (dossierThema?.nr ?? 0) + 1 }); setCurrentView('dossier'); }}
+            />
           </div>
         </motion.div>
 
@@ -1571,7 +1578,7 @@ export function Dashboard() {
           animate={{ opacity: 1 }}
           className={cn("flex-1 px-5 h-full overflow-y-auto", currentView === 'dossier' ? 'block' : 'hidden')}
         >
-          <DossierView onOpenMemory={oeffneNotiz} onEditMemory={(id) => { const m = memories.find((x) => x.id === id); if (m) { setEditingMemory(m); setIsEditorOpen(true); } }} />
+          <DossierView dossierThema={dossierThema} onOpenMemory={oeffneNotiz} onEditMemory={(id) => { const m = memories.find((x) => x.id === id); if (m) { setEditingMemory(m); setIsEditorOpen(true); } }} />
         </motion.div>
 
         <motion.div
