@@ -56,3 +56,24 @@ describe("Ein Dossier von außen öffnen", () => {
     await waitFor(() => expect(anfragen.filter((u) => u.includes("/api/dossier?topic="))).toHaveLength(2));
   });
 });
+
+describe("Eine Teilantwort wirft das Dossier nicht raus", () => {
+  // Die Fläche liest daten.todos.length, daten.contradictions.map(...),
+  // daten.related.length. Ein Feld, das der Server nicht liefert, warf bisher
+  // die ganze Ansicht um — und seit dem 6.10. führt ein Klick im Graphen hierher.
+
+  it("hält durch, wenn die Antwort nur einen Teil der Form trägt", async () => {
+    vi.stubGlobal("fetch", vi.fn(async (url: string) => {
+      if (String(url).includes("/api/dossier/suggestions")) return new Response(JSON.stringify({ tags: [], topics: [] }), { status: 200 });
+      // topic und markdown da, die Listen fehlen oder sind falscher Art.
+      return new Response(JSON.stringify({ topic: "Elena Weiss", markdown: "# Elena", todos: "keine" }), { status: 200 });
+    }));
+    const { container } = render(
+      <ToastProvider><DossierView onOpenMemory={() => {}} dossierThema={{ text: "Elena Weiss", nr: 1 }} /></ToastProvider>
+    );
+    await waitFor(() => expect(container.textContent).toMatch(/Elena Weiss/));
+    // Die Überschriften stehen — die Fläche ist da, nicht weg.
+    expect(container.textContent).toMatch(/Key facts|No entries yet|Nothing yet|Elena/);
+    expect(container.textContent).not.toMatch(/Something went wrong|Cannot read/);
+  });
+});

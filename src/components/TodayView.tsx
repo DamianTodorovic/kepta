@@ -4,6 +4,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { formatDistanceToNow } from 'date-fns';
 import { AlertTriangle, CheckCircle2, Bot, Clock, RefreshCw } from '../lib/icons';
+import { inForm } from '../lib/antwort';
 
 export interface Seite { id: string; title: string; sentence: string; value: string; updatedAt: number }
 export interface Widerspruch { key: string; newer: Seite; older: Seite; about: string }
@@ -21,6 +22,19 @@ export interface Briefing {
   contradictions: Widerspruch[];
   apps: { who: string; calls: number; saves: number; searches: number }[];
 }
+
+// Die Form, die diese Fläche liest. Ein Muster-Element erklärt die Zeilenform
+// (die Fläche liest `w.newer.title`); eine fehlende Liste bleibt leer.
+const LEERES_BRIEFING: Briefing = {
+  since: 0,
+  created: { total: 0, bySource: [{ who: '', count: 0 }], notes: [{ id: '', title: '', type: '', at: 0 }] },
+  changed: { total: 0, notes: [{ id: '', title: '', type: '', at: 0 }] },
+  expiring: [{ id: '', title: '', type: '', at: 0, validTo: 0 }],
+  expired: [{ id: '', title: '', type: '', at: 0, validTo: 0 }],
+  todos: { total: 0, items: [{ id: '', title: '', text: '' }] },
+  contradictions: [{ key: '', about: '', newer: { id: '', title: '', sentence: '', value: '', updatedAt: 0 }, older: { id: '', title: '', sentence: '', value: '', updatedAt: 0 } }],
+  apps: [{ who: '', calls: 0, saves: 0, searches: 0 }],
+};
 
 export const LETZTER_BESUCH = 'kepta_last_today';
 const TAG = 86_400_000;
@@ -131,7 +145,7 @@ export function TodayView({ aktiv, onOpenMemory, onGo }: Props) {
       const r = await fetch(`/api/briefing?since=${seit}`);
       const d = await r.json();
       if (!r.ok) throw new Error(d.error ?? `HTTP ${r.status}`);
-      setDaten(d as Briefing);
+      setDaten(inForm(d, LEERES_BRIEFING));
     } catch (e) {
       setFehler(e instanceof Error ? e.message : String(e));
     }

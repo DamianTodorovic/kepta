@@ -740,3 +740,39 @@ describe("Dashboard: Gruppierungen und Vorschau", () => {
     expect(container.textContent).not.toMatch(/Edit note/);
   });
 });
+
+describe("Dashboard: eine Teilantwort wirft nicht die ganze Fläche", () => {
+  // Die Fläche liest inbox.files.length direkt. Antwortet /api/inbox/status
+  // unvollständig — Server im Hochlauf, ältere Fassung, Teilauswertung — stand
+  // bisher der ganze Bildschirm da und verschwand. Derselbe Fehler, der einmal
+  // den ganzen Einstellungs-Bildschirm gekostet hat.
+
+  async function zeigeMitInbox(antwort: unknown) {
+    notizen = [note({ title: "Docker" })];
+    vi.stubGlobal("fetch", vi.fn(async (url: string) => {
+      if (String(url).includes("/api/inbox/status")) return new Response(JSON.stringify(antwort), { status: 200 });
+      if (String(url).includes("/api/license")) return new Response(JSON.stringify({ licensed: true }), { status: 200 });
+      if (String(url).includes("/api/memories")) return new Response(JSON.stringify(notizen), { status: 200 });
+      if (String(url).includes("/api/health")) return new Response(JSON.stringify({ ok: true, count: 1, dbPath: "/x", embeddings: { total: 0, embedded: 0 } }), { status: 200 });
+      return new Response("{}", { status: 200 });
+    }));
+    const view = render(
+      <ThemeProvider><AuthProvider><ToastProvider><Dashboard /></ToastProvider></AuthProvider></ThemeProvider>
+    );
+    await act(async () => { await new Promise((r) => setTimeout(r, 200)); });
+    return view;
+  }
+
+  for (const [name, antwort] of [
+    ["leeres Objekt", {}],
+    ["null", null],
+    ["files vom falschen Typ", { files: "drei", watching: true }],
+  ] as const) {
+    it(`hält durch, wenn die Inbox-Antwort ein ${name} ist`, async () => {
+      const { container } = await zeigeMitInbox(antwort);
+      // Die Fläche steht noch — und zählt sichtbar null, statt zu verschwinden.
+      expect(container.textContent).toMatch(/in the index/i);
+      expect(container.textContent).toMatch(/0 in Inbox/);
+    });
+  }
+});

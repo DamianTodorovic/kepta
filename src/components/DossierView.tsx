@@ -3,6 +3,7 @@
 import { FormEvent, useEffect, useState } from 'react';
 import { FileText, Copy, Check, Save, Loader2, AlertTriangle } from '../lib/icons';
 import { useToast } from './ui/Toast';
+import { inForm } from '../lib/antwort';
 
 interface Eintrag { id: string; title: string; sentence: string; at: number }
 /** Ein Widerspruch im Dossier — mit ids, wenn der Server sie liefert (tut er). */
@@ -28,6 +29,19 @@ interface Dossier {
   markdown: string;
 }
 interface Vorschlaege { tags: { name: string; count: number }[]; topics: { name: string; count: number }[] }
+
+// Die Form, die die Fläche liest — ein Muster-Element erklärt die Zeilenform,
+// es ist nicht der Inhalt einer leeren Antwort.
+const LEERES_DOSSIER: Dossier = {
+  topic: '', total: 0, kinds: {}, facts: [{ id: '', title: '', sentence: '', at: 0 }],
+  timeline: [{ id: '', title: '', sentence: '', at: 0 }],
+  howtos: [{ id: '', title: '', sentence: '', at: 0 }],
+  documents: [{ id: '', title: '', sentence: '', at: 0 }],
+  todos: [{ id: '', title: '', text: '' }],
+  contradictions: [{ key: '', about: '', newer: { title: '', value: '' }, older: { title: '', value: '' } }],
+  related: [{ tag: '', count: 0 }],
+  first: 0, last: 0, markdown: '',
+};
 
 const tag = (ms: number) => new Date(ms).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
 
@@ -106,7 +120,7 @@ export function DossierView({ onOpenMemory, onEditMemory, dossierThema }: { onOp
       const r = await fetch(`/api/dossier?topic=${encodeURIComponent(t)}`);
       const d = await r.json();
       if (!r.ok) throw new Error(d.error ?? `HTTP ${r.status}`);
-      setDaten(d as Dossier);
+      setDaten(inForm(d, LEERES_DOSSIER));
     } catch (e) {
       setFehler(e instanceof Error ? e.message : String(e));
     } finally {
@@ -122,7 +136,6 @@ export function DossierView({ onOpenMemory, onEditMemory, dossierThema }: { onOp
   // Begriff und nicht die letzte Eingabe.
   useEffect(() => {
     if (dossierThema) void erstelle(dossierThema.text);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [dossierThema]);
 
   const kopieren = async () => {

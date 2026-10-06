@@ -16,6 +16,7 @@ import { ActivityView } from './ActivityView';
 import { CommandPalette, useCommandPaletteHotkey, buildPaletteActions } from './CommandPalette';
 import { saveMemory, deleteMemory, subscribeMemories, refreshMemories, deleteMemories, restoreMemories } from '../lib/store';
 import { subscribeActivity } from '../lib/activity';
+import { inForm } from '../lib/antwort';
 import { useToast } from './ui/Toast';
 import { hybridSearch, type ScoredMemory } from '../lib/semantic';
 import { useSuchPrefs, leseTreffer, normalisiereTreffer, schreibeTreffer, SUCH_PREFS_EVENT, RESULT_STOPS } from '../lib/searchPrefs';
@@ -41,6 +42,11 @@ type ViewKey = 'memories' | 'today' | 'chat' | 'graph' | 'dossier' | 'activity' 
  * Die Stufen des Ergebnisreglers (5..250..0) leben in lib/searchPrefs —
  * die Einstellungen zeigen denselben Regler und schreiben dieselben Schlüssel.
  */
+interface InboxStatus { inboxDir?: string; files: string[]; archiveCount: number; watching: boolean }
+// Die Form, die die Leiste liest. `files: [""]` erklärt, dass die Liste Zeilen
+// enthält — ein Muster-Element ist Form, nicht Inhalt.
+const LEERE_INBOX: InboxStatus = { inboxDir: '', files: [''], archiveCount: 0, watching: false };
+
 const ALL_RESULTS = 10_000;
 /**
  * Der Chat bekommt weiterhin nur eine Handvoll Knoten. Der Regler steuert die
@@ -299,10 +305,21 @@ export function Dashboard() {
   const [clipOk, setClipOk] = useState<string | null>(null);
 
   // Inbox Auto-Import — Gehirn liest immer mit (File-Watcher)
-  const [inbox, setInbox] = useState<{ inboxDir?: string; files: string[]; archiveCount: number; watching: boolean } | null>(null);
+  const [inbox, setInbox] = useState<InboxStatus | null>(null);
   const [inboxScanBusy, setInboxScanBusy] = useState(false);
   const refreshInbox = useCallback(async ()=>{
-    try { const r = await fetch('/api/inbox/status'); if(r.ok) setInbox(await r.json()); } catch {}
+    try {
+      const r = await fetch('/api/inbox/status');
+      if(!r.ok) return;
+      const d = await r.json();
+      // An der Grenze normalisiert, nicht später abgesichert: die Fläche liest
+      // inbox.files.length direkt, und eine Teilantwort (Server im Hochlauf,
+      // ältere Fassung, Teilauswertung) warf bisher die ganze Dashboard-Schicht
+      // raus — derselbe Fehler, der einmal den Einstellungs-Bildschirm gekostet
+      // hat. Auch files:"drei" wäre durchgerutscht und als „drei in Inbox"
+      // aufgetaucht.
+      setInbox(inForm(d, LEERE_INBOX));
+    } catch {}
   }, []);
   useEffect(()=>{ refreshInbox(); const id=setInterval(refreshInbox, 12000); return ()=> clearInterval(id); }, [refreshInbox]);
   const handleInboxScan = async ()=>{
