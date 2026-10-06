@@ -781,3 +781,109 @@ export function kantZaehlung(edges: readonly LayoutEdge[]): { echt: number; aehn
   for (const e of edges) if (e.real) echt++;
   return { echt, aehnlichkeit: edges.length - echt, gesamt: edges.length };
 }
+
+// ---------- Eine Ontologie für beide Ansichten ----------
+//
+// Das Kraftfeld zeichnete bis hierhin Notizen und ließ zwei davon verbunden
+// sein, wenn JEDE eine Entität erwähnte, die durch eine Behauptung verbunden
+// sind. Das ist ein Kreuzprodukt: quadratisch im Preis, und ab der 25. Paarung
+// kappt der Code still — Belege fallen weg, ohne dass das Bild es sagt. Zwei
+// Notizen, die beide „Elena" erwähnen, standen darin gar nicht verbunden, obwohl
+// sie genau dasselbe teilen.
+//
+// Dieses Netz dreht die Blickrichtung um, und zwar für Baum UND Kraftfeld:
+//   Notiz → Konzept  („erwähnt")      — linear, dünn
+//   Konzept ↔ Konzept („behauptet")   — die Aussage selbst, mit Typ und Ursprung
+// Ein Konzept mit genau einer Notiz und ohne Aussage erscheint nicht: es füllt
+// das Bild, ohne etwas zu verbinden.
+
+export const ENTITAETS_PRAEFIX = "__ent:";
+
+export interface EntitaetsKnoten {
+  /** Derselbe Schlüssel, den der Baum für denselben Knoten nutzt. */
+  id: string;
+  label: string;
+  /** Die sichtbaren Notizen, die dieses Konzept erwähnen. */
+  notizen: string[];
+}
+
+export interface Behauptung {
+  source: string;
+  target: string;
+  relation: string | null;
+  /** Die beurkundende Notiz — ohne sie hängt die Kante ins Leere. */
+  memoryId: string | null;
+}
+
+export interface EntitaetsNetz {
+  knoten: EntitaetsKnoten[];
+  /** [notizId, knotenId] */
+  erwahnungen: [string, string][];
+  behauptungen: Behauptung[];
+}
+
+export interface RoheRelation {
+  source: string;
+  target: string;
+  relation?: string | null;
+  memoryId?: string | null;
+}
+
+/**
+ * `sichtbar` ist die Menge der Notizen, die gerade im Bild stehen — nach
+ * Filter, Suche und Zeitregler. Alles andere an einer Kante darf auch nicht
+ * gezeichnet werden: der Regler auf „Februar 2023" hat sonst ein Netz aus
+ * Behauptungen stehen lassen, die es damals noch nicht gab.
+ */
+export function entitaetsNetz(
+  memoriesByEntity: Readonly<Record<string, readonly string[]>> | undefined,
+  relationen: readonly RoheRelation[] | undefined,
+  sichtbar: ReadonlySet<string>,
+  mindesten = 2
+): EntitaetsNetz {
+  const notizenVon = new Map<string, string[]>();
+  for (const [name, ids] of Object.entries(memoriesByEntity ?? {})) {
+    const sichtbare = [...new Set(ids)].filter((id) => sichtbar.has(id)).sort((a, b) => a.localeCompare(b));
+    if (sichtbare.length > 0) notizenVon.set(name, sichtbare);
+  }
+
+  const aufgenommene = new Set<string>();
+  const netze = new Map<string, EntitaetsKnoten>();
+  const nimm = (name: string): void => {
+    if (aufgenommene.has(name)) return;
+    const id = `${ENTITAETS_PRAEFIX}${name}`;
+    // Ein Index darf nicht zwei Dinge unter einem Schlüssel kennen. Trägt eine
+    // Notiz zufällig denselben Text, bleibt das Konzept weg — ein fehlender
+    // Nabel ist besser als ein mehrdeutiger.
+    if (sichtbar.has(id)) return;
+    aufgenommene.add(name);
+    netze.set(id, { id, label: name, notizen: notizenVon.get(name) ?? [] });
+  };
+
+  for (const [name, notizen] of notizenVon) if (notizen.length >= mindesten) nimm(name);
+
+  const behauptungen: Behauptung[] = [];
+  for (const r of relationen ?? []) {
+    const traeger = r.memoryId ?? null;
+    const sichtbarFuerBehauptung = traeger !== null ? sichtbar.has(traeger) : (() => {
+      // Ohne beurkundende Notiz trägt nur die Belegdichte beide Enden.
+      const a = notizenVon.get(r.source)?.length ?? 0;
+      const b = notizenVon.get(r.target)?.length ?? 0;
+      return a >= mindesten && b >= mindesten;
+    })();
+    if (!sichtbarFuerBehauptung) continue;
+    nimm(r.source);
+    nimm(r.target);
+    behauptungen.push({
+      source: `${ENTITAETS_PRAEFIX}${r.source}`,
+      target: `${ENTITAETS_PRAEFIX}${r.target}`,
+      relation: r.relation ?? null,
+      memoryId: traeger,
+    });
+  }
+
+  const knoten = [...netze.values()].sort((a, b) => a.label.localeCompare(b.label));
+  const erwahnungen: [string, string][] = [];
+  for (const k of knoten) for (const notizId of k.notizen) erwahnungen.push([notizId, k.id]);
+  return { knoten, erwahnungen, behauptungen };
+}

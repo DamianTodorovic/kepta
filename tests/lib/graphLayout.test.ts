@@ -21,6 +21,7 @@ import {
   nodeAt,
   nurEchteKanten,
   kantZaehlung,
+  entitaetsNetz,
   EDGE_LOD_THRESHOLD,
   EDGE_LOD_ZOOM,
   resolveCollisions,
@@ -974,5 +975,106 @@ describe("Ähnlichkeit ist eine Wahl, nicht der Grundzustand", () => {
 
   it("kantZaehlung auf leer liefert null und wirft nicht", () => {
     expect(kantZaehlung([])).toEqual({ echt: 0, aehnlichkeit: 0, gesamt: 0 });
+  });
+});
+
+describe("entitaetsNetz — eine Ontologie für Kraftfeld und Baum", () => {
+  // Das Kraftfeld faltet bisher jede Behauptung zwischen zwei Entitäten in das
+  // Kreuzprodukt ihrer Notizen und kappt nach 24 Paaren. Zwei Notizen, die
+  // beide „Elena" erwähnen, stehen darin unverbunden — zwei Notizen, die je
+  // eine verbundene Entität erwähnen, stehen verbunden, obwohl sie nichts
+  // teilen. Dieses Netz baut die Wahrheit um: Notizen hängen an Konzepten,
+  // Konzepte untereinander sind die Aussage.
+
+  const netz = (
+    byEntity: Record<string, string[]>,
+    relationen: { source: string; target: string; relation?: string; memoryId?: string | null }[],
+    sichtbar: string[]
+  ) => entitaetsNetz(byEntity, relationen, new Set(sichtbar));
+
+  it("eine Entität mit zwei sichtbaren Notizen wird ein Knoten", () => {
+    const n = netz({ elena: ["a", "b", "versteckt"] }, [], ["a", "b"]);
+    expect(n.knoten).toEqual([{ id: "__ent:elena", label: "elena", notizen: ["a", "b"] }]);
+    expect(n.erwahnungen).toEqual([["a", "__ent:elena"], ["b", "__ent:elena"]]);
+    expect(n.behauptungen).toEqual([]);
+  });
+
+  it("eine Entität mit genau einer Notiz und ohne Behauptung bleibt weg", () => {
+    // Ein Konzept, von dem nichts ausgesagt wird und das zwei Notizen teilen,
+    // ist Rauschen — es füllt das Bild, ohne etwas zu verbinden.
+    const n = netz({ elena: ["a"] }, [], ["a"]);
+    expect(n.knoten).toEqual([]);
+    expect(n.erwahnungen).toEqual([]);
+  });
+
+  it("Endpunkte einer sichtbaren Behauptung werden Knoten, auch mit einer Notiz", () => {
+    // X behauptet „Elena — Mandant Falk". Beide sind nur je einmal erwähnt,
+    // und genau die Aussage zieht sie ins Bild.
+    const n = netz(
+      { elena: ["x"], falk: ["x"] },
+      [{ source: "elena", target: "falk", relation: "mandant", memoryId: "x" }],
+      ["x"]
+    );
+    expect(n.knoten.map((k) => k.id)).toEqual(["__ent:elena", "__ent:falk"]);
+    expect(n.erwahnungen).toEqual([["x", "__ent:elena"], ["x", "__ent:falk"]]);
+    expect(n.behauptungen).toEqual([{ source: "__ent:elena", target: "__ent:falk", relation: "mandant", memoryId: "x" }]);
+  });
+
+  it("eine Behauptung aus einer ausgeblendeten Notiz gilt nicht", () => {
+    // Der Zeitregler und jeder Filter müssen das Netz mitnehmen: wer die
+    // Notiz nicht sieht, darf ihre Aussage nicht als Kante sehen.
+    const n = netz(
+      { elena: ["x"], falk: ["y"] },
+      [{ source: "elena", target: "falk", memoryId: "versteckt" }],
+      ["x", "y"]
+    );
+    expect(n.behauptungen).toEqual([]);
+    expect(n.knoten).toEqual([]);
+  });
+
+  it("eine Behauptung ohne beurkundende Notiz braucht zwei tragende Konzepte", () => {
+    // memoryId null: die Relation kommt aus dem Kern, ohne dass eine Notiz sie
+    // trägt. Weil keine Notiz sie trägt, kann sie auch kein Filter und kein
+    // Zeitregler wieder wegnehmen — genau das alte graue Gitter ohne Knoten.
+    // Gezeichnet wird sie erst, wenn beide Enden unabhängig belegt sind.
+    const zwei = netz({ elena: ["a", "b"], falk: ["x", "y"] }, [{ source: "elena", target: "falk", memoryId: null }], ["a", "b", "x", "y"]);
+    expect(zwei.behauptungen).toHaveLength(1);
+    expect(zwei.knoten.map((k) => k.id)).toEqual(["__ent:elena", "__ent:falk"]);
+
+    const keiner = netz({ elena: ["a", "b"], falk: ["x"] }, [{ source: "elena", target: "falk", memoryId: null }], ["a", "b", "x"]);
+    expect(keiner.behauptungen).toEqual([]);
+    expect(keiner.knoten.map((k) => k.id)).toEqual(["__ent:elena"]);
+  });
+
+  it("dasselbe Konzept in zwei Behauptungen ist ein Knoten", () => {
+    const n = netz(
+      { elena: ["x"], falk: ["x"], lumen: ["x"] },
+      [
+        { source: "elena", target: "falk", memoryId: "x" },
+        { source: "elena", target: "lumen", memoryId: "x" },
+      ],
+      ["x"]
+    );
+    expect(n.knoten).toHaveLength(3);
+    expect(new Set(n.knoten.map((k) => k.id)).size).toBe(3);
+    expect(n.erwahnungen.filter((e) => e[1] === "__ent:elena")).toHaveLength(1);
+    expect(n.behauptungen).toHaveLength(2);
+  });
+
+  it("ein Knoten, dessen Schlüssel mit einer Notiz-ID zusammenstösst, bleibt weg", () => {
+    // Der Schlüssel eines Konzepten-Knotens ist "__ent:" + Name. Eine Notiz
+    // kann denselben Text als ID tragen (theoretisch, aber der Index im
+    // Layout-Schritt darf nicht zwei Dinge unter einem Schlüssel kennen).
+    // Ein fehlender Nabel ist besser als ein mehrdeutiger.
+    const n = netz({ elena: ["__ent:elena", "b"] }, [], ["__ent:elena", "b"]);
+    expect(n.knoten).toEqual([]);
+    expect(n.erwahnungen).toEqual([]);
+  });
+
+  it("Reihenfolge ist deterministisch, auch bei gleicher Schreibweise", () => {
+    const n = netz({ zeta: ["a", "b"], alpha: ["a", "b"] }, [], ["a", "b"]);
+    expect(n.knoten.map((k) => k.label)).toEqual(["alpha", "zeta"]);
+    const notizen = netz({ alpha: ["b", "a"] }, [], ["b", "a"]);
+    expect(notizen.knoten[0]!.notizen).toEqual(["a", "b"]);
   });
 });
