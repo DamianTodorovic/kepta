@@ -54,6 +54,14 @@ const DEFAULT_TYPE_COLORS: Record<string, string> = {
 
 /** So viele Beschriftungen zeigt der Graph hoechstens gleichzeitig. */
 const MAX_LABELS = 140;
+/**
+ * Ein Ebenenname im Baum wird nie länger gemalt. Zwischen zwei Ebenen liegen
+ * 190 Welteinheiten, ein Zeichen der kleinen Gerüstschrift rund 5 — und ein
+ * zentrierter Notiztitel (26 Zeichen) ragt 78 Einheiten in seine Spalte hinein.
+ * Länger als 16 Zeichen darf das Gerüst deshalb nicht werden, sonst stehen
+ * zwei Namen in einer Zeile.
+ */
+const GERUEST_ZEICHEN = 16;
 const SPRITE_PX = 128;
 
 /**
@@ -508,12 +516,13 @@ export function KnowledgeGraph({ memories, onSelectMemory , sichtbar = true }: K
         const ziel = zielRef.current.get(n.id);
         if (ziel) { n.x = ziel.x; n.y = ziel.y; }
       }
-      autoFitOffen.current = false;
-      fitBaumAnsicht();
-      zeichneNoetig.current = true;
-      return;
     }
-    autoFitOffen.current = true;
+    // Der Ausschnitt wartet nicht auf den Gleiter: wer aus dem Kraftfeld in den
+    // Baum wechselt, sah bis hierhin mehrere Bilder lang das alte Fenster — bei
+    // einem breiten Baum genau den Ausschnitt, in dem nur Stamm und ein Typ
+    // standen. Die Zielpositionen des Layouts kennen die Ebene schon jetzt.
+    autoFitOffen.current = false;
+    fitBaumAnsicht(baumLayout.nodes);
     zeichneNoetig.current = true;
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [baumIdsSchluessel, baumLayout, radiusOf, ansicht, sliderCommit]);
@@ -620,13 +629,17 @@ export function KnowledgeGraph({ memories, onSelectMemory , sichtbar = true }: K
    * einen 3.000-Blatt-Baum zum unlesbaren Strich (Zoom < 1 %). Unterhalb einer
    * Lesbarkeits-Zoomstufe starten wir am Stamm — der Rest ist Pan/Zoom weg.
    */
-  const fitBaumAnsicht = useCallback(() => {
+  const fitBaumAnsicht = useCallback((masse?: readonly LayoutNode[]) => {
     const sim = simRef.current;
     if (!sim || sim.nodes.length === 0) return;
-    const fit = fitTransform(layoutBounds(sim.nodes, 70), dimensions);
+    // Ohne `masse` gelten die aktuellen Positionen — mitten im Gleiter ist das
+    // der alte Kraftfeld-Ausschnitt. Der Wechsel in den Baum gibt die
+    // Zielpositionen, damit das ERSTE Bild des Baums schon alles zeigt.
+    const knoten = masse ?? sim.nodes;
+    const fit = fitTransform(layoutBounds(knoten, 70), dimensions);
     const minBaumZoom = 0.35;
     if (fit.k < minBaumZoom) {
-      const grenzen = layoutBounds(sim.nodes);
+      const grenzen = layoutBounds(knoten);
       const wurzel = sim.index.get("__wurzel");
       const zentrum = wurzel ?? { x: (grenzen.minX + grenzen.maxX) / 2, y: (grenzen.minY + grenzen.maxY) / 2 };
       fit.k = minBaumZoom;
@@ -681,6 +694,9 @@ export function KnowledgeGraph({ memories, onSelectMemory , sichtbar = true }: K
     const stil = getComputedStyle(document.documentElement);
     const lies = (name: string, fallback: string) => (stil.getPropertyValue(name).trim() || fallback);
     const textFarbe = lies("--text-1", "#e8e6e1");
+    // Das Gerüst des Baums (Ebenenamen) steht hinter dem Inhalt zurück — eine
+    // Stufe leiser, aber noch deutlich über der AA-Schwelle auf dem Grund.
+    const geruestFarbe = lies("--text-2", "#9b9992");
     const grundFarbe = lies("--bg-panel-solid", "#151515");
     const akzent = lies("--accent", "#c9b785");
     const schwach = lies("--text-3", "#7a7a7a");
@@ -990,9 +1006,6 @@ export function KnowledgeGraph({ memories, onSelectMemory , sichtbar = true }: K
           .slice(0, MAX_LABELS);
 
     const fs = Math.min(15, 11 / Math.max(0.4, t.k));
-    ctx.font = `500 ${fs}px ui-sans-serif, system-ui, -apple-system, sans-serif`;
-    ctx.textAlign = "center";
-    ctx.textBaseline = "top";
     ctx.lineJoin = "round";
 
     // Belegungsraster in BILDSCHIRM-Koordinaten: ein Etikett, das ein bereits
@@ -1013,6 +1026,36 @@ export function KnowledgeGraph({ memories, onSelectMemory , sichtbar = true }: K
       for (let z = z0; z <= z1; z++) for (let c = c0; c <= c1; c++) belegt.add(`${c},${z}`);
       return true;
     };
+
+    // --- Gerüst-Etiketten (nur Baum): zuerst, und sie belegen das Raster ---
+    // Vorher liefen sie als einziger Text außerhalb des Rasters und in derselben
+    // Schrift wie der Inhalt: die Ebenen standen wie eine zweite Titelspalte im
+    // Bild. Jetzt weicht jede Notiz, die in den Namen einer Ebene fiele, und
+    // das Gerüst tritt mit --text-2 und kleinerer Schrift zurück.
+    if (struktur) {
+      ctx.textAlign = "left";
+      ctx.textBaseline = "middle";
+      ctx.font = `600 ${fs * 0.82}px ui-sans-serif, system-ui, -apple-system, sans-serif`;
+      for (const n of sim.nodes) {
+        const s = struktur.get(n.id);
+        if (!s || s.keinEtikett || !imBild(n)) continue;
+        const titel = s.label.length > GERUEST_ZEICHEN ? `${s.label.slice(0, GERUEST_ZEICHEN)}…` : s.label;
+        const mitteX = (n.x + n.r + 3) * t.k + t.x;
+        const mitteY = n.y * t.k + t.y;
+        const breite = ctx.measureText(titel).width * t.k;
+        // halbe Zeilenhoehe hoch, weil der Text mittig auf der Achse sitzt
+        if (!freiUndBelegen(mitteX, mitteY - zellHoehe / 2, breite)) continue;
+        ctx.lineWidth = 3 / Math.max(0.4, t.k);
+        ctx.strokeStyle = grundFarbe;
+        ctx.strokeText(titel, n.x + n.r + 3, n.y);
+        ctx.fillStyle = hov === n.id ? akzent : geruestFarbe;
+        ctx.fillText(titel, n.x + n.r + 3, n.y);
+      }
+    }
+
+    ctx.font = `500 ${fs}px ui-sans-serif, system-ui, -apple-system, sans-serif`;
+    ctx.textAlign = "center";
+    ctx.textBaseline = "top";
 
     for (const { n, m, r } of etiketten) {
       const titel = m.title.length > 26 ? `${m.title.slice(0, 26)}…` : m.title || "Untitled";
@@ -1035,22 +1078,6 @@ export function KnowledgeGraph({ memories, onSelectMemory , sichtbar = true }: K
         ctx.fillStyle = schwach;
         ctx.fillText(tags, n.x, n.y + r + 2 + fs * 1.15);
         ctx.font = `500 ${fs}px ui-sans-serif, system-ui, sans-serif`;
-      }
-    }
-
-    // Struktur-Etiketten sitzen RECHTS vom Knoten — die Hierarchie liest sich
-    // entlang der Ebenen, nicht unter ihnen.
-    if (struktur) {
-      ctx.textAlign = "left";
-      ctx.textBaseline = "middle";
-      for (const n of sim.nodes) {
-        const s = struktur.get(n.id);
-        if (!s || !imBild(n)) continue;
-        ctx.lineWidth = 3 / Math.max(0.4, t.k);
-        ctx.strokeStyle = grundFarbe;
-        ctx.strokeText(s.label, n.x + n.r + 3, n.y);
-        ctx.fillStyle = hov === n.id ? akzent : textFarbe;
-        ctx.fillText(s.label, n.x + n.r + 3, n.y);
       }
     }
 

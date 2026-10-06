@@ -218,6 +218,39 @@ describe("layoutDendrogram", () => {
       expect(n.y).toBeLessThanOrEqual(bounds.maxY);
     }
   });
+
+  it("ein Knoten, der nur seine eine Notiz wiederholt, trägt kein eigenes Etikett", () => {
+    // Die Aufnahme des Baums vom 6.10. zeigte eine doppelte Spalte: der
+    // Entitätsknoten heisst „elena weiss — tax advisor" und sein einziges Kind
+    // ist die Notiz mit demselben Titel. Das Gerüst sagt dort nichts, was der
+    // Inhalt nicht schon sagt.
+    const a = mem({ id: "e1", type: "semantic", title: "Elena Weiss — tax advisor" });
+    const baum = buildHierarchy([a], new Map([["e1", "elena weiss — tax advisor"]]));
+    const { struktur } = layoutDendrogram(baum);
+    expect(struktur.get("__ent:elena weiss — tax advisor")!.keinEtikett).toBe(true);
+  });
+
+  it("bei zwei Notizen behält der Entitätsknoten sein Etikett", () => {
+    // Hier trägt der Knoten Information, die keine einzelne Notiz hat: er fasst
+    // zwei Behauptungen über dieselbe Person zusammen.
+    const a = mem({ id: "q1", type: "semantic", title: "Q1 call with Elena" });
+    const b = mem({ id: "q2", type: "semantic", title: "Q2 call with Elena" });
+    const baum = buildHierarchy([a, b], new Map([["q1", "elena weiss"], ["q2", "elena weiss"]]));
+    const { struktur } = layoutDendrogram(baum);
+    expect(struktur.get("__ent:elena weiss")!.keinEtikett).toBeFalsy();
+  });
+
+  it("ein Etikett, das der Titel eines seiner Kinder ist, bleibt weg", () => {
+    // Die Aufnahme vom 6.10. zeigt es auch mit mehreren Kindern: die Entität
+    // „hourly rate 2025" hat zwei Notizen, eine davon heisst genauso. Auf der
+    // Zeile des Knotenmittelpunkts steht dann zweimal derselbe Name — ein
+    // Leser weiss nicht, ob der linke die Ebene oder das eine Blatt meint.
+    const a = mem({ id: "h1", type: "semantic", title: "Hourly rate 2025" });
+    const b = mem({ id: "h2", type: "semantic", title: "Hourly rate 2024" });
+    const baum = buildHierarchy([a, b], new Map([["h1", "hourly rate 2025"], ["h2", "hourly rate 2025"]]));
+    const { struktur } = layoutDendrogram(baum);
+    expect(struktur.get("__ent:hourly rate 2025")!.keinEtikett).toBe(true);
+  });
 });
 
 describe("stepDendrogram", () => {

@@ -183,7 +183,7 @@ export function installiereZeiger(): void {
 export function setzeTheme(modus: "hell" | "dunkel"): void {
   const w = document.documentElement.style;
   const werte = modus === "hell"
-    ? { "--bg-panel-solid": "#fbf9f4", "--text-1": "#1a1712", "--text-3": "#6b6555", "--accent": "#8f7440", "--node-rim": "rgba(64, 56, 38, 0.34)", "--node-shade": "rgba(40, 32, 16, 0.16)", "--node-hi": "0.5" }
-    : { "--bg-panel-solid": "#121214", "--text-1": "#e8e6e1", "--text-3": "#7a7a7a", "--accent": "#c9b785", "--node-rim": "rgba(255, 255, 255, 0.2)", "--node-shade": "rgba(0, 0, 0, 0.3)", "--node-hi": "0.72" };
+    ? { "--bg-panel-solid": "#f0f2eb", "--text-1": "#232526", "--text-2": "#5b5e60", "--text-3": "#8d9092", "--accent": "#9c2b1f", "--node-rim": "rgba(34, 48, 60, 0.4)", "--node-shade": "rgba(40, 32, 16, 0.16)", "--node-hi": "0.5" }
+    : { "--bg-panel-solid": "#121214", "--text-1": "#eaeae8", "--text-2": "#9b9992", "--text-3": "#66645e", "--accent": "#c04a39", "--node-rim": "rgba(230, 233, 225, 0.24)", "--node-shade": "rgba(0, 0, 0, 0.35)", "--node-hi": "0.72" };
   for (const [k, v] of Object.entries(werte)) w.setProperty(k, v);
 }

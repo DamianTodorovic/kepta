@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { render, act, fireEvent } from "@testing-library/react";
-import { KnowledgeGraph } from "../../src/components/KnowledgeGraph";
+import { KnowledgeGraph, istHell } from "../../src/components/KnowledgeGraph";
 import { installiereLeinwand, installiereResizeObserver, installiereZeiger, setzeTheme, type Leinwand } from "../helfer/canvas";
 import type { Memory } from "../../src/types";
 
@@ -114,14 +114,23 @@ describe("Helles Thema: die Kante muss dunkel sein", () => {
       .filter((v): v is string => typeof v === "string");
   }
 
-  it("nimmt im hellen Thema die dunkle Randfarbe aus dem Theme", async () => {
+  it("nimmt im hellen Thema die Randfarbe aus dem Theme", async () => {
     const farben = await randfarben("hell");
-    expect(farben.some((f) => String(f).includes("64, 56, 38"))).toBe(true);
+    // Gegen den Token pruefen, nicht gegen eine kopierte Zahl: der Test soll
+    // sehen, ob die Komponente --node-rim liest — nicht, was das Helferlein
+    // gerade als hell notiert.
+    const rim = document.documentElement.style.getPropertyValue("--node-rim").trim();
+    expect(rim).not.toBe("");
+    expect(farben.some((f) => String(f) === rim), `gemalt: ${JSON.stringify(farben)} — Token: ${rim}`).toBe(true);
+    expect(istHell(rim), "auf hellem Grund muss die Kante dunkel sein").toBe(false);
   });
 
-  it("nimmt im dunklen Thema die helle Randfarbe", async () => {
+  it("nimmt im dunklen Thema die Randfarbe aus dem Theme", async () => {
     const farben = await randfarben("dunkel");
-    expect(farben.some((f) => String(f).includes("255, 255, 255"))).toBe(true);
+    const rim = document.documentElement.style.getPropertyValue("--node-rim").trim();
+    expect(rim).not.toBe("");
+    expect(farben.some((f) => String(f) === rim), `gemalt: ${JSON.stringify(farben)} — Token: ${rim}`).toBe(true);
+    expect(istHell(rim), "auf dunklem Grund muss die Kante hell sein").toBe(true);
   });
 
   it("malt im hellen Thema keine harte weisse Kante mehr", async () => {
@@ -411,8 +420,11 @@ describe("Detailstufen: nah scharf, fern sparsam", () => {
     expect(container.textContent).toMatch(/1 link(?!s)/);
     const rahmen = leinwand.letzterRahmen();
     expect(rahmen.filter((x) => x.op === "quadraticCurveTo").length).toBeGreaterThan(0);
-    // Vor dem Zeichnen der echten Kanten steht die Akzentfarbe.
-    const akzentGesetzt = leinwand.aufrufe.some((x) => x.op === "set:strokeStyle" && String(x.args[0]) === "#c9b785");
+    // Vor dem Zeichnen der echten Kanten steht die Akzentfarbe. Der Wert kommt
+    // aus dem gesetzten Theme, nicht aus einer kopierten Hexzahl — sonst misst
+    // dieser Test die Testdatei statt der App.
+    const akzent = document.documentElement.style.getPropertyValue("--accent").trim();
+    const akzentGesetzt = leinwand.aufrufe.some((x) => x.op === "set:strokeStyle" && String(x.args[0]) === akzent);
     expect(akzentGesetzt).toBe(true);
   });
 
@@ -868,3 +880,169 @@ describe("Zeitregler: der Daumen kaempft nicht gegen den Wert", () => {
     expect(container.textContent).toMatch(/Now/);
   });
 });
+
+describe("Im Baum steht die Hierarchie hinter dem Inhalt", () => {
+  // Die Aufnahme vom 6.10. (docs/screenshots/04-dendrogram.png) zeigt eine
+  // doppelte Spalte: „elena weiss — tax advisor" (Etikett des Entitätsknotens)
+  // direkt neben „Elena Weiss — tax advisor" (Titel der Notiz). Zwei Ursachen:
+  // 1) ein Entitätsknoten mit genau einer Notiz wiederholt deren Titel,
+  // 2) die Struktur-Etiketten liefen mit derselben Schrift und Farbe wie der
+  //    Inhalt und waren deshalb nicht als Gerüst zu lesen.
+
+  /** Ein Etikett eines Bildes: Text, Weltkoordinaten, Farbe, Schriftgrad. */
+  interface Etikett { text: string; x: number; y: number; farbe: string; groesse: number }
+
+  /** Der Weltbereich, der nach einer Transformation im Bild liegt. */
+  interface Ausschnitt { x0: number; y0: number; x1: number; y1: number }
+
+  async function inDenBaum(memories: Memory[]) {
+    const { container } = await zeichne(memories);
+    const knopf = container.querySelector('button[title^="Dendrogram"]') as HTMLButtonElement;
+    expect(knopf, "Der Baumknopf fehlt").not.toBeNull();
+    await act(async () => { fireEvent.click(knopf); });
+    return container;
+  }
+
+  /** Das ERSTE Bild nach dem Wechsel: Knoten, die schon auf ihrer Zielstelle
+   *  stehen (die Strukturknoten werden dort erzeugt), und der Welt-Ausschnitt. */
+  async function erstesBild(breite = 1000, hoehe = 700) {
+    leinwand.leeren();
+    await bilder(1);
+    const rahmen = leinwand.letzterRahmen();
+    let tx = 0, ty = 0, k = 1;
+    for (const a of rahmen) {
+      if (a.op === "translate") { tx = Number(a.args[0]); ty = Number(a.args[1]); }
+      if (a.op === "scale") { k = Number(a.args[0]); break; }
+    }
+    const knoten = rahmen
+      .filter((a) => a.op === "arc")
+      .map((a) => ({ x: Number(a.args[0]), y: Number(a.args[1]) }));
+    const ausschnitt: Ausschnitt = {
+      x0: -tx / k, y0: -ty / k, x1: (breite - tx) / k, y1: (hoehe - ty) / k,
+    };
+    return { knoten, ausschnitt };
+  }
+
+  /** Etiketten des letzten Bildes, nachdem der Gleiter zur Ruhe gekommen ist. */
+  async function ruhigeEtiketten(): Promise<Etikett[]> {
+    leinwand.leeren();
+    await bilder(20);
+    let farbe = "";
+    let groesse = 0;
+    const texte: Etikett[] = [];
+    for (const a of leinwand.letzterRahmen()) {
+      if (a.op === "set:fillStyle") farbe = String(a.args[0]);
+      if (a.op === "set:font") {
+        const treffer = /(\d+(?:\.\d+)?)px/.exec(String(a.args[0]));
+        if (treffer) groesse = Number(treffer[1]);
+      }
+      if (a.op === "fillText") {
+        const t = String(a.args[0] ?? "");
+        if (t.trim()) texte.push({ text: t, x: Number(a.args[1]), y: Number(a.args[2]), farbe, groesse });
+      }
+    }
+    return texte;
+  }
+
+  const normal = (t: string) => t.toLowerCase().replace(/[^a-z0-9äöüß&]/g, "");
+
+  it("passt den Ausschnitt sofort, nicht erst nach dem Gleiten", async () => {
+    const a = note({ title: "Elena Weiss — tax advisor", tags: ["people"] });
+    const b = note({ title: "Falk & Sons — client profile", tags: ["client"] });
+    const c = note({ title: "Hourly rate 2025", tags: ["pricing"] });
+    vi.stubGlobal("fetch", vi.fn(async () => new Response(JSON.stringify({
+      relations: [],
+      memoriesByEntity: { "elena weiss": [a.id], "falk & sons": [b.id], "hourly rate 2025": [c.id] },
+    }), { status: 200 })));
+    await inDenBaum([a, b, c]);
+
+    const { knoten, ausschnitt } = await erstesBild();
+    // Strukturknoten stehen im Baum von Anfang an auf ihrer Zielstelle — wenn
+    // der Baum rechts aus dem Bild läuft, steht dort nur Stamm und ein Typ.
+    // Vor dem sofortigen Fit war das Fenster das alte Kraftfeld: x1 = 120.
+    expect(knoten.length, "Es wurden keine Knoten gemalt").toBeGreaterThan(0);
+    for (const n of knoten) {
+      const ausser = n.x < ausschnitt.x0 || n.x > ausschnitt.x1 || n.y < ausschnitt.y0 || n.y > ausschnitt.y1;
+      expect(ausser, `Knoten ${n.x},${n.y} liegt ausserhalb ${JSON.stringify(ausschnitt)}`).toBe(false);
+    }
+  });
+
+  it("steht derselbe Name nicht zweimal", async () => {
+    const a = note({ title: "Elena Weiss — tax advisor", tags: ["people"] });
+    const b = note({ title: "Falk & Sons — client profile", tags: ["client"] });
+    const c = note({ title: "Hourly rate 2025", tags: ["pricing"] });
+    vi.stubGlobal("fetch", vi.fn(async () => new Response(JSON.stringify({
+      relations: [],
+      memoriesByEntity: {
+        "elena weiss — tax advisor": [a.id],
+        "falk & sons — client profile": [b.id],
+        "hourly rate 2025": [c.id],
+      },
+    }), { status: 200 })));
+    await inDenBaum([a, b, c]);
+
+    const texte = (await ruhigeEtiketten()).map((e) => normal(e.text));
+    const dubletten = texte.filter((t, i) => texte.indexOf(t) !== i);
+    expect(dubletten, `zweimal gemalt: ${JSON.stringify(texte)}`).toEqual([]);
+  });
+
+  it("behält ein Knoten mit mehreren Notizen seinen Namen", async () => {
+    // Der Gegenfall: hier trägt der Entitätsknoten Information, die keine
+    // einzelne Notiz hat — er darf dem Aufräumen nicht zum Opfer fallen.
+    const a = note({ id: "q1", title: "Q1 call with Elena", tags: ["meeting"] });
+    const b = note({ id: "q2", title: "Q2 call with Elena", tags: ["meeting"] });
+    vi.stubGlobal("fetch", vi.fn(async () => new Response(JSON.stringify({
+      relations: [{ source: "elena weiss", target: "q1", relation: "mentions", memoryId: a.id }],
+      memoriesByEntity: { "elena weiss": ["q1", "q2"] },
+    }), { status: 200 })));
+    await inDenBaum([a, b]);
+
+    const texte = (await ruhigeEtiketten()).map((e) => e.text);
+    expect(texte).toContain("elena weiss");
+    expect(texte).toContain("Q1 call with Elena");
+    expect(texte).toContain("Q2 call with Elena");
+  });
+
+  it("hält einen langen Ebenennamen in seiner Spalte", async () => {
+    // Zwischen zwei Ebenen liegen 190 Welteinheiten; ein Zeichen misst rund 6.
+    // Ein zentrierter Notiztitel von 26 Zeichen ragt 78 Einheiten nach links in
+    // seine Spalte — das Gerüst darf ihm nicht entgegenlaufen, sonst stehen zwei
+    // Namen in einer Zeile und niemand weiss, welcher die Ebene meint.
+    const a = note({ id: "k1", title: "Kestrel board meeting", tags: ["meeting"] });
+    const b = note({ id: "k2", title: "Kestrel quarterly review", tags: ["meeting"] });
+    vi.stubGlobal("fetch", vi.fn(async () => new Response(JSON.stringify({
+      relations: [],
+      memoriesByEntity: { "kestrel software — client onboarding checklist": ["k1", "k2"] },
+    }), { status: 200 })));
+    await inDenBaum([a, b]);
+
+    const texte = await ruhigeEtiketten();
+    const geruest = texte.filter((e) => e.text.toLowerCase().startsWith("kestrel software"));
+    expect(geruest.length, "Der Ebenenname wurde gar nicht gemalt").toBe(1);
+    expect(geruest[0]!.text.length, geruest[0]!.text).toBeLessThanOrEqual(17);
+    expect(geruest[0]!.text).toMatch(/…$/);
+  });
+
+  it("tritt die Hierarchie hinter die Notiztitel zurück", async () => {
+    const a = note({ id: "q1", title: "Q1 call with Elena", tags: ["meeting"] });
+    const b = note({ id: "q2", title: "Q2 call with Elena", tags: ["meeting"] });
+    vi.stubGlobal("fetch", vi.fn(async () => new Response(JSON.stringify({
+      relations: [],
+      memoriesByEntity: { "elena weiss": ["q1", "q2"] },
+    }), { status: 200 })));
+    await inDenBaum([a, b]);
+
+    const texte = await ruhigeEtiketten();
+    const geruest = texte.find((e) => e.text === "elena weiss");
+    const inhalt = texte.find((e) => e.text === "Q1 call with Elena");
+    expect(geruest, "Der Entitätsknoten wurde nicht gemalt").toBeDefined();
+    expect(inhalt, "Der Notiztitel wurde nicht gemalt").toBeDefined();
+    // Gedämpfte Farbe (--text-2) und kleiner als der Inhalt — das Gerüst soll
+    // Gerüst bleiben, sonst liest sich der Baum wie eine Liste doppelter Namen.
+    const stil = document.documentElement.style;
+    expect(geruest!.farbe, "Gerüst steht nicht auf --text-2").toBe(stil.getPropertyValue("--text-2").trim());
+    expect(inhalt!.farbe, "Notiz nicht auf --text-1").toBe(stil.getPropertyValue("--text-1").trim());
+    expect(geruest!.groesse).toBeLessThan(inhalt!.groesse);
+  });
+});
+

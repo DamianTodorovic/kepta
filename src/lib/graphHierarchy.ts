@@ -18,6 +18,14 @@ export interface StrukturKnoten {
   /** Farbe aus der Typ-Palette; Wurzel/Entitaeten erben bzw. sind neutral. */
   farbe: string | null;
   r: number;
+  /**
+   * true, wenn dieser Knoten nichts sagt, was nicht eines seiner Kinder schon
+   * sagt. Im Baum von 3 000 Notizen war das die Regel: Entitaet heisst
+   * „elena weiss — tax advisor", ein Kind darunter heisst genauso — und beide
+   * Namen standen nebeneinander in derselben Zeile. Der Knoten wird weiter
+   * gezeichnet (er traegt die Kante), nur sein Etikett bleibt weg.
+   */
+  keinEtikett?: boolean;
 }
 
 // ---------- Baum ----------
@@ -215,10 +223,24 @@ export function layoutDendrogram(
   for (const n of nodes) {
     if (n.id === "__wurzel") struktur.set(n.id, { label: baum.label, farbe: null, r: radien.root });
   }
+  // „Elena Weiss — tax advisor" und „elena weiss — tax advisor" sind derselbe
+  // Name. Verglichen wird, was ein Mensch liest: Buchstaben und Ziffern, in
+  // Gross- oder Kleinschreibung egal, Punkt und Gedankenstrich weg.
+  const kennwort = (t: string) => t.toLowerCase().replace(/[^0-9a-zäöüß&]/g, "");
+  // Ein Knoten, dessen Namen eines seiner Kinder schon trägt, sagt auf seiner
+  // Zeile nichts Neues: links der Ebenenname, rechts derselbe Titel als Notiz.
+  // Der Leser weiss dann nicht, was Ebene und was Blatt ist.
+  const nurWiederholung = (k: HierarchieKnoten) =>
+    k.children.some((c) => kennwort(c.label) === kennwort(k.label));
   const sammleStruktur = (k: HierarchieKnoten): void => {
-    if (k.kind === "type") struktur.set(k.id, { label: k.label, farbe: k.typ ?? null, r: radien.type });
-    else if (k.kind === "entity") struktur.set(k.id, { label: k.label, farbe: null, r: radien.entity });
-    else if (k.kind === "group") struktur.set(k.id, { label: k.label, farbe: null, r: radien.group });
+    if (k.kind === "type" || k.kind === "entity" || k.kind === "group") {
+      struktur.set(k.id, {
+        label: k.label,
+        farbe: k.kind === "type" ? k.typ ?? null : null,
+        r: radien[k.kind],
+        keinEtikett: nurWiederholung(k) || undefined,
+      });
+    }
     for (const c of k.children) sammleStruktur(c);
   };
   sammleStruktur(baum);
