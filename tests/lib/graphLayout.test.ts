@@ -976,6 +976,19 @@ describe("Ähnlichkeit ist eine Wahl, nicht der Grundzustand", () => {
   it("kantZaehlung auf leer liefert null und wirft nicht", () => {
     expect(kantZaehlung([])).toEqual({ echt: 0, aehnlichkeit: 0, gesamt: 0 });
   });
+
+  it("hält Paare auf Konzept-IDs, obwohl sie keine Notizen sind", () => {
+    // Das Kraftfeld zeichnet ab jetzt Konzepte als eigene Knoten. Ohne die
+    // Mithilfe hier würden alle Kanten ans Gerüst weggeworfen, weil ihr Ende
+    // nicht in der Notizliste steht — und das Gerüst hinge unsichtbar im Bild.
+    const { a, c } = paar();
+    const kanten = buildEdges([a, c], {
+      ahnlichkeit: false,
+      knotenIds: ["__ent:elena"],
+      realPairs: [[a.id, "__ent:elena"], ["__ent:elena", "__ent:falk"]],
+    });
+    expect(kanten.map((e) => `${e.source}->${e.target}`)).toEqual([`${a.id}->__ent:elena`]);
+  });
 });
 
 describe("entitaetsNetz — eine Ontologie für Kraftfeld und Baum", () => {
@@ -1032,18 +1045,26 @@ describe("entitaetsNetz — eine Ontologie für Kraftfeld und Baum", () => {
     expect(n.knoten).toEqual([]);
   });
 
-  it("eine Behauptung ohne beurkundende Notiz braucht zwei tragende Konzepte", () => {
+  it("eine Behauptung ohne beurkundende Notiz braucht beide Enden im Bild", () => {
     // memoryId null: die Relation kommt aus dem Kern, ohne dass eine Notiz sie
     // trägt. Weil keine Notiz sie trägt, kann sie auch kein Filter und kein
-    // Zeitregler wieder wegnehmen — genau das alte graue Gitter ohne Knoten.
-    // Gezeichnet wird sie erst, wenn beide Enden unabhängig belegt sind.
-    const zwei = netz({ elena: ["a", "b"], falk: ["x", "y"] }, [{ source: "elena", target: "falk", memoryId: null }], ["a", "b", "x", "y"]);
-    expect(zwei.behauptungen).toHaveLength(1);
-    expect(zwei.knoten.map((k) => k.id)).toEqual(["__ent:elena", "__ent:falk"]);
+    // Zeitregler wieder wegnehmen — gezeichnet wird sie deshalb nur, wenn beide
+    // Enden von einer sichtbaren Notiz getragen werden.
+    const beide = netz({ elena: ["a", "b"], falk: ["x", "y"] }, [{ source: "elena", target: "falk", memoryId: null }], ["a", "b", "x", "y"]);
+    expect(beide.behauptungen).toHaveLength(1);
+    expect(beide.knoten.map((k) => k.id)).toEqual(["__ent:elena", "__ent:falk"]);
 
-    const keiner = netz({ elena: ["a", "b"], falk: ["x"] }, [{ source: "elena", target: "falk", memoryId: null }], ["a", "b", "x"]);
-    expect(keiner.behauptungen).toEqual([]);
-    expect(keiner.knoten.map((k) => k.id)).toEqual(["__ent:elena"]);
+    // Je eine Notiz pro Ende: genau der Fall, den das alte Kreuzprodukt als
+    // unsichtbares Notizpaar versteckte. Die Aussage ist da — sie zeichnet.
+    const jeEine = netz({ elena: ["a"], falk: ["x"] }, [{ source: "elena", target: "falk", memoryId: null }], ["a", "x"]);
+    expect(jeEine.behauptungen).toHaveLength(1);
+    expect(jeEine.erwahnungen).toEqual([["a", "__ent:elena"], ["x", "__ent:falk"]]);
+
+    // Ein Ende ohne sichtbare Notiz: die Kante hinge an einem Konzept, das im
+    // Bild nicht vorkommt.
+    const fehlt = netz({ elena: ["a"] }, [{ source: "elena", target: "falk", memoryId: null }], ["a"]);
+    expect(fehlt.behauptungen).toEqual([]);
+    expect(fehlt.knoten).toEqual([]);
   });
 
   it("dasselbe Konzept in zwei Behauptungen ist ein Knoten", () => {

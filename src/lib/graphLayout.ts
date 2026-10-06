@@ -149,6 +149,12 @@ export interface EdgeOptions {
   maxEdges?: number;
   /** Buckets ueber dieser Groesse sind Allerweltsbegriffe und werden uebersprungen. */
   maxBucket?: number;
+  /**
+   * Knoten-IDs, die keine Notizen sind — die Konzepte des Kraftfelds. Ohne sie
+   * würde jedes Paar weggeworfen, das ans Gerüst führt, und das Gerüst hinge
+   * unsichtbar im Bild.
+   */
+  knotenIds?: Iterable<string>;
 }
 
 const DEFAULT_MAX_BUCKET = 140;
@@ -161,6 +167,7 @@ const DEFAULT_MAX_BUCKET = 140;
  */
 export function buildEdges(memories: readonly Memory[], opts: EdgeOptions = {}): LayoutEdge[] {
   const ids = new Set(memories.map((m) => m.id));
+  for (const id of opts.knotenIds ?? []) ids.add(id);
   const maxBucket = opts.maxBucket ?? DEFAULT_MAX_BUCKET;
   const maxEdges = opts.maxEdges ?? Math.min(12_000, Math.max(1200, memories.length * 6));
 
@@ -866,10 +873,14 @@ export function entitaetsNetz(
   for (const r of relationen ?? []) {
     const traeger = r.memoryId ?? null;
     const sichtbarFuerBehauptung = traeger !== null ? sichtbar.has(traeger) : (() => {
-      // Ohne beurkundende Notiz trägt nur die Belegdichte beide Enden.
+      // Ohne beurkundende Notiz kann kein Filter und kein Zeitregler die Kante
+      // wieder wegnehmen. Sie darf deshalb nur zeichnen, was im Bild steht:
+      // beide Enden müssen von mindestens einer sichtbaren Notiz getragen
+      // werden — sonst hinge ein Konzept mit einer Kante im Leeren, genau das
+      // graue Gitter ohne Knoten, das der Regler schon einmal hinterlassen hat.
       const a = notizenVon.get(r.source)?.length ?? 0;
       const b = notizenVon.get(r.target)?.length ?? 0;
-      return a >= mindesten && b >= mindesten;
+      return a >= 1 && b >= 1;
     })();
     if (!sichtbarFuerBehauptung) continue;
     nimm(r.source);

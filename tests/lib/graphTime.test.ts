@@ -129,4 +129,23 @@ describe("edgeVisibleAt", () => {
   it("laesst bei leerer Menge nichts uebrig — kein Gitter ohne Knoten", () => {
     expect(edgeVisibleAt(new Set(), "a", "b")).toBe(false);
   });
+
+  it("lässt Kanten ans Gerüst stehen — ein Konzept hat kein Datum", () => {
+    // Seit dem 6.10. zeichnet das Kraftfeld Konzepte als eigene Knoten. Sie
+    // entstehen aus den Notizen, die sie tragen, und haben selbst kein
+    // Entstehungsdatum. Würde die Zeitregel sie wie Notizen behandeln, fielen
+    // beim Regler alle Gerüstkanten weg: das graue Gitter ohne Knoten.
+    const aktiv = new Set(["a"]);
+    expect(edgeVisibleAt(aktiv, "a", "__ent:elena")).toBe(true);
+    expect(edgeVisibleAt(aktiv, "__ent:elena", "a")).toBe(true);
+    expect(edgeVisibleAt(aktiv, "__ent:elena", "__ent:falk")).toBe(true);
+  });
+
+  it("nimmt einer ausgeblendeten Notiz auch die Kante zum Konzept", () => {
+    // Das Gerüst ist neutral, die Notiz nicht: wer im Februar steht, darf nicht
+    // die Spinne einer Mai-Notiz am Konzept sehen.
+    const aktiv = new Set(["a"]);
+    expect(edgeVisibleAt(aktiv, "b", "__ent:elena")).toBe(false);
+    expect(edgeVisibleAt(aktiv, "__ent:elena", "b")).toBe(false);
+  });
 });

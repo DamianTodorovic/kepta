@@ -52,13 +52,29 @@ export function activeIdsAt(memories: readonly Memory[], at: number | null): Set
 }
 
 /**
+ * Strukturknoten (Wurzel, Typ, Konzept, Tag-Gruppe) tragen das Präfix "__".
+ * Sie sind kein Datum-tragendes Wissen, sondern das Gerüst, das aus den
+ * Notizen entsteht, die es erwähnen — deshalb behandelt die Zeitregel sie
+ * neutral. Würde sie wie Notizen gezählt, fielen beim Regler alle Gerüst-
+ * kanten weg: genau das graue Gitter ohne Knoten, das der Regler schon
+ * einmal im Bild hinterlassen hat.
+ */
+export const STRUKTUR_PRAEFIX = "__";
+export function istStruktur(id: string): boolean {
+  return id.startsWith(STRUKTUR_PRAEFIX);
+}
+
+/**
  * Gehoert eine Kante in das Bild eines Zeitpunkts?
  *
  * Nur, wenn BEIDE Enden damals schon da waren. Der Zeitregler blendete zuerst
  * nur die Knoten aus — bei "Februar 2023" stand das vollstaendige Kantennetz
  * ohne Knoten im Bild, also die Struktur von Wissen, das es noch gar nicht gab.
+ * Ein Gerüst-Ende ist immer dabei; die Notiz-Seite entscheidet.
  */
 export function edgeVisibleAt(aktiv: ReadonlySet<string> | null, source: string, target: string): boolean {
   if (aktiv === null) return true;
-  return aktiv.has(source) && aktiv.has(target);
+  const notA = istStruktur(source) ? null : source;
+  const notB = istStruktur(target) ? null : target;
+  return (notA === null || aktiv.has(notA)) && (notB === null || aktiv.has(notB));
 }

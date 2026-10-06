@@ -73,7 +73,7 @@ describe("Der Graph malt ueberhaupt", () => {
   it("zeigt ohne Notizen einen Hinweis statt einer Leinwand", async () => {
     const { container } = await zeichne([]);
     expect(container.querySelector('[data-testid="graph-canvas"]')).toBeNull();
-    expect(container.textContent).toMatch(/No nodes yet/i);
+    expect(container.textContent).toMatch(/No notes yet/i);
   });
 
   it("legt eine Leinwand an und zeichnet Knoten", async () => {
@@ -86,7 +86,7 @@ describe("Der Graph malt ueberhaupt", () => {
   it("nennt Knoten- und Kantenzahl im Kopf", async () => {
     const ms = [note({ tags: ["a"] }), note({ tags: ["a"] }), note({ tags: ["b"] })];
     const { container } = await zeichne(ms);
-    expect(container.textContent).toMatch(/3 nodes/);
+    expect(container.textContent).toMatch(/3 notes/);
   });
 
   it("rechnet die Leinwand auf die Geraetepixel um", async () => {
@@ -236,13 +236,13 @@ describe("Filter", () => {
       feld.dispatchEvent(new Event("input", { bubbles: true }));
       await new Promise((r) => setTimeout(r, 80));
     });
-    expect(container.textContent).toMatch(/2 nodes/);
+    expect(container.textContent).toMatch(/2 notes/);
     await act(async () => {
       setter.call(feld, "");
       feld.dispatchEvent(new Event("input", { bubbles: true }));
       await new Promise((r) => setTimeout(r, 80));
     });
-    expect(container.textContent).toMatch(/3 nodes/);
+    expect(container.textContent).toMatch(/3 notes/);
   });
 });
 
@@ -406,6 +406,39 @@ describe("Detailstufen: nah scharf, fern sparsam", () => {
     expect(kante * zoom).toBeGreaterThanOrEqual(2.9);
   });
 
+  it("macht Erwähnung und Behauptung verschieden sichtbar", async () => {
+    // Die Legende verspricht drei Kantenarten. Vorher deckte „real connection"
+    // zwei davon: eine Notiz, die einen Begriff erwähnt, und eine Behauptung
+    // zwischen zwei Begriffen sind aber zwei verschiedene Aussagen — und im
+    // alten Kreuzprodukt waren sie gar nicht zu unterscheiden.
+    const a = note({ title: "Mandat" });
+    const b = note({ title: "Frist" });
+    vi.stubGlobal("fetch", vi.fn(async () => new Response(JSON.stringify({
+      relations: [{ source: "e1", target: "e2", relation: "mentions", memoryId: null }],
+      memoriesByEntity: { e1: [a.id], e2: [b.id] },
+    }), { status: 200 })));
+
+    await zeichne([a, b]);
+    await bilder(12);
+    const stil = document.documentElement.style;
+    const akzent = stil.getPropertyValue("--accent").trim();
+    const notiz = stil.getPropertyValue("--text-1").trim();
+    let farbe = "";
+    let breite = "";
+    const striche: { farbe: string; breite: string }[] = [];
+    for (const aufruf of leinwand.letzterRahmen()) {
+      if (aufruf.op === "set:strokeStyle") farbe = String(aufruf.args[0]);
+      if (aufruf.op === "set:lineWidth") breite = String(aufruf.args[0]);
+      if (aufruf.op === "stroke") striche.push({ farbe, breite });
+    }
+    const behauptung = striche.find((s) => s.farbe === akzent);
+    const erwaehnung = striche.find((s) => s.farbe === notiz);
+    expect(behauptung, "keine Behauptung in der Akzentfarbe").toBeDefined();
+    expect(erwaehnung, "keine Erwähnung in der Notizfarbe").toBeDefined();
+    expect(Number(erwaehnung!.breite), "Erwähnung ist nicht feiner als die Behauptung")
+      .toBeLessThan(Number(behauptung!.breite));
+  });
+
   it("zeichnet echte Relationen als gebogene Linie in der Akzentfarbe", async () => {
     // Dieser Zweig war nie gelaufen: alle Testkorpora hatten null Relationen.
     const a = note({ title: "Mandat" });
@@ -417,7 +450,7 @@ describe("Detailstufen: nah scharf, fern sparsam", () => {
 
     const { container } = await zeichne([a, b]);
     await bilder(12);
-    expect(container.textContent).toMatch(/1 link(?!s)/);
+    expect(container.textContent).toMatch(/2 notes · 2 concepts · 3 links(?! ·)/);
     const rahmen = leinwand.letzterRahmen();
     expect(rahmen.filter((x) => x.op === "quadraticCurveTo").length).toBeGreaterThan(0);
     // Vor dem Zeichnen der echten Kanten steht die Akzentfarbe. Der Wert kommt
@@ -614,7 +647,7 @@ describe("Die Kopfzeile zaehlt, was wirklich im Bild steht", () => {
       note({ tags: ["t"], createdAt: neu, updatedAt: neu }),
       note({ tags: ["t"], createdAt: neu, updatedAt: neu }),
     ], { aehnlichkeit: true });
-    expect(container.textContent).toMatch(/4 nodes · 0 links · \+6 similar/);
+    expect(container.textContent).toMatch(/4 notes · 0 concepts · 0 links · \+6 similar/);
 
     const regler = container.querySelector('input[aria-label="Time of the knowledge shown"]') as HTMLInputElement;
         // Ziehen (input) und Loslassen (pointerup): der Filter wirkt beim Loslassen.
@@ -627,7 +660,7 @@ describe("Die Kopfzeile zaehlt, was wirklich im Bild steht", () => {
     });
 
     // Nur die beiden alten Knoten — und damit genau die eine Kante zwischen ihnen.
-    expect(container.textContent).toMatch(/2 nodes · 0 links · \+1 similar/);
+    expect(container.textContent).toMatch(/2 notes · 0 concepts · 0 links · \+1 similar/);
   });
 
   it("ohne Schalter zählt nur, was jemand behauptet hat — nicht die Ähnlichkeit", async () => {
@@ -637,7 +670,7 @@ describe("Die Kopfzeile zaehlt, was wirklich im Bild steht", () => {
       note({ tags: ["t"], createdAt: neu, updatedAt: neu }),
       note({ tags: ["t"], createdAt: neu, updatedAt: neu }),
     ]);
-    expect(container.textContent).toMatch(/4 nodes · 0 links/);
+    expect(container.textContent).toMatch(/4 notes · 0 concepts · 0 links/);
     expect(container.textContent).not.toMatch(/similar/);
     const schalter = container.querySelector('button[aria-pressed]') as HTMLButtonElement;
     expect(schalter.getAttribute("aria-pressed")).toBe("false");
@@ -658,7 +691,7 @@ describe("Die Kopfzeile zaehlt, was wirklich im Bild steht", () => {
       regler.dispatchEvent(new window.PointerEvent("pointerup", { bubbles: true }));
       await new Promise((r) => setTimeout(r, 80));
     });
-    expect(container.textContent).toMatch(/1 node · 0 links/);
+    expect(container.textContent).toMatch(/1 note · 0 concepts · 0 links/);
   });
 });
 

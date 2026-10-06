@@ -1,10 +1,11 @@
 import { useEffect, useRef, useState, useMemo, useCallback } from "react";
 import { Memory } from "../types";
-import { existsAt, graphTimeRange, activeIdsAt, edgeVisibleAt } from "../lib/graphTime";
+import { existsAt, graphTimeRange, activeIdsAt, edgeVisibleAt, istStruktur } from "../lib/graphTime";
 import { Search, Maximize2, ZoomIn, ZoomOut, Clock, Atom2, Sitemap, Network } from "../lib/icons";
 import {
   buildEdges,
   createSimulation,
+  entitaetsNetz,
   reuseSimulation,
   isSettled,
   stepSimulation,
@@ -230,32 +231,46 @@ export function KnowledgeGraph({ memories, onSelectMemory , sichtbar = true }: K
     );
   }, [memories, filter]);
 
-  const realPairs = useMemo(() => {
-    if (!graphApi?.relations) return [];
-    const ids = new Set(filtered.map((m) => m.id));
-    const out: [string, string][] = [];
-    const gesehen = new Set<string>();
-    for (const rel of graphApi.relations) {
-      const a = (graphApi.memoriesByEntity?.[rel.source] ?? []).filter((id) => ids.has(id));
-      const b = (graphApi.memoriesByEntity?.[rel.target] ?? []).filter((id) => ids.has(id));
-      let proRelation = 0;
-      for (const x of a) {
-        for (const y of b) {
-          if (x === y || proRelation >= 24) continue;
-          const k = x < y ? `${x}|${y}` : `${y}|${x}`;
-          if (gesehen.has(k)) continue;
-          gesehen.add(k);
-          out.push([x, y]);
-          proRelation++;
-        }
-      }
-    }
-    return out;
-  }, [graphApi, filtered]);
+  // Welche Notizen es zum committeten Stand des Reglers schon gab. Das haengt am
+  // Regler und an der Filterliste — nicht am Einzelbild: frueher stand die
+  // Rechnung mitten in zeichne() und kostete bei dreitausend Notizen und
+  // sechzig Bildern ueber eine halbe Million Schritte je Sekunde fuer ein
+  // Ergebnis, das sich nur beim Schieben aendert. Sie steht ausserdem frueher
+  // als die Kanten, weil das Konzept-Netz unten gegen denselben Stand rechnet —
+  // sonst bliebe ein Konzept stehen, dessen ganze Belege Geister sind.
+  const zeitAktivIds = useMemo(() => activeIdsAt(filtered, timeFilter), [filtered, timeFilter]);
+
+  /**
+   * Das Netz aus Konzepten und Behauptungen — dieselbe Ontologie, die der Baum
+   * zeichnet. Vorher faltete die Flaeche jede Behauptung zwischen zwei
+   * Entitaeten in das Kreuzprodukt ihrer Notizen und kappte nach 24 Paaren:
+   * quadratisch im Preis, und ab dem 25. Beleg still weg. Ausserdem verband sie
+   * Notizen, die nichts teilen, und trennte Notizen, die dasselbe Konzept
+   * erwaehnen. Jetzt haengt die Notiz am Begriff, und Begriffe sind durch das
+   * verbunden, was jemand ueber sie behauptet hat.
+   */
+  const netzSichtbar = useMemo(() => {
+    const ids = new Set<string>();
+    for (const m of filtered) if (!zeitAktivIds || zeitAktivIds.has(m.id)) ids.add(m.id);
+    return ids;
+  }, [filtered, zeitAktivIds]);
+  const netz = useMemo(
+    () => entitaetsNetz(graphApi?.memoriesByEntity, graphApi?.relations, netzSichtbar),
+    [graphApi, netzSichtbar]
+  );
+  const geruestIds = useMemo(() => netz.knoten.map((k) => k.id), [netz]);
 
   const edges: LayoutEdge[] = useMemo(
-    () => buildEdges(filtered, { realPairs, ahnlichkeit }),
-    [filtered, realPairs, ahnlichkeit]
+    () =>
+      buildEdges(filtered, {
+        realPairs: [
+          ...netz.erwahnungen,
+          ...netz.behauptungen.map((b) => [b.source, b.target] as [string, string]),
+        ],
+        knotenIds: geruestIds,
+        ahnlichkeit,
+      }),
+    [filtered, netz, geruestIds, ahnlichkeit]
   );
 
 
@@ -349,17 +364,6 @@ export function KnowledgeGraph({ memories, onSelectMemory , sichtbar = true }: K
   );
 
   /**
-   * Welche Notizen gab es zum gewaehlten Zeitpunkt?
-   *
-   * Das haengt am Regler und an der Filterliste — nicht am Einzelbild. Frueher
-   * stand diese Rechnung mitten in zeichne(): pro Bild einmal ueber alle Knoten
-   * abbilden, filtern und eine Menge aufbauen. Bei dreitausend Notizen und
-   * sechzig Bildern sind das ueber eine halbe Million Schritte je Sekunde fuer
-   * ein Ergebnis, das sich nur beim Schieben des Reglers aendert.
-   */
-  const zeitAktivIds = useMemo(() => activeIdsAt(filtered, timeFilter), [filtered, timeFilter]);
-
-  /**
    * Live-Rückmeldung beim Ziehen: Im Kraftfeld dimmt der Regler SOFORT, nicht
    * erst beim Loslassen. Das Ziehen veränderte bisher nur das Datums-Label —
    * das Bild stand still bis zum Commit, und genau das fühlte sich kaputt an.
@@ -443,7 +447,19 @@ export function KnowledgeGraph({ memories, onSelectMemory , sichtbar = true }: K
   // eigenen Effekt darunter. forceHistory bewahrt die letzte KRAFTFELD-
   // Anordnung: Wer aus dem Baum zurueckwechselt, darf die Physik nicht aus den
   // dichten Baum-Positionen starten — daraus explodiert sie.
-  const idsSchluessel = useMemo(() => filtered.map((m) => m.id).join(","), [filtered]);
+  // Das Gerüst gehört zur Knotenmenge des Kraftfelds: ein Konzept hat keine
+  // Memory, trägt aber die Kanten. Der Schlüssel entscheidet, wann neu
+  // aufgebaut wird — und ein neues Konzept IST eine neue Knotenmenge.
+  const idsSchluessel = useMemo(
+    () => [...filtered.map((m) => m.id), ...geruestIds].join(","),
+    [filtered, geruestIds]
+  );
+  /** Dasselbe Gerüst, das der Baum malt — hier ohne Typ- und Tag-Ebenen. */
+  const kraftGeruest = useMemo(() => {
+    const m = new Map<string, StrukturKnoten>();
+    for (const k of netz.knoten) m.set(k.id, { label: k.label, farbe: null, r: 8 });
+    return m;
+  }, [netz]);
   const forceHistoryRef = useRef<Simulation | null>(null);
   useEffect(() => {
     if (ansichtRef.current !== "force") return;
@@ -452,6 +468,7 @@ export function KnowledgeGraph({ memories, onSelectMemory , sichtbar = true }: K
     uebergangBaumRef.current = false;
     const alt = simRef.current;
     const sim = reuseSimulation(forceHistoryRef.current, ids, edges, radiusOf);
+    strukturKnotenRef.current = kraftGeruest;
     let zielKraft: Map<string, { x: number; y: number }> | null = null;
     if (kommtVomBaum && alt && alt !== sim) {
       // Gleiten statt springen: Start = Baum-Positionen, Ziel = letzte
@@ -487,7 +504,7 @@ export function KnowledgeGraph({ memories, onSelectMemory , sichtbar = true }: K
     uebergangRef.current = zielKraft ?? new Map();
     zeichneNoetig.current = true;
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [idsSchluessel, edges, radiusOf, ansicht]);
+  }, [idsSchluessel, edges, radiusOf, ansicht, kraftGeruest]);
 
   // Dendrogramm: dieselbe Simulation, aber Kanten = Eltern-Kind, und die
   // Strukturknoten (Wurzel/Typ/Entitaet/Tag-Gruppe) kommen hinzu. Positionen
@@ -742,11 +759,26 @@ export function KnowledgeGraph({ memories, onSelectMemory , sichtbar = true }: K
     // --- Kanten ---
     const nurEcht = nurEchteKanten(sim.edges.length, t.k);
     ctx.lineCap = "round";
-    for (const nurDiese of [false, true]) {
-      // Erst Aehnlichkeit (fein gepunktet), dann echte Relationen darueber.
-      if (nurDiese) {
+    // Drei Klassen, drei Aussehen. Seit dem 6.10. liegen im Feld zwei Arten
+    // echter Kanten: eine Notiz, die einen Begriff erwaehnt, und eine
+    // Behauptung zwischen zwei Begriffen. Eine Legende, die beide „real
+    // connection" nennt, beschreibt das Bild nicht — sie verschwindet dahinter.
+    type KantArt = "vermutung" | "erwaehnung" | "behauptung";
+    const artFuer = (e: LayoutEdge): KantArt => {
+      if (ansichtRef.current === "dendrogram") return "behauptung"; // hier ist jede Kante die Hierarchie selbst
+      if (!e.real) return "vermutung";
+      return istStruktur(e.source) && istStruktur(e.target) ? "behauptung" : "erwaehnung";
+    };
+    for (const art of ["vermutung", "erwaehnung", "behauptung"] as const) {
+      // Erst die Vermutungen (fein gepunktet), dann die Spinnen zum Begriff,
+      // zuletzt die Behauptungen — sie liegen darüber und sind die Aussage.
+      if (art === "behauptung") {
         ctx.strokeStyle = akzent;
         ctx.lineWidth = 2 / Math.max(0.4, t.k);
+        ctx.setLineDash([]);
+      } else if (art === "erwaehnung") {
+        ctx.strokeStyle = textFarbe;
+        ctx.lineWidth = 1 / Math.max(0.4, t.k);
         ctx.setLineDash([]);
       } else {
         if (nurEcht) continue;
@@ -757,31 +789,30 @@ export function KnowledgeGraph({ memories, onSelectMemory , sichtbar = true }: K
       ctx.beginPath();
       let gemalt = 0;
       for (const e of sim.edges) {
-        if (e.real !== nurDiese) continue;
+        if (artFuer(e) !== art) continue;
         const a = index.get(e.source);
         const b = index.get(e.target);
         if (!a || !b) continue;
         if (!imBild(a) && !imBild(b)) continue;
         if (!edgeVisibleAt(kantenZeit, e.source, e.target)) continue;
-        if (hov && hov !== e.source && hov !== e.target && !nurDiese) continue;
+        if (hov && hov !== e.source && hov !== e.target && art === "vermutung") continue;
         ctx.moveTo(a.x, a.y);
-        if (nurDiese) {
-          if (ansichtRef.current === "dendrogram") {
-            // Baum: gerade Verbindung — der Dendrogramm-Look lebt von den
-            // klaren Linien zwischen den Ebenen, nicht von Federn.
-            ctx.lineTo(b.x, b.y);
-          } else {
-            const dx = b.x - a.x, dy = b.y - a.y;
-            const len = Math.hypot(dx, dy) || 1;
-            const off = Math.min(16, len * 0.12);
-            ctx.quadraticCurveTo((a.x + b.x) / 2 - (dy / len) * off, (a.y + b.y) / 2 + (dx / len) * off, b.x, b.y);
-          }
-        } else {
+        if (art === "vermutung" || ansichtRef.current === "dendrogram") {
+          // Baum: gerade Verbindung — der Dendrogramm-Look lebt von den klaren
+          // Linien zwischen den Ebenen, nicht von Federn.
           ctx.lineTo(b.x, b.y);
+        } else {
+          const dx = b.x - a.x, dy = b.y - a.y;
+          const len = Math.hypot(dx, dy) || 1;
+          const off = Math.min(16, len * 0.12);
+          ctx.quadraticCurveTo((a.x + b.x) / 2 - (dy / len) * off, (a.y + b.y) / 2 + (dx / len) * off, b.x, b.y);
         }
         gemalt++;
       }
-      ctx.globalAlpha = Math.min(1, (nurDiese ? (hov ? 0.9 : 0.55) : hov ? 0.5 : 0.22) * kantenVerstaerkung);
+      ctx.globalAlpha = Math.min(
+        1,
+        (art === "behauptung" ? (hov ? 0.9 : 0.55) : art === "erwaehnung" ? 0.34 : hov ? 0.5 : 0.22) * kantenVerstaerkung
+      );
       if (gemalt > 0) ctx.stroke();
       ctx.globalAlpha = 1;
     }
@@ -954,10 +985,12 @@ export function KnowledgeGraph({ memories, onSelectMemory , sichtbar = true }: K
       ctx.globalAlpha = 1;
     }
 
-    // --- Strukturknoten (nur Baum-Ansicht): Wurzel, Typen, Entitaeten ---
+    // --- Gerüst-Knoten: im Baum Wurzel/Typen/Entitäten, im Feld die Konzepte ---
     // Sie haben keine Memory — der Knoten-Durchgang oben ueberspringt sie, sie
     // tragen aber die Hierarchie und brauchen Farbe, Ring und Hervorhebung.
-    const struktur = ansichtRef.current === "dendrogram" ? strukturKnotenRef.current : null;
+    // Beide Ansichten nutzen dieselben Schlüssel ("__ent:..."), damit der
+    // Übergang zwischen Baum und Feld ein Gleiten ist und kein Umbau.
+    const struktur = strukturKnotenRef.current;
     if (struktur) {
       for (const n of sim.nodes) {
         const s = struktur.get(n.id);
@@ -1454,7 +1487,7 @@ export function KnowledgeGraph({ memories, onSelectMemory , sichtbar = true }: K
       <div className="flex-1 flex flex-col items-center justify-center p-8 text-center">
         <div className="hud-label mb-2">Knowledge graph</div>
         <p className="text-sm max-w-sm" style={{ color: "var(--text-2)" }}>
-          No nodes yet. Create your first note — the graph shows real connections (wiki links, agents) and similarities.
+          No notes yet. Write one — its [[wiki links]] become concepts, and concepts are what the graph connects.
         </p>
       </div>
     );
@@ -1473,12 +1506,16 @@ export function KnowledgeGraph({ memories, onSelectMemory , sichtbar = true }: K
           />
         </div>
         {/* Gezaehlt wird, was im Bild steht — nicht, was die Datenbank hergeben
-            wuerde. „edges" war hier eine Zahl aus dem Aehnlichkeitsnebel. */}
+            wuerde. „edges" war hier eine Zahl aus dem Aehnlichkeitsnebel.
+            Seit dem 6.10. liegen im Feld auch Konzepte: zwei Notizen und drei
+            Punkte im Bild mit der Aufschrift „2 nodes" wäre keine Auskunft.
+            Deshalb nennt der Kopf, was er zählt — Notizen, und daneben die
+            Knoten des Gerüsts, die in beiden Ansichten anderes sind. */}
         <div className="hud-label hidden sm:block">
-          {sichtbareAnzahl.knoten} {sichtbareAnzahl.knoten === 1 ? "node" : "nodes"} ·{" "}
+          {sichtbareAnzahl.knoten} {sichtbareAnzahl.knoten === 1 ? "note" : "notes"} ·{" "}
           {ansicht === "dendrogram"
-            ? `${baumLayout.edges.length} ${baumLayout.edges.length === 1 ? "link" : "links"}`
-            : `${kanten.echt} ${kanten.echt === 1 ? "link" : "links"}${kanten.aehnlichkeit ? ` · +${kanten.aehnlichkeit} similar` : ""}`}
+            ? `${Math.max(0, baumLayout.struktur.size - 1)} ${baumLayout.struktur.size - 1 === 1 ? "grouping" : "groupings"} · ${baumLayout.edges.length} ${baumLayout.edges.length === 1 ? "link" : "links"}`
+            : `${netz.knoten.length} ${netz.knoten.length === 1 ? "concept" : "concepts"} · ${kanten.echt} ${kanten.echt === 1 ? "link" : "links"}${kanten.aehnlichkeit ? ` · +${kanten.aehnlichkeit} similar` : ""}`}
         </div>
         <div className="flex items-center gap-0.5 ml-1" role="group" aria-label="Graph layout">
           <button
@@ -1613,14 +1650,15 @@ export function KnowledgeGraph({ memories, onSelectMemory , sichtbar = true }: K
           style={{
             width: "100%",
             height: "100%",
-            // Im Baum sind Strukturknoten weder ziehbar noch öffnbar — der
-            // Zeiger verspricht nur bei echten Notizen eine Aktion (deren
-            // Doppelklick öffnet). Alles andere fühlt sich wie Schwenken an.
+            // Gerüst-Knoten (Konzept im Feld, Ebene im Baum) sind nie etwas, das
+            // man öffnet — der Zeiger verspricht eine Aktion nur bei echten
+            // Notizen, deren Doppelklick öffnet. Alles andere fühlt sich nach
+            // Schwenken an, und Schwenken ist es auch.
             cursor:
               greift
                 ? "grabbing"
                 : hovered
-                  ? (ansicht === "dendrogram" && strukturKnotenRef.current.has(hovered) ? "grab" : "pointer")
+                  ? (istStruktur(hovered) ? "grab" : "pointer")
                   : "grab",
           }}
           onPointerDown={onPointerDown}
@@ -1649,7 +1687,13 @@ export function KnowledgeGraph({ memories, onSelectMemory , sichtbar = true }: K
             ))}
           </div>
           <div className="flex items-center gap-3 hud-label">
-            <svg width="26" height="6"><line x1="0" y1="3" x2="26" y2="3" stroke="var(--accent)" strokeWidth="2" /></svg> {uiT("legend.real")}
+            <svg width="26" height="6"><line x1="0" y1="3" x2="26" y2="3" stroke="var(--accent)" strokeWidth="2" /></svg>{" "}
+            {ansicht === "dendrogram" ? uiT("legend.hierarchy") : uiT("legend.claim")}
+            {ansicht !== "dendrogram" && (
+              <>
+                <svg width="26" height="6"><line x1="0" y1="3" x2="26" y2="3" stroke="var(--text-1)" strokeWidth="1" opacity="0.45" /></svg> {uiT("legend.mention")}
+              </>
+            )}
             {ansicht !== "dendrogram" && ahnlichkeit && (
               <>
                 <svg width="26" height="6"><line x1="0" y1="3" x2="26" y2="3" stroke="var(--text-3)" strokeWidth="1.5" strokeDasharray="3 4" /></svg> {uiT("legend.similarity")}

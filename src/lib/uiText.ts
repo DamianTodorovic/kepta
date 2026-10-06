@@ -33,7 +33,12 @@ export const TEXTE: Record<string, string> = {
   "legend.events": "Events",
   "legend.howtos": "How-tos",
   "legend.documents": "Documents",
-  "legend.real": "real connection",
+  // Drei Kantenarten, drei Namen. „real connection" deckte zwei davon zu — und
+  // seit dem 6.10. liegen beide im Bild: die Spinne von der Notiz zum Begriff
+  // und die Behauptung zwischen zwei Begriffen.
+  "legend.claim": "claimed link",
+  "legend.mention": "mention",
+  "legend.hierarchy": "hierarchy",
   "legend.similarity": "Similarity",
   "preview.close": "Close",
   "preview.edit": "Edit",
