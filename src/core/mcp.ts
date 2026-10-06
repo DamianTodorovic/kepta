@@ -86,7 +86,7 @@ export const TOOLS = [
     name: "memory_search",
     title: "Search memory",
     description:
-      "Hybrid retrieval (BM25 + vectors + knowledge graph) over KEPTA memory. Expired and superseded memories are flagged as such.",
+      "Hybrid retrieval (BM25 + vectors + knowledge graph) over KEPTA memory. Expired and superseded memories are flagged as such; memories the owner marked private never appear here.",
     inputSchema: {
       type: "object",
       properties: {
@@ -176,7 +176,7 @@ export const TOOLS = [
   {
     name: "memory_list",
     title: "List memories",
-    description: "Lists memories, paginated and filterable.",
+    description: "Lists memories, paginated and filterable. Private ones are never listed, not even when scope is asked for explicitly.",
     inputSchema: {
       type: "object",
       properties: {
@@ -295,7 +295,7 @@ function toInt(v: unknown, def: number, min: number, max: number): number {
   return Math.min(Math.max(Math.trunc(n), min), max);
 }
 
-function memoryToOut(r: ReturnType<KeptaStore["getMemory"]>): Record<string, unknown> {
+function memoryToOut(store: KeptaStore, r: ReturnType<KeptaStore["getMemory"]>): Record<string, unknown> {
   if (!r) throw new Error("Memory not found");
   return {
     id: r.id,
@@ -307,7 +307,8 @@ function memoryToOut(r: ReturnType<KeptaStore["getMemory"]>): Record<string, unk
     confidence: r.confidence,
     validFrom: r.validFrom,
     validTo: r.validTo,
-    supersededBy: r.supersededBy,
+    // Für Agenten gibt es nur offene Nachfolgerinnen, siehe zeigerFürAgenten().
+    supersededBy: zeigerFürAgenten(store, r.supersededBy),
     createdAt: r.createdAt,
     updatedAt: r.updatedAt,
   };
@@ -355,8 +356,34 @@ export function saveWithIndex(store: KeptaStore, args: Record<string, unknown>):
  * Grundversprechen, das auch der freie Kern hält, wenn App und kepta-mcp
  * dieselbe Datenbank teilen.
  */
+export const PRIVATER_SCOPE = "private";
+
+/** Trägt die scope-Regel auf eine beliebige Liste an (Treffer, Notizen, Kandidaten). */
 function ohnePrivate<T>(liste: T[], scopeVon: (m: T) => string | undefined): T[] {
-  return liste.filter((m) => scopeVon(m) !== "private");
+  return liste.filter((m) => scopeVon(m) !== PRIVATER_SCOPE);
+}
+
+/**
+ * Fehler für id-Wege auf eine private Notiz — oder null, wenn der Agent darf.
+ * `meldung` ist wortgleich zu der, die das jeweilige Werkzeug für eine
+ * unbekannte id selbst wirft: eine eigene „privat"-Meldung oder ein eigener
+ * Statuscode verriete einem Agenten, der eine id anderweitig kennt, dass die
+ * Notiz existiert. Die Listenwege (search/list/graph/consolidate) brauchen das
+ * nicht — die nennen private ids erst gar nicht.
+ */
+function aussenVor(store: KeptaStore, id: string, meldung: string): Error | null {
+  return store.istPrivat(id) ? new Error(meldung) : null;
+}
+
+/**
+ * Der eine Zeiger, den eine offene Notiz auf eine private richten kann:
+ * supersededBy. Die App consolidiert über den ganzen Bestand und darf eine
+ * offene Notiz auf eine private Nachfolgerin zeigen lassen — für Agentenwege
+ * heißt der Nachfolger dann nichtexistent. (`superseded: true` steht am
+ * Treffer, daran ändert sich nichts.)
+ */
+function zeigerFürAgenten(store: KeptaStore, supersededBy: string | null): string | null {
+  return supersededBy && store.istPrivat(supersededBy) ? null : supersededBy;
 }
 
 export async function callTool(store: KeptaStore, name: string, args: Record<string, unknown>): Promise<{ content: unknown[]; structuredContent: Record<string, unknown>; isError?: boolean }> {
@@ -386,7 +413,7 @@ export async function callTool(store: KeptaStore, name: string, args: Record<str
           count: hits.length,
           usedVectors: res.usedVectors,
           hits: hits.map((h) => ({
-            ...memoryToOut(h.memory),
+            ...memoryToOut(store, h.memory),
             score: h.score,
             expired: h.expired,
             superseded: h.superseded,
@@ -398,6 +425,11 @@ export async function callTool(store: KeptaStore, name: string, args: Record<str
       case "memory_save": {
         // F2: Write-Gate (Opt-in KEPTA_WRITE_GATE=on) — nur für NEUE Knoten;
         // ein explizites Update via id ist die Entscheidung des Agenten selbst.
+        // Ein save mit expliziter id ist ein Update — derselbe Weg, dieselbe Grenze.
+        if (args.id !== undefined) {
+          const verweigert = aussenVor(store, String(args.id), `Memory not found: ${String(args.id)}`);
+          if (verweigert) throw verweigert;
+        }
         const gate = args.id === undefined
           ? await gateDecision(store, String(args.title ?? ""), String(args.content ?? ""))
           : null;
@@ -408,7 +440,7 @@ export async function callTool(store: KeptaStore, name: string, args: Record<str
           const structured = {
             created: viaGate.created,
             gateOutcome: "updated",
-            memory: memoryToOut(viaGate.record),
+            memory: memoryToOut(store, viaGate.record),
             writeGate: gate,
           };
           return { content: [{ type: "text", text: JSON.stringify(structured, null, 2) }], structuredContent: structured };
@@ -421,7 +453,7 @@ export async function callTool(store: KeptaStore, name: string, args: Record<str
         const duplicate = await findDuplicateForNew(store, String(args.title ?? ""), String(args.content ?? ""));
         const structured = {
           created,
-          memory: memoryToOut(record),
+          memory: memoryToOut(store, record),
           duplicateWarning: duplicate,
           ...(writeGateEnabled() ? { gateOutcome: "created", writeGate: gate } : {}),
         };
@@ -432,6 +464,8 @@ export async function callTool(store: KeptaStore, name: string, args: Record<str
       }
       case "memory_update": {
         const id = String(args.id ?? "");
+        const verweigert = aussenVor(store, id, `Memory not found: ${id}`);
+        if (verweigert) throw verweigert;
         const patch: Record<string, unknown> = {};
         for (const k of ["title", "content", "tags", "type", "confidence", "validFrom", "validTo"] as const) {
           if (args[k] !== undefined) patch[k] = args[k];
@@ -439,12 +473,16 @@ export async function callTool(store: KeptaStore, name: string, args: Record<str
         const updated = store.updateMemory(id, patch);
         if (!updated) throw new Error(`Memory not found: ${id}`);
         if (patch.content !== undefined) indexMemory(store, id);
-        const structured = { updated: true, memory: memoryToOut(store.getMemory(id)) };
+        const structured = { updated: true, memory: memoryToOut(store, store.getMemory(id)) };
         return { content: [{ type: "text", text: JSON.stringify(structured, null, 2) }], structuredContent: structured };
       }
       case "memory_delete": {
         const id = String(args.id ?? "");
         const permanent = args.permanent === true;
+        // Wortlaut des Zweigs, den der Agent gerade ruft — derselbe wie bei einer
+        // unbekannten id, sonst wäre die Antwort ein Existenznachweis.
+        const verweigert = aussenVor(store, id, permanent ? `Memory not found: ${id}` : `Memory not found, or already deleted: ${id}`);
+        if (verweigert) throw verweigert;
         if (permanent) {
           const purged = store.purgeMemory(id);
           if (!purged) throw new Error(`Memory not found: ${id}`);
@@ -470,7 +508,7 @@ export async function callTool(store: KeptaStore, name: string, args: Record<str
         const structured = {
           count: memories.length,
           total: opts.trash ? total.trashed : total.active,
-          memories: memories.map(memoryToOut),
+          memories: memories.map((m) => memoryToOut(store, m)),
         };
         return { content: [{ type: "text", text: JSON.stringify(structured, null, 2) }], structuredContent: structured };
       }
@@ -478,11 +516,25 @@ export async function callTool(store: KeptaStore, name: string, args: Record<str
         const entity = args.entity ? String(args.entity) : undefined;
         const depth = toInt(args.depth, 2, 1, 4);
         const g = store.getGraph(entity, depth);
-        const nameById = new Map(g.entities.map((e) => [e.id, e.name]));
+        // Privatheits-Floor: Entitäten sind abgeleitete Daten — ein Knoten fällt
+        // erst, wenn ALLE seine Träger-Notizen privat sind. Nennt ihn zusätzlich
+        // eine offene Notiz, gehört der Name der offenen Welt. Relationen gehen
+        // mit ihrer privaten Träger-Notiz und mit jedem Knoten, den der Floor
+        // entfernt hat.
+        const privaten = store.privateMemoryIds();
+        const traeger = store.memoryIdsByEntity(g.entities.map((e) => e.id));
+        const gehalten = new Set<number>();
+        for (const e of g.entities) {
+          const ids = traeger.get(e.id) ?? [];
+          if (ids.length === 0 || ids.some((id) => !privaten.has(id))) gehalten.add(e.id);
+        }
+        const relationErlaubt = (r: { sourceId: number; targetId: number; memoryId?: string | null }) =>
+          gehalten.has(r.sourceId) && gehalten.has(r.targetId) && !(r.memoryId && privaten.has(r.memoryId));
+        const nameById = new Map(g.entities.filter((e) => gehalten.has(e.id)).map((e) => [e.id, e.name]));
         const structured = {
-          entities: g.entities.map((e) => ({ name: e.name })),
+          entities: g.entities.filter((e) => gehalten.has(e.id)).map((e) => ({ name: e.name })),
           relations: g.relations
-            .filter((r) => nameById.has(r.sourceId) && nameById.has(r.targetId))
+            .filter((r) => relationErlaubt(r) && nameById.has(r.sourceId) && nameById.has(r.targetId))
             .map((r) => ({ source: nameById.get(r.sourceId)!, target: nameById.get(r.targetId)!, relation: r.relation })),
         };
         return { content: [{ type: "text", text: JSON.stringify(structured, null, 2) }], structuredContent: structured };
@@ -491,6 +543,11 @@ export async function callTool(store: KeptaStore, name: string, args: Record<str
         const res = await consolidateMemories(store, {
           dryRun: args.dryRun !== false,
           threshold: typeof args.threshold === "number" ? args.threshold : undefined,
+          // Private Dupletten zu melden hieße, dem Agenten zwei private ids und
+          // ihre Ähnlichkeit zu nennen; anzuwenden würde zudem eine private
+          // Notiz als ersetzt markieren und sie damit aus der Suche des
+          // Besitzers nehmen.
+          ausnehmen: store.privateMemoryIds(),
         });
         const structured = {
           dryRun: res.dryRun,
@@ -502,6 +559,8 @@ export async function callTool(store: KeptaStore, name: string, args: Record<str
       case "memory_forget": {
         const id = String(args.id ?? "");
         const mode = args.mode ? String(args.mode) : "expire";
+        const verweigert = aussenVor(store, id, `Memory not found: ${id}`);
+        if (verweigert) throw verweigert;
         if (!store.getMemory(id)) throw new Error(`Memory not found: ${id}`);
         if (mode === "expire") {
           store.updateMemory(id, { validTo: typeof args.validTo === "number" ? args.validTo : Date.now() });

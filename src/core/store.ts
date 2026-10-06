@@ -472,6 +472,41 @@ export class KeptaStore {
     return { active, trashed };
   }
 
+  /**
+   * Die privaten ids auf einmal — für die Kanäle, die eine Menge prüfen (Graph,
+   * Konsolidierung). Dieselbe Grenze wie istPrivat(), ein Zugriff statt n
+   * Abfragen.
+   */
+  privateMemoryIds(): Set<string> {
+    const zeilen = this.db.prepare("SELECT id FROM memories WHERE scope = 'private'").all() as { id: string }[];
+    return new Set(zeilen.map((z) => z.id));
+  }
+
+  /** Dieselbe Grenze wie privateMemoryIds(), aber über den Primärschlüssel — für Einzelfragen. */
+  istPrivat(id: string): boolean {
+    return this.db.prepare("SELECT 1 FROM memories WHERE id = ? AND scope = 'private'").get(id) !== undefined;
+  }
+
+  /**
+   * Die Notizen, die eine Entität tragen. Entitäten sind abgeleitete Daten: ein
+   * Knoten fällt erst, wenn ALLE seine Träger-Notizen privat sind — nennt ihn
+   * auch eine offene Notiz, gehört der Name zur offenen Welt.
+   */
+  memoryIdsByEntity(entityIds: number[]): Map<number, string[]> {
+    const map = new Map<number, string[]>();
+    if (entityIds.length === 0) return map;
+    const placeholders = entityIds.map(() => "?").join(",");
+    const rows = this.db
+      .prepare(`SELECT entity_id, memory_id FROM memory_entities WHERE entity_id IN (${placeholders})`)
+      .all(...entityIds) as { entity_id: number; memory_id: string }[];
+    for (const r of rows) {
+      const Liste = map.get(r.entity_id);
+      if (Liste) Liste.push(String(r.memory_id));
+      else map.set(r.entity_id, [String(r.memory_id)]);
+    }
+    return map;
+  }
+
   getMemory(id: string): MemoryRecord | null {
     const row = this.getRow(id);
     if (!row) return null;

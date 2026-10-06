@@ -538,7 +538,7 @@ function jaccard(a: string[], b: string[]): number {
  */
 export async function consolidateMemories(
   store: KeptaStore,
-  opts: { dryRun?: boolean; threshold?: number } = {}
+  opts: { dryRun?: boolean; threshold?: number; ausnehmen?: Set<string> } = {}
 ): Promise<ConsolidationResult> {
   const threshold = opts.threshold ?? 0.92;
   const dryRun = opts.dryRun ?? true;
@@ -548,7 +548,11 @@ export async function consolidateMemories(
   // Eine tote Memory gewann dadurch als "behalten" — und eine lebende Dublette zeigte
   // anschliessend auf sie. Ergebnis: die lebende Notiz auf 40 % heruntergewichtet,
   // mit einem Nachfolger, der selbst ausgemustert ist.
-  const active = aktiveErinnerungen(store).aktiv.filter((m) => !m.record.supersededBy);
+  // `ausnehmen` blendet ids vollständig aus — sie erscheinen weder als Kandidat
+  // noch als Nachfolger. Der Agentenkanal nutzt das für private Notizen: zwei
+  // private Dupletten zu melden hieße, dem Agenten zwei private ids und ihre
+  // Ähnlichkeit zu nennen.
+  const active = aktiveErinnerungen(store).aktiv.filter((m) => !m.record.supersededBy && !opts.ausnehmen?.has(m.record.id));
   const candidates: ConsolidationCandidate[] = [];
 
   // Embedding-Dubletten: Centroid pro Memory+Modell vergleichen — Cosine nur zwischen
