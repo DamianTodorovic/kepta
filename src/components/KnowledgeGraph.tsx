@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState, useMemo, useCallback } from "react";
 import { Memory } from "../types";
 import { existsAt, graphTimeRange, activeIdsAt, edgeVisibleAt } from "../lib/graphTime";
-import { Search, Maximize2, ZoomIn, ZoomOut, Clock, Atom2, Sitemap } from "../lib/icons";
+import { Search, Maximize2, ZoomIn, ZoomOut, Clock, Atom2, Sitemap, Network } from "../lib/icons";
 import {
   buildEdges,
   createSimulation,
@@ -16,6 +16,7 @@ import {
   nodeAt,
   reheat,
   nurEchteKanten,
+  kantZaehlung,
   type LayoutEdge,
   type LayoutNode,
   type Simulation,
@@ -135,6 +136,14 @@ export function KnowledgeGraph({ memories, onSelectMemory , sichtbar = true }: K
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
   const [filter, setFilter] = useState("");
+  /**
+   * Aehnlichkeitskanten sind eine Anfrage, kein Grundzustand. Aufgenommen am
+   * 6.10.: 75 Notizen, 891 Kanten — die Masse davon war Tag- und
+   * Titel-Aehnlichkeit, und die echten Verknuepfungen waren darin nicht mehr
+   * zu finden. Aus ist also nicht "weniger Graph", sondern "der Graph sagt
+   * nur, was jemand behauptet hat".
+   */
+  const [ahnlichkeit, setAhnlichkeit] = useState(false);
   const [dimensions, setDimensions] = useState({ w: 800, h: 500 });
   const [hovered, setHovered] = useState<string | null>(null);
   /** Wie viele Knoten der Nutzer festgesetzt hat — nur fuer die Anzeige. */
@@ -237,9 +246,10 @@ export function KnowledgeGraph({ memories, onSelectMemory , sichtbar = true }: K
   }, [graphApi, filtered]);
 
   const edges: LayoutEdge[] = useMemo(
-    () => buildEdges(filtered, { realPairs }),
-    [filtered, realPairs]
+    () => buildEdges(filtered, { realPairs, ahnlichkeit }),
+    [filtered, realPairs, ahnlichkeit]
   );
+
 
   // Groesse = Verbindungsgrad; Huben sind sofort erkennbar.
   const degree = useMemo(() => {
@@ -369,12 +379,18 @@ export function KnowledgeGraph({ memories, onSelectMemory , sichtbar = true }: K
    * "212 nodes · 1272 edges". Eine Kante zaehlt nur, wenn BEIDE Enden damals
    * schon da waren; das ist dieselbe Regel, nach der sie auch gemalt wird.
    */
-  const sichtbareAnzahl = useMemo(() => {
-    if (!zeitAktivIds) return { knoten: filtered.length, kanten: edges.length };
-    let kanten = 0;
-    for (const e of edges) if (edgeVisibleAt(zeitAktivIds, e.source, e.target)) kanten++;
-    return { knoten: zeitAktivIds.size, kanten };
-  }, [zeitAktivIds, filtered.length, edges]);
+  // Der Kopf zählt nur, was nach dem Zeitfilter noch im Bild steht — und
+  // trennt Behauptung von Aehnlichkeit. Eine Zahl aus dem Aehnlichkeitsnebel
+  // wäre keine Auskunft, sondern ein Verkaufsgespräch.
+  const sichtbareKanten = useMemo(
+    () => (zeitAktivIds ? edges.filter((e) => edgeVisibleAt(zeitAktivIds, e.source, e.target)) : edges),
+    [zeitAktivIds, edges]
+  );
+  const kanten = useMemo(() => kantZaehlung(sichtbareKanten), [sichtbareKanten]);
+  const sichtbareAnzahl = useMemo(
+    () => ({ knoten: zeitAktivIds ? zeitAktivIds.size : filtered.length, kanten: sichtbareKanten.length }),
+    [zeitAktivIds, filtered.length, sichtbareKanten]
+  );
 
   // --- Dendrogramm: Hierarchie und Zielpositionen ---
   //
@@ -1429,18 +1445,20 @@ export function KnowledgeGraph({ memories, onSelectMemory , sichtbar = true }: K
             className="hud-input w-full pl-8 pr-3 py-2 rounded-lg text-sm"
           />
         </div>
+        {/* Gezaehlt wird, was im Bild steht — nicht, was die Datenbank hergeben
+            wuerde. „edges" war hier eine Zahl aus dem Aehnlichkeitsnebel. */}
         <div className="hud-label hidden sm:block">
           {sichtbareAnzahl.knoten} {sichtbareAnzahl.knoten === 1 ? "node" : "nodes"} ·{" "}
           {ansicht === "dendrogram"
-            ? `${baumLayout.edges.length} ${baumLayout.edges.length === 1 ? "edge" : "edges"}`
-            : `${sichtbareAnzahl.kanten} ${sichtbareAnzahl.kanten === 1 ? "edge" : "edges"}`}
+            ? `${baumLayout.edges.length} ${baumLayout.edges.length === 1 ? "link" : "links"}`
+            : `${kanten.echt} ${kanten.echt === 1 ? "link" : "links"}${kanten.aehnlichkeit ? ` · +${kanten.aehnlichkeit} similar` : ""}`}
         </div>
         <div className="flex items-center gap-0.5 ml-1" role="group" aria-label="Graph layout">
           <button
             onClick={() => wechsleAnsicht("force")}
             className="btn-ghost px-2.5 py-1.5 rounded-lg flex items-center gap-1.5"
             style={ansicht === "force" ? { border: "1px solid var(--accent)", color: "var(--accent)" } : undefined}
-            title="Force view — the similarity landscape"
+            title="Force view — the links as they are claimed; similarity only on request"
           >
             <Atom2 className="w-4 h-4" />
             <span className="hidden md:inline text-[11px]">Force</span>
@@ -1453,6 +1471,16 @@ export function KnowledgeGraph({ memories, onSelectMemory , sichtbar = true }: K
           >
             <Sitemap className="w-4 h-4" />
             <span className="hidden md:inline text-[11px]">Tree</span>
+          </button>
+          <button
+            onClick={() => setAhnlichkeit((v) => !v)}
+            aria-pressed={ahnlichkeit ? "true" : "false"}
+            className="btn-ghost px-2.5 py-1.5 rounded-lg flex items-center gap-1.5"
+            style={ahnlichkeit ? { border: "1px solid var(--text-3)", color: "var(--text-2)" } : undefined}
+            title="Show similarity links — guesses from shared tags and titles, off by default"
+          >
+            <Network className="w-4 h-4" />
+            <span className="hidden md:inline text-[11px]">Similar</span>
           </button>
         </div>
         <div className="flex items-center gap-1.5 ml-2" title="Node colours — each colour tints its type across the graph, cards and index">
@@ -1595,7 +1623,7 @@ export function KnowledgeGraph({ memories, onSelectMemory , sichtbar = true }: K
           </div>
           <div className="flex items-center gap-3 hud-label">
             <svg width="26" height="6"><line x1="0" y1="3" x2="26" y2="3" stroke="var(--accent)" strokeWidth="2" /></svg> {uiT("legend.real")}
-            {ansicht !== "dendrogram" && (
+            {ansicht !== "dendrogram" && ahnlichkeit && (
               <>
                 <svg width="26" height="6"><line x1="0" y1="3" x2="26" y2="3" stroke="var(--text-3)" strokeWidth="1.5" strokeDasharray="3 4" /></svg> {uiT("legend.similarity")}
               </>

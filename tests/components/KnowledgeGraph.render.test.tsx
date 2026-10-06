@@ -39,10 +39,28 @@ function note(over: Partial<Memory> = {}): Memory {
   };
 }
 
-/** Rendert und laesst die Bildschleife ein paar Mal laufen. */
-async function zeichne(memories: Memory[], onSelect = vi.fn()) {
+/**
+ * Rendert und laesst die Bildschleife ein paar Mal laufen.
+ *
+ * Aehnlichkeitskanten sind seit dem 6.10. ausgeschaltet (die Flaeche zeigt nur,
+ * was jemand behauptet). Wer sie fuer einen Test braucht, holt sie mit
+ * `aehnlichkeit: true` — derselbe Klick, den ein Mensch tut.
+ */
+async function zeichne(
+  memories: Memory[],
+  opts: { onSelect?: (m: Memory) => void; aehnlichkeit?: boolean } | ((m: Memory) => void) = {},
+) {
+  const optionen = typeof opts === "function" ? { onSelect: opts } : opts;
+  // Immer ein Spion: die Fälle unten lesen .mock, und eine mitgegebene
+  // Callback-Funktion wird trotzdem weitergereicht.
+  const onSelect = vi.fn(optionen.onSelect);
   const view = render(<KnowledgeGraph memories={memories} onSelectMemory={onSelect} />);
   await act(async () => { await new Promise((r) => setTimeout(r, 120)); });
+  if (optionen.aehnlichkeit) {
+    const knopf = view.container.querySelector('button[aria-pressed]') as HTMLButtonElement;
+    expect(knopf, "Der Aehnlichkeits-Schalter fehlt").not.toBeNull();
+    await act(async () => { fireEvent.click(knopf); await new Promise((r) => setTimeout(r, 60)); });
+  }
   return { ...view, onSelect };
 }
 
@@ -129,15 +147,15 @@ describe("Zeitregler: das Kantennetz verschwindet mit den Knoten", () => {
   }
 
   it("zeigt ohne Zeitfilter alle Kanten", async () => {
-    const { container } = await zeichne(korpus());
-    expect(container.textContent).toMatch(/6 edges/); // 4 Knoten, alle mit Tag "t"
+    const { container } = await zeichne(korpus(), { aehnlichkeit: true });
+    expect(container.textContent).toMatch(/6 similar/); // 4 Knoten, alle mit Tag "t"
     leinwand.leeren();
     await bilder();
     expect(leinwand.zahl("lineTo")).toBeGreaterThan(0);
   });
 
   it("laesst bei einem frueheren Zeitpunkt die Kanten der spaeteren Knoten weg", async () => {
-    const { container } = await zeichne(korpus());
+    const { container } = await zeichne(korpus(), { aehnlichkeit: true });
     const regler = container.querySelector('input[aria-label="Time of the knowledge shown"]') as HTMLInputElement;
     expect(regler, "Zeitregler fehlt").not.toBeNull();
 
@@ -390,7 +408,7 @@ describe("Detailstufen: nah scharf, fern sparsam", () => {
 
     const { container } = await zeichne([a, b]);
     await bilder(12);
-    expect(container.textContent).toMatch(/1 edges|1 edge/);
+    expect(container.textContent).toMatch(/1 link(?!s)/);
     const rahmen = leinwand.letzterRahmen();
     expect(rahmen.filter((x) => x.op === "quadraticCurveTo").length).toBeGreaterThan(0);
     // Vor dem Zeichnen der echten Kanten steht die Akzentfarbe.
@@ -403,7 +421,7 @@ describe("Detailstufen: nah scharf, fern sparsam", () => {
     // Hier zaehlt, dass eine normale Wissensbasis beim Herauszoomen nicht
     // ploetzlich ohne Verbindungen dasteht.
     const ms = Array.from({ length: 12 }, () => note({ tags: ["gemeinsam"] }));
-    const { container } = await zeichne(ms);
+    const { container } = await zeichne(ms, { aehnlichkeit: true });
     const knopf = (t: string) => container.querySelector(`button[title="${t}"]`) as HTMLButtonElement;
     await act(async () => { for (let i = 0; i < 20; i++) knopf("Zoom out").click(); await new Promise((r) => setTimeout(r, 60)); });
     leinwand.leeren();
@@ -583,8 +601,8 @@ describe("Die Kopfzeile zaehlt, was wirklich im Bild steht", () => {
       note({ tags: ["t"], createdAt: alt, updatedAt: alt }),
       note({ tags: ["t"], createdAt: neu, updatedAt: neu }),
       note({ tags: ["t"], createdAt: neu, updatedAt: neu }),
-    ]);
-    expect(container.textContent).toMatch(/4 nodes · 6 edges/);
+    ], { aehnlichkeit: true });
+    expect(container.textContent).toMatch(/4 nodes · 0 links · \+6 similar/);
 
     const regler = container.querySelector('input[aria-label="Time of the knowledge shown"]') as HTMLInputElement;
         // Ziehen (input) und Loslassen (pointerup): der Filter wirkt beim Loslassen.
@@ -597,7 +615,20 @@ describe("Die Kopfzeile zaehlt, was wirklich im Bild steht", () => {
     });
 
     // Nur die beiden alten Knoten — und damit genau die eine Kante zwischen ihnen.
-    expect(container.textContent).toMatch(/2 nodes · 1 edge(?!s)/);
+    expect(container.textContent).toMatch(/2 nodes · 0 links · \+1 similar/);
+  });
+
+  it("ohne Schalter zählt nur, was jemand behauptet hat — nicht die Ähnlichkeit", async () => {
+    const { container } = await zeichne([
+      note({ tags: ["t"], createdAt: alt, updatedAt: alt }),
+      note({ tags: ["t"], createdAt: alt, updatedAt: alt }),
+      note({ tags: ["t"], createdAt: neu, updatedAt: neu }),
+      note({ tags: ["t"], createdAt: neu, updatedAt: neu }),
+    ]);
+    expect(container.textContent).toMatch(/4 nodes · 0 links/);
+    expect(container.textContent).not.toMatch(/similar/);
+    const schalter = container.querySelector('button[aria-pressed]') as HTMLButtonElement;
+    expect(schalter.getAttribute("aria-pressed")).toBe("false");
   });
 
   it("schreibt bei genau einem Knoten die Einzahl", async () => {
@@ -615,7 +646,7 @@ describe("Die Kopfzeile zaehlt, was wirklich im Bild steht", () => {
       regler.dispatchEvent(new window.PointerEvent("pointerup", { bubbles: true }));
       await new Promise((r) => setTimeout(r, 80));
     });
-    expect(container.textContent).toMatch(/1 node · 0 edges/);
+    expect(container.textContent).toMatch(/1 node · 0 links/);
   });
 });
 

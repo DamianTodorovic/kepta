@@ -139,6 +139,12 @@ export function titleSimilarity(a: string, b: string): number {
 export interface EdgeOptions {
   /** Echte Paare aus der Graph-DB — sie ueberleben jede Kuerzung. */
   realPairs?: readonly (readonly [string, string])[];
+  /**
+   * Aehnlichkeitskanten ueberhaupt suchen. Standard: ja. Die Flaeche schaltet
+   * sie ab — bei 75 Notizen und 891 Kanten war fast alles Aehnlichkeit, und die
+   * Behauptungen, die jemand wirklich verknuepft hat, waren nicht mehr zu sehen.
+   */
+  ahnlichkeit?: boolean;
   /** Obergrenze; ohne Angabe waechst sie mit der Knotenzahl. */
   maxEdges?: number;
   /** Buckets ueber dieser Groesse sind Allerweltsbegriffe und werden uebersprungen. */
@@ -169,6 +175,8 @@ export function buildEdges(memories: readonly Memory[], opts: EdgeOptions = {}):
     belegt.add(k);
     out.push({ source: a, target: b, strength: 0.85, real: true });
   }
+
+  if (opts.ahnlichkeit === false) return out;
 
   // Invertierter Index: Begriff -> Notizen. Nur Paare, die sich mindestens
   // einen Begriff teilen, kommen ueberhaupt in die Bewertung.
@@ -761,4 +769,15 @@ export function nodeAt(
     if (d2 <= r * r && d2 < beste) { beste = d2; treffer = n; }
   }
   return treffer;
+}
+
+/**
+ * Zaehlt die Kanten nach Art — fuer einen Kopf, der nur zahlt, was im Bild
+ * steht. Ein Kopf, der 891 Kanten behauptet, waehrend 884 davon Aehnlichkeit
+ * sind, verkauft die Flaeche schlechter, als sie ist.
+ */
+export function kantZaehlung(edges: readonly LayoutEdge[]): { echt: number; aehnlichkeit: number; gesamt: number } {
+  let echt = 0;
+  for (const e of edges) if (e.real) echt++;
+  return { echt, aehnlichkeit: edges.length - echt, gesamt: edges.length };
 }

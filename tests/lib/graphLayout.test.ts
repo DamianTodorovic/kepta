@@ -20,6 +20,7 @@ import {
   zoomAt,
   nodeAt,
   nurEchteKanten,
+  kantZaehlung,
   EDGE_LOD_THRESHOLD,
   EDGE_LOD_ZOOM,
   resolveCollisions,
@@ -931,5 +932,47 @@ describe("Ein Zug bewegt einen Knoten, nicht den ganzen Graphen", () => {
     const mit = ziehe(ruhendesLayout(), true);
     expect(mit.mittel).toBeGreaterThan(ohne.mittel * 3);
     expect(mit.nachbilder).toBeGreaterThan(100);
+  });
+});
+
+describe("Ähnlichkeit ist eine Wahl, nicht der Grundzustand", () => {
+  // Die Aufnahme vom 6.10.: „75 nodes · 891 edges" — fast alles davon waren
+  // Ähnlichkeitskanten aus gemeinsamen Tags und Titelwörtern. Sie machen die
+  // Fläche zu einem Knäuel, in dem die Behauptungen, die jemand tatsächlich
+  // verknüpft hat, nicht mehr zu sehen sind. Darum ist Ähnlichkeit jetzt
+  // ausgeschaltet, bis man sie ruft.
+  const paar = () => {
+    const a = note({ title: "Akkreditiv Berlin", tags: ["client"] });
+    const b = note({ title: "Akkreditiv Bern", tags: ["client"] });
+    const c = note({ title: "Gänzlich anderes Thema" });
+    return { a, b, c };
+  };
+
+  it("mit ahnlichkeit:false bleibt nur die echte Relation stehen", () => {
+    const { a, b, c } = paar();
+    const ohne = buildEdges([a, b, c], { realPairs: [[a.id, c.id]], ahnlichkeit: false });
+    expect(ohne).toHaveLength(1);
+    expect(ohne[0]!.real).toBe(true);
+    expect([ohne[0]!.source, ohne[0]!.target].sort()).toEqual([a.id, c.id].sort());
+  });
+
+  it("ohne Schalter bleibt das alte Verhalten — kein Aufrufer wird versehentlich blind", () => {
+    const { a, b, c } = paar();
+    const mit = buildEdges([a, b, c], { realPairs: [[a.id, c.id]] });
+    expect(mit.some((e) => !e.real)).toBe(true);
+    expect(mit.filter((e) => e.real)).toHaveLength(1);
+  });
+
+  it("kantZaehlung trennt echt und ähnlich", () => {
+    const { a, b, c } = paar();
+    const kanten = buildEdges([a, b, c], { realPairs: [[a.id, c.id]] });
+    const z = kantZaehlung(kanten);
+    expect(z.echt).toBe(1);
+    expect(z.aehnlichkeit).toBeGreaterThan(0);
+    expect(z.gesamt).toBe(kanten.length);
+  });
+
+  it("kantZaehlung auf leer liefert null und wirft nicht", () => {
+    expect(kantZaehlung([])).toEqual({ echt: 0, aehnlichkeit: 0, gesamt: 0 });
   });
 });
