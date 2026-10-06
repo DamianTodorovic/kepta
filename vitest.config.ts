@@ -9,7 +9,17 @@ export default defineConfig({
     // behoben). singleFork entfiel: vitest 4 hat poolOptions entfernt.
     // @ts-ignore — vitest-Typen unterscheiden sich zwischen Versionen
     pool: "forks",
-    testTimeout: 20_000,
+    // 60 s statt 20 s — nicht weil ein Test langsam wäre, sondern weil die
+    // Suite auf diesem Rechner mitläuft, während andere Agenten Browser- und
+    // Build-Arbeit fahren. Gemessen am 6.10.: der 400-Knoten-Physikfall braucht
+    // allein 1,3 s; in einem vollen Parallel-Lauf bei gesättigter Maschine lief
+    // seine Datei in 43 s und der Fall fiel als Zeitüberschreitung aus — ein
+    // rotes Ergebnis ohne Fehler im Code. Vitest 5 kennt keine Obergrenze für
+    // Forks mehr (--fileParallelism schaltet nur ganz ab, --maxConcurrency
+    // zählt Tests innerhalb einer Datei), also ist das die einzige Schraube,
+    // die eine Überbelegung nicht als Defekt aussehen lässt.
+    testTimeout: 60_000,
+    hookTimeout: 30_000,
     // Default-Umgebung node (src/core, server.ts).
     // src/lib ist Browser-Code → die betroffenen Testdateien setzen oben
     // den Docblock `// @vitest-environment jsdom` (vitest 4: pro Datei statt Glob).

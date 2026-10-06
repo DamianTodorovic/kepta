@@ -465,6 +465,44 @@ describe("Dashboard: Gehirn-Status (Paket 2 — Health auf der Fläche)", () => 
     expect(status!.textContent).toMatch(/Encrypted/);
     expect(status!.textContent).toMatch(/nomic-embed-text 8/);
   });
+
+  it("holt den Zähler nach, sobald ein Agent schreibt", async () => {
+    // Der Kopf der App fragt /api/health einmal beim Einhaengen. Ein Agent, der
+    // in dieser Zeit speichert, ist auf der Flaeche sichtbar (Toast, Liste) —
+    // der Zahl-Knopf blieb trotzdem stehen. In der Aufnahme vom 6.10.: „75
+    // entries in the index" neben „74 nodes in the brain", waehrend gerade
+    // „Claude saved „Lumen retainer — signed"" ueber dem Rand stand.
+    let zaehler = 74;
+    const quellen: { onmessage: ((e: MessageEvent) => void) | null; close: () => void }[] = [];
+    class Attrappe {
+      onmessage: ((e: MessageEvent) => void) | null = null;
+      onerror: (() => void) | null = null;
+      constructor(_url: string) { quellen.push(this); }
+      close() { /* nichts */ }
+    }
+    vi.stubGlobal("EventSource", Attrappe);
+    vi.stubGlobal("fetch", vi.fn(async (url: string) => {
+      if (url.includes("/api/health")) return new Response(JSON.stringify({
+        ok: true, version: "3.1.2", count: zaehler, dbPath: "/x",
+        embeddings: { total: 0, embedded: 0 }, mcp: { protocol: "2026-07-28", tools: 8, http: "/mcp" },
+      }), { status: 200 });
+      if (url.includes("/api/license")) return new Response(JSON.stringify({ licensed: true }), { status: 200 });
+      if (url.includes("/api/memories")) return new Response(JSON.stringify(notizen), { status: 200 });
+      if (url.includes("/api/inbox/status")) return new Response(JSON.stringify({ files: [], watching: true }), { status: 200 });
+      return new Response("{}", { status: 200 });
+    }));
+
+    const { container } = await zeige([note()]);
+    const chip = container.querySelector('[data-testid="gehirn-status"]');
+    await waitFor(() => expect(chip?.textContent).toMatch(/74 nodes in the brain/), { timeout: 3000 });
+
+    zaehler = 75;
+    await act(async () => {
+      quellen[0]!.onmessage?.({ data: JSON.stringify({ type: "save", source: "agent", ts: Date.now() }) } as unknown as MessageEvent);
+      await new Promise((r) => setTimeout(r, 30));
+    });
+    await waitFor(() => expect(chip?.textContent).toMatch(/75 nodes in the brain/), { timeout: 3000 });
+  });
 });
 
 describe("Dashboard: Tastatur", () => {

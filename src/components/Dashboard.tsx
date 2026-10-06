@@ -402,30 +402,39 @@ export function Dashboard() {
     embedEmbedded: number;
   }
   const [gehirn, setGehirn] = useState<GehirnStatus | null>(null);
-  useEffect(() => {
-    let cancelled = false;
-    void (async () => {
-      try {
-        const r = await fetch('/api/health');
-        const d = await r.json();
-        if (cancelled || !d || typeof d !== 'object') return;
-        const e = (d.embeddings ?? {}) as Record<string, unknown>;
-        const v = (d.encryption ?? {}) as Record<string, unknown>;
-        const modelle = (e.models ?? {}) as Record<string, unknown>;
-        setGehirn({
-          version: typeof d.version === 'string' ? d.version : null,
-          count: typeof d.count === 'number' ? d.count : 0,
-          hatVerschluesselung: typeof d.encryption === 'object' && d.encryption !== null,
-          verschluesselt: v.aktiv === true,
-          ablage: typeof v.ablage === 'string' ? v.ablage : null,
-          embedTotal: typeof e.total === 'number' ? e.total : 0,
-          embedEmbedded: typeof e.embedded === 'number' ? e.embedded : 0,
-          embedModelle: Object.entries(modelle).map(([name, anzahl]) => ({ name, anzahl: Number(anzahl) })),
-        });
-      } catch { /* der Server meldet sich, wenn er bereit ist */ }
-    })();
-    return () => { cancelled = true; };
+  /**
+   * /api/health — einmal beim Einhaengen und jedes Mal, wenn sich der Speicher
+   * geaendert hat. Der Zähler in dieser Antwort ist die einzige Zahl der Fläche,
+   * die nicht aus der Notizliste kommt; blieb er stehen, zeigte der Kopf „74
+   * nodes" während die Liste längst 75 zählte und der Toast eine Agenten-
+   * speicherung meldete.
+   */
+  const holeGesundheit = useCallback(async (abgebrochen?: { current: boolean }) => {
+    try {
+      const r = await fetch('/api/health');
+      const d = await r.json();
+      if (abgebrochen?.current) return;
+      if (!d || typeof d !== 'object') return;
+      const e = (d.embeddings ?? {}) as Record<string, unknown>;
+      const v = (d.encryption ?? {}) as Record<string, unknown>;
+      const modelle = (e.models ?? {}) as Record<string, unknown>;
+      setGehirn({
+        version: typeof d.version === 'string' ? d.version : null,
+        count: typeof d.count === 'number' ? d.count : 0,
+        hatVerschluesselung: typeof d.encryption === 'object' && d.encryption !== null,
+        verschluesselt: v.aktiv === true,
+        ablage: typeof v.ablage === 'string' ? v.ablage : null,
+        embedTotal: typeof e.total === 'number' ? e.total : 0,
+        embedEmbedded: typeof e.embedded === 'number' ? e.embedded : 0,
+        embedModelle: Object.entries(modelle).map(([name, anzahl]) => ({ name, anzahl: Number(anzahl) })),
+      });
+    } catch { /* der Server meldet sich, wenn er bereit ist */ }
   }, []);
+  useEffect(() => {
+    const flag = { current: false };
+    void holeGesundheit(flag);
+    return () => { flag.current = true; };
+  }, [holeGesundheit]);
 
   // --- Activity-Stream: das Gehirn lebt — Agent-Aktionen live sehen ---
   const [brainPulse, setBrainPulse] = useState(0);
@@ -436,6 +445,7 @@ export function Dashboard() {
       // Liste live aktualisieren, wenn sich der Speicher ändert (auch via MCP!)
       if (evt.type === 'save' || evt.type === 'update' || evt.type === 'delete' || evt.type === 'consolidate') {
         void refreshMemories();
+        void holeGesundheit();
       }
       if (evt.source === 'agent') {
         setAgentActive(true);
