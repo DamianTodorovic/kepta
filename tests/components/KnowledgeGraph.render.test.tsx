@@ -1083,3 +1083,96 @@ describe("Im Baum steht die Hierarchie hinter dem Inhalt", () => {
   });
 });
 
+describe("Ein gehaltener Begriff sagt, was er ist", () => {
+  // Das Gerüst ist auf 16 Zeichen gekürzt — sonst läuft ein langer Ebenenname
+  // in die Titelspalte hinein. Nur: wer über einem Begriff steht, will genau
+  // dann den ganzen Namen sehen, und dazu, wie viele Notizen ihn tragen.
+
+  const kl = (typ: string, x: number, y: number) =>
+    new (globalThis as unknown as { PointerEvent: typeof PointerEvent }).PointerEvent(typ, {
+      bubbles: true, cancelable: true, clientX: x, clientY: y,
+    });
+
+  /** Transformation und alle Etiketten des letzten Bildes. */
+  function bildInfo() {
+    const rahmen = leinwand.letzterRahmen();
+    let tx = 0, ty = 0, k = 1;
+    for (const a of rahmen) {
+      if (a.op === "translate") { tx = Number(a.args[0]); ty = Number(a.args[1]); }
+      if (a.op === "scale") { k = Number(a.args[0]); break; }
+    }
+    const texte = rahmen
+      .filter((a) => a.op === "fillText")
+      .map((a) => ({ text: String(a.args[0]), x: Number(a.args[1]), y: Number(a.args[2]) }));
+    const knoten = rahmen
+      .filter((a) => a.op === "arc")
+      .map((a) => ({ x: Number(a.args[0]), y: Number(a.args[1]), r: Number(a.args[2]) }));
+    return { tx, ty, k, texte, knoten };
+  }
+
+  it("zeigt den vollen Namen und die Zahl der Notizen", async () => {
+    const langeEntitaet = "mandatsverwaltung nordwind logistics gmbh";
+    const a = note({ id: "n1", title: "Quarterly filing draft", tags: ["client"] });
+    const b = note({ id: "n2", title: "Filing deadline changed", tags: ["client"] });
+    vi.stubGlobal("fetch", vi.fn(async () => new Response(JSON.stringify({
+      relations: [],
+      memoriesByEntity: { [langeEntitaet]: ["n1", "n2"] },
+    }), { status: 200 })));
+
+    const { container } = await zeichne([a, b]);
+    await bilder(12);
+    const c = container.querySelector('[data-testid="graph-canvas"]') as HTMLCanvasElement;
+
+    const vorher = bildInfo();
+    const gekuerzt = vorher.texte.find((t) => t.text === `${langeEntitaet.slice(0, 16)}…`);
+    expect(gekuerzt, `Das gekürzte Etikett fehlt. Gemalt: ${JSON.stringify(vorher.texte.map((t) => t.text))}`).toBeDefined();
+    expect(vorher.texte.some((t) => t.text === langeEntitaet), "Der volle Name steht schon ohne Zeiger im Bild").toBe(false);
+
+    // Der Knoten unter seinem eigenen Etikett — das sitzt rechts neben ihm.
+    const knoten = vorher.knoten.find((n) => Math.abs(n.x + n.r + 3 - gekuerzt!.x) < 0.01 && Math.abs(n.y - gekuerzt!.y) < 0.01);
+    expect(knoten, "Kein Knoten trägt das gekürzte Etikett").toBeDefined();
+    const sx = knoten!.x * vorher.k + vorher.tx;
+    const sy = knoten!.y * vorher.k + vorher.ty;
+
+    await act(async () => {
+      c.dispatchEvent(kl("pointermove", sx, sy));
+      await new Promise((r) => setTimeout(r, 60));
+    });
+
+    const nachher = bildInfo();
+    const detail = nachher.texte.find((t) => t.text.startsWith(langeEntitaet));
+    expect(detail, `Nach dem Halten fehlt der volle Name. Gemalt: ${JSON.stringify(nachher.texte.map((t) => t.text))}`).toBeDefined();
+    expect(detail!.text).toMatch(/· 2 notes$/);
+  });
+
+  it("zählt eine einzelne Notiz in der Einzahl", async () => {
+    // „quay street lease" hat genau eine Notiz — es kommt ins Bild, weil eine
+    // sichtbare Behauptung über es spricht. Und genau dort ist die Einzahl die
+    // Antwort, die jemand lesen will.
+    const a = note({ id: "s1", title: "Kickoff notes", tags: ["meeting"] });
+    const b = note({ id: "s2", title: "Kickoff follow-up", tags: ["meeting"] });
+    vi.stubGlobal("fetch", vi.fn(async () => new Response(JSON.stringify({
+      relations: [{ source: "orion portal", target: "quay street lease", memoryId: "s1" }],
+      memoriesByEntity: { "orion portal": ["s1", "s2"], "quay street lease": ["s1"] },
+    }), { status: 200 })));
+
+    const { container } = await zeichne([a, b]);
+    await bilder(12);
+    const c = container.querySelector('[data-testid="graph-canvas"]') as HTMLCanvasElement;
+
+    const info = bildInfo();
+    const etikett = info.texte.find((t) => t.text.startsWith("quay street leas"));
+    expect(etikett, `Das Begriffsetikett fehlt. Gemalt: ${JSON.stringify(info.texte.map((t) => t.text))}`).toBeDefined();
+    const knoten = info.knoten.find((n) => Math.abs(n.x + n.r + 3 - etikett!.x) < 0.01 && Math.abs(n.y - etikett!.y) < 0.01);
+    expect(knoten, "Kein Knoten trägt das Etikett").toBeDefined();
+
+    await act(async () => {
+      c.dispatchEvent(kl("pointermove", knoten!.x * info.k + info.tx, knoten!.y * info.k + info.ty));
+      await new Promise((r) => setTimeout(r, 60));
+    });
+    const nachher = bildInfo().texte.find((t) => t.text.startsWith("quay street lease"));
+    expect(nachher, `Nach dem Halten fehlt der volle Name. Gemalt: ${JSON.stringify(bildInfo().texte.map((t) => t.text))}`).toBeDefined();
+    expect(nachher!.text).toMatch(/· 1 note$/);
+  });
+});
+

@@ -26,6 +26,12 @@ export interface StrukturKnoten {
    * gezeichnet (er traegt die Kante), nur sein Etikett bleibt weg.
    */
   keinEtikett?: boolean;
+  /**
+   * Wie viele Notizen unter diesem Knoten hängen. Wer über einem Begriff
+   * steht, fragt: was ist das, und wie viel trägt es? Der volle Name passt
+   * nicht in 16 Zeichen, die Zahl aber schon.
+   */
+  blaetter?: number;
 }
 
 // ---------- Baum ----------
@@ -239,6 +245,9 @@ export function layoutDendrogram(
   // Der Leser weiss dann nicht, was Ebene und was Blatt ist.
   const nurWiederholung = (k: HierarchieKnoten) =>
     k.children.some((c) => kennwort(c.label) === kennwort(k.label));
+  // Notizen unter diesem Knoten — ein Blatt ist die Notiz selbst.
+  const zaehleBlaetter = (k: HierarchieKnoten): number =>
+    k.children.length === 0 ? 1 : k.children.reduce((n, c) => n + zaehleBlaetter(c), 0);
   const sammleStruktur = (k: HierarchieKnoten): void => {
     if (k.kind === "type" || k.kind === "entity" || k.kind === "group") {
       struktur.set(k.id, {
@@ -246,6 +255,7 @@ export function layoutDendrogram(
         farbe: k.kind === "type" ? k.typ ?? null : null,
         r: radien[k.kind],
         keinEtikett: nurWiederholung(k) || undefined,
+        blaetter: zaehleBlaetter(k),
       });
     }
     for (const c of k.children) sammleStruktur(c);

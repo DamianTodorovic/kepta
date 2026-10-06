@@ -461,7 +461,7 @@ export function KnowledgeGraph({ memories, onSelectMemory , sichtbar = true }: K
   /** Dasselbe Gerüst, das der Baum malt — hier ohne Typ- und Tag-Ebenen. */
   const kraftGeruest = useMemo(() => {
     const m = new Map<string, StrukturKnoten>();
-    for (const k of netz.knoten) m.set(k.id, { label: k.label, farbe: null, r: 8 });
+    for (const k of netz.knoten) m.set(k.id, { label: k.label, farbe: null, r: 8, blaetter: k.notizen.length });
     return m;
   }, [netz]);
   const forceHistoryRef = useRef<Simulation | null>(null);
@@ -1076,16 +1076,25 @@ export function KnowledgeGraph({ memories, onSelectMemory , sichtbar = true }: K
       for (const n of sim.nodes) {
         const s = struktur.get(n.id);
         if (!s || s.keinEtikett || !imBild(n)) continue;
-        const titel = s.label.length > GERUEST_ZEICHEN ? `${s.label.slice(0, GERUEST_ZEICHEN)}…` : s.label;
+        // Wer über einem Begriff steht oder ihn mit den Pfeiltasten hält,
+        // fragt genau dann: was ist das und wie viel trägt es? Für die Antwort
+        // gilt die Kürzung nicht — und das gehaltene Etikett weicht nicht mehr
+        // weg, es hat Vorrang im Raster.
+        const gehalten = hov === n.id || tastaturIdRef.current === n.id;
+        const titel = gehalten && s.blaetter !== undefined
+          ? `${s.label} · ${s.blaetter} ${s.blaetter === 1 ? "note" : "notes"}`
+          : s.label.length > GERUEST_ZEICHEN
+            ? `${s.label.slice(0, GERUEST_ZEICHEN)}…`
+            : s.label;
         const mitteX = (n.x + n.r + 3) * t.k + t.x;
         const mitteY = n.y * t.k + t.y;
         const breite = ctx.measureText(titel).width * t.k;
         // halbe Zeilenhoehe hoch, weil der Text mittig auf der Achse sitzt
-        if (!freiUndBelegen(mitteX, mitteY - zellHoehe / 2, breite)) continue;
+        if (!gehalten && !freiUndBelegen(mitteX, mitteY - zellHoehe / 2, breite)) continue;
         ctx.lineWidth = 3 / Math.max(0.4, t.k);
         ctx.strokeStyle = grundFarbe;
         ctx.strokeText(titel, n.x + n.r + 3, n.y);
-        ctx.fillStyle = hov === n.id ? akzent : geruestFarbe;
+        ctx.fillStyle = gehalten ? akzent : geruestFarbe;
         ctx.fillText(titel, n.x + n.r + 3, n.y);
       }
     }
