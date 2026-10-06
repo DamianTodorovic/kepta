@@ -338,13 +338,10 @@ export function saveWithIndex(store: KeptaStore, args: Record<string, unknown>):
   };
   const { record, created } = store.upsertMemory(input);
   indexMemory(store, record.id);
-  // Titel + Wiki-Links als Entitäten; Titel-Entität erhält mentions-Relationen zu den Links
-  const links = extractWikiLinks(`${record.title} ${record.content}`);
-  store.linkEntities(record.id, [record.title, ...links]);
-  const titleEntity = record.title.trim().toLowerCase();
-  for (const link of links) {
-    if (link !== titleEntity) store.addRelation(titleEntity, link, "mentions", record.id);
-  }
+  // Titel + Wiki-Links als Entitäten; die Titel-Entität erhält mentions-Relationen.
+  // Ein Aufruf, Ersetzungssemantik — dasselbe Verfahren wie der REST-Schreibweg,
+  // damit beide Türen genau eine Straße in den Graphen haben.
+  store.verknuepfeNotiz(record.id, record.title, extractWikiLinks(`${record.title} ${record.content}`));
   return { created, record: store.getMemory(record.id)! };
 }
 

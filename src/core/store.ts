@@ -924,6 +924,55 @@ export class KeptaStore {
     return { id: Number(res.lastInsertRowid), sourceId: sid, targetId: tid, relation, validFrom, validTo, memoryId };
   }
 
+  /**
+   * Setzt die Verknüpfungen einer Notiz **neu** statt sie anzuhäufen. Zwei
+   * Gründe, beide gemessen: `linkEntities`/`addRelation` sind insert-only — wer
+   * dieselbe Notiz zweimal speicherte, bekam dieselbe Kante zweimal; und ein
+   * Wiki-Link, der aus dem Text verschwand, ließ eine Kante zurück, die
+   * weiterhin behauptete, die Notiz meine sie.
+   *
+   * Kanten gehören zu *einer* Notiz (memory_id) und fallen mit ihr: das ist die
+   * Grenze, die auch der Privatheits-Floor im Agentenkanal braucht.
+   */
+  verknuepfeNotiz(memoryId: string, titel: string, links: string[]): number {
+    const t = String(titel ?? "").trim().toLowerCase();
+    const knoten = new Set<string>(t.length >= 2 ? [t] : []);
+    const paare = new Map<string, [string, string]>();
+    for (const roh of links) {
+      const n = String(roh ?? "").trim().toLowerCase();
+      if (n.length < 2) continue;
+      knoten.add(n);
+      if (n !== t) paare.set(`${t}\u0000${n}`, [t, n]);
+    }
+
+    const setzen = this.db.transaction(() => {
+      const entityIds: number[] = [];
+      for (const name of [...knoten].slice(0, 40)) entityIds.push(this.ensureEntity(name));
+      const erlaubt = new Set(entityIds);
+
+      const eintrag = this.db.prepare("INSERT OR IGNORE INTO memory_entities (memory_id, entity_id) VALUES (?, ?)");
+      for (const eid of entityIds) eintrag.run(memoryId, eid);
+      const traeger = this.db.prepare("SELECT entity_id FROM memory_entities WHERE memory_id = ?").all(memoryId) as { entity_id: number }[];
+      const entfaernen = this.db.prepare("DELETE FROM memory_entities WHERE memory_id = ? AND entity_id = ?");
+      for (const r of traeger) if (!erlaubt.has(r.entity_id)) entfaernen.run(memoryId, r.entity_id);
+
+      const vorhanden = this.db.prepare("SELECT id, source_id, target_id FROM relations WHERE memory_id = ?").all(memoryId) as
+        { id: number; source_id: number; target_id: number }[];
+      const gewollt = new Set<string>();
+      for (const [, [quelle, ziel]] of paare) {
+        const sid = this.ensureEntity(quelle);
+        const zid = this.ensureEntity(ziel);
+        gewollt.add(`${sid}|${zid}`);
+        if (!vorhanden.some((v) => v.source_id === sid && v.target_id === zid)) this.addRelation(quelle, ziel, "mentions", memoryId);
+      }
+      const loeschen = this.db.prepare("DELETE FROM relations WHERE id = ?");
+      for (const v of vorhanden) if (!gewollt.has(`${v.source_id}|${v.target_id}`)) loeschen.run(v.id);
+      return gewollt.size;
+    });
+
+    return setzen() as number;
+  }
+
   getEntityByName(name: string): EntityRecord | null {
     const row = this.db.prepare("SELECT id, name FROM entities WHERE name = ?").get(name.trim().toLowerCase()) as
       | { id: number; name: string }

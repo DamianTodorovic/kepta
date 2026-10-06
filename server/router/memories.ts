@@ -2,6 +2,7 @@
 import crypto from "crypto";
 import express from "express";
 import { indexMemory, gateDecision, writeGateEnabled } from "../../src/core/engine";
+import { extractWikiLinks } from "../../src/core/mcp";
 import { klassifiziere } from "../../src/core/klassifikation";
 import { sanitizeText, sanitizeTitle, sanitizeTags } from "../../src/core/sanitize";
 import { sanitizeScope, sanitizeId, istGueltigeId } from "../helfer/ids";
@@ -41,7 +42,11 @@ export function mountMemories(app: express.Express, ctx: AppKontext): void {
       if (body.supersededBy !== undefined) patch.supersededBy = sanitizeId(body.supersededBy);
       const updated = store.updateMemory(body.id, patch);
       if (!updated) return res.status(404).json({ error: "Node not found" });
-      if (body.content !== undefined) indexMemory(store, updated.id);
+      if (body.content !== undefined || body.title !== undefined) {
+        indexMemory(store, updated.id);
+        // Eine Notiz aus der Oberfläche verknüpft sich wie eine aus dem Agentenkanal.
+        store.verknuepfeNotiz(updated.id, updated.title, extractWikiLinks(`${updated.title} ${updated.content}`));
+      }
       ctx.publishActivity({ type: "update", source: "app", title: updated.title });
       return res.json({ memory: toApi(updated) });
     }
@@ -58,6 +63,7 @@ export function mountMemories(app: express.Express, ctx: AppKontext): void {
       });
       if (updated) {
         indexMemory(store, gate.targetId);
+        store.verknuepfeNotiz(updated.id, updated.title, extractWikiLinks(`${updated.title} ${updated.content}`));
         ctx.publishActivity({ type: "update", source: "app", title: updated.title });
         return res.json({ memory: toApi(updated), gateOutcome: "updated", writeGate: gate });
       }
@@ -77,6 +83,7 @@ export function mountMemories(app: express.Express, ctx: AppKontext): void {
       scope: body.scope === undefined ? undefined : (sanitizeScope(body.scope) ?? undefined),
     });
     indexMemory(store, created.id);
+    store.verknuepfeNotiz(created.id, created.title, extractWikiLinks(`${created.title} ${created.content}`));
     ctx.publishActivity({ type: "save", source: "app", title: created.title });
     return res.json({ memory: toApi(created), ...(writeGateEnabled() ? { gateOutcome: "created", writeGate: gate } : {}) });
   }
