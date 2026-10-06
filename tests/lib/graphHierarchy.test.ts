@@ -103,6 +103,23 @@ describe("buildHierarchy", () => {
     expect(entKnoten.children.map((c) => c.id)).toEqual(["2", "3"]);
   });
 
+  it("nur was das Netz ein Konzept nennt, wird ein Entitätsknoten", () => {
+    // Das Feld zeigt eine Entität erst ab zwei Notizen oder als Endpunkt einer
+    // Behauptung. Der Baum zeigte sie bisher immer — für dieselbe Wissensbasis
+    // standen dann zwei Zahlen da, und die Idee war eine Ontologie.
+    const ent = new Map([["1", "Zebra GmbH"], ["2", "Anstatt AG"], ["3", "Anstatt AG"]]);
+    const baum = buildHierarchy(
+      [mem({ id: "1", type: "semantic" }), mem({ id: "2", type: "semantic" }), mem({ id: "3", type: "semantic" })],
+      ent,
+      new Set(["Anstatt AG"])
+    );
+    const typ = finde(baum, "__typ:semantic")!;
+    // Die eine Notiz über „Zebra GmbH" hängt direkt unter dem Typ — die Ebene
+    // wäre ein Durchreicher, den kein Bild der Welt braucht.
+    expect(typ.children.map((c) => c.id)).toEqual(["__ent:Anstatt AG", "1"]);
+    expect(finde(baum, "__ent:Zebra GmbH")).toBeNull();
+  });
+
   it("Blaetter innerhalb einer Entitaet sind nach Titel sortiert", () => {
     const ent = new Map([["1", "Kunde"], ["2", "Kunde"], ["3", "Kunde"]]);
     const baum = buildHierarchy(

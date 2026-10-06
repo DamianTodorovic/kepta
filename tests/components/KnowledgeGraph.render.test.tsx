@@ -1001,20 +1001,24 @@ describe("Im Baum steht die Hierarchie hinter dem Inhalt", () => {
   });
 
   it("steht derselbe Name nicht zweimal", async () => {
+    // „hourly rate 2025" ist ein Konzept (zwei Notizen) UND der Titel einer von
+    // ihnen — genau der Fall aus der Aufnahme. Die eine Notiz unter
+    // „elena weiss — tax advisor" ist dagegen kein Konzept mehr, seit Baum und
+    // Feld dieselbe Schwelle kennen.
     const a = note({ title: "Elena Weiss — tax advisor", tags: ["people"] });
-    const b = note({ title: "Falk & Sons — client profile", tags: ["client"] });
     const c = note({ title: "Hourly rate 2025", tags: ["pricing"] });
+    const d = note({ title: "Hourly rate 2024", tags: ["pricing"] });
     vi.stubGlobal("fetch", vi.fn(async () => new Response(JSON.stringify({
       relations: [],
       memoriesByEntity: {
         "elena weiss — tax advisor": [a.id],
-        "falk & sons — client profile": [b.id],
-        "hourly rate 2025": [c.id],
+        "hourly rate 2025": [c.id, d.id],
       },
     }), { status: 200 })));
-    await inDenBaum([a, b, c]);
+    await inDenBaum([a, c, d]);
 
     const texte = (await ruhigeEtiketten()).map((e) => normal(e.text));
+    expect(texte, "das Konzept fehlt — die Ebene wurde ganz weggeräumt").toContain("hourlyrate2025");
     const dubletten = texte.filter((t, i) => texte.indexOf(t) !== i);
     expect(dubletten, `zweimal gemalt: ${JSON.stringify(texte)}`).toEqual([]);
   });

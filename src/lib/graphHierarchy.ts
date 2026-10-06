@@ -79,7 +79,14 @@ export function entitiesByMemory(
  */
 export function buildHierarchy(
   memories: readonly Memory[],
-  entitaeten: ReadonlyMap<string, string> = new Map()
+  entitaeten: ReadonlyMap<string, string> = new Map(),
+  /**
+   * Die Konzeptmenge aus entitaetsNetz. Wird sie mitgegeben, ist der Baum kein
+   * zweites Regelwerk: eine Entität, die das Feld nicht zeigt, wird auch hier
+   * kein Knoten. Ohne diese Grenze standen für dieselbe Wissensbasis zwei
+   * Zahlen im Kopf — und die Idee war eine Ontologie.
+   */
+  konzepte?: ReadonlySet<string>
 ): HierarchieKnoten {
   const wurzel: HierarchieKnoten = { id: "__wurzel", kind: "root", label: "Knowledge", children: [] };
   const nachTyp = new Map<string, Memory[]>();
@@ -110,7 +117,7 @@ export function buildHierarchy(
     const ohne: Memory[] = [];
     for (const m of nachTyp.get(t)!) {
       const e = entitaeten.get(m.id);
-      if (e) {
+      if (e && (!konzepte || konzepte.has(e))) {
         let liste = nachEntitaet.get(e);
         if (!liste) { liste = []; nachEntitaet.set(e, liste); }
         liste.push(m);

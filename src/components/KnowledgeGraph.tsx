@@ -419,12 +419,16 @@ export function KnowledgeGraph({ memories, onSelectMemory , sichtbar = true }: K
     return filtered.filter((m) => zeitAktivIds.has(m.id));
   }, [filtered, zeitAktivIds]);
   const entitaeten = useMemo(() => entitiesByMemory(graphApi?.memoriesByEntity), [graphApi]);
+  // Eine Ontologie, eine Schwelle: der Baum baut seine Entitätsebene aus
+  // denselben Konzepten, die das Feld zeigt — sonst stehen für dieselbe
+  // Wissensbasis zwei Zahlen im Kopf.
+  const konzeptNamen = useMemo(() => new Set(netz.knoten.map((k) => k.label)), [netz]);
   const baumLayout = useMemo(
     () =>
       ansicht === "dendrogram"
-        ? layoutDendrogram(buildHierarchy(baumMemories, entitaeten))
+        ? layoutDendrogram(buildHierarchy(baumMemories, entitaeten, konzeptNamen))
         : { edges: [], nodes: [], struktur: new Map<string, StrukturKnoten>() },
-    [baumMemories, entitaeten, ansicht]
+    [baumMemories, entitaeten, konzeptNamen, ansicht]
   );
   const baumIdsSchluessel = useMemo(() => baumMemories.map((m) => m.id).join(","), [baumMemories]);
   const baumNachbarn = useMemo(() => {
@@ -1509,13 +1513,14 @@ export function KnowledgeGraph({ memories, onSelectMemory , sichtbar = true }: K
             wuerde. „edges" war hier eine Zahl aus dem Aehnlichkeitsnebel.
             Seit dem 6.10. liegen im Feld auch Konzepte: zwei Notizen und drei
             Punkte im Bild mit der Aufschrift „2 nodes" wäre keine Auskunft.
-            Deshalb nennt der Kopf, was er zählt — Notizen, und daneben die
-            Knoten des Gerüsts, die in beiden Ansichten anderes sind. */}
+            Beide Ansichten nennen dasselbe Paar — weil sie dasselbe Netz
+            meinen, nicht zwei verschiedene Auszählungen. */}
         <div className="hud-label hidden sm:block">
           {sichtbareAnzahl.knoten} {sichtbareAnzahl.knoten === 1 ? "note" : "notes"} ·{" "}
+          {netz.knoten.length} {netz.knoten.length === 1 ? "concept" : "concepts"} ·{" "}
           {ansicht === "dendrogram"
-            ? `${Math.max(0, baumLayout.struktur.size - 1)} ${baumLayout.struktur.size - 1 === 1 ? "grouping" : "groupings"} · ${baumLayout.edges.length} ${baumLayout.edges.length === 1 ? "link" : "links"}`
-            : `${netz.knoten.length} ${netz.knoten.length === 1 ? "concept" : "concepts"} · ${kanten.echt} ${kanten.echt === 1 ? "link" : "links"}${kanten.aehnlichkeit ? ` · +${kanten.aehnlichkeit} similar` : ""}`}
+            ? `${baumLayout.edges.length} ${baumLayout.edges.length === 1 ? "link" : "links"}`
+            : `${kanten.echt} ${kanten.echt === 1 ? "link" : "links"}${kanten.aehnlichkeit ? ` · +${kanten.aehnlichkeit} similar` : ""}`}
         </div>
         <div className="flex items-center gap-0.5 ml-1" role="group" aria-label="Graph layout">
           <button
