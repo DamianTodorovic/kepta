@@ -845,7 +845,17 @@ export function createApp(store: KeptaStore) {
       entities: g.entities,
       relations: g.relations
         .filter((r) => nameById.has(r.sourceId) && nameById.has(r.targetId))
-        .map((r) => ({ id: r.id, source: nameById.get(r.sourceId)!, target: nameById.get(r.targetId)!, relation: r.relation, memoryId: r.memoryId })),
+        // validFrom/validTo reisen mit: die Kante gilt nicht ewig, und die App
+        // kann eine abgelaufene Behauptung nur zeichnen, wenn sie sie kennt.
+        .map((r) => ({
+          id: r.id,
+          source: nameById.get(r.sourceId)!,
+          target: nameById.get(r.targetId)!,
+          relation: r.relation,
+          memoryId: r.memoryId,
+          validFrom: r.validFrom,
+          validTo: r.validTo,
+        })),
       // entity → memory-IDs (für Graph-Rendering über Memories hinweg)
       memoriesByEntity: Object.fromEntries(g.entities.map((e) => [e.name, [...store.memoryIdsForEntities([e.id])]])),
     });
