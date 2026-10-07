@@ -25,6 +25,7 @@ import {
   entitaetsNetz,
   notizEtikett,
   verborgeneNotizen,
+  selbstSchleife,
   richtungsBand,
   kantenEtikett,
   dickeBand,
@@ -1653,5 +1654,92 @@ describe("verborgeneNotizen", () => {
   it("zählt eine Notiz mit zwei Einträgen desselben Begriffs als eine Trägerin", () => {
     const verborgen = verborgeneNotizen({ nordwind: ["a", "a"], kestrel: [] }, faltung([`${PR}nordwind`]));
     expect([...verborgen]).toEqual(["a"]);
+  });
+});
+
+// P-8: eine Aussage über denselben Begriff — „Nordwind Logistics betreut Nordwind
+// Logistics". Bis hierhin hart verworfen. Sie darf nur auf ausdrücklichen Wunsch
+// erscheinen, und sie darf die Physik und den Grad eines Knotens nicht anfassen.
+describe("Selbstkanten", () => {
+  const a = note({ title: "Alpha" });
+  const paare = (n: number, relation = "betreut"): [string, string, { relation: string }][] =>
+    Array.from({ length: n }, () => [a.id, a.id, { relation }]);
+
+  it("bleibt eine Selbstaussage weg, solange niemand sie verlangt", () => {
+    const r = kantenBaue([a], { realPairs: paare(1) });
+    expect(r.edges).toHaveLength(0);
+    expect(r.selbst).toHaveLength(0);
+    // Verworfen, aber nicht vergessen: die Fläche darf sagen, was ihr fehlt.
+    expect(r.selbstInSumme).toBe(1);
+  });
+
+  it("mit Schalter ist sie eine eigene Kante — die Physik sieht sie nie", () => {
+    const r = kantenBaue([a], { realPairs: paare(1), selbstkaanten: true });
+    expect(r.edges).toHaveLength(0);
+    expect(r.selbst).toHaveLength(1);
+    expect(r.selbst[0].source).toBe(r.selbst[0].target);
+    expect(r.selbst[0].belege).toBe(1);
+    expect(r.selbst[0].relation).toBe("betreut");
+    expect(r.selbstInSumme).toBe(1);
+  });
+
+  it("zwei Selbstaussagen desselben Knotens sind eine Schleife mit zwei Belegen", () => {
+    const r = kantenBaue([a], {
+      realPairs: [
+        [a.id, a.id, { relation: "betreut" }],
+        [a.id, a.id, { relation: "meldet an" }],
+      ],
+      selbstkaanten: true,
+    });
+    expect(r.selbst).toHaveLength(1);
+    expect(r.selbst[0].belege).toBe(2);
+    expect(r.selbst[0].typen).toBe(2);
+    expect(r.selbstInSumme).toBe(2);
+  });
+
+  it("ein Selbstpaar ohne Knoten im Bild ist keine Selbstkante und keine Bilanz", () => {
+    const r = kantenBaue([], { realPairs: [["__ent:geister", "__ent:geister", { relation: "betreut" }]], selbstkaanten: true });
+    expect(r.selbst).toHaveLength(0);
+    expect(r.selbstInSumme).toBe(0);
+  });
+
+  it("gemischte Paare: echte Kanten bleiben echt, die Schleife kommt separat", () => {
+    const b = note({ title: "Beta" });
+    const r = kantenBaue([a, b], {
+      realPairs: [[a.id, b.id, { relation: "betreut" }], [a.id, a.id, { relation: "zweifelt" }]],
+      selbstkaanten: true,
+    });
+    expect(r.edges).toHaveLength(1);
+    expect(r.edges[0].source).not.toBe(r.edges[0].target);
+    expect(r.selbst).toHaveLength(1);
+  });
+});
+
+describe("selbstSchleife — wo die Schlinge sitzt", () => {
+  it("sitzt oben rechts am Knoten und berührt seine Scheibe", () => {
+    const s = selbstSchleife(100, 100, 20);
+    expect(s.cx).toBeGreaterThan(100);
+    expect(s.cy).toBeLessThan(100);
+    expect(s.rad).toBeGreaterThan(0);
+    const entfernung = Math.hypot(s.cx - 100, s.cy - 100);
+    // Der nächste Punkt der Schlinge liegt an der Scheibe, nicht frei im Feld.
+    expect(entfernung - s.rad).toBeLessThanOrEqual(20);
+    expect(entfernung).toBeGreaterThan(20);
+  });
+
+  it("wächst mit dem Knoten", () => {
+    const klein = selbstSchleife(0, 0, 8);
+    const gross = selbstSchleife(0, 0, 24);
+    expect(gross.rad).toBeGreaterThan(klein.rad);
+    expect(Math.hypot(gross.cx, gross.cy)).toBeGreaterThan(Math.hypot(klein.cx, klein.cy));
+  });
+
+  it("greifen: auf dem Ring ja, in der Knotenmitte nein", () => {
+    const knoten: LayoutNode = { id: "a", x: 100, y: 100, vx: 0, vy: 0, r: 20, pinned: false };
+    const index = new Map([["a", knoten]]);
+    const schleife: LayoutEdge = { source: "a", target: "a", strength: 0.85, real: true, belege: 1 };
+    const s = selbstSchleife(knoten.x, knoten.y, knoten.r);
+    expect(kanteBei(index, [schleife], s.cx + s.rad, s.cy)).toBe(schleife);
+    expect(kanteBei(index, [schleife], knoten.x, knoten.y)).toBeNull();
   });
 });

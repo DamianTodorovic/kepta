@@ -186,6 +186,13 @@ export interface EdgeOptions {
    * unsichtbar im Bild.
    */
   knotenIds?: Iterable<string>;
+  /**
+   * Aussagen über denselben Begriff (Quelle = Ziel) als Schleife zeichnen.
+   * Standard: aus — wie bei den Vorbildern am Markt. Eine Selbstbehauptung ist
+   * die seltenste und am leichtesten missverstandene Kante im Bild; wer sie
+   * sieht, hat sie ausdrücklich bestellt.
+   */
+  selbstkaanten?: boolean;
 }
 
 /**
@@ -223,6 +230,14 @@ export interface KantenErgebnis {
   /** Dieselben Zahlen aufsummiert — fuer eine Zeile, die nicht verschweigt,
    *  was hinter den Badges steht. */
   verstecktInSumme: number;
+  /**
+   * Selbstkanten — getrennt von `edges`, weil die Physik und der Grad eines
+   * Knotens davon nichts erfahren dürfen: eine Behauptung über sich selbst ist
+   * kein Nachbar.
+   */
+  selbst: LayoutEdge[];
+  /** Wie viele Selbstpaare im Bestand standen, auch als der Schalter aus war. */
+  selbstInSumme: number;
 }
 
 /**
@@ -262,15 +277,32 @@ export function kantenBaue(memories: readonly Memory[], opts: EdgeOptions = {}):
   };
   const UNBEFRISTET: Gueltigkeit = { validFrom: null, validTo: null };
 
+  // Selbstbehauptungen laufen in einer eigenen Liste: die Physik und der Grad
+  // eines Knotens dürfen davon nichts erfahren, sonst wird aus „zweifelt an
+  // sich selbst" ein Nachbarschaftsgewicht.
+  const selbst = new Map<string, LayoutEdge>();
+  let selbstInSumme = 0;
   for (const [a, b, info] of opts.realPairs ?? []) {
-    if (a === b || !ids.has(a) || !ids.has(b)) continue;
-    const k = schluessel(a, b);
-    let kant = echte.get(k);
+    if (!ids.has(a) || !ids.has(b)) continue;
+    const istSelbst = a === b;
+    if (istSelbst) {
+      selbstInSumme += 1;
+      // Ausgeschaltet heißt nicht vergessen: die Zahl oben bleibt, die Fläche
+      // meldet sie als das, was ihr fehlt.
+      if (!opts.selbstkaanten) continue;
+    }
+    const k = istSelbst ? `selbst|${a}` : schluessel(a, b);
+    const wo = istSelbst ? selbst : echte;
+    let kant = wo.get(k);
     if (!kant) {
       kant = { source: a, target: b, strength: 0.85, real: true };
-      echte.set(k, kant);
-      belegt.add(k);
-      out.push(kant);
+      wo.set(k, kant);
+      if (!istSelbst) {
+        // Die Schleife geht nirgendwo hin: kein Paar, das die
+        // Aehnlichkeitssuche für sich beansprucht, und kein Rand in `out`.
+        belegt.add(k);
+        out.push(kant);
+      }
     }
     // Jeder Beleg zaehlt, auch der zweite desselben Typs: drei Notizen, die
     // dieselbe Behauptung tragen, sind drei Belege — und der Strich darf dicker
@@ -298,7 +330,7 @@ export function kantenBaue(memories: readonly Memory[], opts: EdgeOptions = {}):
   // Aussagen des Pairs hinweg vereint werden muss. Ein unbefristetes Ergebnis
   // lässt die Felder fort — „fehlend" heißt bei fensterOffen „gilt immer", und
   // eine Aehnlichkeitskante hat ohnehin keine Gültigkeit.
-  echte.forEach((kant, k) => {
+  const verguete = (kant: LayoutEdge, k: string) => {
     const f = fenster.get(k);
     if (f && (f.validFrom != null || f.validTo != null)) {
       kant.validFrom = f.validFrom ?? null;
@@ -306,9 +338,13 @@ export function kantenBaue(memories: readonly Memory[], opts: EdgeOptions = {}):
     }
     const namen = typen.get(k);
     if (namen) kant.typen = namen.size;
-  });
+  };
+  echte.forEach(verguete);
+  selbst.forEach(verguete);
 
-  if (opts.ahnlichkeit === false) return { edges: out, versteckteNachbarn: new Map(), verstecktInSumme: 0 };
+  if (opts.ahnlichkeit === false) {
+    return { edges: out, versteckteNachbarn: new Map(), verstecktInSumme: 0, selbst: [...selbst.values()], selbstInSumme };
+  }
 
   // Invertierter Index: Begriff -> Notizen. Nur Paare, die sich mindestens
   // einen Begriff teilen, kommen ueberhaupt in die Bewertung.
@@ -363,7 +399,7 @@ export function kantenBaue(memories: readonly Memory[], opts: EdgeOptions = {}):
     versteckteNachbarn.set(e.target, (versteckteNachbarn.get(e.target) ?? 0) + 1);
     verstecktInSumme += 2;
   }
-  return { edges: out, versteckteNachbarn, verstecktInSumme };
+  return { edges: out, versteckteNachbarn, verstecktInSumme, selbst: [...selbst.values()], selbstInSumme };
 }
 
 // ---------- Startaufstellung ----------
@@ -1098,6 +1134,18 @@ export const KANTEN_GREIF_PX = 6;
 const STUTZEN_BEI_GREIF = 14;
 
 /**
+ * Wo die Schleife einer Selbstbehauptung sitzt: ein Ring oben rechts am
+ * Knoten, der seine Scheibe berührt. Dieselbe Rechnung einmal für den
+ * Zeichenstrich und einmal für die Greifweite — sonst trifft der Zeiger eine
+ * Schlinge, die das Bild nicht malt.
+ */
+export function selbstSchleife(x: number, y: number, radius: number): { cx: number; cy: number; rad: number } {
+  const rad = Math.max(2, radius * 0.62);
+  const abstand = radius + rad * 0.72;
+  return { cx: x + abstand * 0.7071, cy: y - abstand * 0.7071, rad };
+}
+
+/**
  * Naechste Kante zu einem Weltpunkt, innerhalb der Trefferweite — sonst null.
  *
  * Drei Dinge machen das mehr als eine Sehnenlaenge:
@@ -1129,6 +1177,18 @@ export function kanteBei(
     const a = index.get(e.source);
     const b = index.get(e.target);
     if (!a || !b) continue;
+    if (a === b) {
+      // Kein Rand, sondern ein Ring: getroffen ist, wer auf dem Ring liegt.
+      // Die Knotenmitte bleibt der Knoten — wer in einer Scheibe zeigt, will
+      // nie die Kante dahinter.
+      const s = selbstSchleife(a.x, a.y, a.r);
+      const ring = Math.abs(Math.hypot(wx - s.cx, wy - s.cy) - s.rad);
+      if (ring <= toleranz + 1 && ring < beste) {
+        beste = ring;
+        treffer = e;
+      }
+      continue;
+    }
     const minX = Math.min(a.x, b.x) - toleranz - BEULE_MAX;
     const maxX = Math.max(a.x, b.x) + toleranz + BEULE_MAX;
     if (wx < minX || wx > maxX) continue;

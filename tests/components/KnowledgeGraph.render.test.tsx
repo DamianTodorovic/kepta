@@ -2601,3 +2601,124 @@ describe("Faltung im Kraftfeld: was der Baum gefaltet hat, fehlt auch hier", () 
     expect(container.textContent ?? "", "eine Bilanzzeile behauptet noch fehlende Notizen").not.toContain("Showing");
   });
 });
+
+// P-8: die Selbstbehauptung. „Nordwind Logistics zweifelt an Nordwind Logistics"
+// stand bis hierhin im Bestand und verschwand lautlos. Sie ist die seltenste und
+// die am leichtesten missverstandene Kante im Bild — also kommt sie hinter einen
+// Schalter, und der Schalter steht aus.
+describe("Selbstkanten: ein Schalter, eine Schlinge, kein Nachbarschaftsgewinn", () => {
+  function selbstFix(rel = "zweifelt") {
+    vi.stubGlobal("fetch", vi.fn(async () => new Response(JSON.stringify({
+      relations: [{ source: "nordwind logistics", target: "nordwind logistics", relation: rel, memoryId: "s1" }],
+      memoriesByEntity: { "nordwind logistics": ["s1", "s2"] },
+    }), { status: 200 })));
+  }
+  const notizen = () => [
+    note({ id: "s1", title: "Pruefung Nordwind" }),
+    note({ id: "s2", title: "Nachtrag Nordwind" }),
+  ];
+
+  function bild() {
+    let tx = 0, ty = 0, k = 1;
+    const scheiben: { x: number; y: number; r: number }[] = [];
+    for (const a of leinwand.letzterRahmen()) {
+      if (a.op === "translate" && tx === 0 && ty === 0) { tx = Number(a.args[0]); ty = Number(a.args[1]); }
+      if (a.op === "scale" && k === 1) k = Number(a.args[0]);
+      if (a.op === "arc") scheiben.push({ x: Number(a.args[0]), y: Number(a.args[1]), r: Number(a.args[2]) });
+    }
+    return { scheiben, tx, ty, k };
+  }
+
+  async function schalter(container: HTMLElement, an: boolean) {
+    const knopf = [...container.querySelectorAll("button[aria-pressed]")].find((b) => (b.textContent ?? "").trim() === "Self") as HTMLButtonElement | undefined;
+    expect(knopf, "Der Selbstkanten-Schalter fehlt").toBeTruthy();
+    if ((knopf!.getAttribute("aria-pressed") === "true") !== an) {
+      await act(async () => { fireEvent.click(knopf!); await new Promise((r) => setTimeout(r, 200)); });
+    }
+    return knopf!.getAttribute("aria-pressed");
+  }
+
+  it("steht von Haus aus aus", async () => {
+    selbstFix();
+    const { container } = await zeichne(notizen());
+    expect(await schalter(container, false)).toBe("false");
+    expect(localStorage.getItem("kepta_graph_selbstkaanten")).toBeNull();
+  });
+
+  it("verschweigt die Selbstbehauptung nicht, sondern meldet sie", async () => {
+    selbstFix();
+    const { container } = await zeichne(notizen());
+    await bilder(12);
+    expect(container.textContent, container.textContent ?? "").toContain("1 self-claim hidden");
+  });
+
+  it("malt eine Schlinge mehr, wenn der schalter an geht — und keine zweite Kante", async () => {
+    selbstFix();
+    const { container } = await zeichne(notizen());
+    await bilder(12);
+    const aus = bild().scheiben.length;
+    await schalter(container, true);
+    await bilder(12);
+    const an = bild().scheiben.length;
+    expect(an, `Schlingen: aus ${aus}, an ${an}`).toBe(aus + 1);
+    // Die Schlinge sitzt oben rechts über dem Begriff, nicht irgendwo im Feld.
+    const begriff = bild().scheiben.find((s) => s.r > 0 && Math.abs(s.x - s.y) >= 0);
+    expect(begriff).toBeDefined();
+    // Und die Bilanz verstummt, weil nichts mehr fehlt.
+    expect(container.textContent ?? "").not.toContain("self-claim hidden");
+  });
+
+  it("lässt die Knotengröße unangetastet — selbst behaupten ist kein Nachbar", async () => {
+    selbstFix();
+    const { container } = await zeichne(notizen());
+    await bilder(14);
+    const radienAus = bild().scheiben.map((s) => Math.round(s.r * 100)).sort();
+    await schalter(container, true);
+    await bilder(14);
+    const mit = bild().scheiben.map((s) => Math.round(s.r * 100)).sort();
+    // Die Schleife kommt als neuer Kreis dazu, keiner der bestehenden darf
+    // wachsen: der Grad kennt sie nicht.
+    expect(mit.length).toBe(radienAus.length + 1);
+    for (const r of radienAus) expect(mit.filter((x) => x === r).length, `Radius ${r}`).toBeGreaterThan(0);
+  });
+
+  it("greift: auf der Schlinge öffnet sich die Kantkarte der Behauptung", async () => {
+    selbstFix("zweifelt an sich");
+    const { container } = await zeichne(notizen());
+    await bilder(12);
+    await schalter(container, true);
+    // Die Physik muss zur Ruhe kommen: die Greifweite einer Schlinge ist in
+    // Welteinheiten gerechnet, und ein Knoten, der noch wandert, zieht die
+    // Schlinge unter dem Zeiger weg.
+    await bilder(70);
+    const b = bild();
+    // Die Schlinge ist der Kreis, der nicht zu einer Scheibe gehört: ihr
+    // Mittelpunkt liegt außerhalb aller Knotenscheiben.
+    const schlinge = b.scheiben.find((s) => !b.scheiben.some((o) => o !== s && Math.hypot(s.x - o.x, s.y - o.y) < o.r));
+    expect(schlinge, "keine Schlinge gefunden").toBeDefined();
+    const c = container.querySelector('[data-testid="graph-canvas"]') as HTMLCanvasElement;
+    const k = b.k;
+    // Die Fläche ruht selten völlig — also vier Punkte auf dem Ring, der erste
+    // Treffer zählt. Welcher Punkt trifft, ist Sache der Geometrie, nicht des
+    // Beweises: die Schlinge muss greifbar sein.
+    const punkte: [number, number][] = [
+      [schlinge!.x + schlinge!.r, schlinge!.y],
+      [schlinge!.x - schlinge!.r, schlinge!.y],
+      [schlinge!.x, schlinge!.y - schlinge!.r],
+      [schlinge!.x, schlinge!.y + schlinge!.r],
+    ];
+    let karte: Element | null = null;
+    for (const [wxp, wyp] of punkte) {
+      const px = Math.round(wxp * k + b.tx), py = Math.round(wyp * k + b.ty);
+      await act(async () => {
+        c.dispatchEvent(new PointerEvent("pointermove", { bubbles: true, cancelable: true, clientX: px, clientY: py, pointerId: 1 }));
+        await new Promise((r) => setTimeout(r, 160));
+      });
+      karte = container.querySelector('[data-testid="graph-kante-tooltip"]');
+      if (karte) break;
+    }
+    expect(karte, `die Kantkarte öffnet nicht auf der Schlinge — ${JSON.stringify(b.scheiben.map((x) => [Math.round(x.x), Math.round(x.y), Math.round(x.r)]))} bei k=${b.k}`).not.toBeNull();
+    expect(karte!.textContent).toContain("zweifelt an sich");
+    expect(karte!.textContent).toMatch(/1 claim/);
+  });
+});

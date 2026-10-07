@@ -21,6 +21,7 @@ import {
   kantZaehlung,
   richtungsBand,
   kantenEtikett,
+  selbstSchleife,
   notizEtikett,
   verborgeneNotizen,
   type NotizEtikett,
@@ -61,6 +62,13 @@ const KEIL_AB_ZOOM = 0.5;
  */
 const ETIKETT_KEY = "kepta_graph_labels";
 type EtikettModus = "key" | "all" | "off";
+/**
+ * Selbstbehauptungen als Schlinge. Standard: aus — bei den Vorbildern am Markt
+ * ebenso, und mit gutem Grund: ein Ring um einen einzigen Knoten ist das
+ * leichteste Missverständnis im Bild. Aus heißt hier nicht wegwerfen — die
+ * Bilanzzeile nennt, was dem Bild fehlt.
+ */
+const SELBST_KEY = "kepta_graph_selbstkaanten";
 /**
  * Ab diesem Zoom steht der Typ der Aussage an der Linie. Darunter wäre das
  * Etikett kleiner als ein Leser — weit herausgezoomt will man die Form des
@@ -156,6 +164,19 @@ interface KantenInfo {
  * Eine Karte, die halb aus dem Bild laeuft, ist halb lesbar — also wird an den
  * Rand gequetscht, statt zu zeigen, was nicht passt.
  */
+/**
+ * Der Punkt, an dem die Karte einer Kante sitzt. Eine Selbstbehauptung hat
+ * keine Mitte — ihr Anker liegt außen an der Schlinge, damit die Karte nicht
+ * auf dem Knoten steht und wie eine Knotenkarte aussieht.
+ */
+function kartenAnker(a: LayoutNode, b: LayoutNode, gerade: boolean): { x: number; y: number } {
+  if (a === b) {
+    const s = selbstSchleife(a.x, a.y, a.r);
+    return { x: s.cx + s.rad * 0.72, y: s.cy - s.rad * 0.72 };
+  }
+  return kantenMitte(a, b, gerade ? 0 : beulenLenke(Math.hypot(b.x - a.x, b.y - a.y) || 1));
+}
+
 function kartenLage(
   x: number,
   y: number,
@@ -398,6 +419,14 @@ export function KnowledgeGraph({ memories, onSelectMemory, onSelectConcept, sich
     setEtikettenModus(m);
     try { localStorage.setItem(ETIKETT_KEY, m); } catch { /* ignore */ }
   };
+  const [selbstkaanten, setSelbstkaanten] = useState<boolean>(() => {
+    try { return localStorage.getItem(SELBST_KEY) === "1"; } catch { return false; }
+  });
+  const wechsleSelbstkaanten = () => {
+    const v = !selbstkaanten;
+    setSelbstkaanten(v);
+    try { localStorage.setItem(SELBST_KEY, v ? "1" : "0"); } catch { /* ignore */ }
+  };
   /**
    * Zugeklappte Gruppen im Baum. Der Baum startet entfaltet — eine Faltung ist
    * eine Handlung, nie ein Anfangszustand. Nicht gemerkt: ein Merken ueber das
@@ -428,6 +457,8 @@ export function KnowledgeGraph({ memories, onSelectMemory, onSelectConcept, sich
   // Badges: Nachbarn, die der Kantengrenze zum Opfer fielen. Die Zahlen entstehen
   // einmal je Kantenneubau — nicht pro Bild fuer jeden Knoten.
   const versteckteRef = useRef<Map<string, number>>(new Map());
+  /** Die Schlingen des letzten Kantlaufes — gezeichnet und gegriffen aus derselben Liste. */
+  const selbstRef = useRef<LayoutEdge[]>([]);
   const kantTooltipRef = useRef<HTMLDivElement | null>(null);
   // Die Groesse der Leinwand brauchte der Zeigerhandler — als Zustand ware er
   // beim ersten Hover noch die Startmasse.
@@ -583,11 +614,13 @@ export function KnowledgeGraph({ memories, onSelectMemory, onSelectConcept, sich
         ],
         knotenIds: geruestIds,
         ahnlichkeit,
+        selbstkaanten,
       }),
-    [feldNotizen, netz, geruestIds, ahnlichkeit]
+    [feldNotizen, netz, geruestIds, ahnlichkeit, selbstkaanten]
   );
   const edges: LayoutEdge[] = kantenRapport.edges;
   versteckteRef.current = kantenRapport.versteckteNachbarn;
+  selbstRef.current = kantenRapport.selbst;
 
 
   // Groesse = Verbindungsgrad; Huben sind sofort erkennbar.
@@ -799,8 +832,12 @@ export function KnowledgeGraph({ memories, onSelectMemory, onSelectConcept, sich
     if (kantenRapport.verstecktInSumme > 0) {
       klausaen.push(`${zahl(kantenRapport.verstecktInSumme)} neighbours hidden behind badges`);
     }
+    if (kantenRapport.selbstInSumme > 0 && !selbstkaanten) {
+      const n = kantenRapport.selbstInSumme;
+      klausaen.push(`${zahl(n)} self-claim${n === 1 ? "" : "s"} hidden`);
+    }
     return klausaen.join(" · ");
-  }, [bildZaehlung.knoten, memories.length, graphApi, kantenRapport]);
+  }, [bildZaehlung.knoten, memories.length, graphApi, kantenRapport, selbstkaanten]);
   const baumNachbarn = useMemo(() => {
     const n = new Map<string, Set<string>>();
     for (const e of baumLayout.edges) {
@@ -1089,6 +1126,11 @@ export function KnowledgeGraph({ memories, onSelectMemory, onSelectConcept, sich
     zeichneNoetig.current = true;
   }, [etikettenModus]);
 
+  // Selbstbehauptungen sind Darstellung, kein neues Layout.
+  useEffect(() => {
+    zeichneNoetig.current = true;
+  }, [selbstkaanten]);
+
   // Eine neue Notizliste ist eine neue Wissensbasis: was gemerkt wurde, gilt
   // nicht mehr. Ohne diesen Schritt stünde das Etikett der letzten Fassung.
   useEffect(() => {
@@ -1278,6 +1320,24 @@ export function KnowledgeGraph({ memories, onSelectMemory, onSelectConcept, sich
       }
     }
     ctx.setLineDash([]);
+
+    // --- Selbstbehauptungen: ein Ring am eigenen Knoten ---
+    // Dieselbe Zeichenklasse wie die Behauptung — gleiche Farbe, gleiche Dicke
+    // nach Belegen. Kein Etikett an der Schlinge: ihr Mittelpunkt ist der
+    // Knoten selbst, und dort steht schon sein Name.
+    for (const e of selbstRef.current) {
+      const knoten = index.get(e.source);
+      if (!knoten || knoten !== index.get(e.target) || !imBild(knoten)) continue;
+      const s = selbstSchleife(knoten.x, knoten.y, knoten.r);
+      const band = Math.min(BREITE_PX.behauptung.length - 1, dickeBand(e));
+      ctx.strokeStyle = akzent;
+      ctx.lineWidth = BREITE_PX.behauptung[band] / skalar;
+      ctx.globalAlpha = Math.min(1, (hov === e.source ? 0.9 : 0.55) * kantenVerstaerkung);
+      ctx.beginPath();
+      ctx.arc(s.cx, s.cy, s.rad, 0, Math.PI * 2);
+      ctx.stroke();
+      ctx.globalAlpha = 1;
+    }
 
     // --- Knoten ---
     const sp = holeSprites(farbenRef.current, nodeRim, nodeHi);
@@ -1705,19 +1765,23 @@ export function KnowledgeGraph({ memories, onSelectMemory, onSelectConcept, sich
     {
       const el = kantTooltipRef.current;
       const gehalten = hoverKanteRef.current;
-      if (gehalten && (!sim.edges.includes(gehalten) || !index.get(gehalten.source) || !index.get(gehalten.target))) {
+      // Die Schlinge einer Selbstbehauptung steht nicht in sim.edges — sonst
+      // erschiene ihre Karte genau einmal, um im nächsten Bild gelöscht zu werden.
+      const nochDa = !!gehalten
+        && (sim.edges.includes(gehalten) || selbstRef.current.includes(gehalten))
+        && !!index.get(gehalten.source) && !!index.get(gehalten.target);
+      if (gehalten && !nochDa) {
         hoverKanteRef.current = null;
         setKantInfo(null);
       } else if (el && gehalten) {
         const a = index.get(gehalten.source)!;
         const b = index.get(gehalten.target)!;
-        const len = Math.hypot(b.x - a.x, b.y - a.y) || 1;
         const gerade = kanteIstGerade(
           gehalten,
           ansichtRef.current === "dendrogram",
           richtungRef.current && t.k >= KEIL_AB_ZOOM
         );
-        const punkt = kantenMitte(a, b, gerade ? 0 : beulenLenke(len));
+        const punkt = kartenAnker(a, b, gerade);
         const lage = kartenLage(punkt.x * t.k + t.x, punkt.y * t.k + t.y, dimensions, el);
         el.style.transform = `translate(${Math.round(lage.x)}px, ${Math.round(lage.y)}px) translate(-50%, 0)`;
       }
@@ -1876,9 +1940,8 @@ export function KnowledgeGraph({ memories, onSelectMemory, onSelectConcept, sich
     let x = 0;
     let y = 0;
     if (a && b) {
-      const len = Math.hypot(b.x - a.x, b.y - a.y) || 1;
       const gerade = kanteIstGerade(e, baum, richtungRef.current && t.k >= KEIL_AB_ZOOM);
-      const punkt = kantenMitte(a, b, gerade ? 0 : beulenLenke(len));
+      const punkt = kartenAnker(a, b, gerade);
       const lage = kartenLage(punkt.x * t.k + t.x, punkt.y * t.k + t.y, masseRef.current);
       x = lage.x;
       y = lage.y;
@@ -1993,7 +2056,7 @@ export function KnowledgeGraph({ memories, onSelectMemory, onSelectConcept, sich
     // Die Kante kommt erst, wenn kein Knoten greift: sonst streiten Knoten und
     // Linie um denselben Zeiger, und der Knoten verliert ansichtslos.
     const kante = id === null
-      ? kanteBei(sim.index, sim.edges, w.x, w.y, KANTEN_GREIF_PX / Math.max(0.01, transformRef.current.k), malweiseFuer)
+      ? kanteBei(sim.index, selbstRef.current.length > 0 ? [...sim.edges, ...selbstRef.current] : sim.edges, w.x, w.y, KANTEN_GREIF_PX / Math.max(0.01, transformRef.current.k), malweiseFuer)
       : null;
     if (kante !== hoverKanteRef.current) {
       hoverKanteRef.current = kante;
@@ -2292,6 +2355,14 @@ export function KnowledgeGraph({ memories, onSelectMemory, onSelectConcept, sich
           >
             <Network className="w-4 h-4" />
             <span className="hidden md:inline text-[11px]">Similar</span>
+          </button>
+          <button
+            onClick={wechsleSelbstkaanten}
+            aria-pressed={selbstkaanten ? "true" : "false"}
+            className="btn-ghost px-2 py-1.5 rounded-lg text-[11px]"
+            title="Self claims — a concept talking about itself, looped at its own node. Off by default."
+          >
+            Self
           </button>
           <button
             onClick={() => setzeEtiketten("key")}
