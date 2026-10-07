@@ -39,7 +39,7 @@ KEPTA ist kein Feature in einer App — es ist eine Gedächtnis-Schicht, die jed
 
 **Frei heißt frei:** 0 €, für immer, ohne Limiten — kein Konto, keine Tageslimiten, kein Schlüssel, nichts gesperrt. Die beste Memory-Engine, die wir bauen können, ist die freie; genau das ist der Punkt.
 
-**Teams und Organisationen** — Team-Gedächtnis, zentrale Richtlinien, MDM, organisationsweites Audit — bekommen **KEPTA Enterprise auf Anfrage**. Koordination ist das Einzige, was wir je berechnen; Speicherqualität nie. → [schreib mir auf LinkedIn](https://www.linkedin.com/in/damian-todorovic-244235434)
+**Teams und Organisationen** — Team-Gedächtnis, zentrale Richtlinien, organisationsweites Audit — bekommen **KEPTA Enterprise auf Anfrage**. Koordination ist das Einzige, was wir je berechnen; Speicherqualität nie. → [schreib mir auf LinkedIn](https://www.linkedin.com/in/damian-todorovic-244235434)
 
 ## ⚡ Schnellstart
 

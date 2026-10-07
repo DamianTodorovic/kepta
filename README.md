@@ -72,7 +72,7 @@ KEPTA is not a feature inside one app — it is a memory layer that outlives eve
 
 **Free means free:** €0, forever, unlimited — no account, no daily limits, no key, nothing locked. The best memory engine we can build is the free one; that is the point.
 
-**Teams and organizations** — shared team memory, central policies, MDM, organisation-wide audit — get **KEPTA Enterprise by request**. Coordination is the only thing we ever charge for; memory quality never is. → [write to me on LinkedIn](https://www.linkedin.com/in/damian-todorovic-244235434)
+**Teams and organizations** — shared team memory, central policies, organisation-wide audit — get **KEPTA Enterprise by request**. Coordination is the only thing we ever charge for; memory quality never is. → [write to me on LinkedIn](https://www.linkedin.com/in/damian-todorovic-244235434)
 
 ---
 
