@@ -22,6 +22,7 @@ import {
   richtungsBand,
   kantenEtikett,
   notizEtikett,
+  verborgeneNotizen,
   type NotizEtikett,
   kantenMitte,
   beulenLenke,
@@ -536,10 +537,39 @@ export function KnowledgeGraph({ memories, onSelectMemory, onSelectConcept, sich
     [graphApi, netzSichtbar]
   );
   const geruestIds = useMemo(() => netz.knoten.map((k) => k.id), [netz]);
+  /**
+   * Was die Faltung im Kraftfeld verdeckt: nur Notizen, die sonst niemand
+   * trägt. Gegen `netzSichtbar` gerechnet, damit die Kopfzeile nicht etwas
+   * abzieht, was der Suchfilter oder der Zeitregler längst genommen hat.
+   */
+  const verborgen = useMemo(() => {
+    const ro = verborgeneNotizen(graphApi?.memoriesByEntity, gefaltet);
+    if (ro.size === 0) return ro;
+    const out = new Set<string>();
+    for (const id of netzSichtbar) if (ro.has(id)) out.add(id);
+    return out;
+  }, [graphApi, gefaltet, netzSichtbar]);
+  const feldNotizen = useMemo(
+    () => (verborgen.size === 0 ? filtered : filtered.filter((m) => !verborgen.has(m.id))),
+    [filtered, verborgen]
+  );
+  /** Wie viele Notizen je gefaltetem Begriff wirklich weg sind — das Malzeichen darf nur das zählen. */
+  const verdecktJeKonzept = useMemo(() => {
+    const m = new Map<string, number>();
+    if (verborgen.size === 0 || !graphApi?.memoriesByEntity) return m;
+    for (const [name, ids] of Object.entries(graphApi.memoriesByEntity)) {
+      const id = `${ENTITAETS_PRAEFIX}${name}`;
+      if (!gefaltet.has(id)) continue;
+      let n = 0;
+      for (const notiz of new Set(ids)) if (verborgen.has(notiz)) n += 1;
+      if (n > 0) m.set(id, n);
+    }
+    return m;
+  }, [verborgen, graphApi, gefaltet]);
 
   const kantenRapport = useMemo(
     () =>
-      kantenBaue(filtered, {
+      kantenBaue(feldNotizen, {
         realPairs: [
           ...netz.erwahnungen,
           ...netz.behauptungen.map(
@@ -554,7 +584,7 @@ export function KnowledgeGraph({ memories, onSelectMemory, onSelectConcept, sich
         knotenIds: geruestIds,
         ahnlichkeit,
       }),
-    [filtered, netz, geruestIds, ahnlichkeit]
+    [feldNotizen, netz, geruestIds, ahnlichkeit]
   );
   const edges: LayoutEdge[] = kantenRapport.edges;
   versteckteRef.current = kantenRapport.versteckteNachbarn;
@@ -699,8 +729,11 @@ export function KnowledgeGraph({ memories, onSelectMemory, onSelectConcept, sich
   );
   const kanten = useMemo(() => kantZaehlung(sichtbareKanten), [sichtbareKanten]);
   const sichtbareAnzahl = useMemo(
-    () => ({ knoten: zeitAktivIds ? zeitAktivIds.size : filtered.length, kanten: sichtbareKanten.length }),
-    [zeitAktivIds, filtered.length, sichtbareKanten]
+    () => ({
+      knoten: (zeitAktivIds ? zeitAktivIds.size : filtered.length) - verborgen.size,
+      kanten: sichtbareKanten.length,
+    }),
+    [zeitAktivIds, filtered.length, sichtbareKanten, verborgen]
   );
 
   // --- Dendrogramm: Hierarchie und Zielpositionen ---
@@ -792,15 +825,25 @@ export function KnowledgeGraph({ memories, onSelectMemory, onSelectConcept, sich
   // Memory, trägt aber die Kanten. Der Schlüssel entscheidet, wann neu
   // aufgebaut wird — und ein neues Konzept IST eine neue Knotenmenge.
   const idsSchluessel = useMemo(
-    () => [...filtered.map((m) => m.id), ...geruestIds].join(","),
-    [filtered, geruestIds]
+    () => [...feldNotizen.map((m) => m.id), ...geruestIds].join(","),
+    [feldNotizen, geruestIds]
   );
   /** Dasselbe Gerüst, das der Baum malt — hier ohne Typ- und Tag-Ebenen. */
   const kraftGeruest = useMemo(() => {
     const m = new Map<string, StrukturKnoten>();
-    for (const k of netz.knoten) m.set(k.id, { label: k.label, farbe: null, r: 8, blaetter: k.notizen.length });
+    for (const k of netz.knoten) {
+      const verdeckt = verdecktJeKonzept.get(k.id);
+      m.set(k.id, {
+        label: k.label,
+        farbe: null,
+        r: 8,
+        blaetter: k.notizen.length,
+        verdeckt,
+        eingeklappt: verdeckt ? true : undefined,
+      });
+    }
     return m;
-  }, [netz]);
+  }, [netz, verdecktJeKonzept]);
   const forceHistoryRef = useRef<Simulation | null>(null);
   useEffect(() => {
     if (ansichtRef.current !== "force") return;
@@ -1439,7 +1482,7 @@ export function KnowledgeGraph({ memories, onSelectMemory, onSelectConcept, sich
         // bleibt weg: sie füllt das Gesicht des Knotens und sagt nichts. Eine
         // vierstellige Zahl passt nicht in eine Scheibe und bleibt ebenfalls.
         if (s.eingeklappt) {
-          zeichneFaltung(ctx, n.x, n.y, n.r, t.k, `×${s.blaetter ?? 0}`, akzent);
+          zeichneFaltung(ctx, n.x, n.y, n.r, t.k, `×${s.verdeckt ?? s.blaetter ?? 0}`, akzent);
         } else if (n.r * t.k >= VEKTOR_AB_PX && s.blaetter !== undefined && s.blaetter > 1 && s.blaetter < 1000) {
           zeichneGlyph(ctx, n.x, n.y, n.r, String(s.blaetter), farbe);
         }

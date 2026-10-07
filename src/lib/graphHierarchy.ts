@@ -38,6 +38,13 @@ export interface StrukturKnoten {
    * ihre `blaetter`-Zahl aber bleibt die Wahrheit über das, was dahinter steht.
    */
   eingeklappt?: boolean;
+  /**
+   * Wie viele Notizen die Faltung WIRKLICH verbirgt. Im Kraftfeld trägt eine
+   * Notiz oft zwei Begriffe und bleibt sichtbar, obwohl einer gefaltet ist —
+   * dort ist `verdeckt` kleiner als `blaetter`, und nur diese Zahl darf am
+   * Malzeichen stehen.
+   */
+  verdeckt?: number;
 }
 
 // ---------- Baum ----------

@@ -2312,6 +2312,8 @@ describe("Die Legende erklärt den neuen Kanal", () => {
     const text = container.textContent ?? "";
     expect(text, `Legende: ${text.slice(0, 400)}`).toContain("A letter in a node is its type");
     expect(text).toContain("A number in a concept is the notes");
+    // Das Malzeichen ist im Kraftfeld ohne den Baum nicht zu erklären.
+    expect(text).toContain("×");
   });
 });
 
@@ -2474,5 +2476,128 @@ describe("Faltung: ein Doppelklick faltet eine Gruppe und sagt es", () => {
     const texte = rahmen().texte;
     expect(texte.filter((t) => ["Uebergabe Nordwind", "Nachfass Nordwind", "Termin Kestrel"].includes(t)), `gemalt: ${texte.join(" | ")}`).toHaveLength(3);
     expect(texte.some((t) => t.startsWith("×"))).toBe(false);
+  });
+});
+
+// P-7, zweite Hälfte: die Faltung gilt über beide Ansichten. Der Griff sitzt im
+// Baum (dort ist eine Gruppe exklusiv), das Kraftfeld hält sich daran — und zwar
+// nur an den Notizen, die sonst niemand trägt. Ein Doppelklick auf ein Konzept
+// wäre hier der falsche Griff: der erste Klick öffnet schon sein Dossier.
+describe("Faltung im Kraftfeld: was der Baum gefaltet hat, fehlt auch hier", () => {
+  function netz() {
+    vi.stubGlobal("fetch", vi.fn(async () => new Response(JSON.stringify({
+      relations: [],
+      memoriesByEntity: {
+        "nordwind logistics": ["e1", "e2", "e3", "e4"],
+        "kestrel software": ["e4", "e5"],
+      },
+    }), { status: 200 })));
+  }
+  const notizen = () => [
+    note({ id: "e1", title: "Rahmen Nordwind" }),
+    note({ id: "e2", title: "Tranche Nordwind" }),
+    note({ id: "e3", title: "Termin Nordwind" }),
+    note({ id: "e4", title: "Bruecke Beide" }),
+    note({ id: "e5", title: "Protokoll Kestrel" }),
+  ];
+  const EIGENE = ["Rahmen Nordwind", "Tranche Nordwind", "Termin Nordwind"];
+
+  function rahmen() {
+    let tx = 0, ty = 0, k = 1;
+    const texte: { text: string; x: number; y: number }[] = [];
+    const scheiben: { x: number; y: number; r: number }[] = [];
+    for (const a of leinwand.letzterRahmen()) {
+      if (a.op === "translate" && tx === 0 && ty === 0) { tx = Number(a.args[0]); ty = Number(a.args[1]); }
+      if (a.op === "scale" && k === 1) k = Number(a.args[0]);
+      if (a.op === "fillText") texte.push({ text: String(a.args[0]), x: Number(a.args[1]), y: Number(a.args[2]) });
+      if (a.op === "arc") scheiben.push({ x: Number(a.args[0]), y: Number(a.args[1]), r: Number(a.args[2]) });
+    }
+    return { texte: texte.map((t) => t.text), texteOhne: texte, scheiben, tx, ty, k };
+  }
+
+  /** Der Schirmmittelpunkt der Scheibe, deren Gerüst-Etikett rechts neben ihr steht. */
+  function scheibeVon(name: string) {
+    const r = rahmen();
+    const etikett = r.texteOhne.find((t) => t.text === name || t.text === `${name.slice(0, 16)}…`);
+    expect(etikett, `Kein Etikett „${name}". Gemalt: ${r.texte.join(" | ")}`).toBeDefined();
+    const treffer = r.scheiben.find((s) => Math.abs(s.y - etikett!.y) < 0.01 && Math.abs(s.x + s.r + 3 - etikett!.x) < 0.01);
+    expect(treffer, `Keine Scheibe traegt „${name}"`).toBeDefined();
+    return { x: treffer!.x * r.k + r.tx, y: treffer!.y * r.k + r.ty };
+  }
+
+  async function doppelklick(container: HTMLElement, bei: { x: number; y: number }) {
+    const c = container.querySelector('[data-testid="graph-canvas"]') as HTMLCanvasElement;
+    await act(async () => {
+      c.dispatchEvent(new MouseEvent("dblclick", { bubbles: true, cancelable: true, clientX: Math.round(bei.x), clientY: Math.round(bei.y) }));
+      await new Promise((r) => setTimeout(r, 120));
+    });
+  }
+
+  async function knopfKlick(container: HTMLElement, name: string) {
+    const knopf = [...container.querySelectorAll("button")].find((b) => b.textContent?.trim() === name) as HTMLButtonElement;
+    expect(knopf, `Der Knopf „${name}" fehlt`).toBeTruthy();
+    await act(async () => { fireEvent.click(knopf!); await new Promise((r) => setTimeout(r, 200)); });
+  }
+
+  function kopf(container: HTMLElement) {
+    const zeile = [...container.querySelectorAll("div.hud-label")].find((d) => /^\d+ notes?\b/.test((d.textContent ?? "").trim()));
+    return (zeile?.textContent ?? "").trim();
+  }
+
+  async function imBaumFalten() {
+    netz();
+    const { container } = await zeichne(notizen());
+    await bilder(12);
+    await knopfKlick(container, "Tree");
+    await bilder(20);
+    await doppelklick(container, scheibeVon("nordwind logisti…"));
+    for (let i = 0; i < 25; i++) {
+      await bilder(2);
+      if (rahmen().texte.some((t) => t.charCodeAt(0) === 215)) break;
+    }
+    return container;
+  }
+
+  it("verbirgt im kraftfeld nur, was der gefaltete begriff allein trägt", async () => {
+    const container = await imBaumFalten();
+    await knopfKlick(container, "Force");
+    for (let i = 0; i < 25; i++) {
+      await bilder(2);
+      if (rahmen().texte.some((t) => t.charCodeAt(0) === 215)) break;
+    }
+    const texte = rahmen().texte;
+    for (const eigene of EIGENE) expect(texte, `„${eigene}" steht noch im Bild: ${texte.join(" | ")}`).not.toContain(eigene);
+    expect(texte, `die geteilte Notiz fiel mit weg: ${texte.join(" | ")}`).toContain("Bruecke Beide");
+    expect(texte).toContain("Protokoll Kestrel");
+    expect(texte.some((t) => t.charCodeAt(0) === 215), `kein Malzeichen: ${texte.join(" | ")}`).toBe(true);
+    expect(texte).toContain("×3");
+  });
+
+  it("zaehlt die verdeckten notizen aus Kopfzeile und Bilanzzeile", async () => {
+    const container = await imBaumFalten();
+    await knopfKlick(container, "Force");
+    await bilder(8);
+    expect(kopf(container), "Kopfzeile im Kraftfeld").toMatch(/^2 notes/);
+    expect(container.textContent).toContain("Showing 2 of 5 notes");
+  });
+
+  it("gibt die notizen zurück, wenn die gruppe im baum wieder öffnet", async () => {
+    const container = await imBaumFalten();
+    await knopfKlick(container, "Force");
+    await bilder(8);
+    await knopfKlick(container, "Tree");
+    await bilder(20);
+    await doppelklick(container, scheibeVon("nordwind logisti…"));
+    await knopfKlick(container, "Force");
+    for (let i = 0; i < 25; i++) {
+      await bilder(2);
+      if (!rahmen().texte.some((t) => t.charCodeAt(0) === 215)) break;
+    }
+    // Nicht die Etiketten werden gezählt — das Raster lässt bei fünf Knoten
+    // nicht jedes durch, und das wäre eine Messung des Gedränges, nicht der
+    // Faltung. Gezählt wird, was die Fläche über sich selbst sagt.
+    expect(rahmen().texte.some((t) => t.charCodeAt(0) === 215), "ein Malzeichen steht noch im Bild").toBe(false);
+    expect(kopf(container), "Kopfzeile nach dem Aufklappen").toMatch(/^5 notes/);
+    expect(container.textContent ?? "", "eine Bilanzzeile behauptet noch fehlende Notizen").not.toContain("Showing");
   });
 });

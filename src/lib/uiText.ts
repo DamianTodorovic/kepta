@@ -42,7 +42,7 @@ export const TEXTE: Record<string, string> = {
   "legend.similarity": "Similarity",
   // Der zweite Kanal im Knoten: ein Buchstabe, der die Art auch ohne Farbe
   // nennt, und eine Zahl, die sagt, was ein Begriff traegt.
-  "legend.glyph": "A letter in a node is its type · A number in a concept is the notes behind it",
+  "legend.glyph": "A letter in a node is its type · A number in a concept is the notes behind it · ×N means the group is folded",
   // Die Kantkarte: was eine Kante ist, wenn sie keinen Typ nennt.
   "edge.similar": "similarity",
   "preview.close": "Close",

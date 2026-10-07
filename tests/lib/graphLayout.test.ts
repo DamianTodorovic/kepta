@@ -24,6 +24,7 @@ import {
   kantZaehlung,
   entitaetsNetz,
   notizEtikett,
+  verborgeneNotizen,
   richtungsBand,
   kantenEtikett,
   dickeBand,
@@ -1613,5 +1614,44 @@ describe("entitaetsNetz — eine Ontologie für Kraftfeld und Baum", () => {
     expect(n.knoten.map((k) => k.label)).toEqual(["alpha", "zeta"]);
     const notizen = netz({ alpha: ["b", "a"] }, [], ["b", "a"]);
     expect(notizen.knoten[0]!.notizen).toEqual(["a", "b"]);
+  });
+});
+
+// P-7, zweite Hälfte: eine Faltung im Kraftfeld darf nur nehmen, was ihr
+// allein gehört. Eine Notiz, die auch einen anderen Begriff trägt, bleibt —
+// sonst löscht das Zufalten einer Gruppe Belege, die woanders gelesen werden.
+describe("verborgeneNotizen", () => {
+  const faltung = (konzepte: Iterable<string>) => new Set(konzepte);
+  const PR = "__ent:";
+
+  it("verbirgt nur die Notizen, die genau einen gefalteten Begriff tragen", () => {
+    const verborgen = verborgeneNotizen(
+      { nordwind: ["a", "b", "c"], kestrel: ["c", "d"] },
+      faltung([`${PR}nordwind`])
+    );
+    expect([...verborgen].sort()).toEqual(["a", "b"]);
+  });
+
+  it("lässt eine Notiz, die zwei Begriffe teilen, stehen, wenn beide gefaltet sind", () => {
+    // „c" gehört beiden. Zwei gefaltete Gruppen dürfen sie nicht zweimal
+    // verbergen — und einmal verbergen wäre auch falsch: sie wäre ja noch
+    // Beleg des anderen Begriffs, der nur eben auch zu ist.
+    const verborgen = verborgeneNotizen(
+      { nordwind: ["a", "c"], kestrel: ["c", "d"] },
+      faltung([`${PR}nordwind`, `${PR}kestrel`])
+    );
+    expect([...verborgen].sort()).toEqual(["a", "d"]);
+  });
+
+  it("verbirgt nichts ohne Faltung und nichts für einen Begriff, den es nicht gibt", () => {
+    const belege = { nordwind: ["a", "b"] };
+    expect(verborgeneNotizen(belege, faltung([])).size).toBe(0);
+    expect(verborgeneNotizen(belege, faltung([`${PR}unbekannt`])).size).toBe(0);
+    expect(verborgeneNotizen(undefined, faltung([`${PR}nordwind`])).size).toBe(0);
+  });
+
+  it("zählt eine Notiz mit zwei Einträgen desselben Begriffs als eine Trägerin", () => {
+    const verborgen = verborgeneNotizen({ nordwind: ["a", "a"], kestrel: [] }, faltung([`${PR}nordwind`]));
+    expect([...verborgen]).toEqual(["a"]);
   });
 });

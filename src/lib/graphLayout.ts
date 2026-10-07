@@ -1280,6 +1280,38 @@ export interface RoheRelation {
 }
 
 /**
+ * Welche Notizen eine Faltung im Kraftfeld verbergen darf: nur die, die
+ * ausschließlich an einem der gefalteten Begriffe hängen. Eine Notiz, die zwei
+ * Begriffe belegt, würde beim Zufalten des einen ihre Spur im anderen
+ * verlieren — das wäre ein Belegdiebstahl, keine Übersicht.
+ *
+ * `gefalteteKonzepte` trägt die Knoten-IDs („__ent:<name>"), weil die Fläche
+ * genau damit arbeitet.
+ */
+export function verborgeneNotizen(
+  memoriesByEntity: Readonly<Record<string, readonly string[]>> | undefined,
+  gefalteteKonzepte: ReadonlySet<string>
+): Set<string> {
+  const out = new Set<string>();
+  if (!memoriesByEntity || gefalteteKonzepte.size === 0) return out;
+  const traeger = new Map<string, Set<string>>();
+  for (const [name, ids] of Object.entries(memoriesByEntity)) {
+    // Dieselbe Notiz zweimal in derselben Liste macht keinen zweiten Träger.
+    for (const id of new Set(ids)) {
+      let menge = traeger.get(id);
+      if (!menge) { menge = new Set(); traeger.set(id, menge); }
+      menge.add(name);
+    }
+  }
+  for (const [id, mengen] of traeger) {
+    if (mengen.size !== 1) continue;
+    const [name] = [...mengen];
+    if (gefalteteKonzepte.has(`${ENTITAETS_PRAEFIX}${name}`)) out.add(id);
+  }
+  return out;
+}
+
+/**
  * `sichtbar` ist die Menge der Notizen, die gerade im Bild stehen — nach
  * Filter, Suche und Zeitregler. Alles andere an einer Kante darf auch nicht
  * gezeichnet werden: der Regler auf „Februar 2023" hat sonst ein Netz aus
