@@ -1140,6 +1140,24 @@ describe("Ein Klick auf ein Begriff öffnet sein Dossier", () => {
     expect(gewaehlt).toHaveBeenCalledWith("nordwind logistics");
   });
 
+  it("öffnet per Tastatur dasselbe Dossier wie per Klick", async () => {
+    // Der klick ist eine mausaktion. Wer mit den pfeiltasten reist, muss
+    // dieselbe antwort bekommen — sonst ist das konzept für eine handvoll
+    // menschen ein toter punkt und für den rest ein knopf.
+    const gewaehlt = vi.fn();
+    const { container } = await zeichneMitBegriff(gewaehlt);
+    const c = container.querySelector('[data-testid="graph-canvas"]') as HTMLCanvasElement;
+
+    let auswahl = "";
+    for (let i = 0; i < 40 && !auswahl.startsWith("__ent:"); i++) {
+      fireEvent.keyDown(c, { key: "ArrowRight" });
+      auswahl = c.getAttribute("data-selection") ?? "";
+    }
+    expect(auswahl, "Die Tastatur erreicht kein Konzept").toMatch(/^__ent:/);
+    fireEvent.keyDown(c, { key: "Enter" });
+    expect(gewaehlt).toHaveBeenCalledWith("nordwind logistics");
+  });
+
   it("lässt eine Notiz beim Klick in Ruhe — die öffnet erst der Doppelklick", async () => {
     const gewaehlt = vi.fn();
     const { container, onSelect } = await zeichneMitBegriff(gewaehlt);

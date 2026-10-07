@@ -1436,7 +1436,11 @@ export function KnowledgeGraph({ memories, onSelectMemory, onSelectConcept, sich
   const tastaturSchritt = useCallback((richtung: "up" | "down" | "left" | "right") => {
     const sim = simRef.current;
     if (!sim) return;
-    const notizKnoten = sim.nodes.filter((n) => byIdRef.current.has(n.id));
+    // Erreichbar ist, was eine antwort gibt: die notiz (Enter öffnet sie) und
+    // das konzept (Enter öffnet sein dossier). Typ-, tag- und wurzelknoten des
+    // baums sind wege, kein inhalt — sie bleiben aus der reise draußen, sonst
+    // hält man auf einem knoten, der auf Enter nichts tut.
+    const notizKnoten = sim.nodes.filter((n) => byIdRef.current.has(n.id) || n.id.startsWith(ENTITAETS_PRAEFIX));
     if (notizKnoten.length === 0) return;
     const aktuell = tastaturIdRef.current
       ? notizKnoten.find((n) => n.id === tastaturIdRef.current)
@@ -1492,6 +1496,15 @@ export function KnowledgeGraph({ memories, onSelectMemory, onSelectConcept, sich
       if (m) {
         e.preventDefault();
         onSelectMemory(m);
+        return;
+      }
+      // Dasselbe wort wie beim klick: ein konzept öffnet sein dossier.
+      if (id && id.startsWith(ENTITAETS_PRAEFIX)) {
+        const name = strukturKnotenRef.current.get(id)?.label;
+        if (name) {
+          e.preventDefault();
+          onSelectConcept?.(name);
+        }
       }
       return;
     }
@@ -1499,7 +1512,7 @@ export function KnowledgeGraph({ memories, onSelectMemory, onSelectConcept, sich
       e.stopPropagation();
       setzeAuswahl(null);
     }
-  }, [onSelectMemory, tastaturSchritt, setzeAuswahl]);
+  }, [onSelectMemory, onSelectConcept, tastaturSchritt, setzeAuswahl]);
 
   // Wheel-Zoom darf die Seite nicht mitscrollen — React-onWheel ist passiv.
   useEffect(() => {
@@ -1672,7 +1685,7 @@ export function KnowledgeGraph({ memories, onSelectMemory, onSelectConcept, sich
           data-testid="graph-canvas"
           tabIndex={0}
           role="application"
-          aria-label="Knowledge graph. Use the arrow keys to move between notes, Enter opens a note, Escape clears the selection."
+          aria-label="Knowledge graph. Use the arrow keys to move between notes and concepts, Enter opens the note, or the dossier of a concept, Escape clears the selection."
           onKeyDown={onKeyDown}
           className="absolute inset-0 touch-none select-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--accent)]"
           data-selection={tastaturId ?? ""}
