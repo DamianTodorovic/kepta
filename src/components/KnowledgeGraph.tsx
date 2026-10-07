@@ -229,7 +229,8 @@ const GERUEST_ZEICHEN = 16;
 const SPRITE_PX = 128;
 
 /**
- * Ist der Hintergrund hell? Entscheidet ueber Kantenstaerken.
+ * Ist diese Farbe hell? Entscheidet ueber Kantenstaerken auf dem Grund und
+ * ueber die Tinte eines Glyphs, der in einer Scheibe steht.
  * Versteht #rgb, #rrggbb und rgb(...) — mehr kommt aus den Theme-Variablen nicht.
  */
 export function istHell(farbe: string): boolean {
@@ -248,6 +249,40 @@ export function istHell(farbe: string): boolean {
     r = Number(m[1]); g = Number(m[2]); b = Number(m[3]);
   }
   return (0.2126 * r + 0.7152 * g + 0.0722 * b) / 255 > 0.5;
+}
+
+/**
+ * Der Buchstabe, der in einer grossen Scheibe steht: der Anfang des Wortes,
+ * das jemand unter der Flaeche liest (Facts, Events, How-tos, Documents).
+ * Abgeleitet statt erfunden — ein Buchstabe, der gegen die Legende laeuft,
+ * ist schlimmer als keiner. Eine Art ohne Label bekommt keinen.
+ */
+export const GLYPH_FUER_ART: Record<string, string> = Object.fromEntries(
+  Object.entries(TYP_LABELS).map(([t, label]) => [t, label.replace(/[^A-Za-z]/g, "").slice(0, 1).toUpperCase()])
+);
+/** Tinte nach der Helligkeit der Fuelle, nie nach dem Theme: der Glyph sitzt IN der Scheibe. */
+const GLYPH_TINTE_HELL = "#f2f2ef";
+const GLYPH_TINTE_DUNKEL = "#141412";
+
+/**
+ * Ein Zeichen mittig in der Scheibe: der Buchstabe einer Art, die Zahl dessen,
+ * was ein Begriff traegt. Die Groesse sitzt im Verhaeltnis zum Radius, damit
+ * der Glyph beim Zoomen nicht umfaerbt.
+ */
+function zeichneGlyph(
+  ctx: CanvasRenderingContext2D,
+  x: number,
+  y: number,
+  radius: number,
+  text: string,
+  fuellung: string
+) {
+  const hoehe = text.length > 2 ? 0.44 : text.length > 1 ? 0.56 : 0.78;
+  ctx.font = `700 ${Math.max(0.5, radius * hoehe)}px ui-sans-serif, system-ui, -apple-system, sans-serif`;
+  ctx.textAlign = "center";
+  ctx.textBaseline = "middle";
+  ctx.fillStyle = istHell(fuellung) ? GLYPH_TINTE_DUNKEL : GLYPH_TINTE_HELL;
+  ctx.fillText(text, x, y);
 }
 /**
  * Greifweite eines Knotens in BILDSCHIRM-Pixeln.
@@ -1256,6 +1291,11 @@ export function KnowledgeGraph({ memories, onSelectMemory, onSelectConcept, sich
         ctx.ellipse(n.x - rr * 0.34, n.y - rr * 0.4, rr * 0.16, rr * 0.1, -0.5, 0, Math.PI * 2);
         ctx.fillStyle = `rgba(255,255,255,${Math.min(0.9, nodeHi + 0.15).toFixed(2)})`;
         ctx.fill();
+        // Der Buchstabe der Art, erst ab der Vektorgroesse: auf einem Sprite
+        // (unter 15 Bildpunkten) wäre er ein Fussel, und dieser Pfad malt
+        // Zehntausende Knoten — dort darf nichts on top kommen.
+        const buchstabe = GLYPH_FUER_ART[m.type ?? ""];
+        if (buchstabe) zeichneGlyph(ctx, n.x, n.y, rr, buchstabe, farbe);
       } else {
         const bild = sp[typ];
         if (bild) {
@@ -1342,6 +1382,13 @@ export function KnowledgeGraph({ memories, onSelectMemory, onSelectConcept, sich
           ctx.beginPath();
           ctx.arc(n.x, n.y, n.r + 4, 0, Math.PI * 2);
           ctx.stroke();
+        }
+        // Die Zahl der Notizen, die dieser Begriff traegt — dieselbe Auskunft,
+        // die das gehaltene Etikett gibt, aber ohne Nachfrage lesbar. Die Eine
+        // bleibt weg: sie füllt das Gesicht des Knotens und sagt nichts. Eine
+        // vierstellige Zahl passt nicht in eine Scheibe und bleibt ebenfalls.
+        if (n.r * t.k >= VEKTOR_AB_PX && s.blaetter !== undefined && s.blaetter > 1 && s.blaetter < 1000) {
+          zeichneGlyph(ctx, n.x, n.y, n.r, String(s.blaetter), farbe);
         }
       }
     }
@@ -2328,6 +2375,8 @@ export function KnowledgeGraph({ memories, onSelectMemory, onSelectConcept, sich
               </span>
             ))}
           </div>
+          {/* Was in der Scheibe steht, erklaert an der Stelle, die die Farben nennt. */}
+          <div className="hud-label" style={{ color: "var(--text-2)" }}>{uiT("legend.glyph")}</div>
           <div className="flex items-center gap-3 hud-label">
             <svg width="26" height="6"><line x1="0" y1="3" x2="26" y2="3" stroke="var(--accent)" strokeWidth="2" /></svg>{" "}
             {ansicht === "dendrogram" ? uiT("legend.hierarchy") : uiT("legend.claim")}

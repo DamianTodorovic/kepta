@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { render, act, fireEvent } from "@testing-library/react";
-import { KnowledgeGraph, istHell } from "../../src/components/KnowledgeGraph";
+import { KnowledgeGraph, istHell, GLYPH_FUER_ART } from "../../src/components/KnowledgeGraph";
 import { installiereLeinwand, installiereResizeObserver, installiereZeiger, setzeTheme, type Leinwand } from "../helfer/canvas";
 import type { Memory } from "../../src/types";
 
@@ -1595,8 +1595,16 @@ describe("Kanten-Etikett: der Typ steht an der Linie", () => {
     const view = await zeichne([a, b], { aehnlichkeit: true });
     await richteRichtung(view, false);
     await bilder(12);
-    const erlaubt = ["Mandatsuebergabe", "Vertreterliste", "nordwind", "elena"];
-    const fremde = rahmen().texte.filter((t) => !erlaubt.includes(t));
+    const erlaubt = [
+      "Mandatsuebergabe", "Vertreterliste", "nordwind", "elena",
+      // Der Glyph-Kanal malt in die Scheiben: ein Grossbuchstabe fuer die Art,
+      // eine kleine Zahl fuer das, was ein Begriff traegt. Diese Frage gilt
+      // einer Linie, also sind die Scheibenzeichen herausgerechnet.
+      "F", "E", "H", "D",
+    ];
+    const fremde = rahmen().texte.filter(
+      (t) => !erlaubt.includes(t) && !/^\d{1,3}$/.test(t)
+    );
     expect(fremde, `Erfundene Etiketten: ${JSON.stringify(fremde)}`).toEqual([]);
   });
 
@@ -2173,5 +2181,136 @@ describe("Etikett-Budget: Key, All, Off und der Peek darunter", () => {
     const texte = aufnahme().texte;
     expect(texte.some((t) => t.startsWith("Dossiernummer")), `gemalt: ${texte.join(" | ")}`).toBe(true);
     expect(texte.some((t) => t.startsWith("Rechnung")), "ein altes Etikett steht noch").toBe(false);
+  });
+});
+
+// P-6: ein Kanal, den das Auge auch ohne Farbe liest. Die vier Typfarben
+// (blaugrau, mauve, gruen, braun) sind fuer fast jeden Farbsehenden schwer
+// zu unterscheiden — ein Buchstabe in der Scheibe traegt dieselbe Auskunft
+// auf einem anderen Kanal. Der Begriff traegt seine Zahl.
+describe("Glyph im Knoten: Buchstabe fuer die Art, Zahl fuer den Begriff", () => {
+  const zoomeHinein = async (container: HTMLElement, n = 24) => {
+    await act(async () => {
+      for (let i = 0; i < n; i++) (container.querySelector('button[title="Zoom in"]') as HTMLButtonElement).click();
+      await new Promise((r) => setTimeout(r, 60));
+    });
+  };
+
+  /** Alle Textzuege des letzten Bildes mit ihrer Fuellung. */
+  function texteImBild() {
+    let farbe = "";
+    const out: { text: string; farbe: string }[] = [];
+    for (const a of leinwand.letzterRahmen()) {
+      if (a.op === "set:fillStyle") farbe = String(a.args[0]);
+      if (a.op === "fillText") out.push({ text: String(a.args[0]), farbe });
+    }
+    return out;
+  }
+
+  /** Die Fuellungen, mit denen im letzten Bild eine Scheibe gefuellt wurde. */
+  function scheibenFarben() {
+    const rahmen = leinwand.letzterRahmen();
+    const out: string[] = [];
+    let farbe = "";
+    for (let i = 0; i < rahmen.length; i++) {
+      const a = rahmen[i]!;
+      if (a.op === "set:fillStyle") farbe = String(a.args[0]);
+      else if (a.op === "arc" && rahmen[i + 1]?.op === "fill") out.push(farbe);
+    }
+    return out;
+  }
+
+  it("setzt einer grossen Scheibe den Buchstaben ihrer Art in die Mitte", async () => {
+    const { container } = await zeichne([note({ id: "g1", title: "Halbjahresbilanz", type: "semantic" })]);
+    await zoomeHinein(container);
+    leinwand.leeren();
+    await bilder();
+    const texte = texteImBild();
+    expect(texte.some((t) => t.text === "F"), `gemalt: ${texte.map((t) => t.text).join(" | ")}`).toBe(true);
+  });
+
+  it("dreht die Helligkeit um, damit der Buchstabe auf der Fuellung steht", async () => {
+    const { container } = await zeichne([note({ id: "g2", title: "Halbjahresbilanz", type: "semantic" })]);
+    await zoomeHinein(container);
+    leinwand.leeren();
+    await bilder();
+    const glyph = texteImBild().find((t) => t.text === "F");
+    expect(glyph, "Der Buchstabe fehlt").toBeDefined();
+    const farbe = scheibenFarben().find((f) => f !== glyph!.farbe);
+    expect(farbe, "Keine Scheibenfuellung im Bild").toBeDefined();
+    expect(istHell(glyph!.farbe), `Buchstabe ${glyph!.farbe} auf Scheibe ${farbe}`).not.toBe(istHell(farbe!));
+  });
+
+  it("malt den Buchstaben nicht, solange die Scheibe ein Sprite ist", async () => {
+    const { container } = await zeichne([note({ id: "g3", title: "Halbjahresbilanz", type: "semantic" })]);
+    await act(async () => {
+      for (let i = 0; i < 6; i++) (container.querySelector('button[title="Zoom out"]') as HTMLButtonElement).click();
+      await new Promise((r) => setTimeout(r, 60));
+    });
+    leinwand.leeren();
+    await bilder();
+    const rahmen = leinwand.letzterRahmen();
+    expect(rahmen.filter((a) => a.op === "drawImage").length, "Kein Sprite-Bild gemalt").toBeGreaterThan(0);
+    expect(texteImBild().some((t) => /^[FEHD]$/.test(t.text)), "Auf dem Sprite steht ein Buchstabe").toBe(false);
+  });
+
+  it("erfindet keinen Buchstaben fuer eine Art, die er nicht kennt", async () => {
+    const { container } = await zeichne([note({ id: "g4", title: "Halbjahresbilanz", type: "andres" as Memory["type"] })]);
+    await zoomeHinein(container);
+    leinwand.leeren();
+    await bilder();
+    expect(texteImBild().some((t) => /^[FEHD]$/.test(t.text)), `gemalt: ${texteImBild().map((t) => t.text).join(" | ")}`).toBe(false);
+  });
+
+  it("gibt vier Arten vier verschiedene Buchstaben", () => {
+    // Ein Kanal, der zwei Arten dasselbe Zeichen gibt, ist keine Auskunft. Die
+    // Buchstaben werden aus den Woertern der Legende abgeleitet, also muss
+    // diese Wache lesen, wer das Vokabular aendert.
+    const typen = ["semantic", "episodic", "procedural", "reference"];
+    const buchstaben = typen.map((t) => GLYPH_FUER_ART[t]);
+    expect(new Set(buchstaben).size, buchstaben.join(", ")).toBe(4);
+    for (const b of buchstaben) expect(/^[A-Z]$/.test(String(b)), `Buchstabe „${b}" ist keiner`).toBe(true);
+  });
+
+  it("hält die Eins aus dem Gesicht eines Begriffs heraus", async () => {
+    // Ein Begriff mit genau einer Notiz sagt das mit der Zahl nicht — die Eins
+    // füllt nur die Scheibe. Ab zwei Notizen trägt die Zahl eine Auskunft.
+    const a = note({ id: "h1", title: "Bürgschaft Weber", content: "Für die [[Kestrel Software]]." });
+    const b = note({ id: "h2", title: "Kestrel Follow-up", content: "Mit [[Kestrel Software]]." });
+    vi.stubGlobal("fetch", vi.fn(async () => new Response(JSON.stringify({
+      relations: [{ source: "kestrel software", target: "quay street lease", memoryId: "h1" }],
+      memoriesByEntity: { "kestrel software": ["h1", "h2"], "quay street lease": ["h1"] },
+    }), { status: 200 })));
+    const { container } = await zeichne([a, b]);
+    await zoomeHinein(container);
+    leinwand.leeren();
+    await bilder();
+    const texte = texteImBild().map((t) => t.text);
+    expect(texte.includes("2"), `gemalt: ${texte.join(" | ")}`).toBe(true);
+    expect(texte.includes("1"), `gemalt: ${texte.join(" | ")}`).toBe(false);
+  });
+
+  it("setzt einem Begriff, der Notizen traegt, ihre Zahl in die Scheibe", async () => {
+    const a = note({ id: "g5", title: "Quarterly filing draft", tags: ["client"] });
+    const b = note({ id: "g6", title: "Filing deadline changed", tags: ["client"] });
+    vi.stubGlobal("fetch", vi.fn(async () => new Response(JSON.stringify({
+      relations: [],
+      memoriesByEntity: { "nordwind logistics": ["g5", "g6"] },
+    }), { status: 200 })));
+    const { container } = await zeichne([a, b]);
+    await zoomeHinein(container);
+    leinwand.leeren();
+    await bilder();
+    const texte = texteImBild();
+    expect(texte.some((t) => t.text === "2"), `gemalt: ${texte.map((t) => t.text).join(" | ")}`).toBe(true);
+  });
+});
+
+describe("Die Legende erklärt den neuen Kanal", () => {
+  it("sagt, was ein Buchstabe in der Scheibe und eine Zahl im Begriff bedeutet", async () => {
+    const { container } = await zeichne([note()]);
+    const text = container.textContent ?? "";
+    expect(text, `Legende: ${text.slice(0, 400)}`).toContain("A letter in a node is its type");
+    expect(text).toContain("A number in a concept is the notes");
   });
 });
