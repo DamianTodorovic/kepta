@@ -532,3 +532,48 @@ describe("Inbox-Import: ein PDF-Extraktor, und zwar derselbe wie überall", () =
     expect(autoImport).not.toMatch(/statSync/);
   });
 });
+
+// Die Kante weiss seit jeher, WIE LANGE sie gilt: relations.valid_from/valid_to
+// stehen in der Datenbank, addRelation nimmt beide, und die Schreibpfade
+// (ChatGPT-Import, memory_save, die App) fuellen sie. Nur die HTTP-Antwort
+// bildete die Kante auf Namen ab und warf das Fenster dabei weg. Fuer die App
+// war eine Kante damit immer "jetzt gueltig" — der Zeitregler konnte Notizen
+// ausblenden, die Behauptungen zwischen ihnen blieben stehen.
+describe("GET /api/graph traegt die Gueltigkeit der Kante", () => {
+  it("liefert validFrom und validTo einer befristeten Kante", async () => {
+    const von = Date.parse("2024-03-01T00:00:00Z");
+    const bis = Date.parse("2025-01-15T00:00:00Z");
+    store.addRelation("elena", "nordwind logistik", "arbeitet bei", null, von, bis);
+
+    const res = await request(app).get("/api/graph");
+    expect(res.status).toBe(200);
+    const kanten = res.body.relations as {
+      source: string;
+      target: string;
+      relation: string;
+      validFrom: number | null;
+      validTo: number | null;
+    }[];
+    const kante = kanten.find((r) => r.relation === "arbeitet bei");
+    expect(kante, "die Kante fehlt in der Antwort").toBeDefined();
+    expect(kante!.source).toBe("elena");
+    expect(kante!.target).toBe("nordwind logistik");
+    expect(kante!.validFrom).toBe(von);
+    expect(kante!.validTo).toBe(bis);
+  });
+
+  it("eine unbefristete Kante nennt null statt das Feld wegzulassen", async () => {
+    store.addRelation("falk", "castel & sohn", "kennt", null);
+
+    const res = await request(app).get("/api/graph");
+    const kante = (res.body.relations as Record<string, unknown>[]).find((r) => r.relation === "kennt");
+    expect(kante, "die Kante fehlt in der Antwort").toBeDefined();
+    // JSON verschluckt undefined: stuende das Feld einfach nicht da, koennte
+    // die App "unbefristet" nicht von "diese Serverversion kennt das nicht"
+    // unterscheiden — und wuerde eine alte Antwort still als gueltig zeichnen.
+    expect(Object.keys(kante!)).toContain("validFrom");
+    expect(Object.keys(kante!)).toContain("validTo");
+    expect(kante!.validFrom).toBeNull();
+    expect(kante!.validTo).toBeNull();
+  });
+});
