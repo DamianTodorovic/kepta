@@ -1190,6 +1190,38 @@ function distanzPunktStrecke(
   return Math.hypot(wx - (p0.x + t * dx), wy - (p0.y + t * dy));
 }
 
+/**
+ * Was unter einem Knoten steht. Die Kette hat drei Stufen, und die letzte gibt
+ * sich zu erkennen: eine Notiz ohne Titel und ohne Zeilen darf nicht wie eine
+ * mit beidem aussehen.
+ */
+export interface NotizEtikett { text: string; platzhalter: boolean }
+
+/** Auf `maxZeichen` kuerzen; die Auslassung kommt zusätzlich dahinter. */
+function kuerze(text: string, maxZeichen: number): string {
+  if (!(maxZeichen > 0) || text.length <= maxZeichen) return text;
+  return `${text.slice(0, maxZeichen)}…`;
+}
+
+/**
+ * Das Wort, das die Speberschicht selbst einsetzt, wenn eine Notiz ohne Titel
+ * gespeichert wird (in `src/core/store.ts` und `src/lib/store.ts`, je beim
+ * Anlegen und beim Bearbeiten). Es trägt keine Information — zwei Knoten, die
+ * beide „Untitled" heißen, sind zwei Knoten ohne Namen. Der erste Satz sagt
+ * mehr, und wo der fehlt, sagt der Platzhalter sich selbst.
+ */
+const TITEL_WORT_DES_SYSTEMS = "untitled";
+
+export function notizEtikett(m: Memory, maxZeichen = 26): NotizEtikett {
+  const titel = (m.title ?? "").trim();
+  if (titel && titel.toLowerCase() !== TITEL_WORT_DES_SYSTEMS) {
+    return { text: kuerze(titel, maxZeichen), platzhalter: false };
+  }
+  const zeilen = (m.content ?? "").split(/\r?\n/).map((z) => z.trim()).filter((z) => z.length > 0);
+  if (zeilen.length > 0) return { text: kuerze(zeilen.join(" "), maxZeichen), platzhalter: true };
+  return { text: "Untitled note", platzhalter: true };
+}
+
 // ---------- Eine Ontologie für beide Ansichten ----------
 //
 // Das Kraftfeld zeichnete bis hierhin Notizen und ließ zwei davon verbunden

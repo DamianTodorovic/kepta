@@ -23,6 +23,7 @@ import {
   nurEchteKanten,
   kantZaehlung,
   entitaetsNetz,
+  notizEtikett,
   richtungsBand,
   kantenEtikett,
   dickeBand,
@@ -281,6 +282,54 @@ describe("kantenBaue — was der Kantengrenze zum Opfer fällt", () => {
     const e = buildEdges(ms);
     expect(Array.isArray(e)).toBe(true);
     expect(e).toHaveLength(1);
+  });
+});
+
+// P-5: Was an einem Knoten steht, ist eine Entscheidung — nicht der Titel.
+describe("notizEtikett — die Kette vom Titel zum Platzhalter", () => {
+  it("nimmt den Titel, wenn einer da ist", () => {
+    const e = notizEtikett(note({ title: "Mandatsuebergabe" }));
+    expect(e).toEqual({ text: "Mandatsuebergabe", platzhalter: false });
+  });
+
+  it("kürzt den Titel auf das Maß plus Auslassung", () => {
+    const e = notizEtikett(note({ title: "Ein wirklich sehr langer Titel, der nicht komplett passt" }), 26);
+    expect(e.platzhalter).toBe(false);
+    expect(e.text.startsWith("Ein wirklich sehr langer")).toBe(true);
+    expect(e.text.endsWith("…"), e.text).toBe(true);
+    expect(e.text.length, "26 Zeichen plus Auslassungspunkt").toBe(27);
+  });
+
+  it("gibt den vollen Titel her, wenn kein Maß gesetzt ist", () => {
+    const langer = "Ein wirklich sehr langer Titel, der nicht komplett passt";
+    const e = notizEtikett(note({ title: langer }), Infinity);
+    expect(e.text).toBe(langer);
+  });
+
+  it("fällt auf den Inhalt zurück und nennt sich Platzhalter", () => {
+    const e = notizEtikett(note({ title: "   ", content: "Rechnung 2024/07 vom Kanal" }));
+    expect(e.text).toBe("Rechnung 2024/07 vom Kanal");
+    expect(e.platzhalter).toBe(true);
+  });
+
+  it("erfindet nichts, wenn Titel und Inhalt leer sind", () => {
+    const e = notizEtikett(note({ title: "", content: "   \n  " }));
+    expect(e.text).toBe("Untitled note");
+    expect(e.platzhalter).toBe(true);
+  });
+
+  it("hält das Wort des Systems für keinen Titel", () => {
+    // Der Store füllt eine Notiz ohne Titel selbst mit „Untitled" (src/lib/
+    // store.ts:133). Zwei Knoten, die beide dieses eine Wort tragen, sagen
+    // nichts; der erste Satz sagt etwas.
+    const e = notizEtikett(note({ title: "Untitled", content: "Rechnung 2024/07 vom Kanal" }));
+    expect(e.text).toBe("Rechnung 2024/07 vom Kanal");
+    expect(e.platzhalter).toBe(true);
+  });
+
+  it("schlägt Zeilenumbrüche im Inhalt zu einem Satz zusammen", () => {
+    const e = notizEtikett(note({ title: "", content: "Erste Zeile\nZweite Zeile" }));
+    expect(e.text).toBe("Erste Zeile Zweite Zeile");
   });
 });
 

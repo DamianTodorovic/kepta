@@ -21,6 +21,8 @@ import {
   kantZaehlung,
   richtungsBand,
   kantenEtikett,
+  notizEtikett,
+  type NotizEtikett,
   kantenMitte,
   beulenLenke,
   dickeBand,
@@ -50,6 +52,14 @@ const RICHTUNG_KEY = "kepta_graph_richtung";
  * Spitze weniger als ein Pixel — dann bleibt die Linie, was sie ist.
  */
 const KEIL_AB_ZOOM = 0.5;
+/**
+ * Wie viel Beschriftung die Flaeche zeigt. Key ist die Engine: Etikette nach
+ * Wichtigkeit, so viele wie ins Gedraenge passen. All ist die ausdrueckliche
+ * Entscheidung eines Menschen — alles, egal wie voll. Off laesst nichts stehen
+ * und gibt den Titel unter dem Zeiger zurueck.
+ */
+const ETIKETT_KEY = "kepta_graph_labels";
+type EtikettModus = "key" | "all" | "off";
 /**
  * Ab diesem Zoom steht der Typ der Aussage an der Linie. Darunter wäre das
  * Etikett kleiner als ein Leser — weit herausgezoomt will man die Form des
@@ -320,6 +330,17 @@ export function KnowledgeGraph({ memories, onSelectMemory, onSelectConcept, sich
     setRichtung(v);
     try { localStorage.setItem(RICHTUNG_KEY, v ? "1" : "0"); } catch { /* ignore */ }
   };
+  /** Wie viel beschriftet wird — Key ist der Anfang, nie All. */
+  const [etikettenModus, setEtikettenModus] = useState<EtikettModus>(() => {
+    try {
+      const v = localStorage.getItem(ETIKETT_KEY);
+      return v === "all" || v === "off" ? v : "key";
+    } catch { return "key"; }
+  });
+  const setzeEtiketten = (m: EtikettModus) => {
+    setEtikettenModus(m);
+    try { localStorage.setItem(ETIKETT_KEY, m); } catch { /* ignore */ }
+  };
   const [dimensions, setDimensions] = useState({ w: 800, h: 500 });
   const [hovered, setHovered] = useState<string | null>(null);
   /**
@@ -536,6 +557,15 @@ export function KnowledgeGraph({ memories, onSelectMemory, onSelectConcept, sich
   // nur über Refs.
   const richtungRef = useRef(richtung);
   richtungRef.current = richtung;
+  const etikettenModusRef = useRef(etikettenModus);
+  etikettenModusRef.current = etikettenModus;
+  /**
+   * Gelesene Etikette, einer pro Notiz. notizEtikett() zerlegt den Inhalt in
+   * Zeilen — gemessen 1,33 ms für ein einziges Bild, wenn 140 Etikette jeweils
+   * neu gelesen werden. Ein Etikett gilt einmal pro Notizliste, nicht 60-mal
+   * die Sekunde.
+   */
+  const etikettVorratRef = useRef<Map<string, NotizEtikett>>(new Map());
   const zielRef = useRef<Map<string, { x: number; y: number }>>(new Map());
   /** Baum→Kraftfeld-Übergang: Ziele, auf die die Knoten gleiten, bevor die Physik übernimmt. */
   const uebergangRef = useRef<Map<string, { x: number; y: number }>>(new Map());
@@ -924,6 +954,17 @@ export function KnowledgeGraph({ memories, onSelectMemory, onSelectConcept, sich
   useEffect(() => {
     zeichneNoetig.current = true;
   }, [richtung]);
+
+  // Auch die Etikett-Stellung ist reine Darstellung — ein Bild, kein Neu-Layout.
+  useEffect(() => {
+    zeichneNoetig.current = true;
+  }, [etikettenModus]);
+
+  // Eine neue Notizliste ist eine neue Wissensbasis: was gemerkt wurde, gilt
+  // nicht mehr. Ohne diesen Schritt stünde das Etikett der letzten Fassung.
+  useEffect(() => {
+    etikettVorratRef.current.clear();
+  }, [memories]);
 
   // --- Zeichnen ---
   const zeichne = useCallback(() => {
@@ -1323,11 +1364,23 @@ export function KnowledgeGraph({ memories, onSelectMemory, onSelectConcept, sich
     // zeigen kann — dort duerfen alle Etiketten mit (bis zur harten Grenze),
     // waehrend der 140er-Cap Kraftfeld-Sache bleibt.
     const baumAnsicht = ansichtRef.current === "dendrogram";
-    const etiketten = baumAnsicht
-      ? beschriftbar.slice(0, MAX_LABELS * 3)
-      : beschriftbar
-          .filter(({ n, r }) => hov === n.id || nachbarn?.has(n.id) || r * t.k >= mindestRadius)
-          .slice(0, MAX_LABELS);
+    // Was der Zeiger oder die Tastatur haelt, kriegt immer sein Etikett — auch
+    // auf „aus". Eine Fläche, die auf Nachfrage schweigt, ist keine Auskunft.
+    const gehaltenId = hov ?? tastaturIdRef.current;
+    const modus = etikettenModusRef.current;
+    const etiketten =
+      modus === "off"
+        ? beschriftbar.filter(({ n }) => n.id === gehaltenId)
+        : modus === "all"
+          ? beschriftbar
+          : baumAnsicht
+            ? beschriftbar.slice(0, MAX_LABELS * 3)
+            : beschriftbar
+                .filter(({ n, r }) => hov === n.id || nachbarn?.has(n.id) || r * t.k >= mindestRadius)
+                .slice(0, MAX_LABELS);
+    // „All" ist die eine Stellung ohne Raster: wer alles will, bekommt alles —
+    // genau deshalb ist sie nicht die Einstellung, in der die Flaeche startet.
+    const ohneRaster = modus === "all";
 
     const fs = Math.min(15, 11 / Math.max(0.4, t.k));
     ctx.lineJoin = "round";
@@ -1368,6 +1421,10 @@ export function KnowledgeGraph({ memories, onSelectMemory, onSelectConcept, sich
         // gilt die Kürzung nicht — und das gehaltene Etikett weicht nicht mehr
         // weg, es hat Vorrang im Raster.
         const gehalten = hov === n.id || tastaturIdRef.current === n.id;
+        // „Aus" meint alle Etiketten — auch die des Gerüsts. Was der Zeiger
+        // hält, kommt zurück: eine Fläche, die auf Nachfrage schweigt, ist keine
+        // Auskunft.
+        if (modus === "off" && !gehalten) continue;
         const titel = gehalten && s.blaetter !== undefined
           ? `${s.label} · ${s.blaetter} ${s.blaetter === 1 ? "note" : "notes"}`
           : s.label.length > GERUEST_ZEICHEN
@@ -1377,7 +1434,7 @@ export function KnowledgeGraph({ memories, onSelectMemory, onSelectConcept, sich
         const mitteY = n.y * t.k + t.y;
         const breite = ctx.measureText(titel).width * t.k;
         // halbe Zeilenhoehe hoch, weil der Text mittig auf der Achse sitzt
-        if (!gehalten && !freiUndBelegen(mitteX, mitteY - zellHoehe / 2, breite)) continue;
+        if (!gehalten && modus !== "all" && !freiUndBelegen(mitteX, mitteY - zellHoehe / 2, breite)) continue;
         ctx.lineWidth = 3 / Math.max(0.4, t.k);
         ctx.strokeStyle = grundFarbe;
         ctx.strokeText(titel, n.x + n.r + 3, n.y);
@@ -1391,18 +1448,30 @@ export function KnowledgeGraph({ memories, onSelectMemory, onSelectConcept, sich
     ctx.textBaseline = "top";
 
     for (const { n, m, r } of etiketten) {
-      const titel = m.title.length > 26 ? `${m.title.slice(0, 26)}…` : m.title || "Untitled";
+      // Der Peek: was der Zeiger oder die Tastatur haelt, wird nicht gekuerzt —
+      // genau dann will jemand den ganzen Namen lesen.
+      const gehalten = n.id === gehaltenId;
+      const vorrat = etikettVorratRef.current;
+      let gelesen = vorrat.get(n.id);
+      if (!gelesen) {
+        gelesen = notizEtikett(m, 26);
+        vorrat.set(n.id, gelesen);
+      }
+      const { text: titel, platzhalter } = gehalten ? notizEtikett(m, Infinity) : gelesen;
       const mitteX = n.x * t.k + t.x;
       const mitteY = (n.y + r + 2) * t.k + t.y;
       const breite = ctx.measureText(titel).width * t.k;
       // Der Knoten unter dem Zeiger und seine Nachbarn haben Vorrang und
       // ueberschreiben notfalls; alles andere weicht aus.
       const bevorzugt = hov === n.id || nachbarn?.has(n.id) === true;
-      if (!freiUndBelegen(mitteX, mitteY, breite) && !bevorzugt) continue;
+      if (!ohneRaster && !freiUndBelegen(mitteX, mitteY, breite) && !bevorzugt) continue;
       ctx.lineWidth = 3 / Math.max(0.4, t.k);
       ctx.strokeStyle = grundFarbe;
       ctx.strokeText(titel, n.x, n.y + r + 2);
-      ctx.fillStyle = textFarbe;
+      // Ein Etikett aus dem ersten Satz der Notiz ist ein Platzhalter und sieht
+      // aus wie einer — eine Notiz ohne Titel darf nicht so tun, als haette sie
+      // einen.
+      ctx.fillStyle = platzhalter ? schwach : textFarbe;
       ctx.fillText(titel, n.x, n.y + r + 2);
       if (hov === n.id && m.tags.length > 0) {
         const tags = m.tags.slice(0, 3).join(" · ");
@@ -2060,6 +2129,30 @@ export function KnowledgeGraph({ memories, onSelectMemory, onSelectConcept, sich
           >
             <Network className="w-4 h-4" />
             <span className="hidden md:inline text-[11px]">Similar</span>
+          </button>
+          <button
+            onClick={() => setzeEtiketten("key")}
+            aria-pressed={etikettenModus === "key" ? "true" : "false"}
+            className="btn-ghost px-2 py-1.5 rounded-lg text-[11px]"
+            title="Key labels — the busiest nodes first, as many as fit without overlap"
+          >
+            Key
+          </button>
+          <button
+            onClick={() => setzeEtiketten("all")}
+            aria-pressed={etikettenModus === "all" ? "true" : "false"}
+            className="btn-ghost px-2 py-1.5 rounded-lg text-[11px]"
+            title="All labels — every node, however crowded. A choice, not a starting point."
+          >
+            All
+          </button>
+          <button
+            onClick={() => setzeEtiketten("off")}
+            aria-pressed={etikettenModus === "off" ? "true" : "false"}
+            className="btn-ghost px-2 py-1.5 rounded-lg text-[11px]"
+            title="No labels — hover or arrow-key to a node and its full title comes back"
+          >
+            Off
           </button>
           <button
             onClick={wechsleRichtung}

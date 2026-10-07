@@ -72,6 +72,14 @@ describe("buildHierarchy", () => {
     expect(typ.children[0]).toMatchObject({ id: "1", kind: "memory", label: "Solo" });
   });
 
+  it("nennt eine Notiz ohne Titel nach ihrem ersten Satz — wie das Kraftfeld", () => {
+    // Zwei Ansichten, derselbe Knoten, zwei Namen: der Baum sagte „Untitled",
+    // das Feld den ersten Satz. Eine Wissensbasis, die sich je nach Ansicht
+    // anders vorstellt, ist nicht übersichtlich, sondern widersprüchlich.
+    const baum = buildHierarchy([mem({ id: "9", type: "semantic", title: "", content: "Rechnung 2024/07 vom Kanal" })]);
+    expect(finde(baum, "9")?.label).toBe("Rechnung 2024/07 vom Kanal");
+  });
+
   it("Notizen ohne Entitaet, aber mit Tag, werden nach erstem Tag gruppiert", () => {
     const baum = buildHierarchy([
       mem({ id: "1", type: "semantic", tags: ["maschine-scan", "json"] }),

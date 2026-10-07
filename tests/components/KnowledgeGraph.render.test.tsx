@@ -1989,3 +1989,189 @@ describe("Kanten-Tooltip: der Zeiger fragt, die Kante antwortet", () => {
   });
 });
 
+
+// P-5: Die Etiketten sind eine Wahl, nicht ein Schicksal. Cognee bietet ein
+// Budget (Key / All / Off) mit Peek unter dem Zeiger; wer alles auf einmal
+// malt, bekommt den Neo4j-Rückbau — also ist Key die Engine und All die
+// ausdrückliche Entscheidung eines Menschen.
+describe("Etikett-Budget: Key, All, Off und der Peek darunter", () => {
+  const kl = (typ: string, x: number, y: number) =>
+    new (globalThis as unknown as { PointerEvent: typeof PointerEvent }).PointerEvent(typ, {
+      bubbles: true, cancelable: true, clientX: x, clientY: y,
+    });
+
+  /** Rahmen: Transformation, gemalte Texte mit ihrer Farbe, Knotenmittelpunkte. */
+  function aufnahme() {
+    const rahmen = leinwand.letzterRahmen();
+    let tx = 0, ty = 0, k = 1, farbe = "";
+    const texte: { text: string; farbe: string }[] = [];
+    const knoten: { x: number; y: number }[] = [];
+    for (const au of rahmen) {
+      if (au.op === "translate" && tx === 0 && ty === 0) { tx = Number(au.args[0]); ty = Number(au.args[1]); }
+      if (au.op === "scale" && k === 1) k = Number(au.args[0]);
+      if (au.op === "set:fillStyle") farbe = String(au.args[0]);
+      if (au.op === "fillText") texte.push({ text: String(au.args[0]), farbe });
+      if (au.op === "arc") knoten.push({ x: Number(au.args[0]) * k + tx, y: Number(au.args[1]) * k + ty });
+    }
+    return { texte: texte.map((t) => t.text), texteMitFarbe: texte, knoten, tx, ty, k };
+  }
+
+  async function stelle(view: { container: HTMLElement }, name: "Key" | "All" | "Off") {
+    const knopf = [...view.container.querySelectorAll("button[aria-pressed]")].find(
+      (b) => b.textContent?.trim() === name
+    ) as HTMLButtonElement | undefined;
+    expect(knopf, `Der Etikett-Knopf „${name}" fehlt`).toBeTruthy();
+    if (knopf!.getAttribute("aria-pressed") !== "true") {
+      await act(async () => {
+        fireEvent.click(knopf!);
+        await new Promise((r) => setTimeout(r, 80));
+      });
+    }
+  }
+
+  it("bietet drei Stellungen und fängt mit Key an", async () => {
+    const { container } = await zeichne([note(), note()]);
+    const pressed = [...container.querySelectorAll("button[aria-pressed]")].filter((b) => b.getAttribute("aria-pressed") === "true").map((b) => b.textContent?.trim());
+    for (const name of ["Key", "All", "Off"]) {
+      expect([...container.querySelectorAll("button[aria-pressed]")].map((b) => b.textContent?.trim()), `Knopf „${name}" fehlt`).toContain(name);
+    }
+    expect(pressed, `gedrückt sind: ${pressed.join(", ")}`).toContain("Key");
+  });
+
+  it("lässt unter Key Etiketten im Gedränge weg", async () => {
+    const ms = Array.from({ length: 60 }, (_, i) => note({ id: `k${i}`, title: `Ein ziemlich langer Titel ${i}` }));
+    const view = await zeichne(ms);
+    await stelle(view, "Key");
+    leinwand.leeren();
+    await bilder();
+    const gemalt = aufnahme().texte.filter((t) => t.startsWith("Ein ziemlich")).length;
+    expect(gemalt).toBeGreaterThan(0);
+    expect(gemalt, "Key malt so viel wie möglich — das ist der Rückbau").toBeLessThan(ms.length);
+  });
+
+  it("gibt unter All jedes Etikett frei, das Key zurückhielt", async () => {
+    const ms = Array.from({ length: 60 }, (_, i) => note({ id: `a${i}`, title: `Noch ein langer Titel ${i}` }));
+    const view = await zeichne(ms);
+    await stelle(view, "Key");
+    leinwand.leeren();
+    await bilder();
+    const key = aufnahme().texte.filter((t) => t.startsWith("Noch ein")).length;
+
+    await stelle(view, "All");
+    leinwand.leeren();
+    await bilder();
+    const alles = aufnahme().texte.filter((t) => t.startsWith("Noch ein")).length;
+    expect(alles, `Key ${key}, All ${alles}`).toBeGreaterThan(key);
+    expect(alles).toBe(ms.length);
+    expect(localStorage.getItem("kepta_graph_labels")).toBe("all");
+  });
+
+  it("lässt unter Off nichts stehen und holt den Titel unter dem Zeiger zurück", async () => {
+    const ms = [note({ id: "o1", title: "Ortung im Hafen" }), note({ id: "o2", title: "Ortung an der Pier" })];
+    const view = await zeichne(ms);
+    await stelle(view, "Off");
+    leinwand.leeren();
+    await bilder();
+    expect(aufnahme().texte.filter((t) => t.startsWith("Ortung"))).toEqual([]);
+
+    const c = view.container.querySelector('[data-testid="graph-canvas"]') as HTMLCanvasElement;
+    const rahmen = aufnahme();
+    const ziel = rahmen.knoten[0];
+    await act(async () => {
+      c.dispatchEvent(kl("pointermove", ziel.x, ziel.y));
+      await new Promise((r) => setTimeout(r, 80));
+    });
+    leinwand.leeren();
+    await bilder();
+    expect(aufnahme().texte.filter((t) => t.startsWith("Ortung")).length, "der Peek fehlt").toBeGreaterThan(0);
+  });
+
+  it("stellt unter Off auch die Begriffsnamen ab und gibt sie im Peek zurück", async () => {
+    // Ein Begriff ist ein Knoten wie jeder andere: wer die Beschriftung aus
+    // stellt, meint alle — und wer über ihm steht, will gerade dann seinen Namen.
+    const a = note({ id: "c1", title: "Kanalnotiz", tags: [] });
+    const b = note({ id: "c2", title: "Werftnotiz", tags: [] });
+    vi.stubGlobal("fetch", vi.fn(async () => new Response(JSON.stringify({
+      relations: [],
+      memoriesByEntity: { "nordwind kai": ["c1", "c2"] },
+    }), { status: 200 })));
+    const view = await zeichne([a, b]);
+    await stelle(view, "Off");
+    leinwand.leeren();
+    await bilder();
+    const rahmen = aufnahme();
+    expect(rahmen.texte.filter((t) => t.startsWith("nordwind kai")), `gemalt: ${JSON.stringify(rahmen.texte)}`).toEqual([]);
+
+    const c = view.container.querySelector('[data-testid="graph-canvas"]') as HTMLCanvasElement;
+    // Der Begriff ist der kleinste der drei Kreise — er trägt radius 8 aus dem
+    // Gerüst, die Notizen hängen an ihrem Verbindungsgrad.
+    const ziel = rahmen.knoten[rahmen.knoten.length - 1];
+    await act(async () => {
+      c.dispatchEvent(kl("pointermove", ziel.x, ziel.y));
+      await new Promise((r) => setTimeout(r, 80));
+    });
+    leinwand.leeren();
+    await bilder();
+    expect(
+      aufnahme().texte.some((t) => t.startsWith("nordwind kai")),
+      "der Peek für den Begriff fehlt"
+    ).toBe(true);
+  });
+
+  it("zeigt im Peek den ganzen Titel, nicht die Kürzung", async () => {
+    const langer = "Ein wirklich sehr langer Titel, der nicht komplett in das Bild passt";
+    const { container } = await zeichne([note({ id: "p1", title: langer })]);
+    const c = container.querySelector('[data-testid="graph-canvas"]') as HTMLCanvasElement;
+    await bilder();
+    const stehend = aufnahme();
+    const gekuerzt = stehend.texte.find((t) => t.startsWith("Ein wirklich sehr langer"));
+    expect(gekuerzt, `gemalt: ${JSON.stringify(stehend.texte)}`).toBeDefined();
+    expect(gekuerzt!.endsWith("…")).toBe(true);
+
+    const ziel = stehend.knoten[0];
+    await act(async () => {
+      c.dispatchEvent(kl("pointermove", ziel.x, ziel.y));
+      await new Promise((r) => setTimeout(r, 80));
+    });
+    leinwand.leeren();
+    await bilder();
+    expect(aufnahme().texte).toContain(langer);
+  });
+
+  it("malt einen Platzhalter so, dass er einer aussieht", async () => {
+    const mitTitel = note({ id: "t1", title: "Bericht aus der Kanzlei" });
+    const ohneTitel = note({ id: "t2", title: "", content: "Rechnung 2024/07 liegt im Ordner" });
+    const { container } = await zeichne([mitTitel, ohneTitel]);
+    await bilder();
+    const texte = aufnahme().texteMitFarbe;
+    const echt = texte.find((t) => t.text.startsWith("Bericht aus"));
+    const platz = texte.find((t) => t.text.startsWith("Rechnung 2024"));
+    expect(echt, `gemalt: ${JSON.stringify(texte.map((t) => t.text))}`).toBeDefined();
+    expect(platz, "der erste Satz fehlt als Platzhalter").toBeDefined();
+    const stil = document.documentElement.style;
+    expect(platz!.farbe, "ein Platzhalter darf nicht wie ein Titel aussehen").not.toBe(echt!.farbe);
+    expect([stil.getPropertyValue("--text-3").trim(), stil.getPropertyValue("--text-2").trim()]).toContain(platz!.farbe);
+    void container;
+  });
+
+  it("malt das Etikett neu, sobald die Notizliste einen anderen Inhalt trägt", async () => {
+    // Ein Etikett wird nicht jeden Frame aus dem Inhalt gelesen, sondern einmal
+    // pro Notiz gemerkt. Der Preis dafür wäre ein zu altes Etikett — und das
+    // hier ist die Grenze, über die der Cache nicht gehen darf: neue Liste,
+    // neuer Text.
+    const alt = note({ id: "cf1", title: "", content: "Rechnung 2024/07 liegt im Ordner" });
+    const view = await zeichne([alt]);
+    await bilder();
+    expect(aufnahme().texte.some((t) => t.startsWith("Rechnung")), `gemalt: ${aufnahme().texte.join(" | ")}`).toBe(true);
+
+    const neu = note({ id: "cf1", title: "", content: "Dossiernummer 9182 ist eröffnet" });
+    await act(async () => {
+      view.rerender(<KnowledgeGraph memories={[neu]} onSelectMemory={view.onSelect} />);
+    });
+    leinwand.leeren();
+    await bilder();
+    const texte = aufnahme().texte;
+    expect(texte.some((t) => t.startsWith("Dossiernummer")), `gemalt: ${texte.join(" | ")}`).toBe(true);
+    expect(texte.some((t) => t.startsWith("Rechnung")), "ein altes Etikett steht noch").toBe(false);
+  });
+});

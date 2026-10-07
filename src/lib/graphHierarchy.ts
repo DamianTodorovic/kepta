@@ -10,6 +10,7 @@
 // LayoutEdge): der Zeichencode in KnowledgeGraph.tsx bleibt unveraendert — nur
 // die Positionen kommen hierher statt aus der Physik.
 import type { Memory } from "../types";
+import { notizEtikett } from "./graphLayout";
 import type { LayoutEdge, LayoutNode, Bounds } from "./graphLayout";
 
 /** Interner Knoten des Baums (Wurzel, Typ, Entitaet) — ohne eigene Memory. */
@@ -147,7 +148,7 @@ export function buildHierarchy(
         children: nachEntitaet.get(e)!
           .slice()
           .sort((a, b) => (a.title || "").localeCompare(b.title || ""))
-          .map((m) => ({ id: m.id, kind: "memory" as const, label: m.title || "Untitled", children: [] })),
+          .map((m) => ({ id: m.id, kind: "memory" as const, label: notizEtikett(m).text, children: [] })),
       });
     }
     for (const k of [...nachTag.keys()].sort((a, b) => a.localeCompare(b))) {
@@ -158,11 +159,11 @@ export function buildHierarchy(
         children: nachTag.get(k)!
           .slice()
           .sort((a, b) => (a.title || "").localeCompare(b.title || ""))
-          .map((m) => ({ id: m.id, kind: "memory" as const, label: m.title || "Untitled", children: [] })),
+          .map((m) => ({ id: m.id, kind: "memory" as const, label: notizEtikett(m).text, children: [] })),
       });
     }
     for (const m of ohne) {
-      typKnoten.children.push({ id: m.id, kind: "memory", label: m.title || "Untitled", children: [] });
+      typKnoten.children.push({ id: m.id, kind: "memory", label: notizEtikett(m).text, children: [] });
     }
     wurzel.children.push(typKnoten);
   }
