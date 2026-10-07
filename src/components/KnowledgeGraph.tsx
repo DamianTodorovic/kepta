@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState, useMemo, useCallback } from "react";
 import { Memory } from "../types";
 import { existsAt, graphTimeRange, activeIdsAt, edgeVisibleAt, istStruktur, fensterOffen, type Gueltigkeit } from "../lib/graphTime";
-import { Search, Maximize2, ZoomIn, ZoomOut, Clock, Atom2, Sitemap, Network } from "../lib/icons";
+import { Search, Maximize2, ZoomIn, ZoomOut, Clock, Atom2, Sitemap, Network, ChevronRight } from "../lib/icons";
 import {
   buildEdges,
   createSimulation,
@@ -18,6 +18,7 @@ import {
   reheat,
   nurEchteKanten,
   kantZaehlung,
+  richtungsBand,
   ENTITAETS_PRAEFIX,
   type LayoutEdge,
   type LayoutNode,
@@ -36,6 +37,13 @@ import {
 
 export type GraphAnsicht = "force" | "dendrogram";
 const ANSICHT_KEY = "kepta_graph_view";
+/** Richtung ist von Haus aus an — sie ist die Aussage, nicht ein Schmuck. */
+const RICHTUNG_KEY = "kepta_graph_richtung";
+/**
+ * Ab diesem Zoom wird aus der Behauptung ein Keil. Darunter wäre die schmale
+ * Spitze weniger als ein Pixel — dann bleibt die Linie, was sie ist.
+ */
+const KEIL_AB_ZOOM = 0.5;
 
 interface KnowledgeGraphProps {
   memories: Memory[];
@@ -173,6 +181,20 @@ export function KnowledgeGraph({ memories, onSelectMemory, onSelectConcept, sich
    * nur, was jemand behauptet hat".
    */
   const [ahnlichkeit, setAhnlichkeit] = useState(false);
+  /**
+   * Richtung der Behauptungen — breit am Ausgang, schmal am Ziel. Eine
+   * Behauptung ohne Richtung ist halb erzählt: „Elena betreut Nordwind" und
+   * „Nordwind betreut Elena" sind zwei Wissensstände, und die Fläche wusste
+   * bisher nicht, welcher gemeint war.
+   */
+  const [richtung, setRichtung] = useState<boolean>(() => {
+    try { return localStorage.getItem(RICHTUNG_KEY) !== "0"; } catch { return true; }
+  });
+  const wechsleRichtung = () => {
+    const v = !richtung;
+    setRichtung(v);
+    try { localStorage.setItem(RICHTUNG_KEY, v ? "1" : "0"); } catch { /* ignore */ }
+  };
   const [dimensions, setDimensions] = useState({ w: 800, h: 500 });
   const [hovered, setHovered] = useState<string | null>(null);
   /** Wie viele Knoten der Nutzer festgesetzt hat — nur fuer die Anzeige. */
@@ -359,6 +381,10 @@ export function KnowledgeGraph({ memories, onSelectMemory, onSelectConcept, sich
   // Baum-Ansicht: Hervorhebung und Nachbarn entlang der Eltern-Kind-Kanten.
   const ansichtRef = useRef(ansicht);
   ansichtRef.current = ansicht;
+  // Der Zeichencode läuft in einem eigenen Callback — Zustände erreichen ihn
+  // nur über Refs.
+  const richtungRef = useRef(richtung);
+  richtungRef.current = richtung;
   const zielRef = useRef<Map<string, { x: number; y: number }>>(new Map());
   /** Baum→Kraftfeld-Übergang: Ziele, auf die die Knoten gleiten, bevor die Physik übernimmt. */
   const uebergangRef = useRef<Map<string, { x: number; y: number }>>(new Map());
@@ -721,6 +747,11 @@ export function KnowledgeGraph({ memories, onSelectMemory, onSelectConcept, sich
     zeichneNoetig.current = true;
   }, [dimensions, fitBaumAnsicht]);
 
+  // Richtung ist reine Darstellung: kein Neu-Layout, keine Physik, ein Bild.
+  useEffect(() => {
+    zeichneNoetig.current = true;
+  }, [richtung]);
+
   // --- Zeichnen ---
   const zeichne = useCallback(() => {
     const canvas = canvasRef.current;
@@ -807,6 +838,7 @@ export function KnowledgeGraph({ memories, onSelectMemory, onSelectConcept, sich
       // liegen darüber und sind die Aussage.
       if (art === "behauptung") {
         ctx.strokeStyle = akzent;
+        ctx.fillStyle = akzent;
         ctx.lineWidth = 2 / Math.max(0.4, t.k);
         ctx.setLineDash([]);
       } else if (art === "abgelaufen") {
@@ -824,6 +856,10 @@ export function KnowledgeGraph({ memories, onSelectMemory, onSelectConcept, sich
         ctx.setLineDash([3 / Math.max(0.4, t.k), 5 / Math.max(0.4, t.k)]);
       }
       ctx.beginPath();
+      // Behauptungen bekommen eine Form, keine Pfeilspitze: breit am Ausgang,
+      // schmal am Ziel. Die Spitze säße hinter der Zielscheibe und verschwände
+      // in der Dämpfung, der Keil trägt die Richtung durch die ganze Linie.
+      const keil = art === "behauptung" && richtungRef.current && t.k >= KEIL_AB_ZOOM;
       let gemalt = 0;
       for (const e of sim.edges) {
         if (artFuer(e) !== art) continue;
@@ -833,15 +869,30 @@ export function KnowledgeGraph({ memories, onSelectMemory, onSelectConcept, sich
         if (!imBild(a) && !imBild(b)) continue;
         if (!edgeVisibleAt(kantenZeit, e.source, e.target, e, zeit)) continue;
         if (hov && hov !== e.source && hov !== e.target && art === "vermutung") continue;
+        const dx = b.x - a.x, dy = b.y - a.y;
+        const len = Math.hypot(dx, dy) || 1;
+        const off = Math.min(16, len * 0.12);
+        if (keil) {
+          const band = richtungsBand(a, b, {
+            rQuelle: a.r,
+            rZiel: b.r,
+            breit: 3.6 / Math.max(0.4, t.k),
+            duenn: 0.9 / Math.max(0.4, t.k),
+            beule: off,
+          });
+          if (band.length === 0) continue;
+          ctx.moveTo(band[0].x, band[0].y);
+          for (let i = 1; i < band.length; i++) ctx.lineTo(band[i].x, band[i].y);
+          ctx.closePath();
+          gemalt++;
+          continue;
+        }
         ctx.moveTo(a.x, a.y);
         if (art === "vermutung" || ansichtRef.current === "dendrogram") {
           // Baum: gerade Verbindung — der Dendrogramm-Look lebt von den klaren
           // Linien zwischen den Ebenen, nicht von Federn.
           ctx.lineTo(b.x, b.y);
         } else {
-          const dx = b.x - a.x, dy = b.y - a.y;
-          const len = Math.hypot(dx, dy) || 1;
-          const off = Math.min(16, len * 0.12);
           ctx.quadraticCurveTo((a.x + b.x) / 2 - (dy / len) * off, (a.y + b.y) / 2 + (dx / len) * off, b.x, b.y);
         }
         gemalt++;
@@ -856,7 +907,10 @@ export function KnowledgeGraph({ memories, onSelectMemory, onSelectConcept, sich
               ? 0.34
               : hov ? 0.5 : 0.22) * kantenVerstaerkung
       );
-      if (gemalt > 0) ctx.stroke();
+      if (gemalt > 0) {
+        if (keil) ctx.fill();
+        else ctx.stroke();
+      }
       ctx.globalAlpha = 1;
     }
     ctx.setLineDash([]);
@@ -1618,6 +1672,16 @@ export function KnowledgeGraph({ memories, onSelectMemory, onSelectConcept, sich
           >
             <Network className="w-4 h-4" />
             <span className="hidden md:inline text-[11px]">Similar</span>
+          </button>
+          <button
+            onClick={wechsleRichtung}
+            aria-pressed={richtung ? "true" : "false"}
+            className="btn-ghost px-2.5 py-1.5 rounded-lg flex items-center gap-1.5"
+            style={richtung ? { border: "1px solid var(--text-3)", color: "var(--text-2)" } : undefined}
+            title="Claim direction — each link runs from its wide end to its narrow one. Off shows plain lines."
+          >
+            <ChevronRight className="w-4 h-4" />
+            <span className="hidden md:inline text-[11px]">Direction</span>
           </button>
         </div>
         <div className="flex items-center gap-1.5 ml-2" title="Node colours — each colour tints its type across the graph, cards and index">

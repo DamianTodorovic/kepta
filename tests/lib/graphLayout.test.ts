@@ -22,6 +22,7 @@ import {
   nurEchteKanten,
   kantZaehlung,
   entitaetsNetz,
+  richtungsBand,
   EDGE_LOD_THRESHOLD,
   EDGE_LOD_ZOOM,
   resolveCollisions,
@@ -159,6 +160,22 @@ describe("buildEdges: ueber einen Index statt ueber alle Paare", () => {
     expect(fensterOffen(e[0], 123_456)).toBe(true);
   });
 
+  it("gibt die Richtung der echten Kante weiter — Quelle bleibt Quelle", () => {
+    // buildEdges kanonisiert nur den Dedup-Schlüssel, nie die Kante selbst.
+    // Wäre das anders, wüsste die Fläche nie, wer über wen etwas behauptet.
+    const a = note({ title: "Alpha" }); const b = note({ title: "Beta" });
+    const e = buildEdges([a, b], { realPairs: [[a.id, b.id]] });
+    expect(e[0].source).toBe(a.id);
+    expect(e[0].target).toBe(b.id);
+
+    // Und beim zweiten Beleg über demselben Paar gewinnt die zuerst gelesene
+    // Richtung — nicht die letzte, die sonst bei jedem Laden kippte.
+    const zwei = buildEdges([a, b], { realPairs: [[a.id, b.id], [b.id, a.id]] });
+    expect(zwei).toHaveLength(1);
+    expect(zwei[0].source).toBe(a.id);
+    expect(zwei[0].target).toBe(b.id);
+  });
+
   it("haelt sich an die Obergrenze und behaelt die staerksten Kanten", () => {
     const ms = Array.from({ length: 12 }, () => note({ tags: ["gemeinsam"] }));
     const e = buildEdges(ms, { maxEdges: 5 });
@@ -185,6 +202,69 @@ describe("buildEdges: ueber einen Index statt ueber alle Paare", () => {
     // Alle Paare waeren 4,5 Millionen Vergleiche gewesen.
     expect(Date.now() - start).toBeLessThan(4000);
     expect(e.length).toBeGreaterThan(0);
+  });
+});
+
+
+// Die Richtung einer Behauptung ist eine Aussage: „Elena — betreut — Nordwind"
+// ist nicht „Nordwind — betreut — Elena". Bis hierhin ging die Richtung im
+// Payload mit, gemalt wurde aber eine symmetrische Linie. Gemaelt wird ein
+// Keil (breit am Ausgang, schmal am Ziel), keine Pfeilspitze — die versteckt
+// sich hinter den Knoten und liest sich bei gedimmten Kanten als Fleck.
+describe("richtungsBand — die Richtung als Keil", () => {
+  const QUELLE = { x: 0, y: 0 };
+  const ZIEL = { x: 100, y: 0 };
+  const form = { rQuelle: 6, rZiel: 6, breit: 4, duenn: 1, beule: 0, schritte: 8 };
+  const seiten = (band: { x: number; y: number }[]) => band.length / 2;
+  // Der Ring läuft: linke Seite von der Quelle zum Ziel, rechte Seite zurück.
+  // Der Partner von Punkt i ist also Punkt 2n-1-i.
+  const partner = (band: { x: number; y: number }[], i: number) => band[2 * seiten(band) - 1 - i];
+  const mittellinie = (band: { x: number; y: number }[], i: number) => {
+    const a = band[i], b = partner(band, i);
+    return { x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 };
+  };
+  const breite = (band: { x: number; y: number }[], i: number) => Math.abs(band[i].y - partner(band, i).y);
+
+  it("beginnt an der Kante der Quell-Scheibe und endet an der der Ziel-Scheibe", () => {
+    const band = richtungsBand(QUELLE, ZIEL, form);
+    expect(band.length % 2).toBe(0);
+    expect(mittellinie(band, 0).x).toBeCloseTo(6, 6);
+    expect(mittellinie(band, seiten(band) - 1).x).toBeCloseTo(94, 6);
+  });
+
+  it("ist am Ausgang breit und am Ziel schmal — die Richtung liegt in der Form", () => {
+    const band = richtungsBand(QUELLE, ZIEL, form);
+    expect(breite(band, 0)).toBeCloseTo(4, 6);
+    expect(breite(band, seiten(band) - 1)).toBeCloseTo(1, 6);
+    // Und zwar gleichmäßig: eine Mitte ist genau halb so breit wie der Anfang.
+    expect(breite(band, Math.floor(seiten(band) / 2))).toBeCloseTo(2.5, 1);
+  });
+
+  it("liegt symmetrisch um die Sehne", () => {
+    const band = richtungsBand(QUELLE, ZIEL, form);
+    for (let i = 0; i < seiten(band); i++) {
+      expect(mittellinie(band, i).y).toBeCloseTo(0, 6);
+    }
+  });
+
+  it("folgt derselben Biegung wie die Linie", () => {
+    // Die Kanten werden seit je ausgebuchtet gezeichnet. Ein Keil, der der
+    // Biegung nicht folgt, läge neben seiner eigenen Kante.
+    const gerade = richtungsBand(QUELLE, ZIEL, form);
+    const gebogen = richtungsBand(QUELLE, ZIEL, { ...form, beule: 12 });
+    const mitte = Math.floor(seiten(gebogen) / 2);
+    expect(mittellinie(gerade, mitte).y).toBeCloseTo(0, 6);
+    expect(Math.abs(mittellinie(gebogen, mitte).y)).toBeGreaterThan(3);
+    // Nach welcher Seite die Beule zeigt, entscheidet dasselbe Vorzeichen wie
+    // bei der Linie: senkrecht zur Sehne, mit dx nach rechts oben weg.
+    expect(mittellinie(gebogen, mitte).y).toBeGreaterThan(0);
+  });
+
+  it("zeichnet nichts, wenn die Scheiben einander berühren oder deckungsgleich sind", () => {
+    // Ein Keil ohne Strecke wäre ein Punkt auf der Scheibe — eher ein Fehler
+    // als eine Richtung.
+    expect(richtungsBand({ x: 0, y: 0 }, { x: 10, y: 0 }, { ...form, rQuelle: 6, rZiel: 6 })).toEqual([]);
+    expect(richtungsBand(QUELLE, QUELLE, form)).toEqual([]);
   });
 });
 

@@ -69,6 +69,48 @@ async function bilder(n = 8) {
   await act(async () => { await new Promise((r) => setTimeout(r, n * 20)); });
 }
 
+/** Richtung an- oder ausknipsen — derselbe Klick, den ein Mensch tut. */
+async function richteRichtung(view: { container: HTMLElement }, an: boolean) {
+  const knopf = [...view.container.querySelectorAll("button[aria-pressed]")].find((b) =>
+    b.textContent?.includes("Direction")
+  ) as HTMLButtonElement | undefined;
+  expect(knopf, "Der Richtungsschalter fehlt").toBeTruthy();
+  if ((knopf!.getAttribute("aria-pressed") === "true") !== an) {
+    await act(async () => {
+      fireEvent.click(knopf!);
+      await new Promise((r) => setTimeout(r, 60));
+    });
+  }
+}
+
+/**
+ * Die Keile eines Rahmens: gefüllte Pfade in der Akzentfarbe.
+ *
+ * Gemessen wird die Querschnittsbreite am Anfang und am Ende — der Ring läuft
+ * erst die linke Seite hin, dann die rechte zurück, also sind Punkt 0 und der
+ * letzte Punkt ein Paar, und die beiden mittleren ebenso.
+ */
+function keileImRahmen(ahmen: { op: string; args: unknown[] }[], farbe: string) {
+  const out: { anfang: number; ende: number; punkte: number }[] = [];
+  let fuellung = "";
+  let pfad: { x: number; y: number }[] = [];
+  for (const a of ahmen) {
+    if (a.op === "set:fillStyle") fuellung = String(a.args[0]);
+    else if (a.op === "beginPath") pfad = [];
+    else if (a.op === "moveTo" || a.op === "lineTo") pfad.push({ x: Number(a.args[0]), y: Number(a.args[1]) });
+    else if (a.op === "fill") {
+      if (fuellung === farbe && pfad.length >= 4 && pfad.length % 2 === 0) {
+        const n = pfad.length / 2;
+        const paare = (i: number, j: number) =>
+          Math.hypot(pfad[i].x - pfad[j].x, pfad[i].y - pfad[j].y);
+        out.push({ anfang: paare(0, pfad.length - 1), ende: paare(n - 1, n), punkte: pfad.length });
+      }
+      pfad = [];
+    }
+  }
+  return out;
+}
+
 describe("Der Graph malt ueberhaupt", () => {
   it("zeigt ohne Notizen einen Hinweis statt einer Leinwand", async () => {
     const { container } = await zeichne([]);
@@ -411,6 +453,9 @@ describe("Detailstufen: nah scharf, fern sparsam", () => {
     // zwei davon: eine Notiz, die einen Begriff erwähnt, und eine Behauptung
     // zwischen zwei Begriffen sind aber zwei verschiedene Aussagen — und im
     // alten Kreuzprodukt waren sie gar nicht zu unterscheiden.
+    //
+    // Hier geht es um die LINIEN: Richtung aus, dann wird die Behauptung wieder
+    // mit Strich gemalt. Der Keil selbst steht im nächsten Test.
     const a = note({ title: "Mandat" });
     const b = note({ title: "Frist" });
     vi.stubGlobal("fetch", vi.fn(async () => new Response(JSON.stringify({
@@ -418,7 +463,8 @@ describe("Detailstufen: nah scharf, fern sparsam", () => {
       memoriesByEntity: { e1: [a.id], e2: [b.id] },
     }), { status: 200 })));
 
-    await zeichne([a, b]);
+    const view = await zeichne([a, b]);
+    await richteRichtung(view, false);
     await bilder(12);
     const stil = document.documentElement.style;
     const akzent = stil.getPropertyValue("--accent").trim();
@@ -437,6 +483,52 @@ describe("Detailstufen: nah scharf, fern sparsam", () => {
     expect(erwaehnung, "keine Erwähnung in der Notizfarbe").toBeDefined();
     expect(Number(erwaehnung!.breite), "Erwähnung ist nicht feiner als die Behauptung")
       .toBeLessThan(Number(behauptung!.breite));
+  });
+
+  it("malt die Behauptung als Keil: gefüllt, am Ausgang breiter als am Ziel", async () => {
+    // Richtung ist eine Aussage — „e1 behauptet über e2" ist nicht die
+    // Umkehrung. Bis zum 7.10. ging sie im Payload mit und verpuffte in einer
+    // symmetrischen Linie.
+    const a = note({ title: "Mandat" });
+    const b = note({ title: "Frist" });
+    vi.stubGlobal("fetch", vi.fn(async () => new Response(JSON.stringify({
+      relations: [{ source: "e1", target: "e2", relation: "mentions", memoryId: null }],
+      memoriesByEntity: { e1: [a.id], e2: [b.id] },
+    }), { status: 200 })));
+
+    await zeichne([a, b]);
+    await bilder(12);
+    const akzent = document.documentElement.style.getPropertyValue("--accent").trim();
+    const keile = keileImRahmen(leinwand.letzterRahmen(), akzent);
+    expect(keile.length, "kein einziger Keil in der Akzentfarbe").toBeGreaterThan(0);
+    for (const k of keile) {
+      expect(k.anfang).toBeGreaterThan(k.ende);
+      // Und schmal genug, um eine Linie zu bleiben, nicht eine Fläche.
+      expect(k.ende).toBeGreaterThan(0);
+    }
+    // Die Erwähnungen bleiben Linien: nur die Behauptung trägt eine Richtung.
+    expect(leinwand.zahl("stroke")).toBeGreaterThan(0);
+  });
+
+  it("nimmt der Schalter den Keil wieder weg — die Linie bleibt", async () => {
+    const a = note({ title: "Mandat" });
+    const b = note({ title: "Frist" });
+    vi.stubGlobal("fetch", vi.fn(async () => new Response(JSON.stringify({
+      relations: [{ source: "e1", target: "e2", relation: "mentions", memoryId: null }],
+      memoriesByEntity: { e1: [a.id], e2: [b.id] },
+    }), { status: 200 })));
+
+    const view = await zeichne([a, b]);
+    await bilder(6);
+    const akzent = document.documentElement.style.getPropertyValue("--accent").trim();
+    expect(keileImRahmen(leinwand.letzterRahmen(), akzent).length).toBeGreaterThan(0);
+
+    await richteRichtung(view, false);
+    await bilder(12);
+    expect(keileImRahmen(leinwand.letzterRahmen(), akzent)).toHaveLength(0);
+    // Merken, dass der Nutzer die Richtung abgestellt hat — beim nächsten
+    // Öffnen der App gilt immer noch sein Bild.
+    expect(localStorage.getItem("kepta_graph_richtung")).toBe("0");
   });
 
   it("zeichnet echte Relationen als gebogene Linie in der Akzentfarbe", async () => {

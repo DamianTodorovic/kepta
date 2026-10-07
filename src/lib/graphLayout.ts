@@ -836,6 +836,93 @@ export function kantZaehlung(edges: readonly LayoutEdge[]): { echt: number; aehn
   return { echt, aehnlichkeit: edges.length - echt, gesamt: edges.length };
 }
 
+export interface BandForm {
+  /** Radien der beiden Scheiben: der Keil startet bzw. endet an ihrer Kante. */
+  rQuelle: number;
+  rZiel: number;
+  /** Breite am Ausgang und am Ziel, in Welteinheiten. */
+  breit: number;
+  duenn: number;
+  /** Ausbuchtung — derselbe Wert, mit dem die Linie gezeichnet wird. */
+  beule: number;
+  /** Querschnitte entlang des Bogens. */
+  schritte?: number;
+}
+
+/**
+ * Der Keil, mit dem eine Behauptung ihre Richtung sagt: breit am Ausgang,
+ * schmal am Ziel.
+ *
+ * Die Richtung ist eine Aussage — „Elena — betreut — Nordwind" ist etwas
+ * anderes als die Umkehrung. Eine Pfeilspitze wäre die naheliegende Antwort,
+ * aber sie sitzt hinter der Scheibe, die sie erreichen will, und ertrinkt in
+ * der Dämpfung der Nachbarschaft; ein Keil trägt die Richtung durch die ganze
+ * Linie und bleibt bei jedem Zoom lesbar.
+ *
+ * Er folgt demselben Bogen wie die Linie (Kontrollpunkt senkrecht zur Sehne,
+ * gleiches Vorzeichen) und kappt an beiden Enden um den Knotenradius — gemessen
+ * entlang des Bogens, nicht der Sehne, sonst beginnt er bei starker Beule zu
+ * früh und liegt halb unter der Scheibe.
+ *
+ * Der Ring läuft: erst die linke Seite vom Ausgang zum Ziel, dann die rechte
+ * zurück. Punkt i und Punkt 2n-1-i sind deshalb Querschnittspartner.
+ */
+export function richtungsBand(
+  quelle: { x: number; y: number },
+  ziel: { x: number; y: number },
+  form: BandForm
+): { x: number; y: number }[] {
+  const dx = ziel.x - quelle.x;
+  const dy = ziel.y - quelle.y;
+  const sehne = Math.hypot(dx, dy);
+  if (sehne === 0) return [];
+  const beulenX = -dy / sehne;
+  const beulenY = dx / sehne;
+  const schx = (quelle.x + ziel.x) / 2 + beulenX * form.beule;
+  const schy = (quelle.y + ziel.y) / 2 + beulenY * form.beule;
+  const punkt = (t: number) => {
+    const u = 1 - t;
+    return {
+      x: u * u * quelle.x + 2 * u * t * schx + t * t * ziel.x,
+      y: u * u * quelle.y + 2 * u * t * schy + t * t * ziel.y,
+    };
+  };
+
+  const stuetz = 48;
+  const bogen: number[] = [0];
+  let letzter = punkt(0);
+  for (let i = 1; i <= stuetz; i++) {
+    const p = punkt(i / stuetz);
+    bogen.push(bogen[i - 1] + Math.hypot(p.x - letzter.x, p.y - letzter.y));
+    letzter = p;
+  }
+  const anfang = form.rQuelle;
+  const ende = bogen[stuetz] - form.rZiel;
+  if (!(ende > anfang)) return [];
+
+  const n = (form.schritte ?? 12) + 1;
+  const links: { x: number; y: number }[] = [];
+  const rechts: { x: number; y: number }[] = [];
+  // Die Bogenlänge wächst mit i, also wandert der Stützstellenzeiger mit —
+  // ein Keil kostet damit seine Stützstellen und nicht n·48 Suchschritte.
+  let k = 1;
+  for (let i = 0; i < n; i++) {
+    const s = anfang + ((ende - anfang) * i) / (n - 1);
+    while (k < stuetz && bogen[k] < s) k++;
+    const span = bogen[k] - bogen[k - 1] || 1;
+    const t = (k - 1 + (s - bogen[k - 1]) / span) / stuetz;
+    const p = punkt(t);
+    const q = punkt(Math.min(1, t + 1e-4));
+    const tl = Math.hypot(q.x - p.x, q.y - p.y) || 1;
+    const normX = -(q.y - p.y) / tl;
+    const normY = (q.x - p.x) / tl;
+    const halbe = (form.breit + (form.duenn - form.breit) * (i / (n - 1))) / 2;
+    links.push({ x: p.x + normX * halbe, y: p.y + normY * halbe });
+    rechts.push({ x: p.x - normX * halbe, y: p.y - normY * halbe });
+  }
+  return [...links, ...rechts.reverse()];
+}
+
 // ---------- Eine Ontologie für beide Ansichten ----------
 //
 // Das Kraftfeld zeichnete bis hierhin Notizen und ließ zwei davon verbunden
