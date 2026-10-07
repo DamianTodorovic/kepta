@@ -53,7 +53,18 @@ export function mountSystem(app: express.Express, ctx: AppKontext): void {
       entities: g.entities,
       relations: g.relations
         .filter((r) => nameById.has(r.sourceId) && nameById.has(r.targetId))
-        .map((r) => ({ id: r.id, source: nameById.get(r.sourceId)!, target: nameById.get(r.targetId)!, relation: r.relation, memoryId: r.memoryId })),
+        // validFrom/validTo reisen mit. Die Relation weiß, WANN sie gilt —
+        // ohne die beiden Felder sah der Zeitregler jede Behauptung als
+        // „gilt heute", auch die längst geplatzte.
+        .map((r) => ({
+          id: r.id,
+          source: nameById.get(r.sourceId)!,
+          target: nameById.get(r.targetId)!,
+          relation: r.relation,
+          memoryId: r.memoryId,
+          validFrom: r.validFrom,
+          validTo: r.validTo,
+        })),
       // entity → memory-IDs (für Graph-Rendering über Memories hinweg)
       memoriesByEntity: Object.fromEntries(g.entities.map((e) => [e.name, [...store.memoryIdsForEntities([e.id])]])),
     });

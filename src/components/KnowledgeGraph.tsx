@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState, useMemo, useCallback } from "react";
 import { Memory } from "../types";
-import { existsAt, graphTimeRange, activeIdsAt, edgeVisibleAt, istStruktur } from "../lib/graphTime";
+import { existsAt, graphTimeRange, activeIdsAt, edgeVisibleAt, istStruktur, fensterOffen, type Gueltigkeit } from "../lib/graphTime";
 import { Search, Maximize2, ZoomIn, ZoomOut, Clock, Atom2, Sitemap, Network } from "../lib/icons";
 import {
   buildEdges,
@@ -50,7 +50,19 @@ interface KnowledgeGraphProps {
 }
 
 interface GraphApi {
-  relations: { source: string; target: string; relation: string; memoryId: string | null }[];
+  relations: {
+    source: string;
+    target: string;
+    relation: string;
+    memoryId: string | null;
+    /**
+     * Wie lange die Aussage gilt. Der Kern liefert die Felder seit 343cb04
+     * ausdrücklich auch dann, wenn sie null sind — „unbefristet" und „diese
+     * Serverversion kennt das Feld nicht" dürfen nicht dasselbe sein.
+     */
+    validFrom?: number | null;
+    validTo?: number | null;
+  }[];
   memoriesByEntity: Record<string, string[]>;
 }
 
@@ -273,7 +285,9 @@ export function KnowledgeGraph({ memories, onSelectMemory, onSelectConcept, sich
       buildEdges(filtered, {
         realPairs: [
           ...netz.erwahnungen,
-          ...netz.behauptungen.map((b) => [b.source, b.target] as [string, string]),
+          ...netz.behauptungen.map(
+            (b) => [b.source, b.target, { validFrom: b.validFrom, validTo: b.validTo }] as [string, string, Gueltigkeit]
+          ),
         ],
         knotenIds: geruestIds,
         ahnlichkeit,
@@ -403,8 +417,8 @@ export function KnowledgeGraph({ memories, onSelectMemory, onSelectConcept, sich
   // trennt Behauptung von Aehnlichkeit. Eine Zahl aus dem Aehnlichkeitsnebel
   // wäre keine Auskunft, sondern ein Verkaufsgespräch.
   const sichtbareKanten = useMemo(
-    () => (zeitAktivIds ? edges.filter((e) => edgeVisibleAt(zeitAktivIds, e.source, e.target)) : edges),
-    [zeitAktivIds, edges]
+    () => (zeitAktivIds ? edges.filter((e) => edgeVisibleAt(zeitAktivIds, e.source, e.target, e, timeFilter)) : edges),
+    [zeitAktivIds, edges, timeFilter]
   );
   const kanten = useMemo(() => kantZaehlung(sichtbareKanten), [sichtbareKanten]);
   const sichtbareAnzahl = useMemo(
@@ -771,23 +785,34 @@ export function KnowledgeGraph({ memories, onSelectMemory, onSelectConcept, sich
     // --- Kanten ---
     const nurEcht = nurEchteKanten(sim.edges.length, t.k);
     ctx.lineCap = "round";
-    // Drei Klassen, drei Aussehen. Seit dem 6.10. liegen im Feld zwei Arten
+    // Vier Klassen, vier Aussehen. Seit dem 6.10. liegen im Feld zwei Arten
     // echter Kanten: eine Notiz, die einen Begriff erwaehnt, und eine
-    // Behauptung zwischen zwei Begriffen. Eine Legende, die beide „real
-    // connection" nennt, beschreibt das Bild nicht — sie verschwindet dahinter.
-    type KantArt = "vermutung" | "erwaehnung" | "behauptung";
+    // Behauptung zwischen zwei Begriffen. Seit dem 7.10. traegt die Behauptung
+    // zusaetzlich ihr Gueltigkeitsfenster — eine erfuellte bleibt sichtbar und
+    // wird gestrichelt, genau wie der Ring der abgelaufenen Notiz.
+    type KantArt = "vermutung" | "erwaehnung" | "abgelaufen" | "behauptung";
+    const jetzt = Date.now();
     const artFuer = (e: LayoutEdge): KantArt => {
       if (ansichtRef.current === "dendrogram") return "behauptung"; // hier ist jede Kante die Hierarchie selbst
       if (!e.real) return "vermutung";
-      return istStruktur(e.source) && istStruktur(e.target) ? "behauptung" : "erwaehnung";
+      if (!istStruktur(e.source) || !istStruktur(e.target)) return "erwaehnung";
+      // Nur beim Stand „jetzt" wird das Fenster zum Zustand. Ist der Regler
+      // gezogen, hat edgeVisibleAt die geschlossenen Aussagen schon aus dem
+      // Bild genommen — dort waere ein Strich fuer „galt damals" falsch.
+      return kantenZeit === null && !fensterOffen(e, jetzt) ? "abgelaufen" : "behauptung";
     };
-    for (const art of ["vermutung", "erwaehnung", "behauptung"] as const) {
+    for (const art of ["vermutung", "erwaehnung", "abgelaufen", "behauptung"] as const) {
       // Erst die Vermutungen (fein gepunktet), dann die Spinnen zum Begriff,
-      // zuletzt die Behauptungen — sie liegen darüber und sind die Aussage.
+      // dann die erfuellten Aussagen, zuletzt die gueltigen Behauptungen — sie
+      // liegen darüber und sind die Aussage.
       if (art === "behauptung") {
         ctx.strokeStyle = akzent;
         ctx.lineWidth = 2 / Math.max(0.4, t.k);
         ctx.setLineDash([]);
+      } else if (art === "abgelaufen") {
+        ctx.strokeStyle = akzent;
+        ctx.lineWidth = 2 / Math.max(0.4, t.k);
+        ctx.setLineDash([4 / Math.max(0.4, t.k), 3 / Math.max(0.4, t.k)]);
       } else if (art === "erwaehnung") {
         ctx.strokeStyle = textFarbe;
         ctx.lineWidth = 1 / Math.max(0.4, t.k);
@@ -806,7 +831,7 @@ export function KnowledgeGraph({ memories, onSelectMemory, onSelectConcept, sich
         const b = index.get(e.target);
         if (!a || !b) continue;
         if (!imBild(a) && !imBild(b)) continue;
-        if (!edgeVisibleAt(kantenZeit, e.source, e.target)) continue;
+        if (!edgeVisibleAt(kantenZeit, e.source, e.target, e, zeit)) continue;
         if (hov && hov !== e.source && hov !== e.target && art === "vermutung") continue;
         ctx.moveTo(a.x, a.y);
         if (art === "vermutung" || ansichtRef.current === "dendrogram") {
@@ -823,7 +848,13 @@ export function KnowledgeGraph({ memories, onSelectMemory, onSelectConcept, sich
       }
       ctx.globalAlpha = Math.min(
         1,
-        (art === "behauptung" ? (hov ? 0.9 : 0.55) : art === "erwaehnung" ? 0.34 : hov ? 0.5 : 0.22) * kantenVerstaerkung
+        (art === "behauptung"
+          ? (hov ? 0.9 : 0.55)
+          : art === "abgelaufen"
+            ? (hov ? 0.6 : 0.3)
+            : art === "erwaehnung"
+              ? 0.34
+              : hov ? 0.5 : 0.22) * kantenVerstaerkung
       );
       if (gemalt > 0) ctx.stroke();
       ctx.globalAlpha = 1;

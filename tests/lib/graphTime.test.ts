@@ -1,6 +1,6 @@
 // @vitest-environment node
 import { describe, it, expect } from "vitest";
-import { existsAt, graphTimeRange, activeIdsAt, edgeVisibleAt } from "../../src/lib/graphTime";
+import { existsAt, graphTimeRange, activeIdsAt, edgeVisibleAt, fensterOffen } from "../../src/lib/graphTime";
 import type { Memory } from "../../src/types";
 
 function mem(over: Partial<Memory> = {}): Memory {
@@ -147,5 +147,80 @@ describe("edgeVisibleAt", () => {
     const aktiv = new Set(["a"]);
     expect(edgeVisibleAt(aktiv, "b", "__ent:elena")).toBe(false);
     expect(edgeVisibleAt(aktiv, "__ent:elena", "b")).toBe(false);
+  });
+});
+
+// Die Aussage zwischen zwei Begriffen hat seit jeher ein eigenes Zeitfenster:
+// addRelation nimmt validFrom/validTo, und der Kern liefert sie seit 343cb04
+// auch in /api/graph aus. Ignorierte sie der Regler, zeigte „2024" eine
+// Behauptung, die 2023 geplatzt war — die Notiz wäre richtig ausgeblendet,
+// ihre Aussage aber stehen geblieben.
+describe("fensterOffen (Gültigkeit einer Aussage)", () => {
+  it("ohne Fenster gilt die Kante immer", () => {
+    expect(fensterOffen(null, 5_000)).toBe(true);
+    expect(fensterOffen(undefined, 5_000)).toBe(true);
+    expect(fensterOffen({}, 5_000)).toBe(true);
+    expect(fensterOffen({ validFrom: null, validTo: null }, 5_000)).toBe(true);
+  });
+
+  it("vor validFrom gilt sie noch nicht — ab validFrom gilt sie", () => {
+    const f = { validFrom: 4_000, validTo: null };
+    expect(fensterOffen(f, 3_999)).toBe(false);
+    expect(fensterOffen(f, 4_000)).toBe(true);
+    expect(fensterOffen(f, 9_000)).toBe(true);
+  });
+
+  it("ab validTo gilt sie nicht mehr — dieselbe Halboffenheit wie bei der Notiz", () => {
+    const f = { validFrom: null, validTo: 5_000 };
+    expect(fensterOffen(f, 4_999)).toBe(true);
+    expect(fensterOffen(f, 5_000)).toBe(false);
+    expect(fensterOffen(f, 6_000)).toBe(false);
+  });
+
+  it("kennt beide Enden, gilt sie nur dazwischen", () => {
+    const f = { validFrom: 2_000, validTo: 8_000 };
+    expect(fensterOffen(f, 1_000)).toBe(false);
+    expect(fensterOffen(f, 2_000)).toBe(true);
+    expect(fensterOffen(f, 7_999)).toBe(true);
+    expect(fensterOffen(f, 8_000)).toBe(false);
+  });
+
+  it("eine Null ist kein Datum, sondern „nicht gesetzt“", () => {
+    // existsAt behandelt 0 ebenso wie fehlend — beide Funktionen müssen
+    // dieselbe Regel haben, sonst zieht der Regler am Knoten anders als an der
+    // Kante.
+    expect(fensterOffen({ validFrom: 0, validTo: 0 }, 1)).toBe(true);
+  });
+});
+
+describe("edgeVisibleAt mit dem Zeitfenster der Kante", () => {
+  const aktiv = new Set(["a", "b"]);
+
+  it("ein geschlossenes Fenster nimmt die Kante, obwohl beide Enden da waren", () => {
+    expect(edgeVisibleAt(aktiv, "a", "b", { validFrom: null, validTo: 3_000 }, 5_000)).toBe(false);
+    expect(edgeVisibleAt(aktiv, "a", "b", { validFrom: 6_000, validTo: null }, 5_000)).toBe(false);
+    expect(edgeVisibleAt(aktiv, "a", "b", { validFrom: 1_000, validTo: 9_000 }, 5_000)).toBe(true);
+  });
+
+  it("bei „jetzt“ bleibt die abgelaufene Kante im Bild — gestrichelt, nicht versteckt", () => {
+    // Parität zum Knoten: eine abgelaufene Notiz verschwindet nicht, sie trägt
+    // einen gestrichelten Ring. Wer die Behauptung bei „jetzt" ganz ausblendete,
+    // löschte die Geschichte statt sie als erledigt zu zeigen.
+    expect(edgeVisibleAt(null, "a", "b", { validFrom: null, validTo: 3_000 }, null)).toBe(true);
+  });
+
+  it("die Endpunkt-Regel gilt weiter — ein offenes Fenster heilt keine Geisterkante", () => {
+    expect(edgeVisibleAt(aktiv, "a", "c", { validFrom: null, validTo: null }, 5_000)).toBe(false);
+    expect(edgeVisibleAt(aktiv, "a", "c", { validFrom: 1, validTo: 9_000 }, 5_000)).toBe(false);
+  });
+
+  it("ohne Zeitangabe filtert kein Fenster — die alte Dreisignatur bleibt gültig", () => {
+    expect(edgeVisibleAt(aktiv, "a", "b", { validFrom: null, validTo: 3_000 })).toBe(true);
+    expect(edgeVisibleAt(aktiv, "a", "b")).toBe(true);
+  });
+
+  it("das Gerüst bleibt neutral: nur das Fenster entscheidet, nicht das Datum des Begriffs", () => {
+    expect(edgeVisibleAt(aktiv, "__ent:elena", "__ent:falk", { validFrom: 1_000, validTo: 9_000 }, 5_000)).toBe(true);
+    expect(edgeVisibleAt(aktiv, "__ent:elena", "__ent:falk", { validFrom: null, validTo: 3_000 }, 5_000)).toBe(false);
   });
 });

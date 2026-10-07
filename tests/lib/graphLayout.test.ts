@@ -33,6 +33,7 @@ import {
   type LayoutNode,
   type LayoutEdge,
 } from "../../src/lib/graphLayout";
+import { fensterOffen } from "../../src/lib/graphTime";
 import type { Memory } from "../../src/types";
 
 // Der Befund aus der Aufnahme vom 5.9.2026: bei 348 Knoten pressten sich die
@@ -109,6 +110,53 @@ describe("buildEdges: ueber einen Index statt ueber alle Paare", () => {
   it("legt dieselbe echte Relation nicht doppelt an", () => {
     const a = note({ title: "Alpha" }); const b = note({ title: "Beta" });
     expect(buildEdges([a, b], { realPairs: [[a.id, b.id], [b.id, a.id]] })).toHaveLength(1);
+  });
+
+  it("eine echte Kante trägt das Gültigkeitsfenster ihrer Aussage", () => {
+    const a = note({ title: "Alpha" }); const b = note({ title: "Beta" });
+    const e = buildEdges([a, b], { realPairs: [[a.id, b.id, { validFrom: 1_000, validTo: 2_000 }]] });
+    expect(e).toHaveLength(1);
+    expect(e[0].validFrom).toBe(1_000);
+    expect(e[0].validTo).toBe(2_000);
+  });
+
+  it("zwei Aussagen über dasselbe Paar teilen sich einen Strich — er gilt, wenn eine von ihnen gilt", () => {
+    // buildEdges kennt pro Paar genau eine Kante; die zweite Behauptung ist
+    // ein Beleg mehr, nicht ein zweiter Strich (bis P-8 Mehrfachkanten
+    // sichtbar macht). Ihr Fenster darf nicht das der ersten überdecken, sonst
+    // gestrichelt die Fläche eine Aussage, die es noch gibt.
+    const a = note({ title: "Alpha" }); const b = note({ title: "Beta" });
+    const e = buildEdges([a, b], {
+      realPairs: [
+        [a.id, b.id, { validFrom: 1_000, validTo: 2_000 }],
+        [b.id, a.id, { validFrom: 5_000, validTo: 9_000 }],
+      ],
+    });
+    expect(e).toHaveLength(1);
+    expect(e[0].validFrom).toBe(1_000);
+    expect(e[0].validTo).toBe(9_000);
+  });
+
+  it("unbefristet neben befristet macht den Strich unbefristet", () => {
+    const a = note({ title: "Alpha" }); const b = note({ title: "Beta" });
+    const e = buildEdges([a, b], {
+      realPairs: [[a.id, b.id], [a.id, b.id, { validFrom: 1, validTo: 2 }]],
+    });
+    expect(e).toHaveLength(1);
+    expect(e[0].validFrom ?? null).toBeNull();
+    expect(e[0].validTo ?? null).toBeNull();
+  });
+
+  it("eine Aehnlichkeitskante hat kein Fenster und wird nie gefiltert", () => {
+    // Nur die Behauptung aus der Graph-DB hat eine Gültigkeit. Die Vermutung
+    // aus gemeinsamen Worten darf der Zeitregler nicht an einem Datum messen,
+    // das sie nie gehabt hat.
+    const a = note({ title: "Docker Setup", tags: ["infra"] });
+    const b = note({ title: "Docker Setup", tags: ["infra"] });
+    const e = buildEdges([a, b]);
+    expect(e).toHaveLength(1);
+    expect(e[0].real).toBe(false);
+    expect(fensterOffen(e[0], 123_456)).toBe(true);
   });
 
   it("haelt sich an die Obergrenze und behaelt die staerksten Kanten", () => {
@@ -1001,7 +1049,14 @@ describe("entitaetsNetz — eine Ontologie für Kraftfeld und Baum", () => {
 
   const netz = (
     byEntity: Record<string, string[]>,
-    relationen: { source: string; target: string; relation?: string; memoryId?: string | null }[],
+    relationen: {
+      source: string;
+      target: string;
+      relation?: string;
+      memoryId?: string | null;
+      validFrom?: number | null;
+      validTo?: number | null;
+    }[],
     sichtbar: string[]
   ) => entitaetsNetz(byEntity, relationen, new Set(sichtbar));
 
@@ -1030,7 +1085,33 @@ describe("entitaetsNetz — eine Ontologie für Kraftfeld und Baum", () => {
     );
     expect(n.knoten.map((k) => k.id)).toEqual(["__ent:elena", "__ent:falk"]);
     expect(n.erwahnungen).toEqual([["x", "__ent:elena"], ["x", "__ent:falk"]]);
-    expect(n.behauptungen).toEqual([{ source: "__ent:elena", target: "__ent:falk", relation: "mandant", memoryId: "x" }]);
+    expect(n.behauptungen).toEqual([
+      { source: "__ent:elena", target: "__ent:falk", relation: "mandant", memoryId: "x", validFrom: null, validTo: null },
+    ]);
+  });
+
+  it("eine befristete Behauptung trägt ihr Fenster mit", () => {
+    // „Elena war bei Nordwind — bis Juni 2025." Der Kern speichert das seit
+    // je (relations.valid_from/valid_to) und liefert es seit 343cb04 auch aus.
+    // Fiel es hier raus, könnte der Regler die Aussage nicht mehr von der
+    // Notiz trennen, die sie erzählt.
+    const n = netz(
+      { elena: ["x"], nordwind: ["x"] },
+      [{ source: "elena", target: "nordwind", relation: "arbeitet bei", memoryId: "x", validFrom: 1_700_000_000_000, validTo: 1_750_000_000_000 }],
+      ["x"]
+    );
+    expect(n.behauptungen[0].validFrom).toBe(1_700_000_000_000);
+    expect(n.behauptungen[0].validTo).toBe(1_750_000_000_000);
+  });
+
+  it("ohne Fenster steht null da, nicht das Feld fehlt", () => {
+    // Die App muss „unbefristet" von „diese Serverversion sagt nichts dazu"
+    // unterscheiden können — derselbe Grund, warum der Kern die Felder
+    // ausdrücklich null nennt.
+    const n = netz({ elena: ["x"], falk: ["x"] }, [{ source: "elena", target: "falk", memoryId: "x" }], ["x"]);
+    expect(Object.keys(n.behauptungen[0])).toContain("validFrom");
+    expect(n.behauptungen[0].validFrom).toBeNull();
+    expect(n.behauptungen[0].validTo).toBeNull();
   });
 
   it("eine Behauptung aus einer ausgeblendeten Notiz gilt nicht", () => {

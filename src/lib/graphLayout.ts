@@ -13,6 +13,7 @@
 // ueber einen invertierten Index, und die Simulation kuehlt aus und haelt an —
 // statt dauerhaft Rechenzeit zu verbrennen.
 import type { Memory } from "../types";
+import type { Gueltigkeit } from "./graphTime";
 
 export interface LayoutNode {
   id: string;
@@ -32,6 +33,13 @@ export interface LayoutEdge {
   strength: number;
   /** Echte Relation aus der Graph-DB (nicht nur Aehnlichkeit). */
   real: boolean;
+  /**
+   * Wie lange die Aussage gilt, die hinter der Kante steht. Nur echte
+   * Behauptungen haben ein Fenster; eine Aehnlichkeitskante hat keins — und
+   * `fensterOffen` behandelt fehlend als „gilt immer".
+   */
+  validFrom?: number | null;
+  validTo?: number | null;
 }
 
 export interface Bounds {
@@ -137,8 +145,11 @@ export function titleSimilarity(a: string, b: string): number {
 }
 
 export interface EdgeOptions {
-  /** Echte Paare aus der Graph-DB — sie ueberleben jede Kuerzung. */
-  realPairs?: readonly (readonly [string, string])[];
+  /**
+   * Echte Paare aus der Graph-DB — sie ueberleben jede Kuerzung. Das dritte
+   * Element ist das Gueltigkeitsfenster der Aussage, wenn eine dabei ist.
+   */
+  realPairs?: readonly (readonly [string, string, Gueltigkeit?])[];
   /**
    * Aehnlichkeitskanten ueberhaupt suchen. Standard: ja. Die Flaeche schaltet
    * sie ab — bei 75 Notizen und 891 Kanten war fast alles Aehnlichkeit, und die
@@ -173,15 +184,51 @@ export function buildEdges(memories: readonly Memory[], opts: EdgeOptions = {}):
 
   const out: LayoutEdge[] = [];
   const belegt = new Set<string>();
+  const echte = new Map<string, LayoutEdge>();
+  const fenster = new Map<string, Gueltigkeit>();
   const schluessel = (a: string, b: string) => (a < b ? `${a}|${b}` : `${b}|${a}`);
 
-  for (const [a, b] of opts.realPairs ?? []) {
+  /**
+   * Zwei Aussagen über demselben Begriffspaar teilen sich einen Strich, weil
+   * buildEdges pro Paar nur eine Kante kennt (P-8 macht daraus erst mehrere).
+   * Der Strich gilt, solange eine von ihnen gilt — sonst überdeckte die erste
+   * erledigte Behauptung eine, die es noch gibt, und die Fläche strich eine
+   * lebende Aussage. Eine fehlende Grenze heißt unbegrenzt und bleibt es.
+   */
+  const vereine = (bisher: Gueltigkeit | undefined, neu: Gueltigkeit): Gueltigkeit => {
+    if (!bisher) return neu;
+    const von = [bisher.validFrom, neu.validFrom];
+    const bis = [bisher.validTo, neu.validTo];
+    return {
+      validFrom: von.some((v) => v == null) ? null : Math.min(...(von as number[])),
+      validTo: bis.some((v) => v == null) ? null : Math.max(...(bis as number[])),
+    };
+  };
+  const UNBEFRISTET: Gueltigkeit = { validFrom: null, validTo: null };
+
+  for (const [a, b, gueltigkeit] of opts.realPairs ?? []) {
     if (a === b || !ids.has(a) || !ids.has(b)) continue;
     const k = schluessel(a, b);
-    if (belegt.has(k)) continue;
-    belegt.add(k);
-    out.push({ source: a, target: b, strength: 0.85, real: true });
+    if (!echte.has(k)) {
+      const kant: LayoutEdge = { source: a, target: b, strength: 0.85, real: true };
+      echte.set(k, kant);
+      belegt.add(k);
+      out.push(kant);
+    }
+    fenster.set(k, vereine(fenster.get(k), gueltigkeit ?? UNBEFRISTET));
   }
+  // Die Gültigkeit kommt erst zum Schluss auf die Kante, weil sie über alle
+  // Aussagen des Pairs hinweg vereint werden muss. Ein unbefristetes Ergebnis
+  // lässt die Felder fort — „fehlend" heißt bei fensterOffen „gilt immer", und
+  // eine Aehnlichkeitskante hat ohnehin keine Gültigkeit.
+  echte.forEach((kant, k) => {
+    const f = fenster.get(k);
+    if (!f) return;
+    if (f.validFrom != null || f.validTo != null) {
+      kant.validFrom = f.validFrom ?? null;
+      kant.validTo = f.validTo ?? null;
+    }
+  });
 
   if (opts.ahnlichkeit === false) return out;
 
@@ -820,6 +867,14 @@ export interface Behauptung {
   relation: string | null;
   /** Die beurkundende Notiz — ohne sie hängt die Kante ins Leere. */
   memoryId: string | null;
+  /**
+   * Wie lange die Aussage gilt. Der Kern speichert das an der Relation, nicht
+   * an der Notiz: „Elena war bei Nordwind" kann 2023 geplatzt sein, während
+   * die Notiz, die sie erzählt, von 2026 ist. Ohne diese zwei Felder zeigte
+   * der Regler 2024 eine Behauptung, die zwei Jahre zuvor geendet hatte.
+   */
+  validFrom: number | null;
+  validTo: number | null;
 }
 
 export interface EntitaetsNetz {
@@ -834,6 +889,8 @@ export interface RoheRelation {
   target: string;
   relation?: string | null;
   memoryId?: string | null;
+  validFrom?: number | null;
+  validTo?: number | null;
 }
 
 /**
@@ -890,6 +947,8 @@ export function entitaetsNetz(
       target: `${ENTITAETS_PRAEFIX}${r.target}`,
       relation: r.relation ?? null,
       memoryId: traeger,
+      validFrom: r.validFrom ?? null,
+      validTo: r.validTo ?? null,
     });
   }
 

@@ -65,16 +65,54 @@ export function istStruktur(id: string): boolean {
 }
 
 /**
+ * Wie lange eine Aussage gilt — dieselben Felder, die der Kern in den Relationen
+ * speichert und seit 343cb04 auch ausliefert.
+ */
+export interface Gueltigkeit {
+  validFrom?: number | null;
+  validTo?: number | null;
+}
+
+/**
+ * Gilt die Aussage zum Zeitpunkt `at`?
+ *
+ * Dieselbe Halboffenheit wie bei der Notiz: ab validFrom gilt sie, ab validTo
+ * nicht mehr. Eine Null oder ein negativer Wert ist kein Datum, sondern
+ * „nicht gesetzt" — sonst maessen Knoten und Kante mit demselben Regler zwei
+ * verschiedene Dinge.
+ */
+export function fensterOffen(g: Gueltigkeit | null | undefined, at: number): boolean {
+  if (!g) return true;
+  if (typeof g.validFrom === "number" && g.validFrom > 0 && at < g.validFrom) return false;
+  if (typeof g.validTo === "number" && g.validTo > 0 && at >= g.validTo) return false;
+  return true;
+}
+
+/**
  * Gehoert eine Kante in das Bild eines Zeitpunkts?
  *
  * Nur, wenn BEIDE Enden damals schon da waren. Der Zeitregler blendete zuerst
  * nur die Knoten aus — bei "Februar 2023" stand das vollstaendige Kantennetz
  * ohne Knoten im Bild, also die Struktur von Wissen, das es noch gar nicht gab.
  * Ein Gerüst-Ende ist immer dabei; die Notiz-Seite entscheidet.
+ *
+ * Das Zeitfenster der Aussage kommt erst dazu, wenn der Regler gezogen ist. Bei
+ * "jetzt" (aktiv === null) bleibt auch die abgelaufene Kante im Bild und wird
+ * gestrichelt gezeichnet — Parität zum gestrichelten Ring der abgelaufenen
+ * Notiz. Wer sie dann ganz ausblendete, loeschte die Geschichte, statt sie als
+ * erledigt zu zeigen.
  */
-export function edgeVisibleAt(aktiv: ReadonlySet<string> | null, source: string, target: string): boolean {
+export function edgeVisibleAt(
+  aktiv: ReadonlySet<string> | null,
+  source: string,
+  target: string,
+  gueltigkeit?: Gueltigkeit | null,
+  at?: number | null
+): boolean {
   if (aktiv === null) return true;
   const notA = istStruktur(source) ? null : source;
   const notB = istStruktur(target) ? null : target;
-  return (notA === null || aktiv.has(notA)) && (notB === null || aktiv.has(notB));
+  if (!((notA === null || aktiv.has(notA)) && (notB === null || aktiv.has(notB)))) return false;
+  if (at != null && !fensterOffen(gueltigkeit, at)) return false;
+  return true;
 }

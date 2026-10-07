@@ -24,6 +24,7 @@ process.env.KEPTA_ENCRYPTION = "off";
 
 let createApp: typeof import("../server").createApp;
 let app: import("express").Express;
+let store: KeptaStore;
 let dir: string;
 let prevHome: string | undefined;
 
@@ -34,7 +35,8 @@ beforeEach(async () => {
   process.env.KEPTA_DATA_DIR = dir;
   const { KeptaStore: Store } = await import("../src/core/store");
   ({ createApp } = await import("../server"));
-  app = createApp(new Store(path.join(dir, "test.db")) as unknown as KeptaStore, { lizenziert: () => true });
+  store = new Store(path.join(dir, "test.db")) as unknown as KeptaStore;
+  app = createApp(store, { lizenziert: () => true });
 });
 
 afterEach(() => {
@@ -47,9 +49,52 @@ async function graph() {
   expect(res.status).toBe(200);
   return res.body as {
     entities: { id: number; name: string }[];
-    relations: { source: string; target: string; relation: string; memoryId: string | null }[];
+    relations: {
+      source: string;
+      target: string;
+      relation: string;
+      memoryId: string | null;
+      validFrom?: number | null;
+      validTo?: number | null;
+    }[];
   };
 }
+
+describe("Die Graph-Antwort trägt die Gültigkeit der Kante", () => {
+  // Der Kern liefert validFrom/validTo seit 343cb04 aus. Die App hat einen
+  // EIGENEN Graph-Endpunkt (server/router/system.ts), und der bildete die
+  // Relation auf Namen ab und ließ das Fenster weg. Der Zeitregler konnte
+  // dadurch nie eine Behauptung ausblenden, die längst geplatzt ist — er sah
+  // ja nicht, wann sie geendigt hat.
+  it("eine befristete Relation nennt ihr Fenster", async () => {
+    const notiz = await request(app)
+      .post("/api/memories")
+      .send({ title: "Kondominium", content: "[[Elena Weiss]] betreut [[Nordwind Logistics]]." });
+    expect(notiz.status).toBe(200);
+    const von = Date.parse("2024-03-01T00:00:00Z");
+    const bis = Date.parse("2025-06-30T00:00:00Z");
+    store.addRelation("elena weiss", "nordwind logistics", "betreut", String(notiz.body.memory.id), von, bis);
+
+    const g = await graph();
+    const kante = g.relations.find((r) => r.relation === "betreut");
+    expect(kante, "die Kante fehlt in der Antwort").toBeDefined();
+    expect(kante!.validFrom).toBe(von);
+    expect(kante!.validTo).toBe(bis);
+  });
+
+  it("eine unbefristete Relation sagt null statt das Feld wegzulassen", async () => {
+    store.addRelation("alpha", "beta", "kennt", null);
+    const g = await graph();
+    const kante = g.relations.find((r) => r.relation === "kennt");
+    expect(kante, "die Kante fehlt in der Antwort").toBeDefined();
+    // Würde JSON das Feld verschlucken, wäre „unbefristet" nicht mehr von
+    // „diese Serverversion kennt das Feld nicht" zu unterscheiden.
+    expect(Object.keys(kante!)).toContain("validFrom");
+    expect(Object.keys(kante!)).toContain("validTo");
+    expect(kante!.validFrom).toBeNull();
+    expect(kante!.validTo).toBeNull();
+  });
+});
 
 describe("Verknüpfung aus dem REST-Schreibweg", () => {
   it("ein Wiki-Link einer neuen Notiz wird Entität und Relation mit Typ und Träger", async () => {
