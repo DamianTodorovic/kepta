@@ -1376,3 +1376,514 @@ describe("Ein gehaltener Begriff sagt, was er ist", () => {
   });
 });
 
+// P-2: Eine Kante ist eine Aussage, kein dekorativer Strich. Cognee schreibt den
+// Relationstyp an die Linie, macht die Dicke aus dem Gewicht und legt einen
+// Tooltip auf die Kante. Bei uns war der Typ bis hierhin vorhanden (store →
+// /api/graph → Behauptung) und wurde in der Fläche auf [quelle, ziel] reduziert.
+describe("Kanten-Etikett: der Typ steht an der Linie", () => {
+  /** Transform, Linienzüge und Etiketten des letzten Bildes. */
+  function rahmen() {
+    const a = leinwand.letzterRahmen();
+    let tx = 0, ty = 0, k = 1;
+    for (const au of a) {
+      if (au.op === "translate") { tx = Number(au.args[0]); ty = Number(au.args[1]); }
+      if (au.op === "scale") { k = Number(au.args[0]); break; }
+    }
+    const texte = a
+      .filter((au) => au.op === "fillText")
+      .map((au) => String(au.args[0]));
+    // Pfade nach Linienfarbe gruppieren: ein stroke() malt, was seit dem
+    // letzten beginPath angesammelt wurde.
+    const boeger: { farbe: string; breite: number; ax: number; ay: number; cx: number; cy: number; bx: number; by: number }[] = [];
+    let farbe = "";
+    let breite = 1;
+    let pfad: { op: string; args: unknown[] }[] = [];
+    for (const au of a) {
+      if (au.op === "set:strokeStyle") farbe = String(au.args[0]);
+      if (au.op === "set:lineWidth") breite = Number(au.args[0]);
+      else if (au.op === "beginPath") pfad = [];
+      else if (au.op === "moveTo" || au.op === "quadraticCurveTo") pfad.push(au);
+      else if (au.op === "stroke") {
+        let mx = 0, my = 0;
+        for (const p of pfad) {
+          if (p.op === "moveTo") { mx = Number(p.args[0]); my = Number(p.args[1]); }
+          else boeger.push({
+            farbe, breite, ax: mx, ay: my,
+            cx: Number(p.args[0]), cy: Number(p.args[1]),
+            bx: Number(p.args[2]), by: Number(p.args[3]),
+          });
+        }
+        pfad = [];
+      }
+    }
+    return { tx, ty, k, texte, boeger };
+  }
+
+  function begruendung(relations: unknown[], memoriesByEntity: Record<string, string[]>) {
+    vi.stubGlobal("fetch", vi.fn(async () => new Response(JSON.stringify({ relations, memoriesByEntity }), { status: 200 })));
+  }
+
+  const paar = (relation: string | null) => ({
+    relations: [{ source: "nordwind", target: "elena", relation, memoryId: "n1" }],
+    byEntity: { nordwind: ["n1"], elena: ["n2"] },
+  });
+
+  it("nennt den Typ der Behauptung an der Linie", async () => {
+    const f = paar("betreut");
+    begruendung(f.relations, f.byEntity);
+    const a = note({ id: "n1", title: "Mandatsuebergabe", tags: [] });
+    const b = note({ id: "n2", title: "Vertreterliste", tags: [] });
+
+    const view = await zeichne([a, b]);
+    await richteRichtung(view, false);
+    await bilder(12);
+    const info = rahmen();
+    expect(info.texte.filter((t) => t === "betreut").length, `Gemalt: ${JSON.stringify(info.texte)}`)
+      .toBeGreaterThan(0);
+  });
+
+  it("lässt das Etikett weit draussen weg — und die Knotentitel bleiben", async () => {
+    // Kein Nachbau von Etiketten-Teppich: was bei 40 % Zoom unlesbar wäre,
+    // bleibt weg. Die Knotentitel dürfen darunter nicht leiden — sie waren
+    // vorher da und müssen es bleiben.
+    const f = paar("betreut");
+    begruendung(f.relations, f.byEntity);
+    const a = note({ id: "n1", title: "Mandatsuebergabe", tags: [] });
+    const b = note({ id: "n2", title: "Vertreterliste", tags: [] });
+
+    const view = await zeichne([a, b]);
+    const { container } = view;
+    await richteRichtung(view, false);
+    await bilder(8);
+    expect(rahmen().texte).toContain("betreut");
+
+    // Erst wenn die Schwelle unterschritten ist, hoert das Etikett auf — nicht
+    // vorher, weil die Titel langsamer werden.
+    const raus = container.querySelector('button[title="Zoom out"]') as HTMLButtonElement;
+    const zoomProzent = () =>
+      Number((container.querySelector('[title="Current zoom"]')?.textContent ?? "9999").replace(/[^\d.]/g, ""));
+    await act(async () => {
+      for (let i = 0; i < 12 && zoomProzent() >= 85; i++) {
+        raus.click();
+        await new Promise((r) => setTimeout(r, 40));
+      }
+    });
+    expect(zoomProzent(), "der Regler ist nicht unter die Etikettschwelle gekommen").toBeLessThan(90);
+    await bilder(6);
+    const weit = rahmen();
+    expect(weit.texte, "Etikettenteppich beim Herauszoomen").not.toContain("betreut");
+    expect(weit.texte).toContain("Mandatsuebergabe");
+  });
+
+  it("schreibt nichts an eine Linie, die keinen Typ nennt", async () => {
+    // Die Erwaehnung fuehrt die Notiz zum Begriff und die Aehnlichkeit ist ein
+    // Reim — beide behaupten nichts. Und „mentions" ist das Wort, das der Store
+    // selbst fuer jeden Wiki-Link setzt: ein Etikett davon waere ein Etikett
+    // fuer die Installationsleitung im Bild.
+    begruendung(
+      [
+        { source: "nordwind", target: "elena", relation: "mentions", memoryId: "n1" },
+        { source: "nordwind", target: "elena", relation: null, memoryId: "n1" },
+      ],
+      { nordwind: ["n1"], elena: ["n2"] }
+    );
+    const a = note({ id: "n1", title: "Mandatsuebergabe", tags: [] });
+    const b = note({ id: "n2", title: "Vertreterliste", tags: [] });
+
+    const view = await zeichne([a, b], { aehnlichkeit: true });
+    await richteRichtung(view, false);
+    await bilder(12);
+    const erlaubt = ["Mandatsuebergabe", "Vertreterliste", "nordwind", "elena"];
+    const fremde = rahmen().texte.filter((t) => !erlaubt.includes(t));
+    expect(fremde, `Erfundene Etiketten: ${JSON.stringify(fremde)}`).toEqual([]);
+  });
+
+  it("deckelt die Kanten-Etiketten, statt zuzuschreiben", async () => {
+    // 60 Behauptungen im Bild, aber nicht 60 Texte: was nicht passt, bleibt
+    // weg, und das Raster entscheidet, nicht die Hoffnung.
+    const n = 60;
+    const ms = Array.from({ length: n }, (_, i) => note({ id: `b${i}`, title: `Notiz ${i}`, tags: [] }));
+    const relations = Array.from({ length: n }, (_, i) => ({
+      source: `alpha${i}`, target: `beta${i}`, relation: `rel${i}`, memoryId: `b${i}`,
+    }));
+    const byEntity: Record<string, string[]> = {};
+    for (let i = 0; i < n; i++) { byEntity[`alpha${i}`] = [`b${i}`]; byEntity[`beta${i}`] = [`b${i}`]; }
+    begruendung(relations, byEntity);
+    setzeGroesse(2400, 1600);
+
+    const view = await zeichne(ms);
+    await richteRichtung(view, false);
+    await bilder(10);
+    const relTexte = rahmen().texte.filter((t) => /^rel\d+$/.test(t));
+    expect(relTexte.length, "kein einziges Kanten-Etikett").toBeGreaterThan(0);
+    expect(relTexte.length).toBeLessThanOrEqual(40);
+  });
+
+  it("zählt weitere Typen über demselben Paar dazu", async () => {
+    const f = paar("betreut");
+    begruendung([
+      ...f.relations,
+      { source: "nordwind", target: "elena", relation: "meldet an", memoryId: "n2" },
+    ], f.byEntity);
+    const a = note({ id: "n1", title: "Mandatsuebergabe", tags: [] });
+    const b = note({ id: "n2", title: "Vertreterliste", tags: [] });
+
+    const view = await zeichne([a, b]);
+    await richteRichtung(view, false);
+    await bilder(12);
+    expect(rahmen().texte).toContain("betreut +1");
+  });
+});
+
+describe("Kantendicke: was dahintersteht, wird sichtbar", () => {
+  /**
+   * Die Bildschirmbreite der Behauptungslinie (Richtung aus, dann wird sie
+   * gestrichen).
+   *
+   * Zwei Messungen in einem Test fuehlen zwei Views — die ersten bleiben
+   * mounted und malen weiter in dasselbe Zeichenbuch. Also vorher zurueckbauen.
+   */
+  async function breiteDerBehauptung(belege: number): Promise<number> {
+    const relationen = Array.from({ length: belege }, () => ({
+      source: "nordwind", target: "elena", relation: "betreut", memoryId: "n1",
+    }));
+    vi.stubGlobal("fetch", vi.fn(async () => new Response(JSON.stringify({
+      relations: relationen, memoriesByEntity: { nordwind: ["n1"], elena: ["n2"] },
+    }), { status: 200 })));
+    const a = note({ id: "n1", title: "Mandatsuebergabe", tags: [] });
+    const b = note({ id: "n2", title: "Vertreterliste", tags: [] });
+
+    const view = await zeichne([a, b]);
+    await richteRichtung(view, false);
+    await bilder(12);
+
+    const rah = leinwand.letzterRahmen();
+    let k = 1;
+    for (const au of rah) { if (au.op === "scale") { k = Number(au.args[0]); break; } }
+    const akzent = document.documentElement.style.getPropertyValue("--accent").trim();
+    let farbe = "";
+    let breite = "";
+    let kurven = 0;
+    let gefunden: number | null = null;
+    for (const au of rah) {
+      if (au.op === "set:strokeStyle") farbe = String(au.args[0]);
+      else if (au.op === "set:lineWidth") breite = String(au.args[0]);
+      else if (au.op === "beginPath") kurven = 0;
+      else if (au.op === "quadraticCurveTo") kurven++;
+      else if (au.op === "stroke") {
+        // Der erste Akzentzug mit Bogen ist die Behauptung — die Erwähnung malt
+        // in der Notizfarbe, die Hierarchie gibt es hier nicht.
+        if (farbe === akzent && kurven > 0 && gefunden === null) gefunden = Number(breite) * k;
+      }
+    }
+    view.unmount();
+    expect(gefunden, "keine Behauptungslinie gefunden").not.toBeNull();
+    return gefunden as number;
+  }
+
+  it("malt drei Belege dicker als einen", async () => {
+    const einer = await breiteDerBehauptung(1);
+    const drei = await breiteDerBehauptung(3);
+    expect(drei, `${einer} px gegen ${drei} px`).toBeGreaterThan(einer);
+  });
+
+  it("hält die Erwähnung feiner als jede Behauptung", async () => {
+    // Der Keil darf die Rangfolge nicht kippen: eine Notiz, die einen Begriff
+    // erwähnt, bleibt die leiseste echte Kante im Bild.
+    vi.stubGlobal("fetch", vi.fn(async () => new Response(JSON.stringify({
+      relations: [{ source: "nordwind", target: "elena", relation: "betreut", memoryId: "n1" }],
+      memoriesByEntity: { nordwind: ["n1"], elena: ["n2"] },
+    }), { status: 200 })));
+    const a = note({ id: "n1", title: "Mandatsuebergabe", tags: [] });
+    const b = note({ id: "n2", title: "Vertreterliste", tags: [] });
+    const view = await zeichne([a, b]);
+    await richteRichtung(view, false);
+    await bilder(12);
+
+    const akzent = document.documentElement.style.getPropertyValue("--accent").trim();
+    const notiz = document.documentElement.style.getPropertyValue("--text-1").trim();
+    let farbe = "";
+    let breite = "";
+    const striche: { farbe: string; breite: number }[] = [];
+    for (const au of leinwand.letzterRahmen()) {
+      if (au.op === "set:strokeStyle") farbe = String(au.args[0]);
+      if (au.op === "set:lineWidth") breite = String(au.args[0]);
+      if (au.op === "stroke") striche.push({ farbe, breite: Number(breite) });
+    }
+    const erwaehnung = striche.find((s) => s.farbe === notiz);
+    const behauptung = striche.filter((s) => s.farbe === akzent);
+    expect(erwaehnung, "keine Erwähnungslinie").toBeDefined();
+    expect(behauptung.length, "keine Behauptungslinie").toBeGreaterThan(0);
+    for (const kante of behauptung) {
+      expect(erwaehnung!.breite, "Erwähnung ist nicht feiner als die Behauptung").toBeLessThan(kante.breite);
+    }
+  });
+
+  it("gibt die Evidenz auch dem Keil mit", async () => {
+    // Richtung an: die Behauptung wird gefüllt. Auch der Keil muss drei Belege
+    // breiter malen als einen — sonst verschwindet das Gewicht mit dem Schalter.
+    async function keilBreite(belege: number): Promise<number> {
+      const relationen = Array.from({ length: belege }, () => ({
+        source: "nordwind", target: "elena", relation: "betreut", memoryId: "n1",
+      }));
+      vi.stubGlobal("fetch", vi.fn(async () => new Response(JSON.stringify({
+        relations: relationen, memoriesByEntity: { nordwind: ["n1"], elena: ["n2"] },
+      }), { status: 200 })));
+      const a = note({ id: "n1", title: "Mandatsuebergabe", tags: [] });
+      const b = note({ id: "n2", title: "Vertreterliste", tags: [] });
+      const view = await zeichne([a, b]);
+      await bilder(12);
+      let k = 1;
+      for (const au of leinwand.letzterRahmen()) { if (au.op === "scale") { k = Number(au.args[0]); break; } }
+      const akzent = document.documentElement.style.getPropertyValue("--accent").trim();
+      const keile = keileImRahmen(leinwand.letzterRahmen(), akzent);
+      view.unmount();
+      expect(keile.length, "kein Keil gemalt").toBeGreaterThan(0);
+      return Math.max(...keile.map((x) => x.anfang)) * k;
+    }
+    const einer = await keilBreite(1);
+    const drei = await keilBreite(3);
+    expect(drei, `${einer} px gegen ${drei} px`).toBeGreaterThan(einer);
+  });
+});
+
+describe("Kanten-Tooltip: der Zeiger fragt, die Kante antwortet", () => {
+  const kl = (typ: string, x: number, y: number) =>
+    new (globalThis as unknown as { PointerEvent: typeof PointerEvent }).PointerEvent(typ, {
+      bubbles: true, cancelable: true, clientX: x, clientY: y,
+    });
+
+  function rahmenInfo() {
+    const a = leinwand.letzterRahmen();
+    let tx = 0, ty = 0, k = 1;
+    for (const au of a) {
+      if (au.op === "translate") { tx = Number(au.args[0]); ty = Number(au.args[1]); }
+      if (au.op === "scale") { k = Number(au.args[0]); break; }
+    }
+    const akzent = document.documentElement.style.getPropertyValue("--accent").trim();
+    const boeger: { farbe: string; ax: number; ay: number; cx: number; cy: number; bx: number; by: number }[] = [];
+    let farbe = "";
+    let pfad: { op: string; args: unknown[] }[] = [];
+    for (const au of a) {
+      if (au.op === "set:strokeStyle") farbe = String(au.args[0]);
+      else if (au.op === "beginPath") pfad = [];
+      else if (au.op === "moveTo" || au.op === "lineTo" || au.op === "quadraticCurveTo") pfad.push(au);
+      else if (au.op === "stroke") {
+        let mx = 0, my = 0;
+        for (const p of pfad) {
+          if (p.op === "moveTo") { mx = Number(p.args[0]); my = Number(p.args[1]); continue; }
+          if (p.op === "lineTo") {
+            // Eine gerade Kante: Die Mitte der Sehne ist ihre Mitte.
+            const bx = Number(p.args[0]), by = Number(p.args[1]);
+            boeger.push({ farbe, ax: mx, ay: my, cx: (mx + bx) / 2, cy: (my + by) / 2, bx, by });
+            mx = bx; my = by;
+          } else {
+            boeger.push({
+              farbe, ax: mx, ay: my,
+              cx: Number(p.args[0]), cy: Number(p.args[1]),
+              bx: Number(p.args[2]), by: Number(p.args[3]),
+            });
+            mx = Number(p.args[2]); my = Number(p.args[3]);
+          }
+        }
+        pfad = [];
+      }
+    }
+    return { tx, ty, k, boeger, akzent };
+  }
+
+  /** Der Zeiger steht auf der Mitte der Behauptungslinie. */
+  async function aufBehauptung(c: HTMLCanvasElement) {
+    const info = rahmenInfo();
+    const b = info.boeger.find((x) => x.farbe === info.akzent);
+    expect(b, "keine Behauptungslinie im Bild").toBeDefined();
+    const x = (0.25 * b!.ax + 0.5 * b!.cx + 0.25 * b!.bx) * info.k + info.tx;
+    const y = (0.25 * b!.ay + 0.5 * b!.cy + 0.25 * b!.by) * info.k + info.ty;
+    await act(async () => {
+      c.dispatchEvent(kl("pointermove", x, y));
+      await new Promise((r) => setTimeout(r, 60));
+    });
+    return { x, y };
+  }
+
+  const tooltip = (container: HTMLElement) =>
+    container.querySelector('[data-testid="graph-kante-tooltip"]');
+
+  it("sagt, wer über wen was behauptet — und wie viel dahintersteht", async () => {
+    const relationen = Array.from({ length: 3 }, () => ({
+      source: "nordwind", target: "elena", relation: "betreut", memoryId: "n1",
+    }));
+    vi.stubGlobal("fetch", vi.fn(async () => new Response(JSON.stringify({
+      relations: relationen, memoriesByEntity: { nordwind: ["n1"], elena: ["n2"] },
+    }), { status: 200 })));
+    const a = note({ id: "n1", title: "Mandatsuebergabe", tags: [] });
+    const b = note({ id: "n2", title: "Vertreterliste", tags: [] });
+
+    const view = await zeichne([a, b]);
+    await richteRichtung(view, false);
+    await bilder(12);
+    const c = view.container.querySelector('[data-testid="graph-canvas"]') as HTMLCanvasElement;
+    expect(tooltip(view.container), "steht der Tooltip schon ohne Zeiger?").toBeNull();
+
+    await aufBehauptung(c);
+    const kart = tooltip(view.container);
+    expect(kart, "kein Tooltip auf der Kante").not.toBeNull();
+    const text = kart!.textContent ?? "";
+    expect(text).toMatch(/nordwind/);
+    expect(text).toMatch(/elena/);
+    expect(text).toMatch(/betreut/);
+    expect(text).toMatch(/3 claims/);
+  });
+
+  it("nennt das Ende einer geplatzten Behauptung", async () => {
+    vi.stubGlobal("fetch", vi.fn(async () => new Response(JSON.stringify({
+      relations: [{
+        source: "nordwind", target: "elena", relation: "betreut", memoryId: "n1",
+        validFrom: Date.parse("2023-03-05"), validTo: Date.parse("2024-02-09"),
+      }],
+      memoriesByEntity: { nordwind: ["n1"], elena: ["n2"] },
+    }), { status: 200 })));
+    const a = note({ id: "n1", title: "Mandatsuebergabe", tags: [] });
+    const b = note({ id: "n2", title: "Vertreterliste", tags: [] });
+
+    const view = await zeichne([a, b]);
+    await richteRichtung(view, false);
+    await bilder(12);
+    const c = view.container.querySelector('[data-testid="graph-canvas"]') as HTMLCanvasElement;
+    await aufBehauptung(c);
+    const text = tooltip(view.container)?.textContent ?? "";
+    expect(text, text).toMatch(/ended 9 Feb 2024/);
+  });
+
+  it("weist eine Aehnlichkeit als das aus, was sie ist", async () => {
+    // Zwei Notizen, ein gemeinsames Wort: die Kante ist ein Reim, keine
+    // Aussage. Ihr Tooltip darf keinen Typ erfinden, aber ihre Masse nennen.
+    vi.stubGlobal("fetch", vi.fn(async () => new Response(JSON.stringify({
+      relations: [], memoriesByEntity: {},
+    }), { status: 200 })));
+    const a = note({ id: "n1", title: "Docker Swarm Upgrade", tags: ["infra"] });
+    const b = note({ id: "n2", title: "Docker Swarm Kosten", tags: ["infra"] });
+
+    const view = await zeichne([a, b], { aehnlichkeit: true });
+    await bilder(12);
+    const c = view.container.querySelector('[data-testid="graph-canvas"]') as HTMLCanvasElement;
+    const info = rahmenInfo();
+    // Die Aehnlichkeit ist die einzige Kante hier, und sie ist nicht die
+    // Akzentfarbe der Behauptung.
+    const linie = info.boeger.find((x) => x.farbe !== info.akzent);
+    expect(linie, `keine Aehnlichkeitskante gemalt: ${JSON.stringify(info.boeger)}`).toBeDefined();
+    const x = (0.25 * linie!.ax + 0.5 * linie!.cx + 0.25 * linie!.bx) * info.k + info.tx;
+    const y = (0.25 * linie!.ay + 0.5 * linie!.cy + 0.25 * linie!.by) * info.k + info.ty;
+    await act(async () => {
+      c.dispatchEvent(kl("pointermove", x, y));
+      await new Promise((r) => setTimeout(r, 60));
+    });
+    const text = tooltip(view.container)?.textContent ?? "";
+    expect(text.toLowerCase(), text).toContain("similar");
+    expect(text).not.toMatch(/betreut|claims/);
+  });
+
+  it("steht die Karte innerhalb der Leinwand — nicht einen Bildrahmen lang daneben", async () => {
+    // Gemessen 7.10. im echten Browser: der Inhalt war da, die Lage nicht. Der
+    // erste Rahmen nach dem Hover laeuft, BEVOR React die Karte ins DOM baut —
+    // eine Lage, die nur dort gesetzt wird, bleibt fuer immer auf ihrem
+    // Wegwerfwert. Also: Lage mit dem Inhalt setzen, nachziehen im Bild.
+    const relationen = [{ source: "nordwind", target: "elena", relation: "betreut", memoryId: "n1" }];
+    vi.stubGlobal("fetch", vi.fn(async () => new Response(JSON.stringify({
+      relations: relationen, memoriesByEntity: { nordwind: ["n1"], elena: ["n2"] },
+    }), { status: 200 })));
+    const a = note({ id: "n1", title: "Mandatsuebergabe", tags: [] });
+    const b = note({ id: "n2", title: "Vertreterliste", tags: [] });
+
+    const view = await zeichne([a, b]);
+    await richteRichtung(view, false);
+    await bilder(12);
+    const c = view.container.querySelector('[data-testid="graph-canvas"]') as HTMLCanvasElement;
+    await aufBehauptung(c);
+    const kart = view.container.querySelector('[data-testid="graph-kante-tooltip"]') as HTMLElement;
+    expect(kart, "keine Karte").not.toBeNull();
+    const treffer = /translate\((-?\d+(?:\.\d+)?)px, (-?\d+(?:\.\d+)?)px\)/.exec(kart.style.transform);
+    expect(treffer, `ungesetzte Lage: ${kart.style.transform}`).toBeTruthy();
+    const x = Number(treffer![1]);
+    const y = Number(treffer![2]);
+    // Die Leinwand ist 1000 x 700; die Karte ist 200 breit und rund 70 hoch.
+    expect(x).toBeGreaterThanOrEqual(108);
+    expect(x).toBeLessThanOrEqual(892);
+    expect(y).toBeGreaterThanOrEqual(20);
+    expect(y).toBeLessThanOrEqual(700 - 78);
+  });
+
+  it("zeigt im Baum, was eine Linie verbindet — ohne ihr einen Typ zu erfinden", async () => {
+    // Der Baum malt die Hierarchie selbst: Wurzel → Typ → Notiz. Diese Linien
+    // sagen nichts über zwei Begriffe aus, also steht an ihnen kein Etikett.
+    // Die Karte darf aber zeigen, was die Linie ist.
+    const a = note({ id: "t1", title: "Tagungspapier", tags: ["recht"] });
+    const b = note({ id: "t2", title: "Nachtrag", tags: ["recht"] });
+    const view = await zeichne([a, b]);
+    // Richtung aus: im Baum malt die Hierarchie ihre Kanten sonst als Keile,
+    // und diese Messung braucht Linien. Die Karte hängt nicht an der Richtung.
+    await richteRichtung(view, false);
+    const baum = view.container.querySelector('button[title^="Dendrogram"]') as HTMLButtonElement;
+    expect(baum, "der Baum-Knopf fehlt").toBeTruthy();
+    await act(async () => { baum.click(); await new Promise((r) => setTimeout(r, 300)); });
+    await bilder(12);
+
+    const c = view.container.querySelector('[data-testid="graph-canvas"]') as HTMLCanvasElement;
+    const info = rahmenInfo();
+    // Eine Baumkante, deren Mitte fern von jedem Knoten liegt: im Baum stehen
+    // die Ebenen dicht, und der Knoten gewinnt den Zeiger immer gegen die Kante.
+    const kreise = leinwand.letzterRahmen().filter((au) => au.op === "arc").map((au) => ({ x: Number(au.args[0]), y: Number(au.args[1]) }));
+    const segment = info.boeger
+      .map((x) => ({ x: (x.ax + x.bx) / 2, y: (x.ay + x.by) / 2, farbe: x.farbe }))
+      .find((m) => kreise.every((k) => Math.hypot(k.x - m.x, k.y - m.y) > 26));
+    expect(segment, `keine freie Baumkante gefunden — Linien: ${info.boeger.length}, Kreise: ${kreise.length}, k: ${info.k}`).toBeDefined();
+
+    await act(async () => {
+      c.dispatchEvent(kl("pointermove", segment!.x * info.k + info.tx, segment!.y * info.k + info.ty));
+      await new Promise((r) => setTimeout(r, 60));
+    });
+    const kart = tooltip(view.container);
+    expect(kart, "keine Karte auf einer Baumkante").not.toBeNull();
+    const text = kart!.textContent ?? "";
+    expect(text.toLowerCase()).toContain("hierarchy");
+    expect(text).not.toMatch(/betreut|claims/);
+    // Und: an der Hierarchie steht kein Kanten-Etikett.
+    expect(rahmenInfo().boeger.length).toBeGreaterThan(0);
+    expect(leinwand.texteImRahmen().map((t) => t.text).filter((t) => /^(mentions|betreut|related)$/i.test(t))).toEqual([]);
+  });
+
+  it("bleibt still auf einem Knoten und verstummt, wenn der Zeiger geht", async () => {
+    const relationen = [{ source: "nordwind", target: "elena", relation: "betreut", memoryId: "n1" }];
+    vi.stubGlobal("fetch", vi.fn(async () => new Response(JSON.stringify({
+      relations: relationen, memoriesByEntity: { nordwind: ["n1"], elena: ["n2"] },
+    }), { status: 200 })));
+    const a = note({ id: "n1", title: "Mandatsuebergabe", tags: [] });
+    const b = note({ id: "n2", title: "Vertreterliste", tags: [] });
+
+    const view = await zeichne([a, b]);
+    await richteRichtung(view, false);
+    await bilder(12);
+    const c = view.container.querySelector('[data-testid="graph-canvas"]') as HTMLCanvasElement;
+
+    await aufBehauptung(c);
+    expect(tooltip(view.container)).not.toBeNull();
+
+    // Auf dem Begriff selbst gehört der Zeiger dem Knoten, nicht der Kante.
+    const info = rahmenInfo();
+    const knoten = leinwand.letzterRahmen().filter((au) => au.op === "arc");
+    expect(knoten.length).toBeGreaterThan(0);
+    const kreis = knoten[0];
+    await act(async () => {
+      c.dispatchEvent(kl("pointermove", Number(kreis.args[0]) * info.k + info.tx, Number(kreis.args[1]) * info.k + info.ty));
+      await new Promise((r) => setTimeout(r, 60));
+    });
+    expect(tooltip(view.container), "Knoten und Kante streiten um denselben Zeiger").toBeNull();
+
+    await act(async () => {
+      c.dispatchEvent(kl("pointerleave", 5, 5));
+      await new Promise((r) => setTimeout(r, 60));
+    });
+    expect(tooltip(view.container)).toBeNull();
+  });
+});
+

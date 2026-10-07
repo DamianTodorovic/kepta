@@ -40,6 +40,8 @@ export const TEXTE: Record<string, string> = {
   "legend.mention": "mention",
   "legend.hierarchy": "hierarchy",
   "legend.similarity": "Similarity",
+  // Die Kantkarte: was eine Kante ist, wenn sie keinen Typ nennt.
+  "edge.similar": "similarity",
   "preview.close": "Close",
   "preview.edit": "Edit",
   "preview.copyText": "Copy text",
@@ -47,7 +49,7 @@ export const TEXTE: Record<string, string> = {
   "preview.open": "Open",
   "preview.part": "Part",
   "preview.confidence": "Confidence",
-  "hint.force": "Drag: a node stays where you drop it · Double-click: open the note · Wheel: zoom · Size = connections",
+  "hint.force": "Drag: a node stays where you drop it · Double-click: open the note · Wheel: zoom · Size = connections · Width = claims · Hover a link to read it",
   "hint.tree": "Root → type → entity → note · Drag: pan · Double-click: open the note · Wheel: zoom",
   "list.noMatch": "No match",
   "settings.display": "Display",

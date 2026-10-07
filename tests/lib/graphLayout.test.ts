@@ -23,6 +23,13 @@ import {
   kantZaehlung,
   entitaetsNetz,
   richtungsBand,
+  kantenEtikett,
+  dickeBand,
+  DICKE_BAENDER,
+  kanteBei,
+  beulenLenke,
+  BEULE_MAX,
+  kantenMitte,
   EDGE_LOD_THRESHOLD,
   EDGE_LOD_ZOOM,
   resolveCollisions,
@@ -205,6 +212,239 @@ describe("buildEdges: ueber einen Index statt ueber alle Paare", () => {
   });
 });
 
+
+// P-2: eine Kante ist nicht nur ein Strich. Sie sagt, WAS behauptet wird
+// (Etikett), WIE VIEL dahintersteht (Dicke aus Evidenz), und sie ist anfassbar
+// (Treffer auf der Linie, nicht nur am Knoten). Alles drei war bisher nicht
+// sichtbar: der Relationsname wurde in der Fläche auf [quelle, ziel] reduziert,
+// die Dicke war eine Konstante, und kanteBei existierte nicht.
+describe("Kantengewicht: was hinter einer Kante steht", () => {
+  it("trägt eine echte Kante den Typ ihrer Aussage", () => {
+    const a = note({ title: "Alpha" }); const b = note({ title: "Beta" });
+    const e = buildEdges([a, b], { realPairs: [[a.id, b.id, { relation: "betreut" }]] });
+    expect(e).toHaveLength(1);
+    expect(e[0].relation).toBe("betreut");
+    expect(e[0].belege).toBe(1);
+    expect(e[0].typen).toBe(1);
+  });
+
+  it("zwei Aussagen über demselben Paar sind zwei Belege", () => {
+    const a = note({ title: "Alpha" }); const b = note({ title: "Beta" });
+    const e = buildEdges([a, b], {
+      realPairs: [
+        [a.id, b.id, { relation: "betreut" }],
+        [b.id, a.id, { relation: "betreut" }],
+      ],
+    });
+    expect(e).toHaveLength(1);
+    expect(e[0].belege).toBe(2);
+    // Derselbe Typ zweimal ist kein zweiter Typ.
+    expect(e[0].typen).toBe(1);
+  });
+
+  it("verschiedene Typen über einem Paar: der erste gibt das Etikett, die Zahl den Rest", () => {
+    const a = note({ title: "Alpha" }); const b = note({ title: "Beta" });
+    const e = buildEdges([a, b], {
+      realPairs: [
+        [a.id, b.id, { relation: "betreut" }],
+        [a.id, b.id, { relation: "meldet an" }],
+        [a.id, b.id, { relation: "betreut" }],
+      ],
+    });
+    expect(e).toHaveLength(1);
+    expect(e[0].relation).toBe("betreut");
+    expect(e[0].typen).toBe(2);
+    expect(e[0].belege).toBe(3);
+  });
+
+  it("eine Kante ohne Typ bleibt typlos — erfunden wird hier nichts", () => {
+    const a = note({ title: "Alpha" }); const b = note({ title: "Beta" });
+    const e = buildEdges([a, b], { realPairs: [[a.id, b.id, { relation: null }]] });
+    expect(e[0].relation ?? null).toBeNull();
+    expect(e[0].typen ?? 0).toBe(0);
+    expect(e[0].belege).toBe(1);
+  });
+
+  it("eine Aehnlichkeitskante hat weder Typ noch Beleg", () => {
+    const a = note({ title: "Docker Setup", tags: ["infra"] });
+    const b = note({ title: "Docker Setup", tags: ["infra"] });
+    const e = buildEdges([a, b]);
+    expect(e).toHaveLength(1);
+    expect(e[0].real).toBe(false);
+    expect(e[0].relation ?? null).toBeNull();
+    expect(e[0].belege ?? 0).toBe(0);
+  });
+});
+
+describe("kantenEtikett — der Text an der Linie", () => {
+  const behauptung = (over: Partial<LayoutEdge> = {}): LayoutEdge => ({
+    source: "a", target: "b", strength: 0.85, real: true, ...over,
+  });
+
+  it("nennt den Typ einer Behauptung", () => {
+    expect(kantenEtikett(behauptung({ relation: "betreut", typen: 1 }))).toBe("betreut");
+  });
+
+  it("zählt weitere Typen dazu, statt sie zu verschweigen", () => {
+    expect(kantenEtikett(behauptung({ relation: "betreut", typen: 3 }))).toBe("betreut +2");
+  });
+
+  it("gibt nichts her für eine Kante ohne Typ", () => {
+    expect(kantenEtikett(behauptung({ relation: null }))).toBeNull();
+    expect(kantenEtikett(behauptung({ relation: "   " }))).toBeNull();
+    expect(kantenEtikett({ source: "a", target: "b", strength: 0.4, real: false })).toBeNull();
+  });
+
+  it("schreibt die Wörter des Systems nicht an die Linie", () => {
+    // „mentions" setzt der Store selbst für jeden Wiki-Link (store.ts
+    // verknuepfeNotiz), „related" ist sein Füllwort für eine leere Aussage
+    // (addRelation). Beides ist keine Behauptung eines Menschen — und jedes
+    // davon belegt eine Stelle im Etikett-Budget, die einer echten Aussage
+    // fehlt. Die Linie selbst sagt schon, was sie ist.
+    expect(kantenEtikett(behauptung({ relation: "mentions" }))).toBeNull();
+    expect(kantenEtikett(behauptung({ relation: "RELATED" }))).toBeNull();
+    expect(kantenEtikett(behauptung({ relation: "betreut" }))).toBe("betreut");
+    // Ein Mensch, der „mentions" als Typ tippt, verliert damit den Zusatz nicht.
+    expect(kantenEtikett(behauptung({ relation: "mentions", typen: 2 }))).toBeNull();
+  });
+
+  it("kürzt einen langen Typ, statt das Bild zuzuschreiben", () => {
+    const etikett = kantenEtikett(behauptung({ relation: "ist verantwortlich fuer die mandatsuebergabe", typen: 1 }));
+    expect(etikett).not.toBeNull();
+    expect(etikett!.length).toBeLessThanOrEqual(19);
+    expect(etikett!.endsWith("…")).toBe(true);
+  });
+});
+
+describe("dickeBand — die Evidenz wird Breite", () => {
+  const echt = (belege?: number): LayoutEdge => ({
+    source: "a", target: "b", strength: 0.85, real: true, belege,
+  });
+  const verme = (staerke: number): LayoutEdge => ({
+    source: "a", target: "b", strength: staerke, real: false,
+  });
+
+  it("waechst mit den Belegen und bleibt oben gedeckelt", () => {
+    expect(dickeBand(echt(1))).toBe(0);
+    expect(dickeBand(echt(2))).toBe(1);
+    expect(dickeBand(echt(3))).toBe(2);
+    expect(dickeBand(echt(40))).toBe(2);
+  });
+
+  it("eine Kante ohne Belegzähler ist die duennste", () => {
+    expect(dickeBand(echt())).toBe(0);
+    expect(dickeBand(echt(0))).toBe(0);
+  });
+
+  it("teilt die Aehnlichkeit in drei Stufen nach ihrer Masse", () => {
+    expect(dickeBand(verme(0.3))).toBe(0);
+    expect(dickeBand(verme(0.6))).toBe(1);
+    expect(dickeBand(verme(0.9))).toBe(2);
+  });
+
+  it("nie ausserhalb der Bänder, egal was reinkommt", () => {
+    for (const e of [echt(1), echt(9), verme(0), verme(1e9)]) {
+      expect(dickeBand(e)).toBeGreaterThanOrEqual(0);
+      expect(dickeBand(e)).toBeLessThan(DICKE_BAENDER);
+    }
+  });
+});
+
+describe("kanteBei — die Linie ist anfassbar", () => {
+  const knoten = (id: string, x: number, y: number): LayoutNode => ({
+    id, x, y, vx: 0, vy: 0, r: 10, pinned: false,
+  });
+  const kante = (source: string, target: string, real = true): LayoutEdge => ({
+    source, target, strength: 0.85, real,
+  });
+
+  it("trifft eine gerade Linie in ihrer Mitte", () => {
+    const index = new Map([["a", knoten("a", 0, 0)], ["b", knoten("b", 100, 0)]]);
+    const e = kante("a", "b");
+    expect(kanteBei(index, [e], 50, 0, 5, () => "gerade")).toBe(e);
+  });
+
+  it("folgt der gekrümmten Behauptung, nicht der Sehne", () => {
+    // Die Fläche malt die Behauptung als Bogen. Ein Treffertest auf der Sehne
+    // würde ins Leere greifen, genau dort, wo jemand auf die Kante zeigt.
+    const index = new Map([["a", knoten("a", 0, 0)], ["b", knoten("b", 100, 0)]]);
+    const e = kante("a", "b");
+    const beule = beulenLenke(100);
+    const hoehe = 0.25 * 2 * beule; // B(0.5) der Senkrechten nach
+    expect(kanteBei(index, [e], 50, hoehe, 3)).toBe(e);
+    expect(kanteBei(index, [e], 50, 0, 3), "die Sehne ist nicht die Kante").toBeNull();
+  });
+
+  it("verfehlt, wenn der Punkt ausserhalb der Trefferweite liegt", () => {
+    const index = new Map([["a", knoten("a", 0, 0)], ["b", knoten("b", 100, 0)]]);
+    expect(kanteBei(index, [kante("a", "b")], 50, 40, 5, () => "gerade")).toBeNull();
+  });
+
+  it("gibt die nähere von zwei Kanten", () => {
+    const index = new Map([
+      ["a", knoten("a", 0, 0)], ["b", knoten("b", 100, 0)], ["c", knoten("c", 0, 60)],
+    ]);
+    const waagerecht = kante("a", "b");
+    const senkrecht = kante("a", "c");
+    // (50|4) ist 4 Einheiten von der waagerechten, 50 von der senkrechten Kante.
+    expect(kanteBei(index, [senkrecht, waagerecht], 50, 4, 6, () => "gerade")).toBe(waagerecht);
+  });
+
+  it("greift nur, wenn beide Enden im Bild stehen", () => {
+    const index = new Map([["a", knoten("a", 0, 0)]]);
+    expect(kanteBei(index, [kante("a", "fehlt")], 50, 0, 5, () => "gerade")).toBeNull();
+  });
+
+  it("endet an der Knotenscheibe, nicht dahinter", () => {
+    // Zwischen zwei Scheiben mit Radius 10 ist die Linie nur noch von 10 bis 90
+    // gemalt. Wer in der Scheibe zeigt, trifft den Knoten — die Kante darf dort
+    // nicht gewinnen, sonst Tooltip und Knoten streiten um denselben Zeiger.
+    const index = new Map([["a", knoten("a", 0, 0)], ["b", knoten("b", 100, 0)]]);
+    expect(kanteBei(index, [kante("a", "b")], 2, 0, 5, () => "gerade")).toBeNull();
+  });
+
+  it("sucht 12 000 Kanten schneller, als ein Bild dauert", () => {
+    const index = new Map<string, LayoutNode>();
+    const kanten: LayoutEdge[] = [];
+    for (let i = 0; i < 6000; i++) {
+      index.set(`x${i}`, knoten(`x${i}`, i * 3, (i % 7) * 11));
+      index.set(`y${i}`, knoten(`y${i}`, i * 3 + 40, ((i + 3) % 7) * 11));
+      kanten.push(kante(`x${i}`, `y${i}`, false));
+    }
+    // Eine Sonde weitab vom Gitter: sie kann nur diese eine Kante treffen, und
+    // gefunden wird sie erst nach dem vollen Durchlauf — genau wie ein
+    // Zeigerstrich über ein Feld, das bis an die Obergrenze gefüllt ist.
+    index.set("sonde-a", knoten("sonde-a", 0, 5000));
+    index.set("sonde-b", knoten("sonde-b", 20000, 5000));
+    const sonde = kante("sonde-a", "sonde-b", false);
+    kanten.push(sonde);
+    expect(kanteBei(index, kanten, 10000, 5000, 6, () => "gerade")).toBe(sonde);
+    const start = Date.now();
+    for (let t = 0; t < 20; t++) kanteBei(index, kanten, 10000, 5000, 6, () => "gerade");
+    const dauer = (Date.now() - start) / 20;
+    expect(dauer, `${dauer.toFixed(2)} ms pro Zeigerbewegung`).toBeLessThan(4);
+  });
+});
+
+describe("Kantengeometrie: malen und greifen rechnen dieselbe Kurve", () => {
+  it("die Beule wächst mit der Länge und ist gedeckelt", () => {
+    expect(beulenLenke(50)).toBeCloseTo(6, 5);
+    expect(beulenLenke(400)).toBe(BEULE_MAX);
+    expect(beulenLenke(0)).toBe(0);
+  });
+
+  it("die Mitte liegt auf dem Bogen, den die Fläche malt", () => {
+    const a = { x: 0, y: 0 };
+    const b = { x: 100, y: 0 };
+    const gerade = kantenMitte(a, b, 0);
+    expect(gerade.x).toBeCloseTo(50, 5);
+    expect(gerade.y).toBeCloseTo(0, 5);
+    const gebogen = kantenMitte(a, b, 10);
+    expect(Math.abs(gebogen.y)).toBeCloseTo(5, 5);
+    // Der Kontrollpunkt derselben Kurve liegt doppelt so weit draussen.
+    expect(Math.abs(gebogen.y) * 2).toBeCloseTo(10, 5);
+  });
+});
 
 // Die Richtung einer Behauptung ist eine Aussage: „Elena — betreut — Nordwind"
 // ist nicht „Nordwind — betreut — Elena". Bis hierhin ging die Richtung im

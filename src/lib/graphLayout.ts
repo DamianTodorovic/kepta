@@ -15,6 +15,15 @@
 import type { Memory } from "../types";
 import type { Gueltigkeit } from "./graphTime";
 
+/**
+ * Was ueber einem Paar steht: wie lange es gilt und WAS behauptet wird. Der Typ
+ * ist hier optional, weil nicht jede echte Kante einen nennt — eine Erwaehnung
+ * fuehrt die Notiz zum Begriff, ohne etwas ueber zwei Begriffe zu sagen.
+ */
+export interface PaarInfo extends Gueltigkeit {
+  relation?: string | null;
+}
+
 export interface LayoutNode {
   id: string;
   x: number;
@@ -40,6 +49,16 @@ export interface LayoutEdge {
    */
   validFrom?: number | null;
   validTo?: number | null;
+  /**
+   * Was behauptet wird — „betreut", „meldet an". Das Etikett an der Linie.
+   * Fehlend bei Aehnlichkeit und bei Erwähnungen: die nennen keinen Typ, und
+   * erfinden darf ihn hier niemand.
+   */
+  relation?: string | null;
+  /** Wie viele VERSCHIEDENE Typen über dem Paar liegen. 1 = eine Behauptung. */
+  typen?: number;
+  /** Wie viele Aussagen das Paar tragen. Die Evidenz hinter der Dicke. */
+  belege?: number;
 }
 
 export interface Bounds {
@@ -147,9 +166,10 @@ export function titleSimilarity(a: string, b: string): number {
 export interface EdgeOptions {
   /**
    * Echte Paare aus der Graph-DB — sie ueberleben jede Kuerzung. Das dritte
-   * Element ist das Gueltigkeitsfenster der Aussage, wenn eine dabei ist.
+   * Element fuehrt, was ueber dem Paar steht: sein Gueltigkeitsfenster und,
+   * wenn die Aussage einen nennt, ihren Typ.
    */
-  realPairs?: readonly (readonly [string, string, Gueltigkeit?])[];
+  realPairs?: readonly (readonly [string, string, PaarInfo?])[];
   /**
    * Aehnlichkeitskanten ueberhaupt suchen. Standard: ja. Die Flaeche schaltet
    * sie ab — bei 75 Notizen und 891 Kanten war fast alles Aehnlichkeit, und die
@@ -166,6 +186,19 @@ export interface EdgeOptions {
    * unsichtbar im Bild.
    */
   knotenIds?: Iterable<string>;
+}
+
+/**
+ * Die Woerter, die der Store selbst setzt: „mentions" fuer jeden Wiki-Link
+ * (verknuepfeNotiz), „related" als Fuellwort fuer eine Aussage ohne Typ
+ * (addRelation). Sie sind keine Behauptung eines Menschen — und die Form der
+ * Linie sagt bereits, was sie ist. Ein Etikett davon kostet dieselbe Stelle im
+ * Budget wie eine echte Aussage.
+ */
+const SYSTEM_WOERTER = new Set(["mentions", "related"]);
+
+function systemWort(name: string): boolean {
+  return SYSTEM_WOERTER.has(name.toLowerCase());
 }
 
 const DEFAULT_MAX_BUCKET = 140;
@@ -186,6 +219,7 @@ export function buildEdges(memories: readonly Memory[], opts: EdgeOptions = {}):
   const belegt = new Set<string>();
   const echte = new Map<string, LayoutEdge>();
   const fenster = new Map<string, Gueltigkeit>();
+  const typen = new Map<string, Set<string>>();
   const schluessel = (a: string, b: string) => (a < b ? `${a}|${b}` : `${b}|${a}`);
 
   /**
@@ -206,16 +240,37 @@ export function buildEdges(memories: readonly Memory[], opts: EdgeOptions = {}):
   };
   const UNBEFRISTET: Gueltigkeit = { validFrom: null, validTo: null };
 
-  for (const [a, b, gueltigkeit] of opts.realPairs ?? []) {
+  for (const [a, b, info] of opts.realPairs ?? []) {
     if (a === b || !ids.has(a) || !ids.has(b)) continue;
     const k = schluessel(a, b);
-    if (!echte.has(k)) {
-      const kant: LayoutEdge = { source: a, target: b, strength: 0.85, real: true };
+    let kant = echte.get(k);
+    if (!kant) {
+      kant = { source: a, target: b, strength: 0.85, real: true };
       echte.set(k, kant);
       belegt.add(k);
       out.push(kant);
     }
-    fenster.set(k, vereine(fenster.get(k), gueltigkeit ?? UNBEFRISTET));
+    // Jeder Beleg zaehlt, auch der zweite desselben Typs: drei Notizen, die
+    // dieselbe Behauptung tragen, sind drei Belege — und der Strich darf dicker
+    // sein als einer, hinter dem nur eine steht.
+    kant.belege = (kant.belege ?? 0) + 1;
+    const name = typeof info?.relation === "string" ? info.relation.trim() : "";
+    if (name) {
+      let namen = typen.get(k);
+      if (!namen) { namen = new Set(); typen.set(k, namen); }
+      // Zaehlen und benennen darf nur, was ein Mensch gesagt hat. „mentions"
+      // setzt der Store fuer jeden Wiki-Link selbst — mitzaehlen, aber nicht
+      // das Etikett stellen.
+      if (!systemWort(name)) {
+        namen.add(name);
+        if (kant.relation === undefined) kant.relation = name;
+      } else if (kant.relation === undefined) {
+        // Der Systemtyp bleibt sichtbar, wenn weiter nichts ueber dem Paar
+        // steht: die Kantkarte darf nicht so tun, als kenne sie den Typ nicht.
+        kant.relation = name;
+      }
+    }
+    fenster.set(k, vereine(fenster.get(k), info ?? UNBEFRISTET));
   }
   // Die Gültigkeit kommt erst zum Schluss auf die Kante, weil sie über alle
   // Aussagen des Pairs hinweg vereint werden muss. Ein unbefristetes Ergebnis
@@ -223,11 +278,12 @@ export function buildEdges(memories: readonly Memory[], opts: EdgeOptions = {}):
   // eine Aehnlichkeitskante hat ohnehin keine Gültigkeit.
   echte.forEach((kant, k) => {
     const f = fenster.get(k);
-    if (!f) return;
-    if (f.validFrom != null || f.validTo != null) {
+    if (f && (f.validFrom != null || f.validTo != null)) {
       kant.validFrom = f.validFrom ?? null;
       kant.validTo = f.validTo ?? null;
     }
+    const namen = typen.get(k);
+    if (namen) kant.typen = namen.size;
   });
 
   if (opts.ahnlichkeit === false) return out;
@@ -921,6 +977,182 @@ export function richtungsBand(
     rechts.push({ x: p.x - normX * halbe, y: p.y - normY * halbe });
   }
   return [...links, ...rechts.reverse()];
+}
+
+// ---------- Etikett, Dicke und Griff einer Kante ----------
+
+/**
+ * Wie viele Dickenstufen die Flaeche malt. Mehr als drei sind auf dem Schirm
+ * nicht zu unterscheiden, und jede Stufe ist ein eigener gebuendelter Pfad.
+ */
+export const DICKE_BAENDER = 3;
+
+/**
+ * In welches Dickenband eine Kante gehoert.
+ *
+ * Bei einer Behauptung ist das die Evidenz: drei Aussagen ueber demselben Paar
+ * sind ein dickerer Strich als eine. Bei einer Aehnlichkeit ist die Masse selbst
+ * das Gewicht — 0,9 Uebereinstimmung ist etwas anderes als 0,3, und das Bild
+ * sollte es zeigen. Erfindet wird hier nichts: ohne Belegzaehler bleibt die
+ * Kante in der duennsten Stufe.
+ */
+export function dickeBand(e: LayoutEdge): number {
+  if (e.real) return Math.min(DICKE_BAENDER - 1, Math.max(0, (e.belege ?? 1) - 1));
+  if (e.strength >= 0.7) return DICKE_BAENDER - 1;
+  if (e.strength >= 0.5) return 1;
+  return 0;
+}
+
+/** Laengstes Kanten-Etikett in Zeichen — laenger passt nicht zwischen zwei Knoten. */
+export const ETIKETT_MAX_ZEICHEN = 18;
+
+/**
+ * Was an der Linie steht: der Typ der Aussage, mit den uebrigen Typen als Zahl
+ * dahinter. Kein Typ, kein Text — eine Erwaehnung oder ein Reim behauptet
+ * nichts, und das Etikett einer erdachten Beziehung waere eine Luege im Bild.
+ */
+export function kantenEtikett(e: LayoutEdge, maxZeichen = ETIKETT_MAX_ZEICHEN): string | null {
+  const name = typeof e.relation === "string" ? e.relation.trim() : "";
+  if (!name || systemWort(name)) return null;
+  const mehr = (e.typen ?? 1) - 1;
+  const anhang = mehr > 0 ? ` +${mehr}` : "";
+  const raum = Math.max(1, maxZeichen - anhang.length);
+  const kern = name.length > raum ? `${name.slice(0, raum - 1)}…` : name;
+  return `${kern}${anhang}`;
+}
+
+/** Staerkste Ausbuchtung einer Kante — dieselbe Zahl, die gemalt und gegriffen wird. */
+export const BEULE_MAX = 16;
+
+/** Wie weit eine Kante der Senkrechten ausweicht: ein Viertel ihrer Laenge, gedeckelt. */
+export function beulenLenke(laenge: number, max = BEULE_MAX): number {
+  return Math.min(max, laenge * 0.12);
+}
+
+/** Der Kontrollpunkt, den die Flaeche fuer eine Kante nutzt. */
+function bogenschalt(a: { x: number; y: number }, b: { x: number; y: number }, beule: number) {
+  const dx = b.x - a.x;
+  const dy = b.y - a.y;
+  const sehne = Math.hypot(dx, dy) || 1;
+  return {
+    x: (a.x + b.x) / 2 - (dy / sehne) * beule,
+    y: (a.y + b.y) / 2 + (dx / sehne) * beule,
+  };
+}
+
+/**
+ * Der Punkt einer Kante, an dem ihr Etikett steht: die Mitte des Bogens, nicht
+ * der Sehne. Etikett und Griff muessen DEMSELBEN Zug folgen, den die Flaeche
+ * malt — sonst zeigt jemand auf eine Linie und faellt ins Leere.
+ */
+export function kantenMitte(
+  a: { x: number; y: number },
+  b: { x: number; y: number },
+  beule: number
+): { x: number; y: number } {
+  const s = bogenschalt(a, b, beule);
+  return {
+    x: 0.25 * a.x + 0.5 * s.x + 0.25 * b.x,
+    y: 0.25 * a.y + 0.5 * s.y + 0.25 * b.y,
+  };
+}
+
+/** Wie nah ein Zeiger an einer Kante sein muss, damit sie gegriffen gilt (Bildpunkte). */
+export const KANTEN_GREIF_PX = 6;
+
+const STUTZEN_BEI_GREIF = 14;
+
+/**
+ * Naechste Kante zu einem Weltpunkt, innerhalb der Trefferweite — sonst null.
+ *
+ * Drei Dinge machen das mehr als eine Sehnenlaenge:
+ *  1. Die gemalte Kante ist ein Bogen. Der Abstand wird entlang des Bogens
+ *     gemessen, mit demselben Kontrollpunkt, mit dem auch gezeichnet wird.
+ *  2. Die Kante hoert an den Knotenscheiben auf. Wer in einer Scheibe zeigt,
+ *     will den Knoten, nicht die Kante dahinter.
+ *  3. `malweise` ist dieselbe Antwort, die der Zeichencode gibt: „gerade" oder
+ *     „bogen" — oder null, wenn die Kante gar nicht im Bild steht. Eine Kante,
+ *     die man nicht sieht, darf keinen Tooltip gewinnen.
+ *
+ * Vor der Rechnung liegt ein Rechtecktest: ein Zeigerstrich ueber einem vollen
+ * Feld trifft nur Kanten in seiner Nachbarschaft, und die anderen werden mit
+ * vier Vergleichen abgewiesen.
+ */
+export function kanteBei(
+  index: Map<string, LayoutNode>,
+  edges: readonly LayoutEdge[],
+  wx: number,
+  wy: number,
+  toleranz = KANTEN_GREIF_PX,
+  malweise: (e: LayoutEdge) => "gerade" | "bogen" | null = () => "bogen"
+): LayoutEdge | null {
+  let treffer: LayoutEdge | null = null;
+  let beste = Infinity;
+  for (const e of edges) {
+    const wie = malweise(e);
+    if (wie === null) continue;
+    const a = index.get(e.source);
+    const b = index.get(e.target);
+    if (!a || !b) continue;
+    const minX = Math.min(a.x, b.x) - toleranz - BEULE_MAX;
+    const maxX = Math.max(a.x, b.x) + toleranz + BEULE_MAX;
+    if (wx < minX || wx > maxX) continue;
+    const minY = Math.min(a.y, b.y) - toleranz - BEULE_MAX;
+    const maxY = Math.max(a.y, b.y) + toleranz + BEULE_MAX;
+    if (wy < minY || wy > maxY) continue;
+
+    const beule = wie === "gerade" ? 0 : beulenLenke(Math.hypot(b.x - a.x, b.y - a.y));
+    const s = bogenschalt(a, b, beule);
+    const punkt = (t: number) => {
+      const u = 1 - t;
+      return {
+        x: u * u * a.x + 2 * u * t * s.x + t * t * b.x,
+        y: u * u * a.y + 2 * u * t * s.y + t * t * b.y,
+      };
+    };
+
+    // Bogenlaengen entlang der Stuetzstellen, damit das Ende an der SCHEIBE
+    // abgeschnitten wird und nicht an der Sehne.
+    const stuetzen = STUTZEN_BEI_GREIF + 1;
+    const bogen: number[] = [0];
+    let letzter = punkt(0);
+    let laenge = 0;
+    for (let i = 1; i < stuetzen; i++) {
+      const p = punkt(i / (stuetzen - 1));
+      laenge += Math.hypot(p.x - letzter.x, p.y - letzter.y);
+      bogen.push(laenge);
+      letzter = p;
+    }
+    const anfang = a.r;
+    const ende = laenge - b.r;
+    if (!(ende > anfang)) continue;
+
+    for (let i = 0; i + 1 < stuetzen; i++) {
+      if (bogen[i + 1] < anfang || bogen[i] > ende) continue;
+      const span = bogen[i + 1] - bogen[i] || 1;
+      const von = i + Math.max(0, (anfang - bogen[i]) / span);
+      const bis = i + Math.min(1, (ende - bogen[i]) / span);
+      const q0 = punkt(von / (stuetzen - 1));
+      const q1 = punkt(bis / (stuetzen - 1));
+      const d = distanzPunktStrecke(q0, q1, wx, wy);
+      if (d < beste) { beste = d; treffer = e; }
+    }
+  }
+  return beste <= toleranz ? treffer : null;
+}
+
+function distanzPunktStrecke(
+  p0: { x: number; y: number },
+  p1: { x: number; y: number },
+  wx: number,
+  wy: number
+): number {
+  const dx = p1.x - p0.x;
+  const dy = p1.y - p0.y;
+  const l2 = dx * dx + dy * dy;
+  if (l2 === 0) return Math.hypot(wx - p0.x, wy - p0.y);
+  const t = Math.max(0, Math.min(1, ((wx - p0.x) * dx + (wy - p0.y) * dy) / l2));
+  return Math.hypot(wx - (p0.x + t * dx), wy - (p0.y + t * dy));
 }
 
 // ---------- Eine Ontologie für beide Ansichten ----------

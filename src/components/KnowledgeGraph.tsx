@@ -15,11 +15,17 @@ import {
   toWorld,
   zoomAt,
   nodeAt,
+  kanteBei,
   reheat,
   nurEchteKanten,
   kantZaehlung,
   richtungsBand,
+  kantenEtikett,
+  kantenMitte,
+  beulenLenke,
+  dickeBand,
   ENTITAETS_PRAEFIX,
+  KANTEN_GREIF_PX,
   type LayoutEdge,
   type LayoutNode,
   type Simulation,
@@ -44,6 +50,29 @@ const RICHTUNG_KEY = "kepta_graph_richtung";
  * Spitze weniger als ein Pixel — dann bleibt die Linie, was sie ist.
  */
 const KEIL_AB_ZOOM = 0.5;
+/**
+ * Ab diesem Zoom steht der Typ der Aussage an der Linie. Darunter wäre das
+ * Etikett kleiner als ein Leser — weit herausgezoomt will man die Form des
+ * Netzes sehen, nicht tausend Worte darüber.
+ */
+const KANTEN_ETIKETT_AB_ZOOM = 0.9;
+/** So viele Kanten-Etiketten gleichzeitig. Die Knotentitel haben Vorrang. */
+const MAX_KANTEN_ETIKETTEN = 40;
+/**
+ * Linienbreite je Kantenart in Bildpunkten, indexiert nach dem Evidenzband.
+ *
+ * Eine Erwaehnung hat immer genau einen Beleg (die Notiz, die den Begriff
+ * nennt) und bleibt deshalb in einer Stufe — die Rangfolge Erwähnung feiner als
+ * Behauptung ist keine Geschmacksfrage, sondern die Aussage selbst.
+ */
+const BREITE_PX: Record<string, readonly number[]> = {
+  vermutung: [0.8, 1.05, 1.35],
+  erwaehnung: [1],
+  abgelaufen: [1.7, 2.4, 3.2],
+  behauptung: [1.7, 2.4, 3.2],
+};
+/** Keilbreite je Band: [am Ausgang, am Ziel], in Bildpunkten. */
+const KEIL_PX: readonly (readonly [number, number])[] = [[2.4, 0.8], [3.3, 1.05], [4.2, 1.3]];
 
 interface KnowledgeGraphProps {
   memories: Memory[];
@@ -72,6 +101,94 @@ interface GraphApi {
     validTo?: number | null;
   }[];
   memoriesByEntity: Record<string, string[]>;
+}
+
+/**
+ * Was der Zeiger auf einer Kante erfahrt. Die Felder sind bereits gelesen und
+ * benannt — die Karte zeigt keine Interna, sondern wer ueber wen was sagt, wie
+ * oft, und wie lange.
+ */
+interface KantenInfo {
+  quelle: string;
+  ziel: string;
+  /** "claim" | "mention" | "similar" | "hierarchy" — dieselbe Vierheit wie das Bild. */
+  art: "claim" | "mention" | "similar" | "hierarchy";
+  relation: string | null;
+  typen: number;
+  belege: number;
+  staerke: number;
+  validFrom: number | null;
+  validTo: number | null;
+  /**
+   * Lage der Karte auf der Leinwand, im Moment des Greifens.
+   *
+   * Der erste Rahmen nach dem Hover laeuft, bevor React die Karte ins DOM
+   * gebaut hat — eine Lage, die nur dort gesetzt wird, bleibt fuer immer
+   * außerhalb. Der Zeichencode schiebt sie danach weiter, weil die Linie sich
+   * mitbewegt.
+   */
+  x: number;
+  y: number;
+}
+
+/**
+ * Wo die Kantkarte sitzt: unter der Mitte der Linie, innerhalb der Leinwand.
+ *
+ * Eine Karte, die halb aus dem Bild laeuft, ist halb lesbar — also wird an den
+ * Rand gequetscht, statt zu zeigen, was nicht passt.
+ */
+function kartenLage(
+  x: number,
+  y: number,
+  masse: { w: number; h: number },
+  el?: { offsetWidth: number; offsetHeight: number } | null
+): { x: number; y: number } {
+  const halbe = (el?.offsetWidth || 200) / 2;
+  const hoch = el?.offsetHeight || 70;
+  return {
+    x: Math.min(Math.max(x, halbe + 8), Math.max(halbe + 8, masse.w - halbe - 8)),
+    y: Math.min(y + 10, Math.max(20, masse.h - hoch - 8)),
+  };
+}
+
+/**
+ * Ob eine Kante gerade gemalt wird. Der Baum kennt nur Geraden — ausser die
+ * Richtung ist an, dann wird auch die Hierarchie zum Keil auf einem Bogen.
+ * Griff und Strich muessen derselben Kurve folgen.
+ */
+function kanteIstGerade(e: LayoutEdge, baum: boolean, keilAn: boolean): boolean {
+  return baum ? !keilAn : !e.real;
+}
+
+/**
+ * Die beiden Zeilen der Kantkarte — rein, damit sie pruefbar ist.
+ *
+ * "3 claims" ist die Evidenz, nicht die Linie: hinter einem Strich koennen drei
+ * Notizen stehen, die dasselbe behaupten. "ended" statt "until", sobald die
+ * Frist gelaufen ist — eine Karte, die "bis Februar 2024" verspricht, waehrend
+ * laengst Juni 2026 ist, sagt etwas Falsches.
+ */
+export function kantenZeilen(i: KantenInfo): { grund: string; frist: string | null } {
+  const grund =
+    i.art === "claim"
+      ? `${i.relation ?? uiT("legend.claim")}${i.typen > 1 ? ` +${i.typen - 1}` : ""} · ${i.belege} ${
+          i.belege === 1 ? "claim" : "claims"
+        }`
+      : i.art === "mention"
+        ? uiT("legend.mention")
+        : i.art === "similar"
+          ? `${uiT("edge.similar")} ${Math.round(Math.max(0, Math.min(1, i.staerke)) * 100)} %`
+          : uiT("legend.hierarchy");
+
+  const tag = (ms: number) =>
+    new Date(ms).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" });
+  let frist: string | null = null;
+  if (i.validTo != null && i.validTo > 0) {
+    frist = `${i.validTo < Date.now() ? "ended" : "until"} ${tag(i.validTo)}`;
+  } else if (i.validFrom != null && i.validFrom > 0) {
+    frist = `since ${tag(i.validFrom)}`;
+  }
+  return { grund, frist };
 }
 
 const DEFAULT_TYPE_COLORS: Record<string, string> = {
@@ -197,6 +314,22 @@ export function KnowledgeGraph({ memories, onSelectMemory, onSelectConcept, sich
   };
   const [dimensions, setDimensions] = useState({ w: 800, h: 500 });
   const [hovered, setHovered] = useState<string | null>(null);
+  /**
+   * Die Kante unter dem Zeiger — Inhalt und Anfangslage im Zustand, die weitere
+   * Lage direkt am DOM.
+   *
+   * Der Text aendert sich nur, wenn eine andere Kante gewinnt; die Lage
+   * aendert sich mit jedem Bild, waehrend das Layout noch laeuft. Eine Lage im
+   * Zustand pro Bild heisst: sechzig Re-Renders pro Sekunde fuer einen Satz
+   * Text.
+   */
+  const [kantInfo, setKantInfo] = useState<KantenInfo | null>(null);
+  const hoverKanteRef = useRef<LayoutEdge | null>(null);
+  const kantTooltipRef = useRef<HTMLDivElement | null>(null);
+  // Die Groesse der Leinwand brauchte der Zeigerhandler — als Zustand ware er
+  // beim ersten Hover noch die Startmasse.
+  const masseRef = useRef({ w: 800, h: 500 });
+  masseRef.current = dimensions;
   /** Wie viele Knoten der Nutzer festgesetzt hat — nur fuer die Anzeige. */
   const [angeheftet, setAngeheftet] = useState(0);
   const zugRef = useRef<{ sx: number; sy: number; bewegt: boolean } | null>(null);
@@ -308,7 +441,12 @@ export function KnowledgeGraph({ memories, onSelectMemory, onSelectConcept, sich
         realPairs: [
           ...netz.erwahnungen,
           ...netz.behauptungen.map(
-            (b) => [b.source, b.target, { validFrom: b.validFrom, validTo: b.validTo }] as [string, string, Gueltigkeit]
+            (b) =>
+              [b.source, b.target, { validFrom: b.validFrom, validTo: b.validTo, relation: b.relation }] as [
+                string,
+                string,
+                Gueltigkeit & { relation: string | null }
+              ]
           ),
         ],
         knotenIds: geruestIds,
@@ -820,8 +958,11 @@ export function KnowledgeGraph({ memories, onSelectMemory, onSelectConcept, sich
     // echter Kanten: eine Notiz, die einen Begriff erwaehnt, und eine
     // Behauptung zwischen zwei Begriffen. Seit dem 7.10. traegt die Behauptung
     // zusaetzlich ihr Gueltigkeitsfenster — eine erfuellte bleibt sichtbar und
-    // wird gestrichelt, genau wie der Ring der abgelaufenen Notiz.
+    // wird gestrichelt, genau wie der Ring der abgelaufenen Notiz. Seit dem
+    // 7.10. abends hat jede Kante zusaetzlich ein Dickenband: drei Aussagen
+    // ueber demselben Paar sind ein dickerer Strich als eine.
     type KantArt = "vermutung" | "erwaehnung" | "abgelaufen" | "behauptung";
+    const ARTEN: readonly KantArt[] = ["vermutung", "erwaehnung", "abgelaufen", "behauptung"];
     const jetzt = Date.now();
     const artFuer = (e: LayoutEdge): KantArt => {
       if (ansichtRef.current === "dendrogram") return "behauptung"; // hier ist jede Kante die Hierarchie selbst
@@ -832,86 +973,104 @@ export function KnowledgeGraph({ memories, onSelectMemory, onSelectConcept, sich
       // Bild genommen — dort waere ein Strich fuer „galt damals" falsch.
       return kantenZeit === null && !fensterOffen(e, jetzt) ? "abgelaufen" : "behauptung";
     };
-    for (const art of ["vermutung", "erwaehnung", "abgelaufen", "behauptung"] as const) {
-      // Erst die Vermutungen (fein gepunktet), dann die Spinnen zum Begriff,
-      // dann die erfuellten Aussagen, zuletzt die gueltigen Behauptungen — sie
-      // liegen darüber und sind die Aussage.
-      if (art === "behauptung") {
-        ctx.strokeStyle = akzent;
-        ctx.fillStyle = akzent;
-        ctx.lineWidth = 2 / Math.max(0.4, t.k);
-        ctx.setLineDash([]);
-      } else if (art === "abgelaufen") {
-        ctx.strokeStyle = akzent;
-        ctx.lineWidth = 2 / Math.max(0.4, t.k);
-        ctx.setLineDash([4 / Math.max(0.4, t.k), 3 / Math.max(0.4, t.k)]);
-      } else if (art === "erwaehnung") {
-        ctx.strokeStyle = textFarbe;
-        ctx.lineWidth = 1 / Math.max(0.4, t.k);
-        ctx.setLineDash([]);
-      } else {
-        if (nurEcht) continue;
-        ctx.strokeStyle = schwach;
-        ctx.lineWidth = 0.9 / Math.max(0.4, t.k);
-        ctx.setLineDash([3 / Math.max(0.4, t.k), 5 / Math.max(0.4, t.k)]);
-      }
-      ctx.beginPath();
-      // Behauptungen bekommen eine Form, keine Pfeilspitze: breit am Ausgang,
-      // schmal am Ziel. Die Spitze säße hinter der Zielscheibe und verschwände
-      // in der Dämpfung, der Keil trägt die Richtung durch die ganze Linie.
-      const keil = art === "behauptung" && richtungRef.current && t.k >= KEIL_AB_ZOOM;
-      let gemalt = 0;
-      for (const e of sim.edges) {
-        if (artFuer(e) !== art) continue;
-        const a = index.get(e.source);
-        const b = index.get(e.target);
-        if (!a || !b) continue;
-        if (!imBild(a) && !imBild(b)) continue;
-        if (!edgeVisibleAt(kantenZeit, e.source, e.target, e, zeit)) continue;
-        if (hov && hov !== e.source && hov !== e.target && art === "vermutung") continue;
-        const dx = b.x - a.x, dy = b.y - a.y;
-        const len = Math.hypot(dx, dy) || 1;
-        const off = Math.min(16, len * 0.12);
-        if (keil) {
-          const band = richtungsBand(a, b, {
-            rQuelle: a.r,
-            rZiel: b.r,
-            breit: 3.6 / Math.max(0.4, t.k),
-            duenn: 0.9 / Math.max(0.4, t.k),
-            beule: off,
-          });
-          if (band.length === 0) continue;
-          ctx.moveTo(band[0].x, band[0].y);
-          for (let i = 1; i < band.length; i++) ctx.lineTo(band[i].x, band[i].y);
-          ctx.closePath();
+
+    // Ein Durchgang teilt die Kanten in ihre Zeichenklassen: Art, dann Band.
+    // Gebuendelt wird pro Klasse EIN Pfad — eine eigene Breite je Kante waere
+    // ein eigener Pfad je Kante, und das Bild waere weg.
+    const klassen = new Map<string, LayoutEdge[]>();
+    for (const e of sim.edges) {
+      const art = artFuer(e);
+      const band = Math.min(BREITE_PX[art].length - 1, dickeBand(e));
+      const schluessel = `${art}|${band}`;
+      const liste = klassen.get(schluessel);
+      if (liste) liste.push(e);
+      else klassen.set(schluessel, [e]);
+    }
+
+    const skalar = Math.max(0.4, t.k);
+    // Etwas gemalte, sichtbare Behauptungen — aus ihnen wird unten das Etikett.
+    const etikettenmoeglich: LayoutEdge[] = [];
+    for (const art of ARTEN) {
+      const breiten = BREITE_PX[art];
+      for (let band = 0; band < breiten.length; band++) {
+        const liste = klassen.get(`${art}|${band}`);
+        if (!liste || liste.length === 0) continue;
+        // Erst die Vermutungen (fein gepunktet), dann die Spinnen zum Begriff,
+        // dann die erfuellten Aussagen, zuletzt die gueltigen Behauptungen — sie
+        // liegen darüber und sind die Aussage.
+        if (art === "vermutung" && nurEcht) continue;
+        ctx.strokeStyle = art === "erwaehnung" ? textFarbe : art === "vermutung" ? schwach : akzent;
+        ctx.lineWidth = breiten[band] / skalar;
+        ctx.setLineDash(
+          art === "abgelaufen"
+            ? [4 / skalar, 3 / skalar]
+            : art === "vermutung"
+              ? [3 / skalar, 5 / skalar]
+              : []
+        );
+        ctx.beginPath();
+        // Behauptungen bekommen eine Form, keine Pfeilspitze: breit am Ausgang,
+        // schmal am Ziel. Die Spitze säße hinter der Zielscheibe und verschwände
+        // in der Dämpfung, der Keil trägt die Richtung durch die ganze Linie.
+        const keil = art === "behauptung" && richtungRef.current && t.k >= KEIL_AB_ZOOM;
+        if (keil) ctx.fillStyle = akzent;
+        let gemalt = 0;
+        for (const e of liste) {
+          const a = index.get(e.source);
+          const b = index.get(e.target);
+          if (!a || !b) continue;
+          if (!imBild(a) && !imBild(b)) continue;
+          if (!edgeVisibleAt(kantenZeit, e.source, e.target, e, zeit)) continue;
+          if (hov && hov !== e.source && hov !== e.target && art === "vermutung") continue;
+          const dx = b.x - a.x, dy = b.y - a.y;
+          const len = Math.hypot(dx, dy) || 1;
+          const off = beulenLenke(len);
+          if (keil) {
+            const form = KEIL_PX[Math.min(band, KEIL_PX.length - 1)];
+            const band2 = richtungsBand(a, b, {
+              rQuelle: a.r,
+              rZiel: b.r,
+              breit: form[0] / skalar,
+              duenn: form[1] / skalar,
+              beule: off,
+            });
+            if (band2.length === 0) continue;
+            ctx.moveTo(band2[0].x, band2[0].y);
+            for (let i = 1; i < band2.length; i++) ctx.lineTo(band2[i].x, band2[i].y);
+            ctx.closePath();
+            gemalt++;
+            if (kantenEtikett(e)) etikettenmoeglich.push(e);
+            continue;
+          }
+          ctx.moveTo(a.x, a.y);
+          if (art === "vermutung" || ansichtRef.current === "dendrogram") {
+            // Baum: gerade Verbindung — der Dendrogramm-Look lebt von den klaren
+            // Linien zwischen den Ebenen, nicht von Federn.
+            ctx.lineTo(b.x, b.y);
+          } else {
+            ctx.quadraticCurveTo((a.x + b.x) / 2 - (dy / len) * off, (a.y + b.y) / 2 + (dx / len) * off, b.x, b.y);
+          }
           gemalt++;
-          continue;
+          if (art === "behauptung" || art === "abgelaufen") {
+            if (kantenEtikett(e)) etikettenmoeglich.push(e);
+          }
         }
-        ctx.moveTo(a.x, a.y);
-        if (art === "vermutung" || ansichtRef.current === "dendrogram") {
-          // Baum: gerade Verbindung — der Dendrogramm-Look lebt von den klaren
-          // Linien zwischen den Ebenen, nicht von Federn.
-          ctx.lineTo(b.x, b.y);
-        } else {
-          ctx.quadraticCurveTo((a.x + b.x) / 2 - (dy / len) * off, (a.y + b.y) / 2 + (dx / len) * off, b.x, b.y);
+        ctx.globalAlpha = Math.min(
+          1,
+          (art === "behauptung"
+            ? (hov ? 0.9 : 0.55)
+            : art === "abgelaufen"
+              ? (hov ? 0.6 : 0.3)
+              : art === "erwaehnung"
+                ? 0.34
+                : hov ? 0.5 : 0.22) * kantenVerstaerkung
+        );
+        if (gemalt > 0) {
+          if (keil) ctx.fill();
+          else ctx.stroke();
         }
-        gemalt++;
+        ctx.globalAlpha = 1;
       }
-      ctx.globalAlpha = Math.min(
-        1,
-        (art === "behauptung"
-          ? (hov ? 0.9 : 0.55)
-          : art === "abgelaufen"
-            ? (hov ? 0.6 : 0.3)
-            : art === "erwaehnung"
-              ? 0.34
-              : hov ? 0.5 : 0.22) * kantenVerstaerkung
-      );
-      if (gemalt > 0) {
-        if (keil) ctx.fill();
-        else ctx.stroke();
-      }
-      ctx.globalAlpha = 1;
     }
     ctx.setLineDash([]);
 
@@ -1220,6 +1379,72 @@ export function KnowledgeGraph({ memories, onSelectMemory, onSelectConcept, sich
       }
     }
 
+    // --- Kanten-Etiketten: der Typ steht an der Linie ---
+    //
+    // Was eine Behauptung sagt, ist die Auskunft, die im Bild fehlt. Sie kommen
+    // nach den Knotentiteln und teilen sich deren Raster: ein Etikett verdraengt
+    // nie einen Titel, es fuellt nur, was frei bleibt. Und es erscheint erst,
+    // wenn man nah genug am Netz sitzt — weit herausgezoomt ist die Form die
+    // Auskunft, nicht der Text.
+    if (t.k >= KANTEN_ETIKETT_AB_ZOOM && etikettenmoeglich.length > 0) {
+      const gehalten = hoverKanteRef.current;
+      // Vorrang: die Kante unter dem Zeiger, dann die mit der meisten Evidenz.
+      const rang = (e: LayoutEdge) => (e === gehalten ? 1_000_000 : 0) + (e.belege ?? 1) * 100 - kantenEtikett(e)!.length;
+      const kandidaten = [...etikettenmoeglich].sort((x, y) => rang(y) - rang(x)).slice(0, MAX_KANTEN_ETIKETTEN);
+      ctx.font = `600 ${fs * 0.82}px ui-sans-serif, system-ui, -apple-system, sans-serif`;
+      ctx.textAlign = "center";
+      ctx.textBaseline = "middle";
+      for (const e of kandidaten) {
+        const a = index.get(e.source);
+        const b = index.get(e.target);
+        if (!a || !b) continue;
+        const text = kantenEtikett(e);
+        if (!text) continue;
+        const len = Math.hypot(b.x - a.x, b.y - a.y) || 1;
+        // Sechs Bildpunkte ueber der Linie — die Linie selbst soll lesbar
+        // bleiben, und unter dem Knoten steht schon der Titel.
+        const punkt = kantenMitte(a, b, beulenLenke(len));
+        const anY = punkt.y - 6 / t.k;
+        const sx = punkt.x * t.k + t.x;
+        const sy = anY * t.k + t.y;
+        const breite = ctx.measureText(text).width * t.k;
+        const eigne = e === gehalten;
+        if (!eigne && !freiUndBelegen(sx, sy - zellHoehe / 2, breite)) continue;
+        ctx.lineWidth = 3 / Math.max(0.4, t.k);
+        ctx.strokeStyle = grundFarbe;
+        ctx.strokeText(text, punkt.x, anY);
+        ctx.fillStyle = eigne ? akzent : textFarbe;
+        ctx.fillText(text, punkt.x, anY);
+      }
+      ctx.font = `500 ${fs}px ui-sans-serif, system-ui, -apple-system, sans-serif`;
+      ctx.textBaseline = "top";
+    }
+
+    // Der Tooltip haengt an der Kante, nicht am Etikett-Budget: auch weit
+    // herausgezoomt und auch ohne freien Platz in der Rasterzelle folgt er der
+    // Linie, solange der Zeiger auf ihr steht. Und er verschwindet mit ihr —
+    // eine Karte über einer Lücke erzaehlt etwas, das niemand mehr sieht.
+    {
+      const el = kantTooltipRef.current;
+      const gehalten = hoverKanteRef.current;
+      if (gehalten && (!sim.edges.includes(gehalten) || !index.get(gehalten.source) || !index.get(gehalten.target))) {
+        hoverKanteRef.current = null;
+        setKantInfo(null);
+      } else if (el && gehalten) {
+        const a = index.get(gehalten.source)!;
+        const b = index.get(gehalten.target)!;
+        const len = Math.hypot(b.x - a.x, b.y - a.y) || 1;
+        const gerade = kanteIstGerade(
+          gehalten,
+          ansichtRef.current === "dendrogram",
+          richtungRef.current && t.k >= KEIL_AB_ZOOM
+        );
+        const punkt = kantenMitte(a, b, gerade ? 0 : beulenLenke(len));
+        const lage = kartenLage(punkt.x * t.k + t.x, punkt.y * t.k + t.y, dimensions, el);
+        el.style.transform = `translate(${Math.round(lage.x)}px, ${Math.round(lage.y)}px) translate(-50%, 0)`;
+      }
+    }
+
     // Tastatur-Auswahl: ein gepunkteter Zierring in Siegelrot. Er liegt
     // UEBER allem — wer mit Pfeiltasten reist, verliert seinen Knoten nie.
     const takId = tastaturIdRef.current;
@@ -1331,6 +1556,70 @@ export function KnowledgeGraph({ memories, onSelectMemory, onSelectConcept, sich
     return nodeAt(kandidaten, (n) => n.r, w.x, w.y, GREIF_PX / k);
   }, []);
 
+  /**
+   * Wie eine Kante gerade jetzt gemalt wird — oder gar nicht.
+   *
+   * Dieselben Regeln wie der Zeichencode, denn der Griff muss der Linie folgen:
+   * Aehnlichkeit faellt weg, wenn das Feld voll und der Blick weit ist; der
+   * Zeitregler nimmt Kanten, deren Knoten damals noch nicht da waren; und der
+   * Baum malt Geraden — solange nicht die Richtung an ist, denn dann wird auch
+   * die Hierarchie zum Keil auf einem Bogen. Eine Kante, die nicht im Bild
+   * steht, darf keinen Tooltip gewinnen.
+   */
+  const malweiseFuer = useCallback((e: LayoutEdge): "gerade" | "bogen" | null => {
+    const baum = ansichtRef.current === "dendrogram";
+    const keilAn = richtungRef.current && transformRef.current.k >= KEIL_AB_ZOOM;
+    if (!baum) {
+      if (!e.real && nurEchteKanten(simRef.current?.edges.length ?? 0, transformRef.current.k)) return null;
+      if (!edgeVisibleAt(effektivAktivRef.current, e.source, e.target, e, effektivZeitRef.current)) return null;
+    }
+    return kanteIstGerade(e, baum, keilAn) ? "gerade" : "bogen";
+  }, []);
+
+  /** Der Name eines Endpunkts — Begriff oder Notiztitel, nie eine interne ID. */
+  const nameFuer = useCallback((id: string): string => {
+    if (istStruktur(id)) return strukturKnotenRef.current.get(id)?.label ?? id.slice(ENTITAETS_PRAEFIX.length);
+    return byIdRef.current.get(id)?.title ?? id;
+  }, []);
+
+  /** Was der Zeiger ueber einer Kante erfahrt. */
+  const infoFuerKante = useCallback((e: LayoutEdge): KantenInfo => {
+    const baum = ansichtRef.current === "dendrogram";
+    const art: KantenInfo["art"] = baum
+      ? "hierarchy"
+      : !e.real
+        ? "similar"
+        : istStruktur(e.source) && istStruktur(e.target)
+          ? "claim"
+          : "mention";
+    const t = transformRef.current;
+    const a = simRef.current?.index.get(e.source);
+    const b = simRef.current?.index.get(e.target);
+    let x = 0;
+    let y = 0;
+    if (a && b) {
+      const len = Math.hypot(b.x - a.x, b.y - a.y) || 1;
+      const gerade = kanteIstGerade(e, baum, richtungRef.current && t.k >= KEIL_AB_ZOOM);
+      const punkt = kantenMitte(a, b, gerade ? 0 : beulenLenke(len));
+      const lage = kartenLage(punkt.x * t.k + t.x, punkt.y * t.k + t.y, masseRef.current);
+      x = lage.x;
+      y = lage.y;
+    }
+    return {
+      quelle: nameFuer(e.source),
+      ziel: nameFuer(e.target),
+      art,
+      relation: art === "claim" ? e.relation ?? null : null,
+      typen: art === "claim" ? e.typen ?? 1 : 0,
+      belege: e.belege ?? 0,
+      staerke: e.strength,
+      validFrom: e.validFrom ?? null,
+      validTo: e.validTo ?? null,
+      x,
+      y,
+    };
+  }, [nameFuer]);
+
 
   const zaehleAngeheftet = useCallback(() => {
     const sim = simRef.current;
@@ -1423,7 +1712,17 @@ export function KnowledgeGraph({ memories, onSelectMemory, onSelectConcept, sich
       setHovered(id);
       zeichneNoetig.current = true;
     }
-  }, [trefferBei]);
+    // Die Kante kommt erst, wenn kein Knoten greift: sonst streiten Knoten und
+    // Linie um denselben Zeiger, und der Knoten verliert ansichtslos.
+    const kante = id === null
+      ? kanteBei(sim.index, sim.edges, w.x, w.y, KANTEN_GREIF_PX / Math.max(0.01, transformRef.current.k), malweiseFuer)
+      : null;
+    if (kante !== hoverKanteRef.current) {
+      hoverKanteRef.current = kante;
+      setKantInfo(kante ? infoFuerKante(kante) : null);
+      zeichneNoetig.current = true;
+    }
+  }, [trefferBei, malweiseFuer, infoFuerKante]);
 
   const onPointerUp = useCallback(() => {
     const gezogen = draggingRef.current;
@@ -1470,7 +1769,28 @@ export function KnowledgeGraph({ memories, onSelectMemory, onSelectConcept, sich
       setHovered(null);
       zeichneNoetig.current = true;
     }
+    if (hoverKanteRef.current !== null) {
+      hoverKanteRef.current = null;
+      setKantInfo(null);
+      zeichneNoetig.current = true;
+    }
   }, [onPointerUp]);
+
+  /**
+   * Die Karte hoert auf zu existieren, wenn ihre Kante aus dem Bild faellt.
+   *
+   * Filter, Zeitregler und ein Ansichtswechsel nehmen Kanten weg — eine Karte,
+   * die weiter über einer Lücke schwebt, erzaehlt dann etwas, das niemand mehr
+   * sieht.
+   */
+  useEffect(() => {
+    const gehalten = hoverKanteRef.current;
+    if (!gehalten) return;
+    if (edges.includes(gehalten)) return;
+    hoverKanteRef.current = null;
+    setKantInfo(null);
+    zeichneNoetig.current = true;
+  }, [edges, ansicht]);
 
   const onWheel = useCallback((e: React.WheelEvent) => {
     const rect = canvasRef.current?.getBoundingClientRect();
@@ -1607,6 +1927,8 @@ export function KnowledgeGraph({ memories, onSelectMemory, onSelectConcept, sich
     el.addEventListener("wheel", stop, { passive: false });
     return () => el.removeEventListener("wheel", stop);
   }, []);
+
+  const kantZeilen = kantInfo ? kantenZeilen(kantInfo) : null;
 
   if (memories.length === 0) {
     return (
@@ -1811,6 +2133,31 @@ export function KnowledgeGraph({ memories, onSelectMemory, onSelectConcept, sich
             <p className="text-sm max-w-sm" style={{ color: "var(--text-2)" }}>
               Nothing here matches “{filter.trim().slice(0, 40)}”. Clear the filter to get the whole graph back.
             </p>
+          </div>
+        )}
+
+        {/* Die Kante unter dem Zeiger: wer ueber wen, wie oft, und wie lange.
+            Der Text kommt aus demselben Stand wie das Bild — eine Kante ohne
+            Typ erfindt hier keinen, und eine Aehnlichkeit bleibt ein Reim. */}
+        {kantInfo && (
+          <div
+            ref={kantTooltipRef}
+            role="tooltip"
+            data-testid="graph-kante-tooltip"
+            className="hud-panel absolute left-0 top-0 rounded-lg px-2.5 py-1.5 pointer-events-none space-y-0.5 max-w-[280px]"
+            style={{ transform: `translate(${Math.round(kantInfo.x)}px, ${Math.round(kantInfo.y)}px) translate(-50%, 0)` }}
+          >
+            <div className="flex items-center gap-1.5 text-[12px]" style={{ color: "var(--text-1)" }}>
+              <span className="truncate">{kantInfo.quelle}</span>
+              <ChevronRight className="w-3 h-3 shrink-0" style={{ color: "var(--accent)" }} />
+              <span className="truncate">{kantInfo.ziel}</span>
+            </div>
+            <div className="hud-label">{kantZeilen!.grund}</div>
+            {kantZeilen!.frist && (
+              <div className="text-[10px] tnum" style={{ color: "var(--text-3)" }}>
+                {kantZeilen!.frist}
+              </div>
+            )}
           </div>
         )}
 
