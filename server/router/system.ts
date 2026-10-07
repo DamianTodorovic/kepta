@@ -67,6 +67,10 @@ export function mountSystem(app: express.Express, ctx: AppKontext): void {
         })),
       // entity → memory-IDs (für Graph-Rendering über Memories hinweg)
       memoriesByEntity: Object.fromEntries(g.entities.map((e) => [e.name, [...store.memoryIdsForEntities([e.id])]])),
+      // Der ganze Bestand, nicht nur was durch die Kappen von `getGraph`
+      // durchgekommen ist. Die Fläche sagt damit, dass sie einen Ausschnitt
+      // zeigt, statt die gelieferte Zahl als Bestandszahl auszugeben.
+      bestand: store.graphBestand(),
     });
   });
 

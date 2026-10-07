@@ -60,6 +60,37 @@ async function graph() {
   };
 }
 
+describe("Die Graph-Antwort nennt ihren eigenen Ausschnitt", () => {
+  // getGraph kappt bei 500 Begriffen und 2000 Kanten. Diese Kappen bleiben —
+  // sie halten die Fläche schnell. Was gefehlt hat, war die Zahl dahinter: ohne
+  // sie konnte eine Fläche „33 links" in den Kopf schreiben, während die
+  // Wissensbasis 2 431 Behauptungen trägt.
+  it("nennt den Bestand neben dem, was es liefert", async () => {
+    const notiz = await request(app).post("/api/memories").send({ title: "A", content: "x" });
+    expect(notiz.status).toBe(200);
+    store.addRelation("elena weiss", "nordwind logistics", "betreut", String(notiz.body.memory.id));
+    store.addRelation("orion portal", "quay street lease", "folgt aus", String(notiz.body.memory.id));
+
+    const res = await request(app).get("/api/graph?depth=2");
+    expect(res.status).toBe(200);
+    expect(res.body.bestand).toEqual({ knoten: 4, kanten: 2 });
+    expect(res.body.relations).toHaveLength(2);
+  });
+
+  it("zählt den Bestand, auch wenn nur ein Begriff erfragt wurde", async () => {
+    // Der Subgraph um einen Begriff ist per Definition ein Ausschnitt. Gerade
+    // dort ist „von wie viel?" die Frage, die die Fläche beantworten muss.
+    const notiz = await request(app).post("/api/memories").send({ title: "B", content: "x" });
+    store.addRelation("elena weiss", "nordwind logistics", "betreut", String(notiz.body.memory.id));
+    store.addRelation("ganz anderes", "wieder was", "betreut", String(notiz.body.memory.id));
+
+    const res = await request(app).get("/api/graph?entity=elena%20weiss&depth=1");
+    expect(res.status).toBe(200);
+    expect(res.body.relations.length, "der Ausschnitt liefert mehr als einen Begriff").toBeLessThan(2);
+    expect(res.body.bestand).toEqual({ knoten: 4, kanten: 2 });
+  });
+});
+
 describe("Die Graph-Antwort trägt die Gültigkeit der Kante", () => {
   // Der Kern liefert validFrom/validTo seit 343cb04 aus. Die App hat einen
   // EIGENEN Graph-Endpunkt (server/router/system.ts), und der bildete die

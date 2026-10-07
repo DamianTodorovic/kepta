@@ -1,6 +1,7 @@
 import { describe, it, expect } from "vitest";
 import {
   buildEdges,
+  kantenBaue,
   tagOverlap,
   titleSimilarity,
   initialPositions,
@@ -218,6 +219,71 @@ describe("buildEdges: ueber einen Index statt ueber alle Paare", () => {
 // (Treffer auf der Linie, nicht nur am Knoten). Alles drei war bisher nicht
 // sichtbar: der Relationsname wurde in der Fläche auf [quelle, ziel] reduziert,
 // die Dicke war eine Konstante, und kanteBei existierte nicht.
+// P-4: Dichte, die sich zu erkennen gibt. Wenn die Kantengrenze Nachbarn
+// fallen lässt, muss das Bild das sagen können — sonst steht ein Knoten mit drei
+// Strichen im Bild, während die Wissensbasis sieben kennt.
+describe("kantenBaue — was der Kantengrenze zum Opfer fällt", () => {
+  it("zählt je Knoten die Nachbarn, die es nicht ins Bild geschafft haben", () => {
+    // Acht Notizen, alle mit denselben Tags: jedes Paar ist eine Kante, also
+    // kennt jeder Knoten sieben Nachbarn. Bei vier erlaubten Kanten (je zwei
+    // Endpunkte) müssen Nachbarn übrig bleiben — und zwar exakt so viele.
+    const ms = Array.from({ length: 8 }, (_, i) => note({ id: `d${i}`, title: `Notiz ${i}`, tags: ["alles"] }));
+    const { edges, versteckteNachbarn } = kantenBaue(ms, { maxEdges: 4 });
+    expect(edges).toHaveLength(4);
+    const gehalten = new Map<string, number>();
+    for (const e of edges) {
+      gehalten.set(e.source, (gehalten.get(e.source) ?? 0) + 1);
+      gehalten.set(e.target, (gehalten.get(e.target) ?? 0) + 1);
+    }
+    for (const m of ms) {
+      expect(versteckteNachbarn.get(m.id) ?? 0).toBe(7 - (gehalten.get(m.id) ?? 0));
+    }
+  });
+
+  it("meldet nichts versteckt, wenn nichts gekappt wurde", () => {
+    const ms = [note({ title: "Alpha", tags: ["a"] }), note({ title: "Beta", tags: ["a"] })];
+    const r = kantenBaue(ms);
+    expect(r.edges).toHaveLength(1);
+    expect([...r.versteckteNachbarn.values()]).toEqual([]);
+    expect(r.verstecktInSumme).toBe(0);
+  });
+
+  it("zählt die Nachbarn, nicht die Kanten: ein verstecktes Paar berührt zwei Knoten", () => {
+    const ms = Array.from({ length: 8 }, (_, i) => note({ id: `e${i}`, title: `Notiz ${i}`, tags: ["alles"] }));
+    const r = kantenBaue(ms, { maxEdges: 4 });
+    const summe = [...r.versteckteNachbarn.values()].reduce((a, b) => a + b, 0);
+    expect(r.verstecktInSumme).toBe(summe);
+    expect(r.verstecktInSumme).toBeGreaterThan(0);
+  });
+
+  it("Aehnlichkeit aus lässt keine versteckten Nachbarn zurück", () => {
+    // Ohne Suchlauf fällt nichts einer Grenze zum Opfer — die Fläche darf dann
+    // auch kein „hidden behind badges" behaupten.
+    const ms = Array.from({ length: 8 }, (_, i) => note({ id: `f${i}`, title: `Notiz ${i}`, tags: ["alles"] }));
+    const r = kantenBaue(ms, { ahnlichkeit: false });
+    expect(r.edges).toHaveLength(0);
+    expect(r.verstecktInSumme).toBe(0);
+  });
+
+  it("echte Kanten überleben die Grenze und gelten nie als versteckt", () => {
+    const a = note({ id: "g1", title: "Alpha", tags: ["x"] });
+    const b = note({ id: "g2", title: "Beta", tags: ["x"] });
+    const c = note({ id: "g3", title: "Gamma", tags: ["x"] });
+    const r = kantenBaue([a, b, c], { realPairs: [[a.id, b.id]], maxEdges: 1 });
+    expect(r.edges.some((e) => e.real)).toBe(true);
+    expect(r.versteckteNachbarn.get(a.id) ?? 0).toBe(1);
+  });
+
+  it("buildEdges bleibt, was es war: die Kantenliste, ohne Rapport", () => {
+    // Der Rückfall ist absichtlich dünn — alle bestehenden Rufe sollen weiterhin
+    // genau die Liste sehen, die sie immer gesehen haben.
+    const ms = [note({ title: "Alpha", tags: ["a"] }), note({ title: "Beta", tags: ["a"] })];
+    const e = buildEdges(ms);
+    expect(Array.isArray(e)).toBe(true);
+    expect(e).toHaveLength(1);
+  });
+});
+
 describe("Kantengewicht: was hinter einer Kante steht", () => {
   it("trägt eine echte Kante den Typ ihrer Aussage", () => {
     const a = note({ title: "Alpha" }); const b = note({ title: "Beta" });

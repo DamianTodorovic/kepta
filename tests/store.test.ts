@@ -141,6 +141,22 @@ describe("Entities & Relations", () => {
     expect(ids).toEqual(new Set([a.id, b.id]));
     expect(store.entityNamesForMemory(a.id).sort()).toEqual(["kepta", "rust"]);
   });
+
+  it("zählt den ganzen Bestand — auch über die Kappe des Subgraphen hinaus", () => {
+    // getGraph liefert höchstens 500 Begriffe und 2000 Kanten. Ohne die Zahl
+    // dahinter kann keine Fläche sagen, dass sie überhaupt einen Ausschnitt
+    // zeigt — „33 links" wäre dann eine Behauptung über den Bestand.
+    const store = freshStore();
+    const notiz = store.createMemory({ title: "Kanthaufen", content: "..." });
+    for (let i = 0; i < 12; i++) store.addRelation(`begriff ${i}`, `partner ${i}`, "betreut", notiz.id);
+    expect(store.getGraph().relations).toHaveLength(12);
+    expect(store.graphBestand()).toEqual({ knoten: 24, kanten: 12 });
+  });
+
+  it("nennt null als Bestand einer leeren Wissensbasis, nicht das Feld fehlend", () => {
+    const store = freshStore();
+    expect(store.graphBestand()).toEqual({ knoten: 0, kanten: 0 });
+  });
 });
 
 describe("FTS", () => {

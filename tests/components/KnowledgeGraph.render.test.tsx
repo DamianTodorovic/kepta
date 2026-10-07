@@ -1376,7 +1376,109 @@ describe("Ein gehaltener Begriff sagt, was er ist", () => {
   });
 });
 
-// P-2: Eine Kante ist eine Aussage, kein dekorativer Strich. Cognee schreibt den
+// P-4: Dichte, die sich zu erkennt. Ein Knoten mit drei Strichen im Bild,
+// während die Wissensbasis sieben Nachbarn kennt, ist eine Luege durch
+// Weglassen — also: Badge, wo Nachbarn fehlen, und eine Zeile, die sagt, was
+// der Flaeche fehlt.
+describe("Sichtbare Dichte: Badge und Kappungszeile", () => {
+  /** Ein Badge ist der kleine Zahltext rechts neben einem Knoten: "+7". */
+  function badgesImRahmen() {
+    return leinwand.texteImRahmen().map((t) => t.text).filter((t) => /^\+\d+$/.test(t));
+  }
+
+  it("zählt die Notizen, die im Bild stehen, gegen den ganzen Bestand", async () => {
+    const ms = Array.from({ length: 6 }, (_, i) => note({ id: `n${i}`, title: `Notiz ${i}`, tags: [] }));
+    const { container } = await zeichne(ms);
+    // Ohne Filter steht alles im Bild — dann gibt es nichts zu berichten.
+    expect(container.textContent).not.toMatch(/Showing \d+ of \d+ notes/);
+
+    const feld = container.querySelector('input[placeholder="Filter the graph…"]') as HTMLInputElement;
+    await act(async () => {
+      fireEvent.change(feld, { target: { value: "Notiz 1" } });
+      await new Promise((r) => setTimeout(r, 120));
+    });
+    expect(container.textContent, container.textContent ?? "").toMatch(/Showing 1 of 6 notes/);
+  });
+
+  it("behauptet nie mehr Notizen im Bild, als der Filter durchlässt", async () => {
+    const ms = [
+      ...Array.from({ length: 6 }, (_, i) => note({ id: `b${i}`, title: `Bericht ${i}`, tags: [] })),
+      ...Array.from({ length: 3 }, (_, i) => note({ id: `p${i}`, title: `Protokoll ${i}`, tags: [] })),
+    ];
+    const { container } = await zeichne(ms);
+    const feld = container.querySelector('input[placeholder="Filter the graph…"]') as HTMLInputElement;
+    await act(async () => {
+      fireEvent.change(feld, { target: { value: "Bericht" } });
+      await new Promise((r) => setTimeout(r, 120));
+    });
+    const treffer = /Showing (\d+) of (\d+) notes/.exec(container.textContent ?? "");
+    expect(treffer, container.textContent ?? "").toBeTruthy();
+    expect(Number(treffer![1]), "die Zeile zählt mehr, als der Filter durchlässt").toBe(6);
+    expect(Number(treffer![2])).toBe(9);
+  });
+
+  it("sagt, dass die Wissensbasis mehr Behauptungen trägt als geliefert wurden", async () => {
+    // Der Server kappt den Subgraphen bei 2 000 Kanten. Ohne die Zahl dahinter
+    // wäre „3 links" eine Aussage über den Bestand — und falsch.
+    vi.stubGlobal("fetch", vi.fn(async () => new Response(JSON.stringify({
+      relations: [{ source: "nordwind", target: "elena", relation: "betreut", memoryId: "n1" }],
+      memoriesByEntity: { nordwind: ["n1"], elena: ["n2"] },
+      bestand: { knoten: 41, kanten: 2431 },
+    }), { status: 200 })));
+    const a = note({ id: "n1", title: "Mandatsuebergabe", tags: [] });
+    const b = note({ id: "n2", title: "Vertreterliste", tags: [] });
+
+    const { container } = await zeichne([a, b]);
+    await bilder(8);
+    expect(container.textContent, container.textContent ?? "").toMatch(/Showing 1 of 2,431 claims/);
+  });
+
+  it("meldet keine Kappung, wenn der Server nichts übergab", async () => {
+    vi.stubGlobal("fetch", vi.fn(async () => new Response(JSON.stringify({
+      relations: [{ source: "nordwind", target: "elena", relation: "betreut", memoryId: "n1" }],
+      memoriesByEntity: { nordwind: ["n1"], elena: ["n2"] },
+      bestand: { knoten: 2, kanten: 1 },
+    }), { status: 200 })));
+    const a = note({ id: "n1", title: "Mandatsuebergabe", tags: [] });
+    const b = note({ id: "n2", title: "Vertreterliste", tags: [] });
+
+    const { container } = await zeichne([a, b]);
+    await bilder(8);
+    expect(container.textContent, container.textContent ?? "").not.toMatch(/Showing \d+ of [\d,]+ claims/);
+  });
+
+  it("setzt ein Badge auf einen Knoten, dem Nachbarn der Kantengrenze zum Opfer fielen", async () => {
+    // 50 Notizen mit einem gemeinsamen Tag sind 1 225 Aehnlichkeitspaare — die
+    // Grenze liegt bei 1 200. Was fällt, ist ein Nachbar weniger im Bild, und
+    // genau das steht jetzt als Zahl am Knoten.
+    const ms = Array.from({ length: 50 }, (_, i) => note({ id: `d${i}`, title: `Dichteste Notiz ${i}`, tags: ["alles"] }));
+    const view = await zeichne(ms, { aehnlichkeit: true });
+    await bilder(10);
+    const badges = badgesImRahmen();
+    expect(badges.length, "kein einziges Badge trotz Kappung").toBeGreaterThan(0);
+    for (const b of badges) expect(Number(b.slice(1))).toBeGreaterThan(0);
+    // Und die Zeile darunter sagt dieselbe Zahl — Bild und Text streiten nicht.
+    expect(view.container.textContent, view.container.textContent ?? "").toMatch(/neighbours hidden behind badges/);
+  });
+
+  it("setzt kein Badge, wenn nichts gekappt wurde", async () => {
+    const ms = Array.from({ length: 6 }, (_, i) => note({ id: `e${i}`, title: `Ruhige Notiz ${i}`, tags: [] }));
+    const { container } = await zeichne(ms, { aehnlichkeit: true });
+    await bilder(10);
+    expect(badgesImRahmen()).toEqual([]);
+    expect(container.textContent).not.toMatch(/neighbours hidden behind badges/);
+  });
+
+  it("rechnet die Badges nicht, während Aehnlichkeit aus ist", async () => {
+    // Ohne Aehnlichkeitssuchlauf fällt nichts einer Grenze zum Opfer — ein Badge
+    // über nicht existenten Nachbarn wäre eine Erfindung.
+    const ms = Array.from({ length: 50 }, (_, i) => note({ id: `f${i}`, title: `Fünzigste Notiz ${i}`, tags: ["alles"] }));
+    const { container } = await zeichne(ms);
+    await bilder(10);
+    expect(badgesImRahmen()).toEqual([]);
+    expect(container.textContent).not.toMatch(/neighbours hidden behind badges/);
+  });
+});
 // Relationstyp an die Linie, macht die Dicke aus dem Gewicht und legt einen
 // Tooltip auf die Kante. Bei uns war der Typ bis hierhin vorhanden (store →
 // /api/graph → Behauptung) und wurde in der Fläche auf [quelle, ziel] reduziert.

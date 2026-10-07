@@ -3,7 +3,7 @@ import { Memory } from "../types";
 import { existsAt, graphTimeRange, activeIdsAt, edgeVisibleAt, istStruktur, fensterOffen, type Gueltigkeit } from "../lib/graphTime";
 import { Search, Maximize2, ZoomIn, ZoomOut, Clock, Atom2, Sitemap, Network, ChevronRight } from "../lib/icons";
 import {
-  buildEdges,
+  kantenBaue,
   createSimulation,
   entitaetsNetz,
   reuseSimulation,
@@ -71,6 +71,8 @@ const BREITE_PX: Record<string, readonly number[]> = {
   abgelaufen: [1.7, 2.4, 3.2],
   behauptung: [1.7, 2.4, 3.2],
 };
+/** Ab dieser Knotengroesse auf dem Schirm traegt ein Badge eine Zahl. */
+const BADGE_AB_PX = 9;
 /** Keilbreite je Band: [am Ausgang, am Ziel], in Bildpunkten. */
 const KEIL_PX: readonly (readonly [number, number])[] = [[2.4, 0.8], [3.3, 1.05], [4.2, 1.3]];
 
@@ -101,6 +103,12 @@ interface GraphApi {
     validTo?: number | null;
   }[];
   memoriesByEntity: Record<string, string[]>;
+  /**
+   * Was die Wissensbasis traegt, nicht nur was durch die Kappen des Subgraphen
+   * durchgekommen ist. Fehlend bei einer Serverversion, die das nicht kennt —
+   * dann sagt die Flaeche nichts ueber den Rest, statt zu raten.
+   */
+  bestand?: { knoten: number; kanten: number };
 }
 
 /**
@@ -325,6 +333,9 @@ export function KnowledgeGraph({ memories, onSelectMemory, onSelectConcept, sich
    */
   const [kantInfo, setKantInfo] = useState<KantenInfo | null>(null);
   const hoverKanteRef = useRef<LayoutEdge | null>(null);
+  // Badges: Nachbarn, die der Kantengrenze zum Opfer fielen. Die Zahlen entstehen
+  // einmal je Kantenneubau — nicht pro Bild fuer jeden Knoten.
+  const versteckteRef = useRef<Map<string, number>>(new Map());
   const kantTooltipRef = useRef<HTMLDivElement | null>(null);
   // Die Groesse der Leinwand brauchte der Zeigerhandler — als Zustand ware er
   // beim ersten Hover noch die Startmasse.
@@ -435,9 +446,9 @@ export function KnowledgeGraph({ memories, onSelectMemory, onSelectConcept, sich
   );
   const geruestIds = useMemo(() => netz.knoten.map((k) => k.id), [netz]);
 
-  const edges: LayoutEdge[] = useMemo(
+  const kantenRapport = useMemo(
     () =>
-      buildEdges(filtered, {
+      kantenBaue(filtered, {
         realPairs: [
           ...netz.erwahnungen,
           ...netz.behauptungen.map(
@@ -454,6 +465,8 @@ export function KnowledgeGraph({ memories, onSelectMemory, onSelectConcept, sich
       }),
     [filtered, netz, geruestIds, ahnlichkeit]
   );
+  const edges: LayoutEdge[] = kantenRapport.edges;
+  versteckteRef.current = kantenRapport.versteckteNachbarn;
 
 
   // Groesse = Verbindungsgrad; Huben sind sofort erkennbar.
@@ -589,6 +602,28 @@ export function KnowledgeGraph({ memories, onSelectMemory, onSelectConcept, sich
     () => ({ knoten: zeitAktivIds ? zeitAktivIds.size : filtered.length, kanten: sichtbareKanten.length }),
     [zeitAktivIds, filtered.length, sichtbareKanten]
   );
+
+  /**
+   * Die ehrliche Bilanz des Ausschnitts: was die Wissensbasis traegt, gegen was
+   * in diesem Bild steht. Drei Klausaen, und jede von ihnen bleibt weg, solange
+   * nichts fehlt — eine Zeile, die eine Luecke behauptet, wo keine ist, macht
+   * die Flaeche schlechter, nicht genauer.
+   */
+  const dichteZeile = useMemo(() => {
+    const zahl = (n: number) => n.toLocaleString("en-US");
+    const klausaen: string[] = [];
+    if (sichtbareAnzahl.knoten < memories.length) {
+      klausaen.push(`Showing ${zahl(sichtbareAnzahl.knoten)} of ${zahl(memories.length)} notes`);
+    }
+    const geliefert = graphApi?.relations.length ?? 0;
+    if (graphApi?.bestand && graphApi.bestand.kanten > geliefert) {
+      klausaen.push(`Showing ${zahl(geliefert)} of ${zahl(graphApi.bestand.kanten)} claims in the store`);
+    }
+    if (kantenRapport.verstecktInSumme > 0) {
+      klausaen.push(`${zahl(kantenRapport.verstecktInSumme)} neighbours hidden behind badges`);
+    }
+    return klausaen.join(" · ");
+  }, [sichtbareAnzahl.knoten, memories.length, graphApi, kantenRapport]);
 
   // --- Dendrogramm: Hierarchie und Zielpositionen ---
   //
@@ -1377,6 +1412,37 @@ export function KnowledgeGraph({ memories, onSelectMemory, onSelectConcept, sich
         ctx.fillText(tags, n.x, n.y + r + 2 + fs * 1.15);
         ctx.font = `500 ${fs}px ui-sans-serif, system-ui, sans-serif`;
       }
+    }
+
+    // --- Badges: Nachbarn, die der Kantengrenze zum Opfer fielen ---
+    //
+    // Ein Knoten mit drei Strichen im Bild, während die Wissensbasis sieben
+    // Nachbarn kennt, ist eine Luege durch Weglassen. Die Zahl liegt schon im
+    // Rapport der Kantengrenze — hier wird sie nur abgelesen, nie gerechnet.
+    const versteckte = versteckteRef.current;
+    if (versteckte.size > 0) {
+      ctx.font = `600 ${fs * 0.78}px ui-sans-serif, system-ui, -apple-system, sans-serif`;
+      ctx.textAlign = "left";
+      ctx.textBaseline = "middle";
+      for (const n of sim.nodes) {
+        const zahl = versteckte.get(n.id);
+        if (!zahl || !imBild(n)) continue;
+        // Auf einem Staubkorn ist eine Zahl Lärm, keine Auskunft.
+        if (n.r * t.k < BADGE_AB_PX) continue;
+        const m = byIdRef.current.get(n.id);
+        // Ein Geist zum gewaehlten Zeitpunkt hat keine verborgenen Nachbarn —
+        // die sind schlicht noch nicht da.
+        if (m && zeit !== null && !existsAt(m, zeit)) continue;
+        const bx = n.x + n.r * 0.85;
+        const by = n.y - n.r * 0.85;
+        ctx.lineWidth = 3 / skalar;
+        ctx.strokeStyle = grundFarbe;
+        ctx.strokeText(`+${zahl}`, bx, by);
+        ctx.fillStyle = schwach;
+        ctx.fillText(`+${zahl}`, bx, by);
+      }
+      ctx.textBaseline = "top";
+      ctx.font = `500 ${fs}px ui-sans-serif, system-ui, -apple-system, sans-serif`;
     }
 
     // --- Kanten-Etiketten: der Typ steht an der Linie ---
@@ -2183,6 +2249,10 @@ export function KnowledgeGraph({ memories, onSelectMemory, onSelectConcept, sich
               </>
             )}
           </div>
+          {/* Die Bilanz des Ausschnitts — nur wo etwas fehlt. */}
+          {dichteZeile && (
+            <div className="hud-label tnum" style={{ color: "var(--text-2)" }}>{dichteZeile}</div>
+          )}
           <div className="hud-label">
             {ansicht === "dendrogram"
               ? uiT("hint.tree")

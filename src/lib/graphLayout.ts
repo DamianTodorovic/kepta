@@ -210,6 +210,28 @@ const DEFAULT_MAX_BUCKET = 140;
  * Unterschied ist nur, dass wir sie jetzt gar nicht erst vergleichen.
  */
 export function buildEdges(memories: readonly Memory[], opts: EdgeOptions = {}): LayoutEdge[] {
+  return kantenBaue(memories, opts).edges;
+}
+
+export interface KantenErgebnis {
+  edges: LayoutEdge[];
+  /**
+   * Wie viele Nachbarn je Knoten der Kantengrenze zum Opfer gefallen sind.
+   * Nur die Aehnlichkeitskanten fallen — echte Paare ueberleben jede Kuerzung.
+   */
+  versteckteNachbarn: Map<string, number>;
+  /** Dieselben Zahlen aufsummiert — fuer eine Zeile, die nicht verschweigt,
+   *  was hinter den Badges steht. */
+  verstecktInSumme: number;
+}
+
+/**
+ * Dasselbe wie `buildEdges`, mit Rapport: die Flaeche braucht zu wissen, was
+ * der Grenze zum Opfer gefallen ist, um ein Badge und eine ehrliche Zeile
+ * daraus zu machen. `buildEdges` bleibt der duenne Rückfall fuer alle, denen
+ * die Kantenliste allein reicht.
+ */
+export function kantenBaue(memories: readonly Memory[], opts: EdgeOptions = {}): KantenErgebnis {
   const ids = new Set(memories.map((m) => m.id));
   for (const id of opts.knotenIds ?? []) ids.add(id);
   const maxBucket = opts.maxBucket ?? DEFAULT_MAX_BUCKET;
@@ -286,7 +308,7 @@ export function buildEdges(memories: readonly Memory[], opts: EdgeOptions = {}):
     if (namen) kant.typen = namen.size;
   });
 
-  if (opts.ahnlichkeit === false) return out;
+  if (opts.ahnlichkeit === false) return { edges: out, versteckteNachbarn: new Map(), verstecktInSumme: 0 };
 
   // Invertierter Index: Begriff -> Notizen. Nur Paare, die sich mindestens
   // einen Begriff teilen, kommen ueberhaupt in die Bewertung.
@@ -322,13 +344,26 @@ export function buildEdges(memories: readonly Memory[], opts: EdgeOptions = {}):
     }
   }
 
-  // Muss gekuerzt werden, fallen die schwaechsten Aehnlichkeiten zuerst.
+  // Muss gekuerzt werden, fallen die schwaechsten Aehnlichkeiten zuerst — und
+  // was faellt, ist ein Nachbar weniger im Bild. Die Zahl mitzunehmen kostet
+  // einen Durchgang ueber den ohnehin schon fertigen Kandidaten und ist der
+  // einzige Weg, ein Badge ehrlich zu nennen.
   kandidaten.sort((a, b) => b.strength - a.strength);
-  for (const e of kandidaten) {
-    if (out.length >= maxEdges) break;
-    out.push(e);
+  const versteckteNachbarn = new Map<string, number>();
+  let verstecktInSumme = 0;
+  for (let i = 0; i < kandidaten.length; i++) {
+    const e = kandidaten[i];
+    if (out.length < maxEdges) {
+      out.push(e);
+      continue;
+    }
+    // Ein echtes Paar ist hier nie dabei: echte Kanten stehen vor dem Suchlauf
+    // in `out` und jeder Kandidat wurde genau einmal bewertet.
+    versteckteNachbarn.set(e.source, (versteckteNachbarn.get(e.source) ?? 0) + 1);
+    versteckteNachbarn.set(e.target, (versteckteNachbarn.get(e.target) ?? 0) + 1);
+    verstecktInSumme += 2;
   }
-  return out;
+  return { edges: out, versteckteNachbarn, verstecktInSumme };
 }
 
 // ---------- Startaufstellung ----------

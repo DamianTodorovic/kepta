@@ -1049,6 +1049,19 @@ export class KeptaStore {
     return { entities, relations };
   }
 
+  /**
+   * Was die Wissensbasis WIRKLICH enthält — im Gegensatz zu dem, was `getGraph`
+   * höchstens liefert. Die Kappen selbst (500 Begriffe, 2000 Kanten) sind
+   * unverändert: wer mehr auf einmal schickt, bezahlt mit einer langsameren
+   * Fläche, nicht mit einer besseren. Was fehlt, war die Zahl dahinter, damit
+   * eine Fläche sagen kann „ich zeige einen Ausschnitt" statt „so viel ist da".
+   */
+  graphBestand(): { knoten: number; kanten: number } {
+    const knoten = this.db.prepare("SELECT COUNT(*) AS n FROM entities").get() as { n: number };
+    const kanten = this.db.prepare("SELECT COUNT(*) AS n FROM relations").get() as { n: number };
+    return { knoten: Number(knoten.n), kanten: Number(kanten.n) };
+  }
+
   /** Memory-IDs, die eine der Entitäten mentionen */
   memoryIdsForEntities(entityIds: number[]): Set<string> {
     if (entityIds.length === 0) return new Set();
