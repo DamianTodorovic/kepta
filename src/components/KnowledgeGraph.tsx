@@ -284,6 +284,27 @@ function zeichneGlyph(
   ctx.fillStyle = istHell(fuellung) ? GLYPH_TINTE_DUNKEL : GLYPH_TINTE_HELL;
   ctx.fillText(text, x, y);
 }
+
+/**
+ * Das Malzeichen ueber einer gefalteten Gruppe: wie viel dahinter liegt, und
+ * dass es gerade nicht im Bild ist. Ueber der Scheibe und in BILDPIXELN
+ * gerechnet — ein Zustand, der erst beim Heranzoomen erschiene, wäre keiner.
+ */
+function zeichneFaltung(
+  ctx: CanvasRenderingContext2D,
+  x: number,
+  y: number,
+  radius: number,
+  k: number,
+  text: string,
+  farbe: string
+) {
+  ctx.font = `700 ${11 / Math.max(0.4, k)}px ui-sans-serif, system-ui, -apple-system, sans-serif`;
+  ctx.textAlign = "center";
+  ctx.textBaseline = "bottom";
+  ctx.fillStyle = farbe;
+  ctx.fillText(text, x, y - radius - 2 / Math.max(0.4, k));
+}
 /**
  * Greifweite eines Knotens in BILDSCHIRM-Pixeln.
  *
@@ -376,6 +397,20 @@ export function KnowledgeGraph({ memories, onSelectMemory, onSelectConcept, sich
     setEtikettenModus(m);
     try { localStorage.setItem(ETIKETT_KEY, m); } catch { /* ignore */ }
   };
+  /**
+   * Zugeklappte Gruppen im Baum. Der Baum startet entfaltet — eine Faltung ist
+   * eine Handlung, nie ein Anfangszustand. Nicht gemerkt: ein Merken ueber das
+   * Neuladen liess Notizen verschwinden, die niemand mehr vermisst.
+   */
+  const [gefaltet, setGefaltet] = useState<ReadonlySet<string>>(new Set());
+  const falteUm = useCallback((id: string) => {
+    setGefaltet((vorher) => {
+      const neu = new Set(vorher);
+      if (neu.has(id)) neu.delete(id);
+      else neu.add(id);
+      return neu;
+    });
+  }, []);
   const [dimensions, setDimensions] = useState({ w: 800, h: 500 });
   const [hovered, setHovered] = useState<string | null>(null);
   /**
@@ -668,28 +703,6 @@ export function KnowledgeGraph({ memories, onSelectMemory, onSelectConcept, sich
     [zeitAktivIds, filtered.length, sichtbareKanten]
   );
 
-  /**
-   * Die ehrliche Bilanz des Ausschnitts: was die Wissensbasis traegt, gegen was
-   * in diesem Bild steht. Drei Klausaen, und jede von ihnen bleibt weg, solange
-   * nichts fehlt — eine Zeile, die eine Luecke behauptet, wo keine ist, macht
-   * die Flaeche schlechter, nicht genauer.
-   */
-  const dichteZeile = useMemo(() => {
-    const zahl = (n: number) => n.toLocaleString("en-US");
-    const klausaen: string[] = [];
-    if (sichtbareAnzahl.knoten < memories.length) {
-      klausaen.push(`Showing ${zahl(sichtbareAnzahl.knoten)} of ${zahl(memories.length)} notes`);
-    }
-    const geliefert = graphApi?.relations.length ?? 0;
-    if (graphApi?.bestand && graphApi.bestand.kanten > geliefert) {
-      klausaen.push(`Showing ${zahl(geliefert)} of ${zahl(graphApi.bestand.kanten)} claims in the store`);
-    }
-    if (kantenRapport.verstecktInSumme > 0) {
-      klausaen.push(`${zahl(kantenRapport.verstecktInSumme)} neighbours hidden behind badges`);
-    }
-    return klausaen.join(" · ");
-  }, [sichtbareAnzahl.knoten, memories.length, graphApi, kantenRapport]);
-
   // --- Dendrogramm: Hierarchie und Zielpositionen ---
   //
   // Zum gewaehlten Zeitpunkt nicht existierende Notizen fallen aus dem Baum —
@@ -712,11 +725,49 @@ export function KnowledgeGraph({ memories, onSelectMemory, onSelectConcept, sich
   const baumLayout = useMemo(
     () =>
       ansicht === "dendrogram"
-        ? layoutDendrogram(buildHierarchy(baumMemories, entitaeten, konzeptNamen))
+        ? layoutDendrogram(buildHierarchy(baumMemories, entitaeten, konzeptNamen), { eingeklappt: gefaltet })
         : { edges: [], nodes: [], struktur: new Map<string, StrukturKnoten>() },
-    [baumMemories, entitaeten, konzeptNamen, ansicht]
+    [baumMemories, entitaeten, konzeptNamen, ansicht, gefaltet]
   );
-  const baumIdsSchluessel = useMemo(() => baumMemories.map((m) => m.id).join(","), [baumMemories]);
+  // Was der Baum wirklich stellt — nicht, was die Wissensbasis hergibt. Eine
+  // gefaltete Gruppe nimmt ihre Kinder aus der SIMULATION, nicht nur aus dem
+  // Layout: der Schlüssel unten entscheidet, wann neu aufgebaut wird, und mit
+  // den Notizen der Gruppe würden sie trotz Faltung weiter im Bild stehen.
+  const baumNotizen = useMemo(() => baumLayout.nodes.filter((n) => !istStruktur(n.id)), [baumLayout]);
+  const baumIdsSchluessel = useMemo(() => baumNotizen.map((n) => n.id).join(","), [baumNotizen]);
+  /**
+   * Was die Kopfzeile zählt. Im Kraftfeld sind das die gefilterten Notizen; im
+   * Baum das, was der Baum wirklich stellt — eine gefaltete Gruppe nimmt ihre
+   * Notizen aus dem Bild, und die Zeile verspricht, was im Bild steht.
+   */
+  const bildZaehlung = useMemo(
+    () =>
+      ansicht === "dendrogram"
+        ? { knoten: baumNotizen.length, kanten: sichtbareAnzahl.kanten }
+        : sichtbareAnzahl,
+    [ansicht, baumNotizen, sichtbareAnzahl]
+  );
+  /**
+   * Die ehrliche Bilanz des Ausschnitts: was die Wissensbasis traegt, gegen was
+   * in diesem Bild steht. Jede Klausa bleibt weg, solange nichts fehlt — eine
+   * Zeile, die eine Luecke behauptet, wo keine ist, macht die Flaeche
+   * schlechter, nicht genauer.
+   */
+  const dichteZeile = useMemo(() => {
+    const zahl = (n: number) => n.toLocaleString("en-US");
+    const klausaen: string[] = [];
+    if (bildZaehlung.knoten < memories.length) {
+      klausaen.push(`Showing ${zahl(bildZaehlung.knoten)} of ${zahl(memories.length)} notes`);
+    }
+    const geliefert = graphApi?.relations.length ?? 0;
+    if (graphApi?.bestand && graphApi.bestand.kanten > geliefert) {
+      klausaen.push(`Showing ${zahl(geliefert)} of ${zahl(graphApi.bestand.kanten)} claims in the store`);
+    }
+    if (kantenRapport.verstecktInSumme > 0) {
+      klausaen.push(`${zahl(kantenRapport.verstecktInSumme)} neighbours hidden behind badges`);
+    }
+    return klausaen.join(" · ");
+  }, [bildZaehlung.knoten, memories.length, graphApi, kantenRapport]);
   const baumNachbarn = useMemo(() => {
     const n = new Map<string, Set<string>>();
     for (const e of baumLayout.edges) {
@@ -1387,7 +1438,9 @@ export function KnowledgeGraph({ memories, onSelectMemory, onSelectConcept, sich
         // die das gehaltene Etikett gibt, aber ohne Nachfrage lesbar. Die Eine
         // bleibt weg: sie füllt das Gesicht des Knotens und sagt nichts. Eine
         // vierstellige Zahl passt nicht in eine Scheibe und bleibt ebenfalls.
-        if (n.r * t.k >= VEKTOR_AB_PX && s.blaetter !== undefined && s.blaetter > 1 && s.blaetter < 1000) {
+        if (s.eingeklappt) {
+          zeichneFaltung(ctx, n.x, n.y, n.r, t.k, `×${s.blaetter ?? 0}`, akzent);
+        } else if (n.r * t.k >= VEKTOR_AB_PX && s.blaetter !== undefined && s.blaetter > 1 && s.blaetter < 1000) {
           zeichneGlyph(ctx, n.x, n.y, n.r, String(s.blaetter), farbe);
         }
       }
@@ -1985,8 +2038,18 @@ export function KnowledgeGraph({ memories, onSelectMemory, onSelectConcept, sich
     const w = weltPunkt(e);
     const treffer = trefferBei(w);
     const m = treffer ? byIdRef.current.get(treffer.id) : undefined;
-    if (m) onSelectMemory(m);
-  }, [onSelectMemory, trefferBei]);
+    if (m) { onSelectMemory(m); return; }
+    // Eine Gruppe im Baum falten: die Kinder verschwinden, ihre Zahl bleibt.
+    // Die Wurzel ist der Rahmen, keine Gruppe — sie zu falten wäre ein leeres
+    // Bild mit einem Klick, der sich nach nichts anfuelt.
+    if (treffer && ansichtRef.current === "dendrogram" && istStruktur(treffer.id) && treffer.id !== "__wurzel") {
+      falteUm(treffer.id);
+    }
+  }, [onSelectMemory, trefferBei, falteUm]);
+
+  /** Zeiger, wo eine Handlung wartet: ein Konzept öffnet, eine Gruppe faltet. */
+  const zeigerHand = (id: string) =>
+    id.startsWith(ENTITAETS_PRAEFIX) || (ansicht === "dendrogram" && istStruktur(id) && id !== "__wurzel");
 
   // --- Tastaturbedienung ---
   // Pfeiltasten waehlen den naechsten Notiz-Knoten in der jeweiligen Richtung,
@@ -2023,11 +2086,14 @@ export function KnowledgeGraph({ memories, onSelectMemory, onSelectConcept, sich
   const tastaturSchritt = useCallback((richtung: "up" | "down" | "left" | "right") => {
     const sim = simRef.current;
     if (!sim) return;
-    // Erreichbar ist, was eine antwort gibt: die notiz (Enter öffnet sie) und
-    // das konzept (Enter öffnet sein dossier). Typ-, tag- und wurzelknoten des
-    // baums sind wege, kein inhalt — sie bleiben aus der reise draußen, sonst
-    // hält man auf einem knoten, der auf Enter nichts tut.
-    const notizKnoten = sim.nodes.filter((n) => byIdRef.current.has(n.id) || n.id.startsWith(ENTITAETS_PRAEFIX));
+    // Erreichbar ist, was eine antwort gibt: die Notiz (Enter öffnet sie), das
+    // Konzept (Enter öffnet sein Dossier) und — im Baum — die Typ- und
+    // Tag-Ebene (Enter faltet sie). Die Wurzel ist der Rahmen, sie tut nichts
+    // und bleibt deshalb aus der Reise draußen.
+    const imBaum = ansicht === "dendrogram";
+    const notizKnoten = sim.nodes.filter(
+      (n) => byIdRef.current.has(n.id) || n.id.startsWith(ENTITAETS_PRAEFIX) || (imBaum && /^__(typ|tag):/.test(n.id))
+    );
     if (notizKnoten.length === 0) return;
     const aktuell = tastaturIdRef.current
       ? notizKnoten.find((n) => n.id === tastaturIdRef.current)
@@ -2065,7 +2131,7 @@ export function KnowledgeGraph({ memories, onSelectMemory, onSelectConcept, sich
       if (bewertung(n) < bewertung(bester)) bester = n;
     }
     setzeAuswahl(bester.id);
-  }, [setzeAuswahl]);
+  }, [setzeAuswahl, ansicht]);
 
   const onKeyDown = useCallback((e: React.KeyboardEvent) => {
     const richtungen: Record<string, "up" | "down" | "left" | "right"> = {
@@ -2092,6 +2158,13 @@ export function KnowledgeGraph({ memories, onSelectMemory, onSelectConcept, sich
           e.preventDefault();
           onSelectConcept?.(name);
         }
+        return;
+      }
+      // Eine Typ- oder Tag-Ebene hat kein Dossier. Ohne Handlung wäre Enter
+      // dort eine tote Taste — im Baum ist sie der Weg zur Faltung.
+      if (id && ansicht === "dendrogram" && /^__(typ|tag):/.test(id)) {
+        e.preventDefault();
+        falteUm(id);
       }
       return;
     }
@@ -2099,7 +2172,7 @@ export function KnowledgeGraph({ memories, onSelectMemory, onSelectConcept, sich
       e.stopPropagation();
       setzeAuswahl(null);
     }
-  }, [onSelectMemory, onSelectConcept, tastaturSchritt, setzeAuswahl]);
+  }, [onSelectMemory, onSelectConcept, tastaturSchritt, setzeAuswahl, ansicht, falteUm]);
 
   // Wheel-Zoom darf die Seite nicht mitscrollen — React-onWheel ist passiv.
   useEffect(() => {
@@ -2142,7 +2215,7 @@ export function KnowledgeGraph({ memories, onSelectMemory, onSelectConcept, sich
             Beide Ansichten nennen dasselbe Paar — weil sie dasselbe Netz
             meinen, nicht zwei verschiedene Auszählungen. */}
         <div className="hud-label hidden sm:block">
-          {sichtbareAnzahl.knoten} {sichtbareAnzahl.knoten === 1 ? "note" : "notes"} ·{" "}
+          {bildZaehlung.knoten} {bildZaehlung.knoten === 1 ? "note" : "notes"} ·{" "}
           {netz.knoten.length} {netz.knoten.length === 1 ? "concept" : "concepts"} ·{" "}
           {ansicht === "dendrogram"
             ? `${baumLayout.edges.length} ${baumLayout.edges.length === 1 ? "link" : "links"}`
@@ -2315,14 +2388,14 @@ export function KnowledgeGraph({ memories, onSelectMemory, onSelectConcept, sich
           style={{
             width: "100%",
             height: "100%",
-            // Ein Konzept öffnet beim Klick sein dossier — der Zeiger sagt es.
-            // Die übrigen Gerüstknoten (typ, tag-gruppe, wurzel) sind nur
-            // wege, kein inhalt: sie versprechen nichts und bleiben greifbar.
+            // Ein Konzept öffnet beim Klick sein dossier, eine Gruppe im Baum
+            // faltet der Doppelklick — der Zeiger sagt, wo eine Handlung wartet.
+            // Die Wurzel ist der Rahmen, sie verspricht nichts und bleibt greifbar.
             cursor:
               greift
                 ? "grabbing"
                 : hovered
-                  ? (hovered.startsWith(ENTITAETS_PRAEFIX) ? "pointer" : "grab")
+                  ? (zeigerHand(hovered) ? "pointer" : "grab")
                   : "grab",
           }}
           onPointerDown={onPointerDown}

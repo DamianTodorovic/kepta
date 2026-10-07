@@ -33,6 +33,11 @@ export interface StrukturKnoten {
    * nicht in 16 Zeichen, die Zahl aber schon.
    */
   blaetter?: number;
+  /**
+   * true, wenn diese Gruppe zugeklappt ist: ihre Kinder liegen nicht im Bild,
+   * ihre `blaetter`-Zahl aber bleibt die Wahrheit über das, was dahinter steht.
+   */
+  eingeklappt?: boolean;
 }
 
 // ---------- Baum ----------
@@ -179,9 +184,14 @@ export interface DendrogrammOptionen {
   ebenenAbstand?: number;
   /** Radius je Knotenart. */
   radien?: Partial<Record<HierarchieKnoten["kind"], number>>;
+  /**
+   * ids der Gruppen, die zugeklappt liegen. Ein leeres Set ist dasselbe wie
+   * keines: der Baum startet entfaltet, die Faltung ist eine Benutzerhandlung.
+   */
+  eingeklappt?: ReadonlySet<string>;
 }
 
-const STANDARD: Required<Omit<DendrogrammOptionen, "radien">> & { radien: Record<HierarchieKnoten["kind"], number> } = {
+const STANDARD: Required<Omit<DendrogrammOptionen, "radien" | "eingeklappt">> & { radien: Record<HierarchieKnoten["kind"], number> } = {
   blattAbstand: 38,
   ebenenAbstand: 190,
   radien: { root: 11, type: 9, entity: 8, group: 8, memory: 7 },
@@ -209,6 +219,10 @@ export function layoutDendrogram(
   const blattAbstand = opts.blattAbstand ?? STANDARD.blattAbstand;
   const ebenenAbstand = opts.ebenenAbstand ?? STANDARD.ebenenAbstand;
   const radien = { ...STANDARD.radien, ...(opts.radien ?? {}) };
+  // Nur eine Gruppe mit Kindern kann gefaltet sein — eine Blattnotiz steht
+  // sowieso allein, und ihr ein „zugeklappt" anzuhängen wäre ein Zustand ohne
+  // Wirkung und mit Irreführung.
+  const gefaltet = (k: HierarchieKnoten) => k.children.length > 0 && !!opts.eingeklappt?.has(k.id);
 
   const nodes: LayoutNode[] = [];
   const edges: LayoutEdge[] = [];
@@ -217,7 +231,7 @@ export function layoutDendrogram(
 
   const besuche = (k: HierarchieKnoten, tiefe: number): number => {
     const r = radien[k.kind];
-    if (k.children.length === 0) {
+    if (k.children.length === 0 || gefaltet(k)) {
       const y = blattY * blattAbstand;
       blattY += 1;
       nodes.push({ id: k.id, x: tiefe * ebenenAbstand, y, vx: 0, vy: 0, r, pinned: false });
@@ -257,8 +271,12 @@ export function layoutDendrogram(
         r: radien[k.kind],
         keinEtikett: nurWiederholung(k) || undefined,
         blaetter: zaehleBlaetter(k),
+        eingeklappt: gefaltet(k) || undefined,
       });
     }
+    // Die Kinder einer gefalteten Gruppe sind nicht im Bild — also bekommen
+    // sie auch kein Etikett und keine Farbe, die jemand lesen könnte.
+    if (gefaltet(k)) return;
     for (const c of k.children) sammleStruktur(c);
   };
   sammleStruktur(baum);

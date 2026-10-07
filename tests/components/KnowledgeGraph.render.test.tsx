@@ -2314,3 +2314,165 @@ describe("Die Legende erklärt den neuen Kanal", () => {
     expect(text).toContain("A number in a concept is the notes");
   });
 });
+
+// P-7: Gruppen, die man zufaltet, und eine Zahl, die bleibt. Der Baum startet
+// entfaltet — die Faltung ist eine Handlung, und sie muss im Bild stehen, auch
+// wenn die Scheibe klein ist: sonst ist das Verschwinden der Kinder keine
+// Auskunft, sondern ein Verlust.
+describe("Faltung: ein Doppelklick faltet eine Gruppe und sagt es", () => {
+  async function inDenBaum(ms: Memory[]) {
+    const { container } = await zeichne(ms);
+    const knopf = container.querySelector('button[title^="Dendrogram"]') as HTMLButtonElement;
+    expect(knopf, "Der Baumknopf fehlt").not.toBeNull();
+    await act(async () => { fireEvent.click(knopf); });
+    await bilder(20);
+    return container;
+  }
+
+  /** Texte des letzten Bildes und die Scheiben, die sie tragen. */
+  function rahmen() {
+    let tx = 0, ty = 0, k = 1, farbe = "";
+    const texte: { text: string; x: number; y: number }[] = [];
+    const scheiben: { x: number; y: number; r: number }[] = [];
+    for (const a of leinwand.letzterRahmen()) {
+      if (a.op === "translate" && tx === 0 && ty === 0) { tx = Number(a.args[0]); ty = Number(a.args[1]); }
+      if (a.op === "scale" && k === 1) k = Number(a.args[0]);
+      if (a.op === "set:fillStyle") farbe = String(a.args[0]);
+      if (a.op === "fillText") texte.push({ text: String(a.args[0]), x: Number(a.args[1]), y: Number(a.args[2]) });
+      if (a.op === "arc") scheiben.push({ x: Number(a.args[0]), y: Number(a.args[1]), r: Number(a.args[2]) });
+    }
+    void farbe;
+    return { texte: texte.map((t) => t.text), texteOhne: texte, scheiben, tx, ty, k };
+  }
+
+  /** Der Mittelpunkt der Scheibe, deren Geruest-Etikett so liegt wie ueblich. */
+  function scheibeVon(name: string) {
+    const r = rahmen();
+    const etikett = r.texteOhne.find((t) => t.text === name || t.text === `${name.slice(0, 16)}…`);
+    expect(etikett, `Kein Etikett „${name}". Gemalt: ${r.texte.join(" | ")}`).toBeDefined();
+    const treffer = r.scheiben.find((s) => Math.abs(s.x + s.r + 3 - etikett!.x) < 0.01 && Math.abs(s.y - etikett!.y) < 0.01);
+    expect(treffer, `Keine Scheibe traegt „${name}"`).toBeDefined();
+    return { x: treffer!.x * r.k + r.tx, y: treffer!.y * r.k + r.ty };
+  }
+
+  /**
+   * Nur das dblclick-Ereignis selbst — ein fireEvent.doubleClick schickt
+   * zusaendlich mousedown/mouseup und die malen eine Pfads-Bewegung, die im
+   * Bild landet und die Etiketten aus dem Ausschnitt schiebt.
+   */
+  async function doppelklick(container: HTMLElement, bei: { x: number; y: number }) {
+    const c = container.querySelector('[data-testid="graph-canvas"]') as HTMLCanvasElement;
+    await act(async () => {
+      c.dispatchEvent(new MouseEvent("dblclick", {
+        bubbles: true, cancelable: true, clientX: Math.round(bei.x), clientY: Math.round(bei.y),
+      }));
+      await new Promise((r) => setTimeout(r, 120));
+    });
+  }
+
+  /**
+   * Die Scheibe einer Notiz. Im Baum sind die Notizen oft zu klein für einen
+   * gemalten Kreis — ihr Etikett sitzt aber bekanntermaessen direkt unter der
+   * Mitte (radius 7 + 2), und die Greifweite von 12 Bildpunkten trifft sie auch
+   * so. Ueber den Kreis zu gehen, haette den Test an die Detailstufe gekettet.
+   */
+  function scheibeVonNotiz(titel: string) {
+    const r = rahmen();
+    const etikett = r.texteOhne.find((t) => t.text === titel);
+    expect(etikett, `Kein Etikett „${titel}". Gemalt: ${r.texte.join(" | ")}`).toBeDefined();
+    return { x: etikett!.x * r.k + r.tx, y: (etikett!.y - 9) * r.k + r.ty };
+  }
+
+  /**
+   * Das Bild nach einer Handlung. Der Baum ruht — nach einer Faltung fliegen
+   * zwar Rahmen, aber einen leeren Rahmen zu lesen und „nichts gemalt" zu
+   * melden, waere eine Messung der Geduld und nicht der Flaeche.
+   */
+  async function bildNach(soll: (texte: string[]) => boolean) {
+    let letztes = rahmen();
+    for (let i = 0; i < 25 && !soll(letztes.texte); i++) {
+      await bilder(2);
+      letztes = rahmen();
+    }
+    return letztes;
+  }
+
+  const notizen = () => [
+    note({ id: "f1", title: "Uebergabe Nordwind", type: "semantic" }),
+    note({ id: "f2", title: "Nachfass Nordwind", type: "semantic" }),
+    note({ id: "f3", title: "Termin Kestrel", type: "episodic" }),
+  ];
+  const sichtbar = () => {
+    const texte = rahmen().texte;
+    return ["Uebergabe Nordwind", "Nachfass Nordwind", "Termin Kestrel"].filter((t) => texte.includes(t)).length;
+  };
+
+  it("startet entfaltet: jedes Kind steht, keine Malzahl im Bild", async () => {
+    await inDenBaum(notizen());
+    expect(sichtbar()).toBe(3);
+    expect(rahmen().texte.some((t) => t.startsWith("×"))).toBe(false);
+  });
+
+  it("laesst die Kinder einer doppelt genommenen Gruppe weg und zaehlt sie weiter", async () => {
+    const container = await inDenBaum(notizen());
+    await doppelklick(container, scheibeVon("Facts"));
+    const texte = (await bildNach((t) => t.includes("×2"))).texte;
+    expect(texte).not.toContain("Uebergabe Nordwind");
+    expect(texte).not.toContain("Nachfass Nordwind");
+    expect(texte, `Termin fiel mit weg: ${texte.join(" | ")}`).toContain("Termin Kestrel");
+    expect(texte, `keine Malzahl: ${texte.join(" | ")}`).toContain("×2");
+    void container;
+  });
+
+  it("oeffnet die Gruppe beim zweiten Doppelklick wieder", async () => {
+    const container = await inDenBaum(notizen());
+    const bei = scheibeVon("Facts");
+    await doppelklick(container, bei);
+    await bildNach((t) => t.includes("×2"));
+    await doppelklick(container, bei);
+    const texte = (await bildNach((t) => t.includes("Uebergabe Nordwind"))).texte;
+    expect(texte.filter((t) => ["Uebergabe Nordwind", "Nachfass Nordwind", "Termin Kestrel"].includes(t))).toHaveLength(3);
+    expect(texte.some((t) => t.startsWith("×"))).toBe(false);
+  });
+
+  /** Die Kopfzeile der Flaeche: „N notes · M concepts · …". */
+  function kopfZeile(container: HTMLElement) {
+    const zeile = [...container.querySelectorAll("div.hud-label")].find((d) => /^\d+ notes?( ·|$)/.test((d.textContent ?? "").trim()));
+    expect(zeile, "Die Kopfzeile fehlt").toBeDefined();
+    return Number((zeile!.textContent ?? "").trim().match(/^(\d+)/)![1]!);
+  }
+
+  it("zaehlt in der Kopfzeile, was nach der Faltung im Bild steht", async () => {
+    const container = await inDenBaum(notizen());
+    expect(kopfZeile(container), "Kopfzeile vor der Faltung").toBe(3);
+    await doppelklick(container, scheibeVon("Facts"));
+    await bildNach((t) => t.includes("×2"));
+    expect(kopfZeile(container), "Kopfzeile nach der Faltung").toBe(1);
+    // Und die Bilanz des Ausschnitts sagt, warum eine fehlt.
+    expect(container.textContent).toContain("Showing 1 of 3 notes");
+  });
+
+  it("faltet auch die tastatur: pfeil links auf die ebene, enter zu", async () => {
+    const container = await inDenBaum(notizen());
+    const c = container.querySelector('[data-testid="graph-canvas"]') as HTMLCanvasElement;
+    fireEvent.keyDown(c, { key: "ArrowDown" });
+    for (let i = 0; i < 6 && !(c.getAttribute("data-selection") ?? "").startsWith("__typ:"); i++) {
+      fireEvent.keyDown(c, { key: "ArrowLeft" });
+    }
+    expect((c.getAttribute("data-selection") ?? "").startsWith("__typ:"), `Auswahl: ${c.getAttribute("data-selection")}`).toBe(true);
+    fireEvent.keyDown(c, { key: "Enter" });
+    const texte = (await bildNach((t) => t.includes("×2"))).texte;
+    expect(texte).not.toContain("Uebergabe Nordwind");
+    expect(texte).toContain("Termin Kestrel");
+  });
+
+  it("faltet nicht, wer eine Notiz doppelt nimmt — die oeffnet sie", async () => {
+    const container = await inDenBaum(notizen());
+    const bei = scheibeVonNotiz("Uebergabe Nordwind");
+    await doppelklick(container, bei);
+    await bilder(6);
+    const texte = rahmen().texte;
+    expect(texte.filter((t) => ["Uebergabe Nordwind", "Nachfass Nordwind", "Termin Kestrel"].includes(t)), `gemalt: ${texte.join(" | ")}`).toHaveLength(3);
+    expect(texte.some((t) => t.startsWith("×"))).toBe(false);
+  });
+});

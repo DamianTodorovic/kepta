@@ -223,6 +223,51 @@ describe("layoutDendrogram", () => {
     }
   });
 
+  it("faltet eine Gruppe zu einem Blatt: ihre Kinder verschwinden samt Kanten", () => {
+    const baum = buildHierarchy([
+      mem({ id: "1", type: "semantic", title: "a", tags: ["k"] }),
+      mem({ id: "2", type: "semantic", title: "b", tags: ["k"] }),
+      mem({ id: "3", type: "episodic", title: "c" }),
+    ]);
+    const { nodes, edges, struktur } = layoutDendrogram(baum, { eingeklappt: new Set(["__typ:semantic"]) });
+    const ids = new Set(nodes.map((n) => n.id));
+    expect(ids.has("__typ:semantic"), "die gefaltete Gruppe muss stehen").toBe(true);
+    expect(ids.has("__tag:k"), "die Kindgruppe steht noch").toBe(false);
+    expect(ids.has("1"), "ein gefaltetes Notizkind steht noch").toBe(false);
+    expect(ids.has("3"), "eine andere Gruppe fiel mit weg").toBe(true);
+    expect(edges.some((e) => e.target === "1"), "eine Kante in die Faltung steht noch").toBe(false);
+    expect(struktur.get("__typ:semantic")).toMatchObject({ eingeklappt: true, blaetter: 2 });
+    expect(struktur.has("__tag:k"), "ein weggefallenes Kind wird noch benannt").toBe(false);
+  });
+
+  it("faltet tiefer liegende Gruppen, ohne die darüber zu berühren", () => {
+    const baum = buildHierarchy([
+      mem({ id: "1", type: "semantic", title: "a", tags: ["k"] }),
+      mem({ id: "2", type: "semantic", title: "b", tags: ["k"] }),
+      mem({ id: "3", type: "semantic", title: "c", tags: ["andere"] }),
+    ]);
+    const { nodes, struktur } = layoutDendrogram(baum, { eingeklappt: new Set(["__tag:k"]) });
+    const ids = new Set(nodes.map((n) => n.id));
+    expect(ids.has("__typ:semantic"), "die Ebene darüber fiel weg").toBe(true);
+    expect(ids.has("__tag:andere"), "eine andere Gruppe fiel mit weg").toBe(true);
+    expect(ids.has("1"), "ein gefaltetes Kind steht noch").toBe(false);
+    expect(struktur.get("__tag:k")).toMatchObject({ eingeklappt: true, blaetter: 2 });
+  });
+
+  it("lässt den Baum unverändert, wenn niemand faltet", () => {
+    // Der Baum startet voll entfaltet; die Faltung ist Benutzerhandlung. Ein
+    // leeres Set darf deshalb nicht wie ein Eingriff aussehen.
+    const baum = buildHierarchy([
+      mem({ id: "1", type: "semantic", title: "a" }),
+      mem({ id: "2", type: "episodic", title: "b" }),
+    ]);
+    const ohne = layoutDendrogram(baum);
+    const leer = layoutDendrogram(baum, { eingeklappt: new Set() });
+    expect(leer.nodes.map((n) => [n.id, n.x, n.y])).toEqual(ohne.nodes.map((n) => [n.id, n.x, n.y]));
+    expect(leer.edges).toHaveLength(ohne.edges.length);
+    for (const [id, s] of leer.struktur) expect(s.eingeklappt, `${id} gefaltet ohne Hand`).toBeUndefined();
+  });
+
   it("ist deterministisch: gleiche Eingabe, gleiche Positionen", () => {
     const notizen = [
       mem({ id: "1", type: "semantic", title: "a" }),

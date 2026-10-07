@@ -53,7 +53,7 @@ export const TEXTE: Record<string, string> = {
   "preview.part": "Part",
   "preview.confidence": "Confidence",
   "hint.force": "Drag: a node stays where you drop it · Double-click: open the note · Wheel: zoom · Size = connections · Width = claims · Hover a link to read it",
-  "hint.tree": "Root → type → entity → note · Drag: pan · Double-click: open the note · Wheel: zoom",
+  "hint.tree": "Root → type → entity → note · Double-click a group: fold it, the count stays · Double-click a note: open it · Drag: pan · Wheel: zoom",
   "list.noMatch": "No match",
   "settings.display": "Display",
   "settings.fontSize": "Text size",
