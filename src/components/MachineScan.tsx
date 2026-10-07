@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { motion } from "motion/react";
 import { X, ShieldCheck, ShieldAlert, Loader2, FolderOpen, CheckCircle2, AlertTriangle, Bot } from "../lib/icons";
+import { inForm } from "../lib/antwort";
 
 /**
  * Rechner-Scan mit ausdruecklicher Zustimmung.
@@ -31,6 +32,17 @@ export interface ScanVorschau {
   sample: { path: string; bytes: number }[];
   totalBytes: number;
 }
+
+// Die Form, die diese Fläche liest: `vorschau.byFolder.length`,
+// `vorschau.skipped.map(...)`. Ein Feld, das der Server nicht liefert, warf
+// bisher den ganzen Dialog raus.
+const LEERE_VORSCHAU: ScanVorschau = {
+  roots: [""], seen: 0, found: 0, truncated: false, skippedFolders: 0,
+  skipped: [{ grund: "", label: "", anzahl: 0 }],
+  byFolder: [{ ordner: "", anzahl: 0 }],
+  sample: [{ path: "", bytes: 0 }],
+  totalBytes: 0,
+};
 
 export interface ScanStatus {
   running: boolean;
@@ -160,7 +172,7 @@ export function MachineScan({ open, onClose, onImported, autoPreview = false }: 
     try {
       const r = await fetch("/api/scan/preview", { method: "POST", headers: { "Content-Type": "application/json" }, body: "{}" });
       if (!r.ok) throw new Error((await r.json().catch(() => ({}))).error ?? "Preview failed");
-      setVorschau((await r.json()) as ScanVorschau);
+      setVorschau(inForm(await r.json(), LEERE_VORSCHAU));
     } catch (e) {
       setFehler(e instanceof Error ? e.message : "Preview failed");
     } finally {

@@ -298,3 +298,20 @@ describe("Der Nutzer bestimmt, was und von wo gelesen wird", () => {
     expect(await screen.findByText(/What you should know before you agree/i)).toBeTruthy();
   });
 });
+
+describe("Eine Teilantwort wirft den Scan-Dialog nicht raus", () => {
+  // Die Fläche liest vorschau.byFolder.length und vorschau.skipped.map(...).
+  // Antwortet /api/scan/preview ohne diese Felder, stand bisher ein leerer
+  // Bildschirm da — React hatte den Dialog nach dem Fehler ausgehängt.
+  it("hält durch, wenn die Vorschau nur Zahlen trägt", async () => {
+    vi.stubGlobal("fetch", vi.fn(async (url: string) => {
+      if (String(url).includes("/api/scan/preview")) return new Response(JSON.stringify({ seen: 120, found: 12 }), { status: 200 });
+      return new Response("{}", { status: 200 });
+    }));
+    const { container } = render(<MachineScan open onClose={() => {}} onImported={() => {}} />);
+    await userEvent.click(await screen.findByRole("button", { name: /Show me what would be imported/i }));
+    await waitFor(() => expect(container.textContent).toMatch(/12/));
+    expect(container.textContent, "Der Dialog ist von der Seite verschwunden").not.toBe("");
+    expect(container.textContent).not.toMatch(/Cannot read/);
+  });
+});
