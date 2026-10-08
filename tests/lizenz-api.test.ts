@@ -132,7 +132,10 @@ describe("Freemium: die Pro-Werkzeuge laufen ohne Schlüssel mit Tageslimiten", 
     for (let i = 0; i < 20; i++) {
       const res = await request(app).post("/api/profile").send({ beruf: "Anwältin" });
       expect(res.status, `Aufruf ${i + 1}`).toBe(200);
-      expect(res.headers["x-kepta-remaining"]).toBe(String(19 - i));
+      expect(
+        res.headers["x-kepta-remaining"],
+        `Aufruf ${i + 1}: ${res.status} · plan: ${res.headers["x-kepta-plan"] ?? "KEINER"} · text: ${res.text.slice(0, 90)} · köpfe: ${JSON.stringify(res.headers).slice(0, 260)}`
+      ).toBe(String(19 - i));
     }
     const ueber = await request(app).post("/api/profile").send({ beruf: "Anwältin" });
     expect(ueber.status).toBe(429);
@@ -180,7 +183,7 @@ describe("Freemium: die Pro-Werkzeuge laufen ohne Schlüssel mit Tageslimiten", 
       // Der Fall ist unter Last schon einmal mit 401 aufgefallen — ein Status,
       // den diese App nirgends sendet. Ohne den Antworttext daneben bleibt so
       // etwas ein Rätsel, also nennt die Meldung, wer wirklich geantwortet hat.
-      expect(res.status, `Nachricht ${i + 1}: ${res.status} · ${res.text.slice(0, 200)}`).toBe(200);
+      expect(res.status, `Nachricht ${i + 1}: ${res.status} · Text: ${res.text.slice(0, 120)} · Köpfe: ${JSON.stringify(res.headers).slice(0, 300)}`).toBe(200);
       expect(res.headers["x-kepta-plan"]).toBe("pro");
     }
     expect(stromaufwaerts, "jede Nachricht muss durch die eingesetzte Quelle gehen").toHaveBeenCalledTimes(12);

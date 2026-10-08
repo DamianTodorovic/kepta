@@ -54,6 +54,15 @@ const METHODEN = [
 ] as const;
 
 /**
+ * Die Schriftgröße aus einem CSS-Schriftkurzbefehl — die letzte Zahl vor „px".
+ * Ohne erkennbare Größe gilt 12 px, der Satz, mit dem der Graph arbeitet.
+ */
+function schriftgroesse(font: unknown): number {
+  const treff = [...String(font ?? "").matchAll(/(\d+(?:\.\d+)?)px/g)].pop();
+  return treff ? Number(treff[1]) : 12;
+}
+
+/**
  * Baut den Buchfuehrungs-Kontext und haengt ihn an HTMLCanvasElement — inklusive
  * der Leinwaende, die die Komponente sich selbst fuer die Sprites anlegt.
  */
@@ -78,9 +87,20 @@ export function installiereLeinwand(): Leinwand {
       return { addColorStop: (...a: unknown[]) => aufrufe.push({ op: "addColorStop", args: a }) };
     };
     ctx.createLinearGradient = ctx.createRadialGradient;
+    /**
+     * Breite im eingestellten Satz — nicht in einem festgeschriebenen. Vorher
+     * standen hier sture 6 px pro Zeichen, gleichgültig was `ctx.font` sagte.
+     * Der Wissensgraph verkleinert seine Etiketten mit dem Zoom: im Test waren
+     * sie damit bis zu viermal zu breit und verdrängten Nachbarn, wo der
+     * Browser sie nebeneinander stellt. 0,5 × Schriftgröße pro Zeichen hält den
+     * gewohnten Wert bei 12 px und folgt doch der gesetzten Größe.
+     */
     ctx.measureText = (t: string) => {
       aufrufe.push({ op: "measureText", args: [t] });
-      return { width: String(t).length * 6 };
+      const text = String(t);
+      if (!text.length) return { width: 0 };
+      const groesse = schriftgroesse(ctx.font);
+      return { width: text.length * groesse * 0.5 };
     };
     ctx.getImageData = (x: number, y: number, w: number, h: number) => ({
       data: new Uint8ClampedArray(Math.max(0, w) * Math.max(0, h) * 4),
