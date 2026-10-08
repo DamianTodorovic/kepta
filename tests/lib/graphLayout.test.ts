@@ -1495,8 +1495,66 @@ describe("entitaetsNetz — eine Ontologie für Kraftfeld und Baum", () => {
       validFrom?: number | null;
       validTo?: number | null;
     }[],
-    sichtbar: string[]
-  ) => entitaetsNetz(byEntity, relationen, new Set(sichtbar));
+    sichtbar: string[],
+    titelVon?: (id: string) => string | undefined
+  ) => entitaetsNetz(byEntity, relationen, new Set(sichtbar), 2, titelVon);
+
+  // G-1 (lesenseitig): der Schreibweg legt von jeder Notiz auch ihren Titel als
+  // Begriff an und hängt die Behauptung daran. In einer echten Basis von 400
+  // Notizen sind das 400 von 420 Begriffen und alle 1 400 Linien — ein Echo der
+  // Titelliste, kein Wissen. Solange der Schreibweg nicht umgestellt ist, darf
+  // die Fläche das Echo nicht als Ontologie ausgeben.
+  it("ein Begriff, der nur den Titel seiner einen Notiz wiederholt, ist keiner", () => {
+    const n = netz(
+      { "rahmen nordwind": ["m1"], nordwind: ["m1", "m2"] },
+      [{ source: "rahmen nordwind", target: "nordwind", relation: "mentions", memoryId: "m1" }],
+      ["m1", "m2"],
+      (id) => ({ m1: "Rahmen Nordwind", m2: "Tranche Nordwind" })[id]
+    );
+    expect(n.knoten.map((k) => k.label)).toEqual(["nordwind"]);
+    expect(n.behauptungen).toEqual([]);
+    expect(n.erwahnungen).toEqual([["m1", "__ent:nordwind"], ["m2", "__ent:nordwind"]]);
+  });
+
+  it("zwei Notizen mit demselben Titel sind eine Gruppe, kein Echo", () => {
+    const n = netz(
+      { nordwind: ["m1", "m2"] },
+      [{ source: "nordwind", target: "quay", relation: "betreut", memoryId: "m1" }],
+      ["m1", "m2"],
+      (id) => ({ m1: "Nordwind", m2: "Nordwind" })[id]
+    );
+    expect(n.knoten.map((k) => k.label)).toContain("nordwind");
+    expect(n.behauptungen).toHaveLength(1);
+  });
+
+  it("eine Behauptung zwischen zwei echten Begriffen bleibt, auch wenn Echos im Bestand sind", () => {
+    const n = netz(
+      {
+        "titel einer notiz": ["m1"],
+        nordwind: ["m1", "m2"],
+        quay: ["m2", "m3"],
+      },
+      [
+        { source: "titel einer notiz", target: "nordwind", relation: "mentions", memoryId: "m1" },
+        { source: "nordwind", target: "quay", relation: "betreut", memoryId: "m2" },
+      ],
+      ["m1", "m2", "m3"],
+      (id) => ({ m1: "Titel einer notiz", m2: "Tranche", m3: "Termin" })[id]
+    );
+    expect(n.knoten.map((k) => k.label)).toEqual(["nordwind", "quay"]);
+    expect(n.behauptungen).toHaveLength(1);
+    expect(n.behauptungen[0]!.relation).toBe("betreut");
+  });
+
+  it("ohne Titelkenntnis bleibt das Netz, was es war", () => {
+    const n = netz(
+      { "rahmen nordwind": ["m1"], nordwind: ["m1", "m2"] },
+      [{ source: "rahmen nordwind", target: "nordwind", relation: "mentions", memoryId: "m1" }],
+      ["m1", "m2"]
+    );
+    expect(n.knoten.map((k) => k.label)).toEqual(["nordwind", "rahmen nordwind"]);
+    expect(n.behauptungen).toHaveLength(1);
+  });
 
   it("eine Entität mit zwei sichtbaren Notizen wird ein Knoten", () => {
     const n = netz({ elena: ["a", "b", "versteckt"] }, [], ["a", "b"]);

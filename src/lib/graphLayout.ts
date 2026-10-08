@@ -1400,13 +1400,29 @@ export function entitaetsNetz(
   memoriesByEntity: Readonly<Record<string, readonly string[]>> | undefined,
   relationen: readonly RoheRelation[] | undefined,
   sichtbar: ReadonlySet<string>,
-  mindesten = 2
+  mindesten = 2,
+  /**
+   * Der Titel einer Notiz, wenn ihn der Aufrufer kennt. Mit ihm ist das Echo zu
+   * fassen, das der Schreibweg hinterlässt: von jeder Notiz wird auch ihr Titel
+   * als Begriff angelegt und die Behauptung daran gehängt. Ein Begriff, den nur
+   * eine Notiz trägt und der genau deren Titel ist, sagt darum nichts über die
+   * Wissensbasis aus — er sagt, wie eine Überschrift lautet.
+   */
+  titelVon?: (id: string) => string | undefined
 ): EntitaetsNetz {
   const notizenVon = new Map<string, string[]>();
   for (const [name, ids] of Object.entries(memoriesByEntity ?? {})) {
     const sichtbare = [...new Set(ids)].filter((id) => sichtbar.has(id)).sort((a, b) => a.localeCompare(b));
     if (sichtbare.length > 0) notizenVon.set(name, sichtbare);
   }
+
+  const echo = (name: string): boolean => {
+    if (!titelVon) return false;
+    const ids = notizenVon.get(name);
+    if (!ids || ids.length !== 1) return false;
+    const titel = (titelVon(ids[0]!) ?? "").trim().toLowerCase();
+    return titel !== "" && titel === name.trim().toLowerCase();
+  };
 
   const aufgenommene = new Set<string>();
   const netze = new Map<string, EntitaetsKnoten>();
@@ -1421,10 +1437,13 @@ export function entitaetsNetz(
     netze.set(id, { id, label: name, notizen: notizenVon.get(name) ?? [] });
   };
 
-  for (const [name, notizen] of notizenVon) if (notizen.length >= mindesten) nimm(name);
+  for (const [name, notizen] of notizenVon) if (notizen.length >= mindesten && !echo(name)) nimm(name);
 
   const behauptungen: Behauptung[] = [];
   for (const r of relationen ?? []) {
+    // Eine Aussage, die an einem Titel-Echo hängt, ist keine Aussage: Der
+    // Schreibweg hat sie erzeugt, nicht ein Mensch.
+    if (echo(r.source) || echo(r.target)) continue;
     const traeger = r.memoryId ?? null;
     const sichtbarFuerBehauptung = traeger !== null ? sichtbar.has(traeger) : (() => {
       // Ohne beurkundende Notiz kann kein Filter und kein Zeitregler die Kante

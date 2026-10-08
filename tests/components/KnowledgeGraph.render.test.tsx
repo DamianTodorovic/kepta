@@ -3450,3 +3450,45 @@ describe("Ein Filter lässt das Bild bei dem stehen, was übrig ist", () => {
     expect(Math.abs(mittig.y - masse.h / 2), `Schwerpunkt y ${Math.round(mittig.y)} von ${masse.h}`).toBeLessThan(masse.h * 0.12);
   });
 });
+
+// G-1, lesenseitig: der Schreibweg legt von jeder Notiz auch ihren Titel als
+// Begriff an. In einer echten Basis von 400 Notizen waren das 400 von 420
+// Begriffen — die Fläche malte eine Titelliste und nannte sie Ontologie. Der
+// Begriff, der nur den Titel seiner einen Notiz wiederholt, ist kein Begriff.
+describe("Ein Titel-Echo wird kein Begriff im Bild", () => {
+  async function welt() {
+    vi.stubGlobal("fetch", vi.fn(async () => new Response(JSON.stringify({
+      relations: [
+        { source: "Rahmen Nordwind", target: "nordwind", relation: "mentions", memoryId: "e1" },
+        { source: "nordwind", target: "quay street", relation: "betreut", memoryId: "e2" },
+      ],
+      memoriesByEntity: {
+        "Rahmen Nordwind": ["e1"],
+        nordwind: ["e1", "e2"],
+        "quay street": ["e2"],
+      },
+    }), { status: 200 })));
+    const v = await zeichne([
+      note({ id: "e1", title: "Rahmen Nordwind" }),
+      note({ id: "e2", title: "Mietvertrag Quay Street" }),
+    ]);
+    await bilder(10);
+    return v.container;
+  }
+
+  it("zählt nur die Begriffe, die etwas verbinden", async () => {
+    const container = await welt();
+    const kopf = [...container.querySelectorAll("div.hud-label")]
+      .find((d) => /^\d+ notes?\b/.test((d.textContent ?? "").trim()))?.textContent?.trim();
+    expect(kopf, "das Titel-Echo steht noch als Begriff im Kopf").toMatch(/^2 notes · 2 concepts/);
+  });
+
+  it("hängt an das Echo auch keine Behauptung", async () => {
+    // Vorher: 6 Linien — zwei davon führen über den Titel der einen Notiz. Nachher
+    // vier: drei Erwähnungen und die eine Behauptung, die jemand geschrieben hat.
+    const container = await welt();
+    const kopf = [...container.querySelectorAll("div.hud-label")]
+      .find((d) => /^\d+ notes?\b/.test((d.textContent ?? "").trim()))?.textContent?.trim();
+    expect(kopf).toMatch(/· 4 links$/);
+  });
+});

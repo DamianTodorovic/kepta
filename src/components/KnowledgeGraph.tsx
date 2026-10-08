@@ -607,9 +607,21 @@ export function KnowledgeGraph({ memories, onSelectMemory, onSelectConcept, sich
     for (const m of filtered) if (!zeitAktivIds || zeitAktivIds.has(m.id)) ids.add(m.id);
     return ids;
   }, [filtered, zeitAktivIds]);
+  /** Titel je Notiz — nur für eine Frage gebraucht: ist dieser Begriff das Echo
+   *  einer Überschrift? Der Schreibweg legt von jeder Notiz auch ihren Titel als
+   *  Begriff an, und in einer vollen Basis ist die Hälfte der „Ontologie" genau
+   *  das: eine Titelliste mit Kanten. */
+  const titelVonId = useMemo(() => new Map(memories.map((m) => [m.id, m.title])), [memories]);
   const netz = useMemo(
-    () => entitaetsNetz(graphApi?.memoriesByEntity, graphApi?.relations, netzSichtbar),
-    [graphApi, netzSichtbar]
+    () =>
+      entitaetsNetz(
+        graphApi?.memoriesByEntity,
+        graphApi?.relations,
+        netzSichtbar,
+        2,
+        (id) => titelVonId.get(id)
+      ),
+    [graphApi, netzSichtbar, titelVonId]
   );
   const geruestIds = useMemo(() => netz.knoten.map((k) => k.id), [netz]);
   /**
