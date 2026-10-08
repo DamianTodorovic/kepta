@@ -15,7 +15,7 @@ import { type Edition, EDITIONEN, EDITIONS_LABEL, OEFFENTLICHER_SCHLUESSEL, ausG
 export { EDITIONEN, EDITIONS_LABEL };
 export type { Edition };
 
-export const DOWNLOAD = "https://github.com/DamianTodorovic/kepta-pro-releases/releases/latest";
+export const DOWNLOAD = "https://github.com/DamianTodorovic/kepta/releases/latest";
 
 export type Sprache = "de" | "en";
 

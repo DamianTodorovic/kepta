@@ -368,7 +368,7 @@ That is deliberate, not a giveaway: anyone who has to prove that nothing leaks s
 
 ## ⚡ Getting started
 
-**Just want to use it.** Download the file for your system from [Releases](https://github.com/DamianTodorovic/kepta-pro-releases/releases/latest) and open it. The table below says which one. First launch needs one extra click because the app is not code-signed — that is explained per system further down.
+**Just want to use it.** Download the file for your system from [Releases](https://github.com/DamianTodorovic/kepta/releases/latest) and open it. The table below says which one. First launch needs one extra click because the app is not code-signed — that is explained per system further down.
 
 **Connect it to your assistants.** One click inside the app, or one block of text into one file. No path, nothing to build — `npx` fetches the server the first time it is needed:
 

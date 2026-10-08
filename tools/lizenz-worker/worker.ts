@@ -94,7 +94,7 @@ So aktivierst du KEPTA:
 2. Namen eintragen: ${name}
 3. Schlüssel einfügen — die Prüfung läuft offline, nichts verlässt deinen Rechner.
 
-Download (macOS/Windows/Linux): https://github.com/DamianTodorovic/kepta-pro-releases/releases/latest
+Download (macOS — Apple silicon and Intel): https://github.com/DamianTodorovic/kepta/releases/latest
 
 Fragen oder Teams/Enterprise (MDM, SSO): einfach auf LinkedIn antworten.
 — Damian Todorovic`;

@@ -43,14 +43,39 @@ describe("README: kein versprochener Installer, den es nicht gibt", () => {
     expect(schild).not.toContain("Linux");
   });
 
-  // „Gebaut" und „geliefert" sind zwei verschiedene Sätze. Ein Absatz über
-  // Windows-Pfade im Richtlinien-Leser ist wahr, wenn daneben steht, dass die App
-  // nur macOS verlässt — sonst liest jemand eine Windows-App heraus, die es nicht gibt.
-  it("nennt Windows und Linux nur zusammen mit dem Lieferstand", () => {
-    const unverdraeumelt = zeilen
-      .filter((z) => /\bWindows\b|\bLinux\b/.test(z))
-      .filter((z) => !/ship|publish|nur macOS|only|self-build|build it|engine|when you build|no app file/i.test(z))
-      .map((z) => z.trim().slice(0, 90));
-    expect(unverdraeumelt).toEqual([]);
+  // Ein Download-Link ist keine Nebensache: er ist der Ort, an dem ein Mensch
+  // landet, wenn er die App haben will. Die README zeigte auf
+  // `DamianTodorovic/kepta-pro-releases` — anonym gemessen 404, und der Name trägt
+  // eine Stufe, die es nicht mehr gibt. Dieselbe Adresse saß zweimal in dem Text,
+  // der einem Käufer seinen Schlüssel bringt (`tools/lizenz-worker`, `tools/license-studio`).
+  // Veröffentlichte Pakete liegen am Engine-Repo, also darf nur dorthin ein Download zeigen.
+  it("verweist jeden Download auf das Repo, in dem die Pakete wirklich liegen", () => {
+    const TEXT = ["README.md", "tools/lizenz-worker/worker.ts", "tools/license-studio/kern.ts"];
+    const BELEG = (pfad: string) =>
+      pfad === "README.md" ? README : fs.readFileSync(path.join(process.cwd(), pfad), "utf-8");
+    const links = TEXT.flatMap((pfad) =>
+      [...BELEG(pfad).matchAll(/https:\/\/github\.com\/DamianTodorovic\/[\w.-]+\/releases[^\s)"'`]/g)].map((m) => `${pfad}: ${m[0]}`)
+    );
+    expect(links.length, "mindestens ein Release-Link muss belegt sein").toBeGreaterThan(0);
+    const falsch = links.filter((u) => !/\/kepta\/releases/.test(u));
+    expect(falsch, `Downloads zeigen ins Leere:\n${falsch.join("\n")}`).toEqual([]);
+  });
+
+  // Und kein Text, der nach außen geht, darf einen Installer für eine Plattform
+  // nennen, die nicht ausgeliefert wird — derselbe Maßstab wie oben, nur am
+  // Schlüsseltext, den ein Käufer per Mail bekommt.
+  it("verspricht in keinem außen gehenden Text ein Plattform-Paket, das es nicht gibt", () => {
+    const TEXT = ["tools/lizenz-worker/worker.ts", "tools/license-studio/kern.ts"];
+    const stellen = TEXT.flatMap((pfad) =>
+      BELEGZEILEN(pfad)
+        .filter((z) => /Windows|Linux|AppImage|\.exe\b/i.test(z))
+        .filter((z) => !/self-build|build it|engine|source|nur macOS|macOS only/i.test(z))
+        .map((z) => `${pfad}: ${z.trim().slice(0, 90)}`)
+    );
+    expect(stellen, `Plattformen ohne Paket versprochen:\n${stellen.join("\n")}`).toEqual([]);
   });
 });
+
+function BELEGZEILEN(pfad: string): string[] {
+  return fs.readFileSync(path.join(process.cwd(), pfad), "utf-8").split("\n");
+}
