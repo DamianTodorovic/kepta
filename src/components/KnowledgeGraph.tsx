@@ -42,8 +42,10 @@ import {
   buildHierarchy,
   entitiesByMemory,
   layoutDendrogram,
+  vorschlagFaltung,
   stepDendrogram,
   TYP_LABELS,
+  type HierarchieKnoten,
   type StrukturKnoten,
 } from "../lib/graphHierarchy";
 import { layoutSemantik, SEMANTIK_KAPPE, type SemantikKarte } from "../lib/graphSemantik";
@@ -116,6 +118,11 @@ function merkeKrafte(k: KrafteStellung): void {
  * 1440 px Breite, gemessen am 400-Notizen-Bestand (8.10.).
  */
 export const LEGENDE_HOEHE = 96;
+/**
+ * Was ein Zeile im Baum auf dem Schirm mindestens braucht, damit ihr Titel zu
+ * lesen ist. 14 px sind der Etikettschrift (11 px) plus ihr Atemzug.
+ */
+const ZEILEN_LESEBAR = 14;
 /**
  * Ab diesem Zoom wird aus der Behauptung ein Keil. Darunter wäre die schmale
  * Spitze weniger als ein Pixel — dann bleibt die Linie, was sie ist.
@@ -508,14 +515,12 @@ export function KnowledgeGraph({ memories, onSelectMemory, onSelectConcept, sich
    * Neuladen liess Notizen verschwinden, die niemand mehr vermisst.
    */
   const [gefaltet, setGefaltet] = useState<ReadonlySet<string>>(new Set());
-  const falteUm = useCallback((id: string) => {
-    setGefaltet((vorher) => {
-      const neu = new Set(vorher);
-      if (neu.has(id)) neu.delete(id);
-      else neu.add(id);
-      return neu;
-    });
-  }, []);
+  /**
+   * Gruppen, die jemand gegen die automatische Faltung ausgedrückt hat. Die
+   * Hand des Menschen gewinnt in beide Richtungen: was er öffnet, bleibt offen,
+   * bis er es selbst wieder schließt.
+   */
+  const [entfaltet, setEntfaltet] = useState<ReadonlySet<string>>(new Set());
   const [dimensions, setDimensions] = useState({ w: 800, h: 500 });
   const legendenRef = useRef<HTMLDivElement>(null);
   /**
@@ -1058,12 +1063,80 @@ export function KnowledgeGraph({ memories, onSelectMemory, onSelectConcept, sich
   // denselben Konzepten, die das Feld zeigt — sonst stehen für dieselbe
   // Wissensbasis zwei Zahlen im Kopf.
   const konzeptNamen = useMemo(() => new Set(netz.knoten.map((k) => k.label)), [netz]);
+  const baum = useMemo(
+    () => (ansicht === "dendrogram" ? buildHierarchy(baumMemories, entitaeten, konzeptNamen) : null),
+    [baumMemories, entitaeten, konzeptNamen, ansicht]
+  );
+  /**
+   * Wie viele Zeilen die Leinwand bei lesbarem Abstand hält. Der Rahmen ist der
+   * zum Einpassen — dieselbe Fläche, die auch die Legende abzieht.
+   */
+  const baumRahmen = useMemo(
+    () => Math.max(6, Math.floor((einpassFlaeche().h - 128) / ZEILEN_LESEBAR)),
+    [einpassFlaeche]
+  );
+  /** Was der Baum faltet, damit er hineinpasst. Leer, wenn er es nicht muss. */
+  const autoFaltung = useMemo(
+    () => new Set(baum ? vorschlagFaltung(baum, baumRahmen) : []),
+    [baum, baumRahmen]
+  );
+  /** Was wirklich zu ist: die eigene Hand, und was der Baum selbst schloss. */
+  const dicht = useMemo(() => {
+    const aus = new Set(gefaltet);
+    for (const id of autoFaltung) if (!entfaltet.has(id)) aus.add(id);
+    return aus;
+  }, [gefaltet, autoFaltung, entfaltet]);
+  /**
+   * Die Geste auf einer Gruppe — sie kehrt immer das, was im Bild steht.
+   *
+   * Eine automatische Faltung ist keine Handlung, also braucht sie keinen
+   * zweiten Griff: wer sie doppelt nimmt, öffnet sie, und das Öffnen hält, bis
+   * er dieselbe Gruppe wieder schließt.
+   */
+  const falteUm = useCallback((id: string) => {
+    if (dicht.has(id)) {
+      setGefaltet((v) => {
+        if (!v.has(id)) return v;
+        const n = new Set(v);
+        n.delete(id);
+        return n;
+      });
+      setEntfaltet((v) => (v.has(id) ? v : new Set(v).add(id)));
+      return;
+    }
+    setGefaltet((v) => new Set(v).add(id));
+    setEntfaltet((v) => {
+      if (!v.has(id)) return v;
+      const n = new Set(v);
+      n.delete(id);
+      return n;
+    });
+  }, [dicht]);
+  /** Wie viele Notizen hinter den automatischen Faltungen liegen, die noch gelten. */
+  const autoZiffern = useMemo(() => {
+    if (!baum || autoFaltung.size === 0) return 0;
+    const zaehle = (k: HierarchieKnoten): number =>
+      k.children.length === 0 ? 1 : k.children.reduce((n, c) => n + zaehle(c), 0);
+    let n = 0;
+    const sammle = (k: HierarchieKnoten) => {
+      if (autoFaltung.has(k.id) && !entfaltet.has(k.id) && !gefaltet.has(k.id)) { n += zaehle(k); return; }
+      for (const c of k.children) sammle(c);
+    };
+    sammle(baum);
+    return n;
+  }, [baum, autoFaltung, entfaltet, gefaltet]);
+  /** Wie viele Gruppen noch automatisch zu sind — nicht, wie viele der Mensch schloss. */
+  const autoGefaeltet = useMemo(() => {
+    let n = 0;
+    for (const id of autoFaltung) if (!entfaltet.has(id) && !gefaltet.has(id)) n += 1;
+    return n;
+  }, [autoFaltung, entfaltet, gefaltet]);
   const baumLayout = useMemo(
     () =>
-      ansicht === "dendrogram"
-        ? layoutDendrogram(buildHierarchy(baumMemories, entitaeten, konzeptNamen), { eingeklappt: gefaltet })
+      baum
+        ? layoutDendrogram(baum, { eingeklappt: dicht })
         : { edges: [], nodes: [], struktur: new Map<string, StrukturKnoten>() },
-    [baumMemories, entitaeten, konzeptNamen, ansicht, gefaltet]
+    [baum, dicht]
   );
   // Was der Baum wirklich stellt — nicht, was die Wissensbasis hergibt. Eine
   // gefaltete Gruppe nimmt ihre Kinder aus der SIMULATION, nicht nur aus dem
@@ -1135,8 +1208,13 @@ export function KnowledgeGraph({ memories, onSelectMemory, onSelectConcept, sich
       const n = semantikFeld.ohneVektor;
       klausaen.push(`${zahl(n)} note${n === 1 ? "" : "s"} without a vector, parked at the rim`);
     }
+    // Was der Baum nicht zeigen kann, weil seine Zeilen nicht reichen, steht
+    // nicht stillschweigend weg — es ist gefaltet, und die Zeile nennt es.
+    if (autoZiffern > 0) {
+      klausaen.push(`Gathered to fit: ${zahl(autoZiffern)} notes under ${zahl(autoGefaeltet)} groups`);
+    }
     return klausaen.join(" · ");
-  }, [bildZaehlung.knoten, memories.length, graphApi, kantenRapport, selbstkaanten, ansicht, karte, semantikFeld]);
+  }, [bildZaehlung.knoten, memories.length, graphApi, kantenRapport, selbstkaanten, ansicht, karte, semantikFeld, autoZiffern, autoGefaeltet]);
   const baumNachbarn = useMemo(() => {
     const n = new Map<string, Set<string>>();
     for (const e of baumLayout.edges) {
@@ -1421,17 +1499,11 @@ export function KnowledgeGraph({ memories, onSelectMemory, onSelectConcept, sich
     // der alte Kraftfeld-Ausschnitt. Der Wechsel in den Baum gibt die
     // Zielpositionen, damit das ERSTE Bild des Baums schon alles zeigt.
     const knoten = masse ?? sim.nodes;
+    // Keine Untergrenze mehr: die Lesbarkeit trägt jetzt der Baum selbst, indem
+    // er sich faltet. Eine Klemme hier schnitt Zeilen ab — 59 von 129 waren
+    // gemalt, der Rest lag außerhalb der Leinwand, ohne dass die Fläche etwas
+    // davon sagte.
     const fit = fitTransform(layoutBounds(knoten, 70), einpassFlaeche());
-    const minBaumZoom = 0.35;
-    if (fit.k < minBaumZoom) {
-      const grenzen = layoutBounds(knoten);
-      const wurzel = sim.index.get("__wurzel");
-      const zentrum = wurzel ?? { x: (grenzen.minX + grenzen.maxX) / 2, y: (grenzen.minY + grenzen.maxY) / 2 };
-      fit.k = minBaumZoom;
-      // Der Stamm gehoert an den linken Rand — die Ebenen wachsen nach rechts.
-      fit.x = dimensions.w * 0.12 - zentrum.x * fit.k;
-      fit.y = dimensions.h / 2 - zentrum.y * fit.k;
-    }
     transformRef.current = fit;
     setZoomAnzeige(fit.k);
     zeichneNoetig.current = true;
@@ -3299,6 +3371,16 @@ export function KnowledgeGraph({ memories, onSelectMemory, onSelectConcept, sich
           {/* Die Bilanz des Ausschnitts — nur wo etwas fehlt. */}
           {dichteZeile && (
             <div className="hud-label tnum" style={{ color: "var(--text-2)" }}>{dichteZeile}</div>
+          )}
+          {autoZiffern > 0 && (
+            <button
+              onClick={() => setEntfaltet(new Set(autoFaltung))}
+              className="hud-label text-left w-fit"
+              style={{ color: "var(--accent)" }}
+              title="Every gathered group opens — the tree grows past the canvas again, and pan and zoom are yours"
+            >
+              Show everything
+            </button>
           )}
           <div className="hud-label">
             {ansicht === "dendrogram"

@@ -3779,3 +3779,86 @@ describe("Die Legende nimmt dem eingepassten Bild nichts weg", () => {
     expect(unten - hoch, `das Bild füllt nur ${Math.round(unten - hoch)} von ${frei}`).toBeGreaterThanOrEqual(frei * 0.4);
   });
 });
+
+// #72: Der Baum war so groß wie sein Bestand. 400 Notizen sind 425 Zeilen; die
+// Leinwand hält bei lesbarem Abstand etwa vierunddreißig aus. Bisher entschied
+// das die Kamera: sie band bei 0,35 an und schnitt den Baum ab (gemessen: Tinte
+// über die volle Höhe, 116 Bildpunkte an der Unterkante), und „alles zeigen"
+// ließ eine 42 px breite Haarlinie. Jetzt faltet der Baum selbst — und sagt es.
+describe("Der Baum faltet sich, was nicht in seine Leinwand passt", () => {
+  const BLAETTER = 120;
+  function gross() {
+    const notizen: Memory[] = [];
+    const begriffe: Record<string, string[]> = { nordwind: [], kestrel: [], quay: [] };
+    for (let i = 0; i < BLAETTER; i++) {
+      const begriff = Object.keys(begriffe)[i % 3]!;
+      const id = `g${i}`;
+      begriffe[begriff]!.push(id);
+      notizen.push(note({ id, title: `Notiz ${i}`, content: `Hält [[${begriff}]] fest.`, tags: [begriff] }));
+    }
+    vi.stubGlobal("fetch", vi.fn(async () => new Response(JSON.stringify({
+      relations: [], memoriesByEntity: begriffe,
+    }), { status: 200 })));
+    return notizen;
+  }
+  /** Alle gemalten Scheiben eines Rahmens, in Schirmkoordinaten. */
+  function schirmScheiben() {
+    let tx = 0, ty = 0, k = 1;
+    const out: { x: number; y: number; r: number }[] = [];
+    for (const a of leinwand.letzterRahmen()) {
+      if (a.op === "translate" && tx === 0 && ty === 0) { tx = Number(a.args[0]); ty = Number(a.args[1]); }
+      if (a.op === "scale" && k === 1) k = Number(a.args[0]);
+      if (a.op === "arc") out.push({ x: Number(a.args[0]), y: Number(a.args[1]), r: Number(a.args[2]) });
+      else if (a.op === "drawImage") out.push({ x: Number(a.args[1]) + Number(a.args[3]) / 2, y: Number(a.args[2]) + Number(a.args[4]) / 2, r: Number(a.args[3]) / 2 });
+      else if (a.op === "fillRect") out.push({ x: Number(a.args[0]) + Number(a.args[2]) / 2, y: Number(a.args[1]) + Number(a.args[3]) / 2, r: Number(a.args[2]) / 2 });
+    }
+    return out.map((s) => ({ x: s.x * k + tx, y: s.y * k + ty, r: s.r * k }));
+  }
+  async function imBaum(notizen: Memory[]) {
+    const view = await zeichne(notizen);
+    await bilder(10);
+    const baum = [...view.container.querySelectorAll("button")].find((b) => b.textContent?.trim() === "Tree") as HTMLButtonElement;
+    expect(baum, "der Knopf Tree fehlt").toBeTruthy();
+    await act(async () => { fireEvent.click(baum); await new Promise((r) => setTimeout(r, 120)); });
+    await bilder(20);
+    return view;
+  }
+
+  it("hält seine Zeilen im Rahmen und nennt es", async () => {
+    const { container } = await imBaum(gross());
+    const scheiben = schirmScheiben();
+    // 120 Notizen wären 129 Zeilen; der Rahmen bei 700 px Leinwand hält etwa
+    // vierzig aus. Alles darüber ist abgeschnitten, nicht gefaltet.
+    expect(scheiben.length, `der Baum malt ${scheiben.length} Zeilen`).toBeLessThanOrEqual(45);
+    expect(container.textContent).toMatch(/Gathered to fit/i);
+  });
+
+  it("gibt die Faltung her, wenn jemand alles sehen will", async () => {
+    const { container } = await imBaum(gross());
+    const vorher = schirmScheiben().length;
+    const knopf = [...container.querySelectorAll("button")].find((b) => /show everything/i.test(b.textContent ?? "")) as HTMLButtonElement;
+    expect(knopf, "der Knopf Show everything fehlt").toBeTruthy();
+    await act(async () => { fireEvent.click(knopf); await new Promise((r) => setTimeout(r, 120)); });
+    await bilder(12);
+    expect(schirmScheiben().length, "nichts ist aufgegangen").toBeGreaterThan(vorher + 50);
+    expect(container.textContent).not.toMatch(/Gathered to fit/i);
+  });
+
+  it("schneidet keine Zeile an der Leinwandkante ab", async () => {
+    await imBaum(gross());
+    const scheiben = schirmScheiben();
+    expect(scheiben.length).toBeGreaterThan(0);
+    for (const s of scheiben) {
+      expect(s.y - s.r, `Zeile bei ${Math.round(s.y)} liegt über der Leinwand`).toBeGreaterThanOrEqual(-1);
+      expect(s.y + s.r, `Zeile bei ${Math.round(s.y)} liegt unter der Leinwand`).toBeLessThan(700 + 1);
+      expect(s.x + s.r, `Spalte bei ${Math.round(s.x)} liegt hinter der Leinwand`).toBeLessThan(1000 + 1);
+    }
+  });
+
+  it("lässt einen kleinen Baum ganz entfaltet", async () => {
+    const kleine = gross().slice(0, 6);
+    const { container } = await imBaum(kleine);
+    expect(schirmScheiben().length, "ein kleiner Baum wurde gefaltet").toBeGreaterThanOrEqual(kleine.length);
+    expect(container.textContent).not.toMatch(/Gathered to fit/i);
+  });
+});

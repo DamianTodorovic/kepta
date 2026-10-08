@@ -308,6 +308,72 @@ export function layoutDendrogram(
  * kommt. Der Faktor folgt der Daempfungsphilosophie des Kraftfelds: schnell
  * genug, um zuzuordnen, langsam genug, um nicht zu springen.
  */
+/**
+ * Welche Gruppen der Baum falten muss, damit er in eine Zahl Zeilen passt.
+ *
+ * Der Baum war immer so groß, wie sein Bestand Zeilen braucht: 400 Notizen sind
+ * 425 Zeilen. Die Leinwand hält bei lesbarem Abstand etwa vierunddreißig aus.
+ * Bisher entschied das die Kamera — sie band den Ausschnitt bei 0,35 an, und der
+ * Baum wurde oben und unten abgeschnitten (gemessen: 59 von 129 Zeilen waren
+ * überhaupt gemalt, eine lag bei y = −18). Der Knopf „alles zeigen" ließ eine
+ * 42 px breite Haarlinie. Beides zeigt einen Baum, den niemand liest.
+ *
+ * Gefaltet wird von unten. Der größte Brocken wäre oben — einen Typ zu falten
+ * spart mehr Zeilen als eine Gruppe, und der Baum hört dann über seinen Begriffen
+ * auf: übrig bleibt eine Zahl, keine Struktur. Von unten bleiben die Ebenen
+ * erhalten, die jemand als Landkarte braucht, und nur die Massen dahinter treten
+ * hinter ein Malzeichen.
+ *
+ * Die Wurzel ist kein Kandidat: ein Baum, der sich selbst verschließt, ist kein
+ * Bild mehr. Reicht auch die tiefste Faltung nicht, bleibt die Struktur an der
+ * obersten Ebene stehen, und die Fläche sagt das.
+ */
+export function vorschlagFaltung(baum: HierarchieKnoten, zeilen: number): string[] {
+  if (zeilen <= 0) return [];
+  /** Sichtbare Zeilen unter diesem Knoten — wird mit jeder Faltung nachgezogen. */
+  const zeilenUnter = new Map<string, number>();
+  const aelter = new Map<string, string | null>();
+  const ebenen = new Map<number, string[]>();
+  let tiefste = 0;
+  const zaehle = (k: HierarchieKnoten, wer: string | null, tiefe: number): number => {
+    let n = 1;
+    for (const c of k.children) {
+      n += zaehle(c, k.id, tiefe + 1);
+    }
+    zeilenUnter.set(k.id, n);
+    aelter.set(k.id, wer);
+    if (k.children.length > 0 && tiefe > 0) {
+      if (!ebenen.has(tiefe)) ebenen.set(tiefe, []);
+      ebenen.get(tiefe)!.push(k.id);
+      tiefste = Math.max(tiefste, tiefe);
+    }
+    return n;
+  };
+  const gesamt = zaehle(baum, null, 0);
+  if (gesamt <= zeilen) return [];
+
+  const gewaehlt = new Set<string>();
+  let uebrig = gesamt;
+  for (let tiefe = tiefste; tiefe >= 1 && uebrig > zeilen; tiefe--) {
+    // Innerhalb einer Ebene ändert eine Faltung die Gewinne ihrer Nachbarn
+    // nicht — Väter liegen immer eine Ebene höher. Also genügt ein Sortieren
+    // je Ebene statt eines Neubewertens je Zug.
+    const kandidaten = (ebenen.get(tiefe) ?? [])
+      .map((id) => ({ id, gewinnt: (zeilenUnter.get(id) ?? 1) - 1 }))
+      .filter((k) => k.gewinnt > 0)
+      .sort((a, b) => b.gewinnt - a.gewinnt || (a.id < b.id ? -1 : a.id > b.id ? 1 : 0));
+    for (const k of kandidaten) {
+      if (uebrig <= zeilen) break;
+      gewaehlt.add(k.id);
+      uebrig -= k.gewinnt;
+      for (let p: string | null = k.id; p; p = aelter.get(p) ?? null) {
+        zeilenUnter.set(p, (zeilenUnter.get(p) ?? 1) - k.gewinnt);
+      }
+    }
+  }
+  return [...gewaehlt];
+}
+
 export const GLIDE_FAKTOR = 0.22;
 /**
  * Ab welcher Restdistanz ein Knoten AUF DAS ZIEL geschnappt wird. Ohne das

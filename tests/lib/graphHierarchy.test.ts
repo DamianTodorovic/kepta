@@ -9,6 +9,7 @@ import {
   entitiesByMemory,
   layoutDendrogram,
   stepDendrogram,
+  vorschlagFaltung,
   GLIDE_EPSILON,
   TYP_LABELS,
   type HierarchieKnoten,
@@ -371,5 +372,94 @@ describe("stepDendrogram", () => {
   it("meldet Ruhe, wenn nichts mehr zu setzen ist", () => {
     const nodes = [{ id: "a", x: 12, y: 12, vx: 0, vy: 0, r: 5, pinned: false }];
     expect(stepDendrogram(nodes, new Map([["a", { x: 12, y: 12 }]]))).toBe(false);
+  });
+});
+
+// #72: Der Baum passte nicht in seine Leinwand. Die Kamera wurde bei 0,35
+// angebunden (ab ~63 Blättern immer), was den Baum oben und unten abschnitt —
+// gemessen am 400-Notizen-Bestand: Tinte über die volle Leinwandhöhe, 116
+// Bildpunkte an der Unterkante. Der Knopf „alles zeigen" ließ dagegen eine 42 px
+// breite Haarlinie übrig. Beides ist kein Ausschnitt, sondern ein Verlust.
+// Der Baum muss sich selbst falten, wenn er nicht passt.
+describe("vorschlagFaltung: der Baum faltet sich, was er nicht zeigen kann", () => {
+  const zweig = (id: string, blaetter: number): HierarchieKnoten => ({
+    id, kind: "entity", label: id,
+    children: Array.from({ length: blaetter }, (_, i) => ({
+      id: `${id}-n${i}`, kind: "memory" as const, label: `${id} Notiz ${i}`, children: [],
+    })),
+  });
+  const baum = (gruppen: number[], typen = 1): HierarchieKnoten => ({
+    id: "__wurzel", kind: "root", label: "Wurzel",
+    children: Array.from({ length: typen }, (_, t) => ({
+      id: `__typ:${t}`, kind: "type" as const, label: `Typ ${t}`,
+      children: gruppen.map((g, i) => zweig(`g${t}-${i}`, g)),
+    })),
+  });
+  /** Zeilen, die der Vorschlag im Layout sichtbar lässt. */
+  function zeilen(baum: HierarchieKnoten, ids: string[]) {
+    return layoutDendrogram(baum, { eingeklappt: new Set(ids) }).nodes.length;
+  }
+
+  it("lässt einen Baum, der passt, unangetastet", () => {
+    const b = baum([3, 4, 2]);
+    // 9 Blätter + 3 Gruppen + 1 Typ + Wurzel = 14 Zeilen.
+    expect(zeilen(b, [])).toBe(14);
+    expect(vorschlagFaltung(b, 14)).toEqual([]);
+    expect(vorschlagFaltung(b, 400)).toEqual([]);
+  });
+
+  it("faltet zuerst die tiefste Ebene, nicht den größten Brocken", () => {
+    // Ein Typ zu falten spart mehr Zeilen als eine Gruppe — und wäre doch der
+    // falsche Griff: der Baum hört dann oberhalb seiner Begriffe auf, und was
+    // übrig bleibt, ist eine Zahl von ganz oben, keine Struktur.
+    const b = baum(Array.from({ length: 3 }, () => 20), 2);
+    const ids = vorschlagFaltung(b, 10);
+    expect(ids.some((id) => id.startsWith("__typ:")), `oben gefaltet: ${ids.join(", ")}`).toBe(false);
+    expect(ids.every((id) => id.startsWith("g")), `nicht die Gruppen: ${ids.join(", ")}`).toBe(true);
+  });
+
+  it("faltet die größte Gruppe zuerst", () => {
+    // Zwei Gruppen auf derselben Ebene: der Vater einer Gruppe spart immer mehr
+    // als ihr Kind, also ist die Reihenfolge nur auf einer Ebene prüfbar.
+    const b: HierarchieKnoten = {
+      id: "__wurzel", kind: "root", label: "Wurzel",
+      children: [zweig("gross", 40), zweig("klein", 2)],
+    };
+    const ids = vorschlagFaltung(b, 20);
+    expect(ids[0], `zuerst: ${ids.join(", ")}`).toBe("gross");
+  });
+
+  it("hält die sichtbaren Zeilen im Rahmen", () => {
+    const b = baum(Array.from({ length: 20 }, () => 20));
+    for (const rahmen of [60, 34, 20, 12]) {
+      const ids = vorschlagFaltung(b, rahmen);
+      expect(zeilen(b, ids), `Rahmen ${rahmen}: ${ids.length} Faltungen, ${zeilen(b, ids)} Zeilen`).toBeLessThanOrEqual(rahmen);
+    }
+  });
+
+  it("faltet die Wurzel nie", () => {
+    const b = baum(Array.from({ length: 30 }, () => 30));
+    expect(vorschlagFaltung(b, 2)).not.toContain("__wurzel");
+  });
+
+  it("gibt die größtmögliche Faltung, wenn auch sie nicht passt", () => {
+    const b = baum(Array.from({ length: 6 }, () => 10), 4);
+    const ids = vorschlagFaltung(b, 1);
+    // Was übrig bleibt: die Wurzel und ihre vier Typen — tiefer geht nicht,
+    // ohne die Identität des Baums zu verschließen.
+    expect(zeilen(b, ids), `Rahmen 1: ${zeilen(b, ids)} Zeilen`).toBe(5);
+  });
+
+  it("faltet nichts, was schon gefaltet ist", () => {
+    const b = baum([8, 8, 8]);
+    const ids = vorschlagFaltung(b, 6);
+    for (const id of ids) {
+      expect(ids.filter((anderer) => anderer.startsWith(`${id}-`)), `${id} liegt unter einer eigenen Faltung`).toHaveLength(0);
+    }
+  });
+
+  it("nennt denselben Vorschlag, wenn der Bestand derselbe ist", () => {
+    const b = baum([12, 7, 30, 4], 2);
+    expect(vorschlagFaltung(b, 15)).toEqual(vorschlagFaltung(b, 15));
   });
 });
