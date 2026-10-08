@@ -46,11 +46,19 @@ import {
 } from "../lib/graphHierarchy";
 import { layoutSemantik, SEMANTIK_KAPPE, type SemantikKarte } from "../lib/graphSemantik";
 import { schemaInventar, SCHEMA_SCHLUESSEL, type SchemaKante } from "../lib/graphSchema";
+import { herkunftsBild, HERKUNFT_FARBEN, HERKUNFT_LABELS } from "../lib/graphHerkunft";
 
 export type GraphAnsicht = "force" | "dendrogram" | "semantic";
 const ANSICHT_KEY = "kepta_graph_view";
 /** Richtung ist von Haus aus an — sie ist die Aussage, nicht ein Schmuck. */
 const RICHTUNG_KEY = "kepta_graph_richtung";
+/**
+ * Welcher Kanal die Knoten färbt. Art ist der Standard — sie ist die Frage,
+ * die die Fläche zuerst beantwortet. Die Herkunft kommt dazu, wenn sie etwas zu
+ * unterscheiden hat.
+ */
+type FarbKanal = "typ" | "herkunft";
+const FARB_KANAL_KEY = "kepta_graph_farbkanal";
 /**
  * Ab diesem Zoom wird aus der Behauptung ein Keil. Darunter wäre die schmale
  * Spitze weniger als ein Pixel — dann bleibt die Linie, was sie ist.
@@ -405,6 +413,14 @@ export function KnowledgeGraph({ memories, onSelectMemory, onSelectConcept, sich
   const [richtung, setRichtung] = useState<boolean>(() => {
     try { return localStorage.getItem(RICHTUNG_KEY) !== "0"; } catch { return true; }
   });
+  /** Welcher Kanal die Knoten färbt. Gemerkt wie die Ansicht; Art ist der Standard. */
+  const [kanal, setKanal] = useState<FarbKanal>(() => {
+    try { return localStorage.getItem(FARB_KANAL_KEY) === "herkunft" ? "herkunft" : "typ"; } catch { return "typ"; }
+  });
+  const wechsleKanal = (v: FarbKanal) => {
+    setKanal(v);
+    try { localStorage.setItem(FARB_KANAL_KEY, v); } catch { /* ignore */ }
+  };
   const wechsleRichtung = () => {
     const v = !richtung;
     setRichtung(v);
@@ -500,6 +516,20 @@ export function KnowledgeGraph({ memories, onSelectMemory, onSelectConcept, sich
     try { return JSON.parse(localStorage.getItem("kepta_type_colors") || "{}"); } catch { return {}; }
   });
   const TYPE_COLORS = useMemo(() => ({ ...DEFAULT_TYPE_COLORS, ...customTypeColors }), [customTypeColors]);
+  /**
+   * Die Herkunft des Bestands — woher die Notizen kommen. Zwei Herkünfte sind
+   * eine Auskunft, eine ist keine: dann bleibt der Kanal aus, mit dem Grund auf
+   * dem Knopf, statt die ganze Wissensbasis in eine Farbe zu tauchen.
+   */
+  const herkunft = useMemo(
+    () => herkunftsBild(memories.map((m) => ({ id: m.id, tags: m.tags }))),
+    [memories]
+  );
+  const aktiverKanal: FarbKanal = herkunft.verfügbar ? kanal : "typ";
+  const notenFarben = useMemo(
+    () => (aktiverKanal === "herkunft" ? { ...HERKUNFT_FARBEN, neutral: "#9a9a9a" } : TYPE_COLORS),
+    [aktiverKanal, TYPE_COLORS]
+  );
 
   // Eine Typ-Farbe wirkt app-weit (Karten-Grat, Typ-Label, Index-Zahlen).
   useEffect(() => {
@@ -786,10 +816,21 @@ export function KnowledgeGraph({ memories, onSelectMemory, onSelectConcept, sich
   const nachbarnRef = useRef(neighborsOf);
   const byIdRef = useRef(byId);
   const farbenRef = useRef(TYPE_COLORS);
+  /**
+   * Die Farben des aktiven Kanals. Art ist der Standardkanal; die Herkunft
+   * färbt nur, wenn der Bestand auch zwei Herkünfte hat — sonst malt sie alles
+   * in eine Farbe und sagt damit nichts.
+   */
+  const notenFarbenRef = useRef<Record<string, string>>(TYPE_COLORS);
+  const herkunftRef = useRef<Map<string, string>>(new Map());
+  const aktiverKanalRef = useRef<FarbKanal>("typ");
   degreeRef.current = degree;
   nachbarnRef.current = neighborsOf;
   byIdRef.current = byId;
   farbenRef.current = TYPE_COLORS;
+  notenFarbenRef.current = notenFarben;
+  herkunftRef.current = herkunft.träger;
+  aktiverKanalRef.current = aktiverKanal;
   // Baum-Ansicht: Hervorhebung und Nachbarn entlang der Eltern-Kind-Kanten.
   const ansichtRef = useRef(ansicht);
   ansichtRef.current = ansicht;
@@ -1320,7 +1361,7 @@ export function KnowledgeGraph({ memories, onSelectMemory, onSelectConcept, sich
   // Richtung ist reine Darstellung: kein Neu-Layout, keine Physik, ein Bild.
   useEffect(() => {
     zeichneNoetig.current = true;
-  }, [richtung]);
+  }, [richtung, aktiverKanal]);
 
   // Auch die Etikett-Stellung ist reine Darstellung — ein Bild, kein Neu-Layout.
   useEffect(() => {
@@ -1547,7 +1588,7 @@ export function KnowledgeGraph({ memories, onSelectMemory, onSelectConcept, sich
     }
 
     // --- Knoten ---
-    const sp = holeSprites(farbenRef.current, nodeRim, nodeHi);
+    const sp = holeSprites(notenFarbenRef.current, nodeRim, nodeHi);
     const beschriftbar: { n: LayoutNode; m: Memory; r: number }[] = [];
     /**
      * Sehr kleine Knoten, gesammelt nach Farbe UND Deckkraft: x, y, Kantenlaenge.
@@ -1584,8 +1625,9 @@ export function KnowledgeGraph({ memories, onSelectMemory, onSelectConcept, sich
       // aus der Punktwolke wieder eine lesbare Dichte.
       const rrBasis = istHov ? r + 3 / t.k : r;
       const rr = Math.max(rrBasis, MIN_KNOTEN_PX / t.k);
-      const typ = m.type && sp[m.type] ? m.type : "neutral";
-      const farbe = farbenRef.current[m.type ?? "semantic"] ?? "#9a9a9a";
+      const herkunftArt = aktiverKanalRef.current === "herkunft" ? herkunftRef.current.get(n.id) : undefined;
+      const typ = herkunftArt ?? (m.type && sp[m.type] ? m.type : "neutral");
+      const farbe = notenFarbenRef.current[typ] ?? "#9a9a9a";
 
       // Winzig: sammeln statt einzeln malen.
       //
@@ -2632,6 +2674,34 @@ export function KnowledgeGraph({ memories, onSelectMemory, onSelectConcept, sich
             Schema
           </button>
         </div>
+        {/* Welcher Kanal färbt. Art ist der Standardkanal und bleibt es auch —
+            die Herkunftsfarbe ist ein zweiter Blick, und der schaltet sich ab,
+            wenn der Bestand nichts zu unterscheiden hat. */}
+        <div className="flex items-center gap-0.5 ml-2" role="group" aria-label="Node colour channel">
+          <button
+            onClick={() => wechsleKanal("typ")}
+            aria-pressed={aktiverKanal === "typ" ? "true" : "false"}
+            className="btn-ghost px-2 py-1.5 rounded-lg text-[11px]"
+            style={aktiverKanal === "typ" ? { border: "1px solid var(--accent)", color: "var(--accent)" } : undefined}
+            title="Colour by kind of knowledge — facts, events, how-tos, documents. What the graph starts with."
+          >
+            Type
+          </button>
+          <button
+            onClick={() => wechsleKanal("herkunft")}
+            disabled={!herkunft.verfügbar}
+            aria-pressed={aktiverKanal === "herkunft" ? "true" : "false"}
+            className="btn-ghost px-2 py-1.5 rounded-lg text-[11px]"
+            style={aktiverKanal === "herkunft" ? { border: "1px solid var(--accent)", color: "var(--accent)" } : undefined}
+            title={
+              herkunft.verfügbar
+                ? `Colour by where notes came from — ${herkunft.arten.length} kinds in this base: ${herkunft.arten.map((a) => HERKUNFT_LABELS[a]).join(", ")}`
+                : herkunft.grund
+            }
+          >
+            Provenance
+          </button>
+        </div>
         <div className="flex items-center gap-1.5 ml-2" title="Node colours — each colour tints its type across the graph, cards and index">
           {(["semantic", "episodic", "procedural", "reference"] as const).map((t) => (
             <input
@@ -2881,11 +2951,19 @@ export function KnowledgeGraph({ memories, onSelectMemory, onSelectConcept, sich
 
         <div className="absolute left-3 bottom-3 hud-panel rounded-lg px-3 py-2 pointer-events-none space-y-1">
           <div className="flex items-center gap-3 hud-label">
-            {(["semantic", "episodic", "procedural", "reference"] as const).map((t) => (
-              <span key={t} className="flex items-center gap-1.5">
-                <span className="w-2 h-2 rounded-full" style={{ background: TYPE_COLORS[t] }} /> {TYP_LABELS[t]}
-              </span>
-            ))}
+            {/* Die Legende erklärt den Kanal, der gerade färbt — nicht den, den
+                man eben abgeschaltet hat. */}
+            {aktiverKanal === "herkunft"
+              ? herkunft.arten.map((a) => (
+                  <span key={a} className="flex items-center gap-1.5">
+                    <span className="w-2 h-2 rounded-full" style={{ background: HERKUNFT_FARBEN[a] }} /> {HERKUNFT_LABELS[a]}
+                  </span>
+                ))
+              : (["semantic", "episodic", "procedural", "reference"] as const).map((t) => (
+                  <span key={t} className="flex items-center gap-1.5">
+                    <span className="w-2 h-2 rounded-full" style={{ background: TYPE_COLORS[t] }} /> {TYP_LABELS[t]}
+                  </span>
+                ))}
           </div>
           {/* Was in der Scheibe steht, erklaert an der Stelle, die die Farben nennt. */}
           <div className="hud-label" style={{ color: "var(--text-2)" }}>{uiT("legend.glyph")}</div>

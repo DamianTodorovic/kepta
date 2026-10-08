@@ -3132,3 +3132,105 @@ describe("Das Schema-Inventar nennt, was der Bestand trägt", () => {
     expect(kopfNachher, "der Kopf hat sich durch das Panel verbogen").toBe(kopfVorher);
   });
 });
+
+// P-11: der zweite Farbkanal. Cognee färbt „by Type, Node set, or User"; bei
+// KEPTA trug die Fläche nur die Artfarbe, und die Herkunft (Posteingang,
+// Rechner-Scan, hier geschrieben) war nirgends zu sehen.
+//
+// Der Vertrag, der hier gemessen wird: ein Kanal, der nichts zu unterscheiden
+// hat, schaltet sich ab und sagt warum — er taucht die Wissensbasis nicht in
+// ein graues „Unbekannt".
+describe("Die Herkunft färbt, wenn sie etwas zu sagen hat", () => {
+  const HERKUNFT_GESCHRIEBEN = "#8b9096";
+  const HERKUNFT_DATEI = "#b5813a";
+
+  function knopf(container: HTMLElement, name: string) {
+    const k = [...container.querySelectorAll("button")].find((b) => b.textContent?.trim() === name);
+    expect(k, `Der Knopf „${name}" fehlt`).toBeTruthy();
+    return k as HTMLButtonElement;
+  }
+
+  async function umschalten(container: HTMLElement, name: string) {
+    await act(async () => {
+      fireEvent.click(knopf(container, name));
+      await new Promise((r) => setTimeout(r, 220));
+    });
+  }
+
+  /** Welche Farben in diesem Lauf als Füllung gesetzt wurden — auch die der Sprite-Herstellung. */
+  function gemaltenFarben(): Set<string> {
+    return new Set(
+      leinwand.aufrufe
+        .filter((a) => a.op === "set:fillStyle" && typeof a.args[0] === "string" && String(a.args[0]).startsWith("#"))
+        .map((a) => String(a.args[0]))
+    );
+  }
+
+  it("startet im Typ-Kanal", async () => {
+    const { container } = await zeichne([note({ tags: ["x"] }), note({ tags: [] })]);
+    await bilder(8);
+    expect(knopf(container, "Type").getAttribute("aria-pressed")).toBe("true");
+    expect(gemaltenFarben()).not.toContain(HERKUNFT_DATEI);
+  });
+
+  it("schaltet den Herkunfts-Kanal ab, wenn alles aus derselben Hand kommt", async () => {
+    const { container } = await zeichne([note({ tags: ["a"] }), note({ tags: ["b"] }), note({ tags: [] })]);
+    await bilder(8);
+    const herkunft = knopf(container, "Provenance");
+    expect(herkunft.disabled, "der Kanal ist an, obwohl nichts zu unterscheiden ist").toBe(true);
+    expect(herkunft.getAttribute("title")).toMatch(/written in KEPTA/i);
+    expect(herkunft.getAttribute("title")).toMatch(/nothing to tell apart/i);
+  });
+
+  it("gibt den Kanal her, sobald zwei Herkünfte im Bestand stehen", async () => {
+    const ms = [
+      note({ id: "h1", title: "Rechnung Mai", tags: ["auto-import", "inbox", "pdf"] }),
+      note({ id: "h2", title: "Idee Notar", tags: [] }),
+      note({ id: "h3", title: "Schlüsselübergabe", tags: [] }),
+    ];
+    const { container } = await zeichne(ms);
+    await bilder(8);
+    const herkunft = knopf(container, "Provenance");
+    expect(herkunft.disabled).toBe(false);
+    expect(herkunft.getAttribute("title")).toMatch(/2 kinds/i);
+
+    leinwand.leeren();
+    await umschalten(container, "Provenance");
+    await bilder(8);
+    const farben = gemaltenFarben();
+    expect(farben, "die Herkunftsfarbe wird nicht gemalt").toContain(HERKUNFT_DATEI);
+    expect(farben).toContain(HERKUNFT_GESCHRIEBEN);
+    expect(container.textContent).toMatch(/From a file/);
+    expect(container.textContent).toMatch(/Written in KEPTA/);
+  });
+
+  it("lässt die Typfarben in Ruhe, wenn der Kanal zurückgeht", async () => {
+    const ms = [
+      note({ id: "h1", title: "Rechnung Mai", tags: ["auto-import", "inbox", "pdf"] }),
+      note({ id: "h2", title: "Idee Notar", tags: [] }),
+    ];
+    const { container } = await zeichne(ms);
+    await bilder(8);
+    await umschalten(container, "Provenance");
+    await bilder(6);
+    leinwand.leeren();
+    await umschalten(container, "Type");
+    await bilder(8);
+    const farben = gemaltenFarben();
+    expect(farben, "nach dem Zurückwechseln fehlt die Typfarbe").toContain("#56749a");
+    expect(farben, "die Herkunftsfarbe malt noch ins Bild").not.toContain(HERKUNFT_DATEI);
+  });
+
+  it("merkt sich den Kanal", async () => {
+    const ms = [
+      note({ id: "h1", title: "Rechnung Mai", tags: ["inbox", "auto-import"] }),
+      note({ id: "h2", title: "Idee Notar", tags: [] }),
+    ];
+    const { container } = await zeichne(ms);
+    await bilder(8);
+    await umschalten(container, "Provenance");
+    expect(localStorage.getItem("kepta_graph_farbkanal")).toBe("herkunft");
+    await umschalten(container, "Type");
+    expect(localStorage.getItem("kepta_graph_farbkanal")).toBe("typ");
+  });
+});
