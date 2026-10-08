@@ -63,7 +63,9 @@ afterEach(() => {
 
 async function warteAufEnde(): Promise<{ imported: number; phase: string }> {
   for (let i = 0; i < 80; i++) {
-    const s = (await request(app).get("/api/scan/status")).body;
+    const status = await request(app).get("/api/scan/status");
+    expect(status.status, `status-Poll: ${status.status} · ${status.text.slice(0, 200)}`).toBe(200);
+    const s = status.body;
     if (!s.running) return s;
     await new Promise((r) => setTimeout(r, 60));
   }
@@ -81,6 +83,7 @@ describe("POST /api/scan/preview", () => {
 
   it("nennt keine einzige geheime Datei — auch nicht dem Namen nach", async () => {
     const res = await request(app).post("/api/scan/preview").send({});
+    expect(res.status, `${res.status} · ${res.text.slice(0, 200)}`).toBe(200);
     // Nur die PFADE pruefen, nicht die ganze Antwort: die Begruendungstexte
     // sprechen selbst von "credentials" ("Keys, passwords and credentials"),
     // das ist Erklaerung und kein Fund.
@@ -96,6 +99,7 @@ describe("POST /api/scan/preview", () => {
 
   it("sagt, warum etwas fehlt", async () => {
     const res = await request(app).post("/api/scan/preview").send({});
+    expect(res.status, `${res.status} · ${res.text.slice(0, 200)}`).toBe(200);
     const gruende = (res.body.skipped as { grund: string; anzahl: number }[]).map((s) => s.grund);
     expect(gruende).toContain("geheim");
     expect(res.body.skippedFolders).toBeGreaterThan(0);
@@ -103,6 +107,7 @@ describe("POST /api/scan/preview", () => {
 
   it("gruppiert nach Ordner", async () => {
     const res = await request(app).post("/api/scan/preview").send({});
+    expect(res.status, `${res.status} · ${res.text.slice(0, 200)}`).toBe(200);
     const ordner = (res.body.byFolder as { ordner: string; anzahl: number }[]);
     expect(ordner.find((o) => o.ordner === "Dokumente")?.anzahl).toBe(2);
     expect(ordner.find((o) => o.ordner === "(top level)")?.anzahl).toBe(1);
@@ -111,11 +116,13 @@ describe("POST /api/scan/preview", () => {
   it("laesst sich nicht auf fremde Verzeichnisse richten", async () => {
     // Ein Aufruf mit /etc oder / faellt auf das Heimverzeichnis zurueck.
     const res = await request(app).post("/api/scan/preview").send({ roots: ["/etc", "/", "../../.."] });
+    expect(res.status, `${res.status} · ${res.text.slice(0, 200)}`).toBe(200);
     expect(res.body.roots).toEqual([heim]);
   });
 
   it("nimmt einen Unterordner des Heims an", async () => {
     const res = await request(app).post("/api/scan/preview").send({ roots: [path.join(heim, "Dokumente")] });
+    expect(res.status, `${res.status} · ${res.text.slice(0, 200)}`).toBe(200);
     expect(res.body.roots).toEqual([path.join(heim, "Dokumente")]);
     expect(res.body.found).toBe(2);
   });
@@ -135,7 +142,9 @@ describe("POST /api/scan/start", () => {
   });
 
   it("importiert nach Bestaetigung genau die Dokumente", async () => {
-    expect((await request(app).post("/api/scan/start").send({ confirmed: true })).body.started).toBe(true);
+    const angestossen = await request(app).post("/api/scan/start").send({ confirmed: true });
+    expect(angestossen.status, `start: ${angestossen.status} · ${angestossen.text.slice(0, 200)}`).toBe(200);
+    expect(angestossen.body.started).toBe(true);
     const ende = await warteAufEnde();
     expect(ende.phase).toBe("done");
     expect(ende.imported).toBe(3);

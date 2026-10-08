@@ -24,7 +24,7 @@ export default defineConfig({
     // src/lib ist Browser-Code → die betroffenen Testdateien setzen oben
     // den Docblock `// @vitest-environment jsdom` (vitest 4: pro Datei statt Glob).
     environment: "node",
-    setupFiles: ["tests/setup.http.ts", "tests/setup.ui.ts"],
+    setupFiles: ["tests/setup.http.ts", "tests/setup.horchen.ts", "tests/setup.ui.ts"],
     coverage: {
       provider: "v8",
       reporter: ["text", "html", "lcov", "json-summary"],
