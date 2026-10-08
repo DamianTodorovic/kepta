@@ -1098,6 +1098,13 @@ export function KnowledgeGraph({ memories, onSelectMemory, onSelectConcept, sich
         setZoomAnzeige(transformRef.current.k);
       }
       nutzerBewegt.current = false;
+      // Der erste Ausschnitt rechnet auf den Positionen, die die Übernahme
+      // mitbringt. Bei einer vollen Wissensbasis ist das Feld damit noch nicht
+      // fertig — es dehnt sich über hunderte Bilder, und das Bild wanderte nach
+      // rechts unten vom Rahmen weg. Also passt sich die Kamera noch einmal an,
+      // wenn die Physik wirklich steht. Vom Baum kommt sie bereits mit einem
+      // gesetzten Ausschnitt; der bleibt.
+      autoFitOffen.current = !kommtVomBaum;
     }
     uebergangRef.current = zielKraft ?? new Map();
     zeichneNoetig.current = true;
@@ -2689,7 +2696,10 @@ export function KnowledgeGraph({ memories, onSelectMemory, onSelectConcept, sich
             ? `${baumLayout.edges.length} ${baumLayout.edges.length === 1 ? "link" : "links"}`
             : `${kanten.echt} ${kanten.echt === 1 ? "link" : "links"}${kanten.aehnlichkeit ? ` · +${kanten.aehnlichkeit} similar` : ""}`}
         </div>
-        <div className="flex items-center gap-0.5 ml-1" role="group" aria-label="Graph layout">
+        {/* Die Gruppe bricht um: in einem schmalen Fenster lief die letzte
+            Schaltfläche über den Rand hinaus — ein Knopf, den man nicht sehen
+            kann, ist keine Funktion. */}
+        <div className="flex flex-wrap items-center gap-0.5 ml-1" role="group" aria-label="Graph layout">
           <button
             onClick={() => wechsleAnsicht("force")}
             className="btn-ghost px-2.5 py-1.5 rounded-lg flex items-center gap-1.5"

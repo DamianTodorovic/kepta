@@ -200,7 +200,17 @@ export function Dashboard() {
     };
   }, []);
   const [copied, setCopied] = useState(false);
-  const [isFocusMode, setIsFocusMode] = useState(false);
+  /**
+   * Die Leiste ist 256 px breit. In einem Fenster unter der `md`-Grenze sind das
+   * zwei Drittel des Bildschirms, und die Fläche daneben — der Graph, die Liste —
+   * bekommt nur noch einen Streifen. Also startet sie eingeklappt, wenn das
+   * Fenster beide nicht trägt. Wer sie will, holt sie mit dem Knopf, den es
+   * dafür schon gibt; die Entscheidung bleibt beim Menschen, nur die Reihenfolge
+   * stimmt jetzt mit der Breite.
+   */
+  const [isFocusMode, setIsFocusMode] = useState(
+    () => typeof window !== "undefined" && window.innerWidth < 768
+  );
 
   // Papierkorb
   const [trashOpen, setTrashOpen] = useState(false);

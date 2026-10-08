@@ -3360,3 +3360,93 @@ describe("Die Suche zählt Treffer und führt von einem zum nächsten", () => {
     expect(onSelect).toHaveBeenCalledTimes(1);
   });
 });
+
+// #94: der Filter lässt die Kamera stehen. Die Kopfzeile sagt „8 notes", das
+// Bild ist schwarz — die Fläche hat recht und sieht aus, als hätte sie unrecht.
+//
+// Der Fall ist hier nicht behauptet, sondern nachgestellt: zwölf Notizen stehen
+// settled im Feld, dann bleibt ein Wort übrig, das drei trifft. Was der Nutzer
+// danach sieht, müssen diese drei sein — nicht der leere Rahmen um eine Welt,
+// die geradeauseinandergeflogen ist.
+describe("Ein Filter lässt das Bild bei dem stehen, was übrig ist", () => {
+  const masse = { w: 1000, h: 700 };
+
+  function notizen() {
+    const aus = [
+      note({ id: "f1", title: "Rahmen Nordwind" }),
+      note({ id: "f2", title: "Tranche Nordwind" }),
+      note({ id: "f3", title: "Termin Nordwind" }),
+    ];
+    for (let i = 0; i < 9; i++) aus.push(note({ title: `Bemerkung ${i + 1}` }));
+    return aus;
+  }
+
+  /** Die Scheiben des letzten Rahmens, auf den Bildschirm gerechnet. */
+  function aufSchirm() {
+    let tx = 0, ty = 0, k = 1;
+    const punkte: { x: number; y: number }[] = [];
+    for (const a of leinwand.letzterRahmen()) {
+      if (a.op === "translate" && tx === 0 && ty === 0) { tx = Number(a.args[0]); ty = Number(a.args[1]); }
+      else if (a.op === "scale" && k === 1) k = Number(a.args[0]);
+      else if (a.op === "arc") punkte.push({ x: Number(a.args[0]), y: Number(a.args[1]) });
+      else if (a.op === "drawImage") {
+        punkte.push({ x: Number(a.args[1]) + Number(a.args[3]) / 2, y: Number(a.args[2]) + Number(a.args[4]) / 2 });
+      } else if (a.op === "fillRect") {
+        punkte.push({ x: Number(a.args[0]) + Number(a.args[2]) / 2, y: Number(a.args[1]) + Number(a.args[3]) / 2 });
+      }
+    }
+    return punkte.map((p) => ({ x: p.x * k + tx, y: p.y * k + ty }));
+  }
+
+  /** Bis zwei Rahmen dieselben Scheiben setzen — das Feld steht wirklich. */
+  async function ruhigDerWeile() {
+    let letzte: { x: number; y: number }[] = [];
+    for (let i = 0; i < 100; i++) {
+      await bilder(4);
+      const s = aufSchirm();
+      const gleich = s.length > 0 && s.length === letzte.length && s.every((p, j) => p.x === letzte[j]!.x && p.y === letzte[j]!.y);
+      if (gleich) {
+        return {
+          s,
+          ausser: s.filter((p) => p.x < 0 || p.y < 0 || p.x > masse.w || p.y > masse.h).length,
+        };
+      }
+      letzte = s;
+    }
+    const s = aufSchirm();
+    return { s, ausser: s.filter((p) => p.x < 0 || p.y < 0 || p.x > masse.w || p.y > masse.h).length };
+  }
+
+  it("holt nach dem Filtern alles zurück in den Rahmen", async () => {
+    const { container } = await zeichne(notizen());
+    await ruhigDerWeile();
+
+    const feld = container.querySelector('input[placeholder^="Filter"]') as HTMLInputElement;
+    await act(async () => {
+      fireEvent.change(feld, { target: { value: "Nordwind" } });
+      await new Promise((r) => setTimeout(r, 120));
+    });
+    const { s, ausser } = await ruhigDerWeile();
+    // Das Feld steht, wenn zwei Rahmen dieselben Scheiben setzen. Was hier zählt,
+    // ist die Weltkoordinate: ein Rahmen, der noch wandert, wäre keine Messung.
+    expect(s.length, "es wird nichts mehr gemalt").toBeGreaterThanOrEqual(3);
+    expect(ausser, `${ausser} von ${s.length} Knoten stehen außerhalb des Rahmens`).toBe(0);
+  });
+
+  it("stellt das Bild in die Mitte seiner Leinwand, nicht an den Rand", async () => {
+    const { container } = await zeichne(notizen());
+    await ruhigDerWeile();
+    const feld = container.querySelector('input[placeholder^="Filter"]') as HTMLInputElement;
+    await act(async () => {
+      fireEvent.change(feld, { target: { value: "Bemerkung 1" } });
+      await new Promise((r) => setTimeout(r, 120));
+    });
+    const { s } = await ruhigDerWeile();
+    expect(s.length).toBeGreaterThan(0);
+    const mittig = s.reduce((a, p) => ({ x: a.x + p.x / s.length, y: a.y + p.y / s.length }), { x: 0, y: 0 });
+    // Wer alles einpasst, zeigt es auch in der Mitte: ein Bild, das rechts am
+    // Rand klebt, ist halb so breit, wie die Leinwand hergibt.
+    expect(Math.abs(mittig.x - masse.w / 2), `Schwerpunkt x ${Math.round(mittig.x)} von ${masse.w}`).toBeLessThan(masse.w * 0.12);
+    expect(Math.abs(mittig.y - masse.h / 2), `Schwerpunkt y ${Math.round(mittig.y)} von ${masse.h}`).toBeLessThan(masse.h * 0.12);
+  });
+});

@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
-import { render, screen, waitFor, act } from "@testing-library/react";
+import { render, screen, waitFor, act, fireEvent } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { Dashboard } from "../../src/components/Dashboard";
 import { AuthProvider } from "../../src/contexts/AuthContext";
@@ -775,4 +775,39 @@ describe("Dashboard: eine Teilantwort wirft nicht die ganze Fläche", () => {
       expect(container.textContent).toMatch(/0 in Inbox/);
     });
   }
+});
+
+// #93: bei schmalem Fenster bekam die Seitenleiste 256 px und die Fläche den
+// Rest — bei 390 px waren das 134 px für den Graphen, gemessen als schmaler
+// Streifen mit abgeschnittener Knopfleiste. Die Leiste lässt sich einklappen;
+// die Fläche entscheidet nur nicht selbst, wann das nötig ist.
+describe("Bei schmalem Fenster rückt die Seitenleiste zurück", () => {
+  function fenster(breite: number) {
+    Object.defineProperty(window, "innerWidth", { value: breite, writable: true, configurable: true });
+  }
+  function leiste(container: HTMLElement) {
+    return container.querySelector(".sidebar-glass");
+  }
+
+  it("startet eingeklappt, wenn das Fenster zu schmal für beide ist", async () => {
+    fenster(390);
+    const { container } = await zeige([note({ title: "Fristen" })]);
+    expect(leiste(container)?.className, "die Leiste steht und frisst die Breite").toMatch(/w-0/);
+  });
+
+  it("startet geöffnet bei einem Fenster, das beide trägt", async () => {
+    fenster(1440);
+    const { container } = await zeige([note({ title: "Fristen" })]);
+    expect(leiste(container)?.className).toMatch(/w-64/);
+  });
+
+  it("gibt die Leiste her, wer sie selbst wieder holt", async () => {
+    fenster(390);
+    const { container } = await zeige([note({ title: "Fristen" })]);
+    await act(async () => {
+      fireEvent.click(screen.getByRole("button", { name: "Show sidebar" }));
+      await new Promise((r) => setTimeout(r, 60));
+    });
+    expect(leiste(container)?.className).toMatch(/w-64/);
+  });
 });

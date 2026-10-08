@@ -90,6 +90,12 @@ export const THETA = 0.9;
  * Mit 45 ziehen Kanten wirklich an: verbundene Paare rund 60, beliebige rund 270.
  */
 export const IDEAL_LINK = 45;
+/**
+ * Was ein Knoten pro Bild höchstens wandern darf. Das Federnetz wird mit
+ * explizitem Euler integriert; ohne diese Grenze ist es für Begriffe mit vielen
+ * Blättern instabil und die Welt wächst pro Bild um den Faktor zwei.
+ */
+export const MAX_VERZUG = IDEAL_LINK * 3;
 /** Staerke der Abstossung pro Knoten. */
 export const REPULSION = 3400;
 /**
@@ -827,6 +833,19 @@ export function stepSimulation(sim: Simulation): void {
     n.vy -= n.y * g * alpha;
     n.vx *= DAMPING;
     n.vy *= DAMPING;
+    // Die Schallmauer. Explizites Euler ist für ein Federnetz nur bis zu einer
+    // endlichen Steifheit stabil: zwanzig Federn an einem Begriff, jeder Knoten
+    // mehrere hundert Einheiten vom Nachbarn, und das System wächst pro Bild um
+    // den Faktor zwei statt zur Ruhe zu laufen. Gemessen bei 400 Notizen — die
+    // Welt endete bei 4,5e13 Einheiten, die Fläche öffnete bei 2 % und war leer.
+    // Ein Bild darf höchstens drei Ruhelängen weit werfen; alles darüber ist
+    // keine Anordnung, sondern ein Absturz, und wird hier abgefangen.
+    const betrag = Math.hypot(n.vx, n.vy);
+    if (betrag > MAX_VERZUG) {
+      const drossel = MAX_VERZUG / betrag;
+      n.vx *= drossel;
+      n.vy *= drossel;
+    }
     n.x += n.vx;
     n.y += n.vy;
   }

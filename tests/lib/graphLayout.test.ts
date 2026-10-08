@@ -43,6 +43,7 @@ import {
   ALPHA_MIN,
   REPULSION,
   type LayoutNode,
+  type Simulation,
   type LayoutEdge,
 } from "../../src/lib/graphLayout";
 import { fensterOffen } from "../../src/lib/graphTime";
@@ -1741,5 +1742,93 @@ describe("selbstSchleife — wo die Schlinge sitzt", () => {
     const s = selbstSchleife(knoten.x, knoten.y, knoten.r);
     expect(kanteBei(index, [schleife], s.cx + s.rad, s.cy)).toBe(schleife);
     expect(kanteBei(index, [schleife], knoten.x, knoten.y)).toBeNull();
+  });
+});
+
+// #94: eine gefüllte Wissensbasis öffnete im echten Browser bei 2 % Zoom, und
+// die Leinwand war leer. Nachgebaut: 400 Notizen, 420 Begriffe, jeder Titel ein
+// eigener Begriff — genau das, was die App heute schreibt.
+describe("Die Welt bleibt lesbar, wenn der Bestand wächst", () => {
+  function sternwelt(notizen = 400, themen = 20) {
+    const ids: string[] = [];
+    const kanten: LayoutEdge[] = [];
+    const themenNamen = Array.from({ length: themen }, (_, i) => `__ent:thema-${i}`);
+    for (let i = 0; i < notizen; i++) {
+      const notiz = `n${i}`;
+      const titel = `__ent:titel-${i}`;
+      ids.push(notiz, titel);
+      kanten.push({ source: notiz, target: titel, strength: 1, real: true });
+      const thema = themenNamen[i % themen];
+      ids.push(thema);
+      kanten.push({ source: titel, target: thema, strength: 1, real: true });
+      if (i % 4 === 0) {
+        kanten.push({ source: titel, target: themenNamen[(i + 1) % themen]!, strength: 1, real: true });
+      }
+    }
+    return { ids: [...new Set(ids)], kanten };
+  }
+
+  function einfahr(sim: Simulation, runden = 900) {
+    for (let i = 0; i < runden && !isSettled(sim); i++) stepSimulation(sim);
+    return sim;
+  }
+
+  it("hält die Knoten in einer Welt, die der Bildschirm fassen kann", () => {
+    const { ids, kanten } = sternwelt();
+    const sim = einfahr(createSimulation(ids, kanten, () => 6));
+    const grenzen = layoutBounds(sim.nodes, 6);
+    const breite = grenzen.maxX - grenzen.minX;
+    const k = fitTransform(layoutBounds(sim.nodes, randFuerAnsicht(sim.nodes)), { w: 1130, h: 710 }).k;
+    // 400 Notizen sind kein Ausnahmefall. Wenn die Fläche sie bei 2 % einpasst,
+    // ist nichts zu sehen — also muss die Welt in einen lesbaren Maßstab passen.
+    expect(k, `Welt ist ${Math.round(breite)} Einheiten breit, Zoom ${Math.round(k * 100)} %`).toBeGreaterThan(0.2);
+  });
+
+  it("hält die Dichte über die Größenordnung hinweg gleich", () => {
+    const dichte = (n: number, themen: number) => {
+      const welt = sternwelt(n, themen);
+      const sim = einfahr(createSimulation(welt.ids, welt.kanten, () => 6));
+      const g = layoutBounds(sim.nodes);
+      return sim.nodes.length / ((g.maxX - g.minX) * (g.maxY - g.minY));
+    };
+    expect(dichte(800, 20) / dichte(100, 10), "die Dichte fällt mit der Größe ins Bodenlose").toBeGreaterThan(0.2);
+  });
+
+  it("explodiert nicht, wenn ein Begriff viele Notizen trägt", () => {
+    // Der Befund von 400 Notizen: der Begriff mit zwanzig Blättern wurde in
+    // jedem Bild schneller — 1,7e3, 4,7e3, 1,1e4 — und die Welt endete bei
+    // 4,5e13 Einheiten. Zwanzig Federn an einem Knoten dürfen kein System sein,
+    // das pro Bild um den Faktor zwei wächst.
+    const welt = sternwelt(400, 20);
+    const sim = createSimulation(welt.ids, welt.kanten, () => 6);
+    const anfang = layoutBounds(sim.nodes);
+    const weltBreite = anfang.maxX - anfang.minX;
+    let vorher = sim.nodes.map((k) => [k.x, k.y] as const);
+    const sprünge: number[] = [];
+    for (let schritt = 0; schritt < 300; schritt++) {
+      stepSimulation(sim);
+      let sprung = 0;
+      for (let i = 0; i < sim.nodes.length; i++) {
+        sprung = Math.max(sprung, Math.hypot(sim.nodes[i]!.x - vorher[i]![0], sim.nodes[i]!.y - vorher[i]![1]));
+      }
+      vorher = sim.nodes.map((k) => [k.x, k.y] as const);
+      sprünge.push(sprung);
+      // Kein Bild wirft einen Knoten um mehr als ein Fünftel der Welt.
+      expect(sprung, `Bild ${schritt}: ${sprung.toExponential(2)} auf einmal`).toBeLessThan(weltBreite * 0.2);
+      // Und die Welt darf atmen, aber nicht wachsen.
+      const g = layoutBounds(sim.nodes);
+      expect(g.maxX - g.minX, `Bild ${schritt}: die Welt ist auf ${(g.maxX - g.minX).toExponential(2)} angewachsen`).toBeLessThan(weltBreite * 2);
+    }
+    const mittel = (a: number[]) => a.reduce((s, x) => s + x, 0) / a.length;
+    // Sie kommt zur Ruhe: die letzten zwanzig Bilder bewegen weniger als die
+    // ersten zwanzig. Wer wächst statt zu stehen, hat keine Anordnung.
+    expect(mittel(sprünge.slice(-20)), `die letzten Bilder bewegen mehr (${mittel(sprünge.slice(-20)).toFixed(1)} gegen ${mittel(sprünge.slice(0, 20)).toFixed(1)})`).toBeLessThan(mittel(sprünge.slice(0, 20)));
+  });
+
+  it("bleibt bei dreitausend Knoten in einer Welt, die der Bildschirm fassen kann", () => {
+    const welt = sternwelt(1500, 30);
+    const sim = einfahr(createSimulation(welt.ids, welt.kanten, () => 6));
+    const k = fitTransform(layoutBounds(sim.nodes, randFuerAnsicht(sim.nodes)), { w: 1130, h: 710 }).k;
+    expect(k, `Zoom ${Math.round(k * 100)} % bei ${sim.nodes.length} Knoten`).toBeGreaterThan(0.2);
   });
 });
