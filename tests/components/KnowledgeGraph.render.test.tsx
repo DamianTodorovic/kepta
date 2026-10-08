@@ -2980,3 +2980,155 @@ describe("Die semantische Ansicht steht auf den Vektoren", () => {
     expect(container.textContent).toMatch(/stays where you drop it/);
   });
 });
+
+// P-10: das Schema-Inventar. Cognee zeigt im „Schema"-Tab, was seine
+// Wissensbasis trägt — Zählungen je Typ und wie Typen verbunden sind. Bei
+// KEPTA standen diese Zahlen verstreut: die Art-Ziffern auf den
+// Dashboard-Kacheln, die Kantenarten in der Legende, die Behauptungswörter an
+// den Linien.
+//
+// Der Vertrag, der hier zählt: das Inventar kommt aus demselben Payload, den
+// die Fläche zeichnet. Eine zweite Zählung neben der ersten ist genau die
+// Sorte Zahl, die in einer Welle dreimal falsch war.
+//
+// KEIN DOWNGRADE: Der Blick ist zusätzlich. Die Fläche startet ohne ihn, und
+// nichts an ihr wird schlechter, solange er zu ist.
+describe("Das Schema-Inventar nennt, was der Bestand trägt", () => {
+  function bestand() {
+    vi.stubGlobal("fetch", vi.fn(async () => new Response(JSON.stringify({
+      relations: [
+        { source: "nordwind logistics", target: "quay street lease", relation: "betreut", memoryId: "n1" },
+        { source: "nordwind logistics", target: "kestrel software", relation: "betreut", memoryId: "n2" },
+        { source: "elena weiss", target: "nordwind logistics", relation: "meldet an", memoryId: "n3" },
+      ],
+      memoriesByEntity: {
+        "nordwind logistics": ["n1", "n2", "n3"],
+        "quay street lease": ["n1"],
+        "kestrel software": ["n2"],
+        "elena weiss": ["n3"],
+      },
+      bestand: { knoten: 4, kanten: 3 },
+    }), { status: 200 })));
+  }
+  const notizen = () => [
+    note({ id: "n1", title: "Rahmen Nordwind", type: "semantic" }),
+    note({ id: "n2", title: "Tranche Kestrel", type: "episodic" }),
+    note({ id: "n3", title: "Protokoll Weiss", type: "semantic" }),
+  ];
+
+  async function öffne(container: HTMLElement) {
+    const k = [...container.querySelectorAll("button")].find((b) => b.textContent?.trim() === "Schema") as HTMLButtonElement;
+    expect(k, "Der Schema-Knopf fehlt").toBeTruthy();
+    await act(async () => { fireEvent.click(k!); await new Promise((r) => setTimeout(r, 120)); });
+    return container.querySelector('[data-testid="graph-schema"]') as HTMLElement;
+  }
+
+  function zeilen(panel: HTMLElement) {
+    return [...panel.querySelectorAll('[data-testid="graph-schema-row"]')].map((z) => (z.textContent ?? "").trim());
+  }
+
+  function gedimmt(container: HTMLElement): { hell: number; dunkel: number } {
+    let hell = 0;
+    let dunkel = 0;
+    const ahmen = leinwand.letzterRahmen();
+    for (let i = 0; i < ahmen.length; i++) {
+      if (ahmen[i].op !== "arc") continue;
+      let alpha: unknown = 1;
+      for (let j = i - 1; j >= 0; j--) {
+        if (ahmen[j].op === "set:globalAlpha") { alpha = ahmen[j].args[0]; break; }
+      }
+      if (Number(alpha) >= 0.99) hell++;
+      else if (Number(alpha) <= 0.2) dunkel++;
+    }
+    return { hell, dunkel };
+  }
+
+  it("startet zu und lässt die Fläche unangetastet", async () => {
+    bestand();
+    const { container } = await zeichne(notizen());
+    await bilder(8);
+    expect(container.querySelector('[data-testid="graph-schema"]')).toBeNull();
+    const vorher = gedimmt(container);
+    expect(vorher.dunkel, "vor dem Öffnen steht schon etwas gedimmt").toBe(0);
+
+    const panel = await öffne(container);
+    expect(panel).not.toBeNull();
+    await bilder(8);
+    expect(gedimmt(container)).toEqual(vorher);
+  });
+
+  it("zählt die Arten, die Begriffe und die Behauptungen aus demselben Stand", async () => {
+    bestand();
+    const { container } = await zeichne(notizen());
+    await bilder(8);
+    const panel = await öffne(container);
+    const zeilenText = zeilen(panel).join(" | ");
+    expect(zeilenText).toMatch(/Facts\s+2/);
+    expect(zeilenText).toMatch(/Events\s+1/);
+    expect(zeilenText).toMatch(/Concepts\s+4/);
+    expect(zeilenText).toMatch(/betreut\s+2/);
+    expect(zeilenText).toMatch(/meldet an\s+1/);
+    // Eine Art, die nicht vorkommt, bekommt keine Zeile.
+    expect(zeilenText).not.toMatch(/How-tos/);
+  });
+
+  it("nennt die Zahl der Behauptungen, die der Bestand trägt, nicht die des Ausschnitts", async () => {
+    bestand();
+    const { container } = await zeichne(notizen());
+    await bilder(8);
+    const panel = await öffne(container);
+    // 3 Notizen und 4 Begriffe sind 7 Knoten; die 9 gemalten Linien des Kopfes
+    // sind 6 Erwähnungen und 3 Behauptungen — das Inventar nennt beides getrennt.
+    expect(panel.textContent).toMatch(/3 notes · 7 nodes · 3 claims in the store/);
+  });
+
+  it("spotlightet eine Behauptung: was sie nicht trägt, tritt zurück", async () => {
+    bestand();
+    const { container } = await zeichne(notizen());
+    await bilder(8);
+    const panel = await öffne(container);
+    const vorher = gedimmt(container);
+    expect(vorher.dunkel).toBe(0);
+
+    const reihe = [...panel.querySelectorAll('[data-testid="graph-schema-row"]')]
+      .find((z) => (z.textContent ?? "").includes("betreut")) as HTMLButtonElement;
+    expect(reihe, `keine Zeile „betreut"`).toBeTruthy();
+    await act(async () => { fireEvent.click(reihe!); await new Promise((r) => setTimeout(r, 160)); });
+    await bilder(8);
+
+    const nachher = gedimmt(container);
+    expect(nachher.dunkel, "das Spotlight dimmt nichts zurück").toBeGreaterThan(0);
+    expect(nachher.hell, "das Spotlight lässt nichts stehen").toBeGreaterThan(0);
+    expect(nachher.hell).toBeLessThan(vorher.hell);
+  });
+
+  it("gibt das Spotlight her, wer dieselbe Zeile noch einmal nimmt", async () => {
+    bestand();
+    const { container } = await zeichne(notizen());
+    await bilder(8);
+    const panel = await öffne(container);
+    const reihe = [...panel.querySelectorAll('[data-testid="graph-schema-row"]')]
+      .find((z) => (z.textContent ?? "").includes("betreut")) as HTMLButtonElement;
+    await act(async () => { fireEvent.click(reihe!); await new Promise((r) => setTimeout(r, 160)); });
+    await bilder(6);
+    expect(gedimmt(container).dunkel).toBeGreaterThan(0);
+    await act(async () => { fireEvent.click(reihe!); await new Promise((r) => setTimeout(r, 160)); });
+    await bilder(8);
+    expect(gedimmt(container).dunkel, "die Zeile hält das Bild noch immer dunkel").toBe(0);
+  });
+
+  it("lässt die Kopfzeile unangetastet — das Inventar ist ein zweiter Blick, keine zweite Zahl der Fläche", async () => {
+    bestand();
+    const { container } = await zeichne(notizen());
+    await bilder(8);
+    const kopfVorher = [...container.querySelectorAll("div.hud-label")].find((d) => /^\d+ notes?\b/.test((d.textContent ?? "").trim()))?.textContent?.trim();
+    // 3 Notizen, 4 Begriffe, 9 gemalte Linien — davon 3 Behauptungen und 6
+    // Erwähnungen. Was der Kopf zählt, ist das Bild; was das Inventar zählt, ist
+    // der Bestand. Beide Zahlen bleiben, wie sie sind.
+    expect(kopfVorher).toBe("3 notes · 4 concepts · 9 links");
+    await öffne(container);
+    await bilder(8);
+    const kopfNachher = [...container.querySelectorAll("div.hud-label")].find((d) => /^\d+ notes?\b/.test((d.textContent ?? "").trim()))?.textContent?.trim();
+    expect(kopfNachher, "der Kopf hat sich durch das Panel verbogen").toBe(kopfVorher);
+  });
+});

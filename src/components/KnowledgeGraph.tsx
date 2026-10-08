@@ -45,6 +45,7 @@ import {
   type StrukturKnoten,
 } from "../lib/graphHierarchy";
 import { layoutSemantik, SEMANTIK_KAPPE, type SemantikKarte } from "../lib/graphSemantik";
+import { schemaInventar, SCHEMA_SCHLUESSEL, type SchemaKante } from "../lib/graphSchema";
 
 export type GraphAnsicht = "force" | "dendrogram" | "semantic";
 const ANSICHT_KEY = "kepta_graph_view";
@@ -610,6 +611,98 @@ export function KnowledgeGraph({ memories, onSelectMemory, onSelectConcept, sich
     }
     return m;
   }, [verborgen, graphApi, gefaltet]);
+
+  /**
+   * Das Schema-Inventar (P-10): ein zweiter Blick auf denselben Payload — was
+   * der Bestand an Arten, Begriffen und Behauptungen trägt. Zu, weil die Fläche
+   * beim Öffnen das Bild zeigen soll und nicht eine Tabelle.
+   */
+  const [schemaOffen, setSchemaOffen] = useState(false);
+  /** Die gewählte Zeile des Inventars; alles ausserhalb ihrer tritt zurück. */
+  const [spot, setSpot] = useState<string | null>(null);
+  const spotRef = useRef<Set<string> | null>(null);
+
+  /**
+   * Das Inventar des Bestands, aus demselben Payload wie die Fläche: die
+   * Behauptungen aus `relations`, die Erwähnungen aus `memoriesByEntity`, die
+   * Arten aus den Notizen selbst. Die Zahl der Begriffe holt sich der Bestand
+   * selbst — `bestand.knoten` ist die Totalzahl, nicht die des Ausschnitts.
+   *
+   * Absichtlich der ganze Bestand und nicht der gefilterte Ausschnitt: die
+   * Frage an ein Schema ist „was habe ich", nicht „was sehe ich gerade". Die
+   * Kopfzeile daneben beantwortet das zweite, und beide Zahlen stehen für sich.
+   */
+  const inventar = useMemo(() => {
+    const kanten: SchemaKante[] = [];
+    for (const r of graphApi?.relations ?? []) {
+      kanten.push({
+        source: `${ENTITAETS_PRAEFIX}${r.source}`,
+        target: `${ENTITAETS_PRAEFIX}${r.target}`,
+        real: true,
+        relation: r.relation ?? null,
+      });
+    }
+    const träger = graphApi?.memoriesByEntity ?? {};
+    for (const [name, ids] of Object.entries(träger)) {
+      for (const id of new Set(ids)) {
+        kanten.push({ source: id, target: `${ENTITAETS_PRAEFIX}${name}`, real: true });
+      }
+    }
+    return schemaInventar({
+      notizen: memories,
+      konzepte: graphApi?.bestand?.knoten ?? Object.keys(träger).length,
+      kanten,
+    });
+  }, [memories, graphApi]);
+
+  /**
+   * Was die gewählte Zeile des Inventars im Bild lässt. Ohne Zeile wird nichts
+   * zurücktreten — das Panel allein verändert das Bild nicht.
+   */
+  const spotIds = useMemo(() => {
+    if (!spot) return null;
+    const ids = new Set<string>();
+    if (spot === SCHEMA_SCHLUESSEL.begriffe) {
+      for (const k of netz.knoten) ids.add(k.id);
+      return ids;
+    }
+    if (spot === SCHEMA_SCHLUESSEL.erwahnung) {
+      for (const [name, notizen] of Object.entries(graphApi?.memoriesByEntity ?? {})) {
+        ids.add(`${ENTITAETS_PRAEFIX}${name}`);
+        for (const id of new Set(notizen)) ids.add(id);
+      }
+      return ids;
+    }
+    if (spot.startsWith("knoten:")) {
+      const schluessel = spot.slice("knoten:".length);
+      for (const m of memories) {
+        const typ = typeof m.type === "string" ? m.type.trim() : "";
+        if (schluessel === "—" ? !typ : typ === schluessel) ids.add(m.id);
+      }
+      return ids;
+    }
+    const wort = spot.slice("kante:".length);
+    for (const r of graphApi?.relations ?? []) {
+      const name = typeof r.relation === "string" ? r.relation.trim() : "";
+      if (wort === "—" ? name : name !== wort) continue;
+      ids.add(`${ENTITAETS_PRAEFIX}${r.source}`);
+      ids.add(`${ENTITAETS_PRAEFIX}${r.target}`);
+    }
+    return ids;
+  }, [spot, memories, netz, graphApi]);
+  spotRef.current = spotIds;
+
+  /**
+   * Die Zahl der Behauptungen, die der Bestand trägt: was das Inventar an
+   * Behauptungswörtern zählt, und — wenn der Server sie mitliefert — seine
+   * eigene Totalzahl. Erwähnungen sind keine Behauptungen und zählen nicht mit.
+   */
+  const behauptungen =
+    graphApi?.bestand?.kanten ??
+    inventar.kanten
+      .filter((z) => z.schluessel !== SCHEMA_SCHLUESSEL.erwahnung && z.schluessel !== SCHEMA_SCHLUESSEL.ahnlichkeit)
+      .reduce((s, z) => s + z.anzahl, 0);
+  spotRef.current = spotIds;
 
   const kantenRapport = useMemo(
     () =>
@@ -1280,6 +1373,9 @@ export function KnowledgeGraph({ memories, onSelectMemory, onSelectConcept, sich
 
     const t = transformRef.current;
     const hov = hoveredRef.current;
+    // Was das Schema-Inventar im Bild lässt. `null` = nichts gewählt, das Bild
+    // ist unangetastet — das Panel allein verändert keinen Pixel.
+    const spot = spotRef.current;
     const nachbarn = hov ? nachbarnRef.current.get(hov) : undefined;
     // Kraftfeld: die LIVE-Zeit (Regler folgt der Hand), sonst der Commit-Stand.
     const zeit = effektivZeitRef.current;
@@ -1377,6 +1473,9 @@ export function KnowledgeGraph({ memories, onSelectMemory, onSelectConcept, sich
           if (!imBild(a) && !imBild(b)) continue;
           if (!edgeVisibleAt(kantenZeit, e.source, e.target, e, zeit)) continue;
           if (hov && hov !== e.source && hov !== e.target && art === "vermutung") continue;
+          // Eine Kante, die kein Ende im Spotlight hat, gehört nicht zur Frage.
+          // Sie steht nicht gedimmt im Weg — sie ist nicht Teil der Auskunft.
+          if (spot && !spot.has(e.source) && !spot.has(e.target)) continue;
           const dx = b.x - a.x, dy = b.y - a.y;
           const len = Math.hypot(dx, dy) || 1;
           const off = beulenLenke(len);
@@ -1468,7 +1567,7 @@ export function KnowledgeGraph({ memories, onSelectMemory, onSelectConcept, sich
       if (!m) continue;
       const r = n.r;
       const istHov = hov === n.id;
-      const gedimmt = hov !== null && !istHov && !nachbarn?.has(n.id);
+      const gedimmt = (hov !== null && !istHov && !nachbarn?.has(n.id)) || (!!spot && !spot.has(n.id));
       const zeitInaktiv = zeit !== null && !existsAt(m, zeit);
       const ersetzt = !!m.supersededBy;
       ctx.globalAlpha = zeitInaktiv ? 0.06 : gedimmt ? 0.14 : ersetzt ? 0.55 : 1;
@@ -1977,6 +2076,8 @@ export function KnowledgeGraph({ memories, onSelectMemory, onSelectConcept, sich
   }, [zeichne, dimensions, fitBaumAnsicht, sichtbar]);
 
   useEffect(() => { zeichneNoetig.current = true; }, [timeFilter, TYPE_COLORS, hovered]);
+  // Das Spotlight ist reine Darstellung: kein Neu-Layout, ein Bild.
+  useEffect(() => { zeichneNoetig.current = true; }, [spot]);
   // Live-Dimmen: schon während des Ziehens neu zeichnen (billig — nur Alpha im
   // Canvas, kein Layout), nicht erst beim Commit.
   useEffect(() => { zeichneNoetig.current = true; }, [sliderWert]);
@@ -2522,6 +2623,14 @@ export function KnowledgeGraph({ memories, onSelectMemory, onSelectConcept, sich
             <ChevronRight className="w-4 h-4" />
             <span className="hidden md:inline text-[11px]">Direction</span>
           </button>
+          <button
+            onClick={() => setSchemaOffen((v) => !v)}
+            aria-pressed={schemaOffen ? "true" : "false"}
+            className="btn-ghost px-2 py-1.5 rounded-lg text-[11px]"
+            title="Schema — what the store holds: kinds, concepts, claims. The counts beside the picture stay the picture's."
+          >
+            Schema
+          </button>
         </div>
         <div className="flex items-center gap-1.5 ml-2" title="Node colours — each colour tints its type across the graph, cards and index">
           {(["semantic", "episodic", "procedural", "reference"] as const).map((t) => (
@@ -2676,6 +2785,72 @@ export function KnowledgeGraph({ memories, onSelectMemory, onSelectConcept, sich
             <p className="text-sm max-w-sm" style={{ color: "var(--text-2)" }}>
               Nothing here matches “{filter.trim().slice(0, 40)}”. Clear the filter to get the whole graph back.
             </p>
+          </div>
+        )}
+
+        {/* Das Schema-Inventar: was der Bestand trägt. Gezählt wird aus
+            demselben Payload, den die Fläche zeichnet — eine zweite Zahl neben
+            der ersten ist genau die Sorte Zahl, die in einer Welle dreimal
+            falsch war. Eine Zeile ist der Griff: was sie nicht trägt, tritt
+            zurück, bis sie noch einmal genommen wird. */}
+        {schemaOffen && (
+          <div
+            data-testid="graph-schema"
+            className="hud-panel absolute right-3 top-3 rounded-lg px-3 py-2 space-y-1.5 max-h-[calc(100%-1.5rem)] overflow-y-auto w-[218px] max-w-[calc(100%-1.5rem)]"
+          >
+            <div className="hud-label">Schema of the store</div>
+            <div className="hud-label tnum" style={{ color: "var(--text-3)" }}>
+              {memories.length.toLocaleString("en-US")} notes ·{" "}
+              {inventar.gesamtKnoten.toLocaleString("en-US")} nodes ·{" "}
+              {behauptungen.toLocaleString("en-US")} claims in the store
+            </div>
+            <div className="pt-0.5">
+              <div className="hud-label mb-1" style={{ color: "var(--text-2)" }}>Nodes</div>
+              {inventar.knoten.map((z) => (
+                <button
+                  key={z.schluessel}
+                  data-testid="graph-schema-row"
+                  aria-pressed={spot === z.schluessel ? "true" : "false"}
+                  onClick={() => setSpot((v) => (v === z.schluessel ? null : z.schluessel))}
+                  className="w-full flex items-baseline text-left text-[12px] py-0.5 rounded hover:bg-[var(--bg-hover)]"
+                  style={spot === z.schluessel ? { color: "var(--accent)" } : { color: "var(--text-1)" }}
+                >
+                  <span className="truncate">{z.label}</span>{" "}
+                  <span className="tnum ml-auto pl-2 shrink-0" style={{ color: "var(--text-2)" }}>
+                    {z.anzahl.toLocaleString("en-US")}
+                  </span>
+                </button>
+              ))}
+            </div>
+            <div>
+              <div className="hud-label mb-1" style={{ color: "var(--text-2)" }}>Links</div>
+              {inventar.kanten.length === 0 ? (
+                <div className="text-[12px]" style={{ color: "var(--text-3)" }}>
+                  Nothing claimed yet — links appear when a note names two things together.
+                </div>
+              ) : (
+                inventar.kanten.map((z) => (
+                  <button
+                    key={z.schluessel}
+                    data-testid="graph-schema-row"
+                    aria-pressed={spot === z.schluessel ? "true" : "false"}
+                    onClick={() => setSpot((v) => (v === z.schluessel ? null : z.schluessel))}
+                    className="w-full flex items-baseline text-left text-[12px] py-0.5 rounded hover:bg-[var(--bg-hover)]"
+                    style={spot === z.schluessel ? { color: "var(--accent)" } : { color: "var(--text-1)" }}
+                  >
+                    <span className="truncate">{z.label}</span>{" "}
+                    <span className="tnum ml-auto pl-2 shrink-0" style={{ color: "var(--text-2)" }}>
+                      {z.anzahl.toLocaleString("en-US")}
+                    </span>
+                  </button>
+                ))
+              )}
+            </div>
+            {spot && (
+              <button onClick={() => setSpot(null)} className="hud-label w-full text-left" style={{ color: "var(--accent)" }}>
+                Clear spotlight
+              </button>
+            )}
           </div>
         )}
 
