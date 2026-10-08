@@ -1,5 +1,9 @@
 ## [Unreleased]
 
+### Fixed
+- **A release build no longer fakes a broken test suite.** Packaging rebuilds the native SQLite module for Electron; the next `npm test` then failed hundreds of tests whose visible message was a trailing `afterEach` line, not the cause. `npm test` now checks the module loads under the running Node first and, if it does not, names the one remedy instead of drowning the run.
+
+
 ## [3.1.3] — 2026-10-08
 
 The knowledge graph got finished. Before this, the picture showed notes and the lines between them; it now shows **what is claimed, by whom, how much sits behind it, and whether it still holds** — and it gives you the levers to read a large base.

@@ -140,7 +140,57 @@ export function pruefe(release, { starten = true, protokoll = console.log } = {}
   return apps.length;
 }
 
+/**
+ * Laedt das native Modul unter dem laufenden Node? null wenn ja, sonst der
+ * FehlerText. Der Griff passiert in einem eigenen Prozess, damit ein Fehlversuch
+ * diesen Prüfprozess nicht mit einem halb geladenen Modul zurücklässt.
+ */
+function fehlerBeimLaden() {
+  try {
+    execFileSync(process.execPath, ["-e", `require(${JSON.stringify(MODUL)})`], {
+      stdio: ["ignore", "ignore", "pipe"],
+      timeout: 30_000,
+    });
+    return null;
+  } catch (e) {
+    return String(e.stderr ?? e.message ?? e);
+  }
+}
+
+/**
+ * Der Streit, den ein Paketbau hinterlaesst: `electron-builder` stellt das Modul
+ * in node_modules auf Electron um, der naechste Testlauf unter Node faellt dann
+ * mit Hunderten Fehlern, deren sichtbare Meldung eine Nachlaufzeile aus dem
+ * afterEach ist. Erkannt wird die Ursache an ihrem eigenen Satz.
+ */
+export function abiKonflikt(fehlerText) {
+  return /compiled against a different Node\.js version/i.test(fehlerText ?? "");
+}
+
+/** Die Meldung, die ein Mensch lesen kann, bevor die Suite laeuft. */
+export const HEILUNG = `npm rebuild ${MODUL}`;
+
+/**
+ * Wache vor dem Testlauf: true, wenn das Modul unter diesem Node laedt. Bei einem
+ * ABI-Streit nennt sie die eine Heilung, bei allem anderen den Fehler selbst —
+ * die Wache darf nichts erfinden, was nicht der Grund ist. Sie baut nicht selbst.
+ */
+export function pruefeNode({ fehler = fehlerBeimLaden, protokoll = console.error } = {}) {
+  const text = fehler();
+  if (!text) return true;
+  if (abiKonflikt(text)) {
+    protokoll(
+      `Kein Fehler im Code: das native SQLite-Modul ist für eine andere Laufzeit gebaut ` +
+        `(der letzte Paketbau stellt es auf Electron um). Heilung: ${HEILUNG}`
+    );
+  } else {
+    protokoll(text.trim().split("\n").slice(0, 4).join("\n"));
+  }
+  return false;
+}
+
 if (process.argv[1] && fileURLToPath(import.meta.url) === path.resolve(process.argv[1])) {
+  if (process.argv.includes("--node")) process.exit(pruefeNode() ? 0 : 1);
   try {
     const n = pruefe(process.argv[2] ?? "release", { starten: !process.argv.includes("--ohne-start") });
     console.log(`${n} App(s) geprueft — die native SQLite-Verschluesselung passt.`);

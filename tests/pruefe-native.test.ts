@@ -8,7 +8,7 @@ import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import { createRequire } from "node:module";
-import { architektur, erwartet, findeApps, pruefe } from "../scripts/pruefe-native.mjs";
+import { architektur, erwartet, findeApps, pruefe, abiKonflikt, pruefeNode } from "../scripts/pruefe-native.mjs";
 
 function machO(cpu: number): Buffer {
   const b = Buffer.alloc(32);
@@ -95,5 +95,48 @@ describe("pruefe", () => {
     const fehlt = release({ "linux-arm64-unpacked": null });
     expect(() => pruefe(fehlt, { starten: false, protokoll: () => undefined })).toThrow("fehlt in app.asar.unpacked");
     expect(() => pruefe(fs.mkdtempSync(path.join(os.tmpdir(), "kepta-leer-")), { starten: false })).toThrow("Keine gepackte App");
+  });
+});
+
+// Der andere Irrtum, den ein Paketbau hinterlaessst: er baut das native Modul fuer
+// Electron in node_modules um, und der naechste Testlauf unter Node faellt mit 460
+// Fehlern — deren sichtbare Meldung eine Nachlaufzeile aus dem afterEach ist, nicht
+// die Ursache. Die Wache vor `npm test` soll den Grund nennen, bevor die Suite laeuft.
+const ABI_STREIT = `Error: The module '.../better_sqlite3.node'
+was compiled against a different Node.js version using
+NODE_MODULE_VERSION 149. This version of Node.js requires
+NODE_MODULE_VERSION 147. Please try re-compiling or re-installing
+the module (for instance, using \`npm rebuild\` or \`npm install\`).`;
+
+describe("Die Wache vor dem Testlauf", () => {
+  it("erkennt den ABI-Streit an der echten Meldung", () => {
+    expect(abiKonflikt(ABI_STREIT)).toBe(true);
+  });
+
+  it("haelt einen echten Fehler nicht fuer einen ABI-Streit", () => {
+    expect(abiKonflikt("TypeError: Cannot read properties of undefined (reading 'close')")).toBe(false);
+    expect(abiKonflikt("")).toBe(false);
+  });
+
+  it("nennt die Heilung, wenn das Modul fuer eine andere Laufzeit gebaut ist", () => {
+    const zeilen: string[] = [];
+    expect(pruefeNode({ fehler: () => ABI_STREIT, protokoll: (t: string) => zeilen.push(t) })).toBe(false);
+    expect(zeilen.length).toBe(1);
+    expect(zeilen[0]).toContain("npm rebuild better-sqlite3-multiple-ciphers");
+    expect(zeilen[0]).toContain("Kein Fehler im Code");
+  });
+
+  it("schweigt, wenn das Modul laedt", () => {
+    const zeilen: string[] = [];
+    expect(pruefeNode({ fehler: () => null, protokoll: (t: string) => zeilen.push(t) })).toBe(true);
+    expect(zeilen).toEqual([]);
+  });
+
+  it("erfindet keinen ABI-Streit, wenn etwas anderes kaputt ist", () => {
+    const zeilen: string[] = [];
+    const text = "Error: Could not locate the bindings file. Tried:\n -> /x/better_sqlite3.node";
+    expect(pruefeNode({ fehler: () => text, protokoll: (t: string) => zeilen.push(t) })).toBe(false);
+    expect(zeilen.join(" ")).toContain("Could not locate the bindings file");
+    expect(zeilen.join(" ")).not.toContain("npm rebuild");
   });
 });
