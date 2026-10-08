@@ -791,6 +791,31 @@ export function reheat(sim: Simulation, alpha = 0.35): void {
 }
 
 /**
+ * Die Regler: Kräfte an einer laufenden Simulation verstellen.
+ *
+ * Dieselben Knoten, dieselben Positionen, nur eine andere Physik darunter. Ein
+ * Neubau (reuseSimulation mit neuen Kräften) würde die Welt bei jedem Bild des
+ * Reglers neu einsetzen und die Kamera mitnehmen — wer an der Abstoßung dreht,
+ * will zusehen, wie das bestehende Bild sich setzt. Das Anheizen gehört dazu:
+ * ein ausgekühltes Feld rührte sich sonst nicht, und der Regler wäre tot.
+ */
+export function setzeKrafte(sim: Simulation, krafte: SimKrafte): void {
+  sim.krafte = { ...krafte };
+  sim.ruheLaenge = IDEAL_LINK * (krafte.link ?? 1);
+  reheat(sim);
+}
+
+/**
+ * Dasselbe für die Knotengröße: die Radien setzen und das Feld weiterarbeiten
+ * lassen. Die Kollision löst die neuen Überlappungen im nächsten Bild — sie ist
+ * Teil jedes Schritts, und der Regler darf der Welt nicht vorgreifen.
+ */
+export function setzeKnotenGroesse(sim: Simulation, radiusOf: (id: string) => number): void {
+  for (const n of sim.nodes) n.r = radiusOf(n.id);
+  reheat(sim);
+}
+
+/**
  * Solange gezogen wird, bleibt die Simulation warm.
  *
  * Ein einmaliges Anheizen genuegt nicht: alpha faellt danach sofort wieder, und

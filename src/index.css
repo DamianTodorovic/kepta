@@ -599,7 +599,8 @@ button:focus-visible, a:focus-visible, [role="button"]:focus-visible,
 .graph-swatch:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 
 /* Graph: Zeit-Regler als feine Tintenlinie mit Siegel-Linse */
-.graph-time {
+.graph-time,
+.graph-regler {
   -webkit-appearance: none;
   appearance: none;
   width: 132px;
@@ -607,12 +608,14 @@ button:focus-visible, a:focus-visible, [role="button"]:focus-visible,
   background: transparent;
   cursor: pointer;
 }
-.graph-time::-webkit-slider-runnable-track {
+.graph-time::-webkit-slider-runnable-track,
+.graph-regler::-webkit-slider-runnable-track {
   height: 2px;
   border-radius: 2px;
   background: linear-gradient(90deg, var(--accent-soft-2), var(--border-strong));
 }
-.graph-time::-webkit-slider-thumb {
+.graph-time::-webkit-slider-thumb,
+.graph-regler::-webkit-slider-thumb {
   -webkit-appearance: none;
   width: 14px;
   height: 14px;
@@ -623,16 +626,23 @@ button:focus-visible, a:focus-visible, [role="button"]:focus-visible,
   margin-top: -6px;
   transition: transform 0.12s var(--ease-apple);
 }
-.graph-time::-webkit-slider-thumb:hover { transform: scale(1.18); }
-.graph-time::-moz-range-track { height: 2px; border-radius: 2px; background: var(--border-strong); }
-.graph-time::-moz-range-thumb {
+.graph-time::-webkit-slider-thumb:hover,
+.graph-regler::-webkit-slider-thumb:hover { transform: scale(1.18); }
+.graph-time::-moz-range-track,
+.graph-regler::-moz-range-track { height: 2px; border-radius: 2px; background: var(--border-strong); }
+.graph-time::-moz-range-thumb,
+.graph-regler::-moz-range-thumb {
   width: 13px;
   height: 13px;
   border-radius: 999px;
   background: var(--accent);
   border: 1px solid var(--edge-light);
 }
-.graph-time:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.graph-time:focus-visible,
+.graph-regler:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+/* Der Kraft-Regler im Panel: dieselbe Linie, nur die Breite des Kastens. */
+.graph-regler { width: 100%; }
 
 /* Datumsgenaue Zeitauswahl neben dem Regler — passt zur Kopfzeile. */
 .graph-datum {

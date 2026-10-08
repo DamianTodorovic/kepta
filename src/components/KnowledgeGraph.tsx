@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState, useMemo, useCallback } from "react";
 import { Memory } from "../types";
 import { existsAt, graphTimeRange, activeIdsAt, edgeVisibleAt, istStruktur, fensterOffen, type Gueltigkeit } from "../lib/graphTime";
-import { Search, Maximize2, ZoomIn, ZoomOut, Clock, Atom2, Sitemap, Network, Scatter, ChevronRight } from "../lib/icons";
+import { Search, Maximize2, ZoomIn, ZoomOut, Clock, Atom2, Sitemap, Network, Scatter, ChevronRight, SlidersHorizontal } from "../lib/icons";
 import {
   kantenBaue,
   createSimulation,
@@ -17,6 +17,8 @@ import {
   nodeAt,
   kanteBei,
   reheat,
+  setzeKrafte,
+  setzeKnotenGroesse,
   nurEchteKanten,
   kantZaehlung,
   richtungsBand,
@@ -59,6 +61,54 @@ const RICHTUNG_KEY = "kepta_graph_richtung";
  */
 type FarbKanal = "typ" | "herkunft";
 const FARB_KANAL_KEY = "kepta_graph_farbkanal";
+/**
+ * Die Stellung der vier Regler unter „Forces" (P-13). 1 ist der Stand der
+ * gestimmten Konstanten: wer nichts verstellt, bekommt exakt das Bild von vor
+ * dem Regler — und es wird nichts in den Speicher geschrieben.
+ *
+ * Die Felder heißen wie in SimKrafte, damit das, was sich die Fläche merkt,
+ * genau das enthält, was das Feld liest.
+ */
+type KrafteStellung = { gravitaet: number; abstossung: number; link: number; groesse: number };
+const KRAFTE_KEY = "kepta_graph_krafte";
+const KRAFTE_STAND: KrafteStellung = { gravitaet: 1, abstossung: 1, link: 1, groesse: 1 };
+/** Was ein Regler darf: eine Zahl über null, sonst fällt er auf den Stand zurück. */
+function kraftWert(roh: unknown, sonst: number): number {
+  const wert = Number(roh);
+  return Number.isFinite(wert) && wert > 0 ? wert : sonst;
+}
+function liesKrafte(): KrafteStellung {
+  try {
+    const roh = JSON.parse(localStorage.getItem(KRAFTE_KEY) ?? "null");
+    if (!roh || typeof roh !== "object") return { ...KRAFTE_STAND };
+    return {
+      gravitaet: kraftWert(roh.gravitaet, 1),
+      abstossung: kraftWert(roh.abstossung, 1),
+      link: kraftWert(roh.link, 1),
+      groesse: kraftWert(roh.groesse, 1),
+    };
+  } catch {
+    return { ...KRAFTE_STAND };
+  }
+}
+/**
+ * Die vier Regler und ihre Bereiche. 1 ist bei allen der gestimmte Stand; die
+ * Bereiche enden dort, wo das Bild kippt — weiter zu fahren zeigt eine Welt,
+ * die niemand lesen kann, und ein Regler bis dorthin wäre eine Falle.
+ */
+const REGLER: readonly { feld: keyof KrafteStellung; name: string; min: number; max: number; hinweis: string }[] = [
+  { feld: "gravitaet", name: "Center force", min: 0.2, max: 3, hinweis: "How hard the middle gathers the picture." },
+  { feld: "abstossung", name: "Repel strength", min: 0.3, max: 4, hinweis: "How hard unrelated notes push apart — the space between topics." },
+  { feld: "link", name: "Link distance", min: 0.5, max: 2.5, hinweis: "How long a link rests — the gap inside a topic." },
+  { feld: "groesse", name: "Node size", min: 0.6, max: 2, hinweis: "How big every node is drawn. The field spaces them by this size." },
+];
+function merkeKrafte(k: KrafteStellung): void {
+  try {
+    const unverstellt = (["gravitaet", "abstossung", "link", "groesse"] as const).every((f) => k[f] === 1);
+    if (unverstellt) localStorage.removeItem(KRAFTE_KEY);
+    else localStorage.setItem(KRAFTE_KEY, JSON.stringify(k));
+  } catch { /* Speicher ist eine Erinnerung, keine Bedingung */ }
+}
 /**
  * Ab diesem Zoom wird aus der Behauptung ein Keil. Darunter wäre die schmale
  * Spitze weniger als ein Pixel — dann bleibt die Linie, was sie ist.
@@ -665,6 +715,46 @@ export function KnowledgeGraph({ memories, onSelectMemory, onSelectConcept, sich
   const spotRef = useRef<Set<string> | null>(null);
 
   /**
+   * Die Regler (P-13): Anziehung zur Mitte, Abstoßung, Link-Abstand,
+   * Knotengröße. Sie verstellen ein laufendes Feld — die Welt wird nicht neu
+   * gebaut, die Kamera bleibt, wo sie war.
+   */
+  const [krafte, setzeKrafte_] = useState<KrafteStellung>(liesKrafte);
+  const [krafteOffen, setzeKrafteOffen] = useState(false);
+  const krafteRef = useRef(krafte);
+  krafteRef.current = krafte;
+  /** Die Stellung, die dem Feld zuletzt gegeben wurde — gleich heißt: nichts tun. */
+  const zuletztGestellt = useRef(krafte);
+  /** Was das Feld liest — an jeder Baustelle frisch abgeholt, nicht gemerkt. */
+  const krafteFeld = (k: KrafteStellung) => ({ gravitaet: k.gravitaet, abstossung: k.abstossung, link: k.link });
+  const groesseRef = useRef(krafte.groesse);
+  groesseRef.current = krafte.groesse;
+  /**
+   * Die Stellung wirklich machen.
+   *
+   * Nach den Simulations-Effekten deklariert: die bauen das Feld bei einem
+   * Filterwechsel ohnehin mit der aktuellen Stellung neu, dieser Regler-Effekt
+   * läuft danach und lässt das bestehende Feld unter neuen Kräften sich setzen.
+   *
+   * Ein neues Objekt ist noch keine neue Stellung: wer „Zurück" drückt, ohne
+   * etwas verstellt zu haben, darf das Bild nicht noch einmal anlaufen sehen.
+   */
+  useEffect(() => {
+    const alt = zuletztGestellt.current;
+    zuletztGestellt.current = krafte;
+    merkeKrafte(krafte);
+    if (
+      alt.gravitaet === krafte.gravitaet && alt.abstossung === krafte.abstossung &&
+      alt.link === krafte.link && alt.groesse === krafte.groesse
+    ) return;
+    const sim = simRef.current;
+    if (!sim) return;
+    setzeKrafte(sim, krafteFeld(krafte));
+    setzeKnotenGroesse(sim, radiusOf);
+    zeichneNoetig.current = true;
+  }, [krafte]);
+
+  /**
    * Das Inventar des Bestands, aus demselben Payload wie die Fläche: die
    * Behauptungen aus `relations`, die Erwähnungen aus `memoriesByEntity`, die
    * Arten aus den Notizen selbst. Die Zahl der Begriffe holt sich der Bestand
@@ -881,7 +971,7 @@ export function KnowledgeGraph({ memories, onSelectMemory, onSelectConcept, sich
    * wirklich genutzt, Huben bleiben erkennbar, und es ist wieder Luft dazwischen.
    */
   const radiusOf = useCallback(
-    (id: string) => Math.min(18, 4 + Math.log2(1 + (degreeRef.current.get(id) ?? 0)) * 2.2),
+    (id: string) => Math.min(18, 4 + Math.log2(1 + (degreeRef.current.get(id) ?? 0)) * 2.2) * groesseRef.current,
     []
   );
 
@@ -1077,7 +1167,7 @@ export function KnowledgeGraph({ memories, onSelectMemory, onSelectConcept, sich
     const kommtVomBaum = uebergangBaumRef.current;
     uebergangBaumRef.current = false;
     const alt = simRef.current;
-    const sim = reuseSimulation(forceHistoryRef.current, ids, edges, radiusOf);
+    const sim = reuseSimulation(forceHistoryRef.current, ids, edges, radiusOf, krafteFeld(krafteRef.current));
     strukturKnotenRef.current = kraftGeruest;
     let zielKraft: Map<string, { x: number; y: number }> | null = null;
     if (kommtVomBaum && alt && alt !== sim) {
@@ -1135,7 +1225,7 @@ export function KnowledgeGraph({ memories, onSelectMemory, onSelectConcept, sich
     letzterZeitCommit.current = sliderCommit;
     if (ansicht !== "dendrogram") return;
     const ids = baumIdsSchluessel ? baumIdsSchluessel.split(",") : [];
-    const sim = reuseSimulation(simRef.current, ids, baumLayout.edges, radiusOf);
+    const sim = reuseSimulation(simRef.current, ids, baumLayout.edges, radiusOf, krafteFeld(krafteRef.current));
     for (const n of baumLayout.nodes) {
       if (!n.id.startsWith("__") || sim.index.has(n.id)) continue;
       const kopie: LayoutNode = { ...n };
@@ -1170,7 +1260,7 @@ export function KnowledgeGraph({ memories, onSelectMemory, onSelectConcept, sich
   useEffect(() => {
     if (ansicht !== "semantic" || !semantikFeld) return;
     const ids = idsSchluessel ? idsSchluessel.split(",") : [];
-    const sim = reuseSimulation(simRef.current, ids, edges, radiusOf);
+    const sim = reuseSimulation(simRef.current, ids, edges, radiusOf, krafteFeld(krafteRef.current));
     simRef.current = sim;
     strukturKnotenRef.current = kraftGeruest;
     zielRef.current = semantikFeld.ziele;
@@ -2799,6 +2889,18 @@ export function KnowledgeGraph({ memories, onSelectMemory, onSelectConcept, sich
           >
             Schema
           </button>
+          <button
+            onClick={() => setzeKrafteOffen((v) => !v)}
+            aria-pressed={krafteOffen ? "true" : "false"}
+            className="btn-ghost px-2 py-1.5 rounded-lg text-[11px]"
+            style={krafteOffen ? { border: "1px solid var(--accent)", color: "var(--accent)" } : undefined}
+            title="Forces — how hard the field gathers, repels and spaces itself, and how big the nodes are. The picture keeps its place while it settles."
+          >
+            <span className="inline-flex items-center gap-1">
+              <SlidersHorizontal className="w-3.5 h-3.5" />
+              Forces
+            </span>
+          </button>
         </div>
         {/* Welcher Kanal färbt. Art ist der Standardkanal und bleibt es auch —
             die Herkunftsfarbe ist ein zweiter Blick, und der schaltet sich ab,
@@ -3047,6 +3149,57 @@ export function KnowledgeGraph({ memories, onSelectMemory, onSelectConcept, sich
                 Clear spotlight
               </button>
             )}
+          </div>
+        )}
+
+        {/* Die Kräfte (P-13): vier Regler über demselben Feld. Sie bauen die Welt
+            nicht neu — wer dreht, sieht zu, wie dieselbe Anordnung sich unter
+            neuen Kräften setzt. Unverstellt steht hier 1,0× und das ist exakt der
+            Stand der Konstanten; dann liegt nichts im Speicher. */}
+        {krafteOffen && (
+          <div
+            data-testid="graph-krafte"
+            className="hud-panel absolute left-3 top-3 rounded-lg px-3 py-2 space-y-2 w-[236px] max-w-[calc(100%-1.5rem)]"
+          >
+            <div className="hud-label">Forces in the field</div>
+            {REGLER.map((r) => (
+              <label key={r.feld} className="block">
+                <span className="flex items-baseline text-[12px]" style={{ color: "var(--text-1)" }}>
+                  {r.name}
+                  <span
+                    className="tnum ml-auto pl-2 shrink-0"
+                    style={{ color: krafte[r.feld] === 1 ? "var(--text-3)" : "var(--accent)" }}
+                  >
+                    {krafte[r.feld].toFixed(1)}×
+                  </span>
+                </span>
+                <input
+                  type="range"
+                  aria-label={r.name}
+                  min={r.min}
+                  max={r.max}
+                  step={0.1}
+                  value={krafte[r.feld]}
+                  onChange={(e) => {
+                    const wert = kraftWert(e.target.value, 1);
+                    setzeKrafte_((v) => ({ ...v, [r.feld]: wert }));
+                  }}
+                  title={r.hinweis}
+                  className="graph-regler"
+                />
+              </label>
+            ))}
+            <div className="text-[11px] leading-snug" style={{ color: "var(--text-3)" }}>
+              Repulsion is what separates topics; the rest holds a topic together.
+            </div>
+            <button
+              data-testid="graph-krafte-reset"
+              onClick={() => setzeKrafte_({ ...KRAFTE_STAND })}
+              className="hud-label w-full text-left"
+              style={{ color: "var(--accent)" }}
+            >
+              Back to the tuned defaults
+            </button>
           </div>
         )}
 

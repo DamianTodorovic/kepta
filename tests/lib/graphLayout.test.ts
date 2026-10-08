@@ -11,6 +11,8 @@ import {
   gravityFor,
   reuseSimulation,
   reheat,
+  setzeKrafte,
+  setzeKnotenGroesse,
   isSettled,
   stepSimulation,
   layoutBounds,
@@ -42,6 +44,7 @@ import {
   vorspannen,
   type SimKrafte,
   COLLIDE_PADDING,
+  IDEAL_LINK,
   ALPHA_MIN,
   REPULSION,
   type LayoutNode,
@@ -2058,5 +2061,76 @@ describe("Zwei Haufen, die nichts teilen, stehen auseinander", () => {
     for (let i = 1; i < kurve.length; i++) {
       expect(kurve[i], `Abstoßung ${stufen[i]}×: ${kurve.map((k) => k.toFixed(0)).join(" → ")}`).toBeGreaterThan(kurve[i - 1]! * 1.05);
     }
+  });
+});
+
+// P-13: Die Regler dürfen die Welt nicht neu bauen. Wer an der Abstoßung dreht,
+// will sehen, wie das bestehende Bild sich setzt — nicht, dass die Knoten an
+// ihren Start zurückfallen und die Kamera springt.
+describe("Die Regler verstellen ein laufendes Feld, ohne die Welt neu zu bauen", () => {
+  function welt() {
+    const ids: string[] = ["__ent:a", "__ent:b", "__ent:c"];
+    const kanten: LayoutEdge[] = [];
+    for (let i = 0; i < 30; i++) {
+      const n = `n${i}`;
+      ids.push(n);
+      kanten.push({ source: n, target: ids[i % 3]!, strength: 1, real: true });
+    }
+    return { ids, kanten };
+  }
+  function stehend(krafte?: SimKrafte) {
+    const w = welt();
+    const sim = createSimulation(w.ids, w.kanten, () => 7, krafte);
+    vorspannen(sim, 900);
+    return sim;
+  }
+
+  it("setzt Kraft und Ruhelänge auf dieselbe Simulation", () => {
+    const sim = stehend();
+    const vorher = sim.nodes.map((n) => [n.x, n.y]);
+    setzeKrafte(sim, { abstossung: 2, link: 0.5 });
+    expect(sim.krafte).toEqual({ abstossung: 2, link: 0.5 });
+    expect(sim.ruheLaenge).toBeCloseTo(IDEAL_LINK * 0.5, 6);
+    expect(sim.nodes.map((n) => [n.x, n.y])).toEqual(vorher);
+  });
+
+  it("heizt das Feld an, sonst rührt der Regler nichts", () => {
+    const sim = stehend();
+    expect(isSettled(sim), "ohne Regler darf das Feld stehen").toBe(true);
+    setzeKrafte(sim, { abstossung: 4 });
+    expect(isSettled(sim), "der Regler hat nichts angestoßen").toBe(false);
+    expect(sim.alpha).toBeGreaterThanOrEqual(0.3);
+  });
+
+  it("gibt die Knotengröße der Welt, nicht der Welt die Knotengröße", () => {
+    // Größere Knoten dürfen nicht ineinander stehen: die Kollision ist die
+    // harte Grenze, und sie gilt auch dem Regler. Gelöst wird sie aber vom
+    // Feld, nicht vom Setzen — die Welt bleibt erst stehen, wo sie war.
+    const sim = stehend();
+    const vorher = sim.nodes.map((n) => [n.x, n.y]);
+    setzeKnotenGroesse(sim, () => 16);
+    expect(sim.nodes.every((n) => n.r === 16)).toBe(true);
+    expect(sim.nodes.map((n) => [n.x, n.y]), "der Regler hat die Welt verrückt").toEqual(vorher);
+    expect(isSettled(sim), "das Feld muss mit den neuen Radien weiterarbeiten").toBe(false);
+    vorspannen(sim, 400);
+    let naeste = Infinity;
+    for (let i = 0; i < sim.nodes.length; i++) {
+      for (let j = i + 1; j < sim.nodes.length; j++) {
+        naeste = Math.min(naeste, Math.hypot(sim.nodes[i]!.x - sim.nodes[j]!.x, sim.nodes[i]!.y - sim.nodes[j]!.y));
+      }
+    }
+    expect(naeste, `Knoten stehen sich auf ${naeste.toFixed(1)} gegenüber`).toBeGreaterThanOrEqual(32 + COLLIDE_PADDING - 0.001);
+  });
+
+  it("unverstellt lässt das Feld stehen, wie es war", () => {
+    const a = stehend();
+    const b = stehend();
+    setzeKrafte(b, {});
+    setzeKnotenGroesse(b, (id) => {
+      const knoten = a.index.get(id)!;
+      return knoten.r;
+    });
+    expect(b.ruheLaenge).toBe(a.ruheLaenge);
+    expect(b.nodes.map((n) => [n.x, n.y, n.r])).toEqual(a.nodes.map((n) => [n.x, n.y, n.r]));
   });
 });

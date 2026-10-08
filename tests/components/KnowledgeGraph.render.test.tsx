@@ -3498,3 +3498,175 @@ describe("Ein Titel-Echo wird kein Begriff im Bild", () => {
     expect(kopf).toMatch(/· 4 links$/);
   });
 });
+
+// P-13: Kraft- und Knotengrößen-Regler. Der Maßstab ist Obsidian: wer an der
+// Abstoßung, der Anziehung, dem Link-Abstand oder der Knotengröße dreht, sieht
+// dasselbe Feld sich neu setzen — die Welt wird nicht neu gebaut, die Kamera
+// springt nicht, und ohne Hand an den Reglern steht exakt das Bild von vorher.
+describe("Die Regler unter dem Knopf Forces", () => {
+  function bestand() {
+    const notizen: Memory[] = [];
+    for (let i = 0; i < 18; i++) {
+      notizen.push(note({
+        id: `k${i}`,
+        title: `Notiz ${i}`,
+        content: `Hält [[${i < 9 ? "Nordwind" : "Kestrel"}]] fest.`,
+        tags: [i < 9 ? "nordwind" : "kestrel"],
+      }));
+    }
+    return notizen;
+  }
+  async function kreftePanel(container: HTMLElement) {
+    const knopf = [...container.querySelectorAll("button")].find((b) => b.textContent?.trim() === "Forces") as HTMLButtonElement;
+    expect(knopf, "Der Knopf Forces fehlt").toBeTruthy();
+    await act(async () => { fireEvent.click(knopf!); await new Promise((r) => setTimeout(r, 60)); });
+    const panel = container.querySelector('[data-testid="graph-krafte"]') as HTMLElement;
+    expect(panel, "Das Panel der Kräfte fehlt").toBeTruthy();
+    return panel;
+  }
+  async function drehe(panel: HTMLElement, name: string, wert: string) {
+    const regler = panel.querySelector(`input[aria-label="${name}"]`) as HTMLInputElement;
+    expect(regler, `Der Regler „${name}" fehlt`).toBeTruthy();
+    await act(async () => {
+      fireEvent.input(regler!, { target: { value: wert } });
+      await new Promise((r) => setTimeout(r, 60));
+    });
+    await bilder(10);
+  }
+  /**
+   * Die gemalten Scheiben des letzten Rahmens, in Weltkoordinaten — über alle
+   * drei LOD-Stufen, sonst hängt das Messen davon ab, wie groß die Fläche gerade
+   * rechnet (arc / Sprite / Sammel-Rechteck).
+   */
+  function scheiben() {
+    const out: { x: number; y: number; r: number }[] = [];
+    for (const a of leinwand.letzterRahmen()) {
+      if (a.op === "arc") out.push({ x: Number(a.args[0]), y: Number(a.args[1]), r: Number(a.args[2]) });
+      else if (a.op === "drawImage") {
+        out.push({
+          x: Number(a.args[1]) + Number(a.args[3]) / 2,
+          y: Number(a.args[2]) + Number(a.args[4]) / 2,
+          r: Number(a.args[3]) / 2,
+        });
+      } else if (a.op === "fillRect") {
+        out.push({
+          x: Number(a.args[0]) + Number(a.args[2]) / 2,
+          y: Number(a.args[1]) + Number(a.args[3]) / 2,
+          r: Number(a.args[2]) / 2,
+        });
+      }
+    }
+    return out;
+  }
+  /** Die Kamera des letzten Rahmens: Maßstab und Sprung, wie die Fläche sie setzt. */
+  function kamera() {
+    let tx = 0, ty = 0, k = 1;
+    for (const a of leinwand.letzterRahmen()) {
+      if (a.op === "translate" && tx === 0 && ty === 0) { tx = Number(a.args[0]); ty = Number(a.args[1]); }
+      if (a.op === "scale" && k === 1) k = Number(a.args[0]);
+    }
+    return { tx, ty, k };
+  }
+  const abstand = (a: { x: number; y: number }[], b: { x: number; y: number }[]) =>
+    a.reduce((s, n, i) => Math.max(s, b[i] ? Math.hypot(n.x - b[i].x, n.y - b[i].y) : Infinity), 0);
+
+  it("zeigt vier Regler und ihre Stellung", async () => {
+    const { container } = await zeichne(bestand());
+    const panel = await kreftePanel(container);
+    const namen = [...panel.querySelectorAll("input[type=range]")].map((i) => i.getAttribute("aria-label"));
+    expect(namen).toEqual(["Center force", "Repel strength", "Link distance", "Node size"]);
+    expect(panel.textContent).toContain("1.0×");
+  });
+
+  /**
+   * Wartet, bis das Feld steht: zwei Bilder hintereinander ohne Bewegung.
+   *
+   * Das ist kein langsamer Test, das ist die Physik: alpha fällt über
+   * ALPHA_DECAY 0,0165 von 1 auf die Untergrenze in rund 300 Bildern — bei
+   * 60 Hz fünf Sekunden, egal ob 20 oder 2 000 Knoten. Wer das abkürzt, misst
+   * eine Welt, die noch läuft.
+   */
+  async function ruhe() {
+    for (let i = 0; i < 70; i++) {
+      const a = scheiben();
+      await bilder(6);
+      if (abstand(scheiben(), a) < 0.01) return;
+    }
+    throw new Error("Das Feld kommt nicht zur Ruhe");
+  }
+
+  /** Bewegung über ein Messfenster — das Feld steht nie exakt still. */
+  async function druck(): Promise<number> {
+    const a = scheiben();
+    await bilder(6);
+    return abstand(scheiben(), a);
+  }
+
+  it("räumt nichts um, wer das Panel nur öffnet und schließt", async () => {
+    // Der Maßstab ist die Eigenbewegung des Feldes im selben Fenster: die läuft
+    // in den letzten hundert Bildern aus, und niemandem ist mit einem Bild
+    // gedient, das auf den Tausendstel-Stillstand wartet.
+    const { container } = await zeichne(bestand());
+    await ruhe();
+    const grund = await druck();
+    const panel = await kreftePanel(container);
+    expect(await druck(), "das Panel hat die Welt angestoßen").toBeLessThanOrEqual(grund + 0.01);
+    await act(async () => {
+      fireEvent.click(panel.querySelector("[data-testid='graph-krafte-reset']")!);
+      await new Promise((r) => setTimeout(r, 60));
+    });
+    expect(await druck(), "Zurück ohne Verstellung hat die Welt angestoßen").toBeLessThanOrEqual(grund + 0.01);
+  });
+
+  it("bewegt der Abstoßungsregler das Feld, nicht die Kamera", async () => {
+    const { container } = await zeichne(bestand());
+    await bilder(10);
+    const vorher = scheiben();
+    const kameras = kamera();
+    const panel = await kreftePanel(container);
+    await drehe(panel, "Repel strength", "4");
+    const nachher = scheiben();
+    expect(nachher.length, "das Bild hat Knoten verloren").toBe(vorher.length);
+    expect(abstand(nachher, vorher), "der Regler hat nichts bewegt").toBeGreaterThan(1);
+    const jetzt = kamera();
+    expect(jetzt.k, "der Regler hat die Kamera verstellt").toBeCloseTo(kameras.k, 6);
+    expect(jetzt.tx, "der Regler hat die Kamera geschoben").toBeCloseTo(kameras.tx, 6);
+    expect(jetzt.ty, "der Regler hat die Kamera geschoben").toBeCloseTo(kameras.ty, 6);
+  });
+
+  it("macht der Größenregler die Knoten größer, nicht die Welt weiter", async () => {
+    const { container } = await zeichne(bestand());
+    await bilder(10);
+    const vorher = scheiben();
+    const panel = await kreftePanel(container);
+    await drehe(panel, "Node size", "2");
+    const nachher = scheiben();
+    expect(nachher.length).toBeGreaterThan(0);
+    expect(Math.max(...nachher.map((s) => s.r))).toBeGreaterThan(Math.max(...vorher.map((s) => s.r)) * 1.5);
+  });
+
+  it("merkt sich die Stellung über ein neues Bild", async () => {
+    const { container } = await zeichne(bestand());
+    const panel = await kreftePanel(container);
+    await drehe(panel, "Link distance", "2");
+    expect(localStorage.getItem("kepta_graph_krafte")).toContain("\"link\":2");
+    const zweiter = await zeichne(bestand());
+    const zweitesPanel = await kreftePanel(zweiter.container);
+    expect((zweitesPanel.querySelector('input[aria-label="Link distance"]') as HTMLInputElement).value).toBe("2");
+  });
+
+  it("setzt Zurück auf die gestimmten Konstanten", async () => {
+    const { container } = await zeichne(bestand());
+    const panel = await kreftePanel(container);
+    await drehe(panel, "Center force", "2.5");
+    await drehe(panel, "Node size", "1.6");
+    await act(async () => {
+      fireEvent.click(panel.querySelector("[data-testid='graph-krafte-reset']")!);
+      await new Promise((r) => setTimeout(r, 60));
+    });
+    for (const name of ["Center force", "Repel strength", "Link distance", "Node size"]) {
+      expect((panel.querySelector(`input[aria-label="${name}"]`) as HTMLInputElement).value, name).toBe("1");
+    }
+    expect(localStorage.getItem("kepta_graph_krafte")).toBe(null);
+  });
+});
