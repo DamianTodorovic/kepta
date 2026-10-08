@@ -357,4 +357,19 @@ describe("stepDendrogram", () => {
     stepDendrogram(nodes, new Map([["a", { x: 10 + GLIDE_EPSILON / 2, y: 10 }]]));
     expect(nodes[0].x).toBe(10 + GLIDE_EPSILON / 2);
   });
+
+  // Gefunden in P-9: zwei Besuche derselben Projektion zeigten zwei verschiedene
+  // Bilder. Der letzte Sprung auf das Ziel geschah in einem Schritt, der keine
+  // Bewegung meldete — die Bildschleife zeichnete also nicht mehr, und das
+  // stehende Bild blieb bis zu GLIDE_EPSILON hinter der Rechnung zurück.
+  it("meldet den letzten Sprung als Bewegung, damit das Bild ihn zeigt", () => {
+    const nodes = [{ id: "a", x: 10, y: 10, vx: 0, vy: 0, r: 5, pinned: false }];
+    const ruch = stepDendrogram(nodes, new Map([["a", { x: 10 + GLIDE_EPSILON / 2, y: 10 }]]));
+    expect(ruch, "der Snap veränderte die Position, meldet aber Ruhe").toBe(true);
+  });
+
+  it("meldet Ruhe, wenn nichts mehr zu setzen ist", () => {
+    const nodes = [{ id: "a", x: 12, y: 12, vx: 0, vy: 0, r: 5, pinned: false }];
+    expect(stepDendrogram(nodes, new Map([["a", { x: 12, y: 12 }]]))).toBe(false);
+  });
 });

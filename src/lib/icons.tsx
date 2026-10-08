@@ -90,6 +90,7 @@ export const PartyPopper = make("rocket");
 export const Moon = make("moon");
 export const Sun = make("sun");
 export const Network = make("network");
+export const Scatter = make("scatter");
 export const MessageSquare = make("messagesquare");
 export const Info = make("info");
 

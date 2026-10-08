@@ -335,6 +335,11 @@ export function stepDendrogram(
     } else if (n.x !== t.x || n.y !== t.y) {
       n.x = t.x;
       n.y = t.y;
+      // Der Sprung ist Bewegung, auch wenn er unter dem Epsilon liegt: die
+      // Bildschleife zeichnet nur, was ihr diese Funktion zurückgibt, und
+      // meldete hier Ruhe — das stehende Bild blieb bis zu einem Epsilon
+      // hinter der Rechnung zurück.
+      bewegt = true;
     }
   }
   return bewegt;

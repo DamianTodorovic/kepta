@@ -2722,3 +2722,261 @@ describe("Selbstkanten: ein Schalter, eine Schlinge, kein Nachbarschaftsgewinn",
     expect(karte!.textContent).toMatch(/1 claim/);
   });
 });
+
+// P-9: die dritte Ansicht. Cognee hat einen „Semantic"-Tab — Knoten stehen auf
+// einer deterministischen Projektion ihrer Embeddings, mit einer sichtbaren
+// Warnung, wenn die Kappung greift. Unsere Fläche hatte Feld und Baum.
+//
+// Was hier gemessen wird, ist nicht das Bild hübscher, sondern drei Verträge:
+// dieselbe Wissensbasis muss dasselbe Bild ergeben, die Kappung muss laut sein,
+// und keine Notiz darf schweigend fallen.
+//
+// KEIN DOWNGRADE: Das Kraftfeld bleibt die Ansicht, die startet, und es steht
+// nach dem Abstecher exakt wieder dort, wo es war.
+describe("Die semantische Ansicht steht auf den Vektoren", () => {
+  /** Die Karte, wie der Server sie liefert: Plätze und eine ehrliche Bilanz. */
+  function karteVon(
+    punkte: { id: string; x: number; y: number }[],
+    extra: Record<string, unknown> = {}
+  ) {
+    return {
+      punkte,
+      modell: "nomic-embed-text",
+      getragen: punkte.length,
+      gesamt: punkte.length,
+      gekappt: 0,
+      anteil: [0.71, 0.18],
+      ...extra,
+    };
+  }
+
+  /**
+   * Ein Fetch, das nach URL unterscheidet, und die Liste der URLs, die wirklich
+   * gefragt wurden — damit „nur beim Öffnen der Ansicht" eine Messung ist.
+   */
+  function semantikStub(karte: unknown, opts: { fehler?: boolean } = {}) {
+    const aufrufe: string[] = [];
+    vi.stubGlobal("fetch", vi.fn(async (url: string) => {
+      const u = String(url);
+      aufrufe.push(u);
+      if (u.includes("/api/graph/semantik")) {
+        if (opts.fehler) throw new TypeError("network down");
+        return new Response(JSON.stringify(karte), { status: 200 });
+      }
+      return new Response(JSON.stringify({ relations: [], memoriesByEntity: {} }), { status: 200 });
+    }));
+    return aufrufe;
+  }
+
+  const drei = () => [
+    note({ id: "s1", title: "Rahmen Nordwind" }),
+    note({ id: "s2", title: "Tranche Kestrel" }),
+    note({ id: "s3", title: "Protokoll Quay" }),
+  ];
+  const PUNKTE = [
+    { id: "s1", x: -450, y: -300 },
+    { id: "s2", x: 450, y: -300 },
+    { id: "s3", x: 0, y: 450 },
+  ];
+
+  function knopf(container: HTMLElement, name: string) {
+    const k = [...container.querySelectorAll("button")].find((b) => b.textContent?.trim() === name);
+    expect(k, `Der Knopf „${name}" fehlt`).toBeTruthy();
+    return k as HTMLButtonElement;
+  }
+
+  async function ansichtWechseln(container: HTMLElement, name: string) {
+    await act(async () => {
+      fireEvent.click(knopf(container, name));
+      await new Promise((r) => setTimeout(r, 200));
+    });
+  }
+
+  /**
+   * Die Mittelpunkte aller gemalten Scheiben eines Rahmens, in Weltkoordinaten.
+   *
+   * Die Fläche malt einen Knoten auf einer von drei Stufen: ab Rechenstärke als
+   * arc(), kleiner als Sprite per drawImage(), und ganz kleine gesammelt als
+   * fillRect(). Alle drei tragen die Weltkoordinate — gesammelt wird die Menge,
+   * nicht der Kanal, sonst hängt das Messen von der Zoomstufe ab.
+   */
+  function scheiben(): { x: number; y: number; r: number }[] {
+    const out: { x: number; y: number; r: number }[] = [];
+    for (const a of leinwand.letzterRahmen()) {
+      if (a.op === "arc") {
+        // arc(x, y, radius, …) — der Mittelpunkt steht direkt in der Liste.
+        out.push({ x: Number(a.args[0]), y: Number(a.args[1]), r: Number(a.args[2]) });
+      } else if (a.op === "drawImage") {
+        // drawImage(bild, x, y, weite, hoehe) — eine Stelle weiter, weil das
+        // Bild der erste Parameter ist.
+        out.push({
+          x: Number(a.args[1]) + Number(a.args[3]) / 2,
+          y: Number(a.args[2]) + Number(a.args[4]) / 2,
+          r: Number(a.args[3]) / 2,
+        });
+      } else if (a.op === "fillRect") {
+        // fillRect(x, y, weite, hoehe) — die Sammelstufe für die kleinsten Knoten.
+        out.push({
+          x: Number(a.args[0]) + Number(a.args[2]) / 2,
+          y: Number(a.args[1]) + Number(a.args[3]) / 2,
+          r: Number(a.args[2]) / 2,
+        });
+      }
+    }
+    return out.sort((p, q) => p.x - q.x || p.y - q.y || p.r - q.r);
+  }
+
+  /** Größter Abstand, den zwei Aufnahmen derselben Menge trennt. */
+  function abtrieb(a: { x: number; y: number }[], b: { x: number; y: number }[]): number {
+    let groesster = 0;
+    for (let i = 0; i < a.length; i++) {
+      groesster = Math.max(groesster, Math.hypot(a[i].x - b[i].x, a[i].y - b[i].y));
+    }
+    return groesster;
+  }
+
+  /**
+   * Bis zwei aufeinanderfolgende Rahmen exakt dieselben Scheiben setzen.
+   *
+   * Das Kraftfeld kühlt über rund dreihundert Rahmen aus (ALPHA_DECAY 1,65 %
+   * pro Rahmen bis ALPHA_MIN); so lange das läuft, wandert jede Aufnahme. Die
+   * Projektion steht nach dem Gleiten exakt auf ihren Zielkoordinaten.
+   */
+  async function ruhig(max = 120): Promise<{ x: number; y: number; r: number }[]> {
+    let letzte: { x: number; y: number; r: number }[] = [];
+    for (let i = 0; i < max; i++) {
+      await bilder(4);
+      const jetzt = scheiben();
+      if (jetzt.length > 0 && jetzt.length === letzte.length && abtrieb(letzte, jetzt) === 0) return jetzt;
+      letzte = jetzt;
+    }
+    return letzte;
+  }
+
+  it("startet im Kraftfeld und fragt die semantische Karte erst beim Öffnen", async () => {
+    const aufrufe = semantikStub(karteVon(PUNKTE));
+    const { container } = await zeichne(drei());
+    await bilder(8);
+    expect(aufrufe.filter((u) => u.includes("/api/graph/semantik")), "die Karte wurde ungefragt geholt").toHaveLength(0);
+    expect(container.textContent).toMatch(/stays where you drop it/);
+
+    await ansichtWechseln(container, "Semantic");
+    expect(aufrufe.filter((u) => u.includes("/api/graph/semantik"))).toHaveLength(1);
+    expect(container.textContent).toMatch(/projection/i);
+  });
+
+  it("lässt das Kraftfeld unangetastet, wenn die Ansicht wieder schließt", async () => {
+    semantikStub(karteVon(PUNKTE));
+    const { container } = await zeichne(drei());
+    const vorher = await ruhig();
+    expect(vorher.length).toBeGreaterThan(0);
+
+    await ansichtWechseln(container, "Semantic");
+    await ruhig();
+    await ansichtWechseln(container, "Force");
+    const nachher = await ruhig();
+    // Die zwanzigstel Weltinheit sind die Restenergie des Feldes, die zwischen
+    // zwei Aufnahmen weiterläuft. Was der Test ausschliesst, ist das, was ein
+    // Mensch sähe: dass die Feldanordnung nach dem Abstecher eine andere ist.
+    expect(nachher).toHaveLength(vorher.length);
+    expect(abtrieb(vorher, nachher), "kein Knoten ist nach dem Zurückwechseln spürbar gewandert").toBeLessThan(0.05);
+  });
+
+  it("zeichnet dieselbe Projektion, wenn dieselbe Wissensbasis zweimal geöffnet wird", async () => {
+    semantikStub(karteVon(PUNKTE));
+    const { container } = await zeichne(drei());
+    await ruhig();
+
+    await ansichtWechseln(container, "Semantic");
+    const ersterBesuch = await ruhig();
+    await ansichtWechseln(container, "Force");
+    await ruhig();
+    await ansichtWechseln(container, "Semantic");
+    const zweiterBesuch = await ruhig();
+
+    expect(ersterBesuch.length).toBeGreaterThan(0);
+    expect(zweiterBesuch).toHaveLength(ersterBesuch.length);
+    expect(abtrieb(ersterBesuch, zweiterBesuch), "zwei Besuche, zwei Bilder").toBe(0);
+    // Und es ist die Projektion, nicht das Feld: die drei Notizen sitzen auf
+    // ihren Kartenkoordinaten ±450/±300, nicht beieinander im Knäuel.
+    expect(Math.max(...zweiterBesuch.map((s) => Math.abs(s.x)))).toBeCloseTo(450, 6);
+  });
+
+  it("merkt sich die Ansicht und kommt darin wieder", async () => {
+    semantikStub(karteVon(PUNKTE));
+    const { container, unmount } = await zeichne(drei());
+    await ansichtWechseln(container, "Semantic");
+    expect(localStorage.getItem("kepta_graph_view")).toBe("semantic");
+    expect(knopf(container, "Semantic").getAttribute("style")).toMatch(/accent/);
+    unmount();
+
+    const wieder = await zeichne(drei());
+    expect(knopf(wieder.container, "Semantic").getAttribute("style"), "Wieder offen im Kraftfeld").toMatch(/accent/);
+  });
+
+  it("meldet laut, wie viele Notizen die Kappung aus dem Bild nimmt", async () => {
+    semantikStub(karteVon(PUNKTE, { gekappt: 3 }));
+    const { container } = await zeichne(drei());
+    await ansichtWechseln(container, "Semantic");
+    await bilder(8);
+    expect(container.textContent).toMatch(/3 notes left out/);
+    expect(container.textContent).toMatch(/the map holds 2,000 vectors/);
+  });
+
+  it("stellt die Notizen ohne Vektor an den Rand und sagt es", async () => {
+    // Vier Notizen, zwei mit Vektor: die zwei ohne fallen nicht weg.
+    const ms = [...drei(), note({ id: "s4", title: "Ohne Einbettung" })];
+    semantikStub(karteVon(PUNKTE.slice(0, 2), { getragen: 2, gesamt: 4 }));
+    const { container } = await zeichne(ms);
+    await ansichtWechseln(container, "Semantic");
+    const plaetze = await ruhig();
+    expect(container.textContent).toMatch(/2 notes without a vector, parked at the rim/);
+    // Gefordert: alle vier Notizen stehen im Bild. Gezählt werden die Plätze
+    // des Rahmens — Begriffe kommen nicht vor, das Stub liefert keine
+    // memoriesByEntity.
+    expect(plaetze.length).toBeGreaterThanOrEqual(4);
+    // Und die zwei ohne Vektor sind wirklich draussen: ihr Abstand vom
+    // Mittelpunkt ist größer als der weiteste projizierte Punkt.
+    const weite = plaetze.map((p) => Math.hypot(p.x, p.y)).sort((a, b) => a - b);
+    expect(weite[weite.length - 1]).toBeGreaterThan(600);
+    expect(weite[weite.length - 2]).toBeGreaterThan(600);
+  });
+
+  it("nennt, was die beiden Achsen tragen, und welchen Modellen sie vertrauen", async () => {
+    semantikStub(karteVon(PUNKTE));
+    const { container } = await zeichne(drei());
+    await ansichtWechseln(container, "Semantic");
+    await bilder(8);
+    expect(container.textContent).toMatch(/two axes carry 89 % of the differences/i);
+    expect(container.textContent).toMatch(/nomic-embed-text/);
+  });
+
+  it("erklärt zu wenig Vektoren, statt ein schwarzes Feld zu zeigen", async () => {
+    semantikStub(karteVon(PUNKTE.slice(0, 1), { getragen: 1, gesamt: 3 }));
+    const { container } = await zeichne(drei());
+    await ansichtWechseln(container, "Semantic");
+    await bilder(8);
+    expect(container.textContent).toMatch(/at least two notes with a vector/);
+    expect(container.textContent).toMatch(/1 here/);
+  });
+
+  it("versagt laut, wenn die Karte nicht kommt", async () => {
+    semantikStub(null, { fehler: true });
+    const { container } = await zeichne(drei());
+    await ansichtWechseln(container, "Semantic");
+    await bilder(8);
+    expect(container.textContent).toMatch(/could not be read/i);
+  });
+
+  it("lässt Feld und Baum in Ruhe: beide Knöpfe tun weiter, was sie taten", async () => {
+    semantikStub(karteVon(PUNKTE));
+    const { container } = await zeichne(drei());
+    await ansichtWechseln(container, "Semantic");
+    await ansichtWechseln(container, "Tree");
+    await bilder(12);
+    expect(container.textContent).toMatch(/Root → type → entity → note/);
+    await ansichtWechseln(container, "Force");
+    await bilder(12);
+    expect(container.textContent).toMatch(/stays where you drop it/);
+  });
+});

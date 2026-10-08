@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState, useMemo, useCallback } from "react";
 import { Memory } from "../types";
 import { existsAt, graphTimeRange, activeIdsAt, edgeVisibleAt, istStruktur, fensterOffen, type Gueltigkeit } from "../lib/graphTime";
-import { Search, Maximize2, ZoomIn, ZoomOut, Clock, Atom2, Sitemap, Network, ChevronRight } from "../lib/icons";
+import { Search, Maximize2, ZoomIn, ZoomOut, Clock, Atom2, Sitemap, Network, Scatter, ChevronRight } from "../lib/icons";
 import {
   kantenBaue,
   createSimulation,
@@ -44,8 +44,9 @@ import {
   TYP_LABELS,
   type StrukturKnoten,
 } from "../lib/graphHierarchy";
+import { layoutSemantik, SEMANTIK_KAPPE, type SemantikKarte } from "../lib/graphSemantik";
 
-export type GraphAnsicht = "force" | "dendrogram";
+export type GraphAnsicht = "force" | "dendrogram" | "semantic";
 const ANSICHT_KEY = "kepta_graph_view";
 /** Richtung ist von Haus aus an — sie ist die Aussage, nicht ein Schmuck. */
 const RICHTUNG_KEY = "kepta_graph_richtung";
@@ -529,6 +530,18 @@ export function KnowledgeGraph({ memories, onSelectMemory, onSelectConcept, sich
     return () => { abgebrochen = true; };
   }, [memories.length]);
 
+  /**
+   * Die semantische Karte: Plätze, keine Vektoren.
+   *
+   * Die Projektion rechnet der Server (P-9). Der Renderer bekommt `{id,x,y}` und
+   * die Bilanz der Reduktion — niemals die Einbettungen selbst. Bei dreitausend
+   * Notizen à 768 Dimensionen wären das neun Millionen Zahlen durch die Leitung
+   * und über den Hauptthread, für ein Bild von gut tausend mal siebenhundert
+   * Pixeln.
+   */
+  const [karte, setKarte] = useState<SemantikKarte | null>(null);
+  const [karteFehler, setKarteFehler] = useState(false);
+
   const filtered = useMemo(() => {
     if (!filter.trim()) return memories;
     const q = filter.toLowerCase();
@@ -655,10 +668,11 @@ export function KnowledgeGraph({ memories, onSelectMemory, onSelectConcept, sich
   const [greift, setGreift] = useState(false);
   // Zwei Darstellungsarten fuer dasselbe Wissen: das Kraftfeld (Aehnlichkeits-
   // landschaft) und das Dendrogramm (Wurzel -> Typ -> Entitaet/Tag -> Notiz).
+  // Seit P-9 die dritte: die Projektion der Einbettungen.
   const [ansicht, setAnsicht] = useState<GraphAnsicht>(() => {
     try {
       const v = localStorage.getItem(ANSICHT_KEY);
-      return v === "dendrogram" ? "dendrogram" : "force";
+      return v === "dendrogram" || v === "semantic" ? v : "force";
     } catch { return "force"; }
   });
   const wechsleAnsicht = (v: GraphAnsicht) => {
@@ -814,6 +828,23 @@ export function KnowledgeGraph({ memories, onSelectMemory, onSelectConcept, sich
     [ansicht, baumNotizen, sichtbareAnzahl]
   );
   /**
+   * Die semantische Anordnung: die Plätze der Karte, die Begriffe in der Mitte
+   * ihrer Notizen, und die Notizen ohne Vektor am Rand — gestellt, nicht
+   * weggelassen. Ohne Karte (noch geladen, oder fehlerhaft) gibt es nichts zu
+   * stellen, und die Ansicht erklärt das unten statt ein schwarzes Feld zu zeigen.
+   */
+  const semantikFeld = useMemo(
+    () =>
+      ansicht === "semantic" && karte
+        ? layoutSemantik(
+            karte,
+            feldNotizen.map((m) => m.id),
+            netz.knoten.map((k) => ({ id: k.id, notizen: k.notizen }))
+          )
+        : null,
+    [ansicht, karte, feldNotizen, netz]
+  );
+  /**
    * Die ehrliche Bilanz des Ausschnitts: was die Wissensbasis traegt, gegen was
    * in diesem Bild steht. Jede Klausa bleibt weg, solange nichts fehlt — eine
    * Zeile, die eine Luecke behauptet, wo keine ist, macht die Flaeche
@@ -836,8 +867,20 @@ export function KnowledgeGraph({ memories, onSelectMemory, onSelectConcept, sich
       const n = kantenRapport.selbstInSumme;
       klausaen.push(`${zahl(n)} self-claim${n === 1 ? "" : "s"} hidden`);
     }
+    // Die beiden Klausen der Projektion. Eine Karte, die schweigend die Hälfte
+    // des Bestands fallen lässt, wäre schlimmer als keine Ansicht: sie sähe aus
+    // wie die Wissensbasis und wäre ein Stichprobenbild davon.
+    if (ansicht === "semantic" && karte && karte.gekappt > 0) {
+      klausaen.push(
+        `${zahl(karte.gekappt)} notes left out — the map holds ${zahl(SEMANTIK_KAPPE)} vectors`
+      );
+    }
+    if (ansicht === "semantic" && semantikFeld && semantikFeld.ohneVektor > 0) {
+      const n = semantikFeld.ohneVektor;
+      klausaen.push(`${zahl(n)} note${n === 1 ? "" : "s"} without a vector, parked at the rim`);
+    }
     return klausaen.join(" · ");
-  }, [bildZaehlung.knoten, memories.length, graphApi, kantenRapport, selbstkaanten]);
+  }, [bildZaehlung.knoten, memories.length, graphApi, kantenRapport, selbstkaanten, ansicht, karte, semantikFeld]);
   const baumNachbarn = useMemo(() => {
     const n = new Map<string, Set<string>>();
     for (const e of baumLayout.edges) {
@@ -965,6 +1008,24 @@ export function KnowledgeGraph({ memories, onSelectMemory, onSelectConcept, sich
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [baumIdsSchluessel, baumLayout, radiusOf, ansicht, sliderCommit]);
 
+  // Semantische Ansicht: dieselbe Knotenmenge und dieselben Behauptungen wie im
+  // Kraftfeld, nur die Plätze kommen aus der Projektion. Physik aus, Gleiter an
+  // — derselbe Mechanismus wie im Baum, weil die Zielpositionen schon fest
+  // stehen und nichts mehr verhandelt wird. Wer aus dem Kraftfeld kommt, sieht
+  // das Feld also in die Karte auseinanderziehen; das ist dieselbe Bewegung,
+  // die der Baum macht, und kein neuer Zeichencode.
+  useEffect(() => {
+    if (ansicht !== "semantic" || !semantikFeld) return;
+    const ids = idsSchluessel ? idsSchluessel.split(",") : [];
+    const sim = reuseSimulation(simRef.current, ids, edges, radiusOf);
+    simRef.current = sim;
+    strukturKnotenRef.current = kraftGeruest;
+    zielRef.current = semantikFeld.ziele;
+    autoFitOffen.current = false;
+    fitKarte(semantikFeld.ziele);
+    zeichneNoetig.current = true;
+  }, [ansicht, idsSchluessel, edges, radiusOf, semantikFeld, kraftGeruest]);
+
   // Ansichtswechsel: Ausschnitt wieder freigeben — ein neues Layout verdient
   // einen frischen Autofit, auch wenn der Nutzer vorher selbst geschoben hat.
   // Und: Wer aus dem Baum kommt, bekommt im Kraftfeld einen Gleit-Übergang.
@@ -977,6 +1038,29 @@ export function KnowledgeGraph({ memories, onSelectMemory, onSelectConcept, sich
     nutzerBewegt.current = false;
     zeichneNoetig.current = true;
   }, [ansicht]);
+
+  // Die Karte wird geholt, wenn die Ansicht offen wird — und nicht vorher. Im
+  // Kraftfeld läge sie unbenutzt im Zustand, und ein Antwortpfad, der nie
+  // gefragt wurde, wäre ein Ratfen. Beim Wechsel wird neu gefragt: die
+  // Wissensbasis schreibt man mit denselben Händen, die die Ansicht öffnen.
+  useEffect(() => {
+    if (ansicht !== "semantic") return;
+    let abgebrochen = false;
+    setKarte(null);
+    setKarteFehler(false);
+    void (async () => {
+      try {
+        const res = await fetch("/api/graph/semantik");
+        const data = await res.json();
+        if (abgebrochen) return;
+        if (!data || !Array.isArray(data.punkte)) setKarteFehler(true);
+        else setKarte(data as SemantikKarte);
+      } catch {
+        if (!abgebrochen) setKarteFehler(true);
+      }
+    })();
+    return () => { abgebrochen = true; };
+  }, [ansicht, memories.length]);
 
   // --- Container messen ---
   //
@@ -1090,6 +1174,29 @@ export function KnowledgeGraph({ memories, onSelectMemory, onSelectConcept, sich
     zeichneNoetig.current = true;
   }, [dimensions]);
 
+  /**
+   * Projektion einspannen: die Zielpositionen, nicht die aktuellen. Beim
+   * Wechsel in die Ansicht stehen die Knoten noch im Kraftfeld — der Ausschnitt
+   * würde auf das Feld gerechnet und die Karte läge halbbildschirmweise draussen.
+   * Die Randnotizen sitzen schon in `ziele`, also passt die ganze Menge hinein.
+   */
+  const fitKarte = useCallback((ziele: ReadonlyMap<string, { x: number; y: number }>) => {
+    if (ziele.size === 0) return;
+    let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+    for (const p of ziele.values()) {
+      if (p.x < minX) minX = p.x;
+      if (p.x > maxX) maxX = p.x;
+      if (p.y < minY) minY = p.y;
+      if (p.y > maxY) maxY = p.y;
+    }
+    transformRef.current = fitTransform(
+      { minX: minX - 70, minY: minY - 70, maxX: maxX + 70, maxY: maxY + 70 },
+      dimensions
+    );
+    setZoomAnzeige(transformRef.current.k);
+    zeichneNoetig.current = true;
+  }, [dimensions]);
+
   const zoom = useCallback((faktor: number, sx?: number, sy?: number) => {
     const t = transformRef.current;
     transformRef.current = zoomAt(t, faktor, sx ?? dimensions.w / 2, sy ?? dimensions.h / 2);
@@ -1111,10 +1218,11 @@ export function KnowledgeGraph({ memories, onSelectMemory, onSelectConcept, sich
     const sim = simRef.current;
     if (!sim || sim.nodes.length === 0) return;
     if (ansichtRef.current === "dendrogram") { fitBaumAnsicht(); return; }
+    if (ansichtRef.current === "semantic") { fitKarte(zielRef.current); return; }
     transformRef.current = fitTransform(layoutBounds(sim.nodes, randFuerAnsicht(sim.nodes)), dimensions);
     setZoomAnzeige(transformRef.current.k);
     zeichneNoetig.current = true;
-  }, [dimensions, fitBaumAnsicht]);
+  }, [dimensions, fitBaumAnsicht, fitKarte]);
 
   // Richtung ist reine Darstellung: kein Neu-Layout, keine Physik, ein Bild.
   useEffect(() => {
@@ -1814,9 +1922,9 @@ export function KnowledgeGraph({ memories, onSelectMemory, onSelectConcept, sich
       if (!laeuft) return;
       const sim = simRef.current;
       if (sim) {
-        if (ansichtRef.current === "dendrogram") {
-          // Baum: kein Physik-Loop — die Knoten gleiten auf ihre Tidy-Tree-
-          // Positionen und ruhen dann. Loslassen einer Bewegung = Auto-Fit.
+        if (ansichtRef.current === "dendrogram" || ansichtRef.current === "semantic") {
+          // Baum und Projektion: kein Physik-Loop — die Knoten gleiten auf ihre
+          // Zielstellen und ruhen dann. Loslassen einer Bewegung = Auto-Fit.
           const bewegt = stepDendrogram(sim.nodes, zielRef.current, reduzierteBewegung.current ? 1 : undefined);
           if (bewegt) zeichneNoetig.current = true;
           if (autoFitOffen.current && !bewegt && sim.nodes.length > 0) {
@@ -2291,6 +2399,13 @@ export function KnowledgeGraph({ memories, onSelectMemory, onSelectConcept, sich
 
   const kantZeilen = kantInfo ? kantenZeilen(kantInfo) : null;
 
+  /**
+   * Ob die Projektion etwas zu zeigen hat. Zwei Punkte sind die untere Grenze:
+   * eine Achse braucht eine Richtung, und eine Richtung braucht ein Zweites.
+   */
+  const karteZeigbar =
+    ansicht !== "semantic" || (!karteFehler && karte !== null && karte.punkte.length >= 2);
+
   if (memories.length === 0) {
     return (
       <div className="flex-1 flex flex-col items-center justify-center p-8 text-center">
@@ -2345,6 +2460,15 @@ export function KnowledgeGraph({ memories, onSelectMemory, onSelectConcept, sich
           >
             <Sitemap className="w-4 h-4" />
             <span className="hidden md:inline text-[11px]">Tree</span>
+          </button>
+          <button
+            onClick={() => wechsleAnsicht("semantic")}
+            className="btn-ghost px-2.5 py-1.5 rounded-lg flex items-center gap-1.5"
+            style={ansicht === "semantic" ? { border: "1px solid var(--accent)", color: "var(--accent)" } : undefined}
+            title="Semantic map — the same notes placed by their vectors. Distance is meaning, computed once and always the same way."
+          >
+            <Scatter className="w-4 h-4" />
+            <span className="hidden md:inline text-[11px]">Semantic</span>
           </button>
           <button
             onClick={() => setAhnlichkeit((v) => !v)}
@@ -2520,6 +2644,32 @@ export function KnowledgeGraph({ memories, onSelectMemory, onSelectConcept, sich
           onDoubleClick={onDoubleClick}
         />
 
+        {/* Die Projektion hat ein Leer- und ein Fehlerbild, und beide zeigen
+            nichts an: eine Ansicht, die einen leeren Rahmen lässt, wo ihre
+            Grundlage fehlt, ist ein Defekt, den der Nutzer erst selbst finden
+            muss. Eine Leinwand wird hier nicht gemalt — unter der Auskunft
+            stünde sonst das Kraftfeld und täte so, als wäre es die Karte. */}
+        {!karteZeigbar && (
+          <div
+            data-testid="graph-semantik-leer"
+            className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none text-center px-6"
+          >
+            <div className="hud-label mb-1.5">Semantic map</div>
+            <p className="text-sm max-w-sm" style={{ color: "var(--text-2)" }}>
+              {karteFehler ? (
+                <>The vectors could not be read from the engine, so there is nothing to project. Force and Tree need only the notes themselves.</>
+              ) : karte === null ? (
+                <>Reading the vectors — the projection runs on this machine, once per change.</>
+              ) : (
+                <>
+                  This map needs at least two notes with a vector — {karte.punkte.length} here. One point
+                  has no direction to spread along; two or more show what separates them.
+                </>
+              )}
+            </p>
+          </div>
+        )}
+
         {filtered.length === 0 && (
           <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none text-center px-6">
             <div className="hud-label mb-1.5">No match</div>
@@ -2578,6 +2728,16 @@ export function KnowledgeGraph({ memories, onSelectMemory, onSelectConcept, sich
               </>
             )}
           </div>
+          {/* Was die Karte tut, ist eine Reduktion, und eine Reduktion schuldet
+              ihre Zahl: zwei Achsen, die 61 % der Unterschiede tragen, sind ein
+              anderes Bild als zwei Achsen mit 9 %. Der Modellname gehört dazu —
+              Vektoren verschiedener Modelle sind keine Entfernungen. */}
+          {ansicht === "semantic" && karte && (
+            <div className="hud-label tnum" style={{ color: "var(--text-2)" }}>
+              Two axes carry {Math.round(Math.min(1, karte.anteil[0] + karte.anteil[1]) * 100)} % of the differences
+              {karte.modell ? ` · ${karte.modell}` : ""}
+            </div>
+          )}
           {/* Die Bilanz des Ausschnitts — nur wo etwas fehlt. */}
           {dichteZeile && (
             <div className="hud-label tnum" style={{ color: "var(--text-2)" }}>{dichteZeile}</div>
@@ -2585,7 +2745,9 @@ export function KnowledgeGraph({ memories, onSelectMemory, onSelectConcept, sich
           <div className="hud-label">
             {ansicht === "dendrogram"
               ? uiT("hint.tree")
-              : uiT("hint.force")}
+              : ansicht === "semantic"
+                ? uiT("hint.semantic")
+                : uiT("hint.force")}
           </div>
         </div>
       </div>

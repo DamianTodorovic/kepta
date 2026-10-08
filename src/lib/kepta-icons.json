@@ -188,6 +188,9 @@
   },
   "minus": {
    "body": "<path fill=\"none\" stroke=\"currentColor\" stroke-linecap=\"round\" stroke-width=\"1.5\" d=\"M20 12L4 12\"/>"
+  },
+  "scatter": {
+   "body": "<g fill=\"none\" stroke=\"currentColor\" stroke-linecap=\"round\" stroke-width=\"1.5\"><path d=\"M4 20h16\"/><circle cx=\"8\" cy=\"15.5\" r=\"1.5\"/><circle cx=\"12.5\" cy=\"11\" r=\"1.5\"/><circle cx=\"17\" cy=\"7\" r=\"1.5\"/></g>"
   }
  }
 }

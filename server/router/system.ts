@@ -9,6 +9,7 @@ import { APP_VERSION } from "../../src/core/version";
 import { memoryToMarkdown } from "../../src/core/obsidian";
 import { TOOLS as MCP_TOOLS } from "../../src/core/mcp";
 import { mcpStartInDerApp } from "../helfer/mcp-start";
+import { semantikVomBestand } from "../helfer/semantik";
 import { serverVerzeichnis, resolveDistDir } from "../helfer/pfad";
 import type { AppKontext } from "../kontext";
 
@@ -72,6 +73,16 @@ export function mountSystem(app: express.Express, ctx: AppKontext): void {
       // zeigt, statt die gelieferte Zahl als Bestandszahl auszugeben.
       bestand: store.graphBestand(),
     });
+  });
+
+  // --- Semantische Karte: wo die Bedeutungen liegen ---
+  // Die dritte Ansicht des Graphen legt jede Notiz dorthin, wohin ihr Vektor
+  // zeigt. Gerechnet wird hier, damit der Renderer Plätze bekommt und keine
+  // Vektoren; die Antwort trägt ausserdem mit, wie viel die zwei Achsen von den
+  // Unterschieden tragen und was der Kappung zum Opfer fiel — eine Projektion,
+  // die ihre eigene Verringerung verschweigt, ist ein Verkaufsgespräch.
+  app.get("/api/graph/semantik", (_req, res) => {
+    res.json(semantikVomBestand(store));
   });
 
   // Export: schreibt alle aktiven Memories als .md in ~/.kepta/export/<zeitstempel>/
