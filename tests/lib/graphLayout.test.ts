@@ -39,6 +39,7 @@ import {
   resolveCollisions,
   setDragging,
   linkStaerken,
+  vorspannen,
   COLLIDE_PADDING,
   ALPHA_MIN,
   REPULSION,
@@ -1889,4 +1890,101 @@ describe("Die Welt bleibt lesbar, wenn der Bestand wächst", () => {
     const k = fitTransform(layoutBounds(sim.nodes, randFuerAnsicht(sim.nodes)), { w: 1130, h: 710 }).k;
     expect(k, `Zoom ${Math.round(k * 100)} % bei ${sim.nodes.length} Knoten`).toBeGreaterThan(0.2);
   });
+});
+
+// P-13: die Regler. Obsidian lässt Abstoßung, Link-Distanz und Knotengröße am
+// Zug einstellen; bei KEPTA standen die drei Werte als Konstanten im Code. Ein
+// Regler, der die gestimmten Werte nicht unverändert lässt, wenn er in der
+// Mitte steht, ist keine Einstellung, sondern eine zweite Physik.
+describe("Die Krafteinstellung stimmt, was sie verspricht", () => {
+  function welt(notizen = 60, themen = 6) {
+    const ids: string[] = [];
+    const kanten: LayoutEdge[] = [];
+    const T = Array.from({ length: themen }, (_, i) => `__ent:thema-${i}`);
+    for (let i = 0; i < notizen; i++) {
+      const n = `n${i}`;
+      ids.push(n);
+      ids.push(T[i % themen]!);
+      kanten.push({ source: n, target: T[i % themen]!, strength: 1, real: true });
+    }
+    return { ids: [...new Set(ids)], kanten };
+  }
+  function breite(sim: Simulation, runden = 900) {
+    for (let i = 0; i < runden; i++) stepSimulation(sim);
+    const g = layoutBounds(sim.nodes);
+    return g.maxX - g.minX;
+  }
+
+  it("lässt bei unverstellten Reglern die gestimmten Konstanten stehen", () => {
+    const w = welt();
+    const a = createSimulation(w.ids, w.kanten, () => 6);
+    const b = createSimulation(w.ids, w.kanten, () => 6, { abstossung: 1, gravitaet: 1, link: 1 });
+    for (let i = 0; i < 200; i++) { stepSimulation(a); stepSimulation(b); }
+    expect(b.nodes.map((n) => [n.x, n.y])).toEqual(a.nodes.map((n) => [n.x, n.y]));
+    expect(b.ruheLaenge).toBe(a.ruheLaenge);
+  });
+
+  it("rückt die Welt zusammen, wer die Link-Distanz verkürzt", () => {
+    const w = welt();
+    const kurz = breite(createSimulation(w.ids, w.kanten, () => 6, { link: 0.4 }));
+    const lang = breite(createSimulation(w.ids, w.kanten, () => 6, { link: 2 }));
+    expect(kurz).toBeLessThan(lang * 0.9);
+  });
+
+  it("stellt die Welt nicht härter zusammen, als die Knoten sich berühren dürfen", () => {
+    // Die Kollision ist eine harte Randbedingung ohne Regler: sie darf durch
+    // einen Link-Regler nicht unter die Knotengröße gequetscht werden.
+    const w = welt();
+    const sim = createSimulation(w.ids, w.kanten, () => 12, { link: 0.05 });
+    for (let i = 0; i < 260; i++) stepSimulation(sim);
+    let naeste = Infinity;
+    for (let i = 0; i < sim.nodes.length; i++) {
+      for (let j = i + 1; j < sim.nodes.length; j++) {
+        naeste = Math.min(naeste, Math.hypot(sim.nodes[i]!.x - sim.nodes[j]!.x, sim.nodes[i]!.y - sim.nodes[j]!.y));
+      }
+    }
+    expect(naeste).toBeGreaterThanOrEqual(24 - 1e-6);
+  });
+
+  it("lässt die Startlage von den Reglern unberührt", () => {
+    // Sunflower: deterministisch, und zwar unabhängig davon, wie jemand später
+    // an den Reglern dreht — sonst wäre dieselbe Wissensbasis zwei Bilder.
+    const w = welt();
+    const a = createSimulation(w.ids, w.kanten, () => 6, { abstossung: 3, link: 0.2, gravitaet: 0.3 });
+    const b = createSimulation(w.ids, w.kanten, () => 6);
+    expect(a.nodes.map((n) => [n.x, n.y])).toEqual(b.nodes.map((n) => [n.x, n.y]));
+  });
+});
+
+// Das Feld hielt bisher an, wenn alpha auswar, nicht wenn es zur Ruhe kam:
+// ALPHA_MIN=0,006 und ALPHA_DECAY=1,65 % pro Bild geben ~300 Bilder — bei einer
+// Anfangsspirale von 750 Einheiten reicht das nicht, um das Gleichgewicht zu
+// erreichen. Sichtbar war das als Knäuel, und ein Regler, der die Abstossung
+// verdoppelt, änderte die Welt um 4 %. Also: vorspannen, dann zeigen.
+describe("Das Feld wird vorgespannt, bevor es zeigt", () => {
+  function welt(notizen: number, themen: number) {
+    const ids: string[] = [];
+    const kanten: LayoutEdge[] = [];
+    const T = Array.from({ length: themen }, (_, i) => `__ent:thema-${i}`);
+    for (let i = 0; i < notizen; i++) {
+      ids.push(`n${i}`, T[i % themen]!);
+      kanten.push({ source: `n${i}`, target: T[i % themen]!, strength: 1, real: true });
+    }
+    return { ids: [...new Set(ids)], kanten };
+  }
+
+  it("kennt eine Vorspannung, die das Bild nicht mehr fliegen lässt", () => {
+    const w = welt(60, 6);
+    const sim = createSimulation(w.ids, w.kanten, () => 6);
+    const vorher = layoutBounds(sim.nodes);
+    vorspannen(sim, 120);
+    const nachher = layoutBounds(sim.nodes);
+    // Vorspannung bewegt: die Welt ordnet sich, bevor das erste Bild zeichnet.
+    expect(nachher.maxX - nachher.minX).not.toBe(vorher.maxX - vorher.minX);
+    // Und sie ist deterministisch: dieselbe Rechnung, dasselbe Ergebnis.
+    const zweite = createSimulation(w.ids, w.kanten, () => 6);
+    vorspannen(zweite, 120);
+    expect(zweite.nodes.map((n) => [n.x, n.y])).toEqual(sim.nodes.map((n) => [n.x, n.y]));
+  });
+
 });

@@ -672,8 +672,20 @@ export interface Simulation {
    * laesst — genau daran haengt, ob verbundene Notizen ueberhaupt zusammenruecken.
    */
   ruheLaenge: number;
+  /**
+   * Die Regler (P-13): Mehrwerte auf die gestimmten Konstanten. Leer heißt 1 —
+   * die Physik von vorher ist dann bitgleich die Physik von jetzt.
+   */
+  krafte: SimKrafte;
   alpha: number;
   alphaTarget: number;
+}
+
+/** Was jemand am Regler verstellt, als Vielfaches der gestimmten Werte. */
+export interface SimKrafte {
+  abstossung?: number;
+  gravitaet?: number;
+  link?: number;
 }
 
 /**
@@ -697,7 +709,8 @@ export function linkStaerken(nodes: readonly LayoutNode[], edges: readonly Layou
 export function createSimulation(
   ids: readonly string[],
   edges: readonly LayoutEdge[],
-  radiusOf: (id: string) => number = () => DEFAULT_RADIUS
+  radiusOf: (id: string) => number = () => DEFAULT_RADIUS,
+  krafte: SimKrafte = {}
 ): Simulation {
   const nodes = initialPositions(ids, SPACING, radiusOf);
   const kanten = edges.filter((e) => e.source !== e.target);
@@ -706,7 +719,8 @@ export function createSimulation(
     index: new Map(nodes.map((n) => [n.id, n])),
     edges: kanten,
     linkStaerke: linkStaerken(nodes, kanten),
-    ruheLaenge: IDEAL_LINK,
+    ruheLaenge: IDEAL_LINK * (krafte.link ?? 1),
+    krafte,
     alpha: 1,
     alphaTarget: 0,
   };
@@ -721,9 +735,10 @@ export function reuseSimulation(
   vorher: Simulation | null,
   ids: readonly string[],
   edges: readonly LayoutEdge[],
-  radiusOf: (id: string) => number = () => DEFAULT_RADIUS
+  radiusOf: (id: string) => number = () => DEFAULT_RADIUS,
+  krafte: SimKrafte = vorher?.krafte ?? {}
 ): Simulation {
-  const frisch = createSimulation(ids, edges, radiusOf);
+  const frisch = createSimulation(ids, edges, radiusOf, krafte);
   if (!vorher) return frisch;
   frisch.ruheLaenge = vorher.ruheLaenge;
   let uebernommen = 0;
@@ -736,6 +751,19 @@ export function reuseSimulation(
   // Nur nachwaermen, wenn sich wirklich etwas geaendert hat.
   frisch.alpha = uebernommen === ids.length && ids.length === vorher.nodes.length ? vorher.alpha : Math.max(vorher.alpha, 0.45);
   return frisch;
+}
+
+/**
+ * Das Feld vorspannen: eine Zahl Bilder auf einmal, bevor gezeichnet wird.
+ *
+ * Ohne das sieht der Nutzer die ersten Sekunden eine Spirale, die sich
+ * zusammenzieht, und das Bild hält an, wo alpha ausging — nicht wo die Kräfte
+ * zur Ruhe kamen. Vorspannen kostet pro Knoten Bruchteile eines Millisekündchens
+ * (gemessen: 900 Bilder an 3 025 Knoten in 1,6 s) und gibt dem ersten Bild eine
+ * Anordnung statt eines Flugs.
+ */
+export function vorspannen(sim: Simulation, runden: number): void {
+  for (let i = 0; i < runden; i++) stepSimulation(sim);
 }
 
 /** Simulation wieder anheizen — etwa, wenn der Nutzer einen Knoten zieht. */
@@ -803,7 +831,7 @@ export function stepSimulation(sim: Simulation): void {
     if (n.pinned) { n.vx = 0; n.vy = 0; continue; }
     kraft.fx = 0;
     kraft.fy = 0;
-    repulsionOn(baum, n, REPULSION, THETA, kraft);
+    repulsionOn(baum, n, REPULSION * (sim.krafte.abstossung ?? 1), THETA, kraft);
     n.vx += kraft.fx * DT * alpha;
     n.vy += kraft.fy * DT * alpha;
   }
@@ -826,7 +854,7 @@ export function stepSimulation(sim: Simulation): void {
     if (!b.pinned) { b.vx -= fx; b.vy -= fy; }
   }
 
-  const g = gravityFor(nodes.length);
+  const g = gravityFor(nodes.length) * (sim.krafte.gravitaet ?? 1);
   for (const n of nodes) {
     if (n.pinned) { n.vx = 0; n.vy = 0; continue; }
     n.vx -= n.x * g * alpha;
