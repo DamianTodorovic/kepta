@@ -1,18 +1,16 @@
-// Team-Ansicht (Enterprise, Milestone E2) — die Admin-Konsole in Kurzform.
+// Team-Ansicht (Milestone E2) — die Admin-Konsole in Kurzform.
 //
-// Eine Karte, die sagt: welche Edition, wie viele Seats, wer hat welche Rolle
-// im Workspace, und wie viele team:*-Notizen gibt es. Rollen werden zentral
-// verwaltet (managed-settings.json, MDM) — diese Ansicht liest sie und erklärt
-// den Admins, wo sie sie ändern; sie editiert sie nicht. Free/Pro sieht eine
-// dezente Upgrade-Karte statt des Teams.
+// Eine Karte, die sagt: wer hat welche Rolle im Workspace, und wie viele
+// team:*-Notizen gibt es. Rollen werden zentral verwaltet
+// (managed-settings.json, MDM) — diese Ansicht liest sie und erklärt
+// den Admins, wo sie sie ändern; sie editiert sie nicht. Ohne Rollen-Datei
+// sagt sie genau das, statt eine Sackgasse zu sein.
 import { useEffect, useState } from "react";
 import { User as UsersIcon, ShieldCheck, Lock } from "../lib/icons";
 import { t } from "../lib/uiText";
 import { getJson } from "../lib/api";
 
 export interface TeamInfo {
-  edition: string | null;
-  seats?: number | null;
   team: { name?: string; rollen: Record<string, string>; meineRolle: string } | null;
 }
 
@@ -48,10 +46,7 @@ export function TeamView({ aktiv }: { aktiv: boolean }) {
     return <div className="p-5 text-sm" style={{ color: "var(--text-muted)" }}>{t("team.loading")}</div>;
   }
 
-  const edition = info.edition ?? null;
-  const teamFaehig = edition === "business" || edition === "enterprise";
-
-  if (!teamFaehig) {
+  if (!info.team) {
     return (
       <div className="max-w-xl mx-auto mt-10">
         <div className="rounded-2xl border p-6" style={{ borderColor: "var(--border, rgba(255,255,255,0.1))" }}>
@@ -59,14 +54,13 @@ export function TeamView({ aktiv }: { aktiv: boolean }) {
             <UsersIcon className="w-5 h-5" />
             <h2 className="text-base font-semibold">{t("team.title")}</h2>
           </div>
-          <p className="text-sm" style={{ color: "var(--text-muted)" }}>{t("team.upsell")}</p>
+          <p className="text-sm" data-testid="team-keine-rollen" style={{ color: "var(--text-muted)" }}>{t("team.keineRollen")}</p>
         </div>
       </div>
     );
   }
 
-  const rollen = info.team?.rollen ?? {};
-  const meine = info.team?.meineRolle ?? "viewer";
+  const rollen = info.team.rollen ?? {};
   const rollenListe = Object.entries(rollen);
 
   return (
@@ -74,12 +68,10 @@ export function TeamView({ aktiv }: { aktiv: boolean }) {
       <div className="rounded-2xl border p-6" style={{ borderColor: "var(--border, rgba(255,255,255,0.1))" }}>
         <div className="flex items-center gap-2 mb-1">
           <UsersIcon className="w-5 h-5" />
-          <h2 className="text-base font-semibold">{info.team?.name ?? t("team.title")}</h2>
+          <h2 className="text-base font-semibold">{info.team.name ?? t("team.title")}</h2>
         </div>
         <div className="flex items-center gap-2 text-sm" style={{ color: "var(--text-muted)" }}>
-          <span data-testid="team-edition">KEPTA Enterprise</span>
-          <span aria-hidden>·</span>
-          <span data-testid="team-seats">{info.seats != null ? `${info.seats} ${info.seats === 1 ? "seat" : "seats"}` : t("team.seatsUnbegrenzt")}</span>
+          <span data-testid="team-meine-rolle">{info.team.meineRolle}</span>
         </div>
       </div>
 

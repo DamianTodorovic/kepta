@@ -60,8 +60,9 @@ export const TEXTE: Record<string, string> = {
   "settings.fontSize": "Text size",
   "team.loading": "Loading team…",
   "team.title": "Team workspace",
-  "team.upsell": "Shared team memory lives in team workspaces — part of KEPTA Enterprise. Roles come from your organisation's managed settings; every note in a team workspace is encrypted on this machine like everything else.",
-  "team.seatsUnbegrenzt": "seat plan per agreement",
+  // Kein Angebot, kein Preis: Team-Speicher ist eine Funktion der verwalteten
+  // Konfiguration. Fehlt die Rollen-Datei, ist die Ansicht leer und sagt warum.
+  "team.keineRollen": "A team workspace is switched on by your organisation's managed settings (managed-settings.json). Nothing was provisioned on this computer, so there is nothing to show — every note you make stays personal and encrypted here.",
   "team.rollen": "Roles",
   "team.rollenLeer": "No roles assigned yet — your admin lists them in the managed settings file.",
   "team.dieserRechner": "this computer",

@@ -3,7 +3,6 @@ import { Sidebar } from './Sidebar';
 import { MemoryCard } from './MemoryCard';
 import { MemoryEditor } from './MemoryEditor';
 import { MemoryPreview } from './MemoryPreview';
-import { ProUpgrade, holeUpgradeUrl, type Lizenz } from './ProUpgrade';
 import { Chat } from './Chat';
 import { hydrateAISettings } from '../lib/ai';
 import { hydratePrefs, spiegelePrefs } from '../lib/prefs';
@@ -123,18 +122,11 @@ export function Dashboard() {
   // Klick auf eine Karte oeffnet die lesbare Vorschau — der Editor kommt nur
   // noch ueber deren „Edit“-Knopf.
   const [vorschauMemory, setVorschauMemory] = useState<Memory | null>(null);
-  const [upgradeOffen, setUpgradeOffen] = useState(false);
-  const [upgradeUrl, setUpgradeUrl] = useState<string | undefined>(undefined);
-  // Erst wenn KEPTA_UPGRADE_URL gesetzt ist (Paddle live), führt der Kaufen-Knopf
-  // wirklich zur Kasse — sonst auf den Kontakt-Weg (LinkedIn).
-  const [checkoutLive, setCheckoutLive] = useState(false);
-  // Wem die Lizenz gehoert — steht sichtbar in der Seitenleiste (2.12.0), damit
-  // ein weitergegebener Schluessel auffaellt.
-  const [lizenz, setLizenz] = useState<Lizenz | null>(null);
-  const [lizenzWiderrufen, setLizenzWiderrufen] = useState(false);
-  // Der Pro-Tag: 24 h ab Erststart alle Pro-Werkzeuge offen (helfer/probetag.ts
-  // serverseitig) — die Seitenleiste zeigt die Uhr, das Ende kommt als Toast.
-  const [protag, setProtag] = useState<{ aktiv: boolean; restMs: number } | null>(null);
+  // Eine Organisation kann Rollen setzen (managed-settings.json). Nur wenn das
+  // geschehen ist, führt der Weg zu Team — sonst wäre der Punkt eine Sackgasse.
+  // Dieselbe Frische-Regel wie früher bei der Lizenz: beim Start und bei
+  // Fokuswechsel nachfragen, weil die Datei im Betrieb ergänzt werden kann.
+  const [teamVorhanden, setTeamVorhanden] = useState(false);
   // Gruppierung der Liste: Alle (flach), Nach Datei, Nach Typ, Zeitraum.
   const [gruppierung, setGruppierung] = useState<'alle' | 'datei' | 'typ' | 'zeitraum'>(() => {
     try {
@@ -146,57 +138,22 @@ export function Dashboard() {
     try { localStorage.setItem('ki_gehirn_gruppierung', gruppierung); } catch { /* ignore */ }
   }, [gruppierung]);
 
-  // Der sanfte Übergang: läuft der Pro-Tag zum ersten Mal nicht mehr, sagt
-  // ein Toast Bescheid — einmal pro Installation, nie eine Wand. Der Nutzer
-  // verliert die App nicht, nur die Grenzenlosigkeit.
-  const uebernimmProtag = useCallback((d: { protag?: { aktiv?: boolean; restMs?: number } }) => {
-    if (!d.protag || typeof d.protag.aktiv !== 'boolean') return;
-    setProtag({ aktiv: d.protag.aktiv, restMs: typeof d.protag.restMs === 'number' ? d.protag.restMs : 0 });
-    if (!d.protag.aktiv) {
-      try {
-        if (!localStorage.getItem('ki_gehirn_protag_ende')) {
-          localStorage.setItem('ki_gehirn_protag_ende', '1');
-          toast.push({
-            message: 'Your unlimited day is over — KEPTA keeps running, free, with daily limits. A key removes them.',
-            kind: 'info',
-          });
-        }
-      } catch { /* privates Fenster */ }
-    }
-  }, [toast]);
-
-  // Lizenzdaten: einmal beim Mount. Die App ist NIE gesperrt (Freemium) —
-  // ohne Schlüssel läuft der Free-Plan mit Tageslimiten; dieses Laden holt nur
-  // Lizenzinhaber, den Pro-Tag und den Upgrade-Weg fürs Seitenleisten-Panel.
+  // Lizenz, Pro-Tag und Upgrade-Weg sind seit 10.10.2026 weg: die herunterladbare
+  // App läuft unbegrenzt und hat kein Schlüssel-Feld. Was hier blieb, ist der
+  // Rest der Seitenleisten-Inhalte.
   useEffect(() => {
-    fetch('/api/license').then(r => r.json()).then(d => {
-      if (d.licensed && typeof d.licensee === 'string' && typeof d.number === 'string') {
-        setLizenz({ licensee: d.licensee, number: d.number, edition: typeof d.edition === 'string' ? d.edition : undefined, seats: typeof d.seats === 'number' ? d.seats : undefined });
-      }
-      setLizenzWiderrufen(d.revoked === true);
-      if (typeof d.upgradeUrl === 'string') setUpgradeUrl(d.upgradeUrl);
-      setCheckoutLive(d.checkoutLive === true);
-      uebernimmProtag(d);
-    }).catch(() => { /* der Hintergrundserver meldet sich, wenn er bereit ist */ });
-  }, []);
-  // Stufenwechsel (z. B. per License Studio/API während die App offen ist):
-  // Bei Fensterfokus frisch nachfragen, damit Fußzeile und Organization-Panel
-  // die aktuelle Stufe zeigen, statt des Stands vom Start.
-  useEffect(() => {
-    const lade = () => {
-      fetch('/api/license').then(r => r.json()).then(d => {
-        if (d.licensed && typeof d.licensee === 'string' && typeof d.number === 'string') {
-          setLizenz({ licensee: d.licensee, number: d.number, edition: typeof d.edition === 'string' ? d.edition : undefined, seats: typeof d.seats === 'number' ? d.seats : undefined });
-          setLizenzWiderrufen(d.revoked === true);
-        }
-        uebernimmProtag(d);
-      }).catch(() => { /* Fokus-Refresh ist best effort */ });
+    const frage = () => {
+      fetch('/api/team').then(r => (r.ok ? r.json() : null)).then(d => {
+        setTeamVorhanden(Boolean(d?.team));
+      }).catch(() => { /* der Hintergrundserver meldet sich, wenn er bereit ist */ });
     };
-    window.addEventListener('focus', lade);
-    document.addEventListener('visibilitychange', lade);
+    frage();
+    const beiFokus = () => { if (document.visibilityState !== 'hidden') frage(); };
+    window.addEventListener('focus', beiFokus);
+    document.addEventListener('visibilitychange', beiFokus);
     return () => {
-      window.removeEventListener('focus', lade);
-      document.removeEventListener('visibilitychange', lade);
+      window.removeEventListener('focus', beiFokus);
+      document.removeEventListener('visibilitychange', beiFokus);
     };
   }, []);
   const [copied, setCopied] = useState(false);
@@ -1072,17 +1029,11 @@ export function Dashboard() {
         onNavigate={setCurrentView}
         totalMemories={memories.length}
         appsLive={appsLive}
-        licensee={lizenz?.licensee ?? null}
-        licenseNumber={lizenz?.number ?? null}
-        licenseEdition={lizenz?.edition ?? null}
-        licenseSeats={lizenz?.seats ?? null}
-        protagAktiv={!lizenz && (protag?.aktiv ?? false)}
-        protagRestMs={protag?.restMs ?? null}
+        teamVisible={teamVorhanden}
         isFocusMode={isFocusMode}
         toggleFocusMode={() => setIsFocusMode(!isFocusMode)}
         showSetup={(() => { try { const p = loadProfile(); return !p?.hasCompletedOnboarding; } catch { return false; } })()}
         onOpenSetup={() => setWizardOpen(true)}
-        onUpgrade={() => setUpgradeOffen(true)}
       />
 
       <main className="flex-1 flex flex-col min-w-0 overflow-hidden my-2.5 mr-2.5 panel rounded-2xl relative z-10">
@@ -1675,17 +1626,6 @@ export function Dashboard() {
         onOpenMemory={(m) => { setDuplicatesOpen(false); setEditingMemory(m); setIsEditorOpen(true); }}
       />
       <ShortcutsSheet open={shortcutsOpen} onClose={() => setShortcutsOpen(false)} />
-
-      {upgradeOffen && (
-        <ProUpgrade
-          onClose={() => setUpgradeOffen(false)}
-          onActivated={(neu) => { setLizenz(neu); setLizenzWiderrufen(false); setUpgradeOffen(false); }}
-          revoked={lizenzWiderrufen}
-          upgradeUrl={upgradeUrl}
-          checkoutLive={checkoutLive}
-          protagRestMs={!lizenz && (protag?.aktiv ?? false) ? (protag?.restMs ?? null) : null}
-        />
-      )}
     </div>
   );
 }

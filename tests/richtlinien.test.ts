@@ -2,7 +2,8 @@
 //
 // Verwaltete Konfiguration + zentrale Richtlinien (src/lib/richtlinien.ts und
 // ihre Durchsetzung im Server): eine Datei der Organisation steuert die App —
-// Lizenz vorab eingetragen (MDM), Cloud-Chat zu, Rechner-Scan zu, Shield an.
+// Cloud-Chat zu, Rechner-Scan zu, Shield an. Eine Licence in der Datei kennt die App
+// nicht mehr (10.10.2026) — sie wird ignoriert, nicht geahnt.
 // Fehlt oder ist die Datei kaputt, bleibt alles beim Alten.
 import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
 import { tmpdir } from "node:os";
@@ -92,32 +93,36 @@ describe("liesVerwaltet", () => {
   });
 });
 
-describe("verwaltete Lizenz (MDM-Ausrollung)", () => {
-  it("eine gültige Lizenz in der Verwaltung schaltet die App frei — ohne dass sie je eingetippt wurde", async () => {
-    schreibeVerwaltet({ license_name: "Mandels Kanzlei", license_key: signiere("Mandels Kanzlei", 21, paar.privat, "business", 5) });
-    const res = await request(app).get("/api/license");
-    expect(res.body).toMatchObject({ licensed: true, licensee: "Mandels Kanzlei", edition: "business", seats: 5 });
+describe("eine verwaltete Datei mit alten Lizenz-Feldern", () => {
+  // Die herunterladbare App hat seit 10.10.2026 kein Schlüssel-System. Eine
+  // Organisationen-Datei, die noch license_name/license_key trägt (air-gapped
+  // Ausrollungen vor diesem Stand), darf die App deshalb weder blockieren noch
+  // irgendwas "freischalten": die Felder werden ignoriert, der Rest gilt.
+  it("ignoriert die Lizenz-Felder und lässt die Richtlinien gelten", async () => {
+    schreibeVerwaltet({
+      license_name: "Mandels Kanzlei",
+      license_key: signiere("Mandels Kanzlei", 21, paar.privat, "business", 5),
+      richtlinien: { chat_cloud: "deny" },
+    });
+    const verwaltet = liesVerwaltet();
+    expect(verwaltet).not.toBeNull();
+    expect(verwaltet).not.toHaveProperty("license_name");
+    expect(verwaltet).not.toHaveProperty("license_key");
+    expect(verwaltet!.richtlinien).toEqual({ chat_cloud: "deny" });
+    // Und die App selbst: keine Lizenz-Route, kein Plan, keine Sperre.
+    expect((await request(app).get("/api/license")).status).toBe(404);
     expect((await request(app).get("/api/scan/status")).status).not.toBe(403);
   });
 
-  it("eine ungültige verwaltete Lizenz schaltet nichts frei", async () => {
-    schreibeVerwaltet({ license_name: "Falsch", license_key: signiere("Richtig", 21, paar.privat) });
-    expect((await request(app).get("/api/license")).body.licensed).toBe(false);
-  });
-
-  it("eine eingetippte Lizenz schlägt die verwaltete — und bleibt nach dem Entfernen der Datei", async () => {
+  it("eine Datei nur mit Lizenz-Feldern gilt als keine Richtlinie", async () => {
     schreibeVerwaltet({ license_name: "Verwaltet GmbH", license_key: signiere("Verwaltet GmbH", 30, paar.privat) });
-    await request(app).post("/api/license").send({ name: "Sarah Mandel", key: signiere("Sarah Mandel", 31, paar.privat) });
-    expect((await request(app).get("/api/license")).body.licensee).toBe("Sarah Mandel");
-    fs.unlinkSync(verwaltetDatei);
-    richtlinienCacheLeeren();
-    expect((await request(app).get("/api/license")).body.licensee).toBe("Sarah Mandel");
+    expect(liesVerwaltet()).toBeNull();
   });
 });
 
 describe("zentrale Richtlinien im Server", () => {
   it("chat_cloud=deny: fremde Hosts werden abgewiesen, lokale Modelle bleiben offen", async () => {
-    schreibeVerwaltet({ license_name: "Mandels Kanzlei", license_key: signiere("Mandels Kanzlei", 20, paar.privat), richtlinien: { chat_cloud: "deny" } });
+    schreibeVerwaltet({ richtlinien: { chat_cloud: "deny" } });
     const cloud = await request(app).post("/api/chat").send({ messages: [{ role: "user", content: "hi" }], baseUrl: "https://api.openai.com/v1" });
     // Diese Abschaltung ist eine Sicherheitszusage: sie darf nie als Zahl ohne
     // Namen fallen. Unter Last ist hier schon ein fremder Status statt 403
@@ -131,7 +136,7 @@ describe("zentrale Richtlinien im Server", () => {
   });
 
   it("chat_cloud=deny: auch der STREAM-Endpunkt weist fremde Hosts ab (26.9.-Audit: die Umgehungslücke)", async () => {
-    schreibeVerwaltet({ license_name: "Mandels Kanzlei", license_key: signiere("Mandels Kanzlei", 20, paar.privat), richtlinien: { chat_cloud: "deny" } });
+    schreibeVerwaltet({ richtlinien: { chat_cloud: "deny" } });
     const stream = await request(app).post("/api/chat/stream").send({ messages: [{ role: "user", content: "hi" }], baseUrl: "https://api.openai.com/v1" });
     expect(stream.status).toBe(403);
     expect(stream.body.error).toMatch(/organization's policy/);
@@ -141,14 +146,14 @@ describe("zentrale Richtlinien im Server", () => {
   });
 
   it("machine_scan=deny: der Scan startet nicht — auch mit confirmed:true", async () => {
-    schreibeVerwaltet({ license_name: "Mandels Kanzlei", license_key: signiere("Mandels Kanzlei", 20, paar.privat), richtlinien: { machine_scan: "deny" } });
+    schreibeVerwaltet({ richtlinien: { machine_scan: "deny" } });
     const res = await request(app).post("/api/scan/start").send({ confirmed: true });
     expect(res.status).toBe(403);
     expect(res.body.error).toMatch(/organization's policy/);
   });
 
   it("privacy_shield=force_on: abschalten wird ignoriert, der Schutz bleibt an", async () => {
-    schreibeVerwaltet({ license_name: "Mandels Kanzlei", license_key: signiere("Mandels Kanzlei", 20, paar.privat), richtlinien: { privacy_shield: "force_on" } });
+    schreibeVerwaltet({ richtlinien: { privacy_shield: "force_on" } });
     await request(app).put("/api/shield").send({ chat: false, apps: false });
     const stand = await request(app).get("/api/shield");
     expect(stand.body.chat).toBe(true);
@@ -157,19 +162,17 @@ describe("zentrale Richtlinien im Server", () => {
 
   it("/api/policies zeigt die Verwaltung — ohne Geheimnisse", async () => {
     schreibeVerwaltet({
-      license_name: "Mandels Kanzlei",
-      license_key: signiere("Mandels Kanzlei", 21, paar.privat, "business", 5),
       richtlinien: { chat_cloud: "deny", machine_scan: "deny" },
     });
     const res = await request(app).get("/api/policies");
-    expect(res.body).toEqual({ managed: true, policies: { chat_cloud: "deny", machine_scan: "deny" }, licensePreProvisioned: true });
+    expect(res.body).toEqual({ managed: true, policies: { chat_cloud: "deny", machine_scan: "deny" } });
     expect(res.text).not.toContain("signiere");
     expect(JSON.stringify(res.body)).not.toMatch(/[A-Z2-7]{5}-[A-Z2-7]/); // kein Schlüssel im Klartext
   });
 
   it("ohne Verwaltung: managed false, leere Richtlinien", async () => {
     const res = await request(app).get("/api/policies");
-    expect(res.body).toEqual({ managed: false, policies: {}, licensePreProvisioned: false });
+    expect(res.body).toEqual({ managed: false, policies: {} });
   });
 });
 

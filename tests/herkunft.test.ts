@@ -64,7 +64,7 @@ describe("Nur dieser Rechner", () => {
   });
 
   it("eine fremde Webseite kann keine Notiz einschleusen — auch nicht aus einem Sandbox-Frame", async () => {
-    const app = createApp(store, { lizenziert: () => true });
+    const app = createApp(store);
     const formular = await request(app).post("/api/memories").set("Origin", "https://evil.example").type("form").send(eingeschleust);
     expect(formular.status).toBe(403);
     expect(formular.body).toEqual({ error: "Forbidden origin." });
@@ -74,7 +74,7 @@ describe("Nur dieser Rechner", () => {
   });
 
   it("DNS-Rebinding: mit fremdem Host-Kopf ist nichts lesbar — auch nicht der Live-Stream", async () => {
-    const app = createApp(store, { lizenziert: () => true });
+    const app = createApp(store);
     for (const pfad of ["/api/memories", "/api/health", "/api/activity"]) {
       const r = await request(app).get(pfad).set("Host", "evil.example:3000");
       expect(r.status, pfad).toBe(403);
@@ -83,7 +83,7 @@ describe("Nur dieser Rechner", () => {
   });
 
   it("das Fenster, lokale Dev-Server, Skripte und KI-Apps über MCP arbeiten weiter", async () => {
-    const app = createApp(store, { lizenziert: () => true });
+    const app = createApp(store);
     const fenster = await request(app).post("/api/memories").set("Host", "127.0.0.1:51234").set("Origin", "http://127.0.0.1:51234").send({ title: "From the window", content: "ok" });
     expect(fenster.status).toBeLessThan(300);
     const dev = await request(app).post("/api/memories").set("Origin", "http://localhost:5173").send({ title: "From the dev server", content: "ok" });
@@ -100,7 +100,7 @@ describe("Nur dieser Rechner", () => {
 
   it("KEPTA_HOST fürs Netz: ein Netzwerk-Host ist erlaubt, fremde Webseiten bleiben gesperrt", async () => {
     process.env.KEPTA_HOST = "0.0.0.0";
-    const app = createApp(store, { lizenziert: () => true });
+    const app = createApp(store);
     expect((await request(app).get("/api/health").set("Host", "192.168.1.5:3000")).status).toBe(200);
     const fremd = await request(app).post("/api/memories").set("Host", "192.168.1.5:3000").set("Origin", "https://evil.example").type("form").send(eingeschleust);
     expect(fremd.status).toBe(403);

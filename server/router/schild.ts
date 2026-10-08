@@ -55,7 +55,6 @@ export function mountSchild(app: express.Express, ctx: AppKontext): void {
     res.json({
       managed: verwaltet !== null,
       policies: verwaltet?.richtlinien ?? {},
-      licensePreProvisioned: verwaltet?.license_key !== undefined,
     });
   });
 }

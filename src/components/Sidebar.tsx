@@ -18,24 +18,16 @@ interface SidebarProps {
   totalMemories: number;
   /** An AI app used KEPTA in the last minutes — a green dot on „Activity“. */
   appsLive?: boolean;
-  /** Wem die Lizenz gehoert (2.12.0) — sichtbar, damit ein weitergegebener Schluessel auffaellt. */
-  licensee?: string | null;
-  licenseNumber?: string | null;
-  /** Die Stufe des Schluessels (pro / business / enterprise) — alte Schluessel ohne Stufe gelten als Pro. */
-  licenseEdition?: string | null;
-  /** Business: gekaufte Seat-Zahl. */
-  licenseSeats?: number | null;
-  /** Der Pro-Tag läuft: alle Pro-Werkzeuge offen, die Fußzeile zeigt die Uhr. */
-  protagAktiv?: boolean;
-  /** Restlaufzeit des Pro-Tags in Millisekunden (nur solange aktiv). */
-  protagRestMs?: number | null;
+  /**
+   * Eine Organisation hat Rollen gesetzt (managed-settings.json) — nur dann
+   * führt der Weg zu Team. Ohne Rollen-Datei gäbe es eine Sackgasse.
+   */
+  teamVisible?: boolean;
   isFocusMode: boolean;
   toggleFocusMode: () => void;
   /** Ersteinrichtung noch nicht abgeschlossen → dezentes Setup-Icon in der Fußzeile */
   showSetup?: boolean;
   onOpenSetup?: () => void;
-  /** Freemium: ohne Schlüssel öffnet die Fußzeile das Upgrade-Panel. */
-  onUpgrade?: () => void;
 }
 
 /* Die Sidebar ist bewusst IMMER dunkel (wie bei Slack/Linear) — sie bildet
@@ -51,14 +43,7 @@ const ACCENT_LIGHT = '#c04a39';
 /** So viele Tags stehen sofort da; der Rest kommt auf Wunsch. */
 const TAGS_SICHTBAR = 40;
 
-/** Restlaufzeit des Pro-Tags kompakt: Stunden (ab 90 min), sonst Minuten. */
-function formatProtagRest(ms: number): string {
-  const minuten = Math.max(1, Math.round(ms / 60000));
-  if (minuten < 90) return `${minuten} min`;
-  return `${Math.round(minuten / 60)} h`;
-}
-
-export function Sidebar({ tags, selectedTags, onSelectTag, onClearTags, currentView, onNavigate, totalMemories, appsLive, licensee, licenseNumber, licenseEdition, licenseSeats, protagAktiv, protagRestMs, isFocusMode, toggleFocusMode, showSetup, onOpenSetup, onUpgrade }: SidebarProps) {
+export function Sidebar({ tags, selectedTags, onSelectTag, onClearTags, currentView, onNavigate, totalMemories, appsLive, teamVisible, isFocusMode, toggleFocusMode, showSetup, onOpenSetup }: SidebarProps) {
   const { isDark, toggle: toggleTheme } = useTheme();
   // Die Liste war hart auf 40 geschnitten — ohne ein Wort darueber. Wer viel
   // Wissen hat, sah den Rest schlicht nicht und konnte ihn auch nicht suchen.
@@ -75,11 +60,9 @@ export function Sidebar({ tags, selectedTags, onSelectTag, onClearTags, currentV
     { id: 'graph' as const, label: t('nav.graph'), icon: Network },
     { id: 'dossier' as const, label: t('nav.dossier'), icon: FileText },
     { id: 'activity' as const, label: t('nav.activity'), icon: Bot },
-    // Enterprise (E2): Team nur, wenn die Edition es mitbringt — Free/Pro
-    // sehen den Punkt nicht statt einer Sackgasse.
-    ...(licenseEdition === 'business' || licenseEdition === 'enterprise'
-      ? [{ id: 'team' as const, label: t('nav.team'), icon: User }]
-      : []),
+    // Team nur, wenn eine Organisation Rollen gesetzt hat — sonst wäre der
+    // Punkt eine Sackgasse.
+    ...(teamVisible ? [{ id: 'team' as const, label: t('nav.team'), icon: User }] : []),
     { id: 'settings' as const, label: t('nav.settings'), icon: SettingsIcon },
   ];
 
@@ -186,34 +169,20 @@ export function Sidebar({ tags, selectedTags, onSelectTag, onClearTags, currentV
       <div className="p-2.5 space-y-2" style={{ borderTop: `1px solid ${LINE}` }}>
         <div
           className="px-2 py-2 rounded-lg flex items-center gap-2.5"
-          style={{ background: SURFACE, border: '1px solid rgba(255, 255, 255, 0.04)', cursor: licensee ? 'default' : 'pointer' }}
-          onClick={() => { if (!licensee && onUpgrade) onUpgrade(); }}
-          role={licensee ? undefined : 'button'}
-          aria-label={licensee ? undefined : 'KEPTA'}
+          style={{ background: SURFACE, border: '1px solid rgba(255, 255, 255, 0.04)' }}
         >
           <KeptaMark size={24} radius={6} />
           <div className="min-w-0 flex-1">
             <div className="text-[12.5px] truncate font-semibold tracking-[0.01em]" style={{ color: TEXT_STRONG }}>
-              {/* Branding 3.1.1: schlicht KEPTA — keine Stufen-Anzeige mehr. Der
-                  Lizenz-Mechanismus bleibt unverändert im Hintergrund; die Version
-                  steht bewusst NICHT in der Sidebar (Damian, 25.9.) — sie bleibt
-                  über Systemstatus und /api/health abrufbar (3.1.1). */}
+              {/* Branding 3.1.1: schlicht KEPTA — keine Stufen-Anzeige mehr.
+                  Seit 10.10.2026 sagt auch die zweite Zeile nichts über Grenzen,
+                  weil es sie nicht mehr gibt: die App läuft unbegrenzt.
+                  Die Versionszahl steht bewusst NICHT in der Sidebar (Damian, 25.9.) —
+                  sie bleibt über Systemstatus und /api/health abrufbar. */}
               {'KEPTA'}
             </div>
-            <div
-              className="text-[11px] truncate"
-              style={{ color: licensee ? TEXT_FAINT : ACCENT_LIGHT }}
-              title={licensee
-                ? `${licenseSeats && licenseSeats > 1 ? `${licenseSeats} seats · ` : ''}local · private · encrypted`
-                : protagAktiv
-                  ? 'Your first day is unlimited — no limits. After that: the free plan with daily limits, and it never locks.'
-                  : 'Daily limits on some tools — a key removes them'}
-            >
-              {licensee
-                ? licensee
-                : protagAktiv
-                  ? `Unlimited day · ${protagRestMs != null ? formatProtagRest(protagRestMs) : 'no limits'} left`
-                  : 'A key removes the limits'}
+            <div className="text-[11px] truncate" style={{ color: TEXT_FAINT }} title="local · private · encrypted">
+              local · private · encrypted
             </div>
           </div>
         </div>

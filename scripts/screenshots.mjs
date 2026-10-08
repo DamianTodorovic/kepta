@@ -2,10 +2,7 @@
 // reproduzierbar, mit dem erfundenen Demo-Korpus (scripts/demo-korpus.mjs) und
 // nie mit echten Daten: eigener Server, leerer Datenordner, eigenes HOME,
 // eigener Datenbank-Schlüssel (der Schlüsselbund des Systems bleibt unberührt)
-// und eine frische Browser-Sitzung ohne gespeicherten Zustand. Die Demo-
-// Instanz wird mit einem Lizenzschlüssel für "KEPTA Demo" freigeschaltet, den
-// scripts/generate-license.mjs mit dem Schlüssel aus dem Schlüsselbund
-// ausstellt — er wird nirgends ausgegeben und verschwindet mit dem Datenordner.
+// und eine frische Browser-Sitzung ohne gespeicherten Zustand.
 //
 // Seit 2.13 arbeiten dabei zwei KI-Apps über den echten MCP-Server mit dem
 // Gedächtnis (Claude und Cursor), eine Notiz ist privat, und das Demo-HOME
@@ -22,7 +19,7 @@
 //
 //   cd /tmp/x && ffmpeg -f concat -safe 0 -i liste.txt -vf "scale=1280:-1:flags=lanczos,split[a][b];[a]palettegen=stats_mode=full:max_colors=256[p];[b][p]paletteuse=dither=sierra2_4a:diff_mode=rectangle" -fps_mode vfr -loop 0 docs/demo.gif
 import { app, BrowserWindow, nativeTheme } from "electron";
-import { spawn, execFileSync } from "node:child_process";
+import { spawn } from "node:child_process";
 import crypto from "node:crypto";
 import fs from "node:fs";
 import net from "node:net";
@@ -91,15 +88,6 @@ async function starteServer() {
   }
   kind.kill();
   throw new Error("Der Demo-Server ist nicht hochgekommen — erst `npm run build`?");
-}
-
-/** Schaltet die Demo-Instanz frei; der Schlüssel läuft nur durch diesen Prozess. */
-async function lizenziere(basis) {
-  const name = "KEPTA Demo";
-  // Nummer 999999 ist für die Demo reserviert — das Studio vergibt von 1 aufwärts.
-  const key = execFileSync("node", [path.join(wurzel, "scripts", "generate-license.mjs"), "--name", name, "--nummer", "999999", "--nur-schluessel"], { encoding: "utf8" }).trim();
-  const res = await fetch(`${basis}/api/license`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ name, key }) });
-  if (!res.ok) throw new Error(`Lizenz: HTTP ${res.status}`);
 }
 
 /**
@@ -275,7 +263,6 @@ app.whenReady().then(async () => {
   let server;
   try {
     server = await starteServer();
-    await lizenziere(server.basis);
     console.log(`Demo-Korpus: ${await saeDemo(server.basis)} Notizen`);
     // Eine private Notiz: keine KI-App sieht sie, keine Cloud bekommt sie.
     const privat = await fetch(`${server.basis}/api/memories`, {

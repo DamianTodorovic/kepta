@@ -36,7 +36,7 @@ beforeEach(async () => {
   const { KeptaStore: Store } = await import("../src/core/store");
   ({ createApp } = await import("../server"));
   store = new Store(path.join(dir, "test.db")) as unknown as KeptaStore;
-  app = createApp(store, { lizenziert: () => true });
+  app = createApp(store);
 });
 
 afterEach(() => {

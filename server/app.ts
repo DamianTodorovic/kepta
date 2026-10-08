@@ -5,7 +5,7 @@
 //      BEVOR das globale 1mb-Limit registriert wird — express.json überspringt
 //      bereits geparste Bodies, daher würde das globale Limit sie sonst mit
 //      413 abweisen (P1-Kommentar, seit 2.10).
-//   2. Globale Parser (1mb) und das Lizenz-Gate.
+//   2. Globale Parser (1mb) und der Wiederherstellungsschlüssel.
 //   3. Alle übrigen Router.
 //   4. Zentrale Fehlerbehandlung ganz am Ende.
 import express from "express";
@@ -27,7 +27,7 @@ import { mountMcp } from "./router/mcp";
 import { mountChat } from "./router/chat";
 import { mountClip } from "./router/clip";
 import { mountSettings } from "./router/settings";
-import { mountLicense } from "./router/license";
+import { mountRecoveryKey } from "./router/recovery-key";
 import { mountSystem } from "./router/system";
 import { mountAudit } from "./router/audit";
 import { mountSchild } from "./router/schild";
@@ -36,8 +36,6 @@ import { mountClients } from "./router/clients";
 import { mountTeam } from "./router/team";
 import { mountChatImport } from "./router/importe";
 import { nurDieserRechner } from "../src/lib/herkunft";
-import { mountFreemium } from "./helfer/freemium";
-import { ersterStartSichern } from "./helfer/probetag";
 import type { AppOptionen, AppKontext } from "./kontext";
 
 export type { AppOptionen } from "./kontext";
@@ -54,22 +52,18 @@ const ALLOWED_ORIGINS = new Set([
   "file://",
 ]);
 
-// Freemium statt Sperre: die App ist nie verriegelt. Die Pro-Werkzeuge
-// (chat, clip, scan, dossier …) laufen ohne Schlüssel mit großzügigen
-// Tageslimiten, mit Schlüssel unbegrenzt — die Regeln stehen in
-// server/helfer/freemium.ts. Frei bleibt, was der offene Kern auch kann
-// (Notizen, Suche, Import, Sync, Export, MCP), die Lizenz selbst und der
-// Wiederherstellungsschlüssel: die Daten sind nie Geisel der Lizenz.
+// Die App ist offen: jedes Werkzeug läuft unbegrenzt, für jede Person, die sie
+// herunterlädt. Ein Schlüssel-System und Tageslimits gab es einmal (Freemium mit
+// Zählern, Pro-Tag mit Polzer-Ankern) — seit 10.10.2026 ist ersatzlos weg, weil
+// Damian die herunterladbare KEPTA ohne jede Grenze haben will. Was bleibt, sind
+// die Schutzbremsen, die nichts mit Bezahlung zu tun haben: nur dieser Rechner
+// erreicht den Server, 1mb pro Body, Drosseln gegen Brute-Force, der Knoten-
+// deckel, und der Wiederherstellungsschlüssel hinter drei Türstehern.
 
 export function createApp(store: KeptaStore, optionen: AppOptionen = {}) {
   const app = express();
 
-  // Der Pro-Tag: die echte App sichert den Erststart-Zeitstempel einmal hier —
-  // im Schlüsselbund und im Plan-Zustand (planzustand.ts), damit ein Neustart
-  // keinen neuen Tag startet. Tests starten ohne die Option und bleiben
-  // limiten-hermetisch.
   const datenOrdner = process.env.KEPTA_DATA_DIR || path.join(os.homedir(), ".kepta");
-  if (optionen.probetag) ersterStartSichern(store, datenOrdner);
 
   // Only this computer — not a website open in a browser on it (src/lib/herkunft.ts).
   // First of all, so that no route registered below can be reached around it.
@@ -97,7 +91,6 @@ export function createApp(store: KeptaStore, optionen: AppOptionen = {}) {
     datenOrdner,
     optionen,
     limiter,
-    istLizenziert: () => false, // wird von mountLicense überschrieben
     publishActivity: () => { /* wird von mountActivity ersetzt */ },
     markiereEigeneAenderung: () => { /* wird von mountActivity ersetzt */ },
     listAllMemories,
@@ -144,9 +137,9 @@ export function createApp(store: KeptaStore, optionen: AppOptionen = {}) {
   // DB-Change-Watcher; der SSE-Endpunkt wird hier registriert.
   mountActivity(app, ctx);
 
-  // 3) Lizenz + Freemium-Limits nach den Import-Routen, vor allen Fachrouten.
-  mountLicense(app, ctx);
-  mountFreemium(app, ctx);
+  // 3) Der Wiederherstellungsschlüssel — nach den Import-Routen, vor allen
+  //    Fachrouten, damit sein Body-Limit und seine drei Türsteher gelten.
+  mountRecoveryKey(app, ctx);
 
   // 4) Audit-Ummantelung zuerst — sie muss vor allen Fachrouten stehen,
   //    damit jede Änderung erfasst wird, die gleich folgt.

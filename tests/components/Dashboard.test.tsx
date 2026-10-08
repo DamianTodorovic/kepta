@@ -109,19 +109,26 @@ describe("Dashboard: der leere Zustand", () => {
   });
 });
 
-describe("Dashboard: Lizenz", () => {
-  it("sperrt NIE: ohne gueltige Lizenz laeuft die ganze App im Free-Plan (Freemium), die Seitenleiste zeigt den Upgrade-Hinweis", async () => {
-    vi.stubGlobal("fetch", vi.fn(async (url: string) => {
-      if (url.includes("/api/license")) return new Response(JSON.stringify({ licensed: false, free: true, upgradeUrl: "https://kepta.pro/upgrade" }), { status: 200 });
+describe("Dashboard: nichts ist gesperrt", () => {
+  // Die App hat seit 10.10.2026 kein Schlüssel-System und keine Grenzen. Der
+  // Beweis ist nicht „sie zeigt kein Schloss", sondern: sie fragt nirgends nach
+  // einer Lizenz, und die Seitenleiste wirbt mit keinem Schlüssel mehr.
+  it("läuft vollständig durch, ohne die Lizenzroute je zu befragen", async () => {
+    const abruf = vi.fn(async (url: string) => {
+      if (url.includes("/api/team")) return new Response(JSON.stringify({ team: null }), { status: 200 });
       if (url.includes("/api/memories")) return new Response("[]", { status: 200 });
       if (url.includes("/api/inbox/status")) return new Response(JSON.stringify({ files: [], archiveCount: 0, watching: false }), { status: 200 });
       return new Response("{}", { status: 200 });
-    }));
+    });
+    vi.stubGlobal("fetch", abruf);
     await zeige([]);
-    await waitFor(() => expect(screen.getByText("A key removes the limits")).toBeTruthy());
-    // Die App ist da — kein Sperrbildschirm:
-    expect(screen.getByRole("button", { name: /^Knowledge$/ })).toBeTruthy();
-    expect(document.body.textContent).not.toMatch(/trial/i);
+    await waitFor(() => expect(screen.getByRole("button", { name: /^Knowledge$/ })).toBeTruthy());
+    expect(screen.getByText(/local · private · encrypted/)).toBeTruthy();
+    // Eng Gemein: „key“ steht auch beim Provider-Hinweis („No API key …“), und der
+    // gehört weiter dazu. Verboten sind genau die alten Stufen-Sätze.
+    expect(screen.queryByText(/removes the limits|unlimited day|daily limit|activate a key/i)).toBeNull();
+    const nachLizenz = abruf.mock.calls.filter((c) => String(c[0]).includes("/api/license"));
+    expect(nachLizenz, `die Lizenzroute wurde ${nachLizenz.length}× befragt`).toHaveLength(0);
   });
 });
 

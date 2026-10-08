@@ -52,7 +52,7 @@ sh("codesign", ["--verify", "--deep", "--strict", ziel]);
 console.log("— 6/7 Modul für Node zurückbauen (Tests bleiben lauffähig)");
 sh("npm", ["rebuild", "better-sqlite3-multiple-ciphers"]);
 
-console.log("— 7/7 Starten und Lizenz-/Versionsanzeige prüfen");
+console.log("— 7/7 Starten und Versionsanzeige prüfen");
 sh("open", ["-a", "KEPTA"]);
 await new Promise((r) => setTimeout(r, 6000));
 // Die Build-Staging-Kopien entfernen — sonst tauchen sie im Launcher/Spotlight
@@ -61,25 +61,25 @@ await new Promise((r) => setTimeout(r, 6000));
 for (const staging of ["release/mac-arm64", "release/mac"]) {
   fs.rmSync(path.join(root, staging), { recursive: true, force: true });
 }
-let lizenz = null;
-for (let i = 0; i < 5 && !lizenz; i++) {
+let gesund = null;
+for (let i = 0; i < 5 && !gesund; i++) {
   try {
     const endpoint = JSON.parse(fs.readFileSync(path.join(process.env.HOME, ".kepta", "endpoint.json"), "utf8"));
-    const res = await fetch(`${endpoint.url}/api/license`);
-    lizenz = await res.json();
+    const res = await fetch(`${endpoint.url}/api/health`);
+    gesund = await res.json();
   } catch {
     await new Promise((r) => setTimeout(r, 2000));
   }
 }
-if (!lizenz) {
-  console.error("App läuft, aber die Lizenz-API antwortete nicht — bitte Fenster prüfen.");
+if (!gesund) {
+  console.error("App läuft, aber die Health-API antwortete nicht — bitte Fenster prüfen.");
   process.exit(1);
 }
 console.log(`\nInstalliert: KEPTA ${version} (${process.arch})`);
-// Branding 3.1.1: schlicht KEPTA — die Lizenz schlägt nur noch nüchtern an
-// (Schlüssel aktiv ja/nein), keine Stufen- und Nummern-Anzeige mehr.
-console.log(`Anzeige in der App: KEPTA · Schlüssel ${lizenz.licensed ? "aktiv" : "kein Schlüssel"}`);
-if (!lizenz.licensed) {
-  console.error("ACHTUNG: Die App meldet keine gültige Lizenz — Lizenzschlüssel prüfen (License Studio / Ausgestellt-Liste).");
+// Die App meldet ihre Version, sonst nichts: ein Schlüssel-System gibt es in
+// dieser App nicht mehr (10.10.2026), also prüft auch niemand einen Schlüssel.
+console.log(`Anzeige in der App: KEPTA ${gesund.version} · unbegrenzt`);
+if (gesund.version !== version) {
+  console.error(`ACHTUNG: die laufende App meldet ${gesund.version}, gebaut wurde ${version}.`);
   process.exit(1);
 }

@@ -35,9 +35,13 @@
 // wer die App auspackte, konnte sich beliebige Schlüssel ausstellen.
 //
 // Eine Testphase als SPERR-Modus gab es nie (Entscheidung von Damian,
-// 13.9.2026). Seit 2.13.9 gilt stattdessen Freemium: ohne Schlüssel läuft die
-// App weiter — als KEPTA Core mit gratis Pro-Tag und Tageslimiten, sperrt nie
-// (server/helfer/freemium.ts). Der Schlüssel entfernt nur die Limiten.
+// 13.9.2026). Einmal gab es Freemium: Tageslimiten und ein gratis erster Tag.
+// Seit 10.10.2026 ist das ersatzlos weg — die herunterladbare App läuft
+// unbegrenzt und hat kein Schlüssel-Feld (`server/helfer/freemium.ts` und der
+// Pro-Tag sind gelöscht). Was bleibt, ist das Ausstellen und Prüfen von
+// Schlüsseln als WERKZEUG für KEPTA Enterprise, das ausschließlich von
+// `tools/license-studio` und `scripts/generate-license.mjs` benutzt wird. Kein
+// Weg durch die App führt mehr hierher.
 import crypto from "node:crypto";
 import { GESPERRTE_LIZENZEN } from "./sperrliste";
 

@@ -1,5 +1,20 @@
 ## [Unreleased]
 
+## [3.1.5] — 2026-10-09
+
+### Removed
+- **The key system and every usage limit are gone.** Damian, 9.10.2026: „bei KEPTA gibt es kein Licence Key gar nix … diese Version soll man unbegrenzt nutzen können." Concretely: `server/helfer/freemium.ts` (13 daily-limit rules answering 429 with an upgrade path, `X-KEPTA-Plan`, `X-KEPTA-Remaining`), `server/helfer/probetag.ts` and `server/helfer/planzustand.ts` (the sealed 24-hour first day, the persistent counters, the keychain and hidden-file anchors), `server/router/license.ts` (`GET`/`POST /api/license`, the licensee line in Settings, `licensePreProvisioned` in `/api/policies`), and `src/components/ProUpgrade.tsx` with the sidebar footer that read „Unlimited day · 3 h left" / „A key removes the limits" and the Dashboard toast that announced the day was over. Nothing in the app counts, meters or advertises now, and the MDM schema ignores a `license_name`/`license_key` left in an existing organization file (measured: `tests/richtlinien.test.ts`).
+- **What did NOT go, because it was protection rather than payment:** loopback-only binding, Helmet, the 1 MB body cap, the write throttle of 60/min and the chat throttle of 20/min, the 5 000-node cap, the privacy shield, the managed policies (cloud chat off / scan off / shield forced on) and the recovery key with its three doorkeepers. `/api/recovery-key` moved to its own router so the route that carried it could go; it still answers 403 to a request that is not the window, and 404 when nothing is encrypted (`tests/keine-grenzen.test.ts`, `tests/server.test.ts`).
+
+### Changed
+- **Team memory is switched on by the organization's roles file, not by a plan.** The scopes and their roles were gated on a business/enterprise edition; with no keys in the app that gate would have locked a working feature forever — a downgrade, which is exactly what this product is not allowed to do. `teamPolicy()` now keys off `managed-settings.json` alone: file present → admins/members write `team:*`, viewers read; no file → `team:*` stays shut and `/api/team` answers `team: null`. The sidebar shows the Team entry only when a file exists, and the view says so plainly instead of offering a purchase.
+- **Two operator tools keep the key machinery, detached from the app.** `src/core/lizenz.ts`, `src/core/schluessel.ts`, the revocation list, `tools/license-studio`, `tools/lizenz-worker` and `scripts/generate-license.mjs` stay where they are — they belong to KEPTA Enterprise, where keys are issued personally. No runtime path in the app reaches them any more; the module's own header now says that instead of describing Freemium.
+- **The install check and the screenshot run stopped asking for a key.** `scripts/install-app.mjs` step 7 verifies `/api/health` and compares the running version with the build; `scripts/screenshots.mjs` no longer mints a demo key before shooting.
+
+### Notes
+- Measured on this commit: **116 files / 1952 tests** green (43 cases that pinned the limits, the trial day and the upgrade panel were deleted with the behaviour, eight new cases pin the opposite), lint 0 errors, HTTP routes 59 → 58.
+- Existing installs lose nothing: the old counter fields (`plan_zustand`, `probetag_*`, `license_*`) stay in the database unread and unwritten, and no user data is deleted by this change.
+
 ## [3.1.4] — 2026-10-08
 
 ### Security

@@ -7,10 +7,6 @@ import type { Umgebung, Eintrag } from "../src/lib/einrichtung";
 
 /** Optionen für createApp — nur Tests setzen sie; die App startet ohne. */
 export interface AppOptionen {
-  /** Ersetzt die Lizenzprüfung (Tests); fehlt sie, zählt der hinterlegte Schlüssel. */
-  lizenziert?: () => boolean;
-  /** Der Pro-Tag: 24 h ab Erststart alle Pro-Funktionen ohne Limiten (echte App, nicht Tests). */
-  probetag?: boolean;
   /** Where Claude, Cursor & Co. keep their settings — a temp folder in tests. */
   umgebung?: Umgebung;
   /** The MCP entry „Connect“ writes — the server inside the app, else npx. */
@@ -31,7 +27,6 @@ export interface AppKontext {
   optionen: AppOptionen;
   /** Rate-Limiter (einmal pro App gebaut). */
   limiter: Limiter;
-  istLizenziert(): boolean;
   /** Aktivität an alle SSE-Abnehmer melden (Suche optional gedrosselt). */
   publishActivity(evt: Omit<ActivityEvent, "ts">, opts?: { throttleSearchMs?: number }): void;
   /**

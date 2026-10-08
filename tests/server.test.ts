@@ -33,7 +33,7 @@ beforeEach(async () => {
   vi.resetModules(); // server.ts liest DATA_DIR beim Import → pro Test frisch
   ({ createApp } = await import("../server"));
   store = new KeptaStore(path.join(dir, "test.db"));
-  app = createApp(store, { lizenziert: () => true }); // sonst sperrt der Server die Enterprise-Routen
+  app = createApp(store);
 });
 
 afterEach(() => {

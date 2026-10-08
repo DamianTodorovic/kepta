@@ -31,7 +31,7 @@ beforeEach(async () => {
   vi.resetModules();
   ({ createApp } = await import("../server"));
   store = new KeptaStore(path.join(dir, "test.db"));
-  app = createApp(store, { lizenziert: () => true });
+  app = createApp(store);
 });
 
 afterEach(() => {
@@ -65,14 +65,12 @@ const CLAUDE = JSON.stringify([
 ]);
 
 describe("POST /api/import/chat", () => {
-  it("ohne Lizenz: Freemium — 2 freie Imports/Tag, die 3. antwortet 429 mit dem Upgrade-Weg", async () => {
-    const free = createApp(store);
-    expect((await request(free).post("/api/import/chat").send({ content: CHATGPT })).status).toBe(200);
-    expect((await request(free).post("/api/import/chat").send({ content: CHATGPT })).status).toBe(200);
-    const ueber = await request(free).post("/api/import/chat").send({ content: CHATGPT });
-    expect(ueber.status).toBe(429);
-    expect(ueber.body.error).toMatch(/Daily free limit/);
-    expect(ueber.body.upgradeUrl).toBe("https://kepta.pro/upgrade");
+  it("drei Exporte nacheinander gehen alle durch — ein Tageslimit gibt es nicht mehr", async () => {
+    const frei = createApp(store);
+    for (let i = 0; i < 3; i++) {
+      const res = await request(frei).post("/api/import/chat").send({ content: CHATGPT });
+      expect(res.status, `Import ${i + 1}: ${res.status} · ${res.text.slice(0, 140)}`).toBe(200);
+    }
   });
 
   it("ohne Inhalt: 400; mit kaputtem JSON: 400 mit Erklärung", async () => {

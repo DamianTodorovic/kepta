@@ -20,59 +20,55 @@ function stubFetch(routen: Record<string, unknown>) {
 
 afterEach(() => vi.unstubAllGlobals());
 
-const FREE: TeamInfo = { edition: null, seats: null, team: null };
-const BUSINESS: TeamInfo = {
-  edition: "business",
-  seats: 5,
+const OHNE_ROLLEN: TeamInfo = { team: null };
+const MIT_ROLLEN: TeamInfo = {
   team: { name: "Kanzlei Weber", rollen: { local: "admin", gast: "viewer" }, meineRolle: "admin" },
 };
 
 describe("TeamView", () => {
-  it("Free/Pro: Upgrade-Karte statt Team, keine Rollen-Tabelle", async () => {
-    stubFetch({ "/api/team": FREE, "/api/memories": { memories: [] } });
+  it("ohne Rollen-Datei: die Ansicht sagt warum, statt eine Sackgasse zu sein", async () => {
+    stubFetch({ "/api/team": OHNE_ROLLEN, "/api/memories": { memories: [] } });
     render(<TeamView aktiv />);
-    await waitFor(() => expect(screen.getByText(/part of KEPTA Enterprise/)).toBeTruthy());
+    await waitFor(() => expect(screen.getByTestId("team-keine-rollen")).toBeTruthy());
+    expect(screen.getByTestId("team-keine-rollen").textContent).toContain("managed-settings.json");
+    // Kein Angebot, kein Preis: die Ansicht wirbt für nichts.
+    expect(screen.queryByText(/enterprise/i)).toBeNull();
     expect(screen.queryByTestId("team-rollen")).toBeNull();
   });
 
-  it("Business: Workspace-Name, Edition, Seats, Rollen mit this-computer-Markierung", async () => {
-    stubFetch({ "/api/team": BUSINESS, "/api/memories": { memories: [{ id: "1", scope: "team:weber", title: "Fristen" }, { id: "2", scope: "local", title: "privat" }] } });
+  it("mit Rollen: Workspace-Name, meine Rolle, Rollen mit this-computer-Markierung, Notizen gezählt", async () => {
+    stubFetch({ "/api/team": MIT_ROLLEN, "/api/memories": { memories: [{ id: "1", scope: "team:weber", title: "Fristen" }, { id: "2", scope: "local", title: "privat" }] } });
     render(<TeamView aktiv />);
-    await waitFor(() => expect(screen.getByTestId("team-edition").textContent).toBe("KEPTA Enterprise"));
-    expect(screen.getByText("Kanzlei Weber")).toBeTruthy();
-    expect(screen.getByTestId("team-seats").textContent).toBe("5 seats");
+    await waitFor(() => expect(screen.getByText("Kanzlei Weber")).toBeTruthy());
+    expect(screen.getByTestId("team-meine-rolle").textContent).toBe("admin");
     const rollen = screen.getByTestId("team-rollen");
     expect(rollen.textContent).toContain("gast");
     expect(rollen.textContent).toContain("admin");
     expect(rollen.textContent).toContain("(this computer)");
     // Team-Notizen gezählt, lokale nicht mitgezählt:
     expect(screen.getByTestId("team-notizen-count").textContent).toContain("1 entry");
-  });
-
-  it("Enterprise ohne Seats-Angabe → per-agreement-Text", async () => {
-    stubFetch({ "/api/team": { edition: "enterprise", seats: null, team: { rollen: {}, meineRolle: "viewer" } }, "/api/memories": { memories: [] } });
-    render(<TeamView aktiv />);
-    await waitFor(() => expect(screen.getByTestId("team-edition").textContent).toBe("KEPTA Enterprise"));
-    expect(screen.getByTestId("team-seats").textContent).toContain("per agreement");
+    // Eine Stufe wird nirgends mehr behauptet.
+    expect(screen.queryByTestId("team-edition")).toBeNull();
+    expect(screen.queryByTestId("team-seats")).toBeNull();
   });
 });
 
-describe("Sidebar: Team-Nav-Punkt nur mit Team-Edition", () => {
+describe("Sidebar: Team-Nav-Punkt nur mit Rollen-Datei", () => {
   const basis = { tags: [], selectedTags: [], onSelectTag: () => undefined, onClearTags: () => undefined, currentView: "memories" as const, onNavigate: vi.fn(), totalMemories: 0, isFocusMode: false, toggleFocusMode: () => undefined };
 
   afterEach(() => vi.restoreAllMocks());
 
-  it("business → Team-Punkt vorhanden, Klick navigiert zu 'team'", async () => {
+  it("Rollen vorhanden → Team-Punkt da, Klick navigiert zu 'team'", async () => {
     const onNavigate = vi.fn();
-    const { container } = render(<Sidebar {...basis} onNavigate={onNavigate} licenseEdition="business" />);
+    const { container } = render(<Sidebar {...basis} onNavigate={onNavigate} teamVisible />);
     const knopf = Array.from(container.querySelectorAll("button")).find((b) => b.textContent === "Team");
     expect(knopf).toBeTruthy();
     knopf!.click();
     expect(onNavigate).toHaveBeenCalledWith("team");
   });
 
-  it("free → kein Team-Punkt (keine Sackgasse)", () => {
-    const { container } = render(<Sidebar {...basis} licenseEdition={null} />);
+  it("ohne Rollen-Datei → kein Team-Punkt (keine Sackgasse)", () => {
+    const { container } = render(<Sidebar {...basis} />);
     const teamKnopf = Array.from(container.querySelectorAll("button")).find((b) => b.textContent === "Team");
     expect(teamKnopf).toBeUndefined();
   });

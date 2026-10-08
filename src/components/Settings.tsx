@@ -141,37 +141,27 @@ export function Settings() {
   // selbst — kein Node.js, kein npm. Außerhalb der App bleibt es beim Weg über npx.
   const mcpAusApp = health?.mcp?.stdio ? JSON.stringify({ mcpServers: { kepta: health.mcp.stdio } }, null, 2) : null;
 
-  // Organisation: verwaltete Konfiguration und Lizenz für das Admin-Panel.
+  // Organisation: die verwaltete Konfiguration für das Admin-Panel. Eine Lizenz
+  // gehört hier nicht mehr her — die App hat keine (10.10.2026).
   const [orgInfo, setOrgInfo] = useState<{
     managed: boolean;
     policies: Record<string, string>;
-    licensePreProvisioned: boolean;
-    edition?: string;
-    licensee?: string;
-    seats?: number;
   } | null>(null);
   useEffect(() => {
     const lade = () => {
       void (async () => {
         try {
-          const [richtlinien, lizenz] = await Promise.all([
-            fetch('/api/policies').then(r => r.json()).catch(() => null),
-            fetch('/api/license').then(r => r.json()).catch(() => null),
-          ]);
-          if (!richtlinien && !lizenz) return;
+          const richtlinien = await fetch('/api/policies').then(r => r.json()).catch(() => null);
+          if (!richtlinien) return;
           setOrgInfo({
-            managed: richtlinien?.managed === true,
-            policies: richtlinien?.policies ?? {},
-            licensePreProvisioned: richtlinien?.licensePreProvisioned === true,
-            edition: typeof lizenz?.edition === 'string' ? lizenz.edition : undefined,
-            licensee: typeof lizenz?.licensee === 'string' ? lizenz.licensee : undefined,
-            seats: typeof lizenz?.seats === 'number' ? lizenz.seats : undefined,
+            managed: richtlinien.managed === true,
+            policies: richtlinien.policies ?? {},
           });
         } catch { /* Settings bleibt ohne Organisations-Panel */ }
       })();
     };
     lade();
-    // Stufenwechsel, während das Fenster offen ist: bei Fokus frisch zeigen.
+    // Die Datei kann im Betrieb geändert werden: bei Fokus frisch zeigen.
     window.addEventListener('focus', lade);
     document.addEventListener('visibilitychange', lade);
     return () => {
@@ -700,32 +690,18 @@ export function Settings() {
 
                 <div className="mt-6 pt-6" style={{ borderTop: '1px solid var(--border-subtle)' }}>
                   <h3 className="settings-h mb-2" style={{ color: 'var(--text-1)' }}>Organization</h3>
-                  {orgInfo && (orgInfo.managed || orgInfo.licensee) ? (
+                  {orgInfo?.managed ? (
                     <div className="text-sm" style={{ color: 'var(--text-2)' }}>
-                      {orgInfo.licensee && (
-                        <p className="mb-2">
-                          <strong style={{ color: 'var(--text-1)' }}>{orgInfo.licensee}</strong>
-                          {orgInfo.edition === 'business' && orgInfo.seats ? <> · {orgInfo.seats} seats</> : null}
-                          {orgInfo.edition === 'enterprise' && <> · scope per agreement</>}
-                        </p>
-                      )}
-                      {orgInfo.managed ? (
-                        <>
-                          <p className="mb-1.5">This installation is <strong style={{ color: 'var(--text-1)' }}>managed by your organization</strong> (managed-settings.json). Active policies:</p>
-                          <ul className="list-disc pl-5 space-y-1">
-                            {orgInfo.policies.chat_cloud === 'deny' && <li>Cloud models are disabled — local models (e.g. Ollama) only</li>}
-                            {orgInfo.policies.machine_scan === 'deny' && <li>The computer scan is disabled</li>}
-                            {orgInfo.policies.privacy_shield === 'force_on' && <li>The privacy shield is always on and cannot be switched off</li>}
-                            {orgInfo.licensePreProvisioned && <li>The license was provisioned by your IT department</li>}
-                          </ul>
-                        </>
-                      ) : (
-                        <p>No organization policies — every setting on this page is yours.</p>
-                      )}
+                      <p className="mb-1.5">This installation is <strong style={{ color: 'var(--text-1)' }}>managed by your organization</strong> (managed-settings.json). Active policies:</p>
+                      <ul className="list-disc pl-5 space-y-1">
+                        {orgInfo.policies.chat_cloud === 'deny' && <li>Cloud models are disabled — local models (e.g. Ollama) only</li>}
+                        {orgInfo.policies.machine_scan === 'deny' && <li>The computer scan is disabled</li>}
+                        {orgInfo.policies.privacy_shield === 'force_on' && <li>The privacy shield is always on and cannot be switched off</li>}
+                      </ul>
                     </div>
                   ) : (
                     <p className="text-sm" style={{ color: 'var(--text-2)' }}>
-                      Not licensed or not managed. Personal install — every setting on this page is yours.
+                      No organization policies. Personal install — every setting on this page is yours.
                     </p>
                   )}
                 </div>

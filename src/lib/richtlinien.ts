@@ -1,11 +1,16 @@
-// Verwaltete Konfiguration und zentrale Richtlinien — die Enterprise-/MDM-Schicht.
+// Verwaltete Konfiguration und zentrale Richtlinien — die MDM-Schicht.
 //
 // Eine Organisation legt EINE Datei ab (macOS: /Library/Application Support/
 // KEPTA/managed-settings.json, Linux: /etc/kepta/managed-settings.json,
 // Windows: %PROGRAMDATA%\KEPTA\managed-settings.json, oder KEPTA_MANAGED_CONFIG)
-// und die App gehorcht: Lizenz vorab eingetragen (Air-gapped-Ausrollung per
-// MDM), Cloud-Chat verboten, Rechner-Scan verboten, Privacy-Shield erzwungen.
+// und die App gehorcht: Cloud-Chat verboten, Rechner-Scan verboten,
+// Privacy-Shield erzwungen, Team-Rollen gesetzt.
 // Kein Telefonieren nach Hause, keine Zusatz-Infrastruktur — eine Datei.
+//
+// Früher durfte die Datei auch eine Lizenz vor eintragen (air-gapped
+// Ausrollung). Die herunterladbare App hat seit 10.10.2026 kein
+// Schlüssel-System mehr: zwei solche Felder in einer bestehenden Datei werden
+// weiterhin ignoriert (Whitelist unten), die App stürzt nicht darüber ab.
 //
 // Fehlt die Datei, ist alles wie immer: nichts ist verwaltet, nichts eingeschränkt.
 // Ist sie kaputt, wird sie ignoriert (mit Zeile im Log) — eine falsche Richtlinie
@@ -15,9 +20,6 @@ import os from "node:os";
 import path from "node:path";
 
 export interface VerwalteteEinstellungen {
-  /** Vorab eingetragene Lizenz (MDM-Ausrollung) — wird offline geprüft wie jede andere. */
-  license_name?: string;
-  license_key?: string;
   /** Zentrale Richtlinien: Schlüssel → Zielzustand. */
   richtlinien?: {
     /** Cloud-Modelle im Chat verbieten (nur lokale Modelle wie Ollama bleiben). */
@@ -29,9 +31,8 @@ export interface VerwalteteEinstellungen {
   };
   /**
    * Team-Rollen (Milestone E1): wer darf auf `team:*`-Scopes lesen/schreiben?
-   * Wirksam nur mit einer Business-/Enterprise-Edition; die Durchsetzung
-   * liegt in src/core/team.ts. actorIds kleingeschrieben; fehlt eine Person,
-   * gilt standardRolle (sonst viewer — sicherer Default).
+   * Die Durchsetzung liegt in src/lib/team.ts. actorIds kleingeschrieben; fehlt
+   * eine Person, gilt standardRolle (sonst viewer — sicherer Default).
    */
   team?: {
     name?: string;
@@ -79,8 +80,6 @@ export function liesVerwaltet(umgebung: NodeJS.ProcessEnv = process.env): Verwal
     try {
       const daten = JSON.parse(roh) as VerwalteteEinstellungen;
       const wert: VerwalteteEinstellungen = {};
-      if (typeof daten.license_name === "string" && daten.license_name.trim()) wert.license_name = daten.license_name.trim();
-      if (typeof daten.license_key === "string" && daten.license_key.trim()) wert.license_key = daten.license_key.trim();
       if (daten.richtlinien && typeof daten.richtlinien === "object") {
         const gefiltert: Partial<NonNullable<VerwalteteEinstellungen["richtlinien"]>> = {};
         for (const schluessel of ["chat_cloud", "machine_scan", "privacy_shield"] as const) {

@@ -9,7 +9,6 @@ export const PREF_KEYS = [
   'ki_gehirn_adaptive_profile',
   'ki_gehirn_autolearn',
   'ki_gehirn_gruppierung',
-  'ki_gehirn_protag_ende',
   'ki_gehirn_semantic',
   'ki_gehirn_topK',
   'ki_gehirn_wizard_dismissed',

@@ -36,7 +36,7 @@ beforeEach(async () => {
   vi.resetModules();
   ({ createApp } = await import("../server"));
   store = new KeptaStore(path.join(dir, "test.db"));
-  app = createApp(store, { lizenziert: () => true, umgebung: { home, plattform: "darwin", claude: () => null } });
+  app = createApp(store, { umgebung: { home, plattform: "darwin", claude: () => null } });
 });
 
 afterEach(() => {
@@ -275,13 +275,16 @@ describe("Today, Widersprüche, Dossier", () => {
   });
 });
 
-describe("Lizenz", () => {
-  it("Freemium: die Pro-Routen laufen ohne Schlüssel im Free-Plan — KI-Apps und Verbinden bleiben frei", async () => {
-    const ohne = createApp(store, { lizenziert: () => false, umgebung: { home, plattform: "darwin", claude: () => null } });
+describe("alle Routen laufen ohne alles", () => {
+  // Kein Schlüssel, keine Stufe, kein Zähler: diese Routes answers simply 200.
+  // Der Plan-Kopf ist mit den Limits weg (10.10.2026) — was blieb, ist die
+  // Aussage, dass nichts gesperrt ist.
+  it("Briefing, Dossier, Audit und Shield antworten jeder Installation", async () => {
+    const ohne = createApp(store, { umgebung: { home, plattform: "darwin", claude: () => null } });
     for (const pfad of ["/api/briefing", "/api/dossier?topic=x", "/api/audit", "/api/shield"]) {
       const res = await request(ohne).get(pfad);
       expect(res.status, pfad).toBe(200);
-      expect(res.headers["x-kepta-plan"], pfad).toBe("free");
+      expect(res.headers, `${pfad}: kein Plan-Kopf mehr`).not.toHaveProperty("x-kepta-plan");
     }
     expect((await request(ohne).get("/api/agents")).status).toBe(200);
     expect((await request(ohne).get("/api/clients")).status).toBe(200);

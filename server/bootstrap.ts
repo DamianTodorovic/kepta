@@ -7,7 +7,7 @@ import os from "os";
 import express from "express";
 import { KeptaStore } from "../src/core/store";
 import { defaultExtensions } from "../src/core/extensions";
-import { teamPolicy, editionAusStore } from "../src/lib/team";
+import { teamPolicy } from "../src/lib/team";
 import { schluesselbundKeyProvider } from "../src/core/schluessel";
 import { migrateFromLegacyJson } from "../src/core/migrate";
 import { EmbeddingQueue } from "../src/core/embeddings";
@@ -27,16 +27,14 @@ export async function startServer() {
   // Der Schluessel liegt im Schluesselbund des Systems (schluessel.ts).
   const datenOrdner = process.env.KEPTA_DATA_DIR || path.join(os.homedir(), ".kepta");
   // Enterprise (Milestone E1): team:*-Scopes nach Rollen aus der verwalteten
-  // Konfiguration durchsetzen. Die Edition wird live aus der Lizenz gelesen
-  // (storeRef — die Lizenz kann im Betrieb aktiviert werden); nicht-team-Scopes
-  // bleiben exakt wie immer, Pro verhält sich unverändert.
-  const storeRef: { store: KeptaStore } = {} as { store: KeptaStore };
+  // Konfiguration durchsetzen. team:* ist allein durch die Rollen-Datei
+  // geschaltet (eine Lizenz-Edition gibt es in dieser App nicht mehr);
+  // nicht-team-Scopes bleiben exakt wie immer.
   const store = new KeptaStore(undefined, {
     ...defaultExtensions(),
     keys: schluesselbundKeyProvider(datenOrdner),
-    ...teamPolicy({ edition: () => editionAusStore(storeRef.store) }),
+    ...teamPolicy(),
   });
-  storeRef.store = store;
   const migration = migrateFromLegacyJson(store);
   if (!migration.skipped) {
     console.log(`Migration: ${migration.migrated} nodes taken over from memories.json (backup: ${migration.backupPath ?? "none"})`);
@@ -47,10 +45,7 @@ export async function startServer() {
   // derselbe Aufruf wie im Kern-Server (server.ts: aktiviereSuchCacheDelta).
   aktiviereSuchCacheDelta(store);
 
-  // Der Pro-Tag: die echte App (Electron-Hülle, npm start) sichert den
-  // Erststart — 24 h volle Pro-Werkzeuge, dann Free mit Tageslimiten. Tests
-  // bauen die App ohne diese Option und bleiben limiten-hermetisch.
-  const app = createApp(store, { probetag: true });
+  const app = createApp(store);
 
   // Vite-Dev-Middleware: der tsx-Dev-Server (`npm run dev`) nutzt sie immer —
   // das gebündelte dist/server.cjs (`npm start`, Electron) dagegen nur, wenn KEIN

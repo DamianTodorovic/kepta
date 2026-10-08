@@ -53,7 +53,7 @@ beforeEach(async () => {
   vi.resetModules();
   ({ createApp } = await import("../server"));
   store = new KeptaStore(path.join(wurzel, "test.db"));
-  app = createApp(store, { lizenziert: () => true }); // der Rechner-Scan ist eine Enterprise-Funktion
+  app = createApp(store); // der Rechner-Scan läuft für jede Installation
 });
 
 afterEach(() => {

@@ -496,15 +496,14 @@ describe("Seitenleiste", () => {
     expect(screen.getByTestId("apps-live")).toBeTruthy();
   });
 
-  it("zeigt den Pro-Tag mit Restlaufzeit (Stufe heißt Core) — und nach Ablauf weiter Core", async () => {
+  it("zeigt in der Fußzeile weder eine Restlaufzeit noch einen Schlüssel-Hinweis", async () => {
     const basis = { tags: [], selectedTags: [], onSelectTag: vi.fn(), onClearTags: vi.fn(), currentView: "today" as const, onNavigate: vi.fn(), totalMemories: 3, isFocusMode: false, toggleFocusMode: vi.fn() };
-    render(<AuthProvider><ThemeProvider><Sidebar {...basis} protagAktiv protagRestMs={3 * 3600_000} /></ThemeProvider></AuthProvider>);
-    // Stufen-Modell (Damian 24.9.): ohne Schlüssel heißt die App KEPTA Core —
-    // auch während des Pro-Tags; der Countdown steht in der zweiten Zeile.
-    expect(screen.getAllByText(/^KEPTA$/).length).toBeGreaterThan(0);
-    expect(screen.getByText("Unlimited day · 3 h left")).toBeTruthy();
-    cleanup();
     render(<AuthProvider><ThemeProvider><Sidebar {...basis} /></ThemeProvider></AuthProvider>);
+    // Stufen-Modell (Damian 24.9.): die App heißt schlicht KEPTA. Seit
+    // 10.10.2026 steht darunter auch kein Countdown und kein Werbe-Satz mehr —
+    // es gibt weder einen Pro-Tag noch Schlüssel.
     expect(screen.getAllByText(/^KEPTA$/).length).toBeGreaterThan(0);
+    expect(screen.getByText(/local · private · encrypted/)).toBeTruthy();
+    expect(screen.queryByText(/unlimited|key|limit/i)).toBeNull();
   });
 });
