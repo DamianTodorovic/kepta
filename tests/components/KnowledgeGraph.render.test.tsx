@@ -3234,3 +3234,129 @@ describe("Die Herkunft färbt, wenn sie etwas zu sagen hat", () => {
     expect(localStorage.getItem("kepta_graph_farbkanal")).toBe("typ");
   });
 });
+
+// P-12: die Suche als Griff, nicht nur als Filter. Cognee zählt Treffer und
+//blättert mit Enter durch sie hindurch. Bei KEPTA tippte man ein Wort, die
+// Fläche wurde dünner — und welche Notiz gemeint war, musste selbst gesucht
+// werden.
+//
+// Der Vertrag, der hier gemessen wird: der Zähler steht, Enter springt,
+// Shift+Enter geht zurück, Escape räumt ZUERST die Suche. Und der alte
+// Tastaturfluss bleibt heil: ohne Treffer öffnet Enter weiter die Auswahl.
+describe("Die Suche zählt Treffer und führt von einem zum nächsten", () => {
+  const notizen = () => [
+    note({ id: "t1", title: "Rahmen Nordwind", content: "Tranche 1 ist unterschrieben." }),
+    note({ id: "t2", title: "Tranche Nordwind", content: "Die zweite Tranche verschiebt sich." }),
+    note({ id: "t3", title: "Protokoll Kestrel", content: "Zwei Sitze, keine Anpassung." }),
+  ];
+
+  function feld(container: HTMLElement) {
+    const f = container.querySelector('input[placeholder^="Filter"]') as HTMLInputElement | null;
+    expect(f, "das Suchfeld fehlt").not.toBeNull();
+    return f!;
+  }
+  function zaehler(container: HTMLElement) {
+    const z = container.querySelector('[data-testid="graph-search-count"]');
+    return (z?.textContent ?? "").trim();
+  }
+  function Auswahl(container: HTMLElement) {
+    const v = (container.querySelector('[data-testid="graph-canvas"]') as HTMLElement).getAttribute("data-selection");
+    return v && v.length ? v : null;
+  }
+  async function tippe(container: HTMLElement, text: string) {
+    await act(async () => {
+      fireEvent.change(feld(container), { target: { value: text } });
+      await new Promise((r) => setTimeout(r, 80));
+    });
+  }
+  async function druecke(container: HTMLElement, schlussel: string, opts: { shift?: boolean } = {}) {
+    await act(async () => {
+      fireEvent.keyDown(feld(container), { key: schlussel, shiftKey: opts.shift === true });
+      await new Promise((r) => setTimeout(r, 80));
+    });
+  }
+
+  it("zählt die Treffer, ohne das Tippen zu blockieren", async () => {
+    const { container } = await zeichne(notizen());
+    await bilder(8);
+    expect(zaehler(container)).toBe("");
+    await tippe(container, "Nordwind");
+    expect(feld(container).value).toBe("Nordwind");
+    expect(zaehler(container)).toMatch(/2 matches/);
+    await tippe(container, "Kestrel");
+    expect(zaehler(container)).toMatch(/1 match$/);
+  });
+
+  it("sagt, wenn nichts passt — und erfindet keinen Treffer", async () => {
+    const { container } = await zeichne(notizen());
+    await bilder(8);
+    await tippe(container, "Zahnarzt");
+    expect(zaehler(container)).toMatch(/no match/i);
+  });
+
+  it("springt mit Enter zum Treffer und zählt die Stelle mit", async () => {
+    const { container } = await zeichne(notizen());
+    await bilder(8);
+    await tippe(container, "Nordwind");
+    expect(Auswahl(container)).toBeNull();
+    await druecke(container, "Enter");
+    expect(Auswahl(container)).toBe("t1");
+    expect(zaehler(container)).toMatch(/1 of 2/);
+    await druecke(container, "Enter");
+    expect(Auswahl(container)).toBe("t2");
+    expect(zaehler(container)).toMatch(/2 of 2/);
+    // Und wieder von vorn — uralte Erwartung an ein Blättern.
+    await druecke(container, "Enter");
+    expect(Auswahl(container)).toBe("t1");
+    expect(zaehler(container)).toMatch(/1 of 2/);
+  });
+
+  it("geht mit Shift+Enter zurück", async () => {
+    const { container } = await zeichne(notizen());
+    await bilder(8);
+    await tippe(container, "Nordwind");
+    await druecke(container, "Enter");
+    await druecke(container, "Enter");
+    expect(zaehler(container)).toMatch(/2 of 2/);
+    await druecke(container, "Enter", { shift: true });
+    expect(Auswahl(container)).toBe("t1");
+    expect(zaehler(container)).toMatch(/1 of 2/);
+  });
+
+  it("räumt mit Escape zuerst die Suche, dann die Auswahl", async () => {
+    const { container } = await zeichne(notizen());
+    await bilder(8);
+    await tippe(container, "Nordwind");
+    await druecke(container, "Enter");
+    expect(Auswahl(container)).toBe("t1");
+
+    await druecke(container, "Escape");
+    expect(feld(container).value).toBe("");
+    expect(zaehler(container)).toBe("");
+    expect(Auswahl(container), "Escape hat auch die Auswahl genommen").toBe("t1");
+
+    await druecke(container, "Escape");
+    expect(Auswahl(container), "die zweite Escape hebt nichts mehr auf").toBeNull();
+  });
+
+  it("öffnet mit Enter die Auswahl, wenn die Suche nichts zu blättern hat", async () => {
+    const { container, onSelect } = await zeichne(notizen());
+    await bilder(8);
+    // Suchen, springen, Feld leeren: der Knoten bleibt gehalten, es gibt nur
+    // nichts mehr durchzublättern. Dann gilt der alte Fluss — Enter öffnet.
+    await tippe(container, "Nordwind");
+    await druecke(container, "Enter");
+    expect(Auswahl(container)).toBe("t1");
+    await tippe(container, "");
+    expect(zaehler(container)).toBe("");
+    await druecke(container, "Enter");
+    expect(onSelect, "Enter öffnet nicht mehr die gehaltene Auswahl").toHaveBeenCalledTimes(1);
+    expect((onSelect.mock.calls[0] as unknown[])[0]).toMatchObject({ id: "t1" });
+    // Und mit einem Wort, das nichts trifft, tut Enter weiterhin nichts — es
+    // öffnet höchstens, was wirklich noch im Bild steht.
+    await tippe(container, "Zahnarzt");
+    expect(zaehler(container)).toMatch(/no match/i);
+    await druecke(container, "Enter");
+    expect(onSelect).toHaveBeenCalledTimes(1);
+  });
+});

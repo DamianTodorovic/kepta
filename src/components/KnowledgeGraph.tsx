@@ -2440,6 +2440,110 @@ export function KnowledgeGraph({ memories, onSelectMemory, onSelectConcept, sich
     }
   }, []);
 
+  /**
+   * Die Treffer der Suche: was das Suchwort trifft UND im Bild steht. Die
+   * Reihenfolge ist die der Notizliste — dieselbe Frage, dieselbe Antwort, kein
+   * drittes Sortieren, das einen Treffer als ersten ausgibt, weil es ihn
+   * zufällig zuerst fand.
+   */
+  const trefferIds = useMemo(() => {
+    if (!filter.trim()) return [] as string[];
+    const imBild =
+      ansicht === "dendrogram"
+        ? new Set(baumNotizen.map((n) => n.id))
+        : new Set(feldNotizen.map((m) => m.id));
+    return filtered.filter((m) => imBild.has(m.id)).map((m) => m.id);
+  }, [filter, filtered, ansicht, baumNotizen, feldNotizen]);
+  /** Wo im Blättern man steht. -1 = gefunden, aber noch nicht hingesprungen. */
+  const [trefferZeiger, setTrefferZeiger] = useState(-1);
+  useEffect(() => { setTrefferZeiger(-1); }, [filter]);
+
+  /** Die Kamera auf einen Knoten — ein Sprung aus der Suche soll ankommen. */
+  const zentriere = useCallback((id: string) => {
+    const sim = simRef.current;
+    const canvas = canvasRef.current;
+    if (!sim || !canvas) return;
+    const n = sim.nodes.find((k) => k.id === id);
+    if (!n) return;
+    const t = transformRef.current;
+    transformRef.current = {
+      ...t,
+      x: canvas.clientWidth / 2 - n.x * t.k,
+      y: canvas.clientHeight / 2 - n.y * t.k,
+    };
+    // Wer gesprungen ist, will genau diesen Knoten sehen — ein Auto-Fit danach
+    // würde das Fenster wieder auf alles ziehen.
+    autoFitOffen.current = false;
+    nutzerBewegt.current = true;
+    zeichneNoetig.current = true;
+  }, []);
+
+  /** Enter in der Suche: vorwärts, Shift+Enter rückwärts, und es greift um. */
+  const springeTreffer = useCallback((schritt: 1 | -1): boolean => {
+    if (trefferIds.length === 0) return false;
+    const laenge = trefferIds.length;
+    const i = (((trefferZeiger + schritt) % laenge) + laenge) % laenge;
+    setTrefferZeiger(i);
+    const id = trefferIds[i]!;
+    setzeAuswahl(id);
+    zentriere(id);
+    return true;
+  }, [trefferIds, trefferZeiger, setzeAuswahl, zentriere]);
+
+  /** Was Enter tut, wenn nichts gemeint ist als ein Treffer: die Auswahl öffnen. */
+  const oeffneAuswahl = useCallback((e: React.KeyboardEvent) => {
+    const id = tastaturIdRef.current;
+    const m = id ? byIdRef.current.get(id) : undefined;
+    if (m) {
+      e.preventDefault();
+      onSelectMemory(m);
+      return;
+    }
+    // Dasselbe wort wie beim klick: ein konzept öffnet sein dossier.
+    if (id && id.startsWith(ENTITAETS_PRAEFIX)) {
+      const name = strukturKnotenRef.current.get(id)?.label;
+      if (name) {
+        e.preventDefault();
+        onSelectConcept?.(name);
+      }
+      return;
+    }
+    // Eine Typ- oder Tag-Ebene hat kein Dossier. Ohne Handlung wäre Enter
+    // dort eine tote Taste — im Baum ist sie der Weg zur Faltung.
+    if (id && ansicht === "dendrogram" && /^__(typ|tag):/.test(id)) {
+      e.preventDefault();
+      falteUm(id);
+    }
+  }, [onSelectMemory, onSelectConcept, ansicht, falteUm]);
+
+  /**
+   * Die Tastatur der Suche. Escape räumt ZUERST das Wort — wer ein Suchfeld
+   * schließt, will nicht im selben Atemzug auch noch die Auswahl verlieren.
+   * Ohne Wort, aber mit Trefferlosigkeit gilt weiter der alte Fluss: Enter
+   * öffnet, was gehalten ist.
+   */
+  const onSucheKeyDown = useCallback((e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === "Enter") {
+      if (springeTreffer(e.shiftKey ? -1 : 1)) {
+        e.preventDefault();
+        return;
+      }
+      oeffneAuswahl(e);
+      return;
+    }
+    if (e.key === "Escape") {
+      if (filter) {
+        e.preventDefault();
+        setFilter("");
+        return;
+      }
+      if (tastaturIdRef.current) {
+        e.preventDefault();
+        setzeAuswahl(null);
+      }
+    }
+  }, [springeTreffer, oeffneAuswahl, filter, setzeAuswahl]);
+
   const tastaturSchritt = useCallback((richtung: "up" | "down" | "left" | "right") => {
     const sim = simRef.current;
     if (!sim) return;
@@ -2501,35 +2605,14 @@ export function KnowledgeGraph({ memories, onSelectMemory, onSelectConcept, sich
       return;
     }
     if (e.key === "Enter") {
-      const id = tastaturIdRef.current;
-      const m = id ? byIdRef.current.get(id) : undefined;
-      if (m) {
-        e.preventDefault();
-        onSelectMemory(m);
-        return;
-      }
-      // Dasselbe wort wie beim klick: ein konzept öffnet sein dossier.
-      if (id && id.startsWith(ENTITAETS_PRAEFIX)) {
-        const name = strukturKnotenRef.current.get(id)?.label;
-        if (name) {
-          e.preventDefault();
-          onSelectConcept?.(name);
-        }
-        return;
-      }
-      // Eine Typ- oder Tag-Ebene hat kein Dossier. Ohne Handlung wäre Enter
-      // dort eine tote Taste — im Baum ist sie der Weg zur Faltung.
-      if (id && ansicht === "dendrogram" && /^__(typ|tag):/.test(id)) {
-        e.preventDefault();
-        falteUm(id);
-      }
+      oeffneAuswahl(e);
       return;
     }
     if (e.key === "Escape" && tastaturIdRef.current) {
       e.stopPropagation();
       setzeAuswahl(null);
     }
-  }, [onSelectMemory, onSelectConcept, tastaturSchritt, setzeAuswahl, ansicht, falteUm]);
+  }, [oeffneAuswahl, tastaturSchritt, setzeAuswahl]);
 
   // Wheel-Zoom darf die Seite nicht mitscrollen — React-onWheel ist passiv.
   useEffect(() => {
@@ -2568,9 +2651,30 @@ export function KnowledgeGraph({ memories, onSelectMemory, onSelectConcept, sich
           <input
             value={filter}
             onChange={(e) => setFilter(e.target.value)}
+            onKeyDown={onSucheKeyDown}
             placeholder="Filter the graph…"
+            aria-describedby="graph-search-count"
             className="hud-input w-full pl-8 pr-3 py-2 rounded-lg text-sm"
           />
+        </div>
+        {/* Der Zähler steht in der Zeile, nicht über ihr: absolute über dem Feld
+            hing auf die zweite Reihe der Leiste, sobald die umbrach. Gezählt
+            wird, was im Bild steht — ein Treffer, den die Faltung verbirgt,
+            wäre eine Zahl, ins Leere zu springen. */}
+        <div
+          id="graph-search-count"
+          data-testid="graph-search-count"
+          className="hud-label tnum"
+          style={{ color: "var(--text-3)" }}
+          aria-live="polite"
+        >
+          {filter.trim() === ""
+            ? ""
+            : trefferIds.length === 0
+              ? "No match"
+              : trefferZeiger < 0
+                ? `${trefferIds.length} match${trefferIds.length === 1 ? "" : "es"}`
+                : `${trefferZeiger + 1} of ${trefferIds.length}`}
         </div>
         {/* Gezaehlt wird, was im Bild steht — nicht, was die Datenbank hergeben
             wuerde. „edges" war hier eine Zahl aus dem Aehnlichkeitsnebel.
