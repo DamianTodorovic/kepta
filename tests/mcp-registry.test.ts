@@ -65,10 +65,27 @@ describe("MCP-Registry: der Besitznachweis", () => {
   });
 });
 
-describe("MCP-Registry: eine Version an vier Stellen", () => {
-  it("App, npm-Paket, server.json und Paketeintrag tragen dieselbe Version", () => {
-    expect(server.version).toBe(app.version);
+// Die Registry-Beschreibung ist eine Installationsanweisung, kein Tagebuch:
+// `npx kepta-mcp@<version>` muss es auf npm wirklich geben. App und ihr eigenes
+// npm-Bündel wandern zusammen (3.1.4), die Registry-Datei darf nur eine
+// veröffentlichte Engine-Version nennen. Stand gemessen 08.10.2026 über
+// registry.npmjs.org/kepta-mcp (dist-tags.latest) und über die MCP-Registry
+// (neuester Eintrag von io.github.DamianTodorovic/kepta): 3.1.2.
+const VEROEFFENTLICHTE_ENGINE = "3.1.2";
+
+describe("MCP-Registry: Versionen an ihrem rechten Ort", () => {
+  it("App und ihr npm-Bündel wandern zusammen", () => {
     expect(npmPaket.version).toBe(app.version);
-    expect(server.packages[0].version).toBe(app.version);
+  });
+
+  it("server.json nennt innen und außen dieselbe Version", () => {
+    expect(server.packages[0].version).toBe(server.version);
+  });
+
+  it("server.json nennt eine Engine-Version, die es auf npm wirklich gibt", () => {
+    expect(
+      server.version,
+      `server.json verspricht npx kepta-mcp@${server.version} — veröffentlicht ist ${VEROEFFENTLICHTE_ENGINE}`
+    ).toBe(VEROEFFENTLICHTE_ENGINE);
   });
 });

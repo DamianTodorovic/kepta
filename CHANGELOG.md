@@ -1,7 +1,9 @@
 ## [Unreleased]
 
+## [3.1.4] — 2026-10-08
+
 ### Security
-- **The window can no longer fetch a webfont from a stranger.** The content policy allowed `fonts.googleapis.com` and `fonts.gstatic.com` although the app ships no webfont at all — only system fonts through CSS variables. On an app whose promise is that everything happens on this machine, an unused permission is still an open door: one added `<link>` and the first launch pulls type from Google. The hardening test fails if a font host comes back. Measured on the running 3.1.3: the app holds exactly one socket — `127.0.0.1:<port>` — and no outbound connection at all; the tightened policy takes effect with the next build.
+- **The window can no longer fetch a webfont from a stranger.** The content policy allowed `fonts.googleapis.com` and `fonts.gstatic.com` although the app ships no webfont at all — only system fonts through CSS variables. On an app whose promise is that everything happens on this machine, an unused permission is still an open door: one added `<link>` and the first launch pulls type from Google. The hardening test fails if a font host comes back. Measured on the machine before this build: the running app held exactly one socket — `127.0.0.1:<port>`, listening — and not one outbound connection; this build carries the tightened policy.
 
 ### Changed
 - **One listener per app under test, not one per request.** Supertest turns an Express app into a fresh `http.Server` for *every* call, binds an ephemeral port and closes it right after the answer — with 118 workers that is a stream of ports handed to whoever asks next, and the suite has been answering with statuses this app cannot produce (401 where 403 belongs, 404 where 400 belongs, `ETIMEDOUT`, a 200 without the counter header). `tests/setup.horchen.ts` keeps exactly one listener per app for the whole file; `tests/helfer/horchen.test.ts` measures it, and ordinary mock servers stay untouched.
