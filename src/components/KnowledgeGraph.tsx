@@ -110,6 +110,13 @@ function merkeKrafte(k: KrafteStellung): void {
   } catch { /* Speicher ist eine Erinnerung, keine Bedingung */ }
 }
 /**
+ * Was die Legende unten über das Bild legt. Gemessen wird sie am echten Kasten
+ * (`graph-legende`); dieser Wert rechnet, bevor das erste Maß da ist — jsdom und
+ * der allererste Rahmen kennen keine Höhe. 96 sind die Höhe des Kastens bei
+ * 1440 px Breite, gemessen am 400-Notizen-Bestand (8.10.).
+ */
+export const LEGENDE_HOEHE = 96;
+/**
  * Ab diesem Zoom wird aus der Behauptung ein Keil. Darunter wäre die schmale
  * Spitze weniger als ein Pixel — dann bleibt die Linie, was sie ist.
  */
@@ -510,6 +517,19 @@ export function KnowledgeGraph({ memories, onSelectMemory, onSelectConcept, sich
     });
   }, []);
   const [dimensions, setDimensions] = useState({ w: 800, h: 500 });
+  const legendenRef = useRef<HTMLDivElement>(null);
+  /**
+   * Der Rahmen, in den das Bild passt: die Leinwand abzüglich dessen, was die
+   * Legende unten über sie legt. „Alles zeigen" hieß bisher, die Unterkante
+   * unter den Kasten zu legen — 643 von 700 Bildpunkten.
+   */
+  const einpassFlaeche = useCallback(
+    () => ({
+      w: dimensions.w,
+      h: Math.max(160, dimensions.h - (legendenRef.current?.offsetHeight || LEGENDE_HOEHE)),
+    }),
+    [dimensions]
+  );
   const [hovered, setHovered] = useState<string | null>(null);
   /**
    * Die Kante unter dem Zeiger — Inhalt und Anfangslage im Zustand, die weitere
@@ -1193,10 +1213,10 @@ export function KnowledgeGraph({ memories, onSelectMemory, onSelectConcept, sich
           maxX: Math.max(...punkte.map((p) => p.x)) + 70,
           maxY: Math.max(...punkte.map((p) => p.y)) + 70,
         };
-        transformRef.current = fitTransform(grenzen, dimensions);
+        transformRef.current = fitTransform(grenzen, einpassFlaeche());
         setZoomAnzeige(transformRef.current.k);
       } else {
-        transformRef.current = fitTransform(layoutBounds(sim.nodes, randFuerAnsicht(sim.nodes)), dimensions);
+        transformRef.current = fitTransform(layoutBounds(sim.nodes, randFuerAnsicht(sim.nodes)), einpassFlaeche());
         setZoomAnzeige(transformRef.current.k);
       }
       nutzerBewegt.current = false;
@@ -1384,7 +1404,7 @@ export function KnowledgeGraph({ memories, onSelectMemory, onSelectConcept, sich
   const fitView = useCallback(() => {
     const sim = simRef.current;
     if (!sim || sim.nodes.length === 0) return;
-    transformRef.current = fitTransform(layoutBounds(sim.nodes, randFuerAnsicht(sim.nodes)), dimensions);
+    transformRef.current = fitTransform(layoutBounds(sim.nodes, randFuerAnsicht(sim.nodes)), einpassFlaeche());
     setZoomAnzeige(transformRef.current.k);
     zeichneNoetig.current = true;
   }, [dimensions]);
@@ -1401,7 +1421,7 @@ export function KnowledgeGraph({ memories, onSelectMemory, onSelectConcept, sich
     // der alte Kraftfeld-Ausschnitt. Der Wechsel in den Baum gibt die
     // Zielpositionen, damit das ERSTE Bild des Baums schon alles zeigt.
     const knoten = masse ?? sim.nodes;
-    const fit = fitTransform(layoutBounds(knoten, 70), dimensions);
+    const fit = fitTransform(layoutBounds(knoten, 70), einpassFlaeche());
     const minBaumZoom = 0.35;
     if (fit.k < minBaumZoom) {
       const grenzen = layoutBounds(knoten);
@@ -1434,7 +1454,7 @@ export function KnowledgeGraph({ memories, onSelectMemory, onSelectConcept, sich
     }
     transformRef.current = fitTransform(
       { minX: minX - 70, minY: minY - 70, maxX: maxX + 70, maxY: maxY + 70 },
-      dimensions
+      einpassFlaeche()
     );
     setZoomAnzeige(transformRef.current.k);
     zeichneNoetig.current = true;
@@ -1462,7 +1482,7 @@ export function KnowledgeGraph({ memories, onSelectMemory, onSelectConcept, sich
     if (!sim || sim.nodes.length === 0) return;
     if (ansichtRef.current === "dendrogram") { fitBaumAnsicht(); return; }
     if (ansichtRef.current === "semantic") { fitKarte(zielRef.current); return; }
-    transformRef.current = fitTransform(layoutBounds(sim.nodes, randFuerAnsicht(sim.nodes)), dimensions);
+    transformRef.current = fitTransform(layoutBounds(sim.nodes, randFuerAnsicht(sim.nodes)), einpassFlaeche());
     setZoomAnzeige(transformRef.current.k);
     zeichneNoetig.current = true;
   }, [dimensions, fitBaumAnsicht, fitKarte]);
@@ -1917,10 +1937,12 @@ export function KnowledgeGraph({ memories, onSelectMemory, onSelectConcept, sich
     // Vorher hing die Regel allein am Radius (ab 7 px auf dem Schirm). Eine
     // frische Wissensbasis hat aber lauter unverbundene Notizen, also lauter
     // Knoten mit dem Mindestradius: bei zwoelf Notizen wurde KEIN einziger Titel
-    // gezeichnet, der Graph zeigte zwoelf namenlose Punkte. Die Schwelle liegt
-    // jetzt so tief, dass sie nur noch Unlesbares fernhaelt; ueber das Gedraenge
+    // gezeichnet, der Graph zeigte zwoelf namenlose Punkte. Auch die 3 px danach
+    // waren so eine Kante: 60 Notizen bei 73 % Zoom lagen als Punkte ohne einen
+    // einzigen Titel da. Die Schwelle hält jetzt Staub fern (25 000 Knoten bei
+    // 4 % Zoom), nicht die kleine Basis — was im Gedränge sichtbar bleibt,
     // entscheidet das Belegungsraster weiter unten.
-    const mindestRadius = 3;
+    const mindestRadius = 1.5;
     // Im Baum macht die Hierarchie lesbar, was das Kraftfeld nur durch Zoomen
     // zeigen kann — dort duerfen alle Etiketten mit (bis zur harten Grenze),
     // waehrend der 140er-Cap Kraftfeld-Sache bleibt.
@@ -2202,7 +2224,7 @@ export function KnowledgeGraph({ memories, onSelectMemory, onSelectConcept, sich
               // willkuerlichen Ausschnitts mitten im Knaeuel.
               if (autoFitOffen.current && isSettled(sim) && sim.nodes.length > 0) {
                 autoFitOffen.current = false;
-                transformRef.current = fitTransform(layoutBounds(sim.nodes, randFuerAnsicht(sim.nodes)), dimensions);
+                transformRef.current = fitTransform(layoutBounds(sim.nodes, randFuerAnsicht(sim.nodes)), einpassFlaeche());
                 setZoomAnzeige(transformRef.current.k);
               }
             }
@@ -3228,7 +3250,11 @@ export function KnowledgeGraph({ memories, onSelectMemory, onSelectConcept, sich
           </div>
         )}
 
-        <div className="absolute left-3 bottom-3 hud-panel rounded-lg px-3 py-2 pointer-events-none space-y-1">
+        <div
+          ref={legendenRef}
+          data-testid="graph-legende"
+          className="absolute left-3 bottom-3 hud-panel rounded-lg px-3 py-2 pointer-events-none space-y-1"
+        >
           <div className="flex items-center gap-3 hud-label">
             {/* Die Legende erklärt den Kanal, der gerade färbt — nicht den, den
                 man eben abgeschaltet hat. */}

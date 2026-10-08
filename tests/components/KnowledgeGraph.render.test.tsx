@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { render, act, fireEvent } from "@testing-library/react";
-import { KnowledgeGraph, istHell, GLYPH_FUER_ART } from "../../src/components/KnowledgeGraph";
+import { KnowledgeGraph, istHell, GLYPH_FUER_ART, LEGENDE_HOEHE } from "../../src/components/KnowledgeGraph";
 import { installiereLeinwand, installiereResizeObserver, installiereZeiger, setzeTheme, type Leinwand } from "../helfer/canvas";
 import type { Memory } from "../../src/types";
 
@@ -67,6 +67,52 @@ async function zeichne(
 /** Weitere Bilder abwarten (die Schleife laeuft ueber requestAnimationFrame). */
 async function bilder(n = 8) {
   await act(async () => { await new Promise((r) => setTimeout(r, n * 20)); });
+}
+
+/**
+ * Wo die erste gemalte Scheibe auf dem Schirm sitzt — über die Transform des
+ * letzten Rahmens gerechnet.
+ *
+ * Nicht „Mitte der Leinwand": der Ausschnitt passt in den Rahmen über der
+ * Legende, und wer eine Geste prüft, muss dorthin greifen, wo das Bild steht.
+ * Die drei LOD-Stufen zählen mit, sonst hängt der Punkt vom Zoom ab.
+ */
+function scheibeAufSchirm(): { x: number; y: number } | null {
+  let tx = 0, ty = 0, k = 1;
+  let welt: { x: number; y: number } | null = null;
+  for (const a of leinwand.letzterRahmen()) {
+    if (a.op === "translate" && tx === 0 && ty === 0) { tx = Number(a.args[0]); ty = Number(a.args[1]); }
+    if (a.op === "scale" && k === 1) k = Number(a.args[0]);
+    if (!welt) {
+      if (a.op === "arc") welt = { x: Number(a.args[0]), y: Number(a.args[1]) };
+      else if (a.op === "drawImage") welt = { x: Number(a.args[1]) + Number(a.args[3]) / 2, y: Number(a.args[2]) + Number(a.args[4]) / 2 };
+      else if (a.op === "fillRect") welt = { x: Number(a.args[0]) + Number(a.args[2]) / 2, y: Number(a.args[1]) + Number(a.args[3]) / 2 };
+    }
+  }
+  return welt ? { x: welt.x * k + tx, y: welt.y * k + ty } : null;
+}
+
+/** Die Geste auf der ersten Scheibe: greifen, ziehen, loslassen. */
+async function greifeScheibe(c: HTMLCanvasElement, dx = 140, dy = -90) {
+  const p = scheibeAufSchirm();
+  expect(p, "Es wird keine Scheibe gemalt").not.toBeNull();
+  await act(async () => {
+    c.dispatchEvent(new (globalThis as unknown as { PointerEvent: typeof PointerEvent }).PointerEvent("pointerdown", {
+      bubbles: true, cancelable: true, clientX: p!.x, clientY: p!.y,
+    }));
+    await new Promise((r) => setTimeout(r, 30));
+    for (let i = 1; i <= 6; i++) {
+      c.dispatchEvent(new (globalThis as unknown as { PointerEvent: typeof PointerEvent }).PointerEvent("pointermove", {
+        bubbles: true, cancelable: true, clientX: p!.x + (dx * i) / 6, clientY: p!.y + (dy * i) / 6,
+      }));
+      await new Promise((r) => setTimeout(r, 16));
+    }
+    c.dispatchEvent(new (globalThis as unknown as { PointerEvent: typeof PointerEvent }).PointerEvent("pointerup", {
+      bubbles: true, cancelable: true, clientX: p!.x + dx, clientY: p!.y + dy,
+    }));
+    await new Promise((r) => setTimeout(r, 60));
+  });
+  return p!;
 }
 
 /** Richtung an- oder ausknipsen — derselbe Klick, den ein Mensch tut. */
@@ -315,9 +361,10 @@ describe("Bedienung", () => {
     const { container } = await zeichne([note()], onSelect);
     await bilder();
     const c = container.querySelector('[data-testid="graph-canvas"]') as HTMLCanvasElement;
-    // Ein einzelner Knoten liegt nach dem Einpassen in der Mitte der Leinwand.
+    const sitz = scheibeAufSchirm();
+    expect(sitz, "der Knoten wird nicht gemalt").not.toBeNull();
     await act(async () => {
-      c.dispatchEvent(new MouseEvent("dblclick", { bubbles: true, clientX: 500, clientY: 350 }));
+      c.dispatchEvent(new MouseEvent("dblclick", { bubbles: true, clientX: sitz!.x, clientY: sitz!.y }));
       await new Promise((r) => setTimeout(r, 40));
     });
     expect(onSelect).toHaveBeenCalled();
@@ -627,9 +674,10 @@ describe("Ziehen gegen Schwenken", () => {
     const vorher = leinwand.von("translate").at(-1)?.args as number[] | undefined;
 
     await act(async () => {
-      c.dispatchEvent(kl("pointerdown", 500, 350));
-      c.dispatchEvent(kl("pointermove", 560, 400));
-      c.dispatchEvent(kl("pointerup", 560, 400));
+      const p = scheibeAufSchirm()!;
+      c.dispatchEvent(kl("pointerdown", p.x, p.y));
+      c.dispatchEvent(kl("pointermove", p.x + 60, p.y + 50));
+      c.dispatchEvent(kl("pointerup", p.x + 60, p.y + 50));
       await new Promise((r) => setTimeout(r, 60));
     });
     leinwand.leeren();
@@ -824,7 +872,7 @@ describe("Ein abgelegter Knoten bleibt liegen", () => {
     const { container } = await zeichne([note()]);
     await bilder();
     const c = container.querySelector('[data-testid="graph-canvas"]') as HTMLCanvasElement;
-    await ziehe(c, [500, 350], [640, 260]);
+    await greifeScheibe(c);
 
     leinwand.leeren();
     await bilder(4);
@@ -848,7 +896,7 @@ describe("Ein abgelegter Knoten bleibt liegen", () => {
     const c = container.querySelector('[data-testid="graph-canvas"]') as HTMLCanvasElement;
     expect(container.textContent).not.toMatch(/Release \d+ pinned/);
 
-    await ziehe(c, [500, 350], [640, 260]);
+    await greifeScheibe(c);
     expect(container.textContent).toMatch(/Release 1 pinned/);
 
     const knopf = [...container.querySelectorAll("button")].find((b) => /Release \d+ pinned/.test(b.textContent ?? ""))!;
@@ -864,9 +912,10 @@ describe("Ein abgelegter Knoten bleibt liegen", () => {
     await bilder();
     const c = container.querySelector('[data-testid="graph-canvas"]') as HTMLCanvasElement;
     await act(async () => {
-      c.dispatchEvent(kl("pointerdown", 500, 350));
+      const p = scheibeAufSchirm()!;
+      c.dispatchEvent(kl("pointerdown", p.x, p.y));
       await new Promise((r) => setTimeout(r, 30));
-      c.dispatchEvent(kl("pointerup", 501, 351)); // ein Bildpunkt Wackeln
+      c.dispatchEvent(kl("pointerup", p.x + 1, p.y + 1)); // ein Bildpunkt Wackeln
       await new Promise((r) => setTimeout(r, 60));
     });
     expect(container.textContent).not.toMatch(/Release \d+ pinned/);
@@ -3668,5 +3717,65 @@ describe("Die Regler unter dem Knopf Forces", () => {
       expect((panel.querySelector(`input[aria-label="${name}"]`) as HTMLInputElement).value, name).toBe("1");
     }
     expect(localStorage.getItem("kepta_graph_krafte")).toBe(null);
+  });
+});
+
+// #96: Die Legende liegt als Kasten über dem unteren Rand der Leinwand. Der
+// Ausschnitt wusste davon nichts — wer „alles zeigen" drückte, sah unten
+// Knoten und Titel unter dem Kasten verschwinden (gemessen am 400-Notizen-
+// Bestand: „Drucker Notiz 16/19/20" lagen unter der Legende).
+describe("Die Legende nimmt dem eingepassten Bild nichts weg", () => {
+  function welt() {
+    vi.stubGlobal("fetch", vi.fn(async () => new Response(JSON.stringify({
+      relations: [], memoriesByEntity: {},
+    }), { status: 200 })));
+    // Eine breite, flache Welt: sie füllt den Rahmen in der Höhe, und damit
+    // entscheidet genau ihre Unterkante über die Kante der Legende.
+    return Array.from({ length: 14 }, (_, i) =>
+      note({ id: `b${i}`, title: `Rand ${i}`, content: `Am Rand ${i}.`, tags: [`rand-${i % 2}`] }));
+  }
+  function rahmen() {
+    let tx = 0, ty = 0, k = 1;
+    const scheiben: { x: number; y: number; r: number }[] = [];
+    for (const a of leinwand.letzterRahmen()) {
+      if (a.op === "translate" && tx === 0 && ty === 0) { tx = Number(a.args[0]); ty = Number(a.args[1]); }
+      if (a.op === "scale" && k === 1) k = Number(a.args[0]);
+      if (a.op === "arc") scheiben.push({ x: Number(a.args[0]), y: Number(a.args[1]), r: Number(a.args[2]) });
+      else if (a.op === "drawImage") {
+        scheiben.push({ x: Number(a.args[1]) + Number(a.args[3]) / 2, y: Number(a.args[2]) + Number(a.args[4]) / 2, r: Number(a.args[3]) / 2 });
+      } else if (a.op === "fillRect") {
+        scheiben.push({ x: Number(a.args[0]) + Number(a.args[2]) / 2, y: Number(a.args[1]) + Number(a.args[3]) / 2, r: Number(a.args[2]) / 2 });
+      }
+    }
+    return { tx, ty, k, scheiben };
+  }
+  async function ruhig() {
+    for (let i = 0; i < 70; i++) {
+      const a = rahmen();
+      await bilder(6);
+      const b = rahmen();
+      if (a.scheiben.length === b.scheiben.length &&
+          a.scheiben.every((s, j) => Math.hypot(s.x - b.scheiben[j].x, s.y - b.scheiben[j].y) < 0.01)) return b;
+    }
+    throw new Error("das Feld steht nicht");
+  }
+
+  it("lässt keinen Knoten unter die Legende reichen", async () => {
+    await zeichne(welt());
+    const r = await ruhig();
+    const unten = Math.max(...r.scheiben.map((s) => (s.y + s.r) * r.k + r.ty));
+    const frei = 700 - LEGENDE_HOEHE;
+    expect(unten, `unterster Knoten bei ${Math.round(unten)} — die Legende beginnt bei ${frei}`).toBeLessThanOrEqual(frei + 1);
+  });
+
+  it("schrumpft das Bild nicht zur Briefmarke, damit die Legende frei bleibt", async () => {
+    const { container } = await zeichne(welt());
+    await ruhig();
+    expect(container.querySelector('[data-testid="graph-legende"]'), "die Legende fehlt").toBeTruthy();
+    const r = rahmen();
+    const hoch = Math.min(...r.scheiben.map((s) => (s.y - s.r) * r.k + r.ty));
+    const unten = Math.max(...r.scheiben.map((s) => (s.y + s.r) * r.k + r.ty));
+    const frei = 700 - LEGENDE_HOEHE;
+    expect(unten - hoch, `das Bild füllt nur ${Math.round(unten - hoch)} von ${frei}`).toBeGreaterThanOrEqual(frei * 0.4);
   });
 });
