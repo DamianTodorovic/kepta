@@ -106,7 +106,7 @@ describe("POST /api/license", () => {
 
   it("ein gesperrter Schlüssel lässt sich nicht aktivieren: 403 mit Erklärung, nichts gespeichert", async () => {
     const res = await aktiviere("Sarah Mandel", signiere("Sarah Mandel", 666, paar.privat));
-    expect(res.status, `Sperre erwartet, geantwortet: ${res.res.statusMessage} · ${res.text.slice(0, 200)}`).toBe(403);
+    expect(res.status, `Sperre erwartet, geantwortet ${res.status}: ${res.text.slice(0, 200)}`).toBe(403);
     expect(res.body.error).toMatch(/revoked/);
     expect(store.einstellungen().license_key).toBeUndefined();
   });
@@ -180,7 +180,7 @@ describe("Freemium: die Pro-Werkzeuge laufen ohne Schlüssel mit Tageslimiten", 
       // Der Fall ist unter Last schon einmal mit 401 aufgefallen — ein Status,
       // den diese App nirgends sendet. Ohne den Antworttext daneben bleibt so
       // etwas ein Rätsel, also nennt die Meldung, wer wirklich geantwortet hat.
-      expect(res.status, `Nachricht ${i + 1}: ${res.res.statusMessage} · ${res.text.slice(0, 200)}`).toBe(200);
+      expect(res.status, `Nachricht ${i + 1}: ${res.status} · ${res.text.slice(0, 200)}`).toBe(200);
       expect(res.headers["x-kepta-plan"]).toBe("pro");
     }
     expect(stromaufwaerts, "jede Nachricht muss durch die eingesetzte Quelle gehen").toHaveBeenCalledTimes(12);
