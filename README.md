@@ -4,7 +4,7 @@
 
 <p align="center"><sub>Desktop app · no cloud · no account · encrypted at rest<br>SQLite · hybrid retrieval · knowledge graph · MCP</sub></p>
 
-<p align="center"><a href="https://github.com/DamianTodorovic/kepta/releases/latest"><img alt="Download" src="https://img.shields.io/github/v/release/DamianTodorovic/kepta?label=Download"></a> <a href="https://github.com/DamianTodorovic/kepta/actions/workflows/ci.yml"><img alt="Engine CI" src="https://github.com/DamianTodorovic/kepta/actions/workflows/ci.yml/badge.svg"></a> <a href="LICENSE"><img alt="License" src="https://img.shields.io/badge/license-Proprietary-black"></a> <img alt="Coverage gate" src="https://img.shields.io/badge/coverage%20gate-%E2%89%A5%2089%25%20of%20lines-brightgreen"> <img alt="Tests" src="https://img.shields.io/badge/tests-1973%20passing-brightgreen"> <img alt="Platform" src="https://img.shields.io/badge/platform-macOS-lightgrey"></p>
+<p align="center"><a href="https://github.com/DamianTodorovic/kepta/releases/latest"><img alt="Download" src="https://img.shields.io/github/v/release/DamianTodorovic/kepta?label=Download"></a> <a href="https://github.com/DamianTodorovic/kepta/actions/workflows/ci.yml"><img alt="Engine CI" src="https://github.com/DamianTodorovic/kepta/actions/workflows/ci.yml/badge.svg"></a> <a href="LICENSE"><img alt="License" src="https://img.shields.io/badge/license-Proprietary-black"></a> <img alt="Coverage gate" src="https://img.shields.io/badge/coverage%20gate-%E2%89%A5%2089%25%20of%20lines-brightgreen"> <img alt="Tests" src="https://img.shields.io/badge/tests-1975%20passing-brightgreen"> <img alt="Platform" src="https://img.shields.io/badge/platform-macOS-lightgrey"></p>
 
 <p align="center"><sub>The memory engine underneath is source-available (BUSL-1.1, converts to AGPL-3.0-or-later after four years): <a href="https://github.com/DamianTodorovic/kepta">DamianTodorovic/kepta</a> — the headless core with the MCP server. This repository is the full desktop application.</sub></p>
 
@@ -344,16 +344,16 @@ for hit in kepta.search("carbonara without cream"):
 
 Standard library only, no dependencies. It discovers the running app through `~/.kepta/endpoint.json`, so the random port a packaged build picks is not your problem. Details: [python/README.md](python/README.md) · [PyPI](https://pypi.org/project/kepta/)
 
-## 🔐 Core & Pro — freemium, never locked
+## 🔐 KEPTA is free — and a license key only by agreement
 
-KEPTA Pro is the **proprietary** license-key edition of the app; this repository is private.
+There are two things to buy or not buy: **KEPTA Core**, free, and **KEPTA Enterprise**, by agreement. A license key is issued per buyer by Damian, not through a shop; this repository is private.
 
-- **Every download comes with one free Pro day.** A fresh install runs 24 hours with every Pro tool, unlimited — no panel, no account, no key. Then the app stays **KEPTA Core**: the same features with generous **daily limits**, never a locked window. The limits are **tamper-evident**: counters and the trial day live in a sealed, authenticated state in the encrypted database plus a first-start anchor kept in two independent local proof places (the keychain and a hidden anchor file outside the data folder) — an app restart resets nothing, a rolled-back clock forfeits the day, and editing, forging or deleting the state (even together with the database) is detected by consensus and costs the trial day, never the data. All of it stays on the machine; nothing phones home. When a limit is reached, the app answers with the upgrade path, never with a lock.
-- **Pro removes the limits.** One license key — issued per buyer, carrying a license number and bound to the buyer's name, which KEPTA shows in the sidebar (the name alone, without a tier label since 3.1.1). It is validated **offline** against a signature; nothing leaves the machine to check it. A key that is passed on can be revoked: its number goes on the list inside the app, and from the next update on that key stops unlocking anything.
+- **Every download comes with one unlimited day.** A fresh install runs 24 hours with every tool, unlimited — no panel, no account, no key. Then the app stays **KEPTA Core**: the same features with generous **daily limits**, never a locked window. The limits are **tamper-evident**: counters and the trial day live in a sealed, authenticated state in the encrypted database plus a first-start anchor kept in two independent local proof places (the keychain and a hidden anchor file outside the data folder) — an app restart resets nothing, a rolled-back clock forfeits the day, and editing, forging or deleting the state (even together with the database) is detected by consensus and costs the trial day, never the data. All of it stays on the machine; nothing phones home. When a limit is reached, the app answers with the upgrade path, never with a lock.
+- **A key removes the limits.** One license key — issued per buyer, carrying a license number and bound to the buyer's name, which KEPTA shows in the sidebar (the name alone, without a tier label since 3.1.1). It is validated **offline** against a signature; nothing leaves the machine to check it. A key that is passed on can be revoked: its number goes on the list inside the app, and from the next update on that key stops unlocking anything.
 - **Enterprise stays personal.** Team memory ships as the enforcement layer (licensed team scopes, roles, per-tenant isolation in KEPTA Enterprise), central policies ship as the managed configuration documented in [SECURITY-ENTERPRISE.md](SECURITY-ENTERPRISE.md), and the enterprise build runs on your own hardware — air-gapped if you need it. Sold as roadmap, not built yet: SSO (SAML/OIDC), the workspaces UI and MDM enrolment. One tier, shaped per organization; the license is pre-provisioned and validated offline as always.
 - **The data is never hostage.** The knowledge base file stays on disk, encrypted, and readable by the source-available engine — with or without a key.
 
-**Buying Pro** — the Upgrade panel in the app shows the current way to buy; the button always points to the live path (while the self-serve checkout is in its final review, that is a direct message to [me on LinkedIn](https://www.linkedin.com/in/damian-todorovic-244235434)). **Enterprise** — [write to me on LinkedIn](https://www.linkedin.com/in/damian-todorovic-244235434).
+**Getting a key** — the Upgrade panel in the app points to the live path, which today is a direct message to [me on LinkedIn](https://www.linkedin.com/in/damian-todorovic-244235434); there is no self-serve checkout. **Enterprise** — [write to me on LinkedIn](https://www.linkedin.com/in/damian-todorovic-244235434).
 
 ### Icon attribution
 
@@ -421,11 +421,11 @@ The app bundle itself **is** signed, ad-hoc. That is not notarisation and does n
 
 ## 🧪 Quality & tests
 
-**1973 tests**, run with Vitest and v8 coverage. The coverage thresholds are a hard gate: a commit that falls below any of them fails the run — and so does a README that names the wrong number of tests, because `npm run test:cov` ends by comparing it with the run.
+**1975 tests**, run with Vitest and v8 coverage. The coverage thresholds are a hard gate: a commit that falls below any of them fails the run — and so does a README that names the wrong number of tests, because `npm run test:cov` ends by comparing it with the run.
 
 ```bash
 npm run lint       # typecheck (tsc) + ESLint — 0 errors required
-npm test           # 1973 tests (vitest)
+npm test           # 1975 tests (vitest)
 npm run test:cov   # tests + coverage gate + test count in the README
 npm run eval       # retrieval quality (Hit@1)
 ```

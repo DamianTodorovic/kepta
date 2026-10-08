@@ -283,3 +283,21 @@ describe("Dokumentation: die genannten Coverage-Schwellen sind die echten", () =
     }
   });
 });
+
+// Der Stufen-Kanon (4.10.2026, für alle Außenflächen): es gibt KEPTA Core (0 €) und
+// KEPTA Enterprise (nur gegen Vereinbarung). „KEPTA Pro" ist tot — und ein README, das
+// trotzdem eine Pro-Stufe zum Kauf anbietet, ist kein Tippfehler sondern ein Versprechen,
+// das niemand einlösen kann.
+describe("README: die Stufen heißen, wie sie vergeben werden", () => {
+  it("bietet kein KEPTA Pro und keinen Pro-Kauf an", () => {
+    const text = lies("README.md");
+    const proStellen = [...text.matchAll(/KEPTA Pro\b|\bPro day\b|\bPro tool\b|\bPro removes\b|\bBuying Pro\b/gi)].map((m) => m[0]);
+    expect(proStellen, "README nennt eine tote Stufe: " + proStellen.join(", ")).toEqual([]);
+  });
+
+  it("nennt Core frei und Enterprise nur gegen Vereinbarung", () => {
+    const text = lies("README.md");
+    expect(text).toMatch(/KEPTA Core\*\*, free|Core, free/i);
+    expect(text).toMatch(/Enterprise\*\*, by agreement|Enterprise.*agreement/i);
+  });
+});

@@ -542,10 +542,19 @@ describe("kanteBei — die Linie ist anfassbar", () => {
     const sonde = kante("sonde-a", "sonde-b", false);
     kanten.push(sonde);
     expect(kanteBei(index, kanten, 10000, 5000, 6, () => "gerade")).toBe(sonde);
-    const start = Date.now();
-    for (let t = 0; t < 20; t++) kanteBei(index, kanten, 10000, 5000, 6, () => "gerade");
-    const dauer = (Date.now() - start) / 20;
-    expect(dauer, `${dauer.toFixed(2)} ms pro Zeigerbewegung`).toBeLessThan(4);
+    // Eine Zeigerbewegung darf kein Bild verfehlen. Gemessen wird über drei
+    // unabhängige Serien à 60 Züge und dann die MEDIANE — ein Einzelwert auf
+    // einem vollen Rechner ist keine Aussage über die Suche. Gemessen am
+    // 8.10.2026 fiel dieselbe Zusage zweimal im Parallel-Lauf (5,85 ms und ein
+    // Ausreißer in der Nacht), während sie allein und im Median hielt.
+    const serien: number[] = [];
+    for (let runde = 0; runde < 3; runde++) {
+      const start = performance.now();
+      for (let t = 0; t < 60; t++) kanteBei(index, kanten, 10000, 5000, 6, () => "gerade");
+      serien.push((performance.now() - start) / 60);
+    }
+    const median = serien.slice().sort((a, b) => a - b)[1];
+    expect(median, `${median.toFixed(2)} ms pro Zeigerbewegung — Serien ${serien.map((s) => s.toFixed(2)).join(" / ")}`).toBeLessThan(4);
   });
 });
 
