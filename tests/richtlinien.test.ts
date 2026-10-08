@@ -119,7 +119,10 @@ describe("zentrale Richtlinien im Server", () => {
   it("chat_cloud=deny: fremde Hosts werden abgewiesen, lokale Modelle bleiben offen", async () => {
     schreibeVerwaltet({ license_name: "Mandels Kanzlei", license_key: signiere("Mandels Kanzlei", 20, paar.privat), richtlinien: { chat_cloud: "deny" } });
     const cloud = await request(app).post("/api/chat").send({ messages: [{ role: "user", content: "hi" }], baseUrl: "https://api.openai.com/v1" });
-    expect(cloud.status).toBe(403);
+    // Diese Abschaltung ist eine Sicherheitszusage: sie darf nie als Zahl ohne
+    // Namen fallen. Unter Last ist hier schon ein fremder Status statt 403
+    // angekommen — ohne den Antworttext war nicht zu entscheiden, wer geantwortet hat.
+    expect(cloud.status, `Abstellung erwartet, geantwortet: ${cloud.res.statusMessage} · ${cloud.text.slice(0, 200)}`).toBe(403);
     expect(cloud.body.error).toMatch(/organization's policy/);
     // Lokal (Standard-Ollama ohne baseUrl) kommt an den Modell-Aufruf durch —
     // der scheitert hier am nicht laufenden Ollama, aber eben nicht an der Richtlinie:

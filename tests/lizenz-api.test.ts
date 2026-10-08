@@ -106,7 +106,7 @@ describe("POST /api/license", () => {
 
   it("ein gesperrter Schlüssel lässt sich nicht aktivieren: 403 mit Erklärung, nichts gespeichert", async () => {
     const res = await aktiviere("Sarah Mandel", signiere("Sarah Mandel", 666, paar.privat));
-    expect(res.status).toBe(403);
+    expect(res.status, `Sperre erwartet, geantwortet: ${res.res.statusMessage} · ${res.text.slice(0, 200)}`).toBe(403);
     expect(res.body.error).toMatch(/revoked/);
     expect(store.einstellungen().license_key).toBeUndefined();
   });
