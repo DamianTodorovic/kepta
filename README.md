@@ -4,7 +4,7 @@
 
 <p align="center"><sub>Desktop app · no cloud · no account · encrypted at rest<br>SQLite · hybrid retrieval · knowledge graph · MCP</sub></p>
 
-<p align="center"><a href="https://github.com/DamianTodorovic/kepta/releases/latest"><img alt="Download" src="https://img.shields.io/github/v/release/DamianTodorovic/kepta?label=Download"></a> <a href="https://github.com/DamianTodorovic/kepta/actions/workflows/ci.yml"><img alt="Engine CI" src="https://github.com/DamianTodorovic/kepta/actions/workflows/ci.yml/badge.svg"></a> <a href="LICENSE"><img alt="License" src="https://img.shields.io/badge/license-Proprietary-black"></a> <img alt="Coverage gate" src="https://img.shields.io/badge/coverage%20gate-%E2%89%A5%2089%25%20of%20lines-brightgreen"> <img alt="Tests" src="https://img.shields.io/badge/tests-1964%20passing-brightgreen"> <img alt="Platform" src="https://img.shields.io/badge/platform-macOS%20%7C%20Windows-lightgrey"></p>
+<p align="center"><a href="https://github.com/DamianTodorovic/kepta/releases/latest"><img alt="Download" src="https://img.shields.io/github/v/release/DamianTodorovic/kepta?label=Download"></a> <a href="https://github.com/DamianTodorovic/kepta/actions/workflows/ci.yml"><img alt="Engine CI" src="https://github.com/DamianTodorovic/kepta/actions/workflows/ci.yml/badge.svg"></a> <a href="LICENSE"><img alt="License" src="https://img.shields.io/badge/license-Proprietary-black"></a> <img alt="Coverage gate" src="https://img.shields.io/badge/coverage%20gate-%E2%89%A5%2089%25%20of%20lines-brightgreen"> <img alt="Tests" src="https://img.shields.io/badge/tests-1964%20passing-brightgreen"> <img alt="Platform" src="https://img.shields.io/badge/platform-macOS-lightgrey"></p>
 
 <p align="center"><sub>The memory engine underneath is source-available (BUSL-1.1, converts to AGPL-3.0-or-later after four years): <a href="https://github.com/DamianTodorovic/kepta">DamianTodorovic/kepta</a> — the headless core with the MCP server. This repository is the full desktop application.</sub></p>
 
@@ -389,15 +389,15 @@ npm run electron   # desktop shell (optional)
 
 ### 📦 Which file do I need?
 
+The desktop app is published **only for macOS** — Apple silicon and Intel. No other platform has a downloadable app, and nothing here pretends otherwise.
+
 | Your system | File |
 |---|---|
 | Mac with Apple Silicon (M1–M4) | `KEPTA-<version>-mac-arm64.dmg` |
 | Mac with an Intel processor | `KEPTA-<version>-mac-x64.dmg` |
-| **Windows — take this one if unsure** | `KEPTA-<version>-win.exe` (contains both architectures) |
-| Windows (Intel/AMD), smaller file | `KEPTA-<version>-win-x64.exe` |
-| Windows on ARM, smaller file | `KEPTA-<version>-win-arm64.exe` |
+| Windows or Linux | No app file is published. The engine itself runs on all three (`kepta-mcp` on npm, or from source), so an MCP client on those systems talks to the same memory — only the window is missing. |
 
-Every file carries its platform and architecture in the name. On a Mac, if you are unsure: Apple menu → *About This Mac* — "Apple M…" means `arm64`, "Intel" means `x64`. The `.zip` files are the same programs without an installer. The packages are self-contained; you only need Node ≥ 22.13 to build them yourself.
+Every published file carries its platform and architecture in the name. On a Mac, if you are unsure: Apple menu → *About This Mac* — "Apple M…" means `arm64`, "Intel" means `x64`. The `.zip` files are the same programs without an installer. The packages are self-contained; you only need Node ≥ 22.13 to build them yourself.
 
 ### 🍎 First launch on macOS
 
@@ -415,11 +415,9 @@ Without the terminal: **System Settings → Privacy & Security**, scroll down to
 
 The app bundle itself **is** signed, ad-hoc. That is not notarisation and does not remove the warning, but it does decide which warning you get: macOS treats KEPTA as an ordinary unsigned app you can approve, rather than a damaged one it refuses outright.
 
-### 🪟 First launch on Windows
+### 🛠️ Other platforms: build it yourself
 
-The Windows installer is unsigned too. SmartScreen will say "Windows protected your PC" on first launch. Approve it once: **More info** → **Run anyway**.
-
-If you would rather not trust the binaries, build them yourself: `npm install && npm run build:mac`, `build:win` or `build:linux` produces the packages under `release/` — including Linux formats (AppImage/deb), which are built from source but not shipped prebuilt.
+`npm install && npm run build:win` or `build:linux` produce packages under `release/`. They are built from this source and never published here, so they are untested against a real installer download; treat them as source builds, not as shipped products. An unsigned Windows package also carries the usual SmartScreen warning on first launch (**More info** → **Run anyway**).
 
 ## 🧪 Quality & tests
 

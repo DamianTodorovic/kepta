@@ -171,14 +171,19 @@ describe("Freemium: die Pro-Werkzeuge laufen ohne Schlüssel mit Tageslimiten", 
 
   it("mit gültigem Schlüssel: keine Freemium-Limits — der 12. Chat geht durch (dort stößt der Free-Plan an), der Plan-Header sagt pro", async () => {
     await aktiviere("Sarah Mandel", signiere("Sarah Mandel", 7, paar.privat));
-    vi.stubGlobal("fetch", vi.fn(async () => new Response(JSON.stringify({ choices: [{ message: { content: "ok" } }] }), { status: 200 })));
+    const stromaufwaerts = vi.fn(async () => new Response(JSON.stringify({ choices: [{ message: { content: "ok" } }] }), { status: 200 }));
+    vi.stubGlobal("fetch", stromaufwaerts);
     // 12 = über das Free-Limit (10) hinaus, aber unter dem 20/min-Schutzlimiter —
     // es geht hier um das FREEMIUM-Limit, nicht um die Drossel.
     for (let i = 0; i < 12; i++) {
       const res = await request(app).post("/api/chat").send({ messages: [{ role: "user", content: "hi" }] });
-      expect(res.status, `Nachricht ${i + 1}`).toBe(200);
+      // Der Fall ist unter Last schon einmal mit 401 aufgefallen — ein Status,
+      // den diese App nirgends sendet. Ohne den Antworttext daneben bleibt so
+      // etwas ein Rätsel, also nennt die Meldung, wer wirklich geantwortet hat.
+      expect(res.status, `Nachricht ${i + 1}: ${res.res.statusMessage} · ${res.text.slice(0, 200)}`).toBe(200);
       expect(res.headers["x-kepta-plan"]).toBe("pro");
     }
+    expect(stromaufwaerts, "jede Nachricht muss durch die eingesetzte Quelle gehen").toHaveBeenCalledTimes(12);
     vi.unstubAllGlobals();
   });
 
