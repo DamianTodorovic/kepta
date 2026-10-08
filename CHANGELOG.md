@@ -1,7 +1,42 @@
 ## [Unreleased]
 
+## [3.1.3] — 2026-10-08
+
+The knowledge graph got finished. Before this, the picture showed notes and the lines between them; it now shows **what is claimed, by whom, how much sits behind it, and whether it still holds** — and it gives you the levers to read a large base.
+
+### Added
+- **Claim direction.** Each link runs from its wide end to its narrow one: who says what about whom. Off shows plain lines.
+- **Link text, weight and card.** A line names its relation, is drawn thicker when several claims sit on the same pair, and hovering it opens who-over-whom, how often, and for how long.
+- **Validity on the edge.** A claim that has expired is drawn dashed, the same way an expired note is ringed. The time slider and the picture agree.
+- **What the picture is missing.** A badge counts the neighbours a node has but the picture could not draw; a balance line names every gap — clipped edges, hidden neighbours, self-claims, vectors left out of the semantic map. Nothing is dropped quietly.
+- **Labels are a decision, not a carpet.** Three settings (Key / All / Off), a crowding grid that keeps titles from lying on each other, and the full name under the pointer even on Off.
+- **A sign inside the node that reads without colour** — a letter for its kind, a number for what a concept carries. Colour-blind safe by construction.
+- **Groups fold, in both views.** Double-click a group in the tree and it steps behind a `×N` badge that keeps counting; the force view obeys the same state and hides only what nothing else carries.
+- **A claim about itself is not a neighbour** — it gets a loop, and a switch.
+- **The third view: Semantic.** Notes placed by the meaning of their own texts, from a deterministic projection computed on the server, so no embedding travels into the view. It says how much of the difference its two axes carry and where the notes without a vector were parked.
+- **Schema inventory.** A second look at the same payload: which kinds, concepts and claims the store actually holds. Choosing a row spotlights it in the picture.
+- **Provenance colour.** Written in KEPTA, from a file, from this computer — a second colour channel that switches itself off, with the reason, when the base has nothing to distinguish.
+- **Search counts its hits and leads you through them.** How many notes match, which one you are on; Enter jumps, Shift+Enter returns, Escape clears the word first.
+- **Forces you can set.** Center force, repel strength, link distance, node size. Turning a slider does not rebuild the world: the picture keeps its place and settles under the new forces, and one click returns the tuned defaults.
+- **Concepts are nodes in the force field too**, and an agent writing a memory is visible in the dashboard's own number.
+- **Keyboard parity**: arrow keys reach concepts, Enter opens what a click opens.
+
+### Changed
+- **A term must be more than the title of the one note carrying it.** Repeating your own filing is an echo, not knowledge, and the graph leaves it out — on a 400-note base that turned 420 "concepts" and 1 400 lines into 20 concepts and 500. The write path is unchanged; what you stored stays stored.
+- **Repulsion is weighted against the link springs, not against nothing.** The repelling force carried a stray integration factor and delivered a sixtieth of its own constant, so topics pressed together like petals and the knob moved nothing. On the same 400-note base the topics now stand apart as islands with white space between them.
+- **The tree folds itself to fit its canvas.** 400 notes are 425 rows and no screen holds that; the deepest groups now step behind a `×N` badge, the balance line says how many notes are gathered, and one click opens everything again. The old behaviour clipped rows off the canvas in silence.
+- **Fit-to-view really frames the whole graph** — including the strip the legend takes at the bottom, which used to sit on top of the lowest notes.
+- Similarity is on request, and the head line counts only what is in the picture.
+
 ### Fixed
-- **The supply-chain section named hashes, a licence and a version that do not match the repository.** `SECURITY-ENTERPRISE.md` promised installers published with **SHA-256 checksums** — what the public release actually carries is electron-builder's `latest-mac.yml` with **SHA-512** digests, no separate checksum files, and macOS arm64/x64 as the only installers that exist. The same document called the engine "**AGPL-3.0 open source**"; the engine is BUSL-1.1 source-available, which is not an OSI-approved open-source licence, and each release converts to AGPL-3.0-or-later four years after release. That label had also survived in `THIRD-PARTY-NOTICES.md` — including a licence-history line with the wrong dates, while the registry reads MIT 2.6.4–2.10.3, AGPL-3.0-or-later 2.12.0–2.13.21, BUSL-1.1 from 2.13.22 — and in `.github/FUNDING.yml`, and in the Paddle support blurb in `tools/lizenz-worker/CHECKLISTE.md`, which is text meant to be copied into a ticket. "Source maps are excluded from every package; shipped code is minified bundles" now names where each is true: `!**/*.map` in `electron-builder.json`, no `sourceMappingURL` in the app or npm artifacts, minification on the app's server bundle. The document's own stamp said "Version 2.13, September 2026" while the app is 3.1.2.
+- **A base of ~400 notes opened as a black canvas.** The spring net diverged: a concept with twenty leaves threw itself further out every frame, the world ended at 4,5e13 units and the view fitted to 2 % of an empty field. A speed limit of three rest-lengths per frame stops the fall; collision stays uncapped.
+- **A filter left the camera where it was**: the head line said eight notes while the picture showed nothing. The view now returns everything to the frame and centres it.
+- **A partial response from the file-scan preview threw the whole dialog away** (twice: the list and the status route).
+- **At phone width the graph was given an 80-pixel strip**; the shell now collapses its side rail instead.
+- The supply-chain section of the security notes named hashes, a licence and a version that did not match what is published; it now describes the artefacts that actually exist (electron-builder `latest-mac.yml` with SHA-512, BUSL-1.1 source-available engine, macOS arm64/x64 installers).
+
+### Security
+- **Private notes are no longer readable or deletable through the id paths.** An agent — or anything talking to the MCP door — can neither see nor remove a memory marked private; the check sits in front of the store, not in the UI.
 
 ## [3.1.2] — 2026-10-02
 
