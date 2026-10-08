@@ -96,8 +96,24 @@ export const IDEAL_LINK = 45;
  * Blättern instabil und die Welt wächst pro Bild um den Faktor zwei.
  */
 export const MAX_VERZUG = IDEAL_LINK * 3;
-/** Staerke der Abstossung pro Knoten. */
-export const REPULSION = 3400;
+/**
+ * Stärke der Abstossung pro Knoten — im selben Impulsmaß wie die Federn.
+ *
+ * Vorher stand hier 3400, und nur diese Kraft wurde zusätzlich mit DT (0,016)
+ * multipliziert: geliefert hat sie 54. Eine Feder, die zwanzig Einheiten über
+ * ihrer Ruhelänge hängt, zieht in demselben Bild mit 11; ein Nachbar stößt im
+ * selben Moment mit 0,02 ab. Das Bild war eine Spirale mit Federn, kein
+ * Kraftfeld: gemessen am 400-Notizen-Bestand standen die zwanzig Themen als
+ * Blumen mit aneinanderliegenden Blütenblättern, und wer die Abstoßung
+ * vervierfachte, sah dasselbe Bild (Zoom 67 → 68 %, Tinte 8,77 → 8,79 %).
+ * Ein Regler, der nichts bewegt, ist kein Regler.
+ *
+ * 450 ist das Achtfache des alten Lieferwerts und der Punkt, an dem dieselbe
+ * Fläche weißen Raum zwischen den Themen zeigt — Inseln wie Buchhaltung/Elena
+ * Weiss, Apotheke/Fahrrad, Nordwind/Drucker stehen auseinander, ohne dass die
+ * Knoten unter die Lesbarkeit schrumpfen (Zoom 59 %, Tinte 7,5 %).
+ */
+export const REPULSION = 450;
 /**
  * Weiche Feder zum Ursprung — verhindert Abdriften, ohne zu stauchen.
  *
@@ -105,11 +121,14 @@ export const REPULSION = 3400;
  * Schwerkraft stellt sich der Gleichgewichtsradius auf R ~ N^(1/3) ein, gleiche
  * Dichte braucht aber R ~ N^(1/2): der Graph waere mit wachsendem Wissen immer
  * dichter geworden — dieselbe Beschwerde wie bei der Wand, nur ohne Wand.
+ *
+ * Zieht mit der Abstossung im Gleichschritt hoch: die Weltgröße ist ihr
+ * Verhältnis. Nur die Abstossung zu verstärken bläst das Feld auf — gemessen an
+ * derselben Sonde (8 Begriffe à 50 Notizen): Welt 1 376 × 1 473 statt
+ * 952 × 1 026, Zoom 40 % statt 57 %.
  */
-export const GRAVITY = 0.00055;
+export const GRAVITY = 0.0045;
 export const DAMPING = 0.82;
-/** Schrittweite der Integration. */
-export const DT = 0.016;
 export const ALPHA_DECAY = 0.0165;
 export const ALPHA_MIN = 0.006;
 /** Grundstaerke der Federn; die Gewichtung nach Grad kommt aus linkStaerken(). */
@@ -832,8 +851,8 @@ export function stepSimulation(sim: Simulation): void {
     kraft.fx = 0;
     kraft.fy = 0;
     repulsionOn(baum, n, REPULSION * (sim.krafte.abstossung ?? 1), THETA, kraft);
-    n.vx += kraft.fx * DT * alpha;
-    n.vy += kraft.fy * DT * alpha;
+    n.vx += kraft.fx * alpha;
+    n.vy += kraft.fy * alpha;
   }
 
   for (let i = 0; i < edges.length; i++) {

@@ -40,6 +40,7 @@ import {
   setDragging,
   linkStaerken,
   vorspannen,
+  type SimKrafte,
   COLLIDE_PADDING,
   ALPHA_MIN,
   REPULSION,
@@ -1987,4 +1988,75 @@ describe("Das Feld wird vorgespannt, bevor es zeigt", () => {
     expect(zweite.nodes.map((n) => [n.x, n.y])).toEqual(sim.nodes.map((n) => [n.x, n.y]));
   });
 
+});
+
+// #95: Was ein gutes Bild ist, wird gemessen, bevor an Zahlen gedreht wird.
+//
+// Zwei Haufen, die nichts teilen, müssen im Bild *auseinander* stehen — sonst
+// liest die Fläche als ein Knäuel, egal wie viele Notizen sie trägt. Der Maßstab
+// ist die eigene Ausdehnung der Haufen, nicht eine absolute Zahl: was zählt, ist
+// der Abstand der Schwerpunkte gegen die Breite eines Haufens.
+describe("Zwei Haufen, die nichts teilen, stehen auseinander", () => {
+  function zweiHaufen(groesse = 12) {
+    const ids: string[] = ["__ent:a", "__ent:b"];
+    const kanten: LayoutEdge[] = [];
+    for (let i = 0; i < groesse; i++) {
+      ids.push(`a${i}`, `b${i}`);
+      kanten.push({ source: `a${i}`, target: "__ent:a", strength: 1, real: true });
+      kanten.push({ source: `b${i}`, target: "__ent:b", strength: 1, real: true });
+    }
+    return { ids, kanten };
+  }
+  function maß(sim: Simulation) {
+    const schwerp = (prae: string) => {
+      const knoten = sim.nodes.filter((n) => n.id.startsWith(prae));
+      return {
+        x: knoten.reduce((s, n) => s + n.x, 0) / knoten.length,
+        y: knoten.reduce((s, n) => s + n.y, 0) / knoten.length,
+      };
+    };
+    const a = schwerp("a");
+    const b = schwerp("b");
+    const streuung = (prae: string, mittig: { x: number; y: number }) =>
+      sim.nodes.filter((n) => n.id.startsWith(prae)).reduce((s, n) => s + Math.hypot(n.x - mittig.x, n.y - mittig.y), 0) /
+      sim.nodes.filter((n) => n.id.startsWith(prae)).length;
+    const weit = Math.hypot(b.x - a.x, b.y - a.y);
+    const eng = Math.max(streuung("a", a), streuung("b", b));
+    const g = layoutBounds(sim.nodes);
+    return {
+      trennung: weit / eng,
+      abstand: weit,
+      weite: eng,
+      zoom: fitTransform({ minX: g.minX, minY: g.minY, maxX: g.maxX, maxY: g.maxY }, { w: 1130, h: 710 }).k,
+    };
+  }
+  function feld(krafte?: SimKrafte) {
+    const w = zweiHaufen();
+    const sim = createSimulation(w.ids, w.kanten, () => 6, krafte);
+    vorspannen(sim, 900);
+    return maß(sim);
+  }
+
+  it("stellt die Schwerpunkte mindestens eine Haufenbreite auseinander", () => {
+    const m = feld();
+    expect(m.trennung, `Trennung ${m.trennung.toFixed(2)} — die Haufen liegen ineinander`).toBeGreaterThanOrEqual(1);
+  });
+
+  it("hält die Welt in einem Maßstab, der die Knoten zeigt", () => {
+    const m = feld();
+    expect(m.zoom, `Zoom ${Math.round(m.zoom * 100)} % — zu weit weg, um etwas zu lesen`).toBeGreaterThan(0.25);
+  });
+
+  it("rückt die Haufen mit jedem Schritt der Abstoßung weiter auseinander", () => {
+    // Der Regler, der auf diese Kurve gesetzt wird, darf keine Stelle haben, an
+    // der er nichts bewegt — und keine, an der er rückwärts bewegt. Gemessen
+    // wird der absolute Abstand der Schwerpunkte, nicht das Verhältnis: bei
+    // schwacher Abstoßung ziehen die Federn die Haufen enger zusammen, und das
+    // Verhältnis wächst, obwohl nichts weiter weg gerückt ist.
+    const stufen = [0.5, 1, 2, 4, 8];
+    const kurve = stufen.map((stufe) => feld({ abstossung: stufe }).abstand);
+    for (let i = 1; i < kurve.length; i++) {
+      expect(kurve[i], `Abstoßung ${stufen[i]}×: ${kurve.map((k) => k.toFixed(0)).join(" → ")}`).toBeGreaterThan(kurve[i - 1]! * 1.05);
+    }
+  });
 });

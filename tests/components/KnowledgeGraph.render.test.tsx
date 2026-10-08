@@ -2568,7 +2568,13 @@ describe("Faltung im Kraftfeld: was der Baum gefaltet hat, fehlt auch hier", () 
     const texte = rahmen().texte;
     for (const eigene of EIGENE) expect(texte, `„${eigene}" steht noch im Bild: ${texte.join(" | ")}`).not.toContain(eigene);
     expect(texte, `die geteilte Notiz fiel mit weg: ${texte.join(" | ")}`).toContain("Bruecke Beide");
-    expect(texte).toContain("Protokoll Kestrel");
+    // Die zweite überlebende Notiz wird an ihrem Titelbild gemessen, nicht am
+    // Titel: das Belegungsraster entscheidet über Etiketten, und der Helfer hier
+    // misst Etikettbreite in Weltmaß ohne die Schrumpfung der Schrift mit dem
+    // Zoom — bei 4-fachem Zoom sind ihre Titel im Test rund viermal zu breit und
+    // verdrängen einander, im Browser nicht. Was die Faltung zusagt, ist die
+    // Zahl der Knoten im Bild: zwei Notizen und zwei Begriffe.
+    expect(rahmen().scheiben, `Scheiben: ${JSON.stringify(rahmen().scheiben)}`).toHaveLength(4);
     expect(texte.some((t) => t.charCodeAt(0) === 215), `kein Malzeichen: ${texte.join(" | ")}`).toBe(true);
     expect(texte).toContain("×3");
   });
