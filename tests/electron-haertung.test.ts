@@ -59,3 +59,30 @@ describe("Electron-Haertung", () => {
     expect(quelle).toMatch(/hostname\s*===\s*['"]127\.0\.0\.1['"]/);
   });
 });
+
+  // Die App liefert keine Web-Schrift: index.css nutzt nur System-Schriften über
+  // Variablen, kein @font-face, kein Schrift-Link in index.html. Die zwei Fremden
+  // im Inhalts-Sicherheitsplan waren deshalb totes Einverständnis — jemand hängt
+  // ein <link> an, und das Fenster holt beim ersten Start Schriften bei Google ab.
+  // Bei einer App, deren Versprechen „läuft ganz auf diesem Rechner" ist, ist das
+  // kein Formelfrage.
+  describe("Der Inhalts-Sicherheitsplan holt keine Schrift von einem Fremdrechner", () => {
+    const csp = quelle.match(/'Content-Security-Policy': \[(`[^`]+`)\]/)?.[1] ?? "";
+
+    it("die Richtschnur steht überhaupt da", () => {
+      expect(csp.length, "kein CSP-String in electron.js gefunden").toBeGreaterThan(40);
+    });
+
+    it("nennt keine Schrift-Auslieferung im style- und font-Ziel", () => {
+      expect(csp).not.toMatch(/fonts\.googleapis\.com/);
+      expect(csp).not.toMatch(/fonts\.gstatic\.com/);
+      const fontSrc = csp.match(/font-src([^;]*)/)?.[1] ?? "";
+      expect(fontSrc, `font-src erlaubt weiter: ${fontSrc.trim()}`).not.toMatch(/https?:/);
+    });
+
+    it("lässt die eingebetteten Schriften und Daten-Quellen zu", () => {
+      const fontSrc = csp.match(/font-src([^;]*)/)?.[1] ?? "";
+      expect(fontSrc).toContain("'self'");
+      expect(fontSrc).toContain("data:");
+    });
+  });

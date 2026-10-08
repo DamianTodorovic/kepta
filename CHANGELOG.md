@@ -1,5 +1,8 @@
 ## [Unreleased]
 
+### Security
+- **The window can no longer fetch a webfont from a stranger.** The content policy allowed `fonts.googleapis.com` and `fonts.gstatic.com` although the app ships no webfont at all — only system fonts through CSS variables. On an app whose promise is that everything happens on this machine, an unused permission is still an open door: one added `<link>` and the first launch pulls type from Google. The hardening test fails if a font host comes back. Measured on the running 3.1.3: the app holds exactly one socket — `127.0.0.1:<port>` — and no outbound connection at all; the tightened policy takes effect with the next build.
+
 ### Changed
 - **The README no longer sells a tier that is gone.** It offered „KEPTA Pro“, a free „Pro day“ and „Buying Pro“ — what exists is KEPTA Core (free) and KEPTA Enterprise (by agreement, the key issued personally). The licensing section says that now, and a docs test fails on any dead-tier wording.
 - **The test canvas stopped lying about text width.** The jsdom stand-in measured every string at a fixed 6 px per character, whatever `ctx.font` said. The graph shrinks its labels with the zoom, so labels were up to four times too wide in tests and pushed neighbours out of slots the browser would have kept. It now measures with the font that is set (0.5 × size per character, 12 px as the default), which is exactly the size the label tests were calibrated at — all 154 graph render checks still pass, and `tests/helfer/canvas.test.ts` pins the proportionality.
