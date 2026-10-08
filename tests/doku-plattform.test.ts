@@ -42,4 +42,15 @@ describe("README: kein versprochener Installer, den es nicht gibt", () => {
     expect(schild).not.toContain("Windows");
     expect(schild).not.toContain("Linux");
   });
+
+  // „Gebaut" und „geliefert" sind zwei verschiedene Sätze. Ein Absatz über
+  // Windows-Pfade im Richtlinien-Leser ist wahr, wenn daneben steht, dass die App
+  // nur macOS verlässt — sonst liest jemand eine Windows-App heraus, die es nicht gibt.
+  it("nennt Windows und Linux nur zusammen mit dem Lieferstand", () => {
+    const unverdraeumelt = zeilen
+      .filter((z) => /\bWindows\b|\bLinux\b/.test(z))
+      .filter((z) => !/ship|publish|nur macOS|only|self-build|build it|engine|when you build|no app file/i.test(z))
+      .map((z) => z.trim().slice(0, 90));
+    expect(unverdraeumelt).toEqual([]);
+  });
 });

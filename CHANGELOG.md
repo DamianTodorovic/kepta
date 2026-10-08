@@ -1,6 +1,7 @@
 ## [Unreleased]
 
 ### Changed
+- **Built is not shipped.** The README named Windows and Linux paths in the policy reader and the key-storage paragraph without saying the app leaves only for macOS. Both sentences now carry the shipping state, and the platform test fails any Windows/Linux claim that does not.
 - **The README stops promising installers that are not shipped.** The download table offered Windows files (`KEPTA-<version>-win.exe`, "take this one if unsure") and a Windows first-launch guide, while every published release carries macOS only. The table now says which platforms actually get an app, keeps the self-build route for Windows and Linux as a source build, and a test (`tests/doku-plattform.test.ts`) fails if a published-installer claim comes back.
 
 ### Fixed
