@@ -368,7 +368,7 @@ That is deliberate, not a giveaway: anyone who has to prove that nothing leaks s
 
 ## ⚡ Getting started
 
-**Just want to use it.** Download the file for your system from [Releases](https://github.com/DamianTodorovic/kepta/releases/latest) and open it. The table below says which one. First launch needs one extra click because the app is not code-signed — that is explained per system further down.
+**Just want to use it.** Download the macOS build from [Releases](https://github.com/DamianTodorovic/kepta/releases/latest) and open it — the table below names the right file for your Mac and says plainly what Windows and Linux do not get. First launch needs one extra approval because the app is not code-signed; *First launch on macOS* further down says exactly how.
 
 **Connect it to your assistants.** One click inside the app, or one block of text into one file. No path, nothing to build — `npx` fetches the server the first time it is needed:
 
@@ -381,10 +381,9 @@ That is the whole connection, and it works without the desktop app: `npx -y kept
 **Run it from source.** The repository is private — you need access as a licensee. Node 22.13 or newer:
 
 ```bash
-git clone git@github.com:DamianTodorovic/kepta-enterprise.git && cd kepta-enterprise
+git clone git@github.com:DamianTodorovic/kepta-app.git && cd kepta-app
 npm install && npm test && npm run eval
-npm run dev        # http://localhost:3000
-npm run electron   # desktop shell (optional)
+npm run app        # server on http://localhost:3000 and the desktop window
 ```
 
 ### 📦 Which file do I need?
