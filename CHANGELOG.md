@@ -4,6 +4,7 @@
 - **The README stops promising installers that are not shipped.** The download table offered Windows files (`KEPTA-<version>-win.exe`, "take this one if unsure") and a Windows first-launch guide, while every published release carries macOS only. The table now says which platforms actually get an app, keeps the self-build route for Windows and Linux as a source build, and a test (`tests/doku-plattform.test.ts`) fails if a published-installer claim comes back.
 
 ### Fixed
+- **The version bump had corrupted two dependencies in the lockfile.** Counting 3.1.2 → 3.1.3 replaced the string wherever it stood, so `bytes` and `@jridgewell/resolve-uri` ended up on versions that the public registry has never published; a clean `npm ci` (the CI's first step) died with `notarget`. Both entries now name the real published version, and `scripts/pruefe-lock.mjs` — run by `npm test` before the suite — reports every dependency whose lockfile version differs from what is installed.
 - **A release build no longer fakes a broken test suite.** Packaging rebuilds the native SQLite module for Electron; the next `npm test` then failed hundreds of tests whose visible message was a trailing `afterEach` line, not the cause. `npm test` now checks the module loads under the running Node first and, if it does not, names the one remedy instead of drowning the run.
 
 
