@@ -3,7 +3,7 @@
 // lesen); nicht-team-Scopes bleiben exakt wie der ALLOW_ALL-Default
 // (Regressionsschutz für alles bisherige). Plus /api/team.
 //
-// Bis 10.10.2026 verlangte diese Matrix zusätzlich eine Business-/Enterprise-
+// Bis 09.10.2026 verlangte diese Matrix zusätzlich eine Business-/Enterprise-
 // Lizenz. Die herunterladbare App hat kein Schlüssel-System mehr, also schaltet
 // allein die verwaltete Rollen-Datei — die Fälle hier prüfen genau das.
 import { describe, it, expect, beforeEach } from "vitest";

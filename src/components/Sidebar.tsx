@@ -175,7 +175,7 @@ export function Sidebar({ tags, selectedTags, onSelectTag, onClearTags, currentV
           <div className="min-w-0 flex-1">
             <div className="text-[12.5px] truncate font-semibold tracking-[0.01em]" style={{ color: TEXT_STRONG }}>
               {/* Branding 3.1.1: schlicht KEPTA — keine Stufen-Anzeige mehr.
-                  Seit 10.10.2026 sagt auch die zweite Zeile nichts über Grenzen,
+                  Seit 09.10.2026 sagt auch die zweite Zeile nichts über Grenzen,
                   weil es sie nicht mehr gibt: die App läuft unbegrenzt.
                   Die Versionszahl steht bewusst NICHT in der Sidebar (Damian, 25.9.) —
                   sie bleibt über Systemstatus und /api/health abrufbar. */}

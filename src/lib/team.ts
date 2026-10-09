@@ -17,7 +17,7 @@
 //
 // Geschaltet wird das Ganze allein durch diese Datei. Früher war zusätzlich eine
 // Business-/Enterprise-Lizenz nötig; seit die herunterladbare App kein
-// Schlüssel-System mehr hat (10.10.2026), wäre diese Bedingung eine dauerhafte
+// Schlüssel-System mehr hat (09.10.2026), wäre diese Bedingung eine dauerhafte
 // Sperre eines vorhandenen Werkzeugs — also weg. Nicht-team-Scopes ("local",
 // "user:*", "agent:*") verhält sich diese Policy exakt wie der bisherige Default
 // (immer ja), und ohne Rollen-Datei bleibt team:* dicht: lesen UND schreiben.

@@ -8,7 +8,7 @@
 //
 // Es gibt zwei Dinge: KEPTA Core (kostenlos, unbegrenzt, ohne Schlüssel) und
 // KEPTA Enterprise (nach Vereinbarung, persönlich ausgestellt). Ein Schlüssel
-// gehört nur zu Enterprise. Seit 10.10.2026 hat die herunterladbare App kein
+// gehört nur zu Enterprise. Seit 09.10.2026 hat die herunterladbare App kein
 // Schlüssel-Feld mehr und prüft auch keinen — dieser Code ist das Ausstellungs-
 // und Prüfwerkzeug für Enterprise (`tools/license-studio`,
 // `scripts/generate-license.mjs`, `tools/lizenz-worker`), kein Laufzeitpfad der
@@ -70,7 +70,7 @@ export const EDITIONEN: readonly Edition[] = ["business", "enterprise"];
 
 /**
  * Was ein Schlüssel tragen kann: eine der beiden Stufen, oder „alt" — die
- * Einzelstufe der App, die es seit 10.10.2026 nicht mehr gibt. „alt" lässt sich
+ * Einzelstufe der App, die es seit 09.10.2026 nicht mehr gibt. „alt" lässt sich
  * nicht ausstellen, aber prüfen: sie steht in ausgelieferten Schlüsseln.
  */
 export type Stufe = Edition | "alt";

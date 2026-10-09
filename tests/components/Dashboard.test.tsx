@@ -110,7 +110,7 @@ describe("Dashboard: der leere Zustand", () => {
 });
 
 describe("Dashboard: nichts ist gesperrt", () => {
-  // Die App hat seit 10.10.2026 kein Schlüssel-System und keine Grenzen. Der
+  // Die App hat seit 09.10.2026 kein Schlüssel-System und keine Grenzen. Der
   // Beweis ist nicht „sie zeigt kein Schloss", sondern: sie fragt nirgends nach
   // einer Lizenz, und die Seitenleiste wirbt mit keinem Schlüssel mehr.
   it("läuft vollständig durch, ohne die Lizenzroute je zu befragen", async () => {

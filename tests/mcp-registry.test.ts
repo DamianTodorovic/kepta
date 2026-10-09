@@ -68,7 +68,7 @@ describe("MCP-Registry: der Besitznachweis", () => {
 // Die Registry-Beschreibung ist eine Installationsanweisung, kein Tagebuch:
 // `npx kepta-mcp@<version>` muss es auf npm wirklich geben. App und ihr eigenes
 // npm-Bündel wandern zusammen (3.1.5), die Registry-Datei darf nur eine
-// veröffentlichte Engine-Version nennen. Stand gemessen 10.10.2026: der Publish-
+// veröffentlichte Engine-Version nennen. Stand gemessen 09.10.2026: der Publish-
 // Lauf `37921066342` am Kern-Tag `v3.2.0` (Commit `6fe7955`) meldet
 // `+ kepta-mcp@3.2.0` und „kepta-mcp@3.2.0 ist auf npm sichtbar"; die Registry
 // selbst antwortet im selben Lauf mit „Registry-Eintrag aktualisiert".

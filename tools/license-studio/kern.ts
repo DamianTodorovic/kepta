@@ -9,7 +9,7 @@
 // und gilt bei jeder weiteren Prüfung als gesperrt.
 //
 // Ausgestellt wird nur KEPTA Enterprise (Vertrag, persönlich). Die App selbst
-// hat seit 10.10.2026 kein Schlüssel-Feld mehr und läuft unbegrenzt — ein
+// hat seit 09.10.2026 kein Schlüssel-Feld mehr und läuft unbegrenzt — ein
 // Schlüssel weist den Vertrag aus, er schaltet nichts frei.
 import fs from "node:fs";
 import path from "node:path";

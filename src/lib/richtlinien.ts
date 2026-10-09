@@ -8,7 +8,7 @@
 // Kein Telefonieren nach Hause, keine Zusatz-Infrastruktur — eine Datei.
 //
 // Früher durfte die Datei auch eine Lizenz vor eintragen (air-gapped
-// Ausrollung). Die herunterladbare App hat seit 10.10.2026 kein
+// Ausrollung). Die herunterladbare App hat seit 09.10.2026 kein
 // Schlüssel-System mehr: zwei solche Felder in einer bestehenden Datei werden
 // weiterhin ignoriert (Whitelist unten), die App stürzt nicht darüber ab.
 //

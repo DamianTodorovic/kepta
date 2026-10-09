@@ -277,7 +277,7 @@ describe("Today, Widersprüche, Dossier", () => {
 
 describe("alle Routen laufen ohne alles", () => {
   // Kein Schlüssel, keine Stufe, kein Zähler: diese Routes answers simply 200.
-  // Der Plan-Kopf ist mit den Limits weg (10.10.2026) — was blieb, ist die
+  // Der Plan-Kopf ist mit den Limits weg (09.10.2026) — was blieb, ist die
   // Aussage, dass nichts gesperrt ist.
   it("Briefing, Dossier, Audit und Shield antworten jeder Installation", async () => {
     const ohne = createApp(store, { umgebung: { home, plattform: "darwin", claude: () => null } });

@@ -500,7 +500,7 @@ describe("Seitenleiste", () => {
     const basis = { tags: [], selectedTags: [], onSelectTag: vi.fn(), onClearTags: vi.fn(), currentView: "today" as const, onNavigate: vi.fn(), totalMemories: 3, isFocusMode: false, toggleFocusMode: vi.fn() };
     render(<AuthProvider><ThemeProvider><Sidebar {...basis} /></ThemeProvider></AuthProvider>);
     // Stufen-Modell (Damian 24.9.): die App heißt schlicht KEPTA. Seit
-    // 10.10.2026 steht darunter auch kein Countdown und kein Werbe-Satz mehr —
+    // 09.10.2026 steht darunter auch kein Countdown und kein Werbe-Satz mehr —
     // es gibt weder einen gratis ersten Tag noch einen Schlüssel.
     expect(screen.getAllByText(/^KEPTA$/).length).toBeGreaterThan(0);
     expect(screen.getByText(/local · private · encrypted/)).toBeTruthy();

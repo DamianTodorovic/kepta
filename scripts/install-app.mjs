@@ -77,7 +77,7 @@ if (!gesund) {
 }
 console.log(`\nInstalliert: KEPTA ${version} (${process.arch})`);
 // Die App meldet ihre Version, sonst nichts: ein Schlüssel-System gibt es in
-// dieser App nicht mehr (10.10.2026), also prüft auch niemand einen Schlüssel.
+// dieser App nicht mehr (09.10.2026), also prüft auch niemand einen Schlüssel.
 console.log(`Anzeige in der App: KEPTA ${gesund.version} · unbegrenzt`);
 if (gesund.version !== version) {
   console.error(`ACHTUNG: die laufende App meldet ${gesund.version}, gebaut wurde ${version}.`);

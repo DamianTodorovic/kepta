@@ -3,7 +3,7 @@
 // Verwaltete Konfiguration + zentrale Richtlinien (src/lib/richtlinien.ts und
 // ihre Durchsetzung im Server): eine Datei der Organisation steuert die App —
 // Cloud-Chat zu, Rechner-Scan zu, Shield an. Eine Licence in der Datei kennt die App
-// nicht mehr (10.10.2026) — sie wird ignoriert, nicht geahnt.
+// nicht mehr (09.10.2026) — sie wird ignoriert, nicht geahnt.
 // Fehlt oder ist die Datei kaputt, bleibt alles beim Alten.
 import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
 import { tmpdir } from "node:os";
@@ -94,7 +94,7 @@ describe("liesVerwaltet", () => {
 });
 
 describe("eine verwaltete Datei mit alten Lizenz-Feldern", () => {
-  // Die herunterladbare App hat seit 10.10.2026 kein Schlüssel-System. Eine
+  // Die herunterladbare App hat seit 09.10.2026 kein Schlüssel-System. Eine
   // Organisationen-Datei, die noch license_name/license_key trägt (air-gapped
   // Ausrollungen vor diesem Stand), darf die App deshalb weder blockieren noch
   // irgendwas "freischalten": die Felder werden ignoriert, der Rest gilt.

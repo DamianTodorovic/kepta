@@ -1,6 +1,6 @@
 # KEPTA Selbstbedienungs-Checkout — Setup-Checkliste (30–60 Minuten)
 
-> **Stand 10.10.2026: dieser Weg ist zugestellt, nicht gelöscht.** Die
+> **Stand 09.10.2026: dieser Weg ist zugestellt, nicht gelöscht.** Die
 > herunterladbare App hat kein Schlüssel-Feld, keine Grenzen und kein
 > Upgrade-Panel mehr; die Einzelstufe, für die diese Checkliste angelegt wurde,
 > gibt es nicht mehr. Schlüssel gehören nur zu KEPTA Enterprise und werden von

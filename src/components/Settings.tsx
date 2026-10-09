@@ -142,7 +142,7 @@ export function Settings() {
   const mcpAusApp = health?.mcp?.stdio ? JSON.stringify({ mcpServers: { kepta: health.mcp.stdio } }, null, 2) : null;
 
   // Organisation: die verwaltete Konfiguration für das Admin-Panel. Eine Lizenz
-  // gehört hier nicht mehr her — die App hat keine (10.10.2026).
+  // gehört hier nicht mehr her — die App hat keine (09.10.2026).
   const [orgInfo, setOrgInfo] = useState<{
     managed: boolean;
     policies: Record<string, string>;

@@ -6,7 +6,7 @@
 // die Ausstellung im KV und schickt dem Kunden eine fertige Mail. Er sieht nie
 // eine Datenbank und kennt keine Kundeninhalte.
 //
-// Stand 10.10.2026: Die kostenlose App hat kein Schlüssel-Feld mehr und läuft
+// Stand 09.10.2026: Die kostenlose App hat kein Schlüssel-Feld mehr und läuft
 // unbegrenzt; ein Schlüssel gehört nur zu KEPTA Enterprise und wird heute von
 // Hand verkauft (License Studio). Dieser Worker ist die Automatisierung für den
 // Fall, dass ein Checkout dazukommt — er stellt nur die Team-Form von KEPTA

@@ -129,7 +129,7 @@ describe("Sidebar: Fusszeile", () => {
     expect(screen.getAllByText(/^KEPTA$/).length).toBeGreaterThan(0);
     expect(screen.getByText(/local · private · encrypted/)).toBeTruthy();
     // Die alte Fußzeile warb mit „A key removes the limits". Es gibt weder
-    // Grenzen noch Schlüssel (10.10.2026), also darf kein Wort davon bleiben.
+    // Grenzen noch Schlüssel (09.10.2026), also darf kein Wort davon bleiben.
     expect(screen.queryByText(/key|limit|unlimited/i)).toBeNull();
   });
 

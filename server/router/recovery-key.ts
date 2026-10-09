@@ -3,7 +3,7 @@
 //
 // Er wohnt seit jeher in einer Zeile mit der alten Lizenz-Route, ist aber davon
 // unabhängig: die Daten waren nie Geisel einer Bezahlung. Seit die kostenlose
-// App gar kein Schlüssel-System mehr hat (10.10.2026) steht er allein da — und
+// App gar kein Schlüssel-System mehr hat (09.10.2026) steht er allein da — und
 // seine drei Türsteher bleiben, denn sie schützen den Schlüssel, nicht einen Plan:
 // nur dieser Host (gegen DNS-Rebinding), nur diese Herkunft, und ein Kopf, den
 // eine fremde Seite ohne Vorabfrage nicht senden kann.
