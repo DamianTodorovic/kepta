@@ -1,6 +1,6 @@
 # KEPTA — Security & Enterprise Deployment Notes
 
-*For procurement, IT departments and security review. App 3.1.2, October 2026.*
+*For procurement, IT departments and security review. App 3.1.5 · engine 3.2.0 on npm, October 2026.*
 *German-speaking organizations: the same content applies verbatim — the architecture has no cloud component to audit.*
 
 ## 1. Where the data lives

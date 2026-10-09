@@ -1,5 +1,8 @@
 ## [Unreleased]
 
+### Changed
+- **The engine pin follows npm.** The core repo published `kepta-mcp@3.2.0` on 10.10.2026 (run `37921066342`, tag `v3.2.0` = commit `6fe7955`, provenance on, MCP registry answered „Registry-Eintrag aktualisiert"), so `server.json` and the constant in `tests/mcp-registry.test.ts` now name **3.2.0** instead of 3.1.2 — the file tells a buyer which `npx kepta-mcp@…` really exists, and it may not promise one that was never published. `SECURITY-ENTERPRISE.md` also stopped naming the app as 3.1.2. The app itself and its own npm bundle stay at **3.1.5** — those two numbers travel together and are guarded separately.
+
 ### Removed
 - **Pro is gone from the key tooling as well** (Damian, 9.10.2026: „Pro gibt es nicht mehr nirgends"). `src/core/lizenz.ts` no longer carries a single-user plan: what can be issued is `business` or `enterprise`, and `EDITIONS_LABEL` names both **KEPTA Enterprise** — the product name never appears beside the dead tier again. `signiere()` now requires the plan instead of defaulting to it, so no call site can quietly issue what nobody sells.
 - **The studio's plan picker lost the old tier and its prices.** `tools/license-studio/index.html` offers the two shapes of a KEPTA Enterprise agreement (team with seats, organization by agreement); `main.ts` maps anything unknown to `enterprise` rather than to the plan that no longer exists; `build.mjs` describes the app as issuing KEPTA Enterprise keys.
