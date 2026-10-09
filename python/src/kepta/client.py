@@ -55,6 +55,13 @@ def discover_url() -> str:
     return DEFAULT_URL
 
 
+def network_reason(error: BaseException) -> str:
+    """Why the socket did not answer, in the operating system's own words."""
+    reason = getattr(error, "reason", None) or error
+    text = getattr(reason, "strerror", None) or str(reason) or type(reason).__name__
+    return str(text).strip().rstrip(".!").lower()
+
+
 @dataclass(frozen=True)
 class Memory:
     """A memory. Timestamps are milliseconds since the epoch.
@@ -164,10 +171,14 @@ class KeptaClient:
             detail = e.read().decode("utf-8", "replace")[:400]
             raise KeptaError(f"{method} {path} failed ({e.code}): {detail}") from e
         except (URLError, TimeoutError) as e:
+            # `from None`, weil die Rahmen von urllib und socket zwischen dem
+            # Nutzer und diesem Satz standen (69 Zeilen, Befund A1-07). Der Grund
+            # selbst steht in der Meldung.
             raise KeptaError(
-                f"KEPTA at {self.url} is unreachable. Is the server running? "
-                f"Otherwise set KEPTA_URL. Cause: {e}"
-            ) from e
+                f"KEPTA at {self.url} is not answering ({network_reason(e)}). "
+                "Start the server (the KEPTA app, or npm run dev in the core) "
+                "or set KEPTA_URL to the running address."
+            ) from None
 
     # ---------- Reading ----------
 

@@ -12,6 +12,8 @@ pip install kepta
 
 ## In thirty seconds
 
+A running KEPTA on this machine is the precondition: the desktop app, or `npm run dev` in the [open core](https://github.com/DamianTodorovic/kepta). `pip install kepta` brings the client, never a server.
+
 ```python
 from kepta import KeptaClient
 
@@ -33,26 +35,33 @@ Full text and graph work immediately. The vector track also finds what is worded
 ollama pull nomic-embed-text
 ```
 
-Only then does `search("what do I cook with pasta")` find the carbonara recipe, which does not contain the word *pasta* at all. Without the model, `hit.vector_score` stays at `0.0` and search remains lexical — not an error, just fewer hits on paraphrased questions. How to tell:
+Without the model, `hit.vector_score` stays at `0.0` and search remains lexical — not an error, just fewer hits on paraphrased questions. How to tell:
 
 ```python
 kepta.health()["embeddings"]     # {'total': 128, 'embedded': 128, ...} — or zeros everywhere
 ```
 
+**What the model does and does not buy you — measured, with `nomic-embed-text` on the note above plus six unrelated ones.** `search("carbonara without cream")` puts the recipe first, vector similarity `0.75`. A paraphrase that shares **no word** with the note is not found: `search("what do I cook with pasta")` leaves the recipe at `0.51`, under the vector floor of `0.58` (`src/core/engine.ts`, `VECTOR_FLOOR`), while a note that merely happens to contain the word "Pasta" wins at `0.59`. In that case the full-text leg answers — it matches the one word question and note do share.
+
+Trying a bigger multilingual model does not rescue this example either: measured with `bge-m3` on the same seven notes, the word-overlap query still ranks first (`0.77`) and the paraphrase still falls below the floor (`0.48`). What changed was the noise — irrelevant notes dropped from `0.58-0.59` to under `0.42`, so the leg returns nothing instead of something wrong. One caveat if you switch: `VECTOR_FLOOR` is calibrated for `nomic-embed-text`, and every model puts its similarities on its own scale.
+
 ## Why this is interesting
 
 **The same memory as your agents.** Claude Desktop and Cursor talk to the same database over MCP. What your Python script writes, Claude knows in its next answer.
 
-**Memories age.** Each one has a type, a validity window and a confidence score. When someone moves house, the new address supersedes the old one — the old one stays as history and drops in the ranking. Contradictions do not pile up.
+**Memories age.** Each one has a type, a validity window and a confidence score. When someone moves house, you name the successor: the new address supersedes the old one, the old one stays as history and drops in the ranking. Contradictions do not pile up.
 
 ```python
 old = kepta.save("Home", "Alex lives in Hamburg.")
-kepta.update(old.id, valid_to=1788400000000)      # expired from this point on
-kepta.save("Home, current", "Alex now lives in Leipzig.")
+new = kepta.save("Home, current", "Alex now lives in Leipzig.")
 
-m = kepta.list()[0]
-m.is_expired, m.is_superseded                      # state right on the object
+kepta.forget(old.id, mode="supersede", supersede_by=new.id)
+
+home = next(m for m in kepta.list() if m.id == old.id)   # list() runs by last change, so pick by id
+home.is_superseded, home.is_expired                 # True, False — state right on the object
 ```
+
+Superseding is an act you name, not something the server does on its own. The window on its own is `kepta.update(old.id, valid_to=...)` — a moment in milliseconds, after which `is_expired` reads `True` while `is_superseded` stays `False`. For the pairs you did not name: `consolidate(dry_run=False)`.
 
 **No dependencies.** Standard library only. A memory that promises privacy should not pull foreign code into your process.
 
@@ -61,16 +70,22 @@ m.is_expired, m.is_superseded                      # state right on the object
 `KeptaClient()` looks in this order:
 
 1. Environment variable `KEPTA_URL`
-2. `~/.kepta/endpoint.json` — the address file KEPTA writes on startup
+2. `~/.kepta/endpoint.json` — the address file the HTTP server writes when it starts (under `KEPTA_DATA_DIR` if you set one)
 3. `http://127.0.0.1:3000` as a fallback for development mode
 
-Step 2 is the important one: a packaged server picks a random port. Being explicit works too, of course:
+Step 2 is the important one: the app picks a random port, so without that file it could not be found at all. Being explicit works too, of course:
 
 ```python
 kepta = KeptaClient("http://127.0.0.1:52341")
 ```
 
-If nothing is running you do not get a cryptic network error but a sentence that says what to do:
+If nothing is running, the client does not dump `urllib` and `socket` at you. What arrives is one sentence naming the address, the reason and what to do:
+
+```text
+kepta.client.KeptaError: KEPTA at http://127.0.0.1:3000 is not answering (connection refused). Start the server (the KEPTA app, or npm run dev in the core) or set KEPTA_URL to the running address.
+```
+
+Or ask first:
 
 ```python
 if not kepta.is_alive():
@@ -96,7 +111,7 @@ if not kepta.is_alive():
 
 ## The server behind it
 
-The client talks to the KEPTA HTTP API on your own machine — start it from the [open core](https://github.com/DamianTodorovic/kepta) (`npm run dev`). It is the same local, encrypted memory the MCP server writes, free with no account and no limits. German notes work as well as English ones: the search stopword list covers both languages.
+The client talks to the KEPTA HTTP API on your own machine — start it from the [open core](https://github.com/DamianTodorovic/kepta) (`npm run dev`), or use the desktop app, which runs the same server. It is the same local, encrypted memory the MCP server writes, free with no account and no limits. The one exception: `npx kepta-mcp`, the stdio server Claude Desktop and Cursor start, opens no HTTP port at all — checked in the published 3.2.0 bundle — so it is not what this client connects to. German notes work as well as English ones: the search stopword list covers both languages.
 
 ## License
 

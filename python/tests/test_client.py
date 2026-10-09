@@ -5,10 +5,12 @@ from __future__ import annotations
 import json
 import threading
 from http.server import BaseHTTPRequestHandler, HTTPServer
+from urllib.error import URLError
 
 import pytest
 
 from kepta import KeptaClient, KeptaError, Memory, SearchHit, discover_url
+from kepta.client import network_reason
 
 CALLS: list[tuple[str, str, dict | None]] = []
 
@@ -235,9 +237,32 @@ def test_forget_delete_und_valid_to(client):
 
 def test_fehler_bei_nicht_erreichbarem_server():
     c = KeptaClient("http://127.0.0.1:9")  # Port 9 nimmt keine Verbindungen an
-    with pytest.raises(KeptaError, match="unreachable"):
+    with pytest.raises(KeptaError, match="not answering"):
         c.health()
     assert c.is_alive() is False
+
+
+def test_netzfehler_ist_ein_Satz_ohne_Netzstapel():
+    # Befund A1-07: der Rat stand als letzte Zeile hinter 69 Zeilen urllib, http
+    # und socket. Ein Satz, der Grund und Adresse nennt, und keine Kette dahinter.
+    c = KeptaClient("http://127.0.0.1:9")
+    with pytest.raises(KeptaError) as fall:
+        c.health()
+    meldung = str(fall.value)
+    assert "\n" not in meldung
+    assert "http://127.0.0.1:9" in meldung
+    assert "connection refused" in meldung
+    assert "KEPTA_URL" in meldung
+    assert fall.value.__cause__ is None
+    assert fall.value.__suppress_context__ is True
+
+
+def test_unbekannter_Host_ohne_strerror_bleibt_bei_der_Sache():
+    # Ein Grund ohne strerror (NameServer-Antwort als Objekt) darf die Meldung
+    # nicht leer laufen lassen.
+    assert network_reason(URLError(RuntimeError("no route to host"))) == "no route to host"
+    assert network_reason(TimeoutError()) != ""
+    assert "\n" not in network_reason(URLError(ConnectionRefusedError(61, "Connection refused")))
 
 
 def test_http_fehler_wird_zu_kepta_error(client):
