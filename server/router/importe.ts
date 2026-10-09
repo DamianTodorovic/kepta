@@ -85,7 +85,7 @@ export function mountImporte(app: express.Express, ctx: AppKontext): void {
  * KI-Verlauf übernehmen: das conversations.json aus dem ChatGPT- oder
  * Claude-Export wird zu Markdown aufbereitet und über die Obsidian-Pipeline
  * importiert (Titel-Dedup: ein erneuter Import aktualisiert statt doppelt).
- * Pro-Feature — deshalb NACH dem Lizenz-Gate registriert (app.ts).
+ * Der teuerste Schreibweg der App: 40mb Body, deshalb hinter der Schreib-Drossel.
  */
 export function mountChatImport(app: express.Express, ctx: AppKontext): void {
   const { store } = ctx;

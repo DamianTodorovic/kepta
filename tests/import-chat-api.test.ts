@@ -2,7 +2,7 @@
 //
 // POST /api/import/chat von Anfang bis Ende: ungültige Eingaben, beide Export-
 // formate, Wiedereinlesen ohne Doppel (Titel-Dedup der Obsidian-Pipeline) und
-// das Lizenz-Gate — der Verlaufsimport ist ein Pro-Feature.
+// die Schreib-Drossel um den 40mb-Body herum.
 import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
 import { tmpdir } from "node:os";
 import path from "node:path";

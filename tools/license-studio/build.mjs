@@ -37,7 +37,7 @@ fs.writeFileSync(path.join(appOrdner, "package.json"), JSON.stringify({
   name: "kepta-license-studio",
   productName: NAME,
   version: "1.0.0",
-  description: "Issue license keys for KEPTA Pro, Business and Enterprise",
+  description: "Issue license keys for KEPTA Enterprise",
   author: "Damian Todorovic",
   main: "main.cjs",
   private: true,

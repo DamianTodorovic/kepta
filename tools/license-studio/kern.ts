@@ -2,18 +2,21 @@
 //
 // Ausstellen, prüfen, sperren, die fertige Nachricht an den Kunden und die
 // Liste der ausgestellten Lizenzen. Signiert und geprüft wird mit
-// src/core/lizenz.ts — genau dem Code, mit dem KEPTA Enterprise beim Kunden
-// prüft. Der Kunde gibt nur Namen und Schlüssel ein, offline. Jede Lizenz
-// bekommt eine eigene Nummer; wird ein Schlüssel weitergegeben, kommt seine
-// Nummer auf die Sperrliste (src/core/sperrliste.ts) und gilt ab dem nächsten
-// KEPTA-Update nicht mehr. Der private Schlüssel kommt als Argument herein;
-// woher, entscheidet main.ts.
+// src/core/lizenz.ts — demselben Code, der auch die Prüfung eines Schlüssels
+// kennt. Der private Schlüssel kommt als Argument herein; woher, entscheidet
+// main.ts. Jede Lizenz bekommt eine eigene Nummer; wird ein Schlüssel
+// weitergegeben, kommt seine Nummer auf die Sperrliste (src/core/sperrliste.ts)
+// und gilt bei jeder weiteren Prüfung als gesperrt.
+//
+// Ausgestellt wird nur KEPTA Enterprise (Vertrag, persönlich). Die App selbst
+// hat seit 10.10.2026 kein Schlüssel-Feld mehr und läuft unbegrenzt — ein
+// Schlüssel weist den Vertrag aus, er schaltet nichts frei.
 import fs from "node:fs";
 import path from "node:path";
-import { type Edition, EDITIONEN, EDITIONS_LABEL, OEFFENTLICHER_SCHLUESSEL, ausGruppen, formatiereNummer, normalisiere, pruefeSchluessel, signiere } from "../../src/core/lizenz";
+import { type Edition, type Stufe, EDITIONEN, EDITIONS_LABEL, OEFFENTLICHER_SCHLUESSEL, ausGruppen, formatiereNummer, normalisiere, pruefeSchluessel, signiere } from "../../src/core/lizenz";
 
 export { EDITIONEN, EDITIONS_LABEL };
-export type { Edition };
+export type { Edition, Stufe };
 
 export const DOWNLOAD = "https://github.com/DamianTodorovic/kepta/releases/latest";
 
@@ -26,8 +29,8 @@ export interface Eintrag {
   notiz: string;
   /** Zeitpunkt als ISO-Text */
   ausgestelltAm: string;
-  /** Die Stufe des Schlüssels — fehlt (alte Einträge), ist es Pro. */
-  edition?: Edition;
+  /** Die Stufe des Schlüssels; „alt" = die frühere Einzelstufe der App. */
+  edition?: Stufe;
   /** Business: die gekaufte Seat-Zahl. */
   seats?: number;
   /** Weitergegeben — steht auf der Sperrliste. */
@@ -53,11 +56,11 @@ export function vorname(name: string): string {
   return anzeigeName(name).split(" ")[0] ?? "";
 }
 
-/** Passt der private Schlüssel zum Prüfschlüssel der App? Sonst wäre jeder ausgestellte Schlüssel wertlos. */
+/** Passt der private Schlüssel zum Prüfschlüssel? Sonst wäre jeder ausgestellte Schlüssel wertlos. */
 export function passtZurApp(privat: string, oeffentlich: string = OEFFENTLICHER_SCHLUESSEL): boolean {
   const probe = "KEPTA License Studio — Selbsttest";
   try {
-    return pruefeSchluessel(probe, signiere(probe, 1, privat), oeffentlich, KEINE_SPERRE).gueltig;
+    return pruefeSchluessel(probe, signiere(probe, 1, privat, "enterprise"), oeffentlich, KEINE_SPERRE).gueltig;
   } catch {
     return false;
   }
@@ -65,7 +68,7 @@ export function passtZurApp(privat: string, oeffentlich: string = OEFFENTLICHER_
 
 /**
  * Stellt einen Schlüssel für Name, Nummer und Stufe aus — und prüft ihn sofort
- * so, wie die App es tut. Ed25519 ist deterministisch: derselbe Name mit
+ * so, wie die Prüfung es tut. Ed25519 ist deterministisch: derselbe Name mit
  * derselben Nummer und Stufe ergibt immer denselben Schlüssel.
  */
 export function stelleAus(
@@ -73,7 +76,7 @@ export function stelleAus(
   nummer: number,
   privat: string,
   oeffentlich: string = OEFFENTLICHER_SCHLUESSEL,
-  edition: Edition = "pro",
+  edition: Edition,
   seats?: number,
 ): string {
   const n = anzeigeName(name);
@@ -81,7 +84,7 @@ export function stelleAus(
   if (n.length > 200) throw new Error("Der Name ist zu lang (höchstens 200 Zeichen).");
   const key = signiere(n, nummer, privat, edition, seats);
   if (!pruefeSchluessel(n, key, oeffentlich, KEINE_SPERRE).gueltig) {
-    throw new Error("Dieser Schlüssel würde in KEPTA nicht funktionieren — der Signaturschlüssel im Schlüsselbund passt nicht zur App.");
+    throw new Error("Dieser Schlüssel würde nicht bestehen — der Signaturschlüssel im Schlüsselbund passt nicht zum Prüfschlüssel.");
   }
   return key;
 }
@@ -122,43 +125,53 @@ export function pruefe(
   return { ...p, gehoertZu: treffer ? { name: treffer.name, nummer: treffer.nummer } : null };
 }
 
-/** Die Stufe, wie sie in Nachrichten steht — alte Einträge ohne Stufe sind Pro. */
-export function editionVon(eintrag: Pick<Eintrag, "edition">): Edition {
-  return EDITIONEN.includes(eintrag.edition as Edition) ? (eintrag.edition as Edition) : "pro";
+/**
+ * Die Stufe, wie sie in einer Datei oder Nachricht steht. „pro" war die
+ * Einzelstufe der App, und die allerersten Einträge tragen gar keine Stufe —
+ * beides heißt heute „alt" und bleibt erhalten.
+ */
+function stufeAusJson(x: unknown): Stufe | undefined {
+  if (x === "alt" || x === "pro") return "alt";
+  return EDITIONEN.includes(x as Edition) ? (x as Edition) : undefined;
 }
 
-/** Die fertige Nachricht an den Kunden — so, wie die Download-Seite es erklärt. */
-export function nachricht(name: string, nummer: number, key: string, sprache: Sprache, edition: Edition = "pro", seats?: number): string {
+/** Die Stufe eines Eintrags — ohne Angabe zählt die Altstufe. */
+export function editionVon(eintrag: Pick<Eintrag, "edition">): Stufe {
+  return stufeAusJson(eintrag.edition) ?? "alt";
+}
+
+/** Die fertige Nachricht an den Kunden. */
+export function nachricht(name: string, nummer: number, key: string, sprache: Sprache, edition: Stufe, seats?: number): string {
   const n = anzeigeName(name);
   const nr = formatiereNummer(nummer);
-  const produkt = EDITIONS_LABEL[edition] ?? EDITIONS_LABEL.pro;
+  const produkt = EDITIONS_LABEL[edition];
   const stufeZeilen = sprache === "en"
     ? edition === "business"
-      ? [`This is a KEPTA Business license covering ${seatsFuerAnzeige(edition, seats)} seats — one seat per person, personal keys only.`]
+      ? [`This is a KEPTA Enterprise license for your team, covering ${seatsFuerAnzeige(seats)} seats — one seat per person, personal keys only.`]
       : edition === "enterprise"
         ? ["This is a KEPTA Enterprise license. The scope and terms are the ones we agreed with your organization individually."]
-        : ["This is a KEPTA Pro license for you personally."]
+        : ["This is a KEPTA license from before today's Enterprise plans — for you personally. It stays as a record; KEPTA itself runs unlimited."]
     : edition === "business"
-      ? [`Das ist eine KEPTA-Business-Lizenz für ${seatsFuerAnzeige(edition, seats)} Seats — ein Seat pro Person, bitte nur persönliche Schlüssel.`]
+      ? [`Das ist eine KEPTA-Enterprise-Lizenz für euer Team mit ${seatsFuerAnzeige(seats)} Seats — ein Platz pro Person, bitte nur persönliche Schlüssel.`]
       : edition === "enterprise"
         ? ["Das ist eine KEPTA-Enterprise-Lizenz. Umfang und Konditionen sind die, die wir mit eurer Organisation individuell vereinbart haben."]
-        : ["Das ist eine KEPTA-Pro-Lizenz, persönlich für dich."];
+        : ["Das ist eine KEPTA-Lizenz aus der Zeit vor den heutigen Enterprise-Verträgen — für dich persönlich. Sie bleibt als Nachweis stehen; KEPTA selbst läuft unbegrenzt."];
   const zeilen = sprache === "en"
     ? [
         `Hi ${vorname(n)},`,
         "",
-        `thank you for choosing ${produkt}! Here is everything you need:`,
+        `thank you for choosing ${produkt}. Here is everything you need:`,
         "",
         `1. Download: ${DOWNLOAD}`,
         "   Apple silicon (M1 and later): KEPTA-…-mac-arm64.dmg · Intel: KEPTA-…-mac-x64.dmg",
         "2. Open the DMG and drag KEPTA into Applications. The first time, macOS says it cannot verify the developer:",
         "   System Settings → Privacy & Security → \"Open Anyway\".",
-        "3. Activate — only once. KEPTA remembers it, also after restarts and updates:",
+        "3. Your key is issued for:",
         "",
         `   Name:        ${n}`,
         `   License key: ${key}`,
         "",
-        "Enter the name exactly like this (upper and lower case and spaces don't matter). Activation is offline, nothing leaves your Mac.",
+        "KEPTA needs no key to run: every tool is unlimited. This key records your agreement, nothing leaves your Mac.",
         `This is license no. ${nr}. ${stufeZeilen[0]} So please keep the key to yourself.`,
         "",
         "If anything is unclear, just reply here.",
@@ -169,18 +182,18 @@ export function nachricht(name: string, nummer: number, key: string, sprache: Sp
     : [
         `Hallo ${vorname(n)},`,
         "",
-        `danke, dass du dich für ${produkt} entschieden hast! Hier ist alles, was du brauchst:`,
+        `danke, dass du dich für ${produkt} entscheidest. Hier ist alles, was du brauchst:`,
         "",
         `1. Herunterladen: ${DOWNLOAD}`,
         "   Apple Silicon (M1 und neuer): KEPTA-…-mac-arm64.dmg · Intel: KEPTA-…-mac-x64.dmg",
         "2. DMG öffnen und KEPTA in „Programme“ ziehen. Beim ersten Öffnen meldet macOS, dass der Entwickler nicht überprüft werden kann:",
         "   Systemeinstellungen → Datenschutz & Sicherheit → „Dennoch öffnen“.",
-        "3. Aktivieren — nur einmal. KEPTA merkt es sich, auch nach Neustarts und Updates:",
+        "3. Dein Schlüssel ist ausgestellt auf:",
         "",
         `   Name:            ${n}`,
         `   Lizenzschlüssel: ${key}`,
         "",
-        "Gib den Namen genau so ein (Groß- und Kleinschreibung und Leerzeichen sind egal). Die Aktivierung läuft offline, nichts verlässt deinen Mac.",
+        "KEPTA braucht keinen Schlüssel, um zu laufen: jedes Werkzeug ist unbegrenzt. Der Schlüssel weist euren Vertrag aus, und nichts verlässt deinen Mac.",
         `Das ist Lizenz Nr. ${nr}. ${stufeZeilen[0]} Bitte gib den Schlüssel nicht weiter.`,
         "",
         "Wenn etwas unklar ist, antworte einfach hier.",
@@ -192,7 +205,7 @@ export function nachricht(name: string, nummer: number, key: string, sprache: Sp
 }
 
 /** Seats für die Anzeige — fehlt die Zahl (alter Eintrag), zählt ein Seat. */
-function seatsFuerAnzeige(edition: Edition, seats?: number): number {
+function seatsFuerAnzeige(seats?: number): number {
   return seats ?? 1;
 }
 
@@ -221,7 +234,7 @@ function istEintrag(x: unknown): x is Eintrag {
   const e = x as Eintrag | null;
   return !!e && Number.isInteger(e.nummer) && e.nummer >= 1 && typeof e.name === "string" && typeof e.key === "string"
     && typeof e.notiz === "string" && typeof e.ausgestelltAm === "string"
-    && (e.edition === undefined || EDITIONEN.includes(e.edition))
+    && (e.edition === undefined || stufeAusJson(e.edition) !== undefined)
     && (e.seats === undefined || (Number.isInteger(e.seats) && e.seats >= 0))
     && (e.gesperrt === undefined || typeof e.gesperrt === "boolean");
 }
@@ -243,7 +256,9 @@ export function ladeListe(datei: string): Eintrag[] {
     throw kaputt;
   }
   if (!Array.isArray(daten)) throw kaputt;
-  return daten.filter(istEintrag);
+  // Jeder Eintrag bleibt stehen; eine alte Stufenangabe wird in die heutige
+  // überführt („pro" und „fehlend" → „alt").
+  return daten.filter(istEintrag).map((e) => ({ ...e, edition: editionVon(e) }));
 }
 
 /** Schreibt atomar (erst eine Nebendatei, dann umbenennen) und nur für den eigenen Benutzer lesbar. */
@@ -267,7 +282,7 @@ export function trageEin(
   privat: string,
   oeffentlich: string = OEFFENTLICHER_SCHLUESSEL,
   jetzt: Date = new Date(),
-  edition: Edition = "pro",
+  edition: Edition,
   seats?: number,
 ): { eintrag: Eintrag; neu: boolean } {
   const liste = ladeListe(datei);

@@ -18,7 +18,7 @@ const { JSDOM, VirtualConsole } = laden("jsdom") as {
 };
 
 const HTML = fs.readFileSync(path.join(process.cwd(), "tools", "license-studio", "index.html"), "utf8");
-const EINTRAG = { nummer: 7, name: "Sarah Mandel", key: "AAAAA-BBBBB-CCCCC", notiz: "Harbor Advisory", ausgestelltAm: "2026-09-13T12:00:00.000Z" };
+const EINTRAG = { nummer: 7, name: "Sarah Mandel", key: "AAAAA-BBBBB-CCCCC", notiz: "Harbor Advisory", ausgestelltAm: "2026-09-13T12:00:00.000Z", edition: "enterprise" as const };
 const STATUS = { schluessel: true, passt: true, anzahl: 1, gesperrt: [] as number[], sperrlisteGefunden: true, listeDatei: "/Users/damian/Library/Application Support/KEPTA License Studio/licenses.json", listenFehler: null };
 
 function oeffne(ueberschreiben: Record<string, unknown> = {}, bestaetigt = true) {
@@ -106,13 +106,13 @@ describe("das Fenster von KEPTA License Studio", () => {
     tippe("notiz", "Harbor Advisory");
     el<HTMLFormElement>("form-aus").requestSubmit();
     await bis(() => !el("ergebnis").hidden);
-    expect(studio.ausstellen).toHaveBeenCalledWith("Sarah Mandel", "Harbor Advisory", "pro", undefined);
+    expect(studio.ausstellen).toHaveBeenCalledWith("Sarah Mandel", "Harbor Advisory", "enterprise", undefined);
     expect(el("erg-name").textContent).toBe("Sarah Mandel");
     expect(el("erg-nummer").textContent).toBe("0007");
     expect(el("erg-key").textContent).toBe(EINTRAG.key);
     expect(el("erg-datum").textContent).toContain("ausgestellt und geprüft");
     await bis(() => el<HTMLTextAreaElement>("nachricht").value.startsWith("Hallo"));
-    expect(studio.nachricht).toHaveBeenCalledWith("Sarah Mandel", 7, EINTRAG.key, "de", "pro", undefined);
+    expect(studio.nachricht).toHaveBeenCalledWith("Sarah Mandel", 7, EINTRAG.key, "de", "enterprise", undefined);
     expect(el<HTMLInputElement>("name").value).toBe("");
     doc.querySelector<HTMLButtonElement>('#sprache button[data-sprache="en"]')!.click();
     await bis(() => el<HTMLTextAreaElement>("nachricht").value.startsWith("Hi"));

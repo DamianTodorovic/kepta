@@ -1,9 +1,10 @@
 // @vitest-environment jsdom
 //
 // Team-Ansicht (Enterprise E2) aus Sicht einer Person, die sie benutzt:
-// Free/Pro sieht eine Upgrade-Karte statt einer Sackgasse; Business/Enterprise
-// sieht Workspace, Seats, Rollen (mit "this computer"-Markierung) und die
-// Anzahl der team:*-Notizen. Server nachgebildet (stubFetch wie EnterpriseViews).
+// Team-Ansicht aus Sicht einer Person, die sie benutzt: ohne verwaltete Rollen
+// sieht sie einen Hinweis statt einer Sackgasse; mit Rollen den Workspace, die
+// eigene Rolle (mit "this computer"-Markierung) und die Anzahl der
+// team:*-Notizen. Server nachgebildet (stubFetch wie EnterpriseViews).
 import { describe, it, expect, vi, afterEach } from "vitest";
 import { render, screen, waitFor } from "@testing-library/react";
 import { TeamView, type TeamInfo } from "../../src/components/TeamView";

@@ -501,7 +501,7 @@ describe("Seitenleiste", () => {
     render(<AuthProvider><ThemeProvider><Sidebar {...basis} /></ThemeProvider></AuthProvider>);
     // Stufen-Modell (Damian 24.9.): die App heißt schlicht KEPTA. Seit
     // 10.10.2026 steht darunter auch kein Countdown und kein Werbe-Satz mehr —
-    // es gibt weder einen Pro-Tag noch Schlüssel.
+    // es gibt weder einen gratis ersten Tag noch einen Schlüssel.
     expect(screen.getAllByText(/^KEPTA$/).length).toBeGreaterThan(0);
     expect(screen.getByText(/local · private · encrypted/)).toBeTruthy();
     expect(screen.queryByText(/unlimited|key|limit/i)).toBeNull();

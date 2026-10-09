@@ -115,7 +115,7 @@ describe("eine verwaltete Datei mit alten Lizenz-Feldern", () => {
   });
 
   it("eine Datei nur mit Lizenz-Feldern gilt als keine Richtlinie", async () => {
-    schreibeVerwaltet({ license_name: "Verwaltet GmbH", license_key: signiere("Verwaltet GmbH", 30, paar.privat) });
+    schreibeVerwaltet({ license_name: "Verwaltet GmbH", license_key: "MIGF-SCHLUESSEL-AUS-VERWALTUNG" });
     expect(liesVerwaltet()).toBeNull();
   });
 });

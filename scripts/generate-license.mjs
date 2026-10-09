@@ -1,14 +1,15 @@
 // Lizenzschlüssel ausstellen — nur für Damian, offline.
 //
-//   node scripts/generate-license.mjs --name "Sarah Mandel" --nummer 7
 //   node scripts/generate-license.mjs --name "Mandels Kanzlei" --nummer 8 --edition business --seats 5
+//   node scripts/generate-license.mjs --name "Harbor Advisory GmbH" --nummer 9 --edition enterprise
 //
-// Der Schlüssel enthält Lizenznummer, Stufe (pro/business/enterprise) und
-// Seats, signiert über Namen, Nummer, Stufe und Seats — dasselbe Format wie
-// signiere() in src/core/lizenz.ts (v3.1). Signiert wird mit dem privaten
-// Schlüssel aus dem macOS-Schlüsselbund (angelegt von
-// scripts/license-keypair.mjs); er steht nirgends im Repo und nie in der App.
-// Für Tests kann er über KEPTA_LICENSE_PRIVATE_KEY (PKCS#8/DER, base64)
+// Der Schlüssel enthält Lizenznummer, Stufe (business/enterprise) und Seats,
+// signiert über Namen, Nummer, Stufe und Seats — dasselbe Format wie signiere()
+// in src/core/lizenz.ts. Ausgestellt wird nur KEPTA Enterprise (Vertrag,
+// persönlich); die kostenlose App hat kein Schlüssel-Feld und läuft unbegrenzt.
+// Signiert wird mit dem privaten Schlüssel aus dem macOS-Schlüsselbund (angelegt
+// von scripts/license-keypair.mjs); er steht nirgends im Repo und nie in der
+// App. Für Tests kann er über KEPTA_LICENSE_PRIVATE_KEY (PKCS#8/DER, base64)
 // hereingereicht werden.
 //
 // Bequemer geht es mit KEPTA License Studio (npm run license-studio): es
@@ -17,8 +18,8 @@ import crypto from "node:crypto";
 import { execFileSync } from "node:child_process";
 
 const ALPHABET = "ABCDEFGHIJKLMNOPQRSTUVWXYZ234567";
-const EDITIONS_CODE = { pro: 1, business: 2, enterprise: 3 };
-const EDITIONS_LABEL = { pro: "KEPTA Pro", business: "KEPTA Business", enterprise: "KEPTA Enterprise" };
+const EDITIONS_CODE = { business: 2, enterprise: 3 };
+const EDITIONS_LABEL = { business: "KEPTA Enterprise", enterprise: "KEPTA Enterprise" };
 const HOECHSTE_SEATS = 9999;
 
 /** Wie normalisiere() in src/core/lizenz.ts — samt Unicode-Form (NFC). */
@@ -50,18 +51,18 @@ const args = process.argv.slice(2);
 const wert = (schalter) => { const i = args.indexOf(schalter); return i >= 0 ? args[i + 1] : null; };
 const name = wert("--name");
 const nummer = Number(wert("--nummer"));
-const edition = wert("--edition") ?? "pro";
+const edition = wert("--edition") ?? "enterprise";
 const seats = wert("--seats") === null ? undefined : Number(wert("--seats"));
 if (!name || !name.trim() || !Number.isInteger(nummer) || nummer < 1 || nummer > 0xffffffff) {
-  console.error('Aufruf: node scripts/generate-license.mjs --name "Name des Kunden" --nummer 7 [--edition pro|business|enterprise] [--seats 5]');
+  console.error('Aufruf: node scripts/generate-license.mjs --name "Name des Kunden" --nummer 7 --edition business|enterprise [--seats 5]');
   process.exit(1);
 }
 if (!(edition in EDITIONS_CODE)) {
-  console.error("Unbekannte Stufe — erlaubt: pro, business, enterprise");
+  console.error("Unbekannte Stufe — erlaubt: business, enterprise");
   process.exit(1);
 }
-// Pro ist persönlich (1), Enterprise wird nach Absprache lizenziert (0).
-const anzahl = edition === "pro" ? 1 : edition === "enterprise" ? 0 : seats;
+// Enterprise wird nach Absprache lizenziert (0), Business trägt die gekauften Seats.
+const anzahl = edition === "enterprise" ? 0 : seats;
 if (edition === "business" && (!Number.isInteger(anzahl) || anzahl < 1 || anzahl > HOECHSTE_SEATS)) {
   console.error(`Business braucht --seats von 1 bis ${HOECHSTE_SEATS}`);
   process.exit(1);
@@ -84,5 +85,5 @@ if (args.includes("--nur-schluessel")) {
   console.log(`License no.: ${String(nummer).padStart(4, "0")}`);
   console.log(`Edition:     ${edition}${edition === "business" ? ` (${anzahl} seats)` : edition === "enterprise" ? " (terms per agreement)" : ""}`);
   console.log(`Key:         ${schluessel}`);
-  console.log(`\nThe customer enters this name and this key when the app asks for a license.\n`);
+  console.log(`\nKEPTA läuft ohne Schlüssel — dieser Schlüssel weist den Vertrag aus (Name und Nummer).\n`);
 }

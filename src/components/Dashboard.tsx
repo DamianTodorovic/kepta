@@ -138,7 +138,7 @@ export function Dashboard() {
     try { localStorage.setItem('ki_gehirn_gruppierung', gruppierung); } catch { /* ignore */ }
   }, [gruppierung]);
 
-  // Lizenz, Pro-Tag und Upgrade-Weg sind seit 10.10.2026 weg: die herunterladbare
+  // Schlüssel, gratis erster Tag und Upgrade-Weg sind seit 10.10.2026 weg: die herunterladbare
   // App läuft unbegrenzt und hat kein Schlüssel-Feld. Was hier blieb, ist der
   // Rest der Seitenleisten-Inhalte.
   useEffect(() => {

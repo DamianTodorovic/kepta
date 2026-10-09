@@ -1,21 +1,30 @@
-// Lizenzschlüssel für KEPTA — Ed25519-Signaturen, offline geprüft.
+// Lizenzschlüssel — Ed25519-Signaturen, offline geprüft.
 //
-// Ein Schlüssel enthält die Lizenznummer (4 Byte) und die Ed25519-Signatur
-// über „kepta-lizenz-v3“, den normalisierten Namen des Käufers und diese
-// Nummer — als Base32 in 5er-Gruppen. Der Kunde gibt nur Namen und Schlüssel
-// ein; nichts verlässt seinen Rechner.
+// Ein Schlüssel trägt seine Lizenznummer (4 Byte), seine Stufe (1 Byte) und die
+// Seat-Zahl (2 Byte), signiert über den normalisierten Namen des Käufers, die
+// Nummer, die Stufe und die Seats („kepta-lizenz-v3.1") — als Base32 in
+// 5er-Gruppen. Ausgestellt und geprüft wird offline, auf einer Maschine ohne
+// Netzverkehr dabei.
 //
-// Seit v3.1 (September 2026, Neuausrichtung auf Pro/Business/Enterprise)
-// trägt der Schlüssel zusätzlich seine Stufe: 71 Byte = Nummer (4) + Stufe
-// (1 Byte, 1=Pro 2=Business 3=Enterprise) + Seats (2 Byte) + Signatur (64),
-// signiert über „kepta-lizenz-v3.1“ samt Stufe und Seats. Pro schaltet
-// dieselbe App frei wie jede andere Stufe — die Stufe sagt dem Kunden (und
-// der Fußzeile), was sein Vertrag umfasst; Team-Funktionen kommen mit
-// Business später dazu. Schlüssel der Form v3 (68 Byte) bleiben gültig und
-// gelten als Pro.
+// Es gibt zwei Dinge: KEPTA Core (kostenlos, unbegrenzt, ohne Schlüssel) und
+// KEPTA Enterprise (nach Vereinbarung, persönlich ausgestellt). Ein Schlüssel
+// gehört nur zu Enterprise. Seit 10.10.2026 hat die herunterladbare App kein
+// Schlüssel-Feld mehr und prüft auch keinen — dieser Code ist das Ausstellungs-
+// und Prüfwerkzeug für Enterprise (`tools/license-studio`,
+// `scripts/generate-license.mjs`, `tools/lizenz-worker`), kein Laufzeitpfad der
+// App. Wer hier einen Grenzweg einbaut, baut eine Sperre ein.
+//
+// Der Stufen-Byte: 2 = Team mit Seats, 3 = Organisation nach Absprache. Nach
+// außen heißen beide KEPTA Enterprise, weil es nur diese eine bezahlte Stufe
+// gibt. Die 1 war die Einzelstufe der App; ihr Name steht in den Signaturen der
+// Schlüssel, die vor dem Umbau ausgeliefert wurden, und bleibt deshalb als
+// „alt" zum Prüfen bekannt — ausgestellt wird sie nicht mehr. Auch ein Schlüssel
+// ohne Stufen-Byte (68 Byte, die Form davor) zählt als „alt" und prüft weiter.
+// Schlüssel der allerersten Form (nur der Name, bis 2.11.0, 64 Byte) gelten
+// nicht mehr; an Kunden war keiner ausgegeben.
 //
 // Gegen Weitergabe (Entscheidung von Damian, 13.9.2026: „der einfache Weg wie
-// Sublime Text“): der Name steht sichtbar in der App, jede Lizenz hat ihre
+// Sublime Text"): der Name steht sichtbar in der App, jede Lizenz hat ihre
 // eigene Nummer, und eine weitergegebene Nummer kommt auf die Sperrliste
 // (src/core/sperrliste.ts) — ab dem nächsten Update gilt ihr Schlüssel nicht
 // mehr, auch nicht auf Rechnern, die schon aktiviert waren. Eine Bindung an
@@ -25,23 +34,12 @@
 //
 // Signiert wird mit Damians privatem Schlüssel, der nur in seinem
 // macOS-Schlüsselbund liegt (scripts/license-keypair.mjs legt ihn an;
-// KEPTA License Studio und scripts/generate-license.mjs signieren damit). In
-// der App steht nur der ÖFFENTLICHE Schlüssel: mit ihm lässt sich prüfen, aber
-// kein Schlüssel erzeugen. Schlüssel der ersten Form (nur der Name, bis
-// 2.11.0) sind 64 Byte lang und gelten nicht mehr; an Kunden war keiner
-// ausgegeben.
+// KEPTA License Studio und scripts/generate-license.mjs signieren damit). Im
+// Ausstellungscode steht nur der ÖFFENTLICHE Schlüssel: mit ihm lässt sich
+// prüfen, aber kein Schlüssel erzeugen.
 //
 // Die erste Fassung (12.9.2026) war ein HMAC mit dem Geheimnis im Quelltext —
 // wer die App auspackte, konnte sich beliebige Schlüssel ausstellen.
-//
-// Eine Testphase als SPERR-Modus gab es nie (Entscheidung von Damian,
-// 13.9.2026). Einmal gab es Freemium: Tageslimiten und ein gratis erster Tag.
-// Seit 10.10.2026 ist das ersatzlos weg — die herunterladbare App läuft
-// unbegrenzt und hat kein Schlüssel-Feld (`server/helfer/freemium.ts` und der
-// Pro-Tag sind gelöscht). Was bleibt, ist das Ausstellen und Prüfen von
-// Schlüsseln als WERKZEUG für KEPTA Enterprise, das ausschließlich von
-// `tools/license-studio` und `scripts/generate-license.mjs` benutzt wird. Kein
-// Weg durch die App führt mehr hierher.
 import crypto from "node:crypto";
 import { GESPERRTE_LIZENZEN } from "./sperrliste";
 
@@ -63,23 +61,35 @@ const FORM_V31 = "kepta-lizenz-v3.1";
 export const HOECHSTE_NUMMER = 0xffffffff;
 
 /**
- * Die Stufen der Neuausrichtung (September 2026): Pro für Einzelpersonen,
- * Business für Teams, Enterprise für Organisationen. Alle schalten dieselbe
- * App frei — die Stufe gehört zum Vertrag, nicht zu einer anderen Software.
+ * Die Stufen, die sich ausstellen lassen. Beide gehören zu KEPTA Enterprise —
+ * der Unterschied sitzt im Vertrag (Sitze für ein Team oder Umfang mit einer
+ * Organisation), nicht in einer anderen Software.
  */
-export type Edition = "pro" | "business" | "enterprise";
-export const EDITIONEN: readonly Edition[] = ["pro", "business", "enterprise"];
-const EDITIONS_CODE: Record<Edition, number> = { pro: 1, business: 2, enterprise: 3 };
-const EDITION_VON_CODE: Record<number, Edition> = { 1: "pro", 2: "business", 3: "enterprise" };
-/** Anzeigename der Stufe — in der Fußzeile der App und in der Kunden-Nachricht. */
-export const EDITIONS_LABEL: Record<Edition, string> = {
-  pro: "KEPTA Pro",
-  // Die interne Edition „business“ zeigt KEPTA Enterprise — die öffentliche
-  // Stufe Business gibt es nicht mehr; Team-Features sind Enterprise.
+export type Edition = "business" | "enterprise";
+export const EDITIONEN: readonly Edition[] = ["business", "enterprise"];
+
+/**
+ * Was ein Schlüssel tragen kann: eine der beiden Stufen, oder „alt" — die
+ * Einzelstufe der App, die es seit 10.10.2026 nicht mehr gibt. „alt" lässt sich
+ * nicht ausstellen, aber prüfen: sie steht in ausgelieferten Schlüsseln.
+ */
+export type Stufe = Edition | "alt";
+
+const EDITIONS_CODE: Record<Edition, number> = { business: 2, enterprise: 3 };
+const CODE_STUFE: Record<number, Stufe> = { 1: "alt", 2: "business", 3: "enterprise" };
+/**
+ * Der Name, wie er in die Signatur geschrieben wird. Für „alt" ist das der Name
+ * der ehemaligen Einzelstufe — er kann sich nicht ändern, ohne die Schlüssel
+ * ungültig zu machen, die mit ihm ausgeliefert wurden.
+ */
+const STUFEN_DRAHTNAME: Record<Stufe, string> = { alt: "pro", business: "business", enterprise: "enterprise" };
+/** Was der Käufer für seine Stufe bekommt — nach außen gibt es einen Produktnamen. */
+export const EDITIONS_LABEL: Record<Stufe, string> = {
+  alt: "KEPTA Enterprise",
   business: "KEPTA Enterprise",
   enterprise: "KEPTA Enterprise",
 };
-/** Höchste Seat-Zahl, die ein Business-Schlüssel tragen kann (2 Byte). */
+/** Höchste Seat-Zahl, die ein Schlüssel tragen kann (2 Byte). */
 export const HOECHSTE_SEATS = 9999;
 
 /** Die gesperrten Nummern aus src/core/sperrliste.ts. */
@@ -91,9 +101,9 @@ export interface Lizenzpruefung {
   nummer: number | null;
   /** Echt, aber auf der Sperrliste. */
   gesperrt: boolean;
-  /** Die Stufe des Schlüssels — v3-Schlüssel (ohne Stufe) gelten als Pro. */
-  edition: Edition;
-  /** Business: Seat-Zahl. Pro: 1. Enterprise: 0 (Umfang nach Absprache). */
+  /** Die Stufe des Schlüssels; „alt" = Einzelstufe oder Form ohne Stufen-Byte. */
+  edition: Stufe;
+  /** Business: die Seat-Zahl. Enterprise: 0 (Umfang im Vertrag). Alt: 1. */
   seats: number;
 }
 
@@ -138,22 +148,22 @@ export function ausGruppen(text: string): Buffer | null {
   return Buffer.from(bytes);
 }
 
-function signaturText(name: string, nummer: number, edition?: Edition, seats?: number): Buffer {
+function signaturText(name: string, nummer: number, stufe?: Stufe, seats?: number): Buffer {
   const kopf = `${FORM}\n${normalisiere(name)}\n${nummer}`;
-  if (!edition) return Buffer.from(kopf);
-  return Buffer.from(`${FORM_V31}\n${normalisiere(name)}\n${nummer}\n${edition}\n${seats}`);
+  if (!stufe) return Buffer.from(kopf);
+  return Buffer.from(`${FORM_V31}\n${normalisiere(name)}\n${nummer}\n${STUFEN_DRAHTNAME[stufe]}\n${seats}`);
 }
 
 const istNummer = (n: number) => Number.isInteger(n) && n >= 1 && n <= HOECHSTE_NUMMER;
 
 /**
- * Wie viele Seats dieser Stufe entsprechen: Pro ist persönlich (1), Business
- * trägt die gekaufte Seat-Zahl (muss beim Ausstellen genannt werden),
+ * Wie viele Seats einer Stufe entsprechen: die Altstufe war persönlich (1),
+ * Business trägt die gekaufte Seat-Zahl (muss beim Ausstellen genannt werden),
  * Enterprise wird nach Absprache mit Damian lizenziert (0 = Umfang steht im
  * Vertrag, nicht im Schlüssel).
  */
-export function seatsFuer(edition: Edition, seats?: number): number {
-  if (edition === "pro") return 1;
+export function seatsFuer(edition: Stufe, seats?: number): number {
+  if (edition === "alt") return 1;
   if (edition === "enterprise") return 0;
   if (!Number.isInteger(seats) || (seats as number) < 1 || (seats as number) > HOECHSTE_SEATS) {
     throw new Error(`Business-Lizenzen brauchen 1 bis ${HOECHSTE_SEATS} Seats`);
@@ -162,7 +172,7 @@ export function seatsFuer(edition: Edition, seats?: number): number {
 }
 
 /** Die zulässige Seat-Zahl einer Stufe — oder null, wenn die Kombination nicht existiert. */
-function akzeptierteSeats(edition: Edition, seats: number): number | null {
+function akzeptierteSeats(edition: Stufe, seats: number): number | null {
   try {
     return seatsFuer(edition, seats);
   } catch {
@@ -174,13 +184,13 @@ function akzeptierteSeats(edition: Edition, seats: number): number | null {
  * Nummer und Signatur aus einem Schlüssel — oder null, wenn er nicht diese
  * Form hat. v3.1-Schlüssel tragen zusätzlich Stufe und Seats.
  */
-export function leseSchluessel(schluessel: string): { nummer: number; signatur: Buffer; edition?: Edition; seats?: number } | null {
+export function leseSchluessel(schluessel: string): { nummer: number; signatur: Buffer; edition?: Stufe; seats?: number } | null {
   const bytes = ausGruppen(schluessel);
   if (!bytes || bytes.length !== NUMMER_BYTES + SIGNATUR_BYTES) {
     if (!bytes || bytes.length !== NUMMER_BYTES + STUFE_BYTES + SEATS_BYTES + SIGNATUR_BYTES) return null;
     const nummer = bytes.readUInt32BE(0);
     if (!istNummer(nummer)) return null;
-    const edition = EDITION_VON_CODE[bytes[NUMMER_BYTES]];
+    const edition = CODE_STUFE[bytes[NUMMER_BYTES]];
     if (!edition) return null;
     const seats = bytes.readUInt16BE(NUMMER_BYTES + STUFE_BYTES);
     return { nummer, signatur: bytes.subarray(NUMMER_BYTES + STUFE_BYTES + SEATS_BYTES), edition, seats };
@@ -195,12 +205,12 @@ export function signiere(
   name: string,
   nummer: number,
   privaterSchluessel: string,
-  edition: Edition = "pro",
+  edition: Edition,
   seats?: number,
 ): string {
   if (!istNummer(nummer)) throw new Error("Ungültige Lizenznummer");
   if (!normalisiere(name)) throw new Error("Kein Name");
-  if (!EDITIONEN.includes(edition)) throw new Error("Unbekannte Stufe");
+  if (!EDITIONEN.includes(edition)) throw new Error(`Unbekannte Stufe — es gibt nur ${EDITIONEN.join(" und ")}`);
   const anzahl = seatsFuer(edition, seats);
   const k = crypto.createPrivateKey({ key: Buffer.from(privaterSchluessel, "base64"), format: "der", type: "pkcs8" });
   const kopf = Buffer.alloc(NUMMER_BYTES + STUFE_BYTES + SEATS_BYTES);
@@ -217,7 +227,7 @@ export function pruefeSchluessel(
   oeffentlich: string = OEFFENTLICHER_SCHLUESSEL,
   gesperrt: ReadonlySet<number> = GESPERRT,
 ): Lizenzpruefung {
-  const ungueltig: Lizenzpruefung = { gueltig: false, nummer: null, gesperrt: false, edition: "pro", seats: 1 };
+  const ungueltig: Lizenzpruefung = { gueltig: false, nummer: null, gesperrt: false, edition: "alt", seats: 1 };
   const teile = leseSchluessel(schluessel);
   if (!teile || !normalisiere(name)) return ungueltig;
   let echt = false;
@@ -230,7 +240,7 @@ export function pruefeSchluessel(
   if (!echt) return ungueltig;
   // Die Stufe steht im Klartext im Schlüssel: nur die zulässigen Kombinationen gelten.
   if (teile.edition && akzeptierteSeats(teile.edition, teile.seats ?? -1) !== teile.seats) return ungueltig;
-  const edition = teile.edition ?? "pro";
+  const edition = teile.edition ?? "alt";
   if (gesperrt.has(teile.nummer)) return { gueltig: false, nummer: teile.nummer, gesperrt: true, edition, seats: teile.seats ?? 1 };
   return { gueltig: true, nummer: teile.nummer, gesperrt: false, edition, seats: teile.seats ?? 1 };
 }

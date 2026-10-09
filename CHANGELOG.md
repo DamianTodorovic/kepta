@@ -1,5 +1,20 @@
 ## [Unreleased]
 
+### Removed
+- **Pro is gone from the key tooling as well** (Damian, 9.10.2026: „Pro gibt es nicht mehr nirgends"). `src/core/lizenz.ts` no longer carries a single-user plan: what can be issued is `business` or `enterprise`, and `EDITIONS_LABEL` names both **KEPTA Enterprise** — the product name never appears beside the dead tier again. `signiere()` now requires the plan instead of defaulting to it, so no call site can quietly issue what nobody sells.
+- **The studio's plan picker lost the old tier and its prices.** `tools/license-studio/index.html` offers the two shapes of a KEPTA Enterprise agreement (team with seats, organization by agreement); `main.ts` maps anything unknown to `enterprise` rather than to the plan that no longer exists; `build.mjs` describes the app as issuing KEPTA Enterprise keys.
+
+### Changed
+- **A key from before the change still verifies — and is no longer called by the dead name.** The plan byte is part of the signed text, so `1` (and the older 68-byte key without a byte at all) is read as `edition: "alt"`, its signature still checked against the name the plan carried. Displayed, labelled and mailed it is KEPTA Enterprise, with the studio noting „frühere Einzel-Lizenz". Issuing `alt` is refused.
+- **The ledger keeps its old entries.** `licenses.json` on this machine holds seven keys, two of them from before the change; reading a stored `edition: "pro"` now migrates it to `"alt"` instead of dropping the row. (The first cut of this migration dropped exactly the entries it had just migrated — caught by `tests/kein-pro-tier.test.ts`, which round-trips the file.)
+- **The customer message describes the app that exists.** Since 3.1.5 there is no key field to type into, so the message no longer walks the buyer through activating: it names the contract (name, number, seats where agreed), says KEPTA runs every tool unlimited, and keeps the offline promise. Same for the worker's mail and the CLI's closing line.
+- **`scripts/generate-license.mjs`:** `--edition business|enterprise`, default `enterprise`, and a request for the old tier is refused before anything is signed. The key it prints is verified by the same code the studio uses (`tests/kein-pro-tier.test.ts` runs the script and checks the answer).
+- **`tools/lizenz-worker`:** only the team price-id issues a key. Any other price returns `ignoriert` with no key and no mail — the old fallback minted a single-user key for whatever the checkout threw at it. `CHECKLISTE.md` is marked as parked, names the two Paddle prices as dead and asks for them to be archived, because a live price that issues nothing would still charge.
+- Measured on this commit: **118 files / 1967 tests** green, lint 0 errors. No runtime path of the app changed — the app files touched here are comments — so there is no new build and no new release.
+
+### Added
+- **Two guards.** `tests/kein-pro-tier.test.ts` (13 cases): the issuable plans, the legacy keys, the ledger migration, the customer message, the CLI, and a text scan over `src/`, `server/`, `scripts/`, `tools/`, `tests/` and the root docs that fails any file naming the dead tier as a product (dated records — `CHANGELOG.md`, `docs/` — are annotated, not rewritten). `tests/lizenz-worker.test.ts` (3 cases): the worker had no test at all; it now signs a real key through the same verification the app's module performs, refuses an unknown price and rejects a bad Paddle signature.
+
 ## [3.1.5] — 2026-10-09
 
 ### Removed

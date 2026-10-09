@@ -1,9 +1,11 @@
 // @vitest-environment node
 //
 // KEPTA License Studio (tools/license-studio): was das Studio ausstellt, muss
-// die App annehmen — mit Name und Lizenznummer, offline. Gesperrte Nummern
-// gelten nicht. Geprüft mit src/core/lizenz.ts und einem eigenen Testpaar;
-// den privaten Schlüssel der echten App gibt es nur in Damians Schlüsselbund.
+// die Prüfung in src/core/lizenz.ts bestehen — mit Name und Lizenznummer.
+// Gesperrte Nummern gelten nicht. Geprüft mit einem eigenen Testpaar; den
+// privaten Schlüssel der echten Ausstellungen gibt es nur in Damians
+// Schlüsselbund. Ausgestellt wird nur KEPTA Enterprise; Schlüssel aus der Zeit
+// davor bleiben in der Liste stehen (tests/kein-pro-tier.test.ts hält das fest).
 import { describe, it, expect } from "vitest";
 import crypto from "node:crypto";
 import fs from "node:fs";
@@ -26,36 +28,36 @@ const { privat, oeffentlich } = paar();
 const fremd = paar();
 const KEINE = new Set<number>();
 const neueDatei = () => path.join(fs.mkdtempSync(path.join(os.tmpdir(), "kepta-studio-")), "unterordner", "licenses.json");
-const eintrag = (nummer: number, name: string, extra: object = {}) => ({ nummer, name, key: stelleAus(name, nummer, privat, oeffentlich), notiz: "", ausgestelltAm: "2026-09-13T12:00:00.000Z", ...extra });
+const eintrag = (nummer: number, name: string, extra: object = {}) => ({ nummer, name, key: stelleAus(name, nummer, privat, oeffentlich, "enterprise"), notiz: "", ausgestelltAm: "2026-09-13T12:00:00.000Z", edition: "enterprise" as const, ...extra });
 
 describe("ausstellen", () => {
-  it("ein ausgestellter Schlüssel besteht die Prüfung der App — mit seiner Nummer", () => {
-    const key = stelleAus("Sarah Mandel", 7, privat, oeffentlich);
-    expect(pruefeSchluessel("  sarah  MANDEL ", key, oeffentlich, KEINE)).toEqual({ gueltig: true, nummer: 7, gesperrt: false, edition: "pro", seats: 1 });
+  it("ein ausgestellter Schlüssel besteht die Prüfung — mit seiner Nummer", () => {
+    const key = stelleAus("Sarah Mandel", 7, privat, oeffentlich, "enterprise");
+    expect(pruefeSchluessel("  sarah  MANDEL ", key, oeffentlich, KEINE)).toEqual({ gueltig: true, nummer: 7, gesperrt: false, edition: "enterprise", seats: 0 });
     expect(pruefeSchluessel("Sara Mandel", key, oeffentlich, KEINE).gueltig).toBe(false);
   });
 
   it("derselbe Name mit derselben Nummer ergibt immer denselben Schlüssel — eine andere Nummer einen anderen", () => {
-    expect(stelleAus("Sarah Mandel", 7, privat, oeffentlich)).toBe(stelleAus("  sarah   MANDEL ", 7, privat, oeffentlich));
-    expect(stelleAus("Sarah Mandel", 8, privat, oeffentlich)).not.toBe(stelleAus("Sarah Mandel", 7, privat, oeffentlich));
+    expect(stelleAus("Sarah Mandel", 7, privat, oeffentlich, "enterprise")).toBe(stelleAus("  sarah   MANDEL ", 7, privat, oeffentlich, "enterprise"));
+    expect(stelleAus("Sarah Mandel", 8, privat, oeffentlich, "enterprise")).not.toBe(stelleAus("Sarah Mandel", 7, privat, oeffentlich, "enterprise"));
   });
 
-  it("passt der Signaturschlüssel nicht zur App, wird nichts ausgestellt", () => {
-    expect(() => stelleAus("Sarah Mandel", 7, fremd.privat, oeffentlich)).toThrow(/passt nicht zur App/);
+  it("passt der Signaturschlüssel nicht, wird nichts ausgestellt", () => {
+    expect(() => stelleAus("Sarah Mandel", 7, fremd.privat, oeffentlich, "enterprise")).toThrow(/passt nicht zum Prüfschlüssel/);
     expect(passtZurApp(privat, oeffentlich)).toBe(true);
     expect(passtZurApp(fremd.privat, oeffentlich)).toBe(false);
     expect(passtZurApp("kein schluessel", oeffentlich)).toBe(false);
   });
 
   it("ohne Namen oder mit überlangem Namen: eine klare Meldung", () => {
-    expect(() => stelleAus("   ", 7, privat, oeffentlich)).toThrow(/Namen/);
-    expect(() => stelleAus("x".repeat(201), 7, privat, oeffentlich)).toThrow(/zu lang/);
+    expect(() => stelleAus("   ", 7, privat, oeffentlich, "enterprise")).toThrow(/Namen/);
+    expect(() => stelleAus("x".repeat(201), 7, privat, oeffentlich, "enterprise")).toThrow(/zu lang/);
   });
 
   it("„ü“ als ein Zeichen oder als u + Trema: derselbe Name, derselbe Schlüssel", () => {
     const nfd = "Jürgen Müller".normalize("NFD");
     expect(anzeigeName(`  ${nfd} `)).toBe("Jürgen Müller");
-    expect(stelleAus(nfd, 3, privat, oeffentlich)).toBe(stelleAus("Jürgen Müller", 3, privat, oeffentlich));
+    expect(stelleAus(nfd, 3, privat, oeffentlich, "enterprise")).toBe(stelleAus("Jürgen Müller", 3, privat, oeffentlich, "enterprise"));
   });
 });
 
@@ -73,15 +75,14 @@ describe("hinweise zum Namen", () => {
 });
 
 describe("die Nachricht an den Kunden", () => {
-  it.each(["de", "en"] as const)("%s: Name, Nummer, Schlüssel, Download, ‚nur einmal‘ und ‚offline‘ — keine Testphase, kein Mac-Code", (sprache) => {
-    const key = stelleAus("Sarah Mandel", 7, privat, oeffentlich);
-    const t = nachricht("  Sarah   Mandel ", 7, key, sprache);
+  it.each(["de", "en"] as const)("%s: Name, Nummer, Schlüssel, Download, Mac-Weg — keine Testphase, kein Mac-Code", (sprache) => {
+    const key = stelleAus("Sarah Mandel", 7, privat, oeffentlich, "enterprise");
+    const t = nachricht("  Sarah   Mandel ", 7, key, sprache, "enterprise");
     expect(t).toContain("Sarah Mandel");
     expect(t).toContain(key);
     expect(t).toContain("0007");
     expect(t).toContain(DOWNLOAD);
     expect(t).toMatch(sprache === "de" ? /^Hallo Sarah,/ : /^Hi Sarah,/);
-    expect(t).toMatch(sprache === "de" ? /nur einmal/ : /only once/);
     expect(t).toMatch(sprache === "de" ? /nichts verlässt deinen Mac/ : /nothing leaves your Mac/);
     expect(t).not.toMatch(/trial|Testphase|@kepta\.app|Mac's code|Mac-Code/i);
   });
@@ -91,12 +92,9 @@ describe("die Nachricht an den Kunden", () => {
     expect(vorname("")).toBe("");
   });
 
-  it("die Stufe steht in der Nachricht — Pro persönlich, Business mit Seats, Enterprise nach Absprache", () => {
-    const key = stelleAus("Sarah Mandel", 7, privat, oeffentlich);
-    expect(nachricht("Sarah Mandel", 7, key, "de")).toContain("Das ist eine KEPTA-Pro-Lizenz, persönlich für dich.");
-    expect(nachricht("Sarah Mandel", 7, key, "en")).toContain("This is a KEPTA Pro license for you personally.");
+  it("die Stufe steht in der Nachricht — Team mit Seats, Organisation nach Absprache", () => {
     const business = stelleAus("Mandels Kanzlei", 8, privat, oeffentlich, "business", 5);
-    expect(nachricht("Mandels Kanzlei", 8, business, "de", "business", 5)).toContain("für 5 Seats");
+    expect(nachricht("Mandels Kanzlei", 8, business, "de", "business", 5)).toContain("mit 5 Seats");
     expect(nachricht("Mandels Kanzlei", 8, business, "en", "business", 5)).toContain("covering 5 seats");
     const enterprise = stelleAus("Big Corp", 9, privat, oeffentlich, "enterprise");
     expect(nachricht("Big Corp", 9, enterprise, "de", "enterprise")).toContain("individuell vereinbart");
@@ -108,12 +106,12 @@ describe("prüfen (Support)", () => {
   it("gültig mit Nummer — gesperrt — oder: für wen der Schlüssel eigentlich ausgestellt wurde", () => {
     const e = eintrag(7, "Sarah Mandel");
     const liste = [e];
-    expect(pruefe("sarah mandel", e.key, liste, oeffentlich)).toEqual({ gueltig: true, nummer: 7, gesperrt: false, edition: "pro", seats: 1, gehoertZu: null });
-    expect(pruefe("Sara Mandel", e.key.toLowerCase().replace(/-/g, " "), liste, oeffentlich)).toEqual({ gueltig: false, nummer: null, gesperrt: false, edition: "pro", seats: 1, gehoertZu: { name: "Sarah Mandel", nummer: 7 } });
-    expect(pruefe("Sara Mandel", "AAAAA-BBBBB", liste, oeffentlich)).toEqual({ gueltig: false, nummer: null, gesperrt: false, edition: "pro", seats: 1, gehoertZu: null });
+    expect(pruefe("sarah mandel", e.key, liste, oeffentlich)).toEqual({ gueltig: true, nummer: 7, gesperrt: false, edition: "enterprise", seats: 0, gehoertZu: null });
+    expect(pruefe("Sara Mandel", e.key.toLowerCase().replace(/-/g, " "), liste, oeffentlich)).toEqual({ gueltig: false, nummer: null, gesperrt: false, edition: "alt", seats: 1, gehoertZu: { name: "Sarah Mandel", nummer: 7 } });
+    expect(pruefe("Sara Mandel", "AAAAA-BBBBB", liste, oeffentlich)).toEqual({ gueltig: false, nummer: null, gesperrt: false, edition: "alt", seats: 1, gehoertZu: null });
     expect(pruefe("Sara Mandel", "!!", liste, oeffentlich).gehoertZu).toBeNull();
     const gesperrt = [{ ...e, gesperrt: true }];
-    expect(pruefe("Sarah Mandel", e.key, gesperrt, oeffentlich)).toEqual({ gueltig: false, nummer: 7, gesperrt: true, edition: "pro", seats: 1, gehoertZu: null });
+    expect(pruefe("Sarah Mandel", e.key, gesperrt, oeffentlich)).toEqual({ gueltig: false, nummer: 7, gesperrt: true, edition: "enterprise", seats: 0, gehoertZu: null });
   });
 });
 
@@ -138,9 +136,9 @@ describe("die Liste der ausgestellten Lizenzen", () => {
   it("fehlt die Datei, ist sie leer; die erste Lizenz bekommt Nr. 1 — nur für den eigenen Benutzer lesbar", () => {
     const datei = neueDatei();
     expect(ladeListe(datei)).toEqual([]);
-    const r = trageEin(datei, " Sarah  Mandel ", "  Harbor Advisory ", privat, oeffentlich, new Date("2026-09-13T12:00:00Z"));
+    const r = trageEin(datei, " Sarah  Mandel ", "  Harbor Advisory ", privat, oeffentlich, new Date("2026-09-13T12:00:00Z"), "enterprise");
     expect(r.neu).toBe(true);
-    expect(r.eintrag).toEqual({ nummer: 1, name: "Sarah Mandel", key: stelleAus("Sarah Mandel", 1, privat, oeffentlich), notiz: "Harbor Advisory", ausgestelltAm: "2026-09-13T12:00:00.000Z", edition: "pro" });
+    expect(r.eintrag).toEqual({ nummer: 1, name: "Sarah Mandel", key: stelleAus("Sarah Mandel", 1, privat, oeffentlich, "enterprise"), notiz: "Harbor Advisory", ausgestelltAm: "2026-09-13T12:00:00.000Z", edition: "enterprise" });
     expect(ladeListe(datei)).toEqual([r.eintrag]);
     expect(fs.statSync(datei).mode & 0o777).toBe(0o600);
     expect(fs.readdirSync(path.dirname(datei))).toEqual(["licenses.json"]);
@@ -148,35 +146,34 @@ describe("die Liste der ausgestellten Lizenzen", () => {
 
   it("dieselbe Stufe: dieselbe Lizenz; eine andere Stufe ist ein neuer Vertrag mit neuer Nummer", () => {
     const datei = neueDatei();
-    trageEin(datei, "Sarah Mandel", "", privat, oeffentlich);
-    const wieder = trageEin(datei, "SARAH mandel", "anders", privat, oeffentlich, new Date(), "pro");
+    trageEin(datei, "Sarah Mandel", "", privat, oeffentlich, new Date(), "business", 5);
+    const wieder = trageEin(datei, "SARAH mandel", "anders", privat, oeffentlich, new Date(), "business", 5);
     expect(wieder.neu).toBe(false);
     expect(wieder.eintrag.nummer).toBe(1);
-    const business = trageEin(datei, "Sarah Mandel", "Teamvertrag", privat, oeffentlich, new Date(), "business", 5);
-    expect(business.neu).toBe(true);
-    expect(business.eintrag.nummer).toBe(2);
-    expect(business.eintrag.edition).toBe("business");
-    expect(business.eintrag.seats).toBe(5);
-    const nochmal = trageEin(datei, "Sarah Mandel", "", privat, oeffentlich, new Date(), "business", 5);
+    const organisation = trageEin(datei, "Sarah Mandel", "Organisationsvertrag", privat, oeffentlich, new Date(), "enterprise");
+    expect(organisation.neu).toBe(true);
+    expect(organisation.eintrag.nummer).toBe(2);
+    expect(organisation.eintrag.edition).toBe("enterprise");
+    const nochmal = trageEin(datei, "Sarah Mandel", "", privat, oeffentlich, new Date(), "enterprise");
     expect(nochmal.neu).toBe(false);
     expect(nochmal.eintrag.nummer).toBe(2);
   });
 
   it("derselbe Name: dieselbe Lizenz; ein neuer Name: die nächste Nummer — die neueste oben", () => {
     const datei = neueDatei();
-    trageEin(datei, "Sarah Mandel", "", privat, oeffentlich);
-    const wieder = trageEin(datei, "SARAH mandel", "anders", privat, oeffentlich);
+    trageEin(datei, "Sarah Mandel", "", privat, oeffentlich, new Date(), "enterprise");
+    const wieder = trageEin(datei, "SARAH mandel", "anders", privat, oeffentlich, new Date(), "enterprise");
     expect(wieder.neu).toBe(false);
     expect(wieder.eintrag.nummer).toBe(1);
-    trageEin(datei, "Thomas Akt", "", privat, oeffentlich);
+    trageEin(datei, "Thomas Akt", "", privat, oeffentlich, new Date(), "enterprise");
     expect(ladeListe(datei).map((e) => [e.nummer, e.name])).toEqual([[2, "Thomas Akt"], [1, "Sarah Mandel"]]);
   });
 
   it("sperren und entsperren — ist die Lizenz eines Namens gesperrt, bekommt er beim nächsten Mal eine neue Nummer", () => {
     const datei = neueDatei();
-    trageEin(datei, "Sarah Mandel", "", privat, oeffentlich);
+    trageEin(datei, "Sarah Mandel", "", privat, oeffentlich, new Date(), "enterprise");
     expect(gesperrteNummern(sperre(datei, 1, true))).toEqual([1]);
-    const neu = trageEin(datei, "Sarah Mandel", "", privat, oeffentlich);
+    const neu = trageEin(datei, "Sarah Mandel", "", privat, oeffentlich, new Date(), "enterprise");
     expect(neu.neu).toBe(true);
     expect(neu.eintrag.nummer).toBe(2);
     expect(gesperrteNummern(sperre(datei, 1, false))).toEqual([]);
@@ -186,7 +183,7 @@ describe("die Liste der ausgestellten Lizenzen", () => {
 
   it("ohne Namen wird nichts eingetragen", () => {
     const datei = neueDatei();
-    expect(() => trageEin(datei, "  ", "", privat, oeffentlich)).toThrow(/Namen/);
+    expect(() => trageEin(datei, "  ", "", privat, oeffentlich, new Date(), "enterprise")).toThrow(/Namen/);
     expect(fs.existsSync(datei)).toBe(false);
   });
 
@@ -195,7 +192,7 @@ describe("die Liste der ausgestellten Lizenzen", () => {
     fs.mkdirSync(path.dirname(datei), { recursive: true });
     fs.writeFileSync(datei, "{kaputt");
     expect(() => ladeListe(datei)).toThrow(/beschädigt/);
-    expect(() => trageEin(datei, "Sarah Mandel", "", privat, oeffentlich)).toThrow(/beschädigt/);
+    expect(() => trageEin(datei, "Sarah Mandel", "", privat, oeffentlich, new Date(), "enterprise")).toThrow(/beschädigt/);
     expect(fs.readFileSync(datei, "utf8")).toBe("{kaputt");
     fs.writeFileSync(datei, '{"kein":"array"}');
     expect(() => ladeListe(datei)).toThrow(/beschädigt/);
@@ -206,7 +203,9 @@ describe("die Liste der ausgestellten Lizenzen", () => {
     fs.mkdirSync(path.dirname(datei), { recursive: true });
     const gut = { nummer: 4, name: "Sarah Mandel", key: "K", notiz: "", ausgestelltAm: "2026-09-13T12:00:00.000Z" };
     fs.writeFileSync(datei, JSON.stringify([{ name: 1 }, null, { ...gut, nummer: 0 }, { ...gut, gesperrt: "ja" }, gut]));
-    expect(ladeListe(datei)).toEqual([gut]);
+    // Der Rest der Liste bleibt; die eigene Stufe wird beim Lesen gesetzt (ohne
+    // Angabe zählt die Altstufe).
+    expect(ladeListe(datei)).toEqual([{ ...gut, edition: "alt" }]);
   });
 });
 

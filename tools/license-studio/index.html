@@ -105,7 +105,7 @@ td.aktion .knopf + .knopf { margin-left: 6px; }
 <main>
   <section id="ausstellen">
     <h1>Lizenz ausstellen</h1>
-    <p class="lead">Dein Kunde gibt nur Namen und Schlüssel ein — offline, nichts verlässt seinen Mac. Jede Lizenz bekommt eine eigene Nummer, und der Name steht sichtbar in KEPTA. Wird ein Schlüssel weitergegeben, sperrst du ihn unter „Ausgestellt“.</p>
+    <p class="lead">Der Schlüssel weist den Vertrag aus — die App selbst braucht keinen und läuft mit jedem Werkzeug unbegrenzt. Jede Lizenz bekommt eine eigene Nummer und läuft auf einen Namen. Taucht ein Schlüssel irgendwo auf, wo er nicht hingehört: sperren.</p>
     <form id="form-aus" autocomplete="off">
       <div class="reihe">
         <label><span>Name des Kunden (wie auf der Rechnung)</span><input id="name" placeholder="z. B. Sarah Mandel" maxlength="200" autofocus></label>
@@ -114,9 +114,8 @@ td.aktion .knopf + .knopf { margin-left: 6px; }
       <div class="reihe">
         <label><span>Stufe</span>
           <select id="edition">
-            <option value="pro" selected>KEPTA Pro — 12 €/Monat · 120 €/Jahr</option>
-            <option value="business">KEPTA Business — 25 €/Nutzer/Monat (jährlich)</option>
-            <option value="enterprise">KEPTA Enterprise — Preis nach Absprache (Firmengröße, Umsatz)</option>
+            <option value="enterprise" selected>KEPTA Enterprise — Organisation, Umfang nach Absprache</option>
+            <option value="business">KEPTA Enterprise — Team mit Seats (1–9999)</option>
           </select>
         </label>
         <label id="seats-feld" hidden><span>Seats (Plätze, 1–9999)</span><input id="seats" type="number" min="1" max="9999" placeholder="z. B. 5"></label>
@@ -146,7 +145,7 @@ td.aktion .knopf + .knopf { margin-left: 6px; }
 
   <section id="pruefen" hidden>
     <h1>Schlüssel prüfen</h1>
-    <p class="lead">Für den Support: Ein Kunde meldet, sein Schlüssel funktioniert nicht? Trag ein, was er eingegeben hat. Geprüft wird genau so wie in KEPTA — samt Sperrliste.</p>
+    <p class="lead">Für den Support: Ein Kunde meldet, sein Schlüssel funktioniert nicht? Trag ein, was er eingegeben hat. Geprüft wird mit demselben Code, der auch die Sperrliste liest.</p>
     <form id="form-pruef" autocomplete="off">
       <label><span>Name, wie der Kunde ihn eingegeben hat</span><input id="p-name" maxlength="200"></label>
       <label><span>Lizenzschlüssel</span><textarea id="p-key" rows="3" spellcheck="false" style="font-family:var(--mono);font-size:13px"></textarea></label>
@@ -157,7 +156,7 @@ td.aktion .knopf + .knopf { margin-left: 6px; }
 
   <section id="liste" hidden>
     <h1>Ausgestellte Lizenzen</h1>
-    <p class="lead">Jede Lizenz, die du hier ausstellst, landet in dieser Liste — auf deinem Mac, nur für deinen Benutzer lesbar. Taucht ein Schlüssel irgendwo auf, wo er nicht hingehört: sperren. Ab dem nächsten KEPTA-Update gilt er nicht mehr.</p>
+    <p class="lead">Jede Lizenz, die du hier ausstellst, landet in dieser Liste — auf deinem Mac, nur für deinen Benutzer lesbar. Taucht ein Schlüssel irgendwo auf, wo er nicht hingehört: sperren. Die Nummer steht danach in der Sperrliste des Repos.</p>
     <div class="info" id="sperr-info" hidden></div>
     <input id="suche" placeholder="Suchen — Name, Nummer oder Notiz" style="margin-bottom:14px">
     <table><thead><tr><th>Nr.</th><th>Name</th><th>Stufe</th><th>Notiz</th><th>Ausgestellt</th><th></th></tr></thead><tbody id="zeilen"></tbody></table>
@@ -180,11 +179,11 @@ let hinweisRunde = 0;
 
 const datum = (iso) => new Date(iso).toLocaleString("de-DE", { day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit" });
 const nr = (n) => String(n).padStart(4, "0");
-const STUFEN = { pro: "KEPTA Pro", business: "KEPTA Business", enterprise: "KEPTA Enterprise" };
-const stufeVon = (e) => (STUFEN[e.edition] ? e.edition : "pro");
+const STUFEN = { business: "KEPTA Enterprise", enterprise: "KEPTA Enterprise", alt: "KEPTA Enterprise" };
+const stufeVon = (e) => (e.edition === "business" || e.edition === "enterprise" ? e.edition : "alt");
 const stufeText = (e) => {
   const st = stufeVon(e);
-  return STUFEN[st] + (st === "business" && e.seats ? ` · ${e.seats} Seats` : st === "enterprise" ? " · nach Absprache" : "");
+  return STUFEN[st] + (st === "business" && e.seats ? ` · ${e.seats} Seats` : st === "enterprise" ? " · nach Absprache" : " · frühere Einzel-Lizenz");
 };
 
 function toast(text) {
@@ -323,7 +322,7 @@ async function ladeListe() {
 async function schalteSperre(e) {
   const sperren = !e.gesperrt;
   const frage = sperren
-    ? `Lizenz Nr. ${nr(e.nummer)} (${e.name}) sperren?\n\nAb dem nächsten KEPTA-Update gilt dieser Schlüssel nicht mehr — auch nicht auf Rechnern, die schon aktiviert sind.`
+    ? `Lizenz Nr. ${nr(e.nummer)} (${e.name}) sperren?\n\nDie Nummer steht ab jetzt in src/core/sperrliste.ts und gilt bei jeder weiteren Prüfung als gesperrt.`
     : `Sperre für Lizenz Nr. ${nr(e.nummer)} (${e.name}) aufheben?`;
   if (!window.confirm(frage)) return;
   const r = await studio.sperren(e.nummer, sperren);

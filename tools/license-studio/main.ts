@@ -15,7 +15,7 @@ import { execFileSync } from "node:child_process";
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
-import { type Eintrag, type Edition, EDITIONEN, gesperrteNummern, hinweise, ladeListe, leseSperrliste, nachricht, passtZurApp, pruefe, sperre, sperrlisteQuelle, trageEin } from "./kern";
+import { type Eintrag, type Edition, type Stufe, EDITIONEN, editionVon, gesperrteNummern, hinweise, ladeListe, leseSperrliste, nachricht, passtZurApp, pruefe, sperre, sperrlisteQuelle, trageEin } from "./kern";
 
 const DIENST = "app.kepta.license-signing";
 // Tests reichen eine eigene Datei herein — sonst schriebe ein Probelauf ins Repo.
@@ -52,7 +52,8 @@ function privaterSchluessel(): string | null {
 
 const listeDatei = () => path.join(app.getPath("userData"), "licenses.json");
 const text = (x: unknown, max: number) => (typeof x === "string" ? x.slice(0, max) : "");
-const stufe = (x: unknown): Edition => (EDITIONEN.includes(x as Edition) ? (x as Edition) : "pro");
+/** Die Stufe, die das Fenster zum *Ausstellen* wählt — Unbekanntes wird Enterprise. */
+const editionAuswahl = (x: unknown): Edition => (EDITIONEN.includes(x as Edition) ? (x as Edition) : "enterprise");
 const zahl = (x: unknown, max: number) => (typeof x === "number" && Number.isInteger(x) && x >= 0 && x <= max ? x : undefined);
 
 /** Die Nummern in der Sperrliste des Repos — null, wenn es sie hier nicht gibt. */
@@ -88,7 +89,7 @@ ipcMain.handle("ausstellen", (_e, a: { name?: unknown; notiz?: unknown; edition?
   try {
     const privat = privaterSchluessel();
     if (!privat) return { ok: false, fehler: "Kein Signaturschlüssel im Schlüsselbund. Einmalig im Terminal: node scripts/license-keypair.mjs" };
-    const { eintrag, neu } = trageEin(listeDatei(), text(a?.name, 400), text(a?.notiz, 500), privat, undefined, new Date(), stufe(a?.edition), zahl(a?.seats, 9999));
+    const { eintrag, neu } = trageEin(listeDatei(), text(a?.name, 400), text(a?.notiz, 500), privat, undefined, new Date(), editionAuswahl(a?.edition), zahl(a?.seats, 9999));
     return { ok: true, eintrag, neu };
   } catch (e) {
     return { ok: false, fehler: (e as Error).message };
@@ -128,8 +129,10 @@ ipcMain.handle("sperren", (_e, a: { nummer?: unknown; gesperrt?: unknown }) => {
   }
 });
 
+// Die Nachricht bekommt die Stufe des Eintrags — auch „alt" bei einem Schlüssel
+// aus der Zeit vor den Enterprise-Verträgen.
 ipcMain.handle("nachricht", (_e, a: { name?: unknown; nummer?: unknown; key?: unknown; sprache?: unknown; edition?: unknown; seats?: unknown }) =>
-  nachricht(text(a?.name, 400), typeof a?.nummer === "number" ? a.nummer : 0, text(a?.key, 400), a?.sprache === "en" ? "en" : "de", stufe(a?.edition), zahl(a?.seats, 9999)));
+  nachricht(text(a?.name, 400), typeof a?.nummer === "number" ? a.nummer : 0, text(a?.key, 400), a?.sprache === "en" ? "en" : "de", editionVon({ edition: a?.edition as Stufe | undefined }), zahl(a?.seats, 9999)));
 
 ipcMain.handle("hinweise", (_e, name: unknown) => hinweise(text(name, 400)));
 
