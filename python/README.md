@@ -27,7 +27,7 @@ for hit in kepta.search("carbonara without cream"):
 
 ## How search works
 
-Three tracks, fused by Reciprocal Rank Fusion: **full text** (BM25), **vectors** and the **knowledge graph**.
+Three tracks, fused by Reciprocal Rank Fusion: **full text** (BM25), **vectors** and the **knowledge graph**. They are not three equal forces: measured per leg on the repository's own corpus of 58 notes / 45 queries (`npx tsx scripts/ablation.ts`, 09.10.2026), full text alone reaches 71 % Hit@1, full text plus graph still 71 % (+0 percentage points), full text plus vectors 78 %. Full text is the leg that answers.
 
 Full text and graph work immediately. The vector track also finds what is worded differently from the question — for that it needs a local embedding model:
 
@@ -111,7 +111,7 @@ if not kepta.is_alive():
 
 ## The server behind it
 
-The client talks to the KEPTA HTTP API on your own machine — start it from the [open core](https://github.com/DamianTodorovic/kepta) (`npm run dev`), or use the desktop app, which runs the same server. It is the same local, encrypted memory the MCP server writes, free with no account and no limits. The one exception: `npx kepta-mcp`, the stdio server Claude Desktop and Cursor start, opens no HTTP port at all — checked in the published 3.2.0 bundle — so it is not what this client connects to. German notes work as well as English ones: the search stopword list covers both languages.
+The client talks to the KEPTA HTTP API on your own machine — start it from the [open core](https://github.com/DamianTodorovic/kepta) (`npm run dev`), or run the desktop app, which serves the same API from its own copy of the engine. It is the same local, encrypted memory the MCP server writes, free with no account and no limits. The one exception: `npx kepta-mcp`, the stdio server Claude Desktop and Cursor start, opens no HTTP port at all — checked in the published 3.2.0 bundle — so it is not what this client connects to. German notes work as well as English ones: the search stopword list covers both languages.
 
 ## License
 
