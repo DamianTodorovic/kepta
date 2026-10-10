@@ -430,7 +430,11 @@ describe("Storage, Import/Export, Convenience-Routen", () => {
     fs.writeFileSync(datei, JSON.stringify({ theme: "dark", ai_key: "sk-alt-123", zahl: 5 }));
     store.setzeEinstellungen({ theme: "light" }); // was schon in der Datenbank steht, gewinnt
     const neu = createApp(store);
-    expect((await request(neu).get("/api/settings")).body).toEqual({ theme: "light", ai_key: "sk-alt-123" });
+    // A3-09: der uebernommene Klartext darf von dieser Route nicht mehr zurueckkommen —
+    // der Titel dieses Falls sagt "laesst keinen Klartext zurueck", und seit der Maske
+    // (F13, Schritt 3) gilt das auch fuer die Antwort.
+    expect((await request(neu).get("/api/settings")).body).toEqual({ theme: "light", ai_key: { gesetzt: true, ende: "-123" } });
+    expect(store.einstellungen().ai_key).toBe("sk-alt-123"); // Speicher bleibt die Datenbank
     expect(fs.existsSync(datei)).toBe(false);
   });
 
@@ -991,6 +995,9 @@ describe("Import: Body-Limits, Vollständigkeit, Zeitstempel", () => {
         { id: "k-dup", title: "Zweite", content: "b" },
       ],
       mode: "replace",
+      // F12: derselbe Vertrag wie im Kern — ein Volltausch braucht die
+      // ausdrueckliche Bestaetigung, sonst antwortet die Route mit 400.
+      confirm: "replace",
     });
     expect(res.status).toBe(200);
     expect(res.body.imported).toBe(1);

@@ -1031,12 +1031,49 @@ export class KeptaStore {
       ).map((r) => ({ id: Number(r.id), name: String(r.name) }));
       return { entities, relations };
     }
-    const entities = (this.db.prepare("SELECT id, name FROM entities LIMIT 500").all() as Record<string, unknown>[]).map((r) => ({
+    // A7-08: die Scheibe war ein Ausschnitt der Zeilenordnung, nicht der
+    // Bedeutung. `LIMIT 500` ohne ORDER BY liefert die hundert zuerst
+    // eingefuegten Begriffe — in einem Bestand mit 934 Begriffen (gemessen bei
+    // 1 500 Notizen) kann genau der zentrale fehlen, und der Schnitt wechselt,
+    // sobald jemand Neues schreibt. Geordnet wird nach der Zahl der Notizen, die
+    // einen Begriff tragen: der Ausschnitt ist die Bedeutungsspitze, und die
+    // Bilanzzeile der Flaeche sagt weiterhin, wie viel davon nicht gezeigt wird.
+    //
+    // Ein GROUP BY mit einem Join ueber die Traagertabelle — kein korrelierter
+    //COUNT je Zeile: der zaehlt bei zehntausend Begriffen gegen
+    // hunderttausend Zeilen, und die Graphseite haengt.
+    const entities = (
+      this.db
+        .prepare(
+          `SELECT e.id AS id, e.name AS name
+           FROM entities e
+           LEFT JOIN memory_entities me ON me.entity_id = e.id
+           GROUP BY e.id, e.name
+           ORDER BY COUNT(me.memory_id) DESC, e.id ASC
+           LIMIT 500`
+        )
+        .all() as Record<string, unknown>[]
+    ).map((r) => ({
       id: Number(r.id),
       name: String(r.name),
     }));
+    // Dasselbe fuer die Kanten: was hinter einer 2 000er-Scheibe liegt, darf
+    // nicht die Einfuegereihenfolge entscheiden. Paare mit mehr Belegen — drei
+    // Aussagen ueber demselben Paar sind ein staerkeres Paar als eine — stehen
+    // vorne, innerhalb des Paares die aelteste zuerst, damit der Schnitt bei
+    // gleichem Bestand derselbe bleibt.
     const relations = (
-      this.db.prepare("SELECT id, source_id, target_id, relation, valid_from, valid_to, memory_id FROM relations LIMIT 2000").all() as Record<string, unknown>[]
+      this.db
+        .prepare(
+          `SELECT r.id, r.source_id, r.target_id, r.relation, r.valid_from, r.valid_to, r.memory_id
+           FROM relations r
+           LEFT JOIN (
+             SELECT source_id, target_id, COUNT(*) AS paare FROM relations GROUP BY source_id, target_id
+           ) p ON p.source_id = r.source_id AND p.target_id = r.target_id
+           ORDER BY p.paare DESC, r.id ASC
+           LIMIT 2000`
+        )
+        .all() as Record<string, unknown>[]
     ).map((r) => ({
       id: Number(r.id),
       sourceId: Number(r.source_id),
@@ -1183,27 +1220,59 @@ function schluesselPragmas(db: Database.Database, schluessel: Uint8Array, pragma
   db.pragma(`${pragma} = "x'${Buffer.from(schluessel).toString("hex")}'"`);
 }
 
-function setzeSchluessel(db: Database.Database, schluessel: Uint8Array): void {
+function setzeSchluessel(db: Database.Database, schluessel: Uint8Array, herkunft?: string): void {
   schluesselPragmas(db, schluessel, "key");
   try {
     db.prepare("SELECT count(*) FROM sqlite_master").get();
   } catch (e) {
     db.close();
     if (sqliteCode(e) === "SQLITE_NOTADB") {
-      throw new Error("The knowledge base could not be opened with its key — the key in the keychain does not belong to this database. Nothing was changed.");
+      // Blattgröße prüfen, bevor ein Satz über die Datei fällt: eine Wissensbasis ist
+      // immer ein Vielfaches ihrer Seitenlänge (SQLCipher: 512..65536, Potenzen von 2).
+      // Die Datei heißt hier `db.name`, nicht der Pfad des Aufrufers — die Verbindung
+      // ist schon geschlossen, die Bytes auf der Platte sind unverändert.
+      let groesse = -1;
+      try {
+        groesse = fs.statSync(db.name).size;
+      } catch {
+        groesse = -1;
+      }
+      if (groesse >= 0 && groesse % 512 !== 0) {
+        throw new Error(
+          `The file at ${db.name} is not a SQLite database at all — ${groesse} bytes is not a multiple of any page size, ` +
+            `so it is either not a database or the damaged remnant of one. No key can open it, and none was tried again. ` +
+            `Nothing was changed. If a restore or another program wrote here, point KEPTA_DATA_DIR at the real knowledge base.`,
+        );
+      }
+      throw new Error(
+        `The knowledge base ${db.name} could not be opened with the 256-bit key${herkunft ? ` from ${herkunft}` : " it was given"} — ` +
+          `either that is not the key this file was encrypted with, or the file itself is damaged. ` +
+          `SQLite reports only "file is not a database", so KEPTA does not say which. Nothing was changed. ` +
+          `SECURITY.md, "Keep a copy of the key", lists the command that reads your key back on every operating system; ` +
+          `if this file was written with a key you hold yourself, set KEPTA_DB_KEY to it and start again.`,
+      );
     }
     throw e;
   }
 }
 
 /** Ohne Schluessel: eine verschluesselte Datei darf nicht still als leeres Gehirn weiterlaufen. */
-function pruefeLesbar(db: Database.Database, hinweis: string | undefined): void {
+function pruefeLesbar(db: Database.Database, hinweis: string | undefined, herkunft?: string): void {
   try {
     db.prepare("SELECT count(*) FROM sqlite_master").get();
   } catch (e) {
     db.close();
     if (sqliteCode(e) === "SQLITE_NOTADB") {
-      throw new Error(`The knowledge base is encrypted, but its key is not available${hinweis ? `: ${hinweis}` : "."}`);
+      // Fall (c) aus A1-08: die Schluesselquelle war nicht zu erreichen. Der Grund
+      // steht schon in `hinweis` — ihn schaerft die Schluesselschicht mit Quelle,
+      // Wartezeit und Rueckhol-Befehl. Abgeschnitten werden darf er nicht.
+      throw new Error(
+        `The knowledge base is encrypted, but its key is not available${
+          hinweis ? `: ${hinweis}` : herkunft ? ` from ${herkunft}` : "."
+        } Nothing was changed. The file was not opened and no empty knowledge base was started over it. ` +
+          `SECURITY.md, "Keep a copy of the key", lists the command that reads your key back; ` +
+          `a key you hold yourself goes in KEPTA_DB_KEY (openssl rand -hex 32).`,
+      );
     }
     throw e;
   }

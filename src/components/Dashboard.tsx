@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
+import './huelle.css';
 import { Sidebar } from './Sidebar';
 import { MemoryCard } from './MemoryCard';
 import { MemoryEditor } from './MemoryEditor';
@@ -103,12 +104,28 @@ export function Dashboard() {
   // Dieselbe Rettung für alle Nutzer-Präferenzen (Semantic, TopK, Gruppierung,
   // Wizard, AutoLearn, Profil): Hydration beim Start, Spiegel im Takt — der
   // Random-Port-Origin verliert sonst JEDE Einstellung.
+  //
+  // (b) aus dem A1-Nachtrag: Lesen und Schreiben sind hier zwei verschiedene
+  // Entscheidungen, und keine darf der anderen zuvorkommen. Vor dem Lesen
+  // schrieb der erste Spiegel-Lauf eine Spiegelung ohne den Assistenten-Merker
+  // über die alte — der Nutzer war seine Entscheidung los. Und der Wecker konnte
+  // den Assistenten vor dem Merker zeigen. Also: erst die Antwort abwarten, dann
+  // spiegeln, dann — siehe unten — allenfalls der Assistent.
+  const [praeferenzenGelesen, setPraeferenzenGelesen] = useState(false);
   useEffect(() => {
-    let cancelled = false;
-    hydratePrefs().then(() => { if (!cancelled) setAiBereit(z => z + 1); });
-    const takt = setInterval(spiegelePrefs, 10_000);
-    spiegelePrefs();
-    return () => { cancelled = true; clearInterval(takt); };
+    let offen = true;
+    let takt: ReturnType<typeof setInterval> | null = null;
+    void hydratePrefs().then(() => {
+      if (!offen) return;
+      setAiBereit((z) => z + 1);
+      setPraeferenzenGelesen(true);
+      spiegelePrefs();
+      takt = setInterval(spiegelePrefs, 10_000);
+    });
+    return () => {
+      offen = false;
+      if (takt) clearInterval(takt);
+    };
   }, []);
   const [memories, setMemories] = useState<Memory[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
@@ -164,10 +181,63 @@ export function Dashboard() {
    * Fenster beide nicht trägt. Wer sie will, holt sie mit dem Knopf, den es
    * dafür schon gibt; die Entscheidung bleibt beim Menschen, nur die Reihenfolge
    * stimmt jetzt mit der Breite.
+   *
+   * Die Breite wird nicht beim Start gefühlt: ein Fenster, das während des Laufs
+   * schmaler wird (oder wird), ließ die Leiste stehen, wo sie beim Mount stand —
+   * bei 390 px blieb der Fläche ein Streifen von 80 × 418 px (A7-06, gemessen
+   * 09.10.2026). Also fragt der Rahmen bei jeder Breitenänderung neu.
    */
-  const [isFocusMode, setIsFocusMode] = useState(
+  const [schmal, setSchmal] = useState(
     () => typeof window !== "undefined" && window.innerWidth < 768
   );
+  useEffect(() => {
+    const beiBreite = () => setSchmal(window.innerWidth < 768);
+    window.addEventListener("resize", beiBreite);
+    window.addEventListener("orientationchange", beiBreite);
+    return () => {
+      window.removeEventListener("resize", beiBreite);
+      window.removeEventListener("orientationchange", beiBreite);
+    };
+  }, []);
+  const [isFocusMode, setIsFocusMode] = useState(schmal);
+  const letzteBreitenklasse = useRef(schmal);
+  useEffect(() => {
+    // Nur das Umkippen der Breite entscheidet, nicht jeder Render — wer die
+    // Leiste selbst geöffnet hat, dem räumt sie erst wieder ein anderer Knopf.
+    if (letzteBreitenklasse.current === schmal) return;
+    letzteBreitenklasse.current = schmal;
+    setIsFocusMode(schmal);
+  }, [schmal]);
+
+  /**
+   * Z-14: das Fenster weiß, ob es gerade den Schlüssel hat. macOS dimmt die
+   * Traffic-Lights selbst (electron.js: `titleBarStyle: hiddenInset`), aber der
+   * Inhalt wusste nichts davon — die Auswahl blieb siegelrot, als spräche
+   * jemand anders. Gedämpft wird die Chrome (huelle.css), nie das Blatt, und
+   * ein offener Dialog lässt den Zustand nicht verschwinden: der Schlüssel
+   * gehört dem Fenster, nicht dem Panel.
+   */
+  const [schluessel, setSchluessel] = useState(
+    () => typeof document === "undefined" || document.hasFocus()
+  );
+  useEffect(() => {
+    // Die Ereignisse selbst sind die Auskunft, nicht `document.hasFocus()`:
+    // dem Fenster darf man den Verlust ansehen, auch wenn ein Renderer die
+    // Frage in einem Randfall noch mit „ja" beantwortet.
+    const an = () => setSchluessel(true);
+    const aus = () => setSchluessel(false);
+    const beiSichtbarkeit = () =>
+      setSchluessel(document.visibilityState !== "hidden" && document.hasFocus());
+    window.addEventListener("focus", an);
+    window.addEventListener("blur", aus);
+    document.addEventListener("visibilitychange", beiSichtbarkeit);
+    beiSichtbarkeit();
+    return () => {
+      window.removeEventListener("focus", an);
+      window.removeEventListener("blur", aus);
+      document.removeEventListener("visibilitychange", beiSichtbarkeit);
+    };
+  }, []);
 
   // Papierkorb
   const [trashOpen, setTrashOpen] = useState(false);
@@ -251,7 +321,12 @@ export function Dashboard() {
    * des Ergebnisreglers; tiefer zu suchen schneidet nichts ab, es verfeinert.
    */
   const anfrageLimit = topK === 0 ? ALL_RESULTS : Math.max(effectiveLimit, suchPrefs.tiefe);
-  useEffect(() => { try { localStorage.setItem('ki_gehirn_semantic', String(semanticEnabled)); } catch { /* ignore */ } }, [semanticEnabled]); spiegelePrefs();
+  // Der Spiegel Ruf gehoert in den Effect: so stand er einmal pro Render im
+  // Korper und bewarf die Settings-Route bei jeder Bewegung der Oberflaeche.
+  useEffect(() => {
+    try { localStorage.setItem('ki_gehirn_semantic', String(semanticEnabled)); } catch { /* ignore */ }
+    spiegelePrefs();
+  }, [semanticEnabled]);
 
   // 180ms Debounce für Suche — vermeidet hybridSearch bei jedem Keystroke
   useEffect(() => {
@@ -341,23 +416,37 @@ export function Dashboard() {
       }
     } catch { /* ignore */ }
   };
+  // A7-10, gemessen am 09.10. an einem neuen Datenordner mit 12 Notizen: der
+  // Assistent stand nach 2 920 ms ueber der Flaeche, die Kopfzeile zaehlte das
+  // Bild da schon. Sein Wecker lief ab dem Mount — 600 ms fuer die leere Base,
+  // 2 500 ms fuer die gefuellte — und fragte nie, ob ueberhaupt eine Auskunft
+  // ueber den Bestand da ist. Also: erst die erste Antwort, dann ein gemalter
+  // Rahmen, dann der Assistent. Nie frueher und nie spaeter nach der Uhr.
+  //
+  // (a) und (b) sind getrennt: dieser Wecker entscheidet nur, WANN. OB ueberhaupt
+  // einer kommt, steht in der Datenbank (Der Assistenten-Merker) und wird vor
+  // dem Lesen nicht ueberholt — `praeferenzenGelesen` ist die Schwelle.
   useEffect(() => {
+    if (!initialLoaded || !praeferenzenGelesen) return;
     try {
       if (wizardDismissed()) return;
       const p = loadProfile();
       if (p?.hasCompletedOnboarding) return;
-      if (memories.length === 0) {
-        const timer = setTimeout(() => setWizardOpen(true), 600);
-        return () => clearTimeout(timer);
-      }
-      if (!p) {
-        const timer = setTimeout(() => setWizardOpen(true), 2500);
-        return () => clearTimeout(timer);
-      }
-    } catch {}
-    // Bewusst nur beim Mount + erstem Datenlayout — Dismiss-Speicher entscheidet dauerhaft
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [memories.length === 0]);
+    } catch { return; }
+    let naechster = 0;
+    let gemalt = 0;
+    // Zwei Rahmen: der erste stellt das Bild ins DOM, der zweite ist sicher
+    // gemalt. Der Assistent tritt hinter dem Bild auf, nicht vor ihm.
+    naechster = requestAnimationFrame(() => {
+      gemalt = requestAnimationFrame(() => setWizardOpen(true));
+    });
+    return () => {
+      cancelAnimationFrame(naechster);
+      cancelAnimationFrame(gemalt);
+    };
+    // Der Dismiss-Speicher entscheidet dauerhaft, beide Gaende kippen genau
+    // einmal — das ist Absicht, nicht Vergessen.
+  }, [initialLoaded, praeferenzenGelesen]);
   const searchInputRef = useRef<HTMLInputElement>(null);
   const clipInputRef = useRef<HTMLInputElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -757,7 +846,9 @@ export function Dashboard() {
           totalNodes++;
         }
       }
-      setImportMsg(`Imported ${totalNodes} nodes from ${list.length} file(s).`);
+      // D2(c) Z7: eine Zahl spricht wie ein Mensch — „3 file(s)" war eine
+      // Klammer, wo ein Wort hingehört.
+      setImportMsg(`Imported ${totalNodes} ${totalNodes === 1 ? "node" : "nodes"} from ${list.length} ${list.length === 1 ? "file" : "files"}.`);
       setTimeout(() => setImportMsg(null), 3500);
     } catch (e: unknown) {
       const msg = e instanceof Error ? e.message : String(e);
@@ -945,7 +1036,7 @@ export function Dashboard() {
                 {g.quelle && (
                   <button
                     onClick={() => void oeffneQuelle(g.quelle!)}
-                    className="btn-ghost px-1.5 py-0.5 rounded text-[10px] shrink-0"
+                    className="btn-ghost min-h-6 px-1.5 inline-flex items-center rounded text-[11px] shrink-0"
                     title={g.quelle.art === 'datei' ? `Open file: ${g.quelle.pfad}` : `Open link: ${g.quelle.url}`}
                   >
                     {g.quelle.art === 'url' ? 'Open link' : 'Open file'}
@@ -1015,7 +1106,11 @@ export function Dashboard() {
   }, [visibleCount, displayedMemories.length]);
 
   return (
-    <div className="flex h-full overflow-hidden text-zinc-900 dark:text-zinc-100">
+    <div
+      className={cn("huelle flex h-full overflow-hidden text-zinc-900 dark:text-zinc-100", schmal && "huelle-schmal")}
+      data-fenster={schluessel ? "schluessel" : "gedaempft"}
+      data-einrichtung={wizardOpen ? "offen" : undefined}
+    >
       <Sidebar
         tags={allTags}
         selectedTags={selectedTags}
@@ -1058,14 +1153,20 @@ export function Dashboard() {
             </div>
             <div className="flex-1 max-w-xl relative group">
               <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 transition-colors" style={{ color: 'var(--text-3)' }} />
+              {/* D1-15, nachgemessen: „Search… (⌘K for commands)" brauchte bei
+                  390 px 188,6 px in 106 px Raum und schnitt bei „…(⌘K foi" hart
+                  ab — ein Eingabefeld kennt keine Ellipse von selbst. Der
+                  ⌘-Hinweis steht schon auf dem eigenen Knopf daneben; eine
+                  Fläche, die beim Schmalwerden 82 px verliert, trägt keine
+                  zweite Behauptung. */}
               <input
                 ref={searchInputRef}
                 type="text"
-                placeholder="Search… (⌘K for commands)"
+                placeholder={schmal ? "Search" : "Search your memory"}
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 onKeyDown={(e) => { if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "k") { e.preventDefault(); setPaletteOpen(true); } }}
-                className="hud-input w-full pl-9 pr-4 py-2 rounded-lg text-sm"
+                className="hud-input w-full min-w-0 truncate pl-9 pr-4 py-2 rounded-lg text-sm"
               />
             </div>
 
@@ -1172,7 +1273,7 @@ export function Dashboard() {
                 step={1}
                 value={Math.max(0, RESULT_STOPS.indexOf(topK as typeof RESULT_STOPS[number]))}
                 onChange={(e) => setTopK(RESULT_STOPS[parseInt(e.target.value, 10)] ?? 5)}
-                className="w-24"
+                className="h-7 w-24"
                 aria-label="Number of results shown"
                 title="How many hits the index shows. The last step shows everything that matches."
               />
@@ -1237,7 +1338,7 @@ export function Dashboard() {
                 <button
                   onClick={handleInboxScan}
                   disabled={inboxScanBusy}
-                  className="ml-0.5 -mr-1 px-1 rounded text-[10px] font-semibold hover:opacity-80 disabled:opacity-40"
+                  className="ml-0.5 -mr-1 min-h-6 px-1.5 inline-flex items-center rounded text-[11px] font-semibold hover:opacity-80 disabled:opacity-40"
                   style={{ color: 'var(--accent)' }}
                   title="Scan the inbox now and import"
                 >
@@ -1277,7 +1378,13 @@ export function Dashboard() {
                 <div className="flex-1 min-w-0">
                   <div className="text-[13px] font-medium truncate" style={{ color: "var(--text-1)" }}>
                     {importing ? "Importing…" : dragOver ? "Drop to import" : "Drag files here"}
-                    <span className="hidden sm:inline font-normal" style={{ color: "var(--text-3)" }}> — PDF, MD, TXT, JSON</span>
+                  </div>
+                  {/* Die Formate auf eigener Zeile: in einer Reihe mit dem Satz
+                      abgeschnitten, gemessen +137 px bei 1 024 px und +130 px bei
+                      820 px Fensterbreite — ein `sm:inline` misst die Breite des
+                      Fensters, die Zeile kriegt die Breite der Fläche. */}
+                  <div className="text-[11px] tnum" style={{ color: "var(--text-2)" }}>
+                    PDF · MD · TXT · JSON
                   </div>
                   {importMsg && <div className="text-[11px] mt-0.5 flex items-center gap-1" style={{ color: "var(--ok)" }}><CheckCircle2 className="w-3 h-3" />{importMsg}</div>}
                   {importErr && <div className="text-[11px] mt-0.5 flex items-center gap-1" style={{ color: "var(--danger)" }}><AlertCircle className="w-3 h-3" />{importErr}</div>}
@@ -1312,7 +1419,7 @@ export function Dashboard() {
                   value={clipUrl}
                   onChange={(e) => setClipUrl(e.target.value)}
                   onKeyDown={(e) => { if (e.key === "Enter") handleClip(); }}
-                  placeholder="Paste a URL and import…"
+                  placeholder="Paste a URL…"
                   className="flex-1 min-w-0 bg-transparent text-sm outline-none"
                   style={{ color: "var(--text-1)" }}
                 />
@@ -1486,7 +1593,7 @@ export function Dashboard() {
                         key={key}
                         onClick={() => setGruppierung(key)}
                         disabled={!!debouncedSearchQuery.trim()}
-                        className="apple-seg-btn text-[11px] font-medium disabled:opacity-40"
+                        className="apple-seg-btn min-h-7 text-[11px] font-medium disabled:opacity-40"
                         data-on={effektivGruppierung === key ? "true" : "false"}
                         title={debouncedSearchQuery.trim()
                           ? 'Grouping is off while you search — results are ranked by relevance'
@@ -1524,16 +1631,21 @@ export function Dashboard() {
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
-          className={cn("flex-1 flex flex-col h-full min-h-0 overflow-hidden px-5 py-3", currentView === 'graph' ? 'flex' : 'hidden')}
+          className={cn("flex-1 flex flex-col h-full min-h-0 overflow-hidden px-2 py-3 md:px-5", currentView === 'graph' ? 'flex' : 'hidden')}
         >
           <div className="flex items-center gap-3 mb-2 shrink-0">
-            <div className="text-[13px] font-medium" style={{ color: 'var(--text-1)' }}>Graph</div>
-            <div className="text-[12px] tnum" style={{ color: 'var(--text-3)' }}>{memories.length} entries · connected through tags, similarity and knowledge entities</div>
-            <div className="ml-auto">
+            <div className="text-[13px] font-medium shrink-0" style={{ color: 'var(--text-1)' }}>Graph</div>
+            {/* Der lange Satz ist schmückende Auskunft, keine Zahl: in einem
+                Fenster, das ihn nicht trägt, bricht er um und rückt das Bild
+                nach unten (A7-06). Die Zählung bleibt stehen, der Rest nicht. */}
+            <div className="text-[12px] tnum min-w-0 truncate" style={{ color: 'var(--text-3)' }}>
+              {memories.length} entries{schmal ? "" : " · connected through tags, similarity and knowledge entities"}
+            </div>
+            <div className="ml-auto shrink-0">
               <button onClick={() => setCurrentView("memories")} className="btn-ghost px-2.5 py-1.5 rounded-md text-xs font-medium">Back to the list</button>
             </div>
           </div>
-          <div className="flex-1 min-h-0">
+          <div className="flex-1 min-h-0 flaeche-huelle">
             <KnowledgeGraph
               memories={memories}
               sichtbar={currentView === 'graph'}

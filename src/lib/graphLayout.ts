@@ -696,6 +696,10 @@ export interface Simulation {
    * die Physik von vorher ist dann bitgleich die Physik von jetzt.
    */
   krafte: SimKrafte;
+  /** Wie viele Knoten im Gang liegen; der Mal-Pass liest die Zahl fuer seine Zeile. */
+  allein?: number;
+  /** Der Anker des Gangs in Weltkoordinaten: oberste Reihe, mittlere Spalte. */
+  alleinAnker?: { x: number; y: number } | null;
   alpha: number;
   alphaTarget: number;
 }
@@ -723,6 +727,57 @@ export function linkStaerken(nodes: readonly LayoutNode[], edges: readonly Layou
   }
   void nodes;
   return edges.map((e) => e.strength / Math.max(1, Math.min(grad.get(e.source) ?? 1, grad.get(e.target) ?? 1)));
+}
+
+/**
+ * Der Gang.
+ *
+ * Eine Notiz ohne jeden Nachbarn ist im Kraftfeld kein Punkt, sondern Rauschen:
+ * die Abstossung wirft sie nach aussen, und was bleibt, ist ein Ring aus
+ * hundertfünfundsechzig einsamen Punkten um einen Klumpen — im Bild die Aussage
+ * „dein Gedaechtnis ist ein Haufen". Also: was in *diesem* Bild nichts
+ * verbindet, tanzt nicht um den Kern, sondern liegt unter ihm in Reihen —
+ * zahlbar, betitelt, und mit demselben Doppelklick zu oeffnen wie jeder andere
+ * Knoten. „Dieses Bild" ist massgeblich: wer die Aehnlichkeitslinien anmacht,
+ * hoelt Punkte zurueck in den Kern, weil sie dann eben doch Nachbarn haben.
+ */
+export const GANG_SPALTEN = 32;
+export const GANG_ABSTAND = 26;
+/** Luft zwischen dem untersten Kernknoten und der ersten Gangreihe. */
+export const GANG_RAND = 90;
+
+/** Der i-te Platz im Gang, relativ zum Anker: Spalten zuerst, dann Zeilen. */
+export function gangPlatz(
+  i: number,
+  spalten = GANG_SPALTEN,
+  abstand = GANG_ABSTAND
+): { x: number; y: number } {
+  const spalte = i % spalten;
+  const zeile = Math.floor(i / spalten);
+  return { x: (spalte - (spalten - 1) / 2) * abstand, y: zeile * abstand };
+}
+
+/**
+ * Welche Knoten in diesem Bild keinen einzigen Nachbarn haben.
+ *
+ * Begriffe (`__ent:`) sind nie allein — sie *sind* die Nachbarschaft. Gezogene
+ * Knoten bleiben, wo der Nutzer sie hingelegt hat: die Hand gewinnt gegen jede
+ * Ordnung der Flaeche.
+ */
+/** Wer ohne jeden Nachbarn dasteht — der Gang entscheidet selbst, ob er greift. */
+export function alleinKnoten(
+  nodes: readonly LayoutNode[],
+  edges: readonly LayoutEdge[]
+): LayoutNode[] {
+  const nachbarn = new Set<string>();
+  for (const e of edges) {
+    if (e.source === e.target) continue;
+    nachbarn.add(e.source);
+    nachbarn.add(e.target);
+  }
+  return nodes.filter(
+    (n) => !n.pinned && !n.id.startsWith(ENTITAETS_PRAEFIX) && !nachbarn.has(n.id)
+  );
 }
 
 export function createSimulation(
@@ -868,10 +923,32 @@ export function stepSimulation(sim: Simulation): void {
   // trennt — leistet die Kollision, und die laeuft ohnehin in jedem Bild in
   // voller Staerke und ohne alpha.
   const alpha = sim.alpha;
-  const baum = buildQuadtree(nodes);
+
+  // Der Gang zuerst: seine Punkte bekommen ihren Platz gerechnet, nicht
+  // erstritten. Ohne diese Reihenfolge stoesst die Abstossung sie in den
+  // Ring zurueck, den dieser Block abschafft.
+  const alleinMoeglich = alleinKnoten(nodes, edges);
+  // Der Gang greift nur, wo er eine Vorstadt ist und nicht die ganze Stadt.
+  //
+  // Eine Basis, in der noch nichts zusammenhaengt, hat keinen Kern, unter den
+  // man umziehen koennte — dort ist die runde Anordnung des Feldes die bessere
+  // Antwort, und das zwolf-Notizen-Bild bleibt, was es ist. Untergrenze acht:
+  // drei Punkte in einer Reihe mit einem Satz darueber sind mehr Rauschen als
+  // Ordnung. Obergrenze die Haelfte: ab da waere der "Kern" die Ausnahme.
+  const allein =
+    alleinMoeglich.length >= 8 && alleinMoeglich.length * 2 <= nodes.length
+      ? alleinMoeglich
+      : [];
+  sim.allein = allein.length;
+  const imGang = new Set(allein.map((n) => n.id));
+
+  // Die Quadtree kennt den Gang nicht: er soll den Kern weder stossen noch
+  // ihn beim Einpassen verzerren.
+  const baum = buildQuadtree(imGang.size === 0 ? nodes : nodes.filter((n) => !imGang.has(n.id)));
   const kraft = { fx: 0, fy: 0 };
 
   for (const n of nodes) {
+    if (imGang.has(n.id)) continue;
     if (n.pinned) { n.vx = 0; n.vy = 0; continue; }
     kraft.fx = 0;
     kraft.fy = 0;
@@ -900,6 +977,7 @@ export function stepSimulation(sim: Simulation): void {
 
   const g = gravityFor(nodes.length) * (sim.krafte.gravitaet ?? 1);
   for (const n of nodes) {
+    if (imGang.has(n.id)) continue;
     if (n.pinned) { n.vx = 0; n.vy = 0; continue; }
     n.vx -= n.x * g * alpha;
     n.vy -= n.y * g * alpha;
@@ -924,6 +1002,25 @@ export function stepSimulation(sim: Simulation): void {
 
   // Harte Randbedingung zum Schluss, ohne alpha: Knoten ueberlappen nie.
   resolveCollisions(nodes);
+
+  // Der Gang bekommt seinen Platz ZULETZT, nach dem Bild, das die Kraefte
+  // gerade gewirkt haben. Vorher gesetzt, haengte sein Rand an der Kernlage des
+  // vorigen Bildes — der Kern sinkt aber noch, und der Abstand war um Bruchteile
+  // eines Bildpunktes gebrochen, kaum dass jemand nachmisst.
+  if (allein.length > 0) {
+    let randY = 0;
+    for (const n of nodes) if (!imGang.has(n.id) && n.y > randY) randY = n.y;
+    allein.forEach((n, i) => {
+      const platz = gangPlatz(i);
+      n.x = platz.x;
+      n.y = randY + GANG_RAND + platz.y;
+      n.vx = 0;
+      n.vy = 0;
+    });
+    sim.alleinAnker = { x: 0, y: randY + GANG_RAND };
+  } else {
+    sim.alleinAnker = null;
+  }
 
   sim.alpha += (sim.alphaTarget - sim.alpha) * ALPHA_DECAY;
   if (sim.alphaTarget === 0 && sim.alpha < ALPHA_MIN) sim.alpha = ALPHA_MIN;
@@ -1021,6 +1118,28 @@ export const EDGE_LOD_ZOOM = 0.55;
 
 export function nurEchteKanten(kantenzahl: number, zoom: number): boolean {
   return kantenzahl > EDGE_LOD_THRESHOLD && zoom < EDGE_LOD_ZOOM;
+}
+
+/**
+ * Wie viel Bildflaeche ein Linienzug fuer sich braucht, bevor das Feld zum
+ * Schleier wird.
+ *
+ * A7 hat bei 1 500 Notizen 1 543 Linien-Stuecke in 1 130 × 668 px gemessen —
+ * ungekuerzt, weil die einzige Kappe des Feldes (`nurEchteKanten`) nur fuer
+ * Aehnlichkeitslinien gilt und erst ab 2 500 Kanten greift. Erwaehnungen stehen
+ * damit gleich stark im Bild wie die neun Behauptungen, die jemand gefuehrt hat.
+ *
+ * Gekappt wird nach BILDFLAECHE: pro Zug 900 Quadratzpixel Leinwand. Das ist
+ * dieselbe Groessenordnung, die ein Etikett braucht (11 pxschrift, 14 px Zeile),
+ * und sie skaliert mit dem Fenster — ein grosses Bild darf mehr Linien haben als
+ * ein kleines, weil es mehr Platz hat, nicht weil mehr Notizen da sind.
+ */
+export const LINIEN_FLAECHE_PRO_ZUG = 900;
+/** Mindestbudget, damit ein kleines Feld nicht auf null Linien faellt. */
+export const LINIEN_MINDESTBUDGET = 40;
+
+export function linienBudget(breite: number, hoehe: number): number {
+  return Math.max(LINIEN_MINDESTBUDGET, Math.floor((breite * hoehe) / LINIEN_FLAECHE_PRO_ZUG));
 }
 
 /** Naechster Knoten zu einem Weltpunkt innerhalb der Trefferweite, sonst null. */

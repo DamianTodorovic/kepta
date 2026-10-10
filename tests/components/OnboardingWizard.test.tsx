@@ -218,3 +218,28 @@ describe("OnboardingWizard: Rueckwaerts und freiwillige Angaben", () => {
     expect(container.textContent).toMatch(/KEPTA adapts to you/);
   });
 });
+
+// A7-10, im echten Browser gemessen (a7-screens/12-wizard2-erschienen.png): der
+// Assistent lag als Schicht ueber dem ganzen Fenster — `fixed inset-0` mit einem
+// flaechendeckenden Dimmer dahinter. Wer nach dem Import zum ersten Mal in den
+// Graphen sah, sah zuerst den Dialog. Der Assistent soll das Bild nicht
+// beruehren, also steht er als Taefelchen an der Seite und laesst die Flaeche
+// frei. Die Geometrie selbst ist im Browser nachgemessen; was hier haelt, ist
+// die Struktur, aus der sie kommt: keine Schicht ueber dem ganzen Fenster.
+describe("A7-10: der Assistent verdeckt die Fläche nicht", () => {
+  it("tritt als Seitentäfelchen auf, nicht als Schicht über dem ganzen Fenster", () => {
+    const { container } = oeffne();
+    const schicht = container.firstElementChild as HTMLElement;
+    expect(schicht.getAttribute("data-testid"), "die Schicht hat keinen Namen fuer die Stilregel").toBe("wizard-taefelchen");
+    const klassen = schicht.className.split(/\s+/);
+    expect(klassen, "die Schicht spannt sich ueber das ganze Fenster").not.toContain("inset-0");
+    expect(container.querySelector(".hud-backdrop"), "ein Dimmer legt sich ueber das Bild").toBeNull();
+  });
+
+  it("bleibt erreichbar: Later und der Titel stehen im Taefelchen", async () => {
+    const { container } = oeffne();
+    const schicht = container.firstElementChild as HTMLElement;
+    expect(schicht.textContent).toMatch(/Set up KEPTA/);
+    expect([...schicht.querySelectorAll("button")].some((b) => b.textContent?.trim() === "Later")).toBe(true);
+  });
+});

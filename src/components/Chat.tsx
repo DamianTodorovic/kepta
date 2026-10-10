@@ -723,8 +723,8 @@ export function Chat({ activeMemories, onSaveToBrain, onSaveToBrainWithMeta, isF
                   {connection.local && <span className="px-1 py-0 rounded text-[9px] border" style={{ borderColor: "var(--border-subtle)", color: "var(--ok)" }}>local</span>}
                   <button
                     onClick={() => { disconnectAI(); stossVerbindungAn((n) => n + 1); }}
-                    className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] border transition-colors hover:opacity-80"
-                    style={{ borderColor: "var(--border-subtle)", color: "var(--text-3)" }}
+                    className="inline-flex items-center gap-1 min-h-6 px-2 rounded text-[11px] border transition-colors hover:opacity-80"
+                    style={{ borderColor: "var(--border-subtle)", color: "var(--text-2)" }}
                     title="Disconnect this AI — nothing is deleted, you can reconnect any time"
                   >
                     Disconnect
@@ -732,11 +732,11 @@ export function Chat({ activeMemories, onSaveToBrain, onSaveToBrainWithMeta, isF
                 </>
               ) : (
                 <>
-                  <span style={{ color: "var(--text-3)" }}>No AI connected</span>
+                  <span style={{ color: "var(--text-2)" }}>No AI connected</span>
                   {detectedLocal && (
                     <button
                       onClick={() => connectLocal(detectedLocal)}
-                      className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] border transition-colors hover:opacity-80"
+                      className="inline-flex items-center gap-1 min-h-6 px-2 rounded text-[11px] border transition-colors hover:opacity-80"
                       style={{ borderColor: "var(--border-subtle)", color: "var(--accent)", background: "var(--accent-soft)" }}
                       title={`${detectedLocal.label} detected locally — connect it`}
                     >
@@ -797,10 +797,12 @@ export function Chat({ activeMemories, onSaveToBrain, onSaveToBrainWithMeta, isF
                 <span>· {budgetedMemories.length} entries active</span>
               </span>
             </div>
-            <div className="relative h-5 flex items-center">
+            <div className="relative h-7 flex items-center">
               <div className="absolute left-0 right-0 h-1.5 rounded-full overflow-hidden" style={{ background: "var(--bg-inset-strong)" }}>
                 <div className="h-full rounded-full transition-[width]" style={{ width: `${budgetPercent}%`, background: "var(--accent)" }} />
               </div>
+              {/* h-7 statt h-1.5: die Trefferfläche des Reglers war gemessen
+                  6 px hoch (Z-08: mindestens 20, wiederholt 28). */}
               <input
                 type="range"
                 min={MIN_BUDGET}
@@ -808,7 +810,7 @@ export function Chat({ activeMemories, onSaveToBrain, onSaveToBrainWithMeta, isF
                 step={500}
                 value={tokenBudget}
                 onChange={(e) => setTokenBudget(parseInt(e.target.value, 10))}
-                className="relative w-full h-1.5 appearance-none bg-transparent accent-[var(--accent)] cursor-pointer
+                className="relative w-full h-7 appearance-none bg-transparent accent-[var(--accent)] cursor-pointer
                   [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-3.5 [&::-webkit-slider-thumb]:h-3.5 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-white [&::-webkit-slider-thumb]:border-2 [&::-webkit-slider-thumb]:border-[var(--accent)] [&::-webkit-slider-thumb]:shadow-sm
                   [&::-moz-range-thumb]:w-3.5 [&::-moz-range-thumb]:h-3.5 [&::-moz-range-thumb]:rounded-full [&::-moz-range-thumb]:bg-white [&::-moz-range-thumb]:border-2 [&::-moz-range-thumb]:border-[var(--accent)]"
                 aria-label="Token Budget"

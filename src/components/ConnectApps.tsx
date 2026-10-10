@@ -62,7 +62,7 @@ export function ConnectApps() {
         </p>
       )}
       {fehler && <p className="text-sm" style={{ color: 'var(--warn)' }}>{fehler}</p>}
-      {clients === null && !fehler && <p className="text-sm" style={{ color: 'var(--text-3)' }}>Looking for AI apps on this computer…</p>}
+      {clients === null && !fehler && <p className="text-sm" style={{ color: 'var(--text-2)' }}>Looking for AI apps on this computer…</p>}
       {keineApp && (
         <p className="text-sm" style={{ color: 'var(--text-2)' }}>
           No AI app found on this computer. Any MCP client works with the settings block below.

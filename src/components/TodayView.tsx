@@ -201,6 +201,9 @@ export function TodayView({ aktiv, onOpenMemory, onGo }: Props) {
         )}
         {/* Zeitmaschine: das Fenster, in das Today hineinsieht. */}
         <div className="mt-4" data-testid="today-zeitfenster">
+          {/* h-7 statt h-1.5: gemessen war die Trefferfläche des Reglers 6 px
+              hoch. Z-08 verlangt mindestens 20, für Wiederholtes 28. Die Spur
+              malt die Lage darunter, der Knauf sitzt zentriert. */}
           <input
             type="range"
             min={0}
@@ -208,7 +211,7 @@ export function TodayView({ aktiv, onOpenMemory, onGo }: Props) {
             step={1}
             value={fenster}
             onChange={(e) => setFenster(parseInt(e.target.value, 10))}
-            className="w-full h-1.5 appearance-none bg-transparent accent-[var(--accent)] cursor-pointer
+            className="w-full h-7 appearance-none bg-transparent accent-[var(--accent)] cursor-pointer
               [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-3.5 [&::-webkit-slider-thumb]:h-3.5 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-white [&::-webkit-slider-thumb]:border-2 [&::-webkit-slider-thumb]:border-[var(--accent)] [&::-webkit-slider-thumb]:shadow-sm
               [&::-moz-range-thumb]:w-3.5 [&::-moz-range-thumb]:h-3.5 [&::-moz-range-thumb]:rounded-full [&::-moz-range-thumb]:bg-white [&::-moz-range-thumb]:border-2 [&::-moz-range-thumb]:border-[var(--accent)]"
             aria-label="Time window"
@@ -227,7 +230,7 @@ export function TodayView({ aktiv, onOpenMemory, onGo }: Props) {
           <button onClick={() => void laden()} className="btn-ghost px-2.5 py-1 rounded-lg text-xs flex items-center gap-1"><RefreshCw className="w-3.5 h-3.5" /> Try again</button>
         </div>
       )}
-      {!daten && !fehler && <p className="text-sm" style={{ color: 'var(--text-3)' }}>Getting your day ready…</p>}
+      {!daten && !fehler && <p className="text-sm" style={{ color: 'var(--text-2)' }}>Getting your day ready…</p>}
 
       {daten && (
         <>
@@ -354,7 +357,7 @@ export function TodayView({ aktiv, onOpenMemory, onGo }: Props) {
                   <li key={n.id} className="text-[13px] flex items-baseline gap-2">
                     <Clock className="w-3.5 h-3.5 shrink-0 translate-y-0.5" style={{ color: 'var(--text-3)' }} />
                     <Titel id={n.id} title={n.title} onOpen={onOpenMemory} />
-                    <span className="text-[11px]" style={{ color: 'var(--text-3)' }}>expired {datum(n.validTo)} — still true?</span>
+                    <span className="text-[11px]" style={{ color: 'var(--text-2)' }}>expired {datum(n.validTo)} — still true?</span>
                   </li>
                 ))}
               </ul>
@@ -363,9 +366,11 @@ export function TodayView({ aktiv, onOpenMemory, onGo }: Props) {
 
           <Abschnitt titel="Your AI apps">
             {daten.apps.length === 0 ? (
-              <p className="text-sm" style={{ color: 'var(--text-3)' }}>
+              <p className="text-sm" style={{ color: 'var(--text-2)' }}>
                 No AI app has used KEPTA since then.{' '}
-                <button onClick={() => onGo('activity')} className="underline underline-offset-2" style={{ color: 'var(--accent)' }}>Connect an app</button>
+                {/* min-h-6: gemessen 20 px hohe Textstelle ohne Polster — die
+                    Untergrenze, nicht mehr. */}
+                <button onClick={() => onGo('activity')} className="min-h-6 px-0.5 inline-flex items-center underline underline-offset-2" style={{ color: 'var(--accent)' }}>Connect an app</button>
               </p>
             ) : (
               <ul className="space-y-1.5">

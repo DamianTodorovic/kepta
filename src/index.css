@@ -1,5 +1,14 @@
 @import "tailwindcss";
 
+/* Das Zeitmaß soll nicht nur in dieser Datei gelten: Tailwind v4 nimmt die
+   Übergangs-Voreinstellung aus dem Theme-Block, also zieht die Signaturkurve
+   und die Regelstufe 200 ms in jede transition-Klasse der Bausteine — ohne
+   dass jemand eine Zahl schreiben kann, die daneben liegt (D1-13). */
+@theme {
+  --default-transition-duration: var(--dur);
+  --default-transition-timing-function: var(--ease-apple);
+}
+
 @variant dark (&:where(.dark, .dark *));
 
 /* ============================================================
@@ -13,70 +22,185 @@
    ============================================================ */
 
 :root {
-  /* Flächen — Aktenblatt, neutral und matt */
-  --bg-base: #e9e9e7;
+  /* ============================================================
+     DIE LEITER — generiert, nicht gepinselt.
+     Regel nach Linear (drei Variablen statt vierzig Werte):
+       Basis    = der Ton der Marke; C/H sind dem bisherigen
+                  Aktendeckel gesampelt und bleiben gleich
+       Kontrast = 1,30 Verhältnis je Stufen-Nachbar (D1 Z-01)
+       Stufen   = Tisch → Panel → Blatt, in BEIDEN Themen dieselbe
+                  Zahl. Eine vierte Füllstufe passt ins helle Thema
+                  nicht: über dem Blatt (#fafaf8) läge die nächste bei
+                  Y 1,26 — über Weiß ist keine Stufe mehr. Gehobene
+                  Flächen (Menü, Toast, Composer) tragen deshalb Kante
+                  ≥ 3:1 und Schatten statt einer eigenen Füllstufe.
+     Entwurf und Beweis: node scripts/design-wache.mjs --generieren,
+     Prüfung jedes Wertes: node scripts/design-wache.mjs
+     ============================================================ */
+  --eb-0: oklch(0.8095 0.0027 106.5);   /* Tisch — der graue Aktendeckel */
+  --eb-1: oklch(0.8936 0.0027 106.5);   /* Panel */
+  --eb-2: oklch(0.9846 0.0027 106.5);   /* Blatt: Karte, Menü, Toast */
+  --feld: oklch(0.8095 0.0027 106.5);   /* ein Schritt unter dem Panel */
+
+  /* Flächen — alte Namen bleiben, sie zeigen auf die Stufen */
+  --bg-base: var(--eb-0);
   --bg-ambient-1: rgba(34, 48, 60, 0.04);
   --bg-ambient-2: rgba(156, 43, 31, 0.025);
-  --glass: rgba(240, 242, 235, 0.78);
-  --glass-strong: rgba(246, 247, 242, 0.9);
-  --glass-panel: rgba(238, 240, 233, 0.7);
-  --bg-panel: #eff1ea;
-  --bg-panel-solid: #f0f2eb;
-  --bg-inset: rgba(34, 48, 60, 0.055);
-  --bg-inset-strong: rgba(34, 48, 60, 0.1);
+  --glass: var(--eb-2);
+  --glass-strong: var(--eb-2);
+  --glass-panel: var(--eb-1);
+  --bg-panel: var(--eb-1);
+  --bg-panel-solid: var(--eb-2);
+  --bg-inset: var(--feld);
+  --bg-inset-strong: var(--eb-1);
+  --bg-hover: var(--eb-1);
+  --scrim: color-mix(in srgb, var(--bg-base) 60%, transparent);
 
-  /* Linien — Tinte auf Papier */
-  --border-subtle: rgba(34, 48, 60, 0.14);
-  --border-strong: rgba(34, 48, 60, 0.24);
-  --border-hover: rgba(34, 48, 60, 0.34);
+  /* Linien — drei Rollen, jede gegen beide Nachbarn gerechnet */
+  --kante-dekor: oklch(0.6968 0.0027 106.5);      /* Haarlinie in einer Fläche, 1,35 */
+  --kante-stark: oklch(0.6090 0.0027 106.5);      /* sichtbare Regel, 1,90 */
+  --kante-kontrolle: oklch(0.4958 0.0027 106.5);  /* Bedienelement-Berandung, 3,05 */
+  --border-subtle: var(--kante-dekor);
+  --border-strong: var(--kante-stark);
+  --border-hover: var(--kante-kontrolle);
+  --border: var(--kante-kontrolle);
+  --inset: var(--feld);
   --edge-light: rgba(255, 255, 255, 0.65);
 
-  /* Text — Tinte */
-  --text-1: #232526;
-  --text-2: #5b5e60;
-  --text-3: #8d9092;
+  /* Text — Tinte. Gelöst gegen das härteste Gegenüber, das unter ihr
+     liegen kann: im hellen Thema der Tisch samt Ambient-Tinktur, nicht
+     das Papier. Sonst sind die Zeilen auf dem Aktendeckel zu leise. */
+  --text-1: oklch(0.2494 0.0035 228.9);   /* 8,72 gegen den Tisch */
+  --text-2: oklch(0.3342 0.0050 236.6);   /* 6,00 */
+  --text-3: oklch(0.3972 0.0046 236.5);   /* 4,65 — die Ebene, die erklärt */
+  --text-muted: var(--text-2);
 
-  /* Akzent — Siegellack: nur für Versiegeltes, Aktives, Primäres */
-  --accent: #9c2b1f;
-  --accent-2: #7e2117;
-  --accent-soft: rgba(156, 43, 31, 0.08);
-  --accent-soft-2: rgba(156, 43, 31, 0.16);
-  --accent-glow: rgba(156, 43, 31, 0.3);
-  --on-accent: #f7f2e9;
+  /* Akzent — Siegellack. Zwei Rollen, weil Komponenten denselben Token
+     für Schrift und für Fläche benutzen: ein dunkles Rot kann nicht
+     beides zugleich sein (D1-04). `--accent` = Schrift und Zeichen,
+     `--accent-fuell` = Masse (Knopf, Sprechblase, Schalter),
+     `--accent-kante` = Rand der Masse, `--fokus` = Tastatur-Ring. */
+  --accent: oklch(0.4153 0.1510 29.9);          /* 7,23 auf dem Blatt */
+  --accent-fuell: oklch(0.4640 0.1510 29.9);
+  --accent-kante: oklch(0.4640 0.1510 29.9);
+  --fokus: oklch(0.4640 0.1510 29.9);           /* 4,28 gegen den Tisch */
+  --accent-2: oklch(0.4200 0.1510 29.9);
+  --accent-soft: oklch(0.4640 0.1510 29.9 / 0.07);
+  --accent-soft-2: oklch(0.4640 0.1510 29.9 / 0.11);
+  --accent-glow: oklch(0.4640 0.1510 29.9 / 0.22);
+  --on-accent: oklch(0.9626 0.0131 82.4);       /* 6,78 auf der Füllung */
 
-  /* Semantik — Archivtinten */
-  --ok: #3e6b4f;
-  --ok-soft: rgba(62, 107, 79, 0.12);
-  --warn: #8a5a16;
-  --warn-soft: rgba(138, 90, 22, 0.12);
-  --danger: #a03a2c;
-  --danger-soft: rgba(160, 58, 44, 0.1);
+  /* Semantik — Archivtinten, als Schrift gelöst (4,65 gegen den Tisch) */
+  --ok: oklch(0.3896 0.0676 155.6);
+  --ok-soft: oklch(0.4192 0.0676 155.6 / 0.10);
+  --warn: oklch(0.4031 0.1009 70.0);
+  --warn-soft: oklch(0.4325 0.1009 70.0 / 0.10);
+  --danger: oklch(0.4136 0.1384 30.5);
+  --danger-soft: oklch(0.4431 0.1384 30.5 / 0.09);
+  --err: var(--danger);
 
-  /* Knotentypen — Archivtinten, kühl gelesen */
-  --type-semantic: #33506b;
-  --type-episodic: #6d4257;
-  --type-procedural: #3e5c42;
-  --type-reference: #6b4a32;
+  /* Knotentypen — Archivtinten, kühl gelesen, alle ≥ 4,65 */
+  --type-semantic: oklch(0.3963 0.0571 247.6);
+  --type-episodic: oklch(0.4061 0.0663 349.5);
+  --type-procedural: oklch(0.3914 0.0553 148.0);
+  --type-reference: oklch(0.4016 0.0580 56.6);
+
+  /* Die Stahl-Seitenleiste bleibt Stahl (Material-Entscheidung), aber sie
+     bekommt Token statt Inline-Farben: nur so erreicht sie ein Theme und
+     eine increased-contrast-Antwort. BENUTZT WIRD SIE VON Sidebar.tsx —
+     die Werte hier sind gerechnet, nicht gesetzt. */
+  --side-basis-1: oklch(0.2435 0.0030 286.0);
+  --side-basis-2: oklch(0.1880 0.0030 286.0);
+  --side-text: oklch(0.9365 0.0027 106.5);
+  --side-ruhig: oklch(0.7111 0.0097 91.6);    /* 7,68 auf dem Stahl */
+  --side-akzent: oklch(0.7286 0.1552 30.7);   /* 8,35 auf dem Stahl */
+  --side-kante: oklch(0.5395 0.0026 286.0);   /* hält 3,05 auch über der hellsten Stahl-Lage */   /* 3,05 gegen den Stahl */
+  --side-flaeche: oklch(1 0 0 / 0.045);        /* Lage über dem Stahl: hover */
+  --side-auswahl: oklch(1 0 0 / 0.07);         /* Lage über dem Stahl: die aktive Stelle */
 
   /* Schatten liegen flach auf dem Tisch, nichts schwebt */
-  --shadow-sm: 0 1px 2px rgba(20, 28, 34, 0.08);
-  --shadow-md: 0 2px 8px rgba(20, 28, 34, 0.1);
-  --shadow-lg: 0 12px 32px rgba(20, 28, 34, 0.18);
+  --shadow-sm: 0 1px 2px rgba(20, 28, 34, 0.12);
+  --shadow-md: 0 2px 8px rgba(20, 28, 34, 0.15);
+  --shadow-lg: 0 12px 32px rgba(20, 28, 34, 0.22);
 
   --font-ui: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
   --font-display: "Charter", "Iowan Old Style", "Palatino", Georgia, "Times New Roman", serif;
   --font-mono: ui-monospace, "SF Mono", SFMono-Regular, Menlo, Consolas, monospace;
 
-  /* Radius — Aktendeckel-Kanten, kompakt */
+  /* Radius — Aktendeckel-Kanten, kompakt. Die Familie hält schon (D1 B.3):
+     fünf Stufen, überall gezogen, kein Ausreißer. Nicht umbauen. */
   --r-panel: 14px;
   --r-card: 12px;
   --r-btn: 7px;
   --r-chip: 4px;
   --r-badge: 3px;
 
+  /* ============================================================
+     SCHRIFTSTUFEN — D1-08 maß 15 Größen im selben Fenster, davon
+     sieben mit halben Pixelschritten, und deklariert bis 8,5 px.
+     Die Leiter hat acht Stufen, ganzzahlig, keine unter 11 px.
+     Eine Stufe kleiner ist damit eine Stufe, nicht ein Raten (Z-04).
+     Wer eine Zwischenstufe will: die Stufe ist die Entscheidung.
+     ============================================================ */
+  --fs-1: 11px;   /* Meta: Zähler, Kapseln, Registerzeilen-Unterkante */
+  --fs-2: 12px;   /* Mono, dichte Beschriftung */
+  --fs-3: 13px;   /* UI klein: Abschnittskapitel, Fließtext in der Karte */
+  --fs-4: 14px;   /* Regel: Körper, Eingabe, Chat — der Default von Apple macOS */
+  --fs-5: 16px;   /* Kartentitel, Indexwert */
+  --fs-6: 20px;   /* Panel- und Ansichtstitel */
+  --fs-7: 28px;   /* die dominante Zahl des Registers */
+  --fs-8: 40px;   /* Displayzeile (die obere Klammer von clamp) */
+  --lh-dicht: 1.24;
+  --lh-lesbar: 1.55;
+  --lh-prosa: 1.65;
+
+  /* Gewichte: eine nicht-variable Schrift (Segoe UI auf Windows) kennt
+     300/400/600/700. Alles dazwischen — 490, 540, 560, 590, 620, 640, 680 —
+     kollabiert auf zwei Stufen, und die halbe Hierarchie verschwindet. */
+  --fw-ruhig: 400;
+  --fw-halbfest: 600;
+  --fw-fest: 700;
+
+  /* ============================================================
+     RASTER — D1-03/B.3 maß Abstände von 1/3/5/7 px ohne Basis.
+     Basis ist 4 px; 2 px ist die optische Feinstufe (Haarlinie,
+     innenliegende Lücken), mehr ist nicht erlaubt.
+     ============================================================ */
+  --s-fein: 2px;
+  --s-1: 4px;
+  --s-2: 8px;
+  --s-3: 12px;
+  --s-4: 16px;
+  --s-5: 24px;
+  --s-6: 32px;
+  --s-7: 48px;
+
+  /* Icons — Vertrag aus Z-06: unterste Stufe 14 px. Bei 10 px messe ich
+     0,63 px Strich (1,5 × 10/24) — subpixel, im Rendering grau. */
+  --icon-min: 14px;
+  --icon-stufe-1: 14px;
+  --icon-stufe-2: 16px;
+  --icon-stufe-3: 20px;
+  --icon-stufe-4: 24px;
+
+  /* ============================================================
+     ZEITMASS — D1-13 maß: das deklarierte 200 ms kam auf keiner Fläche
+     vor (0,14 s ×88, 0,12 s ×54), und die Signaturkurve regierte 12 von
+     159 Übergängen. Drei Stufen, eine Kurve, und die Anwendung zieht
+     daraus statt einzeln zu schreiben.
+     ============================================================ */
   --ease-apple: cubic-bezier(0.2, 0.8, 0.2, 1);
-  --dur-fast: 120ms;
-  --dur: 200ms;
+  --dur-fast: 100ms;   /* Quittung: Hover, Farbe, Rand */
+  --dur: 200ms;        /* Regel: Größenwechsel, Flächen, Schieber */
+  --dur-slow: 300ms;   /* Ankunft: Blenden, Panels, Täfelchen */
+
+  /* Schleifenperioden sind keine Übergänge und stehen deshalb nicht auf
+     der Leiter: ein Shimmer von 300 ms ist Stakkato, einer von 1,5 s ist
+     eine Wartespur. Getestet wird hier nur, dass keine endlose Bewegung
+     ohne Zustand läuft (Z-11). */
+  --lauf-shimmer: 1500ms;
+  --lauf-tippen: 1100ms;
+  --lauf-puls: 1200ms;
 
   /* Graph-Knoten: Tinte statt Glas */
   --node-hi: 0.5;
@@ -88,45 +212,80 @@
 }
 
 .dark {
-  /* Der Aktenschrank nachts — echtes Schwarz, neutral, kein Blaustich */
-  --bg-base: #070708;
+  /* Der Aktenschrank nachts — echtes Schwarz, neutral, kein Blaustich.
+     Dieselbe Leiter-Regel wie im hellen Thema, nur aufsteigend vom Tisch:
+     1,30 je Nachbar, drei Stufen, Feld einen Schritt unter dem Panel. */
+  --eb-0: oklch(0.1291 0.0026 286.0);   /* #070708 Tisch */
+  --eb-1: oklch(0.2651 0.0026 286.0);   /* #242425 Panel — 1,30 gegen den Tisch */
+  --eb-2: oklch(0.3428 0.0026 286.0);   /* #373738 Blatt — 1,30 gegen das Panel */
+  --feld: oklch(0.1291 0.0026 286.0);   /* ein Schritt unter dem Panel */
+
+  --bg-base: var(--eb-0);
   --bg-ambient-1: rgba(195, 74, 57, 0.025);
   --bg-ambient-2: rgba(255, 255, 255, 0.02);
-  --glass: rgba(16, 16, 18, 0.85);
-  --glass-strong: rgba(21, 21, 23, 0.95);
-  --glass-panel: rgba(13, 13, 14, 0.72);
-  --bg-panel: #101012;
-  --bg-panel-solid: #121214;
-  --bg-inset: rgba(255, 255, 255, 0.045);
-  --bg-inset-strong: rgba(255, 255, 255, 0.085);
+  --glass: var(--eb-2);
+  --glass-strong: var(--eb-2);
+  --glass-panel: var(--eb-1);
+  --bg-panel: var(--eb-1);
+  --bg-panel-solid: var(--eb-2);
+  --bg-inset: var(--feld);
+  --bg-inset-strong: var(--eb-1);
+  --bg-hover: var(--eb-1);
 
-  --border-subtle: rgba(255, 255, 255, 0.08);
-  --border-strong: rgba(255, 255, 255, 0.15);
-  --border-hover: rgba(255, 255, 255, 0.24);
+  --kante-dekor: oklch(0.4378 0.0026 286.0);      /* 1,35 gegen das Blatt */
+  --kante-stark: oklch(0.5174 0.0026 286.0);      /* 1,90 */
+  --kante-kontrolle: oklch(0.6321 0.0026 286.0);  /* 3,05 — WCAG 1.4.11 */
+  --border-subtle: var(--kante-dekor);
+  --border-strong: var(--kante-stark);
+  --border-hover: var(--kante-kontrolle);
+  --border: var(--kante-kontrolle);
+  --inset: var(--feld);
   --edge-light: rgba(255, 255, 255, 0.05);
 
-  --text-1: #eaeae8;
-  --text-2: #9b9992;
-  --text-3: #66645e;
+  /* Gelöst gegen die hellste Fläche, auf der Schrift liegen kann (#373738) */
+  --text-1: oklch(0.9365 0.0027 106.5);   /* #eaeae8 — Marke bleibt, 9,89 */
+  --text-2: oklch(0.8166 0.0104 93.6);    /* #bab8b1 — 6,00 */
+  --text-3: oklch(0.7434 0.0097 91.6);    /* #a4a29b — 4,65: die Ebene, die erklärt */
+  --text-muted: var(--text-2);
 
-  --accent: #c04a39;
-  --accent-2: #d05a47;
-  --accent-soft: rgba(194, 75, 59, 0.12);
-  --accent-soft-2: rgba(194, 75, 59, 0.22);
-  --accent-glow: rgba(194, 75, 59, 0.34);
-  --on-accent: #f7efe7;
+  /* Akzent in zwei Rollen: Schrift (#f97d69, 4,65 auf dem Blatt) und
+     Masse (#c04a39 — das Siegel bleibt). Ein dunkles Rot kann nicht
+     beides sein: 4,65 als Schrift und 4,5 für die helle Tinte darauf
+     vertragen sich nicht auf derselben Fläche. */
+  --accent: oklch(0.7608 0.1552 30.7);
+  --accent-fuell: oklch(0.5651 0.1552 30.7);
+  --accent-kante: oklch(0.6275 0.1552 30.7);
+  --fokus: oklch(0.6495 0.1552 30.7);
+  --accent-2: oklch(0.6201 0.1552 30.7);
+  --accent-soft: oklch(0.5651 0.1552 30.7 / 0.07);
+  --accent-soft-2: oklch(0.5651 0.1552 30.7 / 0.13);
+  --accent-glow: oklch(0.5651 0.1552 30.7 / 0.24);
+  --on-accent: oklch(0.9802 0.0137 67.7);  /* 4,60 auf dem Siegel */
 
-  --ok: #7fb08a;
-  --ok-soft: rgba(127, 176, 138, 0.13);
-  --warn: #cfa45e;
-  --warn-soft: rgba(207, 164, 94, 0.13);
-  --danger: #d06a58;
-  --danger-soft: rgba(208, 106, 88, 0.13);
+  --ok: oklch(0.7349 0.0759 151.0);
+  --ok-soft: oklch(0.7118 0.0759 151.0 / 0.11);
+  --warn: oklch(0.7464 0.1018 78.4);
+  --warn-soft: oklch(0.7435 0.1018 78.4 / 0.11);
+  --danger: oklch(0.7580 0.1327 31.4);
+  --danger-soft: oklch(0.7258 0.1327 31.4 / 0.10);
+  --err: var(--danger);
 
-  --type-semantic: #96a7bd;
-  --type-episodic: #b08ca4;
-  --type-procedural: #8fb89a;
-  --type-reference: #c2a283;
+  --type-semantic: oklch(0.7430 0.0374 254.9);
+  --type-episodic: oklch(0.7503 0.0545 338.8);
+  --type-procedural: oklch(0.7444 0.0615 153.0);
+  --type-reference: oklch(0.7463 0.0570 65.8);
+
+  /* Die Stahl-Seitenleiste: dieselben Werte, die Sidebar.tsx heute inline
+     setzt — aber als Token, damit ein Theme und eine increased-contrast-
+     Antwort sie erreichen. TEXT_FAINT war 2,67, jetzt 7,68. */
+  --side-basis-1: oklch(0.2435 0.0030 286.0);
+  --side-basis-2: oklch(0.1880 0.0030 286.0);
+  --side-text: oklch(0.9365 0.0027 106.5);
+  --side-ruhig: oklch(0.7111 0.0097 91.6);
+  --side-akzent: oklch(0.7286 0.1552 30.7);
+  --side-kante: oklch(0.5395 0.0026 286.0);
+  --side-flaeche: oklch(1 0 0 / 0.045);
+  --side-auswahl: oklch(1 0 0 / 0.07);
 
   --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.4);
   --shadow-md: 0 2px 10px rgba(0, 0, 0, 0.45);
@@ -154,20 +313,22 @@ body {
   background-color: var(--bg-base);
   color: var(--text-1);
   font-family: var(--font-ui);
-  font-size: 14px;
+  font-size: var(--fs-4);
   letter-spacing: -0.008em;
   touch-action: manipulation;
   -webkit-tap-highlight-color: transparent;
-  transition: background-color 0.18s ease, color 0.18s ease;
+  transition: background-color var(--dur) ease, color var(--dur) ease;
 }
 
-/* Jedes Eingabefeld bekommt einen sichtbaren Fokus — auch wenn der
-   Wrapper keinen focus-within-Ring trägt (Interface Guidelines). */
+/* Ein Ring-System für alles Fokussierbare: 2 px + 2 px Abstand, gerechnet
+   gegen beide Nachbarn (--fokus hält 3,05 auf jeder Stufe). D1-07: die
+   Eingabefelder waren davon ausgenommen — `outline: none` und ein 12-%-Halo. */
+:where(a, button, input, textarea, select, summary, [role="button"], [role="checkbox"], [role="switch"], [tabindex], .switch):focus-visible,
 input:focus-visible,
 textarea:focus-visible,
 select:focus-visible {
-  outline: 2px solid var(--accent);
-  outline-offset: 1px;
+  outline: 2px solid var(--fokus);
+  outline-offset: 2px;
 }
 
 /* Ambienter Grund: ein Hauch Tinte unten, ein Hauch Siegel oben — kaum da */
@@ -203,34 +364,34 @@ select:focus-visible {
 
 /* ---------- Typografie ---------- */
 .label {
-  font-size: 11px;
-  font-weight: 590;
+  font-size: var(--fs-1);
+  font-weight: var(--fw-halbfest);
   letter-spacing: 0.01em;
   color: var(--text-2);
 }
 /* Keine Versalien-Labels: das Register spricht in normaler Schrift,
    die Hierarchie kommt aus Größe und Tinte */
 .label-caps {
-  font-size: 11px;
-  font-weight: 620;
+  font-size: var(--fs-1);
+  font-weight: var(--fw-halbfest);
   letter-spacing: 0.01em;
   text-transform: none;
   color: var(--text-2);
 }
-.mono { font-family: var(--font-mono); font-size: 12px; }
+.mono { font-family: var(--font-mono); font-size: var(--fs-2); }
 .tnum { font-variant-numeric: tabular-nums; }
 .hud-label {
-  font-size: 11px;
-  font-weight: 590;
+  font-size: var(--fs-1);
+  font-weight: var(--fw-halbfest);
   letter-spacing: 0.01em;
   color: var(--text-2);
 }
 /* Display-Zeile: Charter mit Akten-Verlässlichkeit */
 .display {
   font-family: var(--font-display);
-  font-size: clamp(30px, 3.4vw, 44px);
+  font-size: clamp(var(--fs-7),3.4vw, var(--fs-8));
   line-height: 1.16;
-  font-weight: 600;
+  font-weight: var(--fw-halbfest);
   letter-spacing: -0.005em;
   color: var(--text-1);
   text-wrap: balance;
@@ -238,9 +399,9 @@ select:focus-visible {
 /* Dominante Zahl des Registers — Ziffern wie in ein Protokoll gesetzt */
 .num-hero {
   font-family: var(--font-display);
-  font-size: 28px;
+  font-size: var(--fs-7);
   line-height: 1;
-  font-weight: 600;
+  font-weight: var(--fw-halbfest);
   letter-spacing: 0;
   font-variant-numeric: tabular-nums;
   color: var(--text-1);
@@ -284,10 +445,12 @@ select:focus-visible {
 /* Kartentitel in Serif: jede Notiz liest sich wie ein Dokumentkopf */
 .card h3, .hud-card h3 {
   font-family: var(--font-display);
-  font-weight: 600;
+  font-weight: var(--fw-halbfest);
   letter-spacing: 0.002em;
-}
+  /* D1-14: diese Deklaration stand außerhalb der Regel und wurde vom
+     Browser verworfen — Kartentitel brachen nie ausbalanciert um. */
   text-wrap: balance;
+}
 
 /* Karten — Aktenblätter: flach, haarlinien-getrennt. Hover vertieft
    nur die Tinte, nichts hebt ab. */
@@ -297,7 +460,7 @@ select:focus-visible {
   border: 1px solid var(--border-subtle);
   border-radius: var(--r-card);
   box-shadow: var(--shadow-sm);
-  transition: border-color 0.16s var(--ease-apple), background 0.16s var(--ease-apple), box-shadow 0.22s var(--ease-apple);
+  transition: border-color var(--dur) var(--ease-apple), background var(--dur) var(--ease-apple), box-shadow var(--dur-slow) var(--ease-apple);
 }
 .card:hover, .hud-card:hover {
   border-color: var(--border-hover);
@@ -334,10 +497,10 @@ select:focus-visible {
   padding-left: 0;
   border-left: none;
 }
-.index-cell .k { font-size: 11px; color: var(--text-3); }
+.index-cell .k { font-size: var(--fs-1); color: var(--text-3); }
 .index-cell .v {
-  font-size: 15px;
-  font-weight: 620;
+  font-size: var(--fs-5);
+  font-weight: var(--fw-halbfest);
   letter-spacing: -0.01em;
   font-variant-numeric: tabular-nums;
   color: var(--text-1);
@@ -350,16 +513,16 @@ select:focus-visible {
 .chat-prose {
   max-width: 68ch;
   line-height: 1.65;
-  font-size: 14px;
+  font-size: var(--fs-4);
 }
 .msg-user {
   margin-left: auto;
   max-width: min(78%, 58ch);
   padding: 9px 14px;
   border-radius: var(--r-btn);
-  background: var(--accent);
+  background: var(--accent-fuell);
   color: var(--on-accent);
-  font-size: 14px;
+  font-size: var(--fs-4);
   line-height: 1.55;
   box-shadow: var(--shadow-sm);
 }
@@ -374,11 +537,11 @@ select:focus-visible {
   border: 1px solid var(--border-subtle);
   border-radius: var(--r-panel);
   box-shadow: var(--shadow-sm);
-  transition: border-color 0.16s var(--ease-apple), box-shadow 0.16s var(--ease-apple);
+  transition: border-color var(--dur) var(--ease-apple), box-shadow var(--dur) var(--ease-apple);
 }
 .composer:focus-within {
-  border-color: color-mix(in srgb, var(--accent) 50%, var(--border-subtle));
-  box-shadow: 0 0 0 3px var(--accent-soft), var(--shadow-sm);
+  border-color: var(--accent-fuell);
+  box-shadow: 0 0 0 2px var(--accent-fuell), var(--shadow-sm);
 }
 .composer:focus { outline: none; }
 .composer::placeholder { color: var(--text-3); }
@@ -401,7 +564,7 @@ select:focus-visible {
   padding: 0 14px;
   border-radius: var(--r-btn);
   margin: 0 6px;
-  font-size: 13.5px;
+  font-size: var(--fs-3);
   color: var(--text-1);
   transition: background 0.1s var(--ease-apple);
 }
@@ -416,15 +579,20 @@ select:focus-visible {
   border: 1px solid var(--border-subtle);
   border-radius: var(--r-btn);
   color: var(--text-1);
-  transition: border-color 0.12s ease, box-shadow 0.12s ease, background 0.12s ease;
+  transition: border-color var(--dur-fast) ease, box-shadow var(--dur-fast) ease, background var(--dur-fast) ease;
 }
 .hud-input::placeholder { color: var(--text-3); }
-.hud-input:hover { border-color: var(--border-strong); }
+.hud-input:hover { border-color: var(--kante-stark); }
+/* D1-07: vorher `outline: none` plus ein Halo mit 12 % Deckung (≈ 1,1:1).
+   Jetzt Rand in Kontrollstärke plus der eine Ring für alles. */
 .hud-input:focus {
-  outline: none;
-  border-color: var(--accent);
-  box-shadow: 0 0 0 3px var(--accent-soft);
+  border-color: var(--accent-fuell);
   background: var(--bg-panel);
+}
+.hud-input:focus-visible {
+  outline: 2px solid var(--fokus);
+  outline-offset: 2px;
+  border-color: var(--accent-fuell);
 }
 .hud-input:disabled { opacity: 0.55; }
 
@@ -441,13 +609,15 @@ input[type="checkbox"], input[type="radio"] { accent-color: var(--accent); }
 .btn-primary {
   position: relative;
   border-radius: 999px;
-  background: var(--accent);
+  background: var(--accent-fuell);
   color: var(--on-accent);
-  font-weight: 600;
+  font-weight: var(--fw-halbfest);
   letter-spacing: -0.006em;
-  border: 1px solid color-mix(in srgb, var(--accent) 80%, black 20%);
+  /* Rand in Kontrollstärke: die Masse selbst hält auf dem Blatt nur 2,43,
+     die Berandung muss die 3:1 von WCAG 1.4.11 tragen. */
+  border: 1px solid var(--accent-kante);
   box-shadow: var(--shadow-sm);
-  transition: background 0.12s ease, transform 0.08s ease, box-shadow 0.12s ease, opacity 0.12s ease;
+  transition: background var(--dur-fast) ease, transform var(--dur-fast) ease, box-shadow var(--dur-fast) ease, opacity var(--dur-fast) ease;
 }
 .btn-primary:hover {
   background: var(--accent-2);
@@ -461,8 +631,8 @@ input[type="checkbox"], input[type="radio"] { accent-color: var(--accent); }
   color: var(--text-1);
   border: 1px solid var(--border-subtle);
   border-radius: var(--r-btn);
-  font-weight: 540;
-  transition: background 0.12s ease, border-color 0.12s ease, color 0.12s ease, transform 0.08s ease;
+  font-weight: var(--fw-halbfest);
+  transition: background var(--dur-fast) ease, border-color var(--dur-fast) ease, color var(--dur-fast) ease, transform var(--dur-fast) ease;
 }
 .btn-ghost:hover { background: var(--bg-inset-strong); border-color: var(--border-strong); }
 .btn-ghost:active { transform: scale(0.985); }
@@ -471,26 +641,27 @@ input[type="checkbox"], input[type="radio"] { accent-color: var(--accent); }
   background: transparent;
   color: var(--danger);
   border: 1px solid var(--border-subtle);
-  font-weight: 540;
-  transition: background 0.12s ease, border-color 0.12s ease;
+  font-weight: var(--fw-halbfest);
+  transition: background var(--dur-fast) ease, border-color var(--dur-fast) ease;
 }
 .btn-danger-ghost:hover { background: var(--danger-soft); border-color: color-mix(in srgb, var(--danger) 30%, transparent); }
 
 .btn-primary, .btn-ghost, .btn-danger-ghost { cursor: pointer; }
-/* Fokus: ein Siegelroter Ring für alles Tastatur-fokussierbare */
+/* Fokus: ein Siegelroter Ring für alles Tastatur-fokussierbare — dieselben
+   2 px + 2 px wie oben, damit es genau ein Ring-System ist (D1-07, Z-09).
+   .hud-input hatte hier `outline: none`; das ist weg. */
 .btn-primary:focus-visible, .btn-ghost:focus-visible, .btn-danger-ghost:focus-visible,
 button:focus-visible, a:focus-visible, [role="button"]:focus-visible,
 .switch:focus-visible, summary:focus-visible {
-  outline: 2px solid var(--accent);
+  outline: 2px solid var(--fokus);
   outline-offset: 2px;
 }
-.hud-input:focus-visible { outline: none; }
 
 /* Sidebar-Navigation: Registerlaschen — die aktive Stelle trägt einen
    Siegelroten Strich am linken Blattrand (kein Layout-Shift). */
 .sidebar-nav-btn, .sidebar-tag-btn {
   border: 1px solid transparent;
-  transition: background 0.14s ease, color 0.14s ease, border-color 0.14s ease, box-shadow 0.14s ease;
+  transition: background var(--dur) ease, color var(--dur) ease, border-color var(--dur) ease, box-shadow var(--dur) ease;
 }
 .sidebar-nav-btn:hover, .sidebar-tag-btn:hover { background: rgba(255, 255, 255, 0.045); }
 .sidebar-nav-btn[data-active="true"] {
@@ -507,8 +678,8 @@ button:focus-visible, a:focus-visible, [role="button"]:focus-visible,
   display: flex;
   align-items: center;
   gap: 8px;
-  font-size: 13px;
-  font-weight: 620;
+  font-size: var(--fs-3);
+  font-weight: var(--fw-halbfest);
   letter-spacing: -0.008em;
   color: var(--text-1);
 }
@@ -516,8 +687,8 @@ button:focus-visible, a:focus-visible, [role="button"]:focus-visible,
 
 /* HTTP-Method-Badge: Stempel aus Tinte */
 .method-badge {
-  font-size: 10px;
-  font-weight: 680;
+  font-size: var(--fs-1);
+  font-weight: var(--fw-fest);
   letter-spacing: 0.06em;
   padding: 2px 7px;
   border-radius: var(--r-badge);
@@ -537,7 +708,7 @@ button:focus-visible, a:focus-visible, [role="button"]:focus-visible,
   background: var(--bg-inset);
   border: 1px dashed var(--border-strong);
   overflow: hidden;
-  transition: border-color 0.16s var(--ease-apple), background 0.16s var(--ease-apple), box-shadow 0.16s var(--ease-apple);
+  transition: border-color var(--dur) var(--ease-apple), background var(--dur) var(--ease-apple), box-shadow var(--dur) var(--ease-apple);
 }
 .import-band[data-drag="true"] {
   border-color: var(--accent);
@@ -552,12 +723,12 @@ button:focus-visible, a:focus-visible, [role="button"]:focus-visible,
 .suggestion-pill {
   padding: 7px 14px;
   border-radius: 999px;
-  font-size: 12.5px;
-  font-weight: 550;
+  font-size: var(--fs-2);
+  font-weight: var(--fw-halbfest);
   background: var(--bg-inset);
   border: 1px solid var(--border-subtle);
   color: var(--text-2);
-  transition: background 0.14s var(--ease-apple), color 0.14s var(--ease-apple), border-color 0.14s var(--ease-apple);
+  transition: background var(--dur) var(--ease-apple), color var(--dur) var(--ease-apple), border-color var(--dur) var(--ease-apple);
 }
 .suggestion-pill:hover {
   background: var(--accent-soft);
@@ -586,7 +757,7 @@ button:focus-visible, a:focus-visible, [role="button"]:focus-visible,
   border: 1px solid var(--border-strong);
   background: transparent;
   cursor: pointer;
-  transition: transform 0.14s var(--ease-apple), box-shadow 0.14s var(--ease-apple), border-color 0.14s var(--ease-apple);
+  transition: transform var(--dur) var(--ease-apple), box-shadow var(--dur) var(--ease-apple), border-color var(--dur) var(--ease-apple);
 }
 .graph-swatch::-webkit-color-swatch-wrapper { padding: 2px; }
 .graph-swatch::-webkit-color-swatch { border-radius: 999px; border: none; }
@@ -624,7 +795,7 @@ button:focus-visible, a:focus-visible, [role="button"]:focus-visible,
   border: 1px solid color-mix(in srgb, var(--accent) 60%, black 40%);
   box-shadow: var(--shadow-sm);
   margin-top: -6px;
-  transition: transform 0.12s var(--ease-apple);
+  transition: transform var(--dur-fast) var(--ease-apple);
 }
 .graph-time::-webkit-slider-thumb:hover,
 .graph-regler::-webkit-slider-thumb:hover { transform: scale(1.18); }
@@ -649,12 +820,15 @@ button:focus-visible, a:focus-visible, [role="button"]:focus-visible,
   width: 128px;
   height: 26px;
   padding: 0 8px;
-  background: var(--inset, rgba(255, 255, 255, 0.05));
-  border: 1px solid var(--border);
+  /* D1-14: hier standen var(--inset) und var(--border) — beide nirgends
+     definiert, gemessen borderWidth 0 px: das Feld hatte in beiden Themen
+     keinen Rand. Jetzt echte Stufen und eine Berandung in Kontrollstärke. */
+  background: var(--feld);
+  border: 1px solid var(--kante-kontrolle);
   border-radius: 8px;
   color: var(--text-1);
   font-family: inherit;
-  font-size: 12px;
+  font-size: var(--fs-2);
   cursor: pointer;
 }
 .graph-datum:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
@@ -667,8 +841,8 @@ button:focus-visible, a:focus-visible, [role="button"]:focus-visible,
   gap: 4px;
   padding: 2px 8px;
   border-radius: var(--r-chip);
-  font-size: 11px;
-  font-weight: 560;
+  font-size: var(--fs-1);
+  font-weight: var(--fw-halbfest);
   background: var(--bg-inset);
   border: 1px solid var(--border-subtle);
   color: var(--text-2);
@@ -678,8 +852,8 @@ button:focus-visible, a:focus-visible, [role="button"]:focus-visible,
   align-items: center;
   padding: 1px 7px;
   border-radius: var(--r-badge);
-  font-size: 10px;
-  font-weight: 640;
+  font-size: var(--fs-1);
+  font-weight: var(--fw-halbfest);
   letter-spacing: 0.05em;
 }
 .kbd {
@@ -688,7 +862,7 @@ button:focus-visible, a:focus-visible, [role="button"]:focus-visible,
   padding: 1px 6px;
   border-radius: 4px;
   font-family: var(--font-mono);
-  font-size: 10.5px;
+  font-size: var(--fs-1);
   background: var(--bg-inset);
   border: 1px solid var(--border-subtle);
   border-bottom-width: 2px;
@@ -708,7 +882,18 @@ button:focus-visible, a:focus-visible, [role="button"]:focus-visible,
   height: 7px;
   border-radius: 999px;
   background: var(--accent);
-  animation: agent-pulse 1.2s ease-in-out infinite;
+  box-shadow: 0 0 0 3px var(--accent-soft);
+}
+/* Ruheregel (Z-11, D1-12): ein Punkt, der „verbunden" sagt, ist ein
+   Zustand, keine Aufgabe — er atmet nicht endlos. Wer eine laufende
+   Antwort anzeigt, setzt data-laeuft="true", und nur dann pulsiert er.
+   Apples Motion-Seite verbietet Dauer-Oszillation in Flächen, die häufig
+   angesehen werden; ein permanenter Puls ist die teuerste Aufmerksamkeit
+   für die billigste Information. */
+@media (prefers-reduced-motion: no-preference) {
+  .agent-dot[data-laeuft="true"] {
+    animation: agent-pulse var(--lauf-puls) ease-in-out infinite;
+  }
 }
 @keyframes agent-pulse {
   0%, 100% { box-shadow: 0 0 0 0 var(--accent-glow); transform: scale(1); }
@@ -725,13 +910,13 @@ button:focus-visible, a:focus-visible, [role="button"]:focus-visible,
   border-radius: 999px;
   background: var(--bg-inset-strong);
   border: 1px solid var(--border-subtle);
-  transition: background 0.15s ease, border-color 0.15s ease;
+  transition: background var(--dur) ease, border-color var(--dur) ease;
   cursor: pointer;
   flex-shrink: 0;
 }
 .switch[data-on="true"] {
-  background: var(--accent);
-  border-color: color-mix(in srgb, var(--accent) 80%, black 20%);
+  background: var(--accent-fuell);
+  border-color: var(--accent-kante);
 }
 .switch .knob {
   display: inline-block;
@@ -740,14 +925,14 @@ button:focus-visible, a:focus-visible, [role="button"]:focus-visible,
   border-radius: 999px;
   background: #fff;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
-  transition: transform 0.15s ease;
+  transition: transform var(--dur) ease;
   transform: translateX(2px);
 }
 .switch[data-on="true"] .knob { transform: translateX(15px); }
 
 /* ---------- Overlays ---------- */
 .hud-backdrop {
-  background: color-mix(in srgb, var(--bg-base) 60%, transparent);
+  background: var(--scrim);
   backdrop-filter: blur(8px);
   -webkit-backdrop-filter: blur(8px);
 }
@@ -765,7 +950,11 @@ button:focus-visible, a:focus-visible, [role="button"]:focus-visible,
   inset: 0;
   transform: translateX(-100%);
   background: linear-gradient(90deg, transparent, var(--bg-inset-strong), transparent);
-  animation: skeleton-shimmer 1.5s infinite;
+}
+/* Shimmer ist erlaubt, weil er eine laufende Arbeit anzeigt — aber nur,
+   wenn Bewegung zugelassen ist. */
+@media (prefers-reduced-motion: no-preference) {
+  .skeleton::after { animation: skeleton-shimmer var(--lauf-shimmer) linear infinite; }
 }
 @keyframes skeleton-shimmer { 100% { transform: translateX(100%); } }
 
@@ -776,11 +965,15 @@ button:focus-visible, a:focus-visible, [role="button"]:focus-visible,
   height: 5px;
   border-radius: 999px;
   background: var(--text-3);
-  margin-right: 3px;
-  animation: typing-bounce 1.1s infinite ease-in-out;
+  margin-right: var(--s-fein);
 }
-.typing-dot:nth-child(2) { animation-delay: 0.15s; }
-.typing-dot:nth-child(3) { animation-delay: 0.3s; }
+/* Die Tipper antworten auf eine laufende Anfrage, also dürfen sie bewegen —
+   aber nur, wenn die Fläche Bewegung zulässt. */
+@media (prefers-reduced-motion: no-preference) {
+  .typing-dot { animation: typing-bounce var(--lauf-tippen) ease-in-out infinite; }
+  .typing-dot:nth-child(2) { animation-delay: 0.15s; }
+  .typing-dot:nth-child(3) { animation-delay: 0.3s; }
+}
 @keyframes typing-bounce {
   0%, 60%, 100% { transform: translateY(0); opacity: 0.45; }
   30% { transform: translateY(-3px); opacity: 1; }
@@ -795,6 +988,30 @@ button:focus-visible, a:focus-visible, [role="button"]:focus-visible,
   gap: 10px;
   min-width: 0;
 }
+
+/* ---------- Verträge, die die Komponenten nachziehen ----------
+   Diese drei Klassen sind das Angebot aus dieser Scheibe: ein Maß für
+   Trefferfläche, eins für Icongröße, eins für die Schriftstufe. Sie sind
+   hier ohne Abnehmer — das ist Absicht, nicht toter Stil: E2/E3 ziehen
+   sie an, weil sie sonst pro Knopf eine Zahl erfinden. */
+
+/* Apple HIG für macOS: Default 28×28 pt, Minimum 20×20 pt (nicht 44 — das
+   ist iOS). D1-10 maß „Scan" 13 px und „copy" 17 px. */
+.tap { min-block-size: 28px; min-inline-size: 28px; }
+.tap-reihum { min-block-size: 28px; }
+.tap-min { min-block-size: 20px; min-inline-size: 20px; }
+
+/* Kein Icon unter 14 px. Die drei Legenden-Regeln der Graph-Fläche sind
+   26×6-<svg>-Striche und gar keine Icons — sie tragen kein aria-hidden
+   und bleiben deshalb unberührt (sonst würde die Legende auf 14 px hoch
+   geblasen). */
+svg[aria-hidden="true"] { min-block-size: var(--icon-min); min-inline-size: var(--icon-min); }
+
+.ikone { display: inline-flex; align-items: center; justify-content: center; }
+.ikone-1 { width: var(--icon-stufe-1); height: var(--icon-stufe-1); }
+.ikone-2 { width: var(--icon-stufe-2); height: var(--icon-stufe-2); }
+.ikone-3 { width: var(--icon-stufe-3); height: var(--icon-stufe-3); }
+.ikone-4 { width: var(--icon-stufe-4); height: var(--icon-stufe-4); }
 
 /* ---------- Alt-Klassen (Rückwärtskompatibilität) ---------- */
 .text-gradient { color: var(--text-1); }
@@ -828,7 +1045,7 @@ button:focus-visible, a:focus-visible, [role="button"]:focus-visible,
   border: 1px solid var(--border-subtle);
   border-radius: var(--r-card);
   background: var(--glass);
-  transition: border-color 0.16s var(--ease-apple), background 0.16s var(--ease-apple);
+  transition: border-color var(--dur) var(--ease-apple), background var(--dur) var(--ease-apple);
   /* Große Basen: Off-Screen-Karten überspringen Layout und Paint komplett.
      Ohne das liefet jeder Ansichtswechsel ein Layout über alle ~165.000
      Layout-Objekte des Bestands (~1,1 s Blockade im Hauptthread). */
@@ -836,28 +1053,28 @@ button:focus-visible, a:focus-visible, [role="button"]:focus-visible,
   contain-intrinsic-size: auto 132px;
 }
 .row-entry:hover { border-color: var(--border-hover); background: var(--glass-strong); }
-.row-entry:active { transform: scale(0.995); transition-duration: 80ms; }
+.row-entry:active { transform: scale(0.995); transition-duration: var(--dur-fast); }
 .row-type {
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  font-size: 11.5px;
-  font-weight: 620;
+  font-size: var(--fs-2);
+  font-weight: var(--fw-halbfest);
   letter-spacing: 0.02em;
   white-space: nowrap;
 }
 .row-body { min-width: 0; }
 .row-body h3 {
   font-family: var(--font-display);
-  font-size: 17px;
-  font-weight: 600;
+  font-size: var(--fs-5);
+  font-weight: var(--fw-halbfest);
   line-height: 1.24;
   margin: 0 0 3px;
   text-wrap: balance;
 }
 .row-body p {
   margin: 0;
-  font-size: 13px;
+  font-size: var(--fs-3);
   line-height: 1.55;
   color: var(--text-2);
   display: -webkit-box;
@@ -870,7 +1087,7 @@ button:focus-visible, a:focus-visible, [role="button"]:focus-visible,
   display: inline-flex;
   align-items: center;
   gap: 4px;
-  font-size: 11px;
+  font-size: var(--fs-1);
   color: var(--text-3);
   padding: 2px 7px;
   border: 1px solid var(--border-subtle);
@@ -880,8 +1097,8 @@ button:focus-visible, a:focus-visible, [role="button"]:focus-visible,
 }
 button.row-quiet { cursor: pointer; }
 .row-stamp {
-  font-size: 10px;
-  font-weight: 700;
+  font-size: var(--fs-1);
+  font-weight: var(--fw-fest);
   letter-spacing: 0.08em;
   padding: 2px 7px;
   border: 1.5px solid;
@@ -897,10 +1114,10 @@ button.row-quiet { cursor: pointer; }
   border-top: 1px solid var(--border-subtle);
   padding-top: 10px;
 }
-.row-pct { font-family: var(--font-display); font-size: 15px; font-weight: 600; color: var(--accent); }
+.row-pct { font-family: var(--font-display); font-size: var(--fs-5); font-weight: var(--fw-halbfest); color: var(--accent); }
 .row-tags { display: flex; flex-wrap: wrap; gap: 5px; justify-content: flex-start; min-width: 0; overflow: hidden; }
-.row-tag { display: inline-flex; align-items: center; gap: 3px; font-size: 11px; color: var(--text-2); }
-.row-time { font-size: 11px; color: var(--text-3); white-space: nowrap; margin-left: auto; }
+.row-tag { display: inline-flex; align-items: center; gap: 3px; font-size: var(--fs-1); color: var(--text-2); }
+.row-time { font-size: var(--fs-1); color: var(--text-3); white-space: nowrap; margin-left: auto; }
 
 /* ---------- Apple-Segmented Control ----------
    Eine verbundene Wahlschiene: alle Optionen teilen sich eine Fläche,
@@ -921,7 +1138,7 @@ button.row-quiet { cursor: pointer; }
   border: 0;
   background: transparent;
   color: var(--text-2);
-  transition: background 0.16s var(--ease-apple), color 0.16s var(--ease-apple), box-shadow 0.16s var(--ease-apple);
+  transition: background var(--dur) var(--ease-apple), color var(--dur) var(--ease-apple), box-shadow var(--dur) var(--ease-apple);
 }
 .apple-seg-btn:hover { color: var(--text-1); }
 .apple-seg-btn[data-on="true"] {
@@ -930,3 +1147,75 @@ button.row-quiet { cursor: pointer; }
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.35), inset 0 1px 0 var(--edge-light);
 }
 .apple-seg-btn:disabled { opacity: 0.45; }
+
+/* ---------- Hülle der Graph-Fläche (A7-06) ----------
+   Bei 390 px Fensterbreite blieb der Fläche im Messlauf ein Streifen von
+   80 × 418 CSS-px — die Seitenleiste hielt ihre 256 px in der Reihe fest, egal
+   ob das Fenster beide trug. Unter der md-Grenze liegt sie deshalb *über* der
+   Fläche; wer sie öffnet, verliert keinen Strich vom Bild. Der Rahmen setzt
+   .huelle-schmal nach der echten Fensterbreite, nicht nach dem ersten Render. */
+.huelle-schmal .seiten-leiste {
+  position: fixed;
+  inset-block: 0;
+  inset-inline-start: 0;
+  z-index: 40;
+  box-shadow: 0 0 24px rgba(0, 0, 0, 0.45);
+}
+
+/* Die Leiste der Fläche hält eine Zeile (A7-07). Bei 1 500 Notizen war die
+   Zahlengruppe („1 500 notes · 39 concepts · 1 543 links") länger als die Reihe,
+   brach um und nahm der Leinwand 42 px: 1130 × 668 statt 1130 × 710, und der
+   Fit rechnete mit einem andern Rahmen als bei 400 Notizen. Ein Notiz mehr
+   durfte kein Bild rücken — also: eine Zeile, und was nicht passt, schneidet ab.
+   Anker ist die Suchzahl #graph-search-count; die Leiste selbst gehört der
+   Flächen-Scheibe und wird hier nicht umgeschrieben, nur in der Höhe gehalten. */
+.flaeche-huelle div:has(> #graph-search-count) {
+  flex-wrap: nowrap;
+  min-width: 0;
+  /* Was nicht in die Zeile passt, bleibt seitlich erreichbar — eine Knopfgruppe,
+     die in drei Reihen bricht, kostet das Bild 180 px Hoehe. */
+  overflow-x: auto;
+  overflow-y: hidden;
+}
+/* Die Gruppen in der Leiste brechen ebenfalls um: das naechste Ende derselben
+   Zeile. Nachgemessen am 10.10.: mit der Leiste allein in einer Zeile wurden die
+   Gruppen bei 1 440 px 285 px hoch — die Leinwand verlor 181 px. */
+.flaeche-huelle div:has(> #graph-search-count) > [role="group"] {
+  flex-wrap: nowrap;
+}
+.flaeche-huelle div:has(> #graph-search-count) #graph-search-count,
+.flaeche-huelle div:has(> #graph-search-count) > .hud-label {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  min-width: 0;
+}
+
+/* ---------- Der Assistent als Täfelchen (A7-10) ----------
+   Bis zum 09.10. lag der Einrichtungsassistent als `fixed inset-0` mit einem
+   flächendeckenden Dimmer über dem ganzen Fenster — der erste Blick in den
+   eigenen Graphen ging hinter einem Dialog verloren (a7-screens/12-wizard2-
+   erschienen.png, gemessene Deckung 1 682 542 px²). Er steht jetzt als Spalte
+   neben der Fläche: die Fläche bleibt sichtbar und vermessbar, solange er redet. */
+.wizard-taefelchen {
+  flex: 0 0 min(560px, 38vw);
+  width: min(560px, 38vw);
+  max-width: 560px;
+  min-height: 0;
+}
+/* Im schmalen Fenster ist eine nebenständige Spalte das Bild selbst. Der Rahmen
+   stapelt dort untereinander: das Täfelchen *nimmt* dem Bild Raum, statt es zu
+   decken — die obere Kante des Gedächtnisses bleibt frei, und kein Strich des
+   Bildes liegt unter einer Schicht. */
+.huelle-schmal {
+  flex-direction: column;
+}
+.huelle-schmal > main {
+  min-height: 0;
+}
+.huelle-schmal .wizard-taefelchen {
+  flex: 0 0 58%;
+  width: auto;
+  max-width: none;
+  min-height: 0;
+}

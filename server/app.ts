@@ -60,6 +60,60 @@ const ALLOWED_ORIGINS = new Set([
 // erreicht den Server, 1mb pro Body, Drosseln gegen Brute-Force, der Knoten-
 // deckel, und der Wiederherstellungsschlüssel hinter drei Türstehern.
 
+/** Groessen, die ein Mensch lesen kann — fuer die Fehlerantwort ohne Stapel. */
+function menschenGroesse(bytes: number): string {
+  if (!Number.isFinite(bytes) || bytes < 0) return "unknown";
+  if (bytes >= 1024 * 1024) return `${+(bytes / (1024 * 1024)).toFixed(2)} MB`;
+  if (bytes >= 1024) return `${Math.round(bytes / 1024)} KB`;
+  return `${bytes} bytes`;
+}
+
+/**
+ * A3-04/Q-19 — die einzige Fehlermittelware, identisch zum Kern
+ * (`~/kepta-core/server.ts`, sichererFehler). Die App hatte schon einen Haenger,
+ * aber er gab `err.message` ungeprueft nach aussen: bei einer 500 stand der
+ * interne Grund beim Client (gemessen: "no such table: memories"), bei einer 413
+ * nur "request entity too large" ohne jede Groesse — und die Schichten, die
+ * bootstrap.ts nach createApp montiert, lagen ueberhaupt nicht unter ihm.
+ * Weder Stapel noch Pfad noch der gesandte Body gehen hinaus; der wahre Grund
+ * bleibt beim Betreiber, sonst ist eine 500 unauffindbar.
+ */
+export function sichererFehler(err: unknown, req: express.Request, res: express.Response, _next: express.NextFunction) {
+  // Abweichung vom Kern, bewusst: der Kern reicht dann an Express weiter (das
+  // beendet die Antwort), die App kappt die Verbindung — ihre SSE-Zeile
+  // (/api/activity) hat den Kopf schon gesendet und braucht das Ende, nicht
+  // einen zweiten Versuch zu antworten.
+  if (res.headersSent) {
+    res.destroy();
+    return;
+  }
+  const e = (err ?? {}) as { status?: number; statusCode?: number; type?: string; expose?: boolean; message?: string; limit?: number; length?: number };
+  const status = [e.status, e.statusCode].find((s) => typeof s === "number" && s >= 400 && s <= 599) ?? 500;
+
+  if (status === 413 || e.type === "entity.too.large") {
+    const limitBytes = typeof e.limit === "number" ? e.limit : undefined;
+    const receivedBytes = typeof e.length === "number" ? e.length : undefined;
+    const text = "Body too large"
+      + (limitBytes !== undefined ? ` — this route accepts up to ${menschenGroesse(limitBytes)}` : "")
+      + (receivedBytes !== undefined ? `, this request carried ${menschenGroesse(receivedBytes)}` : "")
+      + ". Nothing was stored.";
+    return res.status(413).json({ error: text, limitBytes, receivedBytes });
+  }
+
+  if (status === 400 && (e.type === "entity.parse.failed" || err instanceof SyntaxError)) {
+    return res.status(400).json({ error: "Body is not valid JSON — nothing was read. The body itself is not echoed back." });
+  }
+
+  if (status >= 500) {
+    console.error(`kepta: request failed (${req.method} ${req.path}) — ${err instanceof Error ? (err.stack ?? err.message) : String(err)}`);
+    return res.status(status).json({ error: "The request failed inside the server. The reason is in the server log, not in this answer." });
+  }
+  // 4xx mit expose:true sind nach http-errors-eigener Regel ungefaehrlich;
+  // alles andere in dieser Klasse bekommt den Wortlaut ohne Detail.
+  const grund = e.expose === true && typeof e.message === "string" ? e.message : "The request could not be handled.";
+  res.status(status).json({ error: grund });
+}
+
 export function createApp(store: KeptaStore, optionen: AppOptionen = {}) {
   const app = express();
 
@@ -164,22 +218,10 @@ export function createApp(store: KeptaStore, optionen: AppOptionen = {}) {
 
   // 5) Zentrale Fehlerbehandlung — Express 5 leitet Rejections aus async-
   // Handlern automatisch hierher (früher landeten unbehandelte Rejections als
-  // HTML-Standardseite beim Client). Die API spricht JSON, also JSON-Fehler;
-  // wer schon antwortet (SSE-Streams), bekommt nur das Ende der Verbindung.
-  app.use((err: unknown, _req: express.Request, res: express.Response, _next: express.NextFunction) => {
-    if (res.headersSent) {
-      res.destroy();
-      return;
-    }
-    const status =
-      (typeof err === "object" && err !== null && "status" in err && Number((err as { status: unknown }).status)) ||
-      (typeof err === "object" && err !== null && "statusCode" in err && Number((err as { statusCode: unknown }).statusCode)) ||
-      500;
-    const gueltig = Number.isInteger(status) && status >= 400 && status <= 599 ? status : 500;
-    const message = err instanceof Error ? err.message : "Internal server error";
-    if (gueltig >= 500) console.error("Unhandled API error:", err);
-    res.status(gueltig).json({ error: message });
-  });
+  // HTML-Standardseite beim Client). Die API spricht JSON, also JSON-Fehler.
+  // bootstrap.ts haengt dieselbe Mittelware noch einmal an, hinter static und
+  // dem SPA-Fallback: Express laeuft die Schicht ab der Fehlerstelle abwaerts.
+  app.use(sichererFehler);
 
   return app;
 }

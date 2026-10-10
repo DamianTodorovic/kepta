@@ -18,6 +18,20 @@ import type { AppKontext } from "../kontext";
 
 const MAX_SETTINGS_BYTES = 64 * 1024;
 
+/**
+ * A3-09 — dieselbe Maske wie der Kern (`kepta-core/server.ts:76`). Wortlaut und
+ * Form sind absichtlich gleich: secretfoermige Namen gehen nur als Anzeige
+ * heraus, gesetzt plus die letzten vier Zeichen. Die App nennt zusaetzlich die
+ * Reihe, die src/lib/settings.ts aus dem Browserspeicher heruebergespiegelt hat —
+ * auch darin stand der KI-Schluessel im Klartext.
+ */
+const GEHEIM_NAME_MUSTER = /(?:api[_-]?key|access[_-]?key|secret|token|passwort|password|passphrase|schluessel|key)$/i;
+const GEHEIM_NAMEN = new Set(["ai_settings", "ki_gehirn_ai_settings"]);
+
+function istGeheimSchluessel(name: string): boolean {
+  return GEHEIM_NAMEN.has(name) || GEHEIM_NAME_MUSTER.test(name);
+}
+
 export function mountSettings(app: express.Express, ctx: AppKontext): void {
   const { store } = ctx;
 
@@ -56,11 +70,27 @@ export function mountSettings(app: express.Express, ctx: AppKontext): void {
   uebernimmSettingsDatei(store, path.join(ctx.datenOrdner, "settings.json"));
 
   app.get("/api/settings", (_req, res) => {
+    let bestand: Record<string, string>;
     try {
-      res.json(store.einstellungen());
+      bestand = store.einstellungen();
     } catch {
-      res.json({});
+      bestand = {};
     }
+    // A3-09: diese Route war die Klartext-Tuer zu dem, was die verschluesselte
+    // Datei hueltet. Geschrieben wird weiter ueber PUT, die Datenbank bleibt der
+    // unveraenderte Speicher — und der Rueckweg der App (`ai_connection`, darin
+    // der Schluessel nur als Umschlag) bleibt lesbar.
+    const angezeit: Record<string, unknown> = {};
+    for (const [k, v] of Object.entries(bestand)) {
+      if (!istGeheimSchluessel(k)) {
+        angezeit[k] = v;
+        continue;
+      }
+      // Ein kurzer Wert haelt keine vier Zeichen uebrig, die zeigen kann, ohne
+      // die Haelfte preiszugeben.
+      angezeit[k] = { gesetzt: true, ende: v.length >= 8 ? v.slice(-4) : null };
+    }
+    res.json(angezeit);
   });
 
   app.put("/api/settings", ctx.limiter.write, (req, res) => {

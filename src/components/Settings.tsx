@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef, FormEvent } from 'react';
 import { Key, ShieldCheck, SettingsIcon, Download, CheckCircle2, RefreshCw, Cpu, HardDriveDownload, Server, Plug, Copy, Terminal, Braces, Globe, Search, Save, Layers, ExternalLink, Sparkles } from "../lib/icons";
 import { motion } from 'motion/react';
-import { PROVIDERS, providerById, loadAISettings, saveAISettings, AISettings } from '../lib/ai';
+import { PROVIDERS, providerById, loadAISettings, hydrateAISettings, saveAISettings, kiSchluesselStatus, type AISchluesselStatus, type AISettings } from '../lib/ai';
 import { AUTO_LEARN_TIMEOUT_MS } from '../lib/autolearn';
 import { getMemoriesSync, refreshMemories } from '../lib/store';
 import { SystemStatus } from './SystemStatus';
@@ -130,6 +130,18 @@ export function Settings() {
   const [autoLearnSaved, setAutoLearnSaved] = useState(false);
   const [extractModel, setExtractModel] = useState<string>(()=>{ try{ return loadAISettings().extractModel ?? ''; }catch{ return ''; }});
   const [extractSaved, setExtractSaved] = useState(false);
+  /**
+   * Wo der KI-Schluessel wirklich liegt (F13): versiegelt mit dem
+   * Datenbankschluessel dieser Installation, oder — wenn es den nicht gibt —
+   * gar nicht. Der Satz darunter sagt beides, denn der zweite Fall ist der,
+   * in dem jemand nach dem Neustart vor einem leeren Feld steht.
+   */
+  const [schluesselHuelle, setSchluesselHuelle] = useState<AISchluesselStatus | null>(null);
+  useEffect(() => {
+    let gueltig = true;
+    kiSchluesselStatus().then((s) => { if (gueltig) setSchluesselHuelle(s); });
+    return () => { gueltig = false; };
+  }, []);
 
   // --- MCP-Tab state ---
   const [copied, setCopied] = useState<string | null>(null);
@@ -232,8 +244,17 @@ export function Settings() {
     return () => { cancelled = true; window.removeEventListener('focus', onFocus); };
   }, [settings.providerId, settings.baseUrl, settings.apiKey, provider.needsKey, provider.protocol]);
 
+  // Jemand, der gleich nach dem Start in die Einstellungen klickt, trifft die
+  // Rehydrierung des Dashboard noch laufend an — die Messung aus dem gebauten
+  // Buendel liess das Feld leer. Also selbst nachholen, dann nachziehen.
   useEffect(() => {
-    setSettings(loadAISettings());
+    let gueltig = true;
+    hydrateAISettings().then((s) => {
+      if (!gueltig) return;
+      setSettings(s);
+      setExtractModel(s.extractModel ?? '');
+    });
+    return () => { gueltig = false; };
   }, []);
 
   useEffect(() => {
@@ -530,7 +551,11 @@ export function Settings() {
                     className={inputClass}
                   />
                   <p className="text-xs mt-2" style={{ color: 'var(--text-3)' }}>
-                    The key is stored locally on your device and sent straight to the provider.
+                    {!provider.needsKey || schluesselHuelle === null
+                      ? 'The key is stored locally on your device and sent straight to the provider.'
+                      : schluesselHuelle.verschlossen
+                        ? `Sealed with this installation's database key (${schluesselHuelle.ablage ?? 'the system keychain'}) — never returned by the settings API.`
+                        : 'This knowledge base has no database key, so an API key cannot be sealed here. It stays in this window and must be entered again after a restart.'}
                   </p>
                 </div>
 

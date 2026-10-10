@@ -30,33 +30,67 @@ export function prefsObjekt(): Record<string, string> {
 }
 
 let spiegelTimer: ReturnType<typeof setTimeout> | null = null;
+let gelesen = false;
+let lauf: Promise<void> | null = null;
 
-/** Alle bekannten Präferenzen in die DB spiegeln — entprellt (1,5 s). */
+/**
+ * Alle bekannten Präferenzen in die DB spiegeln — entprellt (1,5 s).
+ *
+ * (b) aus dem A1-Nachtrag: gespiegelt wird erst, NACHDEM die Spiegelung gelesen
+ * ist. Der Rahmen schreibt beim Mount `ki_gehirn_gruppierung` und
+ * `ki_gehirn_semantic` in den lokalen Speicher, und der entprellte Lauf landete
+ * bisher vor der Antwort von `/api/settings` — dann stand in der Datenbank eine
+ * Spiegelung ohne den Assistenten-Merker, und die Entscheidung des Nutzers war
+ * weg. Also: Lesen zuerst, Schreiben danach.
+ */
 export function spiegelePrefs(): void {
-  if (spiegelTimer) return;
-  spiegelTimer = setTimeout(() => {
-    spiegelTimer = null;
-    try {
-      fetch('/api/settings', {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ui_prefs: JSON.stringify(prefsObjekt()) }),
-      }).catch(() => { /* offline: localStorage trägt weiter */ });
-    } catch { /* Umgebung ohne fetch (Tests) */ }
-  }, 1500);
+  const bereit = gelesen ? Promise.resolve() : hydratePrefs();
+  void bereit.then(() => {
+    if (spiegelTimer) return;
+    spiegelTimer = setTimeout(() => {
+      spiegelTimer = null;
+      try {
+        fetch('/api/settings', {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ ui_prefs: JSON.stringify(prefsObjekt()) }),
+        }).catch(() => { /* offline: localStorage trägt weiter */ });
+      } catch { /* Umgebung ohne fetch (Tests) */ }
+    }, 1500);
+  });
 }
 
-export async function hydratePrefs(): Promise<void> {
+/** Die Spiegelung lesen und fehlende Keys eintragen — laufende Aufträge werden geteilt. */
+export function hydratePrefs(): Promise<void> {
+  if (lauf) return lauf;
+  lauf = liesSpiegelung()
+    .then(() => { gelesen = true; })
+    .finally(() => { lauf = null; });
+  return lauf;
+}
+
+async function liesSpiegelung(): Promise<void> {
   try {
     const r = await fetch('/api/settings');
     if (!r.ok) return;
     const d = (await r.json()) as Record<string, unknown>;
-    const roh = typeof d.ui_prefs === 'string' ? d.ui_prefs : '';
-    if (!roh) return;
-    const gespiegelt = JSON.parse(roh) as Record<string, string>;
+    // Die Settings-Maske auf der Server-Seite haelt `ui_prefs` als Zeichenkette
+    // (der Speicher nimmt nur Strings an). Solange beide Seiten committet werden,
+    // ist das eine Form, die wechseln kann — und ein stummer Ausfall dieser
+    // Hydration setzt jedem Nutzer alle Schalter zurueck, weil der
+    // Zufalls-Port-Origin ohne Spiegelung leer startet. Also beide Formen lesen.
+    const roh = d.ui_prefs;
+    let gespiegelt: Record<string, string> = {};
+    if (typeof roh === "string" && roh) {
+      gespiegelt = JSON.parse(roh) as Record<string, string>;
+    } else if (roh && typeof roh === "object") {
+      gespiegelt = roh as Record<string, string>;
+    } else {
+      return;
+    }
     for (const k of PREF_KEYS) {
       try {
-        if (localStorage.getItem(k) === null && typeof gespiegelt[k] === 'string') {
+        if (localStorage.getItem(k) === null && typeof gespiegelt[k] === "string") {
           localStorage.setItem(k, gespiegelt[k]);
         }
       } catch { /* kein Storage */ }

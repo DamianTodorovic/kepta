@@ -26,6 +26,12 @@ import { DEFAULT_EMBED_MODEL } from "../src/core/embeddings";
 
 interface ToolErgebnis {
   content: { type: string; text: string }[];
+  /**
+   * Bei Erfolg gesetzt. Eine Absage traegt **keinen** Strukturteil mehr
+   * (A2-01, F12-Paritaet zum Kern) — die liest `alsAbsage` aus dem Text, und
+   * genau das wird dort auch geprueft. Dieses Feld ist die Sicht der Erfolgs-
+   * pfade, nicht eine Behauptung ueber jede Antwort.
+   */
   structuredContent: Record<string, unknown>;
   isError?: boolean;
 }
@@ -38,11 +44,17 @@ function alsErgebnis(res: Awaited<ReturnType<typeof handleRpc>>): ToolErgebnis {
  * Eine Absage kommt als Werkzeugergebnis mit `isError` zurück, nicht als
  * JSON-RPC-Fehler — der Agent soll den Grund im Text sehen, die Tür aber nicht
  * verletzen. Der Wortlaut ist Teil des Vertrags, deshalb wird er verglichen.
+ *
+ * F12-Paritaet: im Fehlerfall tragt die Antwort **keinen** Strukturteil mehr
+ * (`structuredContent` fehlt ganz). Ein konformer MCP-Client validiert ihn gegen
+ * die deklarierte outputSchema und würde die Absage werfen, statt sie zu zeigen —
+ * der Grund steht seitdem nur noch im Text (`Error: …`).
  */
 function alsAbsage(res: Awaited<ReturnType<typeof handleRpc>>): string {
   const r = alsErgebnis(res);
   if (!r.isError) throw new Error("Erwartete Absage, bekam Erfolg: " + JSON.stringify(r.structuredContent).slice(0, 200));
-  return String(r.structuredContent.error ?? "");
+  expect("structuredContent" in r).toBe(false);
+  return String(r.content[0]?.text ?? "").replace(/^Error:\s*/, "");
 }
 
 /**

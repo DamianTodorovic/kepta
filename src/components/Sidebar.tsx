@@ -33,13 +33,11 @@ interface SidebarProps {
 /* Die Sidebar ist bewusst IMMER dunkel (wie bei Slack/Linear) — sie bildet
    den Kontrast-Rahmen um die Inhaltsfläche und macht die App sofort
    wiedererkennbar, unabhängig vom Theme. Materie liegt in .sidebar-glass.
-   Onyx-Palette: warm-weißer Text, Champagner-Akzent, neutrale Flächen. */
-const TEXT_STRONG = '#eaeae8';
-const TEXT_MUTED = 'rgba(235, 235, 232, 0.55)';
-const TEXT_FAINT = 'rgba(235, 235, 232, 0.34)';
-const LINE = 'rgba(255, 255, 255, 0.07)';
-const SURFACE = 'rgba(255, 255, 255, 0.05)';
-const ACCENT_LIGHT = '#c04a39';
+   Alle Werte dazu stehen in ./huelle.css unter .seiten-leiste. Vorher standen
+   sie als sechs Konstanten und siebzehn Inline-Stilen hier — gegen eine
+   Inline-Farbe gewinnt kein Thema und keine Increased-Contrast-Regel, und die
+   active Beschriftung zeigte im hellen Thema dasselbe #c04a39 wie im dunklen,
+   während ihre eigene Registerlasche längst var(--accent) zog (D1-06, Z-13). */
 /** So viele Tags stehen sofort da; der Rest kommt auf Wunsch. */
 const TAGS_SICHTBAR = 40;
 
@@ -68,17 +66,17 @@ export function Sidebar({ tags, selectedTags, onSelectTag, onClearTags, currentV
 
   return (
     <div className={cn(
-      "sidebar-glass flex flex-col h-full shrink-0 transition-[width] duration-300",
+      "sidebar-glass seiten-leiste flex flex-col h-full shrink-0 transition-[width] duration-300",
       isFocusMode ? "w-0 overflow-hidden border-none" : "w-64"
     )}>
       {/* Marke */}
-      <div className="h-[64px] px-4 flex items-center gap-2.5 shrink-0" style={{ borderBottom: `1px solid ${LINE}` }}>
+      <div className="seiten-kante-unten h-[64px] px-4 flex items-center gap-2.5 shrink-0">
         <KeptaMark size={26} radius={7} />
         <div className="min-w-0">
-          <div className="font-semibold tracking-[-0.02em] text-[13.5px] leading-none" style={{ color: TEXT_STRONG }}>
+          <div className="seiten-marke font-semibold tracking-[-0.02em] text-[13.5px] leading-none">
             KEPTA
           </div>
-          <div className="text-[11px] mt-1 tnum" style={{ color: TEXT_FAINT }}>
+          <div className="seiten-zahl text-[11px] mt-1 tnum">
             {totalMemories} {totalMemories === 1 ? 'entry' : 'entries'}
           </div>
         </div>
@@ -94,16 +92,15 @@ export function Sidebar({ tags, selectedTags, onSelectTag, onClearTags, currentV
                 key={item.id}
                 onClick={() => onNavigate(item.id)}
                 data-active={active}
-                className="sidebar-nav-btn w-full flex items-center gap-2.5 px-2.5 py-[7px] rounded-lg text-[13.5px] text-left"
-                style={{
-                  color: active ? ACCENT_LIGHT : TEXT_MUTED,
-                  fontWeight: active ? 600 : 490,
-                }}
+                className={cn(
+                  "sidebar-nav-btn w-full min-h-9 flex items-center gap-2.5 px-2.5 py-[7px] rounded-lg text-[13.5px] text-left",
+                  active ? "font-semibold" : "font-medium"
+                )}
               >
-                <item.icon className="w-4 h-4 shrink-0" weight={item.weight ?? 'duotone'} style={{ color: active ? ACCENT_LIGHT : TEXT_FAINT }} />
+                <item.icon className="seiten-ikone w-4 h-4 shrink-0" weight={item.weight ?? 'duotone'} />
                 <span className="flex-1">{item.label}</span>
                 {item.id === 'activity' && appsLive && (
-                  <span aria-hidden title="An AI app is using KEPTA right now" data-testid="apps-live" className="w-1.5 h-1.5 rounded-full animate-pulse shrink-0" style={{ background: '#7fb08a' }} />
+                  <span aria-hidden title="An AI app is using KEPTA right now" data-testid="apps-live" className="seiten-punkt w-1.5 h-1.5 rounded-full animate-pulse shrink-0" />
                 )}
               </button>
             );
@@ -115,9 +112,9 @@ export function Sidebar({ tags, selectedTags, onSelectTag, onClearTags, currentV
       {tags.length > 0 && (
         <div className="flex-1 min-h-0 px-2.5 py-2 overflow-hidden flex flex-col">
           <div className="flex items-center justify-between px-2 mb-1.5">
-            <span className="text-[10.5px] font-semibold tracking-[0.09em] uppercase" style={{ color: TEXT_FAINT }}>Tags</span>
+            <span className="seiten-kopf text-[10.5px] font-semibold tracking-[0.09em] uppercase">Tags</span>
             {selectedTags.length > 0 && (
-              <button onClick={onClearTags} className="text-[11px] hover:underline" style={{ color: ACCENT_LIGHT }}>Reset</button>
+              <button onClick={onClearTags} className="seiten-handlung min-h-6 text-[11px]">Reset</button>
             )}
           </div>
           <div className="flex-1 overflow-y-auto space-y-px pr-1">
@@ -130,15 +127,12 @@ export function Sidebar({ tags, selectedTags, onSelectTag, onClearTags, currentV
                   key={name}
                   onClick={() => onSelectTag(name)}
                   data-active={active}
-                  className="sidebar-tag-btn w-full flex items-center gap-2 px-2 py-[5px] rounded-md text-[13px] text-left"
-                  style={{
-                    color: active ? TEXT_STRONG : TEXT_MUTED,
-                  }}
+                  className="sidebar-tag-btn w-full min-h-7 flex items-center gap-2 px-2 py-[5px] rounded-md text-[13px] text-left"
                 >
-                  <Hash className="w-3.5 h-3.5 shrink-0" style={{ color: TEXT_FAINT }} />
+                  <Hash className="seiten-ikone w-3.5 h-3.5 shrink-0" />
                   <span className="truncate flex-1">{name}</span>
                   {count !== null && count > 1 && (
-                    <span className="text-[10.5px] tnum px-1.5 py-px rounded-md shrink-0" style={{ background: SURFACE, color: TEXT_FAINT }}>{count}</span>
+                    <span className="seiten-plakette text-[10.5px] tnum px-1.5 py-px rounded-md shrink-0">{count}</span>
                   )}
                 </button>
               );
@@ -146,8 +140,7 @@ export function Sidebar({ tags, selectedTags, onSelectTag, onClearTags, currentV
             {versteckteTags > 0 && (
               <button
                 onClick={() => setAlleTags(true)}
-                className="w-full text-left px-2 py-[5px] rounded-md text-[12px]"
-                style={{ color: ACCENT_LIGHT }}
+                className="seiten-handlung w-full min-h-7 text-left px-2 py-[5px] rounded-md text-[12px]"
               >
                 {versteckteTags} more…
               </button>
@@ -155,8 +148,7 @@ export function Sidebar({ tags, selectedTags, onSelectTag, onClearTags, currentV
             {alleTags && tags.length > TAGS_SICHTBAR && (
               <button
                 onClick={() => setAlleTags(false)}
-                className="w-full text-left px-2 py-[5px] rounded-md text-[12px]"
-                style={{ color: TEXT_FAINT }}
+                className="seiten-zahl w-full min-h-7 text-left px-2 py-[5px] rounded-md text-[12px]"
               >
                 Show fewer
               </button>
@@ -166,14 +158,11 @@ export function Sidebar({ tags, selectedTags, onSelectTag, onClearTags, currentV
       )}
 
       {/* Fußzeile */}
-      <div className="p-2.5 space-y-2" style={{ borderTop: `1px solid ${LINE}` }}>
-        <div
-          className="px-2 py-2 rounded-lg flex items-center gap-2.5"
-          style={{ background: SURFACE, border: '1px solid rgba(255, 255, 255, 0.04)' }}
-        >
+      <div className="seiten-kante-oben p-2.5 space-y-2">
+        <div className="seiten-flaeche px-2 py-2 rounded-lg flex items-center gap-2.5">
           <KeptaMark size={24} radius={6} />
           <div className="min-w-0 flex-1">
-            <div className="text-[12.5px] truncate font-semibold tracking-[0.01em]" style={{ color: TEXT_STRONG }}>
+            <div className="seiten-marke text-[12.5px] truncate font-semibold tracking-[0.01em]">
               {/* Branding 3.1.1: schlicht KEPTA — keine Stufen-Anzeige mehr.
                   Seit 09.10.2026 sagt auch die zweite Zeile nichts über Grenzen,
                   weil es sie nicht mehr gibt: die App läuft unbegrenzt.
@@ -181,8 +170,13 @@ export function Sidebar({ tags, selectedTags, onSelectTag, onClearTags, currentV
                   sie bleibt über Systemstatus und /api/health abrufbar. */}
               {'KEPTA'}
             </div>
-            <div className="text-[11px] truncate" style={{ color: TEXT_FAINT }} title="local · private · encrypted">
-              local · private · encrypted
+            <div className="seiten-erklarung text-[11px] truncate">
+              {/* Vorher: „local · private · encrypted". Die App hat im selben
+                  Fenster einen Zustand dafür — die Chip-Leiste meldet
+                  „Not encrypted", gemessen am selben Lauf (e3-screens/
+                  vorher-dark-1440px-erststart.png). Eine Marke behauptet
+                  keinen Zustand, den ein Statusfeld neben ihr misst. */}
+              local · private
             </div>
           </div>
         </div>
@@ -190,18 +184,16 @@ export function Sidebar({ tags, selectedTags, onSelectTag, onClearTags, currentV
           {showSetup && onOpenSetup && (
             <button
               onClick={onOpenSetup}
-              className="w-8 h-8 flex items-center justify-center rounded-lg shrink-0"
-              style={{ background: 'rgba(192, 74, 57, 0.12)', border: '1px solid rgba(192, 74, 57, 0.3)', color: ACCENT_LIGHT }}
+              className="seiten-knopf-einrichten w-9 h-9 flex items-center justify-center rounded-lg shrink-0"
               aria-label="Open setup"
               title="Open setup"
             >
-              <Sparkles className="w-3.5 h-3.5" />
+              <Sparkles className="w-4 h-4" />
             </button>
           )}
           <button
             onClick={toggleTheme}
-            className="flex-1 flex items-center justify-center gap-1.5 h-8 rounded-lg text-[12px] font-medium"
-            style={{ background: SURFACE, border: `1px solid ${LINE}`, color: TEXT_MUTED }}
+            className="seiten-knopf flex-1 h-9 flex items-center justify-center gap-1.5 rounded-lg text-[12px] font-medium"
             aria-label="Switch theme"
           >
             {isDark ? <Sun className="w-3.5 h-3.5" /> : <Moon className="w-3.5 h-3.5" />}
@@ -209,12 +201,11 @@ export function Sidebar({ tags, selectedTags, onSelectTag, onClearTags, currentV
           </button>
           <button
             onClick={toggleFocusMode}
-            className="w-8 h-8 flex items-center justify-center rounded-lg"
-            style={{ background: SURFACE, border: `1px solid ${LINE}`, color: TEXT_MUTED }}
+            className="seiten-knopf w-9 h-9 flex items-center justify-center rounded-lg"
             aria-label="Focus mode"
             title="Hide sidebar"
           >
-            <PanelLeftClose className="w-3.5 h-3.5" />
+            <PanelLeftClose className="w-4 h-4" />
           </button>
         </div>
       </div>

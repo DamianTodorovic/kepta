@@ -225,9 +225,9 @@ export function SystemStatus() {
             {copied === 'mcp' ? 'Copied' : copied === 'fehler:mcp' ? 'Copying failed' : 'Copy config'}
           </button>
         </div>
-        <div className="text-[11px] mt-1.5" style={{ color: 'var(--text-3)' }}>
-          Or HTTP: <code>POST {typeof window !== 'undefined' ? window.location.origin : ''}/mcp</code> (JSON-RPC, protocol 2026-07-28)
-          <button onClick={() => copy('url', `${typeof window !== 'undefined' ? window.location.origin : ''}/mcp`)} className="ml-1.5 underline" style={{ color: 'var(--accent)' }}>copy</button>
+        <div className="text-xs mt-1.5 flex flex-wrap items-center gap-x-1.5" style={{ color: 'var(--text-2)' }}>
+          <span>Or HTTP: <code>POST {typeof window !== 'undefined' ? window.location.origin : ''}/mcp</code> (JSON-RPC, protocol 2026-07-28)</span>
+          <button onClick={() => copy('url', `${typeof window !== 'undefined' ? window.location.origin : ''}/mcp`)} className="min-h-6 px-1 inline-flex items-center underline" style={{ color: 'var(--accent)' }}>copy</button>
         </div>
       </div>
     </div>

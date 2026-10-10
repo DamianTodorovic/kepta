@@ -198,8 +198,15 @@ export interface DendrogrammOptionen {
   eingeklappt?: ReadonlySet<string>;
 }
 
+/**
+ * Der Abstand zweier Blaetter in Welteinheiten. Steht als Groesse hier, weil
+ * die Flaeche daraus ihren Lesbarkeitsboden rechnet (`zeilenKMin`): was eine
+ * Zeile hier ist, ist sie auf dem Schirm mal dem Zoom.
+ */
+export const BLATT_ABSTAND = 38;
+
 const STANDARD: Required<Omit<DendrogrammOptionen, "radien" | "eingeklappt">> & { radien: Record<HierarchieKnoten["kind"], number> } = {
-  blattAbstand: 38,
+  blattAbstand: BLATT_ABSTAND,
   ebenenAbstand: 190,
   radien: { root: 11, type: 9, entity: 8, group: 8, memory: 7 },
 };
@@ -327,31 +334,60 @@ export function layoutDendrogram(
  * Die Wurzel ist kein Kandidat: ein Baum, der sich selbst verschließt, ist kein
  * Bild mehr. Reicht auch die tiefste Faltung nicht, bleibt die Struktur an der
  * obersten Ebene stehen, und die Fläche sagt das.
+ *
+ * Zwei Grenzen gegen die Gier desselben Verfahrens (A7-01, gemessen am echten
+ * Bestand): die Typ-Ebene ist kein Kandidat, und die Faltung nimmt nie die
+ * letzte Notiz. Bei 60 Notizen falte sie alle 15 Gruppen und ließ „Showing 0 of
+ * 60 notes" zurück — eine Ansicht, die nur noch Zahlen zeigt, ist keine Ansicht,
+ * und der eine Knopf darunter war nicht zu treffen. Was die Zeilen dann über den
+ * Rahmen stehen, sagt die Bilanz; die Kamera nimmt sie mit.
  */
+/** Eine Gruppe, die nur ein oder zwei Notizen verbirgt, wird nicht gefaltet. */
+export const FALTUNG_MIN_NOTIZEN = 3;
+/**
+ * So viele Notizen muss die automatische Faltung immer im Bild lassen.
+ *
+ * Eins ist die Untergrenze, nicht drei: die Zusage ist „die Ansicht zeigt Inhalt",
+ * und wer bei 1 500 Notizen drei einzelne Blaetter offen laesst, erzaehlt eine
+ * Geschichte, die keine ist. Was hinter den Malzeichen liegt, sagt die Bilanz.
+ */
+export const FALTUNG_HALTE_NOTIZEN = 1;
+
 export function vorschlagFaltung(baum: HierarchieKnoten, zeilen: number): string[] {
   if (zeilen <= 0) return [];
   /** Sichtbare Zeilen unter diesem Knoten — wird mit jeder Faltung nachgezogen. */
   const zeilenUnter = new Map<string, number>();
+  /** Notizen (Blätter) unter diesem Knoten — die Zahl, die eine Faltung kostet. */
+  const notizenUnter = new Map<string, number>();
   const aelter = new Map<string, string | null>();
-  const ebenen = new Map<number, string[]>();
+  const ebenen = new Map<number, { id: string; art: HierarchieKnoten["kind"] }[]>();
   let tiefste = 0;
-  const zaehle = (k: HierarchieKnoten, wer: string | null, tiefe: number): number => {
+  const zaehle = (k: HierarchieKnoten, wer: string | null, tiefe: number): { zeilen: number; notizen: number } => {
     let n = 1;
+    let blaetter = k.children.length === 0 ? 1 : 0;
     for (const c of k.children) {
-      n += zaehle(c, k.id, tiefe + 1);
+      const unten = zaehle(c, k.id, tiefe + 1);
+      n += unten.zeilen;
+      blaetter += unten.notizen;
     }
     zeilenUnter.set(k.id, n);
+    notizenUnter.set(k.id, blaetter);
     aelter.set(k.id, wer);
-    if (k.children.length > 0 && tiefe > 0) {
+    // Kandidat ist jede Ebene mit Kindern ausser der Typ-Ebene: die Typen sind
+    // die Landkarte des Baums, und eine Klammer um „Facts" verbirgt den halben
+    // Bestand hinter einer Zahl (A7-01, gemessen: „Showing 0 of 60 notes").
+    if (k.children.length > 0 && tiefe > 0 && k.kind !== "type") {
       if (!ebenen.has(tiefe)) ebenen.set(tiefe, []);
-      ebenen.get(tiefe)!.push(k.id);
+      ebenen.get(tiefe)!.push({ id: k.id, art: k.kind });
       tiefste = Math.max(tiefste, tiefe);
     }
-    return n;
+    return { zeilen: n, notizen: blaetter };
   };
-  const gesamt = zaehle(baum, null, 0);
+  const gesamt = zaehle(baum, null, 0).zeilen;
   if (gesamt <= zeilen) return [];
 
+  const halteNotizen = Math.min(FALTUNG_HALTE_NOTIZEN, notizenUnter.get(baum.id) ?? 0);
+  let sichtbareNotizen = notizenUnter.get(baum.id) ?? 0;
   const gewaehlt = new Set<string>();
   let uebrig = gesamt;
   for (let tiefe = tiefste; tiefe >= 1 && uebrig > zeilen; tiefe--) {
@@ -359,13 +395,18 @@ export function vorschlagFaltung(baum: HierarchieKnoten, zeilen: number): string
     // nicht — Väter liegen immer eine Ebene höher. Also genügt ein Sortieren
     // je Ebene statt eines Neubewertens je Zug.
     const kandidaten = (ebenen.get(tiefe) ?? [])
-      .map((id) => ({ id, gewinnt: (zeilenUnter.get(id) ?? 1) - 1 }))
-      .filter((k) => k.gewinnt > 0)
+      .map(({ id }) => ({ id, gewinnt: (zeilenUnter.get(id) ?? 1) - 1, notizen: notizenUnter.get(id) ?? 0 }))
+      .filter((k) => k.notizen >= FALTUNG_MIN_NOTIZEN && k.gewinnt > 0)
       .sort((a, b) => b.gewinnt - a.gewinnt || (a.id < b.id ? -1 : a.id > b.id ? 1 : 0));
     for (const k of kandidaten) {
       if (uebrig <= zeilen) break;
+      // Die letzte Notiz bleibt liegen: was unter der Haltezahl liegt, ist eine
+      // Zeile ohne Inhalt. Überspringen, nicht abbrechen — eine kleinere Gruppe
+      // weiter unten im Sortierungsfeld ist noch zu haben.
+      if (sichtbareNotizen - k.notizen < halteNotizen) continue;
       gewaehlt.add(k.id);
       uebrig -= k.gewinnt;
+      sichtbareNotizen -= k.notizen;
       for (let p: string | null = k.id; p; p = aelter.get(p) ?? null) {
         zeilenUnter.set(p, (zeilenUnter.get(p) ?? 1) - k.gewinnt);
       }
@@ -374,8 +415,22 @@ export function vorschlagFaltung(baum: HierarchieKnoten, zeilen: number): string
   return [...gewaehlt];
 }
 
-export const GLIDE_FAKTOR = 0.22;
 /**
+ * Der Zoom-Boden des Baums: die kleinste Darstellung, bei der zwei Zeilen auf
+ * dem Schirm noch `lesbarPx` auseinanderstehen.
+ *
+ * F8-N1, im eigenen Bild gesehen: nachdem die Faltung nicht mehr die letzte
+ * Notiz frisst, ist der Baum hoehher als sein Rahmen — und die Kamera hat ihn
+ * trotzdem komplett hinein gepresst. Bei 400 Notizen standen zwei Zeilen 3 px
+ * auseinander: eine Haarlinie, in der weder Titel noch ×N-Badges zu lesen sind.
+ * Der Baum darf ueber den Rahmen hinausgehen (die Flaeche sagt, was im Bild
+ * steht); er darf sich nicht auf Lesbarkeit hinauszoomen lassen.
+ */
+export function zeilenKMin(lesbarPx: number, blattAbstand: number): number {
+  return lesbarPx / Math.max(1, Math.abs(blattAbstand) || 1);
+}
+
+export const GLIDE_FAKTOR = 0.22;/**
  * Ab welcher Restdistanz ein Knoten AUF DAS ZIEL geschnappt wird. Ohne das
  * kriecht der Schweif der asymptotischen Annaeherung minutenlang mit
  * subpixelgenauen Bewegungen weiter — unabhaengig vom Zoom lesbar: 1 Welt-

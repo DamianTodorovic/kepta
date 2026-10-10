@@ -94,11 +94,55 @@ describe("neue Wissensbasis mit Schluessel", () => {
 });
 
 describe("falscher oder fehlender Schluessel", () => {
-  it("ein falscher Schluessel oeffnet nichts und veraendert nichts", () => {
+  // F12 nach F7 (Kern, `F7-SCHLUESSEL.md` Abschnitt 7): die alte Meldung hieß
+  // "the key in the keychain does not belong to this database" — sie nannte eine
+  // Quelle (keychain), die sie nicht kennt, und eine Ursache (falscher Schluessel),
+  // die von "die Datei ist beschaedigt" nicht zu unterscheiden ist. SQLite
+  // antwortet auf beides mit SQLITE_NOTADB.
+  it("ein falscher Schluessel oeffnet nichts, nennt zwei Moeglichkeiten und veraendert nichts", () => {
     const p = neuerPfad();
     new KeptaStore(p, mit(SCHLUESSEL)).close();
     const vorher = hash(p);
-    expect(() => new KeptaStore(p, mit(ANDERER))).toThrow("does not belong to this database");
+    let meldung = "";
+    try { new KeptaStore(p, mit(ANDERER, "Test-Bund")); } catch (e) { meldung = String((e as Error).message); }
+    expect(meldung).toMatch(/either that is not the key this file was encrypted with, or the file itself is damaged/i);
+    // Die Herkunft wird nicht erfunden: ohne Herkunfts-Zeile an der Call-Site
+    // (store.ts:116/:117, außerhalb der zugeteilten Funktionen) nennt die Meldung
+    // keine Quelle. Diese Zeile faellt laut um, sobald die zwei Zeilen gesetzt sind.
+    expect(meldung).toMatch(/could not be opened with the 256-bit key it was given/);
+    expect(meldung).not.toMatch(/Test-Bund/);
+    expect(meldung).not.toMatch(/keychain|does not belong/i);
+    expect(meldung).toMatch(/Nothing was changed/);
+    expect(hash(p)).toBe(vorher);
+  });
+
+  it("eine Textdatei als Wissensbasis ist kein Schluesselproblem, sondern keine Datenbank", () => {
+    const p = neuerPfad();
+    fs.writeFileSync(p, "x".repeat(22), "utf-8"); // genau 22 bytes, keine Blattere
+    const vorher = hash(p);
+    let meldung = "";
+    try { new KeptaStore(p, mit(SCHLUESSEL)); } catch (e) { meldung = String((e as Error).message); }
+    expect(meldung).toMatch(/is not a SQLite database at all/i);
+    expect(meldung).toMatch(/22 bytes is not a multiple of any page size/);
+    expect(meldung).not.toMatch(/keychain|does not belong/i);
+    expect(hash(p)).toBe(vorher);
+  });
+
+  it("beschadigte Seite, richtiger Schluessel: die Meldung haelt die Beschadigung offen", () => {
+    const p = neuerPfad();
+    new KeptaStore(p, mit(SCHLUESSEL)).close();
+    const fd = fs.openSync(p, "r+");
+    try {
+      const blatt = Buffer.alloc(1);
+      fs.readSync(fd, blatt, 0, 1, 24);
+      fs.writeSync(fd, Buffer.from([(blatt[0]! ^ 0xff)]), 0, 1, 24);
+    } finally {
+      fs.closeSync(fd);
+    }
+    const vorher = hash(p);
+    let meldung = "";
+    try { new KeptaStore(p, mit(SCHLUESSEL)); } catch (e) { meldung = String((e as Error).message); }
+    expect(meldung).toMatch(/either that is not the key this file was encrypted with, or the file itself is damaged/i);
     expect(hash(p)).toBe(vorher);
   });
 
@@ -107,7 +151,11 @@ describe("falscher oder fehlender Schluessel", () => {
     new KeptaStore(p, mit(SCHLUESSEL)).close();
     expect(() => new KeptaStore(p)).toThrow("encrypted, but its key is not available.");
     const gesperrt = mit(() => { throw new Error("Keychain locked"); });
+    // Der Grund aus der Schluesselschicht wird nicht abgeschnitten, und die
+    // Meldung nennt den Ausweg statt nur die Absage.
     expect(() => new KeptaStore(p, gesperrt)).toThrow("encrypted, but its key is not available: Keychain locked");
+    expect(() => new KeptaStore(p, gesperrt)).toThrow(/no empty knowledge base was started over it/);
+    expect(() => new KeptaStore(p, gesperrt)).toThrow(/KEPTA_DB_KEY/);
   });
 });
 

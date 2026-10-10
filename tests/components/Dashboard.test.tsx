@@ -123,7 +123,10 @@ describe("Dashboard: nichts ist gesperrt", () => {
     vi.stubGlobal("fetch", abruf);
     await zeige([]);
     await waitFor(() => expect(screen.getByRole("button", { name: /^Knowledge$/ })).toBeTruthy());
-    expect(screen.getByText(/local · private · encrypted/)).toBeTruthy();
+    // „encrypted" ist ein gemessener Zustand und gehört nicht in die Marke —
+    // dieselbe Instanz trug im selben Fenster den Chip „Not encrypted"
+    // (10.10., leerer Datenordner, KEPTA_ENCRYPTION=off).
+    expect(screen.getByText(/^local · private$/)).toBeTruthy();
     // Eng Gemein: „key“ steht auch beim Provider-Hinweis („No API key …“), und der
     // gehört weiter dazu. Verboten sind genau die alten Stufen-Sätze.
     expect(screen.queryByText(/removes the limits|unlimited day|daily limit|activate a key/i)).toBeNull();
@@ -176,7 +179,7 @@ describe("Dashboard: Suche", () => {
     // Semantik aus -> reiner Stichwortfilter, kein Serveraufruf noetig
     const schalter = container.querySelector('input[type="checkbox"]') as HTMLInputElement;
     await user.click(schalter);
-    await user.type(screen.getByPlaceholderText(/Search…/), "docker");
+    await user.type(screen.getByPlaceholderText(/Search your memory/), "docker");
     await waitFor(() => expect(container.textContent).not.toMatch(/Kochen/), { timeout: 3000 });
   });
 
@@ -423,7 +426,7 @@ describe("Dashboard: Such-Einstellungen stecken im Request (Paket 2 — Einstell
     await act(async () => {
       schreibeSuchPrefs({ tiefe: 32, spurBm25: false, spurVektor: true, spurGraph: true });
     });
-    await user.type(screen.getByPlaceholderText(/Search…/), "docker");
+    await user.type(screen.getByPlaceholderText(/Search your memory/), "docker");
     await waitFor(() => {
       expect(letzteAnfrage).not.toBeNull();
       expect(letzteAnfrage!.topK).toBe(32);
@@ -445,7 +448,7 @@ describe("Dashboard: Such-Einstellungen stecken im Request (Paket 2 — Einstell
       return new Response("{}", { status: 200 });
     }));
     await zeige([note({ title: "Docker" })]);
-    await user.type(screen.getByPlaceholderText(/Search…/), "docker");
+    await user.type(screen.getByPlaceholderText(/Search your memory/), "docker");
     await waitFor(() => expect(letzteAnfrage).not.toBeNull(), { timeout: 4000 });
     expect(letzteAnfrage!.topK).toBeGreaterThanOrEqual(16);
   });
@@ -620,7 +623,7 @@ describe("Dashboard: Suche mit der Server-Engine", () => {
       return new Response("{}", { status: 200 });
     }));
     const { container } = await zeige([note({ title: "Docker" })]);
-    await user.type(screen.getByPlaceholderText(/Search…/), "docker");
+    await user.type(screen.getByPlaceholderText(/Search your memory/), "docker");
     await waitFor(() => expect(container.textContent).toMatch(/5 of 57 matches/), { timeout: 4000 });
     await user.click(screen.getByRole("button", { name: /show all/i }));
     await waitFor(() => expect(container.textContent).toMatch(/All matches/));
@@ -636,7 +639,7 @@ describe("Dashboard: Suche mit der Server-Engine", () => {
       return new Response("{}", { status: 200 });
     }));
     const { container } = await zeige([note({ title: "Docker" })]);
-    await user.type(screen.getByPlaceholderText(/Search…/), "quantenphysik");
+    await user.type(screen.getByPlaceholderText(/Search your memory/), "quantenphysik");
     await waitFor(() => expect(container.textContent).toMatch(/No matches/i), { timeout: 4000 });
   });
 
@@ -651,7 +654,7 @@ describe("Dashboard: Suche mit der Server-Engine", () => {
     }));
     const { container } = await zeige([note({ title: "Docker" })]);
     // Vor der ersten Antwort wärmt sich das Gehirn — spätestens danach ist es warm.
-    await user.type(screen.getByPlaceholderText(/Search…/), "docker");
+    await user.type(screen.getByPlaceholderText(/Search your memory/), "docker");
     await waitFor(() => expect(container.textContent).toMatch(/Brain warm — answer in \d+ ms/), { timeout: 4000 });
   });
 
@@ -675,7 +678,7 @@ describe("Dashboard: Suche mit der Server-Engine", () => {
       return new Response("{}", { status: 200 });
     }));
     const { container } = await zeige([note({ title: "Docker" })]);
-    await user.type(screen.getByPlaceholderText(/Search…/), "docker");
+    await user.type(screen.getByPlaceholderText(/Search your memory/), "docker");
     await waitFor(() => expect(container.textContent).toMatch(/Found via/), { timeout: 4000 });
     expect(container.textContent).toMatch(/bm25 #1/);
     expect(container.textContent).toMatch(/vector #3/);
@@ -816,5 +819,77 @@ describe("Bei schmalem Fenster rückt die Seitenleiste zurück", () => {
       await new Promise((r) => setTimeout(r, 60));
     });
     expect(leiste(container)?.className).toMatch(/w-64/);
+  });
+});
+
+// A7-06, nachgemessen am 09.10. im echten Browser (Tabelle B, letzte Zeile je
+// Bestand): bei 390 px blieb der Fläche ein Streifen von 80 × 418 CSS-px, und der
+// begann bei y = 740 eines 844-px-Fensters — rund 314 px Bild unter der Falz,
+// nichts daran scrollte. Die Entscheidung „Leiste zu oder auf“ fiel einmal beim
+// Mount und wurde danach nie wieder gefragt; ein Lauf, der die Breite umstellt,
+// findet dieselben 256 px Leiste wie beim Start in 1440 px.
+describe("A7-06: die Hülle folgt der Fensterbreite", () => {
+  const echteBreite = window.innerWidth;
+  afterEach(() => {
+    Object.defineProperty(window, "innerWidth", { value: echteBreite, writable: true, configurable: true });
+  });
+  function fenster(breite: number) {
+    Object.defineProperty(window, "innerWidth", { value: breite, writable: true, configurable: true });
+  }
+  const rahmen = (container: HTMLElement) => container.firstElementChild as HTMLElement;
+  const leiste = (container: HTMLElement) => container.querySelector(".sidebar-glass") as HTMLElement | undefined;
+  async function breitesWechsel(nach: number) {
+    Object.defineProperty(window, "innerWidth", { value: nach, writable: true, configurable: true });
+    await act(async () => {
+      fireEvent(window, new Event("resize"));
+      await new Promise((r) => setTimeout(r, 60));
+    });
+  }
+
+  it("trägt das schmale Merkmal, wenn das Fenster beim Start schmal ist", async () => {
+    fenster(390);
+    const { container } = await zeige([note({ title: "Fristen" })]);
+    expect(rahmen(container).className, "der Rahmen sagt nicht, dass er schmal ist").toMatch(/huelle-schmal/);
+  });
+
+  it("setzt das schmale Merkmal neu, wenn das Fenster während des Laufs schmal wird", async () => {
+    fenster(1440);
+    const { container } = await zeige([note({ title: "Fristen" })]);
+    expect(rahmen(container).className).not.toMatch(/huelle-schmal/);
+    await breitesWechsel(390);
+    expect(rahmen(container).className, "die Breite gilt nur vom Mount, nicht vom Fenster").toMatch(/huelle-schmal/);
+    expect(leiste(container)?.className, "die Leiste steht noch in der Reihe").toMatch(/w-0/);
+  });
+
+  it("gibt das breite Merkmal zurück, wenn das Fenster wieder trägt", async () => {
+    fenster(390);
+    const { container } = await zeige([note({ title: "Fristen" })]);
+    await breitesWechsel(1440);
+    expect(rahmen(container).className).not.toMatch(/huelle-schmal/);
+    expect(leiste(container)?.className).toMatch(/w-64/);
+  });
+
+  it("nennt die Seitenleiste beim Namen, damit der Rahmen sie überlagern kann", async () => {
+    fenster(1440);
+    const { container } = await zeige([note({ title: "Fristen" })]);
+    expect(leiste(container)?.className, "die Leiste hat kein Kleid, das die Stilregel greifen kann").toMatch(/seiten-leiste/);
+  });
+
+  it("gibt der Fläche ihr Kleid, damit die Stilregel ihre Leiste findet", async () => {
+    fenster(1440);
+    const { container } = await zeige([note({ title: "Fristen" })]);
+    expect(container.querySelector(".flaeche-huelle"), "die Flächen-Ansicht steht ohne Hook im Rahmen").toBeTruthy();
+  });
+
+  it("zeigt den langen Satz der Flächen-Kopfzeile, wo das Fenster ihn trägt", async () => {
+    fenster(1440);
+    const { container } = await zeige([note({ title: "Fristen" })]);
+    expect(container.textContent).toMatch(/connected through tags/);
+  });
+
+  it("lässt den langen Satz der Flächen-Kopfzeile im schmalen Fenster weg", async () => {
+    fenster(390);
+    const { container } = await zeige([note({ title: "Fristen" })]);
+    expect(container.textContent, "der Satz bricht um und nimmt der Fläche die Höhe").not.toMatch(/connected through tags/);
   });
 });

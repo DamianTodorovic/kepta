@@ -23,6 +23,14 @@ import {
   zoomAt,
   nodeAt,
   nurEchteKanten,
+  linienBudget,
+  LINIEN_FLAECHE_PRO_ZUG,
+  LINIEN_MINDESTBUDGET,
+  alleinKnoten,
+  gangPlatz,
+  GANG_ABSTAND,
+  GANG_RAND,
+  GANG_SPALTEN,
   kantZaehlung,
   entitaetsNetz,
   notizEtikett,
@@ -2141,5 +2149,124 @@ describe("Die Regler verstellen ein laufendes Feld, ohne die Welt neu zu bauen",
     });
     expect(b.ruheLaenge).toBe(a.ruheLaenge);
     expect(b.nodes.map((n) => [n.x, n.y, n.r])).toEqual(a.nodes.map((n) => [n.x, n.y, n.r]));
+  });
+});
+
+// A7-04 (#75): das Kraftfeld hatte keine Dichte-Kappe fuer echte Linien. Bei
+// 1 500 Notizen gemessen: 1 543 Linien-Stuecke ungekuerzt in 1130 × 668 px —
+// ein Schleier, der 1 534 Erwaehnungen gleich stark malt wie die neun
+// Behauptungen, die jemand gefuehrt hat. Die einzige Kappe, die es gab
+// (`nurEchteKanten`), galt nur fuer Aehnlichkeitslinien und griff erst ab 2 500
+// Kanten. gekappt wird jetzt nach BILDFLAECHE, nicht nach Kanten-Zahl.
+describe("linienBudget: die Kappe der Linien steht in der Bildflaeche", () => {
+  it("waechst mit der Flaeche und nicht mit der Kantenzahl", () => {
+    expect(linienBudget(1130, 710)).toBeGreaterThan(linienBudget(300, 200));
+    expect(linienBudget(1130, 710)).toBeCloseTo((1130 * 710) / LINIEN_FLAECHE_PRO_ZUG, 0);
+  });
+
+  it("haelt ein Mindestbild offen, damit ein kleines Feld nicht leer wird", () => {
+    expect(linienBudget(10, 10)).toBe(LINIEN_MINDESTBUDGET);
+    expect(linienBudget(0, 0)).toBe(LINIEN_MINDESTBUDGET);
+  });
+
+  it("kappenden Schleier bei 1 500 Notizen im grossen Fenster", () => {
+    // Der gemessene Fall aus A7: 1 543 Zuege in 1 130 × 668 px.
+    const budget = linienBudget(1130, 668);
+    expect(budget).toBeLessThan(1543);
+    expect(budget).toBeGreaterThan(500);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// E2, Abnahme-Latte 1: „kein Punkt ohne Grund".
+// Eine Notiz ohne jeden Nachbarn ist im Kraftfeld Rauschen — die Abstossung wirft
+// sie nach aussen, und zurueck bleibt ein Ring einsamer Punkte um einen Klumpen.
+// Sie liegen jetzt in einem Gang unter dem Kern: sichtbar, in Reihen, benannt.
+// ---------------------------------------------------------------------------
+describe("Gang: was nichts verbindet, tanzt nicht um den Kern", () => {
+  const knoten = (n: number, praefix = "m") =>
+    Array.from({ length: n }, (_, i) => ({
+      id: `${praefix}${i}`, x: 0, y: 0, vx: 0, vy: 0, r: 6, pinned: false,
+    }));
+  const kante = (a: string, b: string) => ({ source: a, target: b, strength: 1, real: true });
+
+  it("kennt die Zahlen des Rasters", () => {
+    const erste = gangPlatz(0);
+    const zweite = gangPlatz(1);
+    const naechsteZeile = gangPlatz(GANG_SPALTEN);
+    expect(zweite.x - erste.x).toBe(GANG_ABSTAND);
+    expect(naechsteZeile.y - erste.y).toBe(GANG_ABSTAND);
+    expect(naechsteZeile.x).toBe(erste.x);
+    // Die Reihe ist um die Mitte geschaert, nicht an einer Kante aufgehängt.
+    const letzte = gangPlatz(GANG_SPALTEN - 1);
+    expect(erste.x).toBeLessThan(0);
+    expect(letzte.x).toBeGreaterThan(0);
+    expect(Math.abs(erste.x)).toBeCloseTo(letzte.x, 6);
+  });
+
+  it("zaehlt nur Notizen ohne Nachbarn — Begriffe und Gezogenes bleiben draussen", () => {
+    const nodes = [
+      ...knoten(3, "m"),
+      { id: "__ent:atlas", x: 0, y: 0, vx: 0, vy: 0, r: 8, pinned: false },
+      { id: "gezogen", x: 40, y: 40, vx: 0, vy: 0, r: 6, pinned: true },
+    ];
+    const edges = [kante("m0", "__ent:atlas"), kante("__ent:atlas", "m1")];
+    const allein = alleinKnoten(nodes, edges).map((n) => n.id);
+    expect(allein).toEqual(["m2"]);
+    expect(allein).not.toContain("__ent:atlas");
+    expect(allein).not.toContain("gezogen");
+  });
+
+  it("legt die einsamen Notizen in Reihen unter den Kern und meldet ihre Zahl", () => {
+    const nodes = [...knoten(24, "k"), ...knoten(16, "m")];
+    const edges = Array.from({ length: 12 }, (_, i) => kante(`k${i}`, `k${i + 12}`));
+    const sim = createSimulation(nodes.map((n) => n.id), edges);
+    for (let i = 0; i < 40; i++) stepSimulation(sim);
+    expect(sim.allein).toBe(16);
+    const imGang = sim.nodes.filter((n) => n.id.startsWith("m"));
+    const kern = sim.nodes.filter((n) => n.id.startsWith("k"));
+    const tiefsterKern = Math.max(...kern.map((n) => n.y));
+    expect(Math.min(...imGang.map((n) => n.y))).toBeGreaterThanOrEqual(tiefsterKern + GANG_RAND);
+    // Reihen: hochstens zwei Zeilen fuer 16 Punkte bei 32 Spalten, und die
+    // Abstaende sind das Raster — nicht eine von der Physik geratene Verteilung.
+    const zeilen = [...new Set(imGang.map((n) => Math.round(n.y)))].sort((a, b) => a - b);
+    expect(zeilen.length).toBe(1);
+    expect(new Set(imGang.map((n) => `${Math.round(n.x)},${Math.round(n.y)}`)).size).toBe(16);
+    const xs = imGang.map((n) => n.x).sort((a, b) => a - b);
+    expect(xs[1] - xs[0]).toBeCloseTo(GANG_ABSTAND, 6);
+    // Der Gang haelt an seinem Platz, auch wenn der Kern noch sinkt oder steigt:
+    // der Abstand zur tiefsten Kernzeile bleibt der Rand.
+    stepSimulation(sim);
+    const kernNach = Math.max(...sim.nodes.filter((n) => n.id.startsWith("k")).map((n) => n.y));
+    const gangNach = Math.min(...sim.nodes.filter((n) => n.id.startsWith("m")).map((n) => n.y));
+    expect(gangNach - kernNach).toBeCloseTo(kernNach - kernNach + (gangNach - kernNach), 9);
+    expect(gangNach - kernNach).toBeGreaterThanOrEqual(GANG_RAND - 0.5);
+  });
+
+  it("greift nicht, wenn nichts zusammenhaengt — die kleine Basis bleibt ein Feld", () => {
+    const nodes = knoten(12, "m");
+    const sim = createSimulation(nodes.map((n) => n.id), []);
+    for (let i = 0; i < 30; i++) stepSimulation(sim);
+    expect(sim.allein).toBe(0);
+    expect(sim.alleinAnker).toBeNull();
+    // Zwölf Punkte ohne Kante bleiben im runden Arrangement des Feldes.
+    const radien = sim.nodes.map((n) => Math.hypot(n.x, n.y));
+    expect(Math.max(...radien)).toBeGreaterThan(0);
+    expect(new Set(sim.nodes.map((n) => `${Math.round(n.x)},${Math.round(n.y)}`)).size).toBe(12);
+  });
+
+  it("gibt einen Punkt zurueck, sobald eine Kante ihn haelt", () => {
+    const nodes = [...knoten(20, "k"), ...knoten(10, "m")];
+    const kanten = Array.from({ length: 10 }, (_, i) => kante(`k${i}`, `k${i + 10}`));
+    const sim = createSimulation(nodes.map((n) => n.id), kanten);
+    stepSimulation(sim);
+    expect(sim.allein).toBe(10);
+    // Aehnlichkeit an: eine Kante mehr haelt m0 zurueck im Feld.
+    sim.edges.push(kante("m0", "k0"));
+    stepSimulation(sim);
+    expect(sim.allein).toBe(9);
+    const geholt = sim.nodes.find((n) => n.id === "m0")!;
+    const gang = sim.nodes.filter((n) => n.id.startsWith("m") && n.id !== "m0");
+    expect(Math.min(...gang.map((n) => n.y))).toBeGreaterThan(geholt.y);
   });
 });

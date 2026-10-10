@@ -2,103 +2,62 @@ import { describe, it, expect } from "vitest";
 import fs from "node:fs";
 import path from "node:path";
 import { CORPUS, QUERIES } from "../scripts/eval-corpus";
+import { dokuVergleich, leseBericht, readmeDateien, statischeTestanzahl, testbehauptungen } from "../scripts/test-bericht.mjs";
 
 // Der Korpus wuchs von 30 auf 58 Notizen, die READMEs behaupteten weiter 92 %
 // Hit@1 auf 25 Anfragen. Die Zahl war nicht erfunden — sie war nur von gestern.
 // Genau so entsteht die Sorte Falschaussage, die einem in einem Kommentarfeld
 // um die Ohren fliegt: niemand luegt, die Doku hinkt nur nach.
 const wurzel = process.cwd();
-const lies = (p: string) => fs.readFileSync(path.join(wurzel, p), "utf-8");
-// Seit dem Open-Core-Split ist das Repository englisch-only — README.de.md ist
-// entfallen, der Waechter prueft nur noch das eine README.
-const dateien = ["README.md"];
+const lies = (p: string) => {
+  const aufgeloest = path.resolve(wurzel, p);
+  if (!aufgeloest.startsWith(wurzel + path.sep)) throw new Error(`Unexpected file: ${p}`);
+  return fs.readFileSync(aufgeloest, "utf-8");
+};
+// Welche Dateien eine Testzahl nennen duerfen, liest das Modul aus dem Baum —
+// Kern und App haben damit dieselbe Regel und nicht zwei, die unabhaengig
+// voneinander formuliert wurden. Hier sind es die einen READMEs seit dem
+// Open-Core-Split; README.de.md existiert in diesem Repo nicht.
+const dateien = readmeDateien();
 
 // Nachtrag: der Waechter deckte nur die Korpuszahlen ab. Waehrenddessen
 // behaupteten beide READMEs "333 Tests" (es waren 463) und "20 kB" (es sind
 // 74). Dieselbe Sorte Drift, nur an anderer Stelle — also hier mit abgedeckt.
-describe("Dokumentation: Testanzahl und Paketgroesse driften nicht weg", () => {
-  // Statisch gezaehlte it/test-Aufrufe liegen leicht unter der Laufzeitzahl,
-  // weil it.each mehrere Faelle erzeugt. Deshalb Toleranz statt Gleichheit.
-  /**
-   * Zaehlt die Testfaelle statisch — inklusive der Tabellen von it.each.
-   *
-   * Die erste Fassung zaehlte nur die AUFRUFE. Sobald viel mit it.each
-   * gearbeitet wird (die Scan-Regeln pruefen jeden Eintrag ihrer Listen), lag
-   * die Laufzeitzahl um mehr als die Haelfte darueber, und der Waechter schlug
-   * grundlos an. Eine Tabelle mit sichtbaren Eintraegen wird jetzt gezaehlt;
-   * kommt sie aus einer Variablen, bleibt es bei eins — dann untertreibt die
-   * Schaetzung, was fuer die Untergrenze die sichere Richtung ist.
-   */
-  function statischeTestanzahl(): number {
-    let summe = 0;
+describe("Dokumentation: die Testzahl ist die Zahl eines Laufs", () => {
+  it("es gibt READMEs mit einer Testzahl, sonst prueft das hier nichts", () => {
+    // Ohne diesen Anker waere die Liste unten leer, it.each liefe nullmal, und
+    // die Wache meldete gruen, ohne etwas gesehen zu haben.
+    expect(dateien.length, "kein README.md im Baum — wo soll die Testzahl dann stehen?").toBeGreaterThan(0);
+  });
 
-    /** Elemente eines Array-Literals ab der oeffnenden Klammer, sonst null. */
-    const tabellenLaenge = (quelle: string, ab: number): number | null => {
-      if (quelle[ab] !== "[") return null;
-      let tiefe = 0;
-      let elemente = 1;
-      let inText: string | null = null;
-      for (let i = ab; i < quelle.length; i++) {
-        const c = quelle[i];
-        const davor = quelle[i - 1];
-        if (inText) { if (c === inText && davor !== "\\") inText = null; continue; }
-        if (c === '"' || c === "'" || c === "`") { inText = c; continue; }
-        if (c === "[" || c === "(" || c === "{") tiefe++;
-        else if (c === "]" || c === ")" || c === "}") {
-          tiefe--;
-          if (tiefe === 0) {
-            const inhalt = quelle.slice(ab + 1, i).trim();
-            return inhalt === "" ? 0 : elemente;
-          }
-        } else if (c === "," && tiefe === 1) elemente++;
-      }
-      return null;
-    };
+  it.each(dateien)("%s nennt die Zahl der Faelle, die in einem Lauf durchgelaufen sind", (datei) => {
+    const bericht = leseBericht();
+    // Die eine Quelle: der JSON-Bericht, nicht der Quelltext. Kann er nicht gelesen
+    // werden — fehlt, aelter als der Baum, stammt er aus einem Teillauf — dann
+    // verweigert die Wache und vergleicht nichts. Ein Wert aus der Ablage war der
+    // Grund, warum die App-Wache am 10.10. einen drei Tage alten Bericht als
+    // "passt" melden konnte: 1967 Tests, 118 von 131 Dateien, 22 Dateien juenger.
+    if (!bericht.ok) throw new Error(`Ich kann die Testzahl nicht pruefen: ${bericht.grund}\n  ${bericht.hinweis}`);
 
-    const zaehleDatei = (quelle: string): number => {
-      let n = 0;
-      const re = /^[ \t]*(?:it|test)(\.each)?\s*\(/gm;
-      let m: RegExpExecArray | null;
-      while ((m = re.exec(quelle)) !== null) {
-        if (!m[1]) { n += 1; continue; }
-        const nachKlammer = re.lastIndex;
-        const laenge = tabellenLaenge(quelle, nachKlammer);
-        n += laenge && laenge > 0 ? laenge : 1;
-      }
-      return n;
-    };
+    // dokuVergleich ist dieselbe Funktion, die scripts/doku-check.mjs nach dem
+    // Lauf anwendet: Zahl und Messstand, Zeile fuer Zeile, das Abzeichen beim
+    // Namen genannt — ein Bild in Zeile 2 alterte frueher unbehelligt.
+    const text = lies(datei);
+    const behauptungen = testbehauptungen(text);
+    expect(
+      dokuVergleich(text, bericht, datei),
+      `${datei} passt nicht zum Lauf vom ${bericht.zeit} (${bericht.dateienBericht} Testdateien, ${bericht.zahl} ausgefuehrte Faelle)`
+    ).toEqual([]);
+    expect(behauptungen.length, `${datei} nennt gar keine Testanzahl mehr`).toBeGreaterThan(0);
 
-    const lauf = (dir: string) => {
-      for (const e of fs.readdirSync(dir, { withFileTypes: true })) {
-        const p = path.join(dir, e.name);
-        if (e.isDirectory()) lauf(p);
-        else if (e.name.endsWith(".test.ts") || e.name.endsWith(".test.tsx")) {
-          summe += zaehleDatei(fs.readFileSync(p, "utf-8"));
-        }
-      }
-    };
-    lauf(path.join(wurzel, "tests"));
-    return summe;
-  }
-
-  it.each(dateien)("%s nennt eine Testanzahl, die zur Wirklichkeit passt", (datei) => {
-    const genannt = [...lies(datei).matchAll(/\*\*(\d+)\s+(?:tests|Tests)\*\*/g)].map((m) => Number(m[1]));
-    expect(genannt.length, `${datei} nennt gar keine Testanzahl mehr`).toBeGreaterThan(0);
-    const echt = statischeTestanzahl();
-    for (const zahl of genannt) {
-      // Die statische Zaehlung ist eine UNTERGRENZE: ein einziges it.each
-      // erzeugt zur Laufzeit so viele Faelle, wie seine Tabelle Zeilen hat.
-      // Seit die Scan-Regeln gegen jeden Eintrag ihrer Listen geprueft werden
-      // (jede geheime Endung, jeder gesperrte Ordner, jedes lesbare Format),
-      // liegt die Laufzeitzahl rund ein Drittel ueber der statischen — mit 25 %
-      // Spielraum schlug der Waechter grundlos an.
-      //
-      // Die tragende Aussage bleibt dieselbe und faengt genau den Fehler, der
-      // hier zweimal passiert ist: die Doku darf nie WENIGER behaupten, als
-      // statisch dasteht. Die Obergrenze ist nur eine Plausibilitaetsschranke
-      // gegen frei erfundene Zahlen.
-      expect(zahl, `${datei}: behauptet ${zahl}, statisch gezaehlt ${echt} — die Doku hinkt nach`).toBeGreaterThanOrEqual(echt);
-      expect(zahl, `${datei}: behauptet ${zahl}, statisch nur ${echt} — zu hoch gegriffen`).toBeLessThanOrEqual(Math.round(echt * 1.45));
+    // Die Wortzaehlung bleibt — als Plausibilitaetsboden nach unten, der frei
+    // erfundene Zahlen abfaengt. Sie ist NICHT die Zahl: ein it.each mit einer
+    // Tabelle aus einer Variablen steht hier als ein Fall und laeuft als viele,
+    // und ein it.skip wird gar nicht gesehen, waehrend vitests numTotalTests ihn
+    // mitzaehlt, obwohl er nie lief. Warum, steht in scripts/test-bericht.mjs.
+    const boden = statischeTestanzahl() - (bericht.uebersprungen ?? 0);
+    for (const b of behauptungen) {
+      expect(b.zahl, `${datei}:${b.zeile} ${b.art}: behauptet ${b.zahl}, aber im Quelltext stehen mindestens ${boden} Testbloecke — die Doku hinkt nach`).toBeGreaterThanOrEqual(boden);
     }
   });
 
@@ -205,11 +164,14 @@ describe("Dokumentation: die Routenzahl driftet nicht weg", () => {
 // also genau die Zahl, die aus den READMEs schon entfernt worden war.
 describe("Abzeichen und Anwendungstexte behaupten nichts Falsches", () => {
   it.each(dateien)("%s: das Test-Abzeichen nennt die tatsaechliche Zahl", (datei) => {
-    const treffer = [...lies(datei).matchAll(/tests-(\d+)%20passing/g)].map((m) => Number(m[1]));
-    expect(treffer.length, `${datei} hat kein Test-Abzeichen mehr`).toBeGreaterThan(0);
-    const behauptet = [...lies(datei).matchAll(/\*\*(\d+)\s+(?:tests|Tests)\*\*/g)].map((m) => Number(m[1]));
-    for (const t of treffer) {
-      expect(behauptet, `${datei}: Abzeichen sagt ${t}, Fliesstext sagt ${behauptet.join("/")}`).toContain(t);
+    // Ein Bild, das niemand durchsucht: wenn es eine andere Zahl traegt als der
+    // Fliesstext, ist das eine zweite, ungepruefte Behauptung.
+    const behauptungen = testbehauptungen(lies(datei));
+    const abzeichen = behauptungen.filter((b) => b.art === "Abzeichen");
+    expect(abzeichen.length, `${datei} hat kein Test-Abzeichen mehr`).toBeGreaterThan(0);
+    const fliesstext = behauptungen.filter((b) => b.art === "Fettsatz").map((b) => b.zahl);
+    for (const a of abzeichen) {
+      expect(fliesstext, `${datei}: Abzeichen (Zeile ${a.zeile}) sagt ${a.zahl}, Fliesstext sagt ${fliesstext.join("/")}`).toContain(a.zahl);
     }
   });
 

@@ -127,7 +127,14 @@ describe("Sidebar: Fusszeile", () => {
   it("nennt die Marke und sagt nichts von Grenzen oder Schlüsseln", () => {
     zeige();
     expect(screen.getAllByText(/^KEPTA$/).length).toBeGreaterThan(0);
-    expect(screen.getByText(/local · private · encrypted/)).toBeTruthy();
+    // Die Marke nennt zwei Dinge, die immer stimmen, und keinen gemessenen
+    // Zustand: „encrypted" stand hier, während dieselbe Instanz im selben
+    // Fenster einen Chip „Not encrypted" trug (gemessen 10.10., leerer
+    // Datenordner mit KEPTA_ENCRYPTION=off — e3-screens/
+    // vorher-dark-1440px-erststart.png). Der Zustand gehört dorthin, wo er
+    // gemessen wird: Systemstatus und die Chip-Leiste der Fläche.
+    expect(screen.getByText(/^local · private$/)).toBeTruthy();
+    expect(screen.queryByText(/encrypt/i)).toBeNull();
     // Die alte Fußzeile warb mit „A key removes the limits". Es gibt weder
     // Grenzen noch Schlüssel (09.10.2026), also darf kein Wort davon bleiben.
     expect(screen.queryByText(/key|limit|unlimited/i)).toBeNull();

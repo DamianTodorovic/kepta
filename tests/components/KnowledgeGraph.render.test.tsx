@@ -57,7 +57,13 @@ async function zeichne(
   const view = render(<KnowledgeGraph memories={memories} onSelectMemory={onSelect} />);
   await act(async () => { await new Promise((r) => setTimeout(r, 120)); });
   if (optionen.aehnlichkeit) {
-    const knopf = view.container.querySelector('button[aria-pressed]') as HTMLButtonElement;
+    // Der Schalter wird beim Titel gefasst, nicht an seiner Stelle in der
+    // Leiste: seit E2/Z-07 sind dieSelectionen (Kraftfeld, Baum, Karte,
+    // Dichtestufe) vor ihm, und ein Knopf, den die Sonde ueber seine Nummer
+    // findet, ist ein Test, der umfaellt, wenn die Leiste umgestellt wird.
+    const knopf = view.container.querySelector(
+      'button[aria-pressed][title^="Show similarity links"]'
+    ) as HTMLButtonElement;
     expect(knopf, "Der Aehnlichkeits-Schalter fehlt").not.toBeNull();
     await act(async () => { fireEvent.click(knopf); await new Promise((r) => setTimeout(r, 60)); });
   }
@@ -67,6 +73,25 @@ async function zeichne(
 /** Weitere Bilder abwarten (die Schleife laeuft ueber requestAnimationFrame). */
 async function bilder(n = 8) {
   await act(async () => { await new Promise((r) => setTimeout(r, n * 20)); });
+}
+
+/**
+ * Der Knoten, dessen Gerüst-Etikett an dieser Bildschirmstelle steht.
+ *
+ * Seit F8/A7-02 werden Etiketten in BILDPIXELn gemalt, nicht mehr in der
+ * Weltn transformation: der Punkt rechts neben der Scheibe liegt auf dem
+ * Schirm, nicht in der Welt. Umrechnen ist Aufgabe des Tests, nicht der
+ * Flaeche — deshalb steht die Rechnung hier und nicht fünfmal im Quelltext.
+ */
+function knotenUnterEtikett(
+  knoten: readonly { x: number; y: number; r: number }[],
+  etikett: { x: number; y: number },
+  info: { k: number; tx: number; ty: number }
+) {
+  return knoten.find((n) =>
+    Math.abs((n.x + n.r) * info.k + info.tx + 3 - etikett.x) < 0.6 &&
+    Math.abs(n.y * info.k + info.ty - etikett.y) < 0.6
+  );
 }
 
 /**
@@ -812,8 +837,10 @@ describe("Die Kopfzeile zaehlt, was wirklich im Bild steht", () => {
     ]);
     expect(container.textContent).toMatch(/4 notes · 0 concepts · 0 links/);
     expect(container.textContent).not.toMatch(/similar/);
-    const schalter = container.querySelector('button[aria-pressed]') as HTMLButtonElement;
-    expect(schalter.getAttribute("aria-pressed")).toBe("false");
+    const schalter = container.querySelector(
+      'button[aria-pressed][title^="Show similarity links"]'
+    ) as HTMLButtonElement;
+    expect(schalter.getAttribute("aria-pressed"), "Aehnlichkeit steht an, niemand hat es angefasst").toBe("false");
   });
 
   it("schreibt bei genau einem Knoten die Einzahl", async () => {
@@ -1246,7 +1273,7 @@ describe("Ein Klick auf ein Begriff öffnet sein Dossier", () => {
     const knoten = rahmen.filter((a) => a.op === "arc").map((a) => ({ x: Number(a.args[0]), y: Number(a.args[1]), r: Number(a.args[2]) }));
     const etikett = texte.find((t) => suche(t.text));
     expect(etikett, `Kein Etikett passt. Gemalt: ${JSON.stringify(texte.map((t) => t.text))}`).toBeDefined();
-    const n = knoten.find((x) => Math.abs(x.x + x.r + 3 - etikett!.x) < 0.01 && Math.abs(x.y - etikett!.y) < 0.01);
+    const n = knotenUnterEtikett(knoten, etikett!, { k, tx, ty });
     expect(n, "Kein Knoten trägt das Etikett").toBeDefined();
     const sx = n!.x * k + tx, sy = n!.y * k + ty;
     await act(async () => {
@@ -1378,7 +1405,7 @@ describe("Ein gehaltener Begriff sagt, was er ist", () => {
     expect(vorher.texte.some((t) => t.text === langeEntitaet), "Der volle Name steht schon ohne Zeiger im Bild").toBe(false);
 
     // Der Knoten unter seinem eigenen Etikett — das sitzt rechts neben ihm.
-    const knoten = vorher.knoten.find((n) => Math.abs(n.x + n.r + 3 - gekuerzt!.x) < 0.01 && Math.abs(n.y - gekuerzt!.y) < 0.01);
+    const knoten = knotenUnterEtikett(vorher.knoten, gekuerzt!, vorher);
     expect(knoten, "Kein Knoten trägt das gekürzte Etikett").toBeDefined();
     const sx = knoten!.x * vorher.k + vorher.tx;
     const sy = knoten!.y * vorher.k + vorher.ty;
@@ -1412,7 +1439,7 @@ describe("Ein gehaltener Begriff sagt, was er ist", () => {
     const info = bildInfo();
     const etikett = info.texte.find((t) => t.text.startsWith("quay street leas"));
     expect(etikett, `Das Begriffsetikett fehlt. Gemalt: ${JSON.stringify(info.texte.map((t) => t.text))}`).toBeDefined();
-    const knoten = info.knoten.find((n) => Math.abs(n.x + n.r + 3 - etikett!.x) < 0.01 && Math.abs(n.y - etikett!.y) < 0.01);
+    const knoten = knotenUnterEtikett(info.knoten, etikett!, info);
     expect(knoten, "Kein Knoten trägt das Etikett").toBeDefined();
 
     await act(async () => {
@@ -2073,11 +2100,14 @@ describe("Etikett-Budget: Key, All, Off und der Peek darunter", () => {
     return { texte: texte.map((t) => t.text), texteMitFarbe: texte, knoten, tx, ty, k };
   }
 
-  async function stelle(view: { container: HTMLElement }, name: "Key" | "All" | "Off") {
+  /** Die Dichtestufe an einem Ort, weil die Zahl vor dem Wort steht. */
+  const STELLEN_MAPPE: Record<string, string> = { Key: "Few", Mehr: "Many", All: "All", Off: "None" };
+  async function stelle(view: { container: HTMLElement }, name: "Key" | "Mehr" | "All" | "Off") {
+    const wort = STELLEN_MAPPE[name];
     const knopf = [...view.container.querySelectorAll("button[aria-pressed]")].find(
-      (b) => b.textContent?.trim() === name
+      (b) => b.textContent?.trim() === wort
     ) as HTMLButtonElement | undefined;
-    expect(knopf, `Der Etikett-Knopf „${name}" fehlt`).toBeTruthy();
+    expect(knopf, `Die Dichtestufe „${name}" (heisst im Bild „${wort}") fehlt`).toBeTruthy();
     if (knopf!.getAttribute("aria-pressed") !== "true") {
       await act(async () => {
         fireEvent.click(knopf!);
@@ -2086,13 +2116,16 @@ describe("Etikett-Budget: Key, All, Off und der Peek darunter", () => {
     }
   }
 
-  it("bietet drei Stellungen und fängt mit Key an", async () => {
+  it("bietet die Stellungen und fängt mit der ruhigen an", async () => {
     const { container } = await zeichne([note(), note()]);
     const pressed = [...container.querySelectorAll("button[aria-pressed]")].filter((b) => b.getAttribute("aria-pressed") === "true").map((b) => b.textContent?.trim());
-    for (const name of ["Key", "All", "Off"]) {
-      expect([...container.querySelectorAll("button[aria-pressed]")].map((b) => b.textContent?.trim()), `Knopf „${name}" fehlt`).toContain(name);
+    // Die Stufen heissen seit E2/Z-12 nach der Dichte, die sie setzen — nicht
+    // nach der Engine, die sie zufaellig hatte. Die Zahl hinter jeder Stufe
+    // pruefen die Faelle darunter, hier geht es nur um das Angebot.
+    for (const wort of ["None", "Few", "Many", "All"]) {
+      expect([...container.querySelectorAll("button[aria-pressed]")].map((b) => b.textContent?.trim()), `Die Dichtestufe „${wort}" fehlt`).toContain(wort);
     }
-    expect(pressed, `gedrückt sind: ${pressed.join(", ")}`).toContain("Key");
+    expect(pressed, `gedrückt sind: ${pressed.join(", ")}`).toContain("Few");
   });
 
   it("lässt unter Key Etiketten im Gedränge weg", async () => {
@@ -2104,6 +2137,20 @@ describe("Etikett-Budget: Key, All, Off und der Peek darunter", () => {
     const gemalt = aufnahme().texte.filter((t) => t.startsWith("Ein ziemlich")).length;
     expect(gemalt).toBeGreaterThan(0);
     expect(gemalt, "Key malt so viel wie möglich — das ist der Rückbau").toBeLessThan(ms.length);
+  });
+
+  it("nennt unter Mehr mehr Notizen als unter Key", async () => {
+    const ms = Array.from({ length: 60 }, (_, i) => note({ id: `m${i}`, title: `Ein sehr langer Titel eines andern ${i}` }));
+    const view = await zeichne(ms);
+    await stelle(view, "Key");
+    leinwand.leeren();
+    await bilder();
+    const ruhige = aufnahme().texte.filter((t) => t.startsWith("Ein sehr")).length;
+    await stelle(view, "Mehr");
+    leinwand.leeren();
+    await bilder();
+    const dichte = aufnahme().texte.filter((t) => t.startsWith("Ein sehr")).length;
+    expect(dichte, 'Mehr nennt nicht mehr Notizen als Key — die Dichtestufe ist ein Wort ohne Zahl').toBeGreaterThan(ruhige);
   });
 
   it("gibt unter All jedes Etikett frei, das Key zurückhielt", async () => {
@@ -2120,7 +2167,7 @@ describe("Etikett-Budget: Key, All, Off und der Peek darunter", () => {
     const alles = aufnahme().texte.filter((t) => t.startsWith("Noch ein")).length;
     expect(alles, `Key ${key}, All ${alles}`).toBeGreaterThan(key);
     expect(alles).toBe(ms.length);
-    expect(localStorage.getItem("kepta_graph_labels")).toBe("all");
+    expect(localStorage.getItem("kepta_graph_labels")).toBe("alle");
   });
 
   it("lässt unter Off nichts stehen und holt den Titel unter dem Zeiger zurück", async () => {
@@ -2401,7 +2448,7 @@ describe("Faltung: ein Doppelklick faltet eine Gruppe und sagt es", () => {
     const r = rahmen();
     const etikett = r.texteOhne.find((t) => t.text === name || t.text === `${name.slice(0, 16)}…`);
     expect(etikett, `Kein Etikett „${name}". Gemalt: ${r.texte.join(" | ")}`).toBeDefined();
-    const treffer = r.scheiben.find((s) => Math.abs(s.x + s.r + 3 - etikett!.x) < 0.01 && Math.abs(s.y - etikett!.y) < 0.01);
+    const treffer = knotenUnterEtikett(r.scheiben, etikett!, r);
     expect(treffer, `Keine Scheibe traegt „${name}"`).toBeDefined();
     return { x: treffer!.x * r.k + r.tx, y: treffer!.y * r.k + r.ty };
   }
@@ -2569,7 +2616,7 @@ describe("Faltung im Kraftfeld: was der Baum gefaltet hat, fehlt auch hier", () 
     const r = rahmen();
     const etikett = r.texteOhne.find((t) => t.text === name || t.text === `${name.slice(0, 16)}…`);
     expect(etikett, `Kein Etikett „${name}". Gemalt: ${r.texte.join(" | ")}`).toBeDefined();
-    const treffer = r.scheiben.find((s) => Math.abs(s.y - etikett!.y) < 0.01 && Math.abs(s.x + s.r + 3 - etikett!.x) < 0.01);
+    const treffer = knotenUnterEtikett(r.scheiben, etikett!, r);
     expect(treffer, `Keine Scheibe traegt „${name}"`).toBeDefined();
     return { x: treffer!.x * r.k + r.tx, y: treffer!.y * r.k + r.ty };
   }
@@ -2962,11 +3009,14 @@ describe("Die semantische Ansicht steht auf den Vektoren", () => {
     const { container, unmount } = await zeichne(drei());
     await ansichtWechseln(container, "Semantic");
     expect(localStorage.getItem("kepta_graph_view")).toBe("semantic");
-    expect(knopf(container, "Semantic").getAttribute("style")).toMatch(/accent/);
+    // Das Zeichen der Auswahl ist seit E2/Z-07 das erhobene Blatt, nicht die
+    // Akzentkante: Auswahl, Schalter und Primataktion durfen nicht dieselbe
+    // Farbe teilen.
+    expect(knopf(container, "Semantic").getAttribute("data-on")).toBe("true");
     unmount();
 
     const wieder = await zeichne(drei());
-    expect(knopf(wieder.container, "Semantic").getAttribute("style"), "Wieder offen im Kraftfeld").toMatch(/accent/);
+    expect(knopf(wieder.container, "Semantic").getAttribute("data-on"), "die gemerkte Ansicht ist nicht die gewaehlte").toBe("true");
   });
 
   it("meldet laut, wie viele Notizen die Kappung aus dem Bild nimmt", async () => {
@@ -3176,14 +3226,14 @@ describe("Das Schema-Inventar nennt, was der Bestand trägt", () => {
     bestand();
     const { container } = await zeichne(notizen());
     await bilder(8);
-    const kopfVorher = [...container.querySelectorAll("div.hud-label")].find((d) => /^\d+ notes?\b/.test((d.textContent ?? "").trim()))?.textContent?.trim();
+    const kopfVorher = container.querySelector('[data-testid="graph-kopf"]')?.textContent?.trim();
     // 3 Notizen, 4 Begriffe, 9 gemalte Linien — davon 3 Behauptungen und 6
     // Erwähnungen. Was der Kopf zählt, ist das Bild; was das Inventar zählt, ist
     // der Bestand. Beide Zahlen bleiben, wie sie sind.
     expect(kopfVorher).toBe("3 notes · 4 concepts · 9 links");
     await öffne(container);
     await bilder(8);
-    const kopfNachher = [...container.querySelectorAll("div.hud-label")].find((d) => /^\d+ notes?\b/.test((d.textContent ?? "").trim()))?.textContent?.trim();
+    const kopfNachher = container.querySelector('[data-testid="graph-kopf"]')?.textContent?.trim();
     expect(kopfNachher, "der Kopf hat sich durch das Panel verbogen").toBe(kopfVorher);
   });
 });
@@ -3830,7 +3880,12 @@ describe("Der Baum faltet sich, was nicht in seine Leinwand passt", () => {
     // 120 Notizen wären 129 Zeilen; der Rahmen bei 700 px Leinwand hält etwa
     // vierzig aus. Alles darüber ist abgeschnitten, nicht gefaltet.
     expect(scheiben.length, `der Baum malt ${scheiben.length} Zeilen`).toBeLessThanOrEqual(45);
-    expect(container.textContent).toMatch(/Gathered to fit/i);
+    // F8-N1: die Zeile nennt ihre Umfaenge selbst — Bestand, offen, gefaltet,
+    // Gruppen. Zwei Zahlen mit demselben Wort „notes" und verschiedenen
+    // Umfaengen waren ein Widerspruch, der nachgezaehlt werden musste.
+    const klaue = (container.textContent || "").match(/(\d+) notes · (\d+) unfolded, (\d+) notes folded under (\d+) groups/);
+    expect(klaue, `Belegtext: ${container.textContent?.slice(0, 260)}`).toBeTruthy();
+    expect(Number(klaue![2]) + Number(klaue![3]), `offen ${klaue![2]} + gefaltet ${klaue![3]} = ${gross().length} nicht aufgegangen`).toBe(gross().length);
   });
 
   it("gibt die Faltung her, wenn jemand alles sehen will", async () => {
@@ -3840,8 +3895,18 @@ describe("Der Baum faltet sich, was nicht in seine Leinwand passt", () => {
     expect(knopf, "der Knopf Show everything fehlt").toBeTruthy();
     await act(async () => { fireEvent.click(knopf); await new Promise((r) => setTimeout(r, 120)); });
     await bilder(12);
-    expect(schirmScheiben().length, "nichts ist aufgegangen").toBeGreaterThan(vorher + 50);
-    expect(container.textContent).not.toMatch(/Gathered to fit/i);
+    // F8-N1: „alles zeigen" heisst nicht, dass alles im Bild steht. Der Baum
+    // zoomt sich nicht mehr unter die Lesbarkeit (frueher: eine 42 px breite
+    // Haarlinie, in der alles „drin" war), sondern wachst ueber den Rahmen —
+    // und die Flaeche sagt, wie viele der entfalteten Notizen wirklich im Bild
+    // stehen. Geprueft wird die Auskunft, nicht die Zahl der gemalten Scheiben.
+    void vorher;
+    const text = container.textContent || "";
+    expect(/(\d+) notes folded under/.test(text), `nach dem Oeffnen steht noch eine Faltung in der Zeile: ${text.slice(0, 260)}`).toBe(false);
+    const offen = (text.match(/(\d+) unfolded/) || [])[1];
+    expect(Number(offen), `nicht alles entfaltet: ${text.slice(0, 200)}`).toBe(gross().length);
+    const imBild = container.querySelector('[data-testid="graph-im-bild"]');
+    expect(imBild!.textContent, "bei 120 offenen Zeilen sagt die Flaeche nicht, was ausserhalb liegt").toMatch(/\d+ of \d+ unfolded notes are in this picture/);
   });
 
   it("schneidet keine Zeile an der Leinwandkante ab", async () => {
@@ -3859,6 +3924,7 @@ describe("Der Baum faltet sich, was nicht in seine Leinwand passt", () => {
     const kleine = gross().slice(0, 6);
     const { container } = await imBaum(kleine);
     expect(schirmScheiben().length, "ein kleiner Baum wurde gefaltet").toBeGreaterThanOrEqual(kleine.length);
-    expect(container.textContent).not.toMatch(/Gathered to fit/i);
+    expect(container.textContent).not.toMatch(/notes folded under/i);
+    expect(container.textContent).not.toMatch(/unfolded notes are in this picture/i);
   });
 });

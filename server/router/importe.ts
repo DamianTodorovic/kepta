@@ -4,12 +4,14 @@
 // (bis 2mb) bzw. Markdown-Batches (bis 10mb) werden nicht schon global mit
 // 413 abgewiesen. Das Mounten übernimmt app.ts in genau dieser Reihenfolge.
 import express from "express";
+import path from "path";
 import { importObsidianVault } from "../../src/core/obsidian";
 import { chatExportZuMarkdown } from "../../src/lib/chat-export";
 import { indexMemory } from "../../src/core/engine";
 import { sanitizeText, sanitizeTitle, sanitizeTags } from "../../src/core/sanitize";
 import { toApi, grenzHinweis } from "../helfer/api-form";
 import { bodyOf } from "../helfer/body";
+import { backupAufbewahrung, datenbanksicherung, halteSicherungen } from "../helfer/sicherung";
 import type { AppKontext } from "../kontext";
 import type { MemoryRecord } from "../helfer/api-form";
 
@@ -17,7 +19,12 @@ export function mountImporte(app: express.Express, ctx: AppKontext): void {
   const { store } = ctx;
 
   function handleMemoriesImport(req: express.Request, res: express.Response) {
-    const { memories: incoming, mode } = bodyOf<{ memories?: Partial<MemoryRecord>[]; mode?: "merge" | "replace" }>(req);
+    const { memories: incoming, mode, confirm, dryRun } = bodyOf<{
+      memories?: Partial<MemoryRecord>[];
+      mode?: "merge" | "replace";
+      confirm?: unknown;
+      dryRun?: unknown;
+    }>(req);
     if (!Array.isArray(incoming)) {
       return res.status(400).json({ error: "Not a valid backup file (a memories array was expected)" });
     }
@@ -35,22 +42,73 @@ export function mountImporte(app: express.Express, ctx: AppKontext): void {
         updatedAt: typeof m.updatedAt === "number" && m.updatedAt > 0 ? m.updatedAt : Date.now(),
       })).filter(m=> m.content.length>0);
 
+    // A3-01/Q-16: eine Nutzlast ohne einzige nutzbare Notiz ist kein Erfolg,
+    // sondern ein Fehler — und bei mode:"replace" war sie der Vollstaender, der
+    // die ganze Wissensbasis loescht (gemessen: 200 {imported:0}, Bestand 0).
+    if (cleaned.length === 0) {
+      return res.status(400).json({ error: "No usable note in the payload (every entry needs a non-empty content) — nothing was changed." });
+    }
+
     if (mode === "replace") {
+      const vorher = store.countMemories();
+      if (dryRun === true) {
+        return res.json({ dryRun: true, affected: vorher, incoming: cleaned.length });
+      }
+      if (confirm !== "replace") {
+        return res.status(400).json({
+          error: `mode:"replace" purges the whole knowledge base for good — ${vorher.active} active and ${vorher.trashed} trashed nodes, trash included. Send confirm:"replace" to do it, or dryRun:true to only see how many are affected. Nothing was changed.`,
+        });
+      }
+      // Vor dem Purge, nicht danach: was hier fehlt, ist nach dem Purge weg.
+      const backupPath = datenbanksicherung(store);
+      if (!backupPath) {
+        return res.status(500).json({ error: "The backup could not be written — nothing is deleted without a backup. Nothing was changed." });
+      }
       // Endgültig leeren (Papierkorb inklusive), dann Import — vollständig listen, nicht gekappt
       for (const m of ctx.listAllMemories({ trash: true })) store.purgeMemory(m.id);
       for (const m of ctx.listAllMemories()) store.purgeMemory(m.id);
       // Doppelte IDs innerhalb der Backup-Datei: letzte Variante gewinnt (createMemory wirft sonst)
       const byId = new Map<string, (typeof cleaned)[number]>();
       for (const m of cleaned) byId.set(m.id, m);
+      let konflikt = false;
       try {
         for (const m of byId.values()) {
           const created = store.createMemory(m);
           indexMemory(store, created.id);
         }
       } catch {
-        return res.status(409).json({ error: "Import failed: conflicting node ids" });
+        konflikt = true;
       }
-      return res.json({ imported: byId.size, total: store.countMemories().active, ...grenzHinweis(store.countMemories().active) });
+      // Erst ist der letzte Schreiblauf am Ordner vorueber, dann wird gezaehlt und
+      // geraeumt: die frische Sicherung ist beim Raeumen immer die neueste und kann
+      // sich nicht selbst wegnehmen. Der Purge laeuft zu diesem Zeitpunkt schon —
+      // die Antwort darf nicht an einer Raeumkehr scheitern, deshalb wird hier
+      // nichts geworfen.
+      const aufbewahrung = backupAufbewahrung();
+      const raeum = halteSicherungen(path.dirname(backupPath), aufbewahrung.behalten);
+      if (konflikt) {
+        return res.status(409).json({
+          error: `Import failed: conflicting node ids (backup: ${backupPath})`,
+          backupPath,
+          backupsGehalten: raeum.gehalten,
+          backupsEntfernt: raeum.entfernt,
+        });
+      }
+      const danach = store.countMemories().active;
+      const warnung = [
+        grenzHinweis(danach).warning,
+        aufbewahrung.ignoriert,
+        raeum.gehalten === 0 ? "KEPTA_BACKUP_KEEP=0 — the backup was written for this purge and deleted right after it: this purge cannot be undone from disk." : undefined,
+      ].filter(Boolean).join(" ");
+      return res.json({
+        imported: byId.size,
+        total: danach,
+        purged: vorher,
+        backupPath,
+        backupsGehalten: raeum.gehalten,
+        backupsEntfernt: raeum.entfernt,
+        ...(warnung ? { warning: warnung } : {}),
+      });
     }
 
     let imported = 0;

@@ -95,8 +95,16 @@ export function mountMemories(app: express.Express, ctx: AppKontext): void {
   app.delete("/api/memories/:id", ctx.limiter.write, (req, res) => {
     const id = String(req.params.id || "");
     if (!istGueltigeId(id)) return res.status(400).json({ error: "Invalid id" });
-    // Default: Papierkorb. ?permanent=1 löscht endgültig.
-    if (req.query.permanent === "1" || req.query.permanent === "true") {
+    // Default: Papierkorb. ?permanent=1 loescht endgueltig.
+    // A3-11: alles ausserhalb dieser Formen wurde still als Papierkorb behandelt —
+    // "?permanent=True" verlangte endgueltig und bekam {"permanent":false}. Ein
+    // Client, der loeschen wollte, hat eine Notiz im Papierkorb liegen und haelt sie
+    // fuer weg. Darum: exakt eine der vier Formen, sonst Ablehnung ohne Wirkung.
+    const permanentRoh = req.query.permanent;
+    if (permanentRoh !== undefined && (typeof permanentRoh !== "string" || !/^(1|0|true|false)$/.test(permanentRoh))) {
+      return res.status(400).json({ error: 'permanent takes exactly one of 1, 0, true, false — or leave it out for the trash. Nothing was deleted.' });
+    }
+    if (permanentRoh === "1" || permanentRoh === "true") {
       const purged = store.purgeMemory(id);
       if (purged) ctx.publishActivity({ type: "delete", source: "app", title: id });
       return res.json({ ok: purged, permanent: true });

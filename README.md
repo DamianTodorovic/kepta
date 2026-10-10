@@ -4,7 +4,7 @@
 
 <p align="center"><sub>Desktop app · no cloud · no account · encrypted at rest<br>SQLite · hybrid retrieval · knowledge graph · MCP</sub></p>
 
-<p align="center"><a href="https://github.com/DamianTodorovic/kepta/releases/latest"><img alt="Download" src="https://img.shields.io/github/v/release/DamianTodorovic/kepta?label=Download"></a> <a href="https://github.com/DamianTodorovic/kepta/actions/workflows/ci.yml"><img alt="Engine CI" src="https://github.com/DamianTodorovic/kepta/actions/workflows/ci.yml/badge.svg"></a> <a href="LICENSE"><img alt="License" src="https://img.shields.io/badge/license-Proprietary-black"></a> <img alt="Coverage gate" src="https://img.shields.io/badge/coverage%20gate-%E2%89%A5%2089%25%20of%20lines-brightgreen"> <img alt="Tests" src="https://img.shields.io/badge/tests-1967%20passing-brightgreen"> <img alt="Platform" src="https://img.shields.io/badge/platform-macOS-lightgrey"></p>
+<p align="center"><a href="https://github.com/DamianTodorovic/kepta/releases/latest"><img alt="Download" src="https://img.shields.io/github/v/release/DamianTodorovic/kepta?label=Download"></a> <a href="https://github.com/DamianTodorovic/kepta/actions/workflows/ci.yml"><img alt="Engine CI" src="https://github.com/DamianTodorovic/kepta/actions/workflows/ci.yml/badge.svg"></a> <a href="LICENSE"><img alt="License" src="https://img.shields.io/badge/license-Proprietary-black"></a> <img alt="Coverage gate" src="https://img.shields.io/badge/coverage%20gate-%E2%89%A5%2089%25%20of%20lines-brightgreen"> <img alt="Tests" src="https://img.shields.io/badge/tests-2163%20passing-brightgreen"> <img alt="Platform" src="https://img.shields.io/badge/platform-macOS-lightgrey"></p>
 
 <p align="center"><sub>The memory engine underneath is source-available (BUSL-1.1, converts to AGPL-3.0-or-later after four years): <a href="https://github.com/DamianTodorovic/kepta">DamianTodorovic/kepta</a> — the headless core with the MCP server. This repository is the full desktop application.</sub></p>
 
@@ -344,11 +344,12 @@ for hit in kepta.search("carbonara without cream"):
 
 Standard library only, no dependencies. It discovers the running app through `~/.kepta/endpoint.json`, so the random port a packaged build picks is not your problem. Details: [python/README.md](python/README.md) · [PyPI](https://pypi.org/project/kepta/)
 
-## 🔐 KEPTA is free, and it is unlimited
+## 🔐 KEPTA is free, and nothing in it is locked
 
 There are two things in the world: **KEPTA Core**, free — the desktop app and the engine underneath it — and **KEPTA Enterprise**, memory for organizations, which exists only **by agreement** with Damian. This repository is private.
 
 - **No keys, no limits, no upgrade panel.** Every tool in the app runs without bound: chat, clipper, machine scan, dossiers, briefings, audit, Device Sync, all eight MCP tools. There is nothing to activate and nothing to buy inside the window, so the app also never asks for it — no key field, no counter, no trial clock, no "first day free" and no message about a limit. What is documented here is what runs.
+- **One number instead of the word "unlimited".** The one bound that exists is a capacity brake on the local HTTP API: it stops taking new notes at `KEPTA_MAX_ACTIVE` active notes, default 5 000 (`server/helfer/api-form.ts:46`, held by `tests/server.test.ts:162`). That is a runaway-agent guard, not a paywall — one environment variable to raise, nothing in the window enforces it, and read, search, update, import and backup are not refused by it.
 - **What used to be here, and why it is gone.** Until 3.1.4 the app metered some tools with daily limits, gave a sealed first 24 hours, and validated an optional key offline. It was never a lock — but it was counting, and counting needed places to hide the tally (an authenticated state in the database, a keychain anchor, a hidden file). KEPTA's promise is a memory that is yours without supervision, so the whole mechanism was removed rather than tuned: no route, no header, no anchor, no strings. The data of anyone who installed an earlier build is untouched; the fields simply stopped being read or written.
 - **Team memory is switched on by your organization, not by a plan.** Team scopes and their roles come from one managed file (`managed-settings.json`, delivered over MDM) and are enforced in the store: admins and members write to `team:*`, viewers read, nobody else sees them. Without that file there is no team workspace — the app says so plainly instead of hiding a dead end. Central policies (cloud chat off, computer scan off, privacy shield forced on) come from the same file and are documented in [SECURITY-ENTERPRISE.md](SECURITY-ENTERPRISE.md). Sold as roadmap, not built yet: SSO (SAML/OIDC), the workspaces UI and MDM enrolment.
 - **The data is never hostage.** The knowledge base file stays on disk, encrypted, and readable by the source-available engine. There is no key that could revoke it.
@@ -420,11 +421,11 @@ The app bundle itself **is** signed, ad-hoc. That is not notarisation and does n
 
 ## 🧪 Quality & tests
 
-**1967 tests**, run with Vitest and v8 coverage. The coverage thresholds are a hard gate: a commit that falls below any of them fails the run — and so does a README that names the wrong number of tests, because `npm run test:cov` ends by comparing it with the run.
+**2163 tests** (measured 2026-10-10), run with Vitest and v8 coverage — the cases a run actually executed, skipped ones not included. The coverage thresholds are a hard gate: a commit that falls below any of them fails the run — and so does a README that names the wrong number of tests. `npm test` writes that run's JSON report and `node scripts/doku-check.mjs` holds the README to exactly that number; `tests/doku-zahlen.test.ts` listens to the same report and refuses to compare when it cannot be trusted — missing, older than the suite, or written by a partial run — instead of checking a value out of the drawer.
 
 ```bash
 npm run lint       # typecheck (tsc) + ESLint — 0 errors required
-npm test           # 1967 tests (vitest)
+npm test           # 2163 tests (vitest)
 npm run test:cov   # tests + coverage gate + test count in the README
 npm run eval       # retrieval quality (Hit@1)
 ```

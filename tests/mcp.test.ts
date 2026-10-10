@@ -212,8 +212,16 @@ describe("MCP-Tools", () => {
   it("memory_forget mode=supersede markiert die Memory als ersetzt", async () => {
     const saved = asTool(await rpc(store, "tools/call", { name: "memory_save", arguments: { title: "Alt", content: "x" } }));
     const id = (saved.structuredContent.memory as { id: string }).id;
-    const res = asTool(await rpc(store, "tools/call", { name: "memory_forget", arguments: { id, mode: "supersede" } }));
+    // F12-Paritaet zum Kern: ein Zeiger ins Leere ist kein Ersetzen. Die Supersede-
+    // Fahne haengt an einem nicht-null-Zeiger, ohne Nachfolger blieb die Notiz
+    // gueltig und der Agent glaubte, sie sei ersetzt — Erfolg ohne Wirkung.
+    const nachfolger = asTool(await rpc(store, "tools/call", { name: "memory_save", arguments: { title: "Neu", content: "y" } }));
+    const nachfolgerId = (nachfolger.structuredContent.memory as { id: string }).id;
+    const res = asTool(await rpc(store, "tools/call", { name: "memory_forget", arguments: { id, mode: "supersede", supersedeBy: nachfolgerId } }));
     expect((res.structuredContent as { forgotten: boolean }).forgotten).toBe(true);
+    const ohneNachfolger = asTool(await rpc(store, "tools/call", { name: "memory_forget", arguments: { id, mode: "supersede" } }));
+    expect(ohneNachfolger.isError).toBe(true);
+    expect(ohneNachfolger.content[0].text).toMatch(/requires supersedeBy/);
   });
 
   it("memory_forget mode=delete verschiebt in den Papierkorb", async () => {

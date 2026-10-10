@@ -1,0 +1,168 @@
+/* ============================================================
+   Hülle — Stahl und Fensterzustand
+   Eigentümer: Scheibe HS (Hülle und Erststart). Alles hier hängt an
+   Klassen, die der Rahmen setzt (.seiten-leiste, .huelle, [data-fenster]);
+   keine einzige Farbe steht mehr im Baum.
+
+   Warum eine eigene Datei neben src/index.css: index.css gehört der
+   Design-System-Scheibe (E1), und bis zu diesem Lauf gab es für den Stahl
+   kein einziges Token — die Werte standen als siebzehn Inline-Stile in
+   Sidebar.tsx. Von dort war sie für kein Thema und keine
+   Increased-Contrast-Regel zu erreichen (D1-06). Sobald E1 die Stahl-Werte
+   ins System hebt, zieht diese Datei aus; die Namen unten sind die Bitte.
+   ============================================================ */
+
+/* ---------- Der Stahl ----------
+   Bewusst in beiden Themen dunkel: die Leiste ist der Rücken des
+   Aktenschrankes, nur das Blatt daneben wechselt. Was beim Wechsel des
+   Blattes mitwandert, steht hier — nicht im Baum.
+
+   Drei Ebenen, jede über der Plattform-Untergrenze von 4,5:1. Die dritte
+   war 2,67:1 (rgba .34) und hat Erklärsätze geschrieben; Ruhe trägt jetzt
+   Größe und Zeichenweite, nicht Unlesbarkeit. */
+.seiten-leiste {
+  --s-tinte-1: #eaeae8;                          /* 16,7:1 — Marke, Auswahl */
+  --s-tinte-2: rgba(235, 235, 232, 0.66);        /* 7,4:1  — Beschriftung */
+  --s-tinte-3: rgba(235, 235, 232, 0.50);        /* 4,7:1  — Zahl, Fußzeile */
+  --s-tinte-3-auf-flaeche: rgba(235, 235, 232, 0.56); /* Zählerplakette auf --s-flaeche-heben */
+  --s-kante: rgba(255, 255, 255, 0.09);
+  --s-kante-sichtbar: rgba(255, 255, 255, 0.18);
+  --s-flaeche-heben: rgba(255, 255, 255, 0.05);
+  --s-flaeche-waehlen: rgba(255, 255, 255, 0.09);
+  /* Der Akzent des Stahls — EIN sichtbares Rot in beiden Themen. var(--accent)
+     ist für Papier gestimmt und fällt auf Stahl im hellen Thema auf 2,4:1
+     (gemessen oklch(0.4286…) auf rgb(36,36,36)); das Nacht-Rot hält dort 3,4:1
+     an der Lasche und 4,6:1 als Schrift. Nachts zieht die Leiste den Wert
+     trotzdem automatisch mit: `.dark .seiten-leiste` unten. */
+  --s-akzent: oklch(0.7302 0.1552 30.7);
+  --s-akzent-flaeche: rgba(192, 74, 57, 0.14);
+  --s-akzent-kante: rgba(192, 74, 57, 0.34);
+  --s-punkt-lebendig: #7fb08a;                   /* „eine App schreibt gerade" */
+  color: var(--s-tinte-2);
+}
+
+/* Bei Nacht wird die Kante zum Blatt einen Hauch leiser — der einzige
+   Unterschied, den das Thema auf dem Stahl macht. */
+.dark .seiten-leiste {
+  --s-kante: rgba(255, 255, 255, 0.07);
+  --s-kante-sichtbar: rgba(255, 255, 255, 0.16);
+  /* Nachts ist das Blatt schwarz und der Akzent des Blattes passt auf den
+     Stahl — also zieht die Leiste, was das System setzt. */
+  --s-akzent: var(--accent);
+}
+
+/* Erhöhter Kontrast: die leiseste Ebene rückt auf, die Trennkante wird eine
+   Kante, die Lasche wird breiter. Vorher gab es für diese Antwort keinen Ort —
+   gegen eine Inline-Farbe gewinnt keine Medienabfrage. */
+@media (prefers-contrast: more) {
+  .seiten-leiste {
+    --s-tinte-2: rgba(235, 235, 232, 0.88);
+    --s-tinte-3: rgba(235, 235, 232, 0.88);
+    --s-tinte-3-auf-flaeche: rgba(235, 235, 232, 0.92);
+    --s-kante: rgba(255, 255, 255, 0.42);
+    --s-flaeche-heben: rgba(255, 255, 255, 0.11);
+  }
+}
+
+/* Erzwungene Farben: der Stahl tritt zurück, das System übernimmt. */
+@media (forced-colors: active) {
+  .seiten-leiste,
+  .seiten-leiste * {
+    background: Canvas;
+    color: CanvasText;
+    border-color: CanvasText;
+    box-shadow: none;
+  }
+  .seiten-leiste .sidebar-nav-btn[data-active="true"] {
+    outline: 2px solid Highlight;
+    outline-offset: -2px;
+  }
+}
+
+/* ---------- Auswahl, Handlung, Ruhe ----------
+   Die Flächen-Regel in index.css zieht für die Lasche var(--accent). Auf dem
+   Stahl ist das im hellen Thema zu dunkel (siehe oben), also gewinnt hier die
+   höhere Spezifität — gleiche Bedeutung in beiden Themen. */
+.seiten-leiste .sidebar-nav-btn { color: var(--s-tinte-2); }
+.seiten-leiste .sidebar-nav-btn .seiten-ikone { color: var(--s-tinte-3); }
+.seiten-leiste .sidebar-nav-btn[data-active="true"] {
+  box-shadow: inset 2px 0 0 var(--s-akzent);
+  color: var(--s-tinte-1);
+}
+.seiten-leiste .sidebar-nav-btn[data-active="true"] .seiten-ikone { color: var(--s-akzent); }
+.seiten-leiste .sidebar-tag-btn { color: var(--s-tinte-2); }
+.seiten-leiste .sidebar-tag-btn[data-active="true"] { color: var(--s-tinte-1); }
+
+/* Ein Zeichen pro Bedeutung (Z-07): die Auswahl zeichnet aus, die Handlung
+   lädt ein. Auf dem Stahl ist die Handlung unterstrichene Tinte — nicht ein
+   drittes Rot. */
+.seiten-leiste .seiten-handlung {
+  color: var(--s-tinte-1);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  text-decoration-thickness: 1px;
+}
+.seiten-leiste .seiten-handlung:hover { text-decoration-thickness: 2px; }
+
+.seiten-leiste .seiten-marke { color: var(--s-tinte-1); }
+.seiten-leiste .seiten-zahl { color: var(--s-tinte-3); }
+.seiten-leiste .seiten-kopf { color: var(--s-tinte-3); }
+.seiten-leiste .seiten-erklarung { color: var(--s-tinte-3); }
+.seiten-leiste .seiten-plakette {
+  background: var(--s-flaeche-heben);
+  color: var(--s-tinte-3-auf-flaeche);
+}
+.seiten-leiste .seiten-kante-oben { border-top: 1px solid var(--s-kante); }
+.seiten-leiste .seiten-kante-unten { border-bottom: 1px solid var(--s-kante); }
+.seiten-leiste .seiten-flaeche {
+  background: var(--s-flaeche-heben);
+  border: 1px solid var(--s-kante);
+}
+.seiten-leiste .seiten-knopf {
+  background: var(--s-flaeche-heben);
+  border: 1px solid var(--s-kante);
+  color: var(--s-tinte-2);
+}
+.seiten-leiste .seiten-knopf:hover { border-color: var(--s-kante-sichtbar); }
+.seiten-leiste .seiten-knopf-einrichten {
+  background: var(--s-akzent-flaeche);
+  border: 1px solid var(--s-akzent-kante);
+  color: var(--s-tinte-1);
+}
+.seiten-leiste .seiten-punkt { background: var(--s-punkt-lebendig); }
+
+/* ---------- Z-14: das Fenster weiß, ob es den Schlüssel hat ----------
+   macOS dimmt die Traffic-Lights selbst (electron.js: hiddenInset). Der
+   Inhalt wusste davon nichts: die Auswahl blieb siegelrot, als wäre gerade
+   jemand am Reden. Der Rahmen setzt [data-fenster] nach focus/blur, und
+   gedämpft wird die Chrome — nie das Blatt. Ein offener Dialog ändert nichts
+   daran: der Schlüssel gehört dem Fenster, nicht dem Panel. */
+.huelle[data-fenster="gedaempft"] .seiten-leiste {
+  --s-akzent: rgba(235, 235, 232, 0.42);
+  --s-akzent-flaeche: rgba(255, 255, 255, 0.05);
+  --s-akzent-kante: rgba(255, 255, 255, 0.12);
+  --s-punkt-lebendig: rgba(235, 235, 232, 0.42);
+}
+.huelle[data-fenster="gedaempft"] .seiten-leiste .seiten-marke,
+.huelle[data-fenster="gedaempft"] .seiten-leiste .sidebar-nav-btn[data-active="true"],
+.huelle[data-fenster="gedaempft"] .seiten-leiste .seiten-handlung {
+  color: var(--s-tinte-2);
+}
+
+/* ---------- Erststart: der Assistent darf den Wegen nicht das Wort abschneiden ----------
+   Gemessen bei 1 440 px mit leerem Bestand (e3-screens/vorher-dark-1440px-erststart.png):
+   das Täfelchen hielt 547 px, die Fläche behielt 617 px, und die Importzeile
+   schnitt genau die beiden Wege ab, die der Leere-Zustand direkt darunter
+   nennt — „D…" statt „Drag files here", „Paste" statt „Paste a URL and
+   import…". Ein abgeschnittener Weg ist kein Weg. Also: schmalere Spalte, und
+   solange der Assistent spricht, bricht die Zeile um statt zu kürzen. */
+.huelle:not(.huelle-schmal) .wizard-taefelchen {
+  flex-basis: min(420px, 32vw);
+  width: min(420px, 32vw);
+}
+.huelle[data-einrichtung="offen"] .import-band {
+  flex-wrap: wrap;
+}
+.huelle[data-einrichtung="offen"] .import-divider {
+  display: none;
+}

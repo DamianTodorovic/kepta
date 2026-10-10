@@ -191,9 +191,9 @@ export function DossierView({ onOpenMemory, onEditMemory, dossierThema }: { onOp
       </form>
       {chips.length > 0 && !daten && (
         <div className="flex flex-wrap gap-1.5 mb-6">
-          <span className="text-[11px] self-center mr-1" style={{ color: 'var(--text-3)' }}>For example:</span>
+          <span className="text-[12px] self-center mr-1" style={{ color: 'var(--text-2)' }}>For example:</span>
           {chips.map((c) => (
-            <button key={c.name} onClick={() => void erstelle(c.name)} className="px-2.5 py-1 rounded-full text-[12px]" style={{ background: 'var(--bg-inset-strong)', color: 'var(--text-2)' }}>
+            <button key={c.name} onClick={() => void erstelle(c.name)} className="min-h-7 inline-flex items-center px-2.5 py-1 rounded-full text-[12px]" style={{ background: 'var(--bg-inset-strong)', color: 'var(--text-2)' }}>
               {c.name}
             </button>
           ))}

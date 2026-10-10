@@ -82,7 +82,12 @@ export function CommandPalette({ open, onClose, actions }: CommandPaletteProps) 
 
         <div ref={listRef} className="overflow-y-auto flex-1 py-2 space-y-0.5">
           {filtered.length === 0 && (
-            <div className="py-10 text-center text-sm" style={{ color: "var(--text-2)" }}>No matches for “{query}”</div>
+            <div className="py-10 px-6 text-center text-sm leading-relaxed" style={{ color: "var(--text-2)" }}>
+              Nothing here answers “{query}”.
+              <span className="block text-[12px] mt-1" style={{ color: "var(--text-2)" }}>
+                One word of a title, a tag, or the first letters of a command — Esc closes this.
+              </span>
+            </div>
           )}
           {filtered.map((a, i) => (
             <button

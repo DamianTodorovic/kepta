@@ -25,18 +25,54 @@ export function mountInbox(app: express.Express, ctx: AppKontext): void {
   let inboxLastScan = 0;
   const inboxQueue = new Set<string>();
 
-  async function autoImportFile(filePath: string) {
+  /**
+   * A3-03/Q-18: path.resolve prueft den Pfad, nie das Ziel. Ein Symlink in der
+   * Inbox loeste sich bisher in jede Datei auf, die dieser Nutzer lesen kann —
+   * ihr Inhalt stand als Knoten im agentensichtbaren Speicher. Darum zwei
+   * Blickrichtungen: lstat auf den Eintrag selbst (er darf kein Link sein) und
+   * realpath auf die echte Lage (sie muss in der Inbox liegen, auch wenn ein
+   * Ordner ueber ihr weiterverlinkt ist). "kein angebot" ist der bisher stille
+   * Fall Ordner: nichts abgelehnt, nichts gemeldet.
+   */
+  type InboxSchleuse =
+    | { aufnahme: "ja"; datei: string }
+    | { aufnahme: "nein"; grund: string }
+    | { aufnahme: "kein angebot" };
+
+  async function inboxGate(pfad: string): Promise<InboxSchleuse> {
+    const basis = path.resolve(INBOX_DIR);
+    const resolved = path.resolve(pfad);
+    if (resolved !== basis && !resolved.startsWith(basis + path.sep)) return { aufnahme: "nein", grund: "not inside the inbox folder" };
+    if (!isSafeFilename(path.basename(resolved))) return { aufnahme: "nein", grund: "not a usable file name" };
+    const eintrag = await fs.promises.lstat(resolved).catch(() => null);
+    if (!eintrag) return { aufnahme: "nein", grund: "not readable" };
+    if (eintrag.isSymbolicLink()) return { aufnahme: "nein", grund: "symlink — the inbox does not follow links out of the folder" };
+    // Ein Ordner in der Inbox ist keine abgelehnte Datei, sondern kein Angebot —
+    // still uebergangen wie bisher (sonst meldete jeder eigene archive-Ordner eine
+    // Ablehnung, und der Waechter schrieb beim ersten Import eine Warnung).
+    if (!eintrag.isFile()) return { aufnahme: "kein angebot" };
+    // Der Home-Pfad ist auf macOS selbst ein Link (/var -> /private/var): verglichen
+    // wird deshalb die echte Lage beider Seiten, nicht der angesehene Pfad.
+    const [echt, echteBasis] = await Promise.all([
+      fs.promises.realpath(resolved).catch(() => null),
+      fs.promises.realpath(INBOX_DIR).catch(() => null),
+    ]);
+    if (!echt || !echteBasis) return { aufnahme: "nein", grund: "not readable" };
+    if (echt !== echteBasis && !echt.startsWith(echteBasis + path.sep)) return { aufnahme: "nein", grund: "leads out of the inbox folder" };
+    return { aufnahme: "ja", datei: echt };
+  }
+
+  async function autoImportFile(filePath: string): Promise<{ grund?: string }> {
     try {
-      // Hardened: nur Dateien innerhalb INBOX_DIR, kein Path-Traversal
-      const resolved = path.resolve(filePath);
-      const inboxResolved = path.resolve(INBOX_DIR);
-      if (!resolved.startsWith(inboxResolved + path.sep) && resolved !== inboxResolved) return;
-      const baseName = path.basename(resolved);
-      if (!isSafeFilename(baseName)) return;
+      // Hardened: nur echte Dateien innerhalb INBOX_DIR — kein Link, kein Traversal.
+      const schleuse = await inboxGate(filePath);
+      if (schleuse.aufnahme === "kein angebot") return {};
+      if (schleuse.aufnahme === "nein") return { grund: schleuse.grund };
+      const resolved = schleuse.datei;
       const stat = fs.statSync(resolved);
-      if (!stat.isFile() || stat.size > 20_000_000) return;
+      if (!stat.isFile() || stat.size > 20_000_000) return {};
       const ext = path.extname(resolved).toLowerCase();
-      if (!INHALTS_ENDUNGEN.includes(ext) && ext !== '.pdf' && stat.size > 500_000) return;
+      if (!INHALTS_ENDUNGEN.includes(ext) && ext !== '.pdf' && stat.size > 500_000) return {};
       let content = '';
       if (ext === '.pdf') {
         // Dieselbe Extraktion wie der Rechner-Scan: pdf.js mit CMaps, async,
@@ -48,7 +84,7 @@ export function mountInbox(app: express.Express, ctx: AppKontext): void {
           try { const j = JSON.parse(content); content = Array.isArray(j) ? JSON.stringify(j, null, 2).slice(0, 50000) : content; } catch { /* kein JSON — dann eben roh */ }
         }
       }
-      if (!content.trim()) return;
+      if (!content.trim()) return {};
       const base = path.basename(resolved, path.extname(resolved));
       // Chunking 2000
       const chunks: string[] = [];
@@ -71,7 +107,12 @@ export function mountInbox(app: express.Express, ctx: AppKontext): void {
         fs.mkdirSync(doneDir, { recursive: true });
         fs.renameSync(resolved, path.join(doneDir, path.basename(resolved)));
       } catch { /* bleibt liegen — der nächste Durchlauf versucht es wieder */ }
-    } catch { /* eine unlesbare Datei haelt den Import nicht auf */ }
+      return {};
+    } catch {
+      // Eine unlesbare Datei haelt den Import nicht auf — aber ihr Grund geht
+      // nach aussen, statt im Nichts zu verschwinden.
+      return { grund: "could not be read" };
+    }
   }
 
   function startInboxWatcher() {
@@ -85,7 +126,16 @@ export function mountInbox(app: express.Express, ctx: AppKontext): void {
         if (!resolved.startsWith(path.resolve(INBOX_DIR) + path.sep)) return;
         if (inboxQueue.has(resolved)) return;
         inboxQueue.add(resolved);
-        setTimeout(() => { inboxQueue.delete(resolved); if (fs.existsSync(resolved)) void autoImportFile(resolved); }, 800);
+        setTimeout(() => { inboxQueue.delete(resolved);
+          const geprueft = path.resolve(resolved);
+          if (!geprueft.startsWith(path.resolve(INBOX_DIR) + path.sep) || !fs.existsSync(geprueft)) return;
+          // Der Grund geht nach aussen, statt im Nichts zu verschwinden: ein Link,
+          // der abgelehnt wird, bleibt in der Inbox liegen — ohne eine Zeile, die
+          // sagt warum, ist das fuer den Nutzer nur eine Datei, die nie ankam.
+          void autoImportFile(geprueft).then((r) => {
+            if (r.grund) console.warn(`kepta inbox: ${path.basename(geprueft)} wurde uebersprungen — ${r.grund}`);
+          });
+        }, 800);
       });
     } catch { /* Ordner nicht beobachtbar — manueller Scan bleibt */ }
   }
@@ -104,7 +154,14 @@ export function mountInbox(app: express.Express, ctx: AppKontext): void {
     let files: string[] = [];
     try { files = fs.readdirSync(INBOX_DIR).filter(f => !f.startsWith('.') && f !== 'archiv' && f !== 'archive').map(f => path.join(INBOX_DIR, f)); } catch { /* Ordner fehlt */ }
     let imported = 0;
-    for (const f of files) { const before = store.countMemories().active; await autoImportFile(f); const after = store.countMemories().active; if (after > before) imported += (after - before); }
-    res.json({ scanned: files.length, imported, inboxDir: INBOX_DIR });
+    const skipped: { file: string; reason: string }[] = [];
+    for (const f of files) {
+      const before = store.countMemories().active;
+      const ergebnis = await autoImportFile(f);
+      const after = store.countMemories().active;
+      if (after > before) imported += (after - before);
+      if (ergebnis.grund) skipped.push({ file: path.basename(f), reason: ergebnis.grund });
+    }
+    res.json({ scanned: files.length, imported, skipped, inboxDir: INBOX_DIR });
   });
 }

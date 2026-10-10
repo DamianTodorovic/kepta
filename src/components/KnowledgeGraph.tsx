@@ -1,7 +1,9 @@
-import { useEffect, useRef, useState, useMemo, useCallback } from "react";
+import { useEffect, useRef, useState, useMemo, useCallback, type ReactNode } from "react";
 import { Memory } from "../types";
 import { existsAt, graphTimeRange, activeIdsAt, edgeVisibleAt, istStruktur, fensterOffen, type Gueltigkeit } from "../lib/graphTime";
-import { Search, Maximize2, ZoomIn, ZoomOut, Clock, Atom2, Sitemap, Network, Scatter, ChevronRight, SlidersHorizontal } from "../lib/icons";
+// Atom2 / Sitemap / Scatter / Network sind hier weg: die Ansichts-Schiene trägt
+// jetzt Worte statt Bilder, und der Aehnlichkeits-Schalter seinen Punkt (Z-07).
+import { Search, Maximize2, ZoomIn, ZoomOut, Clock, ChevronRight, SlidersHorizontal } from "../lib/icons";
 import {
   kantenBaue,
   createSimulation,
@@ -20,11 +22,15 @@ import {
   setzeKrafte,
   setzeKnotenGroesse,
   nurEchteKanten,
+  EDGE_LOD_ZOOM,
+  linienBudget,
   kantZaehlung,
   richtungsBand,
   kantenEtikett,
   selbstSchleife,
   notizEtikett,
+  GANG_SPALTEN,
+  GANG_ABSTAND,
   verborgeneNotizen,
   type NotizEtikett,
   kantenMitte,
@@ -43,6 +49,8 @@ import {
   entitiesByMemory,
   layoutDendrogram,
   vorschlagFaltung,
+  zeilenKMin,
+  BLATT_ABSTAND,
   stepDendrogram,
   TYP_LABELS,
   type HierarchieKnoten,
@@ -129,13 +137,13 @@ const ZEILEN_LESEBAR = 14;
  */
 const KEIL_AB_ZOOM = 0.5;
 /**
- * Wie viel Beschriftung die Flaeche zeigt. Key ist die Engine: Etikette nach
- * Wichtigkeit, so viele wie ins Gedraenge passen. All ist die ausdrueckliche
- * Entscheidung eines Menschen — alles, egal wie voll. Off laesst nichts stehen
- * und gibt den Titel unter dem Zeiger zurueck.
+ * Wie viel Beschriftung die Flaeche zeigt — eine **Dichtestufe**, nicht drei
+ * Knöpfe für Textmenge. Z-12 verlangt eine Entscheidung, die man treffen kann;
+ * die Stufen stehen bei `NAMEN_STUFE` (unter `MAX_LABELS`), weil ihr Budget
+ * diese Zahl braucht.
  */
 const ETIKETT_KEY = "kepta_graph_labels";
-type EtikettModus = "key" | "all" | "off";
+type EtikettModus = "keine" | "wenig" | "mehr" | "alle";
 /**
  * Selbstbehauptungen als Schlinge. Standard: aus — bei den Vorbildern am Markt
  * ebenso, und mit gutem Grund: ein Ring um einen einzigen Knoten ist das
@@ -168,6 +176,124 @@ const BREITE_PX: Record<string, readonly number[]> = {
 const BADGE_AB_PX = 9;
 /** Keilbreite je Band: [am Ausgang, am Ziel], in Bildpunkten. */
 const KEIL_PX: readonly (readonly [number, number])[] = [[2.4, 0.8], [3.3, 1.05], [4.2, 1.3]];
+
+/**
+ * Die Glieder der Leiste, in der Rangfolge, die sie beim Abbauen verlaesst.
+ *
+ * D1-01 hat gemessen, was diese Flaeche im Standardfenster verliert: die Zeile
+ * ist 1 132 px breit und traegt 1 680 px Inhalt — der Zeitregler (+333 px), das
+ * Datumsfeld (+191 px) und die drei Zoom-Knoepfe (+433 bis +509 px) lagen bei
+ * 1 440 px **ausserhalb des Fensters**, seitlich erreichbar, aber ohne jede
+ * Spur davon. Die Flaeche zeigt ein Gedaechtnis, das man durch die Zeit
+ * blaettern kann, und das Blatt, das sagt, wo man steht, war weg.
+ *
+ * Die A7-07-Reparatur hielt die Zeile in einer Reihe und schob den Rest
+ * seitlich — richtig gegen das Umbruchen, ohne die Prioritaetsregel. Die steht
+ * hier jetzt, und ihre Ordnung ist nicht die Reihenfolge der Knöpfe, sondern
+ * die Reihenfolge der Fragen, die die Flaeche beantwortet:
+ *
+ *   1 wo stehe ich (Zoom) · 2 wann (Zeitstand) · 3 welches Bild (Ansicht)
+ *   4 wie viel ist benannt (Namen) · 5 finden · 6 den Zeitraum fassen
+ *
+ * Was unter die Zeile faellt, ist kein Rollner mehr, sondern ein Knopf mit
+ * einer Zahl: „More (8)" sagt, wie viele Geraete nicht in der Zeile stehen,
+ * und oeffnet sie vollstaendig — samt der Erklaerung, die vorher nur im
+ * Schwebetext stand (A8-08).
+ */
+export type Leistenglied =
+  | "zoom"
+  | "zeitstand"
+  | "ansicht"
+  | "namen"
+  | "suche"
+  | "zeitregler"
+  | "richtung"
+  | "datum"
+  | "aehnlichkeit"
+  | "schema"
+  | "krafte"
+  | "selbst"
+  | "kanal"
+  | "farben";
+
+/**
+ * Was ein Glied braucht, in Bildpunkten. Gemessen am vorher-Stand (400 Notizen,
+ * 1 440 px, `e2-rohdaten/e2-400-leiste.json`): Zoom-Knoepfe 3×34 + Readout,
+ * Ansicht 74+67+94, Namen drei Worte, Regler 132, Datum 128. Die Zahlen sind
+ * Ansetze, kein Massband — nachgemessen wird im echten Browser, und weicht das
+ * Bild ab, wird dieser Ansetz berichtigt, nicht die Regel.
+ */
+export const BREITE_PX_GELIED: Record<Leistenglied, number> = {
+  // Nachgemessen am nachher-Stand (10.10., 60 Notizen, 1 440 px, alle Glieder
+  // in der Zeile — `e2-rohdaten/e2-60-leiste.json`): Ansichtsschiene 186,
+  // Dichteschiene 201, Richtung 99, Aehnlichkeit 67, Selbst 51, Schema 73,
+  // Kraefte 86, Kanalschiene 145, Farbwaehler 94, Zoom 3×34 mit der Zahl.
+  // Dazu je acht Bildpixel Atemzug.
+  // Die Zoomzahl ist `hidden md:inline-block` — unter der md-Grenze ist das
+  // Glied drei Knoepfe, nicht vier. 138 traegt beide Faelle.
+  zoom: 138,
+  // Die Zeitangabe fuer sich: „Now" oder „14 Oct 2026". Der Today-Knopf hangt
+  // an demselben Glied und kostet nur, wenn er da ist.
+  zeitstand: 92,
+  ansicht: 194,
+  namen: 209,
+  suche: 158,
+  zeitregler: 150,
+  richtung: 107,
+  datum: 140,
+  aehnlichkeit: 75,
+  schema: 82,
+  krafte: 95,
+  selbst: 60,
+  kanal: 154,
+  farben: 102,
+};
+/** Der „More"-Knopf mit seiner Zahl („More (10)" sind 94 px), dazu die Luecke. */
+export const MENUE_PX = 98;
+/** Der Atemzug zwischen den Gliedern (`gap-2`). */
+export const LUECKE_PX = 8;
+/** Der Rand der Zeile selbst (`px-2`): daran ist kein Geraet. */
+export const LEISTE_POLSTER = 16;
+
+/**
+ * Der Plan fuer die Zeile: welche Glieder stehen drin, welche hinter dem Menue.
+ *
+ * Regel: alles in der Zeile, wenn die Zeile alles tragt. Sonst wird von hinten
+ * (ranghoher = bleibt laenger) abgebaut, bis der Menue-Knopf mit Platz in die
+ * verbleibende Breite passt. Die Funktion ist absichtlich rein — sie haelt die
+ * Rangfolge als Pruefstand, ohne dass dafuer ein Browser noetig waere.
+ */
+export function leistePlan(
+  breite: number,
+  glieder: readonly Leistenglied[] = RANG_FOLGE
+): { zeile: Leistenglied[]; menue: Leistenglied[] } {
+  const summe = (g: readonly Leistenglied[]) =>
+    g.reduce((s, k) => s + BREITE_PX_GELIED[k], 0) + Math.max(0, g.length - 1) * LUECKE_PX;
+  if (breite <= 0 || summe(glieder) <= breite) return { zeile: [...glieder], menue: [] };
+  const zeile: Leistenglied[] = [...glieder];
+  while (zeile.length > 0 && summe(zeile) + LUECKE_PX + MENUE_PX > breite) zeile.pop();
+  const menue = glieder.filter((g) => !zeile.includes(g));
+  return { zeile, menue };
+}
+/** Die Zeitgliede gibt es nur, wenn die Basis ueberhaupt einen Zeitstand hat. */
+const ZEIT_GLIED: readonly Leistenglied[] = ["zeitstand", "datum", "zeitregler"];
+/** Rangfolge von „bleibt am laengsten" (Zoom) bis „geht zuerst" (Farbwaehler). */
+export const RANG_FOLGE: readonly Leistenglied[] = [
+  "zoom",
+  "zeitstand",
+  "ansicht",
+  "namen",
+  "suche",
+  "zeitregler",
+  "richtung",
+  "datum",
+  "aehnlichkeit",
+  "schema",
+  "krafte",
+  "selbst",
+  "kanal",
+  "farben",
+];
 
 interface KnowledgeGraphProps {
   memories: Memory[];
@@ -315,6 +441,100 @@ const DEFAULT_TYPE_COLORS: Record<string, string> = {
 /** So viele Beschriftungen zeigt der Graph hoechstens gleichzeitig. */
 const MAX_LABELS = 140;
 /**
+ * Die drei Dichtestufen und ihre Flucht: `kuerzung` in Zeichen, `budget` in
+ * Etiketten, `raster` = weicht ein Titel dem bereits gemalten aus,
+ * `kantentext` = der Typ steht an der Linie.
+ *
+ * Was eine Stufe verspricht, ist eine Zahl im Bild, kein Gefühl: der Anteil
+ * benannter Notizen. Der Hebel ist die Kuerzungslaenge — F8 hat ihn benannt und
+ * nicht gezogen, „weil ueber die Kuerzungslaenge der Flaeche jemand entscheiden
+ * muss, der die Persona im Kopf hat". Entscheidung GF, 10.10.: 14 Zeichen, weil
+ * ein Titel von 26 Zeichen 143 Bildpixel belegt und einer von 14 die Haelfte —
+ * dieselbe Schrift, derselbe Grund, doppelt so viele Namen. Der volle Name
+ * bleibt, wo die Flaeche ihn schon jetzt zeigt: unter Zeiger und Tastatur.
+ * Und weil „mehr Namen" den Platz fuer die Meta braucht, tritt in dieser Stufe
+ * der Typ an der Linie zurueck — Meta faellt weg, Inhalt bleibt (Z-12).
+ */
+const NAMEN_STUFE: Record<
+  EtikettModus,
+  {
+    wort: string;
+    kuerzung: number;
+    budget: number;
+    raster: boolean;
+    kantentext: boolean;
+    /** Wieweit die Pforte der Kandidaten offen steht, in Einheiten von `mindestRadius`. */
+    pforte: number;
+    erklaerung: string;
+  }
+> = {
+  keine: {
+    // Die enge Pforte: nur Knoten ab 1,5 Bildpunkten kommen als Name in Frage.
+    pforte: 1,
+    wort: "None",
+    kuerzung: 0,
+    budget: 0,
+    raster: true,
+    kantentext: false,
+    erklaerung: "No labels — hover or arrow-key to a node and its full title comes back",
+  },
+  wenig: {
+    // Die enge Pforte: nur Knoten ab 1,5 Bildpunkten kommen als Name in Frage.
+    pforte: 1,
+    wort: "Few",
+    kuerzung: 26,
+    budget: MAX_LABELS,
+    raster: true,
+    kantentext: true,
+    erklaerung: "Few names, whole ones — the busiest nodes first, as many as fit without overlap",
+  },
+  mehr: {
+    // „More" ist hier nicht moeglich: der Ueberlauf-Knopf der Zeile heisst
+    // schon More (N) und sagt etwas anderes — ein Wort, eine Bedeutung (Z-07).
+    wort: "Many",
+    // Die halbierte Pforte: was im Feld unter 1,5 Bildpunkten fällt, ist als
+    // Name trotzdem lesbar, weil der Titel selbst in festen Bildpixeln steht.
+    pforte: 0.5,
+    kuerzung: 14,
+    budget: MAX_LABELS * 2,
+    raster: true,
+    kantentext: false,
+    erklaerung: "More names, shorter ones — titles are cut so more fit, and the kind steps back from the links",
+  },
+  alle: {
+    // Die enge Pforte: nur Knoten ab 1,5 Bildpunkten kommen als Name in Frage.
+    pforte: 1,
+    wort: "All",
+    kuerzung: 26,
+    budget: Number.MAX_SAFE_INTEGER,
+    raster: false,
+    kantentext: true,
+    erklaerung: "Every node named, however crowded. A choice, not a starting point.",
+  },
+};
+/** Die Stufen, in der Reihenfolge der Dichte — nicht nach Alphabet. */
+const STUFEN_FOLGE: readonly EtikettModus[] = ["keine", "wenig", "mehr", "alle"];
+/** Was der Merker von vor der Dichtestufe heisst. */
+const NAMEN_ALT: Record<string, EtikettModus> = { key: "wenig", all: "alle", off: "keine" };
+function leseNamenStufe(roh: string | null): EtikettModus {
+  if (!roh) return "wenig";
+  if (roh in NAMEN_ALT) return NAMEN_ALT[roh];
+  return roh === "keine" || roh === "wenig" || roh === "mehr" || roh === "alle" ? roh : "wenig";
+}
+/**
+ * Die Groesse eines Titels AUF DEM SCHIRM, in Bildpixeln — nicht in
+ * Welteinheiten.
+ *
+ * Vorher wurde die Schrift mit `11 / k` gegen den Zoom skaliert und bei 15
+ * Welt-Pixeln zugedeckelt: ab 73 % Zoom waren es 11 px, darunter fiel sie mit
+ * dem Fit. Gemessen bei 1 500 Notizen (12 % Zoom): 1,4 px. Eine Flaeche, deren
+ * Titel man erst beim Heranzoomen lesen kann, benennt nichts.
+ *
+ * 9 px ist die Untergrenze, die A7 als Ziel gesetzt hat; 11 px ist der Wert, den
+ * die Flaeche bei kleinem Bestand immer schon hatte.
+ */
+const ETIKETT_PX = 11;
+/**
  * Ein Ebenenname im Baum wird nie länger gemalt. Zwischen zwei Ebenen liegen
  * 190 Welteinheiten, ein Zeichen der kleinen Gerüstschrift rund 5 — und ein
  * zentrierter Notiztitel (26 Zeichen) ragt 78 Einheiten in seine Spalte hinein.
@@ -329,6 +549,39 @@ const SPRITE_PX = 128;
  * ueber die Tinte eines Glyphs, der in einer Scheibe steht.
  * Versteht #rgb, #rrggbb und rgb(...) — mehr kommt aus den Theme-Variablen nicht.
  */
+/**
+ * Die Zeile des Aehnlichkeits-Schalters — mit der Grenze, die das Bild setzt.
+ *
+ * A7-05, gemessen bei 1 500 Notizen: der Kopf sagte „+7 457 similar", die
+ * gemalten Pixel stiegen von 4 377 auf 5 057 (+15 %), weil genau diese Linien
+ * von der Bildkappe unterdrueckt werden. Derselbe Schalter antwortete bei 60
+ * Notizen sichtbar (8 403 → 15 027 px). Ein Knopf, dessen Zahl sich bewegt und
+ * dessen Bild stillsteht, bringt der Flaeche Misstrauen ein — also nennt die
+ * Zeile die Kappe, wenn sie greift. Dieselbe Funktion, die der Mal-Pass fuer die
+ * Kappe benutzt, schreibt den Text: Zahl und Bild koennen nicht mehr
+ * auseinanderlaufen.
+ */
+export function aehnlichkeitsZeile(aehnlichkeit: number, kantenzahl: number, zoom: number): string {
+  if (aehnlichkeit <= 0) return "";
+  return nurEchteKanten(kantenzahl, zoom)
+    ? ` · +${aehnlichkeit} similar — hidden until ${Math.round(EDGE_LOD_ZOOM * 100)} % zoom`
+    : ` · +${aehnlichkeit} similar`;
+}
+
+/**
+ * Passt die Flaeche ihren Ausschnitt, wenn das Feld zur Ruhe kommt?
+ *
+ * A7-09, gemessen: 60 Notizen im 1440-px-Fenster — im Rasterlauf 75 % Zoom, im
+ * Dichtelauf und in drei frischen Sitzungen 62 %. Derselbe Bestand, zwei
+ * Landemaessstaebe, weil der Refit an `if (bewegt)` hing: ein Feld, das beim
+ * ersten Bild des Loops schon stand, durchlief den Zweig nie und behielt den
+ * Ausschnitt, der fuer seine Ausgangspositionen gerechnet war. Die Zusage haengt
+ * am Ruhe-Ereignis, nicht an der Bewegung.
+ */
+export function refitFaellig(autoFitOffen: boolean, bewegt: boolean, knoten: number): boolean {
+  return autoFitOffen && !bewegt && knoten > 0;
+}
+
 export function istHell(farbe: string): boolean {
   const s = farbe.trim();
   let r = 0, g = 0, b = 0;
@@ -381,26 +634,6 @@ function zeichneGlyph(
   ctx.fillText(text, x, y);
 }
 
-/**
- * Das Malzeichen ueber einer gefalteten Gruppe: wie viel dahinter liegt, und
- * dass es gerade nicht im Bild ist. Ueber der Scheibe und in BILDPIXELN
- * gerechnet — ein Zustand, der erst beim Heranzoomen erschiene, wäre keiner.
- */
-function zeichneFaltung(
-  ctx: CanvasRenderingContext2D,
-  x: number,
-  y: number,
-  radius: number,
-  k: number,
-  text: string,
-  farbe: string
-) {
-  ctx.font = `700 ${11 / Math.max(0.4, k)}px ui-sans-serif, system-ui, -apple-system, sans-serif`;
-  ctx.textAlign = "center";
-  ctx.textBaseline = "bottom";
-  ctx.fillStyle = farbe;
-  ctx.fillText(text, x, y - radius - 2 / Math.max(0.4, k));
-}
 /**
  * Greifweite eines Knotens in BILDSCHIRM-Pixeln.
  *
@@ -490,12 +723,11 @@ export function KnowledgeGraph({ memories, onSelectMemory, onSelectConcept, sich
     setRichtung(v);
     try { localStorage.setItem(RICHTUNG_KEY, v ? "1" : "0"); } catch { /* ignore */ }
   };
-  /** Wie viel beschriftet wird — Key ist der Anfang, nie All. */
+  /** Wie viel beschriftet wird — „wenig" ist der Anfang, nie „alle". */
   const [etikettenModus, setEtikettenModus] = useState<EtikettModus>(() => {
     try {
-      const v = localStorage.getItem(ETIKETT_KEY);
-      return v === "all" || v === "off" ? v : "key";
-    } catch { return "key"; }
+      return leseNamenStufe(localStorage.getItem(ETIKETT_KEY));
+    } catch { return "wenig"; }
   });
   const setzeEtiketten = (m: EtikettModus) => {
     setEtikettenModus(m);
@@ -557,6 +789,16 @@ export function KnowledgeGraph({ memories, onSelectMemory, onSelectConcept, sich
   // beim ersten Hover noch die Startmasse.
   const masseRef = useRef({ w: 800, h: 500 });
   masseRef.current = dimensions;
+  /** Die Zeile am Rand, die sagt, wie viele Knoten einen Titel tragen. */
+  const benanntRef = useRef<HTMLDivElement | null>(null);
+  /** Die Zeile am Rand, die sagt, wie viele Zuege der Bildflaeche weichen mussten. */
+  const kappenRef = useRef<HTMLDivElement | null>(null);
+  /** Die Zeile der Zustandszeichen; der Mal-Pass schreibt sie, Bild fuer Bild. */
+  const zustandRef = useRef<HTMLDivElement | null>(null);
+  /** Die Zeile am Rand, die sagt, wie viele entfaltete Notizen im Bild stehen. */
+  const imRahmenRef = useRef<HTMLDivElement | null>(null);
+  /** Wie viele Notizen im Bild stehen — gespiegelt, damit der Mal-Pass nicht auf Zustand wartet. */
+  const imBildRef = useRef(0);
   /** Wie viele Knoten der Nutzer festgesetzt hat — nur fuer die Anzeige. */
   const [angeheftet, setAngeheftet] = useState(0);
   const zugRef = useRef<{ sx: number; sy: number; bewegt: boolean } | null>(null);
@@ -579,13 +821,113 @@ export function KnowledgeGraph({ memories, onSelectMemory, onSelectConcept, sich
     return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
   };
   const timeRange = useMemo(() => graphTimeRange(memories), [memories]);
-  const timeFilter = timeRange && sliderCommit < 100
-    ? Math.round(timeRange.min + ((timeRange.max - timeRange.min) * sliderCommit) / 100)
-    : null;
+  /**
+   * Die Skala des Zeitreglers endet heute.
+   *
+   * A8-03, nicht als Geschmack, sondern als Falschauskunft gemessen:
+   * `graphTimeRange` sammelt startOf, validTo **und** updatedAt — und validTo
+   * darf in der Zukunft liegen. Der Regler war Prozent genau dieser Spanne,
+   * 100 % hiess per Definition „Now", und der erste Schritt nach links (0,5)
+   * zeigte kein Datum in der Vergangenheit, sondern eines **vor** der
+   * Gegenwart. Der Nutzer zieht „zurueck in die Zeit" und landet vor ihr; das
+   * Datum in Akzentfarbe bestaetigt ihm eine Zahl, die nie eine Vergangenheit
+   * beantworten konnte.
+   *
+   * Also: der Arm der Skala laeuft von dem aeltesten Stand bis heute, und was
+   * darueber hinaus gilt, ist ein Zustand an der Linie — die Flaeche sagt ihn
+   * als „+N later", nicht als Schritt auf der Achse.
+   */
+  const zeitAchse = useMemo(() => {
+    if (!timeRange) return null;
+    const heute = Date.now();
+    const spaeter = memories.filter((m) => (m.validTo ?? 0) > heute);
+    return {
+      min: Math.min(Math.max(0, timeRange.min), heute),
+      heute,
+      spaeter,
+      verschiebt: spaeter.length > 0,
+    };
+  }, [timeRange, memories]);
+  /**
+   * Was der Anteil der Skala zeitlich bedeutet. 100 % ist die Gegenwart
+   * selbst — null, nicht ein Datum, damit „Now" und „heute" nicht zwei
+   * verschiedene Zahlen sind.
+   */
+  const zeitMs = (anteil: number): number | null => {
+    if (!zeitAchse || anteil >= 100) return null;
+    const spanne = Math.max(0, zeitAchse.heute - zeitAchse.min);
+    return Math.round(zeitAchse.min + (spanne * anteil) / 100);
+  };
+  const timeFilter = zeitMs(sliderCommit);
   // Nur für die Anzeige während des Ziehens — ein Billig-Rechnen, kein Layout.
-  const liveFilter = timeRange && sliderWert < 100
-    ? Math.round(timeRange.min + ((timeRange.max - timeRange.min) * sliderWert) / 100)
-    : null;
+  const liveFilter = zeitMs(sliderWert);
+  /** Der Stand, den die Leiste zeigt: die Hand zuerst, dann der Commit. */
+  const zeitStandMs = liveFilter;
+  const setzeSlider = (v: number) => {
+    setSliderWert(v >= 100 ? 100 : v);
+    setSliderCommit(v >= 100 ? 100 : v);
+  };
+  /**
+   * Ein gewaehlter Tag gilt bis zu seinem Ende — und nur bis heute: das Feld
+   * kann heute nicht mehr fragen, als die Skalaantwortete.
+   */
+  const setzeDatum = (roh: string) => {
+    if (!roh || !zeitAchse) {
+      setzeSlider(100);
+      return;
+    }
+    const [j, m, t] = roh.split("-").map(Number);
+    if (!j || !m || !t) return;
+    const epoch = new Date(j, m - 1, t, 23, 59, 59, 999).getTime();
+    const spanne = zeitAchse.heute - zeitAchse.min;
+    setzeSlider(spanne > 0 ? ((epoch - zeitAchse.min) / spanne) * 100 : 100);
+  };
+  const datumKurz = (ms: number) =>
+    new Date(ms).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" });
+  const datumLang = (ms: number) =>
+    new Date(ms).toLocaleDateString("en-GB", { day: "numeric", month: "long", year: "numeric" });
+  // --- Die Leiste: Plan, Zeichen, Geraete -----------------------------------
+  /** Die echte Breite der Zeile; 0 heisst „noch nicht gemessen" → alles bleibt drin. */
+  const [leistenBreite, setLeistenBreite] = useState(0);
+  const [mehrOffen, setzeMehrOffen] = useState(false);
+  const leistenRo = useRef<ResizeObserver | null>(null);
+  /**
+   * Der Beobachter hängt am Knoten, nicht an einem Effect mit leerer Liste.
+   *
+   * Grund, gemessen am 10.10. im echten Browser: die Flaeche startet mit leerer
+   * Wissensbasis (der Bestand kommt per Fetch), und in diesem Moment gibt es
+   * keine Zeile — ein Effect `[]` lief einmal mit `el === null` und kam nie
+   * wieder. Die Zeile blieb bei „nicht gemessen", der Plan baute nichts ab und
+   * neun Geraete standen bei 1 440 px ausserhalb des Fensters. Ein Callback-Ref
+   * laeuft, sobald der Knoten da ist.
+   */
+  const leistenMessen = useCallback((el: HTMLDivElement | null) => {
+    if (leistenRo.current) {
+      leistenRo.current.disconnect();
+      leistenRo.current = null;
+    }
+    if (!el || typeof ResizeObserver === "undefined") return;
+    // Geplant wird nach dem inneren Mass des Knotens (`clientWidth` minus
+    // `px-2`), nicht nach dem contentRect des Beobachters: der Beobachter ist
+    // nur der Anlass, die Groesse holt sich die Zeile selbst. Das haelt auch
+    // dort, wo jsdom kein Layout kennt — dort bleibt das Mass 0, und 0 heisst
+    // „nichts abgebaut": die Zeichen-Wachen finden ihre Knöpfe in der Zeile,
+    // die Abbauschicht prueft den Plan als eigene Funktion und setzt das Mass
+    // fuer einen Fall von aussen.
+    const innen = () => Math.max(0, el.clientWidth - LEISTE_POLSTER);
+    const ro = new ResizeObserver(() => setLeistenBreite(innen()));
+    ro.observe(el);
+    setLeistenBreite(innen());
+    leistenRo.current = ro;
+  }, []);
+  /**
+   * Der Plan der Zeile. Ohne Zeitachse gibt es keine Zeitgliede — die Skala
+   * faellt nicht aus dem Plan, sie existiert gar nicht erst.
+   */
+  const plan = useMemo(
+    () => leistePlan(leistenBreite, zeitAchse ? RANG_FOLGE : RANG_FOLGE.filter((g) => !ZEIT_GLIED.includes(g))),
+    [leistenBreite, zeitAchse]
+  );
 
   const [customTypeColors, setCustomTypeColors] = useState<Record<string, string>>(() => {
     try { return JSON.parse(localStorage.getItem("kepta_type_colors") || "{}"); } catch { return {}; }
@@ -1008,9 +1350,7 @@ export function KnowledgeGraph({ memories, onSelectMemory, onSelectConcept, sich
    * nur Alpha und Kantensichtbarkeit im Canvas. Der Dendrogramm-Neubau bleibt
    * bewusst am Commit (das war die Ruckel-Fixes 16.9.).
    */
-  const liveEpoch = timeRange && sliderWert < 100 && ansicht === "force"
-    ? Math.round(timeRange.min + ((timeRange.max - timeRange.min) * sliderWert) / 100)
-    : null;
+  const liveEpoch = ansicht === "force" ? liveFilter : null;
   // Kraftfeld: live während des Ziehens, sonst der committete Stand. Nach dem
   // Loslassen zeigen live und Commit auf denselben Wert — kein Flackern.
   const effektivZeit = liveEpoch ?? timeFilter;
@@ -1156,6 +1496,7 @@ export function KnowledgeGraph({ memories, onSelectMemory, onSelectConcept, sich
         : sichtbareAnzahl,
     [ansicht, baumNotizen, sichtbareAnzahl]
   );
+  imBildRef.current = bildZaehlung.knoten;
   /**
    * Die semantische Anordnung: die Plätze der Karte, die Begriffe in der Mitte
    * ihrer Notizen, und die Notizen ohne Vektor am Rand — gestellt, nicht
@@ -1182,8 +1523,22 @@ export function KnowledgeGraph({ memories, onSelectMemory, onSelectConcept, sich
   const dichteZeile = useMemo(() => {
     const zahl = (n: number) => n.toLocaleString("en-US");
     const klausaen: string[] = [];
-    if (bildZaehlung.knoten < memories.length) {
-      klausaen.push(`Showing ${zahl(bildZaehlung.knoten)} of ${zahl(memories.length)} notes`);
+    const offen = bildZaehlung.knoten;
+    /**
+     * F8-N1, nach der Sichtpruefung am eigenen Bild: „Showing 20 of 400 notes"
+     * und darunter „7 of 20 notes carry a title" sind zwei Zahlen mit demselben
+     * Wort und zwei verschiedenen Umfaengen — fuer einen Menschen ein
+     * Widerspruch, und die Zeile ist das einzige Stueck Text, das ihm erklaert,
+     * was das Bild ist. Darum nennt der Baum jetzt seine drei Groessen in einer
+     * Klaue: Bestand, was offen steht, was gefaltet ist und wie viele Gruppen
+     * es traegt.
+     */
+    if (ansicht === "dendrogram" && autoZiffern > 0) {
+      klausaen.push(
+        `${zahl(memories.length)} notes · ${zahl(offen)} unfolded, ${zahl(autoZiffern)} notes folded under ${zahl(autoGefaeltet)} groups`
+      );
+    } else if (offen < memories.length) {
+      klausaen.push(`Showing ${zahl(offen)} of ${zahl(memories.length)} notes`);
     }
     const geliefert = graphApi?.relations.length ?? 0;
     if (graphApi?.bestand && graphApi.bestand.kanten > geliefert) {
@@ -1209,10 +1564,8 @@ export function KnowledgeGraph({ memories, onSelectMemory, onSelectConcept, sich
       klausaen.push(`${zahl(n)} note${n === 1 ? "" : "s"} without a vector, parked at the rim`);
     }
     // Was der Baum nicht zeigen kann, weil seine Zeilen nicht reichen, steht
-    // nicht stillschweigend weg — es ist gefaltet, und die Zeile nennt es.
-    if (autoZiffern > 0) {
-      klausaen.push(`Gathered to fit: ${zahl(autoZiffern)} notes under ${zahl(autoGefaeltet)} groups`);
-    }
+    // nicht stillschweigend weg — es ist gefaltet, und die Zahl steht in der
+    // Klaue oben (der Baum) oder in der Bilanz des Feldes.
     return klausaen.join(" · ");
   }, [bildZaehlung.knoten, memories.length, graphApi, kantenRapport, selbstkaanten, ansicht, karte, semantikFeld, autoZiffern, autoGefaeltet]);
   const baumNachbarn = useMemo(() => {
@@ -1425,7 +1778,13 @@ export function KnowledgeGraph({ memories, onSelectMemory, onSelectConcept, sich
       for (const e of entries) {
         const cr = e.contentRect;
         if (cr.width < 1 || cr.height < 1) continue; // ausgeblendet — kein sinnvolles Mass
-        setDimensions({ w: Math.max(320, Math.round(cr.width)), h: Math.max(320, Math.round(cr.height)) });
+        // A7-08: das GEMESSENE gilt, nicht ein gedeckelter Mindestwert. Die
+        // fruehere Untergrenze von 320 px stellte bei 390 px Fensterbreite einen
+        // 640 px breiten Puffer in ein 80-px-Feld — der Browser zog die Welt auf
+        // ein Achtel zusammen, und der Fit rechnete mit einem Bild, das niemand
+        // sah. Ein Puffer unter einem Bildpunkt ist die einzige Grenze, die der
+        // Geometrie nichts tut.
+        setDimensions({ w: Math.max(1, Math.round(cr.width)), h: Math.max(1, Math.round(cr.height)) });
         zeichneNoetig.current = true;
       }
     });
@@ -1499,13 +1858,25 @@ export function KnowledgeGraph({ memories, onSelectMemory, onSelectConcept, sich
     // der alte Kraftfeld-Ausschnitt. Der Wechsel in den Baum gibt die
     // Zielpositionen, damit das ERSTE Bild des Baums schon alles zeigt.
     const knoten = masse ?? sim.nodes;
-    // Keine Untergrenze mehr: die Lesbarkeit trägt jetzt der Baum selbst, indem
-    // er sich faltet. Eine Klemme hier schnitt Zeilen ab — 59 von 129 waren
-    // gemalt, der Rest lag außerhalb der Leinwand, ohne dass die Fläche etwas
-    // davon sagte.
-    const fit = fitTransform(layoutBounds(knoten, 70), einpassFlaeche());
-    transformRef.current = fit;
-    setZoomAnzeige(fit.k);
+    // F8-N1, im eigenen Bild gesehen: „keine Untergrenze" machte den Baum bei
+    // 400 Notizen zu einer Haarlinie — zwei Zeilen 3 px auseinander, weil die
+    // Kamera ALLE Zeilen in den Rahmen presst. Der Baum darf ueber den Rahmen
+    // hinausgehen (die Flaeche sagt, wie viele Notizen im Bild stehen); er darf
+    // sich nicht unter die Lesbarkeit hinauszoomen.
+    const grenzen = layoutBounds(knoten, 70);
+    const ein = einpassFlaeche();
+    const fit = fitTransform(grenzen, ein);
+    const boden = zeilenKMin(ZEILEN_LESEBAR, BLATT_ABSTAND);
+    const k = Math.max(fit.k, boden);
+    // Zentriert, nicht oben verankert: in einem horizontalen Dendrogramm sitzt
+    // die Wurzel in der MITTE der Blatthoehe (Eltern zentrieren auf ihre
+    // Kinder). Oben verankert haette der Baum gerade seinen Stamm abgeschnitten.
+    // Was der Lesbarkeitsboden uebrig laesst, liegt ausserhalb — und die Flaeche
+    // sagt es in ihrer Bilanz.
+    const mitteX = (grenzen.minX + grenzen.maxX) / 2;
+    const mitteY = (grenzen.minY + grenzen.maxY) / 2;
+    transformRef.current = { k, x: ein.w / 2 - mitteX * k, y: ein.h / 2 - mitteY * k };
+    setZoomAnzeige(k);
     zeichneNoetig.current = true;
   }, [dimensions]);
 
@@ -1589,8 +1960,8 @@ export function KnowledgeGraph({ memories, onSelectMemory, onSelectConcept, sich
     if (!ctx) return;
 
     const dpr = Math.min(2, (typeof window !== "undefined" && window.devicePixelRatio) || 1);
-    const bw = Math.round(dimensions.w * dpr);
-    const bh = Math.round(dimensions.h * dpr);
+    const bw = Math.max(1, Math.round(dimensions.w * dpr));
+    const bh = Math.max(1, Math.round(dimensions.h * dpr));
     if (canvas.width !== bw || canvas.height !== bh) { canvas.width = bw; canvas.height = bh; }
 
     const stil = getComputedStyle(document.documentElement);
@@ -1681,13 +2052,66 @@ export function KnowledgeGraph({ memories, onSelectMemory, onSelectConcept, sich
     }
 
     const skalar = Math.max(0.4, t.k);
+    /**
+     * Teilt dieser Bild Durchgang die Linien in Nachbarschaft und Rest?
+     *
+     * Nur im Feld und nur, waehrend ein Zeiger haelt. Im Baum sind die Linien
+     * die Struktur selbst — dort zu dimmen hiesse, die Hierarchie wegzunehmen,
+     * um eine Zeile zu zeigen.
+     */
+    const teilt = hov !== null && ansichtRef.current !== "dendrogram";
     // Etwas gemalte, sichtbare Behauptungen — aus ihnen wird unten das Etikett.
     const etikettenmoeglich: LayoutEdge[] = [];
+    /**
+     * A7-04 — die Dichte-Kappe des Feldes, nach BILDFLAECHE.
+     *
+     * Bei 1 500 Notizen gemalt: 1 543 Linien-Stuecke in 1 130 × 668 px, ungekuerzt.
+     * Die Erwaehnungen — jede Notiz an ihrem Begriff — standen mit derselben
+     * Deckkraft im Bild wie die neun Behauptungen, die jemand gefuehrt hat. Der
+     * Baum hatte seine Faltung, das Feld hatte nichts davon.
+     *
+     * Jetzt: Behauptungen, erfuellte und Vermutungen behalten ihren Platz; was
+     * vom Bild uebrig bleibt, ist das Budget fuer die Erwaehnungen. Reicht es
+     * nicht, fallen die am schwaechsten belegten Zuege zuerst, und die Zahl der
+     * gefallenen steht am Rand — das Bild darf nicht schweigend duenner werden.
+     *
+     * Waehrend ein Zeiger haelt, gilt die Kappe nicht: dort sind die Erwaehnungen
+     * schon auf α 0,08 gestellt, und ein Netz, das beim Anfassen die Haelfte
+     * verliert, ist unruhiger als ein voller Schleier.
+     */
+    const linienFrei = linienBudget(dimensions.w, dimensions.h);
+    let andereZuege = 0;
+    for (const [schluessel, liste] of klassen) {
+      const artDerKlasse = schluessel.slice(0, schluessel.indexOf("|"));
+      // Nur Behauptungen und erfuellte Aussagen konkurrieren mit den
+      // Erwaehnungen um die Bildflaeche. Vermutungen haben ihre eigene Kappe
+      // (`nurEchteKanten`) und treten hinter das Begriffsnetz zurueck —
+      // nachgemessen: als die Aehnlichkeiten zugeschaltet waren, standen bei 400
+      // Notizen ploetzlich ALLE 390 Erwaehnungen „left out", weil 2 003
+      // vermutete Kanten das Budget vorher auffrassen. Wer Aehnlichkeiten ruft,
+      // loescht darum nicht die Ontologie.
+      if (artDerKlasse === "erwaehnung" || artDerKlasse === "vermutung") continue;
+      andereZuege += liste.length;
+    }
+    const erwaehnungBudget = teilt ? Number.MAX_SAFE_INTEGER : Math.max(0, linienFrei - andereZuege);
+    let erwaehnungGemalt = 0;
+    let gekappt = 0;
     for (const art of ARTEN) {
       const breiten = BREITE_PX[art];
       for (let band = 0; band < breiten.length; band++) {
-        const liste = klassen.get(`${art}|${band}`);
+        let liste = klassen.get(`${art}|${band}`);
         if (!liste || liste.length === 0) continue;
+        // Reicht das Bild nicht fuer alle Erwaehnungen, fallen die am
+        // schwaechsten belegten Zuege zuerst. Sortiert wird nur, wenn die Kappe
+        // wirklich greift — und nach der Belegzahl, nicht nach der Zeilenordnung
+        // der Datenbank.
+        if (art === "erwaehnung" && liste.length > erwaehnungBudget - erwaehnungGemalt) {
+          liste = [...liste].sort(
+            (x, y) =>
+              dickeBand(y) - dickeBand(x) ||
+              (x.source < y.source ? -1 : x.source > y.source ? 1 : x.target < y.target ? -1 : 1)
+          );
+        }
         // Erst die Vermutungen (fein gepunktet), dann die Spinnen zum Begriff,
         // dann die erfuellten Aussagen, zuletzt die gueltigen Behauptungen — sie
         // liegen darüber und sind die Aussage.
@@ -1701,6 +2125,17 @@ export function KnowledgeGraph({ memories, onSelectMemory, onSelectConcept, sich
               ? [3 / skalar, 5 / skalar]
               : []
         );
+        // --- Zwei Zuege beim Halten (A7-03) ---
+        //
+        // Vorher galt die Deckkraft je Klasse, nie je Kante: wer eine Notiz
+        // anfasste, um zu sehen, was an ihr haengt, liess bei 1 500 Notizen alle
+        // 1 534 Erwaehnungszuege bei α 0,34 stehen, waehrend die Behauptungen
+        // global auf 0,9 gingen — das Netz wurde lauter statt ruhiger. Jetzt in
+        // zwei Zuegen: was ein Ende unter dem Zeiger hat, in voller Staerke, der
+        // Rest bei α 0,08. Dasselbe Muster, das die Vermutungen beim Halten
+        // schon kannten (`hov !== e.source && hov !== e.target` -> weg).
+        const zuege = teilt ? ([false, true] as const) : ([false] as const);
+        for (const nahez of zuege) {
         ctx.beginPath();
         // Behauptungen bekommen eine Form, keine Pfeilspitze: breit am Ausgang,
         // schmal am Ziel. Die Spitze säße hinter der Zielscheibe und verschwände
@@ -1718,6 +2153,14 @@ export function KnowledgeGraph({ memories, onSelectMemory, onSelectConcept, sich
           // Eine Kante, die kein Ende im Spotlight hat, gehört nicht zur Frage.
           // Sie steht nicht gedimmt im Weg — sie ist nicht Teil der Auskunft.
           if (spot && !spot.has(e.source) && !spot.has(e.target)) continue;
+          // Die Aufteilung in die zwei Zuege — Nachbarschaft und Rest.
+          if (teilt && (hov === e.source || hov === e.target) !== nahez) continue;
+          // Die Bildflaeche ist aufgebraucht: dieser Zug faellt, und er wird
+          // gezaehlt, nicht verschluckt.
+          if (art === "erwaehnung" && erwaehnungGemalt >= erwaehnungBudget) {
+            gekappt++;
+            continue;
+          }
           const dx = b.x - a.x, dy = b.y - a.y;
           const len = Math.hypot(dx, dy) || 1;
           const off = beulenLenke(len);
@@ -1735,7 +2178,10 @@ export function KnowledgeGraph({ memories, onSelectMemory, onSelectConcept, sich
             for (let i = 1; i < band2.length; i++) ctx.lineTo(band2[i].x, band2[i].y);
             ctx.closePath();
             gemalt++;
-            if (kantenEtikett(e)) etikettenmoeglich.push(e);
+            // Das Etikett einer Kante wird einmal gesammelt, nicht je Zug —
+            // sonst staende dieselbe Aussage zweimal im Vorrat. Ohne Zeiger
+            // gibt es nur einen Zug, und der sammelt.
+            if ((!teilt || nahez) && kantenEtikett(e)) etikettenmoeglich.push(e);
             continue;
           }
           ctx.moveTo(a.x, a.y);
@@ -1747,25 +2193,32 @@ export function KnowledgeGraph({ memories, onSelectMemory, onSelectConcept, sich
             ctx.quadraticCurveTo((a.x + b.x) / 2 - (dy / len) * off, (a.y + b.y) / 2 + (dx / len) * off, b.x, b.y);
           }
           gemalt++;
-          if (art === "behauptung" || art === "abgelaufen") {
+          if (art === "erwaehnung") erwaehnungGemalt++;
+          if ((art === "behauptung" || art === "abgelaufen") && (!teilt || nahez)) {
             if (kantenEtikett(e)) etikettenmoeglich.push(e);
           }
         }
+        // Der geteilte Zug: die Nachbarschaft des Zeigers in voller Staerke, der
+        // Rest bei α 0,08. Im Baum wird nicht geteilt — dort SIND die Linien die
+        // Struktur, und wer eine Zeile anfasst, soll nicht den Baum verlieren.
         ctx.globalAlpha = Math.min(
           1,
-          (art === "behauptung"
-            ? (hov ? 0.9 : 0.55)
-            : art === "abgelaufen"
-              ? (hov ? 0.6 : 0.3)
-              : art === "erwaehnung"
-                ? 0.34
-                : hov ? 0.5 : 0.22) * kantenVerstaerkung
+          (teilt && !nahez
+            ? 0.08
+            : art === "behauptung"
+              ? (hov ? 0.9 : 0.55)
+              : art === "abgelaufen"
+                ? (hov ? 0.6 : 0.3)
+                : art === "erwaehnung"
+                  ? (hov ? 0.85 : 0.34)
+                  : hov ? 0.5 : 0.22) * kantenVerstaerkung
         );
         if (gemalt > 0) {
           if (keil) ctx.fill();
           else ctx.stroke();
         }
         ctx.globalAlpha = 1;
+        }
       }
     }
     ctx.setLineDash([]);
@@ -1803,15 +2256,28 @@ export function KnowledgeGraph({ memories, onSelectMemory, onSelectConcept, sich
      * gleichfarbigen kommen in EINEN Pfad und werden mit einem fill() gemalt.
      */
     const winzig = new Map<string, number[]>();
+    let imRahmenNoten = 0;
+    // Die drei Zeichen, die einen Stand in der Zeit tragen: der gestrichelte
+    // Ring, die leisere Tinte, der Akzentring. A8-05 zahlte sie vor — sie
+    // kommen in der Legende nicht vor, und genau sie entscheiden, ob ein
+    // abgelaufener Satz fuer gueltig gehalten wird. Gezaehlt wird, was gemalt
+    // ist, nicht was die Datenbank traegt.
+    let abgelaufenImBild = 0;
+    let ersetztImBild = 0;
+    let angeheftetImBild = 0;
     for (const n of sim.nodes) {
       if (!imBild(n)) continue;
       const m = byIdRef.current.get(n.id);
       if (!m) continue;
+      // Eine Notiz, die im Rahmen steht — die Zahl hinter ihr ist die, die ein
+      // Mensch mit eigenen Augen nachzaehlen kann (F8-N1).
+      imRahmenNoten += 1;
       const r = n.r;
       const istHov = hov === n.id;
       const gedimmt = (hov !== null && !istHov && !nachbarn?.has(n.id)) || (!!spot && !spot.has(n.id));
       const zeitInaktiv = zeit !== null && !existsAt(m, zeit);
       const ersetzt = !!m.supersededBy;
+      if (ersetzt) ersetztImBild++;
       ctx.globalAlpha = zeitInaktiv ? 0.06 : gedimmt ? 0.14 : ersetzt ? 0.55 : 1;
 
       // Kein Groessendeckel mehr: die Kollision haelt die Knoten auseinander,
@@ -1913,6 +2379,7 @@ export function KnowledgeGraph({ memories, onSelectMemory, onSelectConcept, sich
       }
       // Abgelaufen: gestrichelter Ring
       if (m.validTo != null && m.validTo < Date.now()) {
+        abgelaufenImBild++;
         ctx.strokeStyle = textFarbe;
         ctx.lineWidth = 1.2 / Math.max(0.4, t.k);
         ctx.setLineDash([4 / Math.max(0.4, t.k), 3 / Math.max(0.4, t.k)]);
@@ -1926,6 +2393,7 @@ export function KnowledgeGraph({ memories, onSelectMemory, onSelectConcept, sich
       // mehr mitbewegt. Der Abstand ist in Bildpunkten gerechnet, damit der
       // Ring bei jedem Zoom gleich weit aussen sitzt.
       if (n.pinned) {
+        angeheftetImBild++;
         ctx.strokeStyle = akzent;
         ctx.lineWidth = 1.6 / Math.max(0.4, t.k);
         ctx.beginPath();
@@ -1967,6 +2435,9 @@ export function KnowledgeGraph({ memories, onSelectMemory, onSelectConcept, sich
     // Beide Ansichten nutzen dieselben Schlüssel ("__ent:..."), damit der
     // Übergang zwischen Baum und Feld ein Gleiten ist und kein Umbau.
     const struktur = strukturKnotenRef.current;
+    // Die Malzeichen der Faltung werden gesammelt und am Ende IN BILDPIXELN
+    // gemalt — ein Zustand, der erst beim Heranzoomen erschiene, wäre keiner.
+    const faltBadges: { sx: number; sy: number; text: string }[] = [];
     if (struktur) {
       for (const n of sim.nodes) {
         const s = struktur.get(n.id);
@@ -1992,7 +2463,11 @@ export function KnowledgeGraph({ memories, onSelectMemory, onSelectConcept, sich
         // bleibt weg: sie füllt das Gesicht des Knotens und sagt nichts. Eine
         // vierstellige Zahl passt nicht in eine Scheibe und bleibt ebenfalls.
         if (s.eingeklappt) {
-          zeichneFaltung(ctx, n.x, n.y, n.r, t.k, `×${s.verdeckt ?? s.blaetter ?? 0}`, akzent);
+          faltBadges.push({
+            sx: n.x * t.k + t.x,
+            sy: (n.y - n.r) * t.k + t.y,
+            text: `×${s.verdeckt ?? s.blaetter ?? 0}`,
+          });
         } else if (n.r * t.k >= VEKTOR_AB_PX && s.blaetter !== undefined && s.blaetter > 1 && s.blaetter < 1000) {
           zeichneGlyph(ctx, n.x, n.y, n.r, String(s.blaetter), farbe);
         }
@@ -2015,36 +2490,52 @@ export function KnowledgeGraph({ memories, onSelectMemory, onSelectConcept, sich
     // 4 % Zoom), nicht die kleine Basis — was im Gedränge sichtbar bleibt,
     // entscheidet das Belegungsraster weiter unten.
     const mindestRadius = 1.5;
-    // Im Baum macht die Hierarchie lesbar, was das Kraftfeld nur durch Zoomen
-    // zeigen kann — dort duerfen alle Etiketten mit (bis zur harten Grenze),
-    // waehrend der 140er-Cap Kraftfeld-Sache bleibt.
     const baumAnsicht = ansichtRef.current === "dendrogram";
     // Was der Zeiger oder die Tastatur haelt, kriegt immer sein Etikett — auch
-    // auf „aus". Eine Fläche, die auf Nachfrage schweigt, ist keine Auskunft.
+    // auf „keine". Eine Fläche, die auf Nachfrage schweigt, ist keine Auskunft.
     const gehaltenId = hov ?? tastaturIdRef.current;
     const modus = etikettenModusRef.current;
+    const stufe = NAMEN_STUFE[modus];
+    // Der Baum traegt mehr Namen als das Feld, weil seine Zeilen schon ein
+    // Raster sind: dieselbe Stufe, dreimal so viel Platz (A7-02).
+    const budget = stufe.budget * (baumAnsicht ? 3 : 1);
     const etiketten =
-      modus === "off"
+      modus === "keine"
         ? beschriftbar.filter(({ n }) => n.id === gehaltenId)
-        : modus === "all"
+        : modus === "alle"
           ? beschriftbar
-          : baumAnsicht
-            ? beschriftbar.slice(0, MAX_LABELS * 3)
-            : beschriftbar
-                .filter(({ n, r }) => hov === n.id || nachbarn?.has(n.id) || r * t.k >= mindestRadius)
-                .slice(0, MAX_LABELS);
-    // „All" ist die eine Stellung ohne Raster: wer alles will, bekommt alles —
+          : beschriftbar
+              // Die engere Pforte als die breitere Stufe: was im Feld als
+              // Kandidat durchfaellt, kann kein Raster und kein Budget der Welt
+              // benennen. Bei 400 Notizen auf 27 % Zoom standen dort 0 von 400 —
+              // nicht, weil der Platz fehlte, sondern weil die Knoten unter
+              // mindestRadius fielen. „Many" offnet diese Pforte auf die
+              // Haelfte; das Belegungsraster entscheidet weiterhin, was bleibt.
+              .filter(({ n, r }) => hov === n.id || nachbarn?.has(n.id) || r * t.k >= mindestRadius * stufe.pforte)
+              .slice(0, budget);
+    // „alle" ist die eine Stellung ohne Raster: wer alles will, bekommt alles —
     // genau deshalb ist sie nicht die Einstellung, in der die Flaeche startet.
-    const ohneRaster = modus === "all";
+    const ohneRaster = !stufe.raster;
 
-    const fs = Math.min(15, 11 / Math.max(0.4, t.k));
+    // --- Text in BILDPIXELn ---
+    //
+    // Vorher sass jede Schrift in der Weltn transformation und wurde mit
+    // `11 / k` gegen-skaliert — bei 15 Welt-Pixeln zugedeckelt. Bei 12 % Zoom
+    // auf dem Schirm gemessen: 1,4 px. Kein Wort war noch zu lesen, die Kopfzeile
+    // behauptete derweil „1 500 notes". Der ganze Textauschnitt läuft deshalb
+    // ausserhalb der Transformation: feste Bildpixel, bei jedem Zoom, und was
+    // nicht passt, entscheidet allein das Belegungsraster.
+    ctx.save();
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+
+    const fs = ETIKETT_PX;
     ctx.lineJoin = "round";
 
     // Belegungsraster in BILDSCHIRM-Koordinaten: ein Etikett, das ein bereits
     // gezeichnetes ueberdeckt, wird weggelassen. Ohne das entsteht bei dichten
     // Buendeln der Teppich aus uebereinanderliegenden Titeln, den man in der
     // Aufnahme sieht — lesbar ist dort nichts mehr.
-    const zellHoehe = Math.max(10, fs * t.k + 3);
+    const zellHoehe = fs + 3;
     const belegt = new Set<string>();
     const freiUndBelegen = (mx: number, my: number, breite: number): boolean => {
       const halb = breite / 2;
@@ -2076,25 +2567,25 @@ export function KnowledgeGraph({ memories, onSelectMemory, onSelectConcept, sich
         // gilt die Kürzung nicht — und das gehaltene Etikett weicht nicht mehr
         // weg, es hat Vorrang im Raster.
         const gehalten = hov === n.id || tastaturIdRef.current === n.id;
-        // „Aus" meint alle Etiketten — auch die des Gerüsts. Was der Zeiger
+        // „Keine" meint alle Etiketten — auch die des Gerüsts. Was der Zeiger
         // hält, kommt zurück: eine Fläche, die auf Nachfrage schweigt, ist keine
         // Auskunft.
-        if (modus === "off" && !gehalten) continue;
+        if (modus === "keine" && !gehalten) continue;
         const titel = gehalten && s.blaetter !== undefined
           ? `${s.label} · ${s.blaetter} ${s.blaetter === 1 ? "note" : "notes"}`
           : s.label.length > GERUEST_ZEICHEN
             ? `${s.label.slice(0, GERUEST_ZEICHEN)}…`
             : s.label;
-        const mitteX = (n.x + n.r + 3) * t.k + t.x;
+        const mitteX = (n.x + n.r) * t.k + t.x + 3;
         const mitteY = n.y * t.k + t.y;
-        const breite = ctx.measureText(titel).width * t.k;
+        const breite = ctx.measureText(titel).width;
         // halbe Zeilenhoehe hoch, weil der Text mittig auf der Achse sitzt
-        if (!gehalten && modus !== "all" && !freiUndBelegen(mitteX, mitteY - zellHoehe / 2, breite)) continue;
-        ctx.lineWidth = 3 / Math.max(0.4, t.k);
+        if (!gehalten && !ohneRaster && !freiUndBelegen(mitteX, mitteY - zellHoehe / 2, breite)) continue;
+        ctx.lineWidth = 3;
         ctx.strokeStyle = grundFarbe;
-        ctx.strokeText(titel, n.x + n.r + 3, n.y);
+        ctx.strokeText(titel, mitteX, mitteY);
         ctx.fillStyle = gehalten ? akzent : geruestFarbe;
-        ctx.fillText(titel, n.x + n.r + 3, n.y);
+        ctx.fillText(titel, mitteX, mitteY);
       }
     }
 
@@ -2102,6 +2593,9 @@ export function KnowledgeGraph({ memories, onSelectMemory, onSelectConcept, sich
     ctx.textAlign = "center";
     ctx.textBaseline = "top";
 
+    // Wie viele Notizen diesen Bild ein Etikett verdanken — die Bilanzzeile am
+    // Rand meldet es, damit „25 von 1 500" nicht als Selbstverstaendnis steht.
+    let benannt = 0;
     for (const { n, m, r } of etiketten) {
       // Der Peek: was der Zeiger oder die Tastatur haelt, wird nicht gekuerzt —
       // genau dann will jemand den ganzen Namen lesen.
@@ -2109,31 +2603,32 @@ export function KnowledgeGraph({ memories, onSelectMemory, onSelectConcept, sich
       const vorrat = etikettVorratRef.current;
       let gelesen = vorrat.get(n.id);
       if (!gelesen) {
-        gelesen = notizEtikett(m, 26);
+        gelesen = notizEtikett(m, stufe.kuerzung);
         vorrat.set(n.id, gelesen);
       }
       const { text: titel, platzhalter } = gehalten ? notizEtikett(m, Infinity) : gelesen;
       const mitteX = n.x * t.k + t.x;
-      const mitteY = (n.y + r + 2) * t.k + t.y;
-      const breite = ctx.measureText(titel).width * t.k;
+      const mitteY = (n.y + r) * t.k + t.y + 2;
+      const breite = ctx.measureText(titel).width;
       // Der Knoten unter dem Zeiger und seine Nachbarn haben Vorrang und
       // ueberschreiben notfalls; alles andere weicht aus.
       const bevorzugt = hov === n.id || nachbarn?.has(n.id) === true;
       if (!ohneRaster && !freiUndBelegen(mitteX, mitteY, breite) && !bevorzugt) continue;
-      ctx.lineWidth = 3 / Math.max(0.4, t.k);
+      ctx.lineWidth = 3;
       ctx.strokeStyle = grundFarbe;
-      ctx.strokeText(titel, n.x, n.y + r + 2);
+      ctx.strokeText(titel, mitteX, mitteY);
       // Ein Etikett aus dem ersten Satz der Notiz ist ein Platzhalter und sieht
       // aus wie einer — eine Notiz ohne Titel darf nicht so tun, als haette sie
       // einen.
       ctx.fillStyle = platzhalter ? schwach : textFarbe;
-      ctx.fillText(titel, n.x, n.y + r + 2);
+      ctx.fillText(titel, mitteX, mitteY);
+      benannt++;
       if (hov === n.id && m.tags.length > 0) {
         const tags = m.tags.slice(0, 3).join(" · ");
         ctx.font = `400 ${fs * 0.85}px ui-sans-serif, system-ui, sans-serif`;
-        ctx.strokeText(tags, n.x, n.y + r + 2 + fs * 1.15);
+        ctx.strokeText(tags, mitteX, mitteY + fs * 1.15);
         ctx.fillStyle = schwach;
-        ctx.fillText(tags, n.x, n.y + r + 2 + fs * 1.15);
+        ctx.fillText(tags, mitteX, mitteY + fs * 1.15);
         ctx.font = `500 ${fs}px ui-sans-serif, system-ui, sans-serif`;
       }
     }
@@ -2157,13 +2652,33 @@ export function KnowledgeGraph({ memories, onSelectMemory, onSelectConcept, sich
         // Ein Geist zum gewaehlten Zeitpunkt hat keine verborgenen Nachbarn —
         // die sind schlicht noch nicht da.
         if (m && zeit !== null && !existsAt(m, zeit)) continue;
-        const bx = n.x + n.r * 0.85;
-        const by = n.y - n.r * 0.85;
-        ctx.lineWidth = 3 / skalar;
+        const bx = (n.x + n.r * 0.85) * t.k + t.x;
+        const by = (n.y - n.r * 0.85) * t.k + t.y;
+        ctx.lineWidth = 3;
         ctx.strokeStyle = grundFarbe;
         ctx.strokeText(`+${zahl}`, bx, by);
         ctx.fillStyle = schwach;
         ctx.fillText(`+${zahl}`, bx, by);
+      }
+      ctx.textBaseline = "top";
+      ctx.font = `500 ${fs}px ui-sans-serif, system-ui, -apple-system, sans-serif`;
+    }
+
+    // --- Malzeichen der Faltung: ×N ueber der Gruppe ---
+    //
+    // Eine zugeklappte Gruppe schuldet ihre Zahl — und die Zahl muss lesbar sein,
+    // ohne dass jemand erst heranzoomt. Gesammelt im Welt-Durchgang, gemalt in
+    // Bildpixeln.
+    if (faltBadges.length > 0) {
+      ctx.textAlign = "center";
+      ctx.textBaseline = "bottom";
+      ctx.font = `700 ${fs}px ui-sans-serif, system-ui, -apple-system, sans-serif`;
+      ctx.lineWidth = 3;
+      for (const b of faltBadges) {
+        ctx.strokeStyle = grundFarbe;
+        ctx.strokeText(b.text, b.sx, b.sy);
+        ctx.fillStyle = akzent;
+        ctx.fillText(b.text, b.sx, b.sy);
       }
       ctx.textBaseline = "top";
       ctx.font = `500 ${fs}px ui-sans-serif, system-ui, -apple-system, sans-serif`;
@@ -2176,7 +2691,7 @@ export function KnowledgeGraph({ memories, onSelectMemory, onSelectConcept, sich
     // nie einen Titel, es fuellt nur, was frei bleibt. Und es erscheint erst,
     // wenn man nah genug am Netz sitzt — weit herausgezoomt ist die Form die
     // Auskunft, nicht der Text.
-    if (t.k >= KANTEN_ETIKETT_AB_ZOOM && etikettenmoeglich.length > 0) {
+    if (stufe.kantentext && t.k >= KANTEN_ETIKETT_AB_ZOOM && etikettenmoeglich.length > 0) {
       const gehalten = hoverKanteRef.current;
       // Vorrang: die Kante unter dem Zeiger, dann die mit der meisten Evidenz.
       const rang = (e: LayoutEdge) => (e === gehalten ? 1_000_000 : 0) + (e.belege ?? 1) * 100 - kantenEtikett(e)!.length;
@@ -2194,20 +2709,102 @@ export function KnowledgeGraph({ memories, onSelectMemory, onSelectConcept, sich
         // Sechs Bildpunkte ueber der Linie — die Linie selbst soll lesbar
         // bleiben, und unter dem Knoten steht schon der Titel.
         const punkt = kantenMitte(a, b, beulenLenke(len));
-        const anY = punkt.y - 6 / t.k;
         const sx = punkt.x * t.k + t.x;
-        const sy = anY * t.k + t.y;
-        const breite = ctx.measureText(text).width * t.k;
+        const sy = punkt.y * t.k + t.y - 6;
+        const breite = ctx.measureText(text).width;
         const eigne = e === gehalten;
         if (!eigne && !freiUndBelegen(sx, sy - zellHoehe / 2, breite)) continue;
-        ctx.lineWidth = 3 / Math.max(0.4, t.k);
+        ctx.lineWidth = 3;
         ctx.strokeStyle = grundFarbe;
-        ctx.strokeText(text, punkt.x, anY);
+        ctx.strokeText(text, sx, sy);
         ctx.fillStyle = eigne ? akzent : textFarbe;
-        ctx.fillText(text, punkt.x, anY);
+        ctx.fillText(text, sx, sy);
       }
       ctx.font = `500 ${fs}px ui-sans-serif, system-ui, -apple-system, sans-serif`;
       ctx.textBaseline = "top";
+    }
+    // --- Der Gang: die Zeile am Ort der Punkte ------------------------------
+    //
+    // Was hier liegt, hat in diesem Bild keinen Nachbarn. Die Flaeche hat zwei
+    // Antworten schulig: wo sie hingehoeren, und wie viele es sind. Beides
+    // steht am Ort — nicht in einem Tooltip, nicht in der Werkzeugleiste
+    // (A8-Z6: Erklaerung sitzt am Zeichen).
+    if (sim.allein && sim.allein > 0 && sim.alleinAnker) {
+      const ankerX = sim.alleinAnker.x * t.k + t.x;
+      const ankerY = sim.alleinAnker.y * t.k + t.y;
+      const breite = Math.min(dimensions.w - 24, GANG_SPALTEN * GANG_ABSTAND * t.k);
+      const x0 = Math.max(12, ankerX - breite / 2);
+      if (ankerY > -40 && ankerY < dimensions.h + 40) {
+        ctx.globalAlpha = 1;
+        ctx.strokeStyle = textFarbe;
+        ctx.lineWidth = 1;
+        ctx.globalAlpha = 0.34;
+        ctx.beginPath();
+        ctx.moveTo(x0, ankerY - 22);
+        ctx.lineTo(Math.min(dimensions.w - 12, x0 + breite), ankerY - 22);
+        ctx.stroke();
+        ctx.globalAlpha = 1;
+        ctx.font = `500 ${fs * 0.86}px ui-sans-serif, system-ui, -apple-system, sans-serif`;
+        ctx.textAlign = "left";
+        ctx.textBaseline = "bottom";
+        ctx.fillStyle = geruestFarbe;
+        const zahl = sim.allein.toLocaleString("en-US");
+        ctx.strokeText(`${zahl} notes connect to nothing in this picture`, x0, ankerY - 26);
+        ctx.fillText(`${zahl} notes connect to nothing in this picture`, x0, ankerY - 26);
+      }
+    }
+
+    ctx.restore();
+
+    // Die Bilanz, was das Bild benennt. Geschrieben direkt an den Rand, nicht
+    // ueber den Zustand: ein Wert pro Bild waere eine Rendering-Kette pro Bild,
+    // und die Zahl aendert sich mit jedem Schwenk.
+    {
+      const zeile = benanntRef.current;
+      if (zeile) {
+        const gesamt = imBildRef.current;
+        const meldung = benannt < gesamt ? `${benannt} of ${gesamt} notes carry a title` : "";
+        if (zeile.textContent !== meldung) zeile.textContent = meldung;
+        const anzeige = meldung === "" ? "none" : "";
+        if (zeile.style.display !== anzeige) zeile.style.display = anzeige;
+      }
+      // Die Zustandszeichen, erklaert an dem Ort, der sie zeigt — nur wenn
+      // etwas von ihnen im Bild steht (dieselbe Zurueckhaltung wie die Bilanz).
+      const zustZeile = zustandRef.current;
+      if (zustZeile) {
+        const klausel: string[] = [];
+        if (abgelaufenImBild > 0) klausel.push(`dashed ring — it no longer holds (${abgelaufenImBild})`);
+        if (ersetztImBild > 0) klausel.push(`fainter ink — replaced (${ersetztImBild})`);
+        if (angeheftetImBild > 0) klausel.push(`accent ring — you set it down here (${angeheftetImBild})`);
+        const meldung = klausel.length ? `States here: ${klausel.join(", ")}` : "";
+        if (zustZeile.textContent !== meldung) zustZeile.textContent = meldung;
+        const anzeige = meldung === "" ? "none" : "";
+        if (zustZeile.style.display !== anzeige) zustZeile.style.display = anzeige;
+      }
+      const kapZeile = kappenRef.current;
+      if (kapZeile) {
+        const meldung = gekappt > 0
+          ? `${gekappt} of ${erwaehnungGemalt + gekappt} mention links left out for the picture's space`
+          : "";
+        if (kapZeile.textContent !== meldung) kapZeile.textContent = meldung;
+        const anzeige = meldung === "" ? "none" : "";
+        if (kapZeile.style.display !== anzeige) kapZeile.style.display = anzeige;
+      }
+      // Wie viele der entfalteten Notizen wirklich im Bild stehen. Der Baum
+      // ueberschreitet seinen Rahmen jetzt bewusst (er zoomt sich nicht unter
+      // die Lesbarkeit) — was ausserhalb liegt, sagt die Zeile.
+      const rahmenZeile = imRahmenRef.current;
+      if (rahmenZeile) {
+        const gesamt = imBildRef.current;
+        const meldung = imRahmenNoten >= gesamt
+          ? ""
+          : imRahmenNoten === 0
+            ? "no unfolded notes are in this picture — the tree is taller than its frame, pan to read it"
+            : `${imRahmenNoten} of ${gesamt} unfolded notes are in this picture`;
+        if (rahmenZeile.textContent !== meldung) rahmenZeile.textContent = meldung;
+        const anzeige = meldung === "" ? "none" : "";
+        if (rahmenZeile.style.display !== anzeige) rahmenZeile.style.display = anzeige;
+      }
     }
 
     // Der Tooltip haengt an der Kante, nicht am Etikett-Budget: auch weit
@@ -2299,6 +2896,15 @@ export function KnowledgeGraph({ memories, onSelectMemory, onSelectConcept, sich
                 transformRef.current = fitTransform(layoutBounds(sim.nodes, randFuerAnsicht(sim.nodes)), einpassFlaeche());
                 setZoomAnzeige(transformRef.current.k);
               }
+            } else if (refitFaellig(autoFitOffen.current, bewegt, sim.nodes.length)) {
+              // A7-09: dasselbe Ruhe-Ereignis, wenn das Feld beim ersten Bild des
+              // Loops SCHON stand — ein wiedergenommener, ausgekuehlter Bestand
+              // (Filterwechsel) durchlief den Bewegungszweig nie und blieb auf dem
+              // Ausschnitt sitzen, der fuer seine Ausgangspositionen gerechnet war.
+              autoFitOffen.current = false;
+              transformRef.current = fitTransform(layoutBounds(sim.nodes, randFuerAnsicht(sim.nodes)), einpassFlaeche());
+              setZoomAnzeige(transformRef.current.k);
+              zeichneNoetig.current = true;
             }
           }
         }
@@ -2846,263 +3452,404 @@ export function KnowledgeGraph({ memories, onSelectMemory, onSelectConcept, sich
     );
   }
 
-  return (
-    <div className="flex flex-col h-full min-h-0">
-      <div className="flex items-center gap-2 px-2 py-3 shrink-0 flex-wrap">
-        <div className="relative flex-1 min-w-[180px] max-w-sm">
-          <Search className="w-3.5 h-3.5 absolute left-2.5 top-1/2 -translate-y-1/2" style={{ color: "var(--text-3)" }} />
-          <input
-            value={filter}
-            onChange={(e) => setFilter(e.target.value)}
-            onKeyDown={onSucheKeyDown}
-            placeholder="Filter the graph…"
-            aria-describedby="graph-search-count"
-            className="hud-input w-full pl-8 pr-3 py-2 rounded-lg text-sm"
-          />
-        </div>
-        {/* Der Zähler steht in der Zeile, nicht über ihr: absolute über dem Feld
-            hing auf die zweite Reihe der Leiste, sobald die umbrach. Gezählt
-            wird, was im Bild steht — ein Treffer, den die Faltung verbirgt,
-            wäre eine Zahl, ins Leere zu springen. */}
-        <div
-          id="graph-search-count"
-          data-testid="graph-search-count"
-          className="hud-label tnum"
-          style={{ color: "var(--text-3)" }}
-          aria-live="polite"
+  const drin = (g: Leistenglied) => plan.zeile.includes(g);
+  /** Der Punkt ist das eine Zeichen fuer „ein Schalter ist an". */
+  const punkt = (an: boolean) => (
+    <span
+      aria-hidden="true"
+      data-testid="graph-schalter-punkt"
+      style={{
+        width: 6,
+        height: 6,
+        flex: "0 0 6px",
+        borderRadius: 999,
+        background: an ? "var(--accent)" : "transparent",
+        boxShadow: an ? "none" : "inset 0 0 0 1px var(--border-strong)",
+      }}
+    />
+  );
+  /**
+   * Die drei Rollen der Leiste, in drei verschiedenen Zeichen (Z-07):
+   *
+   *   Auswahl  = ein Segment in der geteilten Schiene, das aktive liegt erhaben
+   *              darauf — `.apple-seg` ist das Hauszeichen dafuer, der
+   *              Index-Gruppierung (`Dashboard.tsx:1541`) nutzt es schon
+   *   Schalter = ein Punkt in Akzentfarbe, nie eine Randfarbe
+   *   Klappe   = derselbe Punkt, weil „Panel offen" ein Zustand ist und keine
+   *              gewaehlte Option
+   *
+   * Vorher standen Auswahl und Klappe in ein und derselben Akzentkante, und die
+   * beiden Schalter „Similar" und „Direction" markierten ihr An stattdessen in
+   * `--text-3` — A8-08: zwanzig Knoepfe, eine Zeile, zwei Sprachen fuer „an".
+   * Die Etikett-Stellung hatte ueberhaupt kein Zeichen: „Key" war
+   * aria-pressed=true und sonst nichts (gemessen 10.10.: Rand
+   * rgba(255,255,255,.08), Schrift --text-1 — wie „All" und „Off" aus).
+   */
+  const segment = (an: boolean, titel: string, onClick: () => void, wort: string, zu = false) => (
+    <button
+      type="button"
+      className="apple-seg-btn text-[11px] font-medium"
+      data-on={an ? "true" : "false"}
+      aria-pressed={an ? "true" : "false"}
+      disabled={zu}
+      onClick={onClick}
+      title={titel}
+    >
+      {wort}
+    </button>
+  );
+  const schalter = (an: boolean, titel: string, onClick: () => void, wort: string, zeichen?: ReactNode) => (
+    <button
+      type="button"
+      onClick={onClick}
+      aria-pressed={an ? "true" : "false"}
+      className="btn-ghost px-2 py-1.5 rounded-lg text-[11px] inline-flex items-center gap-1.5 whitespace-nowrap shrink-0"
+      title={titel}
+    >
+      {punkt(an)}
+      {zeichen}
+      {wort}
+    </button>
+  );
+
+  const zeitStand = (
+    <span
+      className="hud-label whitespace-nowrap tnum shrink-0"
+      data-testid="graph-zeitstand"
+      title={
+        zeitAchse
+          ? `Knowledge shown as of ${datumLang(zeitStandMs ?? Date.now())} · the scale runs from ${datumLang(zeitAchse.min)} to today`
+          : undefined
+      }
+    >
+      <span style={{ color: zeitStandMs !== null || zeitAchse?.verschiebt ? "var(--accent)" : undefined }}>
+        {zeitStandMs === null ? "Now" : datumKurz(zeitStandMs)}
+      </span>
+      {zeitAchse?.verschiebt && (
+        <span
+          className="ml-1"
+          data-testid="graph-zeit-spaeter"
+          title={`${zeitAchse.spaeter.length} commitment${zeitAchse.spaeter.length === 1 ? "" : "s"} in this base end${zeitAchse.spaeter.length === 1 ? "" : ""} after today — that is a state on the link, not a step on this scale`}
         >
-          {filter.trim() === ""
-            ? ""
-            : trefferIds.length === 0
-              ? "No match"
-              : trefferZeiger < 0
-                ? `${trefferIds.length} match${trefferIds.length === 1 ? "" : "es"}`
-                : `${trefferZeiger + 1} of ${trefferIds.length}`}
-        </div>
-        {/* Gezaehlt wird, was im Bild steht — nicht, was die Datenbank hergeben
-            wuerde. „edges" war hier eine Zahl aus dem Aehnlichkeitsnebel.
-            Seit dem 6.10. liegen im Feld auch Konzepte: zwei Notizen und drei
-            Punkte im Bild mit der Aufschrift „2 nodes" wäre keine Auskunft.
-            Beide Ansichten nennen dasselbe Paar — weil sie dasselbe Netz
-            meinen, nicht zwei verschiedene Auszählungen. */}
-        <div className="hud-label hidden sm:block">
-          {bildZaehlung.knoten} {bildZaehlung.knoten === 1 ? "note" : "notes"} ·{" "}
-          {netz.knoten.length} {netz.knoten.length === 1 ? "concept" : "concepts"} ·{" "}
-          {ansicht === "dendrogram"
-            ? `${baumLayout.edges.length} ${baumLayout.edges.length === 1 ? "link" : "links"}`
-            : `${kanten.echt} ${kanten.echt === 1 ? "link" : "links"}${kanten.aehnlichkeit ? ` · +${kanten.aehnlichkeit} similar` : ""}`}
-        </div>
-        {/* Die Gruppe bricht um: in einem schmalen Fenster lief die letzte
-            Schaltfläche über den Rand hinaus — ein Knopf, den man nicht sehen
-            kann, ist keine Funktion. */}
-        <div className="flex flex-wrap items-center gap-0.5 ml-1" role="group" aria-label="Graph layout">
-          <button
-            onClick={() => wechsleAnsicht("force")}
-            className="btn-ghost px-2.5 py-1.5 rounded-lg flex items-center gap-1.5"
-            style={ansicht === "force" ? { border: "1px solid var(--accent)", color: "var(--accent)" } : undefined}
-            title="Force view — the links as they are claimed; similarity only on request"
-          >
-            <Atom2 className="w-4 h-4" />
-            <span className="hidden md:inline text-[11px]">Force</span>
-          </button>
-          <button
-            onClick={() => wechsleAnsicht("dendrogram")}
-            className="btn-ghost px-2.5 py-1.5 rounded-lg flex items-center gap-1.5"
-            style={ansicht === "dendrogram" ? { border: "1px solid var(--accent)", color: "var(--accent)" } : undefined}
-            title="Dendrogram — knowledge as a tree: root → type → entity → note"
-          >
-            <Sitemap className="w-4 h-4" />
-            <span className="hidden md:inline text-[11px]">Tree</span>
-          </button>
-          <button
-            onClick={() => wechsleAnsicht("semantic")}
-            className="btn-ghost px-2.5 py-1.5 rounded-lg flex items-center gap-1.5"
-            style={ansicht === "semantic" ? { border: "1px solid var(--accent)", color: "var(--accent)" } : undefined}
-            title="Semantic map — the same notes placed by their vectors. Distance is meaning, computed once and always the same way."
-          >
-            <Scatter className="w-4 h-4" />
-            <span className="hidden md:inline text-[11px]">Semantic</span>
-          </button>
-          <button
-            onClick={() => setAhnlichkeit((v) => !v)}
-            aria-pressed={ahnlichkeit ? "true" : "false"}
-            className="btn-ghost px-2.5 py-1.5 rounded-lg flex items-center gap-1.5"
-            style={ahnlichkeit ? { border: "1px solid var(--text-3)", color: "var(--text-2)" } : undefined}
-            title="Show similarity links — guesses from shared tags and titles, off by default"
-          >
-            <Network className="w-4 h-4" />
-            <span className="hidden md:inline text-[11px]">Similar</span>
-          </button>
-          <button
-            onClick={wechsleSelbstkaanten}
-            aria-pressed={selbstkaanten ? "true" : "false"}
-            className="btn-ghost px-2 py-1.5 rounded-lg text-[11px]"
-            title="Self claims — a concept talking about itself, looped at its own node. Off by default."
-          >
-            Self
-          </button>
-          <button
-            onClick={() => setzeEtiketten("key")}
-            aria-pressed={etikettenModus === "key" ? "true" : "false"}
-            className="btn-ghost px-2 py-1.5 rounded-lg text-[11px]"
-            title="Key labels — the busiest nodes first, as many as fit without overlap"
-          >
-            Key
-          </button>
-          <button
-            onClick={() => setzeEtiketten("all")}
-            aria-pressed={etikettenModus === "all" ? "true" : "false"}
-            className="btn-ghost px-2 py-1.5 rounded-lg text-[11px]"
-            title="All labels — every node, however crowded. A choice, not a starting point."
-          >
-            All
-          </button>
-          <button
-            onClick={() => setzeEtiketten("off")}
-            aria-pressed={etikettenModus === "off" ? "true" : "false"}
-            className="btn-ghost px-2 py-1.5 rounded-lg text-[11px]"
-            title="No labels — hover or arrow-key to a node and its full title comes back"
-          >
-            Off
-          </button>
-          <button
-            onClick={wechsleRichtung}
-            aria-pressed={richtung ? "true" : "false"}
-            className="btn-ghost px-2.5 py-1.5 rounded-lg flex items-center gap-1.5"
-            style={richtung ? { border: "1px solid var(--text-3)", color: "var(--text-2)" } : undefined}
-            title="Claim direction — each link runs from its wide end to its narrow one. Off shows plain lines."
-          >
-            <ChevronRight className="w-4 h-4" />
-            <span className="hidden md:inline text-[11px]">Direction</span>
-          </button>
-          <button
-            onClick={() => setSchemaOffen((v) => !v)}
-            aria-pressed={schemaOffen ? "true" : "false"}
-            className="btn-ghost px-2 py-1.5 rounded-lg text-[11px]"
-            title="Schema — what the store holds: kinds, concepts, claims. The counts beside the picture stay the picture's."
-          >
-            Schema
-          </button>
-          <button
-            onClick={() => setzeKrafteOffen((v) => !v)}
-            aria-pressed={krafteOffen ? "true" : "false"}
-            className="btn-ghost px-2 py-1.5 rounded-lg text-[11px]"
-            style={krafteOffen ? { border: "1px solid var(--accent)", color: "var(--accent)" } : undefined}
-            title="Forces — how hard the field gathers, repels and spaces itself, and how big the nodes are. The picture keeps its place while it settles."
-          >
-            <span className="inline-flex items-center gap-1">
-              <SlidersHorizontal className="w-3.5 h-3.5" />
-              Forces
-            </span>
-          </button>
-        </div>
-        {/* Welcher Kanal färbt. Art ist der Standardkanal und bleibt es auch —
-            die Herkunftsfarbe ist ein zweiter Blick, und der schaltet sich ab,
-            wenn der Bestand nichts zu unterscheiden hat. */}
-        <div className="flex items-center gap-0.5 ml-2" role="group" aria-label="Node colour channel">
-          <button
-            onClick={() => wechsleKanal("typ")}
-            aria-pressed={aktiverKanal === "typ" ? "true" : "false"}
-            className="btn-ghost px-2 py-1.5 rounded-lg text-[11px]"
-            style={aktiverKanal === "typ" ? { border: "1px solid var(--accent)", color: "var(--accent)" } : undefined}
-            title="Colour by kind of knowledge — facts, events, how-tos, documents. What the graph starts with."
-          >
-            Type
-          </button>
-          <button
-            onClick={() => wechsleKanal("herkunft")}
-            disabled={!herkunft.verfügbar}
-            aria-pressed={aktiverKanal === "herkunft" ? "true" : "false"}
-            className="btn-ghost px-2 py-1.5 rounded-lg text-[11px]"
-            style={aktiverKanal === "herkunft" ? { border: "1px solid var(--accent)", color: "var(--accent)" } : undefined}
-            title={
-              herkunft.verfügbar
-                ? `Colour by where notes came from — ${herkunft.arten.length} kinds in this base: ${herkunft.arten.map((a) => HERKUNFT_LABELS[a]).join(", ")}`
-                : herkunft.grund
-            }
-          >
-            Provenance
-          </button>
-        </div>
-        <div className="flex items-center gap-1.5 ml-2" title="Node colours — each colour tints its type across the graph, cards and index">
-          {(["semantic", "episodic", "procedural", "reference"] as const).map((t) => (
-            <input
-              key={t}
-              type="color"
-              value={TYPE_COLORS[t]}
-              onChange={(e) => setTypeColor(t, e.target.value)}
-              title={`Colour: ${TYP_LABELS[t]} — tints the nodes, their card ridge and the index numbers`}
-              className="graph-swatch"
-              style={{ color: TYPE_COLORS[t] }}
-            />
-          ))}
-        </div>
-        {timeRange && (
-          <div className="flex items-center gap-2.5 ml-3" title="Time travel — knowledge at the chosen moment. Pick a date for an exact moment, or scrub the slider.">
-            <Clock className="w-3.5 h-3.5" style={{ color: "var(--text-3)" }} />
-            <input
-              type="date"
-              value={liveFilter !== null ? isoLokal(liveFilter) : ""}
-              min={isoLokal(timeRange.min)}
-              max={isoLokal(timeRange.max)}
-              onChange={(e) => {
-                // Datumsgenau: ein gewählter Tag gilt bis zu seinem Ende.
-                if (!e.target.value) { setSliderWert(100); setSliderCommit(100); return; }
-                const [j, m, t] = e.target.value.split("-").map(Number);
-                if (!j || !m || !t) return;
-                const epoch = new Date(j, m - 1, t, 23, 59, 59, 999).getTime();
-                const spanne = timeRange.max - timeRange.min;
-                const anteil = Math.max(0, Math.min(100, ((epoch - timeRange.min) / spanne) * 100));
-                setSliderWert(anteil);
-                setSliderCommit(anteil);
-              }}
-              className="graph-time graph-datum"
-              aria-label="Knowledge as of date"
-            />
-            <input
-              type="range"
-              min={0}
-              max={100}
-              step={0.5}
-              value={sliderWert}
-              onChange={(e) => {
-                const v = Number(e.target.value);
-                setSliderWert(v >= 100 ? 100 : v);
-              }}
-              onPointerUp={() => setSliderCommit(sliderWert)}
-              onTouchEnd={() => setSliderCommit(sliderWert)}
-              onKeyUp={() => setSliderCommit(sliderWert)}
-              onBlur={() => setSliderCommit(sliderWert)}
-              className="graph-time"
-              aria-label="Time of the knowledge shown"
-            />
-            <span className="hud-label whitespace-nowrap tnum" style={liveFilter !== null ? { color: "var(--accent)" } : undefined}>
-              {liveFilter === null ? "Now" : new Date(liveFilter).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" })}
-            </span>
-            {liveFilter !== null && (
-              <button onClick={() => { setSliderWert(100); setSliderCommit(100); }} className="btn-ghost px-1.5 py-0.5 rounded text-[10px]">Today</button>
-            )}
-          </div>
-        )}
-        <div className="flex items-center gap-1 ml-auto">
-          <span className="hud-label tnum hidden md:inline-block mr-1" title="Current zoom">
-            {Math.round(zoomAnzeige * 100)} %
-          </span>
-          <button onClick={() => zoom(1.25)} className="btn-ghost p-2 rounded-lg" title="Zoom in"><ZoomIn className="w-4 h-4" /></button>
-          <button onClick={() => zoom(0.8)} className="btn-ghost p-2 rounded-lg" title="Zoom out"><ZoomOut className="w-4 h-4" /></button>
-          <button onClick={fitView} className="btn-ghost p-2 rounded-lg" title="Fit the whole graph into view"><Maximize2 className="w-4 h-4" /></button>
-          {angeheftet > 0 && (
+          +{zeitAchse.spaeter.length} later
+        </span>
+      )}
+      {zeitStandMs !== null && (
+        <button
+          onClick={() => setzeSlider(100)}
+          className="btn-ghost px-1.5 py-0.5 rounded text-[10px] ml-1"
+          title="Back to now"
+        >
+          Today
+        </button>
+      )}
+    </span>
+  );
+  const zeitRegler = (
+    <span
+      className="inline-flex items-center gap-1.5 shrink-0"
+      title={
+        zeitAchse
+          ? `Scrub the time — left is ${datumKurz(zeitAchse.min)}, right is today`
+          : "Scrub the time"
+      }
+    >
+      <Clock className="w-3.5 h-3.5 shrink-0" style={{ color: "var(--text-3)" }} />
+      <input
+        type="range"
+        min={0}
+        max={100}
+        step={0.5}
+        value={sliderWert}
+        onChange={(e) => setSliderWert(Number(e.target.value) >= 100 ? 100 : Number(e.target.value))}
+        onPointerUp={() => setSliderCommit(sliderWert)}
+        onTouchEnd={() => setSliderCommit(sliderWert)}
+        onKeyUp={() => setSliderCommit(sliderWert)}
+        onBlur={() => setSliderCommit(sliderWert)}
+        className="graph-time"
+        /* Der Name bleibt der alte, unverstaendliche Satz ohne Anhaengsel:
+           sechs Tests und F8s Messstrasse fassen den Regler ueber ihn. Die
+           Skalenenden stehen im `title` derselben Gruppe — Auskunft ja, aber
+           nicht auf Kosten des Griffes. */
+        aria-label="Time of the knowledge shown"
+      />
+    </span>
+  );
+  const datumsFeld = (
+    <input
+      type="date"
+      value={zeitStandMs !== null ? isoLokal(zeitStandMs) : ""}
+      min={zeitAchse ? isoLokal(zeitAchse.min) : undefined}
+      max={zeitAchse ? isoLokal(zeitAchse.heute) : undefined}
+      onChange={(e) => setzeDatum(e.target.value)}
+      className="graph-time graph-datum shrink-0"
+      aria-label="Knowledge as of date"
+      title="An exact moment — the scale never runs past today"
+    />
+  );
+  const zoomReihe = (
+    <div className="flex items-center gap-1 shrink-0">
+      <span className="hud-label tnum hidden md:inline-block mr-1" title="Current zoom">
+        {Math.round(zoomAnzeige * 100)} %
+      </span>
+      <button onClick={() => zoom(1.25)} className="btn-ghost p-2 rounded-lg" title="Zoom in"><ZoomIn className="w-4 h-4" /></button>
+      <button onClick={() => zoom(0.8)} className="btn-ghost p-2 rounded-lg" title="Zoom out"><ZoomOut className="w-4 h-4" /></button>
+      <button onClick={fitView} className="btn-ghost p-2 rounded-lg" title="Fit the whole graph into view"><Maximize2 className="w-4 h-4" /></button>
+      {angeheftet > 0 && (
+        <button
+          onClick={loeseAlle}
+          className="btn-ghost px-2 py-1 rounded-lg text-[11px] whitespace-nowrap"
+          style={{ color: "var(--accent)" }}
+          title="Nodes you dragged stay where you put them. This releases them back into the layout."
+        >
+          Release {angeheftet} pinned
+        </button>
+      )}
+    </div>
+  );
+  const sucheBlock = (
+    <>
+      <div className="relative flex-1 min-w-[150px] max-w-sm" data-testid="graph-suche">
+        <Search className="w-3.5 h-3.5 absolute left-2.5 top-1/2 -translate-y-1/2" style={{ color: "var(--text-3)" }} />
+        <input
+          value={filter}
+          onChange={(e) => setFilter(e.target.value)}
+          onKeyDown={onSucheKeyDown}
+          placeholder="Filter the graph…"
+          aria-describedby="graph-search-count"
+          className="hud-input w-full pl-8 pr-3 py-2 rounded-lg text-sm"
+          aria-label="Filter the graph"
+        />
+      </div>
+      {/* Der Zaehler ist ein eigenes Glied der Zeile, nicht ein Kind des
+          Feldumrisses: E1s A7-07-Regel (.flaeche-huelle div:has(> #graph-search-count),
+          index.css:955) greift auf das Element, das den Zaehler direkt traegt,
+          und setzt ihm `min-width: 0` — in einem Umriss um das Feld hat das den
+          Suchraum bei 1 440 px auf null Breite gequetscht (gemessen 10.10.:
+          rect [285,73,0,38]). Gezahlt wird, was im Bild steht. */}
+      <div
+        id="graph-search-count"
+        data-testid="graph-search-count"
+        className="hud-label tnum shrink-0"
+        style={{ color: "var(--text-3)" }}
+        aria-live="polite"
+      >
+        {filter.trim() === ""
+          ? ""
+          : trefferIds.length === 0
+            ? "No match"
+            : trefferZeiger < 0
+              ? `${trefferIds.length} match${trefferIds.length === 1 ? "" : "es"}`
+              : `${trefferZeiger + 1} of ${trefferIds.length}`}
+      </div>
+    </>
+  );
+  /** Schienen = Auswahl. */
+  const schieneAnsicht = (
+    <div className="apple-seg shrink-0" role="group" aria-label="Graph layout" data-testid="graph-schiene-ansicht">
+      {segment(ansicht === "force", "Force view — the links as they are claimed; similarity only on request", () => wechsleAnsicht("force"), "Force")}
+      {segment(ansicht === "dendrogram", "Dendrogram — knowledge as a tree: root → type → entity → note", () => wechsleAnsicht("dendrogram"), "Tree")}
+      {segment(ansicht === "semantic", "Semantic map — the same notes placed by their vectors. Distance is meaning, computed once and always the same way.", () => wechsleAnsicht("semantic"), "Semantic")}
+    </div>
+  );
+  const schieneNamen = (
+    <div className="apple-seg shrink-0" role="group" aria-label="Density of names" data-testid="graph-schiene-namen">
+      {STUFEN_FOLGE.map((m) =>
+        segment(etikettenModus === m, NAMEN_STUFE[m].erklaerung, () => setzeEtiketten(m), NAMEN_STUFE[m].wort))}
+    </div>
+  );
+  const schieneKanal = (
+    <div className="apple-seg shrink-0" role="group" aria-label="Node colour channel" data-testid="graph-schiene-kanal">
+      {segment(aktiverKanal === "typ", "Colour by kind of knowledge — facts, events, how-tos, documents. What the graph starts with.", () => wechsleKanal("typ"), "Type")}
+      {segment(
+        aktiverKanal === "herkunft",
+        herkunft.verfügbar
+          ? `Colour by where notes came from — ${herkunft.arten.length} kinds in this base: ${herkunft.arten.map((a) => HERKUNFT_LABELS[a]).join(", ")}`
+          : herkunft.grund,
+        () => wechsleKanal("herkunft"),
+        "Provenance",
+        !herkunft.verfügbar
+      )}
+    </div>
+  );
+  const farbenReihe = (
+    <div className="flex items-center gap-0.5 shrink-0" title="Node colours — each colour tints its type across the graph, cards and index">
+      {(["semantic", "episodic", "procedural", "reference"] as const).map((t) => (
+        <input
+          key={t}
+          type="color"
+          value={TYPE_COLORS[t]}
+          onChange={(e) => setTypeColor(t, e.target.value)}
+          title={`Colour: ${TYP_LABELS[t]} — tints the nodes, their card ridge and the index numbers`}
+          className="graph-swatch"
+          style={{ color: TYPE_COLORS[t] }}
+        />
+      ))}
+    </div>
+  );
+  const schalterAehnlichkeit = schalter(ahnlichkeit, "Show similarity links — guesses from shared tags and titles, off by default", () => setAhnlichkeit((v) => !v), "Similar");
+  const schalterSelbst = schalter(selbstkaanten, "Self claims — a concept talking about itself, looped at its own node. Off by default.", wechsleSelbstkaanten, "Self");
+  const schalterRichtung = schalter(richtung, "Claim direction — each link runs from its wide end to its narrow one. Off shows plain lines.", wechsleRichtung, "Direction", <ChevronRight className="w-3.5 h-3.5" />);
+  const schalterSchema = schalter(schemaOffen, "Schema — what the store holds: kinds, concepts, claims. The counts beside the picture stay the picture's.", () => {
+    const neu = !schemaOffen;
+    setSchemaOffen(neu);
+    if (neu) setzeMehrOffen(false);
+  }, "Schema");
+  const schalterKrafte = schalter(krafteOffen, "Forces — how hard the field gathers, repels and spaces itself, and how big the nodes are. The picture keeps its place while it settles.", () => {
+    const neu = !krafteOffen;
+    setzeKrafteOffen(neu);
+    if (neu) setzeMehrOffen(false);
+  }, "Forces", <SlidersHorizontal className="w-3.5 h-3.5" />);
+
+  /** Ein Geraet, gerufen nach dem Glied, das die Zeile nicht trug. */
+  const geraet = (g: Leistenglied): ReactNode => {
+    switch (g) {
+      case "suche": return sucheBlock;
+      case "ansicht": return schieneAnsicht;
+      case "namen": return schieneNamen;
+      case "kanal": return schieneKanal;
+      case "farben": return farbenReihe;
+      case "aehnlichkeit": return schalterAehnlichkeit;
+      case "selbst": return schalterSelbst;
+      case "richtung": return schalterRichtung;
+      case "schema": return schalterSchema;
+      case "krafte": return schalterKrafte;
+      case "zeitstand": return zeitStand;
+      case "zeitregler": return zeitRegler;
+      case "datum": return datumsFeld;
+      case "zoom": return zoomReihe;
+    }
+  };
+  /**
+   * Die Erklaerung neben dem Geraet, sobald es im Menue steht.
+   *
+   * A8-08 hat gezaehlt: 21 von 22 Erklaerungen der Leiste steckten in einem
+   * `title`, also hinter einer Sekunde Schweben. Im Menue sind sie Text — die
+   * Auskunft, die die Zeile nicht unterbringen konnte, wird nicht wieder ein
+   * Tooltip.
+   */
+  const erklaerung = (g: Leistenglied): string => {
+    switch (g) {
+      case "suche": return "Only the matching notes stay in the picture — the rest leaves it.";
+      case "ansicht": return "Which picture: claims as a field, knowledge as a tree, meaning as a map.";
+      case "namen": return `Density of names. Now: ${NAMEN_STUFE[etikettenModus].wort.toLowerCase()} — ${NAMEN_STUFE[etikettenModus].erklaerung.toLowerCase()}.`;
+      case "kanal": return "What the colours mean: kind of knowledge, or where the note came from.";
+      case "farben": return "The four kind colours, reused by the cards and the index.";
+      case "aehnlichkeit": return "Similarity links are guesses from shared tags and titles. Off, the graph claims nothing.";
+      case "selbst": return "A concept talking about itself, looped at its own node.";
+      case "richtung": return "Wide end = who claims, narrow end = of whom. Below 50 % zoom the wedge is too small to draw, and the legend says so.";
+      case "schema": return "What the store holds: kinds, concepts, claims.";
+      case "krafte": return "How hard the field gathers, repels and spaces itself.";
+      default: return "";
+    }
+  };
+  return (
+    <div className="relative flex flex-col h-full min-h-0">
+      {/* Die Leiste: EINE Zeile, und was nicht hineinpasst, ist ein Knopf mit
+          einer Zahl — kein seitlicher Rollner, der Bedienelemente ausserhalb
+          des Fensters legt (D1-01, Z-03).
+
+          Gemessen am vorher-Stand (400 Notizen, 1 440 px,
+          `e2-rohdaten/e2-400-leiste.json`): die Zeile war 1 132 px breit und
+          trug 1 680 px. Ausserhalb des Fensters lagen Datumsfeld (+191 px),
+          Zeitregler (+333 px) und alle drei Zoom-Knoepfe (+433 bis +509 px);
+          auf keinen von ihnen antwortete `elementFromPoint`. Die Flaeche zeigt
+          ein Gedaechtnis, das man durch die Zeit blaettern kann, und das Blatt,
+          das sagt, welche Zeit eingestellt ist und wie weit man herausgezoomt
+          hat, war ausser Reichweite.
+
+          Der Abbau folgt einer Rangfolge, und ihre Ordnung ist die Reihenfolge
+          der Fragen, die diese Flaeche beantwortet — nicht die Reihenfolge der
+          Knoepfe: wo stehe ich (Zoom), wann (Zeitstand), welches Bild
+          (Ansicht), wie viel ist benannt (Dichte), finden. */}
+      <div
+        ref={leistenMessen}
+        data-testid="graph-leiste"
+        className="relative flex items-center gap-2 px-2 py-3 shrink-0 flex-nowrap"
+        onKeyDown={(e) => {
+          if (e.key === "Escape" && mehrOffen) {
+            e.stopPropagation();
+            setzeMehrOffen(false);
+          }
+        }}
+      >
+        {drin("suche") && sucheBlock}
+        {drin("ansicht") && schieneAnsicht}
+        {drin("namen") && schieneNamen}
+        {drin("richtung") && schalterRichtung}
+        {drin("aehnlichkeit") && schalterAehnlichkeit}
+        {drin("selbst") && schalterSelbst}
+        {drin("schema") && schalterSchema}
+        {drin("krafte") && schalterKrafte}
+        {drin("kanal") && schieneKanal}
+        {drin("farben") && farbenReihe}
+        <div className="flex items-center gap-2 ml-auto shrink-0">
+          {zeitAchse && drin("zeitstand") && zeitStand}
+          {zeitAchse && drin("datum") && datumsFeld}
+          {zeitAchse && drin("zeitregler") && zeitRegler}
+          {drin("zoom") && zoomReihe}
+          {plan.menue.length > 0 && (
             <button
-              onClick={loeseAlle}
-              className="btn-ghost px-2 py-1 rounded-lg text-[11px] whitespace-nowrap"
-              style={{ color: "var(--accent)" }}
-              title="Nodes you dragged stay where you put them. This releases them back into the layout."
+              type="button"
+              onClick={() => {
+                const neu = !mehrOffen;
+                setzeMehrOffen(neu);
+                // Eine Klappe nach der andern: das Bild soll nicht hinter drei
+                // Ueberschichten verschwinden.
+                if (neu) {
+                  setSchemaOffen(false);
+                  setzeKrafteOffen(false);
+                }
+              }}
+              aria-expanded={mehrOffen ? "true" : "false"}
+              aria-controls="graph-mehr-panel"
+              className="btn-ghost px-2 py-1.5 rounded-lg text-[11px] inline-flex items-center gap-1.5 whitespace-nowrap shrink-0"
+              title={`${plan.menue.length} controls do not fit this row — they are here, each with its explanation`}
+              data-testid="graph-mehr"
             >
-              Release {angeheftet} pinned
+              {/* Kein Punkt: der ist das Zeichen eines Schalters, und das hier
+                  ist eine Klappe — ihre Antwort ist das Panel selbst. */}
+              More ({plan.menue.length})
             </button>
           )}
         </div>
       </div>
+      {/* Das Menue: die Geraete vollstaendig, und die Zeile, die vorher nur im
+          Schwebetext stand, als Text.
+
+          Es haengt als Schicht unter der Zeile, im Rahmen der Flaeche — nicht im
+          Rollner der Zeile selbst (E1s A7-07-Regel, index.css:955, giebt ihr
+          `overflow-x: auto`, und der schnitte jede absolute Schicht ab), und
+          nicht im Fluss unter ihr: ein Streifen im Fluss macht die Leinwand
+          kuerzer, die Leinwand meldet ihren neuen Rahmen, und der Fit rückt die
+          Kamera — gemessen 10.10.: das Menue aufgemacht und aus 27 % Zoom wurden
+          9 %. Eine Klappe darf nicht umziehen. */}
+      {mehrOffen && plan.menue.length > 0 && (
+        <div
+          id="graph-mehr-panel"
+          role="group"
+          aria-label="Controls that did not fit the row"
+          data-testid="graph-mehr-panel"
+          className="hud-panel absolute left-2 right-2 top-[47px] z-30 rounded-lg px-3 py-2 space-y-2 max-h-[55%] overflow-y-auto"
+        >
+          <div className="flex items-center justify-between gap-3">
+            <div className="hud-label" style={{ color: "var(--text-2)" }}>
+              {plan.menue.length} out of the row — everything here works the same
+            </div>
+            <button onClick={() => setzeMehrOffen(false)} className="btn-ghost px-2 py-0.5 rounded text-[11px]" title="Close">
+              Close
+            </button>
+          </div>
+          {plan.menue.map((g) => (
+            <div key={g} className="flex flex-wrap items-center gap-x-3 gap-y-1" data-testid={`graph-mehr-${g}`}>
+              <div className="shrink-0">{geraet(g)}</div>
+              {erklaerung(g) && (
+                <span className="hud-label" style={{ color: "var(--text-2)" }}>{erklaerung(g)}</span>
+              )}
+            </div>
+          ))}
+        </div>
+      )}
 
       <div
         ref={containerRef}
@@ -3327,6 +4074,21 @@ export function KnowledgeGraph({ memories, onSelectMemory, onSelectConcept, sich
           data-testid="graph-legende"
           className="absolute left-3 bottom-3 hud-panel rounded-lg px-3 py-2 pointer-events-none space-y-1"
         >
+          {/* Was im Bild steht. Die Zahlengruppe sass bisher am Ende der Leiste
+              und war damit das erste, was aus dem Fenster fiel (D1-01), und das
+              Umbruchen ihrer laengsten Form nahm der Leinwand 42 px (A7-07).
+              Sie gehoert zu dem, was die Flaeche ueber sich selbst sagt — und
+              das steht an der Legende, nicht an dem, was man anklicken will.
+              Gezaehlt wird, was im Bild steht, nicht was die Datenbank
+              hergeben wuerde; beide Ansichten nennen dasselbe Paar, weil sie
+              dasselbe Netz meinen. */}
+          <div className="hud-label tnum" data-testid="graph-kopf">
+            {bildZaehlung.knoten} {bildZaehlung.knoten === 1 ? "note" : "notes"} ·{" "}
+            {netz.knoten.length} {netz.knoten.length === 1 ? "concept" : "concepts"} ·{" "}
+            {ansicht === "dendrogram"
+              ? `${baumLayout.edges.length} ${baumLayout.edges.length === 1 ? "link" : "links"}`
+              : `${kanten.echt} ${kanten.echt === 1 ? "link" : "links"}${aehnlichkeitsZeile(kanten.aehnlichkeit, edges.length, zoomAnzeige)}`}
+          </div>
           <div className="flex items-center gap-3 hud-label">
             {/* Die Legende erklärt den Kanal, der gerade färbt — nicht den, den
                 man eben abgeschaltet hat. */}
@@ -3344,6 +4106,16 @@ export function KnowledgeGraph({ memories, onSelectMemory, onSelectConcept, sich
           </div>
           {/* Was in der Scheibe steht, erklaert an der Stelle, die die Farben nennt. */}
           <div className="hud-label" style={{ color: "var(--text-2)" }}>{uiT("legend.glyph")}</div>
+          {/* Was die drei Geschichtszeichen bedeuten — nur wo eines im Bild
+              steht. A8-05: der gestrichelte Ring, die leisere Tinte und der
+              Akzentring trugen die ganze Geschichtlichkeit des Bestands und
+              kamen in keiner Zeile vor. */}
+          <div
+            className="hud-label"
+            data-testid="graph-zustaende"
+            ref={zustandRef}
+            style={{ color: "var(--text-2)", display: "none" }}
+          />
           <div className="flex items-center gap-3 hud-label">
             <svg width="26" height="6"><line x1="0" y1="3" x2="26" y2="3" stroke="var(--accent)" strokeWidth="2" /></svg>{" "}
             {ansicht === "dendrogram" ? uiT("legend.hierarchy") : uiT("legend.claim")}
@@ -3372,10 +4144,38 @@ export function KnowledgeGraph({ memories, onSelectMemory, onSelectConcept, sich
           {dichteZeile && (
             <div className="hud-label tnum" style={{ color: "var(--text-2)" }}>{dichteZeile}</div>
           )}
+          {/* Wie viele der entfalteten Notizen wirklich im Bild stehen. Der Baum
+              zoomt sich nicht mehr unter die Lesbarkeit, also liegt bei grossen
+              Bestaenden ein Teil ausserhalb — und das steht dazu, statt dass die
+              Zahl im Kopf des Nutzers still schwindet. */}
+          <div
+            className="hud-label tnum"
+            data-testid="graph-im-bild"
+            ref={imRahmenRef}
+            style={{ color: "var(--text-2)", display: "none" }}
+          />
+          {/* Wie viele Knoten im Bild einen Titel tragen. Der Mal-Pass schreibt
+              die Zahl, weil sie eine Beobachtung des gemalten Bildes ist, keine
+              Rechnung vor dem Bild — und weil sie sich mit jedem Schwenk aendern
+              kann, ohne dass die Flaeche dafuer neu zeichnen muss. */}
+          <div
+            className="hud-label tnum"
+            data-testid="graph-benannt"
+            ref={benanntRef}
+            style={{ color: "var(--text-2)", display: "none" }}
+          />
+          {/* Was die Bildflaechen-Kappe des Feldes hat fallen lassen. Auch das
+              steht am Rand, damit das duenne Bild nicht als volles Bild gilt. */}
+          <div
+            className="hud-label tnum"
+            data-testid="graph-kappen"
+            ref={kappenRef}
+            style={{ color: "var(--text-2)", display: "none" }}
+          />
           {autoZiffern > 0 && (
             <button
               onClick={() => setEntfaltet(new Set(autoFaltung))}
-              className="hud-label text-left w-fit"
+              className="hud-label text-left w-fit pointer-events-auto"
               style={{ color: "var(--accent)" }}
               title="Every gathered group opens — the tree grows past the canvas again, and pan and zoom are yours"
             >

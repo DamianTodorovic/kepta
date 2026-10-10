@@ -28,6 +28,16 @@ export interface Leinwand {
   /** Alle gezeichneten Texte. */
   texte(): { text: string; x: number; y: number }[];
   /**
+   * Texte des letzten Bildes MIT ihrer Groesse auf dem Schirm.
+   *
+   * Die transformierte Leinwand kennt keine Buchstaben, sondern nur Aufrufe: ein
+   * Etikett mit `font = 15px` ist bei 0,12 Zoom 1,8 Bildpunkte hoch. Wer die
+   * Lesbarkeit pruefen will, muss die Schriftgroesse durch die Transformation
+   * rechnen — genau so, wie A7s Mal-Rekorder im Browser es tut (`sx = |t.a|/dpr`).
+   * Ohne diese Grenze gilt ein 1,4-px-Titel im Test als 15 px.
+   */
+  schriften(): { text: string; x: number; y: number; px: number; schrift: number }[];
+  /**
    * Nur die Aufrufe des LETZTEN Bildes. Jedes Bild beginnt mit clearRect —
    * ohne diese Grenze zaehlt man ueber mehrere Bilder hinweg und misst Unsinn.
    */
@@ -141,6 +151,34 @@ export function installiereLeinwand(): Leinwand {
       aufrufe
         .filter((a) => a.op === "fillText")
         .map((a) => ({ text: String(a.args[0]), x: Number(a.args[1]), y: Number(a.args[2]) })),
+    /**
+     * Die Transformation des letzten Bildes nachgespielt: pro fillText die
+     * Groesse, die der Mensch auf dem Schirm sieht.
+     *
+     * Geraetet wird nur, was die Flaeche tatsaechlich aufruft — `setTransform`
+     * setzt, `scale` verletzt, `save`/`restore` stapeln. Der Faktor geteilt durch
+     * devicePixelRatio ist dieselbe Rechnung wie im Rekorder der Messstrasse.
+     */
+    schriften: () => {
+      const rahmen = buch.letzterRahmen();
+      const dpr = (globalThis as unknown as { devicePixelRatio?: number }).devicePixelRatio || 1;
+      const out: { text: string; x: number; y: number; px: number; schrift: number }[] = [];
+      let sx = 1;
+      const stapel: number[] = [];
+      let schrift = 12;
+      for (const a of rahmen) {
+        if (a.op === "setTransform") sx = Math.abs(Number(a.args[0])) || 1;
+        else if (a.op === "scale") sx *= Math.abs(Number(a.args[0])) || 1;
+        else if (a.op === "save") stapel.push(sx);
+        else if (a.op === "restore") sx = stapel.pop() ?? sx;
+        else if (a.op === "set:font") schrift = schriftgroesse(a.args[0]);
+        else if (a.op === "fillText") {
+          const px = (schrift * sx) / dpr;
+          out.push({ text: String(a.args[0]), x: Number(a.args[1]), y: Number(a.args[2]), px, schrift });
+        }
+      }
+      return out;
+    },
     letzterRahmen: () => {
       let start = 0;
       for (let i = aufrufe.length - 1; i >= 0; i--) if (aufrufe[i].op === "clearRect") { start = i; break; }

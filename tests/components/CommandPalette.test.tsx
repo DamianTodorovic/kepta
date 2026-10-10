@@ -36,7 +36,10 @@ describe("CommandPalette", () => {
   it("zeigt Leermeldung ohne Treffer", async () => {
     render(<CommandPalette open onClose={() => {}} actions={actions()} />);
     await userEvent.type(screen.getByPlaceholderText(/Command or search/), "zzz-nichts");
-    expect(screen.getByText(/No matches/)).toBeInTheDocument();
+    expect(screen.getByText(/Nothing here answers/)).toBeInTheDocument();
+    // Die Satzung für leere Zustände: Grund, Ausweg, nächste Tür — nicht nur
+    // die Feststellung, dass nichts passt.
+    expect(screen.getByText(/first letters of a command/)).toBeInTheDocument();
   });
 
   it("führt Aktion per Klick aus und schließt", async () => {

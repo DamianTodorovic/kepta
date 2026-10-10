@@ -10,11 +10,31 @@ import {
   layoutDendrogram,
   stepDendrogram,
   vorschlagFaltung,
+  zeilenKMin,
+  FALTUNG_HALTE_NOTIZEN,
+  FALTUNG_MIN_NOTIZEN,
   GLIDE_EPSILON,
   TYP_LABELS,
   type HierarchieKnoten,
 } from "../../src/lib/graphHierarchy";
 import type { Memory } from "../../src/types";
+
+/**
+ * Notizen, die nach einer Faltung noch als Zeile im Bild stehen.
+ *
+ * Am BAUM abgelaufen, nicht an den Layout-Knoten abgelesen: `istStruktur` erkennt
+ * nur diepraefixierten Knoten der echten Flaeche („__ent:..."), die Test-Fixturen
+ * heissen aber „g0-1" — und zaehlten ihre Gruppen als Notizen.
+ */
+function offeneNotizen(baum: HierarchieKnoten, ids: readonly string[]): number {
+  const gefaltet = new Set(ids);
+  const zahl = (k: HierarchieKnoten): number => {
+    if (k.children.length === 0) return 1;
+    if (gefaltet.has(k.id)) return 0;
+    return k.children.reduce((n, c) => n + zahl(c), 0);
+  };
+  return zahl(baum);
+}
 
 function mem(over: Partial<Memory> = {}): Memory {
   return {
@@ -429,11 +449,28 @@ describe("vorschlagFaltung: der Baum faltet sich, was er nicht zeigen kann", () 
     expect(ids[0], `zuerst: ${ids.join(", ")}`).toBe("gross");
   });
 
-  it("hält die sichtbaren Zeilen im Rahmen", () => {
+  it("hält die sichtbaren Zeilen im Rahmen — oder nennt die Gruppe, die er nicht zumuten darf", () => {
+    // Zwei Zusagen, die sich nicht immer halten lassen: Zeilen im Rahmen UND
+    // Notizen im Bild. Eine Gruppe ist atomar — bei 20 Gruppen zu 20 Notizen und
+    // einem Rahmen von 20 Zeilen steht die Struktur allein schon bei 22, und
+    // die letzte offene Gruppe kostet 20 Zeilen mehr.
+    //
+    // Die Flaeche faellt dann nicht zurueck ins Leere (A7-01, gemessen
+    // „Showing 0 of 60 notes"), sondern ueberschreitet den Rahmen — und genau
+    // das ist die Prufung: der Rahmen gilt, SOLANGE eine Faltung die letzte
+    // Notiz nicht frisst. Die Kamera nimmt den Rest mit.
     const b = baum(Array.from({ length: 20 }, () => 20));
     for (const rahmen of [60, 34, 20, 12]) {
       const ids = vorschlagFaltung(b, rahmen);
-      expect(zeilen(b, ids), `Rahmen ${rahmen}: ${ids.length} Faltungen, ${zeilen(b, ids)} Zeilen`).toBeLessThanOrEqual(rahmen);
+      const zeilen = layoutDendrogram(b, { eingeklappt: new Set(ids) }).nodes.length;
+      const imBild = offeneNotizen(b, ids);
+      expect(imBild, `Rahmen ${rahmen}: keine Notiz mehr im Bild`).toBeGreaterThanOrEqual(FALTUNG_HALTE_NOTIZEN);
+      // Haette die Faltung noch eine Gruppe nehmen duerfen, ohne die Zusage zu
+      // brechen? Nein => der Überhang ist erzwungen, nicht Nachlaessigkeit.
+      const nochEine = b.children[0].children
+        .filter((k) => !ids.includes(k.id))
+        .some((k) => offeneNotizen(b, [...ids, k.id]) >= FALTUNG_HALTE_NOTIZEN);
+      expect(zeilen <= rahmen || !nochEine, `Rahmen ${rahmen}: ${ids.length} Faltungen, ${zeilen} Zeilen, ${imBild} Notizen, nochEine=${nochEine}`).toBe(true);
     }
   });
 
@@ -442,12 +479,17 @@ describe("vorschlagFaltung: der Baum faltet sich, was er nicht zeigen kann", () 
     expect(vorschlagFaltung(b, 2)).not.toContain("__wurzel");
   });
 
-  it("gibt die größtmögliche Faltung, wenn auch sie nicht passt", () => {
+  it("gibt die größtmögliche Faltung, ohne die letzte Notiz zu nehmen", () => {
     const b = baum(Array.from({ length: 6 }, () => 10), 4);
     const ids = vorschlagFaltung(b, 1);
-    // Was übrig bleibt: die Wurzel und ihre vier Typen — tiefer geht nicht,
-    // ohne die Identität des Baums zu verschließen.
-    expect(zeilen(b, ids), `Rahmen 1: ${zeilen(b, ids)} Zeilen`).toBe(5);
+    // Vorher blieb die Wurzel mit ihren vier Typen — 5 Zeilen, null Notizen.
+    // Was der Baum einem leeren Bild vorzieht: eine Gruppe steht offen, und die
+    // Bilanz sagt, was hinter den 23 Malzeichen liegt.
+    expect(ids.some((id) => id.startsWith("__typ:")), `Typ gefaltet: ${ids.join(", ")}`).toBe(false);
+    const offen = b.children.flatMap((t) => t.children).filter((g) => !ids.includes(g.id));
+    expect(offen.length, "wie viele Gruppen offen stehen").toBe(1);
+    const imBild = offeneNotizen(b, ids);
+    expect(imBild, "Notizen im Bild").toBe(10);
   });
 
   it("faltet nichts, was schon gefaltet ist", () => {
@@ -461,5 +503,102 @@ describe("vorschlagFaltung: der Baum faltet sich, was er nicht zeigen kann", () 
   it("nennt denselben Vorschlag, wenn der Bestand derselbe ist", () => {
     const b = baum([12, 7, 30, 4], 2);
     expect(vorschlagFaltung(b, 15)).toEqual(vorschlagFaltung(b, 15));
+  });
+});
+
+// A7-01: der Baum zeigt ab 60 Notizen keine einzige Notiz. Gemessen im echten// Browser (audit-2026-10-09, A7 Tabelle D und `knopf-*.json`): die Bilanzzeile
+// sagt selbst „Showing 0 of 60 notes · Gathered to fit: 60 notes under 15
+// groups", und der einzige Rueckweg sitzt unter `pointer-events: none`.
+// Die Ursache ist die Gier der Faltung: reicht die tiefste Ebene nicht, nimmt
+// sie die Typ-Ebene — und fuehrt damit den ganzen Baum in eine Klammer.
+describe("vorschlagFaltung: die Faltung laesst den Baum nicht leer zurück", () => {
+  const zweig = (id: string, blaetter: number): HierarchieKnoten => ({
+    id, kind: "entity", label: id,
+    children: Array.from({ length: blaetter }, (_, i) => ({
+      id: `${id}-n${i}`, kind: "memory" as const, label: `${id} Notiz ${i}`, children: [],
+    })),
+  });
+  const baum = (gruppen: number[], typen = 1): HierarchieKnoten => ({
+    id: "__wurzel", kind: "root", label: "Wurzel",
+    children: Array.from({ length: typen }, (_, t) => ({
+      id: `__typ:${t}`, kind: "type" as const, label: `Typ ${t}`,
+      children: gruppen.map((g, i) => zweig(`g${t}-${i}`, g)),
+    })),
+  });
+  /** Notizen, die nach der Faltung noch als Zeile im Bild stehen. */
+  const notizenImBild = (b: HierarchieKnoten, ids: string[]) => offeneNotizen(b, ids);
+  const notizenOhneFaltung = (b: HierarchieKnoten) => offeneNotizen(b, []);
+
+  it("faltet die Typ-Ebene nie zu — sie ist die Landkarte, nicht die Masse", () => {
+    // Ein Rahmen, den keine Gruppenfaltung erreichen kann: 40 Notizen an einem
+    // Typ, 40 Zeilen Platz. Die Gier nimmt den Typ — der Baum steht als eine
+    // einzige Klammer da, mit null Notizen.
+    const loser = { id: "__wurzel", kind: "root" as const, label: "Wurzel", children: [
+      { id: "__typ:semantic", kind: "type" as const, label: "Facts", children:
+        Array.from({ length: 40 }, (_, i) => ({ id: `n${i}`, kind: "memory" as const, label: `Notiz ${i}`, children: [] })) },
+    ] };
+    const ids = vorschlagFaltung(loser, 40);
+    expect(ids, `Typ gefaltet: ${ids.join(", ")}`).not.toContain("__typ:semantic");
+    expect(notizenImBild(loser, ids), "der Baum steht ohne einzige Notiz da").toBeGreaterThan(0);
+  });
+
+  it("lässt immer mindestens eine Notiz im Bild, egal wie knapp der Rahmen ist", () => {
+    for (const [typen, gruppen] of [[4, [4, 4, 4, 4, 4, 4, 4, 4, 4, 4]], [4, [20, 20, 20, 20, 20, 20, 20, 20, 20, 20]]] as const) {
+      const b = baum([...gruppen], typen);
+      const gesamt = notizenOhneFaltung(b);
+      for (const rahmen of [12, 8, 4, 2, 1]) {
+        const ids = vorschlagFaltung(b, rahmen);
+        const imBild = notizenImBild(b, ids);
+        expect(imBild, `${gesamt} Notizen, Rahmen ${rahmen}: ${ids.length} Faltungen, ${imBild} Notizen im Bild`)
+          .toBeGreaterThanOrEqual(FALTUNG_HALTE_NOTIZEN);
+      }
+    }
+  });
+
+  it("faltet keine Gruppe, die nur eine oder zwei Notizen verbirgt", () => {
+    // Ein ×N-Badge ueber einer Gruppe, die eine Notiz enthaelt, ist ein
+    // Rueckweg, der zu einem Drittel costs: die Zeile spaeter, der Inhalt
+    // derselbe. Faltung lohnt erst ab drei Notizen.
+    const b = baum([1, 1, 1, 1, 1, 1, 1, 2, 2, 30], 1);
+    const ids = vorschlagFaltung(b, 20);
+    for (const id of ids) {
+      const gruppe = b.children[0].children.find((k) => k.id === id)!;
+      expect(gruppe.children.length, `${id} verbirgt nur ${gruppe.children.length} Notiz(en)`).toBeGreaterThanOrEqual(FALTUNG_MIN_NOTIZEN);
+    }
+  });
+
+  it("sagt die Wahrheit ueber die Bilanz: gefaltete Notizen zaehlen", () => {
+    // Die Zeile „Gathered to fit: N notes under M groups" traegt die Zahl der
+    // versteckten Notizen. Was sie verspricht, muss der Vorschlag halten: nie
+    // mehr verstecken, als ihm von der Flaeche abverlangt wird.
+    const b = baum([10, 10, 10, 10], 1);
+    const ids = vorschlagFaltung(b, 25);
+    const versteckt = b.children[0].children
+      .filter((k) => ids.includes(k.id))
+      .reduce((n, k) => n + k.children.length, 0);
+    expect(notizenImBild(b, ids) + versteckt).toBe(notizenOhneFaltung(b));
+    expect(notizenImBild(b, ids)).toBeGreaterThanOrEqual(1);
+  });
+});
+
+// F8-N1 (Sichtpruefung der QA-Leitung am Bild `400-baum-nach-1440.png`):
+// der Baum nach der Faltungsreparatur ist eine HAARLINIE. Die Kamera nimmt
+// heute alle Zeilen hinein, also steht bei 400 Notizen eine Zeile 3 px ueber
+// der naechsten — Etiketten und ×N-Badges liegen unlesbar uebereinander.
+// Der Boden ist eine Rechnung, keine Geschmacksfrage: zwei Zeilen des Baums
+// duerfen auf dem Schirm nicht enger als ZEILEN_LESEBAR px stehen.
+describe("zeilenKMin: der Lesbarkeitsboden des Baums", () => {
+  it("ist der Zoom, bei dem der Blattabstand lesbar wird", () => {
+    expect(zeilenKMin(14, 38)).toBeCloseTo(14 / 38, 6);
+  });
+
+  it("waechst, wenn der Abstand enger wird, und nie ueber 1 hinaus ohne Grund", () => {
+    expect(zeilenKMin(14, 19)).toBeGreaterThan(zeilenKMin(14, 38));
+    expect(zeilenKMin(0, 38)).toBe(0);
+  });
+
+  it("schuetzt vor einem 0er-Abstand statt zu explodieren", () => {
+    expect(zeilenKMin(14, 0)).toBeGreaterThan(1);
+    expect(Number.isFinite(zeilenKMin(14, -5))).toBe(true);
   });
 });

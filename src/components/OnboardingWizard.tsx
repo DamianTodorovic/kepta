@@ -115,11 +115,14 @@ export function OnboardingWizard({ open, onClose, onComplete }: Props) {
   const starterPreview = starterNotes();
 
   return (
-    <div className="fixed inset-0 z-[80] flex items-center justify-center p-4">
-      <motion.div initial={{opacity:0}} animate={{opacity:1}} exit={{opacity:0}} className="absolute inset-0 hud-backdrop" onClick={onClose} />
+    <aside
+      data-testid="wizard-taefelchen"
+      className="wizard-taefelchen relative z-[80] flex min-w-0 my-2.5 mr-2.5"
+      aria-label="Set up KEPTA"
+    >
       <motion.div initial={{scale:0.96, opacity:0}} animate={{scale:1, opacity:1}} exit={{scale:0.96, opacity:0}}
         transition={{ ease: [0.2, 0.8, 0.2, 1], duration: 0.28 }}
-        className="relative w-full max-w-2xl max-h-[86vh] overflow-hidden palette-lens flex flex-col">
+        className="relative w-full h-full max-h-full overflow-hidden palette-lens flex flex-col">
         {/* Progress */}
         <div className="h-1 w-full flex gap-1 p-1" style={{background:'var(--bg-inset)'}}>
           {[1,2,3,4].map(i=> <div key={i} className="flex-1 rounded-full transition-[width] duration-200" style={{background: step>=i ? 'var(--accent)' : 'var(--bg-inset-strong)'}} />)}
@@ -144,7 +147,10 @@ export function OnboardingWizard({ open, onClose, onComplete }: Props) {
               </div>
               <div>
                 <label className="hud-label block mb-2 flex items-center gap-2"><Target className="w-3.5 h-3.5"/> What you want from KEPTA</label>
-                <input value={goal} onChange={e=>setGoal(e.target.value)} placeholder="e.g. find things faster, keep decisions, stop repeating myself" className="hud-input w-full rounded-xl px-4 py-3 text-sm" />
+                {/* Gemessen: der lange Beispieltext brauchte 387,6 px in 338 px
+                    Raum und schnitt im schmaleren Täfelchen hart ab. Das Beispiel
+                    soll zünden, nicht die Zeile füllen. */}
+                <input value={goal} onChange={e=>setGoal(e.target.value)} placeholder="e.g. find things faster" className="hud-input w-full rounded-xl px-4 py-3 text-sm" />
                 <p className="text-xs mt-2" style={{color:'var(--text-3)'}}>Woven into the system prompt — answers adapt to your goal.</p>
               </div>
               <div className="hud-inset rounded-xl p-3 flex gap-3">
@@ -277,7 +283,7 @@ export function OnboardingWizard({ open, onClose, onComplete }: Props) {
         <div className="p-4 flex items-center justify-between" style={{borderTop:'1px solid var(--border-subtle)'}}>
           <button onClick={()=> step>1 ? setStep((s=> (s-1) as Step)) : onClose()} className="btn-ghost px-4 py-2 rounded-xl text-sm flex items-center gap-2"><ChevronLeft className="w-4 h-4"/>{step===1 ? 'Later' : 'Back'}</button>
           {step<4 ? (
-            <button onClick={()=> setStep((s=> (s+1) as Step))} disabled={step===1 && !name.trim()} className="btn-primary px-6 py-2.5 rounded-xl text-sm flex items-center gap-2 disabled:opacity-40">
+            <button onClick={()=> setStep((s=> (s+1) as Step))} disabled={step===1 && !name.trim()} title={step===1 && !name.trim() ? 'A name first — or leave the setup any time with „Later".' : undefined} className="btn-primary px-6 py-2.5 rounded-xl text-sm flex items-center gap-2 disabled:opacity-40">
               Next <ChevronRight className="w-4 h-4"/>
             </button>
           ) : (
@@ -287,6 +293,6 @@ export function OnboardingWizard({ open, onClose, onComplete }: Props) {
           )}
         </div>
       </motion.div>
-    </div>
+    </aside>
   );
 }

@@ -13,7 +13,7 @@ import { migrateFromLegacyJson } from "../src/core/migrate";
 import { EmbeddingQueue } from "../src/core/embeddings";
 import { aktiviereSuchCacheDelta } from "../src/core/engine";
 import { TOOLS as MCP_TOOLS } from "../src/core/mcp";
-import { createApp } from "./app";
+import { createApp, sichererFehler } from "./app";
 import { resolveDistDir } from "./helfer/pfad";
 
 export { createApp } from "./app";
@@ -78,6 +78,12 @@ export async function startServer() {
       res.sendFile(path.join(distDir, 'index.html'));
     });
   }
+
+  // Express laeuft die Fehler-Schicht ab der Fehlerstelle abwaerts: static, Vite
+  // und der SPA-Fallback liegen NACH createApp, also braucht die Mittelware hier
+  // ihren zweiten Anker — res.sendFile wirft sehr wohl, und sein ENOENT nannte
+  // bisher den absoluten Pfad zu index.html im Antworttext.
+  app.use(sichererFehler);
 
   const server = app.listen(PORT, HOST, () => {
     console.log(`Server running on http://${HOST}:${PORT}${HOST === "127.0.0.1" ? "" : "  (all interfaces — KEPTA_HOST is set explicitly)"}`);

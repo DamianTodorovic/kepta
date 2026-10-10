@@ -503,7 +503,7 @@ describe("Seitenleiste", () => {
     // 09.10.2026 steht darunter auch kein Countdown und kein Werbe-Satz mehr —
     // es gibt weder einen gratis ersten Tag noch einen Schlüssel.
     expect(screen.getAllByText(/^KEPTA$/).length).toBeGreaterThan(0);
-    expect(screen.getByText(/local · private · encrypted/)).toBeTruthy();
+    expect(screen.getByText(/^local · private$/)).toBeTruthy();
     expect(screen.queryByText(/unlimited|key|limit/i)).toBeNull();
   });
 });

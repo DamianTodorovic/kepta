@@ -95,6 +95,7 @@ export const TOOLS = [
         tags: opt({ type: "array", items: { type: "string" }, description: "Tag filter (AND)" }),
         type: opt({ type: "string", enum: ["semantic", "episodic", "procedural", "reference"] }),
         scope: opt(stringSchema("Scope filter, e.g. agent:coder or session:abc")),
+        asOf: opt({ type: "integer", description: "Time travel: search as of these epoch milliseconds, e.g. 1700000000000" }),
       },
       required: ["query"],
     },
@@ -224,12 +225,13 @@ export const TOOLS = [
   {
     name: "memory_consolidate",
     title: "Consolidate memory",
-    description: "Finds duplicates and contradictions by embedding similarity; without dryRun it marks the older copy as superseded.",
+    description: 'Finds duplicates and contradictions by embedding similarity; with dryRun:false it marks the older copy as superseded, and that step needs confirm:"supersede". A superseded memory is weighted down in search — memory_update with supersededBy:null undoes one.',
     inputSchema: {
       type: "object",
       properties: {
         dryRun: opt({ type: "boolean", description: "true = suggestions only (default)", default: true }),
         threshold: opt({ type: "number", description: "Similarity threshold 0..1, default 0.92" }),
+        confirm: opt({ type: "string", description: 'required with dryRun:false — must be exactly "supersede"; without it nothing is applied' }),
       },
     },
     outputSchema: {
@@ -293,6 +295,21 @@ function toInt(v: unknown, def: number, min: number, max: number): number {
   const n = typeof v === "number" ? v : Number(v);
   if (!Number.isFinite(n)) return def;
   return Math.min(Math.max(Math.trunc(n), min), max);
+}
+
+/**
+ * asOf ist epoch Millisekunden. Ein Wert, der keine ganze Zahl ist, wird abgewiesen:
+ * Number("2020-01-01") ist NaN, NaN liest die Engine wie "heute" — der Agent hielt eine
+ * Zeitreise für wirksam, die nie stattfand.
+ */
+function lieseAsOf(wert: unknown): number | undefined {
+  if (wert === undefined || wert === null) return undefined;
+  const roh = typeof wert === "string" ? wert.trim() : wert;
+  const zahl = typeof roh === "number" ? roh : typeof roh === "string" && /^[+-]?\d+$/.test(roh) ? Number(roh) : Number.NaN;
+  if (!Number.isFinite(zahl)) {
+    throw new Error("memory_search: asOf must be epoch milliseconds (an integer), e.g. 1700000000000");
+  }
+  return Math.trunc(zahl);
 }
 
 function memoryToOut(store: KeptaStore, r: ReturnType<KeptaStore["getMemory"]>): Record<string, unknown> {
@@ -383,7 +400,7 @@ function zeigerFürAgenten(store: KeptaStore, supersededBy: string | null): stri
   return supersededBy && store.istPrivat(supersededBy) ? null : supersededBy;
 }
 
-export async function callTool(store: KeptaStore, name: string, args: Record<string, unknown>): Promise<{ content: unknown[]; structuredContent: Record<string, unknown>; isError?: boolean }> {
+export async function callTool(store: KeptaStore, name: string, args: Record<string, unknown>): Promise<{ content: unknown[]; structuredContent?: Record<string, unknown>; isError?: boolean }> {
   const audit = (action: Parameters<typeof store["audit"]>[0], target?: string) => store.audit(action, target);
   try {
     if (name === "memory_search") audit("search", String(args.query ?? ""));
@@ -401,7 +418,7 @@ export async function callTool(store: KeptaStore, name: string, args: Record<str
           tags: Array.isArray(args.tags) ? (args.tags as string[]) : undefined,
           type: (args.type as MemoryType | undefined) ?? undefined,
           scope: args.scope ? String(args.scope) : undefined,
-          asOf: args.asOf !== undefined ? Number(args.asOf) : undefined,
+          asOf: lieseAsOf(args.asOf),
         };
         const res = await searchMemories(store, params);
         const hits = ohnePrivate(res.hits, (h) => h.memory.scope);
@@ -500,6 +517,15 @@ export async function callTool(store: KeptaStore, name: string, args: Record<str
           trash: args.trash === true,
         };
         // Privatheits-Floor: auch ein explizites scope:"private" liefert nichts zurück.
+        //
+        // NICHT auf Kernstand gehoben (F12, 10.10.): der Kern schaetzt `total` neu —
+        // er laeuft durch den gefilterten, privatenfreien Satz und nennt dessen Laenge.
+        // Diese App hat zusaetzlich die Wache (`src/lib/mcpwache.ts:104`), die beim
+        // Agentenkanal bereits `schutz.privat.size` von `total` abzieht, weil hier der
+        // Gesamtbestand geliefert wird. Kern-Fassung plus Wache-Korrektur = dieselbe
+        // Menge **zweimal** gekuerzt: mit einer privaten Notiz im Bestand antwortete die
+        // App `total: 0` statt 1. Also bleibt hier die alte Zahl, und die Heilung ist
+        // an die Wache gekoppelt — sie braucht deren Owner, nicht einen Einzelbau.
         const memories = ohnePrivate(store.listMemories(opts), (m) => m.scope);
         const total = store.countMemories();
         const structured = {
@@ -537,8 +563,18 @@ export async function callTool(store: KeptaStore, name: string, args: Record<str
         return { content: [{ type: "text", text: JSON.stringify(structured, null, 2) }], structuredContent: structured };
       }
       case "memory_consolidate": {
+        // Anwenden ist fuer den Agenten unumkehrbar, der die Ersetzung selbst nicht
+        // rueckgaengig macht — memory_update mit supersededBy:null ist der Rueckweg, und
+        // den gibt es erst seit dieser Aenderung. Deshalb verlangt dryRun:false ein
+        // ausdrueckliches Bestaetigungsfeld.
+        const dryRun = args.dryRun !== false;
+        if (!dryRun && args.confirm !== "supersede") {
+          throw new Error(
+            'memory_consolidate: dryRun:false requires confirm:"supersede" — run with dryRun:true (the default) first to see the candidates'
+          );
+        }
         const res = await consolidateMemories(store, {
-          dryRun: args.dryRun !== false,
+          dryRun,
           threshold: typeof args.threshold === "number" ? args.threshold : undefined,
           // Private Dupletten zu melden hieße, dem Agenten zwei private ids und
           // ihre Ähnlichkeit zu nennen; anzuwenden würde zudem eine private
@@ -564,7 +600,20 @@ export async function callTool(store: KeptaStore, name: string, args: Record<str
           return { content: [{ type: "text", text: `Marked as expired: ${id}` }], structuredContent: { forgotten: true, mode } };
         }
         if (mode === "supersede") {
-          const by = args.supersedeBy ? String(args.supersedeBy) : null;
+          // Ein Zeiger ins Leere ist kein Ersetzen: die Such-Fahne "superseded" haengt an
+          // einem nicht-null-Zeiger. Ohne Nachfolger würde die Notiz gueltig bleiben und
+          // der Agent glauben, sie sei ersetzt — Erfolg ohne Wirkung.
+          const by = typeof args.supersedeBy === "string" ? args.supersedeBy.trim() : "";
+          if (!by) {
+            throw new Error(
+              'memory_forget: mode "supersede" requires supersedeBy (the id of the successor) — use mode "expire" to retire a memory without a successor'
+            );
+          }
+          // Ein Zeiger auf eine private Notiz wandert mit jeder Ausgabe des
+          // geöffneten Knotens hinaus (memoryToOut listet supersededBy) — also
+          // existiert der Nachfolger für Agenten nicht.
+          const nachfolger = aussenVor(store, by, `Memory not found: ${by}`);
+          if (nachfolger) throw nachfolger;
           store.supersedeMemory(id, by);
           return { content: [{ type: "text", text: `Superseded marked: ${id}` }], structuredContent: { forgotten: true, mode } };
         }
@@ -579,9 +628,11 @@ export async function callTool(store: KeptaStore, name: string, args: Record<str
     }
   } catch (e) {
     const msg = e instanceof Error ? e.message : String(e);
+    // Kein structuredContent im Fehlerfall: jedes Werkzeug deklariert eine outputSchema mit
+    // Pflichtfeldern, und ein konformer Client validiert den Strukturteil dagegen, sobald er
+    // da ist — er würde dann die Fehlermeldung werfen statt sie zu zeigen.
     return {
       content: [{ type: "text", text: `Error: ${msg}` }],
-      structuredContent: { error: msg },
       isError: true,
     };
   }

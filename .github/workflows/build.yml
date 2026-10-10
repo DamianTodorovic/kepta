@@ -19,6 +19,19 @@ jobs:
           cache: npm
       - run: npm ci
       - run: npm run lint
+      # Messvorlauf, kein Urteil — bitte nicht als ueberfluessig loeschen.
+      # vitest schreibt seinen JSON-Bericht erst am ENDE eines Laufs, ein Test in
+      # diesem Lauf kann ihn also nicht lesen. Die Zahlenwache
+      # (tests/doku-zahlen.test.ts) haelt die Testzahl im README gegen genau diesen
+      # Bericht und verweigert den Vergleich, wenn er fehlt — ohne diesen Vorlauf
+      # waere jeder frische Runner rot, ohne dass ein Fehler im Code steckte.
+      # timeout-minutes: 8. Gemessen auf diesem Rechner (10 Kerne, ubuntu-latest
+      # hat 4): `npm test` 78 s -> ~3,3 min bei 2,5x, 8 min sind die Haelfte davon
+      # frei. Das Gate darunter bleibt bei 12: `npm run test:cov` mass 130 s, mit
+      # 2,5x Runner-Abstand ~5,4 min — 12 reichen mit doppeltem Puffer.
+      - name: Messvorlauf (schreibt test-results/vitest.json, Befund zaehlt nicht)
+        run: npm test || true
+        timeout-minutes: 8
       - name: Tests + Coverage (Gate)
         run: npm run test:cov
         timeout-minutes: 12
