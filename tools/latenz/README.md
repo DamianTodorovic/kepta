@@ -15,12 +15,16 @@ Läuft mit `npx tsx tools/latenz/bench.ts --n 100000 --out ergebnisse/latenz-100
 | Datum | Stand | Erinnerungen | p50 | p95 | p99 | Ingest (Produkt-Pfad) |
 |---|---|---|---|---|---|---|
 | 30.9.2026 | ohne Cache (`latenz-100k-2026-09-30.json`) | 100k | 6.986 ms | 7.156 ms | 7.496 ms | 2.530/s |
-| 1.10.2026 | **mit Such-Cache** (`latenz-100k-cache-2026-10-01.json`) | 100k | 83,1 ms | 94,8 ms | 100,8 ms | 5.102/s |
-| 1.10.2026 | Cache + vorgerechnete Vektornormen (`latenz-100k-cache2-2026-10-01.json`) | 100k | 72,0 ms | 85,0 ms | 92,4 ms | — |
+| 1.10.2026 | **mit Such-Cache** (`latenz-100k-cache-2026-10-01.json`) | 100k | 83,1 ms | 94,8 ms | 100,8 ms | 5.082/s |
+| 1.10.2026 | Cache + vorgerechnete Vektornormen (`latenz-100k-cache2-2026-10-01.json`) | 100k | 72,0 ms | 85,0 ms | 92,4 ms | 5.136/s |
 | 1.10.2026 | **1 Million Erinnerungen** (`latenz-1m-2026-10-01.json`) | 1.000.000 | 641,7 ms | **782,8 ms** | 837,4 ms | 3.618/s |
-| 1.10.2026 | **AND-first-FTS** 100k (`latenz-100k-fts-2026-10-01.json`) | 100k | **46,6 ms** | 87,6 ms | 94,0 ms | — |
-| 1.10.2026 | **AND-first-FTS** 1 Mio (`latenz-1m-fts-2026-10-01.json`) | 1.000.000 | **276,5 ms** | 672,5 ms | 729,3 ms | — |
-| 1.10.2026 | **+ Delta-Cache-Pflege** 1 Mio (`latenz-1m-delta-2026-10-01.json`) | 1.000.000 | 256,5 ms | 649,4 ms | 715,9 ms | — |
+| 1.10.2026 | **AND-first-FTS** 100k (`latenz-100k-fts-2026-10-01.json`) | 100k | **46,6 ms** | 87,6 ms | 94,0 ms | 5.268/s |
+| 1.10.2026 | **AND-first-FTS** 1 Mio (`latenz-1m-fts-2026-10-01.json`) | 1.000.000 | **276,5 ms** | 672,5 ms | 729,3 ms | 3.697/s |
+| 1.10.2026 | **+ Delta-Cache-Pflege** 1 Mio (`latenz-1m-delta-2026-10-01.json`) | 1.000.000 | 256,5 ms | 649,4 ms | 715,9 ms | 2.896/s |
+
+**Die Bedingung steht an der Tabelle, nicht unter ihr.** Jede Zeile ist mit einem Vektor-Bein gemessen, das konstant **20.000 Chunks** bekommt — `bench.ts` klemmt `--vec-chunks` auf `min(20_000, N)`, und jeder Record trägt die Zahl in `konfiguration.vektorChunks`. Der 100k-Lauf und der 1-Mio-Lauf gehen also über denselben Vektor-Grund, während der Bestand verzehnfacht ist: die Mediane sind ein **begrenztes** Vektor-Bein, kein voll eingebetteter Bestand dieser Größe. Wie viel langsamer ein Store sucht, in dem jede Notiz ihre Vektoren trägt, ist hier **nicht** gemessen — darum gibt es dafür auch keine Zahl, nur die Warnung, dass die beiden Mediane diese Größe nicht einschließen. Ebenso mitgemessen, aber nicht als Grad: Verschlüsselung aus (Zeile oben) und der deterministische Stub-Embedder statt eines echten Modells.
+
+Zwei Grenzen derselben Art gehören zu den Messgrößen, weil sie den Pfad treffen, der hier läuft: `GET /api/graph` liefert höchstens **500 Begriffe** und **2000 Relationen** und sortiert vor beiden Kappen nicht (`src/core/store.ts`, `getGraph()`) — welcher Eintrag bleibt, entscheidet die Zeilenordnung. Und damit niemand zwei Wörter für eine Sache hält: was die Records `erinnerungen` nennt, ist im Lesetext eine **Notiz** (eine Sache, die das Gedächtnis hält); die Spalte oben heißt nach dem Feld im JSON, nicht nach der Sprache der Doku.
 
 **Der Delta-Durchbruch:** Der Cache-Aufbau nach dem Ingest kollabierte von **359,4 s auf 0,74 s** (Warmup-Zahl aus dem Konsolen-Log des 1-Mio-Laufs, **kein committed Record** — `bench.ts` schreibt sie seit diesem Stand als `suche.warmupErsteAbfrageMs` ins JSON) — der Such-Cache wächst jetzt mit jedem Write mit (`aktiviereSuchCacheDelta(store)` nach dem Store-Aufbau; Store-Methoden melden jede Memory-Mutation, die Engine patcht deltafisch). Der SQLite-Trigger bleibt als Sicherheitsnetz: Wege ohne Meldung (Roh-SQL, Importe) verschieben die Generation ohne Patch → Volllauf-Fallback. Serverbetrieb mit häufigen Writes zahlt damit nie einen 6-Minuten-Neuaufbau.
 

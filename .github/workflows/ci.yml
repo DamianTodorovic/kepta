@@ -15,6 +15,17 @@ jobs:
           node-version: 22
       - run: npm ci
       - run: npm run lint
+      # Messvorlauf, kein Urteil — bitte nicht als ueberfluessig loeschen.
+      # vitest schreibt seinen JSON-Bericht erst am ENDE eines Laufs, ein Test in
+      # diesem Lauf kann ihn also nicht lesen. Die Zahlenwache
+      # (tests/doku-zahlen.test.ts) vergleicht die Testzahl in den READMEs gegen
+      # diesen Bericht und verweigert den Vergleich, wenn er fehlt — auf einem
+      # frischen Runner mit seinem ersten vollen Lauf waere sie sonst rot, ohne
+      # dass ein Fehler im Code steckte. Dieser Lauf erzeugt den Bericht des
+      # aktuellen Baums; sein Befund zaehlt nicht, Gate ist der naechste Schritt.
+      # Gemessen auf diesem Rechner (10 Kerne): `npm test` 8-24 s, `test:cov` 11 s.
+      - name: Messvorlauf (schreibt test-results/vitest.json, Befund zaehlt nicht)
+        run: npm test || true
       - run: npm test
       - name: Coverage gate
         run: npm run test:cov

@@ -1,0 +1,71 @@
+# KEPTA — Baukontext fuer `docker build -t kepta-mcp .`
+#
+# Der Dockerfile baut in Stufe 1 mit `npm ci` eine eigene Linux/musl-Fassung von
+# better-sqlite3-multiple-ciphers. Was `COPY . .` danach aus dem Arbeitsbaum
+# darueberlegt, entscheidet diese Datei: liegt das dort per Hand gebaute
+# macOS-Binaer mit drin, bricht der Build mit ERR_DLOPEN_FAILED
+# ("Exec format error"), bevor die Lade-Wache in Stufe 2 ueberhaupt erreicht
+# wird. Gemessen am 09.10.2026: 200 MB Kontext und Exit 1 aus dem Arbeitsbaum,
+# 19 MB und Exit 0 aus einem sauberen Klon.
+#
+# `**/` ist kein Ballast: ein Muster ohne Praefix gilt nur direkt unterhalb des
+# Kontext-Roots, und `node_modules` liegen in diesem Repo auch tiefer.
+
+# Abhaengigkeiten — die Bau-Stufe installiert ihre eigenen, fuer ihr eigenes Linux
+**/node_modules
+
+# Bauartefakte — entstehen erst in der Bau-Stufe, der Container braucht keine
+dist/
+npm/bin/
+npm/*.tgz
+*.tsbuildinfo
+
+# Repo- und Werkstatt-Gedaechtnis
+**/.git
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.mcp.json
+.mimosa/
+
+# Messables: Protokolle, Deckung, Testlaeufer
+coverage/
+test-results/
+**/*.log
+**/.pytest_cache
+**/__pycache__
+**/*.egg-info
+**/*.py[cod]
+
+# Datenbanken — ein Image darf nie einen Datenbestand mitbringen
+**/*.db
+**/*.db-wal
+**/*.db-shm
+.kepta/
+
+# Schluessel und lokale Umgebung: gehen im Zweifel mit ins Image und bleiben dort
+.env
+.env.local
+.env.*.local
+*.pem
+*.key
+
+# Sicherungs- und Medienordner, die .gitignore draussen haelt
+release/
+out/
+build/
+antraege/
+*.dmg
+*.blockmap
+*.zip
+*.snap
+*.AppImage
+*.exe
+*.tar.gz
+project.tar.gz
+
+# Betriebssystem-Artefakte
+**/.DS_Store
+**/Thumbs.db

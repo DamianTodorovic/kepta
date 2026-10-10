@@ -239,3 +239,124 @@ describe("EmbeddingQueue", () => {
     expect(store.chunksNeedingEmbedding().length).toBe(0);
   });
 });
+
+// Befund A4-13 / Q-15: 15 Sekunden Dunkelheit nach jedem Start. Die Produktwege
+// rufen queue.start() OHNE Argument (server.ts, src/mcp-server.ts) — die Queue muss
+// den Sofortlauf also selbst kennen. Gemessen am echten nomic-embed-text vor der
+// Aenderung: erster Vektor nach 15 063 ms am Hochlauf, nach 14 466 ms auf einen Write.
+describe("EmbeddingQueue: Sofortlauf", () => {
+  let store: KeptaStore;
+
+  beforeEach(() => {
+    store = freshStore();
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
+  const warte = (ms: number) => new Promise((r) => setTimeout(r, ms));
+
+  it("bettet einen wartenden Chunk beim start() ohne Argument", async () => {
+    const m = store.createMemory({ title: "Erstimport", content: "Diese Notiz wartet beim Hochlauf" });
+    store.replaceChunks(m.id, ["chunk eins", "chunk zwei"]);
+    stubEmbedFetch();
+    const q = new EmbeddingQueue(store, { intervalMs: 15_000, batchSize: 32, model: "fake" });
+    q.start(); // kein Argument — genau so rufen die Produktwege die Queue
+    await warte(30);
+    q.stop();
+    expect(store.chunksNeedingEmbedding().length).toBe(0);
+  });
+
+  it("start(false) bleibt der alte Weg: kein Sofortlauf am Hochlauf", async () => {
+    const m = store.createMemory({ title: "Spaeter", content: "Kein Sofortlauf erwuenscht" });
+    store.replaceChunks(m.id, ["nur dieser chunk"]);
+    stubEmbedFetch();
+    const q = new EmbeddingQueue(store, { intervalMs: 15_000, model: "fake" });
+    q.start(false);
+    await warte(30);
+    expect(store.chunksNeedingEmbedding().length).toBe(1);
+    q.stop();
+  });
+
+  it("bettet am Hochlauf den ganzen Rückstand, nicht nur den ersten Batch", async () => {
+    // 3 Notizen a 2 Chunks bei batchSize 2 = 3 Batches. Wuerde die Queue nach dem
+    // ersten Batch wieder aufs Intervall (15 s) warten, blieben 4 von 6 Chunks blind —
+    // und ein Erstimport von 1 000 Notizen waere trotz Sofortlauf rund 16 Minuten lang
+    // semantisch leer. Genau das ist der gemessene Schaden hinter A4-13.
+    for (let i = 0; i < 3; i++) {
+      const m = store.createMemory({ title: `Erstimport ${i}`, content: `Notiz ${i} aus dem Import` });
+      store.replaceChunks(m.id, [`chunk eins ${i}`, `chunk zwei ${i}`]);
+    }
+    stubEmbedFetch();
+    const q = new EmbeddingQueue(store, { intervalMs: 15_000, batchSize: 2, model: "fake" });
+    q.start();
+
+    for (let i = 0; i < 40 && store.chunksNeedingEmbedding(500).length > 0; i++) await warte(25);
+    q.stop();
+    expect(store.chunksNeedingEmbedding(500).length).toBe(0);
+    expect(store.embeddingStats().chunksOhneVektor).toBe(0);
+  });
+
+  it("gibt bei einem Fehler den Lauf auf, statt ihn zu wiederholen", async () => {
+    // Ein nicht erreichbarer Dienst darf die Queue nicht in eine Endlosschleife
+    // werfen: eine Runde, Fehler, dann wartet wieder das Intervall.
+    let aufrufe = 0;
+    vi.stubGlobal("fetch", vi.fn(async () => {
+      aufrufe++;
+      return { ok: false, status: 503, json: async () => ({}) } as Response;
+    }));
+    for (let i = 0; i < 3; i++) {
+      const m = store.createMemory({ title: `Ohne Dienst ${i}`, content: `Notiz ${i}` });
+      store.replaceChunks(m.id, [`c1 ${i}`, `c2 ${i}`, `c3 ${i}`]);
+    }
+    const q = new EmbeddingQueue(store, { intervalMs: 15_000, batchSize: 2, model: "fake" });
+    q.start();
+    await warte(60);
+    q.stop();
+
+    expect(aufrufe).toBe(1);
+    expect(store.chunksNeedingEmbedding(500).length).toBe(9);
+    expect(q.lastError).toContain("503");
+  });
+
+  it("bettet eine frisch geschriebene Notiz, ohne aufs Intervall zu warten", async () => {
+    stubEmbedFetch();
+    const q = new EmbeddingQueue(store, { intervalMs: 15_000, batchSize: 32, model: "fake" });
+    q.start(false); // nur der Intervall-Timer; der Write-Sofortlauf ist der gepruefte Teil
+    const m = store.createMemory({ title: "Frische Notiz", content: "Entsteht im laufenden Betrieb" });
+    store.replaceChunks(m.id, ["chunk der frischen notiz"]);
+
+    for (let i = 0; i < 40 && store.chunksNeedingEmbedding().length > 0; i++) await warte(25);
+    q.stop();
+    expect(store.chunksNeedingEmbedding().length).toBe(0);
+  });
+
+  it("stop() nimmt auch den Write-Sofortlauf", async () => {
+    stubEmbedFetch();
+    const q = new EmbeddingQueue(store, { intervalMs: 15_000, model: "fake" });
+    q.start();
+    q.stop();
+
+    const m = store.createMemory({ title: "Nach dem Stop", content: "Darf nicht mehr eingebettet werden" });
+    store.replaceChunks(m.id, ["chunk nach stop"]);
+    await warte(900);
+    expect(store.chunksNeedingEmbedding().length).toBe(1);
+  });
+
+  it("embeddingStats weist chunksOhneVektor aus", async () => {
+    const a = store.createMemory({ title: "A", content: "Inhalt A" });
+    const b = store.createMemory({ title: "B", content: "Inhalt B" });
+    store.replaceChunks(a.id, ["a1", "a2"]);
+    store.replaceChunks(b.id, ["b1"]);
+    stubEmbedFetch();
+    const q = new EmbeddingQueue(store, { model: "fake", batchSize: 10 });
+
+    const vorher = store.embeddingStats();
+    expect(vorher.chunksOhneVektor).toBe(3);
+    expect(vorher.total - vorher.embedded).toBe(vorher.chunksOhneVektor);
+
+    await q.tick();
+    expect(store.embeddingStats().chunksOhneVektor).toBe(0);
+  });
+});

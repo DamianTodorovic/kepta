@@ -98,7 +98,54 @@ describe("falscher oder fehlender Schluessel", () => {
     const p = neuerPfad();
     new KeptaStore(p, mit(SCHLUESSEL)).close();
     const vorher = hash(p);
-    expect(() => new KeptaStore(p, mit(ANDERER))).toThrow("does not belong to this database");
+    // A1-08 / A3-10: der alte Satz behauptete einen Schluesselbund, wo nie einer im
+    // Spiel war. Benannt wird nur, was der Store weiss — hier: gar keine Quelle.
+    let meldung = "";
+    try {
+      new KeptaStore(p, mit(ANDERER));
+    } catch (e) {
+      expect(e).toBeInstanceOf(Error);
+      meldung = (e as Error).message;
+    }
+    expect(meldung).toMatch(/either that is not the key|not the key this file/i);
+    expect(meldung).toMatch(/damaged/);
+    expect(meldung).not.toMatch(/keychain/i); // ohne beleg wird keine Quelle erfunden
+    expect(meldung).toContain("Nothing was changed.");
+    expect(hash(p)).toBe(vorher);
+  });
+
+  it("nennt die Quelle nur, wenn ihr sie wirklich uebergeben wurde", () => {
+    const p = neuerPfad();
+    new KeptaStore(p, mit(SCHLUESSEL, "KEPTA_DB_KEY")).close();
+    const vorher = hash(p);
+    let meldung = "";
+    try {
+      new KeptaStore(p, mit(ANDERER, "KEPTA_DB_KEY"));
+    } catch (e) {
+      meldung = (e as Error).message;
+    }
+    // ablage ist gesetzt — aber der Store uebergibt sie bisher nicht an die Funktion.
+    // Dieser Test haelt die Grenze fest: erst mit dem Uebergabepunkt darf hier
+    // "KEPTA_DB_KEY" stehen, bis dahin bleibt die Aussage quellenneutral.
+    expect(meldung).not.toMatch(/keychain/i);
+    expect(hash(p)).toBe(vorher);
+  });
+
+  it("eine Datei, die gar keine Datenbank ist, wird nicht als Schluesselproblem verkauft", () => {
+    // A1-08 Fall b): "this is not a database" in kepta.db geschrieben.
+    const p = neuerPfad();
+    fs.writeFileSync(p, "this is not a database");
+    const vorher = hash(p);
+    let meldung = "";
+    try {
+      new KeptaStore(p, mit(SCHLUESSEL));
+    } catch (e) {
+      meldung = (e as Error).message;
+    }
+    expect(meldung).toMatch(/not a sqlite database at all|does not look like a database/i);
+    expect(meldung).toMatch(/22 bytes/);
+    expect(meldung).not.toMatch(/keychain|does not belong/i);
+    expect(meldung).toContain("Nothing was changed.");
     expect(hash(p)).toBe(vorher);
   });
 
@@ -106,8 +153,20 @@ describe("falscher oder fehlender Schluessel", () => {
     const p = neuerPfad();
     new KeptaStore(p, mit(SCHLUESSEL)).close();
     expect(() => new KeptaStore(p)).toThrow("encrypted, but its key is not available.");
-    const gesperrt = mit(() => { throw new Error("Keychain locked"); });
-    expect(() => new KeptaStore(p, gesperrt)).toThrow("encrypted, but its key is not available: Keychain locked");
+    const gesperrt = mit(() => {
+      throw new Error("Keychain locked");
+    });
+    let meldung = "";
+    try {
+      new KeptaStore(p, gesperrt);
+    } catch (e) {
+      meldung = (e as Error).message;
+    }
+    expect(meldung).toContain("encrypted, but its key is not available: Keychain locked");
+    // (c) Grund nicht erreichbar: der Ausweg muss dastehen, nicht nur die Absage.
+    expect(meldung).toMatch(/KEPTA_DB_KEY/);
+    expect(meldung).toMatch(/SECURITY\.md/);
+    expect(meldung).toContain("Nothing was changed.");
   });
 });
 

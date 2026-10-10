@@ -147,8 +147,19 @@ export interface EmbeddingQueueOptions {
   immediate?: boolean;
 }
 
+/**
+ * Pause, die die Queue einem Schreibvorgang gönnt, bevor sie ihn bettet.
+ *
+ * Das Intervall (15 s) ist der Notbetrieb fuer nachgetragene Aenderungen, nicht die
+ * Antwort auf "gerade eben gespeichert": eine frische Notiz blieb bis zum nächsten
+ * Intervall semantisch unsichtbar — auch für die Duplettenprüfung beim Speichern.
+ */
+const SOFORTLAUF_NACH_WRITE_MS = 400;
+
 export class EmbeddingQueue {
   private timer: ReturnType<typeof setInterval> | null = null;
+  private writeTimer: ReturnType<typeof setTimeout> | null = null;
+  private abmeldung: (() => void) | null = null;
   private running = false;
   private opts: Required<Omit<EmbeddingQueueOptions, "immediate">>;
   lastError: string | null = null;
@@ -168,17 +179,65 @@ export class EmbeddingQueue {
     };
   }
 
-  start(immediate = false): void {
+  /**
+   * immediate=true (Standard) bettet sofort, was schon wartet: ein Hochlauf auf
+   * einer Datenbank mit Chunks ohne Vektor war sonst 15 Sekunden lang blind, und
+   * ein Erstimport von 1 000 Notizen rund 16 Minuten. Wer den alten Verlauf will,
+   * ruft start(false).
+   */
+  start(immediate = true): void {
     if (this.timer) return;
-    if (immediate) void this.tick();
-    this.timer = setInterval(() => void this.tick(), this.opts.intervalMs);
+    // Erst den Timer setzen, dann laufen: der Lauf prüft ihn vor jeder Runde, und
+    // stop() soll ihn an der nächsten Batchgrenze beenden koennen.
+    this.timer = setInterval(() => void this.lauf(), this.opts.intervalMs);
     if (typeof this.timer.unref === "function") this.timer.unref();
+    this.abmeldung = this.store.onMemorieAenderung(() => this.kickeNachSchreib());
+    if (immediate) void this.lauf();
+  }
+
+  /**
+   * Ein Lauf: bettet Batch fuer Batch, bis nichts mehr wartet.
+   *
+   * Ohne das Nachziehen bliebe der Rest bis zum naechsten Intervall liegen — bei
+   * 1 000 importierten Notizen (63 Batchs) rund 16 Minuten semantisch blind, auch
+   * mit Sofortlauf am Hochlauf. Schlaegt eine Runde fehl (der Dienst ist nicht zu
+   * erreichen), endet der Lauf: 15 Sekunden Geduld sind die richtige Antwort, nicht
+   * eine Endlosschleife gegen einen toten Ollama.
+   */
+  private async lauf(): Promise<void> {
+    while (this.timer !== null) {
+      const runde = await this.tick();
+      if (runde === 0) return;
+    }
+  }
+
+  /**
+   * Getakteter Sofortlauf nach einem Write. Die Pause dämpft: speichert ein Agent
+   * hundert Notizen in Folge, entsteht ein Lauf nach der Pause statt hundert
+   * Timer und hundert Einzelaufrufe — und die erste Notiz ist nach Bruchteilen
+   * einer Sekunde auffindbar statt beim naechsten Intervall.
+   */
+  private kickeNachSchreib(): void {
+    if (this.writeTimer) return;
+    this.writeTimer = setTimeout(() => {
+      this.writeTimer = null;
+      void this.lauf();
+    }, SOFORTLAUF_NACH_WRITE_MS);
+    if (typeof this.writeTimer.unref === "function") this.writeTimer.unref();
   }
 
   stop(): void {
     if (this.timer) {
       clearInterval(this.timer);
       this.timer = null;
+    }
+    if (this.writeTimer) {
+      clearTimeout(this.writeTimer);
+      this.writeTimer = null;
+    }
+    if (this.abmeldung) {
+      this.abmeldung();
+      this.abmeldung = null;
     }
   }
 

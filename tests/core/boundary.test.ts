@@ -38,6 +38,28 @@ describe("memory core boundary (src/core)", () => {
       "embeddings.ts",
       "engine.ts",
       "extensions.ts",
+      // Das Weltbild des Graph-Dienstes: Viertelchen-Baum, Abkuehlung und
+      // keim(id) — reine Geometrie auf Zahlen, ohne DOM, ohne Store, ohne Netz.
+      "graf-kraft.ts",
+      // Begriffsrechnung fuer den Index: Zerlegung, df, g(t)=ln(1+N/df),
+      // Jaccard. Nutzt nur src/core/stopwords.ts, nicht die Anfrage-Kappe.
+      "graf-terms.ts",
+      // Der Datenvertrag von GET /api/graph/bild: Typen und Konstanten, keine
+      // Rechnung, kein Import — das Kuvert, gegen das Client und Kern prüfen.
+      "graf-vertrag.ts",
+      // Claude-Export-Importer: dieselbe Klasse wie chatgpt-import.ts (die
+      // Kompatibilitaetsfalle), dieselbe Grenze — nur Node-Bordmittel, Store,
+      // Engine, obsidian.ts; kein Netz, keine UI, kein Pfad ausser Home/Temp.
+      "import-claude.ts",
+      // Ordner-Importer: ein ganzer Markdown-/Textbestand des Nutzers. Die Zeit-
+      // regel (Quellendatum -> gilt ab, Plattendatum -> nur angelegt) und die
+      // Duplett-pruefung sind Kernlogik, nicht Transport — ein Rausziehen aus dem
+      // Kern waere eine Schwecbung: src/ wird von dieser Wache nicht geprueft.
+      "import-ordner.ts",
+      // Tabellen-Importer (CSV/JSONL mit Spaltensprache): dieselbe Begruendung
+      // wie import-ordner.ts, plus der Kopfschutz (unerkannte Inhaltsspalte =
+      // Abweisung, kein geratenes Textfeld).
+      "import-tabelle.ts",
       // Die Zuordnung von Wissensarten gehoert in den Kern: sie entscheidet in
       // createMemory und muss deshalb ohne Umweg ueber die Oberflaeche
       // erreichbar sein — auch fuer den MCP-Server.

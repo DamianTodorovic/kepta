@@ -1,0 +1,132 @@
+{
+  "vertrag": "graf-2",
+  "sicht": "notiz",
+  "bestand": { "notizen": 4, "knoten": 4, "kanten": 5 },
+  "kuerzung": {
+    "kappe": { "knoten": 500, "kanten": 2000, "paarPruefungen": 150000 },
+    "uebrig": { "knoten": 0, "kanten": 0, "paare": 0, "begriffe": 0 },
+    "grund": [],
+    "gefiltert": { "privat": 0, "papierkorb": 0 },
+    "verwaiste": { "knoten": 0, "kanten": 0 },
+    "vollstaendig": true
+  },
+  "welt": { "einheit": "welt", "groesse": 1000, "herkunft": "kraft" },
+  "stempel": {
+    "generation": 12,
+    "layoutVersion": 4,
+    "parameterHash": "69f001c815eccdabf840ee93b6c682334b6605a4105937fc42d9c90f3035d5d6",
+    "berechent": "neu"
+  },
+  "knoten": [
+    {
+      "id": "k-fest-0001",
+      "titel": "Hetzner GX 1080 RZ",
+      "art": "semantic",
+      "gradEcht": 2,
+      "gradVermutet": 2,
+      "x": 318.4,
+      "y": 402.1,
+      "verankert": false,
+      "versteckteNachbarn": 0,
+      "begriffe": ["hetzner", "gx", "1080", "rz", "server", "mietvertrag"]
+    },
+    {
+      "id": "k-fest-0002",
+      "titel": "Hetzner Standort Leipzig",
+      "art": "semantic",
+      "gradEcht": 3,
+      "gradVermutet": 1,
+      "x": 496.7,
+      "y": 331.9,
+      "verankert": false,
+      "versteckteNachbarn": 0,
+      "begriffe": ["hetzner", "standort", "leipzig", "rz"]
+    },
+    {
+      "id": "k-fest-0003",
+      "titel": "Mietvertrag Klauseln",
+      "art": "reference",
+      "gradEcht": 1,
+      "gradVermutet": 1,
+      "x": 612.3,
+      "y": 508.6,
+      "verankert": false,
+      "versteckteNachbarn": 0,
+      "begriffe": ["mietvertrag", "klauseln", "kuendigung"]
+    },
+    {
+      "id": "k-fest-0004",
+      "titel": "Wartungsvertrag Server",
+      "art": "episodic",
+      "gradEcht": 0,
+      "gradVermutet": 2,
+      "x": 545.2,
+      "y": 620.8,
+      "verankert": false,
+      "versteckteNachbarn": 0,
+      "begriffe": ["wartungsvertrag", "server", "hetzner"]
+    }
+  ],
+  "kanten": [
+    {
+      "id": "a-k-fest-0001|k-fest-0004",
+      "quelle": "k-fest-0001",
+      "ziel": "k-fest-0004",
+      "sorte": "aehnlich",
+      "maess": { "wert": 0.125, "basis": "jaccard", "gemessen": true },
+      "feder": 0.31,
+      "belege": 1,
+      "erklaerung": { "gemeinsame": ["server"], "art": "tag" },
+      "validFrom": null,
+      "validTo": null
+    },
+    {
+      "id": "a-k-fest-0002|k-fest-0004",
+      "quelle": "k-fest-0002",
+      "ziel": "k-fest-0004",
+      "sorte": "aehnlich",
+      "maess": { "wert": 0.83, "basis": "cosinus", "gemessen": true },
+      "feder": 0.83,
+      "belege": 1,
+      "erklaerung": { "gemeinsame": [], "art": "vektor" },
+      "validFrom": null,
+      "validTo": null
+    },
+    {
+      "id": "a-k-fest-0001|k-fest-0003",
+      "quelle": "k-fest-0001",
+      "ziel": "k-fest-0003",
+      "sorte": "aehnlich",
+      "maess": { "wert": 0.33, "basis": "jaccard", "gemessen": true },
+      "feder": 0.44,
+      "belege": 1,
+      "erklaerung": { "gemeinsame": ["mietvertrag"], "art": "tag" },
+      "validFrom": null,
+      "validTo": null
+    },
+    {
+      "id": "l-k-fest-0001|k-fest-0002",
+      "quelle": "k-fest-0001",
+      "ziel": "k-fest-0002",
+      "sorte": "echt",
+      "maess": { "wert": null, "basis": "verlinkt", "gemessen": true },
+      "feder": 0.6,
+      "belege": 2,
+      "erklaerung": { "gemeinsame": ["hetzner standort leipzig"], "art": "titel" },
+      "validFrom": null,
+      "validTo": null
+    },
+    {
+      "id": "l-k-fest-0002|k-fest-0003",
+      "quelle": "k-fest-0002",
+      "ziel": "k-fest-0003",
+      "sorte": "echt",
+      "maess": { "wert": null, "basis": "verlinkt", "gemessen": true },
+      "feder": 0.5,
+      "belege": 1,
+      "erklaerung": { "gemeinsame": ["mietvertrag klauseln"], "art": "titel" },
+      "validFrom": null,
+      "validTo": null
+    }
+  ]
+}

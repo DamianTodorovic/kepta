@@ -1,18 +1,33 @@
 // Der Wissensgraph der Core-Oberfläche: Datenlayer (Notizen → Knoten, [[Links]]
-// → Kanten) und der /api/graph-Endpunkt. Kanten nur zwischen existierenden
+// → Kanten) und das Weltbild in Welteinheiten. Kanten nur zwischen existierenden
 // Notizen, keine Selbst-Kanten, Dedup, Zähler für unverarbeitete Verweise.
+// Das Layout heißt nicht mehr `kraftLayout` (null Produktions-Aufrufer, O(n²));
+// es sitzt in src/core/graf-kraft.ts und arbeitet in Welteinheiten.
 import { describe, it, expect, beforeEach, afterEach } from "vitest";
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import { KeptaStore } from "../../src/core/store";
 import { baueGraph } from "../../src/ui/graph";
+import { berechneWelt, type KraftKante } from "../../src/core/graf-kraft";
+import { WELT_GROESSE, WELT_RAD } from "../../src/core/graf-vertrag";
 
 let store: KeptaStore;
 let dir: string;
 
 function notiz(titel: string, inhalt: string, tags: string[] = []): void {
   store.createMemory({ title: titel, content: inhalt, tags });
+}
+
+/** Dasselbe Bild, das Weltbild dazu: die Kanten des Datenlayers als Federn. */
+function weltAus(g: ReturnType<typeof baueGraph>) {
+  const kanten: KraftKante[] = g.edges.map((e) => ({
+    quelle: e.quelle,
+    ziel: e.ziel,
+    sorte: e.real ? ("echt" as const) : ("aehnlich" as const),
+    feder: e.staerke,
+  }));
+  return berechneWelt({ knoten: g.nodes.map((n) => ({ id: n.id })), kanten });
 }
 
 beforeEach(async () => {
@@ -49,31 +64,68 @@ describe("baueGraph", () => {
   });
 });
 
-describe("kraftLayout (serverseitiges Force-Layout)", () => {
-  it("alle Knoten innerhalb der Grenzen, ohne NaN, Kanten-Endpunkte existieren", async () => {
-    const { kraftLayout } = await import("../../src/ui/graph");
+describe("berechneWelt (serverseitiges Kraftfeld in Welteinheiten)", () => {
+  it("alle Knoten innerhalb der Welt, ohne NaN", () => {
     notiz("Alpha", "Siehe [[Beta]].");
     notiz("Beta", "Rückverweis auf [[Alpha]].");
     const g = baueGraph(store);
-    const layout = kraftLayout(g, 900, 500);
-    expect(layout.length).toBe(2);
-    for (const k of layout) {
-      expect(Number.isFinite(k.x)).toBe(true);
-      expect(Number.isFinite(k.y)).toBe(true);
-      expect(k.x).toBeGreaterThanOrEqual(30);
-      expect(k.x).toBeLessThanOrEqual(870);
-      expect(k.y).toBeGreaterThanOrEqual(26);
-      expect(k.y).toBeLessThanOrEqual(474);
+    const welt = weltAus(g);
+    expect(welt.size).toBe(2);
+    for (const platz of welt.values()) {
+      expect(Number.isFinite(platz.x)).toBe(true);
+      expect(Number.isFinite(platz.y)).toBe(true);
+      expect(platz.x).toBeGreaterThanOrEqual(WELT_RAD - 0.05);
+      expect(platz.x).toBeLessThanOrEqual(WELT_GROESSE - WELT_RAD + 0.05);
+      expect(platz.y).toBeGreaterThanOrEqual(WELT_RAD - 0.05);
+      expect(platz.y).toBeLessThanOrEqual(WELT_GROESSE - WELT_RAD + 0.05);
     }
   });
 
-  it("leerer Graph → leeres Layout (kein Crash)", async () => {
-    const { kraftLayout } = await import("../../src/ui/graph");
-    expect(kraftLayout({ nodes: [], edges: [], verweise: 0 }, 900, 500)).toEqual([]);
+  it("leerer Bestand → leere Welt (kein Crash)", () => {
+    expect(berechneWelt({ knoten: [], kanten: [] })).toEqual(new Map());
+  });
+
+  it("verbundene Knoten landen naeher zusammen als unverbundene — als Population", () => {
+    // Der Einzelvergleich von drei Kanten gegen einen isolierten Knoten haengt an
+    // den Zufalls-IDs der Notizen: dasselbe Gesetz, anderer Lauf, anderes Urteil
+    // (gemessen: 261 gegen 231 im einen, 204 gegen 160 im anderen). Geprueft wird
+    // deshalb dieselbe Groessenordnung wie in F10 — mediale Kantenlaenge gegen
+    // mediale Entfernung zufaelliger Paare. Ein ungeordnetes Bild waere ~1,0.
+    //
+    // Der Bestand braucht dafuer echte Gruppen. Zwei Fallen dabei, beide selbst
+    // gemessen: ein Tag `sach0` zerfaellt nach der Indexregel in `sach` und `0`,
+    // die 6 Gruppen sind also EINE Gruppe; und Titel wie `Wissen 000` teilen das
+    // Wort `wissen` und machen aus 60 Notizen 1200 Kanten — dann gibt es keine
+    // unverbundenen Paare mehr, gegen die man etwas messen koennte.
+    const gruppen = ["alpha", "beta", "gamma", "delta", "epsilon", "zeta"];
+    for (let i = 0; i < 60; i++) {
+      const gruppe = gruppen[i % gruppen.length]!;
+      notiz(`${gruppe} ${i}`, `Ein Text aus der Gruppe.`, [gruppe]);
+    }
+    const g = baueGraph(store, 60);
+    const welt = weltAus(g);
+    const laenge = (a: string, b: string) => Math.hypot(welt.get(a)!.x - welt.get(b)!.x, welt.get(a)!.y - welt.get(b)!.y);
+    const verbunden = g.edges.map((e) => laenge(e.quelle, e.ziel)).sort((a, b) => a - b);
+    let seed = 11;
+    const rnd = () => ((seed = (seed * 1103515245 + 12345) & 0x7fffffff) / 0x7fffffff);
+    const ids = g.nodes.map((n) => n.id);
+    const kontrolle: number[] = [];
+    for (let i = 0; i < 400; i++) {
+      const a = ids[Math.floor(rnd() * ids.length)]!;
+      const b = ids[Math.floor(rnd() * ids.length)]!;
+      if (a !== b) kontrolle.push(laenge(a, b));
+    }
+    kontrolle.sort((a, b) => a - b);
+    const med = (x: number[]) => x[Math.floor(x.length / 2)]!;
+    const verhaeltnis = med(verbunden) / Math.max(1, med(kontrolle));
+    console.log(`[graph] naehe-population knoten=${g.nodes.length} kanten=${verbunden.length} medialeKante=${med(verbunden).toFixed(0)}WE kontrollpaar=${med(kontrolle).toFixed(0)}WE verhaeltnis=${verhaeltnis.toFixed(3)}`);
+    expect(verbunden.length).toBeGreaterThan(100);
+    expect(verbunden.length).toBeLessThan(g.nodes.length * (g.nodes.length - 1) / 2);
+    expect(verhaeltnis).toBeLessThan(0.8);
   });
 });
 
-describe("Ähnlichkeits-Kanten (Port aus Pro)", () => {
+describe("Ähnlichkeits-Kanten (Port aus der App-Ära)", () => {
   it("gleiche Tags + ähnlicher Titel → gestrichelte Kante (real: false)", () => {
     notiz("Mandant Weber Akte", "Quartalsabrechnung, Wartestufe.", ["mandant", "weber"]);
     notiz("Mandant Weber Rechnung", "Rechnung Q3 vorbereitet.", ["mandant", "weber"]);
@@ -103,14 +155,13 @@ describe("Ähnlichkeits-Kanten (Port aus Pro)", () => {
     expect(g.edges.length).toBe(0);
   });
 
-  it("kraftLayout ordnet verbundene Knoten anhand der kombinierten Kanten", async () => {
-    const { kraftLayout } = await import("../../src/ui/graph");
+  it("das Weltbild kennt jeden Knoten des Datenlayers", () => {
     notiz("X Hub", "Siehe [[X A]] und [[X B]].", ["hub"]);
     notiz("X A", "Erster Anhang.", ["hub"]);
     notiz("X B", "Zweiter Anhang.", ["hub"]);
     const g = baueGraph(store);
     expect(g.edges.length).toBeGreaterThanOrEqual(2);
-    const layout = kraftLayout(g, 900, 500);
-    expect(layout.length).toBe(3);
+    const welt = weltAus(g);
+    expect(welt.size).toBe(3);
   });
 });

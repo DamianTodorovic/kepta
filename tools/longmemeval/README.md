@@ -30,7 +30,7 @@ Knowledge-Updates, Abstention („das weiß ich nicht" erkennen).
    Kontext „eine Antwort", halluziniert sie (kein Punkt).
    Deterministischer Vorweg: Steht die Referenz wörtlich in einem Treffer, zählt das
    als Ja **ohne Judge-Aufruf** (`verbatimTreffer`, Anteil im Record als
-   `verbatim_quote` — im 61,5-%-Lauf 29,8 %).
+   `verbatim_quote` — im 2.13.22-Lauf, der 61,5 % brachte, 29,8 %.
 4. **Report:** Genauigkeit gesamt + pro Fähigkeit, Abstention-Leer-Quote,
    Judge-Parse-Fehler — JSON in `ergebnisse/` mit Datum, Modell (+Ollama-Version),
    KEPTA-Version, Commit, Top-k und Datensatz-SHA-256. Nichts wird behauptet, was
@@ -49,7 +49,7 @@ Knowledge-Updates, Abstention („das weiß ich nicht" erkennen).
   (bewertet wörtlich enthaltene Fakten als NO) → `llama3.2:3b` fixiert, im
   OriginaI-Prompt verifiziert auf Ja/Nein/Teilweise-Fällen.
 
-## Stand (22.9.2026): erste Zahl — 29,2 % auf LongMemEval-S (Baseline)
+## Stand (22.9.2026, kepta_version 2.13.2): erste Zahl — 29,2 % auf LongMemEval-S (Baseline)
 
 Erster voller Lauf, 500/500 gerichtet, 0 Judge-Parse-Fehler. Bericht:
 `ergebnisse/longmemeval-2026-09-21-08d8dad4.json` (Modell llama3.2:3b 0.34.2,
@@ -151,3 +151,7 @@ sie verdrängt bei engem topk die exakten Treffer · topk 12 35,0 % ·
    netto gewinnt.
 4. Jede Verbesserung wird mit vollem 500er-Lauf und per-question Record
    veröffentlicht — die Serie ist das Asset.
+
+## Kein Qualitaetswert fuer den ausgelieferten Stand
+
+Kein Qualitaetswert dieser Serie ist eine Messung des ausgelieferten Kerns: jeder Record in diesem Ordner nennt eine `kepta_version` zwischen **2.13.2 und 2.13.22**, ausgeliefert ist **3.2.0** (`package.json`). Bis die Kette gegen den ausgelieferten Stand neu läuft, gilt jeder Wert hier als Protokoll eines aelteren Standes und nicht als Qualitaetswert des Produkts — die Zahlen bleiben in den Records, und `tests/benchmark-belege.test.ts` prueft genau das.

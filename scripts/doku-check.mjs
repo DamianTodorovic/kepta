@@ -1,43 +1,65 @@
-// Stimmt die Testzahl in den READMEs mit dem echten Lauf ueberein?
+// Die post-run-Haelfte der Zahlenwache.
 //
-// tests/doku-zahlen.test.ts prueft die Doku gegen eine STATISCHE Zaehlung —
-// die liegt unter der Laufzeitzahl, weil it.each und Schleifen mehr Faelle
-// erzeugen, als im Quelltext stehen. So konnten die READMEs "1106 Tests"
-// behaupten, waehrend 1183 liefen, ohne dass es auffiel. Dieses Skript laeuft
-// am Ende von `npm run test:cov` und vergleicht mit dem Ergebnis des Laufs.
+// Sie laeuft direkt nach dem Lauf, an seinem eigenen Bericht — das ist der
+// einzige Moment, in dem eine Zahl fuer GENAU DIESEN Lauf beglaubigt werden kann.
+// tests/doku-zahlen.test.ts hoeren auf dieselbe Quelle (scripts/test-bericht.mjs),
+// mitten im Lauf am Bericht des letzten Laufs. Beide vergleichen exakt: die Doku
+// nennt die Zahl der Faelle, die durchgelaufen sind, sonst nichts.
 //
-// Regel: die Doku darf nie MEHR Tests nennen, als gelaufen sind, und hoechstens
-// 3 % darunter liegen. Eine neue Handvoll Tests erzwingt also noch keine
-// README-Aenderung — eine veraltete Zahl schon.
+// Frueher las dieses Skript einen abgelegten Bericht und nannte ihn "der letzte
+// Lauf" — am 10.10. hat die App-Wache damit gemeldet: "1967 Tests gelaufen, die
+// READMEs nennen eine passende Zahl", obwohl der Bericht drei Tage alt war, 118
+// von 131 Testdateien kannte und 22 Dateien seither geaendert waren. Eine Wache,
+// die nicht pruefen kann, muss das sagen. Deshalb exit 1 mit Grund, wenn der
+// Bericht fehlt, aelter als der Baum, aus einem Teillauf stammt oder rot war.
 import fs from "node:fs";
+import path from "node:path";
+import { dokuVergleich, leseBericht, readmeDateien } from "./test-bericht.mjs";
 
-const ERGEBNIS = "test-results/vitest.json";
-const TOLERANZ = 0.03;
-
-if (!fs.existsSync(ERGEBNIS)) {
-  console.error(`doku-check: ${ERGEBNIS} fehlt — erst \`npm run test:cov\` laufen lassen.`);
+const bericht = leseBericht();
+if (!bericht.ok) {
+  console.error(`doku-check: ICH KANN NICHT PRUEFEN — ${bericht.grund}\n  ${bericht.hinweis}`);
   process.exit(1);
 }
-const echt = JSON.parse(fs.readFileSync(ERGEBNIS, "utf8")).numTotalTests;
-const untergrenze = Math.ceil(echt * (1 - TOLERANZ));
+
+const dateien = readmeDateien();
+if (dateien.length === 0) {
+  console.error("doku-check: kein README.md im Baum — hier steht keine Testzahl, die man pruefen koennte.");
+  process.exit(1);
+}
+
+// Die Gruen-Pflicht liegt hier, nicht in tests/doku-zahlen.test.ts: dieses Skript
+// laeuft ausserhalb der Suite (per `&&` nach ihr), sein eigener Befund kann die
+// Zahl also nicht veraendern. Innerhalb der Suite fuehrt dieselbe Forderung zu
+// einem Widerspruch, den keine Zahl aufloest — siehe test-bericht.mjs.
+if (bericht.fehlgeschlagen > 0) {
+  console.error(
+    `doku-check: ICH KANN NICHT BEGLAUBIGEN — ${bericht.fehlgeschlagen} ${bericht.fehlgeschlagen === 1 ? "Test ist" : "Tests sind"} in diesem Lauf fehlgeschlagen ` +
+      `(bestanden: ${bericht.bestanden}). Erst die Suite gruen machen, dann die Zahl.`
+  );
+  process.exit(1);
+}
+
+const uebersprungene = bericht.uebersprungen > 0 ? `, ${bericht.uebersprungen} uebersprungene Faelle nicht gezaehlt` : "";
 const fehler = [];
 
-for (const datei of ["README.md", "README.de.md"]) {
-  const text = fs.readFileSync(datei, "utf8");
-  const genannt = [
-    ...[...text.matchAll(/\*\*(\d+)\s+(?:tests|Tests)\*\*/g)].map((m) => Number(m[1])),
-    ...[...text.matchAll(/tests-(\d+)%20passing/g)].map((m) => Number(m[1])),
-    ...[...text.matchAll(/#\s*(\d+)\s+(?:tests|Tests)\b/g)].map((m) => Number(m[1])),
-  ];
-  if (genannt.length === 0) fehler.push(`${datei}: nennt gar keine Testzahl`);
-  for (const zahl of genannt) {
-    if (zahl > echt) fehler.push(`${datei}: nennt ${zahl} Tests, gelaufen sind ${echt}`);
-    else if (zahl < untergrenze) fehler.push(`${datei}: nennt ${zahl} Tests, gelaufen sind ${echt} — mehr als ${TOLERANZ * 100} % darunter`);
-  }
+// Die Regel selbst steht in test-bericht.mjs (dokuVergleich) — hier und in
+// tests/doku-zahlen.test.ts wird nur angewendet, nicht zweimal formuliert.
+for (const datei of dateien) {
+  const text = fs.readFileSync(path.join(process.cwd(), datei), "utf8");
+  fehler.push(...dokuVergleich(text, bericht, datei));
 }
 
 if (fehler.length > 0) {
-  console.error("doku-check: die Testzahl in der Doku passt nicht zum Lauf:\n  " + fehler.join("\n  "));
+  console.error(
+    `doku-check: die Testzahl in der Doku passt nicht zum Lauf vom ${bericht.zeit}:\n  ` +
+      fehler.join("\n  ") +
+      `\n  Beglaubigte Zahl: ${bericht.zahl} (${bericht.dateienBericht} Testdateien${uebersprungene}).`
+  );
   process.exit(1);
 }
-console.log(`doku-check: ${echt} Tests gelaufen, die READMEs nennen eine passende Zahl.`);
+
+console.log(
+  `doku-check: ${bericht.zahl} Tests sind im Lauf vom ${bericht.zeit} durchgelaufen ` +
+    `(${bericht.dateienBericht} Testdateien${uebersprungene}) — ${dateien.join(" und ")} ${dateien.length === 1 ? "nennt" : "nennen"} diese Zahl und diesen Stand.`
+);

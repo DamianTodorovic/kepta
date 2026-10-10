@@ -109,7 +109,10 @@ export function userNachrichtZuMemory(m: { konversationsId: string; nodeId: stri
     type: undefined,
     title: titelAus(text) || titel || "ChatGPT import",
     content: text,
-    tags: normalizeTags(["chatgpt-import", titel ? `gespräch: ${titel}` : ""]),
+    // Das Tag geht in die Notiz ein und damit auf dieselbe Fläche wie die
+    // Werkzeugtexte: Englisch, eine Sprache (D2-25). Ein bestehender Bestand
+    // bekommt beim nächsten Import dieses eine Tag aktualisiert — gemeldet.
+    tags: normalizeTags(["chatgpt-import", titel ? `conversation: ${titel}` : ""]),
     confidence: 0.7, // importiert, nicht verifiziert
     validFrom: zeitMs,
     validTo: null,
@@ -120,7 +123,7 @@ export function userNachrichtZuMemory(m: { konversationsId: string; nodeId: stri
 
 /** Import eines geparsten conversations.json — idempotent, mit ehrlicher Zusammenfassung. */
 export function importChatgptExport(store: KeptaStore, daten: unknown, opts: { dryRun?: boolean } = {}): ChatgptZusammenfassung {
-  if (!Array.isArray(daten)) throw new Error("conversations.json muss ein Array von Gesprächen sein.");
+  if (!Array.isArray(daten)) throw new Error("conversations.json must be an array of conversations.");
   const z: ChatgptZusammenfassung = { konversationen: 0, nachrichten: 0, nutzerNachrichten: 0, assistantUebersprungen: 0, zuKurz: 0, imported: 0, updated: 0, skipped: 0 };
   for (const konv of daten as ChatgptKonversation[]) {
     z.konversationen += 1;
@@ -151,19 +154,19 @@ export function importChatgptKommando(store: KeptaStore, argumente: string[]): n
   if (positionell[0] === "chatgpt") positionell.shift();
   const quelle = positionell[0];
   if (!quelle) {
-    console.error("Aufruf: npx -y kepta-mcp import chatgpt <conversations.json | export-ordner> [--dry-run]");
-    console.error("ChatGPT → Einstellungen → Datenkontrolle → Daten exportieren → ZIP entpacken → diesen Ordner angeben.");
+    sagen("usage: npx -y kepta-mcp import chatgpt <conversations.json | export folder> [--dry-run]");
+    sagen("export it first: ChatGPT - Settings - Data controls - Export data, unzip it, then point this command at that folder");
     return 2;
   }
   if (positionell.length > 1) {
-    console.error(`Unbekannte Import-Quelle: ${positionell.join(" ")} — aktuell unterstützt: chatgpt.`);
+    sagen(`unknown import source: ${positionell.join(" ")} — what exists: chatgpt`);
     return 2;
   }
   let datei = quelle;
   if (fs.existsSync(quelle) && fs.statSync(quelle).isDirectory()) datei = path.join(quelle, "conversations.json");
   if (/\.zip$/i.test(datei)) {
-    console.error(`ZIP erkannt: ${datei}`);
-    console.error("Bitte erst entpacken und den Ordner angeben (der Importer liest bewusst ohne ZIP-Abhängigkeit).");
+    sagen(`zip detected: ${datei}`);
+    sagen("unzip it first and point this command at the folder — the importer reads without a zip dependency on purpose");
     return 2;
   }
   // Nur REGISTRIERTE Wurzeln sind erlaubt: das Home-Verzeichnis oder der
@@ -176,20 +179,102 @@ export function importChatgptKommando(store: KeptaStore, argumente: string[]): n
     return rel !== "" && !rel.startsWith("..") && !path.isAbsolute(rel);
   });
   if (!erlaubt) {
-    throw new Error(`Only import from a path under your home or temp - got: ${aufgeloest}`);
+    // Die Wache selbst bleibt (sie ist die Grenze, nicht der Komfort), aber die
+    // Absage sagt, was der Nutzer tun kann — und in derselben Sprache wie der
+    // Rest dieses Produkts (D2-25, von Damian entschieden: ein Terminal, Englisch).
+    const [home, temp] = wurzeln;
+    ort("no import from this place:", aufgeloest);
+    sagen("KEPTA reads only your home folder or the system temp:");
+    ort("home:", home);
+    ort("system temp:", temp);
+    sagen("next: copy the export into your Downloads folder, then run the command again");
+    return 2;
   }
   let daten: unknown;
   try {
     daten = JSON.parse(fs.readFileSync(aufgeloest, "utf8"));
   } catch (e) {
-    console.error(`conversations.json nicht lesbar unter ${datei}: ${e instanceof Error ? e.message : String(e)}`);
+    sagen(`conversations.json is not readable under ${datei}: ${e instanceof Error ? e.message : String(e)}`);
     return 2;
   }
   const z = importChatgptExport(store, daten, { dryRun: trocken });
-  const echt = trocken ? " (dry-run — nichts gespeichert)" : "";
-  console.log(`ChatGPT-Import${echt}:`);
-  console.log(`  Gespräche: ${z.konversationen} · Nachrichten gelesen: ${z.nachrichten}`);
-  console.log(`  user: ${z.nutzerNachrichten} (davon ${z.zuKurz} zu kurz) · assistant übersprungen: ${z.assistantUebersprungen}`);
-  console.log(`  Memories: ${z.imported} neu · ${z.updated} aktualisiert · ${z.skipped} unverändert`);
+  const echt = trocken ? " (dry-run — nothing saved)" : "";
+  console.log(`ChatGPT import${echt}:`);
+  console.log(`  conversations: ${z.konversationen} · messages read: ${z.nachrichten}`);
+  console.log(`  user: ${z.nutzerNachrichten} (${z.zuKurz} too short) · assistant skipped: ${z.assistantUebersprungen}`);
+  console.log(`  memories: ${zahl(z.imported)} new · ${zahl(z.updated)} updated · ${zahl(z.skipped)} unchanged`);
+  // Null Notizen sind kein Erfolg: ohne diesen Exit-Abgleich glaubt der Nutzer,
+  // sein ChatGPT-Leben sei jetzt im Gedächtnis.
+  if (z.imported + z.updated + z.skipped === 0) {
+    erklaerungOhneNotiz(z).forEach((zeile) => console.error(zeile));
+    return 1;
+  }
   return 0;
+}
+
+/**
+ * Sätze des Befehls auf 80 Spalten (R2), Fortsetzung eingerückt. Ein Satz mit
+ * einer Export-Format-Erklärung wurde gemessen 194 Zeichen lang.
+ */
+const BREITE = 80;
+function sagen(meldung: string): void {
+  for (const z of bricht(meldung)) console.error(z);
+}
+
+/**
+ * Ein Ort ist eine Adresse, kein Satz: er steht auf seiner eigenen Zeile und
+ * wird nie zerschnitten — ein Pfad, der mitten im Wort umbricht, ist nicht mehr
+ * kopierbar (R2, dieselbe Ausnahme wie bei setup).
+ */
+function ort(label: string, pfad: string): void {
+  const zusammen = `  ${label} ${pfad}`;
+  if ([...zusammen].length <= BREITE) console.error(zusammen);
+  else {
+    console.error(`  ${label}`);
+    console.error(`  ${pfad}`);
+  }
+}
+
+function bricht(text: string, einzug = 2): string[] {
+  const woerter = text.split(/\s+/).filter(Boolean);
+  if (!woerter.length) return [""];
+  const rueck = Math.max(einzug, 4);
+  const setzen = (w: string[], ein: number) => " ".repeat(ein) + w.join(" ");
+  const zeilen: string[] = [];
+  let aktueller: string[] = [];
+  let breite = einzug;
+  for (const wort of woerter) {
+    const laenge = [...wort].length;
+    const naechster = aktueller.length ? breite + 1 + laenge : breite + laenge;
+    if (aktueller.length && naechster > BREITE) {
+      zeilen.push(setzen(aktueller, zeilen.length === 0 ? einzug : rueck));
+      aktueller = [wort];
+      breite = rueck + laenge;
+      continue;
+    }
+    aktueller.push(wort);
+    breite = naechster;
+  }
+  if (aktueller.length) zeilen.push(setzen(aktueller, zeilen.length === 0 ? einzug : rueck));
+  return zeilen;
+}
+
+function zahl(n: number): string {
+  return n.toLocaleString("en-US");
+}
+
+/** Der wahrscheinlichste Grund für null Notizen — danach, was der Export tatsächlich enthielt. */
+function erklaerungOhneNotiz(z: ChatgptZusammenfassung): string[] {
+  const grund =
+    z.konversationen === 0
+      ? "the file holds not a single conversation."
+      : z.nachrichten === 0
+        ? `no message was recognised in ${zahl(z.konversationen)} conversation(s) — usually a different export format: older exports write "author" as a word instead of "author": { "role": ... }.`
+        : z.nutzerNachrichten === 0
+          ? "the export holds only assistant replies — what gets stored is your own side of the chat."
+          : `all ${zahl(z.nutzerNachrichten)} user messages were shorter than ${MIN_LAENGE} characters.`;
+  return [
+    ...bricht(`  no note stored — ${grund}`),
+    ...bricht("  check without storing: npx -y kepta-mcp import chatgpt <folder> --dry-run"),
+  ];
 }

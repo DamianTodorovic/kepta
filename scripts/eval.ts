@@ -1,4 +1,9 @@
-// KEPTA Eval — Precision@5 + Hit@1 + MRR der Retrieval-Engine gegen das Fixkorpus.
+// KEPTA Eval — Recall@5 (gekappt) + Hit@1 + MRR der Retrieval-Engine gegen das Fixkorpus.
+// Gekappt deshalb, weil der Nenner min(5, relevante Notizen) ist (Zeile 52): gemessen
+// wird, wie viel der gesuchten Notizen in den ersten fuenfen angekommen ist — das ist ein
+// Recall, keine Precision. Darum heisst die Ausgabe auch nicht "Precision@5":
+// scripts/ablation.ts teilt durch 5 und meldet auf demselben Korpus P@5 21 %, wo dieser
+// Lauf 81 % meldet. Zwei Metriken, zwei Namen, kein Vergleich zwischen ihnen.
 // Vergleich: v1-naive Suche (Substring-Scoring) vs. v2-Engine (BM25+RRF+Temporal).
 // Läuft deterministisch offline (keine Vektoren), via `npm run eval`.
 import { tmpdir } from "node:os";
@@ -62,9 +67,9 @@ function summarize(rows: Row[], label: string): { p5: number; hit1: number; mrr:
   const hit1 = rows.filter((r) => r.hit1).length / rows.length;
   const mrr = rows.reduce((s, r) => s + r.mrr, 0) / rows.length;
   console.log(`\n${label}`);
-  console.log(`  Precision@5: ${(p5 * 100).toFixed(1)} %`);
-  console.log(`  Hit@1:       ${(hit1 * 100).toFixed(1)} %`);
-  console.log(`  MRR:         ${mrr.toFixed(3)}`);
+  console.log(`  Recall@5 (capped): ${(p5 * 100).toFixed(1)} %`);
+  console.log(`  Hit@1:             ${(hit1 * 100).toFixed(1)} %`);
+  console.log(`  MRR:               ${mrr.toFixed(3)}`);
   return { p5, hit1, mrr };
 }
 
@@ -100,14 +105,14 @@ async function main() {
   const engine = summarize(engineRows, "── v2-Engine (BM25 + RRF + Temporal, ohne Vektoren) ──");
 
   console.log("\n── Verbesserung ──");
-  console.log(`  Precision@5: +${(((engine.p5 - naive.p5) / Math.max(naive.p5, 1e-9)) * 100).toFixed(0)} % relativ`);
-  console.log(`  Hit@1:       +${(((engine.hit1 - naive.hit1) / Math.max(naive.hit1, 1e-9)) * 100).toFixed(0)} % relativ`);
+  console.log(`  Recall@5 (capped): +${(((engine.p5 - naive.p5) / Math.max(naive.p5, 1e-9)) * 100).toFixed(0)} % relativ`);
+  console.log(`  Hit@1:             +${(((engine.hit1 - naive.hit1) / Math.max(naive.hit1, 1e-9)) * 100).toFixed(0)} % relativ`);
 
   // Detail-Tabelle der Engine
   console.log("\nDetails (Engine):");
   for (const r of engineRows) {
     const mark = r.hit1 ? "✓" : r.p5 > 0 ? "~" : "✗";
-    console.log(`  ${mark} ${r.query.padEnd(40)} P@5 ${(r.p5 * 100).toFixed(0).padStart(3)} %  MRR ${r.mrr.toFixed(2)}`);
+    console.log(`  ${mark} ${r.query.padEnd(40)} R@5 ${(r.p5 * 100).toFixed(0).padStart(3)} %  MRR ${r.mrr.toFixed(2)}`);
   }
 
   store.close();

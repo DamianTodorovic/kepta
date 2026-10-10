@@ -12,12 +12,13 @@ import { schluesselbundKeyProvider } from "./src/core/schluessel";
 import { planeImportReparatur, mitFrist } from "./src/core/reparatur";
 import { migrateFromLegacyJson } from "./src/core/migrate";
 import { EmbeddingQueue } from "./src/core/embeddings";
-import { searchMemories as engineSearch, indexMemory, gateDecision, writeGateEnabled, MAX_SEARCH_LIMIT, consolidateMemories, aktiviereSuchCacheDelta } from "./src/core/engine";
-import { handleRpc, TOOLS as MCP_TOOLS, saveWithIndex, ohnePrivate, aussenVor, zeigerFürAgenten } from "./src/core/mcp";
+import { searchMemories as engineSearch, indexMemory, gateDecision, writeGateEnabled, MAX_SEARCH_LIMIT, aktiviereSuchCacheDelta } from "./src/core/engine";
+import { handleRpc, TOOLS as MCP_TOOLS, callTool, saveWithIndex, ohnePrivate, aussenVor, zeigerFürAgenten } from "./src/core/mcp";
 import { importObsidianVault, memoryToMarkdown } from "./src/core/obsidian";
 import { exportBundle, importBundle, PraxissyncJournal, type SyncBundle } from "./src/core/praxissync";
 import { sanitizeText, sanitizeTitle, sanitizeTags } from "./src/core/sanitize";
 import { APP_VERSION } from "./src/core/version";
+import { grafBild } from "./src/graf-dienst";
 import { klassifiziere, istUnbrauchbar, htmlZuText, entferneNaviZeilen } from "./src/core/klassifikation";
 import type { MemoryRecord as CoreMemory } from "./src/core/types";
 import { nurDieserRechner } from "./src/herkunft";
@@ -63,6 +64,151 @@ function isSafeFilename(name: string): boolean {
   if (name.includes("..") || name.includes("/") || name.includes("\\") || name.startsWith(".")) return false;
   if (/[<>:"|?*\x00-\x1F]/.test(name)) return false;
   return /^[\w.\- äöüÄÖÜß()\[\]]+$/.test(name);
+}
+
+/**
+ * A3-09 — welche Einstellungs-Schluessel Geheimnisse tragen koennen. Der Name ist
+ * die einzige Signatur, die die Route hat; die Werte selbst sind frei. Der
+ * ai_settings-Blob steht ausdruecklich dabei: die Desktop-App legt ihre
+ * KI-Verbindung (inkl. Zugangsschluessel) genau darin ab, der Name alone
+ * (settings.ts, ai.ts in kepta-app) verraet das nicht.
+ */
+const GEHEIM_NAME_MUSTER = /(?:api[_-]?key|access[_-]?key|secret|token|passwort|password|passphrase|schluessel|key)$/i;
+const GEHEIM_NAMEN = new Set(["ai_settings"]);
+
+function istGeheimSchluessel(name: string): boolean {
+  return GEHEIM_NAMEN.has(name) || GEHEIM_NAME_MUSTER.test(name);
+}
+
+/**
+ * Sicherung vor dem endgueltigen Loeschen: eine Bytekopie der Datenbankdatei,
+ * nicht ihr JSON-Export. Ein Export laege als Klartext neben einem
+ * verschluesselten Grab und waere ein zweites, offeneres Gehirn auf der Platte;
+ * die Kopie behaelt den Verschlusselungszustand der Originaldatei. Vor der Kopie
+ * raumt der WAL in die Datei — sonst sicherte man einen Bestand, der noch gar
+ * nicht in der Hauptdatei steht. Sie schlaegt fehl? Dann wird auch nichts
+ * geloescht: die Gegenprobe (Datenbank oeffnen, Zaehlen) kann niemand machen,
+ * wenn es die Sicherung nicht gibt.
+ */
+function datenbanksicherung(store: KeptaStore): string | null {
+  try {
+    store.db.pragma("wal_checkpoint(TRUNCATE)");
+    const ordner = path.join(path.dirname(store.dbPath), "backup");
+    fs.mkdirSync(ordner, { recursive: true });
+    // Das Kuerzel neben dem Zeitstempel macht den Namen eindeutig: zwei bestaetigte
+    // Volltausche in derselben Millisekunde schrieben sonst dieselbe Datei, und die
+    // zweite Sicherung ueberschrieb die erste — zwei versprochene Staende, einer auf
+    // der Platte. Die Zahl in der Antwort blieb dabei richtig; der verlorene Stand
+    // war still.
+    const kuerzel = crypto.randomBytes(2).toString("hex");
+    const ziel = path.join(ordner, `kepta-pre-replace-${Date.now()}-${kuerzel}.db`);
+    fs.copyFileSync(store.dbPath, ziel);
+    return ziel;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Der Name, den datenbanksicherung() schreibt — an IHM wird die eigene Sicherung
+ * erkannt, alles andere im Ordner ist Nutzergut und bleibt liegen. Die eine
+ * Gruppe ist optional: Installationen, die vor dem Kuerzel liefen, haelten
+ * Dateien mit dem blossen Zeitstempel, und die raeumen weiter mit. Erkennt der
+ * Schalter die alte Form nicht mehr, hoert die Aufbewahrung bei genau den
+ * aelteren Staenden auf, die den Ordner voll machen.
+ */
+const SICHERUNGS_NAME = /^kepta-pre-replace-(\d+)(?:-([0-9a-f]{4}))?\.db$/;
+
+/**
+ * Aufbewahrung als Zahl, nicht als Vorbehalt: der Ordner legt eine Datei je
+ * Volltausch hin, und auf einer langen gelebten Installation fuellt er die Platte.
+ * Dasselbe Muster wie KEPTA_MAX_ACTIVE — bei jedem Aufruf gelesen, damit ein
+ * Betreiber die Zahl ohne Neustart aendern kann. 0 ist eine Entscheidung
+ * ("behalte nichts"); was keine Zahl ab null ist, faellt auf fuenf zurueck und
+ * wird in der Antwort genannt. Eine Zahl still zu ignorieren war genau der
+ * Fehler des permanent-Schalters.
+ */
+function backupAufbewahrung(): { behalten: number; ignoriert?: string } {
+  const roh = process.env.KEPTA_BACKUP_KEEP;
+  if (roh === undefined || roh.trim() === "") return { behalten: 5 };
+  const wert = Number(roh);
+  if (Number.isFinite(wert) && wert >= 0) return { behalten: Math.floor(wert) };
+  return { behalten: 5, ignoriert: `KEPTA_BACKUP_KEEP="${roh}" is not a number from 0 — five backups are kept.` };
+}
+
+/**
+ * Raeumt den Sicherungsordner auf die erlaubte Zahl, aelteste zuerst. Geloescht
+ * wird ausschliesslich, was datenbanksicherung() selbst geschrieben hat (beide
+ * Namensformen, .db, direkt in diesem Ordner) — nie ein anderer Name, nie ein
+ * Ordner, nie ein Pfad daneben. Bei gleichem Zeitstempel entscheidet das Kuerzel,
+ * damit zwei Laeufe in derselben Millisekunde eine feste Reihenfolge haben. Was
+ * nicht weichen will (kurz gesperrt), geht beim naechsten Volltausch wieder; ein
+ * Raeumfehler darf die Antwort nicht umwerfen, Sicherung und Purge sind dann
+ * laengst gelaufen.
+ */
+function halteSicherungen(ordner: string, behalten: number): { gehalten: number; entfernt: number } {
+  let liste: string[];
+  try { liste = fs.readdirSync(ordner); } catch { return { gehalten: 0, entfernt: 0 }; }
+  const eigene: { n: string; zeit: number; kuerzel: string }[] = [];
+  for (const n of liste) {
+    const treffer = SICHERUNGS_NAME.exec(n);
+    if (treffer) eigene.push({ n, zeit: Number(treffer[1]), kuerzel: treffer[2] ?? "" });
+  }
+  eigene.sort((a, b) => b.zeit - a.zeit || b.kuerzel.localeCompare(a.kuerzel));
+  let entfernt = 0;
+  for (const d of eigene.slice(behalten)) {
+    try {
+      fs.rmSync(path.join(ordner, d.n), { force: true });
+      entfernt++;
+    } catch { /* beim naechsten Volltausch wieder */ }
+  }
+  return { gehalten: eigene.length - entfernt, entfernt };
+}
+
+/** Groessen, die ein Mensch lesen kann — fuer die Fehlerantwort ohne Stapel. */
+function menschenGroesse(bytes: number): string {
+  if (!Number.isFinite(bytes) || bytes < 0) return "unknown";
+  if (bytes >= 1024 * 1024) return `${+(bytes / (1024 * 1024)).toFixed(2)} MB`;
+  if (bytes >= 1024) return `${Math.round(bytes / 1024)} KB`;
+  return `${bytes} bytes`;
+}
+
+/**
+ * A3-04/Q-19 — die einzige Fehlermittelware. Ohne ihr antwortete Express im
+ * Entwicklungsmodus mit vollem Stapel: absolute Pfade bis nach
+ * node_modules/raw-body und die Zeile im eigenen Quelltext (gemessen bei 413 und
+ * bei kaputtem JSON). NODE_ENV=production unterdrueckt den Stapel, repariert ihn
+ * nicht — dieser Handler haelt die Antwort in JSON und laesst nach aussen nur
+ * Grund und Groesse. Weder Stapel noch Pfad noch der gesandte Body gehen hinaus;
+ * der wahre Grund bleibt beim Betreiber, sonst ist eine 500 unauffindbar.
+ */
+export function sichererFehler(err: unknown, req: express.Request, res: express.Response, next: express.NextFunction) {
+  if (res.headersSent) return next(err);
+  const e = (err ?? {}) as { status?: number; statusCode?: number; type?: string; expose?: boolean; message?: string; limit?: number; length?: number };
+  const status = [e.status, e.statusCode].find((s) => typeof s === "number" && s >= 400 && s <= 599) ?? 500;
+
+  if (status === 413 || e.type === "entity.too.large") {
+    const limitBytes = typeof e.limit === "number" ? e.limit : undefined;
+    const receivedBytes = typeof e.length === "number" ? e.length : undefined;
+    const text = "Body too large"
+      + (limitBytes !== undefined ? ` — this route accepts up to ${menschenGroesse(limitBytes)}` : "")
+      + (receivedBytes !== undefined ? `, this request carried ${menschenGroesse(receivedBytes)}` : "")
+      + ". Nothing was stored.";
+    return res.status(413).json({ error: text, limitBytes, receivedBytes });
+  }
+
+  if (status === 400 && (e.type === "entity.parse.failed" || err instanceof SyntaxError)) {
+    return res.status(400).json({ error: "Body is not valid JSON — nothing was read. The body itself is not echoed back." });
+  }
+
+  if (status >= 500) {
+    console.error(`kepta: request failed (${req.method} ${req.path}) — ${err instanceof Error ? (err.stack ?? err.message) : String(err)}`);
+    return res.status(status).json({ error: "The request failed inside the server. The reason is in the server log, not in this answer." });
+  }
+  // 4xx mit expose:true sind nach http-errors-eigener Regel ungefaehrlich;
+  // alles andere in dieser Klasse bekommt den Wortlaut ohne Detail.
+  const grund = e.expose === true && typeof e.message === "string" ? e.message : "The request could not be handled.";
+  res.status(status).json({ error: grund });
 }
 
 // ---------- Suche ----------
@@ -301,7 +447,12 @@ export function createApp(store: KeptaStore) {
   }
 
   function handleMemoriesImport(req: express.Request, res: express.Response) {
-    const { memories: incoming, mode } = req.body as { memories?: Partial<MemoryRecord>[]; mode?: "merge" | "replace" };
+    const { memories: incoming, mode, confirm, dryRun } = req.body as {
+      memories?: Partial<MemoryRecord>[];
+      mode?: "merge" | "replace";
+      confirm?: unknown;
+      dryRun?: unknown;
+    };
     if (!Array.isArray(incoming)) {
       return res.status(400).json({ error: "Not a valid backup file (a memories array was expected)" });
     }
@@ -319,22 +470,71 @@ export function createApp(store: KeptaStore) {
         updatedAt: typeof m.updatedAt === "number" && m.updatedAt > 0 ? m.updatedAt : Date.now(),
       })).filter(m=> m.content.length>0);
 
+    // A3-01/Q-16: eine Nutzlast ohne einzige nutzbare Notiz ist kein Erfolg,
+    // sondern ein Fehler — und bei mode:"replace" war sie der Vollstaender, der
+    // die ganze Wissensbasis loescht (gemessen: 200 {imported:0}, Bestand 0).
+    if (cleaned.length === 0) {
+      return res.status(400).json({ error: "No usable note in the payload (every entry needs a non-empty content) — nothing was changed." });
+    }
+
     if (mode === "replace") {
+      const vorher = store.countMemories();
+      if (dryRun === true) {
+        return res.json({ dryRun: true, affected: vorher, incoming: cleaned.length });
+      }
+      if (confirm !== "replace") {
+        return res.status(400).json({
+          error: `mode:"replace" purges the whole knowledge base for good — ${vorher.active} active and ${vorher.trashed} trashed nodes, trash included. Send confirm:"replace" to do it, or dryRun:true to only see how many are affected. Nothing was changed.`,
+        });
+      }
+      // Vor dem Purge, nicht danach: was hier fehlt, ist nach dem Purge weg.
+      const backupPath = datenbanksicherung(store);
+      if (!backupPath) {
+        return res.status(500).json({ error: "The backup could not be written — nothing is deleted without a backup. Nothing was changed." });
+      }
       // Endgültig leeren (Papierkorb inklusive), dann Import — vollständig listen, nicht gekappt
       for (const m of listAllMemories({ trash: true })) store.purgeMemory(m.id);
       for (const m of listAllMemories()) store.purgeMemory(m.id);
       // Doppelte IDs innerhalb der Backup-Datei: letzte Variante gewinnt (createMemory wirft sonst)
       const byId = new Map<string, (typeof cleaned)[number]>();
       for (const m of cleaned) byId.set(m.id, m);
+      let konflikt = false;
       try {
         for (const m of byId.values()) {
           const created = store.createMemory(m);
           indexMemory(store, created.id);
         }
       } catch {
-        return res.status(409).json({ error: "Import failed: conflicting node ids" });
+        konflikt = true;
       }
-      return res.json({ imported: byId.size, total: activeCount(), ...grenzHinweis() });
+      // Erst ist der letzte Schreiblauf am Ordner vorueber, dann wird gezaehlt und
+      // geraeumt: die frische Sicherung ist beim Raeumen immer die neueste und kann
+      // sich nicht selbst wegnehmen. Der Purge laengt zu dem Zeitpunkt — die Antwort
+      // darf nicht an einer Raeumkehr scheitern, deshalb wird hier nichts geworfen.
+      const aufbewahrung = backupAufbewahrung();
+      const raeum = halteSicherungen(path.dirname(backupPath), aufbewahrung.behalten);
+      const warnung = [
+        grenzHinweis().warning,
+        aufbewahrung.ignoriert,
+        raeum.gehalten === 0 ? "KEPTA_BACKUP_KEEP=0 — the backup was written for this purge and deleted right after it: this purge cannot be undone from disk." : undefined,
+      ].filter(Boolean).join(" ");
+      if (konflikt) {
+        return res.status(409).json({
+          error: `Import failed: conflicting node ids (backup: ${backupPath})`,
+          backupPath,
+          backupsGehalten: raeum.gehalten,
+          backupsEntfernt: raeum.entfernt,
+        });
+      }
+      return res.json({
+        imported: byId.size,
+        total: activeCount(),
+        purged: vorher,
+        backupPath,
+        backupsGehalten: raeum.gehalten,
+        backupsEntfernt: raeum.entfernt,
+        ...(warnung ? { warning: warnung } : {}),
+      });
     }
 
     let imported = 0;
@@ -364,6 +564,13 @@ export function createApp(store: KeptaStore) {
   }
   app.post("/api/import/markdown", writeLimiter, express.json({ limit: "10mb" }), handleMarkdownImport);
 
+  // A3-08: dieselbe Reihenfolge muss die Reparaturroute einhalten — ihr eigenes,
+  // deklariertes 16-kb-Limit war wirkungslos, weil der globale Parser unten den
+  // Body schon verbraucht hatte und der Routen-Parser ihn uebersprang (gemessen:
+  // 20 KB, 100 KB und 900 KB mit HTTP 200). Der Aufrufer schickt {apply:true} —
+  // 16 kb sind hier eine echte Grenze, keine Dekoration.
+  app.post("/api/repair/imports", writeLimiter, express.json({ limit: "16kb" }), handleRepairImports);
+
   // Globales Payload-Limit für alle übrigen Routen (1mb — 50mb war viel zu groß, DoS)
   app.use(express.json({ limit: "1mb" }));
   app.use(express.urlencoded({ limit: "1mb", extended: false }));
@@ -389,11 +596,31 @@ export function createApp(store: KeptaStore) {
   // --- Adaptives Profil (je Nutzer individuell) ---
   const PROFILE_FILE = path.join(DATA_DIR, "profile.json");
   app.get("/api/settings", (_req, res) => {
+    let bestand: Record<string, string>;
     try {
-      res.json(store.einstellungen());
+      bestand = store.einstellungen();
     } catch {
-      res.json({});
+      bestand = {};
     }
+    // A3-09: diese Route war die einzige Klartext-Tuer zu dem, was die
+    // verschluesselte Datei hueltet — der KI-Zugangsschluessel hing unmaskiert
+    // heraus (gemessen {"anthropicApiKey":"sk-test-123"}), an jeden Prozess auf
+    // der Maschine und, sobald KEPTA_HOST gesetzt ist, an jeden Netzpeer. Secret-
+    // foermige Namen und der ai_settings-Blob (darin lebt der Schluessel der
+    // Desktop-App wirklich) gehen von hier nur noch als Anzeige heraus: gesetzt
+    // plus die letzten vier Zeichen. Geschrieben wird weiter ueber PUT, die
+    // Datenbank bleibt der unveraenderte Speicher.
+    const angezeit: Record<string, unknown> = {};
+    for (const [k, v] of Object.entries(bestand)) {
+      if (!istGeheimSchluessel(k)) {
+        angezeit[k] = v;
+        continue;
+      }
+      // Ein kurzer Wert haelt keine vier Zeichen uebrig, die zeigen kann, ohne
+      // die Haelfte preiszugeben.
+      angezeit[k] = { gesetzt: true, ende: v.length >= 8 ? v.slice(-4) : null };
+    }
+    res.json(angezeit);
   });
 
   app.put("/api/settings", writeLimiter, (req, res) => {
@@ -443,20 +670,55 @@ export function createApp(store: KeptaStore) {
     return paren.join("\n").trim() || str.replace(/[^\x20-\x7EÄÖÜäöüß\s]/g, " ").trim();
   }
 
-  async function autoImportFile(filePath: string) {
+  /**
+   * A3-03/Q-18: path.resolve prueft den Pfad, nie das Ziel. Ein Symlink in der
+   * Inbox loeste sich bisher in jede Datei auf, die dieser Nutzer lesen kann —
+   * ihr Inhalt stand als Knoten im agentensichtbaren Speicher (gemessen mit
+   * /tmp/a3-fremd.txt). Darum zwei Blickrichtungen: lstat auf den Eintrag selbst
+   * (er darf kein Link sein) und realpath auf die echte Lage (sie muss in der
+   * Inbox liegen, auch wenn ein Ordner ueber ihr weiterverlinkt ist).
+   * "kein Angebot" ist der bisher stille Fall Ordner: nichts abgelehnt, nichts gemeldet.
+   */
+  type InboxSchleuse =
+    | { aufnahme: "ja"; datei: string }
+    | { aufnahme: "nein"; grund: string }
+    | { aufnahme: "kein angebot" };
+
+  async function inboxGate(pfad: string): Promise<InboxSchleuse> {
+    const basis = path.resolve(INBOX_DIR);
+    const resolved = path.resolve(pfad);
+    if (resolved !== basis && !resolved.startsWith(basis + path.sep)) return { aufnahme: "nein", grund: "not inside the inbox folder" };
+    if (!isSafeFilename(path.basename(resolved))) return { aufnahme: "nein", grund: "not a usable file name" };
+    const eintrag = await fs.promises.lstat(resolved).catch(() => null);
+    if (!eintrag) return { aufnahme: "nein", grund: "not readable" };
+    if (eintrag.isSymbolicLink()) return { aufnahme: "nein", grund: "symlink — the inbox does not follow links out of the folder" };
+    // Ein Ordner in der Inbox ist keine abgelehnte Datei, sondern kein Angebot —
+    // still uebergangen wie bisher (sonst meldete jeder eigene archive-Ordner eine
+    // Ablehnung, und der Waechter schrieb beim ersten Import eine Warnung).
+    if (!eintrag.isFile()) return { aufnahme: "kein angebot" };
+    // Der Home-Pfad ist auf macOS selbst ein Link (/var -> /private/var): verglichen
+    // wird deshalb die echte Lage beider Seiten, nicht der angesehene Pfad.
+    const [echt, echteBasis] = await Promise.all([
+      fs.promises.realpath(resolved).catch(() => null),
+      fs.promises.realpath(INBOX_DIR).catch(() => null),
+    ]);
+    if (!echt || !echteBasis) return { aufnahme: "nein", grund: "not readable" };
+    if (echt !== echteBasis && !echt.startsWith(echteBasis + path.sep)) return { aufnahme: "nein", grund: "leads out of the inbox folder" };
+    return { aufnahme: "ja", datei: echt };
+  }
+
+  async function autoImportFile(filePath: string): Promise<{ grund?: string }> {
     try {
-      // Hardened: nur Dateien innerhalb INBOX_DIR, kein Path-Traversal
-      const resolved = path.resolve(filePath);
-      const inboxResolved = path.resolve(INBOX_DIR);
-      if (!resolved.startsWith(inboxResolved + path.sep) && resolved !== inboxResolved) return;
-      const baseName = path.basename(resolved);
-      if (!isSafeFilename(baseName)) return;
+      const schleuse = await inboxGate(filePath);
+      if (schleuse.aufnahme === "kein angebot") return {};
+      if (schleuse.aufnahme === "nein") return { grund: schleuse.grund };
+      const resolved = schleuse.datei;
       // Nutzerdateien werden nie synchron gelesen — dieselbe Regel, die textAus()
       // seit 2.10.3 formuliert; der Inbox-Watcher lief ihr bisher zuwider.
       const stat = await fs.promises.stat(resolved).catch(() => null);
-      if (!stat?.isFile() || stat.size > 20_000_000) return;
+      if (!stat?.isFile() || stat.size > 20_000_000) return {};
       const ext = path.extname(resolved).toLowerCase();
-      if (!['.txt','.md','.json','.pdf','.csv'].includes(ext) && stat.size>500000) return;
+      if (!['.txt','.md','.json','.pdf','.csv'].includes(ext) && stat.size>500000) return {};
       let content = '';
       if (ext === '.pdf') {
         // pdf.js ist der Extraktor — derselbe, den die Repair-Route benutzt. Die
@@ -472,7 +734,7 @@ export function createApp(store: KeptaStore) {
           try { const j=JSON.parse(content); content = Array.isArray(j) ? JSON.stringify(j,null,2).slice(0,50000) : content; } catch {}
         }
       }
-      if (!content.trim()) return;
+      if (!content.trim()) return {};
       const base = path.basename(resolved, path.extname(resolved));
       // Chunking 2000
       const chunks: string[] = [];
@@ -495,7 +757,10 @@ export function createApp(store: KeptaStore) {
         fs.mkdirSync(doneDir, { recursive: true });
         fs.renameSync(resolved, path.join(doneDir, path.basename(resolved)));
       } catch {}
-    } catch {}
+      return {};
+    } catch {
+      return { grund: "could not be read" };
+    }
   }
 
   function startInboxWatcher(){
@@ -512,7 +777,13 @@ export function createApp(store: KeptaStore) {
         setTimeout(()=>{ inboxQueue.delete(resolved);
           const geprueft = path.resolve(resolved);
           if (!geprueft.startsWith(path.resolve(INBOX_DIR) + path.sep) || !fs.existsSync(geprueft)) return;
-          autoImportFile(geprueft); }, 800);
+          // Der Grund geht nach aussen, statt im Nichts zu verschwinden: ein Link,
+          // der abgelehnt wird, bleibt in der Inbox liegen — ohne eine Zeile, die
+          // sagt warum, ist das fuer den Nutzer nur eine Datei, die nie ankam.
+          void autoImportFile(geprueft).then((r) => {
+            if (r.grund) console.warn(`kepta inbox: ${path.basename(geprueft)} wurde uebersprungen — ${r.grund}`);
+          });
+        }, 800);
       });
     } catch {}
   }
@@ -537,8 +808,15 @@ export function createApp(store: KeptaStore) {
     let files: string[] = [];
     try { files = fs.readdirSync(INBOX_DIR).filter(f=> !f.startsWith('.') && f!=='archiv' && f!=='archive').map(f=> path.join(INBOX_DIR,f)); } catch {}
     let imported = 0;
-    for (const f of files) { const before = activeCount(); await autoImportFile(f); const after = activeCount(); if (after>before) imported += (after-before); }
-    res.json({ scanned: files.length, imported, inboxDir: INBOX_DIR });
+    const skipped: { file: string; reason: string }[] = [];
+    for (const f of files) {
+      const before = activeCount();
+      const ergebnis = await autoImportFile(f);
+      const after = activeCount();
+      if (after>before) imported += (after-before);
+      if (ergebnis.grund) skipped.push({ file: path.basename(f), reason: ergebnis.grund });
+    }
+    res.json({ scanned: files.length, imported, skipped, inboxDir: INBOX_DIR });
   });
 
   // --- Speicher-API ---
@@ -661,8 +939,16 @@ export function createApp(store: KeptaStore) {
   app.delete("/api/memories/:id", writeLimiter, (req, res) => {
     const id = String(req.params.id || "");
     if (!id || id.length > 120 || !/^[\w\-.:]+$/.test(id)) return res.status(400).json({ error: "Invalid id" });
-    // Default: Papierkorb. ?permanent=1 löscht endgültig.
-    if (req.query.permanent === "1" || req.query.permanent === "true") {
+    // Default: Papierkorb. ?permanent=1 loescht endgueltig.
+    // A3-11: alles ausserhalb dieser Formen wurde still als Papierkorb behandelt —
+    // "?permanent=True" verlangte endgueltig und bekam {"permanent":false}. Ein
+    // Client, der loeschen wollte, hat eine Notiz im Papierkorb liegen und hält sie
+    // fuer weg. Darum: exakt eine der vier Formen, sonst Ablehnung ohne Wirkung.
+    const permanentRoh = req.query.permanent;
+    if (permanentRoh !== undefined && (typeof permanentRoh !== "string" || !/^(1|0|true|false)$/.test(permanentRoh))) {
+      return res.status(400).json({ error: 'permanent takes exactly one of 1, 0, true, false — or leave it out for the trash. Nothing was deleted.' });
+    }
+    if (permanentRoh === "1" || permanentRoh === "true") {
       const purged = store.purgeMemory(id);
       if (purged) publishActivity({ type: "delete", source: "app", title: id });
       return res.json({ ok: purged, permanent: true });
@@ -861,6 +1147,21 @@ export function createApp(store: KeptaStore) {
     });
   });
 
+  // --- Graf-Dienst: das Bild hinter einer Flaeche (Vertrag A9, Scheibe K5) ---
+  // Neue Ressource, alte bleibt: /api/graph antwortet unveraendert, weil fremde
+  // Agenten dagegen schreiben. /api/graph/bild liefert Kuvert und Weltbild —
+  // Plaetze in Welteinheiten, zwei Kanaele an der Kante und eine Bilanz, die
+  // sagt, was die Kappen nicht zeigen. Der Privatheits-Floor sitzt auf diesem
+  // Pfad seit heute (vorher kannte ihn nur die MCP-Tuer).
+  app.get("/api/graph/bild", (req, res) => {
+    const ergebnis = grafBild(store, req.query as Record<string, unknown>, req.headers["if-none-match"] as string | undefined);
+    if (ergebnis.status === 400) return res.status(400).json({ error: ergebnis.error });
+    res.setHeader("ETag", ergebnis.etag);
+    res.setHeader("Cache-Control", "private, max-age=0, must-revalidate");
+    if (ergebnis.status === 304) return res.status(304).end();
+    res.json(ergebnis.antwort);
+  });
+
   // --- Obsidian-Interop: Markdown-Import/-Export ---
   // (POST /api/import/markdown ist mit eigenem 10mb-Body-Parser oben registriert.)
 
@@ -1002,7 +1303,7 @@ export function createApp(store: KeptaStore) {
     return out;
   }
 
-  app.post("/api/repair/imports", writeLimiter, express.json({ limit: "16kb" }), async (req, res) => {
+  async function handleRepairImports(req: express.Request, res: express.Response) {
     const anwenden = req.body?.apply === true;
     const alle = listAllMemories();
     const nachQuelle = new Map<string, CoreMemory[]>();
@@ -1078,7 +1379,7 @@ export function createApp(store: KeptaStore) {
     }
     if (anwenden && (dateien > 0 || clips > 0)) letzteEigeneMeldung = Date.now();
     res.json({ ok: true, applied: anwenden, geprueft, dateien, aktualisiert, entfernt, erstellt, clips, fehler: fehler.slice(0, 5) });
-  });
+  }
 
 
   // ---------- Semantische Hybrid-Suche + Ollama Proxy ----------
@@ -1263,56 +1564,59 @@ export function createApp(store: KeptaStore) {
     }
   });
 
-  app.post("/api/mcp/consolidate", writeLimiter, async (req, res) => {
-    const body = req.body as { dryRun?: boolean; threshold?: number };
-    try {
-      const result = await consolidateMemories(store, {
-        dryRun: body.dryRun !== false,
-        threshold: typeof body.threshold === "number" ? body.threshold : undefined,
-        ausnehmen: store.privateMemoryIds(),
-      });
-      publishActivity({ type: "consolidate", source: "agent", title: `dryRun=${result.dryRun} applied=${result.applied}` });
-      return res.json({
-        dryRun: result.dryRun,
-        applied: result.applied,
-        candidates: result.candidates.map((c) => ({ keepId: c.keepId, duplicateId: c.duplicateId, similarity: c.similarity, reason: c.reason })),
-      });
-    } catch (e) {
-      return res.status(400).json({ error: e instanceof Error ? e.message : String(e) });
+  /**
+   * A2-13 — die HTTP-Spiegel gehen durch `callTool`, denselben Pfad wie POST /mcp.
+   * Vorher riefen consolidate und forget die Engine direkt und forget rollte seine
+   * eigene Logik: durch die eine Tuer brauchte eine Zerstoerung eine ausdrueckliche
+   * Bestaetigung, durch die andere nicht, und die Kappe der Vorschlagsliste wurde
+   * hier berechnet, aber nicht herausgegeben. Eine Regel, die an zwei Tueren
+   * verschieden ist, ist keine Regel.
+   *
+   * Die Antwortform bleibt die des Spiegels: der Strukturteil des Werkzeugergebnisses
+   * als Leib, ein refusierter Aufruf als {error: …} mit dem Wortlaut von callTool
+   * (der "Error:"-Vortext ist der Umschlag des Agentenkanals, nicht unsere Zusage),
+   * und "Memory not found" bleibt 404 wie zuvor. Was sich nachweislich aendert, ist
+   * die Regel, nicht die Form: dryRun:false ohne Bestaetigung und supersede ohne
+   * Nachfolger waren an dieser Tuer ein 200 — jetzt dasselbe 400 wie am Agentenweg.
+   */
+  async function werkzeugSpiegel(req: express.Request, res: express.Response, name: string, nachErfolg?: (struktur: Record<string, unknown>) => void) {
+    const args = req.body && typeof req.body === "object" && !Array.isArray(req.body) ? (req.body as Record<string, unknown>) : {};
+    const ergebnis = await callTool(store, name, args);
+    if (ergebnis.isError) {
+      const erster = ergebnis.content?.[0] as { text?: unknown } | undefined;
+      const text = typeof erster?.text === "string" ? erster.text : "";
+      const meldung = text.replace(/^Error:\s*/, "") || "The tool call was refused.";
+      // Die Zahl ist HTTP, nicht Regel: callTool kennt keinen Status. "Memory not
+      // found" war an diesem Spiegel immer 404 — Wortlaut und Weigerung kommen von
+      // callTool (und sind fuer private wie unbekannte id derselbe Text), die 404
+      // bleibt, damit ein Client, der auf 404 prueft, nicht schweigend falsch liegt.
+      const status = /^Memory not found: /.test(meldung) ? 404 : 400;
+      return res.status(status).json({ error: meldung });
     }
+    const struktur = (ergebnis.structuredContent ?? {}) as Record<string, unknown>;
+    nachErfolg?.(struktur);
+    return res.json(struktur);
+  }
+
+  app.post("/api/mcp/consolidate", writeLimiter, async (req, res) => {
+    await werkzeugSpiegel(req, res, "memory_consolidate", (struktur) => {
+      publishActivity({ type: "consolidate", source: "agent", title: `dryRun=${struktur.dryRun} applied=${struktur.applied}` });
+    });
   });
 
   app.post("/api/mcp/forget", writeLimiter, async (req, res) => {
-    const body = req.body as { id?: string; mode?: string; validTo?: number; supersedeBy?: string };
-    const id = String(body.id ?? "");
-    const mode = body.mode ? String(body.mode) : "expire";
-    try {
-      const verweigert = aussenVor(store, id, `Memory not found: ${id}`);
-      if (verweigert) return res.status(404).json({ error: verweigert.message });
-      if (!store.getMemory(id)) return res.status(404).json({ error: `Memory not found: ${id}` });
-      if (mode === "expire") {
-        store.updateMemory(id, { validTo: typeof body.validTo === "number" ? body.validTo : Date.now() });
-      } else if (mode === "supersede") {
-        const by = body.supersedeBy ? String(body.supersedeBy) : null;
-        if (by) {
-          const nachfolger = aussenVor(store, by, `Memory not found: ${by}`);
-          if (nachfolger) return res.status(404).json({ error: nachfolger.message });
-        }
-        store.supersedeMemory(id, by);
-      } else if (mode === "delete") {
-        store.trashMemory(id);
-      } else {
-        return res.status(400).json({ error: `Unknown mode: ${mode}` });
-      }
+    await werkzeugSpiegel(req, res, "memory_forget", () => {
+      const id = String((req.body as { id?: unknown } | undefined)?.id ?? "");
       publishActivity({ type: "delete", source: "agent", title: id });
-      return res.json({ forgotten: true, mode });
-    } catch (e) {
-      return res.status(400).json({ error: e instanceof Error ? e.message : String(e) });
-    }
+    });
   });
 
   // Chat-Proxy, SSE-Streaming und Anbieter-Modelle sind Wege der Desktop-App —
   // der headlose Kern hat kein LLM-Proxy und deshalb keine dieser Routen.
+
+  // Zuletzt registriert, damit sichererFehler die Fehler aller Routen oberhalb
+  // von ihr faengt (startServer haengt sie hinter die statischen Routen noch einmal an).
+  app.use(sichererFehler);
 
   return app;
 }
@@ -1376,6 +1680,10 @@ async function startServer() {
       res.sendFile(path.join(distDir, 'index.html'));
     });
   }
+  // Dieselbe Fehlermittelware noch einmal, hinter static und Vite: ein Fehler aus
+  // diesen Spaeten faellt aus createApps Stapel-Faenger heraus (Express laeuft die
+  // Schicht von der Fehlerstelle ab waerts), und res.sendFile wirft sehr wohl.
+  app.use(sichererFehler);
 
   const server = app.listen(PORT, HOST, () => {
     console.log(`Server running on http://${HOST}:${PORT}${HOST === "127.0.0.1" ? "" : "  (all interfaces — KEPTA_HOST is set explicitly)"}`);

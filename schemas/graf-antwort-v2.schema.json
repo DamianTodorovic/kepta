@@ -1,0 +1,175 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://kepta.dev/schemas/graf-antwort-v2.schema.json",
+  "title": "KEPTA Graf-Antwort graf-2 (GET /api/graph/bild)",
+  "description": "Ein Kuvert, zwei Sichten. Breite und Hoehe kommen hier nicht vor: Positionen sind Welteinheiten, das Fenster skaliert der Client.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["vertrag", "sicht", "bestand", "kuerzung", "welt", "stempel", "knoten", "kanten"],
+  "properties": {
+    "vertrag": { "const": "graf-2" },
+    "sicht": { "enum": ["konzept", "notiz"] },
+    "bestand": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["notizen", "knoten", "kanten"],
+      "properties": {
+        "notizen": { "type": "integer", "minimum": 0 },
+        "knoten": { "type": "integer", "minimum": 0 },
+        "kanten": { "type": "integer", "minimum": 0 }
+      }
+    },
+    "kuerzung": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["kappe", "uebrig", "grund", "gefiltert", "verwaiste", "vollstaendig"],
+      "properties": {
+        "kappe": { "$ref": "#/definitions/dreiZahlen" },
+        "uebrig": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["knoten", "kanten", "paare", "begriffe"],
+          "properties": {
+            "knoten": { "type": "integer", "minimum": 0 },
+            "kanten": { "type": "integer", "minimum": 0 },
+            "paare": { "type": "integer", "minimum": 0 },
+            "begriffe": { "type": "integer", "minimum": 0 }
+          }
+        },
+        "grund": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": { "enum": ["knoten", "kanten", "paarBudget", "tiefe", "privat", "papierkorb"] }
+        },
+        "gefiltert": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["privat", "papierkorb"],
+          "properties": {
+            "privat": { "type": "integer", "minimum": 0 },
+            "papierkorb": { "type": "integer", "minimum": 0 }
+          }
+        },
+        "verwaiste": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["knoten", "kanten"],
+          "properties": {
+            "knoten": { "type": "integer", "minimum": 0 },
+            "kanten": { "type": "integer", "minimum": 0 }
+          }
+        },
+        "vollstaendig": { "type": "boolean" }
+      }
+    },
+    "welt": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["einheit", "groesse", "herkunft"],
+      "properties": {
+        "einheit": { "const": "welt" },
+        "groesse": { "type": "number", "minimum": 1 },
+        "herkunft": { "enum": ["kraft", "karte", "rand"] }
+      }
+    },
+    "stempel": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["generation", "layoutVersion", "parameterHash", "berechent"],
+      "properties": {
+        "generation": { "type": "integer", "minimum": 0 },
+        "layoutVersion": { "type": "integer", "minimum": 1 },
+        "parameterHash": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
+        "berechent": { "enum": ["cache", "neu"] }
+      }
+    },
+    "knoten": { "type": "array", "items": { "$ref": "#/definitions/knoten" } },
+    "kanten": { "type": "array", "items": { "$ref": "#/definitions/kante" } }
+  },
+  "definitions": {
+    "dreiZahlen": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["knoten", "kanten", "paarPruefungen"],
+      "properties": {
+        "knoten": { "type": "integer", "minimum": 0 },
+        "kanten": { "type": "integer", "minimum": 0 },
+        "paarPruefungen": { "type": "integer", "minimum": 0 }
+      }
+    },
+    "knoten": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "titel", "art", "gradEcht", "gradVermutet", "versteckteNachbarn"],
+      "properties": {
+        "id": { "type": "string", "minLength": 1, "maxLength": 200 },
+        "titel": { "type": "string", "maxLength": 300 },
+        "art": { "type": "string", "minLength": 1, "maxLength": 60 },
+        "gradEcht": { "type": "integer", "minimum": 0 },
+        "gradVermutet": { "type": "integer", "minimum": 0 },
+        "x": { "type": "number" },
+        "y": { "type": "number" },
+        "verankert": { "type": "boolean" },
+        "versteckteNachbarn": { "type": "integer", "minimum": 0 },
+        "traeger": { "type": "integer", "minimum": 0 },
+        "traegerIds": { "type": "array", "maxItems": 20, "items": { "type": "string" } },
+        "begriffe": { "type": "array", "maxItems": 12, "items": { "type": "string" } }
+      },
+      "dependencies": { "x": ["y"], "y": ["x"] }
+    },
+    "kante": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "quelle", "ziel", "sorte", "maess", "feder", "belege", "erklaerung", "validFrom", "validTo"],
+      "properties": {
+        "id": { "type": "string", "minLength": 1, "maxLength": 420 },
+        "quelle": { "type": "string", "minLength": 1 },
+        "ziel": { "type": "string", "minLength": 1 },
+        "sorte": { "enum": ["echt", "aehnlich"] },
+        "maess": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["wert", "basis", "gemessen"],
+          "properties": {
+            "wert": { "type": ["number", "null"], "minimum": 0, "maximum": 1 },
+            "basis": { "enum": ["cosinus", "jaccard", "verlinkt"] },
+            "gemessen": { "const": true }
+          }
+        },
+        "feder": { "type": "number", "minimum": 0, "maximum": 1 },
+        "belege": { "type": "integer", "minimum": 0 },
+        "erklaerung": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["gemeinsame", "art"],
+          "properties": {
+            "gemeinsame": { "type": "array", "maxItems": 5, "items": { "type": "string" } },
+            "art": { "enum": ["tag", "titel", "vektor"] }
+          }
+        },
+        "validFrom": { "type": ["number", "null"] },
+        "validTo": { "type": ["number", "null"] }
+      },
+      "allOf": [
+        {
+          "if": { "required": ["sorte"], "properties": { "sorte": { "const": "echt" } } },
+          "then": {
+            "properties": {
+              "belege": { "minimum": 1 },
+              "maess": { "properties": { "wert": { "type": "null" }, "basis": { "const": "verlinkt" } } },
+              "erklaerung": { "properties": { "art": { "const": "titel" } } }
+            }
+          }
+        },
+        {
+          "if": { "required": ["sorte"], "properties": { "sorte": { "const": "aehnlich" } } },
+          "then": {
+            "properties": {
+              "maess": { "properties": { "wert": { "type": "number" }, "basis": { "enum": ["cosinus", "jaccard"] } } }
+            }
+          }
+        }
+      ]
+    }
+  }
+}

@@ -285,6 +285,8 @@ describe("Import: Body-Limits, Vollständigkeit, Zeitstempel", () => {
         { id: "k-dup", title: "Zweite", content: "b" },
       ],
       mode: "replace",
+      // Seit Q-16 will der Vollstaender ausdruecklich bestaetigt sein.
+      confirm: "replace",
     });
     expect(res.status).toBe(200);
     expect(res.body.imported).toBe(1);
@@ -350,14 +352,23 @@ describe("/api/mcp/consolidate — MCP-Parität über HTTP", () => {
 
   it("dryRun:false ersetzt das ältere Duplikat statt es zu löschen", async () => {
     const erste = await request(app).post("/api/memory").send({ title: "Frist Miller", content: "Quartalsrechnung bis Ende Monat." });
-    await request(app).post("/api/memory").send({ title: "Frist Miller", content: "Quartalsrechnung bis Ende Monat." });
-    const res = await request(app).post("/api/mcp/consolidate").send({ dryRun: false, threshold: 0.8 });
+    const zweite = await request(app).post("/api/memory").send({ title: "Frist Miller", content: "Quartalsrechnung bis Ende Monat." });
+    // Seit A2-13 laeuft der Spiegel durch callTool: dryRun:false verlangt die ausdrueckliche
+    // Bestaetigung, die der Agentenkanal schon immer verlangte.
+    const res = await request(app).post("/api/mcp/consolidate").send({ dryRun: false, threshold: 0.8, confirm: "supersede" });
     expect(res.status).toBe(200);
     expect(res.body.dryRun).toBe(false);
-    if (res.body.applied > 0) {
-      const original = store.getMemory(erste.body.memory.id);
-      expect(original?.supersededBy).toBeTruthy();
-    }
+    // Welche Seite bleibt, entscheidet die Engine (pickKeep: updatedAt + Laenge) —
+    // bei zwei wortgleichen Notizen in derselben Millisekunde war das die Richtung,
+    // die dieser Test bisher als sicher annahm und die deshalb flackerte. Was die
+    // Zusage sagt, ist richtungsunabhaengig: genau eine der beiden zeigt als ersetzt
+    // auf die andere, und keine ist geloescht.
+    const beide = [erste.body.memory.id as string, zweite.body.memory.id as string];
+    const zeiger = beide.map((id) => store.getMemory(id)?.supersededBy ?? null);
+    expect(res.body.applied).toBe(1);
+    expect(zeiger.filter((z) => z !== null)).toHaveLength(1);
+    expect(beide).toContain(zeiger.find((z) => z !== null));
+    expect(store.countMemories().active).toBe(2);
   });
 });
 
@@ -388,9 +399,16 @@ describe("/api/mcp/forget — das memory_forget-Werkzeug über HTTP", () => {
     expect(store.getMemory(id)?.deletedAt).toBeGreaterThan(0);
   });
 
-  it("unbekannte id → 404, unbekannter Modus → 400", async () => {
+  it("unbekannte id → 404, unbekannter Modus → 400 — der Spiegel erbt den Wortlaut", async () => {
+    // Der Spiegel geht jetzt durch callTool: Wortlaut und Weigerung kommen von dort,
+    // die 404 fuer "id gibt es nicht" bleibt, wo sie war. Fuer private id gilt
+    // derselbe Text und derselbe Status — die Existenz leakt nicht.
     const weg = await request(app).post("/api/mcp/forget").send({ id: "gibts-nicht" });
     expect(weg.status).toBe(404);
+    // D2-31: der Kern hängt seit E4 jeder Fehlerantwort den Weg an
+    // („— next: …"). Der Spiegel erbt weiter, was der Werkzeugpfad sagt —
+    // geprüft wird der Kopf, der Hint ist Teil des geerbten Wortlauts.
+    expect(String(weg.body.error)).toMatch(/^Memory not found: gibts-nicht( — next: .*)?$/);
     const angelegt = await request(app).post("/api/memory").send({ title: "x", content: "y" });
     const falsch = await request(app).post("/api/mcp/forget").send({ id: angelegt.body.memory.id, mode: "verbrennen" });
     expect(falsch.status).toBe(400);
@@ -428,7 +446,7 @@ describe("Privatheits-Floor über HTTP: Agentenwege gefiltert, Besitzerwege offe
     await legeNotiz("Offene Praxisrechnung", "Identischer Textblock");
     await legeNotiz("Offene Praxisrechnung", "Identischer Textblock länger");
 
-    const res = await request(app).post("/api/mcp/consolidate").send({ dryRun: false });
+    const res = await request(app).post("/api/mcp/consolidate").send({ dryRun: false, confirm: "supersede" });
     expect(res.status).toBe(200);
     expect(privaten.length).toBe(2);
     for (const k of res.body.candidates as { keepId: string; duplicateId: string }[]) {
@@ -450,7 +468,12 @@ describe("Privatheits-Floor über HTTP: Agentenwege gefiltert, Besitzerwege offe
     const privat = await request(app).post("/api/mcp/forget").send({ id });
     const unbekannt = await request(app).post("/api/mcp/forget").send({ id: "gibts-nicht" });
     expect(privat.status).toBe(unbekannt.status);
-    expect(privat.body).toEqual({ error: `Memory not found: ${id}` });
+    // Die Aussage dieses Falls ist derselbe Satz für beide Wege — die Existenz
+    // leakt nicht. Er unterscheidet sich nur durch die id, und seit E4 trägt der
+    // Satz aus dem Kern zusätzlich den Weg („— next: …").
+    expect(String(privat.body.error)).toMatch(new RegExp(`^Memory not found: ${id}( — next: .*)?$`));
+    expect(String(unbekannt.body.error)).toMatch(/^Memory not found: gibts-nicht( — next: .*)?$/);
+    expect(String(privat.body.error).replace(id, "<id>")).toBe(String(unbekannt.body.error).replace("gibts-nicht", "<id>"));
     expect(store.getMemory(id)?.deletedAt).toBeNull();
     expect(store.getMemory(id)?.validTo).toBeNull();
   });

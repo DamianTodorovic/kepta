@@ -1,4 +1,4 @@
-// `npx -y kepta-mcp demo` — die 60-Sekunden-Führung.
+// `npx -y kepta-mcp demo` — die Führung durch sechs Akte.
 //
 // Legt eine WEGWERF-Demodatenbank im temporären Verzeichnis an (niemals die
 // echte Datei unter ~/.kepta) und füllt sie mit einem fiktiven Kanzlei-Korpus
@@ -105,16 +105,44 @@ export function demoDatenbank(dbPfad: string, jetzt = Date.now()): { anzahl: num
   }
 }
 
-/** `npx -y kepta-mcp demo`: Wegwerf-DB bauen, Kennzahlen zeigen, Weg zur App zeigen. */
-export async function starteDemo(): Promise<number> {
-  const ordner = fs.mkdtempSync(path.join(os.tmpdir(), "kepta-demo-"));
-  const dbPfad = path.join(ordner, "kepta.db");
-  const kennzahlen = demoDatenbank(dbPfad);
-  console.log(`KEPTA demo — a throwaway database, throw it away freely.`);
-  console.log(`  ${kennzahlen.anzahl} notes · ${kennzahlen.knoten} graph nodes · ${kennzahlen.kanten} links`);
-  console.log(`  database: ${dbPfad}`);
-  console.log("KEPTA is headless — it lives inside your AI client via MCP, no app, no UI.");
-  console.log("To connect it: npx -y kepta-mcp setup");
-  try { fs.rmSync(ordner, { recursive: true, force: true }); } catch { /* Temp darf bleiben */ }
-  return 0;
+/**
+ * Raeumt den Wegwerf-Ordner und sagt, was uebrig bleibt (null = alles fort).
+ * Die Demo verspricht „the demo data vanishes with it" — ein Rest darf deshalb
+ * nie schweigend entstehen, sondern muss den Pfad und den Befehl nennen.
+ */
+export function loescheWegwerfOrdner(ordner: string): string | null {
+  try {
+    fs.rmSync(ordner, { recursive: true, force: true });
+  } catch {
+    // Ob etwas blieb, entscheidet der Blick auf die Datei, nicht der Fanggrund.
+  }
+  return fs.existsSync(ordner) ? ordner : null;
+}
+
+/**
+ * Strg-C waehrend der Demo: hält das Versprechen der Anzeige und loescht die
+ * Wegwerf-Datenbank. Bis A6-13 war das nur am gluecklichen Ende gebaut — gemessen
+ * blieb ein Ordner in $TMPDIR liegen, weil es dafuer keinen Handler gab.
+ * Gibt die Funktion zurueck, die wieder abmeldet (nach dem normalen Lauf).
+ */
+export function raumtBeiAbbruch(
+  ordner: string,
+  quel: { on(event: string, handler: () => void): unknown; removeListener(event: string, handler: () => void): unknown },
+  beende: (code: number) => void = (code) => process.exit(code)
+): () => void {
+  const handler = (): void => {
+    const rest = loescheWegwerfOrdner(ordner);
+    console.log(
+      rest
+        ? `\nDemo aborted — the throwaway database is still there: ${rest}\n  remove it with: rm -rf ${rest}`
+        : "\nDemo aborted — the throwaway database is deleted."
+    );
+    beende(rest ? 1 : 130);
+  };
+  quel.on("SIGINT", handler);
+  quel.on("SIGTERM", handler);
+  return () => {
+    quel.removeListener("SIGINT", handler);
+    quel.removeListener("SIGTERM", handler);
+  };
 }

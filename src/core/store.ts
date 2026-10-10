@@ -207,6 +207,7 @@ export class KeptaStore {
           valid_from INTEGER,
           valid_to INTEGER,
           superseded_by TEXT,
+          superseded_at INTEGER,
           created_at INTEGER NOT NULL,
           updated_at INTEGER NOT NULL,
           deleted_at INTEGER,
@@ -215,10 +216,10 @@ export class KeptaStore {
           utility REAL NOT NULL DEFAULT 0.5
         );
         INSERT INTO memories_neu (rid, id, scope, type, title, content, tags, confidence,
-          valid_from, valid_to, superseded_by, created_at, updated_at, deleted_at,
+          valid_from, valid_to, superseded_by, superseded_at, created_at, updated_at, deleted_at,
           last_access_at, access_count, utility)
         SELECT rid, id, scope, type, title, content, tags, confidence,
-          valid_from, valid_to, superseded_by, created_at, updated_at, deleted_at,
+          valid_from, valid_to, superseded_by, superseded_at, created_at, updated_at, deleted_at,
           last_access_at, access_count, utility
         FROM memories;
         DROP TABLE memories;
@@ -234,6 +235,11 @@ export class KeptaStore {
   }
 
   private migrate() {
+    // superseded_at VOR dem Typ-Neubau nachziehen: der Neubau in
+    // erweitereTypBeschraenkung() kopiert die Spalten namentlich, also muss diese
+    // stehen, wenn er laeuft — sonst verliert eine Altdatenbank beim Umbau ihre
+    // Ersetzungszeiten. Ohne Tabelle (frische Datenbank) scheitert der ALTER still.
+    this.sorgeFuerSpalte("superseded_at", "INTEGER");
     this.erweitereTypBeschraenkung();
     this.db.exec(`
       CREATE TABLE IF NOT EXISTS meta (key TEXT PRIMARY KEY, value TEXT NOT NULL);
@@ -250,6 +256,7 @@ export class KeptaStore {
         valid_from INTEGER,
         valid_to INTEGER,
         superseded_by TEXT,
+        superseded_at INTEGER,
         created_at INTEGER NOT NULL,
         updated_at INTEGER NOT NULL,
         deleted_at INTEGER,
@@ -320,18 +327,21 @@ export class KeptaStore {
     if (!row) {
       this.db.prepare("INSERT INTO meta (key, value) VALUES ('schema_version', ?)").run(String(SCHEMA_VERSION));
     }
-    // Additive Spalten idempotent nachziehen (ALTER schlägt fehl, wenn vorhanden)
-    const columns = [
-      ["last_access_at", "INTEGER"],
-      ["access_count", "INTEGER NOT NULL DEFAULT 0"],
-      ["utility", "REAL NOT NULL DEFAULT 0.5"],
-    ] as const;
-    for (const [name, type] of columns) {
-      try {
-        this.db.exec(`ALTER TABLE memories ADD COLUMN ${name} ${type}`);
-      } catch {
-        // Spalte existiert bereits
-      }
+    // Additive Spalten idempotent nachziehen
+    this.sorgeFuerSpalte("last_access_at", "INTEGER");
+    this.sorgeFuerSpalte("access_count", "INTEGER NOT NULL DEFAULT 0");
+    this.sorgeFuerSpalte("utility", "REAL NOT NULL DEFAULT 0.5");
+  }
+
+  /**
+   * Additive Spalte nachziehen, idempotent. Nur interne Literale erreichen das —
+   * die Aufrufer stehen in diesem File, es ist keine Stelle fuer Fremdworte.
+   */
+  private sorgeFuerSpalte(name: string, typ: string): void {
+    try {
+      this.db.exec(`ALTER TABLE memories ADD COLUMN ${name} ${typ}`);
+    } catch {
+      // Spalte steht schon, oder die Tabelle noch nicht (frische Datenbank)
     }
   }
 
@@ -418,6 +428,7 @@ export class KeptaStore {
       validFrom: (r.valid_from as number | null) ?? null,
       validTo: (r.valid_to as number | null) ?? null,
       supersededBy: (r.superseded_by as string | null) ?? null,
+      supersededAt: (r.superseded_at as number | null) ?? null,
       createdAt: Number(r.created_at),
       updatedAt: Number(r.updated_at),
       deletedAt: (r.deleted_at as number | null) ?? null,
@@ -428,7 +439,7 @@ export class KeptaStore {
   }
 
   private static readonly COLS =
-    "id, scope, type, title, content, tags, confidence, valid_from, valid_to, superseded_by, created_at, updated_at, deleted_at, last_access_at, access_count, utility";
+    "id, scope, type, title, content, tags, confidence, valid_from, valid_to, superseded_by, superseded_at, created_at, updated_at, deleted_at, last_access_at, access_count, utility";
 
   private getRow(id: string): Record<string, unknown> | undefined {
     return this.db.prepare(`SELECT ${KeptaStore.COLS} FROM memories WHERE id = ?`).get(id) as
@@ -540,6 +551,7 @@ export class KeptaStore {
       validFrom: input.validFrom ?? null,
       validTo: input.validTo ?? null,
       supersededBy: null,
+      supersededAt: null,
       createdAt: input.createdAt ?? now,
       updatedAt: input.updatedAt ?? now,
       deletedAt: null,
@@ -603,6 +615,9 @@ export class KeptaStore {
     if (!row) return null;
     const sets: string[] = [];
     const params: (string | number | null)[] = [];
+    // Ein Instant fuer updated_at und superseded_at: derselbe Schreibvorgang,
+    // zwei Felder, keine Millisekunde Auseinander.
+    const zeitstempel = patch.updatedAt ?? Date.now();
     if (patch.title !== undefined) {
       sets.push("title = ?");
       params.push(cleanText(patch.title, 200) || "Untitled");
@@ -638,11 +653,15 @@ export class KeptaStore {
     if (patch.supersededBy !== undefined) {
       sets.push("superseded_by = ?");
       params.push(patch.supersededBy);
+      // Der Ersetzungszeitpunkt faellt mit dem Zeiger — ohne ihn kann die Zeitreise
+      // (asOf) Ersetztes nicht ausblenden. Ein Zuruecknehmen (null) nimmt ihn wieder.
+      sets.push("superseded_at = ?");
+      params.push(patch.supersededBy === null ? null : zeitstempel);
     }
     if (sets.length === 0) return this.rowToRecord(row);
     // Explizites updatedAt (Import/Resync) gewinnt — sonst "jetzt"
     sets.push("updated_at = ?");
-    params.push(patch.updatedAt ?? Date.now());
+    params.push(zeitstempel);
     params.push(id);
     if (!this.extensions.policy.canWrite(this.actor(), { id, scope: String(row.scope), type: String(row.type) })) {
       throw new Error("Write denied (PolicyGate)");
@@ -873,7 +892,12 @@ export class KeptaStore {
     }));
   }
 
-  embeddingStats(): { total: number; embedded: number; models: Record<string, number> } {
+  /**
+   * Stand der Vektor-Bein. `chunksOhneVektor` ist die Zahl, die ein Nutzer horen
+   * muss, wenn die semantische Suche nach einem Import noch nichts findet — die
+   * Queue arbeitet, aber wie lange noch, steht bisher in keinem Feld.
+   */
+  embeddingStats(): { total: number; embedded: number; chunksOhneVektor: number; models: Record<string, number> } {
     const total = (this.db.prepare("SELECT COUNT(*) c FROM chunks").get() as { c: number }).c;
     const embedded = (this.db.prepare("SELECT COUNT(*) c FROM chunks WHERE embedding IS NOT NULL").get() as { c: number }).c;
     const modelRows = this.db
@@ -881,7 +905,7 @@ export class KeptaStore {
       .all() as Record<string, unknown>[];
     const models: Record<string, number> = {};
     for (const r of modelRows) models[String(r.m ?? "unknown")] = Number(r.c);
-    return { total, embedded, models };
+    return { total, embedded, chunksOhneVektor: total - embedded, models };
   }
 
   // ---------- Entities & Relations ----------
@@ -973,7 +997,23 @@ export class KeptaStore {
       ).map((r) => ({ id: Number(r.id), name: String(r.name) }));
       return { entities, relations };
     }
-    const entities = (this.db.prepare("SELECT id, name FROM entities LIMIT 500").all() as Record<string, unknown>[]).map((r) => ({
+    // Die 500 Begriffe des ungefilterten Pfads sind kein beliebiger Ausschnitt:
+    // ohne ORDER BY entschied die Zeilenordnung, welcher Begriff fehlt, und die
+    // Liste wechselte, sobald neu geschrieben wurde. Geordnet wird nach Traegerzahl
+    // — der Ausschnitt soll die Bedeutungsspitze sein, nicht der erste Fund.
+    // Gleiche Traegerzahl ordnet nach id, damit derselbe Bestand zweimal
+    // dieselbe Liste liefert.
+    const entities = (
+      this.db
+        .prepare(
+          `SELECT e.id, e.name FROM entities e
+           LEFT JOIN memory_entities me ON me.entity_id = e.id
+           GROUP BY e.id, e.name
+           ORDER BY COUNT(me.entity_id) DESC, e.id ASC
+           LIMIT 500`
+        )
+        .all() as Record<string, unknown>[]
+    ).map((r) => ({
       id: Number(r.id),
       name: String(r.name),
     }));
@@ -1153,27 +1193,71 @@ function schluesselPragmas(db: Database.Database, schluessel: Uint8Array, pragma
   db.pragma(`${pragma} = "x'${Buffer.from(schluessel).toString("hex")}'"`);
 }
 
-function setzeSchluessel(db: Database.Database, schluessel: Uint8Array): void {
+/**
+ * `herkunft` ist bewusst optional und wird nur weitergegeben, wenn der Aufrufer sie
+ * wirklich weiss. Ohne sie nennt diese Meldung **keine** Quelle — genau das war der
+ * Befund A1-08/A3-10: Der alte Satz behauptete „the key in the keychain does not
+ * belong to this database" in drei verschiedenen Fällen, und in zweien davon war nie
+ * ein Schlüsselbund im Spiel (Schlüssel aus KEPTA_DB_KEY; die Datei war Müll).
+ *
+ * Was sich an dieser Stelle ehrlich trennen lässt, ist nur, was die Datei selbst
+ * verraet: SQLite antwortet auf einen fremden Schlüssel und auf eine beschädigte
+ * Datei mit dem einen Code SQLITE_NOTADB. Wer daraus eine Ursache destilliert,
+ * erzählt eine Geschichte — also werden beide genannt und keine geraten.
+ */
+function setzeSchluessel(db: Database.Database, schluessel: Uint8Array, herkunft?: string): void {
   schluesselPragmas(db, schluessel, "key");
   try {
     db.prepare("SELECT count(*) FROM sqlite_master").get();
   } catch (e) {
     db.close();
     if (sqliteCode(e) === "SQLITE_NOTADB") {
-      throw new Error("The knowledge base could not be opened with its key — the key in the keychain does not belong to this database. Nothing was changed.");
+      // Blattgröße prüfen, bevor ein Satz über die Datei fällt: eine Wissensbasis ist
+      // immer ein Vielfaches ihrer Seitenlänge (SQLCipher: 512..65536, Potenzen von 2).
+      // Die Datei heißt hier `db.name`, nicht der Pfad des Aufrufers — die Verbindung
+      // ist schon geschlossen, die Bytes auf der Platte sind unverändert.
+      let groesse = -1;
+      try {
+        groesse = fs.statSync(db.name).size;
+      } catch {
+        groesse = -1;
+      }
+      if (groesse >= 0 && groesse % 512 !== 0) {
+        throw new Error(
+          `The file at ${db.name} is not a SQLite database at all — ${groesse} bytes is not a multiple of any page size, ` +
+            `so it is either not a database or the damaged remnant of one. No key can open it, and none was tried again. ` +
+            `Nothing was changed. If a restore or another program wrote here, point KEPTA_DATA_DIR at the real knowledge base.`,
+        );
+      }
+      throw new Error(
+        `The knowledge base ${db.name} could not be opened with the 256-bit key${herkunft ? ` from ${herkunft}` : " it was given"} — ` +
+          `either that is not the key this file was encrypted with, or the file itself is damaged. ` +
+          `SQLite reports only "file is not a database", so KEPTA does not say which. Nothing was changed. ` +
+          `SECURITY.md, "Keep a copy of the key", lists the command that reads your key back on every operating system; ` +
+          `if this file was written with a key you hold yourself, set KEPTA_DB_KEY to it and start again.`,
+      );
     }
     throw e;
   }
 }
 
 /** Ohne Schluessel: eine verschluesselte Datei darf nicht still als leeres Gehirn weiterlaufen. */
-function pruefeLesbar(db: Database.Database, hinweis: string | undefined): void {
+function pruefeLesbar(db: Database.Database, hinweis: string | undefined, herkunft?: string): void {
   try {
     db.prepare("SELECT count(*) FROM sqlite_master").get();
   } catch (e) {
     db.close();
     if (sqliteCode(e) === "SQLITE_NOTADB") {
-      throw new Error(`The knowledge base is encrypted, but its key is not available${hinweis ? `: ${hinweis}` : "."}`);
+      // Fall (c) aus A1-08: die Schluesselquelle war nicht zu erreichen. Der Grund
+      // steht schon in `hinweis` — ihn schaerft die Schluesselschicht mit Quelle,
+      // Wartezeit und Rueckhol-Befehl. Abgeschnitten werden darf er nicht.
+      throw new Error(
+        `The knowledge base is encrypted, but its key is not available${
+          hinweis ? `: ${hinweis}` : herkunft ? ` from ${herkunft}` : "."
+        } Nothing was changed. The file was not opened and no empty knowledge base was started over it. ` +
+          `SECURITY.md, "Keep a copy of the key", lists the command that reads your key back; ` +
+          `a key you hold yourself goes in KEPTA_DB_KEY (openssl rand -hex 32).`,
+      );
     }
     throw e;
   }

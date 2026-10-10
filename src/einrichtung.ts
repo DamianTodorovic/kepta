@@ -45,6 +45,8 @@ export interface ClientStatus {
   canConnect: boolean;
   /** Was sonst zu tun ist. */
   hint?: string;
+  /** Geführt statt verbunden: diese Zeile kann nie ✓ werden, sie ist eine Anleitung. */
+  gefuehrt?: boolean;
 }
 
 export interface Verbindung {
@@ -171,6 +173,7 @@ function gefuehrteKlienten(u: Umgebung): ClientStatus[] {
       connected: false,
       config: zedDatei,
       canConnect: false,
+      gefuehrt: true,
       hint: `Paste into "context_servers" in ${zedDatei}: {"kepta": {"source": "custom", "command": "${EINTRAG.command}", "args": ${JSON.stringify(EINTRAG.args)}}}`,
     },
     {
@@ -180,6 +183,7 @@ function gefuehrteKlienten(u: Umgebung): ClientStatus[] {
       connected: false,
       config: path.join(u.home, ".codex", "config.toml"),
       canConnect: false,
+      gefuehrt: true,
       hint: `Paste into ${path.join(u.home, ".codex", "config.toml")}: [mcp_servers.kepta] command = "${EINTRAG.command}" args = [${EINTRAG.args.map((a) => `"${a}"`).join(", ")}]`,
     },
     {
@@ -189,6 +193,7 @@ function gefuehrteKlienten(u: Umgebung): ClientStatus[] {
       connected: false,
       config: path.join(u.home, ".continue", "config.yaml"),
       canConnect: false,
+      gefuehrt: true,
       hint: `Paste into ${path.join(u.home, ".continue", "config.yaml")}: mcpServers:\n  - name: kepta\n    type: stdio\n    command: ${EINTRAG.command}\n    args: [${EINTRAG.args.map((a) => `"${a}"`).join(", ")}]`,
     },
     {
@@ -198,6 +203,7 @@ function gefuehrteKlienten(u: Umgebung): ClientStatus[] {
       connected: false,
       config: "",
       canConnect: false,
+      gefuehrt: true,
       hint: `Add a stdio MCP server anywhere it fits: command "${EINTRAG.command}", args ${JSON.stringify(EINTRAG.args)}. Or use the HTTP API directly (POST /api/search, /api/memories).`,
     },
   ];
@@ -255,7 +261,48 @@ export function standardUmgebung(): Umgebung {
   };
 }
 
-/** `npx kepta-mcp setup [--yes]`: zeigen, fragen, eintragen. Gibt den Exit-Code zurück. */
+/** 80 Spalten Bühne; ein einzelnes zu langes Wort (ein Pfad) bleibt heil. */
+const BREITE = 80;
+
+/**
+ * Eine logische Zeile in physische von höchstens 80 Zeichen, an Wortgrenzen,
+ * die Fortsetzung hängt unter den Wert (R1, R2). Ein Wort, das allein nicht
+ * passt, bleibt unangetastet — ein Pfad, der mitten im Wort umbricht, ist für
+ * den Menschen nicht mehr zu gebrauchen.
+ */
+function bricht(text: string, einzug: number, rueck = Math.max(einzug, 4)): string[] {
+  const woerter = text.split(/\s+/).filter(Boolean);
+  if (!woerter.length) return [" ".repeat(einzug)];
+  const setzen = (w: string[], ein: number) => " ".repeat(ein) + w.join(" ");
+  const zeilen: string[] = [];
+  let aktueller: string[] = [];
+  let breite = einzug;
+  for (const wort of woerter) {
+    const laenge = [...wort].length;
+    const naechster = aktueller.length ? breite + 1 + laenge : breite + laenge;
+    if (aktueller.length && naechster > BREITE) {
+      zeilen.push(setzen(aktueller, zeilen.length === 0 ? einzug : rueck));
+      aktueller = [wort];
+      breite = rueck + laenge;
+      continue;
+    }
+    aktueller.push(wort);
+    breite = naechster;
+  }
+  if (aktueller.length) zeilen.push(setzen(aktueller, zeilen.length === 0 ? einzug : rueck));
+  return zeilen;
+}
+
+/**
+ * `npx kepta-mcp setup [--yes]`: zeigen, fragen, eintragen. Gibt den Exit-Code zurück.
+ *
+ * R12 (D2-05): erst arbeiten, dann EIN Board. Vorher stand oben ein Kreis und
+ * drei Zeilen tiefer ein Haken — zwei Bilder desselben Moments, und der Mensch
+ * wusste nicht, welches galt. R4 (D2-06): `·` trennt, es markiert nicht; eine
+ * App, die nicht installiert ist, braucht keine Zeile, sondern eine Zahl.
+ * R9 (D2-04): der Screen endet mit einem Weg, nicht mit einem Lob, und kein
+ * Wort behauptet eine Verschlüsselung, die dieser Lauf nie gemessen hat.
+ */
 export async function einrichten(
   argumente: string[],
   u: Umgebung,
@@ -263,32 +310,87 @@ export async function einrichten(
 ): Promise<number> {
   const alle = argumente.includes("--yes") || argumente.includes("-y");
   const liste = finde(u);
-  io.schreibe("KEPTA — connect your AI apps\n\n");
-  for (const c of liste) {
-    const zeichen = c.connected ? "✓" : c.installed ? "○" : "·";
-    const wort = c.connected ? "connected" : c.installed ? "not connected yet" : "not installed";
-    io.schreibe(`  ${zeichen} ${c.name.padEnd(15)} ${wort}\n`);
-  }
   const offen = liste.filter((c) => c.canConnect);
   const vonHand = liste.filter((c) => c.installed && !c.connected && !c.canConnect);
-  let fehler = 0;
-  let verbunden = 0;
+  const zeile = (text = "") => io.schreibe(text + "\n");
+  const text = (t: string, einzug = 2, rueck = Math.max(einzug, 4)) => bricht(t, einzug, rueck).forEach(zeile);
+  /** Ein Feld mit fester Kopfspalte: der Kopf bleibt stehen, der Wert bricht ihm nach. */
+  const feld = (kopf: string, wert: string) => {
+    const spalte = [...kopf].length;
+    bricht(wert, spalte, spalte).forEach((z, i) => zeile(i === 0 ? kopf + z.slice(spalte) : z));
+  };
+
+  io.schreibe("KEPTA — connect your AI apps\n\n");
+  if (offen.length) {
+    text(`${offen.length} ${offen.length === 1 ? "app is" : "apps are"} ready to connect: ${offen.map((c) => c.name).join(", ")}`, 2);
+    zeile("");
+  }
+
+  // Erst die Tat, dann das Bild — ein Screen, ein Zustand (R12).
+  const tat: { name: string; ok: boolean; grund: string; backup?: string | null; abgelehnt?: boolean }[] = [];
   for (const c of offen) {
     let ja = alle;
     if (!ja && io.frage) ja = /^y(es)?$/i.test((await io.frage(`\nConnect ${c.name}? [y/N] `)).trim());
-    if (!ja) continue;
+    if (!ja) {
+      tat.push({ name: c.name, ok: false, grund: "not connected — you did not answer yes", abgelehnt: true });
+      continue;
+    }
     const r = verbinde(c.id, u);
-    io.schreibe(`  ${r.ok ? "✓" : "✗"} ${c.name}: ${r.message}\n${r.backup ? `    Backup of the old file: ${r.backup}\n` : ""}`);
-    if (r.ok) verbunden++;
-    else fehler++;
+    tat.push({ name: c.name, ok: r.ok, grund: r.ok ? "connected" : r.message, backup: r.backup });
   }
-  if (offen.length && !alle && !io.frage) io.schreibe(`\nRun it again with --yes to connect ${offen.map((c) => c.name).join(", ")}.\n`);
-  for (const c of vonHand) io.schreibe(`\n${c.name}: ${c.hint}\n`);
+
+  zeile("  ✓ connected · ○ not connected · ✗ failed");
+  zeile("");
+  let fehler = 0;
+  let verbunden = 0;
+  let nichtDa = 0;
+  for (const c of liste.filter((x) => !x.gefuehrt)) {
+    const getan = tat.find((t) => t.name === c.name);
+    if (c.connected || getan?.ok) {
+      verbunden++;
+      feld(`  ✓ ${c.name.padEnd(18)}`, "connected");
+      continue;
+    }
+    if (getan && !getan.ok && !getan.abgelehnt) {
+      fehler++;
+      feld(`  ✗ ${c.name.padEnd(18)}`, getan.grund);
+      continue;
+    }
+    if (!c.installed) {
+      nichtDa++;
+      continue;
+    }
+    if (getan) {
+      feld(`  ○ ${c.name.padEnd(18)}`, getan.grund);
+      continue;
+    }
+    feld(`  ○ ${c.name.padEnd(18)}`, "installed, but KEPTA does not write here");
+  }
+  if (nichtDa) zeile(`  ${nichtDa} more ${nichtDa === 1 ? "app is" : "apps are"} not on this computer`);
+  if (!verbunden && !fehler) zeile("  nothing was connected");
+
+  for (const t of tat) {
+    if (!t.backup) continue;
+    zeile("");
+    feld("  backup  ", "the file that was there before:");
+    // Der Pfad selbst bricht nie — er ist eine Adresse, kein Satz.
+    zeile("          " + t.backup);
+    text("it stays there — delete it once everything works", 10);
+  }
+
+  if (offen.length && !alle && !io.frage) zeile(`\nRun it again with --yes to connect ${offen.map((c) => c.name).join(", ")}.`);
+  for (const c of vonHand) {
+    zeile("");
+    text(`${c.name}:`, 2);
+    text(c.hint ?? "", 6);
+  }
   if (!offen.length && !vonHand.length && !liste.some((c) => c.connected)) {
-    io.schreibe("\nNo AI app found. Add this to any MCP client:\n" + JSON.stringify({ mcpServers: { kepta: EINTRAG } }, null, 2) + "\n");
+    zeile("\nNo AI app found. Add this to any MCP client:");
+    for (const z of JSON.stringify({ mcpServers: { kepta: EINTRAG } }, null, 2).split("\n")) zeile("  " + z);
   }
-  if (verbunden || liste.some((c) => c.connected)) {
-    io.schreibe("\nNow ask your AI: “Remember that I prefer short answers.” — it lives in your local encrypted file from now on.\n");
-  }
+
+  zeile("");
+  if (verbunden) text("next: quit and reopen the apps above, then ask your AI to remember something", 0);
+  else text("next: kepta --help — the switches and the exit codes; the snippet above fits any MCP client", 0);
   return fehler ? 1 : 0;
 }

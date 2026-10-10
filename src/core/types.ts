@@ -17,6 +17,12 @@ export interface MemoryRecord {
   validTo: number | null;
   /** ID der Memory, die diese ersetzt hat (temporale Invalidierung) */
   supersededBy: string | null;
+  /**
+   * Epoch-ms, ab dem die Ersetzung gilt — die Zeitreise (asOf) braucht ihn, sonst
+   * kann sie Ersetztes nicht ausblenden. null = nie ersetzt bzw. der Zeitpunkt wurde
+   * vor dieser Spalte gesetzt und ist nicht nachrechenbar.
+   */
+  supersededAt: number | null;
   createdAt: number;
   updatedAt: number;
   /** Papierkorb: Zeitpunkt des Löschens, null = aktiv */

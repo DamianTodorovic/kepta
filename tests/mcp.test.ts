@@ -14,6 +14,11 @@ interface ToolResult {
   isError?: boolean;
 }
 
+/** Der Strukturteil einer Antwort — im Fehlerfall darf er nicht vorhanden sein. */
+function struktur(out: ToolResult): unknown {
+  return (out as { structuredContent?: unknown }).structuredContent;
+}
+
 function asResult(res: JsonRpcResponse | null): Record<string, unknown> {
   if (!res || !("result" in res)) throw new Error("Erwartete JSON-RPC-Ergebnis-Antwort");
   return res.result;
@@ -212,7 +217,9 @@ describe("MCP-Tools", () => {
   it("memory_forget mode=supersede markiert die Memory als ersetzt", async () => {
     const saved = asTool(await rpc(store, "tools/call", { name: "memory_save", arguments: { title: "Alt", content: "x" } }));
     const id = (saved.structuredContent.memory as { id: string }).id;
-    const res = asTool(await rpc(store, "tools/call", { name: "memory_forget", arguments: { id, mode: "supersede" } }));
+    const neu = asTool(await rpc(store, "tools/call", { name: "memory_save", arguments: { title: "Neu", content: "y" } }));
+    const nachfolger = (neu.structuredContent.memory as { id: string }).id;
+    const res = asTool(await rpc(store, "tools/call", { name: "memory_forget", arguments: { id, mode: "supersede", supersedeBy: nachfolger } }));
     expect((res.structuredContent as { forgotten: boolean }).forgotten).toBe(true);
   });
 
@@ -447,7 +454,7 @@ describe("Privatheits-Floor: jeder Agentenweg, nicht nur Suche und Liste", () =>
     await speichern({ title: "Offene Praxisrechnung", content: "zwei länger" });
     const privaten = [idVon(p1), idVon(p2)];
 
-    const out = (await ruf("memory_consolidate", { dryRun: false })).structuredContent;
+    const out = (await ruf("memory_consolidate", { dryRun: false, confirm: "supersede" })).structuredContent;
     const kandidaten = out.candidates as { keepId: string; duplicateId: string }[];
     expect(kandidaten.length).toBeGreaterThan(0);
     for (const k of kandidaten) {
@@ -484,7 +491,10 @@ describe("Privatheits-Floor: jeder Agentenweg, nicht nur Suche und Liste", () =>
     for (const [name, args] of wege) {
       const privat = await ruf(name, args);
       expect(privat.isError, name).toBe(true);
-      const err = (privat.structuredContent as { error: string }).error;
+      // Die Meldung sitzt im Text, nicht in einer Struktur — ein Strukturteil im
+      // Fehlerfall würde an der deklarierten outputSchema des Werkzeugs brechen.
+      expect(struktur(privat), name).toBeUndefined();
+      const err = privat.content[0]?.text ?? "";
       expect(err, name).toContain("not found");
       // Kein Wort wie "privat" — das wäre die Existenzbestätigung in Klartext.
       expect(err, name).not.toMatch(/priv/i);
@@ -506,7 +516,7 @@ describe("Privatheits-Floor: jeder Agentenweg, nicht nur Suche und Liste", () =>
 
     const out = await ruf("memory_forget", { id: offneId, mode: "supersede", supersedeBy: privat });
     expect(out.isError).toBe(true);
-    expect((out.structuredContent as { error: string }).error).not.toMatch(/priv/i);
+    expect(out.content[0]?.text ?? "").not.toMatch(/priv/i);
     expect(store.getMemory(offneId)?.supersededBy).toBeNull();
   });
 

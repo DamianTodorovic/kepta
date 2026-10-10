@@ -17,6 +17,16 @@ const RRF_K = 60;
  * davon unabhaengig selbst auf 100, damit Agenten-Kontexte nicht volllaufen.
  */
 export const MAX_SEARCH_LIMIT = 10_000;
+/**
+ * Obergrenze fuer die Dubletten-Vorschläge EINER Konsolidierung.
+ *
+ * Ein Aufruf antwortet an einen Agenten (memory_consolidate) oder an die Konsole;
+ * eine Liste von mehreren tausend Paaren ist dort kein Gewinn, sondern ein
+ * Volltreffer in den Kontext. Die Kappe kapt die Vorschlagsliste und damit
+ * auch, was dryRun:false anwenden kann — gesagt wird sie ueber das Feld
+ * `begrenzt`, damit ein Abschneiden nie still geschieht.
+ */
+export const MAX_CANDIDATES_PRO_AUFRUF = 500;
 const EXPIRED_FACTOR = 0.5;
 const SUPERSEDED_FACTOR = 0.4;
 const RECENCY_WINDOW_MS = 365 * 24 * 3600 * 1000;
@@ -337,12 +347,19 @@ export async function searchMemories(store: KeptaStore, params: SearchParams): P
       if (!tags.every((t) => r.tags.includes(t))) return false;
     }
     if (params.validSince && r.validFrom !== null && r.validFrom < params.validSince) return false;
-    // Zeitreise: Notizen, die zum Zeitpunkt noch nicht existierten oder schon abgelaufen waren, ausblenden
-    if (timeTravel) {
-      const start = r.validFrom ?? r.createdAt;
-      if (start !== null && start > now) return false;
-      if (r.validTo !== null && r.validTo <= now) return false;
-    }
+    // Geltungsbeginn immer — asOf verschiebt nur den betrachteten Instant, nicht die
+    // Regel. Eine Notiz, die erst in der Zukunft gilt, war am gefragten Zeitpunkt noch
+    // nicht da und ist es heute nicht; sie ohne asOf als Gegenwart auszuliefern, war
+    // die zweite Antwort auf dieselbe Frage.
+    const start = r.validFrom ?? r.createdAt;
+    if (start !== null && start > now) return false;
+    // Verfall: in der Zeitreise ausgeblendet, in der Gegenwart als Fund mit
+    // expired-Merkur sichtbar (Temporal-Faktor unten) — die Grenze ist dieselbe.
+    if (timeTravel && r.validTo !== null && r.validTo <= now) return false;
+    // Ersetzung: ab dem Ersetzungszeitpunkt war das nicht mehr mein Stand. Altdaten
+    // ohne Wert bleiben sichtbar — aus einem Zeiger einen Zeitpunkt zu raten waere
+    // eine erfundene Antwort.
+    if (timeTravel && r.supersededBy !== null && r.supersededAt !== null && r.supersededAt <= now) return false;
     return true;
   };
 
@@ -476,8 +493,10 @@ export async function searchMemories(store: KeptaStore, params: SearchParams): P
     score *= 0.5 + 0.5 * r.confidence;
     // Retention (Oblivion): oft/aktuell Genutztes steigt, Vergessenes sinkt
     score *= retentionFactor(r, now);
-    // Temporal
-    const expired = !timeTravel && r.validTo !== null && r.validTo < now;
+    // Temporal — dieselbe Grenze wie der Zeitreise-Zweig in filters(): validTo ist
+    // der Moment, ab dem die Notiz nicht mehr gilt. Ein strenges `<` liess die im
+    // selben Millisekunden-Tick vergessene Notiz gültig erscheinen.
+    const expired = !timeTravel && r.validTo !== null && r.validTo <= now;
     const superseded = r.supersededBy !== null;
     if (expired) score *= EXPIRED_FACTOR;
     if (superseded) score *= SUPERSEDED_FACTOR;
@@ -560,6 +579,8 @@ export interface ConsolidationResult {
   candidates: ConsolidationCandidate[];
   applied: number;
   dryRun: boolean;
+  /** true, wenn die Vorschlagsliste bei MAX_CANDIDATES_PRO_AUFRUF gekappt wurde */
+  begrenzt: boolean;
 }
 
 function jaccard(a: string[], b: string[]): number {
@@ -574,6 +595,10 @@ function jaccard(a: string[], b: string[]): number {
 /**
  * Findet Dubletten: (a) Embedding-Similarity > threshold, (b) Fallback Titel+Tags-Überlappung.
  * Ohne dryRun werden ältere Memories als ersetzt markiert (supersede), nicht gelöscht.
+ * `threshold` ist eine Cosinus-Schwelle und muss in (0, 1] liegen: 0 oder weniger
+ * erklaert jedes Paar zur Dublette, ein Wert ueber 1 ist unerreichbar — beides wird
+ * abgelehnt statt still uminterpretiert. Die Vorschlagsliste ist pro Aufruf gekappt
+ * (`begrenzt` sagt es).
  * `ausnehmen` blendet IDs vollständig aus — sie erscheinen weder als Kandidat, noch
  * werden sie ersetzt. Der Agenten-Floor nutzt das für private Notizen: melden und
  * anwenden sind derselbe Pool, sonst wäre ein dryRun sicher und der Klick danach nicht.
@@ -583,6 +608,9 @@ export async function consolidateMemories(
   opts: { dryRun?: boolean; threshold?: number; ausnehmen?: Set<string> } = {}
 ): Promise<ConsolidationResult> {
   const threshold = opts.threshold ?? 0.92;
+  if (!Number.isFinite(threshold) || threshold <= 0 || threshold > 1) {
+    throw new Error(`consolidate: threshold must be in (0, 1], received ${opts.threshold}`);
+  }
   const dryRun = opts.dryRun ?? true;
   // Nur lebende Memories aufraeumen. Bereits ersetzte liegen als Verlauf da; sie
   // erneut zu vergleichen ist nicht nur ueberfluessig, sondern gefaehrlich:
@@ -592,6 +620,14 @@ export async function consolidateMemories(
   // mit einem Nachfolger, der selbst ausgemustert ist.
   const active = aktiveErinnerungen(store).aktiv.filter((m) => !m.record.supersededBy && !opts.ausnehmen?.has(m.record.id));
   const candidates: ConsolidationCandidate[] = [];
+  let begrenzt = false;
+  const vorschlagen = (kandidat: ConsolidationCandidate): void => {
+    if (candidates.length >= MAX_CANDIDATES_PRO_AUFRUF) {
+      begrenzt = true;
+      return;
+    }
+    candidates.push(kandidat);
+  };
 
   // Embedding-Dubletten: Centroid pro Memory+Modell vergleichen — Cosine nur zwischen
   // identischen Modellen (Cross-Modell-Vektoren erzeugen Schein-Dubletten).
@@ -618,7 +654,7 @@ export async function consolidateMemories(
         const a = centroidList[i]![0];
         const b = centroidList[j]![0];
         const [keep, dup] = pickKeep(store, a, b);
-        candidates.push({ keepId: keep, duplicateId: dup, similarity: sim, reason: "embedding" });
+        vorschlagen({ keepId: keep, duplicateId: dup, similarity: sim, reason: "embedding" });
       }
     }
   }
@@ -641,7 +677,7 @@ export async function consolidateMemories(
         );
         if (!pairExists) {
           const [keep, dup] = pickKeep(store, a.id, b.id);
-          candidates.push({ keepId: keep, duplicateId: dup, similarity: titleSim, reason: "title+tags" });
+          vorschlagen({ keepId: keep, duplicateId: dup, similarity: titleSim, reason: "title+tags" });
         }
       }
     }
@@ -660,7 +696,7 @@ export async function consolidateMemories(
       }
     }
   }
-  return { candidates, applied, dryRun };
+  return { candidates, applied, dryRun, begrenzt };
 }
 
 function pickKeep(store: KeptaStore, a: string, b: string): [string, string] {

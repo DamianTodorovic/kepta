@@ -133,11 +133,13 @@ describe("KEPTA mit KI-Apps verbinden", () => {
     expect(fragen).toEqual(["\nConnect Claude Desktop? [y/N] ", "\nConnect Cursor? [y/N] "]);
     expect(lies(path.join(home, ".cursor", "mcp.json")).mcpServers.kepta).toBeTruthy();
     expect(lies(claudeDesktop()).mcpServers).toBeUndefined();
-    expect(text).toContain("✓ Cursor: Connected.");
+    expect(text).toMatch(/✓ Cursor\s+connected/);
     text = "";
     expect(await einrichten(["--yes"], mac(), { schreibe: (s) => (text += s) })).toBe(0);
     expect(lies(claudeDesktop()).mcpServers.kepta).toBeTruthy();
-    expect(text).toContain("it lives in your local encrypted file from now on");
+    // R9/D2-04: der Schluss ist ein Weg. „it lands in your local encrypted file"
+    // behauptete einen Zustand, den setup nie gemessen hat.
+    expect(text).toMatch(/^next: quit and reopen/m);
   });
 
   it("setup ohne Terminal und ohne --yes ändert nichts; ohne jede App zeigt es den Block zum Einfügen", async () => {
@@ -156,6 +158,92 @@ describe("KEPTA mit KI-Apps verbinden", () => {
     const claude = (a: string[]) => (a[0] === "--version" ? { status: 0, stdout: "2.1", stderr: "" } : { status: 1, stdout: "", stderr: "boom" });
     let text = "";
     expect(await einrichten(["--yes"], mac({ claude }), { schreibe: (s) => (text += s) })).toBe(1);
-    expect(text).toContain("✗ Claude Code: Claude Code said: boom");
+    expect(text).toMatch(/✗ Claude Code\s+Claude Code said: boom/);
+  });
+});
+
+// T-11 (A6-11) und T-18 (A6-18): die Tafel ohne Legende, die Zeile, die nie
+// einen Haken bekommt, und die Sicherungsdatei, von der niemand weiss, dass sie
+// bleibt. Dazu T-12 in dieser Datei: ein Zustand, den setup nie gemessen hat,
+// darf auch nicht behauptet werden.
+describe("setup-Tafel: lesbar, was die Symbole heissen", () => {
+  it("erklaert die Symbole ueber der Liste und zeigt keine Zeile, die nie ✓ werden kann", async () => {
+    schreib(claudeDesktop(), { mcpServers: { other: { command: "x" } } });
+    fs.mkdirSync(path.join(home, ".config", "zed"), { recursive: true });
+    let text = "";
+    await einrichten([], mac(), { schreibe: (s) => (text += s) });
+    // R4: `·` trennt, es markiert nicht. Die Legende kennt nur ✓ und ○ (und ✗).
+    expect(text).toMatch(/✓ connected · ○ not connected/);
+    expect(text).not.toMatch(/· not installed/);
+    expect(text).not.toMatch(/Any other MCP client\s+not connected yet/);
+    const zeilen = text.split("\n").filter((z) => /^\s+[✓○✗]\s/.test(z));
+    expect(zeilen.length).toBeGreaterThan(0);
+    for (const z of zeilen) expect(z, `Zeile ohne erklaerendes Symbol: ${z}`).toMatch(/connected|failed|not on this computer/);
+  });
+
+  // D2-06: „nicht installiert" braucht keine Zeile pro App. Acht Zeilen Lärm
+  // sagen dem Menschen nichts — eine Zahl sagt es.
+  it("faengt die fehlenden Apps in einer Zahl, nicht in einer Zeile je App", async () => {
+    schreib(claudeDesktop(), {});
+    let text = "";
+    await einrichten(["--yes"], mac(), { schreibe: (s) => (text += s) });
+    expect(text).toMatch(/\d+ more apps? are not on this computer/);
+    expect(text).not.toMatch(/^\s*(·|○)\s+(Windsurf|VS Code|Gemini CLI|Cline|Roo Code)\s+not installed/m);
+  });
+
+  // D2-05 / R12: oben ○, drei Zeilen tiefer ✓ — zwei Bilder desselben Moments.
+  it("ein Bildschirm, ein Zustand: jede App erscheint einmal, mit dem Stand nach der Tat", async () => {
+    schreib(claudeDesktop(), { mcpServers: { other: { command: "x" } } });
+    fs.mkdirSync(path.join(home, ".cursor"), { recursive: true });
+    let text = "";
+    expect(await einrichten(["--yes"], mac(), { schreibe: (s) => (text += s) })).toBe(0);
+    expect(text).toMatch(/✓ Claude Desktop/);
+    expect(text).toMatch(/✓ Cursor/);
+    // Wer verbunden wurde, darf im selben Screen nicht mehr offen stehen.
+    expect(text).not.toMatch(/○ Claude Desktop/);
+    expect(text).not.toMatch(/○ Cursor/);
+    const nennungen = (name: string) => text.split("\n").filter((z) => /^\s+[✓○✗]\s/.test(z) && z.includes(name)).length;
+    expect(nennungen("Claude Desktop"), "die App steht zweimal auf dem Schirm").toBe(1);
+  });
+
+  // R9 / D2-04: der Schluss ist ein Weg, kein Lob, und keine Zustandsbehauptung.
+  it("endet mit einem Weg und behauptet keinen Verschlüsselungszustand", async () => {
+    schreib(claudeDesktop(), { mcpServers: { other: { command: "x" } } });
+    let text = "";
+    await einrichten(["--yes"], mac(), { schreibe: (s) => (text += s) });
+    const letzte = text.split("\n").map((z) => z.trim()).filter((z) => z !== "").at(-1) ?? "";
+    expect(letzte, `der Screen endet mit: ${letzte}`).toMatch(/^next:/);
+    expect(text.toLowerCase()).not.toContain("encrypted");
+    expect(text).not.toMatch(/unlimited/);
+  });
+
+  // R2: der Sicherungspfad war 230 Zeichen auf einer Zeile.
+  it("keine Zeile mit Wortgrenze ist laenger als 80 Zeichen", async () => {
+    schreib(claudeDesktop(), { mcpServers: { other: { command: "x" } } });
+    let text = "";
+    await einrichten(["--yes"], mac(), { schreibe: (s) => (text += s) });
+    for (const z of text.split("\n")) {
+      if (!z.trim().includes(" ")) continue;
+      // Ein Pfad ist eine Adresse, kein Satz: er steht auf seiner eigenen Zeile
+      // und wird nie zerschnitten — der Schirm bricht ihn, nicht KEPTA.
+      if (/[\\/]/.test(z)) continue;
+      expect([...z].length, `${[...z].length} Zeichen: ${z}`).toBeLessThanOrEqual(80);
+    }
+  });
+});
+
+describe("setup-Ausgabe: was der Lauf wirklich getan hat", () => {
+  it("nennt die Sicherung mit Pfad und Weg, sie loszuwerden — und behauptet keine Verschluesselung, die hier niemand gemessen hat", async () => {
+    schreib(claudeDesktop(), { mcpServers: { other: { command: "x" } } });
+    let text = "";
+    expect(await einrichten(["--yes"], mac(), { schreibe: (s) => (text += s) })).toBe(0);
+    // R2: der Pfad ist 230 Zeichen geworden. Er steht jetzt auf einer eigenen
+    // Zeile — ein Pfad, der mitten im Wort umbricht, ist nicht mehr kopierbar.
+    expect(text).toContain(`${claudeDesktop()}.kepta-backup-2026-09-14T12-00-00`);
+    expect(text).toMatch(/backup\s/);
+    expect(text).toContain("stays there");
+    expect(text).toContain("delete it once everything works");
+    expect(text.toLowerCase()).not.toContain("encrypted");
+    expect(text).toContain("connected");
   });
 });

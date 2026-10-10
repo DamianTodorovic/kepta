@@ -14,8 +14,8 @@
     "build:mcp": "esbuild src/mcp-server.ts --bundle --platform=node --format=cjs --packages=external --outfile=dist/mcp-server.cjs",
     "mcp": "tsx src/mcp-server.ts",
     "lint": "tsc --noEmit",
-    "test": "vitest run",
-    "test:cov": "vitest run --coverage",
+    "test": "vitest run --reporter=default --reporter=json --outputFile.json=test-results/vitest.json && node scripts/doku-check.mjs",
+    "test:cov": "vitest run --coverage --reporter=default --reporter=json --outputFile.json=test-results/vitest.json && node scripts/doku-check.mjs",
     "eval": "tsx scripts/eval.ts",
     "build:npm": "node scripts/build-npm.mjs"
   },

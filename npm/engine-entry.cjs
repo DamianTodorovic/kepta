@@ -654,6 +654,7 @@ var KeptaStore = class _KeptaStore {
           valid_from INTEGER,
           valid_to INTEGER,
           superseded_by TEXT,
+          superseded_at INTEGER,
           created_at INTEGER NOT NULL,
           updated_at INTEGER NOT NULL,
           deleted_at INTEGER,
@@ -662,10 +663,10 @@ var KeptaStore = class _KeptaStore {
           utility REAL NOT NULL DEFAULT 0.5
         );
         INSERT INTO memories_neu (rid, id, scope, type, title, content, tags, confidence,
-          valid_from, valid_to, superseded_by, created_at, updated_at, deleted_at,
+          valid_from, valid_to, superseded_by, superseded_at, created_at, updated_at, deleted_at,
           last_access_at, access_count, utility)
         SELECT rid, id, scope, type, title, content, tags, confidence,
-          valid_from, valid_to, superseded_by, created_at, updated_at, deleted_at,
+          valid_from, valid_to, superseded_by, superseded_at, created_at, updated_at, deleted_at,
           last_access_at, access_count, utility
         FROM memories;
         DROP TABLE memories;
@@ -683,6 +684,7 @@ var KeptaStore = class _KeptaStore {
     this.db.exec("PRAGMA foreign_keys = ON");
   }
   migrate() {
+    this.sorgeFuerSpalte("superseded_at", "INTEGER");
     this.erweitereTypBeschraenkung();
     this.db.exec(`
       CREATE TABLE IF NOT EXISTS meta (key TEXT PRIMARY KEY, value TEXT NOT NULL);
@@ -699,6 +701,7 @@ var KeptaStore = class _KeptaStore {
         valid_from INTEGER,
         valid_to INTEGER,
         superseded_by TEXT,
+        superseded_at INTEGER,
         created_at INTEGER NOT NULL,
         updated_at INTEGER NOT NULL,
         deleted_at INTEGER,
@@ -766,16 +769,18 @@ var KeptaStore = class _KeptaStore {
     if (!row) {
       this.db.prepare("INSERT INTO meta (key, value) VALUES ('schema_version', ?)").run(String(SCHEMA_VERSION));
     }
-    const columns = [
-      ["last_access_at", "INTEGER"],
-      ["access_count", "INTEGER NOT NULL DEFAULT 0"],
-      ["utility", "REAL NOT NULL DEFAULT 0.5"]
-    ];
-    for (const [name, type] of columns) {
-      try {
-        this.db.exec(`ALTER TABLE memories ADD COLUMN ${name} ${type}`);
-      } catch {
-      }
+    this.sorgeFuerSpalte("last_access_at", "INTEGER");
+    this.sorgeFuerSpalte("access_count", "INTEGER NOT NULL DEFAULT 0");
+    this.sorgeFuerSpalte("utility", "REAL NOT NULL DEFAULT 0.5");
+  }
+  /**
+   * Additive Spalte nachziehen, idempotent. Nur interne Literale erreichen das —
+   * die Aufrufer stehen in diesem File, es ist keine Stelle fuer Fremdworte.
+   */
+  sorgeFuerSpalte(name, typ) {
+    try {
+      this.db.exec(`ALTER TABLE memories ADD COLUMN ${name} ${typ}`);
+    } catch {
     }
   }
   // ---------- Einstellungen ----------
@@ -852,6 +857,7 @@ var KeptaStore = class _KeptaStore {
       validFrom: r.valid_from ?? null,
       validTo: r.valid_to ?? null,
       supersededBy: r.superseded_by ?? null,
+      supersededAt: r.superseded_at ?? null,
       createdAt: Number(r.created_at),
       updatedAt: Number(r.updated_at),
       deletedAt: r.deleted_at ?? null,
@@ -861,7 +867,7 @@ var KeptaStore = class _KeptaStore {
     };
   }
   static {
-    this.COLS = "id, scope, type, title, content, tags, confidence, valid_from, valid_to, superseded_by, created_at, updated_at, deleted_at, last_access_at, access_count, utility";
+    this.COLS = "id, scope, type, title, content, tags, confidence, valid_from, valid_to, superseded_by, superseded_at, created_at, updated_at, deleted_at, last_access_at, access_count, utility";
   }
   getRow(id) {
     return this.db.prepare(`SELECT ${_KeptaStore.COLS} FROM memories WHERE id = ?`).get(id);
@@ -955,6 +961,7 @@ var KeptaStore = class _KeptaStore {
       validFrom: input.validFrom ?? null,
       validTo: input.validTo ?? null,
       supersededBy: null,
+      supersededAt: null,
       createdAt: input.createdAt ?? now,
       updatedAt: input.updatedAt ?? now,
       deletedAt: null,
@@ -1013,6 +1020,7 @@ var KeptaStore = class _KeptaStore {
     if (!row) return null;
     const sets = [];
     const params = [];
+    const zeitstempel = patch.updatedAt ?? Date.now();
     if (patch.title !== void 0) {
       sets.push("title = ?");
       params.push(sanitizeText(patch.title, 200) || "Untitled");
@@ -1048,10 +1056,12 @@ var KeptaStore = class _KeptaStore {
     if (patch.supersededBy !== void 0) {
       sets.push("superseded_by = ?");
       params.push(patch.supersededBy);
+      sets.push("superseded_at = ?");
+      params.push(patch.supersededBy === null ? null : zeitstempel);
     }
     if (sets.length === 0) return this.rowToRecord(row);
     sets.push("updated_at = ?");
-    params.push(patch.updatedAt ?? Date.now());
+    params.push(zeitstempel);
     params.push(id);
     if (!this.extensions.policy.canWrite(this.actor(), { id, scope: String(row.scope), type: String(row.type) })) {
       throw new Error("Write denied (PolicyGate)");
@@ -1221,13 +1231,18 @@ var KeptaStore = class _KeptaStore {
       model: String(r.embedding_model ?? "")
     }));
   }
+  /**
+   * Stand der Vektor-Bein. `chunksOhneVektor` ist die Zahl, die ein Nutzer horen
+   * muss, wenn die semantische Suche nach einem Import noch nichts findet — die
+   * Queue arbeitet, aber wie lange noch, steht bisher in keinem Feld.
+   */
   embeddingStats() {
     const total = this.db.prepare("SELECT COUNT(*) c FROM chunks").get().c;
     const embedded = this.db.prepare("SELECT COUNT(*) c FROM chunks WHERE embedding IS NOT NULL").get().c;
     const modelRows = this.db.prepare("SELECT embedding_model m, COUNT(*) c FROM chunks WHERE embedding IS NOT NULL GROUP BY embedding_model").all();
     const models = {};
     for (const r of modelRows) models[String(r.m ?? "unknown")] = Number(r.c);
-    return { total, embedded, models };
+    return { total, embedded, chunksOhneVektor: total - embedded, models };
   }
   // ---------- Entities & Relations ----------
   ensureEntity(name) {
@@ -1302,7 +1317,13 @@ var KeptaStore = class _KeptaStore {
       const entities2 = this.db.prepare(`SELECT id, name FROM entities WHERE id IN (${placeholders})`).all(...ids).map((r) => ({ id: Number(r.id), name: String(r.name) }));
       return { entities: entities2, relations: relations2 };
     }
-    const entities = this.db.prepare("SELECT id, name FROM entities LIMIT 500").all().map((r) => ({
+    const entities = this.db.prepare(
+      `SELECT e.id, e.name FROM entities e
+           LEFT JOIN memory_entities me ON me.entity_id = e.id
+           GROUP BY e.id, e.name
+           ORDER BY COUNT(me.entity_id) DESC, e.id ASC
+           LIMIT 500`
+    ).all().map((r) => ({
       id: Number(r.id),
       name: String(r.name)
     }));
@@ -1423,25 +1444,40 @@ function schluesselPragmas(db, schluessel, pragma) {
   db.pragma("legacy = 4");
   db.pragma(`${pragma} = "x'${Buffer.from(schluessel).toString("hex")}'"`);
 }
-function setzeSchluessel(db, schluessel) {
+function setzeSchluessel(db, schluessel, herkunft) {
   schluesselPragmas(db, schluessel, "key");
   try {
     db.prepare("SELECT count(*) FROM sqlite_master").get();
   } catch (e) {
     db.close();
     if (sqliteCode(e) === "SQLITE_NOTADB") {
-      throw new Error("The knowledge base could not be opened with its key \u2014 the key in the keychain does not belong to this database. Nothing was changed.");
+      let groesse = -1;
+      try {
+        groesse = import_node_fs.default.statSync(db.name).size;
+      } catch {
+        groesse = -1;
+      }
+      if (groesse >= 0 && groesse % 512 !== 0) {
+        throw new Error(
+          `The file at ${db.name} is not a SQLite database at all \u2014 ${groesse} bytes is not a multiple of any page size, so it is either not a database or the damaged remnant of one. No key can open it, and none was tried again. Nothing was changed. If a restore or another program wrote here, point KEPTA_DATA_DIR at the real knowledge base.`
+        );
+      }
+      throw new Error(
+        `The knowledge base ${db.name} could not be opened with the 256-bit key${herkunft ? ` from ${herkunft}` : " it was given"} \u2014 either that is not the key this file was encrypted with, or the file itself is damaged. SQLite reports only "file is not a database", so KEPTA does not say which. Nothing was changed. SECURITY.md, "Keep a copy of the key", lists the command that reads your key back on every operating system; if this file was written with a key you hold yourself, set KEPTA_DB_KEY to it and start again.`
+      );
     }
     throw e;
   }
 }
-function pruefeLesbar(db, hinweis) {
+function pruefeLesbar(db, hinweis, herkunft) {
   try {
     db.prepare("SELECT count(*) FROM sqlite_master").get();
   } catch (e) {
     db.close();
     if (sqliteCode(e) === "SQLITE_NOTADB") {
-      throw new Error(`The knowledge base is encrypted, but its key is not available${hinweis ? `: ${hinweis}` : "."}`);
+      throw new Error(
+        `The knowledge base is encrypted, but its key is not available${hinweis ? `: ${hinweis}` : herkunft ? ` from ${herkunft}` : "."} Nothing was changed. The file was not opened and no empty knowledge base was started over it. SECURITY.md, "Keep a copy of the key", lists the command that reads your key back; a key you hold yourself goes in KEPTA_DB_KEY (openssl rand -hex 32).`
+      );
     }
     throw e;
   }
@@ -1758,6 +1794,7 @@ function erweitereQuery(query) {
 // src/core/engine.ts
 var RRF_K = 60;
 var MAX_SEARCH_LIMIT = 1e4;
+var MAX_CANDIDATES_PRO_AUFRUF = 500;
 var EXPIRED_FACTOR = 0.5;
 var SUPERSEDED_FACTOR = 0.4;
 var RECENCY_WINDOW_MS = 365 * 24 * 3600 * 1e3;
@@ -1935,11 +1972,10 @@ async function searchMemories(store, params) {
       if (!tags.every((t) => r.tags.includes(t))) return false;
     }
     if (params.validSince && r.validFrom !== null && r.validFrom < params.validSince) return false;
-    if (timeTravel) {
-      const start = r.validFrom ?? r.createdAt;
-      if (start !== null && start > now) return false;
-      if (r.validTo !== null && r.validTo <= now) return false;
-    }
+    const start = r.validFrom ?? r.createdAt;
+    if (start !== null && start > now) return false;
+    if (timeTravel && r.validTo !== null && r.validTo <= now) return false;
+    if (timeTravel && r.supersededBy !== null && r.supersededAt !== null && r.supersededAt <= now) return false;
     return true;
   };
   const beine = {
@@ -2023,7 +2059,7 @@ async function searchMemories(store, params) {
     score *= 1 + recencyBonus;
     score *= 0.5 + 0.5 * r.confidence;
     score *= retentionFactor(r, now);
-    const expired = !timeTravel && r.validTo !== null && r.validTo < now;
+    const expired = !timeTravel && r.validTo !== null && r.validTo <= now;
     const superseded = r.supersededBy !== null;
     if (expired) score *= EXPIRED_FACTOR;
     if (superseded) score *= SUPERSEDED_FACTOR;
@@ -2087,9 +2123,20 @@ function jaccard(a, b) {
 }
 async function consolidateMemories(store, opts = {}) {
   const threshold = opts.threshold ?? 0.92;
+  if (!Number.isFinite(threshold) || threshold <= 0 || threshold > 1) {
+    throw new Error(`consolidate: threshold must be in (0, 1], received ${opts.threshold}`);
+  }
   const dryRun = opts.dryRun ?? true;
   const active = aktiveErinnerungen(store).aktiv.filter((m) => !m.record.supersededBy && !opts.ausnehmen?.has(m.record.id));
   const candidates = [];
+  let begrenzt = false;
+  const vorschlagen = (kandidat) => {
+    if (candidates.length >= MAX_CANDIDATES_PRO_AUFRUF) {
+      begrenzt = true;
+      return;
+    }
+    candidates.push(kandidat);
+  };
   const chunks = embeddbareChunks(store);
   const centroids = /* @__PURE__ */ new Map();
   for (const c of chunks) {
@@ -2112,7 +2159,7 @@ async function consolidateMemories(store, opts = {}) {
         const a = centroidList[i][0];
         const b = centroidList[j][0];
         const [keep, dup] = pickKeep(store, a, b);
-        candidates.push({ keepId: keep, duplicateId: dup, similarity: sim, reason: "embedding" });
+        vorschlagen({ keepId: keep, duplicateId: dup, similarity: sim, reason: "embedding" });
       }
     }
   }
@@ -2133,7 +2180,7 @@ async function consolidateMemories(store, opts = {}) {
         );
         if (!pairExists) {
           const [keep, dup] = pickKeep(store, a.id, b.id);
-          candidates.push({ keepId: keep, duplicateId: dup, similarity: titleSim, reason: "title+tags" });
+          vorschlagen({ keepId: keep, duplicateId: dup, similarity: titleSim, reason: "title+tags" });
         }
       }
     }
@@ -2149,7 +2196,7 @@ async function consolidateMemories(store, opts = {}) {
       }
     }
   }
-  return { candidates, applied, dryRun };
+  return { candidates, applied, dryRun, begrenzt };
 }
 function pickKeep(store, a, b) {
   const ra = store.getMemory(a);
@@ -2206,40 +2253,44 @@ var searchOutSchema = {
   },
   required: ["query", "count", "hits"]
 };
+var VIER_TYPEN = "semantic = fact, episodic = event, procedural = how-to, reference = imported document";
+var EPOCH_BEISPIEL = "epoch milliseconds \u2014 1762387000000 = 6 Oct 2026, 12:16 UTC";
 var TOOLS = [
   {
     name: "memory_search",
     title: "Search memory",
-    description: "Hybrid retrieval (BM25 + vectors + knowledge graph) over KEPTA memory. Expired and superseded memories are flagged as such; memories the owner marked private never appear here.",
+    description: "Searches by words, vectors and links. Returns hits with score and dates; private notes never appear. Count 0 can mean a just-saved note is still indexing - run it again. Read-only.",
     inputSchema: {
       type: "object",
       properties: {
-        query: opt(stringSchema("Search query, in natural language")),
-        limit: opt({ type: "integer", description: "Max hits (1-100, default 10)", default: 10 }),
-        tags: opt({ type: "array", items: { type: "string" }, description: "Tag filter (AND)" }),
-        type: opt({ type: "string", enum: ["semantic", "episodic", "procedural", "reference"] }),
-        scope: opt(stringSchema("Scope filter, e.g. agent:coder or session:abc"))
+        query: opt(stringSchema("Natural-language question or the words the note should contain")),
+        limit: opt({ type: "integer", description: "Hits to return, 1-100", default: 10 }),
+        tags: opt({ type: "array", items: { type: "string" }, description: "Only notes carrying all of these tags" }),
+        type: opt({ type: "string", enum: ["semantic", "episodic", "procedural", "reference"], description: `Only notes of this kind: ${VIER_TYPEN}` }),
+        scope: opt(stringSchema("Only notes in this scope, e.g. agent:coder or session:abc")),
+        asOf: opt({ type: "integer", description: `Time travel: search as of a moment instead of now (${EPOCH_BEISPIEL})` })
       },
       required: ["query"]
     },
-    outputSchema: searchOutSchema
+    outputSchema: searchOutSchema,
+    annotations: { readOnlyHint: true, destructiveHint: false, idempotentHint: true }
   },
   {
     name: "memory_save",
     title: "Save memory",
-    description: "Saves a knowledge node, or updates one when id is given. [[Wiki links]] in the text become linked entities.",
+    description: "Saves a note and returns its id; [[Wiki links]] become entities. With id it replaces the whole note - memory_update patches, memory_delete trashes. duplicateWarning names a twin.",
     inputSchema: {
       type: "object",
       properties: {
-        id: opt(stringSchema("Existing id, to update instead of create")),
-        title: opt(stringSchema("Title")),
-        content: opt(stringSchema("Content")),
-        tags: opt({ type: "array", items: { type: "string" } }),
-        type: opt({ type: "string", enum: ["semantic", "episodic", "procedural", "reference"], description: "semantic=fact, episodic=event, procedural=how-to, reference=imported document" }),
-        scope: opt(stringSchema('Scope, default "local". "private" keeps the memory out of every agent channel \u2014 search, list, graph, consolidate, id lookups \u2014 while the owner still sees it in the app.')),
-        confidence: opt({ type: "number", description: "0..1" }),
-        validFrom: opt({ type: "integer", description: "epoch milliseconds" }),
-        validTo: opt({ type: "integer", description: "epoch milliseconds" })
+        id: opt(stringSchema("Existing id: the whole note is replaced by this call")),
+        title: opt(stringSchema("Short name the note is retrieved by")),
+        content: opt(stringSchema("The full text; [[Wiki links]] in it become entities")),
+        tags: opt({ type: "array", items: { type: "string" }, description: "Labels for retrieval, e.g. weber, billing" }),
+        type: opt({ type: "string", enum: ["semantic", "episodic", "procedural", "reference"], description: VIER_TYPEN }),
+        scope: opt(stringSchema('Scope of the note. "private" keeps it out of every agent channel \u2014 search, list, graph, consolidate and id lookups \u2014 while the owner still reads it in the app.')),
+        confidence: opt({ type: "number", description: "0 = a guess, 1 = confirmed" }),
+        validFrom: opt({ type: "integer", description: `Moment the note starts to hold: ${EPOCH_BEISPIEL}` }),
+        validTo: opt({ type: "integer", description: `Moment it stops holding, null = open: ${EPOCH_BEISPIEL}` })
       },
       required: ["title", "content"]
     },
@@ -2261,72 +2312,77 @@ var TOOLS = [
         }
       },
       required: ["created", "memory"]
-    }
+    },
+    annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: false }
   },
   {
     name: "memory_update",
     title: "Update memory",
-    description: "Updates fields of an existing memory (patch).",
+    description: "Patches one note and returns it; only the fields you send change - memory_save with an id replaces the whole note. supersededBy:null undoes a wrong memory_consolidate.",
     inputSchema: {
       type: "object",
       properties: {
-        id: opt(stringSchema("Id of the memory")),
-        title: opt({ type: "string" }),
-        content: opt({ type: "string" }),
-        tags: opt({ type: "array", items: { type: "string" } }),
-        type: opt({ type: "string", enum: ["semantic", "episodic", "procedural", "reference"] }),
-        confidence: opt({ type: "number" }),
-        validFrom: opt({ type: ["integer", "null"] }),
-        validTo: opt({ type: ["integer", "null"] })
+        id: opt(stringSchema("Id of the note to change")),
+        title: opt(stringSchema("New short name")),
+        content: opt(stringSchema("New full text; [[Wiki links]] become entities")),
+        tags: opt({ type: "array", items: { type: "string" }, description: "Replaces the label list" }),
+        type: opt({ type: "string", enum: ["semantic", "episodic", "procedural", "reference"], description: VIER_TYPEN }),
+        confidence: opt({ type: "number", description: "0 = a guess, 1 = confirmed" }),
+        validFrom: opt({ type: ["integer", "null"], description: `Moment it starts to hold: ${EPOCH_BEISPIEL}` }),
+        validTo: opt({ type: ["integer", "null"], description: `Moment it stops holding; null keeps it open: ${EPOCH_BEISPIEL}` }),
+        supersededBy: opt({ type: ["string", "null"], description: "Id of the successor note, or null to undo a superseding" })
       },
       required: ["id"]
     },
-    outputSchema: { type: "object", properties: { updated: { type: "boolean" }, memory: memoryOutSchema }, required: ["updated"] }
+    outputSchema: { type: "object", properties: { updated: { type: "boolean" }, memory: memoryOutSchema }, required: ["updated"] },
+    annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: true }
   },
   {
     name: "memory_delete",
     title: "Delete memory",
-    description: "Moves a memory to the trash (default), or deletes it for good (permanent).",
+    description: "Moves a note to the trash and returns trashed:true; permanent:true deletes the row. Way back: memory_list with trash:true shows the id, then POST /api/memories/:id/restore.",
     inputSchema: {
       type: "object",
       properties: {
-        id: opt(stringSchema("Id of the memory")),
-        permanent: opt({ type: "boolean", description: "true = delete permanently", default: false })
+        id: opt(stringSchema("Id of the note to remove")),
+        permanent: opt({ type: "boolean", description: "true deletes the row instead of trashing it", default: false })
       },
       required: ["id"]
     },
-    outputSchema: { type: "object", properties: { trashed: { type: "boolean" }, purged: { type: "boolean" } }, required: [] }
+    outputSchema: { type: "object", properties: { trashed: { type: "boolean" }, purged: { type: "boolean" } }, required: [] },
+    annotations: { readOnlyHint: false, destructiveHint: true, idempotentHint: true }
   },
   {
     name: "memory_list",
     title: "List memories",
-    description: "Lists memories, paginated and filterable. Private ones are never listed, not even when scope is asked for explicitly.",
+    description: "Lists notes with count, total and pages, newest first. Private notes are never listed, even when scope asks for them. Read-only; use memory_search to find something by meaning.",
     inputSchema: {
       type: "object",
       properties: {
-        limit: opt({ type: "integer", default: 20, description: "1-200" }),
-        offset: opt({ type: "integer", default: 0 }),
-        type: opt({ type: "string", enum: ["semantic", "episodic", "procedural", "reference"] }),
-        tag: opt({ type: "string" }),
-        scope: opt({ type: "string" }),
-        trash: opt({ type: "boolean", description: "Trash instead of active memories", default: false })
+        limit: opt({ type: "integer", default: 20, description: "Notes to return, 1-200" }),
+        offset: opt({ type: "integer", default: 0, description: "Notes to skip, for paging through total" }),
+        type: opt({ type: "string", enum: ["semantic", "episodic", "procedural", "reference"], description: VIER_TYPEN }),
+        tag: opt({ type: "string", description: "Only notes carrying this label" }),
+        scope: opt({ type: "string", description: "Only notes in this scope, e.g. agent:coder" }),
+        trash: opt({ type: "boolean", description: "List the trash instead of active notes - the way to find a deleted id", default: false })
       }
     },
     outputSchema: {
       type: "object",
       properties: { count: { type: "integer" }, total: { type: "integer" }, memories: { type: "array", items: memoryOutSchema } },
       required: ["count", "memories"]
-    }
+    },
+    annotations: { readOnlyHint: true, destructiveHint: false, idempotentHint: true }
   },
   {
     name: "memory_graph",
-    title: "Knowledge graph",
-    description: "Entities and relations around one entity, or the whole graph, capped.",
+    title: "Read graph",
+    description: "Reads entities and the [[links]] between them, around one entity or the capped whole graph, and returns entities and relations. Read-only; memory_search finds the notes themselves.",
     inputSchema: {
       type: "object",
       properties: {
-        entity: opt(stringSchema("Entity name (optional)")),
-        depth: opt({ type: "integer", description: "Graph depth 1-4, default 2" })
+        entity: opt(stringSchema("Entity to start from; without it the whole graph, capped")),
+        depth: opt({ type: "integer", description: "Hops to follow, 1-4", default: 2 })
       }
     },
     outputSchema: {
@@ -2343,17 +2399,19 @@ var TOOLS = [
         }
       },
       required: ["entities", "relations"]
-    }
+    },
+    annotations: { readOnlyHint: true, destructiveHint: false, idempotentHint: true }
   },
   {
     name: "memory_consolidate",
-    title: "Consolidate memory",
-    description: "Finds duplicates and contradictions by embedding similarity; without dryRun it marks the older copy as superseded.",
+    title: "Consolidate memories",
+    description: 'Finds duplicates and contradictions, returns candidate pairs. Nothing changes until dryRun:false with confirm:"supersede". Undo via memory_update supersededBy:null.',
     inputSchema: {
       type: "object",
       properties: {
-        dryRun: opt({ type: "boolean", description: "true = suggestions only (default)", default: true }),
-        threshold: opt({ type: "number", description: "Similarity threshold 0..1, default 0.92" })
+        dryRun: opt({ type: "boolean", description: "true suggests only, false applies the supersede", default: true }),
+        threshold: opt({ type: "number", description: "Similarity from which two notes count as one pair, 0..1", default: 0.92 }),
+        confirm: opt({ type: "string", description: 'With dryRun:false must be exactly "supersede"; without it nothing is applied' })
       }
     },
     outputSchema: {
@@ -2361,6 +2419,8 @@ var TOOLS = [
       properties: {
         dryRun: { type: "boolean" },
         applied: { type: "integer" },
+        begrenzt: { type: "boolean" },
+        hinweis: { type: "string" },
         candidates: {
           type: "array",
           items: {
@@ -2376,23 +2436,25 @@ var TOOLS = [
         }
       },
       required: ["dryRun", "candidates"]
-    }
+    },
+    annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: false }
   },
   {
     name: "memory_forget",
-    title: "Forget",
-    description: "Temporal invalidation: expire sets valid_to to now, supersede marks the memory as replaced by supersedeBy, delete moves it to the trash.",
+    title: "Invalidate memory",
+    description: "Invalidates one note and returns it: expire closes validTo at the current time, supersede re-points to supersedeBy, delete trashes it. Undo by clearing validTo or supersededBy.",
     inputSchema: {
       type: "object",
       properties: {
-        id: opt(stringSchema("Id of the memory")),
-        mode: opt({ type: "string", enum: ["expire", "supersede", "delete"], description: "default: expire" }),
-        validTo: opt({ type: "integer", description: "mode=expire only, defaults to now" }),
-        supersedeBy: opt(stringSchema("mode=supersede only: id of the successor memory"))
+        id: opt(stringSchema("Id of the note to invalidate")),
+        mode: opt({ type: "string", enum: ["expire", "supersede", "delete"], description: "expire closes validTo, supersede re-points to a successor, delete trashes", default: "expire" }),
+        validTo: opt({ type: "integer", description: `expire mode: the moment validity ends (${EPOCH_BEISPIEL}); without it, now` }),
+        supersedeBy: opt(stringSchema("supersede mode: id of the successor memory \u2014 required for that mode, supersede without it is rejected"))
       },
       required: ["id"]
     },
-    outputSchema: { type: "object", properties: { forgotten: { type: "boolean" }, mode: { type: "string" } }, required: ["forgotten"] }
+    outputSchema: { type: "object", properties: { forgotten: { type: "boolean" }, mode: { type: "string" } }, required: ["forgotten"] },
+    annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: true }
   }
 ];
 var WIKI_LINK_RE = /\[\[([^[\]]{2,80})\]\]/g;
@@ -2404,6 +2466,12 @@ function extractWikiLinks(text) {
   }
   return [...new Set(out)];
 }
+function zeichenKetten(liste, feld) {
+  liste.forEach((t, i) => {
+    if (typeof t !== "string") throw new Error(`${feld}[${i}] must be a string`);
+  });
+  return liste;
+}
 function saveWithIndex(store, args) {
   const title = String(args.title ?? "");
   const content = String(args.content ?? "");
@@ -2412,7 +2480,7 @@ function saveWithIndex(store, args) {
     id: args.id ? String(args.id) : void 0,
     title,
     content,
-    tags: Array.isArray(args.tags) ? args.tags : [],
+    tags: Array.isArray(args.tags) ? zeichenKetten(args.tags, "tags") : [],
     type: args.type,
     scope: args.scope ? String(args.scope) : void 0,
     confidence: typeof args.confidence === "number" ? args.confidence : void 0,

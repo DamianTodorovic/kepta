@@ -5,7 +5,7 @@
  * 8 Tools mit structuredContent — Logik geteilt mit dem HTTP-Server über src/core/mcp.ts.
  *
  * Start:  npx tsx src/mcp-server.ts   |   node dist/mcp-server.cjs
- * Oberflaeche im Browser:  npx kepta-mcp ui [--port 4747] [--no-open]
+ * Kein Browser-UI:  npx kepta-mcp ui erklaert den Weg in den AI-Client.
  * Mit Claude, Cursor & Co. verbinden:  npx kepta-mcp setup [--yes]
  */
 import { KeptaStore, defaultDataDir } from "./core/store";
@@ -18,15 +18,82 @@ import { protokolliereEreignis } from "./aktivitaet";
 import { einrichten, standardUmgebung } from "./einrichtung";
 import { importChatgptKommando } from "./core/chatgpt-import";
 import { starteDemoShow } from "./demo-show";
-import { erlebnisKommando } from "./cli-erlebnis";
+import { erlebnisKommando, hilfeText, versionText, FLAG_LISTE, heimat, bricht } from "./cli-erlebnis";
 import readline from "node:readline";
+
+/**
+ * D2-01: schließt der Leser die Pipe früh (`| head`, `less`, `fzf`, ein Skript,
+ * das nur Zeile 1 will), meldet Node das als 'error'-Event auf dem Strom. Ohne
+ * Empfänger wird daraus ein Stacktrace auf dem Schirm — bei recall/timeline kam
+ * deshalb gar keine Antwort mehr an. Abbestellung ist kein Fehler: kein Wort,
+ * Exit 0. Alle Ausgaben laufen über dieselben beiden Ströme, also fängt sie
+ * dieser eine Handler und keine Einzelschreiberei.
+ */
+function leserAbbestellung(): void {
+  for (const strom of [process.stdout, process.stderr]) {
+    strom.on("error", (e: unknown) => {
+      const code = (e as NodeJS.ErrnoException | null)?.code;
+      if (code === "EPIPE" || code === "ERR_STREAM_DESTROYED" || code === "ECONNRESET") process.exit(0);
+      console.error(`[kepta] could not write the output: ${e instanceof Error ? e.message : String(e)}`);
+      process.exit(1);
+    });
+  }
+}
+leserAbbestellung();
+
+/** Die Befehle, die dieser Einstieg kennt. Etwas anderes ist ein Tippfall, kein Serverstart. */
+const BEFEHLE = ["remember", "recall", "timeline", "contradict", "stats", "demo", "import", "ui", "setup"] as const;
+
+/** Editier-Distanz — fuer "rember" ist der naechstliegende Befehl "remember". */
+function abstand(a: string, b: string): number {
+  let vorher = Array.from({ length: b.length + 1 }, (_, i) => i);
+  for (let i = 1; i <= a.length; i++) {
+    const jetzt = [i];
+    for (let j = 1; j <= b.length; j++) {
+      jetzt[j] = Math.min(jetzt[j - 1]! + 1, vorher[j]! + 1, vorher[j - 1]! + (a[i - 1] === b[j - 1] ? 0 : 1));
+    }
+    vorher = jetzt;
+  }
+  return vorher[b.length]!;
+}
+
+/**
+ * Ein unbekanntes Wort war bisher der stillste Fehler des Produkts: es fiel in
+ * starteMcp() und der Prozess hing an stdin — ohne Meldung, ohne Exit-Code. Hier
+ * endet er hoerbar. stderr, weil stdout der MCP-Kanal ist.
+ *
+ * D2-03: alles, was mit `-` beginnt, ist ein Schalter. Ein Schalter hat keine
+ * Editier-Distanz zu einem Befehl — „did you mean ui?" fuer `-h` ist Quatsch,
+ * und die Distanz-Maschine hat ihn trotzdem geraten.
+ */
+function weiseAb(wort: string): void {
+  if (wort.startsWith("-") && wort.length > 1) {
+    const name = wort.includes("=") ? wort.slice(0, wort.indexOf("=")) : wort;
+    console.error(`[kepta] unknown flag: ${name}`);
+    // R2: die Liste ist länger als die Bühne — sie bricht, statt umzukippen.
+    for (const z of bricht(`KEPTA knows: ${FLAG_LISTE}`, { einzug: 2 })) console.error(z);
+    console.error("[kepta] next: run kepta --help, or drop the switch");
+    return;
+  }
+  const naechste = [...BEFEHLE].sort((a, b) => abstand(wort.toLowerCase(), a) - abstand(wort.toLowerCase(), b))[0];
+  const vorschlag = naechste && abstand(wort.toLowerCase(), naechste) <= Math.max(2, Math.floor(naechste.length / 2));
+  console.error(`[kepta] unknown command: ${wort}${vorschlag ? ` — did you mean "${naechste}"?` : ""}`);
+  console.error(`[kepta] commands: ${BEFEHLE.join(", ")}`);
+  console.error("[kepta] with no argument KEPTA runs the MCP server on stdin — that is how Claude, Cursor & Co. connect.");
+}
 
 /** Derselbe Schluessel wie in der App: aus dem Schluesselbund des Systems. */
 function oeffneStore(): KeptaStore {
   try {
     return new KeptaStore(undefined, { ...defaultExtensions(), keys: schluesselbundKeyProvider(defaultDataDir()) });
   } catch (e) {
-    console.error(`[kepta MCP] ${e instanceof Error ? e.message : String(e)}`);
+    // Der Kernsatz nennt Quelle, Wirkung und Ausweg und war gemessen 250 Zeichen
+    // lang auf einer Zeile. Sein Wortlaut gehoert F7 — hier wird nur die Bühne
+    // gehalten (R2), nicht der Satz.
+    const meldung = e instanceof Error ? e.message : String(e);
+    // Die Bühne zählt inklusive Präfix: 8 Zeichen gehören dem Kanal, der Rest dem Satz.
+    const zeilen = bricht(meldung, { einzug: 0, rueck: 2, breite: 80 - "[kepta] ".length });
+    zeilen.forEach((z, i) => console.error(i === 0 ? `[kepta] ${z.trimStart()}` : `  ${z.trim()}`));
     process.exit(1);
   }
 }
@@ -35,12 +102,18 @@ function oeffneStore(): KeptaStore {
 function starteMcp(): void {
   const store = oeffneStore();
   const v = store.verschluesselung;
-  console.error(
-    `[kepta MCP] ${store.dbPath} — ${v.aktiv ? `encrypted (${v.ablage ?? "key provider"}${v.umgewandelt ? ", converted from plaintext just now" : ""})` : `NOT encrypted${v.hinweis ? `: ${v.hinweis}` : ""}`}`,
-  );
+  // D2-19: einmal sagen, was gilt. Vorher stand der Pfad in zwei Zeilen, und
+  // die wichtigste Meldung — dass diese Datei in diesem Moment von Klartext auf
+  // verschlüsselt umgeschrieben wurde — steckte als Beisatz in einer Klammer.
+  const zustand = v.aktiv ? `encrypted${v.ablage ? ` (${v.ablage})` : ""}` : "NOT encrypted";
+  console.error(`[kepta] kepta ${SERVER_INFO.version} · ${heimat(store.dbPath)} · ${zustand}`);
+  if (v.aktiv && v.umgewandelt) {
+    console.error("[kepta] converted this file from plaintext to encrypted just now");
+  }
+  if (!v.aktiv && v.hinweis) console.error(`[kepta] NOT encrypted — ${v.hinweis}`);
   const migration = migrateFromLegacyJson(store);
   if (!migration.skipped) {
-    console.error(`[kepta MCP] Migration: ${migration.migrated} nodes taken over from memories.json (backup: ${migration.backupPath ?? "none"})`);
+    console.error(`[kepta] Migration: ${migration.migrated} nodes taken over from memories.json (backup: ${migration.backupPath ?? "none"})`);
   }
   const queue = new EmbeddingQueue(store);
   queue.start();
@@ -121,28 +194,51 @@ function starteMcp(): void {
     finishIfDrained();
   });
 
-  console.error(`[kepta MCP] stdio ready — ${SERVER_INFO.name} v${SERVER_INFO.version} — db: ${store.dbPath}`);
+  // D2-20: `npx -y kepta-mcp` ohne Argument ist der Weg aus der Anleitung — und
+  // der Mensch sah danach nichts mehr. Vier Sekunden Stille sind kein „ready".
+  // Die Zeile, die es erklärt, gehört an den Anfang des Wartens, nicht an eine
+  // Abweisung.
+  console.error("[kepta] waiting for an MCP client on stdin — this is how Claude, Cursor & Co. connect");
+  console.error("[kepta] Ctrl+C stops it. Commands: npx -y kepta-mcp --help");
 }
 
 /**
- * `npx kepta-mcp ui`: KEPTA ist headless — es lebt im KI-Klienten (MCP) und
- * hat bewusst KEINE Browser-Oberfläche (die alte Browser-UI ist seit dem
- * Pivot kein Produkt mehr). Der Befehl bleibt für alte Anleitungen bestehen
- * und zeigt den einen richtigen Weg: setup.
+ * `npx kepta-mcp ui`: KEPTA Core ist headless — es lebt im KI-Klienten (MCP) und
+ * hat bewusst keine Browser-Oberfläche. D2-42 mass hier ein Satz, der nach aussen
+ * zeigt, ohne das Ziel zu nennen („see the website") und ohne den kostenlosen
+ * Weg: die Desktop-App mit Fenster ist ein Release **dieses** Repos, Enterprise ist
+ * Vertrag. Die Adresse ist nicht erfunden — sie ist der Remote, den
+ * `git remote get-url origin` nennt. Jede Zeile unter 80 (R2), der Schluss ein
+ * Weg (R9), kein Zustand, den dieser Lauf nicht gemessen hat (R8).
  */
 function uiHinweis(): void {
-  console.log(`KEPTA has no browser interface — it lives inside your AI client via MCP.
-
-  Next step:  npx kepta-mcp setup
-
-The desktop console is KEPTA Enterprise (by agreement — see the website).`);
+  console.log(`KEPTA Core has no window — your AI client is the interface.`);
+  console.log(`The free desktop app adds the browser, the graph and time travel:`);
+  console.log(`  github.com/DamianTodorovic/kepta/releases`);
+  console.log(`KEPTA Enterprise — the team console with mandates and audit — is by agreement.`);
+  console.log(``);
+  console.log(`next: npx -y kepta-mcp setup — connects this file to the AI apps here`);
+  // Kein process.exit: Node läuft natürlich aus, damit die Pipe die kurze
+  // Nachricht vollständig flushen kann (stdio-Drain-Falle).
 }
 
 /**
- * Das Erlebnis-CLI: remember / recall / timeline / contradict / stats.
- * Läuft auf derselben verschlüsselten Datenbank wie UI und MCP-Server.
+ * Hilfe und Version sind Auskünfte, keine Zugriffe. Vor dem Store-Öffnen
+ * abgezweigt, weil sonst schon `kepta help` eine Datenbank anlegt und einen
+ * Schlüssel verlangt (D2-02). Kein process.exit, damit die Pipe die Antwort
+ * vollständig flushen kann — dieselbe Regel wie bei `ui`.
  */
-if (process.argv[2] === "remember" || process.argv[2] === "recall" || process.argv[2] === "timeline" || process.argv[2] === "contradict" || process.argv[2] === "stats") {
+const Einstiegswort = process.argv[2];
+if (Einstiegswort === "help" || Einstiegswort === "-h" || Einstiegswort === "--help") {
+  for (const zeile of hilfeText()) console.log(zeile);
+} else if (Einstiegswort === "-V" || Einstiegswort === "--version") {
+  console.log(versionText());
+}
+/**
+ * Das Erlebnis-CLI: remember / recall / timeline / contradict / stats.
+ * Läuft auf derselben verschlüsselten Datenbank wie der MCP-Server.
+ */
+else if (process.argv[2] === "remember" || process.argv[2] === "recall" || process.argv[2] === "timeline" || process.argv[2] === "contradict" || process.argv[2] === "stats") {
   const store = oeffneStore();
   erlebnisKommando(store, process.argv[2], process.argv.slice(3)).then(
     async (code) => {
@@ -204,7 +300,10 @@ else if (process.argv[2] === "import") {
   }).then(
     (code) => {
       rl?.close();
-      console.log(`\n[kepta] local, encrypted and unlimited for your agents — no account, no cloud.`);
+      // D2-04: hier hing ein Satz an JEDEM Ausgang — „local, encrypted and
+      // unlimited" — auch bei einem setup, das die Datei nie geöffnet hat. Die
+      // Tafel der Einrichtung sagt selbst, was getan wurde, und endet mit einem
+      // Weg. Ein zweiter, ungeprüfter Schluss ist kein Schluss, sondern Lärm.
       // stdout auf Pipes asynchron — das letzte Write erst abwarten (Drain-Falle).
       process.stdout.write("", () => process.exit(code));
     },
@@ -213,6 +312,11 @@ else if (process.argv[2] === "import") {
       process.exit(1);
     }
   );
-} else {
+} else if (process.argv[2] === undefined || process.argv[2] === "") {
   starteMcp();
+} else {
+  // Kein Argument ist der MCP-Weg; ein Wort, das wir nicht kennen, war bisher
+  // derselbe Weg — still. stderr auf Pipes ist asynchron, also erst drainen.
+  weiseAb(String(process.argv[2]));
+  process.stderr.write("", () => process.exit(2));
 }
