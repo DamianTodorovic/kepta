@@ -88,6 +88,18 @@ jobs:
 
       # Nicht veroeffentlichen, was nicht getestet ist. Die Tests pruefen auch
       # server.json gegen das MCP-Schema und den mcpName-Besitznachweis.
+      #
+      # Der Vorlauf ist keine Doppelarbeit: `tests/doku-zahlen.test.ts` haelt die
+      # Zahl im README an den Bericht des letzten Laufs (`test-results/vitest.json`),
+      # und vitest schreibt seinen Bericht erst am ENDE — ein Test kann den Bericht
+      # seines eigenen Laufs nicht lesen. Auf einem frischen Checkout gibt es
+      # keinen Bericht, also verweigert die Wache zu Recht („aelter als die Suite“).
+      # Gemessen: der erste Publish-Lauf auf `8bc48eb` fiel genau hierum, waehrend
+      # `ci.yml` denselben Vorlauf schon seit dem 10.10. kennt.
+      - name: Messvorlauf (schreibt test-results/vitest.json, Befund zählt nicht)
+        if: github.event.inputs.modus != 'test'
+        run: npm test || true
+        timeout-minutes: 10
       - name: Tests
         if: github.event.inputs.modus != 'test'
         run: npm test
