@@ -40,6 +40,10 @@ import path from "node:path";
  * @property {number} zahl             Faelle, die in diesem Lauf durchgelaufen sind
  * @property {number} bestanden        davon mit gruenem Ergebnis
  * @property {number} uebersprungen    Faelle, die der Lauf nicht ausgefuehrt hat
+ * @property {number} erklaertUebersprungen  davon: im Quelltext als skip/todo erklaert
+ * @property {number} zurueckgewiesen   davon: zur Laufzeit abgewiesen (Ruhe, Plattform)
+ * @property {number} bedingtErklaert   skipIf-Faelle im Quelltext (plattformabhaengig)
+ * @property {number} zahlNachAlterRegel total minus pending — die maschinenabhaengige Zahl
  * @property {number} fehlgeschlagen
  * @property {number} dateienBericht   Testdateien, die der Bericht kennt
  * @property {number} dateienBaum      Testdateien, die der Baum hat
@@ -67,20 +71,18 @@ const NOTWENDIGE_FELDER = ["numTotalTests", "numPassedTests", "numFailedTests", 
 export const HINWEIS =
   "Der Bericht entsteht nur durch einen Lauf: `npm test` (oder `npm run test:cov`) — beide schreiben `test-results/vitest.json` und enden mit `node scripts/doku-check.mjs`. Ein Test kann den Bericht seines eigenen Laufs nicht lesen (vitest schreibt ihn am Ende), also ist der erste Lauf nach einem Checkout oder nach einer Aenderung an der Suite die Messung und der zweite die Pruefung.";
 
-/** Der Tag des Berichts — darauf genau haengt die Zahl in der Doku. */
-const tagVon = (ms) => {
-  const d = new Date(ms);
-  const zweistellig = (n) => String(n).padStart(2, "0");
-  return `${d.getFullYear()}-${zweistellig(d.getMonth() + 1)}-${zweistellig(d.getDate())}`;
-};
+/**
+ * Der Tag des Berichts — darauf genau haengt die Zahl in der Doku. UTC, nicht
+ * lokale Zeit: derselbe Commit, ein Runner in UTC und ein Rechner in CEST
+ * mussen denselben Messstand sehen. Um 00:01 CEST ist der Tag sonst schon
+ * weiter als der des Runner-Laufs von 22:01 UTC — und die Wache verweigert
+ * eine Zahl, die vollstaendig richtig ist.
+ */
+const tagVon = (ms) => new Date(ms).toISOString().slice(0, 10);
 
-/** Lokale Zeit des Berichts — die Meldung nennt einen Moment auf diesem Rechner, keine UTC-Stunde.
- *  Mit Sekunden: zwei Aenderungen in derselben Minute sind der Alltag, wenn mehrere an einem Baum arbeiten. */
-const datum = (ms) => {
-  const d = new Date(ms);
-  const zweistellig = (n) => String(n).padStart(2, "0");
-  return `${d.getFullYear()}-${zweistellig(d.getMonth() + 1)}-${zweistellig(d.getDate())} ${zweistellig(d.getHours())}:${zweistellig(d.getMinutes())}:${zweistellig(d.getSeconds())}`;
-};
+/** Der Moment des Berichts, in UTC und mit Sekunden — zwei Aenderungen in
+ *  derselben Minute sind der Alltag, wenn mehrere an einem Baum arbeiten. */
+const datum = (ms) => new Date(ms).toISOString().slice(0, 19).replace("T", " ") + " UTC";
 
 /** Alle Testdateien, die vitest einsammelt: alle `.test.ts`/`.test.tsx` unter `tests/`, relativ, sortiert. */
 export function testDateien(wurzel = process.cwd()) {
@@ -155,6 +157,55 @@ export function genannteTestzahlen(text) {
  */
 export function messstempel(text) {
   return [...new Set([...text.matchAll(/(?:gemessen (?:am )?|measured (?:on )?)(\d{4}-\d{2}-\d{2})/gi)].map((m) => m[1]))];
+}
+
+/**
+ * Die im QUELLTEXT erklaerten Faelle, die ein Lauf nie ausfuehren kann.
+ *
+ * Warum das eigene Zaehlung braucht: `numPendingTests` aus dem Bericht kennt
+ * zwei ganz verschiedene Dinge — einen Fall, den jemand im Quelltext als
+ * `it.skip` erklaert hat, und einen Fall, den eine Ruhe-Klammer WAHREND des
+ * Laufs abgewiesen hat. Der erste darf von der Zahl abgehen, der zweite nicht:
+ * derselbe Commit, ein dedizierter Runner und dieser Rechner, und die Suite
+ * meldet 979 gegen 977 ausgefuehrte Faelle, weil drei zeitmessende Faelle
+ * von der Maschine abhaengen. Die Doku kann nicht gegen zwei Zahlen geschrieben
+ * werden, also haelt die Zahl die Maschine auszuhalten hat — und der Bericht
+ * meldet, was wirklich lief.
+ *
+ * @param {string} wurzel
+ * @returns {{unbedingt: string[], bedingt: string[], grund: string | null}}
+ */
+export function erklaerteSkips(wurzel = process.cwd()) {
+  const unbedingt = [];
+  const bedingt = [];
+  let grund = null;
+  const muster = /^[ \t]*(?:it|test)\.(skip|todo|fixme)(\.each)?\s*\(\s*(?:"([^"]*)"|'([^']*)'|`([^`]*)`)/gm;
+  const bedingtMuster = /^[ \t]*(?:it|test)\.(?:skipIf|runIf|skipIf|onlyIf)\s*\(/gm;
+  const beschreibungMuster = /^[ \t]*(?:describe|suite)\.(skip|todo)\s*\(/gm;
+  const jederFallMuster = /^[ \t]*(?:it|test)\.(skip|todo|fixme)(\.each)?\s*\(/gm;
+  for (const datei of testDateien(wurzel)) {
+    const quelle = fs.readFileSync(path.join(wurzel, datei), "utf-8");
+    if (beschreibungMuster.test(quelle)) {
+      grund = `${datei}: describe.skip — erklaerte Faelle sind nicht einzeln zaehlbar, die Zahl waere maschinenabhaengig`;
+      break;
+    }
+    beschreibungMuster.lastIndex = 0;
+    for (const m of quelle.matchAll(muster)) {
+      unbedingt.push(m[3] ?? m[4] ?? m[5] ?? "");
+    }
+    for (const m of quelle.matchAll(jederFallMuster)) {
+      if (m[2]) grund = `${datei}: it.${m[1]}.each — die Tabelle ist statisch nicht als einzelner Fall erkennbar`;
+    }
+    jederFallMuster.lastIndex = 0;
+    for (const m of quelle.matchAll(bedingtMuster)) {
+      const wo = m.index ?? 0;
+      const zeile = quelle.slice(wo, quelle.indexOf("\n", wo));
+      const titel = /\(\s*(?:"([^"]*)"|'([^']*)'|`([^`]*)`)/.exec(zeile.slice(zeile.indexOf("(")));
+      bedingt.push(titel ? (titel[1] ?? titel[2] ?? titel[3] ?? "") : zeile.trim().slice(0, 60));
+    }
+    bedingtMuster.lastIndex = 0;
+  }
+  return { unbedingt, bedingt, grund };
 }
 
 /**
@@ -331,15 +382,67 @@ export function leseBericht({ wurzel = process.cwd(), bericht = BERICHT_PFAD } =
     // Was ein roter Lauf mit der Zahl macht, steht in den Feldern daneben.
   }
 
-  const uebersprungen = (roh.numPendingTests ?? 0) + (roh.numTodoTests ?? 0);
+  const nichtAusgefuehrt = [];
+
+  for (const datei of roh.testResults) {
+    const eintraege = datei.assertionResults ?? [];
+    for (const a of eintraege) {
+      if (a.status === "pending" || a.status === "skipped" || a.status === "todo") {
+        nichtAusgefuehrt.push(String(a.fullName ?? a.title ?? `${(a.ancestorTitles ?? []).join(" > ")} ${a.title ?? ""}`.trim()));
+      }
+    }
+  }
+  const faelleImBericht = roh.testResults.reduce((n, d) => n + (d.assertionResults?.length ?? 0), 0);
+  const pendingGemeldet = (roh.numPendingTests ?? 0) + (roh.numTodoTests ?? 0);
+  if (faelleImBericht !== roh.numTotalTests) {
+    return {
+      ok: false,
+      grund:
+        `${bericht} zaehlt anders als seine Eintraege: numTotalTests ${roh.numTotalTests}, aber ${faelleImBericht} Faelle in testResults — ` +
+        "ein Bericht, dem die Faelle fehlen (Teillauf, anderer Reporter), kann keine Zahl beglaubigen.",
+      hinweis: HINWEIS,
+    };
+  }
+  const erklaert = erklaerteSkips(wurzel);
+  if (erklaert.grund) {
+    return { ok: false, grund: `${bericht}: ${erklaert.grund}`, hinweis: HINWEIS };
+  }
+  const getroffen = (titel) => nichtAusgefuehrt.some((name) => name.includes(titel) || titel.includes(name));
+  const erfuellt = (titel) => roh.testResults.some((d) => (d.assertionResults ?? []).some((a) => String(a.fullName ?? a.title ?? "").includes(titel)));
+  const fehlendeErklaerung = erklaert.unbedingt.filter((titel) => !getroffen(titel) && !erfuellt(titel));
+  if (fehlendeErklaerung.length > 0) {
+    return {
+      ok: false,
+      grund:
+        `${bericht}: ${fehlendeErklaerung.length} im Quelltext erklaerte(r) Fall/Faelle taucht/flauchen im Bericht nicht auf ` +
+        `(${fehlendeErklaerung.slice(0, 2).join(", ")}) —erklaert ist nicht dasselbe wie nicht vorhanden`,
+      hinweis: HINWEIS,
+    };
+  }
+  const erklartUebersprungen = erklaert.unbedingt.filter((titel) => getroffen(titel)).length;
+  if (erklartUebersprungen > pendingGemeldet) {
+    return {
+      ok: false,
+      grund: `${bericht}: ${erklartUebersprungen} erklaerte Faelle, aber nur ${pendingGemeldet} wurden nicht ausgefuehrt — der Bericht passt nicht zum Baum`,
+      hinweis: HINWEIS,
+    };
+  }
+  const uebersprungen = pendingGemeldet;
+  const zurueckgewiesen = pendingGemeldet - erklartUebersprungen;
   return {
     ok: true,
     // Die Zahl der Faelle, die in diesem Lauf durchgelaufen sind: gesammelt minus
     // die, die der Lauf nie ausgefuehrt hat (skip, todo). In einer gruenen Suite
     // ist das dieselbe Zahl wie die der bestandenen Faelle — und nur diese ist
     // stabil, wenn ein Testfall der Wache selbst gerade rot ist.
-    zahl: roh.numTotalTests - uebersprungen,
+    // erklaert (Quelltext) geht ab, zurueckgewiesen (Ruhe, Plattform) bleibt drin:
+    // nur so ist die Zahl dieselbe auf Runner und Rechner.
+    zahl: roh.numTotalTests - erklartUebersprungen,
     uebersprungen,
+    erklaertUebersprungen: erklartUebersprungen,
+    zurueckgewiesen,
+    bedingtErklaert: erklaert.bedingt.length,
+    zahlNachAlterRegel: roh.numTotalTests - uebersprungen,
     fehlgeschlagen: roh.numFailedTests,
     bestanden: roh.numPassedTests,
     dateienBericht: imBericht.size,

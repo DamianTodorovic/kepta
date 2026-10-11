@@ -7,6 +7,16 @@ export default defineConfig({
     // Forks-Pool (nicht Threads) — SQLite/Datei-Tests laufen isoliert pro Prozess.
     // @ts-ignore — vitest-Typen unterscheiden sich zwischen Versionen
     pool: "forks",
+    // Ein Strang. Seit dieser Welle starten mehrere Testdateien eigene
+    // HTTP-Server; zwei davon gerieten sich ins Gehege, und der Befund sah
+    // wie ein Produktfehler aus („POST mit ungültiger ID → 400" bekam 401 —
+    // die Antwort des *anderen* Servers). Bewiesen: `tests/server.test.ts`
+    // allein 50/50 grün, die ganze Suite parallel 3 rot, dieselbe Suite mit
+    // `--no-file-parallelism` 982 grün. Kosten gemessen: 25,2 s → 46,3 s.
+    // Der eigentliche Fix wäre ein eigener Port je Datei; solange die Suite
+    // einen geteilten Port als Vertrag behandelt, ist die Reihenfolge billiger
+    // als die Lüge.
+    fileParallelism: false,
     testTimeout: 20_000,
     // Headless-Core: node-Umgebung, keine Browser-Komponenten im Repo.
     environment: "node",

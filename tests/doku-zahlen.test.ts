@@ -54,7 +54,7 @@ describe("Dokumentation: die Testzahl ist die Zahl eines Laufs", () => {
     // Tabelle aus einer Variablen steht hier als ein Fall und laeuft als viele,
     // und ein it.skip wird gar nicht gesehen, waehrend vitests numTotalTests ihn
     // mitzaehlt, obwohl er nie lief. Warum, steht in scripts/test-bericht.mjs.
-    const boden = statischeTestanzahl() - (bericht.uebersprungen ?? 0);
+    const boden = statischeTestanzahl() - (bericht.erklaertUebersprungen ?? 0);
     for (const b of behauptungen) {
       expect(b.zahl, `${datei}:${b.zeile} ${b.art}: behauptet ${b.zahl}, aber im Quelltext stehen mindestens ${boden} Testbloecke — die Doku hinkt nach`).toBeGreaterThanOrEqual(boden);
     }

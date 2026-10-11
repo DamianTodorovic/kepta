@@ -34,24 +34,32 @@ function schreibeBericht(
 ) {
   const pfad = path.join(wurzel, "test-results", "vitest.json");
   fs.mkdirSync(path.dirname(pfad), { recursive: true });
+  const namen = [
+    ...Array.from({ length: bestanden }, (_, i) => ({ fullName: `bestanden ${i}`, status: "passed" })),
+    ...Array.from({ length: fehlgeschlagen }, (_, i) => ({ fullName: `fehlgeschlagen ${i}`, status: "failed" })),
+    ...Array.from({ length: uebersprungen }, (_, i) => ({ fullName: `uebersprungen ${i}`, status: "pending" })),
+  ];
+  const dateienListe = dateien.length > 0 ? dateien : ["tests/a.test.ts"];
+  const testResults = dateienListe.map((name, i) => ({
+    name: path.join(wurzel, name),
+    status: "passed",
+    startTime: 0,
+    endTime: 0,
+    assertionResults: namen.filter((_, k) => k % dateienListe.length === i),
+  }));
+  const gesamt = bestanden + fehlgeschlagen + uebersprungen;
   fs.writeFileSync(
     pfad,
     JSON.stringify({
-      numTotalTestSuites: dateien.length,
-      numTotalTests: bestanden + fehlgeschlagen + uebersprungen,
+      numTotalTestSuites: dateienListe.length,
+      numTotalTests: gesamt,
       numPassedTests: bestanden,
       numFailedTests: fehlgeschlagen,
       numPendingTests: uebersprungen,
       numTodoTests: 0,
       success: fehlgeschlagen === 0,
       startTime: Date.now() - vergangen,
-      testResults: dateien.map((name) => ({
-        name,
-        status: "passed",
-        assertionResults: [],
-        startTime: 0,
-        endTime: 0,
-      })),
+      testResults,
     })
   );
   return pfad;
@@ -145,11 +153,15 @@ describe("Der Bericht als einzige Quelle der Testzahl", () => {
     expect(r.bestanden).toBe(9);
   });
 
-  it("zaehlt uebersprungene Faelle nicht mit — sie sind nie gelaufen", () => {
+  it("zurueckgewiesene Faelle zaehlen mit, erklaerte nicht", () => {
+    // zwei faelle wurden nicht ausgefuehrt, aber keiner ist im quelltext als skip
+    // erklaert — sie bleiben in der zahl, und der bericht sagt, was sie sind
     schreibeBericht(wurzel, { bestanden: 8, uebersprungen: 2, dateien: ["tests/a.test.ts"] });
     const r = beglaubigt(leseBericht({ wurzel }));
-    expect(r.zahl).toBe(8);
+    expect(r.zahl).toBe(10);
     expect(r.uebersprungen).toBe(2);
+    expect(r.erklaertUebersprungen).toBe(0);
+    expect(r.zurueckgewiesen).toBe(2);
   });
 
   it("gibt die Zahl der ausgefuehrten Faelle des Laufs zurueck", () => {
@@ -166,6 +178,71 @@ describe("Der Bericht als einzige Quelle der Testzahl", () => {
   it("liest absolute Berichtpfade auf den relativen Pfad im Baum zurueck", () => {
     schreibeBericht(wurzel, { bestanden: 1, dateien: [path.join(wurzel, "tests", "a.test.ts")] });
     expect(leseBericht({ wurzel }).ok).toBe(true);
+  });
+
+  it("zieht nur Erklaertes ab, was im Quelltext als skip steht — nicht was die Ruhe ablehnt", () => {
+    // Drei zeitmessende Faelle ueberspringen zur Laufzeit, wenn die Ruhe-Klammer
+    // sie nicht vorlaesst. Auf einem dedizierten Runner laufen zwei von drei, auf
+    // diesem Rechner keins — dieselbe Suite, dieselbe Datei, verschiedene Zahl.
+    // Die Zahl der Doku darf daran nicht ruehren: abgezogen wird nur, was im
+    // Quelltext erklaert ist.
+    fs.writeFileSync(
+      path.join(wurzel, "tests", "skip.test.ts"),
+      'import { it } from "vitest";\nit.skip("erklärt: Windows-only", () => {});\nit("laufzeit-abgewiesen", () => {});\n'
+    );
+    // Fuenf Faelle, immer dieselben: einer laeuft immer, einer ist im Quelltext als
+    // skip erklaert, und drei zeitmessende werden auf dem einen Rechner ausgefuehrt
+    // und auf dem anderen von der Ruhe-Klammer abgewiesen. Nur der Status wandert.
+    const gelaufen = (abgewiesen: string[]) => {
+      const eintraege = [
+        { fullName: "zaehlt immer", status: "passed" },
+        { fullName: "erklärt: Windows-only", status: "pending" },
+        ...["eins", "zwei", "drei"].map((t) => ({
+          fullName: `zeitmessend ${t}`,
+          status: abgewiesen.includes(t) ? "pending" : "passed",
+        })),
+      ];
+      fs.mkdirSync(path.join(wurzel, "test-results"), { recursive: true });
+      fs.writeFileSync(
+        path.join(wurzel, "test-results", "vitest.json"),
+        JSON.stringify({
+          numTotalTestSuites: 2,
+          numTotalTests: eintraege.length,
+          numPassedTests: eintraege.filter((e) => e.status === "passed").length,
+          numFailedTests: 0,
+          numPendingTests: eintraege.filter((e) => e.status === "pending").length,
+          numTodoTests: 0,
+          success: true,
+          startTime: Date.now(),
+          testResults: [
+            { name: path.join(wurzel, "tests/a.test.ts"), status: "passed", startTime: 0, endTime: 0, assertionResults: [eintraege[0], ...eintraege.slice(2)] },
+            { name: path.join(wurzel, "tests/skip.test.ts"), status: "passed", startTime: 0, endTime: 0, assertionResults: [eintraege[1]] },
+          ],
+        })
+      );
+      return leseBericht({ wurzel });
+    };
+
+    const ruhigeMaschine = beglaubigt(gelaufen([]));
+    const runner = beglaubigt(gelaufen(["eins", "zwei", "drei"]));
+    // die Zahl ist dieselbe, egal wie viele Faelle die Ruhe abgewiesen hat
+    expect(runner.zahl).toBe(ruhigeMaschine.zahl);
+    expect(ruhigeMaschine.erklaertUebersprungen).toBe(1);
+    expect(runner.zurueckgewiesen).toBe(3);
+    expect(ruhigeMaschine.zurueckgewiesen).toBe(0);
+    // und die alte rechnung (total minus pending) liefert hier zwei verschiedene
+    // zahlen — der test greift also gegen den alten stand
+    expect(ruhigeMaschine.zahlNachAlterRegel).not.toBe(runner.zahlNachAlterRegel);
+  });
+
+  it("verwirft einen bericht, in dem ein erklaerter Fall fehlt", () => {
+    fs.writeFileSync(
+      path.join(wurzel, "tests", "skip.test.ts"),
+      'import { it } from "vitest";\nit.skip("taucht nirgends auf", () => {});\n'
+    );
+    schreibeBericht(wurzel, { bestanden: 1, dateien: ["tests/a.test.ts", "tests/skip.test.ts"] });
+    const r = unbeglaubigt(leseBericht({ wurzel }));
+    expect(String(r.grund)).toMatch(/taucht nirgends auf/);
   });
 
   it("liest nur die READMEs, die es wirklich gibt", () => {

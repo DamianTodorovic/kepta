@@ -27,7 +27,7 @@ export const GRENZEN = {
   maxMedianRatio: 1.8,
   /** Andere Node-Prozesse auf dem Rechner (ruhig 3; unter Last 7). */
   nodeProzesse: 5,
-  /** Stuetzender Wert, nie alleiniger Grund (macOS-Loadmittel traegt hier nicht). */
+  /** Stuetzender Wert: wird gemeldet, fuehrt aber kein Urteil (siehe ruedig). */
   last1ProCpu: 2.5,
 };
 
@@ -77,22 +77,39 @@ export function sonde({ stiche = 9, iterationen = 9_000_000 } = {}) {
  * Das Urteil: drei Beweise, einer muss reichen zum Zurueckhalten.
  * @param {object} messung eine Messung aus sonde()
  * @param {Partial<typeof GRENZEN>} [grenzen]
- * @returns {{ruhig: boolean, ursachen: string[], messung: ReturnType<typeof sonde>, grenzen: typeof GRENZEN}}
+ * @returns {{ruhig: boolean, ursachen: string[], meldungen: string[], messung: ReturnType<typeof sonde>, grenzen: typeof GRENZEN}}
+ * `ursachen` sind die Zeugen, die das Urteil fuehren; `meldungen` enthaelt die
+ * Werte, die nur dabei stehen (load1/cpu) — gemeldet, nie grund.
  */
 export function ruedig(messung, grenzen = {}) {
   const g = { ...GRENZEN, ...grenzen };
-  const ursachen = [];
-  if (!(messung.medianMs <= g.medianMs)) ursachen.push(`Median ${messung.medianMs} ms ueber ${g.medianMs} ms`);
+  const zeugen = [];
+  const meldungen = [];
+
+  // Die drei echten Zeugen. Nur sie fuehren das Urteil.
+  if (!(messung.medianMs <= g.medianMs)) zeugen.push(`Median ${messung.medianMs} ms ueber ${g.medianMs} ms`);
   if (!(messung.maxMedianRatio <= g.maxMedianRatio)) {
-    ursachen.push(`Ausreisser: max/median ${messung.maxMedianRatio} ueber ${g.maxMedianRatio} (max ${messung.maximumMs} ms bei Median ${messung.medianMs} ms)`);
+    zeugen.push(`Ausreisser: max/median ${messung.maxMedianRatio} ueber ${g.maxMedianRatio} (max ${messung.maximumMs} ms bei Median ${messung.medianMs} ms)`);
   }
   if (Number.isFinite(messung.nodeProzesse) && !(messung.nodeProzesse <= g.nodeProzesse)) {
-    ursachen.push(`${messung.nodeProzesse} node-Prozesse ueber ${g.nodeProzesse}`);
+    zeugen.push(`${messung.nodeProzesse} node-Prozesse ueber ${g.nodeProzesse}`);
   }
+
+  // load1/cpu wird GEMELDET, nicht entschieden. Der Fund der Leitung (12.10. 00:18):
+  // der Wert war als „stuetzender Wert" beschriftet, zaehlte aber in dieselbe Liste
+  // wie die Zeugen, und das Urteil wurde aus der Laenge dieser Liste gezaehlt —
+  // eine veto-Kante mit falschem Etikett. Auf macOStraegt er Minuten hinterher
+  // (auf diesem Rechner blieb er bei gesetzter Last unveraendert bei 0,48), und auf
+  // dem 4-Kerner-Runner ist ein hoher load1/cpu bei ruhiger Messei Normalbetrieb:
+  // die Sonde haette gruene Laeufe abgelehnt, ohne dass etwas kaputt ist.
+  // Ist schon ein echter Zeuge da, darf er als Begruendung mit in die Ursache.
   if (!(messung.last1ProCpu <= g.last1ProCpu)) {
-    ursachen.push(`load1/cpu ${messung.last1ProCpu} ueber ${g.last1ProCpu} (stuetzender Wert)`);
+    const text = `load1/cpu ${messung.last1ProCpu} ueber ${g.last1ProCpu} (stuetzender Wert, kein Grund)`;
+    meldungen.push(text);
+    if (zeugen.length > 0) zeugen.push(text);
   }
-  return { ruhig: ursachen.length === 0, ursachen, messung, grenzen: g };
+
+  return { ruhig: zeugen.length === 0, ursachen: zeugen, meldungen, messung, grenzen: g };
 }
 
 /** Kurztext fuer Meldungen: eine Zeile, alle Werte, kein Rat. */
