@@ -67,6 +67,8 @@ export interface TabelleZusammenfassung {
   wiederhergestellt: number;
   duplikateInDerLadung: number;
   bereitsVorhanden: number;
+  /** Wie vielemal eine bestehende private Notiz nicht herabgesetzt wurde. */
+  privatGeschuetzt: number;
   abgeschnitten: number;
   pruefungUebersprungen: number;
   /** Der eine Blick durch den bestand: wie lang, und über wievielt knoten. */
@@ -359,6 +361,7 @@ export async function importTabelle(store: KeptaStore, pfad: string, opts: Tabel
     wiederhergestellt: 0,
     duplikateInDerLadung: 0,
     bereitsVorhanden: 0,
+    privatGeschuetzt: 0,
     abgeschnitten: 0,
     pruefungUebersprungen: 0,
     pruefungVorlauf: null,
@@ -432,11 +435,18 @@ export async function importTabelle(store: KeptaStore, pfad: string, opts: Tabel
   }
 
   const gegenBestand = opts.gegenBestand !== false;
-  const vorrat = gegenBestand ? await wortlautVorrat(store) : null;
-  if (vorrat) {
-    zusammenfassung.pruefungVorlauf = vorrat.ms;
-    zusammenfassung.pruefungVorlaufKnoten = vorrat.knoten;
-  }
+  // Der Blick durch den Bestand kostet O(Bestand) und wird nur gebraucht, wenn
+  // wirklich ein neuer Wortlaut eintrifft. Ein Lauf, der nichts ändert, kehrt
+  // deshalb den Bestand nicht um — `pruefungVorlauf` bleibt dann null.
+  let vorrat: Awaited<ReturnType<typeof wortlautVorrat>> | null = null;
+  const besorgeVorrat = async () => {
+    if (!vorrat) {
+      vorrat = await wortlautVorrat(store);
+      zusammenfassung.pruefungVorlauf = vorrat.ms;
+      zusammenfassung.pruefungVorlaufKnoten = vorrat.knoten;
+    }
+    return vorrat;
+  };
   const importMoment = Date.now();
   const inDerLadung = new Set<string>();
 
@@ -498,19 +508,34 @@ export async function importTabelle(store: KeptaStore, pfad: string, opts: Tabel
       zusammenfassung.unveraendert += 1;
       continue;
     }
-    const wortlaut = vorrat?.finden(input.content, input.id!) ?? null;
-    if (!vorrat) zusammenfassung.pruefungUebersprungen += 1;
+    const wortlaut = gegenBestand ? (await besorgeVorrat()).finden(input.content, input.id!) : null;
+    if (!gegenBestand) zusammenfassung.pruefungUebersprungen += 1;
     if (wortlaut) {
       zusammenfassung.bereitsVorhanden += 1;
+      // Privatheits-Floor, derselbe Grund wie bei findDuplicateForNew
+      // (engine.ts:745-752): der Fund nennt eine id, und die Zusammenfassung
+      // liest ein Mensch oder — über die MCP-Tür — ein Agent. Eine private
+      // Notiz wird deshalb nur als „privat" gemeldet, nie mit ihrer Lage.
+      const privat = store.istPrivat(wortlaut);
       if (zusammenfassung.kandidaten.length < ERGEBNIS_KAPPE) {
-        zusammenfassung.kandidaten.push({ neu: input.id!, bestehend: wortlaut, grund: "gleicher wortlaut" });
+        zusammenfassung.kandidaten.push({
+          neu: input.id!,
+          bestehend: privat ? "privat" : wortlaut,
+          grund: privat ? "gleicher wortlaut in einer privaten notiz" : "gleicher wortlaut",
+        });
       }
-      melde("gleicher wortlaut bereits im bestand");
+      melde(privat ? "gleicher wortlaut in einer privaten notiz" : "gleicher wortlaut bereits im bestand");
       continue;
     }
     if (zusammenfassung.trocken) {
       zusammenfassung.imported += 1;
       continue;
+    }
+    if (bestehend && store.istPrivat(bestehend.id) && input.scope !== "private") {
+      // Eine Datei darf ihren Inhalt ändern, aber eine bestehende private
+      // Notiz auf „local" zurückzuschreiben macht etwas privates unprivat.
+      input.scope = undefined;
+      zusammenfassung.privatGeschuetzt += 1;
     }
     if (bestehend?.deletedAt) {
       store.restoreMemory(input.id!);
@@ -518,7 +543,7 @@ export async function importTabelle(store: KeptaStore, pfad: string, opts: Tabel
     }
     const { record, created } = store.upsertMemory(input);
     indexMemory(store, record.id);
-    vorrat?.legeAn(input.content, record.id);
+    if (gegenBestand) (await besorgeVorrat()).legeAn(input.content, record.id);
     if (record.content.length < input.content.length) zusammenfassung.abgeschnitten += 1;
     if (created) zusammenfassung.imported += 1;
     else zusammenfassung.updated += 1;

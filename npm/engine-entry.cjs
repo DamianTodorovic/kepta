@@ -506,6 +506,9 @@ function sanitizeTags(input) {
 // src/core/store.ts
 var SCHEMA_VERSION = 1;
 var VALID_TYPES = ["semantic", "episodic", "procedural", "reference"];
+var LES_FENSTER = 5e3;
+var GRAPH_ENTITATEN_FENSTER = 500;
+var GRAPH_RELATIONEN_FENSTER = 2e3;
 function defaultDataDir() {
   const env = process.env.KEPTA_DATA_DIR;
   if (env) return env;
@@ -874,7 +877,7 @@ var KeptaStore = class _KeptaStore {
   }
   // ---------- CRUD ----------
   listMemories(opts = {}) {
-    const limit = Math.min(Math.max(opts.limit ?? 100, 1), 5e3);
+    const limit = Math.min(Math.max(opts.limit ?? 100, 1), LES_FENSTER);
     const offset = Math.max(opts.offset ?? 0, 0);
     const where = [];
     const params = [];
@@ -1322,12 +1325,12 @@ var KeptaStore = class _KeptaStore {
            LEFT JOIN memory_entities me ON me.entity_id = e.id
            GROUP BY e.id, e.name
            ORDER BY COUNT(me.entity_id) DESC, e.id ASC
-           LIMIT 500`
+           LIMIT ${GRAPH_ENTITATEN_FENSTER}`
     ).all().map((r) => ({
       id: Number(r.id),
       name: String(r.name)
     }));
-    const relations = this.db.prepare("SELECT id, source_id, target_id, relation, valid_from, valid_to, memory_id FROM relations LIMIT 2000").all().map((r) => ({
+    const relations = this.db.prepare(`SELECT id, source_id, target_id, relation, valid_from, valid_to, memory_id FROM relations LIMIT ${GRAPH_RELATIONEN_FENSTER}`).all().map((r) => ({
       id: Number(r.id),
       sourceId: Number(r.source_id),
       targetId: Number(r.target_id),
@@ -2206,12 +2209,21 @@ function pickKeep(store, a, b) {
 }
 
 // src/core/version.ts
-var APP_VERSION = "3.2.0";
+var APP_VERSION = "3.3.0";
 
 // src/core/mcp.ts
 var PROTOCOL_VERSIONS = ["2026-07-28", "2025-06-18", "2024-11-05"];
 var stringSchema = (description) => ({ type: "string", description });
 var opt = (s) => s;
+var SUCHE_LIMIT_MIN = 1;
+var SUCHE_LIMIT_STD = 10;
+var SUCHE_LIMIT_MAX = 100;
+var LISTE_LIMIT_MIN = 1;
+var LISTE_LIMIT_STD = 20;
+var LISTE_LIMIT_MAX = 200;
+var TIEFE_MIN = 1;
+var TIEFE_STD = 2;
+var TIEFE_MAX = 4;
 var memoryOutSchema = {
   type: "object",
   properties: {
@@ -2236,6 +2248,8 @@ var searchOutSchema = {
     query: { type: "string" },
     count: { type: "integer" },
     usedVectors: { type: "boolean" },
+    begrenzt: { type: "boolean" },
+    hinweis: { type: "string" },
     hits: {
       type: "array",
       items: {
@@ -2264,7 +2278,7 @@ var TOOLS = [
       type: "object",
       properties: {
         query: opt(stringSchema("Natural-language question or the words the note should contain")),
-        limit: opt({ type: "integer", description: "Hits to return, 1-100", default: 10 }),
+        limit: opt({ type: "integer", description: `Hits to return, ${SUCHE_LIMIT_MIN}-${SUCHE_LIMIT_MAX}`, default: SUCHE_LIMIT_STD }),
         tags: opt({ type: "array", items: { type: "string" }, description: "Only notes carrying all of these tags" }),
         type: opt({ type: "string", enum: ["semantic", "episodic", "procedural", "reference"], description: `Only notes of this kind: ${VIER_TYPEN}` }),
         scope: opt(stringSchema("Only notes in this scope, e.g. agent:coder or session:abc")),
@@ -2359,7 +2373,7 @@ var TOOLS = [
     inputSchema: {
       type: "object",
       properties: {
-        limit: opt({ type: "integer", default: 20, description: "Notes to return, 1-200" }),
+        limit: opt({ type: "integer", default: LISTE_LIMIT_STD, description: `Notes to return, ${LISTE_LIMIT_MIN}-${LISTE_LIMIT_MAX}` }),
         offset: opt({ type: "integer", default: 0, description: "Notes to skip, for paging through total" }),
         type: opt({ type: "string", enum: ["semantic", "episodic", "procedural", "reference"], description: VIER_TYPEN }),
         tag: opt({ type: "string", description: "Only notes carrying this label" }),
@@ -2369,7 +2383,13 @@ var TOOLS = [
     },
     outputSchema: {
       type: "object",
-      properties: { count: { type: "integer" }, total: { type: "integer" }, memories: { type: "array", items: memoryOutSchema } },
+      properties: {
+        count: { type: "integer" },
+        total: { type: "integer" },
+        begrenzt: { type: "boolean" },
+        hinweis: { type: "string" },
+        memories: { type: "array", items: memoryOutSchema }
+      },
       required: ["count", "memories"]
     },
     annotations: { readOnlyHint: true, destructiveHint: false, idempotentHint: true }
@@ -2381,13 +2401,15 @@ var TOOLS = [
     inputSchema: {
       type: "object",
       properties: {
-        entity: opt(stringSchema("Entity to start from; without it the whole graph, capped")),
-        depth: opt({ type: "integer", description: "Hops to follow, 1-4", default: 2 })
+        entity: opt(stringSchema(`Entity to start from; without it the whole graph, read up to ${GRAPH_ENTITATEN_FENSTER} entities and ${GRAPH_RELATIONEN_FENSTER} relations`)),
+        depth: opt({ type: "integer", description: `Hops to follow, ${TIEFE_MIN}-${TIEFE_MAX}`, default: TIEFE_STD })
       }
     },
     outputSchema: {
       type: "object",
       properties: {
+        begrenzt: { type: "boolean" },
+        hinweis: { type: "string" },
         entities: { type: "array", items: { type: "object", properties: { name: { type: "string" } }, required: ["name"] } },
         relations: {
           type: "array",

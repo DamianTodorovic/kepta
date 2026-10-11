@@ -33,6 +33,16 @@ export { sanitizeTags as normalizeTags } from "./sanitize";
 const SCHEMA_VERSION = 1;
 const VALID_TYPES: MemoryType[] = ["semantic", "episodic", "procedural", "reference"];
 
+/**
+ * Die drei Lesefenster des Speichers — exportiert, weil die Antwort sie nennen muss.
+ * Eine Kappe, die der Leser nicht kennt, ist ein Ergebnis, das für die ganze Welt
+ * gehalten wird (R7). Solange die Zahl nur im SQL stand, konnte der MCP-Pfad sie
+ * nur duplizieren und wäre bei jeder Änderung unbemerkt falsch geblieben.
+ */
+export const LES_FENSTER = 5000;
+export const GRAPH_ENTITATEN_FENSTER = 500;
+export const GRAPH_RELATIONEN_FENSTER = 2000;
+
 export function defaultDataDir(): string {
   const env = process.env.KEPTA_DATA_DIR;
   if (env) return env;
@@ -450,10 +460,10 @@ export class KeptaStore {
   // ---------- CRUD ----------
 
   listMemories(opts: ListOptions = {}): MemoryRecord[] {
-    // Kappe 5000 = Server-Limit für aktive Knoten (server.ts), damit Export/Import
+    // Kappe LES_FENSTER = Server-Limit für aktive Knoten (server.ts), damit Export/Import
     // bei vollem Gehirn nicht still abschneiden. Vollständigkeit sichern Aufrufer
     // über Paginierung (offset), nicht über einen höheren Einzel-Page-Limit.
-    const limit = Math.min(Math.max(opts.limit ?? 100, 1), 5000);
+    const limit = Math.min(Math.max(opts.limit ?? 100, 1), LES_FENSTER);
     const offset = Math.max(opts.offset ?? 0, 0);
     const where: string[] = [];
     const params: (string | number)[] = [];
@@ -1010,7 +1020,7 @@ export class KeptaStore {
            LEFT JOIN memory_entities me ON me.entity_id = e.id
            GROUP BY e.id, e.name
            ORDER BY COUNT(me.entity_id) DESC, e.id ASC
-           LIMIT 500`
+           LIMIT ${GRAPH_ENTITATEN_FENSTER}`
         )
         .all() as Record<string, unknown>[]
     ).map((r) => ({
@@ -1018,7 +1028,7 @@ export class KeptaStore {
       name: String(r.name),
     }));
     const relations = (
-      this.db.prepare("SELECT id, source_id, target_id, relation, valid_from, valid_to, memory_id FROM relations LIMIT 2000").all() as Record<string, unknown>[]
+      this.db.prepare(`SELECT id, source_id, target_id, relation, valid_from, valid_to, memory_id FROM relations LIMIT ${GRAPH_RELATIONEN_FENSTER}`).all() as Record<string, unknown>[]
     ).map((r) => ({
       id: Number(r.id),
       sourceId: Number(r.source_id),

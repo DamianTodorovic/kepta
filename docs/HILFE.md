@@ -63,6 +63,22 @@ KEPTA_ENCRYPTION=off  say it on purpose and the file stays plaintext
 NO_COLOR  TERM=dumb   no escape sequences; the words still carry the state
 ```
 
+## where an answer stops
+
+Nothing is cut in silence. The terminal prints both numbers wherever it lists
+fewer than it found — `showing 5 of 8 matches`. The agent tools answer with
+`begrenzt: true` and a `hinweis` naming the window that applied:
+
+```text
+memory_search        100 hits per call
+memory_list          200 notes per page, 5000 notes per read window
+memory_graph         4 hops, 500 entities, 2000 relations
+memory_consolidate   500 candidate pairs per call
+```
+
+`memory_list` is the one worth knowing: when the read window is full, `total`
+is the size of the window, not of the file. Narrow with type, tag or scope.
+
 ## what an answer looks like
 
 Measured, not imagined — this is `kepta stats` on a file with three notes, at

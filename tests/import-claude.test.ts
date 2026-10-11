@@ -241,6 +241,27 @@ describe("import claude: dryRun, Ladungsname, Duplikate", () => {
     expect(z.kandidaten[0]?.bestehend).toBe("chatgpt:z:1");
     expect(typeof z.pruefungVorlauf).toBe("number");
   });
+
+  it("nennt eine private Notiz nicht beim Namen, wenn ihr Wortlaut schon da ist", async () => {
+    const aussage = "Der Mietvertrag in der Lindenstraße läuft bis zum 31. August 2028.";
+    store.createMemory({ id: "chatgpt:privat:1", title: "Vertrag", content: aussage, scope: "private", tags: ["chatgpt-import"] });
+    const p = exportDatei("privat.json", [gespraech("c1", "Privat", [{ uuid: "m1", sender: "human", text: aussage }])]);
+    const z = await importClaudePfad(store, p);
+    expect(z.bereitsVorhanden).toBe(1);
+    expect(store.countMemories().active).toBe(1);
+    expect(z.kandidaten[0]?.bestehend).toBe("privat");
+    expect(JSON.stringify(z)).not.toContain("chatgpt:privat:1");
+  });
+
+  it("lässt dieselbe Aussage aus einer nicht-privaten Quelle beim Namen", async () => {
+    const aussage = "Der Küchenumbau kostet 18000 Euro und dauert sechs Wochen.";
+    store.createMemory({ id: "datei:wurzel:notiz.md", title: "Küchenumbau", content: aussage, tags: ["import-datei"] });
+    const p = exportDatei("oeffentlich.json", [gespraech("c1", "Öffentlich", [{ uuid: "m1", sender: "human", text: aussage }])]);
+    const z = await importClaudePfad(store, p);
+    expect(z.bereitsVorhanden).toBe(1);
+    // Die Maskierung gilt nur für private Knoten — sonst wäre der Fund wertlos.
+    expect(z.kandidaten[0]?.bestehend).toBe("datei:wurzel:notiz.md");
+  });
 });
 
 describe("import claude: die Schleuse — derselbe Weg, den Q-18 für die Inbox härtete", () => {

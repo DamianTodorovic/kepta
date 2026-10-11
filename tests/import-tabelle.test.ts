@@ -156,6 +156,41 @@ describe("import tabelle: Idempotenz, Duplette, Rückweg", () => {
     expect(typeof z.pruefungVorlauf).toBe("number");
   });
 
+  it("nennt eine private Notiz nicht beim Namen, wenn ihr Wortlaut schon da ist", async () => {
+    const aussage = "Der Mietvertrag in der Lindenstraße läuft bis zum 31. August 2028.";
+    store.createMemory({ id: "chatgpt:privat:1", title: "Vertrag", content: aussage, scope: "private", tags: ["chatgpt-import"] });
+    const p = tabelle("privat.csv", `titel,text\n"Vertrag","${aussage}"\n`);
+    const z = await importTabelle(store, p);
+    expect(z.bereitsVorhanden).toBe(1);
+    expect(store.countMemories().active).toBe(1);
+    expect(z.kandidaten[0]?.bestehend).toBe("privat");
+    expect(JSON.stringify(z)).not.toContain("chatgpt:privat:1");
+  });
+
+  it("senkt eine private Notiz nicht ab, weil eine Zelle das verlangt", async () => {
+    const p = tabelle("reichweite.csv", 'titel,text,scope\n"Diagnose","Der Befund der Ärztin zeigt einen Bandscheibenvorfall im Bereich L4.",local\n');
+    const erster = await importTabelle(store, p);
+    expect(erster.imported).toBe(1);
+    const id = store.listMemories({ limit: 5 })[0]!.id;
+    store.updateMemory(id, { scope: "private" });
+    // Dasselbe Blatt, eine Zeile weiter: jetzt steht „public" in der Spalte.
+    fs.writeFileSync(p, 'titel,text,scope\n"Diagnose","Der Befund der Ärztin zeigt einen Bandscheibenvorfall im Bereich L4, die OP ist vorgemerkt.",public\n');
+    const zweiter = await importTabelle(store, p, { ladung: erster.ladung });
+    expect(zweiter.updated).toBe(1);
+    expect(zweiter.privatGeschuetzt).toBe(1);
+    expect(store.getMemory(id)?.scope).toBe("private");
+  });
+
+  it("kehrt den Bestand nicht um, wenn keine Zeile neu ist", async () => {
+    const p = tabelle("stabil2.csv", 'titel,text\n"Plan B","Der Plan B gilt ab dem nächsten Monat für beide Standorte im Norden."\n');
+    const erster = await importTabelle(store, p);
+    expect(typeof erster.pruefungVorlauf).toBe("number");
+    const zweiter = await importTabelle(store, p, { ladung: erster.ladung });
+    expect(zweiter.unveraendert).toBe(1);
+    expect(zweiter.pruefungVorlauf).toBeNull();
+    expect(zweiter.pruefungVorlaufKnoten).toBe(0);
+  });
+
   it("sagt in der Vorschau, was reinkäme, und lässt die leeren Zeilen als Grund", async () => {
     const p = tabelle("vorschau.csv", "titel,text\nVolle Zeile,Eine Zeile mit genug Text für einen Knoten.\nLeere Zeile,\n");
     const vorher = store.countMemories().active;

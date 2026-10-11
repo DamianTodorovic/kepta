@@ -16,10 +16,11 @@
 // `GET /api/graph/bild` schöpfen. Kein Server, kein Store, keine echten Daten.
 import { createHash } from "node:crypto";
 import fs from "node:fs";
+import os from "node:os";
 import path from "node:path";
 import { pathToFileURL } from "node:url";
 
-import { baueNotizBild } from "../src/ui/graph";
+import { baueGraph } from "../src/ui/graph";
 import { demoKorpus } from "../src/demo";
 
 const argv = process.argv.slice(2);
@@ -41,7 +42,22 @@ async function laden() {
   }
   const texte = JSON.parse(fs.readFileSync(path.resolve(k), "utf8"));
   const liste = Array.isArray(texte) ? texte : texte.notizen ?? [];
-  return liste.map((e) => ({ art: e.type ?? e.art, titel: e.title ?? e.titel, inhalt: e.content ?? e.inhalt, tags: e.tags ?? [], monate: e.monate ?? 0 }));
+  // Zwei Formen: die Notiz selbst, oder A7s Markdown-Dateien mit Frontmatter.
+  const ausFrontmatter = (e) => {
+    const feld = (n) => new RegExp(`^${n}: (.*)$`, "m").exec(e.content)?.[1];
+    return {
+      art: feld("type"),
+      titel: JSON.parse(feld("title")),
+      inhalt: e.content.split("\n\n").slice(1).join("\n\n").trim(),
+      tags: JSON.parse(`[${(feld("tags").replace(/^\[|\]$/g, "") || '""').replace(/"/g, "").split(",").filter(Boolean).map((t) => `"${t.trim()}"`).join(",")}]`),
+      monate: 0,
+    };
+  };
+  return liste.map((e) =>
+    e.title || e.titel
+      ? { art: e.type ?? e.art, titel: e.title ?? e.titel, inhalt: e.content ?? e.inhalt, tags: e.tags ?? [], monate: e.monate ?? 0 }
+      : ausFrontmatter(e)
+  );
 }
 
 const korpus = await laden();
@@ -50,15 +66,40 @@ const teile = korpus.slice(0, begrenzt);
 
 // IDs aus dem Index, nicht aus der Uhr: zwei Läufe desselben Bestands müssen
 // dieselbe Zahl ausspucken, sonst misst man die Zufallsbits der Notiz-ID.
-const notizen = teile.map((e, i) => ({ id: `m-${String(i).padStart(4, "0")}`, titel: e.titel, inhalt: e.inhalt, tags: e.tags, art: e.art }));
-const bild = baueNotizBild(notizen);
+//
+// Der Weg führt über einen echten Store, nicht über `baueNotizBild` allein:
+// [[Wiki-Links]] werden erst beim Speichern zu Entitäten und damit zu echten
+// Kanten. Der Zähler misst sonst 0 echte Kanten und meldet eine Vergleichbarkeit,
+// die nicht da ist — genau das ist ihm beim ersten Lauf passiert.
+const { KeptaStore } = await import("../src/core/store");
+const { indexMemory } = await import("../src/core/engine");
+const crypto = await import("node:crypto");
+process.env.KEPTA_DB_KEY = crypto.randomBytes(32).toString("hex");
+const heim = fs.mkdtempSync(path.join(os.tmpdir(), "kepta-zaehler-"));
+const store = new KeptaStore(path.join(heim, "kepta.db"));
+try {
+  for (const e of teile) {
+    const r = store.createMemory({ type: e.art, title: e.titel, content: e.inhalt, tags: e.tags, confidence: 1 });
+    indexMemory(store, r.id);
+  }
+} finally {
+  store.close();
+}
+const store2 = new KeptaStore(path.join(heim, "kepta.db"));
+let bild;
+try {
+  bild = baueGraph(store2, Math.max(400, teile.length));
+} finally {
+  store2.close();
+  fs.rmSync(heim, { recursive: true, force: true });
+}
 
 const typen = {};
-for (const k of bild.knoten) typen[k.art] = (typen[k.art] ?? 0) + 1;
+for (const k of bild.nodes) typen[k.type] = (typen[k.type] ?? 0) + 1;
 const tags = new Map();
 for (const e of teile) for (const t of e.tags ?? []) tags.set(t, (tags.get(t) ?? 0) + 1);
-const echt = bild.kanten.filter((k) => k.sorte === "echt").length;
-const ahnlich = bild.kanten.filter((k) => k.sorte === "aehnlich").length;
+const echt = bild.edges.filter((k) => k.real).length;
+const ahnlich = bild.edges.length - echt;
 const mitTitel = teile.filter((e) => (e.titel ?? "").trim().length > 0).length;
 const zahlenImTitel = teile.filter((e) => /\b\d{3,}\b/.test(e.titel ?? "")).length;
 
@@ -76,14 +117,12 @@ console.log(
       notizen: teile.length,
       typen,
       tags: tags.size,
-      knoten: bild.knoten.length,
-      kanten: bild.kanten.length,
+      knoten: bild.nodes.length,
+      kanten: bild.edges.length,
       echt,
       ahnlich,
       mitTitel,
       titelMitZahl: zahlenImTitel,
-      bestand: bild.bestand,
-      gekappt: { knoten: bild.kuerzung.uebrig.knoten, kanten: bild.kuerzung.uebrig.kanten },
       strukturFinger: finger,
     },
     null,

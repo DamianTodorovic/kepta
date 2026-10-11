@@ -1,17 +1,48 @@
 // docs/HILFE.md ist das Papier derselben Tafel, die `kepta --help` malt. Zwei
 // Stellen, die einander nicht kennen, sind in diesem Repo schon dreimal
 // auseinandergedriftet (A6, F5, D2-24). Diese Wache vergibt den Auftrag, die
-//README spiegelt: der Pfad ist die Quelle, gespiegelt wird daraus — und ein
+// README spiegelt: der Pfad ist die Quelle, gespiegelt wird daraus — und ein
 // Befehl oder Schalter, den nur eine der beiden Seiten kennt, wirft rot.
 import fs from "node:fs";
 import path from "node:path";
 import { describe, it, expect } from "vitest";
 import { BEFEHLE, FLAG_LISTE, hilfeText } from "../src/cli-erlebnis";
+import { LES_FENSTER, GRAPH_ENTITATEN_FENSTER, GRAPH_RELATIONEN_FENSTER } from "../src/core/store";
+import { TOOLS, SUCHE_LIMIT_MAX, LISTE_LIMIT_MAX, TIEFE_MAX } from "../src/core/mcp";
+import { MAX_CANDIDATES_PRO_AUFRUF } from "../src/core/engine";
 import { ohneFarbe } from "./kli-helfer";
 
 const pfad = path.join(process.cwd(), "docs", "HILFE.md");
 const papier = fs.existsSync(pfad) ? fs.readFileSync(pfad, "utf8") : "";
 const tafel = ohneFarbe(hilfeText().join("\n"));
+
+/**
+ * R7 auf dem Papier: die Kappen, die eine Agentenantwort meldet, stehen in einem
+ * Block des Papiers. Die Zahlen sind nicht abgeschrieben, sie sind importiert —
+ * und die Werkzeugliste, die `begrenzt` deklariert, muss genau die Zeilen haben,
+ * die das Papier nennt. Sonst liest ein Mensch eine Grenze, die niemand setzt,
+ * oder eine Grenze, die niemand meldet.
+ */
+const KAPPEN = new Map<string, number[]>([
+  ["memory_search", [SUCHE_LIMIT_MAX]],
+  ["memory_list", [LISTE_LIMIT_MAX, LES_FENSTER]],
+  ["memory_graph", [TIEFE_MAX, GRAPH_ENTITATEN_FENSTER, GRAPH_RELATIONEN_FENSTER]],
+  ["memory_consolidate", [MAX_CANDIDATES_PRO_AUFRUF]],
+]);
+
+function kappenBlock(): Map<string, number[]> {
+  const anfang = papier.indexOf("## where an answer stops");
+  expect(anfang, "der Kappen-Block fehlt in docs/HILFE.md").toBeGreaterThan(-1);
+  const block = /```text\n([\s\S]*?)```/.exec(papier.slice(anfang));
+  expect(block, "der Kappen-Block hat kein text-Feld").not.toBeNull();
+  const zeilen = new Map<string, number[]>();
+  for (const zeile of block![1]!.split("\n")) {
+    if (!zeile.trim()) continue;
+    const [wort, ...rest] = zeile.trim().split(/\s+/);
+    zeilen.set(wort!, rest.join(" ").match(/\d+/g)?.map(Number) ?? []);
+  }
+  return zeilen;
+}
 
 /** `kepta <wort>` — nur die Befehlsköpfe, Argumente und Shell-Wörter bleiben draussen. */
 function befehlskopfe(text: string): Set<string> {
@@ -66,5 +97,23 @@ describe("docs/HILFE.md und die Tafel kennen dasselbe", () => {
       expect(papier, `docs/HILFE.md erklärt Exit ${code} nicht`).toMatch(new RegExp(`^\\s*${code}\\s{2,}`, "m"));
       expect(tafel, `die Tafel erklärt Exit ${code} nicht`).toMatch(new RegExp(`${code}\\s`));
     }
+  });
+
+  it("der Kappen-Block nennt jede Zahl, die der Code setzt — und keine zweite", () => {
+    const block = kappenBlock();
+    for (const [werkzeug, zahlen] of KAPPEN) {
+      const genannt = block.get(werkzeug);
+      expect(genannt, `docs/HILFE.md hat keine Zeile für ${werkzeug}`).toBeDefined();
+      expect([...genannt!].sort((a, b) => a - b), `${werkzeug}: das Papier schreibt andere Zahlen als der Kern`)
+        .toEqual([...zahlen].sort((a, b) => a - b));
+    }
+    const erfunden = [...block.keys()].filter((wort) => !KAPPEN.has(wort));
+    expect(erfunden, `das Papier kappt Werkzeuge, die keine Kappe melden: ${erfunden.join(", ")}`).toEqual([]);
+  });
+
+  it("genau die Werkzeuge mit einer Kappe im Papier deklariert sie auch in der Antwort", () => {
+    const deklariert = TOOLS.filter((w) => Object.prototype.hasOwnProperty.call((w.outputSchema as { properties?: object }).properties ?? {}, "begrenzt"))
+      .map((w) => w.name);
+    expect(deklariert.sort(), "ein Werkzeug meldet begrenzt, ohne dass das Papier es erklärt").toEqual([...KAPPEN.keys()].sort());
   });
 });

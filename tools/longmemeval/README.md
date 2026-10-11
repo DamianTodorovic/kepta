@@ -154,4 +154,4 @@ sie verdrängt bei engem topk die exakten Treffer · topk 12 35,0 % ·
 
 ## Kein Qualitaetswert fuer den ausgelieferten Stand
 
-Kein Qualitaetswert dieser Serie ist eine Messung des ausgelieferten Kerns: jeder Record in diesem Ordner nennt eine `kepta_version` zwischen **2.13.2 und 2.13.22**, ausgeliefert ist **3.2.0** (`package.json`). Bis die Kette gegen den ausgelieferten Stand neu läuft, gilt jeder Wert hier als Protokoll eines aelteren Standes und nicht als Qualitaetswert des Produkts — die Zahlen bleiben in den Records, und `tests/benchmark-belege.test.ts` prueft genau das.
+Kein Qualitaetswert dieser Serie ist eine Messung des ausgelieferten Kerns: jeder Record in diesem Ordner nennt eine `kepta_version` zwischen **2.13.2 und 2.13.22**, ausgeliefert ist **3.3.0** (`package.json`). Bis die Kette gegen den ausgelieferten Stand neu läuft, gilt jeder Wert hier als Protokoll eines aelteren Standes und nicht als Qualitaetswert des Produkts — die Zahlen bleiben in den Records, und `tests/benchmark-belege.test.ts` prueft genau das.

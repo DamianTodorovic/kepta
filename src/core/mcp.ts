@@ -3,6 +3,7 @@
 // (2025-06-18, 2024-11-05). Erfolgsantworten liefern structuredContent zur outputSchema,
 // Fehlerantworten nur Text + isError — ein Strukturteil im Fehlerfall bricht konforme Clients.
 import type { KeptaStore } from "./store";
+import { LES_FENSTER, GRAPH_ENTITATEN_FENSTER, GRAPH_RELATIONEN_FENSTER } from "./store";
 import type { MemoryType, SearchParams } from "./types";
 import { searchMemories, indexMemory, consolidateMemories, findDuplicateForNew, gateDecision, writeGateEnabled, MAX_CANDIDATES_PRO_AUFRUF } from "./engine";
 import { chunkText } from "./embeddings";
@@ -36,6 +37,24 @@ export type JsonRpcResponse = JsonRpcResult | JsonRpcError;
 
 const stringSchema = (description: string) => ({ type: "string", description });
 const opt = (s: unknown) => s as { type: string; description?: string };
+
+/**
+ * R7: die Kappen der Zahl-Argumente stehen an einer Stelle, weil dieselbe Zahl an
+ * drei Orten erscheinen muss — in der inputSchema, die der Agent liest, im Klammer-
+ * Parse, der sie anwendet, und in der Antwort, die eine Überschreitung meldet.
+ * Vorher war die Obergrenze ein Literal im Parse (mcp.ts:498, :616, :640) und die
+ * Antwort schwieg: limit 500 lieferte 100 Treffer und nannte 100 als die Zahl der
+ * Treffer, depth 9 wanderte vier hops weit und sagte nichts von vier.
+ */
+export const SUCHE_LIMIT_MIN = 1;
+export const SUCHE_LIMIT_STD = 10;
+export const SUCHE_LIMIT_MAX = 100;
+export const LISTE_LIMIT_MIN = 1;
+export const LISTE_LIMIT_STD = 20;
+export const LISTE_LIMIT_MAX = 200;
+export const TIEFE_MIN = 1;
+export const TIEFE_STD = 2;
+export const TIEFE_MAX = 4;
 
 /**
  * D2-31: das Terminal rät bei Tippfällen längst („rember" → „remember"). Die
@@ -101,6 +120,8 @@ const searchOutSchema = {
     query: { type: "string" },
     count: { type: "integer" },
     usedVectors: { type: "boolean" },
+    begrenzt: { type: "boolean" },
+    hinweis: { type: "string" },
     hits: {
       type: "array",
       items: {
@@ -143,7 +164,7 @@ export const TOOLS = [
       type: "object",
       properties: {
         query: opt(stringSchema("Natural-language question or the words the note should contain")),
-        limit: opt({ type: "integer", description: "Hits to return, 1-100", default: 10 }),
+        limit: opt({ type: "integer", description: `Hits to return, ${SUCHE_LIMIT_MIN}-${SUCHE_LIMIT_MAX}`, default: SUCHE_LIMIT_STD }),
         tags: opt({ type: "array", items: { type: "string" }, description: "Only notes carrying all of these tags" }),
         type: opt({ type: "string", enum: ["semantic", "episodic", "procedural", "reference"], description: `Only notes of this kind: ${VIER_TYPEN}` }),
         scope: opt(stringSchema("Only notes in this scope, e.g. agent:coder or session:abc")),
@@ -241,7 +262,7 @@ export const TOOLS = [
     inputSchema: {
       type: "object",
       properties: {
-        limit: opt({ type: "integer", default: 20, description: "Notes to return, 1-200" }),
+        limit: opt({ type: "integer", default: LISTE_LIMIT_STD, description: `Notes to return, ${LISTE_LIMIT_MIN}-${LISTE_LIMIT_MAX}` }),
         offset: opt({ type: "integer", default: 0, description: "Notes to skip, for paging through total" }),
         type: opt({ type: "string", enum: ["semantic", "episodic", "procedural", "reference"], description: VIER_TYPEN }),
         tag: opt({ type: "string", description: "Only notes carrying this label" }),
@@ -251,7 +272,13 @@ export const TOOLS = [
     },
     outputSchema: {
       type: "object",
-      properties: { count: { type: "integer" }, total: { type: "integer" }, memories: { type: "array", items: memoryOutSchema } },
+      properties: {
+        count: { type: "integer" },
+        total: { type: "integer" },
+        begrenzt: { type: "boolean" },
+        hinweis: { type: "string" },
+        memories: { type: "array", items: memoryOutSchema },
+      },
       required: ["count", "memories"],
     },
     annotations: { readOnlyHint: true, destructiveHint: false, idempotentHint: true },
@@ -264,13 +291,15 @@ export const TOOLS = [
     inputSchema: {
       type: "object",
       properties: {
-        entity: opt(stringSchema("Entity to start from; without it the whole graph, capped")),
-        depth: opt({ type: "integer", description: "Hops to follow, 1-4", default: 2 }),
+        entity: opt(stringSchema(`Entity to start from; without it the whole graph, read up to ${GRAPH_ENTITATEN_FENSTER} entities and ${GRAPH_RELATIONEN_FENSTER} relations`)),
+        depth: opt({ type: "integer", description: `Hops to follow, ${TIEFE_MIN}-${TIEFE_MAX}`, default: TIEFE_STD }),
       },
     },
     outputSchema: {
       type: "object",
       properties: {
+        begrenzt: { type: "boolean" },
+        hinweis: { type: "string" },
         entities: { type: "array", items: { type: "object", properties: { name: { type: "string" } }, required: ["name"] } },
         relations: {
           type: "array",
@@ -363,6 +392,35 @@ function toInt(v: unknown, def: number, min: number, max: number): number {
   const n = typeof v === "number" ? v : Number(v);
   if (!Number.isFinite(n)) return def;
   return Math.min(Math.max(Math.trunc(n), min), max);
+}
+
+/**
+ * R7: „wer kappt, sagt es“ — auch auf der Agentenfläche. Jede Antwort, deren Satz
+ * eine Obergrenze hat, führt `begrenzt` mit; `hinweis` sagt in einem Satz, welche
+ * Zahl gilt und was der Agent als nächstes tun kann. Die Feldnamen bleiben die,
+ * die memory_consolidate schon deklariert (D2-29: eine Umbenennung ist ein
+ * Versionswechsel, kein stiller Text).
+ */
+function kappe(...gruende: (string | null)[]): { begrenzt: boolean; hinweis?: string } {
+  const gemeldet = gruende.filter((g): g is string => typeof g === "string" && g !== "");
+  if (gemeldet.length === 0) return { begrenzt: false };
+  return { begrenzt: true, hinweis: gemeldet.join(" ") };
+}
+
+/**
+ * Warum ein Zahlen-Argument nicht so durchlief, wie es bestellt wurde — oder null,
+ * wenn die bestellte Zahl die gelieferte ist. Was der Agent nicht sieht, darf er
+ * nicht voraussetzen: ein limit, das still auf 100 gesetzt wurde, liest sich sonst
+ * als „100 Notizen passen nicht in meine Anfrage“.
+ */
+function klemmGrund(label: string, bestellt: unknown, benutzt: number, min: number, max: number): string | null {
+  if (bestellt === undefined) return null;
+  const n = typeof bestellt === "number" ? bestellt : Number(bestellt);
+  if (!Number.isFinite(n)) return `${label} ${JSON.stringify(String(bestellt))} is not a number, so this call used its default ${benutzt}.`;
+  if (n === benutzt) return null;
+  if (n > max) return `${label} ${n} is above the highest ${label} (${max}), so this call used ${benutzt}.`;
+  if (n < min) return `${label} ${n} is below the lowest ${label} (${min}), so this call used ${benutzt}.`;
+  return `${label} ${n} is not a whole number, so this call used ${benutzt}.`;
 }
 
 /**
@@ -492,10 +550,13 @@ export async function callTool(store: KeptaStore, name: string, args: Record<str
     switch (name) {
       case "memory_search": {
         if (!args.query || !String(args.query).trim()) throw new Error("a query is required");
+        // Nicht-numerisches limit → sauberer Default statt NaN (NaN filtert alles weg).
+        // Die Klammer selbst meldet die Antwort: bestellt ein Agent 500 und liest 100,
+        // muss die Zahl 100 in der Antwort stehen, nicht nur im Code.
+        const seite = toInt(args.limit, SUCHE_LIMIT_STD, SUCHE_LIMIT_MIN, SUCHE_LIMIT_MAX);
         const params: SearchParams = {
           query: String(args.query ?? ""),
-          // Nicht-numerisches limit → sauberer Default 10 statt NaN (NaN filtert alles weg)
-          limit: toInt(args.limit, 10, 1, 100),
+          limit: seite,
           tags: Array.isArray(args.tags) ? zeichenKetten(args.tags, "tags") : undefined,
           type: (args.type as MemoryType | undefined) ?? undefined,
           scope: args.scope ? String(args.scope) : undefined,
@@ -507,6 +568,17 @@ export async function callTool(store: KeptaStore, name: string, args: Record<str
           query: res.query,
           count: hits.length,
           usedVectors: res.usedVectors,
+          ...kappe(
+            klemmGrund("limit", args.limit, seite, SUCHE_LIMIT_MIN, SUCHE_LIMIT_MAX),
+            // res.total zählt mit, was der Privatheits-Floor verwirft — die Zahl darf
+            // nicht nach außen, sonst wäre sie ein Existenznachweis für private Notizen.
+            // Gemessen wird hier nur die eigene Seite: sie ist voll, also endete der
+            // Lesepass an der bestellten Zahl. Ob dahinter etwas liegt, sagt dieser Satz
+            // nicht — er sagt, dass die Frage nach mehr offen bleibt.
+            hits.length === seite
+              ? `These ${seite} hits fill the limit, so the read stopped at ${seite} — raise limit (max ${SUCHE_LIMIT_MAX}) or narrow with tags, type or scope.`
+              : null
+          ),
           hits: hits.map((h) => ({
             ...memoryToOut(store, h.memory),
             score: h.score,
@@ -612,8 +684,9 @@ export async function callTool(store: KeptaStore, name: string, args: Record<str
         return { content: [{ type: "text", text: `Moved to the trash: ${id}` }], structuredContent: { trashed: true, purged: false } };
       }
       case "memory_list": {
+        const seite = toInt(args.limit, LISTE_LIMIT_STD, LISTE_LIMIT_MIN, LISTE_LIMIT_MAX);
         const opts = {
-          limit: toInt(args.limit, 20, 1, 200),
+          limit: seite,
           offset: toInt(args.offset, 0, 0, Number.MAX_SAFE_INTEGER),
           type: (args.type as MemoryType | undefined) ?? undefined,
           // lower-case + LIKE-Escaping passiert im Store (tags LIKE mit ESCAPE-Klausel)
@@ -625,20 +698,30 @@ export async function callTool(store: KeptaStore, name: string, args: Record<str
         // Ein Durchlauf durch den gefilterten Satz, dann die Seite daraus abgeschnitten:
         // total ist die Zahl, nach der der Agent paginiert — nicht die des Gesamtbestands,
         // und ohne private Notizen, deren Menge sonst als Aggregat nach aussen geht.
-        // Grenze 5000 = die Seiten-Obergrenze des Speichers (store.listMemories).
-        const vollen = ohnePrivate(store.listMemories({ ...opts, limit: 5000, offset: 0 }), (m) => m.scope);
+        // Grenze LES_FENSTER = die Seiten-Obergrenze des Speichers (store.listMemories).
+        // Ist sie erreicht, ist total eine untere Schranke und keine Zahl der Welt — das
+        // muss die Antwort sagen, sonst paginiert der Agent bis an die Grenze und glaubt,
+        // das Gehirn sei durchlesen.
+        const gelesen = store.listMemories({ ...opts, limit: LES_FENSTER, offset: 0 });
+        const vollen = ohnePrivate(gelesen, (m) => m.scope);
         const memories = vollen.slice(opts.offset, opts.offset + opts.limit);
         const structured = {
           count: memories.length,
           total: vollen.length,
+          ...kappe(
+            klemmGrund("limit", args.limit, seite, LISTE_LIMIT_MIN, LISTE_LIMIT_MAX),
+            gelesen.length >= LES_FENSTER
+              ? `total ${LES_FENSTER} is one read window, not the size of the store: notes behind the window are neither counted nor reached by offset — narrow with type, tag or scope.`
+              : null
+          ),
           memories: memories.map((m) => memoryToOut(store, m)),
         };
         return { content: [{ type: "text", text: JSON.stringify(structured) }], structuredContent: structured };
       }
       case "memory_graph": {
         const entity = args.entity ? String(args.entity) : undefined;
-        const depth = toInt(args.depth, 2, 1, 4);
-        const g = store.getGraph(entity, depth);
+        const tiefe = toInt(args.depth, TIEFE_STD, TIEFE_MIN, TIEFE_MAX);
+        const g = store.getGraph(entity, tiefe);
         const nameById = new Map(g.entities.map((e) => [e.id, e.name]));
         // Privatheits-Floor: Entitäten sind abgeleitete Daten — ein Knoten fällt, wenn
         // keine seiner Träger-Notizen offen ist. Nennt ihn zusätzlich eine offene Notiz,
@@ -671,7 +754,22 @@ export async function callTool(store: KeptaStore, name: string, args: Record<str
           const ids = traeger.get(e.id) ?? [];
           if (ids.some((id) => !privaten.has(id)) || offenBenannt.has(e.id)) gehalten.add(e.id);
         }
+        const fensterGrund = entity
+          ? []
+          : [
+              // Ohne Startbegriff liest der Speicher ein Fenster, nicht den ganzen
+              // Bestand (store.getGraph: LIMIT je Tabelle). Die Antwort muss das
+              // nennen — ihre Beschreibung tat es bisher allein, und ein Client,
+              // der nur structuredContent liest, sah 500 Begriffe als die Grafik.
+              g.entities.length >= GRAPH_ENTITATEN_FENSTER
+                ? `this whole-graph read covers at most ${GRAPH_ENTITATEN_FENSTER} entities, ranked by how many notes carry each — name an entity to walk from it.`
+                : null,
+              g.relations.length >= GRAPH_RELATIONEN_FENSTER
+                ? `this whole-graph read covers at most ${GRAPH_RELATIONEN_FENSTER} relations — name an entity to walk from it.`
+                : null,
+            ].filter((s): s is string => s !== null);
         const structured = {
+          ...kappe(klemmGrund("depth", args.depth, tiefe, TIEFE_MIN, TIEFE_MAX), fensterGrund.length ? fensterGrund.join(" ") : null),
           entities: g.entities.filter((e) => gehalten.has(e.id)).map((e) => ({ name: e.name })),
           relations: offeneRelations
             .filter((r) => gehalten.has(r.sourceId) && gehalten.has(r.targetId))
@@ -703,13 +801,15 @@ export async function callTool(store: KeptaStore, name: string, args: Record<str
           applied: res.applied,
           // Die Engine kappt ihre Vorschlaege pro Aufruf. Sagt sie es und der Agentenkanal
           // verschluckt das Feld, liest der Agent 500 Kandidaten und hält sie für alle.
-          begrenzt: res.begrenzt === true,
+          // Dieselbe Meldung wie auf den drei anderen gekappten Wegen — ein Mechanismus,
+          // nicht vier (kappe() setzt begrenzt und hinweis zusammen).
+          ...kappe(
+            res.begrenzt === true
+              ? `Candidate list is capped at ${MAX_CANDIDATES_PRO_AUFRUF} pairs per call: more duplicates exist than are shown. Raise threshold to narrow the set, or keep dryRun:true to read the overview before applying.`
+              : null
+          ),
           candidates: res.candidates.map((c) => ({ keepId: c.keepId, duplicateId: c.duplicateId, similarity: c.similarity, reason: c.reason })),
         };
-        if (structured.begrenzt) {
-          structured.hinweis =
-            `Candidate list is capped at ${MAX_CANDIDATES_PRO_AUFRUF} pairs per call: more duplicates exist than are shown. Raise threshold to narrow the set, or keep dryRun:true to read the overview before applying.`;
-        }
         return { content: [{ type: "text", text: JSON.stringify(structured) }], structuredContent: structured };
       }
       case "memory_forget": {

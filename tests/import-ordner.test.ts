@@ -11,6 +11,7 @@ import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
+import crypto from "node:crypto";
 import { KeptaStore } from "../src/core/store";
 import { searchMemories } from "../src/core/engine";
 import { importOrdner, ladungVerwerfen } from "../src/core/import-ordner";
@@ -129,7 +130,81 @@ describe("import ordner: Formen, Vorbehalt, wiki-links", () => {
   });
 });
 
-describe("import ordner: Vorschau, Ladungsname, Rückweg", () => {
+describe("import ordner: die Prüfung schluckt nichts und fragt keine Indexwege", () => {
+  it("lässt ein beinahe-Duplett durch — gefunden wird nur der gleiche Wortlaut", async () => {
+    const basis = "Der Küchenumbau kostet 18000 Euro und dauert sechs Wochen.";
+    store.createMemory({ id: "chatgpt:conv-1:n1", title: "Küchenumbau", content: basis, tags: ["chatgpt-import"] });
+    datei("fast-duplett.md", `${basis} Der Auftrag ging an die Firma Berger.`);
+    const z = await importOrdner(store, vault);
+    expect(z.imported).toBe(1);
+    expect(z.bereitsVorhanden).toBe(0);
+    expect(z.kandidaten).toEqual([]);
+    expect(store.countMemories().active).toBe(2);
+  });
+
+  it("fragt auf dem Importweg nie die Wortspur — und merkt es, wenn doch", async () => {
+    const spaehe = vi.spyOn(store, "ftsSearch");
+    datei("a.md", "Eine Aussage mit genug Text für einen Knoten aus dem Ordner.");
+    datei("b.md", "Die zweite Aussage, ebenfalls lang genug für einen Knoten im Bestand.");
+    const z = await importOrdner(store, vault);
+    expect(z.imported).toBe(2);
+    expect(spaehe).not.toHaveBeenCalled();
+    // Gegen den grünen Nichtstuer: derselbe Spähe feuert, sobald die Wortspur
+    // wirklich gerufen wird. Ohne diese Zeile wäre das oben ein Blindbefund.
+    store.ftsSearch("probe", 3);
+    expect(spaehe).toHaveBeenCalled();
+    spaehe.mockRestore();
+  });
+
+  it("kehrt ein unverändertes Blatt nicht den ganzen Bestand um", async () => {
+    datei("stabil.md", "Der Verein trifft sich am ersten Montag jedes Monats im Rathaus.");
+    const erster = await importOrdner(store, vault);
+    expect(typeof erster.pruefungVorlauf).toBe("number");
+    const zweiter = await importOrdner(store, vault, { ladung: erster.ladung });
+    expect(zweiter.imported).toBe(0);
+    expect(zweiter.unveraendert).toBe(1);
+    // Kein neuer Wortlaut → kein Blick in den Bestand nötig.
+    expect(zweiter.pruefungVorlauf).toBeNull();
+    expect(zweiter.pruefungVorlaufKnoten).toBe(0);
+  });
+});
+
+describe("import ordner: der Privatheits-Floor", () => {
+  it("schluckt den Zwilling einer privaten Notiz, ohne ihre ID irgendwohin zu schreiben", async () => {
+    const aussage = "Der Mietvertrag in der Lindenstraße läuft bis zum 31. August 2028.";
+    store.createMemory({ id: "chatgpt:privat:1", title: "Vertrag", content: aussage, scope: "private", tags: ["chatgpt-import"] });
+    datei("privat-zwilling.md", aussage);
+    const z = await importOrdner(store, vault);
+    expect(z.bereitsVorhanden).toBe(1);
+    expect(store.countMemories().active).toBe(1);
+    expect(z.kandidaten[0]?.bestehend).toBe("privat");
+    expect(JSON.stringify(z)).not.toContain("chatgpt:privat:1");
+  });
+
+  it("senkt eine private Notiz nicht auf local ab, auch wenn die Datei es verlangt", async () => {
+    const wurzel8 = crypto
+      .createHash("sha256")
+      .update(fs.realpathSync(vault))
+      .digest("hex")
+      .slice(0, 8);
+    const id = `datei:${wurzel8}:geheim.md`;
+    store.createMemory({ id, title: "geheim", content: "Die Diagnose vom Arzt: laut Befund ein Bandscheibenvorfall.", scope: "private" });
+    datei("geheim.md", ["---", "scope: local", "---", "", "Die Diagnose vom Arzt: laut Befund ein Bandscheibenvorfall, die OP ist für März vorgemerkt."].join("\n"));
+    const z = await importOrdner(store, vault);
+    expect(z.updated).toBe(1);
+    expect(store.getMemory(id)?.scope).toBe("private");
+    expect(z.privatGeschuetzt).toBe(1);
+  });
+
+  it("lässt eine nicht-private Notiz in Ruhe, wo keine private involved ist", async () => {
+    datei("normal.md", "Der Garten hinter dem Haus bekommt zwei Hochbeete und einen Wasseranschluss.");
+    const z = await importOrdner(store, vault);
+    expect(z.imported).toBe(1);
+    expect(z.privatGeschuetzt).toBe(0);
+  });
+});
+
+describe("import ordner: Vorschau, Ladung, Rückweg", () => {
   it("zählt in der Vorschau, was reinkäme, und schreibt keine einzige Notiz", async () => {
     datei("voll.md", "Eine volle Notiz mit genug Text, um ein Knoten zu werden.");
     datei("leer.md", "   \n");
