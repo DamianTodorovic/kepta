@@ -72,7 +72,7 @@ describe("MCP-Registry: der Besitznachweis", () => {
 // Lauf `37921066342` am Kern-Tag `v3.2.0` (Commit `6fe7955`) meldet
 // `+ kepta-mcp@3.2.0` und „kepta-mcp@3.2.0 ist auf npm sichtbar"; die Registry
 // selbst antwortet im selben Lauf mit „Registry-Eintrag aktualisiert".
-const VEROEFFENTLICHTE_ENGINE = "3.2.0";
+const VEROEFFENTLICHTE_ENGINE = "3.3.0";
 
 describe("MCP-Registry: Versionen an ihrem rechten Ort", () => {
   it("App und ihr npm-Bündel wandern zusammen", () => {
