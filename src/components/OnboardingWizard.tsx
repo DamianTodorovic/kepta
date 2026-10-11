@@ -128,7 +128,7 @@ export function OnboardingWizard({ open, onClose, onComplete }: Props) {
           {[1,2,3,4].map(i=> <div key={i} className="flex-1 rounded-full transition-[width] duration-200" style={{background: step>=i ? 'var(--accent)' : 'var(--bg-inset-strong)'}} />)}
         </div>
         <div className="px-7 pt-6 pb-4 flex items-center gap-3.5" style={{borderBottom:'1px solid var(--border-subtle)'}}>
-          <KeptaMark size={38} radius={9} />
+          <KeptaMark size={38} />
           <div className="flex-1">
             <h2 className="text-[16px] font-semibold tracking-[-0.015em]" style={{color:'var(--text-1)'}}>Set up KEPTA</h2>
             <p className="text-xs mt-0.5" style={{color:'var(--text-2)'}}>Step {step} of 4 — one minute, and KEPTA adapts to you.</p>

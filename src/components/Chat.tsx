@@ -704,7 +704,7 @@ export function Chat({ activeMemories, onSaveToBrain, onSaveToBrainWithMeta, isF
             </button>
           )}
           <div className="w-9 h-9 rounded-xl flex items-center justify-center relative" style={{ background: "var(--accent-soft)", border: "1px solid var(--border-subtle)", boxShadow: "inset 0 1px 0 var(--edge-light)" }}>
-            <KeptaMark size={24} radius={6} />
+            <KeptaMark size={24} />
             <span
               className="absolute -bottom-0.5 -right-0.5 status-dot"
               style={connection.state === "connected" ? undefined : { background: "var(--text-3)", boxShadow: "none" }}
@@ -854,7 +854,7 @@ export function Chat({ activeMemories, onSaveToBrain, onSaveToBrainWithMeta, isF
         {messages.length === 0 && (
           <div className="flex flex-col items-center justify-center h-full text-center py-8">
             <div className="w-16 h-16 rounded-2xl flex items-center justify-center mb-4" style={{ background: 'var(--bg-inset)', border: '1px solid var(--border-subtle)', boxShadow: 'inset 0 1px 0 var(--edge-light)' }}>
-              <KeptaMark size={34} radius={8} />
+              <KeptaMark size={34} />
             </div>
             <div className="hud-label mb-2">Ready</div>
             <p className="text-[13px] max-w-sm leading-relaxed" style={{ color: "var(--text-2)" }}>

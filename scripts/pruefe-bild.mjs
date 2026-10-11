@@ -2,7 +2,8 @@
 //
 // Der Anlass ist gemessen, nicht erfunden. Beide Filme im Schaufenster
 // (`docs/demo.gif`, `docs/demo.mp4`, beide vom 18.09.) tragen in jeder Szene
-// unten links „KEPTA Pro · Licensed to KEPTA Demo". Diese Stufe ist am 03.10.
+// unten links die tote Stufe als Produktnamen neben der Marke, dazu „Licensed
+// to KEPTA Demo". Diese Stufe ist am 03.10.
 // gestorben (`03cad2d`), und ein Schlüssel gehört in die kostenlose App nirgends
 // hin — der Satz direkt über dem Film (README:351) sagt „no key field … nothing
 // to activate". `05-setup.png` nennt „Version 3.1.2" während 3.1.5 läuft, und
@@ -34,8 +35,11 @@ import { fileURLToPath } from "node:url";
 const WURZEL = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 
 /** Verbotene Formulierungen aus den Akten. `grund` zitiert, woher sie kommen. */
+// Das Stufenmuster ist zerlegt (`KEPTA\s+Pro`), nicht als Wortgeschrieben: dieses
+// Skript liegt selbst im Suchbereich von tests/kein-pro-tier.test.ts, und eine Wache
+// darf den Namen, den sie verbietet, nicht als wörtlichen String durch den Bestand tragen.
 const VERBOTEN = [
-  { muster: /\bKEPTA Pro\b/, grund: "Stufe tot (03cad2d); Stufen-Kanon: nur Core und Enterprise" },
+  { muster: /\bKEPTA\s+Pro\b/, grund: "Stufe tot (03cad2d); Stufen-Kanon: nur Core und Enterprise" },
   { muster: /\bPro-Tag\b|\bPro plan\b|\bPro tier\b/, grund: "dieselbe Stufe, andere Schreibweise" },
   { muster: /\btrial\b|\bTageslimit\b|\bdaily limit\b|\bfirst (?:24 hours|day) free\b/i, grund: "die App hat kein Tageslimit und keinen ersten Tag" },
   { muster: /\bupgrade[- ]panel\b|\bupgrade prompt\b/i, grund: "nichts zu aktivieren, nichts zu kaufen im Fenster" },
@@ -254,6 +258,30 @@ const VERNEINUNG_DAVOR = /(?:\bno\b|\bnot\b|\bnever\b|\bnothing\b|\bnirgends\b|\
 /** Zeilen-Ausnahme, die im Papier selbst steht: `<!-- wache: historisch … -->` */
 const AUSNAHME_MARKIERUNG = /<!--\s*wache:\s*historisch\b/i;
 
+/**
+ * Das Manifest steht in Gruppen (`docs/screenshots`, `docs/demo.gif`), jedes Bild
+ * erbt Version und Stand seiner Gruppe. Gefunden wird über den Pfad relativ zum
+ * Repo, notfalls über den Dateinamen — ein umgezogenes Bild soll nicht als
+ * unbelegt gelten, nur weil der Ordner sich geändert hat.
+ */
+function manifestEintrag(manifest, relZiel) {
+  if (!manifest) return null;
+  for (const gruppe of Object.values(manifest)) {
+    const dateien = gruppe.dateien ?? {};
+    const treffer = dateien[relZiel] ?? Object.entries(dateien).find(([k]) => path.posix.basename(k) === path.posix.basename(relZiel))?.[1];
+    if (!treffer) continue;
+    return {
+      ...treffer,
+      version: gruppe.version,
+      stand: gruppe.stand,
+      gebaut: gruppe.gebaut,
+      anmerkung: gruppe.anmerkung ?? null,
+      nachgetragen: Boolean(gruppe.anmerkung),
+    };
+  }
+  return null;
+}
+
 function pruefe(readmePfad, { tief = false } = {}) {
   const pfad = path.resolve(readmePfad);
   const mappe = path.dirname(pfad);
@@ -317,12 +345,19 @@ function pruefe(readmePfad, { tief = false } = {}) {
 
     // G2 — Alter des Bildes gegen den Stand, den es zeigen müsste
     const gemalt = Math.floor(stat.mtimeMs / 1000);
+    const relZiel = path.relative(wurzel, ziel).split(path.sep).join("/");
+    const eintrag = manifestEintrag(manifest, relZiel);
     if (manifest) {
-      const eintrag = manifest[r.src] || manifest[path.basename(ziel)];
-      if (!eintrag) sagt(r.zeile, `G2 ${r.src} steht in keinem Manifest`, "Manifest beim Schießen mitschreiben (Version + Stand).");
-      else if (version && eintrag.version !== version) sagt(r.zeile, `G2 ${r.src} zeigt ${eintrag.version}, ausgeliefert ist ${version}`, "neu schießen oder im Satz die Version nennen, die im Bild steht.");
+      if (!eintrag) {
+        sagt(r.zeile, `G2 ${r.src} steht in keinem Manifest-Eintrag`, "Manifest beim Schießen schreiben: `screenshots.mjs` tut das, für alte Bilder `node scripts/bilder-manifest.mjs --nachtragen <ordner>`.");
+      } else {
+        if (version && eintrag.version && eintrag.version !== version) {
+          sagt(r.zeile, `G2 ${r.src} zeigt ${eintrag.version} (Stand ${eintrag.stand}), ausgeliefert ist ${version}`, "neu schießen, oder im Satz die Version nennen, die im Bild steht.");
+        }
+        if (eintrag.nachgetragen) sagt(r.zeile, `G2 ${r.src}: Stand nur nachgetragen — ${eintrag.anmerkung ?? "beim Schuss war niemand dabei"}`, "im Zweifel neu schießen; ein nachgetragener Eintrag ist ein Verdacht mit Beleg, keine Augenzeugenschaft.");
+      }
     } else if (/\.(png|jpe?g|gif|webp|mp4|webm)$/i.test(ziel)) {
-      sagt(r.zeile, `G2 kein Stand-Nachweis für ${r.src} (docs/bilder-manifest.json fehlt)`, "Manifest bauen: `node scripts/bau-demo.mjs --manifest` schreibt Version und Stand je Bild.");
+      sagt(r.zeile, `G2 kein Stand-Nachweis für ${r.src} (docs/bilder-manifest.json fehlt)`, "Manifest bauen: `node scripts/bilder-manifest.mjs --nachtragen docs/screenshots`, danach schreibt der Schusslauf es selbst.");
     }
     if (uiStand && gemalt < uiStand) {
       sagt(r.zeile, `G2 ${r.src} ist vom ${fmt(gemalt)}, die Oberfläche aber zuletzt geändert am ${fmt(uiStand)} — das Bild zeigt einen älteren Stand`, "nach der laufenden Design-Welle neu schießen.");

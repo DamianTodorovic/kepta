@@ -2,7 +2,7 @@
 <title>KEPTA — Keeps what matters</title>
 <desc>KEPTA wordmark — dark square with a K monogram and a dot</desc>
 <rect width="512" height="512" rx="112" fill="#fcfcf9"/>
-<rect x="96" y="96" width="320" height="320" rx="72" fill="#0f0f0f"/>
+<rect x="96" y="96" width="320" height="320" rx="70" fill="#0f0f0f"/>
 <path d="M176 176 V336 M176 256 L288 176 M176 256 L288 336" stroke="white" stroke-width="22" stroke-linecap="round" stroke-linejoin="round"/>
 <circle cx="332" cy="180" r="18" fill="white"/>
 </svg>

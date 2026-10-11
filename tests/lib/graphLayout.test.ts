@@ -2270,3 +2270,122 @@ describe("Gang: was nichts verbindet, tanzt nicht um den Kern", () => {
     expect(Math.min(...gang.map((n) => n.y))).toBeGreaterThan(geholt.y);
   });
 });
+
+// ---------------------------------------------------------------------------
+// Die README-Latte: „nodes repel each other, never overlap".
+//
+// Gemessen am 11.10. im echten Browser (`docs/graph-kosten.md`,
+// `scripts/fps-laeufer.mjs`): bei 3 000 Notizen und 9 475 Kanten schneiden sich
+// 547 von 3 027 Scheiben, tiefster Schnitt 21 Welteinheiten — und die Proben
+// liegen im KERN (r 8-9 bei Abstand 14-17), nicht im Gang-Raster. Dieser Block
+// stellt dasselbe Feld ohne Browser nach: dichte Clique, bis zur Ruhe geloest,
+// dann brute force nachgezaehlt. Er ist der Beweis, dass die Zahl kein
+// Messstraßen-Artefakt ist — oder ihr Gegenbeweis.
+// ---------------------------------------------------------------------------
+describe("never overlap: ein dichter Bestand muss sich selbst trennen", () => {
+  /** Der Radius, den die Flaeche wirklich setzt (KnowledgeGraph.tsx:1418). */
+  const radius = (grad: number) => Math.min(18, 4 + Math.log2(1 + grad) * 2.2);
+
+  /** Paare, deren Scheiben sich WIRKLICH schneiden — ohne Polster, brute force. */
+  function schnitte(nodes: LayoutNode[]) {
+    let paare = 0;
+    let tief = 0;
+    const proben: string[] = [];
+    for (let i = 0; i < nodes.length; i++) {
+      for (let j = i + 1; j < nodes.length; j++) {
+        const a = nodes[i];
+        const b = nodes[j];
+        const d = Math.hypot(a.x - b.x, a.y - b.y);
+        const summe = a.r + b.r;
+        if (d < summe) {
+          paare++;
+          tief = Math.max(tief, summe - d);
+          if (proben.length < 4) proben.push(`${a.id}/${b.id} d=${d.toFixed(1)} r=${a.r.toFixed(1)}+${b.r.toFixed(1)}`);
+        }
+      }
+    }
+    return { paare, tief: Math.round(tief * 10) / 10, proben };
+  }
+
+  /** Notizen an Begriffe, drei je Notiz — dieselbe Dichte wie der gemessene Bestand. */
+  function cliqueFeld(notizen: number, begriffe: number) {
+    const ids: string[] = [];
+    const kanten: LayoutEdge[] = [];
+    const grad = new Map<string, number>();
+    const zaehle = (id: string) => grad.set(id, (grad.get(id) ?? 0) + 1);
+    for (let b = 0; b < begriffe; b++) ids.push(`__ent:b${b}`);
+    for (let i = 0; i < notizen; i++) {
+      const n = `n${i}`;
+      ids.push(n);
+      for (let k = 0; k < 3; k++) {
+        const ziel = `__ent:b${(i * 3 + k) % begriffe}`;
+        kanten.push({ source: n, target: ziel, strength: 1, real: true });
+        zaehle(n);
+        zaehle(ziel);
+      }
+    }
+    return createSimulation(ids, kanten, (id) => radius(grad.get(id) ?? 0));
+  }
+
+  it("trennt 600 Notizen an 40 Begriffen bis zur Ruhe vollstaendig", () => {
+    const sim = cliqueFeld(600, 40);
+    for (let i = 0; i < 450; i++) stepSimulation(sim); // alpha liegt ab ~310 auf dem Boden
+    expect(isSettled(sim), "der Fall kommt nie zur Ruhe — die Messung waere wertlos").toBe(true);
+    const { paare, tief, proben } = schnitte(sim.nodes);
+    expect(paare, `${paare} Scheibenpaare schneiden sich, tiefster Schnitt ${tief} Welteinheiten: ${proben.join(" | ")}`).toBe(0);
+  });
+
+  it("trennt 400 Notizen an 27 Begriffen bis zur Ruhe vollstaendig", () => {
+    // Die Basis, die das README verkauft, wenn es „a 400-note base" sagt.
+    const sim = cliqueFeld(400, 27);
+    for (let i = 0; i < 450; i++) stepSimulation(sim);
+    expect(isSettled(sim), "der Fall kommt nie zur Ruhe — die Messung waere wertlos").toBe(true);
+    expect(schnitte(sim.nodes).paare, `Ruhe bei 400: ${JSON.stringify(schnitte(sim.nodes))}`).toBe(0);
+  });
+
+  it("trennt 1 500 Notizen an 27 Begriffen bis zur Ruhe vollstaendig", () => {
+    const sim = cliqueFeld(1500, 27);
+    for (let i = 0; i < 450; i++) stepSimulation(sim);
+    expect(isSettled(sim), "der Fall kommt nie zur Ruhe — die Messung waere wertlos").toBe(true);
+    expect(schnitte(sim.nodes).paare, `Ruhe bei 1 500: ${JSON.stringify(schnitte(sim.nodes))}`).toBe(0);
+  });
+
+  it("schliesst den Trichter beim Aufziehen und trennt 3 000 Notizen in der Ruhe", () => {
+    // Der gemessene Fall ist nicht bloess gross, er ist ANDERS gebaut: 27 Begriffe
+    // an 3 000 Notizen sind ~111 Notizen an einem Hub. Mit vier Nachbesserungen
+    // pro Bild blieben 9 Paare in der Ruhe und 390 im Moment des Oeffnens stehen;
+    // seit der Konstantenentscheidung der Leitung (acht) gemaess dieser Zeile:
+    //
+    //   Schritt   30 → 3 328 Paare   60 → 1 517   120 → 1 267   250 → 15   310 → 0
+    //
+    // Die Zahl nennt ihren Moment: was beim Aufziehen uebereinander steht, ist
+    // eine Bewegung, kein Zustand — aber sie muss vor der Ruhe zu Ende sein, und
+    // die Obergrenze von 250 haelt die Heilung fest. Mit den alten vier Durchgaengen
+    // waeren es 390, also schlaegt dieser Fall rot, sobald jemand zurueckgeht.
+    const sim = cliqueFeld(3000, 27);
+    const spur = new Map<number, number>();
+    for (let i = 1; i <= 450; i++) {
+      stepSimulation(sim);
+      if (i === 250 || i === 310) spur.set(i, schnitte(sim.nodes).paare);
+    }
+    expect(isSettled(sim), "der Fall kommt nie zur Ruhe — die Messung waere wertlos").toBe(true);
+    expect(spur.get(250), `bei Schritt 250: ${spur.get(250)} Paare`).toBeLessThanOrEqual(40);
+    expect(spur.get(310), `bei Schritt 310: ${spur.get(310)} Paare — der Trichter schliesst nicht vor der Ruhe`).toBe(0);
+    expect(schnitte(sim.nodes).paare, `Ruhe bei 3 000: ${JSON.stringify(schnitte(sim.nodes))}`).toBe(0);
+  });
+
+  it("sieht das Raster ein ueberlappendes Paar in der Nachbarzelle", () => {
+    // Die Scheidung der zwei Kandidaten, als Bau gefasst: Uebersaehe das Raster
+    // Nachbarzellen (Kandidat b), trennte dieser Nachlauf das Paar nicht.
+    // Die Zelle ist 2·(groesster Radius + Polster) = 52 weit, das Paar sitzt an
+    // der Zellgrenze — 50 und 55, also in ZELLE 0 und ZELLE 1 — und ueberlappt
+    // mit 5 Einheiten Abstand bei verlangten 38.
+    const zelle = (12 + COLLIDE_PADDING) * 2;
+    const a = { id: "a", x: zelle - 2, y: 0, vx: 0, vy: 0, r: 12, pinned: false };
+    const b = { id: "b", x: zelle + 3, y: 0, vx: 0, vy: 0, r: 12, pinned: false };
+    expect(Math.abs(a.x - b.x), "das Paar muss ueberlappen").toBeLessThan(a.r + b.r + COLLIDE_PADDING);
+    expect(Math.floor(a.x / zelle), "und in zwei verschiedenen Zellen sitzen").not.toBe(Math.floor(b.x / zelle));
+    expect(resolveCollisions([a, b], COLLIDE_PADDING, 1), "kein Nachlauf, keine Korrektur").toBeGreaterThan(0);
+    expect(Math.abs(a.x - b.x)).toBeGreaterThanOrEqual(a.r + b.r + COLLIDE_PADDING - 0.001);
+  });
+});

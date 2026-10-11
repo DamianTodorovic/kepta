@@ -4,7 +4,7 @@
 
 <p align="center"><sub>Desktop app · no cloud · no account · encrypted at rest<br>SQLite · hybrid retrieval · knowledge graph · MCP</sub></p>
 
-<p align="center"><a href="https://github.com/DamianTodorovic/kepta/releases/latest"><img alt="Download" src="https://img.shields.io/github/v/release/DamianTodorovic/kepta?label=Download"></a> <a href="https://github.com/DamianTodorovic/kepta/actions/workflows/ci.yml"><img alt="Engine CI" src="https://github.com/DamianTodorovic/kepta/actions/workflows/ci.yml/badge.svg"></a> <a href="LICENSE"><img alt="License" src="https://img.shields.io/badge/license-Proprietary-black"></a> <img alt="Coverage gate" src="https://img.shields.io/badge/coverage%20gate-%E2%89%A5%2089%25%20of%20lines-brightgreen"> <img alt="Tests" src="https://img.shields.io/badge/tests-2163%20passing-brightgreen"> <img alt="Platform" src="https://img.shields.io/badge/platform-macOS-lightgrey"></p>
+<p align="center"><a href="https://github.com/DamianTodorovic/kepta/releases/latest"><img alt="Download" src="https://img.shields.io/github/v/release/DamianTodorovic/kepta?label=Download"></a> <a href="https://github.com/DamianTodorovic/kepta/actions/workflows/ci.yml"><img alt="Engine CI" src="https://github.com/DamianTodorovic/kepta/actions/workflows/ci.yml/badge.svg"></a> <a href="LICENSE"><img alt="License" src="https://img.shields.io/badge/license-Proprietary-black"></a> <img alt="Coverage gate" src="https://img.shields.io/badge/coverage%20gate-%E2%89%A5%2089%25%20of%20lines-brightgreen"> <img alt="Tests" src="https://img.shields.io/badge/tests-2241%20passing-brightgreen"> <img alt="Platform" src="https://img.shields.io/badge/platform-macOS-lightgrey"></p>
 
 <p align="center"><sub>The memory engine underneath is source-available (BUSL-1.1, converts to AGPL-3.0-or-later after four years): <a href="https://github.com/DamianTodorovic/kepta">DamianTodorovic/kepta</a> — the headless core with the MCP server. This repository is the full desktop application.</sub></p>
 
@@ -14,7 +14,9 @@
 
 <p align="center"><a href="docs/demo.mp4">▶ Watch the film (MP4)</a> — same scene, smooth playback, ready for a second screen.</p>
 
-<sub>Every entry is a node, every connection an edge — real connections drawn solid, mere similarity dashed. The time slider replays eighteen months of a fictional advisory firm, and because every note carries a validity window, past moments show exactly what was true then. The two views are the same data: *Force* shows the landscape of topics, *Tree* shows the order in it. Recorded from version 2.13.2 with `npm run screenshots` on an invented demo corpus — no real data, no real people.</sub>
+<sub>Every entry is a node, every connection an edge — real connections drawn solid, mere similarity dashed. The time slider replays eighteen months of a fictional advisory firm, and because every note carries a validity window, past moments show exactly what was true then. The two views are the same data: *Force* shows the landscape of topics, *Tree* shows the order in it. Both films were recorded on 18 September 2026 with `npm run screenshots` on an invented demo corpus — no real data, no real people. **Their build number cannot be recovered from this repository:** its history starts on 1 October (`281f5a1`), two weeks after the recording, so the film shows an older surface than the one described here. The recorded stand of every picture lives in [`docs/bilder-manifest.json`](docs/bilder-manifest.json), and `node scripts/pruefe-bild.mjs` fails the README when a picture is older than the surface it illustrates.</sub>
+
+<sub>**The twelve pictures below are from 7 October, version 3.1.2, stand `3b7f33f`** — before the design-system wave that is landing now, and before the tier and licence wording in this file. They show the product's structure, not its current face. A re-shoot on the final surface is queued.</sub>
 
 | Today — since your last visit, and what needs a look | Activity — AI apps at work, live |
 |---|---|
@@ -25,14 +27,14 @@
 | ![Privacy shield](docs/screenshots/11-privacy.png) | ![Connect](docs/screenshots/12-connect.png) |
 | **Index, grouped by kind — with a private note** | **Search stays ranked** |
 | ![Index](docs/screenshots/01-index.png) | ![Search](docs/screenshots/06-search.png) |
-| **Editor — kind, `[[links]]`, private** | **Settings — encrypted at rest** |
+| **Editor — kind, `[[links]]`, private** | **Settings — the system status board** |
 | ![Editor](docs/screenshots/04-editor.png) | ![Setup](docs/screenshots/05-setup.png) |
 
 | Force — the physics layout | Tree — the dendrogram |
 |---|---|
 | ![Force](docs/screenshots/03-graph.png) | ![Tree](docs/screenshots/04-dendrogram.png) |
 
-<sub>The Force layout positions thousands of nodes without overlap (verified at 3 000 nodes and 9 500 edges at 60 fps); the Tree reads out the hierarchy: root → kind of knowledge → entity or tag group → note. The third view, *Semantic*, places the same notes by what their texts mean — no screenshot of it here yet.</sub>
+<sub>The Force layout separates a dense base completely once it settles: **0 intersecting disc pairs at rest at 400, at 1 500 and at 3 000 notes**, asserted in `tests/lib/graphLayout.test.ts:2285` — re-check with `npx vitest run tests/lib/graphLayout.test.ts`. While it cools at 3 000 notes a few pairs still touch for a moment; the same test pins that funnel at ≤ 40 pairs by step 250 and 0 by step 310, so no sentence here says „never overlaps" without naming the moment. What a frame costs at each size is timed in [`docs/graph-kosten.md`](docs/graph-kosten.md), not claimed in this caption — a millisecond number is only worth the quiet machine that produced it. The Tree reads out the hierarchy: root → kind of knowledge → entity or tag group → note. The third view, *Semantic*, places the same notes by what their texts mean — no screenshot of it here yet.</sub>
 
 ### Knowledge that has a date
 
@@ -104,7 +106,7 @@ Every memory carries a validity window, so the graph can be replayed: pull the t
 - **Supersede chains** (`superseded_by`): contradictions displace each other and the history survives
 - **Files** by drag and drop: PDF, MD, TXT, JSON — chunked at 2000 characters. PDF text comes from pdf.js with the character maps for embedded fonts (shipped with the app, served locally), so a form reads as letters rather than glyph names. Files imported with an older extraction can be read again under *Settings → Data → Re-read imported files* — it counts first and writes only after you confirm
 - **URL clipper** with SSRF protection (IP literals in every notation, DNS resolution, every redirect hop checked); navigation lines, "Skip to main content" and cookie banners are stripped on import
-- **Auto-learn** (**off** by default): on request, KEPTA saves the key point of each chat answer as a node (tag `auto-learn`). The first time an answer would have been learnable, it says so once — with a button to switch it on. Optional small extraction model, 45-second limit, and both success **and** failure are reported
+- **Auto-learn** (**off** by default): on request, KEPTA saves the key point of each chat answer as a node (tag `auto-learn`). The first time an answer would have been learnable, it says so once — with a button to switch it on. Optional small extraction model, 45-second limit (`src/lib/autolearn.ts:11`), and both success **and** failure are reported
 - **Inbox folder** watched and ingested automatically
 - **Obsidian vault import**: Markdown + YAML frontmatter, `[[wiki links]]` become graph edges
 - **Import your AI history**: bring your ChatGPT or Claude data export here (*Settings → Data management → Import your AI history*): every conversation with at least one answer becomes a searchable note with its original date, tagged `chatgpt-import` / `claude-import` — so switching assistants doesn't mean starting over. Importing the same export again updates instead of duplicating
@@ -138,7 +140,7 @@ Every memory carries a validity window, so the graph can be replayed: pull the t
 - **Three views** — *Force*, the physics layout; *Tree*, a dendrogram from the root to the kind of knowledge to an entity or tag group to the note; and *Semantic*, the notes placed by a deterministic projection of their own vectors. Nodes glide from one view to another, and with reduced motion they jump
 - The Tree folds itself to fit its canvas: 400 notes are 425 rows and no screen holds that, so the deepest groups step behind a `×N` badge, the line says how many notes are gathered, and one click opens everything again
 - The semantic map says what it leaves out: how much of the difference its two axes carry, how many vectors the cap held back, and where the notes without a vector were parked. It is computed on the server, so no embedding ever travels into the view
-- Force-directed layout on an **unbounded canvas** — nodes repel each other, never overlap, and follow when you drag their neighbours; the layout grows with the base instead of being squeezed into the window. Verified at 3 000 nodes and 9 500 edges at 60 fps. Repulsion is weighted against the link springs, not against nothing: on a 400-note base the topics stand apart as islands with white space between them, instead of petals touching
+- Force-directed layout on an **unbounded canvas** — nodes repel each other and follow when you drag their neighbours; the layout grows with the base instead of being squeezed into the window. What is asserted, not asserted-away: **at rest no two discs intersect at 400, at 1 500 and at 3 000 notes** (`tests/lib/graphLayout.test.ts:2285`, brute force over every pair, no padding, no browser — `npx vitest run tests/lib/graphLayout.test.ts`), and while the layout cools at 3 000 notes the funnel closes from ≤ 40 pairs at step 250 to 0 at step 310. Frame cost per size is measured and recorded in [`docs/graph-kosten.md`](docs/graph-kosten.md) with its machine conditions; it is deliberately not quoted here. Repulsion is weighted against the link springs, not against nothing: on a 400-note base the topics stand apart as islands with white space between them, instead of petals touching
 - **Forces you can set** — how hard the middle gathers, how hard notes repel, how long a link rests, how big the nodes are. Turning a slider does not rebuild the world: the picture keeps its place and settles under the new forces, and one click returns the tuned defaults
 - Zoom, pan, draggable nodes, and **fit-to-view** that always frames the whole graph — the whole graph includes the strip the legend takes at the bottom
 - **Search counts its hits** — how many notes match, and which one you are on. Enter jumps and pages, Shift+Enter goes back, Escape clears the word before it touches anything else
@@ -254,11 +256,11 @@ The chat exists to prove retrieval works. Day-to-day use runs through MCP.
 <summary><strong>Privacy &amp; hardening</strong></summary>
 
 - All data in `~/.kepta/` — one SQLite file that belongs to you
-- **Encrypted on disk** (since 2.11): SQLCipher 4 format, AES-256 with an HMAC over every page, a random 256-bit key kept in the macOS Keychain on the shipped app (the same code uses Windows DPAPI or the Linux Secret Service when you build it there) — no password to type. Your settings, the AI key included, live inside the encrypted file. What it covers and what it does not, and how to keep a copy of the key: [SECURITY.md](SECURITY.md#encryption-at-rest)
+- **Encrypted on disk** (since 2.11 — and not added later: the core's first commit `2c942be` already carries `package.json` 2.11.0 and sets `cipher = 'sqlcipher'`, `src/core/store.ts:1201`): SQLCipher 4 format, AES-256 with an HMAC over every page, a random 256-bit key kept in the macOS Keychain on the shipped app (the same code uses Windows DPAPI or the Linux Secret Service when you build it there) — no password to type. Your settings, the AI key included, live inside the encrypted file. What it covers and what it does not, and how to keep a copy of the key: [SECURITY.md](SECURITY.md#encryption-at-rest)
 - The server binds to **`127.0.0.1` only** (deliberate override via `KEPTA_HOST`), and answers only this computer — a website using DNS rebinding gets nothing
 - **SSRF protection** in the URL clipper: normalised IP checks, DNS resolution, every redirect hop verified
 - **Content Security Policy** in the Electron session, `nodeIntegration` off, sandbox on
-- Rate limiting, Helmet, input validation on every route
+- **Helmet and a global rate limiter, mounted before every router** (`server/app.ts:154` and `:162`); write routes carry a stricter limiter of their own (`server/router/memories.ts:91`), and bodies are size-capped where they are parsed (`express.json({ limit: "1mb" })`, `server/router/memories.ts:133`)
 - No account, no telemetry, no phone-home — and nothing to activate: the app validates no key, so there is no check of any kind to call home for
 - With no AI configured, not a single byte leaves the machine
 - **Privacy shield, private notes and the audit log** — see *Your AI apps* above
@@ -421,11 +423,11 @@ The app bundle itself **is** signed, ad-hoc. That is not notarisation and does n
 
 ## 🧪 Quality & tests
 
-**2163 tests** (measured 2026-10-10), run with Vitest and v8 coverage — the cases a run actually executed, skipped ones not included. The coverage thresholds are a hard gate: a commit that falls below any of them fails the run — and so does a README that names the wrong number of tests. `npm test` writes that run's JSON report and `node scripts/doku-check.mjs` holds the README to exactly that number; `tests/doku-zahlen.test.ts` listens to the same report and refuses to compare when it cannot be trusted — missing, older than the suite, or written by a partial run — instead of checking a value out of the drawer.
+**2241 tests** (measured 2026-10-11), run with Vitest and v8 coverage — the cases a run actually executed, skipped ones not included. The coverage thresholds are a hard gate: a commit that falls below any of them fails the run — and so does a README that names the wrong number of tests. `npm test` writes that run's JSON report and `node scripts/doku-check.mjs` holds the README to exactly that number; `tests/doku-zahlen.test.ts` listens to the same report and refuses to compare when it cannot be trusted — missing, older than the suite, or written by a partial run — instead of checking a value out of the drawer.
 
 ```bash
 npm run lint       # typecheck (tsc) + ESLint — 0 errors required
-npm test           # 2163 tests (vitest)
+npm test           # 2241 tests (vitest)
 npm run test:cov   # tests + coverage gate + test count in the README
 npm run eval       # retrieval quality (Hit@1)
 ```

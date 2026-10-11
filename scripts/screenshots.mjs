@@ -27,6 +27,7 @@ import os from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { saeDemo } from "./demo-korpus.mjs";
+import { manifestFuegeHinzu } from "./bilder-manifest.mjs";
 
 const wurzel = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const ziel = path.join(wurzel, "docs", "screenshots");
@@ -220,8 +221,22 @@ async function aufnehmen(win, name) {
   if (bild.isEmpty()) throw new Error(`${name}: leeres Bild`);
   const png = bild.resize({ width: AUSGABE, quality: "best" }).toPNG();
   fs.writeFileSync(path.join(ziel, name), png);
+  geschossen.push(path.join("docs", "screenshots", name));
   const { width, height } = bild.getSize();
   console.log(`${name}: ${width}×${height} → ${AUSGABE} px breit, ${(png.length / 1024).toFixed(0)} kB`);
+}
+
+/**
+ * Was in diesem Lauf eingefangen wurde, gehört ins Manifest — mit der Version aus
+ * `package.json` und dem Commit, der in diesem Augenblick HEAD ist. Ein Bild ohne
+ * Stand ist eine Behauptung ohne Datum, und genau daran ist dieses Repo schon
+ * einmal gemessen worden (siehe `scripts/pruefe-bild.mjs`, Regel G2).
+ */
+const geschossen = [];
+function manifestSchreiben() {
+  if (geschossen.length === 0) return;
+  const { pfad, eintrag } = manifestFuegeHinzu(wurzel, "docs/screenshots", geschossen);
+  console.log(`Manifest: ${geschossen.length} Bilder → ${path.relative(wurzel, pfad)} (Version ${eintrag.version}, Stand ${eintrag.stand})`);
 }
 
 /** Einzelbilder fürs GIF, mit echter Zeit je Bild — das GIF läuft so im echten Tempo. */
@@ -411,6 +426,9 @@ app.whenReady().then(async () => {
     console.error(e);
     process.exitCode = 1;
   } finally {
+    // Auch ein halb fertiger Lauf schreibt, was er eingefangen hat — ein Bild
+    // ohne Stand ist später nicht mehr aufklärbar.
+    manifestSchreiben();
     server?.kind.kill();
     if (server) fs.rmSync(server.tmp, { recursive: true, force: true });
     app.quit();

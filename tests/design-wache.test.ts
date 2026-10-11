@@ -37,8 +37,32 @@ describe("Design-Wache", () => {
     expect(ergebnis.schwelle.iconpx).toBe(14);                // Z-06
   });
 
-  it("rechnet mehr als hundert Messungen, nicht fünf", () => {
-    expect(ergebnis.messungen).toBeGreaterThan(100);
+  it("rechnet ihre volle Breite — keine Schleife, die ins Leere läuft", () => {
+    // 240 statt "über hundert": am 11.10. fielen 44 Messungen aus zwei
+    // Sectionen, weil eine Schleife ein Set statt einer Map destructuring
+    // durchlief. Kein Befund wurde rot — es waren einfach weniger Zeilen. Eine
+    // Zahl, die nur nach unten fallen kann, ist keine Kontrolle.
+    expect(ergebnis.messungen).toBeGreaterThan(240);
+    for (const sektion of ["flächen", "kanten", "text", "schichten", "typ", "kontrast", "schrift", "icons", "css"]) {
+      expect(ergebnis.linien.filter((l) => l.sektion === sektion).length, `${sektion} meldet nichts`).toBeGreaterThan(3);
+    }
+  });
+
+  // Die Palette der Fläche: Token, nicht Handfarbe. Diese Zeilen sind der
+  // Beweis, dass die Wache die acht Rollen wirklich misst (B1, 10.10.: vier
+  // Hex-Werte in der Komponente, ein Kommentar sagte „alle ≥ 4,65", das Bild
+  // zeigte 3,91).
+  it("hält die Typ-Farb-Wache: acht Rollen auf der Leinwand, kein Hartwert in der Quelle", () => {
+    const rollen = ergebnis.linien.filter((l) => l.sektion === "typ" && /auf der Leinwand/.test(l.befund));
+    expect(rollen.length).toBe(16);                     // acht Rollen, beide Themen
+    for (const l of rollen) expect(parseFloat(l.zahl.replace(",", "."))).toBeGreaterThanOrEqual(4.5);
+    const kanal = ergebnis.linien.filter((l) => l.sektion === "typ" && /beide Kanäle/.test(l.befund));
+    expect(kanal.map((l) => l.zahl)).toEqual(["8/8", "8/8"]);
+    const ratsche = ergebnis.linien.find((l) => l.sektion === "typ" && /Hex-Literal/.test(l.befund));
+    expect(ratsche, "die Ratsche fehlt").toBeDefined();
+    expect(ratsche!.zahl, `Hex-Literals: ${ratsche!.fund}`).toBe("0");
+    const leser = ergebnis.linien.find((l) => l.sektion === "typ" && /aus dem Token liest/.test(l.befund));
+    expect(leser!.zahl).toBe("8/8");
   });
 
   it("meldet nichts, was unter der Schwelle liegt", () => {

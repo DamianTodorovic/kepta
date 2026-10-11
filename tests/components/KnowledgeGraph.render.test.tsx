@@ -1091,7 +1091,7 @@ describe("Im Baum steht die Hierarchie hinter dem Inhalt", () => {
   //    Inhalt und waren deshalb nicht als Gerüst zu lesen.
 
   /** Ein Etikett eines Bildes: Text, Weltkoordinaten, Farbe, Schriftgrad. */
-  interface Etikett { text: string; x: number; y: number; farbe: string; groesse: number }
+  interface Etikett { text: string; x: number; y: number; farbe: string; groesse: number; gewicht: number }
 
   /** Der Weltbereich, der nach einer Transformation im Bild liegt. */
   interface Ausschnitt { x0: number; y0: number; x1: number; y1: number }
@@ -1130,16 +1130,22 @@ describe("Im Baum steht die Hierarchie hinter dem Inhalt", () => {
     await bilder(20);
     let farbe = "";
     let groesse = 0;
+    let gewicht = 0;
     const texte: Etikett[] = [];
     for (const a of leinwand.letzterRahmen()) {
       if (a.op === "set:fillStyle") farbe = String(a.args[0]);
       if (a.op === "set:font") {
         const treffer = /(\d+(?:\.\d+)?)px/.exec(String(a.args[0]));
         if (treffer) groesse = Number(treffer[1]);
+        // Das Gewicht steht vor der Groesse (`600 11px ui-sans-serif, …`) — seit
+        // die Leiter nichts unter 11 px malt, ist sie der eine Unterschied
+        // zwischen Geruest und Inhalt, also muss sie lesbar sein.
+        const rang = /^(\d{3})\s/.exec(String(a.args[0]));
+        if (rang) gewicht = Number(rang[1]);
       }
       if (a.op === "fillText") {
         const t = String(a.args[0] ?? "");
-        if (t.trim()) texte.push({ text: t, x: Number(a.args[1]), y: Number(a.args[2]), farbe, groesse });
+        if (t.trim()) texte.push({ text: t, x: Number(a.args[1]), y: Number(a.args[2]), farbe, groesse, gewicht });
       }
     }
     return texte;
@@ -1242,12 +1248,18 @@ describe("Im Baum steht die Hierarchie hinter dem Inhalt", () => {
     const inhalt = texte.find((e) => e.text === "Q1 call with Elena");
     expect(geruest, "Der Entitätsknoten wurde nicht gemalt").toBeDefined();
     expect(inhalt, "Der Notiztitel wurde nicht gemalt").toBeDefined();
-    // Gedämpfte Farbe (--text-2) und kleiner als der Inhalt — das Gerüst soll
+    // Gedämpfte Farbe (--text-2) und ein ruhigeres Gewicht — das Gerüst soll
     // Gerüst bleiben, sonst liest sich der Baum wie eine Liste doppelter Namen.
+    // Die Groesse unterscheidet die Ebenen seit dem 11.10. nicht mehr: E1s
+    // Leiter hat nichts unter 11 px, also darf das Gerüst nicht auf 9 px
+    // weichen. Was weicht, sind Tinte und Gewicht.
     const stil = document.documentElement.style;
     expect(geruest!.farbe, "Gerüst steht nicht auf --text-2").toBe(stil.getPropertyValue("--text-2").trim());
     expect(inhalt!.farbe, "Notiz nicht auf --text-1").toBe(stil.getPropertyValue("--text-1").trim());
-    expect(geruest!.groesse).toBeLessThan(inhalt!.groesse);
+    expect(geruest!.groesse, "Gerüst unter der untersten Stufe").toBeGreaterThanOrEqual(11);
+    expect(inhalt!.groesse, "Notiztitel unter der untersten Stufe").toBeGreaterThanOrEqual(11);
+    expect(geruest!.gewicht, `Gerüst (${geruest!.gewicht}) steht nicht ruhiger als der Inhalt (${inhalt!.gewicht})`)
+      .toBeLessThan(inhalt!.gewicht);
   });
 });
 
@@ -3246,8 +3258,13 @@ describe("Das Schema-Inventar nennt, was der Bestand trägt", () => {
 // hat, schaltet sich ab und sagt warum — er taucht die Wissensbasis nicht in
 // ein graues „Unbekannt".
 describe("Die Herkunft färbt, wenn sie etwas zu sagen hat", () => {
-  const HERKUNFT_GESCHRIEBEN = "#8b9096";
-  const HERKUNFT_DATEI = "#b5813a";
+  // Die zwei Farben sind keine Literale mehr, die in der Komponente stehen:
+  // E1s Leiter setzt sie als Token (`--type-herkunft-*`), und die Flaeche holt
+  // sich `<token>-hex` aus dem Stylesheet. Was hier steht, ist derselbe Wert
+  // des dunklen Themes (index.css:309-313), den `setzeTheme("dunkel")` im
+  // Fixture setzt — gepriesft wird also die Kette Token -> Leinwand.
+  const HERKUNFT_GESCHRIEBEN = "#a7acb3";
+  const HERKUNFT_DATEI = "#d8a25c";
 
   function knopf(container: HTMLElement, name: string) {
     const k = [...container.querySelectorAll("button")].find((b) => b.textContent?.trim() === name);
@@ -3322,7 +3339,7 @@ describe("Die Herkunft färbt, wenn sie etwas zu sagen hat", () => {
     await umschalten(container, "Type");
     await bilder(8);
     const farben = gemaltenFarben();
-    expect(farben, "nach dem Zurückwechseln fehlt die Typfarbe").toContain("#56749a");
+    expect(farben, "nach dem Zurückwechseln fehlt die Typfarbe").toContain("#9cadc4");
     expect(farben, "die Herkunftsfarbe malt noch ins Bild").not.toContain(HERKUNFT_DATEI);
   });
 

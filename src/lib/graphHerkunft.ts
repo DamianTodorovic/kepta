@@ -51,17 +51,19 @@ export const HERKUNFT_LABELS: Record<HerkunftsArt, string> = {
 };
 
 /**
- * Drei Farben ausserhalb der Art-Familie (Schiefer, Pflaume, Salbei, Lohe),
- * damit ein Wechsel des Kanals nicht wie ein Wechsel der Arten aussieht.
+ * Die Herkunfts-Farben stehen in `src/index.css` (--type-herkunft-*: Schiefer,
+ * Lohe, Petrol — absichtlich ausserhalb der Art-Familie, damit ein Kanalwechsel
+ * nicht wie ein Artenwechsel aussieht). Hier steht nur der Name; gemalt wird
+ * aus `<token>-hex`, den die design-wache neben das oklch-Original setzt.
  *
- * „Written in KEPTA" steht in Stahlgrau — nicht weil die Herkunft unbekannt
- * wäre, sondern weil sie die unaufgeforderte ist: alles, was hier niemand
+ * „Written in KEPTA" ist stahlgrau, nicht weil die Herkunft unbekannt wäre,
+ * sondern weil sie die unaufgeforderte ist: alles, was hier niemand
  * hereingetragen hat, wurde hier aufgeschrieben.
  */
-export const HERKUNFT_FARBEN: Record<HerkunftsArt, string> = {
-  [HERKUNFT.geschrieben]: "#8b9096",
-  [HERKUNFT.datei]: "#b5813a",
-  [HERKUNFT.rechner]: "#3d8b86",
+export const HERKUNFT_TOKEN: Record<HerkunftsArt, string> = {
+  [HERKUNFT.geschrieben]: "--type-herkunft-geschrieben",
+  [HERKUNFT.datei]: "--type-herkunft-datei",
+  [HERKUNFT.rechner]: "--type-herkunft-rechner",
 };
 
 export function herkunftAusNotiz(notiz: HerkunftsNotiz): HerkunftsArt {

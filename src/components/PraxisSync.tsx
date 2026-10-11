@@ -221,7 +221,9 @@ export default function PraxisSync() {
           Records which bundle went which way and when — through hashes, without knowing the contents.
         </p>
         {journal.length === 0 ? (
-          <p className="text-xs" style={{ color: 'var(--text-2)' }}>Nothing recorded yet.</p>
+          <p className="text-xs" style={{ color: 'var(--text-2)' }}>
+            Nothing recorded yet — the journal fills with the first bundle that goes out or comes in.
+          </p>
         ) : (
           <ul className="space-y-1.5">
             {journal.slice(-8).reverse().map((e) => (

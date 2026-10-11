@@ -15,6 +15,12 @@
 import fs from "node:fs";
 import path from "node:path";
 import { dokuVergleich, leseBericht, readmeDateien } from "./test-bericht.mjs";
+import { beschlag, ruedig, sonde } from "./ruhe-sonde.mjs";
+
+/** Die Ursachen kurz vorlesen — die Meldung soll zeigen, WAS die Last sieht. */
+function beschreibungDerLast(ursachen) {
+  return ursachen.join("; ");
+}
 
 const bericht = leseBericht();
 if (!bericht.ok) {
@@ -33,9 +39,25 @@ if (dateien.length === 0) {
 // Zahl also nicht veraendern. Innerhalb der Suite fuehrt dieselbe Forderung zu
 // einem Widerspruch, den keine Zahl aufloest — siehe test-bericht.mjs.
 if (bericht.fehlgeschlagen > 0) {
+  // Ein roter Lauf ist nur dann ein Urteil ueber den Code, wenn die Maschine eines
+  // faellen durfte. F10s Sonde meldete "ruhig" bei zwei gleichzeitigen vollen
+  // Suite-Laeufen — also wird hier gemessen, nicht gefragt: max/median und
+  // node-Prozesse sehen die Last, der Median allein und der load average nicht.
+  const messung = sonde();
+  const ruhe = ruedig(messung);
+  if (!ruhe.ruhig) {
+    console.error(
+      `doku-check: KEIN URTEIL — ${bericht.fehlgeschlagen} ${bericht.fehlgeschlagen === 1 ? "Test ist" : "Tests sind"} in diesem Lauf fehlgeschlagen, ` +
+        `aber die Maschine war belegt: ${beschreibungDerLast(ruhe.ursachen)}.\n` +
+      `  ${beschlag(messung)}\n` +
+      `  Zeitfaelle unter fremder Last sind kein Befund; bei einer Ruhe-Maschine gilt der Fehlerteil wieder als Urteil. ` +
+      `Die Zahl selbst ist davon unberuehrt (${bericht.zahl} ausgefuehrte Faelle) — beglaubigt wird sie erst in einem ruhigen gruenen Lauf.`
+    );
+    process.exit(1);
+  }
   console.error(
     `doku-check: ICH KANN NICHT BEGLAUBIGEN — ${bericht.fehlgeschlagen} ${bericht.fehlgeschlagen === 1 ? "Test ist" : "Tests sind"} in diesem Lauf fehlgeschlagen ` +
-      `(bestanden: ${bericht.bestanden}). Erst die Suite gruen machen, dann die Zahl.`
+      `(bestanden: ${bericht.bestanden}). Die Maschine war ruhig (${beschlag(messung)}) — das ist ein Befund, kein Wetter. Erst die Suite gruen machen, dann die Zahl.`
   );
   process.exit(1);
 }

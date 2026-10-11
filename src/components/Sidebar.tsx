@@ -71,7 +71,7 @@ export function Sidebar({ tags, selectedTags, onSelectTag, onClearTags, currentV
     )}>
       {/* Marke */}
       <div className="seiten-kante-unten h-[64px] px-4 flex items-center gap-2.5 shrink-0">
-        <KeptaMark size={26} radius={7} />
+        <KeptaMark size={26} />
         <div className="min-w-0">
           <div className="seiten-marke font-semibold tracking-[-0.02em] text-[13.5px] leading-none">
             KEPTA
@@ -160,7 +160,7 @@ export function Sidebar({ tags, selectedTags, onSelectTag, onClearTags, currentV
       {/* Fußzeile */}
       <div className="seiten-kante-oben p-2.5 space-y-2">
         <div className="seiten-flaeche px-2 py-2 rounded-lg flex items-center gap-2.5">
-          <KeptaMark size={24} radius={6} />
+          <KeptaMark size={24} />
           <div className="min-w-0 flex-1">
             <div className="seiten-marke text-[12.5px] truncate font-semibold tracking-[0.01em]">
               {/* Branding 3.1.1: schlicht KEPTA — keine Stufen-Anzeige mehr.

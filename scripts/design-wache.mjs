@@ -112,12 +112,16 @@ function parse(text) {
   return { regeln: blöcke(0, Q.length, ""), weisen };
 }
 
-/** Alle Custom Properties, grouped nach Theme-Block. */
-function tokens(regeln) {
+/** Alle Custom Properties, grouped nach Theme-Block.
+ *  `auchMedien` holt Token aus @media-Blöcken (das increased-contrast-Schema) —
+ *  für das Grundthema müssen sie weggefiltert bleiben, sonst misst man sich
+ *  selbst das Ersatzschema vor (genau dieser Fehler ließ die dritte Rille
+ *  1,31 melden, wo das Schema 1,46 gebaut hatte). */
+function tokens(regeln, auchMedien = false) {
   const map = new Map([["hell", new Map()], ["dunkel", new Map()]]);
   for (const r of regeln) {
-    const sel = r.selektor;
-    if (sel.includes("::")) continue; // keine Token in Medienblöcke ohne Weiteres
+    const sel = (auchMedien && r.selektor.includes("::")) ? r.selektor.split("::").pop().trim() : r.selektor;
+    if (!auchMedien && r.selektor.includes("::")) continue;
     const thema = /(^|,)\s*:root/.test(sel) ? "hell" : /(^|[, ])\.dark\b/.test(sel) ? "dunkel" : null;
     if (!thema) continue;
     for (const d of r.dekl) {
@@ -453,6 +457,7 @@ const SCHULD = new Map([
   ["schrift:gewichte-fremd", { sitze: 3, seit: "10.10.", wer: "E2/E3 (Bausteine)", warum: "500 (Tailwind font-medium), 560 und 740 — eine statische Segoe UI hat diese Stufen nicht" }],
   ["icons:groesse-fremd", { sitze: 33, seit: "10.10.", wer: "E2/E3 (Bausteine)", warum: "w-2.5/w-3-Sitzungen; die Untergrenze --icon-min in index.css hebt sie beim Rendern auf 14 px, die Klasse selbst bleibt" }],
   ["icons:name-fremd", { sitze: 2, seit: "10.10.", wer: "DS, benannt", warum: "RefreshCw->loader (der Körper IST zwei Kreiselpfeile = erneuern) und PartyPopper->rocket (Namensrest aus der Phosphor-Zeit, Bild passt zur Absicht)" }],
+  ["css:radius-waisen", { sitze: 9, seit: "11.10.", wer: "DS (eigene Scheibe)", warum: "2/4/6/8 px stehen wörtlich in index.css außer-halb der Kapsel (999px). Auf die Stufen --r-* gehoben werden sie in einer eigenen Bewegung, weil jede Änderung an einem Radius Flächen von E2 und E3 mitverschiebt, während die Welle läuft. Eine neue Waise macht rot." }],
 ]);
 const schuld = (key, sitze) => {
   const s = SCHULD.get(key);
@@ -498,11 +503,11 @@ const sampeln = (name, thema) => {
   return f ? oklabVon(f) : null;
 };
 
-function leiterEntwurf(thema) {
+function leiterEntwurf(thema, E = ENTWURF) {
   // Der Leiter-Zuschlag: ohne ihn landet die Stufe durch die Rundung der
   // Ausgabe bei 1,298 — und der hex-Fallback im gebauten Bundle wäre unter
   // der Zielmarke, die die Wache in der Quelle misst.
-  const r = ENTWURF.kontrast * 1.012;
+  const r = E.kontrast * 1.012;
   const ton = sampeln("--bg-base", thema);
   if (!ton) return null;
   let ys = [];
@@ -564,7 +569,7 @@ function generiere() {
     const hart = hartestGer(STAPEL, thema, richtung);
     const textgegen = hart.Y;
     console.log(` Schrift gegen den härtesten Stapel: ${hart.wo} → ${hex(farbeVon(LfuerY(textgegen, C, H), C, H))} (Y ${textgegen.toFixed(4)})`);
-    for (const name of [...textToken().keys()].sort()) {
+    for (const name of [...new Set([...textToken().keys(), ...TYPROLLEN])].sort()) {
       if (name === "--accent" || name === "--on-accent") continue; // eigene Rechnung unten
       const def = themen.get(thema)?.get(name);
       if (def && /^var\(/.test(def.wert.trim())) continue; // Alias: geerbt, nicht gelöst
@@ -579,7 +584,7 @@ function generiere() {
       loes(name, null, kantengegen, ziel);
     }
 
-    // Akzent in ZWEI Rollen, weil Komponenten densamen Token für Schrift und für
+    // Akzent in ZWEI Rollen, weil Komponenten denselben Token für Schrift und für
     // Fläche benutzen: `--accent` löst die Schrift-Rolle (auf dem Blatt lesbar),
     // `--accent-fuell` hält die Masse (Siegellack) und `--on-accent` die Tinte.
     // Ein dunkles Rot kann nicht beides zugleich — das ist der Befund D1-04.
@@ -616,71 +621,55 @@ Neu berechnen: node scripts/design-wache.mjs --generieren`);
 function setzen() {
   let text = fs.readFileSync(CSS_PFAD, "utf8");
   let k = 0, verschont = 0;
+  // Der Stahl gehört in BEIDE Blöcke mit denselben Werten: die Leiste bleibt
+  // nachts, egal welches Blatt daneben liegt. Der Rechner wirft ihn pro Thema
+  // unterschiedliche Neutraltöne ab, deshalb wird er einmal gerechnet (dunkel)
+  // und dann mitgenommen.
+  const stahlWerte = werten("dunkel", ENTWURF, (t, w) => quelleMit(t, w));
   for (const [thema, anfang] of [["hell", ":root {"], ["dunkel", ".dark {"]]) {
-    const L = leiterEntwurf(thema);
-    const { ton, ys } = L;
-    const C = ton.C, H = ton.H;
-    const richtung = thema === "dunkel" ? 1 : -1;
-    const blatt = ys[Math.min(2, ys.length - 1)];
-    const want = new Map();
-    ys.forEach((y, i) => want.set(`--eb-${i}`, { L: LfuerY(y, C, H), C, H }));
-    want.set("--feld", { L: LfuerY(L.feld, C, H), C, H });
-    const textgegen = hartestGer(STAPEL, thema, richtung).Y;
-    for (const name of [...textToken().keys()]) {
-      if (name === "--accent" || name === "--on-accent") continue;
-      const marke = sampeln(name, thema);
-      if (!marke) continue;
-      const def = themen.get(thema)?.get(name);
-      if (def && /^var\(/.test(def.wert.trim())) continue;
-      const ziel = name.startsWith("--text-") ? (ENTWURF.text[Number(name.slice(-1)) - 1] ?? ENTWURF.text.at(-1)) : ENTWURF.akzentSchrift;
-      const g = loston({ gegenY: textgegen, ziel, c: marke.C, h: marke.H, richtung });
-      const Y = nichtSchwaecher(richtung, marke.Y, g ? g.Y : null);
-      want.set(name, { L: LfuerY(Y, marke.C, marke.H), C: marke.C, H: marke.H });
-    }
-    const kantengegen = hartestGer(STAPEL, thema, richtung).Y;
-    for (const [name, ziel] of [["--kante-kontrolle", ENTWURF.kontrolle], ["--kante-stark", ENTWURF.stark], ["--kante-dekor", ENTWURF.dekor]]) {
-      const g = loston({ gegenY: kantengegen, ziel, c: C, h: H, richtung });
-      if (g) want.set(name, { L: g.L, C, H });
-    }
-    const akzent = sampeln("--accent-fuell", thema) ?? sampeln("--accent", thema);
-    const aufAkzent = sampeln("--on-accent", thema);
-    const sY = loston({ gegenY: textgegen, ziel: ENTWURF.akzentSchrift, c: akzent.C, h: akzent.H, richtung });
-    want.set("--accent", { L: LfuerY(sY ? nichtSchwaecher(richtung, akzent.Y, sY.Y) : akzent.Y, akzent.C, akzent.H), C: akzent.C, H: akzent.H });
-    want.set("--accent-fuell", { L: akzent.L, C: akzent.C, H: akzent.H });
-    const kante = loston({ gegenY: blatt, ziel: ENTWURF.kontrolle, c: akzent.C, h: akzent.H, richtung });
-    want.set("--accent-kante", { L: kante ? nichtSchwaecher(richtung, akzent.L, kante.L) : akzent.L, C: akzent.C, H: akzent.H });
-    const ring = loston({ gegenY: kantengegen, ziel: ENTWURF.fokus, c: akzent.C, h: akzent.H, richtung });
-    want.set("--fokus", { L: ring ? nichtSchwaecher(richtung, akzent.L, ring.L) : akzent.L, C: akzent.C, H: akzent.H });
-    want.set("--on-accent", { L: aufAkzent.L, C: aufAkzent.C, H: aufAkzent.H });
-
-    // Stahl: die Kante muss auch über der hellsten Lage noch 3:1 halten —
-    // sie lag bei 2,11 (gerechnet gegen den nackten Grund, nicht das Bild).
-    const stahl = STAPEL.filter((s) => s.seite).map((s) => ({ n: s.name, c: stapel(s.lagen, "dunkel") })).filter((s) => s.c);
-    if (stahl.length) {
-      const ys0 = stahl.map((s) => leuchtdichte(s.c));
-      const grund = Math.max(...ys0);                        // hellste Lage = wenigstes Spiel
-      const k = loston({ gegenY: grund, ziel: ENTWURF.kontrolle, c: C, h: H, richtung: 1 });
-      // Stahl ist themenunabhängig: derselbe Wert in beide Blöcke.
-      if (k) want.set("--side-kante", { L: k.L, C, H });
-    }
-
+    const want = werten(thema, ENTWURF, (t, w) => quelleMit(t, w));
+    if (thema === "hell") for (const [n, v] of stahlWerte) if (n.startsWith("--side-")) want.set(n, v);
     const i = text.indexOf(anfang);
     if (i < 0) continue;
     const j = text.indexOf("\n}", i);
     let abschnitt = text.slice(i, j);
     for (const [name, w] of want) {
       const neu = `oklch(${w.L.toFixed(4)} ${w.C.toFixed(4)} ${w.H.toFixed(1)})`;
-      const re = new RegExp(`(\\n\\s*${name}:\\s*)([^;\\n]+)(;)`);
-      const m = abschnitt.match(re);
+      const re2 = new RegExp(`(\\n\\s*${name}:\\s*)([^;\\n]+)(;)`);
+      const m = abschnitt.match(re2);
       if (!m) continue;
       if (m[2].trim().startsWith("var(")) { verschont++; continue; }
       if (m[2].trim() === neu) continue;
-      abschnitt = abschnitt.replace(re, (mm, a, b, c) => { k++; console.log(`${thema}  ${name.padEnd(18)} ${b.trim()}  ->  ${neu}`); return a + neu + c; });
+      abschnitt = abschnitt.replace(re2, (mm, a, b, c) => { k++; console.log(`${thema}  ${name.padEnd(18)} ${b.trim()}  ->  ${neu}`); return a + neu + c; });
+    }
+    // Der sRGB-Kanal derselben Farbe, damit Leinwand und Farbregler dieselbe
+    // Farbe sehen wie die CSS-Verbraucher. Generiert, nicht gepflegt: die Wache
+    // misst beide Kanäle und ein driftender Fallback wird rot.
+    for (const name of TYPROLLEN) {
+      const w = want.get(name);
+      if (!w) continue;
+      const neu = hex(farbeVon(w.L, w.C, w.H));
+      const reH = new RegExp(`(\\n\\s*${hexRolle(name)}:\\s*)([^;\\n]+)(;)`);
+      const mH = abschnitt.match(reH);
+      if (!mH || mH[2].trim() === neu) continue;
+      abschnitt = abschnitt.replace(reH, (mm, a, b, c) => { k++; console.log(`${thema}  ${hexRolle(name).padEnd(18)} ${b.trim()}  ->  ${neu}`); return a + neu + c; });
     }
     text = text.slice(0, i) + abschnitt + text.slice(j);
   }
+  // increased contrast: derselbe Rechner, härtere Ziele, Markerblock am Ende
+  const block = kontrastBlock();
+  const A = "/* === generiert: increased contrast — design-wache --setzen, nicht von Hand === */";
+  const B = "/* === Ende increased contrast === */";
+  const an = text.indexOf(A);
+  const neuText = `${A}\n@media (prefers-contrast: more) {\n${block}\n}\n${B}`;
+  if (an >= 0) {
+    const bis = text.indexOf(B, an);
+    text = text.slice(0, an) + neuText + text.slice(bis + B.length);
+  } else {
+    text = text.replace(/\s*$/, "") + "\n\n" + neuText + "\n";
+  }
   fs.writeFileSync(CSS_PFAD, text);
-  console.log(`gesetzt: ${k}  ·  Aliasse verschont: ${verschont}`);
+  console.log(`gesetzt: ${k}  ·  Aliasse verschont: ${verschont}  ·  Kontrast-Block: ${block.split("\n").length} Zeilen`);
 }
 
 /* ============================================================
@@ -706,7 +695,32 @@ const STAPEL = [
   { name: "Stahl", lagen: ["--side-basis-2"], seite: true },
   { name: "Stahl, Hover-Lage", lagen: ["--side-basis-2", "--side-flaeche"], seite: true },
   { name: "Stahl, aktive Lage", lagen: ["--side-basis-2", "--side-auswahl"], seite: true },
+  // Die Leinwand des Graphen: KnowledgeGraph.tsx setzt den Rahmen auf
+  // `background: var(--glass-panel)` und malt die Knoten transparent darauf.
+  // Aufgelöst ist das --eb-1, aber die Fläche hat ein eigenes Publikum (Knoten,
+  // Kanten, Etikette), deshalb steht sie hier als eigener Stapel.
+  { name: "Leinwand (Graph-Grund)", lagen: ["--glass-panel"], text: true },
 ];
+
+/**
+ * Die Palette, die die Fläche malt: vier Arten, ein Knoten ohne Art, drei
+ * Herkünfte. Dieselbe Elevation-Logik wie beim Seiten-Register — Farbton und
+ * Sättigung sind die der Marke, nur die Lichtstufe wird gerechnet, und zwar
+ * gegen den Grund, auf dem die Farbe wirklich liegt.
+ *
+ * Vor dem 11.10. standen diese acht Werte als Hex-Literal in der Fläche und in
+ * graphHerkunft.ts, mit einem Kommentar, der „alle ≥ 4,65" behauptete; gemessen
+ * waren 4,61 / 4,33 / 3,91 / 3,90.
+ */
+const TYPROLLEN = [
+  "--type-semantic", "--type-episodic", "--type-procedural", "--type-reference",
+  "--type-neutral",
+  "--type-herkunft-geschrieben", "--type-herkunft-datei", "--type-herkunft-rechner",
+];
+/** Der sRGB-Kanal derselben Farbe: `ctx.fillStyle` und `<input type="color">`
+ *  sprechen keine oklch-Syntax (der Regler verlangt zwingend #rrggbb). Wird
+ *  generiert und von der Wache gegen das oklch-Geschwister geprüft. */
+const hexRolle = (name) => `${name}-hex`;
 
 function stapel(namen, thema, themenquelle = themen) {
   let c = null;
@@ -720,17 +734,145 @@ function stapel(namen, thema, themenquelle = themen) {
   return c;
 }
 
-/** das härteste Gegenüber, das unter Schrift liegen kann — über ALLE Stapel */
-function hartestGer(stapelListe, thema, richtung) {
+/**
+ * increased contrast (D1-12: Apple verlangt ein Schema, wenn das normale nicht
+ * reicht) — dieselbe Regel, härtere Ziele bei der Tinte: Ruhe-Ebene auf 7:1
+ * statt 4,65, jede Haarlinie auf Kontrollstärke, der Ring auf 4:1. Die Leiter
+ * bleibt stehen (siehe unten — sie kann nicht wachsen, ohne die Leseseite zu
+ * schwächen).
+ */
+const ENTWURF_K = {
+  ...ENTWURF,
+  // Die Leiter bleibt, wo sie ist. Entschieden am 11.10., gemessen: drei Stufen
+  // zwischen zwei Wänden — mehr Verhältnis je Nachbar gibt es nur, wenn eine der
+  // beiden Endstufen wandert, und die obere (dunkles Thema) bzw. untere (helles
+  // Thema) ist das Gegenüber der Schrift. Der alte Entwurf hat genau dort
+  // erweitert und --text-1 von 9,89 auf 7,31 (dunkel) und 8,05 auf 6,51 (hell)
+  // fallen lassen: ein Schema „mehr Kontrast", das lessbar schwächer malt.
+  kontrast: ENTWURF.kontrast,
+  text: [10, 8, 7],
+  kontrolle: 4,
+  stark: 3.05,
+  dekor: 1.9,
+  akzentSchrift: 7,
+  fokus: 4,
+};
+
+function hartestGer(stapelListe, thema, richtung, quelle = themen) {
   let best = null, wo = null;
   for (const s of stapelListe) {
     if (s.seite) continue;
-    const c = stapel(s.lagen, thema);
+    const c = stapel(s.lagen, thema, quelle);
     const y = leuchtdichte(c);
     if (y == null) continue;
     if (best === null || (richtung > 0 ? y > best : y < best)) { best = y; wo = s.name; }
   }
   return { Y: best, wo };
+}
+
+/**
+ * Ein Token-Wertepaar aus der Regel — dieselbe Funktion für das Normal-Theme
+ * und für das increased-contrast-Theme. `E` sind die Zielwerte, `quelle` die
+ * Flächen, gegen die gerechnet wird (bei einem Theme, das die Leiter selbst
+ * ändert, sind das seine eigenen Stufen — sonst rechtfertigt man sich gegen
+ * ein Bild, das es gleich nicht mehr gibt).
+ */
+function werten(thema, E, quelle) {
+  const L = leiterEntwurf(thema, E);
+  const { ton, ys } = L;
+  const C = ton.C, H = ton.H;
+  const richtung = thema === "dunkel" ? 1 : -1;
+  const blatt = ys[Math.min(2, ys.length - 1)];
+  const want = new Map();
+  ys.forEach((y, i) => want.set(`--eb-${i}`, { L: LfuerY(y, C, H), C, H }));
+  want.set("--feld", { L: LfuerY(L.feld, C, H), C, H });
+  const gegen = () => hartestGer(STAPEL, thema, richtung, quelle(thema, want));
+  const textgegen = gegen().Y;
+  for (const name of new Set([...textToken().keys(), ...TYPROLLEN])) {
+    if (name === "--accent" || name === "--on-accent") continue;
+    const marke = sampeln(name, thema);
+    if (!marke) continue;
+    const def = themen.get(thema)?.get(name);
+    if (def && /^var\(/.test(def.wert.trim())) continue;
+    const ziel = name.startsWith("--text-") ? (E.text[Number(name.slice(-1)) - 1] ?? E.text.at(-1)) : E.akzentSchrift;
+    const g = loston({ gegenY: textgegen, ziel, c: marke.C, h: marke.H, richtung });
+    const Y = nichtSchwaecher(richtung, marke.Y, g ? g.Y : null);
+    want.set(name, { L: LfuerY(Y, marke.C, marke.H), C: marke.C, H: marke.H });
+  }
+  const kantengegen = textgegen;
+  for (const [name, ziel] of [["--kante-kontrolle", E.kontrolle], ["--kante-stark", E.stark], ["--kante-dekor", E.dekor]]) {
+    const g = loston({ gegenY: kantengegen, ziel, c: C, h: H, richtung });
+    if (g) want.set(name, { L: g.L, C, H });
+  }
+  const akzent = sampeln("--accent-fuell", thema) ?? sampeln("--accent", thema);
+  const aufAkzent = sampeln("--on-accent", thema);
+  const sY = loston({ gegenY: textgegen, ziel: E.akzentSchrift, c: akzent.C, h: akzent.H, richtung });
+  want.set("--accent", { L: LfuerY(sY ? nichtSchwaecher(richtung, akzent.Y, sY.Y) : akzent.Y, akzent.C, akzent.H), C: akzent.C, H: akzent.H });
+  want.set("--accent-fuell", { L: akzent.L, C: akzent.C, H: akzent.H });
+  const kk = loston({ gegenY: blatt, ziel: E.kontrolle, c: akzent.C, h: akzent.H, richtung });
+  want.set("--accent-kante", { L: kk ? nichtSchwaecher(richtung, akzent.L, kk.L) : akzent.L, C: akzent.C, H: akzent.H });
+  const ring = loston({ gegenY: kantengegen, ziel: E.fokus, c: akzent.C, h: akzent.H, richtung });
+  want.set("--fokus", { L: ring ? nichtSchwaecher(richtung, akzent.L, ring.L) : akzent.L, C: akzent.C, H: akzent.H });
+  want.set("--on-accent", { L: aufAkzent.L, C: aufAkzent.C, H: aufAkzent.H });
+  const stahl = STAPEL.filter((s) => s.seite).map((s) => leuchtdichte(stapel(s.lagen, "dunkel"))).filter((y) => y != null);
+  const ton2 = sampeln("--side-ruhig", "dunkel") ?? { C, H };
+  if (stahl.length) {
+    const grund = Math.max(...stahl);                // hellste Lage = wenigstes Spiel
+    const k = loston({ gegenY: grund, ziel: E.kontrolle, c: C, h: H, richtung: 1 });
+    // Stahl ist themenunabhängig: Ton aus dem dunklen Block, sonst zieht das
+    // helle Thema seinen Neutralton in eine schwarze Leiste.
+    if (k && thema === "dunkel") want.set("--side-kante", { L: k.L, C, H });
+    // Zwei Bitten aus huelle.css (E3): die leiseste Ebene der Leiste und eine
+    // Hover-Kante, die man von der ruhenden unterscheiden kann.
+    //
+    // Die leiseste Ebene hat ein Dach, kein Ziel allein: sie darf die ruhige
+    // nicht überholen. Das Schema (text.at(-1) = 7 statt 4,65) hob sie sonst über
+    // --side-ruhig, und die leiseste Ebene der Leiste wurde lauter als die
+    // ruhige — gemessen und am 11.10. von E3s Farbvertrag erwischt.
+    const ruhigeK = ton2.Y === undefined || grund == null
+      ? Infinity
+      : (Math.max(ton2.Y, grund) + 0.05) / (Math.min(ton2.Y, grund) + 0.05);
+    const zielLeise = Math.max(SCHWELLE.text, Math.min(E.text.at(-1), ruhigeK - 0.5));
+    const l = loston({ gegenY: grund, ziel: zielLeise, c: ton2.C, h: ton2.H, richtung: 1 });
+    if (l && thema === "dunkel") want.set("--side-leise", { L: l.L, C: ton2.C, H: ton2.H });
+    const kh = loston({ gegenY: grund, ziel: E.kontrolle * 1.3, c: C, h: H, richtung: 1 });
+    if (kh && thema === "dunkel") want.set("--side-kante-heben", { L: kh.L, C, H });
+  }
+  return want;
+}
+
+/** die Flächen, gegen die ein Theme rechnet: seine eigenen Stufen, die
+ *  durchscheinenden Lagen bleiben, wie sie sind (Tinktur, Scrim, Tinte) */
+function quelleMit(thema, want) {
+  const basis = themen.get(thema);
+  const merged = new Map(basis);
+  for (const [n, w] of want) merged.set(n, { wert: `oklch(${w.L} ${w.C} ${w.H})` });
+  return new Map([[thema, merged], [thema === "dunkel" ? "hell" : "dunkel", themen.get(thema === "dunkel" ? "hell" : "dunkel")]]);
+}
+
+function kontrastBlock() {
+  const zeilen = [];
+  const leiterGleich = ENTWURF_K.kontrast === ENTWURF.kontrast;
+  for (const [thema, anfang] of [["hell", ":root"], ["dunkel", ".dark"]]) {
+    const want = werten(thema, ENTWURF_K, (t, w) => quelleMit(t, w));
+    if (thema === "hell") for (const [n, v] of werten("dunkel", ENTWURF_K, (t, w) => quelleMit(t, w))) if (n.startsWith("--side-")) want.set(n, v);
+    zeilen.push(`  ${anfang} {`);
+    for (const [n, w] of want) {
+      const def = themen.get(thema)?.get(n);
+      if (!def || /^var\(/.test(def.wert.trim())) continue;
+      // Die Stufen bleiben: ein Schema, das die Leiter weitet, muss eine Endstufe
+      // verschieben, und die Endstufe ist das Gegenüber der Schrift. Was gleich
+      // bleibt, braucht keine zweite Zeile.
+      if (leiterGleich && (n.startsWith("--eb-") || n === "--feld")) continue;
+      zeilen.push(`    ${n}: oklch(${w.L.toFixed(4)} ${w.C.toFixed(4)} ${w.H.toFixed(1)});`);
+      // Der sRGB-Kanal muss mitziehen: Leinwand und Farbregler lesen ihn, und
+      // ein Schema, das nur die Hälfte umstellt, malt im erhöhten Kontrast das
+      // alte Bild.
+      if (TYPROLLEN.includes(n)) zeilen.push(`    ${hexRolle(n)}: ${hex(farbeVon(w.L, w.C, w.H))};`);
+    }
+    zeilen.push("  }");
+  }
+  return zeilen.join("\n");
 }
 
 /**
@@ -769,14 +911,32 @@ function artefakt(pfad) {
     };
     console.log(`\n--- ${thema} · ${lagen.length} Stapel ---`);
     const accentWert = (th.get(thema)?.get("--accent-fuell") ?? th.get("hell")?.get("--accent-fuell"))?.wert;
-    for (const n of [...textToken().keys()]) if (n !== "--on-accent") prüf(n, SCHWELLE.text);
+    for (const n of [...new Set([...textToken().keys(), ...TYPROLLEN])]) if (n !== "--on-accent") prüf(n, SCHWELLE.text);
+    // Der gebaute sRGB-Kanal: hier ist er die Zahl, die der Bildschirm sieht.
+    for (const n of TYPROLLEN) {
+      const hx = th.get(thema)?.get(hexRolle(n));
+      if (!hx) { ungelöst.push(`${thema}: ${hexRolle(n)} fehlt im Bundle`); continue; }
+      const ro = farbe(hx.wert, th, thema);
+      if (!ro) { ungelöst.push(`${thema}: ${hexRolle(n)}`); continue; }
+      let min = Infinity, wo = null;
+      for (const s of lagen) {
+        if (s.seite) continue;
+        const k = kontrast(composite(ro, s.c), s.c);
+        if (k !== null && k < min) { min = k; wo = s.name; }
+      }
+      if (min === Infinity) continue;
+      const ok = min + TOLERANZ >= SCHWELLE.text;
+      if (!ok) rot++;
+      console.log(`  ${ok ? "OK   " : "ROT  "} ${thema}: ${hexRolle(n).padEnd(18)} ${dez(min).padStart(6)}  >= ${dez(SCHWELLE.text)}   ${wo}`);
+    }
     if (accentWert) prüf("--on-accent", SCHWELLE.text, false, true);
     prüf("--fokus", SCHWELLE.kante);
     for (const [n, z] of [["--kante-kontrolle", SCHWELLE.kante], ["--kante-stark", 1.9], ["--kante-dekor", 1.35]]) prüf(n, z);
     // Der Stahl ist themenunabhängig: nur im dunklen Durchlauf prüfen.
     if (thema === "dunkel") {
-      for (const n of ["--side-text", "--side-ruhig", "--side-akzent"]) prüf(n, SCHWELLE.text, true);
+      for (const n of ["--side-text", "--side-ruhig", "--side-leise", "--side-akzent"]) prüf(n, SCHWELLE.text, true);
       prüf("--side-kante", SCHWELLE.kante, true);
+      prüf("--side-kante-heben", SCHWELLE.kante, true);
     }
     // Leiter im Artefakt
     const ys = STUFEN.map((s) => leuchtdichte(stapel([s], thema, th))).filter((y) => y != null);
@@ -881,6 +1041,8 @@ for (const thema of ["dunkel", "hell"]) {
 
   // 3.8 Schrift: jedes als Text benutzte Token gegen jede Fläche, auf der es liegt
   const TEXT = textToken();
+  meld("text", `${thema}: Schriftrollen aus src/** gelesen`, `${TEXT.size}`, ">= 10",
+    "textToken() — color: var(--…) in src/**", TEXT.size >= 10);
   for (const [name, wo] of TEXT) {
     const def = themen.get(thema)?.get(name) ?? themen.get("dunkel")?.get(name);
     if (!def) continue;
@@ -934,12 +1096,15 @@ for (const t of ["--dur", "--dur-fast", "--ease-apple"]) {
 // 4b. SCHICHT-RECHNUNG — jeder Texttoken gegen jeden Stapel, den das Produkt
 //     wirklich baut (Ambient über dem Tisch, Akzent-Tinte über dem Blatt,
 //     Scrim unter der gehobenen Fläche). Das ist die Zahl, die ein Kunde sieht.
+// BILD merkt sich je Thema und Rolle das schwächste komponierte Bild — das
+// increased-contrast-Schema wird dagegen gehalten, nicht nur gegen die Untergrenze.
+const BILD = new Map();
 {
   const TEXT = textToken();
   for (const thema of ["dunkel", "hell"]) {
     const lagen = STAPEL.filter((s) => !s.seite).map((s) => ({ ...s, c: stapel(s.lagen, thema) })).filter((s) => s.c);
-    let tiefer = 0;
-    for (const [name] of TEXT) {
+    let tiefer = 0, rollen = 0;
+    for (const name of new Set([...TEXT.keys(), ...TYPROLLEN])) {
       const def = themen.get(thema)?.get(name) ?? themen.get("dunkel")?.get(name);
       if (!def || /^var\(/.test(def.wert.trim())) continue;
       const ro = farbe(def.wert, themen, thema);
@@ -952,9 +1117,17 @@ for (const t of ["--dur", "--dur-fast", "--ease-apple"]) {
       if (min === Infinity) continue;
       const ok = hält(min, SCHWELLE.text);
       if (!ok) tiefer++;
+      BILD.set(`${thema}·${name}`, min);
       meld("schichten", `${thema}: ${name} auf dem härtesten Stapel`, dez(min), ">= 4,50",
         `${wo} · ${hex(composite(ro, lagen.find((s) => s.name === wo).c))} auf ${hex(lagen.find((s) => s.name === wo).c)}`, ok);
+      rollen++;
     }
+    // Positive Kontrolle: eine Schleife, die nichts durchläuft, meldet keine
+    // Zeile und sieht dadurch aus wie ein grüner Lauf. Diese Zahl ist der
+    // Beweis, dass überhaupt Rollen gemessen wurden (am 11.10. sind 22 + 22
+    // Messungen so verschwunden, ohne dass eine Linie rot wurde).
+    meld("schichten", `${thema}: Schrift- und Typrollen wirklich gemessen`, `${rollen}`, ">= 12",
+      "textToken() aus src/** + TYPROLLEN", rollen >= 12);
     // Der Ring muss auf jedem Stapel 3:1 halten, nicht nur auf der reinen Fläche
     const fokus = themen.get(thema)?.get("--fokus");
     if (fokus) {
@@ -974,7 +1147,7 @@ for (const t of ["--dur", "--dur-fast", "--ease-apple"]) {
   for (const s of STAPEL.filter((x) => x.seite)) {
     const c = stapel(s.lagen, "dunkel");
     if (!c) continue;
-    for (const name of ["--side-text", "--side-ruhig", "--side-akzent"]) {
+    for (const name of ["--side-text", "--side-ruhig", "--side-leise", "--side-akzent"]) {
       const def = themen.get("dunkel")?.get(name) ?? themen.get("hell")?.get(name);
       if (!def) continue;
       const ro = farbe(def.wert, themen, "dunkel");
@@ -982,16 +1155,170 @@ for (const t of ["--dur", "--dur-fast", "--ease-apple"]) {
       const k = kontrast(composite(ro, c), c);
       meld("schichten", `Stahl · ${name} auf „${s.name}"`, dez(k), ">= 4,50", `${hex(ro)} auf ${hex(c)}`, hält(k, SCHWELLE.text));
     }
-    const kante = themen.get("dunkel")?.get("--side-kante") ?? themen.get("hell")?.get("--side-kante");
-    if (kante) {
-      const ro = farbe(kante.wert, themen, "dunkel");
-      meld("schichten", `Stahl · --side-kante auf „${s.name}"`, dez(kontrast(composite(ro, c), c)), ">= 3,00",
-        `${hex(ro)} auf ${hex(c)}`, hält(kontrast(composite(ro, c), c), SCHWELLE.kante));
+    for (const name of ["--side-kante", "--side-kante-heben"]) {
+      const def = themen.get("dunkel")?.get(name) ?? themen.get("hell")?.get(name);
+      const ro = def && farbe(def.wert, themen, "dunkel");
+      if (!ro) continue;
+      const kb = kontrast(composite(ro, c), c);
+      meld("schichten", `Stahl · ${name} auf „${s.name}"`, dez(kb), ">= 3,00", `${hex(ro)} auf ${hex(c)}`, hält(kb, SCHWELLE.kante));
     }
   }
 }
 
-// ---------------------------------------------------------------- 4. Stahl-Seitenleiste
+// ---------------------------------------------------------------- 4d. Typ-Farben der Fläche
+// Der Befund aus B1s Bildarbeit (10.10.): auf der Leinwand standen vier
+// Hex-Werte, die keiner gerechnet hatte, und ein Kommentar behauptete „alle
+// ≥ 4,65", während das Bild 3,91 zeigte. Seit dem 11.10. kommen die acht
+// Rollen aus src/index.css — diese Zeilen messen das, und die Ratsche unten
+// macht jeden neuen Hartwert in einer Komponente zu einem Befund.
+{
+  const leinwand = STAPEL.find((s) => s.name.startsWith("Leinwand"));
+  for (const thema of ["dunkel", "hell"]) {
+    const c = leinwand && stapel(leinwand.lagen, thema);
+    if (!c) {
+      meld("typ", `${thema}: kein auflösbarer Leinwand-Grund`, "—", "eine Fläche", "STAPEL · --glass-panel", false);
+      continue;
+    }
+    for (const name of TYPROLLEN) {
+      const def = themen.get(thema)?.get(name);
+      if (!def) {
+        meld("typ", `${thema}: ${name} fehlt als Token`, "keins", "eine Zeile in src/index.css", "src/index.css", false);
+        continue;
+      }
+      const ro = farbe(def.wert, themen, thema);
+      if (!ro) {
+        meld("typ", `${thema}: ${name} nicht als Farbe auflösbar`, def.wert, "oklch/hex", `src/index.css:${def.zeile}`, false);
+        continue;
+      }
+      const k = kontrast(composite(ro, c), c);
+      meld("typ", `${thema}: ${name} auf der Leinwand`, dez(k), ">= 4,50",
+        `src/index.css:${def.zeile} ${hex(ro)} auf ${hex(c)}`, hält(k, SCHWELLE.text));
+    }
+    // Der zweite Kanal: Leinwand und Farbregler sprechen sRGB-Hex, der Rest der
+    // App oklch. Zwei Kanäle, eine Farbe — wer eine der beiden Zeilen ändert,
+    // muss die andere mitziehen, sonst malt die Fläche ein anderes Bild als die Karte.
+    let abweg = 0, fehlend = 0;
+    for (const name of TYPROLLEN) {
+      const a = themen.get(thema)?.get(name), b = themen.get(thema)?.get(hexRolle(name));
+      if (!b) { fehlend++; continue; }
+      const ca = a && farbe(a.wert, themen, thema), cb = farbe(b.wert, themen, thema);
+      if (!ca || !cb || hex(ca) !== hex(cb)) {
+        abweg++;
+        meld("typ", `${thema}: ${hexRolle(name)} ≠ ${name}`, `${ca ? hex(ca) : "—"} ≠ ${cb ? hex(cb) : "—"}`, "equal",
+          `src/index.css:${b.zeile}`, false);
+      }
+    }
+    meld("typ", `${thema}: beide Kanäle jeder Rolle gleich`, `${TYPROLLEN.length - fehlend - abweg}/${TYPROLLEN.length}`,
+      "alle 8", "src/index.css --type-*-hex (generiert)", abweg === 0 && fehlend === 0);
+  }
+
+  // Die Ratsche: eine Rolle, die in einer Komponente auf ein Hex-Literal zeigt,
+  // ist ein Farbwert außerhalb des Registers. Schlüssel ist die Rollenbezeichnung,
+  // nicht die Zeile — Bausteine verschieben sich.
+  const ROLLEN = ["semantic", "episodic", "procedural", "reference", "neutral", "geschrieben", "datei", "rechner"];
+  let treffer = 0;
+  const funde = [];
+  for (const rel of DATEIEN.filter((r) => !r.endsWith(".css"))) {
+    zeilenVon(rel).forEach((z, i) => {
+      for (const r of ROLLEN) {
+        if (!new RegExp(`\\b${r}\\b[^:\\n]{0,24}:\\s*["'\`]#[0-9a-fA-F]{3,8}["'\`]`).test(z)) continue;
+        treffer++;
+        if (funde.length < 3) funde.push(`${rel}:${i + 1}`);
+      }
+    });
+  }
+  meld("typ", "Rollen, die in einer Quelle als Hex-Literal malen", String(treffer), "0",
+    treffer ? funde.join(", ") : "src/** — alle acht Rollen stehen nur in index.css", treffer === 0);
+
+  // Und die Gegenseite: die Fläche muss die Token auch lesen, sonst ist die
+  // Ratsche ein freier Brief. Geprüft wird die Anzahl der Rollen, die in
+  // KnowledgeGraph.tsx oder graphHerkunft.ts als `--type-…` vorkommen.
+  const leser = new Set();
+  for (const rel of ["src/components/KnowledgeGraph.tsx", "src/lib/graphHerkunft.ts"]) {
+    for (const z of zeilenVon(rel)) for (const m of z.matchAll(/--type-([a-z-]+)/g)) leser.add(m[1]);
+  }
+  const blind = TYPROLLEN.filter((n) => !leser.has(n.replace("--type-", "")));
+  meld("typ", "Rollen, die die Fläche aus dem Token liest", `${TYPROLLEN.length - blind.length}/${TYPROLLEN.length}`, "8/8",
+    blind.length ? `liest nicht: ${blind.join(", ")}` : "KnowledgeGraph.tsx, graphHerkunft.ts", blind.length === 0);
+}
+
+// ---------------------------------------------------------------- 4c. increased contrast (dritte Rille)
+
+// Die dritte Rille: das generierte increased-contrast-Schema wird
+//     gemessen wie das normale — eigene Leiter, eigene Tinktur darunter,
+//     gleiche Untergrenze (und die Ziele liegen darüber).
+{
+  const A = "generiert: increased contrast";
+  const an = cssText.indexOf(A);
+  if (an < 0) {
+    meld("kontrast", "es gibt kein increased-contrast-Schema", "keins", "eines", "src/index.css", false);
+  } else {
+    const von = cssText.lastIndexOf("/*", an);   // der Marker steht IN einem Kommentar: ohne diesen Schnitt
+    const block = cssText.slice(von, cssText.indexOf("/* === Ende increased contrast", an)); // frisst der Parser den ganzen Block und misst das Grundthema gegen sich selbst
+    const ro = tokens(parse(block).regeln, true);
+    for (const thema of ["dunkel", "hell"]) {
+      const gemischt = new Map([["dunkel", new Map(themen.get("dunkel") ?? [])], ["hell", new Map(themen.get("hell") ?? [])]]);
+      for (const [t, map] of ro) for (const [n, v] of (map ?? [])) gemischt.get(t)?.set(n, v);
+      const lagen = STAPEL.map((s) => ({ ...s, c: stapel(s.lagen, thema, gemischt) })).filter((s) => s.c);
+      let tiefer = 0, rollen = 0;
+      for (const name of new Set([...textToken().keys(), ...TYPROLLEN])) {
+        if (name === "--on-accent") continue;
+        const def = gemischt.get(thema)?.get(name);
+        if (!def || /^var\(/.test(def.wert.trim())) continue;
+        const ro2 = farbe(def.wert, gemischt, thema);
+        if (!ro2) continue;
+        let min = Infinity, wo = null;
+        for (const s of lagen) {
+          if (s.seite) continue;
+          const k = kontrast(composite(ro2, s.c), s.c);
+          if (k !== null && k < min) { min = k; wo = s.name; }
+        }
+        if (min === Infinity) continue;
+        // Two bars, and the second is the one that matters: `prefers-contrast: more`
+        // darf nie das Bild liefern, das der normale Modus schon bringt. Am 11.10.
+        // fiel --text-1 von 9,89 auf 7,31 (dunkel) und von 8,05 auf 6,51 (hell),
+        // weil das Schema seinen Leiterenzuwachs auf der Leseseite geholt hat.
+        const vorher = BILD.get(`${thema}·${name}`);
+        const ok = hält(min, SCHWELLE.text) && (vorher === undefined || min + TOLERANZ >= vorher);
+        if (!ok) tiefer++;
+        meld("kontrast", `${thema}: ${name} auf dem härtesten Stapel`, `${dez(min)} · normal ${dez(vorher)}`,
+          `>= 4,50 und >= ${dez(vorher)}`, `${wo} · ${hex(ro2)} · prefers-contrast: more`, ok);
+        rollen++;
+      }
+      meld("kontrast", `${thema}: Rollen im Schema gemessen`, `${rollen}`, ">= 12",
+        "Markerblock am Dateiende, textToken() + TYPROLLEN", rollen >= 12);
+      const ys = STUFEN.map((s) => leuchtdichte(stapel([s], thema, gemischt))).filter((y) => y != null);
+      // Das Normalverhältnis ist die untere Grenze: ein Schema, das die Leiter
+      // nicht weiter machen kann, ohne die Leseseite anzutasten (Weiß und Schwarz
+      // sind die Wände), lässt sie lieber, wie sie ist.
+      const y0 = STUFEN.map((s) => leuchtdichte(stapel([s], thema))).filter((y) => y != null);
+      let normal = Infinity;
+      for (let i = 1; i < y0.length; i++) {
+        const n = (Math.max(y0[i], y0[i - 1]) + 0.05) / (Math.min(y0[i], y0[i - 1]) + 0.05);
+        if (n < normal) normal = n;
+      }
+      for (let i = 1; i < ys.length; i++) {
+        const k = (Math.max(ys[i], ys[i - 1]) + 0.05) / (Math.min(ys[i], ys[i - 1]) + 0.05);
+        meld("kontrast", `${thema}: Leiter ${STUFEN[i - 1]} -> ${STUFEN[i]}`, `${dez(k)} · normal ${dez(normal)}`,
+          `>= ${dez(normal)} (Wunsch 1,45)`, "media (prefers-contrast: more)",
+          k + TOLERANZ >= Math.max(SCHWELLE.nachbar, normal));
+      }
+      meld("kontrast", `${thema}: Stapel des Schemas geprüft`, `${lagen.length}`, ">= 8", "Markerblock am Dateiende", tiefer === 0);
+    }
+    // Der Stahl ist themenunabhängig und hat eine Reihenfolge: die leiseste
+    // Ebene darf die ruhige nicht überholen — auch nicht, wenn das Schema ruft.
+    const basis = farbe(themen.get("dunkel")?.get("--side-ruhig")?.wert, themen, "dunkel");
+    const schemaLeise = farbe(ro.get("dunkel")?.get("--side-leise")?.wert, ro, "dunkel");
+    if (basis && schemaLeise) {
+      const um = leuchtdichte(schemaLeise) <= leuchtdichte(basis) + TOLERANZ;
+      meld("kontrast", "Stahl: --side-leise bleibt unter --side-ruhig (Schema)",
+        `${dez(leuchtdichte(schemaLeise))} ≤ ${dez(leuchtdichte(basis))}`, "nach Lichtwert",
+        "Markerblock am Dateiende", um);
+    }
+  }
+}
+
+
 
 {
   const r = PAR.regeln.find((x) => x.selektor === ".sidebar-glass");
@@ -1278,6 +1605,53 @@ for (const w of PAR.weisen) {
 }
 meld("css", `Deklarationen außerhalb von Regeln`, String(PAR.weisen.length), "0", "src/index.css", PAR.weisen.length === 0);
 
+// Das Raster (Z-05) und die Tastgröße (D1-11): eine Basis, ganzzahlige
+// Vielfache, und die two Größen, die Apple für Berührung nennt — 28 px als
+// Default, 20 px als absolute Untergrenze.
+{
+  const stufen = [];
+  for (const [n, d] of themen.get("hell") ?? []) {
+    const m = /^--s(?:-fein|-(\d+))?$/.exec(n);
+    if (!m) continue;
+    const px = /^\s*([0-9.]+)px\s*$/.exec(d.wert);
+    stufen.push({ n, px: px ? Number(px[1]) : null, zeile: d.zeile });
+  }
+  stufen.sort((a, b) => a.px - b.px);
+  const halbe = stufen.filter((s) => s.px === null || Math.round(s.px) !== s.px);
+  const fremd = stufen.filter((s) => s.px !== null && s.n !== "--s-fein" && s.px % 4 !== 0);
+  meld("css", `Rasterstufen --s-* in src/index.css`, stufen.map((s) => `${s.px}px`).join(" · "), "<= 8, ganzzahlig, Vielfache von 4 (--s-fein ausgenommen)",
+    `src/index.css:${stufen[0]?.zeile ?? "?"}`, stufen.length >= 6 && stufen.length <= 8 && halbe.length === 0 && fremd.length === 0);
+  const wachst = stufen.every((s, i) => i === 0 || s.px > stufen[i - 1].px);
+  meld("css", `Raster wächst monoton`, wachst ? "ja" : "Nein", "ja", "src/index.css --s-*", wachst);
+  const tippen = PAR.regeln.filter((r) => /\.tap\b|\.tap-min\b/.test(r.selektor))
+    .flatMap((r) => (r.dekl ?? []).filter((d) => /^min-(block|inline)-size$/.test(d.prop))
+      .map((d) => Number(/^\s*([0-9]+)px/.exec(d.wert)?.[1])));
+  meld("css", `Tastmaß in .tap und .tap-min`, tippen.join(" · ") || "keine", "28 px Default, 20 px floor",
+    "src/index.css .tap/.tap-min", tippen.includes(28) && tippen.includes(20));
+
+  // Radien: die Stufen als Token, dazu die Waisen. Diese Zahl ist die Wahrheit
+  // hinter dem Satz „Radius als Hierarchie" — nicht die Wunschzahl.
+  const radien = [];
+  for (const [n, d] of themen.get("hell") ?? []) {
+    if (!/^--r-/.test(n)) continue;
+    const px = Number(/^\s*([0-9.]+)px\s*$/.exec(d.wert)?.[1]);
+    if (Number.isFinite(px)) radien.push({ n, px });
+  }
+  radien.sort((a, b) => b.px - a.px);
+  const doppel = radien.filter((r, i) => radien.some((x, j) => j !== i && x.px === r.px));
+  meld("css", `Radien --r-* in src/index.css`, radien.map((r) => `${r.px}px`).join(" · ") || "keine",
+    ">= 4 Stufen, verschiedene Werte",
+    "src/index.css --r-panel/--r-card/--r-btn/--r-chip/--r-badge",
+    radien.length >= 4 && doppel.length === 0);
+  const waisen = PAR.regeln.flatMap((r) => (r.dekl ?? []))
+    .filter((d) => d.prop === "border-radius" && !/var\(--r-/.test(d.wert))
+    .filter((d) => !/^999px$|^0$|^50%$/.test(d.wert.trim()));
+  const rSchuld = schuld("css:radius-waisen", waisen.length);
+  meld("css", `wörtliche Radien außer der Kapsel (999px)`, `${waisen.length}`,
+    rSchuld ? `benannt: ${rSchuld.sitze} (${rSchuld.wer})` : "0",
+    rSchuld ? rSchuld.warum : "src/index.css", rSchuld ? rSchuld.treffer : waisen.length === 0);
+}
+
 // Regeln, die auf eine Klasse zeigen, die kein Baustein benutzt — ererbter
 // Auftrag: toter Stil ist kein Fehler, aber eine falsche Fährte.
 {
@@ -1291,6 +1665,67 @@ meld("css", `Deklarationen außerhalb von Regeln`, String(PAR.weisen.length), "0
     "src/index.css Selektoren gegen src/**/*.tsx", true);
 }
 
+// ---------------------------------------------------------------- 9. Die Film-Fläche
+// `linkedin/bilder/scenes/szene.html` kopiert das Register, um daraus Bilder zu
+// rendern, und `akte-css.mjs` hält die Kopie (akte.css) gegen die Szene zusammen —
+// zehn Regeln. Was niemand prüfte: die Szene gegen das Produkt. Ein Token, das hier
+// bewegt wird und dort nicht, zieht still in jeden Film — genau die Lücke, in der
+// schon einmal ein Ring im Bild stand, den es in der Fläche nicht gab. Liegt die
+// Szene nicht auf diesem Rechner, sagt die Wache das statt grün zu sein.
+{
+  const ordner = process.env.KEPTA_SZENE || path.join(path.dirname(REPO), "Desktop/ki gehirn/linkedin/bilder/scenes");
+  const szenePfad = path.join(ordner, "szene.html");
+  if (!fs.existsSync(szenePfad)) {
+    meld("szenen", "Film-Szene auf diesem Rechner nicht gefunden", "BLIND — nichts verglichen",
+      "geprüft, wenn die Datei da ist", szenePfad, true);
+  } else {
+    const text = fs.readFileSync(szenePfad, "utf8");
+    const an = text.indexOf(":root{") >= 0 ? text.indexOf(":root{") : text.indexOf(":root {");
+    const block = an < 0 ? "" : text.slice(an, text.indexOf("}", an));
+    // Gleich machen, was nur anders geschrieben ist: Leerraum nach Kommas,
+    // führende Null bei .5,hex-Farben in derselben Schreibung. Sonst meldet die
+    // Wache siebzehn Formfehler als siebzehn Abweichungen.
+    const glätten = (v) => {
+      let t = v.replace(/,\s*/g, ",").replace(/\s+/g, " ").trim().toLowerCase();
+      t = t.replace(/#[0-9a-f]{6}\b/g, (m) => m.toUpperCase());
+      t = t.replace(/-?(?:\d*\.\d+|\d+\.?\d*)/g, (m) => (m.includes(".") || m.includes("e") ? String(Number(m)) : m));
+      return t;
+    };
+    const rollen = new Map();
+    for (const m of block.matchAll(/(--[\w-]+)\s*:\s*([^;\n]+)/g)) rollen.set(m[1], glätten(m[2]));
+    const hell = themen.get("hell") ?? new Map(), dunkel = themen.get("dunkel") ?? new Map();
+    const wert = (map, n) => { const d = map.get(n); return d ? glätten(d.wert) : null; };
+    let gleich = 0, skala = 0, fremd = 0, abweg = 0;
+    const abwege = [], fremde = [];
+    for (const [n, v] of rollen) {
+      const h = wert(hell, n), d = wert(dunkel, n);
+      if (v === h || v === d) { gleich++; continue; }
+      // Die Szene malt im doppelten Pixelmaß: Radien tragen dort erklärtermaßen
+      // das Doppelte des Produktwerts. Das ist ihre Regel, keine Abweichung.
+      const grund = h ?? d;
+      if (/^--r-/.test(n) && grund && /^\d+(\.\d+)?px$/.test(grund) && v === `${parseFloat(grund) * 2}px`) { skala++; continue; }
+      if (grund === null) { fremd++; fremde.push(n); continue; }
+      abweg++; abwege.push(`${n}: Szene ${v} ≠ Produkt ${grund}`);
+    }
+    meld("szenen", "Token der Szene, wertgleich mit src/index.css", `${gleich}/${rollen.size}`,
+      "alle außer der ×2-Regel und den eigenen Rollen", `${szenePfad}:root`, abweg === 0);
+    meld("szenen", "Radien nach der erklärten Regel ×2 (Filmmaß)", `${skala}`, "—", "szene.html gegen --r-*", true);
+    meld("szenen", "eigene Rollen der Szene (stehen nicht im Register)", `${fremd}`, "benannt",
+      fremde.join(" ") || "keine", true);
+    for (const z of abwege) meld("szenen", "Abweichung Szene ↔ Produkt", z, "gleich", szenePfad, false);
+    // Ein Zitat auf eine Stelle, die es nicht mehr gibt, ist eine falsche Quelle
+    // im Bild — die Szene begründet ihre Scheibenfarben mit einer Zeile in der Fläche.
+    if (/DEFAULT_TYPE_COLORS/.test(text)) {
+      const lebt = DATEIEN.some((rel) => zeilenVon(rel).some((z) => z.includes("DEFAULT_TYPE_COLORS")));
+      const schuldZitat = schuld("szenen:zitat-veraltet", lebt ? 0 : 1);
+      meld("szenen", "die Szene begründet ihre Scheibenfarben mit `DEFAULT_TYPE_COLORS`",
+        lebt ? "die Stelle steht noch in der Fläche" : "die Stelle existiert nicht mehr — die Fläche malt aus --type-*-hex",
+        schuldZitat ? `benannt: ${schuldZitat.sitze} (${schuldZitat.wer})` : "zitierte Stelle muss existieren",
+        schuldZitat ? schuldZitat.warum : szenePfad, lebt || (schuldZitat ? schuldZitat.treffer : false));
+    }
+  }
+}
+
 // ---------------------------------------------------------------- Bericht
 
 const GRUPPEN = {
@@ -1298,11 +1733,14 @@ const GRUPPEN = {
   kanten: "Trennlinien — gegen beide Nachbarn",
   text: "Schriftebenen — gegen jede Fläche, auf der sie liegt",
   schichten: "Schicht-Rechnung — Text gegen das komponierte Bild (Ambient, Tinte, Scrim, Stahl-Lagen)",
+  typ: "Typ-Farben der Fläche — Token statt Hartwert, beide Kanäle, Ratsche",
   seitenleiste: "Stahl-Seitenleiste — Inline-Farben über den Gradient-Enden",
+  kontrast: "increased contrast — das generierte Schema, gleiche Untergrenze",
   var: "Custom Properties — Auflösung aus src/**",
   schrift: "Schriftgrößen und Gewichte",
   icons: "Icon-Vertrag — Namen, Pfad-Daten, Größen",
   css: "CSS-Handwerk — Waisen, Zeitmaße",
+  szenen: "Film-Fläche — die Kopie des Registers gegen das Original",
 };
 const nur = process.argv.includes("--abschnitt") ? process.argv[process.argv.indexOf("--abschnitt") + 1] : null;
 const leise = process.argv.includes("--leise");

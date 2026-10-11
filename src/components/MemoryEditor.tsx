@@ -163,7 +163,7 @@ export function MemoryEditor({ memory, onSave, onClose, onDelete }: MemoryEditor
       >
         <header className="flex items-center justify-between p-5 shrink-0" style={{ borderBottom: '1px solid var(--border-subtle)' }}>
           <div className="flex items-center gap-3">
-            <KeptaMark size={30} radius={8} />
+            <KeptaMark size={30} />
             <div>
               <h2 className="text-[15px] font-semibold" style={{ color: 'var(--text-1)' }}>
                 {memory?.id ? 'Edit note' : 'New note'}
@@ -330,7 +330,7 @@ export function MemoryEditor({ memory, onSave, onClose, onDelete }: MemoryEditor
                       <input type="date" value={validFrom} onChange={(e) => setValidFrom(e.target.value)} className="hud-input rounded-lg px-3 py-2 text-sm" />
                     </label>
                     <label className="flex flex-col gap-1.5">
-                      <span className="text-xs" style={{ color: 'var(--text-3)' }}>Valid until (empty = unlimited)</span>
+                      <span className="text-xs" style={{ color: 'var(--text-3)' }}>Valid until (empty = no end date)</span>
                       <input type="date" value={validTo} onChange={(e) => setValidTo(e.target.value)} className="hud-input rounded-lg px-3 py-2 text-sm" />
                     </label>
                   </div>

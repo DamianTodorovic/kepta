@@ -116,6 +116,39 @@ describe("Token-Form in src/index.css", () => {
     expect(css).toMatch(/\.huelle-schmal \.seiten-leiste\s*\{[^}]*position:\s*fixed/s);
     expect(css).toMatch(/\.flaeche-huelle div:has\(> #graph-search-count\)\s*\{[^}]*flex-wrap:\s*nowrap/s);
   });
+  it("kennt Schichten, Medienabfragen und ihr Schema", () => {
+    // Die drei Abfragen, die D1-12 fehlten, plus die Ruhe-Antwort.
+    for (const mq of ["prefers-reduced-motion", "prefers-contrast: more", "forced-colors: active", "prefers-reduced-transparency: reduce"]) {
+      expect(css, `es fehlt @media (${mq})`).toContain(`(${mq}`);
+    }
+    // Das increased-contrast-Schema ist generiert, nicht von Hand gesetzt:
+    // es trägt seinen Marker und beide Theme-Blöcke.
+    expect(css).toMatch(/generiert: increased contrast/);
+    const schema = css.slice(css.indexOf("@media (prefers-contrast: more)"));
+    // Das Schema härtet die Tinte und die Linien, nicht die Leiter: drei Stufen
+    // zwischen Weiß und Schwarz lassen sich nur weiter spreizen, indem eine
+    // Endstufe wandert, und die Endstufe ist das Gegenüber der Schrift.
+    // Gemessen am 11.10.: --text-1 fiel dabei von 9,89 auf 7,31 (dunkel).
+    for (const block of [/:root\s*\{[\s\S]*?\}/, /\.dark\s*\{[\s\S]*?\}/]) {
+      const a = block.exec(schema)?.[0] ?? "";
+      for (const n of ["--text-1", "--text-2", "--text-3", "--kante-kontrolle", "--fokus"]) {
+        expect(a, `das Schema nennt ${n} nicht`).toContain(`${n}:`);
+      }
+      expect(a, "das Schema verschiebt die Flächenleiter").not.toMatch(/--eb-0:/);
+      expect(a, "das Schema verschiebt die Flächenleiter").not.toMatch(/--feld:/);
+    }
+    // Jede Typ-Rolle hat ihren sRGB-Kanal auch im Schema — sonst malt die
+    // Leinwand im erhöhten Kontrast das Bild des normalen.
+    for (const n of ["--type-semantic", "--type-neutral", "--type-herkunft-datei"]) {
+      expect(schema, `das Schema nennt ${n} nicht`).toContain(`${n}:`);
+      expect(schema, `das Schema nennt ${n}-hex nicht`).toContain(`${n}-hex:`);
+    }
+    // Die Stahl-Lagen sind Lagen (Alpha), keine erfundenen Deckfarben.
+    expect(css).toMatch(/--side-flaeche: oklch\(1 0 0 \/ 0\.045\)/);
+    expect(css).toMatch(/--side-auswahl: oklch\(1 0 0 \/ 0\.07\)/);
+    // Und was huelle.css (E3) gebraucht hat, ist da.
+    for (const n of ["--side-leise", "--side-kante-heben"]) expect(css).toContain(`${n}:`);
+  });
 });
 
 describe("Iconvertrag in src/lib/icons.tsx", () => {

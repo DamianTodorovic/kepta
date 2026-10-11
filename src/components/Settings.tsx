@@ -389,7 +389,7 @@ export function Settings() {
         className="hud-panel rounded-2xl p-6 md:p-8"
       >
         <div className="flex items-center gap-4 mb-6 pb-6" style={{ borderBottom: '1px solid var(--border-subtle)' }}>
-          <KeptaMark size={40} radius={10} />
+          <KeptaMark size={40} />
           <div>
             <h2 className="text-lg font-semibold" style={{ color: 'var(--text-1)' }}>Settings</h2>
             <p className="text-sm mt-1" style={{ color: 'var(--text-2)' }}>AI connection, data and MCP</p>

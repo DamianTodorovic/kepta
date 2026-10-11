@@ -58,7 +58,7 @@ import {
 } from "../lib/graphHierarchy";
 import { layoutSemantik, SEMANTIK_KAPPE, type SemantikKarte } from "../lib/graphSemantik";
 import { schemaInventar, SCHEMA_SCHLUESSEL, type SchemaKante } from "../lib/graphSchema";
-import { herkunftsBild, HERKUNFT_FARBEN, HERKUNFT_LABELS } from "../lib/graphHerkunft";
+import { HERKUNFT, herkunftsBild, HERKUNFT_TOKEN, HERKUNFT_LABELS } from "../lib/graphHerkunft";
 
 export type GraphAnsicht = "force" | "dendrogram" | "semantic";
 const ANSICHT_KEY = "kepta_graph_view";
@@ -431,12 +431,61 @@ export function kantenZeilen(i: KantenInfo): { grund: string; frist: string | nu
   return { grund, frist };
 }
 
-const DEFAULT_TYPE_COLORS: Record<string, string> = {
-  semantic: "#56749a",
-  episodic: "#916b85",
-  procedural: "#62866b",
-  reference: "#97785b",
+/**
+ * Die Palette der Fläche steht in `src/index.css`, hier nur ihr Name. Zwei
+ * Kanäle, eine Farbe: `--type-*` (oklch) für jeden CSS-Verbraucher — Karten-
+ * Grat, Index-Zahlen, Legendenpunkt — und `--type-*-hex` (derselbe Wert in
+ * sRGB) für die zwei Stellen, die kein oklch sprechen: die Leinwand
+ * (`canvas.fillStyle`) und der Farbregler (`<input type="color">` verlangt
+ * zwingend `#rrggbb`). Beide schreibt `scripts/design-wache.mjs --setzen`;
+ * die Wache misst die Kanäle gegeneinander, damit keiner abdriftet.
+ *
+ * Vorher standen die Werte als Hex-Literal in dieser Datei und ein Kommentar
+ * behauptete „alle ≥ 4,65", während das Bild 3,91 zeigte (B1, 10.10.).
+ */
+const TYP_FOLGE = ["semantic", "episodic", "procedural", "reference"] as const;
+const TYP_TOKEN: Record<string, string> = {
+  semantic: "--type-semantic",
+  episodic: "--type-episodic",
+  procedural: "--type-procedural",
+  reference: "--type-reference",
+  neutral: "--type-neutral",
 };
+const ROLLEN_TOKEN: Record<string, string> = { ...TYP_TOKEN, ...HERKUNFT_TOKEN };
+
+/** Eine eigene Farbwahl überschreibt beide Kanäle desselben Tokens — sonst
+ *  malt die Leinwand die Wahl und das Blatt den Registerton. */
+function setTypVar(rolle: string, wert: string) {
+  document.documentElement.style.setProperty(`--type-${rolle}`, wert);
+  document.documentElement.style.setProperty(`--type-${rolle}-hex`, wert);
+}
+
+function leseRollenHexe(): Record<string, string> {
+  if (typeof document === "undefined") return {};
+  const stil = getComputedStyle(document.documentElement);
+  const out: Record<string, string> = {};
+  for (const [rolle, token] of Object.entries(ROLLEN_TOKEN)) {
+    const wert = stil.getPropertyValue(`${token}-hex`).trim();
+    if (/^#[0-9a-f]{6}$/i.test(wert)) out[rolle] = wert;
+  }
+  return out;
+}
+
+/**
+ * Die Farben wechseln mit dem Theme, und der Theme-Effekt eines Vorfahren läuft
+ * NACH dem der Kinder: ein Render allein sähe beim Umschalten noch die alte
+ * Klasse. Beobachtet wird deshalb die Wurzel selbst.
+ */
+function useRollenHexe(): Record<string, string> {
+  const [hexe, setHexe] = useState<Record<string, string>>(leseRollenHexe);
+  useEffect(() => {
+    const beob = new MutationObserver(() => setHexe(leseRollenHexe()));
+    beob.observe(document.documentElement, { attributes: true, attributeFilter: ["class"] });
+    setHexe(leseRollenHexe());
+    return () => beob.disconnect();
+  }, []);
+  return hexe;
+}
 
 /** So viele Beschriftungen zeigt der Graph hoechstens gleichzeitig. */
 const MAX_LABELS = 140;
@@ -530,8 +579,19 @@ function leseNamenStufe(roh: string | null): EtikettModus {
  * dem Fit. Gemessen bei 1 500 Notizen (12 % Zoom): 1,4 px. Eine Flaeche, deren
  * Titel man erst beim Heranzoomen lesen kann, benennt nichts.
  *
- * 9 px ist die Untergrenze, die A7 als Ziel gesetzt hat; 11 px ist der Wert, den
- * die Flaeche bei kleinem Bestand immer schon hatte.
+ * Die Leiter der Flaeche hat eine unterste Stufe: E1s `--fs-1` = 11 px
+ * (index.css:147, "acht Stufen, ganzzahlig, keine unter 11 px"). Was kleiner
+ * gemalt wurde — 9,4 / 9,0 / 8,6 px — war eine Zwischenstufe, die niemand
+ * gesetzt hat. E1s Satz gilt deshalb auch im Gemaelde: wer kleiner will,
+ * waehlt die Stufe, und die Stufe heisst 11.
+ *
+ * Zuruecktreten leisten Gewicht und Farbe (--text-2, --text-3), nicht die
+ * Groesse. Die Gewichte sind E1s Leiter (index.css:182-184: 400 ruhig,
+ * 600 halbfest, 700 fest); das 500 vorher war ein erfundener Wert, und E1s
+ * eigene Notiz sagt, warum das zaehlt: zwischen 400 und 600 kollabiert auf
+ * Windows alles auf zwei Stufen, und die halbe Hierarchie verschwindet.
+ *
+ * Messgrundlage: vorher der ganze Text des Bildes, tiefste Stufe 9 px.
  */
 const ETIKETT_PX = 11;
 /**
@@ -615,8 +675,14 @@ const GLYPH_TINTE_DUNKEL = "#141412";
 
 /**
  * Ein Zeichen mittig in der Scheibe: der Buchstabe einer Art, die Zahl dessen,
- * was ein Begriff traegt. Die Groesse sitzt im Verhaeltnis zum Radius, damit
- * der Glyph beim Zoomen nicht umfaerbt.
+ * was ein Begriff traegt.
+ *
+ * Die Groesse sitzt im Verhaeltnis zum Radius, damit der Glyph beim Zoomen nicht
+ * umfaerbt — aber die unterste Schriftstufe gilt AUF DEM SCHIRM, nicht in
+ * Welteinheiten. Der Radius kommt in Welteinheiten an, also wird die Stufe hier
+ * gegen den Zoom zurueckgerechnet. Das begrenzt die Scheibe von selbst: beide
+ * Aufrufer malen erst ab 15 Bildpunkten Radius, und drei Ziffern auf 11 px
+ * brauchen 19 Bildpunkte in eine 30er Scheibe.
  */
 function zeichneGlyph(
   ctx: CanvasRenderingContext2D,
@@ -624,10 +690,12 @@ function zeichneGlyph(
   y: number,
   radius: number,
   text: string,
-  fuellung: string
+  fuellung: string,
+  zoom: number
 ) {
   const hoehe = text.length > 2 ? 0.44 : text.length > 1 ? 0.56 : 0.78;
-  ctx.font = `700 ${Math.max(0.5, radius * hoehe)}px ui-sans-serif, system-ui, -apple-system, sans-serif`;
+  const stufe = ETIKETT_PX / Math.max(0.05, zoom);
+  ctx.font = `700 ${Math.max(radius * hoehe, stufe)}px ui-sans-serif, system-ui, -apple-system, sans-serif`;
   ctx.textAlign = "center";
   ctx.textBaseline = "middle";
   ctx.fillStyle = istHell(fuellung) ? GLYPH_TINTE_DUNKEL : GLYPH_TINTE_HELL;
@@ -932,7 +1000,15 @@ export function KnowledgeGraph({ memories, onSelectMemory, onSelectConcept, sich
   const [customTypeColors, setCustomTypeColors] = useState<Record<string, string>>(() => {
     try { return JSON.parse(localStorage.getItem("kepta_type_colors") || "{}"); } catch { return {}; }
   });
-  const TYPE_COLORS = useMemo(() => ({ ...DEFAULT_TYPE_COLORS, ...customTypeColors }), [customTypeColors]);
+  const rollenHexe = useRollenHexe();
+  const TYPE_COLORS = useMemo(() => {
+    const aus: Record<string, string> = {};
+    for (const rolle of [...TYP_FOLGE, "neutral"]) {
+      const wert = customTypeColors[rolle] ?? rollenHexe[rolle];
+      if (wert) aus[rolle] = wert;
+    }
+    return aus;
+  }, [rollenHexe, customTypeColors]);
   /**
    * Die Herkunft des Bestands — woher die Notizen kommen. Zwei Herkünfte sind
    * eine Auskunft, eine ist keine: dann bleibt der Kanal aus, mit dem Grund auf
@@ -943,20 +1019,21 @@ export function KnowledgeGraph({ memories, onSelectMemory, onSelectConcept, sich
     [memories]
   );
   const aktiverKanal: FarbKanal = herkunft.verfügbar ? kanal : "typ";
-  const notenFarben = useMemo(
-    () => (aktiverKanal === "herkunft" ? { ...HERKUNFT_FARBEN, neutral: "#9a9a9a" } : TYPE_COLORS),
-    [aktiverKanal, TYPE_COLORS]
-  );
+  const notenFarben = useMemo(() => {
+    if (aktiverKanal !== "herkunft") return TYPE_COLORS;
+    const aus: Record<string, string> = {};
+    for (const art of Object.values(HERKUNFT)) if (rollenHexe[art]) aus[art] = rollenHexe[art];
+    if (rollenHexe.neutral) aus.neutral = rollenHexe.neutral;
+    return aus;
+  }, [aktiverKanal, TYPE_COLORS, rollenHexe]);
 
   // Eine Typ-Farbe wirkt app-weit (Karten-Grat, Typ-Label, Index-Zahlen).
   useEffect(() => {
-    for (const t of Object.keys(customTypeColors)) {
-      document.documentElement.style.setProperty(`--type-${t}`, customTypeColors[t]);
-    }
+    for (const t of Object.keys(customTypeColors)) setTypVar(t, customTypeColors[t]);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
   const setTypeColor = (t: string, c: string) => {
-    document.documentElement.style.setProperty(`--type-${t}`, c);
+    setTypVar(t, c);
     setCustomTypeColors((prev) => {
       const next = { ...prev, [t]: c };
       try { localStorage.setItem("kepta_type_colors", JSON.stringify(next)); } catch { /* ignore */ }
@@ -1806,10 +1883,9 @@ export function KnowledgeGraph({ memories, onSelectMemory, onSelectConcept, sich
       const schluessel = `${JSON.stringify(farben)}|${rim}|${hi.toFixed(2)}`;
       if (spriteCache.current?.schluessel === schluessel) return spriteCache.current.bilder;
       const bilder: Record<string, HTMLCanvasElement> = {};
-      const eintraege: [string, string][] = [
-        ...Object.keys(farben).map((t) => [t, farben[t]] as [string, string]),
-        ["neutral", "#9a9a9a"],
-      ];
+      // Der Knoten ohne Art hat einen Eintrag in der Palette, kein Bild aus
+      // einer Handfarbe: `neutral` steht als Token im Register.
+      const eintraege: [string, string][] = Object.keys(farben).map((t) => [t, farben[t]] as [string, string]);
       for (const [name, farbe] of eintraege) {
         const c = document.createElement("canvas");
         c.width = SPRITE_PX;
@@ -2294,7 +2370,7 @@ export function KnowledgeGraph({ memories, onSelectMemory, onSelectConcept, sich
       const rr = Math.max(rrBasis, MIN_KNOTEN_PX / t.k);
       const herkunftArt = aktiverKanalRef.current === "herkunft" ? herkunftRef.current.get(n.id) : undefined;
       const typ = herkunftArt ?? (m.type && sp[m.type] ? m.type : "neutral");
-      const farbe = notenFarbenRef.current[typ] ?? "#9a9a9a";
+      const farbe = notenFarbenRef.current[typ];
 
       // Winzig: sammeln statt einzeln malen.
       //
@@ -2365,7 +2441,7 @@ export function KnowledgeGraph({ memories, onSelectMemory, onSelectConcept, sich
         // (unter 15 Bildpunkten) wäre er ein Fussel, und dieser Pfad malt
         // Zehntausende Knoten — dort darf nichts on top kommen.
         const buchstabe = GLYPH_FUER_ART[m.type ?? ""];
-        if (buchstabe) zeichneGlyph(ctx, n.x, n.y, rr, buchstabe, farbe);
+        if (buchstabe) zeichneGlyph(ctx, n.x, n.y, rr, buchstabe, farbe, t.k);
       } else {
         const bild = sp[typ];
         if (bild) {
@@ -2442,7 +2518,10 @@ export function KnowledgeGraph({ memories, onSelectMemory, onSelectConcept, sich
       for (const n of sim.nodes) {
         const s = struktur.get(n.id);
         if (!s || !imBild(n)) continue;
-        const farbe = (s.farbe && farbenRef.current[s.farbe]) || "#9a9a9a";
+        // Ein Gerüst-Knoten ohne Art trägt die neutrale Rolle desselben
+        // Registers, nicht eine Handfarbe: Wurzel, Typ und Entität sind keine
+        // Notiz.
+        const farbe = (s.farbe && farbenRef.current[s.farbe]) || farbenRef.current.neutral;
         ctx.globalAlpha = 1;
         ctx.fillStyle = farbe;
         ctx.beginPath();
@@ -2469,7 +2548,7 @@ export function KnowledgeGraph({ memories, onSelectMemory, onSelectConcept, sich
             text: `×${s.verdeckt ?? s.blaetter ?? 0}`,
           });
         } else if (n.r * t.k >= VEKTOR_AB_PX && s.blaetter !== undefined && s.blaetter > 1 && s.blaetter < 1000) {
-          zeichneGlyph(ctx, n.x, n.y, n.r, String(s.blaetter), farbe);
+          zeichneGlyph(ctx, n.x, n.y, n.r, String(s.blaetter), farbe, t.k);
         }
       }
     }
@@ -2554,11 +2633,12 @@ export function KnowledgeGraph({ memories, onSelectMemory, onSelectConcept, sich
     // Vorher liefen sie als einziger Text außerhalb des Rasters und in derselben
     // Schrift wie der Inhalt: die Ebenen standen wie eine zweite Titelspalte im
     // Bild. Jetzt weicht jede Notiz, die in den Namen einer Ebene fiele, und
-    // das Gerüst tritt mit --text-2 und kleinerer Schrift zurück.
+    // das Gerüst tritt mit --text-2 zurueck. Nicht mit Groesse: die Leiter
+    // hat nichts unter 11 px, also unterscheidet hier das Gewicht.
     if (struktur) {
       ctx.textAlign = "left";
       ctx.textBaseline = "middle";
-      ctx.font = `600 ${fs * 0.82}px ui-sans-serif, system-ui, -apple-system, sans-serif`;
+      ctx.font = `400 ${fs}px ui-sans-serif, system-ui, -apple-system, sans-serif`;
       for (const n of sim.nodes) {
         const s = struktur.get(n.id);
         if (!s || s.keinEtikett || !imBild(n)) continue;
@@ -2589,7 +2669,7 @@ export function KnowledgeGraph({ memories, onSelectMemory, onSelectConcept, sich
       }
     }
 
-    ctx.font = `500 ${fs}px ui-sans-serif, system-ui, -apple-system, sans-serif`;
+    ctx.font = `600 ${fs}px ui-sans-serif, system-ui, -apple-system, sans-serif`;
     ctx.textAlign = "center";
     ctx.textBaseline = "top";
 
@@ -2625,11 +2705,11 @@ export function KnowledgeGraph({ memories, onSelectMemory, onSelectConcept, sich
       benannt++;
       if (hov === n.id && m.tags.length > 0) {
         const tags = m.tags.slice(0, 3).join(" · ");
-        ctx.font = `400 ${fs * 0.85}px ui-sans-serif, system-ui, sans-serif`;
+        ctx.font = `400 ${fs}px ui-sans-serif, system-ui, sans-serif`;
         ctx.strokeText(tags, mitteX, mitteY + fs * 1.15);
         ctx.fillStyle = schwach;
         ctx.fillText(tags, mitteX, mitteY + fs * 1.15);
-        ctx.font = `500 ${fs}px ui-sans-serif, system-ui, sans-serif`;
+        ctx.font = `600 ${fs}px ui-sans-serif, system-ui, sans-serif`;
       }
     }
 
@@ -2640,7 +2720,7 @@ export function KnowledgeGraph({ memories, onSelectMemory, onSelectConcept, sich
     // Rapport der Kantengrenze — hier wird sie nur abgelesen, nie gerechnet.
     const versteckte = versteckteRef.current;
     if (versteckte.size > 0) {
-      ctx.font = `600 ${fs * 0.78}px ui-sans-serif, system-ui, -apple-system, sans-serif`;
+      ctx.font = `600 ${fs}px ui-sans-serif, system-ui, -apple-system, sans-serif`;
       ctx.textAlign = "left";
       ctx.textBaseline = "middle";
       for (const n of sim.nodes) {
@@ -2661,7 +2741,7 @@ export function KnowledgeGraph({ memories, onSelectMemory, onSelectConcept, sich
         ctx.fillText(`+${zahl}`, bx, by);
       }
       ctx.textBaseline = "top";
-      ctx.font = `500 ${fs}px ui-sans-serif, system-ui, -apple-system, sans-serif`;
+      ctx.font = `600 ${fs}px ui-sans-serif, system-ui, -apple-system, sans-serif`;
     }
 
     // --- Malzeichen der Faltung: ×N ueber der Gruppe ---
@@ -2681,7 +2761,7 @@ export function KnowledgeGraph({ memories, onSelectMemory, onSelectConcept, sich
         ctx.fillText(b.text, b.sx, b.sy);
       }
       ctx.textBaseline = "top";
-      ctx.font = `500 ${fs}px ui-sans-serif, system-ui, -apple-system, sans-serif`;
+      ctx.font = `600 ${fs}px ui-sans-serif, system-ui, -apple-system, sans-serif`;
     }
 
     // --- Kanten-Etiketten: der Typ steht an der Linie ---
@@ -2696,7 +2776,7 @@ export function KnowledgeGraph({ memories, onSelectMemory, onSelectConcept, sich
       // Vorrang: die Kante unter dem Zeiger, dann die mit der meisten Evidenz.
       const rang = (e: LayoutEdge) => (e === gehalten ? 1_000_000 : 0) + (e.belege ?? 1) * 100 - kantenEtikett(e)!.length;
       const kandidaten = [...etikettenmoeglich].sort((x, y) => rang(y) - rang(x)).slice(0, MAX_KANTEN_ETIKETTEN);
-      ctx.font = `600 ${fs * 0.82}px ui-sans-serif, system-ui, -apple-system, sans-serif`;
+      ctx.font = `400 ${fs}px ui-sans-serif, system-ui, -apple-system, sans-serif`;
       ctx.textAlign = "center";
       ctx.textBaseline = "middle";
       for (const e of kandidaten) {
@@ -2720,7 +2800,7 @@ export function KnowledgeGraph({ memories, onSelectMemory, onSelectConcept, sich
         ctx.fillStyle = eigne ? akzent : textFarbe;
         ctx.fillText(text, sx, sy);
       }
-      ctx.font = `500 ${fs}px ui-sans-serif, system-ui, -apple-system, sans-serif`;
+      ctx.font = `600 ${fs}px ui-sans-serif, system-ui, -apple-system, sans-serif`;
       ctx.textBaseline = "top";
     }
     // --- Der Gang: die Zeile am Ort der Punkte ------------------------------
@@ -2734,23 +2814,33 @@ export function KnowledgeGraph({ memories, onSelectMemory, onSelectConcept, sich
       const ankerY = sim.alleinAnker.y * t.k + t.y;
       const breite = Math.min(dimensions.w - 24, GANG_SPALTEN * GANG_ABSTAND * t.k);
       const x0 = Math.max(12, ankerX - breite / 2);
-      if (ankerY > -40 && ankerY < dimensions.h + 40) {
-        ctx.globalAlpha = 1;
+      const zeilen = Math.ceil(sim.allein / GANG_SPALTEN);
+      const letzteZeile = ankerY + (zeilen - 1) * GANG_ABSTAND * t.k;
+      if (ankerY > -40 && letzteZeile < dimensions.h + 80) {
+        const text = `${sim.allein.toLocaleString("en-US")} notes connect to nothing in this picture`;
+        ctx.globalAlpha = 0.34;
         ctx.strokeStyle = textFarbe;
         ctx.lineWidth = 1;
-        ctx.globalAlpha = 0.34;
         ctx.beginPath();
         ctx.moveTo(x0, ankerY - 22);
         ctx.lineTo(Math.min(dimensions.w - 12, x0 + breite), ankerY - 22);
         ctx.stroke();
         ctx.globalAlpha = 1;
-        ctx.font = `500 ${fs * 0.86}px ui-sans-serif, system-ui, -apple-system, sans-serif`;
+        ctx.font = `400 ${fs}px ui-sans-serif, system-ui, -apple-system, sans-serif`;
         ctx.textAlign = "left";
-        ctx.textBaseline = "bottom";
+        ctx.textBaseline = "top";
+        // Die Zeile steht UNTER dem Band, nicht darüber.
+        //
+        // Darüber braucht sie Abstand zum tiefsten Kernknoten — und der ist in
+        // WELTeinheiten nicht zu haben: bei 42 % Zoom waren 140 Einheiten genug
+        // Luft, bei 28 % (das schmale Fenster) lag der Satz quer über
+        // „Werkstatt Werkzeug 0015". Ein Band, das seinen Titel selbst trägt,
+        // kann ihn nicht über etwas legen, das schon dort stand.
+        ctx.lineWidth = 3;
+        ctx.strokeStyle = grundFarbe;
+        ctx.strokeText(text, x0, letzteZeile + GANG_ABSTAND * t.k * 0.5 + 6);
         ctx.fillStyle = geruestFarbe;
-        const zahl = sim.allein.toLocaleString("en-US");
-        ctx.strokeText(`${zahl} notes connect to nothing in this picture`, x0, ankerY - 26);
-        ctx.fillText(`${zahl} notes connect to nothing in this picture`, x0, ankerY - 26);
+        ctx.fillText(text, x0, letzteZeile + GANG_ABSTAND * t.k * 0.5 + 6);
       }
     }
 
@@ -3537,7 +3627,7 @@ export function KnowledgeGraph({ memories, onSelectMemory, onSelectConcept, sich
       {zeitStandMs !== null && (
         <button
           onClick={() => setzeSlider(100)}
-          className="btn-ghost px-1.5 py-0.5 rounded text-[10px] ml-1"
+          className="btn-ghost px-1.5 py-1 rounded text-[11px] ml-1"
           title="Back to now"
         >
           Today
@@ -3545,7 +3635,20 @@ export function KnowledgeGraph({ memories, onSelectMemory, onSelectConcept, sich
       )}
     </span>
   );
-  const zeitRegler = (
+  /**
+   * Der Zeitregler. `imMenue` aendert nur eines: wie die Trefferflaeche
+   * entstehen darf.
+   *
+   * Die Zeichnung ist E1s 16-px-Linie (index.css:777) und bleibt 16 px hoch.
+   * Die Box waechst auf 44 px — in der Zeile mit gegenlaeufigem Rand, damit
+   * nichts rueckt (gemessen: die Leiste ist 51 px hoch, der Regler faellt
+   * exakt in ihre 12-px-Polster, alle vier Saume treffen ihn selbst). Im Menue
+   * stehen die Reihen 12 px auseinander; derselbe Gegenrand haette dem
+   * Nachbarn die Flaeche gestohlen — gemessen am 11.10.: `unten` traf den
+   * Direction-Knopf, `oben` das Suchfeld. Also wachst dort die Reihe, statt
+   * dass sie ueberlappt.
+   */
+  const zeitRegler = (imMenue = false) => (
     <span
       className="inline-flex items-center gap-1.5 shrink-0"
       title={
@@ -3567,6 +3670,11 @@ export function KnowledgeGraph({ memories, onSelectMemory, onSelectConcept, sich
         onKeyUp={() => setSliderCommit(sliderWert)}
         onBlur={() => setSliderCommit(sliderWert)}
         className="graph-time"
+        style={
+          imMenue
+            ? { boxSizing: "content-box", paddingBlock: "14px" }
+            : { boxSizing: "content-box", paddingBlock: "14px", marginBlock: "-14px" }
+        }
         /* Der Name bleibt der alte, unverstaendliche Satz ohne Anhaengsel:
            sechs Tests und F8s Messstrasse fassen den Regler ueber ihn. Die
            Skalenenden stehen im `title` derselben Gruppe — Auskunft ja, aber
@@ -3674,15 +3782,15 @@ export function KnowledgeGraph({ memories, onSelectMemory, onSelectConcept, sich
   );
   const farbenReihe = (
     <div className="flex items-center gap-0.5 shrink-0" title="Node colours — each colour tints its type across the graph, cards and index">
-      {(["semantic", "episodic", "procedural", "reference"] as const).map((t) => (
+      {TYP_FOLGE.map((t) => (
         <input
           key={t}
           type="color"
-          value={TYPE_COLORS[t]}
+          value={TYPE_COLORS[t] ?? ""}
           onChange={(e) => setTypeColor(t, e.target.value)}
           title={`Colour: ${TYP_LABELS[t]} — tints the nodes, their card ridge and the index numbers`}
           className="graph-swatch"
-          style={{ color: TYPE_COLORS[t] }}
+          style={{ color: `var(${TYP_TOKEN[t]})` }}
         />
       ))}
     </div>
@@ -3715,7 +3823,7 @@ export function KnowledgeGraph({ memories, onSelectMemory, onSelectConcept, sich
       case "schema": return schalterSchema;
       case "krafte": return schalterKrafte;
       case "zeitstand": return zeitStand;
-      case "zeitregler": return zeitRegler;
+      case "zeitregler": return zeitRegler(true);
       case "datum": return datumsFeld;
       case "zoom": return zoomReihe;
     }
@@ -3786,7 +3894,7 @@ export function KnowledgeGraph({ memories, onSelectMemory, onSelectConcept, sich
         <div className="flex items-center gap-2 ml-auto shrink-0">
           {zeitAchse && drin("zeitstand") && zeitStand}
           {zeitAchse && drin("datum") && datumsFeld}
-          {zeitAchse && drin("zeitregler") && zeitRegler}
+          {zeitAchse && drin("zeitregler") && zeitRegler(false)}
           {drin("zoom") && zoomReihe}
           {plan.menue.length > 0 && (
             <button
@@ -3836,7 +3944,7 @@ export function KnowledgeGraph({ memories, onSelectMemory, onSelectConcept, sich
             <div className="hud-label" style={{ color: "var(--text-2)" }}>
               {plan.menue.length} out of the row — everything here works the same
             </div>
-            <button onClick={() => setzeMehrOffen(false)} className="btn-ghost px-2 py-0.5 rounded text-[11px]" title="Close">
+            <button onClick={() => setzeMehrOffen(false)} className="btn-ghost px-2 py-1 rounded text-[11px]" title="Close">
               Close
             </button>
           </div>
@@ -4062,7 +4170,7 @@ export function KnowledgeGraph({ memories, onSelectMemory, onSelectConcept, sich
             </div>
             <div className="hud-label">{kantZeilen!.grund}</div>
             {kantZeilen!.frist && (
-              <div className="text-[10px] tnum" style={{ color: "var(--text-3)" }}>
+              <div className="text-[11px] tnum" style={{ color: "var(--text-3)" }}>
                 {kantZeilen!.frist}
               </div>
             )}
@@ -4095,12 +4203,12 @@ export function KnowledgeGraph({ memories, onSelectMemory, onSelectConcept, sich
             {aktiverKanal === "herkunft"
               ? herkunft.arten.map((a) => (
                   <span key={a} className="flex items-center gap-1.5">
-                    <span className="w-2 h-2 rounded-full" style={{ background: HERKUNFT_FARBEN[a] }} /> {HERKUNFT_LABELS[a]}
+                    <span className="w-2 h-2 rounded-full" style={{ background: `var(${HERKUNFT_TOKEN[a]})` }} /> {HERKUNFT_LABELS[a]}
                   </span>
                 ))
-              : (["semantic", "episodic", "procedural", "reference"] as const).map((t) => (
+              : TYP_FOLGE.map((t) => (
                   <span key={t} className="flex items-center gap-1.5">
-                    <span className="w-2 h-2 rounded-full" style={{ background: TYPE_COLORS[t] }} /> {TYP_LABELS[t]}
+                    <span className="w-2 h-2 rounded-full" style={{ background: `var(${TYP_TOKEN[t]})` }} /> {TYP_LABELS[t]}
                   </span>
                 ))}
           </div>

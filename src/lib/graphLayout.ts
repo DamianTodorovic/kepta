@@ -152,8 +152,20 @@ export const COLLIDE_PADDING = 14;
  * Paar nur noch einmal statt zweimal und braucht dadurch einen Durchgang mehr,
  * bis eine dichte Clique steht. Unterm Strich ist das trotzdem ein Bruchteil
  * der alten Kosten — bei 25 000 Knoten 11,4 ms statt 73,2 ms.
+ *
+ * Acht, gemessen am 11.10. an einem Feld wie dem veraeusserten: 3 000 Notizen an
+ * 27 Begriffen (≈ 111 Notizen je Hub) liessen mit vier Durchgaengen 9 Paare von
+ * 3 027 Scheiben uebereinander stehen und 390 im Moment des Oeffnens — die
+ * README-Zusage „never overlap" galt also weder in der Ruhe noch beim ersten
+ * Anblick. Die Scheidung der Kandidaten: ein einziger weiterer Nachlauf macht
+ * 7 942 Korrekturen, das Raster sieht die Paare, es fehlen nur die Durchgaenge.
+ * Mit acht: 0 Paare in der Ruhe, 15 beim Oeffnen, +2,1 ms pro Bild in der Physik
+ * (9,7 → 11,8 ms/Schritt bei 3 000 Knoten, Node ohne Rasterung). Bei 400 Notizen
+ * sind die 4,5 ms Basis die Grundlage, dort faellt der Zuwachs nicht ins
+ * Gewicht; bei 3 000 liegt er auf einem Wert, der das Bildbudget ohnehin
+ * verfehlt. Entscheidung der Leitung, Zahlen im Bericht (`docs/graph-kosten.md`).
  */
-export const COLLIDE_ITERATIONEN = 4;
+export const COLLIDE_ITERATIONEN = 8;
 /** Standardradius, wenn der Aufrufer keinen angibt. */
 export const DEFAULT_RADIUS = 10;
 const MAX_DEPTH = 26;
@@ -743,8 +755,16 @@ export function linkStaerken(nodes: readonly LayoutNode[], edges: readonly Layou
  */
 export const GANG_SPALTEN = 32;
 export const GANG_ABSTAND = 26;
-/** Luft zwischen dem untersten Kernknoten und der ersten Gangreihe. */
-export const GANG_RAND = 90;
+/**
+ * Luft zwischen dem untersten Kernknoten und der ersten Gangreihe.
+ *
+ * 90 war zu knapp: der unterste Kernknoten traegt eine Titelzeile von rund
+ * 14 Bildpunkten, und ueber der ersten Gangreihe steht die Zeile des Gangs
+ * selbst. Bei 44 % Zoom stossen beide in dieselbe Zeile — im Bild 10.10.
+ * („176 notes connect to nothing…" lag ueber „Werkzeug 0231"). 140 Einheiten
+ * sind der Platz fuer beide Zeilen plus ihren Atemzug.
+ */
+export const GANG_RAND = 140;
 
 /** Der i-te Platz im Gang, relativ zum Anker: Spalten zuerst, dann Zeilen. */
 export function gangPlatz(

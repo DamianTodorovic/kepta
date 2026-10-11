@@ -48,11 +48,16 @@ describe("Seitenleisten-Farbe: kein Inline-Wert an einer Fläche, die ein Theme 
     expect(STIL).toMatch(/--s-tinte/);
   });
 
-  it("kennt beide Themen als Klasse, nicht nur als Wunsch", () => {
-    // Die Maske schaltet das Thema über .dark an <html>. Eine Regel ohne diesen
-    // Anker kann das Produkt nicht erreichen.
-    expect(STIL).toMatch(/\.dark\s+\.seiten-leiste/);
-    expect(STIL).toMatch(/\.seiten-leiste(?![\s\S]{0,400}\.dark)/);
+  it("zieht den Stahl aus dem System, nicht aus einem eigenen Wert", () => {
+    // E1 hat die Triade gesetzt (index.css:112-119, 281-288) — in beiden
+    // Themen derselbe Satz. Eine eigene Farbe hier wäre ein zweites System.
+    for (const name of ["--side-text", "--side-ruhig", "--side-akzent", "--side-kante", "--side-flaeche", "--side-auswahl"]) {
+      expect(STIL, `huelle.css zieht ${name} nicht`).toContain(`var(${name}`);
+    }
+    // Was das System noch nicht hat, läuft über Fallback — nie über ein Literal,
+    // das niemand mehr findet.
+    const literale = STIL.replace(/\/\*[\s\S]*?\*\//g, "").match(/#[0-9a-fA-F]{3,8}\b|rgba?\(/g) ?? [];
+    expect(literale, `Litale statt Token: ${literale.join(", ")}`).toEqual(["#7fb08a"]);
   });
 
   it("antwortet auf erhöhten Kontrast", () => {
@@ -81,6 +86,50 @@ describe("Keine tote Variable: jede Referenz in der eigenen Fläche ist definier
       expect(fehlen, `${datei}: undefiniert und ohne Fallback → ${fehlen.join(", ")}`).toEqual([]);
     });
   }
+});
+
+describe("Seiten-Harmonie: die drei Ebenen bleiben in der Reihenfolge", () => {
+  const index = lese("src", "index.css");
+
+  /** oklch-L aus einer Token-Zeile, pro Blockabschnitt. */
+  function stufen(block: RegExp, wo: string) {
+    const ausschnitt = block.exec(index)?.[0] ?? "";
+    const h = (name: string) => {
+      const m = new RegExp(`${name}:\\s*oklch\\(\\s*([0-9.]+)`).exec(ausschnitt);
+      if (!m) throw new Error(`${name} fehlt im ${wo}-Block`);
+      return Number(m[1]);
+    };
+    return { text: h("--side-text"), ruhig: h("--side-ruhig"), leise: h("--side-leise"), basis: h("--side-basis-2") };
+  }
+
+  it("normal: text > ruhig > leise > Stahl", () => {
+    const s = stufen(/:root\s*\{[\s\S]*?\n\}/, "Wurzel");
+    expect(s.text, `text ${s.text} muss über ruhig ${s.ruhig} liegen`).toBeGreaterThan(s.ruhig);
+    expect(s.ruhig, `ruhig ${s.ruhig} muss über leise ${s.leise} liegen`).toBeGreaterThan(s.leise);
+    expect(s.leise, `leise ${s.leise} muss über dem Stahl ${s.basis} liegen`).toBeGreaterThan(s.basis);
+  });
+
+  it("erhöhter Kontrast: die leiseste Ebene überholt die Beschriftung nicht", () => {
+    // Gemessen am 11.10. mit E1s erster Anhebung (0,7516): die Metadaten-Ebene
+    // wurde heller als die Navigation — rgb(176,174,168) gegen rgb(164,162,155).
+    // Eine Anhebung, die die Rampe dreht, ist kein höherer Kontrast, sondern
+    // eine falsche Hierarchie.
+    // Der Kontrastblock erklärt **nur, was er anhebt** — was dort fehlt, behält
+    // den Basiswert, also wird die ruhige Ebene dort gelesen, wo sie steht.
+    const basis = stufen(/:root\s*\{[\s\S]*?\n\}/, "Wurzel");
+    const angehoben = /@media\s*\(prefers-contrast:\s*more\)\s*\{[\s\S]*?\n\}/.exec(index)?.[0] ?? "";
+    const m = /--side-leise:\s*oklch\(\s*([0-9.]+)/.exec(angehoben);
+    if (!m) throw new Error("--side-leise wird im Kontrastblock nicht angehoben — diese Wache meint genau das");
+    const leise = Number(m[1]);
+    expect(basis.ruhig, `ruhig ${basis.ruhig} muss über dem angehobenen leise ${leise} liegen`).toBeGreaterThan(leise);
+    expect(leise, `die Anhebung ${leise} soll über ihrem eigenen Basiswert ${basis.leise} liegen`).toBeGreaterThan(basis.leise);
+  });
+
+  it("dunkles Thema zieht dieselben Ebenen wie das helle", () => {
+    const hell = stufen(/:root\s*\{[\s\S]*?\n\}/, "Wurzel");
+    const dunkel = stufen(/\.dark\s*\{[\s\S]*?\n\}/, "Dunkelblock");
+    expect(dunkel).toEqual(hell);
+  });
 });
 
 describe("Zielgrößen-Vertrag: was klickbar ist, hat eine Fläche", () => {

@@ -71,7 +71,7 @@
      liegen kann: im hellen Thema der Tisch samt Ambient-Tinktur, nicht
      das Papier. Sonst sind die Zeilen auf dem Aktendeckel zu leise. */
   --text-1: oklch(0.2494 0.0035 228.9);   /* 8,72 gegen den Tisch */
-  --text-2: oklch(0.3342 0.0050 236.6);   /* 6,00 */
+  --text-2: oklch(0.3341 0.0050 236.6);   /* 6,00 */
   --text-3: oklch(0.3972 0.0046 236.5);   /* 4,65 — die Ebene, die erklärt */
   --text-muted: var(--text-2);
 
@@ -99,11 +99,31 @@
   --danger-soft: oklch(0.4431 0.1384 30.5 / 0.09);
   --err: var(--danger);
 
-  /* Knotentypen — Archivtinten, kühl gelesen, alle ≥ 4,65 */
-  --type-semantic: oklch(0.3963 0.0571 247.6);
-  --type-episodic: oklch(0.4061 0.0663 349.5);
+  /* Knotentypen — Archivtinten, kühl gelesen, alle ≥ 4,65.
+     Der Ton (C/H) ist die Marke, die Lichtstufe ist gerechnet gegen den
+     härtesten Stapel; --type-*-hex ist derselbe Wert im sRGB-Kanal, den
+     Leinwand (canvas.fillStyle) und Farbregler (<input type=color> verlangt
+     #rrggbb) lesen. Generiert von scripts/design-wache.mjs --setzen. */
+  --type-semantic: oklch(0.3962 0.0571 247.6);
+  --type-semantic-hex: #2d4964;
+  --type-episodic: oklch(0.4060 0.0663 349.5);
+  --type-episodic-hex: #643a4f;
   --type-procedural: oklch(0.3914 0.0553 148.0);
+  --type-procedural-hex: #304e34;
   --type-reference: oklch(0.4016 0.0580 56.6);
+  --type-reference-hex: #604028;
+  /* Ein Knoten ohne Art ist kein Knoten ohne Farbe: der Fallback stand als
+     Hartwert in der Fläche (#9a9a9a). Neutralton der Marke, Stufe gerechnet. */
+  --type-neutral: oklch(0.3955 0.0000 89.9);
+  --type-neutral-hex: #464646;
+  /* Der Herkunfts-Kanal — dieselbe Elevation-Logik, eigener Ton (Schiefer,
+     Lohe, Petrol), damit ein Kanalwechsel nicht wie ein Artenwechsel aussieht. */
+  --type-herkunft-geschrieben: oklch(0.3955 0.0107 252.9);
+  --type-herkunft-geschrieben-hex: #42474c;
+  --type-herkunft-datei: oklch(0.3955 0.1082 72.1);
+  --type-herkunft-datei-hex: #693a00;
+  --type-herkunft-rechner: oklch(0.3882 0.0769 189.6);
+  --type-herkunft-rechner-hex: #00514d;
 
   /* Die Stahl-Seitenleiste bleibt Stahl (Material-Entscheidung), aber sie
      bekommt Token statt Inline-Farben: nur so erreicht sie ein Theme und
@@ -114,7 +134,9 @@
   --side-text: oklch(0.9365 0.0027 106.5);
   --side-ruhig: oklch(0.7111 0.0097 91.6);    /* 7,68 auf dem Stahl */
   --side-akzent: oklch(0.7286 0.1552 30.7);   /* 8,35 auf dem Stahl */
-  --side-kante: oklch(0.5395 0.0026 286.0);   /* hält 3,05 auch über der hellsten Stahl-Lage */   /* 3,05 gegen den Stahl */
+  --side-kante: oklch(0.5395 0.0026 286.0);   /* 3,05 auch über der hellsten Stahl-Lage */
+  --side-leise: oklch(0.6425 0.0097 91.6);    /* leiseste Ebene auf dem Stahl, hält 4,68 auch über der hellsten Lage */
+  --side-kante-heben: oklch(0.6029 0.0026 286.0); /* Hover-Kante: 3,96 gegen den Stahl, die ruhende hält 3,05 */
   --side-flaeche: oklch(1 0 0 / 0.045);        /* Lage über dem Stahl: hover */
   --side-auswahl: oklch(1 0 0 / 0.07);         /* Lage über dem Stahl: die aktive Stelle */
 
@@ -232,7 +254,7 @@
   --bg-inset-strong: var(--eb-1);
   --bg-hover: var(--eb-1);
 
-  --kante-dekor: oklch(0.4378 0.0026 286.0);      /* 1,35 gegen das Blatt */
+  --kante-dekor: oklch(0.4379 0.0026 286.0);      /* 1,35 gegen das Blatt */
   --kante-stark: oklch(0.5174 0.0026 286.0);      /* 1,90 */
   --kante-kontrolle: oklch(0.6321 0.0026 286.0);  /* 3,05 — WCAG 1.4.11 */
   --border-subtle: var(--kante-dekor);
@@ -266,14 +288,30 @@
   --ok-soft: oklch(0.7118 0.0759 151.0 / 0.11);
   --warn: oklch(0.7464 0.1018 78.4);
   --warn-soft: oklch(0.7435 0.1018 78.4 / 0.11);
-  --danger: oklch(0.7580 0.1327 31.4);
+  --danger: oklch(0.7581 0.1327 31.4);
   --danger-soft: oklch(0.7258 0.1327 31.4 / 0.10);
   --err: var(--danger);
 
   --type-semantic: oklch(0.7430 0.0374 254.9);
-  --type-episodic: oklch(0.7503 0.0545 338.8);
+  --type-semantic-hex: #9cadc4;
+  --type-episodic: oklch(0.7504 0.0545 338.8);
+  --type-episodic-hex: #c6a1ba;
   --type-procedural: oklch(0.7444 0.0615 153.0);
+  --type-procedural-hex: #8fb89a;
   --type-reference: oklch(0.7463 0.0570 65.8);
+  --type-reference-hex: #c6a687;
+  /* Ein Knoten ohne Art ist kein Knoten ohne Farbe — der Fallback stand als
+     Hartwert in der Fläche (#9a9a9a). Neutralton, Stufe gerechnet. */
+  --type-neutral: oklch(0.7436 0.0000 89.9);
+  --type-neutral-hex: #acacac;
+  /* Der Herkunfts-Kanal — dieselbe Elevation-Logik, eigener Ton (Schiefer,
+     Lohe, Petrol), damit ein Kanalwechsel nicht wie ein Artenwechsel aussieht. */
+  --type-herkunft-geschrieben: oklch(0.7433 0.0107 252.9);
+  --type-herkunft-geschrieben-hex: #a7acb3;
+  --type-herkunft-datei: oklch(0.7481 0.1082 72.1);
+  --type-herkunft-datei-hex: #d8a25c;
+  --type-herkunft-rechner: oklch(0.7342 0.0769 189.6);
+  --type-herkunft-rechner-hex: #6cb9b3;
 
   /* Die Stahl-Seitenleiste: dieselben Werte, die Sidebar.tsx heute inline
      setzt — aber als Token, damit ein Theme und eine increased-contrast-
@@ -285,6 +323,8 @@
   --side-akzent: oklch(0.7286 0.1552 30.7);
   --side-kante: oklch(0.5395 0.0026 286.0);
   --side-flaeche: oklch(1 0 0 / 0.045);
+  --side-leise: oklch(0.6425 0.0097 91.6);
+  --side-kante-heben: oklch(0.6029 0.0026 286.0);
   --side-auswahl: oklch(1 0 0 / 0.07);
 
   --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.4);
@@ -1029,6 +1069,36 @@ svg[aria-hidden="true"] { min-block-size: var(--icon-min); min-inline-size: var(
   .card:hover, .hud-card:hover, .btn-primary:active, .btn-ghost:active { transform: none; }
 }
 
+/* ---------- Weniger Durchsicht ----------
+   D1-12 fand: `prefers-reduced-motion` war die einzige Medienabfrage der
+   ganzen Datei — bei fünf `backdrop-filter`-Regeln und einem Scrim ist das
+   eine Lücke. Wer Durchsicht ablehnt (weil der Inhalt dahinter durchscheint
+   oder weil es flackert), bekommt dieselben Flächen **deckend** und keinen
+   Weichzeichner. Die Leiter selbst ist schon opak; was hier fällt, sind die
+   Rest-Alphas: Ambiente-Tinktur, Scrim, Glas-Kanten. */
+@media (prefers-reduced-transparency: reduce) {
+  *, *::before, *::after { backdrop-filter: none !important; -webkit-backdrop-filter: none !important; }
+  #root::before { display: none; }
+  :root, .dark { --bg-ambient-1: transparent; --bg-ambient-2: transparent; --scrim: var(--eb-0); --edge-light: transparent; }
+  /* Ohne Tinktur liegt der Tisch allein — die Ruhe-Ebene hält dort schon
+     gerechnet (dunkel 5,11 · hell 4,83), die Wache prüft beide Fälle. */
+}
+
+/* ---------- Erzwungene Farben ----------
+   Windows nimmt Flächen und Schriften weg und setzt Systemfarben. Was dann
+   noch Bedeutung tragen muss, ist die Kontur und der kleine Zustands-Punkt. */
+@media (forced-colors: active) {
+  /* Der Ring bleibt der Ring — aber in Systemfarbe, damit er auf jedem
+     Hintergrund sichtbar ist, den das System gerade setzt. */
+  :where(a, button, input, textarea, select, summary, [role="button"], [role="checkbox"], [role="switch"], [tabindex], .switch):focus-visible,
+  .hud-input:focus-visible { outline: 2px solid Highlight; outline-offset: 2px; }
+  /* Status- und Siegelpunkt tragen ihre Bedeutung allein über die Farbe —
+     ohne Ausname fällt sie im erzwungenen Modus weg. */
+  .status-dot, .agent-dot, .method-badge[data-method="POST"] { forced-color-adjust: none; }
+  /* Kanten, die ein Bedienelement beranden, bleiben Kanten. */
+  .hud-input, .graph-datum, .switch, .btn-primary, .btn-ghost, .btn-danger-ghost, .method-badge, .apple-seg { border-color: CanvasText; }
+}
+
 /* ---------- Der Aktentisch — Registerzeilen statt Karten-Raster ----------
    Eine Notiz ist eine Zeile: Typ-Standarte links, Akte in der Mitte,
    Register-Meta rechts. Haarlinien trennen, nichts schwebt. */
@@ -1219,3 +1289,78 @@ button.row-quiet { cursor: pointer; }
   max-width: none;
   min-height: 0;
 }
+
+/* === generiert: increased contrast — design-wache --setzen, nicht von Hand === */
+@media (prefers-contrast: more) {
+  :root {
+    --text-3: oklch(0.2918 0.0046 236.5);
+    --text-2: oklch(0.2493 0.0050 236.6);
+    --text-1: oklch(0.1344 0.0035 228.9);
+    --warn: oklch(0.2985 0.1009 70.0);
+    --ok: oklch(0.2843 0.0676 155.6);
+    --danger: oklch(0.3089 0.1384 30.5);
+    --type-semantic: oklch(0.2912 0.0571 247.6);
+    --type-semantic-hex: #112e46;
+    --type-episodic: oklch(0.3007 0.0663 349.5);
+    --type-episodic-hex: #461f33;
+    --type-procedural: oklch(0.2861 0.0553 148.0);
+    --type-procedural-hex: #15321a;
+    --type-reference: oklch(0.2965 0.0580 56.6);
+    --type-reference-hex: #42240c;
+    --type-neutral: oklch(0.2921 0.0000 89.9);
+    --type-neutral-hex: #2c2c2c;
+    --type-herkunft-geschrieben: oklch(0.2919 0.0107 252.9);
+    --type-herkunft-geschrieben-hex: #282c31;
+    --type-herkunft-datei: oklch(0.2987 0.1082 72.1);
+    --type-herkunft-datei-hex: #4d1f00;
+    --type-herkunft-rechner: oklch(0.2829 0.0769 189.6);
+    --type-herkunft-rechner-hex: #003532;
+    --kante-kontrolle: oklch(0.4327 0.0027 106.5);
+    --kante-stark: oklch(0.4958 0.0027 106.5);
+    --kante-dekor: oklch(0.6090 0.0027 106.5);
+    --accent: oklch(0.3107 0.1510 29.9);
+    --accent-fuell: oklch(0.4640 0.1510 29.9);
+    --accent-kante: oklch(0.4640 0.1510 29.9);
+    --fokus: oklch(0.4506 0.1510 29.9);
+    --on-accent: oklch(0.9626 0.0131 82.4);
+    --side-kante: oklch(0.6050 0.0026 286.0);
+    --side-leise: oklch(0.6897 0.0097 91.6);
+    --side-kante-heben: oklch(0.6716 0.0026 286.0);
+  }
+  .dark {
+    --text-3: oklch(0.8635 0.0097 91.6);
+    --text-2: oklch(0.9057 0.0104 93.6);
+    --text-1: oklch(0.9800 0.0027 106.5);
+    --warn: oklch(0.8663 0.1018 78.4);
+    --ok: oklch(0.8549 0.0759 151.0);
+    --danger: oklch(0.8780 0.1327 31.4);
+    --type-semantic: oklch(0.8630 0.0374 254.9);
+    --type-semantic-hex: #c2d4eb;
+    --type-episodic: oklch(0.8704 0.0545 338.8);
+    --type-episodic-hex: #eec7e0;
+    --type-procedural: oklch(0.8564 0.0615 153.0);
+    --type-procedural-hex: #b2dcbd;
+    --type-reference: oklch(0.8663 0.0570 65.8);
+    --type-reference-hex: #eeccac;
+    --type-neutral: oklch(0.8636 0.0000 89.9);
+    --type-neutral-hex: #d2d2d2;
+    --type-herkunft-geschrieben: oklch(0.8634 0.0107 252.9);
+    --type-herkunft-geschrieben-hex: #cdd3d9;
+    --type-herkunft-datei: oklch(0.8680 0.1082 72.1);
+    --type-herkunft-datei-hex: #ffc882;
+    --type-herkunft-rechner: oklch(0.8543 0.0769 189.6);
+    --type-herkunft-rechner-hex: #92e0da;
+    --kante-kontrolle: oklch(0.7026 0.0026 286.0);
+    --kante-stark: oklch(0.6321 0.0026 286.0);
+    --kante-dekor: oklch(0.5174 0.0026 286.0);
+    --accent: oklch(0.8807 0.1552 30.7);
+    --accent-fuell: oklch(0.5651 0.1552 30.7);
+    --accent-kante: oklch(0.6965 0.1552 30.7);
+    --fokus: oklch(0.7198 0.1552 30.7);
+    --on-accent: oklch(0.9802 0.0137 67.7);
+    --side-kante: oklch(0.6050 0.0026 286.0);
+    --side-leise: oklch(0.6897 0.0097 91.6);
+    --side-kante-heben: oklch(0.6716 0.0026 286.0);
+  }
+}
+/* === Ende increased contrast === */

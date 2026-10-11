@@ -216,10 +216,15 @@ export function Dashboard() {
    * jemand anders. Gedämpft wird die Chrome (huelle.css), nie das Blatt, und
    * ein offener Dialog lässt den Zustand nicht verschwinden: der Schlüssel
    * gehört dem Fenster, nicht dem Panel.
+   *
+   * Der Start ist bewusst **optimistisch** und nicht aus `document.hasFocus()`:
+   * ein kopfloser Browser hat nie den Schlüssel, und diese Wohnung
+   * photographiert kopflos. Wäre der erste Zustand die Anfrage, erschiene in
+   * jedem Produktbild eine gedämpfte Fläche. Die Dämpfung soll eintreten, wenn
+   * das Fenster den Schlüssel *verliert* — nicht, wenn die Messung ihn nicht
+   * fragen kann.
    */
-  const [schluessel, setSchluessel] = useState(
-    () => typeof document === "undefined" || document.hasFocus()
-  );
+  const [schluessel, setSchluessel] = useState(true);
   useEffect(() => {
     // Die Ereignisse selbst sind die Auskunft, nicht `document.hasFocus()`:
     // dem Fenster darf man den Verlust ansehen, auch wenn ein Renderer die
@@ -231,7 +236,6 @@ export function Dashboard() {
     window.addEventListener("focus", an);
     window.addEventListener("blur", aus);
     document.addEventListener("visibilitychange", beiSichtbarkeit);
-    beiSichtbarkeit();
     return () => {
       window.removeEventListener("focus", an);
       window.removeEventListener("blur", aus);
@@ -1148,7 +1152,7 @@ export function Dashboard() {
               </button>
             )}
             <div className="flex items-center gap-2 shrink-0" style={{ color: 'var(--text-1)' }}>
-              <KeptaMark size={22} radius={6} />
+              <KeptaMark size={22} />
               <span className="hidden md:block font-semibold text-[13px] tracking-[-0.02em]">KEPTA</span>
             </div>
             <div className="flex-1 max-w-xl relative group">
@@ -1567,7 +1571,7 @@ export function Dashboard() {
               ) : displayedMemories.length === 0 ? (
                 <div className="flex-1 flex flex-col items-center justify-center text-center">
                   <div className="w-16 h-16 rounded-2xl flex items-center justify-center mb-4" style={{ background: 'var(--bg-inset)', border: '1px solid var(--border-subtle)', boxShadow: 'inset 0 1px 0 var(--edge-light)' }}>
-                    <KeptaMark size={34} radius={8} />
+                    <KeptaMark size={34} />
                   </div>
                   <h3 className="text-[15px] font-semibold mb-1.5" style={{ color: 'var(--text-1)' }}>
                     {debouncedSearchQuery || selectedTags.length > 0 ? 'No matches' : 'No entries yet'}

@@ -4,63 +4,49 @@
    Klassen, die der Rahmen setzt (.seiten-leiste, .huelle, [data-fenster]);
    keine einzige Farbe steht mehr im Baum.
 
-   Warum eine eigene Datei neben src/index.css: index.css gehört der
-   Design-System-Scheibe (E1), und bis zu diesem Lauf gab es für den Stahl
-   kein einziges Token — die Werte standen als siebzehn Inline-Stile in
-   Sidebar.tsx. Von dort war sie für kein Thema und keine
-   Increased-Contrast-Regel zu erreichen (D1-06). Sobald E1 die Stahl-Werte
-   ins System hebt, zieht diese Datei aus; die Namen unten sind die Bitte.
+   Die Werte kommen aus dem System: E1 setzt die Stahl-Ebenen in index.css
+   (:112-121 und 283-292, in beiden Themen derselbe Satz — die Leiste bleibt
+   also auch nach E1s Urteil Stahl; seit 11.10. auch --side-leise als dritte
+   Ebene und --side-kante-heben für die Hover-Kante). Diese Datei **definiert
+   keine Farbe**, sie verdrahtet Zustände an Token. Was das System nicht hat,
+   bleibt eine Zeile mit Namensbitte statt eines eigenen Werts — zur Zeit ein
+   einziges Literal (der Lebend-Punkt, Bitte: --side-ok).
    ============================================================ */
 
 /* ---------- Der Stahl ----------
-   Bewusst in beiden Themen dunkel: die Leiste ist der Rücken des
-   Aktenschrankes, nur das Blatt daneben wechselt. Was beim Wechsel des
-   Blattes mitwandert, steht hier — nicht im Baum.
-
-   Drei Ebenen, jede über der Plattform-Untergrenze von 4,5:1. Die dritte
-   war 2,67:1 (rgba .34) und hat Erklärsätze geschrieben; Ruhe trägt jetzt
-   Größe und Zeichenweite, nicht Unlesbarkeit. */
+   Drei Ebenen, jede über der Plattform-Untergrenze von 4,5:1. Die dritte war
+   2,67:1 (rgba .34) und hat Erklärsätze geschrieben; Ruhe trägt jetzt Größe
+   und Zeichenweite, nicht Unlesbarkeit. */
 .seiten-leiste {
-  --s-tinte-1: #eaeae8;                          /* 16,7:1 — Marke, Auswahl */
-  --s-tinte-2: rgba(235, 235, 232, 0.66);        /* 7,4:1  — Beschriftung */
-  --s-tinte-3: rgba(235, 235, 232, 0.50);        /* 4,7:1  — Zahl, Fußzeile */
-  --s-tinte-3-auf-flaeche: rgba(235, 235, 232, 0.56); /* Zählerplakette auf --s-flaeche-heben */
-  --s-kante: rgba(255, 255, 255, 0.09);
-  --s-kante-sichtbar: rgba(255, 255, 255, 0.18);
-  --s-flaeche-heben: rgba(255, 255, 255, 0.05);
-  --s-flaeche-waehlen: rgba(255, 255, 255, 0.09);
-  /* Der Akzent des Stahls — EIN sichtbares Rot in beiden Themen. var(--accent)
-     ist für Papier gestimmt und fällt auf Stahl im hellen Thema auf 2,4:1
-     (gemessen oklch(0.4286…) auf rgb(36,36,36)); das Nacht-Rot hält dort 3,4:1
-     an der Lasche und 4,6:1 als Schrift. Nachts zieht die Leiste den Wert
-     trotzdem automatisch mit: `.dark .seiten-leiste` unten. */
-  --s-akzent: oklch(0.7302 0.1552 30.7);
-  --s-akzent-flaeche: rgba(192, 74, 57, 0.14);
-  --s-akzent-kante: rgba(192, 74, 57, 0.34);
-  --s-punkt-lebendig: #7fb08a;                   /* „eine App schreibt gerade" */
+  --s-tinte-1: var(--side-text);                     /* 16,24:1 — Marke, Auswahl */
+  --s-tinte-2: var(--side-ruhig);                    /* 7,33:1 — Beschriftung */
+  --s-tinte-3: var(--side-leise);                    /* 4,68:1 — Zahl, Fußzeile, Plakette */
+  --s-kante: var(--side-kante);                      /* 3,05 gegen den Stahl */
+  --s-kante-sichtbar: var(--side-kante-heben);       /* 3,96 — Hover-Kante */
+  --s-flaeche-heben: var(--side-flaeche);
+  --s-flaeche-waehlen: var(--side-auswahl);
+  /* Ein Rot in beiden Themen, aus dem System. var(--accent) ist für Papier
+     gestimmt und fiel auf Stahl im hellen Thema auf 2,4:1 (gemessen). */
+  --s-akzent: var(--side-akzent);
+  --s-akzent-flaeche: var(--side-flaeche);
+  --s-akzent-kante: var(--side-akzent);
+  --s-punkt-lebendig: #7fb08a;  /* Bitte an E1: --side-ok. var(--ok) ist im
+                                   hellen Thema ein Archivgrün für Papier und
+                                   verschwindet auf dem Stahl. */
   color: var(--s-tinte-2);
 }
 
-/* Bei Nacht wird die Kante zum Blatt einen Hauch leiser — der einzige
-   Unterschied, den das Thema auf dem Stahl macht. */
-.dark .seiten-leiste {
-  --s-kante: rgba(255, 255, 255, 0.07);
-  --s-kante-sichtbar: rgba(255, 255, 255, 0.16);
-  /* Nachts ist das Blatt schwarz und der Akzent des Blattes passt auf den
-     Stahl — also zieht die Leiste, was das System setzt. */
-  --s-akzent: var(--accent);
-}
-
-/* Erhöhter Kontrast: die leiseste Ebene rückt auf, die Trennkante wird eine
-   Kante, die Lasche wird breiter. Vorher gab es für diese Antwort keinen Ort —
-   gegen eine Inline-Farbe gewinnt keine Medienabfrage. */
+/* Erhöhter Kontrast. Die **Farben** hebt das System selbst: index.css:1282-1284
+   und 1309-1311 ziehen --side-leise, --side-kante und --side-kante-heben unter
+   (prefers-contrast: more) an. Weil die Ebenen hier nur noch Aliase auf diese
+   Token sind, wandert die Antwort automatisch mit — eine eigene Anhebung hier
+   würde E1s gewählte Stufen überholen und die Rampe wieder flach machen.
+   Was das System nicht kann, ist Geometrie: die Lasche wird breiter, nicht
+   lauter. Vorher gab es für diese Antwort keinen Ort — gegen eine Inline-Farbe
+   gewinnt keine Medienabfrage. */
 @media (prefers-contrast: more) {
-  .seiten-leiste {
-    --s-tinte-2: rgba(235, 235, 232, 0.88);
-    --s-tinte-3: rgba(235, 235, 232, 0.88);
-    --s-tinte-3-auf-flaeche: rgba(235, 235, 232, 0.92);
-    --s-kante: rgba(255, 255, 255, 0.42);
-    --s-flaeche-heben: rgba(255, 255, 255, 0.11);
+  .seiten-leiste .sidebar-nav-btn[data-active="true"] {
+    box-shadow: inset 3px 0 0 var(--s-akzent);
   }
 }
 
@@ -110,7 +96,7 @@
 .seiten-leiste .seiten-erklarung { color: var(--s-tinte-3); }
 .seiten-leiste .seiten-plakette {
   background: var(--s-flaeche-heben);
-  color: var(--s-tinte-3-auf-flaeche);
+  color: var(--s-tinte-3);
 }
 .seiten-leiste .seiten-kante-oben { border-top: 1px solid var(--s-kante); }
 .seiten-leiste .seiten-kante-unten { border-bottom: 1px solid var(--s-kante); }
@@ -138,15 +124,30 @@
    gedämpft wird die Chrome — nie das Blatt. Ein offener Dialog ändert nichts
    daran: der Schlüssel gehört dem Fenster, nicht dem Panel. */
 .huelle[data-fenster="gedaempft"] .seiten-leiste {
-  --s-akzent: rgba(235, 235, 232, 0.42);
-  --s-akzent-flaeche: rgba(255, 255, 255, 0.05);
-  --s-akzent-kante: rgba(255, 255, 255, 0.12);
-  --s-punkt-lebendig: rgba(235, 235, 232, 0.42);
+  /* Der Akzent tritt auf die ruhige Ebene zurück — dasselbe neutrale Grau, das
+     das System schon für die Beschriftung kennt, kein eigener Mischwert. So
+     entsteht das Bild der inaktiven Ampel: Form bleibt, Farbe geht. */
+  --s-akzent: var(--side-ruhig);
+  --s-akzent-flaeche: var(--side-flaeche);
+  --s-akzent-kante: var(--side-kante);
+  --s-punkt-lebendig: var(--side-ruhig);
 }
 .huelle[data-fenster="gedaempft"] .seiten-leiste .seiten-marke,
 .huelle[data-fenster="gedaempft"] .seiten-leiste .sidebar-nav-btn[data-active="true"],
 .huelle[data-fenster="gedaempft"] .seiten-leiste .seiten-handlung {
   color: var(--s-tinte-2);
+}
+
+/* Der Primärknopf: auf macOS heißt „hier kann ich gerade etwas tun" über die
+   Füllfarbe. Verliert das Fenster den Schlüssel, wird der Knopf eine neutrale
+   Fläche mit Kante — dieselbe Sprache wie die Ampel, und weil der Start
+   optimistisch ist (Dashboard.tsx), passiert das nur nach einem echten Verlust,
+   nicht in jedem kopflosen Produktbild. */
+.huelle[data-fenster="gedaempft"] .btn-primary {
+  background: var(--bg-inset-strong);
+  border-color: var(--border-strong);
+  color: var(--text-2);
+  box-shadow: none;
 }
 
 /* ---------- Erststart: der Assistent darf den Wegen nicht das Wort abschneiden ----------

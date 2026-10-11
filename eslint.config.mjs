@@ -10,6 +10,11 @@ export default tseslint.config(
   {
     ignores: [
       "dist/**",
+      // Die privaten Bauordner der Welle (`vite build --outDir dist-<kuerzel>`) sind
+      // auch gebauter Haufen, nicht Quelltext. Ohne diese Zeile lintet das Gate
+      // minifizierte Bundles: gemessen 11.10. ergaben acht getrackte Dateien aus
+      // `dist-e1/` und `dist-e3/` zusammen 11.100 „Fehler".
+      "dist-*/**",
       "release/**",
       "node_modules/**",
       "coverage/**",

@@ -115,11 +115,19 @@ async function mcp(basis, id, name, args) {
 }
 
 /**
+ * Der Anker liegt fest, nicht in der Laufzeit: ein Bild, das „bis 31. März" zeigt,
+ * muss morgen dasselbe sagen. B1 hatte gefunden, dass hier alles gegen `Date.now()`
+ * gerechnet wurde — über `KEPTA_DEMO_ANKER` (Epoch-ms) lässt es sich für eine
+ * Messung verschieben, ohne den Weg zu verbiegen.
+ */
+export const ANKER = Number(process.env.KEPTA_DEMO_ANKER ?? Date.UTC(2026, 2, 31));
+
+/**
  * Legt den Korpus über MCP an (memory_save) — der Weg, auf dem Agenten
  * speichern. Nur dort werden [[Wiki-Links]] zu Entitäten und Kanten.
  */
 export async function saeDemo(basis) {
-  const jetzt = Date.now();
+  const jetzt = ANKER;
   const ids = {};
   let rpc = 1;
   for (const n of DEMO) {

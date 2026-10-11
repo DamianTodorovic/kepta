@@ -11,11 +11,14 @@
 // nicht alles in „Unbekannt".
 
 import { describe, it, expect } from "vitest";
+import fs from "node:fs";
+import path from "node:path";
 import {
   herkunftsBild,
   HERKUNFT,
   HERKUNFT_LABELS,
-  HERKUNFT_FARBEN,
+  HERKUNFT_TOKEN,
+  type HerkunftsArt,
   type HerkunftsNotiz,
 } from "../../src/lib/graphHerkunft";
 
@@ -88,10 +91,27 @@ describe("Der Kanal sagt, wann er nichts zu sagen hat", () => {
 });
 
 describe("Die Farben des Kanals", () => {
-  it("geben jeder Herkunft eine eigene Farbe", () => {
-    const farben = Object.values(HERKUNFT_FARBEN);
-    expect(new Set(farben).size).toBe(farben.length);
-    for (const f of farben) expect(f).toMatch(/^#[0-9a-f]{6}$/i);
+  // Der Kanal nennt nur noch Token-Namen. Ein Hex-Literal hier war der Befund
+  // aus B1s Bildarbeit: vier Werte in der Komponente, ein Kommentar, der
+  // „alle ≥ 4,65" sagte, und ein Bild, das 3,91 maß. Seitdem rechnet die
+  // design-wache die Palette in src/index.css — dieser Test hält die Brücke
+  // zwischen beiden Seiten: jeder Name, den die Fläche malt, muss dort stehen.
+  const css = fs.readFileSync(path.join(process.cwd(), "src/index.css"), "utf-8");
+
+  it("gibt jeder Herkunft einen eigenen Token", () => {
+    const namen = Object.values(HERKUNFT) as HerkunftsArt[];
+    const tokens = namen.map((a) => HERKUNFT_TOKEN[a]);
+    expect(new Set(tokens).size).toBe(tokens.length);
+    for (const t of tokens) expect(t).toMatch(/^--type-herkunft-[a-z]+$/);
+  });
+
+  it("malt beide Kanäle aus dem Register, nicht aus der Quelle", () => {
+    for (const t of Object.values(HERKUNFT_TOKEN)) {
+      // oklch-Stufe für jeden CSS-Verbraucher …
+      expect(css, `${t} fehlt im Register`).toContain(`${t}:`);
+      // … und der sRGB-Kanal für Leinwand und Farbregler
+      expect(css, `${t}-hex fehlt im Register`).toContain(`${t}-hex:`);
+    }
   });
 
   it("benennen jede Herkunft in der Sprache der Fläche", () => {

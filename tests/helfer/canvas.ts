@@ -240,8 +240,29 @@ export function installiereZeiger(): void {
 /** Theme-Variablen setzen, wie sie index.css im jeweiligen Modus liefert. */
 export function setzeTheme(modus: "hell" | "dunkel"): void {
   const w = document.documentElement.style;
+  // Die Rollen-Farben (E1s Leiter) holt sich die Flaeche aus dem Stylesheet —
+  // `leseRollenHexe()` liesst `--type-*-hex` von der Wurzel. Ein jsdom-Fixture
+  // kennt index.css nicht, also standen dort vorher die Hex-Literale der
+  // Komponente; seit die Token Quelle sind, malt die Leinwand ohne diese Zeilen
+  // gar nichts (undefined-Farbe -> TypeError im Mal-Pass, 63 Tests fielen).
+  // Die Werte sind die von index.css:107-126 (hell) und 295-314 (dunkel).
+  const rollen = modus === "hell"
+    ? {
+      "--type-semantic-hex": "#2d4964", "--type-episodic-hex": "#643a4f",
+      "--type-procedural-hex": "#304e34", "--type-reference-hex": "#604028",
+      "--type-neutral-hex": "#464646",
+      "--type-herkunft-geschrieben-hex": "#42474c", "--type-herkunft-datei-hex": "#693a00",
+      "--type-herkunft-rechner-hex": "#00514d",
+    }
+    : {
+      "--type-semantic-hex": "#9cadc4", "--type-episodic-hex": "#c6a1ba",
+      "--type-procedural-hex": "#8fb89a", "--type-reference-hex": "#c6a687",
+      "--type-neutral-hex": "#acacac",
+      "--type-herkunft-geschrieben-hex": "#a7acb3", "--type-herkunft-datei-hex": "#d8a25c",
+      "--type-herkunft-rechner-hex": "#6cb9b3",
+    };
   const werte = modus === "hell"
     ? { "--bg-panel-solid": "#f0f2eb", "--text-1": "#232526", "--text-2": "#5b5e60", "--text-3": "#8d9092", "--accent": "#9c2b1f", "--node-rim": "rgba(34, 48, 60, 0.4)", "--node-shade": "rgba(40, 32, 16, 0.16)", "--node-hi": "0.5" }
     : { "--bg-panel-solid": "#121214", "--text-1": "#eaeae8", "--text-2": "#9b9992", "--text-3": "#66645e", "--accent": "#c04a39", "--node-rim": "rgba(230, 233, 225, 0.24)", "--node-shade": "rgba(0, 0, 0, 0.35)", "--node-hi": "0.72" };
-  for (const [k, v] of Object.entries(werte)) w.setProperty(k, v);
+  for (const [k, v] of Object.entries({ ...werte, ...rollen })) w.setProperty(k, v);
 }

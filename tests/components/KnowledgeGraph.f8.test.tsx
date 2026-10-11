@@ -126,7 +126,7 @@ describe("A7-01: der Rueckweg aus der Faltung ist mit der Maus zu treffen", () =
     // zu halten. Ein ×N, das nicht gemalt wird, ist ein Schwinden ohne Zahl.
     const malzeichen = leinwand.schriften().filter((x) => /^×\d+$/.test(x.text));
     expect(malzeichen.length, `kein ×N gemalt: ${JSON.stringify(leinwand.schriften().map((x) => x.text))}`).toBeGreaterThan(0);
-    expect(malzeichen[0].px, `das Malzeichen ist ${malzeichen[0].px} px — ein Zustand, den man erst beim Heranzoomen sieht, ist keiner`).toBeGreaterThanOrEqual(9);
+    expect(malzeichen[0].px, `das Malzeichen ist ${malzeichen[0].px} px — ein Zustand, den man erst beim Heranzoomen sieht, ist keiner`).toBeGreaterThanOrEqual(11);
 
     // Zweite Zusage: der Rueckweg ist mit der Maus zu treffen.
     const legende = container.querySelector('[data-testid="graph-legende"]');
@@ -189,8 +189,10 @@ describe("A7-02: die Titel schrumpfen unter die Lesbarkeit", () => {
     const titel = notizschriften();
     expect(titel.length, "Es wird gar kein Notiztitel gemalt — die Flaeche hat nichts zu messen").toBeGreaterThan(0);
     const kleinste = Math.min(...titel.map((t) => t.px));
-    // Der Anspruch, den A7 als Ziel gesetzt hat: 9 px auf dem Schirm, bei JEDEM Zoom.
-    expect(kleinste, `kleinster Titel ${kleinste.toFixed(1)} px bei Zoom ${k.toFixed(3)} (${titel.length} Titel)`).toBeGreaterThanOrEqual(9);
+    // Die Latte der Flaeche: E1s unterste Schriftstufe, 11 px auf dem Schirm,
+    // bei JEDEM Zoom. Vorher stand hier 9 px — das Ziel, das A7 gesetzt hatte,
+    // bevor die Leiter gezoge war.
+    expect(kleinste, `kleinster Titel ${kleinste.toFixed(1)} px bei Zoom ${k.toFixed(3)} (${titel.length} Titel)`).toBeGreaterThanOrEqual(11);
     expect(container).toBeTruthy();
   });
 
@@ -202,7 +204,7 @@ describe("A7-02: die Titel schrumpfen unter die Lesbarkeit", () => {
     const titel = leinwand.schriften().filter((s) => /^F8 Notiz \d+/.test(s.text));
     expect(titel.length, "Der Baum malt keine Notiztitel").toBeGreaterThan(0);
     const kleinste = Math.min(...titel.map((t) => t.px));
-    expect(kleinste, `Baum-Titel nur ${kleinste.toFixed(1)} px`).toBeGreaterThanOrEqual(9);
+    expect(kleinste, `Baum-Titel nur ${kleinste.toFixed(1)} px`).toBeGreaterThanOrEqual(11);
   });
 
   it("meldet in der Bilanz, wie viele Knoten einen Titel tragen", async () => {

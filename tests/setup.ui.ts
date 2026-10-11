@@ -1,6 +1,42 @@
 import "@testing-library/jest-dom/vitest";
+import fs from "node:fs";
+import path from "node:path";
 import { afterEach } from "vitest";
 import { cleanup } from "@testing-library/react";
+
+// jsdom legt keine Stylesheet-Regeln aus und jsdoms getComputedStyle kennt keine
+// Custom Properties (angelegte issue seit Jahren). Beides zusammen heisst: eine
+// Komponente, die ihre Farben aus dem Register liest — die Graph-Fläche tut das
+// seit dem 11.10., sie malt keine Handfarbe mehr — sähe in Tests ein leeres
+// Bild. Also: (1) die Register-Werte aus src/index.css auf die Wurzel schreiben,
+// damit sie da sind, und (2) getComputedStyle so erweitern, dass es Inline-
+// Custom-Properties zurückgibt, wie ein echter Browser es für jeden Wert täte.
+// Die Werte kommen nicht aus einer Hand, sondern aus der Register-Datei selbst —
+// eine Testpalette kann so nie von der Produktleiter abdriften.
+if (typeof window !== "undefined" && typeof document !== "undefined") {
+  const css = fs.readFileSync(path.join(process.cwd(), "src/index.css"), "utf-8");
+  const wurzel = /:root\s*\{([\s\S]*?)\n\}/.exec(css)?.[1] ?? "";
+  for (const [, name, wert] of wurzel.matchAll(/(--type-[\w-]+-hex):\s*(#[0-9a-fA-F]{6})/g)) {
+    document.documentElement.style.setProperty(name, wert);
+  }
+
+  const gemessen = window.getComputedStyle.bind(window);
+  const mitRegister = (el: Element, ...rest: unknown[]) => {
+    const stil = (gemessen as (e: Element, ...r: unknown[]) => CSSStyleDeclaration)(el, ...rest);
+    const inline = (el as HTMLElement | null)?.style;
+    if (!inline) return stil;
+    return new Proxy(stil, {
+      get: (ziel, key) =>
+        key === "getPropertyValue"
+          ? (name: string) => stil.getPropertyValue(name) || inline.getPropertyValue(name) || ""
+          : Reflect.get(ziel, key, ziel),
+    });
+  };
+  window.getComputedStyle = mitRegister as unknown as typeof window.getComputedStyle;
+  // Vitest kopiert die jsdom-Fenster-Globals auf globalThis — die Komponente
+  // ruft die Funktion nackt auf, also muss beide Stellen dasselbe sehen.
+  (globalThis as unknown as Record<string, unknown>).getComputedStyle = mitRegister;
+}
 
 // Vitest ruft Testing-Library-Cleanup nicht automatisch → sonst leaken DOM-Knoten
 // zwischen Tests ("Found multiple elements"). cleanup ist ein No-op ohne jsdom.
