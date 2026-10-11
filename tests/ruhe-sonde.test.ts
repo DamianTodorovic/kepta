@@ -81,14 +81,41 @@ describe("Die Ruhe-Sonde haelt ihr Urteil zurueck, wenn die Maschine belegt ist"
 
   it("traegt das Urteil nicht allein aus dem load average", () => {
     // Auf diesem Rechner blieb load1/cpu bei gesetzter Last unveraendert (~0,5).
-    // Die Sonde darf den Wert melden, aber nicht als einzigen Grund verlangen.
+    // Die Sonde darf den Wert melden, aber nicht als einzigen Grund verlangen —
+    // der Fund der Leitung (12.10. 00:18): beschriftet als "stuetzender Wert",
+    //zaehlte der load in dieselbe Liste wie die Zeugen und wurde damit zur
+    // veto-Kante. Auf einem 4-Kerner-Runner ist ein hoher load1/cpu bei ruhiger
+    // Messei Normalbetrieb; die Sonde haette gruene Laeufe abgelehnt.
     const m = sonde({ stiche: 5 });
     const urteil = ruedig(m);
     if (!urteil.ruhig) {
-      expect(urteil.ursachen.some((u) => /medianMs|max\/median|node-Prozesse/.test(u))).toBe(true);
+      expect(urteil.ursachen.some((u) => /Median \d|Ausreisser|node-Prozesse/.test(u))).toBe(true);
     } else {
       expect(m.maxMedianRatio).toBeLessThanOrEqual(1.8);
     }
+
+    // derselbe Anspruch an einem gesetzen Wert: nur load fuehrt kein Urteil
+    const messung = {
+      stiche: 9,
+      iterationen: 9_000_000,
+      medianMs: 5,
+      minimumMs: 4,
+      maximumMs: 5,
+      maxMedianRatio: 1,
+      last1ProCpu: 9,
+      cpus: 10,
+      nodeProzesse: 0,
+    };
+    const nurLast = ruedig(messung);
+    expect(nurLast.ruhig, "load allein darf keinen Lauf aufhalten").toBe(true);
+    expect(nurLast.ursachen).toEqual([]);
+    expect(nurLast.meldungen.join(" ")).toMatch(/load1\/cpu 9 ueber .*stuetzender Wert/);
+
+    // zusammen mit einem echten Zeugen ist er Begruendung, nicht Grund
+    const mitZeuge = ruedig({ ...messung, nodeProzesse: 12 });
+    expect(mitZeuge.ruhig).toBe(false);
+    expect(mitZeuge.ursachen.join(" ")).toMatch(/node-Prozesse/);
+    expect(mitZeuge.ursachen.join(" ")).toMatch(/load1\/cpu/);
   });
 
   it("kennt seine Schwellen aus der Messung, nicht aus dem Kopf", () => {

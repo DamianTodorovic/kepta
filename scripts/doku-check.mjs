@@ -46,9 +46,10 @@ if (bericht.fehlgeschlagen > 0) {
   const messung = sonde();
   const ruhe = ruedig(messung);
   if (!ruhe.ruhig) {
+    const stuetzen = ruhe.meldungen.length > 0 ? `; mitgemeldet: ${ruhe.meldungen.join("; ")}` : "";
     console.error(
       `doku-check: KEIN URTEIL — ${bericht.fehlgeschlagen} ${bericht.fehlgeschlagen === 1 ? "Test ist" : "Tests sind"} in diesem Lauf fehlgeschlagen, ` +
-        `aber die Maschine war belegt: ${beschreibungDerLast(ruhe.ursachen)}.\n` +
+        `aber die Maschine war belegt: ${beschreibungDerLast(ruhe.ursachen)}${stuetzen}.\n` +
       `  ${beschlag(messung)}\n` +
       `  Zeitfaelle unter fremder Last sind kein Befund; bei einer Ruhe-Maschine gilt der Fehlerteil wieder als Urteil. ` +
       `Die Zahl selbst ist davon unberuehrt (${bericht.zahl} ausgefuehrte Faelle) — beglaubigt wird sie erst in einem ruhigen gruenen Lauf.`
@@ -62,7 +63,7 @@ if (bericht.fehlgeschlagen > 0) {
   process.exit(1);
 }
 
-const uebersprungene = bericht.uebersprungen > 0 ? `, ${bericht.uebersprungen} uebersprungene Faelle nicht gezaehlt` : "";
+const uebersprungene = bericht.erklaertUebersprungen > 0 ? `, ${bericht.erklaertUebersprungen} im quelltext erklaerte Faelle nicht gezaehlt` : "";
 const fehler = [];
 
 // Die Regel selbst steht in test-bericht.mjs (dokuVergleich) — hier und in
@@ -83,5 +84,5 @@ if (fehler.length > 0) {
 
 console.log(
   `doku-check: ${bericht.zahl} Tests sind im Lauf vom ${bericht.zeit} durchgelaufen ` +
-    `(${bericht.dateienBericht} Testdateien${uebersprungene}) — ${dateien.join(" und ")} ${dateien.length === 1 ? "nennt" : "nennen"} diese Zahl und diesen Stand.`
+    `(${bericht.dateienBericht} Testdateien${uebersprungene}${bericht.zurueckgewiesen > 0 ? `, ${bericht.zurueckgewiesen} zurueckgewiesene mitgezaehlt` : ""}) — ${dateien.join(" und ")} ${dateien.length === 1 ? "nennt" : "nennen"} diese Zahl und diesen Stand.`
 );
