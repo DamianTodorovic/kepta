@@ -6,6 +6,9 @@ All notable changes are documented in this file. The format follows [Keep a Chan
 
 ## [Unreleased]
 
+### Fixed
+- **The quietness probe's own test stopped putting a verdict on a timing.** Its load case measured twice — the median with four busy loops running, four times the median without them — and demanded the first stay under the second. On a desk with spare cores that holds; on a CI runner's four cores the same four loops take a larger share of the scheduler, the ratio came out **4,23×** (283,26 ms against 267,96 ms) and the guard turned red on a commit that had touched nothing but a line of HTML. The blind spot that case was reaching for is now shown on **set numbers** instead of on the machine: one measurement with a quiet median, a running outlier and eleven node processes reads `ruhig` to a median-only rule and `nicht ruhig` to the OR-chain of three witnesses. What the live load still has to prove, and can: the probe holds its verdict back, names at least one of the three witnesses, and counts its own children above the process limit. Byte-identical with `kepta-app/tests/ruhe-sonde.test.ts`; there the same line turned the release tip red (run `38182756836`), here a runner had won that coin-flip once by luck and not by rule. Case count unchanged: **982**.
+
 ## [3.3.0] — 2026-10-11
 
 ### Added
@@ -26,7 +29,14 @@ All notable changes are documented in this file. The format follows [Keep a Chan
 - **A relation's window travels, but the core's own write path leaves it empty.** `GET /api/graph` carries `validFrom`/`validTo` on every edge (merged from `6fe7955`, 07.10.2026: „die Kante sagt, wie lange sie gilt"), yet `addRelation` is called without a window, so both fields stand `null` for anything this engine wrote. A client drawing such a graph cannot tell an expired claim from a live one and must not pretend it can — **the shape is ready, the data is not.**
 
 ### Numbers of this release
-**79 test files / 977 executed cases** (3 skipped, not counted), `tsc --noEmit` clean, coverage gate held — measured 2026-10-11 22:57 with `npm run test:cov` and judged by the second run; `node scripts/doku-check.mjs` green on `README.md` and `README.de.md`.
+**79 test files / 982 cases in one run** (979 passed, 3 refused by the quietness probe and counted along), `tsc --noEmit` clean, coverage gate held — measured 2026-10-12 01:29 with `npm run test:cov` and judged by the second run; `node scripts/doku-check.mjs` green on `README.md` and `README.de.md`. The line stood **977** until this hour, which was the stand of the run before the quietness probe lost its machine dependency; 982 is what the published tag executes.
+
+### Security
+- **The HTTP API answers this computer only.** Requests whose `Host` header does not name this computer are refused — a website using DNS rebinding could otherwise read the notes — and so are requests from any other website that would change something: before, an ordinary web page open in the browser could write a note into the knowledge base through a form. The browser interface (`npx kepta-mcp ui`) was already protected. Local pages, AI apps over MCP and scripts work as before. Written on 17.09.2026 (`7943489`); this release is the first that carried it out, and until tonight the entry stood under a second, misplaced *Unreleased* header in the middle of the 2.x history — which sold a closed door as still open.
+- **express 4.22.3 with qs 6.16.0**: a crafted query string can no longer stall the server (GHSA-4mjr-xmp4-gh2g) or slip past the array limit (GHSA-x5fp-wj9c-mxmx).
+
+### Changed
+- **Ask in German, find English notes — and the other way round.** The query is expanded with the other language's terms before the search runs (`src/core/synonyme.ts`, wired in at `src/core/engine.ts:7`). On the eval corpus (58 notes, 45 queries) Hit@1 goes from 51.1 % to 71.1 % and the second metric from 62.2 % to 81.1 % — named `Recall@5 (capped)` here, because the same numbers stood under the label *Precision@5* in the entry that was moved, and `scripts/eval.ts` divides the hits in the top five by `min(5, relevant)` (see the rename below). Written on 17.09.2026 (`f5c7e3e`), carried out by this release, and it sat under the same stray header.
 
 
 ### Changed
@@ -287,26 +297,6 @@ The audit pass on this repository, done as fixes rather than as notes. Every ite
 ### Fixed
 - Unnecessary regex escapes in the wiki-link matchers (obsidian, mcp) and the
   embedding queue's constructor (erasable syntax, TS 5.9-friendly).
-
-## [Unreleased]
-
-### Security
-- **The HTTP API answers this computer only.** Requests whose `Host` header
-  does not name this computer are refused — a website using DNS rebinding
-  could otherwise read the notes — and so are requests from any other website
-  that would change something: before, an ordinary web page open in the
-  browser could write a note into the knowledge base through a form. The
-  browser interface (`npx kepta-mcp ui`) was already protected. Local pages,
-  AI apps over MCP and scripts work as before.
-- express 4.22.3 with qs 6.16.0: a crafted query string can no longer stall
-  the server (GHSA-4mjr-xmp4-gh2g) or slip past the array limit
-  (GHSA-x5fp-wj9c-mxmx).
-
-### Changed
-- **Ask in German, find English notes — and the other way round.** The query
-  is expanded with the other language's terms before the search runs
-  (`src/synonyme.ts`). On the eval corpus (58 notes, 45 queries) Hit@1 goes
-  from 51.1 % to 71.1 % and Precision@5 from 62.2 % to 81.1 %.
 
 ## [2.12.0] — 2026-09-14
 

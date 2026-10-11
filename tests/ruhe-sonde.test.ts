@@ -33,7 +33,6 @@ describe("Die Ruhe-Sonde haelt ihr Urteil zurueck, wenn die Maschine belegt ist"
   });
 
   it("ueberspringt bei gesetzter Last — und die Medianschwelle allein haette 'ruhig' gesagt", () => {
-    const basis = sonde({ stiche: 9 });
     const kinder = lastSetzen();
     let m: ReturnType<typeof sonde> | null = null;
     try {
@@ -48,35 +47,46 @@ describe("Die Ruhe-Sonde haelt ihr Urteil zurueck, wenn die Maschine belegt ist"
     }
     const urteil = ruedig(m!);
     expect(urteil.ruhig, `Sonde meldet ruhig trotz vier Busy-Loops: ${JSON.stringify(m)}`).toBe(false);
-    // Wenigstens einer der last-sensiblen Beweise muss nennen, was die Medianschwelle
-    // allein nicht sieht. (Beide zugleich verlangt waere ein Urteil ueb den
-    // Scheduler dieses Laufes, nicht ueber die Regel.)
-    expect(urteil.ursachen.join(" | ")).toMatch(/max\/median|node-Prozesse/);
+    // Welcher der drei Zeugen an einem laufenden Prozess die fuehrende Ursache ist,
+    // entscheidet dessen Scheduler. Verlangt waere hier eine bestimmte — also ein
+    // Urteil ueb den Lauf, nicht ueb die Regel. Deshalb das ODER im Muster.
+    expect(urteil.ursachen.join(" | ")).toMatch(/Median \d|Ausreisser|node-Prozesse/);
     expect(urteil.ursachen.length).toBeGreaterThan(0);
-
-    // Der gruene Nichtstuer, bewiesen ohne Wetterabhaengigkeit: die Last ist an den
-    // Ausreissern und an den Prozessen sichtbar, waehrend der Median nahe an der
-    // Vor-Last-Messung bleibt. Ein absolute Medianschwelle hier waere selbst eine
-    // Zeitmessung unter Last gewesen — und die ist in diesem Haus kein Urteil.
-    const vorLast = basis.medianMs;
-    // Was unter gesetzter Last gilt: (a) die Sonde haelt das Urteil zurueck,
-    // (b) die Struktur sieht die Last — vier eigene Kinder heben die Zahl der
-    // node-Prozesse ueber die Grenze, (c) der Median allein steigt kaum: hier blieb er
-    // unter dem Vierfachen der Vorlast-Basis. Genau darum ist die Regel eine ODER-
-    // Kette aus drei Zeugen (median, max/median, prozesse): auf diesem Rechner sah
-    // beim einen Lauf der Ausreisser die Last (1,26 -> 2,97), beim naechsten blieb er
-    // unter seiner Grenze — ein einzelner Zeuge ist keine Sonde, und eine absolute
-    // Medianschwelle als beweis ist genau die zeitmessung unter last, die wir nicht
-    // als Urteil gelten lassen.
-    expect(m!.medianMs).toBeLessThan(vorLast * 4);
+    // Vier eigene Kinder heben die Zahl der node-Prozesse ueber die Grenze: eine
+    // Zaehlung ueb die eigene Prozessgruppe, keine Zeitmessung.
     expect(m!.nodeProzesse).toBeGreaterThan(GRENZEN.nodeProzesse);
-    const nurMedian = ruedig(m!, {
-      medianMs: Math.max(GRENZEN.medianMs, vorLast * 4),
+
+    // Der blinde Fleck der Medianschwelle, bewiesen an gesetzten Zahlen statt an
+    // diesem Rechner. Vorher war der Beweiss ein Verhaeltnis zweier Live-Messungen
+    // (Median unter Last < 4x Median vor Last). Auf dem 4-Kern-Runner war es 4,23x —
+    // vier Busy-Loops stehlen dort einen groesseren Teil der Rechenscheiben als auf
+    // einem 10-Kern-Rechner, wo die Sonde gruen aussah. Damit entschied die Maschine
+    // ueber die Regel, und eine Zeitmessung unter Last ist in diesem Haus kein Urteil
+    // (F10, Befund der Leitung am 12.10. aus dem roten Lauf 38182756836).
+    const lastOhneMedian = {
+      stiche: 9,
+      iterationen: 9_000_000,
+      medianMs: 12,
+      minimumMs: 10,
+      maximumMs: 40,
+      maxMedianRatio: 3.33,
+      last1ProCpu: 0.4,
+      cpus: 4,
+      nodeProzesse: 11,
+    };
+    const nurMedian = ruedig(lastOhneMedian, {
       maxMedianRatio: Number.POSITIVE_INFINITY,
       nodeProzesse: Number.POSITIVE_INFINITY,
       last1ProCpu: Number.POSITIVE_INFINITY,
     });
-    expect(nurMedian.ruhig, "der median-zeuge allein haette 'ruhig' gemeldet — die Last war nicht messbar").toBe(true);
+    expect(
+      nurMedian.ruhig,
+      "der Median-zeuge allein haette 'ruhig' gemeldet, obwohl Ausreisser und Prozesse die Last sehen"
+    ).toBe(true);
+    const alleZeugen = ruedig(lastOhneMedian);
+    expect(alleZeugen.ruhig, "die ODER-Kette muss dieselbe Messung als Last sehen").toBe(false);
+    expect(alleZeugen.ursachen.join(" ")).toMatch(/Ausreisser/);
+    expect(alleZeugen.ursachen.join(" ")).toMatch(/node-Prozesse/);
   });
 
   it("traegt das Urteil nicht allein aus dem load average", () => {
