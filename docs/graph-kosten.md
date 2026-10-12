@@ -240,3 +240,22 @@ Checked and **clean**: `README.md:37` and `:143` of this repo carry no milliseco
 `raw.githubusercontent.com/DamianTodorovic/kepta/main/README.md` (16 138 bytes, fetched 18:5x) has no
 “60 fps” and no “never overlap”. A cached copy under `~/.hermes/cache/` still shows the old sentence —
 the cache is stale, the page is not.
+
+## The admission gate on a shared machine (12 October, 15:37) — what a verdict is allowed to say
+
+A promised time may only be judged where the machine itself is quiet enough to hold the
+promise: since 12 October the core's timed cases run through
+`kepta-core/tests/helfer/zeit-zusage.ts`, which refuses a verdict unless the probe's own
+throw is **at most half the ordered figure** (15 ms → 7,5 ms, 120 ms → 60 ms), and says so
+aloud with both numbers — `kein Urteil — Maschine zu laut fuer diese Zusage`. This is not a
+skip: nothing is silenced and no ordered number moved (15, 5, 120, 750 stand where A9 §6 put
+them); it is a verdict that only speaks where it can speak. Why it exists, in one measured
+line: at 14:49 on this desk the quietness probe reported 11,03 / 10,21 ms and still called
+the window *ruhig* (its own ceiling is 20 ms), and the 15 ms case cost 18,9 ms — it fell
+through a verdict that could not have been a verdict. The same path cost 10,0 ms in windows
+where the probe threw 6,28–6,34 ms. Both directions of the gate are proven on **set**
+numbers, not on a loaded run (`kepta-core/tests/helfer/zeit-zusage.test.ts`), because a
+measured refusal would itself be a timing under load. One number is deliberately left
+outside the gate: the cache-hit promise (5 ms) — measured 0,1 ms at a 6,3 ms baseline and
+0,2 ms at a 31,4 ms baseline, so it is invariant to the neighbourhood, and gating it would
+only mute a claim that demonstrably holds.
