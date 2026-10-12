@@ -15,8 +15,8 @@ import { APP_VERSION } from "../src/core/version";
 const wurzel = path.resolve(__dirname, "..");
 const lies = (relativ: string) => JSON.parse(fs.readFileSync(path.join(wurzel, relativ), "utf8"));
 
-describe("Versions-Parität: eine Zahl an fünf Stellen", () => {
-  it("package.json, server.json (top + Paketeintrag), npm/package.json und version.ts tragen dieselbe Version", () => {
+describe("Versions-Parität: eine Zahl an sieben Stellen", () => {
+  it("package.json, server.json (top + Paketeintrag), npm/package.json, version.ts und das Sperrschema tragen dieselbe Version", () => {
     const app = lies("package.json");
     const server = lies("server.json");
     const paket = lies("npm/package.json");
@@ -24,6 +24,14 @@ describe("Versions-Parität: eine Zahl an fünf Stellen", () => {
     expect(server.version).toBe(app.version);
     expect(server.packages[0].version).toBe(app.version);
     expect(paket.version).toBe(app.version);
+    // Das Sperrschema war die stille Stelle: seit dem 3.3.0-Schnitt trug
+    // package-lock.json oben und in packages[""] noch "3.2.0", während alles
+    // andere 3.3.0 sagte. Aufgefallen ist es erst, weil `npm update proxy-addr`
+    // den Eintrag am 12.10. zufällig mitzog. Ein Versionsfeld, das niemand liest,
+    // ist keine Bestätigung, sondern ein zweiter Text.
+    const sperre = lies("package-lock.json");
+    expect(sperre.version, "package-lock.json (oben)").toBe(app.version);
+    expect(sperre.packages[""].version, 'package-lock.json (packages[""])').toBe(app.version);
   });
 
   it("der README-Versions-Badge trägt dieselbe Version", () => {
