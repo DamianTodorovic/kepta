@@ -1,4 +1,6 @@
-## [Unreleased]
+## [3.2.1] — 2026-10-12
+
+Why this patch exists, in one line: the released `app-3.2.0` binary was measured to contain `proxy-addr@2.0.7`, the version GitHub flags as critical, and this repository ships its dependencies inside the package — so the only way to hand over the closed version is a new build. Nothing else in the product's behaviour changed; the rest of this entry is checks that were wrong, not features.
 
 ### Security
 - **The same two advisories, closed here too.** `proxy-addr` **2.0.7 → 2.0.8** (GHSA-jqcg-44mw-7w3h, *critical*, pulled in by `express@5.2.1`) and `source-map-js` **1.2.1 → 1.2.2** (GHSA-68fv-2mgg-jv7q, *high*, reached only through `@tailwindcss/vite`, `jsdom → css-tree` and `vitest → vite → postcss`). Found on the engine repository, where GitHub's Dependabot badge is visible; this repository has alerts disabled, so it was checked here rather than assumed clean. `npm update <paket>` only — lock diff 12 added / 13 removed lines, `package.json` and every range untouched, both target versions confirmed present in the registry before anything was written. Reachability stated instead of implied: the app's server never sets `trust proxy` (no hit outside `node_modules`), so no forwarded-header trust decision exists to spoof, and `source-map-js` does not reach the packaged app.
