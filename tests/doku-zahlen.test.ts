@@ -555,3 +555,35 @@ describe("Doku und Meldungen: npx ruft nur das veröffentlichte Paket", () => {
     ).toEqual([]);
   });
 });
+
+describe("Der Messstand: eine Aussage ueber einen moeglichen Lauf, nicht ueb die Uhr", () => {
+  // Am 12.10. fiel der App-Gate zweimal auf demselben Baum: um 23:50 UTC gruen,
+  // um 00:00 UTC rot (Lauf 38185328804), und die Zahl 2 243 stimmte beide Male.
+  // Die alte Regel verglich den Stempel mit dem Tag DES laufenden Berichts — ueb
+  // Mitternacht konnte kein Stand gruen sein, und jeder Nachtschicht-Lauf war ein
+  // Los. Die neue Regel lasst dem Stempel nur die Grenze, die keine Maschine
+  // brechen kann: er darf nicht vor dem beglaubigten Lauf liegen.
+  const lauf = (zahl: number, tag: string) => ({ zahl, tag, zeit: tag + " 00:00:00 UTC" });
+
+  it("faellt nicht ueb Mitternacht: Stempel vom Vortag, der Lauf eine Minute spaeter", () => {
+    expect(dokuVergleich("**2243 tests** (measured 2026-10-11)", lauf(2243, "2026-10-12"), "README.md")).toEqual([]);
+  });
+
+  it("laesst denselben Stempel am Tag des Laufs gelten", () => {
+    expect(dokuVergleich("**2243 tests** (measured 2026-10-12)", lauf(2243, "2026-10-12"), "README.md")).toEqual([]);
+  });
+
+  it("verweigert einen Messstand in der Zukunft", () => {
+    const fehler = dokuVergleich("**2243 tests** (measured 2026-11-01)", lauf(2243, "2026-10-12"), "README.md");
+    expect(fehler.join(" | ")).toMatch(/Zukunft/);
+  });
+
+  it("verweigert weiter die Zahl eines anderen Laufs", () => {
+    const fehler = dokuVergleich("**2241 tests** (measured 2026-10-11)", lauf(2243, "2026-10-12"), "README.md");
+    expect(fehler.join(" | ")).toMatch(/nennt 2241 Tests, gelaufen sind 2243/);
+  });
+
+  it("verweigert eine Zahl ohne jeden Messstand", () => {
+    expect(dokuVergleich("**2243 tests**", lauf(2243, "2026-10-12"), "README.md").join(" | ")).toMatch(/keinen Messstand/);
+  });
+});

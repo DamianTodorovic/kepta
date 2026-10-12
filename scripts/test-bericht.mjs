@@ -210,8 +210,9 @@ export function erklaerteSkips(wurzel = process.cwd()) {
 
 /**
  * Die eine Regel, die beide Wachen anwenden: jede Zahl, die eine Doku als
- * Testzahl in die Welt setzt, muss die Zahl DIESES Laufs sein und an seinem
- * Messstand haengen. steht sie hier einmal, pruefen sie beide — die Suite und
+ * Testzahl in die Welt setzt, muss die Zahl DIESES Laufs sein, und ihr Messstand
+ * darf kein Datum sein, das dieser Lauf widerlegt (eine Zukunft hat niemand
+ * gemessen). steht sie hier einmal, pruefen sie beide — die Suite und
  * das post-run-Skript — und eine Meldung nennt Zeile und Art (Fettsatz,
  * Abzeichen, Befehlskommentar). Das Abzeichen ist der Fall, den niemand fand:
  * ein Bild in Zeile 2, das keine Suche trifft und keinen Textvergleich stoert.
@@ -235,8 +236,35 @@ export function dokuVergleich(text, lauf, datei) {
   const stempel = messstempel(text);
   if (stempel.length === 0) {
     fehler.push(`${datei}: nennt keinen Messstand ("gemessen am YYYY-MM-DD") fuer seine Testzahl`);
-  } else if (!stempel.includes(lauf.tag)) {
-    fehler.push(`${datei}: haengt die Zahl an ${stempel.join(" / ")}, beglaubigt ist der Lauf vom ${lauf.tag}`);
+  } else {
+    // Ein Messstand ist eine Aussage darueber, WELCHER Stand gemessen wurde — nicht
+    // das Datum des Laufs, der gerade zufaellig auf der Platte liegt. Die alte Regel
+    // hiess: Stempel muss == Tag dieses Laufs sein. Am 12.10. lief der App-Gate um
+    // 23:50 UTC gruen (Stempel 11.10., Lauf 11.10.) und derselbe Baum zwei Minuten
+    // spaeter um 00:00 UTC rot (Stempel 11.10., Lauf 12.10. — Lauf 38185328804),
+    // waehrend die Zahl die ganze Zeit stimmte: 2 243. Ein Pruefer, der ueb
+    // Mitternacht faellt, ohne dass sich am Stand etwas aendert, ist keine Regel,
+    // sondern ein Los.
+    //
+    // Die erste Heilung hier wollte den Stempel ausserdem nach unten begrenzen
+    // ("nicht aelter als die juengste Testdatei"). Diese Grenze ist auf einem Runner
+    // nicht fahrbar: `actions/checkout@v4` schreibt mit fetch-depth 1 (dem Default)
+    // jede Datei neu, dort ist die "juengste Testdatei" also IMMER der Tag des
+    // Laufs. Ein README, das seit gestern unveraendert richtig ist, waere beim
+    // naechsten Push rot — genau die Sorte rotes Ergebnis ohne Grund, die wir gerade
+    // erst ausraeumen. Die Untergrenze ist deshalb wieder draeu, und es fehlt nichts
+    // Wichtiges: dass ein BERICHT aelter ist als die Suite, verweigert schon
+    // `leseBericht` (auf einem Rechner, wo mtimes etwas bedeuten), und dass eine Doku
+    // hinter einer juengeren Suite herhaengt, faengt die Zahl selbst — sie muss die
+    // Zahl DIESES Laufs sein, und eine neue Datei aendert sie.
+    // Was bleibt, ist maschinenunabhaengig: ein Stempel darf nicht vor diesem Lauf
+    // liegen, denn eine Zukunft hat noch niemand gemessen.
+    const zukunft = stempel.filter((s) => s > lauf.tag);
+    if (zukunft.length > 0) {
+      fehler.push(
+        `${datei}: nennt einen Messstand in der Zukunft (${zukunft.join(", ")}) — beglaubigt ist der Lauf vom ${lauf.tag}`
+      );
+    }
   }
   return fehler;
 }
