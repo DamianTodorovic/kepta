@@ -25,6 +25,7 @@ import {
   KAPPE,
   LAYOUT_VERSION,
   WELT_GROESSE,
+  scheibenRadius,
   type GrafAntwort,
   type GrafKante,
   type GrafKnoten,
@@ -32,7 +33,7 @@ import {
   type GrafSicht,
 } from "./core/graf-vertrag";
 import { baueNotizBild, type NotizKnoten, type NotizVektor } from "./ui/graph";
-import { berechneWelt, type KraftKante } from "./core/graf-kraft";
+import { berechneWelt, NACHTRAG_TICKS, type KraftKante } from "./core/graf-kraft";
 
 /** Seitengroesse des Bestand-Durchlaufs (listMemories kappt selbst bei 5000). */
 const NOTIZ_SEITE = 500;
@@ -213,12 +214,36 @@ interface CacheEintrag {
   generation: number;
   layoutVersion: number;
   parameterHash: string;
-  stellen: Map<string, { x: number; y: number }>;
-  signaturen: Map<string, string>;
   antwort: GrafAntwort;
 }
 
+/**
+ * Der Grundriss: die Plaetze und die Weltseite EINER Bestandsgeneration, je Sicht
+ * einmal gerechnet — nicht je Anfrage (Stand 5). Das ist die Antwort auf die
+ * Kostenfrage des 11./12.10.: die Trennung der Scheiben kostet 126 ms bei 430
+ * Knoten, 1,2 s bei 1 527 und 3,7 s bei 3 027 (Belege:
+ * `e2-code/nacht-12-10/rohdaten/ruhe-pass.json`), und die Zusage an die Anfrage
+ * sind 120 ms gesamt. Beides zusammen geht nur, wenn die Rechnung nicht in der
+ * Anfrage liegt. Die Flaeche tut seit je dasselbe: Geruest vorberechnen, liefern.
+ *
+ * Ehrlichkeit statt Tempo-Schwindel: `stempel.rahmenGeneration` und
+ * `stempel.rahmenAlter` sagen, fuer welche Generation der Grundriss gilt und wie
+ * viele er hinterherhinkt, und `cacheZuruecksetzen` loescht ihn mit — es ueberlebt
+ * kein Reset, den ein Test erfindet.
+ */
+interface Rahmen {
+  generation: number;
+  layoutVersion: number;
+  stellen: Map<string, { x: number; y: number }>;
+  /** Kantenmenge je Knoten — unveraenderte Menge bedeutet unveraenderter Platz. */
+  signaturen: Map<string, string>;
+  weltSeite: number;
+  /** Untergrund derselben Welt — gehoert zum Rahmen, weil er aus seiner Rechnung kommt. */
+  nullpunkt: { x: number; y: number };
+}
+
 const bildCache = new WeakMap<KeptaStore, Map<string, CacheEintrag>>();
+const rahmenCache = new WeakMap<KeptaStore, Map<GrafSicht, Rahmen>>();
 /** Nicht unbegrenzt: ein Client koennte sonst so viele Ansichten halten, wie er will. */
 const CACHE_PLATZE = 8;
 const layoutsGezaehlt = new WeakMap<KeptaStore, number>();
@@ -228,10 +253,32 @@ export function layoutsBerechnet(store: KeptaStore): number {
   return layoutsGezaehlt.get(store) ?? 0;
 }
 
-/** Nur fuer Tests: Bild-Cache und Zaehler eines Stores leeren. */
+/** Nur fuer Tests: Bild-Cache, Grundrisse und Zaehler eines Stores leeren. */
 export function cacheZuruecksetzen(store: KeptaStore): void {
   bildCache.delete(store);
+  rahmenCache.delete(store);
   layoutsGezaehlt.set(store, 0);
+}
+
+/**
+ * Nur die ANSICHTEN vergessen — der Grundriss bleibt. Fuer die Kosten-Wache ist
+ * das der Unterschied zwischen "eine Anfrage" und "ein Grundriss": der Rahmen
+ * gehoert zur Bestandsgeneration, nicht zurParameterkombination, und ein Client, der
+ * eine zweite Sicht öffnet, zahlt keine zweite Relaxation. Der volle Reset
+ * (`cacheZuruecksetzen`) bleibt der kaelteste aller Faelle und wird weiter
+ * gemessen — als eigener Fall.
+ */
+export function ansichtenZuruecksetzen(store: KeptaStore): void {
+  bildCache.delete(store);
+}
+
+function rahmenDes(store: KeptaStore): Map<GrafSicht, Rahmen> {
+  let map = rahmenCache.get(store);
+  if (!map) {
+    map = new Map();
+    rahmenCache.set(store, map);
+  }
+  return map;
 }
 
 function cacheDes(storte: KeptaStore, hash: string): Map<string, CacheEintrag> {
@@ -432,7 +479,11 @@ function kuvertAus(
   knoten: GrafKnoten[],
   kanten: GrafKante[],
   stellen: Map<string, { x: number; y: number }> | null,
-  stempel: GrafAntwort["stempel"]
+  stempel: GrafAntwort["stempel"],
+  /** Seite der Welt, in der diese Plaetze liegen — `welt.groesse` im Kuvert. */
+  weltSeite: number,
+  /** Untere linke Ecke derselben Welt — `welt.nullpunkt`, weil die Plaetze nicht bei Null liegen muessen. */
+  nullpunkt: { x: number; y: number }
 ): GrafAntwort {
   if (stellen) {
     for (const k of knoten) {
@@ -449,7 +500,10 @@ function kuvertAus(
     kuerzung,
     // Das Weltformat ist eines; ob Plaetze mitreisen, sagt der Client an den
     // Feldern x/y — herkunft benennt, wie sie gerechnet wurden.
-    welt: { einheit: "welt", groesse: WELT_GROESSE, herkunft: "kraft" },
+    // Die Weltseite ist die DESSES Bestands, nicht die Konstante: der Client
+    // teilt durch diesen Wert. Stand 5 meldet sie pro Bild, weil das Feld ohne
+    // Rueckklammerung so gross wird, wie seine Kraefte es bauen.
+    welt: { einheit: "welt", groesse: weltSeite, nullpunkt, herkunft: "kraft" },
     stempel,
     knoten,
     kanten,
@@ -481,7 +535,14 @@ export function grafBild(store: KeptaStore, query: Record<string, unknown>, ifNo
   }
 
   // Bild rechnen.
-  const stempel = { generation, layoutVersion: LAYOUT_VERSION, parameterHash: hash, berechent: "neu" as const };
+  const stempel: GrafAntwort["stempel"] = {
+    generation,
+    layoutVersion: LAYOUT_VERSION,
+    parameterHash: hash,
+    berechent: "neu",
+    rahmenGeneration: null,
+    rahmenAlter: 0,
+  };
   let bestand: GrafAntwort["bestand"];
   let kuerzung: GrafKuerzung;
   let knoten: GrafKnoten[];
@@ -525,31 +586,67 @@ export function grafBild(store: KeptaStore, query: Record<string, unknown>, ifNo
   //    Partnern (gemessen: 459 WE Abstand zur eigenen [[Link]]-Zielnote, als
   //    alle Bestehenden fest genagelt waren).
   let stellen: Map<string, { x: number; y: number }> | null = null;
-  let signaturen = new Map<string, string>();
+  let weltSeite = WELT_GROESSE;
+  let nullpunkt = { x: 0, y: 0 };
+  const rahmen = rahmenDes(store);
+  const alte = rahmen.get(p.sicht);
   if (p.layout) {
-    const federn: KraftKante[] = kanten.map((k) => ({ quelle: k.quelle, ziel: k.ziel, sorte: k.sorte, feder: k.feder }));
-    const geruest = alt && alt.layoutVersion === LAYOUT_VERSION ? alt.stellen : undefined;
-    signaturen = knotenSignaturen(kanten);
-    let gehalten: Set<string> | undefined;
-    if (geruest) {
-      gehalten = new Set(
-        knoten
-          .filter((k) => geruest.has(k.id) && alt!.signaturen.get(k.id) === signaturen.get(k.id))
-          .map((k) => k.id)
+    // Der Grundriss wird GELESEN, wenn er fuer diese Bestandsgeneration gilt und
+    // jeden Knoten dieses Bildes kennt. Ein Rahmen aus einer aelteren Generation
+    // wird nicht als aktuell verkauft: er ist der Anker der Ergaenzung, und die
+    // sagt `rahmenAlter`, wie viele Generationen sie hinterherhing.
+    const tragend =
+      !!alte &&
+      alte.layoutVersion === LAYOUT_VERSION &&
+      alte.generation === generation &&
+      knoten.every((k) => alte.stellen.has(k.id));
+    if (tragend && alte) {
+      stellen = alte.stellen;
+      weltSeite = alte.weltSeite;
+      nullpunkt = alte.nullpunkt;
+      stempel.berechent = "rahmen";
+      stempel.rahmenGeneration = alte.generation;
+      stempel.rahmenAlter = 0;
+      for (const k of knoten) k.verankert = true;
+    } else {
+      const federn: KraftKante[] = kanten.map((k) => ({ quelle: k.quelle, ziel: k.ziel, sorte: k.sorte, feder: k.feder }));
+      const geruest = alte && alte.layoutVersion === LAYOUT_VERSION ? alte.stellen : undefined;
+      const signaturen = knotenSignaturen(kanten);
+      let gehalten: Set<string> | undefined;
+      if (geruest) {
+        gehalten = new Set(
+          knoten
+            .filter((k) => geruest.has(k.id) && alte!.signaturen.get(k.id) === signaturen.get(k.id))
+            .map((k) => k.id)
+        );
+      }
+      const diagnose = { ticks: 0, alpha: 0, besuche: 0, welt: WELT_GROESSE, nullpunkt: { x: 0, y: 0 }, ueberlaeufe: 0, anDerWand: 0, schliif: 0 };
+      const welt = berechneWelt(
+        {
+          // Das Weltbild kennt die Scheiben, die es trennt: derselbe Radius, den
+          // der Client malt, aus einer Stelle im Vertrag.
+          knoten: knoten.map((k) => ({ id: k.id, scheibe: scheibenRadius(k.gradEcht, k.gradVermutet) })),
+          kanten: federn,
+          vorher: geruest,
+          unveraendert: gehalten,
+          // Ein Nachtrag an einen bestehenden Grundriss rechnet kurz (60 Ticks),
+          // ein erster Rahmen zaehlt bis zur echten Ruhe aus.
+          ticksMax: geruest ? NACHTRAG_TICKS : undefined,
+        },
+        diagnose
       );
+      layoutsGezaehlt.set(store, (layoutsGezaehlt.get(store) ?? 0) + 1);
+      stellen = new Map([...welt].map(([id, platz]) => [id, { x: platz.x, y: platz.y }]));
+      weltSeite = diagnose.welt ?? weltSeite;
+      nullpunkt = diagnose.nullpunkt ?? nullpunkt;
+      for (const k of knoten) if (gehalten?.has(k.id)) k.verankert = true;
+      stempel.rahmenGeneration = generation;
+      stempel.rahmenAlter = alte && alte.layoutVersion === LAYOUT_VERSION ? Math.max(0, generation - alte.generation) : 0;
+      rahmen.set(p.sicht, { generation, layoutVersion: LAYOUT_VERSION, stellen, signaturen, weltSeite, nullpunkt });
     }
-    const welt = berechneWelt({
-      knoten: knoten.map((k) => ({ id: k.id })),
-      kanten: federn,
-      vorher: geruest,
-      unveraendert: gehalten,
-    });
-    layoutsGezaehlt.set(store, (layoutsGezaehlt.get(store) ?? 0) + 1);
-    stellen = new Map([...welt].map(([id, platz]) => [id, { x: platz.x, y: platz.y }]));
-    for (const k of knoten) if (gehalten?.has(k.id)) k.verankert = true;
   }
 
-  const antwort = kuvertAus(p, bestand, kuerzung, knoten, kanten, stellen, stempel);
-  cache.set(hash, { generation, layoutVersion: LAYOUT_VERSION, parameterHash: hash, stellen: stellen ?? new Map(), signaturen, antwort });
+  const antwort = kuvertAus(p, bestand, kuerzung, knoten, kanten, stellen, stempel, weltSeite, nullpunkt);
+  cache.set(hash, { generation, layoutVersion: LAYOUT_VERSION, parameterHash: hash, antwort });
   return { status: 200, etag, antwort };
 }

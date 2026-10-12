@@ -16,17 +16,53 @@ export const GRAF_SICHTEN: readonly GrafSicht[] = ["konzept", "notiz"];
 export const GRAF_VERTRAG = "graf-2";
 
 /**
- * Welteinheiten, nicht Pixel. Der Client skaliert mit min(breite,hoehe)/1000 —
- * Fenster- und Reglergroesse gehen in keine Rechnung ein (A9 B-1/B-2).
+ * Welteinheiten, nicht Pixel. Der Client skaliert mit min(breite,hoehe)/`groesse`
+ * — Fenster- und Reglergroesse gehen in keine Rechnung ein (A9 B-1/B-2).
+ *
+ * STAND 5: diese Zahl ist der ANKER, nicht mehr die Welt. Die Weltseite eines
+ * Bildes ist die Ausdehnung, die seine Kraefte bauen, und reist als
+ * `welt.groesse` mit; der Anker ist die Untergrenze darunter. Warum: eine feste
+ * Welt ueber einem wachsenden Bestand ist kein Rahmen, sondern ein Stapel —
+ * gemessen 12.10.2026 (`e2-code/nacht-12-10/`): in der Ruhe klemmte der Anker 1000
+ * bei 427 / 1 527 / 3 027 Knoten 148 / 516 / 1 213 Plaetze an die Wand und liess
+ * 147 / 961 / 4 312 Scheibenpaare uebereinander stehen; dieselben Bestaende ohne
+ * Rueckklammerung, mit Trennung ueber 3 Ueberlaeufe je Tick, trennen 0 / 0 / 0 und
+ * melden dafuer 1 575 bis 7 017 Einheiten Seite. Ein Client, der die 1000 hart
+ * einbaut, zeichnet grosses Bild zu klein — die Zahl steht im Kuvert, bitte lies sie.
  */
 export const WELT_GROESSE = 1000;
-/** Randzone, in die kein Knoten gelegt wird. */
+/** Randzone, in die kein Knoten gelegt wird — gilt relativ zur Welt DIESES Bildes. */
 export const WELT_RAD = 30;
+
+/**
+ * Der Radius, den ein Knoten im Bild hat, in Welteinheiten — das eigene Gesetz des
+ * Kerns, an EINER Stelle, weil das Weltbild dieselben Kreise trennen muss, die ein
+ * Client malt. Vorher wohnte die Formel nur in `scripts/graf-bild.mjs`; die
+ * Relaxation kannte sie nicht; darum legte sie Knoten ineinander, deren Scheiben
+ * sich sichtbar schnitten.
+ *
+ * Die Regel ist die ungedeckelte (`6 + 2,4*sqrt(grad echt) + 1,1*sqrt(grad
+ * vermutet)`), nicht den 18er-Deckel der Flaeche: wer den groessten Kreis trennt,
+ * den ein Kunde an diesen Platz malen kann, trennt damit auch jeden kleineren.
+ * Ein Client, der flacher malt (etwa mit der Flaechen-Deckel 18), zeichnet also in
+ * jedem Fall mit Luft — die Zusage haelt nach beiden Gesetzen, gemessen 0 / 0 / 0 Paare.
+ */
+export function scheibenRadius(gradEcht: number, gradVermutet = 0): number {
+  return 6 + 2.4 * Math.sqrt(Math.max(0, gradEcht)) + 1.1 * Math.sqrt(Math.max(0, gradVermutet));
+}
 
 /**
  * Aendert sich nur, wenn die Kraftgesetze sich aendern. Ein Cache, der unter
  * derselben Generation ein anderes Bild bekommt, ist kein Cache sondern ein
  * Roulette — darum haengt er an dieser Zahl mit.
+ *
+ * Stand 5: das Weltbild kennt die Scheiben, die es trennt, und die Welt kennt ihre
+ * Klemmung nicht mehr. Drei Ueberlaeufe je Tick (gemessen, nicht gefuehlt: 2 lassen
+ * 37 Paare bei 3 027, 3 trennen 0, 12 kosten 67 % mehr fuer dieselbe 0), ein
+ * Startplatz ausserhalb der bereits gelegten Scheiben, und die Weltseite als
+ * Ausdehnung des Bildes statt als Konstante. Plaetze aus Stand 4 sind ungueltig,
+ * weil schon die Ruhelage eine andere ist: die Klemmung war die Hauptursache der
+ * Ueberlappung, nicht die Zahl der Durchgaenge.
  *
  * Stand 4: ein neuer Knoten steigt bei seiner platzierten Nachbarschaft ein (nicht im
  * Leeren), seine Reichweite ist der Einstiegshalbmesser, die Abstossung hat eine
@@ -39,7 +75,7 @@ export const WELT_RAD = 30;
  * nach der rohen Spannung, und alpha dämpft den Weg nicht mehr — dasselbe
  * Kraftgesetz, ein anderes Ergebnis. Plaetze aus Version 1 sind ungueltig.
  */
-export const LAYOUT_VERSION = 4;
+export const LAYOUT_VERSION = 5;
 
 /**
  * Voreinstellungen. Jede einzelne Kappe reist als Feld im Kuvert mit.
@@ -78,7 +114,22 @@ export interface GrafKuerzung {
 
 export interface GrafWelt {
   einheit: "welt";
+  /**
+   * Seite der Welt DIESES Bildes, in Welteinheiten. Der Client teilt seine Flaeche
+   * durch diesen Wert — nie durch eine eingebaute 1000. Der Anker 1000 gilt als
+   * Untergrenze: kleine Bestaende behalten die alte Welt, grosse bekommen die ihre.
+   */
   groesse: number;
+  /**
+   * Untere linke Ecke der Welt DIESES Bildes. Die Plaetze liegen in
+   * `nullpunkt + [0, groesse]` auf beiden Achsen; der Client rechnet
+   * `(x - nullpunkt.x) / groesse`. Auf dem ersten Rahmen eines Bestands ist der
+   * Nullpunkt `(0, 0)` — das Bild wird an den Rand gesetzt. spaeter kann er
+   * negativ werden, und das ist eine gemeldete Zahl, keine Ueberraschung: ein
+   * Nachtrag verschiebt nichts, weil jede Verschiebung jeden bitgleich verankerten
+   * Knoten bewegen wuerde.
+   */
+  nullpunkt: { x: number; y: number };
   herkunft: "kraft" | "karte" | "rand";
 }
 
@@ -86,8 +137,23 @@ export interface GrafStempel {
   generation: number;
   layoutVersion: number;
   parameterHash: string;
-  /** Ehrlich: war die Rechnung diesmal Arbeit? */
-  berechent: "cache" | "neu";
+  /**
+   * Ehrlich: war die Rechnung diesmal Arbeit?
+   *   "cache"   — dasselbe Bild, unveraendert herausgegeben (Parameter und
+   *               Generation gleich), keinerlei Rechnung;
+   *   "rahmen"  — die Plaetze kamen aus dem Grundriss dieser Bestandsgeneration:
+   *               keine Relaxation, nur lesen und zuschneiden;
+   *   "neu"     — diese Anfrage hat gerechnet (ersten Grundriss ueberhaupt, oder
+   *               Nachtrag an einen bestehenden).
+   * Stand 5 kennt "neu" als den teuren Fall; er ist einmal je Bestand und Sicht,
+   * nicht je Anfrage. Die Groessenordnung steht in der Doku und in
+   * `tests/graf-kosten.test.ts` als eigener Fall.
+   */
+  berechent: "cache" | "neu" | "rahmen";
+  /** Fuer welche Bestandsgeneration der Grundriss der Plaetze gilt; null ohne layout. */
+  rahmenGeneration?: number | null;
+  /** Wie viele Generationen der Grundriss bei dieser Antwort hinterherhinkte: 0 = aktuell. */
+  rahmenAlter?: number;
 }
 
 export interface GrafKnoten {
@@ -100,7 +166,7 @@ export interface GrafKnoten {
   gradEcht: number;
   /** Zahl der Aehnlichkeitskanten an diesem Ende (Vermutung). */
   gradVermutet: number;
-  /** Welteinheiten 0..1000; fehlt, wenn layout=0. */
+  /** Welteinheiten, Achse x: liegt in `welt.nullpunkt.x .. + welt.groesse` — fehlt, wenn layout=0. */
   x?: number;
   y?: number;
   /** true, wenn der Platz aus dem letzten Bild uebernommen wurde. */
@@ -159,7 +225,7 @@ export function leeresKuvert(sicht: GrafSicht): GrafAntwort {
       verwaiste: { knoten: 0, kanten: 0 },
       vollstaendig: true,
     },
-    welt: { einheit: "welt", groesse: WELT_GROESSE, herkunft: "kraft" },
+    welt: { einheit: "welt", groesse: WELT_GROESSE, nullpunkt: { x: 0, y: 0 }, herkunft: "kraft" },
     stempel: { generation: 0, layoutVersion: LAYOUT_VERSION, parameterHash: "", berechent: "neu" },
     knoten: [],
     kanten: [],

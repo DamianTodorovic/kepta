@@ -10,10 +10,10 @@
     "verwaiste": { "knoten": 0, "kanten": 0 },
     "vollstaendig": true
   },
-  "welt": { "einheit": "welt", "groesse": 1000, "herkunft": "kraft" },
+  "welt": { "einheit": "welt", "groesse": 1000, "nullpunkt": { "x": 0, "y": 0 }, "herkunft": "kraft" },
   "stempel": {
     "generation": 12,
-    "layoutVersion": 4,
+    "layoutVersion": 5,
     "parameterHash": "69f001c815eccdabf840ee93b6c682334b6605a4105937fc42d9c90f3035d5d6",
     "berechent": "neu"
   },

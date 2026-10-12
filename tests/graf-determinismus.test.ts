@@ -5,8 +5,8 @@
 // Dinge, die ein Test pruefen kann: Ordnung unabhaengig, Start aus der Identitaet,
 // Anker-Regel.
 import { describe, it, expect } from "vitest";
-import { keim, berechneWelt, WELT_MITTE, type KraftKante, type KraftEingang } from "../src/core/graf-kraft";
-import { WELT_GROESSE, WELT_RAD } from "../src/core/graf-vertrag";
+import { keim, berechneWelt, WELT_MITTE, type KraftKante, type KraftEingang, type WeltDiagnose } from "../src/core/graf-kraft";
+import { WELT_GROESSE, WELT_RAD, scheibenRadius } from "../src/core/graf-vertrag";
 
 /** Ein Netz aus `n` Knoten, jedes vierte Paar verbunden — deterministischer Bau. */
 function netz(n: number, zusatz = false): KraftEingang {
@@ -66,13 +66,24 @@ describe("graf-kraft: Determinismus", () => {
   });
 
   it("alle Plaetze liegen in der Welt und sind Zahlen ohne NaN", () => {
-    for (const [id, platz] of berechneWelt(netz(150))) {
+    // WARUM ANDERS SEIT STAND 5: die Weltseite ist nicht mehr die Konstante 1000,
+    // sondern die Ausdehnung, die die Kraefte dieses Bestands bauen — sie reist als
+    // `welt.groesse` im Kuvert mit (`berechneWelt` meldet sie in der Diagnose). Die
+    // Behauptung dieses Falls ist unveraendert: kein Platz liegt ausserhalb der
+    // Welt, die fuer dieses Bild gilt. Was sich geaendert hat, ist, wo diese Welt
+    // endet — 1000 hart einzubauen waere genau der Fehler, den die Neuregelung
+    // abschafft (Beleg der Rechnung: audit-2026-10-09/e2-code/nacht-12-10/).
+    const diagnose = { ticks: 0, alpha: 0, besuche: 0 } as WeltDiagnose;
+    const platze = berechneWelt(netz(150), diagnose);
+    const welt = diagnose.welt ?? WELT_GROESSE;
+    expect(welt).toBeGreaterThanOrEqual(WELT_GROESSE);
+    for (const [id, platz] of platze) {
       expect(Number.isFinite(platz.x)).toBe(true);
       expect(Number.isFinite(platz.y)).toBe(true);
       expect(platz.x).toBeGreaterThanOrEqual(WELT_RAD - 0.05);
-      expect(platz.x).toBeLessThanOrEqual(WELT_GROESSE - WELT_RAD + 0.05);
+      expect(platz.x).toBeLessThanOrEqual(welt - WELT_RAD + 0.05);
       expect(platz.y).toBeGreaterThanOrEqual(WELT_RAD - 0.05);
-      expect(platz.y).toBeLessThanOrEqual(WELT_GROESSE - WELT_RAD + 0.05);
+      expect(platz.y).toBeLessThanOrEqual(welt - WELT_RAD + 0.05);
       expect(id.startsWith("k-")).toBe(true);
     }
   });
@@ -138,5 +149,51 @@ describe("graf-kraft: Anker-Regel", () => {
       expect(platz.x).not.toBe(NaN);
       expect(id).toBeTruthy();
     }
+  });
+
+  it("ein Nachtrag, der unter den Untergrund waechst, meldet die Welt, in der er liegt", () => {
+    // Der Fall, den die Kosten-Wache 12.10. 13:09 erwischt hat: drei Anker dicht
+    // beieinander, einer davon mit unveraenderter Kantenmenge — und ein Neuling,
+    // der denselben Platz will. Ein verankertes Ende gibt nie nach (`verankert`
+    // ist Vertrag), also nimmt das freie Ende den ganzen Fehlbetrag und liegt
+    // unterhalb des alten Untergrunds. Die Zusage, die ein Client braucht, ist
+    // nicht "bei 0 beginnt die Welt", sondern "innerhalb der gemeldeten Welt".
+    const vorher = new Map([
+      ["a", { x: 30, y: 30 }],
+      ["b", { x: 34, y: 30 }],
+      ["c", { x: 32, y: 34 }],
+    ]);
+    const scheibe = scheibenRadius(9, 0);
+    const diagnose: WeltDiagnose = { ticks: 0, alpha: 0, besuche: 0 };
+    const welt = berechneWelt(
+      {
+        knoten: [{ id: "a", scheibe }, { id: "b", scheibe }, { id: "c", scheibe }, { id: "n", scheibe }],
+        kanten: [],
+        vorher,
+        unveraendert: new Set(["a", "b", "c"]),
+        ticksMax: 60,
+      },
+      diagnose
+    );
+    const nullpunkt = diagnose.nullpunkt!;
+    const groesse = diagnose.welt!;
+
+    // (a) Der Neuling liegt wirklich ausserhalb des alten Rahmens — sonst prueft
+    //     dieser Fall nichts, was der naechste nicht schon prueft.
+    const neu = welt.get("n")!;
+    expect(neu.x, "dieser Aufbau sollte unter den alten Untergrund wachsen").toBeLessThan(WELT_RAD);
+
+    // (b) Und doch in der Welt, die er meldet: Saum auf beiden Achsen, mit dem
+    //     halben Rundungsspielraum der Meldung.
+    for (const [id, p] of welt) {
+      expect(p.x, `${id} x unter dem gemeldeten Saum`).toBeGreaterThanOrEqual(nullpunkt.x + WELT_RAD - 0.05);
+      expect(p.x, `${id} x ueber dem gemeldeten Saum`).toBeLessThanOrEqual(nullpunkt.x + groesse - WELT_RAD + 0.05);
+      expect(p.y, `${id} y unter dem gemeldeten Saum`).toBeGreaterThanOrEqual(nullpunkt.y + WELT_RAD - 0.05);
+      expect(p.y, `${id} y ueber dem gemeldeten Saum`).toBeLessThanOrEqual(nullpunkt.y + groesse - WELT_RAD + 0.05);
+    }
+
+    // (c) Die Anker bleiben bitgleich — das ist der Grund, warum hier die Welt
+    //     wachst und nicht das Bild verschoben wird.
+    for (const [id, platz] of vorher) expect(welt.get(id), `${id} hat seine Kantenmenge nicht`).toEqual({ x: platz.x, y: platz.y, verankert: true });
   });
 });

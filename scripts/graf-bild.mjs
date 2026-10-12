@@ -30,6 +30,7 @@ import { indexMemory } from "../src/core/engine";
 import { demoKorpus } from "../src/demo";
 import { baueNotizBild } from "../src/ui/graph";
 import { berechneWelt } from "../src/core/graf-kraft";
+import { scheibenRadius } from "../src/core/graf-vertrag";
 
 const argv = process.argv.slice(2);
 const schalter = (name, fallback) => {
@@ -105,7 +106,9 @@ try {
   kuerzung = bild.kuerzung;
   bestand = bild.bestand;
   welt = berechneWelt({
-    knoten: knoten.map((k) => ({ id: k.id })),
+    // Die Scheibe je Knoten aus dem Vertrag: dieselbe Zahl, die hier gemalt wird.
+    // Zwei Gesetze, zwei Wahrheiten — das war die Paritaet-Luecke zum Kern.
+    knoten: knoten.map((k) => ({ id: k.id, scheibe: scheibenRadius(k.gradEcht, k.gradVermutet) })),
     kanten: kanten.map((k) => ({ quelle: k.quelle, ziel: k.ziel, sorte: k.sorte, feder: k.feder })),
   });
 } finally {
@@ -136,7 +139,7 @@ const plan = {
   knoten: platziert.map((k) => ({
     x: k.x,
     y: k.y,
-    r: 6 + 2.4 * Math.sqrt(k.gradEcht) + 1.1 * Math.sqrt(k.gradVermutet),
+    r: scheibenRadius(k.gradEcht, k.gradVermutet),
     farbe: k.art,
     titel: betitelt.has(k.id) ? k.titel : "",
     echt: k.gradEcht,
