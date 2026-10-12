@@ -293,10 +293,30 @@ describe("Der Bericht als einzige Quelle der Testzahl", () => {
     expect(funde[0]).toMatch(/README\.md:2 Abzeichen: nennt 788 Tests, gelaufen sind 848/);
   });
 
-  it("verlangt den Messstand zu jeder Zahl — und denselben Tag wie den Lauf", () => {
+  it("verlangt den Messstand zu jeder Zahl — und ein Datum, das dieser Lauf nicht widerlegt", () => {
     const lauf = { zahl: 848, tag: "2026-10-10" };
     expect(dokuVergleich("**848 tests**\ntests-848%20passing", lauf, "README.md").join("\n")).toMatch(/keinen Messstand/);
-    expect(dokuVergleich("**848 tests** (gemessen am 2026-10-09)", lauf, "README.md").join("\n")).toMatch(/2026-10-09[\s\S]*beglaubigt ist der Lauf vom 2026-10-10/);
+
+    // Der Fall, der am 12.10. den App-Gate riss (lauf 38185328804): derselbe Baum,
+    // zwei minuten ueb Mitternacht, die Zahl nie in streit. Ein Stempel vom Vortag
+    // ist an diesem Lauf wahr — also ist die Meldung leer.
+    expect(dokuVergleich("**848 tests** (gemessen am 2026-10-09)", lauf, "README.md")).toEqual([]);
+    expect(dokuVergleich("**848 tests** (gemessen am 2026-10-10)", lauf, "README.md")).toEqual([]);
+
+    // Die Untergrenze "nicht aelter als die juengste Testdatei", die hier einen
+    // Moment lang stand, ist auf einem Runner nicht fahrbar: actions/checkout@v4
+    // schreibt mit fetch-depth 1 jede Datei neu, dort ist die juengste Testdatei
+    // immer der Tag des Laufs, und ein unveraendert richtiges README waerte beim
+    // naechsten Push rot — dieselbe Sorte Grund-los-rot, die dieser Lauf abgestellt
+    // hat. Halten tut stattdessen die Zahl: sie muss DIESES Laufs Zahl sein.
+    expect(dokuVergleich("**841 tests** (gemessen am 2026-10-01)", lauf, "README.md").join("\n")).toMatch(
+      /nennt 841 Tests, gelaufen sind 848/
+    );
+
+    // und ein Stempel aus der Zukunft bleibt eine erfundene Zahl
+    expect(
+      dokuVergleich("**848 tests** (gemessen am 2026-10-11)", lauf, "README.md").join("\n")
+    ).toMatch(/Zukunft/);
   });
 });
 
