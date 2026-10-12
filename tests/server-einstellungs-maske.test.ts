@@ -6,6 +6,7 @@ import path from "node:path";
 import fs from "node:fs";
 import { KeptaStore } from "../src/core/store";
 import { schluesselbundKeyProvider } from "../src/core/schluessel";
+import { portErzwingen, portFuerDatei } from "./helfer/port-vergabe";
 
 // Der Rueckweg der Desktop-App ist ein lesbarer Name. Seit F13 legt die App ihre
 // KI-Verbindung unter `ai_connection` ab (kepta-app/src/lib/ai.ts) und den
@@ -14,7 +15,9 @@ import { schluesselbundKeyProvider } from "../src/core/schluessel";
 // festhaelt, ist beides: der Name bleibt lesbar, und die Maske bleibt zu.
 process.env.KEPTA_NO_AUTOSTART = "1";
 
-const PORT = 8811;
+// Kein geschriebener Port mehr, sondern der aus dem Dateinamen: dieselbe Datei,
+// dieselbe Zahl, in jedem Lauf (`tests/helfer/port-vergabe.ts`).
+const PORT = portFuerDatei("tests/server-einstellungs-maske.test.ts");
 let URLE = `http://127.0.0.1:${PORT}`;
 
 // So sieht der Umschlag der App aus: Kennung, IV, Chiffretext, Tag — Base64.
@@ -63,23 +66,21 @@ beforeAll(async () => {
   // Ein Horcher pro Datei: der Node-Agent haelt Verbindungen warm, und ein
   // geschlossener Port mit warmem Socket loest ECONNRESET aus.
   hoerer = http.createServer(createApp(store));
-  // Der bestellte Port zuerst. Zwei Agenten, ein Baum: ist 8811 belegt, horcht
-  // diese Datei auf einem frischen — sonst misst sie gegen den Lauf eines
-  // anderen und sieht trotzdem gut aus.
-  const binden = (port: number) =>
-    new Promise<void>((los, fehler) => {
-      hoerer.once("error", fehler);
-      hoerer.listen(port, "127.0.0.1", () => los());
-    });
+  // Der Zahl-Vertrag dieser Suite: diese Datei horcht auf IHREM Port, nicht auf
+  // dem erstbesten freien. Zwei Laeufe desselben Baums auf derselben Datei
+  // scheitern hoerbar — ein stiller Ausweichport (wie hier frueher `listen(0)`)
+  // macht einen Fehlerbericht zu einer Frage des Zeitpunkts, und eine Zahl, die
+  // von einem Lauf zum naechsten wandert, ist in diesem Haus keine Zahl.
   try {
-    await binden(PORT);
+    await portErzwingen(PORT, "tests/server-einstellungs-maske.test.ts");
   } catch (e) {
-    if ((e as NodeJS.ErrnoException).code !== "EADDRINUSE") throw e;
-    await binden(0);
+    throw new Error(`${(e as Error).message} — ein zweiter Lauf desselben Baums laeuft; nicht zwei Suiten auf einem Baum.`);
   }
-  const adresse = hoerer.address();
-  if (adresse === null || typeof adresse === "string") throw new Error("Der Horcher hat keinen Port");
-  URLE = `http://127.0.0.1:${adresse.port}`;
+  await new Promise<void>((los, fehler) => {
+    hoerer.once("error", fehler);
+    hoerer.listen(PORT, "127.0.0.1", () => los());
+  });
+  URLE = `http://127.0.0.1:${PORT}`;
 });
 
 beforeEach(async () => {

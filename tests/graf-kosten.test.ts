@@ -567,7 +567,15 @@ describe("graf-kosten: einmal rechnen, dann ausliefern", () => {
     // nur bei einer Maschinen-Baseline bis 7,5 ms.
     if (!ruheKlammer(ruhe, "mutation", 15)) return kontext.skip();
     expect(medianWuerfe).toBeLessThanOrEqual(15);
-  });
+    // Dieselbe Laeufer-Geduld wie die beiden 500-Knoten-Faelle, und der Grund ist
+    // ein Befund von 18:02 und 18:05: dieser Fall riss unter fremder Last die
+    // 20-s-Schwelle des Laufers, und **der Timeout kippte den naechsten Fall** —
+    // dessen Bild enthielt ploetzlich den „Neuling", den dieser Fall gerade
+    // angelegt hatte (`ein Neuling mit eigener Nachbarschaft` bekam
+    // expected 'Neuling' to be 'Eigen 7'). Ein abgebrochener Fall schreibt
+    // weiter in den Store des naechsten, weil `beforeEach` laengst neu gebaut
+    // hat. Die Kappe ist also nicht Bequemlichkeit, sie trennt die Faelle.
+  }, 180_000);
 
   it("ein Neuling mit eigener Nachbarschaft landet bei ihr, nicht in der Mitte", async () => {
     // Der Fall, in dem die Zusage etwas behauptet: eine Notiz, die genau eine
@@ -646,17 +654,30 @@ describe("graf-kosten: gemessene Grenzen", () => {
       umlauf.push((await hole("?sicht=notiz&knoten=500")).ms);
     }
     console.log(`[kosten] 500 Knoten anfrage=${neu.map((x) => x.toFixed(0)).join(",")} cache=${cache.map((x) => x.toFixed(1)).join(",")} HTTP=${umlauf.map((x) => x.toFixed(1)).join(",")}`);
-    expect(p95(cache)).toBeLessThan(5);
     // Zusage dieses Falls: <= 120 ms p95 je Anfrage.
     if (!ruheKlammer(ruhe, "500 Knoten", 120)) return kontext.skip();
+    // Die Cache-Kappe stand vorher frei im Fall, und der Lauf 18:49:07 hat es
+    // erwischt: p95(cache) = 7,50 ms gegen bestellte 5, weil die Maschine in
+    // diesem Fenster load1 92,8 auf 10 Kernen trug (mobileassetd 90,7 % CPU seit
+    // 42 Minuten, dazu Photos und KEPTA.app). Derselbe Fehler, denselben Tag
+    // schon einmal geheilt (13:29, kalter Fall: 231 ms gegen 120 vor der Klammer).
+    // Eine Erwartung an eine Zeit, die vor der Ruhe-Klammer steht, ist keine
+    // Heilung, sondern eine zweite Art, die Maschine rot zu machen. Die Zahl 5 ms
+    // ist unveraendert bestelle; nur der Moment, in dem sie sprechen darf, ist
+    // derselbe wie bei den beiden Erwartungen unter ihr.
+    expect(p95(cache)).toBeLessThan(5);
     // A9 §6 Auftrag, unveraendert bestellt: <= 120 ms p95.
     expect(p95(neu)).toBeLessThan(120);
-    // Die 60 s sind die Geduld des Laufers, nicht ein Budget: der Fall braucht im
-    // Alleinlauf 1,3 s (gemessen 12:56, ruhige Maschine). Beim Lauf 13:31 auf einem
-    // mit 8,37 fremden Kernen belegten Rechner riss die DEFAULT-Kappe von 20 s —
-    // ein Urteil ueber die Nachbarschaft, nicht ueber den Pfad. Die Zeit-Assertions
-    // bleiben trotzdem hinter der Ruhe-Klammer.
-  }, 60_000);
+    // 180 s sind die Geduld des Laufers, nicht ein Budget — dasselbe Zahl wie im
+    // Ruhe-Fall dieser Suite. Warum nicht 20 s (der Default) und nicht 60 s: im
+    // Alleinlauf braucht dieser Fall 1,3 s (12:56, ruhige Maschine), und beim Lauf
+    // 18:28:54 — load1 16,74 auf 10 Kernen, Sonde 12,2 ms Median, die ganze Suite
+    // 133,99 s statt 37 s — riss selbst 60 s. Ein Timeout ist ein Urteil ueber die
+    // Nachbarschaft, nie ueber den Pfad; die Budget-Assertions bleiben hinter der
+    // Ruhe-Klammer und der Zusage-Pforte, eine Geduld kann also kein Gruen erkaufen.
+    // Was sie verhindert, ist die Kaskade von 18:02: ein mitten im Fall
+    // abgebrochener Wurf schreibt weiter in den Bestand des naechsten Falles.
+  }, 180_000);
 
   it("500 Knoten: der kalte Grundriss ist einmal je Generation und wird gemeldet", async (kontext) => {
     const ruhe = maschinenruhe();
@@ -699,7 +720,7 @@ describe("graf-kosten: gemessene Grenzen", () => {
     expect(p95(kalt)).toBeLessThan(p95(nurGelesen) + 120);
     // Dieselbe Geduld des Laufers wie beim Nachbarn: 2,1 s im Alleinlauf, 20 s
     // Default waren auf dem belegten Rechner von 13:31 zu wenig.
-  }, 60_000);
+  }, 180_000);
 
   it("2000 Knoten: erste Rechnung unter 750 ms", async (kontext) => {
     const ruhe = maschinenruhe();
@@ -732,7 +753,9 @@ describe("graf-kosten: gemessene Grenzen", () => {
     // kein Versprechen nach aussen — nach aussen steht die Messung im Bericht
     // F10-GRAF-DIENST.md, nicht diese Grenze.
     expect(p95(neu)).toBeLessThan(750);
-  });
+    // Dasselbe Zahl an Laeufergeduld wie die drei anderen Zeitfaelle: dieser hier
+    // saet 2 000 Notizen und ist damit der teuerste Aufbau der Datei.
+  }, 180_000);
 
   it("ein Reglerzug am Fenster kostet keine Anfrage: die Antwort kennt kein Fenster", async () => {
     saete(20);
