@@ -4,6 +4,11 @@ export default defineConfig({
   test: {
     // Test-Discovery: alle *.test.ts im Repo (Quelle: tests/).
     include: ["tests/**/*.test.ts"],
+    // Die Umwelt-Grundlage vor jeder Datei — der Vertrag steht in
+    // `tests/helfer/umwelt-basis.ts`, gewacht von `tests/umwelt-vertrag.test.ts`.
+    // Geroettet wird hier nur die Reihenfolge: eine setupFile laeuft, BEVOR die Datei
+    // importiert, also vor jedem `process.env.…` und jedem `vi.stubEnv` der Datei.
+    setupFiles: ["tests/helfer/umwelt-setup.ts"],
     // Forks-Pool (nicht Threads) — SQLite/Datei-Tests laufen isoliert pro Prozess.
     // @ts-ignore — vitest-Typen unterscheiden sich zwischen Versionen
     pool: "forks",

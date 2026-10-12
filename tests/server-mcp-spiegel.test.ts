@@ -17,11 +17,26 @@ beforeEach(async () => {
   prevHome = process.env.HOME;
   process.env.HOME = dir;
   process.env.KEPTA_DATA_DIR = dir;
+  // Die zwei Tueren vergleichen nur, wenn beide denselben RAHMEN haben, und der Rahmen
+  // steht in der Prozess-Umwelt: `KEPTA_MAX_ACTIVE` (server.ts:431, bei JEDEM Schreiblauf
+  // gelesen; eine kleine Kappe beantwortet den funften create mit 429) und
+  // `KEPTA_WRITE_GATE` (server.ts:~906; an, kann ein create zu einem update werden lassen
+  // und antwortet trotzdem 200, oder es ganz ablehnen — wieder 200). Vitest faehrt
+  // Dateien in wiederverwendeten Forks (`pool: "forks"`, `fileParallelism: true`), und
+  // `vi.stubEnv` aus einer Nachbardatei wirkt weiter, wenn sie nicht zurueckgebaut wird:
+  // andere Dateien dieser Suite setzen beide Werte (`tests/server.test.ts:145,170`,
+  // `tests/import-*.test.ts`, `tests/engine.test.ts:451,471`, `tests/mcp.test.ts:326`).
+  // Ein Fall, der eine Umwelt erbt, die er nicht gesetzt hat, vergleicht am Ende zwei
+  // Bestaende, die nie dieselben waren — gemeldet als Tuer-Streit (12.10., 16:04:17 und
+  // 20:31, im Alleinlauf nie). Also: was dieser Fall braucht, setzt er selbst.
+  vi.stubEnv("KEPTA_MAX_ACTIVE", "5000");
+  vi.stubEnv("KEPTA_WRITE_GATE", "");
   vi.resetModules();
   ({ createApp } = await import("../server"));
 });
 
 afterEach(() => {
+  vi.unstubAllEnvs();
   if (prevHome === undefined) delete process.env.HOME;
   else process.env.HOME = prevHome;
 });
@@ -44,11 +59,38 @@ async function mcp(app: any, name: string, args: Record<string, unknown>): Promi
 const fehlerText = (ergebnis: McpErgebnis) => String(ergebnis.content?.[0]?.text ?? "").replace(/^Error:\s*/, "");
 const istFehler = (ergebnis: McpErgebnis) => ergebnis.isError === true;
 
-/** N Dubletten mit gleichem Titel: die lexikalische Spur bildet Paare, die Kappe greift. */
-async function dubletten(app: any, n: number, titel = "Frist Miller Quartalsrechnung") {
+/**
+ * N Dubletten mit gleichem Titel: die lexikalische Spur bildet Paare, die Kappe greift.
+ *
+ * Der Status JEDES Schreiblaufs wird geprueft, nicht nur geschickt. Grund, in eigenen
+ * Worten: dieser Fall vergleichte zwei Tueren an zwei Bestaenden, und die Antwort der
+ * Tueren ist eine Funktion dessen, was im Bestand liegt. Ging eine Schreibphase verloren,
+ * streiten die Tueren um eine Zahl, die nie dieselbe Grundlage hatte — gemeldet wurde das
+ * als Regelunterschied (`expected applied 3 to match applied 2`, 12.10. im Parallelhaufen
+ * um 16:04:17 und 20:31, im Alleinlauf nie), weil `dubletten` die Antwort weggeworfen hat.
+ * `schlechtBei` setzt eine Schreibphase absichtlich in den Ablehnungsfall; der Weg ist die
+ * Gegenprobe, dass diese Wache etwas findet.
+ */
+async function dubletten(app: any, n: number, titel = "Frist Miller Quartalsrechnung", schlechtBei = -1) {
+  const verloren: string[] = [];
   for (let i = 0; i < n; i++) {
-    await request(app).post("/api/memories").send({ title: titel, content: `Quartalsrechnung bis Ende Monat, Fassung ${i}.` });
+    const nutzlaut = i === schlechtBei ? { title: "", content: "" } : { title: titel, content: `Quartalsrechnung bis Ende Monat, Fassung ${i}.` };
+    const antwort = await request(app).post("/api/memories").send(nutzlaut);
+    if (antwort.status !== 200 && antwort.status !== 201) {
+      verloren.push(`Schreiblauf ${i}: ${antwort.status} ${JSON.stringify(antwort.body).slice(0, 200)}`);
+    }
   }
+  expect(verloren, `${n} Dubletten bestellt, ${verloren.length} Schreiblauf/-laeufe abgewiesen — die Grundlage der Tueren ist damit nicht dieselbe: ${verloren.join(" | ")}`).toEqual([]);
+}
+
+/** Beide Bestaende muessen gleich aussehen, bevor zwei Tueren vergleichen werden. */
+function gleicheGrundlage(a: { store: KeptaStore }, b: { store: KeptaStore }, erwartet: number) {
+  const aktivA = a.store.countMemories().active;
+  const aktivB = b.store.countMemories().active;
+  expect(
+    [aktivA, aktivB],
+    `die zwei Bestaende fassen unterschiedlich viele lebende Notizen (${aktivA} gegen ${aktivB}, erwartet ${erwartet} je Seite) — ein Tuer-Vergleich waehlt hier die Regel, nicht die Grundlage`
+  ).toEqual([erwartet, erwartet]);
 }
 
 describe("A2-13 — die HTTP-Spiegel von consolidate und forget gehen durch dieselbe Regel wie der Agentenweg", () => {
@@ -57,6 +99,7 @@ describe("A2-13 — die HTTP-Spiegel von consolidate und forget gehen durch dies
     const b = instanz("cons-ko-b");
     await dubletten(a.app, 4);
     await dubletten(b.app, 4);
+    gleicheGrundlage(a, b, 4);
 
     const spiegel = await request(a.app).post("/api/mcp/consolidate").send({ dryRun: false });
     const agent = await mcp(b.app, "memory_consolidate", { dryRun: false });
@@ -76,6 +119,7 @@ describe("A2-13 — die HTTP-Spiegel von consolidate und forget gehen durch dies
     const b = instanz("cons-ja-b");
     await dubletten(a.app, 4);
     await dubletten(b.app, 4);
+    gleicheGrundlage(a, b, 4);
 
     const spiegel = await request(a.app).post("/api/mcp/consolidate").send({ dryRun: false, confirm: "supersede" });
     const agent = await mcp(b.app, "memory_consolidate", { dryRun: false, confirm: "supersede" });
@@ -95,6 +139,7 @@ describe("A2-13 — die HTTP-Spiegel von consolidate und forget gehen durch dies
     // 33 Dubletten = 528 Paare, die Kappe sitzt bei 500 pro Aufruf.
     await dubletten(a.app, 33);
     await dubletten(b.app, 33);
+    gleicheGrundlage(a, b, 33);
 
     const spiegel = await request(a.app).post("/api/mcp/consolidate").send({});
     const agent = await mcp(b.app, "memory_consolidate", {});
@@ -103,6 +148,39 @@ describe("A2-13 — die HTTP-Spiegel von consolidate und forget gehen durch dies
     expect(agent.structuredContent!.begrenzt).toBe(true);
     expect(spiegel.body.candidates).toHaveLength(500);
     expect((agent.structuredContent!.candidates as unknown[]).length).toBe(500);
+  });
+
+  it("ein verlorener Schreiblauf wird benannt, bevor zwei Tueren verglichen werden", async () => {
+    // Die Gegenprobe, dass `dubletten` etwas findet: die Kappe, die ein Nachbar in der
+    // Prozess-Umwelt hinterlassen kann, wird hier gesetzt (server.ts:431 liest sie bei
+    // JEDEM Schreiblauf). Fuenf bestellte Dubletten, Kappe 3: die erste bis vierte geht
+    // durch (geprueft wird vor dem Schreiben: 3 > 3 ist falsch), die fuenfte wird mit 429
+    // beantwortet — und genau die warf der Helfer frueher weg.
+    const a = instanz("ver-a");
+    vi.stubEnv("KEPTA_MAX_ACTIVE", "3");
+    let meldung = "";
+    try {
+      await dubletten(a.app, 5);
+    } catch (e) {
+      meldung = String((e as Error).message);
+    }
+    expect(meldung, "der Helfer liess eine abgewiesene Schreibphase laufen — dann ist der Schutz nicht da").toMatch(/Schreiblauf 4: 429/);
+    expect(a.store.countMemories().active).toBe(4);
+  });
+
+  it("derselbe Streit, absichtlich gemacht: die Zahl trennt an der Grundlage, nicht an der Regel", async () => {
+    // Was am 12.10. im Parallelhaufen als Tuer-Streit erschien (applied 3 gegen applied 2),
+    // ist ohne einen fremden Läufer reproduzierbar: zwei Bestaende mit 4 und mit 3 Dubletten.
+    // Die Regel ist dieselbe an beiden Tueren — die Zahl folgt den Paaren im Bestand.
+    const a = instanz("str-a");
+    const b = instanz("str-b");
+    await dubletten(a.app, 4);
+    await dubletten(b.app, 3);
+    const spiegel = await request(a.app).post("/api/mcp/consolidate").send({ dryRun: false, confirm: "supersede" });
+    const agent = await mcp(b.app, "memory_consolidate", { dryRun: false, confirm: "supersede" });
+    expect(spiegel.body.applied).toBe(3);
+    expect(agent.structuredContent!.applied).toBe(2);
+    expect(() => gleicheGrundlage(a, b, 4)).toThrow(/unterschiedlich viele lebende Notizen \(4 gegen 3/);
   });
 
   it("forget supersede ohne Nachfolger: beide Tueren verweigern, keine Kette ins Leere", async () => {
