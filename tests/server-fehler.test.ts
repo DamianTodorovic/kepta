@@ -1,9 +1,11 @@
-import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
+import { describe, it, expect, beforeAll, afterAll, beforeEach, afterEach, vi } from "vitest";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import fs from "node:fs";
 import request from "supertest";
 import { KeptaStore } from "../src/core/store";
+import { hoererDerDatei, type DateiHoerer } from "./helfer/hoerer";
+import { anlage } from "./helfer/anlage";
 
 // server.ts startet beim Import normalerweise automatisch — hier nur createApp.
 process.env.KEPTA_NO_AUTOSTART = "1";
@@ -13,6 +15,18 @@ let store: KeptaStore;
 let app: import("express").Express;
 let prevHome: string | undefined;
 let dir: string;
+// Ein Horcher pro Datei, auf IHREM Port — nicht einer je Anfrage (`tests/helfer/hoerer.ts`).
+let hoerer: DateiHoerer;
+let URLE: string;
+
+beforeAll(async () => {
+  hoerer = await hoererDerDatei("tests/server-fehler.test.ts");
+  URLE = hoerer.url;
+});
+
+afterAll(async () => {
+  await hoerer.schliesse();
+});
 
 beforeEach(async () => {
   dir = fs.mkdtempSync(path.join(tmpdir(), "kepta-fehler-"));
@@ -23,6 +37,7 @@ beforeEach(async () => {
   ({ createApp } = await import("../server"));
   store = new KeptaStore(path.join(dir, "test.db"));
   app = createApp(store);
+  hoerer.gebeApp(app);
 });
 
 afterEach(() => {
@@ -41,7 +56,7 @@ function zeigeNichtsVomStapel(text: string) {
 
 describe("Q-19 — Fehlerantworten leaken Stapelverweise mit absoluten Pfaden", () => {
   it("413 am globalen Limit: JSON, Grund und Groesse, kein Stapel", async () => {
-    const res = await request(app)
+    const res = await request(URLE)
       .post("/api/memories")
       .set("Content-Type", "application/json")
       .send({ title: "X", content: "x".repeat(1_500_000) });
@@ -55,7 +70,7 @@ describe("Q-19 — Fehlerantworten leaken Stapelverweise mit absoluten Pfaden", 
   });
 
   it("413 am Routen-Limit (2mb beim Import): ebenfalls JSON ohne Stapel", async () => {
-    const res = await request(app)
+    const res = await request(URLE)
       .post("/api/memories/import")
       .set("Content-Type", "application/json")
       .send({ memories: [{ title: "Zu groß", content: "x".repeat(2_500_000) }] });
@@ -68,7 +83,7 @@ describe("Q-19 — Fehlerantworten leaken Stapelverweise mit absoluten Pfaden", 
 
   it("kaputtes JSON: 400 als JSON, ohne Stapel und ohne den Body zurueckzugeben", async () => {
     const geheim = "sk-GEHEIMER-WERT-das-darf-nicht-zurueck";
-    const res = await request(app)
+    const res = await request(URLE)
       .post("/api/memories")
       .set("Content-Type", "application/json")
       .send(`{"title":"${geheim}", "content": `);
@@ -82,7 +97,7 @@ describe("Q-19 — Fehlerantworten leaken Stapelverweise mit absoluten Pfaden", 
   it("eine werfende Route: 500 als JSON, der Grund bleibt im Protokoll", async () => {
     store.db.exec("DROP TABLE memories");
     const vorher = vi.spyOn(console, "error").mockImplementation(() => undefined);
-    const res = await request(app).get("/api/memories");
+    const res = await request(URLE).get("/api/memories");
     const protokolliert = vorher.mock.calls.map((c) => c.join(" ")).join("\n");
     vorher.mockRestore();
     expect(res.status).toBe(500);
@@ -94,12 +109,12 @@ describe("Q-19 — Fehlerantworten leaken Stapelverweise mit absoluten Pfaden", 
   });
 
   it("413 schreibt nichts in die Datenbank", async () => {
-    await request(app).post("/api/memories").send({ title: "Vorher", content: "bestand" });
-    await request(app)
+    anlage(await request(URLE).post("/api/memories").send({ title: "Vorher", content: "bestand" }), "Vorher-Notiz anlegen");
+    await request(URLE)
       .post("/api/memories")
       .set("Content-Type", "application/json")
       .send({ title: "Zu groß", content: "x".repeat(1_500_000) });
-    const liste = await request(app).get("/api/memories");
+    const liste = await request(URLE).get("/api/memories");
     expect(liste.body).toHaveLength(1);
     expect(liste.body[0].title).toBe("Vorher");
   });

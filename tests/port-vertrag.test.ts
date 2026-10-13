@@ -16,7 +16,7 @@ import { describe, it, expect } from "vitest";
 import fs from "node:fs";
 import path from "node:path";
 import http from "node:http";
-import { PORT_AUSNAHME, PORT_BASIS, PORT_BEREICH, portErzwingen, portFuerDatei, portZulaessig } from "./helfer/port-vergabe";
+import { HORCHENDE_KENNUNGEN, PORT_AUSNAHME, PORT_BASIS, PORT_BEREICH, portErzwingen, portFuerDatei, portFuerHorer, portZulaessig } from "./helfer/port-vergabe";
 
 const wurzel = process.cwd();
 
@@ -102,13 +102,36 @@ describe("port-vertrag: jede horchende Datei bekommt ihre Zahl aus ihrem Namen",
     expect(new Set(ports).size).toBeGreaterThan(150);
   });
 
-  it("die horchenden Dateien dieser Suite haben verschiedene Ports", () => {
-    const horchend = ["tests/server-einstellungs-maske.test.ts"];
-    const ports = horchend.map(portFuerDatei);
-    expect(new Set(ports).size).toBe(horchend.length);
-    // Laeuft je eine Datei mit eigenem Server dazu, traegt sie hier hinein — die
-    // Liste ist die einzige Stelle, an der die Suite weiss, wer horcht.
-    expect(horchend.length, "erwartet mindestens eine horchende Datei").toBeGreaterThan(0);
+  it("die Liste, die sagt, wer horcht, ist die Suite selbst — in beide Richtungen", () => {
+    // Die Liste in `tests/helfer/port-vergabe.ts` ist der einzige Ort, an dem die Suite
+    // weiss, wer auf welcher Zahl sitzt. Sie war per Hand gepflegt und wurde von einem
+    // Satz als gewaehnt bezeichnet, den keine Wache hielt. Das ist die gefaehrliche Art
+    // von Vertrag: waechst die Suite, bleibt die Liste stehen, und zwei Dateien horchen
+    // auf derselben Zahl — was wie ein Produktfehler aussieht, der keiner ist.
+    const ruft: string[] = [];
+    for (const name of fs.readdirSync(path.join(wurzel, "tests"))) {
+      if (!name.endsWith(".test.ts")) continue;
+      const text = fs.readFileSync(path.join(wurzel, "tests", name), "utf8");
+      // Zwei Formen, dasselbe Versprechen: die Datei nimmt ihren Port aus ihrem Namen —
+      // ueber den Horcher-Helfer, oder direkt, weil sie ihren Server selbst hoert
+      // (`tests/server-einstellungs-maske.test.ts`).
+      for (const m of text.matchAll(/(?:hoererDerDatei|portFuerHorer)\(\s*["'`]([^"'`]+)["'`]/g)) ruft.push(m[1]!);
+    }
+    const ruftSet = [...new Set(ruft)].sort();
+    expect(ruftSet.length, "kein einziger Aufruf von hoererDerDatei — dann prueft dieser Fall nichts").toBeGreaterThan(0);
+    const gelistet = [...HORCHENDE_KENNUNGEN].sort();
+    // Wer horcht, muss gelistet sein.
+    expect(gelistet, `${ruftSet.filter((k) => !HORCHENDE_KENNUNGEN.includes(k)).join(", ")} horcht, fehlt aber in der Liste`)
+      .toEqual(ruftSet);
+    // Und ein Eintrag ohne Horcher macht rot — sonst verdeckt die Liste eine Datei, die
+    // langst keine ist, und ihr Port bleibt reserviert.
+    for (const kennung of HORCHENDE_KENNUNGEN) {
+      expect(ruftSet, `Listeneintrag ${kennung} hat keinen Aufruf mehr in der Suite`).toContain(kennung);
+    }
+    // Verschiedene Zahlen, eine je Kennung.
+    const ports = gelistet.map(portFuerHorer);
+    expect(new Set(ports).size, `doppelte Port unter ${gelistet.length} Kennungen`).toBe(gelistet.length);
+    for (const p of ports) expect(portZulaessig(p), `Port ${p} ausserhalb des erlaubten Fensters`).toBe(true);
   });
 
   it("keine Datei importiert den Server ohne die Automarke, die seinen Start verhindert", () => {

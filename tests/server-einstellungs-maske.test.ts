@@ -6,7 +6,7 @@ import path from "node:path";
 import fs from "node:fs";
 import { KeptaStore } from "../src/core/store";
 import { schluesselbundKeyProvider } from "../src/core/schluessel";
-import { portErzwingen, portFuerDatei } from "./helfer/port-vergabe";
+import { portErzwingen, portFuerHorer } from "./helfer/port-vergabe";
 
 // Der Rueckweg der Desktop-App ist ein lesbarer Name. Seit F13 legt die App ihre
 // KI-Verbindung unter `ai_connection` ab (kepta-app/src/lib/ai.ts) und den
@@ -15,9 +15,10 @@ import { portErzwingen, portFuerDatei } from "./helfer/port-vergabe";
 // festhaelt, ist beides: der Name bleibt lesbar, und die Maske bleibt zu.
 process.env.KEPTA_NO_AUTOSTART = "1";
 
-// Kein geschriebener Port mehr, sondern der aus dem Dateinamen: dieselbe Datei,
-// dieselbe Zahl, in jedem Lauf (`tests/helfer/port-vergabe.ts`).
-const PORT = portFuerDatei("tests/server-einstellungs-maske.test.ts");
+// Kein geschriebener Port mehr, sondern die Zuteilung der Suite: dieselbe Datei,
+// dieselbe Zahl, in jedem Lauf — und ohne Kollision mit einer andern horchenden
+// Datei (`tests/helfer/port-vergabe.ts`: HORCHENDE_KENNUNGEN, portFuerHorer).
+const PORT = portFuerHorer("tests/server-einstellungs-maske.test.ts");
 let URLE = `http://127.0.0.1:${PORT}`;
 
 // So sieht der Umschlag der App aus: Kennung, IV, Chiffretext, Tag — Base64.

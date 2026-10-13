@@ -1,10 +1,12 @@
-import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
+import { describe, it, expect, beforeEach, afterEach, vi, beforeAll, afterAll } from "vitest";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import fs from "node:fs";
 import dns from "node:dns";
 import request from "supertest";
 import { KeptaStore } from "../src/core/store";
+import { hoererDerDatei, type DateiHoerer } from "./helfer/hoerer";
+import { anlage } from "./helfer/anlage";
 import { indexMemory, consolidateMemories } from "../src/core/engine";
 import { DEFAULT_EMBED_MODEL } from "../src/core/embeddings";
 import { APP_VERSION } from "../src/core/version";
@@ -19,6 +21,21 @@ let app: import("express").Express;
 let prevHome: string | undefined;
 let dir: string;
 
+// Ein Horcher pro Datei, auf IHREM Port — nicht einer je Anfrage
+// (`tests/helfer/hoerer.ts`: der Nachbau vom 13.10., der eine offene
+// `request(URLE)`-Kette an einen fremden v4-Hoerer verlor).
+let hoerer: DateiHoerer;
+let URLE: string;
+
+beforeAll(async () => {
+  hoerer = await hoererDerDatei("tests/server.test.ts");
+  URLE = hoerer.url;
+});
+
+afterAll(async () => {
+  await hoerer.schliesse();
+});
+
 beforeEach(async () => {
   dir = fs.mkdtempSync(path.join(tmpdir(), "kepta-server-"));
   prevHome = process.env.HOME;
@@ -28,6 +45,7 @@ beforeEach(async () => {
   ({ createApp } = await import("../server"));
   store = new KeptaStore(path.join(dir, "test.db"));
   app = createApp(store);
+  hoerer.gebeApp(app);
 });
 
 afterEach(() => {
@@ -37,7 +55,7 @@ afterEach(() => {
 
 describe("GET /api/health", () => {
   it("liefert ok:true mit MCP-Metadaten", async () => {
-    const res = await request(app).get("/api/health");
+    const res = await request(URLE).get("/api/health");
     expect(res.status).toBe(200);
     expect(res.body.ok).toBe(true);
     expect(res.body.name).toBe("kepta");
@@ -52,7 +70,7 @@ describe("GET /api/health", () => {
   it("zeigt einen FTS-Ausfall, statt ihn zu verschlucken", async () => {
     store.db.exec("DROP TABLE memories_fts");
     store.ftsSearch("irgendwas");
-    const res = await request(app).get("/api/health");
+    const res = await request(URLE).get("/api/health");
     expect(res.body.fts.ok).toBe(false);
     expect(res.body.fts.fehler).toMatch(/no such table/);
   });
@@ -60,74 +78,74 @@ describe("GET /api/health", () => {
 
 describe("/api/memories CRUD", () => {
   it("GET liefert anfangs eine leere Liste", async () => {
-    const res = await request(app).get("/api/memories");
+    const res = await request(URLE).get("/api/memories");
     expect(res.status).toBe(200);
     expect(Array.isArray(res.body)).toBe(true);
     expect(res.body).toHaveLength(0);
   });
 
   it("POST setzt scope — die HTTP-Route ignorierte das Feld, MCP konnte es laengst", async () => {
-    const res = await request(app).post("/api/memories").send({ title: "Scope", content: "x", scope: "agent:coder" });
+    const res = await request(URLE).post("/api/memories").send({ title: "Scope", content: "x", scope: "agent:coder" });
     expect(res.status).toBe(200);
     expect(res.body.memory.scope).toBe("agent:coder");
   });
 
   it("POST begrenzt einen unsinnig langen scope", async () => {
-    const res = await request(app).post("/api/memories").send({ title: "Scope", content: "x", scope: "a".repeat(200) });
+    const res = await request(URLE).post("/api/memories").send({ title: "Scope", content: "x", scope: "a".repeat(200) });
     expect(res.status).toBe(200);
     expect(res.body.memory.scope.length).toBeLessThanOrEqual(64);
   });
 
   it("POST setzt supersededBy beim Aendern", async () => {
-    const alt = await request(app).post("/api/memories").send({ title: "Alte Adresse", content: "Hamburg" });
-    const neu = await request(app).post("/api/memories").send({ title: "Neue Adresse", content: "Leipzig" });
-    const res = await request(app).post("/api/memories").send({ id: alt.body.memory.id, supersededBy: neu.body.memory.id });
+    const alt = await request(URLE).post("/api/memories").send({ title: "Alte Adresse", content: "Hamburg" });
+    const neu = await request(URLE).post("/api/memories").send({ title: "Neue Adresse", content: "Leipzig" });
+    const res = await request(URLE).post("/api/memories").send({ id: alt.body.memory.id, supersededBy: neu.body.memory.id });
     expect(res.status).toBe(200);
     expect(res.body.memory.supersededBy).toBe(neu.body.memory.id);
   });
 
   it("POST loest eine Ersetzung wieder auf (supersededBy: null)", async () => {
-    const alt = await request(app).post("/api/memories").send({ title: "A", content: "x" });
-    const neu = await request(app).post("/api/memories").send({ title: "B", content: "y" });
-    await request(app).post("/api/memories").send({ id: alt.body.memory.id, supersededBy: neu.body.memory.id });
-    const res = await request(app).post("/api/memories").send({ id: alt.body.memory.id, supersededBy: null });
+    const alt = await request(URLE).post("/api/memories").send({ title: "A", content: "x" });
+    const neu = await request(URLE).post("/api/memories").send({ title: "B", content: "y" });
+    anlage(await request(URLE).post("/api/memories").send({ id: alt.body.memory.id, supersededBy: neu.body.memory.id }), "Ersetzung als Anlage");
+    const res = await request(URLE).post("/api/memories").send({ id: alt.body.memory.id, supersededBy: null });
     expect(res.body.memory.supersededBy).toBeNull();
   });
 
   it("POST legt eine Memory an und GET findet sie", async () => {
-    const post = await request(app).post("/api/memories").send({ title: "Server-Test", content: "Inhalt", tags: ["api"] });
+    const post = await request(URLE).post("/api/memories").send({ title: "Server-Test", content: "Inhalt", tags: ["api"] });
     expect(post.status).toBe(200);
     expect(post.body.memory.title).toBe("Server-Test");
 
-    const list = await request(app).get("/api/memories");
+    const list = await request(URLE).get("/api/memories");
     expect(list.body).toHaveLength(1);
   });
 
   it("POST ohne Titel und Inhalt → 400", async () => {
-    const res = await request(app).post("/api/memories").send({ tags: ["leer"] });
+    const res = await request(URLE).post("/api/memories").send({ tags: ["leer"] });
     expect(res.status).toBe(400);
     expect(res.body.error).toBeTruthy();
   });
 
   it("POST mit ungültiger ID → 400", async () => {
-    const res = await request(app).post("/api/memories").send({ id: "bad id!!", title: "X" });
+    const res = await request(URLE).post("/api/memories").send({ id: "bad id!!", title: "X" });
     expect(res.status).toBe(400);
   });
 
   it("DELETE verschiebt in den Papierkorb", async () => {
-    const post = await request(app).post("/api/memories").send({ title: "Weg", content: "x" });
+    const post = await request(URLE).post("/api/memories").send({ title: "Weg", content: "x" });
     const id = post.body.memory.id;
-    const del = await request(app).delete(`/api/memories/${encodeURIComponent(id)}`);
+    const del = await request(URLE).delete(`/api/memories/${encodeURIComponent(id)}`);
     expect(del.status).toBeLessThan(400);
-    const active = await request(app).get("/api/memories");
+    const active = await request(URLE).get("/api/memories");
     expect(active.body).toHaveLength(0);
-    const trash = await request(app).get("/api/memories?trash=1");
+    const trash = await request(URLE).get("/api/memories?trash=1");
     expect(trash.body).toHaveLength(1);
   });
 
   it("GET /api/memories/search findet über die Engine", async () => {
-    await request(app).post("/api/memories").send({ title: "Rust Backend", content: "Speichersicherheit", tags: ["rust"] });
-    const res = await request(app).get("/api/memories/search?q=Speichersicherheit&limit=5");
+    anlage(await request(URLE).post("/api/memories").send({ title: "Rust Backend", content: "Speichersicherheit", tags: ["rust"] }), "Rust-Notiz als Anlage");
+    const res = await request(URLE).get("/api/memories/search?q=Speichersicherheit&limit=5");
     expect(res.status).toBe(200);
     expect(res.body.count).toBeGreaterThan(0);
     expect(res.body.memories[0].title).toBe("Rust Backend");
@@ -143,7 +161,7 @@ describe("Grenze fuer aktive Knoten", () => {
       id: `grenze-${i}`, title: `Knoten ${i}`, content: `Inhalt ${i}`,
     }));
     vi.stubEnv("KEPTA_MAX_ACTIVE", "5");
-    const res = await request(app).post("/api/memories/import").send({ memories: viele });
+    const res = await request(URLE).post("/api/memories/import").send({ memories: viele });
     vi.unstubAllEnvs();
     expect(res.status).toBe(200);
     expect(res.body.imported).toBe(12);
@@ -151,7 +169,7 @@ describe("Grenze fuer aktive Knoten", () => {
   });
 
   it("Import ohne Ueberschreitung warnt nicht", async () => {
-    const res = await request(app).post("/api/memories/import").send({
+    const res = await request(URLE).post("/api/memories/import").send({
       memories: [{ id: "grenze-ok", title: "Einer", content: "x" }],
     });
     expect(res.status).toBe(200);
@@ -160,7 +178,7 @@ describe("Grenze fuer aktive Knoten", () => {
 
   it("Einzelanlage nennt die tatsaechliche Grenze", async () => {
     // Erst ueber die Grenze bringen — bei leerem Bestand greift keine.
-    await request(app).post("/api/memories/import").send({
+    await request(URLE).post("/api/memories/import").send({
       memories: [
         { id: "voll-1", title: "A", content: "x" },
         { id: "voll-2", title: "B", content: "y" },
@@ -168,7 +186,7 @@ describe("Grenze fuer aktive Knoten", () => {
       ],
     });
     vi.stubEnv("KEPTA_MAX_ACTIVE", "1");
-    const res = await request(app).post("/api/memories").send({ title: "Zu viel", content: "x" });
+    const res = await request(URLE).post("/api/memories").send({ title: "Zu viel", content: "x" });
     vi.unstubAllEnvs();
     expect(res.status).toBe(429);
     expect(res.body.error).toMatch(/3 active nodes, maximum is 1/);
@@ -177,18 +195,18 @@ describe("Grenze fuer aktive Knoten", () => {
 
 describe("POST /mcp (JSON-RPC)", () => {
   it("initialize verhandelt die Protokollversion", async () => {
-    const res = await request(app).post("/mcp").send({ jsonrpc: "2.0", id: 1, method: "initialize", params: { protocolVersion: "2026-07-28" } });
+    const res = await request(URLE).post("/mcp").send({ jsonrpc: "2.0", id: 1, method: "initialize", params: { protocolVersion: "2026-07-28" } });
     expect(res.status).toBe(200);
     expect(res.body.result.protocolVersion).toBe("2026-07-28");
   });
 
   it("tools/list liefert alle 8 Tools", async () => {
-    const res = await request(app).post("/mcp").send({ jsonrpc: "2.0", id: 2, method: "tools/list" });
+    const res = await request(URLE).post("/mcp").send({ jsonrpc: "2.0", id: 2, method: "tools/list" });
     expect(res.body.result.tools).toHaveLength(8);
   });
 
   it("tools/call memory_save funktioniert end-to-end", async () => {
-    const res = await request(app).post("/mcp").send({
+    const res = await request(URLE).post("/mcp").send({
       jsonrpc: "2.0",
       id: 3,
       method: "tools/call",
@@ -199,35 +217,35 @@ describe("POST /mcp (JSON-RPC)", () => {
 
   it("ungültiger Body (Batch-Array) → 400 mit Batching-Hinweis", async () => {
     // MCP 2026-07-28 hat Batching gestrichen → einzelnes Error-Objekt -32600
-    const res = await request(app).post("/mcp").send([{ jsonrpc: "2.0", id: 1, method: "ping" }]);
+    const res = await request(URLE).post("/mcp").send([{ jsonrpc: "2.0", id: 1, method: "ping" }]);
     expect(res.status).toBe(400);
     expect(res.body.error.code).toBe(-32600);
     expect(res.body.error.message).toContain("Batching");
   });
 
   it("fehlendes jsonrpc-Feld wird toleriert, falscher Wert → -32600", async () => {
-    const ok = await request(app).post("/mcp").send({ id: 1, method: "ping" });
+    const ok = await request(URLE).post("/mcp").send({ id: 1, method: "ping" });
     expect(ok.status).toBe(200);
     expect(ok.body.result).toEqual({});
-    const bad = await request(app).post("/mcp").send({ jsonrpc: "1.0", id: 2, method: "ping" });
+    const bad = await request(URLE).post("/mcp").send({ jsonrpc: "1.0", id: 2, method: "ping" });
     expect(bad.body.error.code).toBe(-32600);
   });
 
   it("Notification (ohne id) → 202 accepted", async () => {
-    const res = await request(app).post("/mcp").send({ jsonrpc: "2.0", method: "notifications/initialized" });
+    const res = await request(URLE).post("/mcp").send({ jsonrpc: "2.0", method: "notifications/initialized" });
     expect(res.status).toBe(202);
     expect(res.body.accepted).toBe(true);
   });
 
   it("Notification für unbekannte Methode → 202, kein JSON-RPC-Error mit id:null", async () => {
-    const res = await request(app).post("/mcp").send({ jsonrpc: "2.0", method: "nope/notification" });
+    const res = await request(URLE).post("/mcp").send({ jsonrpc: "2.0", method: "nope/notification" });
     expect(res.status).toBe(202);
     expect(res.body.accepted).toBe(true);
   });
 
   it("tools/call memory_search mit String-limit liefert Default-Verhalten (kein NaN)", async () => {
-    await request(app).post("/api/memories").send({ title: "Rust", content: "Speichersicherheit" });
-    const res = await request(app).post("/mcp").send({
+    await request(URLE).post("/api/memories").send({ title: "Rust", content: "Speichersicherheit" });
+    const res = await request(URLE).post("/mcp").send({
       jsonrpc: "2.0", id: 7, method: "tools/call",
       params: { name: "memory_search", arguments: { query: "Speichersicherheit", limit: "kaputt" } },
     });
@@ -235,7 +253,7 @@ describe("POST /mcp (JSON-RPC)", () => {
   });
 
   it("GET /mcp → 405 (nur POST erlaubt)", async () => {
-    const res = await request(app).get("/mcp");
+    const res = await request(URLE).get("/mcp");
     expect(res.status).toBe(405);
   });
 });
@@ -243,7 +261,7 @@ describe("POST /mcp (JSON-RPC)", () => {
 describe("Import: Body-Limits, Vollständigkeit, Zeitstempel", () => {
   it("akzeptiert Import-Payload >1MB (2mb-Limit der Route, globales 1mb-Limit greift nicht)", async () => {
     const big = "x".repeat(1_200_000);
-    const res = await request(app)
+    const res = await request(URLE)
       .post("/api/memories/import")
       .set("Content-Type", "application/json")
       .send({ memories: [{ title: "Groß", content: big }], mode: "merge" });
@@ -253,7 +271,7 @@ describe("Import: Body-Limits, Vollständigkeit, Zeitstempel", () => {
 
   it("weist Import-Payload über dem 2mb-Limit mit 413 ab", async () => {
     const big = "x".repeat(2_500_000);
-    const res = await request(app)
+    const res = await request(URLE)
       .post("/api/memories/import")
       .set("Content-Type", "application/json")
       .send({ memories: [{ title: "Zu groß", content: big }] });
@@ -262,7 +280,7 @@ describe("Import: Body-Limits, Vollständigkeit, Zeitstempel", () => {
 
   it("akzeptiert Markdown-Import >2MB (10mb-Limit der Route)", async () => {
     const files = [1, 2, 3].map((i) => ({ name: `note-${i}.md`, content: `# Notiz ${i}\n\n${"Inhalt. ".repeat(350_000)}` }));
-    const res = await request(app)
+    const res = await request(URLE)
       .post("/api/import/markdown")
       .set("Content-Type", "application/json")
       .send({ files });
@@ -271,7 +289,7 @@ describe("Import: Body-Limits, Vollständigkeit, Zeitstempel", () => {
   });
 
   it("globales 1mb-Limit bleibt für normale Routen aktiv (413)", async () => {
-    const res = await request(app)
+    const res = await request(URLE)
       .post("/api/memories")
       .set("Content-Type", "application/json")
       .send({ title: "X", content: "x".repeat(1_500_000) });
@@ -279,7 +297,7 @@ describe("Import: Body-Limits, Vollständigkeit, Zeitstempel", () => {
   });
 
   it("Replace-Import mit doppelten IDs → 200 (dedupliziert) statt 500", async () => {
-    const res = await request(app).post("/api/memories/import").send({
+    const res = await request(URLE).post("/api/memories/import").send({
       memories: [
         { id: "k-dup", title: "Erste", content: "a" },
         { id: "k-dup", title: "Zweite", content: "b" },
@@ -295,10 +313,10 @@ describe("Import: Body-Limits, Vollständigkeit, Zeitstempel", () => {
 
   it("Merge-Import erhält createdAt/updatedAt aus der Backup-Datei", async () => {
     const then = Date.now() - 100_000;
-    await request(app).post("/api/memories/import").send({
+    await request(URLE).post("/api/memories/import").send({
       memories: [{ title: "Historisch", content: "x", createdAt: then, updatedAt: then }],
     });
-    const list = await request(app).get("/api/memories");
+    const list = await request(URLE).get("/api/memories");
     const m = list.body.find((r: { title: string }) => r.title === "Historisch");
     expect(m.updatedAt).toBe(then);
     expect(m.createdAt).toBe(then);
@@ -306,10 +324,10 @@ describe("Import: Body-Limits, Vollständigkeit, Zeitstempel", () => {
 
   it("listet auch >1000 Knoten vollständig (Liste und Export)", async () => {
     for (let i = 0; i < 1100; i++) store.createMemory({ title: `Bulk ${i}`, content: "kurz" });
-    const list = await request(app).get("/api/memories");
+    const list = await request(URLE).get("/api/memories");
     expect(list.status).toBe(200);
     expect(list.body).toHaveLength(1100);
-    const exp = await request(app).post("/api/export/markdown").send({});
+    const exp = await request(URLE).post("/api/export/markdown").send({});
     expect(exp.status).toBe(200);
     expect(exp.body.exported).toBe(1100);
   });
@@ -318,13 +336,13 @@ describe("Import: Body-Limits, Vollständigkeit, Zeitstempel", () => {
 describe("Sanitize: Code bleibt lesbar, Steuerzeichen werden bereinigt", () => {
   it("POST /api/memories erhält legitimen Code-Beispiel-Inhalt", async () => {
     const code = 'Beispiel: <a href="javascript:void(0)">klick</a> mit onclick="alert(1)" — nur Demo-Code';
-    const post = await request(app).post("/api/memories").send({ title: "Code-Notiz", content: code });
+    const post = await request(URLE).post("/api/memories").send({ title: "Code-Notiz", content: code });
     expect(post.status).toBe(200);
     expect(post.body.memory.content).toBe(code);
   });
 
   it("NUL-Bytes und Steuerzeichen werden trotzdem entfernt", async () => {
-    const post = await request(app).post("/api/memories").send({ title: "Steuer", content: "sauber\u0000\u0001inhalt" });
+    const post = await request(URLE).post("/api/memories").send({ title: "Steuer", content: "sauber\u0000\u0001inhalt" });
     expect(post.status).toBe(200);
     expect(post.body.memory.content).not.toMatch(/[\u0000\u0001]/);
     expect(post.body.memory.content).toContain("sauber");
@@ -334,16 +352,16 @@ describe("Sanitize: Code bleibt lesbar, Steuerzeichen werden bereinigt", () => {
 
 describe("Version (eine Quelle)", () => {
   it("/api/health liefert die package.json-Version", async () => {
-    const res = await request(app).get("/api/health");
+    const res = await request(URLE).get("/api/health");
     expect(res.body.version).toBe(APP_VERSION);
   });
 });
 
 describe("/api/mcp/consolidate — MCP-Parität über HTTP", () => {
   it("dryRun (Standard) liefert Kandidaten, ohne etwas zu ändern", async () => {
-    await request(app).post("/api/memory").send({ title: "Backup-Zeit", content: "Jeden Sonntag 03:00 sichert der Server." });
-    await request(app).post("/api/memory").send({ title: "Backup-Zeit", content: "Jeden Sonntag 03:00 sichert der Server." });
-    const res = await request(app).post("/api/mcp/consolidate").send({});
+    await request(URLE).post("/api/memory").send({ title: "Backup-Zeit", content: "Jeden Sonntag 03:00 sichert der Server." });
+    await request(URLE).post("/api/memory").send({ title: "Backup-Zeit", content: "Jeden Sonntag 03:00 sichert der Server." });
+    const res = await request(URLE).post("/api/mcp/consolidate").send({});
     expect(res.status).toBe(200);
     expect(res.body.dryRun).toBe(true);
     expect(Array.isArray(res.body.candidates)).toBe(true);
@@ -351,11 +369,11 @@ describe("/api/mcp/consolidate — MCP-Parität über HTTP", () => {
   });
 
   it("dryRun:false ersetzt das ältere Duplikat statt es zu löschen", async () => {
-    const erste = await request(app).post("/api/memory").send({ title: "Frist Miller", content: "Quartalsrechnung bis Ende Monat." });
-    const zweite = await request(app).post("/api/memory").send({ title: "Frist Miller", content: "Quartalsrechnung bis Ende Monat." });
+    const erste = await request(URLE).post("/api/memory").send({ title: "Frist Miller", content: "Quartalsrechnung bis Ende Monat." });
+    const zweite = await request(URLE).post("/api/memory").send({ title: "Frist Miller", content: "Quartalsrechnung bis Ende Monat." });
     // Seit A2-13 laeuft der Spiegel durch callTool: dryRun:false verlangt die ausdrueckliche
     // Bestaetigung, die der Agentenkanal schon immer verlangte.
-    const res = await request(app).post("/api/mcp/consolidate").send({ dryRun: false, threshold: 0.8, confirm: "supersede" });
+    const res = await request(URLE).post("/api/mcp/consolidate").send({ dryRun: false, threshold: 0.8, confirm: "supersede" });
     expect(res.status).toBe(200);
     expect(res.body.dryRun).toBe(false);
     // Welche Seite bleibt, entscheidet die Engine (pickKeep: updatedAt + Laenge) —
@@ -374,26 +392,26 @@ describe("/api/mcp/consolidate — MCP-Parität über HTTP", () => {
 
 describe("/api/mcp/forget — das memory_forget-Werkzeug über HTTP", () => {
   it("Standard ist expire: valid_to wird gesetzt, die Notiz bleibt lesbar", async () => {
-    const angelegt = await request(app).post("/api/memory").send({ title: "Alte Preisliste", content: "Gültig bis Widerruf." });
+    const angelegt = await request(URLE).post("/api/memory").send({ title: "Alte Preisliste", content: "Gültig bis Widerruf." });
     const id = angelegt.body.memory.id;
-    const res = await request(app).post("/api/mcp/forget").send({ id });
+    const res = await request(URLE).post("/api/mcp/forget").send({ id });
     expect(res.status).toBe(200);
     expect(res.body).toEqual({ forgotten: true, mode: "expire" });
     expect(store.getMemory(id)?.validTo).toBeGreaterThan(0);
   });
 
   it("supersede verdrahtet den Nachfolger", async () => {
-    const alt = await request(app).post("/api/memory").send({ title: "Adresse", content: "Altstadt 1." });
-    const neu = await request(app).post("/api/memory").send({ title: "Adresse", content: "Neustadt 2." });
-    const res = await request(app).post("/api/mcp/forget").send({ id: alt.body.memory.id, mode: "supersede", supersedeBy: neu.body.memory.id });
+    const alt = await request(URLE).post("/api/memory").send({ title: "Adresse", content: "Altstadt 1." });
+    const neu = await request(URLE).post("/api/memory").send({ title: "Adresse", content: "Neustadt 2." });
+    const res = await request(URLE).post("/api/mcp/forget").send({ id: alt.body.memory.id, mode: "supersede", supersedeBy: neu.body.memory.id });
     expect(res.status).toBe(200);
     expect(store.getMemory(alt.body.memory.id)?.supersededBy).toBe(neu.body.memory.id);
   });
 
   it("delete verschiebt in den Papierkorb", async () => {
-    const angelegt = await request(app).post("/api/memory").send({ title: "Weg damit", content: "Papierkorb-Test." });
+    const angelegt = await request(URLE).post("/api/memory").send({ title: "Weg damit", content: "Papierkorb-Test." });
     const id = angelegt.body.memory.id;
-    const res = await request(app).post("/api/mcp/forget").send({ id, mode: "delete" });
+    const res = await request(URLE).post("/api/mcp/forget").send({ id, mode: "delete" });
     expect(res.status).toBe(200);
     expect(res.body.mode).toBe("delete");
     expect(store.getMemory(id)?.deletedAt).toBeGreaterThan(0);
@@ -403,38 +421,45 @@ describe("/api/mcp/forget — das memory_forget-Werkzeug über HTTP", () => {
     // Der Spiegel geht jetzt durch callTool: Wortlaut und Weigerung kommen von dort,
     // die 404 fuer "id gibt es nicht" bleibt, wo sie war. Fuer private id gilt
     // derselbe Text und derselbe Status — die Existenz leakt nicht.
-    const weg = await request(app).post("/api/mcp/forget").send({ id: "gibts-nicht" });
+    const weg = await request(URLE).post("/api/mcp/forget").send({ id: "gibts-nicht" });
     expect(weg.status).toBe(404);
     // D2-31: der Kern hängt seit E4 jeder Fehlerantwort den Weg an
     // („— next: …"). Der Spiegel erbt weiter, was der Werkzeugpfad sagt —
     // geprüft wird der Kopf, der Hint ist Teil des geerbten Wortlauts.
     expect(String(weg.body.error)).toMatch(/^Memory not found: gibts-nicht( — next: .*)?$/);
-    const angelegt = await request(app).post("/api/memory").send({ title: "x", content: "y" });
-    const falsch = await request(app).post("/api/mcp/forget").send({ id: angelegt.body.memory.id, mode: "verbrennen" });
+    const angelegt = await request(URLE).post("/api/memory").send({ title: "x", content: "y" });
+    const falsch = await request(URLE).post("/api/mcp/forget").send({ id: angelegt.body.memory.id, mode: "verbrennen" });
     expect(falsch.status).toBe(400);
   });
 });
 
 describe("Privatheits-Floor über HTTP: Agentenwege gefiltert, Besitzerwege offen", () => {
   async function legeNotiz(title: string, content: string, scope?: string) {
-    return request(app).post("/api/memory").send(scope ? { title, content, scope } : { title, content });
+    // Die Anlage prueft ihre eigene Zulassung. Grund, in eigenen Worten: dieser
+    // Helfer hat die Antwort zurueckgegeben und ihren Status liegengelassen. Ging
+    // die Anlage fehl (429 aus einer Kappe, 401 von einem fremden Horcher), stand
+    // drei Zeilen spaeter `expected 200 to be 404` im Bericht, und die Meldung
+    // verdaechtigte den Privatheits-Floor in src/core/mcp.ts:601 — obwohl nie eine
+    // Notiz angelegt war. Gemessen 13.10. 12:26 auf diesem Rechner.
+    const antwort = await request(URLE).post("/api/memory").send(scope ? { title, content, scope } : { title, content });
+    return anlage(antwort, `Notiz "${title}"${scope ? ` (scope ${scope})` : ""} über /api/memory anlegen`);
   }
 
   it("POST /api/mcp/search liefert privaten Inhalt nicht an Agenten", async () => {
     await legeNotiz("Steuerklausur", "Die Steuer-ID des Mandanten ist 998877", "private");
     await legeNotiz("Offener Fahrplan", "Nächste Woche Release");
 
-    const privat = await request(app).post("/api/mcp/search").send({ query: "Steuer-ID 998877" });
+    const privat = await request(URLE).post("/api/mcp/search").send({ query: "Steuer-ID 998877" });
     expect(privat.status).toBe(200);
     expect(privat.body.count).toBe(0);
     expect(privat.body.memories).toEqual([]);
 
-    const offen = await request(app).post("/api/mcp/search").send({ query: "Release Fahrplan" });
+    const offen = await request(URLE).post("/api/mcp/search").send({ query: "Release Fahrplan" });
     expect(offen.body.count).toBeGreaterThan(0);
     expect((offen.body.memories as { title: string }[]).map((m) => m.title)).toContain("Offener Fahrplan");
     // Leerlauf-Schutz: die private Notiz ist im Index und findet sich auf dem
     // Besitzerweg — der Agentenweg filtert sie also heraus, statt sie zu verpassen.
-    const besitzer = await request(app).get("/api/memories/search?q=998877");
+    const besitzer = await request(URLE).get("/api/memories/search?q=998877");
     expect((besitzer.body.memories as { title: string }[]).map((m) => m.title)).toContain("Steuerklausur");
   });
 
@@ -446,7 +471,7 @@ describe("Privatheits-Floor über HTTP: Agentenwege gefiltert, Besitzerwege offe
     await legeNotiz("Offene Praxisrechnung", "Identischer Textblock");
     await legeNotiz("Offene Praxisrechnung", "Identischer Textblock länger");
 
-    const res = await request(app).post("/api/mcp/consolidate").send({ dryRun: false, confirm: "supersede" });
+    const res = await request(URLE).post("/api/mcp/consolidate").send({ dryRun: false, confirm: "supersede" });
     expect(res.status).toBe(200);
     expect(privaten.length).toBe(2);
     for (const k of res.body.candidates as { keepId: string; duplicateId: string }[]) {
@@ -465,8 +490,8 @@ describe("Privatheits-Floor über HTTP: Agentenwege gefiltert, Besitzerwege offe
     const angelegt = await legeNotiz("Geheime Vollmacht", "Unterschrift", "private");
     const id = angelegt.body.memory.id as string;
 
-    const privat = await request(app).post("/api/mcp/forget").send({ id });
-    const unbekannt = await request(app).post("/api/mcp/forget").send({ id: "gibts-nicht" });
+    const privat = await request(URLE).post("/api/mcp/forget").send({ id });
+    const unbekannt = await request(URLE).post("/api/mcp/forget").send({ id: "gibts-nicht" });
     expect(privat.status).toBe(unbekannt.status);
     // Die Aussage dieses Falls ist derselbe Satz für beide Wege — die Existenz
     // leakt nicht. Er unterscheidet sich nur durch die id, und seit E4 trägt der
@@ -482,12 +507,12 @@ describe("Privatheits-Floor über HTTP: Agentenwege gefiltert, Besitzerwege offe
     const angelegt = await legeNotiz("Geheime Konten", "IBAN 666", "private");
     const id = String(angelegt.body.memory.id);
 
-    const res = await request(app).post("/api/mcp/save").send({ id, title: "Geheime Konten", content: "überschrieben" });
+    const res = await request(URLE).post("/api/mcp/save").send({ id, title: "Geheime Konten", content: "überschrieben" });
     expect(res.status).toBe(404);
     expect(res.body).toEqual({ error: `Memory not found: ${id}` });
     expect(store.getMemory(id)?.content).toBe("IBAN 666");
 
-    const neu = await request(app).post("/api/mcp/save").send({ title: "Offene Konten", content: "IBAN 777" });
+    const neu = await request(URLE).post("/api/mcp/save").send({ title: "Offene Konten", content: "IBAN 777" });
     expect(neu.status).toBe(200);
     expect(neu.body.created).toBe(true);
   });
@@ -498,11 +523,11 @@ describe("Privatheits-Floor über HTTP: Agentenwege gefiltert, Besitzerwege offe
     // der Graph-Beleg braucht den Link also von der Store-Seite aus.
     store.linkEntities(String(angelegt.body.memory.id), ["geheime vollmacht"]);
 
-    const liste = await request(app).get("/api/memories");
+    const liste = await request(URLE).get("/api/memories");
     expect((liste.body as { scope: string }[]).some((m) => m.scope === "private")).toBe(true);
-    const suche = await request(app).get("/api/memories/search?q=Unterschrift");
+    const suche = await request(URLE).get("/api/memories/search?q=Unterschrift");
     expect(suche.body.memories.length).toBeGreaterThan(0);
-    const graph = await request(app).get("/api/graph");
+    const graph = await request(URLE).get("/api/graph");
     expect((graph.body.entities as { name: string }[]).map((e) => e.name)).toContain("geheime vollmacht");
   });
 });
@@ -516,10 +541,10 @@ describe("Inbox-Import: ein PDF-Extraktor, und zwar derselbe wie überall", () =
 
   it("Textdatei wird importiert und wandert ins Archiv", async () => {
     const pfad = legeInbox("backup.txt", "Sonntags 03:00 läuft das Backup.");
-    const res = await request(app).post("/api/inbox/scan");
+    const res = await request(URLE).post("/api/inbox/scan");
     expect(res.status).toBe(200);
     expect(res.body.imported).toBe(1);
-    const liste = await request(app).get("/api/memories");
+    const liste = await request(URLE).get("/api/memories");
     expect(
       (liste.body as { title: string; content: string }[]).some(
         (m) => m.title === "backup" && m.content.includes("Sonntags 03:00")
@@ -535,10 +560,10 @@ describe("Inbox-Import: ein PDF-Extraktor, und zwar derselbe wie überall", () =
     // Extraktion und lieferte den Müll, den /api/repair/imports danach
     // wegräumen durfte — dieselbe Datei, zwei Extraktoren, ein Kreisverkehr.
     legeInbox("kratz.pdf", Buffer.from("%PDF-1.4\n(Steuerbescheid 2026) Tj\n%%EOF", "utf-8"));
-    const res = await request(app).post("/api/inbox/scan");
+    const res = await request(URLE).post("/api/inbox/scan");
     expect(res.status).toBe(200);
     expect(res.body.imported).toBe(1);
-    const liste = await request(app).get("/api/memories");
+    const liste = await request(URLE).get("/api/memories");
     expect((liste.body as { content: string }[]).some((m) => m.content.includes("Steuerbescheid 2026"))).toBe(true);
   });
 
@@ -568,7 +593,7 @@ describe("GET /api/graph traegt die Gueltigkeit der Kante", () => {
     const bis = Date.parse("2025-01-15T00:00:00Z");
     store.addRelation("elena", "nordwind logistik", "arbeitet bei", null, von, bis);
 
-    const res = await request(app).get("/api/graph");
+    const res = await request(URLE).get("/api/graph");
     expect(res.status).toBe(200);
     const kanten = res.body.relations as {
       source: string;
@@ -588,7 +613,7 @@ describe("GET /api/graph traegt die Gueltigkeit der Kante", () => {
   it("eine unbefristete Kante nennt null statt das Feld wegzulassen", async () => {
     store.addRelation("falk", "castel & sohn", "kennt", null);
 
-    const res = await request(app).get("/api/graph");
+    const res = await request(URLE).get("/api/graph");
     const kante = (res.body.relations as Record<string, unknown>[]).find((r) => r.relation === "kennt");
     expect(kante, "die Kante fehlt in der Antwort").toBeDefined();
     // JSON verschluckt undefined: stuende das Feld einfach nicht da, koennte

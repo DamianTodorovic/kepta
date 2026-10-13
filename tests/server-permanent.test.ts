@@ -1,9 +1,10 @@
-import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
+import { describe, it, expect, beforeEach, afterEach, vi, beforeAll, afterAll } from "vitest";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import fs from "node:fs";
 import request from "supertest";
 import { KeptaStore } from "../src/core/store";
+import { hoererDerDatei, type DateiHoerer } from "./helfer/hoerer";
 
 // server.ts nur importieren, nachdem AUTOSTART gesetzt ist.
 process.env.KEPTA_NO_AUTOSTART = "1";
@@ -14,6 +15,21 @@ let app: import("express").Express;
 let prevHome: string | undefined;
 let dir: string;
 
+// Ein Horcher pro Datei, auf IHREM Port — nicht einer je Anfrage
+// (`tests/helfer/hoerer.ts`: der Nachbau vom 13.10., der eine offene
+// `request(URLE)`-Kette an einen fremden v4-Hoerer verlor).
+let hoerer: DateiHoerer;
+let URLE: string;
+
+beforeAll(async () => {
+  hoerer = await hoererDerDatei("tests/server-permanent.test.ts");
+  URLE = hoerer.url;
+});
+
+afterAll(async () => {
+  await hoerer.schliesse();
+});
+
 beforeEach(async () => {
   dir = fs.mkdtempSync(path.join(tmpdir(), "kepta-permanent-"));
   prevHome = process.env.HOME;
@@ -23,6 +39,7 @@ beforeEach(async () => {
   ({ createApp } = await import("../server"));
   store = new KeptaStore(path.join(dir, "test.db"));
   app = createApp(store);
+  hoerer.gebeApp(app);
 });
 
 afterEach(() => {
@@ -31,17 +48,17 @@ afterEach(() => {
 });
 
 async function knoten(titel = "Loeschkandidat") {
-  const res = await request(app).post("/api/memories").send({ title: titel, content: "Inhalt mit Substanz." });
+  const res = await request(URLE).post("/api/memories").send({ title: titel, content: "Inhalt mit Substanz." });
   return String(res.body.memory.id);
 }
 
-const aktiv = async () => (await request(app).get("/api/memories")).body.length;
-const paperkorb = async () => (await request(app).get("/api/memories?trash=1")).body.length;
+const aktiv = async () => (await request(URLE).get("/api/memories")).body.length;
+const paperkorb = async () => (await request(URLE).get("/api/memories?trash=1")).body.length;
 
 describe("A3-11 — DELETE /api/memories/:id?permanent= nahm unbekannte Werte still als Papierkorb", () => {
   it("lehnt ?permanent=True ab, statt die Notiz in den Papierkorb zu verschieben", async () => {
     const id = await knoten();
-    const res = await request(app).delete(`/api/memories/${encodeURIComponent(id)}?permanent=True`);
+    const res = await request(URLE).delete(`/api/memories/${encodeURIComponent(id)}?permanent=True`);
     expect(res.status).toBe(400);
     expect(await aktiv()).toBe(1);
     expect(await paperkorb()).toBe(0);
@@ -49,7 +66,7 @@ describe("A3-11 — DELETE /api/memories/:id?permanent= nahm unbekannte Werte st
 
   it("nennt in der Ablehnung die erlaubten Formen", async () => {
     const id = await knoten();
-    const res = await request(app).delete(`/api/memories/${encodeURIComponent(id)}?permanent=True`);
+    const res = await request(URLE).delete(`/api/memories/${encodeURIComponent(id)}?permanent=True`);
     const text = JSON.stringify(res.body);
     expect(text).toMatch(/permanent/);
     for (const form of ["1", "0", "true", "false"]) expect(text).toContain(form);
@@ -58,7 +75,7 @@ describe("A3-11 — DELETE /api/memories/:id?permanent= nahm unbekannte Werte st
   it("lehnt jeden unbekannten Wert ab (yes, ja, leer, TWO)", async () => {
     for (const wert of ["yes", "ja", "", "TRUE-ish", "2"]) {
       const id = await knoten(`Kandidat ${wert || "leer"}`);
-      const res = await request(app).delete(`/api/memories/${encodeURIComponent(id)}?permanent=${encodeURIComponent(wert)}`);
+      const res = await request(URLE).delete(`/api/memories/${encodeURIComponent(id)}?permanent=${encodeURIComponent(wert)}`);
       expect(res.status).toBe(400);
     }
     expect(await aktiv()).toBe(5);
@@ -67,14 +84,14 @@ describe("A3-11 — DELETE /api/memories/:id?permanent= nahm unbekannte Werte st
 
   it("lehnt einen doppelten Query-Wert ab, statt den ersten zu nehmen", async () => {
     const id = await knoten();
-    const res = await request(app).delete(`/api/memories/${encodeURIComponent(id)}?permanent=1&permanent=0`);
+    const res = await request(URLE).delete(`/api/memories/${encodeURIComponent(id)}?permanent=1&permanent=0`);
     expect(res.status).toBe(400);
     expect(await aktiv()).toBe(1);
   });
 
   it("?permanent=1 loescht endgueltig (Quittung permanent:true, nichts im Papierkorb)", async () => {
     const id = await knoten();
-    const res = await request(app).delete(`/api/memories/${encodeURIComponent(id)}?permanent=1`);
+    const res = await request(URLE).delete(`/api/memories/${encodeURIComponent(id)}?permanent=1`);
     expect(res.status).toBe(200);
     expect(res.body).toEqual({ ok: true, permanent: true });
     expect(await aktiv()).toBe(0);
@@ -83,23 +100,23 @@ describe("A3-11 — DELETE /api/memories/:id?permanent= nahm unbekannte Werte st
 
   it("?permanent=true loescht endgueltig, ?permanent=false und =0 verschieben in den Papierkorb", async () => {
     const a = await knoten("a");
-    const w = await request(app).delete(`/api/memories/${encodeURIComponent(a)}?permanent=true`);
+    const w = await request(URLE).delete(`/api/memories/${encodeURIComponent(a)}?permanent=true`);
     expect(w.body).toEqual({ ok: true, permanent: true });
 
     const b = await knoten("b");
-    const f = await request(app).delete(`/api/memories/${encodeURIComponent(b)}?permanent=false`);
+    const f = await request(URLE).delete(`/api/memories/${encodeURIComponent(b)}?permanent=false`);
     expect(f.body).toEqual({ ok: true, permanent: false });
     expect(await paperkorb()).toBe(1);
 
     const c = await knoten("c");
-    const n = await request(app).delete(`/api/memories/${encodeURIComponent(c)}?permanent=0`);
+    const n = await request(URLE).delete(`/api/memories/${encodeURIComponent(c)}?permanent=0`);
     expect(n.body).toEqual({ ok: true, permanent: false });
     expect(await paperkorb()).toBe(2);
   });
 
   it("ohne permanent-Feld bleibt der Papierkorb der Standard", async () => {
     const id = await knoten();
-    const res = await request(app).delete(`/api/memories/${encodeURIComponent(id)}`);
+    const res = await request(URLE).delete(`/api/memories/${encodeURIComponent(id)}`);
     expect(res.status).toBe(200);
     expect(res.body).toEqual({ ok: true, permanent: false });
     expect(await paperkorb()).toBe(1);
@@ -107,7 +124,7 @@ describe("A3-11 — DELETE /api/memories/:id?permanent= nahm unbekannte Werte st
 
   it("eine unbekannte Form loescht nichts — auch nicht im Papierkorb einer anderen Notiz", async () => {
     const id = await knoten();
-    const res = await request(app).delete(`/api/memories/${encodeURIComponent(id)}?permanent=TRUE`);
+    const res = await request(URLE).delete(`/api/memories/${encodeURIComponent(id)}?permanent=TRUE`);
     expect(res.status).toBe(400);
     expect(String(res.body.error)).not.toMatch(/undefined|object Object/);
     expect(await aktiv()).toBe(1);

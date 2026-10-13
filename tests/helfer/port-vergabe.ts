@@ -65,6 +65,81 @@ export function portZulaessig(port: number): boolean {
 }
 
 /**
+ * Die Kennungen, die in DIESER Suite einen Horcher setzen: der Pfad der Datei, und für
+ * eine Datei, die zwei Bestände gleichzeitig vergleichen muss, der Pfad mit `#slot`.
+ *
+ * Die Liste ist nicht Dekoration. Zwei Namen können in 4 000 Plaetzen zusammenfallen —
+ * und das ist hier keine Kollisionsstatistik, sondern ein echter Fund:
+ * `tests/server.test.ts` und `tests/server-repair-limit.test.ts` hashes beide auf 42085.
+ * Mit `request(app)` fiel das nie auf, weil jede Anfrage sich einen flüchtigen Port
+ * nahm; mit einem langlebigen Horcher würden die beiden Dateien einander den Port
+ * zuschlagen. Also: keine Portjagd im Lauf, sondern eine **einmalige, gleiche
+ * Zuteilung** — der Reihe nach nimmt jeder Namen seinen nächsten freien Kandidaten.
+ * Dieselbe Liste, dieselbe Sortierung, auf jedem Rechner dieselben Zahlen.
+ *
+ * Gewacht von `tests/port-vertrag.test.ts`: wer neu horcht, ohne hier zu stehen, macht
+ * die Wache rot; ein Eintrag ohne Horcher macht sie ebenso rot. Die Liste darf also nur
+ * mit der Suite wachsen und schrumpfen, nicht im Verborgenen.
+ */
+export const HORCHENDE_KENNUNGEN: readonly string[] = [
+  "tests/graf-bilanz.test.ts",
+  "tests/graf-doku.test.ts",
+  "tests/graf-kosten.test.ts",
+  "tests/herkunft.test.ts",
+  "tests/server-einstellungs-maske.test.ts",
+  "tests/server-fehler.test.ts",
+  "tests/server-herkunftsdecke.test.ts",
+  "tests/server-import-ersatz.test.ts",
+  "tests/server-import-ersatz.test.ts#zweitstapel",
+  "tests/server-inbox-symlink.test.ts",
+  "tests/server-mcp-spiegel.test.ts",
+  "tests/server-mcp-spiegel.test.ts#b",
+  "tests/server-permanent.test.ts",
+  "tests/server-repair-limit.test.ts",
+  "tests/server-settings-geheim.test.ts",
+  "tests/sockel-vertrag.test.ts#probe",
+  "tests/server.test.ts",
+];
+
+/** Die Kandidatenfolge eines Namens: erst die Eigenzahl, dann die Sprünge des Bereichs. */
+function kandidaten(name: string): number[] {
+  const h = fnv1a(name);
+  const out: number[] = [];
+  for (let i = 0; i < PORT_BEREICH; i++) {
+    const kandidat = PORT_BASIS + ((h + i * 7919) % PORT_BEREICH);
+    if (!PORT_AUSNAHME.includes(kandidat)) out.push(kandidat);
+  }
+  return out;
+}
+
+/**
+ * Der Port eines Horchers — dieselbe Zuteilung in jedem Lauf, Kollisionen ausgeschlossen.
+ * `portFuerDatei` ist die reine Eigenzahl (davon handelt der Zahl-Vertrag dieser Datei);
+ * diese Funktion hier ist die, die der Horcher benutzt, weil zwei Dateien sich den
+ * Port nicht teilen können.
+ */
+export function portFuerHorer(kennung: string): number {
+  if (!HORCHENDE_KENNUNGEN.includes(kennung)) {
+    throw new Error(
+      `portFuerHorer: ${kennung} steht nicht in HORCHENDE_KENNUNGEN (tests/helfer/port-vergabe.ts). ` +
+        `Neue Horcher tragen sich dort ein — die Liste ist die einzige Stelle, an der die Suite weiss, wer horcht.`
+    );
+  }
+  const vergeben = new Set<number>();
+  for (const name of [...HORCHENDE_KENNUNGEN].sort()) {
+    const port = kandidaten(name).find((k) => !vergeben.has(k));
+    if (port === undefined) {
+      throw new Error(`portFuerHorer: kein freier Port für ${name} im Fenster ${PORT_BASIS}..${PORT_BASIS + PORT_BEREICH - 1}`);
+    }
+    vergeben.add(port);
+    if (name === kennung) return port;
+  }
+  // Unerreichbar: die Mitgliedschaft ist oben geprüft. Die Zeile steht, weil ein
+  // stummer Rueckfall genau die Klasse waere, die dieses Modul abschafft.
+  throw new Error(`portFuerHorer: ${kennung} wurde zugeteilt, aber nicht erreicht`);
+}
+
+/**
  * Ein Port, der frei ist — oder ein Wurf, der sagt, dass er es nicht ist.
  * Binden, sofort schliessen, weitergeben: der Testlauf hoert danach selbst auf
  * dieser Zahl, und ein zweiter Lauf auf demselben Baum trifft ihn statt an

@@ -1,10 +1,11 @@
-import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
+import { describe, it, expect, beforeEach, afterEach, vi, beforeAll, afterAll } from "vitest";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import fs from "node:fs";
 import express from "express";
 import request from "supertest";
 import { KeptaStore } from "../src/core/store";
+import { hoererDerDatei, type DateiHoerer } from "./helfer/hoerer";
 import { nurDieserRechner } from "../src/herkunft";
 
 // server.ts nur importieren, nachdem AUTOSTART gesetzt ist — sonst startet der echte Server.
@@ -16,6 +17,21 @@ let app: import("express").Express;
 let prevHome: string | undefined;
 let dir: string;
 
+// Ein Horcher pro Datei, auf IHREM Port — nicht einer je Anfrage
+// (`tests/helfer/hoerer.ts`: der Nachbau vom 13.10., der eine offene
+// `request(URLE)`-Kette an einen fremden v4-Hoerer verlor).
+let hoerer: DateiHoerer;
+let URLE: string;
+
+beforeAll(async () => {
+  hoerer = await hoererDerDatei("tests/server-herkunftsdecke.test.ts");
+  URLE = hoerer.url;
+});
+
+afterAll(async () => {
+  await hoerer.schliesse();
+});
+
 beforeEach(async () => {
   dir = fs.mkdtempSync(path.join(tmpdir(), "kepta-deckung-"));
   prevHome = process.env.HOME;
@@ -25,6 +41,7 @@ beforeEach(async () => {
   ({ createApp } = await import("../server"));
   store = new KeptaStore(path.join(dir, "test.db"));
   app = createApp(store);
+  hoerer.gebeApp(app);
 });
 
 afterEach(() => {
@@ -81,7 +98,7 @@ describe("Herkunfts-Decke — jede Tuer einzeln hinter der Schleuse", () => {
     const lesend = tueren(app).filter((t) => LESEND.includes(t.method));
     expect(lesend.length).toBeGreaterThan(5);
     for (const tuer of lesend) {
-      const r = await (request(app) as any)[tuer.method](fuellen(tuer.pfad)).set("Host", FREMDER_HOST);
+      const r = await (request(URLE) as any)[tuer.method](fuellen(tuer.pfad)).set("Host", FREMDER_HOST);
       expect(r.status, `${tuer.method} ${tuer.pfad}`).toBe(403);
       expect(r.body, `${tuer.method} ${tuer.pfad}`).toEqual({ error: "Forbidden host." });
     }
@@ -91,11 +108,11 @@ describe("Herkunfts-Decke — jede Tuer einzeln hinter der Schleuse", () => {
     const schreibend = tueren(app).filter((t) => SCHREIBEND.includes(t.method));
     expect(schreibend.length).toBeGreaterThan(5);
     for (const tuer of schreibend) {
-      const fremderHost = await (request(app) as any)[tuer.method](fuellen(tuer.pfad)).set("Host", FREMDER_HOST).send({});
+      const fremderHost = await (request(URLE) as any)[tuer.method](fuellen(tuer.pfad)).set("Host", FREMDER_HOST).send({});
       expect(fremderHost.status, `${tuer.method} ${tuer.pfad} (Host)`).toBe(403);
       expect(fremderHost.body, `${tuer.method} ${tuer.pfad} (Host)`).toEqual({ error: "Forbidden host." });
       // Dieselbe Tuer, lokaler Host, fremde Webseite: der Formularweg ohne Preflight.
-      const fremdeSeite = await (request(app) as any)[tuer.method](fuellen(tuer.pfad))
+      const fremdeSeite = await (request(URLE) as any)[tuer.method](fuellen(tuer.pfad))
         .set("Host", "127.0.0.1:3000").set("Origin", FREMDE_SEITE).type("form").send({ title: "x" });
       expect(fremdeSeite.status, `${tuer.method} ${tuer.pfad} (Origin)`).toBe(403);
       expect(fremdeSeite.body, `${tuer.method} ${tuer.pfad} (Origin)`).toEqual({ error: "Forbidden origin." });

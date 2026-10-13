@@ -1,0 +1,16 @@
+sockel-nachbau-1357 — Nachbau der Sockel-Klasse, ausgefuehrt auf diesem Rechner (fuenf Faelle)
+RUN v26.8.1 | node scripts/nachbau-sockel.mjs | 2026-10-13 11:57:47 UTC | darwin arm64
+quelle: scripts/nachbau-sockel.mjs — unveraendert im Repo, auf jedem Rechner nachfuehrbar
+--- ausgabe ---
+FALL 1: listen(0) ohne Host -> { address: "::", family: IPv6, port: 55007 }
+FALL 1:   supertest tut genau das: app.listen(0) ohne Host (node_modules/supertest/lib/test.js:63)
+FALL 2: v6-Wildcard-Bind auf 55008 trotz bestehendem v4-Hoerer: DURCHGEHEN (sitzt als :: IPv6)
+FALL 2:   Anfrage http://127.0.0.1:55008/ -> 200, application/json, leib="{\"geo\":\"eigener\"}"
+FALL 3: fremder v4-Bind auf 55010 NACH einem v6-Wildcard-Hoerer: DURCHGEHEN
+FALL 3:   Anfrage http://127.0.0.1:55010/ -> 401, text/plain, leib="Unauthorized"
+FALL 3:   wer antwortet: DER FREMDE (401 text/plain — unser Server kennt keine 401)
+FALL 4: Kindprozess: kind: gebunden auf 127.0.0.1:55012
+FALL 4:   Anfrage -> 401, text/plain, leib="Unauthorized"
+FALL 4:   ein leerer {}-Leib bei 401 ist genau die Signatur aus tests/server-mcp-spiegel.test.ts (Schreiblauf 27: 401 {})
+FALL 5: zweiter v4-Bind auf 55014 trotz unserem v4-Hoerer: EADDRINUSE — genau das will der Horcher, darum bindet er 127.0.0.1
+NACHBAU-STAND: v26.8.1 auf darwin, ephemere Untergrenze net.inet.ip.portrange.first = 49152

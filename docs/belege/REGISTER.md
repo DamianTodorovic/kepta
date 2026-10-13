@@ -23,10 +23,27 @@ in der Arbeitsmappe — lokal, ohne Fern, auf einem Runner nicht vorhanden. Die 
 | `welt-stufe.log.txt` | 6787 B | `b8631e17c4dce3a3…` |
 | `weltdeckung-1558.log.txt` | 373 B | `2d045af4e122e915…` |
 | `nacht-11-10/e2-weltdeckung-kueche-11-10.auszug.txt` | 1841 B | `a6601418cc1fa72e…` |
+| `r1/ablation-2326.log.txt` | 3213 B | `8cafcf22fe06dd67…` |
+| `r1/eval-0037.log.txt` | 1493 B | `031c0443bc413d18…` |
+| `r1/kontext-groesse-2128.log.txt` | 1835 B | `204e65256c2503b4…` |
+| `nacht-13-10/sockel-nachbau-1357.log.txt` | 1359 B | `85fa18ab82409dfb…` |
 
-Summe: **71137 Bytes** in 9 Dateien, Stand der Kopie: 2026-10-12 21:35 UTC; Kuren: 23:5x UTC
-und 2026-10-13. Nicht in dieser Tabelle: `r1/` (drei Laeufe der Doku-Scheibe) — die Zeilen
-nachzutragen ist eine eigene Scheibe, keine Behauptung.
+Summe: **79037 Bytes** in 13 Dateien, Stand der letzten Kopie: 2026-10-13 11:57 UTC; Kuren:
+23:5x UTC (12.10.) und 13.10. Die drei `r1/`-Laeufe sind jetzt mit Zeilen eingetragen — der
+Satz, der sie als offene Luecke nannte, ist damit gegenstandslos.
+
+Die eine Datei, die sich von allen anderen unterscheidet: `nacht-13-10/sockel-nachbau-1357.log.txt`
+stammt aus `scripts/nachbau-sockel.mjs` (`a85be354f55696c7…`), und das Skript **liegt im Repo**.
+Jeder kann den Nachbau auf seinem Rechner selbst fuehren (`node scripts/nachbau-sockel.mjs`) —
+die Zeilen sind also nicht nur ein Protokoll von diesem Schreibtisch, sondern eine Behauptung
+ueber Socket-Ordnung, die nachpruefbar ist. Was sie sagt, in einem Satz: ein Horcher ohne Host
+bindet `::` (IPv6-Wildcard), und ein spaeterer ausdruecklicher v4-Hoerer auf derselben Zahl
+gewinnt die Demux und beantwortet die Anfragen, die fuer unseren Server gedacht waren (FALL 3
+und 4, je `401 text/plain`). Das ist die Signatur der beiden Roetungen `401 {}` und `404 {}`
+in dieser Suite — geheilt durch `tests/helfer/hoerer.ts`: ein Horcher je Datei, auf
+`127.0.0.1` ausdruecklich (FALL 5: ein zweiter v4-Bind auf derselben Zahl scheitert dann mit
+`EADDRINUSE` statt still daneben zulauern), Port aus dem Fenster unterhalb der ephemeren
+Untergrenze dieses Rechners (`49152`).
 
 ## Die Kur an `ruhe-mit-anteil-1444.log.txt` — entschieden von der Leitung, gefahren von W
 

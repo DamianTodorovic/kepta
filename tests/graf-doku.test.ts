@@ -4,13 +4,14 @@
 // Kraft-Layout ohne jeden Produktions-Aufrufer (B-4). Diese Datei prueft jede
 // Behauptung ueber den Bild-Pfad gegen die Route, die sie bedient — ein
 // dokumentierter Parameter, den die Route nicht liest, macht sie rot.
-import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
+import { describe, it, expect, beforeEach, afterEach, vi, beforeAll, afterAll } from "vitest";
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import request from "supertest";
 import Ajv from "ajv";
 import { KeptaStore } from "../src/core/store";
+import { hoererDerDatei, type DateiHoerer } from "./helfer/hoerer";
 import type { GrafAntwort } from "../src/core/graf-vertrag";
 
 process.env.KEPTA_NO_AUTOSTART = "1";
@@ -21,6 +22,21 @@ let app: import("express").Express;
 let dir: string;
 let prevHome: string | undefined;
 
+// Ein Horcher pro Datei, auf IHREM Port — nicht einer je Anfrage
+// (`tests/helfer/hoerer.ts`: der Nachbau vom 13.10., der eine offene
+// `request(URLE)`-Kette an einen fremden v4-Hoerer verlor).
+let hoerer: DateiHoerer;
+let URLE: string;
+
+beforeAll(async () => {
+  hoerer = await hoererDerDatei("tests/graf-doku.test.ts");
+  URLE = hoerer.url;
+});
+
+afterAll(async () => {
+  await hoerer.schliesse();
+});
+
 beforeEach(async () => {
   dir = fs.mkdtempSync(path.join(os.tmpdir(), "kepta-graf-doku-"));
   prevHome = process.env.HOME;
@@ -30,6 +46,7 @@ beforeEach(async () => {
   ({ createApp } = await import("../server"));
   store = new KeptaStore(path.join(dir, "t.db"));
   app = createApp(store);
+  hoerer.gebeApp(app);
   store.createMemory({ title: "Alpha", content: "Siehe [[Beta]].", tags: ["gemeinsam"] });
   store.createMemory({ title: "Beta", content: "Ein Satz.", tags: ["gemeinsam"] });
   store.linkEntities(store.listMemories({ limit: 1 })[0]!.id, ["Alpha", "Beta"]);
@@ -73,7 +90,7 @@ describe("graf-doku: was die Doku behauptet, liest die Route", () => {
       const dokumentiert = dokumentierteParameter(datei);
       expect(dokumentiert.length).toBeGreaterThan(3);
       for (const name of dokumentiert) {
-        const res = await request(app).get(`/api/graph/bild?${name}=1`);
+        const res = await request(URLE).get(`/api/graph/bild?${name}=1`);
         const meldetUnbekannt = res.status === 400 && unbekannt.test(String(res.body?.error ?? ""));
         if (name === "width" || name === "height") {
           // Der Vertrag schliesst das Fenster absichtlich aus (A9 B-1/B-2), und
@@ -91,7 +108,7 @@ describe("graf-doku: was die Doku behauptet, liest die Route", () => {
     const ajv = new Ajv({ strict: false, allErrors: true });
     const pruefe = ajv.compile(schema);
     for (const sicht of ["konzept", "notiz"]) {
-      const res = await request(app).get(`/api/graph/bild?sicht=${sicht}`);
+      const res = await request(URLE).get(`/api/graph/bild?sicht=${sicht}`);
       expect(res.status).toBe(200);
       const fehler = (pruefe(res.body) ? [] : (pruefe.errors ?? [])).map((e) => `${e.instancePath || "/"} ${e.message}`);
       expect(fehler).toEqual([]);
@@ -105,7 +122,7 @@ describe("graf-doku: was die Doku behauptet, liest die Route", () => {
   });
 
   it("das Kuvert nennt seine Rechenpflicht, und die Antwort haelt sie ein", async () => {
-    const res = await request(app).get("/api/graph/bild?sicht=notiz");
+    const res = await request(URLE).get("/api/graph/bild?sicht=notiz");
     const b = res.body as GrafAntwort;
     expect(b.bestand.knoten).toBe(b.knoten.length + b.kuerzung.uebrig.knoten);
     expect(b.bestand.kanten).toBe(b.kanten.length + b.kuerzung.uebrig.kanten);
@@ -129,7 +146,7 @@ describe("graf-doku: was die Doku behauptet, liest die Route", () => {
 
   it("die Antwort ist English in der Fehlerseite, Deutsch in den Feldnamen", async () => {
     // CONTRIBUTING.md setzt die Sprachregelung: maschinenlesbarer Text English.
-    const res = await request(app).get("/api/graph/bild?sicht=nichts");
+    const res = await request(URLE).get("/api/graph/bild?sicht=nichts");
     expect(res.status).toBe(400);
     expect(String(res.body.error)).toMatch(/^[A-Za-z0-9 .,'`:;()/?-]+$/);
   });

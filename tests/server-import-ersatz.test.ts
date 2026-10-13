@@ -1,10 +1,12 @@
-import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
+import { describe, it, expect, beforeEach, afterEach, vi, beforeAll, afterAll } from "vitest";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import fs from "node:fs";
 import crypto from "node:crypto";
 import request from "supertest";
 import { KeptaStore } from "../src/core/store";
+import { hoererDerDatei, type DateiHoerer } from "./helfer/hoerer";
+import { anlage } from "./helfer/anlage";
 import { defaultExtensions } from "../src/core/extensions";
 
 // server.ts startet beim Import normalerweise automatisch — mit KEPTA_NO_AUTOSTART=1
@@ -18,6 +20,31 @@ let app: import("express").Express;
 let prevHome: string | undefined;
 let dir: string;
 
+// Ein Horcher pro Datei, auf IHREM Port — nicht einer je Anfrage
+// (`tests/helfer/hoerer.ts`: der Nachbau vom 13.10., der eine offene
+// `request(URLE)`-Kette an einen fremden v4-Hoerer verlor).
+let hoerer: DateiHoerer;
+let URLE: string;
+// Der zweite Stapel (die verschluesselte Probe weiter unten) braucht einen eigenen
+// Horcher, weil beide Stapel nicht derselbe sind: ein Horcher reicht fuer einen
+// Stapel, und ein zweiter `hoererDerDatei`-Aufruf mit Slot ist dieselbe Zuteilung —
+// kein Horcher je Anfrage, kein zweiter Lauf auf derselben Zahl
+// (`tests/helfer/port-vergabe.ts`: HORCHENDE_KENNUNGEN).
+let hoererZ: DateiHoerer;
+let URLZ: string;
+
+beforeAll(async () => {
+  hoerer = await hoererDerDatei("tests/server-import-ersatz.test.ts");
+  URLE = hoerer.url;
+  hoererZ = await hoererDerDatei("tests/server-import-ersatz.test.ts#zweitstapel");
+  URLZ = hoererZ.url;
+});
+
+afterAll(async () => {
+  await hoerer.schliesse();
+  await hoererZ.schliesse();
+});
+
 beforeEach(async () => {
   dir = fs.mkdtempSync(path.join(tmpdir(), "kepta-ersatz-"));
   prevHome = process.env.HOME;
@@ -27,6 +54,7 @@ beforeEach(async () => {
   ({ createApp } = await import("../server"));
   store = new KeptaStore(path.join(dir, "test.db"));
   app = createApp(store);
+  hoerer.gebeApp(app);
 });
 
 afterEach(() => {
@@ -36,28 +64,28 @@ afterEach(() => {
 
 async function fuelle(n: number, praefix = "Bestand") {
   for (let i = 0; i < n; i++) {
-    await request(app).post("/api/memories").send({ title: `${praefix} ${i}`, content: `Inhalt ${i} mit Substanz.` });
+    anlage(await request(URLE).post("/api/memories").send({ title: `${praefix} ${i}`, content: `Inhalt ${i} mit Substanz.` }), `${praefix} ${i} anlegen`);
   }
 }
 
 /** Zwei Notizen in den Papierkorb — der Purge bei mode:"replace" erwischt sie mit. */
 async function papierkorb(n: number) {
   for (let i = 0; i < n; i++) {
-    const post = await request(app).post("/api/memories").send({ title: `Weg ${i}`, content: `Papierkorb-Inhalt ${i}.` });
-    await request(app).delete(`/api/memories/${encodeURIComponent(post.body.memory.id)}`);
+    const post = anlage(await request(URLE).post("/api/memories").send({ title: `Weg ${i}`, content: `Papierkorb-Inhalt ${i}.` }), `Weg ${i} anlegen`);
+    anlage(await request(URLE).delete(`/api/memories/${encodeURIComponent(post.body.memory.id)}`), `Weg ${i} in den Papierkorb`, [200, 204]);
   }
 }
 
 const zaehlen = async () => {
-  const aktiv = await request(app).get("/api/memories");
-  const trash = await request(app).get("/api/memories?trash=1");
+  const aktiv = await request(URLE).get("/api/memories");
+  const trash = await request(URLE).get("/api/memories?trash=1");
   return { aktiv: aktiv.body.length, trash: trash.body.length };
 };
 
 describe("Q-16 — POST /api/memories/import mit mode:\"replace\" kann die ganze Wissensbasis endgültig löschen", () => {
   it("lehnt replace ohne ausdrückliche Bestätigung ab und lässt jeden Knoten in Ruhe", async () => {
     await fuelle(3);
-    const res = await request(app)
+    const res = await request(URLE)
       .post("/api/memories/import")
       .send({ mode: "replace", memories: [{ id: "neu-1", title: "Neu", content: "Neuer Inhalt." }] });
     expect(res.status).toBe(400);
@@ -68,7 +96,7 @@ describe("Q-16 — POST /api/memories/import mit mode:\"replace\" kann die ganze
   it("lehnt eine replace-Nutzlast ohne eine einzige nutzbare Notiz ab (leeres Array)", async () => {
     await fuelle(3);
     await papierkorb(2);
-    const res = await request(app)
+    const res = await request(URLE)
       .post("/api/memories/import")
       .send({ mode: "replace", confirm: "replace", memories: [] });
     expect(res.status).toBe(400);
@@ -78,7 +106,7 @@ describe("Q-16 — POST /api/memories/import mit mode:\"replace\" kann die ganze
   it("lehnt das Nur-Titel-Backup ab, dessen Notizen durch den Inhaltfilter laufen", async () => {
     await fuelle(3);
     // A3 Abschnitt B: frueher 200 {imported:0} — und der ganze Bestand weg.
-    const res = await request(app).post("/api/memories/import").send({
+    const res = await request(URLE).post("/api/memories/import").send({
       mode: "replace",
       confirm: "replace",
       memories: [{ id: "a1", title: "Nur-Titel", content: "" }],
@@ -91,7 +119,7 @@ describe("Q-16 — POST /api/memories/import mit mode:\"replace\" kann die ganze
   it("zeigt der Trockenlauf die Zahl der Betroffenen, ohne etwas anzufassen", async () => {
     await fuelle(3);
     await papierkorb(2);
-    const res = await request(app)
+    const res = await request(URLE)
       .post("/api/memories/import")
       .send({ mode: "replace", dryRun: true, memories: [{ id: "n1", title: "Neu", content: "Inhalt" }] });
     expect(res.status).toBe(200);
@@ -106,7 +134,7 @@ describe("Q-16 — POST /api/memories/import mit mode:\"replace\" kann die ganze
   it("legt vor dem Purge die Sicherung auf die Platte und nennt ihren Pfad in der Antwort", async () => {
     await fuelle(3);
     await papierkorb(2);
-    const res = await request(app).post("/api/memories/import").send({
+    const res = await request(URLE).post("/api/memories/import").send({
       mode: "replace",
       confirm: "replace",
       memories: [{ id: "n1", title: "Neu", content: "Nur dieser Knoten bleibt uebrig." }],
@@ -134,7 +162,7 @@ describe("Q-16 — POST /api/memories/import mit mode:\"replace\" kann die ganze
     await fuelle(3);
     // backup/ als Datei statt Ordner: mkdir und Copy schlagen fehl, der Purge darf trotzdem nicht laufen.
     fs.writeFileSync(path.join(dir, "backup"), "blockiert", "utf-8");
-    const res = await request(app).post("/api/memories/import").send({
+    const res = await request(URLE).post("/api/memories/import").send({
       mode: "replace",
       confirm: "replace",
       memories: [{ id: "n1", title: "Neu", content: "Inhalt" }],
@@ -152,8 +180,9 @@ describe("Q-16 — POST /api/memories/import mit mode:\"replace\" kann die ganze
     const keyed = new KeptaStore(path.join(klarOrdner, "kepta.db"), verschluesselt);
     try {
       const keyedApp = createApp(keyed);
-      await request(keyedApp).post("/api/memories").send({ title: "Privat", content: MARKER });
-      const res = await request(keyedApp).post("/api/memories/import").send({
+      hoererZ.gebeApp(keyedApp);
+      await anlage(await request(URLZ).post("/api/memories").send({ title: "Privat", content: MARKER }), "verschlüsselte Probe-Notiz anlegen");
+      const res = await request(URLZ).post("/api/memories/import").send({
         mode: "replace",
         confirm: "replace",
         memories: [{ id: "n1", title: "Neu", content: "Inhalt" }],
@@ -179,7 +208,7 @@ describe("Q-16 — POST /api/memories/import mit mode:\"replace\" kann die ganze
 
   it("merge braucht keine Bestätigung und schreibt keine Sicherung", async () => {
     await fuelle(2);
-    const res = await request(app)
+    const res = await request(URLE)
       .post("/api/memories/import")
       .send({ mode: "merge", memories: [{ id: "m1", title: "Frisch", content: "Inhalt" }] });
     expect(res.status).toBe(200);
@@ -191,7 +220,7 @@ describe("Q-16 — POST /api/memories/import mit mode:\"replace\" kann die ganze
 
   it("merge ohne nutzbare Notiz wird abgelehnt statt als Erfolg gemeldet", async () => {
     await fuelle(2);
-    const res = await request(app).post("/api/memories/import").send({ memories: [] });
+    const res = await request(URLE).post("/api/memories/import").send({ memories: [] });
     expect(res.status).toBe(400);
     expect(await zaehlen()).toEqual({ aktiv: 2, trash: 0 });
   });
@@ -217,7 +246,7 @@ const pause = () => new Promise((r) => setTimeout(r, 4));
 /** Ein bestaetigter Volltausch mit einem Knoten; gibt die Antwort zurueck. */
 async function volltausch(markierung: string) {
   await pause();
-  return request(app).post("/api/memories/import").send({
+  return request(URLE).post("/api/memories/import").send({
     mode: "replace",
     confirm: "replace",
     memories: [{ id: `k-${markierung}`, title: `Stand ${markierung}`, content: `Inhalt ${markierung}` }],
@@ -323,7 +352,7 @@ describe("Q-16 Folge — der Sicherungsordner waechst: Aufbewahrung als Policy m
     vi.stubEnv("KEPTA_BACKUP_KEEP", "0");
     await fuelle(3);
     fs.writeFileSync(path.join(dir, "backup"), "blockiert", "utf-8");
-    const res = await request(app).post("/api/memories/import").send({
+    const res = await request(URLE).post("/api/memories/import").send({
       mode: "replace",
       confirm: "replace",
       memories: [{ id: "x", title: "Neu", content: "Inhalt" }],
@@ -342,11 +371,11 @@ describe("Q-16 Folge — der Sicherungsordner waechst: Aufbewahrung als Policy m
     await fuelle(2);
     const uhre = vi.spyOn(Date, "now").mockReturnValue(1_700_000_000_000);
     try {
-      const erste = await request(app).post("/api/memories/import").send({
+      const erste = await request(URLE).post("/api/memories/import").send({
         mode: "replace", confirm: "replace",
         memories: [{ id: "gl1", title: "Glatt 1", content: "Erster Stand derselben Millisekunde." }],
       });
-      const zweite = await request(app).post("/api/memories/import").send({
+      const zweite = await request(URLE).post("/api/memories/import").send({
         mode: "replace", confirm: "replace",
         memories: [{ id: "gl2", title: "Glatt 2", content: "Zweiter Stand derselben Millisekunde." }],
       });
@@ -402,7 +431,7 @@ describe("Q-16 Folge — der Sicherungsordner waechst: Aufbewahrung als Policy m
     await fuelle(1);
     let letzte: { body: Record<string, unknown> } | undefined;
     for (let i = 0; i < 12; i++) {
-      letzte = await request(app).post("/api/memories/import").send({
+      letzte = await request(URLE).post("/api/memories/import").send({
         mode: "replace", confirm: "replace",
         memories: [{ id: `k${i}`, title: `Schnell ${i}`, content: `Stand ${i} mit Substanz.` }],
       });

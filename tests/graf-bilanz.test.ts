@@ -6,12 +6,13 @@
 //
 // Dieser Test fuehrt die Rechenpflicht an Bestaenden vor, die bewusst ueber die
 // Kappen laufen, und prueft den Floor auf beiden Tueren.
-import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
+import { describe, it, expect, beforeEach, afterEach, vi, beforeAll, afterAll } from "vitest";
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import request from "supertest";
 import { KeptaStore } from "../src/core/store";
+import { hoererDerDatei, type DateiHoerer } from "./helfer/hoerer";
 import { handleRpc } from "../src/core/mcp";
 import type { GrafAntwort } from "../src/core/graf-vertrag";
 
@@ -23,6 +24,21 @@ let app: import("express").Express;
 let dir: string;
 let prevHome: string | undefined;
 
+// Ein Horcher pro Datei, auf IHREM Port — nicht einer je Anfrage
+// (`tests/helfer/hoerer.ts`: der Nachbau vom 13.10., der eine offene
+// `request(URLE)`-Kette an einen fremden v4-Hoerer verlor).
+let hoerer: DateiHoerer;
+let URLE: string;
+
+beforeAll(async () => {
+  hoerer = await hoererDerDatei("tests/graf-bilanz.test.ts");
+  URLE = hoerer.url;
+});
+
+afterAll(async () => {
+  await hoerer.schliesse();
+});
+
 beforeEach(async () => {
   dir = fs.mkdtempSync(path.join(os.tmpdir(), "kepta-graf-bilanz-"));
   prevHome = process.env.HOME;
@@ -32,6 +48,7 @@ beforeEach(async () => {
   ({ createApp } = await import("../server"));
   store = new KeptaStore(path.join(dir, "t.db"));
   app = createApp(store);
+  hoerer.gebeApp(app);
 });
 
 afterEach(() => {
@@ -41,7 +58,7 @@ afterEach(() => {
 });
 
 async function bild(query: string) {
-  const res = await request(app).get(`/api/graph/bild${query}`);
+  const res = await request(URLE).get(`/api/graph/bild${query}`);
   return { status: res.status, body: res.body as GrafAntwort, etag: res.headers["etag"] as string | undefined };
 }
 

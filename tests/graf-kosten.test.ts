@@ -7,13 +7,14 @@
 // Die Zahlen in den Grenzen sind A9s Auftraege aus Abschnitt 6. Was dieser Lauf
 // misst, steht im Bericht — ein Auftrag, der nicht erfuellt ist, wird nicht leiser
 // assertioniert, sondern gemeldet.
-import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
+import { describe, it, expect, beforeEach, afterEach, vi, beforeAll, afterAll } from "vitest";
 import { execFileSync } from "node:child_process";
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import request from "supertest";
 import { KeptaStore } from "../src/core/store";
+import { hoererDerDatei, type DateiHoerer } from "./helfer/hoerer";
 import type { GrafAntwort } from "../src/core/graf-vertrag";
 import { WELT_RAD } from "../src/core/graf-vertrag";
 import { WANDER_GRENZE } from "../src/core/graf-kraft";
@@ -33,6 +34,21 @@ let app: import("express").Express;
 let dir: string;
 let prevHome: string | undefined;
 
+// Ein Horcher pro Datei, auf IHREM Port — nicht einer je Anfrage
+// (`tests/helfer/hoerer.ts`: der Nachbau vom 13.10., der eine offene
+// `request(URLE)`-Kette an einen fremden v4-Hoerer verlor).
+let hoerer: DateiHoerer;
+let URLE: string;
+
+beforeAll(async () => {
+  hoerer = await hoererDerDatei("tests/graf-kosten.test.ts");
+  URLE = hoerer.url;
+});
+
+afterAll(async () => {
+  await hoerer.schliesse();
+});
+
 beforeEach(async () => {
 dir = fs.mkdtempSync(path.join(os.tmpdir(), "kepta-graf-kosten-"));
 prevHome = process.env.HOME;
@@ -43,6 +59,7 @@ vi.resetModules();
 dienst = await import("../src/graf-dienst");
 store = new KeptaStore(path.join(dir, "t.db"));
 app = createApp(store);
+  hoerer.gebeApp(app);
 });
 
 afterEach(() => {
@@ -111,7 +128,7 @@ function mutationswurf(): number {
 
 async function hole(query: string, etag?: string) {
 const start = performance.now();
-const req = request(app).get(`/api/graph/bild${query}`);
+const req = request(URLE).get(`/api/graph/bild${query}`);
 if (etag) req.set("If-None-Match", etag);
 const res = await req;
 return { ms: performance.now() - start, status: res.status, body: res.body as GrafAntwort, etag: res.headers["etag"] as string };
@@ -773,7 +790,7 @@ describe("graf-kosten: gemessene Grenzen", () => {
     const einwurf = await hole("?sicht=notiz");
     // Breite und Hoehe sind keine Parameter dieses Pfads (A9 G-10): ein Client,
     // der sie sendet, bekommt einen Grund statt ein ignoriertes Feld.
-    const res = await request(app).get("/api/graph/bild?layout=1&width=1200&height=800");
+    const res = await request(URLE).get("/api/graph/bild?layout=1&width=1200&height=800");
     expect(res.status).toBe(400);
     expect(String(res.body.error)).toContain("width");
     const zweiterWurf = await hole("?sicht=notiz");
