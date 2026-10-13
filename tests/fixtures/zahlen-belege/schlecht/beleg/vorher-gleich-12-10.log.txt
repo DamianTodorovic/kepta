@@ -1,0 +1,3 @@
+STAND 4 | knoten=400 kanten=1181 ms=65 ticks=140 weltseite=1000 (fest) anDerWand=36 ausdehnung=915x940 paareEigen=37(tief 22.7) paareFlaeche=15
+STAND 4 | knoten=1500 kanten=4664 ms=311 ticks=140 weltseite=1000 (fest) anDerWand=221 ausdehnung=940x940 paareEigen=935(tief 73.9) paareFlaeche=443
+STAND 4 | knoten=3000 kanten=9414 ms=745 ticks=140 weltseite=1000 (fest) anDerWand=818 ausdehnung=940x940 paareEigen=7134(tief 98.6) paareFlaeche=5236

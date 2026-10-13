@@ -36,7 +36,20 @@ describe("Dokumentation: die Testzahl ist die Zahl eines Laufs", () => {
     // verweigert die Wache und vergleicht nichts. Ein Wert aus der Ablage war der
     // Grund, warum die App-Wache am 10.10. einen drei Tage alten Bericht als
     // "passt" melden konnte: 1967 Tests, 118 von 131 Dateien, 22 Dateien juenger.
-    if (!bericht.ok) throw new Error(`Ich kann die Testzahl nicht pruefen: ${bericht.grund}\n  ${bericht.hinweis}`);
+    if (!bericht.ok) {
+      // Der Lauf kann seinen eigenen Bericht nicht lesen, waehrend er ihn schreibt:
+      // vitest oeffnet die JSON erst am Ende, und ein Leser mittendrin erwischt eine
+      // halbe Datei (gemessen: Kern-Lauf 1 am 12.10., "Expected property name or '}' in
+      // JSON at position 1"). In diesem einen Fall ist das Weigern der Befund, nicht die
+      // rote Zahl — die Autoritaet fuer Zahl und Stand ist `scripts/doku-check.mjs` NACH
+      // dem Lauf. Jede andere Weigerung (fehlt, alt, unvollstaendig, passt nicht zum
+      // Baum) bleibt ein Wurf: die zeigt an, dass jemand eine alte Zahl ungeprueft liest.
+      if (/kein lesbares JSON/.test(bericht.grund)) {
+        expect(bericht.hinweis, "ein halb geschriebener Bericht muss den Weg zum echten Lauf nennen").toContain("npm test");
+        return;
+      }
+      throw new Error(`Ich kann die Testzahl nicht pruefen: ${bericht.grund}\n  ${bericht.hinweis}`);
+    }
 
     // dokuVergleich ist dieselbe Funktion, die scripts/doku-check.mjs nach dem
     // Lauf anwendet: Zahl und Messstand, Zeile fuer Zeile, das Abzeichen beim

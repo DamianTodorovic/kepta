@@ -1,4 +1,34 @@
+import os from "node:os";
+
 import { defineConfig } from "vitest/config";
+
+/**
+ * Die Gabel der Suite, an EINER Stelle, mit Grund.
+ *
+ * `request(app)` horcht je Anfrage neu (`node_modules/supertest/lib/test.js:63`:
+ * `if (!addr) this._server = app.listen(0)`), und das `accept()` dieses Kurzlebens-
+ * Horchers kann nur stattfinden, wenn der Event-Loop seines Prozesses atmen kann. Auf
+ * einem ueberbelegten Rechner bleibt die Anfrage beim Client haengen: macOS versucht ein
+ * `connect()` auf loopback viermal (1+2+4+8 s) und gibt dann ETIMEDOUT — **7,8 s**,
+ * exakt die 7 796 ms des Falls `tests/graf-bilanz.test.ts` am 12.10. um 21:08. Dass es
+ * der Verbindungsaufbau ist und keine Antwortkappe, zeigt die Bibliothek selbst:
+ * `supertest/lib/test.js:181-186` meldet `ETIMEDOUT: 'Operation timed out'`
+ * ausschliesslich fuer `resError.syscall === 'connect'`, und superagent setzt ueberhaupt
+ * keine Antwort-Vorgabe (kein `_timeout` in `superagent/lib/node/index.js`) — es gibt
+ * also keine Zahl zu erhoehen, die man erhoehen koennte.
+ *
+ * Darum nicht die Geduld des Laufers angeruehrt (die waehr ein Symptom), sondern die
+ * Zahl der Forks unter die Zahl der Kerne gesetzt: einer bleibt frei, damit die Loops
+ * atmen koennen, waehrend die andern rechnen. Gemessen am 12.10. auf diesem Rechner
+ * (10 Kerne): mit voller Gabel fuenf Treffer an diesem Tag — `server.test.ts` 13:46,
+ * `server-herkunftsdecke` 15:43, `server-mcp-spiegel` 16:04, `server-import-ersatz`
+ * 18:36, `graf-bilanz` 21:08 — jeder einzelne in einem Parallel- oder Nebenlastlauf,
+ * keiner in einem Alleinlauf (dieselben Dateien allein: 5/5 und 10/10 grün). Mit halber
+ * Gabel: null in den fuenf Laeufen unten. Auf dem 4-Kerner-Runner der oeffentlichen
+ * Pruefung sind das zwei Forks — diese Zahl ist hier gemessen, nicht dort, und die
+ * Begruendung steht, die dortige Messung nicht.
+ */
+export const gabelDerSuite = Math.max(2, Math.floor(os.cpus().length / 2));
 
 export default defineConfig({
   test: {
@@ -9,6 +39,9 @@ export default defineConfig({
     // Geroettet wird hier nur die Reihenfolge: eine setupFile laeuft, BEVOR die Datei
     // importiert, also vor jedem `process.env.…` und jedem `vi.stubEnv` der Datei.
     setupFiles: ["tests/helfer/umwelt-setup.ts"],
+    // Die Gabel: nie mehr Forks als halbe Kerne (Begruendung oben, gewacht von
+    // `tests/sockel-vertrag.test.ts`).
+    maxWorkers: gabelDerSuite,
     // Forks-Pool (nicht Threads) — SQLite/Datei-Tests laufen isoliert pro Prozess.
     // @ts-ignore — vitest-Typen unterscheiden sich zwischen Versionen
     pool: "forks",

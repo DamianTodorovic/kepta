@@ -1,0 +1,27 @@
+KEPTA Bau-Kontext — Groessen von Arbeitsbaum, node_modules und sauberer Kopie
+Gefahren 2026-10-12T21:28:47Z (UTC) im Kern-Repo, Stand e70da08 + uncommittete README-Arbeit, Node v26.8.1, arm64
+Kein Docker-Lauf: gemessen wird der Kontext, den `docker build -t kepta-mcp .` aus diesem Baum senden wuerde,
+und die Dateigroesse einer sauberen Kopie. Die Zahlen unten sind `du`- und `stat`-Ausgabe, nicht behauptet.
+
+Befehle, so nachzubauen:
+  du -sk -I .git .            -> 183924 kb  = 179.6 MB  (Arbeitsbaum ohne .git)
+  du -sk node_modules         -> 173348 kb  = 169.3 MB  (der Teil, der einer sauberen Kopie fehlt)
+  git ls-files -z | xargs -0 stat -f "%z" | awk '{s+=$1} END {print s}'
+                              -> 220 Dateien, 4040668 bytes = 3.85 MB  (summe der getrackten dateien)
+  du -sk dist                 -> 2376 kb (vorhandener Bau-Ordner, zaehlt zum schmutzigen Kontext dazu)
+
+Gerundet auf die Stellenzahl des Papiers:
+  schmutziger Kontext 180 MB   (davon 169 MB node_modules)
+  saubere Kopie        4 MB    (3.9 MB auf eine Nachkommastelle, 3.85 MB exakt in bytes)
+
+Warum das den Satz traegt: der Fehler, vor dem die Readme warnt, ist kein Speichler — ein macOS
+node_modules (169 MB) im Baukontext bringt die Linux-Phase zu ERR_DLOPEN_FAILED, weil das native
+SQLite-Modul fuer das falsche ABI gebaut ist. Eine saubere Kopie enthaelt keine node_modules, also
+4 MB Kontext statt 180 MB, und der Bau geht durch. `.dockerignore` (4 kb, im Repo) haellt
+node_modules und dist seit dem A1-Befund aus dem Kontext heraus; bis diese Datei einen Checkout
+erreicht, ist die saubere Kopie der sichere Weg.
+
+Keine Zeit gemessen, keine Ruhe-Sonde noetig — es sind Groessen, keine Latenzen.
+Ende 2026-10-12T21:28:47Z (UTC)
+
+(Name 2128 = 21:28 UTC = 23:28 lokal; die Datei benennt sich in UTC, die Ablation-Datei in Lokalzeit.)

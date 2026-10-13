@@ -1,0 +1,20 @@
+
+
+[90mstdout[2m | tests/graf-ruhe.test.ts[2m > [22m[2mnever overlap: der Kern trennt seine Scheiben in der Ruhe[2m > [22m[2mtrennt 400 Notizen an 27 Begriffen — nach eigener Regel UND nach der Regel der Flaeche
+[22m[39m[ruhe] knoten=400 kanten=1181 ms=57 ticks=140 schliff=1 weltseite=1321 anDerWand=4 paareEigen=0 paareFlaeche=0 medialeKante=283 kontrollpaar=427 verhaeltnis=0.662 notizRadius=10.16 anteil=0.769%
+
+[90mstdout[2m | tests/graf-ruhe.test.ts[2m > [22m[2mnever overlap: der Kern trennt seine Scheiben in der Ruhe[2m > [22m[2mtrennt 1500 Notizen an 27 Begriffen — nach eigener Regel UND nach der Regel der Flaeche
+[22m[39m[ruhe] knoten=1500 kanten=4664 ms=424 ticks=140 schliff=59 weltseite=1775 anDerWand=4 paareEigen=0 paareFlaeche=0 medialeKante=385 kontrollpaar=572 verhaeltnis=0.674 notizRadius=10.16 anteil=0.572%
+
+[90mstdout[2m | tests/graf-ruhe.test.ts[2m > [22m[2mnever overlap: der Kern trennt seine Scheiben in der Ruhe[2m > [22m[2mtrennt 3000 Notizen an 27 Begriffen — nach eigener Regel UND nach der Regel der Flaeche
+[22m[39m[ruhe] knoten=3000 kanten=9414 ms=1296 ticks=140 schliff=13 weltseite=2759 anDerWand=4 paareEigen=0 paareFlaeche=0 medialeKante=571 kontrollpaar=817 verhaeltnis=0.699 notizRadius=10.16 anteil=0.368%
+
+ [32m✓[39m tests/graf-ruhe.test.ts [2m([22m[2m3 tests[22m[2m)[22m[33m 2103[2mms[22m[39m
+     [33m[2m✓[22m[39m trennt 1500 Notizen an 27 Begriffen — nach eigener Regel UND nach der Regel der Flaeche [33m 490[2mms[22m[39m
+     [33m[2m✓[22m[39m trennt 3000 Notizen an 27 Begriffen — nach eigener Regel UND nach der Regel der Flaeche [33m 1548[2mms[22m[39m
+
+[2m Test Files [22m [1m[32m1 passed[39m[22m[90m (1)[39m
+[2m      Tests [22m [1m[32m3 passed[39m[22m[90m (3)[39m
+[2m   Start at [22m 14:44:20
+[2m   Duration [22m 2.20s[2m (transform 28ms, setup 0ms, import 34ms, tests 2.10s, environment 0ms)[22m
+

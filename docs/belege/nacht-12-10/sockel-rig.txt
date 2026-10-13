@@ -1,0 +1,79 @@
+== Sockel-Rig gestartet 23:06:27 — Kerne: 10, last1: 9.57
+lauf 1 start=23:06:27 nebenlast=nein
+  exit=1 ende=23:07:57 log=sockel-halb-1-230627.log
+ Test Files  3 failed | 82 passed (85)
+      Tests  7 failed | 1026 passed | 4 skipped (1037)
+   Duration  89.95s (transform 2.61s, setup 1.24s, import 6.45s, tests 198.81s, environment 9ms)
+  ROT:  FAIL  tests/doku-zahlen.test.ts > Dokumentation: die Testzahl ist die Zahl eines Laufs > README.md nennt die Zahl der Faelle, die in einem Lauf durchgelaufen sind
+  ROT:  FAIL  tests/doku-zahlen.test.ts > Dokumentation: die Testzahl ist die Zahl eines Laufs > README.de.md nennt die Zahl der Faelle, die in einem Lauf durchgelaufen sind
+  ROT:  FAIL  tests/herkunft.test.ts > Nur dieser Rechner > lokale Seiten, Skripte und KI-Apps über MCP arbeiten weiter
+  ROT:  FAIL  tests/zahlen-belege.test.ts > zahlen-belege: die Zahl selbst > kennt die Grenze: eine Zahl, die im Artefakt vorkommt, gilt — auch an anderer Stelle
+  ROT:  FAIL  tests/zahlen-belege.test.ts > zahlen-belege: Ausnahmen sind keine Freifaehrt > laesst eine Umleitung gelten, wenn die andere Maschine denselben Wert haelt
+  ROT:  FAIL  tests/zahlen-belege.test.ts > zahlen-belege: Ausnahmen sind keine Freifaehrt > prueft einen Papierbeleg nach, statt ihn zu glauben
+  ROT:  FAIL  tests/zahlen-belege.test.ts > zahlen-belege: Ausnahmen sind keine Freifaehrt > haelt ein Soll fuer eine Latte und eine Messung fuer eine Messung
+  ETIMEDOUT im beglaubigten Lauf: 0
+  last1 jetzt: 14.52
+lauf 2 start=23:07:58 nebenlast=nein
+  exit=1 ende=23:09:32 log=sockel-halb-2-230758.log
+ Test Files  2 failed | 83 passed (85)
+      Tests  13 failed | 1020 passed | 4 skipped (1037)
+   Duration  93.99s (transform 2.70s, setup 1.23s, import 6.23s, tests 215.25s, environment 10ms)
+  ROT:  FAIL  tests/doku-zahlen.test.ts > Dokumentation: die Testzahl ist die Zahl eines Laufs > README.md nennt die Zahl der Faelle, die in einem Lauf durchgelaufen sind
+  ROT:  FAIL  tests/doku-zahlen.test.ts > Dokumentation: die Testzahl ist die Zahl eines Laufs > README.de.md nennt die Zahl der Faelle, die in einem Lauf durchgelaufen sind
+  ROT:  FAIL  tests/zahlen-belege.test.ts > zahlen-belege: die Zahl selbst > kennt die Grenze: eine Zahl, die im Artefakt vorkommt, gilt — auch an anderer Stelle
+  ROT:  FAIL  tests/zahlen-belege.test.ts > zahlen-belege: die vier Fundstellen > sieht jede der vier Fundstellen — und sagt, was die Datei wirklich hat
+  ROT:  FAIL  tests/zahlen-belege.test.ts > zahlen-belege: die vier Fundstellen > sind alle Glieder einer Serie falsch, sind alle rot — eines genuegt schon
+  ROT:  FAIL  tests/zahlen-belege.test.ts > zahlen-belege: die vier Fundstellen > blaekt die Zahl, die in derselben Datei eine andere Zeile meint — bekannte Grenze
+  ROT:  FAIL  tests/zahlen-belege.test.ts > zahlen-belege: die vier Fundstellen > laesst den geheilten Stand durch — gruen ist keine Gleichgueltigkeit
+  ROT:  FAIL  tests/zahlen-belege.test.ts > zahlen-belege: die vier Fundstellen > meldet die Pflicht ohne Zitat von sich aus — die Erfassung ist die Ausnahme
+  ROT:  FAIL  tests/zahlen-belege.test.ts > zahlen-belege: die vier Fundstellen > verliert keine Behauptung: jede Zahl landet in genau einem Korb
+  ROT:  FAIL  tests/zahlen-belege.test.ts > zahlen-belege: Ausnahmen sind keine Freifaehrt > laesst eine Umleitung gelten, wenn die andere Maschine denselben Wert haelt
+  ROT:  FAIL  tests/zahlen-belege.test.ts > zahlen-belege: Ausnahmen sind keine Freifaehrt > prueft einen Papierbeleg nach, statt ihn zu glauben
+  ROT:  FAIL  tests/zahlen-belege.test.ts > zahlen-belege: Ausnahmen sind keine Freifaehrt > haelt ein Soll fuer eine Latte und eine Messung fuer eine Messung
+  ROT:  FAIL  tests/zahlen-belege.test.ts > zahlen-belege: die Console luegt nicht ueber ihren Exit-Code > gibt 1 fuer jeden Befund und 0 fuer einen gruenen Baum
+  ETIMEDOUT im beglaubigten Lauf: 0
+  last1 jetzt: 18.00
+lauf 3 start=23:09:32 nebenlast=nein
+  exit=1 ende=23:11:05 log=sockel-halb-3-230932.log
+ Test Files  2 failed | 83 passed (85)
+      Tests  6 failed | 1027 passed | 4 skipped (1037)
+   Duration  92.13s (transform 2.58s, setup 1.39s, import 6.47s, tests 211.01s, environment 9ms)
+  ROT:  FAIL  tests/doku-zahlen.test.ts > Dokumentation: die Testzahl ist die Zahl eines Laufs > README.md nennt die Zahl der Faelle, die in einem Lauf durchgelaufen sind
+  ROT:  FAIL  tests/doku-zahlen.test.ts > Dokumentation: die Testzahl ist die Zahl eines Laufs > README.de.md nennt die Zahl der Faelle, die in einem Lauf durchgelaufen sind
+  ROT:  FAIL  tests/zahlen-belege.test.ts > zahlen-belege: die Zahl selbst > kennt die Grenze: eine Zahl, die im Artefakt vorkommt, gilt — auch an anderer Stelle
+  ROT:  FAIL  tests/zahlen-belege.test.ts > zahlen-belege: Ausnahmen sind keine Freifaehrt > laesst eine Umleitung gelten, wenn die andere Maschine denselben Wert haelt
+  ROT:  FAIL  tests/zahlen-belege.test.ts > zahlen-belege: Ausnahmen sind keine Freifaehrt > prueft einen Papierbeleg nach, statt ihn zu glauben
+  ROT:  FAIL  tests/zahlen-belege.test.ts > zahlen-belege: Ausnahmen sind keine Freifaehrt > haelt ein Soll fuer eine Latte und eine Messung fuer eine Messung
+  ETIMEDOUT im beglaubigten Lauf: 0
+  last1 jetzt: 14.93
+lauf 4 start=23:11:09 nebenlast=ja
+  exit=1 ende=23:13:02 log=sockel-halb-4-231105.log
+ Test Files  2 failed | 83 passed (85)
+      Tests  2 failed | 1010 passed | 4 skipped (1016)
+   Duration  111.61s (transform 3.43s, setup 1.74s, import 8.59s, tests 282.79s, environment 57ms)
+  ROT:  FAIL  tests/zahlen-belege.test.ts [ tests/zahlen-belege.test.ts ]
+  ROT:  FAIL  tests/doku-zahlen.test.ts > Dokumentation: die Testzahl ist die Zahl eines Laufs > README.md nennt die Zahl der Faelle, die in einem Lauf durchgelaufen sind
+  ROT:  FAIL  tests/doku-zahlen.test.ts > Dokumentation: die Testzahl ist die Zahl eines Laufs > README.de.md nennt die Zahl der Faelle, die in einem Lauf durchgelaufen sind
+  ETIMEDOUT im beglaubigten Lauf: 0
+  Nebenlaeufer: SIDECAR_EXIT=1, ETIMEDOUT dort: 0
+     FAIL  tests/zahlen-belege.test.ts [ tests/zahlen-belege.test.ts ]
+     FAIL  tests/doku-zahlen.test.ts > Dokumentation: die Testzahl ist die Zahl eines Laufs > README.md nennt die Zahl der Faelle, die in einem Lauf durchgelaufen sind
+     FAIL  tests/doku-zahlen.test.ts > Dokumentation: die Testzahl ist die Zahl eines Laufs > README.de.md nennt die Zahl der Faelle, die in einem Lauf durchgelaufen sind
+          Tests  2 failed | 1010 passed | 4 skipped (1016)
+  last1 jetzt: 23.30
+lauf 5 start=23:13:06 nebenlast=ja
+  exit=1 ende=23:15:07 log=sockel-halb-5-231302.log
+ Test Files  2 failed | 83 passed (85)
+      Tests  2 failed | 1010 passed | 4 skipped (1016)
+   Duration  119.88s (transform 3.46s, setup 2.01s, import 8.96s, tests 308.66s, environment 16ms)
+  ROT:  FAIL  tests/zahlen-belege.test.ts [ tests/zahlen-belege.test.ts ]
+  ROT:  FAIL  tests/doku-zahlen.test.ts > Dokumentation: die Testzahl ist die Zahl eines Laufs > README.md nennt die Zahl der Faelle, die in einem Lauf durchgelaufen sind
+  ROT:  FAIL  tests/doku-zahlen.test.ts > Dokumentation: die Testzahl ist die Zahl eines Laufs > README.de.md nennt die Zahl der Faelle, die in einem Lauf durchgelaufen sind
+  ETIMEDOUT im beglaubigten Lauf: 0
+  Nebenlaeufer: SIDECAR_EXIT=1, ETIMEDOUT dort: 0
+     FAIL  tests/zahlen-belege.test.ts [ tests/zahlen-belege.test.ts ]
+     FAIL  tests/doku-zahlen.test.ts > Dokumentation: die Testzahl ist die Zahl eines Laufs > README.md nennt die Zahl der Faelle, die in einem Lauf durchgelaufen sind
+     FAIL  tests/doku-zahlen.test.ts > Dokumentation: die Testzahl ist die Zahl eines Laufs > README.de.md nennt die Zahl der Faelle, die in einem Lauf durchgelaufen sind
+          Tests  2 failed | 1010 passed | 4 skipped (1016)
+  last1 jetzt: 17.91
+== Sockel-Rig fertig 23:15:07

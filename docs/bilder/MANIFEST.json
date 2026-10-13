@@ -1,0 +1,87 @@
+{
+ "angelegt": "2026-10-12",
+ "wer": "Scheibe Bildregie (B1) — README-Bilder, keine README-Texte",
+ "stand": {
+  "kern": "3.4.0",
+  "committet": "e70da08",
+  "arbeitsbaum": "schmutzig (README.md und scripts/zahlen-belege.mjs waren schon geaendert)"
+ },
+ "maleBlock": {
+  "quelle": "scripts/graf-bild.mjs",
+  "sha256_vom_extrahierten_block": "8f71428b8395abce"
+ },
+ "stuecke": [
+  {
+   "pfad": "docs/bilder/kepta-graph-notiz-1600x900.png",
+   "art": "png",
+   "breite": 1600,
+   "hoehe": 900,
+   "bytes": 38867,
+   "sha256": "0162a7de87eadd86",
+   "herkunft": "GET /api/graph/bild?sicht=notiz&layout=1 an Kern 3.4.0, gemalt vom Python-Block aus scripts/graf-bild.mjs (unveraendert extrahiert), Textstreifen abgeschnitten",
+   "neu": "keine bestehende Datei angefasst",
+   "kuvert": {
+    "pfad": "docs/bilder/kepta-graph-notiz.kuvert.json",
+    "bytes": 271401
+   }
+  },
+  {
+   "pfad": "docs/bilder/kepta-graph-notiz-1600x2676.png",
+   "art": "png",
+   "breite": 1600,
+   "hoehe": 2676,
+   "bytes": 160752,
+   "sha256": "29526ca3288210d0",
+   "herkunft": "derselbe Lauf, knapp gerahmt (Seitenverhaeltnis des gerechneten Weltbildes)",
+   "neu": "keine bestehende Datei angefasst"
+  },
+  {
+   "pfad": "docs/bilder/kepta-graph-konzept-1600x900.png",
+   "art": "png",
+   "breite": 1600,
+   "hoehe": 900,
+   "bytes": 18620,
+   "sha256": "77fc31d56693b52d",
+   "herkunft": "GET /api/graph/bild?sicht=konzept aus demselben Lauf — 93 Knoten, 132 echte Kanten, keine Aehnlichkeitskante",
+   "neu": "keine bestehende Datei angefasst",
+   "kuvert": {
+    "pfad": "docs/bilder/kepta-graph-konzept.kuvert.json",
+    "bytes": 71019
+   }
+  },
+  {
+   "pfad": "docs/bilder/kepta-scheidung-960-0Paare.gif",
+   "art": "gif",
+   "breite": 960,
+   "hoehe": 960,
+   "bytes": 190403,
+   "sha256": "fc9eb99c5e8afa48",
+   "herkunft": "zwei gerechnete Weltbilder an einem Feld (3 000 Knoten, 9 414 Kanten): Stand 4 = git show 6ae32d3:src/core/graf-kraft.ts, Stand 5 = Kern 3.4.0; geblendet mit crop+hstack, nichts interpoliert",
+   "neu": "keine bestehende Datei angefasst",
+   "kuvert": {
+    "pfad": "docs/bilder/kepta-scheidung.kuvert.json",
+    "bytes": 5159
+   }
+  },
+  {
+   "pfad": "docs/bilder/kepta-scheidung-960-0Paare.mp4",
+   "art": "mp4",
+   "breite": 960,
+   "hoehe": 960,
+   "bytes": 726022,
+   "sha256": "2d8e11a7137c921d",
+   "herkunft": "derselbe Schnitt, 30 fps CFR, ohne Ton, +faststart — fuer Leser, die MP4 lieber haben; das GIF ist kleiner",
+   "neu": "keine bestehende Datei angefasst"
+  },
+  {
+   "pfad": "docs/bilder/kepta-architektur-1600x900.png",
+   "art": "png",
+   "breite": 1600,
+   "hoehe": 900,
+   "bytes": 294743,
+   "sha256": "8bdee52aedc50b73",
+   "herkunft": "eigene Flaeche in den dunklen Tokens der App (kepta-app/src/index.css:236-300), Namen ausschliesslich aus dem Quelltext des Kerns, geschossen im Kopf-los-Fenster bei 1 600x900, Geraetefaktor 2",
+   "neu": "keine bestehende Datei angefasst"
+  }
+ ]
+}

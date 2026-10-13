@@ -1,0 +1,46 @@
+427 | Klammer x1 (Anker, Wurzel-Regel) | 140 (geliefert) | weltseite 1000 ticks 140 Budget | 917x940 wand 32 | 44 ms | sein 50(24.5) gedeckelt 35 flaeche 15
+427 | Klammer x1 (Anker, Wurzel-Regel) | Ruhe | weltseite 1000 ticks 428 alpha-Boden | 940x940 wand 148 | 99 ms | sein 147(20.3) gedeckelt 134 flaeche 90
+427 | Klammer x2 | 140 (geliefert) | weltseite 2000 ticks 140 Budget | 877x1507 wand 0 | 41 ms | sein 29(21.1) gedeckelt 15 flaeche 8
+427 | Klammer x2 | Ruhe | weltseite 2000 ticks 428 alpha-Boden | 1940x1940 wand 255 | 105 ms | sein 256(32.2) gedeckelt 249 flaeche 199
+427 | Klammer x4 | 140 (geliefert) | weltseite 4000 ticks 140 Budget | 1063x1724 wand 0 | 42 ms | sein 20(17.5) gedeckelt 11 flaeche 4
+427 | Klammer x4 | Ruhe | weltseite 4000 ticks 428 alpha-Boden | 3454x3940 wand 330 | 121 ms | sein 236(32.4) gedeckelt 225 flaeche 195
+427 | Klammer x8 | 140 (geliefert) | weltseite 8000 ticks 140 Budget | 3135x3374 wand 0 | 42 ms | sein 18(7.9) gedeckelt 11 flaeche 4
+427 | Klammer x8 | Ruhe | weltseite 8000 ticks 428 alpha-Boden | 3049x7086 wand 36 | 122 ms | sein 9(13.5) gedeckelt 7 flaeche 3
+427 | ohne Klammer, Falle 0,012 | 140 (geliefert) | weltseite 1235 ticks 140 Budget | 957x1174 wand 0 | 60 ms | sein 52(22.5) gedeckelt 36 flaeche 19
+427 | ohne Klammer, Falle 0,012 | Ruhe | weltseite 7489 ticks 428 alpha-Boden | 2643x7428 wand 0 | 112 ms | sein 8(15.1) gedeckelt 8 flaeche 3
+427 | ohne Klammer, Falle 0,003 | 140 (geliefert) | weltseite 1000 ticks 140 Budget | 833x938 wand 0 | 38 ms | sein 61(39.3) gedeckelt 39 flaeche 28
+427 | ohne Klammer, Falle 0,003 | Ruhe | weltseite 2200 ticks 428 alpha-Boden | 1194x2140 wand 0 | 111 ms | sein 5(14.5) gedeckelt 2 flaeche 1
+427 | ohne Klammer, ohne Falle | 140 (geliefert) | weltseite 1000 ticks 140 Budget | 819x890 wand 0 | 43 ms | sein 62(25.3) gedeckelt 40 flaeche 25
+427 | ohne Klammer, ohne Falle | Ruhe | weltseite 1702 ticks 428 alpha-Boden | 930x1642 wand 0 | 107 ms | sein 6(12.8) gedeckelt 2 flaeche 1
+1527 | Klammer x1 (Anker, Wurzel-Regel) | 140 (geliefert) | weltseite 1748 ticks 140 Budget | 1364x1539 wand 0 | 199 ms | sein 545(68.1) gedeckelt 348 flaeche 177
+1527 | Klammer x1 (Anker, Wurzel-Regel) | Ruhe | weltseite 1748 ticks 428 alpha-Boden | 1688x1688 wand 516 | 556 ms | sein 961(32.7) gedeckelt 853 flaeche 674
+1527 | Klammer x2 | 140 (geliefert) | weltseite 3496 ticks 140 Budget | 1468x1793 wand 0 | 218 ms | sein 347(41.9) gedeckelt 215 flaeche 108
+1527 | Klammer x2 | Ruhe | weltseite 3496 ticks 428 alpha-Boden | 3436x3436 wand 675 | 591 ms | sein 1408(47.8) gedeckelt 1324 flaeche 1140
+1527 | Klammer x4 | 140 (geliefert) | weltseite 6991 ticks 140 Budget | 2264x2583 wand 0 | 205 ms | sein 252(41.7) gedeckelt 156 flaeche 82
+1527 | Klammer x4 | Ruhe | weltseite 6991 ticks 428 alpha-Boden | 5758x5671 wand 138 | 605 ms | sein 182(20.9) gedeckelt 152 flaeche 127
+1527 | Klammer x8 | 140 (geliefert) | weltseite 13981 ticks 140 Budget | 8409x8400 wand 0 | 188 ms | sein 75(35.2) gedeckelt 70 flaeche 48
+1527 | Klammer x8 | Ruhe | weltseite 13981 ticks 428 alpha-Boden | 2918x4033 wand 0 | 612 ms | sein 63(41.4) gedeckelt 34 flaeche 14
+1527 | ohne Klammer, Falle 0,012 | 140 (geliefert) | weltseite 1422 ticks 140 Budget | 1338x1361 wand 0 | 194 ms | sein 518(73.3) gedeckelt 308 flaeche 158
+1527 | ohne Klammer, Falle 0,012 | Ruhe | weltseite 5866 ticks 428 alpha-Boden | 5113x5805 wand 0 | 586 ms | sein 40(29.9) gedeckelt 25 flaeche 11
+1527 | ohne Klammer, Falle 0,003 | 140 (geliefert) | weltseite 1274 ticks 140 Budget | 1214x1208 wand 0 | 199 ms | sein 851(72.3) gedeckelt 596 flaeche 371
+1527 | ohne Klammer, Falle 0,003 | Ruhe | weltseite 2376 ticks 428 alpha-Boden | 2316x1973 wand 0 | 582 ms | sein 65(29.8) gedeckelt 8 flaeche 5
+1527 | ohne Klammer, ohne Falle | 140 (geliefert) | weltseite 1245 ticks 140 Budget | 1169x1184 wand 0 | 199 ms | sein 975(71.5) gedeckelt 720 flaeche 440
+1527 | ohne Klammer, ohne Falle | Ruhe | weltseite 1877 ticks 428 alpha-Boden | 1817x1809 wand 0 | 592 ms | sein 111(31.2) gedeckelt 14 flaeche 11
+3027 | Klammer x1 (Anker, Wurzel-Regel) | 140 (geliefert) | weltseite 2461 ticks 140 Budget | 1686x1873 wand 0 | 480 ms | sein 2051(89.6) gedeckelt 1596 flaeche 1005
+3027 | Klammer x1 (Anker, Wurzel-Regel) | Ruhe | weltseite 2461 ticks 428 alpha-Boden | 2401x2401 wand 1213 | 1350 ms | sein 4312(57.5) gedeckelt 3934 flaeche 3315
+3027 | Klammer x2 | 140 (geliefert) | weltseite 4921 ticks 140 Budget | 1703x2053 wand 0 | 490 ms | sein 1711(79.1) gedeckelt 1300 flaeche 826
+3027 | Klammer x2 | Ruhe | weltseite 4921 ticks 428 alpha-Boden | 4861x4861 wand 1172 | 1416 ms | sein 3732(59.1) gedeckelt 3561 flaeche 2988
+3027 | Klammer x4 | 140 (geliefert) | weltseite 9842 ticks 140 Budget | 4871x4917 wand 0 | 496 ms | sein 499(79.6) gedeckelt 409 flaeche 223
+3027 | Klammer x4 | Ruhe | weltseite 9842 ticks 428 alpha-Boden | 5308x6049 wand 0 | 1452 ms | sein 116(45.8) gedeckelt 47 flaeche 24
+3027 | Klammer x8 | 140 (geliefert) | weltseite 19684 ticks 140 Budget | 13662x13519 wand 0 | 448 ms | sein 174(60.3) gedeckelt 167 flaeche 129
+3027 | Klammer x8 | Ruhe | weltseite 19684 ticks 428 alpha-Boden | 5598x5724 wand 0 | 1450 ms | sein 240(54.5) gedeckelt 153 flaeche 79
+3027 | ohne Klammer, Falle 0,012 | 140 (geliefert) | weltseite 1657 ticks 140 Budget | 1597x1574 wand 0 | 470 ms | sein 2765(99.8) gedeckelt 2170 flaeche 1444
+3027 | ohne Klammer, Falle 0,012 | Ruhe | weltseite 6200 ticks 428 alpha-Boden | 6140x5322 wand 0 | 1422 ms | sein 286(46.4) gedeckelt 215 flaeche 89
+3027 | ohne Klammer, Falle 0,003 | 140 (geliefert) | weltseite 1520 ticks 140 Budget | 1460x1422 wand 0 | 480 ms | sein 3609(101.5) gedeckelt 2947 flaeche 1991
+3027 | ohne Klammer, Falle 0,003 | Ruhe | weltseite 2914 ticks 428 alpha-Boden | 2854x2229 wand 0 | 1428 ms | sein 254(83.6) gedeckelt 54 flaeche 27
+3027 | ohne Klammer, ohne Falle | 140 (geliefert) | weltseite 1471 ticks 140 Budget | 1411x1406 wand 0 | 481 ms | sein 3819(99.9) gedeckelt 3125 flaeche 2152
+3027 | ohne Klammer, ohne Falle | Ruhe | weltseite 2323 ticks 428 alpha-Boden | 2262x2114 wand 0 | 1417 ms | sein 378(54.7) gedeckelt 130 flaeche 55
+RUHE am anfang: {"ruhig":true,"ursachen":[],"meldungen":[],"messung":{"stiche":30,"iterationen":9000000,"medianMs":6.11,"minimumMs":5.82,"maximumMs":6.62,"maxMedianRatio":1.08,"last1ProCpu":0.22,"cpus":10,"nodeProzesse":2},"grenzen":{"medianMs":20,"maxMedianRatio":1.8,"nodeProzesse":5,"last1ProCpu":2.5}}
+RUHE am ende: {"ruhig":true,"ursachen":[],"meldungen":[],"messung":{"stiche":30,"iterationen":9000000,"medianMs":6.39,"minimumMs":6.24,"maximumMs":11.51,"maxMedianRatio":1.8,"last1ProCpu":0.24,"cpus":10,"nodeProzesse":2},"grenzen":{"medianMs":20,"maxMedianRatio":1.8,"nodeProzesse":5,"last1ProCpu":2.5}}
+loadavg 2.45 2.25 2.10
+welt-exit=0

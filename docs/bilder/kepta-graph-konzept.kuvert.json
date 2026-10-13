@@ -1,0 +1,4240 @@
+{
+ "angelegt": "2026-10-12",
+ "vertrag": "graf-2",
+ "sicht": "konzept",
+ "bestand": {
+  "notizen": 73,
+  "knoten": 93,
+  "kanten": 132
+ },
+ "kuerzung": {
+  "kappe": {
+   "knoten": 2000,
+   "kanten": 8000,
+   "paarPruefungen": 0
+  },
+  "uebrig": {
+   "knoten": 0,
+   "kanten": 0,
+   "paare": 0,
+   "begriffe": 0
+  },
+  "grund": [],
+  "gefiltert": {
+   "privat": 0,
+   "papierkorb": 0
+  },
+  "verwaiste": {
+   "knoten": 0,
+   "kanten": 0
+  },
+  "vollstaendig": true
+ },
+ "welt": {
+  "einheit": "welt",
+  "groesse": 3754,
+  "nullpunkt": {
+   "x": -1,
+   "y": -1
+  },
+  "herkunft": "kraft"
+ },
+ "stempel": {
+  "generation": 798,
+  "layoutVersion": 5,
+  "parameterHash": "871da6486587c3533df2b6a1d0bf8d33272d0ad4287e2bc9830132ad2174db58",
+  "berechent": "neu",
+  "rahmenGeneration": 798,
+  "rahmenAlter": 0
+ },
+ "knoten": [
+  {
+   "id": "e-1",
+   "titel": "hourly rate 2025",
+   "art": "begriff",
+   "gradEcht": 1,
+   "gradVermutet": 0,
+   "versteckteNachbarn": 0,
+   "traeger": 2,
+   "traegerIds": [
+    "k-mv5oduoh-801edc4c",
+    "k-mv5oduqp-f8e54747"
+   ],
+   "x": 853,
+   "y": 1019.9
+  },
+  {
+   "id": "e-2",
+   "titel": "hourly rate 2026",
+   "art": "begriff",
+   "gradEcht": 5,
+   "gradVermutet": 0,
+   "versteckteNachbarn": 0,
+   "traeger": 5,
+   "traegerIds": [
+    "k-mv5oduqp-f8e54747",
+    "k-mv5odvek-00301d02",
+    "k-mv5odx1r-f9186530",
+    "k-mv5odx56-066f6d51",
+    "k-mv5odxqb-43d22f8c"
+   ],
+   "x": 939.6,
+   "y": 1274.3
+  },
+  {
+   "id": "e-3",
+   "titel": "office address (until march)",
+   "art": "begriff",
+   "gradEcht": 0,
+   "gradVermutet": 0,
+   "versteckteNachbarn": 0,
+   "traeger": 1,
+   "traegerIds": [
+    "k-mv5oduro-390e7647"
+   ],
+   "x": 2106.5,
+   "y": 559.9
+  },
+  {
+   "id": "e-4",
+   "titel": "office address",
+   "art": "begriff",
+   "gradEcht": 3,
+   "gradVermutet": 0,
+   "versteckteNachbarn": 0,
+   "traeger": 3,
+   "traegerIds": [
+    "k-mv5odusc-8bcc3cd6",
+    "k-mv5odwgg-c61a3e7f",
+    "k-mv5odx6p-2ac979b5"
+   ],
+   "x": 1948.9,
+   "y": 1450.2
+  },
+  {
+   "id": "e-5",
+   "titel": "office move checklist",
+   "art": "begriff",
+   "gradEcht": 5,
+   "gradVermutet": 0,
+   "versteckteNachbarn": 0,
+   "traeger": 4,
+   "traegerIds": [
+    "k-mv5odusc-8bcc3cd6",
+    "k-mv5odval-c13721c3",
+    "k-mv5odwgg-c61a3e7f",
+    "k-mv5odxrq-d5a42146"
+   ],
+   "x": 1756.4,
+   "y": 1598.2
+  },
+  {
+   "id": "e-6",
+   "titel": "backup schedule (weekly)",
+   "art": "begriff",
+   "gradEcht": 0,
+   "gradVermutet": 0,
+   "versteckteNachbarn": 0,
+   "traeger": 1,
+   "traegerIds": [
+    "k-mv5odut7-cfc8473b"
+   ],
+   "x": 30,
+   "y": 1538
+  },
+  {
+   "id": "e-7",
+   "titel": "backup schedule",
+   "art": "begriff",
+   "gradEcht": 6,
+   "gradVermutet": 0,
+   "versteckteNachbarn": 0,
+   "traeger": 5,
+   "traegerIds": [
+    "k-mv5odutz-58880edf",
+    "k-mv5oduw6-b71c2025",
+    "k-mv5odvqd-6adbfc78",
+    "k-mv5odvrj-4defc69f",
+    "k-mv5odwei-adc44fd0"
+   ],
+   "x": 1824.6,
+   "y": 1677.9
+  },
+  {
+   "id": "e-8",
+   "titel": "restore from backup",
+   "art": "begriff",
+   "gradEcht": 2,
+   "gradVermutet": 0,
+   "versteckteNachbarn": 0,
+   "traeger": 2,
+   "traegerIds": [
+    "k-mv5odutz-58880edf",
+    "k-mv5odwei-adc44fd0"
+   ],
+   "x": 2008.4,
+   "y": 1417.3
+  },
+  {
+   "id": "e-9",
+   "titel": "jonas brandt",
+   "art": "begriff",
+   "gradEcht": 7,
+   "gradVermutet": 0,
+   "versteckteNachbarn": 0,
+   "traeger": 7,
+   "traegerIds": [
+    "k-mv5odutz-58880edf",
+    "k-mv5odvg6-3fbe86ee",
+    "k-mv5odvnp-776188a2",
+    "k-mv5odvqd-6adbfc78",
+    "k-mv5odvuf-75a42603",
+    "k-mv5odwji-882e7b83",
+    "k-mv5odxuz-c1bd80e2"
+   ],
+   "x": 1615,
+   "y": 1903.2
+  },
+  {
+   "id": "e-10",
+   "titel": "mara lind — account lead",
+   "art": "begriff",
+   "gradEcht": 3,
+   "gradVermutet": 0,
+   "versteckteNachbarn": 0,
+   "traeger": 1,
+   "traegerIds": [
+    "k-mv5oduv5-d1f0f189"
+   ],
+   "x": 1234.5,
+   "y": 1697.3
+  },
+  {
+   "id": "e-11",
+   "titel": "lumen & co.",
+   "art": "begriff",
+   "gradEcht": 6,
+   "gradVermutet": 0,
+   "versteckteNachbarn": 0,
+   "traeger": 6,
+   "traegerIds": [
+    "k-mv5oduv5-d1f0f189",
+    "k-mv5odvoz-f0736460",
+    "k-mv5odvzw-06cee77d",
+    "k-mv5odw4e-94326214",
+    "k-mv5odx1r-f9186530",
+    "k-mv5odx9h-a7519a8d"
+   ],
+   "x": 1294.7,
+   "y": 1528.7
+  },
+  {
+   "id": "e-12",
+   "titel": "veltmann architects",
+   "art": "begriff",
+   "gradEcht": 2,
+   "gradVermutet": 0,
+   "versteckteNachbarn": 0,
+   "traeger": 2,
+   "traegerIds": [
+    "k-mv5oduv5-d1f0f189",
+    "k-mv5odval-c13721c3"
+   ],
+   "x": 1129.8,
+   "y": 1983.6
+  },
+  {
+   "id": "e-13",
+   "titel": "project atlas",
+   "art": "begriff",
+   "gradEcht": 4,
+   "gradVermutet": 0,
+   "versteckteNachbarn": 0,
+   "traeger": 4,
+   "traegerIds": [
+    "k-mv5oduv5-d1f0f189",
+    "k-mv5odvek-00301d02",
+    "k-mv5odx9h-a7519a8d",
+    "k-mv5odxwb-37acb0ae"
+   ],
+   "x": 1365.3,
+   "y": 1320.8
+  },
+  {
+   "id": "e-14",
+   "titel": "jonas brandt — bookkeeping",
+   "art": "begriff",
+   "gradEcht": 4,
+   "gradVermutet": 0,
+   "versteckteNachbarn": 0,
+   "traeger": 1,
+   "traegerIds": [
+    "k-mv5oduw6-b71c2025"
+   ],
+   "x": 1599.7,
+   "y": 1831.2
+  },
+  {
+   "id": "e-15",
+   "titel": "falk & sons",
+   "art": "begriff",
+   "gradEcht": 3,
+   "gradVermutet": 0,
+   "versteckteNachbarn": 0,
+   "traeger": 3,
+   "traegerIds": [
+    "k-mv5oduw6-b71c2025",
+    "k-mv5odw1v-fff682cc",
+    "k-mv5odxuz-c1bd80e2"
+   ],
+   "x": 1344.8,
+   "y": 1942.2
+  },
+  {
+   "id": "e-16",
+   "titel": "nordwind logistics",
+   "art": "begriff",
+   "gradEcht": 6,
+   "gradVermutet": 0,
+   "versteckteNachbarn": 0,
+   "traeger": 6,
+   "traegerIds": [
+    "k-mv5oduw6-b71c2025",
+    "k-mv5oduya-fc515959",
+    "k-mv5odvoz-f0736460",
+    "k-mv5odvzw-06cee77d",
+    "k-mv5odwwf-aafe5f43",
+    "k-mv5odxey-9f44dfe5"
+   ],
+   "x": 1590.8,
+   "y": 1984.5
+  },
+  {
+   "id": "e-17",
+   "titel": "staging server",
+   "art": "begriff",
+   "gradEcht": 7,
+   "gradVermutet": 0,
+   "versteckteNachbarn": 0,
+   "traeger": 5,
+   "traegerIds": [
+    "k-mv5oduw6-b71c2025",
+    "k-mv5odvoz-f0736460",
+    "k-mv5odvqd-6adbfc78",
+    "k-mv5odwck-2a8b5546",
+    "k-mv5odxki-05b016b5"
+   ],
+   "x": 1587.9,
+   "y": 1668.2
+  },
+  {
+   "id": "e-18",
+   "titel": "elena weiss — tax advisor",
+   "art": "begriff",
+   "gradEcht": 3,
+   "gradVermutet": 0,
+   "versteckteNachbarn": 0,
+   "traeger": 1,
+   "traegerIds": [
+    "k-mv5odux7-febf226d"
+   ],
+   "x": 1584.7,
+   "y": 1358.9
+  },
+  {
+   "id": "e-19",
+   "titel": "vat",
+   "art": "begriff",
+   "gradEcht": 6,
+   "gradVermutet": 0,
+   "versteckteNachbarn": 0,
+   "traeger": 6,
+   "traegerIds": [
+    "k-mv5odux7-febf226d",
+    "k-mv5odvg6-3fbe86ee",
+    "k-mv5odvmc-b7937522",
+    "k-mv5odx3g-b3353d66",
+    "k-mv5odx56-066f6d51",
+    "k-mv5odxlu-91fdd548"
+   ],
+   "x": 1390.8,
+   "y": 1377
+  },
+  {
+   "id": "e-20",
+   "titel": "q4 close",
+   "art": "begriff",
+   "gradEcht": 4,
+   "gradVermutet": 0,
+   "versteckteNachbarn": 0,
+   "traeger": 4,
+   "traegerIds": [
+    "k-mv5odux7-febf226d",
+    "k-mv5odviu-56c3c06f",
+    "k-mv5odw4e-94326214",
+    "k-mv5odwhs-a737e4c1"
+   ],
+   "x": 1419.9,
+   "y": 1751.2
+  },
+  {
+   "id": "e-21",
+   "titel": "kestrel software",
+   "art": "begriff",
+   "gradEcht": 4,
+   "gradVermutet": 0,
+   "versteckteNachbarn": 0,
+   "traeger": 4,
+   "traegerIds": [
+    "k-mv5odux7-febf226d",
+    "k-mv5odvyg-3715d4ae",
+    "k-mv5odx3g-b3353d66",
+    "k-mv5odxlu-91fdd548"
+   ],
+   "x": 1464,
+   "y": 1151.7
+  },
+  {
+   "id": "e-22",
+   "titel": "tobias roth — cfo at nordwind",
+   "art": "begriff",
+   "gradEcht": 1,
+   "gradVermutet": 0,
+   "versteckteNachbarn": 0,
+   "traeger": 1,
+   "traegerIds": [
+    "k-mv5oduya-fc515959"
+   ],
+   "x": 1789,
+   "y": 2546.6
+  },
+  {
+   "id": "e-23",
+   "titel": "nina keller — practice manager",
+   "art": "begriff",
+   "gradEcht": 2,
+   "gradVermutet": 0,
+   "versteckteNachbarn": 0,
+   "traeger": 1,
+   "traegerIds": [
+    "k-mv5oduz2-9517b3fc"
+   ],
+   "x": 1440.8,
+   "y": 1702.6
+  },
+  {
+   "id": "e-24",
+   "titel": "castell dental",
+   "art": "begriff",
+   "gradEcht": 2,
+   "gradVermutet": 0,
+   "versteckteNachbarn": 0,
+   "traeger": 2,
+   "traegerIds": [
+    "k-mv5oduz2-9517b3fc",
+    "k-mv5odxt3-e557de56"
+   ],
+   "x": 1052.7,
+   "y": 1954.7
+  },
+  {
+   "id": "e-25",
+   "titel": "privacy checklist",
+   "art": "begriff",
+   "gradEcht": 9,
+   "gradVermutet": 0,
+   "versteckteNachbarn": 0,
+   "traeger": 8,
+   "traegerIds": [
+    "k-mv5oduz2-9517b3fc",
+    "k-mv5odvhd-c46bffa2",
+    "k-mv5odvt4-e33cf2e0",
+    "k-mv5odvvq-525edb1f",
+    "k-mv5odw6d-4166c2f1",
+    "k-mv5odwji-882e7b83",
+    "k-mv5odx07-25396908",
+    "k-mv5odxiw-e56d72c6"
+   ],
+   "x": 1883.7,
+   "y": 1596.9
+  },
+  {
+   "id": "e-26",
+   "titel": "paul hartmann — owner of brightwater",
+   "art": "begriff",
+   "gradEcht": 1,
+   "gradVermutet": 0,
+   "versteckteNachbarn": 0,
+   "traeger": 1,
+   "traegerIds": [
+    "k-mv5odv01-632d5fd2"
+   ],
+   "x": 986.5,
+   "y": 2090.9
+  },
+  {
+   "id": "e-27",
+   "titel": "brightwater bakery",
+   "art": "begriff",
+   "gradEcht": 4,
+   "gradVermutet": 0,
+   "versteckteNachbarn": 0,
+   "traeger": 4,
+   "traegerIds": [
+    "k-mv5odv01-632d5fd2",
+    "k-mv5odvzw-06cee77d",
+    "k-mv5odw1v-fff682cc",
+    "k-mv5odx80-204de3b2"
+   ],
+   "x": 1201.5,
+   "y": 1952.6
+  },
+  {
+   "id": "e-28",
+   "titel": "sofia marin — partner at veltmann",
+   "art": "begriff",
+   "gradEcht": 2,
+   "gradVermutet": 0,
+   "versteckteNachbarn": 0,
+   "traeger": 1,
+   "traegerIds": [
+    "k-mv5odval-c13721c3"
+   ],
+   "x": 1274.5,
+   "y": 1800.1
+  },
+  {
+   "id": "e-29",
+   "titel": "david chen — founder of orion health",
+   "art": "begriff",
+   "gradEcht": 1,
+   "gradVermutet": 0,
+   "versteckteNachbarn": 0,
+   "traeger": 1,
+   "traegerIds": [
+    "k-mv5odvc6-7f436c1d"
+   ],
+   "x": 1738.4,
+   "y": 1905
+  },
+  {
+   "id": "e-30",
+   "titel": "orion health",
+   "art": "begriff",
+   "gradEcht": 3,
+   "gradVermutet": 0,
+   "versteckteNachbarn": 0,
+   "traeger": 3,
+   "traegerIds": [
+    "k-mv5odvc6-7f436c1d",
+    "k-mv5odvx4-46409966",
+    "k-mv5odwsi-0546407f"
+   ],
+   "x": 1321.9,
+   "y": 1666.7
+  },
+  {
+   "id": "e-31",
+   "titel": "lumen retainer (from the proposal)",
+   "art": "begriff",
+   "gradEcht": 0,
+   "gradVermutet": 0,
+   "versteckteNachbarn": 0,
+   "traeger": 1,
+   "traegerIds": [
+    "k-mv5odvd6-8ff6fc50"
+   ],
+   "x": 3089.3,
+   "y": 1805.2
+  },
+  {
+   "id": "e-32",
+   "titel": "lumen & co. — client profile",
+   "art": "begriff",
+   "gradEcht": 4,
+   "gradVermutet": 0,
+   "versteckteNachbarn": 0,
+   "traeger": 1,
+   "traegerIds": [
+    "k-mv5odvek-00301d02"
+   ],
+   "x": 1320.6,
+   "y": 1424.8
+  },
+  {
+   "id": "e-33",
+   "titel": "mara lind",
+   "art": "begriff",
+   "gradEcht": 7,
+   "gradVermutet": 0,
+   "versteckteNachbarn": 0,
+   "traeger": 7,
+   "traegerIds": [
+    "k-mv5odvek-00301d02",
+    "k-mv5odvk1-df9f3845",
+    "k-mv5odvuf-75a42603",
+    "k-mv5odw4e-94326214",
+    "k-mv5odwji-882e7b83",
+    "k-mv5odx9h-a7519a8d",
+    "k-mv5odxcz-75b37d29"
+   ],
+   "x": 1643.1,
+   "y": 1611.2
+  },
+  {
+   "id": "e-34",
+   "titel": "client portal",
+   "art": "begriff",
+   "gradEcht": 14,
+   "gradVermutet": 0,
+   "versteckteNachbarn": 0,
+   "traeger": 14,
+   "traegerIds": [
+    "k-mv5odvek-00301d02",
+    "k-mv5odvg6-3fbe86ee",
+    "k-mv5odvqd-6adbfc78",
+    "k-mv5odvt4-e33cf2e0",
+    "k-mv5odvuf-75a42603",
+    "k-mv5odw1v-fff682cc",
+    "k-mv5odw4e-94326214",
+    "k-mv5odw6d-4166c2f1",
+    "k-mv5odw99-cdd4c98c",
+    "k-mv5odwgg-c61a3e7f",
+    "k-mv5odwl5-a0477022",
+    "k-mv5odwut-5ccf9a08",
+    "k-mv5odxcz-75b37d29",
+    "k-mv5odxwb-37acb0ae"
+   ],
+   "x": 1602.9,
+   "y": 1484.7
+  },
+  {
+   "id": "e-35",
+   "titel": "nordwind logistics — client profile",
+   "art": "begriff",
+   "gradEcht": 4,
+   "gradVermutet": 0,
+   "versteckteNachbarn": 0,
+   "traeger": 1,
+   "traegerIds": [
+    "k-mv5odvg6-3fbe86ee"
+   ],
+   "x": 1514.7,
+   "y": 1634
+  },
+  {
+   "id": "e-36",
+   "titel": "tobias roth",
+   "art": "begriff",
+   "gradEcht": 4,
+   "gradVermutet": 0,
+   "versteckteNachbarn": 0,
+   "traeger": 4,
+   "traegerIds": [
+    "k-mv5odvg6-3fbe86ee",
+    "k-mv5odw99-cdd4c98c",
+    "k-mv5odwwf-aafe5f43",
+    "k-mv5odxey-9f44dfe5"
+   ],
+   "x": 1456.8,
+   "y": 1533.2
+  },
+  {
+   "id": "e-37",
+   "titel": "castell dental — client profile",
+   "art": "begriff",
+   "gradEcht": 3,
+   "gradVermutet": 0,
+   "versteckteNachbarn": 0,
+   "traeger": 1,
+   "traegerIds": [
+    "k-mv5odvhd-c46bffa2"
+   ],
+   "x": 2189.6,
+   "y": 1732.9
+  },
+  {
+   "id": "e-38",
+   "titel": "nina keller",
+   "art": "begriff",
+   "gradEcht": 2,
+   "gradVermutet": 0,
+   "versteckteNachbarn": 0,
+   "traeger": 2,
+   "traegerIds": [
+    "k-mv5odvhd-c46bffa2",
+    "k-mv5odxiw-e56d72c6"
+   ],
+   "x": 2584.3,
+   "y": 1388.9
+  },
+  {
+   "id": "e-39",
+   "titel": "payroll run",
+   "art": "begriff",
+   "gradEcht": 7,
+   "gradVermutet": 0,
+   "versteckteNachbarn": 0,
+   "traeger": 7,
+   "traegerIds": [
+    "k-mv5odvhd-c46bffa2",
+    "k-mv5odviu-56c3c06f",
+    "k-mv5odw7w-7bc779cd",
+    "k-mv5odx80-204de3b2",
+    "k-mv5odxh5-262e53b1",
+    "k-mv5odxol-ebc431df",
+    "k-mv5odxt3-e557de56"
+   ],
+   "x": 1714.9,
+   "y": 2181.6
+  },
+  {
+   "id": "e-40",
+   "titel": "brightwater bakery — client profile",
+   "art": "begriff",
+   "gradEcht": 3,
+   "gradVermutet": 0,
+   "versteckteNachbarn": 0,
+   "traeger": 1,
+   "traegerIds": [
+    "k-mv5odviu-56c3c06f"
+   ],
+   "x": 1593.3,
+   "y": 2043.9
+  },
+  {
+   "id": "e-41",
+   "titel": "paul hartmann",
+   "art": "begriff",
+   "gradEcht": 2,
+   "gradVermutet": 0,
+   "versteckteNachbarn": 0,
+   "traeger": 2,
+   "traegerIds": [
+    "k-mv5odviu-56c3c06f",
+    "k-mv5odxol-ebc431df"
+   ],
+   "x": 1898.8,
+   "y": 2023.9
+  },
+  {
+   "id": "e-42",
+   "titel": "veltmann architects — client profile",
+   "art": "begriff",
+   "gradEcht": 2,
+   "gradVermutet": 0,
+   "versteckteNachbarn": 0,
+   "traeger": 1,
+   "traegerIds": [
+    "k-mv5odvk1-df9f3845"
+   ],
+   "x": 1517.1,
+   "y": 1494.4
+  },
+  {
+   "id": "e-43",
+   "titel": "sofia marin",
+   "art": "begriff",
+   "gradEcht": 2,
+   "gradVermutet": 0,
+   "versteckteNachbarn": 0,
+   "traeger": 2,
+   "traegerIds": [
+    "k-mv5odvk1-df9f3845",
+    "k-mv5odxqb-43d22f8c"
+   ],
+   "x": 1330.3,
+   "y": 1175.7
+  },
+  {
+   "id": "e-44",
+   "titel": "orion health — client profile",
+   "art": "begriff",
+   "gradEcht": 2,
+   "gradVermutet": 0,
+   "versteckteNachbarn": 0,
+   "traeger": 1,
+   "traegerIds": [
+    "k-mv5odvl8-cec0cfd5"
+   ],
+   "x": 1730.9,
+   "y": 1640.8
+  },
+  {
+   "id": "e-45",
+   "titel": "david chen",
+   "art": "begriff",
+   "gradEcht": 3,
+   "gradVermutet": 0,
+   "versteckteNachbarn": 0,
+   "traeger": 3,
+   "traegerIds": [
+    "k-mv5odvl8-cec0cfd5",
+    "k-mv5odvx4-46409966",
+    "k-mv5odxbe-2bcad458"
+   ],
+   "x": 1601.9,
+   "y": 1406.9
+  },
+  {
+   "id": "e-46",
+   "titel": "client onboarding",
+   "art": "begriff",
+   "gradEcht": 4,
+   "gradVermutet": 0,
+   "versteckteNachbarn": 0,
+   "traeger": 3,
+   "traegerIds": [
+    "k-mv5odvl8-cec0cfd5",
+    "k-mv5odw6d-4166c2f1",
+    "k-mv5odxbe-2bcad458"
+   ],
+   "x": 1747.9,
+   "y": 1466.1
+  },
+  {
+   "id": "e-47",
+   "titel": "kestrel software — client profile",
+   "art": "begriff",
+   "gradEcht": 2,
+   "gradVermutet": 0,
+   "versteckteNachbarn": 0,
+   "traeger": 1,
+   "traegerIds": [
+    "k-mv5odvmc-b7937522"
+   ],
+   "x": 1179.4,
+   "y": 1339.9
+  },
+  {
+   "id": "e-48",
+   "titel": "elena weiss",
+   "art": "begriff",
+   "gradEcht": 7,
+   "gradVermutet": 0,
+   "versteckteNachbarn": 0,
+   "traeger": 7,
+   "traegerIds": [
+    "k-mv5odvmc-b7937522",
+    "k-mv5odvvq-525edb1f",
+    "k-mv5odvyg-3715d4ae",
+    "k-mv5odvzw-06cee77d",
+    "k-mv5odwhs-a737e4c1",
+    "k-mv5odxlu-91fdd548",
+    "k-mv5odxn5-f424d3db"
+   ],
+   "x": 1160.8,
+   "y": 1599.8
+  },
+  {
+   "id": "e-49",
+   "titel": "falk & sons — client profile",
+   "art": "begriff",
+   "gradEcht": 1,
+   "gradVermutet": 0,
+   "versteckteNachbarn": 0,
+   "traeger": 1,
+   "traegerIds": [
+    "k-mv5odvnp-776188a2"
+   ],
+   "x": 1253.7,
+   "y": 2308.2
+  },
+  {
+   "id": "e-50",
+   "titel": "client portal — scope",
+   "art": "begriff",
+   "gradEcht": 3,
+   "gradVermutet": 0,
+   "versteckteNachbarn": 0,
+   "traeger": 1,
+   "traegerIds": [
+    "k-mv5odvoz-f0736460"
+   ],
+   "x": 1607.9,
+   "y": 1590.6
+  },
+  {
+   "id": "e-51",
+   "titel": "data retention policy",
+   "art": "begriff",
+   "gradEcht": 6,
+   "gradVermutet": 0,
+   "versteckteNachbarn": 0,
+   "traeger": 6,
+   "traegerIds": [
+    "k-mv5odvrj-4defc69f",
+    "k-mv5odvt4-e33cf2e0",
+    "k-mv5odvuf-75a42603",
+    "k-mv5odw7w-7bc779cd",
+    "k-mv5odwb4-1d4211fe",
+    "k-mv5odwl5-a0477022"
+   ],
+   "x": 1762.4,
+   "y": 1990.7
+  },
+  {
+   "id": "e-52",
+   "titel": "decision: receipts go through the portal",
+   "art": "begriff",
+   "gradEcht": 4,
+   "gradVermutet": 0,
+   "versteckteNachbarn": 0,
+   "traeger": 1,
+   "traegerIds": [
+    "k-mv5odvuf-75a42603"
+   ],
+   "x": 1781.8,
+   "y": 1745.3
+  },
+  {
+   "id": "e-53",
+   "titel": "decision: local ai for client data",
+   "art": "begriff",
+   "gradEcht": 3,
+   "gradVermutet": 0,
+   "versteckteNachbarn": 0,
+   "traeger": 2,
+   "traegerIds": [
+    "k-mv5odvvq-525edb1f",
+    "k-mv5odwy4-b1548f51"
+   ],
+   "x": 1238.2,
+   "y": 1368.4
+  },
+  {
+   "id": "e-54",
+   "titel": "decision: monthly one-page summary",
+   "art": "begriff",
+   "gradEcht": 2,
+   "gradVermutet": 0,
+   "versteckteNachbarn": 0,
+   "traeger": 1,
+   "traegerIds": [
+    "k-mv5odvx4-46409966"
+   ],
+   "x": 1479.5,
+   "y": 1468.5
+  },
+  {
+   "id": "e-55",
+   "titel": "vat — eu sales",
+   "art": "begriff",
+   "gradEcht": 2,
+   "gradVermutet": 0,
+   "versteckteNachbarn": 0,
+   "traeger": 1,
+   "traegerIds": [
+    "k-mv5odvyg-3715d4ae"
+   ],
+   "x": 1160.2,
+   "y": 1258.5
+  },
+  {
+   "id": "e-56",
+   "titel": "q4 close — plan",
+   "art": "begriff",
+   "gradEcht": 4,
+   "gradVermutet": 0,
+   "versteckteNachbarn": 0,
+   "traeger": 1,
+   "traegerIds": [
+    "k-mv5odvzw-06cee77d"
+   ],
+   "x": 1351.9,
+   "y": 1818
+  },
+  {
+   "id": "e-57",
+   "titel": "portal adoption",
+   "art": "begriff",
+   "gradEcht": 3,
+   "gradVermutet": 0,
+   "versteckteNachbarn": 0,
+   "traeger": 1,
+   "traegerIds": [
+    "k-mv5odw1v-fff682cc"
+   ],
+   "x": 1265.1,
+   "y": 1662.7
+  },
+  {
+   "id": "e-58",
+   "titel": "project atlas — goals",
+   "art": "begriff",
+   "gradEcht": 4,
+   "gradVermutet": 0,
+   "versteckteNachbarn": 0,
+   "traeger": 1,
+   "traegerIds": [
+    "k-mv5odw4e-94326214"
+   ],
+   "x": 1436.4,
+   "y": 1589.1
+  },
+  {
+   "id": "e-59",
+   "titel": "month-end close",
+   "art": "begriff",
+   "gradEcht": 2,
+   "gradVermutet": 0,
+   "versteckteNachbarn": 0,
+   "traeger": 1,
+   "traegerIds": [
+    "k-mv5odw99-cdd4c98c"
+   ],
+   "x": 1641.7,
+   "y": 1246
+  },
+  {
+   "id": "e-60",
+   "titel": "quarterly vat return",
+   "art": "begriff",
+   "gradEcht": 1,
+   "gradVermutet": 0,
+   "versteckteNachbarn": 0,
+   "traeger": 1,
+   "traegerIds": [
+    "k-mv5odwb4-1d4211fe"
+   ],
+   "x": 1503.6,
+   "y": 2527.2
+  },
+  {
+   "id": "e-61",
+   "titel": "how to rotate api keys",
+   "art": "begriff",
+   "gradEcht": 1,
+   "gradVermutet": 0,
+   "versteckteNachbarn": 0,
+   "traeger": 1,
+   "traegerIds": [
+    "k-mv5odwck-2a8b5546"
+   ],
+   "x": 1822.9,
+   "y": 1372.8
+  },
+  {
+   "id": "e-62",
+   "titel": "year-end close",
+   "art": "begriff",
+   "gradEcht": 2,
+   "gradVermutet": 0,
+   "versteckteNachbarn": 0,
+   "traeger": 1,
+   "traegerIds": [
+    "k-mv5odwhs-a737e4c1"
+   ],
+   "x": 1072.7,
+   "y": 1820.7
+  },
+  {
+   "id": "e-63",
+   "titel": "new team member — first week",
+   "art": "begriff",
+   "gradEcht": 3,
+   "gradVermutet": 0,
+   "versteckteNachbarn": 0,
+   "traeger": 1,
+   "traegerIds": [
+    "k-mv5odwji-882e7b83"
+   ],
+   "x": 1899.7,
+   "y": 1737.6
+  },
+  {
+   "id": "e-64",
+   "titel": "client offboarding",
+   "art": "begriff",
+   "gradEcht": 2,
+   "gradVermutet": 0,
+   "versteckteNachbarn": 0,
+   "traeger": 1,
+   "traegerIds": [
+    "k-mv5odwl5-a0477022"
+   ],
+   "x": 1744.5,
+   "y": 1772.9
+  },
+  {
+   "id": "e-65",
+   "titel": "meeting notes template",
+   "art": "begriff",
+   "gradEcht": 0,
+   "gradVermutet": 0,
+   "versteckteNachbarn": 0,
+   "traeger": 1,
+   "traegerIds": [
+    "k-mv5odwmr-43edb7ca"
+   ],
+   "x": 574.6,
+   "y": 30
+  },
+  {
+   "id": "e-66",
+   "titel": "keyboard shortcuts",
+   "art": "begriff",
+   "gradEcht": 0,
+   "gradVermutet": 0,
+   "versteckteNachbarn": 0,
+   "traeger": 1,
+   "traegerIds": [
+    "k-mv5odwny-68c6d893"
+   ],
+   "x": 2023.3,
+   "y": 3692.1
+  },
+  {
+   "id": "e-67",
+   "titel": "glossary",
+   "art": "begriff",
+   "gradEcht": 0,
+   "gradVermutet": 0,
+   "versteckteNachbarn": 0,
+   "traeger": 1,
+   "traegerIds": [
+    "k-mv5odwpb-e0bb58d0"
+   ],
+   "x": 1682.8,
+   "y": 128.2
+  },
+  {
+   "id": "e-68",
+   "titel": "team working agreement",
+   "art": "begriff",
+   "gradEcht": 0,
+   "gradVermutet": 0,
+   "versteckteNachbarn": 0,
+   "traeger": 1,
+   "traegerIds": [
+    "k-mv5odwr3-ae1e89d1"
+   ],
+   "x": 3096.3,
+   "y": 673.8
+  },
+  {
+   "id": "e-69",
+   "titel": "engagement letter — orion health",
+   "art": "begriff",
+   "gradEcht": 1,
+   "gradVermutet": 0,
+   "versteckteNachbarn": 0,
+   "traeger": 1,
+   "traegerIds": [
+    "k-mv5odwsi-0546407f"
+   ],
+   "x": 870,
+   "y": 1617.8
+  },
+  {
+   "id": "e-70",
+   "titel": "portal user guide",
+   "art": "begriff",
+   "gradEcht": 1,
+   "gradVermutet": 0,
+   "versteckteNachbarn": 0,
+   "traeger": 1,
+   "traegerIds": [
+    "k-mv5odwut-5ccf9a08"
+   ],
+   "x": 1568,
+   "y": 934.4
+  },
+  {
+   "id": "e-71",
+   "titel": "cash-flow model — nordwind",
+   "art": "begriff",
+   "gradEcht": 2,
+   "gradVermutet": 0,
+   "versteckteNachbarn": 0,
+   "traeger": 1,
+   "traegerIds": [
+    "k-mv5odwwf-aafe5f43"
+   ],
+   "x": 1483.7,
+   "y": 1859
+  },
+  {
+   "id": "e-72",
+   "titel": "reading list: local-first software",
+   "art": "begriff",
+   "gradEcht": 1,
+   "gradVermutet": 0,
+   "versteckteNachbarn": 0,
+   "traeger": 1,
+   "traegerIds": [
+    "k-mv5odwy4-b1548f51"
+   ],
+   "x": 820.2,
+   "y": 999.4
+  },
+  {
+   "id": "e-73",
+   "titel": "privacy notice for clients",
+   "art": "begriff",
+   "gradEcht": 1,
+   "gradVermutet": 0,
+   "versteckteNachbarn": 0,
+   "traeger": 1,
+   "traegerIds": [
+    "k-mv5odx07-25396908"
+   ],
+   "x": 2327.3,
+   "y": 1818.8
+  },
+  {
+   "id": "e-74",
+   "titel": "engagement letter — lumen & co.",
+   "art": "begriff",
+   "gradEcht": 2,
+   "gradVermutet": 0,
+   "versteckteNachbarn": 0,
+   "traeger": 1,
+   "traegerIds": [
+    "k-mv5odx1r-f9186530"
+   ],
+   "x": 836,
+   "y": 1398.4
+  },
+  {
+   "id": "e-75",
+   "titel": "board pack q2 — kestrel software",
+   "art": "begriff",
+   "gradEcht": 2,
+   "gradVermutet": 0,
+   "versteckteNachbarn": 0,
+   "traeger": 1,
+   "traegerIds": [
+    "k-mv5odx3g-b3353d66"
+   ],
+   "x": 1687.1,
+   "y": 1162.2
+  },
+  {
+   "id": "e-76",
+   "titel": "invoice template 2026",
+   "art": "begriff",
+   "gradEcht": 2,
+   "gradVermutet": 0,
+   "versteckteNachbarn": 0,
+   "traeger": 1,
+   "traegerIds": [
+    "k-mv5odx56-066f6d51"
+   ],
+   "x": 994.6,
+   "y": 1478.3
+  },
+  {
+   "id": "e-77",
+   "titel": "lease — quay street",
+   "art": "begriff",
+   "gradEcht": 1,
+   "gradVermutet": 0,
+   "versteckteNachbarn": 0,
+   "traeger": 1,
+   "traegerIds": [
+    "k-mv5odx6p-2ac979b5"
+   ],
+   "x": 2195.2,
+   "y": 1253.4
+  },
+  {
+   "id": "e-78",
+   "titel": "seasonal staff plan — brightwater",
+   "art": "begriff",
+   "gradEcht": 2,
+   "gradVermutet": 0,
+   "versteckteNachbarn": 0,
+   "traeger": 1,
+   "traegerIds": [
+    "k-mv5odx80-204de3b2"
+   ],
+   "x": 1366.7,
+   "y": 2213.1
+  },
+  {
+   "id": "e-79",
+   "titel": "kickoff: project atlas",
+   "art": "begriff",
+   "gradEcht": 3,
+   "gradVermutet": 0,
+   "versteckteNachbarn": 0,
+   "traeger": 1,
+   "traegerIds": [
+    "k-mv5odx9h-a7519a8d"
+   ],
+   "x": 1528.7,
+   "y": 1344.4
+  },
+  {
+   "id": "e-80",
+   "titel": "onboarding call with orion health",
+   "art": "begriff",
+   "gradEcht": 2,
+   "gradVermutet": 0,
+   "versteckteNachbarn": 0,
+   "traeger": 1,
+   "traegerIds": [
+    "k-mv5odxbe-2bcad458"
+   ],
+   "x": 1541.2,
+   "y": 1248.1
+  },
+  {
+   "id": "e-81",
+   "titel": "design review — portal navigation",
+   "art": "begriff",
+   "gradEcht": 2,
+   "gradVermutet": 0,
+   "versteckteNachbarn": 0,
+   "traeger": 1,
+   "traegerIds": [
+    "k-mv5odxcz-75b37d29"
+   ],
+   "x": 1772.8,
+   "y": 1802.1
+  },
+  {
+   "id": "e-82",
+   "titel": "call with tobias roth about cash flow",
+   "art": "begriff",
+   "gradEcht": 2,
+   "gradVermutet": 0,
+   "versteckteNachbarn": 0,
+   "traeger": 1,
+   "traegerIds": [
+    "k-mv5odxey-9f44dfe5"
+   ],
+   "x": 1374.1,
+   "y": 1756.8
+  },
+  {
+   "id": "e-83",
+   "titel": "retro — first quarter",
+   "art": "begriff",
+   "gradEcht": 1,
+   "gradVermutet": 0,
+   "versteckteNachbarn": 0,
+   "traeger": 1,
+   "traegerIds": [
+    "k-mv5odxh5-262e53b1"
+   ],
+   "x": 1994.7,
+   "y": 2544.1
+  },
+  {
+   "id": "e-84",
+   "titel": "workshop: privacy at castell dental",
+   "art": "begriff",
+   "gradEcht": 2,
+   "gradVermutet": 0,
+   "versteckteNachbarn": 0,
+   "traeger": 1,
+   "traegerIds": [
+    "k-mv5odxiw-e56d72c6"
+   ],
+   "x": 2403.2,
+   "y": 1261.1
+  },
+  {
+   "id": "e-85",
+   "titel": "incident: portal login outage",
+   "art": "begriff",
+   "gradEcht": 1,
+   "gradVermutet": 0,
+   "versteckteNachbarn": 0,
+   "traeger": 1,
+   "traegerIds": [
+    "k-mv5odxki-05b016b5"
+   ],
+   "x": 1162.4,
+   "y": 1760.8
+  },
+  {
+   "id": "e-86",
+   "titel": "kestrel board meeting",
+   "art": "begriff",
+   "gradEcht": 3,
+   "gradVermutet": 0,
+   "versteckteNachbarn": 0,
+   "traeger": 1,
+   "traegerIds": [
+    "k-mv5odxlu-91fdd548"
+   ],
+   "x": 1278,
+   "y": 1281.9
+  },
+  {
+   "id": "e-87",
+   "titel": "training: e-invoicing",
+   "art": "begriff",
+   "gradEcht": 1,
+   "gradVermutet": 0,
+   "versteckteNachbarn": 0,
+   "traeger": 1,
+   "traegerIds": [
+    "k-mv5odxn5-f424d3db"
+   ],
+   "x": 1120.7,
+   "y": 2126.8
+  },
+  {
+   "id": "e-88",
+   "titel": "year-end meeting with brightwater",
+   "art": "begriff",
+   "gradEcht": 2,
+   "gradVermutet": 0,
+   "versteckteNachbarn": 0,
+   "traeger": 1,
+   "traegerIds": [
+    "k-mv5odxol-ebc431df"
+   ],
+   "x": 1971.7,
+   "y": 2204.9
+  },
+  {
+   "id": "e-89",
+   "titel": "veltmann billing review",
+   "art": "begriff",
+   "gradEcht": 2,
+   "gradVermutet": 0,
+   "versteckteNachbarn": 0,
+   "traeger": 1,
+   "traegerIds": [
+    "k-mv5odxqb-43d22f8c"
+   ],
+   "x": 1019.3,
+   "y": 1099.3
+  },
+  {
+   "id": "e-90",
+   "titel": "office move — keys handed over",
+   "art": "begriff",
+   "gradEcht": 1,
+   "gradVermutet": 0,
+   "versteckteNachbarn": 0,
+   "traeger": 1,
+   "traegerIds": [
+    "k-mv5odxrq-d5a42146"
+   ],
+   "x": 2074.7,
+   "y": 1742.8
+  },
+  {
+   "id": "e-91",
+   "titel": "call with nina keller — new location",
+   "art": "begriff",
+   "gradEcht": 2,
+   "gradVermutet": 0,
+   "versteckteNachbarn": 0,
+   "traeger": 1,
+   "traegerIds": [
+    "k-mv5odxt3-e557de56"
+   ],
+   "x": 1114.5,
+   "y": 2200.2
+  },
+  {
+   "id": "e-92",
+   "titel": "falk & sons — receipts scanned",
+   "art": "begriff",
+   "gradEcht": 2,
+   "gradVermutet": 0,
+   "versteckteNachbarn": 0,
+   "traeger": 1,
+   "traegerIds": [
+    "k-mv5odxuz-c1bd80e2"
+   ],
+   "x": 1458.2,
+   "y": 2161.9
+  },
+  {
+   "id": "e-93",
+   "titel": "portal launch",
+   "art": "begriff",
+   "gradEcht": 2,
+   "gradVermutet": 0,
+   "versteckteNachbarn": 0,
+   "traeger": 1,
+   "traegerIds": [
+    "k-mv5odxwb-37acb0ae"
+   ],
+   "x": 1417.5,
+   "y": 1112.8
+  }
+ ],
+ "kanten": [
+  {
+   "id": "r-1",
+   "quelle": "e-1",
+   "ziel": "e-2",
+   "sorte": "echt",
+   "maess": {
+    "wert": null,
+    "basis": "verlinkt",
+    "gemessen": true
+   },
+   "feder": 0.5,
+   "belege": 1,
+   "erklaerung": {
+    "gemeinsame": [
+     "mentions"
+    ],
+    "art": "titel"
+   },
+   "validFrom": null,
+   "validTo": null
+  },
+  {
+   "id": "r-10",
+   "quelle": "e-14",
+   "ziel": "e-17",
+   "sorte": "echt",
+   "maess": {
+    "wert": null,
+    "basis": "verlinkt",
+    "gemessen": true
+   },
+   "feder": 0.5,
+   "belege": 1,
+   "erklaerung": {
+    "gemeinsame": [
+     "mentions"
+    ],
+    "art": "titel"
+   },
+   "validFrom": null,
+   "validTo": null
+  },
+  {
+   "id": "r-100",
+   "quelle": "e-2",
+   "ziel": "e-76",
+   "sorte": "echt",
+   "maess": {
+    "wert": null,
+    "basis": "verlinkt",
+    "gemessen": true
+   },
+   "feder": 0.5,
+   "belege": 1,
+   "erklaerung": {
+    "gemeinsame": [
+     "mentions"
+    ],
+    "art": "titel"
+   },
+   "validFrom": null,
+   "validTo": null
+  },
+  {
+   "id": "r-101",
+   "quelle": "e-19",
+   "ziel": "e-76",
+   "sorte": "echt",
+   "maess": {
+    "wert": null,
+    "basis": "verlinkt",
+    "gemessen": true
+   },
+   "feder": 0.5,
+   "belege": 1,
+   "erklaerung": {
+    "gemeinsame": [
+     "mentions"
+    ],
+    "art": "titel"
+   },
+   "validFrom": null,
+   "validTo": null
+  },
+  {
+   "id": "r-102",
+   "quelle": "e-4",
+   "ziel": "e-77",
+   "sorte": "echt",
+   "maess": {
+    "wert": null,
+    "basis": "verlinkt",
+    "gemessen": true
+   },
+   "feder": 0.5,
+   "belege": 1,
+   "erklaerung": {
+    "gemeinsame": [
+     "mentions"
+    ],
+    "art": "titel"
+   },
+   "validFrom": null,
+   "validTo": null
+  },
+  {
+   "id": "r-103",
+   "quelle": "e-27",
+   "ziel": "e-78",
+   "sorte": "echt",
+   "maess": {
+    "wert": null,
+    "basis": "verlinkt",
+    "gemessen": true
+   },
+   "feder": 0.5,
+   "belege": 1,
+   "erklaerung": {
+    "gemeinsame": [
+     "mentions"
+    ],
+    "art": "titel"
+   },
+   "validFrom": null,
+   "validTo": null
+  },
+  {
+   "id": "r-104",
+   "quelle": "e-39",
+   "ziel": "e-78",
+   "sorte": "echt",
+   "maess": {
+    "wert": null,
+    "basis": "verlinkt",
+    "gemessen": true
+   },
+   "feder": 0.5,
+   "belege": 1,
+   "erklaerung": {
+    "gemeinsame": [
+     "mentions"
+    ],
+    "art": "titel"
+   },
+   "validFrom": null,
+   "validTo": null
+  },
+  {
+   "id": "r-105",
+   "quelle": "e-11",
+   "ziel": "e-79",
+   "sorte": "echt",
+   "maess": {
+    "wert": null,
+    "basis": "verlinkt",
+    "gemessen": true
+   },
+   "feder": 0.5,
+   "belege": 1,
+   "erklaerung": {
+    "gemeinsame": [
+     "mentions"
+    ],
+    "art": "titel"
+   },
+   "validFrom": null,
+   "validTo": null
+  },
+  {
+   "id": "r-106",
+   "quelle": "e-13",
+   "ziel": "e-79",
+   "sorte": "echt",
+   "maess": {
+    "wert": null,
+    "basis": "verlinkt",
+    "gemessen": true
+   },
+   "feder": 0.5,
+   "belege": 1,
+   "erklaerung": {
+    "gemeinsame": [
+     "mentions"
+    ],
+    "art": "titel"
+   },
+   "validFrom": null,
+   "validTo": null
+  },
+  {
+   "id": "r-107",
+   "quelle": "e-33",
+   "ziel": "e-79",
+   "sorte": "echt",
+   "maess": {
+    "wert": null,
+    "basis": "verlinkt",
+    "gemessen": true
+   },
+   "feder": 0.5,
+   "belege": 1,
+   "erklaerung": {
+    "gemeinsame": [
+     "mentions"
+    ],
+    "art": "titel"
+   },
+   "validFrom": null,
+   "validTo": null
+  },
+  {
+   "id": "r-108",
+   "quelle": "e-45",
+   "ziel": "e-80",
+   "sorte": "echt",
+   "maess": {
+    "wert": null,
+    "basis": "verlinkt",
+    "gemessen": true
+   },
+   "feder": 0.5,
+   "belege": 1,
+   "erklaerung": {
+    "gemeinsame": [
+     "mentions"
+    ],
+    "art": "titel"
+   },
+   "validFrom": null,
+   "validTo": null
+  },
+  {
+   "id": "r-109",
+   "quelle": "e-46",
+   "ziel": "e-80",
+   "sorte": "echt",
+   "maess": {
+    "wert": null,
+    "basis": "verlinkt",
+    "gemessen": true
+   },
+   "feder": 0.5,
+   "belege": 1,
+   "erklaerung": {
+    "gemeinsame": [
+     "mentions"
+    ],
+    "art": "titel"
+   },
+   "validFrom": null,
+   "validTo": null
+  },
+  {
+   "id": "r-11",
+   "quelle": "e-7",
+   "ziel": "e-14",
+   "sorte": "echt",
+   "maess": {
+    "wert": null,
+    "basis": "verlinkt",
+    "gemessen": true
+   },
+   "feder": 0.5,
+   "belege": 1,
+   "erklaerung": {
+    "gemeinsame": [
+     "mentions"
+    ],
+    "art": "titel"
+   },
+   "validFrom": null,
+   "validTo": null
+  },
+  {
+   "id": "r-110",
+   "quelle": "e-34",
+   "ziel": "e-81",
+   "sorte": "echt",
+   "maess": {
+    "wert": null,
+    "basis": "verlinkt",
+    "gemessen": true
+   },
+   "feder": 0.5,
+   "belege": 1,
+   "erklaerung": {
+    "gemeinsame": [
+     "mentions"
+    ],
+    "art": "titel"
+   },
+   "validFrom": null,
+   "validTo": null
+  },
+  {
+   "id": "r-111",
+   "quelle": "e-33",
+   "ziel": "e-81",
+   "sorte": "echt",
+   "maess": {
+    "wert": null,
+    "basis": "verlinkt",
+    "gemessen": true
+   },
+   "feder": 0.5,
+   "belege": 1,
+   "erklaerung": {
+    "gemeinsame": [
+     "mentions"
+    ],
+    "art": "titel"
+   },
+   "validFrom": null,
+   "validTo": null
+  },
+  {
+   "id": "r-112",
+   "quelle": "e-36",
+   "ziel": "e-82",
+   "sorte": "echt",
+   "maess": {
+    "wert": null,
+    "basis": "verlinkt",
+    "gemessen": true
+   },
+   "feder": 0.5,
+   "belege": 1,
+   "erklaerung": {
+    "gemeinsame": [
+     "mentions"
+    ],
+    "art": "titel"
+   },
+   "validFrom": null,
+   "validTo": null
+  },
+  {
+   "id": "r-113",
+   "quelle": "e-16",
+   "ziel": "e-82",
+   "sorte": "echt",
+   "maess": {
+    "wert": null,
+    "basis": "verlinkt",
+    "gemessen": true
+   },
+   "feder": 0.5,
+   "belege": 1,
+   "erklaerung": {
+    "gemeinsame": [
+     "mentions"
+    ],
+    "art": "titel"
+   },
+   "validFrom": null,
+   "validTo": null
+  },
+  {
+   "id": "r-114",
+   "quelle": "e-39",
+   "ziel": "e-83",
+   "sorte": "echt",
+   "maess": {
+    "wert": null,
+    "basis": "verlinkt",
+    "gemessen": true
+   },
+   "feder": 0.5,
+   "belege": 1,
+   "erklaerung": {
+    "gemeinsame": [
+     "mentions"
+    ],
+    "art": "titel"
+   },
+   "validFrom": null,
+   "validTo": null
+  },
+  {
+   "id": "r-115",
+   "quelle": "e-38",
+   "ziel": "e-84",
+   "sorte": "echt",
+   "maess": {
+    "wert": null,
+    "basis": "verlinkt",
+    "gemessen": true
+   },
+   "feder": 0.5,
+   "belege": 1,
+   "erklaerung": {
+    "gemeinsame": [
+     "mentions"
+    ],
+    "art": "titel"
+   },
+   "validFrom": null,
+   "validTo": null
+  },
+  {
+   "id": "r-116",
+   "quelle": "e-25",
+   "ziel": "e-84",
+   "sorte": "echt",
+   "maess": {
+    "wert": null,
+    "basis": "verlinkt",
+    "gemessen": true
+   },
+   "feder": 0.5,
+   "belege": 1,
+   "erklaerung": {
+    "gemeinsame": [
+     "mentions"
+    ],
+    "art": "titel"
+   },
+   "validFrom": null,
+   "validTo": null
+  },
+  {
+   "id": "r-117",
+   "quelle": "e-17",
+   "ziel": "e-85",
+   "sorte": "echt",
+   "maess": {
+    "wert": null,
+    "basis": "verlinkt",
+    "gemessen": true
+   },
+   "feder": 0.5,
+   "belege": 1,
+   "erklaerung": {
+    "gemeinsame": [
+     "mentions"
+    ],
+    "art": "titel"
+   },
+   "validFrom": null,
+   "validTo": null
+  },
+  {
+   "id": "r-118",
+   "quelle": "e-21",
+   "ziel": "e-86",
+   "sorte": "echt",
+   "maess": {
+    "wert": null,
+    "basis": "verlinkt",
+    "gemessen": true
+   },
+   "feder": 0.5,
+   "belege": 1,
+   "erklaerung": {
+    "gemeinsame": [
+     "mentions"
+    ],
+    "art": "titel"
+   },
+   "validFrom": null,
+   "validTo": null
+  },
+  {
+   "id": "r-119",
+   "quelle": "e-19",
+   "ziel": "e-86",
+   "sorte": "echt",
+   "maess": {
+    "wert": null,
+    "basis": "verlinkt",
+    "gemessen": true
+   },
+   "feder": 0.5,
+   "belege": 1,
+   "erklaerung": {
+    "gemeinsame": [
+     "mentions"
+    ],
+    "art": "titel"
+   },
+   "validFrom": null,
+   "validTo": null
+  },
+  {
+   "id": "r-12",
+   "quelle": "e-18",
+   "ziel": "e-19",
+   "sorte": "echt",
+   "maess": {
+    "wert": null,
+    "basis": "verlinkt",
+    "gemessen": true
+   },
+   "feder": 0.5,
+   "belege": 1,
+   "erklaerung": {
+    "gemeinsame": [
+     "mentions"
+    ],
+    "art": "titel"
+   },
+   "validFrom": null,
+   "validTo": null
+  },
+  {
+   "id": "r-120",
+   "quelle": "e-48",
+   "ziel": "e-86",
+   "sorte": "echt",
+   "maess": {
+    "wert": null,
+    "basis": "verlinkt",
+    "gemessen": true
+   },
+   "feder": 0.5,
+   "belege": 1,
+   "erklaerung": {
+    "gemeinsame": [
+     "mentions"
+    ],
+    "art": "titel"
+   },
+   "validFrom": null,
+   "validTo": null
+  },
+  {
+   "id": "r-121",
+   "quelle": "e-48",
+   "ziel": "e-87",
+   "sorte": "echt",
+   "maess": {
+    "wert": null,
+    "basis": "verlinkt",
+    "gemessen": true
+   },
+   "feder": 0.5,
+   "belege": 1,
+   "erklaerung": {
+    "gemeinsame": [
+     "mentions"
+    ],
+    "art": "titel"
+   },
+   "validFrom": null,
+   "validTo": null
+  },
+  {
+   "id": "r-122",
+   "quelle": "e-41",
+   "ziel": "e-88",
+   "sorte": "echt",
+   "maess": {
+    "wert": null,
+    "basis": "verlinkt",
+    "gemessen": true
+   },
+   "feder": 0.5,
+   "belege": 1,
+   "erklaerung": {
+    "gemeinsame": [
+     "mentions"
+    ],
+    "art": "titel"
+   },
+   "validFrom": null,
+   "validTo": null
+  },
+  {
+   "id": "r-123",
+   "quelle": "e-39",
+   "ziel": "e-88",
+   "sorte": "echt",
+   "maess": {
+    "wert": null,
+    "basis": "verlinkt",
+    "gemessen": true
+   },
+   "feder": 0.5,
+   "belege": 1,
+   "erklaerung": {
+    "gemeinsame": [
+     "mentions"
+    ],
+    "art": "titel"
+   },
+   "validFrom": null,
+   "validTo": null
+  },
+  {
+   "id": "r-124",
+   "quelle": "e-43",
+   "ziel": "e-89",
+   "sorte": "echt",
+   "maess": {
+    "wert": null,
+    "basis": "verlinkt",
+    "gemessen": true
+   },
+   "feder": 0.5,
+   "belege": 1,
+   "erklaerung": {
+    "gemeinsame": [
+     "mentions"
+    ],
+    "art": "titel"
+   },
+   "validFrom": null,
+   "validTo": null
+  },
+  {
+   "id": "r-125",
+   "quelle": "e-2",
+   "ziel": "e-89",
+   "sorte": "echt",
+   "maess": {
+    "wert": null,
+    "basis": "verlinkt",
+    "gemessen": true
+   },
+   "feder": 0.5,
+   "belege": 1,
+   "erklaerung": {
+    "gemeinsame": [
+     "mentions"
+    ],
+    "art": "titel"
+   },
+   "validFrom": null,
+   "validTo": null
+  },
+  {
+   "id": "r-126",
+   "quelle": "e-5",
+   "ziel": "e-90",
+   "sorte": "echt",
+   "maess": {
+    "wert": null,
+    "basis": "verlinkt",
+    "gemessen": true
+   },
+   "feder": 0.5,
+   "belege": 1,
+   "erklaerung": {
+    "gemeinsame": [
+     "mentions"
+    ],
+    "art": "titel"
+   },
+   "validFrom": null,
+   "validTo": null
+  },
+  {
+   "id": "r-127",
+   "quelle": "e-24",
+   "ziel": "e-91",
+   "sorte": "echt",
+   "maess": {
+    "wert": null,
+    "basis": "verlinkt",
+    "gemessen": true
+   },
+   "feder": 0.5,
+   "belege": 1,
+   "erklaerung": {
+    "gemeinsame": [
+     "mentions"
+    ],
+    "art": "titel"
+   },
+   "validFrom": null,
+   "validTo": null
+  },
+  {
+   "id": "r-128",
+   "quelle": "e-39",
+   "ziel": "e-91",
+   "sorte": "echt",
+   "maess": {
+    "wert": null,
+    "basis": "verlinkt",
+    "gemessen": true
+   },
+   "feder": 0.5,
+   "belege": 1,
+   "erklaerung": {
+    "gemeinsame": [
+     "mentions"
+    ],
+    "art": "titel"
+   },
+   "validFrom": null,
+   "validTo": null
+  },
+  {
+   "id": "r-129",
+   "quelle": "e-15",
+   "ziel": "e-92",
+   "sorte": "echt",
+   "maess": {
+    "wert": null,
+    "basis": "verlinkt",
+    "gemessen": true
+   },
+   "feder": 0.5,
+   "belege": 1,
+   "erklaerung": {
+    "gemeinsame": [
+     "mentions"
+    ],
+    "art": "titel"
+   },
+   "validFrom": null,
+   "validTo": null
+  },
+  {
+   "id": "r-13",
+   "quelle": "e-18",
+   "ziel": "e-20",
+   "sorte": "echt",
+   "maess": {
+    "wert": null,
+    "basis": "verlinkt",
+    "gemessen": true
+   },
+   "feder": 0.5,
+   "belege": 1,
+   "erklaerung": {
+    "gemeinsame": [
+     "mentions"
+    ],
+    "art": "titel"
+   },
+   "validFrom": null,
+   "validTo": null
+  },
+  {
+   "id": "r-130",
+   "quelle": "e-9",
+   "ziel": "e-92",
+   "sorte": "echt",
+   "maess": {
+    "wert": null,
+    "basis": "verlinkt",
+    "gemessen": true
+   },
+   "feder": 0.5,
+   "belege": 1,
+   "erklaerung": {
+    "gemeinsame": [
+     "mentions"
+    ],
+    "art": "titel"
+   },
+   "validFrom": null,
+   "validTo": null
+  },
+  {
+   "id": "r-131",
+   "quelle": "e-34",
+   "ziel": "e-93",
+   "sorte": "echt",
+   "maess": {
+    "wert": null,
+    "basis": "verlinkt",
+    "gemessen": true
+   },
+   "feder": 0.5,
+   "belege": 1,
+   "erklaerung": {
+    "gemeinsame": [
+     "mentions"
+    ],
+    "art": "titel"
+   },
+   "validFrom": null,
+   "validTo": null
+  },
+  {
+   "id": "r-132",
+   "quelle": "e-13",
+   "ziel": "e-93",
+   "sorte": "echt",
+   "maess": {
+    "wert": null,
+    "basis": "verlinkt",
+    "gemessen": true
+   },
+   "feder": 0.5,
+   "belege": 1,
+   "erklaerung": {
+    "gemeinsame": [
+     "mentions"
+    ],
+    "art": "titel"
+   },
+   "validFrom": null,
+   "validTo": null
+  },
+  {
+   "id": "r-14",
+   "quelle": "e-18",
+   "ziel": "e-21",
+   "sorte": "echt",
+   "maess": {
+    "wert": null,
+    "basis": "verlinkt",
+    "gemessen": true
+   },
+   "feder": 0.5,
+   "belege": 1,
+   "erklaerung": {
+    "gemeinsame": [
+     "mentions"
+    ],
+    "art": "titel"
+   },
+   "validFrom": null,
+   "validTo": null
+  },
+  {
+   "id": "r-15",
+   "quelle": "e-16",
+   "ziel": "e-22",
+   "sorte": "echt",
+   "maess": {
+    "wert": null,
+    "basis": "verlinkt",
+    "gemessen": true
+   },
+   "feder": 0.5,
+   "belege": 1,
+   "erklaerung": {
+    "gemeinsame": [
+     "mentions"
+    ],
+    "art": "titel"
+   },
+   "validFrom": null,
+   "validTo": null
+  },
+  {
+   "id": "r-16",
+   "quelle": "e-23",
+   "ziel": "e-24",
+   "sorte": "echt",
+   "maess": {
+    "wert": null,
+    "basis": "verlinkt",
+    "gemessen": true
+   },
+   "feder": 0.5,
+   "belege": 1,
+   "erklaerung": {
+    "gemeinsame": [
+     "mentions"
+    ],
+    "art": "titel"
+   },
+   "validFrom": null,
+   "validTo": null
+  },
+  {
+   "id": "r-17",
+   "quelle": "e-23",
+   "ziel": "e-25",
+   "sorte": "echt",
+   "maess": {
+    "wert": null,
+    "basis": "verlinkt",
+    "gemessen": true
+   },
+   "feder": 0.5,
+   "belege": 1,
+   "erklaerung": {
+    "gemeinsame": [
+     "mentions"
+    ],
+    "art": "titel"
+   },
+   "validFrom": null,
+   "validTo": null
+  },
+  {
+   "id": "r-18",
+   "quelle": "e-26",
+   "ziel": "e-27",
+   "sorte": "echt",
+   "maess": {
+    "wert": null,
+    "basis": "verlinkt",
+    "gemessen": true
+   },
+   "feder": 0.5,
+   "belege": 1,
+   "erklaerung": {
+    "gemeinsame": [
+     "mentions"
+    ],
+    "art": "titel"
+   },
+   "validFrom": null,
+   "validTo": null
+  },
+  {
+   "id": "r-19",
+   "quelle": "e-12",
+   "ziel": "e-28",
+   "sorte": "echt",
+   "maess": {
+    "wert": null,
+    "basis": "verlinkt",
+    "gemessen": true
+   },
+   "feder": 0.5,
+   "belege": 1,
+   "erklaerung": {
+    "gemeinsame": [
+     "mentions"
+    ],
+    "art": "titel"
+   },
+   "validFrom": null,
+   "validTo": null
+  },
+  {
+   "id": "r-2",
+   "quelle": "e-4",
+   "ziel": "e-5",
+   "sorte": "echt",
+   "maess": {
+    "wert": null,
+    "basis": "verlinkt",
+    "gemessen": true
+   },
+   "feder": 0.5,
+   "belege": 1,
+   "erklaerung": {
+    "gemeinsame": [
+     "mentions"
+    ],
+    "art": "titel"
+   },
+   "validFrom": null,
+   "validTo": null
+  },
+  {
+   "id": "r-20",
+   "quelle": "e-5",
+   "ziel": "e-28",
+   "sorte": "echt",
+   "maess": {
+    "wert": null,
+    "basis": "verlinkt",
+    "gemessen": true
+   },
+   "feder": 0.5,
+   "belege": 1,
+   "erklaerung": {
+    "gemeinsame": [
+     "mentions"
+    ],
+    "art": "titel"
+   },
+   "validFrom": null,
+   "validTo": null
+  },
+  {
+   "id": "r-21",
+   "quelle": "e-29",
+   "ziel": "e-30",
+   "sorte": "echt",
+   "maess": {
+    "wert": null,
+    "basis": "verlinkt",
+    "gemessen": true
+   },
+   "feder": 0.5,
+   "belege": 1,
+   "erklaerung": {
+    "gemeinsame": [
+     "mentions"
+    ],
+    "art": "titel"
+   },
+   "validFrom": null,
+   "validTo": null
+  },
+  {
+   "id": "r-22",
+   "quelle": "e-32",
+   "ziel": "e-33",
+   "sorte": "echt",
+   "maess": {
+    "wert": null,
+    "basis": "verlinkt",
+    "gemessen": true
+   },
+   "feder": 0.5,
+   "belege": 1,
+   "erklaerung": {
+    "gemeinsame": [
+     "mentions"
+    ],
+    "art": "titel"
+   },
+   "validFrom": null,
+   "validTo": null
+  },
+  {
+   "id": "r-23",
+   "quelle": "e-2",
+   "ziel": "e-32",
+   "sorte": "echt",
+   "maess": {
+    "wert": null,
+    "basis": "verlinkt",
+    "gemessen": true
+   },
+   "feder": 0.5,
+   "belege": 1,
+   "erklaerung": {
+    "gemeinsame": [
+     "mentions"
+    ],
+    "art": "titel"
+   },
+   "validFrom": null,
+   "validTo": null
+  },
+  {
+   "id": "r-24",
+   "quelle": "e-13",
+   "ziel": "e-32",
+   "sorte": "echt",
+   "maess": {
+    "wert": null,
+    "basis": "verlinkt",
+    "gemessen": true
+   },
+   "feder": 0.5,
+   "belege": 1,
+   "erklaerung": {
+    "gemeinsame": [
+     "mentions"
+    ],
+    "art": "titel"
+   },
+   "validFrom": null,
+   "validTo": null
+  },
+  {
+   "id": "r-25",
+   "quelle": "e-32",
+   "ziel": "e-34",
+   "sorte": "echt",
+   "maess": {
+    "wert": null,
+    "basis": "verlinkt",
+    "gemessen": true
+   },
+   "feder": 0.5,
+   "belege": 1,
+   "erklaerung": {
+    "gemeinsame": [
+     "mentions"
+    ],
+    "art": "titel"
+   },
+   "validFrom": null,
+   "validTo": null
+  },
+  {
+   "id": "r-26",
+   "quelle": "e-35",
+   "ziel": "e-36",
+   "sorte": "echt",
+   "maess": {
+    "wert": null,
+    "basis": "verlinkt",
+    "gemessen": true
+   },
+   "feder": 0.5,
+   "belege": 1,
+   "erklaerung": {
+    "gemeinsame": [
+     "mentions"
+    ],
+    "art": "titel"
+   },
+   "validFrom": null,
+   "validTo": null
+  },
+  {
+   "id": "r-27",
+   "quelle": "e-9",
+   "ziel": "e-35",
+   "sorte": "echt",
+   "maess": {
+    "wert": null,
+    "basis": "verlinkt",
+    "gemessen": true
+   },
+   "feder": 0.5,
+   "belege": 1,
+   "erklaerung": {
+    "gemeinsame": [
+     "mentions"
+    ],
+    "art": "titel"
+   },
+   "validFrom": null,
+   "validTo": null
+  },
+  {
+   "id": "r-28",
+   "quelle": "e-19",
+   "ziel": "e-35",
+   "sorte": "echt",
+   "maess": {
+    "wert": null,
+    "basis": "verlinkt",
+    "gemessen": true
+   },
+   "feder": 0.5,
+   "belege": 1,
+   "erklaerung": {
+    "gemeinsame": [
+     "mentions"
+    ],
+    "art": "titel"
+   },
+   "validFrom": null,
+   "validTo": null
+  },
+  {
+   "id": "r-29",
+   "quelle": "e-34",
+   "ziel": "e-35",
+   "sorte": "echt",
+   "maess": {
+    "wert": null,
+    "basis": "verlinkt",
+    "gemessen": true
+   },
+   "feder": 0.5,
+   "belege": 1,
+   "erklaerung": {
+    "gemeinsame": [
+     "mentions"
+    ],
+    "art": "titel"
+   },
+   "validFrom": null,
+   "validTo": null
+  },
+  {
+   "id": "r-3",
+   "quelle": "e-7",
+   "ziel": "e-8",
+   "sorte": "echt",
+   "maess": {
+    "wert": null,
+    "basis": "verlinkt",
+    "gemessen": true
+   },
+   "feder": 0.5,
+   "belege": 1,
+   "erklaerung": {
+    "gemeinsame": [
+     "mentions"
+    ],
+    "art": "titel"
+   },
+   "validFrom": null,
+   "validTo": null
+  },
+  {
+   "id": "r-30",
+   "quelle": "e-25",
+   "ziel": "e-37",
+   "sorte": "echt",
+   "maess": {
+    "wert": null,
+    "basis": "verlinkt",
+    "gemessen": true
+   },
+   "feder": 0.5,
+   "belege": 1,
+   "erklaerung": {
+    "gemeinsame": [
+     "mentions"
+    ],
+    "art": "titel"
+   },
+   "validFrom": null,
+   "validTo": null
+  },
+  {
+   "id": "r-31",
+   "quelle": "e-37",
+   "ziel": "e-38",
+   "sorte": "echt",
+   "maess": {
+    "wert": null,
+    "basis": "verlinkt",
+    "gemessen": true
+   },
+   "feder": 0.5,
+   "belege": 1,
+   "erklaerung": {
+    "gemeinsame": [
+     "mentions"
+    ],
+    "art": "titel"
+   },
+   "validFrom": null,
+   "validTo": null
+  },
+  {
+   "id": "r-32",
+   "quelle": "e-37",
+   "ziel": "e-39",
+   "sorte": "echt",
+   "maess": {
+    "wert": null,
+    "basis": "verlinkt",
+    "gemessen": true
+   },
+   "feder": 0.5,
+   "belege": 1,
+   "erklaerung": {
+    "gemeinsame": [
+     "mentions"
+    ],
+    "art": "titel"
+   },
+   "validFrom": null,
+   "validTo": null
+  },
+  {
+   "id": "r-33",
+   "quelle": "e-39",
+   "ziel": "e-40",
+   "sorte": "echt",
+   "maess": {
+    "wert": null,
+    "basis": "verlinkt",
+    "gemessen": true
+   },
+   "feder": 0.5,
+   "belege": 1,
+   "erklaerung": {
+    "gemeinsame": [
+     "mentions"
+    ],
+    "art": "titel"
+   },
+   "validFrom": null,
+   "validTo": null
+  },
+  {
+   "id": "r-34",
+   "quelle": "e-40",
+   "ziel": "e-41",
+   "sorte": "echt",
+   "maess": {
+    "wert": null,
+    "basis": "verlinkt",
+    "gemessen": true
+   },
+   "feder": 0.5,
+   "belege": 1,
+   "erklaerung": {
+    "gemeinsame": [
+     "mentions"
+    ],
+    "art": "titel"
+   },
+   "validFrom": null,
+   "validTo": null
+  },
+  {
+   "id": "r-35",
+   "quelle": "e-20",
+   "ziel": "e-40",
+   "sorte": "echt",
+   "maess": {
+    "wert": null,
+    "basis": "verlinkt",
+    "gemessen": true
+   },
+   "feder": 0.5,
+   "belege": 1,
+   "erklaerung": {
+    "gemeinsame": [
+     "mentions"
+    ],
+    "art": "titel"
+   },
+   "validFrom": null,
+   "validTo": null
+  },
+  {
+   "id": "r-36",
+   "quelle": "e-42",
+   "ziel": "e-43",
+   "sorte": "echt",
+   "maess": {
+    "wert": null,
+    "basis": "verlinkt",
+    "gemessen": true
+   },
+   "feder": 0.5,
+   "belege": 1,
+   "erklaerung": {
+    "gemeinsame": [
+     "mentions"
+    ],
+    "art": "titel"
+   },
+   "validFrom": null,
+   "validTo": null
+  },
+  {
+   "id": "r-37",
+   "quelle": "e-33",
+   "ziel": "e-42",
+   "sorte": "echt",
+   "maess": {
+    "wert": null,
+    "basis": "verlinkt",
+    "gemessen": true
+   },
+   "feder": 0.5,
+   "belege": 1,
+   "erklaerung": {
+    "gemeinsame": [
+     "mentions"
+    ],
+    "art": "titel"
+   },
+   "validFrom": null,
+   "validTo": null
+  },
+  {
+   "id": "r-38",
+   "quelle": "e-44",
+   "ziel": "e-45",
+   "sorte": "echt",
+   "maess": {
+    "wert": null,
+    "basis": "verlinkt",
+    "gemessen": true
+   },
+   "feder": 0.5,
+   "belege": 1,
+   "erklaerung": {
+    "gemeinsame": [
+     "mentions"
+    ],
+    "art": "titel"
+   },
+   "validFrom": null,
+   "validTo": null
+  },
+  {
+   "id": "r-39",
+   "quelle": "e-44",
+   "ziel": "e-46",
+   "sorte": "echt",
+   "maess": {
+    "wert": null,
+    "basis": "verlinkt",
+    "gemessen": true
+   },
+   "feder": 0.5,
+   "belege": 1,
+   "erklaerung": {
+    "gemeinsame": [
+     "mentions"
+    ],
+    "art": "titel"
+   },
+   "validFrom": null,
+   "validTo": null
+  },
+  {
+   "id": "r-4",
+   "quelle": "e-7",
+   "ziel": "e-9",
+   "sorte": "echt",
+   "maess": {
+    "wert": null,
+    "basis": "verlinkt",
+    "gemessen": true
+   },
+   "feder": 0.5,
+   "belege": 1,
+   "erklaerung": {
+    "gemeinsame": [
+     "mentions"
+    ],
+    "art": "titel"
+   },
+   "validFrom": null,
+   "validTo": null
+  },
+  {
+   "id": "r-40",
+   "quelle": "e-19",
+   "ziel": "e-47",
+   "sorte": "echt",
+   "maess": {
+    "wert": null,
+    "basis": "verlinkt",
+    "gemessen": true
+   },
+   "feder": 0.5,
+   "belege": 1,
+   "erklaerung": {
+    "gemeinsame": [
+     "mentions"
+    ],
+    "art": "titel"
+   },
+   "validFrom": null,
+   "validTo": null
+  },
+  {
+   "id": "r-41",
+   "quelle": "e-47",
+   "ziel": "e-48",
+   "sorte": "echt",
+   "maess": {
+    "wert": null,
+    "basis": "verlinkt",
+    "gemessen": true
+   },
+   "feder": 0.5,
+   "belege": 1,
+   "erklaerung": {
+    "gemeinsame": [
+     "mentions"
+    ],
+    "art": "titel"
+   },
+   "validFrom": null,
+   "validTo": null
+  },
+  {
+   "id": "r-42",
+   "quelle": "e-9",
+   "ziel": "e-49",
+   "sorte": "echt",
+   "maess": {
+    "wert": null,
+    "basis": "verlinkt",
+    "gemessen": true
+   },
+   "feder": 0.5,
+   "belege": 1,
+   "erklaerung": {
+    "gemeinsame": [
+     "mentions"
+    ],
+    "art": "titel"
+   },
+   "validFrom": null,
+   "validTo": null
+  },
+  {
+   "id": "r-43",
+   "quelle": "e-16",
+   "ziel": "e-50",
+   "sorte": "echt",
+   "maess": {
+    "wert": null,
+    "basis": "verlinkt",
+    "gemessen": true
+   },
+   "feder": 0.5,
+   "belege": 1,
+   "erklaerung": {
+    "gemeinsame": [
+     "mentions"
+    ],
+    "art": "titel"
+   },
+   "validFrom": null,
+   "validTo": null
+  },
+  {
+   "id": "r-44",
+   "quelle": "e-11",
+   "ziel": "e-50",
+   "sorte": "echt",
+   "maess": {
+    "wert": null,
+    "basis": "verlinkt",
+    "gemessen": true
+   },
+   "feder": 0.5,
+   "belege": 1,
+   "erklaerung": {
+    "gemeinsame": [
+     "mentions"
+    ],
+    "art": "titel"
+   },
+   "validFrom": null,
+   "validTo": null
+  },
+  {
+   "id": "r-45",
+   "quelle": "e-17",
+   "ziel": "e-50",
+   "sorte": "echt",
+   "maess": {
+    "wert": null,
+    "basis": "verlinkt",
+    "gemessen": true
+   },
+   "feder": 0.5,
+   "belege": 1,
+   "erklaerung": {
+    "gemeinsame": [
+     "mentions"
+    ],
+    "art": "titel"
+   },
+   "validFrom": null,
+   "validTo": null
+  },
+  {
+   "id": "r-46",
+   "quelle": "e-17",
+   "ziel": "e-34",
+   "sorte": "echt",
+   "maess": {
+    "wert": null,
+    "basis": "verlinkt",
+    "gemessen": true
+   },
+   "feder": 0.5,
+   "belege": 1,
+   "erklaerung": {
+    "gemeinsame": [
+     "mentions"
+    ],
+    "art": "titel"
+   },
+   "validFrom": null,
+   "validTo": null
+  },
+  {
+   "id": "r-47",
+   "quelle": "e-7",
+   "ziel": "e-17",
+   "sorte": "echt",
+   "maess": {
+    "wert": null,
+    "basis": "verlinkt",
+    "gemessen": true
+   },
+   "feder": 0.5,
+   "belege": 1,
+   "erklaerung": {
+    "gemeinsame": [
+     "mentions"
+    ],
+    "art": "titel"
+   },
+   "validFrom": null,
+   "validTo": null
+  },
+  {
+   "id": "r-48",
+   "quelle": "e-9",
+   "ziel": "e-17",
+   "sorte": "echt",
+   "maess": {
+    "wert": null,
+    "basis": "verlinkt",
+    "gemessen": true
+   },
+   "feder": 0.5,
+   "belege": 1,
+   "erklaerung": {
+    "gemeinsame": [
+     "mentions"
+    ],
+    "art": "titel"
+   },
+   "validFrom": null,
+   "validTo": null
+  },
+  {
+   "id": "r-49",
+   "quelle": "e-7",
+   "ziel": "e-51",
+   "sorte": "echt",
+   "maess": {
+    "wert": null,
+    "basis": "verlinkt",
+    "gemessen": true
+   },
+   "feder": 0.5,
+   "belege": 1,
+   "erklaerung": {
+    "gemeinsame": [
+     "mentions"
+    ],
+    "art": "titel"
+   },
+   "validFrom": null,
+   "validTo": null
+  },
+  {
+   "id": "r-5",
+   "quelle": "e-10",
+   "ziel": "e-11",
+   "sorte": "echt",
+   "maess": {
+    "wert": null,
+    "basis": "verlinkt",
+    "gemessen": true
+   },
+   "feder": 0.5,
+   "belege": 1,
+   "erklaerung": {
+    "gemeinsame": [
+     "mentions"
+    ],
+    "art": "titel"
+   },
+   "validFrom": null,
+   "validTo": null
+  },
+  {
+   "id": "r-50",
+   "quelle": "e-25",
+   "ziel": "e-51",
+   "sorte": "echt",
+   "maess": {
+    "wert": null,
+    "basis": "verlinkt",
+    "gemessen": true
+   },
+   "feder": 0.5,
+   "belege": 1,
+   "erklaerung": {
+    "gemeinsame": [
+     "mentions"
+    ],
+    "art": "titel"
+   },
+   "validFrom": null,
+   "validTo": null
+  },
+  {
+   "id": "r-51",
+   "quelle": "e-25",
+   "ziel": "e-34",
+   "sorte": "echt",
+   "maess": {
+    "wert": null,
+    "basis": "verlinkt",
+    "gemessen": true
+   },
+   "feder": 0.5,
+   "belege": 1,
+   "erklaerung": {
+    "gemeinsame": [
+     "mentions"
+    ],
+    "art": "titel"
+   },
+   "validFrom": null,
+   "validTo": null
+  },
+  {
+   "id": "r-52",
+   "quelle": "e-34",
+   "ziel": "e-52",
+   "sorte": "echt",
+   "maess": {
+    "wert": null,
+    "basis": "verlinkt",
+    "gemessen": true
+   },
+   "feder": 0.5,
+   "belege": 1,
+   "erklaerung": {
+    "gemeinsame": [
+     "mentions"
+    ],
+    "art": "titel"
+   },
+   "validFrom": null,
+   "validTo": null
+  },
+  {
+   "id": "r-53",
+   "quelle": "e-51",
+   "ziel": "e-52",
+   "sorte": "echt",
+   "maess": {
+    "wert": null,
+    "basis": "verlinkt",
+    "gemessen": true
+   },
+   "feder": 0.5,
+   "belege": 1,
+   "erklaerung": {
+    "gemeinsame": [
+     "mentions"
+    ],
+    "art": "titel"
+   },
+   "validFrom": null,
+   "validTo": null
+  },
+  {
+   "id": "r-54",
+   "quelle": "e-33",
+   "ziel": "e-52",
+   "sorte": "echt",
+   "maess": {
+    "wert": null,
+    "basis": "verlinkt",
+    "gemessen": true
+   },
+   "feder": 0.5,
+   "belege": 1,
+   "erklaerung": {
+    "gemeinsame": [
+     "mentions"
+    ],
+    "art": "titel"
+   },
+   "validFrom": null,
+   "validTo": null
+  },
+  {
+   "id": "r-55",
+   "quelle": "e-9",
+   "ziel": "e-52",
+   "sorte": "echt",
+   "maess": {
+    "wert": null,
+    "basis": "verlinkt",
+    "gemessen": true
+   },
+   "feder": 0.5,
+   "belege": 1,
+   "erklaerung": {
+    "gemeinsame": [
+     "mentions"
+    ],
+    "art": "titel"
+   },
+   "validFrom": null,
+   "validTo": null
+  },
+  {
+   "id": "r-56",
+   "quelle": "e-25",
+   "ziel": "e-53",
+   "sorte": "echt",
+   "maess": {
+    "wert": null,
+    "basis": "verlinkt",
+    "gemessen": true
+   },
+   "feder": 0.5,
+   "belege": 1,
+   "erklaerung": {
+    "gemeinsame": [
+     "mentions"
+    ],
+    "art": "titel"
+   },
+   "validFrom": null,
+   "validTo": null
+  },
+  {
+   "id": "r-57",
+   "quelle": "e-48",
+   "ziel": "e-53",
+   "sorte": "echt",
+   "maess": {
+    "wert": null,
+    "basis": "verlinkt",
+    "gemessen": true
+   },
+   "feder": 0.5,
+   "belege": 1,
+   "erklaerung": {
+    "gemeinsame": [
+     "mentions"
+    ],
+    "art": "titel"
+   },
+   "validFrom": null,
+   "validTo": null
+  },
+  {
+   "id": "r-58",
+   "quelle": "e-30",
+   "ziel": "e-54",
+   "sorte": "echt",
+   "maess": {
+    "wert": null,
+    "basis": "verlinkt",
+    "gemessen": true
+   },
+   "feder": 0.5,
+   "belege": 1,
+   "erklaerung": {
+    "gemeinsame": [
+     "mentions"
+    ],
+    "art": "titel"
+   },
+   "validFrom": null,
+   "validTo": null
+  },
+  {
+   "id": "r-59",
+   "quelle": "e-45",
+   "ziel": "e-54",
+   "sorte": "echt",
+   "maess": {
+    "wert": null,
+    "basis": "verlinkt",
+    "gemessen": true
+   },
+   "feder": 0.5,
+   "belege": 1,
+   "erklaerung": {
+    "gemeinsame": [
+     "mentions"
+    ],
+    "art": "titel"
+   },
+   "validFrom": null,
+   "validTo": null
+  },
+  {
+   "id": "r-6",
+   "quelle": "e-10",
+   "ziel": "e-12",
+   "sorte": "echt",
+   "maess": {
+    "wert": null,
+    "basis": "verlinkt",
+    "gemessen": true
+   },
+   "feder": 0.5,
+   "belege": 1,
+   "erklaerung": {
+    "gemeinsame": [
+     "mentions"
+    ],
+    "art": "titel"
+   },
+   "validFrom": null,
+   "validTo": null
+  },
+  {
+   "id": "r-60",
+   "quelle": "e-21",
+   "ziel": "e-55",
+   "sorte": "echt",
+   "maess": {
+    "wert": null,
+    "basis": "verlinkt",
+    "gemessen": true
+   },
+   "feder": 0.5,
+   "belege": 1,
+   "erklaerung": {
+    "gemeinsame": [
+     "mentions"
+    ],
+    "art": "titel"
+   },
+   "validFrom": null,
+   "validTo": null
+  },
+  {
+   "id": "r-61",
+   "quelle": "e-48",
+   "ziel": "e-55",
+   "sorte": "echt",
+   "maess": {
+    "wert": null,
+    "basis": "verlinkt",
+    "gemessen": true
+   },
+   "feder": 0.5,
+   "belege": 1,
+   "erklaerung": {
+    "gemeinsame": [
+     "mentions"
+    ],
+    "art": "titel"
+   },
+   "validFrom": null,
+   "validTo": null
+  },
+  {
+   "id": "r-62",
+   "quelle": "e-27",
+   "ziel": "e-56",
+   "sorte": "echt",
+   "maess": {
+    "wert": null,
+    "basis": "verlinkt",
+    "gemessen": true
+   },
+   "feder": 0.5,
+   "belege": 1,
+   "erklaerung": {
+    "gemeinsame": [
+     "mentions"
+    ],
+    "art": "titel"
+   },
+   "validFrom": null,
+   "validTo": null
+  },
+  {
+   "id": "r-63",
+   "quelle": "e-16",
+   "ziel": "e-56",
+   "sorte": "echt",
+   "maess": {
+    "wert": null,
+    "basis": "verlinkt",
+    "gemessen": true
+   },
+   "feder": 0.5,
+   "belege": 1,
+   "erklaerung": {
+    "gemeinsame": [
+     "mentions"
+    ],
+    "art": "titel"
+   },
+   "validFrom": null,
+   "validTo": null
+  },
+  {
+   "id": "r-64",
+   "quelle": "e-11",
+   "ziel": "e-56",
+   "sorte": "echt",
+   "maess": {
+    "wert": null,
+    "basis": "verlinkt",
+    "gemessen": true
+   },
+   "feder": 0.5,
+   "belege": 1,
+   "erklaerung": {
+    "gemeinsame": [
+     "mentions"
+    ],
+    "art": "titel"
+   },
+   "validFrom": null,
+   "validTo": null
+  },
+  {
+   "id": "r-65",
+   "quelle": "e-48",
+   "ziel": "e-56",
+   "sorte": "echt",
+   "maess": {
+    "wert": null,
+    "basis": "verlinkt",
+    "gemessen": true
+   },
+   "feder": 0.5,
+   "belege": 1,
+   "erklaerung": {
+    "gemeinsame": [
+     "mentions"
+    ],
+    "art": "titel"
+   },
+   "validFrom": null,
+   "validTo": null
+  },
+  {
+   "id": "r-66",
+   "quelle": "e-34",
+   "ziel": "e-57",
+   "sorte": "echt",
+   "maess": {
+    "wert": null,
+    "basis": "verlinkt",
+    "gemessen": true
+   },
+   "feder": 0.5,
+   "belege": 1,
+   "erklaerung": {
+    "gemeinsame": [
+     "mentions"
+    ],
+    "art": "titel"
+   },
+   "validFrom": null,
+   "validTo": null
+  },
+  {
+   "id": "r-67",
+   "quelle": "e-15",
+   "ziel": "e-57",
+   "sorte": "echt",
+   "maess": {
+    "wert": null,
+    "basis": "verlinkt",
+    "gemessen": true
+   },
+   "feder": 0.5,
+   "belege": 1,
+   "erklaerung": {
+    "gemeinsame": [
+     "mentions"
+    ],
+    "art": "titel"
+   },
+   "validFrom": null,
+   "validTo": null
+  },
+  {
+   "id": "r-68",
+   "quelle": "e-27",
+   "ziel": "e-57",
+   "sorte": "echt",
+   "maess": {
+    "wert": null,
+    "basis": "verlinkt",
+    "gemessen": true
+   },
+   "feder": 0.5,
+   "belege": 1,
+   "erklaerung": {
+    "gemeinsame": [
+     "mentions"
+    ],
+    "art": "titel"
+   },
+   "validFrom": null,
+   "validTo": null
+  },
+  {
+   "id": "r-69",
+   "quelle": "e-34",
+   "ziel": "e-58",
+   "sorte": "echt",
+   "maess": {
+    "wert": null,
+    "basis": "verlinkt",
+    "gemessen": true
+   },
+   "feder": 0.5,
+   "belege": 1,
+   "erklaerung": {
+    "gemeinsame": [
+     "mentions"
+    ],
+    "art": "titel"
+   },
+   "validFrom": null,
+   "validTo": null
+  },
+  {
+   "id": "r-7",
+   "quelle": "e-10",
+   "ziel": "e-13",
+   "sorte": "echt",
+   "maess": {
+    "wert": null,
+    "basis": "verlinkt",
+    "gemessen": true
+   },
+   "feder": 0.5,
+   "belege": 1,
+   "erklaerung": {
+    "gemeinsame": [
+     "mentions"
+    ],
+    "art": "titel"
+   },
+   "validFrom": null,
+   "validTo": null
+  },
+  {
+   "id": "r-70",
+   "quelle": "e-11",
+   "ziel": "e-58",
+   "sorte": "echt",
+   "maess": {
+    "wert": null,
+    "basis": "verlinkt",
+    "gemessen": true
+   },
+   "feder": 0.5,
+   "belege": 1,
+   "erklaerung": {
+    "gemeinsame": [
+     "mentions"
+    ],
+    "art": "titel"
+   },
+   "validFrom": null,
+   "validTo": null
+  },
+  {
+   "id": "r-71",
+   "quelle": "e-33",
+   "ziel": "e-58",
+   "sorte": "echt",
+   "maess": {
+    "wert": null,
+    "basis": "verlinkt",
+    "gemessen": true
+   },
+   "feder": 0.5,
+   "belege": 1,
+   "erklaerung": {
+    "gemeinsame": [
+     "mentions"
+    ],
+    "art": "titel"
+   },
+   "validFrom": null,
+   "validTo": null
+  },
+  {
+   "id": "r-72",
+   "quelle": "e-20",
+   "ziel": "e-58",
+   "sorte": "echt",
+   "maess": {
+    "wert": null,
+    "basis": "verlinkt",
+    "gemessen": true
+   },
+   "feder": 0.5,
+   "belege": 1,
+   "erklaerung": {
+    "gemeinsame": [
+     "mentions"
+    ],
+    "art": "titel"
+   },
+   "validFrom": null,
+   "validTo": null
+  },
+  {
+   "id": "r-73",
+   "quelle": "e-34",
+   "ziel": "e-46",
+   "sorte": "echt",
+   "maess": {
+    "wert": null,
+    "basis": "verlinkt",
+    "gemessen": true
+   },
+   "feder": 0.5,
+   "belege": 1,
+   "erklaerung": {
+    "gemeinsame": [
+     "mentions"
+    ],
+    "art": "titel"
+   },
+   "validFrom": null,
+   "validTo": null
+  },
+  {
+   "id": "r-74",
+   "quelle": "e-25",
+   "ziel": "e-46",
+   "sorte": "echt",
+   "maess": {
+    "wert": null,
+    "basis": "verlinkt",
+    "gemessen": true
+   },
+   "feder": 0.5,
+   "belege": 1,
+   "erklaerung": {
+    "gemeinsame": [
+     "mentions"
+    ],
+    "art": "titel"
+   },
+   "validFrom": null,
+   "validTo": null
+  },
+  {
+   "id": "r-75",
+   "quelle": "e-39",
+   "ziel": "e-51",
+   "sorte": "echt",
+   "maess": {
+    "wert": null,
+    "basis": "verlinkt",
+    "gemessen": true
+   },
+   "feder": 0.5,
+   "belege": 1,
+   "erklaerung": {
+    "gemeinsame": [
+     "mentions"
+    ],
+    "art": "titel"
+   },
+   "validFrom": null,
+   "validTo": null
+  },
+  {
+   "id": "r-76",
+   "quelle": "e-34",
+   "ziel": "e-59",
+   "sorte": "echt",
+   "maess": {
+    "wert": null,
+    "basis": "verlinkt",
+    "gemessen": true
+   },
+   "feder": 0.5,
+   "belege": 1,
+   "erklaerung": {
+    "gemeinsame": [
+     "mentions"
+    ],
+    "art": "titel"
+   },
+   "validFrom": null,
+   "validTo": null
+  },
+  {
+   "id": "r-77",
+   "quelle": "e-36",
+   "ziel": "e-59",
+   "sorte": "echt",
+   "maess": {
+    "wert": null,
+    "basis": "verlinkt",
+    "gemessen": true
+   },
+   "feder": 0.5,
+   "belege": 1,
+   "erklaerung": {
+    "gemeinsame": [
+     "mentions"
+    ],
+    "art": "titel"
+   },
+   "validFrom": null,
+   "validTo": null
+  },
+  {
+   "id": "r-78",
+   "quelle": "e-51",
+   "ziel": "e-60",
+   "sorte": "echt",
+   "maess": {
+    "wert": null,
+    "basis": "verlinkt",
+    "gemessen": true
+   },
+   "feder": 0.5,
+   "belege": 1,
+   "erklaerung": {
+    "gemeinsame": [
+     "mentions"
+    ],
+    "art": "titel"
+   },
+   "validFrom": null,
+   "validTo": null
+  },
+  {
+   "id": "r-79",
+   "quelle": "e-17",
+   "ziel": "e-61",
+   "sorte": "echt",
+   "maess": {
+    "wert": null,
+    "basis": "verlinkt",
+    "gemessen": true
+   },
+   "feder": 0.5,
+   "belege": 1,
+   "erklaerung": {
+    "gemeinsame": [
+     "mentions"
+    ],
+    "art": "titel"
+   },
+   "validFrom": null,
+   "validTo": null
+  },
+  {
+   "id": "r-8",
+   "quelle": "e-14",
+   "ziel": "e-15",
+   "sorte": "echt",
+   "maess": {
+    "wert": null,
+    "basis": "verlinkt",
+    "gemessen": true
+   },
+   "feder": 0.5,
+   "belege": 1,
+   "erklaerung": {
+    "gemeinsame": [
+     "mentions"
+    ],
+    "art": "titel"
+   },
+   "validFrom": null,
+   "validTo": null
+  },
+  {
+   "id": "r-80",
+   "quelle": "e-7",
+   "ziel": "e-8",
+   "sorte": "echt",
+   "maess": {
+    "wert": null,
+    "basis": "verlinkt",
+    "gemessen": true
+   },
+   "feder": 0.5,
+   "belege": 1,
+   "erklaerung": {
+    "gemeinsame": [
+     "mentions"
+    ],
+    "art": "titel"
+   },
+   "validFrom": null,
+   "validTo": null
+  },
+  {
+   "id": "r-81",
+   "quelle": "e-4",
+   "ziel": "e-5",
+   "sorte": "echt",
+   "maess": {
+    "wert": null,
+    "basis": "verlinkt",
+    "gemessen": true
+   },
+   "feder": 0.5,
+   "belege": 1,
+   "erklaerung": {
+    "gemeinsame": [
+     "mentions"
+    ],
+    "art": "titel"
+   },
+   "validFrom": null,
+   "validTo": null
+  },
+  {
+   "id": "r-82",
+   "quelle": "e-5",
+   "ziel": "e-34",
+   "sorte": "echt",
+   "maess": {
+    "wert": null,
+    "basis": "verlinkt",
+    "gemessen": true
+   },
+   "feder": 0.5,
+   "belege": 1,
+   "erklaerung": {
+    "gemeinsame": [
+     "mentions"
+    ],
+    "art": "titel"
+   },
+   "validFrom": null,
+   "validTo": null
+  },
+  {
+   "id": "r-83",
+   "quelle": "e-48",
+   "ziel": "e-62",
+   "sorte": "echt",
+   "maess": {
+    "wert": null,
+    "basis": "verlinkt",
+    "gemessen": true
+   },
+   "feder": 0.5,
+   "belege": 1,
+   "erklaerung": {
+    "gemeinsame": [
+     "mentions"
+    ],
+    "art": "titel"
+   },
+   "validFrom": null,
+   "validTo": null
+  },
+  {
+   "id": "r-84",
+   "quelle": "e-20",
+   "ziel": "e-62",
+   "sorte": "echt",
+   "maess": {
+    "wert": null,
+    "basis": "verlinkt",
+    "gemessen": true
+   },
+   "feder": 0.5,
+   "belege": 1,
+   "erklaerung": {
+    "gemeinsame": [
+     "mentions"
+    ],
+    "art": "titel"
+   },
+   "validFrom": null,
+   "validTo": null
+  },
+  {
+   "id": "r-85",
+   "quelle": "e-25",
+   "ziel": "e-63",
+   "sorte": "echt",
+   "maess": {
+    "wert": null,
+    "basis": "verlinkt",
+    "gemessen": true
+   },
+   "feder": 0.5,
+   "belege": 1,
+   "erklaerung": {
+    "gemeinsame": [
+     "mentions"
+    ],
+    "art": "titel"
+   },
+   "validFrom": null,
+   "validTo": null
+  },
+  {
+   "id": "r-86",
+   "quelle": "e-9",
+   "ziel": "e-63",
+   "sorte": "echt",
+   "maess": {
+    "wert": null,
+    "basis": "verlinkt",
+    "gemessen": true
+   },
+   "feder": 0.5,
+   "belege": 1,
+   "erklaerung": {
+    "gemeinsame": [
+     "mentions"
+    ],
+    "art": "titel"
+   },
+   "validFrom": null,
+   "validTo": null
+  },
+  {
+   "id": "r-87",
+   "quelle": "e-33",
+   "ziel": "e-63",
+   "sorte": "echt",
+   "maess": {
+    "wert": null,
+    "basis": "verlinkt",
+    "gemessen": true
+   },
+   "feder": 0.5,
+   "belege": 1,
+   "erklaerung": {
+    "gemeinsame": [
+     "mentions"
+    ],
+    "art": "titel"
+   },
+   "validFrom": null,
+   "validTo": null
+  },
+  {
+   "id": "r-88",
+   "quelle": "e-34",
+   "ziel": "e-64",
+   "sorte": "echt",
+   "maess": {
+    "wert": null,
+    "basis": "verlinkt",
+    "gemessen": true
+   },
+   "feder": 0.5,
+   "belege": 1,
+   "erklaerung": {
+    "gemeinsame": [
+     "mentions"
+    ],
+    "art": "titel"
+   },
+   "validFrom": null,
+   "validTo": null
+  },
+  {
+   "id": "r-89",
+   "quelle": "e-51",
+   "ziel": "e-64",
+   "sorte": "echt",
+   "maess": {
+    "wert": null,
+    "basis": "verlinkt",
+    "gemessen": true
+   },
+   "feder": 0.5,
+   "belege": 1,
+   "erklaerung": {
+    "gemeinsame": [
+     "mentions"
+    ],
+    "art": "titel"
+   },
+   "validFrom": null,
+   "validTo": null
+  },
+  {
+   "id": "r-9",
+   "quelle": "e-14",
+   "ziel": "e-16",
+   "sorte": "echt",
+   "maess": {
+    "wert": null,
+    "basis": "verlinkt",
+    "gemessen": true
+   },
+   "feder": 0.5,
+   "belege": 1,
+   "erklaerung": {
+    "gemeinsame": [
+     "mentions"
+    ],
+    "art": "titel"
+   },
+   "validFrom": null,
+   "validTo": null
+  },
+  {
+   "id": "r-90",
+   "quelle": "e-30",
+   "ziel": "e-69",
+   "sorte": "echt",
+   "maess": {
+    "wert": null,
+    "basis": "verlinkt",
+    "gemessen": true
+   },
+   "feder": 0.5,
+   "belege": 1,
+   "erklaerung": {
+    "gemeinsame": [
+     "mentions"
+    ],
+    "art": "titel"
+   },
+   "validFrom": null,
+   "validTo": null
+  },
+  {
+   "id": "r-91",
+   "quelle": "e-34",
+   "ziel": "e-70",
+   "sorte": "echt",
+   "maess": {
+    "wert": null,
+    "basis": "verlinkt",
+    "gemessen": true
+   },
+   "feder": 0.5,
+   "belege": 1,
+   "erklaerung": {
+    "gemeinsame": [
+     "mentions"
+    ],
+    "art": "titel"
+   },
+   "validFrom": null,
+   "validTo": null
+  },
+  {
+   "id": "r-92",
+   "quelle": "e-16",
+   "ziel": "e-71",
+   "sorte": "echt",
+   "maess": {
+    "wert": null,
+    "basis": "verlinkt",
+    "gemessen": true
+   },
+   "feder": 0.5,
+   "belege": 1,
+   "erklaerung": {
+    "gemeinsame": [
+     "mentions"
+    ],
+    "art": "titel"
+   },
+   "validFrom": null,
+   "validTo": null
+  },
+  {
+   "id": "r-93",
+   "quelle": "e-36",
+   "ziel": "e-71",
+   "sorte": "echt",
+   "maess": {
+    "wert": null,
+    "basis": "verlinkt",
+    "gemessen": true
+   },
+   "feder": 0.5,
+   "belege": 1,
+   "erklaerung": {
+    "gemeinsame": [
+     "mentions"
+    ],
+    "art": "titel"
+   },
+   "validFrom": null,
+   "validTo": null
+  },
+  {
+   "id": "r-94",
+   "quelle": "e-53",
+   "ziel": "e-72",
+   "sorte": "echt",
+   "maess": {
+    "wert": null,
+    "basis": "verlinkt",
+    "gemessen": true
+   },
+   "feder": 0.5,
+   "belege": 1,
+   "erklaerung": {
+    "gemeinsame": [
+     "mentions"
+    ],
+    "art": "titel"
+   },
+   "validFrom": null,
+   "validTo": null
+  },
+  {
+   "id": "r-95",
+   "quelle": "e-25",
+   "ziel": "e-73",
+   "sorte": "echt",
+   "maess": {
+    "wert": null,
+    "basis": "verlinkt",
+    "gemessen": true
+   },
+   "feder": 0.5,
+   "belege": 1,
+   "erklaerung": {
+    "gemeinsame": [
+     "mentions"
+    ],
+    "art": "titel"
+   },
+   "validFrom": null,
+   "validTo": null
+  },
+  {
+   "id": "r-96",
+   "quelle": "e-11",
+   "ziel": "e-74",
+   "sorte": "echt",
+   "maess": {
+    "wert": null,
+    "basis": "verlinkt",
+    "gemessen": true
+   },
+   "feder": 0.5,
+   "belege": 1,
+   "erklaerung": {
+    "gemeinsame": [
+     "mentions"
+    ],
+    "art": "titel"
+   },
+   "validFrom": null,
+   "validTo": null
+  },
+  {
+   "id": "r-97",
+   "quelle": "e-2",
+   "ziel": "e-74",
+   "sorte": "echt",
+   "maess": {
+    "wert": null,
+    "basis": "verlinkt",
+    "gemessen": true
+   },
+   "feder": 0.5,
+   "belege": 1,
+   "erklaerung": {
+    "gemeinsame": [
+     "mentions"
+    ],
+    "art": "titel"
+   },
+   "validFrom": null,
+   "validTo": null
+  },
+  {
+   "id": "r-98",
+   "quelle": "e-21",
+   "ziel": "e-75",
+   "sorte": "echt",
+   "maess": {
+    "wert": null,
+    "basis": "verlinkt",
+    "gemessen": true
+   },
+   "feder": 0.5,
+   "belege": 1,
+   "erklaerung": {
+    "gemeinsame": [
+     "mentions"
+    ],
+    "art": "titel"
+   },
+   "validFrom": null,
+   "validTo": null
+  },
+  {
+   "id": "r-99",
+   "quelle": "e-19",
+   "ziel": "e-75",
+   "sorte": "echt",
+   "maess": {
+    "wert": null,
+    "basis": "verlinkt",
+    "gemessen": true
+   },
+   "feder": 0.5,
+   "belege": 1,
+   "erklaerung": {
+    "gemeinsame": [
+     "mentions"
+    ],
+    "art": "titel"
+   },
+   "validFrom": null,
+   "validTo": null
+  }
+ ]
+}

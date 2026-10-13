@@ -1,0 +1,38 @@
+KEPTA Ablation — Retrieval-Beine einzeln, Hit@1 in Prozent
+Node v26.8.1, arm64
+Befehl: npx tsx scripts/ablation.ts --json   (Kern-Repo, Stand e70da08 + uncommittete README-Arbeit)
+Korpus: 58 Notizen, 45 Anfragen, Embeddings über lokales Ollama (nomic-embed-text), Store in mkdtemp(tmpdir)
+Dieser Lauf misst Genauigkeit, nicht Zeit — deshalb ist hier keine Ruhe-Sonde am Werk und keine
+Latenzzahl zu lesen. Drei Läufe hintereinander, alle EXIT 0, alle bytegleich in den sechs Hit@1-Werten.
+Endzeitpunkte sind `stat`-mtime der JSON-Ausgaben, nicht behauptet:
+  Lauf 1 2026-10-12T21:25:34Z   Lauf 2 2026-10-12T21:26:27Z   Lauf 3 2026-10-12T21:26:33Z
+
+LAUF 1  BM25 allein=71.1  Vektor allein=73.3  Graph allein=11.1  BM25+Vektor=77.8  BM25+Graph=71.1  Alle drei (RRF)=75.6
+LAUF 2  BM25 allein=71.1  Vektor allein=73.3  Graph allein=11.1  BM25+Vektor=77.8  BM25+Graph=71.1  Alle drei (RRF)=75.6
+LAUF 3  BM25 allein=71.1  Vektor allein=73.3  Graph allein=11.1  BM25+Vektor=77.8  BM25+Graph=71.1  Alle drei (RRF)=75.6
+
+Gerundet auf die Stellenzahl des Papiers (Readme nennt ganze Prozent):
+  Volltext allein            Hit@1 71 %   (41/45 Treffer, MRR 0.7595)
+  Volltext + Graph           Hit@1 71 %   (41/45 Treffer, MRR 0.7595)  — Zuwachs +0 Prozentpunkte
+  Volltext + Vektoren        Hit@1 78 %   (45/45 Treffer, MRR 0.8232)  — Zuwachs +7 Prozentpunkte
+  Alle drei (RRF)            Hit@1 76 %   (45/45 Treffer, MRR 0.8121)  — Graph auf dem Paar: -2 Prozentpunkte
+  Graph allein               Hit@1 11 %   (5/45 Treffer,  MRR 0.1111)
+  Vektor allein              Hit@1 73 %   (44/45 Treffer, MRR 0.7637)
+
+Pro Kategorie (Hit@1, Volltext allein / Volltext + Vektoren / Alle drei):
+  lexikalisch   0.92 / 1.00 / 0.96
+  umschreibung  0.30 / 0.30 / 0.30
+  graph         1.00 / 1.00 / 1.00
+  ablenkung     0.25 / 0.50 / 0.50
+  temporal      0.67 / 0.67 / 0.67
+
+Gegen den Stand von 09.10.2026, den das Papier vorher nannte: Volltext 71 %, +Graph 71 %, +Vektoren 78 %,
+Graph allein 11 % — dieselben vier Zahlen. Eine hat sich bewegt: „alle drei" brachte 78 % und bringt
+heute 76 %. Die Readme nennt seit diesem Lauf 76 % und sagt dazu, dass die Graph-Kante auf dem Paar
+zwei Punkte kostet, nicht null.
+
+Rohdaten der drei Läufe (JSON, unverändert):
+LAUF 1 = {"queries":45,"korpus":58,"vektoren":true,"werte":[{"name":"BM25 allein","hit1":0.7111111111111111,"p5":0.20888888888888885,"mrr":0.7594708994708993,"treffer":41},{"name":"Vektor allein","hit1":0.7333333333333333,"p5":0.2,"mrr":0.7637037037037036,"treffer":44},{"name":"Graph allein","hit1":0.1111111111111111,"p5":0.039999999999999994,"mrr":0.1111111111111111,"treffer":5},{"name":"BM25 + Vektor","hit1":0.7777777777777778,"p5":0.23111111111111113,"mrr":0.8231746031746032,"treffer":45},{"name":"BM25 + Graph","hit1":0.7111111111111111,"p5":0.20888888888888885,"mrr":0.7594708994708993,"treffer":41},{"name":"Alle drei (RRF)","hit1":0.7555555555555555,"p5":0.23111111111111113,"mrr":0.8120634920634922,"treffer":45}]}
+LAUF 2 = dieselben sechs hit1-Werte, bytegleich
+LAUF 3 = dieselben sechs hit1-Werte, bytegleich
+Dieser Stand des Logs: 2026-10-12T21:33:44Z (UTC), gefahren aus /tmp/r1-ablation.json, /tmp/r1-ablation-2.json, /tmp/r1-ablation-3.json

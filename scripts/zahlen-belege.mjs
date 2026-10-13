@@ -28,11 +28,12 @@
 // geprueft, deshalb faellt ein falsches Glied trotzdem rot — aber nur, wenn ein weiteres
 // Glied ebenfalls fehlt. Straenger geht es nicht, ohne korrekte Papiere rot zu machen.
 //
-// Classe "Zahl mit Messgroesse, aber ohne Artefakt-Zitat" ist Inventar, kein Befund —
-// sonst laeuft die Wache mitten in einer Welle mit hunderten Zahlen unter lauter roten
-// Zeilen unter und die vier echten Fundstellen sind nicht mehr zu sehen. Welche Dateien
-// hart drauf stehen, steht in AUFPFLICHTUNGEN (datei-scharf, mit Grund) und wird nur mit
-// --pflicht rot. `--inventar` zaehlt beides.
+// Classe "Zahl mit Messgroesse, aber ohne Artefakt-Zitat" ist in den Pflichtdateien ein
+// BEFUND, sonst Inventar — Pflicht seit der Leitung (12.10. 20:5x): "eine Messzahl in
+// README.md oder README.de.md ohne zitiertes Artefakt ist ab jetzt ein Befund, kein
+// Posten in einer Statistik". Welche Dateien hart drauf stehen, steht in AUFPFLICHTUNGEN
+// (datei-scharf, mit Grund, kein wildcard). `--ohne-pflicht` und `--inventar` zaehlen sie
+// als Erfassung — ein Erfassungslauf ist kein Urteil, und er geht deshalb mit 0 raus.
 //
 // Suite-Zahlen sind NICHT dieses Skripts: 982/996-Faelle und Testdatei-Anzahl haelt
 // scripts/doku-check.mjs an einem echten Lauf fest — eine Zahl, eine Haendlerin.
@@ -40,7 +41,7 @@
 // Usage:
 //   node scripts/zahlen-belege.mjs                // pruefen, exit 1 bei Befund
 //   node scripts/zahlen-belege.mjs --inventar     // Schaetzungen zaehlen, exit 0
-//   node scripts/zahlen-belege.mjs --pflicht      // Pflichtdateien: Zahl ohne Zitat auch rot
+//   node scripts/zahlen-belege.mjs --ohne-pflicht // Pflichtdateien nur gezaehlt
 //   node scripts/zahlen-belege.mjs --datei=PFAD   // nur eine Datei (Fixtures)
 //   node scripts/zahlen-belege.mjs --wurzel=PFAD  // anderer Baum (Tests)
 import { execFileSync } from "node:child_process";
@@ -50,8 +51,8 @@ import path from "node:path";
 export const ENDUNGEN = [".log", ".json", ".txt", ".csv"];
 
 /**
- * @typedef {{datei: string, zeile: number, zahl: string, einheit?: string, art: string, zitat?: string, sageDieDatei?: string, grund?: string, alternativen?: string[]}} ZahlenBefund
- * @typedef {{datei: string, behauptungen: number, mitBeleg: number, ohneZitat: number, sollwert: number, umgeleitet: number, zweitbeleg: number, pflicht: boolean}} ZahlenInventar
+ * @typedef {{datei: string, zeile: number, zahl: string, einheit?: string, art: string, zitat?: string, sageDieDatei?: string, grund?: string, alternativen?: string[], lage?: string}} ZahlenBefund
+ * @typedef {{datei: string, behauptungen: number, mitBeleg: number, ohneZitat: number, pflichtOhneZitat: number, sollwert: number, umgeleitet: number, zweitbeleg: number, pflicht: boolean}} ZahlenInventar
  * @typedef {{zahl: string, roh: string, einheit: string, dezimalen: number, art: string, soll: boolean, zeile: number, zitate: string[], papiere: string[], verweise: string[]}} ZahlenBehauptung
  * @typedef {{werte: Set<string>, zahlenwerte: number[], zeilen: {text: string, werte: Set<string>}[], fehler?: string}} ZahlenArtefakt
  */
@@ -111,21 +112,21 @@ export const UMLEITUNGEN = [
     datei: "CHANGELOG.md",
     zahl: "0.932",
     einheit: "%",
-    belegtIn: "audit-2026-10-09/e2-code/nacht-12-10/rohdaten/flaechenanteil-1441.log",
-    grund: "die app misst ihre eigene Flaeche; der Kern zitiert ihre Zahl in einer Zeile, die den Kern-Log nennt",
+    belegtIn: "docs/belege/nacht-12-10/flaechenanteil-1441.log.txt",
+    grund: "die app misst ihre eigene Flaeche; der Kern zitiert ihre Zahl in einer Zeile, die den Kern-Log nennt — der Beleg liegt jetzt im Repo, nicht auf dem Schreibtisch",
   },
   {
     datei: "CHANGELOG.md",
     zahl: "0.540",
     einheit: "%",
-    belegtIn: "audit-2026-10-09/e2-code/nacht-12-10/rohdaten/flaechenanteil-1441.log",
+    belegtIn: "docs/belege/nacht-12-10/flaechenanteil-1441.log.txt",
     grund: "dieselbe Flaechenmessung der app, zweites Glied der Serie",
   },
   {
     datei: "CHANGELOG.md",
     zahl: "0.414",
     einheit: "%",
-    belegtIn: "audit-2026-10-09/e2-code/nacht-12-10/rohdaten/flaechenanteil-1441.log",
+    belegtIn: "docs/belege/nacht-12-10/flaechenanteil-1441.log.txt",
     grund: "dieselbe Flaechenmessung der app, drittes Glied der Serie",
   },
 ];
@@ -396,7 +397,14 @@ function indexVon(wurzel, cache) {
 export function suchBasis(wurzel) {
   const home = process.env.HOME ?? "";
   const mappe = process.env.KEPTA_ARBEITSMAPPE ?? path.join(home, "Desktop", "ki gehirn");
-  const nachbarn = (process.env.KEPTA_NACHBARN ?? "kepta-core,kepta-app,kepta-enterprise").split(",").map((n) => path.join(home, n.trim()));
+  // Ein leerer KEPTA_NACHBARN darf NICHT zur Wohnung werden: path.join(home, "") ist home,
+  // und ein Index ueber ~ sucht Beweise dort, wo ein Runner keine hat (gemessen 12.10.:
+  // die CI-Simulationloeste ein audit-…-Pfad ueber ~ auf). Leere Felder fallen weg.
+  const nachbarn = (process.env.KEPTA_NACHBARN ?? "kepta-core,kepta-app,kepta-enterprise")
+    .split(",")
+    .map((n) => n.trim())
+    .filter(Boolean)
+    .map((n) => path.join(home, n));
   return [...new Set([wurzel, mappe, ...nachbarn])].filter((p) => p && fs.existsSync(p));
 }
 
@@ -601,12 +609,49 @@ function besteZeile(artefakt, anker) {
 }
 
 /**
+ * Die getrackten Dateien des Baums — einmal pro Lauf. Ein Beleg, den `git ls-files` nicht
+ * kennt, ist kein Beleg: er existiert nur auf dem Schreibtisch oder als Nebenprodukt eines
+ * Laufs (`test-results/vitest.json` ist beides — ignoriert und weg, wer neu auspackt).
+ * Ohne git (frisches Auspacken, Runner ohne Historie) gilt jede Datei auf der Platte als
+ * getrackt — in einer Auspackung ist das, was da ist, genau das, was commitet ist.
+ * @param {string} wurzel
+ * @param {Map<string, Set<string>>} cache
+ */
+function getracktVon(wurzel, cache) {
+  if (cache.has(wurzel)) return cache.get(wurzel);
+  /** @type {Set<string>} */
+  let menge;
+  try {
+    menge = new Set(execFileSync("git", ["ls-files", "-z"], { cwd: wurzel, encoding: "utf8" }).split("\0").filter(Boolean));
+  } catch {
+    menge = null;
+  }
+  cache.set(wurzel, menge);
+  return menge;
+}
+
+/**
+ * Ein LaufProdukt ist per Definition kein Beweis fuer jemand anderen: es entsteht erst,
+ * wenn ein Test laeuft, und der Reporter-Ordner ist ignoriert.
+ * @param {string} relativ
+ */
+function istLaufprodukt(relativ) {
+  return relativ.startsWith("test-results/") || relativ.startsWith("coverage/");
+}
+
+/**
  * Der Kern: Behauptungen gegen die zitierten Artefakte.
  * @param {{wurzel: string, datei: string, text: string, suche?: string[], pflicht?: boolean}} optionen
  * @returns {{befunde: ZahlenBefund[], inventar: ZahlenInventar}}
  */
-export function pruefeDoku({ wurzel, datei, text, suche, pflicht = false }) {
+export function pruefeDoku({ wurzel, datei, text, suche, pflicht = true }) {
   const basis = suche ?? [...new Set([path.dirname(path.join(wurzel, datei)), ...suchBasis(wurzel)])];
+  let wurzelReal = path.resolve(wurzel);
+  try {
+    wurzelReal = fs.realpathSync(wurzel);
+  } catch {
+    /* die Wurzel existiert nicht — dann ist der aufloeste Pfad schon die beste Wahrheit */
+  }
   const behauptungen = findeBehauptungen(text);
   /** @type {ZahlenBefund[]} */
   const befunde = [];
@@ -616,9 +661,33 @@ export function pruefeDoku({ wurzel, datei, text, suche, pflicht = false }) {
   const geoeffnet = new Map();
   /** @type {Map<string, string[]>} */
   const index = LAUF_INDEX;
+  /** @type {Map<string, Set<string>|null>} */
+  const getrackt = new Map();
   const pflichtDatei = AUFPFLICHTUNGEN.some((a) => a.datei === datei);
+  /**
+   * Wo liegt ein geloester Beleg, und gilt er fuer die Oeffentlichkeit? Ein Pfad ausserhalb
+   * des Baums, ein ungetrackter im Baum und ein Laufprodukt sind alle dasselbe: Beweis fuer
+   * den einen Schreibtisch, toter Link fuer jeden Runner und jeden Kunden.
+   * @param {string} absolut
+   * @returns {{art: string, lage: string}|null} null = gilt als Repo-Beweis
+   */
+  const einordnung = (absolut) => {
+    const relativ = path.relative(wurzelReal, absolut).replace(/\\/g, "/");
+    if (relativ.startsWith("..")) return { art: "beleg-nicht-im-repo", lage: absolut };
+    // Fixtures sind Testdaten, keine Repo-Beweise: sie darf die Wache nicht auf
+    // Getracktheit pruefen — sonst macht jede eigene Fixtur ihren Pruefer rot, weil
+    // die Testdatei per Definition nur auf der Platte liegt. Pruefen muss den
+    // ABSOLUTEN Pfad — relativ zur Fixture-Wurzel faellt das Wort "fixtures" weg.
+    if (absolut.split("/").includes("fixtures")) return null;
+    const menge = getracktVon(wurzel, getrackt);
+    if (menge !== null && !menge.has(relativ)) {
+      return { art: istLaufprodukt(relativ) ? "beleg-nur-im-lauf" : "beleg-nicht-getrackt", lage: relativ };
+    }
+    return null;
+  };
   let mitBeleg = 0;
   let ohneZitat = 0;
+  let pflichtOhneZitat = 0;
   let sollwert = 0;
   let umgeleitet = 0;
   let zweitbeleg = 0;
@@ -629,6 +698,7 @@ export function pruefeDoku({ wurzel, datei, text, suche, pflicht = false }) {
     }
     if (b.zitate.length === 0 && b.papiere.length === 0) {
       ohneZitat += 1;
+      if (pflichtDatei) pflichtOhneZitat += 1;
       if (pflicht && pflichtDatei) {
         befunde.push({ datei, zeile: b.zeile, zahl: b.roh, einheit: b.einheit, art: "pflicht-ohne-zitat" });
       }
@@ -638,6 +708,8 @@ export function pruefeDoku({ wurzel, datei, text, suche, pflicht = false }) {
     let belegt = false;
     /** @type {string[]} */
     const sagen = [];
+    /** @type {ZahlenBefund[]} */
+    const privateBelege = [];
     let einProtokollGeoeffnet = false;
     for (const zitat of b.zitate) {
       if (!aufgeloest.has(zitat)) aufgeloest.set(zitat, loeseZitat(zitat, basis, index));
@@ -661,6 +733,11 @@ export function pruefeDoku({ wurzel, datei, text, suche, pflicht = false }) {
         befunde.push({ datei, zeile: b.zeile, zahl: b.roh, art: "artefakt-unlesbar", zitat, grund: artefakt.fehler });
         continue;
       }
+      const privat = einordnung(absolut);
+      if (privat) {
+        privateBelege.push({ datei, zeile: b.zeile, zahl: b.roh, einheit: b.einheit, art: privat.art, zitat, lage: privat.lage });
+        continue;
+      }
       if (imArtefakt(artefakt, b)) {
         belegt = true;
         continue;
@@ -676,6 +753,7 @@ export function pruefeDoku({ wurzel, datei, text, suche, pflicht = false }) {
       // Nur Dateinamen, die keine Protokolle sind: die Zeile hat keinen Beleg, aber sie
       // luegt auch nicht — sie gehoert in die Erfassung, nicht in den Befund.
       ohneZitat += 1;
+      if (pflichtDatei) pflichtOhneZitat += 1;
       if (pflicht && pflichtDatei) {
         befunde.push({ datei, zeile: b.zeile, zahl: b.roh, einheit: b.einheit, art: "pflicht-ohne-zitat" });
       }
@@ -717,6 +795,15 @@ export function pruefeDoku({ wurzel, datei, text, suche, pflicht = false }) {
         befunde.push({ datei, zeile: b.zeile, zahl: b.roh, art: "artefakt-unlesbar", zitat: papier, grund: p.fehler });
         continue;
       }
+      const privatPapier = einordnung(orte[0]);
+      if (privatPapier) {
+        // Ein Beleg zweiter Hand deckt keinen Befund zu: ein Papier, das nur auf meinem
+        // Tisch liegt, bestaetigt einer Zahl ebenso wenig wie ein Log, das dort liegt.
+        // (Dieses Loch sass in der ersten Fassung und hats Zeile 15 der CHANGELOG still
+        // durchgewinkt — gemessen 12.10., 38 Behauptungen ohne Befund.)
+        privateBelege.push({ datei, zeile: b.zeile, zahl: b.roh, einheit: b.einheit, art: privatPapier.art, zitat: papier, lage: privatPapier.lage });
+        continue;
+      }
       if (imArtefakt(p, b)) {
         papierTreffer.push(path.basename(orte[0]));
       } else {
@@ -725,6 +812,13 @@ export function pruefeDoku({ wurzel, datei, text, suche, pflicht = false }) {
     }
     if (papierTreffer.length > 0) {
       zweitbeleg += 1;
+      continue;
+    }
+    if (privateBelege.length > 0 && sagen.length === 0) {
+      // Ein Befund pro Behauptung, auch wenn drei Zitate privat sind: der erste nennt
+      // die Datei, der Rest haengt als Zahl dran — sonst versaeuft die Meldung.
+      const [erster, ...rest] = privateBelege;
+      befunde.push({ ...erster, sageDieDatei: rest.length > 0 ? `${rest.length} weitere Zitate derselben Art (${[...new Set(rest.map((p) => p.art))].join(", ")})` : undefined });
       continue;
     }
     if (sagen.length > 0) {
@@ -746,16 +840,22 @@ export function pruefeDoku({ wurzel, datei, text, suche, pflicht = false }) {
   }
   return {
     befunde,
-    inventar: { datei, behauptungen: behauptungen.length, mitBeleg, ohneZitat, sollwert, umgeleitet, zweitbeleg, pflicht: pflichtDatei },
+    inventar: { datei, behauptungen: behauptungen.length, mitBeleg, ohneZitat, pflichtOhneZitat, sollwert, umgeleitet, zweitbeleg, pflicht: pflichtDatei },
   };
 }
 
 /** Markdown-Dateien des Baums — ueber git, damit ignorierte Ordner nicht mitzaehlen. */
 export function mdDateien(wurzel) {
+  // Fixture-Papiere sind nicht die Doku: sie fuehren der Wache absichtlich Fehler vor
+  // (tests/fixtures/zahlen-belege/schlecht), und ihr Befund ist die Aufgabe des Tests,
+  // nicht des Live-Baums. Seit die Fixtur committet ist (31a5ac0), machte sie jeden
+  // Live-Lauf rot — 11 Befunde aus der eigenen pruebaetischen Luege.
+  const istFixtur = (rel) => rel.split("/").includes("fixtures") || rel.split("\\").includes("fixtures");
   try {
     return execFileSync("git", ["ls-files", "-z", "*.md"], { cwd: wurzel, encoding: "utf8" })
       .split("\0")
       .filter(Boolean)
+      .filter((rel) => !istFixtur(rel))
       .sort();
   } catch {
     /** @type {string[]} */
@@ -803,12 +903,15 @@ export function hauptfunktion(argv = process.argv.slice(2)) {
   const arg = (name) => argv.find((a) => a.startsWith(`--${name}=`))?.split("=").slice(1).join("=");
   const wurzel = arg("wurzel") ?? process.cwd();
   liesAusnahmen([...AUFPFLICHTUNGEN, ...UMLEITUNGEN]);
-  const pflicht = argv.includes("--pflicht");
+  // Erfassung ist nicht Urteil: --inventar und --ohne-pflicht zaehlen die Pflicht-
+  // Befunde, ohne sie zu melden, und gehen mit 0 raus. Ohne Flag ist die Pflicht an.
+  const erfassung = argv.includes("--inventar") || argv.includes("--ohne-pflicht");
+  const pflicht = !erfassung;
   const dateien = arg("datei") ? [arg("datei")] : mdDateien(wurzel);
 
-  /** @type {object[]} */
+  /** @type {ZahlenBefund[]} */
   const alle = [];
-  /** @type {object[]} */
+  /** @type {ZahlenInventar[]} */
   const inventar = [];
   for (const datei of dateien) {
     const absolut = path.isAbsolute(datei) ? datei : path.join(wurzel, datei);
@@ -830,23 +933,25 @@ export function hauptfunktion(argv = process.argv.slice(2)) {
       sollwert: a.sollwert + i.sollwert,
       umgeleitet: a.umgeleitet + i.umgeleitet,
       zweitbeleg: a.zweitbeleg + i.zweitbeleg,
+      pflichtOhneZitat: a.pflichtOhneZitat + i.pflichtOhneZitat,
     }),
-    { behauptungen: 0, mitBeleg: 0, ohneZitat: 0, sollwert: 0, umgeleitet: 0, zweitbeleg: 0 },
+    { behauptungen: 0, mitBeleg: 0, ohneZitat: 0, sollwert: 0, umgeleitet: 0, zweitbeleg: 0, pflichtOhneZitat: 0 },
   );
   const nachArt = new Map();
   for (const b of alle) nachArt.set(b.art, (nachArt.get(b.art) ?? 0) + 1);
 
   if (argv.includes("--inventar")) {
     console.log(
-      `zahlen-belege: ${dateien.length} Markdown-Dateien, ${summe.behauptungen} Messbehauptungen — ` +
-        `${summe.mitBeleg} im zitierten Artefakt bestaetigt, ${summe.ohneZitat} ohne Artefakt-Zitat auf der Zeile, ` +
+      `zahlen-belege (Erfassung, kein Urteil): ${dateien.length} Markdown-Dateien, ${summe.behauptungen} Messbehauptungen — ` +
+        `${summe.mitBeleg} im zitierten Artefakt bestaetigt, ${summe.ohneZitat} ohne Artefakt-Zitat auf der Zeile ` +
+        `(davon ${summe.pflichtOhneZitat} in Pflichtdateien — die wären ohne --inventar Befunde), ` +
         `${summe.sollwert} Soll-Zahlen (Latte, keine Messung), ${summe.umgeleitet} in einem anderen Baum belegt, ` +
-        `${summe.zweitbeleg} nur in einem Papier belegt, ${alle.length} Befund/Befunde${pflicht ? " (Pflicht ohne Zitat mitgezaehlt)" : ""}`
+        `${summe.zweitbeleg} nur in einem Papier belegt, ${alle.length} Befund/Befunde`
     );
     for (const i of inventar.filter((x) => x.behauptungen > 0).sort((a, b) => b.behauptungen - a.behauptungen)) {
       console.log(
         `  ${i.datei}: ${i.behauptungen} Behauptungen, ${i.mitBeleg} bestaetigt, ${i.ohneZitat} ohne Zitat, ` +
-          `${i.sollwert} Soll, ${i.umgeleitet} umgelenkt, ${i.zweitbeleg} im Papier${i.pflicht ? " [Pflicht]" : ""}`
+          `${i.sollwert} Soll, ${i.umgeleitet} umgelenkt, ${i.zweitbeleg} im Papier${i.pflicht ? ` [Pflicht, ${i.pflichtOhneZitat} ohne Zitat]` : ""}`
       );
     }
     return 0;
@@ -856,7 +961,7 @@ export function hauptfunktion(argv = process.argv.slice(2)) {
       `zahlen-belege: ${dateien.length} Markdown-Dateien, ${summe.behauptungen} Messbehauptungen — ` +
         `jedes zitierte Artefakt ist geoeffnet und jede Zahl darin gefunden (${summe.mitBeleg} bestaetigt, ` +
         `${summe.ohneZitat} ohne Zitat, ${summe.sollwert} Soll, ${summe.umgeleitet} umgelenkt, ${summe.zweitbeleg} im Papier` +
-        `${pflicht ? ", keine Pflicht-Zahl ohne Zitat" : ", Pflichten nicht geprueft — --pflicht"})`
+        `${pflicht ? ", keine Pflicht-Zahl ohne Zitat" : ", Pflichten nur gezaehlt — --ohne-pflicht"})`
     );
     return 0;
   }
@@ -868,7 +973,7 @@ export function hauptfunktion(argv = process.argv.slice(2)) {
     console.error(
       `  ${b.datei}:${b.zeile} — ${b.zahl}${b.einheit ? ` ${b.einheit}` : ""} — ${b.art}` +
         `${b.zitat ? ` (zitiert: ${b.zitat})` : ""}${b.sageDieDatei ? ` — die Datei sagt: ${b.sageDieDatei}` : ""}` +
-        `${b.grund ? ` — ${b.grund}` : ""}${b.alternativen ? ` — Kandidaten: ${b.alternativen.join(", ")}` : ""}`
+        `${b.grund ? ` — ${b.grund}` : ""}${b.alternativen ? ` — Kandidaten: ${b.alternativen.join(", ")}` : ""}${b.lage ? ` — Lage: ${b.lage}` : ""}`
     );
   }
   console.error(`  geoeffnete Artefakte: ${summe.mitBeleg} von ${summe.behauptungen} Behauptungen bestaetigt, ${summe.ohneZitat} ohne Zitat`);

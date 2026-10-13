@@ -1,0 +1,25 @@
+KEPTA Retrieval-Eval — Engine gegen naive Substring-Baseline, npm run eval
+Gefahren 2026-10-13 00:41:50 lokal = 2026-10-12T22:41:50Z UTC (Ende aus der mtime der Ausgabe), Stand e70da08 + uncommittete README-Arbeit, Node v26.8.1
+(Name 0037 = 00:37 lokal, die Minute des ersten Versuchs; die Nachbardatei kontext-groesse-2128 zaehlt in UTC.)
+Befehl: npx tsx scripts/eval.ts   (= npm run eval), Store in mkdtemp(tmpdir), keine Embeddings, kein Modell, deterministisch
+Korpus: 58 Notizen, 45 feste Anfragen. EXIT 0.
+
+v1-Baseline (naive Substring-Suche):  Recall@5 capped 62.2 % | Hit@1 51.1 % | MRR 0.559
+v2-Engine (BM25 + RRF + Temporal, ohne Vektoren):  Recall@5 capped 81.1 % | Hit@1 71.1 % | MRR 0.759
+Verbesserung:  Recall@5 +30 % relativ | Hit@1 +39 % relativ
+
+Gegen die oeffentliche Flaeche (github.io/index-flug.html, Zeile 2134): dort stehen Hit@1 71.1 % und MRR 0.759 fuer
+die Engine sowie 51.1 % und 0.559 fuer die Baseline — dieselben vier Werte, von diesem Lauf bestaetigt.
+Zusaetzlich im Bild, aber auf der Seite nicht genannt: Recall@5 capped 81.1 % gegen 62.2 %.
+
+Auszug aus dem Skript-Ausgabeblock (gekuerzt, ohne Symbolzeilen):
+  ── v1-Baseline (naive Substring-Suche) ──
+  Recall@5 (capped): 62.2 %
+  Hit@1:             51.1 %
+  MRR:               0.559
+  ── v2-Engine (BM25 + RRF + Temporal, ohne Vektoren) ──
+  Recall@5 (capped): 81.1 %
+  Hit@1:             71.1 %
+  MRR:               0.759
+  ── Verbesserung ──
+  Recall@5 (capped): +30 % relativ

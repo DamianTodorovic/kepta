@@ -1,0 +1,3 @@
+knoten=400 | STAND 4 (Welt 1000 fest) deckung=16.4% ticks=140 | STAND 5 (weltseite 1321) deckung=9.4% ticks=140 schliff=1
+knoten=1500 | STAND 4 (Welt 1000 fest) deckung=60.7% ticks=140 | STAND 5 (weltseite 1775) deckung=19.3% ticks=140 schliff=59
+knoten=3000 | STAND 4 (Welt 1000 fest) deckung=120.4% ticks=140 | STAND 5 (weltseite 2759) deckung=15.8% ticks=140 schliff=13

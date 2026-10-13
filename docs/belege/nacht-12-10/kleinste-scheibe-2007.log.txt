@@ -1,0 +1,16 @@
+kleinste-scheibe — Start 2026-10-12T18:07:18.443Z (UTC), Node v26.8.1
+Radiusregel: scheibenRadius(grad, 0) = 6 + 2,4·√grad — der Rahmen geht nicht ein
+
+FALL A — das gelieferte Bild, Kern-Quelltext von heute, 140 Ticks je Feld:
+  knoten=400 kleinsterRadius=10.16 weltseite=1321 anteil=0.769% ticks=140 schliff=1 ms=55
+  knoten=1500 kleinsterRadius=10.16 weltseite=1775 anteil=0.572% ticks=140 schliff=59 ms=432
+  knoten=3000 kleinsterRadius=10.16 weltseite=2759 anteil=0.368% ticks=140 schliff=13 ms=1321
+
+FALL B — die verworfene Variante (Klammer x8, tren 8, 140 Ticks, 3 027 Knoten):
+  Artefakt: bild-guete.json[28] weltseite=19684 medialeKante=4629 kontrollpaar=6418 verhaeltnis=0.721 | trennung-stufe.log Zeile 35
+  Nachbau: knoten=3027 kleinsterRadius=10.16 weltseite=19684 anteil=0.0516% ticks=140 wand=0 ms=591
+  Gegen das Artefakt: weltseite 19684 gegen 19684 -> dieselbe Seite
+  Gegen das Papier (CHANGELOG.md:16, 0,052 %): 0.052 % -> dezimal gleich, Kanal ausgetauscht
+
+Zum Vergleich, mit derselben Kleinsten-Scheibe an der gelieferten Weltseite von 3 000 Knoten (2 759): 0.368 % — der Unterschied zwischen Bild und Streu ist allein die Seite.
+Ende 2026-10-12T18:07:20.857Z (UTC), loadavg 3.24 3.44 3.58
