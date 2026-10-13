@@ -20,8 +20,9 @@ const sperre = JSON.parse(fs.readFileSync(new URL("../package-lock.json", import
 // also lag es da, ohne jemals Widerspruch zu ernten.
 //
 // server.json gehört bewusst NICHT hierher: sie nennt die auf npm
-// veröffentlichte Engine-Version (3.3.0), nicht die App-Version, und die
-// hält tests/mcp-registry.test.ts gegen den npm-Register fest. Zwei Zahlen,
+// veröffentlichte Engine-Version (der Register sagt sie, seit 13.10. fragt der
+// Fall npm selbst), nicht die App-Version, und ein Gleichheitszeichen zwischen
+// beiden Zahlen wäre der Fehler. Zwei Zahlen,
 // zwei Paare — ein Gleichheitszeichen zwischen ihnen wäre der Fehler.
 describe("Versions-Quelle", () => {
   it("package.json, APP_VERSION, MCP SERVER_INFO, das npm-Bündel und das Sperrschema stimmen überein", () => {

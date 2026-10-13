@@ -1,4 +1,5 @@
 import { describe, it, expect } from "vitest";
+import { execFileSync } from "node:child_process";
 import fs from "node:fs";
 import path from "node:path";
 import Ajv from "ajv";
@@ -67,12 +68,29 @@ describe("MCP-Registry: der Besitznachweis", () => {
 
 // Die Registry-Beschreibung ist eine Installationsanweisung, kein Tagebuch:
 // `npx kepta-mcp@<version>` muss es auf npm wirklich geben. App und ihr eigenes
-// npm-Bündel wandern zusammen (3.1.5), die Registry-Datei darf nur eine
-// veröffentlichte Engine-Version nennen. Stand gemessen 09.10.2026: der Publish-
-// Lauf `37921066342` am Kern-Tag `v3.2.0` (Commit `6fe7955`) meldet
-// `+ kepta-mcp@3.2.0` und „kepta-mcp@3.2.0 ist auf npm sichtbar"; die Registry
-// selbst antwortet im selben Lauf mit „Registry-Eintrag aktualisiert".
-const VEROEFFENTLICHTE_ENGINE = "3.3.0";
+// npm-Bündel wandern zusammen, die Registry-Datei darf nur eine veröffentlichte
+// Engine-Version nennen.
+//
+// Die Zahl darunter war bis 13.10. eine in diesem Datei versteckte Abschrift
+// ("3.3.0", mit Datum und Publish-Lauf im Kommentar) — ein Kommentar, der eine
+// Behauptung über die Welt festschreibt, und die Wache hätte sie auch dann
+// bestätigt, als npm längst weiter war. Seit 13.10. fragt der Fall die Welt selbst:
+// `npm view kepta-mcp version` ist die Wahrheit des Registers, und server.json muss
+// sie treffen. Ohne Netz vergleicht der Fall, was er ohne Netz sehen kann (die zwei
+// Felder derselben Datei), und sagt im Fehltext, dass die Außenprüfung nicht lief —
+// ein stiller Fallback, der wie eine Prüfung aussieht, wäre der Fehler, den dieser
+// Fall gerade heilt.
+function veroeffentlichteEngine(): string | null {
+  try {
+    return execFileSync("npm", ["view", "kepta-mcp", "version"], {
+      encoding: "utf8",
+      timeout: 30_000,
+      stdio: ["ignore", "pipe", "ignore"],
+    }).trim();
+  } catch {
+    return null;
+  }
+}
 
 describe("MCP-Registry: Versionen an ihrem rechten Ort", () => {
   it("App und ihr npm-Bündel wandern zusammen", () => {
@@ -84,9 +102,16 @@ describe("MCP-Registry: Versionen an ihrem rechten Ort", () => {
   });
 
   it("server.json nennt eine Engine-Version, die es auf npm wirklich gibt", () => {
+    const registrier = veroeffentlichteEngine();
+    if (!registrier) {
+      // Kein Netz: die Innenpruefung bleibt, die Aussenpruefung ist nicht erfolgt.
+      expect(server.packages[0].version, "ohne Netz: mindestens die beiden Felder derselben Datei").toBe(server.version);
+      console.warn("mcp-registry: npm nicht erreichbar — die Aussenpruefung lief nicht, verglichen wurden nur die Felder derselben Datei.");
+      return;
+    }
     expect(
       server.version,
-      `server.json verspricht npx kepta-mcp@${server.version} — veröffentlicht ist ${VEROEFFENTLICHTE_ENGINE}`
-    ).toBe(VEROEFFENTLICHTE_ENGINE);
+      `server.json verspricht npx kepta-mcp@${server.version} — der Register meldet latest ${registrier}`
+    ).toBe(registrier);
   });
 });

@@ -25,10 +25,13 @@ jobs:
       # (tests/doku-zahlen.test.ts) haelt die Testzahl im README gegen genau diesen
       # Bericht und verweigert den Vergleich, wenn er fehlt — ohne diesen Vorlauf
       # waere jeder frische Runner rot, ohne dass ein Fehler im Code steckte.
-      # timeout-minutes: 8. Gemessen auf diesem Rechner (10 Kerne, ubuntu-latest
-      # hat 4): `npm test` 78 s -> ~3,3 min bei 2,5x, 8 min sind die Haelfte davon
-      # frei. Das Gate darunter bleibt bei 12: `npm run test:cov` mass 130 s, mit
-      # 2,5x Runner-Abstand ~5,4 min — 12 reichen mit doppeltem Puffer.
+      # timeout-minutes: 8 und 12 sind Latten in dieser Datei, keine Messungen —
+      # die Desk-Dauern vom 12.10., aus denen sie gewaehlt wurden, lagen nur in
+      # test-results/ (git-ignoriert, von der Platte gefegt) und sind darum aus
+      # CHANGELOG.md und README.md gezogen; nachmessen will sie niemand, solange
+      # scripts/ruhe-sonde.mjs diese Maschine als belegt sieht — eine Zeit unter
+      # fremder Last ist kein Urteiler. Der Vorlauf bleibt bei 8, das Gate bei 12,
+      # gemessen an den vier Kernen von ubuntu-latest.
       - name: Messvorlauf (schreibt test-results/vitest.json, Befund zaehlt nicht)
         run: npm test || true
         timeout-minutes: 8
@@ -56,6 +59,18 @@ jobs:
           else
             echo "Kein coverage-summary.json (json-summary Reporter aktiv?)" >> "$GITHUB_STEP_SUMMARY"
           fi
+      # Zahlen-Belege: jede Messzahl in der Doku wird an ihrem eigenen Artefakt
+      # gemessen (scripts/zahlen-belege.mjs, byte-identisch zum Kern). Am 12.10.
+      # gebaut, nachdem drei Vorher-Zahlen in README und CHANGELOG etwas behauptet
+      # hatten, was das zitierte Log nicht hergab, und seit 13.10. hier verdrahtet:
+      # eine Console, die niemand abhoert, huetet nichts. Nach der Suite und ihrem
+      # Eval, vor dem Bau — die Suite schreibt test-results/, und die Doku darf
+      # keine Laufprodukte zitieren; ein Beleg, den nur dieser Rechner oeffnen kann,
+      # ist hier ein Befund. Der Runner sieht dabei nur diesen Baum: keine
+      # Arbeitsmappe, keine Nachbarbaeume, und genau so ist die Heilung der
+      # README-Zahlen am 13.10. bewiesen (Auspackung nur getrackter Dateien).
+      - name: Zahlen-Belege (jede Zahl in der Doku trifft ihr zitiertes Artefakt)
+        run: node scripts/zahlen-belege.mjs
       - run: npm run build
       - name: Audit (high severity)
         run: npm audit --audit-level=high || true

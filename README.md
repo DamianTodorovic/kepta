@@ -4,7 +4,7 @@
 
 <p align="center"><sub>Desktop app · no cloud · no account · encrypted at rest<br>SQLite · hybrid retrieval · knowledge graph · MCP</sub></p>
 
-<p align="center"><a href="https://github.com/DamianTodorovic/kepta/releases/latest"><img alt="Download" src="https://img.shields.io/github/v/release/DamianTodorovic/kepta?label=Download"></a> <a href="https://github.com/DamianTodorovic/kepta/actions/workflows/ci.yml"><img alt="Engine CI" src="https://github.com/DamianTodorovic/kepta/actions/workflows/ci.yml/badge.svg"></a> <a href="LICENSE"><img alt="License" src="https://img.shields.io/badge/license-Proprietary-black"></a> <img alt="Coverage gate" src="https://img.shields.io/badge/coverage%20gate-%E2%89%A5%2089%25%20of%20lines-brightgreen"> <img alt="Tests" src="https://img.shields.io/badge/tests-2269%20passing-brightgreen"> <img alt="Platform" src="https://img.shields.io/badge/platform-macOS-lightgrey"></p>
+<p align="center"><a href="https://github.com/DamianTodorovic/kepta/releases/latest"><img alt="Download" src="https://img.shields.io/github/v/release/DamianTodorovic/kepta?label=Download"></a> <a href="https://github.com/DamianTodorovic/kepta/actions/workflows/ci.yml"><img alt="Engine CI" src="https://github.com/DamianTodorovic/kepta/actions/workflows/ci.yml/badge.svg"></a> <a href="LICENSE"><img alt="License" src="https://img.shields.io/badge/license-Proprietary-black"></a> <img alt="Coverage gate" src="https://img.shields.io/badge/coverage%20gate-%E2%89%A5%2089%25%20of%20lines-brightgreen"> <img alt="Tests" src="https://img.shields.io/badge/tests-2277%20passing-brightgreen"> <img alt="Platform" src="https://img.shields.io/badge/platform-macOS-lightgrey"></p>
 
 <p align="center"><sub>The memory engine underneath is source-available (BUSL-1.1, converts to AGPL-3.0-or-later after four years): <a href="https://github.com/DamianTodorovic/kepta">DamianTodorovic/kepta</a> — the headless core with the MCP server. This repository is the full desktop application.</sub></p>
 
@@ -128,7 +128,7 @@ Every memory carries a validity window, so the graph can be replayed: pull the t
 - **Semantic search** can be switched off; the result slider runs 5 · 10 · 20 · 50 · 100 · 250 · **All**, and the index says how many notes match in total
 - **Relevance first while you search** — a grouped list turns flat and ranked as soon as there is a query, so the best hit is on top
 - **One code path** for the UI, the HTTP API and MCP — agents get exactly the quality you get
-- **Eval harness**: `npm run eval` measures Hit@1 and Precision@5 against a fixed corpus
+- **Eval harness**: `npm run eval` measures Hit@1 and **Recall@5 (capped)** against a fixed corpus — capped because the denominator is `min(5, relevant notes)`, not 5, so the figure says how much of the answer set arrived rather than how clean the five are. `npm run ablation` divides by 5 and reports a real P@5 on the same corpus: two metrics, two names, never comparable. Both are cited line by line under "Why KEPTA?", where the runs themselves are kept in the repository.
 
 </details>
 
@@ -138,7 +138,7 @@ Every memory carries a validity window, so the graph can be replayed: pull the t
 - Entities and relations from `[[wiki links]]` and automatic extraction
 - A concept in the picture is a shared one: a term that exists only because it repeats the title of the single note carrying it is an echo of your filing, not knowledge, and the graph leaves it out — the concept count is then the number of things your notes actually share
 - **Three views** — *Force*, the physics layout; *Tree*, a dendrogram from the root to the kind of knowledge to an entity or tag group to the note; and *Semantic*, the notes placed by a deterministic projection of their own vectors. Nodes glide from one view to another, and with reduced motion they jump
-- The Tree folds itself to fit its canvas: 400 notes are 425 rows and no screen holds that, so the deepest groups step behind a `×N` badge, the line says how many notes are gathered, and one click opens everything again
+- The Tree folds itself to fit its canvas: a base of a few hundred notes needs more rows than any screen holds, so the deepest groups step behind a `×N` badge, the line says how many notes are gathered, and one click opens everything again. How many rows a given tree shows is a property of that tree's shape — leaves, groups, types, root — not of its note count, and the figure this sentence used to name for "400 notes" had no run behind it in the repository, so it is gone rather than kept; what is asserted here is asserted by `tests/lib/graphHierarchy.test.ts`, which counts the visible rows of trees it builds itself and holds the fold to its frame
 - The semantic map says what it leaves out: how much of the difference its two axes carry, how many vectors the cap held back, and where the notes without a vector were parked. It is computed on the server, so no embedding ever travels into the view
 - Force-directed layout on an **unbounded canvas** — nodes repel each other and follow when you drag their neighbours; the layout grows with the base instead of being squeezed into the window. What is asserted, not asserted-away: **at rest no two discs intersect at 400, at 1 500 and at 3 000 notes** (`tests/lib/graphLayout.test.ts:2285`, brute force over every pair, no padding, no browser — `npx vitest run tests/lib/graphLayout.test.ts`), and while the layout cools at 3 000 notes the funnel closes from ≤ 40 pairs at step 250 to 0 at step 310. Frame cost per size is measured and recorded in [`docs/graph-kosten.md`](docs/graph-kosten.md) with its machine conditions; it is deliberately not quoted here. Repulsion is weighted against the link springs, not against nothing: on a 400-note base the topics stand apart as islands with white space between them, instead of petals touching
 - **Forces you can set** — how hard the middle gathers, how hard notes repel, how long a link rests, how big the nodes are. Turning a slider does not rebuild the world: the picture keeps its place and settles under the new forces, and one click returns the tuned defaults
@@ -166,7 +166,7 @@ Every memory carries a validity window, so the graph can be replayed: pull the t
 <summary><strong>Today, dossiers and contradictions</strong></summary>
 
 - **Today** (⌘5) — what is new since your last visit and who added it (you, an import or which AI app), what changed, the open to-dos from your notes, what expires soon and what your AI apps did. Read straight from the local database: no AI involved, nothing leaves the computer
-- **Contradictions** — two notes that name a different time, date, amount, percentage or quantity for the same thing appear side by side, the differing value in bold. *Keep the newer*, *Keep the older* (the other is marked as replaced, never deleted) or *Both are right* (never asked again). Careful on purpose: only facts and how-tos are compared, both sentences must share their meaningful words, notes from the same file stay out, and so do the parts of a split file ("README — 5/17"), a note's source line and ranges like "2–4 days"
+- **Contradictions** — two notes that name a different time, date, amount, percentage or quantity for the same thing appear side by side, the differing value in bold. *Keep the newer*, *Keep the older* (the other is marked as replaced, never deleted) or *Both are right* (never asked again). Careful on purpose: only facts and how-tos are compared, both sentences must share their meaningful words, notes from the same file stay out, and so do the parts of a split file (`README — 5/17`), a note's source line and ranges like `2–4 days`
 - **Dossier** (⌘6) — everything about a person, a project or a topic on one page: key facts, a timeline, how-tos, documents, open to-dos, contradictions and related topics. *Copy as Markdown* or *Save as note*
 
 </details>
@@ -228,7 +228,7 @@ The chat exists to prove retrieval works. Day-to-day use runs through MCP.
 - **Duplicate review** — every group side by side, one click to keep the richest copy or dismiss the pair for good. Cleaning up is a single request for the whole batch with one undo, not one request per note (which used to run into the write limiter and stop halfway without saying so)
 - **Scan this computer** — opt-in, with a preview before anything is read. You choose the folders, untick file types and name folders to leave out; the dialog shows the rules that actually apply, read from the same source that enforces them. Settings can only narrow what is read, never widen it: keys, credentials, browser profiles, keychains and wallets stay blocked, the size cap stays capped, and roots outside your home folder are refused. HTML is turned into text before import, and content that carries no knowledge — markup scaffolding, repeated table rows — never becomes a note
 - **Knowledge list** — a click opens a readable preview: the full text, the source as a chip, *Copy text*; the editor opens from there. Every card shows where it came from and which part it is (2/5), and a file source opens in its default application. The list groups by file, by kind or by period, and *Load more* never cuts a group in half
-- **Text size** — 100, 115 or 130 %, under *Settings → Display*. The interface is English; German notes and German queries work as well as English ones
+- **Text size** — `100`, `115` or `130 %`, under *Settings → Display*. These are the three settings values on the slider, not a measurement. The interface is English; German notes and German queries work as well as English ones
 
 </details>
 
@@ -423,28 +423,34 @@ The app bundle itself **is** signed, ad-hoc. That is not notarisation and does n
 
 ## 🧪 Quality & tests
 
-**2269 tests** (measured 2026-10-12), run with Vitest and v8 coverage — the cases a run actually executed, skipped ones not included. The coverage thresholds are a hard gate: a commit that falls below any of them fails the run — and so does a README that names the wrong number of tests. `npm test` writes that run's JSON report and `node scripts/doku-check.mjs` holds the README to exactly that number; `tests/doku-zahlen.test.ts` listens to the same report and refuses to compare when it cannot be trusted — missing, older than the suite, or written by a partial run — instead of checking a value out of the drawer.
+**2277 tests** (measured 2026-10-13), run with Vitest and v8 coverage — the cases a run actually executed, skipped ones not included. The coverage thresholds are a hard gate: a commit that falls below any of them fails the run — and so does a README that names the wrong number of tests. `npm test` writes that run's JSON report and `node scripts/doku-check.mjs` holds the README to exactly that number; `tests/doku-zahlen.test.ts` listens to the same report and refuses to compare when it cannot be trusted — missing, older than the suite, or written by a partial run — instead of checking a value out of the drawer.
 
 ```bash
 npm run lint       # typecheck (tsc) + ESLint — 0 errors required
-npm test           # 2269 tests (vitest)
+npm test           # 2277 tests (vitest)
 npm run test:cov   # tests + coverage gate + test count in the README
 npm run eval       # retrieval quality (Hit@1)
 ```
 
-| Layer | Gate — CI fails below | What it covers |
+| Layer | Bar in `vitest.config.ts` — the number the CI must fail under | What it covers |
 |---|---|---|
-| everything together | **89 %** of lines | core, browser logic, scan rules, server and every component |
-| `src/core` (engine, store, MCP, migration) | **97 %** of lines · **100 %** of functions | data model, search, consolidation, MCP protocol |
-| `src/scan` (machine-scan rules) | **98 %** of lines · **100 %** of functions | what may be read, and what never is |
-| `src/lib` (browser logic) | **92 %** of lines | provider presets, profile, settings, sources, SSE, fetch client |
-| `src/components` (UI) | **84 %** of lines | every component, the graph canvas included |
+| everything together | must not fall under **89 %** of lines (`test.coverage.thresholds.lines`, `vitest.config.ts`) | core, browser logic, scan rules, server and every component |
+| `src/core` (engine, store, MCP, migration) | must not fall under **97 %** of lines · must hold **100 %** of functions (both in `vitest.config.ts`, key `"src/core/**"`) | data model, search, consolidation, MCP protocol |
+| `src/scan` (machine-scan rules) | must not fall under **98 %** of lines · must hold **100 %** of functions (both in `vitest.config.ts`, key `"src/scan/**"`) | what may be read, and what never is |
+| `src/lib` (browser logic) | must not fall under **92 %** of lines (`vitest.config.ts`, key `"src/lib/**"`) | provider presets, profile, settings, sources, SSE, fetch client |
+| `src/components` (UI) | must not fall under **84 %** of lines (`vitest.config.ts`, key `"src/components/**"`) | every component, the graph canvas included |
 
 The server code lives in `server/` — `server/app.ts` assembles the middleware chain and mounts the routers, `server/router/` holds one module per feature area, `server/helfer/` the shared helpers, and `server.ts` itself is only the entry point that ties it together. The routers and helpers count towards the overall coverage gate; the only exclusion is the bootstrap, which binds a port and never runs in a unit test. The gates sit a little below what is reached, so they can only move up. Tests live in `tests/`, mirroring the source layout. New features follow TDD (RED → GREEN → REFACTOR).
 
 ## 🧠 Why KEPTA?
 
-Obsidian is excellent for humans — but Markdown is not a memory: no types, no validity, no MCP. Mem0 and Letta are SDKs without a GUI. The platform memory is tied to one vendor's cloud. **KEPTA is both and neither**: an agent-native memory layer with a desktop app, local, encrypted, with a provable trail of who read what. Eval on a 58-note, 45-query corpus across five query categories (`npm run eval`): Hit@1 **62 %** for the engine, **51 %** for the v1 substring search it replaced. `npm run ablation` breaks it down per leg — full fusion reaches **64 %** against 62 % for BM25 alone, and answers all 45 queries instead of 36. The corpus, the queries and the ablation are all in the repository, so you can disagree with the numbers by rerunning them.
+Obsidian is excellent for humans — but Markdown is not a memory: no types, no validity, no MCP. Mem0 and Letta are SDKs without a GUI. The platform memory is tied to one vendor's cloud. **KEPTA is both and neither**: an agent-native memory layer with a desktop app, local, encrypted, with a provable trail of who read what.
+
+Every figure below is a run of this repository's own tools, kept whole next to the sentence that uses it — disagree with the numbers by rerunning them.
+
+- `npm run eval` — 58 notes, 45 queries, five categories, offline and deterministic. Its run of 2026-10-13 sits in the repository as `docs/belege/tag-13-10/eval-korpus-1413.log.txt`: Hit@1 **71 %** for the engine against **51 %** for the v1 substring search it replaced.
+- `npm run ablation` — the same corpus, broken down per retrieval leg, the vector leg live on a local `nomic-embed-text`. Its run of 2026-10-13 sits in the repository as `docs/belege/tag-13-10/ablation-beine-1144.log.txt`: on Hit@1, full fusion reaches **76 %** where BM25 alone holds **71 %**, and fusion answers every query of the corpus while BM25 alone leaves four unanswered.
+- The two tools measure different things on purpose: the eval divides by `min(5, relevant notes)`, the ablation divides by 5. Neither number is comparable to the other, and neither is quoted as if it were.
 
 The division of roles: the **chat cockpit** proves retrieval works — daily use runs through MCP. [ROADMAP](ROADMAP.md) · [CHANGELOG](CHANGELOG.md)
 

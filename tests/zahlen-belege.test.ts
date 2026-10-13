@@ -1,4 +1,5 @@
 import { describe, it, expect, afterEach, vi } from "vitest";
+import { execFileSync } from "node:child_process";
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
@@ -10,9 +11,11 @@ import {
   werteAusArtefakt,
   imArtefakt,
   loeseZitat,
+  suchBasis,
   pruefeDoku,
   liesAusnahmen,
   hauptfunktion,
+  mdDateien,
   AUFPFLICHTUNGEN,
   UMLEITUNGEN,
 } from "../scripts/zahlen-belege.mjs";
@@ -45,6 +48,20 @@ function kratzer(struktur: Record<string, string>) {
 
 function lese(datei: string) {
   return fs.readFileSync(path.join(FIXTUREN, datei), "utf8");
+}
+
+/** hauptfunktion schreibt Befunde auf die Console — fuer Exit-Vergleiche muss sie zuhoeren. */
+function stumm(argv: string[]) {
+  const log = console.log;
+  const fehler = console.error;
+  console.log = () => {};
+  console.error = () => {};
+  try {
+    return hauptfunktion(argv);
+  } finally {
+    console.log = log;
+    console.error = fehler;
+  }
 }
 
 /** Ein Befund ist ein Satz, kein Objekt — verglichen wird Art und Wert, nicht die Reihenfolge. */
@@ -120,6 +137,70 @@ describe("zahlen-belege: die Zahl selbst", () => {
 });
 
 describe("zahlen-belege: Artefakte lesen", () => {
+  it("ein Beleg zweiter Hand ausser Haus deckt keinen Befund zu", () => {
+    // Das Loch sass am 12.10. in der Wache selbst und liess 38 Behauptungen der
+    // CHANGELOG-Zeile 15 durch: ein .md-Papier ausserhalb des Baums enthielt die Zahl,
+    // also galt sie als bestaetigt — auf meinem Tisch, fuer jeden Runner unsichtbar.
+    const baum = kratzer({
+      "README.md": "Gemessen sind **77 %** Deckung (`audit/FIX.md`, Zeile 3).\n",
+      "beleg/inland.log": "deckung=12.0%\n",
+    });
+    const draussen = kratzer({ "audit/FIX.md": "| 3 000 | **77 %** |\n" });
+    const scharf = pruefeDoku({
+      wurzel: baum,
+      datei: "README.md",
+      text: fs.readFileSync(path.join(baum, "README.md"), "utf8"),
+      suche: [baum, draussen],
+    });
+    expect(scharf.befunde.map((b) => b.art), "das Papier draussen darf nicht mehr freigeben").toEqual(["beleg-nicht-im-repo"]);
+    expect(scharf.inventar.zweitbeleg, "und Zaehlung zweiter Hand darf es nicht sein").toBe(0);
+    // Gegenprobe: dasselbe Papier, aber im Baum — dann ist es sehr wohl ein Beleg zweiter Hand.
+    fs.mkdirSync(path.join(baum, "audit"), { recursive: true });
+    fs.writeFileSync(path.join(baum, "audit/FIX.md"), "| 3 000 | **77 %** |\n", "utf8");
+    const imBaum = pruefeDoku({
+      wurzel: baum,
+      datei: "README.md",
+      text: fs.readFileSync(path.join(baum, "README.md"), "utf8"),
+      suche: [baum],
+    });
+    expect(imBaum.befunde).toEqual([]);
+    expect(imBaum.inventar.zweitbeleg).toBe(1);
+    // Widerspruchprobe: ein Inlands-Artefakt, das der Zahl widerspricht, meldet sie —
+    // die Wache darf also weder zu still noch zu freigiebig sein.
+    fs.writeFileSync(path.join(baum, "README.md"), "Gemessen sind **77 %** Deckung (`beleg/inland.log`).\n", "utf8");
+    const widerspruch = pruefeDoku({
+      wurzel: baum,
+      datei: "README.md",
+      text: fs.readFileSync(path.join(baum, "README.md"), "utf8"),
+      suche: [baum],
+    });
+    expect(widerspruch.befunde.map((b) => b.art)).toEqual(["zahl-nicht-im-beleg"]);
+  });
+
+  it("ein leerer Nachbarpfad macht die Wohnung nicht zur Suchbasis", () => {
+    // Zweites Loch, same day: KEPTA_NACHBARN="" ergab path.join(home, "") = home, und ein
+    // Index ueber ~ loeste audit-Pfade dort auf — die CI-Simulation hatte einen Baum, den
+    // es in der CI nicht gibt.
+    const echt = process.env;
+    const wohnung = kratzer({ "kepta-andere/rohdaten/y.log": "ms=41\n" });
+    const baum = kratzer({ "README.md": "Der Lauf brauchte **41 ms** (`rohdaten/y.log`).\n" });
+    try {
+      process.env = { ...echt, HOME: wohnung, KEPTA_NACHBARN: "", KEPTA_ARBEITSMAPPE: "" };
+      const basis = suchBasis(wohnung);
+      expect(basis.includes(wohnung), "die leeren Felder tragen nichts bei").toBe(true);
+      expect(basis.some((p) => p === path.join(wohnung, "kepta-andere")), "und die Nachbarschaft wird nicht erfunden").toBe(false);
+      const ergebnis = pruefeDoku({
+        wurzel: baum,
+        datei: "README.md",
+        text: fs.readFileSync(path.join(baum, "README.md"), "utf8"),
+        suche: [baum],
+      });
+      expect(ergebnis.befunde.map((b) => b.art), "ohne Basis-Trick ist der Pfad einfach weg").toEqual(["pfad-existiert-nicht"]);
+    } finally {
+      process.env = echt;
+    }
+  });
+
   it("rundet auf die Stellenzahl des Papiers und rechnet Sekunden in Millisekunden", () => {
     const ort = kratzer({ "latenz.json": JSON.stringify({ suche: { p50: 6986.42, p95: 7155.84 }, abfragen: 300 }) });
     const artefakt = werteAusArtefakt(path.join(ort, "latenz.json"));
@@ -159,28 +240,65 @@ describe("zahlen-belege: Artefakte lesen", () => {
 
   it("findet die Fixture-Logs wieder, ohne die Arbeitsmappe zu brauchen", () => {
     const wurzel = path.join(FIXTUREN, "schlecht");
-    expect(loeseZitat("beleg/vorher-gleich-12-10.log", [wurzel], new Map())).toHaveLength(1);
-    const vorher = werteAusArtefakt(path.join(wurzel, "beleg/vorher-gleich-12-10.log"));
+    expect(loeseZitat("beleg/vorher-gleich-12-10.log.txt", [wurzel], new Map())).toHaveLength(1);
+    const vorher = werteAusArtefakt(path.join(wurzel, "beleg/vorher-gleich-12-10.log.txt"));
     // Die geheilten Zahlen — dieselben, die GFs Papiere jetzt nennen — stehen in der Kopie.
     for (const zahl of ["7134", "5236", "745", "818", "98.6"]) {
       expect(vorher.werte.has(zahl), `vorher-gleich-12-10.log fuehrt ${zahl}`).toBe(true);
     }
-    const welt = werteAusArtefakt(path.join(wurzel, "beleg/welt-stufe.log"));
+    const welt = werteAusArtefakt(path.join(wurzel, "beleg/welt-stufe.log.txt"));
     for (const zahl of ["2051", "4312", "1213"]) expect(welt.werte.has(zahl), `welt-stufe.log fuehrt ${zahl}`).toBe(true);
-    const ruhe = werteAusArtefakt(path.join(wurzel, "beleg/ruhe-mit-anteil-1444.log"));
+    const ruhe = werteAusArtefakt(path.join(wurzel, "beleg/ruhe-mit-anteil-1444.log.txt"));
     for (const zahl of ["57", "424", "1296", "0.662", "0.368"]) expect(ruhe.werte.has(zahl), `ruhe.log fuehrt ${zahl}`).toBe(true);
+    // Und was die Wache *nicht* als Doku liest: die eigene Fixture fuehrt ihr absichtlich
+    // Fehler vor (seit 31a5ac0 committet) — als Live-Papier waere sie elf permanente Befunde.
+    const dateien = mdDateien(process.cwd());
+    expect(dateien.some((d) => d.includes("fixtures"))).toBe(false);
+    expect(dateien).toEqual(expect.arrayContaining(["README.md", "CHANGELOG.md"]));
+    // Jede Flächen-Datei, die der Baum hat, muss gelesen werden; eine, die fehlt, darf
+    // nur fehlen, wenn die Wache das begründet optional nennt. Der Kern hat eine deutsche
+    // Fläche, die App keine — und die Wache ist in beiden Räumen byte-identisch.
+    for (const eintrag of AUFPFLICHTUNGEN) {
+      const hatSie = fs.existsSync(path.join(process.cwd(), eintrag.datei));
+      if (hatSie) expect(dateien, `Pflichtfläche ${eintrag.datei} wird nicht gelesen`).toContain(eintrag.datei);
+      else expect(eintrag.optional === true, `${eintrag.datei} fehlt, ohne dass die Wache das begründet`).toBe(true);
+    }
+
+    // Und was ein frisches Auspacken sieht: ein Artefakt, das nur auf der Platte liegt,
+    // ist fuer jeden anderen ein toter Link. Beweis in beide Richtungen — ein eigens
+    // angelegter Scratch-Repo (unsere drei Repos bleiben, wie sie sind; kein git am Baum).
+    const repo = kratzer({
+      "README.md": "Der Lauf brauchte **44 ms** (`beleg/x.log.txt`).\n",
+      "beleg/x.log.txt": "ms=44\n",
+    });
+    const git = (...args: string[]) => execFileSync("git", args, { cwd: repo, encoding: "utf8" });
+    git("init", "-q");
+    git("add", "README.md");
+    git("-c", "user.email=wache@lokal", "-c", "user.name=Wache", "commit", "-q", "-m", "nur das Papier");
+    const ohneCommit = pruefeDoku({ wurzel: repo, datei: "README.md", text: fs.readFileSync(path.join(repo, "README.md"), "utf8"), suche: [repo] });
+    expect(ohneCommit.befunde.map((b) => b.art), "ein ungetrackter Beleg ist ein Befund").toEqual(["beleg-nicht-getrackt"]);
+    git("add", "beleg/x.log.txt");
+    git("-c", "user.email=wache@lokal", "-c", "user.name=Wache", "commit", "-q", "-m", "Beleg dazu");
+    const mitCommit = pruefeDoku({ wurzel: repo, datei: "README.md", text: fs.readFileSync(path.join(repo, "README.md"), "utf8"), suche: [repo] });
+    expect(mitCommit.befunde, "derselbe Satz ist gruen, sobald der Beleg im Commit ist").toEqual([]);
   });
 });
 
 describe("zahlen-belege: die vier Fundstellen", () => {
-  const schlecht = () => {
+  // Die Pflichtfaelle lesen denselben Fixture-Text als Pflichtpapier. Seit 13.10.2026 steht
+  // CHANGELOG.md nicht mehr auf AUFPFLICHTUNGEN (Grund im Quelltext der Wache), und die
+  // Pflicht ist an einem datei-scharfen Namen fest — nicht am Text. Die Fixture heisst
+  // CHANGELOG.md, weil sie die vier Fundstellen der Nacht haelt; als Vorlage fuer eine
+  // Pflichtdatei liest die Wache sie unter dem Namen README.md, ihrer Suche nach derselben
+  // Wurzel, also mit denselben Artefakten.
+  const schlecht = (datei = "CHANGELOG.md", pflicht = true) => {
     const wurzel = path.join(FIXTUREN, "schlecht");
     return pruefeDoku({
       wurzel,
-      datei: "CHANGELOG.md",
+      datei,
       text: lese("schlecht/CHANGELOG.md"),
       suche: [wurzel],
-      pflicht: true,
+      pflicht,
     });
   };
 
@@ -188,9 +306,6 @@ describe("zahlen-belege: die vier Fundstellen", () => {
     const { befunde } = schlecht();
     expect(schluessel(befunde)).toEqual([
       "pfad-existiert-nicht|15",
-      "pflicht-ohne-zitat|1234",
-      "pflicht-ohne-zitat|13.4",
-      "pflicht-ohne-zitat|42",
       "zahl-nicht-im-beleg|1019",
       "zahl-nicht-im-beleg|11",
       "zahl-nicht-im-beleg|1289",
@@ -245,32 +360,96 @@ describe("zahlen-belege: die vier Fundstellen", () => {
     expect(inventar.mitBeleg).toBe(61);
     expect(inventar.behauptungen).toBe(62);
     expect(inventar.sollwert).toBe(1);
-    expect(hauptfunktion([`--wurzel=${wurzel}`, "--datei=CHANGELOG.md", "--pflicht"])).toBe(0);
+    expect(hauptfunktion([`--wurzel=${wurzel}`, "--datei=CHANGELOG.md"])).toBe(0);
   });
 
-  it("meldet die Pflicht ohne Zitat nur, wenn die Wache danach gefragt wird", () => {
-    const wurzel = path.join(FIXTUREN, "schlecht");
-    const milde = pruefeDoku({
-      wurzel,
-      datei: "CHANGELOG.md",
-      text: lese("schlecht/CHANGELOG.md"),
-      suche: [wurzel],
-      pflicht: false,
-    });
+  it("meldet die Pflicht ohne Zitat von sich aus — die Erfassung ist die Ausnahme", () => {
+    const defaultFall = schlecht("README.md");
+    expect(defaultFall.befunde.filter((b) => b.art === "pflicht-ohne-zitat").map((b) => normalisiereZahl(b.zahl)).sort()).toEqual(["1234", "13.4", "42"]);
+    expect(defaultFall.befunde).toHaveLength(14);
+    expect(defaultFall.inventar.pflichtOhneZitat).toBe(3);
+
+    const milde = schlecht("README.md", false);
     expect(milde.befunde.map((b) => b.art)).not.toContain("pflicht-ohne-zitat");
     expect(milde.befunde).toHaveLength(11);
-    expect(schlecht().befunde).toHaveLength(14);
-    expect(hauptfunktion([`--wurzel=${wurzel}`, "--datei=CHANGELOG.md", "--pflicht"]) > 0).toBe(true);
+    // Gezaehlt bleibt es trotzdem — die Erfassung verliert nichts, sie urteilt nur nicht.
+    expect(milde.inventar.pflichtOhneZitat).toBe(3);
+
+    // CLI-Modi. Die Fixture hat neben den Pflicht-Zahlen auch echte Fehler, deshalb bleibt
+    // sie rot, auch ohne Pflicht — der scharfe Beweis ist die Scratch-Datei darunter.
+    const wurzel = path.join(FIXTUREN, "schlecht");
+    expect(stumm([`--wurzel=${wurzel}`, "--datei=CHANGELOG.md"])).toBe(1);
+    expect(stumm([`--wurzel=${wurzel}`, "--datei=CHANGELOG.md", "--ohne-pflicht"])).toBe(1);
+    expect(stumm([`--wurzel=${wurzel}`, "--datei=CHANGELOG.md", "--inventar"])).toBe(0);
+
+    const nurPflicht = kratzer({ "README.md": "Der Lauf brauchte **42 ms** fuer 7 Treffer.\n" });
+    expect(stumm([`--wurzel=${nurPflicht}`, "--datei=README.md"])).toBe(1);
+    expect(stumm([`--wurzel=${nurPflicht}`, "--datei=README.md", "--ohne-pflicht"])).toBe(0);
+
+    // Die Pflichtliste selbst, dateischarf: beide READMEs drauf, mit Grund, ohne wildcard.
+    // CHANGELOG.md ist seit 13.10.2026 NICHT mehr drauf — die Regel der Leitung nennt die
+    // beiden Flaechen, und eine Wache, die an der Geschichte eines Changelogs immer rot ist,
+    // wird abgeschaltet statt angehoert.
+    expect(AUFPFLICHTUNGEN.map((a) => a.datei)).toEqual(["README.md", "README.de.md"]);
+    expect(AUFPFLICHTUNGEN.map((a) => a.datei)).not.toContain("CHANGELOG.md");
+    for (const eintrag of AUFPFLICHTUNGEN) {
+      expect(eintrag.grund.length, `${eintrag.datei} nennt keinen Grund`).toBeGreaterThan(20);
+      expect(eintrag.datei).not.toMatch(/[*?]/);
+    }
+    expect(AUFPFLICHTUNGEN.find((a) => a.datei === "README.md")?.grund).toContain("Flaeche");
+  });
+
+  it("sieht eine Flaechen-Datei, die fehlt: begruendet optional oder Befund", () => {
+    // Zwei Raeume, eine byte-identische Wache: der Kern hat eine deutsche Flaeche, die App
+    // keine und bestellte sie auch nicht. Was beide Male gleich bleibt — fehlt eine Flaeche
+    // ohne Begruendung, ist das ein Befund. Eine Wache, die schweigt, weil das Papier weg
+    // ist, huettet eine Regel, die niemand mehr prueft.
+    const ganzOhne = kratzer({ "docs/notiz.md": "Eine Notiz ohne Messzahl.\n" });
+    const fehler = vi.spyOn(console, "error").mockImplementation(() => {});
+    expect(hauptfunktion([`--wurzel=${ganzOhne}`])).toBe(1);
+    expect(fehler.mock.calls.map((c) => String(c[0])).join(" ")).toContain("pflicht-flaeche-fehlt");
+    fehler.mockRestore();
+
+    const ohneDeutsch = kratzer({ "README.md": "Eine Flaeche ohne Messzahl.\n" });
+    const log = vi.spyOn(console, "log").mockImplementation(() => {});
+    expect(hauptfunktion([`--wurzel=${ohneDeutsch}`, "--ohne-pflicht"])).toBe(0);
+    expect(log.mock.calls.map((c) => String(c[0])).join(" ")).toContain("README.de.md fehlt (optional:");
+    log.mockRestore();
+  });
+
+  it("misst die CHANGELOG weiter an ihren Zitaten — nur die Pflicht ist weg", () => {
+    // Der eine Fall, der die beiden Haelften der Wache trennt: (a) jede ZAHL MIT ZITAT wird
+    // weiterhin gegen ihr Artefakt gemessen, auch in CHANGELOG.md; (b) eine Messzahl OHNE
+    // Zitat ist dort keine Pflicht mehr, sondern Erfassung. Beide Richtunden, damit niemand
+    // den Austausch als "CHANGELOG wird nicht mehr geprueft" lesen kann.
+    const ort = kratzer({
+      "beleg/lauf.log.txt": "ms=44\n",
+      "CHANGELOG.md":
+        "Die Geschichte nennt **45 ms** (`beleg/lauf.log.txt`).\nUnd eine Zahl ohne jeden Beleg: **44 ms**.\n",
+      "README.md":
+        "Die Flaeche nennt **45 ms** (`beleg/lauf.log.txt`).\nUnd eine Zahl ohne jeden Beleg: **44 ms**.\n",
+    });
+    // Zeile 1: zitiert, aber das Artefakt sagt 44 — rot, in beiden Papieren gleich.
+    expect(stumm([`--wurzel=${ort}`, "--datei=CHANGELOG.md"])).toBe(1);
+    const changelog = pruefeDoku({ wurzel: ort, datei: "CHANGELOG.md", text: fs.readFileSync(path.join(ort, "CHANGELOG.md"), "utf8"), suche: [ort] });
+    expect(changelog.befunde.map((b) => `${b.art}|${b.zeile}`)).toEqual(["zahl-nicht-im-beleg|1"]);
+    expect(changelog.inventar.pflichtOhneZitat).toBe(0);
+    expect(changelog.inventar.ohneZitat).toBe(1);
+    // Derselbe Text als Pflichtpapier: die Zahl ohne Zitat ist zusaetzlich ein Befund.
+    const readme = pruefeDoku({ wurzel: ort, datei: "README.md", text: fs.readFileSync(path.join(ort, "README.md"), "utf8"), suche: [ort] });
+    expect(readme.befunde.map((b) => `${b.art}|${b.zeile}`).sort()).toEqual(["pflicht-ohne-zitat|2", "zahl-nicht-im-beleg|1"]);
   });
 
   it("ein Querverweis auf ein anderes Papier ist kein Messbeleg", () => {
     // CHANGELOG.md:25 der Kern-Doku: "The same sentence stands in
     // kepta-app/docs/graph-kosten.md" — ein Verweis, nicht die Quelle der 13,4 ms. Haelt
     // die Wache dafuer, werden sechs Querverweise zu sechs "Zahl trifft ihr Zitat nicht"
-    // (von der Leitung an mir gefunden, 12.10. 19:5x). Hier: Inventar, kein Befund.
+    // (von der Leitung an mir gefunden, 12.10. 19:5x). Der Verweis fuehrt also nie zu
+    // `zahl-nicht-im-beleg`; ob er ueberhaupt meldet, haengt nur an der Pflichtliste.
     const { befunde } = schlecht();
-    const verweis = befunde.find((b) => normalisiereZahl(b.zahl) === "13.4");
-    expect(verweis?.art).toBe("pflicht-ohne-zitat");
+    expect(befunde.find((b) => normalisiereZahl(b.zahl) === "13.4")).toBeUndefined();
+    const pflicht = schlecht("README.md").befunde.find((b) => normalisiereZahl(b.zahl) === "13.4");
+    expect(pflicht?.art).toBe("pflicht-ohne-zitat");
   });
 
   it("ein Datum ist eine Serie mit Jahreszahl, nicht jede Dreiergruppe", () => {
@@ -391,8 +570,8 @@ describe("zahlen-belege: die Console luegt nicht ueber ihren Exit-Code", () => {
     const log = vi.spyOn(console, "log").mockImplementation(() => {});
     const fehler = vi.spyOn(console, "error").mockImplementation(() => {});
     try {
-      expect(hauptfunktion([`--wurzel=${path.join(FIXTUREN, "schlecht")}`, "--datei=CHANGELOG.md", "--pflicht"])).toBe(1);
-      expect(hauptfunktion([`--wurzel=${path.join(FIXTUREN, "gut")}`, "--datei=CHANGELOG.md", "--pflicht"])).toBe(0);
+      expect(hauptfunktion([`--wurzel=${path.join(FIXTUREN, "schlecht")}`, "--datei=CHANGELOG.md"])).toBe(1);
+      expect(hauptfunktion([`--wurzel=${path.join(FIXTUREN, "gut")}`, "--datei=CHANGELOG.md"])).toBe(0);
       expect(hauptfunktion([`--wurzel=${path.join(FIXTUREN, "gut")}`, "--datei=CHANGELOG.md", "--inventar"])).toBe(0);
       const meldung = fehler.mock.calls.map((c) => String(c[0])).join("\n");
       expect(meldung).toContain("zahl-nicht-im-beleg");

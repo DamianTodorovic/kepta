@@ -1,0 +1,29 @@
+
+> kepta@3.2.1 ablation
+> tsx scripts/ablation.ts
+
+
+KEPTA Ablation — 58 Notizen, 45 Anfragen
+
+  Konfiguration      Hit@1    P@5     MRR   Anfragen mit Treffer
+  ──────────────────────────────────────────────────────────────
+  BM25 allein         71 %   21 %  0.76   41/45
+  Vektor allein       73 %   20 %  0.76   44/45  +2 Pp
+  Graph allein        13 %    4 %  0.13    6/45  -58 Pp
+  BM25 + Vektor       78 %   23 %  0.82   45/45  +7 Pp
+  BM25 + Graph        71 %   21 %  0.76   41/45  +0 Pp
+  Alle drei (RRF)     76 %   23 %  0.81   45/45  +4 Pp
+
+  Pp = Prozentpunkte gegenueber BM25 allein.
+
+  Hit@1 je Anfragekategorie — hier zeigt sich, welches Bein wofuer da ist
+
+  Konfiguration           ablenkung (4)         graph (3)  lexikalisch (25)      temporal (3) umschreibung (10)
+  ────────────────────────────────────────────────────────────────────────────────────────────────────────────
+  BM25 allein                     25 %             100 %              92 %              67 %              30 %
+  Vektor allein                   50 %             100 %              88 %             100 %              30 %
+  Graph allein                     0 %             100 %               8 %               0 %              10 %
+  BM25 + Vektor                   50 %             100 %             100 %              67 %              30 %
+  BM25 + Graph                    25 %             100 %              92 %              67 %              30 %
+  Alle drei (RRF)                 50 %             100 %              96 %              67 %              30 %
+
