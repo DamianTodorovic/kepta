@@ -99,14 +99,25 @@ Ein Artefakt, das nur im Arbeitsbaum liegt (neu, uncommittet — oder schlicht v
 `.gitignore:22 *.log` verschluckt), ist in dieser Auspackung weg. Das ist kein
 Parser-Problem: es ist derselbe Defekt, den ein Kunde sieht. **Deshalb liegt jeder
 Mess-Beweis dieses Ordners als `.log.txt`** — Inhalt byte-identisch, nur die Endung
-erweitert; die Ignore-Regel bleibt intakt.
+erweitert; die Ignore-Regel bleibt intakt. Was davon abweicht (zwei gekuerzte
+Maschinenzeilen, ein Papier-Auszug statt eines Laufs) steht begruendet und mit
+Groesse und sha256 in `REGISTER.md`, nicht als Stillschweigen.
 
-### Regel 7: Die drei Pflichtpapiere werden haerter gemessen
+### Regel 7: Die beiden Flaechenpapiere werden haerter gemessen
 
-In `CHANGELOG.md`, `README.md`, `README.de.md` ist eine Messzahl **ohne** Zitat auf ihrer Zeile
-ein Befund (`pflicht-ohne-zitat`), nicht nur eine Zahl in einer Statistik. In allen anderen
-Papieren ist es Erfassung. Erfassung ansehen ohne zu urteilen: `--inventar` oder
-`--ohne-pflicht` — beide gehen mit 0 raus.
+In `README.md` und `README.de.md` ist eine Messzahl **ohne** Zitat auf ihrer Zeile ein Befund
+(`pflicht-ohne-zitat`), nicht nur eine Zahl in einer Statistik. In allen anderen Papieren ist
+es Erfassung. Erfassung ansehen ohne zu urteilen: `--inventar` oder `--ohne-pflicht` — beide
+gehen mit 0 raus.
+
+Stand 13.10.2026: `CHANGELOG.md` ist von der Pflichtliste herunter, und der Grund steht im
+Quelltext der Wache bei `AUFPFLICHTUNGEN` — die Regel der Leitung nennt die beiden Flaechen,
+und eine Wache, die an der Geschichte eines Changelogs fuer jeden Stand rot ist, wird
+abgeschaltet statt angehoert. **Unveraendert bleibt die strengere Haelfte:** jede Zahl MIT
+Zitat wird auch in der CHANGELOG gegen ihr zitiertes Artefakt gemessen; ein toter, mehrdeutiger
+oder ungetrackter Pfad und ein Wert, den die Datei nicht hergibt, sind dort dieselben Befunde
+wie in jedem andern Papier. Haelt der Fall "misst die CHANGELOG weiter an ihren Zitaten" in
+`tests/zahlen-belege.test.ts`.
 
 ### Kurzliste fuer die Zeilen, die die Wache heute an euch meldet
 
@@ -119,8 +130,12 @@ Papieren ist es Erfassung. Erfassung ansehen ohne zu urteilen: `--inventar` oder
 | `README.md` | 347 · `README.de.md` | 191 | 46,6 / 87,6 / 276,5 ms | `tools/latenz/ergebnisse/latenz-100k-fts-2026-10-01.json` (46,6 und 87,6) und `tools/latenz/ergebnisse/latenz-1m-fts-2026-10-01.json` (276,5) — beide im Repo, Zeile 347 selbst zitieren |
 | `README.md` | 355 · `README.de.md` | 199 | 29,8 %, 63,8 % | ein Lauf, der diese Prozente druckt — sonst hat die Zahl keinen |
 
-Und fuer die Graph-Scheibe, zwei Zeilen, reiner Pfadtusch: `CHANGELOG.md:15` und `:16` zitieren
-`e2-code/nacht-12-10/rohdaten/*.log` (Arbeitsmappe → Befund `beleg-nicht-im-repo`). Dieselben
-Dateien liegen **byte-identisch** in `docs/belege/nacht-12-10/` als `.log.txt` — her damit:
+Und fuer die Graph-Scheibe, reiner Pfadtusch, erledigt am 13.10.2026: `CHANGELOG.md` zitierte
+einmal `e2-code/nacht-12-10/rohdaten/*.log` — Arbeitsmappe, also Befund `beleg-nicht-im-repo`,
+auf einem Runner `pfad-existiert-nicht`. Dieselben Dateien liegen **byte-identisch** in
+`docs/belege/nacht-12-10/` als `.log.txt`, und die Papiere zeigen jetzt auf diese Wege:
 `vorher-gleich-12-10.log.txt`, `welt-stufe.log.txt`, `weltdeckung-1558.log.txt`,
-`ruhe-mit-anteil-1444.log.txt`, `kleinste-scheibe-2007.log.txt`.
+`ruhe-mit-anteil-1444.log.txt`, `kleinste-scheibe-2007.log.txt`. Dazu seit demselben Tag der
+Einzelllauf `sockel-halb-1-230627.log.txt` (zwei Maschinenzeilen gekuerzt, siehe REGISTER) und
+in `nacht-11-10/` der erste Papier-Auszug — ein ueberlebendes Protokoll zweiter Hand, als
+solches gekennzeichnet, weil sein Lauf mit `/tmp` verloren ist.

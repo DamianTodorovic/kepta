@@ -32,8 +32,12 @@
 // BEFUND, sonst Inventar — Pflicht seit der Leitung (12.10. 20:5x): "eine Messzahl in
 // README.md oder README.de.md ohne zitiertes Artefakt ist ab jetzt ein Befund, kein
 // Posten in einer Statistik". Welche Dateien hart drauf stehen, steht in AUFPFLICHTUNGEN
-// (datei-scharf, mit Grund, kein wildcard). `--ohne-pflicht` und `--inventar` zaehlen sie
-// als Erfassung — ein Erfassungslauf ist kein Urteil, und er geht deshalb mit 0 raus.
+// (datei-scharf, mit Grund, kein wildcard) — seit 13.10. sind es genau die beiden
+// Flaechen, die die Leitung nennt; der Grund fuer die CHANGELOG als Ausstand steht dort.
+// `--ohne-pflicht` und `--inventar` zaehlen sie als Erfassung — ein Erfassungslauf ist
+// kein Urteil, und er geht deshalb mit 0 raus.
+// Gelaufen wird das hier in jedem CI-Takt nach der Suite (.github/workflows/ci.yml,
+// Schritt "Zahlen-Belege") — eine Console, die niemand abhoert, huetet nichts.
 //
 // Suite-Zahlen sind NICHT dieses Skripts: 982/996-Faelle und Testdatei-Anzahl haelt
 // scripts/doku-check.mjs an einem echten Lauf fest — eine Zahl, eine Haendlerin.
@@ -134,12 +138,23 @@ export const UMLEITUNGEN = [
 /**
  * Die Dateien, die hart geprueft werden (Zahl ohne Zitat = Befund). Dateischarf, mit
  * Grund — ein wildcard wirft in liesAusnahmen.
+ *
+ * Stand 13.10.2026: CHANGELOG.md ist raus. Grund, datei-scharf und ohne wildcard:
+ *   1. Die Pflicht-Regel der Leitung vom 12.10.2026 nennt woertlich nur die beiden
+ *      Flaechen — "eine Messzahl in README.md oder README.de.md ohne zitiertes Artefakt
+ *      ist ab jetzt ein Befund". Die CHANGELOG wurde von der ersten Fassung mitgenommen,
+ *      weil dort die vier Fundstellen der Nacht standen; die Regel selbst nennt sie nie.
+ *   2. Die Geschichte eines Changelogs laesst sich nicht rueckwirkend belegen: ein Eintrag
+ *      beschreibt einen Lauf von damals, und wenn sein Rohdaten-Log damals nach `/tmp`
+ *      ging, kann heute kein Artefakt mehr auf der Platte liegen. 183 solche Zahlen
+ *      haengen an dieser Datei — eine Wache, die fuer jeden Stand immer rot ist, wird
+ *      abgeschaltet statt angehoert, und das ist der zweite Grund.
+ * Funktion (a) bleibt fuer CHANGELOG.md unveraendert an: jede Zahl MIT Zitat wird weiter
+ * gegen ihr zitiertes Artefakt gemessen, und ein toter oder mehrdeutiger Pfad ist weiter
+ * ein Befund (haelt tests/zahlen-belege.test.ts, Fall "misst die CHANGELOG weiter an
+ * ihren Zitaten"). Die Zahl ohne Zitat ist dort Erfassung — anzusehen mit --inventar.
  */
 export const AUFPFLICHTUNGEN = [
-  {
-    datei: "CHANGELOG.md",
-    grund: "die vorher/nachher-Zahlen der Graph-Scheibe sind hier zitiert und waren am 12.10. an vier Stellen nicht im zitierten Log",
-  },
   { datei: "README.md", grund: "dieselben Zahlen stehen in der englischen Flaeche — Publikum" },
   { datei: "README.de.md", grund: "dieselben Zahlen in der deutschen Flaeche" },
 ];

@@ -277,14 +277,20 @@ describe("zahlen-belege: Artefakte lesen", () => {
 });
 
 describe("zahlen-belege: die vier Fundstellen", () => {
-  const schlecht = () => {
+  // Die Pflichtfaelle lesen denselben Fixture-Text als Pflichtpapier. Seit 13.10.2026 steht
+  // CHANGELOG.md nicht mehr auf AUFPFLICHTUNGEN (Grund im Quelltext der Wache), und die
+  // Pflicht ist an einem datei-scharfen Namen fest — nicht am Text. Die Fixture heisst
+  // CHANGELOG.md, weil sie die vier Fundstellen der Nacht haelt; als Vorlage fuer eine
+  // Pflichtdatei liest die Wache sie unter dem Namen README.md, ihrer Suche nach derselben
+  // Wurzel, also mit denselben Artefakten.
+  const schlecht = (datei = "CHANGELOG.md", pflicht = true) => {
     const wurzel = path.join(FIXTUREN, "schlecht");
     return pruefeDoku({
       wurzel,
-      datei: "CHANGELOG.md",
+      datei,
       text: lese("schlecht/CHANGELOG.md"),
       suche: [wurzel],
-      pflicht: true,
+      pflicht,
     });
   };
 
@@ -292,9 +298,6 @@ describe("zahlen-belege: die vier Fundstellen", () => {
     const { befunde } = schlecht();
     expect(schluessel(befunde)).toEqual([
       "pfad-existiert-nicht|15",
-      "pflicht-ohne-zitat|1234",
-      "pflicht-ohne-zitat|13.4",
-      "pflicht-ohne-zitat|42",
       "zahl-nicht-im-beleg|1019",
       "zahl-nicht-im-beleg|11",
       "zahl-nicht-im-beleg|1289",
@@ -353,14 +356,12 @@ describe("zahlen-belege: die vier Fundstellen", () => {
   });
 
   it("meldet die Pflicht ohne Zitat von sich aus — die Erfassung ist die Ausnahme", () => {
-    const wurzel = path.join(FIXTUREN, "schlecht");
-    const text = lese("schlecht/CHANGELOG.md");
-    const defaultFall = pruefeDoku({ wurzel, datei: "CHANGELOG.md", text, suche: [wurzel] });
+    const defaultFall = schlecht("README.md");
     expect(defaultFall.befunde.filter((b) => b.art === "pflicht-ohne-zitat").map((b) => normalisiereZahl(b.zahl)).sort()).toEqual(["1234", "13.4", "42"]);
     expect(defaultFall.befunde).toHaveLength(14);
     expect(defaultFall.inventar.pflichtOhneZitat).toBe(3);
 
-    const milde = pruefeDoku({ wurzel, datei: "CHANGELOG.md", text, suche: [wurzel], pflicht: false });
+    const milde = schlecht("README.md", false);
     expect(milde.befunde.map((b) => b.art)).not.toContain("pflicht-ohne-zitat");
     expect(milde.befunde).toHaveLength(11);
     // Gezaehlt bleibt es trotzdem — die Erfassung verliert nichts, sie urteilt nur nicht.
@@ -368,6 +369,7 @@ describe("zahlen-belege: die vier Fundstellen", () => {
 
     // CLI-Modi. Die Fixture hat neben den Pflicht-Zahlen auch echte Fehler, deshalb bleibt
     // sie rot, auch ohne Pflicht — der scharfe Beweis ist die Scratch-Datei darunter.
+    const wurzel = path.join(FIXTUREN, "schlecht");
     expect(stumm([`--wurzel=${wurzel}`, "--datei=CHANGELOG.md"])).toBe(1);
     expect(stumm([`--wurzel=${wurzel}`, "--datei=CHANGELOG.md", "--ohne-pflicht"])).toBe(1);
     expect(stumm([`--wurzel=${wurzel}`, "--datei=CHANGELOG.md", "--inventar"])).toBe(0);
@@ -377,7 +379,11 @@ describe("zahlen-belege: die vier Fundstellen", () => {
     expect(stumm([`--wurzel=${nurPflicht}`, "--datei=README.md", "--ohne-pflicht"])).toBe(0);
 
     // Die Pflichtliste selbst, dateischarf: beide READMEs drauf, mit Grund, ohne wildcard.
-    expect(AUFPFLICHTUNGEN.map((a) => a.datei)).toEqual(["CHANGELOG.md", "README.md", "README.de.md"]);
+    // CHANGELOG.md ist seit 13.10.2026 NICHT mehr drauf — die Regel der Leitung nennt die
+    // beiden Flaechen, und eine Wache, die an der Geschichte eines Changelogs immer rot ist,
+    // wird abgeschaltet statt angehoert.
+    expect(AUFPFLICHTUNGEN.map((a) => a.datei)).toEqual(["README.md", "README.de.md"]);
+    expect(AUFPFLICHTUNGEN.map((a) => a.datei)).not.toContain("CHANGELOG.md");
     for (const eintrag of AUFPFLICHTUNGEN) {
       expect(eintrag.grund.length, `${eintrag.datei} nennt keinen Grund`).toBeGreaterThan(20);
       expect(eintrag.datei).not.toMatch(/[*?]/);
@@ -385,14 +391,39 @@ describe("zahlen-belege: die vier Fundstellen", () => {
     expect(AUFPFLICHTUNGEN.find((a) => a.datei === "README.md")?.grund).toContain("Flaeche");
   });
 
+  it("misst die CHANGELOG weiter an ihren Zitaten — nur die Pflicht ist weg", () => {
+    // Der eine Fall, der die beiden Haelften der Wache trennt: (a) jede ZAHL MIT ZITAT wird
+    // weiterhin gegen ihr Artefakt gemessen, auch in CHANGELOG.md; (b) eine Messzahl OHNE
+    // Zitat ist dort keine Pflicht mehr, sondern Erfassung. Beide Richtunden, damit niemand
+    // den Austausch als "CHANGELOG wird nicht mehr geprueft" lesen kann.
+    const ort = kratzer({
+      "beleg/lauf.log.txt": "ms=44\n",
+      "CHANGELOG.md":
+        "Die Geschichte nennt **45 ms** (`beleg/lauf.log.txt`).\nUnd eine Zahl ohne jeden Beleg: **44 ms**.\n",
+      "README.md":
+        "Die Flaeche nennt **45 ms** (`beleg/lauf.log.txt`).\nUnd eine Zahl ohne jeden Beleg: **44 ms**.\n",
+    });
+    // Zeile 1: zitiert, aber das Artefakt sagt 44 — rot, in beiden Papieren gleich.
+    expect(stumm([`--wurzel=${ort}`, "--datei=CHANGELOG.md"])).toBe(1);
+    const changelog = pruefeDoku({ wurzel: ort, datei: "CHANGELOG.md", text: fs.readFileSync(path.join(ort, "CHANGELOG.md"), "utf8"), suche: [ort] });
+    expect(changelog.befunde.map((b) => `${b.art}|${b.zeile}`)).toEqual(["zahl-nicht-im-beleg|1"]);
+    expect(changelog.inventar.pflichtOhneZitat).toBe(0);
+    expect(changelog.inventar.ohneZitat).toBe(1);
+    // Derselbe Text als Pflichtpapier: die Zahl ohne Zitat ist zusaetzlich ein Befund.
+    const readme = pruefeDoku({ wurzel: ort, datei: "README.md", text: fs.readFileSync(path.join(ort, "README.md"), "utf8"), suche: [ort] });
+    expect(readme.befunde.map((b) => `${b.art}|${b.zeile}`).sort()).toEqual(["pflicht-ohne-zitat|2", "zahl-nicht-im-beleg|1"]);
+  });
+
   it("ein Querverweis auf ein anderes Papier ist kein Messbeleg", () => {
     // CHANGELOG.md:25 der Kern-Doku: "The same sentence stands in
     // kepta-app/docs/graph-kosten.md" — ein Verweis, nicht die Quelle der 13,4 ms. Haelt
     // die Wache dafuer, werden sechs Querverweise zu sechs "Zahl trifft ihr Zitat nicht"
-    // (von der Leitung an mir gefunden, 12.10. 19:5x). Hier: Inventar, kein Befund.
+    // (von der Leitung an mir gefunden, 12.10. 19:5x). Der Verweis fuehrt also nie zu
+    // `zahl-nicht-im-beleg`; ob er ueberhaupt meldet, haengt nur an der Pflichtliste.
     const { befunde } = schlecht();
-    const verweis = befunde.find((b) => normalisiereZahl(b.zahl) === "13.4");
-    expect(verweis?.art).toBe("pflicht-ohne-zitat");
+    expect(befunde.find((b) => normalisiereZahl(b.zahl) === "13.4")).toBeUndefined();
+    const pflicht = schlecht("README.md").befunde.find((b) => normalisiereZahl(b.zahl) === "13.4");
+    expect(pflicht?.art).toBe("pflicht-ohne-zitat");
   });
 
   it("ein Datum ist eine Serie mit Jahreszahl, nicht jede Dreiergruppe", () => {

@@ -1,0 +1,527 @@
+
+> kepta@3.4.0 test:cov
+> vitest run --coverage --reporter=default --reporter=json --outputFile.json=test-results/vitest.json && node scripts/doku-check.mjs
+
+
+      [2mCoverage enabled with [22m[33mv8[39m
+
+[90mstdout[2m | tests/graf-ruhe.test.ts[2m > [22m[2mnever overlap: der Kern trennt seine Scheiben in der Ruhe[2m > [22m[2mtrennt 400 Notizen an 27 Begriffen — nach eigener Regel UND nach der Regel der Flaeche
+[22m[39m[ruhe] knoten=400 kanten=1181 ms=987 ticks=140 schliff=1 weltseite=1321 anDerWand=4 paareEigen=0 paareFlaeche=0 medialeKante=283 kontrollpaar=427 verhaeltnis=0.662 notizRadius=10.16 anteil=0.769%
+
+ [32m✓[39m tests/kli-ausgabemuster.test.ts [2m([22m[2m26 tests[22m[2m)[22m[33m 4970[2mms[22m[39m
+     [33m[2m✓[22m[39m keine Zeile steht auf einem ungeraden Einzug, keine auf 3 oder 5 [33m 940[2mms[22m[39m
+     [33m[2m✓[22m[39m der gewiesene Weg nennt einen Befehl, den es gibt, und der trifft (Z5) [33m 814[2mms[22m[39m
+     [33m[2m✓[22m[39m --json liefert ein Objekt, Prosa liefert keinen JSON-Text [33m 835[2mms[22m[39m
+     [33m[2m✓[22m[39m mit --color=always ist der Text wortgleich wie mit --color=never [33m 865[2mms[22m[39m
+     [33m[2m✓[22m[39m kein Zustand hangt nur an einer Farbe: jedes Zustandswort steht auch da [33m 419[2mms[22m[39m
+     [33m[2m✓[22m[39m Gruppen, Schalter, Exit-Codes, Umwelt — keine Zeile ueber 80, kein Befehl auf Spalte 0 [33m 403[2mms[22m[39m
+     [33m[2m✓[22m[39m auch die Hilftafel verliert nichts: jeder Satz der Befehle steht ganz da [33m 431[2mms[22m[39m
+ [32m✓[39m tests/kli-kein-ungemessener-zustand.test.ts [2m([22m[2m19 tests[22m[2m)[22m[33m 6146[2mms[22m[39m
+     [33m[2m✓[22m[39m “kepta stats" benutzt das Wort nur, wo es NOT heisst [33m 539[2mms[22m[39m
+     [33m[2m✓[22m[39m “kepta recall weber" benutzt das Wort nur, wo es NOT heisst [33m 657[2mms[22m[39m
+     [33m[2m✓[22m[39m “kepta timeline weber" benutzt das Wort nur, wo es NOT heisst [33m 413[2mms[22m[39m
+     [33m[2m✓[22m[39m “kepta contradict" benutzt das Wort nur, wo es NOT heisst [33m 423[2mms[22m[39m
+     [33m[2m✓[22m[39m “kepta remember Notiz über Weber" benutzt das Wort nur, wo es NOT heisst [33m 455[2mms[22m[39m
+     [33m[2m✓[22m[39m “kepta ui" benutzt das Wort nur, wo es NOT heisst [33m 392[2mms[22m[39m
+     [33m[2m✓[22m[39m “kepta help" benutzt das Wort nur, wo es NOT heisst [33m 414[2mms[22m[39m
+     [33m[2m✓[22m[39m “kepta --version" benutzt das Wort nur, wo es NOT heisst [33m 379[2mms[22m[39m
+     [33m[2m✓[22m[39m “kepta " benutzt das Wort nur, wo es NOT heisst [33m 382[2mms[22m[39m
+     [33m[2m✓[22m[39m “kepta setup --yes" benutzt das Wort nur, wo es NOT heisst [33m 382[2mms[22m[39m
+     [33m[2m✓[22m[39m setup verspricht keine Grenzenlosigkeit, die es nicht geprüft hat [33m 374[2mms[22m[39m
+     [33m[2m✓[22m[39m der Pfad und die letzte Schreibzeit stehen da, weil sie gelesen wurden [33m 419[2mms[22m[39m
+     [33m[2m✓[22m[39m keine Zeile länger als 80, das Wortlaut bleibt Wort für Wort erhalten [33m 424[2mms[22m[39m
+ [32m✓[39m tests/kli-hilfe-und-flags.test.ts [2m([22m[2m24 tests[22m[2m)[22m[33m 6912[2mms[22m[39m
+     [33m[2m✓[22m[39m “help” druckt die Tafel auf stdout, Exit 0, und öffnet keine Datenbank [33m 517[2mms[22m[39m
+     [33m[2m✓[22m[39m “-h” druckt die Tafel auf stdout, Exit 0, und öffnet keine Datenbank [33m 564[2mms[22m[39m
+     [33m[2m✓[22m[39m “--help” druckt die Tafel auf stdout, Exit 0, und öffnet keine Datenbank [33m 362[2mms[22m[39m
+     [33m[2m✓[22m[39m nennt Name und Version, Exit 0, und verlangt dafür keinen Schlüssel [33m 379[2mms[22m[39m
+     [33m[2m✓[22m[39m -V ist dieselbe Tür [33m 423[2mms[22m[39m
+     [33m[2m✓[22m[39m ein unbekanntes Flag wird als Flag abgewiesen — und nicht als Tippfall auf „ui“ geraten [33m 382[2mms[22m[39m
+     [33m[2m✓[22m[39m auch vor ein Wort gesetzte Flags geraten nicht in die Editier-Distanz [33m 411[2mms[22m[39m
+     [33m[2m✓[22m[39m ein Flag hinter dem Befehl wird nicht zum Suchtext (D2-09) [33m 444[2mms[22m[39m
+     [33m[2m✓[22m[39m stats --json liefert ein kompaktes JSON-Objekt ohne Farbe und ohne next [33m 414[2mms[22m[39m
+     [33m[2m✓[22m[39m recall --json liefert ein kompaktes JSON-Objekt ohne Farbe und ohne next [33m 480[2mms[22m[39m
+     [33m[2m✓[22m[39m timeline --json liefert ein kompaktes JSON-Objekt ohne Farbe und ohne next [33m 381[2mms[22m[39m
+     [33m[2m✓[22m[39m contradict --json liefert ein kompaktes JSON-Objekt ohne Farbe und ohne next [33m 428[2mms[22m[39m
+     [33m[2m✓[22m[39m die Zahlen im JSON sind dieselben wie in der Prosa [33m 868[2mms[22m[39m
+     [33m[2m✓[22m[39m merken mit leerem Text endet nicht mit Erfolg [33m 417[2mms[22m[39m
+     [33m[2m✓[22m[39m erfolgreiches Merken endet mit 0 [33m 438[2mms[22m[39m
+[90mstdout[2m | tests/graf-ruhe.test.ts[2m > [22m[2mnever overlap: der Kern trennt seine Scheiben in der Ruhe[2m > [22m[2mtrennt 1500 Notizen an 27 Begriffen — nach eigener Regel UND nach der Regel der Flaeche
+[22m[39m[ruhe] knoten=1500 kanten=4664 ms=6263 ticks=140 schliff=59 weltseite=1775 anDerWand=4 paareEigen=0 paareFlaeche=0 medialeKante=385 kontrollpaar=572 verhaeltnis=0.674 notizRadius=10.16 anteil=0.572%
+
+[90mstderr[2m | tests/server.test.ts[2m > [22m[2mInbox-Import: ein PDF-Extraktor, und zwar derselbe wie überall[2m > [22m[2munlesbares PDF fällt auf die Rohbyte-Schicht zurück, statt die Inbox zu blockieren
+[22m[39mWarning: Indexing all PDF objects
+
+ [32m✓[39m tests/server.test.ts [2m([22m[2m50 tests[22m[2m)[22m[33m 3255[2mms[22m[39m
+     [33m[2m✓[22m[39m listet auch >1000 Knoten vollständig (Liste und Export) [33m 704[2mms[22m[39m
+     [33m[2m✓[22m[39m unlesbares PDF fällt auf die Rohbyte-Schicht zurück, statt die Inbox zu blockieren [33m 940[2mms[22m[39m
+ [32m✓[39m tests/core/praxissync.test.ts [2m([22m[2m2 tests[22m[2m)[22m[33m 1790[2mms[22m[39m
+     [33m[2m✓[22m[39m paginiert: mehr als 100 Notizen kommen GANZ in das Bundle [33m 643[2mms[22m[39m
+     [33m[2m✓[22m[39m Export → Import rundet vollständig ab [33m 1143[2mms[22m[39m
+ [32m✓[39m tests/workflows.test.ts [2m([22m[2m15 tests[22m[2m)[22m[33m 4824[2mms[22m[39m
+     [33m[2m✓[22m[39m bereits gelistete Version wird uebersprungen, der Publisher bleibt zu [33m 404[2mms[22m[39m
+     [33m[2m✓[22m[39m genuiner Duplikats-Konflikt bleibt ein Skip [33m 1691[2mms[22m[39m
+     [33m[2m✓[22m[39m HTTP 400 ist eine Ablehnung, kein Erfolg [33m 1486[2mms[22m[39m
+     [33m[2m✓[22m[39m nach einem Abweis entscheidet die Registry, nicht der Publisher [33m 742[2mms[22m[39m
+     [33m[2m✓[22m[39m erfolgreicher Publish ohne Registry-Treffer bleibt Erfolg [33m 481[2mms[22m[39m
+ [32m✓[39m tests/mcp-cli-kommando.test.ts [2m([22m[2m7 tests[22m[2m)[22m[33m 4230[2mms[22m[39m
+     [33m[2m✓[22m[39m Tippfehler 'rember' endet mit Exit 2 und nennt den naechsten Befehl [33m 379[2mms[22m[39m
+     [33m[2m✓[22m[39m ein erdachter Befehl endet ebenfalls mit Exit 2 — und die Liste ist sichtbar [33m 464[2mms[22m[39m
+     [33m[2m✓[22m[39m --help ist die Hilfetür: Tafel auf stdout, Exit 0, kein hängender stdin [33m 429[2mms[22m[39m
+     [33m[2m✓[22m[39m -h und --version sind dieselben Türen [33m 885[2mms[22m[39m
+     [33m[2m✓[22m[39m ein Schalter, den es nicht gibt, endet mit Exit 2 und nennt die echten Schalter [33m 453[2mms[22m[39m
+     [33m[2m✓[22m[39m ohne Argument startet der MCP-Server weiter — und sagt, worauf er wartet [33m 1217[2mms[22m[39m
+     [33m[2m✓[22m[39m die bekannten Befehle fallen nicht in die neue Bremse [33m 401[2mms[22m[39m
+[90mstderr[2m | tests/server-inbox-symlink.test.ts[2m > [22m[2mQ-18 — der Inbox-Watcher folgt Symlinks (CWE-59)[2m > [22m[2mder WATCHER selbst übernimmt die verlinkte Datei nicht (A3-Beweispfad)
+[22m[39mkepta inbox: verlinkt.txt wurde uebersprungen — symlink — the inbox does not follow links out of the folder
+
+[90mstderr[2m | tests/server-inbox-symlink.test.ts[2m > [22m[2mQ-18 — der Inbox-Watcher folgt Symlinks (CWE-59)[2m > [22m[2mder WATCHER selbst übernimmt die verlinkte Datei nicht (A3-Beweispfad)
+[22m[39mkepta inbox: garten wurde uebersprungen — symlink — the inbox does not follow links out of the folder
+
+[90mstdout[2m | tests/import-ordner.test.ts[2m > [22m[2mimport ordner: Menge, Bremse, keine Sperre[2m > [22m[2mblockiert den Lauf nicht: 1200 Dateien halten eine andere Aufgabe am Leben
+[22m[39m  Mengenzaehler: 1200 dateien in 795 ms (0.66 ms je datei)
+
+[90mstderr[2m | tests/server-inbox-symlink.test.ts[2m > [22m[2mQ-18 — der Inbox-Watcher folgt Symlinks (CWE-59)[2m > [22m[2mder WATCHER selbst übernimmt die verlinkte Datei nicht (A3-Beweispfad)
+[22m[39mkepta inbox: verlinkt.txt wurde uebersprungen — symlink — the inbox does not follow links out of the folder
+
+ [32m✓[39m tests/import-ordner.test.ts [2m([22m[2m27 tests[22m[2m)[22m[33m 1889[2mms[22m[39m
+     [33m[2m✓[22m[39m blockiert den Lauf nicht: 1200 Dateien halten eine andere Aufgabe am Leben [33m 1221[2mms[22m[39m
+ [32m✓[39m tests/import-claude.test.ts [2m([22m[2m24 tests[22m[2m)[22m[33m 1786[2mms[22m[39m
+     [33m[2m✓[22m[39m lässt keine datei im projektordner fallen: 1.200 gespräch-dateien gehen alle durch [33m 1109[2mms[22m[39m
+ [32m✓[39m tests/server-inbox-symlink.test.ts [2m([22m[2m6 tests[22m[2m)[22m[33m 3642[2mms[22m[39m
+     [33m[2m✓[22m[39m der WATCHER selbst übernimmt die verlinkte Datei nicht (A3-Beweispfad) [33m 3318[2mms[22m[39m
+ [32m✓[39m tests/mcp-kappen-meldung.test.ts [2m([22m[2m18 tests[22m[2m)[22m[33m 1682[2mms[22m[39m
+     [33m[2m✓[22m[39m sagt bei vollem Lesefenster, dass total ein Fenster ist und nicht die Welt [33m 1246[2mms[22m[39m
+ [32m✓[39m tests/mcp-consolidate-bestaetigung.test.ts [2m([22m[2m15 tests[22m[2m)[22m[33m 2647[2mms[22m[39m
+     [33m[2m✓[22m[39m ueber 500 Paare: begrenzt steht in der Antwort, die Liste ist gekappt, der Text sagt es [33m 881[2mms[22m[39m
+     [33m[2m✓[22m[39m begrenzt und hinweis sind in der outputSchema deklariert — sonst gilt A2-01 sogleich wieder [33m 895[2mms[22m[39m
+ [32m✓[39m tests/kli-mcp-hochlauf.test.ts [2m([22m[2m6 tests[22m[2m)[22m[33m 2905[2mms[22m[39m
+     [33m[2m✓[22m[39m nennt Version, Datei und Zustand in EINER Zeile — und den Pfad kein zweites Mal [33m 532[2mms[22m[39m
+     [33m[2m✓[22m[39m sagt dem Wartenden, worauf er wartet — und wie er herauskommt [33m 533[2mms[22m[39m
+     [33m[2m✓[22m[39m jede Log-Zeile trägt dasselbe Präfix, keins nennt eine andere Senderin [33m 587[2mms[22m[39m
+     [33m[2m✓[22m[39m meldet eine Umwandlung von Klartext als eigene Zeile, nicht in einer Klammer [33m 446[2mms[22m[39m
+     [33m[2m✓[22m[39m nennt Kern, kostenlose App und Enterprise, jede Zeile unter 80 [33m 393[2mms[22m[39m
+     [33m[2m✓[22m[39m weist den Weg, statt nur abzustellen: die letzte Zeile ist ein next [33m 410[2mms[22m[39m
+ [32m✓[39m tests/kli-pipe-ueberlebt.test.ts [2m([22m[2m4 tests[22m[2m)[22m[33m 2145[2mms[22m[39m
+     [33m[2m✓[22m[39m stats | head -1: Zeile 1 steht, stderr ist leer, der Exit ist 0 [33m 593[2mms[22m[39m
+     [33m[2m✓[22m[39m recall | head -1: der Kopf steht, kein Stack, kein Error-Wort [33m 594[2mms[22m[39m
+     [33m[2m✓[22m[39m timeline | head -2: die Antwort beginnt, danach Stille auf stderr [33m 453[2mms[22m[39m
+     [33m[2m✓[22m[39m contradict | head -1: auch der dry-run überlebt den Abbruch des Lesers [33m 494[2mms[22m[39m
+ [32m✓[39m tests/server-import-ersatz.test.ts [2m([22m[2m22 tests[22m[2m)[22m[33m 1416[2mms[22m[39m
+     [33m[2m✓[22m[39m lehnt replace ohne ausdrückliche Bestätigung ab und lässt jeden Knoten in Ruhe [33m 302[2mms[22m[39m
+ [32m✓[39m tests/core/store-verschluesselung.test.ts [2m([22m[2m24 tests[22m[2m)[22m[33m 1821[2mms[22m[39m
+     [33m[2m✓[22m[39m Windows: haelt jemand die Datei fest, bleibt das Original — nach ein paar Versuchen [33m 432[2mms[22m[39m
+     [33m[2m✓[22m[39m wartet, solange ein lebender Prozess umwandelt [33m 472[2mms[22m[39m
+     [33m[2m✓[22m[39m eine frische Sperre wird abgewartet — und nach der Frist klar gemeldet, nicht weggeraeumt [33m 626[2mms[22m[39m
+ [32m✓[39m tests/demo.test.ts [2m([22m[2m16 tests[22m[2m)[22m[33m 1580[2mms[22m[39m
+ [32m✓[39m tests/graf-bilanz.test.ts [2m([22m[2m7 tests[22m[2m)[22m[33m 1291[2mms[22m[39m
+     [33m[2m✓[22m[39m ein Bestand ueber der Knotenkappe meldet die Differenz [33m 958[2mms[22m[39m
+ [32m✓[39m tests/ruhe-sonde.test.ts [2m([22m[2m4 tests[22m[2m)[22m[33m 6410[2mms[22m[39m
+     [33m[2m✓[22m[39m misst sieben Groessen, und zwar als Zahlen [33m 954[2mms[22m[39m
+     [33m[2m✓[22m[39m ueberspringt bei gesetzter Last — und die Medianschwelle allein haette 'ruhig' gesagt [33m 3131[2mms[22m[39m
+     [33m[2m✓[22m[39m traegt das Urteil nicht allein aus dem load average [33m 835[2mms[22m[39m
+     [33m[2m✓[22m[39m kennt seine Schwellen aus der Messung, nicht aus dem Kopf [33m 1486[2mms[22m[39m
+[90mstdout[2m | tests/import-tabelle.test.ts[2m > [22m[2mimport tabelle: Menge, Bremse, keine Sperre[2m > [22m[2mblockiert den Lauf nicht: 1500 Zeilen halten eine andere Aufgabe am Leben
+[22m[39m  Mengenzaehler: 1500 zeilen in 1286 ms (0.86 ms je zeile), ohne duplikatspruefung
+
+ [32m✓[39m tests/mcp.test.ts [2m([22m[2m41 tests[22m[2m)[22m[33m 1519[2mms[22m[39m
+     [33m[2m✓[22m[39m memory_save indiziert Chunks für die Vektor-Suche [33m 469[2mms[22m[39m
+ [32m✓[39m tests/import-tabelle.test.ts [2m([22m[2m21 tests[22m[2m)[22m[33m 1752[2mms[22m[39m
+     [33m[2m✓[22m[39m blockiert den Lauf nicht: 1500 Zeilen halten eine andere Aufgabe am Leben [33m 1301[2mms[22m[39m
+[90mstdout[2m | tests/graf-kosten.test.ts[2m > [22m[2mgraf-kosten: einmal rechnen, dann ausliefern[2m > [22m[2meine zusaetzliche Notiz haelt die Bestehenden in der Wander-Grenze und kostet <= 15 ms
+[22m[39m[kosten] mutation=86.7ms exaktgehalten=77/77 gewandertBegrenzt=3 groessteVerrueckung=1.1WE grenze=28.3WE partner=1 mittlereNachbarschaft=144WE zumLink=144WE
+[kosten] mutation fuenf Wuerfe=86.7,60.5,61.7,51.7,46.5ms median=60.5ms p95=86.7ms
+[kosten] mutation: ruhe vorher | Maschine: Median 173.56 ms, max/median 1.5, 28 node-Prozesse, load1/cpu 1.5 auf 10 Kernen; Fenster 10525ms, fremde Kerne 6.24 aus 96 Prozessen (node 6910ms, node 6770ms, node 6740ms), eigene Node-Prozesse nicht gerechnet
+[kosten] mutation: ruhe nachher | Maschine: Median 188.35 ms, max/median 2.07, 28 node-Prozesse, load1/cpu 1.83 auf 10 Kernen; Fenster 11533ms, fremde Kerne 6.46 aus 88 Prozessen (node 7430ms, node 7240ms, node 7240ms), eigene Node-Prozesse nicht gerechnet
+[kosten] mutation: urteil=NICHT ruhig grund=Median 173.56 ms ueber 20 ms, fremde CPU 6.24 Kerne ueber 1.2 | alteRegel (nur Niveau+Streuung) haette gesagt: vorher=false nachher=false
+[kosten] mutation: Maschine nicht ruhig — bestellte Grenze bleibt offen, kein Urteil unter fremder Last
+
+ [32m✓[39m tests/server-mcp-spiegel.test.ts [2m([22m[2m10 tests[22m[2m)[22m[33m 1170[2mms[22m[39m
+     [33m[2m✓[22m[39m dryRun:false ohne Bestaetigung: beide Tueren verweigern, beide mit demselben Wortlaut [33m 459[2mms[22m[39m
+     [33m[2m✓[22m[39m die Kappe wird an beiden Tueren gesagt: begrenzt ist auf beiden Wegen da [33m 376[2mms[22m[39m
+[90mstdout[2m | tests/graf-kosten.test.ts[2m > [22m[2mgraf-kosten: einmal rechnen, dann ausliefern[2m > [22m[2mein Neuling mit eigener Nachbarschaft landet bei ihr, nicht in der Mitte
+[22m[39m[kosten] lokalerNeuling abstand=138WE
+
+ [32m✓[39m tests/graf-dichte.test.ts [2m([22m[2m13 tests[22m[2m)[22m[33m 1261[2mms[22m[39m
+     [33m[2m✓[22m[39m bei 400 Notizen geht kein Begriff verloren — die alte Kappe haette 100 % verworfen [33m 491[2mms[22m[39m
+     [33m[2m✓[22m[39m bei 2 000 Notizen gilt dasselbe, und was das Budget nicht erreiht, steht im Feld [33m 597[2mms[22m[39m
+ [32m✓[39m tests/embeddings.test.ts [2m([22m[2m32 tests[22m[2m)[22m[33m 1609[2mms[22m[39m
+     [33m[2m✓[22m[39m bettet eine frisch geschriebene Notiz, ohne aufs Intervall zu warten [33m 433[2mms[22m[39m
+     [33m[2m✓[22m[39m stop() nimmt auch den Write-Sofortlauf [33m 907[2mms[22m[39m
+[90mstdout[2m | tests/graf-ruhe.test.ts[2m > [22m[2mnever overlap: der Kern trennt seine Scheiben in der Ruhe[2m > [22m[2mtrennt 3000 Notizen an 27 Begriffen — nach eigener Regel UND nach der Regel der Flaeche
+[22m[39m[ruhe] knoten=3000 kanten=9414 ms=16983 ticks=140 schliff=13 weltseite=2759 anDerWand=4 paareEigen=0 paareFlaeche=0 medialeKante=571 kontrollpaar=817 verhaeltnis=0.699 notizRadius=10.16 anteil=0.368%
+
+ [32m✓[39m tests/graf-ruhe.test.ts [2m([22m[2m3 tests[22m[2m)[22m[33m 25731[2mms[22m[39m
+     [33m[2m✓[22m[39m trennt 400 Notizen an 27 Begriffen — nach eigener Regel UND nach der Regel der Flaeche [33m 1023[2mms[22m[39m
+     [33m[2m✓[22m[39m trennt 1500 Notizen an 27 Begriffen — nach eigener Regel UND nach der Regel der Flaeche [33m 6557[2mms[22m[39m
+     [33m[2m✓[22m[39m trennt 3000 Notizen an 27 Begriffen — nach eigener Regel UND nach der Regel der Flaeche [33m 18145[2mms[22m[39m
+ [32m✓[39m tests/core/suchbreite.test.ts [2m([22m[2m8 tests[22m[2m)[22m[33m 621[2mms[22m[39m
+ [32m✓[39m tests/mcp-list-total.test.ts [2m([22m[2m6 tests[22m[2m)[22m[33m 876[2mms[22m[39m
+ [32m✓[39m tests/server-permanent.test.ts [2m([22m[2m8 tests[22m[2m)[22m[33m 576[2mms[22m[39m
+ [32m✓[39m tests/graph-kappe.test.ts [2m([22m[2m3 tests[22m[2m)[22m[33m 540[2mms[22m[39m
+ [32m✓[39m tests/graf-doku.test.ts [2m([22m[2m5 tests[22m[2m)[22m[33m 608[2mms[22m[39m
+     [33m[2m✓[22m[39m jeder dokumentierte Parameter wird von der Route gelesen — und width/height werden abgewiesen [33m 357[2mms[22m[39m
+ [31m❯[39m tests/doku-zahlen.test.ts [2m([22m[2m50 tests[22m[2m | [22m[31m2 failed[39m[2m)[22m[33m 422[2mms[22m[39m
+     [32m✓[39m es gibt READMEs mit einer Testzahl, sonst prueft das hier nichts[32m 2[2mms[22m[39m
+[31m     [31m×[31m README.md nennt die Zahl der Faelle, die in einem Lauf durchgelaufen sind[39m[32m 15[2mms[22m[39m
+[31m     [31m×[31m README.de.md nennt die Zahl der Faelle, die in einem Lauf durchgelaufen sind[39m[32m 8[2mms[22m[39m
+     [32m✓[39m README.md nennt keine Paketgroesse, die um mehr als die Haelfte danebenliegt[32m 1[2mms[22m[39m
+     [32m✓[39m README.de.md nennt keine Paketgroesse, die um mehr als die Haelfte danebenliegt[32m 0[2mms[22m[39m
+     [32m✓[39m README.md nennt die richtige Zahl an Notizen und Anfragen[32m 1[2mms[22m[39m
+     [32m✓[39m README.de.md nennt die richtige Zahl an Notizen und Anfragen[32m 0[2mms[22m[39m
+     [32m✓[39m README.md behauptet keine Hit@1-Zahl aus einem alten Korpus mehr[32m 0[2mms[22m[39m
+     [32m✓[39m README.de.md behauptet keine Hit@1-Zahl aus einem alten Korpus mehr[32m 0[2mms[22m[39m
+     [32m✓[39m hat zu jeder Anfrage eine Kategorie und nur gueltige Ziel-IDs[32m 2[2mms[22m[39m
+     [32m✓[39m deckt alle fuenf Anfragekategorien ab[32m 0[2mms[22m[39m
+     [32m✓[39m README.md nennt die tatsaechliche Zahl der HTTP-Routen[32m 1[2mms[22m[39m
+     [32m✓[39m README.de.md nennt die tatsaechliche Zahl der HTTP-Routen[32m 0[2mms[22m[39m
+     [32m✓[39m README.md: das Test-Abzeichen nennt die tatsaechliche Zahl[32m 1[2mms[22m[39m
+     [32m✓[39m README.de.md: das Test-Abzeichen nennt die tatsaechliche Zahl[32m 0[2mms[22m[39m
+     [32m✓[39m keine Datei behauptet mehr 92 % Hit@1[32m 18[2mms[22m[39m
+     [32m✓[39m CHANGELOG.md hat einen Abschnitt fuer die Version aus package.json[32m 1[2mms[22m[39m
+     [32m✓[39m README.md zeigt die Version aus package.json als Badge[32m 0[2mms[22m[39m
+     [32m✓[39m die READMEs nennen die Coverage-Schwellen aus vitest.config.ts[32m 211[2mms[22m[39m
+     [32m✓[39m jede Cache-Sekunde in den READMEs liegt als Record in tools/latenz/ergebnisse[32m 2[2mms[22m[39m
+     [32m✓[39m es gibt ueberhaupt Werkzeug-Dokus, sonst prueft das hier nichts[32m 0[2mms[22m[39m
+     [32m✓[39m tools/latenz/README.md: jedes genannte Testfile existiert, jede Zahl stimmt[32m 1[2mms[22m[39m
+     [32m✓[39m tools/longmemeval/README.md: jedes genannte Testfile existiert, jede Zahl stimmt[32m 1[2mms[22m[39m
+     [32m✓[39m die Werkzeuge haben testbare Dateien, die der Waechter oben wirklich sieht[32m 1[2mms[22m[39m
+     [32m✓[39m die Records und die ausgelieferte Version sind ueberhaupt da, sonst prueft das hier nichts[32m 30[2mms[22m[39m
+     [32m✓[39m README.md: jede Benchmark-Zahl ist belegt, oder der Rückzug ist erklaert[32m 25[2mms[22m[39m
+     [32m✓[39m README.de.md: jede Benchmark-Zahl ist belegt, oder der Rückzug ist erklaert[32m 8[2mms[22m[39m
+     [32m✓[39m tools/longmemeval/README.md: jede Benchmark-Zahl ist belegt, oder der Rückzug ist erklaert[32m 22[2mms[22m[39m
+     [32m✓[39m die erledigte 61,5 % verlangt niemand mehr — und steht sie doch, muss ihre Lauf-Version dabei stehen[32m 0[2mms[22m[39m
+     [32m✓[39m die Doku-Liste ist nicht leer gelaufen[32m 0[2mms[22m[39m
+     [32m✓[39m README.md enthaelt keine Zeichen aus einem Fremdalphabet[32m 1[2mms[22m[39m
+     [32m✓[39m README.de.md enthaelt keine Zeichen aus einem Fremdalphabet[32m 1[2mms[22m[39m
+     [32m✓[39m CHANGELOG.md enthaelt keine Zeichen aus einem Fremdalphabet[32m 2[2mms[22m[39m
+     [32m✓[39m SECURITY.md enthaelt keine Zeichen aus einem Fremdalphabet[32m 1[2mms[22m[39m
+     [32m✓[39m LICENSE enthaelt keine Zeichen aus einem Fremdalphabet[32m 0[2mms[22m[39m
+     [32m✓[39m tools/longmemeval/README.md enthaelt keine Zeichen aus einem Fremdalphabet[32m 0[2mms[22m[39m
+     [32m✓[39m tools/latenz/README.md enthaelt keine Zeichen aus einem Fremdalphabet[32m 0[2mms[22m[39m
+     [32m✓[39m die Latenz-Records messen weiterhin unverschluesselt — sonst ist der Waechter unterfluessig[32m 0[2mms[22m[39m
+     [32m✓[39m README.md verschweigt nicht, dass die Latenzlaeufe ohne Verschlüsselung gemessen wurden[32m 1[2mms[22m[39m
+     [32m✓[39m README.de.md verschweigt nicht, dass die Latenzlaeufe ohne Verschlüsselung gemessen wurden[32m 0[2mms[22m[39m
+     [32m✓[39m README.md behauptet nicht, Frage- oder Antworttext liege im Repo[32m 0[2mms[22m[39m
+     [32m✓[39m README.de.md behauptet nicht, Frage- oder Antworttext liege im Repo[32m 0[2mms[22m[39m
+     [32m✓[39m die committeten Felder sind die, die der Text aufzaehlt[32m 9[2mms[22m[39m
+     [32m✓[39m jede Ingest-Zahl in der Doku steht in einem committeten Latenz-Record[32m 22[2mms[22m[39m
+     [32m✓[39m jeder npx-Aufruf heisst kepta-mcp (oder ein Tool, das es wirklich gibt)[32m 21[2mms[22m[39m
+     [32m✓[39m faellt nicht ueb Mitternacht: Stempel vom Vortag, der Lauf eine Minute spaeter[32m 1[2mms[22m[39m
+     [32m✓[39m laesst denselben Stempel am Tag des Laufs gelten[32m 0[2mms[22m[39m
+     [32m✓[39m verweigert einen Messstand in der Zukunft[32m 0[2mms[22m[39m
+     [32m✓[39m verweigert weiter die Zahl eines anderen Laufs[32m 0[2mms[22m[39m
+     [32m✓[39m verweigert eine Zahl ohne jeden Messstand[32m 0[2mms[22m[39m
+ [32m✓[39m tests/mcp-forget-supersede.test.ts [2m([22m[2m7 tests[22m[2m)[22m[33m 552[2mms[22m[39m
+ [32m✓[39m tests/core/suchcache.test.ts [2m([22m[2m8 tests[22m[2m)[22m[33m 800[2mms[22m[39m
+ [32m✓[39m tests/mcp-fehlerform.test.ts [2m([22m[2m4 tests[22m[2m)[22m[33m 470[2mms[22m[39m
+ [32m✓[39m tests/engine.test.ts [2m([22m[2m35 tests[22m[2m)[22m[33m 633[2mms[22m[39m
+ [32m✓[39m tests/server-settings-geheim.test.ts [2m([22m[2m10 tests[22m[2m)[22m[33m 480[2mms[22m[39m
+ [32m✓[39m tests/cli-erlebnis.test.ts [2m([22m[2m13 tests[22m[2m)[22m[33m 472[2mms[22m[39m
+ [32m✓[39m tests/engine-consolidate-schutz.test.ts [2m([22m[2m6 tests[22m[2m)[22m[33m 478[2mms[22m[39m
+ [32m✓[39m tests/mcp-asof.test.ts [2m([22m[2m4 tests[22m[2m)[22m[33m 348[2mms[22m[39m
+ [32m✓[39m tests/server-einstellungs-maske.test.ts [2m([22m[2m4 tests[22m[2m)[22m[33m 413[2mms[22m[39m
+ [32m✓[39m tests/npm-package.test.ts [2m([22m[2m10 tests[22m[2m)[22m[33m 674[2mms[22m[39m
+     [33m[2m✓[22m[39m remember + recall runden im eigenen Prozess ab — keine stumme Ausgabe, kein MCP-Fallback [33m 315[2mms[22m[39m
+ [32m✓[39m tests/mcp-graph-privatsphaere.test.ts [2m([22m[2m7 tests[22m[2m)[22m[33m 441[2mms[22m[39m
+ [31m❯[39m tests/herkunft.test.ts [2m([22m[2m5 tests[22m[2m | [22m[31m1 failed[39m[2m)[22m[33m 316[2mms[22m[39m
+     [32m✓[39m erkennt diesen Rechner — und nur ihn[32m 154[2mms[22m[39m
+     [32m✓[39m eine fremde Webseite kann keine Notiz einschleusen — auch nicht aus einem Sandbox-Frame[32m 71[2mms[22m[39m
+     [32m✓[39m DNS-Rebinding: mit fremdem Host-Kopf ist nichts lesbar — auch nicht der Live-Stream[32m 16[2mms[22m[39m
+[31m     [31m×[31m lokale Seiten, Skripte und KI-Apps über MCP arbeiten weiter[39m[32m 21[2mms[22m[39m
+     [32m✓[39m KEPTA_HOST fürs Netz: ein Netzwerk-Host ist erlaubt, fremde Webseiten bleiben gesperrt[32m 50[2mms[22m[39m
+ [32m✓[39m tests/core/store-parallel.test.ts [2m([22m[2m3 tests[22m[2m)[22m[33m 508[2mms[22m[39m
+     [33m[2m✓[22m[39m wartet auf eine fremde Schreibsperre, statt sofort abzubrechen [33m 493[2mms[22m[39m
+ [32m✓[39m tests/server-herkunftsdecke.test.ts [2m([22m[2m4 tests[22m[2m)[22m[32m 293[2mms[22m[39m
+ [32m✓[39m tests/server-repair-limit.test.ts [2m([22m[2m3 tests[22m[2m)[22m[32m 229[2mms[22m[39m
+ [32m✓[39m tests/aktivitaet.test.ts [2m([22m[2m7 tests[22m[2m)[22m[32m 280[2mms[22m[39m
+[90mstdout[2m | tests/zahlen-belege.test.ts[2m > [22m[2mzahlen-belege: die vier Fundstellen[2m > [22m[2mlaesst den geheilten Stand durch — gruen ist keine Gleichgueltigkeit
+[22m[39mzahlen-belege: 1 Markdown-Dateien, 62 Messbehauptungen — jedes zitierte Artefakt ist geoeffnet und jede Zahl darin gefunden (61 bestaetigt, 0 ohne Zitat, 1 Soll, 0 umgelenkt, 0 im Papier, keine Pflicht-Zahl ohne Zitat)
+
+ [31m❯[39m tests/zahlen-belege.test.ts [2m([22m[2m21 tests[22m[2m | [22m[31m4 failed[39m[2m)[22m[32m 297[2mms[22m[39m
+     [32m✓[39m normalisiert jede Schreibweise, die in einem Papier steht[32m 3[2mms[22m[39m
+     [32m✓[39m findet Zahlen mit Messgroesse und Serien, aber keine Datumssplitter[32m 4[2mms[22m[39m
+[31m     [31m×[31m kennt die Grenze: eine Zahl, die im Artefakt vorkommt, gilt — auch an anderer Stelle[39m[32m 13[2mms[22m[39m
+     [32m✓[39m rundet auf die Stellenzahl des Papiers und rechnet Sekunden in Millisekunden[32m 2[2mms[22m[39m
+     [32m✓[39m meldet ein unlesbares Artefakt, statt es zu ueberschlagen[32m 2[2mms[22m[39m
+     [32m✓[39m haelt ein mehrdeutiges Zitat an, statt den ersten Kandidaten zu raten[32m 3[2mms[22m[39m
+     [32m✓[39m findet die Fixture-Logs wieder, ohne die Arbeitsmappe zu brauchen[32m 47[2mms[22m[39m
+     [32m✓[39m sieht jede der vier Fundstellen — und sagt, was die Datei wirklich hat[32m 12[2mms[22m[39m
+     [32m✓[39m sind alle Glieder einer Serie falsch, sind alle rot — eines genuegt schon[32m 5[2mms[22m[39m
+     [32m✓[39m blaekt die Zahl, die in derselben Datei eine andere Zeile meint — bekannte Grenze[32m 6[2mms[22m[39m
+     [32m✓[39m laesst den geheilten Stand durch — gruen ist keine Gleichgueltigkeit[32m 8[2mms[22m[39m
+     [32m✓[39m meldet die Pflicht ohne Zitat von sich aus — die Erfassung ist die Ausnahme[32m 140[2mms[22m[39m
+     [32m✓[39m ein Querverweis auf ein anderes Papier ist kein Messbeleg[32m 9[2mms[22m[39m
+     [32m✓[39m ein Datum ist eine Serie mit Jahreszahl, nicht jede Dreiergruppe[32m 0[2mms[22m[39m
+     [32m✓[39m verliert keine Behauptung: jede Zahl landet in genau einem Korb[32m 11[2mms[22m[39m
+     [32m✓[39m weist eine Umleitung zurueck, deren eigener Beleg den Wert nicht hergibt[32m 3[2mms[22m[39m
+[31m     [31m×[31m laesst eine Umleitung gelten, wenn die andere Maschine denselben Wert haelt[39m[32m 4[2mms[22m[39m
+[31m     [31m×[31m prueft einen Papierbeleg nach, statt ihn zu glauben[39m[32m 3[2mms[22m[39m
+     [32m✓[39m verwirft jede wildcard-Ausnahme und jede Ausnahme ohne Grund[32m 1[2mms[22m[39m
+[31m     [31m×[31m haelt ein Soll fuer eine Latte und eine Messung fuer eine Messung[39m[32m 2[2mms[22m[39m
+     [32m✓[39m gibt 1 fuer jeden Befund und 0 fuer einen gruenen Baum[32m 13[2mms[22m[39m
+ [32m✓[39m tests/server-fehler.test.ts [2m([22m[2m5 tests[22m[2m)[22m[33m 353[2mms[22m[39m
+ [32m✓[39m tests/platten-wache.test.ts [2m([22m[2m11 tests[22m[2m)[22m[33m 327[2mms[22m[39m
+ [32m✓[39m tests/graf-vertrag.test.ts [2m([22m[2m9 tests[22m[2m)[22m[32m 157[2mms[22m[39m
+ [32m✓[39m tests/core/fts-ausfall.test.ts [2m([22m[2m5 tests[22m[2m)[22m[32m 224[2mms[22m[39m
+ [32m✓[39m tests/mcp-werkzeugtext.test.ts [2m([22m[2m13 tests[22m[2m)[22m[32m 104[2mms[22m[39m
+ [32m✓[39m tests/graf-determinismus.test.ts [2m([22m[2m9 tests[22m[2m)[22m[33m 1178[2mms[22m[39m
+     [33m[2m✓[22m[39m derselbe Bestand ergibt bitidentische Plaetze [33m 349[2mms[22m[39m
+     [33m[2m✓[22m[39m eine zusaetzliche Notiz bewegt nur ihre Nachbarschaft [33m 430[2mms[22m[39m
+ [32m✓[39m tests/extensions.test.ts [2m([22m[2m15 tests[22m[2m)[22m[32m 244[2mms[22m[39m
+[90mstdout[2m | tests/core/chatgpt-import.test.ts[2m > [22m[2mChatGPT-Import[2m > [22m[2mKommandozeile[2m > [22m[2mliest conversations.json aus einem Ordner und schreibt Memories (Exit 0)
+[22m[39mChatGPT import:
+  conversations: 1 · messages read: 3
+  user: 2 (1 too short) · assistant skipped: 1
+  memories: 1 new · 0 updated · 0 unchanged
+
+[90mstderr[2m | tests/core/chatgpt-import.test.ts[2m > [22m[2mChatGPT-Import[2m > [22m[2mKommandozeile[2m > [22m[2munbekannte Import-Quelle → Exit 2
+[22m[39m  unknown import source: claude
+    /var/folders/ct/jl4tc0wd7672rpl4_gbvg7c80000gn/T/kepta-chatgpt-BB4pI7 — what
+    exists: chatgpt
+
+[90mstderr[2m | tests/core/chatgpt-import.test.ts[2m > [22m[2mChatGPT-Import[2m > [22m[2mKommandozeile[2m > [22m[2mverweigert ZIPs mit Entpack-Hinweis (Exit 2, ohne Import)
+[22m[39m  zip detected:
+    /var/folders/ct/jl4tc0wd7672rpl4_gbvg7c80000gn/T/kepta-chatgpt-n1H5Ma/export.zip
+  unzip it first and point this command at the folder — the importer reads
+    without a zip dependency on purpose
+
+[90mstdout[2m | tests/core/chatgpt-import.test.ts[2m > [22m[2mChatGPT-Import[2m > [22m[2mKommandozeile[2m > [22m[2mdry-run zählt, speichert aber nichts
+[22m[39mChatGPT import (dry-run — nothing saved):
+  conversations: 1 · messages read: 3
+  user: 2 (1 too short) · assistant skipped: 1
+  memories: 1 new · 0 updated · 0 unchanged
+
+[90mstderr[2m | tests/core/chatgpt-import.test.ts[2m > [22m[2mChatGPT-Import[2m > [22m[2mKommandozeile[2m > [22m[2mkaputtes JSON → Exit 2 mit Meldung, kein Crash
+[22m[39m  conversations.json is not readable under
+    /var/folders/ct/jl4tc0wd7672rpl4_gbvg7c80000gn/T/kepta-chatgpt-a05bnq/broken.json:
+    Expected property name or '}' in JSON at position 1 (line 1 column 2)
+
+[90mstdout[2m | tests/ui/graph.test.ts[2m > [22m[2mberechneWelt (serverseitiges Kraftfeld in Welteinheiten)[2m > [22m[2mverbundene Knoten landen naeher zusammen als unverbundene — als Population
+[22m[39m[graph] naehe-population knoten=60 kanten=270 medialeKante=120WE kontrollpaar=733WE verhaeltnis=0.163
+
+ [32m✓[39m tests/core/chatgpt-import.test.ts [2m([22m[2m10 tests[22m[2m)[22m[32m 95[2mms[22m[39m
+ [32m✓[39m tests/ui/graph.test.ts [2m([22m[2m9 tests[22m[2m)[22m[32m 213[2mms[22m[39m
+ [32m✓[39m tests/port-vertrag.test.ts [2m([22m[2m7 tests[22m[2m)[22m[32m 82[2mms[22m[39m
+[90mstderr[2m | tests/mcp-registry.test.ts[2m > [22m[2mserver.json: das Schema[2m > [22m[2merfuellt das offizielle MCP-Schema
+[22m[39munknown format "uri" ignored in schema at path "#/properties/%24schema"
+unknown format "uri" ignored in schema at path "#/properties/%24schema"
+unknown format "uri" ignored in schema at path "#/definitions/Icon/properties/src"
+unknown format "uri" ignored in schema at path "#/definitions/Icon/properties/src"
+unknown format "uri" ignored in schema at path "#/properties/registryBaseUrl"
+unknown format "uri" ignored in schema at path "#/properties/registryBaseUrl"
+unknown format "uri" ignored in schema at path "#/definitions/Repository/properties/url"
+unknown format "uri" ignored in schema at path "#/definitions/Repository/properties/url"
+unknown format "uri" ignored in schema at path "#/properties/websiteUrl"
+unknown format "uri" ignored in schema at path "#/properties/websiteUrl"
+
+ [32m✓[39m tests/mcp-registry.test.ts [2m([22m[2m7 tests[22m[2m)[22m[32m 79[2mms[22m[39m
+ [32m✓[39m tests/engine-zeit.test.ts [2m([22m[2m4 tests[22m[2m)[22m[32m 51[2mms[22m[39m
+[kepta] checking the macOS Keychain for your KEPTA key
+[kepta] checking the macOS Keychain for your KEPTA key
+[kepta] checking the macOS Keychain for your KEPTA key
+[kepta] no key in the macOS Keychain yet — storing a new one; if a dialog asks, allow it (KEPTA never overwrites a key)
+[kepta] checking the macOS Keychain for your KEPTA key
+[kepta] checking the macOS Keychain for your KEPTA key
+[kepta] checking the Test-Bund for your KEPTA key
+[kepta] checking the Test-Bund for your KEPTA key
+[kepta] checking the macOS Keychain for your KEPTA key
+[kepta] checking the Test-Bund for your KEPTA key
+[kepta] no key in the Test-Bund yet — storing a new one; if a dialog asks, allow it (KEPTA never overwrites a key)
+[kepta] checking the Test-Bund for your KEPTA key
+[kepta] no key in the Test-Bund yet — storing a new one; if a dialog asks, allow it (KEPTA never overwrites a key)
+[kepta] checking the Test-Bund for your KEPTA key
+[kepta] no key in the Test-Bund yet — storing a new one; if a dialog asks, allow it (KEPTA never overwrites a key)
+[kepta] checking the Test-Bund for your KEPTA key
+[kepta] no key in the Test-Bund yet — storing a new one; if a dialog asks, allow it (KEPTA never overwrites a key)
+[kepta] checking the macOS Keychain for your KEPTA key
+[kepta] checking the macOS Keychain for your KEPTA key
+[kepta] no key in the macOS Keychain yet — storing a new one; if a dialog asks, allow it (KEPTA never overwrites a key)
+[kepta] checking the macOS Keychain for your KEPTA key
+ [32m✓[39m tests/core/schluessel.test.ts [2m([22m[2m52 tests[22m[2m)[22m[32m 122[2mms[22m[39m
+ [32m✓[39m tests/chatgpt-import-cli.test.ts [2m([22m[2m5 tests[22m[2m)[22m[32m 73[2mms[22m[39m
+ [32m✓[39m tests/benchmark-belege.test.ts [2m([22m[2m9 tests[22m[2m)[22m[32m 30[2mms[22m[39m
+ [32m✓[39m tests/migrate.test.ts [2m([22m[2m11 tests[22m[2m)[22m[32m 125[2mms[22m[39m
+ [32m✓[39m tests/core/klassifikation.test.ts [2m([22m[2m27 tests[22m[2m)[22m[32m 16[2mms[22m[39m
+ [32m✓[39m tests/core/boundary.test.ts [2m([22m[2m4 tests[22m[2m)[22m[32m 18[2mms[22m[39m
+ [32m✓[39m tests/superseded-at.test.ts [2m([22m[2m6 tests[22m[2m)[22m[32m 119[2mms[22m[39m
+ [32m✓[39m tests/umwelt-vertrag.test.ts [2m([22m[2m6 tests[22m[2m)[22m[32m 39[2mms[22m[39m
+ [32m✓[39m tests/einrichtung.test.ts [2m([22m[2m18 tests[22m[2m)[22m[32m 52[2mms[22m[39m
+ [32m✓[39m tests/encryption-eval.test.ts [2m([22m[2m4 tests[22m[2m)[22m[32m 56[2mms[22m[39m
+ [32m✓[39m tests/core/consolidate-superseded.test.ts [2m([22m[2m3 tests[22m[2m)[22m[32m 67[2mms[22m[39m
+ [32m✓[39m tests/test-bericht.test.ts [2m([22m[2m21 tests[22m[2m)[22m[32m 53[2mms[22m[39m
+ [32m✓[39m tests/graf-kante-ehrlich.test.ts [2m([22m[2m9 tests[22m[2m)[22m[32m 14[2mms[22m[39m
+ [32m✓[39m tests/kli-hilfe-doku.test.ts [2m([22m[2m8 tests[22m[2m)[22m[32m 16[2mms[22m[39m
+ [32m✓[39m tests/core/ablation.test.ts [2m([22m[2m4 tests[22m[2m)[22m[32m 51[2mms[22m[39m
+ [32m✓[39m tests/core/reparatur.test.ts [2m([22m[2m12 tests[22m[2m)[22m[32m 14[2mms[22m[39m
+ [32m✓[39m tests/version-paritaet.test.ts [2m([22m[2m4 tests[22m[2m)[22m[32m 9[2mms[22m[39m
+ [32m✓[39m tests/core/stopwords.test.ts [2m([22m[2m9 tests[22m[2m)[22m[32m 12[2mms[22m[39m
+ [32m✓[39m tests/longmemeval.test.ts [2m([22m[2m14 tests[22m[2m)[22m[32m 17[2mms[22m[39m
+ [32m✓[39m tests/helfer/zeit-zusage.test.ts [2m([22m[2m4 tests[22m[2m)[22m[32m 5[2mms[22m[39m
+ [32m✓[39m tests/dockerfile.test.ts [2m([22m[2m6 tests[22m[2m)[22m[32m 6[2mms[22m[39m
+ [32m✓[39m tests/core/protocol-negotiation.test.ts [2m([22m[2m5 tests[22m[2m)[22m[32m 6[2mms[22m[39m
+ [32m✓[39m tests/sockel-vertrag.test.ts [2m([22m[2m5 tests[22m[2m)[22m[32m 7[2mms[22m[39m
+ [32m✓[39m tests/synonyme.test.ts [2m([22m[2m6 tests[22m[2m)[22m[32m 4[2mms[22m[39m
+[90mstdout[2m | tests/graf-kosten.test.ts[2m > [22m[2mgraf-kosten: gemessene Grenzen[2m > [22m[2m500 Knoten: eine Anfrage unter 120 ms p95, Cache-Treffer unter 5 ms
+[22m[39m[kosten] 500 Knoten anfrage=212,258,237,242,244 cache=0.1,0.1,0.1,0.1,0.1 HTTP=23.6,17.1,17.4,19.1,17.4
+[kosten] 500 Knoten: ruhe vorher | Maschine: Median 169.26 ms, max/median 2.03, 21 node-Prozesse, load1/cpu 1.92 auf 10 Kernen; Fenster 9897ms, fremde Kerne 6.07 aus 98 Prozessen (node 6830ms, node 6800ms, node 6690ms), eigene Node-Prozesse nicht gerechnet
+[kosten] 500 Knoten: ruhe nachher | Maschine: Median 102.76 ms, max/median 1.19, 21 node-Prozesse, load1/cpu 1.85 auf 10 Kernen; Fenster 6213ms, fremde Kerne 7.79 aus 126 Prozessen (node 5890ms, node 5880ms, node 5870ms), eigene Node-Prozesse nicht gerechnet
+[kosten] 500 Knoten: urteil=NICHT ruhig grund=Median 169.26 ms ueber 20 ms, Ausreisser: max/median 2.03 ueber 1.8 (max 344.3 ms bei Median 169.26 ms), fremde CPU 6.07 Kerne ueber 1.2 | alteRegel (nur Niveau+Streuung) haette gesagt: vorher=false nachher=false
+[kosten] 500 Knoten: Maschine nicht ruhig — bestellte Grenze bleibt offen, kein Urteil unter fremder Last
+
+[90mstdout[2m | tests/graf-kosten.test.ts[2m > [22m[2mgraf-kosten: gemessene Grenzen[2m > [22m[2m500 Knoten: der kalte Grundriss ist einmal je Generation und wird gemeldet
+[22m[39m[kosten] 500 Knoten kalt=978,1426,1064,1064,1068ms nurGelesen=192,254,204,243,198ms rechnungenProGeneration=1,1,1,1,1
+[kosten] 500 Knoten kalt: ruhe vorher | Maschine: Median 100.15 ms, max/median 1.16, 21 node-Prozesse, load1/cpu 1.78 auf 10 Kernen; Fenster 6069ms, fremde Kerne 8.20 aus 83 Prozessen (node 5820ms, node 5820ms, node 5820ms), eigene Node-Prozesse nicht gerechnet
+[kosten] 500 Knoten kalt: ruhe nachher | Maschine: Median 110.37 ms, max/median 1.48, 21 node-Prozesse, load1/cpu 1.7 auf 10 Kernen; Fenster 6707ms, fremde Kerne 8.22 aus 80 Prozessen (node 6340ms, node 6300ms, node 6300ms), eigene Node-Prozesse nicht gerechnet
+[kosten] 500 Knoten kalt: urteil=NICHT ruhig grund=Median 100.15 ms ueber 20 ms, fremde CPU 8.20 Kerne ueber 1.2 | alteRegel (nur Niveau+Streuung) haette gesagt: vorher=false nachher=false
+[kosten] 500 Knoten kalt: Maschine nicht ruhig — bestellte Grenze bleibt offen, kein Urteil unter fremder Last
+
+[90mstdout[2m | tests/graf-kosten.test.ts[2m > [22m[2mgraf-kosten: gemessene Grenzen[2m > [22m[2m2000 Knoten: erste Rechnung unter 750 ms
+[22m[39m[kosten] 2000 Knoten neu=3496,3631,3682
+[kosten] 2000 Knoten: ruhe vorher | Maschine: Median 106.98 ms, max/median 1.28, 21 node-Prozesse, load1/cpu 1.64 auf 10 Kernen; Fenster 6572ms, fremde Kerne 8.01 aus 90 Prozessen (node 6170ms, node 6160ms, node 6150ms), eigene Node-Prozesse nicht gerechnet
+[kosten] 2000 Knoten: ruhe nachher | Maschine: Median 99.26 ms, max/median 1.21, 21 node-Prozesse, load1/cpu 1.45 auf 10 Kernen; Fenster 6064ms, fremde Kerne 7.81 aus 63 Prozessen (node 5880ms, node 5870ms, node 5860ms), eigene Node-Prozesse nicht gerechnet
+[kosten] 2000 Knoten: urteil=NICHT ruhig grund=Median 106.98 ms ueber 20 ms, fremde CPU 8.01 Kerne ueber 1.2 | alteRegel (nur Niveau+Streuung) haette gesagt: vorher=false nachher=false
+[kosten] 2000 Knoten: Maschine nicht ruhig — bestellte Grenze bleibt offen, kein Urteil unter fremder Last
+
+ [32m✓[39m tests/graf-kosten.test.ts [2m([22m[2m14 tests[22m[2m | [22m[33m4 skipped[39m[2m)[22m[33m 89058[2mms[22m[39m
+     [33m[2m✓[22m[39m laesst ein ruhiges Bild urteilen — die Sonde darf keine Dauer-Sperre sein [33m 322[2mms[22m[39m
+     [33m[2m✓[22m[39m zwei Aufrufe mit identischem Bestand und Parametern rechnen genau einmal [33m 322[2mms[22m[39m
+     [33m[2m✓[22m[39m If-None-Match antwortet 304 ohne Koerper und ohne neue Rechnung [33m 363[2mms[22m[39m
+
+[31m⎯⎯⎯⎯⎯⎯⎯[39m[1m[41m Failed Tests 7 [49m[22m[31m⎯⎯⎯⎯⎯⎯⎯[39m
+
+[41m[1m FAIL [22m[49m tests/doku-zahlen.test.ts[2m > [22mDokumentation: die Testzahl ist die Zahl eines Laufs[2m > [22mREADME.md nennt die Zahl der Faelle, die in einem Lauf durchgelaufen sind
+[41m[1m FAIL [22m[49m tests/doku-zahlen.test.ts[2m > [22mDokumentation: die Testzahl ist die Zahl eines Laufs[2m > [22mREADME.de.md nennt die Zahl der Faelle, die in einem Lauf durchgelaufen sind
+[31m[1mError[22m: Ich kann die Testzahl nicht pruefen: test-results/vitest.json ist aelter als tests/sockel-vertrag.test.ts — er beschreibt einen Stand, der nicht mehr gilt (Bericht 2026-10-12 20:57:32 UTC, tests/sockel-vertrag.test.ts 2026-10-12 21:03:59 UTC).
+  Der Bericht entsteht nur durch einen Lauf: `npm test` (oder `npm run test:cov`) — beide schreiben `test-results/vitest.json` und enden mit `node scripts/doku-check.mjs`. Ein Test kann den Bericht seines eigenen Laufs nicht lesen (vitest schreibt ihn am Ende), also ist der erste Lauf nach einem Checkout oder nach einer Aenderung an der Suite die Messung und der zweite die Pruefung.[39m
+[36m [2m❯[22m tests/doku-zahlen.test.ts:[2m39:28[22m[39m
+    [90m 37|[39m     // Grund, warum die App-Wache am 10.10. einen drei Tage alten Beri…
+    [90m 38|[39m     // "passt" melden konnte: 1967 Tests, 118 von 131 Dateien, 22 Date…
+    [90m 39|[39m     if (!bericht.ok) throw new Error(`Ich kann die Testzahl nicht prue…
+    [90m   |[39m                            [31m^[39m
+    [90m 40|[39m
+    [90m 41|[39m     // dokuVergleich ist dieselbe Funktion, die scripts/doku-check.mjs…
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/7]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m tests/herkunft.test.ts[2m > [22mNur dieser Rechner[2m > [22mlokale Seiten, Skripte und KI-Apps über MCP arbeiten weiter
+[31m[1mAssertionError[22m: expected 404 to be less than 300[39m
+[36m [2m❯[22m tests/herkunft.test.ts:[2m83:26[22m[39m
+    [90m 81|[39m     [35mconst[39m app [33m=[39m [34mcreateApp[39m(store)[33m;[39m
+    [90m 82|[39m     const lokal = await request(app).post("/api/memories").set("Host",…
+    [90m 83|[39m     [34mexpect[39m(lokal[33m.[39mstatus)[33m.[39m[34mtoBeLessThan[39m([34m300[39m)[33m;[39m
+    [90m   |[39m                          [31m^[39m
+    [90m 84|[39m     const dev = await request(app).post("/api/memories").set("Origin",…
+    [90m 85|[39m     [34mexpect[39m(dev[33m.[39mstatus)[33m.[39m[34mtoBeLessThan[39m([34m300[39m)[33m;[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/7]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m tests/zahlen-belege.test.ts[2m > [22mzahlen-belege: die Zahl selbst[2m > [22mkennt die Grenze: eine Zahl, die im Artefakt vorkommt, gilt — auch an anderer Stelle
+[31m[1mAssertionError[22m: expected [ '1289', '1289', '427', '58', '58' ] to deeply equal [ '1289', '58' ][39m
+
+[32m- Expected[39m
+[31m+ Received[39m
+
+[2m  [[22m
+[2m    "1289",[22m
+[31m+   "1289",[39m
+[31m+   "427",[39m
+[31m+   "58",[39m
+[2m    "58",[22m
+[2m  ][22m
+
+[36m [2m❯[22m tests/zahlen-belege.test.ts:[2m132:70[22m[39m
+    [90m130|[39m       suche[33m:[39m [ort][33m,[39m
+    [90m131|[39m     })[33m;[39m
+    [90m132|[39m     expect([...befunde.map((b) => normalisiereZahl(b.zahl))].sort()).t…
+    [90m   |[39m                                                                      [31m^[39m
+    [90m133|[39m     [34mexpect[39m(inventar[33m.[39mmitBeleg)[33m.[39m[34mtoBeGreaterThan[39m([34m0[39m)[33m;[39m
+    [90m134|[39m   })[33m;[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/7]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m tests/zahlen-belege.test.ts[2m > [22mzahlen-belege: Ausnahmen sind keine Freifaehrt[2m > [22mlaesst eine Umleitung gelten, wenn die andere Maschine denselben Wert haelt
+[31m[1mAssertionError[22m: expected [ { datei: 'CHANGELOG.md', …(6) } ] to deeply equal [][39m
+
+[32m- Expected[39m
+[31m+ Received[39m
+
+[32m- [][39m
+[31m+ [[39m
+[31m+   {[39m
+[31m+     "art": "beleg-nicht-im-repo",[39m
+[31m+     "datei": "CHANGELOG.md",[39m
+[31m+     "einheit": "%",[39m
+[31m+     "lage": "/private/var/folders/ct/jl4tc0wd7672rpl4_gbvg7c80000gn/T/zahlen-belege-m3p05v/beleg/kern.log",[39m
+[31m+     "zahl": "0.932",[39m
+[31m+     "zeile": 1,[39m
+[31m+     "zitat": "beleg/kern.log",[39m
+[31m+   },[39m
+[31m+ ][39m
+
+[36m [2m❯[22m tests/zahlen-belege.test.ts:[2m373:21[22m[39m
+    [90m371|[39m       suche[33m:[39m [ort][33m,[39m
+    [90m372|[39m     })[33m;[39m
+    [90m373|[39m     [34mexpect[39m(befunde)[33m.[39m[34mtoEqual[39m([])[33m;[39m
+    [90m   |[39m                     [31m^[39m
+    [90m374|[39m     [34mexpect[39m(inventar[33m.[39mumgeleitet)[33m.[39m[34mtoBe[39m([34m1[39m)[33m;[39m
+    [90m375|[39m   })[33m;[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[4/7]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m tests/zahlen-belege.test.ts[2m > [22mzahlen-belege: Ausnahmen sind keine Freifaehrt[2m > [22mprueft einen Papierbeleg nach, statt ihn zu glauben
+[31m[1mAssertionError[22m: expected [ { datei: 'CHANGELOG.md', …(6) } ] to deeply equal [][39m
+
+[32m- Expected[39m
+[31m+ Received[39m
+
+[32m- [][39m
+[31m+ [[39m
+[31m+   {[39m
+[31m+     "art": "beleg-nicht-im-repo",[39m
+[31m+     "datei": "CHANGELOG.md",[39m
+[31m+     "einheit": "%",[39m
+[31m+     "lage": "/private/var/folders/ct/jl4tc0wd7672rpl4_gbvg7c80000gn/T/zahlen-belege-inFN0V/beleg/x.log",[39m
+[31m+     "zahl": "118",[39m
+[31m+     "zeile": 1,[39m
+[31m+     "zitat": "beleg/x.log",[39m
+[31m+   },[39m
+[31m+ ][39m
+
+[36m [2m❯[22m tests/zahlen-belege.test.ts:[2m389:21[22m[39m
+    [90m387|[39m       suche[33m:[39m [ort][33m,[39m
+    [90m388|[39m     })[33m;[39m
+    [90m389|[39m     [34mexpect[39m(befunde)[33m.[39m[34mtoEqual[39m([])[33m;[39m
+    [90m   |[39m                     [31m^[39m
+    [90m390|[39m     [34mexpect[39m(inventar[33m.[39mzweitbeleg)[33m.[39m[34mtoBe[39m([34m1[39m)[33m;[39m
+    [90m391|[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[5/7]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m tests/zahlen-belege.test.ts[2m > [22mzahlen-belege: Ausnahmen sind keine Freifaehrt[2m > [22mhaelt ein Soll fuer eine Latte und eine Messung fuer eine Messung
+[31m[1mAssertionError[22m: expected [ '0.877', '0.877' ] to deeply equal [ '0.877' ][39m
+
+[32m- Expected[39m
+[31m+ Received[39m
+
+[2m  [[22m
+[2m    "0.877",[22m
+[31m+   "0.877",[39m
+[2m  ][22m
+
+[36m [2m❯[22m tests/zahlen-belege.test.ts:[2m422:58[22m[39m
+    [90m420|[39m     })[33m;[39m
+    [90m421|[39m     [34mexpect[39m(inventar[33m.[39msollwert)[33m.[39m[34mtoBe[39m([34m1[39m)[33m;[39m
+    [90m422|[39m     expect(befunde.map((b) => normalisiereZahl(b.zahl))).toEqual(["0.8…
+    [90m   |[39m                                                          [31m^[39m
+    [90m423|[39m     [34mexpect[39m(befunde[[34m0[39m][33m.[39mart)[33m.[39m[34mtoBe[39m([32m"zahl-nicht-im-beleg"[39m)[33m;[39m
+    [90m424|[39m   })[33m;[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[6/7]⎯[22m[39m
+
+
+[2m Test Files [22m [1m[31m3 failed[39m[22m[2m | [22m[1m[32m82 passed[39m[22m[90m (85)[39m
+[2m      Tests [22m [1m[31m7 failed[39m[22m[2m | [22m[1m[32m1026 passed[39m[22m[2m | [22m[33m4 skipped[39m[90m (1037)[39m
+[2m   Start at [22m 23:06:27
+[2m   Duration [22m 89.95s[2m (transform 2.61s, setup 1.24s, import 6.45s, tests 198.81s, environment 9ms)[22m
+

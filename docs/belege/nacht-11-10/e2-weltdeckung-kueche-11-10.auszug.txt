@@ -1,0 +1,30 @@
+# Auszug — ueberlebendes Papier, KEIN Maschinenlog
+
+Quelle: E2-GRAPH-FLAEche.md (Scheibe E2, Arbeitsmappe, Ordner audit-2026-10-09),
+Zeile 1144-1160, wortgleich uebernommen am 2026-10-13. Darunter steht der Kanal der
+Zahl: gemessen 11.10.2026 nachts am Kuechenbestand mit der eigenen Radiusregel des
+Kerns; die zugehoerigen JSON-Rohdaten lagen unter /tmp/kepta-kollision-gf/ und sind
+verloren. Dieser Auszug ist deshalb der einzige Beleg, den dieses Repository fuer die
+118 % Weltdeckung hat — Papier zweiter Hand, kein Lauf. Die 120,4 % desselben Satzes,
+am abgelegten Feld gemessen, haben ihren Maschinenlauf:
+docs/belege/nacht-12-10/weltdeckung-1558.log.txt.
+
+--- Zitat Anfang (Quelle Zeile 1144-1160) ---
+**Die Scheibenregel des Kerns ist eine andere als die der Fläche**
+(`scripts/graf-bild.mjs:139`): `r = 6 + 2,4·√grad_echt + 1,1·√grad_vermutet`,
+**ohne Deckel** — an einem Hub mit 111 Notizen r = 31,2, wo die Fläche bei 18
+kapped. Gemessen an denselben Kern-Plätzen:
+
+| Bestand | eigene Regel des Kerns, Ruhe | tiefster Schnitt | Scheiben decken die Welt | Regel der Fläche, Ruhe |
+|---|---|---|---|---|
+| 400 (427 Knoten) | **99 Paare** | 21,9 | **17 %** | 77 Paare |
+| 1 500 (1 527) | **1 026 Paare** | 72,6 | **60 %** | 540 Paare |
+| 3 000 (3 027) | **7 254 Paare** | 96,8 | **118 %** | 5 286 Paare |
+
+> **Kanal dieser Zeile:** gemessen 11.10. nachts am Kuechenbestand mit der eigenen
+> Radiusregel des Kerns; die zugehoerigen JSON-Rohdaten lagen unter
+> `/tmp/kepta-kollision-gf/` und sind **verloren** (`e2-code/nacht-12-10/WARUM-HIER.md`,
+> „Zahlen, die hier NICHT stehen"). Die 118 % Weltdeckung, die das veroeffentlichte 3.3.0
+> nennt, kommen von hier. Am heute *abgelegten* Feld gemessen sind es **120,4 %**
+> (`skripte/weltdeckung.mts`, `rohdaten/weltdeckung-1558.log`, 12.10. 15:58).
+--- Zitat Ende ---

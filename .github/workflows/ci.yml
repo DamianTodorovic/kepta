@@ -29,6 +29,17 @@ jobs:
       - run: npm test
       - name: Coverage gate
         run: npm run test:cov
+      # Zahlen-Belege: jede Messzahl in der Doku wird an ihrem eigenen Artefakt
+      # gemessen (scripts/zahlen-belege.mjs). Am 12.10. gebaut, nachdem drei
+      # Vorher-Zahlen in README und CHANGELOG etwas behauptet hatten, was das
+      # zitierte Log nicht hergab, und seit 13.10. hier verdrahtet: eine Console,
+      # die niemand abhoert, huetet nichts. Nach der Suite, vor dem Bau — die
+      # Suite schreibt test-results/, und die Doku zitiert keine Laufprodukte.
+      # Der Runner sieht dabei nur diesen Baum: keine Arbeitsmappe, keine
+      # Nachbarbaeume. Ein Zitat, das nur auf einem Schreibtisch existiert, ist
+      # hier ein Befund — genau das ist der Punkt.
+      - name: Zahlen-Belege (jede Zahl in der Doku trifft ihr zitiertes Artefakt)
+        run: node scripts/zahlen-belege.mjs
       - run: npm run build
       # Der Python-Client ist ein verteiltes Artefakt (PyPI) — seine Tests
       # (Stub-Server, keine Live-App nötig) liefen bis 26.9. nirgends. Jetzt
