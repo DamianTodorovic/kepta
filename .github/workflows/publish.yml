@@ -190,6 +190,18 @@ jobs:
           done
           echo "::error::kepta-mcp@$VERSION ist nach 10 Minuten nicht auf npm sichtbar"; exit 1
 
+      # Bewiesen ist eine veroeffentlichte version erst, wenn jemand anders sie holt.
+      # Bis 13.10. endete dieser lauf mit "npm hat die version angenommen" — kein
+      # schritt hat je das paket installiert, das ein kunde installiert. Die probe
+      # tut genau das in einem sandkasten-HOME: installieren, MCP-Handshake, acht
+      # werkzeuge, eine notiz speichern und wieder finden, und in die datei schauen
+      # (kein SQLite-Klartext-Kopf). Sie laeuft vor der MCP-Registry, weil wir der
+      # Registry nicht etwas melden, das wir selbst nicht angefasst haben.
+      - name: Probe am veroeffentlichten Paket
+        run: |
+          VERSION=$(node -p "require('./npm/package.json').version")
+          node scripts/probe-veroeffentlicht.mjs "$VERSION"
+
       - name: mcp-publisher holen
         run: |
           curl -fL "https://github.com/modelcontextprotocol/registry/releases/latest/download/mcp-publisher_linux_amd64.tar.gz" \
