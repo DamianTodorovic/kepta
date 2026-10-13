@@ -119,16 +119,33 @@ oder ungetrackter Pfad und ein Wert, den die Datei nicht hergibt, sind dort dies
 wie in jedem andern Papier. Haelt der Fall "misst die CHANGELOG weiter an ihren Zitaten" in
 `tests/zahlen-belege.test.ts`.
 
-### Kurzliste fuer die Zeilen, die die Wache heute an euch meldet
+### Was die Wache meldet, wird gerechnet — nicht gepflegt
 
-| Papier | Zeile | Was fehlt | Wo der Beleg langst liegt |
-|---|---|---|---|
-| `README.md` | 143 | Zitat fuer 189 MB / 19 MB | Bundle-Bau-Log oder Groessenlauf — ein Lauf, der die Zahl druckt, ist der Beleg |
-| `README.md` | 211 · `README.de.md` | 133 | 71 %, 78 %, 11 % ohne Zitat | Ablation-Lauf (`scripts/ablation.ts`), Ausgabe als `.txt` hierher |
-| `README.md` | 254 · `README.de.md` | 153 | 283/385/571, 427/572/817, 0,662/0,674/0,699 | `docs/belege/nacht-12-10/ruhe-mit-anteil-1444.log.txt` (im Repo, bereit) |
-| `README.md` | 338/339 · `README.de.md` | 182/183 | 70/72/56/66 %, 87/89/74/85 % | LongMemEval-Records in `tools/longmemeval/ergebnisse/` — beachte: Qualitaetszahlen brauchen einen Record vom **ausgelieferten** Stand (`scripts/benchmark-belege.mjs`), 61,5 % bleibt als Aussen-Aussage gesperrt |
-| `README.md` | 347 · `README.de.md` | 191 | 46,6 / 87,6 / 276,5 ms | `tools/latenz/ergebnisse/latenz-100k-fts-2026-10-01.json` (46,6 und 87,6) und `tools/latenz/ergebnisse/latenz-1m-fts-2026-10-01.json` (276,5) — beide im Repo, Zeile 347 selbst zitieren |
-| `README.md` | 355 · `README.de.md` | 199 | 29,8 %, 63,8 % | ein Lauf, der diese Prozente druckt — sonst hat die Zahl keinen |
+Diese Zeilen standen frueher als tabelle im papier: "papier / zeile / was fehlt / wo der
+beleg langst liegt". Sie war am 13.10. in jedem einzelen ihrer felder überholt — die
+READMEs nennen keine einzige unbelegte zahl mehr, und die tabelle behauptete sechs
+stellen. Eine liste, die jemand von hand pflegt, beschreibt den augenblick, in dem
+jemand sie zuletzt tippte; die Wache weiß es besser, also steht hier nur noch, wie man
+es nachliest:
+
+    node scripts/zahlen-belege.mjs --inventar
+
+Was der lauf hergibt, aendert sich mit jedem papier — die summe der behauptungen stand
+zweimal in diesem absatz und war zweimal überholt, noch ehe der commit da war (594, dann
+570, weil diese zeilen selbst zahlen nennen). Also wird nicht mehr abgeschrieben, was man
+nachlesen kann. Der satz, der haelt, ist der am 13.10. um 15:2x UTC gemessene: **keine
+einzige zahl ohne artefakt-zitat steht in einer pflichtdatei** — `README.md` und
+`README.de.md` melden 0, und die beiden flaechen nennen 39 beziehungsweise 40 behauptungen,
+die in einem geoeffneten artefakt bestaetigt sind. Der rest ohne zitat haengt an
+geschichte und werkzeug-Papieren (`CHANGELOG.md`, `tools/longmemeval/README.md`,
+`docs/graph-kosten.md`) — dateien, deren aussagen laeufer sind, und deren *zitierte*
+zahlen weiter gegen ihr artefakt gemessen werden.
+
+**Zwei regeln aus der alten tabelle bleiben, weil sie keinen zeitwert haben.** Erstens:
+qualitaetszahlen brauchen einen record vom **ausgelieferten** stand — gemessen mit
+`scripts/benchmark-belege.mjs`, nicht an einem baum, den niemand verschickt; 61,5 %
+bleibt als aussen-aussage gesperrt. Zweitens: ein lauf, der die zahl druckt, ist der
+beleg — nicht ein ordner, in dem sie mal gestanden hat.
 
 Und fuer die Graph-Scheibe, reiner Pfadtusch, erledigt am 13.10.2026: `CHANGELOG.md` zitierte
 einmal `e2-code/nacht-12-10/rohdaten/*.log` — Arbeitsmappe, also Befund `beleg-nicht-im-repo`,
