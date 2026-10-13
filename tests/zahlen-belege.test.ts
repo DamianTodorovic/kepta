@@ -254,7 +254,15 @@ describe("zahlen-belege: Artefakte lesen", () => {
     // Fehler vor (seit 31a5ac0 committet) — als Live-Papier waere sie elf permanente Befunde.
     const dateien = mdDateien(process.cwd());
     expect(dateien.some((d) => d.includes("fixtures"))).toBe(false);
-    expect(dateien).toEqual(expect.arrayContaining(["README.md", "README.de.md", "CHANGELOG.md"]));
+    expect(dateien).toEqual(expect.arrayContaining(["README.md", "CHANGELOG.md"]));
+    // Jede Flächen-Datei, die der Baum hat, muss gelesen werden; eine, die fehlt, darf
+    // nur fehlen, wenn die Wache das begründet optional nennt. Der Kern hat eine deutsche
+    // Fläche, die App keine — und die Wache ist in beiden Räumen byte-identisch.
+    for (const eintrag of AUFPFLICHTUNGEN) {
+      const hatSie = fs.existsSync(path.join(process.cwd(), eintrag.datei));
+      if (hatSie) expect(dateien, `Pflichtfläche ${eintrag.datei} wird nicht gelesen`).toContain(eintrag.datei);
+      else expect(eintrag.optional === true, `${eintrag.datei} fehlt, ohne dass die Wache das begründet`).toBe(true);
+    }
 
     // Und was ein frisches Auspacken sieht: ein Artefakt, das nur auf der Platte liegt,
     // ist fuer jeden anderen ein toter Link. Beweis in beide Richtungen — ein eigens
@@ -389,6 +397,24 @@ describe("zahlen-belege: die vier Fundstellen", () => {
       expect(eintrag.datei).not.toMatch(/[*?]/);
     }
     expect(AUFPFLICHTUNGEN.find((a) => a.datei === "README.md")?.grund).toContain("Flaeche");
+  });
+
+  it("sieht eine Flaechen-Datei, die fehlt: begruendet optional oder Befund", () => {
+    // Zwei Raeume, eine byte-identische Wache: der Kern hat eine deutsche Flaeche, die App
+    // keine und bestellte sie auch nicht. Was beide Male gleich bleibt — fehlt eine Flaeche
+    // ohne Begruendung, ist das ein Befund. Eine Wache, die schweigt, weil das Papier weg
+    // ist, huettet eine Regel, die niemand mehr prueft.
+    const ganzOhne = kratzer({ "docs/notiz.md": "Eine Notiz ohne Messzahl.\n" });
+    const fehler = vi.spyOn(console, "error").mockImplementation(() => {});
+    expect(hauptfunktion([`--wurzel=${ganzOhne}`])).toBe(1);
+    expect(fehler.mock.calls.map((c) => String(c[0])).join(" ")).toContain("pflicht-flaeche-fehlt");
+    fehler.mockRestore();
+
+    const ohneDeutsch = kratzer({ "README.md": "Eine Flaeche ohne Messzahl.\n" });
+    const log = vi.spyOn(console, "log").mockImplementation(() => {});
+    expect(hauptfunktion([`--wurzel=${ohneDeutsch}`, "--ohne-pflicht"])).toBe(0);
+    expect(log.mock.calls.map((c) => String(c[0])).join(" ")).toContain("README.de.md fehlt (optional:");
+    log.mockRestore();
   });
 
   it("misst die CHANGELOG weiter an ihren Zitaten — nur die Pflicht ist weg", () => {

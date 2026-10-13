@@ -156,7 +156,17 @@ export const UMLEITUNGEN = [
  */
 export const AUFPFLICHTUNGEN = [
   { datei: "README.md", grund: "dieselben Zahlen stehen in der englischen Flaeche — Publikum" },
-  { datei: "README.de.md", grund: "dieselben Zahlen in der deutschen Flaeche" },
+  {
+    datei: "README.de.md",
+    grund: "dieselben Zahlen in der deutschen Flaeche",
+    // optional heisst nicht "egal": fehlt die Datei, sagt die Console es in jedem Lauf —
+    // sie macht nur keinen Befund daraus. Begruendung, datei-scharf, Leitung 13.10.2026:
+    // der Kern hat eine deutsche Flaeche, die App hat keine und bestellt auch keine
+    // (ihre Aussenseiten sind englisch). Eine Wache, die byte-identisch in beiden
+    // Raeumen laeuft, darf den einen nicht rot machen, weil der andere anders gebaut ist.
+    optional: true,
+    grundOptional: "die App-Flaeche ist englisch — eine deutsche README ist dort nicht bestellt",
+  },
 ];
 
 /**
@@ -953,7 +963,21 @@ export function hauptfunktion(argv = process.argv.slice(2)) {
     { behauptungen: 0, mitBeleg: 0, ohneZitat: 0, sollwert: 0, umgeleitet: 0, zweitbeleg: 0, pflichtOhneZitat: 0 },
   );
   const nachArt = new Map();
+
+  // Eine Pflichtflaeche, die im Baum fehlt, ist keine Zahl ohne Zitat — sie ist ein Loch
+  // in der Regel selbst. Sie wird in jedem Lauf gesehen: optional meldet die Console ohne
+  // Befund, nicht optional ist einer. Nur auf ganzen Laeufen, denn bei --datei= ist die
+  // Wurzel absichtlich ein Fragment (die Fixtures).
+  const flaechenHinweise = [];
+  if (!arg("datei")) {
+    for (const a of AUFPFLICHTUNGEN) {
+      if (dateien.includes(a.datei)) continue;
+      if (a.optional) flaechenHinweise.push(`${a.datei} fehlt (optional: ${a.grundOptional})`);
+      else alle.push({ datei: a.datei, zeile: 0, zahl: "—", art: "pflicht-flaeche-fehlt", grund: a.grund });
+    }
+  }
   for (const b of alle) nachArt.set(b.art, (nachArt.get(b.art) ?? 0) + 1);
+  const hinweis = flaechenHinweise.length ? ` — Flaechen ohne Papier: ${flaechenHinweise.join("; ")}` : "";
 
   if (argv.includes("--inventar")) {
     console.log(
@@ -961,7 +985,7 @@ export function hauptfunktion(argv = process.argv.slice(2)) {
         `${summe.mitBeleg} im zitierten Artefakt bestaetigt, ${summe.ohneZitat} ohne Artefakt-Zitat auf der Zeile ` +
         `(davon ${summe.pflichtOhneZitat} in Pflichtdateien — die wären ohne --inventar Befunde), ` +
         `${summe.sollwert} Soll-Zahlen (Latte, keine Messung), ${summe.umgeleitet} in einem anderen Baum belegt, ` +
-        `${summe.zweitbeleg} nur in einem Papier belegt, ${alle.length} Befund/Befunde`
+        `${summe.zweitbeleg} nur in einem Papier belegt, ${alle.length} Befund/Befunde${hinweis}`
     );
     for (const i of inventar.filter((x) => x.behauptungen > 0).sort((a, b) => b.behauptungen - a.behauptungen)) {
       console.log(
@@ -976,13 +1000,13 @@ export function hauptfunktion(argv = process.argv.slice(2)) {
       `zahlen-belege: ${dateien.length} Markdown-Dateien, ${summe.behauptungen} Messbehauptungen — ` +
         `jedes zitierte Artefakt ist geoeffnet und jede Zahl darin gefunden (${summe.mitBeleg} bestaetigt, ` +
         `${summe.ohneZitat} ohne Zitat, ${summe.sollwert} Soll, ${summe.umgeleitet} umgelenkt, ${summe.zweitbeleg} im Papier` +
-        `${pflicht ? ", keine Pflicht-Zahl ohne Zitat" : ", Pflichten nur gezaehlt — --ohne-pflicht"})`
+        `${pflicht ? ", keine Pflicht-Zahl ohne Zitat" : ", Pflichten nur gezaehlt — --ohne-pflicht"}${hinweis})`
     );
     return 0;
   }
   console.error(
     `zahlen-belege: ${alle.length} Befund/Befunde — eine Zahl in der Doku, die ihr eigenes Zitat nicht trifft ` +
-      `(${[...nachArt].map(([a, n]) => `${n} ${a}`).join(", ")}):`
+      `(${[...nachArt].map(([a, n]) => `${n} ${a}`).join(", ")})${hinweis}:`
   );
   for (const b of alle) {
     console.error(
