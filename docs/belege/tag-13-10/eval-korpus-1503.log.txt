@@ -1,0 +1,69 @@
+eval-korpus-1503 — npm run eval auf dem Kern, gefahren am veraeffentlichten stand + tag-13-10 arbeit
+RUN v26.8.1 | npm run eval | 2026-10-13 13:03:35 UTC | commit 6d479a8 (3.4.0 + Sockel-Heilung)
+grund: github.io/index-flug.html zeile 2134 nennt Hit@1 71,1 % und MRR 0,759 fuer die engine und 51,1 % / 0,559 fuer die ersetzte substring-suche. der beleg dazu war ein lauf vom 12.10. (docs/belege/r1/eval-0037.log.txt, engine 3.3.0). dieser lauf zeigt: dieselben sechs zahlen, am stand von heute, unveraendert — die aussenseite muss nicht nachgezogen werden, sie ist nachgemessen.
+--- ausgabe ---
+
+> kepta@3.4.0 eval
+> tsx scripts/eval.ts
+
+
+── v1-Baseline (naive Substring-Suche) ──
+  Recall@5 (capped): 62.2 %
+  Hit@1:             51.1 %
+  MRR:               0.559
+
+── v2-Engine (BM25 + RRF + Temporal, ohne Vektoren) ──
+  Recall@5 (capped): 81.1 %
+  Hit@1:             71.1 %
+  MRR:               0.759
+
+── Verbesserung ──
+  Recall@5 (capped): +30 % relativ
+  Hit@1:             +39 % relativ
+
+Details (Engine):
+  ✓ Wo läuft die Produktion?                 R@5 100 %  MRR 1.00
+  ~ Welche Datenbank nutzen wir?             R@5 100 %  MRR 0.50
+  ✓ Wo wohnt Alex gerade?                    R@5 100 %  MRR 1.00
+  ✓ Umsatzsteuer Frist                       R@5 100 %  MRR 1.00
+  ✓ Wie ist die hybride Suche implementiert? R@5 100 %  MRR 1.00
+  ✓ Welche Embedding-Modelle lokal?          R@5 100 %  MRR 1.00
+  ✓ Wie funktioniert der Wissensgraph?       R@5 100 %  MRR 1.00
+  ✓ Serverzugang und Passwort                R@5 100 %  MRR 1.00
+  ✓ Fitness Trainingsplan                    R@5 100 %  MRR 1.00
+  ✓ Impfungen Auffrischung                   R@5 100 %  MRR 1.00
+  ✓ Warum Rust statt Go?                     R@5 100 %  MRR 1.00
+  ✓ Autoversicherung kündigen                R@5 100 %  MRR 1.00
+  ✓ Werkstatt Termin Auto                    R@5 100 %  MRR 1.00
+  ✓ Keller Umbau Kosten                      R@5 100 %  MRR 1.00
+  ✓ Welche LLM Kontextfenster?               R@5 100 %  MRR 1.00
+  ✓ Obsidian Notizen Format                  R@5 100 %  MRR 1.00
+  ✓ React Build Setup                        R@5 100 %  MRR 1.00
+  ✓ Kaution Vermieter                        R@5 100 %  MRR 1.00
+  ✓ Carbonara Zutaten                        R@5 100 %  MRR 1.00
+  ✓ KEPTA MCP Architektur                    R@5 100 %  MRR 1.00
+  ~ Passwörter sicher verwalten              R@5 100 %  MRR 0.50
+  ✓ Rechnungen Buchhaltung Tool              R@5 100 %  MRR 1.00
+  ✓ Zettelkasten Notizen Methode             R@5 100 %  MRR 1.00
+  ✓ Geburtstag Familie                       R@5 100 %  MRR 1.00
+  ✓ Deployment und Domain                    R@5 100 %  MRR 1.00
+  ✓ Was koche ich mit Nudeln?                R@5 100 %  MRR 1.00
+  ✗ Wie bewahre ich meine Zugangsdaten sicher auf? R@5   0 %  MRR 0.14
+  ✓ Wo lasse ich mein Fahrzeug instand setzen? R@5 100 %  MRR 1.00
+  ✗ Was mag meine Grossmutter?               R@5   0 %  MRR 0.00
+  ✓ Was tue ich fuer meinen Ruecken?         R@5 100 %  MRR 1.00
+  ✗ Wie lege ich Geld an?                    R@5   0 %  MRR 0.00
+  ✗ Wer hilft bei einem medizinischen Notfall? R@5   0 %  MRR 0.00
+  ✗ Wie fotografiere ich drinnen richtig?    R@5   0 %  MRR 0.00
+  ✗ Was muss ich beim Auszug renovieren?     R@5   0 %  MRR 0.00
+  ✗ Was gibt es an Heiligabend zu essen?     R@5   0 %  MRR 0.00
+  ✓ Anton Bauer                              R@5 100 %  MRR 1.00
+  ✓ Weber                                    R@5 100 %  MRR 1.00
+  ✓ Hetzner                                  R@5 100 %  MRR 1.00
+  ✓ Wie oft wird gesichert?                  R@5  50 %  MRR 1.00
+  ~ Welches Passwort gilt in der Produktion? R@5 100 %  MRR 0.20
+  ~ Welcher Server ist gemeint?              R@5 100 %  MRR 0.33
+  ~ Was steht zur Datenbank an?              R@5 100 %  MRR 0.50
+  ✓ Wie bin ich erreichbar?                  R@5 100 %  MRR 1.00
+  ✓ Welche Laufschuhe habe ich?              R@5 100 %  MRR 1.00
+  ✗ Bis wann muss die Umsatzsteuer abgegeben werden? R@5   0 %  MRR 0.00

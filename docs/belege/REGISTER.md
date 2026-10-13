@@ -27,8 +27,9 @@ in der Arbeitsmappe — lokal, ohne Fern, auf einem Runner nicht vorhanden. Die 
 | `r1/eval-0037.log.txt` | 1493 B | `031c0443bc413d18…` |
 | `r1/kontext-groesse-2128.log.txt` | 1835 B | `204e65256c2503b4…` |
 | `nacht-13-10/sockel-nachbau-1357.log.txt` | 1359 B | `85fa18ab82409dfb…` |
+| `tag-13-10/eval-korpus-1503.log.txt` | 4066 B | `d86d8742e31c8544…` |
 
-Summe: **79037 Bytes** in 13 Dateien, Stand der letzten Kopie: 2026-10-13 11:57 UTC; Kuren:
+Summe: **83103 Bytes** in 14 Dateien, Stand der letzten Kopie: 2026-10-13 11:57 UTC; Kuren:
 23:5x UTC (12.10.) und 13.10. Die drei `r1/`-Laeufe sind jetzt mit Zeilen eingetragen — der
 Satz, der sie als offene Luecke nannte, ist damit gegenstandslos.
 
@@ -103,3 +104,10 @@ nicht mehr kann. Fuer neue Zitate bleibt die Regel: **Log zuerst.**
 Pass 1 liegt jetzt hier (er ist in der Doku zitiert); die vier andern Laeufe bleiben in der
 Arbeitsmappe, weil kein Papier des Kerns eine Zahl an ihnen misst — die Doku sagt das an der
 Stelle, die sie nennt.
+
+Der vierte lauf-ordner (`tag-13-10/`) haelt den Eval-Lauf vom 13.10. auf dem Kern: derselbe
+bestand an zahlen, den `github.io/index-flug.html` Zeile 2134 seit dem 12.10. nennt (Hit@1
+71,1 % und MRR 0,759 gegen 51,1 % und 0,559; Recall@5 gekappt 81,1 % gegen 62,2 %) — gemessen
+am stand nach dem 3.4.0-schnitt, nicht am stand von damals. Der aeltere beleg
+(`r1/eval-0037.log.txt`) bleibt liegen, weil er der ist, auf den sich die aenderung von
+12.10. stuetzte.
