@@ -50,7 +50,22 @@ function privaterSchluessel(): string | null {
   return null;
 }
 
-const listeDatei = () => path.join(app.getPath("userData"), "licenses.json");
+/** Der Ordner, in dem die Liste wirklich liegt: der heutige — und solange dort nichts
+ *  steht, der Name vor der Umbenennung. Ohne diesen Zweig verliert eine bestehende
+ *  Werkstatt beim Start ihre ausgestellten Schluessel, weil `productName` mit der Marke
+ *  auch den userData-Pfad bewegt. na-historisch: die alte Pfadform ist Datenpfad, kein Wort. */
+const listenOrdner = () => {
+  const heute = app.getPath("userData");
+  const vorher = path.join(path.dirname(heute), "KEPTA License Studio"); // na-historisch: Datenpfad vor der Umbenennung
+  try {
+    if (!fs.existsSync(path.join(heute, "licenses.json")) && fs.existsSync(path.join(vorher, "licenses.json")))
+      return vorher;
+  } catch {
+    /* Lesefehler entscheidet nicht: die heutige Ordnung gilt */
+  }
+  return heute;
+};
+const listeDatei = () => path.join(listenOrdner(), "licenses.json");
 const text = (x: unknown, max: number) => (typeof x === "string" ? x.slice(0, max) : "");
 /** Die Stufe, die das Fenster zum *Ausstellen* wählt — Unbekanntes wird Enterprise. */
 const editionAuswahl = (x: unknown): Edition => (EDITIONEN.includes(x as Edition) ? (x as Edition) : "enterprise");

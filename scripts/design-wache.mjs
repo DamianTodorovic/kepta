@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// KEPTA Design-Wache — Rechenerei über den Token-Werten in src/index.css.
+// K3PTA Design-Wache — Rechenerei über den Token-Werten in src/index.css.
 // Kein Browser, kein Build. Sie misst, was in der Datei steht, und zwar so,
 // wie der Browser es zusammensetzt: durchscheinende Flächen werden über ihren
 // echten Ahnen gemischt (sonst lügen sie — D1 B.12 Punkt 5), und eine Linie

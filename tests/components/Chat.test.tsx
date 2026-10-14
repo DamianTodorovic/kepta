@@ -7,7 +7,7 @@ import { ToastProvider } from "../../src/components/ui/Toast";
 import { saveAISettings, PROVIDERS } from "../../src/lib/ai";
 import type { Memory } from "../../src/types";
 
-// Der Chat ist die Stelle, an der KEPTA Geld kostet und Wissen nach draussen
+// Der Chat ist die Stelle, an der K3PTA Geld kostet und Wissen nach draussen
 // gibt. Zwei Dinge muessen hier stimmen: was in den Kontext wandert, und dass
 // ein Abbruch auch wirklich abbricht.
 

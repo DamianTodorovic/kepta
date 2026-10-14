@@ -4,7 +4,7 @@
 // `~/.kepta/profile.json` um 14:29:48 {"beruf":"Anwältin"} — eine Zeichenkette,
 // die im Produkt nirgends vorkommt, nur in tests/keine-grenzen.test.ts. Um
 // 20:59:46 desselben Tags trug dieselbe Datei 6.272 Bytes in einem
-// KEPTA-NEBEN1-Umschlag. Zwei Schreiblaeufe in einem Datenordner, die niemand
+// K3PTA-NEBEN1-Umschlag. Zwei Schreiblaeufe in einem Datenordner, die niemand
 // bestellt hatte.
 //
 // Die Ursache steht in server/app.ts:120:

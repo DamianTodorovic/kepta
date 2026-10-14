@@ -56,6 +56,8 @@ export interface ScanStatus {
   seen: number;
   found: number;
   imported: number;
+  /** Schluesselfoermige Stellen, die der Lauf vor der Notiz verdeckt hat (#76). */
+  masked?: number;
   skippedFolders: number;
   truncated: boolean;
   error: string | null;
@@ -564,6 +566,24 @@ export function MachineScan({ open, onClose, onImported, autoPreview = false }: 
                 <Bot className="w-3.5 h-3.5 mt-0.5 shrink-0" />
                 Everything landed under the tag <code>machine-scan</code> — filter by it to review or delete the lot.
               </div>
+              {(status.masked ?? 0) > 0 && (
+                // Eine Maske, ueber die nichts gesagt wird, ist eine stille
+                // Aenderung am Text des Nutzers. Die Zahl gehoert auf den Schirm.
+                // Das Beispiel steht fuer sich: inline zerriss der Satz bei
+                // 1440 px (Bild scan-maske-1440px.png, 14.10. — die Monospace-
+                // Insel brach mitten im Wort und warf „value" hinter die Klammer).
+                <div className="text-[12px] rounded-lg p-2.5" style={{ background: "var(--bg-inset)", color: "var(--text-2)" }} data-testid="maskiert-meldung">
+                  <div className="flex items-start gap-2">
+                    <ShieldCheck className="w-3.5 h-3.5 mt-0.5 shrink-0" style={{ color: "var(--ok)" }} />
+                    <span>
+                      {status.masked} key-shaped {status.masked === 1 ? "value was" : "values were"} masked before saving. The note keeps the kind and the length — never the value.
+                    </span>
+                  </div>
+                  <div className="font-mono text-[11px] mt-1 ml-[22px]" style={{ color: "var(--text-3)" }}>
+                    it reads: sk-…MASKIERT(43)
+                  </div>
+                </div>
+              )}
             </div>
           )}
 

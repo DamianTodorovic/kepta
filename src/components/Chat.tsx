@@ -629,7 +629,7 @@ export function Chat({ activeMemories, onSaveToBrain, onSaveToBrainWithMeta, isF
       if (!autoLearnEnabled && shouldLearn(accText) && shouldShowHint(read)) {
         try { localStorage.setItem(AUTOLEARN_HINT_KEY, 'seen'); } catch { /* Speicher gesperrt — Hinweis kommt dann erneut */ }
         toast.push({
-          message: 'KEPTA can save answers like this as knowledge automatically.',
+          message: 'K3PTA can save answers like this as knowledge automatically.',
           kind: 'info',
           duration: 9000,
           action: {
@@ -644,7 +644,7 @@ export function Chat({ activeMemories, onSaveToBrain, onSaveToBrainWithMeta, isF
 
       if (autoLearnEnabled && shouldLearn(accText)) {
         // Hintergrund-Extraktion, blockiert die Oberfläche nie. Scheitert sie, sagt
-        // KEPTA das — stilles Verschlucken machte die Funktion früher unsichtbar wirkungslos.
+        // K3PTA das — stilles Verschlucken machte die Funktion früher unsichtbar wirkungslos.
         (async ()=>{
           const s = loadAISettings();
           const prov = providerById(s.providerId);

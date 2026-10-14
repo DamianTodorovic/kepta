@@ -15,6 +15,7 @@ import express from "express";
 import { scanne, nachOrdner, type Dateisystem, type Fund, type ScanStand } from "../../src/scan/walker";
 import { grundLabel, GEHEIME_ORDNER, GEHEIME_DATEIMUSTER, UEBERSPRUNGENE_ORDNER, LESBARE_ENDUNGEN, MAX_DATEI_BYTES, MAX_DATEIEN, MAX_TIEFE, type Ablehnungsgrund } from "../../src/scan/regeln";
 import { klassifiziere, istUnbrauchbar, entferneNaviZeilen } from "../../src/core/klassifikation";
+import { maskiereSchluessel } from "../../src/scan/maskierung";
 import { planeImportReparatur, mitFrist } from "../../src/core/reparatur";
 import { richtlinie } from "../../src/lib/richtlinien";
 import { sanitizeText, sanitizeTitle } from "../../src/core/sanitize";
@@ -35,6 +36,8 @@ interface ScanLage {
   uebersprungen: number;
   /** Stuecke ohne Erkenntniswert, die gar nicht erst zu Notizen wurden. */
   verworfen?: number;
+  /** Schluesselfoermige Stellen, die vor der Notiz verdeckt wurden (#76). */
+  maskiert?: number;
   abgeschnitten: boolean;
   gestartet: number | null;
   fehler: string | null;
@@ -313,6 +316,10 @@ export function mountScan(app: express.Express, ctx: AppKontext): void {
         const schonDa = new Set(ctx.listAllMemories().map((m) => m.title));
         let n = 0;
         let verworfen = 0;
+        // #76: wie viele schluesselfoermige Stellen in diesem Lauf verdeckt
+        // wurden. Die Zahl gehoert zur Auskunft — eine Maske, ueber die niemand
+        // etwas sagt, ist eine stille Veraenderung am Text des Nutzers.
+        let maskiert = 0;
         for (const f of stand.funde as Fund[]) {
           if (scanAbbruch) break;
           try {
@@ -324,21 +331,26 @@ export function mountScan(app: express.Express, ctx: AppKontext): void {
               const titel = stuecke.length === 1 ? basisName : `${basisName} — ${i + 1}/${stuecke.length}`;
               if (schonDa.has(titel)) continue;
               schonDa.add(titel);
+              // Erst die Maske, dann alles andere: was ab hier gelesen, geurteilt
+              // und geschrieben wird, traegt den Wert nicht mehr.
+              const stueck = maskiereSchluessel(stuecke[i]);
+              const kopf = maskiereSchluessel(titel);
+              maskiert += stueck.maskiert + kopf.maskiert;
               // Traegt dieses Stueck ueberhaupt Wissen? Was hier durchfaellt,
               // wird gar nicht erst zu einer Notiz — statt spaeter muehsam
               // wieder aussortiert zu werden.
-              const urteil = istUnbrauchbar(stuecke[i]);
+              const urteil = istUnbrauchbar(stueck.text);
               if (urteil.unbrauchbar) { verworfen++; continue; }
-              const inhalt = sanitizeText(`${stuecke[i]}\n\n— Source: ${f.pfad}`, 50000);
+              const inhalt = sanitizeText(`${stueck.text}\n\n— Source: ${f.pfad}`, 50000);
               // Jede Notiz bekommt eine Art zugewiesen, mit nachlesbarem Grund.
               // Vorher setzte der Scan gar keinen Typ, und alles fiel auf
               // "Fakt" zurueck: 3071 von 3148 Notizen.
               const zuordnung = klassifiziere({
-                title: titel, content: stuecke[i],
+                title: kopf.text, content: stueck.text,
                 tags: ["machine-scan"], quelle: f.pfad,
               });
               const angelegt = store.createMemory({
-                title: sanitizeTitle(titel) || basisName.slice(0, 80),
+                title: sanitizeTitle(kopf.text) || basisName.slice(0, 80),
                 content: inhalt,
                 type: zuordnung.typ,
                 tags: ["machine-scan", path.extname(f.pfad).replace(".", "") || "file"],
@@ -353,8 +365,11 @@ export function mountScan(app: express.Express, ctx: AppKontext): void {
           } catch { /* eine unlesbare Datei haelt den Durchlauf nicht auf */ }
           if (n % 25 === 0) await new Promise((r) => setImmediate(r));
         }
-        scanLage = { ...scanLage, laeuft: false, phase: scanAbbruch ? "cancelled" : "done", importiert: n, verworfen };
-        ctx.publishActivity({ type: "save", source: "app", title: `Machine scan: ${n} notes` });
+        scanLage = { ...scanLage, laeuft: false, phase: scanAbbruch ? "cancelled" : "done", importiert: n, verworfen, maskiert };
+        ctx.publishActivity({
+          type: "save", source: "app",
+          title: `Machine scan: ${n} notes${maskiert > 0 ? ` · ${maskiert} key-shaped value${maskiert === 1 ? "" : "s"} masked` : ""}`,
+        });
       } catch (e) {
         scanLage = { ...scanLage, laeuft: false, phase: "idle", fehler: e instanceof Error ? e.message : "Scan failed" };
       }
@@ -368,6 +383,8 @@ export function mountScan(app: express.Express, ctx: AppKontext): void {
       seen: scanLage.gesehen,
       found: scanLage.gefunden,
       imported: scanLage.importiert,
+      /** Aus dem letzten Lauf: wie viele Schluesselstellen verdeckt wurden. */
+      masked: scanLage.maskiert ?? 0,
       skippedFolders: scanLage.uebersprungen,
       truncated: scanLage.abgeschnitten,
       startedAt: scanLage.gestartet,

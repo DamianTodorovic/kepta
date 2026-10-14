@@ -2,7 +2,7 @@
 //
 // Aufgabe #64 (3) — die Kennungen werden zweisprachig, nicht ausgetauscht.
 //
-// Damians Befehl (13.10. 21:5x): KEPTA wird K3PTA, ueberall. Die Leitung hat gemessen
+// Damians Befehl (13.10. 21:5x): K3PTA wird K3PTA, ueberall. Die Leitung hat gemessen
 // und geteilt (audit-2026-10-09/UMBENNUNG-K3PTA-2026-10-13.md): die sichtbaren Woerter
 // macht NA, **die Kennungen mache ich** — und der Abnahme-Satz rueckwaerts vom Nutzer
 // lautet: *niemand, der heute installiert ist, darf nach dem Update eine leere

@@ -26,7 +26,12 @@ describe("Verschlüsselte Nebendateien", () => {
     const s = schlüssel();
     schreibeJsonDatei(pfad, daten, s);
     const roh = fs.readFileSync(pfad, "utf8");
-    expect(roh.startsWith("K3PTA-NEBEN1")).toBe(true);
+    // Der Marker ist eine Format-Kennung, kein sichtbares Wort: er steht in den
+    // Dateien, die schon auf den Platten der Bestandsinstallationen liegen
+    // (Damians eigene: ~/.kepta/profile.json beginnt mit genau diesen 13 Bytes).
+    // Wer ihn umbiegt, verliert sie — `leseJsonDatei` gibt für eine fremde Magie
+    // null, und `server/router/settings.ts:104` macht daraus still `{}`.
+    expect(roh.startsWith("KEPTA-NEBEN1")).toBe(true);
     // Der Klartext darf nirgends in der Datei stehen — auch nicht als Fragment.
     expect(roh.includes("Damian")).toBe(false);
     expect(roh.includes("Steuerrecht")).toBe(false);
@@ -52,7 +57,31 @@ describe("Verschlüsselte Nebendateien", () => {
     fs.writeFileSync(pfad, JSON.stringify({ roots: ["/home/user/kanzlei"] }, null, 2), "utf-8");
     expect(leseJsonDatei<{ roots?: string[] }>(pfad, s)).toEqual({ roots: ["/home/user/kanzlei"] });
     schreibeJsonDatei(pfad, { roots: ["/home/user/kanzlei"] }, s);
-    expect(fs.readFileSync(pfad, "utf8").startsWith("K3PTA-NEBEN1")).toBe(true);
+    expect(fs.readFileSync(pfad, "utf8").startsWith("KEPTA-NEBEN1")).toBe(true);
+  });
+
+  it("der Umschlag ist eine Format-Kennung, kein Markenwort — eine fremde Magie wird nicht gelesen", () => {
+    // Die Gegenprobe zu den beiden Marker-Erwartungen oben (`:34` und `:60`):
+    // derselbe Geheimtext, nur die ersten 13
+    // Bytes gegen die neu aussehende Schreibweise getauscht. Beide Dateien sind
+    // gleich lang, damit der Beweis wirklich am Marker hängt und nicht an einer
+    // kaputten Datei.
+    // Die Lesart ist `null`, kein Fehler — und genau deshalb wäre ein umgebogener
+    // Marker ein stiller Datenverlust: `server/router/settings.ts:104` macht aus
+    // null ein leeres Profil und schreibt beim nächsten POST über die Datei hinweg.
+    const dir = ordner();
+    const pfad = path.join(dir, "profil.json");
+    const s = schlüssel();
+    schreibeJsonDatei(pfad, { displayName: "Cara" }, s);
+    const roh = fs.readFileSync(pfad);
+    expect(roh.subarray(0, 13).toString("utf8")).toBe("KEPTA-NEBEN1\n");
+    const fremd = Buffer.concat([Buffer.from("K3PTA-NEBEN1\n", "utf8"), roh.subarray(13)]);
+    expect(fremd.length).toBe(roh.length);
+    fs.writeFileSync(pfad, fremd);
+    expect(leseJsonDatei(pfad, s)).toBeNull();
+    // Unter der echten Kennung geht derselbe Umschlag unverloren durch die Tür.
+    fs.writeFileSync(pfad, roh);
+    expect(leseJsonDatei<{ displayName?: string }>(pfad, s)).toEqual({ displayName: "Cara" });
   });
 
   it("KEPTA_ENCRYPTION=off → Klartext, deterministisch wie der Store", () => {

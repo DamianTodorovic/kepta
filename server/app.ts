@@ -56,7 +56,7 @@ const ALLOWED_ORIGINS = new Set([
 // Die App ist offen: jedes Werkzeug läuft unbegrenzt, für jede Person, die sie
 // herunterlädt. Ein Schlüssel-System und Tageslimits gab es einmal (Freemium mit
 // Zählern und einem gratis ersten Tag mit Polzer-Ankern) — seit 09.10.2026 ist ersatzlos weg, weil
-// Damian die herunterladbare KEPTA ohne jede Grenze haben will. Was bleibt, sind
+// Damian die herunterladbare K3PTA ohne jede Grenze haben will. Was bleibt, sind
 // die Schutzbremsen, die nichts mit Bezahlung zu tun haben: nur dieser Rechner
 // erreicht den Server, 1mb pro Body, Drosseln gegen Brute-Force, der Knoten-
 // deckel, und der Wiederherstellungsschlüssel hinter drei Türstehern.

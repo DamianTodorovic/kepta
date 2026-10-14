@@ -79,7 +79,7 @@ describe("das Fenster von K3PTA License Studio", () => {
     expect(el<HTMLButtonElement>("erzeugen").disabled).toBe(false);
     expect(el("zahl").textContent).toBe("1");
     expect(el("sperr-info").hidden).toBe(true);
-    expect(el("listen-pfad").textContent).toBe("~/Library/Application Support/K3PTA License Studio/licenses.json");
+    expect(el("listen-pfad").textContent).toBe("~/Library/Application Support/KEPTA License Studio/licenses.json");
     await zu();
   });
 

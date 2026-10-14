@@ -66,7 +66,7 @@ describe("memory core boundary (src/core)", () => {
       // den Kern: der Store braucht ihn, bevor er die Datei auch nur liest.
       "schluessel.ts",
       // Die gesperrten Lizenznummern (2.12.0) — reine Daten, die lizenz.ts liest;
-      // KEPTA License Studio schreibt sie.
+      // K3PTA License Studio schreibt sie.
       "sperrliste.ts",
       "stopwords.ts",
       "store.ts",

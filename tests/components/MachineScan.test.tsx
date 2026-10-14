@@ -264,6 +264,44 @@ describe("formatBytes", () => {
   });
 });
 
+describe("Die Maske wird gesagt, nicht still geschwiegen (#76)", () => {
+  it("meldet, wie viele Schluesselstellen der Lauf verdeckt hat", async () => {
+    // #76: eine Maske, ueber die nichts gesagt wird, ist eine stille Aenderung
+    // am Text des Nutzers. Die Zahl steht auf dem Schirm — und nur dort, wo sie
+    // etwas bedeutet: der Status nach dem Lauf.
+    const user = userEvent.setup();
+    vi.unstubAllGlobals();
+    vi.stubGlobal("fetch", vi.fn(async (url: string) => {
+      if (String(url).includes("/api/scan/preview")) return new Response(JSON.stringify(VORSCHAU), { status: 200 });
+      if (String(url).includes("/api/scan/status")) return new Response(JSON.stringify({ running: false, phase: "done", seen: 120, found: 12, imported: 12, masked: 3, skippedFolders: 4, truncated: false, error: null }), { status: 200 });
+      return new Response(JSON.stringify({ started: true }), { status: 200 });
+    }));
+    oeffne();
+    await user.click(screen.getByRole("button", { name: /Show me what would be imported/i }));
+    for (const h of await screen.findAllByRole("checkbox")) await user.click(h);
+    await user.click(screen.getByRole("button", { name: /Import 12 documents/i }));
+    const zeile = await screen.findByTestId("maskiert-meldung");
+    expect(zeile.textContent).toMatch(/3 key-shaped values were masked/);
+    expect(zeile.textContent).toMatch(/sk-…MASKIERT\(43\)/);
+  });
+
+  it("zeigt die Maske nicht, wenn der Lauf nichts verdeckt hat", async () => {
+    const user = userEvent.setup();
+    vi.unstubAllGlobals();
+    vi.stubGlobal("fetch", vi.fn(async (url: string) => {
+      if (String(url).includes("/api/scan/preview")) return new Response(JSON.stringify(VORSCHAU), { status: 200 });
+      if (String(url).includes("/api/scan/status")) return new Response(JSON.stringify({ running: false, phase: "done", seen: 120, found: 12, imported: 12, masked: 0, skippedFolders: 4, truncated: false, error: null }), { status: 200 });
+      return new Response(JSON.stringify({ started: true }), { status: 200 });
+    }));
+    oeffne();
+    await user.click(screen.getByRole("button", { name: /Show me what would be imported/i }));
+    for (const h of await screen.findAllByRole("checkbox")) await user.click(h);
+    await user.click(screen.getByRole("button", { name: /Import 12 documents/i }));
+    await waitFor(() => expect(screen.getByText(/Done — 12 notes added/i)).toBeTruthy(), { timeout: 4000 });
+    expect(screen.queryByTestId("maskiert-meldung")).toBeNull();
+  });
+});
+
 describe("Der Nutzer bestimmt, was und von wo gelesen wird", () => {
   // Die Forderung dahinter: "möchte ich auch explizit, dass man bei K3PTA
   // einstellen kann was genau und von wo genau er wissen herausziehen kann und

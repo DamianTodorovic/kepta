@@ -125,7 +125,7 @@ export function mountMemories(app: express.Express, ctx: AppKontext): void {
    * Liste — und ab der einundsechzigsten griff die Schreibdrossel (60/min) und
    * beantwortete alles Weitere mit 429. Weil der Aufrufer den Fehler verwarf,
    * meldete die Oberflaeche trotzdem Erfolg. Von aussen sah das aus, als
-   * loesche KEPTA wahllos die halbe Wissensbasis.
+   * loesche K3PTA wahllos die halbe Wissensbasis.
    *
    * Hier faellt alles in einen Aufruf, und die Antwort sagt genau, was geschehen
    * ist. Geloescht wird IN DEN PAPIERKORB, nie endgueltig.

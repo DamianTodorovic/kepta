@@ -5,7 +5,7 @@ import userEvent from "@testing-library/user-event";
 import { OnboardingWizard } from "../../src/components/OnboardingWizard";
 
 // Der Assistent bot acht feste Kategorien an, die ersten beiden aus dem Umfeld
-// des Autors: "Fishing — Bait, rods, spots" und "Dropshipping". Wer KEPTA fuer
+// des Autors: "Fishing — Bait, rods, spots" und "Dropshipping". Wer K3PTA fuer
 // eine Kanzlei ansah, bekam als Erstes Angelkoeder angeboten — und jede
 // Kategorie schrieb fremde Fachnotizen in die eigene Datenbank.
 //
@@ -28,7 +28,7 @@ function oeffne() {
 }
 
 // Die Endschaft (Schritt 4) ist das einzige Bild, auf dem der Frischgelaedene
-// nachgelesen bekommt, was KEPTA mit seinen Angaben getan hat. Sie darf dort
+// nachgelesen bekommt, was K3PTA mit seinen Angaben getan hat. Sie darf dort
 // nichts behaupten, was der Knopfdruck unter ihr nicht wirklich schreibt.
 // Pruefziel ist die Liste selbst, nicht der ganze Schirm: Ueberschrift und
 // Fortschritt gehoeren anderen Fallgruppen.
@@ -64,7 +64,7 @@ describe("OnboardingWizard: keine fremden Fachgebiete mehr", () => {
     }
   });
 
-  it("kuendigt an, dass nur Notizen ueber KEPTA selbst angelegt werden", async () => {
+  it("kuendigt an, dass nur Notizen ueber K3PTA selbst angelegt werden", async () => {
     const user = userEvent.setup();
     oeffne();
     await zuSchrittZwei(user);
@@ -129,7 +129,7 @@ describe("OnboardingWizard: eigene Themen", () => {
 
 describe("OnboardingWizard: Angebot, den Rechner anzusehen", () => {
   // Der Wunsch des Nutzers: schon beim ersten Start bestaetigen koennen, dass
-  // KEPTA den Rechner durchsieht. Der Haken hier ist bewusst NUR eine Anfrage —
+  // K3PTA den Rechner durchsieht. Der Haken hier ist bewusst NUR eine Anfrage —
   // die eigentliche Zustimmung holt der Scan-Dialog mit Vorschau und dem Hinweis
   // auf MCP-Agenten. Ein Haken im Assistenten darf keine Festplatte lesen.
   it("bietet es an und sagt dabei, was nie gelesen wird", async () => {
@@ -322,7 +322,7 @@ describe("OnboardingWizard: KI-Erkennung (Schritt 3)", () => {  function stubLoc
     await waitFor(() => expect(container.textContent).toMatch(/\d+ms/), { timeout: 4000 });
   });
 
-  it("erklaert bei gar keiner lokaler KI, dass KEPTA trotzdem funktioniert", async () => {
+  it("erklaert bei gar keiner lokaler KI, dass K3PTA trotzdem funktioniert", async () => {
     const user = userEvent.setup();
     stubLocalAI(false, false);
     const { container } = oeffne();
@@ -369,11 +369,22 @@ describe("OnboardingWizard: Rueckwaerts und freiwillige Angaben", () => {
     // Sichtbare Wörter dürfen mitgehen, ein Pfad nicht: `~/.kepta/kepta.db` ist
     // der Ort auf der Platte (src/core/store.ts:44) und `/api/memory` die Tür.
     // Ein Zug, der beides beugt, schreibt an einen Ort, den niemand liest.
+    //
+    // Der Wächter prueft daher die Pfade, nicht die ganze Datei: die letzte Zeile
+    // verbot einmal das sichtbare „Set up K3PTA" im Quelltext — weiter unten im
+    // selben Block (und in `tests/components/huelle-fenster.test.tsx:110`) wird
+    // genau dieser Sichttext verlangt. Ein Verbot, das der eigene Fall bricht, ist
+    // ein zu weiter Schnitt, kein kaputter Zug.
     const quelle = require("node:fs").readFileSync("src/components/OnboardingWizard.tsx", "utf-8");
     expect(quelle).toMatch(/~\/\.kepta\/kepta\.db/);
     expect(quelle).toMatch(/\/api\/memory/);
     expect(quelle).toMatch(/\/api\/profile/);
-    expect(quelle, "sichtbares Markenwort ist noch das alte").not.toMatch(/Set up KEPTA/);
+    // Ein Pfad mit dem alten Wort bleibt erlaubt; die neue Form an seiner Stelle nicht.
+    expect(quelle, "ein Pfad oder eine Route ist verbogen worden").not.toMatch(
+      /\.k3pta\/|k3pta\.db|\/api\/k3pta/i,
+    );
+    // Und der Sichttext fuehrt die neue Marke — sonst ist der Zug hier halb stehen geblieben.
+    expect(quelle, "der sichtbare Satz fuehrt noch die alte Marke").toMatch(/Set up K3PTA/);
   });
 });
 

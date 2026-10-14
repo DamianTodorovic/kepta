@@ -97,7 +97,7 @@ describe("Testkapsel: kein Suite-Lauf schreibt in den echten Datenordner", () =>
 //
 // Beabsichtigt eng gefasst: nur die Dateien, die eine Route schreibt.
 // `kepta.db` und seine WAL-/SHM-Nachbarn fehlen bewusst, weil eine live
-// laufende KEPTA-App sie fortlaufend anfasst — das ist Betrieb, kein
+// laufende K3PTA-App sie fortlaufend anfasst — das ist Betrieb, kein
 // Testfehler, und eine Wache, die dafür rot wird, wird abgeschaltet.
 //
 // Ausnahmefall für die Leitung: `KEPTA_HEIMWACHE=aus` lässt die Tripwire
@@ -136,7 +136,7 @@ describe("Heim-Tripwire: ihr own Lauf ist die eigentliche Prüfung", () => {
   });
 
   it("hat eine Ausstiegsklappe, die die Leitung setzen kann", () => {
-    // Ohne Klappe wird die Wache bei jedem Parallelbetrieb eines echten KEPTA
+    // Ohne Klappe wird die Wache bei jedem Parallelbetrieb eines echten K3PTA
     // rot — und eine Wache, die im Weg steht, wird aus dem Takt genommen.
     expect(/KEPTA_HEIMWACHE/.test(fs.readFileSync(path.join(ORDNER, "testkapsel.test.ts"), "utf-8"))).toBe(true);
     expect(/KEPTA_HEIM\b/.test(fs.readFileSync(path.join(ORDNER, "testkapsel.test.ts"), "utf-8"))).toBe(true);
@@ -216,7 +216,7 @@ describe("Testkapsel: die zwei Türen schreiben wirklich in die Kapsel", () => {
 // unter $HOME etwas geschrieben wird.** Der Anlass ist gemessen, nicht erfunden —
 // die echte profile.json auf diesem Rechner trug um 14:29:48 {"beruf":"Anwältin"}
 // aus einer Testdatei, und um 20:59:46 hatte sie 6.272 Bytes in einem
-// KEPTA-NEBEN1-Umschlag. Zwei Schreibläufe in Damians Datenordner an einem Tag,
+// K3PTA-NEBEN1-Umschlag. Zwei Schreibläufe in Damians Datenordner an einem Tag,
 // keiner von dieser Scheibe.
 describe("Heim-Wache: schreibt ein Lauf unter $HOME, wird es gemeldet", () => {
   let heim = "";

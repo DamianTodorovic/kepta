@@ -340,7 +340,7 @@ describe("Storage, Import/Export, Convenience-Routen", () => {
     // Duplikaten in die Schreibdrossel (60/min). Die ersten sechzig
     // verschwanden, alles Weitere bekam 429 — und weil der Aufrufer den Fehler
     // verwarf, meldete die Oberflaeche trotzdem Erfolg. Von aussen sah das aus,
-    // als loesche KEPTA wahllos die halbe Wissensbasis.
+    // als loesche K3PTA wahllos die halbe Wissensbasis.
     const ids: string[] = [];
     for (let i = 0; i < 5; i++) {
       const r = await request(app).post("/api/memories").send({ title: `B${i}`, content: `Inhalt ${i}` });

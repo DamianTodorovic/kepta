@@ -1,5 +1,5 @@
 /**
- * Aufgaben-Kennungen zweisprachig lesen (Aufgabe #64, Leitung 13.10.: „KEPTA wird zu
+ * Aufgaben-Kennungen zweisprachig lesen (Aufgabe #64, Leitung 13.10.: „K3PTA wird zu
  * K3PTA, ueberall" — die sichtbaren Woerter macht NA, **die Kennungen macht F12**).
  *
  * Die Regel ist nicht „umbenennen", sondern **zwei Formen lesen, eine melden**. Der

@@ -212,7 +212,7 @@ describe("Der Nutzer darf eigene Ordner aussen vor lassen", () => {
 });
 
 // Nachtrag #73, 14.10.2026, gemessen am echten Heim: vier Ordner
-// `KEPTA-datensicherung-vor-*` liegen dort, je eine Kopie des Datenordners
+// `K3PTA-datensicherung-vor-*` liegen dort, je eine Kopie des Datenordners
 // (kepta.db, export/, profile.json, scan-config.json, endpoint.json). Ein
 // Erstlauf naehme 7.300 Dateien davon — 53,6 % dessen, was der Scan aufnimmt —
 // und darunter genau die Dateien, die scan.ts selbst als „sensible Metadaten"
@@ -220,14 +220,14 @@ describe("Der Nutzer darf eigene Ordner aussen vor lassen", () => {
 // ausgeschlossen (scan.ts: ausgeschlossenePfade); eine KOpie davon war es nicht.
 describe("K3PTAs eigene Datenordner — auch als Kopie (#73)", () => {
   const sicherung = baum({
-    [HEIM]: [ordner("Dokumente"), ordner("KEPTA-datensicherung-vor-3.2.1-2026-10-12")],
+    [HEIM]: [ordner("Dokumente"), ordner("K3PTA-datensicherung-vor-3.2.1-2026-10-12")],
     [`${HEIM}/Dokumente`]: [datei("Fristen.md", 900)],
-    [`${HEIM}/KEPTA-datensicherung-vor-3.2.1-2026-10-12`]: [
+    [`${HEIM}/K3PTA-datensicherung-vor-3.2.1-2026-10-12`]: [
       datei("kepta.db", 4_000_000), datei("profile.json", 700),
       datei("scan-config.json", 300), ordner("export"), ordner("inbox"),
     ],
-    [`${HEIM}/KEPTA-datensicherung-vor-3.2.1-2026-10-12/export`]: [datei("Mandatsakte.md", 1200)],
-    [`${HEIM}/KEPTA-datensicherung-vor-3.2.1-2026-10-12/inbox`]: [datei("Beleg.md", 400)],
+    [`${HEIM}/K3PTA-datensicherung-vor-3.2.1-2026-10-12/export`]: [datei("Mandatsakte.md", 1200)],
+    [`${HEIM}/K3PTA-datensicherung-vor-3.2.1-2026-10-12/inbox`]: [datei("Beleg.md", 400)],
   });
 
   it("betritt einen Ordner nicht, in dem die eigene Datenbank liegt", () => {
@@ -258,7 +258,7 @@ describe("K3PTAs eigene Datenordner — auch als Kopie (#73)", () => {
     // Ausdruecklich gewaehlte Wurzeln sind eine informierte Entscheidung —
     // ausser sie tragen K3PTAs eigene Datenbank. Dann haelt sich der Nutzer fuer
     // sein eigenes Gedaelchtnis eine zweite Kopie ins Gedaelchtnis.
-    const s = scanneVollstaendig([`${HEIM}/KEPTA-datensicherung-vor-3.2.1-2026-10-12`], sicherung);
+    const s = scanneVollstaendig([`${HEIM}/K3PTA-datensicherung-vor-3.2.1-2026-10-12`], sicherung);
     expect(s.funde).toEqual([]);
   });
 

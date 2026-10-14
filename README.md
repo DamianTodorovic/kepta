@@ -1,10 +1,10 @@
-<p align="center"><img src="public/kepta-logo.svg" width="88" alt="KEPTA"></p>
-<h1 align="center">KEPTA — Keeps what matters</h1>
-<p align="center"><strong>Your AI forgets you after every chat.<br>KEPTA remembers — on your own computer, in one encrypted file.</strong></p>
+<p align="center"><img src="public/kepta-logo.svg" width="88" alt="K3PTA"></p>
+<h1 align="center">K3PTA — Keeps what matters</h1>
+<p align="center"><strong>Your AI forgets you after every chat.<br>K3PTA remembers — on your own computer, in one encrypted file.</strong></p>
 
 <p align="center"><sub>Desktop app · no cloud · no account · encrypted at rest<br>SQLite · hybrid retrieval · knowledge graph · MCP</sub></p>
 
-<p align="center"><a href="https://github.com/DamianTodorovic/kepta/releases/latest"><img alt="Download" src="https://img.shields.io/github/v/release/DamianTodorovic/kepta?label=Download"></a> <a href="https://github.com/DamianTodorovic/kepta/actions/workflows/ci.yml"><img alt="Engine CI" src="https://github.com/DamianTodorovic/kepta/actions/workflows/ci.yml/badge.svg"></a> <a href="LICENSE"><img alt="License" src="https://img.shields.io/badge/license-Proprietary-black"></a> <img alt="Coverage gate" src="https://img.shields.io/badge/coverage%20gate-%E2%89%A5%2089%25%20of%20lines-brightgreen"> <img alt="Tests" src="https://img.shields.io/badge/tests-2393%20passing-brightgreen"> <img alt="Platform" src="https://img.shields.io/badge/platform-macOS-lightgrey"></p>
+<p align="center"><a href="https://github.com/DamianTodorovic/kepta/releases/latest"><img alt="Download" src="https://img.shields.io/github/v/release/DamianTodorovic/kepta?label=Download"></a> <a href="https://github.com/DamianTodorovic/kepta/actions/workflows/ci.yml"><img alt="Engine CI" src="https://github.com/DamianTodorovic/kepta/actions/workflows/ci.yml/badge.svg"></a> <a href="LICENSE"><img alt="License" src="https://img.shields.io/badge/license-Proprietary-black"></a> <img alt="Coverage gate" src="https://img.shields.io/badge/coverage%20gate-%E2%89%A5%2089%25%20of%20lines-brightgreen"> <img alt="Tests" src="https://img.shields.io/badge/tests-2507%20passing-brightgreen"> <img alt="Platform" src="https://img.shields.io/badge/platform-macOS-lightgrey"></p>
 
 <p align="center"><sub>The memory engine underneath is source-available (BUSL-1.1, converts to AGPL-3.0-or-later after four years): <a href="https://github.com/DamianTodorovic/kepta">DamianTodorovic/kepta</a> — the headless core with the MCP server. This repository is the full desktop application.</sub></p>
 
@@ -44,7 +44,7 @@ Every memory carries a validity window, so the graph can be replayed: pull the t
 
 **The problem.** You use ChatGPT, Claude or something similar. You explain your project, your client, the way you like things done. The next day you open a fresh chat and it knows none of it. So you explain it again. And again. Meanwhile the platform quietly keeps what you told it — in their cloud, tied to their service, on their terms.
 
-**What KEPTA is.** A small program that runs on your own computer and remembers those things for you. Your assistants read it and write back to it through **MCP** — the open protocol that Claude Desktop, Cursor, Gemini CLI, Cline, Codex and many others speak. The knowledge lives in **one encrypted file** on your machine: since 2.11, AES-256 at rest, the key in your system keychain. Not a cloud. Not a service. A file — like a document you own.
+**What K3PTA is.** A small program that runs on your own computer and remembers those things for you. Your assistants read it and write back to it through **MCP** — the open protocol that Claude Desktop, Cursor, Gemini CLI, Cline, Codex and many others speak. The knowledge lives in **one encrypted file** on your machine: since 2.11, AES-256 at rest, the key in your system keychain. Not a cloud. Not a service. A file — like a document you own.
 
 **What that looks like on an ordinary day.** You tell your assistant to remember that your client bills quarterly. Two weeks later, in a brand-new chat with a *different* assistant, the answer is already right. You drop a PDF into a folder and your assistant can quote from it. A client changes address — and the old one stops coming back, because the new note *supersedes* the old instead of piling on top.
 
@@ -52,15 +52,15 @@ Every memory carries a validity window, so the graph can be replayed: pull the t
 
 - You use AI assistants daily and keep repeating yourself → yes.
 - You handle client data, patient data or anything confidential → **yes, especially you**. This is the part the platforms cannot offer.
-- You are looking for a notes app to read and write by hand → probably not. KEPTA is built so your *assistant* uses it — and you supervise.
+- You are looking for a notes app to read and write by hand → probably not. K3PTA is built so your *assistant* uses it — and you supervise.
 
 ### Do I need to be a developer?
 
 **To use the app — no.** Download the file for your system, open it, done. It is an ordinary window: a list, a search box, a settings page. [Which file do I need?](#-which-file-do-i-need) tells you exactly which one to take.
 
-**To connect it to your assistants — one click.** KEPTA finds the AI apps already installed on the computer and adds itself to their MCP settings. If your app is not on the list, the app shows you the exact block to paste — and anything that speaks HTTP has the REST API.
+**To connect it to your assistants — one click.** K3PTA finds the AI apps already installed on the computer and adds itself to their MCP settings. If your app is not on the list, the app shows you the exact block to paste — and anything that speaks HTTP has the REST API.
 
-**For the smarter search — optional.** KEPTA searches perfectly well out of the box. Install [Ollama](https://ollama.com) — one free download — and it will additionally find notes that mean the same thing in different words.
+**For the smarter search — optional.** K3PTA searches perfectly well out of the box. Install [Ollama](https://ollama.com) — one free download — and it will additionally find notes that mean the same thing in different words.
 
 <details>
 <summary><strong>The words used on this page, in plain terms</strong></summary>
@@ -71,7 +71,7 @@ Every memory carries a validity window, so the graph can be replayed: pull the t
 | **MCP** | The open protocol such programs use to talk to tools. KEPTA speaks it, so your assistants can read and write your notes. |
 | **SQLite** | A database that is simply one file on your disk. Nothing to run, nothing to log into; you can copy it like a photo. |
 | **Encryption at rest** | The file is stored encrypted (AES-256, SQLCipher format). Whoever holds only the file holds nothing readable. |
-| **Keychain** | Where your operating system keeps secrets. KEPTA stores the database key there — no password to type, no key on the disk. |
+| **Keychain** | Where your operating system keeps secrets. K3PTA stores the database key there — no password to type, no key on the disk. |
 | **Embedding / vector** | Text turned into numbers, so a computer can tell that "car workshop" and "garage" mean nearly the same thing. |
 | **BM25 / full text** | Classic keyword search: it finds the words you actually typed. |
 | **Knowledge graph** | Your notes linked to one another, like `[[links]]` in a wiki. |
@@ -86,7 +86,7 @@ Every memory carries a validity window, so the graph can be replayed: pull the t
 2. **Keep agents sharp instead of letting them rot.** Every memory carries a type, a validity window and a confidence score. Contradictions supersede each other; expired facts are flagged, not silently served.
 3. **A second brain found by meaning.** Ask *"what do I cook with pasta"* and the carbonara recipe comes back — once `ollama pull nomic-embed-text` has run. Without an embedding model, search stays lexical and still works.
    **Measured caveat, September 2026:** that example works in English and does not work in German. On a four-note check (`npm run embed:sprachtest`) the default model answers 4 of 4 English paraphrase questions and 1 of 4 of the same questions translated into German. The implementation is not at fault — normalised cosine, 768 dimensions — the default model is English-centric. If your notes are German, expect lexical search to carry most of the weight until you switch to a multilingual model such as `bge-m3`.
-4. **Capture without friction.** Drag in files (PDF/MD/TXT), clip URLs, watch an inbox folder, save chat answers — or let KEPTA **read the documents already on your computer**: opt-in, with a preview of exactly what would be imported before a single file is opened. Keys, credentials, browser profiles, keychains and system folders are never read, and that cannot be switched off — because an imported note is readable by every agent you connect over MCP.
+4. **Capture without friction.** Drag in files (PDF/MD/TXT), clip URLs, watch an inbox folder, save chat answers — or let K3PTA **read the documents already on your computer**: opt-in, with a preview of exactly what would be imported before a single file is opened. Keys, credentials, browser profiles, keychains and system folders are never read, and that cannot be switched off — because an imported note is readable by every agent you connect over MCP.
 5. **Obsidian bridge.** Vault import and export (Markdown + frontmatter); `[[wiki links]]` become graph edges.
 6. **Private, provably.** Everything lives in `~/.kepta/`, encrypted on disk, no account, no telemetry — and every AI access is written to a tamper-evident audit log you can check and export.
 7. **Research-grade knowledge graph** that stays legible at thousands of nodes, duplicate review that shows you the pairs instead of just counting them, and a trash can with undo.
@@ -106,7 +106,7 @@ Every memory carries a validity window, so the graph can be replayed: pull the t
 - **Supersede chains** (`superseded_by`): contradictions displace each other and the history survives
 - **Files** by drag and drop: PDF, MD, TXT, JSON — chunked at 2000 characters. PDF text comes from pdf.js with the character maps for embedded fonts (shipped with the app, served locally), so a form reads as letters rather than glyph names. Files imported with an older extraction can be read again under *Settings → Data → Re-read imported files* — it counts first and writes only after you confirm
 - **URL clipper** with SSRF protection (IP literals in every notation, DNS resolution, every redirect hop checked); navigation lines, "Skip to main content" and cookie banners are stripped on import
-- **Auto-learn** (**off** by default): on request, KEPTA saves the key point of each chat answer as a node (tag `auto-learn`). The first time an answer would have been learnable, it says so once — with a button to switch it on. Optional small extraction model, 45-second limit (`src/lib/autolearn.ts:11`), and both success **and** failure are reported
+- **Auto-learn** (**off** by default): on request, K3PTA saves the key point of each chat answer as a node (tag `auto-learn`). The first time an answer would have been learnable, it says so once — with a button to switch it on. Optional small extraction model, 45-second limit (`src/lib/autolearn.ts:11`), and both success **and** failure are reported
 - **Inbox folder** watched and ingested automatically
 - **Obsidian vault import**: Markdown + YAML frontmatter, `[[wiki links]]` become graph edges
 - **Import your AI history**: bring your ChatGPT or Claude data export here (*Settings → Data management → Import your AI history*): every conversation with at least one answer becomes a searchable note with its original date, tagged `chatgpt-import` / `claude-import` — so switching assistants doesn't mean starting over. Importing the same export again updates instead of duplicating
@@ -128,7 +128,7 @@ Every memory carries a validity window, so the graph can be replayed: pull the t
 - **Semantic search** can be switched off; the result slider runs 5 · 10 · 20 · 50 · 100 · 250 · **All**, and the index says how many notes match in total
 - **Relevance first while you search** — a grouped list turns flat and ranked as soon as there is a query, so the best hit is on top
 - **One code path** for the UI, the HTTP API and MCP — agents get exactly the quality you get
-- **Eval harness**: `npm run eval` measures Hit@1 and **Recall@5 (capped)** against a fixed corpus — capped because the denominator is `min(5, relevant notes)`, not 5, so the figure says how much of the answer set arrived rather than how clean the five are. `npm run ablation` divides by 5 and reports a real P@5 on the same corpus: two metrics, two names, never comparable. Both are cited line by line under "Why KEPTA?", where the runs themselves are kept in the repository.
+- **Eval harness**: `npm run eval` measures Hit@1 and **Recall@5 (capped)** against a fixed corpus — capped because the denominator is `min(5, relevant notes)`, not 5, so the figure says how much of the answer set arrived rather than how clean the five are. `npm run ablation` divides by 5 and reports a real P@5 on the same corpus: two metrics, two names, never comparable. Both are cited line by line under "Why K3PTA?", where the runs themselves are kept in the repository.
 
 </details>
 
@@ -174,7 +174,7 @@ Every memory carries a validity window, so the graph can be replayed: pull the t
 <details open>
 <summary><strong>Your AI apps — connected, visible, accountable</strong></summary>
 
-- **Connect in one click** — KEPTA finds the AI apps already installed (Claude Desktop, Claude Code, Cursor, Windsurf, VS Code, Gemini CLI, Cline, Roo Code) and adds itself to their MCP settings, pointing to the server inside the app (no Node, no npm). Zed, Codex CLI, Continue and every other MCP client get the exact snippet to paste. A backup of the old file sits right next to it, every other entry stays, and a file that is not plain JSON is never touched
+- **Connect in one click** — K3PTA finds the AI apps already installed (Claude Desktop, Claude Code, Cursor, Windsurf, VS Code, Gemini CLI, Cline, Roo Code) and adds itself to their MCP settings, pointing to the server inside the app (no Node, no npm). Zed, Codex CLI, Continue and every other MCP client get the exact snippet to paste. A backup of the old file sits right next to it, every other entry stays, and a file that is not plain JSON is never touched
 - **Live activity** (⌘7) — which app is active right now and what it searched, saved or changed, with a message the moment it happens: *Claude saved "…"*
 - **Audit log** — every access to the knowledge base, by you, by each AI app and by scripts, with exactly the notes an app got to see. Every entry is sealed with the SHA-256 of the one before it; *Check integrity* shows whether anything was changed, removed or cut off. Export as CSV, safe against spreadsheet formulas. A note's preview says which app read it and when
 - **Privacy shield** — before a question goes to a cloud model, email addresses, phone numbers, IBANs, card numbers, passwords and keys become placeholders like `[EMAIL-1]`; the answer shows the real values again, even while it streams. AI apps read notes without passwords, keys, card numbers and IBANs, and if one writes a note back, the real values stay. Private notes never reach an app or a cloud model. Card numbers must pass the Luhn check and IBANs the mod-97 check; dates are never taken for phone numbers. Both protections are on by default, and every cloud request is in the audit log
@@ -276,7 +276,7 @@ flowchart LR
     CU["Cursor"]
     GM["Gemini CLI · Cline · Codex<br/>Windsurf · VS Code · Zed · …"]
   end
-  subgraph App["KEPTA — all on your machine"]
+  subgraph App["K3PTA — all on your machine"]
     UI["Desktop app<br/>React 19 + Electron"]
     SRV["HTTP API<br/>58 routes"]
     MCP["MCP server<br/>stdio + POST /mcp"]
@@ -346,13 +346,13 @@ for hit in kepta.search("carbonara without cream"):
 
 Standard library only, no dependencies. It discovers the running app through `~/.kepta/endpoint.json`, so the random port a packaged build picks is not your problem. Details: [python/README.md](python/README.md) · [PyPI](https://pypi.org/project/kepta/)
 
-## 🔐 KEPTA is free, and nothing in it is locked
+## 🔐 K3PTA is free, and nothing in it is locked
 
-There are two things in the world: **KEPTA Core**, free — the desktop app and the engine underneath it — and **KEPTA Enterprise**, memory for organizations, which exists only **by agreement** with Damian. This repository is private.
+There are two things in the world: **K3PTA Core**, free — the desktop app and the engine underneath it — and **K3PTA Enterprise**, memory for organizations, which exists only **by agreement** with Damian. This repository is private.
 
 - **No keys, no limits, no upgrade panel.** Every tool in the app runs without bound: chat, clipper, machine scan, dossiers, briefings, audit, Device Sync, all eight MCP tools. There is nothing to activate and nothing to buy inside the window, so the app also never asks for it — no key field, no counter, no trial clock, no "first day free" and no message about a limit. What is documented here is what runs.
 - **One number instead of the word "unlimited".** The one bound that exists is a capacity brake on the local HTTP API: it stops taking new notes at `KEPTA_MAX_ACTIVE` active notes, default 5 000 (`server/helfer/api-form.ts:46`, held by `tests/server.test.ts:162`). That is a runaway-agent guard, not a paywall — one environment variable to raise, nothing in the window enforces it, and read, search, update, import and backup are not refused by it.
-- **What used to be here, and why it is gone.** Until 3.1.4 the app metered some tools with daily limits, gave a sealed first 24 hours, and validated an optional key offline. It was never a lock — but it was counting, and counting needed places to hide the tally (an authenticated state in the database, a keychain anchor, a hidden file). KEPTA's promise is a memory that is yours without supervision, so the whole mechanism was removed rather than tuned: no route, no header, no anchor, no strings. The data of anyone who installed an earlier build is untouched; the fields simply stopped being read or written.
+- **What used to be here, and why it is gone.** Until 3.1.4 the app metered some tools with daily limits, gave a sealed first 24 hours, and validated an optional key offline. It was never a lock — but it was counting, and counting needed places to hide the tally (an authenticated state in the database, a keychain anchor, a hidden file). K3PTA's promise is a memory that is yours without supervision, so the whole mechanism was removed rather than tuned: no route, no header, no anchor, no strings. The data of anyone who installed an earlier build is untouched; the fields simply stopped being read or written.
 - **Team memory is switched on by your organization, not by a plan.** Team scopes and their roles come from one managed file (`managed-settings.json`, delivered over MDM) and are enforced in the store: admins and members write to `team:*`, viewers read, nobody else sees them. Without that file there is no team workspace — the app says so plainly instead of hiding a dead end. Central policies (cloud chat off, computer scan off, privacy shield forced on) come from the same file and are documented in [SECURITY-ENTERPRISE.md](SECURITY-ENTERPRISE.md). Sold as roadmap, not built yet: SSO (SAML/OIDC), the workspaces UI and MDM enrolment.
 - **The data is never hostage.** The knowledge base file stays on disk, encrypted, and readable by the source-available engine. There is no key that could revoke it.
 
@@ -379,7 +379,7 @@ That is deliberate, not a giveaway: anyone who has to prove that nothing leaks s
 { "mcpServers": { "kepta": { "command": "npx", "args": ["-y", "kepta-mcp"] } } }
 ```
 
-That is the whole connection, and it works without the desktop app: `npx -y kepta-mcp` gives an agent a memory on its own, in the same encrypted `~/.kepta/kepta.db` the app uses. If you would rather not have npx check the registry on every start, install it once with `npm i -g kepta-mcp` and use `"command": "kepta"` instead. The version with your own checkout path is in the app under *Settings → MCP / API*, with a copy button. In the installed app that page offers a third way first: the MCP server that ships inside KEPTA, started by the app itself — no Node.js, no npm.
+That is the whole connection, and it works without the desktop app: `npx -y kepta-mcp` gives an agent a memory on its own, in the same encrypted `~/.kepta/kepta.db` the app uses. If you would rather not have npx check the registry on every start, install it once with `npm i -g kepta-mcp` and use `"command": "kepta"` instead. The version with your own checkout path is in the app under *Settings → MCP / API*, with a copy button. In the installed app that page offers a third way first: the MCP server that ships inside K3PTA, started by the app itself — no Node.js, no npm.
 
 **Run it from source.** The repository is private — you need access as a licensee. Node 22.13 or newer:
 
@@ -395,15 +395,15 @@ The desktop app is published **only for macOS** — Apple silicon and Intel. No 
 
 | Your system | File |
 |---|---|
-| Mac with Apple Silicon (M1–M4) | `KEPTA-<version>-mac-arm64.dmg` |
-| Mac with an Intel processor | `KEPTA-<version>-mac-x64.dmg` |
+| Mac with Apple Silicon (M1–M4) | `K3PTA-<version>-mac-arm64.dmg` |
+| Mac with an Intel processor | `K3PTA-<version>-mac-x64.dmg` |
 | Windows or Linux | No app file is published. The engine itself runs on all three (`kepta-mcp` on npm, or from source), so an MCP client on those systems talks to the same memory — only the window is missing. |
 
 Every published file carries its platform and architecture in the name. On a Mac, if you are unsure: Apple menu → *About This Mac* — "Apple M…" means `arm64`, "Intel" means `x64`. The `.zip` files are the same programs without an installer. The packages are self-contained; you only need Node ≥ 22.13 to build them yourself.
 
 ### 🍎 First launch on macOS
 
-KEPTA is built without an Apple developer certificate, so the releases are **not notarised**. macOS quarantines the download and says the developer cannot be verified. The app is fine; what is missing is a certificate that costs 99 EUR a year.
+K3PTA is built without an Apple developer certificate, so the releases are **not notarised**. macOS quarantines the download and says the developer cannot be verified. The app is fine; what is missing is a certificate that costs 99 EUR a year.
 
 The fastest way through, and the one that works on every macOS version:
 
@@ -411,11 +411,11 @@ The fastest way through, and the one that works on every macOS version:
 xattr -dr com.apple.quarantine /Applications/KEPTA.app
 ```
 
-Without the terminal: **System Settings → Privacy & Security**, scroll down to the message about KEPTA, click **Open Anyway**, and confirm with your password. Once, then never again.
+Without the terminal: **System Settings → Privacy & Security**, scroll down to the message about K3PTA, click **Open Anyway**, and confirm with your password. Once, then never again.
 
 > Older guides say to right-click the app and choose *Open*. Apple removed that route in macOS 15 — on current systems it does nothing. Use one of the two above.
 
-The app bundle itself **is** signed, ad-hoc. That is not notarisation and does not remove the warning, but it does decide which warning you get: macOS treats KEPTA as an ordinary unsigned app you can approve, rather than a damaged one it refuses outright.
+The app bundle itself **is** signed, ad-hoc. That is not notarisation and does not remove the warning, but it does decide which warning you get: macOS treats K3PTA as an ordinary unsigned app you can approve, rather than a damaged one it refuses outright.
 
 ### 🛠️ Other platforms: build it yourself
 
@@ -423,11 +423,11 @@ The app bundle itself **is** signed, ad-hoc. That is not notarisation and does n
 
 ## 🧪 Quality & tests
 
-**2393 tests** (measured 2026-10-13), run with Vitest and v8 coverage — the cases a run actually executed, skipped ones not included. The coverage thresholds are a hard gate: a commit that falls below any of them fails the run — and so does a README that names the wrong number of tests. `npm test` writes that run's JSON report and `node scripts/doku-check.mjs` holds the README to exactly that number; `tests/doku-zahlen.test.ts` listens to the same report and refuses to compare when it cannot be trusted — missing, older than the suite, or written by a partial run — instead of checking a value out of the drawer.
+**2507 tests** (measured 2026-10-14), run with Vitest and v8 coverage — the cases a run actually executed, skipped ones not included. The coverage thresholds are a hard gate: a commit that falls below any of them fails the run — and so does a README that names the wrong number of tests. `npm test` writes that run's JSON report and `node scripts/doku-check.mjs` holds the README to exactly that number; `tests/doku-zahlen.test.ts` listens to the same report and refuses to compare when it cannot be trusted — missing, older than the suite, or written by a partial run — instead of checking a value out of the drawer.
 
 ```bash
 npm run lint       # typecheck (tsc) + ESLint — 0 errors required
-npm test           # 2393 tests (vitest)
+npm test           # 2507 tests (vitest)
 npm run test:cov   # tests + coverage gate + test count in the README
 npm run eval       # retrieval quality (Hit@1)
 ```
@@ -442,9 +442,9 @@ npm run eval       # retrieval quality (Hit@1)
 
 The server code lives in `server/` — `server/app.ts` assembles the middleware chain and mounts the routers, `server/router/` holds one module per feature area, `server/helfer/` the shared helpers, and `server.ts` itself is only the entry point that ties it together. The routers and helpers count towards the overall coverage gate; the only exclusion is the bootstrap, which binds a port and never runs in a unit test. The gates sit a little below what is reached, so they can only move up. Tests live in `tests/`, mirroring the source layout. New features follow TDD (RED → GREEN → REFACTOR).
 
-## 🧠 Why KEPTA?
+## 🧠 Why K3PTA?
 
-Obsidian is excellent for humans — but Markdown is not a memory: no types, no validity, no MCP. Mem0 and Letta are SDKs without a GUI. The platform memory is tied to one vendor's cloud. **KEPTA is both and neither**: an agent-native memory layer with a desktop app, local, encrypted, with a provable trail of who read what.
+Obsidian is excellent for humans — but Markdown is not a memory: no types, no validity, no MCP. Mem0 and Letta are SDKs without a GUI. The platform memory is tied to one vendor's cloud. **K3PTA is both and neither**: an agent-native memory layer with a desktop app, local, encrypted, with a provable trail of who read what.
 
 Every figure below is a run of this repository's own tools, kept whole next to the sentence that uses it — disagree with the numbers by rerunning them.
 
@@ -454,4 +454,4 @@ Every figure below is a run of this repository's own tools, kept whole next to t
 
 The division of roles: the **chat cockpit** proves retrieval works — daily use runs through MCP. [ROADMAP](ROADMAP.md) · [CHANGELOG](CHANGELOG.md)
 
-**KEPTA** — built for focus. Keeps what matters.
+**K3PTA** — built for focus. Keeps what matters.

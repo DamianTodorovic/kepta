@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
-import { render, screen, waitFor, act, fireEvent } from "@testing-library/react";
+import { render, screen, waitFor, act, fireEvent, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { Dashboard } from "../../src/components/Dashboard";
 import { AuthProvider } from "../../src/contexts/AuthContext";
@@ -891,5 +891,71 @@ describe("A7-06: die Hülle folgt der Fensterbreite", () => {
     fenster(390);
     const { container } = await zeige([note({ title: "Fristen" })]);
     expect(container.textContent, "der Satz bricht um und nimmt der Fläche die Höhe").not.toMatch(/connected through tags/);
+  });
+});
+
+/**
+ * Die Sackgasse, die GF im echten Browser bewiesen hat
+ * (audit-2026-10-09/gf-beleg-2026-10-14/v6-code-leer.png, Befund Zeile 252):
+ * die beiden Zeilen haengen im Nicht-leer-Zweig der Liste. Leert ein Wort die
+ * Seite, verschwindet auch die Moeglichkeit, das Wort zurückzunehmen.
+ */
+describe("Dashboard: die neun Woerter fuehren in keine Sackgasse", () => {
+  // Ein Kunstbestand ohne ein einziges Programmstueck: "Code" trifft ins Leere,
+  // obwohl vier Notizen geladen sind. Genau der Fall, den mein Beweislauf von
+  // Schritt 3 nie erreicht hat — dort waren alle elf Notizen auf der Seite.
+  function ohneCode(): Memory[] {
+    return [
+      note({ title: "Gedanke", content: "Frei getippt, keine Datei dahinter" }),
+      note({ title: "Notiz zwei", content: "Noch ein Gedanke" }),
+      note({ title: "Papier", content: "— Source: /tmp/b.md", tags: ["machine-scan"] }),
+      note({ title: "Vertrag", content: "— Source: /tmp/d.pdf", tags: ["machine-scan"] }),
+    ];
+  }
+  const zeile1 = () => within(screen.getByRole("group", { name: /where it came from/i }));
+  const zeile2 = () => within(screen.getByRole("group", { name: /what it is about/i }));
+
+  it("zeigt beide Zeilen, bevor irgendetwas leer ist", async () => {
+    await zeige(ohneCode());
+    expect(zeile1().getByRole("button", { name: "Code" })).toBeTruthy();
+    expect(zeile2().getByRole("button", { name: "Tasks" })).toBeTruthy();
+  });
+
+  it("laesst beide Zeilen stehen, wenn ein Traeger ins Leere laeuft", async () => {
+    const user = userEvent.setup();
+    const { container } = await zeige(ohneCode());
+    await user.click(zeile1().getByRole("button", { name: "Code" }));
+    await waitFor(() => expect(container.textContent).toMatch(/no entries/i), { timeout: 4000 });
+    expect(screen.getByRole("group", { name: /where it came from/i }), "Zeile 1 ist bei leerem Filter aus dem Baum — die Sackgasse").toBeTruthy();
+    expect(screen.getByRole("group", { name: /what it is about/i }), "Zeile 2 ist bei leerem Filter aus dem Baum — die Sackgasse").toBeTruthy();
+  });
+
+  it("bietet einen Zurueck-Knopf, der mit einem Klick alles wieder zeigt", async () => {
+    const user = userEvent.setup();
+    const { container } = await zeige(ohneCode());
+    await user.click(zeile1().getByRole("button", { name: "Code" }));
+    await waitFor(() => expect(container.textContent).toMatch(/no entries/i), { timeout: 4000 });
+    await user.click(screen.getByRole("button", { name: /show everything again/i }));
+    await waitFor(() => expect(container.textContent).toMatch(/Papier/), { timeout: 4000 });
+    expect(container.textContent).not.toMatch(/no entries/i);
+  });
+
+  it("nennt die Gruppe als Grund der Leerheit, nicht 'No entries yet'", async () => {
+    const user = userEvent.setup();
+    const { container } = await zeige(ohneCode());
+    await user.click(zeile1().getByRole("button", { name: "Code" }));
+    await waitFor(() => expect(container.textContent).toMatch(/no entries in code/i), { timeout: 4000 });
+    expect(container.textContent, "vier Notizen sind geladen — 'noch keine Eintraege' ist eine Luege").not.toMatch(/No entries yet/i);
+  });
+
+  it("faengt auch das duenne Themenwort ab: Tasks ohne Treffer", async () => {
+    const user = userEvent.setup();
+    const { container } = await zeige(ohneCode());
+    await user.click(zeile2().getByRole("button", { name: "Tasks" }));
+    await waitFor(() => expect(container.textContent).toMatch(/no entries filed under tasks/i), { timeout: 4000 });
+    expect(screen.getByRole("group", { name: /where it came from/i })).toBeTruthy();
+    expect(screen.getByRole("group", { name: /what it is about/i })).toBeTruthy();
+    await user.click(screen.getByRole("button", { name: /show everything again/i }));
+    await waitFor(() => expect(container.textContent).not.toMatch(/no entries/i), { timeout: 4000 });
   });
 });

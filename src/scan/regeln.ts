@@ -58,7 +58,7 @@ export const UEBERSPRUNGENE_ORDNER: readonly string[] = [
  * Die Marke, an der ein Ordner als K3PTAs eigener Datenordner zu erkennen ist.
  *
  * Nicht am Ordnernamen — Sicherungskopien heißen wie ihr Besitzer sie tauft
- * (`KEPTA-datensicherung-vor-3.2.1-2026-10-12`, `mein-archiv`, was auch immer).
+ * (`K3PTA-datensicherung-vor-3.2.1-2026-10-12`, `mein-archiv`, was auch immer).
  * Am Dateinamen der Datenbank erkennt der Scan jede Kopie seines eigenen
  * Bestands. Gemessen am echten Heim 14.10.: 7.300 von 13.616 Dateien eines
  * Erstlaufs (53,6 %) kamen aus vier solchen Kopien, darunter `profile.json`,

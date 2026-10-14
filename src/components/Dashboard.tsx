@@ -199,6 +199,20 @@ export function Dashboard() {
   const nurCode = aktiveTraeger.length > 0 && aktiveTraeger.every((t) => t === 'code');
   const gruppenFilterAktiv = aktiveTraeger.length > 0 || aktiveThemen.length > 0;
 
+  /**
+   * Warum die Liste leer ist, in einem Satz, den der Nutzer selbstloest. Ein
+   * leerer Gruppenfilter ist kein "noch nichts angelegt" — der Bestand ist da,
+   * nur diese Auswahl trifft ihn nicht. Die drei Stellen, die das bisher
+   * verschwiegen haben: Kopfzeile, Absatz, und dass die Zeilen gleich mit der
+   * Liste aus dem Baum fielen (GF, v6-code-leer.png).
+   */
+  const gruppenListe = (w: string[]) =>
+    w.length < 2 ? w.join('') : `${w.slice(0, -1).join(', ')} and ${w[w.length - 1]}`;
+  const gruppenGrund = aktiveTraeger.length > 0
+    ? `in ${gruppenListe(aktiveTraeger.map((t) => TRAEGER_LABELS[t]))}` +
+      (aktiveThemen.length > 0 ? ` about ${gruppenListe(aktiveThemen.map((t) => THEMA_LABELS[t]))}` : '')
+    : `filed under ${gruppenListe(aktiveThemen.map((t) => THEMA_LABELS[t]))}`;
+
   // Schlüssel, gratis erster Tag und Upgrade-Weg sind seit 09.10.2026 weg: die herunterladbare
   // App läuft unbegrenzt und hat kein Schlüssel-Feld. Was hier blieb, ist der
   // Rest der Seitenleisten-Inhalte.
@@ -1668,29 +1682,12 @@ export function Dashboard() {
                     </div>
                   ))}
                 </div>
-              ) : displayedMemories.length === 0 ? (
-                <div className="flex-1 flex flex-col items-center justify-center text-center">
-                  <div className="w-16 h-16 rounded-2xl flex items-center justify-center mb-4" style={{ background: 'var(--bg-inset)', border: '1px solid var(--border-subtle)', boxShadow: 'inset 0 1px 0 var(--edge-light)' }}>
-                    <KeptaMark size={34} />
-                  </div>
-                  <h3 className="text-[15px] font-semibold mb-1.5" style={{ color: 'var(--text-1)' }}>
-                    {debouncedSearchQuery || selectedTags.length > 0 ? 'No matches' : 'No entries yet'}
-                  </h3>
-                  <p className="text-[13px] max-w-sm mx-auto leading-relaxed" style={{ color: 'var(--text-2)' }}>
-                    {debouncedSearchQuery || selectedTags.length > 0
-                      ? semanticEnabled && debouncedSearchQuery.trim().length >= 2
-                        ? `Nothing found for “${debouncedSearchQuery.trim().slice(0, 48)}”. Try different terms, raise the result count, or switch to keyword search.`
-                        : "No entries match the search criteria."
-                      : "Drop files here, import a URL, or start with “New” — agents write into the very same base over MCP."}
-                  </p>
-                  {semanticEnabled && debouncedSearchQuery.trim().length >= 2 && displayedMemories.length === 0 && (
-                    <button onClick={() => setSemanticEnabled(false)} className="mt-4 btn-ghost px-3.5 py-2 rounded-lg text-[13px] font-medium">
-                      Switch to keyword search
-                    </button>
-                  )}
-                </div>
               ) : (
                 <>
+                  {/* Die Kontrolle bleibt stehen, solange etwas gefiltert werden
+                      kann — ein leerer Bestand ohne Auswahl braucht sie nicht. */}
+                  {(displayedMemories.length > 0 || gruppenFilterAktiv || memories.length > 0) && (
+                  <>
                   {/* NEUN WOERTER, ZWEI ZEILEN — Zeile 1 "woher" (Notes · Files ·
                       Code, erschoepfend), Zeile 2 "worum" (sechs kombinierbare
                       Themen). Themen greifen nie in Code: die Sperre ist hier
@@ -1764,8 +1761,49 @@ export function Dashboard() {
                       </button>
                     ))}
                   </div>
-
-                  {listenInhalt}
+                  </>
+                  )}
+                  {/* Der leer gefilterte Zustand steht innerhalb derselben
+                      Zweige wie die Zeilen: ein Klick auf ein Wort, das die
+                      geladene Seite nicht trifft, darf die Kontrolle nicht
+                      mitnehmen, die ihn zuruecknimmt (GF, v6-code-leer.png). */}
+                  {displayedMemories.length === 0 ? (
+                    <div className="flex-1 flex flex-col items-center justify-center text-center">
+                      <div className="w-16 h-16 rounded-2xl flex items-center justify-center mb-4" style={{ background: 'var(--bg-inset)', border: '1px solid var(--border-subtle)', boxShadow: 'inset 0 1px 0 var(--edge-light)' }}>
+                        <KeptaMark size={34} />
+                      </div>
+                      <h3 className="text-[15px] font-semibold mb-1.5" style={{ color: 'var(--text-1)' }}>
+                        {debouncedSearchQuery || selectedTags.length > 0
+                          ? 'No matches'
+                          : gruppenFilterAktiv ? `No entries ${gruppenGrund}` : 'No entries yet'}
+                      </h3>
+                      <p className="text-[13px] max-w-sm mx-auto leading-relaxed" style={{ color: 'var(--text-2)' }}>
+                        {debouncedSearchQuery || selectedTags.length > 0
+                          ? semanticEnabled && debouncedSearchQuery.trim().length >= 2
+                            ? `Nothing found for “${debouncedSearchQuery.trim().slice(0, 48)}”. Try different terms, raise the result count, or switch to keyword search.`
+                            : "No entries match the search criteria."
+                          : gruppenFilterAktiv
+                            ? `Nothing ${gruppenGrund} among the ${groessenZahl(memories.length)} loaded entries` +
+                              (tuerBestand !== null && tuerBestand > memories.length
+                                ? ` — the store holds ${groessenZahl(tuerBestand)}, and this filter only sees what is loaded.`
+                                : '.')
+                            : "Drop files here, import a URL, or start with “New” — agents write into the very same base over MCP."}
+                      </p>
+                      {gruppenFilterAktiv && (
+                        <button
+                          onClick={() => { setAktiveTraeger([]); setAktiveThemen([]); }}
+                          className="mt-4 btn-ghost px-3.5 py-2 rounded-lg text-[13px] font-medium"
+                        >
+                          Show everything again
+                        </button>
+                      )}
+                      {semanticEnabled && debouncedSearchQuery.trim().length >= 2 && displayedMemories.length === 0 && (
+                        <button onClick={() => setSemanticEnabled(false)} className="mt-4 btn-ghost px-3.5 py-2 rounded-lg text-[13px] font-medium">
+                          Switch to keyword search
+                        </button>
+                      )}
+                    </div>
+                  ) : listenInhalt}
                 </>
               )}
             </div>
