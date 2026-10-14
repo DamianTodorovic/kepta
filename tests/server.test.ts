@@ -322,9 +322,17 @@ describe("Import: Body-Limits, Vollständigkeit, Zeitstempel", () => {
     expect(m.createdAt).toBe(then);
   });
 
-  it("listet auch >1000 Knoten vollständig (Liste und Export)", async () => {
+  it("listet auch >1000 Knoten vollständig — jetzt ausdrücklich (Liste und Export)", async () => {
     for (let i = 0; i < 1100; i++) store.createMemory({ title: `Bulk ${i}`, content: "kurz" });
-    const list = await request(URLE).get("/api/memories");
+    // #57: die Liste kampt. Der ungefragte Aufruf liefert den neuesten Schnitt bis
+    // LISTE_DEFAULT (500) und sagt im Header, wie viel der Bestand wirklich traegt —
+    // Abschneiden bleibt nicht mehr still. Vollstaendigkeit ist damit eine Bestellung,
+    // keine Nebenwirkung: mit limit ueber LES_FENSTER kommt der ganze Bestand.
+    const kappe = await request(URLE).get("/api/memories");
+    expect(kappe.status).toBe(200);
+    expect(kappe.body).toHaveLength(500);
+    expect(kappe.headers["x-kepta-total-count"]).toBe("1100");
+    const list = await request(URLE).get("/api/memories?limit=5000");
     expect(list.status).toBe(200);
     expect(list.body).toHaveLength(1100);
     const exp = await request(URLE).post("/api/export/markdown").send({});

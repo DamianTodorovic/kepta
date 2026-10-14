@@ -1358,7 +1358,18 @@ var KeptaStore = class _KeptaStore {
       id: Number(r.id),
       name: String(r.name)
     }));
-    const relations = this.db.prepare(`SELECT id, source_id, target_id, relation, valid_from, valid_to, memory_id FROM relations LIMIT ${GRAPH_RELATIONEN_FENSTER}`).all().map((r) => ({
+    const relations = this.db.prepare(
+      `WITH traeger AS (SELECT entity_id, COUNT(*) AS n FROM memory_entities GROUP BY entity_id)
+           SELECT r.id, r.source_id, r.target_id, r.relation, r.valid_from, r.valid_to, r.memory_id
+           FROM relations r
+           LEFT JOIN (
+             SELECT source_id, target_id, COUNT(*) AS paare FROM relations GROUP BY source_id, target_id
+           ) p ON p.source_id = r.source_id AND p.target_id = r.target_id
+           LEFT JOIN traeger ts ON ts.entity_id = r.source_id
+           LEFT JOIN traeger tt ON tt.entity_id = r.target_id
+           ORDER BY p.paare DESC, (COALESCE(ts.n, 0) + COALESCE(tt.n, 0)) DESC, r.id ASC
+           LIMIT ${GRAPH_RELATIONEN_FENSTER}`
+    ).all().map((r) => ({
       id: Number(r.id),
       sourceId: Number(r.source_id),
       targetId: Number(r.target_id),

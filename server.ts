@@ -6,7 +6,7 @@ import crypto from "crypto";
 import path from "path";
 import fs from "fs";
 import os from "os";
-import { KeptaStore } from "./src/core/store";
+import { KeptaStore, LES_FENSTER } from "./src/core/store";
 import { leseUmwelt, gewonneneUmweltNamen, ohneWert } from "./src/core/umwelt";
 import { defaultExtensions } from "./src/core/extensions";
 import { schluesselbundKeyProvider } from "./src/core/schluessel";
@@ -79,6 +79,14 @@ function isSafeFilename(name: string): boolean {
  * (settings.ts, ai.ts in kepta-app) verraet das nicht.
  */
 const GEHEIM_NAME_MUSTER = /(?:api[_-]?key|access[_-]?key|secret|token|passwort|password|passphrase|schluessel|key)$/i;
+/**
+ * #57: die Kappe des ungefragten Lesewegs. `GET /api/memories` lieferte bis hierher
+ * den Vollbestand (14.702 Knoten, 30.981.380 Bytes, 9,99 s am echten Gehirn),
+ * obwohl jeder_CLIENT ein `limit` mitschicken kann. 500 ist dieselbe Kappe, die die
+ * dokumentierte Suche derselben Engine kennt (`/api/memories/search`: Max 500,
+ * Default 20); harte Obergrenze ist LES_FENSTER.
+ */
+const LISTE_DEFAULT = 500;
 const GEHEIM_NAMEN = new Set(["ai_settings"]);
 
 function istGeheimSchluessel(name: string): boolean {
@@ -839,10 +847,43 @@ export function createApp(store: KeptaStore) {
   // --- Speicher-API ---
 
   app.get("/api/memories", (req, res) => {
-    const memories = req.query.trash === "1" ? listAllMemories({ trash: true }).map(toApi) : allApiMemories();
-    const body = JSON.stringify(memories);
-    const hash = crypto.createHash("sha256").update(body).digest("hex");
-    const etag = `"${hash}"`;
+    const trash = req.query.trash === "1";
+    // #57 — `limit` wurde ignoriert. Die Route rief `allApiMemories()`, und das
+    // blaetterte den ganzen Bestand in 1000er-Seiten durch (`server.ts:296`). Am
+    // echten Bestand gemessen: 14.702 Knoten, 30.981.380 Bytes, 9,99 s — an einen
+    // Client, der 20 bestellt hatte.
+    //
+    // Das Antwort-FORMAT bleibt das naked array: das Paket ist auf npm veroeffentlicht,
+    // eine Form-Aenderung waere ein Bruch nach aussen. Die Zahl kommt additiv im
+    // Header `X-Kepta-Total-Count`, den jeder bisherige Leser ignoriert.
+    //
+    // Der Default ist gekappt, die Obergrenze ist LES_FENSTER — dieselbe Zahl, die
+    // `store.listMemories` (`src/core/store.ts:468`) schon fuer eine einzelne Seite
+    // kennt. decided, weil 500 die Kappe der dokumentierten Suche derselben Engine
+    // ist (`/api/memories/search`, `limit`-Max 500) und ein groesserer Default die
+    // Route wieder zum Vollbestand machen wuerde.
+    const roh = req.query.limit === undefined ? NaN : parseInt(String(req.query.limit), 10);
+    const limit = Math.min(Math.max(Number.isFinite(roh) ? roh : LISTE_DEFAULT, 1), LES_FENSTER);
+    const memories = store.listMemories(trash ? { trash: true, limit } : { limit }).map(toApi);
+    const zaehlung = store.countMemories();
+    res.setHeader("X-Kepta-Total-Count", String(trash ? zaehlung.trashed : zaehlung.active));
+
+    // ETag abgeleitet statt geholt: sha256 ueber die ganze Antwort (bis hier,
+    // `server.ts:844`) bedeutete, dass die Pruefung "hat sich etwas geaendert" einmal
+    // den Vollbestand kostete. Dieselbe Zwei-Zahlen-Kennung, die der DB-Waechter
+    // bereits benutzt (`server.ts:324`), plus die Memories-Generation: zwei Schreiben
+    // koennen in einer Millisekunde landen, und dann bleiben Zahl UND neuester Stand
+    // gleich — ein ETag aus nur diesen beiden wuerde 304 auf einen geaenderten Leib
+    // antworten. Der Fall steht in `tests/server-speicher-liesekappe.test.ts`.
+    const stand = store.db
+      .prepare(
+        trash
+          ? "SELECT COALESCE(MAX(updated_at), 0) AS m FROM memories WHERE deleted_at IS NOT NULL"
+          : "SELECT COALESCE(MAX(updated_at), 0) AS m FROM memories WHERE deleted_at IS NULL",
+      )
+      .get() as { m: number };
+    const zahl = trash ? zaehlung.trashed : zaehlung.active;
+    const etag = `"${trash ? "t" : "a"}${zahl}-${stand.m}-g${store.memGeneration()}"`;
     res.setHeader("ETag", etag);
     res.setHeader("Cache-Control", "private, max-age=0, must-revalidate");
     if (req.headers["if-none-match"] === etag) {
@@ -1154,6 +1195,14 @@ export function createApp(store: KeptaStore) {
           id: r.id,
           source: nameById.get(r.sourceId)!,
           target: nameById.get(r.targetId)!,
+          // #57: zusaetzlich, nie statt. Die Namen waren bisher die einzige
+          // Schluesselnatur dieser Tuer, waehrend `entities[].id` eine Zahl ist — ein
+          // Client musste eine Kante ueber einen Namenssuchschlag an einen Knoten
+          // haengen (500 Begriffe × 2.000 Kanten im schlimmsten Fall), und genau das
+          // tat die App-Seite. Die Zahlen sind dieselbe Natur wie die der Knoten;
+          // die Namen bleiben, weil App und Flaeche daran haengen.
+          sourceId: r.sourceId,
+          targetId: r.targetId,
           relation: r.relation,
           memoryId: r.memoryId,
           validFrom: r.validFrom,

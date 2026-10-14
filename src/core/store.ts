@@ -1029,8 +1029,39 @@ export class KeptaStore {
       id: Number(r.id),
       name: String(r.name),
     }));
+    // #56, zweiter Teil: dieselbe Scheibe, die die App nach A7-08 schon hat.
+    //
+    // Vorher stand hier ein `SELECT ... FROM relations LIMIT 2000` ohne jede Ordnung
+    // (`:1033` im Stand 378b0c4). Was hinter der Scheibe liegt, entschied damit die
+    // rowid — also die Schreibfolge. Gemessen in `tests/graph-kappe.test.ts`: ein Paar
+    // mit 60 Belegen verschwand vollstaendig aus dem Schnitt, wenn es ZULETZT
+    // geschrieben wurde (0 von 60), und zwei Laeufe ueber denselben Inhalt mit
+    // verschiedener Schreibfolge gaben verschiedene Antworten.
+    //
+    // Stufen, in dieser Reihenfolge: erst die Belege desselben Paares (drei Aussagen
+    // ueber einem Paar sind ein staerkeres Paar als eine), dann die Tragweite der
+    // Enden (ein Begriff, den 40 Notizen tragen, haengt mehr am Netz als einer, den
+    // eine traegt), zuletzt die id — damit derselbe Bestand zweimal dieselbe Liste
+    // liefert.
+    //
+    // Ein GROUP BY ueber die Beleg- und die Traegertabelle, kein korrelierter
+    // Zaehler je Zeile: der zaehlt bei zehntausend Begriffen gegen hunderttausend
+    // Zeilen, und die Graphseite haengt.
     const relations = (
-      this.db.prepare(`SELECT id, source_id, target_id, relation, valid_from, valid_to, memory_id FROM relations LIMIT ${GRAPH_RELATIONEN_FENSTER}`).all() as Record<string, unknown>[]
+      this.db
+        .prepare(
+          `WITH traeger AS (SELECT entity_id, COUNT(*) AS n FROM memory_entities GROUP BY entity_id)
+           SELECT r.id, r.source_id, r.target_id, r.relation, r.valid_from, r.valid_to, r.memory_id
+           FROM relations r
+           LEFT JOIN (
+             SELECT source_id, target_id, COUNT(*) AS paare FROM relations GROUP BY source_id, target_id
+           ) p ON p.source_id = r.source_id AND p.target_id = r.target_id
+           LEFT JOIN traeger ts ON ts.entity_id = r.source_id
+           LEFT JOIN traeger tt ON tt.entity_id = r.target_id
+           ORDER BY p.paare DESC, (COALESCE(ts.n, 0) + COALESCE(tt.n, 0)) DESC, r.id ASC
+           LIMIT ${GRAPH_RELATIONEN_FENSTER}`
+        )
+        .all() as Record<string, unknown>[]
     ).map((r) => ({
       id: Number(r.id),
       sourceId: Number(r.source_id),

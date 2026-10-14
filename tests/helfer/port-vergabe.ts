@@ -97,6 +97,8 @@ export const HORCHENDE_KENNUNGEN: readonly string[] = [
   "tests/server-permanent.test.ts",
   "tests/server-repair-limit.test.ts",
   "tests/server-settings-geheim.test.ts",
+  // #57: der Leseweg des Kerns (limit, Haufung, ETag-Ableitung) hoert auf eigenem Port.
+  "tests/server-speicher-liesekappe.test.ts",
   "tests/sockel-vertrag.test.ts#probe",
   "tests/server.test.ts",
   // #64: die Umwelt-Kennungen brauchen einen eigenen Horcher — U-4 misst /api/health gegen

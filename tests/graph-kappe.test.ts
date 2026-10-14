@@ -87,3 +87,67 @@ describe("getGraph: der Ausschnitt der Begriffe", () => {
     expect(graph.entities.map((e) => e.name)).toEqual(["alpha", "beta", "gamma"]);
   });
 });
+
+// #56, zweiter Teil: dieselbe Scheibe, aber fuer die Kanten.
+//
+// Der Kern las `SELECT ... FROM relations LIMIT 2000` ohne jede Ordnung
+// (`src/core/store.ts:1033`). Was die App laengst gemessen und geheilt hat
+// (A7-08, Bericht F8-GRAPH-FLAEche), fehlte hier: ohne ORDER BY entscheidet die
+// rowid, welches Paar hinter der Scheibe liegt — und die rowid folgt dem
+// Schreibweg, nicht der Bedeutung. Zwei Laeufe mit demselben Inhalt, aber
+// verschiedener Einfuegereihenfolge, durften nicht verschiedene Antworten geben.
+describe("getGraph: der Ausschnitt der Kanten", () => {
+  const KANTEN_KAPPE = 2000;
+
+  /**
+   * 2 000 Einer-Beleg-Paare plus ein Paar mit 60 Belegen. zuerst sagt, ob das
+   * tragende Paar ZUERST oder ZULETZT geschrieben wird — der einzige Unterschied
+   * zwischen den beiden Laeufen.
+   */
+  function kantenBasis(zuerst: boolean): KeptaStore {
+    const store = freshStore();
+    const anker = store.createMemory({ title: "Anker", content: "..." }).id;
+    // Das tragende Paar: 60 Belege, ein einziges Paar.
+    const dicht = () => {
+      for (let i = 0; i < 60; i++) store.addRelation("zentral A", "zentral B", `belegt ${i}`, anker);
+    };
+    // Die Fuellkante: 2 000 Paare mit je einem Beleg.
+    const duenn = () => {
+      for (let i = 0; i < KANTEN_KAPPE; i++) store.addRelation(`blatt ${i} q`, `blatt ${i} z`, `eins ${i}`, anker);
+    };
+    if (zuerst) {
+      dicht();
+      duenn();
+    } else {
+      duenn();
+      dicht();
+    }
+    return store;
+  }
+
+  it("gibt dieselbe Antwort, egal in welcher Reihenfolge geschrieben wurde", () => {
+    // Verglichen wird die Kantenliste, NICHT die id-Folge: die rowids laufen in beiden
+    // Laeufen von 1 bis 2000, ein Vergleich der Zahlen waer wahr ohne etwas zu pruefen
+    // (erster Wurf dieser Datei — er ging green, obwohl die Antworten verschieden
+    // waren). Die `relation`-Zeile traegt den Beleg-Text je Kante, unterscheidet also
+    // das zentale Paar ("belegt i") von den Fuellkanten ("eins i").
+    const a = kantenBasis(true).getGraph().relations.map((r) => r.relation);
+    const b = kantenBasis(false).getGraph().relations.map((r) => r.relation);
+    expect(b, "zwei Laeufe ueber denselben Inhalt, verschiedene Reihenfolge").toEqual(a);
+  });
+
+  it("laesst das am besten belegte Paar nicht hinter der Scheibe fallen", () => {
+    const relations = kantenBasis(false).getGraph().relations;
+    expect(relations.length).toBeLessThanOrEqual(KANTEN_KAPPE);
+    const starke = relations.filter((r) => r.relation.startsWith("belegt ")).length;
+    expect(starke, `von 60 Belegen des zentralen Paares stehen ${starke} im Schnitt`).toBe(60);
+  });
+
+  it("haelt zwei Laeufe auf demselben Bestand identisch", () => {
+    const store = kantenBasis(false);
+    const zuerst = store.getGraph().relations.map((r) => r.id);
+    const danach = store.getGraph().relations.map((r) => r.id);
+    expect(danach).toEqual(zuerst);
+    expect(zuerst.length).toBeGreaterThan(0);
+  });
+});
