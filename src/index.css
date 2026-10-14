@@ -466,15 +466,19 @@ select:focus-visible {
   background: var(--glass);
   backdrop-filter: blur(6px);
   -webkit-backdrop-filter: blur(6px);
-  border: 1px solid var(--border-subtle);
-  box-shadow: var(--shadow-sm);
+  border: 1px solid var(--kante-flaeche);
+  /* Die innere Linie ist keine Zierde: auf einem Element mit backdrop-filter verliert
+     der 1-px-Border die Hälfte seiner Kraft (gemalt #9d9d9c statt #626260, 1,59:1
+     gegen das gedimmte Blatt; zwei Pixel Breite helfen nicht — 1,64). Dieselbe
+     Kante als inset-Linie gemalt hält 3,69 nach außen und 5,85 nach innen. */
+  box-shadow: inset 0 0 0 1px var(--kante-flaeche), var(--shadow-sm);
 }
 .glass-strong {
   background: var(--glass-strong);
   backdrop-filter: blur(8px);
   -webkit-backdrop-filter: blur(8px);
-  border: 1px solid var(--border-subtle);
-  box-shadow: var(--shadow-md);
+  border: 1px solid var(--kante-flaeche);
+  box-shadow: inset 0 0 0 1px var(--kante-flaeche), var(--shadow-md);
 }
 
 /* Sidebar: der Rücken des Aktenschrankes — immer Stahl, immer dunkel,
@@ -571,6 +575,18 @@ select:focus-visible {
   display: flex;
   align-items: center;
   gap: 6px;
+}
+/* Das Legenden-Wort neben der Zahl (ein <span> im gefärbten Zahl-<span>). Es kam
+   von außen mit `text-[10px] opacity-70` — 10 px stehen unter der Schriftleiter
+   (--fs-1 = 11 px), und die Deckung wäscht die Tinte aus: im gemalten Bild
+   3,45–3,49:1 auf dem Panel, in 16 von 16 Fällen unter 4,5:1 (14.10., Pixel,
+   nicht CSS-Wert). Ruhe kommt hier aus der Größe, nie aus der Deckung.
+   Spezifisch genug, um die beiden Hilfsklassen zu überdecken; wenn die Flächen-
+   scheibe das Wort selbst setzt, zieht diese Regel leer durch — kein Schaden. */
+.index-strip span > span {
+  font-size: var(--fs-1);
+  letter-spacing: 0.01em;
+  opacity: 1;
 }
 
 /* Chat — die Antwort ist Prosa am Blattrand, die Frage ein Karton-Zettel */
@@ -1192,14 +1208,17 @@ svg[aria-hidden="true"] { min-block-size: var(--icon-min); min-inline-size: var(
   align-items: center;
   gap: 4px;
   font-size: var(--fs-1);
-  color: var(--text-3);
+  /* Zweite Tintenstufe, nicht die dritte: der Chip ist ein Griff, kein Fußtext.
+     Auf dem Tisch (#c1c1bf) misst das 6,2 gegen 5,2 — und ein kurzes Wort wie
+     „Links" blieb bei der leisen Stufe unter der Kante (4,36:1, 14.10.). */
+  color: var(--text-2);
   padding: 2px 7px;
   border: 1px solid var(--border-subtle);
   border-radius: 4px;
   background: var(--bg-inset);
   cursor: inherit;
 }
-button.row-quiet { cursor: pointer; }
+button.row-quiet { cursor: pointer; border-color: var(--kante-kontrolle); }
 .row-stamp {
   font-size: var(--fs-1);
   font-weight: var(--fw-fest);

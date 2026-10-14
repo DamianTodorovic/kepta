@@ -29,7 +29,7 @@ import { KeptaMark } from './KeptaMark';
 import { Memory } from '../types';
 import { parseQuelle, oeffneQuelle, type Quelle } from '../lib/quelle';
 import { pdfTextAusBuffer } from '../lib/pdfText';
-import { TYP_LABELS } from '../lib/graphHierarchy';
+import { TYP_LABELS, TRAEGER_LABELS, TRAEGER_REIHENFOLGE, TRAEGER_HINWEISE, THEMA_LABELS, THEMA_REIHENFOLGE, THEMA_HINWEISE, gruppenVonNotiz, type Traeger, type Thema } from '../lib/graphHierarchy';
 import { t, wendeZoomAn } from '../lib/uiText';
 import { Search, Plus, CheckCircle2, Copy, PanelLeftOpen, ScanSearch, UploadCloud, Globe, Loader2, AlertCircle, Sparkles, Trash2, HardDriveDownload, FileText, ExternalLink, ShieldCheck } from "../lib/icons";
 import { motion, AnimatePresence } from 'motion/react';
@@ -183,6 +183,21 @@ export function Dashboard() {
   useEffect(() => {
     try { localStorage.setItem('ki_gehirn_gruppierung', gruppierung); } catch { /* ignore */ }
   }, [gruppierung]);
+
+  /**
+   * Zeile 1 (Notes · Files · Code) und Zeile 2 (sechs Themen) als Filter.
+   * Leer heisst "alle" — die Chips sind eine Verfeinerung, kein Pflichtfeld,
+   * und ein Nutzer soll die Liste ohne jede Auswahl lesen koennen.
+   *
+   * Nicht in den Praeferenzen gespeichert, entschieden, weil: ein gemerkter
+   * Filter versteckt beim naechsten Start Notize. Der Traeger ist aus den Daten
+   * ableitbar, die Auswahl nicht — wer nur "Code" sah, findet seine Notizen
+   * sonst nicht wieder.
+   */
+  const [aktiveTraeger, setAktiveTraeger] = useState<Traeger[]>([]);
+  const [aktiveThemen, setAktiveThemen] = useState<Thema[]>([]);
+  const nurCode = aktiveTraeger.length > 0 && aktiveTraeger.every((t) => t === 'code');
+  const gruppenFilterAktiv = aktiveTraeger.length > 0 || aktiveThemen.length > 0;
 
   // Schlüssel, gratis erster Tag und Upgrade-Weg sind seit 09.10.2026 weg: die herunterladbare
   // App läuft unbegrenzt und hat kein Schlüssel-Feld. Was hier blieb, ist der
@@ -622,10 +637,19 @@ export function Dashboard() {
    */
   const ladung = tuerBestand !== null && tuerBestand > memories.length ? memories.length : null;
 
-  // Typen-Verteilung für die Übersichtskacheln
-  const typeCounts = useMemo(() => {
-    const c = { semantic: 0, episodic: 0, procedural: 0, reference: 0 } as Record<string, number>;
-    for (const m of memories) if (m.type && c[m.type] !== undefined) c[m.type] += 1;
+  /**
+   * Zeile 1 als Zahl: Notes · Files · Code. Vorher standen hier die vier
+   * Rechen-Arten („4 Facts · 1 Events · 1 How-tos · 5 Documents") — dieselben
+   * Wörter, die Damian verworfen hat, an der sichtbarsten Stelle der Fläche.
+   *
+   * Der Traeger ist erschoepfend: jede Notiz zaehlt in genau einer Spalte, die
+   * drei Zahlen summieren immer auf die Heldenzahl. Die alten typeCounts
+   * uebersprachen still jeden Typ ausserhalb der vier — eine Verteilung, die
+   * kleiner war als die Zahl darueber, und niemand sah es.
+   */
+  const traegerCounts = useMemo(() => {
+    const c: Record<Traeger, number> = { notes: 0, files: 0, code: 0 };
+    for (const m of memories) c[gruppenVonNotiz(m).traeger] += 1;
     return c;
   }, [memories]);
 
@@ -711,24 +735,42 @@ export function Dashboard() {
 
   // --- Angezeigte Karten ---
   const { displayedMemories, scoredForDisplay } = useMemo(() => {
+    /**
+     * Zeile 1 und 2 zuerst, dann alles andere: die Chips sind eine Achse durch
+     * den Bestand, kein zusaetzlicher Suchtext. Traeger UND Themen — ein aktives
+     * Thema mit gewaehltem Traeger "Files" zeigt Files-Stuecke mit diesem Thema,
+     * nicht die Vereinigung beider Zeilen.
+     */
+    const durchGruppenFilter = (liste: Memory[], scored: ScoredMemory[] | null) => {
+      if (!gruppenFilterAktiv) return { displayedMemories: liste, scoredForDisplay: scored };
+      const gefiltert = liste.filter((m) => {
+        const g = gruppenVonNotiz(m);
+        if (aktiveTraeger.length > 0 && !aktiveTraeger.includes(g.traeger)) return false;
+        if (aktiveThemen.length > 0 && !g.themen.some((t) => aktiveThemen.includes(t))) return false;
+        return true;
+      });
+      if (!scored) return { displayedMemories: gefiltert, scoredForDisplay: null as ScoredMemory[] | null };
+      const ids = new Set(gefiltert.map((m) => m.id));
+      return { displayedMemories: gefiltert, scoredForDisplay: scored.filter((r) => ids.has(r.memory.id)) };
+    };
     // Semantik aktiv + Query vorhanden -> zeige gerankte Top-k (Server-Engine, Fallback lokal)
     if (semanticEnabled && effectiveScored !== null) {
       const q = debouncedSearchQuery.trim();
       if (q.length >= 2) {
         if (effectiveScored.length > 0) {
-          return { displayedMemories: effectiveScored.map(r => r.memory), scoredForDisplay: effectiveScored };
+          return durchGruppenFilter(effectiveScored.map(r => r.memory), effectiveScored);
         }
-        return { displayedMemories: [] as Memory[], scoredForDisplay: [] as ScoredMemory[] };
+        return durchGruppenFilter([] as Memory[], [] as ScoredMemory[]);
       }
     }
     // Kein semantisches Ranking -> klassischer Keyword-Filter oder nur Tag-Filter
     const q = debouncedSearchQuery.trim().toLowerCase();
     if (q) {
       const filtered = tagFiltered.filter(m => m.title.toLowerCase().includes(q) || m.content.toLowerCase().includes(q) || m.tags.some(t => t.toLowerCase().includes(q)));
-      return { displayedMemories: filtered, scoredForDisplay: null as ScoredMemory[] | null };
+      return durchGruppenFilter(filtered, null);
     }
-    return { displayedMemories: tagFiltered, scoredForDisplay: null as ScoredMemory[] | null };
-  }, [tagFiltered, effectiveScored, semanticEnabled, debouncedSearchQuery]);
+    return durchGruppenFilter(tagFiltered, null);
+  }, [tagFiltered, effectiveScored, semanticEnabled, debouncedSearchQuery, gruppenFilterAktiv, aktiveTraeger, aktiveThemen]);
 
   // --- Automatisches Retrieval für Chat: Top-k relevante Knoten statt alle gefilterten ---
   const chatMemories: Memory[] = useMemo(() => {
@@ -1013,8 +1055,15 @@ export function Dashboard() {
       liste.sort((a, b) => (a.schluessel === 'ohne' ? 1 : 0) - (b.schluessel === 'ohne' ? 1 : 0));
     }
     for (const g of liste) {
-      const typen = [...new Set(g.memories.map((m) => TYP_LABELS[m.type ?? 'semantic'] ?? m.type ?? '—'))];
-      g.typMix = typen.length === 1 ? typen[0] : typen.slice(0, 3).join(' · ') + (typen.length > 3 ? ' …' : '');
+      // Die Mischung unter einer Gruppe spricht die Menschensprache: erst der
+      // Traeger (Zeile 1), dann die Themen, die in der Gruppe wirklich vorkommen.
+      // Die vier Rechen-Arten stehen hier nicht mehr — sie sind im Schema und in
+      // der Farbe, nicht im Text, den ein Nutzer lesen muss.
+      const abgeleitet = g.memories.map((m) => gruppenVonNotiz(m));
+      const traeger = TRAEGER_REIHENFOLGE.filter((t) => abgeleitet.some((x) => x.traeger === t));
+      const themen = THEMA_REIHENFOLGE.filter((t) => abgeleitet.some((x) => x.themen.includes(t)));
+      const worte = [...traeger.map((t) => TRAEGER_LABELS[t]), ...themen.map((t) => THEMA_LABELS[t])];
+      g.typMix = worte.length === 0 ? '—' : worte.slice(0, 3).join(' · ') + (worte.length > 3 ? ' …' : '');
     }
     return liste;
   }, [displayedMemories, effektivGruppierung]);
@@ -1515,12 +1564,13 @@ export function Dashboard() {
                 </div>
                 <div className="index-cell">
                   <span className="v" style={{ gap: 10 }}>
-                    <span style={{ color: 'var(--type-semantic)' }}>{typeCounts.semantic} <span className="text-[10px] opacity-70">{t('legend.facts')}</span></span>
-                    <span style={{ color: 'var(--type-episodic)' }}>{typeCounts.episodic} <span className="text-[10px] opacity-70">{t('legend.events')}</span></span>
-                    <span style={{ color: 'var(--type-procedural)' }}>{typeCounts.procedural} <span className="text-[10px] opacity-70">{t('legend.howtos')}</span></span>
-                    <span style={{ color: 'var(--type-reference)' }}>{typeCounts.reference} <span className="text-[10px] opacity-70">{t('legend.documents')}</span></span>
+                    {/* Farben sind vorhandene Token (index.css haelt E1) — die
+                        Farbe zeigt die Ebene, das Wort ist Zeile 1. */}
+                    <span style={{ color: 'var(--type-semantic)' }}>{traegerCounts.notes} <span className="text-[10px] opacity-70">{TRAEGER_LABELS.notes}</span></span>
+                    <span style={{ color: 'var(--type-reference)' }}>{traegerCounts.files} <span className="text-[10px] opacity-70">{TRAEGER_LABELS.files}</span></span>
+                    <span style={{ color: 'var(--type-procedural)' }}>{traegerCounts.code} <span className="text-[10px] opacity-70">{TRAEGER_LABELS.code}</span></span>
                   </span>
-                  <span className="k">facts, events, how-tos{ladung !== null ? ` · in the ${groessenZahl(ladung)} loaded` : ''}</span>
+                  <span className="k">where it came from{ladung !== null ? ` · in the ${groessenZahl(ladung)} loaded` : ''}</span>
                 </div>
                 <div className="index-cell">
                   <span className="v">{allTags.length}</span>
@@ -1641,6 +1691,60 @@ export function Dashboard() {
                 </div>
               ) : (
                 <>
+                  {/* NEUN WOERTER, ZWEI ZEILEN — Zeile 1 "woher" (Notes · Files ·
+                      Code, erschoepfend), Zeile 2 "worum" (sechs kombinierbare
+                      Themen). Themen greifen nie in Code: die Sperre ist hier
+                      sichtbar, nicht nur im Code. */}
+                  <div className="flex flex-wrap items-center gap-1.5 mb-1.5" role="group" aria-label="Where it came from">
+                    <span className="text-[11px] shrink-0" style={{ color: 'var(--text-3)' }}>From</span>
+                    {TRAEGER_REIHENFOLGE.map((t) => {
+                      const an = aktiveTraeger.includes(t);
+                      return (
+                        <button
+                          key={t}
+                          type="button"
+                          aria-pressed={an}
+                          title={TRAEGER_HINWEISE[t]}
+                          onClick={() => setAktiveTraeger((vorher) => vorher.includes(t) ? vorher.filter((x) => x !== t) : [...vorher, t])}
+                          className="row-quiet min-h-6 px-2"
+                          style={an ? { background: 'var(--accent-soft)', color: 'var(--accent)', borderColor: 'var(--accent)' } : undefined}
+                        >
+                          {TRAEGER_LABELS[t]}
+                        </button>
+                      );
+                    })}
+                    {gruppenFilterAktiv && (
+                      <button
+                        type="button"
+                        className="row-quiet min-h-6 px-2"
+                        title="Show everything again"
+                        onClick={() => { setAktiveTraeger([]); setAktiveThemen([]); }}
+                      >
+                        Clear
+                      </button>
+                    )}
+                  </div>
+                  <div className="flex flex-wrap items-center gap-1.5 mb-3" role="group" aria-label="What it is about">
+                    <span className="text-[11px] shrink-0" style={{ color: 'var(--text-3)' }}>About</span>
+                    {THEMA_REIHENFOLGE.map((t) => {
+                      const an = aktiveThemen.includes(t);
+                      return (
+                        <button
+                          key={t}
+                          type="button"
+                          aria-pressed={an}
+                          disabled={nurCode}
+                          title={nurCode ? 'Code is not sorted by topic — a program is a program' : THEMA_HINWEISE[t]}
+                          onClick={() => setAktiveThemen((vorher) => vorher.includes(t) ? vorher.filter((x) => x !== t) : [...vorher, t])}
+                          className="row-quiet min-h-6 px-2 disabled:opacity-45"
+                          style={an ? { background: 'var(--accent-soft)', color: 'var(--accent)', borderColor: 'var(--accent)' } : undefined}
+                        >
+                          {THEMA_LABELS[t]}
+                        </button>
+                      );
+                    })}
+                  </div>
+
                   <div className="apple-seg mb-3" role="group" aria-label="Grouping of the list">
                     {([['alle', t('list.all')], ['datei', t('list.byFile')], ['typ', t('list.byType')], ['zeitraum', t('list.period')]] as const).map(([key, label]) => (
                       <button

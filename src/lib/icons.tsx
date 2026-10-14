@@ -19,26 +19,26 @@ import keptaData from "./kepta-icons.json";
 
 /* Zwei Körper, die die gesampelte Collection nicht hat, in ihrer Schreibweise. */
 const PANEL =
-  '<g fill="none" stroke="currentColor" stroke-width="1.5"><path fill="currentColor" d="M2 11C2 7.22876 2 5.34315 3.17157 4.17157C4.34315 3 6.22876 3 10 3H14C17.7712 3 19.6569 3 20.8284 4.17157C22 5.34315 22 7.22876 22 11V13C22 16.7712 22 18.6569 20.8284 19.8284C19.6569 21 17.7712 21 14 21H10C6.22876 21 4.34315 21 3.17157 19.8284C2 18.6569 2 16.7712 2 13V11Z"/><path fill="currentColor" stroke-linecap="round" d="M5.5 10H11.5"/><path fill="currentColor" stroke-linecap="round" d="M6.5 14H10.5"/><path fill="currentColor" stroke-linecap="round" d="M15 21L15 3"/>';
+  '<g fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2 11C2 7.22876 2 5.34315 3.17157 4.17157C4.34315 3 6.22876 3 10 3H14C17.7712 3 19.6569 3 20.8284 4.17157C22 5.34315 22 7.22876 22 11V13C22 16.7712 22 18.6569 20.8284 19.8284C19.6569 21 17.7712 21 14 21H10C6.22876 21 4.34315 21 3.17157 19.8284C2 18.6569 2 16.7712 2 13V11Z"/><path stroke-linecap="round" d="M5.5 10H11.5"/><path stroke-linecap="round" d="M6.5 14H10.5"/><path stroke-linecap="round" d="M15 21L15 3"/>';
 
 const ZUSATZ = {
   icons: {
     // Das Zu/Auf-Paar brauchte bisher dasselbe Bild: ein Knopf, der zwei
     // Zustände hat, zeigte in beiden dasselbe. Der Pfeil steht in der
     // Inhaltsseite der Leiste und sagt, wohin die Kante geht.
-    "panelleft-close": { body: `${PANEL}<path fill="currentColor" stroke-linecap="round" stroke-linejoin="round" d="M19.6 9.4L17 12L19.6 14.6"/></g>` },
-    "panelleft-open": { body: `${PANEL}<path fill="currentColor" stroke-linecap="round" stroke-linejoin="round" d="M17 9.4L19.6 12L17 14.6"/></g>` },
+    "panelleft-close": { body: `${PANEL}<path stroke-linecap="round" stroke-linejoin="round" d="M19.6 9.4L17 12L19.6 14.6"/></g>` },
+    "panelleft-open": { body: `${PANEL}<path stroke-linecap="round" stroke-linejoin="round" d="M17 9.4L19.6 12L17 14.6"/></g>` },
     // Ein Ladezeichen war bisher das Erneuerungszeichen — und umgekehrt.
     // „loader" in dieser Collection ist kreuzweise mit zwei Pfeilspitzen
     // gezeichnet (das ist Erneuern/synchronisieren, richtig für RefreshCw);
     // der Spinner bekommt eigenen Bogen mit Lücke, der sich drehen kann.
     "loader-circle": {
-      body: '<g fill="none" stroke="currentColor" stroke-linecap="round" stroke-width="1.5"><path fill="currentColor" d="M21 12A9 9 0 1 1 14.8 3.44"/></g>',
+      body: '<g fill="none" stroke="currentColor" stroke-linecap="round" stroke-width="1.5"><path d="M21 12A9 9 0 1 1 14.8 3.44"/></g>',
     },
     // Drei legte Blätter: die Liste der Werkzeuge heißt Layers und zeigte
     // eine Erdkugel.
     layers: {
-      body: '<g fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"><path fill="currentColor" d="M12 3.4L3.6 7.7 12 12l8.4-4.3L12 3.4Z"/><path fill="currentColor" d="M3.6 12.2L12 16.5l8.4-4.3"/><path fill="currentColor" d="M3.6 16.4L12 20.7l8.4-4.3"/></g>',
+      body: '<g fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"><path d="M12 3.4L3.6 7.7 12 12l8.4-4.3L12 3.4Z"/><path d="M3.6 12.2L12 16.5l8.4-4.3"/><path d="M3.6 16.4L12 20.7l8.4-4.3"/></g>',
     },
   },
 };

@@ -28,7 +28,11 @@ export interface ScanVorschau {
   truncated: boolean;
   skippedFolders: number;
   skipped: { grund: string; label: string; anzahl: number }[];
+  /** Die Ordner, die zu blieben — beim Namen, nicht nur gezaehlt. */
+  leftOutFolders: { ordner: string; grund: string }[];
   byFolder: { ordner: string; anzahl: number }[];
+  /** Wie viele oberste Ordner es ueberhaupt gibt — die Liste zeigt nur einen Teil. */
+  ordnerGesamt: number;
   sample: { path: string; bytes: number }[];
   totalBytes: number;
 }
@@ -39,7 +43,9 @@ export interface ScanVorschau {
 const LEERE_VORSCHAU: ScanVorschau = {
   roots: [""], seen: 0, found: 0, truncated: false, skippedFolders: 0,
   skipped: [{ grund: "", label: "", anzahl: 0 }],
+  leftOutFolders: [{ ordner: "", grund: "" }],
   byFolder: [{ ordner: "", anzahl: 0 }],
+  ordnerGesamt: 0,
   sample: [{ path: "", bytes: 0 }],
   totalBytes: 0,
 };
@@ -74,6 +80,18 @@ export function formatBytes(n: number): string {
   if (n < 1024) return `${n} B`;
   if (n < 1024 * 1024) return `${Math.round(n / 1024)} kB`;
   return `${(n / (1024 * 1024)).toFixed(1)} MB`;
+}
+
+/** Warum ein Ordner zu blieb, in einem Wort, das der Nutzer lesen kann. */
+function lassGrund(grund: string): string {
+  switch (grund) {
+    case "eigene-daten": return "K3PTA's own data";
+    case "abgewaehlt": return "you left it out";
+    case "ausgeschlossen": return "not part of this scan";
+    case "zu-tief": return "deeper than 12 folders";
+    case "versteckt": return "hidden folder";
+    default: return "system, cache or build folder";
+  }
 }
 
 export function MachineScan({ open, onClose, onImported, autoPreview = false }: Props) {
@@ -180,9 +198,35 @@ export function MachineScan({ open, onClose, onImported, autoPreview = false }: 
     }
   }, []);
 
+  /**
+   * Einen Ordner aus der Vorschau heraus weglassen — und die Zahl neu sehen.
+   *
+   * Die Vorschau war bis hierhin eine Auskunft ohne Wirkung: wer sah, dass ein
+   * Kunde-Shop-Theme die Haelfte fuellt, konnte erst nach dem Schliessen im
+   * Regelfeld drei Worte eintippen. Der Klick auf den Chip tut genau das, was
+   * das Feld tut — `zusaetzlichAusgelassen` — und laeuft der Vorschau hinterher,
+   * damit die neue Zahl die Antwort ist, nicht ein Wunsch.
+   */
+  const ordnerAuslassen = useCallback(async (name: string) => {
+    const bisher = ausgelassen.split(",").map((x) => x.trim()).filter(Boolean);
+    if (bisher.some((x) => x.toLowerCase() === name.toLowerCase())) return;
+    const neu = [...bisher, name].join(", ");
+    setAusgelassen(neu);
+    await sichereAuswahl(endungen, neu);
+    await starteVorschau();
+  }, [ausgelassen, endungen, sichereAuswahl, starteVorschau]);
+
+  /** Dieselbe Bewegung rueckwaerts: ein eigener Ausschluss wird zurueckgenommen. */
+  const ordnerZulassen = useCallback(async (name: string) => {
+    const neu = ausgelassen.split(",").map((x) => x.trim()).filter(Boolean)
+      .filter((x) => x.toLowerCase() !== name.toLowerCase()).join(", ");
+    setAusgelassen(neu);
+    await sichereAuswahl(endungen, neu);
+    await starteVorschau();
+  }, [ausgelassen, endungen, sichereAuswahl, starteVorschau]);
+
   // Vom Assistenten kommend: die Vorschau laeuft von selbst an.
-  const vorschauAngestossen = useRef(false);
-  useEffect(() => {
+  const vorschauAngestossen = useRef(false);  useEffect(() => {
     if (!open || !autoPreview) { if (!open) vorschauAngestossen.current = false; return; }
     if (vorschauAngestossen.current) return;
     vorschauAngestossen.current = true;
@@ -339,10 +383,9 @@ export function MachineScan({ open, onClose, onImported, autoPreview = false }: 
 
           {!vorschau && !status && (
             <div className="flex flex-col items-center py-6 gap-3">
-              <button onClick={starteVorschau} disabled={laeuftVorschau} className="btn-ghost px-4 py-2.5 rounded-xl text-sm flex items-center gap-2">
-                {laeuftVorschau ? <><Loader2 className="w-4 h-4 animate-spin" /> Looking through your folders…</> : <><FolderOpen className="w-4 h-4" /> Show me what would be imported</>}
-              </button>
-              <p className="text-[12px]" style={{ color: "var(--text-3)" }}>This step only looks. It writes nothing.</p>
+              <p className="text-[12px] text-center" style={{ color: "var(--text-3)" }}>
+                This step only looks. It writes nothing — and it tells you which folders it would take.
+              </p>
             </div>
           )}
 
@@ -358,8 +401,12 @@ export function MachineScan({ open, onClose, onImported, autoPreview = false }: 
                   <div className="hud-label">of text</div>
                 </div>
                 <div className="hud-inset rounded-lg p-2.5">
+                  {/* „left out" war die Zahl der Dateien, die im Lauf durchfielen.
+                      Ein Ordner, den die Regel von vornherein nicht betritt, ist
+                      nie „gesehen" worden — auf dem echten Schirm stand deshalb
+                      „0 left out", während 52 Dateien in drei Ordnern lagen. */}
                   <div className="text-lg font-semibold tnum" style={{ color: "var(--text-3)" }}>{vorschau.seen - vorschau.found}</div>
-                  <div className="hud-label">left out</div>
+                  <div className="hud-label">not readable</div>
                 </div>
               </div>
 
@@ -374,21 +421,92 @@ export function MachineScan({ open, onClose, onImported, autoPreview = false }: 
                 <div>
                   <div className="hud-label mb-1.5">Where they come from</div>
                   <div className="flex flex-wrap gap-1.5">
-                    {vorschau.byFolder.map((f) => (
-                      <span key={f.ordner} className="chip tnum">{f.ordner} <span style={{ color: "var(--text-3)" }}>{f.anzahl}</span></span>
-                    ))}
+                    {vorschau.byFolder.map((f) => {
+                      // „(top level)" ist kein Ordnername, sondern der Korb fuer
+                      // die Dateien nebenan — ein Ausschluss ins Leere waere ein
+                      // Chip, der etwas zu tun scheint und nichts tut.
+                      const echt = f.ordner && f.ordner !== "(top level)";
+                      if (!echt) {
+                        return (
+                          <span key={f.ordner || "(leer)"} className="chip tnum" data-testid="vorschau-ordner-ohne-wirkung">
+                            {f.ordner || "—"} <span style={{ color: "var(--text-3)" }}>{f.anzahl}</span>
+                          </span>
+                        );
+                      }
+                      return (
+                        <button
+                          key={f.ordner}
+                          type="button"
+                          onClick={() => void ordnerAuslassen(f.ordner)}
+                          disabled={laeuftVorschau}
+                          className="chip tnum min-h-7 disabled:opacity-40"
+                          data-testid="vorschau-ordner"
+                          title={`Leave ${f.ordner} out of the scan — the count updates`}
+                          aria-label={`Leave ${f.ordner} out of the scan`}
+                        >
+                          {f.ordner} <span style={{ color: "var(--text-3)" }}>{f.anzahl}</span>
+                        </button>
+                      );
+                    })}
                   </div>
+                  {vorschau.ordnerGesamt > vorschau.byFolder.length && (
+                    <div className="text-[11.5px] mt-1" style={{ color: "var(--text-3)" }}>
+                      {vorschau.byFolder.length} of {vorschau.ordnerGesamt} folders shown — the rest holds fewer documents.
+                    </div>
+                  )}
+                  {ausgelassen.trim() !== "" && (
+                    <div className="flex flex-wrap items-center gap-1.5 mt-1.5">
+                      <span className="text-[11.5px]" style={{ color: "var(--text-3)" }}>left out by you:</span>
+                      {ausgelassen.split(",").map((x) => x.trim()).filter(Boolean).map((x) => (
+                        <button
+                          key={x}
+                          type="button"
+                          onClick={() => void ordnerZulassen(x)}
+                          disabled={laeuftVorschau}
+                          className="chip tnum min-h-7 disabled:opacity-40"
+                          data-testid="eigener-ausschluss"
+                          title={`Include ${x} again`}
+                          aria-label={`Include ${x} again`}
+                        >
+                          {x} ×
+                        </button>
+                      ))}
+                    </div>
+                  )}
                 </div>
               )}
 
-              {vorschau.skipped.length > 0 && (
+              {(vorschau.skipped.length > 0 || vorschau.skippedFolders > 0) && (
                 <div>
-                  <div className="hud-label mb-1.5">Left out</div>
-                  <div className="flex flex-wrap gap-1.5">
-                    {vorschau.skipped.map((s) => (
-                      <span key={s.grund} className="chip tnum">{s.label} <span style={{ color: "var(--text-3)" }}>{s.anzahl}</span></span>
-                    ))}
+                  <div className="hud-label mb-1.5">
+                    Left out{vorschau.skippedFolders > 0 ? ` — ${vorschau.skippedFolders} folder${vorschau.skippedFolders === 1 ? "" : "s"} not entered` : ""}
                   </div>
+                  {vorschau.skipped.length > 0 && (
+                    <div className="flex flex-wrap gap-1.5">
+                      {vorschau.skipped.map((s) => (
+                        <span key={s.grund} className="chip tnum">{s.label} <span style={{ color: "var(--text-3)" }}>{s.anzahl}</span></span>
+                      ))}
+                    </div>
+                  )}
+                  {/* Die Gruende zaehlen Dateien; was mit einem ORDNER geschah, war
+                      bisher nur eine Zahl (skippedFolders). Der Name ist die
+                      Auskunft — sonst sieht niemand, dass ein gesuchter Ordner
+                      zufaellig auf einer Ausschlussliste steht. */}
+                  {vorschau.leftOutFolders.some((f) => f.ordner) && (
+                    <div className="mt-1.5 space-y-0.5" data-testid="links-out-ordner">
+                      {vorschau.leftOutFolders.filter((f) => f.ordner).slice(0, 8).map((f, i) => (
+                        <div key={`${f.ordner}-${i}`} className="text-[11.5px] flex items-baseline gap-1.5 min-w-0">
+                          <span className="font-mono truncate" style={{ color: "var(--text-2)" }} title={f.ordner}>{f.ordner}</span>
+                          <span style={{ color: "var(--text-3)" }}>{lassGrund(f.grund)}</span>
+                        </div>
+                      ))}
+                      {vorschau.skippedFolders > 8 && (
+                        <div className="text-[11.5px]" style={{ color: "var(--text-3)" }}>
+                          …and {vorschau.skippedFolders - 8} more folders left out.
+                        </div>
+                      )}
+                    </div>
+                  )}
                 </div>
               )}
 
@@ -456,7 +574,14 @@ export function MachineScan({ open, onClose, onImported, autoPreview = false }: 
 
         <div className="flex items-center gap-2 px-5 py-3.5 shrink-0" style={{ borderTop: "1px solid var(--border-subtle)" }}>
           <span className="text-[12px]" style={{ color: "var(--text-3)" }}>
-            {status?.running ? "You can stop this at any time." : "Local only. No cloud, no account."}
+            {status?.running
+              ? "You can stop this at any time."
+              : vorschau && !bereit
+                // Die beiden Haken liegen in der Liste darunter — bei 1440×900
+                // hinter der Faltkante (Bild scan-vorschau-1440px-ausgeschlossen.png,
+                // 14.10.). Ein Knopf, der nichts darf, muss sagen, was fehlt.
+                ? "Tick the two points in the list to enable the import."
+                : "Local only. No cloud, no account."}
           </span>
           <div className="ml-auto flex items-center gap-2">
             {status?.running ? (
@@ -466,9 +591,19 @@ export function MachineScan({ open, onClose, onImported, autoPreview = false }: 
             ) : (
               <>
                 <button onClick={onClose} className="btn-ghost px-3 py-1.5 rounded-lg text-[12.5px]">Not now</button>
-                <button onClick={starteImport} disabled={!bereit} className="btn-primary px-4 py-1.5 rounded-lg text-[12.5px] disabled:opacity-40">
-                  {vorschau ? `Import ${vorschau.found} documents` : "Import"}
-                </button>
+                {/* Vor der ersten Vorschau liegt der Knopf unten, nicht in der
+                    Mitte des Inhalts: bei 1440×900 (gemessen 14.10., Bild
+                    e3-bilder/scan-vorschau-1440px-vorher.png) stand er halb
+                    hinter der Fußzeile, und ein Klick traf die Fußzeile. */}
+                {!vorschau ? (
+                  <button onClick={starteVorschau} disabled={laeuftVorschau} className="btn-primary px-4 py-1.5 rounded-lg text-[12.5px] flex items-center gap-2 disabled:opacity-40">
+                    {laeuftVorschau ? <><Loader2 className="w-3.5 h-3.5 animate-spin" /> Looking through your folders…</> : <><FolderOpen className="w-3.5 h-3.5" /> Show me what would be imported</>}
+                  </button>
+                ) : (
+                  <button onClick={starteImport} disabled={!bereit} className="btn-primary px-4 py-1.5 rounded-lg text-[12.5px] disabled:opacity-40">
+                    {vorschau ? `Import ${vorschau.found} documents` : "Import"}
+                  </button>
+                )}
               </>
             )}
           </div>

@@ -10,6 +10,7 @@
 // LayoutEdge): der Zeichencode in KnowledgeGraph.tsx bleibt unveraendert — nur
 // die Positionen kommen hierher statt aus der Physik.
 import type { Memory } from "../types";
+import { gruppen, type Gruppe, type Traeger, type Thema } from "../core/klassifikation";
 import { notizEtikett } from "./graphLayout";
 import type { LayoutEdge, LayoutNode, Bounds } from "./graphLayout";
 
@@ -67,6 +68,89 @@ export const TYP_LABELS: Record<string, string> = {
 };
 
 const BEKANNTE_TYPEN = ["semantic", "episodic", "procedural", "reference"];
+
+// ---------- Die Menschenschicht: neun Woerter in zwei Zeilen ----------
+//
+// TYP_LABELS oben bleibt, wie es ist: die vier Rechen-Arten steuern Farben und
+// die Legende im Graphen (KnowledgeGraph.tsx) und stehen in Tests. Was hier
+// dazukommt, ist die Schicht, die ein Mensch liest — Vorgabe:
+// WA-GRUPPEN-VORSCHLAG-2026-10-14.md, Abschnitt 5.
+//
+//   Zeile 1 (woher): Notes · Files · Code        erschoepfend, ohne Ueberschneidung
+//   Zeile 2 (worum): People · Projects · Events · Tasks · Guides · Links
+//                    kombinierbar, und NIE in Code
+//
+// Die Regeln dazu liegen im Kern (src/core/klassifikation.ts) — hier stehen nur
+// die Woerter und ein Duennschicht-Zugriff, damit Flaeche und Graph dieselben
+// Antworten geben wie die Tests.
+export type { Traeger, Thema, Gruppe } from "../core/klassifikation";
+
+export const TRAEGER_REIHENFOLGE: Traeger[] = ["notes", "files", "code"];
+export const THEMA_REIHENFOLGE: Thema[] = ["people", "projects", "events", "tasks", "guides", "links"];
+
+export const TRAEGER_LABELS: Record<Traeger, string> = {
+  notes: "Notes",
+  files: "Files",
+  code: "Code",
+};
+
+/** Ein Satz, der erklaert, ohne ein Fachwort zu brauchen. */
+export const TRAEGER_HINWEISE: Record<Traeger, string> = {
+  notes: "typed here — no file behind it",
+  files: "a document from your folders",
+  code: "programs, schemas, configs",
+};
+
+export const THEMA_LABELS: Record<Thema, string> = {
+  people: "People",
+  projects: "Projects",
+  events: "Events",
+  tasks: "Tasks",
+  guides: "Guides",
+  links: "Links",
+};
+
+export const THEMA_HINWEISE: Record<Thema, string> = {
+  people: "a name, a role, a way to reach them",
+  projects: "something being built or run — a client, a repo, a shop",
+  events: "it happened at a time: a meeting, a call, a date",
+  tasks: "still to do: open point, deadline, next step",
+  guides: "how it is done: steps, setup, checklist",
+  links: "a web address or a source to read",
+};
+
+/**
+ * Traeger und Themen einer Notiz — dieselbe Rechnung wie im Kern und in den
+ * Tests.
+ *
+ * Der Puffer dahinter ist keine Bequemlichkeit: ein Klick auf einen Chip laeuft
+ * ueber den ganzen Bestand, und ungebuffert kostet das 14.702 x sechs Regexe
+ * (~350 ms, gemessen 17:1x am echten Bestand) — eine Flaeche, die bei jedem
+ * Klick eine drittel Sekunde haengt. Geschluesselt ist auf id + updatedAt,
+ * weil sich Inhalt und Tags nur mit dem Aenderungszeitpunkt aendern; ein
+ * umbenannter oder neu getaggter Knoten rechnet also von selbst neu.
+ */
+const gruppenPuffer = new Map<string, Gruppe>();
+export function gruppenVonNotiz(m: { id?: string; title?: string; content?: string; tags?: readonly string[]; updatedAt?: number }): Gruppe {
+  const schluessel = m.id ? `${m.id}:${m.updatedAt ?? 0}` : null;
+  if (schluessel) {
+    const gepuffert = gruppenPuffer.get(schluessel);
+    if (gepuffert) return gepuffert;
+  }
+  const berechnet = gruppen({ title: m.title ?? "", content: m.content ?? "", tags: m.tags ?? [] });
+  if (schluessel) {
+    if (gruppenPuffer.size > 24_000) gruppenPuffer.clear();
+    gruppenPuffer.set(schluessel, berechnet);
+  }
+  return berechnet;
+}
+
+/** Die Menschenschrift fuer eine Notiz: "Files · People, Projects". Code hat keine Themen. */
+export function gruppenEtikett(m: { title?: string; content?: string; tags?: readonly string[] }): string {
+  const g = gruppenVonNotiz(m);
+  const themen = g.themen.length ? ` · ${g.themen.map((t) => THEMA_LABELS[t]).join(", ")}` : "";
+  return `${TRAEGER_LABELS[g.traeger]}${themen}`;
+}
 
 /**
  * Entitaetszugehoerigkeit je Notiz. Die Graph-DB liefert `memoriesByEntity`

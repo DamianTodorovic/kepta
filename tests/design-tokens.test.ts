@@ -116,6 +116,44 @@ describe("Token-Form in src/index.css", () => {
     expect(css).toMatch(/\.huelle-schmal \.seiten-leiste\s*\{[^}]*position:\s*fixed/s);
     expect(css).toMatch(/\.flaeche-huelle div:has\(> #graph-search-count\)\s*\{[^}]*flex-wrap:\s*nowrap/s);
   });
+  // H-1 Legende (14.10., an Pixeln gemessen): die vier Wörter im Index-Streifen
+  // standen bei 10 px und opacity .7 — das sind 3,45–3,49:1 auf dem Panel, in 16
+  // von 16 Fällen (4 Wörter × 4 Breiten) unter der Schriftkante 4,5:1. Die Ruhe
+  // soll von der Größe kommen, nicht von einem Wäschegang über die Tinte.
+  it("dämpft die Legende nicht, sondern setzt sie kleiner", () => {
+    const regel = (css.match(/\.index-strip[^{]*\{[^}]*\}/g) ?? []).find((r) => /\.index-strip\s+span/.test(r));
+    expect(regel, "die Index-Legende hat keine Regel in index.css").toBeTruthy();
+    expect(regel).toMatch(/font-size:\s*var\(--fs-1\)/);
+    expect(regel, "opacity unter 1 wäscht die Tinte aus dem Wort").toMatch(/opacity:\s*1\s*[;}]/);
+  });
+
+  // H-2 Die Schublade (Vorschau und Editor) ist die gehobenste Fläche im Produkt.
+  // Ihr Rand war die dekorative Haarlinie; auf die Flächenrolle gezogen blieb die
+  // Zahl im Bild trotzdem 1,59:1 — ein 1-px-Border verliert auf einem Element mit
+  // backdrop-filter die Hälfte seiner Kraft (zwei Pixel Breite ändern nichts: 1,64).
+  // Eine innere Schattenlinie malt denselben Token echt: 3,69:1 nach außen, 5,85:1
+  // nach innen (1440 px, 14.10.).
+  it("gibt der Schublade eine Flächenkante, die im Bild steht", () => {
+    const schublade = css.match(/\.glass-strong\s*\{[^}]*\}/)?.[0] ?? "";
+    expect(schublade).toContain("var(--kante-flaeche)");
+    expect(schublade, "die Kante muss als innere Linie gemalt werden, nicht als Border").toMatch(
+      /box-shadow:[^;]*inset\s+0 0 0 1px var\(--kante-flaeche\)/,
+    );
+    expect(css.match(/\.glass\s*\{[^}]*\}/)?.[0] ?? "").toContain("var(--kante-flaeche)");
+  });
+
+  // H-3 Die neun Wörter (WAs Umbau 17:35) sind die Hauptfilter der Fläche, .row-quiet
+  // trug für sie die leise Stufe --text-3: im gemalten Bild 5,18:1, für ein kurzes
+  // Wort wie „Links" 4,36:1 (36 Wortkästen, 14.10.) — unter der Schriftkante. Eine
+  // Bedienkontrolle darf nicht die leise Stufe der Fläche sein; ihre Berandung ist
+  // außerdem eine Haarlinie, wo ein Bedienelement eine Kontrollkante braucht.
+  it("hebt die Chips über die leise Stufe und gibt ihnen eine Kontrollkante", () => {
+    const chip = css.match(/\.row-quiet\s*\{[^}]*\}/)?.[0] ?? "";
+    expect(chip, ".row-quiet steht nicht auf der zweiten Tintenstufe").toContain("color: var(--text-2)");
+    const knopf = css.match(/button\.row-quiet\s*\{[^}]*\}/)?.[0] ?? "";
+    expect(knopf, "ein Chip ohne Kontrollkante ist ein Textstück, kein Griff").toContain("var(--kante-kontrolle)");
+  });
+
   it("kennt Schichten, Medienabfragen und ihr Schema", () => {
     // Die drei Abfragen, die D1-12 fehlten, plus die Ruhe-Antwort.
     for (const mq of ["prefers-reduced-motion", "prefers-contrast: more", "forced-colors: active", "prefers-reduced-transparency: reduce"]) {
@@ -192,5 +230,24 @@ describe("Iconvertrag in src/lib/icons.tsx", () => {
   it("benennt die tote weight-API, statt sie zu verschweigen", () => {
     expect(icons).toMatch(/weight\?:/);
     expect(icons, "weight muss als ignoriert benannt sein").toMatch(/einen? Strich|ignoriert/);
+  });
+
+  // Der Vertrag steht in der ersten Zeile von icons.tsx: Solar „Linear", 1,5 px
+  // Strich. Eine Strich-Gruppe (`fill="none" stroke="currentColor"`) darf deshalb
+  // keinen Pfad tragen, der sich selbst wieder füllt. Im gemalten Bild heißt das:
+  // die Nav-Leiste zeigt Klümpchen statt Zeichen — gemessen 14.10. am echten
+  // Screen, `ikon-Copytext` 1,01:1 (das ganze 16×16-Feld eine Farbe).
+  it("malt die Serie als Strich, nicht als Fläche", () => {
+    const koerper = new Map<string, string>();
+    for (const [name, e] of Object.entries(daten.icons)) koerper.set(name, (e as { body: string }).body);
+    for (const m of icons.matchAll(/"([\w-]+)":\s*\{[\s\S]*?body:\s*([`'"])([\s\S]*?)\2/g)) koerper.set(m[1], m[3]);
+    const klumpen: string[] = [];
+    for (const [name, body] of koerper) {
+      const strichGruppe = /fill="none"[^>]*stroke="currentColor"/.test(body);
+      if (!strichGruppe) continue;
+      const gefuellt = [...body.matchAll(/<path\b[^>]*fill="currentColor"[^>]*>/g)].length;
+      if (gefuellt > 0) klumpen.push(`${name} (${gefuellt} Pfade)`);
+    }
+    expect(klumpen, `${klumpen.length} Bilder füllen eine Strich-Gruppe — sie malen Klumpen`).toEqual([]);
   });
 });

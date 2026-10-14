@@ -132,14 +132,24 @@ export function mountScan(app: express.Express, ctx: AppKontext): void {
     const gruende = Object.entries(stand.abgelehnt)
       .map(([g, n]) => ({ grund: g, label: grundLabel(g as Ablehnungsgrund), anzahl: n }))
       .sort((a, b) => b.anzahl - a.anzahl);
+    // Alle Ordner zaehlen, zwanzig zeigen: auf einem echten Heim sind es 17
+    // oberste Ordner (gemessen 14.10.), und einer, den die Liste nicht zeigt,
+    // kann der Nutzer nicht wegklicken. Die Gesamtzahl steht daneben, damit die
+    // Liste nicht als Vollstaendigkeit gelesen wird.
+    const alleOrdner = nachOrdner(stand.funde, wurzeln, Number.MAX_SAFE_INTEGER);
     return {
       roots: wurzeln,
       seen: stand.gesehen,
       found: stand.funde.length,
       truncated: stand.abgeschnitten,
       skippedFolders: stand.uebersprungeneOrdner,
+      // Welche Ordner zu blieben, beim Namen — `skippedFolders` allein ist eine
+      // Zahl ohne Auskunft, und nur am Namen sieht jemand, dass sein eines
+      // Wunschziel mit einem Ballast-Namen zusammenfaellt.
+      leftOutFolders: stand.uebersprungene.slice(0, 24),
       skipped: gruende,
-      byFolder: nachOrdner(stand.funde, wurzeln),
+      byFolder: alleOrdner.slice(0, 20),
+      ordnerGesamt: alleOrdner.length,
       sample: stand.funde.slice(0, 24).map((f) => ({ path: f.pfad, bytes: f.groesse })),
       totalBytes: stand.funde.reduce((n, f) => n + f.groesse, 0),
     };

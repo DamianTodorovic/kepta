@@ -138,7 +138,12 @@ describe("OnboardingWizard: Angebot, den Rechner anzusehen", () => {
     await zuSchrittVier(user);
     expect(screen.getByText(/Also look through this computer for documents/i)).toBeTruthy();
     expect(screen.getByText(/Keys, passwords, credentials and browser data are never read/i)).toBeTruthy();
-    expect(screen.getByText(/You will see exactly what would be imported/i)).toBeTruthy();
+    // „exactly" war zu viel versprochen: die Vorschau zeigt zwanzig oberste
+    // Ordner und vierundzwanzig Dateinamen, nicht 13.616 Titel. Der Satz sagt
+    // jetzt, was der Schirm danach wirklich tut.
+    expect(screen.getByText(/you see the folders it would take and how many documents each holds/i)).toBeTruthy();
+    expect(screen.getByText(/you can leave any of them out/i)).toBeTruthy();
+    expect(screen.queryByText(/exactly what would be imported/i)).toBeNull();
   });
 
   it("ist von sich aus abgewaehlt", async () => {

@@ -6,6 +6,7 @@
 // herstellen will (ein .ssh-Ordner voller Schluessel zum Beispiel).
 import {
   beurteileDatei,
+  istKeptaDatenordner,
   istUebersprungenerOrdner,
   MAX_DATEIEN,
   MAX_TIEFE,
@@ -32,6 +33,12 @@ export interface Fund {
   groesse: number;
 }
 
+export interface UebersprungenerOrdner {
+  ordner: string;
+  /** Warum der Ordner zu blieb: systemordner | abgewaehlt | eigene-daten | ausgeschlossen | zu-tief */
+  grund: string;
+}
+
 export interface ScanStand {
   /** Dateien, die aufgenommen werden koennen. */
   funde: Fund[];
@@ -41,6 +48,8 @@ export interface ScanStand {
   abgelehnt: Record<string, number>;
   /** Ordner, die gar nicht erst betreten wurden. */
   uebersprungeneOrdner: number;
+  /** Welche das sind — eine Zahl ohne Namen ist keine Auskunft. Begrenzt. */
+  uebersprungene: UebersprungenerOrdner[];
   /** true, sobald eine Grenze erreicht war — es gaebe also mehr. */
   abgeschnitten: boolean;
 }
@@ -56,12 +65,24 @@ export interface ScanOptionen {
   einstellungen?: ScanEinstellungen;
 }
 
+/** Hoechstens so viele Ordnernamen werden gemeldet — ein Heim kann Tausende haben. */
+const NAMEN_KAPPE = 50;
+
 function leererStand(): ScanStand {
-  return { funde: [], gesehen: 0, abgelehnt: {}, uebersprungeneOrdner: 0, abgeschnitten: false };
+  return { funde: [], gesehen: 0, abgelehnt: {}, uebersprungeneOrdner: 0, uebersprungene: [], abgeschnitten: false };
 }
 
 function zaehle(stand: ScanStand, grund: Ablehnungsgrund): void {
   stand.abgelehnt[grund] = (stand.abgelehnt[grund] ?? 0) + 1;
+}
+
+/** Ein Ordner blieb zu. Zaehlen — und beim Namen melden, solange er nicht untergeht. */
+function meldet(stand: ScanStand, pfad: string, grund: string): void {
+  stand.uebersprungeneOrdner++;
+  if (stand.uebersprungene.length >= NAMEN_KAPPE) return;
+  const teile = pfad.split(/[\\/]/).filter(Boolean);
+  const name = teile[teile.length - 1];
+  if (name) stand.uebersprungene.push({ ordner: name, grund });
 }
 
 /**
@@ -92,16 +113,33 @@ export function* scanne(
     const normiert = pfad.replace(/[\\/]+$/, "");
     if (besucht.has(normiert)) continue;
     besucht.add(normiert);
-    if (ausgeschlossen.has(normiert)) { stand.uebersprungeneOrdner++; continue; }
-    if (tiefe > maxTiefe) { stand.uebersprungeneOrdner++; continue; }
+    if (ausgeschlossen.has(normiert)) { meldet(stand, normiert, "ausgeschlossen"); continue; }
+    if (tiefe > maxTiefe) { meldet(stand, normiert, "zu-tief"); continue; }
 
-    for (const eintrag of fs.lies(pfad)) {
+    const eintraege = fs.lies(pfad);
+    // Traegt dieser Ordner K3PTAs eigene Datenbank, ist er ein Datenordner — der
+    // lebende oder eine seiner Kopien. Ihn einzulesen haette zwei Folgen: der
+    // Scan fuellt das Gehirn mit seiner eigenen Sicherung (gemessen 53,6 % eines
+    // Erstlaufs im echten Heim), und er macht aus `scan-config.json` und
+    // `profile.json` Notizen — Dateien, die verschluesselt abgelegt werden und
+    // ueber MCP an angeschlossene Agenten gehen.
+    if (istKeptaDatenordner(eintraege)) { meldet(stand, normiert, "eigene-daten"); continue; }
+
+    for (const eintrag of eintraege) {
       const voll = fs.verbinde(pfad, eintrag.name);
       if (eintrag.istOrdner) {
         const eigenesVeto = (opts.einstellungen?.zusaetzlichAusgelassen ?? [])
           .some((o) => o.toLowerCase() === eintrag.name.toLowerCase());
-        if (istUebersprungenerOrdner(eintrag.name) || eigenesVeto || ausgeschlossen.has(voll.replace(/[\\/]+$/, ""))) {
-          stand.uebersprungeneOrdner++;
+        if (istUebersprungenerOrdner(eintrag.name)) {
+          meldet(stand, voll, "systemordner");
+          continue;
+        }
+        if (eigenesVeto) {
+          meldet(stand, voll, "abgewaehlt");
+          continue;
+        }
+        if (ausgeschlossen.has(voll.replace(/[\\/]+$/, ""))) {
+          meldet(stand, voll, "ausgeschlossen");
           continue;
         }
         stapel.push({ pfad: voll, tiefe: tiefe + 1, wurzel });

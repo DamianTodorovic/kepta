@@ -210,3 +210,68 @@ describe("Der Nutzer darf eigene Ordner aussen vor lassen", () => {
     expect(nurMd.funde.map((f) => f.pfad)).toEqual([`${HEIM2}/a.md`]);
   });
 });
+
+// Nachtrag #73, 14.10.2026, gemessen am echten Heim: vier Ordner
+// `KEPTA-datensicherung-vor-*` liegen dort, je eine Kopie des Datenordners
+// (kepta.db, export/, profile.json, scan-config.json, endpoint.json). Ein
+// Erstlauf naehme 7.300 Dateien davon — 53,6 % dessen, was der Scan aufnimmt —
+// und darunter genau die Dateien, die scan.ts selbst als „sensible Metadaten"
+// fuehrt und verschluesselt ablegt. Der lebende Datenordner ist langleich
+// ausgeschlossen (scan.ts: ausgeschlossenePfade); eine KOpie davon war es nicht.
+describe("K3PTAs eigene Datenordner — auch als Kopie (#73)", () => {
+  const sicherung = baum({
+    [HEIM]: [ordner("Dokumente"), ordner("KEPTA-datensicherung-vor-3.2.1-2026-10-12")],
+    [`${HEIM}/Dokumente`]: [datei("Fristen.md", 900)],
+    [`${HEIM}/KEPTA-datensicherung-vor-3.2.1-2026-10-12`]: [
+      datei("kepta.db", 4_000_000), datei("profile.json", 700),
+      datei("scan-config.json", 300), ordner("export"), ordner("inbox"),
+    ],
+    [`${HEIM}/KEPTA-datensicherung-vor-3.2.1-2026-10-12/export`]: [datei("Mandatsakte.md", 1200)],
+    [`${HEIM}/KEPTA-datensicherung-vor-3.2.1-2026-10-12/inbox`]: [datei("Beleg.md", 400)],
+  });
+
+  it("betritt einen Ordner nicht, in dem die eigene Datenbank liegt", () => {
+    const s = scanneVollstaendig([HEIM], sicherung);
+    expect(s.funde.map((f) => f.pfad)).toEqual([`${HEIM}/Dokumente/Fristen.md`]);
+  });
+
+  it("zaehlt die Sicherung als uebersprungenen Ordner, nicht als Ablehnung", () => {
+    const s = scanneVollstaendig([HEIM], sicherung);
+    expect(s.uebersprungeneOrdner).toBeGreaterThanOrEqual(1);
+    // Kein einzelner Dateigrund darf die Sicherung melden — der Ordner geht zu,
+    // bevor eine seiner Dateien beurteilt wird.
+    expect(s.funde.some((f) => f.pfad.includes("datensicherung"))).toBe(false);
+  });
+
+  it("laesst einen echten Notizordner, der nur so heisst wie eine Sicherung", () => {
+    // Die Marke ist der Datenbank-Marker, nicht der Ordnername: ein Ordner
+    // `datensicherung-meine-notizen` ohne kepta.db enthaelt Wissen.
+    const harmlos = baum({
+      [HEIM]: [ordner("datensicherung-meine-notizen")],
+      [`${HEIM}/datensicherung-meine-notizen`]: [datei("Vertrag.md", 800)],
+    });
+    const s = scanneVollstaendig([HEIM], harmlos);
+    expect(s.funde.map((f) => f.pfad)).toEqual([`${HEIM}/datensicherung-meine-notizen/Vertrag.md`]);
+  });
+
+  it("betritt eine Sicherung auch dann nicht, wenn sie als eigene Wurzel genannt wird", () => {
+    // Ausdruecklich gewaehlte Wurzeln sind eine informierte Entscheidung —
+    // ausser sie tragen K3PTAs eigene Datenbank. Dann haelt sich der Nutzer fuer
+    // sein eigenes Gedaelchtnis eine zweite Kopie ins Gedaelchtnis.
+    const s = scanneVollstaendig([`${HEIM}/KEPTA-datensicherung-vor-3.2.1-2026-10-12`], sicherung);
+    expect(s.funde).toEqual([]);
+  });
+
+  it("laesst ein ausdruecklich gewaehltes Download-Ziel lesen — der Root ist keine Ordnerregel", () => {
+    // Der Gegenfall zur Ausschlussliste: `downloads` liegt jetzt drin, aber eine
+    // ausdruecklich gewaehlte Wurzel wird nach wie vor nicht an ihrem eigenen
+    // Namen gemessen. Sonst koennte niemand mehr gezielt seine Belege importieren.
+    const heim = baum({
+      [HEIM]: [ordner("Downloads")],
+      [`${HEIM}/Downloads`]: [datei("Rechnung-2026.md", 600)],
+    });
+    expect(scanneVollstaendig([`${HEIM}/Downloads`], heim).funde.map((f) => f.pfad))
+      .toEqual([`${HEIM}/Downloads/Rechnung-2026.md`]);
+    expect(scanneVollstaendig([HEIM], heim).funde).toEqual([]);
+  });
+});

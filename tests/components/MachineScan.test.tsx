@@ -17,6 +17,7 @@ const VORSCHAU = {
   skippedFolders: 4,
   skipped: [{ grund: "geheim", label: "Keys, passwords and credentials", anzahl: 6 }],
   byFolder: [{ ordner: "Dokumente", anzahl: 12 }],
+  ordnerGesamt: 1,
   sample: [{ path: "/Users/a/Dokumente/Fristen.md", bytes: 3000 }],
   totalBytes: 42000,
 };
@@ -128,6 +129,32 @@ describe("MachineScan: Vorschau und Abschluss", () => {
     expect(screen.getAllByText(/Dokumente/).length).toBeGreaterThan(0);
     expect(screen.getByText(/Keys, passwords and credentials/)).toBeTruthy();
     expect(screen.getByText("108")).toBeTruthy(); // 120 gesehen - 12 genommen
+  });
+
+  it("unterscheidet die Dateien, die durchfielen, von den Ordnern, die nie betreten wurden", async () => {
+    // Ein Ordner, den die Regel von vornherein nicht betritt, steht in keiner
+    // Datei-Zaehlung. „0 left out" ueber vier weggelassenen Ordnern war die Zahl,
+    // die im eigenen Bildbefund stand (1440 px, 14.10.).
+    const user = userEvent.setup();
+    oeffne();
+    await user.click(screen.getByRole("button", { name: /Show me what would be imported/i }));
+    await waitFor(() => expect(screen.getByText("108")).toBeTruthy());
+    expect(screen.getByText("not readable")).toBeTruthy();
+    expect(screen.queryByText(/^left out$/)).toBeNull();
+    expect(screen.getByText(/Left out — 4 folders not entered/i)).toBeTruthy();
+  });
+
+  it("sagt in der Fußzeile, was fehlt, statt einen toten Knopf zu zeigen", async () => {
+    // Die beiden Haken stehen in der Liste — bei 1440×900 hinter der Faltkante.
+    // Der Knopf unten ist dann grau, und der Mensch sieht keinen Grund.
+    const user = userEvent.setup();
+    oeffne();
+    await user.click(screen.getByRole("button", { name: /Show me what would be imported/i }));
+    await screen.findByRole("button", { name: /Import 12 documents/i });
+    expect(screen.getByText(/Tick the two points in the list to enable the import/i)).toBeTruthy();
+
+    for (const h of screen.getAllByRole("checkbox")) await user.click(h);
+    await waitFor(() => expect(screen.getByText(/Local only\. No cloud, no account/i)).toBeTruthy());
   });
 
   it("warnt, wenn mehr da ist als ein Durchlauf schafft", async () => {
@@ -296,6 +323,119 @@ describe("Der Nutzer bestimmt, was und von wo gelesen wird", () => {
     vi.stubGlobal("fetch", vi.fn(async () => new Response("{}", { status: 200 })));
     render(<MachineScan open onClose={() => {}} />);
     expect(await screen.findByText(/What you should know before you agree/i)).toBeTruthy();
+  });
+});
+
+describe("Die Vorschau darf wirken, nicht nur informieren (#73)", () => {
+  // Bis hierhin war die Herkunftsliste eine Auskunft: wer sah, dass ein
+  // Kunden-Shop-Theme die Haelfte fuellt, musste den Dialog schliessen und drei
+  // Worte in ein Regelfeld tippen. Auf einem echten Heim sind 17 oberste Ordner
+  // (gemessen 14.10.), die Liste zeigt zwanzig — und was nicht da steht, war
+  // auch nicht wegzulassen.
+  function mitZaehler(zusatz: Record<string, unknown> = {}) {
+    const gesendet: { url: string; body: unknown }[] = [];
+    let vorschauZaehler = 0;
+    vi.stubGlobal("fetch", vi.fn(async (url: string, o?: RequestInit) => {
+      const u = String(url);
+      if (u.includes("/api/scan/preview")) {
+        vorschauZaehler++;
+        return new Response(JSON.stringify({ ...VORSCHAU, ...zusatz, found: vorschauZaehler === 1 ? 12 : 3 }), { status: 200 });
+      }
+      if (u.includes("/api/scan/config")) {
+        gesendet.push({ url: u, body: o?.body ? JSON.parse(String(o.body)) : null });
+        return new Response(JSON.stringify({ ok: true }), { status: 200 });
+      }
+      return new Response("{}", { status: 200 });
+    }));
+    return { gesendet, vorschau: () => vorschauZaehler };
+  }
+
+  it("laesst einen Ordner per Klick weg und sieht danach eine kleinere Zahl", async () => {
+    const user = userEvent.setup();
+    const { gesendet, vorschau } = mitZaehler();
+    render(<MachineScan open onClose={() => {}} />);
+    await user.click(screen.getByRole("button", { name: /Show me what would be imported/i }));
+    await user.click(await screen.findByRole("button", { name: /Leave Dokumente out of the scan/i }));
+
+    await waitFor(() => expect(gesendet.length).toBeGreaterThan(0));
+    const body = gesendet[0].body as { zusaetzlichAusgelassen: string[] };
+    expect(body.zusaetzlichAusgelassen).toEqual(["Dokumente"]);
+    await waitFor(() => expect(vorschau()).toBe(2), { timeout: 4000 });
+    // Die neue Zahl ist die Antwort, nicht die alte: 12 -> 3.
+    await waitFor(() => expect(screen.getByRole("button", { name: /Import 3 documents/i })).toBeTruthy(), { timeout: 4000 });
+  });
+
+  it("zeigt, dass die Liste nicht alles ist", async () => {
+    const user = userEvent.setup();
+    vi.unstubAllGlobals();
+    mitZaehler({ ordnerGesamt: 17 });
+    render(<MachineScan open onClose={() => {}} />);
+    await user.click(screen.getByRole("button", { name: /Show me what would be imported/i }));
+    await waitFor(() => expect(screen.getByText(/1 of 17 folders shown/i)).toBeTruthy());
+  });
+
+  it("nimmt einen eigenen Ausschluss zurueck, ohne das Regelfeld zu suchen", async () => {
+    const user = userEvent.setup();
+    const { gesendet } = mitZaehler();
+    // Der Nutzer hat "angelshop" schon ausgeschlossen; die Fläche zeigt ihn und
+    // laesst ihn wieder fallen.
+    render(<MachineScan open onClose={() => {}} />);
+    await user.click(screen.getByRole("button", { name: /Show me what would be imported/i }));
+    await screen.findByRole("button", { name: /Leave Dokumente out of the scan/i });
+    await user.click(screen.getByRole("button", { name: /Leave Dokumente out of the scan/i }));
+    await waitFor(() => expect(screen.getByRole("button", { name: /Include Dokumente again/i })).toBeTruthy());
+    // Der sichtbare Name bleibt der Ordner, der Zug ist die Erklaerung.
+    expect(screen.getByRole("button", { name: /Include Dokumente again/i }).textContent).toBe("Dokumente ×");
+    await user.click(screen.getByRole("button", { name: /Include Dokumente again/i }));
+    const letzte = gesendet[gesendet.length - 1].body as { zusaetzlichAusgelassen: string[] };
+    expect(letzte.zusaetzlichAusgelassen).toEqual([]);
+  });
+
+  it("macht aus einem Korb ohne Ordner keinen wirkungslosen Knopf", async () => {
+    const user = userEvent.setup();
+    vi.unstubAllGlobals();
+    mitZaehler({ byFolder: [{ ordner: "(top level)", anzahl: 4 }] });
+    render(<MachineScan open onClose={() => {}} />);
+    await user.click(screen.getByRole("button", { name: /Show me what would be imported/i }));
+    await screen.findByTestId("vorschau-ordner-ohne-wirkung");
+    expect(screen.queryByRole("button", { name: /Leave \(top level\) out/i })).toBeNull();
+  });
+});
+
+describe("Der Erststart nimmt ihr die erste Frage ab (#73)", () => {
+  // Hat jemand im Assistenten "ja, sieh den Rechner durch" angekreuzt, oeffnet
+  // die App diesen Dialog von selbst — mit autoPreview. Dann darf er nicht auf
+  // einen Knopf warten: die Frage war schon beantwortet, was jetzt fehlt, sind
+  // Zahlen. Ohne diesen Fall oeffnet sich der Dialog, zeigt einen Knopf und
+  // niemand drueckt ihn.
+  it("holt die Vorschau selbst, ohne dass jemand klicken muss", async () => {
+    const aufrufe: string[] = [];
+    vi.unstubAllGlobals();
+    vi.stubGlobal("fetch", vi.fn(async (url: string) => {
+      aufrufe.push(String(url));
+      if (String(url).includes("/api/scan/preview")) return new Response(JSON.stringify(VORSCHAU), { status: 200 });
+      return new Response("{}", { status: 200 });
+    }));
+    render(<MachineScan open onClose={() => {}} autoPreview />);
+    await waitFor(() => expect(aufrufe.some((u) => u.includes("/api/scan/preview"))).toBe(true), { timeout: 4000 });
+    await waitFor(() => expect(screen.getByRole("button", { name: /Import 12 documents/i })).toBeTruthy(), { timeout: 4000 });
+    expect(screen.queryByRole("button", { name: /Show me what would be imported/i })).toBeNull();
+  });
+
+  it("eroeffnet die Zahlen nicht zweimal, wenn der Schirm zweimal malt", async () => {
+    const aufrufe: string[] = [];
+    vi.unstubAllGlobals();
+    vi.stubGlobal("fetch", vi.fn(async (url: string) => {
+      aufrufe.push(String(url));
+      if (String(url).includes("/api/scan/preview")) return new Response(JSON.stringify(VORSCHAU), { status: 200 });
+      return new Response("{}", { status: 200 });
+    }));
+    const { rerender } = render(<MachineScan open onClose={() => {}} autoPreview />);
+    await waitFor(() => expect(aufrufe.filter((u) => u.includes("/api/scan/preview"))).toHaveLength(1), { timeout: 4000 });
+    rerender(<MachineScan open onClose={() => {}} autoPreview />);
+    rerender(<MachineScan open onClose={() => {}} autoPreview />);
+    await new Promise((r) => setTimeout(r, 120));
+    expect(aufrufe.filter((u) => u.includes("/api/scan/preview")).length, "ein Heimlauf pro Malen, nicht einer pro Rendern").toBe(1);
   });
 });
 

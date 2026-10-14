@@ -6,6 +6,7 @@ import { motion } from 'motion/react';
 import { Brain } from "../lib/icons";
 import { Hash, Clock, Zap, FileText, ExternalLink, Lock } from "../lib/icons";
 import { inhaltOhneQuelle, oeffneQuelle, parseChunkTitel, parseQuelle } from '../lib/quelle';
+import { gruppenVonNotiz, THEMA_HINWEISE, THEMA_LABELS, TRAEGER_HINWEISE, TRAEGER_LABELS } from '../lib/graphHierarchy';
 import { useToast } from './ui/Toast';
 
 interface MemoryCardProps {
@@ -21,13 +22,17 @@ interface MemoryCardProps {
   herkunft?: { bm25: number | null; vektor: number | null; graph: number | null };
 }
 
+/**
+ * Die vier Rechen-Arten: sie liefern Icon und Farbe (Token `--type-*`, hält E1).
+ * Ihr NAME steht hier nicht mehr auf der Karte — was der Nutzer liest, ist der
+ * Traeger aus Zeile 1 ("Notes · Files · Code"), siehe unten.
+ */
 const TYPE_META: Record<string, { label: string; icon: React.ComponentType<{ className?: string; style?: React.CSSProperties; weight?: IconWeight }> }> = {
   semantic: { label: 'Fact', icon: Brain },
   episodic: { label: 'Event', icon: Clock },
   reference: { label: 'Document', icon: FileText },
   procedural: { label: 'How-to', icon: Zap },
 };
-
 export const MemoryCard = memo(function MemoryCard({ memory, onClick, score, matchedTerms, herkunft }: MemoryCardProps) {
   const toast = useToast();
   const pct = typeof score === "number" ? Math.round(score * 100) : null;
@@ -35,9 +40,12 @@ export const MemoryCard = memo(function MemoryCard({ memory, onClick, score, mat
   const expired = memory.validTo != null && memory.validTo < now;
   const superseded = !!memory.supersededBy;
   const meta = memory.type ? TYPE_META[memory.type] : undefined;
-  const typeLabel = meta?.label ?? null;
   const TypeIcon = meta?.icon;
   const typeColor = memory.type ? `var(--type-${memory.type})` : null;
+  // Zeile 1 und 2 — was der Nutzer auf der Karte liest. Ein Lauf durch dieselben
+  // Regeln wie in den Tests; Traeger und Themen sind ableitbar, nicht gespeichert.
+  const gruppe = gruppenVonNotiz(memory);
+  const traegerEtikett = TRAEGER_LABELS[gruppe.traeger];
   // Woher die Notiz stammt und ob sie Teil eines mehrteiligen Imports ist —
   // beides steht in Titel/Content (Konvention der Import-Wege).
   const quelle = parseQuelle(memory);
@@ -59,10 +67,10 @@ export const MemoryCard = memo(function MemoryCard({ memory, onClick, score, mat
         />
       )}
 
-      {/* Typ-Standarte: Glyph + Name in der Farbe des Wissensorts */}
-      <span className="row-type" style={{ color: typeColor ?? 'var(--text-2)' }}>
+      {/* Standarte: Glyph und Farbe aus der Rechen-Art, Wort aus Zeile 1 */}
+      <span className="row-type" style={{ color: typeColor ?? 'var(--text-2)' }} title={TRAEGER_HINWEISE[gruppe.traeger]}>
         {TypeIcon && <TypeIcon className="w-3.5 h-3.5 shrink-0" weight="duotone" />}
-        <span className="row-type-label">{typeLabel}</span>
+        <span className="row-type-label">{traegerEtikett}</span>
       </span>
 
       {/* Die Akte selbst: Titel in Serif, darunter der bereinigte Text */}
@@ -70,6 +78,19 @@ export const MemoryCard = memo(function MemoryCard({ memory, onClick, score, mat
         <h3>{memory.title || 'Untitled'}</h3>
         <p>{lesetext || memory.content}</p>
         <div className="row-body-foot">
+          {/* Zeile 2 — kombinierbare Themen, in Code keine. Maximal drei genannt,
+              damit die Fusszeile bei 390 px nicht umbricht und der Quellknopf
+              nicht von der Karte rutscht. */}
+          {gruppe.themen.length > 0 && (
+            <span className="row-quiet inline-flex items-center gap-1 min-w-0">
+              {gruppe.themen.slice(0, 3).map((t) => (
+                <span key={t} className="shrink-0" style={{ color: 'var(--text-2)' }} title={THEMA_HINWEISE[t]}>
+                  {THEMA_LABELS[t]}
+                </span>
+              )).reduce<React.ReactNode[]>((acc, el, i) => (i ? [...acc, <span key={`t${i}`}>·</span>, el] : [el]), [])}
+              {gruppe.themen.length > 3 && <span>+{gruppe.themen.length - 3}</span>}
+            </span>
+          )}
           {herkunft && (herkunft.bm25 !== null || herkunft.vektor !== null || herkunft.graph !== null) && (
             <span className="row-quiet inline-flex items-center gap-1 tnum" title="Where the search found this note — the position in each retrieval track (BM25, vectors, knowledge graph). null means that track did not see it.">
               <span>Found via</span>

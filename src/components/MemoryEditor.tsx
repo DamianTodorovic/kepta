@@ -5,16 +5,19 @@ import { formatDistanceToNow } from 'date-fns';
 import { Brain } from "../lib/icons";
 import { X, Save, Trash2, Hash, Clock, Zap, Lock } from "../lib/icons";
 import { KeptaMark } from './KeptaMark';
+import { gruppenVonNotiz, THEMA_LABELS, TRAEGER_LABELS } from '../lib/graphHierarchy';
 
 type MemoryKind = 'semantic' | 'episodic' | 'procedural' | 'reference';
 
 const KINDS: { key: MemoryKind; label: string; hint: string }[] = [
-  { key: 'semantic', label: 'Fact', hint: 'Facts & connections' },
-  { key: 'episodic', label: 'Event', hint: 'Events & conversations' },
-  { key: 'procedural', label: 'How-to', hint: 'Procedures & processes' },
+  // Die Tipps erklaeren in Alltagssprache, was hier gehoert — sie duerfen das
+  // Wort nicht selbst wiederholen. „Fact — Facts & connections" erklaert nichts.
+  { key: 'semantic', label: 'Fact', hint: 'Something that is simply true — a definition, a number, a decision you made' },
+  { key: 'episodic', label: 'Event', hint: 'Something that happened at a time — a meeting, a call, a date' },
+  { key: 'procedural', label: 'How-to', hint: 'How something is done — steps, a setup, a checklist' },
   // Vierte Art, weil die drei anderen jedes uebernommene Dokument zum "Fakt"
   // machten: an einem echten Bestand 2320 von 2421 Notizen.
-  { key: 'reference', label: 'Document', hint: 'Imported files & documents' },
+  { key: 'reference', label: 'Document', hint: 'A paper you keep — a contract, an invoice, a file from your folders' },
 ];
 
 function toLocalDateInput(ts: number | null | undefined): string {
@@ -75,6 +78,13 @@ export function MemoryEditor({ memory, onSave, onClose, onDelete }: MemoryEditor
     validFrom !== toLocalDateInput(memory?.validFrom) ||
     validTo !== toLocalDateInput(memory?.validTo) ||
     privat !== (memory?.scope === 'private');
+
+  /**
+   * Wo diese Notiz landet — live aus dem getippten Text, mit dem Grund der
+   * Regel. Dieselbe Rechnung wie auf der Karte und im Filter, damit der
+   * Nutzer nicht zwei Antworten auf „wo ist das?" bekommt.
+   */
+  const ablage = gruppenVonNotiz({ title, content, tags });
   useEffect(() => {
     if (!dirty) return;
     const warn = (e: BeforeUnloadEvent) => {
@@ -217,6 +227,22 @@ export function MemoryEditor({ memory, onSave, onClose, onDelete }: MemoryEditor
                 style={{ color: 'var(--text-1)' }}
                 autoFocus
               />
+            </div>
+
+            {/* Zeile 1 und 2 — was die Regeln aus dem Text machen, solange er
+                getippt wird. Read-only: der Nutzer waehlt den Inhalt, die
+                Ablage folgt daraus. */}
+            <div className="flex flex-wrap items-center gap-1.5 mb-3" aria-label="Filed under">
+              <span className="hud-label shrink-0">Filed under</span>
+              <span className="row-quiet" title={ablage.grund}>{TRAEGER_LABELS[ablage.traeger]}</span>
+              {ablage.themen.map((t) => (
+                <span key={t} className="row-quiet" title="A topic word in this text points here">{THEMA_LABELS[t]}</span>
+              ))}
+              {ablage.themen.length === 0 && (
+                <span className="text-xs" style={{ color: 'var(--text-3)' }}>
+                  {ablage.traeger === 'code' ? 'code is never sorted by topic' : 'no topic word in this text yet'}
+                </span>
+              )}
             </div>
 
             {/* Memory-Typ: segmented control */}

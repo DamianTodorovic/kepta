@@ -46,7 +46,35 @@ export const UEBERSPRUNGENE_ORDNER: readonly string[] = [
   // Browserprofile enthalten Sitzungen und Verlaeufe
   "chrome", "chromium", "firefox", ".mozilla", "safari", "edge", "brave",
   ".thunderbird", "mail",
+  // Transit und Medien (#73, gemessen am echten Heim, 14.10.2026): ein einziger
+  // heruntergeladener Projektordner brachte 16 Dateien ein, ein Videoschnitt-
+  // Programm 50 JSON-Projektdateien. Diese Ordner sind Durchgang, kein Bestand.
+  // Eine ausdruecklich gewaehlte Wurzel bleibt davon unberuehrt — wer seine
+  // Belege aus ~/Downloads holen will, kann ~/Downloads als Ziel angeben.
+  "downloads", "movies", "pictures", "music",
 ];
+
+/**
+ * Die Marke, an der ein Ordner als K3PTAs eigener Datenordner zu erkennen ist.
+ *
+ * Nicht am Ordnernamen — Sicherungskopien heißen wie ihr Besitzer sie tauft
+ * (`KEPTA-datensicherung-vor-3.2.1-2026-10-12`, `mein-archiv`, was auch immer).
+ * Am Dateinamen der Datenbank erkennt der Scan jede Kopie seines eigenen
+ * Bestands. Gemessen am echten Heim 14.10.: 7.300 von 13.616 Dateien eines
+ * Erstlaufs (53,6 %) kamen aus vier solchen Kopien, darunter `profile.json`,
+ * `scan-config.json` und `endpoint.json` — genau die Dateien, die der Server
+ * verschluesselt ablegt und im Quelltext als „sensible Metadaten" fuehrt.
+ *
+ * Der Name steht in src/core/store.ts (defaultDbPath); eine Wache in
+ * tests/scan/regeln.test.ts vergleicht beide, damit eine Umbenennung hier nicht
+ * still gueltig bleibt.
+ */
+export const DATENBANK_MARKE = "kepta.db";
+
+/** Traegt dieser Ordner (seine Eintragliste) K3PTAs eigene Datenbank? */
+export function istKeptaDatenordner(eintraege: readonly { name: string; istOrdner: boolean }[]): boolean {
+  return eintraege.some((e) => !e.istOrdner && e.name.toLowerCase() === DATENBANK_MARKE);
+}
 
 /**
  * Dateinamen und Endungen, die nie geoeffnet werden. Die Muster greifen auf dem

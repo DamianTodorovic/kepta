@@ -8,6 +8,7 @@ import {
   grundLabel,
   teileUnterWurzel,
   MAX_DATEI_BYTES,
+  DATENBANK_MARKE,
   GEHEIME_ORDNER,
   LESBARE_ENDUNGEN,
 } from "../../src/scan/regeln";
@@ -212,5 +213,47 @@ describe("Was der Nutzer einstellen darf — und was nicht", () => {
     expect(istLesbaresFormat("a.md", [".md"])).toBe(true);
     expect(istLesbaresFormat("a.txt", [".md"])).toBe(false);
     expect(istLesbaresFormat("ohnepunkt", [".md"])).toBe(false);
+  });
+});
+
+// Nachtrag #73, 14.10.2026, gemessen am echten Heim (e3-code/vorher-heimwalk.mts,
+// 32.329 Dateien, 782 ms): coverage, node_modules, dist, build und .cache greifen
+// bereits — null Funden. Was weiter eingesammelt wird, sind der Download-Ordner
+// (16 Dateien), die Medienordner (Movies/CapCut 50) und K3PTAs eigene
+// Sicherungskopien (7.300 Dateien, 53,6 % eines Erstlaufs).
+describe("Ballast-Ordner bleiben draussen (#73)", () => {
+  it.each(["Downloads", "Movies", "Pictures", "Music"])("betritt %s nicht", (ordner) => {
+    expect(istUebersprungenerOrdner(ordner)).toBe(true);
+  });
+
+  it("lehnt eine Datei unterhalb des Download-Ordners ab, weil dort Transit liegt", () => {
+    expect(beurteileDatei("/Users/a/Downloads/ephemora-cell-main/README.md", 400, "/Users/a"))
+      .toEqual({ aufnehmen: false, grund: "systemordner" });
+  });
+
+  it("lehnt Projektdateien aus einer Video-App ab — CapCut schreibt JSON-Projekte", () => {
+    expect(beurteileDatei("/Users/a/Movies/CapCut/Projects/draft.json", 900, "/Users/a"))
+      .toEqual({ aufnehmen: false, grund: "systemordner" });
+  });
+
+  it("erklaert der Oberflaeche, warum — der Grund heisst Systemordner, nicht geheim", () => {
+    expect(grundLabel("systemordner")).toMatch(/folder|Ordner|build/i);
+  });
+
+  it("nennt dieselbe Datenbank-Marke, die der Kern anlegt (Wache gegen Umbenennung)", () => {
+    // Die Marke ist der Erkennungspunkt des Walkers. Wer sie in src/core/store.ts
+    // umbenennt und hier vergisst, schaltet die Sicherungs-Ausschaltung stumm ab.
+    const quelle = require("node:fs").readFileSync("src/core/store.ts", "utf-8");
+    expect(quelle).toMatch(/defaultDataDir\(\),\s*"kepta\.db"/);
+    expect(DATENBANK_MARKE).toBe("kepta.db");
+  });
+
+  it("laesst einen Ordner, der nur SO HEISST wie ein Ballast-Ordner, in Ruhe", () => {
+    // "downloads" ist ein Ausschluss auf Ordnernamen, nicht auf Worthuelen:
+    // eine Notiz in `Downloads von 2019/` (andere Schreibweise) oder ein Ordner
+    // `music-theory-notes` darf nicht verschwinden, weil zwei Buchstaben treffen.
+    expect(istUebersprungenerOrdner("music-theory-notes")).toBe(false);
+    expect(istUebersprungenerOrdner("Downloads 2019")).toBe(false);
+    expect(beurteileDatei("/Users/a/Musik/Theorie.md", 300, "/Users/a").aufnehmen).toBe(true);
   });
 });

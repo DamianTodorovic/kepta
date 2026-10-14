@@ -318,8 +318,8 @@ export function OnboardingWizard({ open, onClose, onComplete }: Props) {
                 <span className="text-xs leading-relaxed" style={{color:'var(--text-2)'}}>
                   <strong style={{color:'var(--text-1)'}}>Also look through this computer for documents.</strong>{' '}
                   K3PTA can read the documents in your home folder and turn them into notes — everything stays on this
-                  machine. Keys, passwords, credentials and browser data are never read. You will see exactly what would
-                  be imported and can still say no.
+                  machine. Keys, passwords, credentials and browser data are never read. Before anything is saved you
+                  see the folders it would take and how many documents each holds, and you can leave any of them out.
                 </span>
               </label>
               <div className="hud-inset rounded-xl p-3 flex gap-3">

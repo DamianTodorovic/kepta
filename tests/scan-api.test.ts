@@ -49,6 +49,17 @@ beforeEach(async () => {
   schreibe("Projekt/node_modules/pkg/README.md", "fremde Bibliothek");
   schreibe("Projekt/passwords.md", "hunter2");
   schreibe("Bilder/foto.png", "binaerkram");
+  // Ballast #73, so wie er auf einem echten Rechner liegt (gemessen 14.10.:
+  // vier `KEPTA-datensicherung-vor-*`-Ordner, 53,6 % eines Erstlaufs):
+  // eine Kopie des eigenen Datenordners — und damit die Dateien, die der Server
+  // verschluesselt ablegt und selbst „sensible Metadaten" nennt.
+  schreibe("KEPTA-datensicherung-vor-3.2.0/kepta.db", "binar, nicht lesbar");
+  schreibe("KEPTA-datensicherung-vor-3.2.0/export/Mandatsakte.md", "Eine exportierte Notiz aus der Sicherung.");
+  schreibe("KEPTA-datensicherung-vor-3.2.0/scan-config.json", '{"roots":["/Users/a/Dokumente"]}');
+  schreibe("KEPTA-datensicherung-vor-3.2.0/profile.json", '{"displayName":"Damian","goal":"..."}');
+  // Transit und Medien.
+  schreibe("Downloads/Rechnung-2026.md", "Rechnung ueber 400 Euro, faellig am 12.");
+  schreibe("Movies/CapCut/Projects/draft.json", '{"composition":1}');
 
   vi.resetModules();
   ({ createApp } = await import("../server"));
@@ -111,6 +122,64 @@ describe("POST /api/scan/preview", () => {
     const ordner = (res.body.byFolder as { ordner: string; anzahl: number }[]);
     expect(ordner.find((o) => o.ordner === "Dokumente")?.anzahl).toBe(2);
     expect(ordner.find((o) => o.ordner === "(top level)")?.anzahl).toBe(1);
+  });
+
+  it("nennt die Ordner, die es gar nicht erst betreten hat — nicht nur ihre Zahl", async () => {
+    // „left out: 3 folders" ist eine Zahl ohne Auskunft. Der Nutzer soll sehen,
+    // WELCHER Ordner draußen blieb, sonst merkt er nicht, dass sein eines
+    // Wunschziel zufällig mit einem Ballast-Namen zusammenfällt.
+    const res = await request(app).post("/api/scan/preview").send({});
+    expect(res.status, `${res.status} · ${res.text.slice(0, 200)}`).toBe(200);
+    const namen = (res.body.leftOutFolders as { ordner: string; grund: string }[]).map((f) => f.ordner);
+    expect(namen).toContain("Downloads");
+    expect(namen).toContain("Movies");
+    expect(namen).toContain("KEPTA-datensicherung-vor-3.2.0");
+    expect(namen).toContain("node_modules");
+    const grund = (o: string) => (res.body.leftOutFolders as { ordner: string; grund: string }[])
+      .find((f) => f.ordner === o)?.grund;
+    // Der Grund unterscheidet die harte Liste vom eigenen Veto.
+    expect(grund("KEPTA-datensicherung-vor-3.2.0"), "die Sicherung muss als eigene Datei erkannt werden").toBe("eigene-daten");
+    expect(grund("Downloads"), "Downloads bleibt ein Regel-Ausschluss").toBe("systemordner");
+    // Ein Ordner, der nur so heißt wie eine Sicherung, steht nicht auf der Liste.
+    expect(namen).not.toContain("datensicherung-meine-notizen");
+  });
+
+  it("zaehlt auch, wie viele oberste Ordner es gibt — nicht nur die zwolf", async () => {
+    // Die Vorschau zeigt eine Liste mit Kuppe; ohne die Gesamtzahl ist „das sind
+    // alle" eine Behauptung, die der Antwort nicht anzusehen ist.
+    const res = await request(app).post("/api/scan/preview").send({});
+    expect(res.status, `${res.status} · ${res.text.slice(0, 200)}`).toBe(200);
+    expect(typeof res.body.ordnerGesamt).toBe("number");
+    expect(res.body.ordnerGesamt).toBeGreaterThanOrEqual((res.body.byFolder as unknown[]).length);
+  });
+
+  it("nimmt seine eigene Datensicherung nicht auf — auch nicht die Config darin", async () => {
+    const res = await request(app).post("/api/scan/preview").send({});
+    expect(res.status, `${res.status} · ${res.text.slice(0, 200)}`).toBe(200);
+    const pfade = (res.body.sample as { path: string }[]).map((s) => s.path);
+    expect(pfade.some((p) => p.includes("datensicherung"))).toBe(false);
+    // Die drei Dateien, die der Server verschluesselt ablegt, duerfen nie als
+    // Notiz enden: was in der Wissensbasis steht, lesen angeschlossene Agenten.
+    expect(pfade.some((p) => /profile\.json|scan-config\.json|endpoint\.json$/.test(p))).toBe(false);
+    expect(res.body.found).toBe(3);
+    expect(res.body.skippedFolders).toBeGreaterThan(0);
+  });
+
+  it("laesst Downloads und Medienordner weg, wenn das ganze Heim laeuft", async () => {
+    const res = await request(app).post("/api/scan/preview").send({});
+    expect(res.status, `${res.status} · ${res.text.slice(0, 200)}`).toBe(200);
+    const pfade = (res.body.sample as { path: string }[]).map((s) => s.path);
+    expect(pfade.some((p) => /\/Downloads\//.test(p))).toBe(false);
+    expect(pfade.some((p) => /\/Movies\//.test(p))).toBe(false);
+  });
+
+  it("laesst ein ausdruecklich gewaehltes Download-Ziel lesen", async () => {
+    // Der Gegenfall: die Liste schliesst das Heim-Wandern aus, nicht die
+    // Entscheidung des Nutzers. Wer ~/Downloads als Wurzel nennt, bekommt sie.
+    const res = await request(app).post("/api/scan/preview").send({ roots: [path.join(heim, "Downloads")] });
+    expect(res.status, `${res.status} · ${res.text.slice(0, 200)}`).toBe(200);
+    expect(res.body.found).toBe(1);
+    expect((res.body.sample as { path: string }[])[0].path).toContain("Rechnung-2026.md");
   });
 
   it("laesst sich nicht auf fremde Verzeichnisse richten", async () => {

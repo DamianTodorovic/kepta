@@ -153,6 +153,131 @@ export function klassifiziere(eingabe: ZuOrdnendes): Zuordnung {
   return { typ: "semantic", grund: "formulierter Text ohne Ablauf oder Datum" };
 }
 
+// ---------------------------------------------------------------------------
+// NEUN WOERTER IN ZWEI ZEILEN — die Menschenschicht ueber den vier Arten.
+//
+// Die vier inneren Arten oben bleiben das Rechenwerk: kein Schema-Umbau, kein
+// MCP-Enum, keine Umschulung. Was hier dazukommt, sind zwei Achsen, die ein
+// Mensch versteht — Vorgabe: WA-GRUPPEN-VORSCHLAG-2026-10-14.md, Abschnitt 5.
+//
+//   Zeile 1 (woher)  notes | files | code   — erschoepfend, ohne Ueberschneidung
+//   Zeile 2 (worum)  six kombinierbare Filter, die NUR in notes und files greifen
+//
+// Die Code-Sperre ist kein Detail, sondern die Abnahme: wurden die Themen ueber
+// Code losgelassen, blaht sich Files auf 52,7 % und Events auf 25,8 % — dieselbe
+// Faelschung, an der ein Money-Korb mit 2.970 Treffern und 13 eigenen gestorben
+// ist. Darum prueft `themen()` den Traeger selbst und nicht nur der Aufrufer.
+// ---------------------------------------------------------------------------
+
+export type Traeger = "notes" | "files" | "code";
+export type Thema = "people" | "projects" | "events" | "tasks" | "guides" | "links";
+
+/** Programme, Schemas, Configs. */
+const CODE_ENDUNGEN = new Set([
+  "ts", "tsx", "js", "jsx", "py", "sql", "sh", "yml", "yaml", "toml", "ini",
+  "env", "json", "css", "rs", "go", "java", "lock",
+]);
+
+/** Dokumente — Papiere, die man liest, nicht Code, den man ausführt. */
+const DOKUMENT_ENDUNGEN = new Set([
+  "md", "txt", "pdf", "docx", "xlsx", "csv", "html", "eml", "log", "rtf",
+]);
+
+/**
+ * Der echte Quellpfad. Er steht in den Daten, weil der Scan ihn anhaengt —
+ * und er entscheidet vor jedem Etikett: ein Schema bleibt Code, auch wenn es
+ * als Markdown daliegt. Im echten Bestand sind das 1.420 Notizen (9,7 %).
+ */
+export function quellpfad(eingabe: ZuOrdnendes): string {
+  const direkt = (eingabe.quelle ?? "").trim();
+  if (direkt) return direkt;
+  const imText = /Source:\s*([^\n]+)/u.exec(eingabe.content ?? "");
+  return imText ? imText[1].trim() : "";
+}
+
+/** Die Endung eines Pfades, klein und ohne Punkt; "" wenn keine. */
+function endung(pfad: string): string {
+  const m = /\.([A-Za-z0-9]+)$/u.exec(pfad);
+  return m ? m[1].toLowerCase() : "";
+}
+
+/** Letzte Zuflucht: kein Pfad, keine Endungs-Marke — wie sieht es aus? */
+function siehtNachCodeAus(inhalt: string): boolean {
+  return /^\s*(export |import |function |const |let |interface |type |\w+\s*\([^)]*\)\s*\{|\/\/|#include|SELECT |UPDATE |INSERT |\{[\s\S]*":)/u.test(inhalt)
+    || /^\s*[{[][\s\S]*["'][\s\S]*["'][,}\]]/u.test(inhalt.trim());
+}
+
+/**
+ * Zeile 1 — woher das Stück kam. Reihenfolge ist Absicht: echter Quellpfad,
+ * dann die Endungs-Marke im Tag (der Scan schreibt sie), dann das Aussehen.
+ */
+export function traeger(eingabe: ZuOrdnendes): { traeger: Traeger; grund: string } {
+  const tags = (eingabe.tags ?? []).map((t) => t.toLowerCase());
+  if (!tags.includes("machine-scan")) {
+    return { traeger: "notes", grund: "selbst getippt, keine Datei dahinter" };
+  }
+  const pfad = quellpfad(eingabe);
+  const e = endung(pfad);
+  if (e) {
+    if (CODE_ENDUNGEN.has(e)) return { traeger: "code", grund: `Quelldatei .${e}` };
+    if (DOKUMENT_ENDUNGEN.has(e)) return { traeger: "files", grund: `Quelldatei .${e}` };
+    return { traeger: "files", grund: `übernommen aus .${e}` };
+  }
+  for (const t of tags) {
+    if (CODE_ENDUNGEN.has(t)) return { traeger: "code", grund: `Endungs-Marke im Tag: .${t}` };
+    if (DOKUMENT_ENDUNGEN.has(t)) return { traeger: "files", grund: `Endungs-Marke im Tag: .${t}` };
+  }
+  if (siehtNachCodeAus(eingabe.content ?? "")) return { traeger: "code", grund: "Aussehen: Programmtext, kein Pfad bekannt" };
+  return { traeger: "files", grund: "übernommenes Dokument, kein Pfad bekannt" };
+}
+
+/**
+ * Zeile 2 — worum es geht. Kombinierbar, keine Zuordnung: ein gescanntes PDF
+ * über einen Kunden ist People UND Projects UND vielleicht Events.
+ *
+ * Die Funktion prüft den Traeger selbst. Ein Aufrufer, der sie vergisst, kann
+ * die Fälschung nicht bauen.
+ */
+const THEMA_MUSTER: [Thema, RegExp][] = [
+  ["people", /\b(herr|frau|mr\.|mrs\.|kolleg|kunde|kundin|geburtstag|telefon|\+4[19]|e-mail:|mail:|kontakt|millers?)\b/iu],
+  ["projects", /\b(projekt|mandant|kanzlei|auftrag|angelshop|freqtrade|kepta|k3pta|sprint|release|repo|feature|theme|shop)\b/iu],
+  ["events", /\b(20\d\d-\d\d-\d\d|\d{1,2}\.\d{1,2}\.\d{2,4}|meeting|termin|getroffen|passierte|geschah|gestern|letzte woche)\b/iu],
+  ["tasks", /\b(todo|to-do|offene punkte|muss noch|erledigen|fällig|frist|deadline|action item|zu tun|nächste schritte|next steps)\b/iu],
+  ["guides", /\b(anleitung|how[- ]?to|vorgehen|rezept|workflow|checkliste|so geht|setup|installation|schritt \d|step \d)\b/iu],
+  ["links", /\b(https?:\/\/|www\.|arxiv|github|quelle:|link zur)\b/iu],
+];
+
+export function themen(eingabe: ZuOrdnendes): Thema[] {
+  if (traeger(eingabe).traeger === "code") return [];
+  return themenAusText(`${eingabe.title ?? ""}\n${eingabe.content ?? ""}`);
+}
+
+/** Der eigentliche Abgleich — ohne Traeger-Pruefung, fuer Aufrufer, die sie schon haben. */
+function themenAusText(text: string): Thema[] {
+  return THEMA_MUSTER.filter(([, muster]) => muster.test(text)).map(([name]) => name);
+}
+
+export interface Gruppe {
+  traeger: Traeger;
+  grund: string;
+  themen: Thema[];
+}
+
+/**
+ * Beides auf einen Ruf — das ist, was die Fläche zeichnet. Der Traeger wird
+ * hier EINMAL gerechnet: ein Lauf ueber 14.702 Notizen kostet so 191 ms statt
+ * 358 ms (gemessen 16:2x, derselbe Bestand, dieselbe Maschine).
+ */
+export function gruppen(eingabe: ZuOrdnendes): Gruppe {
+  const t = traeger(eingabe);
+  return {
+    traeger: t.traeger,
+    grund: t.grund,
+    themen: t.traeger === "code" ? [] : themenAusText(`${eingabe.title ?? ""}\n${eingabe.content ?? ""}`),
+  };
+}
+
+
 /**
  * Traegt dieser Inhalt ueberhaupt Wissen — oder ist es nur das Geruest eines
  * Dokuments?

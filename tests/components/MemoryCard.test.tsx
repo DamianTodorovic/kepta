@@ -52,9 +52,50 @@ describe("MemoryCard", () => {
     expect(screen.getByText("SUPERSEDED")).toBeInTheDocument();
   });
 
-  it("zeigt Typ-Label Ablauf für procedural", () => {
+  // Die Standarte nannte bisher die Rechen-Art („How-to" für procedural). Seit
+  // #74 steht dort Zeile 1 — der Traeger —, weil genau die vier Woerter
+  // verworfen wurden. Icon und Farbe bleiben an die Rechen-Art gebunden.
+  it("nennt den Traeger statt der Rechen-Art — eine eigene Notiz ist Notes", () => {
     render(<MemoryCard memory={mem({ type: "procedural" })} onClick={() => {}} />);
-    expect(screen.getByText("How-to")).toBeInTheDocument();
+    expect(screen.getByText("Notes")).toBeInTheDocument();
+    expect(screen.queryByText("How-to")).not.toBeInTheDocument();
+  });
+
+  it("zeigt Themen unter der Karte, wenn der Text sie traegt", () => {
+    render(
+      <MemoryCard
+        memory={mem({
+          type: "episodic",
+          title: "Standup",
+          content: "Meeting 2026-10-12 mit Frau Peck. TODO: Angebot nachfassen.",
+          tags: ["machine-scan", "md"],
+        })}
+        onClick={() => {}}
+      />,
+    );
+    // Traeger ueber die Quelldatei-Endung im Tag, Themen aus dem Text.
+    expect(screen.getByText("Files")).toBeInTheDocument();
+    expect(screen.getByText("People")).toBeInTheDocument();
+    expect(screen.getByText("Events")).toBeInTheDocument();
+    expect(screen.getByText("Tasks")).toBeInTheDocument();
+  });
+
+  it("setzt kein Thema auf eine Code-Karte, auch wenn alle sechs im Text stehen", () => {
+    render(
+      <MemoryCard
+        memory={mem({
+          type: "reference",
+          title: "zh-TW schema",
+          content: "Kontakt: Herr Lin. Meeting 2026-10-12. TODO frist deadline. Anleitung setup step 1. https://example.org",
+          tags: ["machine-scan", "json"],
+        })}
+        onClick={() => {}}
+      />,
+    );
+    expect(screen.getByText("Code")).toBeInTheDocument();
+    for (const wort of ["People", "Projects", "Events", "Tasks", "Guides", "Links"]) {
+      expect(screen.queryByText(wort), wort).not.toBeInTheDocument();
+    }
   });
 
   it("fällt bei leerem Titel auf 'Ohne Titel' zurück", () => {
