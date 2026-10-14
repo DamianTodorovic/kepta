@@ -126,7 +126,7 @@ describe("Sidebar: viele Tags", () => {
 describe("Sidebar: Fusszeile", () => {
   it("nennt die Marke und sagt nichts von Grenzen oder Schlüsseln", () => {
     zeige();
-    expect(screen.getAllByText(/^KEPTA$/).length).toBeGreaterThan(0);
+    expect(screen.getAllByText(/^K3PTA$/).length).toBeGreaterThan(0);
     // Die Marke nennt zwei Dinge, die immer stimmen, und keinen gemessenen
     // Zustand: „encrypted" stand hier, während dieselbe Instanz im selben
     // Fenster einen Chip „Not encrypted" trug (gemessen 10.10., leerer

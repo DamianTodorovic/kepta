@@ -1,4 +1,4 @@
-// KEPTA Core — Typen für Storage & Retrieval (React-frei, Node-only)
+// K3PTA Core — Typen für Storage & Retrieval (React-frei, Node-only)
 
 export type MemoryType = "semantic" | "episodic" | "procedural" | "reference";
 export type MemoryScope = string; // "local" | "user:<id>" | "agent:<id>" | "session:<id>"

@@ -1,6 +1,6 @@
 {
   "appId": "app.kepta.desktop",
-  "productName": "KEPTA",
+  "productName": "K3PTA",
   "directories": {
     "output": "release",
     "buildResources": "build"

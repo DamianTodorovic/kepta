@@ -172,7 +172,7 @@ export function SystemStatus() {
           detail={health?.encryption.aktiv
             ? `The knowledge base file is encrypted (SQLCipher 4 format, AES-256${schluesselOrt(health.encryption.ablage)}).`
             : health?.encryption.hinweis ?? 'The knowledge base file is not encrypted.'}
-          fix="Close other programs that use KEPTA (AI agents over MCP) and restart KEPTA — it encrypts the file as soon as it has it to itself."
+          fix="Close other programs that use K3PTA (AI agents over MCP) and restart K3PTA — it encrypts the file as soon as it has it to itself."
         />
         <Row
           ok={keyOk}

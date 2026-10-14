@@ -1,7 +1,7 @@
 {
   "_base": [
     {
-      "title": "Welcome to KEPTA — local and private",
+      "title": "Welcome to K3PTA — local and private",
       "content": "No login, no cloud. Everything lives in ~/.kepta/kepta.db on this machine. Back it up through System → JSON export. MCP shares the very same store with Claude and Cursor.",
       "tags": [
         "start",

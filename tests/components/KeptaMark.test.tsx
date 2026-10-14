@@ -16,7 +16,7 @@ function verhaeltnis(breite: string, rx: string) {
 describe("KeptaMark", () => {
   it("rendert das Logo-SVG mit aria-label", () => {
     render(<KeptaMark />);
-    expect(screen.getByRole("img", { name: "KEPTA Logo" })).toBeInTheDocument();
+    expect(screen.getByRole("img", { name: "K3PTA Logo" })).toBeInTheDocument();
   });
 
   it("übernimmt eine benutzerdefinierte Größe", () => {
@@ -58,9 +58,9 @@ describe("KeptaMark", () => {
 });
 
 describe("KeptaWordmark", () => {
-  it("zeigt den Text KEPTA und reicht className durch", () => {
+  it("zeigt den Text K3PTA und reicht className durch", () => {
     render(<KeptaWordmark className="test-klasse" />);
-    const el = screen.getByText("KEPTA");
+    const el = screen.getByText("K3PTA");
     expect(el).toBeInTheDocument();
     expect(el).toHaveClass("test-klasse");
   });

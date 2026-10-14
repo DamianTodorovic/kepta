@@ -61,3 +61,36 @@ export function grenzHinweis(aktiveKnoten: number): { warning?: string } {
 
 /** Wie viele Notizen ein Sammelaufruf hoechstens anfassen darf. */
 export const MAX_BULK_IDS = 5_000;
+
+/**
+ * Seitenweis lesen — die Maße der Liste-Route (`GET /api/memories`).
+ *
+ * Noetig, weil die Route keinen seitenweisen Leseweg hatte: sie zog bei jedem
+ * Aufruf die ganze Wissensbasis durch die Leitung (an Damians Bestand: 14.702
+ * Knoten, 30.981.380 Bytes, 9,99 s — gemessen von der Leitung). Dieselbe Bauart
+ * wie SUCHE_LIMIT_MIN/STD/MAX im Kern (kepta-core/src/core/mcp.ts:49-51):
+ * Zahl mit Einheit, Kappe, die sich melden muss statt zu schneiden.
+ *
+ * MAX 200 = bei ~2,1 Kilobyte je Knoten gut 420 Kilobyte pro Abriss — die
+ * Abnahme-Grenze der Leitung heisst "unter 1 Megabyte je Abruf".
+ */
+export const SEITE_MIN = 1;
+export const SEITE_STD = 100;
+export const SEITE_MAX = 200;
+
+/**
+ * Die Default-Seitengroesse, bei jedem Aufruf gelesen (wie maxActiveMemories),
+ * damit ein Betreiber sie ohne Neustart aendern kann. KEPTA_LIST_SEITE steuert;
+ * was keine ganze Zahl zwischen 1 und 200 ist, faellt hoerbar auf 100 zurueck —
+ * die Route nennt den Wert in ihrem Hinweis.
+ */
+export function seiteUmwelt(env: Record<string, string | undefined> = process.env): { groesse: number; unverstanden?: string } {
+  const roh = env.KEPTA_LIST_SEITE;
+  if (roh === undefined || roh.trim() === "") return { groesse: SEITE_STD };
+  const wert = Number(roh);
+  if (Number.isInteger(wert) && wert >= SEITE_MIN && wert <= SEITE_MAX) return { groesse: wert };
+  return {
+    groesse: SEITE_STD,
+    unverstanden: `KEPTA_LIST_SEITE="${roh}" is not a whole number from ${SEITE_MIN} to ${SEITE_MAX} — pages of ${SEITE_STD} nodes are used.`,
+  };
+}

@@ -20,7 +20,7 @@ beforeEach(() => {
 });
 afterEach(() => { vi.unstubAllGlobals(); vi.useRealTimers(); });
 
-describe("Welche Schluessel gehoeren KEPTA", () => {
+describe("Welche Schluessel gehoeren K3PTA", () => {
   it("erkennt die eigenen und laesst fremde in Ruhe", () => {
     expect(gehoertUns("kepta_type_colors")).toBe(true);
     expect(gehoertUns("ki_gehirn_topK")).toBe(true);
@@ -50,7 +50,7 @@ describe("Einstellungen kommen nach dem Neustart zurueck", () => {
     expect(localStorage.getItem("theme")).toBe("light");
   });
 
-  it("nimmt nichts an, was nicht KEPTA gehoert", async () => {
+  it("nimmt nichts an, was nicht K3PTA gehoert", async () => {
     vi.stubGlobal("fetch", vi.fn(async () => new Response(JSON.stringify({
       fremd: "boese", theme: "dark",
     }), { status: 200 })));

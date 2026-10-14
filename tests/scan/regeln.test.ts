@@ -12,7 +12,7 @@ import {
   LESBARE_ENDUNGEN,
 } from "../../src/scan/regeln";
 
-// Der Rechner-Scan ist die eingriffsstaerkste Funktion von KEPTA. Alles bleibt
+// Der Rechner-Scan ist die eingriffsstaerkste Funktion von K3PTA. Alles bleibt
 // auf dem Geraet, aber was in der Wissensbasis steht, koennen angeschlossene
 // Agenten ueber MCP lesen — ein eingesammelter Schluessel ist damit nicht mehr
 // nur eine Datei auf der Platte. Eine Luecke in diesen Regeln ist kein

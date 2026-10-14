@@ -64,7 +64,7 @@ describe("KI-Apps und Verbinden", () => {
     expect((await request(app).get(`/api/agents?after=${r.body.entries[0].id}`)).body.entries).toEqual([]);
   });
 
-  it("/api/clients + Connect: trägt KEPTA ein und hält es im Protokoll fest", async () => {
+  it("/api/clients + Connect: trägt K3PTA ein und hält es im Protokoll fest", async () => {
     fs.mkdirSync(path.join(home, ".cursor"), { recursive: true });
     const liste = (await request(app).get("/api/clients")).body.clients;
     expect(liste.find((c: { id: string }) => c.id === "cursor")).toMatchObject({ installed: true, connected: false, canConnect: true });

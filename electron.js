@@ -50,7 +50,7 @@ function createWindow() {
   mainWindow = new BrowserWindow({
     width: 1280,
     height: 840,
-    title: "KEPTA",
+    title: "K3PTA",
     icon: app.isPackaged ? undefined : path.join(__dirname, 'build/icon.png'),
     backgroundColor: '#fcfcf9',
     titleBarStyle: 'hiddenInset',
@@ -115,7 +115,7 @@ function createWindow() {
     // Escaped und kodiert: vorher stand der Text roh in der data:-URL — am ersten
     // "#" (schon in der Hintergrundfarbe) schnitt der Browser den Rest als Fragment ab.
     const esc = (t) => String(t).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]);
-    const titel = serverError ? 'KEPTA could not start' : 'Connection error';
+    const titel = serverError ? 'K3PTA could not start' : 'Connection error';
     const text = serverError
       ? esc(serverError.message || serverError)
       : 'The background server did not become ready in time. Please restart the app.';

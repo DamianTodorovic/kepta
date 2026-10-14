@@ -1,5 +1,5 @@
-// Baut KEPTA License Studio — das Werkzeug, mit dem Damian Lizenzschlüssel
-// ausstellt — als eigene Mac-App. Es wird nie mit KEPTA ausgeliefert: das
+// Baut K3PTA License Studio — das Werkzeug, mit dem Damian Lizenzschlüssel
+// ausstellt — als eigene Mac-App. Es wird nie mit K3PTA ausgeliefert: das
 // Kundenpaket enthält nur dist/, electron.js und package.json.
 //
 //   npm run license-studio                    # bauen → tools/license-studio/release/
@@ -16,7 +16,7 @@ import { fileURLToPath } from "node:url";
 const hier = path.dirname(fileURLToPath(import.meta.url));
 const wurzel = path.resolve(hier, "..", "..");
 const appOrdner = path.join(hier, "app");
-const NAME = "KEPTA License Studio";
+const NAME = "K3PTA License Studio";
 
 // app/ ist reines Bauergebnis (in .gitignore) — jedes Mal frisch.
 fs.rmSync(appOrdner, { recursive: true, force: true });
@@ -37,7 +37,7 @@ fs.writeFileSync(path.join(appOrdner, "package.json"), JSON.stringify({
   name: "kepta-license-studio",
   productName: NAME,
   version: "1.0.0",
-  description: "Issue license keys for KEPTA Enterprise",
+  description: "Issue license keys for K3PTA Enterprise",
   author: "Damian Todorovic",
   main: "main.cjs",
   private: true,

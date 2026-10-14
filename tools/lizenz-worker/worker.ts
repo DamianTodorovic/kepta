@@ -1,4 +1,4 @@
-// KEPTA Lizenz-Worker — die Automatisierung hinter einem Checkout.
+// K3PTA Lizenz-Worker — die Automatisierung hinter einem Checkout.
 //
 // Was er tut: Paddle meldet einen Kauf (Webhook), der Worker verifiziert die
 // Signatur, stellt den Lizenzschlüssel im EXAKTEN Format von src/core/lizenz.ts
@@ -7,9 +7,9 @@
 // eine Datenbank und kennt keine Kundeninhalte.
 //
 // Stand 09.10.2026: Die kostenlose App hat kein Schlüssel-Feld mehr und läuft
-// unbegrenzt; ein Schlüssel gehört nur zu KEPTA Enterprise und wird heute von
+// unbegrenzt; ein Schlüssel gehört nur zu K3PTA Enterprise und wird heute von
 // Hand verkauft (License Studio). Dieser Worker ist die Automatisierung für den
-// Fall, dass ein Checkout dazukommt — er stellt nur die Team-Form von KEPTA
+// Fall, dass ein Checkout dazukommt — er stellt nur die Team-Form von K3PTA
 // Enterprise aus. Eine Price-ID ohne Stufe wird abgewiesen, es wird also kein
 // Schlüssel für ein Produkt ausgestellt, das es nicht mehr gibt.
 //
@@ -94,13 +94,13 @@ async function versendeMail(env: Env, an: string, name: string, schluessel: stri
   const nr = String(nummer).padStart(4, "0");
   const text = `Danke für deine Lizenz, ${name}!
 
-KEPTA Enterprise — Lizenz Nr. ${nr} · ${seats} ${seats === 1 ? "Seat" : "Seats"}
+K3PTA Enterprise — Lizenz Nr. ${nr} · ${seats} ${seats === 1 ? "Seat" : "Seats"}
 
 Dein Schlüssel:
 
 ${schluessel}
 
-KEPTA braucht keinen Schlüssel, um zu laufen: die App ist kostenlos, jedes Werkzeug unbegrenzt. Der Schlüssel weist euren Vertrag aus (Name und Nummer), bleibt personenbezogen und darf nicht weitergegeben werden.
+K3PTA braucht keinen Schlüssel, um zu laufen: die App ist kostenlos, jedes Werkzeug unbegrenzt. Der Schlüssel weist euren Vertrag aus (Name und Nummer), bleibt personenbezogen und darf nicht weitergegeben werden.
 
 Download (macOS — Apple silicon und Intel): https://github.com/DamianTodorovic/kepta/releases/latest
 
@@ -109,13 +109,13 @@ Fragen, MDM oder SSO: einfach auf LinkedIn antworten.
   await fetch("https://api.resend.com/emails", {
     method: "POST",
     headers: { Authorization: `Bearer ${env.RESEND_API_KEY}`, "Content-Type": "application/json" },
-    body: JSON.stringify({ from: env.MAIL_FROM ?? "KEPTA <lizenzen@kepta.pro>", to: an, subject: "Your KEPTA Enterprise license key", text }),
+    body: JSON.stringify({ from: env.MAIL_FROM ?? "K3PTA <lizenzen@kepta.pro>", to: an, subject: "Your K3PTA Enterprise license key", text }),
   });
 }
 
 export default {
   async fetch(request: Request, env: Env): Promise<Response> {
-    if (request.method !== "POST") return new Response("KEPTA license endpoint — POST only", { status: 405 });
+    if (request.method !== "POST") return new Response("K3PTA license endpoint — POST only", { status: 405 });
     const body = await request.text();
     if (!(await paddleSignaturGueltig(request, body, env.PADDLE_WEBHOOK_SECRET))) {
       return new Response("Bad signature", { status: 401 });
@@ -129,7 +129,7 @@ export default {
     if (ereignis.event_type !== "transaction.completed") return Response.json({ ok: true, ignoriert: ereignis.event_type });
 
     const mail = ereignis.data?.customer?.email ?? "";
-    const name = ereignis.data?.custom_data?.name ?? ereignis.data?.customer?.email?.split("@")[0] ?? "KEPTA-Kunde";
+    const name = ereignis.data?.custom_data?.name ?? ereignis.data?.customer?.email?.split("@")[0] ?? "K3PTA-Kunde";
     // Paddle vergibt opake Price-IDs — Zuordnung über die EXAKTEN IDs (siehe CHECKLISTE.md),
     // niemals per Teilstring: „business" kommt in keiner ID vor (Bug vom 20.9. behoben).
     const BUSINESS_PREISE = new Set(["pri_01m2vassqjm41yrp4k6brsjcq2"]); // Team-Lizenz (per Seat)

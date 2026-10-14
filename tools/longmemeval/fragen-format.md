@@ -20,7 +20,7 @@ committed, nur der SHA-256 der verwendeten Datei wird im Ergebnis-JSON ausgewies
    wie viele Datensätze das Feld tragen (Kontrollzahl gegen versehentliche Orakel-Nutzung).
 2. Ingest: eine Session = mehrere Memories, `session_date` → Zeitstempel der Notiz
    (bi-temporal: gültig-ab = Session-Datum), Quellverweis `session_id` in der Notiz.
-3. Ergebnis-JSON muss enthalten: KEPTA-Version, Modellname+Ollama-Version,
+3. Ergebnis-JSON muss enthalten: K3PTA-Version, Modellname+Ollama-Version,
    Datensatz-Dateiname + SHA-256, Datum, Genauigkeit gesamt und pro Fähigkeit,
    Abstention-Quote, Anzahl „Fehler/Leer" pro Kategorie.
 

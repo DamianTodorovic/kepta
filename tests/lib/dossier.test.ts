@@ -53,7 +53,7 @@ describe("Dossier", () => {
     const d = await dossier(store, "Zebra");
     expect(d.total).toBe(0);
     expect(dossierAlsMarkdown(d)).toContain("_0 notes_");
-    await expect(dossier(store, "   ")).rejects.toThrow("Tell KEPTA who or what the dossier is about.");
+    await expect(dossier(store, "   ")).rejects.toThrow("Tell K3PTA who or what the dossier is about.");
   });
 
   it("findet den Satz, der am meisten über das Thema sagt", () => {

@@ -3,7 +3,7 @@
 // Die Fläche malt einzelne Notizen und einzelne Behauptungen. Wer wissen will,
 // ob das Netz dünn oder voll ist, fragt nach den ZÄHLUNGEN: wie viele Fakten,
 // wie viele Ereignisse, wer über wen was behauptet. Cognee legt das als
-// „Schema"-Tab aus; bei KEPTA standen die Zahlen verstreut — die Art-Ziffern
+// „Schema"-Tab aus; bei K3PTA standen die Zahlen verstreut — die Art-Ziffern
 // auf den Dashboard-Kacheln, die Kantenarten in der Legende, die Behauptungs-
 // typen an den Linien selbst.
 //

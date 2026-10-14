@@ -16,7 +16,9 @@ interface SidebarProps {
   currentView: Ansicht;
   onNavigate: (view: Ansicht) => void;
   totalMemories: number;
-  /** An AI app used KEPTA in the last minutes — a green dot on „Activity“. */
+  /** Setzt die Fläche, wenn die Tür mehr hält, als die Seite bringt. */
+  tagsAusLadung?: number | null;
+  /** An AI app used K3PTA in the last minutes — a green dot on „Activity“. */
   appsLive?: boolean;
   /**
    * Eine Organisation hat Rollen gesetzt (managed-settings.json) — nur dann
@@ -41,7 +43,7 @@ interface SidebarProps {
 /** So viele Tags stehen sofort da; der Rest kommt auf Wunsch. */
 const TAGS_SICHTBAR = 40;
 
-export function Sidebar({ tags, selectedTags, onSelectTag, onClearTags, currentView, onNavigate, totalMemories, appsLive, teamVisible, isFocusMode, toggleFocusMode, showSetup, onOpenSetup }: SidebarProps) {
+export function Sidebar({ tags, selectedTags, onSelectTag, onClearTags, currentView, onNavigate, totalMemories, tagsAusLadung, appsLive, teamVisible, isFocusMode, toggleFocusMode, showSetup, onOpenSetup }: SidebarProps) {
   const { isDark, toggle: toggleTheme } = useTheme();
   // Die Liste war hart auf 40 geschnitten — ohne ein Wort darueber. Wer viel
   // Wissen hat, sah den Rest schlicht nicht und konnte ihn auch nicht suchen.
@@ -74,10 +76,10 @@ export function Sidebar({ tags, selectedTags, onSelectTag, onClearTags, currentV
         <KeptaMark size={26} />
         <div className="min-w-0">
           <div className="seiten-marke font-semibold tracking-[-0.02em] text-[13.5px] leading-none">
-            KEPTA
+            K3PTA
           </div>
           <div className="seiten-zahl text-[11px] mt-1 tnum">
-            {totalMemories} {totalMemories === 1 ? 'entry' : 'entries'}
+            {totalMemories.toLocaleString('en-GB')} {totalMemories === 1 ? 'entry' : 'entries'}
           </div>
         </div>
       </div>
@@ -100,7 +102,7 @@ export function Sidebar({ tags, selectedTags, onSelectTag, onClearTags, currentV
                 <item.icon className="seiten-ikone w-4 h-4 shrink-0" weight={item.weight ?? 'duotone'} />
                 <span className="flex-1">{item.label}</span>
                 {item.id === 'activity' && appsLive && (
-                  <span aria-hidden title="An AI app is using KEPTA right now" data-testid="apps-live" className="seiten-punkt w-1.5 h-1.5 rounded-full animate-pulse shrink-0" />
+                  <span aria-hidden title="An AI app is using K3PTA right now" data-testid="apps-live" className="seiten-punkt w-1.5 h-1.5 rounded-full animate-pulse shrink-0" />
                 )}
               </button>
             );
@@ -153,6 +155,13 @@ export function Sidebar({ tags, selectedTags, onSelectTag, onClearTags, currentV
                 Show fewer
               </button>
             )}
+            {/* Die Zählung neben jedem Tag kann nur zählen, was liegt. Ohne diese
+                Zeile wäre „bestand 25" eine Behauptung über 250. */}
+            {typeof tagsAusLadung === 'number' && tagsAusLadung > 0 && (
+              <div className="seiten-erklarung px-2 pt-2 pb-1 text-[11px] leading-snug">
+                counts cover the {tagsAusLadung.toLocaleString('en-GB')} loaded notes
+              </div>
+            )}
           </div>
         </div>
       )}
@@ -163,12 +172,12 @@ export function Sidebar({ tags, selectedTags, onSelectTag, onClearTags, currentV
           <KeptaMark size={24} />
           <div className="min-w-0 flex-1">
             <div className="seiten-marke text-[12.5px] truncate font-semibold tracking-[0.01em]">
-              {/* Branding 3.1.1: schlicht KEPTA — keine Stufen-Anzeige mehr.
+              {/* Branding 3.1.1: schlicht K3PTA — keine Stufen-Anzeige mehr.
                   Seit 09.10.2026 sagt auch die zweite Zeile nichts über Grenzen,
                   weil es sie nicht mehr gibt: die App läuft unbegrenzt.
                   Die Versionszahl steht bewusst NICHT in der Sidebar (Damian, 25.9.) —
                   sie bleibt über Systemstatus und /api/health abrufbar. */}
-              {'KEPTA'}
+              {'K3PTA'}
             </div>
             <div className="seiten-erklarung text-[11px] truncate">
               {/* Vorher: „local · private · encrypted". Die App hat im selben

@@ -47,7 +47,9 @@ function legeFremdeDatei(): string {
 
 const knotentext = async () => {
   const res = await request(app).get("/api/memories");
-  return (res.body as { content: string }[]).map((m) => m.content).join("\n");
+  // Seit Aufgabe #64(1) nennt der Leib die Liste unter `memories` (wie die Suchtuer,
+  // server/router/search.ts:23-28) — nicht mehr als nackter Array.
+  return ((res.body as { memories?: { content: string }[] }).memories ?? []).map((m) => m.content).join("\n");
 };
 
 describe("Q-18 — der Inbox-Waechter folgt Symlinks (CWE-59)", () => {

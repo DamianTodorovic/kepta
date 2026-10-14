@@ -1,16 +1,16 @@
-# KEPTA Selbstbedienungs-Checkout — Setup-Checkliste (30–60 Minuten)
+# K3PTA Selbstbedienungs-Checkout — Setup-Checkliste (30–60 Minuten)
 
 > **Stand 09.10.2026: dieser Weg ist zugestellt, nicht gelöscht.** Die
 > herunterladbare App hat kein Schlüssel-Feld, keine Grenzen und kein
 > Upgrade-Panel mehr; die Einzelstufe, für die diese Checkliste angelegt wurde,
-> gibt es nicht mehr. Schlüssel gehören nur zu KEPTA Enterprise und werden von
+> gibt es nicht mehr. Schlüssel gehören nur zu K3PTA Enterprise und werden von
 > Hand verkauft (License Studio). Die Price-IDs unten sind die Belege dessen,
 > was in Paddle angelegt wurde — **die Einzelstufe muss in Paddle archiviert
 > werden**, sonst läuft ein Verkauf ins Leere: der Worker stellt für einen
 > Preis ohne Stufe bewusst nichts aus.
 >
 > Ziel, falls ein Checkout wieder angeht: Damians Handverkauf bleibt die
-> Haupttür; der Worker automated nur die Team-Form von KEPTA Enterprise.
+> Haupttür; der Worker automated nur die Team-Form von K3PTA Enterprise.
 > Schritt für Schritt:
 
 ## 1. Paddle (Merchant of Record — nimmt EU-VAT/Steuern ab, ~20 Minuten)
@@ -30,12 +30,12 @@ Paddle Billing liefert **keinen fertigen Checkout-Link** ohne einen von zwei Weg
    klickt dort auf **contact support** und bittet um Hosted-Checkout-Zugriff
    (Kurztext dazu weiter unten).
 2. **Website Approval** (Paddle verlangt eine kontrollierte Domain mit ToS + Privacy + Refund auf der Seite — ein Repo-Pfad reicht nicht):
-   - [x] **KEPTA-Landing-Page gebaut und live:** `https://damiantodorovic.github.io/` (Wurzel, User-Repo `DamianTodorovic/damiantodorovic.github.io`) und `https://damiantodorovic.github.io/kepta/` (gh-pages-Branch im kepta-Repo) — enthält Preise, ToS, Privacy Notice, 14-Tage-Rückerstattung
+   - [x] **K3PTA-Landing-Page gebaut und live:** `https://damiantodorovic.github.io/` (Wurzel, User-Repo `DamianTodorovic/damiantodorovic.github.io`) und `https://damiantodorovic.github.io/kepta/` (gh-pages-Branch im kepta-Repo) — enthält Preise, ToS, Privacy Notice, 14-Tage-Rückerstattung
    - [x] Domain `damiantodorovic.github.io` bei Paddle → Checkout → Website Approval eingereicht (19.9.) → **Status: Pending**
    - [ ] Paddle-Genehmigung abwarten; bei Rückfragen Support antworten
 
 **Support-Text-Vorschlag (englisch, kopieren/reichen):**
-> Hi Paddle team, I'm building KEPTA — a local-first encrypted memory app for
+> Hi Paddle team, I'm building K3PTA — a local-first encrypted memory app for
 > AI assistants (desktop application for macOS/Windows, BUSL-1.1 source-available
 > core, public repo at github.com/DamianTodorovic/kepta). I'd like to request access to Hosted
 > Checkouts so customers can buy a license directly from inside the desktop

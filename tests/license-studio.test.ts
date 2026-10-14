@@ -1,10 +1,10 @@
 // @vitest-environment node
 //
-// KEPTA License Studio (tools/license-studio): was das Studio ausstellt, muss
+// K3PTA License Studio (tools/license-studio): was das Studio ausstellt, muss
 // die Prüfung in src/core/lizenz.ts bestehen — mit Name und Lizenznummer.
 // Gesperrte Nummern gelten nicht. Geprüft mit einem eigenen Testpaar; den
 // privaten Schlüssel der echten Ausstellungen gibt es nur in Damians
-// Schlüsselbund. Ausgestellt wird nur KEPTA Enterprise; Schlüssel aus der Zeit
+// Schlüsselbund. Ausgestellt wird nur K3PTA Enterprise; Schlüssel aus der Zeit
 // davor bleiben in der Liste stehen (tests/kein-pro-tier.test.ts hält das fest).
 import { describe, it, expect } from "vitest";
 import crypto from "node:crypto";
@@ -209,7 +209,7 @@ describe("die Liste der ausgestellten Lizenzen", () => {
   });
 });
 
-describe("das Studio kommt nie in die KEPTA-App", () => {
+describe("das Studio kommt nie in die K3PTA-App", () => {
   it("das Kundenpaket enthält nur dist/, electron.js und package.json", () => {
     const cfg = JSON.parse(fs.readFileSync(path.join(process.cwd(), "electron-builder.json"), "utf8")) as { files: string[] };
     expect(cfg.files.filter((f) => !f.startsWith("!"))).toEqual(["dist/**/*", "electron.js", "package.json"]);

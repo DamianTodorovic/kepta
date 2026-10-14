@@ -6,7 +6,7 @@
 // Binaerdatei ist (Identifier=Electron). codesign --verify schlaegt darauf fehl.
 //
 // Fuer Nutzer ist das schlimmer als "unsigniert": macOS meldet dann haeufig
-// "KEPTA ist beschaedigt und kann nicht geoeffnet werden" statt "Entwickler nicht
+// "K3PTA ist beschaedigt und kann nicht geoeffnet werden" statt "Entwickler nicht
 // verifiziert" — und fuer "beschaedigt" gibt es kein "Trotzdem oeffnen".
 //
 // Eine Ad-hoc-Signatur kostet nichts und behebt genau das. Sie ersetzt keine

@@ -14,7 +14,7 @@ import { DossierView } from './DossierView';
 import { TeamView } from './TeamView';
 import { ActivityView } from './ActivityView';
 import { CommandPalette, useCommandPaletteHotkey, buildPaletteActions } from './CommandPalette';
-import { saveMemory, deleteMemory, subscribeMemories, refreshMemories, deleteMemories, restoreMemories } from '../lib/store';
+import { saveMemory, deleteMemory, subscribeMemories, refreshMemories, deleteMemories, restoreMemories, bestandGroesse, getMemoriesSync } from '../lib/store';
 import { subscribeActivity } from '../lib/activity';
 import { inForm } from '../lib/antwort';
 import { useToast } from './ui/Toast';
@@ -46,6 +46,33 @@ interface InboxStatus { inboxDir?: string; files: string[]; archiveCount: number
 // Die Form, die die Leiste liest. `files: [""]` erklärt, dass die Liste Zeilen
 // enthält — ein Muster-Element ist Form, nicht Inhalt.
 const LEERE_INBOX: InboxStatus = { inboxDir: '', files: [''], archiveCount: 0, watching: false };
+
+/**
+ * Eine Zahl ohne ihre Menge ist eine Seitenlänge, die sich als Bestand ausgibt.
+ *
+ * `GET /api/memories` antwortet seit F12 mit einer Seite und führt den Bestand
+ * im Leib (`total`) und im Kopf (`x-kepta-total`); src/lib/store.ts:40-47 hebt
+ * ihn heraus. Wo die Fläche nur einen Teil malt, sagt sie „100 of 14,702 in the
+ * store" — und wo die Tür schweigt, zählt sie nur, was sie trägt, statt aus der
+ * eigenen Seitenlänge eine Menge zu erfinden.
+ */
+/**
+ * Dieselbe Zahl, dasselbe Kleid. Der Index-Held schreibt „14,702"; der
+ * Gehirn-Chip daneben schrieb „14702" — zwei Kleider, eine Zahl, ein Bildschirm.
+ * Gilt für Größen, die die Tür aus dem *ganzen* Bestand meldet (`/api/health`),
+ * nicht für Seitenzähler, die bei 200 enden.
+ */
+function groessenZahl(n: number): string {
+  return n.toLocaleString('en-GB');
+}
+
+function mengensatz(gemalt: number, bestand: number | null, menge = 'in the store'): string {
+  const zahl = groessenZahl;
+  const entries = (n: number) => `${zahl(n)} ${n === 1 ? 'entry' : 'entries'}`;
+  if (bestand === null) return entries(gemalt);
+  if (bestand > gemalt) return `${zahl(gemalt)} of ${zahl(bestand)} ${menge}`;
+  return entries(bestand);
+}
 
 const ALL_RESULTS = 10_000;
 /**
@@ -128,6 +155,8 @@ export function Dashboard() {
     };
   }, []);
   const [memories, setMemories] = useState<Memory[]>([]);
+  /** Was die Tür über den Bestand sagt — `null`, wenn sie schweigt. */
+  const [tuerBestand, setTuerBestand] = useState<number | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [debouncedSearchQuery, setDebouncedSearchQuery] = useState('');
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
@@ -461,7 +490,15 @@ export function Dashboard() {
   const loadMoreRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    const unsubscribe = subscribeMemories(setMemories);
+    // Die Tür nennt ihren Bestand in derselben Nachricht wie die Seite: der
+    // Subscriber bringt die geladenen Knoten, `bestandGroesse()` sagt, wie viele
+    // die Tür wirklich hält. Beides zusammen ist die Zahl, die die Fläche zeigt.
+    const empfang = (neue: Memory[]) => {
+      setMemories(neue);
+      setTuerBestand(bestandGroesse());
+    };
+    const unsubscribe = subscribeMemories(empfang);
+    empfang(getMemoriesSync());
     return unsubscribe;
   }, []);
 
@@ -576,6 +613,14 @@ export function Dashboard() {
     for (const m of memories) for (const t of m.tags) counts.set(t, (counts.get(t) ?? 0) + 1);
     return [...counts.entries()].sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0])).map(([tag, count]) => ({ tag, count }));
   }, [memories]);
+
+  /**
+   * Die Basis, über die diese Fläche zählt: `null` heißt, sie malt den ganzen
+   * Bestand. Sonst ist es die Ladung, und jede Zelle, die nur liegen zählen
+   * kann (Typen, Kategorien, Seitenverhältnis, Tag-Ziffern), nennt sie — sonst
+   * liest der Mensch „3 categories" als Aussage über 2.000 Notizen.
+   */
+  const ladung = tuerBestand !== null && tuerBestand > memories.length ? memories.length : null;
 
   // Typen-Verteilung für die Übersichtskacheln
   const typeCounts = useMemo(() => {
@@ -1074,13 +1119,17 @@ export function Dashboard() {
             </button>
           </div>
           <div className="text-center text-[11px] mt-2 tnum" style={{ color: 'var(--text-3)' }}>
-            {paginatedMemories.length} von {displayedMemories.length} shown
+            {paginatedMemories.length.toLocaleString('en-GB')} of {displayedMemories.length.toLocaleString('en-GB')} shown
           </div>
         </>
       )}
       {visibleCount >= displayedMemories.length && displayedMemories.length > PAGE_SIZE && (
         <div className="text-center text-[11px] mt-4 tnum" style={{ color: 'var(--text-3)' }}>
-          All {displayedMemories.length} entries shown
+          {/* „All 100 entries shown" über einer Tür, die 14.702 hält, war die
+              stille Kappe: das „All" galt der Ladung, nicht dem Bestand. */}
+          {tuerBestand !== null && tuerBestand > displayedMemories.length
+            ? <>All {displayedMemories.length.toLocaleString('en-GB')} loaded · {tuerBestand.toLocaleString('en-GB')} in the store</>
+            : <>All {displayedMemories.length.toLocaleString('en-GB')} entries shown</>}
         </div>
       )}
     </>
@@ -1126,7 +1175,8 @@ export function Dashboard() {
         onClearTags={() => setSelectedTags([])}
         currentView={currentView}
         onNavigate={setCurrentView}
-        totalMemories={memories.length}
+        totalMemories={tuerBestand ?? memories.length}
+        tagsAusLadung={ladung}
         appsLive={appsLive}
         teamVisible={teamVorhanden}
         isFocusMode={isFocusMode}
@@ -1153,7 +1203,7 @@ export function Dashboard() {
             )}
             <div className="flex items-center gap-2 shrink-0" style={{ color: 'var(--text-1)' }}>
               <KeptaMark size={22} />
-              <span className="hidden md:block font-semibold text-[13px] tracking-[-0.02em]">KEPTA</span>
+              <span className="hidden md:block font-semibold text-[13px] tracking-[-0.02em]">K3PTA</span>
             </div>
             <div className="flex-1 max-w-xl relative group">
               <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 transition-colors" style={{ color: 'var(--text-3)' }} />
@@ -1410,7 +1460,7 @@ export function Dashboard() {
                 <button
                   onClick={() => setScanOpen(true)}
                   className="btn-ghost px-3 py-1.5 text-xs font-medium flex items-center gap-1.5"
-                  title="Let KEPTA look through this computer for documents — you see what would be imported before anything is read"
+                  title="Let K3PTA look through this computer for documents — you see what would be imported before anything is read"
                 >
                   <HardDriveDownload className="w-3.5 h-3.5" /> Scan this computer
                 </button>
@@ -1460,8 +1510,8 @@ export function Dashboard() {
               {/* Übersicht — der Index-Streifen: eine dominante Zahl, leise Zweitgrößen */}
               <div className="index-strip mb-4 shrink-0 flex-wrap gap-y-3">
                 <div className="index-cell" style={{ flex: '0 1 auto' }}>
-                  <span className="num-hero">{memories.length}</span>
-                  <span className="k">{memories.length === 1 ? 'entry in the index' : 'entries in the index'}</span>
+                  <span className="num-hero">{(tuerBestand ?? memories.length).toLocaleString('en-GB')}</span>
+                  <span className="k">{(tuerBestand ?? memories.length) === 1 ? 'entry in the index' : 'entries in the index'}</span>
                 </div>
                 <div className="index-cell">
                   <span className="v" style={{ gap: 10 }}>
@@ -1470,11 +1520,11 @@ export function Dashboard() {
                     <span style={{ color: 'var(--type-procedural)' }}>{typeCounts.procedural} <span className="text-[10px] opacity-70">{t('legend.howtos')}</span></span>
                     <span style={{ color: 'var(--type-reference)' }}>{typeCounts.reference} <span className="text-[10px] opacity-70">{t('legend.documents')}</span></span>
                   </span>
-                  <span className="k">facts, events, how-tos</span>
+                  <span className="k">facts, events, how-tos{ladung !== null ? ` · in the ${groessenZahl(ladung)} loaded` : ''}</span>
                 </div>
                 <div className="index-cell">
                   <span className="v">{allTags.length}</span>
-                  <span className="k">categories</span>
+                  <span className="k">categories{ladung !== null ? ` in the ${groessenZahl(ladung)} loaded` : ''}</span>
                 </div>
                 <div className="index-cell ml-auto">
                   <span className="v">
@@ -1492,11 +1542,11 @@ export function Dashboard() {
                 <div className="mb-4 shrink-0 flex flex-wrap items-center gap-2 text-[11.5px]" data-testid="gehirn-status">
                   {gehirn.version && (
                     <span className="chip" title="The running version — also reported over MCP and /api/health.">
-                      KEPTA {gehirn.version}
+                      K3PTA {gehirn.version}
                     </span>
                   )}
                   <span className="chip tnum" title="Active nodes in the local database.">
-                    {gehirn.count} {gehirn.count === 1 ? 'node' : 'nodes'} in the brain
+                    {groessenZahl(gehirn.count)} {gehirn.count === 1 ? 'node' : 'nodes'} in the brain
                   </span>
                   {gehirn.hatVerschluesselung && (
                     <span
@@ -1515,8 +1565,8 @@ export function Dashboard() {
                       className="chip tnum"
                       title="The embedding model behind vector search and how many of the text chunks carry its vectors."
                     >
-                      Embeddings: {gehirn.embedModelle.map((m) => `${m.name} ${m.anzahl}`).join(' · ')}
-                      {gehirn.embedModelle.length === 0 ? `${gehirn.embedEmbedded}/${gehirn.embedTotal} embedded` : ''}
+                      Embeddings: {gehirn.embedModelle.map((m) => `${m.name} ${groessenZahl(m.anzahl)}`).join(' · ')}
+                      {gehirn.embedModelle.length === 0 ? `${groessenZahl(gehirn.embedEmbedded)}/${groessenZahl(gehirn.embedTotal)} embedded` : ''}
                     </span>
                   )}
                 </div>
@@ -1524,7 +1574,7 @@ export function Dashboard() {
 
               <div className="flex items-center justify-between mb-3 shrink-0">
                 <div className="flex items-center gap-2.5 text-[12px] tnum" style={{ color: 'var(--text-3)' }}>
-                  <span>{displayedMemories.length} of {tagFiltered.length} entries</span>
+                  <span>{displayedMemories.length.toLocaleString('en-GB')} of {tagFiltered.length.toLocaleString('en-GB')} {ladung !== null ? 'on this page' : 'entries'}</span>
                   {semanticEnabled && debouncedSearchQuery.trim().length >= 2 && (
                     serverTotal !== null && serverTotal > displayedMemories.length ? (
                       <button
@@ -1643,7 +1693,7 @@ export function Dashboard() {
                 Fenster, das ihn nicht trägt, bricht er um und rückt das Bild
                 nach unten (A7-06). Die Zählung bleibt stehen, der Rest nicht. */}
             <div className="text-[12px] tnum min-w-0 truncate" style={{ color: 'var(--text-3)' }}>
-              {memories.length} entries{schmal ? "" : " · connected through tags, similarity and knowledge entities"}
+              {mengensatz(memories.length, tuerBestand)}{schmal ? "" : " · connected through tags, similarity and knowledge entities"}
             </div>
             <div className="ml-auto shrink-0">
               <button onClick={() => setCurrentView("memories")} className="btn-ghost px-2.5 py-1.5 rounded-md text-xs font-medium">Back to the list</button>

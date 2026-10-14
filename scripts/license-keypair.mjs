@@ -29,7 +29,7 @@ const { publicKey, privateKey } = crypto.generateKeyPairSync("ed25519");
 const privat = privateKey.export({ type: "pkcs8", format: "der" }).toString("base64");
 const oeffentlich = publicKey.export({ type: "spki", format: "der" }).toString("base64");
 
-execFileSync("/usr/bin/security", ["add-generic-password", "-s", DIENST, "-a", "kepta", "-l", "KEPTA license signing key (Ed25519, private)", "-w", privat]);
+execFileSync("/usr/bin/security", ["add-generic-password", "-s", DIENST, "-a", "kepta", "-l", "K3PTA license signing key (Ed25519, private)", "-w", privat]);
 const zurueck = execFileSync("/usr/bin/security", ["find-generic-password", "-s", DIENST, "-a", "kepta", "-w"], { encoding: "utf8" }).trim();
 if (zurueck !== privat) {
   console.error("Der Schlüssel ließ sich nicht aus dem Schlüsselbund zurücklesen — nichts eingetragen.");

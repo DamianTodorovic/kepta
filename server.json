@@ -1,7 +1,7 @@
 {
   "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
   "name": "io.github.DamianTodorovic/kepta",
-  "title": "KEPTA — Agent Memory",
+  "title": "K3PTA — Agent Memory",
   "description": "Local memory for AI agents. One SQLite file on your machine — no cloud, no account.",
   "version": "3.4.0",
   "websiteUrl": "https://github.com/DamianTodorovic/kepta",

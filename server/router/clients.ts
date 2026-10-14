@@ -1,4 +1,4 @@
-// --- KI-Apps: wer nutzt KEPTA, was die Agenten tun — und neue Apps verbinden ---
+// --- KI-Apps: wer nutzt K3PTA, was die Agenten tun — und neue Apps verbinden ---
 // Die Umgebung (wo Claude, Cursor & Co. ihre Konfiguration halten) kommt aus
 // den Optionen; in der App zeigt der Eintrag auf den Server in der App selbst,
 // sonst auf npx.

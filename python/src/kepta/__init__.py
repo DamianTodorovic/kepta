@@ -1,6 +1,6 @@
-"""KEPTA — local memory for AI agents, from Python.
+"""K3PTA — local memory for AI agents, from Python.
 
-This package is the client, not the app. KEPTA itself runs as a desktop app on
+This package is the client, not the app. K3PTA itself runs as a desktop app on
 the same machine; here you connect to it.
 
     from kepta import KeptaClient

@@ -1,4 +1,4 @@
-// KEPTA Core — Ein Sanitizer für alle Wege.
+// K3PTA Core — Ein Sanitizer für alle Wege.
 // Server (HTTP), Store (SQLite) und MCP haben früher je einen kleinen Spiegel
 // dieser Regeln gepflegt; zwei davon drifteten auseinander. Seitdem steht hier
 // die eine Fassung: was als Notiz in die Wissensbasis geht, kommt durch diese

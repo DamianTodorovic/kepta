@@ -84,7 +84,7 @@ describe("searchMemories (RRF-Fusion)", () => {
   });
 
   it("Entity-Bein findet Memories über Entitätsnamen", async () => {
-    const m = store.createMemory({ title: "Projekt KEPTA", content: "Das Gehirn für Agenten" });
+    const m = store.createMemory({ title: "Projekt K3PTA", content: "Das Gehirn für Agenten" });
     indexMemory(store, m.id);
     store.linkEntities(m.id, ["kepta-projekt"]);
     seedEmbeddings(store);

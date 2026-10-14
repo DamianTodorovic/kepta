@@ -58,7 +58,7 @@ function buildUpstreamHeaders(req: ChatRequest): Record<string, string> {
     if (req.apiKey) headers["Authorization"] = `Bearer ${req.apiKey}`;
     if (req.providerId === "openrouter") {
       headers["HTTP-Referer"] = "kepta-local";
-      headers["X-Title"] = "KEPTA";
+      headers["X-Title"] = "K3PTA";
     }
   }
   return headers;

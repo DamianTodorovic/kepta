@@ -334,6 +334,27 @@ describe("Chat: Code in Antworten", () => {
     await waitFor(() => expect(schreibe).toHaveBeenCalledWith(expect.stringContaining("npm run dev")));
   });
 
+  // Der Fall dahinter, gemeldet von A1x und von E1 geheilt (13.10. 23:5x):
+  // der Knopf war `opacity-0` und erschien nur per Hover — auf Touch und per
+  // Tastatur nicht auffindbar — und hieß für einen Lesegerät-Nutzer nichts, weil
+  // das Icon aria-hidden ist und nur ein title dastand.
+  it("ist am Codeblock auch ohne Maus zu finden und hat einen Zugangs-Namen", async () => {
+    const user = userEvent.setup();
+    stubFetch({ stuecke: ["Hier:\n\n```bash\nnpm run dev\n```\n"] });
+    const { container } = zeige();
+    await frage(user, "Wie starte ich?");
+    await waitFor(() => expect(container.textContent).toMatch(/npm run dev/));
+    const knopfe = [...container.querySelectorAll("button")];
+    const code = knopfe.find((b) => /copy code/i.test(b.getAttribute("aria-label") ?? ""));
+    expect(code, "der Codeblock-Knopf trägt keinen aria-label").toBeTruthy();
+    expect(code!.className, `Knopf ist wieder unsichtbar geschaltet: ${code!.className}`).not.toMatch(/(^|\s)opacity-0(\s|$)/);
+    // zwei Deutungen von „kopieren" brauchen zwei Namen
+    const antwort = knopfe.find((b) => /copy answer/i.test(b.getAttribute("aria-label") ?? ""));
+    expect(antwort, "die Antwort hat keinen eigenen Zugangs-Namen zum Kopieren").toBeTruthy();
+    expect(antwort).not.toBe(code);
+    expect(antwort!.textContent).toMatch(/^Copy$/);   // das sichtbare Wort bleibt kurz
+  });
+
   it("stellt Markdown-Ueberschriften und Listen dar", async () => {
     const user = userEvent.setup();
     stubFetch({ stuecke: ["## Schritte\n\n- Erstens\n- Zweitens\n"] });

@@ -6,7 +6,7 @@ import { extractWikiLinks } from "../../src/core/mcp";
 import { klassifiziere } from "../../src/core/klassifikation";
 import { sanitizeText, sanitizeTitle, sanitizeTags } from "../../src/core/sanitize";
 import { sanitizeScope, sanitizeId, istGueltigeId } from "../helfer/ids";
-import { toApi, maxActiveMemories, grenzHinweis, MAX_BULK_IDS, type MemoryRecord } from "../helfer/api-form";
+import { toApi, maxActiveMemories, grenzHinweis, MAX_BULK_IDS, SEITE_MIN, SEITE_MAX, seiteUmwelt, type MemoryRecord } from "../helfer/api-form";
 import { bodyOf } from "../helfer/body";
 import type { AppKontext } from "../kontext";
 
@@ -201,18 +201,137 @@ export function mountMemories(app: express.Express, ctx: AppKontext): void {
     res.json({ ok: true, memory: toApi(store.getMemory(id)!) });
   });
 
-  // Liste (mit ETag — das Frontend prüft sie, bevor es den ganzen Bestand lädt)
+  // Liste — seitenweis. Vorher gab es hier keinen seitenweisen Leseweg:
+  // ctx.listAllMemories() zog bei JEDEM Aufruf die ganze Basis durch die Leitung
+  // (an Damians Bestand 14.702 Knoten = 30.981.380 Bytes in 9,99 s), und die
+  // Flaechen filterten das im Renderer. Ein Aufruf ohne `limit` liefert die
+  // Default-Seite und sagt es — still 14.702 Knoten darf niemand mehr bekommen.
+  //
+  // Die Antwort ist ein Leib mit Zahl, nicht mehr ein nackter Array. Auftrag der
+  // Leitung nach GFs Befund vom 13.10. (Flaeche: "100 entries" bei 14.702 in der
+  // Tuer): **die Zahl, die eine Flaeche zeigt, muss aus dem Leib kommen** — ein
+  // Renderer darf nicht auf Header-Hoffnung bauen. Das Feld heisst `memories`, wie
+  // die Suchtuer es schon immer tat (`server/router/search.ts:23-28` nennt
+  // {query, count, total, memories}), und drei Flaechen lesen diese Form bereits
+  // (`src/lib/store.ts:55`, `src/components/Dashboard.tsx:258`,
+  // `src/components/Chat.tsx:670` — alle drei akzeptieren {memories:[]}).
+  // Dieselbe Zahl bleibt zusaetzlich in Koepfen (`x-kepta-*`), fuer jeden, der vor
+  // dem Leib entscheiden will; die Umstellung der Flaechen ist GFs Scheibe.
   app.get("/api/memories", (req, res) => {
-    const memories = req.query.trash === "1" ? ctx.listAllMemories({ trash: true }).map(toApi) : ctx.listAllMemories().map(toApi);
-    const body = JSON.stringify(memories);
+    const { ganzerBestand } = leseGrenzwerte(req, res);
+    if (res.headersSent) return;
+    const trash = req.query.trash === "1";
+    const bestand = store.countMemories();
+    const total = trash ? bestand.trashed : bestand.active;
+    const einheit = trash ? "trashed notes" : "notes";
+
+    let seite: number;
+    let offset = 0;
+    let geklemmt: string | undefined;
+    if (ganzerBestand) {
+      seite = total;
+    } else {
+      const umgebung = seiteUmwelt();
+      const roh = typeof req.query.limit === "string" ? req.query.limit : undefined;
+      const gewollt = roh === undefined ? umgebung.groesse : parseInt(roh, 10);
+      seite = Math.min(Math.max(gewollt, SEITE_MIN), SEITE_MAX);
+      offset = typeof req.query.offset === "string" ? parseInt(req.query.offset, 10) : 0;
+      if (seite !== gewollt) {
+        geklemmt = `limit=${gewollt} is outside ${SEITE_MIN}..${SEITE_MAX} - the page was pinned to ${seite}.`;
+      }
+      if (umgebung.unverstanden) geklemmt = [geklemmt, umgebung.unverstanden].filter(Boolean).join(" ");
+    }
+
+    const memories = (ganzerBestand ? ctx.listAllMemories({ trash }) : store.listMemories({ limit: seite, offset, trash })).map(toApi);
+    const begrenzt = offset + memories.length < total;
+    const hinweis = [
+      geklemmt,
+      hinweisDerListe({ ganzerBestand, seite, offset, total, einheit, begrenzt }),
+    ].filter(Boolean).join(" ");
+
+    // Der Leib nennt den Vertrag selbst — Zahl zuerst, dann die Knoten. Ein nackter
+    // Array haette die Gesamtzahl nur im Kopf, und GFs Flaeche zeigte "100 entries"
+    // bei 14.702 in der Tuer.
+    const korpus = {
+      count: memories.length,
+      total,
+      limit: seite,
+      offset,
+      begrenzt,
+      hinweis,
+      memories,
+    };
+    // Seite statt Gesamtbestand: der ETag fuehrt ueber das, was gesendet wird.
+    // Ueber dem ganzen String einer 31-Megabyte-Liste hing ein zweiter Vollzugriff,
+    // bevor die Antwort ueberhaupt begonnen hatte.
+    const body = JSON.stringify(korpus);
     const hash = crypto.createHash("sha1").update(body).digest("hex");
     const etag = `"${hash}"`;
     res.setHeader("ETag", etag);
     res.setHeader("Cache-Control", "private, max-age=0, must-revalidate");
+    res.setHeader("x-kepta-count", String(memories.length));
+    res.setHeader("x-kepta-total", String(total));
+    res.setHeader("x-kepta-limit", String(seite));
+    res.setHeader("x-kepta-offset", String(offset));
+    res.setHeader("x-kepta-begrenzt", begrenzt ? "1" : "0");
+    res.setHeader("x-kepta-hinweis", hinweis);
     if (req.headers["if-none-match"] === etag) {
       return res.status(304).end();
     }
     res.setHeader("Content-Type", "application/json");
     res.send(body);
   });
+}
+
+/**
+ * Die drei Steuerfelder der Liste-Route, strenge gelesen.
+ *
+ * Form pruefen, Groesse klemmen: ein limit ueber der Obergrenze wird auf die
+ * Grenze gesetzt und gesagt (dasselbe Muster wie die Kernsuche mit
+ * SUCHE_LIMIT_MIN/STD/MAX), eine Form, die keine Zahl ist, darf nie still als
+ * "ganze Basis" oder "Seite 1" enden — das ist die Lehre aus A3-11, wo
+ * `?permanent=True` schweigend etwas anderes tat. Der Rueckweg heisst alle=1
+ * und steht in jeder Ablehnung.
+ */
+function leseGrenzwerte(req: express.Request, res: express.Response): { ganzerBestand: boolean } {
+  const ganzer = req.query.alle;
+  if (ganzer !== undefined && ganzer !== "1" && ganzer !== "true") {
+    res.status(400).json({
+      error: `alle takes exactly 1 or true - or leave it out for one page of ${seiteUmwelt().groesse} notes (limit=<${SEITE_MIN}..${SEITE_MAX}>). Nothing was read.`,
+    });
+    return { ganzerBestand: false };
+  }
+  const zaehler = (feld: string, wert: unknown, minimum: number): number | null | undefined => {
+    if (wert === undefined) return undefined;
+    const gueltigeForm = typeof wert === "string" && /^\d+$/.test(wert);
+    if (!gueltigeForm) {
+      res.status(400).json({
+        error: `${feld} must be a whole number${feld === "limit" ? ` from ${SEITE_MIN} to ${SEITE_MAX}, or alle=1 for the whole base` : ` from ${minimum} up`} - ${typeof wert === "string" ? `"${wert}"` : "a repeated query value"} is neither. Nothing was read.`,
+      });
+      return null;
+    }
+    const n = parseInt(wert, 10);
+    if (n < minimum) {
+      res.status(400).json({
+        error: `${feld} must be a whole number from ${feld === "limit" ? `${SEITE_MIN} to ${SEITE_MAX}, or alle=1 for the whole base` : `${minimum} up`} - got ${n}. Nothing was read.`,
+      });
+      return null;
+    }
+    return n;
+  };
+  if (zaehler("limit", req.query.limit, SEITE_MIN) === null) return { ganzerBestand: false };
+  if (zaehler("offset", req.query.offset, 0) === null) return { ganzerBestand: false };
+  return { ganzerBestand: ganzer === "1" || ganzer === "true" };
+}
+
+/** Zahl je mit Einheit, und nie eine Kappe, die nicht genannt ist. Nur ASCII — der Wert geht in einen Kopf. */
+function hinweisDerListe(f: { ganzerBestand: boolean; seite: number; offset: number; total: number; einheit: string; begrenzt: boolean }): string {
+  if (f.ganzerBestand) {
+    return `alle=1 asked for the whole base: ${f.total.toLocaleString("en-US")} ${f.einheit} in one answer. This is the heavy path - page with limit= instead if a window has to render it.`;
+  }
+  if (!f.begrenzt) {
+    return `${f.total.toLocaleString("en-US")} ${f.einheit} read from offset ${f.offset} - the whole list fits in this page (limit=${f.seite}).`;
+  }
+  const rest = f.total - (f.offset + f.seite);
+  return `This page holds ${f.seite.toLocaleString("en-US")} of ${f.total.toLocaleString("en-US")} ${f.einheit}; ${rest.toLocaleString("en-US")} more follow at offset ${(f.offset + f.seite).toLocaleString("en-US")} (limit=<${SEITE_MIN}..${SEITE_MAX}>, offset=, alle=1 for the whole base).`;
 }

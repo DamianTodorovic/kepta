@@ -1,10 +1,10 @@
 # kepta
 
-**Python client for [KEPTA](https://github.com/DamianTodorovic/kepta) — local memory for AI agents.**
+**Python client for [K3PTA](https://github.com/DamianTodorovic/kepta) — local memory for AI agents.**
 
-Your agents forget you after every conversation. KEPTA fixes that — with a SQLite file on your own machine. No account, no cloud, no telemetry.
+Your agents forget you after every conversation. K3PTA fixes that — with a SQLite file on your own machine. No account, no cloud, no telemetry.
 
-This package is the **client, not the app**. KEPTA runs as a desktop application on the same device; here you connect to it.
+This package is the **client, not the app**. K3PTA runs as a desktop application on the same device; here you connect to it.
 
 ```bash
 pip install kepta
@@ -61,7 +61,7 @@ m.is_expired, m.is_superseded                      # state right on the object
 `KeptaClient()` looks in this order:
 
 1. Environment variable `KEPTA_URL`
-2. `~/.kepta/endpoint.json` — the address file KEPTA writes on startup
+2. `~/.kepta/endpoint.json` — the address file K3PTA writes on startup
 3. `http://127.0.0.1:3000` as a fallback for development mode
 
 Step 2 is the important one: the packaged app picks a random port. Being explicit works too, of course:
@@ -74,7 +74,7 @@ If nothing is running you do not get a cryptic network error but a sentence that
 
 ```python
 if not kepta.is_alive():
-    print("KEPTA is not running — start the app or set KEPTA_URL.")
+    print("K3PTA is not running — start the app or set KEPTA_URL.")
 ```
 
 ## What the client can do
@@ -92,7 +92,7 @@ if not kepta.is_alive():
 
 `Memory` and `SearchHit` are frozen dataclasses with type annotations. Alongside the overall score, `SearchHit` exposes the individual tracks as `vector_score` and `lexical_score`.
 
-## Installing KEPTA
+## Installing K3PTA
 
 The app is available for macOS, Windows and Linux under [Releases](https://github.com/DamianTodorovic/kepta/releases) — Intel and ARM in each case. MIT licensed, free.
 

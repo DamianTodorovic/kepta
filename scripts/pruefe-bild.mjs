@@ -3,7 +3,7 @@
 // Der Anlass ist gemessen, nicht erfunden. Beide Filme im Schaufenster
 // (`docs/demo.gif`, `docs/demo.mp4`, beide vom 18.09.) tragen in jeder Szene
 // unten links die tote Stufe als Produktnamen neben der Marke, dazu „Licensed
-// to KEPTA Demo". Diese Stufe ist am 03.10.
+// to K3PTA Demo". Diese Stufe ist am 03.10.
 // gestorben (`03cad2d`), und ein Schlüssel gehört in die kostenlose App nirgends
 // hin — der Satz direkt über dem Film (README:351) sagt „no key field … nothing
 // to activate". `05-setup.png` nennt „Version 3.1.2" während 3.1.5 läuft, und

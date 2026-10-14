@@ -5,21 +5,21 @@
 //
 // Der Schlüssel enthält Lizenznummer, Stufe (business/enterprise) und Seats,
 // signiert über Namen, Nummer, Stufe und Seats — dasselbe Format wie signiere()
-// in src/core/lizenz.ts. Ausgestellt wird nur KEPTA Enterprise (Vertrag,
+// in src/core/lizenz.ts. Ausgestellt wird nur K3PTA Enterprise (Vertrag,
 // persönlich); die kostenlose App hat kein Schlüssel-Feld und läuft unbegrenzt.
 // Signiert wird mit dem privaten Schlüssel aus dem macOS-Schlüsselbund (angelegt
 // von scripts/license-keypair.mjs); er steht nirgends im Repo und nie in der
 // App. Für Tests kann er über KEPTA_LICENSE_PRIVATE_KEY (PKCS#8/DER, base64)
 // hereingereicht werden.
 //
-// Bequemer geht es mit KEPTA License Studio (npm run license-studio): es
+// Bequemer geht es mit K3PTA License Studio (npm run license-studio): es
 // vergibt die Nummern selbst, führt die Liste und sperrt weitergegebene Schlüssel.
 import crypto from "node:crypto";
 import { execFileSync } from "node:child_process";
 
 const ALPHABET = "ABCDEFGHIJKLMNOPQRSTUVWXYZ234567";
 const EDITIONS_CODE = { business: 2, enterprise: 3 };
-const EDITIONS_LABEL = { business: "KEPTA Enterprise", enterprise: "KEPTA Enterprise" };
+const EDITIONS_LABEL = { business: "K3PTA Enterprise", enterprise: "K3PTA Enterprise" };
 const HOECHSTE_SEATS = 9999;
 
 /** Wie normalisiere() in src/core/lizenz.ts — samt Unicode-Form (NFC). */

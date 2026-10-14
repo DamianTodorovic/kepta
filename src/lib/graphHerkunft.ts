@@ -45,9 +45,23 @@ const STEMPEL: readonly [string, HerkunftsArt][] = [
 ];
 
 export const HERKUNFT_LABELS: Record<HerkunftsArt, string> = {
-  [HERKUNFT.geschrieben]: "Written in KEPTA",
+  [HERKUNFT.geschrieben]: "Written in K3PTA",
   [HERKUNFT.datei]: "From a file",
   [HERKUNFT.rechner]: "From this computer",
+};
+
+/**
+ * Die gleiche Auskunft für den eingebetteten Satz („Everything here was …").
+ * Geschrieben, nicht gerechnet: der Satz braucht Kleinschrift am Anfang, die
+ * Marke aber ihre Schreibweise. Ein `.toLowerCase()` über LABELS ergab
+ * „written in k3pta" — ein Eigenname, den eine Kasus-Biegung klein macht
+ * (Hausregel 14.10.). Wer ein Label ändert, ändert hier mit; der Fall in
+ * tests/lib/graphHerkunft.test.ts hält beide Formen zusammen.
+ */
+export const HERKUNFT_SATZ: Record<HerkunftsArt, string> = {
+  [HERKUNFT.geschrieben]: "written in K3PTA",
+  [HERKUNFT.datei]: "from a file",
+  [HERKUNFT.rechner]: "from this computer",
 };
 
 /**
@@ -56,7 +70,7 @@ export const HERKUNFT_LABELS: Record<HerkunftsArt, string> = {
  * nicht wie ein Artenwechsel aussieht). Hier steht nur der Name; gemalt wird
  * aus `<token>-hex`, den die design-wache neben das oklch-Original setzt.
  *
- * „Written in KEPTA" ist stahlgrau, nicht weil die Herkunft unbekannt wäre,
+ * „Written in K3PTA" ist stahlgrau, nicht weil die Herkunft unbekannt wäre,
  * sondern weil sie die unaufgeforderte ist: alles, was hier niemand
  * hereingetragen hat, wurde hier aufgeschrieben.
  */
@@ -94,7 +108,7 @@ export function herkunftsBild(notizen: readonly HerkunftsNotiz[]): HerkunftsBild
     ? "No notes yet — there is nothing to have come from anywhere."
     : verfügbar
       ? ""
-      : `Everything here was ${HERKUNFT_LABELS[arten[0] ?? HERKUNFT.geschrieben].toLowerCase()} — there is nothing to tell apart.`;
+      : `Everything here was ${HERKUNFT_SATZ[arten[0] ?? HERKUNFT.geschrieben]} — there is nothing to tell apart.`;
 
   return { träger, zahlen, arten, verfügbar, grund };
 }

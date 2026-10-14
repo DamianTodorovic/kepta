@@ -1,4 +1,4 @@
-// KEPTA Ablation — was traegt jedes Retrieval-Bein wirklich bei?
+// K3PTA Ablation — was traegt jedes Retrieval-Bein wirklich bei?
 //
 // Anlass: Das bestehende Eval misst die Engine "ohne Vektoren" und verknuepft
 // keine Entitaeten. Die dort ausgewiesenen 92 % Hit@1 stammen damit aus BM25

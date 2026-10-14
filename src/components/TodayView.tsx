@@ -49,7 +49,7 @@ export const FENSTER = [
   { label: 'Today', ms: TAG, text: 'in the last 24 hours' },
   { label: '7 days', ms: 7 * TAG, text: 'in the last 7 days' },
   { label: '30 days', ms: 30 * TAG, text: 'in the last 30 days' },
-  { label: 'Everything', ms: 0, text: 'in all the time KEPTA remembers' },
+  { label: 'Everything', ms: 0, text: 'in all the time K3PTA remembers' },
 ] as const;
 
 /** Fensterstart als Zeitstempel: letzter Besuch (<0), fixe Spanne oder „alles“ (0). */
@@ -164,7 +164,7 @@ export function TodayView({ aktiv, onOpenMemory, onGo }: Props) {
       });
       const d = await r.json().catch(() => ({}));
       if (!r.ok) throw new Error((d as { error?: string }).error ?? `HTTP ${r.status}`);
-      setErledigt((p) => ({ ...p, [w.key]: wahl === 'both' ? 'Noted — KEPTA will not ask about these two again.' : `Done — “${drop.title}” is marked as replaced by “${keep.title}”.` }));
+      setErledigt((p) => ({ ...p, [w.key]: wahl === 'both' ? 'Noted — K3PTA will not ask about these two again.' : `Done — “${drop.title}” is marked as replaced by “${keep.title}”.` }));
     } catch (e) {
       setErledigt((p) => ({ ...p, [w.key]: `That did not work: ${e instanceof Error ? e.message : String(e)}` }));
     }
@@ -367,7 +367,7 @@ export function TodayView({ aktiv, onOpenMemory, onGo }: Props) {
           <Abschnitt titel="Your AI apps">
             {daten.apps.length === 0 ? (
               <p className="text-sm" style={{ color: 'var(--text-2)' }}>
-                No AI app has used KEPTA since then.{' '}
+                No AI app has used K3PTA since then.{' '}
                 {/* min-h-6: gemessen 20 px hohe Textstelle ohne Polster — die
                     Untergrenze, nicht mehr. */}
                 <button onClick={() => onGo('activity')} className="min-h-6 px-0.5 inline-flex items-center underline underline-offset-2" style={{ color: 'var(--accent)' }}>Connect an app</button>

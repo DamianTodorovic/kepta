@@ -1,4 +1,4 @@
-// KEPTA-Server — Einstiegspunkt.
+// K3PTA-Server — Einstiegspunkt.
 //
 // Diese Datei ist eine schlanke Fassade: seit dem Refactoring 2026-09 lebt die
 // App in server/app.ts (Middleware-Kette) und server/router/* (Fachrouten),
@@ -23,6 +23,6 @@ import { startServer } from "./server/bootstrap";
 export const serverStart: Promise<void> | undefined =
   process.env.KEPTA_NO_AUTOSTART !== "1" ? startServer() : undefined;
 serverStart?.catch((e: unknown) => {
-  console.error(`KEPTA could not start: ${e instanceof Error ? e.message : String(e)}`);
+  console.error(`K3PTA could not start: ${e instanceof Error ? e.message : String(e)}`);
   if (!process.versions.electron) process.exit(1);
 });

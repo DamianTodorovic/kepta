@@ -1,4 +1,4 @@
-# 🗺️ KEPTA Roadmap — v2.0 and beyond
+# 🗺️ K3PTA Roadmap — v2.0 and beyond
 
 > As of September 2026 · Replaces `WHITE-SPACE-ANALYSE.md` (the v1.0 analysis, whose quick wins and big bets are all shipped).
 
@@ -29,7 +29,7 @@ Every user-facing string, the MCP tool descriptions, the starter pack and the
 native date controls are English. German survives where it is a feature, not a
 default: the search stopword list stays bilingual, so German notes keep working.
 A German switch for the main surfaces came in 2.10 and left again in 2.11:
-KEPTA's interface is English, one language done properly.
+K3PTA's interface is English, one language done properly.
 
 ## ✅ v2.6.15 — September 2026: wave 1, the white-space features
 
@@ -59,7 +59,7 @@ KEPTA's interface is English, one language done properly.
 |---|---|
 | **Encrypted knowledge base** | SQLCipher 4 format through SQLite3 Multiple Ciphers: AES-256 and an HMAC-SHA512 over every page, search fully intact — the whole file is encrypted, not single fields, so FTS5 and vectors keep working |
 | **Key in the system keychain** | 256 random bits, created on first start; macOS Keychain, Windows DPAPI, Linux Secret Service, `KEPTA_DB_KEY` for headless installs |
-| **Safe conversion** | An existing base is converted only when KEPTA has it to itself: copy, encrypt, verify every table and the integrity check, replace in one step, overwrite the old file with zeros |
+| **Safe conversion** | An existing base is converted only when K3PTA has it to itself: copy, encrypt, verify every table and the integrity check, replace in one step, overwrite the old file with zeros |
 | **Settings inside** | The settings, the AI key included, moved from `settings.json` into the encrypted file |
 | **English only** | The German interface switch from 2.10 is gone |
 
@@ -68,7 +68,7 @@ KEPTA's interface is English, one language done properly.
 | Feature | What shipped |
 |---|---|
 | **Name and number** | Activation stays name and key, offline, and every key carries a license number. Since 3.1.1 the sidebar shows the licensee's name with no tier label — the number itself is no longer on screen (it travels with the license state and the activation answer) |
-| **Revocation** | A revoked license number no longer unlocks KEPTA from the next update on — also where it was already activated |
+| **Revocation** | A revoked license number no longer unlocks K3PTA from the next update on — also where it was already activated |
 | **Copy buttons** | Chat, recovery key, system status and the MCP block copy again |
 
 ## ✅ v2.13 — September 2026: your memory, every day

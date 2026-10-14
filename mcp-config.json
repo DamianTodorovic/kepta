@@ -1,5 +1,5 @@
 {
-  "_comment": "KEPTA — MCP config for Claude Desktop. Copy the mcpServers block into ~/Library/Application Support/Claude/claude_desktop_config.json (macOS) or %APPDATA%\\Claude\\claude_desktop_config.json (Windows), then restart Claude Desktop.",
+  "_comment": "K3PTA — MCP config for Claude Desktop. Copy the mcpServers block into ~/Library/Application Support/Claude/claude_desktop_config.json (macOS) or %APPDATA%\\Claude\\claude_desktop_config.json (Windows), then restart Claude Desktop.",
   "mcpServers": {
     "kepta": {
       "command": "npx",

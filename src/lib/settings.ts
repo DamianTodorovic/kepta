@@ -10,11 +10,11 @@
 //
 // Die Loesung liegt nicht darin, den Port festzunageln (er kann belegt sein),
 // sondern die Einstellungen dorthin zu legen, wo auch das Wissen liegt: in den
-// KEPTA-Datenordner. Der Browserspeicher bleibt als schneller Zwischenspeicher
+// K3PTA-Datenordner. Der Browserspeicher bleibt als schneller Zwischenspeicher
 // bestehen — die Komponenten lesen weiter localStorage und muessen nichts
 // wissen. Diese Datei spiegelt in beide Richtungen.
 
-/** Praefixe, die zu KEPTA gehoeren. Alles andere bleibt unberuehrt. */
+/** Praefixe, die zu K3PTA gehoeren. Alles andere bleibt unberuehrt. */
 const UNSERE = ["kepta_", "ki_gehirn_"];
 /** Einzelne Schluessel ohne Praefix. */
 const EINZELN = ["theme"];

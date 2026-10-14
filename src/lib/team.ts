@@ -1,4 +1,4 @@
-// KEPTA Team-Scopes und Rollen (Milestone E1).
+// K3PTA Team-Scopes und Rollen (Milestone E1).
 //
 // Team-Daten leben in Scopes der Form `team:<name>` — technisch ganz normale
 // Scopes, die dieselbe verschlüsselte Datei nutzen wie alles andere. Wer sie

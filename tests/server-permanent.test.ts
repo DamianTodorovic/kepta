@@ -41,8 +41,10 @@ async function knoten(titel = "Loeschkandidat") {
   return String(res.body.memory.id);
 }
 
-const aktiv = async () => (await request(app).get("/api/memories")).body.length;
-const paperkorb = async () => (await request(app).get("/api/memories?trash=1")).body.length;
+// Der Leib der Liste nennt seine Zahl selbst (`count`/`total`, seit Aufgabe #64(1)):
+// die Helfer zaehlen nicht mehr die Laenge eines Arrays, sondern lesen die Zahl.
+const aktiv = async () => (await request(app).get("/api/memories")).body.total;
+const paperkorb = async () => (await request(app).get("/api/memories?trash=1")).body.total;
 
 describe("A3-11 — DELETE ?permanent= nahm unbekannte Werte still als Papierkorb", () => {
   it("lehnt ?permanent=True ab, statt die Notiz in den Papierkorb zu verschieben", async () => {

@@ -1,5 +1,5 @@
 {
-  "_comment": "KEPTA — mcp.json (Cursor / Windsurf / Zed). Put this file in the project root, or at .cursor/mcp.json. See mcp-config.json for Claude Desktop and for the alternatives.",
+  "_comment": "K3PTA — mcp.json (Cursor / Windsurf / Zed). Put this file in the project root, or at .cursor/mcp.json. See mcp-config.json for Claude Desktop and for the alternatives.",
   "mcpServers": {
     "kepta": {
       "command": "npx",

@@ -1,11 +1,11 @@
 # AGENTS.md — working rules for AI agents in this workspace
 
-## Your memory: KEPTA (MCP server `kepta`)
-Use the KEPTA MCP tools as your persistent memory, across sessions:
+## Your memory: K3PTA (MCP server `kepta`)
+Use the K3PTA MCP tools as your persistent memory, across sessions:
 
 - **Session start**: `memory_search` on the current topic, before asking or redoing work. Also `memory_list { type: "procedural" }` for project procedures.
 - **Session end / important findings**: `memory_save` — pick the type yourself:
-  - `semantic` = facts and architecture (e.g. "KEPTA 2.11 stores its knowledge base encrypted, via better-sqlite3-multiple-ciphers")
+  - `semantic` = facts and architecture (e.g. "K3PTA 2.11 stores its knowledge base encrypted, via better-sqlite3-multiple-ciphers")
   - `episodic` = events (e.g. "persona test found the wizard re-trigger bug")
   - `procedural` = repeatable procedures (e.g. "release: npm test → eval → build → tag v*")
 - **Outdated knowledge**: `memory_forget { mode: "supersede" }` or `expire` — never park a contradicting node indifferently beside the old one.
@@ -20,7 +20,7 @@ Use the KEPTA MCP tools as your persistent memory, across sessions:
 - UX standard: "brutally good" — test from the persona's perspective, no jargon labels.
 
 ## Current state (2026-10-10) — read before you start
-- **The app has no key and no limits** (Damian, 9.10.2026, shipped in 3.1.5 / `c7cde55`): no license field, no activation, no daily counters, no upgrade panel, no "first day" — in the UI, in the API and in every outward text. `tests/keine-grenzen.test.ts` fails if any of it comes back. Licence keys belong to **KEPTA Enterprise** only (a contract, issued personally) and live in this repo as operator tooling: `tools/license-studio`, `tools/lizenz-worker`, `scripts/generate-license.mjs`. No runtime path of the app reaches `src/core/lizenz.ts`.
+- **The app has no key and no limits** (Damian, 9.10.2026, shipped in 3.1.5 / `c7cde55`): no license field, no activation, no daily counters, no upgrade panel, no "first day" — in the UI, in the API and in every outward text. `tests/keine-grenzen.test.ts` fails if any of it comes back. Licence keys belong to **K3PTA Enterprise** only (a contract, issued personally) and live in this repo as operator tooling: `tools/license-studio`, `tools/lizenz-worker`, `scripts/generate-license.mjs`. No runtime path of the app reaches `src/core/lizenz.ts`.
 - **Repositories:** `DamianTodorovic/kepta` is the public repo — the headless Core, source-available under **BUSL-1.1** (converts to AGPL-3.0-or-later four years after each version), local copy `~/kepta-core`. It also carries the desktop installers: each app build arrives as a `app-x.y.z` tag with a `SHA256SUMS.txt`, and `releases/latest` is the rolling download address the README and the site use. `v*` tags there fire `publish.yml` (npm + MCP registry) and `py-v*` fires PyPI — so never tag blindly. This repo (`~/kepta-app`, `main`) is the desktop application, proprietary (UNLICENSED), on the **private** remote `DamianTodorovic/kepta-app` — the source has lived there since 8.10.2026, not only on this machine. `~/kepta-enterprise` is the coordination layer on top; `kepta-license-studio` holds only the License Studio builds. There is no `kepta-pro-releases` and no `kepta-website` on GitHub — both 404.
 - **Versions:** the app and its npm bundle are **3.1.5** (`package.json`, `package-lock.json`, `src/core/version.ts`, `npm/package.json`, `CHANGELOG.md`). The engine on npm is **3.2.0** (`kepta-mcp`, published 09.10.2026 by the core repo's `publish.yml` from tag `v3.2.0` = commit `6fe7955`) — `server.json` names *that* number, not the app's, and `tests/mcp-registry.test.ts` holds the constant. `~/kepta-core` is at 3.2.0 on `main` too.
 - **Both HTTP APIs answer this computer only** (`src/lib/herkunft.ts` here, `src/herkunft.ts` in Core): a foreign `Host` header and write requests from other websites get 403. It is the first middleware in `createApp` — never register a route before it, never loosen it without a test.
@@ -34,4 +34,4 @@ Use the KEPTA MCP tools as your persistent memory, across sessions:
 - Never delete notes for good — the trash, with a backup and a list of ids to restore.
 
 ## Division of roles
-The KEPTA chat is a test cockpit (proving mode). The product is the memory layer for Claude Desktop and Cursor via MCP (`POST /mcp`, 8 tools, protocol 2026-07-28).
+The K3PTA chat is a test cockpit (proving mode). The product is the memory layer for Claude Desktop and Cursor via MCP (`POST /mcp`, 8 tools, protocol 2026-07-28).

@@ -1,4 +1,4 @@
-// KEPTA-Icon-Serie — Solar „Linear" (24 px, 1,5 px Strich, currentColor),
+// K3PTA-Icon-Serie — Solar „Linear" (24 px, 1,5 px Strich, currentColor),
 // gesammelt und offline eingebettet (Iconify-Collection, keine Laufzeit-
 // Netzwerkfetches). Eine Serie für alles: gleicher Strich, gleiche
 // Geometrie, gleiche Ecken. Gesammelt mit better-icons (Iconify).
@@ -65,7 +65,7 @@ function make(keptaName: string) {
   // Der Name wird beim Modul-Load gegen das Dataset geprüft — Tippfehler
   // fliegen sofort, nicht erst zur Laufzeit.
   if (!(keptaName in daten.icons)) {
-    throw new Error(`Kepta-Icons: icon "${keptaName}" does not exist`);
+    throw new Error(`K3PTA-Icons: icon "${keptaName}" does not exist`);
   }
   return function KeptaIcon({ className, style, size }: IconProps) {
     return (

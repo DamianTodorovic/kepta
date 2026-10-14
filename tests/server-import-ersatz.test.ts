@@ -58,7 +58,7 @@ async function papierkorb(n: number) {
 const zaehlen = async () => {
   const aktiv = await request(app).get("/api/memories");
   const trash = await request(app).get("/api/memories?trash=1");
-  return { aktiv: aktiv.body.length, trash: trash.body.length };
+  return { aktiv: aktiv.body.total, trash: trash.body.total };
 };
 
 describe("Q-16 — POST /api/memories/import mit mode:\"replace\" loescht die ganze Wissensbasis endgueltig", () => {

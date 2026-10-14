@@ -52,7 +52,7 @@ export const AKTION: Record<string, string> = {
   'resolve contradiction': 'resolved a contradiction',
 };
 
-/** A note id as KEPTA creates it — k-<time>-<8 hex>. */
+/** A note id as K3PTA creates it — k-<time>-<8 hex>. */
 const NOTIZ_ID = /\bk-[0-9a-z]+-[0-9a-f]{8}\b\s?/g;
 
 /**
@@ -96,7 +96,7 @@ function Live({ aktiv, onOpenMemory }: { aktiv: boolean; onOpenMemory: (id: stri
     return (
       <div className="space-y-5">
         <p className="text-sm" style={{ color: 'var(--text-2)' }}>
-          No AI app has used KEPTA yet. Connect one below — every note it saves or looks up then shows up here as it happens.
+          No AI app has used K3PTA yet. Connect one below — every note it saves or looks up then shows up here as it happens.
         </p>
         <ConnectApps />
       </div>

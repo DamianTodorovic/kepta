@@ -506,6 +506,13 @@ export function indexMemory(store: KeptaStore, memoryId: string): void {
   if (!record) return;
   const texts = [`${record.title}\n${record.tags.join(", ")}`, ...chunkText(record.content)];
   store.replaceChunks(memoryId, texts);
+  // Verknuepfen gehoert zum Indexieren, nicht zu einem einzelnen Schreibweg. Der
+  // Scanner, die Inbox und die Importe haben bisher nur indiziert — ihre Notizen
+  // standen darum im Graphen als Blatt ohne Kante (13.10.: 14.702 Notizen, 30
+  // Begriffe). `verknuepfeNotiz` ist pro Notiz setzend, kein Haufen: wer
+  // dieselbe Notiz zweimal indiziert, bekommt dieselben Kanten ein zweites Mal
+  // nicht dazu.
+  store.verknuepfeNotiz(memoryId, record.title, []);
 }
 
 // ---------- Konsolidierung ----------

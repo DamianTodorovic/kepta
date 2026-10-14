@@ -167,7 +167,7 @@ describe("holeOderErzeugeSchluessel", () => {
 
   it("nimmt einen vorhandenen Schluessel und lehnt einen fremden Eintrag ab", () => {
     expect(holeOderErzeugeSchluessel(speicherBund(SCHLUESSEL), {}).toString("hex")).toBe(SCHLUESSEL);
-    expect(() => holeOderErzeugeSchluessel(speicherBund("kein-schluessel"), {})).toThrow("not a KEPTA key");
+    expect(() => holeOderErzeugeSchluessel(speicherBund("kein-schluessel"), {})).toThrow("not a K3PTA key");
   });
 
   it("erster Leseversuch leer, zweiter findet den Schluessel: kein Anlegen, kein Überschreiben", () => {

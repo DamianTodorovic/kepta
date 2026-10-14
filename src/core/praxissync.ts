@@ -1,8 +1,8 @@
-// KEPTA Praxis-Sync (F4) — E2E-verschlüsselter Geräteabgleich mit Paketmitschnitt.
+// K3PTA Praxis-Sync (F4) — E2E-verschlüsselter Geräteabgleich mit Paketmitschnitt.
 // Zielbild §203: zwei Geräte tauschen Memories direkt aus — als Datei per USB,
 // Ordner-Sync oder verschlüsselter Mail. Das Bundle ist AES-256-GCM-verschlüsselt
 // mit einem scrypt-Key aus der Passphrase: der Übertragungsweg kann mitgelesen
-// werden, ohne lesbar zu sein; KEPTA selbst sendet nichts.
+// werden, ohne lesbar zu sein; K3PTA selbst sendet nichts.
 // Der Paketmitschnitt hält jeden Payload-Hash in einer verketteten JSONL-Kette
 // fest (je Zeile sha256 über die Zeile + Hash des Vorgängers) — der nachprüfbare
 // Beweis, welche Pakete wann übertragen wurden, ohne deren Inhalt zu kennen.

@@ -18,10 +18,12 @@ import {
   zoomAt,
   nodeAt,
   kanteBei,
-  reheat,
+  merkUrsprung,
+  loeseKnoten,
   setzeKrafte,
   setzeKnotenGroesse,
   nurEchteKanten,
+  punktwolke,
   EDGE_LOD_ZOOM,
   linienBudget,
   kantZaehlung,
@@ -44,6 +46,7 @@ import {
   type Transform,
 } from "../lib/graphLayout";
 import { t as uiT } from "../lib/uiText";
+import { bestandGroesse } from "../lib/store";
 import {
   buildHierarchy,
   entitiesByMemory,
@@ -1117,7 +1120,24 @@ export function KnowledgeGraph({ memories, onSelectMemory, onSelectConcept, sich
       ),
     [graphApi, netzSichtbar, titelVonId]
   );
+  /**
+   * Die Größe des Bestands, wie die Tür sie nennt — nie die Länge der Seite.
+   * `null` von der Tür heißt hier: nichts behaupten, sondern die eigene Liste
+   * als das nennen, was sie ist (ein Ausschnitt, dessen Größe unbekannt bleibt).
+   */
+  const bestandNotizen = bestandGroesse() ?? memories.length;
   const geruestIds = useMemo(() => netz.knoten.map((k) => k.id), [netz]);
+  /**
+   * Wie viele der Notizen im Bild tatsächlich an einem Begriff hängen. Das ist
+   * die Zahl auf Damians Frage vom 13.10. („12 000 Notes drauf, ich erkenn gar
+   * nix"): sie sagt, ob das Feld ein Netz zeigt oder eine Punktwolke, die nur
+   * so tut. Gezaehlt wird ueber die Erwaehnungen — eine Notiz mit drei Begriffen
+   * ist eine gedeckte Notiz.
+   */
+  const notizenMitBegriff = useMemo(
+    () => new Set(netz.erwahnungen.map(([notizId]) => notizId)).size,
+    [netz]
+  );
   /**
    * Was die Faltung im Kraftfeld verdeckt: nur Notizen, die sonst niemand
    * trägt. Gegen `netzSichtbar` gerechnet, damit die Kopfzeile nicht etwas
@@ -1130,10 +1150,31 @@ export function KnowledgeGraph({ memories, onSelectMemory, onSelectConcept, sich
     for (const id of netzSichtbar) if (ro.has(id)) out.add(id);
     return out;
   }, [graphApi, gefaltet, netzSichtbar]);
-  const feldNotizen = useMemo(
-    () => (verborgen.size === 0 ? filtered : filtered.filter((m) => !verborgen.has(m.id))),
-    [filtered, verborgen]
-  );
+  /**
+   * Die Detailstufe des Feldes. Hängt die Mehrzahl der Notizen an keinem
+   * Begriff, sind 14 702 Punkte kein Netz, sondern ein Schleier — das Feld malt
+   * dann nur, was wirklich verbunden ist, und sagt die nicht gemalte Masse.
+   *
+   * Drei Ausnahmen halten die Fläche erreichbar und nie leer: ein aktiver
+   * Suchfilter zeigt immer seine Treffer, eine Basis ohne jeden Begriff wird nie
+   * ausgedünnt (sonst stünde ein leeres Bild mit einer Zahl darauf), und unter
+   * drei gemalten Dingen bleibt die Ausmalung ganz.
+   */
+  const feldMassen = useMemo(() => {
+    const grund = verborgen.size === 0 ? filtered : filtered.filter((m) => !verborgen.has(m.id));
+    if (filter.trim() !== "" || netz.knoten.length === 0 || !punktwolke(bestandNotizen, notizenMitBegriff)) {
+      return { notizen: grund, unausgemalt: 0 };
+    }
+    const gedeckt = new Set<string>();
+    for (const [notizId] of netz.erwahnungen) gedeckt.add(notizId);
+    const gemalt = grund.filter((m) => gedeckt.has(m.id));
+    // Mindestens drei gemalte Dinge, sonst ist das Bild ein einzelner Punkt:
+    // Begriffe können ohne sichtbare Träger stehen (Zeitregler), dann wäre die
+    // Ausmalmenge null und die Fläche leer.
+    if (gemalt.length + netz.knoten.length < 3) return { notizen: grund, unausgemalt: 0 };
+    return { notizen: gemalt, unausgemalt: grund.length - gemalt.length };
+  }, [filtered, verborgen, filter, netz, bestandNotizen, notizenMitBegriff]);
+  const feldNotizen = feldMassen.notizen;
   /** Wie viele Notizen je gefaltetem Begriff wirklich weg sind — das Malzeichen darf nur das zählen. */
   const verdecktJeKonzept = useMemo(() => {
     const m = new Map<string, number>();
@@ -1455,10 +1496,15 @@ export function KnowledgeGraph({ memories, onSelectMemory, onSelectConcept, sich
   const kanten = useMemo(() => kantZaehlung(sichtbareKanten), [sichtbareKanten]);
   const sichtbareAnzahl = useMemo(
     () => ({
-      knoten: (zeitAktivIds ? zeitAktivIds.size : filtered.length) - verborgen.size,
+      // Gezaehlt wird, was das Feld wirklich malt — nach Detailstufe (§
+      // `feldMassen`). Eine Kopfzahl, die 14 702 nennt, waehrend 32 Punkte
+      // stehen, ist dieselbe Luege, die die Bilanzzeile bekämpft.
+      knoten: zeitAktivIds
+        ? feldNotizen.reduce((n, m) => n + (zeitAktivIds.has(m.id) ? 1 : 0), 0)
+        : feldNotizen.length,
       kanten: sichtbareKanten.length,
     }),
-    [zeitAktivIds, filtered.length, sichtbareKanten, verborgen]
+    [zeitAktivIds, feldNotizen, sichtbareKanten]
   );
 
   // --- Dendrogramm: Hierarchie und Zielpositionen ---
@@ -1611,15 +1657,50 @@ export function KnowledgeGraph({ memories, onSelectMemory, onSelectConcept, sich
      * es traegt.
      */
     if (ansicht === "dendrogram" && autoZiffern > 0) {
+      // „in the store" nur, wenn die Tür den Bestand nennt: 100 von 14 702 als
+      // „100 notes" auszugeben ist dieselbe stille Kappe, die dieser Schnitt
+      // abschafft. Schweigt die Tür, bleibt die Liste alles, was die Fläche weiß.
+      const umfang = bestandGroesse() === null
+        ? `${zahl(memories.length)} notes`
+        : `${zahl(bestandNotizen)} notes in the store`;
       klausaen.push(
-        `${zahl(memories.length)} notes · ${zahl(offen)} unfolded, ${zahl(autoZiffern)} notes folded under ${zahl(autoGefaeltet)} groups`
+        `${umfang} · ${zahl(offen)} unfolded, ${zahl(autoZiffern)} notes folded under ${zahl(autoGefaeltet)} groups`
       );
-    } else if (offen < memories.length) {
-      klausaen.push(`Showing ${zahl(offen)} of ${zahl(memories.length)} notes`);
+    } else if (offen < bestandNotizen) {
+      // „in the store" nur, wenn die Tür den Bestand nennt; schweigt sie, ist
+      // die größere Zahl die eigene Liste und die Klaue heißt „in this view".
+      klausaen.push(
+        `Showing ${zahl(offen)} of ${zahl(bestandNotizen)} notes${bestandGroesse() === null ? " in this view" : " in the store"}`
+      );
     }
     const geliefert = graphApi?.relations.length ?? 0;
     if (graphApi?.bestand && graphApi.bestand.kanten > geliefert) {
       klausaen.push(`Showing ${zahl(geliefert)} of ${zahl(graphApi.bestand.kanten)} claims in the store`);
+    }
+    // Die Deckung. Eine Punktwolke und ein Netz sehen gleich aus, solange keine
+    // Zahl sagt, wie viel des Bestands überhaupt an einem Begriff hängt. Wenn
+    // die Detailstufe schon ausdünnt, sagt die Zahl der Masse, was nicht malt —
+    // dieselben zwei Größen, nie zweimal. Genenner ist der Bestand der Tür,
+    // nicht die Länge der Seite.
+    if (feldMassen.unausgemalt > 0) {
+      klausaen.push(
+        `${zahl(feldMassen.unausgemalt)} notes hang under no concept and are not painted — search still finds them`
+      );
+    } else if (bestandNotizen > 0 && notizenMitBegriff < bestandNotizen) {
+      const grund = `${zahl(notizenMitBegriff)} of ${zahl(bestandNotizen)} notes carry a concept`;
+      klausaen.push(
+        punktwolke(bestandNotizen, notizenMitBegriff)
+          ? `${grund} — this field is not a network yet, the tree view groups the rest`
+          : grund
+      );
+    }
+    // Was der Titel-Echo (G-1) nicht durchlaesst, bleibt verborgen — aber es
+    // steht in der Zeile. Nicht im Umfang der Klaue oben: die zählt den Schnitt
+    // aus dem Bestand, diese die Kanten, die im Bild nicht gezeichnet werden,
+    // obwohl ihre Notiz zu sehen ist.
+    if (netz.vomEchoVerschluckt > 0) {
+      const n = netz.vomEchoVerschluckt;
+      klausaen.push(`${zahl(n)} claim${n === 1 ? "" : "s"} not drawn — its term is only a note title`);
     }
     if (kantenRapport.verstecktInSumme > 0) {
       klausaen.push(`${zahl(kantenRapport.verstecktInSumme)} neighbours hidden behind badges`);
@@ -1644,7 +1725,7 @@ export function KnowledgeGraph({ memories, onSelectMemory, onSelectConcept, sich
     // nicht stillschweigend weg — es ist gefaltet, und die Zahl steht in der
     // Klaue oben (der Baum) oder in der Bilanz des Feldes.
     return klausaen.join(" · ");
-  }, [bildZaehlung.knoten, memories.length, graphApi, kantenRapport, selbstkaanten, ansicht, karte, semantikFeld, autoZiffern, autoGefaeltet]);
+  }, [bildZaehlung.knoten, memories.length, bestandNotizen, graphApi, kantenRapport, selbstkaanten, ansicht, karte, semantikFeld, autoZiffern, autoGefaeltet, notizenMitBegriff, netz, feldMassen]);
   const baumNachbarn = useMemo(() => {
     const n = new Map<string, Set<string>>();
     for (const e of baumLayout.edges) {
@@ -3121,16 +3202,24 @@ export function KnowledgeGraph({ memories, onSelectMemory, onSelectConcept, sich
   }, []);
 
   /**
-   * Alles wieder der Physik ueberlassen.
+   * Alles zurück an die Stelle vor dem ersten Griff.
    *
    * Ohne diesen Weg zurueck waere das Anheften eine Falle: nach ein paar
    * Griffen stuende der halbe Graph still, und niemand koennte ihn loesen.
+   *
+   * Kein `reheat`: der Knopf verspricht einen Heimweg, kein Neubeleben des
+   * ganzen Feldes. Ein ausgekuehltes Bild bleibt stehen, und was sich bewegt,
+   * ist genau der Knoten, den die Hand wegggenommen hat.
    */
   const loeseAlle = useCallback(() => {
     const sim = simRef.current;
     if (!sim) return;
-    for (const k of sim.nodes) k.pinned = false;
-    reheat(sim, 0.5);
+    for (const k of sim.nodes) {
+      // Ein Knoten ohne gemerkte Stelle hat nichts zurueckzugeben — aber er soll
+      // auch nicht festgenagelt bleiben.
+      if (k.ursprung) loeseKnoten(sim, k.id);
+      else k.pinned = false;
+    }
     setAngeheftet(0);
     zeichneNoetig.current = true;
   }, []);
@@ -3144,6 +3233,9 @@ export function KnowledgeGraph({ memories, onSelectMemory, onSelectConcept, sich
     // nicht der Hand. (Und das Anheften ist Kraftfeld-Sache.)
     const treffer = ansichtRef.current === "force" ? trefferBei(w) : null;
     if (treffer) {
+      // Die Stelle des ERSTEN Griffs wird gemerkt, bevor die Hand sie bewegt:
+      // genau sie gibt der Loesungsknopf zurueck.
+      merkUrsprung(sim, treffer.id);
       treffer.pinned = true;
       draggingRef.current = treffer;
       zugRef.current = { sx: e.clientX, sy: e.clientY, bewegt: false };
@@ -3708,7 +3800,7 @@ export function KnowledgeGraph({ memories, onSelectMemory, onSelectConcept, sich
           onClick={loeseAlle}
           className="btn-ghost px-2 py-1 rounded-lg text-[11px] whitespace-nowrap"
           style={{ color: "var(--accent)" }}
-          title="Nodes you dragged stay where you put them. This releases them back into the layout."
+          title="Nodes you dragged stay where you put them. This puts each one back where your hand first grabbed it."
         >
           Release {angeheftet} pinned
         </button>
@@ -4191,7 +4283,18 @@ export function KnowledgeGraph({ memories, onSelectMemory, onSelectConcept, sich
               hergeben wuerde; beide Ansichten nennen dasselbe Paar, weil sie
               dasselbe Netz meinen. */}
           <div className="hud-label tnum" data-testid="graph-kopf">
-            {bildZaehlung.knoten} {bildZaehlung.knoten === 1 ? "note" : "notes"} ·{" "}
+            {/* Die gemalte Zahl, und dahinter die Größe des Bestands, wenn die
+                Fläche weniger malt, als die Tür hat. Ohne diesen zweiten Teil
+                wäre „100 notes" die Behauptung, das Gehirn habe 100 Notizen. */}
+            {bildZaehlung.knoten} {bildZaehlung.knoten === 1 ? "note" : "notes"}
+            {/* Der Zusatz gehört nur der Kappung: schweigt die Tür, ist die
+                Liste alles, was die Fläche weiß, und „of …" wäre eine Zahl aus
+                der Luft. Filter, Zeitregler und Faltung ändern die gemalte Zahl
+                ohnehin — dafür steht die Bilanzzeile darunter. */}
+            {bestandGroesse() !== null && bestandNotizen > bildZaehlung.knoten
+              ? ` of ${bestandNotizen.toLocaleString("en-US")} in the store`
+              : ""}{" "}
+            ·{" "}
             {netz.knoten.length} {netz.knoten.length === 1 ? "concept" : "concepts"} ·{" "}
             {ansicht === "dendrogram"
               ? `${baumLayout.edges.length} ${baumLayout.edges.length === 1 ? "link" : "links"}`

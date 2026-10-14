@@ -107,9 +107,9 @@ describe("Z-14: das Fenster weiß, ob es den Schlüssel hat", () => {
     // Täfelchen, und der Assistent ist genau der Erststart-Fall.
     localStorage.removeItem("ki_gehirn_wizard_dismissed");
     const rahmen = await start();
-    await waitFor(() => expect(screen.getByText(/Set up KEPTA/)).toBeTruthy(), { timeout: 6000 });
+    await waitFor(() => expect(screen.getByText(/Set up K3PTA/)).toBeTruthy(), { timeout: 6000 });
     window.dispatchEvent(new Event("blur"));
     await waitFor(() => expect(rahmen.getAttribute("data-fenster")).toBe("gedaempft"));
-    expect(screen.getByText(/Set up KEPTA/).isConnected, "der Dialog ist mit dem Rahmen verschwunden").toBe(true);
+    expect(screen.getByText(/Set up K3PTA/).isConnected, "der Dialog ist mit dem Rahmen verschwunden").toBe(true);
   });
 });

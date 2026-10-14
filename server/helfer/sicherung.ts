@@ -9,6 +9,7 @@ import crypto from "crypto";
 import fs from "fs";
 import path from "path";
 import type { KeptaStore } from "../../src/core/store";
+import { leseUmwelt } from "../../src/core/umwelt";
 
 /**
  * Der Name, den datenbanksicherung() schreibt — an IHM wird die eigene Sicherung
@@ -30,11 +31,15 @@ const SICHERUNGS_NAME = /^kepta-pre-replace-(\d+)(?:-([0-9a-f]{4}))?\.db$/;
  * Fehler des permanent-Schalters.
  */
 export function backupAufbewahrung(env: Record<string, string | undefined> = process.env): { behalten: number; ignoriert?: string } {
-  const roh = env.KEPTA_BACKUP_KEEP;
+  // Aufgabe #64: beide Namensformen, der Sieger wird beim Namen genannt. Der Kern
+  // (`kepta-core/server.ts:132`) liest bisher nur KEPTA_BACKUP_KEEP — die Paritaet
+  // ist meldbar gebrochen, bis die Kern-Scheibe nachzieht (Bericht Abschnitt 9).
+  const fund = leseUmwelt("sicherungBehalten", env);
+  const roh = fund.wert;
   if (roh === undefined || roh.trim() === "") return { behalten: 5 };
   const wert = Number(roh);
   if (Number.isFinite(wert) && wert >= 0) return { behalten: Math.floor(wert) };
-  return { behalten: 5, ignoriert: `KEPTA_BACKUP_KEEP="${roh}" is not a number from 0 — five backups are kept.` };
+  return { behalten: 5, ignoriert: `${fund.gewonnen}="${roh}" is not a number from 0 — five backups are kept.${fund.meldung ? " " + fund.meldung : ""}` };
 }
 
 /**

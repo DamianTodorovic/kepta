@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 //
-// Texte und Schriftgroesse. KEPTA ist englisch — der Deutsch-Umschalter aus
+// Texte und Schriftgroesse. K3PTA ist englisch — der Deutsch-Umschalter aus
 // 2.10 ist entfernt (11.9.2026).
 import { describe, it, expect, beforeEach } from "vitest";
 import { t, getZoom, setZoom, wendeZoomAn, TEXTE } from "../../src/lib/uiText";

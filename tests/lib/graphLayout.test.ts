@@ -1914,7 +1914,7 @@ describe("Die Welt bleibt lesbar, wenn der Bestand wächst", () => {
 });
 
 // P-13: die Regler. Obsidian lässt Abstoßung, Link-Distanz und Knotengröße am
-// Zug einstellen; bei KEPTA standen die drei Werte als Konstanten im Code. Ein
+// Zug einstellen; bei K3PTA standen die drei Werte als Konstanten im Code. Ein
 // Regler, der die gestimmten Werte nicht unverändert lässt, wenn er in der
 // Mitte steht, ist keine Einstellung, sondern eine zweite Physik.
 describe("Die Krafteinstellung stimmt, was sie verspricht", () => {

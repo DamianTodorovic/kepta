@@ -2,7 +2,7 @@
 // Der Kern konnte das laengst, war aber an nichts angeschlossen. Hier wird er
 // erreichbar: exportieren erzeugt ein AES-256-GCM-Paket, das per USB, Ordner
 // oder verschluesselter Mail auf das zweite Geraet der Kanzlei wandert.
-// KEPTA selbst sendet nichts — der Weg bleibt in der Hand des Nutzers.
+// K3PTA selbst sendet nichts — der Weg bleibt in der Hand des Nutzers.
 //
 // Die Passphrase wird ausschliesslich zum Ableiten des Schluessels benutzt und
 // niemals protokolliert, zurueckgegeben oder in publishActivity gereicht.

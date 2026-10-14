@@ -1,4 +1,4 @@
-// Texte der Oberflaeche und Schriftgroesse. KEPTA ist englisch — eine Sprache,
+// Texte der Oberflaeche und Schriftgroesse. K3PTA ist englisch — eine Sprache,
 // kein Umschalter (so entschieden mit 2.6.0, bestaetigt am 11.9.2026; der
 // Deutsch-Umschalter aus 2.10 ist wieder entfernt). Die Tabelle gibt gemeinsam
 // benutzten Texten einen Namen; t() liefert den Text zum Schluessel oder, fehlt

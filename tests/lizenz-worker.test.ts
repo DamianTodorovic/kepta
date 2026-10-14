@@ -4,7 +4,7 @@
 // Kauf: Paddle meldet, der Worker stellt im v3.1-Format der App aus und schickt
 // eine Mail. Geprüft wird hier, was wirklich zählt: der ausgestellte Schlüssel
 // besteht dieselbe offline-Prüfung wie einer aus dem License Studio, ein Preis
-// ohne Stufe stellt nichts aus, und die Mail beschreibt das KEPTA von heute —
+// ohne Stufe stellt nichts aus, und die Mail beschreibt das K3PTA von heute —
 // ohne die tote Einzelstufe und ohne eine Aktivierung, die es seit 3.1.5 nicht
 // mehr gibt.
 import { describe, it, expect, vi, afterEach } from "vitest";
@@ -78,9 +78,9 @@ describe("der Lizenz-Worker", () => {
 
     expect(gesendet).toHaveLength(1);
     const mail = gesendet[0] as { subject: string; text: string };
-    expect(mail.subject).toBe("Your KEPTA Enterprise license key");
+    expect(mail.subject).toBe("Your K3PTA Enterprise license key");
     expect(mail.text).toContain(key);
-    expect(mail.text).toContain("KEPTA Enterprise");
+    expect(mail.text).toContain("K3PTA Enterprise");
     expect(mail.text).not.toMatch(/Pro\b/);
     expect(mail.text).not.toMatch(/aktivier|activate|upgrade/i);
     expect(mail.text).toMatch(/unbegrenzt|no activation/i);

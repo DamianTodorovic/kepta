@@ -1,7 +1,7 @@
 // @vitest-environment node
 //
 // Warum diese Datei existiert: Damian hat entschieden, dass die herunterladbare
-// KEPTA keine Schlüssel und keine Grenzen mehr kennt — „bei KEPTA gibt es kein
+// K3PTA keine Schlüssel und keine Grenzen mehr kennt — „bei K3PTA gibt es kein
 // Licence Key, gar nix … diese Version soll man unbegrenzt nutzen können"
 // (9.10.2026). Die Fälle hier sind die neue Wahrheit, und sie sind absichtlich
 // SO geschrieben, dass sie vor dem Umbau rot sind: Jeder davon traf früher auf
@@ -27,7 +27,21 @@ let datei: string;
 let store: KeptaStore;
 let app: ReturnType<typeof createApp>;
 
+// Kapsel. createApp löst seinen Datenordner so auf (server/app.ts:120):
+// KEPTA_DATA_DIR, sonst ~/.kepta. Ohne diese zwei Zeilen schrieb genau dieser
+// Lauf am 13.10. um 14:29:48 {"beruf":"Anwältin"} in Damians echtes
+// ~/.kepta/profile.json — und ersetzte die Datei, statt sie zu füllen.
+// Hält tests/testkapsel.test.ts.
+let kappe: string;
+let vorherHeim: string | undefined;
+let vorherDaten: string | undefined;
+
 beforeEach(() => {
+  kappe = fs.mkdtempSync(path.join(tmpdir(), "kepta-unbegrenzt-kapsel-"));
+  vorherHeim = process.env.HOME;
+  vorherDaten = process.env.KEPTA_DATA_DIR;
+  process.env.HOME = kappe;
+  process.env.KEPTA_DATA_DIR = kappe;
   datei = path.join(tmpdir(), `kepta-unbegrenzt-${Date.now()}-${Math.random().toString(36).slice(2)}.db`);
   store = new KeptaStore(datei);
   app = createApp(store);
@@ -35,6 +49,11 @@ beforeEach(() => {
 
 afterEach(() => {
   store.close();
+  if (vorherHeim === undefined) delete process.env.HOME;
+  else process.env.HOME = vorherHeim;
+  if (vorherDaten === undefined) delete process.env.KEPTA_DATA_DIR;
+  else process.env.KEPTA_DATA_DIR = vorherDaten;
+  fs.rmSync(kappe, { recursive: true, force: true });
   for (const ende of [datei, `${datei}-wal`, `${datei}-shm`]) {
     if (fs.existsSync(ende)) fs.rmSync(ende);
   }
@@ -113,7 +132,7 @@ describe("die Härtung bleibt stehen", () => {
   it("der Wiederherstellungsschlüssel verlangt weiter den Fenster-Kopf", async () => {
     const res = await request(app).post("/api/recovery-key");
     expect(res.status, `Text: ${res.text.slice(0, 160)}`).toBe(403);
-    expect(res.body.error).toMatch(/KEPTA window/);
+    expect(res.body.error).toMatch(/K3PTA window/);
     const mit = await request(app).post("/api/recovery-key").set("X-KEPTA-Recovery", "1");
     expect(mit.status, `Text: ${mit.text.slice(0, 160)}`).toBe(404);
   });

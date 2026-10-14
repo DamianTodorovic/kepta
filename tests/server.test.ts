@@ -79,8 +79,8 @@ describe("/api/memories CRUD", () => {
   it("GET liefert anfangs eine leere Liste", async () => {
     const res = await request(app).get("/api/memories");
     expect(res.status).toBe(200);
-    expect(Array.isArray(res.body)).toBe(true);
-    expect(res.body).toHaveLength(0);
+    expect(Array.isArray(res.body.memories)).toBe(true);
+    expect(res.body.count).toBe(0);
   });
 
   it("POST setzt scope — die HTTP-Route ignorierte das Feld, MCP konnte es laengst", async () => {
@@ -117,7 +117,7 @@ describe("/api/memories CRUD", () => {
     expect(post.body.memory.title).toBe("Server-Test");
 
     const list = await request(app).get("/api/memories");
-    expect(list.body).toHaveLength(1);
+    expect(list.body.count).toBe(1);
   });
 
   it("POST ohne Titel und Inhalt → 400", async () => {
@@ -137,9 +137,9 @@ describe("/api/memories CRUD", () => {
     const del = await request(app).delete(`/api/memories/${encodeURIComponent(id)}`);
     expect(del.status).toBeLessThan(400);
     const active = await request(app).get("/api/memories");
-    expect(active.body).toHaveLength(0);
+    expect(active.body.count).toBe(0);
     const trash = await request(app).get("/api/memories?trash=1");
-    expect(trash.body).toHaveLength(1);
+    expect(trash.body.count).toBe(1);
   });
 
   it("GET /api/memories/search findet über die Engine", async () => {
@@ -332,7 +332,7 @@ describe("Storage, Import/Export, Convenience-Routen", () => {
     const restore = await request(app).post(`/api/memories/${encodeURIComponent(id)}/restore`);
     expect(restore.status).toBeLessThan(400);
     const active = await request(app).get("/api/memories");
-    expect(active.body).toHaveLength(1);
+    expect(active.body.count).toBe(1);
   });
 
   it("POST /api/memories/bulk-delete raeumt viele auf EINMAL in den Papierkorb", async () => {
@@ -352,7 +352,7 @@ describe("Storage, Import/Export, Convenience-Routen", () => {
     expect(res.body.ids).toHaveLength(3);
 
     const aktiv = await request(app).get("/api/memories");
-    expect(aktiv.body).toHaveLength(2);
+    expect(aktiv.body.count).toBe(2);
   });
 
   it("bulk-restore holt genau die zurueck, die bulk-delete genommen hat", async () => {
@@ -362,11 +362,11 @@ describe("Storage, Import/Export, Convenience-Routen", () => {
       ids.push(r.body.memory.id);
     }
     const weg = await request(app).post("/api/memories/bulk-delete").send({ ids });
-    expect((await request(app).get("/api/memories")).body).toHaveLength(0);
+    expect((await request(app).get("/api/memories")).body.count).toBe(0);
 
     const zurueck = await request(app).post("/api/memories/bulk-restore").send({ ids: weg.body.ids });
     expect(zurueck.body.restored).toBe(4);
-    expect((await request(app).get("/api/memories")).body).toHaveLength(4);
+    expect((await request(app).get("/api/memories")).body.count).toBe(4);
   });
 
   it("bulk-delete weist Unsinn ab, statt irgendetwas zu loeschen", async () => {
@@ -385,8 +385,8 @@ describe("Storage, Import/Export, Convenience-Routen", () => {
     expect(fremd.body.notFound).toBe(2);
 
     const aktiv = await request(app).get("/api/memories");
-    expect(aktiv.body).toHaveLength(1);
-    expect(aktiv.body[0].id).toBe(id);
+    expect(aktiv.body.count).toBe(1);
+    expect(aktiv.body.memories[0].id).toBe(id);
   });
 
   it("Einstellungen ueberleben im Datenordner, nicht im Browserspeicher", async () => {
@@ -510,11 +510,11 @@ describe("Storage, Import/Export, Convenience-Routen", () => {
     expect(trocken.body.changed).toBeGreaterThan(0);
     expect(trocken.body.examples[0].grund).toBeTruthy();
     // Nichts geschrieben.
-    expect((await request(app).get("/api/memories")).body.every((m: { type: string }) => m.type === "semantic")).toBe(true);
+    expect((await request(app).get("/api/memories")).body.memories.every((m: { type: string }) => m.type === "semantic")).toBe(true);
 
     const echt = await request(app).post("/api/memories/reclassify").send({ apply: true });
     expect(echt.body.applied).toBe(true);
-    const nachher = (await request(app).get("/api/memories")).body as { title: string; type: string }[];
+    const nachher = (await request(app).get("/api/memories")).body.memories as { title: string; type: string }[];
     expect(nachher.find((m) => m.title === "Drucker einrichten")!.type).toBe("procedural");
     expect(nachher.find((m) => m.title === "Besprechung Kanzlei")!.type).toBe("episodic");
   });
@@ -559,7 +559,7 @@ describe("Storage, Import/Export, Convenience-Routen", () => {
     expect(nachher.content.endsWith(`— Source: ${datei}`)).toBe(true);
     expect(nachher.title).toBe("formular");
     // Der ueberzaehlige Teil liegt im Papierkorb — 2.10.1 loeschte endgueltig.
-    const papierkorb = (await request(app).get("/api/memories?trash=1")).body as { id: string }[];
+    const papierkorb = (await request(app).get("/api/memories?trash=1")).body.memories as { id: string }[];
     expect(papierkorb.map((m) => m.id)).toContain(zwei.id);
 
     // Ein zweiter Lauf findet nichts mehr und schreibt nichts neu.
@@ -667,7 +667,7 @@ describe("Storage, Import/Export, Convenience-Routen", () => {
     expect(res.body.imported).toBeGreaterThanOrEqual(1);
     // Die importierte Memory ist auffindbar
     const list = await request(app).get("/api/memories");
-    expect(list.body.some((m: { content: string }) => m.content.includes("Automatisch importierter"))).toBe(true);
+    expect(list.body.memories.some((m: { content: string }) => m.content.includes("Automatisch importierter"))).toBe(true);
   });
 
   it("GET /api/tools listet Tools", async () => {
@@ -1010,16 +1010,26 @@ describe("Import: Body-Limits, Vollständigkeit, Zeitstempel", () => {
       memories: [{ title: "Historisch", content: "x", createdAt: then, updatedAt: then }],
     });
     const list = await request(app).get("/api/memories");
-    const m = list.body.find((r: { title: string }) => r.title === "Historisch");
+    const m = list.body.memories.find((r: { title: string }) => r.title === "Historisch");
     expect(m.updatedAt).toBe(then);
     expect(m.createdAt).toBe(then);
   });
 
-  it("listet auch >1000 Knoten vollständig (Liste und Export)", async () => {
+  it("listet auch >1000 Knoten vollständig — auf dem vollen Leseweg, nicht still auf Seite 100", async () => {
     for (let i = 0; i < 1100; i++) store.createMemory({ title: `Bulk ${i}`, content: "kurz" });
-    const list = await request(app).get("/api/memories");
-    expect(list.status).toBe(200);
-    expect(list.body).toHaveLength(1100);
+    // Aufgabe #52: die Liste ist seitenweis. Die Wache gegen das stille Abschneiden
+    // bleibt — sie sitzt jetzt auf `alle=1`, dem ausdruecklichen vollen Leseweg.
+    const ganz = await request(app).get("/api/memories?alle=1");
+    expect(ganz.status).toBe(200);
+    expect(ganz.body.count).toBe(1100);
+    expect(ganz.headers["x-kepta-total"]).toBe("1100");
+    expect(ganz.headers["x-kepta-begrenzt"]).toBe("0");
+    // Ohne Anfrage kommt die Default-Kappe, und sie nennt sich in Kopf und Zahl.
+    const seite = await request(app).get("/api/memories");
+    expect(seite.body.count).toBe(100);
+    expect(seite.headers["x-kepta-total"]).toBe("1100");
+    expect(seite.headers["x-kepta-begrenzt"]).toBe("1");
+    expect(String(seite.headers["x-kepta-hinweis"])).toMatch(/100 of 1,100 notes/);
     const exp = await request(app).post("/api/export/markdown").send({});
     expect(exp.status).toBe(200);
     expect(exp.body.exported).toBe(1100);

@@ -1,4 +1,4 @@
-// Rechner-Scan: KEPTA sieht auf ausdruecklichen Wunsch den ganzen Rechner
+// Rechner-Scan: K3PTA sieht auf ausdruecklichen Wunsch den ganzen Rechner
 // durch und sammelt Dokumente ein.
 //
 // Alles bleibt dabei auf dem Geraet — es gibt keine Cloud und der Kern hat
@@ -117,7 +117,7 @@ export function mountScan(app: express.Express, ctx: AppKontext): void {
     return out.length > 0 ? out : standardWurzeln();
   }
 
-  /** KEPTAs eigener Datenordner darf nie in den Scan — sonst frisst er sich selbst. */
+  /** K3PTAs eigener Datenordner darf nie in den Scan — sonst frisst er sich selbst. */
   function ausgeschlossenePfade(): string[] {
     return [path.resolve(ctx.datenOrdner), path.resolve(INBOX_DIR), path.resolve(archiveDir(ctx.datenOrdner))];
   }
@@ -223,7 +223,7 @@ export function mountScan(app: express.Express, ctx: AppKontext): void {
   });
 
   /**
-   * Die vollstaendige Erklaerung, was KEPTA liest und was nie.
+   * Die vollstaendige Erklaerung, was K3PTA liest und was nie.
    *
    * Das ist die geforderte klare Deklaration: nicht ein Satz im Dialog, sondern
    * die tatsaechlich geltenden Listen — aus demselben Quelltext, der auch
@@ -414,7 +414,7 @@ export function mountScan(app: express.Express, ctx: AppKontext): void {
           store.updateMemory(u.id, { title: u.title, content: u.content });
           indexMemory(store, u.id);
         }
-        // In den Papierkorb, nicht endgültig — KEPTA löscht nie ohne Rückweg.
+        // In den Papierkorb, nicht endgültig — K3PTA löscht nie ohne Rückweg.
         for (const id of plan.entfaelle) store.trashMemory(id);
         const vorlage = gruppe[0]!;
         for (const t of plan.neu) {

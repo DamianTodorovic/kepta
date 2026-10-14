@@ -26,6 +26,41 @@ function notify() {
   listeners.forEach(fn => fn(cache));
 }
 
+// ---------- Was die Tür über den Bestand sagt, nicht was die Seite brachte ----------
+//
+// `GET /api/memories` antwortet seit F12 mit einer Seite (Default 100) und führt
+// die Größe des Bestands im Kopf `x-kepta-total`. Eine Fläche, die daraus
+// „100 entries" macht, gibt ihre Seitenlänge als Bestand aus — die stille
+// Kappe, gegen die diese Welle antritt. `null` heißt: die Tür sagt nichts; dann
+// weiß die Fläche nichts und darf nichts behaupten. Ein alter Wert wird
+// bewusst nicht weitergereicht, denn nach Löschen wäre er eine Lüge.
+let bestand: number | null = null;
+let begrenzt = false;
+
+function zahl(wert: unknown): number | null {
+  if (typeof wert === 'number') return Number.isFinite(wert) && wert >= 0 ? wert : null;
+  if (typeof wert === 'string' && wert.trim() !== '') {
+    const n = Number(wert);
+    return Number.isFinite(n) && n >= 0 ? n : null;
+  }
+  return null;
+}
+
+function kopfZahl(res: Response, name: string): number | null {
+  const roh = (res as { headers?: { get?: (k: string) => string | null } })?.headers?.get?.(name);
+  return zahl(roh);
+}
+
+/** Größe des Bestands, wie die Tür sie nennt — oder null, wenn sie schweigt. */
+export function bestandGroesse(): number | null {
+  return bestand;
+}
+
+/** Sagt die Tür, dass noch mehr hinter der Seite liegt? */
+export function seiteIstBegrenzt(): boolean {
+  return begrenzt;
+}
+
 export function getMemoriesSync(): Memory[] {
   return cache;
 }
@@ -44,6 +79,11 @@ async function doRefresh(): Promise<Memory[]> {
       // Mit ETag antwortet der Server bei unverändertem Bestand mit 304 und
       // leerem Körper: kein Transfer, kein Parse, kein Re-Render.
       const res = await fetch('/api/memories', etag ? { headers: { 'If-None-Match': etag } } : undefined);
+      // Die Köpfe zuerst lesen: eine 304-Antwort bringt keinen Leib, aber sie
+      // nennt Bestand und Kappung weiter — und ein leerer Leib darf die Zahl
+      // nicht tilgen, indem er übersprungen wird.
+      bestand = kopfZahl(res, 'x-kepta-total');
+      begrenzt = kopfZahl(res, 'x-kepta-begrenzt') === 1;
       // Defensiv gelesen: ältere Test-Mocks bauen Responses ohne status/headers.
       if ((res as { status?: number }).status === 304) {
         // Bestand unverändert — Cache behalten, die Oberfläche nicht anfassen.
@@ -51,6 +91,13 @@ async function doRefresh(): Promise<Memory[]> {
       }
       const neuesEtag = res.headers?.get?.('etag') ?? null;
       const data = await res.json();
+      // Der Leib nennt den Vertrag seit F12 selbst (`{count,total,limit,offset,
+      // begrenzt,hinweis,memories}`). Die Zahl aus dem Leib gewinnt über den
+      // Kopf: sie nimmt denselben Weg wie die Daten und hängt nicht an einem
+      // Kopf-Zugang. Der Kopf bleibt der Arm für die 304 ohne Leib.
+      const totalAusLeib = zahl(data?.total);
+      if (totalAusLeib !== null) bestand = totalAusLeib;
+      if (typeof data?.begrenzt === 'boolean') begrenzt = data.begrenzt;
       // API liefert ein nacktes Array (ältere Clients erwarteten {memories:[]})
       cache = Array.isArray(data) ? data : Array.isArray(data?.memories) ? data.memories : [];
       etag = neuesEtag;

@@ -1,10 +1,10 @@
 // P-11: die Herkunft als Farbkanal.
 //
-// Cognee färbt seine Knoten „by Type, Node set, or User". Bei KEPTA trägt die
+// Cognee färbt seine Knoten „by Type, Node set, or User". Bei K3PTA trägt die
 // Fläche eine einzige Farbe: die Art. Dabei weiss die Wissensbasis sehr wohl,
 // woher eine Notiz kommt — der Posteinggang stempelt `auto-import`/`inbox`,
 // der Rechner-Scan stempelt `machine-scan`, und was niemand stempelt, wurde in
-// KEPTA geschrieben.
+// K3PTA geschrieben.
 //
 // Der Vertrag, der diese Datei zähmt: Herkunft ist eine Auskunft, kein
 // Lückenbüsser. Wo nichts zu unterscheiden ist, sagt das die Fläche — sie malt
@@ -17,6 +17,7 @@ import {
   herkunftsBild,
   HERKUNFT,
   HERKUNFT_LABELS,
+  HERKUNFT_SATZ,
   HERKUNFT_TOKEN,
   type HerkunftsArt,
   type HerkunftsNotiz,
@@ -33,7 +34,7 @@ describe("Die Herkunft wird gelesen, nicht erfunden", () => {
     expect(herkunftsBild([notiz("b", ["machine-scan", "md"])]).träger.get("b")).toBe(HERKUNFT.rechner);
   });
 
-  it("nennt eine Notiz ohne Stempel beim Namen: in KEPTA geschrieben", () => {
+  it("nennt eine Notiz ohne Stempel beim Namen: in K3PTA geschrieben", () => {
     expect(herkunftsBild([notiz("c", ["steuer"])]).träger.get("c")).toBe(HERKUNFT.geschrieben);
   });
 
@@ -52,7 +53,7 @@ describe("Der Kanal sagt, wann er nichts zu sagen hat", () => {
   it("ist abgeschaltet, wenn alles aus derselben Hand kommt", () => {
     const bild = herkunftsBild([notiz("a", []), notiz("b", ["x"]), notiz("c", ["y"])]);
     expect(bild.verfügbar).toBe(false);
-    expect(bild.grund).toMatch(/written in KEPTA/i);
+    expect(bild.grund).toMatch(/written in K3PTA/i);
     expect(bild.arten).toEqual([HERKUNFT.geschrieben]);
   });
 
@@ -115,8 +116,28 @@ describe("Die Farben des Kanals", () => {
   });
 
   it("benennen jede Herkunft in der Sprache der Fläche", () => {
-    expect(HERKUNFT_LABELS[HERKUNFT.geschrieben]).toBe("Written in KEPTA");
+    expect(HERKUNFT_LABELS[HERKUNFT.geschrieben]).toBe("Written in K3PTA");
     expect(HERKUNFT_LABELS[HERKUNFT.datei]).toBe("From a file");
     expect(HERKUNFT_LABELS[HERKUNFT.rechner]).toBe("From this computer");
+  });
+
+  // Hausregel 14.10., von der Leitung gesetzt: kein Eigenname darf durch eine
+  // Kasus-Biegung laufen. Der Satz wurde mit ${LABEL.toLowerCase()} gebaut und ergibt
+  // „written in k3pta". Der alte Fall ließ das durch, weil er /…/i schrieb — ein
+  // Prüfer ohne Kasus sieht keinen Kasusfehler.
+  it("biegt die Marke nicht klein, wenn der Satz sie einbettet", () => {
+    const bild = herkunftsBild([{ id: "a", tags: [] }, { id: "b", tags: [] }] as never[]);
+    expect(bild.grund, `Satz lautet: ${bild.grund}`).toContain("written in K3PTA");
+  });
+
+  it("rechnet keine Herkunftsform — die Satzeinbettung steht geschrieben", () => {
+    const quelltext = fs.readFileSync(path.join(process.cwd(), "src/lib/graphHerkunft.ts"), "utf8");
+    expect(quelltext, "ein .toLowerCase() an einer Herkunft biegt die Marke klein")
+      .not.toMatch(/HERKUNFT_LABELS\[[^\]]*\]\.toLowerCase\(\)/);
+    for (const [, satz] of Object.entries(HERKUNFT_SATZ)) {
+      expect(satz, `Satzform beginnt groß: ${satz}`).not.toMatch(/^[A-Z]/);
+      if (/k3pta/i.test(satz)) expect(satz, `Marke klein gebogen: ${satz}`).toContain("K3PTA");
+    }
+    expect(HERKUNFT_SATZ[HERKUNFT.geschrieben]).toBe("written in K3PTA");
   });
 });

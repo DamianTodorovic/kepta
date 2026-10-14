@@ -7,6 +7,7 @@ import os from "os";
 import express from "express";
 import { KeptaStore } from "../src/core/store";
 import { defaultExtensions } from "../src/core/extensions";
+import { leseUmwelt, gewonneneUmweltNamen } from "../src/core/umwelt";
 import { teamPolicy } from "../src/lib/team";
 import { schluesselbundKeyProvider } from "../src/core/schluessel";
 import { migrateFromLegacyJson } from "../src/core/migrate";
@@ -25,7 +26,9 @@ export async function startServer() {
   const HOST = process.env.KEPTA_HOST || "127.0.0.1";
 
   // Der Schluessel liegt im Schluesselbund des Systems (schluessel.ts).
-  const datenOrdner = process.env.KEPTA_DATA_DIR || path.join(os.homedir(), ".kepta");
+  // Beide Namensformen (Aufgabe #64) — derselbe Ordner wie vorher, wenn nur die
+  // alte Form gesetzt ist.
+  const datenOrdner = leseUmwelt("datenordner").wert || path.join(os.homedir(), ".kepta");
   // Enterprise (Milestone E1): team:*-Scopes nach Rollen aus der verwalteten
   // Konfiguration durchsetzen. team:* ist allein durch die Rollen-Datei
   // geschaltet (eine Lizenz-Edition gibt es in dieser App nicht mehr);
@@ -89,6 +92,13 @@ export async function startServer() {
     console.log(`Server running on http://${HOST}:${PORT}${HOST === "127.0.0.1" ? "" : "  (all interfaces — KEPTA_HOST is set explicitly)"}`);
     const v = store.verschluesselung;
     console.log(`Encryption: ${v.aktiv ? `on (${v.ablage ?? "key provider"}${v.umgewandelt ? ", converted from plaintext just now" : ""})` : `OFF${v.hinweis ? ` — ${v.hinweis}` : ""}`}`);
+    // Aufgabe #64: die Kennungen sind zweisprachig, und die Startausgabe sagt, welche
+    // Form laeuft. `ablage` oben nennt schon den Sieger des Schluessels; hier steht
+    // zusaetzlich der Streitfall — beide Formen gesetzt, eine gilt, und das wird nicht
+    // verschwiegen. Ohne Streit bleibt die Zeile weg (kein Rauschen im Protokoll).
+    for (const f of gewonneneUmweltNamen().filter((x) => x.meldung)) console.log(`Kennungen: ${f.meldung}`);
+    const ordnerFund = leseUmwelt("datenordner");
+    console.log(`Datenordner: ${datenOrdner}${ordnerFund.gewonnen ? ` (aus ${ordnerFund.gewonnen})` : " (Default ~/.kepta, keine Form gesetzt)"}`);
     console.log(`Speicher: ${store.dbPath} (SQLite) | Embeddings: ${JSON.stringify(store.embeddingStats())}`);
     console.log(`API: http://localhost:${PORT}/api/health | /api/search | MCP: POST /mcp (2026-07-28, ${MCP_TOOLS.length} Tools)`);
     // Adresse hinterlegen, damit fremde Clients die App finden: die gepackte App

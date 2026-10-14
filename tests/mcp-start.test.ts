@@ -1,6 +1,6 @@
 // @vitest-environment node
 //
-// Der MCP-Server steckt in der fertigen App: das KEPTA-Programm startet ihn
+// Der MCP-Server steckt in der fertigen App: das K3PTA-Programm startet ihn
 // selbst als Node. Damit brauchen Agenten weder Node.js noch npm — und
 // stolpern nicht über eine npm-Fassung, die die verschlüsselte Datei nicht
 // öffnen kann.
@@ -31,7 +31,7 @@ describe("mcpStartInDerApp", () => {
     expect(server.mcpStartInDerApp(undefined, "/usr/local/bin/node", "/repo/dist")).toBeNull();
   });
 
-  it("startet den mitgelieferten Server mit dem KEPTA-Programm als Node", () => {
+  it("startet den mitgelieferten Server mit dem K3PTA-Programm als Node", () => {
     expect(server.mcpStartInDerApp("44.0.0", "/Applications/KEPTA.app/Contents/MacOS/KEPTA", "/Applications/KEPTA.app/Contents/Resources/app.asar/dist")).toEqual({
       command: "/Applications/KEPTA.app/Contents/MacOS/KEPTA",
       args: ["/Applications/KEPTA.app/Contents/Resources/app.asar/dist/mcp-server.cjs"],

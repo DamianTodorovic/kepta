@@ -149,7 +149,7 @@ export function Settings() {
   const [healthError, setHealthError] = useState<string | null>(null);
 
   const provider = providerById(settings.providerId);
-  // In der fertigen App: der mitgelieferte MCP-Server, gestartet vom KEPTA-Programm
+  // In der fertigen App: der mitgelieferte MCP-Server, gestartet vom K3PTA-Programm
   // selbst — kein Node.js, kein npm. Außerhalb der App bleibt es beim Weg über npx.
   const mcpAusApp = health?.mcp?.stdio ? JSON.stringify({ mcpServers: { kepta: health.mcp.stdio } }, null, 2) : null;
 
@@ -334,7 +334,7 @@ export function Settings() {
     setTimeout(() => setExported(false), 3000);
   };
 
-  /** KI-Verlauf (ChatGPT/Claude-Export) übernehmen — WS5: „Switch to KEPTA, keep your memory." */
+  /** KI-Verlauf (ChatGPT/Claude-Export) übernehmen — WS5: „Switch to K3PTA, keep your memory." */
   const chatImportFeld = useRef<HTMLInputElement>(null);
   const [chatImportLaeuft, setChatImportLaeuft] = useState(false);
   const [chatImportErgebnis, setChatImportErgebnis] = useState<{ format: string; conversations: number; imported: number; emptyConversations: number } | null>(null);
@@ -960,7 +960,7 @@ export function Settings() {
               </div>
               <div className="hud-inset rounded-xl overflow-hidden">
                 <div className="flex items-center justify-between px-3 py-2" style={{ borderBottom: '1px solid var(--border-subtle)' }}>
-                  <span className="text-xs font-mono" style={{ color: 'var(--text-3)' }}>{mcpAusApp ? 'mcp.json — runs inside the KEPTA app' : 'mcp.json (project root)'}</span>
+                  <span className="text-xs font-mono" style={{ color: 'var(--text-3)' }}>{mcpAusApp ? 'mcp.json — runs inside the K3PTA app' : 'mcp.json (project root)'}</span>
                   <button onClick={() => copy(mcpAusApp ?? MCP_JSON_NPX, 'mcp-npx')} className="btn-ghost flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs">
                     {copied === 'mcp-npx' ? <><CheckCircle2 className="w-3.5 h-3.5" style={{ color: 'var(--ok)' }} /> Copied</> : copied === 'error:mcp-npx' ? <><Copy className="w-3.5 h-3.5" /> Copying failed</> : <><Copy className="w-3.5 h-3.5" /> Copy</>}
                   </button>
@@ -969,7 +969,7 @@ export function Settings() {
               </div>
               <p className="text-xs mt-2 leading-relaxed" style={{ color: 'var(--text-3)' }}>
                 {mcpAusApp
-                  ? <>In Cursor: Settings → Features → MCP. In Zed: <code>settings.json → experimental.mcp</code>. This starts the MCP server that ships inside KEPTA — no Node.js, no npm. With Node.js 22.13 or newer, <code>npx -y kepta-mcp</code> works too (kepta-mcp 2.11 or newer). From your own checkout instead (after <code>npm run build:mcp</code>):</>
+                  ? <>In Cursor: Settings → Features → MCP. In Zed: <code>settings.json → experimental.mcp</code>. This starts the MCP server that ships inside K3PTA — no Node.js, no npm. With Node.js 22.13 or newer, <code>npx -y kepta-mcp</code> works too (kepta-mcp 2.11 or newer). From your own checkout instead (after <code>npm run build:mcp</code>):</>
                   : <>In Cursor: Settings → Features → MCP. In Zed: <code>settings.json → experimental.mcp</code>. Nothing to build — <code>npx</code> fetches the server on first use. From your own checkout instead (after <code>npm run build:mcp</code>):</>}
               </p>
               <div className="hud-inset rounded-xl overflow-hidden mt-2">
@@ -1009,7 +1009,7 @@ export function Settings() {
                 ) : (
                   <>
                     <p className="text-xs mt-3 leading-relaxed" style={{ color: 'var(--text-2)' }}>
-                      Content = the same <code>mcpServers</code> as above. Replace the placeholder <code>/PATH/TO/KEPTA-REPO</code> (get the real path with <code>pwd</code> in the project folder). Then restart Claude Desktop.
+                      Content = the same <code>mcpServers</code> as above. Replace the placeholder <code>/PATH/TO/K3PTA-REPO</code> (get the real path with <code>pwd</code> in the project folder). Then restart Claude Desktop.
                     </p>
                     <p className="text-xs mt-2 leading-relaxed" style={{ color: 'var(--text-2)' }}>
                       The repo root also holds <code>mcp-config.json</code> as a ready-made example — copy it straight in.

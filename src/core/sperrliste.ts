@@ -1,5 +1,5 @@
 // Gesperrte Lizenznummern — Schlüssel, die weitergegeben oder öffentlich
-// geworden sind. KEPTA License Studio trägt sie hier ein („Sperren“). Mit dem
+// geworden sind. K3PTA License Studio trägt sie hier ein („Sperren“). Mit dem
 // nächsten Update gelten diese Schlüssel nicht mehr, auch nicht auf Rechnern,
 // die schon aktiviert waren.
 //

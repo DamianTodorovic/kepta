@@ -28,8 +28,8 @@ random bytes; SQLite reports "file is not a database".
 
 **What it does not protect against:**
 - Malware, or another person, using your logged-in account. They can ask the
-  keychain for the key the same way KEPTA does.
-- A running KEPTA: the local API (`127.0.0.1`, no authentication) serves the
+  keychain for the key the same way K3PTA does.
+- A running K3PTA: the local API (`127.0.0.1`, no authentication) serves the
   decrypted knowledge to programs on the same machine, as before.
 - Files outside the database: since 2.13.4, `profile.json`,
   `scan-config.json` and the sync journal are encrypted with the same
@@ -59,7 +59,7 @@ from a terminal:
 
 To restore on a new machine, put the key back before the first start — macOS:
 `security add-generic-password -s app.kepta.database -a kepta -w <key>` — or
-start KEPTA once with `KEPTA_DB_KEY=<key>`.
+start K3PTA once with `KEPTA_DB_KEY=<key>`.
 
 Scope: the local server on `localhost:3000`, the file watcher on `~/.kepta/inbox`, and MCP over stdio.
 

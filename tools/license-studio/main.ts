@@ -1,4 +1,4 @@
-// KEPTA License Studio — Lizenzschlüssel für KEPTA Enterprise ausstellen.
+// K3PTA License Studio — Lizenzschlüssel für K3PTA Enterprise ausstellen.
 //
 // Nur für Damian, nur auf seinem Mac. Der private Signaturschlüssel bleibt im
 // Hauptprozess: er kommt über /usr/bin/security aus dem Schlüsselbund —
@@ -6,7 +6,7 @@
 // erreicht das Fenster nie. Das Fenster bekommt nur fertige Schlüssel.
 //
 // Gesperrte Nummern schreibt das Studio in src/core/sperrliste.ts des
-// Enterprise-Repos (~/kepta-enterprise) — mit dem nächsten KEPTA-Update gelten
+// Enterprise-Repos (~/kepta-enterprise) — mit dem nächsten K3PTA-Update gelten
 // diese Schlüssel nicht mehr.
 //
 // Bauen und nach /Applications legen: npm run license-studio -- --installieren
@@ -154,7 +154,7 @@ function oeffneFenster(): void {
     height: 740,
     minWidth: 820,
     minHeight: 600,
-    title: "KEPTA License Studio",
+    title: "K3PTA License Studio",
     backgroundColor: "#070708",
     titleBarStyle: "hiddenInset",
     show: false,

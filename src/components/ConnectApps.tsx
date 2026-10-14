@@ -1,4 +1,4 @@
-// Connect KEPTA to the AI apps on this computer — one click each. KEPTA adds
+// Connect K3PTA to the AI apps on this computer — one click each. K3PTA adds
 // itself to the app's MCP settings, keeps a backup of the old file right next
 // to it and changes nothing else. Used in the settings and on the Activity page.
 import { useEffect, useState } from 'react';
@@ -25,7 +25,7 @@ export function ConnectApps() {
     fetch('/api/clients')
       .then((r) => r.json())
       .then((d: { clients?: ClientStatus[] }) => { if (!vorbei) setClients(Array.isArray(d.clients) ? d.clients : []); })
-      .catch(() => { if (!vorbei) setFehler('KEPTA could not look for AI apps — is the local server running?'); });
+      .catch(() => { if (!vorbei) setFehler('K3PTA could not look for AI apps — is the local server running?'); });
     return () => { vorbei = true; };
   }, []);
 
@@ -53,7 +53,7 @@ export function ConnectApps() {
         <h3 className="settings-h" style={{ color: 'var(--text-1)' }}>Connect your AI apps</h3>
       </div>
       <p className="text-sm mb-3" style={{ color: 'var(--text-2)' }}>
-        One click, and the app can use your memory. KEPTA adds itself to the app’s settings — with a backup of the old file right
+        One click, and the app can use your memory. K3PTA adds itself to the app’s settings — with a backup of the old file right
         next to it — and changes nothing else. Afterwards, quit and reopen the app.
       </p>
       {meldung && (

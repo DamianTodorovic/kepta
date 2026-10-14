@@ -95,7 +95,7 @@ describe("Private Notizen auf den id-Wegen des Agentenkanals", () => {
     store = frischerStore();
     const privat = store.createMemory({
       title: "Zeugnisverweigerung — Mandantengeheimnis",
-      content: "Der Inhalt dieser Notiz verlässt KEPTA nie.",
+      content: "Der Inhalt dieser Notiz verlässt K3PTA nie.",
       scope: "private",
     });
     privatId = privat.id;
@@ -108,7 +108,7 @@ describe("Private Notizen auf den id-Wegen des Agentenkanals", () => {
   it("memory_update gibt eine private Notiz nicht zurück und ändert sie nicht", async () => {
     const res = await werkzeug(store, "memory_update", { id: privatId, content: "überschrieben" });
     expect(alsAbsage(res).length).toBeGreaterThan(0);
-    expect(store.getMemory(privatId)!.content).toBe("Der Inhalt dieser Notiz verlässt KEPTA nie.");
+    expect(store.getMemory(privatId)!.content).toBe("Der Inhalt dieser Notiz verlässt K3PTA nie.");
   });
 
   it("die Absage klingt wie bei einer unbekannten id — kein Existenznachweis", async () => {

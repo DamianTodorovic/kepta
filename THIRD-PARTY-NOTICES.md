@@ -1,6 +1,6 @@
-# Third-party software in KEPTA Enterprise
+# Third-party software in K3PTA Enterprise
 
-KEPTA Enterprise is proprietary software, but it builds on open source. This
+K3PTA Enterprise is proprietary software, but it builds on open source. This
 file lists the bundled components and their licenses. The memory engine
 underneath is licensed separately: source-available under **BUSL-1.1**, each release converting to AGPL-3.0-or-later four years after its release — see [DamianTodorovic/kepta](https://github.com/DamianTodorovic/kepta).
 
@@ -8,7 +8,7 @@ underneath is licensed separately: source-available under **BUSL-1.1**, each rel
 
 | Set | License | Usage |
 |---|---|---|
-| **Solar** (480 Design, via Iconify) | **CC BY 4.0** | 61 glyphs of the KEPTA icon series (`solar:*-linear`) |
+| **Solar** (480 Design, via Iconify) | **CC BY 4.0** | 61 glyphs of the K3PTA icon series (`solar:*-linear`) |
 | **Tabler Icons** | MIT | 1 glyph (`binary-tree`, the Tree-view switcher) |
 
 Solar is licensed under the Creative Commons Attribution 4.0 International
@@ -35,7 +35,7 @@ created by 480 Design (https://480.design / https://github.com/480-Design).
 | markdown rendering: react-markdown + remark/rehype ecosystem | MIT |
 | vitest, esbuild, TypeScript, Vite (build/dev only) | MIT / Apache-2.0 |
 
-## KEPTA's own components under a free or permissive license
+## K3PTA's own components under a free or permissive license
 
 Published from the public core repository ([DamianTodorovic/kepta](https://github.com/DamianTodorovic/kepta)); copies of these two folders live in this repository and track its release number.
 

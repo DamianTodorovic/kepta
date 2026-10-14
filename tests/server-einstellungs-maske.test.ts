@@ -23,6 +23,8 @@ const PORT = 8813;
 let URLE = `http://127.0.0.1:${PORT}`;
 
 let wurzel = "";
+let vorherHeim: string | undefined;
+let vorherDaten: string | undefined;
 let store: KeptaStore;
 let hoerer: import("node:http").Server;
 
@@ -48,6 +50,12 @@ async function lese(): Promise<{ status: number; bestand: Record<string, unknown
 // ECONNRESET aus — derselbe Fall, den tests/helfer/hoerer.ts erzaehlt.
 beforeAll(async () => {
   wurzel = fs.mkdtempSync(path.join(os.tmpdir(), "kepta-appmaske-"));
+  // Kapsel: createApp zieht ohne KEPTA_DATA_DIR ~/.kepta des Anmeldekontos an
+  // (server/app.ts:120), und os.homedir() folgt HOME. Haelt tests/testkapsel.test.ts.
+  vorherHeim = process.env.HOME;
+  vorherDaten = process.env.KEPTA_DATA_DIR;
+  process.env.HOME = wurzel;
+  process.env.KEPTA_DATA_DIR = wurzel;
   const datenSchluessel = new Uint8Array(crypto.randomBytes(32));
   store = new KeptaStore(path.join(wurzel, "kepta.db"), {
     ...defaultExtensions(),
@@ -62,6 +70,10 @@ beforeAll(async () => {
 afterAll(async () => {
   if (hoerer) await niederlegen(hoerer);
   store?.close();
+  if (vorherHeim === undefined) delete process.env.HOME;
+  else process.env.HOME = vorherHeim;
+  if (vorherDaten === undefined) delete process.env.KEPTA_DATA_DIR;
+  else process.env.KEPTA_DATA_DIR = vorherDaten;
   fs.rmSync(wurzel, { recursive: true, force: true });
 });
 

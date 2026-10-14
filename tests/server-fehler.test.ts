@@ -110,8 +110,11 @@ describe("Q-19 — Fehlerantworten leaken Stapelverweise, Pfade und interne Grue
       .set("Content-Type", "application/json")
       .send({ title: "Zu groß", content: "x".repeat(1_500_000) });
     const liste = await request(app).get("/api/memories");
-    expect(liste.body).toHaveLength(1);
-    expect(liste.body[0].title).toBe("Vorher");
+    // Der Leib nennt seine Zahl selbst (Aufgabe #64(1)) — gezählt wird die Antwort,
+    // nicht ein Array, dessen Laenge der Zufall liefert.
+    expect(liste.body.count).toBe(1);
+    expect(liste.body.total).toBe(1);
+    expect(liste.body.memories[0].title).toBe("Vorher");
   });
 
   it("die Mittelware faengt auch eine Schicht unterhalb von createApp (static/SPA in bootstrap.ts)", async () => {
@@ -120,13 +123,14 @@ describe("Q-19 — Fehlerantworten leaken Stapelverweise, Pfade und interne Grue
     // Mittelware dort einen zweiten Anker. Genau den baut bootstrap.ts jetzt.
     const app2 = createApp(store);
     app2.use("/spa", (_req, _res, next) => {
-      next(new Error("ENOENT: no such file or directory, open '/Users/damiantodorovic/.kepta/dist/index.html'"));
+      next(new Error("ENOENT: no such file or directory, open '/home/betreiber/.kepta/dist/index.html'"));
     });
     app2.use(sichererFehler);
     const res = await request(app2).get("/spa/index.html");
     expect(res.status).toBe(500);
     zeigeNichtsVomStapel(res.text);
     expect(res.text).not.toContain("index.html");
+    expect(res.text).not.toMatch(/\/home\/|\/Users\/|node_modules|\.kepta/);
     expect(res.headers["content-type"]).toMatch(/application\/json/);
   });
 });

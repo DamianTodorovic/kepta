@@ -1,6 +1,6 @@
-"""Python client for a locally running KEPTA.
+"""Python client for a locally running K3PTA.
 
-KEPTA itself is a desktop app (Electron). This package does not install it — it
+K3PTA itself is a desktop app (Electron). This package does not install it — it
 talks to the HTTP API of the running instance, so that Python agents use the same
 memory as Claude Desktop or Cursor.
 """
@@ -24,11 +24,11 @@ ENDPOINT_FILE = "endpoint.json"
 
 
 class KeptaError(RuntimeError):
-    """KEPTA was unreachable or returned an error."""
+    """K3PTA was unreachable or returned an error."""
 
 
 def data_dir() -> Path:
-    """KEPTA's data directory. `KEPTA_DATA_DIR` wins, otherwise ~/.kepta."""
+    """K3PTA's data directory. `KEPTA_DATA_DIR` wins, otherwise ~/.kepta."""
     override = os.environ.get("KEPTA_DATA_DIR")
     return Path(override) if override else Path.home() / ".kepta"
 
@@ -73,7 +73,7 @@ class Memory:
 
     @property
     def is_expired(self) -> bool:
-        """Past its validity window? KEPTA downweights such hits when ranking."""
+        """Past its validity window? K3PTA downweights such hits when ranking."""
         return self.valid_to is not None and self.valid_to < time.time() * 1000
 
     @property
@@ -120,7 +120,7 @@ class SearchHit:
 
 
 class KeptaClient:
-    """A speaking connection to a running KEPTA instance.
+    """A speaking connection to a running K3PTA instance.
 
     >>> kepta = KeptaClient()
     >>> kepta.save("Carbonara", "Guanciale, pecorino, egg yolk.", tags=["cooking"])
@@ -155,7 +155,7 @@ class KeptaClient:
             raise KeptaError(f"{method} {path} failed ({e.code}): {detail}") from e
         except (URLError, TimeoutError) as e:
             raise KeptaError(
-                f"KEPTA at {self.url} is unreachable. Is the app running? "
+                f"K3PTA at {self.url} is unreachable. Is the app running? "
                 f"Otherwise set KEPTA_URL. Cause: {e}"
             ) from e
 

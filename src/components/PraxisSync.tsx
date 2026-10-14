@@ -114,7 +114,7 @@ export default function PraxisSync() {
       <div>
         <h3 className="text-base font-semibold mb-1" style={{ color: 'var(--text-1)' }}>Device Sync</h3>
         <p className="text-sm leading-relaxed" style={{ color: 'var(--text-2)' }}>
-          Encrypted exchange between your own devices. KEPTA sends nothing — you get a file
+          Encrypted exchange between your own devices. K3PTA sends nothing — you get a file
           and carry it across yourself: a USB stick, your own folder, an encrypted mail. The
           route may be read along the way; the contents may not.
         </p>

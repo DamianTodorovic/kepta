@@ -1,13 +1,13 @@
-KEPTA Desktop App
+K3PTA Desktop App
 =================
 
 Copyright (c) 2026 Damian Todorovic. Alle Rechte vorbehalten.
 
-Dieses Repository enthaelt proprietären Quellcode (die KEPTA-Desktop-
+Dieses Repository enthaelt proprietären Quellcode (die K3PTA-Desktop-
 anwendung und ihre Profi-Funktionen). Keine Veroeffentlichung, keine
 Weitergabe, keine Bearbeitung ohne ausdrueckliche schriftliche Genehmigung.
 
-Der Quelltext des Kerns von KEPTA (Memory-Engine, MCP-Server, HTTP-API)
+Der Quelltext des Kerns von K3PTA (Memory-Engine, MCP-Server, HTTP-API)
 ist unter der Business Source License 1.1 veroeffentlicht (waehrend vier
 Jahren source-available, danach AGPL-3.0-or-later) und lebt hier:
 https://github.com/DamianTodorovic/kepta

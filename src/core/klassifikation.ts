@@ -162,7 +162,7 @@ export function klassifiziere(eingabe: ZuOrdnendes): Zuordnung {
  * `<a name='L420'></a><a href='#L420'>420</a>` — die Randspalte einer
  * Quelltextansicht, ohne ein einziges inhaltliches Wort. Sie fluteten die
  * Wissensbasis, machten die Duplikatsuche unbrauchbar (sie AEHNELN einander ja
- * wirklich) und liessen jedes Aufraeumen aussehen, als loesche KEPTA wahllos.
+ * wirklich) und liessen jedes Aufraeumen aussehen, als loesche K3PTA wahllos.
  *
  * Geprueft wird am Eingang. Was hier durchfaellt, wird gar nicht erst zu einer
  * Notiz — statt spaeter muehsam wieder aussortiert zu werden.

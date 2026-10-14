@@ -407,6 +407,10 @@ const EBENEN = new Map([
 // überhaupt sichtbar sein (>= 1,35) und dürfen nicht brüllen.
 const KANTEN = [
   ["--kante-kontrolle", SCHWELLE.kante],
+  // Die Flächengrenze trägt im hellen Thema die Trennung zwischen Blatt und Tisch,
+  // weil dort die Leuchtkraft keinen Raum mehr hat (Spanne 1,79× gegen 18,5×).
+  // Sie muss deshalb gegen BEIDE Nachbarn 3:1 erreichen, nicht dekorativ sein.
+  ["--kante-flaeche", SCHWELLE.kante],
   ["--kante-stark", 1.9],
   ["--kante-dekor", 1.35],
 ];
@@ -458,6 +462,7 @@ const SCHULD = new Map([
   ["icons:groesse-fremd", { sitze: 33, seit: "10.10.", wer: "E2/E3 (Bausteine)", warum: "w-2.5/w-3-Sitzungen; die Untergrenze --icon-min in index.css hebt sie beim Rendern auf 14 px, die Klasse selbst bleibt" }],
   ["icons:name-fremd", { sitze: 2, seit: "10.10.", wer: "DS, benannt", warum: "RefreshCw->loader (der Körper IST zwei Kreiselpfeile = erneuern) und PartyPopper->rocket (Namensrest aus der Phosphor-Zeit, Bild passt zur Absicht)" }],
   ["css:radius-waisen", { sitze: 9, seit: "11.10.", wer: "DS (eigene Scheibe)", warum: "2/4/6/8 px stehen wörtlich in index.css außer-halb der Kapsel (999px). Auf die Stufen --r-* gehoben werden sie in einer eigenen Bewegung, weil jede Änderung an einem Radius Flächen von E2 und E3 mitverschiebt, während die Welle läuft. Eine neue Waise macht rot." }],
+  ["css:klassen-waisen", { sitze: 18, seit: "14.10. (vorher 20 — .tap und .tap-reihum ziehen seit 14.10. in Chat.tsx)", wer: "DS (eigene Scheibe)", warum: "Der Zensus 13.10. zählt 20 Regeln in index.css, die kein Baustein ruft — darunter die Ikonenstufen .ikone-1…4 und die Tastmaße .tap/.tap-min/.tap-reihum: der Vertrag ist geschrieben, aber an keiner Fläche gezogen. Gelöscht wird hier nichts, solange die Welle läuft (E2/E3 können uncommittete Rufer haben); gemeldet wird jede Verschiebung, und eine 21. Waise macht rot." }],
 ]);
 const schuld = (key, sitze) => {
   const s = SCHULD.get(key);
@@ -931,7 +936,7 @@ function artefakt(pfad) {
     }
     if (accentWert) prüf("--on-accent", SCHWELLE.text, false, true);
     prüf("--fokus", SCHWELLE.kante);
-    for (const [n, z] of [["--kante-kontrolle", SCHWELLE.kante], ["--kante-stark", 1.9], ["--kante-dekor", 1.35]]) prüf(n, z);
+    for (const [n, z] of [["--kante-kontrolle", SCHWELLE.kante], ["--kante-flaeche", SCHWELLE.kante], ["--kante-stark", 1.9], ["--kante-dekor", 1.35]]) prüf(n, z);
     // Der Stahl ist themenunabhängig: nur im dunklen Durchlauf prüfen.
     if (thema === "dunkel") {
       for (const n of ["--side-text", "--side-ruhig", "--side-leise", "--side-akzent"]) prüf(n, SCHWELLE.text, true);
@@ -984,6 +989,18 @@ for (const thema of ["dunkel", "hell"]) {
   while (anzahl < 12 && hoch(y, ENTWURF.kontrast) <= 1) { y = hoch(y, ENTWURF.kontrast); anzahl++; }
   meld("flächen", `${thema}: Stufen, die zwischen Tisch und Weiß passen`, `${anzahl}`, `>= ${STUFEN.length}`,
     `Tisch ${hex(stufen[0]?.c)} Y ${ys[0]?.toFixed(4)} · 1,30 je Schritt · gebaut: ${stufen.length}`, anzahl >= STUFEN.length);
+
+  // 3.2b die SPANNE — das Verhältnis ist in beiden Themen 1,30, der Raum nicht.
+  // Im Hellen überschreiben drei Stufen nur das 1,79-fache an Leuchtkraft, im
+  // Dunkeln das 18,5-fache: die Leiter im Licht ist nicht flacher im Schritt,
+  // sondern kleiner im Ganzen. Deshalb trägt im Hellen die KANTE die Grenze
+  // (--kante-flaeche, Abschnitt kanten), nicht die Fläche. Die Untergrenze hier
+  // ist der gemuchte Istwert: wer sie unterschreitet, halbiert die Leiter weiter.
+  const spanne = ys.length > 1 ? ys[ys.length - 1] / ys[0] : 0;
+  const SPANNEN = { hell: 1.79, dunkel: 18.5 };
+  meld("flächen", `${thema}: Spanne der Leiter (Tisch → Blatt)`, `${spanne.toFixed(2)}×`,
+    `>= ${SPANNEN[thema]}×`, `Y ${ys[0]?.toFixed(4)} → ${ys[ys.length - 1]?.toFixed(4)} · Verhältnis dunkel/hell 10,3 — benannt, nicht behoben`,
+    spanne >= SPANNEN[thema] - 0.005);
 
   // 3.3 jede Stufe gegen den Tisch
   for (const s of stufen.slice(1)) {
@@ -1652,17 +1669,126 @@ meld("css", `Deklarationen außerhalb von Regeln`, String(PAR.weisen.length), "0
     rSchuld ? rSchuld.warum : "src/index.css", rSchuld ? rSchuld.treffer : waisen.length === 0);
 }
 
+// Materie hat Namen. Der Zensus 13.10. meldete zwei Hex-Werte, die direkt in
+// Regeln standen: der Stahl des Schrankrückens und der weiße Schalterknopf.
+// Beide heißen jetzt --stahl-1/--stahl-2 und --knopf; ein neuer Farbwert von
+// Hand macht rot, weil er außerhalb der Leiter liegt, die niemand prüft.
+{
+  const hart = [];
+  cssText.split("\n").forEach((z, i) => {
+    if (/^\s*(\*|\/\*|\/\/)/.test(z)) return;                 // Kommentare nennen Werte, sie setzen keine
+    if (/^\s*--[\w-]+\s*:/.test(z)) return;                    // ein Token darf einen Wert tragen, dafür ist es da
+    const m = /^\s*(background|background-color|color|border[\w-]*|fill|stroke|outline-color|box-shadow)\s*:[^;]*#([0-9a-fA-F]{3,8})\b/.exec(z);
+    if (m) hart.push(`:${i + 1} ${m[1]} #${m[2]}`);
+  });
+  meld("css", "Hex als Farbwert in einer Regel", `${hart.length}`, "0",
+    hart.length ? hart.join("  ") : "src/index.css — Materie heißt --stahl-1/2, --knopf, --type-*-hex",
+    hart.length === 0);
+}
+
+// Hausregel 14.10., von Damian gesetzt und von der Leitung weitergegeben:
+// **kein Eigenname darf durch eine Kasus-Biegung laufen.** Die Umbenennung hat
+// die eine Stelle sichtbar gemacht, die es immer falsch gab: ein Satz baute sich
+// aus LABELS.toLowerCase() und ergab „written in k3pta". Kommentare sind hier
+// absichtlich herausgerechnet — sonst verbietet die Wache ihr eigenes Benennen.
+{
+  const bloecke = (t) => t.replace(/\/\*[\s\S]*?\*\//g, "").replace(/^[ \t]*\/\/.*$/gm, "");
+  const biegung = [];
+  for (const rel of DATEIEN.filter((r) => /\.(ts|tsx)$/.test(r))) {
+    const z = bloecke(zeilenVon(rel).join("\n")).split("\n");
+    z.forEach((zeile, i) => {
+      if (!/\.(toLowerCase|toUpperCase)\s*\(\s*\)/.test(zeile)) return;
+      const kontext = [z[i - 1], zeile, z[i + 1]].filter(Boolean).join(" ");
+      if (/["'`][^"'`]*\b(kepta|k3pta)\b[^"'`]*["'`]/i.test(kontext)) biegung.push(`${rel}:${i + 1}`);
+    });
+  }
+  meld("css", "Eigenname in einer Kasus-Biegung", `${biegung.length}`, "0",
+    biegung.length ? biegung.join(" ") : "src/** — kein Markenwort durch toLowerCase()/toUpperCase()",
+    biegung.length === 0);
+}
+
+// Kommentar-Hex neben einem Flächen-Token ist eine Behauptung über den Wert, und
+// niemand rechnete sie nach. Am 13.10. nannten zwei Kommentare #242425 und #373738,
+// die Tokens daneben rechnen #252526 und #38383a — zwei Kanäle zu tief. Ein
+// Kommentar, der einen Wert nennt, wird jetzt gegen den Wert gerechnet.
+{
+  const re = /(--e[a-z0-9-]*)\s*:\s*oklch\(\s*([0-9.]+)\s+([0-9.]+)\s+([0-9.]+)[^)]*\)[^;]*;\s*\/\*\s*#([0-9a-fA-F]{6})/g;
+  const genannt = [...cssText.matchAll(re)];
+  const daneben = genannt.filter((m) => {
+    const f = farbeVon(Number(m[2]), Number(m[3]), Number(m[4]));
+    // farbeVon liefert 0…1 — der Kanal ist erst das Byte
+    const ist = [f.r, f.g, f.b].map((v) => Math.round(Math.min(1, Math.max(0, v)) * 255).toString(16).padStart(2, "0")).join("");
+    return `#${ist}` !== `#${m[5].toLowerCase()}`;
+  });
+  meld("css", "Kommentar-Hex der Flächen-Tokens, nachgerechnet", `${genannt.length - daneben.length}/${genannt.length}`,
+    "alle gleich", "src/index.css — oklch des Tokens gegen das Hex im Kommentar derselben Zeile",
+    genannt.length > 0 && daneben.length === 0);
+}
+
 // Regeln, die auf eine Klasse zeigen, die kein Baustein benutzt — ererbter
 // Auftrag: toter Stil ist kein Fehler, aber eine falsche Fährte.
+//
+// Der erste Leser verglich den ganzen Quelltext mit `includes(k)` und ließ sich
+// damit täuschen: `glass` gilt als gerufen, weil `glass-strong` dasteht, `inset`
+// weil `hud-inset` existiert, `ikone` weil `ikone-1` definiert ist. Der Zensus
+// (e1-code/zensus.mjs, 13.10.) zählt Wörter, keine Teilzeichenketten und meldet
+// 20 Waisen statt 16. Hier zählt jetzt dasselbe Wort-Raster, und die Gegenrich-
+// tung ist neu: eine Klasse, die ein Baustein ruft, die aber nirgends definiert
+// ist, war dem Haus ganz unsichtbar (hud-raised in PraxisSync.tsx:172,183).
 {
   const klassen = new Set();
   for (const r of PAR.regeln) {
     for (const m of r.selektor.matchAll(/\.([a-zA-Z][-\w]*)/g)) klassen.add(m[1]);
   }
+  // Rufer sind: className-Wortlisten, Strings in cn()/clsx(), classList-Setzer und
+  // Selektoren im Code. Tailwind-Formen sind keine eigenen Klassen.
   const quelltext = DATEIEN.filter((rel) => rel.endsWith(".tsx")).map((rel) => zeilenVon(rel).join("\n")).join("\n");
-  const tot = [...klassen].filter((k) => !quelltext.includes(k)).sort();
-  meld("css", `Klassenregeln ohne Baustein (toter Stil)`, tot.length ? tot.join(" ") : "keine", "—",
-    "src/index.css Selektoren gegen src/**/*.tsx", true);
+  // Andere CSS-Dateien als index.css (huelle.css) tragen ebenfalls Regeln — ohne
+  // sie erschiene jede Klasse davon als nackter Rufer.
+  for (const rel of DATEIEN.filter((r) => r.endsWith(".css") && r !== "src/index.css")) {
+    for (const regel of zeilenVon(rel).join("\n").replace(/\/\*[\s\S]*?\*\//g, "").split("}")) {
+      const selektor = regel.slice(0, regel.indexOf("{"));
+      if (selektor === regel) continue;
+      for (const m of selektor.matchAll(/\.([a-zA-Z][-\w]*)/g)) klassen.add(m[1]);
+    }
+  }
+  const geruft = new Set();
+  const wort = (t) => String(t).replace(/\$\{[^}]*\}/g, " ").split(/\s+/).filter((k) => /^[A-Za-z_][-\w]*$/.test(k));
+  for (const m of quelltext.matchAll(/className\s*=\s*(?:"([^"]*)"|\{`([^`]*)`\}|\{\s*"([^"]*)"\s*\})/g))
+    for (const k of wort(m[1] ?? m[2] ?? m[3])) geruft.add(k);
+  for (const m of quelltext.matchAll(/\b(?:cn|clsx|twMerge)\(([^)]*)\)/g))
+    for (const q of m[1].matchAll(/(["'`])([^"'`]*)\1/g)) {
+      // currentView === 'chat' ist eine Fläche, keine Klasse
+      if (/(?:===|!==|==|!=|>=|<=)$/.test(m[1].slice(0, q.index).trimEnd())) continue;
+      for (const k of wort(q[2])) geruft.add(k);
+    }
+  for (const m of quelltext.matchAll(/classList\.(?:add|remove|toggle|replace)\(\s*["']([^"']+)["']/g))
+    for (const k of wort(m[1])) geruft.add(k);
+  // Tailwind-Erkennung: Stamm als Präfix-Schnitt, weil Stämme selbst Bindestriche
+  // tragen (max-h, pointer-events, line-clamp).
+  const STAMM = new Set(("flex grid block inline hidden absolute relative fixed sticky overflow truncate w h size min-w min-h max-w max-h p px py pt pb pl pr m mx my mt mb ml mr space gap place items justify content self basis grow shrink top right bottom left inset z border rounded bg text font leading tracking whitespace break indent align list decoration underline no-underline normal-case uppercase lowercase capitalize italic shadow outline ring opacity blur backdrop transition delay duration ease animate scale rotate translate transform origin cursor select resize touch fill stroke antialiased sr not-sr pointer-events divide prose appearance line-clamp caret columns object aspect group peer container").split(" "));
+  const istTailwind = (k) =>
+    /^(sm|md|lg|xl|2xl|hover|focus|focus-visible|focus-within|active|disabled|first|last|odd|even|aria|data|max-min)-/.test(k) ||
+    (() => {
+      const t = k.split(/-(?=\d|[$[{a-z])/);
+      return t.some((_, i) => STAMM.has(t.slice(0, i + 1).join("-")));
+    })();
+  const tot = [...klassen].filter((k) => !geruft.has(k) && !/^dark$/.test(k)).sort();
+  const wSchuld = schuld("css:klassen-waisen", tot.length);
+  meld("css", `Klassenregeln ohne Baustein (toter Stil)`, tot.length ? `${tot.length}: ${tot.join(" ")}` : "keine",
+    wSchuld ? `benannt: ${wSchuld.sitze} (${wSchuld.wer})` : "0",
+    wSchuld ? wSchuld.warum : "src/index.css Selektoren gegen Wortlisten in src/**/*.tsx",
+    wSchuld ? wSchuld.treffer : tot.length === 0);
+  const fremd = [...geruft].filter((k) => !klassen.has(k) && !istTailwind(k)).sort();
+  meld("css", `gerufene Klasse ohne Regel (nackter Rufer)`, fremd.length ? fremd.join(" ") : "keine", "0",
+    "Wortlisten in src/**/*.tsx gegen src/index.css — neu: 13.10. gefunden (hud-raised)",
+    fremd.length === 0);
+  // Positive Kontrolle: ein Rufer, den es nur als Teil eines längern Namens gibt,
+  // darf nicht als gerufen zählen — sonst ist die Waisenliste wieder geschönt.
+  const kontrolle = [...klassen].filter((k) => geruft.has(`${k}-x`)).length;
+  meld("css", `Kontrolle: Teilzeichenketten-Rufer zählen mit (Sonde grün)`,
+    `${kontrolle === 0 ? "keine" : kontrolle}`, "0",
+    "glass gegen glass-strong — die alte Sonde ließ sich so täuschen", kontrolle === 0);
 }
 
 // ---------------------------------------------------------------- 9. Die Film-Fläche

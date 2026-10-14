@@ -14,6 +14,7 @@ import compression from "compression";
 import path from "path";
 import os from "os";
 import type { KeptaStore } from "../src/core/store";
+import { leseUmwelt } from "../src/core/umwelt";
 import type { MemoryRecord as CoreMemory } from "../src/core/types";
 import { erstelleLimiter } from "./helfer/limiter";
 import { mountActivity } from "./router/activity";
@@ -117,7 +118,10 @@ export function sichererFehler(err: unknown, req: express.Request, res: express.
 export function createApp(store: KeptaStore, optionen: AppOptionen = {}) {
   const app = express();
 
-  const datenOrdner = process.env.KEPTA_DATA_DIR || path.join(os.homedir(), ".kepta");
+  // Beide Namensformen (Aufgabe #64): K3PTA_DATA_DIR zuerst, KEPTA_DATA_DIR als
+  // Rueckfall, ~/.kepta als Default. Wer nur die alte Form setzt, sieht seinen
+  // Bestand — kein Zug, kein Doppelbestand.
+  const datenOrdner = leseUmwelt("datenordner").wert || path.join(os.homedir(), ".kepta");
 
   // Only this computer — not a website open in a browser on it (src/lib/herkunft.ts).
   // First of all, so that no route registered below can be reached around it.
@@ -182,6 +186,22 @@ export function createApp(store: KeptaStore, optionen: AppOptionen = {}) {
 
   // 1) Import-Routen mit eigenem Body-Limit — vor dem globalen Parser.
   mountImporte(app, ctx);
+
+  // 1b) Anker für Limits, die sonst nur dastehen. Drei Routen des App-Servers
+  //     deklarierten eine engere Kappe, als ihr Router mountet: Reparatur 16 kb,
+  //     Scan-Konfiguration 256 kb (server/router/scan.ts:203 und :373) und
+  //     Oeffnen 16 kb (server/router/system.ts:118). Sie mounten alle hinter dem
+  //     globalen Parser — und express.json ueberspringt einen bereits geparsten
+  //     Body. Der Kern loest das über die Reihenfolge (kepta-core/server.ts:572
+  //     vor :575); hier bekommt jede engere Kappe ihren Parser, bevor das
+  //     1mb-Limit sie bekommt. Ohne diese Anker antwortete die App auf 900 kb
+  //     mit 200, der Kern mit 413. Haelt tests/server-repair-limit.test.ts: die
+  //     Datei liest die deklarierten Kappen aus dem Quelltext und prueft jede
+  //     einzelne am echten Horcher — ein viertes Limit kann nicht wieder als
+  //     Absicht enden (es war genau so einer, /api/open, von der Sonde gefunden).
+  app.use("/api/repair/imports", express.json({ limit: "16kb" }));
+  app.use("/api/scan/config", express.json({ limit: "256kb" }));
+  app.use("/api/open", express.json({ limit: "16kb" }));
 
   // 2) Globales Payload-Limit für alle übrigen Routen (1mb — 50mb war viel zu groß, DoS)
   app.use(express.json({ limit: "1mb" }));

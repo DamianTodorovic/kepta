@@ -1,5 +1,5 @@
 // Der eine API-Client des Frontends — statt 38 verstreuter fetch()-Aufrufe mit
-// je eigener Fehlerbehandlung. Der Wrapper liest den KEPTA-Fehlervertrag
+// je eigener Fehlerbehandlung. Der Wrapper liest den K3PTA-Fehlervertrag
 // ({ error: string }) und wirft Error-Meldungen, die direkt in die Oberfläche
 // gehören. Darüber hinaus bleibt es fetch: JSON rein, JSON raus, keine Magie.
 
@@ -12,7 +12,7 @@ export class ApiFehler extends Error {
   }
 }
 
-/** Fehlertext aus einer Antwort ziehen — KEPTA nennt Fehler unter "error". */
+/** Fehlertext aus einer Antwort ziehen — K3PTA nennt Fehler unter "error". */
 async function fehlerAus(res: Response): Promise<string> {
   try {
     const data = (await res.json()) as { error?: unknown };

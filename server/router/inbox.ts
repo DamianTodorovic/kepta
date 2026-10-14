@@ -1,4 +1,4 @@
-// Inbox Auto-Import — KEPTA liest immer mit (File-Watcher).
+// Inbox Auto-Import — K3PTA liest immer mit (File-Watcher).
 // PDFs laufen seit 2.13-Refactoring durch dieselbe pdf.js-Extraktion wie der
 // Rechner-Scan (server/helfer/text.ts): die frühere Rohbyte-Schabrasche in
 // dieser Datei lieferte bei PDFs mit eingebetteten Schriften Glyph-Namen und

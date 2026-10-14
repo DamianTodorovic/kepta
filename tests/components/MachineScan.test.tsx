@@ -136,7 +136,7 @@ describe("MachineScan: Vorschau und Abschluss", () => {
     stubFetch({ truncated: true });
     oeffne();
     await user.click(screen.getByRole("button", { name: /Show me what would be imported/i }));
-    await waitFor(() => expect(screen.getByText(/There is more than KEPTA imports in one pass/i)).toBeTruthy());
+    await waitFor(() => expect(screen.getByText(/There is more than K3PTA imports in one pass/i)).toBeTruthy());
   });
 
   it("meldet den Abschluss zurueck", async () => {
@@ -238,7 +238,7 @@ describe("formatBytes", () => {
 });
 
 describe("Der Nutzer bestimmt, was und von wo gelesen wird", () => {
-  // Die Forderung dahinter: "möchte ich auch explizit, dass man bei KEPTA
+  // Die Forderung dahinter: "möchte ich auch explizit, dass man bei K3PTA
   // einstellen kann was genau und von wo genau er wissen herausziehen kann und
   // darf. Dies muss auch klar deklariert werden."
   const regelwerk = {
@@ -266,7 +266,7 @@ describe("Der Nutzer bestimmt, was und von wo gelesen wird", () => {
     const user = userEvent.setup();
     mitRegelwerk([]);
     render(<MachineScan open onClose={() => {}} />);
-    await screen.findByText(/What KEPTA may read/i);
+    await screen.findByText(/What K3PTA may read/i);
 
     await user.click(screen.getByRole("button", { name: /Show the full rules/i }));
     expect(screen.getByText(/The exact list that is never read/i)).toBeTruthy();
@@ -281,7 +281,7 @@ describe("Der Nutzer bestimmt, was und von wo gelesen wird", () => {
     const gesendet: { url: string; body: unknown }[] = [];
     mitRegelwerk(gesendet);
     render(<MachineScan open onClose={() => {}} />);
-    await screen.findByText(/What KEPTA may read/i);
+    await screen.findByText(/What K3PTA may read/i);
 
     await user.click(screen.getByRole("button", { name: ".pdf" }));
     await waitFor(() => expect(gesendet.length).toBeGreaterThan(0));

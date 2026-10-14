@@ -32,6 +32,11 @@ describe("memory core boundary (src/core)", () => {
   it("contains exactly the known core files (no silent additions)", () => {
     const names = coreFiles.map((f) => path.basename(f)).sort();
     expect(names).toEqual([
+      // Begriffe aus dem Notiztext (Ueberschriften, Wiki-Links) sind reine
+      // Stringlogik ohne jeden Import — der Kern braucht sie, weil jede
+      // Schreiberei sie braucht (#56: der Rechner-Scan legte nie einen Begriff,
+      // und ein Bestand von 14.702 Notizen hielt 30 Begriffe).
+      "begiffe.ts",
       // Kern 3.1.x: ChatGPT-Export-Import (App-Stand) und Synonym-Erweiterung
       // der Suche sind Kern-Dateien.
       "chatgpt-import.ts",
@@ -67,6 +72,10 @@ describe("memory core boundary (src/core)", () => {
       "store.ts",
       "synonyme.ts",
       "types.ts",
+      // Die zwei Namensformen der Aufgaben-Kennungen (#64): beide lesen, eine
+      // gewinnen und sie gemeldet werden lassen. Reine Umgebungswithnung, keine
+      // Imports — der Store, der Schluesselanbieter und der Server lesen durch sie.
+      "umwelt.ts",
       "version.ts",
     ]);
   });

@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { Sparkles, Check, ChevronRight, ChevronLeft, Cpu, Database, Search, Globe, FolderOpen, User, Target, Loader2, Plug, PartyPopper } from "../lib/icons";
+import { Sparkles, Check, ChevronRight, ChevronLeft, Cpu, Database, Globe, User, Target, Loader2, PartyPopper, AlertCircle, Info } from "../lib/icons";
 import { normalizeTopics, MAX_TOPICS, type DetectedAI, detectLocalAIs, suggestProvider, saveProfile, createDefaultProfile, type UserProfileAdaptive } from '../lib/profile';
 import { starterNotes } from '../lib/starter';
 import { KeptaMark } from './KeptaMark';
@@ -17,7 +17,7 @@ type Step = 1 | 2 | 3 | 4 | 5;
 // Frueher wurden hier Fachpakete zusammengesetzt: wer "Fishing" waehlte, bekam
 // Forellenkoeder in die eigene Datenbank. Ein Gedaechtnis, das mit "dein Wissen"
 // wirbt, startet nicht mit fremdem Wissen — geblieben sind die Notizen ueber
-// KEPTA selbst (siehe lib/starter.ts).
+// K3PTA selbst (siehe lib/starter.ts).
 
 export function OnboardingWizard({ open, onClose, onComplete }: Props) {
   const [step, setStep] = useState<Step>(1);
@@ -29,7 +29,6 @@ export function OnboardingWizard({ open, onClose, onComplete }: Props) {
   const [scanning, setScanning] = useState(false);
   const [importing, setImporting] = useState(false);
   const [importResult, setImportResult] = useState<string | null>(null);
-  const [customNote, setCustomNote] = useState('');
   // Rechner-Scan: hier wird nur GEFRAGT, ob danach danach gefragt werden soll.
   // Die eigentliche Zustimmung — mit Vorschau und dem Hinweis auf MCP-Agenten —
   // holt der Scan-Dialog selbst ein. Ein Haken im Assistenten darf nicht
@@ -60,6 +59,18 @@ export function OnboardingWizard({ open, onClose, onComplete }: Props) {
   };
   const removeTopic = (t: string) => setTopics(prev => prev.filter(x => x !== t));
 
+  // Was der Knopf unten mit den KI-Einstellungen tut, haengt an einem einzigen
+  // Fund: ein lokaler Anbieter, der ein Modell meldet. Frueher stand diese
+  // Rechnung nur in handleFinish, die Endschaft behauptete derweil
+  // „Provider auto-configured" — auch wenn nichts geschrieben wurde, und sie
+  // nannte einen Anbieter, der nie installiert war. Hier wird einmal gerechnet;
+  // Knopf und Schirm lesen dasselbe, damit der Schirm nicht vorgreifen kann.
+  const lokalerFund = detected?.find(d => d.available && d.models.length > 0) ?? null;
+  const provId = detected ? suggestProvider(detected, 'openai') : 'ollama';
+  const prov = providerById(provId);
+  const providerWirdGesetzt = lokalerFund !== null;
+  const modellZumSetzen = lokalerFund?.models[0] || prov.defaultModel;
+
   const handleFinish = async () => {
     const starter = starterNotes();
     setImporting(true);
@@ -69,15 +80,10 @@ export function OnboardingWizard({ open, onClose, onComplete }: Props) {
       else localStorage.removeItem('kepta_scan_wunsch');
     } catch { /* ignore */ }
     try {
-      // auto-konfiguriere Provider wenn lokal gefunden
-      const provId = detected ? suggestProvider(detected, 'openai') : 'ollama';
-      const prov = providerById(provId);
+      // nur überschreiben wenn ein lokaler Anbieter ein Modell gemeldet hat
       const s = loadAISettings();
-      // nur überschreiben wenn noch default / leer und lokaler Anbieter verfügbar
-      const shouldAuto = detected?.some(d=>d.available && d.models.length>0);
-      if (shouldAuto) {
-        const bestModel = detected?.find(d=>d.id===provId)?.models[0] || prov.defaultModel;
-        saveAISettings({ providerId: provId, apiKey: s.apiKey === 'local' ? 'local' : s.apiKey, baseUrl: prov.baseUrl, model: bestModel });
+      if (providerWirdGesetzt) {
+        saveAISettings({ providerId: provId, apiKey: s.apiKey === 'local' ? 'local' : s.apiKey, baseUrl: prov.baseUrl, model: modellZumSetzen });
       }
 
       // Profil speichern
@@ -86,7 +92,6 @@ export function OnboardingWizard({ open, onClose, onComplete }: Props) {
         displayName: name.trim() || 'You',
         topics,
         goal: goal.trim(),
-        customNote: customNote.trim(),
         detectedAIs: detected || [],
         preferredProviderId: provId,
         hasCompletedOnboarding: true,
@@ -103,10 +108,11 @@ export function OnboardingWizard({ open, onClose, onComplete }: Props) {
         const r = await fetch('/api/memory', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(n) });
         if (r.ok) imported++;
       }
-      setImportResult(`${imported} nodes created for you`);
+      setImportResult(`${imported} note${imported === 1 ? '' : 's'} created for you`);
       setTimeout(()=> onComplete(profile, imported), 900);
-    } catch (e:any) {
-      setImportResult(e.message||'Error');
+    } catch (e) {
+      // Ein String ohne .message warf hier „undefined" in den grünen Kasten.
+      setImportResult(e instanceof Error ? e.message : String(e));
     } finally { setImporting(false); }
   };
 
@@ -118,7 +124,7 @@ export function OnboardingWizard({ open, onClose, onComplete }: Props) {
     <aside
       data-testid="wizard-taefelchen"
       className="wizard-taefelchen relative z-[80] flex min-w-0 my-2.5 mr-2.5"
-      aria-label="Set up KEPTA"
+      aria-label="Set up K3PTA"
     >
       <motion.div initial={{scale:0.96, opacity:0}} animate={{scale:1, opacity:1}} exit={{scale:0.96, opacity:0}}
         transition={{ ease: [0.2, 0.8, 0.2, 1], duration: 0.28 }}
@@ -130,10 +136,11 @@ export function OnboardingWizard({ open, onClose, onComplete }: Props) {
         <div className="px-7 pt-6 pb-4 flex items-center gap-3.5" style={{borderBottom:'1px solid var(--border-subtle)'}}>
           <KeptaMark size={38} />
           <div className="flex-1">
-            <h2 className="text-[16px] font-semibold tracking-[-0.015em]" style={{color:'var(--text-1)'}}>Set up KEPTA</h2>
-            <p className="text-xs mt-0.5" style={{color:'var(--text-2)'}}>Step {step} of 4 — one minute, and KEPTA adapts to you.</p>
+            <h2 className="text-[16px] font-semibold tracking-[-0.015em]" style={{color:'var(--text-1)'}}>Set up K3PTA</h2>
+            {/* „one minute" war eine ungeprüfte Anwerbung und {step}/4 stand
+                zweimal auf demselben Schirm — einmal in Worten, einmal in Ziffern. */}
+            <p className="text-xs mt-0.5" style={{color:'var(--text-2)'}}>Step {step} of 4 — four questions, all on this computer.</p>
           </div>
-          <span className="hud-label tnum">{step}/4</span>
         </div>
 
         <div className="flex-1 overflow-y-auto p-6">
@@ -142,20 +149,37 @@ export function OnboardingWizard({ open, onClose, onComplete }: Props) {
             <motion.div key="s1" initial={{x:20, opacity:0}} animate={{x:0, opacity:1}} exit={{x:-20, opacity:0}} className="space-y-5">
               <div className="flex items-center gap-2 hud-label"><User className="w-3.5 h-3.5" style={{color:'var(--accent)'}}/> Who are you?</div>
               <div>
-                <label className="hud-label block mb-2">Name (what should KEPTA call you?)</label>
+                <label className="hud-label block mb-2">Name (what should K3PTA call you?)</label>
                 <input value={name} onChange={e=>setName(e.target.value)} placeholder="e.g. Alex" autoFocus className="hud-input w-full rounded-xl px-4 py-3 text-sm" />
               </div>
               <div>
-                <label className="hud-label block mb-2 flex items-center gap-2"><Target className="w-3.5 h-3.5"/> What you want from KEPTA</label>
+                <label className="hud-label block mb-2 flex items-center gap-2"><Target className="w-3.5 h-3.5"/> What you want from K3PTA (optional)</label>
                 {/* Gemessen: der lange Beispieltext brauchte 387,6 px in 338 px
                     Raum und schnitt im schmaleren Täfelchen hart ab. Das Beispiel
                     soll zünden, nicht die Zeile füllen. */}
                 <input value={goal} onChange={e=>setGoal(e.target.value)} placeholder="e.g. find things faster" className="hud-input w-full rounded-xl px-4 py-3 text-sm" />
-                <p className="text-xs mt-2" style={{color:'var(--text-3)'}}>Woven into the system prompt — answers adapt to your goal.</p>
+                {/* Gemessen an Chat.tsx:385-402: goal, Name und Themen stehen am
+                    Anfang jeder Anfrage. „Systemprompt" ist der Name dafuer im
+                    Code, nicht die Sprache, die ein Erstanwender braucht. */}
+                <p className="text-xs mt-2" style={{color:'var(--text-3)'}}>If you write one, K3PTA puts it in front of every answer it gives you.</p>
               </div>
-              <div className="hud-inset rounded-xl p-3 flex gap-3">
-                <div className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0" style={{background:'var(--accent-soft)'}}><Plug className="w-4 h-4" style={{color:'var(--accent)'}}/></div>
-                <p className="text-xs leading-relaxed" style={{color:'var(--text-2)'}}>Next, KEPTA scans locally for the AI you have installed (Ollama, LM Studio). No key, no cloud — just localhost pings.</p>
+              {/* Die drei Fragen, die ein Frischgelaedener wirklich hat, werden
+                  hier beantwortet und nicht frueher: wo liegt mein Bestand, wer
+                  kann ihn lesen, was geschieht beim ersten Oeffnen mit meinen
+                  Dateien. Alles andere auf diesem Schirm ist Zubereitung.
+                  Gemessen 13.10. 21:2x: die Lange dieser Zeilen machte Schritt 1
+                  bei 1024 px blätterbar (162 px) und bei 390 px (362 px), ausser
+                  die Vorschau auf Schritt 3 — die steht dort selbst. */}
+              <div className="hud-inset rounded-xl p-3 space-y-1.5">
+                <p className="text-xs leading-relaxed" style={{color:'var(--text-2)'}}>
+                  <strong style={{color:'var(--text-1)'}}>Where your notes live.</strong> One file here: <code className="font-mono">~/.kepta/kepta.db</code>. No account, no cloud of ours.
+                </p>
+                <p className="text-xs leading-relaxed" style={{color:'var(--text-2)'}}>
+                  <strong style={{color:'var(--text-1)'}}>Who can read them.</strong> Only programs you connect here. Nothing leaves unless you add a cloud key — that AI sees your question and the notes it needs.
+                </p>
+                <p className="text-xs leading-relaxed" style={{color:'var(--text-2)'}}>
+                  <strong style={{color:'var(--text-1)'}}>Your files.</strong> Opening K3PTA reads nothing. Documents come in only if you drop them, or say yes at the end — after seeing the list.
+                </p>
               </div>
             </motion.div>
           )}
@@ -186,45 +210,56 @@ export function OnboardingWizard({ open, onClose, onComplete }: Props) {
                 )}
               </div>
               <div className="hud-inset rounded-xl p-3">
-                <div className="hud-label mb-2">KEPTA starts with {starterPreview.length} notes about itself — nothing else</div>
+                <div className="hud-label mb-2">K3PTA starts with {starterPreview.length} notes about itself — nothing else</div>
                 <div className="flex flex-wrap gap-1.5 max-h-28 overflow-y-auto">
                   {starterPreview.map(n=> <span key={n.title} className="px-2 py-1 rounded-lg text-xs hud-inset" style={{color:'var(--text-2)'}}>{n.title}</span>)}
                 </div>
-              </div>
-              <div>
-                <label className="hud-label block mb-2">Anything else worth knowing? (optional)</label>
-                <input value={customNote} onChange={e=>setCustomNote(e.target.value)} placeholder="e.g. how you like answers, a constraint, a deadline…" className="hud-input w-full rounded-xl px-4 py-2.5 text-sm" />
               </div>
             </motion.div>
           )}
           {step===3 && (
             <motion.div key="s3" initial={{x:20, opacity:0}} animate={{x:0, opacity:1}} exit={{x:-20, opacity:0}} className="space-y-4">
-              <div className="hud-label flex items-center gap-2"><Cpu className="w-3.5 h-3.5" style={{color:'var(--accent)'}}/> Your AI — detected locally</div>
-              {scanning && <div className="hud-inset rounded-xl p-6 flex items-center gap-3"><Loader2 className="w-5 h-5 animate-spin" style={{color:'var(--accent)'}}/><span className="text-sm" style={{color:'var(--text-2)'}}>Scanning localhost:11434 and :1234…</span></div>}
+              <div className="hud-label flex items-center gap-2"><Cpu className="w-3.5 h-3.5" style={{color:'var(--accent)'}}/> Your AI — found on this computer</div>
+              {/* Die Ports gehören nicht in einen Sprechtext: „localhost:11434"
+                  ist für einen Frischgelaedenen kein Grund, kein Ausweg und keine
+                  Tür. Sie stehen im Titel, für den, der sie sucht. */}
+              {scanning && <div className="hud-inset rounded-xl p-6 flex items-center gap-3" title="Pings http://localhost:11434/api/tags and http://localhost:1234/v1/models"><Loader2 className="w-5 h-5 animate-spin" style={{color:'var(--accent)'}}/><span className="text-sm" style={{color:'var(--text-2)'}}>Asking this machine whether an AI is running…</span></div>}
               {!scanning && detected && (
                 <div className="space-y-2">
                   {detected.map(d=>(
                     <div key={d.id} className="hud-inset rounded-xl p-3 flex items-center gap-3" style={{borderColor: d.available ? 'color-mix(in srgb, var(--ok) 35%, var(--border-subtle))' : undefined}}>
-                      <span className={`w-2.5 h-2.5 rounded-full ${d.available ? 'bg-emerald-500' : 'bg-zinc-400'}`} style={{boxShadow: d.available ? '0 0 8px var(--ok)' : undefined}}/>
+                      {/* Kein Tailwind-Grün: emerald-500 ist eine eigene Farbe
+                          und gilt in beiden Themen gleich — Z-13. */}
+                      <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{background: d.available ? 'var(--ok)' : 'var(--text-3)', boxShadow: d.available ? '0 0 8px var(--ok)' : undefined}}/>
                       <div className="flex-1 min-w-0">
                         <div className="text-sm font-medium" style={{color:'var(--text-1)'}}>{d.label} {d.available ? '— available' : '— not found'}</div>
-                        <div className="text-xs truncate" style={{color:'var(--text-3)'}}>{d.models.length ? d.models.slice(0,4).join(', ') + (d.models.length>4?` +${d.models.length-4}`:'') : d.available ? 'no models loaded (ollama pull ...)' : 'not installed'}</div>
+                        {/* Gemessen 13.10. 21:2x: `truncate` schnitt die Modelliste
+                            bei jeder Breite ab (522 px_needed gegen 267/174/109/227
+                            px Sicht). Ein Modell, das der Nutzer nicht lesen kann,
+                            ist keine Angabe, ein Rätsel. Jetzt bricht das lange Wort
+                            um, und nur die Liste bleibt gekappt (vier + Zahl). */}
+                        <div className="text-xs break-words" style={{color:'var(--text-3)'}}>{d.models.length ? d.models.slice(0,4).join(', ') + (d.models.length>4?` +${d.models.length-4}`:'') : d.available ? 'answering, but no model loaded — in a terminal: ollama pull llama3.2' : 'not installed'}</div>
                       </div>
                       {d.available && <span className="text-xs hud-label px-1.5 py-1 rounded hud-inset" style={{color:'var(--ok)'}}>{d.latencyMs}ms</span>}
                     </div>
                   ))}
                   <div className="rounded-xl p-3" style={{background:'var(--accent-soft)', border:'1px solid var(--border-subtle)'}}>
                     <p className="text-xs leading-relaxed" style={{color:'var(--text-2)'}}>
-                      <strong style={{color:'var(--text-1)'}}>Recommendation:</strong> {(() => {
+                      <strong style={{color:'var(--text-1)'}}>So:</strong> {(() => {
                         // "ollama" ist zugleich suggestProvider's Nichts-gefunden-
                         // Default — ohne Verfügbarkeits-Check behauptete der Wizard
                         // "Ollama found", obwohl gerade "not found" stand.
+                        // „Recommendation" war außerdem die falsche Stufe: der
+                        // Assistent empfiehlt hier nicht, er setzt den Anbieter.
+                        // Und „set as the provider" war eine drittels Lüge derselben
+                        // Art — geschrieben wird erst mit dem Knopf auf Schritt 4.
                         const gefunden = detected.some(d => d.available && d.models.length > 0);
-                        if (!gefunden) return 'No local AI found — you can install Ollama later or enter a cloud key. KEPTA works anyway, with the starter pack.';
-                        const empfehlung = suggestProvider(detected);
-                        return empfehlung === 'ollama' ? 'Ollama found — KEPTA uses it, free and offline.'
-                          : empfehlung === 'lmstudio' ? 'LM Studio found — set as the provider.'
-                          : 'No local AI found — you can install Ollama later or enter a cloud key. KEPTA works anyway, with the starter pack.';
+                        if (!gefunden) return 'No local AI found — you can install Ollama later or enter a cloud key. K3PTA works anyway, with the starter pack.';
+                        const empfohlener = suggestProvider(detected);
+                        const meldet = detected.find(d => d.id === empfohlener && d.available);
+                        if (!meldet) return 'No local AI found — you can install Ollama later or enter a cloud key. K3PTA works anyway, with the starter pack.';
+                        const modell = meldet.models[0];
+                        return `${meldet.label} will answer${modell ? ` with ${modell}` : ' as soon as a model is loaded'}. Nothing leaves this machine, and you can change it in Settings.`;
                       })()}
                     </p>
                   </div>
@@ -241,19 +276,36 @@ export function OnboardingWizard({ open, onClose, onComplete }: Props) {
                   <div className="w-10 h-10 rounded-lg flex items-center justify-center shrink-0" style={{background:'var(--accent-soft)'}}><User className="w-4.5 h-4.5" style={{color:'var(--accent)'}}/></div>
                   <div>
                     <div className="text-sm font-semibold" style={{color:'var(--text-1)'}}>{name.trim()||'You'}{topics.length ? ` — ${topics.join(', ')}` : ''}</div>
-                    <div className="text-xs" style={{color:'var(--text-2)'}}>{goal || 'Goal: collect knowledge and answer faster'}</div>
-                    {customNote && <div className="text-xs mt-1" style={{color:'var(--text-3)'}}>“{customNote}”</div>}
+                    {/* Nur das Ziel steht hier, und nur wenn es da ist. Der Satz
+                        „no goal given" gehört an die Liste unten — zweimal auf
+                        einem Schirm war eine Wiederholung, keine Auskunft. */}
+                    {goal.trim() ? <div className="text-xs" style={{color:'var(--text-2)'}}>{goal.trim()}</div> : null}
                   </div>
                 </div>
-                <div className="grid grid-cols-3 gap-2 text-center">
-                  <div className="hud-inset rounded-lg p-2.5"><div className="text-lg font-semibold tnum" style={{color:'var(--text-1)'}}>{starterPreview.length}</div><div className="hud-label">entries</div></div>
-                  <div className="hud-inset rounded-lg p-2.5"><div className="text-lg font-semibold tnum" style={{color:'var(--text-1)'}}>{topics.length}</div><div className="hud-label">topics</div></div>
-                  <div className="hud-inset rounded-lg p-2.5"><div className="text-lg font-semibold tnum" style={{color:'var(--ok)'}}>{detected?.filter(d=>d.available).length || 0}</div><div className="hud-label">Local AI</div></div>
+                {/* Gemessen 13.10. 21:2x: in einem 262 px breiten Täfelchen brauchte
+                    die Beschriftung 35–40 px, die Zelle ließ 32 — „entries“ (vorher)
+                    und „topics“/„models“ (nachher) waren abgeschnitten. Die Zellen
+                    bekommen ihren Rand waagerecht dünner, die Höhe bleibt. */}
+                <div className="grid grid-cols-3 gap-1.5 text-center">
+                  <div className="hud-inset rounded-lg px-1 py-2.5"><div className="text-lg font-semibold tnum" style={{color:'var(--text-1)'}}>{starterPreview.length}</div><div className="hud-label">notes</div></div>
+                  <div className="hud-inset rounded-lg px-1 py-2.5"><div className="text-lg font-semibold tnum" style={{color:'var(--text-1)'}}>{topics.length}</div><div className="hud-label">topics</div></div>
+                  <div className="hud-inset rounded-lg px-1 py-2.5"><div className="text-lg font-semibold tnum" style={{color:'var(--ok)'}}>{detected?.reduce((n,d)=> n + (d.available ? d.models.length : 0), 0) || 0}</div><div className="hud-label">models</div></div>
                 </div>
                 <ul className="text-xs space-y-1.5" style={{color:'var(--text-2)'}}>
-                  <li className="flex gap-2"><Check className="w-3.5 h-3.5 mt-0.5" style={{color:'var(--ok)'}}/> The starter pack is saved as real nodes — editable and deletable</li>
-                  <li className="flex gap-2"><Check className="w-3.5 h-3.5 mt-0.5" style={{color:'var(--ok)'}}/> Provider auto-configured ({detected ? suggestProvider(detected) : '...' })</li>
-                  <li className="flex gap-2"><Check className="w-3.5 h-3.5 mt-0.5" style={{color:'var(--ok)'}}/> Profile saved locally — every answer adapts to your goal</li>
+                  <li className="flex gap-2"><Check className="w-3.5 h-3.5 mt-0.5" style={{color:'var(--ok)'}}/> The {starterPreview.length} notes about K3PTA land in your memory — you can edit or delete every one</li>
+                  {/* Die zwei Zeilen darunter waren Behauptungen: der Anbieter wurde
+                      nur gesetzt, wenn ein lokaler Dienst ein Modell meldete, und
+                      „adapts to your goal" stand auch da, wenn das Feld leer war. */}
+                  {providerWirdGesetzt ? (
+                    <li className="flex gap-2"><Check className="w-3.5 h-3.5 mt-0.5" style={{color:'var(--ok)'}}/> Answers will come from {prov.label}, model {modellZumSetzen} — change it any time in Settings</li>
+                  ) : (
+                    <li className="flex gap-2"><AlertCircle className="w-3.5 h-3.5 mt-0.5" style={{color:'var(--warn)'}}/> Nothing was set: no AI on this machine reported a model. K3PTA stores your notes anyway — pick an AI in Settings for answers</li>
+                  )}
+                  {goal.trim() ? (
+                    <li className="flex gap-2"><Check className="w-3.5 h-3.5 mt-0.5" style={{color:'var(--ok)'}}/> Your goal is put in front of every question: „{goal.trim()}“</li>
+                  ) : (
+                    <li className="flex gap-2"><Info className="w-3.5 h-3.5 mt-0.5" style={{color:'var(--text-2)'}}/> No goal given — the assistant answers from your notes alone</li>
+                  )}
                 </ul>
               </div>
               <label className="hud-inset rounded-xl p-3 flex gap-3 cursor-pointer">
@@ -265,14 +317,14 @@ export function OnboardingWizard({ open, onClose, onComplete }: Props) {
                 />
                 <span className="text-xs leading-relaxed" style={{color:'var(--text-2)'}}>
                   <strong style={{color:'var(--text-1)'}}>Also look through this computer for documents.</strong>{' '}
-                  KEPTA can read the documents in your home folder and turn them into notes — everything stays on this
+                  K3PTA can read the documents in your home folder and turn them into notes — everything stays on this
                   machine. Keys, passwords, credentials and browser data are never read. You will see exactly what would
                   be imported and can still say no.
                 </span>
               </label>
               <div className="hud-inset rounded-xl p-3 flex gap-3">
                 <Globe className="w-4 h-4 mt-0.5 shrink-0" style={{color:'var(--text-3)'}}/>
-                <p className="text-xs leading-relaxed" style={{color:'var(--text-2)'}}>After this: drop files or POST /api/clip — KEPTA keeps learning. Another person on another machine sees entirely different suggestions here.</p>
+                <p className="text-xs leading-relaxed" style={{color:'var(--text-2)'}}>After this: drop a file on the window or paste a link, and K3PTA keeps learning. Your whole memory is one file — <code className="font-mono">~/.kepta/kepta.db</code> — so you can back it up, move it, or delete it whenever you like.</p>
               </div>
               {importResult && <div className="rounded-xl p-3 text-sm text-center" style={{background:'color-mix(in srgb, var(--ok) 12%, transparent)', border:'1px solid color-mix(in srgb, var(--ok) 30%, transparent)', color:'var(--ok)'}}>{importResult}</div>}
             </motion.div>
@@ -288,7 +340,7 @@ export function OnboardingWizard({ open, onClose, onComplete }: Props) {
             </button>
           ) : (
             <button onClick={handleFinish} disabled={importing} className="btn-primary px-6 py-2.5 rounded-xl text-sm flex items-center gap-2">
-              {importing ? <><Loader2 className="w-4 h-4 animate-spin"/> Filling your brain…</> : <><Sparkles className="w-4 h-4"/> Create my brain — {starterPreview.length} nodes</>}
+              {importing ? <><Loader2 className="w-4 h-4 animate-spin"/> Filling your brain…</> : <><Sparkles className="w-4 h-4"/> Create my brain — {starterPreview.length} notes</>}
             </button>
           )}
         </div>

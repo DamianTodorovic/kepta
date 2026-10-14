@@ -27,6 +27,17 @@ function oeffne() {
   return render(<OnboardingWizard open onClose={() => {}} onComplete={() => {}} />);
 }
 
+// Die Endschaft (Schritt 4) ist das einzige Bild, auf dem der Frischgelaedene
+// nachgelesen bekommt, was KEPTA mit seinen Angaben getan hat. Sie darf dort
+// nichts behaupten, was der Knopfdruck unter ihr nicht wirklich schreibt.
+// Pruefziel ist die Liste selbst, nicht der ganze Schirm: Ueberschrift und
+// Fortschritt gehoeren anderen Fallgruppen.
+function endschaft(container: HTMLElement) {
+  const liste = container.querySelector("ul");
+  if (!liste) throw new Error("keine Rueckmeldungsliste auf der Endschaft");
+  return liste.textContent ?? "";
+}
+
 async function zuSchrittVier(user: ReturnType<typeof userEvent.setup>) {
   await user.type(screen.getByPlaceholderText("e.g. Alex"), "Damian");
   for (let i = 0; i < 3; i++) {
@@ -156,8 +167,124 @@ describe("OnboardingWizard: Angebot, den Rechner anzusehen", () => {
   });
 });
 
-describe("OnboardingWizard: KI-Erkennung (Schritt 3)", () => {
-  function stubLocalAI(ollamaOk: boolean, lmstudioOk: boolean) {
+// Zwei Behauptungen auf der Endschaft standen fest, egal was vorher passiert war:
+//   „Provider auto-configured (…)“ — geschrieben wird der Anbieter nur, wenn ein
+//   lokaler KI-Provider ein Modell gemeldet hat. Im Standardfall dieses Tests meldet
+//   Ollama sich zwar, aber mit leerer Modelliste: es wurde nichts geschrieben.
+//   „every answer adapts to your goal“ — das Ziel ist freiwillig und war hier leer.
+// Beide Fälle sind die wahren Erste-Start-Faelle: heruntergeladen, Ollama nicht
+// installiert oder leer, Ziel nicht ausgefuellt.
+describe("Endschaft: sie sagt nur, was der Klick wirklich schreibt", () => {
+  it("ohne Modell in der Liste behauptet sie keinen eingerichteten Anbieter", async () => {
+    const user = userEvent.setup();
+    const { container } = oeffne();
+    await zuSchrittVier(user);
+
+    const rueck = endschaft(container);
+    expect(rueck, "es wurde kein Anbieter geschrieben, die Liste behauptet es doch").not.toMatch(/auto-configured|configured|provider set/i);
+    expect(rueck).toMatch(/no ai|nothing was set|noch keine KI/i);
+  });
+
+  it("mit gefundenem Modell nennt sie Anbieter und Modell, die sie schreibt", async () => {
+    vi.stubGlobal("fetch", vi.fn(async (url: string | URL) => {
+      const ziel = String(url);
+      if (ziel.includes("11434")) return new Response(JSON.stringify({ models: [{ name: "llama3.2" }] }), { status: 200 });
+      if (ziel.includes("1234")) throw new Error("kein LM Studio");
+      return new Response("{}", { status: 200 });
+    }));
+    const user = userEvent.setup();
+    const { container } = oeffne();
+    await zuSchrittVier(user);
+
+    const rueck = endschaft(container);
+    expect(rueck).toMatch(/llama3\.2/);
+    expect(rueck).toMatch(/Ollama/i);
+    expect(rueck).not.toMatch(/no ai|nothing was set/i);
+  });
+
+  it("ohne Ziel behauptet sie keine angepassten Antworten", async () => {
+    const user = userEvent.setup();
+    const { container } = oeffne();
+    await zuSchrittVier(user);
+
+    const rueck = endschaft(container);
+    expect(rueck, "das Ziel ist freiwillig; ohne Ziel passt sich nichts an").not.toMatch(/adapts to your goal|every answer adapts/i);
+    expect(rueck).toMatch(/no goal|bleibt allgemein/i);
+  });
+
+  it("mit Ziel sagt sie, wohin das Ziel geschrieben wird", async () => {
+    const user = userEvent.setup();
+    const { container } = oeffne();
+    await user.type(screen.getByPlaceholderText("e.g. Alex"), "Damian");
+    await user.type(screen.getByPlaceholderText("e.g. find things faster"), "find things faster");
+    await zuSchrittVier(user);
+
+    const rueck = endschaft(container);
+    expect(rueck).toMatch(/find things faster/);
+    expect(rueck).toMatch(/question|prompt/i);
+  });
+});
+
+// Die drei Fragen, die ein Frischgelaedener wirklich hat — wo liegt mein
+// Bestand, wer kann ihn lesen, was geschieht beim ersten Oeffnen mit meinen
+// Dateien. Sie muessen auf dem ERSTEN Schirm beantwortet sein, nicht auf dem
+// letzten, den man wegklickt. Auf dem letzten steht dafuer die Datei selbst.
+describe("Erster Schirm: die drei Fragen sind beantwortet", () => {
+  it("er nennt Ordner, Herkunft und dass die Dokumente warten", () => {
+    const { container } = oeffne();
+    const text = container.textContent ?? "";
+    expect(text, "keine Zeile darueber, wo der Bestand liegt").toMatch(/~\/\.kepta\/kepta\.db/);
+    expect(text, "keine Zeile darueber, dass nichts hochgeladen wird").toMatch(/no K3PTA account|nothing leaves|nothing is sent/i);
+    expect(text, "keine Zeile darueber, was beim Oeffnen mit den Dateien geschieht").toMatch(/reads nothing/i);
+    expect(text, "keine Zeile darueber, dass Dateien nur auf Wunsch gelesen werden").toMatch(/you ask for that|say yes at the end/i);
+    // Die Beschönigung, dass ein Schluessel nichts koestete: ein KI-Anbieter in
+    // fremdem Rechenzentrum sieht die Anfrage. Das muss da stehen, sonst ist die
+    // Sicherheitszeile eine halbe Wahrheit.
+    expect(text, "keine Zeile darueber, was ein Schluessel nach aussen gibt").toMatch(/cloud key|cloud ai/i);
+  });
+
+  it("der letzte Schirm nennt die Datei, in die geschrieben wird", async () => {
+    const user = userEvent.setup();
+    const { container } = oeffne();
+    await zuSchrittVier(user);
+
+    const text = container.textContent ?? "";
+    expect(text).toMatch(/kepta\.db/);
+    expect(text).toMatch(/back it up, move it, or delete/i);
+  });
+});
+
+describe("Endschaft: kein Feld ohne Wirkung", () => {
+  // Die Frage muss ueber alle Schritte laufen: auf Schritt 4 sind die Felder von
+  // Schritt 2 laengst ausgewechselt, ein Blick auf den Endschirm findet sie nie.
+  // Gelesen wird immer erst, wenn der Schritt auch erschienen ist — die
+  // Blends-Animation laesst sonst den alten Schritt im Baum stehen.
+  it("es gibt nirgends ein viertes Freitextfeld", async () => {
+    const user = userEvent.setup();
+    const { container } = oeffne();
+    const merke = () => {
+      const felder = [...container.querySelectorAll("input")].map((f) => f.getAttribute("placeholder") ?? "");
+      const beschriftungen = [...container.querySelectorAll("label")].map((l) => l.textContent ?? "");
+      return [...felder, ...beschriftungen].join(" | ");
+    };
+
+    await user.type(screen.getByPlaceholderText("e.g. Alex"), "Damian");
+    let alle = merke();
+    await user.click(screen.getByRole("button", { name: /Next/i }));
+    await screen.findByPlaceholderText(/Type a topic/i);
+    alle += " | " + merke();
+    await user.click(screen.getByRole("button", { name: /Next/i }));
+    await screen.findByText(/Your AI/i);
+    alle += " | " + merke();
+    await user.click(screen.getByRole("button", { name: /Next/i }));
+    await screen.findByText(/Almost there/i);
+    alle += " | " + merke();
+
+    expect(alle).not.toMatch(/worth knowing|constraint|deadline/i);
+  });
+});
+
+describe("OnboardingWizard: KI-Erkennung (Schritt 3)", () => {  function stubLocalAI(ollamaOk: boolean, lmstudioOk: boolean) {
     vi.stubGlobal("fetch", vi.fn(async (url: string | URL) => {
       const ziel = String(url);
       if (ziel.includes("11434")) {
@@ -172,7 +299,7 @@ describe("OnboardingWizard: KI-Erkennung (Schritt 3)", () => {
     }));
   }
 
-  it("zeigt Ollama als verfügbar mit Latenz und Empfehlung", async () => {
+  it("zeigt Ollama als verfügbar mit Latenz und nennt Modell und Ort", async () => {
     const user = userEvent.setup();
     stubLocalAI(true, false);
     const { container } = oeffne();
@@ -181,7 +308,10 @@ describe("OnboardingWizard: KI-Erkennung (Schritt 3)", () => {
     await waitFor(() => expect(container.textContent).toMatch(/available/), { timeout: 4000 });
     const text = container.textContent ?? "";
     expect(text).toMatch(/Ollama/);
-    expect(text).toMatch(/free and offline/);
+    // „free and offline" war die Werbung; gemeldet wird jetzt das Modell, das
+    // wirklich geschrieben wird, und dass es auf der Platte bleibt.
+    expect(text).toMatch(/will answer with llama3\.2/);
+    expect(text).toMatch(/Nothing leaves this machine/i);
     expect(text).toMatch(/\d+ms/);
     await user.click(screen.getByRole("button", { name: /Scan again/i }));
     await waitFor(() => expect(container.textContent).toMatch(/\d+ms/), { timeout: 4000 });
@@ -194,28 +324,51 @@ describe("OnboardingWizard: KI-Erkennung (Schritt 3)", () => {
     await user.type(screen.getByPlaceholderText("e.g. Alex"), "Damian");
     for (let i = 0; i < 2; i++) await user.click(screen.getByRole("button", { name: /Next/i }));
     await waitFor(() => expect(container.textContent).toMatch(/not found/), { timeout: 4000 });
-    expect(container.textContent).toMatch(/KEPTA works anyway/);
+    expect(container.textContent).toMatch(/K3PTA works anyway/);
   });
 });
 
 describe("OnboardingWizard: Rueckwaerts und freiwillige Angaben", () => {
-  it("Back fuehrt einen Schritt zurueck; Hinweis-Feld bleibt freiwillig", async () => {
+  // Das Hinweis-Feld ist geflogen („Ein Feld ohne Wirkung ist kein Feld"), also
+  // prueft dieser Fall, was bleibt: Rueckwaerts gehen verliert nichts.
+  it("Back und wieder vor verliert weder Name noch Thema", async () => {
     const user = userEvent.setup();
-    const { container } = oeffne();
+    oeffne();
     await user.type(screen.getByPlaceholderText("e.g. Alex"), "Damian");
     await user.click(screen.getByRole("button", { name: /Next/i }));
-    await screen.findByPlaceholderText(/Type a topic/i);
-    // freiwilliges Hinweis-Feld ausfuellen (Schritt 2)
-    const hinweis = [...container.querySelectorAll("input")].find((i) =>
-      (i.getAttribute("placeholder") || "").includes("constraint")
-    );
-    if (hinweis) await user.type(hinweis, "Nie nach thetaering fragen");
-    // Zurueck auf Schritt 1, dann wieder vor
+    const feld = await screen.findByPlaceholderText(/Type a topic/i);
+    await user.type(feld, "Fristen{Enter}");
+    await screen.findByRole("button", { name: /Remove Fristen/i });
+
     await user.click(screen.getByRole("button", { name: /^Back$/i }));
-    await screen.findByPlaceholderText("e.g. Alex");
+    const name = await screen.findByPlaceholderText("e.g. Alex") as HTMLInputElement;
+    expect(name.value).toBe("Damian");
+
     await user.click(screen.getByRole("button", { name: /Next/i }));
     await screen.findByPlaceholderText(/Type a topic/i);
-    expect(container.textContent).toMatch(/KEPTA adapts to you/);
+    expect(screen.getByRole("button", { name: /Remove Fristen/i })).toBeTruthy();
+  });
+
+  it("der Schirm zaehlt sich selbst, und zwar nur einmal", () => {
+    const { container } = oeffne();
+    const text = container.textContent ?? "";
+    expect(text).toMatch(/Step 1 of 4/);
+    // Frueher stand dieselbe Zahl zweimal auf dem Kopf: in Worten und als
+    // „1/4"-Plakette daneben. Die Plakette ist weg.
+    expect(text).not.toMatch(/\b1\/4\b/);
+    // Und „one minute" war eine Anwerbung ohne Messung.
+    expect(text).not.toMatch(/one minute/i);
+  });
+
+  it("der Namenszug lässt Pfade und Routen unangetastet", () => {
+    // Sichtbare Wörter dürfen mitgehen, ein Pfad nicht: `~/.kepta/kepta.db` ist
+    // der Ort auf der Platte (src/core/store.ts:44) und `/api/memory` die Tür.
+    // Ein Zug, der beides beugt, schreibt an einen Ort, den niemand liest.
+    const quelle = require("node:fs").readFileSync("src/components/OnboardingWizard.tsx", "utf-8");
+    expect(quelle).toMatch(/~\/\.kepta\/kepta\.db/);
+    expect(quelle).toMatch(/\/api\/memory/);
+    expect(quelle).toMatch(/\/api\/profile/);
+    expect(quelle, "sichtbares Markenwort ist noch das alte").not.toMatch(/Set up KEPTA/);
   });
 });
 
@@ -239,7 +392,7 @@ describe("A7-10: der Assistent verdeckt die Fläche nicht", () => {
   it("bleibt erreichbar: Later und der Titel stehen im Taefelchen", async () => {
     const { container } = oeffne();
     const schicht = container.firstElementChild as HTMLElement;
-    expect(schicht.textContent).toMatch(/Set up KEPTA/);
+    expect(schicht.textContent).toMatch(/Set up K3PTA/);
     expect([...schicht.querySelectorAll("button")].some((b) => b.textContent?.trim() === "Later")).toBe(true);
   });
 });

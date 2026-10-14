@@ -26,7 +26,7 @@ describe("Verschlüsselte Nebendateien", () => {
     const s = schlüssel();
     schreibeJsonDatei(pfad, daten, s);
     const roh = fs.readFileSync(pfad, "utf8");
-    expect(roh.startsWith("KEPTA-NEBEN1")).toBe(true);
+    expect(roh.startsWith("K3PTA-NEBEN1")).toBe(true);
     // Der Klartext darf nirgends in der Datei stehen — auch nicht als Fragment.
     expect(roh.includes("Damian")).toBe(false);
     expect(roh.includes("Steuerrecht")).toBe(false);
@@ -52,7 +52,7 @@ describe("Verschlüsselte Nebendateien", () => {
     fs.writeFileSync(pfad, JSON.stringify({ roots: ["/home/user/kanzlei"] }, null, 2), "utf-8");
     expect(leseJsonDatei<{ roots?: string[] }>(pfad, s)).toEqual({ roots: ["/home/user/kanzlei"] });
     schreibeJsonDatei(pfad, { roots: ["/home/user/kanzlei"] }, s);
-    expect(fs.readFileSync(pfad, "utf8").startsWith("KEPTA-NEBEN1")).toBe(true);
+    expect(fs.readFileSync(pfad, "utf8").startsWith("K3PTA-NEBEN1")).toBe(true);
   });
 
   it("KEPTA_ENCRYPTION=off → Klartext, deterministisch wie der Store", () => {

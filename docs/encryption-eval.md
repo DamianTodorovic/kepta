@@ -4,7 +4,7 @@ As of 11 September 2026 (2.11.0), re-measured 3 October 2026 on 3.1.2 · Evidenc
 
 ## The question
 
-Can KEPTA keep its knowledge base encrypted on disk — without a password to
+Can K3PTA keep its knowledge base encrypted on disk — without a password to
 type every morning, without losing search, and without a moment in which data
 can get lost? People bound by professional secrecy (§ 203 StGB: practices, law
 firms) need an answer that holds up, not a pragma that looks like security.
@@ -14,7 +14,7 @@ Until 2.10 the answer was no. The first version of this document (5 September
 silently did nothing on `node:sqlite`, and that the key seam in the core was
 asked but never awaited. Since 2.11 the answer is yes.
 
-## What KEPTA does
+## What K3PTA does
 
 | Part | Choice | Why |
 |---|---|---|
@@ -30,17 +30,17 @@ asked but never awaited. Since 2.11 the answer is yes.
 |---|---|---|
 | 1 | Without a key (tests, `KEPTA_ENCRYPTION=off`) the file is plaintext — the marker is readable in the database and the WAL. | test "Befund 1", `eval:crypto` [1] |
 | 2 | With a key, neither the file nor the WAL contains the marker, before or after a checkpoint; the file does not start with the SQLite header. | test "Befund 2", `eval:crypto` [2] |
-| 3 | A plain SQLite — including KEPTA 2.10 — cannot read the file: "file is not a database". | test "Befund 4" |
+| 3 | A plain SQLite — including K3PTA 2.10 — cannot read the file: "file is not a database". | test "Befund 4" |
 | 4 | A wrong key opens nothing and changes nothing (the file's hash is unchanged); a missing key on an encrypted file stops the start instead of opening an empty brain. | `store-verschluesselung.test.ts` |
-| 5 | An existing plaintext base is converted only when KEPTA has it to itself; every table keeps its rows, the integrity check says "ok", the search finds everything. If another program has the file open, the file stays as it was and the status says why. | `store-verschluesselung.test.ts` |
+| 5 | An existing plaintext base is converted only when K3PTA has it to itself; every table keeps its rows, the integrity check says "ok", the search finds everything. If another program has the file open, the file stays as it was and the status says why. | `store-verschluesselung.test.ts` |
 | 6 | A program that still held the old file open during the conversion finds only zeros afterwards — it cannot keep writing to an orphaned plaintext file. | `store-verschluesselung.test.ts` |
 | 7 | Cost on this machine: opening 0.5 ms without a key, 0.6–0.65 ms with it (median of 30); converting 2,000 notes (1.3 MB) takes 39 ms. The 11.9. run measured 0.48/0.59 ms and 28 ms — the difference is machine load, not the cipher. | `eval:crypto` [3], [4] |
 
 ## Limits (honest)
 
 - **Same user account:** malware, or anyone using your logged-in account, can
-  ask the keychain for the key exactly as KEPTA does.
-- **A running KEPTA** serves decrypted knowledge over its local API, as before.
+  ask the keychain for the key exactly as K3PTA does.
+- **A running K3PTA** serves decrypted knowledge over its local API, as before.
 - **Files next to the database:** since 2.13.4 `profile.json`,
   `scan-config.json` and the sync journal use the same key as the knowledge
   base (AES-256-GCM per file or per line — `src/core/nebendateien.ts`;

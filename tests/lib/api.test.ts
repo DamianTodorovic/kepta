@@ -21,7 +21,7 @@ describe("api client", () => {
     expect(JSON.parse(init?.body as string)).toEqual({ apply: true });
   });
 
-  it("wandelt den KEPTA-Fehlervertrag ({error}) in eine ApiFehler-Meldung", async () => {
+  it("wandelt den K3PTA-Fehlervertrag ({error}) in eine ApiFehler-Meldung", async () => {
     vi.stubGlobal("fetch", vi.fn(async () => new Response(JSON.stringify({ error: "URL missing or too long" }), { status: 400 })));
     const fehler = await getJson("/api/clip").catch((e) => e);
     expect(fehler).toBeInstanceOf(ApiFehler);

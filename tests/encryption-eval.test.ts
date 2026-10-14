@@ -1,6 +1,6 @@
 // F5 — Verschluesselung: die Beweise hinter docs/encryption-eval.md.
 // Bis 2.10 hielt diese Datei fest, dass die Datenbank im Klartext liegt und ein
-// PRAGMA key still verpufft. Seit 2.11 verschluesselt KEPTA die Datei (SQLite3
+// PRAGMA key still verpufft. Seit 2.11 verschluesselt K3PTA die Datei (SQLite3
 // Multiple Ciphers, SQLCipher-4-Format). Hier steht, was auf der Platte liegt —
 // mit und ohne Schluessel. Kein Alibi, nur Befunde.
 import { describe, it, expect } from "vitest";
@@ -61,7 +61,7 @@ describe("F5 — Verschluesselung", () => {
     expect(gefragt).toEqual([p]);
   });
 
-  it("Befund 4: ein gewoehnliches SQLite (auch ein KEPTA 2.10) liest die Datei nicht", () => {
+  it("Befund 4: ein gewoehnliches SQLite (auch ein K3PTA 2.10) liest die Datei nicht", () => {
     const p = neuerPfad();
     const store = new KeptaStore(p, mitSchluessel());
     store.createMemory({ title: "x", content: MARKER });

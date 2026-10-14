@@ -1,5 +1,5 @@
 // Embeddings via Ollama (/api/embed) — persistente Chunk-Vektoren + Hintergrund-Queue.
-// Ohne Ollama läuft KEPTA weiterhin rein lexikalisch (FTS5-BM25), alles optional.
+// Ohne Ollama läuft K3PTA weiterhin rein lexikalisch (FTS5-BM25), alles optional.
 import type { KeptaStore } from "./store";
 import type { AuditSink } from "./extensions";
 

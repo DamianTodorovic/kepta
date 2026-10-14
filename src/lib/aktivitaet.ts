@@ -1,4 +1,4 @@
-// What the AI apps are doing — visible in KEPTA, live.
+// What the AI apps are doing — visible in K3PTA, live.
 //
 // Claude Desktop, Cursor & Co. start the MCP server as a process of their own;
 // the app is another one. All they share is the encrypted database — so the
@@ -88,7 +88,7 @@ export function letzteAktivitaet(store: KeptaStore, nach = 0, limit = 50): Aktiv
   }
 }
 
-/** Who was there: per app the latest entry and the number of calls — merged by the name KEPTA shows. */
+/** Who was there: per app the latest entry and the number of calls — merged by the name K3PTA shows. */
 export function agenten(store: KeptaStore): { who: string; lastSeen: number; calls: number }[] {
   let zeilen: { client: string; lastSeen: number; calls: number }[] = [];
   try {

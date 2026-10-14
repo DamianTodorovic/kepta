@@ -41,7 +41,7 @@ const sha256 = (datei) => crypto.createHash("sha256").update(fs.readFileSync(dat
 const sha512base64 = (datei) => crypto.createHash("sha512").update(fs.readFileSync(datei)).digest("base64");
 
 const dateien = ["dmg", "zip", "dmg.blockmap", "zip.blockmap"].flatMap(arche =>
-  ["arm64", "x64"].map(arch => `KEPTA-${version}-mac-${arch}.${arche}`)
+  ["arm64", "x64"].map(arch => `K3PTA-${version}-mac-${arch}.${arche}`)
 );
 for (const f of dateien) {
   const p = path.join(RELEASE, f);
@@ -137,7 +137,7 @@ if (FERN) {
     const erwartet = [...dateien, "latest-mac.yml", "SHA256SUMS.txt"].sort();
     meld(`Release ${tag} traegt ${namen.length} Assets: ${namen.join(", ")}`, namen.length === erwartet.length);
     meld("Asset-Namen sind genau die lokalen Bauteile", JSON.stringify(namen) === JSON.stringify(erwartet));
-    const dmg = `KEPTA-${version}-mac-arm64.dmg`;
+    const dmg = `K3PTA-${version}-mac-arm64.dmg`;
     const asset = json.assets.find(a => a.name === dmg);
     if (asset) {
       const ziel = path.join(os.tmpdir(), "fern-" + dmg);
@@ -152,7 +152,7 @@ if (FERN) {
   }
 }
 
-console.log(`\nBeweis-Kette fuer KEPTA ${version}:`);
+console.log(`\nBeweis-Kette fuer K3PTA ${version}:`);
 console.log(zeilen.join("\n"));
 console.log(fehler ? `\n${fehler} FEHLER — nicht ausliefern.` : "\nalle Beweise angetreten — auslieferbar.");
 process.exit(fehler ? 1 : 0);

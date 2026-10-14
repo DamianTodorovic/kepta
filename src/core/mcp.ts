@@ -1,4 +1,4 @@
-// KEPTA MCP — Protokoll-Handling (stdio + Streamable HTTP teilen sich diese Logik).
+// K3PTA MCP — Protokoll-Handling (stdio + Streamable HTTP teilen sich diese Logik).
 // Unterstützt: 2026-07-28 (stateless core, server/discover) sowie Legacy-Clients
 // (2025-06-18, 2024-11-05). Alle Tools liefern structuredContent mit outputSchema.
 import type { KeptaStore } from "./store";
@@ -9,7 +9,7 @@ import { APP_VERSION } from "./version";
 
 export const PROTOCOL_VERSIONS = ["2026-07-28", "2025-06-18", "2024-11-05"] as const;
 export const LATEST_PROTOCOL_VERSION = "2026-07-28";
-export const SERVER_INFO = { name: "kepta", title: "KEPTA — Agent Memory", version: APP_VERSION };
+export const SERVER_INFO = { name: "kepta", title: "K3PTA — Agent Memory", version: APP_VERSION };
 
 export interface JsonRpcRequest {
   jsonrpc?: string;
@@ -86,7 +86,7 @@ export const TOOLS = [
     name: "memory_search",
     title: "Search memory",
     description:
-      "Hybrid retrieval (BM25 + vectors + knowledge graph) over KEPTA memory. Expired and superseded memories are flagged as such; memories the owner marked private never appear here.",
+      "Hybrid retrieval (BM25 + vectors + knowledge graph) over K3PTA memory. Expired and superseded memories are flagged as such; memories the owner marked private never appear here.",
     inputSchema: {
       type: "object",
       properties: {
@@ -363,7 +363,7 @@ export function saveWithIndex(store: KeptaStore, args: Record<string, unknown>):
 }
 
 /**
- * Privatheits-Floor: eine Notiz mit scope "private" verlässt KEPTA nie über
+ * Privatheits-Floor: eine Notiz mit scope "private" verlässt K3PTA nie über
  * MCP — egal welcher Client fragt und egal, ob sie per scope-Argument
  * angefragt wird. Die App trägt darüber hinaus die volle MCP-Wache (Privacy-
  * Schild, Audit-Protokoll, Aktivitäts-Meldung); dieser Floor ist das
@@ -651,7 +651,7 @@ const AELTESTE_PROTOCOL_VERSION = VERSIONEN_ABSTEIGEND[VERSIONEN_ABSTEIGEND.leng
  * Frueher lief jede unbekannte Anfrage auf die neueste Version hinaus. Fuer einen
  * Client, der etwas Aelteres spricht, ist das die eine Antwort, mit der er nichts
  * anfangen kann: Claude Desktop bat um 2025-03-26, bekam 2026-07-28 und brach ab
- * mit "Server's protocol version is not supported". KEPTA war damit fuer den
+ * mit "Server's protocol version is not supported". K3PTA war damit fuer den
  * verbreitetsten MCP-Client unbenutzbar.
  *
  * Richtig ist, nie ueber das hinauszugehen, wonach gefragt wurde: die hoechste
@@ -690,7 +690,7 @@ export interface McpContext {
   /** Wer verbunden ist — aus initialize (clientInfo). Über stdio genau ein Client je Prozess. */
   client?: { name?: string; title?: string; version?: string };
   /**
-   * Hört mit, was Agenten tun — die Oberfläche von KEPTA Core zeigt es live an.
+   * Hört mit, was Agenten tun — die Oberfläche von K3PTA Core zeigt es live an.
    * Ohne Zuhörer ändert sich nichts; ein Fehler darin bricht keinen Aufruf.
    */
   melde?: (e: McpEreignis) => void;

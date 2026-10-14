@@ -81,7 +81,7 @@ export function PrivacyShield() {
           <h3 className="settings-h" style={{ color: 'var(--text-1)' }}>Privacy shield</h3>
         </div>
         <p className="text-sm" style={{ color: 'var(--text-2)' }}>
-          Your notes stay yours. KEPTA hides personal data before anything leaves this computer.
+          Your notes stay yours. K3PTA hides personal data before anything leaves this computer.
         </p>
       </div>
       {fehler && <p className="text-sm" style={{ color: 'var(--warn)' }}>{fehler}</p>}

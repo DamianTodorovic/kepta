@@ -102,7 +102,7 @@ describe("Today", () => {
     expect(JSON.parse(String(aufloesen.init!.body))).toEqual({ keep: "b", drop: "a", both: false });
 
     await user.click(screen.getByRole("button", { name: "Both are right" }));
-    await screen.findByText("Noted — KEPTA will not ask about these two again.");
+    await screen.findByText("Noted — K3PTA will not ask about these two again.");
 
     await user.click(screen.getByRole("button", { name: "Prefers short answers" }));
     expect(oeffne).toHaveBeenCalledWith("n1");
@@ -132,7 +132,7 @@ describe("Today", () => {
       expect(seit).toBeLessThanOrEqual(Date.now() - 7 * TAG + 5000);
     });
     fireEvent.change(regler, { target: { value: "4" } }); // Everything
-    await screen.findByText(/in all the time KEPTA remembers/);
+    await screen.findByText(/in all the time K3PTA remembers/);
     expect(new URLSearchParams(aufrufe.at(-1)!.url.split("?")[1]).get("since")).toBe("0");
   });
 
@@ -217,16 +217,16 @@ describe("Dossier", () => {
     expect(JSON.parse(String(gespeichert.init!.body))).toEqual({ title: "Dossier: Atlas", content: "# Dossier: Atlas\n", type: "reference", tags: ["dossier"] });
 
     await user.click(screen.getByRole("button", { name: "#lumen" }));
-    await screen.findByText(/KEPTA knows nothing about “lumen” yet/);
+    await screen.findByText(/K3PTA knows nothing about “lumen” yet/);
   });
 
   it("per Eingabe — und ein verständlicher Fehler", async () => {
     const user = userEvent.setup();
-    stubFetch({ "/api/dossier/suggestions": { status: 500, body: {} }, "/api/dossier?": { status: 400, body: { error: "Tell KEPTA who or what the dossier is about." } } });
+    stubFetch({ "/api/dossier/suggestions": { status: 500, body: {} }, "/api/dossier?": { status: 400, body: { error: "Tell K3PTA who or what the dossier is about." } } });
     mitToast(<DossierView onOpenMemory={vi.fn()} />);
     await user.type(screen.getByRole("textbox", { name: /Who or what/ }), "Zebra");
     await user.click(screen.getByRole("button", { name: /Create dossier/ }));
-    await screen.findByText("Tell KEPTA who or what the dossier is about.");
+    await screen.findByText("Tell K3PTA who or what the dossier is about.");
   });
 
   it("löst Widersprüche im Fluss: neuerer gilt, beide gültig mit Fenster, oder der Editor", async () => {
@@ -341,7 +341,7 @@ describe("Aktivität und Prüfprotokoll", () => {
   it("Live ohne jede App: Verbinden steht gleich da", async () => {
     stubFetch({ "/api/agents": { body: { entries: [], agents: [] } }, "/api/clients": { body: { clients: [] } } });
     mitToast(<ActivityView aktiv onOpenMemory={vi.fn()} />);
-    await screen.findByText(/No AI app has used KEPTA yet/);
+    await screen.findByText(/No AI app has used K3PTA yet/);
     await screen.findByText(/No AI app found on this computer/);
   });
 
@@ -406,14 +406,14 @@ describe("KI-Apps verbinden", () => {
   it("ein Klick verbindet — mit ehrlicher Rückmeldung", async () => {
     const user = userEvent.setup();
     stubFetch({
-      "/api/clients/cursor/connect": { body: { ok: true, message: "Connected. Quit and reopen Cursor to load KEPTA.", clients: apps(true) } },
+      "/api/clients/cursor/connect": { body: { ok: true, message: "Connected. Quit and reopen Cursor to load K3PTA.", clients: apps(true) } },
       "/api/clients": { body: { clients: apps(false) } },
     });
     mitToast(<ConnectApps />);
     await screen.findByText("Not installed");
     expect(screen.getByText(/claude mcp add/)).toBeTruthy();
     await user.click(screen.getByRole("button", { name: "Connect" }));
-    await screen.findByText("Connected. Quit and reopen Cursor to load KEPTA.");
+    await screen.findByText("Connected. Quit and reopen Cursor to load K3PTA.");
     expect(screen.getAllByText("Connected")).toHaveLength(1);
     expect(screen.queryByRole("button", { name: "Connect" })).toBeNull();
   });
@@ -499,10 +499,10 @@ describe("Seitenleiste", () => {
   it("zeigt in der Fußzeile weder eine Restlaufzeit noch einen Schlüssel-Hinweis", async () => {
     const basis = { tags: [], selectedTags: [], onSelectTag: vi.fn(), onClearTags: vi.fn(), currentView: "today" as const, onNavigate: vi.fn(), totalMemories: 3, isFocusMode: false, toggleFocusMode: vi.fn() };
     render(<AuthProvider><ThemeProvider><Sidebar {...basis} /></ThemeProvider></AuthProvider>);
-    // Stufen-Modell (Damian 24.9.): die App heißt schlicht KEPTA. Seit
+    // Stufen-Modell (Damian 24.9.): die App heißt schlicht K3PTA. Seit
     // 09.10.2026 steht darunter auch kein Countdown und kein Werbe-Satz mehr —
     // es gibt weder einen gratis ersten Tag noch einen Schlüssel.
-    expect(screen.getAllByText(/^KEPTA$/).length).toBeGreaterThan(0);
+    expect(screen.getAllByText(/^K3PTA$/).length).toBeGreaterThan(0);
     expect(screen.getByText(/^local · private$/)).toBeTruthy();
     expect(screen.queryByText(/unlimited|key|limit/i)).toBeNull();
   });

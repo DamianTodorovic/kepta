@@ -18,6 +18,7 @@ import crypto from "node:crypto";
 import fs from "node:fs";
 import path from "node:path";
 import { holeOderErzeugeSchluessel, schluesselbundFuer, standardAusfuehren, type Ausfuehren } from "./schluessel";
+import { leseUmwelt } from "./umwelt";
 import { PraxissyncJournal, verifyJournal, type SyncJournalEntry } from "./praxissync";
 import { defaultAuditDir, type AuditEvent } from "./extensions";
 
@@ -43,10 +44,11 @@ export function nebendateiSchluessel(
   ausf: Ausfuehren = standardAusfuehren,
   env: Record<string, string | undefined> = process.env,
 ): Buffer | null {
-  if (env.KEPTA_ENCRYPTION === "off") return null;
-  // KEPTA_DB_KEY zuerst — derselbe Schlüssel wie für die Wissensbasis, nur
+  if (leseUmwelt("verschluesselung", env).wert === "off") return null;
+  // Der Schluessel zuerst aus der Umgebung (beide Namensformen, Meldung in
+  // /api/health) — derselbe Schlüssel wie für die Wissensbasis, nur
   // gelesen, nie erzeugt oder überschrieben.
-  const ausUmgebung = env.KEPTA_DB_KEY?.trim();
+  const ausUmgebung = leseUmwelt("schluessel", env).wert?.trim();
   if (ausUmgebung && /^[0-9a-f]{64}$/i.test(ausUmgebung)) return Buffer.from(ausUmgebung, "hex");
   try {
     const bund = schluesselbundFuer(plattform, datenordner, ausf);

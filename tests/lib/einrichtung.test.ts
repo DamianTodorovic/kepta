@@ -1,6 +1,6 @@
 // @vitest-environment node
 //
-// KEPTA mit einem Klick in Claude Desktop, Claude Code, Cursor, Windsurf und
+// K3PTA mit einem Klick in Claude Desktop, Claude Code, Cursor, Windsurf und
 // VS Code eintragen — mit Sicherung, ohne andere Einträge anzufassen, nie in
 // einer Datei, die kein reines JSON ist. In der Desktop-App ist der Eintrag der
 // MCP-Server in der App selbst. Alles in einem Heimatordner aus dem Temp-Ordner.
@@ -25,8 +25,8 @@ beforeEach(() => {
   home = fs.mkdtempSync(path.join(os.tmpdir(), "kepta-home-"));
 });
 
-describe("KEPTA mit KI-Apps verbinden", () => {
-  it("findet, was installiert ist, und erkennt KEPTA am Namen oder am Befehl", () => {
+describe("K3PTA mit KI-Apps verbinden", () => {
+  it("findet, was installiert ist, und erkennt K3PTA am Namen oder am Befehl", () => {
     schreib(claudeDesktop(), { mcpServers: { other: { command: "x" } } });
     schreib(path.join(home, ".cursor", "mcp.json"), { mcpServers: { memory: APP } });
     expect(status(mac(), "claude-desktop")).toMatchObject({ installed: true, connected: false, canConnect: true });
@@ -42,10 +42,10 @@ describe("KEPTA mit KI-Apps verbinden", () => {
   it("trägt den MCP-Server der App ein, lässt alles andere stehen und legt eine Sicherung daneben", () => {
     schreib(claudeDesktop(), { globalShortcut: "Cmd+K", mcpServers: { other: { command: "x" } } });
     const r = verbinde("claude-desktop", mac(), APP);
-    expect(r).toEqual({ ok: true, message: "Connected. Quit and reopen Claude Desktop to load KEPTA.", backup: `${claudeDesktop()}.kepta-backup-2026-09-14T12-00-00` });
+    expect(r).toEqual({ ok: true, message: "Connected. Quit and reopen Claude Desktop to load K3PTA.", backup: `${claudeDesktop()}.kepta-backup-2026-09-14T12-00-00` });
     expect(lies(claudeDesktop())).toEqual({ globalShortcut: "Cmd+K", mcpServers: { other: { command: "x" }, kepta: APP } });
     expect(lies(r.backup!)).toEqual({ globalShortcut: "Cmd+K", mcpServers: { other: { command: "x" } } });
-    expect(verbinde("claude-desktop", mac(), APP)).toEqual({ ok: true, message: "KEPTA was already connected to Claude Desktop.", backup: null });
+    expect(verbinde("claude-desktop", mac(), APP)).toEqual({ ok: true, message: "K3PTA was already connected to Claude Desktop.", backup: null });
   });
 
   it("legt eine fehlende Datei an — für VS Code in dessen eigenem Format, ohne Eintrag mit npx", () => {

@@ -1,5 +1,5 @@
 // Wie ein Agent den MCP-Server dieser Installation startet. In der fertigen App
-// steckt er schon drin, mit dem passenden Datenbank-Modul: das KEPTA-Programm
+// steckt er schon drin, mit dem passenden Datenbank-Modul: das K3PTA-Programm
 // startet ihn selbst als Node (ELECTRON_RUN_AS_NODE). Kein Node.js, kein npm —
 // und keine Falle, wenn npm noch eine Fassung ausliefert, die die verschlüsselte
 // Datei nicht öffnen kann. Außerhalb der App (Entwicklung) gibt es diesen Weg nicht.

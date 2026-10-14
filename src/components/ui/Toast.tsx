@@ -1,4 +1,4 @@
-// KEPTA Toast-System — Undo statt Bestätigungs-Dialoge.
+// K3PTA Toast-System — Undo statt Bestätigungs-Dialoge.
 // useToast().push({ message, kind?, action?: { label, onClick } })
 import { createContext, useCallback, useContext, useMemo, useRef, useState, type ReactNode } from 'react';
 import { AnimatePresence, motion } from 'motion/react';

@@ -926,9 +926,10 @@ export function Chat({ activeMemories, onSaveToBrain, onSaveToBrainWithMeta, isF
                                 setCopiedCodeId(msg.id);
                                 setTimeout(() => setCopiedCodeId((id) => (id === msg.id ? null : id)), 1600);
                               }}
-                              className="absolute top-2 right-2 p-1.5 rounded-lg opacity-0 group-hover/code:opacity-100 transition-opacity"
-                              style={{ background: "var(--bg-inset-strong)", border: "1px solid var(--border-subtle)", color: copiedCodeId === msg.id ? "var(--ok)" : "var(--text-3)" }}
+                              className="absolute top-2 right-2 flex items-center justify-center p-1.5 rounded-lg tap transition-opacity"
+                              style={{ background: "var(--bg-inset-strong)", border: "1px solid var(--border-subtle)", color: copiedCodeId === msg.id ? "var(--ok)" : "var(--text-2)" }}
                               title="Copy code"
+                              aria-label={copiedCodeId === msg.id ? "Code copied" : "Copy code"}
                             >
                               {copiedCodeId === msg.id ? <CheckCircle2 className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
                             </button>
@@ -1006,8 +1007,9 @@ export function Chat({ activeMemories, onSaveToBrain, onSaveToBrainWithMeta, isF
                   <div className="flex justify-end gap-1.5 pt-1">
                     <button
                       onClick={() => handleCopy(msg.content, msg.id)}
-                      className="flex items-center gap-1.5 text-[11px] font-medium px-2 py-1 rounded hud-inset hover:!border-[color-mix(in_srgb,var(--accent)_45%,transparent)] transition-colors"
+                      className="flex items-center gap-1.5 text-[11px] font-medium px-2 py-1 rounded hud-inset tap-reihum hover:!border-[color-mix(in_srgb,var(--accent)_45%,transparent)] transition-colors"
                       style={{ color: "var(--text-2)" }}
+                      aria-label={copiedId === msg.id ? "Answer copied" : "Copy answer"}
                     >
                       {copiedId === msg.id ? <Check className="w-3 h-3" style={{ color: "var(--ok)" }} /> : <Copy className="w-3 h-3" />}
                       {copiedId === msg.id ? "Copied" : "Copy"}

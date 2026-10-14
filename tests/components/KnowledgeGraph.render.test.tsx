@@ -931,6 +931,45 @@ describe("Ein abgelegter Knoten bleibt liegen", () => {
     expect(container.textContent).not.toMatch(/Release \d+ pinned/);
   });
 
+  it("geht beim Loesen an die Stelle zurueck, an der die Hand ihn gefasst hat", async () => {
+    // Die Klage vom 13.10. waörtlich: „wenn ich ein Knoten wegziehe und dann
+    // oben rechts Release one pinned drücke passiert garnichts und der knoten
+    // geht nicht an seinen ursprünglichen Punkt zurück." Der Fall oben beweist
+    // nur, dass der Knopf erscheint und verschwindet — dieser beweist die
+    // Wirkung, auf dem Schirm, in Bildpunkten.
+    const { container } = await zeichne([note()]);
+    await bilder(40);
+    const c = container.querySelector('[data-testid="graph-canvas"]') as HTMLCanvasElement;
+
+    const vorDemGriff = scheibeAufSchirm();
+    expect(vorDemGriff, "der Knoten muss liegen, bevor er angefasst wird").not.toBeNull();
+
+    await greifeScheibe(c, 140, -90);
+    const abgelegt = scheibeAufSchirm();
+    expect(abgelegt).not.toBeNull();
+    expect(Math.hypot(abgelegt!.x - vorDemGriff!.x, abgelegt!.y - vorDemGriff!.y),
+      "der Zug selbst hat nichts bewegt").toBeGreaterThan(60);
+
+    const knopf = [...container.querySelectorAll("button")].find((b) => /Release \d+ pinned/.test(b.textContent ?? ""))!;
+    await act(async () => { knopf.click(); await new Promise((r) => setTimeout(r, 60)); });
+    await bilder(4);
+
+    const zurueck = scheibeAufSchirm();
+    expect(zurueck, "nach dem Loesen wird keine Scheibe gemalt").not.toBeNull();
+    // Sonde in diesem Fall gemessen: vor dem Griff (441,2285 / 302), abgelegt
+    // (581,2285 / 212), nach dem Loesen (439,3975 / 302). Das y steht bitgenau
+    // wieder da; der x weicht 1,83 px ab, und dieser Rest sitzt an der KAMERA,
+    // nicht am Knoten — die Weltgleichheit des Punktes beweist
+    // `tests/lib/graphLayout.ursprung.test.ts` auf den Stellenwert. Die
+    // Restursache (ein Transform-Schritt zwischen den zwei Messungen) ist im
+    // Bericht als offene Zeile gemeldet, nicht hier zugeklebt.
+    expect(zurueck!.y, "der geloeste Knoten steht nicht auf der Hoehe des ersten Griffs").toBe(vorDemGriff!.y);
+    expect(Math.hypot(zurueck!.x - abgelegt!.x, zurueck!.y - abgelegt!.y),
+      "der geloeste Knoten ist kaum naeher am Ausgangspunkt als der Ablageort").toBeGreaterThan(100);
+    expect(Math.hypot(zurueck!.x - vorDemGriff!.x, zurueck!.y - vorDemGriff!.y),
+      "der geloeste Knoten steht nicht an der Stelle des ersten Griffs").toBeLessThan(3);
+  });
+
   it("heftet einen blossen Klick nicht an", async () => {
     // Wer einen Knoten nur antippt — etwa um ihn anzusehen — will ihn nicht
     // festnageln. Ohne diese Unterscheidung waere nach kurzem Stoebern der
@@ -1547,6 +1586,87 @@ describe("Sichtbare Dichte: Badge und Kappungszeile", () => {
     for (const b of badges) expect(Number(b.slice(1))).toBeGreaterThan(0);
     // Und die Zeile darunter sagt dieselbe Zahl — Bild und Text streiten nicht.
     expect(view.container.textContent, view.container.textContent ?? "").toMatch(/neighbours hidden behind badges/);
+  });
+
+  it("nennt die Deckung des Bestands und was der Titel-Echo nicht durchlässt", async () => {
+    // Damians Frage vom 13.10.: „12 000 Notes drauf … ich erkenn gar nix außer
+    // einem großen Kreis." Eine Punktwolke und ein Netz sehen gleich aus,
+    // solange keine Zahl sagt, wie viel des Bestands überhaupt an einem Begriff
+    // hängt — und wie viele Behauptungen die Fläche bewusst nicht malt.
+    vi.stubGlobal("fetch", vi.fn(async () => new Response(JSON.stringify({
+      relations: [{ source: "elena weiss", target: "nordwind logistik", relation: "mentions", memoryId: "g1" }],
+      memoriesByEntity: { "elena weiss": ["g1"], "nordwind logistik": ["g1"], docker: ["g1", "g2"] },
+    }), { status: 200 })));
+    const ms = [
+      note({ id: "g1", title: "Elena Weiss" }),
+      note({ id: "g2", title: "Zweite Notiz" }),
+      note({ id: "g3", title: "Dritte Notiz" }),
+      note({ id: "g4", title: "Vierte" }),
+      note({ id: "g5", title: "Fuenfte" }),
+    ];
+    const { container } = await zeichne(ms);
+    await bilder(10);
+    // Nur `docker` hat zwei Träger — die beiden Titel-Echo-Begriffe werden von
+    // G-1 verborgen, mitsamt ihrer einen Kante.
+    expect(container.textContent, container.textContent ?? "").toMatch(/2 of 5 notes carry a concept/);
+    expect(container.textContent).toMatch(/1 claim not drawn — its term is only a note title/);
+    // Und kein Verdikt über eine Basis von fünf Notizen: die Marke gilt ab 200.
+    expect(container.textContent).not.toMatch(/not a network yet/);
+  });
+
+  it("sagt, dass das Feld kein Netz ist, wenn die Masse nichts verbindet", async () => {
+    // 240 Notizen, keine einzige an einem Begriff. Das Kraftfeld malt darin
+    // 240 vereinsamte Punkte und heißt trotzdem Netz — die Zeile muss es
+    // umkehren und den Ausweg nennen, ohne ihn zu verordnen.
+    const ms = Array.from({ length: 240 }, (_, i) => note({ id: `w${i}`, title: `Wolke ${i}`, tags: [] }));
+    const { container } = await zeichne(ms);
+    await bilder(10);
+    expect(container.textContent, container.textContent ?? "").toMatch(
+      /0 of 240 notes carry a concept — this field is not a network yet, the tree view groups the rest/
+    );
+    // Gegenprobe gegen ein leeres Bild: ohne jeden Begriff wird nicht ausgedünnt,
+    // sonst stünde eine Zahl auf einer weißen Fläche.
+    expect(container.textContent).not.toMatch(/are not painted/);
+  });
+
+  it("malt bei einer Punktwolke nur das Verbundene und nennt die Masse", async () => {
+    // 400 Notizen, zwei davon hängen an einem Begriff. Das Feld lässt die 398
+    // liegen, die nichts verbinden, und sagt die Zahl — damit der Kopf nicht
+    // 400 behauptet, während zwei Punkte auf dem Schirm stehen.
+    vi.stubGlobal("fetch", vi.fn(async () => new Response(JSON.stringify({
+      relations: [],
+      memoriesByEntity: { docker: ["p0", "p1"] },
+    }), { status: 200 })));
+    const ms = Array.from({ length: 400 }, (_, i) => note({ id: `p${i}`, title: `Wolke ${i}`, tags: [] }));
+    const { container } = await zeichne(ms);
+    await bilder(10);
+    expect(container.textContent, container.textContent ?? "").toMatch(/2 notes/);
+    expect(container.textContent).toMatch(
+      /398 notes hang under no concept and are not painted — search still finds them/
+    );
+  });
+
+  it("holt eine unausgemalte Notiz zurück, sobald die Suche sie ruft", async () => {
+    // Dünne Fläche, aber der Nutzer tippt einen Titel, der unter keinem Begriff
+    // hängt: Treffer werden immer gemalt, sonst wäre die Suche totgeschaltet.
+    vi.stubGlobal("fetch", vi.fn(async () => new Response(JSON.stringify({
+      relations: [],
+      memoriesByEntity: { docker: ["q0", "q1"] },
+    }), { status: 200 })));
+    const ms = Array.from({ length: 400 }, (_, i) => note({ id: `q${i}`, title: `Wolke ${i}`, tags: [] }));
+    const { container } = await zeichne(ms);
+    await bilder(10);
+    expect(container.textContent).toMatch(/are not painted/);
+
+    const feld = container.querySelector('input[placeholder="Filter the graph…"]') as HTMLInputElement;
+    const setter = Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, "value")!.set!;
+    await act(async () => {
+      setter.call(feld, "Wolke 397");
+      feld.dispatchEvent(new Event("input", { bubbles: true }));
+      await new Promise((r) => setTimeout(r, 80));
+    });
+    expect(container.textContent, container.textContent ?? "").toMatch(/1 note ·/);
+    expect(container.textContent).not.toMatch(/are not painted/);
   });
 
   it("setzt kein Badge, wenn nichts gekappt wurde", async () => {
@@ -3100,7 +3220,7 @@ describe("Die semantische Ansicht steht auf den Vektoren", () => {
 
 // P-10: das Schema-Inventar. Cognee zeigt im „Schema"-Tab, was seine
 // Wissensbasis trägt — Zählungen je Typ und wie Typen verbunden sind. Bei
-// KEPTA standen diese Zahlen verstreut: die Art-Ziffern auf den
+// K3PTA standen diese Zahlen verstreut: die Art-Ziffern auf den
 // Dashboard-Kacheln, die Kantenarten in der Legende, die Behauptungswörter an
 // den Linien.
 //
@@ -3251,7 +3371,7 @@ describe("Das Schema-Inventar nennt, was der Bestand trägt", () => {
 });
 
 // P-11: der zweite Farbkanal. Cognee färbt „by Type, Node set, or User"; bei
-// KEPTA trug die Fläche nur die Artfarbe, und die Herkunft (Posteingang,
+// K3PTA trug die Fläche nur die Artfarbe, und die Herkunft (Posteingang,
 // Rechner-Scan, hier geschrieben) war nirgends zu sehen.
 //
 // Der Vertrag, der hier gemessen wird: ein Kanal, der nichts zu unterscheiden
@@ -3300,7 +3420,7 @@ describe("Die Herkunft färbt, wenn sie etwas zu sagen hat", () => {
     await bilder(8);
     const herkunft = knopf(container, "Provenance");
     expect(herkunft.disabled, "der Kanal ist an, obwohl nichts zu unterscheiden ist").toBe(true);
-    expect(herkunft.getAttribute("title")).toMatch(/written in KEPTA/i);
+    expect(herkunft.getAttribute("title")).toMatch(/written in K3PTA/i);
     expect(herkunft.getAttribute("title")).toMatch(/nothing to tell apart/i);
   });
 
@@ -3323,7 +3443,7 @@ describe("Die Herkunft färbt, wenn sie etwas zu sagen hat", () => {
     expect(farben, "die Herkunftsfarbe wird nicht gemalt").toContain(HERKUNFT_DATEI);
     expect(farben).toContain(HERKUNFT_GESCHRIEBEN);
     expect(container.textContent).toMatch(/From a file/);
-    expect(container.textContent).toMatch(/Written in KEPTA/);
+    expect(container.textContent).toMatch(/Written in K3PTA/);
   });
 
   it("lässt die Typfarben in Ruhe, wenn der Kanal zurückgeht", async () => {
@@ -3358,7 +3478,7 @@ describe("Die Herkunft färbt, wenn sie etwas zu sagen hat", () => {
 });
 
 // P-12: die Suche als Griff, nicht nur als Filter. Cognee zählt Treffer und
-//blättert mit Enter durch sie hindurch. Bei KEPTA tippte man ein Wort, die
+//blättert mit Enter durch sie hindurch. Bei K3PTA tippte man ein Wort, die
 // Fläche wurde dünner — und welche Notiz gemeint war, musste selbst gesucht
 // werden.
 //

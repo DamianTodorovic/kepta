@@ -11,7 +11,7 @@ const MARK_RX = 7;
 
 export function KeptaMark({ size = 32 }: { size?: number }) {
   return (
-    <svg width={size} height={size} viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="KEPTA Logo">
+    <svg width={size} height={size} viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="K3PTA Logo">
       <rect width="32" height="32" rx={MARK_RX} fill="#0f0f0f" />
       {/* K */}
       <path d="M11 9.5 V22.5 M11 16 L18.2 9.5 M11 16 L18.2 22.5" stroke="white" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" />
@@ -23,7 +23,7 @@ export function KeptaMark({ size = 32 }: { size?: number }) {
 export function KeptaWordmark({ className }: { className?: string }) {
   return (
     <span className={className} style={{ fontWeight: 740, letterSpacing: '-0.03em', fontSize: '15px', lineHeight: 1, color: 'var(--text-1)' }}>
-      KEPTA
+      K3PTA
     </span>
   );
 }

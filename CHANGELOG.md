@@ -45,13 +45,13 @@ Why this patch exists, in one line: the released `app-3.2.0` binary was measured
 - **The test-count guards were rebuilt on the core's one source, byte-identically.** This repository's `scripts/doku-check.mjs` read whatever `test-results/vitest.json` the last `npm run test:cov` had left behind, and on 10.10. it printed "1967 Tests gelaufen, die READMEs nennen eine passende Zahl" for a report from 09.10. that knew 118 of the 131 test files then on disk, with 22 of them changed since — a guard that could not check anything and reported success. Plain `npm test` never wrote a report and never called the script, so the README was held to a source that only existed after a coverage run. `scripts/test-bericht.mjs` (same bytes in `kepta-core`) now decides what the number means: the cases a run executed, skipped ones not counted, and it refuses with a reason when the report is missing, older than the newest test file, or from a partial run. `npm test` and `npm run test:cov` both write that report and end with `node scripts/doku-check.mjs`, which additionally refuses a red run. `tests/doku-zahlen.test.ts` listens to the same module and compares exactly; the static `it(`/`test(` count survives as a floor against invented numbers, with the reason in the file (`it.each(regeln)` counts as one and runs as many, `it.skip` is invisible there while vitest lists it). Measured on this release: **142 files / 2 243 executed cases**, lint 0 errors, 50 warnings (12.10.2026 01:20, `npm run test:cov`, two runs — the first measures, the second is judged). An earlier draft of this sentence named **2 241** at 23:09 — that was the stand one run before the release, not the stand that shipped, and the release body and the README both say 2 243. A test cannot read the report of its own run, so the first `npm test` after a checkout or a suite change is the measurement and the second is the check. **CI keeps that order now:** `build.yml` gained a `Messvorlauf` step (`npm test || true`, `timeout-minutes: 8`, verdict discarded) before the `test:cov` gate, with the reason above it. The timeout question was answered by measurement, not guess, and the two durations and the core count that stood here on 12.10 are withdrawn again: their only carrier was the reporter folder, which `.gitignore` keeps out of the repository and a fresh checkout therefore does not hold, so nobody but the desk that ran them can open them — and a figure nobody can open is not a measurement, which is the rule `scripts/zahlen-belege.mjs` now applies to every other number in this file. What stays is the decision, and it is a bar in a config file rather than a figure from a log: `timeout-minutes` 8 for the measuring pre-run and 12 for the gate, both readable in `.github/workflows/build.yml`, set against the four cores of `ubuntu-latest` from a solo desk run on this machine and left alone since because the gate has never come near them. **The badge is guarded too:** `testbehauptungen()` names kind and line for every count claim (`README.md:7 Abzeichen: nennt 2164 Tests, gelaufen sind 2163`), and `dokuVergleich()` demands a measurement date beside the number — the README says `measured 2026-10-10`, and a stamp from another run fails the check.
 
 ### Removed
-- **Pro is gone from the key tooling as well** (Damian, 9.10.2026: „Pro gibt es nicht mehr nirgends"). `src/core/lizenz.ts` no longer carries a single-user plan: what can be issued is `business` or `enterprise`, and `EDITIONS_LABEL` names both **KEPTA Enterprise** — the product name never appears beside the dead tier again. `signiere()` now requires the plan instead of defaulting to it, so no call site can quietly issue what nobody sells.
-- **The studio's plan picker lost the old tier and its prices.** `tools/license-studio/index.html` offers the two shapes of a KEPTA Enterprise agreement (team with seats, organization by agreement); `main.ts` maps anything unknown to `enterprise` rather than to the plan that no longer exists; `build.mjs` describes the app as issuing KEPTA Enterprise keys.
+- **Pro is gone from the key tooling as well** (Damian, 9.10.2026: „Pro gibt es nicht mehr nirgends"). `src/core/lizenz.ts` no longer carries a single-user plan: what can be issued is `business` or `enterprise`, and `EDITIONS_LABEL` names both **K3PTA Enterprise** — the product name never appears beside the dead tier again. `signiere()` now requires the plan instead of defaulting to it, so no call site can quietly issue what nobody sells.
+- **The studio's plan picker lost the old tier and its prices.** `tools/license-studio/index.html` offers the two shapes of a K3PTA Enterprise agreement (team with seats, organization by agreement); `main.ts` maps anything unknown to `enterprise` rather than to the plan that no longer exists; `build.mjs` describes the app as issuing K3PTA Enterprise keys.
 
 ### Changed
-- **A key from before the change still verifies — and is no longer called by the dead name.** The plan byte is part of the signed text, so `1` (and the older 68-byte key without a byte at all) is read as `edition: "alt"`, its signature still checked against the name the plan carried. Displayed, labelled and mailed it is KEPTA Enterprise, with the studio noting „frühere Einzel-Lizenz". Issuing `alt` is refused.
+- **A key from before the change still verifies — and is no longer called by the dead name.** The plan byte is part of the signed text, so `1` (and the older 68-byte key without a byte at all) is read as `edition: "alt"`, its signature still checked against the name the plan carried. Displayed, labelled and mailed it is K3PTA Enterprise, with the studio noting „frühere Einzel-Lizenz". Issuing `alt` is refused.
 - **The ledger keeps its old entries.** `licenses.json` on this machine holds seven keys, two of them from before the change; reading a stored `edition: "pro"` now migrates it to `"alt"` instead of dropping the row. (The first cut of this migration dropped exactly the entries it had just migrated — caught by `tests/kein-pro-tier.test.ts`, which round-trips the file.)
-- **The customer message describes the app that exists.** Since 3.1.5 there is no key field to type into, so the message no longer walks the buyer through activating: it names the contract (name, number, seats where agreed), says KEPTA runs every tool unlimited, and keeps the offline promise. Same for the worker's mail and the CLI's closing line.
+- **The customer message describes the app that exists.** Since 3.1.5 there is no key field to type into, so the message no longer walks the buyer through activating: it names the contract (name, number, seats where agreed), says K3PTA runs every tool unlimited, and keeps the offline promise. Same for the worker's mail and the CLI's closing line.
 - **`scripts/generate-license.mjs`:** `--edition business|enterprise`, default `enterprise`, and a request for the old tier is refused before anything is signed. The key it prints is verified by the same code the studio uses (`tests/kein-pro-tier.test.ts` runs the script and checks the answer).
 - **`tools/lizenz-worker`:** only the team price-id issues a key. Any other price returns `ignoriert` with no key and no mail — the old fallback minted a single-user key for whatever the checkout threw at it. `CHECKLISTE.md` is marked as parked, names the two Paddle prices as dead and asks for them to be archived, because a live price that issues nothing would still charge.
 - Measured on this commit: **118 files / 1967 tests** green, lint 0 errors. No runtime path of the app changed — the app files touched here are comments — so there is no new build and no new release.
@@ -62,12 +62,12 @@ Why this patch exists, in one line: the released `app-3.2.0` binary was measured
 ## [3.1.5] — 2026-10-09
 
 ### Removed
-- **The key system and every usage limit are gone.** Damian, 9.10.2026: „bei KEPTA gibt es kein Licence Key gar nix … diese Version soll man unbegrenzt nutzen können." Concretely: `server/helfer/freemium.ts` (13 daily-limit rules answering 429 with an upgrade path, `X-KEPTA-Plan`, `X-KEPTA-Remaining`), `server/helfer/probetag.ts` and `server/helfer/planzustand.ts` (the sealed 24-hour first day, the persistent counters, the keychain and hidden-file anchors), `server/router/license.ts` (`GET`/`POST /api/license`, the licensee line in Settings, `licensePreProvisioned` in `/api/policies`), and `src/components/ProUpgrade.tsx` with the sidebar footer that read „Unlimited day · 3 h left" / „A key removes the limits" and the Dashboard toast that announced the day was over. Nothing in the app counts, meters or advertises now, and the MDM schema ignores a `license_name`/`license_key` left in an existing organization file (measured: `tests/richtlinien.test.ts`).
+- **The key system and every usage limit are gone.** Damian, 9.10.2026: „bei K3PTA gibt es kein Licence Key gar nix … diese Version soll man unbegrenzt nutzen können." Concretely: `server/helfer/freemium.ts` (13 daily-limit rules answering 429 with an upgrade path, `X-KEPTA-Plan`, `X-KEPTA-Remaining`), `server/helfer/probetag.ts` and `server/helfer/planzustand.ts` (the sealed 24-hour first day, the persistent counters, the keychain and hidden-file anchors), `server/router/license.ts` (`GET`/`POST /api/license`, the licensee line in Settings, `licensePreProvisioned` in `/api/policies`), and `src/components/ProUpgrade.tsx` with the sidebar footer that read „Unlimited day · 3 h left" / „A key removes the limits" and the Dashboard toast that announced the day was over. Nothing in the app counts, meters or advertises now, and the MDM schema ignores a `license_name`/`license_key` left in an existing organization file (measured: `tests/richtlinien.test.ts`).
 - **What did NOT go, because it was protection rather than payment:** loopback-only binding, Helmet, the 1 MB body cap, the write throttle of 60/min and the chat throttle of 20/min, the 5 000-node cap, the privacy shield, the managed policies (cloud chat off / scan off / shield forced on) and the recovery key with its three doorkeepers. `/api/recovery-key` moved to its own router so the route that carried it could go; it still answers 403 to a request that is not the window, and 404 when nothing is encrypted (`tests/keine-grenzen.test.ts`, `tests/server.test.ts`).
 
 ### Changed
 - **Team memory is switched on by the organization's roles file, not by a plan.** The scopes and their roles were gated on a business/enterprise edition; with no keys in the app that gate would have locked a working feature forever — a downgrade, which is exactly what this product is not allowed to do. `teamPolicy()` now keys off `managed-settings.json` alone: file present → admins/members write `team:*`, viewers read; no file → `team:*` stays shut and `/api/team` answers `team: null`. The sidebar shows the Team entry only when a file exists, and the view says so plainly instead of offering a purchase.
-- **Two operator tools keep the key machinery, detached from the app.** `src/core/lizenz.ts`, `src/core/schluessel.ts`, the revocation list, `tools/license-studio`, `tools/lizenz-worker` and `scripts/generate-license.mjs` stay where they are — they belong to KEPTA Enterprise, where keys are issued personally. No runtime path in the app reaches them any more; the module's own header now says that instead of describing Freemium.
+- **Two operator tools keep the key machinery, detached from the app.** `src/core/lizenz.ts`, `src/core/schluessel.ts`, the revocation list, `tools/license-studio`, `tools/lizenz-worker` and `scripts/generate-license.mjs` stay where they are — they belong to K3PTA Enterprise, where keys are issued personally. No runtime path in the app reaches them any more; the module's own header now says that instead of describing Freemium.
 - **The install check and the screenshot run stopped asking for a key.** `scripts/install-app.mjs` step 7 verifies `/api/health` and compares the running version with the build; `scripts/screenshots.mjs` no longer mints a demo key before shooting.
 
 ### Notes
@@ -82,12 +82,12 @@ Why this patch exists, in one line: the released `app-3.2.0` binary was measured
 ### Changed
 - **One listener per app under test, not one per request.** Supertest turns an Express app into a fresh `http.Server` for *every* call, binds an ephemeral port and closes it right after the answer — with 118 workers that is a stream of ports handed to whoever asks next, and the suite has been answering with statuses this app cannot produce (401 where 403 belongs, 404 where 400 belongs, `ETIMEDOUT`, a 200 without the counter header). `tests/setup.horchen.ts` keeps exactly one listener per app for the whole file; `tests/helfer/horchen.test.ts` measures it, and ordinary mock servers stay untouched.
 - **Seven scan checks state the status before the body.** One of them read `byFolder.find(…)` out of whatever came back; when the answer was not the expected one, the failure read `Cannot read properties of undefined (reading 'find')` and said nothing about what had actually been sent. Each site now asserts the status first and prints the answer text beside it.
-- **The README no longer sells a tier that is gone.** It offered „KEPTA Pro“, a free „Pro day“ and „Buying Pro“ — what exists is KEPTA Core (free) and KEPTA Enterprise (by agreement, the key issued personally). The licensing section says that now, and a docs test fails on any dead-tier wording.
+- **The README no longer sells a tier that is gone.** It offered „K3PTA Pro“, a free „Pro day“ and „Buying Pro“ — what exists is K3PTA Core (free) and K3PTA Enterprise (by agreement, the key issued personally). The licensing section says that now, and a docs test fails on any dead-tier wording.
 - **The test canvas stopped lying about text width.** The jsdom stand-in measured every string at a fixed 6 px per character, whatever `ctx.font` said. The graph shrinks its labels with the zoom, so labels were up to four times too wide in tests and pushed neighbours out of slots the browser would have kept. It now measures with the font that is set (0.5 × size per character, 12 px as the default), which is exactly the size the label tests were calibrated at — all 154 graph render checks still pass, and `tests/helfer/canvas.test.ts` pins the proportionality.
 - **The suite stopped sharing sockets it had no right to reuse.** Node keeps the global HTTP agent on `keepAlive: true`, and `request(app)` binds a fresh ephemeral port for every call, releasing it again straight after the answer. Under 117 workers that is a stream of ports handed to whoever asks next, and the answers that came back were not the ones this app can produce: 401 where 403 belongs, 404 where 400 belongs, `ETIMEDOUT`, and a 200 without the counter header the middleware always sets. `tests/setup.http.ts` turns reuse off. Measured: without this line a four-file harness failed in 2 of 6 runs and the full suite in 2 of 3; with it (and only once it actually took effect — the first attempt set `options.keepAlive`, which the agent ignores) the last four full runs were green, 117 files / 1979 tests, as is the CI runner. The durable guard is still the rule the enterprise suite enforces: never `request(app)`, always a server that listens once per file.
 - **A speed promise that survives a busy machine.** The edge-hit check demanded “one pointer move over 12 000 links in under 4 ms“ from a single 20-move average; it fell at 5.85 ms in a parallel run while nothing about the search had changed. It now takes the median of three 60-move series and prints all three.
 - **Built is not shipped.** The README named Windows and Linux paths in the policy reader and the key-storage paragraph without saying the app leaves only for macOS. Both sentences now carry the shipping state, and the platform test fails any Windows/Linux claim that does not.
-- **The README stops promising installers that are not shipped.** The download table offered Windows files (`KEPTA-<version>-win.exe`, "take this one if unsure") and a Windows first-launch guide, while every published release carries macOS only. The table now says which platforms actually get an app, keeps the self-build route for Windows and Linux as a source build, and a test (`tests/doku-plattform.test.ts`) fails if a published-installer claim comes back.
+- **The README stops promising installers that are not shipped.** The download table offered Windows files (`K3PTA-<version>-win.exe`, "take this one if unsure") and a Windows first-launch guide, while every published release carries macOS only. The table now says which platforms actually get an app, keeps the self-build route for Windows and Linux as a source build, and a test (`tests/doku-plattform.test.ts`) fails if a published-installer claim comes back.
 
 ### Fixed
 - **The version bump had corrupted two dependencies in the lockfile.** Counting 3.1.2 → 3.1.3 replaced the string wherever it stood, so `bytes` and `@jridgewell/resolve-uri` ended up on versions that the public registry has never published; a clean `npm ci` (the CI's first step) died with `notarget`. Both entries now name the real published version, and `scripts/pruefe-lock.mjs` — run by `npm test` before the suite — reports every dependency whose lockfile version differs from what is installed.
@@ -111,7 +111,7 @@ The knowledge graph got finished. Before this, the picture showed notes and the 
 - **A claim about itself is not a neighbour** — it gets a loop, and a switch.
 - **The third view: Semantic.** Notes placed by the meaning of their own texts, from a deterministic projection computed on the server, so no embedding travels into the view. It says how much of the difference its two axes carry and where the notes without a vector were parked.
 - **Schema inventory.** A second look at the same payload: which kinds, concepts and claims the store actually holds. Choosing a row spotlights it in the picture.
-- **Provenance colour.** Written in KEPTA, from a file, from this computer — a second colour channel that switches itself off, with the reason, when the base has nothing to distinguish.
+- **Provenance colour.** Written in K3PTA, from a file, from this computer — a second colour channel that switches itself off, with the reason, when the base has nothing to distinguish.
 - **Search counts its hits and leads you through them.** How many notes match, which one you are on; Enter jumps, Shift+Enter returns, Escape clears the word first.
 - **Forces you can set.** Center force, repel strength, link distance, node size. Turning a slider does not rebuild the world: the picture keeps its place and settles under the new forces, and one click returns the tuned defaults.
 - **Concepts are nodes in the force field too**, and an agent writing a memory is visible in the dashboard's own number.
@@ -145,14 +145,14 @@ The app becomes publicly downloadable — and this finishes the release cut the 
 - **Today 2.0** (package 3): the time-machine slider and a consolidated truth movement — new, updated, superseded (with successor), deleted.
 - **Dossier 2.0** (package 3): contradictions resolve in the flow (newer wins, both-valid windows, editor); the resolve route grew a `window: true` option.
 - **Chat with full memory** (package 3): the engine question carries retrieval depth and track switches, hits get source-provenance badges, the answer pane shows search duration and warm state.
-- **The real KEPTA mark as app icon** — `build/icon.icns` built from the KeptaMark geometry on the Big Sur grid, replacing the generic electron.icns.
+- **The real K3PTA mark as app icon** — `build/icon.icns` built from the KeptaMark geometry on the Big Sur grid, replacing the generic electron.icns.
 
 ### Fixed
 - **`since=0` is the time machine's "everything" window.** The briefing route no longer drops an explicit 0 onto the 24-hour default.
 - **The app's own coverage gate was red since 3.1.1.** `src/core/**` demands 100 % function coverage, and the core lift left four functions never executed: `aktiviereSuchCacheDelta` (called only from the bootstrap, which tests do not run), the unsubscribe closure of `onMemorieAenderung`, and `VerschlussteAuditDatei.flush()` together with its swallowed-error branch. Three tests cover them now, and the audit-file test awaits `flush()` instead of sleeping 120 ms and hoping. The run: 1,629 tests over 105 files, `npm run test:cov` green including `doku-check`.
 - **The documentation said things the repository does not support.** Each of these was a claim the repository itself contradicted, and each is its own line now — one line, one claim, one proof. (Getrennt am 13.10., weil die Zahlen-Wache einen Dateinamen aus dem ersten Teilsatz als Beleg fuer Prozentzahlen im letzten las.)
   - The npm package inside this repo still claimed MIT while the core is BUSL-1.1 (package, `npm/LICENSE`, `npm/README.md` and the test that pins them moved together)
-  - the app's `LICENSE` was titled "KEPTA Enterprise" and pointed at an AGPL core
+  - the app's `LICENSE` was titled "K3PTA Enterprise" and pointed at an AGPL core
   - the download and CI badges named `kepta-pro-releases` and `kepta-enterprise`, neither of which exists on GitHub (both 404) — they now name the public core repository, which is where the DMGs and the working CI actually are
   - the security document still called `profile.json`, `scan-config.json` and the journals plaintext although they have carried the database key since 2.13.4
   - and the LongMemEval runner README (`tools/longmemeval/README.md`, die Serie in ihren eigenen Worten — ein Papier dieses Repos, kein Maschinenlauf) stopped at 37,0 % (25.9.) although the 1.10. series reached 61,5 % — it now carries the whole series, the judge A/B (+11,7 pp with the engine untouched), the strict-binary 40,4 % reading and the in-sample caveat
@@ -162,7 +162,7 @@ The app becomes publicly downloadable — and this finishes the release cut the 
 
 ### Changed
 - **The app runs on the open core 3.1.1** (build package 1 of the app master plan). `src/core/**` was lifted from kepta-core 3.1.1: search cache keyed on a trigger-fed data generation with delta maintenance (`aktiviereSuchCacheDelta` wired at bootstrap), AND-first FTS, engine/library exports — the engine is identical with the core repository (~/kepta-core, no local forks).
-- **Branding is simply KEPTA.** The "KEPTA Pro" claims ("Licensed to …", upgrade banners, Pro pricing) left the UI; the license mechanism itself stays untouched.
+- **Branding is simply K3PTA.** The "K3PTA Pro" claims ("Licensed to …", upgrade banners, Pro pricing) left the UI; the license mechanism itself stays untouched.
 - Version parity 3.1.1 across package.json, server.json, npm package and the core version module.
 - The License Studio tools directory was restored from history (tests/license-studio*.ts had lost their subject in the copy).
 
@@ -196,27 +196,27 @@ All notable changes are documented in this file. The format follows [Keep a Chan
 ## [2.13.11] — 2026-09-25
 
 ### Changed
-- **The sidebar no longer shows the version (Damian, 25.9.).** The card names the tier only — KEPTA Core / KEPTA Pro / KEPTA Enterprise — without the number; the version stays available in the system status and over /api/health. Reverses the sidebar part of 2.13.10.
+- **The sidebar no longer shows the version (Damian, 25.9.).** The card names the tier only — K3PTA Core / K3PTA Pro / K3PTA Enterprise — without the number; the version stays available in the system status and over /api/health. Reverses the sidebar part of 2.13.10.
 
 ## [2.13.10] — 2026-09-25
 
 ### Changed
-- **The app shows its version.** The sidebar names the tier with the version (KEPTA Core 2.13.10), and the system status lists it as the first row — previously the number existed only over MCP and /api/health.
+- **The app shows its version.** The sidebar names the tier with the version (K3PTA Core 2.13.10), and the system status lists it as the first row — previously the number existed only over MCP and /api/health.
 
 ## [2.13.9] — 2026-09-24
 
 ### Changed
-- **Tier naming (Damian, 24.9.): the unlicensed app is KEPTA Core** — the Pro day (24 h, every tool open) belongs to Core; **KEPTA Pro is the license key** that removes the daily limits. The sidebar shows KEPTA Core / KEPTA Pro accordingly. Same binary, one download.
+- **Tier naming (Damian, 24.9.): the unlicensed app is K3PTA Core** — the Pro day (24 h, every tool open) belongs to Core; **KEPTA Pro is the license key** that removes the daily limits. The sidebar shows KEPTA Core / KEPTA Pro accordingly. Same binary, one download.
 
 ## [2.13.8] — 2026-09-23
 
 ### Fixed
 - **The Buy button never leads into the void.** Until Paddle goes live the
   upgrade URL falls back to `kepta.pro/upgrade`, which does not exist yet —
-  a fresh user clicking "Buy KEPTA Pro" landed on a dead address. The API
+  a fresh user clicking "Buy K3PTA Pro" landed on a dead address. The API
   now reports `checkoutLive` (true only when `KEPTA_UPGRADE_URL` is set),
   and the upgrade panel renders accordingly: with a live checkout the real
-  buy button; without it, "Get KEPTA Pro — write to Damian on LinkedIn".
+  buy button; without it, "Get K3PTA Pro — write to Damian on LinkedIn".
   Key activation beside it is untouched.
 
 ## [2.13.7] — 2026-09-23
@@ -315,14 +315,14 @@ All notable changes are documented in this file. The format follows [Keep a Chan
   it holds a per-store inventory cache that invalidates on any write. On a
   200 000-note corpus this took a query from over a minute down to
   milliseconds; the 3 000-note daily reality stops paying that tax too.
-- Internally labelled "business" editions now display as **KEPTA Enterprise**
+- Internally labelled "business" editions now display as **K3PTA Enterprise**
   everywhere (sidebar, team view, settings, upgrade panel) — the public tier
   named Business no longer exists.
 
 ## [2.13.2] — 2026-09-17
 
 ### Security
-- **KEPTA answers this computer only.** The app's HTTP server now refuses
+- **K3PTA answers this computer only.** The app's HTTP server now refuses
   requests whose `Host` header does not name this computer — a website using
   DNS rebinding could otherwise read the notes — and refuses requests from any
   other website that would change something: before, an ordinary web page
@@ -347,7 +347,7 @@ All notable changes are documented in this file. The format follows [Keep a Chan
   drag, no seconds of frozen window on large knowledge bases. Layouts only
   recompute in the view that actually shows them, and a chosen moment stands
   still instead of sliding.
-- Messages about features that need a license now name **KEPTA Pro**.
+- Messages about features that need a license now name **K3PTA Pro**.
 
 ### Fixed
 - *Settings → MCP / API* shows where Claude Desktop keeps its config file on
@@ -373,11 +373,11 @@ everything below.
 - **Windows installers** for x64 and arm64, built in CI.
 
 ### Changed
-- **Licenses know their tier.** A key now says whether it is for KEPTA Pro
-  (personal), KEPTA Business (with its number of seats) or KEPTA Enterprise,
+- **Licenses know their tier.** A key now says whether it is for K3PTA Pro
+  (personal), K3PTA Business (with its number of seats) or K3PTA Enterprise,
   and the sidebar shows the tier. Every tier unlocks the same app. Keys issued
   before stay valid and count as Pro. The lock screen now simply says
-  *Activate KEPTA*. The tier shown updates when the window regains focus.
+  *Activate K3PTA*. The tier shown updates when the window regains focus.
 - The app package contains no source maps at all, dependencies included.
 - **The graph's time slider moves smoothly.** The layout is rebuilt once when
   you let go instead of at every step, and in the tree view the notes stand in
@@ -410,7 +410,7 @@ everything below.
 - **Dossier.** Everything about a person, a project or a topic on one page:
   key facts, a timeline, how-tos, documents, open to-dos, contradictions and
   related topics. *Copy as Markdown* or *Save as note*. ⌘6.
-- **Connect your AI apps in one click.** KEPTA finds Claude Desktop, Claude
+- **Connect your AI apps in one click.** K3PTA finds Claude Desktop, Claude
   Code, Cursor, Windsurf and VS Code and adds itself to their MCP settings —
   pointing to the server inside the app, no Node and no npm. A backup of the
   old file sits right next to it, every other entry stays, and a file that is
@@ -455,7 +455,7 @@ everything below.
   Activation stays as simple as before — name and key, offline, once — and
   nothing leaves the Mac.
 - **Keys that are passed on can be revoked.** A revoked license number is
-  listed in the app; from the next update on, its key no longer unlocks KEPTA,
+  listed in the app; from the next update on, its key no longer unlocks K3PTA,
   also on Macs where it was already activated. The activation window says so.
 - **Keys of the 2.11 form (without a number) are no longer accepted.** None
   had been handed to customers.
@@ -490,7 +490,7 @@ everything below.
   characters. Not a word of a note, a title or the search index is readable in
   the file, in its write-ahead log, or in any copy or backup of it.
 - **An existing knowledge base is converted on the first start of 2.11** —
-  only when KEPTA has the file to itself. It copies the file, encrypts the copy,
+  only when K3PTA has the file to itself. It copies the file, encrypts the copy,
   checks it (the same rows in every table, SQLite's integrity check) and puts
   it in place in one step; the old file is then overwritten with zeros. If an
   AI agent still has the file open, the conversion waits for the next start
@@ -509,12 +509,12 @@ everything below.
   key that lives only in the maintainer's keychain. The lock screen is in
   English.
 - **The app's own server checks the license too, not only the window.**
-  Without a valid key, what only KEPTA Enterprise can do — chat, model
+  Without a valid key, what only K3PTA Enterprise can do — chat, model
   discovery, the clipper, opening files, the machine scan and the profile —
   answers 403. Everything the open core can do stays free: notes, search,
   import, sync, export, MCP and the recovery key.
 - **Agents connect without Node.js.** *Settings → MCP / API* now offers the
-  MCP server that ships inside the app, started by KEPTA itself — no Node.js,
+  MCP server that ships inside the app, started by K3PTA itself — no Node.js,
   no npm, and no stumbling over an npm release that cannot open the encrypted
   file. `/api/health` reports the exact command as `mcp.stdio`.
 - **The app no longer ships its server source.** The package contained
@@ -527,7 +527,7 @@ everything below.
   fetch the key from the keychain by themselves.
 
 ### Changed
-- **SQLite engine:** `node:sqlite` could not open an encrypted file, so KEPTA
+- **SQLite engine:** `node:sqlite` could not open an encrypted file, so K3PTA
   now uses `better-sqlite3-multiple-ciphers` (pinned to 12.11.1). The npm
   package `kepta-mcp` has exactly this one dependency; npm installs it
   prebuilt for Node 22, 24 and 26 on macOS, Windows and Linux.
@@ -537,12 +537,12 @@ everything below.
   to be cut off at the first `#` in its own markup; it is encoded now.
 
 ### Removed
-- **The German interface switch** from 2.10 (*Settings → Display*). KEPTA's
+- **The German interface switch** from 2.10 (*Settings → Display*). K3PTA's
   interface is English; the text size setting stays. German notes and German
   queries keep working — the stopword list is still bilingual.
 
 ### Upgrade notes
-- **Quit every agent that uses KEPTA over MCP before the first start of 2.11**
+- **Quit every agent that uses K3PTA over MCP before the first start of 2.11**
   (Claude Desktop, Cursor, …), so the app has the file to itself, and start
   them again afterwards. An older `kepta-mcp` cannot read the encrypted file:
   it stops with "file is not a database" and changes nothing. `npx -y
@@ -651,7 +651,7 @@ everything below.
   different product.
 
 ### Documentation
-- `.env.example` said `cp .env.example .env`. KEPTA never read a `.env` file —
+- `.env.example` said `cp .env.example .env`. K3PTA never read a `.env` file —
   the `dotenv` above was never imported. It now says to set the variables in the
   environment.
 - The release notes suggested `node /PATH/kepta/dist/mcp-server.cjs`; they now
@@ -661,7 +661,7 @@ everything below.
   the real size of the npm bundle — 81 kB, not 74.
 - The Enterprise section described features as "being worked on" for a
   commercial edition that already ship here — Praxis-Sync with its
-  tamper-evident ledger among them. KEPTA Enterprise is going to be a product of
+  tamper-evident ledger among them. K3PTA Enterprise is going to be a product of
   its own; the section now says that, and that nothing in this repository moves
   into it.
 
@@ -888,7 +888,7 @@ everything below.
 ## [2.7.0] — 2026-09-06
 
 ### Added
-- **Scan this computer (opt-in).** KEPTA can go through the documents in your home
+- **Scan this computer (opt-in).** K3PTA can go through the documents in your home
   folder and turn them into notes. Everything stays on the machine — there is no
   cloud and the core has no network access. Three things are wired in, not
   optional: keys, credentials, browser profiles, keychains, wallets, system,
@@ -955,7 +955,7 @@ everything below.
   is visible, so the layout cooled down and fitted itself to the initial 800×500
   — switching to the graph then showed it off-centre. It re-fits on every size
   change until the user pans or zooms themselves.
-- **KEPTA blamed an agent for its own writes.** The database watcher cannot see
+- **K3PTA blamed an agent for its own writes.** The database watcher cannot see
   who wrote, only that the count changed, so it announced every change as "The
   brain was updated from outside" — including imports the user had just started.
   It now stays quiet for changes the app announced itself; a foreign process
@@ -1152,7 +1152,7 @@ rebuilt. Then it answered a question nobody had asked.
 ### Found while measuring
 - **Semantic search does not work in German with the default model.** The
   paraphrase category scores 10 % with the vector leg on or off. That is not a
-  KEPTA bug: cosine is normalised, vectors are unit length, dimensions and model
+  K3PTA bug: cosine is normalised, vectors are unit length, dimensions and model
   are right. It is the model. `npm run embed:sprachtest` puts four notes and four
   paraphrase questions to `nomic-embed-text` in both languages:
 
@@ -1258,7 +1258,7 @@ reviewers. Neither was a wording problem.
   linker-signed one inside the Electron binary, still carrying
   `Identifier=Electron`. `codesign --verify` failed on it outright.
 
-  That is worse than unsigned. macOS then tends to report "KEPTA is damaged and
+  That is worse than unsigned. macOS then tends to report "K3PTA is damaged and
   can't be opened" instead of "developer cannot be verified" — and *damaged* has
   no "Open Anyway". Anyone downloading the app met a message that reads like a
   corrupt file or malware, with no way forward. 26 downloads across 21 releases
@@ -1331,7 +1331,7 @@ runs, and nobody notices until someone asks where the release is.
 ## [2.6.7] — 2026-09-04
 
 ### Fixed
-- **Claude Desktop could not start KEPTA at all.** The client asked for an older
+- **Claude Desktop could not start K3PTA at all.** The client asked for an older
   protocol version, and the server answered with its newest —
   `Server's protocol version is not supported: 2026-07-28` — so the connection
   was refused before a single tool was offered. Version negotiation now never
@@ -1352,7 +1352,7 @@ runs, and nobody notices until someone asks where the release is.
 ## [2.6.6] — 2026-09-04
 
 ### Added
-- **KEPTA is listed in the official MCP registry** as
+- **K3PTA is listed in the official MCP registry** as
   `io.github.DamianTodorovic/kepta` — the place where people go looking for MCP
   servers on purpose rather than by accident. `server.json` declares the entry;
   the npm package proves ownership through its `mcpName` field.
@@ -1561,7 +1561,7 @@ Auto-learn no longer runs without being asked.
   costs nobody had knowingly agreed to. It is now `=== 'true'`. Anyone who used it in
   2.5.0 can switch it back on under *Settings*.
 - **So that it is still discoverable:** the first time an answer would have been
-  learnable, KEPTA shows a one-off hint — with a button that turns the feature on right
+  learnable, K3PTA shows a one-off hint — with a button that turns the feature on right
   there. Never again after that (`ki_gehirn_autolearn_hint`).
 
 ### Tests
@@ -1604,7 +1604,7 @@ Windows joins in. That covers every common system — before this, Windows was o
 
 ### Added
 - **Windows:** NSIS installer and ZIP for `x64` and `arm64`, built by the new `release-windows` job on `windows-latest`. The installer lets you pick the target folder and installs per user, without administrator rights.
-- **Platform in the filename:** the scheme is now `KEPTA-<version>-<platform>-<arch>.<ext>`. Without the platform, `KEPTA-<version>-x64.zip` from macOS and from Windows would have been identically named and would have **overwritten each other** in the release — found while adding the Windows job, before it hit anyone.
+- **Platform in the filename:** the scheme is now `K3PTA-<version>-<platform>-<arch>.<ext>`. Without the platform, `K3PTA-<version>-x64.zip` from macOS and from Windows would have been identically named and would have **overwritten each other** in the release — found while adding the Windows job, before it hit anyone.
 - **First-launch instructions for Windows** in the release notes and README: the installer is unsigned too, and SmartScreen blocks the first run.
 
 ### Changed
@@ -1625,7 +1625,7 @@ A distribution release: up to 2.2.1 only Apple Silicon Macs could download the a
 ### Added
 - **Intel Macs (x64):** `electron-builder.json` had no `arch` entry, so only the CI runner's own architecture was built — arm64. From now on DMG and ZIP are produced for `arm64` **and** `x64`.
 - **Linux:** AppImage and deb, each for `x64` and `arm64`. A separate workflow job `release-linux` on `ubuntu-latest`, because Linux packages cannot be built on a macOS runner. New script `npm run build:linux`.
-- **Architecture in the filename:** electron-builder only appends it for arm64 by default — the Intel build would have been plain `KEPTA-2.3.0.dmg` and indistinguishable. `artifactName` now enforces `KEPTA-<version>-<arch>.<ext>` for every package.
+- **Architecture in the filename:** electron-builder only appends it for arm64 by default — the Intel build would have been plain `KEPTA-2.3.0.dmg` and indistinguishable. `artifactName` now enforces `K3PTA-<version>-<arch>.<ext>` for every package.
 
 ### Fixes
 - **A false platform promise:** the README and badge announced "macOS | Linux" and "DMG/snap"; a Linux package never existed and snap was never configured. The README now names exactly the files that do exist, including first-launch instructions for Linux.
@@ -1708,7 +1708,7 @@ A security and robustness release: code-review fixes across the server, core, El
 
 ## [2.0.0] — 2026-09-01
 
-The SOTA release: KEPTA goes from a note store to a full agent memory.
+The SOTA release: K3PTA goes from a note store to a full agent memory.
 
 ### Storage (breaking: JSON → SQLite)
 - SQLite via `node:sqlite` (no native build, FTS5 included), WAL mode, file `~/.kepta/kepta.db`

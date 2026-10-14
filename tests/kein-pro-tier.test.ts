@@ -1,10 +1,10 @@
 // @vitest-environment node
 //
-// „Pro“ ist keine Stufe mehr — auch nicht dort, wo KEPTA-Enterprise-Schlüssel
+// „Pro“ ist keine Stufe mehr — auch nicht dort, wo K3PTA-Enterprise-Schlüssel
 // erzeugt werden (Damian, 9.10.2026: „Pro gibt es nicht mehr nirgends“). Ein
 // Schlüssel aus der Zeit davor bleibt prüfbar: sein Stufenname steht in der
 // Signatur und liesse sich nicht ändern, ohne ihn ungültig zu machen. Was sich
-// ändern muss, ist der Name, den Menschen lesen — er ist immer KEPTA Enterprise.
+// ändern muss, ist der Name, den Menschen lesen — er ist immer K3PTA Enterprise.
 //
 // Ausnahmen von der Text-Wache: diese Datei und tests/doku-zahlen.test.ts (eine
 // Wache muss benennen, was sie verbietet), CHANGELOG.md und docs/ (datierte
@@ -35,9 +35,9 @@ function altschluessel(name: string, nummer: number, seats: number, stufenCode: 
 }
 
 describe("die Stufen, die es gibt", () => {
-  it("ausstellen lässt sich nur Business und Enterprise — beide heißen KEPTA Enterprise", () => {
+  it("ausstellen lässt sich nur Business und Enterprise — beide heißen K3PTA Enterprise", () => {
     expect(EDITIONEN).toEqual(["business", "enterprise"]);
-    for (const stufe of EDITIONEN) expect(EDITIONS_LABEL[stufe]).toBe("KEPTA Enterprise");
+    for (const stufe of EDITIONEN) expect(EDITIONS_LABEL[stufe]).toBe("K3PTA Enterprise");
     expect(Object.values(EDITIONS_LABEL).join(" ")).not.toMatch(/Pro\b/);
   });
 
@@ -49,10 +49,10 @@ describe("die Stufen, die es gibt", () => {
 });
 
 describe("Schlüssel aus der Zeit davor bleiben prüfbar", () => {
-  it("ein Stufen-Byte 1 prüft weiter — und heißt in der Anzeige KEPTA Enterprise", () => {
+  it("ein Stufen-Byte 1 prüft weiter — und heißt in der Anzeige K3PTA Enterprise", () => {
     const p = pruefeSchluessel("Sarah Mandel", altschluessel("Sarah Mandel", 7, 1, 1, "pro"), OEFFENTLICH, KEINE);
     expect(p).toEqual({ gueltig: true, nummer: 7, gesperrt: false, edition: "alt", seats: 1 });
-    expect(EDITIONS_LABEL[p.edition]).toBe("KEPTA Enterprise");
+    expect(EDITIONS_LABEL[p.edition]).toBe("K3PTA Enterprise");
   });
 
   it("ein Schlüssel ganz ohne Stufen-Byte (68 Byte) prüft weiter", () => {
@@ -76,7 +76,7 @@ describe("das Ledger des Studios", () => {
   it("Einträge mit der alten Stufenangabe bleiben stehen und heißen „alt“ — kein Schlüssel geht beim Lesen verloren", () => {
     const p = datei();
     fs.writeFileSync(p, JSON.stringify([
-      { nummer: 7, name: "KEPTA Demo", key: "AAAAA-BBBBB", notiz: "", ausgestelltAm: "2026-09-17T15:53:46.367Z", edition: "pro" },
+      { nummer: 7, name: "K3PTA Demo", key: "AAAAA-BBBBB", notiz: "", ausgestelltAm: "2026-09-17T15:53:46.367Z", edition: "pro" },
       { nummer: 1, name: "Damian Todorovic", key: "CCCCC-DDDDD", notiz: "", ausgestelltAm: "2026-09-13T21:41:56.596Z" },
       { nummer: 5, name: "Damian Test Business", key: "EEEEE-FFFFF", notiz: "", ausgestelltAm: "2026-09-16T12:48:43.702Z", edition: "business", seats: 5 },
     ]));
@@ -99,19 +99,19 @@ describe("das Ledger des Studios", () => {
     const key = stelleAus("Sarah Mandel", 7, PRIVAT, OEFFENTLICH, "enterprise");
     for (const sprache of ["de", "en"] as const) {
       const t = nachricht("Sarah Mandel", 7, key, sprache, "enterprise");
-      expect(t).toContain("KEPTA Enterprise");
+      expect(t).toContain("K3PTA Enterprise");
       expect(t).toContain(key);
       expect(t).toContain("0007");
       expect(t).toMatch(sprache === "de" ? /unbegrenzt/ : /unlimited/);
       expect(t).not.toMatch(/Pro\b/);
-      expect(t).not.toMatch(/KEPTA-Pro|Upgrade|activate|aktivier/i);
+      expect(t).not.toMatch(/K3PTA-Pro|Upgrade|activate|aktivier/i);
     }
-    const alt = altschluessel("KEPTA Demo", 7, 1, 1, "pro");
+    const alt = altschluessel("K3PTA Demo", 7, 1, 1, "pro");
     for (const sprache of ["de", "en"] as const) {
-      const t = nachricht("KEPTA Demo", 7, alt, sprache, "alt");
+      const t = nachricht("K3PTA Demo", 7, alt, sprache, "alt");
       expect(t).not.toMatch(/Pro\b/);
-      expect(t).not.toMatch(/KEPTA-Pro|Upgrade|activate|aktivier/i);
-      expect(t).toContain("KEPTA Enterprise");
+      expect(t).not.toMatch(/K3PTA-Pro|Upgrade|activate|aktivier/i);
+      expect(t).toContain("K3PTA Enterprise");
     }
   });
 

@@ -127,7 +127,7 @@ describe("A7-10: der Assistent folgt dem ersten Bild, nicht der Stoppuhr", () =>
     const schickBestand = ausstehenderBestand();
     await start();
     await act(async () => { await schlafe(3000); });
-    expect(screen.queryByText(/Set up KEPTA/), "der Dialog steht über einem Bild, das noch keines ist").toBeNull();
+    expect(screen.queryByText(/Set up K3PTA/), "der Dialog steht über einem Bild, das noch keines ist").toBeNull();
     // Die ausstehende Anfrage bleibt nicht stehen: der Store deduppt sie, und ein
     // haengender Lauf macht den naechsten Fall in dieser Datei blind.
     await act(async () => { schickBestand(); await schlafe(80); });
@@ -138,7 +138,7 @@ describe("A7-10: der Assistent folgt dem ersten Bild, nicht der Stoppuhr", () =>
     const { container } = await start();
     await waitFor(() => expect(container.textContent).toMatch(/Fristen/), { timeout: 2500 });
     await waitFor(
-      () => expect(screen.queryByText(/Set up KEPTA/), "der Assistent haengt an der Wanduhr, nicht am Bild").not.toBeNull(),
+      () => expect(screen.queryByText(/Set up K3PTA/), "der Assistent haengt an der Wanduhr, nicht am Bild").not.toBeNull(),
       { timeout: 1200 }
     );
     // Das Bild steht schon, bevor der Assistent da ist — er tritt dahinter auf.
@@ -156,7 +156,7 @@ describe("A7-10: der Assistent folgt dem ersten Bild, nicht der Stoppuhr", () =>
     const gesehen: number[] = [];
     for (let i = 0; i < 8; i++) {
       await act(async () => { await schlafe(300); });
-      if (screen.queryAllByText(/Set up KEPTA/).length > 0) gesehen.push(Date.now());
+      if (screen.queryAllByText(/Set up K3PTA/).length > 0) gesehen.push(Date.now());
     }
     expect(
       { gekommen: gesehen.length, merker: localStorage.getItem("ki_gehirn_wizard_dismissed") },

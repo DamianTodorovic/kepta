@@ -1,6 +1,6 @@
 // @vitest-environment node
 //
-// Das Fenster von KEPTA License Studio (tools/license-studio/index.html) in
+// Das Fenster von K3PTA License Studio (tools/license-studio/index.html) in
 // jsdom — mit window.studio so, wie contextBridge es anlegt: als nicht
 // konfigurierbare Eigenschaft. Genau daran scheiterte die erste Fassung:
 // `const studio = window.studio` ist dann ein SyntaxError, das ganze Skript
@@ -70,7 +70,7 @@ async function bis(bedingung: () => boolean): Promise<void> {
   throw new Error("Zustand nicht erreicht");
 }
 
-describe("das Fenster von KEPTA License Studio", () => {
+describe("das Fenster von K3PTA License Studio", () => {
   it("läuft mit window.studio aus contextBridge — ohne Skriptfehler, Status grün, Knopf aktiv", async () => {
     const { el, fehler, zu } = oeffne();
     await bis(() => el("status").className === "status gut");
@@ -79,7 +79,7 @@ describe("das Fenster von KEPTA License Studio", () => {
     expect(el<HTMLButtonElement>("erzeugen").disabled).toBe(false);
     expect(el("zahl").textContent).toBe("1");
     expect(el("sperr-info").hidden).toBe(true);
-    expect(el("listen-pfad").textContent).toBe("~/Library/Application Support/KEPTA License Studio/licenses.json");
+    expect(el("listen-pfad").textContent).toBe("~/Library/Application Support/K3PTA License Studio/licenses.json");
     await zu();
   });
 
@@ -94,7 +94,7 @@ describe("das Fenster von KEPTA License Studio", () => {
   it("passt der Schlüssel nicht zur App, bleibt der Knopf gesperrt", async () => {
     const { el, zu } = oeffne({ status: async () => ({ ...STATUS, passt: false }) });
     await bis(() => el("status").className === "status schlecht");
-    expect(el("status").textContent).toContain("passt nicht zu KEPTA");
+    expect(el("status").textContent).toContain("passt nicht zu K3PTA");
     expect(el<HTMLButtonElement>("erzeugen").disabled).toBe(true);
     await zu();
   });

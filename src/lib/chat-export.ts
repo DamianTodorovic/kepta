@@ -1,7 +1,7 @@
 // KI-Verlauf importieren — ChatGPT- und Claude-Datenexporte werden zu
 // Markdown-Dateien aufbereitet und über die Obsidian-Import-Pipeline ins
 // Gehirn geholt (Tags, created-Datum, Titel-Dedup: ein erneuter Import
-// aktualisiert, statt zu verdoppeln). Damit wechselt jemand zu KEPTA und
+// aktualisiert, statt zu verdoppeln). Damit wechselt jemand zu K3PTA und
 // behält sein Gedächtnis — genau dafür ist WS5 gebaut.
 //
 // Beide Formate sind undokumentiert und ändern sich gelegentlich: der Parser

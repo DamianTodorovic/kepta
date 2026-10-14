@@ -10,6 +10,7 @@ import { memoryToMarkdown } from "../../src/core/obsidian";
 import { TOOLS as MCP_TOOLS } from "../../src/core/mcp";
 import { mcpStartInDerApp } from "../helfer/mcp-start";
 import { semantikVomBestand } from "../helfer/semantik";
+import { leseUmwelt, gewonneneUmweltNamen, ohneWert } from "../../src/core/umwelt";
 import { serverVerzeichnis, resolveDistDir } from "../helfer/pfad";
 import type { AppKontext } from "../kontext";
 
@@ -29,6 +30,18 @@ export function mountSystem(app: express.Express, ctx: AppKontext): void {
       count: activeCount(),
       embeddings: store.embeddingStats(),
       encryption: store.verschluesselung,
+      // Aufgabe #64: welche Namensform der Umgebung wirklich läuft. Ein Betreiber,
+      // der beide Formen gesetzt hat, soll es hier sehen und nicht raten müssen.
+      // Gesehen wird der **Name**, nie der Wert: `ohneWert` hält den Schlüssel aus der
+      // Umgebung aus der Antwort — diese Tür hängt an 127.0.0.1, bis KEPTA_HOST sie
+      // ins Netz stellt.
+      kennungen: {
+        schluessel: ohneWert(leseUmwelt("schluessel")),
+        datenordner: ohneWert(leseUmwelt("datenordner")),
+        verschluesselung: ohneWert(leseUmwelt("verschluesselung")),
+        sicherungBehalten: ohneWert(leseUmwelt("sicherungBehalten")),
+        gemeldet: gewonneneUmweltNamen().filter((f) => f.meldung).map(ohneWert),
+      },
       mcp: { protocol: "2026-07-28", tools: MCP_TOOLS.length, http: "/mcp", stdio: mcpStartInDerApp(process.versions.electron, process.execPath, typeof __dirname === "string" ? __dirname : resolveDistDir()) },
       time: new Date().toISOString(),
     });
@@ -50,10 +63,18 @@ export function mountSystem(app: express.Express, ctx: AppKontext): void {
     const depth = Number.isFinite(depthRaw) ? Math.min(Math.max(depthRaw, 1), 4) : 2;
     const g = store.getGraph(entity, depth);
     const nameById = new Map(g.entities.map((e) => [e.id, e.name]));
+    // Diese Masche war bisher eine stille Lucke: Kanten, deren anderes Ende nicht im
+    // Auszug liegt, verschwanden, ohne dass die Antwort eine Zahl dafuer nannte.
+    // A1x hat die Groessenordnung gemessen (tests/core/graphdeckung.test.ts:99-104):
+    // 1.593 von 2.000 Kanten auf Damians echtem Bestand, 827 von 2.000 am
+    // 14.000-Kunstbestand. GFs Flaeche zeigte darum "0 links" bei vollen Taschen.
+    const kanten = g.relations.filter((r) => nameById.has(r.sourceId) && nameById.has(r.targetId));
+    const bestand = store.graphBestand();
+    const verworfen = g.relations.length - kanten.length;
+    const begrenzt = g.entities.length < bestand.knoten || kanten.length < bestand.kanten;
     res.json({
       entities: g.entities,
-      relations: g.relations
-        .filter((r) => nameById.has(r.sourceId) && nameById.has(r.targetId))
+      relations: kanten
         // validFrom/validTo reisen mit. Die Relation weiß, WANN sie gilt —
         // ohne die beiden Felder sah der Zeitregler jede Behauptung als
         // „gilt heute", auch die längst geplatzte.
@@ -71,7 +92,21 @@ export function mountSystem(app: express.Express, ctx: AppKontext): void {
       // Der ganze Bestand, nicht nur was durch die Kappen von `getGraph`
       // durchgekommen ist. Die Fläche sagt damit, dass sie einen Ausschnitt
       // zeigt, statt die gelieferte Zahl als Bestandszahl auszugeben.
-      bestand: store.graphBestand(),
+      bestand,
+      // Und jetzt in Zahlen, was zwischen Bestand, Kappe und Masche verloren geht —
+      // gezeigt + verworfen = im Auszug, damit eine Flaeche nie eine Bilanzzahl fuer
+      // einen Bruchteil ausgeben kann.
+      ausriss: {
+        begriffe: g.entities.length,
+        kantenImAuszug: g.relations.length,
+        kantenGezeigt: kanten.length,
+        kantenVerworfen: verworfen,
+        begrenzt,
+        grund: "edges whose other end is not in this excerpt — the caps in getGraph (500 concepts, 2000 edges) and this filter decide together what a window can draw",
+        hinweis: begrenzt || verworfen
+          ? `This excerpt holds ${g.entities.length} of ${bestand.knoten} concepts and ${kanten.length} of ${bestand.kanten} edges; the door dropped ${verworfen} edges whose other end is outside the excerpt. The base holds ${bestand.knoten} concepts and ${bestand.kanten} edges.`
+          : `This excerpt is the whole graph: ${g.entities.length} concepts and ${kanten.length} edges, nothing dropped.`,
+      },
     });
   });
 

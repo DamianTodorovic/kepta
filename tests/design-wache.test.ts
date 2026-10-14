@@ -87,6 +87,26 @@ describe("Design-Wache", () => {
     for (const l of text) expect(parseFloat(l.zahl.replace(",", "."))).toBeGreaterThanOrEqual(4.5);
   });
 
+  it("hält die Klassen-Wache: Wörter statt Teilzeichenketten, und kein nackter Rufer", () => {
+    // Zwei Blenden, die der Zensus 13.10. (e1-code/zensus.mjs) aufgedeckt hat:
+    // 1. Die tote-Stil-Zeile verglich den Quelltext mit `includes(k)` — `glass`
+    //    galt als gerufen, weil `glass-strong` dasteht, `inset` wegen `hud-inset`,
+    //    `ikone` wegen `ikone-1`, `label` wegen `hud-label`. Sie meldete 16, es
+    //    sind 20. 2. Die Gegenrichtung fehlte ganz: hud-raised (PraxisSync.tsx:172)
+    //    und row-type-label (MemoryCard.tsx:65) wurden gerufen, ohne definiert zu
+    //    sein. Beide sind jetzt Regeln in src/index.css.
+    const tot = ergebnis.linien.find((l) => /toter Stil/.test(l.befund));
+    expect(tot, "Zeile tote-r-Stil fehlt").toBeTruthy();
+    expect(Number(/^(\d+)/.exec(tot!.zahl)?.[1] ?? 0), "die Wort-Sonde meldet weniger als die Teilzeichenketten-Sonde").toBeGreaterThanOrEqual(16);
+    for (const k of ["glass", "inset", "ikone", "label"]) expect(tot!.zahl, `${k} fehlt in der Waisenliste`).toContain(k);
+    const fremd = ergebnis.linien.find((l) => /nackter Rufer/.test(l.befund));
+    expect(fremd, "Zeile nackter-Rufer fehlt").toBeTruthy();
+    expect(fremd!.ok, `nackte Rufer: ${fremd!.zahl}`).toBe(true);
+    const kontrolle = ergebnis.linien.find((l) => /Teilzeichenketten-Rufer/.test(l.befund));
+    expect(kontrolle, "positive Kontrolle fehlt").toBeTruthy();
+    expect(kontrolle!.ok).toBe(true);
+  });
+
   it("hält die Zeichen-Wache: kein Bild unter zwei Namen", () => {
     const doppel = ergebnis.linien.filter((l) => l.sektion === "icons" && /identischen Pfad-Daten/.test(l.befund));
     expect(doppel).toHaveLength(1);

@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * KEPTA — MCP Server (stdio)
+ * K3PTA — MCP Server (stdio)
  * Protokoll: MCP 2026-07-28 (stateless core) mit Legacy-Fallback (2025-06-18, 2024-11-05).
  * 8 Tools mit structuredContent — Logik geteilt mit dem HTTP-Server über src/core/mcp.ts.
  *

@@ -1,4 +1,4 @@
-// A dossier: everything KEPTA knows about one person, project or topic — on
+// A dossier: everything K3PTA knows about one person, project or topic — on
 // one page, ready to copy into a document or keep as a note.
 import { FormEvent, useEffect, useState } from 'react';
 import { FileText, Copy, Check, Save, Loader2, AlertTriangle } from '../lib/icons';
@@ -203,7 +203,7 @@ export function DossierView({ onOpenMemory, onEditMemory, dossierThema }: { onOp
 
       {daten && daten.total === 0 && (
         <p className="text-sm mt-4" style={{ color: 'var(--text-2)' }}>
-          KEPTA knows nothing about “{daten.topic}” yet. Try another name — or save a first note about it.
+          K3PTA knows nothing about “{daten.topic}” yet. Try another name — or save a first note about it.
         </p>
       )}
 

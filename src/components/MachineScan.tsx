@@ -6,7 +6,7 @@ import { inForm } from "../lib/antwort";
 /**
  * Rechner-Scan mit ausdruecklicher Zustimmung.
  *
- * KEPTA darf auf Wunsch den ganzen Rechner durchsehen und Dokumente einsammeln.
+ * K3PTA darf auf Wunsch den ganzen Rechner durchsehen und Dokumente einsammeln.
  * Alles bleibt dabei auf dem Geraet. Der Punkt, den man dem Nutzer trotzdem
  * sagen muss, ist ein anderer: was in der Wissensbasis steht, koennen
  * ANGESCHLOSSENE KI-AGENTEN ueber MCP lesen. Deshalb ist die Zustimmung hier
@@ -63,7 +63,7 @@ interface Props {
   /**
    * Beim Oeffnen sofort nachsehen, statt darauf zu warten, dass der Nutzer den
    * Knopf drueckt. Wird gesetzt, wenn er im Einrichtungs-Assistenten schon
-   * zugestimmt hat, dass KEPTA sich den Rechner ansehen darf: dann hat er die
+   * zugestimmt hat, dass K3PTA sich den Rechner ansehen darf: dann hat er die
    * Frage bereits beantwortet und will Zahlen sehen, keinen zweiten Knopf.
    * Die eigentliche Zustimmung zum LESEN holt der Dialog trotzdem hier ein.
    */
@@ -227,7 +227,7 @@ export function MachineScan({ open, onClose, onImported, autoPreview = false }: 
           <div className="flex-1 min-w-0">
             <div className="hud-label">Scan this computer</div>
             <h2 className="text-[17px] font-semibold mt-0.5" style={{ color: "var(--text-1)" }}>
-              Let KEPTA read your documents
+              Let K3PTA read your documents
             </h2>
             <p className="text-[12.5px] mt-1" style={{ color: "var(--text-2)" }}>
               Off by default. Nothing is read until you have seen what would be imported and agreed to both points below.
@@ -248,7 +248,7 @@ export function MachineScan({ open, onClose, onImported, autoPreview = false }: 
               <li>SSH and GPG keys, certificates, <code>.env</code> files, <code>credentials</code>, password stores, crypto wallets</li>
               <li>Browser profiles, cookies, saved logins, mail stores, keychains</li>
               <li>System, cache and build folders, <code>node_modules</code>, <code>.git</code>, hidden folders</li>
-              <li>Anything outside your home folder, and KEPTA's own data folder</li>
+              <li>Anything outside your home folder, and K3PTA's own data folder</li>
             </ul>
           </div>
 
@@ -258,7 +258,7 @@ export function MachineScan({ open, onClose, onImported, autoPreview = false }: 
               <ShieldAlert className="w-4 h-4" /> What you should know before you agree
             </div>
             <p className="text-[12.5px] leading-relaxed" style={{ color: "var(--text-2)" }}>
-              Everything stays on this computer — KEPTA has no cloud and no account. But an imported document becomes a
+              Everything stays on this computer — K3PTA has no cloud and no account. But an imported document becomes a
               normal note, and notes are readable by <strong style={{ color: "var(--text-1)" }}>every AI assistant you connect over MCP</strong>.
               If a document contains something you would not paste into a chat, do not import that folder.
             </p>
@@ -267,7 +267,7 @@ export function MachineScan({ open, onClose, onImported, autoPreview = false }: 
           {regelwerk && !status && (
             <div className="rounded-xl p-3.5 space-y-3" style={{ background: "var(--bg-inset)", border: "1px solid var(--border-subtle)" }}>
               <div className="flex items-center gap-2">
-                <div className="hud-label">What KEPTA may read</div>
+                <div className="hud-label">What K3PTA may read</div>
                 <button onClick={() => setZeigeRegeln((v) => !v)} className="btn-ghost px-2 py-0.5 rounded text-[11px] ml-auto">
                   {zeigeRegeln ? "Hide the full rules" : "Show the full rules"}
                 </button>
@@ -366,7 +366,7 @@ export function MachineScan({ open, onClose, onImported, autoPreview = false }: 
               {vorschau.truncated && (
                 <div className="flex items-start gap-2 text-[12.5px] rounded-lg p-2.5" style={{ background: "var(--warn-soft)", color: "var(--text-2)" }}>
                   <AlertTriangle className="w-3.5 h-3.5 mt-0.5 shrink-0" style={{ color: "var(--warn)" }} />
-                  There is more than KEPTA imports in one pass. The first {vorschau.found} documents are taken; run it again afterwards.
+                  There is more than K3PTA imports in one pass. The first {vorschau.found} documents are taken; run it again afterwards.
                 </div>
               )}
 
@@ -409,7 +409,7 @@ export function MachineScan({ open, onClose, onImported, autoPreview = false }: 
                 <label className="flex items-start gap-2.5 cursor-pointer">
                   <input type="checkbox" checked={verstandenLokal} onChange={(e) => setVerstandenLokal(e.target.checked)} className="mt-0.5" />
                   <span className="text-[12.5px]" style={{ color: "var(--text-2)" }}>
-                    I want KEPTA to read these {vorschau.found} documents and save them as notes on this computer.
+                    I want K3PTA to read these {vorschau.found} documents and save them as notes on this computer.
                   </span>
                 </label>
                 <label className="flex items-start gap-2.5 cursor-pointer">

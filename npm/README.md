@@ -2,7 +2,7 @@
 
 **Local memory for AI agents, over MCP.** One SQLite file on your own machine — no cloud, no account, no subscription. The store is never synced anywhere; what an agent then puts into a prompt travels wherever that agent's model runs.
 
-Your assistant forgets you after every chat. KEPTA remembers: Claude Desktop, Cursor and any other client that speaks the Model Context Protocol read and write the same memory, and it never leaves your computer.
+Your assistant forgets you after every chat. K3PTA remembers: Claude Desktop, Cursor and any other client that speaks the Model Context Protocol read and write the same memory, and it never leaves your computer.
 
 ## Use it
 

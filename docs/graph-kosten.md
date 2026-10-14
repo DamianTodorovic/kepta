@@ -233,7 +233,7 @@ Places that still say it, on 11 October at 18:52 — file and line, no judgement
 | `../Desktop/ki gehirn/WHITE-SPACE-ANALYSE-ENTERPRISE-2026-10-01.md` | 111 |
 | `../Desktop/ki gehirn/linkedin/LINDENBERG-UND-PROFIL-2026-09-22.md` | 45 |
 | `../Desktop/ki gehirn/web-qa/scratch/lat-feldordnung.html` (scratch) | 2820 |
-| `../Desktop/ki gehirn/NOTFALL-SICHERUNG-22-9/markdown-export-3644/` — frozen export, ~10 files (`README — 921.md:10`, `README.de — 917.md:10`, `README — 613.md:26`, `KEPTA-FUNKTIONEN — 1229.md:13`, others) | — |
+| `../Desktop/ki gehirn/NOTFALL-SICHERUNG-22-9/markdown-export-3644/` — frozen export, ~10 files (`README — 921.md:10`, `README.de — 917.md:10`, `README — 613.md:26`, `K3PTA-FUNKTIONEN — 1229.md:13`, others) | — |
 
 Checked and **clean**: `README.md:37` and `:143` of this repo carry no millisecond claim anymore;
 `~/kepta-core/README.md` and `README.de.md` never carried one; the **live** public page

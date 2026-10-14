@@ -1,6 +1,6 @@
 // Contradictions: two notes that say different things about the same thing.
 //
-// KEPTA looks for sentences in different notes that talk about the same thing
+// K3PTA looks for sentences in different notes that talk about the same thing
 // — the same meaningful words around a value — but give a different time,
 // date, amount, percentage or quantity: „Backups run nightly at 02:00“ against
 // „Backups now run nightly at 03:00“. Careful on purpose, because a false
@@ -12,7 +12,7 @@
 // - the values must be of the same kind, and neither sentence may already
 //   mention the other value („from 02:00 to 03:00“); a value that ends a range
 //   („2–4 days“) is not compared at all;
-// - notes from the same source file, parts of a file KEPTA split up
+// - notes from the same source file, parts of a file K3PTA split up
 //   („README — 5/17“) and notes already replaced by a newer one stay out, and
 //   the source line of a note („— Source: …“) is not read for values;
 // - a pair marked „both are right“ never comes back.
@@ -171,7 +171,7 @@ export function paarSchluessel(a: string, b: string): string {
 }
 
 const VERGLEICHBAR = new Set(["semantic", "procedural"]);
-/** „README — 5/17“: one part of a file KEPTA split up — a passage, not one fact. */
+/** „README — 5/17“: one part of a file K3PTA split up — a passage, not one fact. */
 const DATEITEIL = /\s[—–-]\s\d+\/([2-9]|\d{2,})$/;
 
 /** All contradictions among the notes — newest first. */

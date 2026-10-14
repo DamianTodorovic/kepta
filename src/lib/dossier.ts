@@ -1,4 +1,4 @@
-// A dossier: everything KEPTA knows about one person, project or topic — on
+// A dossier: everything K3PTA knows about one person, project or topic — on
 // one page. Facts, a timeline, how-tos, documents, open to-dos, contradictions
 // and related topics, gathered from the notes that really belong to it: the
 // hybrid search (weak hits dropped), the tag and the knowledge entity of the
@@ -75,7 +75,7 @@ function notizenZurEntitaet(store: KeptaStore, name: string): MemoryRecord[] {
 
 export async function dossier(store: KeptaStore, thema: string, opts: { limit?: number } = {}): Promise<Dossier> {
   const topic = thema.replace(/\s+/g, " ").trim().slice(0, 120);
-  if (!topic) throw new Error("Tell KEPTA who or what the dossier is about.");
+  if (!topic) throw new Error("Tell K3PTA who or what the dossier is about.");
   const treffer = await searchMemories(store, { query: topic, limit: opts.limit ?? 40 });
   const bester = treffer.hits[0]?.score ?? 0;
   const gesammelt = new Map<string, MemoryRecord>();

@@ -50,7 +50,7 @@ export default tseslint.config(
       // Leere catch-Blöcke sind hier bewusste Abfänger (defensive Guards mit
       // Kommentar daneben) — kein Fehler, den der Compiler nicht fände.
       "no-empty": ["error", { allowEmptyCatch: true }],
-      // KEPTA schrubbt Steuerzeichen als Produktversprechen (NUL, \x00-\x1F
+      // K3PTA schrubbt Steuerzeichen als Produktversprechen (NUL, \x00-\x1F
       // raus aus Notizen) — die Regexe, die sie finden, sind der legitime Einsatz.
       "no-control-regex": "off",
       // Ungenutzte Vars sind hier zu oft bewusste Dokumentation (verwerfende

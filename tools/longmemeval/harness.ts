@@ -1,4 +1,4 @@
-// KEPTA × LongMemEval — Runner.
+// K3PTA × LongMemEval — Runner.
 //
 // Ziel: ≥ 70 % auf LongMemEval, reproduzierbar, als öffentliches Asset.
 // Methodik siehe README.md im selben Ordner. Der Datensatz kommt von der
@@ -246,7 +246,7 @@ export async function betteAlleEin(
 // ── Phase 2: Antworten ──
 //
 // DER EINE Suchpfad des Produkts (engine.searchMemories: FTS5-BM25 + Vektoren +
-// Graph → RRF → Boosts). KEINE answer_session_ids, kein Orakel. Was KEPTA
+// Graph → RRF → Boosts). KEINE answer_session_ids, kein Orakel. Was K3PTA
 // zurückgibt, ist der Antwortkontext — der Judge bewertet, ob er die
 // Referenzantwort trägt (Retrieval-Fairness: das Produkt ist die Gedächtnis-
 // Schicht, der Assistenz-Text entstünde beim Kunden auf ihrer Basis).

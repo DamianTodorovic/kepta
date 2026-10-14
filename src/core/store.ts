@@ -13,6 +13,8 @@ import crypto from "node:crypto";
 // Die Zuordnung ist reine, abhaengigkeitsfreie Logik — deshalb darf der Kern
 // sie benutzen, ohne sich etwas einzuhandeln.
 import { klassifiziere } from "./klassifikation";
+import { leseUmwelt } from "./umwelt";
+import { begriffeAusText } from "./begiffe";
 import type {
   MemoryRecord,
   MemoryInput,
@@ -34,7 +36,11 @@ const SCHEMA_VERSION = 1;
 const VALID_TYPES: MemoryType[] = ["semantic", "episodic", "procedural", "reference"];
 
 export function defaultDataDir(): string {
-  const env = process.env.KEPTA_DATA_DIR;
+  // Beide Namensformen (Aufgabe #64): K3PTA_DATA_DIR zuerst, KEPTA_DATA_DIR als
+  // Rueckfall. Wer nur die alte Form gesetzt hat, behaelt seinen Ordner — und damit
+  // seinen Bestand. Der Default bleibt `~/.kepta`: ein Zug waehre eine
+  // Auslieferungstatsache, kein Texttausch.
+  const env = leseUmwelt("datenordner").wert;
   if (env) return env;
   return path.join(os.homedir(), ".kepta");
 }
@@ -936,14 +942,53 @@ export class KeptaStore {
    */
   verknuepfeNotiz(memoryId: string, titel: string, links: string[]): number {
     const t = String(titel ?? "").trim().toLowerCase();
-    const knoten = new Set<string>(t.length >= 2 ? [t] : []);
+    // Der eigene Text spricht zuerst. Ueberschriften und Wiki-Links der Notiz sind
+    // Begriffe, egal welcher Schreibweg gerade speichert — sonst gilt die Regel nur
+    // fuer die zwei Pfade, die zufaellig selbst verknuepfen (Vault, Agentenkanal),
+    // und alles aus dem Rechner-Scan bleibt ein Blatt ohne Kante.
+    const notiz = this.getMemory(memoryId);
+    const eigenen = notiz ? begriffeAusText(`${notiz.title}\n${notiz.content}`) : [];
+    const knoten = new Set<string>();
     const paare = new Map<string, [string, string]>();
-    for (const roh of links) {
+    for (const roh of [...eigenen, ...links]) {
       const n = String(roh ?? "").trim().toLowerCase();
       if (n.length < 2) continue;
       knoten.add(n);
       if (n !== t) paare.set(`${t}\u0000${n}`, [t, n]);
     }
+
+    // Begriffe, die eine Notiz zusammen nennt, sind miteinander gesetzt — nicht
+    // ueber den Titel der Notiz. Ein Titel traegt eine einzige Notiz, faellt
+    // damit gegen jeden Bedeutungsschnitt, und die Route liefert ausserdem nur
+    // Kanten, deren beide Enden mitgeliefert werden: ueber den Titel haengen
+    // Begriffe nie aneinander, und uebrig bleibt ein Kreis aus Blaettern. Die
+    // Notiz selbst ist die Aussage — wer in einem Text Budget und Fristen nennt,
+    // hat sie verbunden.
+    //
+    // Gekappt auf die ersten acht Begriffe je Notiz: aus 14 Wuerfen wuerden 91
+    // Paare, und eine lange Notiz waere ein Knotenwerk statt einer Aussage.
+    // Der Titel bleibt aus der Paarbildung draussen: er haengt schon an jedem
+    // seiner Begriffe, und dieselbe Kante zweimal zu setzen ist der alte Fehler.
+    const fuerPaare = [...knoten].filter((k) => k !== t).slice(0, 8);
+    for (let i = 0; i < fuerPaare.length; i++) {
+      for (let j = i + 1; j < fuerPaare.length; j++) {
+        const a = fuerPaare[i];
+        const b = fuerPaare[j];
+        if (!a || !b) continue;
+        paare.set(a < b ? a + "|" + b : b + "|" + a, a < b ? [a, b] : [b, a]);
+      }
+    }
+
+    // Ein Knoten ohne Kante ist auf der Flaeche ein Punkt, kein Netz: das
+    // Kraftfeld legt unverbundene Knoten auf einen Kreis. Gemessen am
+    // 14.000-Notizen-Kunstbestand — jeder Titel als eigener Begriff ergab
+    // 14.216 Begriffe fuer denselben Bestand, der mit dieser Regel 2.568 hat — eine
+    // Ueberschwemmung aus Knoten, denen keine Kante folgt. Eine
+    // Notiz, die keinen zweiten Begriff nennt, hinterlaesst darum nichts; und
+    // weil das Setzen pro Notiz geschieht, fallen ihre fruheren Kanten weg,
+    // sobald der letzte Begriff aus ihrem Text verschwindet.
+    if (paare.size === 0) knoten.clear();
+    else if (t.length >= 2) knoten.add(t);
 
     const setzen = this.db.transaction(() => {
       const entityIds: number[] = [];
@@ -1042,14 +1087,28 @@ export class KeptaStore {
     // Ein GROUP BY mit einem Join ueber die Traagertabelle — kein korrelierter
     //COUNT je Zeile: der zaehlt bei zehntausend Begriffen gegen
     // hunderttausend Zeilen, und die Graphseite haengt.
+    //
+    // Zweite Stufe seit #56: die Tragweite. Ein Begriff ist so bedeutsam, wie Notizen
+    // ihn tragen UND Aussagen an ihm sitzen — beides zusammen, nicht hintereinander
+    // rangiert. Sonst druecken 14.000 Titel-Knoten mit je einer Traegerin jede
+    // explizite Setzung eines Menschen aus der Scheibe (gemessen: ein Paar mit 60
+    // Belegen und ohne Traeger-Notiz fiel komplett raus).
     const entities = (
       this.db
         .prepare(
-          `SELECT e.id AS id, e.name AS name
+          `WITH grad AS (
+             SELECT entity_id, SUM(n) AS n FROM (
+               SELECT source_id AS entity_id, COUNT(*) AS n FROM relations GROUP BY source_id
+               UNION ALL
+               SELECT target_id AS entity_id, COUNT(*) AS n FROM relations GROUP BY target_id
+             ) GROUP BY entity_id
+           )
+           SELECT e.id AS id, e.name AS name
            FROM entities e
            LEFT JOIN memory_entities me ON me.entity_id = e.id
+           LEFT JOIN grad g ON g.entity_id = e.id
            GROUP BY e.id, e.name
-           ORDER BY COUNT(me.memory_id) DESC, e.id ASC
+           ORDER BY (COUNT(me.memory_id) + COALESCE(MAX(g.n), 0)) DESC, e.id ASC
            LIMIT 500`
         )
         .all() as Record<string, unknown>[]
@@ -1060,20 +1119,32 @@ export class KeptaStore {
     // Dasselbe fuer die Kanten: was hinter einer 2 000er-Scheibe liegt, darf
     // nicht die Einfuegereihenfolge entscheiden. Paare mit mehr Belegen — drei
     // Aussagen ueber demselben Paar sind ein staerkeres Paar als eine — stehen
-    // vorne, innerhalb des Paares die aelteste zuerst, damit der Schnitt bei
+    // vorne. Innerhalb des Paares die aelteste zuerst, damit der Schnitt bei
     // gleichem Bestand derselbe bleibt.
-    const relations = (
+    //
+    // Und die Scheibe muss in sich geschlossen sein: eine Kante, deren Ende der
+    // Begriffsschnitt nicht mitliefert, wird von der Tuer spater weggeworfen
+    // (server/router/system.ts:56). Gemessen: 1.593 von 2 000 Kanten auf einem
+    // echten Bestand, 1.711 von 2 000 im Test-Fixture — die Flaeche haette ihre
+    // Bilanz gegen eine Zahl gezogen, die sie nie zeichnet.
+    const knotenIds = entities.map((e) => e.id);
+    const kantenPlaceholders = knotenIds.map(() => "?").join(",");
+    const relations = knotenIds.length === 0 ? [] : (
       this.db
         .prepare(
-          `SELECT r.id, r.source_id, r.target_id, r.relation, r.valid_from, r.valid_to, r.memory_id
+          `WITH traeger AS (SELECT entity_id, COUNT(*) AS n FROM memory_entities GROUP BY entity_id)
+           SELECT r.id, r.source_id, r.target_id, r.relation, r.valid_from, r.valid_to, r.memory_id
            FROM relations r
            LEFT JOIN (
              SELECT source_id, target_id, COUNT(*) AS paare FROM relations GROUP BY source_id, target_id
            ) p ON p.source_id = r.source_id AND p.target_id = r.target_id
-           ORDER BY p.paare DESC, r.id ASC
+           LEFT JOIN traeger ts ON ts.entity_id = r.source_id
+           LEFT JOIN traeger tt ON tt.entity_id = r.target_id
+           WHERE r.source_id IN (${kantenPlaceholders}) AND r.target_id IN (${kantenPlaceholders})
+           ORDER BY p.paare DESC, (COALESCE(ts.n, 0) + COALESCE(tt.n, 0)) DESC, r.id ASC
            LIMIT 2000`
         )
-        .all() as Record<string, unknown>[]
+        .all(...knotenIds, ...knotenIds) as Record<string, unknown>[]
     ).map((r) => ({
       id: Number(r.id),
       sourceId: Number(r.source_id),

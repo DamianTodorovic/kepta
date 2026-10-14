@@ -1,6 +1,6 @@
 {
   "appId": "app.kepta.license-studio",
-  "productName": "KEPTA License Studio",
+  "productName": "K3PTA License Studio",
   "directories": {
     "app": "tools/license-studio/app",
     "output": "tools/license-studio/release"

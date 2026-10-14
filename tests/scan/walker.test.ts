@@ -52,7 +52,7 @@ describe("scanneVollstaendig", () => {
     expect(s.abgeschnitten).toBe(false);
   });
 
-  it("laesst ausdruecklich ausgeschlossene Pfade aus — etwa KEPTAs eigenen Datenordner", () => {
+  it("laesst ausdruecklich ausgeschlossene Pfade aus — etwa K3PTAs eigenen Datenordner", () => {
     const mitDaten = baum({
       [HEIM]: [ordner("Dokumente"), ordner(".kepta")],
       [`${HEIM}/Dokumente`]: [datei("a.md")],
@@ -173,7 +173,7 @@ describe("nachOrdner", () => {
 });
 
 describe("Der Nutzer darf eigene Ordner aussen vor lassen", () => {
-  // Die Forderung: "möchte ich auch explizit, dass man bei KEPTA einstellen
+  // Die Forderung: "möchte ich auch explizit, dass man bei K3PTA einstellen
   // kann was genau und von wo genau er wissen herausziehen kann und darf."
   const HEIM2 = "/Users/b";
   const mitArchiv = baum({

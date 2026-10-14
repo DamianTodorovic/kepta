@@ -6,8 +6,8 @@
 // 5er-Gruppen. Ausgestellt und geprüft wird offline, auf einer Maschine ohne
 // Netzverkehr dabei.
 //
-// Es gibt zwei Dinge: KEPTA Core (kostenlos, unbegrenzt, ohne Schlüssel) und
-// KEPTA Enterprise (nach Vereinbarung, persönlich ausgestellt). Ein Schlüssel
+// Es gibt zwei Dinge: K3PTA Core (kostenlos, unbegrenzt, ohne Schlüssel) und
+// K3PTA Enterprise (nach Vereinbarung, persönlich ausgestellt). Ein Schlüssel
 // gehört nur zu Enterprise. Seit 09.10.2026 hat die herunterladbare App kein
 // Schlüssel-Feld mehr und prüft auch keinen — dieser Code ist das Ausstellungs-
 // und Prüfwerkzeug für Enterprise (`tools/license-studio`,
@@ -15,7 +15,7 @@
 // App. Wer hier einen Grenzweg einbaut, baut eine Sperre ein.
 //
 // Der Stufen-Byte: 2 = Team mit Seats, 3 = Organisation nach Absprache. Nach
-// außen heißen beide KEPTA Enterprise, weil es nur diese eine bezahlte Stufe
+// außen heißen beide K3PTA Enterprise, weil es nur diese eine bezahlte Stufe
 // gibt. Die 1 war die Einzelstufe der App; ihr Name steht in den Signaturen der
 // Schlüssel, die vor dem Umbau ausgeliefert wurden, und bleibt deshalb als
 // „alt" zum Prüfen bekannt — ausgestellt wird sie nicht mehr. Auch ein Schlüssel
@@ -34,7 +34,7 @@
 //
 // Signiert wird mit Damians privatem Schlüssel, der nur in seinem
 // macOS-Schlüsselbund liegt (scripts/license-keypair.mjs legt ihn an;
-// KEPTA License Studio und scripts/generate-license.mjs signieren damit). Im
+// K3PTA License Studio und scripts/generate-license.mjs signieren damit). Im
 // Ausstellungscode steht nur der ÖFFENTLICHE Schlüssel: mit ihm lässt sich
 // prüfen, aber kein Schlüssel erzeugen.
 //
@@ -61,7 +61,7 @@ const FORM_V31 = "kepta-lizenz-v3.1";
 export const HOECHSTE_NUMMER = 0xffffffff;
 
 /**
- * Die Stufen, die sich ausstellen lassen. Beide gehören zu KEPTA Enterprise —
+ * Die Stufen, die sich ausstellen lassen. Beide gehören zu K3PTA Enterprise —
  * der Unterschied sitzt im Vertrag (Sitze für ein Team oder Umfang mit einer
  * Organisation), nicht in einer anderen Software.
  */
@@ -85,9 +85,9 @@ const CODE_STUFE: Record<number, Stufe> = { 1: "alt", 2: "business", 3: "enterpr
 const STUFEN_DRAHTNAME: Record<Stufe, string> = { alt: "pro", business: "business", enterprise: "enterprise" };
 /** Was der Käufer für seine Stufe bekommt — nach außen gibt es einen Produktnamen. */
 export const EDITIONS_LABEL: Record<Stufe, string> = {
-  alt: "KEPTA Enterprise",
-  business: "KEPTA Enterprise",
-  enterprise: "KEPTA Enterprise",
+  alt: "K3PTA Enterprise",
+  business: "K3PTA Enterprise",
+  enterprise: "K3PTA Enterprise",
 };
 /** Höchste Seat-Zahl, die ein Schlüssel tragen kann (2 Byte). */
 export const HOECHSTE_SEATS = 9999;

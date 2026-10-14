@@ -4,7 +4,7 @@ import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { SystemStatus, normalisiereHealth } from "../../src/components/SystemStatus";
 
-// Die Statusanzeige ist die Stelle, an der KEPTA behauptet, was funktioniert.
+// Die Statusanzeige ist die Stelle, an der K3PTA behauptet, was funktioniert.
 // Genau dort stand bis zum 6.9.2026 "92 % Hit@1 in der Eval" — eine Zahl aus
 // einem Korpus, den es nicht mehr gibt und die aus beiden READMEs laengst
 // entfernt war. Wer hier etwas ueber sich selbst sagt, muss es belegen koennen.
@@ -222,7 +222,7 @@ describe("SystemStatus: eine kaputte Antwort darf nichts umwerfen", () => {
     stubFetch({ health: { ...GESUND, encryption: { aktiv: false, hinweis: "The knowledge base is open in another program" } } });
     const aus = render(<SystemStatus />);
     await waitFor(() => expect(aus.container.textContent).toMatch(/open in another program/));
-    expect(aus.container.textContent).toMatch(/restart KEPTA/);
+    expect(aus.container.textContent).toMatch(/restart K3PTA/);
     aus.unmount();
 
     stubFetch({ health: { ...GESUND, encryption: { aktiv: false } } });

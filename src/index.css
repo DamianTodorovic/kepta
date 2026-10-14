@@ -60,6 +60,19 @@
   --kante-dekor: oklch(0.6968 0.0027 106.5);      /* Haarlinie in einer Fläche, 1,35 */
   --kante-stark: oklch(0.6090 0.0027 106.5);      /* sichtbare Regel, 1,90 */
   --kante-kontrolle: oklch(0.4958 0.0027 106.5);  /* Bedienelement-Berandung, 3,05 */
+  /* Flächengrenze: die Kante ZWISCHEN Blatt und Tisch. Im hellen Thema kann die
+     Leuchtkraft hier nicht mehr trennen — drei Stufen bei 1,30 überschreiben von
+     Tisch zu Blatt nur das 1,79-fache (dunkel: 18,5-faches), also trägt die Kante
+     die Grenze. Darum ≥ 3,0 gegen beide Nachbarn, nicht dekorativ. */
+  --kante-flaeche: var(--kante-kontrolle);
+  /* Materie des Schrankrückens: dieselben zwei Werte in beiden Themen — der
+     Stahl ist die eine Fläche, die sich nicht stimmt. Vorher standen sie als
+     Hex direkt in .sidebar-glass (Zensus 13.10.: „Hex als Farbwert im CSS"). */
+  --stahl-1: #0c0c0d;
+  --stahl-2: #060607;
+  /* Der griffige Punkt am Schalter: in beiden Themen rein weiß, damit er vor
+     dem Blatt wie vor dem Stahl gleich hell bleibt. */
+  --knopf: #ffffff;
   --border-subtle: var(--kante-dekor);
   --border-strong: var(--kante-stark);
   --border-hover: var(--kante-kontrolle);
@@ -238,8 +251,8 @@
      Dieselbe Leiter-Regel wie im hellen Thema, nur aufsteigend vom Tisch:
      1,30 je Nachbar, drei Stufen, Feld einen Schritt unter dem Panel. */
   --eb-0: oklch(0.1291 0.0026 286.0);   /* #070708 Tisch */
-  --eb-1: oklch(0.2651 0.0026 286.0);   /* #242425 Panel — 1,30 gegen den Tisch */
-  --eb-2: oklch(0.3428 0.0026 286.0);   /* #373738 Blatt — 1,30 gegen das Panel */
+  --eb-1: oklch(0.2651 0.0026 286.0);   /* #252526 Panel — 1,30 gegen den Tisch */
+  --eb-2: oklch(0.3428 0.0026 286.0);   /* #38383a Blatt — 1,30 gegen das Panel */
   --feld: oklch(0.1291 0.0026 286.0);   /* ein Schritt unter dem Panel */
 
   --bg-base: var(--eb-0);
@@ -257,6 +270,7 @@
   --kante-dekor: oklch(0.4379 0.0026 286.0);      /* 1,35 gegen das Blatt */
   --kante-stark: oklch(0.5174 0.0026 286.0);      /* 1,90 */
   --kante-kontrolle: oklch(0.6321 0.0026 286.0);  /* 3,05 — WCAG 1.4.11 */
+  --kante-flaeche: var(--kante-kontrolle);        /* Grenze Blatt↔Tisch, hier 7,9 gegen den Tisch */
   --border-subtle: var(--kante-dekor);
   --border-strong: var(--kante-stark);
   --border-hover: var(--kante-kontrolle);
@@ -264,7 +278,7 @@
   --inset: var(--feld);
   --edge-light: rgba(255, 255, 255, 0.05);
 
-  /* Gelöst gegen die hellste Fläche, auf der Schrift liegen kann (#373738) */
+  /* Gelöst gegen die hellste Fläche, auf der Schrift liegen kann (#38383a) */
   --text-1: oklch(0.9365 0.0027 106.5);   /* #eaeae8 — Marke bleibt, 9,89 */
   --text-2: oklch(0.8166 0.0104 93.6);    /* #bab8b1 — 6,00 */
   --text-3: oklch(0.7434 0.0097 91.6);    /* #a4a29b — 4,65: die Ebene, die erklärt */
@@ -466,20 +480,30 @@ select:focus-visible {
 /* Sidebar: der Rücken des Aktenschrankes — immer Stahl, immer dunkel,
    egal ob das Blatt daneben im Tag- oder Nachtmodus liegt. */
 .sidebar-glass {
-  background: linear-gradient(180deg, #0c0c0d, #060607);
+  background: linear-gradient(180deg, var(--stahl-1), var(--stahl-2));
   border-right: 1px solid rgba(255, 255, 255, 0.07);
   box-shadow: inset 1px 0 0 rgba(255, 255, 255, 0.03);
 }
 
 .panel, .hud-panel {
   background: var(--glass-panel);
-  border: 1px solid var(--border-subtle);
+  border: 1px solid var(--kante-flaeche);
   border-radius: var(--r-panel);
   box-shadow: var(--shadow-sm);
 }
 .inset, .hud-inset {
   background: var(--bg-inset);
   border: 1px solid var(--border-subtle);
+}
+/* Gehobene Fläche: ein Blatt über dem Panel. Wurde gerufen (PraxisSync.tsx:172
+   und :183), bevor es definiert war — der Zensus 13.10. hat den nackten Rufer
+   gefunden. Die Lage ist keine neue Schicht: sie nimmt --bg-panel-solid (= --eb-2,
+   dasselbe Blatt wie die Karten) und dieselbe Kante wie .hud-panel, damit der
+   Kontrast des Textes darauf schon gemessen ist. */
+.hud-raised {
+  background: var(--bg-panel-solid);
+  border: 1px solid var(--kante-flaeche);
+  box-shadow: var(--shadow-sm);
 }
 
 /* Kartentitel in Serif: jede Notiz liest sich wie ein Dokumentkopf */
@@ -497,7 +521,7 @@ select:focus-visible {
 .card, .hud-card {
   position: relative;
   background: var(--glass);
-  border: 1px solid var(--border-subtle);
+  border: 1px solid var(--kante-flaeche);
   border-radius: var(--r-card);
   box-shadow: var(--shadow-sm);
   transition: border-color var(--dur) var(--ease-apple), background var(--dur) var(--ease-apple), box-shadow var(--dur-slow) var(--ease-apple);
@@ -963,7 +987,7 @@ button:focus-visible, a:focus-visible, [role="button"]:focus-visible,
   height: 14px;
   width: 14px;
   border-radius: 999px;
-  background: #fff;
+  background: var(--knopf);
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
   transition: transform var(--dur) ease;
   transform: translateX(2px);
@@ -1112,7 +1136,7 @@ svg[aria-hidden="true"] { min-block-size: var(--icon-min); min-inline-size: var(
   flex-direction: column;
   gap: 10px;
   padding: 16px 16px 14px;
-  border: 1px solid var(--border-subtle);
+  border: 1px solid var(--kante-flaeche);
   border-radius: var(--r-card);
   background: var(--glass);
   transition: border-color var(--dur) var(--ease-apple), background var(--dur) var(--ease-apple);
@@ -1132,6 +1156,16 @@ svg[aria-hidden="true"] { min-block-size: var(--icon-min); min-inline-size: var(
   font-weight: var(--fw-halbfest);
   letter-spacing: 0.02em;
   white-space: nowrap;
+}
+/* Der gerufene Name fehlt. Der Stand von 13.10. (Zensus, Befund K-4): ohne diese
+   Regel läuft die Typ-Standarte über lange Namen („procedural knowledge") starr
+   bis zum Kartenrand und schneidet ihn ab — nowrap geerbt von .row-type, kein
+   eigener Umbruch. Mit min-width:0 darf das Label schrumpfen und verkürzen, die
+   Karte hält ihr Maß. */
+.row-type-label {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 .row-body { min-width: 0; }
 .row-body h3 {

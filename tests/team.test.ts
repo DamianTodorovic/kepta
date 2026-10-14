@@ -6,7 +6,7 @@
 // Bis 09.10.2026 verlangte diese Matrix zusätzlich eine Business-/Enterprise-
 // Lizenz. Die herunterladbare App hat kein Schlüssel-System mehr, also schaltet
 // allein die verwaltete Rollen-Datei — die Fälle hier prüfen genau das.
-import { describe, it, expect, beforeEach } from "vitest";
+import { describe, it, expect, beforeEach, afterEach } from "vitest";
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
@@ -132,12 +132,30 @@ describe("/api/team", () => {
   let dir: string;
   let store: KeptaStore;
   let app: import("express").Express;
+  // Kapsel: ohne diese zwei Variablen löst createApp seinen Datenordner als
+  // ~/.kepta des Anmeldekontos auf (server/app.ts:120) und schreibt dorthin.
+  // Hält tests/testkapsel.test.ts.
+  let vorherHeim: string | undefined;
+  let vorherDaten: string | undefined;
 
   beforeEach(() => {
     richtlinienCacheLeeren();
     dir = fs.mkdtempSync(path.join(os.tmpdir(), "team-api-"));
+    vorherHeim = process.env.HOME;
+    vorherDaten = process.env.KEPTA_DATA_DIR;
+    process.env.HOME = dir;
+    process.env.KEPTA_DATA_DIR = dir;
     store = new KeptaStore(path.join(dir, "test.db"));
     app = createApp(store);
+  });
+
+  afterEach(() => {
+    store.close();
+    if (vorherHeim === undefined) delete process.env.HOME;
+    else process.env.HOME = vorherHeim;
+    if (vorherDaten === undefined) delete process.env.KEPTA_DATA_DIR;
+    else process.env.KEPTA_DATA_DIR = vorherDaten;
+    fs.rmSync(dir, { recursive: true, force: true });
   });
 
   it("ohne Rollen-Datei → team null, und die Antwort nennt keine Stufe mehr", async () => {

@@ -44,7 +44,7 @@ export function RecoveryKey() {
     <div className="rounded-xl p-4 mt-3" style={{ border: '1px solid var(--border-subtle)', background: 'var(--bg-inset)' }}>
       <div className="text-sm font-medium" style={{ color: 'var(--text-1)' }}>Recovery key</div>
       <p className="text-xs mt-1" style={{ color: 'var(--text-2)' }}>
-        You and your agents never need it — KEPTA fetches the key by itself. Keep one copy in your password manager:
+        You and your agents never need it — K3PTA fetches the key by itself. Keep one copy in your password manager:
         it is the only way to open your knowledge base, or a backup of it, on a new computer. Never share it.
       </p>
       {key ? (

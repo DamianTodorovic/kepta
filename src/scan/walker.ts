@@ -48,7 +48,7 @@ export interface ScanStand {
 export interface ScanOptionen {
   maxDateien?: number;
   maxTiefe?: number;
-  /** Absolute Pfade, die ausgelassen werden (etwa KEPTAs eigener Datenordner). */
+  /** Absolute Pfade, die ausgelassen werden (etwa K3PTAs eigener Datenordner). */
   ausgeschlossen?: readonly string[];
   /** Wird zwischen den Haeppchen gefragt; true bricht ab. */
   abbrechen?: () => boolean;

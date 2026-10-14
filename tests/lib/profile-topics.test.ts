@@ -4,7 +4,7 @@ import { createDefaultProfile, loadProfile, normalizeTopics, MAX_TOPICS, MAX_TOP
 import { starterNotes } from "../../src/lib/starter";
 
 // Der Einrichtungsassistent bot acht feste Kategorien an, zwei davon aus dem
-// Umfeld des Autors ("Fishing — Bait, rods, spots", "Dropshipping"). Wer KEPTA
+// Umfeld des Autors ("Fishing — Bait, rods, spots", "Dropshipping"). Wer K3PTA
 // fuer eine Kanzlei geprueft hat, bekam als Erstes Angelkoeder angeboten.
 // Schlimmer als die Optik: jede Kategorie schrieb fremde Notizen in die
 // Datenbank des Nutzers — Forellenkoeder, Angelknoten, Shopify-Pflichtseiten.
@@ -80,7 +80,7 @@ describe("loadProfile: Migration alter Profile", () => {
 });
 
 describe("starterNotes", () => {
-  it("legt nur Notizen ueber KEPTA selbst an, nichts aus fremden Fachgebieten", () => {
+  it("legt nur Notizen ueber K3PTA selbst an, nichts aus fremden Fachgebieten", () => {
     const notizen = starterNotes();
     expect(notizen.length).toBeGreaterThan(0);
     const text = JSON.stringify(notizen).toLowerCase();

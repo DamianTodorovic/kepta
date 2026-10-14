@@ -1,6 +1,6 @@
 // Sammelt die Zahlen, die es ohne Telemetrie schon gibt.
 //
-// KEPTA misst seine Nutzer bewusst nicht — der Server bindet an 127.0.0.1 und
+// K3PTA misst seine Nutzer bewusst nicht — der Server bindet an 127.0.0.1 und
 // sonst nichts. Belege gibt es trotzdem: npm zaehlt Downloads, GitHub zaehlt
 // Sterne, Klone, Seitenaufrufe und Release-Downloads. Genau diese Zahlen sehen
 // sich Geldgeber bei quelloffenen Projekten an.

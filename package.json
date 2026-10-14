@@ -2,7 +2,7 @@
   "name": "kepta",
   "private": true,
   "version": "3.2.1",
-  "description": "KEPTA — Keeps what matters. A local brain for AI agents: SQLite, hybrid retrieval, knowledge graph, MCP 2026-07-28 — no cloud.",
+  "description": "K3PTA — Keeps what matters. A local brain for AI agents: SQLite, hybrid retrieval, knowledge graph, MCP 2026-07-28 — no cloud.",
   "author": "Damian Todorovic",
   "type": "module",
   "scripts": {
@@ -84,7 +84,7 @@
     "yaml": "^2.9.1"
   },
   "main": "electron.js",
-  "productName": "KEPTA",
+  "productName": "K3PTA",
   "license": "UNLICENSED",
   "homepage": "https://github.com/DamianTodorovic/kepta#readme",
   "repository": {

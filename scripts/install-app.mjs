@@ -1,4 +1,4 @@
-// Installiert die frisch gebaute KEPTA-App nach /Applications — der Weg, um
+// Installiert die frisch gebaute K3PTA-App nach /Applications — der Weg, um
 // „immer die neueste Version" zu haben, mit einem Befehl:
 //
 //   npm run app:installieren
@@ -35,10 +35,10 @@ console.log("— 4/7 Verschlüsselung im Paket prüfen");
 sh("node", ["scripts/pruefe-native.mjs", "release"]);
 
 const version = JSON.parse(fs.readFileSync(path.join(root, "package.json"), "utf8")).version;
-console.log(`— 5/7 Installieren (KEPTA ${version})`);
+console.log(`— 5/7 Installieren (K3PTA ${version})`);
 // pkill ist exit 1, wenn gerade nichts läuft — kein Fehler.
 try {
-  execFileSync("pkill", ["-x", "KEPTA"], { stdio: "ignore" });
+  execFileSync("pkill", ["-x", "K3PTA"], { stdio: "ignore" });
 } catch {
   // keine laufende App — nichts zu beenden
 }
@@ -53,11 +53,11 @@ console.log("— 6/7 Modul für Node zurückbauen (Tests bleiben lauffähig)");
 sh("npm", ["rebuild", "better-sqlite3-multiple-ciphers"]);
 
 console.log("— 7/7 Starten und Versionsanzeige prüfen");
-sh("open", ["-a", "KEPTA"]);
+sh("open", ["-a", "K3PTA"]);
 await new Promise((r) => setTimeout(r, 6000));
 // Die Build-Staging-Kopien entfernen — sonst tauchen sie im Launcher/Spotlight
-// als weitere „KEPTA"-Versionen auf (das Versionen-Chaos vom 17.9.). Der
-// Launcher soll GENAU EINE KEPTA zeigen: /Applications.
+// als weitere „K3PTA"-Versionen auf (das Versionen-Chaos vom 17.9.). Der
+// Launcher soll GENAU EINE K3PTA zeigen: /Applications.
 for (const staging of ["release/mac-arm64", "release/mac"]) {
   fs.rmSync(path.join(root, staging), { recursive: true, force: true });
 }
@@ -75,10 +75,10 @@ if (!gesund) {
   console.error("App läuft, aber die Health-API antwortete nicht — bitte Fenster prüfen.");
   process.exit(1);
 }
-console.log(`\nInstalliert: KEPTA ${version} (${process.arch})`);
+console.log(`\nInstalliert: K3PTA ${version} (${process.arch})`);
 // Die App meldet ihre Version, sonst nichts: ein Schlüssel-System gibt es in
 // dieser App nicht mehr (09.10.2026), also prüft auch niemand einen Schlüssel.
-console.log(`Anzeige in der App: KEPTA ${gesund.version} · unbegrenzt`);
+console.log(`Anzeige in der App: K3PTA ${gesund.version} · unbegrenzt`);
 if (gesund.version !== version) {
   console.error(`ACHTUNG: die laufende App meldet ${gesund.version}, gebaut wurde ${version}.`);
   process.exit(1);

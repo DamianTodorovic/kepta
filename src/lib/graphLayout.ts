@@ -34,6 +34,13 @@ export interface LayoutNode {
   r: number;
   /** Waehrend des Ziehens festgehalten. Nach dem Loslassen wieder frei. */
   pinned: boolean;
+  /**
+   * Die Stelle, an der dieser Knoten beim ERSTEN Griff lag. `loeseKnoten` stellt
+   * sie wieder her — ohne sie ist „Release pinned" nur ein „wieder der Physik
+   * übergeben", und genau das war die Klage vom 13.10.: „passiert garnichts und
+   * der knoten geht nicht an seinen ursprünglichen Punkt zurück".
+   */
+  ursprung?: { x: number; y: number };
 }
 
 export interface LayoutEdge {
@@ -840,6 +847,10 @@ export function reuseSimulation(
     const alt = vorher.index.get(n.id);
     if (!alt) continue;
     n.x = alt.x; n.y = alt.y; n.vx = alt.vx; n.vy = alt.vy; n.pinned = alt.pinned;
+    // Der gemerkte Ursprung wandert mit: `idsSchluessel` der Flaeche aendert sich
+    // bei jedem Tipp im Suchfeld, und ein Ursprung, der hier fiele, waere beim
+    // naechsten Filter weg — der Loesungsknopf waere auch wieder wirkungslos.
+    if (alt.ursprung) n.ursprung = { x: alt.ursprung.x, y: alt.ursprung.y };
     uebernommen++;
   }
   // Nur nachwaermen, wenn sich wirklich etwas geaendert hat.
@@ -863,6 +874,41 @@ export function vorspannen(sim: Simulation, runden: number): void {
 /** Simulation wieder anheizen — etwa, wenn der Nutzer einen Knoten zieht. */
 export function reheat(sim: Simulation, alpha = 0.35): void {
   sim.alpha = Math.max(sim.alpha, alpha);
+}
+
+/**
+ * Merkt die Stelle des ERSTEN Griffs. Ein zweiter Griff ueberschreibt sie nicht:
+ * „zurueck" heißt zurueck an den Anfang, nicht an die letzte Ablagestelle.
+ */
+export function merkUrsprung(sim: Simulation, id: string): boolean {
+  const n = sim.index.get(id);
+  if (!n || n.ursprung) return false;
+  n.ursprung = { x: n.x, y: n.y };
+  return true;
+}
+
+/**
+ * Gibt einen Knoten an seine gemerkte Stelle zurueck und laesst ihn frei.
+ *
+ * Ohne `reheat`: der Knopf verspricht einen Weg zurueck, kein Neubepleben des
+ * ganzen Feldes. Ein kaltes Feld bleibt darum kalt, und was zurueckgeht, ist
+ * genau der Knoten, den die Hand wegggenommen hat.
+ *
+ * Rueckgabewert ist der zurueckgelegte Weg in Welteinheiten — 0, wenn es nichts
+ * zurueckzugeben gab. Das ist die Zahl hinter „Release N pinned": gezaehlt wird
+ * nur, was auch eine zurueckgehbare Stelle hat.
+ */
+export function loeseKnoten(sim: Simulation, id: string): number {
+  const n = sim.index.get(id);
+  if (!n?.ursprung) return 0;
+  const { x, y } = n.ursprung;
+  const weg = Math.hypot(n.x - x, n.y - y);
+  n.x = x;
+  n.y = y;
+  n.vx = 0;
+  n.vy = 0;
+  n.pinned = false;
+  return weg;
 }
 
 /**
@@ -1059,6 +1105,24 @@ export function layoutBounds(nodes: readonly LayoutNode[], padding = 0): Bounds 
     if (n.y > maxY) maxY = n.y;
   }
   return { minX: minX - padding, minY: minY - padding, maxX: maxX + padding, maxY: maxY + padding };
+}
+
+/**
+ * Ab wann ist das Kraftfeld kein Netz, sondern eine Punktwolke, die sich für
+ * eines ausgibt?
+ *
+ * Die Fläche malt jede Notiz als Knoten. Hängt die Mehrzahl der Notizen an
+ * keinem Begriff, steht ein rundes Feld voller Punkte im Bild — bei 14 702
+ * Notizen und 37 gedeckten (Damian, 13.10.) sind das 4-Bildpunkte Abstand pro
+ * Punkt und null Etiketten. Die Marke ist die Hälfte des Bestands, die der Gang
+ * schon für sich beansprucht (`graphLayout.ts` Gangregel: `allein · 2 ≤ Knoten`),
+ * nach unten verschärft auf zwanzigstel: unter fünf Prozent gedeckter Notizen
+ * verbindet das Bild nichts, was es zeigt. Unter 200 Notizen greift die Marke
+ * nicht — eine kleine Basis darf sich als Feld zeigen, auch wenn sie noch
+ * verstreut ist.
+ */
+export function punktwolke(notizen: number, gedeckt: number): boolean {
+  return notizen >= 200 && gedeckt * 20 < notizen;
 }
 
 /**
@@ -1558,6 +1622,12 @@ export interface EntitaetsNetz {
   /** [notizId, knotenId] */
   erwahnungen: [string, string][];
   behauptungen: Behauptung[];
+  /**
+   * Behauptungen, die im Bestand stehen, deren beurkundende Notiz im Bild steht
+   * und die die Titel-Echo-Regel (G-1) nicht durchlässt. Die Zahl gehört an die
+   * Fläche: verborgen ist hier richtig, verschwiegen wäre falsch.
+   */
+  vomEchoVerschluckt: number;
 }
 
 export interface RoheRelation {
@@ -1627,11 +1697,24 @@ export function entitaetsNetz(
     if (sichtbare.length > 0) notizenVon.set(name, sichtbare);
   }
 
+  /**
+   * Die Trägerzahl je Begriff **im ganzen Bestand** — nicht im Ausschnitt. Ob
+   * ein Begriff nur seine eigene Notiz hat, ist eine Tatsache der
+   * Wissensbasis; Filter und Zeitregler entscheiden, was gezeichnet wird, aber
+   * nicht, was ein Titel-Echo ist. Ohne diese Zeile machte ein Tipp im Suchfeld
+   * eine lebende Behauptung zu einer Überschrift.
+   */
+  const traegerImBestand = new Map<string, number>();
+  for (const [name, ids] of Object.entries(memoriesByEntity ?? {})) {
+    traegerImBestand.set(name, new Set(ids).size);
+  }
+
   const echo = (name: string): boolean => {
     if (!titelVon) return false;
-    const ids = notizenVon.get(name);
-    if (!ids || ids.length !== 1) return false;
-    const titel = (titelVon(ids[0]!) ?? "").trim().toLowerCase();
+    if ((traegerImBestand.get(name) ?? 0) !== 1) return false;
+    const einzig = (memoriesByEntity ?? {})[name]?.[0];
+    if (!einzig) return false;
+    const titel = (titelVon(einzig) ?? "").trim().toLowerCase();
     return titel !== "" && titel === name.trim().toLowerCase();
   };
 
@@ -1651,10 +1734,14 @@ export function entitaetsNetz(
   for (const [name, notizen] of notizenVon) if (notizen.length >= mindesten && !echo(name)) nimm(name);
 
   const behauptungen: Behauptung[] = [];
+  /**
+   * Wie viele Behauptungen das Titel-Echo nicht durchlässt, obwohl ihre
+   * beurkundende Notiz im Bild steht. G-1 entscheidet bewusst, diese Kanten zu
+   * verbergen — aber ein Bild, das etwas verbirgt, muss die Zahl dazusagen,
+   * sonst hält der Nutzer seine eigenen Wiki-Links für fehlgeschlagen.
+   */
+  let vomEchoVerschluckt = 0;
   for (const r of relationen ?? []) {
-    // Eine Aussage, die an einem Titel-Echo hängt, ist keine Aussage: Der
-    // Schreibweg hat sie erzeugt, nicht ein Mensch.
-    if (echo(r.source) || echo(r.target)) continue;
     const traeger = r.memoryId ?? null;
     const sichtbarFuerBehauptung = traeger !== null ? sichtbar.has(traeger) : (() => {
       // Ohne beurkundende Notiz kann kein Filter und kein Zeitregler die Kante
@@ -1667,6 +1754,12 @@ export function entitaetsNetz(
       return a >= 1 && b >= 1;
     })();
     if (!sichtbarFuerBehauptung) continue;
+    // Eine Aussage, die an einem Titel-Echo hängt, ist keine Aussage: Der
+    // Schreibweg hat sie erzeugt, nicht ein Mensch. Der Verlust ist gezählt.
+    if (echo(r.source) || echo(r.target)) {
+      vomEchoVerschluckt++;
+      continue;
+    }
     nimm(r.source);
     nimm(r.target);
     behauptungen.push({
@@ -1682,5 +1775,5 @@ export function entitaetsNetz(
   const knoten = [...netze.values()].sort((a, b) => a.label.localeCompare(b.label));
   const erwahnungen: [string, string][] = [];
   for (const k of knoten) for (const notizId of k.notizen) erwahnungen.push([notizId, k.id]);
-  return { knoten, erwahnungen, behauptungen };
+  return { knoten, erwahnungen, behauptungen, vomEchoVerschluckt };
 }

@@ -3,6 +3,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import os from "node:os";
+import { leseUmwelt } from "./umwelt";
 import { KeptaStore } from "./store";
 import type { MemoryInput } from "./types";
 
@@ -31,7 +32,8 @@ export interface MigrationResult {
  * KEPTA_DATA_DIR bleiben die Home-Pfade wie bisher.
  */
 export function legacyJsonPaths(): string[] {
-  const datenVerzeichnis = process.env.KEPTA_DATA_DIR;
+  // Beide Namensformen (Aufgabe #64).
+  const datenVerzeichnis = leseUmwelt("datenordner").wert;
   if (datenVerzeichnis) return [path.join(datenVerzeichnis, "memories.json")];
 
   const home = os.homedir();

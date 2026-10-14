@@ -21,7 +21,7 @@ const zeilen = README.split("\n");
 function versprochenePakete(): string[] {
   return zeilen
     .map((z, i) => ({ z, n: i + 1 }))
-    .filter(({ z }) => /KEPTA-<version>-(win|linux)|win-x64\.exe|win-arm64\.exe|AppImage|\.deb\b/i.test(z))
+    .filter(({ z }) => /K3PTA-<version>-(win|linux)|win-x64\.exe|win-arm64\.exe|AppImage|\.deb\b/i.test(z))
     .filter(({ z }) => !/build:win|build:linux|baue|build them|selbst/i.test(z))
     .map(({ z, n }) => `${n}: ${z.trim()}`);
 }

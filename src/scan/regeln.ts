@@ -1,6 +1,6 @@
 // Was darf ein Rechner-Scan lesen — und was niemals?
 //
-// KEPTA soll auf Wunsch den ganzen Rechner durchsehen und Wissen einsammeln.
+// K3PTA soll auf Wunsch den ganzen Rechner durchsehen und Wissen einsammeln.
 // Alles bleibt dabei auf dem Geraet; es gibt keine Cloud und der Kern hat keinen
 // Netzzugang. Trotzdem ist das die eingriffsstaerkste Funktion der Anwendung,
 // aus einem Grund, der leicht uebersehen wird: was einmal in der Wissensbasis

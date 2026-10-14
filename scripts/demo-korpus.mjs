@@ -68,7 +68,7 @@ const N = [
   ["reference", "Meeting notes template", ["template", "process"], "Date · People · Decisions · Open questions · Next steps (who, by when).", 16],
   ["reference", "Keyboard shortcuts", ["team", "tools"], "⌘K command palette · ⌘1–7 switch views · ⌘N new note · ? all shortcuts.", 16],
   ["reference", "Glossary", ["team"], "Reverse charge: the customer pays the VAT. Accruals: costs in the right period. Close: the month-end or year-end routine.", 15],
-  ["reference", "Team working agreement", ["team", "process"], "Core hours 10–15. Decisions go into KEPTA the same day. Reviews within one working day.", 14],
+  ["reference", "Team working agreement", ["team", "process"], "Core hours 10–15. Decisions go into K3PTA the same day. Reviews within one working day.", 14],
   ["reference", "Engagement letter — Orion Health", ["document", "contract"], "Scope: bookkeeping, payroll and a monthly summary for [[Orion Health]].", 10],
   ["reference", "Portal user guide", ["document", "portal"], "How clients upload receipts and download reports in the [[Client Portal]].", 8],
   ["reference", "Cash-flow model — Nordwind", ["document", "finance"], "A 13-week cash-flow model for [[Nordwind Logistics]], requested by [[Tobias Roth]].", 7],

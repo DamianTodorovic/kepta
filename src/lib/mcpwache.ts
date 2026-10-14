@@ -1,4 +1,4 @@
-// Everything around one MCP request in KEPTA Enterprise: the privacy shield
+// Everything around one MCP request in K3PTA Enterprise: the privacy shield
 // before and after the tool, then the activity feed and the audit log — both
 // with exactly what the AI app got to see.
 //
@@ -21,7 +21,7 @@ export interface McpSchutz {
   privateTitel: ReadonlySet<string>;
 }
 
-export const PRIVAT_MELDUNG = "This note is private — its owner keeps it away from AI apps, so KEPTA cannot show or change it.";
+export const PRIVAT_MELDUNG = "This note is private — its owner keeps it away from AI apps, so K3PTA cannot show or change it.";
 
 /** Reads the settings and the private notes afresh for every call — a switch in the app counts at once. */
 export function ladeSchutz(store: KeptaStore): McpSchutz {

@@ -81,6 +81,12 @@ describe("getGraph: die Scheibe der Kanten ist dieselbe Rechnung", () => {
     // 2 100 Kanten ueber verstreute Paare, dazu ein Paar mit 60 Belegen —
     // angelegt ZULETZT. Ohne ORDER BY faellt der starke Paarstapel aus der
     // 2 000er-Scheibe, mit ihr bleibt er.
+    //
+    // Nachtrag #56: die Kantenscheibe ist jetzt *in sich geschlossen* — eine Kante,
+    // deren Ende der Begriffsschnitt (500 von 1.402 Knoten) nicht mitliefert, wird
+    // erst gar nicht gewaehlt. Darum liefert dieser Bestand weniger als 2 000 Kanten,
+    // und das ist die richtige Zahl: die Flaeche kann nur zeichnen, was die Tuer
+    // wirklich mitgeschickt hat. Getauscht wird nicht mehr gegen eine Scheibengroesse.
     const E = 700;
     for (let i = 0; i < E; i++) {
       const m = notiz(store!, 3000 + i);
@@ -91,10 +97,14 @@ describe("getGraph: die Scheibe der Kanten ist dieselbe Rechnung", () => {
     }
     for (let i = 0; i < 60; i++) store!.addRelation("wichtig A", "wichtig B", `belegt ${i}`, null);
 
-    const { relations } = store!.getGraph();
-    expect(relations.length, "die Kantscheibe liefert nicht 2 000").toBe(2000);
+    const { entities, relations } = store!.getGraph();
+    expect(relations.length).toBeGreaterThan(0);
+    expect(relations.length).toBeLessThanOrEqual(2000);
+    const ids = new Set(entities.map((e) => e.id));
+    const aussen = relations.filter((r) => !ids.has(r.sourceId) || !ids.has(r.targetId));
+    expect(aussen, `${aussen.length} Kanten ohne mitgeliefertes Ende`).toHaveLength(0);
     const starke = relations.filter((r) => r.relation.startsWith("belegt ")).length;
-    expect(starke, `von 60 Belegen des wichtigsten Paares stehen ${starke} im Schnitt`).toBeGreaterThan(0);
+    expect(starke, `von 60 Belegen des wichtigsten Paares stehen ${starke} im Schnitt`).toBe(60);
   });
 
   it("liefert denselben Schnitt, wenn niemand etwas schreibt", () => {

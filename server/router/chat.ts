@@ -53,7 +53,7 @@ export function mountChat(app: express.Express, ctx: AppKontext): void {
     let system = schild ? schild.schirme(ohne.text) : ohne.text;
     const messages = schild ? body.messages.map((m) => ({ ...m, content: schild.schirme(String(m.content ?? "")) })) : body.messages;
     if (schild && !schild.leer) {
-      system += "\n\n(Privacy note from KEPTA: some personal values were replaced with placeholders such as [EMAIL-1]. Keep every placeholder exactly as written — KEPTA puts the real values back before the user reads your answer.)";
+      system += "\n\n(Privacy note from K3PTA: some personal values were replaced with placeholders such as [EMAIL-1]. Keep every placeholder exactly as written — K3PTA puts the real values back before the user reads your answer.)";
     }
     const text = schild ? beschreibe(schild.zaehlung) : "";
     protokolliere(store, {

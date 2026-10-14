@@ -1,6 +1,6 @@
 // P-10: das Schema-Inventar. Cognee zeigt im „Schema"-Tab, was in seiner
 // Wissensbasis eigentlich vorkommt — Zählungen je Typ und wie Typen verbunden
-// sind. Bei KEPTA standen diese Zahlen verstreut: die Art-Ziffern auf den
+// sind. Bei K3PTA standen diese Zahlen verstreut: die Art-Ziffern auf den
 // Dashboard-Kacheln, die Kantenarten in der Legende, die Kantentypen an den
 // Linien selbst.
 //

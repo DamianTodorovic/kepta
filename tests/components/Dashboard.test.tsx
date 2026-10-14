@@ -470,7 +470,7 @@ describe("Dashboard: Gehirn-Status (Paket 2 — Health auf der Fläche)", () => 
     }));
     const { container } = await zeige([note()]);
     const status = container.querySelector('[data-testid="gehirn-status"]');
-    await waitFor(() => expect(status?.textContent).toMatch(/KEPTA 3\.1\.1/), { timeout: 3000 });
+    await waitFor(() => expect(status?.textContent).toMatch(/K3PTA 3\.1\.1/), { timeout: 3000 });
     expect(status!.textContent).toMatch(/42 nodes in the brain/);
     expect(status!.textContent).toMatch(/Encrypted/);
     expect(status!.textContent).toMatch(/nomic-embed-text 8/);

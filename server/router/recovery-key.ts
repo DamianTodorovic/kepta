@@ -17,7 +17,7 @@ export function mountRecoveryKey(app: express.Express, ctx: AppKontext): void {
     if (!/^(127\.0\.0\.1|localhost):\d+$/.test(req.headers.host ?? "")) return res.status(403).json({ error: "Forbidden host." });
     const herkunft = req.headers.origin;
     if (herkunft && !/^http:\/\/(127\.0\.0\.1|localhost):\d+$/.test(herkunft)) return res.status(403).json({ error: "Forbidden origin." });
-    if (req.get("x-kepta-recovery") !== "1") return res.status(403).json({ error: "This request must come from the KEPTA window." });
+    if (req.get("x-kepta-recovery") !== "1") return res.status(403).json({ error: "This request must come from the K3PTA window." });
     let schluessel: string | null;
     try {
       schluessel = store.wiederherstellungsSchluessel();

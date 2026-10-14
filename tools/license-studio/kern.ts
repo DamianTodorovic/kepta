@@ -1,4 +1,4 @@
-// KEPTA License Studio — die Logik ohne Fenster.
+// K3PTA License Studio — die Logik ohne Fenster.
 //
 // Ausstellen, prüfen, sperren, die fertige Nachricht an den Kunden und die
 // Liste der ausgestellten Lizenzen. Signiert und geprüft wird mit
@@ -8,7 +8,7 @@
 // weitergegeben, kommt seine Nummer auf die Sperrliste (src/core/sperrliste.ts)
 // und gilt bei jeder weiteren Prüfung als gesperrt.
 //
-// Ausgestellt wird nur KEPTA Enterprise (Vertrag, persönlich). Die App selbst
+// Ausgestellt wird nur K3PTA Enterprise (Vertrag, persönlich). Die App selbst
 // hat seit 09.10.2026 kein Schlüssel-Feld mehr und läuft unbegrenzt — ein
 // Schlüssel weist den Vertrag aus, er schaltet nichts frei.
 import fs from "node:fs";
@@ -58,7 +58,7 @@ export function vorname(name: string): string {
 
 /** Passt der private Schlüssel zum Prüfschlüssel? Sonst wäre jeder ausgestellte Schlüssel wertlos. */
 export function passtZurApp(privat: string, oeffentlich: string = OEFFENTLICHER_SCHLUESSEL): boolean {
-  const probe = "KEPTA License Studio — Selbsttest";
+  const probe = "K3PTA License Studio — Selbsttest";
   try {
     return pruefeSchluessel(probe, signiere(probe, 1, privat, "enterprise"), oeffentlich, KEINE_SPERRE).gueltig;
   } catch {
@@ -147,15 +147,15 @@ export function nachricht(name: string, nummer: number, key: string, sprache: Sp
   const produkt = EDITIONS_LABEL[edition];
   const stufeZeilen = sprache === "en"
     ? edition === "business"
-      ? [`This is a KEPTA Enterprise license for your team, covering ${seatsFuerAnzeige(seats)} seats — one seat per person, personal keys only.`]
+      ? [`This is a K3PTA Enterprise license for your team, covering ${seatsFuerAnzeige(seats)} seats — one seat per person, personal keys only.`]
       : edition === "enterprise"
-        ? ["This is a KEPTA Enterprise license. The scope and terms are the ones we agreed with your organization individually."]
-        : ["This is a KEPTA license from before today's Enterprise plans — for you personally. It stays as a record; KEPTA itself runs unlimited."]
+        ? ["This is a K3PTA Enterprise license. The scope and terms are the ones we agreed with your organization individually."]
+        : ["This is a K3PTA license from before today's Enterprise plans — for you personally. It stays as a record; K3PTA itself runs unlimited."]
     : edition === "business"
-      ? [`Das ist eine KEPTA-Enterprise-Lizenz für euer Team mit ${seatsFuerAnzeige(seats)} Seats — ein Platz pro Person, bitte nur persönliche Schlüssel.`]
+      ? [`Das ist eine K3PTA-Enterprise-Lizenz für euer Team mit ${seatsFuerAnzeige(seats)} Seats — ein Platz pro Person, bitte nur persönliche Schlüssel.`]
       : edition === "enterprise"
-        ? ["Das ist eine KEPTA-Enterprise-Lizenz. Umfang und Konditionen sind die, die wir mit eurer Organisation individuell vereinbart haben."]
-        : ["Das ist eine KEPTA-Lizenz aus der Zeit vor den heutigen Enterprise-Verträgen — für dich persönlich. Sie bleibt als Nachweis stehen; KEPTA selbst läuft unbegrenzt."];
+        ? ["Das ist eine K3PTA-Enterprise-Lizenz. Umfang und Konditionen sind die, die wir mit eurer Organisation individuell vereinbart haben."]
+        : ["Das ist eine K3PTA-Lizenz aus der Zeit vor den heutigen Enterprise-Verträgen — für dich persönlich. Sie bleibt als Nachweis stehen; K3PTA selbst läuft unbegrenzt."];
   const zeilen = sprache === "en"
     ? [
         `Hi ${vorname(n)},`,
@@ -171,7 +171,7 @@ export function nachricht(name: string, nummer: number, key: string, sprache: Sp
         `   Name:        ${n}`,
         `   License key: ${key}`,
         "",
-        "KEPTA needs no key to run: every tool is unlimited. This key records your agreement, nothing leaves your Mac.",
+        "K3PTA needs no key to run: every tool is unlimited. This key records your agreement, nothing leaves your Mac.",
         `This is license no. ${nr}. ${stufeZeilen[0]} So please keep the key to yourself.`,
         "",
         "If anything is unclear, just reply here.",
@@ -186,14 +186,14 @@ export function nachricht(name: string, nummer: number, key: string, sprache: Sp
         "",
         `1. Herunterladen: ${DOWNLOAD}`,
         "   Apple Silicon (M1 und neuer): KEPTA-…-mac-arm64.dmg · Intel: KEPTA-…-mac-x64.dmg",
-        "2. DMG öffnen und KEPTA in „Programme“ ziehen. Beim ersten Öffnen meldet macOS, dass der Entwickler nicht überprüft werden kann:",
+        "2. DMG öffnen und K3PTA in „Programme“ ziehen. Beim ersten Öffnen meldet macOS, dass der Entwickler nicht überprüft werden kann:",
         "   Systemeinstellungen → Datenschutz & Sicherheit → „Dennoch öffnen“.",
         "3. Dein Schlüssel ist ausgestellt auf:",
         "",
         `   Name:            ${n}`,
         `   Lizenzschlüssel: ${key}`,
         "",
-        "KEPTA braucht keinen Schlüssel, um zu laufen: jedes Werkzeug ist unbegrenzt. Der Schlüssel weist euren Vertrag aus, und nichts verlässt deinen Mac.",
+        "K3PTA braucht keinen Schlüssel, um zu laufen: jedes Werkzeug ist unbegrenzt. Der Schlüssel weist euren Vertrag aus, und nichts verlässt deinen Mac.",
         `Das ist Lizenz Nr. ${nr}. ${stufeZeilen[0]} Bitte gib den Schlüssel nicht weiter.`,
         "",
         "Wenn etwas unklar ist, antworte einfach hier.",
@@ -211,7 +211,7 @@ function seatsFuerAnzeige(seats?: number): number {
 
 const SPERRLISTE_KOPF = [
   "// Gesperrte Lizenznummern — Schlüssel, die weitergegeben oder öffentlich",
-  "// geworden sind. KEPTA License Studio trägt sie hier ein („Sperren“). Mit dem",
+  "// geworden sind. K3PTA License Studio trägt sie hier ein („Sperren“). Mit dem",
   "// nächsten Update gelten diese Schlüssel nicht mehr, auch nicht auf Rechnern,",
   "// die schon aktiviert waren.",
   "//",

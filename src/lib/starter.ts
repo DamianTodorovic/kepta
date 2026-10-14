@@ -4,7 +4,7 @@ import starterPacks from '../data/starter-packs.json';
 // und Angelknoten in seine Datenbank geschrieben, wer "Dropshipping" waehlte
 // Shopify-Pflichtseiten. Das war nicht nur schief positioniert — es war falsch:
 // ein Gedaechtnis, das mit "dein Wissen" wirbt, darf nicht mit fremdem Wissen
-// starten. Uebrig bleibt, was fuer jeden gilt und was KEPTA ueber sich selbst
+// starten. Uebrig bleibt, was fuer jeden gilt und was K3PTA ueber sich selbst
 // erklaert. Was der Nutzer fachlich macht, tippt er selbst ein — siehe
 // normalizeTopics in profile.ts.
 

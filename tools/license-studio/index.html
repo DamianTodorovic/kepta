@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'unsafe-inline'; script-src 'unsafe-inline'; img-src data:">
-<title>KEPTA License Studio</title>
+<title>K3PTA License Studio</title>
 <style>
 :root {
   --bg: #070708; --panel: #101012; --inset: rgba(255,255,255,0.045); --inset-2: rgba(255,255,255,0.085);
@@ -92,7 +92,7 @@ td.aktion .knopf + .knopf { margin-left: 6px; }
 <aside>
   <div class="marke">
     <svg width="30" height="30" viewBox="0 0 30 30" aria-hidden="true"><rect width="30" height="30" rx="8" fill="#c04a39"/><path d="M10.2 8.6v12.8M10.2 15l7.1-5.9M10.2 15l7.1 6.4" stroke="#fff" stroke-width="1.8" fill="none"/><circle cx="21" cy="9.6" r="1.6" fill="#fff"/></svg>
-    <div><b>KEPTA</b><span>License Studio</span></div>
+    <div><b>K3PTA</b><span>License Studio</span></div>
   </div>
   <nav>
     <button type="button" data-ansicht="ausstellen" aria-current="page"><span>Ausstellen</span><kbd>⌘1</kbd></button>
@@ -114,8 +114,8 @@ td.aktion .knopf + .knopf { margin-left: 6px; }
       <div class="reihe">
         <label><span>Stufe</span>
           <select id="edition">
-            <option value="enterprise" selected>KEPTA Enterprise — Organisation, Umfang nach Absprache</option>
-            <option value="business">KEPTA Enterprise — Team mit Seats (1–9999)</option>
+            <option value="enterprise" selected>K3PTA Enterprise — Organisation, Umfang nach Absprache</option>
+            <option value="business">K3PTA Enterprise — Team mit Seats (1–9999)</option>
           </select>
         </label>
         <label id="seats-feld" hidden><span>Seats (Plätze, 1–9999)</span><input id="seats" type="number" min="1" max="9999" placeholder="z. B. 5"></label>
@@ -179,7 +179,7 @@ let hinweisRunde = 0;
 
 const datum = (iso) => new Date(iso).toLocaleString("de-DE", { day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit" });
 const nr = (n) => String(n).padStart(4, "0");
-const STUFEN = { business: "KEPTA Enterprise", enterprise: "KEPTA Enterprise", alt: "KEPTA Enterprise" };
+const STUFEN = { business: "K3PTA Enterprise", enterprise: "K3PTA Enterprise", alt: "K3PTA Enterprise" };
 const stufeVon = (e) => (e.edition === "business" || e.edition === "enterprise" ? e.edition : "alt");
 const stufeText = (e) => {
   const st = stufeVon(e);
@@ -218,16 +218,16 @@ async function ladeStatus() {
     el.innerHTML = '<span class="punkt"></span>Kein Signaturschlüssel im Schlüsselbund. Einmalig im Terminal: <code>node scripts/license-keypair.mjs</code>';
   } else if (!st.passt) {
     el.className = "status schlecht";
-    el.innerHTML = '<span class="punkt"></span>Der Signaturschlüssel passt nicht zu KEPTA — Schlüssel würden in der App nicht funktionieren.';
+    el.innerHTML = '<span class="punkt"></span>Der Signaturschlüssel passt nicht zu K3PTA — Schlüssel würden in der App nicht funktionieren.';
   } else {
     el.className = "status gut";
-    el.innerHTML = '<span class="punkt"></span>Signaturschlüssel bereit · passt zu KEPTA';
+    el.innerHTML = '<span class="punkt"></span>Signaturschlüssel bereit · passt zu K3PTA';
   }
   const info = $("sperr-info");
   info.hidden = st.gesperrt.length === 0;
   info.textContent = st.gesperrt.length === 0 ? ""
-    : `Gesperrt: Nr. ${st.gesperrt.map(nr).join(", ")} — gilt ab dem nächsten KEPTA-Update.`
-      + (st.sperrlisteGefunden ? "" : " Die Sperrliste von KEPTA (src/core/sperrliste.ts) wurde nicht gefunden — trag die Nummern dort ein.");
+    : `Gesperrt: Nr. ${st.gesperrt.map(nr).join(", ")} — gilt ab dem nächsten K3PTA-Update.`
+      + (st.sperrlisteGefunden ? "" : " Die Sperrliste von K3PTA (src/core/sperrliste.ts) wurde nicht gefunden — trag die Nummern dort ein.");
   $("listen-pfad").textContent = st.listeDatei.replace(/^\/Users\/[^/]+/, "~");
   $("fehler-liste").hidden = !st.listenFehler;
   $("fehler-liste").textContent = st.listenFehler || "";
@@ -298,7 +298,7 @@ $("form-pruef").addEventListener("submit", async (ev) => {
   el.hidden = false;
   if (r.gueltig) {
     el.className = "ergebnis gut";
-    el.textContent = `✓ Gültig — Lizenz Nr. ${nr(r.nummer)}. So eingegeben, schaltet KEPTA frei.`;
+    el.textContent = `✓ Gültig — Lizenz Nr. ${nr(r.nummer)}. So eingegeben, schaltet K3PTA frei.`;
   } else if (r.gesperrt) {
     el.className = "ergebnis schlecht";
     el.textContent = `✗ Gesperrt — Lizenz Nr. ${nr(r.nummer)} steht auf der Sperrliste und gilt ab dem nächsten Update nicht mehr.`;
@@ -328,7 +328,7 @@ async function schalteSperre(e) {
   const r = await studio.sperren(e.nummer, sperren);
   if (!r.ok) { $("fehler-liste").hidden = false; $("fehler-liste").textContent = r.fehler; return; }
   toast(sperren
-    ? `Nr. ${nr(e.nummer)} gesperrt — gilt ab dem nächsten KEPTA-Update${r.geschrieben ? "" : " (Sperrliste von Hand eintragen)"}`
+    ? `Nr. ${nr(e.nummer)} gesperrt — gilt ab dem nächsten K3PTA-Update${r.geschrieben ? "" : " (Sperrliste von Hand eintragen)"}`
     : `Sperre für Nr. ${nr(e.nummer)} aufgehoben`);
   await ladeStatus();
   await ladeListe();

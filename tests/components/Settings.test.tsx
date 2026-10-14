@@ -246,10 +246,10 @@ describe("Settings: MCP in der fertigen App", () => {
     const schreibe = vi.fn(async () => {});
     Object.defineProperty(navigator, "clipboard", { value: { writeText: schreibe }, configurable: true });
     await user.click(screen.getByRole("button", { name: /MCP \/ API/i }));
-    await waitFor(() => expect(container.textContent).toMatch(/runs inside the KEPTA app/));
+    await waitFor(() => expect(container.textContent).toMatch(/runs inside the K3PTA app/));
     expect(container.textContent).toMatch(/no Node\.js, no npm/);
     expect(container.textContent).toMatch(/it already points to this app/);
-    const kopfzeile = screen.getByText("mcp.json — runs inside the KEPTA app").parentElement!;
+    const kopfzeile = screen.getByText("mcp.json — runs inside the K3PTA app").parentElement!;
     await user.click(within(kopfzeile).getByRole("button", { name: /Copy/ }));
     await waitFor(() => expect(schreibe).toHaveBeenCalled());
     expect(JSON.parse(String((schreibe.mock.calls as unknown[][])[0][0]))).toEqual({ mcpServers: { kepta: start } });
@@ -325,7 +325,7 @@ describe("Settings: Selbstlernen im Detail", () => {
 });
 
 describe("Settings: Darstellung", () => {
-  it("merkt sich die Textgröße — eine Sprachwahl gibt es nicht mehr, KEPTA ist englisch", async () => {
+  it("merkt sich die Textgröße — eine Sprachwahl gibt es nicht mehr, K3PTA ist englisch", async () => {
     const user = userEvent.setup();
     render(<Settings />);
     expect(screen.queryByText("Interface language")).toBeNull();

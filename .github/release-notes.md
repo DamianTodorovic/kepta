@@ -2,14 +2,14 @@
 
 | Your system | File |
 |---|---|
-| Mac with Apple silicon (M1 and later) | `KEPTA-<version>-mac-arm64.dmg` |
-| Mac with an Intel processor | `KEPTA-<version>-mac-x64.dmg` |
+| Mac with Apple silicon (M1 and later) | `K3PTA-<version>-mac-arm64.dmg` |
+| Mac with an Intel processor | `K3PTA-<version>-mac-x64.dmg` |
 
 Published installers are **macOS only**. Windows and Linux targets exist in `electron-builder.json` and in CI (`release-windows`, `release-linux`), but no Windows or Linux installer is published — if you need one for a pilot, ask and we cut it. The headless engine with the MCP server runs wherever Node runs: `npx -y kepta-mcp`.
 
 Every file carries its platform and architecture in the name. On a Mac, if you are unsure: Apple menu → *About This Mac* — "Apple M…" means `arm64`, "Intel" means `x64`.
 
-**No license key is needed to run KEPTA.** The download is KEPTA Core and it is free: the first day after the first launch is an **unlimited day**, then it keeps working for free with daily limits on the endpoints that matter. The app never locks — a reached limit answers with a hint, not a wall, and writing or searching is never limited. A signed key only removes the daily limits; it is an artefact of a KEPTA Enterprise agreement, not something sold off a shelf.
+**No license key is needed to run K3PTA.** The download is K3PTA Core and it is free: the first day after the first launch is an **unlimited day**, then it keeps working for free with daily limits on the endpoints that matter. The app never locks — a reached limit answers with a hint, not a wall, and writing or searching is never limited. A signed key only removes the daily limits; it is an artefact of a K3PTA Enterprise agreement, not something sold off a shelf.
 
 ## 🍎 First launch on macOS
 
@@ -24,7 +24,7 @@ xattr -dr com.apple.quarantine /Applications/KEPTA.app
 ```
 
 Without the terminal: **System Settings → Privacy & Security** → scroll to the
-KEPTA message → **Open Anyway**. Once, then never again.
+K3PTA message → **Open Anyway**. Once, then never again.
 
 Note: right-clicking the app and choosing *Open* no longer works — Apple removed
 that route in macOS 15.
@@ -37,14 +37,14 @@ Nothing to install yet: no Windows or Linux installer is published. If one is cu
 
 From 2.11 the knowledge base is encrypted on disk, with a key the app creates
 and keeps in your system keychain. Before the first start of the new version,
-**quit every agent that uses KEPTA over MCP** (Claude Desktop, Cursor, …), so
+**quit every agent that uses K3PTA over MCP** (Claude Desktop, Cursor, …), so
 the app has the file to itself and can convert it — then start them again.
 *Settings → System status* shows whether the file is encrypted. Keep a copy of
 the key: [SECURITY.md](https://github.com/DamianTodorovic/kepta/blob/main/SECURITY.md#encryption-at-rest).
 
 ## 🔌 Connect an agent (MCP)
 
-KEPTA ships its own MCP server — no Node.js, no npm. *Settings → MCP / API* connects Claude Desktop, Claude Code, Cursor, Windsurf and VS Code in one click, or shows the block to copy. For KEPTA in *Applications* on a Mac it is:
+K3PTA ships its own MCP server — no Node.js, no npm. *Settings → MCP / API* connects Claude Desktop, Claude Code, Cursor, Windsurf and VS Code in one click, or shows the block to copy. For K3PTA in *Applications* on a Mac it is:
 
 ```json
 {
@@ -67,16 +67,16 @@ All data stays local in `~/.kepta/` — no account, no cloud, no telemetry.
 
 | Dein System | Datei |
 |---|---|
-| Mac mit Apple Silicon (M1 und neuer) | `KEPTA-<version>-mac-arm64.dmg` |
-| Mac mit Intel-Prozessor | `KEPTA-<version>-mac-x64.dmg` |
+| Mac mit Apple Silicon (M1 und neuer) | `K3PTA-<version>-mac-arm64.dmg` |
+| Mac mit Intel-Prozessor | `K3PTA-<version>-mac-x64.dmg` |
 
 Veröffentlichte Installer sind **nur macOS**. Windows- und Linux-Ziele gibt es in `electron-builder.json` und in CI (`release-windows`, `release-linux`), aber kein öffentlicher Installer dafür — für einen Piloten schneiden wir auf Anfrage einen. Die headless Engine mit MCP-Server läuft da, wo Node läuft: `npx -y kepta-mcp`.
 
-**KEPTA braucht keinen Schlüssel zum Laufen.** Der Download ist KEPTA Core und gratis: Der erste Tag nach dem Erststart ist **ein Tag ohne Grenzen**, danach geht es kostenlos weiter mit Tageslimiten an den ausschlaggebenden Endpunkten. Die App sperrt nie — eine erreichte Grenze antwortet mit einem Hinweis, nicht mit einer Wand, und Notieren wie Suchen ist nie limitiert. Ein signierter Schlüssel entfernt nur die Limiten; er ist Artefakt einer Enterprise-Vereinbarung, kein Kaufprodukt von der Liste.
+**K3PTA braucht keinen Schlüssel zum Laufen.** Der Download ist K3PTA Core und gratis: Der erste Tag nach dem Erststart ist **ein Tag ohne Grenzen**, danach geht es kostenlos weiter mit Tageslimiten an den ausschlaggebenden Endpunkten. Die App sperrt nie — eine erreichte Grenze antwortet mit einem Hinweis, nicht mit einer Wand, und Notieren wie Suchen ist nie limitiert. Ein signierter Schlüssel entfernt nur die Limiten; er ist Artefakt einer Enterprise-Vereinbarung, kein Kaufprodukt von der Liste.
 
-Die Builds sind **nicht notarisiert**. macOS: `xattr -dr com.apple.quarantine /Applications/KEPTA.app`, oder *Systemeinstellungen → Datenschutz & Sicherheit* → die KEPTA-Meldung → **Dennoch öffnen**. Einmal, dann nie wieder. Ältere Anleitungen empfehlen Rechtsklick → **Öffnen** — Apple hat den Weg mit macOS 15 entfernt, er tut auf aktuellen Systemen nichts.
+Die Builds sind **nicht notarisiert**. macOS: `xattr -dr com.apple.quarantine /Applications/KEPTA.app`, oder *Systemeinstellungen → Datenschutz & Sicherheit* → die K3PTA-Meldung → **Dennoch öffnen**. Einmal, dann nie wieder. Ältere Anleitungen empfehlen Rechtsklick → **Öffnen** — Apple hat den Weg mit macOS 15 entfernt, er tut auf aktuellen Systemen nichts.
 
-**Update von einer Version vor 2.11:** die Wissensbasis wird verschlüsselt. Vor dem ersten Start alle Agenten schließen, die KEPTA über MCP nutzen (Claude Desktop, Cursor …), danach wieder starten. Eine Kopie des Schlüssels aufbewahren: [SECURITY.md](https://github.com/DamianTodorovic/kepta/blob/main/SECURITY.md#encryption-at-rest).
+**Update von einer Version vor 2.11:** die Wissensbasis wird verschlüsselt. Vor dem ersten Start alle Agenten schließen, die K3PTA über MCP nutzen (Claude Desktop, Cursor …), danach wieder starten. Eine Kopie des Schlüssels aufbewahren: [SECURITY.md](https://github.com/DamianTodorovic/kepta/blob/main/SECURITY.md#encryption-at-rest).
 
 Alle Daten bleiben lokal in `~/.kepta/`.
 

@@ -9,12 +9,13 @@
 // Wogegen das schützt: gegen jeden, der die Datei, eine Kopie oder ein Backup in
 // die Hand bekommt, und gegen eine ausgebaute Platte. Wogegen nicht: gegen
 // Schadsoftware, die unter demselben Benutzerkonto läuft — sie darf den
-// Schlüsselbund so fragen wie KEPTA selbst.
+// Schlüsselbund so fragen wie K3PTA selbst.
 import { execFileSync } from "node:child_process";
 import crypto from "node:crypto";
 import fs from "node:fs";
 import path from "node:path";
 import type { KeyProvider } from "./extensions";
+import { leseUmwelt } from "./umwelt";
 
 export const DIENST = "app.kepta.database";
 export const KONTO = "kepta";
@@ -76,7 +77,7 @@ export function macSchluesselbund(ausf: Ausfuehren = standardAusfuehren): Schlue
       // (Der 2.13.4-Fix aus der App, am 26.9. in den Kern portiert — das
       // npm-Paket öffnet dieselbe Datenbank und trug die Gefahr bis dahin.)
       try {
-        ausf("/usr/bin/security", ["add-generic-password", "-s", DIENST, "-a", KONTO, "-l", "KEPTA database key", "-w", hex]);
+        ausf("/usr/bin/security", ["add-generic-password", "-s", DIENST, "-a", KONTO, "-l", "K3PTA database key", "-w", hex]);
       } catch (e) {
         if (exitCode(e) === 45) {
           throw new Error(
@@ -139,7 +140,7 @@ export function linuxSchluesselbund(ausf: Ausfuehren = standardAusfuehren): Schl
     },
     ablegen(hex) {
       // secret-tool liest das Geheimnis von stdin — es erscheint in keiner Argumentliste.
-      ausf("secret-tool", ["store", "--label=KEPTA database key", "service", DIENST, "account", KONTO], { input: hex });
+      ausf("secret-tool", ["store", "--label=K3PTA database key", "service", DIENST, "account", KONTO], { input: hex });
     },
   };
 }
@@ -166,9 +167,13 @@ export function holeOderErzeugeSchluessel(
   env: Record<string, string | undefined> = process.env,
   zufall: (n: number) => Buffer = (n) => crypto.randomBytes(n),
 ): Buffer {
-  const ausUmgebung = env.KEPTA_DB_KEY?.trim();
+  // Zwei Namensformen, eine davon gewinnt und sagt es (Aufgabe #64): ein Start, der
+  // nur KEPTA_DB_KEY kennt, behaelt seinen Schluessel; ein Start mit beiden sieht in
+  // /api/health, welche Form laeuft.
+  const fund = leseUmwelt("schluessel", env);
+  const ausUmgebung = fund.wert?.trim();
   if (ausUmgebung) {
-    if (!istSchluessel(ausUmgebung)) throw new Error("KEPTA_DB_KEY must be 64 hexadecimal characters (256 bits).");
+    if (!istSchluessel(ausUmgebung)) throw new Error(`${fund.gewonnen} must be 64 hexadecimal characters (256 bits).`);
     return Buffer.from(ausUmgebung, "hex");
   }
   if (!bund) {
@@ -176,7 +181,7 @@ export function holeOderErzeugeSchluessel(
   }
   const vorhanden = bund.lesen();
   if (vorhanden) {
-    if (!istSchluessel(vorhanden)) throw new Error(`The entry in the ${bund.name} is not a KEPTA key.`);
+    if (!istSchluessel(vorhanden)) throw new Error(`The entry in the ${bund.name} is not a K3PTA key.`);
     return Buffer.from(vorhanden, "hex");
   }
   // Zweiter Leseversuch, BEVOR etwas angelegt wird: Ein flüchtiger Lesefehler
@@ -187,7 +192,7 @@ export function holeOderErzeugeSchluessel(
   // der echte — keine Neuerzeugung.
   const zweiterVersuch = bund.lesen();
   if (zweiterVersuch) {
-    if (!istSchluessel(zweiterVersuch)) throw new Error(`The entry in the ${bund.name} is not a KEPTA key.`);
+    if (!istSchluessel(zweiterVersuch)) throw new Error(`The entry in the ${bund.name} is not a K3PTA key.`);
     return Buffer.from(zweiterVersuch, "hex");
   }
   const neu = zufall(32).toString("hex");
@@ -209,10 +214,11 @@ export function schluesselbundKeyProvider(
   ausf: Ausfuehren = standardAusfuehren,
   env: Record<string, string | undefined> = process.env,
 ): KeyProvider {
-  if (env.KEPTA_ENCRYPTION === "off") return { keyFor: () => null };
+  if (leseUmwelt("verschluesselung", env).wert === "off") return { keyFor: () => null };
   const bund = schluesselbundFuer(plattform, datenordner, ausf);
+  const schluesselForm = leseUmwelt("schluessel", env);
   return {
-    ablage: env.KEPTA_DB_KEY ? "KEPTA_DB_KEY" : bund?.name,
+    ablage: schluesselForm.gewonnen ?? bund?.name,
     keyFor: () => holeOderErzeugeSchluessel(bund, env),
   };
 }
