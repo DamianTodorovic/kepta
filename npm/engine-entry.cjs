@@ -537,6 +537,8 @@ var VALID_TYPES = ["semantic", "episodic", "procedural", "reference"];
 var LES_FENSTER = 5e3;
 var GRAPH_ENTITATEN_FENSTER = 500;
 var GRAPH_RELATIONEN_FENSTER = 2e3;
+var GRAPH_RANG_POOL = 4e3;
+var GRAPH_PAAR_POOL = 8e3;
 function defaultDataDir() {
   const env = leseUmwelt("datenordner").wert;
   if (env) return env;
@@ -1348,17 +1350,10 @@ var KeptaStore = class _KeptaStore {
       const entities2 = this.db.prepare(`SELECT id, name FROM entities WHERE id IN (${placeholders})`).all(...ids).map((r) => ({ id: Number(r.id), name: String(r.name) }));
       return { entities: entities2, relations: relations2 };
     }
-    const entities = this.db.prepare(
-      `SELECT e.id, e.name FROM entities e
-           LEFT JOIN memory_entities me ON me.entity_id = e.id
-           GROUP BY e.id, e.name
-           ORDER BY COUNT(me.entity_id) DESC, e.id ASC
-           LIMIT ${GRAPH_ENTITATEN_FENSTER}`
-    ).all().map((r) => ({
-      id: Number(r.id),
-      name: String(r.name)
-    }));
-    const relations = this.db.prepare(
+    const entities = this.graphNachbarschaft(this.graphRang(GRAPH_RANG_POOL));
+    const knotenIds = entities.map((e) => e.id);
+    const kantenPlaceholders = knotenIds.map(() => "?").join(",");
+    const relations = knotenIds.length === 0 ? [] : this.db.prepare(
       `WITH traeger AS (SELECT entity_id, COUNT(*) AS n FROM memory_entities GROUP BY entity_id)
            SELECT r.id, r.source_id, r.target_id, r.relation, r.valid_from, r.valid_to, r.memory_id
            FROM relations r
@@ -1367,9 +1362,10 @@ var KeptaStore = class _KeptaStore {
            ) p ON p.source_id = r.source_id AND p.target_id = r.target_id
            LEFT JOIN traeger ts ON ts.entity_id = r.source_id
            LEFT JOIN traeger tt ON tt.entity_id = r.target_id
+           WHERE r.source_id IN (${kantenPlaceholders}) AND r.target_id IN (${kantenPlaceholders})
            ORDER BY p.paare DESC, (COALESCE(ts.n, 0) + COALESCE(tt.n, 0)) DESC, r.id ASC
            LIMIT ${GRAPH_RELATIONEN_FENSTER}`
-    ).all().map((r) => ({
+    ).all(...knotenIds, ...knotenIds).map((r) => ({
       id: Number(r.id),
       sourceId: Number(r.source_id),
       targetId: Number(r.target_id),
@@ -1379,6 +1375,93 @@ var KeptaStore = class _KeptaStore {
       memoryId: r.memory_id ?? null
     }));
     return { entities, relations };
+  }
+  /**
+   * Der Namensvorrat fuer die Such-Erweiterung: Begriffe in Rangfolge, tiefer als
+   * das Sichtfenster der Graphflaeche. Getrennt, weil beide verschiedene Dinge sind
+   * — seit #83 ist das Fenster eine Nachbarschaft, und eine Nachbarschaft von 500
+   * ist ein schlechter Vorrat aller Namen, die eine Anfrage nennen koennte.
+   */
+  entityNamen(pool = GRAPH_RANG_POOL) {
+    return this.graphRang(pool).map((e) => e.name);
+  }
+  /**
+   * Rangfolge der Begriffe nach Bedeutung: die Zahl der Notizen, die ihn tragen,
+   * **und** die Zahl der Kanten, die an ihm sitzen — zusammen, nicht hintereinander
+   * (dieselbe Formel wie die App seit #56). Gekappt auf `pool` Zeilen: das Fenster
+   * will 500, und was hinter dem Pool liegt, ist weniger bedeutsam als alles darin.
+   */
+  graphRang(pool) {
+    return this.db.prepare(
+      `WITH grad AS (
+             SELECT entity_id, SUM(n) AS n FROM (
+               SELECT source_id AS entity_id, COUNT(*) AS n FROM relations GROUP BY source_id
+               UNION ALL
+               SELECT target_id AS entity_id, COUNT(*) AS n FROM relations GROUP BY target_id
+             ) GROUP BY entity_id
+           )
+           SELECT e.id AS id, e.name AS name,
+                  (COUNT(me.memory_id) + COALESCE(MAX(g.n), 0)) AS trag
+           FROM entities e
+           LEFT JOIN memory_entities me ON me.entity_id = e.id
+           LEFT JOIN grad g ON g.entity_id = e.id
+           GROUP BY e.id, e.name
+           ORDER BY trag DESC, e.id ASC
+           LIMIT ${pool}`
+    ).all().map((r) => ({ id: Number(r.id), name: String(r.name) }));
+  }
+  /**
+   * Die Begriffscheibe als Nachbarschaft, nicht als Rangliste (#83-2). Der erste
+   * Samen in Rangfolge wird ueber Kanten erweitert (Breadth-first, die staerkere
+   * Kante zuerst), dann der naechste, bis die Kappe voll ist; danach fuellt der Rest
+   * nach Rang auf. Zwei Aufrufe auf demselben Bestand liefern dieselbe Folge.
+   */
+  graphNachbarschaft(rang) {
+    if (rang.length === 0) return [];
+    const imFenster = /* @__PURE__ */ new Set();
+    const nachbarn = /* @__PURE__ */ new Map();
+    const paare = this.db.prepare(
+      `SELECT source_id AS a, target_id AS b, COUNT(*) AS n
+         FROM relations GROUP BY source_id, target_id
+         ORDER BY n DESC, source_id ASC, target_id ASC
+         LIMIT ${GRAPH_PAAR_POOL}`
+    ).all();
+    const bekannt = new Set(rang.map((e) => e.id));
+    const fuege = (von, nb, n) => {
+      const liste = nachbarn.get(von) ?? [];
+      liste.push({ id: nb, n });
+      nachbarn.set(von, liste);
+    };
+    for (const p of paare) {
+      if (!bekannt.has(p.a) || !bekannt.has(p.b)) continue;
+      fuege(p.a, p.b, p.n);
+      if (p.a !== p.b) fuege(p.b, p.a, p.n);
+    }
+    for (const liste of nachbarn.values()) liste.sort((x, y) => y.n - x.n || x.id - y.id);
+    for (const samen of rang) {
+      if (imFenster.size >= GRAPH_ENTITATEN_FENSTER) break;
+      if (imFenster.has(samen.id)) continue;
+      imFenster.add(samen.id);
+      let schnitt = [samen.id];
+      while (schnitt.length > 0 && imFenster.size < GRAPH_ENTITATEN_FENSTER) {
+        const naechster = [];
+        for (const id of schnitt) {
+          for (const nb of nachbarn.get(id) ?? []) {
+            if (imFenster.has(nb.id)) continue;
+            imFenster.add(nb.id);
+            naechster.push(nb.id);
+            if (imFenster.size >= GRAPH_ENTITATEN_FENSTER) break;
+          }
+          if (imFenster.size >= GRAPH_ENTITATEN_FENSTER) break;
+        }
+        schnitt = naechster;
+      }
+    }
+    for (const e of rang) {
+      if (imFenster.size >= GRAPH_ENTITATEN_FENSTER) break;
+      imFenster.add(e.id);
+    }
+    return rang.filter((e) => imFenster.has(e.id)).map((e) => ({ id: e.id, name: e.name }));
   }
   /** Memory-IDs, die eine der Entitäten mentionen */
   memoryIdsForEntities(entityIds) {
@@ -1969,8 +2052,7 @@ function graphNamen(store) {
   const generation = store.datenGeneration();
   const eintrag = graphCache.get(store);
   if (eintrag && eintrag.generation === generation) return eintrag.namen;
-  const { entities } = store.getGraph(void 0, 1);
-  const namen = entities.map((e) => e.name).filter((name) => name.length >= ENTITAET_MIN_LAENGE).map((name) => ({ name, muster: wortGrenzenMuster(name) }));
+  const namen = store.entityNamen().filter((name) => name.length >= ENTITAET_MIN_LAENGE).map((name) => ({ name, muster: wortGrenzenMuster(name) }));
   graphCache.set(store, { generation, namen });
   return namen;
 }

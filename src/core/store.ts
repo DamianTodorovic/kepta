@@ -43,6 +43,12 @@ const VALID_TYPES: MemoryType[] = ["semantic", "episodic", "procedural", "refere
 export const LES_FENSTER = 5000;
 export const GRAPH_ENTITATEN_FENSTER = 500;
 export const GRAPH_RELATIONEN_FENSTER = 2000;
+// Zweiter Wert des Nachbarschaftsfensters (#83-2, Paritaet zur App): die Rangtiefe,
+// aus der Samen und Blaetter kommen, und die Zahl der Paare, deren Adjazenz der
+// Wachstumslauf im Kopf haelt. Beide sind Arbeitsobergrenzen, keine Antworten —
+// was ausserhalb liegt, ist nach Rang und Beleg schwacher als alles darin.
+export const GRAPH_RANG_POOL = 4000;
+export const GRAPH_PAAR_POOL = 8000;
 
 export function defaultDataDir(): string {
   // Beide Namensformen (#64) — derselbe Ordner wie vorher, wenn nur die alte Form gesetzt ist.
@@ -1009,45 +1015,34 @@ export class KeptaStore {
       ).map((r) => ({ id: Number(r.id), name: String(r.name) }));
       return { entities, relations };
     }
-    // Die 500 Begriffe des ungefilterten Pfads sind kein beliebiger Ausschnitt:
-    // ohne ORDER BY entschied die Zeilenordnung, welcher Begriff fehlt, und die
-    // Liste wechselte, sobald neu geschrieben wurde. Geordnet wird nach Traegerzahl
-    // — der Ausschnitt soll die Bedeutungsspitze sein, nicht der erste Fund.
-    // Gleiche Traegerzahl ordnet nach id, damit derselbe Bestand zweimal
-    // dieselbe Liste liefert.
-    const entities = (
-      this.db
-        .prepare(
-          `SELECT e.id, e.name FROM entities e
-           LEFT JOIN memory_entities me ON me.entity_id = e.id
-           GROUP BY e.id, e.name
-           ORDER BY COUNT(me.entity_id) DESC, e.id ASC
-           LIMIT ${GRAPH_ENTITATEN_FENSTER}`
-        )
-        .all() as Record<string, unknown>[]
-    ).map((r) => ({
-      id: Number(r.id),
-      name: String(r.name),
-    }));
-    // #56, zweiter Teil: dieselbe Scheibe, die die App nach A7-08 schon hat.
+    // #83 (2), Paritaet zur App: die 500 Begriffe sind keine Rangliste mehr, sondern
+    // eine **Nachbarschaft**. Rangieren allein reicht nicht: die Kantenscheibe liefert
+    // Kanten, deren Enden ausserhalb der Begriffsscheibe liegen, und was die Flaeche
+    // danach uebrig behaelt, ist eine Wolke ohne Halt. Gemessen an demselben
+    // 14.702-Notizen-Bestand mit der Rangregel der App: 500 Begriffe, 1.402 Kanten,
+    // 41 Knoten ohne jede Kante, groesster Teil 8 Knoten in 201 Teilen; nach dem
+    // Wachstum 0 Knoten ohne Halt und groesster Teil 27 in 31 Teilen. Der Nutzer sagt
+    // dazu "ich erkenn nix außer 'nem großen Kreis".
     //
-    // Vorher stand hier ein `SELECT ... FROM relations LIMIT 2000` ohne jede Ordnung
-    // (`:1033` im Stand 378b0c4). Was hinter der Scheibe liegt, entschied damit die
-    // rowid — also die Schreibfolge. Gemessen in `tests/graph-kappe.test.ts`: ein Paar
-    // mit 60 Belegen verschwand vollstaendig aus dem Schnitt, wenn es ZULETZT
-    // geschrieben wurde (0 von 60), und zwei Laeufe ueber denselben Inhalt mit
-    // verschiedener Schreibfolge gaben verschiedene Antworten.
+    // Regel: Samen in Rangfolge (Traegerzahlen **und** Tragweite), jeder um ueber
+    // Kanten Erreichte erweitert, bis die Kappe voll ist; erst wenn die
+    // Nachbarschaften nicht reichen, fuellt der Rest nach Rang auf. Ein Bestand,
+    // dessen Begriffe gar nicht verknuepft sind, darf keinen leeren Graphen zeigen.
+    const entities = this.graphNachbarschaft(this.graphRang(GRAPH_RANG_POOL));
+    // Dasselbe fuer die Kanten: was hinter einer 2 000er-Scheibe liegt, darf
+    // nicht die Einfuegereihenfolge entscheiden. Paare mit mehr Belegen — drei
+    // Aussagen ueber demselben Paar sind ein staerkeres Paar als eine — stehen
+    // vorne. Innerhalb des Paares die aelteste zuerst, damit der Schnitt bei
+    // gleichem Bestand derselbe bleibt.
     //
-    // Stufen, in dieser Reihenfolge: erst die Belege desselben Paares (drei Aussagen
-    // ueber einem Paar sind ein staerkeres Paar als eine), dann die Tragweite der
-    // Enden (ein Begriff, den 40 Notizen tragen, haengt mehr am Netz als einer, den
-    // eine traegt), zuletzt die id — damit derselbe Bestand zweimal dieselbe Liste
-    // liefert.
-    //
-    // Ein GROUP BY ueber die Beleg- und die Traegertabelle, kein korrelierter
-    // Zaehler je Zeile: der zaehlt bei zehntausend Begriffen gegen hunderttausend
-    // Zeilen, und die Graphseite haengt.
-    const relations = (
+    // Und die Scheibe ist **in sich geschlossen**: eine Kante, deren Ende der
+    // Begriffsschnitt nicht mitliefert, ist keine Kante des Graphen, sondern ein
+    // Zeiger ins Leere. Die App-Tuer wirft sie seit A7-08 weg; ein Verbraucher, der
+    // die Zahl der Kanten gegen die Zahl der Knoten rechnet, haette sonst eine
+    // Bilanz, die er nie zeichnen kann.
+    const knotenIds = entities.map((e) => e.id);
+    const kantenPlaceholders = knotenIds.map(() => "?").join(",");
+    const relations = knotenIds.length === 0 ? [] : (
       this.db
         .prepare(
           `WITH traeger AS (SELECT entity_id, COUNT(*) AS n FROM memory_entities GROUP BY entity_id)
@@ -1058,10 +1053,11 @@ export class KeptaStore {
            ) p ON p.source_id = r.source_id AND p.target_id = r.target_id
            LEFT JOIN traeger ts ON ts.entity_id = r.source_id
            LEFT JOIN traeger tt ON tt.entity_id = r.target_id
+           WHERE r.source_id IN (${kantenPlaceholders}) AND r.target_id IN (${kantenPlaceholders})
            ORDER BY p.paare DESC, (COALESCE(ts.n, 0) + COALESCE(tt.n, 0)) DESC, r.id ASC
            LIMIT ${GRAPH_RELATIONEN_FENSTER}`
         )
-        .all() as Record<string, unknown>[]
+        .all(...knotenIds, ...knotenIds) as Record<string, unknown>[]
     ).map((r) => ({
       id: Number(r.id),
       sourceId: Number(r.source_id),
@@ -1072,6 +1068,105 @@ export class KeptaStore {
       memoryId: (r.memory_id as string | null) ?? null,
     }));
     return { entities, relations };
+  }
+
+  /**
+   * Der Namensvorrat fuer die Such-Erweiterung: Begriffe in Rangfolge, tiefer als
+   * das Sichtfenster der Graphflaeche. Getrennt, weil beide verschiedene Dinge sind
+   * — seit #83 ist das Fenster eine Nachbarschaft, und eine Nachbarschaft von 500
+   * ist ein schlechter Vorrat aller Namen, die eine Anfrage nennen koennte.
+   */
+  entityNamen(pool = GRAPH_RANG_POOL): string[] {
+    return this.graphRang(pool).map((e) => e.name);
+  }
+
+  /**
+   * Rangfolge der Begriffe nach Bedeutung: die Zahl der Notizen, die ihn tragen,
+   * **und** die Zahl der Kanten, die an ihm sitzen — zusammen, nicht hintereinander
+   * (dieselbe Formel wie die App seit #56). Gekappt auf `pool` Zeilen: das Fenster
+   * will 500, und was hinter dem Pool liegt, ist weniger bedeutsam als alles darin.
+   */
+  private graphRang(pool: number): { id: number; name: string }[] {
+    return (
+      this.db
+        .prepare(
+          `WITH grad AS (
+             SELECT entity_id, SUM(n) AS n FROM (
+               SELECT source_id AS entity_id, COUNT(*) AS n FROM relations GROUP BY source_id
+               UNION ALL
+               SELECT target_id AS entity_id, COUNT(*) AS n FROM relations GROUP BY target_id
+             ) GROUP BY entity_id
+           )
+           SELECT e.id AS id, e.name AS name,
+                  (COUNT(me.memory_id) + COALESCE(MAX(g.n), 0)) AS trag
+           FROM entities e
+           LEFT JOIN memory_entities me ON me.entity_id = e.id
+           LEFT JOIN grad g ON g.entity_id = e.id
+           GROUP BY e.id, e.name
+           ORDER BY trag DESC, e.id ASC
+           LIMIT ${pool}`
+        )
+        .all() as Record<string, unknown>[]
+    ).map((r) => ({ id: Number(r.id), name: String(r.name) }));
+  }
+
+  /**
+   * Die Begriffscheibe als Nachbarschaft, nicht als Rangliste (#83-2). Der erste
+   * Samen in Rangfolge wird ueber Kanten erweitert (Breadth-first, die staerkere
+   * Kante zuerst), dann der naechste, bis die Kappe voll ist; danach fuellt der Rest
+   * nach Rang auf. Zwei Aufrufe auf demselben Bestand liefern dieselbe Folge.
+   */
+  private graphNachbarschaft(rang: { id: number; name: string }[]): EntityRecord[] {
+    if (rang.length === 0) return [];
+    const imFenster = new Set<number>();
+    const nachbarn = new Map<number, { id: number; n: number }[]>();
+    const paare = this.db
+      .prepare(
+        `SELECT source_id AS a, target_id AS b, COUNT(*) AS n
+         FROM relations GROUP BY source_id, target_id
+         ORDER BY n DESC, source_id ASC, target_id ASC
+         LIMIT ${GRAPH_PAAR_POOL}`
+      )
+      .all() as { a: number; b: number; n: number }[];
+    const bekannt = new Set(rang.map((e) => e.id));
+    const fuege = (von: number, nb: number, n: number): void => {
+      const liste = nachbarn.get(von) ?? [];
+      liste.push({ id: nb, n });
+      nachbarn.set(von, liste);
+    };
+    for (const p of paare) {
+      if (!bekannt.has(p.a) || !bekannt.has(p.b)) continue;
+      fuege(p.a, p.b, p.n);
+      if (p.a !== p.b) fuege(p.b, p.a, p.n);
+    }
+    for (const liste of nachbarn.values()) liste.sort((x, y) => y.n - x.n || x.id - y.id);
+
+    for (const samen of rang) {
+      if (imFenster.size >= GRAPH_ENTITATEN_FENSTER) break;
+      if (imFenster.has(samen.id)) continue;
+      imFenster.add(samen.id);
+      let schnitt = [samen.id];
+      while (schnitt.length > 0 && imFenster.size < GRAPH_ENTITATEN_FENSTER) {
+        const naechster: number[] = [];
+        for (const id of schnitt) {
+          for (const nb of nachbarn.get(id) ?? []) {
+            if (imFenster.has(nb.id)) continue;
+            imFenster.add(nb.id);
+            naechster.push(nb.id);
+            if (imFenster.size >= GRAPH_ENTITATEN_FENSTER) break;
+          }
+          if (imFenster.size >= GRAPH_ENTITATEN_FENSTER) break;
+        }
+        schnitt = naechster;
+      }
+    }
+
+    for (const e of rang) {
+      if (imFenster.size >= GRAPH_ENTITATEN_FENSTER) break;
+      imFenster.add(e.id);
+    }
+
+    return rang.filter((e) => imFenster.has(e.id)).map((e) => ({ id: e.id, name: e.name }));
   }
 
   /** Memory-IDs, die eine der Entitäten mentionen */
