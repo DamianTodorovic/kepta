@@ -389,7 +389,7 @@ export async function importTabelle(store: KeptaStore, pfad: string, opts: Tabel
   const beide = [...new Set([...erlaubteRoh, ...erlaubte])];
   const ziel = path.resolve(pfad);
   if (!bleibtInDenWurzeln(ziel, beide)) {
-    throw new Error(`no import from this place: ${ortFürMeldung(ziel)} — KEPTA reads only your home folder and the system temp (${erlaubteRoh.join(", ")}). Next: copy the table into your Downloads folder and run the command again, or name another root with the roots option.`);
+    throw new Error(`no import from this place: ${ortFürMeldung(ziel)} — K3PTA reads only your home folder and the system temp (${erlaubteRoh.join(", ")}). Next: copy the table into your Downloads folder and run the command again, or name another root with the roots option.`);
   }
   // Q-18, dieselbe Schleuse wie die Inbox: erst der Blick auf den Eintrag selbst
   // (ein Link ist kein Lesestoff), dann die echte Lage. Der Ort oben ist schon
@@ -401,7 +401,7 @@ export async function importTabelle(store: KeptaStore, pfad: string, opts: Tabel
     throw new Error(`cannot read ${ortFürMeldung(ziel)}: ${e instanceof Error ? e.message : String(e)}`);
   }
   if (eintrag.isSymbolicLink()) {
-    throw new Error(`${ortFürMeldung(ziel)} is a symlink — KEPTA imports the real file. Point the command at the file the link points to, or copy it in.`);
+    throw new Error(`${ortFürMeldung(ziel)} is a symlink — K3PTA imports the real file. Point the command at the file the link points to, or copy it in.`);
   }
   if (!eintrag.isFile()) {
     throw new Error(`${ortFürMeldung(ziel)} is not a file — this command reads one .csv or .jsonl table`);
@@ -427,7 +427,7 @@ export async function importTabelle(store: KeptaStore, pfad: string, opts: Tabel
   for (const [feld, spalte] of Object.entries(plan.spalten)) if (spalte !== undefined) zusammenfassung.spalten.erkannt[feld] = spalte;
   zusammenfassung.uebrig = plan.uebrig;
   if (!plan.spalten.inhalt) {
-    melde(`inhaltsspalte nicht erkannt — Kopfzeile: ${kopf.join(", ") || "leer"}. KEPTA kennt: ${WORTE.inhalt.join(", ")}. Nenne die Spalte ausdruecklich, statt sie zu raten.`);
+    melde(`inhaltsspalte nicht erkannt — Kopfzeile: ${kopf.join(", ") || "leer"}. K3PTA kennt: ${WORTE.inhalt.join(", ")}. Nenne die Spalte ausdruecklich, statt sie zu raten.`);
     zusammenfassung.gruende = [...meldeMappe.entries()].map(([grund, anzahl]) => ({ grund, anzahl }));
     zusammenfassung.bestand.nachher = store.countMemories().active;
     zusammenfassung.bremse = bremseLesen(zusammenfassung.bestand.nachher);

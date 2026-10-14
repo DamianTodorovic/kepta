@@ -29,6 +29,14 @@ export const UMWELT_GRUND: Record<string, string | undefined> = {
   KEPTA_DB_KEY: undefined,
   KEPTA_HOST: undefined,
   KEPTA_DATA_DIR: undefined,
+  // #64: dieselbe Rolle hat einen zweiten Namen bekommen, und ein Wert aus der Schale
+  // des Betreibers waere eine geerbte Produktgrenze — der neue Name wird so gut
+  // gestellt wie der alte, sonst haengt ein Lauf an einem Schluessel, den niemand
+  // in dieser Datei gesetzt hat.
+  K3PTA_DATA_DIR: undefined,
+  K3PTA_DB_KEY: undefined,
+  K3PTA_ENCRYPTION: undefined,
+  K3PTA_BACKUP_KEEP: undefined,
   // Wo der Richter und das Einbettmodell stehen — gelesen wird KEPTA_EMBED_MODEL schon
   // beim Modul-Import (`src/core/embeddings.ts:6: DEFAULT_EMBED_MODEL = process.env.… ||
   // "nomic-embed-text"`), ein Wert aus der Schale des Betreibers erreicht also jede Datei,

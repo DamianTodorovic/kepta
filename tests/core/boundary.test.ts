@@ -81,6 +81,10 @@ describe("memory core boundary (src/core)", () => {
       "store.ts",
       "synonyme.ts",
       "types.ts",
+      // Die zwei Namensformen der Aufgaben-Kennungen (#64): beide lesen, eine gewinnen
+      // und die Siegerin melden. Reines Lesen der Umgebung, ohne eigene Abhaengigkeit —
+      // Store, Schluesselanbieter, Migration und Server lesen durch sie.
+      "umwelt.ts",
       "version.ts",
     ]);
   });

@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * KEPTA — MCP Server (stdio)
+ * K3PTA — MCP Server (stdio)
  * Protokoll: MCP 2026-07-28 (stateless core) mit Legacy-Fallback (2025-06-18, 2024-11-05).
  * 8 Tools mit structuredContent — Logik geteilt mit dem HTTP-Server über src/core/mcp.ts.
  *
@@ -71,7 +71,7 @@ function weiseAb(wort: string): void {
     const name = wort.includes("=") ? wort.slice(0, wort.indexOf("=")) : wort;
     console.error(`[kepta] unknown flag: ${name}`);
     // R2: die Liste ist länger als die Bühne — sie bricht, statt umzukippen.
-    for (const z of bricht(`KEPTA knows: ${FLAG_LISTE}`, { einzug: 2 })) console.error(z);
+    for (const z of bricht(`K3PTA knows: ${FLAG_LISTE}`, { einzug: 2 })) console.error(z);
     console.error("[kepta] next: run kepta --help, or drop the switch");
     return;
   }
@@ -79,7 +79,7 @@ function weiseAb(wort: string): void {
   const vorschlag = naechste && abstand(wort.toLowerCase(), naechste) <= Math.max(2, Math.floor(naechste.length / 2));
   console.error(`[kepta] unknown command: ${wort}${vorschlag ? ` — did you mean "${naechste}"?` : ""}`);
   console.error(`[kepta] commands: ${BEFEHLE.join(", ")}`);
-  console.error("[kepta] with no argument KEPTA runs the MCP server on stdin — that is how Claude, Cursor & Co. connect.");
+  console.error("[kepta] with no argument K3PTA runs the MCP server on stdin — that is how Claude, Cursor & Co. connect.");
 }
 
 /** Derselbe Schluessel wie in der App: aus dem Schluesselbund des Systems. */
@@ -203,7 +203,7 @@ function starteMcp(): void {
 }
 
 /**
- * `npx kepta-mcp ui`: KEPTA Core ist headless — es lebt im KI-Klienten (MCP) und
+ * `npx kepta-mcp ui`: K3PTA Core ist headless — es lebt im KI-Klienten (MCP) und
  * hat bewusst keine Browser-Oberfläche. D2-42 mass hier ein Satz, der nach aussen
  * zeigt, ohne das Ziel zu nennen („see the website") und ohne den kostenlosen
  * Weg: die Desktop-App mit Fenster ist ein Release **dieses** Repos, Enterprise ist
@@ -212,10 +212,10 @@ function starteMcp(): void {
  * Weg (R9), kein Zustand, den dieser Lauf nicht gemessen hat (R8).
  */
 function uiHinweis(): void {
-  console.log(`KEPTA Core has no window — your AI client is the interface.`);
+  console.log(`K3PTA Core has no window — your AI client is the interface.`);
   console.log(`The free desktop app adds the browser, the graph and time travel:`);
   console.log(`  github.com/DamianTodorovic/kepta/releases`);
-  console.log(`KEPTA Enterprise — the team console with mandates and audit — is by agreement.`);
+  console.log(`K3PTA Enterprise — the team console with mandates and audit — is by agreement.`);
   console.log(``);
   console.log(`next: npx -y kepta-mcp setup — connects this file to the AI apps here`);
   // Kein process.exit: Node läuft natürlich aus, damit die Pipe die kurze
@@ -292,7 +292,7 @@ else if (process.argv[2] === "import") {
   // Kein process.exit: Node läuft natürlich aus, damit die Pipe die kurze
   // Nachricht vollständig flushen kann (stdio-Drain-Falle).
 } else if (process.argv[2] === "setup") {
-  // `npx kepta-mcp setup [--yes]`: KEPTA in Claude, Cursor & Co. eintragen.
+  // `npx kepta-mcp setup [--yes]`: K3PTA in Claude, Cursor & Co. eintragen.
   const rl = process.stdin.isTTY ? readline.createInterface({ input: process.stdin, output: process.stdout }) : null;
   einrichten(process.argv.slice(3), standardUmgebung(), {
     schreibe: (s) => process.stdout.write(s),

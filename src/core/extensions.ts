@@ -1,4 +1,4 @@
-// KEPTA Core — extension points. Everything here ships in the free edition:
+// K3PTA Core — extension points. Everything here ships in the free edition:
 // these are the places where an organisation-grade deployment plugs in, but the
 // defaults below are real, useful implementations for a single local user.
 
@@ -75,10 +75,11 @@ export class FileAuditSink {
 import fs from "node:fs";
 import path from "node:path";
 import os from "node:os";
+import { leseUmwelt } from "./umwelt";
 
 export function defaultAuditDir(): string {
-  const env = process.env.KEPTA_DATA_DIR;
-  return env ?? path.join(os.homedir(), ".kepta");
+  // Beide Namensformen (#64), Default bleibt ~/.kepta.
+  return leseUmwelt("datenordner").wert ?? path.join(os.homedir(), ".kepta");
 }
 
 /**
@@ -150,7 +151,7 @@ export const MANUAL_TRASH: RetentionPolicy = {
 };
 
 /**
- * The free-edition set. Everything behaves exactly like KEPTA before these
+ * The free-edition set. Everything behaves exactly like K3PTA before these
  * hooks existed — the seams are the feature, not the implementations. Audit is
  * the one seam whose default writes nothing: a local install keeps no plaintext
  * journal of who read what (SECURITY.md, "Audit").

@@ -15,7 +15,7 @@ describe("negotiateVersion", () => {
   });
 
   it("bietet bei einer unbekannten aelteren Version die hoechste an, die nicht neuer ist", () => {
-    // 2025-03-26 ist eine echte MCP-Version, die KEPTA nicht fuehrt. Zwischen
+    // 2025-03-26 ist eine echte MCP-Version, die K3PTA nicht fuehrt. Zwischen
     // 2024-11-05 und 2025-06-18 gelegen, muss 2024-11-05 herauskommen.
     expect(negotiateVersion("2025-03-26")).toBe("2024-11-05");
     expect(negotiateVersion("2025-07-01")).toBe("2025-06-18");

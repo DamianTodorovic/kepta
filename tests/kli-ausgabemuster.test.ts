@@ -276,7 +276,7 @@ describe("R10 — Fehler dreizeilig, auf stderr, Exit ungleich 0, nie ein Stack"
     expect(zeilen.some((z) => /^\s*next:/.test(z)), fehl).toBe(true);
     for (const z of zeilen) expect([...z].length, `länger als 80: ${z}`).toBeLessThanOrEqual(80);
     // Die Tafel ist die Antwort auf --help, nicht die auf einen Irrtum (D2-21).
-    expect(fehl).not.toMatch(/KEPTA from the terminal/);
+    expect(fehl).not.toMatch(/K3PTA from the terminal/);
     expect(stackZeilen(fehl)).toEqual([]);
   });
 });
@@ -352,7 +352,7 @@ describe("der Umbruch verliert kein Wort (R2, selbst gefunden)", () => {
   // Kern-Konflikttext fehlten „reads" und „rand". Ein Füller, der Wörter
   // verschluckt, ist schlimmer als ein umkippendes Terminal.
   const texte = [
-    "store one sentence — KEPTA picks the type and the tags for it",
+    "store one sentence — K3PTA picks the type and the tags for it",
     "The knowledge base is encrypted, but its key is not available. Nothing was changed. The file was not opened and no empty knowledge base was started over it. SECURITY.md lists the command that reads your key back; a key you hold yourself goes in KEPTA_DB_KEY (openssl rand -hex 32).",
   ];
 

@@ -1,4 +1,4 @@
-// KEPTA Core — SQLite-Storage (SQLite3 Multiple Ciphers, FTS5, WAL)
+// K3PTA Core — SQLite-Storage (SQLite3 Multiple Ciphers, FTS5, WAL)
 // Eine Datei pro Gehirn: ~/.kepta/kepta.db. React-frei, von Server & MCP-Server geteilt.
 // Mit Schluessel liegt die Datei verschluesselt auf der Platte (SQLCipher-4-Format).
 //
@@ -13,6 +13,7 @@ import crypto from "node:crypto";
 // Die Zuordnung ist reine, abhaengigkeitsfreie Logik — deshalb darf der Kern
 // sie benutzen, ohne sich etwas einzuhandeln.
 import { klassifiziere } from "./klassifikation";
+import { leseUmwelt } from "./umwelt";
 import type {
   MemoryRecord,
   MemoryInput,
@@ -44,7 +45,8 @@ export const GRAPH_ENTITATEN_FENSTER = 500;
 export const GRAPH_RELATIONEN_FENSTER = 2000;
 
 export function defaultDataDir(): string {
-  const env = process.env.KEPTA_DATA_DIR;
+  // Beide Namensformen (#64) — derselbe Ordner wie vorher, wenn nur die alte Form gesetzt ist.
+  const env = leseUmwelt("datenordner").wert;
   if (env) return env;
   return path.join(os.homedir(), ".kepta");
 }
@@ -1160,12 +1162,12 @@ export function blobToFloat32(buf: Uint8Array): Float32Array {
 const KLARTEXT_KOPF = Buffer.from("SQLite format 3\0", "latin1");
 /** Die Kopie, die waehrend der Umwandlung verschluesselt wird. */
 const KOPIE = ".encrypting";
-/** Sperre: nur ein KEPTA-Prozess wandelt um, die anderen warten. */
+/** Sperre: nur ein K3PTA-Prozess wandelt um, die anderen warten. */
 const SPERRE = ".encrypting-lock";
 const VERWAIST_MS = 10 * 60_000;
 const ANDERES_PROGRAMM =
-  "The knowledge base is open in another program (an AI agent over MCP, an older KEPTA?) — it stays unencrypted until KEPTA has it to itself. Close the other program and restart KEPTA.";
-const WIRD_UMGEWANDELT = "The knowledge base is being encrypted by another KEPTA process — try again in a moment.";
+  "The knowledge base is open in another program (an AI agent over MCP, an older K3PTA?) — it stays unencrypted until K3PTA has it to itself. Close the other program and restart K3PTA.";
+const WIRD_UMGEWANDELT = "The knowledge base is being encrypted by another K3PTA process — try again in a moment.";
 
 function fehlertext(e: unknown): string {
   return e instanceof Error ? e.message : String(e);
@@ -1195,7 +1197,7 @@ export function istKlartextDatenbank(dbPath: string): boolean {
  * SQLCipher-4-Format (AES-256, HMAC-SHA512 je Seite) mit einem rohen
  * 256-Bit-Schluessel — kein Passwort, also auch keine Schluesselableitung, die
  * jeden Start verlangsamt. Das Format ist offen: mit dem Schluessel oeffnet jedes
- * SQLCipher-Werkzeug die Datei, KEPTA sperrt niemanden ein.
+ * SQLCipher-Werkzeug die Datei, K3PTA sperrt niemanden ein.
  */
 function schluesselPragmas(db: Database.Database, schluessel: Uint8Array, pragma: "key" | "rekey"): void {
   db.pragma("cipher = 'sqlcipher'");
@@ -1242,7 +1244,7 @@ function setzeSchluessel(db: Database.Database, schluessel: Uint8Array, herkunft
       throw new Error(
         `The knowledge base ${db.name} could not be opened with the 256-bit key${herkunft ? ` from ${herkunft}` : " it was given"} — ` +
           `either that is not the key this file was encrypted with, or the file itself is damaged. ` +
-          `SQLite reports only "file is not a database", so KEPTA does not say which. Nothing was changed. ` +
+          `SQLite reports only "file is not a database", so K3PTA does not say which. Nothing was changed. ` +
           `SECURITY.md, "Keep a copy of the key", lists the command that reads your key back on every operating system; ` +
           `if this file was written with a key you hold yourself, set KEPTA_DB_KEY to it and start again.`,
       );
@@ -1313,7 +1315,7 @@ function leseSperre(dbPath: string): { pid: number | null; seit: number } | null
 }
 
 /**
- * Wartet, solange ein anderer KEPTA-Prozess die Datei gerade umwandelt. Eine
+ * Wartet, solange ein anderer K3PTA-Prozess die Datei gerade umwandelt. Eine
  * Sperre, deren Prozess nicht mehr lebt (Absturz, Stromausfall), wird samt
  * halbfertiger Kopie weggeraeumt — das Original ist in dem Fall unberuehrt.
  */
@@ -1353,7 +1355,7 @@ export function verschluessleFallsKlartext(dbPath: string, schluessel: Uint8Arra
     warteAufUmwandlung(dbPath);
     if (!istKlartextDatenbank(dbPath)) return false;
     const sperre = sperreNehmen(dbPath);
-    if (sperre === null) continue; // ein anderer KEPTA-Prozess war schneller — auf ihn warten
+    if (sperre === null) continue; // ein anderer K3PTA-Prozess war schneller — auf ihn warten
     try {
       if (!istKlartextDatenbank(dbPath)) return false;
       verschluessleKlartextDatenbank(dbPath, schluessel, plattform);
@@ -1367,7 +1369,7 @@ export function verschluessleFallsKlartext(dbPath: string, schluessel: Uint8Arra
 }
 
 /**
- * Wandelt eine Klartext-Datenbank in eine verschluesselte um — nur, wenn KEPTA
+ * Wandelt eine Klartext-Datenbank in eine verschluesselte um — nur, wenn K3PTA
  * sie gerade fuer sich allein hat, und so, dass in keinem Moment etwas verloren geht:
  *   1. Allein? Aus dem WAL-Modus kommt SQLite nur heraus, wenn keine andere
  *      Verbindung die Datei offen hat. Sonst: abbrechen, nichts ist passiert.

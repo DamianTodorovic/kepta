@@ -50,7 +50,7 @@ function aufzeichner(antworten: Array<string | Error> = []) {
 function befehlFehler(hex: string): Error {
   return Object.assign(
     new Error(
-      `Command failed: /usr/bin/security add-generic-password -s ${DIENST} -a ${KONTO} -l KEPTA database key -w ${hex}\n` +
+      `Command failed: /usr/bin/security add-generic-password -s ${DIENST} -a ${KONTO} -l K3PTA database key -w ${hex}\n` +
         "security: SecKeychainItemCreateFromContent (<default>): The authorization was canceled by the user.",
     ),
     {
@@ -227,7 +227,7 @@ describe("macOS: security", () => {
 
   it("A1-08: ein fremder Eintrag nennt den Rückhol-Befehl statt nur abzulehnen", () => {
     const bund = macSchluesselbund(aufzeichner(["fremd\n"]).ausf);
-    expect(() => holeOderErzeugeSchluessel(bund, {})).toThrow(/not a KEPTA key[\s\S]*security find-generic-password/);
+    expect(() => holeOderErzeugeSchluessel(bund, {})).toThrow(/not a K3PTA key[\s\S]*security find-generic-password/);
   });
 
   it("A1-08: Exit 45 schickt den Nutzer nicht auf einen Befehl, der selbst mit 45 scheitert", () => {
@@ -441,7 +441,7 @@ describe("holeOderErzeugeSchluessel", () => {
 
   it("nimmt einen vorhandenen Schluessel und lehnt einen fremden Eintrag ab", () => {
     expect(holeOderErzeugeSchluessel(speicherBund(SCHLUESSEL), {}).toString("hex")).toBe(SCHLUESSEL);
-    expect(() => holeOderErzeugeSchluessel(speicherBund("kein-schluessel"), {})).toThrow("not a KEPTA key");
+    expect(() => holeOderErzeugeSchluessel(speicherBund("kein-schluessel"), {})).toThrow("not a K3PTA key");
   });
 
   it("erster Leseversuch leer, zweiter findet den Schluessel: kein Anlegen, kein Überschreiben", () => {
@@ -553,7 +553,7 @@ describe("ohne schluessel keine datei — Damians Entscheidung vom 10.10.2026", 
 
   it("der Schluessel wird einmal geholt und nicht zweimal beim Bund geklopft", () => {
     // Ein Schluesselbund, der antwortet: lesen gibt Zurückgelesenes, ablegen merkt sich
-    // den Wert, den KEPTA in der Argumentliste vorbietet.
+    // den Wert, den K3PTA in der Argumentliste vorbietet.
     let gespeichert: string | null = null;
     let zaehler = 0;
     const ausf: Ausfuehren = (_befehl, argumente) => {

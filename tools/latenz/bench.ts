@@ -1,5 +1,5 @@
 /**
- * Latenz-Benchmark für KEPTA — misst den EINEN Suchpfad (`searchMemories`)
+ * Latenz-Benchmark für K3PTA — misst den EINEN Suchpfad (`searchMemories`)
  * und den Produkt-Schreibpfad (`saveWithIndex`) bei kontrollierbarer
  * Erinnerungszahl.
  *

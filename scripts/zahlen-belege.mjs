@@ -375,6 +375,13 @@ const AUSGELASSEN = new Set(["node_modules", ".git", "dist", "coverage", "test-r
 const LAUF_INDEX = new Map();
 
 /**
+ * Was in diesem Lauf nicht geprueft werden konnte, wird gesagt, nicht verschluckt:
+ * ein Fall in eine Ausnahmefalle ohne Git prueft Getracktheit nicht, er nimmt sie an.
+ * @type {Set<string>}
+ */
+const LAUFHINWEISE = new Set();
+
+/**
  * Der Index einer Suchbasis: alle Dateien mit Mess-/Papier-Endung, relativ zur Basis.
  * Einmal pro Lauf gebaut — die Papiere zitieren mit weggelassenen Ordnern
  * ("audit-2026-10-09/…" fehlt oft), und ohne Index muesste jede Citation den Baum
@@ -647,9 +654,13 @@ function getracktVon(wurzel, cache) {
   /** @type {Set<string>} */
   let menge;
   try {
-    menge = new Set(execFileSync("git", ["ls-files", "-z"], { cwd: wurzel, encoding: "utf8" }).split("\0").filter(Boolean));
+    menge = new Set(execFileSync("git", ["ls-files", "-z"], { cwd: wurzel, encoding: "utf8", stdio: ["ignore", "pipe", "ignore"] }).split("\0").filter(Boolean));
   } catch {
+    // Zweierlei Ausfall, ein Hinweis: ohne Git ist `getrackt` keine Pruefung, sondern
+    // eine Annahme — naemlich dass der Baum aus `git ls-files` ausgepackt wurde. Wer
+    // das nicht sieht, liest eine gruene Auspackung als Beweis der Getracktheit.
     menge = null;
+    LAUFHINWEISE.add("Getrackt-Pruefung ausgefallen (kein Git in diesem Baum) — angenommen: Auspackung aus `git ls-files`");
   }
   cache.set(wurzel, menge);
   return menge;
@@ -877,7 +888,7 @@ export function mdDateien(wurzel) {
   // Live-Lauf rot — 11 Befunde aus der eigenen pruebaetischen Luege.
   const istFixtur = (rel) => rel.split("/").includes("fixtures") || rel.split("\\").includes("fixtures");
   try {
-    return execFileSync("git", ["ls-files", "-z", "*.md"], { cwd: wurzel, encoding: "utf8" })
+    return execFileSync("git", ["ls-files", "-z", "*.md"], { cwd: wurzel, encoding: "utf8", stdio: ["ignore", "pipe", "ignore"] })
       .split("\0")
       .filter(Boolean)
       .filter((rel) => !istFixtur(rel))
@@ -977,7 +988,8 @@ export function hauptfunktion(argv = process.argv.slice(2)) {
     }
   }
   for (const b of alle) nachArt.set(b.art, (nachArt.get(b.art) ?? 0) + 1);
-  const hinweis = flaechenHinweise.length ? ` — Flaechen ohne Papier: ${flaechenHinweise.join("; ")}` : "";
+  const offen = [...flaechenHinweise, ...LAUFHINWEISE];
+  const hinweis = offen.length ? ` — offen: ${offen.join("; ")}` : "";
 
   if (argv.includes("--inventar")) {
     console.log(

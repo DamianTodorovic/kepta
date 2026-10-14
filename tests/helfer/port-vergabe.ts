@@ -99,6 +99,9 @@ export const HORCHENDE_KENNUNGEN: readonly string[] = [
   "tests/server-settings-geheim.test.ts",
   "tests/sockel-vertrag.test.ts#probe",
   "tests/server.test.ts",
+  // #64: die Umwelt-Kennungen brauchen einen eigenen Horcher — U-4 misst /api/health gegen
+  // einen echten Lauscher, nicht gegen request(app) (die Klasse steht in tests/helfer/hoerer.ts).
+  "tests/umwelt-kennungen.test.ts",
 ];
 
 /** Die Kandidatenfolge eines Namens: erst die Eigenzahl, dann die Sprünge des Bereichs. */

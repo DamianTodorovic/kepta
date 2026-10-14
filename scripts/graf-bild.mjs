@@ -41,6 +41,34 @@ const BREITE = Number(schalter("--breite", 1200));
 const HOEHE = Number(schalter("--hoehe", 627));
 const ZIEL = path.resolve(schalter("--out", path.join(os.tmpdir(), `kepta-graf-${BREITE}x${HOEHE}.png`)));
 
+/**
+ * Die Marke kommt aus dem eigenen Papier, nicht aus diesem Skript: das erste Wort
+ * der Stufe-1-Ueberschrift von README.md ist das, was aussen verkauft wird. Sweept
+ * das Umbenennen das Papier, malt das Bild von selbst mit — eine getippte Marke im
+ * Skript waere die vierte Stelle, die hinterherhinkt (12./13.10.: Karte 476,
+ * og.html 474, Seite 982).
+ *
+ * Die eine Überscheibung (`--marke` / `KEPTA_MARKE`) ist für den Fall, dass ein
+ * Bild dem Papier vorauslaufen muss. Sie wird gemeldet, nicht verschleiert.
+ */
+function markeAusPapier() {
+  const pfad = path.resolve(import.meta.dirname, "..", "README.md");
+  const zeilen = fs.readFileSync(pfad, "utf8").split("\n");
+  const nr = zeilen.findIndex((l) => /^#\s+\S/.test(l));
+  if (nr < 0) throw new Error(`README.md hat keine Stufe-1-Ueberschrift — die Marke wäre geraten.`);
+  const wort = zeilen[nr].replace(/^#\s+/, "").trim().split(/\s+/)[0];
+  if (!wort) throw new Error(`Ueberschrift ohne Wort — „${zeilen[nr].trim()}".`);
+  const ueberschreib = schalter("--marke", process.env.KEPTA_MARKE ?? null);
+  return {
+    name: ueberschreib ?? wort,
+    papier: wort,
+    quelle: ueberschreib ? "--marke / KEPTA_MARKE" : `README.md Zeile ${nr + 1}`,
+    abweichend: Boolean(ueberschreib && ueberschreib !== wort),
+  };
+}
+
+const MARKE = markeAusPapier();
+
 // Ein Schlüssel aus der Umgebung, nie aus dem Schlüsselbund: der Rechner des
 // Nutzers bleibt unberührt, die Datei ist verschlüsselt wie im Feld.
 const schluessel = crypto.randomBytes(32).toString("hex");
@@ -162,7 +190,8 @@ const plan = {
     `Bestand ${bestand.knoten} Notizen · ${bestand.kanten} Kanten gerechnet — im Bild ${knoten.length} Knoten · ${kanten.length} Kanten (${kanten.filter((k) => k.sorte === "echt").length} echt durchzogen, ${kanten.filter((k) => k.sorte === "aehnlich").length} ähnlich gestrichelt)`,
     `betitelt {ETIKETT} von ${knoten.length} · gekappt ${kuerzung.uebrig.knoten} Knoten, ${kuerzung.uebrig.kanten} Kanten${kuerzung.grund.length ? ` (${kuerzung.grund.join(", ")})` : ""} · ${kuerzung.gefiltert.privat} private Notizen nicht gezeigt`,
   ],
-  fuss: `KEPTA — knowledge graph, computed by the engine · ${neuesterStand()} · erfundener Demo-Bestand, keine echten Daten`,
+  fuss: `${MARKE.name} — knowledge graph, computed by the engine · ${neuesterStand()} · erfundener Demo-Bestand, keine echten Daten`,
+  marke: MARKE,
 };
 
 function neuesterStand() {
@@ -284,5 +313,7 @@ if (aus.status !== 0) {
   console.error("graf-bild: Pillow konnte nicht malen.\n" + (aus.stderr || ""));
   process.exit(1);
 }
-console.log(aus.stdout.trim());
+const bericht = JSON.parse(aus.stdout.trim());
+bericht.marke = { gemalt: MARKE.name, papier: MARKE.papier, quelle: MARKE.quelle, abweichend: MARKE.abweichend };
+console.log(JSON.stringify(bericht));
 console.log("Plan: " + path.join(heim, "plan.json"));

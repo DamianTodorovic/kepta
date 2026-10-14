@@ -1,4 +1,4 @@
-// D2-02, D2-03, D2-09 / Z5 — die drei Dinge, die jedes Werkzeug hat und KEPTA
+// D2-02, D2-03, D2-09 / Z5 — die drei Dinge, die jedes Werkzeug hat und K3PTA
 // nicht hatte: Hilfe hinter -h und --help, ein Maschinenformat, und Exit-Codes,
 // die sagen, was passiert ist. Dazu D2-03: alles, was mit `-` beginnt, ist ein
 // Schalter — niemals ein Befehl, den man korrigieren könnte.
@@ -17,7 +17,7 @@ describe("die Hilfetüren sind erreichbar (D2-02)", () => {
       const k = sandkiste();
       const l = await lauf([tür], k);
       expect(l.code, `stdout: ${l.aus}\nstderr: ${l.fehl}`).toBe(0);
-      expect(l.aus).toMatch(/KEPTA from the terminal/);
+      expect(l.aus).toMatch(/K3PTA from the terminal/);
       for (const befehl of ["remember", "recall", "timeline", "contradict", "stats", "demo", "setup"]) {
         expect(l.aus, `die Tafel erklärt ${befehl} nicht`).toContain(befehl);
       }

@@ -64,7 +64,7 @@ function gesamt(l: Lauf): string {
   return `${l.aus}\n${l.fehl}`;
 }
 
-describe("KEPTA-CLI: ein unbekannter Befehl startet keinen schweigenden Server", () => {
+describe("K3PTA-CLI: ein unbekannter Befehl startet keinen schweigenden Server", () => {
   it("Tippfehler 'rember' endet mit Exit 2 und nennt den naechsten Befehl", async () => {
     const l = await starte(["rember"]);
     expect(l.code, `Exit-Code ${l.code}, Ausgabe: ${gesamt(l).slice(0, 300)}`).toBe(2);
@@ -88,7 +88,7 @@ describe("KEPTA-CLI: ein unbekannter Befehl startet keinen schweigenden Server",
   it("--help ist die Hilfetür: Tafel auf stdout, Exit 0, kein hängender stdin", async () => {
     const l = await starte(["--help"]);
     expect(l.code, gesamt(l).slice(0, 300)).toBe(0);
-    expect(l.aus).toMatch(/KEPTA from the terminal/);
+    expect(l.aus).toMatch(/K3PTA from the terminal/);
     expect(l.aus).toMatch(/remember/);
     expect(l.fehl).not.toMatch(/unknown/i);
   });
@@ -96,7 +96,7 @@ describe("KEPTA-CLI: ein unbekannter Befehl startet keinen schweigenden Server",
   it("-h und --version sind dieselben Türen", async () => {
     const hilfe = await starte(["-h"]);
     expect(hilfe.code, gesamt(hilfe).slice(0, 300)).toBe(0);
-    expect(hilfe.aus).toMatch(/KEPTA from the terminal/);
+    expect(hilfe.aus).toMatch(/K3PTA from the terminal/);
     const fassung = await starte(["--version"]);
     expect(fassung.code, gesamt(fassung).slice(0, 300)).toBe(0);
     expect(fassung.aus).toMatch(/kepta \d+\.\d+\.\d+/);

@@ -1,4 +1,4 @@
-"""Tests gegen einen Stub-Server — kein laufendes KEPTA nötig."""
+"""Tests gegen einen Stub-Server — kein laufendes K3PTA nötig."""
 
 from __future__ import annotations
 

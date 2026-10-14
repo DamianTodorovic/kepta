@@ -97,7 +97,7 @@ describe("demo-show", () => {
   });
 });
 
-// Die Demo ist der einzige Moment, in dem KEPTA für ein Publikum spielt. D2-17
+// Die Demo ist der einzige Moment, in dem K3PTA für ein Publikum spielt. D2-17
 // und D2-18 haben gemessen: sie nutzt ein eigenes Raster (3 und 5 Leerzeichen),
 // ist einfarbig, erfindet ein Ergebnis und schneidet Wörter mitten im [[Link]]
 // ab. Genau dafür gelten hier dieselben Regeln wie für die fünf Befehle.

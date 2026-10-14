@@ -184,7 +184,7 @@ export function importChatgptKommando(store: KeptaStore, argumente: string[]): n
     // Rest dieses Produkts (D2-25, von Damian entschieden: ein Terminal, Englisch).
     const [home, temp] = wurzeln;
     ort("no import from this place:", aufgeloest);
-    sagen("KEPTA reads only your home folder or the system temp:");
+    sagen("K3PTA reads only your home folder or the system temp:");
     ort("home:", home);
     ort("system temp:", temp);
     sagen("next: copy the export into your Downloads folder, then run the command again");

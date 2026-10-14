@@ -7,7 +7,7 @@
 5. Open a PR with a description, and a screenshot for UI changes
 6. Found a bug? Open an issue. Questions, ideas, security-model critique? Open a [discussion](https://github.com/DamianTodorovic/kepta/discussions).
 
-Never commit a secret. The old `KI-Gehirn` branding is gone — use `KEPTA`.
+Never commit a secret. The old `KI-Gehirn` branding is gone — use `K3PTA`.
 
 Docs, UI strings and code comments are English. Keep new user-facing text in English — and do not put a translatable string in a place where code branches on its wording; that turns a translation into a behaviour change.
 

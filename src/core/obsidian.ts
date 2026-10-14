@@ -33,7 +33,7 @@ function parseYamlScalar(raw: string): unknown {
   return v;
 }
 
-/** Minimaler YAML-Frontmatter-Parser für KEPTA-relevante Felder. */
+/** Minimaler YAML-Frontmatter-Parser für K3PTA-relevante Felder. */
 export function parseFrontmatter(raw: string): { meta: Record<string, unknown>; body: string; hasFrontmatter: boolean } {
   const m = raw.match(FRONTMATTER_RE);
   if (!m) return { meta: {}, body: raw, hasFrontmatter: false };

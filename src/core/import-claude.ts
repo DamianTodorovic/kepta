@@ -449,7 +449,7 @@ export async function importClaudePfad(store: KeptaStore, pfad: string, opts: Cl
   let wurzelReal: string;
   try {
     if (fs.lstatSync(ziel).isSymbolicLink()) {
-      throw new Error(`${ortFürMeldung(ziel)} is a symlink — KEPTA imports the real file or folder. Point the command at the folder the link points to, or copy the export in.`);
+      throw new Error(`${ortFürMeldung(ziel)} is a symlink — K3PTA imports the real file or folder. Point the command at the folder the link points to, or copy the export in.`);
     }
     wurzelReal = fs.realpathSync(ziel);
   } catch (e) {
@@ -649,7 +649,7 @@ function ortFürMeldung(pfad: string): string {
 
 function keineErlaubteWurzelText(pfad: string, erlaubte: string[]): string {
   const orte = erlaubte.map((w) => ortFürMeldung(w)).join(", ");
-  return `no import from this place: ${ortFürMeldung(pfad)} — KEPTA reads only your home folder and the system temp (${orte}). Next: copy the export into your Downloads folder and run the command again, or name another root with the roots option.`;
+  return `no import from this place: ${ortFürMeldung(pfad)} — K3PTA reads only your home folder and the system temp (${orte}). Next: copy the export into your Downloads folder and run the command again, or name another root with the roots option.`;
 }
 
 /** Pfad-relativ, nicht startsWith: „/home/x-anderer" darf nicht durch „/home/x" rutschen. */

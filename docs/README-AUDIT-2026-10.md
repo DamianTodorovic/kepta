@@ -288,8 +288,8 @@ wegen des abschließenden Zeilenumbruchs; alle sieben Papiere nach derselben Zä
 | letta-ai/letta-code | 146 | 13 | 3 | 43 | ja (61) | nie | 0 | Zeile 97 "AgentFile deprecation" |
 | ollama/ollama | 358 | 3 (Logo) | keine | 16 | nein | nie | 0 | nein |
 | cli/cli (trunk) | 123 | 8 (Screenshot) | keine | 22 | nein | 30 | 0 | Zeile 5 Warntafel, Zeile 115 "Comparison with hub" |
-| **KEPTA README.md** | 374 | **1 (nur Logo)** | 2 | 48 | ja (16) | 2 und 12 | **0** | Satz ja (367), Sektion nein |
-| **KEPTA README.de.md** | 226 | **1 (nur Logo)** | 2 | 19 | ja | 10 | Verweis auf EN (Zeile 10) | nein |
+| **K3PTA README.md** | 374 | **1 (nur Logo)** | 2 | 48 | ja (16) | 2 und 12 | **0** | Satz ja (367), Sektion nein |
+| **K3PTA README.de.md** | 226 | **1 (nur Logo)** | 2 | 19 | ja | 10 | Verweis auf EN (Zeile 10) | nein |
 
 **Die eine Zahl, die die Tabelle zusammenfasst:** die sechs Markt-Papiere zeigen das Produkt in
 Zeile 3 bis 13. **Unsere beiden Papiere enthalten genau ein Bild: das Logo.** Gemessen mit
@@ -373,8 +373,10 @@ Text, den GitHub rendert, aber kein Produktblick.
 
 ### 11.4 Material für den Vertrieb — und die Zahl, die uns drückt
 
-- **Kein Befund:** in keinem der sechs Papiere steht ein KEPTA-Name, keine Behauptung über uns, kein
-  namentlicher Vergleich (gemessen: grep -niE über alle sechs, 0 Treffer). Suchmaterial wäre nur in
+- **Kein Befund:** in keinem der sechs Papiere steht unser Markenname — **in keiner Schreibweise** —,
+  keine Behauptung über uns, kein namentlicher Vergleich. Gemessen nachträglich mit einer Zeichenklasse
+  statt eines Worts (`grep -rniEc 'k3?pta' rohdaten/*.md`, 14.10.), weil ein Wort bei einer Umbenennung
+  die Aussage mitbiegt: **0 Treffer in allen sieben geladenen Papieren.** Suchmaterial wäre nur in
   ihren Doku-Seiten und Benchmark-Tabellen zu finden, nicht in ihren READMEs; das habe ich nicht
   gelesen und melde es als offene Fläche, nicht als „nichts zu finden".
 - **Mem0 behauptet LongMemEval 94,4** (eigene Tabelle Zeile 50, Research-Highlight Zeile 67,

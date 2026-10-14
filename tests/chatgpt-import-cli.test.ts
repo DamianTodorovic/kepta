@@ -60,7 +60,7 @@ describe("import chatgpt: die Absage mit Tat", () => {
     const { code, fehl } = funkt(["chatgpt", draussen]);
     expect(code).not.toBe(0);
     expect(fehl).not.toContain("Only import from");
-    expect(fehl).toContain("KEPTA reads only your home folder");
+    expect(fehl).toContain("K3PTA reads only your home folder");
     expect(fehl).toContain(os.homedir());
     expect(fehl).toContain(os.tmpdir());
     expect(fehl).toContain("Downloads");

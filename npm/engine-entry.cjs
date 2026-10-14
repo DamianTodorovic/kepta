@@ -176,6 +176,34 @@ function klassifiziere(eingabe) {
   return { typ: "semantic", grund: "formulierter Text ohne Ablauf oder Datum" };
 }
 
+// src/core/umwelt.ts
+var UMWELT_NAMEN = {
+  schluessel: ["K3PTA_DB_KEY", "KEPTA_DB_KEY"],
+  datenordner: ["K3PTA_DATA_DIR", "KEPTA_DATA_DIR"],
+  sicherungBehalten: ["K3PTA_BACKUP_KEEP", "KEPTA_BACKUP_KEEP"],
+  verschluesselung: ["K3PTA_ENCRYPTION", "KEPTA_ENCRYPTION"]
+};
+var gespurrt = /* @__PURE__ */ new Map();
+function nichtLeer(wert) {
+  return typeof wert === "string" && wert.trim() !== "";
+}
+function leseUmwelt(rolle, env = process.env) {
+  const [neu, alt] = UMWELT_NAMEN[rolle];
+  const hatNeu = nichtLeer(env[neu]);
+  const hatAlt = nichtLeer(env[alt]);
+  const fund = {
+    rolle,
+    gewonnen: hatNeu ? neu : hatAlt ? alt : void 0,
+    wert: hatNeu ? env[neu] : hatAlt ? env[alt] : void 0,
+    auchAlteForm: hatNeu && hatAlt
+  };
+  if (fund.auchAlteForm) {
+    fund.meldung = `${neu} wins; ${alt} is also set and ignored \u2014 both names are set, and the value that runs is the one named first.`;
+  }
+  if (fund.gewonnen) gespurrt.set(rolle, fund);
+  return fund;
+}
+
 // src/core/stopwords.ts
 var STOPWORDS_DE = /* @__PURE__ */ new Set([
   "der",
@@ -510,7 +538,7 @@ var LES_FENSTER = 5e3;
 var GRAPH_ENTITATEN_FENSTER = 500;
 var GRAPH_RELATIONEN_FENSTER = 2e3;
 function defaultDataDir() {
-  const env = process.env.KEPTA_DATA_DIR;
+  const env = leseUmwelt("datenordner").wert;
   if (env) return env;
   return import_node_path.default.join(import_node_os.default.homedir(), ".kepta");
 }
@@ -1420,8 +1448,8 @@ var KLARTEXT_KOPF = Buffer.from("SQLite format 3\0", "latin1");
 var KOPIE = ".encrypting";
 var SPERRE = ".encrypting-lock";
 var VERWAIST_MS = 10 * 6e4;
-var ANDERES_PROGRAMM = "The knowledge base is open in another program (an AI agent over MCP, an older KEPTA?) \u2014 it stays unencrypted until KEPTA has it to itself. Close the other program and restart KEPTA.";
-var WIRD_UMGEWANDELT = "The knowledge base is being encrypted by another KEPTA process \u2014 try again in a moment.";
+var ANDERES_PROGRAMM = "The knowledge base is open in another program (an AI agent over MCP, an older K3PTA?) \u2014 it stays unencrypted until K3PTA has it to itself. Close the other program and restart K3PTA.";
+var WIRD_UMGEWANDELT = "The knowledge base is being encrypted by another K3PTA process \u2014 try again in a moment.";
 function fehlertext(e) {
   return e instanceof Error ? e.message : String(e);
 }
@@ -1466,7 +1494,7 @@ function setzeSchluessel(db, schluessel, herkunft) {
         );
       }
       throw new Error(
-        `The knowledge base ${db.name} could not be opened with the 256-bit key${herkunft ? ` from ${herkunft}` : " it was given"} \u2014 either that is not the key this file was encrypted with, or the file itself is damaged. SQLite reports only "file is not a database", so KEPTA does not say which. Nothing was changed. SECURITY.md, "Keep a copy of the key", lists the command that reads your key back on every operating system; if this file was written with a key you hold yourself, set KEPTA_DB_KEY to it and start again.`
+        `The knowledge base ${db.name} could not be opened with the 256-bit key${herkunft ? ` from ${herkunft}` : " it was given"} \u2014 either that is not the key this file was encrypted with, or the file itself is damaged. SQLite reports only "file is not a database", so K3PTA does not say which. Nothing was changed. SECURITY.md, "Keep a copy of the key", lists the command that reads your key back on every operating system; if this file was written with a key you hold yourself, set KEPTA_DB_KEY to it and start again.`
       );
     }
     throw e;

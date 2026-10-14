@@ -1,4 +1,4 @@
-# KEPTA from the terminal
+# K3PTA from the terminal
 
 One local file, no account. This page is the paper twin of the board
 `kepta --help` prints in a terminal. `tests/kli-hilfe-doku.test.ts` keeps the
@@ -8,7 +8,7 @@ fails the suite. Nothing here is a promise the code does not keep.
 ## write
 
 ```text
-kepta remember "<text>" [#tag]     store a sentence — KEPTA picks type and tags
+kepta remember "<text>" [#tag]     store a sentence — K3PTA picks type and tags
 kepta import chatgpt <folder>      your ChatGPT export, turned into notes
 ```
 
@@ -25,7 +25,7 @@ kepta demo                         a six-act story on a throwaway database
 ## set up
 
 ```text
-kepta setup                        connect KEPTA to the AI apps on this computer
+kepta setup                        connect K3PTA to the AI apps on this computer
 kepta ui                           where to look at your notes
 ```
 
@@ -85,7 +85,7 @@ Measured, not imagined — this is `kepta stats` on a file with three notes, at
 80 columns:
 
 ```text
-KEPTA memory
+K3PTA memory
     file    ~/.kepta/kepta.db
     notes   3 active · 0 in trash
     types   semantic: 3

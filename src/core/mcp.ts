@@ -1,4 +1,4 @@
-// KEPTA MCP — Protokoll-Handling (stdio + Streamable HTTP teilen sich diese Logik).
+// K3PTA MCP — Protokoll-Handling (stdio + Streamable HTTP teilen sich diese Logik).
 // Unterstützt: 2026-07-28 (stateless core, server/discover) sowie Legacy-Clients
 // (2025-06-18, 2024-11-05). Erfolgsantworten liefern structuredContent zur outputSchema,
 // Fehlerantworten nur Text + isError — ein Strukturteil im Fehlerfall bricht konforme Clients.
@@ -11,7 +11,7 @@ import { APP_VERSION } from "./version";
 
 export const PROTOCOL_VERSIONS = ["2026-07-28", "2025-06-18", "2024-11-05"] as const;
 export const LATEST_PROTOCOL_VERSION = "2026-07-28";
-export const SERVER_INFO = { name: "kepta", title: "KEPTA — Agent Memory", version: APP_VERSION };
+export const SERVER_INFO = { name: "kepta", title: "K3PTA — Agent Memory", version: APP_VERSION };
 
 export interface JsonRpcRequest {
   jsonrpc?: string;
@@ -494,7 +494,7 @@ export function saveWithIndex(store: KeptaStore, args: Record<string, unknown>):
 }
 
 /**
- * Privatheits-Floor: eine Notiz mit scope "private" verlässt KEPTA nie über den
+ * Privatheits-Floor: eine Notiz mit scope "private" verlässt K3PTA nie über den
  * **Agentenkanal** — also über die acht MCP-Werkzeuge (stdio), über `POST /mcp`
  * und über die vier HTTP-Spiegel `/api/mcp/search|save|consolidate|forget`, die laut
  * Changelog genau „MCP tool parity over HTTP" sind. Bis 3.1.2 galt der Floor nur
@@ -595,7 +595,7 @@ export async function callTool(store: KeptaStore, name: string, args: Record<str
         // außer über private Notizen: die sind für Agenten weder lesbar noch
         // überschreibbar, und ein Update würde den PRIVATEN Datensatz zurückgeben.
         if (args.id !== undefined) {
-          // Bei save kann der Wortlaut nicht aufgehen: eine unbekannte id legt KEPTA
+          // Bei save kann der Wortlaut nicht aufgehen: eine unbekannte id legt K3PTA
           // einfach an, eine private muss abgelehnt werden. Das ist das eine bleibende
           // Existenz-Oracle — inhaltlich bleibt die Notiz unangetastet.
           const verweigert = aussenVor(store, String(args.id), `Memory not found: ${String(args.id)}`);
@@ -874,7 +874,7 @@ const AELTESTE_PROTOCOL_VERSION = VERSIONEN_ABSTEIGEND[VERSIONEN_ABSTEIGEND.leng
  * Frueher lief jede unbekannte Anfrage auf die neueste Version hinaus. Fuer einen
  * Client, der etwas Aelteres spricht, ist das die eine Antwort, mit der er nichts
  * anfangen kann: Claude Desktop bat um 2025-03-26, bekam 2026-07-28 und brach ab
- * mit "Server's protocol version is not supported". KEPTA war damit fuer den
+ * mit "Server's protocol version is not supported". K3PTA war damit fuer den
  * verbreitetsten MCP-Client unbenutzbar.
  *
  * Richtig ist, nie ueber das hinauszugehen, wonach gefragt wurde: die hoechste
@@ -913,7 +913,7 @@ export interface McpContext {
   /** Wer verbunden ist — aus initialize (clientInfo). Über stdio genau ein Client je Prozess. */
   client?: { name?: string; title?: string; version?: string };
   /**
-   * Hört mit, was Agenten tun — die Oberfläche von KEPTA Core zeigt es live an.
+   * Hört mit, was Agenten tun — die Oberfläche von K3PTA Core zeigt es live an.
    * Ohne Zuhörer ändert sich nichts; ein Fehler darin bricht keinen Aufruf.
    */
   melde?: (e: McpEreignis) => void;

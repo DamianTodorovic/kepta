@@ -1,6 +1,6 @@
 // D2-01 / Z1 — der Absturz, den kein Bericht vor D2 hatte: schließt der Leser
 // die Pipe früh (`| head`, `less`, `fzf`, ein Skript, das nur Zeile 1 will),
-// warf KEPTA einen Node-Stacktrace — bei recall/timeline kam dabei gar keine
+// warf K3PTA einen Node-Stacktrace — bei recall/timeline kam dabei gar keine
 // Antwort mehr an. Fundstelle war die Drain-Klammer nach jedem Erlebnis-Befehl.
 // Ein Textprodukt, das bei `| head` abstürzt, ist kein Textprodukt.
 import { describe, it, expect } from "vitest";
@@ -12,7 +12,7 @@ const AI = "The AI assistant answers with AI-generated text about AI";
 describe("D2-01: die Antwort überlebt jede Pipe", () => {
   it("stats | head -1: Zeile 1 steht, stderr ist leer, der Exit ist 0", async () => {
     const l = await laufMitFrueherPipe(["stats"], sandkiste());
-    expect(l.aus.split("\n")[0], `erste Zeile fehlt, stdout war: ${JSON.stringify(l.aus)}`).toBe("KEPTA memory");
+    expect(l.aus.split("\n")[0], `erste Zeile fehlt, stdout war: ${JSON.stringify(l.aus)}`).toBe("K3PTA memory");
     expect(stackZeilen(l.fehl), l.fehl).toEqual([]);
     expect(l.fehl, l.fehl).toBe("");
     expect(l.code, l.fehl).toBe(0);

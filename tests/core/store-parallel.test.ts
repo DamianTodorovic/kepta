@@ -5,7 +5,7 @@ import fs from "node:fs";
 import { spawn } from "node:child_process";
 import { KeptaStore } from "../../src/core/store";
 
-// KEPTA verspricht eine Datenbank fuer alle: Desktop-App, MCP-Server, Python-Client.
+// K3PTA verspricht eine Datenbank fuer alle: Desktop-App, MCP-Server, Python-Client.
 // Dann muss ein zweiter Prozess sie auch oeffnen koennen, waehrend ein erster
 // gerade schreibt — sonst startet der MCP-Server nicht, sobald die App laeuft.
 let dir: string;

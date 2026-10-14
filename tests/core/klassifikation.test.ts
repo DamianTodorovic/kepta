@@ -4,7 +4,7 @@ import {
   nummerierteSchritte, aufzaehlungsZeilen, markupAnteil, istBelegQuelle,
 } from "../../src/core/klassifikation";
 
-// Der Anlass: KEPTA ordnete Wissen NIE selbst zu. Der Typ kam allein vom
+// Der Anlass: K3PTA ordnete Wissen NIE selbst zu. Der Typ kam allein vom
 // Aufrufer, und wo keiner ihn setzte, fiel alles auf "semantic". An einer
 // echten Wissensbasis aus einem Rechner-Scan waren 3071 von 3148 Notizen
 // "Fakt" — eine Einteilung, die nichts mehr einteilt.

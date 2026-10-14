@@ -7,6 +7,7 @@ import path from "path";
 import fs from "fs";
 import os from "os";
 import { KeptaStore } from "./src/core/store";
+import { leseUmwelt, gewonneneUmweltNamen, ohneWert } from "./src/core/umwelt";
 import { defaultExtensions } from "./src/core/extensions";
 import { schluesselbundKeyProvider } from "./src/core/schluessel";
 import { planeImportReparatur, mitFrist } from "./src/core/reparatur";
@@ -44,10 +45,14 @@ interface MemoryRecord {
 
 // ---------- Lokaler Speicher: SQLite (src/core), vorher JSON in ~/.kepta ----------
 
-const DATA_DIR_ROH = process.env.KEPTA_DATA_DIR || path.join(os.homedir(), ".kepta");
+// Beide Namensformen (#64): K3PTA_DATA_DIR zuerst, KEPTA_DATA_DIR als Rueckfall. Wer nur
+// die alte Form gesetzt hat, bleibt in seinem Ordner — ein Austausch waere eine
+// Auslieferungstatsache, kein Texttausch. Der Default bleibt ~/.kepta.
+const DATA_DIR_FUND = leseUmwelt("datenordner");
+const DATA_DIR_ROH = DATA_DIR_FUND.wert || path.join(os.homedir(), ".kepta");
 const DATA_DIR = path.resolve(DATA_DIR_ROH);
 if (!DATA_DIR.startsWith(os.homedir()) && !DATA_DIR.startsWith(os.tmpdir())) {
-  throw new Error(`KEPTA_DATA_DIR must live under your home or temp - got: ${DATA_DIR}`);
+  throw new Error(`${DATA_DIR_FUND.gewonnen ?? "KEPTA_DATA_DIR"} must live under your home or temp - got: ${DATA_DIR}`);
 }
 
 function trimSlash(url: string) {
@@ -129,11 +134,13 @@ const SICHERUNGS_NAME = /^kepta-pre-replace-(\d+)(?:-([0-9a-f]{4}))?\.db$/;
  * Fehler des permanent-Schalters.
  */
 function backupAufbewahrung(): { behalten: number; ignoriert?: string } {
-  const roh = process.env.KEPTA_BACKUP_KEEP;
+  // Beide Namensformen (#64); die gemeldete Zahl nennt den Sieger, nicht eine Vermutung.
+  const fund = leseUmwelt("sicherungBehalten");
+  const roh = fund.wert;
   if (roh === undefined || roh.trim() === "") return { behalten: 5 };
   const wert = Number(roh);
   if (Number.isFinite(wert) && wert >= 0) return { behalten: Math.floor(wert) };
-  return { behalten: 5, ignoriert: `KEPTA_BACKUP_KEEP="${roh}" is not a number from 0 — five backups are kept.` };
+  return { behalten: 5, ignoriert: `${fund.gewonnen}="${roh}" is not a number from 0 — five backups are kept.${fund.meldung ? " " + fund.meldung : ""}` };
 }
 
 /**
@@ -588,6 +595,16 @@ export function createApp(store: KeptaStore) {
       embeddings: store.embeddingStats(),
       fts: store.ftsStatus(),
       encryption: store.verschluesselung,
+      // #64: welche Namensform der Umgebung wirklich laeuft, und ob beide gesetzt waren.
+      // Gemeldet wird der **Name** — nie der Wert. Ein Schluessel aus der Umgebung gehoert
+      // nicht in eine Tuere, die `KEPTA_HOST` ins Netz stellen kann (`ohneWert`).
+      kennungen: {
+        schluessel: ohneWert(leseUmwelt("schluessel")),
+        datenordner: ohneWert(leseUmwelt("datenordner")),
+        verschluesselung: ohneWert(leseUmwelt("verschluesselung")),
+        sicherungBehalten: ohneWert(leseUmwelt("sicherungBehalten")),
+        gemeldet: gewonneneUmweltNamen().filter((f) => f.meldung).map(ohneWert),
+      },
       mcp: { protocol: "2026-07-28", tools: MCP_TOOLS.length, http: "/mcp" },
       time: new Date().toISOString(),
     });
@@ -646,7 +663,7 @@ export function createApp(store: KeptaStore) {
     }
   });
 
-  // --- Inbox Auto-Import — KEPTA liest immer mit (File-Watcher) ---
+  // --- Inbox Auto-Import — K3PTA liest immer mit (File-Watcher) ---
   const INBOX_DIR = path.join(DATA_DIR, "inbox");
   try { fs.mkdirSync(INBOX_DIR, { recursive: true }); } catch {}
   let inboxWatcher: fs.FSWatcher | null = null;
@@ -969,7 +986,7 @@ export function createApp(store: KeptaStore) {
    * Liste — und ab der einundsechzigsten griff die Schreibdrossel (60/min) und
    * beantwortete alles Weitere mit 429. Weil der Aufrufer den Fehler verwarf,
    * meldete die Oberflaeche trotzdem Erfolg. Von aussen sah das aus, als
-   * loesche KEPTA wahllos die halbe Wissensbasis.
+   * loesche K3PTA wahllos die halbe Wissensbasis.
    *
    * Hier faellt alles in einen Aufruf, und die Antwort sagt genau, was geschehen
    * ist. Geloescht wird IN DEN PAPIERKORB, nie endgueltig.
@@ -1052,7 +1069,7 @@ export function createApp(store: KeptaStore) {
   // Der Kern konnte das laengst, war aber an nichts angeschlossen. Hier wird er
   // erreichbar: exportieren erzeugt ein AES-256-GCM-Paket, das per USB, Ordner
   // oder verschluesselter Mail auf das zweite Geraet der Kanzlei wandert.
-  // KEPTA selbst sendet nichts — der Weg bleibt in der Hand des Nutzers.
+  // K3PTA selbst sendet nichts — der Weg bleibt in der Hand des Nutzers.
   //
   // Die Passphrase wird ausschliesslich zum Ableiten des Schluessels benutzt und
   // niemals protokolliert, zurueckgegeben oder in publishActivity gereicht.
@@ -1347,7 +1364,7 @@ export function createApp(store: KeptaStore) {
           store.updateMemory(u.id, { title: u.title, content: u.content });
           indexMemory(store, u.id);
         }
-        // In den Papierkorb, nicht endgültig — KEPTA löscht nie ohne Rückweg.
+        // In den Papierkorb, nicht endgültig — K3PTA löscht nie ohne Rückweg.
         for (const id of plan.entfaelle) store.trashMemory(id);
         const vorlage = gruppe[0];
         for (const t of plan.neu) {
@@ -1689,6 +1706,12 @@ async function startServer() {
     console.log(`Server running on http://${HOST}:${PORT}${HOST === "127.0.0.1" ? "" : "  (all interfaces — KEPTA_HOST is set explicitly)"}`);
     const v = store.verschluesselung;
     console.log(`Encryption: ${v.aktiv ? `on (${v.ablage ?? "key provider"}${v.umgewandelt ? ", converted from plaintext just now" : ""})` : `OFF${v.hinweis ? ` — ${v.hinweis}` : ""}`}`);
+    // Aufgabe #64, dieselbe Meldung wie in der App: die Kennungen sind zweisprachig, und
+    // der Start sagt, welche Form laeuft. `ablage` oben nennt schon den Sieger des
+    // Schluessels; hier steht zusaetzlich der Streitfall — beide Formen gesetzt, eine gilt,
+    // und das wird nicht verschwiegen. Ohne Streit bleibt die Zeile weg (kein Rauschen).
+    for (const f of gewonneneUmweltNamen().filter((x) => x.meldung)) console.log(`Kennungen: ${f.meldung}`);
+    console.log(`Datenordner: ${DATA_DIR}${DATA_DIR_FUND.gewonnen ? ` (aus ${DATA_DIR_FUND.gewonnen})` : " (Default ~/.kepta, keine Form gesetzt)"}`);
     console.log(`Speicher: ${store.dbPath} (SQLite) | Embeddings: ${JSON.stringify(store.embeddingStats())}`);
     console.log(`API: http://localhost:${PORT}/api/health | /api/search | MCP: POST /mcp (2026-07-28, ${MCP_TOOLS.length} Tools)`);
     // Adresse hinterlegen, damit fremde Clients die App finden: die gepackte App
@@ -1716,6 +1739,6 @@ async function startServer() {
 export const serverStart: Promise<void> | undefined =
   process.env.KEPTA_NO_AUTOSTART !== "1" ? startServer() : undefined;
 serverStart?.catch((e: unknown) => {
-  console.error(`KEPTA could not start: ${e instanceof Error ? e.message : String(e)}`);
+  console.error(`K3PTA could not start: ${e instanceof Error ? e.message : String(e)}`);
   if (!process.versions.electron) process.exit(1);
 });

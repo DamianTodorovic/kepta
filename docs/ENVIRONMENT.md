@@ -1,6 +1,6 @@
 # Environment variables
 
-Every switch KEPTA reads from the environment, what it does, and what happens if you
+Every switch K3PTA reads from the environment, what it does, and what happens if you
 touch it. Nothing here is a paid feature: these are the screws of the free core. Where a
 switch can hurt, it says so in the same line.
 
@@ -44,7 +44,7 @@ loud one — no database, non-zero exit, one sentence pointing at `KEPTA_DB_KEY`
 | Variable | Default | What it does | Read in |
 |---|---|---|---|
 | `KEPTA_MAX_ACTIVE` | `5000` | How many **active notes** the local HTTP API accepts. Above it, creating a new single note answers `429`; reading, searching and updating stay open, and imports and backups are never refused on this count. The number is read on every request, so raising it needs no restart. It is a brake on a runaway agent writing your memory full — not a licence limit, and not a wall you have to pay to pass. | `server.ts` (`maxActiveMemories()`) |
-| `KEPTA_HOST` | `127.0.0.1` | The address the HTTP API binds to. **Setting this to a network address is the one switch that can expose your memory**: the API has no authentication, and with a non-loopback bind the additional `Host` check is switched off — because the owner chose to serve the network. Then anyone who can reach that port reads every note, writes notes, deletes them and reads the settings, and the loopback guarantee in [SECURITY.md](../SECURITY.md) is over. The way to serve KEPTA to another machine is a reverse proxy in front of `127.0.0.1` that carries its own authentication, TLS and network rules — KEPTA deliberately ships none of that. | `server.ts` (`startServer()`, `nurDieserRechner({ bindHost })`), `src/herkunft.ts` |
+| `KEPTA_HOST` | `127.0.0.1` | The address the HTTP API binds to. **Setting this to a network address is the one switch that can expose your memory**: the API has no authentication, and with a non-loopback bind the additional `Host` check is switched off — because the owner chose to serve the network. Then anyone who can reach that port reads every note, writes notes, deletes them and reads the settings, and the loopback guarantee in [SECURITY.md](../SECURITY.md) is over. The way to serve K3PTA to another machine is a reverse proxy in front of `127.0.0.1` that carries its own authentication, TLS and network rules — K3PTA deliberately ships none of that. | `server.ts` (`startServer()`, `nurDieserRechner({ bindHost })`), `src/herkunft.ts` |
 | `KEPTA_WRITE_GATE` | off | Set to `on` and a local model reviews each write before it lands (`src/core/engine.ts`, `writeGateEnabled()`); reviews are logged, and the gate is opt-in because it costs a model call per save. | `src/core/engine.ts` (`writeGateEnabled()`) |
 | `KEPTA_WRITE_GATE_MODEL` | `llama3.2` | The model the write gate asks. Needs that model locally. | `src/core/engine.ts` |
 
@@ -55,7 +55,7 @@ loud one — no database, non-zero exit, one sentence pointing at `KEPTA_DB_KEY`
 | `KEPTA_EMBED_MODEL` | `nomic-embed-text` | The model the engine embeds with. Changing it changes the meaning of every stored vector: the vector floor (`src/core/engine.ts`, `VECTOR_FLOOR = 0.58`) is calibrated **for this model**, and similarity scores of other models sit on a different scale. Measured with `bge-m3` on the carbonara example in [python/README.md](../python/README.md): the word-overlap query still ranks first (0.77), the paraphrase still falls below the floor. | `src/core/embeddings.ts` (`DEFAULT_EMBED_MODEL`) |
 | `KEPTA_OLLAMA_URL` | `http://127.0.0.1:11434` | Where Ollama answers, for the engine and the background queue. | `src/core/embeddings.ts` (`ollamaBaseUrl()`) |
 | `OLLAMA_HOST`, `OLLAMA_EMBED_MODEL` | `http://localhost:11434`, `nomic-embed-text` | **Not the same pair as above.** These two belong to the chat-proxy route in `server.ts` and do not steer the embedding queue. Three near-identical names for two different settings is a trap; if you rename either pair, do it in both places and in this file. | `server.ts` (chat proxy) |
-| `OLLAMA_URL` | `http://127.0.0.1:11434` | The judge endpoint for the LongMemEval harness in `tools/` only. No effect on a running KEPTA. | `tools/longmemeval/harness.ts` |
+| `OLLAMA_URL` | `http://127.0.0.1:11434` | The judge endpoint for the LongMemEval harness in `tools/` only. No effect on a running K3PTA. | `tools/longmemeval/harness.ts` |
 
 ## For tests and tooling
 
@@ -63,11 +63,11 @@ loud one — no database, non-zero exit, one sentence pointing at `KEPTA_DB_KEY`
 |---|---|---|---|
 | `KEPTA_NO_AUTOSTART` | unset | `1` = importing `server.ts` no longer starts a server. Used by every HTTP test file so suites can open the app on their own port. A test helper, not an operator switch. | `server.ts` (bottom of file) |
 | `KEPTA_DEMO_FAST` | unset | `1` = `npx -y kepta-mcp demo` without the pauses between scenes (`--fast` does the same). | `src/demo-show.ts` |
-| `KEPTA_URL` | unset | Not read by the core — this one belongs to the **Python client**, which uses it to find a running KEPTA instead of `endpoint.json`. See [python/README.md](../python/README.md). | `python/src/kepta/client.py` |
+| `KEPTA_URL` | unset | Not read by the core — this one belongs to the **Python client**, which uses it to find a running K3PTA instead of `endpoint.json`. See [python/README.md](../python/README.md). | `python/src/kepta/client.py` |
 
 `NODE_ENV` is read by Express and by nothing in the core that changes security behaviour; the
 JSON error responses work with it set or unset. `APPDATA` and `ELECTRON_RUN_AS_NODE` appear in
-path resolution and are the platform's own variables, not KEPTA's screws.
+path resolution and are the platform's own variables, not K3PTA's screws.
 
 ## Limits that are not variables
 

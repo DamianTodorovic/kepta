@@ -1,11 +1,11 @@
-<p align="center"><img src="docs/kepta-logo.svg" width="88" alt="KEPTA"></p>
-<p align="center"><img src="https://img.shields.io/badge/tests-1045%20passing-brightgreen" alt="Tests"> <img src="https://img.shields.io/badge/coverage%20gate-%E2%89%A5%2070%25%20der%20Zeilen-brightgreen" alt="Coverage-Gate"> <img src="https://img.shields.io/badge/Verschl%C3%BCsselung-SQLCipher%204-green" alt="verschlüsselt"> <a href="https://www.linkedin.com/in/damian-todorovic-244235434"><img src="https://img.shields.io/badge/LinkedIn-Damian%20Todorovic-0A66C2?logo=linkedin&logoColor=white" alt="Damian Todorovic auf LinkedIn"></a></p>
+<p align="center"><img src="docs/kepta-logo.svg" width="88" alt="K3PTA"></p>
+<p align="center"><img src="https://img.shields.io/badge/tests-1061%20passing-brightgreen" alt="Tests"> <img src="https://img.shields.io/badge/coverage%20gate-%E2%89%A5%2070%25%20der%20Zeilen-brightgreen" alt="Coverage-Gate"> <img src="https://img.shields.io/badge/Verschl%C3%BCsselung-SQLCipher%204-green" alt="verschlüsselt"> <a href="https://www.linkedin.com/in/damian-todorovic-244235434"><img src="https://img.shields.io/badge/LinkedIn-Damian%20Todorovic-0A66C2?logo=linkedin&logoColor=white" alt="Damian Todorovic auf LinkedIn"></a></p>
 
-# KEPTA — das Gedächtnis für KI-Systeme (deutsches Readme)
+# K3PTA — das Gedächtnis für KI-Systeme (deutsches Readme)
 
 Deine KI vergisst alles. Jeder Chat beginnt bei null.
 
-KEPTA ändert das — **lokal**. Eine verschlüsselte SQLite-Datei auf deinem Rechner, die **jede** KI liest und schreibt: Claude Desktop, Cursor, Gemini CLI, Cline, jeder MCP-Client — und Skripte über eine kleine **HTTP-API**. Keine Cloud, kein Konto, keine Telemetrie. Eine Datei, die dir gehört.
+K3PTA ändert das — **lokal**. Eine verschlüsselte SQLite-Datei auf deinem Rechner, die **jede** KI liest und schreibt: Claude Desktop, Cursor, Gemini CLI, Cline, jeder MCP-Client — und Skripte über eine kleine **HTTP-API**. Keine Cloud, kein Konto, keine Telemetrie. Eine Datei, die dir gehört.
 
 > **Dies ist der source-available Kern** (BUSL-1.1 — jede Zeile öffentlich, aber kein OSI-zertifiziertes Open Source; Übergang in AGPL-3.0-or-later vier Jahre nach jedem Release): Memory-Engine, MCP-Server, HTTP-API — dazu der Python-Client unter MIT, damit ihn jedes Python-Projekt einbauen kann. **Alles, was das Gedächtnis klüger macht, liegt in dieser Engine — gratis, ohne Lizenzschritt, und innerhalb des Gedächtnisses gibt es keine Stufen, nichts wird zurückgehalten, um etwas zu verkaufen.** Eine Kapazitätsgrenze gibt es trotzdem, und sie ist keine Bezahlsperre: die lokale API nimmt neue Notizen bis `KEPTA_MAX_ACTIVE` (Standard 5000) an — zu finden bei den [Schrauben](#-schrauben). English: [README.md](README.md).
 
@@ -29,15 +29,15 @@ Eine **Notiz** ist ein Ding, das dein Gedächtnis hält — `remember` schreibt 
 
 ## 🖥️ Oder lad die Desktop-App
 
-**Der Kern hat keine eigene Oberfläche: seine Oberfläche ist dein KI-Client.** Wer ein Fenster will, nimmt die kostenlose Desktop-App — dieselbe Engine, dieselbe verschlüsselte Datei, derselbe Schlüssel — und die liegt in den Releases dieses Repos. Für Teams und Organisationen gibt es KEPTA Enterprise nach Absprache. Dieser Dreisatz ist die ganze Antwort, und jedes Dokument hier sagt dasselbe.
+**Der Kern hat keine eigene Oberfläche: seine Oberfläche ist dein KI-Client.** Wer ein Fenster will, nimmt die kostenlose Desktop-App — dieselbe Engine, dieselbe verschlüsselte Datei, derselbe Schlüssel — und die liegt in den Releases dieses Repos. Für Teams und Organisationen gibt es K3PTA Enterprise nach Absprache. Dieser Dreisatz ist die ganze Antwort, und jedes Dokument hier sagt dasselbe.
 
-Die App bringt Memory-Browser, Hybridsuche mit Spuren-Herkunft, Wissensgraph, Zeitreise, Dossiers und einen Chat, der das Gedächtnis liest. Die DMG für deinen Mac liegt im [neuesten Release](https://github.com/DamianTodorovic/kepta/releases/latest) (Apple Silicon oder Intel), reinziehen in „Programme". Die Builds sind ad-hoc signiert und nicht notarisiert, macOS fragt also ein einziges Mal. Zwei Wege, die auf jeder macOS-Version funktionieren: `xattr -dr com.apple.quarantine /Applications/KEPTA.app`, oder *Systemeinstellungen → Datenschutz & Sicherheit* → die KEPTA-Meldung → **Dennoch öffnen**. Einmal, dann nie wieder. Ältere Anleitungen empfehlen Rechtsklick → **Öffnen** — Apple hat diesen Weg mit macOS 15 entfernt, er tut auf aktuellen Systemen nichts. (Was aus diesem Repository läuft, hat kein Fenster: `npm run dev` startet die HTTP-API und ihr `POST /mcp` — ein Dienst auf deinem Rechner, keine Oberfläche.)
+Die App bringt Memory-Browser, Hybridsuche mit Spuren-Herkunft, Wissensgraph, Zeitreise, Dossiers und einen Chat, der das Gedächtnis liest. Die DMG für deinen Mac liegt im [neuesten Release](https://github.com/DamianTodorovic/kepta/releases/latest) (Apple Silicon oder Intel), reinziehen in „Programme". Die Builds sind ad-hoc signiert und nicht notarisiert, macOS fragt also ein einziges Mal. Zwei Wege, die auf jeder macOS-Version funktionieren: `xattr -dr com.apple.quarantine /Applications/KEPTA.app`, oder *Systemeinstellungen → Datenschutz & Sicherheit* → die K3PTA-Meldung → **Dennoch öffnen**. Einmal, dann nie wieder. Ältere Anleitungen empfehlen Rechtsklick → **Öffnen** — Apple hat diesen Weg mit macOS 15 entfernt, er tut auf aktuellen Systemen nichts. (Was aus diesem Repository läuft, hat kein Fenster: `npm run dev` startet die HTTP-API und ihr `POST /mcp` — ein Dienst auf deinem Rechner, keine Oberfläche.)
 
-Die App ist gratis wie alles in diesem Repository. KEPTA Enterprise (Team- und Mandanten-Gedächtnis, Audit-Kette, Menschenschleuse, Point-in-Time-Recovery) wird nach Absprache lizenziert — [schreib mir auf LinkedIn](https://www.linkedin.com/in/damian-todorovic-244235434).
+Die App ist gratis wie alles in diesem Repository. K3PTA Enterprise (Team- und Mandanten-Gedächtnis, Audit-Kette, Menschenschleuse, Point-in-Time-Recovery) wird nach Absprache lizenziert — [schreib mir auf LinkedIn](https://www.linkedin.com/in/damian-todorovic-244235434).
 
 ## 🧠 Eine Engine. Frei. Für jede KI.
 
-KEPTA ist kein Feature in einer App — es ist eine Gedächtnis-Schicht, die jedes Modell, jede App und jedes Kontextfenster überlebt. Drei Türen führen in dieselbe verschlüsselte Datei:
+K3PTA ist kein Feature in einer App — es ist eine Gedächtnis-Schicht, die jedes Modell, jede App und jedes Kontextfenster überlebt. Drei Türen führen in dieselbe verschlüsselte Datei:
 
 | Tür | Wer sie nutzt |
 |---|---|
@@ -47,11 +47,11 @@ KEPTA ist kein Feature in einer App — es ist eine Gedächtnis-Schicht, die jed
 
 **Frei heißt frei:** 0 €, für immer — kein Konto, kein Lizenzschlüssel, kein Tageslimit, keine Stufe innerhalb des Gedächtnisses, nichts gesperrt, um es später zu verkaufen. Die beste Memory-Engine, die wir bauen können, ist die freie; genau das ist der Punkt. Dieser Satz handelt von Geld, nicht von Kapazität: auf einer Maschine stoppt die lokale API neue Notizen, sobald `KEPTA_MAX_ACTIVE` Notizen aktiv sind (Standard **5000**, `server.ts` → `maxActiveMemories()`) — eine Bremse für einen davonlaufenden Agenten, keine Bezahlsperre. Hochsetzen: diese eine Variable, sonst ändert sich nichts. Nachlesen: [SECURITY.md](SECURITY.md#environment-variables).
 
-**Teams und Organisationen** — Team-Gedächtnis, zentrale Richtlinien, MDM, organisationsweites Audit — bekommen **KEPTA Enterprise auf Anfrage**. Koordination ist das Einzige, was wir je berechnen; Gedächtnisqualität nie. → [schreib mir auf LinkedIn](https://www.linkedin.com/in/damian-todorovic-244235434)
+**Teams und Organisationen** — Team-Gedächtnis, zentrale Richtlinien, MDM, organisationsweites Audit — bekommen **K3PTA Enterprise auf Anfrage**. Koordination ist das Einzige, was wir je berechnen; Gedächtnisqualität nie. → [schreib mir auf LinkedIn](https://www.linkedin.com/in/damian-todorovic-244235434)
 
 ## ⚡ Schnellstart
 
-**1. Mit deinen KI-Apps verbinden:** `npx -y kepta-mcp setup` findet Claude Desktop, Claude Code, Cursor, Windsurf, VS Code, Gemini CLI, Cline und Roo Code und trägt KEPTA dort ein — es fragt je App (`--yes` verbindet alle), sichert jede Datei, die es ändert, und lässt alle anderen Einträge stehen. Für Zed, Codex CLI und Continue gibt es den Einfüge-Schnipsel im englischen [README.md](README.md#connect-your-ai-apps) (deren Konfigurationsformate ändern sich zu schnell, um sie von außen zu schreiben). Jeder andere MCP-Client:
+**1. Mit deinen KI-Apps verbinden:** `npx -y kepta-mcp setup` findet Claude Desktop, Claude Code, Cursor, Windsurf, VS Code, Gemini CLI, Cline und Roo Code und trägt K3PTA dort ein — es fragt je App (`--yes` verbindet alle), sichert jede Datei, die es ändert, und lässt alle anderen Einträge stehen. Für Zed, Codex CLI und Continue gibt es den Einfüge-Schnipsel im englischen [README.md](README.md#connect-your-ai-apps) (deren Konfigurationsformate ändern sich zu schnell, um sie von außen zu schreiben). Jeder andere MCP-Client:
 
 ```json
 {
@@ -96,9 +96,9 @@ KEPTA_DB_KEY=$(openssl rand -hex 32)
 docker run --rm -i -e KEPTA_DB_KEY="$KEPTA_DB_KEY" -v kepta-data:/data kepta-mcp
 ```
 
-**Ohne Schlüssel keine Datei.** Der Wert ist Bedingung, nicht Empfehlung: 64 Hex-Zeichen, einmal erzeugt mit `openssl rand -hex 32` und aufgehoben wie ein Passwort. Ein Container hat keinen Schlüsselbund, also kann eine **neue** Wissensbasis ohne `KEPTA_DB_KEY` nicht entstehen — KEPTA bricht dann mit Exit ungleich 0 ab und nennt den Ausweg. Beim Start immer **denselben** Wert übergeben: ein neues `openssl rand -hex 32` beim zweiten Lauf ist ein Schlüssel, der nicht zu dem Volume passt, und auch dann bleibt die Datei unverändert. Der einzige Weg zu einer Klartext-Datei ist der Schalter, der das laut sagt: `KEPTA_ENCRYPTION=off`.
+**Ohne Schlüssel keine Datei.** Der Wert ist Bedingung, nicht Empfehlung: 64 Hex-Zeichen, einmal erzeugt mit `openssl rand -hex 32` und aufgehoben wie ein Passwort. Ein Container hat keinen Schlüsselbund, also kann eine **neue** Wissensbasis ohne `KEPTA_DB_KEY` nicht entstehen — K3PTA bricht dann mit Exit ungleich 0 ab und nennt den Ausweg. Beim Start immer **denselben** Wert übergeben: ein neues `openssl rand -hex 32` beim zweiten Lauf ist ein Schlüssel, der nicht zu dem Volume passt, und auch dann bleibt die Datei unverändert. Der einzige Weg zu einer Klartext-Datei ist der Schalter, der das laut sagt: `KEPTA_ENCRYPTION=off`.
 
-Für alle, die diesen Text gegen eine ältere Fassung lesen: **vor** dieser Regel hat ein unbrauchbarer Wert (Platzhalter mitkopiert, zu kurz, kein Hex) KEPTA nicht gestoppt — eine Zeile „NOT encrypted", die Datenbank **im Klartext**, Exit-Code 0. Beginnt deine `kepta.db` mit den Bytes `SQLite format 3`, ist genau das passiert, und die Datei ist für jede Leserin offen. Erst Fassung dieser Regel ist der Stand vom 10.10.2026, der Code wird gerade umgestellt — wer eine ältere Ausgabe fährt, prüft sie statt sich auf diesen Satz zu verlassen. [SECURITY.md](SECURITY.md#encryption-at-rest) sagt die ganze Regel.
+Für alle, die diesen Text gegen eine ältere Fassung lesen: **vor** dieser Regel hat ein unbrauchbarer Wert (Platzhalter mitkopiert, zu kurz, kein Hex) K3PTA nicht gestoppt — eine Zeile „NOT encrypted", die Datenbank **im Klartext**, Exit-Code 0. Beginnt deine `kepta.db` mit den Bytes `SQLite format 3`, ist genau das passiert, und die Datei ist für jede Leserin offen. Erst Fassung dieser Regel ist der Stand vom 10.10.2026, der Code wird gerade umgestellt — wer eine ältere Ausgabe fährt, prüft sie statt sich auf diesen Satz zu verlassen. [SECURITY.md](SECURITY.md#encryption-at-rest) sagt die ganze Regel.
 
 **CI und Server haben keinen Schlüsselbund.** Der Schlüssel kommt als Secret in die Pipeline, einmal erzeugt — nicht je Lauf neu, sonst startet jeder Lauf ein leeres Gedächtnis:
 
@@ -107,9 +107,9 @@ Für alle, die diesen Text gegen eine ältere Fassung lesen: **vor** dieser Rege
 - run: KEPTA_DB_KEY="${{ secrets.KEPTA_DB_KEY }}" npx -y kepta-mcp stats
 ```
 
-Drei Fallen, am Baum gemessen: Ein **leerer** Wert ist kein „ohne Schlüssel" — `KEPTA_DB_KEY=""` verwirft KEPTA und fragt den Schlüsselbund des Rechners, du liest also den Eintrag, den du gerade nicht anfassen wolltest (`src/core/schluessel.ts`). Ein **Platzhalter** ist auch ein Wert. Und ein Schlüssel, der in einer protokollierten Befehlszeile steht, ist ein **veröffentlichter** Schlüssel. Wenn der Lauf keinen Schlüssel erreicht, ist das richtige Ergebnis das von oben: keine Datenbank, Exit ungleich 0, ein Satz mit `KEPTA_DB_KEY`. Ein grüner CI-Lauf, der eine Klartext-Wissensbasis gebaut hat, ist genau der Fehler, den diese Regel schließt.
+Drei Fallen, am Baum gemessen: Ein **leerer** Wert ist kein „ohne Schlüssel" — `KEPTA_DB_KEY=""` verwirft K3PTA und fragt den Schlüsselbund des Rechners, du liest also den Eintrag, den du gerade nicht anfassen wolltest (`src/core/schluessel.ts`). Ein **Platzhalter** ist auch ein Wert. Und ein Schlüssel, der in einer protokollierten Befehlszeile steht, ist ein **veröffentlichter** Schlüssel. Wenn der Lauf keinen Schlüssel erreicht, ist das richtige Ergebnis das von oben: keine Datenbank, Exit ungleich 0, ein Satz mit `KEPTA_DB_KEY`. Ein grüner CI-Lauf, der eine Klartext-Wissensbasis gebaut hat, ist genau der Fehler, den diese Regel schließt.
 
-**Zahlen:** **1045 Tests** (85 Dateien, gemessen am 2026-10-13) · 32 Routen · `npm run eval` — Eval auf 58 Notizen / 45 Anfragen (Hit@1, Recall@5 gekappt, MRR). Die Testzahl ist die Zahl der Fälle, die ein Lauf gesammelt hat und ausführen konnte: ein im Quelltext als `it.skip` geschriebener Fall geht von ihr ab, ein Fall, den die **Ruhe-Sonde während des Laufs abgewiesen hat**, bleibt darin — derselbe Baum auf demselben Rechner ist so oder so dieselbe Zahl (`scripts/test-bericht.mjs` begründet es an diesem Rechner: an einem Commit wiesen drei Zeit-Fälle die Ruhe ab, am nächsten liefen sie, und eine Zahl, die mit der Nachbarschaft läuft, ist keine Zahl). `npm test` schreibt den Bericht genau dieses Laufs, `node scripts/doku-check.mjs` hält beide READMEs auf dieser Zahl fest, und `tests/doku-zahlen.test.ts` hört auf denselben Bericht: fehlt er, ist er älter als die Suite oder stammt er aus einem Teillauf, meldet die Wache, dass sie nicht prüfen kann, statt still einen Wert aus der Ablage zu vergleichen.
+**Zahlen:** **1061 Tests** (86 Dateien, gemessen am 2026-10-14) · 32 Routen · `npm run eval` — Eval auf 58 Notizen / 45 Anfragen (Hit@1, Recall@5 gekappt, MRR). Die Testzahl ist die Zahl der Fälle, die ein Lauf gesammelt hat und ausführen konnte: ein im Quelltext als `it.skip` geschriebener Fall geht von ihr ab, ein Fall, den die **Ruhe-Sonde während des Laufs abgewiesen hat**, bleibt darin — derselbe Baum auf demselben Rechner ist so oder so dieselbe Zahl (`scripts/test-bericht.mjs` begründet es an diesem Rechner: an einem Commit wiesen drei Zeit-Fälle die Ruhe ab, am nächsten liefen sie, und eine Zahl, die mit der Nachbarschaft läuft, ist keine Zahl). `npm test` schreibt den Bericht genau dieses Laufs, `node scripts/doku-check.mjs` hält beide READMEs auf dieser Zahl fest, und `tests/doku-zahlen.test.ts` hört auf denselben Bericht: fehlt er, ist er älter als die Suite oder stammt er aus einem Teillauf, meldet die Wache, dass sie nicht prüfen kann, statt still einen Wert aus der Ablage zu vergleichen.
 
 ## 🔍 Wie eine Anfrage ihre Antwort findet
 
@@ -159,13 +159,13 @@ SQLCipher 4 (AES-256, HMAC-SHA512 je Seite, WAL eingeschlossen). Der Schlüssel 
 
 Drei Dinge über diesen Schlüssel sind leicht zu übersehen und teuer:
 
-- **Ohne Schlüssel keine Datei.** Kann KEPTA einer **neuen** Wissensbasis keinen sicher abgelegten Schlüssel geben — kein Bund, Server oder CI, Freigabe abgelehnt — dann entsteht die Datei **nicht**: Exit ungleich 0, ein Satz mit dem Ausweg in der Meldung. Bestehende Dateien werden weiter normal geöffnet; ein fehlender oder fremder Schlüssel hat auch vorher schon angehalten und nichts geändert. (Die Regel ist am 10.10.2026 gefallen und wird gerade eingebaut: eine ältere Fassung legte bei einem unbrauchbaren Wert die Datenbank im Klartext an und endete mit Exit-Code 0 — der Gegenprüfung lohnt, wenn du eine ältere Ausgabe fährst.)
+- **Ohne Schlüssel keine Datei.** Kann K3PTA einer **neuen** Wissensbasis keinen sicher abgelegten Schlüssel geben — kein Bund, Server oder CI, Freigabe abgelehnt — dann entsteht die Datei **nicht**: Exit ungleich 0, ein Satz mit dem Ausweg in der Meldung. Bestehende Dateien werden weiter normal geöffnet; ein fehlender oder fremder Schlüssel hat auch vorher schon angehalten und nichts geändert. (Die Regel ist am 10.10.2026 gefallen und wird gerade eingebaut: eine ältere Fassung legte bei einem unbrauchbaren Wert die Datenbank im Klartext an und endete mit Exit-Code 0 — der Gegenprüfung lohnt, wenn du eine ältere Ausgabe fährst.)
 - **`KEPTA_ENCRYPTION=off` ist der einzige Weg nach Klartext** — absichtlich, für Werkzeuge, die rohes SQLite brauchen. Kein Tempo-Schalter und kein Weg, ein Schlüsselproblem zu „reparieren"; um einen Container zum Laufen zu bringen ist dieser Schalter der falsche, da gehört `KEPTA_DB_KEY` hin.
-- **Beim ersten Zugriff fragt macOS eventuell nach**, ob auf den Schlüsselbund-Eintrag zugegriffen werden darf. Das ist KEPTA, der seinen eigenen Schlüssel sucht — zulassen und dauerhaft erlauben. Details, was die Verschlüsselung nicht abdeckt, und wie du eine Kopie des Schlüssels aufbewahrst: [SECURITY.md](SECURITY.md).
+- **Beim ersten Zugriff fragt macOS eventuell nach**, ob auf den Schlüsselbund-Eintrag zugegriffen werden darf. Das ist K3PTA, der seinen eigenen Schlüssel sucht — zulassen und dauerhaft erlauben. Details, was die Verschlüsselung nicht abdeckt, und wie du eine Kopie des Schlüssels aufbewahrst: [SECURITY.md](SECURITY.md).
 
 ## 🔧 Schrauben
 
-Jede Umgebungsvariable, die KEPTA liest — mit Standardwert, was sie ändert und was kaputtgehen kann — steht in einer Tabelle: **[docs/ENVIRONMENT.md](docs/ENVIRONMENT.md)** (englisch). Die drei wichtigsten in Kürze:
+Jede Umgebungsvariable, die K3PTA liest — mit Standardwert, was sie ändert und was kaputtgehen kann — steht in einer Tabelle: **[docs/ENVIRONMENT.md](docs/ENVIRONMENT.md)** (englisch). Die drei wichtigsten in Kürze:
 
 | | |
 |---|---|
@@ -192,7 +192,7 @@ Median-Suchzeiten auf einem Laptop (Apple M4), jeder Lauf committed in [`tools/l
 
 ### Benchmark-Protokoll — LongMemEval-S, vollständig öffentlich
 
-KEPTA liefert seinen Gedächtnis-Benchmark als Rohdaten je Frage statt als Zahl: **jeder Lauf committed alle 500 Frage-Records in diesem Repository**, in [`tools/longmemeval/ergebnisse/`](tools/longmemeval/ergebnisse/) — je mit id, Typ und Fähigkeit, dem Judge-Urteil, der Zahl der geprüften Notizen, dem Kontext, der das Urteil gemacht hat, und dem Wörtlich-Treffer der Referenzantwort. Frage- und Antwort-*Text* liegen nicht im Repo: der kommt aus dem festgeschriebenen Upstream-Datensatz, dessen SHA-256 jeder Record trägt. Fixierter Datensatz (LongMemEval-S, 500 Fragen, SHA-gepinnt), fixierter Judge, lokal vollständig reproduzierbar — siehe [`tools/longmemeval/README.md`](tools/longmemeval/README.md).
+K3PTA liefert seinen Gedächtnis-Benchmark als Rohdaten je Frage statt als Zahl: **jeder Lauf committed alle 500 Frage-Records in diesem Repository**, in [`tools/longmemeval/ergebnisse/`](tools/longmemeval/ergebnisse/) — je mit id, Typ und Fähigkeit, dem Judge-Urteil, der Zahl der geprüften Notizen, dem Kontext, der das Urteil gemacht hat, und dem Wörtlich-Treffer der Referenzantwort. Frage- und Antwort-*Text* liegen nicht im Repo: der kommt aus dem festgeschriebenen Upstream-Datensatz, dessen SHA-256 jeder Record trägt. Fixierter Datensatz (LongMemEval-S, 500 Fragen, SHA-gepinnt), fixierter Judge, lokal vollständig reproduzierbar — siehe [`tools/longmemeval/README.md`](tools/longmemeval/README.md).
 
 Die Serie liegt als Rohdaten je Frage im Repo — und sie ist **keine aktuelle Messung**, deshalb steht hier kein Qualitaetswert. Jeder Record in diesem Ordner nennt eine `kepta_version` zwischen **2.13.2 und 2.13.22** (`grep -h kepta_version tools/longmemeval/ergebnisse/*.json`), ausgeliefert ist **3.4.0**. Das gehört in einen Satz und meint eines: Die Records gelten für den Kern, gegen den sie gefahren wurden — eine Versionsnummer, die ohne neuen Lauf steigt, sagt über 3.4.0 nichts aus, sie hebt diese Prozentwerte weder auf noch entwertet sie sie. Bis die Kette gegen die ausgelieferte Engine neu läuft, bleiben die Zahlen in den Records und nicht im Papier. Was gleich bleibt: Beide Richter sind lokal (`qwen2.5:3b` für die Kontinuitätsserie, `qwen2.5:14b` Q4 für die späteren Läufe, beide auf einer Consumer-GPU), null Cloud, kein Fine-Tuning, und jeder Schritt beider Ketten ist ein Lauf-Record im selben Ordner.
 
@@ -200,7 +200,7 @@ Die Serie liegt als Rohdaten je Frage im Repo — und sie ist **keine aktuelle M
 
 ## 🐍 Python-Client
 
-Voraussetzung ist ein laufendes KEPTA auf diesem Rechner: die Desktop-App, oder `npm run dev` aus diesem Repository. `pip install kepta` bringt den Client, nie einen Server — und beachte: `npx kepta-mcp`, der stdio-Server, den dein KI-Client startet, öffnet **überhaupt keinen HTTP-Port**, er ist also nicht das, was dieser Client erreicht.
+Voraussetzung ist ein laufendes K3PTA auf diesem Rechner: die Desktop-App, oder `npm run dev` aus diesem Repository. `pip install kepta` bringt den Client, nie einen Server — und beachte: `npx kepta-mcp`, der stdio-Server, den dein KI-Client startet, öffnet **überhaupt keinen HTTP-Port**, er ist also nicht das, was dieser Client erreicht.
 
 ```bash
 pip install kepta
@@ -216,10 +216,10 @@ for hit in kepta.search("carbonara without cream"):
 
 Keine Abhängigkeiten — nur die Standardbibliothek. Das Beispiel ist gemessen, nicht Dekoration: `search("carbonara without cream")` legt diese Notiz auf Platz 1, Vektor-Ähnlichkeit 0,75 mit dem Standardmodell (`nomic-embed-text`). Was dasselbe Modell **nicht** findet, ist eine Umschreibung ohne ein gemeinsames Wort: `search("what do I cook with pasta")` lässt das Rezept bei 0,51 liegen — unter dem Vektor-Schwellwert von 0,58 (`src/core/engine.ts`, `VECTOR_FLOOR`) — während eine Notiz, die bloß das Wort „Pasta" enthält, mit 0,59 gewinnt. In dem Fall antwortet die Wortspur, sie trifft das eine gemeinsame Wort. [python/README.md](python/README.md#how-search-works) nennt die Grenze und was sie verschiebt.
 
-## 👋 Wer KEPTA baut
+## 👋 Wer K3PTA baut
 
-KEPTA bauen **Damian Todorovic** und **Emil Wagner** — ein kleines Team aus Deutschland, das öffentlich baut. Fragen, Ideen, Enterprise für dein Team — oder du willst einfach mitverfolgen, wohin das geht: **[finde uns auf LinkedIn](https://www.linkedin.com/in/damian-todorovic-244235434)**.
+K3PTA bauen **Damian Todorovic** und **Emil Wagner** — ein kleines Team aus Deutschland, das öffentlich baut. Fragen, Ideen, Enterprise für dein Team — oder du willst einfach mitverfolgen, wohin das geht: **[finde uns auf LinkedIn](https://www.linkedin.com/in/damian-todorovic-244235434)**.
 
 ## 📄 Lizenz
 
-[BUSL 1.1](LICENSE) — source-available, kein OSI-zertifiziertes Open Source: jede Zeile öffentlich, Produktivnutzung in der eigenen Organisation immer erlaubt, Anbieten als gehosteter Service ist vorbehalten, und jede Version geht vier Jahre nach Release in AGPL-3.0-or-later über. **Das npm-Paket `kepta-mcp` trägt dieselbe Lizenz wie dieses Repository; der Python-Client unter `python/` bleibt MIT**, damit ihn jedes Python-Projekt einbauen kann. KEPTA Enterprise für Teams und Organisationen wird nach Absprache lizenziert — [schreib mir auf LinkedIn](https://www.linkedin.com/in/damian-todorovic-244235434).
+[BUSL 1.1](LICENSE) — source-available, kein OSI-zertifiziertes Open Source: jede Zeile öffentlich, Produktivnutzung in der eigenen Organisation immer erlaubt, Anbieten als gehosteter Service ist vorbehalten, und jede Version geht vier Jahre nach Release in AGPL-3.0-or-later über. **Das npm-Paket `kepta-mcp` trägt dieselbe Lizenz wie dieses Repository; der Python-Client unter `python/` bleibt MIT**, damit ihn jedes Python-Projekt einbauen kann. K3PTA Enterprise für Teams und Organisationen wird nach Absprache lizenziert — [schreib mir auf LinkedIn](https://www.linkedin.com/in/damian-todorovic-244235434).

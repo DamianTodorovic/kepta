@@ -1,4 +1,4 @@
-# KEPTA — MCP-Server im Container.
+# K3PTA — MCP-Server im Container.
 #
 # Verzeichnisse wie Glama starten den Server hierueber und pruefen, ob er auf
 # Introspektion antwortet. Gebaut wird aus dem Quelltext dieses Repos, nicht aus

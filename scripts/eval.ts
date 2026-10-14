@@ -1,4 +1,4 @@
-// KEPTA Eval — Recall@5 (gekappt) + Hit@1 + MRR der Retrieval-Engine gegen das Fixkorpus.
+// K3PTA Eval — Recall@5 (gekappt) + Hit@1 + MRR der Retrieval-Engine gegen das Fixkorpus.
 // Gekappt deshalb, weil der Nenner min(5, relevante Notizen) ist (Zeile 52): gemessen
 // wird, wie viel der gesuchten Notizen in den ersten fuenfen angekommen ist — das ist ein
 // Recall, keine Precision. Darum heisst die Ausgabe auch nicht "Precision@5":

@@ -1,7 +1,7 @@
 # The words in this repository
 
 The API and the tools speak a small technical language. Here is each word in everyday
-language, once, so no document has to guess. Where a term has two meanings in KEPTA, the
+language, once, so no document has to guess. Where a term has two meanings in K3PTA, the
 second meaning is named — that is where the confusion actually lives.
 
 ## What a thing is
@@ -20,9 +20,9 @@ second meaning is named — that is where the confusion actually lives.
 
 | Word | Meaning 1 | Meaning 2 |
 |---|---|---|
-| **key** | the **licence key** to unlock a paid tier — KEPTA has none | the **database key**, 64 hex characters, that opens your file. When a document says "no key", it must say which one. |
+| **key** | the **licence key** to unlock a paid tier — K3PTA has none | the **database key**, 64 hex characters, that opens your file. When a document says "no key", it must say which one. |
 | **restore** | bringing a **note** back out of the trash (`POST /api/memories/:id/restore`) | putting a **backup file** back in place, e.g. a `pre-replace` snapshot |
-| **host** | the machine your KEPTA runs on (network sense) | an app that embeds the engine ("a host that wires in `LocalFileAuditSink`") |
+| **host** | the machine your K3PTA runs on (network sense) | an app that embeds the engine ("a host that wires in `LocalFileAuditSink`") |
 | **UI / interface** | a window you click in — the desktop app, not this repository | what people call the surface of the core: it has none; your AI client *is* the interface |
 
 ## How a search works

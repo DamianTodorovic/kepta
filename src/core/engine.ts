@@ -1,4 +1,4 @@
-// KEPTA Retrieval-Engine — EIN Suchpfad für UI, HTTP-API und MCP.
+// K3PTA Retrieval-Engine — EIN Suchpfad für UI, HTTP-API und MCP.
 // Pipeline: FTS5-BM25 + Vektor-KNN + Entity-Match → RRF-Fusion → Boosts
 // (Recency, Konfidenz, Temporal-Abwertung) → Top-k. Ohne Vektoren rein lexikalisch stark.
 import type { KeptaStore } from "./store";

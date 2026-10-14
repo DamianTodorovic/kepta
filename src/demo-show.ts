@@ -84,7 +84,7 @@ export async function starteDemoShow(argumente: string[]): Promise<number> {
   });
 
   sag();
-  akt("KEPTA demo — a throwaway database");
+  akt("K3PTA demo — a throwaway database");
   zeile(["Everything you see is real product code, nothing is mocked.", ""]);
   zeile(["Press Ctrl+C any time — the demo data vanishes with it.", ""]);
   sag();
@@ -204,7 +204,7 @@ export async function starteDemoShow(argumente: string[]): Promise<number> {
   const rest = loescheWegwerfOrdner(ordner);
   if (rest) zeile([`left behind: ${rest}`, FARBEN.rot], [`remove it with: rm -rf ${rest}`, FARBEN.grau]);
   abmelden();
-  zeile(["KEPTA is headless — it lives inside your AI client via MCP", ""]);
+  zeile(["K3PTA is headless — it lives inside your AI client via MCP", ""]);
   ausgabe([["next: npx -y kepta-mcp setup", FARBEN.grau]], { einzug: 4 });
   return rest ? 1 : 0;
 }

@@ -1,4 +1,4 @@
-// Was die Agenten gerade tun — sichtbar in der Oberfläche von KEPTA Core.
+// Was die Agenten gerade tun — sichtbar in der Oberfläche von K3PTA Core.
 //
 // Claude Desktop, Cursor und Co. starten den MCP-Server als eigenen Prozess;
 // die Oberfläche läuft als anderer. Gemeinsam haben beide nur die

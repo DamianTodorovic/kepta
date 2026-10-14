@@ -1,4 +1,4 @@
-# KEPTA × LongMemEval — der Runner
+# K3PTA × LongMemEval — der Runner
 
 Ziel: **LongMemEval ≥ 70 %**, unabhängig reproduzierbar, als öffentliches Asset im Core-Repo.
 Benchmark-Paper: Wu et al., „LongMemEval: Benchmarking Chat Assistants on Long-Term
@@ -8,7 +8,7 @@ Knowledge-Updates, Abstention („das weiß ich nicht" erkennen).
 
 ## Methodik (so läuft der Test)
 
-1. **Ingest:** Jede Haystack-Session wird als Memories in einen frischen KEPTA-Store
+1. **Ingest:** Jede Haystack-Session wird als Memories in einen frischen K3PTA-Store
    geschrieben — über **denselben Produkt-Schreibpfad** (`saveWithIndex`: Store +
    Index + Entitäten, kein Sonderweg). Ein Turn = eine Notiz, Typ nach Klassifikation,
    Zeitstempel aus dem Session-Datum (bi-temporal: gültig-ab = Session-Datum),
@@ -33,7 +33,7 @@ Knowledge-Updates, Abstention („das weiß ich nicht" erkennen).
    `verbatim_quote` — im 2.13.22-Lauf, der 61,5 % brachte, 29,8 %.
 4. **Report:** Genauigkeit gesamt + pro Fähigkeit, Abstention-Leer-Quote,
    Judge-Parse-Fehler — JSON in `ergebnisse/` mit Datum, Modell (+Ollama-Version),
-   KEPTA-Version, Commit, Top-k und Datensatz-SHA-256. Nichts wird behauptet, was
+   K3PTA-Version, Commit, Top-k und Datensatz-SHA-256. Nichts wird behauptet, was
    nicht in der Datei steht.
 
 ## Stand (21.9.2026): Pipeline komplett, erste Zahl steht aus
@@ -53,7 +53,7 @@ Knowledge-Updates, Abstention („das weiß ich nicht" erkennen).
 
 Erster voller Lauf, 500/500 gerichtet, 0 Judge-Parse-Fehler. Bericht:
 `ergebnisse/longmemeval-2026-09-21-08d8dad4.json` (Modell llama3.2:3b 0.34.2,
-Temperatur 0, topk 8, Datensatz-SHA-256 `08d8dad4…`, KEPTA 2.13.2, Commit `d308278`).
+Temperatur 0, topk 8, Datensatz-SHA-256 `08d8dad4…`, K3PTA 2.13.2, Commit `d308278`).
 
 | Fähigkeit | n | Genauigkeit |
 |---|---|---|

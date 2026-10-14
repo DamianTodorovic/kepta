@@ -188,7 +188,7 @@ describe("Umwandlung eines Klartext-Bestands", () => {
     wieder.close();
   });
 
-  it("hat ein anderes Programm die Datei offen, bleibt sie Klartext — bis KEPTA sie allein hat", () => {
+  it("hat ein anderes Programm die Datei offen, bleibt sie Klartext — bis K3PTA sie allein hat", () => {
     const p = klartextBestand(3);
     const fremd = new KeptaStore(p); // etwa ein aelterer MCP-Server
     const s = new KeptaStore(p, mit(SCHLUESSEL));
@@ -254,7 +254,7 @@ describe("Umwandlung eines Klartext-Bestands", () => {
   });
 });
 
-describe("mehrere KEPTA-Prozesse", () => {
+describe("mehrere K3PTA-Prozesse", () => {
   it("wartet, solange ein lebender Prozess umwandelt", async () => {
     const p = neuerPfad();
     const sperre = JSON.stringify(p + ".encrypting-lock");
@@ -294,10 +294,10 @@ describe("mehrere KEPTA-Prozesse", () => {
   it("eine frische Sperre wird abgewartet — und nach der Frist klar gemeldet, nicht weggeraeumt", () => {
     const p = neuerPfad();
     fs.writeFileSync(p + ".encrypting-lock", "");
-    expect(() => warteAufUmwandlung(p, 250)).toThrow("being encrypted by another KEPTA process");
+    expect(() => warteAufUmwandlung(p, 250)).toThrow("being encrypted by another K3PTA process");
     // Prozess 1 gibt es immer; fragen darf man ihn meist nicht (EPERM) — er lebt trotzdem.
     fs.writeFileSync(p + ".encrypting-lock", JSON.stringify({ pid: 1, seit: Date.now() }));
-    expect(() => warteAufUmwandlung(p, 250)).toThrow("being encrypted by another KEPTA process");
+    expect(() => warteAufUmwandlung(p, 250)).toThrow("being encrypted by another K3PTA process");
     expect(fs.existsSync(p + ".encrypting-lock")).toBe(true);
   });
 
@@ -313,7 +313,7 @@ describe("mehrere KEPTA-Prozesse", () => {
     const p = klartextBestand(1);
     sperreWirft("EEXIST");
     const s = new KeptaStore(p, mit(SCHLUESSEL));
-    expect(s.verschluesselung).toEqual({ aktiv: false, hinweis: expect.stringContaining("being encrypted by another KEPTA process") });
+    expect(s.verschluesselung).toEqual({ aktiv: false, hinweis: expect.stringContaining("being encrypted by another K3PTA process") });
     s.close();
   });
 

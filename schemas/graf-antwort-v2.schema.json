@@ -1,7 +1,7 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
   "$id": "https://kepta.dev/schemas/graf-antwort-v2.schema.json",
-  "title": "KEPTA Graf-Antwort graf-2 (GET /api/graph/bild)",
+  "title": "K3PTA Graf-Antwort graf-2 (GET /api/graph/bild)",
   "description": "Ein Kuvert, zwei Sichten. Breite und Hoehe kommen hier nicht vor: Positionen sind Welteinheiten, das Fenster skaliert der Client.",
   "type": "object",
   "additionalProperties": false,

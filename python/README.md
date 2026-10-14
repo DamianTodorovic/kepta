@@ -1,10 +1,10 @@
 # kepta
 
-**Python client for [KEPTA](https://github.com/DamianTodorovic/kepta) — local memory for AI agents.**
+**Python client for [K3PTA](https://github.com/DamianTodorovic/kepta) — local memory for AI agents.**
 
-Your agents forget you after every conversation. KEPTA fixes that — with a SQLite file on your own machine. No account, no cloud, no telemetry.
+Your agents forget you after every conversation. K3PTA fixes that — with a SQLite file on your own machine. No account, no cloud, no telemetry.
 
-This package is the **client, not the app**. KEPTA runs as a local server on the same device; here you connect to it.
+This package is the **client, not the app**. K3PTA runs as a local server on the same device; here you connect to it.
 
 ```bash
 pip install kepta
@@ -12,7 +12,7 @@ pip install kepta
 
 ## In thirty seconds
 
-A running KEPTA on this machine is the precondition: the desktop app, or `npm run dev` in the [open core](https://github.com/DamianTodorovic/kepta). `pip install kepta` brings the client, never a server.
+A running K3PTA on this machine is the precondition: the desktop app, or `npm run dev` in the [open core](https://github.com/DamianTodorovic/kepta). `pip install kepta` brings the client, never a server.
 
 ```python
 from kepta import KeptaClient
@@ -82,14 +82,14 @@ kepta = KeptaClient("http://127.0.0.1:52341")
 If nothing is running, the client does not dump `urllib` and `socket` at you. What arrives is one sentence naming the address, the reason and what to do:
 
 ```text
-kepta.client.KeptaError: KEPTA at http://127.0.0.1:3000 is not answering (connection refused). Start the server (the KEPTA app, or npm run dev in the core) or set KEPTA_URL to the running address.
+kepta.client.KeptaError: K3PTA at http://127.0.0.1:3000 is not answering (connection refused). Start the server (the K3PTA app, or npm run dev in the core) or set KEPTA_URL to the running address.
 ```
 
 Or ask first:
 
 ```python
 if not kepta.is_alive():
-    print("KEPTA is not running — start the server (npm run dev) or set KEPTA_URL.")
+    print("K3PTA is not running — start the server (npm run dev) or set KEPTA_URL.")
 ```
 
 ## What the client can do
@@ -111,7 +111,7 @@ if not kepta.is_alive():
 
 ## The server behind it
 
-The client talks to the KEPTA HTTP API on your own machine — start it from the [open core](https://github.com/DamianTodorovic/kepta) (`npm run dev`), or run the desktop app, which serves the same API from its own copy of the engine. It is the same local, encrypted memory the MCP server writes, free with no account and no limits. The one exception: `npx kepta-mcp`, the stdio server Claude Desktop and Cursor start, opens no HTTP port at all — checked in the published 3.2.0 bundle — so it is not what this client connects to. German notes work as well as English ones: the search stopword list covers both languages.
+The client talks to the K3PTA HTTP API on your own machine — start it from the [open core](https://github.com/DamianTodorovic/kepta) (`npm run dev`), or run the desktop app, which serves the same API from its own copy of the engine. It is the same local, encrypted memory the MCP server writes, free with no account and no limits. The one exception: `npx kepta-mcp`, the stdio server Claude Desktop and Cursor start, opens no HTTP port at all — checked in the published 3.2.0 bundle — so it is not what this client connects to. German notes work as well as English ones: the search stopword list covers both languages.
 
 ## License
 

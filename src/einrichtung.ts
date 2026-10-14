@@ -1,11 +1,11 @@
-// KEPTA mit den KI-Apps verbinden, die schon auf dem Rechner sind.
+// K3PTA mit den KI-Apps verbinden, die schon auf dem Rechner sind.
 //
 // `npx kepta-mcp setup` und der Knopf „Connect“ in der Oberfläche teilen
 // diesen Code. Er findet Claude Desktop, Claude Code, Cursor, Windsurf,
-// VS Code, Gemini CLI, Cline und Roo Code, sieht nach, ob KEPTA dort schon
+// VS Code, Gemini CLI, Cline und Roo Code, sieht nach, ob K3PTA dort schon
 // eingetragen ist, und trägt es ein — mit einer Sicherung der alten Datei
 // daneben. Andere Einträge bleiben, wie sie sind; eine Datei, die kein reines
-// JSON ist, wird nie überschrieben. Claude Code bekommt KEPTA über seinen
+// JSON ist, wird nie überschrieben. Claude Code bekommt K3PTA über seinen
 // eigenen Befehl (`claude mcp add`), weil es seine Datei ständig selbst neu
 // schreibt. Für jede weitere KI, die MCP spricht (Zed, Codex CLI, Continue,
 // …), liefert er den exakten Schnipsel zum Einfügen — schreiben wir dort
@@ -39,9 +39,9 @@ export interface ClientStatus {
   name: string;
   installed: boolean;
   connected: boolean;
-  /** Die Datei, in der KEPTA eingetragen ist oder wird. */
+  /** Die Datei, in der K3PTA eingetragen ist oder wird. */
   config: string;
-  /** Kann KEPTA sich hier selbst eintragen? */
+  /** Kann K3PTA sich hier selbst eintragen? */
   canConnect: boolean;
   /** Was sonst zu tun ist. */
   hint?: string;
@@ -90,7 +90,7 @@ function dateien(u: Umgebung): Datei[] {
   ];
 }
 
-/** Steht KEPTA in dieser Server-Liste? Am Namen oder am Befehl erkannt. */
+/** Steht K3PTA in dieser Server-Liste? Am Namen oder am Befehl erkannt. */
 export function hatKepta(server: unknown): boolean {
   if (!server || typeof server !== "object" || Array.isArray(server)) return false;
   return Object.entries(server as Record<string, unknown>).some(([name, e]) => /kepta/i.test(name) || /kepta/i.test(JSON.stringify(e ?? "")));
@@ -121,7 +121,7 @@ function claudeCodeVerbunden(j: Record<string, unknown> | null): boolean {
   return projekte.some((p) => hatKepta(p?.mcpServers));
 }
 
-/** Welche Apps es gibt und ob KEPTA dort schon eingetragen ist. */
+/** Welche Apps es gibt und ob K3PTA dort schon eingetragen ist. */
 export function finde(u: Umgebung): ClientStatus[] {
   const aus: ClientStatus[] = dateien(u).map((d) => {
     const installed = fs.existsSync(d.ordner);
@@ -134,7 +134,7 @@ export function finde(u: Umgebung): ClientStatus[] {
       connected,
       config: d.datei,
       canConnect: installed && !connected && l.ok,
-      hint: l.ok ? undefined : `${d.datei} is not plain JSON — KEPTA leaves it alone. Add KEPTA there by hand.`,
+      hint: l.ok ? undefined : `${d.datei} is not plain JSON — K3PTA leaves it alone. Add K3PTA there by hand.`,
     };
   });
   const datei = path.join(u.home, ".claude.json");
@@ -158,8 +158,8 @@ export function finde(u: Umgebung): ClientStatus[] {
 /**
  * KI-Apps ohne sicheren Schreib-Weg von außen: ihre Konfigurationsformate
  * bewegen sich zu schnell (Zed), sind kein JSON (Codex: TOML, Continue: YAML)
- * oder sitzen in IDE-internen Speichern. KEPTA schreibt dort nichts — sie
- * bekommen den exakten Schnipsel zum Einfügen. So läuft KEPTA mit jeder KI,
+ * oder sitzen in IDE-internen Speichern. K3PTA schreibt dort nichts — sie
+ * bekommen den exakten Schnipsel zum Einfügen. So läuft K3PTA mit jeder KI,
  * die MCP spricht, ohne jemals eine fremde Datei zu riskieren.
  */
 function gefuehrteKlienten(u: Umgebung): ClientStatus[] {
@@ -213,26 +213,26 @@ function stempel(d: Date): string {
   return d.toISOString().replace(/[:.]/g, "-").slice(0, 19);
 }
 
-/** Trägt KEPTA in einer App ein — mit Sicherung, ohne andere Einträge anzufassen. */
+/** Trägt K3PTA in einer App ein — mit Sicherung, ohne andere Einträge anzufassen. */
 export function verbinde(id: string, u: Umgebung): Verbindung {
   if (id === "claude-code") {
     const r = u.claude?.(["mcp", "add", "--scope", "user", "kepta", "--", "npx", "-y", "kepta-mcp"]) ?? null;
     if (!r) return { ok: false, message: `Claude Code was not found. Run this in a terminal: ${CLAUDE_CODE_BEFEHL}` };
     if (r.status !== 0) {
-      if (/already exists/i.test(r.stderr + r.stdout)) return { ok: true, message: "KEPTA was already connected to Claude Code." };
+      if (/already exists/i.test(r.stderr + r.stdout)) return { ok: true, message: "K3PTA was already connected to Claude Code." };
       return { ok: false, message: `Claude Code said: ${(r.stderr || r.stdout).trim().slice(0, 300) || `exit ${r.status}`}` };
     }
-    return { ok: true, message: "Connected. Start a new Claude Code session to use KEPTA." };
+    return { ok: true, message: "Connected. Start a new Claude Code session to use K3PTA." };
   }
   const d = dateien(u).find((x) => x.id === id);
   if (!d) return { ok: false, message: "Unknown app." };
   if (!fs.existsSync(d.ordner)) return { ok: false, message: `${d.name} does not seem to be installed on this computer.` };
   const l = lies(d.datei);
-  if (!l.ok) return { ok: false, message: `${d.datei} is not plain JSON — KEPTA leaves it alone. Add KEPTA there by hand.` };
+  if (!l.ok) return { ok: false, message: `${d.datei} is not plain JSON — K3PTA leaves it alone. Add K3PTA there by hand.` };
   const json = l.json ?? {};
   const alt = json[d.schluessel];
   const liste = alt && typeof alt === "object" && !Array.isArray(alt) ? (alt as Record<string, unknown>) : {};
-  if (hatKepta(liste)) return { ok: true, message: `KEPTA was already connected to ${d.name}.`, backup: null };
+  if (hatKepta(liste)) return { ok: true, message: `K3PTA was already connected to ${d.name}.`, backup: null };
   let backup: string | null = null;
   let modus = 0o600;
   if (l.json !== null) {
@@ -244,7 +244,7 @@ export function verbinde(id: string, u: Umgebung): Verbindung {
   const zwischen = `${d.datei}.kepta-tmp`;
   fs.writeFileSync(zwischen, JSON.stringify(neu, null, 2) + "\n", { mode: modus });
   fs.renameSync(zwischen, d.datei);
-  return { ok: true, message: `Connected. Quit and reopen ${d.name} to load KEPTA.`, backup };
+  return { ok: true, message: `Connected. Quit and reopen ${d.name} to load K3PTA.`, backup };
 }
 
 /** Die echte Umgebung: Heimatordner, System und der Befehl `claude`, falls es ihn gibt. */
@@ -320,7 +320,7 @@ export async function einrichten(
     bricht(wert, spalte, spalte).forEach((z, i) => zeile(i === 0 ? kopf + z.slice(spalte) : z));
   };
 
-  io.schreibe("KEPTA — connect your AI apps\n\n");
+  io.schreibe("K3PTA — connect your AI apps\n\n");
   if (offen.length) {
     text(`${offen.length} ${offen.length === 1 ? "app is" : "apps are"} ready to connect: ${offen.map((c) => c.name).join(", ")}`, 2);
     zeile("");
@@ -364,7 +364,7 @@ export async function einrichten(
       feld(`  ○ ${c.name.padEnd(18)}`, getan.grund);
       continue;
     }
-    feld(`  ○ ${c.name.padEnd(18)}`, "installed, but KEPTA does not write here");
+    feld(`  ○ ${c.name.padEnd(18)}`, "installed, but K3PTA does not write here");
   }
   if (nichtDa) zeile(`  ${nichtDa} more ${nichtDa === 1 ? "app is" : "apps are"} not on this computer`);
   if (!verbunden && !fehler) zeile("  nothing was connected");

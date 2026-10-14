@@ -2,7 +2,7 @@
 //
 // Legt eine WEGWERF-Demodatenbank im temporären Verzeichnis an (niemals die
 // echte Datei unter ~/.kepta) und füllt sie mit einem fiktiven Kanzlei-Korpus
-// samt [[Verknüpfungen]]. KEPTA Core hat keine eigene Oberfläche mehr — der
+// samt [[Verknüpfungen]]. K3PTA Core hat keine eigene Oberfläche mehr — der
 // Lauf zeigt die Kennzahlen und den Weg zur kostenlosen Desktop-App, die
 // dieselbe Datei öffnet. Jeder Aufruf ist frisch: der Ordner wird neu
 // gebaut, alter Demo-Inhalt bleibt nie liegen.
@@ -53,7 +53,7 @@ export function demoKorpus(jetzt = Date.now()): DemoNotiz[] {
     { type: "procedural", title: "Audit preparation", content: "For a Betriebsprüfung: 1. pull the [[Retention periods]] list 2. re-scan any paper, see [[Scanner workflow]] 3. reconcile the [[DATEV export how-to|DATEV exports]] 4. block one week of calendar via [[Deadline calendar]].", tags: ["howto", "audit"], validFrom: vor(60) },
 
     // Fristen und Steuern
-    { type: "semantic", title: "Deadline calendar", content: "All statutory deadlines live in the shared calendar; KEPTA keeps the reasoning — why a deadline applies to which client. Sources: [[Filing deadlines]] and [[VAT pre-announcements]].", tags: ["deadlines"], validFrom: vor(190) },
+    { type: "semantic", title: "Deadline calendar", content: "All statutory deadlines live in the shared calendar; K3PTA keeps the reasoning — why a deadline applies to which client. Sources: [[Filing deadlines]] and [[VAT pre-announcements]].", tags: ["deadlines"], validFrom: vor(190) },
     { type: "reference", title: "Filing deadlines", content: "Annual returns: July 31 (with extension September 1). Financial statements: 6 months after the fiscal year. Full list in the [[Deadline calendar]].", tags: ["deadlines"], validFrom: vor(180) },
     { type: "procedural", title: "VAT pre-announcements", content: "Umsatzsteuervoranmeldung monthly via [[DATEV]] by the 10th of the following month. Dauerfristverlängerung for most clients — check the flag in the [[Deadline calendar]].", tags: ["deadlines", "howto"], validFrom: vor(170) },
     { type: "semantic", title: "Tax law change 2026", content: "The 2026 changes moved two filing dates — both are updated in [[Filing deadlines]]. Affected clients get a note in the [[Deadline calendar]].", tags: ["tax", "deadlines"], validFrom: vor(90) },

@@ -1,6 +1,6 @@
 // @vitest-environment node
 //
-// `npx kepta-mcp setup` und „Connect“ in der Oberfläche: KEPTA in Claude
+// `npx kepta-mcp setup` und „Connect“ in der Oberfläche: K3PTA in Claude
 // Desktop, Claude Code, Cursor, Windsurf und VS Code eintragen — mit einer
 // Sicherung, ohne andere Einträge anzufassen, und nie in einer Datei, die kein
 // reines JSON ist. Alles in einem Heimatordner aus dem Temp-Verzeichnis.
@@ -24,8 +24,8 @@ beforeEach(() => {
   home = fs.mkdtempSync(path.join(os.tmpdir(), "kepta-home-"));
 });
 
-describe("KEPTA mit KI-Apps verbinden", () => {
-  it("findet, was installiert ist, und erkennt KEPTA am Namen oder am Befehl", () => {
+describe("K3PTA mit KI-Apps verbinden", () => {
+  it("findet, was installiert ist, und erkennt K3PTA am Namen oder am Befehl", () => {
     schreib(claudeDesktop(), { mcpServers: { other: { command: "x" } } });
     schreib(path.join(home, ".cursor", "mcp.json"), { mcpServers: { memory: { command: "npx", args: ["-y", "kepta-mcp"] } } });
     expect(status(mac(), "claude-desktop")).toMatchObject({ installed: true, connected: false, canConnect: true });
@@ -38,13 +38,13 @@ describe("KEPTA mit KI-Apps verbinden", () => {
     expect(hatKepta(null)).toBe(false);
   });
 
-  it("trägt KEPTA ein, lässt alles andere stehen und legt eine Sicherung daneben", () => {
+  it("trägt K3PTA ein, lässt alles andere stehen und legt eine Sicherung daneben", () => {
     schreib(claudeDesktop(), { globalShortcut: "Cmd+K", mcpServers: { other: { command: "x" } } });
     const r = verbinde("claude-desktop", mac());
     expect(r).toMatchObject({ ok: true, backup: `${claudeDesktop()}.kepta-backup-2026-09-14T12-00-00` });
     expect(lies(claudeDesktop())).toEqual({ globalShortcut: "Cmd+K", mcpServers: { other: { command: "x" }, kepta: { command: "npx", args: ["-y", "kepta-mcp"] } } });
     expect(lies(r.backup!)).toEqual({ globalShortcut: "Cmd+K", mcpServers: { other: { command: "x" } } });
-    expect(verbinde("claude-desktop", mac())).toEqual({ ok: true, message: "KEPTA was already connected to Claude Desktop.", backup: null });
+    expect(verbinde("claude-desktop", mac())).toEqual({ ok: true, message: "K3PTA was already connected to Claude Desktop.", backup: null });
     expect(status(mac(), "claude-desktop").connected).toBe(true);
   });
 
@@ -225,7 +225,7 @@ describe("setup-Tafel: lesbar, was die Symbole heissen", () => {
     for (const z of text.split("\n")) {
       if (!z.trim().includes(" ")) continue;
       // Ein Pfad ist eine Adresse, kein Satz: er steht auf seiner eigenen Zeile
-      // und wird nie zerschnitten — der Schirm bricht ihn, nicht KEPTA.
+      // und wird nie zerschnitten — der Schirm bricht ihn, nicht K3PTA.
       if (/[\\/]/.test(z)) continue;
       expect([...z].length, `${[...z].length} Zeichen: ${z}`).toBeLessThanOrEqual(80);
     }

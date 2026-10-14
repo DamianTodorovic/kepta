@@ -1,4 +1,4 @@
-// Only this computer may use KEPTA's HTTP API — not a website that happens to
+// Only this computer may use K3PTA's HTTP API — not a website that happens to
 // be open in a browser on it.
 //
 // Two attacks, both reproduced against the server before this guard existed:

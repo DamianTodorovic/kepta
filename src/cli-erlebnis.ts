@@ -1,8 +1,8 @@
-// Das CLI-Erlebnis: die fünf Befehle, die KEPTA im Terminal lebendig machen.
+// Das CLI-Erlebnis: die fünf Befehle, die K3PTA im Terminal lebendig machen.
 //
 //   kepta remember "…"        — merken (Typ + Tags werden automatisch gesetzt)
 //   kepta recall "frage"      — suchen und lesbar antworten, mit Quellen
-//   kepta timeline "thema"    — was weiß KEPTA wann über dieses Thema
+//   kepta timeline "thema"    — was weiß K3PTA wann über dieses Thema
 //   kepta contradict          — Widersprüche und Duplikate melden (dry-run)
 //   kepta stats               — die Gedächtnis-Statistik
 //
@@ -14,6 +14,7 @@ import { saveWithIndex } from "./core/mcp";
 import { searchMemories } from "./core/engine";
 import { consolidateMemories } from "./core/engine";
 import { klassifiziere } from "./core/klassifikation";
+import { leseUmwelt } from "./core/umwelt";
 import { APP_VERSION } from "./core/version";
 import { baueGraph } from "./ui/graph";
 
@@ -111,7 +112,7 @@ function tag(ms: number): string {
   return new Date(ms).toISOString().slice(0, 10);
 }
 
-/** remember: Text rein, KEPTA entscheidet Typ (die Store-Regeln, nicht „alles Fakt") und Tags. */
+/** remember: Text rein, K3PTA entscheidet Typ (die Store-Regeln, nicht „alles Fakt") und Tags. */
 export function remember(store: KeptaStore, text: string, tags: string[]): { titel: string; typ: string; id: string } {
   const sauber = text.trim();
   if (!sauber) throw new Error("Nothing to remember — give me a sentence.");
@@ -138,7 +139,7 @@ export interface RecallTreffer {
 
 /**
  * recall: die Top-Treffer als lesbare Karten; antwortet NICHT mit erfundenem
- * Text — nur KEPTA-Suche. Eine Karte bleibt bei 180 Zeichen stehen, aber sie
+ * Text — nur K3PTA-Suche. Eine Karte bleibt bei 180 Zeichen stehen, aber sie
  * sagt, wie viel dahinter liegt: ein `…` ohne Zahl ist eine Behauptung (D2-18).
  */
 export async function recall(store: KeptaStore, frage: string, limit = 5): Promise<{ treffer: RecallTreffer[]; total: number; vektoren: boolean }> {
@@ -291,10 +292,14 @@ export function typenSortiert(typen: Record<string, number>): [string, number][]
  * README ist genau der Fall, in dem der Nutzer eine Zahl sehen muss.
  */
 function verschluesselungsGrund(s: Statistik): { grund: string; ausweg: string } {
-  if (process.env.KEPTA_ENCRYPTION === "off") {
-    return { grund: "switched off by KEPTA_ENCRYPTION=off", ausweg: "unset KEPTA_ENCRYPTION and run the command again" };
+  // Beide Namensformen (#64): die Ausgabe nennt die, die wirklich gilt — ein Nutzer, der
+    // K3PTA_ENCRYPTION unsetten soll, findet KEPTA_ENCRYPTION in seiner Umgebung nicht.
+  const verschluesselung = leseUmwelt("verschluesselung");
+  if (verschluesselung.wert === "off") {
+    return { grund: `switched off by ${verschluesselung.gewonnen}=off`, ausweg: `unset ${verschluesselung.gewonnen} and run the command again` };
   }
-  const umgebung = (process.env.KEPTA_DB_KEY ?? "").trim();
+  const schluesselForm = leseUmwelt("schluessel");
+  const umgebung = (schluesselForm.wert ?? "").trim();
   const hinweis = s.hinweis?.replace(/[.\s]+$/, "");
   const grund = hinweis
     ? hinweis + (umgebung ? ` ${STRICH}you gave ${zahl(umgebung.length)} characters` : "")
@@ -302,21 +307,21 @@ function verschluesselungsGrund(s: Statistik): { grund: string; ausweg: string }
   return {
     grund,
     ausweg:
-      `run 'openssl rand -hex 32' and set KEPTA_DB_KEY to the result ${STRICH}or unset KEPTA_DB_KEY and let your OS keychain hold the key. ` +
+      `run 'openssl rand -hex 32' and set ${schluesselForm.gewonnen ?? "KEPTA_DB_KEY"} to the result ${STRICH}or unset ${schluesselForm.gewonnen ?? "KEPTA_DB_KEY"} and let your OS keychain hold the key. ` +
       "What your key protects and how to recover it: SECURITY.md.",
   };
 }
 
 /** CLI-Dispatcher für die fünf Erlebnis-Befehle — liefert den Exit-Code. */
 export const BEFEHLE: [string, string][] = [
-  ['remember "<text>" [#tag]', "store one sentence — KEPTA picks the type and the tags"],
+  ['remember "<text>" [#tag]', "store one sentence — K3PTA picks the type and the tags"],
   ['recall "<frage>"', "what the memory says about it, best matches first"],
   ['timeline "<thema>"', "the same topic in order of time, oldest first"],
   ["contradict", "look for duplicates and contradictions — changes nothing"],
   ["stats", "the file: notes, types, graph — and what state it is in"],
   ["demo", "a six-act story on a throwaway database — nothing mocked"],
   ["import chatgpt <ordner>", "your ChatGPT export, turned into notes"],
-  ["setup", "connect KEPTA to the AI apps already on this computer"],
+  ["setup", "connect K3PTA to the AI apps already on this computer"],
   ["ui", "where to look at your notes — the core itself has no window"],
 ];
 
@@ -548,7 +553,7 @@ function hilfeText(): string[] {
     zeilen.push("", farbe(GEWICHT, name));
     for (const [befehl, satz] of unter) eintrag(befehl, satz);
   };
-  zeilen.push(farbe(GEWICHT, "KEPTA from the terminal — one local file, no account"));
+  zeilen.push(farbe(GEWICHT, "K3PTA from the terminal — one local file, no account"));
   gruppe("write", BEFEHLE.filter(([b]) => b.startsWith("remember") || b.startsWith("import")));
   gruppe("read", BEFEHLE.filter(([b]) => /^(recall|timeline|contradict|stats|demo)/.test(b)));
   gruppe("set up", BEFEHLE.filter(([b]) => /^(setup|ui)/.test(b)));
@@ -597,7 +602,7 @@ export async function erlebnisKommando(store: KeptaStore, befehl: string, rest: 
   }
   const Irrtümer = [...sch.unbekannte.map((f) => `unknown flag: ${f}`), ...sch.fehler];
   if (Irrtümer.length) {
-    fehlerBlock(Irrtümer[0]!, `KEPTA knows: ${FLAG_LISTE}`, "run kepta --help, or drop the switch");
+    fehlerBlock(Irrtümer[0]!, `K3PTA knows: ${FLAG_LISTE}`, "run kepta --help, or drop the switch");
     return 2;
   }
   const maschine = sch.json;
@@ -763,7 +768,7 @@ export async function erlebnisKommando(store: KeptaStore, befehl: string, rest: 
           return 0;
         }
         const feld = (name: string, ...abschnitte: Abschnitt[]) => zeile(abschnitte, { einzug: 4, kopf: [name.padEnd(8), GRAU] });
-        titel("KEPTA memory");
+        titel("K3PTA memory");
         feld("file", [heimat(s.pfad), ""]);
         feld("notes", [`${zahl(s.notizen.active)} active ${PUNKT}${zahl(s.notizen.trashed)} in trash`, ""]);
         feld("types", [typenSortiert(s.typen).map(([k, v]) => `${k}: ${zahl(v)}`).join(` ${PUNKT}`) || "—", ""]);
@@ -800,7 +805,7 @@ export async function erlebnisKommando(store: KeptaStore, befehl: string, rest: 
       default:
         // D2-21: ein Irrtum bekommt einen Block, nicht die ganze Tafel — die
         // Tafel ist die Antwort auf --help.
-        fehlerBlock(`unknown command: ${befehl}`, `KEPTA knows: ${BEFEHLE.map(([b]) => b.split(" ")[0]).join(", ")}`, "run kepta --help for the whole board");
+        fehlerBlock(`unknown command: ${befehl}`, `K3PTA knows: ${BEFEHLE.map(([b]) => b.split(" ")[0]).join(", ")}`, "run kepta --help for the whole board");
         return 2;
     }
   } catch (e) {

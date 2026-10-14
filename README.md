@@ -1,11 +1,11 @@
-<p align="center"><img src="docs/kepta-logo.svg" width="88" alt="KEPTA"></p>
-<p align="center"><img src="https://img.shields.io/badge/version-3.4.0-blue" alt="v3.4.0"> <img src="https://img.shields.io/badge/license-BUSL--1.1-blue" alt="BUSL-1.1"> <img src="https://img.shields.io/badge/tests-1045%20passing-brightgreen" alt="tests"> <img src="https://img.shields.io/badge/coverage%20gate-%E2%89%A5%2070%25%20of%20lines-brightgreen" alt="coverage gate"> <img src="https://img.shields.io/badge/platform-macOS%20%7C%20Windows%20%7C%20Linux-lightgrey" alt="platform"> <img src="https://img.shields.io/badge/encryption-SQLCipher%204-green" alt="encrypted"> <a href="https://www.linkedin.com/in/damian-todorovic-244235434"><img src="https://img.shields.io/badge/LinkedIn-Damian%20Todorovic-0A66C2?logo=linkedin&logoColor=white" alt="Damian Todorovic on LinkedIn"></a></p>
+<p align="center"><img src="docs/kepta-logo.svg" width="88" alt="K3PTA"></p>
+<p align="center"><img src="https://img.shields.io/badge/version-3.4.0-blue" alt="v3.4.0"> <img src="https://img.shields.io/badge/license-BUSL--1.1-blue" alt="BUSL-1.1"> <img src="https://img.shields.io/badge/tests-1061%20passing-brightgreen" alt="tests"> <img src="https://img.shields.io/badge/coverage%20gate-%E2%89%A5%2070%25%20of%20lines-brightgreen" alt="coverage gate"> <img src="https://img.shields.io/badge/platform-macOS%20%7C%20Windows%20%7C%20Linux-lightgrey" alt="platform"> <img src="https://img.shields.io/badge/encryption-SQLCipher%204-green" alt="encrypted"> <a href="https://www.linkedin.com/in/damian-todorovic-244235434"><img src="https://img.shields.io/badge/LinkedIn-Damian%20Todorovic-0A66C2?logo=linkedin&logoColor=white" alt="Damian Todorovic on LinkedIn"></a></p>
 
-# KEPTA — the memory for AI systems
+# K3PTA — the memory for AI systems
 
 ## Your AI forgets everything. Every chat starts from zero.
 
-**KEPTA is the fix: one local, encrypted memory that every AI reads and writes — Claude, Cursor, Gemini CLI, Cline, any MCP client, and scripts over HTTP. No cloud. No account. One file you own.**
+**K3PTA is the fix: one local, encrypted memory that every AI reads and writes — Claude, Cursor, Gemini CLI, Cline, any MCP client, and scripts over HTTP. No cloud. No account. One file you own.**
 
 Everything an AI system learns goes into an encrypted knowledge base on your own computer — and every AI recalls it in milliseconds, however long the context grows. Documents, decisions, client knowledge, whole chat histories: remembered, linked, contradicted, superseded — never lost.
 
@@ -21,7 +21,7 @@ flowchart LR
     B["Cursor · Gemini CLI<br/>Cline · Codex · Zed"]
     C["Your scripts"]
   end
-  subgraph KEPTA["KEPTA — this repository"]
+  subgraph K3PTA["K3PTA — this repository"]
     direction TB
     M["MCP server<br/>8 tools · stdio + Streamable HTTP"]
     G["HTTP API · 32 routes<br/>Python client · CLI"]
@@ -78,15 +78,15 @@ A **note** is one thing your memory holds — `remember` writes one by hand, you
 
 ## 🖥️ Or download the desktop app
 
-**The core has no window of its own: its interface is your AI client.** If you want a window, that is the free desktop app — same engine, same encrypted file, same key — and it is downloadable from the releases of this repository. For teams and organizations there is KEPTA Enterprise by agreement. These three sentences are the whole answer; every document here says the same.
+**The core has no window of its own: its interface is your AI client.** If you want a window, that is the free desktop app — same engine, same encrypted file, same key — and it is downloadable from the releases of this repository. For teams and organizations there is K3PTA Enterprise by agreement. These three sentences are the whole answer; every document here says the same.
 
-The app brings the memory browser, hybrid search with retrieval provenance, the knowledge graph, time travel, dossiers and a chat that reads the memory. Download the DMG for your Mac from the [latest release](https://github.com/DamianTodorovic/kepta/releases/latest) (Apple Silicon or Intel) and drag it into Applications. The build is ad-hoc signed and not notarised, so macOS asks a single time. Two ways through, and both work on every macOS version: `xattr -dr com.apple.quarantine /Applications/KEPTA.app`, or **System Settings → Privacy & Security** → the KEPTA message → **Open Anyway**. Once, then never again. Older guides say right-click → *Open*; Apple removed that route in macOS 15 and it does nothing on current systems. (What runs from this repository has no window: `npm run dev` starts the HTTP API and its `POST /mcp` — a service on your machine, not an interface.)
+The app brings the memory browser, hybrid search with retrieval provenance, the knowledge graph, time travel, dossiers and a chat that reads the memory. Download the DMG for your Mac from the [latest release](https://github.com/DamianTodorovic/kepta/releases/latest) (Apple Silicon or Intel) and drag it into Applications. The build is ad-hoc signed and not notarised, so macOS asks a single time. Two ways through, and both work on every macOS version: `xattr -dr com.apple.quarantine /Applications/KEPTA.app`, or **System Settings → Privacy & Security** → the K3PTA message → **Open Anyway**. Once, then never again. Older guides say right-click → *Open*; Apple removed that route in macOS 15 and it does nothing on current systems. (What runs from this repository has no window: `npm run dev` starts the HTTP API and its `POST /mcp` — a service on your machine, not an interface.)
 
-The app is free, like everything in this repository. KEPTA Enterprise (team and tenant memory, audit chain, human review, point-in-time recovery) is licensed by agreement — [write to me on LinkedIn](https://www.linkedin.com/in/damian-todorovic-244235434).
+The app is free, like everything in this repository. K3PTA Enterprise (team and tenant memory, audit chain, human review, point-in-time recovery) is licensed by agreement — [write to me on LinkedIn](https://www.linkedin.com/in/damian-todorovic-244235434).
 
 ## 🧠 One engine. Free. For every AI.
 
-KEPTA is not a feature inside one app — it is a memory layer that outlives every model, every app and every context window. Three doors lead into the same encrypted file:
+K3PTA is not a feature inside one app — it is a memory layer that outlives every model, every app and every context window. Three doors lead into the same encrypted file:
 
 | Door | What uses it |
 |---|---|
@@ -96,7 +96,7 @@ KEPTA is not a feature inside one app — it is a memory layer that outlives eve
 
 **Free means free:** €0, forever — no account, no licence key, no daily limit, no tier inside the memory, nothing locked to sell you later. The best memory engine we can build is the free one; that is the point. This sentence is about money, not about capacity. On one machine the local API stops accepting new notes once `KEPTA_MAX_ACTIVE` notes are active (**5000** by default, `server.ts` → `maxActiveMemories()`): a brake on a runaway agent writing your memory full, not a paywall — raise it with that variable and nothing else changes. Nothing in the free core is a locked feature; see [SECURITY.md](SECURITY.md#environment-variables) for every such screw.
 
-**Teams and organizations** — shared team memory, central policies, MDM, organisation-wide audit — get **KEPTA Enterprise by request**. Coordination is the only thing we ever charge for; memory quality never is. → [write to me on LinkedIn](https://www.linkedin.com/in/damian-todorovic-244235434)
+**Teams and organizations** — shared team memory, central policies, MDM, organisation-wide audit — get **K3PTA Enterprise by request**. Coordination is the only thing we ever charge for; memory quality never is. → [write to me on LinkedIn](https://www.linkedin.com/in/damian-todorovic-244235434)
 
 ---
 
@@ -108,7 +108,7 @@ KEPTA is not a feature inside one app — it is a memory layer that outlives eve
 npx -y kepta-mcp setup
 ```
 
-Finds Claude Desktop, Claude Code, Cursor, Windsurf, VS Code, Gemini CLI, Cline and Roo Code on your computer and adds KEPTA to them. It asks per app (`--yes` connects all of them), keeps a backup of every file it changes and leaves every other entry alone. Zed, Codex CLI and Continue get the exact snippet to paste (their config formats move too fast to write from outside). Any other MCP client:
+Finds Claude Desktop, Claude Code, Cursor, Windsurf, VS Code, Gemini CLI, Cline and Roo Code on your computer and adds K3PTA to them. It asks per app (`--yes` connects all of them), keeps a backup of every file it changes and leaves every other entry alone. Zed, Codex CLI and Continue get the exact snippet to paste (their config formats move too fast to write from outside). Any other MCP client:
 
 ```json
 {
@@ -154,9 +154,9 @@ KEPTA_DB_KEY=$(openssl rand -hex 32)
 docker run --rm -i -e KEPTA_DB_KEY="$KEPTA_DB_KEY" -v kepta-data:/data kepta-mcp
 ```
 
-**No key, no file.** Pass a real value: 64 hexadecimal characters, `openssl rand -hex 32`, generated once and stored where you keep your secrets. A container cannot fall back to a keychain, so without `KEPTA_DB_KEY` a **new** knowledge base is not created — KEPTA stops with a non-zero exit and says what to do instead. The same value has to come back on every later start: a fresh `openssl rand -hex 32` the second time means a key that does not fit the volume, and that also stops with nothing changed. The only way to a plaintext database is the switch that says so out loud, `KEPTA_ENCRYPTION=off`.
+**No key, no file.** Pass a real value: 64 hexadecimal characters, `openssl rand -hex 32`, generated once and stored where you keep your secrets. A container cannot fall back to a keychain, so without `KEPTA_DB_KEY` a **new** knowledge base is not created — K3PTA stops with a non-zero exit and says what to do instead. The same value has to come back on every later start: a fresh `openssl rand -hex 32` the second time means a key that does not fit the volume, and that also stops with nothing changed. The only way to a plaintext database is the switch that says so out loud, `KEPTA_ENCRYPTION=off`.
 
-One transitional sentence for whoever reads this against an older build: **before** this rule was in the code, an unusable value (a placeholder copied out of a guide, too short, not hex) did not fail — KEPTA printed one line, created the database in **plaintext** and exited 0. If your `kepta.db` starts with the bytes `SQLite format 3`, that is what happened, and the file is readable by anyone who can read it. Check the version, then re-key or replace the volume. [SECURITY.md](SECURITY.md#encryption-at-rest) has the whole rule.
+One transitional sentence for whoever reads this against an older build: **before** this rule was in the code, an unusable value (a placeholder copied out of a guide, too short, not hex) did not fail — K3PTA printed one line, created the database in **plaintext** and exited 0. If your `kepta.db` starts with the bytes `SQLite format 3`, that is what happened, and the file is readable by anyone who can read it. Check the version, then re-key or replace the volume. [SECURITY.md](SECURITY.md#encryption-at-rest) has the whole rule.
 
 ### CI, servers and every other headless start
 
@@ -258,7 +258,7 @@ Two smaller ones worth a line each: a **symlink inside `~/.kepta/inbox/` is not 
 
 ## 🐍 Python client
 
-A running KEPTA on this machine is the precondition: the desktop app, or `npm run dev` in this repository. `pip install kepta` brings the client, never a server — and note that `npx kepta-mcp`, the stdio server your AI client starts, opens **no HTTP port at all**, so it is not what this client talks to.
+A running K3PTA on this machine is the precondition: the desktop app, or `npm run dev` in this repository. `pip install kepta` brings the client, never a server — and note that `npx kepta-mcp`, the stdio server your AI client starts, opens **no HTTP port at all**, so it is not what this client talks to.
 
 ```bash
 pip install kepta
@@ -302,7 +302,7 @@ tests/              Vitest suite with CI-enforced coverage thresholds
 
 ## 🔧 Screws
 
-Every variable KEPTA reads from the environment — with its default, what it changes and what
+Every variable K3PTA reads from the environment — with its default, what it changes and what
 can break if you touch it — is in one table: **[docs/ENVIRONMENT.md](docs/ENVIRONMENT.md)**. The
 three that matter most, in short:
 
@@ -321,7 +321,7 @@ The knowledge base is a SQLCipher 4 database: AES-256, an HMAC-SHA512 over every
 
 What that means on the byte level, measured rather than asserted: one note written with `kepta-mcp` 3.2.0 from the registry into a throwaway `HOME` on 10.10.2026 left a `~/.kepta/kepta.db` whose first sixteen bytes are `85 95 55 36 a3 ab f4 02 4c 6c f0 5c 0f 0b 4c 69` — not `SQLite format 3` — with no trace of the note's text anywhere in the file. `head -c 16 ~/.kepta/kepta.db` is the whole test, on any store, yours included.
 
-**The rule: no key, no file.** When KEPTA is about to create a knowledge base and cannot put its key somewhere safe — no keychain, a denied approval, CI with an empty environment — it does **not** create the file. It stops with a non-zero exit and names the way out (`KEPTA_DB_KEY`, or `KEPTA_ENCRYPTION=off` if plaintext is truly what you want). Failing quietly into an unencrypted database was the old behaviour, and it is the failure this rule exists to kill. Opening an **existing** file is unchanged: a missing or wrong key there already stopped and changed nothing. *Standing date: this was decided on 10.10.2026 and is being put into the code now — a build that predates it still writes plaintext and exits 0 on an unusable value, so if you run an older release, test it rather than trusting this sentence.*
+**The rule: no key, no file.** When K3PTA is about to create a knowledge base and cannot put its key somewhere safe — no keychain, a denied approval, CI with an empty environment — it does **not** create the file. It stops with a non-zero exit and names the way out (`KEPTA_DB_KEY`, or `KEPTA_ENCRYPTION=off` if plaintext is truly what you want). Failing quietly into an unencrypted database was the old behaviour, and it is the failure this rule exists to kill. Opening an **existing** file is unchanged: a missing or wrong key there already stopped and changed nothing. *Standing date: this was decided on 10.10.2026 and is being put into the code now — a build that predates it still writes plaintext and exits 0 on an unusable value, so if you run an older release, test it rather than trusting this sentence.*
 
 That leaves exactly one door to plaintext, and it is a door you have to open on purpose: **`KEPTA_ENCRYPTION=off`**. It is for tooling that must read raw SQLite — inspectors, one-off migration scripts — not a performance switch, and not a fix for a key problem (on an encrypted file it produces an unreadable-file error instead). Never reach for it to get a container started; that is the case `KEPTA_DB_KEY` is for. What the encryption covers, what it cannot cover, and how to keep a copy of the key: [SECURITY.md](SECURITY.md).
 
@@ -329,7 +329,7 @@ That leaves exactly one door to plaintext, and it is a door you have to open on 
 
 ## 🧪 Quality
 
-**1045 tests** (85 files, measured 2026-10-13) with Vitest and v8 coverage — the number of cases a run collected and could execute: a case somebody wrote as `it.skip` in the source leaves the count, a case the **quietness probe refused during the run stays in it**, because it is the same tree on the same runner either way (`scripts/test-bericht.mjs` spells out why: on this desk three timing cases refused at one commit and ran at the next, and a number that moves with the neighbourhood is not a number). `npm test` writes that run's JSON report, and `node scripts/doku-check.mjs` then holds both READMEs to exactly that number. `tests/doku-zahlen.test.ts` listens to the same report and refuses to compare when it cannot be trusted — missing, older than the suite, or written by a partial run — instead of checking a value out of the drawer. The coverage thresholds are a CI gate: a commit that falls below one of them turns CI red. On top: a retrieval eval (Hit@1, Recall@5 capped, MRR) on a fixed corpus, an ablation test per retrieval leg, an encryption eval and a boundary test on the core architecture.
+**1061 tests** (86 files, measured 2026-10-14) with Vitest and v8 coverage — the number of cases a run collected and could execute: a case somebody wrote as `it.skip` in the source leaves the count, a case the **quietness probe refused during the run stays in it**, because it is the same tree on the same runner either way (`scripts/test-bericht.mjs` spells out why: on this desk three timing cases refused at one commit and ran at the next, and a number that moves with the neighbourhood is not a number). `npm test` writes that run's JSON report, and `node scripts/doku-check.mjs` then holds both READMEs to exactly that number. `tests/doku-zahlen.test.ts` listens to the same report and refuses to compare when it cannot be trusted — missing, older than the suite, or written by a partial run — instead of checking a value out of the drawer. The coverage thresholds are a CI gate: a commit that falls below one of them turns CI red. On top: a retrieval eval (Hit@1, Recall@5 capped, MRR) on a fixed corpus, an ablation test per retrieval leg, an encryption eval and a boundary test on the core architecture.
 
 ### Coverage thresholds (enforced by CI)
 
@@ -348,7 +348,7 @@ Median search times on one laptop (Apple M4), every run committed in [`tools/lat
 
 ### Benchmark record — LongMemEval-S, fully public
 
-KEPTA ships its memory benchmark as raw per-question records instead of a headline number: **every run commits all 500 question records to this repository**, in [`tools/longmemeval/ergebnisse/`](tools/longmemeval/ergebnisse/) — each with its id, type and skill, the judge's verdict, how many notes retrieval returned, which of the retrieved contexts settled it, and whether the reference answer appeared verbatim. The question and answer *text* is not in the repo: it comes from the pinned upstream dataset, whose SHA-256 every record carries. Fixed dataset (LongMemEval-S, 500 questions, SHA-pinned), fixed judge, fully reproducible locally — see [`tools/longmemeval/README.md`](tools/longmemeval/README.md).
+K3PTA ships its memory benchmark as raw per-question records instead of a headline number: **every run commits all 500 question records to this repository**, in [`tools/longmemeval/ergebnisse/`](tools/longmemeval/ergebnisse/) — each with its id, type and skill, the judge's verdict, how many notes retrieval returned, which of the retrieved contexts settled it, and whether the reference answer appeared verbatim. The question and answer *text* is not in the repo: it comes from the pinned upstream dataset, whose SHA-256 every record carries. Fixed dataset (LongMemEval-S, 500 questions, SHA-pinned), fixed judge, fully reproducible locally — see [`tools/longmemeval/README.md`](tools/longmemeval/README.md).
 
 The series is committed as raw per-question records — and it is **not a current measurement**, which is why no score is quoted here. Every record in that folder names a `kepta_version` between **2.13.2 and 2.13.22** (`grep -h kepta_version tools/longmemeval/ergebnisse/*.json`), while this repository ships **3.4.0**. The two belong together in one sentence and mean one thing: the records stay valid for the engine they were run against, and a version number that moves without a new run says nothing about 3.4.0 — it neither revives those percentages nor invalidates them. Until the chain runs again against the shipped engine, the numbers stay in the records and out of the paper. What does not change: both judges are local (`qwen2.5:3b` for the continuity series, `qwen2.5:14b` Q4 for the later runs, both on a consumer GPU), zero cloud, no fine-tuning, and every step of both chains is a run record in the same folder.
 
@@ -356,18 +356,18 @@ The series is committed as raw per-question records — and it is **not a curren
 
 ---
 
-## 👋 Who builds KEPTA
+## 👋 Who builds K3PTA
 
-KEPTA is built by **Damian Todorovic** and **Emil Wagner** — a small team from Germany, shipping in public. Questions, ideas, Enterprise for your team — or you simply want to follow where this is going: **[find us on LinkedIn](https://www.linkedin.com/in/damian-todorovic-244235434)**.
+K3PTA is built by **Damian Todorovic** and **Emil Wagner** — a small team from Germany, shipping in public. Questions, ideas, Enterprise for your team — or you simply want to follow where this is going: **[find us on LinkedIn](https://www.linkedin.com/in/damian-todorovic-244235434)**.
 
 ## 📄 License
 
-[BUSL 1.1](LICENSE) — source-available, not OSI-approved open source: every line public, production use inside your own organization always allowed, offering it as a hosted service is reserved, and each version converts to AGPL-3.0-or-later four years after release. **The npm package `kepta-mcp` carries the same license as this repository; the Python client under `python/` stays MIT** so any Python project can embed it. KEPTA Enterprise for teams and organizations is licensed by agreement — [write to me on LinkedIn](https://www.linkedin.com/in/damian-todorovic-244235434).
+[BUSL 1.1](LICENSE) — source-available, not OSI-approved open source: every line public, production use inside your own organization always allowed, offering it as a hosted service is reserved, and each version converts to AGPL-3.0-or-later four years after release. **The npm package `kepta-mcp` carries the same license as this repository; the Python client under `python/` stays MIT** so any Python project can embed it. K3PTA Enterprise for teams and organizations is licensed by agreement — [write to me on LinkedIn](https://www.linkedin.com/in/damian-todorovic-244235434).
 
-**What this repository is — and what it is not.** This source-available core is the memory engine: storage, retrieval, MCP — free, for every AI. Forks are legitimate; presenting a fork as KEPTA is not: the **KEPTA name and the KEPTA branding belong to Damian Todorovic**. Fork it, build with it, ship your own product from it — under a different name, without offering this engine as a hosted service, and with every change you make becoming AGPL-3.0-or-later when the version's Change Date arrives. Private notes stay out of every AI channel — `private` is a disclosure rule toward agents, not a shield against programs running on your own machine ([SECURITY.md](SECURITY.md)).
+**What this repository is — and what it is not.** This source-available core is the memory engine: storage, retrieval, MCP — free, for every AI. Forks are legitimate; presenting a fork as K3PTA is not: the **K3PTA name and the K3PTA branding belong to Damian Todorovic**. Fork it, build with it, ship your own product from it — under a different name, without offering this engine as a hosted service, and with every change you make becoming AGPL-3.0-or-later when the version's Change Date arrives. Private notes stay out of every AI channel — `private` is a disclosure rule toward agents, not a shield against programs running on your own machine ([SECURITY.md](SECURITY.md)).
 
 ---
 
 <p align="center">
-  <sub>KEPTA — one local, encrypted memory that every AI reads and writes. Local, encrypted, free. No subscription, no account, no excuses.</sub>
+  <sub>K3PTA — one local, encrypted memory that every AI reads and writes. Local, encrypted, free. No subscription, no account, no excuses.</sub>
 </p>

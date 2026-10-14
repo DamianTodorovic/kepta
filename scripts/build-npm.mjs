@@ -26,7 +26,7 @@ await build({
 // ein per banner ergaenzter zweiter landete in Zeile 2, wo "#!" ein Syntaxfehler
 // ist — das Paket liess sich installieren und startete bei niemandem.
 // Zweiter Entry: die Engine als BIBLIOTHEK (exportiert, startet nichts).
-// KEPTA Enterprise bindet die Engine über genau diese Fläche an.
+// K3PTA Enterprise bindet die Engine über genau diese Fläche an.
 const engineZiel = path.resolve("npm/engine-entry.cjs");
 await build({
   entryPoints: ["npm/engine-entry.ts"],

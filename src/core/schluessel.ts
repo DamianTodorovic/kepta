@@ -9,12 +9,13 @@
 // Wogegen das schützt: gegen jeden, der die Datei, eine Kopie oder ein Backup in
 // die Hand bekommt, und gegen eine ausgebaute Platte. Wogegen nicht: gegen
 // Schadsoftware, die unter demselben Benutzerkonto läuft — sie darf den
-// Schlüsselbund so fragen wie KEPTA selbst.
+// Schlüsselbund so fragen wie K3PTA selbst.
 import { execFileSync } from "node:child_process";
 import crypto from "node:crypto";
 import fs from "node:fs";
 import path from "node:path";
 import type { KeyProvider } from "./extensions";
+import { leseUmwelt } from "./umwelt";
 
 export const DIENST = "app.kepta.database";
 export const KONTO = "kepta";
@@ -93,7 +94,7 @@ export function ohneSchluessel(text: string, hex: string): string {
  */
 function menschlicherGrund(e: unknown, timeoutMs: number): string {
   const err = e as { code?: string; status?: number; stderr?: string };
-  if (err.code === "ETIMEDOUT") return `it did not answer in time (KEPTA waited ${timeoutMs / 1000} seconds and gave up)`;
+  if (err.code === "ETIMEDOUT") return `it did not answer in time (K3PTA waited ${timeoutMs / 1000} seconds and gave up)`;
   if (err.code === "ENOENT") return "the helper program is not on this system";
   const grund = (err.stderr ?? "").trim().replace(/^(security|secret-tool):\s*/, "");
   if (typeof err.status === "number") return grund ? `it exited with code ${err.status}: ${grund}` : `it exited with code ${err.status}`;
@@ -112,7 +113,7 @@ function ausweg(bund: Pick<Schluesselbund, "name" | "wegweiser">): string {
 /** Ein Lesefehler aus dem Schlüsselbund: Grund in Menschengestalt, dann der Ausweg. */
 function lesefehler(e: unknown, bund: Pick<Schluesselbund, "name" | "wegweiser">): Error {
   return new Error(
-    `KEPTA could not read its key from the ${bund.name} — ${menschlicherGrund(e, LESE_TIMEOUT_MS)}. ` +
+    `K3PTA could not read its key from the ${bund.name} — ${menschlicherGrund(e, LESE_TIMEOUT_MS)}. ` +
       `Nothing was changed and nothing was encrypted. ${ausweg(bund)}`,
   );
 }
@@ -147,7 +148,7 @@ export function macSchluesselbund(ausf: Ausfuehren = standardAusfuehren): Schlue
       // (Der 2.13.4-Fix aus der App, am 26.9. in den Kern portiert — das
       // npm-Paket öffnet dieselbe Datenbank und trug die Gefahr bis dahin.)
       try {
-        ausf("/usr/bin/security", ["add-generic-password", "-s", DIENST, "-a", KONTO, "-l", "KEPTA database key", "-w", hex], {
+        ausf("/usr/bin/security", ["add-generic-password", "-s", DIENST, "-a", KONTO, "-l", "K3PTA database key", "-w", hex], {
           timeout: SCHREIB_TIMEOUT_MS,
         });
       } catch (e) {
@@ -158,12 +159,12 @@ export function macSchluesselbund(ausf: Ausfuehren = standardAusfuehren): Schlue
             `A key entry already exists in the ${name} but could not be read — refusing to overwrite it. ` +
               `Nothing was changed and nothing was encrypted. Read the stored key back with: ${wegweiser} ` +
               `(SECURITY.md, "Keep a copy of the key") and start again with that key in KEPTA_DB_KEY, ` +
-              `or run KEPTA once from a Terminal where the Keychain can ask you.`,
+              `or run K3PTA once from a Terminal where the Keychain can ask you.`,
           );
         }
         throw new Error(
           ohneSchluessel(
-            `KEPTA could not store its new key in the ${name} — ${menschlicherGrund(e, SCHREIB_TIMEOUT_MS)}. ` +
+            `K3PTA could not store its new key in the ${name} — ${menschlicherGrund(e, SCHREIB_TIMEOUT_MS)}. ` +
               `Nothing was encrypted and your knowledge base was left untouched. ${ausweg(bund)}`,
             hex,
           ),
@@ -233,7 +234,7 @@ export function linuxSchluesselbund(ausf: Ausfuehren = standardAusfuehren): Schl
     },
     ablegen(hex) {
       // secret-tool liest das Geheimnis von stdin — es erscheint in keiner Argumentliste.
-      ausf("secret-tool", ["store", "--label=KEPTA database key", "service", DIENST, "account", KONTO], { input: hex });
+      ausf("secret-tool", ["store", "--label=K3PTA database key", "service", DIENST, "account", KONTO], { input: hex });
     },
   };
 }
@@ -277,13 +278,16 @@ export function holeOderErzeugeSchluessel(
   zufall: (n: number) => Buffer = (n) => crypto.randomBytes(n),
   melden: Melden = aufFermeldung,
 ): Buffer {
-  const ausUmgebung = env.KEPTA_DB_KEY?.trim();
+  // Zwei Namensformen, eine gewinnt und sagt es (#64): ein Start, der nur die alte
+  // Form kennt, behaelt seinen Schluessel — er faellt nicht in den Bund-Zweig.
+  const fund = leseUmwelt("schluessel", env);
+  const ausUmgebung = fund.wert?.trim();
   if (ausUmgebung) {
     // A1-04: ein Tippfehler in dieser Variablen war bis anhin ein stiller Fall —
     // die Zahl in der Meldung ist der Grund, den der Nutzer selbst prüfen kann.
     if (!istSchluessel(ausUmgebung)) {
       throw new Error(
-        `KEPTA_DB_KEY must be 64 hexadecimal characters (256 bits) — got ${ausUmgebung.length}, need 64. ` +
+        `${fund.gewonnen} must be 64 hexadecimal characters (256 bits) — got ${ausUmgebung.length}, need 64. ` +
           `Generate one with: openssl rand -hex 32. Nothing was written.`,
       );
     }
@@ -291,19 +295,19 @@ export function holeOderErzeugeSchluessel(
   }
   if (!bund) {
     throw new Error(
-      "No keychain on this system — no macOS Keychain, no Windows DPAPI, no Linux Secret Service — so KEPTA has nowhere to keep a key. " +
+      "No keychain on this system — no macOS Keychain, no Windows DPAPI, no Linux Secret Service — so K3PTA has nowhere to keep a key. " +
         "Set KEPTA_DB_KEY to a 64-character hex key (openssl rand -hex 32) to encrypt the knowledge base.",
     );
   }
   // A1-10: der Nutzer sieht, dass gewartet wird, bevor die erste Zeile spaeter kommt.
-  melden(`checking the ${bund.name} for your KEPTA key`);
+  melden(`checking the ${bund.name} for your K3PTA key`);
   const vorrat = (wert: string | null): Buffer | null => {
     if (!wert) return null;
     // A1-08: ein fremder Eintrag ist nicht "kein Schluessel" und auch kein
     // Bund-Defekt — die Meldung nennt, was sie prueft und wie man nachsieht.
     if (!istSchluessel(wert)) {
       throw new Error(
-        `The entry in the ${bund.name} is not a KEPTA key (expected 64 hex characters, got ${wert.length}). ` +
+        `The entry in the ${bund.name} is not a K3PTA key (expected 64 hex characters, got ${wert.length}). ` +
           `Nothing was changed. Look at that entry with: ${bund.wegweiser} (SECURITY.md, "Keep a copy of the key").`,
       );
     }
@@ -319,7 +323,7 @@ export function holeOderErzeugeSchluessel(
   // der echte — keine Neuerzeugung. Unangetastet, auch wenn das Warten kostet.
   const zweiterVersuch = vorrat(bund.lesen());
   if (zweiterVersuch) return zweiterVersuch;
-  melden(`no key in the ${bund.name} yet — storing a new one; if a dialog asks, allow it (KEPTA never overwrites a key)`);
+  melden(`no key in the ${bund.name} yet — storing a new one; if a dialog asks, allow it (K3PTA never overwrites a key)`);
   const neu = zufall(32).toString("hex");
   bund.ablegen(neu);
   if (bund.lesen() !== neu) {
@@ -360,7 +364,7 @@ const DATENBANK_DATEI = "kepta.db";
  * im Speicher des Prozesses.
  *
  * Grenze (Damian, 10.10.2026, wörtlich: **„Abbrechen: ohne Schluessel keine Datei."**):
- * Wer eine Wissensbasis **anlegt**, bekommt keine Datei, wenn KEPTA keinen Schlüssel
+ * Wer eine Wissensbasis **anlegt**, bekommt keine Datei, wenn K3PTA keinen Schlüssel
  * sicher verwahren kann. Ein Wurf aus `keyFor()` allein reicht dafür nicht — `store.ts`
  * fängt ihn als `hinweis` und legt die Klartext-Datei trotzdem an (A1-04, Q-05). Also
  * wird der Schlüssel **hier** geholt, vor jeder Öffnung: was hier wirft, verhindert
@@ -376,11 +380,12 @@ export function schluesselbundKeyProvider(
   env: Record<string, string | undefined> = process.env,
 ): KeyProvider {
   pruefeSchreibrecht(datenordner);
-  if (env.KEPTA_ENCRYPTION === "off") return { keyFor: () => null };
+  if (leseUmwelt("verschluesselung", env).wert === "off") return { keyFor: () => null };
   const bund = schluesselbundFuer(plattform, datenordner, ausf);
+  const schluesselForm = leseUmwelt("schluessel", env);
   let aufgeloest: Buffer | null = null;
   const provider: KeyProvider = {
-    ablage: env.KEPTA_DB_KEY ? "KEPTA_DB_KEY" : bund?.name,
+    ablage: schluesselForm.gewonnen ?? bund?.name,
     keyFor: () => (aufgeloest ??= holeOderErzeugeSchluessel(bund, env)),
   };
   const datenbank = path.join(datenordner, DATENBANK_DATEI);
@@ -389,7 +394,7 @@ export function schluesselbundKeyProvider(
       provider.keyFor(datenbank);
     } catch (e) {
       throw new Error(
-        `KEPTA did not create a knowledge base — no file was written. ${fehlertext(e)} ` +
+        `K3PTA did not create a knowledge base — no file was written. ${fehlertext(e)} ` +
           `If you mean to run without encryption, say so on purpose: KEPTA_ENCRYPTION=off.`,
       );
     }

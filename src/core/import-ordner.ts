@@ -121,7 +121,7 @@ function ortFürMeldung(pfad: string): string {
 }
 
 function keineErlaubteWurzelText(pfad: string, erlaubte: string[]): string {
-  return `no import from this place: ${ortFürMeldung(pfad)} — KEPTA reads only your home folder and the system temp (${erlaubte.join(", ")}). Next: copy the folder into your Downloads folder and run the command again, or name another root with the roots option.`;
+  return `no import from this place: ${ortFürMeldung(pfad)} — K3PTA reads only your home folder and the system temp (${erlaubte.join(", ")}). Next: copy the folder into your Downloads folder and run the command again, or name another root with the roots option.`;
 }
 
 /** Pfad-relativ, nicht startsWith: „/home/x-anderer" darf nicht durch „/home/x" rutschen. */
@@ -385,7 +385,7 @@ export async function importOrdner(store: KeptaStore, pfad: string, opts: Ordner
   let wurzelReal: string;
   try {
     if (fs.lstatSync(ziel).isSymbolicLink()) {
-      throw new Error(`${ortFürMeldung(ziel)} is a symlink — KEPTA imports the real folder. Point the command at the folder the link points to, or copy it in.`);
+      throw new Error(`${ortFürMeldung(ziel)} is a symlink — K3PTA imports the real folder. Point the command at the folder the link points to, or copy it in.`);
     }
     wurzelReal = fs.realpathSync(ziel);
   } catch (e) {

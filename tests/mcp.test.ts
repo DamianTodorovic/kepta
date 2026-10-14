@@ -57,7 +57,7 @@ describe("MCP-Protokoll", () => {
 
   it("server/discover liefert Server-Info + alle Tools (stateless core)", async () => {
     const res = asResult(await rpc(store, "server/discover"));
-    expect(res.serverInfo).toEqual({ name: "kepta", title: "KEPTA — Agent Memory", version: APP_VERSION });
+    expect(res.serverInfo).toEqual({ name: "kepta", title: "K3PTA — Agent Memory", version: APP_VERSION });
     expect(SERVER_INFO.version).toBe(APP_VERSION);
     const tools = res.tools as typeof TOOLS;
     expect(tools).toHaveLength(8);
@@ -121,7 +121,7 @@ describe("MCP-Tools", () => {
     store = freshStore();
   });
 
-  it("Privatheits-Floor: private Notizen verlassen KEPTA nie über MCP — auch nicht per scope-Anfrage", async () => {
+  it("Privatheits-Floor: private Notizen verlassen K3PTA nie über MCP — auch nicht per scope-Anfrage", async () => {
     store.createMemory({ title: "Offen zugänglich", content: "Normale Notiz", tags: ["offen"] });
     store.createMemory({ title: "Privat!", content: "Steuer-ID 12345", scope: "private" });
 
@@ -142,7 +142,7 @@ describe("MCP-Tools", () => {
     const saved = asTool(
       await rpc(store, "tools/call", {
         name: "memory_save",
-        arguments: { title: "Deploy-Setup", content: "KEPTA läuft über [[Docker]] und PM2", tags: ["devops"], type: "procedural" },
+        arguments: { title: "Deploy-Setup", content: "K3PTA läuft über [[Docker]] und PM2", tags: ["devops"], type: "procedural" },
       })
     );
     expect(saved.structuredContent.created).toBe(true);

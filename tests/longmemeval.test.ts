@@ -51,7 +51,7 @@ describe("Wertung — das Raster hinter der veröffentlichten Zahl", () => {
   });
 
   it("der Richter-Prompt misst Kontext-Suffizienz, nicht eine generierte Antwort", () => {
-    // Der Kern des Judge-Frames: KEPTA meldet 61,5 %, Zep 63,8 % — das ist nur
+    // Der Kern des Judge-Frames: K3PTA meldet 61,5 %, Zep 63,8 % — das ist nur
     // dann ehrlich, wenn beide Zeilen dasselbe messen. Sie messen es nicht, und
     // dieser Test pinnt, WAS dieses Projekt misst: enthält der geretriefte
     // Kontext die Referenzantwort — es antwortet kein Generator-LLM.

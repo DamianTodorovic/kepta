@@ -1,4 +1,4 @@
-# KEPTA — Baukontext fuer `docker build -t kepta-mcp .`
+# K3PTA — Baukontext fuer `docker build -t kepta-mcp .`
 #
 # Der Dockerfile baut in Stufe 1 mit `npm ci` eine eigene Linux/musl-Fassung von
 # better-sqlite3-multiple-ciphers. Was `COPY . .` danach aus dem Arbeitsbaum
