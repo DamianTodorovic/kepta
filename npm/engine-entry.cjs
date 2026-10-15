@@ -219,7 +219,31 @@ var RAHMENWORT = /* @__PURE__ */ new Set([
   "references",
   "inhalt",
   "anhang",
-  "quellen"
+  "quellen",
+  // Die 17 Namen, die am 15.10.2026 um 18:3x MESZ tatsächlich in seinem Bestand als
+  // Begriffe hingen (17 von 500 Fensternamen seiner laufenden Tuer; Beleg in der
+  // Arbeitsmappe `audit-2026-10-09/belege-15-10/a1x/geruestwort-tuer.log.txt`, Fall
+  // `tests/graph-geruest.test.ts`). Deutsche Abschnittslabels aus Persona- und
+  // Dossier-Notizen, englische aus importierten READMEs und SECURITY.md-Dateien —
+  // Papierform, kein Inhalt. Verglichen wird hier normalisiert (klein, eine Leere),
+  // also genau so, wie `lege` unten in die Liste schaut.
+  "ablauf",
+  "bewertungen",
+  "befunde",
+  "gesamturteil",
+  "was gut funktioniert",
+  "documentation",
+  "security policy",
+  "how to report",
+  "reporting",
+  "reporting a vulnerability",
+  "supported versions",
+  "scope",
+  "not in scope",
+  "known limitations",
+  "executive summary",
+  "consequences",
+  "what to expect"
 ]);
 var BUCHSTABE = new RegExp("\\p{L}", "u");
 var normalisiere = (roh) => roh.replace(/\s+/g, " ").trim().toLowerCase();
