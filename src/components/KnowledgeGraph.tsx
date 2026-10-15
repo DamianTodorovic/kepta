@@ -46,6 +46,7 @@ import {
   dickeBand,
   ENTITAETS_PRAEFIX,
   KANTEN_GREIF_PX,
+  knotenRadius,
   type LayoutEdge,
   type LayoutNode,
   type Simulation,
@@ -311,6 +312,34 @@ export const RANG_FOLGE: readonly Leistenglied[] = [
  */
 function mengenzahl(n: number): string {
   return n.toLocaleString("en-US");
+}
+
+/**
+ * Der Titel-Etat als ein Satz (#5, offene Liste 15.10.).
+ *
+ * Auf „21 of 400 notes carry a title" folgt die Frage, die jeder Mensch direkt
+ * danach stellt: wie viele haben KEINEN Namen, und warum. Die Antwort ist eine
+ * Rechnung, die restlos aufgeht — jeder Knoten auf dem Weg von der Menge ins
+ * Bild faellt in genau einen Grund. Darum wird hier nichts geschaetzt: die
+ * Zahlen bringt der Mal-Pass mit, und wer eine Grundklasse anlegt, muss sie
+ * in dieselbe Kette haengen, sonst weist der Satz einen Rest aus, den niemand
+ * gesetzt hat.
+ *
+ * Schwaigt der Grundsteil, ist das keine Luecke: ein Modus, der keine Namen
+ * will, versaeumt nichts, und ein Bild, das alle benennt, hat nichts zu erklaeren.
+ */
+export function titelEtat(
+  benannt: number,
+  umfang: number,
+  gruende: readonly (readonly [number, string])[]
+): string {
+  if (benannt >= umfang) return "";
+  const grundZeilen = gruende.filter(([n]) => n > 0).map(([n, w]) => `${mengenzahl(n)} ${w}`);
+  const ohneeNamen = umfang - benannt;
+  const grund = grundZeilen.length
+    ? ` · ${mengenzahl(ohneeNamen)} stayed nameless: ${grundZeilen.join(", ")}`
+    : "";
+  return `${mengenzahl(benannt)} of ${mengenzahl(umfang)} notes carry a title${grund}`;
 }
 
 interface KnowledgeGraphProps {
@@ -1629,17 +1658,14 @@ export function KnowledgeGraph({ memories: memoriesAusFenster, onSelectMemory, o
   const strukturKnotenRef = useRef<Map<string, StrukturKnoten>>(new Map());
 
   /**
-   * Knotengroesse nach Verbindungsgrad.
+   * Knotengroesse nach Verbindungsgrad — das Gesetz liegt in `knotenRadius`
+   * (graphLayout), weil die Physik dieselbe Groesse rechnet wie der Mal-Pass
+   * und ein zweites Exemplar davon schon einmal die Spanne totgemacht hat.
    *
-   * Die vorige Formel (7 + log2(1+grad) * 4.5, gedeckelt bei 24) war schon bei
-   * einem Dutzend Verbindungen am Anschlag — in einer normalen Wissensbasis
-   * hatten damit FAST ALLE Knoten dieselbe Maximalgroesse. Das Ergebnis war eine
-   * Wand gleich grosser Kugeln ohne jede Rangfolge, und weil sie so gross waren,
-   * passte kaum etwas auf den Schirm. Flacher und kleiner: die Spanne wird
-   * wirklich genutzt, Huben bleiben erkennbar, und es ist wieder Luft dazwischen.
+   * Hier nur der Multiplikator: der Groesseregler der Flaeche.
    */
   const radiusOf = useCallback(
-    (id: string) => Math.min(18, 4 + Math.log2(1 + (degreeRef.current.get(id) ?? 0)) * 2.2) * groesseRef.current,
+    (id: string) => knotenRadius(degreeRef.current.get(id) ?? 0) * groesseRef.current,
     []
   );
 
@@ -2599,6 +2625,8 @@ export function KnowledgeGraph({ memories: memoriesAusFenster, onSelectMemory, o
     // --- Knoten ---
     const sp = holeSprites(notenFarbenRef.current, nodeRim, nodeHi);
     const beschriftbar: { n: LayoutNode; m: Memory; r: number }[] = [];
+    /** Wie viele der gemalten Notizen ausgegraut sind — die vierte Zahl des Titel-Etats. */
+    let verblasen = 0;
     /**
      * Sehr kleine Knoten, gesammelt nach Farbe UND Deckkraft: x, y, Kantenlaenge.
      *
@@ -2672,6 +2700,7 @@ export function KnowledgeGraph({ memories: memoriesAusFenster, onSelectMemory, o
         if (punkte) punkte.push(n.x - rr, n.y - rr, rr * 2);
         else winzig.set(schluessel, [n.x - rr, n.y - rr, rr * 2]);
         if (!zeitInaktiv && !gedimmt) beschriftbar.push({ n, m, r: rr });
+        else verblasen++;
         continue;
       }
 
@@ -2764,6 +2793,7 @@ export function KnowledgeGraph({ memories: memoriesAusFenster, onSelectMemory, o
       }
       ctx.globalAlpha = 1;
       if (!zeitInaktiv && !gedimmt) beschriftbar.push({ n, m, r: rr });
+      else verblasen++;
     }
 
     // Die gesammelten Winzlinge, nach Farbe gebuendelt.
@@ -2868,21 +2898,27 @@ export function KnowledgeGraph({ memories: memoriesAusFenster, onSelectMemory, o
       gangZuEng && (sim.gangIds?.size ?? 0) > 0
         ? beschriftbar.filter(({ n }) => !sim.gangIds?.has(n.id) || n.id === gehaltenId)
         : beschriftbar;
+    /** Wie viele Kandidaten in zu engen Gang-Reihen standen (fuenfter Grund des Titel-Etats). */
+    const reihtenZuEng = beschriftbar.length - kandidaten.length;
     const budget = stufe.budget * (baumAnsicht ? 3 : 1);
+    // Die engere Pforte als die breitere Stufe: was im Feld als
+    // Kandidat durchfaellt, kann kein Raster und kein Budget der Welt
+    // benennen. Bei 400 Notizen auf 27 % Zoom standen dort 0 von 400 —
+    // nicht, weil der Platz fehlte, sondern weil die Knoten unter
+    // mindestRadius fielen. „Many" offnet diese Pforte auf die
+    // Haelfte; das Belegungsraster entscheidet weiterhin, was bleibt.
+    const durchDiePforte =
+      modus === "keine" || modus === "alle"
+        ? kandidaten
+        : kandidaten.filter(
+            ({ n, r }) => hov === n.id || nachbarn?.has(n.id) || r * t.k >= mindestRadius * stufe.pforte
+          );
+    /** Wie viele Kandidaten an der Pforte fielen (sechster Grund des Titel-Etats). */
+    const pforteFallaeller = kandidaten.length - durchDiePforte.length;
     const etiketten =
-      modus === "keine"
-        ? kandidaten.filter(({ n }) => n.id === gehaltenId)
-        : modus === "alle"
-          ? kandidaten
-          : kandidaten
-              // Die engere Pforte als die breitere Stufe: was im Feld als
-              // Kandidat durchfaellt, kann kein Raster und kein Budget der Welt
-              // benennen. Bei 400 Notizen auf 27 % Zoom standen dort 0 von 400 —
-              // nicht, weil der Platz fehlte, sondern weil die Knoten unter
-              // mindestRadius fielen. „Many" offnet diese Pforte auf die
-              // Haelfte; das Belegungsraster entscheidet weiterhin, was bleibt.
-              .filter(({ n, r }) => hov === n.id || nachbarn?.has(n.id) || r * t.k >= mindestRadius * stufe.pforte)
-              .slice(0, budget);
+      modus === "keine" ? kandidaten.filter(({ n }) => n.id === gehaltenId) : durchDiePforte.slice(0, budget);
+    /** Wie viele nach der Pforte am Budget standen (siebter Grund des Titel-Etats). */
+    const ueberBudget = modus === "keine" ? 0 : durchDiePforte.length - etiketten.length;
     // „alle" ist die eine Stellung ohne Raster: wer alles will, bekommt alles —
     // genau deshalb ist sie nicht die Einstellung, in der die Flaeche startet.
     const ohneRaster = !stufe.raster;
@@ -2966,7 +3002,11 @@ export function KnowledgeGraph({ memories: memoriesAusFenster, onSelectMemory, o
 
     // Wie viele Notizen diesen Bild ein Etikett verdanken — die Bilanzzeile am
     // Rand meldet es, damit „25 von 1 500" nicht als Selbstverstaendnis steht.
+    // Die zwei Fortsetzungenzaehler gehoeren dazu: ein Titel, der faellt, faut
+    // nicht einfach weg, er hat einen Grund, und der Grund ist eine Zahl.
     let benannt = 0;
+    let zuBreit = 0;
+    let verdraengt = 0;
     for (const { n, m, r } of etiketten) {
       // Der Peek: was der Zeiger oder die Tastatur haelt, wird nicht gekuerzt —
       // genau dann will jemand den ganzen Namen lesen.
@@ -2986,11 +3026,17 @@ export function KnowledgeGraph({ memories: memoriesAusFenster, onSelectMemory, o
       // gehört — gemessen 15.10. im Fall: 149 px Titel über 27 px Teil, also
       // 4,7 Spalten weit. Was der Zeiger hält, bleibt ausgenommen: auf Nachfrage
       // gilt die Kürzung nicht.
-      if (!gehalten && sim.gangIds?.has(n.id) && breite > GANG_ABSTAND * t.k) continue;
+      if (!gehalten && sim.gangIds?.has(n.id) && breite > GANG_ABSTAND * t.k) {
+        zuBreit++;
+        continue;
+      }
       // Der Knoten unter dem Zeiger und seine Nachbarn haben Vorrang und
       // ueberschreiben notfalls; alles andere weicht aus.
       const bevorzugt = hov === n.id || nachbarn?.has(n.id) === true;
-      if (!ohneRaster && !freiUndBelegen(mitteX, mitteY, breite) && !bevorzugt) continue;
+      if (!ohneRaster && !freiUndBelegen(mitteX, mitteY, breite) && !bevorzugt) {
+        verdraengt++;
+        continue;
+      }
       ctx.lineWidth = 3;
       ctx.strokeStyle = grundFarbe;
       ctx.strokeText(titel, mitteX, mitteY);
@@ -3169,7 +3215,21 @@ export function KnowledgeGraph({ memories: memoriesAusFenster, onSelectMemory, o
       const zeile = benanntRef.current;
       if (zeile) {
         const gesamt = imBildRef.current;
-        const meldung = benannt < gesamt ? `${mengenzahl(benannt)} of ${mengenzahl(gesamt)} notes carry a title` : "";
+        // Der selbst gewaehlte Modus „None" versaeumt nichts, also bekommt er
+        // keine Begruendung — und ein Bild, das alle benennt, schweigt ganz.
+        const gruende: [number, string][] =
+          modus === "keine"
+            ? []
+            : [
+                [gesamt - imRahmenNoten, "not on this screen"],
+                [verblasen, "faded by the filter or the pointer"],
+                [reihtenZuEng, "in rows too tight for a title"],
+                [pforteFallaeller, "too small for a name at this zoom"],
+                [ueberBudget, `over the ${mengenzahl(budget)} names this picture allows`],
+                [zuBreit, "a title wider than its row"],
+                [verdraengt, "crowded out by a name already there"],
+              ];
+        const meldung = titelEtat(benannt, gesamt, gruende);
         if (zeile.textContent !== meldung) zeile.textContent = meldung;
         const anzeige = meldung === "" ? "none" : "";
         if (zeile.style.display !== anzeige) zeile.style.display = anzeige;

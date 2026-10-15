@@ -186,6 +186,30 @@ export const DEFAULT_RADIUS = 10;
 const MAX_DEPTH = 26;
 
 /**
+ * Das Größengesetz: wie gross ein Knoten wird, wenn er n Verbindungen haelt.
+ *
+ * Die alte Formel (18 als Kappe, 4 + log2(1+grad) · 2,2) war bei einem
+ * Dutzend Verbindungen am Anschlag: ein Hub mit 92 und einer mit 163 standen
+ * beide bei 18 — dasselbe Bild, keine Rangfolge, und die Spanne der Groesse
+ * war nur dem Namen nach vorhanden.
+ *
+ * Die Wurzel laeuft mit dem Grad mit und bleibt doch bezwingbar:
+ * `min(26, 4 + √grad · 1,6)` — 1 Verbindung 5,6, 18 sind 10,8, 92 sind 19,4,
+ * 163 sind 24,4 Bildpunkte. Die Spitze trennt sich damit um das 1,26-fache
+ * statt 1,10-fache. Latte: Obsidians eigenes Gesetz ist `3·√(gewicht+1)`,
+ * geclampt 8…30 (gemessen 15.10., `audit-2026-10-09/GF-OBSIDIAN-LATTE-15-10.md`)
+ * — wir liegen in derselben Klasse, nicht eine Stufe darunter.
+ *
+ * Der Wert ist in WELTEINHEITEN und wird vor dem Mal-Pass mit dem
+ * Groesseregler der Flaeche multipliziert. Unsinn unten (negative Zahl, NaN)
+ * faellt auf die kleinste Stufe zurueck, nicht in die Kappe.
+ */
+export function knotenRadius(grad: number): number {
+  const g = Number.isFinite(grad) && grad > 0 ? grad : 0;
+  return Math.min(26, 4 + Math.sqrt(g) * 1.6);
+}
+
+/**
  * Schwerkraft fuer n Knoten. Aus dem Gleichgewicht von Abstossung (REPULSION*n/R²)
  * und Feder (g*R) folgt R³ ~ REPULSION*n/g; mit g ~ 1/sqrt(n) wird daraus
  * R ~ sqrt(n) — und damit bleibt die Dichte gleich, egal wie viel Wissen da ist.

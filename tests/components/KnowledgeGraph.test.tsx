@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { istHell } from "../../src/components/KnowledgeGraph";
-import { nodeAt, type LayoutNode } from "../../src/lib/graphLayout";
+import { knotenRadius, nodeAt, type LayoutNode } from "../../src/lib/graphLayout";
 
 // Die Zeichenfunktion selbst laesst sich in jsdom nicht sinnvoll pruefen (es
 // gibt dort keinen Canvas-Kontext). Was sich pruefen laesst, sind die reinen
@@ -43,10 +43,11 @@ describe("istHell: der Graph muss wissen, auf welchem Grund er malt", () => {
 describe("Knoten lassen sich greifen — auch die kleinsten, auch weit herausgezoomt", () => {
   // Die Greifweite war einmal 4 WELT-Einheiten und schrumpfte damit mit dem
   // Zoom: bei 20 % blieben 0,8 px. Sie betraegt jetzt 12 BILDSCHIRM-Pixel.
-  // Zusaetzlich wurde die Knotengroesse verkleinert (Spanne 6,2 bis 18 statt
-  // fast durchgaengig 24) — beides zusammen darf das Greifen nicht kaputt machen.
+  // Dazu das Größengesetz (Spanne 5,6 bis 26 statt 6,2 bis 18) — beides
+  // zusammen darf das Greifen nicht kaputt machen.
   const GREIF_PX = 12;
-  const KLEINSTER_RADIUS = 4 + Math.log2(2) * 2.2; // ein Knoten mit einer Verbindung
+  /** Dasselbe Gesetz, keine Abschrift: ein Knoten mit einer Verbindung. */
+  const KLEINSTER_RADIUS = knotenRadius(1);
 
   function greifbar(radiusWelt: number, k: number, danebenPx: number): boolean {
     const n: LayoutNode = { id: "a", x: 0, y: 0, vx: 0, vy: 0, r: radiusWelt, pinned: false };

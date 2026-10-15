@@ -224,6 +224,92 @@ describe("A7-02: die Titel schrumpfen unter die Lesbarkeit", () => {
   });
 });
 
+/**
+ * Der Titel-Etat (Liste 15.10., Punkt 5). Die Flaeche sagte bisher nur, wie viel
+ * benannt IST. Ein Mensch, der 400 Knoten sieht und 18 Namen liest, fragt nach
+ * den anderen — und die Antwort ist nicht eine Zahl, sondern die Summe der
+ * Gründe. Darum muss der Etat restlos aufgehen: benannt + namenlos = Umfang,
+ * und jeder Grund traegt eine Zahl.
+ */
+describe("Titel-Etat: die Bilanz nennt, wie viele ohne Namen blieben — und warum", () => {
+  const zahl = (s: string) => Number(s.replace(/,/g, ""));
+
+  /** Was am Rand steht, in vier Groessen zerlegt — wie ein Mensch es nachrechnet. */
+  function etat(container: HTMLElement) {
+    const zeile = container.querySelector('[data-testid="graph-benannt"]');
+    expect(zeile, "Die Bilanz sagt nichts ueber Titel").toBeTruthy();
+    const text = zeile!.textContent ?? "";
+    const m = /^([\d,]+) of ([\d,]+) notes carry a title(?: · ([\d,]+) stayed nameless: (.+))?$/.exec(text);
+    expect(m, `Unerwarteter Wortlaut: "${text}"`).toBeTruthy();
+    const gruende = (m![4] ?? "").split(", ").filter(Boolean).map((t) => ({
+      n: zahl(t.split(" ")[0]),
+      wort: t.replace(/^[\d,]+\s*/, ""),
+    }));
+    return { text, benannt: zahl(m![1]), umfang: zahl(m![2]), ohnee: m![3] ? zahl(m![3]) : 0, gruende };
+  }
+
+  async function stufe(container: HTMLElement, wort: string) {
+    const schiene = container.querySelector('[data-testid="graph-schiene-namen"]');
+    expect(schiene, "Die Dichteschiene fehlt").toBeTruthy();
+    const knopf = [...schiene!.querySelectorAll("button")].find((b) => (b.textContent ?? "").trim() === wort);
+    expect(knopf, `Der Stufen-Knopf "${wort}" fehlt`).toBeTruthy();
+    await act(async () => {
+      knopf!.click();
+      await new Promise((r) => setTimeout(r, 300));
+    });
+  }
+
+  it("rechnet 400 Knoten auf 'Few' restlos auf: benannte, Namenlose, und jeder Grund mit Zahl", async () => {
+    const notizen = Array.from({ length: 400 }, () => note());
+    const { container } = await feld(notizen, [900, 640]);
+    await act(async () => { await new Promise((r) => setTimeout(r, 300)); });
+    const gemalt = notizschriften().length;
+    const e = etat(container);
+    expect(e.benannt, `Gemeldet ${e.benannt}, auf der Leinwand ${gemalt} Titel`).toBe(gemalt);
+    expect(gemalt, "Es wurde gar kein Titel gemalt — der Fall hat keinen Etat zu pruefen").toBeGreaterThan(0);
+    expect(e.ohnee, `Der Etat verschweigt die Namenlosen: "${e.text}"`).toBeGreaterThan(0);
+    expect(e.benannt + e.ohnee, `benannt + namenlos != Umfang in "${e.text}"`).toBe(e.umfang);
+    const summe = e.gruende.reduce((s, g) => s + g.n, 0);
+    expect(e.gruende.length, `Ohne Grund ist die Zahl kein Etat: "${e.text}"`).toBeGreaterThan(0);
+    expect(summe, `Die Gründe sumieren auf ${summe}, Namenlose sind ${e.ohnee}: "${e.text}"`).toBe(e.ohnee);
+    for (const g of e.gruende) {
+      expect(g.n, `Ein Grund ohne Zahl: "${g.wort}"`).toBeGreaterThan(0);
+      expect(g.wort, `Ein Grund ohne Wort: "${g.wort}"`).not.toBe("");
+    }
+  });
+
+  it("erklaert einen selbst gewaehlten Modus nicht als Mangel", async () => {
+    const notizen = Array.from({ length: 40 }, () => note());
+    const { container } = await feld(notizen, [900, 640]);
+    await stufe(container, "None");
+    const e = etat(container);
+    expect(e.gruende.length, `Wer "None" waehlt, braucht keinen Grund: "${e.text}"`).toBe(0);
+    expect(e.ohnee, "Der gewaehlte Modus steht als Zahl der versaeumten Namen da").toBe(0);
+  });
+
+  it("zaehlt die Namenlosen am Baum anders als im Feld, weil dort ein anderes Raster gilt", async () => {
+    const notizen = Array.from({ length: 120 }, () => note());
+    begriffsFeld(notizen, 4);
+    const { container } = await feld(notizen, [900, 640]);
+    await act(async () => { await new Promise((r) => setTimeout(r, 300)); });
+    const feldEtat = etat(container);
+    const baum = [...container.querySelectorAll("button")].find((b) =>
+      (b.getAttribute("title") || "").startsWith("Dendrogram")
+    );
+    expect(baum, "Der Baum-Knopf fehlt").toBeTruthy();
+    await act(async () => {
+      baum!.click();
+      await new Promise((r) => setTimeout(r, 500));
+    });
+    const e = etat(container);
+    const summe = e.gruende.reduce((s, g) => s + g.n, 0);
+    expect(summe, `Der Baum-Etat geht nicht auf: "${e.text}"`).toBe(e.ohnee);
+    expect(e.benannt + e.ohnee, `auch im Baum nicht: "${e.text}"`).toBe(e.umfang);
+    expect(e.gruende.length, `Der Baum nennt keinen Grund: "${e.text}"`).toBeGreaterThan(0);
+    expect(feldEtat.umfang, "Der Feld-Etat ist vor dem Umschalten nicht gemessen worden").toBeGreaterThan(0);
+  });
+});
+
 describe("A7-04: dem Kraftfeld fehlte jede Dichte-Kappe", () => {
   it("kappt die Erwaehnungen nach Bildflaeche und sagt, wie viele fielen", async () => {
     // 60 Notizen an drei Begriffen in einem 180 × 140 px Bild: das Budget sind

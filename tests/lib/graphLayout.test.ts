@@ -9,6 +9,7 @@ import {
   repulsionOn,
   createSimulation,
   gravityFor,
+  knotenRadius,
   reuseSimulation,
   reheat,
   setzeKrafte,
@@ -2301,6 +2302,51 @@ describe("Gang: was nichts verbindet, tanzt nicht um den Kern", () => {
 });
 
 // ---------------------------------------------------------------------------
+// Das Größengesetz (Liste 15.10., Punkt 6).
+//
+// GFs Latte aus `audit-2026-10-09/GF-OBSIDIAN-LATTE-15-10.md`: Obsidian selbst
+// rechnet 3·√(gewicht+1), geclampt 8…30 Bildpunkte. Wir ziehen gleich, nicht
+// nach: min(26, 4 + √grad · 1,6). Der Grund ist eine Messung an seinem Bestand —
+// die alte Formel (min 18, 4 + log2(1+grad)·2,2) sass bei 92 UND bei 163
+// Verbindungen auf derselben Kappe: zwei Knoten, ein Bild, keine Rangfolge.
+// ---------------------------------------------------------------------------
+describe("Größengesetz: Wurzel statt Logarithmus, Kappe 26", () => {
+  it("trifft die vier Stufen, die GF gerechnet hat", () => {
+    expect(knotenRadius(0)).toBeCloseTo(4, 6);
+    expect(knotenRadius(1)).toBeCloseTo(5.6, 6);
+    expect(knotenRadius(18)).toBeCloseTo(10.789, 2);
+    expect(knotenRadius(92)).toBeCloseTo(19.346, 2);
+    expect(knotenRadius(163)).toBeCloseTo(24.427, 2);
+  });
+
+  it("trennt einen Hub von 92 Verbindungen von einem von 163 — die alte Kappe tat das nicht", () => {
+    const kleiner = knotenRadius(92);
+    const grosser = knotenRadius(163);
+    expect(
+      grosser / kleiner,
+      `92 → ${kleiner.toFixed(2)} px gegen 163 → ${grosser.toFixed(2)} px`
+    ).toBeGreaterThanOrEqual(1.25);
+    expect(kleiner, "Grad 92 darf nicht mehr an der alten Kappe 18 kleben").toBeGreaterThan(18);
+  });
+
+  it("wachst monoton bis zur Kappe 26 und geht nie darueber", () => {
+    let vorher = 0;
+    for (let grad = 0; grad <= 600; grad++) {
+      const r = knotenRadius(grad);
+      expect(r, `Grad ${grad} ueber der Kappe`).toBeLessThanOrEqual(26);
+      expect(r, `Grad ${grad} kleiner als sein Vorgaenger`).toBeGreaterThanOrEqual(vorher);
+      vorher = r;
+    }
+    expect(knotenRadius(400), "bei √400·1,6 + 4 = 36 ist die Kappe erreicht").toBe(26);
+  });
+
+  it("traegt einen Unsinn nicht als Groesse davon", () => {
+    expect(knotenRadius(-7)).toBe(4);
+    expect(knotenRadius(Number.NaN)).toBe(4);
+  });
+});
+
+// ---------------------------------------------------------------------------
 // Die README-Latte: „nodes repel each other, never overlap".
 //
 // Gemessen am 11.10. im echten Browser (`docs/graph-kosten.md`,
@@ -2312,8 +2358,8 @@ describe("Gang: was nichts verbindet, tanzt nicht um den Kern", () => {
 // Messstraßen-Artefakt ist — oder ihr Gegenbeweis.
 // ---------------------------------------------------------------------------
 describe("never overlap: ein dichter Bestand muss sich selbst trennen", () => {
-  /** Der Radius, den die Flaeche wirklich setzt (KnowledgeGraph.tsx:1418). */
-  const radius = (grad: number) => Math.min(18, 4 + Math.log2(1 + grad) * 2.2);
+  /** Der Radius, den die Flaeche wirklich setzt — dasselbe Gesetz, keine Abschrift. */
+  const radius = (grad: number) => knotenRadius(grad);
 
   /** Paare, deren Scheiben sich WIRKLICH schneiden — ohne Polster, brute force. */
   function schnitte(nodes: LayoutNode[]) {
@@ -2383,23 +2429,32 @@ describe("never overlap: ein dichter Bestand muss sich selbst trennen", () => {
     // Der gemessene Fall ist nicht bloess gross, er ist ANDERS gebaut: 27 Begriffe
     // an 3 000 Notizen sind ~111 Notizen an einem Hub. Mit vier Nachbesserungen
     // pro Bild blieben 9 Paare in der Ruhe und 390 im Moment des Oeffnens stehen;
-    // seit der Konstantenentscheidung der Leitung (acht) gemaess dieser Zeile:
+    // seit der Konstantenentscheidung der Leitung (acht) galt fuer die alte Kappe 18:
     //
     //   Schritt   30 → 3 328 Paare   60 → 1 517   120 → 1 267   250 → 15   310 → 0
     //
-    // Die Zahl nennt ihren Moment: was beim Aufziehen uebereinander steht, ist
-    // eine Bewegung, kein Zustand — aber sie muss vor der Ruhe zu Ende sein, und
-    // die Obergrenze von 250 haelt die Heilung fest. Mit den alten vier Durchgaengen
-    // waeren es 390, also schlaegt dieser Fall rot, sobald jemand zurueckgeht.
+    // Seit dem Wurzelgesetz (`knotenRadius`, Kappe 26) ist dieselbe Flugkurve an
+    // jeder fruehen Station FLACH und schliesst einen Moment spaeter — gemessen
+    // 15.10. an demselben Feld:
+    //
+    //   Schritt   60 → 1 355   120 → 958   180 → 390   250 → 14   310 → 1   380 → 0
+    //
+    // Der Rest bei 310 sind zwei Hube, die noch auseinandergleiten (r 26 + 26,
+    // Abstand 47,4 gegen verlangte 52,0 — 4,6 Einheiten). Die Zahl nennt ihren
+    // Moment: was beim Aufziehen uebereinander steht, ist eine Bewegung, kein
+    // Zustand — aber sie muss vor der Ruhe zu Ende sein, und die Obergrenze
+    // haelt die Heilung fest. Mit den alten vier Durchgaengen waeren es 390,
+    // also schlaegt dieser Fall rot, sobald jemand zurueckgeht.
     const sim = cliqueFeld(3000, 27);
     const spur = new Map<number, number>();
     for (let i = 1; i <= 450; i++) {
       stepSimulation(sim);
-      if (i === 250 || i === 310) spur.set(i, schnitte(sim.nodes).paare);
+      if (i === 250 || i === 310 || i === 380) spur.set(i, schnitte(sim.nodes).paare);
     }
     expect(isSettled(sim), "der Fall kommt nie zur Ruhe — die Messung waere wertlos").toBe(true);
     expect(spur.get(250), `bei Schritt 250: ${spur.get(250)} Paare`).toBeLessThanOrEqual(40);
-    expect(spur.get(310), `bei Schritt 310: ${spur.get(310)} Paare — der Trichter schliesst nicht vor der Ruhe`).toBe(0);
+    expect(spur.get(310), `bei Schritt 310: ${spur.get(310)} Paare`).toBeLessThanOrEqual(40);
+    expect(spur.get(380), `bei Schritt 380: ${spur.get(380)} Paare — der Trichter schliesst nicht vor der Ruhe`).toBe(0);
     expect(schnitte(sim.nodes).paare, `Ruhe bei 3 000: ${JSON.stringify(schnitte(sim.nodes))}`).toBe(0);
   });
 

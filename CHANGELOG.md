@@ -1,3 +1,53 @@
+## [3.2.11]
+
+### Added
+
+- **The balance now says how many nodes stayed nameless, and why.** The surface
+  already reported „21 of 400 notes carry a title" — the question a person asks
+  directly after that is about the other 379, and the picture answered nothing.
+  The paint pass now partitions them: off this screen, faded by the filter or the
+  pointer, rows too tight for a title, under the name gate, over the name budget,
+  wider than its row, crowded out by a name already there. The arithmetic closes
+  by construction — every node falls into exactly one reason on its way from the
+  base into the picture — so the sentence is a budget, not a mood. A chosen
+  „None" is not a failure and gets no reasons; a picture that names everything
+  stays silent. Measured on the guarded case: „21 of 400 notes carry a title ·
+  379 stayed nameless: 260 over the 140 names this picture allows, 119 crowded out
+  by a name already there". Guards: `tests/components/KnowledgeGraph.etat.test.ts`
+  (6 cases over all seven reason classes) and three cases in
+  `tests/components/KnowledgeGraph.f8.test.tsx` (2 of 3 red before; zeroing one
+  bucket turns the closure case red again).
+- **Node size follows a square root, capped at 26.** Degree 92 and degree 163 were
+  the same pixel value — both sat on the old cap of 18, so the biggest hub in a
+  knowledge base looked like the second-biggest and the size range existed in name
+  only. `knotenRadius` in `src/lib/graphLayout.ts` is now the single law the
+  physics and the paint pass share: `min(26, 4 + √grad · 1.6)` — 1 connection 5.6,
+  18 → 10.8, 92 → 19.4, 163 → 24.4 image points, the top two hubs 1.26× apart
+  instead of 1.10×. The bar is Obsidian's own law, `3·√(weight+1)` clamped 8…30,
+  measured 15.10. (`audit-2026-10-09/GF-OBSIDIAN-LATTE-15-10.md`): the same class,
+  not a step below. Guards: four cases in `tests/lib/graphLayout.test.ts` (red
+  before: `knotenRadius is not a function`), and the two places that had copied the
+  old formula into a test now call the law instead of restating it.
+
+### Fixed
+
+- **The 3 000-note separation case names the moment it was measured at.** With
+  larger hubs the funnel closes one step later than it did under the old cap:
+  measured on the same field, side by side — new law 60 → 1 355, 120 → 958,
+  180 → 390, 250 → 14, 310 → 1, 380 → 0; old law 60 → 1 517, 120 → 1 267,
+  180 → 619, 250 → 15, 310 → 0. The new curve is lower at every early station and
+  rests at zero; the single pair at step 310 is two hubs still sliding apart
+  (r 26 + 26, 47.4 apart against 52.0 required). The case now bounds the flight and
+  demands the funnel be closed before rest, instead of asserting a step number that
+  was calibrated to radii that no longer exist.
+
+**Not hidden:** the reason class „too small for a name at this zoom" cannot fire
+today. The paint pass floors every node at 1.5 image points
+(`MIN_KNOTEN_PX`, `src/components/KnowledgeGraph.tsx:763`) and the narrow gate
+opens at the same 1.5 — so the bucket is permanently zero while the floor holds.
+The number is kept because it is true the moment the floor moves, and the floor is
+Dichte's #102 subject, not a thing to change under a running wave.
+
 ## [3.2.10]
 
 ### Fixed
