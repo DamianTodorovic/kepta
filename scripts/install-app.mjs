@@ -35,25 +35,36 @@ console.log("— 4/7 Verschlüsselung im Paket prüfen");
 sh("node", ["scripts/pruefe-native.mjs", "release"]);
 
 const version = JSON.parse(fs.readFileSync(path.join(root, "package.json"), "utf8")).version;
-console.log(`— 5/7 Installieren (K3PTA ${version})`);
+// Der Paketname kommt aus dem Baum, nicht aus dem Kopf. Der Namenszug vom 14.10.
+// hat das Produkt auf K3PTA gestellt (electron-builder.json: productName), diese
+// Zeile hielt an "KEPTA.app" fest: ditto fand seine Quelle nicht, und das rm -rf
+// davor hatte die installierte App schon weggenommen, ohne dass ein Ersatz da war.
+// Gemessen 15.10. 05:45 im Schritt 5 von 7.
+const paket = JSON.parse(fs.readFileSync(path.join(root, "electron-builder.json"), "utf8")).productName;
+const quelle = path.join(root, "release", "mac-arm64", `${paket}.app`);
+const ziel = `/Applications/${paket}.app`;
+console.log(`— 5/7 Installieren (${paket} ${version})`);
+if (!fs.existsSync(quelle)) {
+  console.error(`— Abbruch: ${quelle} fehlt. Nichts wird ersetzt, die laufende Installation bleibt, wie sie ist.`);
+  process.exit(1);
+}
 // pkill ist exit 1, wenn gerade nichts läuft — kein Fehler.
 try {
-  execFileSync("pkill", ["-x", "K3PTA"], { stdio: "ignore" });
+  execFileSync("pkill", ["-x", paket], { stdio: "ignore" });
 } catch {
   // keine laufende App — nichts zu beenden
 }
 await new Promise((r) => setTimeout(r, 2000));
-const ziel = "/Applications/KEPTA.app";
 fs.rmSync(ziel, { recursive: true, force: true });
 // ditto statt fs.cpSync: kopiert Codesignaturen/Permissions MAC-korrekt.
-sh("ditto", [path.join(root, "release", "mac-arm64", "KEPTA.app"), ziel]);
+sh("ditto", [quelle, ziel]);
 sh("codesign", ["--verify", "--deep", "--strict", ziel]);
 
 console.log("— 6/7 Modul für Node zurückbauen (Tests bleiben lauffähig)");
 sh("npm", ["rebuild", "better-sqlite3-multiple-ciphers"]);
 
 console.log("— 7/7 Starten und Versionsanzeige prüfen");
-sh("open", ["-a", "K3PTA"]);
+sh("open", ["-a", paket]);
 await new Promise((r) => setTimeout(r, 6000));
 // Die Build-Staging-Kopien entfernen — sonst tauchen sie im Launcher/Spotlight
 // als weitere „K3PTA"-Versionen auf (das Versionen-Chaos vom 17.9.). Der
