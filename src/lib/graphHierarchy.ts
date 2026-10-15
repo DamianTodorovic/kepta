@@ -59,6 +59,14 @@ export interface HierarchieKnoten {
   children: HierarchieKnoten[];
 }
 
+/**
+ * Die Etikette der vier Rechen-Arten. **Nicht fuer Sichttext** — die vier Woerter
+ * sind verworfen (Damian, 14.10.: kein Nutzer versteht, was damit gemeint ist).
+ * Diese Map bleibt, weil sie der Maschinen-Seite ihre Kurztitel gibt und weil
+ * `tests/kategorien-wache.test.ts` aus ihr die verbotenen Woerter ableitet:
+ * keine Flaeche darf sie zeigen, und keine Flaeche darf diese Map importieren.
+ * Sichttext bekommt `TYP_BESCHREIBUNG` oder die neun Woerter.
+ */
 export const TYP_LABELS: Record<string, string> = {
   semantic: "Facts",
   episodic: "Events",
@@ -67,14 +75,25 @@ export const TYP_LABELS: Record<string, string> = {
   reference: "Documents",
 };
 
+/**
+ * Was ein Mensch an denselben vier Stellen liest: eine Beschreibung in
+ * Alltagssprache, kein Korb-Wort. Die Rechen-Art bleibt das, was sie ist — der
+ * Sichttext wandert (Auftrag #84).
+ */
+export const TYP_BESCHREIBUNG: Record<string, string> = {
+  semantic: "Statements",
+  episodic: "What happened",
+  procedural: "How it's done",
+  reference: "Papers",
+};
+
 const BEKANNTE_TYPEN = ["semantic", "episodic", "procedural", "reference"];
 
 // ---------- Die Menschenschicht: neun Woerter in zwei Zeilen ----------
 //
-// TYP_LABELS oben bleibt, wie es ist: die vier Rechen-Arten steuern Farben und
-// die Legende im Graphen (KnowledgeGraph.tsx) und stehen in Tests. Was hier
-// dazukommt, ist die Schicht, die ein Mensch liest — Vorgabe:
-// WA-GRUPPEN-VORSCHLAG-2026-10-14.md, Abschnitt 5.
+// TYP_LABELS oben ist die Maschinen-Seite der vier Rechen-Arten: Kurztitel,
+// Farb-Token, und der Grund, aus dem die Wache ihre verbotenen Woerter ableitet.
+// Was ein Mensch liest, ist TYP_BESCHREIBUNG oder eines der neun Woerter unten.
 //
 //   Zeile 1 (woher): Notes · Files · Code        erschoepfend, ohne Ueberschneidung
 //   Zeile 2 (worum): People · Projects · Events · Tasks · Guides · Links
@@ -211,7 +230,7 @@ export function buildHierarchy(
     const typKnoten: HierarchieKnoten = {
       id: `__typ:${t}`,
       kind: "type",
-      label: TYP_LABELS[t] ?? t,
+      label: TYP_BESCHREIBUNG[t] ?? t,
       typ: istBekannt ? (t as HierarchieKnoten["typ"]) : undefined,
       children: [],
     };

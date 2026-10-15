@@ -29,7 +29,7 @@ import { KeptaMark } from './KeptaMark';
 import { Memory } from '../types';
 import { parseQuelle, oeffneQuelle, type Quelle } from '../lib/quelle';
 import { pdfTextAusBuffer } from '../lib/pdfText';
-import { TYP_LABELS, TRAEGER_LABELS, TRAEGER_REIHENFOLGE, TRAEGER_HINWEISE, THEMA_LABELS, THEMA_REIHENFOLGE, THEMA_HINWEISE, gruppenVonNotiz, type Traeger, type Thema } from '../lib/graphHierarchy';
+import { TYP_BESCHREIBUNG, TRAEGER_LABELS, TRAEGER_REIHENFOLGE, TRAEGER_HINWEISE, THEMA_LABELS, THEMA_REIHENFOLGE, THEMA_HINWEISE, gruppenVonNotiz, type Traeger, type Thema } from '../lib/graphHierarchy';
 import { t, wendeZoomAn } from '../lib/uiText';
 import { Search, Plus, CheckCircle2, Copy, PanelLeftOpen, ScanSearch, UploadCloud, Globe, Loader2, AlertCircle, Sparkles, Trash2, HardDriveDownload, FileText, ExternalLink, ShieldCheck } from "../lib/icons";
 import { motion, AnimatePresence } from 'motion/react';
@@ -114,6 +114,13 @@ async function extractTextFromFile(file: File): Promise<string> {
   }
   return await file.text();
 }
+
+/**
+ * Ab wie viel Kastenbreite der schmückende Satz der Graph-Kopfzeile stehen bleibt.
+ * 390 px, weil der Satz in diesem Fenster 387 px braucht (gemessen 15.10., Kasten
+ * 343 px → Ende war abgeschnitten). Darunter bleibt nur die Zählung stehen.
+ */
+const SATZ_BREITE_MIN = 390;
 
 export function Dashboard() {
   const toast = useToast();
@@ -258,6 +265,33 @@ export function Dashboard() {
     };
   }, []);
   const [isFocusMode, setIsFocusMode] = useState(schmal);
+  /**
+   * Passt der schmückende Satz in der Graph-Kopfzeile in seinen Kasten?
+   *
+   * Die Geräteklasse `schmal` erwischte das 820-er Fenster nicht, obwohl der Kasten
+   * dort nur 343 px hatte und der Satz 387 brauchte — Ergebnis war ein Satz mit
+   * abgeschnittenem Ende. Also misst die Flaeche ihren eigenen Platz. Der Kasten
+   * wächst nicht mit dem Inhalt (min-w-0, truncate), darum rueckt die Messung nicht
+   * mit dem Text und kann nicht zwischen zwei Zuständen hin- und herspringen.
+   */
+  const satzKastenRef = useRef<HTMLDivElement | null>(null);
+  const [satzPasst, setSatzPasst] = useState(true);
+  useEffect(() => {
+    const kasten = satzKastenRef.current;
+    if (!kasten || typeof ResizeObserver === "undefined") return;
+    const pruefe = () => {
+      // Kein Layout, kein Urteil: ein Rahmen ohne gemessene Breite (JSDOM kennt keine
+      // Anordnung, und im ersten Takt nach dem Mount kann die Breite noch 0 sein)
+      // darf den Satz nicht verstecken — sonst verschwindet er dort, wo gar nichts
+      // gemessen wurde.
+      if (kasten.clientWidth <= 0) return;
+      setSatzPasst(kasten.clientWidth >= SATZ_BREITE_MIN);
+    };
+    const beobachter = new ResizeObserver(pruefe);
+    beobachter.observe(kasten);
+    pruefe();
+    return () => beobachter.disconnect();
+  }, []);
   const letzteBreitenklasse = useRef(schmal);
   useEffect(() => {
     // Nur das Umkippen der Breite entscheidet, nicht jeder Render — wer die
@@ -575,11 +609,29 @@ export function Dashboard() {
       });
     } catch { /* der Server meldet sich, wenn er bereit ist */ }
   }, []);
+  /**
+   * #77 — die Bestandszahl der zwei Zeilen, durch dieselben Regeln wie die Flaeche.
+   * Die Liste haelt hoechstens SEITE_MAX Notizen; ohne diese Zahl waere „0 Code"
+   * auf der Seite ein Urteil ueber den Laden, und der Laden haelt Tausende
+   * Programme. Kein Puffer auf der Seite: die Zahl kommt, wenn die Tür antwortet.
+   */
+  const [bestandGruppen, setBestandGruppen] = useState<{
+    bestand: number; traeger: Record<Traeger, number>; themen: Record<Thema, number>; ohneThema: number; ms: number;
+  } | null>(null);
+  const holeGruppen = useCallback(async (abgebrochen?: { current: boolean }) => {
+    try {
+      const r = await fetch('/api/memories/gruppen');
+      const d = await r.json();
+      if (abgebrochen?.current || !d || typeof d !== 'object' || typeof d.bestand !== 'number') return;
+      setBestandGruppen(d);
+    } catch { /* die Zahl fehlt, bis die Tür antwortet */ }
+  }, []);
   useEffect(() => {
     const flag = { current: false };
     void holeGesundheit(flag);
+    void holeGruppen(flag);
     return () => { flag.current = true; };
-  }, [holeGesundheit]);
+  }, [holeGesundheit, holeGruppen]);
 
   // --- Activity-Stream: das Gehirn lebt — Agent-Aktionen live sehen ---
   const [brainPulse, setBrainPulse] = useState(0);
@@ -591,6 +643,7 @@ export function Dashboard() {
       if (evt.type === 'save' || evt.type === 'update' || evt.type === 'delete' || evt.type === 'consolidate') {
         void refreshMemories();
         void holeGesundheit();
+        void holeGruppen();
       }
       if (evt.source === 'agent') {
         setAgentActive(true);
@@ -666,6 +719,17 @@ export function Dashboard() {
     for (const m of memories) c[gruppenVonNotiz(m).traeger] += 1;
     return c;
   }, [memories]);
+
+  /** Der Streifen zeigt den Laden, sobald die Tür geantwortet hat — vorher das Blatt. */
+  const zeigeTraeger = bestandGruppen?.traeger ?? traegerCounts;
+  /** Die Bestandzahl genau der Gruppe, die ins Leere lief — eingelesen, nicht geschätzt. */
+  const zahlDerWahl = bestandGruppen === null ? undefined
+    : aktiveTraeger.length === 1 ? bestandGruppen.traeger[aktiveTraeger[0]]
+    : aktiveTraeger.length === 0 && aktiveThemen.length === 1 ? bestandGruppen.themen[aktiveThemen[0]]
+    : undefined;
+  /** Zaehlen Blatt und Laden verschieden, nennt die Chip-Zeile die Zahl des Blatts. */
+  const blattWeichtAb = bestandGruppen !== null
+    && (zeigeTraeger.notes !== traegerCounts.notes || zeigeTraeger.files !== traegerCounts.files || zeigeTraeger.code !== traegerCounts.code);
 
   // Begrüßung nach Tageszeit + Name aus dem adaptiven Profil
   const greeting = (() => {
@@ -1053,7 +1117,7 @@ export function Dashboard() {
         else hinueber('ohne', t('list.noSource'), 'Handnotiz o. Agent', null, m);
       } else if (effektivGruppierung === 'typ') {
         const typ = m.type ?? 'semantic';
-        hinueber(`typ:${typ}`, TYP_LABELS[typ] ?? typ, '', null, m);
+        hinueber(`typ:${typ}`, TYP_BESCHREIBUNG[typ] ?? typ, '', null, m);
       } else {
         const tag = new Date(m.createdAt);
         const heute = new Date(); heute.setHours(0, 0, 0, 0);
@@ -1579,16 +1643,19 @@ export function Dashboard() {
                 <div className="index-cell">
                   <span className="v" style={{ gap: 10 }}>
                     {/* Farben sind vorhandene Token (index.css haelt E1) — die
-                        Farbe zeigt die Ebene, das Wort ist Zeile 1. */}
-                    <span style={{ color: 'var(--type-semantic)' }}>{traegerCounts.notes} <span className="text-[10px] opacity-70">{TRAEGER_LABELS.notes}</span></span>
-                    <span style={{ color: 'var(--type-reference)' }}>{traegerCounts.files} <span className="text-[10px] opacity-70">{TRAEGER_LABELS.files}</span></span>
-                    <span style={{ color: 'var(--type-procedural)' }}>{traegerCounts.code} <span className="text-[10px] opacity-70">{TRAEGER_LABELS.code}</span></span>
+                        Farbe zeigt die Ebene, das Wort ist Zeile 1. Gezählt wird
+                        der Laden (#77), nicht das Blatt: die Heldenzahl oben ist
+                        auch der Laden, und zwei Zahlen derselben Fläche müssen
+                        sich auf dieselbe Menge beziehen. */}
+                    <span style={{ color: 'var(--type-semantic)' }}>{zeigeTraeger.notes} <span className="text-[10px] opacity-70">{TRAEGER_LABELS.notes}</span></span>
+                    <span style={{ color: 'var(--type-reference)' }}>{zeigeTraeger.files} <span className="text-[10px] opacity-70">{TRAEGER_LABELS.files}</span></span>
+                    <span style={{ color: 'var(--type-procedural)' }}>{zeigeTraeger.code} <span className="text-[10px] opacity-70">{TRAEGER_LABELS.code}</span></span>
                   </span>
-                  <span className="k">where it came from{ladung !== null ? ` · in the ${groessenZahl(ladung)} loaded` : ''}</span>
+                  <span className="k">where it came from · {bestandGruppen ? `in the ${groessenZahl(bestandGruppen.bestand)} stored` : ladung !== null ? `in the ${groessenZahl(ladung)} loaded` : 'in the index'}</span>
                 </div>
                 <div className="index-cell">
                   <span className="v">{allTags.length}</span>
-                  <span className="k">categories{ladung !== null ? ` in the ${groessenZahl(ladung)} loaded` : ''}</span>
+                  <span className="k">tags{ladung !== null ? ` in the ${groessenZahl(ladung)} loaded` : ""}</span>
                 </div>
                 <div className="index-cell ml-auto">
                   <span className="v">
@@ -1720,6 +1787,17 @@ export function Dashboard() {
                         Clear
                       </button>
                     )}
+                    {/* #77 — die zweite Zahl, getrennt: was das Blatt haelt, ueber
+                        das der Filter wirklich laeuft. */}
+                    {blattWeichtAb && (
+                      <span
+                        className="text-[11px] shrink-0 tnum"
+                        style={{ color: 'var(--text-3)' }}
+                        title={`The chips run over the ${groessenZahl(memories.length)} entries loaded on this page, not over the store.`}
+                      >
+                        on this page {traegerCounts.notes} · {traegerCounts.files} · {traegerCounts.code}
+                      </span>
+                    )}
                   </div>
                   <div className="flex flex-wrap items-center gap-1.5 mb-3" role="group" aria-label="What it is about">
                     <span className="text-[11px] shrink-0" style={{ color: 'var(--text-3)' }}>About</span>
@@ -1754,7 +1832,7 @@ export function Dashboard() {
                           ? 'Grouping is off while you search — results are ranked by relevance'
                           : key === 'alle' ? 'Flat grid, newest relevance first'
                           : key === 'datei' ? 'Group all chunks under their source file or link'
-                          : key === 'typ' ? 'Facts, Events, How-tos, Documents'
+                          : key === 'typ' ? Object.values(TYP_BESCHREIBUNG).join(' · ')
                           : 'Today, this week, older'}
                       >
                         {label}
@@ -1784,9 +1862,11 @@ export function Dashboard() {
                             : "No entries match the search criteria."
                           : gruppenFilterAktiv
                             ? `Nothing ${gruppenGrund} among the ${groessenZahl(memories.length)} loaded entries` +
-                              (tuerBestand !== null && tuerBestand > memories.length
-                                ? ` — the store holds ${groessenZahl(tuerBestand)}, and this filter only sees what is loaded.`
-                                : '.')
+                              (zahlDerWahl !== undefined
+                                ? ` — the store holds ${groessenZahl(zahlDerWahl)} of them, and this filter only sees what is loaded.`
+                                : tuerBestand !== null && tuerBestand > memories.length
+                                  ? ` — the store holds ${groessenZahl(tuerBestand)}, and this filter only sees what is loaded.`
+                                  : '.')
                             : "Drop files here, import a URL, or start with “New” — agents write into the very same base over MCP."}
                       </p>
                       {gruppenFilterAktiv && (
@@ -1833,9 +1913,17 @@ export function Dashboard() {
             <div className="text-[13px] font-medium shrink-0" style={{ color: 'var(--text-1)' }}>Graph</div>
             {/* Der lange Satz ist schmückende Auskunft, keine Zahl: in einem
                 Fenster, das ihn nicht trägt, bricht er um und rückt das Bild
-                nach unten (A7-06). Die Zählung bleibt stehen, der Rest nicht. */}
-            <div className="text-[12px] tnum min-w-0 truncate" style={{ color: 'var(--text-3)' }}>
-              {mengensatz(memories.length, tuerBestand)}{schmal ? "" : " · connected through tags, similarity and knowledge entities"}
+                nach unten (A7-06). Die Zählung bleibt stehen, der Rest nicht.
+
+                „schmal" allein reicht nicht: gemessen 15.10. im 820-er Fenster war
+                der Kasten 343 px breit und der Satz brauchte 387 — er endete
+                abgeschnitten mit „…similarity and knowledg…" (leitung-bilder/
+                graph-820x1180.png). Darum entscheidet der Kasten, nicht die
+                Geräteklasse: der Satz bleibt nur stehen, wenn er passt. Der Kasten
+                wird vom Inhalt nicht gedehnt (min-w-0 und truncate in einer
+                flex-Zeile), also misst die Beobachtung die verfügbare Breite. */}
+            <div ref={satzKastenRef} className="text-[12px] tnum min-w-0 truncate" style={{ color: 'var(--text-3)' }}>
+              {mengensatz(memories.length, tuerBestand)}{!schmal && satzPasst ? " · connected through tags, similarity and knowledge entities" : ""}
             </div>
             <div className="ml-auto shrink-0">
               <button onClick={() => setCurrentView("memories")} className="btn-ghost px-2.5 py-1.5 rounded-md text-xs font-medium">Back to the list</button>

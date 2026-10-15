@@ -5,19 +5,19 @@ import { formatDistanceToNow } from 'date-fns';
 import { Brain } from "../lib/icons";
 import { X, Save, Trash2, Hash, Clock, Zap, Lock } from "../lib/icons";
 import { KeptaMark } from './KeptaMark';
-import { gruppenVonNotiz, THEMA_LABELS, TRAEGER_LABELS } from '../lib/graphHierarchy';
+import { gruppenVonNotiz, THEMA_LABELS, TRAEGER_LABELS, TYP_BESCHREIBUNG } from '../lib/graphHierarchy';
 
 type MemoryKind = 'semantic' | 'episodic' | 'procedural' | 'reference';
 
 const KINDS: { key: MemoryKind; label: string; hint: string }[] = [
   // Die Tipps erklaeren in Alltagssprache, was hier gehoert — sie duerfen das
   // Wort nicht selbst wiederholen. „Fact — Facts & connections" erklaert nichts.
-  { key: 'semantic', label: 'Fact', hint: 'Something that is simply true — a definition, a number, a decision you made' },
-  { key: 'episodic', label: 'Event', hint: 'Something that happened at a time — a meeting, a call, a date' },
-  { key: 'procedural', label: 'How-to', hint: 'How something is done — steps, a setup, a checklist' },
+  { key: 'semantic', label: TYP_BESCHREIBUNG.semantic, hint: 'Something that is simply true — a definition, a number, a decision you made' },
+  { key: 'episodic', label: TYP_BESCHREIBUNG.episodic, hint: 'Something that happened at a time — a meeting, a call, a date' },
+  { key: 'procedural', label: TYP_BESCHREIBUNG.procedural, hint: 'How something is done — steps, a setup, a checklist' },
   // Vierte Art, weil die drei anderen jedes uebernommene Dokument zum "Fakt"
   // machten: an einem echten Bestand 2320 von 2421 Notizen.
-  { key: 'reference', label: 'Document', hint: 'A paper you keep — a contract, an invoice, a file from your folders' },
+  { key: 'reference', label: TYP_BESCHREIBUNG.reference, hint: 'A paper you keep — a contract, an invoice, a file from your folders' },
 ];
 
 function toLocalDateInput(ts: number | null | undefined): string {
@@ -182,7 +182,7 @@ export function MemoryEditor({ memory, onSave, onClose, onDelete }: MemoryEditor
                 {memory?.id ? (
                   <>
                     <Clock className="w-3 h-3" />
-                    {KINDS.find(k => k.key === (memory.type || 'semantic'))?.label ?? 'Fact'}
+                    {KINDS.find(k => k.key === (memory.type || 'semantic'))?.label ?? TYP_BESCHREIBUNG.semantic}
                     {' · '}
                     {formatDistanceToNow(new Date(memory.updatedAt), { addSuffix: true })}
                   </>

@@ -29,10 +29,6 @@ export const TEXTE: Record<string, string> = {
   "list.older": "Older",
   "list.loadMore": "Load more",
   "list.empty.title": "No entries yet",
-  "legend.facts": "Facts",
-  "legend.events": "Events",
-  "legend.howtos": "How-tos",
-  "legend.documents": "Documents",
   // Drei Kantenarten, drei Namen. „real connection" deckte zwei davon zu — und
   // seit dem 6.10. liegen beide im Bild: die Spinne von der Notiz zum Begriff
   // und die Behauptung zwischen zwei Begriffen.

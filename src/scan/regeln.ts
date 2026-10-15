@@ -173,11 +173,22 @@ export function istGeheimerPfad(pfad: string, wurzel?: string): boolean {
   return false;
 }
 
+/** Traegt der Ordnername eine Signatur einer eigenen Ausgabe? */
+// Ein Export ist eine Kopie des Bestands, kein neuer Bestand. Genau das war der Weg,
+// auf dem Damians Arbeitsmappe ihre eigenen Papiere ins Netz schrieb: der Ordner
+// `NOTFALL-SICHERUNG-22-9/markdown-export-3644` (68 von 500 Begriffen seines Graph-Fensters
+// sind wortgleich in Papieren dieser Mappe, gemessen lesend durch seine Tuer am 14.10.)
+// stammt aus einem Markdown-Export, den die App selbst geschrieben hat. Die Signatur ist
+// das Muster, nicht das Wort: `Export`, `export-2026-04` oder `Exporte 2026` sind echter
+// Bestand und bleiben offen.
+const EIGENE_AUSGABE: readonly RegExp[] = [/^(kepta|k3pta)-export-/i, /^markdown-export-/i];
+
 /** Traegt der Ordnername einen Namen, den der Scan nicht betritt? */
 export function istUebersprungenerOrdner(name: string): boolean {
   const n = name.toLowerCase();
   if (GEHEIME_ORDNER.includes(n)) return true;
   if (UEBERSPRUNGENE_ORDNER.includes(n)) return true;
+  if (EIGENE_AUSGABE.some((m) => m.test(name))) return true;
   // Versteckte Ordner bleiben aussen vor: dort liegt Werkzeugzustand, kein Wissen.
   return n.startsWith(".") && n !== "." && n !== "..";
 }

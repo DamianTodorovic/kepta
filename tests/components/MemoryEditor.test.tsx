@@ -26,9 +26,9 @@ function memory(overrides: Partial<Memory> = {}): Memory {
 }
 
 describe("MemoryEditor: Typwahl", () => {
-  it("bietet die drei Typen an", () => {
+  it("bietet die vier Arten an — in Alltagssprache, nicht als Korb-Wort (#84)", () => {
     render(<MemoryEditor memory={memory({ type: "episodic" })} onSave={() => {}} onClose={() => {}} />);
-    for (const label of ["Fact", "Event", "How-to"]) {
+    for (const label of ["Statements", "What happened", "How it.s done", "Papers"]) {
       expect(screen.getByRole("button", { name: new RegExp(label, "i") })).toBeTruthy();
     }
   });
@@ -38,7 +38,7 @@ describe("MemoryEditor: Typwahl", () => {
     const onSave = vi.fn();
     render(<MemoryEditor memory={memory({ type: "semantic" })} onSave={onSave} onClose={() => {}} />);
 
-    await user.click(screen.getByRole("button", { name: /How-to/i }));
+    await user.click(screen.getByRole("button", { name: /How it.s done/i }));
     await user.click(screen.getByRole("button", { name: /^Save$/i }));
 
     await waitFor(() => expect(onSave).toHaveBeenCalled());

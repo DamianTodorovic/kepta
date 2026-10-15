@@ -235,8 +235,10 @@ function graphNamen(store: KeptaStore): string[] {
   const generation = store.datenGeneration();
   const eintrag = graphCache.get(store);
   if (eintrag && eintrag.generation === generation) return eintrag.namen;
-  const { entities } = store.getGraph(undefined, 1);
-  const namen = entities.map((e) => e.name);
+  // Der Namensvorrat ist nicht das Sichtfenster: seit #83 waehlt die Graphflaeche
+  // eine Nachbarschaft, und eine Nachbarschaft von 500 Begriffen ist ein schlechter
+  // Vorrat fuer das, was eine Anfrage zufaellig nennt.
+  const namen = store.entityNamen();
   graphCache.set(store, { generation, namen });
   return namen;
 }

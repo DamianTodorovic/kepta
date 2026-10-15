@@ -54,6 +54,15 @@ function stubFetch() {
       gespeichert.push(init?.body ? JSON.parse(String(init.body)) : null);
       return new Response(JSON.stringify(note()), { status: 200 });
     }
+    // #77 — die Zahl-Route: der Laden, ueber den die Flaeche zaehlt.
+    if (url.includes("/api/memories/gruppen")) {
+      return new Response(JSON.stringify({
+        ok: true, bestand: 150,
+        traeger: { notes: 100, files: 30, code: 20 },
+        themen: { people: 5, projects: 9, events: 3, tasks: 1, guides: 2, links: 4 },
+        ohneThema: 120, ms: 2,
+      }), { status: 200 });
+    }
     if (url.includes("/api/memories")) return new Response(JSON.stringify(notizen), { status: 200 });
     if (url.includes("/api/search")) return new Response(JSON.stringify({ results: [], total: 0 }), { status: 200 });
     if (url.includes("/api/inbox/status")) return new Response(JSON.stringify({ inboxDir: "/x", files: [], watching: true }), { status: 200 });
@@ -700,10 +709,12 @@ describe("Dashboard: Gruppierungen und Vorschau", () => {
     await user.click(screen.getByRole("button", { name: "By type" }));
     await waitFor(() => {
       const text = container.textContent ?? "";
-      expect(text).toContain("Facts");
-      expect(text).toContain("Events");
-      expect(text).toContain("How-tos");
-      expect(text).toContain("Documents");
+      // Die vier Abschnitte bleiben — ihr Sichttext ist eine Beschreibung, kein
+      // Korb-Wort (#84).
+      expect(text).toContain("Statements");
+      expect(text).toContain("What happened");
+      expect(text).toContain("How it's done");
+      expect(text).toContain("Papers");
       expect(text).toMatch(/1 entry/);
     });
   });
@@ -957,5 +968,29 @@ describe("Dashboard: die neun Woerter fuehren in keine Sackgasse", () => {
     expect(screen.getByRole("group", { name: /what it is about/i })).toBeTruthy();
     await user.click(screen.getByRole("button", { name: /show everything again/i }));
     await waitFor(() => expect(container.textContent).not.toMatch(/no entries/i), { timeout: 4000 });
+  });
+
+  /**
+   * #77 — die Flaeche haelt zwei Zahlen, und sie duerfen nicht vertauscht
+   * werden: der Streifen zaehlt den Laden (Antwort der Tür, hier 150), die
+   * Chip-Zeile das Blatt, über das der Filter wirklich laeuft (hier 4).
+   */
+  it("zaehlt den Laden im Streifen und das Blatt an den Chips, getrennt", async () => {
+    const { container } = await zeige(ohneCode());
+    // Erst die Karten abwarten — der Speicher lädt mit 300 ms Sammelzeit, und
+    // ohne sie steht die Zeile noch gar nicht im Baum.
+    await waitFor(() => expect(container.textContent).toMatch(/in the 150 stored/), { timeout: 6000 });
+    // Der Streifen spricht fuer den Laden: 150 Stuecke, 20 davon Code.
+    expect(container.textContent).toMatch(/100\s*Notes/);
+    expect(container.textContent).toMatch(/30\s*Files/);
+    expect(container.textContent).toMatch(/20\s*Code/);
+    // Die Zeile an den Chips spricht fuer das Blatt — und ihre drei Zahlen
+    // summieren auf die Karten, die wirklich stehen. Ohne Seitenfesten Wert,
+    // weil der Speicher-Zustand im vollen Lauf von Test zu Test weiterlebt.
+    const treffer = /on this page (\d+) · (\d+) · (\d+)/u.exec(container.textContent ?? "");
+    expect(treffer, "die zweite Zahl fehlt: was das Blatt haelt").not.toBeNull();
+    const blatt = [Number(treffer![1]), Number(treffer![2]), Number(treffer![3])];
+    expect(blatt.reduce((a, b) => a + b, 0)).toBe(container.querySelectorAll(".row-entry").length);
+    expect(blatt[2], "Code liegt auf dieser Seite nicht, im Laden schon").toBe(0);
   });
 });

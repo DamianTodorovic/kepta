@@ -82,6 +82,12 @@ export function mountSystem(app: express.Express, ctx: AppKontext): void {
           id: r.id,
           source: nameById.get(r.sourceId)!,
           target: nameById.get(r.targetId)!,
+          // #83 (3), Paritaet zum Kern (server.ts:1204): die Namen sind der Vertrag
+          // fuer die Flaeche, aber ein Verbraucher, der Knoten zaehlen oder kanten
+          // zusammenfuehren will, darf nicht raten muessen, welches Ende welches ist.
+          // Additiv — kein Feld entfernt, kein Format geaendert.
+          sourceId: r.sourceId,
+          targetId: r.targetId,
           relation: r.relation,
           memoryId: r.memoryId,
           validFrom: r.validFrom,

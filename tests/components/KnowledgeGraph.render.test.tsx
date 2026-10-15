@@ -2,6 +2,7 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { render, act, fireEvent } from "@testing-library/react";
 import { KnowledgeGraph, istHell, GLYPH_FUER_ART, LEGENDE_HOEHE } from "../../src/components/KnowledgeGraph";
+import { TYP_BESCHREIBUNG } from "../../src/lib/graphHierarchy";
 import { installiereLeinwand, installiereResizeObserver, installiereZeiger, setzeTheme, type Leinwand } from "../helfer/canvas";
 import type { Memory } from "../../src/types";
 
@@ -1808,7 +1809,7 @@ describe("Kanten-Etikett: der Typ steht an der Linie", () => {
       // Der Glyph-Kanal malt in die Scheiben: ein Grossbuchstabe fuer die Art,
       // eine kleine Zahl fuer das, was ein Begriff traegt. Diese Frage gilt
       // einer Linie, also sind die Scheibenzeichen herausgerechnet.
-      "F", "E", "H", "D",
+      ...Object.values(GLYPH_FUER_ART).map(String),   // abgeleitet: wer das Vokabular aendert, aendert die Liste nicht von Hand
     ];
     const fremde = rahmen().texte.filter(
       (t) => !erlaubt.includes(t) && !/^\d{1,3}$/.test(t)
@@ -2454,7 +2455,7 @@ describe("Glyph im Knoten: Buchstabe fuer die Art, Zahl fuer den Begriff", () =>
     leinwand.leeren();
     await bilder();
     const texte = texteImBild();
-    expect(texte.some((t) => t.text === "F"), `gemalt: ${texte.map((t) => t.text).join(" | ")}`).toBe(true);
+    expect(texte.some((t) => t.text === GLYPH_FUER_ART.semantic), `gemalt: ${texte.map((t) => t.text).join(" | ")}`).toBe(true);
   });
 
   it("dreht die Helligkeit um, damit der Buchstabe auf der Fuellung steht", async () => {
@@ -2462,7 +2463,7 @@ describe("Glyph im Knoten: Buchstabe fuer die Art, Zahl fuer den Begriff", () =>
     await zoomeHinein(container);
     leinwand.leeren();
     await bilder();
-    const glyph = texteImBild().find((t) => t.text === "F");
+    const glyph = texteImBild().find((t) => t.text === GLYPH_FUER_ART.semantic);
     expect(glyph, "Der Buchstabe fehlt").toBeDefined();
     const farbe = scheibenFarben().find((f) => f !== glyph!.farbe);
     expect(farbe, "Keine Scheibenfuellung im Bild").toBeDefined();
@@ -2479,7 +2480,7 @@ describe("Glyph im Knoten: Buchstabe fuer die Art, Zahl fuer den Begriff", () =>
     await bilder();
     const rahmen = leinwand.letzterRahmen();
     expect(rahmen.filter((a) => a.op === "drawImage").length, "Kein Sprite-Bild gemalt").toBeGreaterThan(0);
-    expect(texteImBild().some((t) => /^[FEHD]$/.test(t.text)), "Auf dem Sprite steht ein Buchstabe").toBe(false);
+    expect(texteImBild().some((t) => Object.values(GLYPH_FUER_ART).map(String).includes(t.text)), "Auf dem Sprite steht ein Buchstabe").toBe(false);
   });
 
   it("erfindet keinen Buchstaben fuer eine Art, die er nicht kennt", async () => {
@@ -2487,7 +2488,7 @@ describe("Glyph im Knoten: Buchstabe fuer die Art, Zahl fuer den Begriff", () =>
     await zoomeHinein(container);
     leinwand.leeren();
     await bilder();
-    expect(texteImBild().some((t) => /^[FEHD]$/.test(t.text)), `gemalt: ${texteImBild().map((t) => t.text).join(" | ")}`).toBe(false);
+    expect(texteImBild().some((t) => Object.values(GLYPH_FUER_ART).map(String).includes(t.text)), `gemalt: ${texteImBild().map((t) => t.text).join(" | ")}`).toBe(false);
   });
 
   it("gibt vier Arten vier verschiedene Buchstaben", () => {
@@ -2645,7 +2646,7 @@ describe("Faltung: ein Doppelklick faltet eine Gruppe und sagt es", () => {
 
   it("laesst die Kinder einer doppelt genommenen Gruppe weg und zaehlt sie weiter", async () => {
     const container = await inDenBaum(notizen());
-    await doppelklick(container, scheibeVon("Facts"));
+    await doppelklick(container, scheibeVon("Statements"));
     const texte = (await bildNach((t) => t.includes("×2"))).texte;
     expect(texte).not.toContain("Uebergabe Nordwind");
     expect(texte).not.toContain("Nachfass Nordwind");
@@ -2656,7 +2657,7 @@ describe("Faltung: ein Doppelklick faltet eine Gruppe und sagt es", () => {
 
   it("oeffnet die Gruppe beim zweiten Doppelklick wieder", async () => {
     const container = await inDenBaum(notizen());
-    const bei = scheibeVon("Facts");
+    const bei = scheibeVon("Statements");
     await doppelklick(container, bei);
     await bildNach((t) => t.includes("×2"));
     await doppelklick(container, bei);
@@ -2675,7 +2676,7 @@ describe("Faltung: ein Doppelklick faltet eine Gruppe und sagt es", () => {
   it("zaehlt in der Kopfzeile, was nach der Faltung im Bild steht", async () => {
     const container = await inDenBaum(notizen());
     expect(kopfZeile(container), "Kopfzeile vor der Faltung").toBe(3);
-    await doppelklick(container, scheibeVon("Facts"));
+    await doppelklick(container, scheibeVon("Statements"));
     await bildNach((t) => t.includes("×2"));
     expect(kopfZeile(container), "Kopfzeile nach der Faltung").toBe(1);
     // Und die Bilanz des Ausschnitts sagt, warum eine fehlt.
@@ -3300,8 +3301,8 @@ describe("Das Schema-Inventar nennt, was der Bestand trägt", () => {
     await bilder(8);
     const panel = await öffne(container);
     const zeilenText = zeilen(panel).join(" | ");
-    expect(zeilenText).toMatch(/Facts\s+2/);
-    expect(zeilenText).toMatch(/Events\s+1/);
+    expect(zeilenText).toMatch(new RegExp(`${TYP_BESCHREIBUNG.semantic}\\s+2`));
+    expect(zeilenText).toMatch(new RegExp(`${TYP_BESCHREIBUNG.episodic}\\s+1`));
     expect(zeilenText).toMatch(/Concepts\s+4/);
     expect(zeilenText).toMatch(/betreut\s+2/);
     expect(zeilenText).toMatch(/meldet an\s+1/);
@@ -4065,3 +4066,4 @@ describe("Der Baum faltet sich, was nicht in seine Leinwand passt", () => {
     expect(container.textContent).not.toMatch(/unfolded notes are in this picture/i);
   });
 });
+

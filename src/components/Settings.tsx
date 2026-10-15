@@ -9,6 +9,7 @@ import PraxisSync from './PraxisSync';
 import { KeptaMark } from './KeptaMark';
 import { getZoom, setZoom as speichereZoom, wendeZoomAn } from '../lib/uiText';
 import { sendJson } from '../lib/api';
+import { TRAEGER_LABELS, TRAEGER_REIHENFOLGE, THEMA_LABELS, THEMA_REIHENFOLGE, type Traeger, type Thema } from '../lib/graphHierarchy';
 import { PrivacyShield } from './PrivacyShield';
 import { ConnectApps } from './ConnectApps';
 import { useSuchPrefs, leseTreffer, normalisiereTreffer, schreibeTreffer, SUCH_PREFS_EVENT, RESULT_STOPS, SUCH_TIEFE_MIN, SUCH_TIEFE_MAX, SUCH_TIEFE_DEFAULT } from '../lib/searchPrefs';
@@ -97,6 +98,7 @@ export function Settings() {
    * nach ausdruecklicher Bestaetigung — schreiben.
    */
   const [sortierVorschau, setSortierVorschau] = useState<{ changed: number; after: Record<string, number> } | null>(null);
+  const [bestandGruppen, setBestandGruppen] = useState<{ bestand: number; traeger: Record<Traeger, number>; themen: Record<Thema, number> } | null>(null);
   const [sortiertLaeuft, setSortiertLaeuft] = useState(false);
   const [sortiertFertig, setSortiertFertig] = useState<number | null>(null);
   /**
@@ -770,9 +772,10 @@ export function Settings() {
                 <div className="mt-6 pt-6" style={{ borderTop: '1px solid var(--border-subtle)' }}>
                   <h3 className="settings-h mb-2" style={{ color: 'var(--text-1)' }}>Sort knowledge by kind</h3>
                   <p className="text-sm mb-4" style={{ color: 'var(--text-2)' }}>
-                    Every note is a fact, an event, a how-to or a document. Imported notes used to land as
-                    “fact” by default, because nothing ever decided. This looks at every note and sorts it —
-                    and tells you why. Nothing is written until you confirm.
+                    Every note came from somewhere and is about something — that is what the two rows on
+                    the list say. Imported notes used to land in one basket by default, because nothing ever
+                    decided. This looks at every note again and sorts it — and tells you why. Nothing is
+                    written until you confirm.
                   </p>
                   {sortiertFertig !== null ? (
                     <div className="text-sm" style={{ color: 'var(--ok)' }}>{sortiertFertig} notes sorted.</div>
@@ -780,11 +783,26 @@ export function Settings() {
                     <div className="space-y-3">
                       <div className="hud-inset rounded-lg p-3 text-sm" style={{ color: 'var(--text-2)' }}>
                         <div><strong style={{ color: 'var(--text-1)' }}>{sortierVorschau.changed}</strong> notes would change.</div>
-                        <div className="mt-1.5 flex flex-wrap gap-x-4 gap-y-1 text-[12.5px]">
-                          {Object.entries(sortierVorschau.after).map(([k, v]) => (
-                            <span key={k}>{v} × {k === 'semantic' ? 'Fact' : k === 'episodic' ? 'Event' : k === 'procedural' ? 'How-to' : 'Document'}</span>
-                          ))}
-                        </div>
+                        {/* #84 mit #77: was die Sortierung in den vier inneren Arten
+                            tut, bleibt Sache der Maschine — was der Nutzer sieht, sind
+                            die zwei Zeilen, und ihre Zahlen kommen aus dem Laden. */}
+                        {bestandGruppen && (
+                          <div className="mt-1.5 space-y-1">
+                            <div className="flex flex-wrap gap-x-4 gap-y-1 text-[12.5px]">
+                              {TRAEGER_REIHENFOLGE.map((t) => (
+                                <span key={t}>{bestandGruppen.traeger[t].toLocaleString('en-GB')} × {TRAEGER_LABELS[t]}</span>
+                              ))}
+                            </div>
+                            <div className="flex flex-wrap gap-x-4 gap-y-1 text-[12.5px]" style={{ color: 'var(--text-3)' }}>
+                              {THEMA_REIHENFOLGE.map((t) => (
+                                <span key={t}>{bestandGruppen.themen[t].toLocaleString('en-GB')} × {THEMA_LABELS[t]}</span>
+                              ))}
+                            </div>
+                            <div className="text-[11.5px]" style={{ color: 'var(--text-3)' }}>
+                              counted over all {bestandGruppen.bestand.toLocaleString('en-GB')} entries in the store
+                            </div>
+                          </div>
+                        )}
                       </div>
                       <div className="flex gap-2">
                         <button onClick={() => setSortierVorschau(null)} className="btn-ghost px-4 py-2 rounded-xl text-sm">Cancel</button>
@@ -809,6 +827,7 @@ export function Settings() {
                         setSortiertLaeuft(true);
                         try {
                           setSortierVorschau(await sendJson<{ changed: number; after: Record<string, number> }>('/api/memories/reclassify', {}));
+                          try { setBestandGruppen(await (await fetch('/api/memories/gruppen')).json()); } catch { /* die Zahl fehlt dann */ }
                         } finally { setSortiertLaeuft(false); }
                       }}
                       className="btn-ghost flex items-center justify-center gap-2 px-6 py-2.5 rounded-xl font-medium w-full"

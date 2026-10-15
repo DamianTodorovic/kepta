@@ -717,6 +717,15 @@ export interface Simulation {
   krafte: SimKrafte;
   /** Wie viele Knoten im Gang liegen; der Mal-Pass liest die Zahl fuer seine Zeile. */
   allein?: number;
+  /**
+   * Wer im Gang liegt — dieselbe Menge, die `allein` zaehlt. Der Mal-Pass braucht
+   * die Knoten selbst, nicht nur ihre Zahl: bei kleinem Zoom ruecken die
+   * Gang-Reihen dichter zusammen, als eine Titelzeile hoch ist, und dann legt die
+   * Flaeche ihre Titel in die Punkte der naechsten Reihe (gemessen 15.10. im
+   * 820-er Fenster bei 46 % Zoom: „install-guide.sh (Scan)" lag quer ueber
+   * „32 notes connect to nothing in this picture").
+   */
+  gangIds?: Set<string>;
   /** Der Anker des Gangs in Weltkoordinaten: oberste Reihe, mittlere Spalte. */
   alleinAnker?: { x: number; y: number } | null;
   alpha: number;
@@ -1007,6 +1016,7 @@ export function stepSimulation(sim: Simulation): void {
       : [];
   sim.allein = allein.length;
   const imGang = new Set(allein.map((n) => n.id));
+  sim.gangIds = imGang;
 
   // Die Quadtree kennt den Gang nicht: er soll den Kern weder stossen noch
   // ihn beim Einpassen verzerren.

@@ -229,7 +229,7 @@ describe("Schnitt 3 — eine Schluesselnatur", () => {
     expect(g.relations.every((r) => ids.has(r.sourceId) && ids.has(r.targetId))).toBe(true);
   });
 
-  it("Befund, keine Aenderung: die Tuer biegt Kantenenden auf NAMEN um, Knoten bleiben NUMMERN", async () => {
+  it("die Tuer nennt beide Enden zweimal: der Name fuer die Flaeche, die Nummer fuer jeden anderen", async () => {
     const res = await request(app).get("/api/graph?depth=2").expect(200);
     const body = res.body as {
       entities: { id: number; name: string }[];
@@ -237,9 +237,61 @@ describe("Schnitt 3 — eine Schluesselnatur", () => {
     };
     expect(typeof body.entities[0].id).toBe("number");
     expect(typeof body.relations[0].source).toBe("string");
-    // Die numerische Seite der Kante verlaesst die Tuer nicht: ein Client kann
-    // eine Kante nur ueber einen Namenssuchschlag an einen Knoten haengen.
-    expect(body.relations[0]).not.toHaveProperty("sourceId");
-    expect(body.relations[0]).not.toHaveProperty("targetId");
+    // #83 (3) hebt den Befund von vorhin auf: die Nummer der Kantenenden ist jetzt
+    // mitgeschickt, additiv zum Namen. Der Name bleibt, weil die Flaeche an ihm
+    // haengt — ein Rueckweg faellt nicht an.
+    expect(typeof body.relations[0].sourceId).toBe("number");
+    expect(typeof body.relations[0].targetId).toBe("number");
+    const ids = new Set(body.entities.map((e) => e.id));
+    expect(ids.has(body.relations[0].sourceId as number), "sourceId zeigt auf keinen gelieferten Knoten").toBe(true);
+    expect(ids.has(body.relations[0].targetId as number), "targetId zeigt auf keinen gelieferten Knoten").toBe(true);
+  });
+});
+
+describe("#83 (4) — eine Kante sagt, WAS sie behauptet", () => {
+  it("ein Titel, der einen Begriff nennt, und zwei Begriffe, die zusammen genannt werden, sind nicht dasselbe", () => {
+    scanNotiz("Quartalsbericht", "## Budget\n\n## Fristen\n\nText.");
+    const g = store.getGraph();
+    const namen = new Map(g.entities.map((e) => [e.id, e.name]));
+    const wort = (r: { sourceId: number; targetId: number; relation: string }) =>
+      [namen.get(r.sourceId), namen.get(r.targetId)].sort().join("|") + " = " + r.relation;
+    const titelKante = g.relations.find((r) => namen.get(r.sourceId) === "quartalsbericht" || namen.get(r.targetId) === "quartalsbericht");
+    const paarKante = g.relations.find(
+      (r) =>
+        ((namen.get(r.sourceId) === "budget" && namen.get(r.targetId) === "fristen") ||
+          (namen.get(r.sourceId) === "fristen" && namen.get(r.targetId) === "budget")),
+    );
+    expect(titelKante, `keine Titel-Kante im Schnitt: ${g.relations.map(wort).join(", ")}`).toBeDefined();
+    expect(paarKante, `keine Mittraeger-Kante im Schnitt: ${g.relations.map(wort).join(", ")}`).toBeDefined();
+    expect(titelKante!.relation, "der Titel, der einen Begriff nennt, ist keine Mitnennung").toBe("mentions");
+    expect(paarKante!.relation, "zwei Begriffe in einer Aussage sind keine einfache Erwahnung").toBe("co-mentions");
+  });
+
+  it("der Bestand kennt mehr als ein Kantentyp-Wort", () => {
+    scanNotiz("Q4 Abschluss", "## Budget\n\n## Fristen\n\nText.");
+    scanNotiz("Plan 2027", "## Fristen\n\n## Sicherung\n\nText.");
+    const g = store.getGraph();
+    const typen = new Set(g.relations.map((r) => r.relation));
+    expect([...typen].sort(), `der ganze Schnitt nennt nur: ${[...typen].join(", ")}`).toEqual(["co-mentions", "mentions"]);
+  });
+
+  it("zweimal indexieren derselben Notiz schreibt das Label nicht zweimal", () => {
+    const id = scanNotiz("Vertrag Adler", "## Kuendigung\n\n## Frist\n\nFrist 3 Monate.");
+    const vorher = store.getGraph().relations.filter((r) => r.relation === "co-mentions").length;
+    expect(vorher, "ohne Mittraeger-Kante ist der Fall leer").toBeGreaterThan(0);
+    indexMemory(store, id);
+    indexMemory(store, id);
+    const nachher = store.getGraph().relations.filter((r) => r.relation === "co-mentions").length;
+    expect(nachher, `${vorher} Mittraeger-Kanten vor dem Neuschreiben, ${nachher} danach`).toBe(vorher);
+    // Und die alte Zeile mit dem falschen Wort ist weg, nicht nur doppelt:
+    // dieselbe Paar-Ende darf nicht einmal mentions und einmal co-mentions heissen.
+    const g = store.getGraph();
+    const paare = new Map<string, string[]>();
+    for (const r of g.relations) {
+      const schluessel = [r.sourceId, r.targetId].sort().join("|");
+      paare.set(schluessel, [...(paare.get(schluessel) ?? []), r.relation]);
+    }
+    const gemischt = [...paare].filter(([, worte]) => new Set(worte).size > 1);
+    expect(gemischt.map(([k]) => k), `Paar(e) ${gemischt.map(([k, w]) => k + ":" + w.join("/")).join(", ")} fuehren zwei Worte fuer dieselbe Aussage`).toHaveLength(0);
   });
 });

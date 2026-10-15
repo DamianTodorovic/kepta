@@ -14,7 +14,7 @@
 // der ersten.
 
 import { istStruktur } from "./graphTime";
-import { TYP_LABELS } from "./graphHierarchy";
+import { TYP_BESCHREIBUNG } from "./graphHierarchy";
 
 export interface SchemaNotiz {
   type?: string | null;
@@ -86,7 +86,7 @@ export function schemaInventar(eingabe: SchemaEingabe): SchemaInventar {
   for (const m of eingabe.notizen) {
     const typ = typeof m.type === "string" ? m.type.trim() : "";
     if (!typ) fuege(knoten, OHNE_TYP, "No type");
-    else fuege(knoten, `knoten:${typ}`, TYP_LABELS[typ] ?? typ);
+    else fuege(knoten, `knoten:${typ}`, TYP_BESCHREIBUNG[typ] ?? typ);
   }
   if (eingabe.konzepte > 0) fuege(knoten, BEGRIFFE, "Concepts", eingabe.konzepte);
 

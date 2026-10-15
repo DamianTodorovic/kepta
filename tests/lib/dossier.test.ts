@@ -43,7 +43,7 @@ describe("Dossier", () => {
     const md = dossierAlsMarkdown(await dossier(store, "Atlas"), () => "1 Sep 2026");
     expect(md).toContain("# Dossier: Atlas");
     expect(md).toContain("_4 notes · 1 Sep 2026 – 1 Sep 2026_");
-    expect(md).toContain("## Key facts\n\n- **Atlas relaunch** — The Atlas relaunch starts in October.");
+    expect(md).toContain("## Key points\n\n- **Atlas relaunch** — The Atlas relaunch starts in October.");
     expect(md).toContain("## Timeline\n\n- 1 Sep 2026 — **Atlas kickoff**");
     expect(md).toContain("## Open to-dos\n\n- [ ] send the Atlas deck _(Atlas kickoff)_");
     expect(md).toContain("Related: ");

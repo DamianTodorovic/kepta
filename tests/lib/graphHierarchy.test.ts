@@ -164,14 +164,14 @@ describe("buildHierarchy", () => {
     expect(finde(baum, "__typ:episodic")).toBeNull();
   });
 
-  it("reference ist ein bekannter Typ mit eigenem Label (Documents — wie im Editor)", () => {
+  it("reference ist ein bekannter Typ mit eigener Beschreibung (#84: kein Korb-Wort, auch nicht im Baum)", () => {
     const baum = buildHierarchy([
       mem({ id: "1", type: "reference", title: "pdf-ls" }),
       mem({ id: "2", type: "semantic", title: "a" }),
     ]);
     const refTyp = finde(baum, "__typ:reference");
     expect(refTyp).not.toBeNull();
-    expect(refTyp!.label).toBe("Documents");
+    expect(refTyp!.label).toBe("Papers");   // seit #84 die Beschreibung; die Art bleibt `reference`
     expect(refTyp!.typ).toBe("reference"); // bekannte Farbe — blau wie im Kraftfeld
     expect(finde(baum, "1")).not.toBeNull();
   });

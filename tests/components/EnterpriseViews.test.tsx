@@ -201,7 +201,7 @@ describe("Dossier", () => {
     const oeffne = vi.fn();
     mitToast(<DossierView onOpenMemory={oeffne} />);
     await user.click(await screen.findByRole("button", { name: "Atlas" }));
-    await screen.findByText("Key facts");
+    await screen.findByText("Key points");
     expect(screen.getByText(/The Atlas relaunch starts in October/)).toBeTruthy();
     expect(screen.getByText(/send the deck/)).toBeTruthy();
     expect(screen.getByText("To check")).toBeTruthy();

@@ -41,6 +41,15 @@ interface ScanLage {
   abgeschnitten: boolean;
   gestartet: number | null;
   fehler: string | null;
+  /**
+   * #83 (5): was der Lauf dem Netz hinzugefuegt hat. Der Bestand allein — "3 Notizen
+   * importiert" — sagt einem Menschen nicht, ob sein Graph gewachsen ist, und genau
+   * das war Damians Befund am 14.10.: sein Graph wuchs nicht, und keine Zahl in der
+   * Flaeche haette das gezeigt. Vorher/Nachher an `graphBestand()`, also ueber dem
+   * ganzen Bestand, nicht ueber dem Fenster.
+   */
+  graphVorher?: { knoten: number; kanten: number };
+  graphNeu?: { knoten: number; kanten: number };
 }
 
 // Datenreparatur: PDFs, deren Teile mit der alten Rohbyte-Extraktion
@@ -299,7 +308,13 @@ export function mountScan(app: express.Express, ctx: AppKontext): void {
     if (scanLage.laeuft) return res.status(409).json({ error: "A scan is already running" });
     const wurzeln = pruefeWurzeln(body.roots);
     scanAbbruch = false;
-    scanLage = { laeuft: true, phase: "import", gesehen: 0, gefunden: 0, importiert: 0, uebersprungen: 0, abgeschnitten: false, gestartet: Date.now(), fehler: null };
+    scanLage = {
+      laeuft: true, phase: "import", gesehen: 0, gefunden: 0, importiert: 0, uebersprungen: 0,
+      abgeschnitten: false, gestartet: Date.now(), fehler: null,
+      // Vorher-Stand des Netzes, damit der Lauf am Ende sagen kann, was er
+      // hinzugefuegt hat — nicht nur, wie viele Notizen er aufnahm (#83-5).
+      graphVorher: store.graphBestand(),
+    };
     res.json({ started: true, roots: wurzeln });
 
     void (async () => {
@@ -365,7 +380,12 @@ export function mountScan(app: express.Express, ctx: AppKontext): void {
           } catch { /* eine unlesbare Datei haelt den Durchlauf nicht auf */ }
           if (n % 25 === 0) await new Promise((r) => setImmediate(r));
         }
-        scanLage = { ...scanLage, laeuft: false, phase: scanAbbruch ? "cancelled" : "done", importiert: n, verworfen, maskiert };
+        const nachher = store.graphBestand();
+        const vorher = scanLage.graphVorher ?? { knoten: 0, kanten: 0 };
+        scanLage = {
+          ...scanLage, laeuft: false, phase: scanAbbruch ? "cancelled" : "done", importiert: n, verworfen, maskiert,
+          graphNeu: { knoten: nachher.knoten - vorher.knoten, kanten: nachher.kanten - vorher.kanten },
+        };
         ctx.publishActivity({
           type: "save", source: "app",
           title: `Machine scan: ${n} notes${maskiert > 0 ? ` · ${maskiert} key-shaped value${maskiert === 1 ? "" : "s"} masked` : ""}`,
@@ -383,6 +403,10 @@ export function mountScan(app: express.Express, ctx: AppKontext): void {
       seen: scanLage.gesehen,
       found: scanLage.gefunden,
       imported: scanLage.importiert,
+      /** #83 (5): was der letzte Lauf dem Netz hinzufuegte — ganze Tafel, nicht Fenster. */
+      graphNew: scanLage.graphNeu
+        ? { concepts: scanLage.graphNeu.knoten, edges: scanLage.graphNeu.kanten }
+        : null,
       /** Aus dem letzten Lauf: wie viele Schluesselstellen verdeckt wurden. */
       masked: scanLage.maskiert ?? 0,
       skippedFolders: scanLage.uebersprungen,

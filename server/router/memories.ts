@@ -3,7 +3,7 @@ import crypto from "crypto";
 import express from "express";
 import { indexMemory, gateDecision, writeGateEnabled } from "../../src/core/engine";
 import { extractWikiLinks } from "../../src/core/mcp";
-import { klassifiziere } from "../../src/core/klassifikation";
+import { klassifiziere, gruppen, type Traeger, type Thema } from "../../src/core/klassifikation";
 import { sanitizeText, sanitizeTitle, sanitizeTags } from "../../src/core/sanitize";
 import { sanitizeScope, sanitizeId, istGueltigeId } from "../helfer/ids";
 import { toApi, maxActiveMemories, grenzHinweis, MAX_BULK_IDS, SEITE_MIN, SEITE_MAX, seiteUmwelt, type MemoryRecord } from "../helfer/api-form";
@@ -217,6 +217,32 @@ export function mountMemories(app: express.Express, ctx: AppKontext): void {
   // `src/components/Chat.tsx:670` — alle drei akzeptieren {memories:[]}).
   // Dieselbe Zahl bleibt zusaetzlich in Koepfen (`x-kepta-*`), fuer jeden, der vor
   // dem Leib entscheiden will; die Umstellung der Flaechen ist GFs Scheibe.
+  /**
+   * #77 — die Bestandszahl pro Traeger und pro Thema, durch dieselben Regeln wie
+   * die Flaeche. Ohne diese Route zaehlt die Flaeche das geladene Blatt (hoechstens
+   * SEITE_MAX Notizen) und nennt es Bestand: ein Klick auf „Notes" (92 von 21.066)
+   * trifft dann die Seite, nicht den Laden.
+   *
+   * Kein Puffer, mit Absicht: eine Zahl, die der Nutzer als Bestand liest, darf
+   * nicht hinter einer Schreibaktion alt bleiben. Was der Lauf kostet, steht im
+   * Leib (`ms`) und wird gemeldet statt versteckt.
+   */
+  app.get("/api/memories/gruppen", (_req, res) => {
+    const started = Date.now();
+    const traeger: Record<Traeger, number> = { notes: 0, files: 0, code: 0 };
+    const themen: Record<Thema, number> = { people: 0, projects: 0, events: 0, tasks: 0, guides: 0, links: 0 };
+    let ohneThema = 0;
+    let gezahlt = 0;
+    for (const m of ctx.listAllMemories()) {
+      const g = gruppen({ title: m.title, content: m.content, tags: m.tags });
+      traeger[g.traeger] += 1;
+      if (g.themen.length === 0) ohneThema += 1;
+      for (const t of g.themen) themen[t] += 1;
+      gezahlt += 1;
+    }
+    res.json({ ok: true, bestand: gezahlt, traeger, themen, ohneThema, ms: Date.now() - started });
+  });
+
   app.get("/api/memories", (req, res) => {
     const { ganzerBestand } = leseGrenzwerte(req, res);
     if (res.headersSent) return;

@@ -27,11 +27,11 @@ interface MemoryCardProps {
  * Ihr NAME steht hier nicht mehr auf der Karte — was der Nutzer liest, ist der
  * Traeger aus Zeile 1 ("Notes · Files · Code"), siehe unten.
  */
-const TYPE_META: Record<string, { label: string; icon: React.ComponentType<{ className?: string; style?: React.CSSProperties; weight?: IconWeight }> }> = {
-  semantic: { label: 'Fact', icon: Brain },
-  episodic: { label: 'Event', icon: Clock },
-  reference: { label: 'Document', icon: FileText },
-  procedural: { label: 'How-to', icon: Zap },
+const TYPE_META: Record<string, { icon: React.ComponentType<{ className?: string; style?: React.CSSProperties; weight?: IconWeight }> }> = {
+  semantic: { icon: Brain },
+  episodic: { icon: Clock },
+  reference: { icon: FileText },
+  procedural: { icon: Zap },
 };
 export const MemoryCard = memo(function MemoryCard({ memory, onClick, score, matchedTerms, herkunft }: MemoryCardProps) {
   const toast = useToast();

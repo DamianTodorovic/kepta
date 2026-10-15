@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { motion } from "motion/react";
 import { X, ShieldCheck, ShieldAlert, Loader2, FolderOpen, CheckCircle2, AlertTriangle, Bot } from "../lib/icons";
+import { TRAEGER_LABELS } from '../lib/graphHierarchy';
 import { inForm } from "../lib/antwort";
 
 /**
@@ -58,6 +59,8 @@ export interface ScanStatus {
   imported: number;
   /** Schluesselfoermige Stellen, die der Lauf vor der Notiz verdeckt hat (#76). */
   masked?: number;
+  /** Was der Lauf dem Netz hinzufuegte — Begriffe und Kanten, ganze Tafel (#83). */
+  graphNew?: { concepts: number; edges: number } | null;
   skippedFolders: number;
   truncated: boolean;
   error: string | null;
@@ -396,7 +399,7 @@ export function MachineScan({ open, onClose, onImported, autoPreview = false }: 
               <div className="grid grid-cols-3 gap-2 text-center">
                 <div className="hud-inset rounded-lg p-2.5">
                   <div className="text-lg font-semibold tnum" style={{ color: "var(--text-1)" }}>{vorschau.found}</div>
-                  <div className="hud-label">documents</div>
+                  <div className="hud-label">{TRAEGER_LABELS.files}</div>
                 </div>
                 <div className="hud-inset rounded-lg p-2.5">
                   <div className="text-lg font-semibold tnum" style={{ color: "var(--text-1)" }}>{formatBytes(vorschau.totalBytes)}</div>
@@ -546,7 +549,7 @@ export function MachineScan({ open, onClose, onImported, autoPreview = false }: 
             <div className="space-y-3">
               <div className="grid grid-cols-3 gap-2 text-center">
                 <div className="hud-inset rounded-lg p-2.5"><div className="text-lg font-semibold tnum" style={{ color: "var(--text-1)" }}>{status.seen}</div><div className="hud-label">files seen</div></div>
-                <div className="hud-inset rounded-lg p-2.5"><div className="text-lg font-semibold tnum" style={{ color: "var(--text-1)" }}>{status.found}</div><div className="hud-label">documents</div></div>
+                <div className="hud-inset rounded-lg p-2.5"><div className="text-lg font-semibold tnum" style={{ color: "var(--text-1)" }}>{status.found}</div><div className="hud-label">{TRAEGER_LABELS.files}</div></div>
                 <div className="hud-inset rounded-lg p-2.5"><div className="text-lg font-semibold tnum" style={{ color: "var(--ok)" }}>{status.imported}</div><div className="hud-label">notes written</div></div>
               </div>
               {status.running ? (
@@ -559,7 +562,14 @@ export function MachineScan({ open, onClose, onImported, autoPreview = false }: 
                   {status.phase === "cancelled" ? <AlertTriangle className="w-4 h-4" /> : <CheckCircle2 className="w-4 h-4" />}
                   {status.phase === "cancelled"
                     ? `Stopped — ${status.imported} notes were already written and are kept.`
-                    : `Done — ${status.imported} notes added.`}
+                    : // #83 (5): Notizen zaehlen ist nicht Wissen zaehlen. Damians Befund
+                      // vom 14.10. war „mein Graph waechst nicht", und die Flaeche hatte
+                      // dafuer nur „412 notes added". Der Zuwachs am Netz steht jetzt
+                      // daneben — gemessen am ganzen Bestand, nicht am Fenster.
+                      `Done — ${status.imported} notes added` +
+                      (status.graphNew
+                        ? `, ${status.graphNew.concepts} concepts and ${status.graphNew.edges} links new.`
+                        : ".")}
                 </div>
               )}
               <div className="flex items-start gap-2 text-[12px] rounded-lg p-2.5" style={{ background: "var(--bg-inset)", color: "var(--text-3)" }}>

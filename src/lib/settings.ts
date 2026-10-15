@@ -14,6 +14,8 @@
 // bestehen — die Komponenten lesen weiter localStorage und muessen nichts
 // wissen. Diese Datei spiegelt in beide Richtungen.
 
+import { wendeZoomAn } from "./uiText";
+
 /** Praefixe, die zu K3PTA gehoeren. Alles andere bleibt unberuehrt. */
 const UNSERE = ["kepta_", "ki_gehirn_"];
 /** Einzelne Schluessel ohne Praefix. */
@@ -167,5 +169,12 @@ export function spiegleEinstellungen(): void {
 export async function starteEinstellungen(): Promise<number> {
   const n = await ladeEinstellungen();
   spiegleEinstellungen();
+  // Die Werte liegen jetzt im Browserspeicher — aber ein Wert, der etwas an das
+  // Dokument malt, wirkt erst, wenn ihn jemand anmalt. `ki_gehirn_zoom` überlebt
+  // den Neustart seit dieser Datei; die Textgröße selbst wurde nur gesetzt, wenn
+  // jemand im Einstellungs-Fenster am Regler drehte. Gemessen 14.10. (Lauf auf
+  // 9421 → Neustart auf 9422, frische Origin): Schlüssel „115" wieder da,
+  // computed font-size unverändert. Die Fläche sagte 115 % und zeigte 100 %.
+  wendeZoomAn();
   return n;
 }

@@ -4,6 +4,7 @@ import { FormEvent, useEffect, useState } from 'react';
 import { FileText, Copy, Check, Save, Loader2, AlertTriangle } from '../lib/icons';
 import { useToast } from './ui/Toast';
 import { inForm } from '../lib/antwort';
+import { DOSSIER_TITEL } from '../lib/dossierTitel';
 
 interface Eintrag { id: string; title: string; sentence: string; at: number }
 /** Ein Widerspruch im Dossier — mit ids, wenn der Server sie liefert (tut er). */
@@ -173,8 +174,8 @@ export function DossierView({ onOpenMemory, onEditMemory, dossierThema }: { onOp
       <header className="mb-5">
         <h1 className="display">Dossier</h1>
         <p className="text-sm mt-1" style={{ color: 'var(--text-2)' }}>
-          Everything you know about a person, a project or a topic — on one page. Facts, a timeline, how-tos, documents and what is
-          still open.
+          Everything you know about a person, a project or a topic — on one page: the statements, what happened
+          when, how it's done, the files behind it and what is still open.
         </p>
       </header>
       <form onSubmit={absenden} className="flex gap-2 mb-3">
@@ -226,10 +227,10 @@ export function DossierView({ onOpenMemory, onEditMemory, dossierThema }: { onOp
               </button>
             </div>
           </div>
-          <Liste titel="Key facts" eintraege={daten.facts} onOpen={onOpenMemory} />
-          <Liste titel="Timeline" eintraege={daten.timeline} mitDatum onOpen={onOpenMemory} />
-          <Liste titel="How-tos" eintraege={daten.howtos} onOpen={onOpenMemory} />
-          <Liste titel="Documents" eintraege={daten.documents} onOpen={onOpenMemory} />
+          <Liste titel={DOSSIER_TITEL.punkte} eintraege={daten.facts} onOpen={onOpenMemory} />
+          <Liste titel={DOSSIER_TITEL.zeit} eintraege={daten.timeline} mitDatum onOpen={onOpenMemory} />
+          <Liste titel={DOSSIER_TITEL.anleitungen} eintraege={daten.howtos} onOpen={onOpenMemory} />
+          <Liste titel={DOSSIER_TITEL.papiere} eintraege={daten.documents} onOpen={onOpenMemory} />
           {daten.todos.length > 0 && (
             <section className="mb-6">
               <h3 className="text-[13px] font-semibold mb-2" style={{ color: 'var(--text-1)' }}>Open to-dos</h3>

@@ -20,9 +20,23 @@
 const WIKI_LINK = /\[\[([^[\]]{2,80})\]\]/g;
 const UEBERSCHRIFT = /^#{1,6}[ \t]+(.+?)[ \t]*#*[ \t]*$/;
 const ZAUN = /^\s*(```|~~~)/;
-// Ein Begriff braucht Buchstaben und darf keine Programmzeile sein.
-const TAUGLICH = /[a-zäöüß]/;
-const CODEZEICHEN = /[{};<>]/;
+// #83: ein Begriff ist ein NAME, kein Satz, kein Label und kein Code. Gemessen an
+// seiner laufenden Tuer (21.066 Notizen, Fenster 500 Knoten): 133 Namen mit
+// Gedankenstrich, 109 mit Schraegstrich (die Stueckel-Titel des Scans,
+// „blender_manifest — 1/2"), 92 mit Doppelpunkt, 184 mit vier oder mehr Woertern,
+// mittlere Laenge 23,6. Eine Schwarzliste gegen dieses Zeichen-Gemenge laeuft der
+// Messung hinterher, deshalb die umgekehrte Regel: nur Buchstaben, Ziffern,
+// Leerzeichen, Punkt, Bindestrich, Und und Apostroph — beginnend mit einem
+// Buchstaben oder einer Ziffer.
+const NAME = /^[\p{L}\p{N}][\p{L}\p{N} .'&-]*$/u;
+const MAX_LAENGE = 40;
+const MAX_WOERTER = 4;
+// „Q4 Close", „Lumen & Co." enden legitimerweise auf einem Punkt („Co." ist eine
+// Abkuerzung), „backup laeuft nachts." ist ein Satz. Unterschied: die Länge des
+// letzten Stuecks — drei Zeichen oder weniger sind eine Abkuerzung, alles
+// laengere ein Prädikat.
+const endetAufSatzpunkt = (n: string) =>
+  n.endsWith(".") && (n.split(" ").pop() ?? "").replace(/\.$/, "").length > 3;
 // Abschnittslabels sind die Form des Papiers, nicht sein Inhalt. Gemessen am
 // echten Bestand (14.701 Notizen): `fixed` 76, `tests` 71, `added` 65, `changed`
 // 65, `links` 52, `wiki links` 70 Traeger — ueberwiegend Aenderungs- und
@@ -34,11 +48,9 @@ const RAHMENWORT = new Set([
   "dependencies", "troubleshooting", "license", "contributing", "security", "api", "references",
   "inhalt", "anhang", "quellen",
 ]);
-// Eine Ueberschrift, die ein Satz ist, benennt nichts. Zwei Zeichen — laenge und
-// Aufzaehlung — weil beides im echten Bestand vorkam („Finds Claude Desktop,
-// Cursor, VS Code, Gemini CLI and more", 58 Zeichen, drei Kommas).
-const SATZ_GRENZE = 48;
-const MAX_KOMMAS = 1;
+// Mindestens ein Buchstabe: „14702" ist eine Zahl aus einer Protokollzeile, kein
+// Begriff, auch wenn sie durch die Laenge kaeme.
+const BUCHSTABE = /\p{L}/u;
 
 const normalisiere = (roh: string): string =>
   roh
@@ -60,10 +72,11 @@ export function begriffeAusText(text: string, maksimum = 40): string[] {
   const lege = (kandidat: string): void => {
     if (out.length >= maksimum) return;
     const n = normalisiere(kandidat.split("|")[0] ?? "");
-    if (n.length < 4 || n.length > SATZ_GRENZE) return;
-    if (CODEZEICHEN.test(n) || !TAUGLICH.test(n)) return;
+    if (n.length < 4 || n.length > MAX_LAENGE) return;
+    if (!NAME.test(n) || !BUCHSTABE.test(n)) return;
+    if (n.split(" ").length > MAX_WOERTER) return;
+    if (endetAufSatzpunkt(n)) return;
     if (RAHMENWORT.has(n)) return;
-    if (n.split(",").length - 1 > MAX_KOMMAS) return;
     if (gesehen.has(n)) return;
     gesehen.add(n);
     out.push(n);

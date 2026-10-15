@@ -8,6 +8,7 @@ import { formatDistanceToNow } from "date-fns";
 import { Memory } from "../types";
 import { FileText, ExternalLink, EditPen, Copy, Check, Lock, Bot } from "../lib/icons";
 import { useToast } from "./ui/Toast";
+import { TYP_BESCHREIBUNG } from "../lib/graphHierarchy";
 import { t } from "../lib/uiText";
 import { inhaltOhneQuelle, oeffneQuelle, parseChunkTitel, parseQuelle } from "../lib/quelle";
 
@@ -17,12 +18,9 @@ interface MemoryPreviewProps {
   onEdit: (m: Memory) => void;
 }
 
-const TYPE_LABEL: Record<string, string> = {
-  semantic: "Fact",
-  episodic: "Event",
-  procedural: "How-to",
-  reference: "Document",
-};
+// Die vier Rechen-Arten haben keinen Korb-Namen mehr in der Flaeche — was
+// hier steht, ist dieselbe Beschreibung wie im Editor und in der Liste.
+const TYPE_LABEL = TYP_BESCHREIBUNG;
 
 export function MemoryPreview({ memory, onClose, onEdit }: MemoryPreviewProps) {
   const toast = useToast();

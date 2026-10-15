@@ -1,5 +1,5 @@
 // A dossier: everything K3PTA knows about one person, project or topic — on
-// one page. Facts, a timeline, how-tos, documents, open to-dos, contradictions
+// one page. Key points, a timeline, guides, files, open to-dos, contradictions
 // and related topics, gathered from the notes that really belong to it: the
 // hybrid search (weak hits dropped), the tag and the knowledge entity of the
 // same name. Local and instant; the Markdown version copies into any document.
@@ -8,6 +8,8 @@ import type { MemoryRecord } from "../core/types";
 import { searchMemories } from "../core/engine";
 import { findeWidersprueche, type Widerspruch } from "./widersprueche";
 import { offeneAufgaben } from "./briefing";
+import { DOSSIER_TITEL } from "./dossierTitel";
+
 
 export interface DossierEintrag {
   id: string;
@@ -131,10 +133,10 @@ export function dossierAlsMarkdown(d: Dossier, datum: (ms: number) => string = t
     for (const e of eintraege) zeilen.push(`- ${mitDatum ? `${datum(e.at)} — ` : ""}**${e.title}** — ${e.sentence}`);
     zeilen.push("");
   };
-  abschnitt("Key facts", d.facts);
-  abschnitt("Timeline", d.timeline, true);
-  abschnitt("How-tos", d.howtos);
-  abschnitt("Documents", d.documents);
+  abschnitt(DOSSIER_TITEL.punkte, d.facts);
+  abschnitt(DOSSIER_TITEL.zeit, d.timeline, true);
+  abschnitt(DOSSIER_TITEL.anleitungen, d.howtos);
+  abschnitt(DOSSIER_TITEL.papiere, d.documents);
   if (d.todos.length) {
     zeilen.push("## Open to-dos", "");
     for (const t of d.todos) zeilen.push(`- [ ] ${t.text} _(${t.title})_`);

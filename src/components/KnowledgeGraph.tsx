@@ -55,7 +55,7 @@ import {
   zeilenKMin,
   BLATT_ABSTAND,
   stepDendrogram,
-  TYP_LABELS,
+  TYP_BESCHREIBUNG,
   type HierarchieKnoten,
   type StrukturKnoten,
 } from "../lib/graphHierarchy";
@@ -670,7 +670,7 @@ export function istHell(farbe: string): boolean {
  * ist schlimmer als keiner. Eine Art ohne Label bekommt keinen.
  */
 export const GLYPH_FUER_ART: Record<string, string> = Object.fromEntries(
-  Object.entries(TYP_LABELS).map(([t, label]) => [t, label.replace(/[^A-Za-z]/g, "").slice(0, 1).toUpperCase()])
+  Object.entries(TYP_BESCHREIBUNG).map(([t, label]) => [t, label.replace(/[^A-Za-z]/g, "").slice(0, 1).toUpperCase()])
 );
 /** Tinte nach der Helligkeit der Fuelle, nie nach dem Theme: der Glyph sitzt IN der Scheibe. */
 const GLYPH_TINTE_HELL = "#f2f2ef";
@@ -2658,13 +2658,25 @@ export function KnowledgeGraph({ memories, onSelectMemory, onSelectConcept, sich
     const stufe = NAMEN_STUFE[modus];
     // Der Baum traegt mehr Namen als das Feld, weil seine Zeilen schon ein
     // Raster sind: dieselbe Stufe, dreimal so viel Platz (A7-02).
+    // Der Gang beschriftet sich erst, wenn seine Reihen Platz fuer eine Titelzeile
+    // lassen. Die Reihen stehen in WELTeinheiten (GANG_ABSTAND) und schrumpfen mit
+    // dem Zoom: bei 46 % ware eine Reihe 12 Bildpunkte hoch, ein Titel ist 14 hoch
+    // und darunter steht noch die Tags-Zeile — die Titel einer Reihe lagen in den
+    // Punkten der naechsten und ueber der Zahl am Band (gemessen 15.10. im
+    // 820-er Fenster, leitung-bilder/ausschnitt-legende-820.png). Was an Namen
+    // fehlt, sagt die Zahl am Band selbst, und beim Hereinzoomen kommen die Titel.
+    const gangZuEng = GANG_ABSTAND * t.k < ETIKETT_PX * 2.2;
+    const kandidaten =
+      gangZuEng && (sim.gangIds?.size ?? 0) > 0
+        ? beschriftbar.filter(({ n }) => !sim.gangIds?.has(n.id) || n.id === gehaltenId)
+        : beschriftbar;
     const budget = stufe.budget * (baumAnsicht ? 3 : 1);
     const etiketten =
       modus === "keine"
-        ? beschriftbar.filter(({ n }) => n.id === gehaltenId)
+        ? kandidaten.filter(({ n }) => n.id === gehaltenId)
         : modus === "alle"
-          ? beschriftbar
-          : beschriftbar
+          ? kandidaten
+          : kandidaten
               // Die engere Pforte als die breitere Stufe: was im Feld als
               // Kandidat durchfaellt, kann kein Raster und kein Budget der Welt
               // benennen. Bei 400 Notizen auf 27 % Zoom standen dort 0 von 400 —
@@ -2910,18 +2922,32 @@ export function KnowledgeGraph({ memories, onSelectMemory, onSelectConcept, sich
         ctx.font = `400 ${fs}px ui-sans-serif, system-ui, -apple-system, sans-serif`;
         ctx.textAlign = "left";
         ctx.textBaseline = "top";
-        // Die Zeile steht UNTER dem Band, nicht darüber.
+        // Die Zeile steht UNTER dem Band, nicht darüber — und sie darf kein
+        // Etikett treffen.
         //
-        // Darüber braucht sie Abstand zum tiefsten Kernknoten — und der ist in
-        // WELTeinheiten nicht zu haben: bei 42 % Zoom waren 140 Einheiten genug
-        // Luft, bei 28 % (das schmale Fenster) lag der Satz quer über
-        // „Werkstatt Werkzeug 0015". Ein Band, das seinen Titel selbst trägt,
-        // kann ihn nicht über etwas legen, das schon dort stand.
-        ctx.lineWidth = 3;
-        ctx.strokeStyle = grundFarbe;
-        ctx.strokeText(text, x0, letzteZeile + GANG_ABSTAND * t.k * 0.5 + 6);
-        ctx.fillStyle = geruestFarbe;
-        ctx.fillText(text, x0, letzteZeile + GANG_ABSTAND * t.k * 0.5 + 6);
+        // Der Abstand zum tiefsten Kernknoten ist in WELTeinheiten nicht zu haben:
+        // bei 42 % Zoom waren 140 Einheiten genug Luft, bei 28 % (das schmale
+        // Fenster) lag der Satz quer über „Werkstatt Werkzeug 0015". Ein Band, das
+        // seinen Titel selbst trägt, kann ihn nicht über etwas legen, das schon
+        // dort stand. Darum: dasselbe Belegungsraster wie die Etiketten, und wenn
+        // die Zeile nicht passt, rueckt sie eine Zeile tiefer — höchstens viermal,
+        // sonst faellt sie weg. Gemessen 15.10. 04:5x im schmalen Fenster: der Satz
+        // lag ueber drei Bandtiteln und der Trennlinie (leitung-bilder/
+        // ausschnitt-legende-820.png).
+        const capBreite = ctx.measureText(text).width;
+        const capY0 = letzteZeile + GANG_ABSTAND * t.k * 0.5 + 6;
+        let capGefunden = false;
+        for (let versuch = 0; versuch < 4 && !capGefunden; versuch++) {
+          const y = capY0 + versuch * zellHoehe;
+          if (y + zellHoehe > dimensions.h - 4) break;
+          if (!ohneRaster && !freiUndBelegen(x0 + capBreite / 2, y, capBreite)) continue;
+          ctx.lineWidth = 3;
+          ctx.strokeStyle = grundFarbe;
+          ctx.strokeText(text, x0, y);
+          ctx.fillStyle = geruestFarbe;
+          ctx.fillText(text, x0, y);
+          capGefunden = true;
+        }
       }
     }
 
@@ -3860,7 +3886,7 @@ export function KnowledgeGraph({ memories, onSelectMemory, onSelectConcept, sich
   );
   const schieneKanal = (
     <div className="apple-seg shrink-0" role="group" aria-label="Node colour channel" data-testid="graph-schiene-kanal">
-      {segment(aktiverKanal === "typ", "Colour by kind of knowledge — facts, events, how-tos, documents. What the graph starts with.", () => wechsleKanal("typ"), "Type")}
+      {segment(aktiverKanal === "typ", `Colour by what each note is made of — ${Object.values(TYP_BESCHREIBUNG).join(", ")}. What the graph starts with.`, () => wechsleKanal("typ"), "Type")}
       {segment(
         aktiverKanal === "herkunft",
         herkunft.verfügbar
@@ -3880,7 +3906,7 @@ export function KnowledgeGraph({ memories, onSelectMemory, onSelectConcept, sich
           type="color"
           value={TYPE_COLORS[t] ?? ""}
           onChange={(e) => setTypeColor(t, e.target.value)}
-          title={`Colour: ${TYP_LABELS[t]} — tints the nodes, their card ridge and the index numbers`}
+          title={`Colour: ${TYP_BESCHREIBUNG[t]} — tints the nodes, their card ridge and the index numbers`}
           className="graph-swatch"
           style={{ color: `var(${TYP_TOKEN[t]})` }}
         />
@@ -4311,7 +4337,7 @@ export function KnowledgeGraph({ memories, onSelectMemory, onSelectConcept, sich
                 ))
               : TYP_FOLGE.map((t) => (
                   <span key={t} className="flex items-center gap-1.5">
-                    <span className="w-2 h-2 rounded-full" style={{ background: `var(${TYP_TOKEN[t]})` }} /> {TYP_LABELS[t]}
+                    <span className="w-2 h-2 rounded-full" style={{ background: `var(${TYP_TOKEN[t]})` }} /> {TYP_BESCHREIBUNG[t]}
                   </span>
                 ))}
           </div>

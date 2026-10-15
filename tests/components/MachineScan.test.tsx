@@ -3,6 +3,7 @@ import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { MachineScan, formatBytes } from "../../src/components/MachineScan";
+import { TRAEGER_LABELS } from "../../src/lib/graphHierarchy";
 
 // Der Rechner-Scan ist die eingriffsstaerkste Funktion der Anwendung. Diese
 // Tests halten fest, dass die Zustimmung nicht umgangen werden kann: ohne
@@ -124,7 +125,10 @@ describe("MachineScan: Vorschau und Abschluss", () => {
     await user.click(screen.getByRole("button", { name: /Show me what would be imported/i }));
     // "12" steht zweimal da: als Zahl der Dokumente und am Ordner-Chip.
     await waitFor(() => expect(screen.getAllByText("12").length).toBeGreaterThanOrEqual(2));
-    expect(screen.getByText("documents")).toBeTruthy();
+    // Das Wort hinter der Zahl ist kein festes Wort mehr: WA zieht die
+    // Träger-Etiketten auf seine zwei Zeilen (22:59:43, MachineScan.tsx:402).
+    // Abgeschrieben hätte meine Prüfung das bei jedem Etikettenzug gebrochen.
+    expect(screen.getByText(TRAEGER_LABELS.files)).toBeTruthy();
     expect(screen.getByText("41 kB")).toBeTruthy();
     expect(screen.getAllByText(/Dokumente/).length).toBeGreaterThan(0);
     expect(screen.getByText(/Keys, passwords and credentials/)).toBeTruthy();

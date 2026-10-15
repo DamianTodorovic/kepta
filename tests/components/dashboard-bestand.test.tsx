@@ -189,7 +189,7 @@ describe("Bestand statt Seitenlänge: die Fläche nennt, was die Tür sagt", () 
     // also müssen sie ihre eigene Ladung nennen, sonst liest der Mensch 100 als
     // Zusammensetzung von 14.702.
     expect(text).toMatch(/in the 100 loaded/);
-    expect(text, "die Kategorien-Zelle zählt über die Ladung und nennt nur „categories'").toMatch(/categories in the 100 loaded/);
+    expect(text, "die Kategorien-Zelle zählt über die Ladung und nennt nur „tags'").toMatch(/tags in the 100 loaded/);
     expect(text).toMatch(/of \d+ on this page/);
     expect(text, "das Verhältnis klingt nach Bestand, meint die Seite").not.toMatch(/100 of 100 entries/);
   });
@@ -227,7 +227,7 @@ describe("Bestand statt Seitenlänge: die Fläche nennt, was die Tür sagt", () 
     await act(async () => { await refreshMemories(); });
     await waitFor(() => expect(container.textContent).toMatch(/100 of 100 entries/), { timeout: 6000 });
     expect(container.textContent).not.toMatch(/in the [\d,]+ loaded/);
-    expect(container.textContent).toMatch(/categories/);
+    expect(container.textContent).toMatch(/tags/);
     expect(container.textContent, "die Leiste erklärt eine Ladung, die sie nicht als solche nennt").not.toMatch(/counts cover the/);
   });
 });
