@@ -337,7 +337,7 @@ describe("Storage, Import/Export, Convenience-Routen", () => {
 
   it("POST /api/memories/bulk-delete raeumt viele auf EINMAL in den Papierkorb", async () => {
     // Der Grund fuer diese Route: einzeln geloescht lief das Aufraeumen von
-    // Duplikaten in die Schreibdrossel (60/min). Die ersten sechzig
+    // Duplikaten in die Schreibdrossel. Die ersten sechzig
     // verschwanden, alles Weitere bekam 429 — und weil der Aufrufer den Fehler
     // verwarf, meldete die Oberflaeche trotzdem Erfolg. Von aussen sah das aus,
     // als loesche K3PTA wahllos die halbe Wissensbasis.

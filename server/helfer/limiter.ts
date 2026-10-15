@@ -20,6 +20,17 @@ export interface Limiter {
  */
 export const DATEN_KANTE = 600;
 
+/**
+ * Die Schreibkante je Minute. 60 war zu klein: gemessen 15.10. 05:56 fiel der
+ * zweite Abnahme-Lauf genau hier — ein POST bekam keinen Leib, und ein Helfer las
+ `.id` von undefined ab (tests/server-permanent.test.ts:41). Ein Import, ein
+ * Aufräumen oder eine Reparatur mit mehr als sechzig Schreibungen in einer Minute
+ * war bisher schlicht abgewiesen. 600 ist dieselbe Groessenordnung wie die Lese-
+ * kante: ein Vielfaches dessen, was die Oberflaeche bei Arbeit braucht, und immer
+ * noch ein Ende fuer eine Schleife.
+ */
+export const SCHREIB_KANTE = 600;
+
 export function erstelleLimiter(): Limiter {
   return {
     // Der Begrenzer gilt der Tuer, nicht dem Fenster. Gemessen 15.10. 04:2x: die
@@ -42,6 +53,6 @@ export function erstelleLimiter(): Limiter {
     clip: rateLimit({ windowMs: 60_000, max: 12, standardHeaders: true, legacyHeaders: false, message: { error: "Clip Rate-Limit: max 12/min" } }),
     // Schreibdrossel: groß genug für jede Aufraeumaktion, klein genug, dass ein
     // verirrter Aufruf nicht die ganze Wissensbasis in einem Rutsch bewegt.
-    write: rateLimit({ windowMs: 60_000, max: 60, standardHeaders: true, legacyHeaders: false, message: { error: "Schreib-Limit: max 60/min" } }),
+    write: rateLimit({ windowMs: 60_000, max: SCHREIB_KANTE, standardHeaders: true, legacyHeaders: false, message: { error: `Schreib-Limit: max ${SCHREIB_KANTE}/min` } }),
   };
 }

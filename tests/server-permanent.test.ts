@@ -38,6 +38,14 @@ afterEach(() => {
 
 async function knoten(titel = "Loeschkandidat") {
   const res = await request(app).post("/api/memories").send({ title: titel, content: "Inhalt mit Substanz." });
+  // Erst der Status, dann der Leib: ohne diese Zeile las der Helfer `.id` von
+  // undefined und meldete einen TypeError, wenn die Schreibdrossel geiffen hatte —
+  // genau so fiel der zweite Abnahme-Lauf am 15.10. 05:56. Der Fall war rot, die
+  // Ursache stand nicht drin.
+  if (res.status !== 200 && res.status !== 201)
+    throw new Error(`Anlage fehlgeschlagen: HTTP ${res.status} — ${JSON.stringify(res.body)}`);
+  if (!res.body?.memory?.id)
+    throw new Error(`Anlage ohne Leib: HTTP ${res.status} — ${JSON.stringify(res.body)}`);
   return String(res.body.memory.id);
 }
 

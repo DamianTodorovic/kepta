@@ -122,7 +122,7 @@ export function mountMemories(app: express.Express, ctx: AppKontext): void {
    *
    * Vorher schickte das Duplikate-Fenster eine eigene Anfrage je Notiz. Bei 155
    * Duplikaten waren das 155 Anfragen, 155 Meldungen und 155-mal Neuladen der
-   * Liste — und ab der einundsechzigsten griff die Schreibdrossel (60/min) und
+   * Liste — und ab der einundsechzigsten griff die Schreibdrossel (damals 60/min, heute SCHREIB_KANTE) und
    * beantwortete alles Weitere mit 429. Weil der Aufrufer den Fehler verwarf,
    * meldete die Oberflaeche trotzdem Erfolg. Von aussen sah das aus, als
    * loesche K3PTA wahllos die halbe Wissensbasis.
