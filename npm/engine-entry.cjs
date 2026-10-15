@@ -176,6 +176,83 @@ function klassifiziere(eingabe) {
   return { typ: "semantic", grund: "formulierter Text ohne Ablauf oder Datum" };
 }
 
+// src/core/begiffe.ts
+var WIKI_LINK = /\[\[([^[\]]{2,80})\]\]/g;
+var UEBERSCHRIFT = /^#{1,6}[ \t]+(.+?)[ \t]*#*[ \t]*$/;
+var ZAUN = /^\s*(```|~~~)/;
+var NAME = /^[\p{L}\p{N}][\p{L}\p{N} .'&-]*$/u;
+var MAX_LAENGE = 40;
+var MAX_WOERTER = 4;
+var endetAufSatzpunkt = (n) => n.endsWith(".") && (n.split(" ").pop() ?? "").replace(/\.$/, "").length > 3;
+var RAHMENWORT = /* @__PURE__ */ new Set([
+  "fixed",
+  "added",
+  "changed",
+  "removed",
+  "deprecated",
+  "tests",
+  "links",
+  "wiki links",
+  "wiki-links",
+  "usage",
+  "overview",
+  "notes",
+  "todo",
+  "faq",
+  "install",
+  "installation",
+  "setup",
+  "config",
+  "configuration",
+  "examples",
+  "example",
+  "roadmap",
+  "changelog",
+  "benchmarks",
+  "deployment",
+  "dependencies",
+  "troubleshooting",
+  "license",
+  "contributing",
+  "security",
+  "api",
+  "references",
+  "inhalt",
+  "anhang",
+  "quellen"
+]);
+var BUCHSTABE = new RegExp("\\p{L}", "u");
+var normalisiere = (roh) => roh.replace(/\s+/g, " ").trim().toLowerCase();
+function begriffeAusText(text, maksimum = 40) {
+  if (!text) return [];
+  const out = [];
+  const gesehen = /* @__PURE__ */ new Set();
+  let imZaun = false;
+  const lege = (kandidat) => {
+    if (out.length >= maksimum) return;
+    const n = normalisiere(kandidat.split("|")[0] ?? "");
+    if (n.length < 4 || n.length > MAX_LAENGE) return;
+    if (!NAME.test(n) || !BUCHSTABE.test(n)) return;
+    if (n.split(" ").length > MAX_WOERTER) return;
+    if (endetAufSatzpunkt(n)) return;
+    if (RAHMENWORT.has(n)) return;
+    if (gesehen.has(n)) return;
+    gesehen.add(n);
+    out.push(n);
+  };
+  for (const zeile of text.split("\n")) {
+    if (ZAUN.test(zeile)) {
+      imZaun = !imZaun;
+      continue;
+    }
+    if (imZaun) continue;
+    const kopf = zeile.match(UEBERSCHRIFT);
+    if (kopf) lege(kopf[1] ?? "");
+    for (const m of zeile.matchAll(WIKI_LINK)) if (m[1]) lege(m[1]);
+  }
+  return out;
+}
+
 // src/core/umwelt.ts
 var UMWELT_NAMEN = {
   schluessel: ["K3PTA_DB_KEY", "KEPTA_DB_KEY"],
@@ -1314,11 +1391,14 @@ var KeptaStore = class _KeptaStore {
    */
   verknuepfeNotiz(memoryId, titel, namen) {
     const t = String(titel ?? "").trim().toLowerCase();
+    const notiz = this.getMemory(memoryId);
+    const eigenen = notiz ? begriffeAusText(`${notiz.title}
+${notiz.content}`) : [];
     const knoten = /* @__PURE__ */ new Set();
     if (t.length >= 2) knoten.add(t);
     const paare = /* @__PURE__ */ new Map();
     const schluessel = (a, b, wort) => a + "|" + b + "|" + wort;
-    for (const roh of namen ?? []) {
+    for (const roh of [...eigenen, ...namen ?? []]) {
       const n = String(roh ?? "").trim().toLowerCase();
       if (n.length < 2 || n === t) continue;
       knoten.add(n);
@@ -2299,6 +2379,7 @@ function indexMemory(store, memoryId) {
   const texts = [`${record.title}
 ${record.tags.join(", ")}`, ...chunkText(record.content)];
   store.replaceChunks(memoryId, texts);
+  store.verknuepfeNotiz(memoryId, record.title, []);
 }
 function jaccard(a, b) {
   const sa = new Set(a);
