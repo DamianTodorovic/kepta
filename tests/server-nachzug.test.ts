@@ -217,17 +217,27 @@ describe("N-3 — idempotent, nicht anhaeufend", () => {
 
 describe("N-4 — zwei Rufe, ein Lauf", () => {
   it("weist den zweiten Ruf ab, waehrend der erste laeuft", async () => {
-    // 1.500 Notizen sind drei Stapel: der Lauf gibt die Schleife zweimal ab,
-    // bevor er endet, und der zweite Ruf landet garantiert zwischen zwei Stapeln.
-    // Mit einem einzigen Stapel ware der Ausgang eine Frage der Millisekunden —
-    // ein grüner Fall, der nur glückt, ist kein Fall.
-    for (let i = 0; i < 1500; i++) {
+    // Zwei Dinge machen diesen Fall zu einer Pruefung und nicht zu einem Wurf:
+    //
+    // 1) Beide Rufe gehen gleichzeitig weg. Nacheinander (der zweite erst nach
+    //    der Antwort des ersten) haengt sein Ergebnis an einem Hin-und-Zuruf —
+    //    gemessen am 15.10. in einem vollen Suite-Lauf: der erste war mit seinen
+    //    drei Stapeln fertig, bevor der zweite ankam, und die Tuer antwortete
+    //    202 statt 409. Ein grüner Fall, der auf den Abstand zwischen zwei
+    //    Anfragen wartet, ist keine Latte.
+    // 2) Der Grund ist die Gleichzeitigkeit, nicht die Masse: die Tuer setzt
+    //    ihr Merk vor der ersten Antwort (router/nachzug.ts:110, kein await
+    //    davor), also trifft der zweite Ruf sicher auf einen laufenden Lauf.
+    //    2 000 Notizen sind vier Stapel — genug Luft, ohne den naechsten Fall
+    //    in diesem File auf einem vollen Rechner an den Rand zu druecken.
+    for (let i = 0; i < 2000; i++) {
       alteScanNotiz(`Stapel ${i}`, "## Wartung\n\n## Termine\n\nEin Blatt unter vielen.");
     }
-    const { res } = await starte();
-    expect(res.status).toBe(202);
-    const zweiter = await starte();
-    expect(zweiter.res.status, "ein zweiter Nachzug auf derselben Datei ist ein Konflikt").toBe(409);
+    const [erster, zweiter] = await Promise.all([starte(), starte()]);
+    const zahlen = [erster.res.status, zweiter.res.status].sort();
+    expect(zahlen, `ein Anlauf und eine Absage, nicht: ${zahlen.join(" und ")}`).toEqual([202, 409]);
+    const abgelehnt = erster.res.status === 409 ? erster : zweiter;
+    expect(String(abgelehnt.body.error), "die Absage nennt ihren Grund").toMatch(/already running/i);
     const stand = await warteBisFertig();
     expect(stand.running).toBe(false);
   });

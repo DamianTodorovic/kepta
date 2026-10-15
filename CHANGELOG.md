@@ -1,3 +1,44 @@
+## [3.2.12]
+
+### Fixed
+
+- **The title budget counts the picture, not the store.** 3.2.11 put the base
+  behind the number, and his own window showed what that is worth: „2 of 21,066
+  notes carry a title · 21,064 stayed nameless: **20,337 not on this screen**,
+  384 in rows too tight for a title, 205 over the 140 names this picture allows,
+  138 crowded out by a name already there". The arithmetic closed; 96 % of the
+  sentence was a statement about the viewport, which the frame line above already
+  makes („729 of 21,066 unfolded notes are in this picture"). The etat now pools
+  on what the picture holds and says so — „2 of 729 notes in this picture carry a
+  title · 727 stayed nameless: …" — and the off-screen class is gone: a node that
+  is not in the picture is not a name the picture refused. Guards: reworded cases
+  in `tests/components/KnowledgeGraph.etat.test.ts` (7 cases; 5 red before the
+  reword) and the three closure cases in `KnowledgeGraph.f8.test.tsx`.
+- **A stage promise is now measured where the stage has a lever.** After the
+  square-root law, two long-standing cases flipped between runs on identical
+  bytes (once 2 red, once 1 red, once none): they counted the titles of the last
+  recorded frame while the field was still moving, and a painted title lands or
+  misses on a one-pixel shift. Measured the same base through the surface's own
+  line, per density — 60 notes: Few 30 against Many 29; 200: Few 27 against Many
+  48; 400: Few 12 against Many 38; 200 notes in a 620 × 420 picture: 7 against 7.
+  In a thin field both stages are raster-bound and the difference between them is
+  noise; the lever of the stage is its budget, and that binds from ~140 candidates
+  up. The case now counts the 200-note field, reads the number the surface writes
+  instead of recounting frames, and demands more than ten names of margin. A
+  `stabil()` wait (same value three times) guards the three cases that compare
+  counts across a stage switch. Beleg: `audit-2026-10-09/belege-15-10/leitung/sonde-few-gegen-many.log.txt`.
+- **Counting from the last frame was its own error.** The same probe first
+  reported 0 titles at 200 notes where the surface's own line said 63 — the
+  recorder had caught a half-painted frame. The line the picture writes is now the
+  instrument for these cases.
+
+**Offen und nicht versteckt:** in a *thin* field (60 notes in 1 000 × 700, or 200
+notes in a 620 × 420 window) „Many" names no more than „Few" — 30 against 29 and
+7 against 7. Both stages are limited by the occupancy grid there, not by their
+budget, so the density control is a word without a number at that size. Whether
+the grid should give way earlier when the user asks for more names is a shape
+decision for GF's market bar, booked as open, not answered here.
+
 ## [3.2.11]
 
 ### Added

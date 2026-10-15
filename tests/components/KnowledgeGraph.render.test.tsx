@@ -78,6 +78,53 @@ async function bilder(n = 8) {
 }
 
 /**
+ * Eine gemalte Zahl erst dann ablesen, wenn sie stillsteht.
+ *
+ * Ein Kraftfeld bewegt sich, bis es ruht, und ein Etikettenraster entscheidet in
+ * BILDPIXELn: solange die Knoten wandern, kann derselbe Bestand im einen Bild
+ * 30 Titel malen und im naechsten 29. Gemessen am 15.10. nach dem neuen
+ * Größengesetz — zwei Faelle derselben Datei kippten zwischen Laeuufen auf
+ * identischen Bytes (einmal 2 rot, einmal 1 rot, einmal gruun). Ein Zahltest,
+ * der den Moment waehlt, statt ihn zu benennen, ist keine Latte. Also: zaehlen,
+ * bis die Zahl dreimal dieselbe ist — und nach der Grenze die letzte Zahl
+ *zurueckgeben, damit die Assertion selbst richtet.
+ */
+async function stabil(
+  zaehle: () => number,
+  { wiederholungen = 3, hoechstms = 6000 } = {}
+): Promise<number> {
+  const start = Date.now();
+  let letzter = Number.NaN;
+  let gleiche = 0;
+  let letzte = zaehle();
+  for (;;) {
+    await bilder(2);
+    const n = zaehle();
+    if (n === letzter) gleiche++;
+    else {
+      letzter = n;
+      gleiche = 0;
+    }
+    letzte = n;
+    if (gleiche >= wiederholungen - 1) return n;
+    if (Date.now() - start > hoechstms) return letzte;
+  }
+}
+
+/**
+ * Der Titel-Etat, von der Flaeche selbst geschrieben. Die Zahl aus diesem Satz
+ * ist die Zaehlung des Mal-Passes; eine eigene Zaehlung ueber die letzten
+ * fillText-Aufrufe erwischte bei 200 Notizen einen halben Rahmen und meldete 0,
+ * wo die Zeile 48 sagte.
+ */
+function etatText(container: HTMLElement): string {
+  return (container.querySelector('[data-testid="graph-benannt"]')?.textContent ?? "").trim();
+}
+function etatBenannt(container: HTMLElement): number {
+  return Number((etatText(container).match(/^([\d,]+) of /)?.[1] ?? "0").replace(/,/g, ""));
+}
+
+/**
  * Der Knoten, dessen Gerüst-Etikett an dieser Bildschirmstelle steht.
  *
  * Seit F8/A7-02 werden Etiketten in BILDPIXELn gemalt, nicht mehr in der
@@ -1754,9 +1801,11 @@ describe("Kanten-Etikett: der Typ steht an der Linie", () => {
     const view = await zeichne([a, b]);
     await richteRichtung(view, false);
     await bilder(12);
-    const info = rahmen();
-    expect(info.texte.filter((t) => t === "betreut").length, `Gemalt: ${JSON.stringify(info.texte)}`)
-      .toBeGreaterThan(0);
+    const ruhig = await stabil(() => rahmen().texte.filter((t) => t === "betreut").length);
+    expect(
+      ruhig,
+      `Das Typ-Etikett steht in keinem ruhigen Bild — letzte Aufnahme: ${JSON.stringify(rahmen().texte)}`
+    ).toBeGreaterThan(0);
   });
 
   it("lässt das Etikett weit draussen weg — und die Knotentitel bleiben", async () => {
@@ -1772,7 +1821,11 @@ describe("Kanten-Etikett: der Typ steht an der Linie", () => {
     const { container } = view;
     await richteRichtung(view, false);
     await bilder(8);
-    expect(rahmen().texte).toContain("betreut");
+    const gemalt = await stabil(() => (rahmen().texte.includes("betreut") ? 1 : 0));
+    expect(
+      gemalt,
+      `Kein ruhiges Bild malt das Typ-Etikett — letzte Aufnahme: ${JSON.stringify(rahmen().texte)}`
+    ).toBe(1);
 
     // Erst wenn die Schwelle unterschritten ist, hoert das Etikett auf — nicht
     // vorher, weil die Titel langsamer werden.
@@ -1787,9 +1840,14 @@ describe("Kanten-Etikett: der Typ steht an der Linie", () => {
     });
     expect(zoomProzent(), "der Regler ist nicht unter die Etikettschwelle gekommen").toBeLessThan(90);
     await bilder(6);
-    const weit = rahmen();
-    expect(weit.texte, "Etikettenteppich beim Herauszoomen").not.toContain("betreut");
-    expect(weit.texte).toContain("Mandatsuebergabe");
+    // Beide Zahlen frisch ablesen, und zwar im ruhigen Bild: ein einzelner
+    // Rahmen kann ein Etikett verfehlen, das im naechsten wieder steht — und
+    // eine Fehlende-Zahl, die nur einem halben Bild folgt, waere ein gruener
+    // Scheinbeweis dafuer, dass weit draussen nichts mehr an der Linie steht.
+    const weit = await stabil(() => (rahmen().texte.includes("betreut") ? 1 : 0));
+    expect(weit, "Etikettenteppich beim Herauszoomen").toBe(0);
+    const titel = await stabil(() => (rahmen().texte.includes("Mandatsuebergabe") ? 1 : 0));
+    expect(titel, "Die Knotentitel durften unter der Schwelle nicht leiden").toBe(1);
   });
 
   it("schreibt nichts an eine Linie, die keinen Typ nennt", async () => {
@@ -1856,7 +1914,8 @@ describe("Kanten-Etikett: der Typ steht an der Linie", () => {
     const view = await zeichne([a, b]);
     await richteRichtung(view, false);
     await bilder(12);
-    expect(rahmen().texte).toContain("betreut +1");
+    const band = await stabil(() => (rahmen().texte.includes("betreut +1") ? 1 : 0));
+    expect(band, `Kein ruhiges Bild malt „betreut +1" — letzte Aufnahme: ${JSON.stringify(rahmen().texte)}`).toBe(1);
   });
 });
 
@@ -2278,18 +2337,20 @@ describe("Etikett-Budget: Key, All, Off und der Peek darunter", () => {
     expect(gemalt, "Key malt so viel wie möglich — das ist der Rückbau").toBeLessThan(ms.length);
   });
 
-  it("nennt unter Mehr mehr Notizen als unter Key", async () => {
-    const ms = Array.from({ length: 60 }, (_, i) => note({ id: `m${i}`, title: `Ein sehr langer Titel eines andern ${i}` }));
+  it("nennt unter Mehr mehr Notizen als unter Key — in einem Feld von 200 Notizen", async () => {
+    const ms = Array.from({ length: 200 }, (_, i) => note({ id: `m${i}`, title: `Ein sehr langer Titel eines andern ${i}` }));
     const view = await zeichne(ms);
     await stelle(view, "Key");
-    leinwand.leeren();
     await bilder();
-    const ruhige = aufnahme().texte.filter((t) => t.startsWith("Ein sehr")).length;
+    const ruhige = await stabil(() => etatBenannt(view.container));
     await stelle(view, "Mehr");
-    leinwand.leeren();
     await bilder();
-    const dichte = aufnahme().texte.filter((t) => t.startsWith("Ein sehr")).length;
-    expect(dichte, 'Mehr nennt nicht mehr Notizen als Key — die Dichtestufe ist ein Wort ohne Zahl').toBeGreaterThan(ruhige);
+    const dichte = await stabil(() => etatBenannt(view.container));
+    expect(etatText(view.container), "Im dichten Feld nennt der Etat keinen Grund").toMatch(/stayed nameless/);
+    expect(
+      dichte,
+      `Mehr nennt nicht mehr Notizen als Key — die Dichtestufe ist ein Wort ohne Zahl: Key ${ruhige}, Mehr ${dichte}`
+    ).toBeGreaterThan(ruhige + 10);
   });
 
   it("gibt unter All jedes Etikett frei, das Key zurückhielt", async () => {
@@ -2298,12 +2359,12 @@ describe("Etikett-Budget: Key, All, Off und der Peek darunter", () => {
     await stelle(view, "Key");
     leinwand.leeren();
     await bilder();
-    const key = aufnahme().texte.filter((t) => t.startsWith("Noch ein")).length;
+    const key = await stabil(() => aufnahme().texte.filter((t) => t.startsWith("Noch ein")).length);
 
     await stelle(view, "All");
     leinwand.leeren();
     await bilder();
-    const alles = aufnahme().texte.filter((t) => t.startsWith("Noch ein")).length;
+    const alles = await stabil(() => aufnahme().texte.filter((t) => t.startsWith("Noch ein")).length);
     expect(alles, `Key ${key}, All ${alles}`).toBeGreaterThan(key);
     expect(alles).toBe(ms.length);
     expect(localStorage.getItem("kepta_graph_labels")).toBe("alle");
@@ -2646,7 +2707,7 @@ describe("Faltung: ein Doppelklick faltet eine Gruppe und sagt es", () => {
 
   it("startet entfaltet: jedes Kind steht, keine Malzahl im Bild", async () => {
     await inDenBaum(notizen());
-    expect(sichtbar()).toBe(3);
+    expect(await stabil(sichtbar), "drei Kinder im Baum, drei Titel — nach der Ruhe gezaehlt").toBe(3);
     expect(rahmen().texte.some((t) => t.startsWith("×"))).toBe(false);
   });
 

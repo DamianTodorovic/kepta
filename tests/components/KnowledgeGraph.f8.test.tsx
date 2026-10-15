@@ -239,7 +239,9 @@ describe("Titel-Etat: die Bilanz nennt, wie viele ohne Namen blieben — und war
     const zeile = container.querySelector('[data-testid="graph-benannt"]');
     expect(zeile, "Die Bilanz sagt nichts ueber Titel").toBeTruthy();
     const text = zeile!.textContent ?? "";
-    const m = /^([\d,]+) of ([\d,]+) notes carry a title(?: · ([\d,]+) stayed nameless: (.+))?$/.exec(text);
+    const m = /^([\d,]+) of ([\d,]+) notes in this picture carry a title(?: · ([\d,]+) stayed nameless: (.+))?$/.exec(
+      text
+    );
     expect(m, `Unerwarteter Wortlaut: "${text}"`).toBeTruthy();
     const gruende = (m![4] ?? "").split(", ").filter(Boolean).map((t) => ({
       n: zahl(t.split(" ")[0]),

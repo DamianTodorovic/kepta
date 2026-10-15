@@ -317,13 +317,19 @@ function mengenzahl(n: number): string {
 /**
  * Der Titel-Etat als ein Satz (#5, offene Liste 15.10.).
  *
- * Auf „21 of 400 notes carry a title" folgt die Frage, die jeder Mensch direkt
- * danach stellt: wie viele haben KEINEN Namen, und warum. Die Antwort ist eine
- * Rechnung, die restlos aufgeht — jeder Knoten auf dem Weg von der Menge ins
- * Bild faellt in genau einen Grund. Darum wird hier nichts geschaetzt: die
- * Zahlen bringt der Mal-Pass mit, und wer eine Grundklasse anlegt, muss sie
- * in dieselbe Kette haengen, sonst weist der Satz einen Rest aus, den niemand
+ * Auf „21 of 400 notes in this picture carry a title" folgt die Frage, die jeder
+ * Mensch direkt danach stellt: wie viele haben KEINEN Namen, und warum. Die
+ * Antwort ist eine Rechnung, die restlos aufgeht — jeder Knoten, den das Bild
+ * traegt, faellt in genau einen Grund. Darum wird hier nichts geschaetzt: die
+ * Zahlen bringt der Mal-Pass mit, und wer eine Grundklasse anlegt, muss sie in
+ * dieselbe Kette haengen, sonst weist der Satz einen Rest aus, den niemand
  * gesetzt hat.
+ *
+ * Der Umfang ist das Bild, nicht der Bestand dahinter. Gemessen an seinem echten
+ * Fenster (15.10., 21 066 Notizen): mit dem Bestand als Nenner war der erste
+ * Grund „20 337 not on this screen" — zu 96 % eine Fensteraussage, und die
+ * trifft die Zeile ueber dem Rahmen schon. Was einen Namen im Bild nicht
+ * bekommt, soll keinen Grund ausserhalb des Bildes haben.
  *
  * Schwaigt der Grundsteil, ist das keine Luecke: ein Modus, der keine Namen
  * will, versaeumt nichts, und ein Bild, das alle benennt, hat nichts zu erklaeren.
@@ -339,7 +345,7 @@ export function titelEtat(
   const grund = grundZeilen.length
     ? ` · ${mengenzahl(ohneeNamen)} stayed nameless: ${grundZeilen.join(", ")}`
     : "";
-  return `${mengenzahl(benannt)} of ${mengenzahl(umfang)} notes carry a title${grund}`;
+  return `${mengenzahl(benannt)} of ${mengenzahl(umfang)} notes in this picture carry a title${grund}`;
 }
 
 interface KnowledgeGraphProps {
@@ -3214,14 +3220,16 @@ export function KnowledgeGraph({ memories: memoriesAusFenster, onSelectMemory, o
     {
       const zeile = benanntRef.current;
       if (zeile) {
-        const gesamt = imBildRef.current;
+        // Der Umfang ist, was das Bild traegt — nicht der Bestand dahinter. Was
+        // ausserhalb liegt, sagt die Zeile ueber dem Rahmen; hier geht es um
+        // Namen, und ein Grund ausserhalb des Bildes erklaert keinen.
+        const umfang = imRahmenNoten;
         // Der selbst gewaehlte Modus „None" versaeumt nichts, also bekommt er
         // keine Begruendung — und ein Bild, das alle benennt, schweigt ganz.
         const gruende: [number, string][] =
           modus === "keine"
             ? []
             : [
-                [gesamt - imRahmenNoten, "not on this screen"],
                 [verblasen, "faded by the filter or the pointer"],
                 [reihtenZuEng, "in rows too tight for a title"],
                 [pforteFallaeller, "too small for a name at this zoom"],
@@ -3229,7 +3237,7 @@ export function KnowledgeGraph({ memories: memoriesAusFenster, onSelectMemory, o
                 [zuBreit, "a title wider than its row"],
                 [verdraengt, "crowded out by a name already there"],
               ];
-        const meldung = titelEtat(benannt, gesamt, gruende);
+        const meldung = titelEtat(benannt, umfang, gruende);
         if (zeile.textContent !== meldung) zeile.textContent = meldung;
         const anzeige = meldung === "" ? "none" : "";
         if (zeile.style.display !== anzeige) zeile.style.display = anzeige;
