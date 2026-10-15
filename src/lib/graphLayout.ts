@@ -41,6 +41,14 @@ export interface LayoutNode {
    * der knoten geht nicht an seinen ursprünglichen Punkt zurück".
    */
   ursprung?: { x: number; y: number };
+  /**
+   * Auf dieser Seite des Gangs nicht zu sehen. Versteckt heisst **nicht
+   * vergessen**: der Knoten zaehlt weiter in `sim.allein`, und die Flaeche nennt
+   * ihn in ihrer Zeile. Gemaelt, eingepasst und zusammengetrieben wird er nicht —
+   * 18.500 verborgene Punkte im Einpasskasten waeren ein Bild, das auf Punkte
+   * zoomt, die niemand sieht.
+   */
+  versteckt?: boolean;
 }
 
 export interface LayoutEdge {
@@ -734,6 +742,15 @@ export interface Simulation {
   gangIds?: Set<string>;
   /** Der Anker des Gangs in Weltkoordinaten: oberste Reihe, mittlere Spalte. */
   alleinAnker?: { x: number; y: number } | null;
+  /**
+   * Die aktuelle Seite des Gangs (0 beginnt) und ihre Groesse. `gangSeite` setzt
+   * die Flaeche — ein Blatt, das 145 Seiten hat, braucht einen Blaetterer, den
+   * jemand bedienen kann, und keine 3.712 Einheiten hohe Vorstadt.
+   */
+  gangSeite?: number;
+  gangSeiten?: number;
+  /** Wie viele der Zaehlenden auf keiner Seite stehen — nie eine verlorene Zahl. */
+  gangVersteckt?: number;
   alpha: number;
   alphaTarget: number;
 }
@@ -813,6 +830,35 @@ export function gangZeilen(alleinZahl: number, spalten = GANG_SPALTEN): number {
 }
 
 /**
+ * Reihen je Seite des Gangs.
+ *
+ * 12 Reihen a 32 Spalten = 384 Punkte: so hoch, wie ein Bild bei 26 px Schritt
+ * unter den Kern legen kann, ohne dass der Kern zum Staubkorn wird — 12 Reihen
+ * sind 286 Einheiten, und mit dem Atemzug darueber (GANG_RAND 140) passt die
+ * Seite unter einen Schirm. Mit 4 Reihen wurden aus 2.400 allein stehenden
+ * Notizen 19 Seiten statt einer. Die Masse selbst bleibt ungeaendert zaehlen —
+ * was nicht auf der Seite liegt, ist versteckt, nicht verbunden.
+ */
+export const GANG_REIHEN_PRO_SEITE = 12;
+
+/** Plaetze auf einer Seite — Spalten mal Reihen, nie null. */
+export function gangPlaetzeProSeite(
+  spalten = GANG_SPALTEN,
+  reihen = GANG_REIHEN_PRO_SEITE
+): number {
+  return Math.max(1, spalten) * Math.max(1, reihen);
+}
+
+/**
+ * Wie viele Seiten der Gang hat. Null Notizen ohne Nachbarn sind null Seiten —
+ * eine Seite, die ins Leere blaettert, ist kein Zugang, sondern ein Defekt.
+ */
+export function gangSeiten(alleinZahl: number, plaetze = gangPlaetzeProSeite()): number {
+  if (!(alleinZahl > 0)) return 0;
+  return Math.ceil(alleinZahl / Math.max(1, plaetze));
+}
+
+/**
  * Welche Knoten in diesem Bild keinen einzigen Nachbarn haben.
  *
  * Begriffe (`__ent:`) sind nie allein — sie *sind* die Nachbarschaft. Gezogene
@@ -820,6 +866,24 @@ export function gangZeilen(alleinZahl: number, spalten = GANG_SPALTEN): number {
  * Ordnung der Flaeche.
  */
 /** Wer ohne jeden Nachbarn dasteht — der Gang entscheidet selbst, ob er greift. */
+/**
+ * Greift der Gang, oder bleibt die Basis ein Feld?
+ *
+ * Dieselbe Regel, die der Schritt anwendet, muss die Flaeche lesen koennen, bevor
+ * der erste Schritt gelaufen ist — sonst sagt ihr Blatt etwas zu einer Seite, die
+ * das Bild nie malen wird. Darum steht die Entscheidung hier und nicht zweimal.
+ */
+export function gangGreift(
+  alleinZahl: number,
+  knotenZahl: number,
+  kernDa: boolean,
+  plaetze = gangPlaetzeProSeite()
+): boolean {
+  if (alleinZahl < 8) return false;
+  if (alleinZahl * 2 <= knotenZahl) return true;
+  return alleinZahl >= plaetze && kernDa;
+}
+
 export function alleinKnoten(
   nodes: readonly LayoutNode[],
   edges: readonly LayoutEdge[]
@@ -1022,28 +1086,49 @@ export function stepSimulation(sim: Simulation): void {
   // erstritten. Ohne diese Reihenfolge stoesst die Abstossung sie in den
   // Ring zurueck, den dieser Block abschafft.
   const alleinMoeglich = alleinKnoten(nodes, edges);
-  // Der Gang greift nur, wo er eine Vorstadt ist und nicht die ganze Stadt.
+  // Der Gang greift, wo auch nur eine Vorstadt da ist — und er blaettert, wenn
+  // die Vorstadt groesser ist als ein Bildschirm.
   //
   // Eine Basis, in der noch nichts zusammenhaengt, hat keinen Kern, unter den
   // man umziehen koennte — dort ist die runde Anordnung des Feldes die bessere
   // Antwort, und das zwolf-Notizen-Bild bleibt, was es ist. Untergrenze acht:
   // drei Punkte in einer Reihe mit einem Satz darueber sind mehr Rauschen als
-  // Ordnung. Obergrenze die Haelfte: ab da waere der "Kern" die Ausnahme.
-  const allein =
-    alleinMoeglich.length >= 8 && alleinMoeglich.length * 2 <= nodes.length
-      ? alleinMoeglich
-      : [];
+  // Ordnung.
+  //
+  // Die alte Obergrenze („allein * 2 ≤ Knoten") galt ohne Ausnahme und hat damit
+  // den Gang genau dort abgeschaltet, wo er am meisten zu sagen hat: an Damians
+  // Bestand stehen nach dem Nachzug ~18.500 von 21.066 Notizen ohne Nachbarn
+  // (Tuer 15:00 MESZ: 2.756 Begriffe, 2.726 Kanten; verknuepfbar sind 1.018
+  // Notizen = 4,83 %, die Regel findet in seinem Text keinen zweiten Begriff).
+  // Also die Ausnahme statt der Abschaffung: **ein Kern muss da sein** (wenigstens
+  // etwas, das der Gang unter sich legen koennte) und die Masse muss groesser sein
+  // als eine Seite. Beides nicht erfuellt laesst das Feld, was ein Feld ist —
+  // die zwei Wachen „bleibt ein Feld" und „das Layout darf groesser sein als das
+  // Fenster" halten das, weil sie genau die all-einsame Basis messen.
+  const allein = gangGreift(alleinMoeglich.length, nodes.length, nodes.length - alleinMoeglich.length > 0)
+    ? alleinMoeglich
+    : [];
   sim.allein = allein.length;
-  const imGang = new Set(allein.map((n) => n.id));
+  const plaetze = gangPlaetzeProSeite();
+  const seiten = gangSeiten(allein.length, plaetze);
+  sim.gangSeiten = seiten;
+  const seite = Math.min(Math.max(0, Math.floor(sim.gangSeite ?? 0)), Math.max(0, seiten - 1));
+  sim.gangSeite = seite;
+  const alleinAlle = new Set(allein.map((n) => n.id));
+  const von = seite * plaetze;
+  const dieSeite = allein.slice(von, von + plaetze);
+  const imGang = new Set(dieSeite.map((n) => n.id));
   sim.gangIds = imGang;
+  sim.gangVersteckt = allein.length - imGang.size;
+  for (const n of nodes) n.versteckt = alleinAlle.has(n.id) && !imGang.has(n.id);
 
   // Die Quadtree kennt den Gang nicht: er soll den Kern weder stossen noch
   // ihn beim Einpassen verzerren.
-  const baum = buildQuadtree(imGang.size === 0 ? nodes : nodes.filter((n) => !imGang.has(n.id)));
+  const baum = buildQuadtree(alleinAlle.size === 0 ? nodes : nodes.filter((n) => !alleinAlle.has(n.id)));
   const kraft = { fx: 0, fy: 0 };
 
   for (const n of nodes) {
-    if (imGang.has(n.id)) continue;
+    if (alleinAlle.has(n.id)) continue;
     if (n.pinned) { n.vx = 0; n.vy = 0; continue; }
     kraft.fx = 0;
     kraft.fy = 0;
@@ -1072,7 +1157,7 @@ export function stepSimulation(sim: Simulation): void {
 
   const g = gravityFor(nodes.length) * (sim.krafte.gravitaet ?? 1);
   for (const n of nodes) {
-    if (imGang.has(n.id)) continue;
+    if (alleinAlle.has(n.id)) continue;
     if (n.pinned) { n.vx = 0; n.vy = 0; continue; }
     n.vx -= n.x * g * alpha;
     n.vy -= n.y * g * alpha;
@@ -1095,8 +1180,11 @@ export function stepSimulation(sim: Simulation): void {
     n.y += n.vy;
   }
 
-  // Harte Randbedingung zum Schluss, ohne alpha: Knoten ueberlappen nie.
-  resolveCollisions(nodes);
+  // Harte Randbedingung zum Schluss, ohne alpha: Knoten ueberlappen nie. Was auf
+  // keiner Seite liegt, ist nicht im Bild und braucht keine Scheidung — bei
+  // 18.500 versteckten Punkten waere das ein Nachlauf ueber Punkte, die niemand
+  // sieht, jedes Bild aufs Neue.
+  resolveCollisions(sim.gangVersteckt ? nodes.filter((n) => !n.versteckt) : nodes);
 
   // Der Gang bekommt seinen Platz ZULETZT, nach dem Bild, das die Kraefte
   // gerade gewirkt haben. Vorher gesetzt, haengte sein Rand an der Kernlage des
@@ -1104,8 +1192,8 @@ export function stepSimulation(sim: Simulation): void {
   // eines Bildpunktes gebrochen, kaum dass jemand nachmisst.
   if (allein.length > 0) {
     let randY = 0;
-    for (const n of nodes) if (!imGang.has(n.id) && n.y > randY) randY = n.y;
-    allein.forEach((n, i) => {
+    for (const n of nodes) if (!alleinAlle.has(n.id) && n.y > randY) randY = n.y;
+    dieSeite.forEach((n, i) => {
       const platz = gangPlatz(i);
       n.x = platz.x;
       n.y = randY + GANG_RAND + platz.y;
@@ -1126,8 +1214,13 @@ export function stepSimulation(sim: Simulation): void {
 /** Umschliessendes Rechteck aller Knoten — die tatsaechliche Ausdehnung der Welt. */
 export function layoutBounds(nodes: readonly LayoutNode[], padding = 0): Bounds {
   if (nodes.length === 0) return { minX: -100, minY: -100, maxX: 100, maxY: 100 };
+  // Was auf keiner Seite des Gangs liegt, wird nicht gemalt und darf darum auch
+  // nicht einpassen: ein Bild, das auf verborgene Punkte zoomt, zeigt seinen Kern
+  // klein und leer.
+  const sichtbare = nodes.filter((n) => !n.versteckt);
+  const menge = sichtbare.length > 0 ? sichtbare : nodes;
   let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
-  for (const n of nodes) {
+  for (const n of menge) {
     if (n.x < minX) minX = n.x;
     if (n.y < minY) minY = n.y;
     if (n.x > maxX) maxX = n.x;

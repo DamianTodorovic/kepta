@@ -1,3 +1,31 @@
+## [3.2.6]
+
+### Added
+
+- **The band of unconnected notes became a page with a pager.** Its mass is not a
+  rounding problem: in the test base 800 of 1.001 notes stand without a neighbour,
+  and a real base of 21.066 notes had 1.018 of them reaching a concept (4,83 %,
+  door and probe 15.10. 15:00 MESZ) — so most of it stands without one. As a single
+  grid the band is 384-unit rows at 26 px pitch, thousands of units tall, so the
+  picture either zooms its core into a speck or the sentence lands off-screen.
+  `src/lib/graphLayout.ts` now exports `GANG_REIHEN_PRO_SEITE = 12`
+  (384 places a page), `gangPlaetzeProSeite()` and `gangSeiten()`. The layout places
+  one page, marks the rest `versteckt`, keeps counting every one of them in
+  `sim.allein`, and takes hidden points out of repulsion, collision, painting and
+  fit-to-view. The surface shows a pager (`data-testid="gang-blaetterer"`, prev and
+  next, `1 / 3`) and its screen-reader line names the whole: `N notes connect to
+  nothing in this picture · showing 384 of N · page p of s`.
+- **The band engages where the mass is the story.** The old ceiling
+  (`allein * 2 <= nodes`) switched the band off exactly when most of a base was
+  unlinked — and threw the majority back into the ring around the core. The rule is
+  now `gangGreift(allein, knoten, kernDa)`: a base without a core stays a field (the
+  two guards that say so still pass), but a mass larger than one page next to a real
+  core gets the band.
+- **The graph door states its own coverage.** `GET /api/graph` answers `deckung`
+  (notes, covered, share in percent) from `store.notizenMitBegriff()`. 2.756 concepts
+  and 2.726 edges say nothing about how much of a 21.066-note base actually hangs in
+  the net, and the door was silent about exactly that.
+
 ## [3.2.5]
 
 ### Added

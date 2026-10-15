@@ -34,6 +34,10 @@ import {
   GANG_SPALTEN,
   GANG_ABSTAND,
   gangZeilen,
+  gangSeiten,
+  gangPlaetzeProSeite,
+  gangGreift,
+  GANG_REIHEN_PRO_SEITE,
   alleinKnoten,
   verborgeneNotizen,
   type NotizEtikett,
@@ -846,15 +850,35 @@ export function KnowledgeGraph({ memories, onSelectMemory, onSelectConcept, sich
    * sein Text '' war. An der Handuebergabe liegt dieselbe Menge, die der Schritt gleich
    * zaehlt: `alleinKnoten`.
    */
-  const [gangInfo, setGangInfo] = useState<{ allein: number; zeilen: number } | null>(null);
-  const gangInfoRef = useRef<{ allein: number; zeilen: number } | null>(null);
+  const [gangInfo, setGangInfo] = useState<{ allein: number; zeilen: number; seiten: number; seite: number; gezeigt: number } | null>(null);
+  const gangInfoRef = useRef<{ allein: number; zeilen: number; seiten: number; seite: number; gezeigt: number } | null>(null);
+  /** Welche Seite des Gangs das Bild gerade legt. Ein Ref, kein Staat: die Zahl im Blatt folgt ihr. */
+  const gangSeiteRef = useRef(0);
   const spiegleGang = (sim: Simulation | null) => {
     const alleinZahl = sim ? alleinKnoten(sim.nodes, sim.edges).length : 0;
-    const naechster = alleinZahl > 0 ? { allein: alleinZahl, zeilen: gangZeilen(alleinZahl) } : null;
+    const knoten = sim?.nodes.length ?? 0;
+    const greift = !!sim && alleinZahl > 0 && gangGreift(alleinZahl, knoten, knoten - alleinZahl > 0);
+    const seiten = greift ? gangSeiten(alleinZahl) : 0;
+    const seite = seiten > 0 ? Math.min(Math.max(0, gangSeiteRef.current), seiten - 1) : 0;
+    const gezeigt = greift ? Math.min(alleinZahl, gangPlaetzeProSeite()) : 0;
+    const naechster = alleinZahl > 0 ? { allein: alleinZahl, zeilen: gangZeilen(alleinZahl), seiten, seite, gezeigt } : null;
     const aktuell = gangInfoRef.current;
-    if ((aktuell?.allein ?? 0) === (naechster?.allein ?? 0) && (aktuell?.zeilen ?? 0) === (naechster?.zeilen ?? 0)) return;
+    if (aktuell?.allein === naechster?.allein
+      && aktuell?.zeilen === naechster?.zeilen
+      && aktuell?.seiten === naechster?.seiten
+      && aktuell?.seite === naechster?.seite
+      && aktuell?.gezeigt === naechster?.gezeigt) return;
     gangInfoRef.current = naechster;
     setGangInfo(naechster);
+  };
+  const blaettereGang = (schritt: number) => {
+    const seiten = gangInfoRef.current?.seiten ?? 0;
+    if (seiten <= 1) return;
+    const naechste = Math.min(Math.max(0, gangSeiteRef.current + schritt), seiten - 1);
+    if (naechste === gangSeiteRef.current) return;
+    gangSeiteRef.current = naechste;
+    const sim = simRef.current;
+    if (sim) { sim.gangSeite = naechste; spiegleGang(sim); }
   };
   const legendenRef = useRef<HTMLDivElement>(null);
   /**
@@ -1895,6 +1919,7 @@ export function KnowledgeGraph({ memories, onSelectMemory, onSelectConcept, sich
       }
     }
     simRef.current = sim;
+    sim.gangSeite = gangSeiteRef.current;
     spiegleGang(sim);
     forceHistoryRef.current = sim;
     if (sim.nodes.length > 0) {
@@ -2267,7 +2292,7 @@ export function KnowledgeGraph({ memories, onSelectMemory, onSelectConcept, sich
       x1: (dimensions.w - t.x) / t.k + 80,
       y1: (dimensions.h - t.y) / t.k + 80,
     };
-    const imBild = (n: LayoutNode) => n.x >= sicht.x0 && n.x <= sicht.x1 && n.y >= sicht.y0 && n.y <= sicht.y1;
+    const imBild = (n: LayoutNode) => !n.versteckt && n.x >= sicht.x0 && n.x <= sicht.x1 && n.y >= sicht.y0 && n.y <= sicht.y1;
 
     // Welche Knoten gab es zum gewählten Zeitpunkt? (Regel in lib/graphTime)
     // Der effektive Stand: im Kraftfeld live beim Ziehen, sonst committet.
@@ -3016,9 +3041,15 @@ export function KnowledgeGraph({ memories, onSelectMemory, onSelectConcept, sich
       const ankerY = sim.alleinAnker.y * t.k + t.y;
       const breite = Math.min(dimensions.w - 24, GANG_SPALTEN * GANG_ABSTAND * t.k);
       const x0 = Math.max(12, ankerX - breite / 2);
-      const letzteZeile = ankerY + (gangZeilen(sim.allein) - 1) * GANG_ABSTAND * t.k;
+      // Die letzte Zeile, die das Bild WIRKLICH legt — nicht die, die die Masse
+      // haben wollte. Bei 18.500 allein stehenden Notizen war der Satz sonst
+      // 3.712 Einheiten unter dem Anker angesetzt und damit nie im Bild.
+      const zeileZahl = Math.min(gangZeilen(sim.allein), GANG_REIHEN_PRO_SEITE);
+      const letzteZeile = ankerY + (Math.max(1, zeileZahl) - 1) * GANG_ABSTAND * t.k;
       if (ankerY > -40 && letzteZeile < dimensions.h + 80) {
-        const text = `${sim.allein.toLocaleString("en-US")} notes connect to nothing in this picture`;
+        const seiten = sim.gangSeiten ?? 0;
+        const text = `${sim.allein.toLocaleString("en-US")} notes connect to nothing in this picture`
+          + (seiten > 1 ? ` · page ${(sim.gangSeite ?? 0) + 1} of ${seiten.toLocaleString("en-US")}` : "");
         ctx.globalAlpha = 0.34;
         ctx.strokeStyle = textFarbe;
         ctx.lineWidth = 1;
@@ -4203,8 +4234,43 @@ export function KnowledgeGraph({ memories, onSelectMemory, onSelectConcept, sich
         >
           {gangInfo
             ? `${gangInfo.allein.toLocaleString("en-US")} notes connect to nothing in this picture · ${gangInfo.zeilen} ${gangInfo.zeilen === 1 ? "row" : "rows"} of ${GANG_SPALTEN}`
+              + (gangInfo.seiten > 0
+                ? ` · showing ${gangInfo.gezeigt.toLocaleString("en-US")} of ${gangInfo.allein.toLocaleString("en-US")} · page ${gangInfo.seite + 1} of ${gangInfo.seiten.toLocaleString("en-US")}`
+                : "")
             : ""}
         </p>
+        {gangInfo && gangInfo.seiten > 1 && (
+          <div
+            data-testid="gang-blaetterer"
+            className="absolute right-3 bottom-3 z-10 hud-panel rounded-lg px-1.5 py-1 flex items-center gap-1"
+          >
+            <button
+              type="button"
+              data-testid="gang-zurueck"
+              onClick={() => blaettereGang(-1)}
+              disabled={gangInfo.seite === 0}
+              className="btn-ghost p-1.5 rounded-lg disabled:opacity-40"
+              title="Earlier notes that connect to nothing"
+              aria-label="Previous page of unconnected notes"
+            >
+              <span aria-hidden="true">‹</span>
+            </button>
+            <span className="hud-label tnum" style={{ color: "var(--text-2)" }}>
+              {`${gangInfo.seite + 1} / ${gangInfo.seiten.toLocaleString("en-US")}`}
+            </span>
+            <button
+              type="button"
+              data-testid="gang-weiter"
+              onClick={() => blaettereGang(1)}
+              disabled={gangInfo.seite >= gangInfo.seiten - 1}
+              className="btn-ghost p-1.5 rounded-lg disabled:opacity-40"
+              title="More notes that connect to nothing"
+              aria-label="Next page of unconnected notes"
+            >
+              <span aria-hidden="true">›</span>
+            </button>
+          </div>
+        )}
         {(() => {
           // Was der Nachzug tut, ist im Bild zu lesen — sonst fuellt sich das
           // Netz hinter einem Rahmen, der so aussieht, als ware er fertig.

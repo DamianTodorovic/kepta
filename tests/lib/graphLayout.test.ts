@@ -29,6 +29,9 @@ import {
   alleinKnoten,
   gangPlatz,
   gangZeilen,
+  gangSeiten,
+  gangPlaetzeProSeite,
+  GANG_REIHEN_PRO_SEITE,
   GANG_ABSTAND,
   GANG_RAND,
   GANG_SPALTEN,
@@ -2413,5 +2416,93 @@ describe("never overlap: ein dichter Bestand muss sich selbst trennen", () => {
     expect(Math.floor(a.x / zelle), "und in zwei verschiedenen Zellen sitzen").not.toBe(Math.floor(b.x / zelle));
     expect(resolveCollisions([a, b], COLLIDE_PADDING, 1), "kein Nachlauf, keine Korrektur").toBeGreaterThan(0);
     expect(Math.abs(a.x - b.x)).toBeGreaterThanOrEqual(a.r + b.r + COLLIDE_PADDING - 0.001);
+  });
+});
+
+describe("Gang-Masse: was nicht ins Bild passt, wird eine Seite und kein Ring", () => {
+  // #90, zweite Haelfte. Der Nachzug (3.2.5) hat Damians Bestand gefuellt: aus
+  // 1.530 Begriffen und 1.666 Kanten wurden 2.756 und 2.726 — gemessen durch die
+  // Tuer um 14:58 MESZ. Verknuepfbar ist damit, was die Regel in seinem Text
+  // findet, und das sind 1.018 von 21.066 Notizen (4,83 %, Sonde 15:00:38). Der
+  // Rest steht weiterhin ohne Nachbarn da: ~18.500 Punkte, 145 Seiten a 128
+  // Plaetze, 3.712 Einheiten hoch bei 26 px Schritt. Ein Raster dieser Groesse
+  // unter den Kern zu legen ist keine Ordnung, sondern eine zweite Welt, und die
+  // Abstossung warf sie vorher in den Ring um den Kern — „dein Gedaechtnis ist
+  // ein Haufen". Also: der Gang zaehlt weiter alle, aber er zeigt eine Seite.
+  const knoten = (n: number, praefix = "m") =>
+    Array.from({ length: n }, (_, i) => ({
+      id: `${praefix}${i}`, x: 0, y: 0, vx: 0, vy: 0, r: 6, pinned: false,
+    }));
+  const feld = (notizen: { id: string }[], kanten: { source: string; target: string; strength: number; real: boolean }[]) =>
+    createSimulation(notizen.map((n) => n.id), kanten);
+
+  it("kent die Seiten des Gangs: 384 Plaetze, und 18.500 sind 49 Seiten", () => {
+    expect(gangPlaetzeProSeite()).toBe(GANG_SPALTEN * GANG_REIHEN_PRO_SEITE);
+    expect(gangSeiten(0)).toBe(0);
+    expect(gangSeiten(1)).toBe(1);
+    expect(gangSeiten(gangPlaetzeProSeite())).toBe(1);
+    expect(gangSeiten(gangPlaetzeProSeite() + 1)).toBe(2);
+    expect(gangSeiten(18_500)).toBe(49);
+  });
+
+  it("greift auch dort, wo die Mehrzahl allein steht — der Kern ist dann die Ausnahme", () => {
+    const nodes = knoten(600);
+    const sim = feld(nodes, [{ source: "m0", target: "m1", strength: 1, real: true }]);
+    stepSimulation(sim);
+    // 598 von 602 Knoten ohne Nachbarn: die Regel „Vorstadt, nicht Stadt"
+    // (allein * 2 ≤ Knoten) haette den Gang hier abgeschaltet und die Masse in
+    // den Ring um den Kern geworfen. Die Ausnahme holt sie — denn ein Kern ist da.
+    expect(sim.allein, "die Zahl des Gangs nennt alle, die ohne Nachbarn stehen").toBe(598);
+    expect(sim.gangIds?.size, "gezeigt wird eine Seite").toBe(gangPlaetzeProSeite());
+    expect(sim.gangSeiten).toBe(2);
+    expect(sim.gangVersteckt).toBe(214);
+  });
+
+  it("legt die Seite als Raster und versteckt den Rest, ohne ihn zu vergessen", () => {
+    const nodes = knoten(600);
+    const sim = feld(nodes, [{ source: "m0", target: "m1", strength: 1, real: true }]);
+    stepSimulation(sim);
+    const aufSeite = sim.nodes.filter((n) => sim.gangIds?.has(n.id));
+    const versteckt = sim.nodes.filter((n) => n.versteckt);
+    expect(aufSeite.length).toBe(gangPlaetzeProSeite());
+    expect(versteckt.length).toBe(214);
+    expect(versteckt.every((n) => n.vx === 0 && n.vy === 0), "ein versteckter Punkt darf nicht rechnen").toBe(true);
+    // Die erste Reihe sitzt am Raster, relativ zum Anker.
+    const anker = sim.alleinAnker!;
+    const erste = sim.nodes.find((n) => n.id === "m2")!;
+    expect(erste.x).toBeCloseTo(anker.x + gangPlatz(0).x, 6);
+    expect(erste.y).toBeCloseTo(anker.y + gangPlatz(0).y, 6);
+  });
+
+  it("blaettert: die zweite Seite zeigt, was die erste verbarg, und die Zahl bleibt", () => {
+    const nodes = knoten(600);
+    const sim = feld(nodes, [{ source: "m0", target: "m1", strength: 1, real: true }]);
+    stepSimulation(sim);
+    sim.gangSeite = 1;
+    stepSimulation(sim);
+    expect(sim.allein, "belaedt wird nicht neu gezaehlt").toBe(598);
+    expect(sim.gangIds?.has("m2"), "die erste Seite ist nicht mehr zu sehen").toBe(false);
+    expect(sim.gangIds?.has("m386")).toBe(true);
+    expect(sim.nodes.find((n) => n.id === "m2")?.versteckt).toBe(true);
+    const ersterDerZweiten = sim.nodes.find((n) => n.id === "m386")!;
+    const anker = sim.alleinAnker!;
+    expect(ersterDerZweiten.x).toBeCloseTo(anker.x + gangPlatz(0).x, 6);
+    expect(ersterDerZweiten.y).toBeCloseTo(anker.y + gangPlatz(0).y, 6);
+  });
+
+  it("versteckte Punkte zaehlen nicht ins Bild hinein", () => {
+    const nodes = knoten(600);
+    const sim = feld(nodes, [{ source: "m0", target: "m1", strength: 1, real: true }]);
+    stepSimulation(sim);
+    const versteckte = sim.nodes.filter((n) => n.versteckt);
+    expect(versteckte.length, "es muss etwas zu verbergen geben, sonst beweist der Fall nichts").toBeGreaterThan(0);
+    // Das Einpassen entscheidet, wie weit die Flaeche herauszoomt. Waere die
+    // verborgene Seite mitgezählt, zoomte das Bild auf Punkte, die niemand sieht.
+    expect(layoutBounds(sim.nodes), "die verborgene Seite darf das Bild nicht aufblaehen lassen")
+      .toEqual(layoutBounds(sim.nodes.filter((n) => !n.versteckt)));
+    // Und die Verborgenheit ist ein Feld am Knoten, keine Zweitliste: der Mal-Pass
+    // entscheidet pro Knoten, und er entscheidet dasselbe wie die Seite.
+    expect(sim.nodes.filter((n) => !n.versteckt && !n.pinned && !n.id.startsWith("__ent:")).length)
+      .toBe(sim.nodes.length - versteckte.length);
   });
 });

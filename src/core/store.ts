@@ -1274,6 +1274,27 @@ export class KeptaStore {
     return { knoten: Number(knoten.n), kanten: Number(kanten.n) };
   }
 
+  /**
+   * Wie viele NOTIZEN an wenigstens einem Begriff haengen — die Deckung des
+   * Netzes, nicht seine Groesse. Eine Tuer, die 2.756 Begriffe und 2.726 Kanten
+   * nennt, aber nicht sagt, wie viele ihrer 21.066 Notizen davon beruehrt werden,
+   * laesst den Leser raten, ob das Netz knapp oder weit ist.
+   *
+   * Gezaehlt wird ueber `memory_entities` (der Traeger, nicht die Behauptung):
+   * eine Notiz mit vier Begriffen ist eine gedeckte Notiz.
+   */
+  notizenMitBegriff(): number {
+    const row = this.db
+      .prepare(
+        `SELECT COUNT(DISTINCT me.memory_id) AS n
+           FROM memory_entities me
+           JOIN memories m ON m.id = me.memory_id
+          WHERE m.deleted_at IS NULL`
+      )
+      .get() as { n: number };
+    return Number(row.n);
+  }
+
   /** Memory-IDs, die eine der Entitäten mentionen */
   memoryIdsForEntities(entityIds: number[]): Set<string> {
     if (entityIds.length === 0) return new Set();

@@ -4159,3 +4159,73 @@ describe("Nachzug: die Flaeche fuellt das Netz, das die Tuer fuer offen haelt", 
     expect(knoten!.textContent).toMatch(/backup/i);
   });
 });
+
+describe("Gang-Masse: eine Seite Punkte, ein Blätterer, und die Zahl sagt alles", () => {
+  // #90, zweite Haelfte an der Flaeche. Der Gang zaehlt seit dem Nachzug ~18.500
+  // Notizen ohne Nachbarn — 145 Seiten a 128 Plaetze, 3.712 Einheiten hoch. Die
+  // Flaeche zeigt eine Seite, sagt welche, und laesst sich von dort aus
+  // weiterblaettern. Was nicht gezeigt wird, ist versteckt, nicht vergessen: die
+  // Zahl steht in derselben Zeile.
+  const masse = (n: number) =>
+    Array.from({ length: n }, (_, i) => note({ id: `b${i}`, title: `Blatt ${i}`, content: `einzigartiger Inhalt ${i}`, tags: [] }));
+
+  /**
+   * Ein Begriff, der `k` Notizen traegt — damit hat das Bild einen Kern, und der
+   * Gang kann ueberhaupt erst greifen. Ohne Kern ist die runde Anordnung des
+   * Feldes die bessere Antwort, und das ist eine eigene Wache.
+   */
+  function hub(k: number) {
+    const traeger = Array.from({ length: k }, (_, i) => `b${i}`);
+    vi.stubGlobal("fetch", vi.fn(async (url: string) => {
+      if (String(url).startsWith("/api/graph?")) {
+        return new Response(JSON.stringify({
+          entities: [{ id: 1, name: "Sammelbecken" }],
+          relations: [{ id: "r1", source: "Sammelbecken", target: "Blatt 0", relation: "mentions", memoryId: "b0" }],
+          memoriesByEntity: { Sammelbecken: traeger },
+          bestand: { knoten: 1, kanten: Math.max(1, traeger.length) },
+        }), { status: 200 });
+      }
+      return new Response(JSON.stringify({ relations: [], memoriesByEntity: {} }), { status: 200 });
+    }));
+  }
+
+  it("zaehlt alle, zeigt eine Seite und nennt die Seite", async () => {
+    hub(200);
+    const view = await zeichne(masse(1000));
+    await bilder(10);
+    const info = view.container.querySelector('[data-testid="gang-info"]');
+    expect(info, "die Masse muss in einem Blatt lesbar sein").not.toBeNull();
+    // 800 von 1001 Knoten stehen ohne Nachbarn: die Regel „Vorstadt, nicht Stadt"
+    // (allein * 2 ≤ Knoten) schaltet den Gang hier ab, und genau die Masse ist der
+    // Fall, den die Ausnahme holt — 800 sind drei Seiten a 384.
+    expect(info!.textContent, info!.textContent).toMatch(/800 notes connect to nothing/);
+    expect(info!.textContent, info!.textContent).toMatch(/showing 384/);
+    expect(info!.textContent, info!.textContent).toMatch(/page 1 of 3/);
+    expect(view.container.querySelector('[data-testid="gang-blaetterer"]'), "drei Seiten brauchen einen Zugang, den eine Hand bedienen kann").not.toBeNull();
+  });
+
+  it("blaettert weiter und zaehlt dabei nicht neu", async () => {
+    hub(200);
+    const view = await zeichne(masse(1000));
+    await bilder(10);
+    const weiter = view.container.querySelector<HTMLButtonElement>('[data-testid="gang-weiter"]');
+    expect(weiter, "der naechsten-Seiten-Knopf fehlt").not.toBeNull();
+    act(() => { weiter!.click(); });
+    await bilder(10);
+    const info = view.container.querySelector('[data-testid="gang-info"]')!;
+    expect(info.textContent, info.textContent).toMatch(/page 2 of 3/);
+    expect(info.textContent, "gezaehlt wird die Masse, nicht die Seite").toMatch(/800 notes connect to nothing/);
+    expect(info.textContent, info.textContent).toMatch(/showing 384/);
+  });
+
+  it("bietet keinen Blaetterer an, wo eine Seite reicht", async () => {
+    hub(180);
+    const view = await zeichne(masse(300));
+    await bilder(10);
+    const info = view.container.querySelector('[data-testid="gang-info"]')!;
+    expect(info.textContent, info.textContent).toMatch(/120 notes connect to nothing/);
+    expect(info.textContent, info.textContent).toMatch(/showing 120/);
+    expect(info.textContent, info.textContent).toMatch(/page 1 of 1/);
+    expect(view.container.querySelector('[data-testid="gang-blaetterer"]'), "eine Seite braucht keinen Zugang zu einer zweiten").toBeNull();
+  });
+});

@@ -182,9 +182,18 @@ describe("N-2 — der Nachzug fuellt das Netz, das der alte Scanner leer liess",
     expect(eigene).toContain(path.basename(String(stand.backupFile)));
   });
 
-  it("die Tuer sieht das Netz, das der Lauf gebaut hat", async () => {
-    const g = (await (await fetch(`${URLE}/api/graph`)).json()) as { bestand: { knoten: number; kanten: number } };
+  it("die Tuer sieht das Netz, das der Lauf gebaut hat — und nennt seine Deckung", async () => {
+    const g = (await (await fetch(`${URLE}/api/graph`)).json()) as {
+      bestand: { knoten: number; kanten: number };
+      deckung: { notizen: number; gedeckt: number; anteilProzent: number };
+    };
     expect(g.bestand.kanten).toBeGreaterThan(0);
+    // Die Groesse des Netzes sagt nichts darueber, wie viel des Bestands darin
+    // steht. Ohne diese Zahl ist "2.756 Begriffe" ein Verkaufsgespraech.
+    expect(g.deckung, "die Tuer nennt ihre Deckung").toBeTruthy();
+    expect(g.deckung.gedeckt, "gedeckte Notizen muessen zaehlen").toBeGreaterThan(0);
+    expect(g.deckung.notizen).toBeGreaterThanOrEqual(g.deckung.gedeckt);
+    expect(g.deckung.anteilProzent).toBeCloseTo((100 * g.deckung.gedeckt) / g.deckung.notizen, 1);
   });
 });
 

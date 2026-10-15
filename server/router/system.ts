@@ -99,6 +99,20 @@ export function mountSystem(app: express.Express, ctx: AppKontext): void {
       // durchgekommen ist. Die Fläche sagt damit, dass sie einen Ausschnitt
       // zeigt, statt die gelieferte Zahl als Bestandszahl auszugeben.
       bestand,
+      // Und die Deckung: wie viele der aktiven Notizen an wenigstens einem Begriff
+      // haengen. Eine Zahl, die nur Begriffe und Kanten nennt, laesst den Leser
+      // raten, ob das Netz weit ist oder knapp — gemessen 15.10. an Damians Bestand
+      // (2.756 Begriffe, 2.726 Kanten, aber nur ~1.018 von 21.066 Notizen gedeckt).
+      deckung: (() => {
+        const notizen = activeCount();
+        const gedeckt = Math.min(notizen, store.notizenMitBegriff());
+        return {
+          notizen,
+          gedeckt,
+          anteilProzent: notizen > 0 ? Number(((100 * gedeckt) / notizen).toFixed(2)) : 0,
+          hinweis: "notes covered = active notes that mention at least one concept; the base's own size is in `bestand`",
+        };
+      })(),
       // Und jetzt in Zahlen, was zwischen Bestand, Kappe und Masche verloren geht —
       // gezeigt + verworfen = im Auszug, damit eine Flaeche nie eine Bilanzzahl fuer
       // einen Bruchteil ausgeben kann.
