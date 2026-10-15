@@ -1,6 +1,7 @@
 import {StrictMode} from 'react';
 import {createRoot} from 'react-dom/client';
 import App from './App.tsx';
+import {Fehlerschirm} from './components/Fehlerschirm';
 import './index.css';
 import {starteEinstellungen} from './lib/settings';
 
@@ -9,8 +10,12 @@ import {starteEinstellungen} from './lib/settings';
 // aus "noch nicht geladen" wuerde "zurueckgesetzt".
 void starteEinstellungen().finally(() => {
   createRoot(document.getElementById('root')!).render(
-    <StrictMode>
-      <App />
-    </StrictMode>,
+    // Der Rand sitzt AUCH ausserhalb von StrictMode: ein Wurf im Render darf
+    // nie wieder ein graues Fenster sein, sondern muss sagen, was warf.
+    <Fehlerschirm>
+      <StrictMode>
+        <App />
+      </StrictMode>
+    </Fehlerschirm>,
   );
 });

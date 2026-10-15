@@ -1630,10 +1630,12 @@ describe("Sichtbare Dichte: Badge und Kappungszeile", () => {
     expect(container.textContent).not.toMatch(/are not painted/);
   });
 
-  it("malt bei einer Punktwolke nur das Verbundene und nennt die Masse", async () => {
-    // 400 Notizen, zwei davon hängen an einem Begriff. Das Feld lässt die 398
-    // liegen, die nichts verbinden, und sagt die Zahl — damit der Kopf nicht
-    // 400 behauptet, während zwei Punkte auf dem Schirm stehen.
+  it("malt bei einer Punktwolke die Masse als Gang und nennt sie", async () => {
+    // 400 Notizen, zwei davon haengen an einem Begriff. Bis 15.10. liess das Feld
+    // die 398 liegen, die nichts verbinden, und meldete sie nur als Zahl — an
+    // einem duennen Bestand war das die Haelfte des Gedaechtnisses unsichtbar
+    // (Damian: „mein graph ist sehr klein"). Jetzt sind die 398 der Gang: eine
+    // Seite a 384 Punkte, und die Zahl steht in derselben Zeile.
     vi.stubGlobal("fetch", vi.fn(async () => new Response(JSON.stringify({
       relations: [],
       memoriesByEntity: { docker: ["p0", "p1"] },
@@ -1641,10 +1643,11 @@ describe("Sichtbare Dichte: Badge und Kappungszeile", () => {
     const ms = Array.from({ length: 400 }, (_, i) => note({ id: `p${i}`, title: `Wolke ${i}`, tags: [] }));
     const { container } = await zeichne(ms);
     await bilder(10);
-    expect(container.textContent, container.textContent ?? "").toMatch(/2 notes/);
-    expect(container.textContent).toMatch(
-      /398 notes hang under no concept and are not painted — search still finds them/
-    );
+    expect(container.textContent, container.textContent ?? "").toMatch(/2 of 400 notes carry a concept/);
+    const info = container.querySelector('[data-testid="gang-info"]')!;
+    expect(info.textContent, info.textContent).toMatch(/398 notes connect to nothing/);
+    expect(info.textContent, info.textContent).toMatch(/showing 384 of 398/);
+    expect(container.textContent).not.toMatch(/are not painted/);
   });
 
   it("holt eine unausgemalte Notiz zurück, sobald die Suche sie ruft", async () => {
@@ -1657,7 +1660,9 @@ describe("Sichtbare Dichte: Badge und Kappungszeile", () => {
     const ms = Array.from({ length: 400 }, (_, i) => note({ id: `q${i}`, title: `Wolke ${i}`, tags: [] }));
     const { container } = await zeichne(ms);
     await bilder(10);
-    expect(container.textContent).toMatch(/are not painted/);
+    // Die Masse ist im Bild (als Gang), und ein Treffer bleibt malbar.
+    const info = container.querySelector('[data-testid="gang-info"]')!;
+    expect(info.textContent, info.textContent).toMatch(/398 notes connect to nothing/);
 
     const feld = container.querySelector('input[placeholder="Filter the graph…"]') as HTMLInputElement;
     const setter = Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, "value")!.set!;
@@ -4227,5 +4232,24 @@ describe("Gang-Masse: eine Seite Punkte, ein Blätterer, und die Zahl sagt alles
     expect(info.textContent, info.textContent).toMatch(/showing 120/);
     expect(info.textContent, info.textContent).toMatch(/page 1 of 1/);
     expect(view.container.querySelector('[data-testid="gang-blaetterer"]'), "eine Seite braucht keinen Zugang zu einer zweiten").toBeNull();
+  });
+
+  it("laesst eine Punktwolke nicht mehr aus dem Bild fallen — die Masse wird der Gang", async () => {
+    // Damians Befund 15.10. 16:24: „mein graph ist sehr klein, da stimmt etwas
+    // nicht." Sein Bestand traegt 4,83 % Deckung, und das Punktwolken-Tor warf
+    // darum ~20.000 Notizen aus dem Feld — uebrig blieb ein kleiner Knoten und
+    // eine Zeile "not painted". Jetzt: die Unbedeckten sind der Gang.
+    hub(10);
+    const view = await zeichne(masse(1000));
+    await bilder(10);
+    const info = view.container.querySelector('[data-testid="gang-info"]')!;
+    expect(info.textContent, info.textContent).toMatch(/990 notes connect to nothing/);
+    expect(info.textContent, info.textContent).toMatch(/showing 384 of 990/);
+    expect(info.textContent, info.textContent).toMatch(/page 1 of 3/);
+    const leiste = [...view.container.querySelectorAll("span, p, div")]
+      .map((k) => k.textContent ?? "")
+      .join(" ");
+    expect(leiste, "ein Bild, das seine Masse verschweigt, ist kein Bild des Gedaechtnisses")
+      .not.toMatch(/are not painted/);
   });
 });

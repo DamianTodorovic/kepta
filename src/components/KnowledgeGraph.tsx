@@ -1302,7 +1302,17 @@ export function KnowledgeGraph({ memories, onSelectMemory, onSelectConcept, sich
     // Begriffe können ohne sichtbare Träger stehen (Zeitregler), dann wäre die
     // Ausmalmenge null und die Fläche leer.
     if (gemalt.length + netz.knoten.length < 3) return { notizen: grund, unausgemalt: 0 };
-    return { notizen: gemalt, unausgemalt: grund.length - gemalt.length };
+    // Der Rest faellt nicht mehr aus dem Bild. Was kein Begriff traegt, ist nicht
+    // „unmalbar", sondern **der Gang**: der legt 384 dieser Punkte pro Seite,
+    // zaehlt alle und laesst sich durchblaettern. Das alte Tor warf an einem
+    // duennen Bestand ~20.000 Notizen hinaus — uebrig blieb ein kleiner Knoten
+    // und eine Zeile, die sagte, dass der Rest nicht gemalt wird (Damian 15.10.:
+    // „mein graph ist sehr klein, da stimmt etwas nicht").
+    const unbedeckt = grund.length - gemalt.length;
+    if (gangGreift(unbedeckt, grund.length + netz.knoten.length, true)) {
+      return { notizen: grund, unausgemalt: 0 };
+    }
+    return { notizen: gemalt, unausgemalt: unbedeckt };
   }, [filtered, verborgen, filter, netz, bestandNotizen, notizenMitBegriff]);
   const feldNotizen = feldMassen.notizen;
   /** Wie viele Notizen je gefaltetem Begriff wirklich weg sind — das Malzeichen darf nur das zählen. */

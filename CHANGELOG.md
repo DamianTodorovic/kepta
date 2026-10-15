@@ -1,3 +1,33 @@
+## [3.2.7]
+
+### Fixed
+
+- **A grey window is now a named failure with a way out.** The app had no error
+  boundary at all, so a single throw during render made React unmount the whole
+  tree: an empty window, no sentence, no button (reported 15.10. 16:24 while
+  switching a retrieval track). `src/components/Fehlerschirm.tsx` wraps the root
+  outside `StrictMode`: it names the error and the frame it came from, writes it to
+  the console so a log exists, and offers `Try this screen again`, which rebuilds
+  the children. Guards: `tests/components/Fehlerschirm.test.tsx` (two cases — the
+  panel appears with the message instead of an empty document, and the children
+  return after the retry). The three retrieval tracks were then clicked in the real
+  app against a 21.066-note base with a debug port open: no exception, page intact
+  (`tests/components/Settings.spuren.test.tsx` holds three cases for the toggles
+  themselves). What the boundary changes is the class: the next failure reports
+  itself instead of going grey.
+- **A thin base no longer drops most of itself out of the picture.** The force view
+  carried a gate: when under five percent of notes hang on a concept, it painted
+  only the covered ones and said `N notes hang under no concept and are not painted`.
+  On a real base measured at 4,83 % coverage that meant ~20.000 notes were not in
+  the image at all — which is what "my graph is very small" was. The uncovered mass
+  is now the band: it enters the field, `GANG_REIHEN_PRO_SEITE` shows 384 of them
+  per page, the pager opens the rest, and the same line names the whole count
+  (`398 notes connect to nothing in this picture · showing 384 of 398 · page 1 of
+  2`). Physics, collision, painting and fit skip the pages not shown, so a 21.000-
+  note base still draws ~1.900 points per frame. The gate stays for a small thin
+  base (under one page of uncovered notes), where a band would be noise; the two
+  density cases that named the old wording now assert the band's.
+
 ## [3.2.6]
 
 ### Added
