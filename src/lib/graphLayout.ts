@@ -241,12 +241,18 @@ export interface EdgeOptions {
 
 /**
  * Die Woerter, die der Store selbst setzt: „mentions" fuer jeden Wiki-Link
- * (verknuepfeNotiz), „related" als Fuellwort fuer eine Aussage ohne Typ
- * (addRelation). Sie sind keine Behauptung eines Menschen — und die Form der
- * Linie sagt bereits, was sie ist. Ein Etikett davon kostet dieselbe Stelle im
+ * (verknuepfeNotiz), „co-mentions" fuer zwei Begriffe in derselben Aussage
+ * (dieselbe Funktion, seit #83 (4)) und „related" als Fuellwort fuer eine Aussage
+ * ohne Typ (addRelation). Sie sind keine Behauptung eines Menschen — und die Form
+ * der Linie sagt bereits, was sie ist. Ein Etikett davon kostet dieselbe Stelle im
  * Budget wie eine echte Aussage.
+ *
+ * Die dritte Natur war vergessen: gemessen 15.10. 07:54 setzte store.ts:985
+ * „co-mentions", diese Menge kannte es nicht, und die Linie malte ihr rohes Wort —
+ * drei Zeilen ueber dieser Datei steht die gegenteilige Absicht. Haelt jetzt
+ * tests/lib/graphLayout.test.ts („schreibt die Wörter des Systems nicht an die Linie").
  */
-const SYSTEM_WOERTER = new Set(["mentions", "related"]);
+const SYSTEM_WOERTER = new Set(["mentions", "co-mentions", "related"]);
 
 function systemWort(name: string): boolean {
   return SYSTEM_WOERTER.has(name.toLowerCase());
@@ -356,9 +362,9 @@ export function kantenBaue(memories: readonly Memory[], opts: EdgeOptions = {}):
     if (name) {
       let namen = typen.get(k);
       if (!namen) { namen = new Set(); typen.set(k, namen); }
-      // Zaehlen und benennen darf nur, was ein Mensch gesagt hat. „mentions"
-      // setzt der Store fuer jeden Wiki-Link selbst — mitzaehlen, aber nicht
-      // das Etikett stellen.
+      // Zaehlen und benennen darf nur, was ein Mensch gesagt hat. Die drei Woerter
+      // des Systems (siehe SYSTEM_WOERTER) setzt der Speicher selbst — mitzaehlen,
+      // aber nicht das Etikett stellen.
       if (!systemWort(name)) {
         namen.add(name);
         if (kant.relation === undefined) kant.relation = name;

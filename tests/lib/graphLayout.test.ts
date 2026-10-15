@@ -434,6 +434,13 @@ describe("kantenEtikett — der Text an der Linie", () => {
     // fehlt. Die Linie selbst sagt schon, was sie ist.
     expect(kantenEtikett(behauptung({ relation: "mentions" }))).toBeNull();
     expect(kantenEtikett(behauptung({ relation: "RELATED" }))).toBeNull();
+    // #83 (4) setzte eine dritte Natur ins Bild: „co-mentions" — zwei Begriffe in
+    // derselben Aussage, vom Speicher gebaut, nicht von einem Menschen behauptet.
+    // Gemessen 15.10. 07:54: SYSTEM_WOERTER (graphLayout.ts:249) kannte das Wort
+    // nicht, waehrend store.ts:985 es schreibt — die Linie bekam ihr rohes Etikett,
+    // drei Zeilen weiter steht die gegenteilige Absicht.
+    expect(kantenEtikett(behauptung({ relation: "co-mentions" }))).toBeNull();
+    expect(kantenEtikett(behauptung({ relation: "CO-MENTIONS" }))).toBeNull();
     expect(kantenEtikett(behauptung({ relation: "betreut" }))).toBe("betreut");
     // Ein Mensch, der „mentions" als Typ tippt, verliert damit den Zusatz nicht.
     expect(kantenEtikett(behauptung({ relation: "mentions", typen: 2 }))).toBeNull();
