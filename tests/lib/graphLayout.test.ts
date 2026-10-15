@@ -2505,4 +2505,17 @@ describe("Gang-Masse: was nicht ins Bild passt, wird eine Seite und kein Ring", 
     expect(sim.nodes.filter((n) => !n.versteckt && !n.pinned && !n.id.startsWith("__ent:")).length)
       .toBe(sim.nodes.length - versteckte.length);
   });
+
+  it("greift nie nach einem Punkt, der auf keiner Seite liegt", () => {
+    // Sein Befund 18:2x MESZ: „wenn ich auf eine leere Flaeche druecke, habe ich
+    // auf einmal einen Knoten bei meinem Mauszeiger, und der Graph laesst sich
+    // nicht bewegen." Die Hand greift nach einem Punkt, den das Bild nicht malt
+    // — und meldet dann „greift" statt „schieben". Was nicht gezeigt wird, darf
+    // nicht anfassbar sein; dieselbe Regel gilt schon fuer die Zeitblende.
+    const verboten = { id: "v", x: 0, y: 0, vx: 0, vy: 0, r: 6, pinned: false, versteckt: true };
+    const sichtbar = { id: "s", x: 400, y: 0, vx: 0, vy: 0, r: 6, pinned: false };
+    expect(nodeAt([verboten, sichtbar], (n) => n.r, 0, 0, 12), "ein versteckter Punkt darf nicht greifbar sein").toBeNull();
+    expect(nodeAt([verboten, sichtbar], (n) => n.r, 400, 0, 12)?.id).toBe("s");
+    expect(nodeAt([verboten, sichtbar], (n) => n.r, 390, 0, 12)?.id, "die Toleranz darf die Verborgenheit nicht wieder sichtbar machen").toBe("s");
+  });
 });

@@ -1359,6 +1359,11 @@ export function nodeAt(
   let treffer: LayoutNode | null = null;
   let beste = Infinity;
   for (const n of nodes) {
+    // Was auf keiner Seite des Gangs liegt, wird nicht gemalt und darf auch
+    // nicht angefasst werden: sonst greift die Hand nach einem Punkt, den das
+    // Bild verschweigt, meldet „greift" statt „schieben", und der Graph laesst
+    // sich nicht mehr bewegen (gemessen 15.10. 18:0x an seinem Bestand).
+    if (n.versteckt) continue;
     const dx = n.x - wx;
     const dy = n.y - wy;
     const d2 = dx * dx + dy * dy;

@@ -1,3 +1,22 @@
+## [3.2.9]
+
+### Fixed
+
+- **Clicking empty canvas no longer grabs an invisible node.** Reported 15.10.
+  18:0x: „wenn ich auf eine leere Flaeche druecke, habe ich auf einmal einen Knoten
+  bei meinem Mauszeiger, was dazu fuehrt, dass ich den Graph nicht bewegen kann."
+  The band marks everything outside the current page `versteckt`; the painter and
+  the fit honoured that, `nodeAt()` did not. The hand therefore grabbed a point the
+  picture never drew, the canvas went to `grabbing`, and panning was gone. `nodeAt`
+  now skips hidden points — the rule the time-blend already uses („was ausgeblendet
+  ist, ist nicht anfassbar"). Guard: one case in `tests/lib/graphLayout.test.ts`,
+  red before the fix.
+- **The camera no longer fits the pages it does not show.** With the whole base in
+  the field (3.2.8) the first fit ran *before* the first layout step, so `versteckt`
+  was still unset and the bounds were the start spiral of 20.000+ points — measured
+  in his own window: **3 % zoom**, a 6 px node at 0,18 px, an empty canvas. The
+  handoff now takes one step before fitting.
+
 ## [3.2.8]
 
 ### Fixed

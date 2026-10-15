@@ -1957,6 +1957,11 @@ export function KnowledgeGraph({ memories: memoriesAusFenster, onSelectMemory, o
     sim.gangSeite = gangSeiteRef.current;
     spiegleGang(sim);
     forceHistoryRef.current = sim;
+    // **Ein Schritt vor dem ersten Einpassen.** Erst dieser Schritt setzt, welche
+    // Punkte auf keiner Seite des Gangs liegen. Ohne ihn rechnet die Kamera die
+    // Startspirale aller 20.000 Verborgenen ein — gemessen 15.10. 18:00 an seinem
+    // Bestand: 3 % Zoom, ein 6-px-Punkt wird 0,18 px, und das Bild wirkt leer.
+    stepSimulation(sim);
     if (sim.nodes.length > 0) {
       // Der Ausschnitt gehoert zu den ZIEL-Positionen und MUSS sofort gesetzt
       // werden: ein bereits ausgekuehltes Feld bewegt sich nie wieder, der
