@@ -947,6 +947,74 @@ export class KeptaStore {
     }
     return ids;
   }
+  /**
+   * Setzt die Begriffe und Kanten **einer** Notiz neu — derselbe Name wie in der App
+   * (`kepta-app/src/core/store.ts:950`), damit die Paritaet grepbar bleibt. Der Kern
+   * liest hier keinen Text: die Begriffe kommen von dem, der schreibt (Agentenkanal,
+   * Import). Zwei Naturen, zwei Worte: Titel -> Begriff ist `mentions`, zwei Begriffe
+   * aus derselben Aussage sind `co-mentions`.
+   *
+   * Verglichen wird (Ende, Ende, **Wort**), nicht (Ende, Ende): ein Paar, das frueher
+   * ein anderes Wort trug, wird beim naechsten Setzen umgeschrieben, statt dass zwei
+   * Worte fuer dieselbe Aussage stehen. Und weil jede Kante zu *einer* Notiz gehoert,
+   * faellt sie mit ihr — `addRelation` allein ist ein nacktes INSERT, und ein
+   * Wieder-Speichern des Agentenkanals legte denselben Stich bisher noch einmal.
+   *
+   * Gekappt auf die ersten acht Begriffe fuer die Paarbildung: aus 14 Namen wuerden 91
+   * Paare, und eine lange Notiz waere ein Knotenwerk statt einer Aussage.
+   */
+  verknuepfeNotiz(memoryId: string, titel: string, namen: string[]): number {
+    const t = String(titel ?? "").trim().toLowerCase();
+    const knoten = new Set<string>();
+    if (t.length >= 2) knoten.add(t);
+    const paare = new Map<string, [string, string, string]>();
+    const schluessel = (a: string, b: string, wort: string): string => a + "|" + b + "|" + wort;
+    for (const roh of namen ?? []) {
+      const n = String(roh ?? "").trim().toLowerCase();
+      if (n.length < 2 || n === t) continue;
+      knoten.add(n);
+      paare.set(schluessel(t, n, "mentions"), [t, n, "mentions"]);
+    }
+    // Zwei Begriffe, dieselbe Aussage: das ist eine andere Behauptung als „die Notiz
+    // nennt den Begriff", und sie verdient ihr eigenes Wort. Gekappt auf die ersten
+    // acht Begriffe — aus 14 Namen wuerden 91 Paare, ein Knotenwerk statt einer Aussage.
+    const fuerPaare = [...knoten].filter((k) => k !== t).slice(0, 8);
+    for (let i = 0; i < fuerPaare.length; i++) {
+      for (let j = i + 1; j < fuerPaare.length; j++) {
+        const a = fuerPaare[i]!;
+        const b = fuerPaare[j]!;
+        const von = a < b ? a : b;
+        const nach = a < b ? b : a;
+        paare.set(schluessel(von, nach, "co-mentions"), [von, nach, "co-mentions"]);
+      }
+    }
+    const setzen = this.db.transaction(() => {
+      const ids: number[] = [];
+      for (const name of [...knoten].slice(0, 40)) ids.push(this.ensureEntity(name));
+      const erlaubt = new Set(ids);
+      const eintrag = this.db.prepare("INSERT OR IGNORE INTO memory_entities (memory_id, entity_id) VALUES (?, ?)");
+      for (const eid of ids) eintrag.run(memoryId, eid);
+      const traeger = this.db.prepare("SELECT entity_id FROM memory_entities WHERE memory_id = ?").all(memoryId) as { entity_id: number }[];
+      const entfaernen = this.db.prepare("DELETE FROM memory_entities WHERE memory_id = ? AND entity_id = ?");
+      for (const r of traeger) if (!erlaubt.has(r.entity_id)) entfaernen.run(memoryId, r.entity_id);
+      const vorhanden = this.db
+        .prepare("SELECT id, source_id, target_id, relation FROM relations WHERE memory_id = ?")
+        .all(memoryId) as { id: number; source_id: number; target_id: number; relation: string }[];
+      const gewollt = new Set<string>();
+      for (const [, [quelle, ziel, wort]] of paare) {
+        const sid = this.ensureEntity(quelle);
+        const zid = this.ensureEntity(ziel);
+        gewollt.add(schluessel(String(sid), String(zid), wort));
+        if (!vorhanden.some((v) => v.source_id === sid && v.target_id === zid && v.relation === wort)) {
+          this.addRelation(quelle, ziel, wort, memoryId);
+        }
+      }
+      const loeschen = this.db.prepare("DELETE FROM relations WHERE id = ?");
+      for (const v of vorhanden) if (!gewollt.has(schluessel(String(v.source_id), String(v.target_id), v.relation))) loeschen.run(v.id);
+      return gewollt.size;
+    });
+    return setzen() as number;
+  }
 
   addRelation(source: string, target: string, relation: string, memoryId: string | null, validFrom: number | null = null, validTo: number | null = null): RelationRecord {
     const sid = this.ensureEntity(source);

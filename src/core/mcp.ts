@@ -483,13 +483,13 @@ export function saveWithIndex(store: KeptaStore, args: Record<string, unknown>):
   };
   const { record, created } = store.upsertMemory(input);
   indexMemory(store, record.id);
-  // Titel + Wiki-Links als Entitäten; Titel-Entität erhält mentions-Relationen zu den Links
+  // Titel + Wiki-Links als Entitäten. Der Produzent sitzt im Speicher
+  // (`store.verknuepfeNotiz`), weil hier zwei Naturen zusammenkommen: die Notiz nennt
+  // einen Begriff (`mentions`), und zwei Begriffe derselben Aussage stehen miteinander
+  // (`co-mentions`). Der bisherige Handschleifen-Weg setzte nur das erste Wort und
+  // legte jeden Stich bei jedem Speichern neu an — `addRelation` ist ein nacktes INSERT.
   const links = extractWikiLinks(`${record.title} ${record.content}`);
-  store.linkEntities(record.id, [record.title, ...links]);
-  const titleEntity = record.title.trim().toLowerCase();
-  for (const link of links) {
-    if (link !== titleEntity) store.addRelation(titleEntity, link, "mentions", record.id);
-  }
+  store.verknuepfeNotiz(record.id, record.title, links);
   return { created, record: store.getMemory(record.id)! };
 }
 

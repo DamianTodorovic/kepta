@@ -36,6 +36,23 @@ function vorgabeInKonfig(text: string): boolean {
   return /maxWorkers:\s*gabelDerSuite\b/.test(text);
 }
 
+/**
+ * Zwei Gesetze, eine Stelle. Die Gegenprobe unten prueft dieselben Funktionen, die
+ * die Wache benutzt — ein zweites, davon abgeleitetes RegEx in einem Test waere eine
+ * zweite Wahrheit.
+ *
+ * `istProsa`: eine Zeile, die mit einem Kommentarzeichen beginnt, ist Prosa, kein
+ * Aufruf. Ohne dieses Gesetz meldete die Wache am 15.10. einen Verstoß, den nur ein
+ * Kommentar enthielt — „Hausvertrag: kein request(app), hier gar kein Hoerer" in
+ * tests/graph-kantentyp.test.ts:21. Die Anklage zitiert zu werden ist kein Beweis,
+ * dass die Tat geschah.
+ */
+const istProsa = (zeile: string): boolean => {
+  const rand = zeile.trim();
+  return rand.startsWith("//") || rand.startsWith("*") || rand.startsWith("/*");
+};
+const horchtJeAnfrage = (zeile: string): boolean => /request\(\s*app\s*\)/.test(zeile);
+
 describe("sockel-vertrag: die Suite laeuft mit Kopfraum, nicht mit Volllast", () => {
   it("die Gabel ist verdrahtet — die Konfiguration nennt sie, nicht eine Kopie", () => {
     expect(vorgabeInKonfig(konfig()), "vitest.config.ts setzt maxWorkers nicht auf gabelDerSuite").toBe(true);
@@ -107,7 +124,14 @@ describe("sockel-vertrag: horchen passiert einmal je Datei, nicht je Anfrage", (
         const zeilen = readFileSync(relativ, "utf8").split("\n");
         const name = path.relative(wurzel, relativ);
         for (let i = 0; i < zeilen.length; i++) {
-          if (/request\(\s*app\s*\)/.test(zeilen[i])) funde.push(`${name}:${i + 1}`);
+          const rand = zeilen[i];
+          // Eine Zeile, die mit einem Kommentarzeichen beginnt, ist Prosa, kein Aufruf.
+          // Ohne diese zwei Zeilen meldete die Wache am 15.10. einen Verstoß, den nur
+          // ein Kommentar enthielt: „Hausvertrag: kein request(app), hier gar kein
+          // Hoerer" in tests/graph-kantentyp.test.ts:21. Die Anklage zitiert zu werden
+          // ist kein Beweis, dass die Tat geschah.
+          if (istProsa(rand) || !horchtJeAnfrage(rand)) continue;
+          funde.push(`${name}:${i + 1}`);
         }
       }
     };
@@ -126,6 +150,12 @@ describe("sockel-vertrag: horchen passiert einmal je Datei, nicht je Anfrage", (
     expect(/request\(\s*app\s*\)/.test(text.split("\n")[0]), "der Pruefer sieht die alte Form nicht").toBe(true);
     // Und die neue Form laesst er durch.
     expect(/request\(\s*app\s*\)/.test('await request(URLE).get("/api/health");')).toBe(false);
+    // Und ein Zitat der alten Form in einem Kommentar ist keine Tat: die Wache
+    // sieht zwar dasselbe Wort, verwirft die Zeile aber als Prosa.
+    const kommentar = "  // Hausvertrag: kein request(app), hier gar kein Hoerer";
+    expect(horchtJeAnfrage(kommentar), "das Wort ist im Text (Erwartung an die Sonde)").toBe(true);
+    expect(istProsa(kommentar), "die Zeile ist Prosa").toBe(true);
+    expect(istProsa(kommentar) || !horchtJeAnfrage(kommentar), "die Wache wuerde das Zitat zaehlen").toBe(true);
   });
 
   it("der Horcher bindet 127.0.0.1 ausdruecklich, nicht den Wildcard", () => {

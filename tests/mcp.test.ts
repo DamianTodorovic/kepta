@@ -162,7 +162,14 @@ describe("MCP-Tools", () => {
     const g = graph.structuredContent as { entities: { name: string }[]; relations: { source: string; target: string; relation: string }[] };
     expect(g.entities.map((e) => e.name).sort()).toEqual(["docker", "docker setup", "traefik"]);
     expect(g.relations.length).toBeGreaterThanOrEqual(2);
-    expect(g.relations.every((r) => r.relation === "mentions")).toBe(true);
+    // #83 (4) hebt die alte Zeile auf (`every(r => r.relation === "mentions")`).
+    // Sie behauptete, der Agentenkanal setze Kanten — und Damian hat an seiner
+    // laufenden App gemessen, dass genau das zu wenig ist: alle Kanten trugen das
+    // eine Wort. Ein Titel, der einen Begriff nennt, ist "mentions"; zwei Begriffe,
+    // die in derselben Aussage stehen, sind "co-mentions". Der Zwilling in der App
+    // zog diesen Zug mit fb13218, hier fehlte er.
+    const worte = new Set(g.relations.map((r) => r.relation));
+    expect([...worte].sort(), `der Agentenkanal setzt nur: ${[...worte].join(", ")}`).toEqual(["co-mentions", "mentions"]);
   });
 
   it("memory_update patcht, memory_forget expire setzt validTo", async () => {
