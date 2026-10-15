@@ -3,6 +3,7 @@ import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { render, act, fireEvent } from "@testing-library/react";
 import { KnowledgeGraph, istHell, GLYPH_FUER_ART, LEGENDE_HOEHE } from "../../src/components/KnowledgeGraph";
 import { TYP_BESCHREIBUNG } from "../../src/lib/graphHierarchy";
+import { GANG_ABSTAND } from "../../src/lib/graphLayout";
 import { installiereLeinwand, installiereResizeObserver, installiereZeiger, setzeTheme, type Leinwand } from "../helfer/canvas";
 import type { Memory } from "../../src/types";
 
@@ -4251,6 +4252,93 @@ describe("Gang-Masse: eine Seite Punkte, ein Blätterer, und die Zahl sagt alles
       .join(" ");
     expect(leiste, "ein Bild, das seine Masse verschweigt, ist kein Bild des Gedaechtnisses")
       .not.toMatch(/are not painted/);
+  });
+
+  /**
+   * #91 — Titelbreite gegen Spaltenteil, nicht Reihenöhe gegen Spaltenteil.
+   *
+   * GFs Messung an Damians Bestand (Median 114 px Titel gegen 26 px Spaltenteil):
+   * ein einziger Titel spannt 4,7 Spalten über und nennt damit eine Nachbarschaft,
+   * der er nicht gehört. Die jetzige Pforte `gangZuEng` vergleicht die HÖHE einer
+   * Reihe mit dem Spaltenteil und öffnet bei 93 % — also genau in dem Band, in dem
+   * sich Titel zwangsläufig überdecken. Gehalten wird die fehlende Hälfte: Breite
+   * gegen Teil, an jedem einzelnen Titel.
+   */
+  const gangTitelMasse = (n: number) =>
+    Array.from({ length: n }, (_, i) => note({
+      id: `b${i}`,
+      // Zwei Klassen, damit die Prüfung nicht gegen eine leere Menge läuft:
+      // `KERN*` hängt am Begriff, `G*` ist ein kurzer Gang-Titel (passt in eine
+      // Spalte), `LANG*` ist ein Gang-Titel über mehrere Spalten.
+      title: i < 10 ? `KERN${i}` : i % 2 === 0 ? `G${i}` : `LANG${i}einTitelueberseineZelleZelle`,
+      content: `einzigartiger Inhalt ${i}`, tags: [],
+    }));
+
+  /** Hereinzoomen bis die Anzeige sagt, was der Fall braucht. */
+  async function zoomeNach(prozent: number, container: HTMLElement) {
+    const anzeige = () => {
+      const t = container.querySelector('[title="Current zoom"]')?.textContent ?? "";
+      return Number((t.match(/([\d.,]+)\s*%/) || ["0", "0"])[1].replace(",", "."));
+    };
+    const rein = [...container.querySelectorAll("button")].find((b) => b.title === "Zoom in");
+    expect(rein, "der Zoom-in-Knopf fehlt — Fall greift nicht").toBeTruthy();
+    for (let i = 0; i < 40 && anzeige() < prozent; i++) {
+      await act(async () => { rein!.click(); await new Promise((r) => setTimeout(r, 30)); });
+    }
+    await bilder(6);
+    return anzeige();
+  }
+
+  /** Die Breite, die der Renderer selbst ansetzt: Satzgröße × Zeichen, so oft,
+   *  wie der Zeichenbuch es misst — keine Zahl aus dem Kopf der Prüfung. */
+  function gemalteTitel(marke: RegExp) {
+    return leinwand.schriften()
+      .filter((s) => marke.test(s.text))
+      .map((s) => ({ text: s.text, px: s.text.length * s.schrift * 0.5 }));
+  }
+
+  /** Die Stufe „All" stellt das Raster ab — nur dort zeigt der Gang, was er
+   *  wirklich malt, und nur dort ist die Breite ungeprüft. */
+  async function alleStufe(container: HTMLElement) {
+    const knopf = [...container.querySelectorAll("button[aria-pressed]")].find((b) => b.textContent?.trim() === "All") as HTMLButtonElement | undefined;
+    expect(knopf, "die Dichtestufe All fehlt — der Fall greift nicht").toBeTruthy();
+    await act(async () => { fireEvent.click(knopf!); await new Promise((r) => setTimeout(r, 80)); });
+    await bilder(4);
+  }
+
+  it("malt im Gang keinen Titel über seinen Spaltenteil", async () => {
+    hub(10);
+    const view = await zeichne(gangTitelMasse(1000));
+    await bilder(10);
+    await alleStufe(view.container);
+    const prozent = await zoomeNach(100, view.container);
+    expect(prozent, "der Zoom erreicht 100 % nicht — der Fall prüft nichts").toBeGreaterThanOrEqual(100);
+    // Kontrolle, dass der Gang wirklich im Bild steht: ohne Punkte wäre „kein
+    // Titel" eine Heilung, die nichts heilt.
+    const info = view.container.querySelector('[data-testid="gang-info"]')!;
+    expect(info.textContent).toMatch(/showing 384/);
+    const teil = GANG_ABSTAND * (prozent / 100);
+    const kurzen = gemalteTitel(/^G\d/);
+    expect(kurzen.length, `bei ${prozent} % (Teil ${Math.round(teil)} px) malt der Gang nicht einmal seine kurzen Titel`).toBeGreaterThan(0);
+    const langen = gemalteTitel(/^LANG/);
+    for (const t of langen) {
+      expect(t.px, `ein ${Math.round(t.px)} px breiter Titel steht über einem ${Math.round(teil)} px breiten Spaltenteil`).toBeLessThanOrEqual(teil);
+    }
+    expect(langen, `der Gang malt ${langen.length} Titel, die über ihren Spaltenteil (${Math.round(teil)} px) spannen`).toHaveLength(0);
+  });
+
+  it("gibt die Gang-Titel zurück, sobald ihr Spaltenteil breit genug ist", async () => {
+    hub(10);
+    const view = await zeichne(gangTitelMasse(1000));
+    await bilder(10);
+    await alleStufe(view.container);
+    const prozent = await zoomeNach(900, view.container);
+    const teil = GANG_ABSTAND * (prozent / 100);
+    const langen = gemalteTitel(/^LANG/);
+    expect(langen.length, `bei ${prozent} % (Spaltenteil ${Math.round(teil)} px) malt der Gang immer noch keinen langen Titel`).toBeGreaterThan(0);
+    for (const t of langen) {
+      expect(t.px, `Titel ${Math.round(t.px)} px über Teil ${Math.round(teil)} px`).toBeLessThanOrEqual(teil);
+    }
   });
 });
 

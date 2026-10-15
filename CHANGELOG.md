@@ -1,3 +1,40 @@
+## [3.2.10]
+
+### Fixed
+
+- **The graph header counts the field, not the page the list happens to carry.**
+  His screen at 18:34 MESZ held three numbers over one picture: the header said
+  „100 of 21,066 in the store", the balance below it „21066 notes · 159 concepts ·
+  1061 links", the frame „729 of 21066 unfolded notes are in this picture". The
+  header read `memories.length` — the page the list loads — while the field has
+  carried his whole base since 3.2.8. The surface now reports its own count upward
+  (`onFeldZaehlung`) and the header uses it; one number, derived from the field.
+  The same panel also wrote one size two ways („21066 notes" above „345 of 21,066
+  notes carry a concept") — every quantity on it now carries the thousands
+  separator. Guards: `tests/components/graph-kopf-eine-zahl.test.tsx` (3 cases,
+  red before: header 100 against balance 130) and one new case in
+  `KnowledgeGraph.bestand.test.tsx` (red before: „1050 notes" against „1,050").
+- **A graph opened in a hidden window paints again when the window returns.**
+  Measured in his running app over its own debug port: window visible, canvas
+  300x150 (its HTML default), zoom 3 %, field empty — and 1940x1384 at 9 % after a
+  size change. The paint loop tested `document.hidden` once, when its effect ran,
+  with no listener and no dependency, so a graph first opened behind another window
+  never drew again in that program cycle and the camera stayed fitted to a 300x150
+  surface. The visibility of the window is now state, held by a
+  `visibilitychange` listener. Guard: `tests/components/graph-sichtbar-malt.test.tsx`
+  (3 cases; the control „hidden does not paint" stays green, removing the listener
+  turns two red).
+- **An aisle label no longer names a neighbourhood it does not belong to.**
+  Measured against his base: median title 114 px against a 26 px column split —
+  197 of 200 titles wider than their own cell. The gate compared the row *height*
+  with the column split and opened at 93 % zoom, which is exactly the band (93 % to
+  438 %) where a title spans four neighbours. An aisle title is now painted when it
+  fits its column and not otherwise; the node under the pointer keeps its full
+  title, and zooming in brings the names back. Guards: two cases in
+  `tests/components/KnowledgeGraph.render.test.tsx` (density setting „All"; red
+  before with the number „a 149 px title standing over a 27 px column split"; the
+  deep-zoom control proves short and long names still appear once they fit).
+
 ## [3.2.9]
 
 ### Fixed

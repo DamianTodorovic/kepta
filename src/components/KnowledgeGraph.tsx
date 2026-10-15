@@ -304,6 +304,15 @@ export const RANG_FOLGE: readonly Leistenglied[] = [
   "farben",
 ];
 
+/**
+ * Das Kleid der Mengen auf dieser Fläche (#101). Die Bilanz schreibt „345 of
+ * 21,066 notes carry a concept", ihr eigener Kopf direkt darüber „21066 notes" —
+ * dieselbe Größe, ein Zeilenabstand, zwei Schreibweisen. Eine Zahl pro Fläche.
+ */
+function mengenzahl(n: number): string {
+  return n.toLocaleString("en-US");
+}
+
 interface KnowledgeGraphProps {
   memories: Memory[];
   onSelectMemory: (m: Memory) => void;
@@ -314,6 +323,15 @@ interface KnowledgeGraphProps {
    * knopf in einer leiste.
    */
   onSelectConcept?: (name: string) => void;
+  /**
+   * Wie viele Notizen das FELD trägt — dieselbe Zahl, die die Bilanz über der
+   * Legende nennt (#101). Der Kopf der Graph-Zeile sitzt im Dashboard und las
+   * bisher die Länge der Liste, die das Fenster zufällig trägt: „100 of 21,066
+   * in the store", während unten „21066 notes" stand. Die Fläche ist die einzige,
+   * die den Ganzbestand holt — also meldet sie ihn nach oben, statt dass der
+   * Kopf rät.
+   */
+  onFeldZaehlung?: (knoten: number) => void;
 }
 
 interface GraphApi {
@@ -774,7 +792,7 @@ const ZUG_SCHWELLE_PX = 4;
  * einem Ref (kein Render pro Bild) und das Bild auf einer Leinwand; die Welt ist
  * so gross, wie sie sein muss, und der Ausschnitt richtet sich nach ihr.
  */
-export function KnowledgeGraph({ memories: memoriesAusFenster, onSelectMemory, onSelectConcept, sichtbar = true }: KnowledgeGraphProps & { sichtbar?: boolean }) {
+export function KnowledgeGraph({ memories: memoriesAusFenster, onSelectMemory, onSelectConcept, onFeldZaehlung, sichtbar = true }: KnowledgeGraphProps & { sichtbar?: boolean }) {
   /**
    * Der ganze Bestand, nicht die Seite, die das Fenster traegt.
    *
@@ -1785,6 +1803,12 @@ export function KnowledgeGraph({ memories: memoriesAusFenster, onSelectMemory, o
     [ansicht, baumNotizen, sichtbareAnzahl]
   );
   imBildRef.current = bildZaehlung.knoten;
+  // #101: was der Kopf der Zeile oben zu nennen hat, kommt aus dem Feld — und
+  // zwar aus derselben Größe, die die Bilanz malt. Ein Wert pro Änderung, kein
+  // Wert pro Bild: der Satz oben darf keine Renderkette an das Layout hängen.
+  useEffect(() => {
+    onFeldZaehlung?.(bildZaehlung.knoten);
+  }, [bildZaehlung.knoten, onFeldZaehlung]);
   /**
    * Die semantische Anordnung: die Plätze der Karte, die Begriffe in der Mitte
    * ihrer Notizen, und die Notizen ohne Vektor am Rand — gestellt, nicht
@@ -2957,6 +2981,12 @@ export function KnowledgeGraph({ memories: memoriesAusFenster, onSelectMemory, o
       const mitteX = n.x * t.k + t.x;
       const mitteY = (n.y + r) * t.k + t.y + 2;
       const breite = ctx.measureText(titel).width;
+      // #91: die BREITE gegen den Spaltenteil, nicht die Höhe. Ein Gang-Titel,
+      // der über seinen Teil spannt, nennt eine Nachbarschaft, der er nicht
+      // gehört — gemessen 15.10. im Fall: 149 px Titel über 27 px Teil, also
+      // 4,7 Spalten weit. Was der Zeiger hält, bleibt ausgenommen: auf Nachfrage
+      // gilt die Kürzung nicht.
+      if (!gehalten && sim.gangIds?.has(n.id) && breite > GANG_ABSTAND * t.k) continue;
       // Der Knoten unter dem Zeiger und seine Nachbarn haben Vorrang und
       // ueberschreiben notfalls; alles andere weicht aus.
       const bevorzugt = hov === n.id || nachbarn?.has(n.id) === true;
@@ -3139,7 +3169,7 @@ export function KnowledgeGraph({ memories: memoriesAusFenster, onSelectMemory, o
       const zeile = benanntRef.current;
       if (zeile) {
         const gesamt = imBildRef.current;
-        const meldung = benannt < gesamt ? `${benannt} of ${gesamt} notes carry a title` : "";
+        const meldung = benannt < gesamt ? `${mengenzahl(benannt)} of ${mengenzahl(gesamt)} notes carry a title` : "";
         if (zeile.textContent !== meldung) zeile.textContent = meldung;
         const anzeige = meldung === "" ? "none" : "";
         if (zeile.style.display !== anzeige) zeile.style.display = anzeige;
@@ -3160,7 +3190,7 @@ export function KnowledgeGraph({ memories: memoriesAusFenster, onSelectMemory, o
       const kapZeile = kappenRef.current;
       if (kapZeile) {
         const meldung = gekappt > 0
-          ? `${gekappt} of ${erwaehnungGemalt + gekappt} mention links left out for the picture's space`
+          ? `${mengenzahl(gekappt)} of ${mengenzahl(erwaehnungGemalt + gekappt)} mention links left out for the picture's space`
           : "";
         if (kapZeile.textContent !== meldung) kapZeile.textContent = meldung;
         const anzeige = meldung === "" ? "none" : "";
@@ -3176,7 +3206,7 @@ export function KnowledgeGraph({ memories: memoriesAusFenster, onSelectMemory, o
           ? ""
           : imRahmenNoten === 0
             ? "no unfolded notes are in this picture — the tree is taller than its frame, pan to read it"
-            : `${imRahmenNoten} of ${gesamt} unfolded notes are in this picture`;
+            : `${mengenzahl(imRahmenNoten)} of ${mengenzahl(gesamt)} unfolded notes are in this picture`;
         if (rahmenZeile.textContent !== meldung) rahmenZeile.textContent = meldung;
         const anzeige = meldung === "" ? "none" : "";
         if (rahmenZeile.style.display !== anzeige) rahmenZeile.style.display = anzeige;
@@ -3232,6 +3262,25 @@ export function KnowledgeGraph({ memories: memoriesAusFenster, onSelectMemory, o
   }, [dimensions, holeSprites]);
 
   // --- Bildschleife: rechnet nur, solange sich etwas bewegt ---
+  /**
+   * Die Sichtbarkeit des FENSTERS, nicht der Ansicht.
+   *
+   * Die Schleife unten durfte nicht anlaufen, wenn `document.hidden` beim ersten
+   * Effect-Lauf true war — ein Graph, der in einem verdeckten Fenster geöffnet
+   * wurde, malt in diesem Programmzyklus nie wieder. Gemessen 15.10. 19:05 an
+   * Damians laufender App: Fenster sichtbar, Leinwand 300x150 (ihr
+   * HTML-Default), Zoom 3 %, Feld leer; erst eine Größenänderung holte sie zurück
+   * (1940x1384, 9 %). `document.hidden` war weder Abhängigkeit noch hatte es
+   * einen Hörer. Also: einmal hören, und die Antwort in den Zustand.
+   */
+  const [fensterSichtbar, setzeFensterSichtbar] = useState(
+    () => typeof document === "undefined" || !document.hidden
+  );
+  useEffect(() => {
+    const melden = () => setzeFensterSichtbar(!document.hidden);
+    document.addEventListener("visibilitychange", melden);
+    return () => document.removeEventListener("visibilitychange", melden);
+  }, []);
   useEffect(() => {
     let laeuft = true;
     let raf = 0;
@@ -3294,13 +3343,13 @@ export function KnowledgeGraph({ memories: memoriesAusFenster, onSelectMemory, o
     // Das Dashboard haelt alle Ansichten gemountet und versteckt sie nur per
     // CSS — ohne diese Sperre zeichnet der Graph unsichtbar weiter und hielt
     // den Renderer dauerhaft bei 84 % CPU, egal welche Ansicht offen war.
-    if (!sichtbar || document.hidden) {
+    if (!sichtbar || !fensterSichtbar) {
       zeichneNoetig.current = true; // beim Wiederkommen einmal frisch zeichnen
       return () => { laeuft = false; };
     }
     raf = requestAnimationFrame(schleife);
     return () => { laeuft = false; cancelAnimationFrame(raf); };
-  }, [zeichne, dimensions, fitBaumAnsicht, sichtbar]);
+  }, [zeichne, dimensions, fitBaumAnsicht, sichtbar, fensterSichtbar]);
 
   useEffect(() => { zeichneNoetig.current = true; }, [timeFilter, TYPE_COLORS, hovered]);
   // Das Spotlight ist reine Darstellung: kein Neu-Layout, ein Bild.
@@ -4561,19 +4610,19 @@ export function KnowledgeGraph({ memories: memoriesAusFenster, onSelectMemory, o
             {/* Die gemalte Zahl, und dahinter die Größe des Bestands, wenn die
                 Fläche weniger malt, als die Tür hat. Ohne diesen zweiten Teil
                 wäre „100 notes" die Behauptung, das Gehirn habe 100 Notizen. */}
-            {bildZaehlung.knoten} {bildZaehlung.knoten === 1 ? "note" : "notes"}
+            {mengenzahl(bildZaehlung.knoten)} {bildZaehlung.knoten === 1 ? "note" : "notes"}
             {/* Der Zusatz gehört nur der Kappung: schweigt die Tür, ist die
                 Liste alles, was die Fläche weiß, und „of …" wäre eine Zahl aus
                 der Luft. Filter, Zeitregler und Faltung ändern die gemalte Zahl
                 ohnehin — dafür steht die Bilanzzeile darunter. */}
             {bestandGroesse() !== null && bestandNotizen > bildZaehlung.knoten
-              ? ` of ${bestandNotizen.toLocaleString("en-US")} in the store`
+              ? ` of ${mengenzahl(bestandNotizen)} in the store`
               : ""}{" "}
             ·{" "}
-            {netz.knoten.length} {netz.knoten.length === 1 ? "concept" : "concepts"} ·{" "}
+            {mengenzahl(netz.knoten.length)} {netz.knoten.length === 1 ? "concept" : "concepts"} ·{" "}
             {ansicht === "dendrogram"
-              ? `${baumLayout.edges.length} ${baumLayout.edges.length === 1 ? "link" : "links"}`
-              : `${kanten.echt} ${kanten.echt === 1 ? "link" : "links"}${aehnlichkeitsZeile(kanten.aehnlichkeit, edges.length, zoomAnzeige)}`}
+              ? `${mengenzahl(baumLayout.edges.length)} ${baumLayout.edges.length === 1 ? "link" : "links"}`
+              : `${mengenzahl(kanten.echt)} ${kanten.echt === 1 ? "link" : "links"}${aehnlichkeitsZeile(kanten.aehnlichkeit, edges.length, zoomAnzeige)}`}
           </div>
           <div className="flex items-center gap-3 hud-label">
             {/* Die Legende erklärt den Kanal, der gerade färbt — nicht den, den

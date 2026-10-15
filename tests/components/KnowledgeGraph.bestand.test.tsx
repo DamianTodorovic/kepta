@@ -109,6 +109,19 @@ describe("Der Kopf nennt die gemalte Zahl und den Bestand der Tür", () => {
     expect(container.textContent).not.toMatch(/of 14,702 notes carry a concept/);
   });
 
+  it("schreibt seine Mengen im selben Kleid wie die Bilanz", async () => {
+    // Damians Bild 18:34 MESZ, zwei Zeilen untereinander:
+    //   „21066 notes · 159 concepts · 1061 links"
+    //   „345 of 21,066 notes carry a concept"
+    // Dieselbe Größe, ein Zeilenabstand, zwei Schreibweisen — genau die Klasse,
+    // die dashboard-bestand.test.tsx für den Gehirn-Chip schon sperrt.
+    kapsel.bestand = 14_702;
+    const { container } = await flaeche(Array.from({ length: 1050 }, note));
+    const kopf = container.querySelector('[data-testid="graph-kopf"]')?.textContent ?? "";
+    expect(kopf, kopf).toMatch(/^1,050 notes of 14,702 in the store/);
+    expect(kopf, "rohe Menge neben formatierter im selben Kopf").not.toMatch(/^1050 notes/);
+  });
+
   it("dünnt nicht, wenn die Seite gar nichts Gedecktes bringt", async () => {
     // Mein eigener Befund vom Kunstbestand: die neuesten 100 Notizen hängen an
     // keinem Begriff, `netz.knoten` ist leer. Dann greift der Schutz vor dem

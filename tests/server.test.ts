@@ -1158,8 +1158,20 @@ describe("Express-5-Härtung: Body ohne JSON-Content-Type", () => {
   });
 
   it("POST /api/models mit text/plain bleibt ein 4xx/5xx ohne Absturz — Meldung als JSON", async () => {
-    const res = await request(app).post("/api/models").set("Content-Type", "text/plain").send("kein json");
-    expect(res.status).toBeGreaterThanOrEqual(400);
-    expect(typeof res.body.error).toBe("string");
+    // Ohne Körper nimmt die Route die Default-Basis und wählt das Netz. Ob
+    // api.openai.com antwortet, ist keine Eigenschaft meines Programms — der Fall
+    // ist 15.10. um 19:36 unter Last ROT geworden (200), um 19:33 GRÜN (500), auf
+    // denselben Bytes. Also wird die Haube zugemacht: ein Netzfehler ist der
+    // ehrliche Grenzfall, und er darf nicht in einen Absturz kippen.
+    const realFetch = globalThis.fetch;
+    globalThis.fetch = (async () => { throw new Error("kein Netz im Test"); }) as unknown as typeof fetch;
+    try {
+      const res = await request(app).post("/api/models").set("Content-Type", "text/plain").send("kein json");
+      expect(res.status).toBeGreaterThanOrEqual(400);
+      expect(res.status, "der Begrenzer darf diesen Fall nicht zufällig grün machen").not.toBe(429);
+      expect(typeof res.body.error).toBe("string");
+    } finally {
+      globalThis.fetch = realFetch;
+    }
   });
 });

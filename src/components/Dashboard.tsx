@@ -164,6 +164,9 @@ export function Dashboard() {
   const [memories, setMemories] = useState<Memory[]>([]);
   /** Was die Tür über den Bestand sagt — `null`, wenn sie schweigt. */
   const [tuerBestand, setTuerBestand] = useState<number | null>(null);
+  /** Was das FELD malt, gemeldet von der Graph-Fläche (#101). `null`, solange
+   *  sie noch nichts weiß — dann nennt der Kopf die Liste, die er wirklich hat. */
+  const [feldZaehlung, setzeFeldZaehlung] = useState<number | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [debouncedSearchQuery, setDebouncedSearchQuery] = useState('');
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
@@ -1923,7 +1926,7 @@ export function Dashboard() {
                 wird vom Inhalt nicht gedehnt (min-w-0 und truncate in einer
                 flex-Zeile), also misst die Beobachtung die verfügbare Breite. */}
             <div ref={satzKastenRef} className="text-[12px] tnum min-w-0 truncate" style={{ color: 'var(--text-3)' }}>
-              {mengensatz(memories.length, tuerBestand)}{!schmal && satzPasst ? " · connected through tags, similarity and knowledge entities" : ""}
+              {mengensatz(feldZaehlung ?? memories.length, tuerBestand)}{!schmal && satzPasst ? " · connected through tags, similarity and knowledge entities" : ""}
             </div>
             <div className="ml-auto shrink-0">
               <button onClick={() => setCurrentView("memories")} className="btn-ghost px-2.5 py-1.5 rounded-md text-xs font-medium">Back to the list</button>
@@ -1933,6 +1936,7 @@ export function Dashboard() {
             <KnowledgeGraph
               memories={memories}
               sichtbar={currentView === 'graph'}
+              onFeldZaehlung={setzeFeldZaehlung}
               onSelectMemory={(m) => { setEditingMemory(m); setIsEditorOpen(true); }}
               onSelectConcept={(name) => { setDossierThema({ text: name, nr: (dossierThema?.nr ?? 0) + 1 }); setCurrentView('dossier'); }}
             />
