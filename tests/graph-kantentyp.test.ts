@@ -13,8 +13,9 @@
 // zweimal gemalt, zaehlt als zwei Belege.
 //
 // gebaut: `store.verknuepfeNotiz(memoryId, titel, namen)` — derselbe Name wie in der App,
-// damit die Parität grepbar bleibt. Der Kern liest dabei **keinen Text** (kein
-// `begiffe.ts`): Begriffe kommen hier von dem, der schreibt. Und das Pairing ist auf die
+// damit die Parität grepbar bleibt. Seit der Paritaetsscheibe liest der Kern dabei **auch
+// seinen eigenen Text** (`src/core/begiffe.ts`, Zwilling der App-Datei); die übergebenen
+// Namen bleiben die zweite Quelle, und das Pairing ist auf die
 // ersten acht Begriffe gekappt: aus 14 Namen wuerden 91 Paare, und eine Notiz waere ein
 // Knotenwerk statt einer Aussage.
 //

@@ -566,6 +566,9 @@ export function indexMemory(store: KeptaStore, memoryId: string): void {
   if (!record) return;
   const texts = [`${record.title}\n${record.tags.join(", ")}`, ...chunkText(record.content)];
   store.replaceChunks(memoryId, texts);
+  // Zerlegen und Verknuepfen sind ein Vorgang, nicht zwei: jeder Schreibweg, der hier
+  // entlangkommt, bekommt damit dieselbe Welt wie die Desktop-App.
+  store.verknuepfeNotiz(memoryId, record.title, []);
 }
 
 // ---------- Konsolidierung ----------

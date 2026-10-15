@@ -13,6 +13,7 @@ import crypto from "node:crypto";
 // Die Zuordnung ist reine, abhaengigkeitsfreie Logik — deshalb darf der Kern
 // sie benutzen, ohne sich etwas einzuhandeln.
 import { klassifiziere } from "./klassifikation";
+import { begriffeAusText } from "./begiffe";
 import { leseUmwelt } from "./umwelt";
 import type {
   MemoryRecord,
@@ -965,11 +966,17 @@ export class KeptaStore {
    */
   verknuepfeNotiz(memoryId: string, titel: string, namen: string[]): number {
     const t = String(titel ?? "").trim().toLowerCase();
+    // Der eigene Text spricht zuerst. Ueberschriften und Wiki-Links der Notiz sind
+    // Begriffe, egal welcher Schreibweg gerade speichert — sonst gilt die Regel nur fuer
+    // die Pfade, die zufaellig selbst verknuepfen, und was aus einem Import kommt, bleibt
+    // ein Blatt ohne Kante. Das ist die Stelle, an der DMG und npm-Paket auseinanderliefen.
+    const notiz = this.getMemory(memoryId);
+    const eigenen = notiz ? begriffeAusText(`${notiz.title}\n${notiz.content}`) : [];
     const knoten = new Set<string>();
     if (t.length >= 2) knoten.add(t);
     const paare = new Map<string, [string, string, string]>();
     const schluessel = (a: string, b: string, wort: string): string => a + "|" + b + "|" + wort;
-    for (const roh of namen ?? []) {
+    for (const roh of [...eigenen, ...(namen ?? [])]) {
       const n = String(roh ?? "").trim().toLowerCase();
       if (n.length < 2 || n === t) continue;
       knoten.add(n);

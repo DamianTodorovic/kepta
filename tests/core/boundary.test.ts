@@ -32,6 +32,11 @@ describe("memory core boundary (src/core)", () => {
   it("contains exactly the known core files (no silent additions)", () => {
     const names = coreFiles.map((f) => path.basename(f)).sort();
     expect(names).toEqual([
+      // Die Leseregel der Begriffe: Ueberschriften und Wiki-Links einer Notiz, aus ihrem
+      // eigenen Text geholt. Reine Zeichenrechnung — kein Store, kein DOM, kein Netz, kein
+      // Import ueberhaupt. Zwilling von kepta-app/src/core/begiffe.ts, damit npm und DMG
+      // denselben Graphen bauen und nicht zwei.
+      "begiffe.ts",
       // ChatGPT-Export-Importer (Kompatibilitaetsfalle): gleiche Grenze wie der
       // Rest des Kerns — nur Node-Bordmittel, Store/Engine, kein Netz, keine UI.
       "chatgpt-import.ts",
