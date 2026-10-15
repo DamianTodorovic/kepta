@@ -800,6 +800,19 @@ export function gangPlatz(
 }
 
 /**
+ * Wie viele Reihen der Gang bei n Notizen braucht — dieselbe Rechnung, die der Mal-Pass
+ * ziehen muss, wenn er seine Zeile malt.
+ *
+ * eigene Funktion, weil die Zahl bis hierhin nur ein Zwischenwert im Zeichnen war: was nur auf
+ * dem canvas steht, liest niemand — weder ein Pruefstand noch ein Mensch mit einer
+ * Vorlesesoftware, und schon gar keine Rechnung ueber die eigene Datei.
+ */
+export function gangZeilen(alleinZahl: number, spalten = GANG_SPALTEN): number {
+  if (!(alleinZahl > 0)) return 0;
+  return Math.ceil(alleinZahl / Math.max(1, spalten));
+}
+
+/**
  * Welche Knoten in diesem Bild keinen einzigen Nachbarn haben.
  *
  * Begriffe (`__ent:`) sind nie allein — sie *sind* die Nachbarschaft. Gezogene

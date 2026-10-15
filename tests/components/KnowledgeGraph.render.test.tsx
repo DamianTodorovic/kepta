@@ -4067,3 +4067,25 @@ describe("Der Baum faltet sich, was nicht in seine Leinwand passt", () => {
   });
 });
 
+
+describe("Gang: die Zahl ist auch im DOM zu lesen", () => {
+  // #90. Was der Gang fuer Notizen ohne Nachbarn reserviert, stand bis hierhin nur auf dem
+  // canvas (`sim.allein`, gemalt in KnowledgeGraph.tsx:2913). Fuer eine Vorlesesoftware ist
+  // ein canvas leer Text, fuer eine Pruefung an seiner Datei ebenso — also spiegelt die
+  // Flaeche die Zahl jetzt in ein echtes Blatt.
+  it("nennt Zahl und Zeilen des Gangs in einem DOM-Knoten, nicht nur im Bild", async () => {
+    const view = await zeichne([note(), note(), note()]);
+    await bilder(6);
+    const knoten = view.container.querySelector('[data-testid="gang-info"]');
+    expect(knoten, "die Gang-Zahl steht nur auf dem canvas — fuer niemanden lesbar, der nicht hinsehen kann").not.toBeNull();
+    expect(knoten!.textContent).toMatch(/3 notes connect to nothing/);
+    expect(knoten!.textContent).toMatch(/1 row/);
+  });
+
+  it("sagt nichts, wenn es keinen Gang gibt", async () => {
+    const view = await zeichne([]);
+    await bilder(6);
+    const knoten = view.container.querySelector('[data-testid="gang-info"]');
+    expect(knoten?.textContent ?? "", "ein leerer Gang darf keine Zahl behaupten").not.toMatch(/connect to nothing/);
+  });
+});

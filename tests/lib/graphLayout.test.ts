@@ -28,6 +28,7 @@ import {
   LINIEN_MINDESTBUDGET,
   alleinKnoten,
   gangPlatz,
+  gangZeilen,
   GANG_ABSTAND,
   GANG_RAND,
   GANG_SPALTEN,
@@ -2209,6 +2210,24 @@ describe("Gang: was nichts verbindet, tanzt nicht um den Kern", () => {
     expect(erste.x).toBeLessThan(0);
     expect(letzte.x).toBeGreaterThan(0);
     expect(Math.abs(erste.x)).toBeCloseTo(letzte.x, 6);
+  });
+
+  // #90: die Zeilenzahl des Gangs war bis hierhin nur eine Zeile im Mal-Pass
+  // (`Math.ceil(sim.allein / GANG_SPALTEN)`), also stand sie allein auf dem canvas — fuer
+  // keinen Leser, fuer keine Pruefung, und fuer jede Einpass-Rechnung auf seine Datei
+  // angewiesen. Sie ist eine Rechengroesse des Rasters, also gehoert sie in das Raster.
+  it("gangZeilen: die Zeilenzahl steht als Zahl bereit, nicht nur als gemalter Text", () => {
+    expect(gangZeilen(0)).toBe(0);
+    expect(gangZeilen(1)).toBe(1);
+    expect(gangZeilen(GANG_SPALTEN)).toBe(1);
+    expect(gangZeilen(GANG_SPALTEN + 1)).toBe(2);
+    expect(gangZeilen(176)).toBe(6);
+  });
+
+  it("gangZeilen folgt genau der Menge, die alleinKnoten uebergibt", () => {
+    const allein = alleinKnoten([...knoten(33, "m")], []);
+    expect(allein.length).toBe(33);
+    expect(gangZeilen(allein.length)).toBe(2);
   });
 
   it("zaehlt nur Notizen ohne Nachbarn — Begriffe und Gezogenes bleiben draussen", () => {

@@ -8,6 +8,21 @@
 ### Fixed
 - **The route table stopped implying a door that is not there.** It listed `/api/memories/:id` with no method, which reads as a documented `GET` — and `GET /api/memories/:id` answers `404`, because the only methods registered on that path are `DELETE` and `POST .../restore`. The row now names every method it lists, the section says in words that there is no single-note GET and where a note's body actually arrives (`GET /api/memories`, or a `GET /api/memories/search` hit — both carry the full `content`), and `tests/doku-plattform.test.ts` parses the table and fails if a named route is not registered on the server. Neither `kepta-core` nor the Enterprise server grew a route in this pass: all three doors already behave the same, so what was wrong here was only the sentence about them.
 
+- **The band of unconnected notes became a page, not only a picture.** Its one sentence —
+  `N notes connect to nothing in this picture` — existed only as text drawn onto the canvas, so
+  nothing outside the paint loop could read the count: not a screen reader, not a check on a real
+  store, not the row-pitch calculation the next slice needs. `src/lib/graphLayout.ts` now exports
+  `gangZeilen(alleinZahl, spalten)` (the arithmetic the paint pass was doing inline) and the surface
+  mirrors `{ allein, zeilen }` into a real element (`data-testid="gang-info"`, `role="status"`,
+  screen-reader text `N notes connect to nothing in this picture · R rows of C`). The mirror sits at
+  the layout handoff, not in the animation loop, and that was measured, not assumed: `sim.allein` is
+  set by the first simulation step, so a mirror waiting for a frame stood empty where no frame is
+  painted (`textContent ''` — zwei rote Laeufe). Held by four cases:
+  `tests/lib/graphLayout.test.ts` (0 notes = 0 rows, 176 notes = 6 rows at 32 columns) and
+  `tests/components/KnowledgeGraph.render.test.tsx` (the node carries count and rows when a band
+  exists; it claims nothing when there is no band). The picture did not move: same caption at the
+  same place, same rows — only now someone other than the eye can read it.
+
 - **The graph stopped writing its lonely notes into each other.** Notes with no neighbour in the picture lie in rows under the core, and their titles are drawn centred on the dot: at 820 px and 46 % zoom a row is 12 image pixels tall while a title is 14 with its tag line, so the titles of one row landed in the dots of the next and across the caption that counts them. Band titles are now withheld while a row cannot hold a line — the count stays, and zooming in brings the names back — and the caption reserves its cells in the same occupancy grid the labels use. Measured before and after in the same window: `audit-2026-10-09/leitung-bilder/ausschnitt-legende-820.png` against `graph-820x1180.png`. `src/lib/graphLayout.ts` (`gangIds`), `src/components/KnowledgeGraph.tsx`.
 - **A header sentence that does not fit is gone rather than chopped.** The graph header carried "… connected through tags, similarity and knowledge entities" behind a `truncate`; at 820 px the box measured 343 px and the sentence 387, so it ended mid-word in front of the user. The box now decides: below the width the sentence needs, only the count stands. `src/components/Dashboard.tsx` (`SATZ_BREITE_MIN`, a `ResizeObserver` on the box itself, silent where no layout exists).
 - **The provider line stopped speaking in house words.** It read "No API key — the test cockpit chat cannot answer. Agents over MCP do not need one." — an internal name for our own product on a surface a stranger reads. It now says what is missing and what still works without it. `src/components/SystemStatus.tsx:180`.

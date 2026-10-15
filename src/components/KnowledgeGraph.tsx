@@ -33,6 +33,8 @@ import {
   notizEtikett,
   GANG_SPALTEN,
   GANG_ABSTAND,
+  gangZeilen,
+  alleinKnoten,
   verborgeneNotizen,
   type NotizEtikett,
   kantenMitte,
@@ -825,6 +827,27 @@ export function KnowledgeGraph({ memories, onSelectMemory, onSelectConcept, sich
    */
   const [entfaltet, setEntfaltet] = useState<ReadonlySet<string>>(new Set());
   const [dimensions, setDimensions] = useState({ w: 800, h: 500 });
+  /**
+   * Die Gang-Zahl in ein echtes Blatt spiegeln. Was nur auf dem canvas steht, liest niemand:
+   * weder eine Vorlesesoftware noch eine Pruefung an seiner Datei, und seit 11:08 auch nicht
+   * die eigene Einpass-Rechnung (#90).
+   *
+   * Der Spiegel haengt an der Handuebergabe des Layouts, nicht am Mal-Pass: `sim.allein` wird
+   * erst im ersten Schritt gesetzt, und ein Spiegel, der vom Bildzyklus abhaengt, ist in
+   * einem Pruefstand ohne Bildzyklus leer — gemessen 15.10. 11:22, wo der Knoten stand und
+   * sein Text '' war. An der Handuebergabe liegt dieselbe Menge, die der Schritt gleich
+   * zaehlt: `alleinKnoten`.
+   */
+  const [gangInfo, setGangInfo] = useState<{ allein: number; zeilen: number } | null>(null);
+  const gangInfoRef = useRef<{ allein: number; zeilen: number } | null>(null);
+  const spiegleGang = (sim: Simulation | null) => {
+    const alleinZahl = sim ? alleinKnoten(sim.nodes, sim.edges).length : 0;
+    const naechster = alleinZahl > 0 ? { allein: alleinZahl, zeilen: gangZeilen(alleinZahl) } : null;
+    const aktuell = gangInfoRef.current;
+    if ((aktuell?.allein ?? 0) === (naechster?.allein ?? 0) && (aktuell?.zeilen ?? 0) === (naechster?.zeilen ?? 0)) return;
+    gangInfoRef.current = naechster;
+    setGangInfo(naechster);
+  };
   const legendenRef = useRef<HTMLDivElement>(null);
   /**
    * Der Rahmen, in den das Bild passt: die Leinwand abzüglich dessen, was die
@@ -1789,6 +1812,7 @@ export function KnowledgeGraph({ memories, onSelectMemory, onSelectConcept, sich
       }
     }
     simRef.current = sim;
+    spiegleGang(sim);
     forceHistoryRef.current = sim;
     if (sim.nodes.length > 0) {
       // Der Ausschnitt gehoert zu den ZIEL-Positionen und MUSS sofort gesetzt
@@ -1842,6 +1866,7 @@ export function KnowledgeGraph({ memories, onSelectMemory, onSelectConcept, sich
       sim.index.set(kopie.id, kopie);
     }
     simRef.current = sim;
+    spiegleGang(null);
     strukturKnotenRef.current = baumLayout.struktur;
     zielRef.current = new Map(baumLayout.nodes.map((n) => [n.id, { x: n.x, y: n.y }]));
     if (zeitWechsel) {
@@ -1871,6 +1896,7 @@ export function KnowledgeGraph({ memories, onSelectMemory, onSelectConcept, sich
     const ids = idsSchluessel ? idsSchluessel.split(",") : [];
     const sim = reuseSimulation(simRef.current, ids, edges, radiusOf, krafteFeld(krafteRef.current));
     simRef.current = sim;
+    spiegleGang(null);
     strukturKnotenRef.current = kraftGeruest;
     zielRef.current = semantikFeld.ziele;
     autoFitOffen.current = false;
@@ -2907,8 +2933,7 @@ export function KnowledgeGraph({ memories, onSelectMemory, onSelectConcept, sich
       const ankerY = sim.alleinAnker.y * t.k + t.y;
       const breite = Math.min(dimensions.w - 24, GANG_SPALTEN * GANG_ABSTAND * t.k);
       const x0 = Math.max(12, ankerX - breite / 2);
-      const zeilen = Math.ceil(sim.allein / GANG_SPALTEN);
-      const letzteZeile = ankerY + (zeilen - 1) * GANG_ABSTAND * t.k;
+      const letzteZeile = ankerY + (gangZeilen(sim.allein) - 1) * GANG_ABSTAND * t.k;
       if (ankerY > -40 && letzteZeile < dimensions.h + 80) {
         const text = `${sim.allein.toLocaleString("en-US")} notes connect to nothing in this picture`;
         ctx.globalAlpha = 0.34;
@@ -4088,6 +4113,15 @@ export function KnowledgeGraph({ memories, onSelectMemory, onSelectConcept, sich
           boxShadow: "inset 0 1px 0 var(--edge-light), var(--shadow-sm)",
         }}
       >
+        <p
+          data-testid="gang-info"
+          role="status"
+          className="sr-only"
+        >
+          {gangInfo
+            ? `${gangInfo.allein.toLocaleString("en-US")} notes connect to nothing in this picture · ${gangInfo.zeilen} ${gangInfo.zeilen === 1 ? "row" : "rows"} of ${GANG_SPALTEN}`
+            : ""}
+        </p>
         <canvas
           ref={canvasRef}
           data-testid="graph-canvas"
