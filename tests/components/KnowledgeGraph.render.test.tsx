@@ -4253,3 +4253,35 @@ describe("Gang-Masse: eine Seite Punkte, ein Blätterer, und die Zahl sagt alles
       .not.toMatch(/are not painted/);
   });
 });
+
+describe("Ganzbestand: der Gang kennt die Stadt, nicht nur die Seite des Fensters", () => {
+  // Damians Bild 17:22 MESZ: „19 notes of 21,066 in the store" und
+  // „counts cover the 100 loaded notes". Die Liste im Fenster traegt eine Seite
+  // (100 Notizen) — und der Graph wurde aus genau dieser Seite gebaut. Die Tür
+  // kennt `?alle=1`; der Gang holt sich damit den ganzen Bestand, die Liste
+  // bleibt leicht.
+  it("holt den ganzen Bestand, wenn die Fensterseite nur einen Teil traegt", async () => {
+    const alle = Array.from({ length: 500 }, (_, i) =>
+      note({ id: `g${i}`, title: `Ganz ${i}`, content: `einzigartiger Inhalt ${i}`, tags: [] }));
+    vi.stubGlobal("fetch", vi.fn(async (url: string) => {
+      if (String(url).startsWith("/api/memories")) {
+        return new Response(JSON.stringify({ memories: alle, count: alle.length, total: alle.length, begrenzt: false }), { status: 200 });
+      }
+      if (String(url).startsWith("/api/graph?")) {
+        return new Response(JSON.stringify({
+          entities: [{ id: 1, name: "Sammelbecken" }],
+          relations: [{ id: "r1", source: "Sammelbecken", target: "Ganz 0", relation: "mentions", memoryId: "g0" }],
+          memoriesByEntity: { Sammelbecken: ["g0", "g1"] },
+          bestand: { knoten: 1, kanten: 2 },
+        }), { status: 200 });
+      }
+      return new Response(JSON.stringify({ relations: [], memoriesByEntity: {} }), { status: 200 });
+    }));
+    const view = await zeichne(alle.slice(0, 3));
+    await bilder(14);
+    const info = view.container.querySelector('[data-testid="gang-info"]')!;
+    expect(info.textContent, "der Gang muss die Masse des Ganzen sehen, nicht die 3 der Seite").toMatch(/498 notes connect to nothing/);
+    expect(info.textContent, info.textContent).toMatch(/showing 384 of 498/);
+    expect(info.textContent, info.textContent).toMatch(/page 1 of 2/);
+  });
+});

@@ -1,3 +1,20 @@
+## [3.2.8]
+
+### Fixed
+
+- **The graph now sees the whole memory, not the page the list happens to carry.**
+  The window loads one page of notes (`GET /api/memories`, 100 by default) because a
+  21.000-row list must stay light — and the graph was built from exactly that page.
+  Measured in his own window at 17:22 MESZ: the header said `19 notes of 21,066 in
+  the store` and the side rail `counts cover the 100 loaded notes`, so most of a
+  person's memory was never a candidate for the picture, no matter how the band or
+  the caps were tuned. The graph view now asks the door for the whole base once per
+  session (`GET /api/memories?alle=1`, the switch the door already had) and keeps
+  the larger set for the field; the list is untouched and still pages. Guard:
+  `tests/components/KnowledgeGraph.render.test.tsx` — a 500-note base delivered
+  through the door while the window carries 3 must still count 498 lonely notes,
+  show 384 of them and offer page 1 of 2.
+
 ## [3.2.7]
 
 ### Fixed

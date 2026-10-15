@@ -774,7 +774,32 @@ const ZUG_SCHWELLE_PX = 4;
  * einem Ref (kein Render pro Bild) und das Bild auf einer Leinwand; die Welt ist
  * so gross, wie sie sein muss, und der Ausschnitt richtet sich nach ihr.
  */
-export function KnowledgeGraph({ memories, onSelectMemory, onSelectConcept, sichtbar = true }: KnowledgeGraphProps & { sichtbar?: boolean }) {
+export function KnowledgeGraph({ memories: memoriesAusFenster, onSelectMemory, onSelectConcept, sichtbar = true }: KnowledgeGraphProps & { sichtbar?: boolean }) {
+  /**
+   * Der ganze Bestand, nicht die Seite, die das Fenster traegt.
+   *
+   * Die Liste im Programm laedt eine Seite (`GET /api/memories`, 100 Notizen) —
+   * fuer 21.000 Zeilen ist das richtig, fuer ein Bild, das sein Gedaechtnis
+   * zeigen will, die Haelfte der Wahrheit: gemessen 15.10. 17:22 an Damians
+   * Bestand, wo der Graph "19 of 21,066" meldete, weil er nur kannte, was die
+   * Liste zufaellig getragen hatte. Die Tuer kennt `?alle=1`; der Gang holt sich
+   * den ganzen Bestand einmal je Sitzung, die Liste bleibt leicht.
+   */
+  const [ganzerBestand, setzeGanzenBestand] = useState<Memory[]>([]);
+  useEffect(() => {
+    let abgebrochen = false;
+    void (async () => {
+      try {
+        const res = await fetch("/api/memories?alle=1");
+        if (!res.ok || abgebrochen) return;
+        const daten = await res.json();
+        const liste = Array.isArray(daten) ? daten : Array.isArray(daten?.memories) ? daten.memories : [];
+        if (!abgebrochen && liste.length > 0) setzeGanzenBestand(liste as Memory[]);
+      } catch { /* Tuer nicht erreichbar: die Fensterseite traegt das Bild, bis sie antwortet */ }
+    })();
+    return () => { abgebrochen = true; };
+  }, []);
+  const memories = ganzerBestand.length > memoriesAusFenster.length ? ganzerBestand : memoriesAusFenster;
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
   const [filter, setFilter] = useState("");
