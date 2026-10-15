@@ -18,6 +18,11 @@ Laeufe liegt, korrekt gekuerzt, im Kern-Repo unter `docs/belege/`.
 | `tag-13-10/eval-korpus-1143.log.txt` | 3419 B | `8b343e7457825fa0…` |
 | `tag-13-10/eval-korpus-1413.log.txt` | 4181 B | `dcd3e42dc0021921…` |
 | `tag-13-10/ablation-beine-1144.log.txt` | 1904 B | `62d15147e59de149…` |
+| `app-abnahme/nachzug-vorher-rot.log.txt` | 6030 B | `1e240e7500dd47b2…` |
+| `app-abnahme/nachzug-tuer-gruen.log.txt` | 1008 B | `5bf5486e036c9104…` |
+| `app-abnahme/nachzug-flaeche-vorher-rot.log.txt` | 16278 B | `9c0ac4b1640fd829…` |
+| `app-abnahme/nachzug-flaeche-gruen.log.txt` | 19204 B | `1e6eb0616a86a748…` |
+| `app-abnahme/nachzug-mutation-rot.log.txt` | 22052 B | `1c8a44f87cda8e3a…` |
 
 Summe: **9504 Bytes** in 3 Dateien, Stand der aeltesten Kopie: 2026-10-13 12:13 UTC.
 

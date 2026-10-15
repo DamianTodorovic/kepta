@@ -1,0 +1,387 @@
+
+ RUN  v5.0.1 /Users/damiantodorovic/kepta-app
+
+(node:35300) ExperimentalWarning: localStorage is not available because --localstorage-file was not provided.
+(Use `node --trace-warnings ...` to show where the warning was created)
+stderr | tests/server-nachzug.test.ts > N-1 — kein Strich vor der Sicherung > verweigert den Lauf und schreibt nichts, wenn die Sicherung fehlschlaegt
+kepta: request failed (POST /api/graph/nachzug) — TypeError: The "path" argument must be of type string. Received null
+    at Object.dirname (node:path:1442:5)
+    at /Users/damiantodorovic/kepta-app/server/router/nachzug.ts:108:41
+    at Layer.handleRequest (/Users/damiantodorovic/kepta-app/node_modules/router/lib/layer.js:152:17)
+    at next (/Users/damiantodorovic/kepta-app/node_modules/router/lib/route.js:157:13)
+    at file:///Users/damiantodorovic/kepta-app/node_modules/express-rate-limit/dist/index.mjs:1018:7
+    at processTicksAndRejections (node:internal/process/task_queues:104:5)
+    at file:///Users/damiantodorovic/kepta-app/node_modules/express-rate-limit/dist/index.mjs:836:5
+
+ ❯ tests/server-nachzug.test.ts (7 tests | 7 failed) 290ms
+   ❯ N-1 — kein Strich vor der Sicherung (1)
+     × verweigert den Lauf und schreibt nichts, wenn die Sicherung fehlschlaegt 19ms
+   ❯ N-2 — der Nachzug fuellt das Netz, das der alte Scanner leer liess (2)
+     × setzt Begriffe und Kanten, die vor dem Produzenten nicht gesetzt wurden 4ms
+     × die Tuer sieht das Netz, das der Lauf gebaut hat 3ms
+   ❯ N-3 — idempotent, nicht anhaeufend (2)
+     × ein zweiter Lauf ueber demselben Bestand aendert keine Zahl 2ms
+     × nach einem fertigen Lauf meldet der Status keinen Bedarf mehr 2ms
+   ❯ N-4 — zwei Rufe, ein Lauf (1)
+     × weist den zweiten Ruf ab, waehrend der erste laeuft 151ms
+   ❯ N-5 — Abbruch laesst einen gueltigen Zwischenstand (1)
+     × der Abbruch stoppt, und ein voller Lauf danach landet auf demselben Endstand 38ms
+stderr | tests/components/KnowledgeGraph.render.test.tsx > Der Graph malt ueberhaupt > legt eine Leinwand an und zeichnet Knoten
+Each child in a list should have a unique "key" prop.
+
+Check the render method of `KnowledgeGraph`. See https://react.dev/link/warning-keys for more information.
+
+ ❯ tests/components/KnowledgeGraph.render.test.tsx (165 tests | 1 failed) 133525ms
+   ✓ Der Graph malt ueberhaupt (4)
+     ✓ zeigt ohne Notizen einen Hinweis statt einer Leinwand 175ms
+     ✓ legt eine Leinwand an und zeichnet Knoten 164ms
+     ✓ nennt Knoten- und Kantenzahl im Kopf 147ms
+     ✓ rechnet die Leinwand auf die Geraetepixel um 153ms
+   ✓ Helles Thema: die Kante muss dunkel sein (3)
+     ✓ nimmt im hellen Thema die Randfarbe aus dem Theme 316ms
+     ✓ nimmt im dunklen Thema die Randfarbe aus dem Theme 318ms
+     ✓ malt im hellen Thema keine harte weisse Kante mehr 316ms
+   ✓ Zeitregler: das Kantennetz verschwindet mit den Knoten (2)
+     ✓ zeigt ohne Zeitfilter alle Kanten 385ms
+     ✓ laesst bei einem frueheren Zeitpunkt die Kanten der spaeteren Knoten weg 644ms
+   ✓ Beschriftung: kein Teppich uebereinander (2)
+     ✓ laesst Etiketten einander ausweichen 319ms
+     ✓ kuerzt lange Titel 318ms
+   ✓ Filter (2)
+     ✓ erklaert einen leeren Treffer, statt eine schwarze Flaeche zu zeigen 253ms
+     ✓ engt die Knotenzahl ein und gibt sie wieder frei 342ms
+   ✓ Bedienung (5)
+     ✓ zoomt hinein und heraus und passt die Ansicht an 300ms
+     ✓ oeffnet eine Notiz bei Doppelklick auf einen Knoten 357ms
+     ✓ gibt den Zeiger nach dem Loslassen wieder frei 438ms
+     ✓ loest die Hervorhebung, wenn der Zeiger die Flaeche verlaesst 419ms
+     ✓ verhindert das Mitscrollen der Seite beim Radzoom 156ms
+   ✓ Farben und Groesse (2)
+     ✓ bietet eine Farbe je Wissensart an und merkt sich eine Aenderung 199ms
+     ✓ passt die Ansicht neu ein, wenn sich das Fenster aendert 251ms
+   ✓ Detailstufen: nah scharf, fern sparsam (8)
+     ✓ buendelt sehr kleine Knoten zu einem Pfad statt sie einzeln zu kopieren 372ms
+     ✓ malt mittelgrosse Knoten als Sprite und grosse als Vektorkugel 602ms
+     ✓ laesst auch weit heraussgezoomt etwas Sichtbares stehen 383ms
+     ✓ macht Erwähnung und Behauptung verschieden sichtbar 460ms
+     ✓ malt die Behauptung als Keil: gefüllt, am Ausgang breiter als am Ziel 398ms
+     ✓ nimmt der Schalter den Keil wieder weg — die Linie bleibt 584ms
+     ✓ zeichnet echte Relationen als gebogene Linie in der Akzentfarbe 400ms
+     ✓ malt Aehnlichkeitskanten auch weit herausgezoomt, solange es wenige sind 450ms
+   ✓ Zustaende einzelner Notizen (2)
+     ✓ umrandet abgelaufene Notizen gestrichelt 314ms
+     ✓ zeichnet ersetzte Notizen blasser 317ms
+   ✓ Ziehen gegen Schwenken (2)
+     ✓ schwenkt die Ansicht, wenn man ins Leere greift 464ms
+     ✓ schwenkt NICHT, wenn man einen Knoten greift 465ms
+   ✓ Finger und Trackpad (2)
+     ✓ laesst den Browser die Flaeche nicht wegscrollen 155ms
+     ✓ bedient sich ueber Zeigerereignisse, also auch mit dem Finger 373ms
+   ✓ Die Groesse haengt am Container, nicht am ersten Bild (3)
+     ✓ misst auch, wenn der Graph zuerst ohne Notizen erscheint 302ms
+     ✓ folgt einer spaeteren Groessenaenderung 468ms
+     ✓ nimmt eine Meldung ueber null Pixel nicht an 416ms
+   ✓ Die Kopfzeile zaehlt, was wirklich im Bild steht (3)
+     ✓ nimmt beim Zurueckdrehen Knoten UND Kanten heraus 315ms
+     ✓ ohne Schalter zählt nur, was jemand behauptet hat — nicht die Ähnlichkeit 149ms
+     ✓ schreibt bei genau einem Knoten die Einzahl 235ms
+   ✓ Ein abgelegter Knoten bleibt liegen (4)
+     ✓ bleibt an der Stelle, an der er losgelassen wurde 1468ms
+     ✓ nennt die Zahl der angehefteten Knoten und bietet an, sie zu loesen 574ms
+     ✓ geht beim Loesen an die Stelle zurueck, an der die Hand ihn gefasst hat 1298ms
+     ✓ heftet einen blossen Klick nicht an 412ms
+   ✓ Ausgegraute Knoten kosten nicht mehr als sichtbare (2)
+     ✓ malt Geister gebuendelt, nicht einzeln 471ms
+     ✓ malt auch beim Ueberfahren gebuendelt weiter 456ms
+   ✓ Tastatursteuerung: der Graph ist ohne Maus erreichbar (4)
+     ✓ waehlt mit Pfeiltasten einen Knoten, Enter oeffnet ihn 164ms
+     ✓ bewegt die Auswahl in alle vier Richtungen und haelt sie im Bild 169ms
+     ✓ hebt Escape die Auswahl auf 153ms
+     ✓ Enter ohne Auswahl tut nichts 148ms
+   ✓ Zeitregler: der Daumen kaempft nicht gegen den Wert (1)
+     ✓ haelt die gezogene Position auf dem Raster und zeigt das Datum 166ms
+   ✓ Im Baum steht die Hierarchie hinter dem Inhalt (5)
+     ✓ passt den Ausschnitt sofort, nicht erst nach dem Gleiten 182ms
+     ✓ steht derselbe Name nicht zweimal 562ms
+     ✓ behält ein Knoten mit mehreren Notizen seinen Namen 571ms
+     ✓ hält einen langen Ebenennamen in seiner Spalte 572ms
+     ✓ tritt die Hierarchie hinter die Notiztitel zurück 570ms
+   ✓ Ein Klick auf ein Begriff öffnet sein Dossier (3)
+     ✓ nennt der Fläche das Begriff beim Klick 466ms
+     ✓ öffnet per Tastatur dasselbe Dossier wie per Klick 414ms
+     ✓ lässt eine Notiz beim Klick in Ruhe — die öffnet erst der Doppelklick 458ms
+   ✓ Ein gehaltener Begriff sagt, was er ist (2)
+     ✓ zeigt den vollen Namen und die Zahl der Notizen 469ms
+     ✓ zählt eine einzelne Notiz in der Einzahl 464ms
+   ✓ Sichtbare Dichte: Badge und Kappungszeile (11)
+     ✓ zählt die Notizen, die im Bild stehen, gegen den ganzen Bestand 289ms
+     ✓ behauptet nie mehr Notizen im Bild, als der Filter durchlässt 288ms
+     ✓ sagt, dass die Wissensbasis mehr Behauptungen trägt als geliefert wurden 313ms
+     ✓ meldet keine Kappung, wenn der Server nichts übergab 307ms
+     ✓ setzt ein Badge auf einen Knoten, dem Nachbarn der Kantengrenze zum Opfer fielen 429ms
+     ✓ nennt die Deckung des Bestands und was der Titel-Echo nicht durchlässt 356ms
+     ✓ sagt, dass das Feld kein Netz ist, wenn die Masse nichts verbindet 357ms
+     ✓ malt bei einer Punktwolke nur das Verbundene und nennt die Masse 350ms
+     ✓ holt eine unausgemalte Notiz zurück, sobald die Suche sie ruft 460ms
+     ✓ setzt kein Badge, wenn nichts gekappt wurde 422ms
+     ✓ rechnet die Badges nicht, während Aehnlichkeit aus ist 361ms
+   ✓ Kanten-Etikett: der Typ steht an der Linie (5)
+     ✓ nennt den Typ der Behauptung an der Linie 453ms
+     ✓ lässt das Etikett weit draussen weg — und die Knotentitel bleiben 735ms
+     ✓ schreibt nichts an eine Linie, die keinen Typ nennt 527ms
+     ✓ deckelt die Kanten-Etiketten, statt zuzuschreiben 425ms
+     ✓ zählt weitere Typen über demselben Paar dazu 460ms
+   ✓ Kantendicke: was dahintersteht, wird sichtbar (3)
+     ✓ malt drei Belege dicker als einen 855ms
+     ✓ hält die Erwähnung feiner als jede Behauptung 458ms
+     ✓ gibt die Evidenz auch dem Keil mit 794ms
+   ✓ Kanten-Tooltip: der Zeiger fragt, die Kante antwortet (6)
+     ✓ sagt, wer über wen was behauptet — und wie viel dahintersteht 539ms
+     ✓ nennt das Ende einer geplatzten Behauptung 526ms
+     ✓ weist eine Aehnlichkeit als das aus, was sie ist 536ms
+     ✓ steht die Karte innerhalb der Leinwand — nicht einen Bildrahmen lang daneben 530ms
+     ✓ zeigt im Baum, was eine Linie verbindet — ohne ihr einen Typ zu erfinden 833ms
+     ✓ bleibt still auf einem Knoten und verstummt, wenn der Zeiger geht 653ms
+   ✓ Etikett-Budget: Key, All, Off und der Peek darunter (9)
+     ✓ bietet die Stellungen und fängt mit der ruhigen an 151ms
+     ✓ lässt unter Key Etiketten im Gedränge weg 318ms
+     ✓ nennt unter Mehr mehr Notizen als unter Key 566ms
+     ✓ gibt unter All jedes Etikett frei, das Key zurückhielt 565ms
+     ✓ lässt unter Off nichts stehen und holt den Titel unter dem Zeiger zurück 650ms
+     ✓ stellt unter Off auch die Begriffsnamen ab und gibt sie im Peek zurück 654ms
+     ✓ zeigt im Peek den ganzen Titel, nicht die Kürzung 566ms
+     ✓ malt einen Platzhalter so, dass er einer aussieht 315ms
+     ✓ malt das Etikett neu, sobald die Notizliste einen anderen Inhalt trägt 492ms
+   ✓ Glyph im Knoten: Buchstabe fuer die Art, Zahl fuer den Begriff (7)
+     ✓ setzt einer grossen Scheibe den Buchstaben ihrer Art in die Mitte 379ms
+     ✓ dreht die Helligkeit um, damit der Buchstabe auf der Fuellung steht 381ms
+     ✓ malt den Buchstaben nicht, solange die Scheibe ein Sprite ist 380ms
+     ✓ erfindet keinen Buchstaben fuer eine Art, die er nicht kennt 381ms
+     ✓ gibt vier Arten vier verschiedene Buchstaben 1ms
+     ✓ hält die Eins aus dem Gesicht eines Begriffs heraus 382ms
+     ✓ setzt einem Begriff, der Notizen traegt, ihre Zahl in die Scheibe 382ms
+   ✓ Die Legende erklärt den neuen Kanal (1)
+     ✓ sagt, was ein Buchstabe in der Scheibe und eine Zahl im Begriff bedeutet 155ms
+   ✓ Faltung: ein Doppelklick faltet eine Gruppe und sagt es (6)
+     ✓ startet entfaltet: jedes Kind steht, keine Malzahl im Bild 554ms
+     ✓ laesst die Kinder einer doppelt genommenen Gruppe weg und zaehlt sie weiter 695ms
+     ✓ oeffnet die Gruppe beim zweiten Doppelklick wieder 826ms
+     ✓ zaehlt in der Kopfzeile, was nach der Faltung im Bild steht 696ms
+     ✓ faltet auch die tastatur: pfeil links auf die ebene, enter zu 628ms
+     ✓ faltet nicht, wer eine Notiz doppelt nimmt — die oeffnet sie 809ms
+   ✓ Faltung im Kraftfeld: was der Baum gefaltet hat, fehlt auch hier (3)
+     ✓ verbirgt im kraftfeld nur, was der gefaltete begriff allein trägt 1434ms
+     ✓ zaehlt die verdeckten notizen aus Kopfzeile und Bilanzzeile 1551ms
+     ✓ gibt die notizen zurück, wenn die gruppe im baum wieder öffnet 2539ms
+   ✓ Selbstkanten: ein Schalter, eine Schlinge, kein Nachbarschaftsgewinn (5)
+     ✓ steht von Haus aus aus 154ms
+     ✓ verschweigt die Selbstbehauptung nicht, sondern meldet sie 393ms
+     ✓ malt eine Schlinge mehr, wenn der schalter an geht — und keine zweite Kante 856ms
+     ✓ lässt die Knotengröße unangetastet — selbst behaupten ist kein Nachbar 934ms
+     ✓ greift: auf der Schlinge öffnet sich die Kantkarte der Behauptung 2187ms
+   ✓ Die semantische Ansicht steht auf den Vektoren (10)
+     ✓ startet im Kraftfeld und fragt die semantische Karte erst beim Öffnen 530ms
+     ✓ lässt das Kraftfeld unangetastet, wenn die Ansicht wieder schließt 6652ms
+     ✓ zeichnet dieselbe Projektion, wenn dieselbe Wissensbasis zweimal geöffnet wird 7276ms
+     ✓ merkt sich die Ansicht und kommt darin wieder 530ms
+     ✓ meldet laut, wie viele Notizen die Kappung aus dem Bild nimmt 533ms
+     ✓ stellt die Notizen ohne Vektor an den Rand und sagt es 946ms
+     ✓ nennt, was die beiden Achsen tragen, und welchen Modellen sie vertrauen 530ms
+     ✓ erklärt zu wenig Vektoren, statt ein schwarzes Feld zu zeigen 521ms
+     ✓ versagt laut, wenn die Karte nicht kommt 529ms
+     ✓ lässt Feld und Baum in Ruhe: beide Knöpfe tun weiter, was sie taten 1276ms
+   ✓ Das Schema-Inventar nennt, was der Bestand trägt (6)
+     ✓ startet zu und lässt die Fläche unangetastet 608ms
+     ✓ zählt die Arten, die Begriffe und die Behauptungen aus demselben Stand 443ms
+     ✓ nennt die Zahl der Behauptungen, die der Bestand trägt, nicht die des Ausschnitts 443ms
+     ✓ spotlightet eine Behauptung: was sie nicht trägt, tritt zurück 760ms
+     ✓ gibt das Spotlight her, wer dieselbe Zeile noch einmal nimmt 1047ms
+     ✓ lässt die Kopfzeile unangetastet — das Inventar ist ein zweiter Blick, keine zweite Zahl der Fläche 604ms
+   ✓ Die Herkunft färbt, wenn sie etwas zu sagen hat (5)
+     ✓ startet im Typ-Kanal 319ms
+     ✓ schaltet den Herkunfts-Kanal ab, wenn alles aus derselben Hand kommt 316ms
+     ✓ gibt den Kanal her, sobald zwei Herkünfte im Bestand stehen 699ms
+     ✓ lässt die Typfarben in Ruhe, wenn der Kanal zurückgeht 1042ms
+     ✓ merkt sich den Kanal 750ms
+   ✓ Die Suche zählt Treffer und führt von einem zum nächsten (6)
+     ✓ zählt die Treffer, ohne das Tippen zu blockieren 513ms
+     ✓ sagt, wenn nichts passt — und erfindet keinen Treffer 413ms
+     ✓ springt mit Enter zum Treffer und zählt die Stelle mit 662ms
+     ✓ geht mit Shift+Enter zurück 666ms
+     ✓ räumt mit Escape zuerst die Suche, dann die Auswahl 670ms
+     ✓ öffnet mit Enter die Auswahl, wenn die Suche nichts zu blättern hat 852ms
+   ✓ Ein Filter lässt das Bild bei dem stehen, was übrig ist (2)
+     ✓ holt nach dem Filtern alles zurück in den Rahmen 10195ms
+     ✓ stellt das Bild in die Mitte seiner Leinwand, nicht an den Rand 10302ms
+   ✓ Ein Titel-Echo wird kein Begriff im Bild (2)
+     ✓ zählt nur die Begriffe, die etwas verbinden 364ms
+     ✓ hängt an das Echo auch keine Behauptung 360ms
+   ✓ Die Regler unter dem Knopf Forces (6)
+     ✓ zeigt vier Regler und ihre Stellung 223ms
+     ✓ räumt nichts um, wer das Panel nur öffnet und schließt 5765ms
+     ✓ bewegt der Abstoßungsregler das Feld, nicht die Kamera 697ms
+     ✓ macht der Größenregler die Knoten größer, nicht die Welt weiter 699ms
+     ✓ merkt sich die Stellung über ein neues Bild 716ms
+     ✓ setzt Zurück auf die gestimmten Konstanten 825ms
+   ✓ Die Legende nimmt dem eingepassten Bild nichts weg (2)
+     ✓ lässt keinen Knoten unter die Legende reichen 5391ms
+     ✓ schrumpft das Bild nicht zur Briefmarke, damit die Legende frei bleibt 5391ms
+   ✓ Der Baum faltet sich, was nicht in seine Leinwand passt (4)
+     ✓ hält seine Zeilen im Rahmen und nennt es 894ms
+     ✓ gibt die Faltung her, wenn jemand alles sehen will 1266ms
+     ✓ schneidet keine Zeile an der Leinwandkante ab 897ms
+     ✓ lässt einen kleinen Baum ganz entfaltet 899ms
+   ✓ Gang: die Zahl ist auch im DOM zu lesen (2)
+     ✓ nennt Zahl und Zeilen des Gangs in einem DOM-Knoten, nicht nur im Bild 278ms
+     ✓ sagt nichts, wenn es keinen Gang gibt 249ms
+   ❯ Nachzug: die Flaeche fuellt das Netz, das die Tuer fuer offen haelt (3)
+     × startet den Lauf, nennt was er hinzugefuegt hat, und holt das Netz neu 332ms
+     ✓ ruft nichts und sagt nichts, wenn die Tuer keinen Bedarf meldet 304ms
+     ✓ zeigt die Verweigerung, wenn die Sicherung fehlt 316ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 8 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  tests/server-nachzug.test.ts > N-1 — kein Strich vor der Sicherung > verweigert den Lauf und schreibt nichts, wenn die Sicherung fehlschlaegt
+AssertionError: fehlende Sicherung muss den Lauf stoppen, nicht still durchgehen: expected 500 to be 503 // Object.is equality
+
+- Expected
++ Received
+
+- 503
++ 500
+
+ ❯ tests/server-nachzug.test.ts:124:92
+    122|
+    123|     const { res, body } = await starte();
+    124|     expect(res.status, `fehlende Sicherung muss den Lauf stoppen, nich…
+       |                                                                                            ^
+    125|     expect(String(body.error ?? "")).toMatch(/backup|sicherung/i);
+    126|
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/8]⎯
+
+ FAIL  tests/server-nachzug.test.ts > N-2 — der Nachzug fuellt das Netz, das der alte Scanner leer liess > setzt Begriffe und Kanten, die vor dem Produzenten nicht gesetzt wurden
+AssertionError: expected 409 to be 202 // Object.is equality
+
+- Expected
++ Received
+
+- 202
++ 409
+
+ ❯ tests/server-nachzug.test.ts:144:24
+    142|
+    143|     const { res } = await starte();
+    144|     expect(res.status).toBe(202);
+       |                        ^
+    145|     const stand = await warteBisFertig();
+    146|     expect(stand.running).toBe(false);
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/8]⎯
+
+ FAIL  tests/server-nachzug.test.ts > N-2 — der Nachzug fuellt das Netz, das der alte Scanner leer liess > die Tuer sieht das Netz, das der Lauf gebaut hat
+AssertionError: expected 0 to be greater than 0
+ ❯ tests/server-nachzug.test.ts:170:30
+    168|   it("die Tuer sieht das Netz, das der Lauf gebaut hat", async () => {
+    169|     const g = (await (await fetch(`${URLE}/api/graph`)).json()) as { b…
+    170|     expect(g.bestand.kanten).toBeGreaterThan(0);
+       |                              ^
+    171|   });
+    172| });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/8]⎯
+
+ FAIL  tests/server-nachzug.test.ts > N-3 — idempotent, nicht anhaeufend > ein zweiter Lauf ueber demselben Bestand aendert keine Zahl
+AssertionError: expected 409 to be 202 // Object.is equality
+
+- Expected
++ Received
+
+- 202
++ 409
+
+ ❯ tests/server-nachzug.test.ts:178:24
+    176|     const erster = store.graphBestand();
+    177|     const { res } = await starte();
+    178|     expect(res.status).toBe(202);
+       |                        ^
+    179|     const stand = await warteBisFertig();
+    180|     expect(store.graphBestand()).toEqual(erster);
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[4/8]⎯
+
+ FAIL  tests/server-nachzug.test.ts > N-3 — idempotent, nicht anhaeufend > nach einem fertigen Lauf meldet der Status keinen Bedarf mehr
+AssertionError: die Marke ist gesetzt — derselbe Stand wird nicht zweimal gefahren: expected true to be false // Object.is equality
+
+- Expected
++ Received
+
+- false
++ true
+
+ ❯ tests/server-nachzug.test.ts:187:96
+    185|   it("nach einem fertigen Lauf meldet der Status keinen Bedarf mehr", …
+    186|     const stand = await lage();
+    187|     expect(stand.needed, "die Marke ist gesetzt — derselbe Stand wird …
+       |                                                                                                ^
+    188|     expect(stand.markeGesetzt).toBe(stand.marke);
+    189|   });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[5/8]⎯
+
+ FAIL  tests/server-nachzug.test.ts > N-4 — zwei Rufe, ein Lauf > weist den zweiten Ruf ab, waehrend der erste laeuft
+AssertionError: expected 409 to be 202 // Object.is equality
+
+- Expected
++ Received
+
+- 202
++ 409
+
+ ❯ tests/server-nachzug.test.ts:202:24
+    200|     }
+    201|     const { res } = await starte();
+    202|     expect(res.status).toBe(202);
+       |                        ^
+    203|     const zweiter = await starte();
+    204|     expect(zweiter.res.status, "ein zweiter Nachzug auf derselben Date…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[6/8]⎯
+
+ FAIL  tests/server-nachzug.test.ts > N-5 — Abbruch laesst einen gueltigen Zwischenstand > der Abbruch stoppt, und ein voller Lauf danach landet auf demselben Endstand
+AssertionError: expected 409 to be 202 // Object.is equality
+
+- Expected
++ Received
+
+- 202
++ 409
+
+ ❯ tests/server-nachzug.test.ts:216:24
+    214|     }
+    215|     const { res } = await starte();
+    216|     expect(res.status).toBe(202);
+       |                        ^
+    217|     await fetch(`${URLE}/api/graph/nachzug/cancel`, { method: "POST" }…
+    218|     const abgebrochen = await warteBisFertig();
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[7/8]⎯
+
+ FAIL  tests/components/KnowledgeGraph.render.test.tsx > Nachzug: die Flaeche fuellt das Netz, das die Tuer fuer offen haelt > startet den Lauf, nennt was er hinzugefuegt hat, und holt das Netz neu
+AssertionError: nach dem Lauf muss das Bild neu gelesen werden: expected 1 to be greater than or equal to 2
+ ❯ tests/components/KnowledgeGraph.render.test.tsx:4131:121
+    4129|     expect(knoten!.textContent).toMatch(/4 concepts/);
+    4130|     expect(knoten!.textContent).toMatch(/9 links/);
+    4131|     expect(rufe.filter((r) => r === "GET /api/graph?depth=2").length, …
+       |                                                                                                                         ^
+    4132|   });
+    4133|
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[8/8]⎯
+
+
+ Test Files  2 failed (2)
+      Tests  8 failed | 164 passed (172)
+   Start at  14:08:58
+   Duration  134.29s (tests 99%)
+

@@ -1,3 +1,30 @@
+## [3.2.5]
+
+### Added
+
+- **The graph can fill itself in, and says so while it does.** Saving a note has linked its own
+  terms since the parity commit, but the 14,701 notes the computer scan had already indexed were
+  written before that rule existed — measured through the door on a real store on 15.10.: 1,018 of
+  21,066 notes hang on a concept, 4,83 %. They are not broken, they are simply unlinked, and the
+  picture shows exactly that: a ring of lonely points around a small knot. `POST /api/graph/nachzug`
+  walks the whole store through `indexMemory` in stacks of 500 (measured 0,21-0,24 ms per note, so a
+  five-second job, not an event), `GET` reports how far it got, `POST .../cancel` stops it between
+  stacks, and a producer mark decides whether a store still needs the walk — the same stand is never
+  filled twice, and raising the mark refills it once. Before the first line is written the run takes a
+  database backup (`datenbanksicherung`, the helper that so far only ran before a replacing import) and
+  **refuses to touch the store if that backup fails**: 503, nothing written, and the surface shows the
+  reason. The graph view starts the walk when the door reports a need, reads progress as a line over
+  the canvas, and reloads the network when it ends — growth you can see instead of a number in a table.
+  Guards: `tests/server-nachzug.test.ts` (seven cases: refuses and writes nothing without a backup,
+  fills the net, door agrees, idempotent on the second run, one run per mark, second call refused while
+  the first runs, cancel leaves a valid middle that a full run then finishes to the same end) and three
+  cases in `tests/components/KnowledgeGraph.render.test.tsx`. Red before the route existed: 7 of 7, and
+  2 of the surface cases. Proofs: `docs/belege/app-abnahme/nachzug-vorher-rot.log.txt`,
+  `docs/belege/app-abnahme/nachzug-tuer-gruen.log.txt`,
+  `docs/belege/app-abnahme/nachzug-flaeche-vorher-rot.log.txt`,
+  `docs/belege/app-abnahme/nachzug-flaeche-gruen.log.txt`,
+  `docs/belege/app-abnahme/nachzug-mutation-rot.log.txt`.
+
 ## [3.2.4]
 
 ### Fixed

@@ -599,6 +599,14 @@ function leseNamenStufe(roh: string | null): EtikettModus {
  * Messgrundlage: vorher der ganze Text des Bildes, tiefste Stufe 9 px.
  */
 const ETIKETT_PX = 11;
+
+/**
+ * Wie oft die Flaeche den Nachzug fragt, waehrend er laeuft. 600 ms sind bei
+ * 500-Notizen-Stapeln (~100 ms je Stapel) acht Fragen je Sekunde — genug fuer
+ * eine Zahl, die sich visibly bewegt, und ein Zehntel der Last, die das Bild
+ * selbst traegt.
+ */
+const NACHZUG_FRAGE_MS = 600;
 /**
  * Ein Ebenenname im Baum wird nie länger gemalt. Zwischen zwei Ebenen liegen
  * 190 Welteinheiten, ein Zeichen der kleinen Gerüstschrift rund 5 — und ein
@@ -1069,6 +1077,7 @@ export function KnowledgeGraph({ memories, onSelectMemory, onSelectConcept, sich
 
   // --- Echte Relationen aus der Graph-DB ---
   const [graphApi, setGraphApi] = useState<GraphApi | null>(null);
+  const [netzLade, setNetzLade] = useState(0);
   useEffect(() => {
     let abgebrochen = false;
     void (async () => {
@@ -1079,7 +1088,81 @@ export function KnowledgeGraph({ memories, onSelectMemory, onSelectConcept, sich
       } catch { /* Engine nicht erreichbar — Aehnlichkeitskanten bleiben */ }
     })();
     return () => { abgebrochen = true; };
-  }, [memories.length]);
+  }, [memories.length, netzLade]);
+
+  /**
+   * Der Nachzug (Aufgabe #96): was der Scanner vor dem Begriff-Produzenten
+   * hinterliess, steht als Blatt ohne Kante im Bild — am echten Bestand gemessen
+   * 4,83 % der Notizen an einem Begriff. Die Tuer zaehlt den Bedarf und fuellt
+   * ihn; die Flaece holt ihn, nennt ihn, und liest das Netz neu, wenn er fertig
+   * ist. Ein Hintergrundlauf, den niemand sehen kann, ist eine Zahl in einer
+   * Datenbank — kein Bild, das sich aendert.
+   */
+  const [nachzug, setNachzug] = useState<{
+    laufen: boolean; gesehen: number; gesamt: number;
+    begriffe: number; kanten: number; neuBegriffe: number; neuKanten: number; fehler: string | null;
+  } | null>(null);
+  useEffect(() => {
+    let abgebrochen = false;
+    const hole = async (): Promise<Record<string, unknown> | null> => {
+      try {
+        const res = await fetch("/api/graph/nachzug");
+        if (!res.ok) return null;
+        const data = (await res.json()) as Record<string, unknown>;
+        return typeof data?.needed === "boolean" ? data : null;
+      } catch { return null; }
+    };
+    const zeige = (stand: Record<string, unknown>) => {
+      if (abgebrochen) return;
+      setNachzug({
+        laufen: Boolean(stand.running),
+        gesehen: Number(stand.seen ?? 0),
+        gesamt: Number(stand.total ?? 0),
+        begriffe: Number(stand.concepts ?? 0),
+        kanten: Number(stand.edges ?? 0),
+        neuBegriffe: Number(stand.addedConcepts ?? 0),
+        neuKanten: Number(stand.addedEdges ?? 0),
+        fehler: typeof stand.error === "string" ? stand.error : null,
+      });
+    };
+    void (async () => {
+      const erster = await hole();
+      if (!erster || abgebrochen) return;
+      let stand = erster;
+      if (!stand.running && stand.needed) {
+        let antwort: Response;
+        try {
+          antwort = await fetch("/api/graph/nachzug", { method: "POST" });
+        } catch { return; }
+        if (abgebrochen) return;
+        if (antwort.status === 503) {
+          const grund = (await antwort.json().catch(() => null)) as { error?: string } | null;
+          if (!abgebrochen) {
+            setNachzug({ laufen: false, gesehen: 0, gesamt: Number(stand.total ?? 0), begriffe: 0, kanten: 0, neuBegriffe: 0, neuKanten: 0, fehler: grund?.error ?? "no backup" });
+          }
+          return;
+        }
+        if (antwort.status !== 202) return; // 409: ein Lauf laeuft schon — den verfolgt die Flaeche einfach mit
+        const gefoelgt = await hole();
+        if (!gefoelgt || abgebrochen) return;
+        stand = gefoelgt;
+      }
+      for (;;) {
+        if (!stand.running && !stand.needed) return; // nichts zu tun, nichts zu sagen
+        zeige(stand);
+        if (!stand.running) {
+          if (Number(stand.addedEdges ?? 0) > 0 || Number(stand.addedConcepts ?? 0) > 0) setNetzLade((n) => n + 1);
+          return;
+        }
+        await new Promise((los) => setTimeout(los, NACHZUG_FRAGE_MS));
+        if (abgebrochen) return;
+        const weiter = await hole();
+        if (!weiter) return;
+        stand = weiter;
+      }
+    })();
+    return () => { abgebrochen = true; };
+  }, []);
 
   /**
    * Die semantische Karte: Plätze, keine Vektoren.
@@ -4122,6 +4205,32 @@ export function KnowledgeGraph({ memories, onSelectMemory, onSelectConcept, sich
             ? `${gangInfo.allein.toLocaleString("en-US")} notes connect to nothing in this picture · ${gangInfo.zeilen} ${gangInfo.zeilen === 1 ? "row" : "rows"} of ${GANG_SPALTEN}`
             : ""}
         </p>
+        {(() => {
+          // Was der Nachzug tut, ist im Bild zu lesen — sonst fuellt sich das
+          // Netz hinter einem Rahmen, der so aussieht, als ware er fertig.
+          const zeile = !nachzug
+            ? ""
+            : nachzug.fehler
+              ? `Network not filled: ${nachzug.fehler}`
+              : nachzug.laufen
+                ? nachzug.gesamt > 0
+                  ? `Filling the network — ${nachzug.gesehen.toLocaleString("en-US")} of ${nachzug.gesamt.toLocaleString("en-US")} notes`
+                  : "Filling the network…"
+                : nachzug.neuBegriffe > 0 || nachzug.neuKanten > 0
+                  ? `Network filled: +${nachzug.neuBegriffe.toLocaleString("en-US")} concepts, +${nachzug.neuKanten.toLocaleString("en-US")} links`
+                  : "";
+          return (
+            <p
+              data-testid="nachzug-info"
+              role="status"
+              aria-live="polite"
+              className={zeile ? "absolute left-3 top-3 z-10 hud-panel rounded-md px-2.5 py-1 pointer-events-none" : "sr-only"}
+              style={zeile ? { color: "var(--text-2)" } : undefined}
+            >
+              {zeile}
+            </p>
+          );
+        })()}
         <canvas
           ref={canvasRef}
           data-testid="graph-canvas"

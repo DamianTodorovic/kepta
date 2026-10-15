@@ -20,6 +20,7 @@ import { erstelleLimiter } from "./helfer/limiter";
 import { mountActivity } from "./router/activity";
 import { mountImporte } from "./router/importe";
 import { mountMemories } from "./router/memories";
+import { mountNachzug } from "./router/nachzug";
 import { mountSearch } from "./router/search";
 import { mountScan } from "./router/scan";
 import { mountInbox } from "./router/inbox";
@@ -221,6 +222,7 @@ export function createApp(store: KeptaStore, optionen: AppOptionen = {}) {
 
   // 5) Die Fachrouten.
   mountMemories(app, ctx);
+  mountNachzug(app, ctx);
   mountSearch(app, ctx);
   mountScan(app, ctx);
   mountInbox(app, ctx);

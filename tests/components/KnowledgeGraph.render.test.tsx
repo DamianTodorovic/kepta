@@ -4089,3 +4089,73 @@ describe("Gang: die Zahl ist auch im DOM zu lesen", () => {
     expect(knoten?.textContent ?? "", "ein leerer Gang darf keine Zahl behaupten").not.toMatch(/connect to nothing/);
   });
 });
+
+describe("Nachzug: die Flaeche fuellt das Netz, das die Tuer fuer offen haelt", () => {
+  // Aufgabe #96, zweite Haelfte. Die Tuer (`server/router/nachzug.ts`) zaehlt und
+  // schreibt; gesehen wird der Lauf erst, wenn die Flaeche ihn holt, seinen
+  // Fortschritt nennt und das Bild neu liest, wenn er endete. Ohne diese Zeilen
+  // bliebe der Nachzug ein Auftrag, den niemand erteilt — und Damians Bestand
+  // stünde weiter als Kreis vereinzelpter Punkte, obwohl die Kanten langst
+  // gemessen moeglich sind (15.10.: 1.018 von 21.066 Notizen am Begriff = 4,83 %).
+  function tür(nachStatus: Record<string, unknown>[], graph = { relations: [], memoriesByEntity: {} }) {
+    const rufe: string[] = [];
+    let gezaehlt = 0;
+    vi.stubGlobal("fetch", vi.fn(async (url: string, gabe?: { method?: string }) => {
+      rufe.push(`${gabe?.method ?? "GET"} ${url}`);
+      if (url === "/api/graph/nachzug" && gabe?.method === "POST") {
+        return new Response(JSON.stringify({ started: true }), { status: 202 });
+      }
+      if (url === "/api/graph/nachzug") {
+        const korper = nachStatus[Math.min(gezaehlt, nachStatus.length - 1)];
+        gezaehlt++;
+        return new Response(JSON.stringify(korper), { status: 200 });
+      }
+      return new Response(JSON.stringify(graph), { status: 200 });
+    }));
+    return { rufe };
+  }
+
+  it("startet den Lauf, nennt was er hinzugefuegt hat, und holt das Netz neu", async () => {
+    const { rufe } = tür([
+      { needed: true, running: false, phase: "idle", total: 3, seen: 0, concepts: 0, edges: 0, addedConcepts: 0, addedEdges: 0, error: null },
+      { needed: true, running: false, phase: "done", total: 3, seen: 3, concepts: 4, edges: 9, addedConcepts: 4, addedEdges: 9, error: null },
+    ]);
+    const view = await zeichne([note(), note(), note()]);
+    await bilder(8);
+
+    expect(rufe.filter((r) => r === "POST /api/graph/nachzug").length, "ein Bedarf wird einmal gerufen, nicht pro Bild").toBe(1);
+    const knoten = view.container.querySelector('[data-testid="nachzug-info"]');
+    expect(knoten, "der Nachzug ist eine Auskunft, die man hoeren kann — kein stiller Hintergrundlauf").not.toBeNull();
+    expect(knoten!.textContent).toMatch(/4 concepts/);
+    expect(knoten!.textContent).toMatch(/9 links/);
+    expect(rufe.filter((r) => r === "GET /api/graph?depth=2").length, "nach dem Lauf muss das Bild neu gelesen werden").toBeGreaterThanOrEqual(2);
+  });
+
+  it("ruft nichts und sagt nichts, wenn die Tuer keinen Bedarf meldet", async () => {
+    const { rufe } = tür([
+      { needed: false, running: false, phase: "done", total: 3, seen: 3, concepts: 4, edges: 9, addedConcepts: 0, addedEdges: 0, error: null },
+    ]);
+    const view = await zeichne([note(), note(), note()]);
+    await bilder(8);
+    expect(rufe.filter((r) => r === "POST /api/graph/nachzug")).toEqual([]);
+    const knoten = view.container.querySelector('[data-testid="nachzug-info"]');
+    expect(knoten?.textContent ?? "", "kein Bedarf = keine Behauptung").toBe("");
+  });
+
+  it("zeigt die Verweigerung, wenn die Sicherung fehlt", async () => {
+    vi.stubGlobal("fetch", vi.fn(async (url: string, gabe?: { method?: string }) => {
+      if (url === "/api/graph/nachzug" && gabe?.method === "POST") {
+        return new Response(JSON.stringify({ error: "No database backup could be written — the backfill refuses to touch the store without one" }), { status: 503 });
+      }
+      if (url === "/api/graph/nachzug") {
+        return new Response(JSON.stringify({ needed: true, running: false, phase: "idle", total: 3, seen: 0, concepts: 0, edges: 0, addedConcepts: 0, addedEdges: 0, error: null }), { status: 200 });
+      }
+      return new Response(JSON.stringify({ relations: [], memoriesByEntity: {} }), { status: 200 });
+    }));
+    const view = await zeichne([note(), note(), note()]);
+    await bilder(8);
+    const knoten = view.container.querySelector('[data-testid="nachzug-info"]');
+    expect(knoten, "eine abgelehnte Fuellung ist ein Befund, kein schweigender Rahmen").not.toBeNull();
+    expect(knoten!.textContent).toMatch(/backup/i);
+  });
+});

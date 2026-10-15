@@ -1,0 +1,195 @@
+
+[1m[30m[46m RUN [49m[39m[22m [36mv5.0.1 [39m[90m/Users/damiantodorovic/kepta-app[39m
+
+(node:33721) ExperimentalWarning: localStorage is not available because --localstorage-file was not provided.
+(Use `node --trace-warnings ...` to show where the warning was created)
+[90mstderr[2m | tests/components/KnowledgeGraph.render.test.tsx[2m > [22m[2mDer Graph malt ueberhaupt[2m > [22m[2mlegt eine Leinwand an und zeichnet Knoten
+[22m[39mEach child in a list should have a unique "key" prop.
+
+Check the render method of `KnowledgeGraph`. See https://react.dev/link/warning-keys for more information.
+
+ [32m✓[39m tests/server-nachzug.test.ts [2m([22m[2m7 tests[22m[2m)[22m[33m 2048[2mms[22m[39m
+   [32m✓[39m N-4 — zwei Rufe, ein Lauf [2m(1)[22m
+     [33m[2m✓[22m[39m weist den zweiten Ruf ab, waehrend der erste laeuft[33m 494[2mms[22m[39m
+   [32m✓[39m N-5 — Abbruch laesst einen gueltigen Zwischenstand [2m(1)[22m
+     [33m[2m✓[22m[39m der Abbruch stoppt, und ein voller Lauf danach landet auf demselben Endstand[33m 1444[2mms[22m[39m
+ [32m✓[39m tests/components/KnowledgeGraph.render.test.tsx [2m([22m[2m165 tests[22m[2m)[22m[33m 134759[2mms[22m[39m
+   [32m✓[39m Helles Thema: die Kante muss dunkel sein [2m(3)[22m
+     [33m[2m✓[22m[39m nimmt im hellen Thema die Randfarbe aus dem Theme[33m 304[2mms[22m[39m
+     [33m[2m✓[22m[39m nimmt im dunklen Thema die Randfarbe aus dem Theme[33m 301[2mms[22m[39m
+   [32m✓[39m Zeitregler: das Kantennetz verschwindet mit den Knoten [2m(2)[22m
+     [33m[2m✓[22m[39m zeigt ohne Zeitfilter alle Kanten[33m 372[2mms[22m[39m
+     [33m[2m✓[22m[39m laesst bei einem frueheren Zeitpunkt die Kanten der spaeteren Knoten weg[33m 648[2mms[22m[39m
+   [32m✓[39m Beschriftung: kein Teppich uebereinander [2m(2)[22m
+     [33m[2m✓[22m[39m laesst Etiketten einander ausweichen[33m 316[2mms[22m[39m
+     [33m[2m✓[22m[39m kuerzt lange Titel[33m 317[2mms[22m[39m
+   [32m✓[39m Filter [2m(2)[22m
+     [33m[2m✓[22m[39m engt die Knotenzahl ein und gibt sie wieder frei[33m 333[2mms[22m[39m
+   [32m✓[39m Bedienung [2m(5)[22m
+     [33m[2m✓[22m[39m zoomt hinein und heraus und passt die Ansicht an[33m 304[2mms[22m[39m
+     [33m[2m✓[22m[39m oeffnet eine Notiz bei Doppelklick auf einen Knoten[33m 366[2mms[22m[39m
+     [33m[2m✓[22m[39m gibt den Zeiger nach dem Loslassen wieder frei[33m 451[2mms[22m[39m
+     [33m[2m✓[22m[39m loest die Hervorhebung, wenn der Zeiger die Flaeche verlaesst[33m 426[2mms[22m[39m
+   [32m✓[39m Detailstufen: nah scharf, fern sparsam [2m(8)[22m
+     [33m[2m✓[22m[39m buendelt sehr kleine Knoten zu einem Pfad statt sie einzeln zu kopieren[33m 381[2mms[22m[39m
+     [33m[2m✓[22m[39m malt mittelgrosse Knoten als Sprite und grosse als Vektorkugel[33m 611[2mms[22m[39m
+     [33m[2m✓[22m[39m laesst auch weit heraussgezoomt etwas Sichtbares stehen[33m 378[2mms[22m[39m
+     [33m[2m✓[22m[39m macht Erwähnung und Behauptung verschieden sichtbar[33m 465[2mms[22m[39m
+     [33m[2m✓[22m[39m malt die Behauptung als Keil: gefüllt, am Ausgang breiter als am Ziel[33m 404[2mms[22m[39m
+     [33m[2m✓[22m[39m nimmt der Schalter den Keil wieder weg — die Linie bleibt[33m 586[2mms[22m[39m
+     [33m[2m✓[22m[39m zeichnet echte Relationen als gebogene Linie in der Akzentfarbe[33m 405[2mms[22m[39m
+     [33m[2m✓[22m[39m malt Aehnlichkeitskanten auch weit herausgezoomt, solange es wenige sind[33m 457[2mms[22m[39m
+   [32m✓[39m Zustaende einzelner Notizen [2m(2)[22m
+     [33m[2m✓[22m[39m umrandet abgelaufene Notizen gestrichelt[33m 320[2mms[22m[39m
+     [33m[2m✓[22m[39m zeichnet ersetzte Notizen blasser[33m 325[2mms[22m[39m
+   [32m✓[39m Ziehen gegen Schwenken [2m(2)[22m
+     [33m[2m✓[22m[39m schwenkt die Ansicht, wenn man ins Leere greift[33m 469[2mms[22m[39m
+     [33m[2m✓[22m[39m schwenkt NICHT, wenn man einen Knoten greift[33m 465[2mms[22m[39m
+   [32m✓[39m Finger und Trackpad [2m(2)[22m
+     [33m[2m✓[22m[39m bedient sich ueber Zeigerereignisse, also auch mit dem Finger[33m 379[2mms[22m[39m
+   [32m✓[39m Die Groesse haengt am Container, nicht am ersten Bild [2m(3)[22m
+     [33m[2m✓[22m[39m misst auch, wenn der Graph zuerst ohne Notizen erscheint[33m 308[2mms[22m[39m
+     [33m[2m✓[22m[39m folgt einer spaeteren Groessenaenderung[33m 475[2mms[22m[39m
+     [33m[2m✓[22m[39m nimmt eine Meldung ueber null Pixel nicht an[33m 420[2mms[22m[39m
+   [32m✓[39m Die Kopfzeile zaehlt, was wirklich im Bild steht [2m(3)[22m
+     [33m[2m✓[22m[39m nimmt beim Zurueckdrehen Knoten UND Kanten heraus[33m 319[2mms[22m[39m
+   [32m✓[39m Ein abgelegter Knoten bleibt liegen [2m(4)[22m
+     [33m[2m✓[22m[39m bleibt an der Stelle, an der er losgelassen wurde[33m 1490[2mms[22m[39m
+     [33m[2m✓[22m[39m nennt die Zahl der angehefteten Knoten und bietet an, sie zu loesen[33m 589[2mms[22m[39m
+     [33m[2m✓[22m[39m geht beim Loesen an die Stelle zurueck, an der die Hand ihn gefasst hat[33m 1313[2mms[22m[39m
+     [33m[2m✓[22m[39m heftet einen blossen Klick nicht an[33m 415[2mms[22m[39m
+   [32m✓[39m Ausgegraute Knoten kosten nicht mehr als sichtbare [2m(2)[22m
+     [33m[2m✓[22m[39m malt Geister gebuendelt, nicht einzeln[33m 467[2mms[22m[39m
+     [33m[2m✓[22m[39m malt auch beim Ueberfahren gebuendelt weiter[33m 443[2mms[22m[39m
+   [32m✓[39m Im Baum steht die Hierarchie hinter dem Inhalt [2m(5)[22m
+     [33m[2m✓[22m[39m steht derselbe Name nicht zweimal[33m 556[2mms[22m[39m
+     [33m[2m✓[22m[39m behält ein Knoten mit mehreren Notizen seinen Namen[33m 573[2mms[22m[39m
+     [33m[2m✓[22m[39m hält einen langen Ebenennamen in seiner Spalte[33m 568[2mms[22m[39m
+     [33m[2m✓[22m[39m tritt die Hierarchie hinter die Notiztitel zurück[33m 571[2mms[22m[39m
+   [32m✓[39m Ein Klick auf ein Begriff öffnet sein Dossier [2m(3)[22m
+     [33m[2m✓[22m[39m nennt der Fläche das Begriff beim Klick[33m 462[2mms[22m[39m
+     [33m[2m✓[22m[39m öffnet per Tastatur dasselbe Dossier wie per Klick[33m 412[2mms[22m[39m
+     [33m[2m✓[22m[39m lässt eine Notiz beim Klick in Ruhe — die öffnet erst der Doppelklick[33m 462[2mms[22m[39m
+   [32m✓[39m Ein gehaltener Begriff sagt, was er ist [2m(2)[22m
+     [33m[2m✓[22m[39m zeigt den vollen Namen und die Zahl der Notizen[33m 469[2mms[22m[39m
+     [33m[2m✓[22m[39m zählt eine einzelne Notiz in der Einzahl[33m 471[2mms[22m[39m
+   [32m✓[39m Sichtbare Dichte: Badge und Kappungszeile [2m(11)[22m
+     [33m[2m✓[22m[39m sagt, dass die Wissensbasis mehr Behauptungen trägt als geliefert wurden[33m 306[2mms[22m[39m
+     [33m[2m✓[22m[39m meldet keine Kappung, wenn der Server nichts übergab[33m 304[2mms[22m[39m
+     [33m[2m✓[22m[39m setzt ein Badge auf einen Knoten, dem Nachbarn der Kantengrenze zum Opfer fielen[33m 410[2mms[22m[39m
+     [33m[2m✓[22m[39m nennt die Deckung des Bestands und was der Titel-Echo nicht durchlässt[33m 343[2mms[22m[39m
+     [33m[2m✓[22m[39m sagt, dass das Feld kein Netz ist, wenn die Masse nichts verbindet[33m 355[2mms[22m[39m
+     [33m[2m✓[22m[39m malt bei einer Punktwolke nur das Verbundene und nennt die Masse[33m 353[2mms[22m[39m
+     [33m[2m✓[22m[39m holt eine unausgemalte Notiz zurück, sobald die Suche sie ruft[33m 457[2mms[22m[39m
+     [33m[2m✓[22m[39m setzt kein Badge, wenn nichts gekappt wurde[33m 421[2mms[22m[39m
+     [33m[2m✓[22m[39m rechnet die Badges nicht, während Aehnlichkeit aus ist[33m 360[2mms[22m[39m
+   [32m✓[39m Kanten-Etikett: der Typ steht an der Linie [2m(5)[22m
+     [33m[2m✓[22m[39m nennt den Typ der Behauptung an der Linie[33m 459[2mms[22m[39m
+     [33m[2m✓[22m[39m lässt das Etikett weit draussen weg — und die Knotentitel bleiben[33m 756[2mms[22m[39m
+     [33m[2m✓[22m[39m schreibt nichts an eine Linie, die keinen Typ nennt[33m 524[2mms[22m[39m
+     [33m[2m✓[22m[39m deckelt die Kanten-Etiketten, statt zuzuschreiben[33m 423[2mms[22m[39m
+     [33m[2m✓[22m[39m zählt weitere Typen über demselben Paar dazu[33m 457[2mms[22m[39m
+   [32m✓[39m Kantendicke: was dahintersteht, wird sichtbar [2m(3)[22m
+     [33m[2m✓[22m[39m malt drei Belege dicker als einen[33m 858[2mms[22m[39m
+     [33m[2m✓[22m[39m hält die Erwähnung feiner als jede Behauptung[33m 460[2mms[22m[39m
+     [33m[2m✓[22m[39m gibt die Evidenz auch dem Keil mit[33m 795[2mms[22m[39m
+   [32m✓[39m Kanten-Tooltip: der Zeiger fragt, die Kante antwortet [2m(6)[22m
+     [33m[2m✓[22m[39m sagt, wer über wen was behauptet — und wie viel dahintersteht[33m 529[2mms[22m[39m
+     [33m[2m✓[22m[39m nennt das Ende einer geplatzten Behauptung[33m 526[2mms[22m[39m
+     [33m[2m✓[22m[39m weist eine Aehnlichkeit als das aus, was sie ist[33m 534[2mms[22m[39m
+     [33m[2m✓[22m[39m steht die Karte innerhalb der Leinwand — nicht einen Bildrahmen lang daneben[33m 524[2mms[22m[39m
+     [33m[2m✓[22m[39m zeigt im Baum, was eine Linie verbindet — ohne ihr einen Typ zu erfinden[33m 839[2mms[22m[39m
+     [33m[2m✓[22m[39m bleibt still auf einem Knoten und verstummt, wenn der Zeiger geht[33m 656[2mms[22m[39m
+   [32m✓[39m Etikett-Budget: Key, All, Off und der Peek darunter [2m(9)[22m
+     [33m[2m✓[22m[39m lässt unter Key Etiketten im Gedränge weg[33m 314[2mms[22m[39m
+     [33m[2m✓[22m[39m nennt unter Mehr mehr Notizen als unter Key[33m 561[2mms[22m[39m
+     [33m[2m✓[22m[39m gibt unter All jedes Etikett frei, das Key zurückhielt[33m 564[2mms[22m[39m
+     [33m[2m✓[22m[39m lässt unter Off nichts stehen und holt den Titel unter dem Zeiger zurück[33m 652[2mms[22m[39m
+     [33m[2m✓[22m[39m stellt unter Off auch die Begriffsnamen ab und gibt sie im Peek zurück[33m 653[2mms[22m[39m
+     [33m[2m✓[22m[39m zeigt im Peek den ganzen Titel, nicht die Kürzung[33m 570[2mms[22m[39m
+     [33m[2m✓[22m[39m malt einen Platzhalter so, dass er einer aussieht[33m 318[2mms[22m[39m
+     [33m[2m✓[22m[39m malt das Etikett neu, sobald die Notizliste einen anderen Inhalt trägt[33m 484[2mms[22m[39m
+   [32m✓[39m Glyph im Knoten: Buchstabe fuer die Art, Zahl fuer den Begriff [2m(7)[22m
+     [33m[2m✓[22m[39m setzt einer grossen Scheibe den Buchstaben ihrer Art in die Mitte[33m 378[2mms[22m[39m
+     [33m[2m✓[22m[39m dreht die Helligkeit um, damit der Buchstabe auf der Fuellung steht[33m 384[2mms[22m[39m
+     [33m[2m✓[22m[39m malt den Buchstaben nicht, solange die Scheibe ein Sprite ist[33m 377[2mms[22m[39m
+     [33m[2m✓[22m[39m erfindet keinen Buchstaben fuer eine Art, die er nicht kennt[33m 382[2mms[22m[39m
+     [33m[2m✓[22m[39m hält die Eins aus dem Gesicht eines Begriffs heraus[33m 387[2mms[22m[39m
+     [33m[2m✓[22m[39m setzt einem Begriff, der Notizen traegt, ihre Zahl in die Scheibe[33m 384[2mms[22m[39m
+   [32m✓[39m Faltung: ein Doppelklick faltet eine Gruppe und sagt es [2m(6)[22m
+     [33m[2m✓[22m[39m startet entfaltet: jedes Kind steht, keine Malzahl im Bild[33m 556[2mms[22m[39m
+     [33m[2m✓[22m[39m laesst die Kinder einer doppelt genommenen Gruppe weg und zaehlt sie weiter[33m 677[2mms[22m[39m
+     [33m[2m✓[22m[39m oeffnet die Gruppe beim zweiten Doppelklick wieder[33m 817[2mms[22m[39m
+     [33m[2m✓[22m[39m zaehlt in der Kopfzeile, was nach der Faltung im Bild steht[33m 685[2mms[22m[39m
+     [33m[2m✓[22m[39m faltet auch die tastatur: pfeil links auf die ebene, enter zu[33m 617[2mms[22m[39m
+     [33m[2m✓[22m[39m faltet nicht, wer eine Notiz doppelt nimmt — die oeffnet sie[33m 801[2mms[22m[39m
+   [32m✓[39m Faltung im Kraftfeld: was der Baum gefaltet hat, fehlt auch hier [2m(3)[22m
+     [33m[2m✓[22m[39m verbirgt im kraftfeld nur, was der gefaltete begriff allein trägt[33m 1416[2mms[22m[39m
+     [33m[2m✓[22m[39m zaehlt die verdeckten notizen aus Kopfzeile und Bilanzzeile[33m 1535[2mms[22m[39m
+     [33m[2m✓[22m[39m gibt die notizen zurück, wenn die gruppe im baum wieder öffnet[33m 2543[2mms[22m[39m
+   [32m✓[39m Selbstkanten: ein Schalter, eine Schlinge, kein Nachbarschaftsgewinn [2m(5)[22m
+     [33m[2m✓[22m[39m verschweigt die Selbstbehauptung nicht, sondern meldet sie[33m 395[2mms[22m[39m
+     [33m[2m✓[22m[39m malt eine Schlinge mehr, wenn der schalter an geht — und keine zweite Kante[33m 847[2mms[22m[39m
+     [33m[2m✓[22m[39m lässt die Knotengröße unangetastet — selbst behaupten ist kein Nachbar[33m 932[2mms[22m[39m
+     [33m[2m✓[22m[39m greift: auf der Schlinge öffnet sich die Kantkarte der Behauptung[33m 2183[2mms[22m[39m
+   [32m✓[39m Die semantische Ansicht steht auf den Vektoren [2m(10)[22m
+     [33m[2m✓[22m[39m startet im Kraftfeld und fragt die semantische Karte erst beim Öffnen[33m 526[2mms[22m[39m
+     [33m[2m✓[22m[39m lässt das Kraftfeld unangetastet, wenn die Ansicht wieder schließt[33m 6878[2mms[22m[39m
+     [33m[2m✓[22m[39m zeichnet dieselbe Projektion, wenn dieselbe Wissensbasis zweimal geöffnet wird[33m 7420[2mms[22m[39m
+     [33m[2m✓[22m[39m merkt sich die Ansicht und kommt darin wieder[33m 523[2mms[22m[39m
+     [33m[2m✓[22m[39m meldet laut, wie viele Notizen die Kappung aus dem Bild nimmt[33m 532[2mms[22m[39m
+     [33m[2m✓[22m[39m stellt die Notizen ohne Vektor an den Rand und sagt es[33m 949[2mms[22m[39m
+     [33m[2m✓[22m[39m nennt, was die beiden Achsen tragen, und welchen Modellen sie vertrauen[33m 539[2mms[22m[39m
+     [33m[2m✓[22m[39m erklärt zu wenig Vektoren, statt ein schwarzes Feld zu zeigen[33m 536[2mms[22m[39m
+     [33m[2m✓[22m[39m versagt laut, wenn die Karte nicht kommt[33m 534[2mms[22m[39m
+     [33m[2m✓[22m[39m lässt Feld und Baum in Ruhe: beide Knöpfe tun weiter, was sie taten[33m 1280[2mms[22m[39m
+   [32m✓[39m Das Schema-Inventar nennt, was der Bestand trägt [2m(6)[22m
+     [33m[2m✓[22m[39m startet zu und lässt die Fläche unangetastet[33m 610[2mms[22m[39m
+     [33m[2m✓[22m[39m zählt die Arten, die Begriffe und die Behauptungen aus demselben Stand[33m 441[2mms[22m[39m
+     [33m[2m✓[22m[39m nennt die Zahl der Behauptungen, die der Bestand trägt, nicht die des Ausschnitts[33m 433[2mms[22m[39m
+     [33m[2m✓[22m[39m spotlightet eine Behauptung: was sie nicht trägt, tritt zurück[33m 765[2mms[22m[39m
+     [33m[2m✓[22m[39m gibt das Spotlight her, wer dieselbe Zeile noch einmal nimmt[33m 1054[2mms[22m[39m
+     [33m[2m✓[22m[39m lässt die Kopfzeile unangetastet — das Inventar ist ein zweiter Blick, keine zweite Zahl der Fläche[33m 614[2mms[22m[39m
+   [32m✓[39m Die Herkunft färbt, wenn sie etwas zu sagen hat [2m(5)[22m
+     [33m[2m✓[22m[39m startet im Typ-Kanal[33m 325[2mms[22m[39m
+     [33m[2m✓[22m[39m schaltet den Herkunfts-Kanal ab, wenn alles aus derselben Hand kommt[33m 320[2mms[22m[39m
+     [33m[2m✓[22m[39m gibt den Kanal her, sobald zwei Herkünfte im Bestand stehen[33m 704[2mms[22m[39m
+     [33m[2m✓[22m[39m lässt die Typfarben in Ruhe, wenn der Kanal zurückgeht[33m 1046[2mms[22m[39m
+     [33m[2m✓[22m[39m merkt sich den Kanal[33m 758[2mms[22m[39m
+   [32m✓[39m Die Suche zählt Treffer und führt von einem zum nächsten [2m(6)[22m
+     [33m[2m✓[22m[39m zählt die Treffer, ohne das Tippen zu blockieren[33m 493[2mms[22m[39m
+     [33m[2m✓[22m[39m sagt, wenn nichts passt — und erfindet keinen Treffer[33m 396[2mms[22m[39m
+     [33m[2m✓[22m[39m springt mit Enter zum Treffer und zählt die Stelle mit[33m 646[2mms[22m[39m
+     [33m[2m✓[22m[39m geht mit Shift+Enter zurück[33m 652[2mms[22m[39m
+     [33m[2m✓[22m[39m räumt mit Escape zuerst die Suche, dann die Auswahl[33m 674[2mms[22m[39m
+     [33m[2m✓[22m[39m öffnet mit Enter die Auswahl, wenn die Suche nichts zu blättern hat[33m 863[2mms[22m[39m
+   [32m✓[39m Ein Filter lässt das Bild bei dem stehen, was übrig ist [2m(2)[22m
+     [33m[2m✓[22m[39m holt nach dem Filtern alles zurück in den Rahmen[33m 10692[2mms[22m[39m
+     [33m[2m✓[22m[39m stellt das Bild in die Mitte seiner Leinwand, nicht an den Rand[33m 10689[2mms[22m[39m
+   [32m✓[39m Ein Titel-Echo wird kein Begriff im Bild [2m(2)[22m
+     [33m[2m✓[22m[39m zählt nur die Begriffe, die etwas verbinden[33m 360[2mms[22m[39m
+     [33m[2m✓[22m[39m hängt an das Echo auch keine Behauptung[33m 362[2mms[22m[39m
+   [32m✓[39m Die Regler unter dem Knopf Forces [2m(6)[22m
+     [33m[2m✓[22m[39m räumt nichts um, wer das Panel nur öffnet und schließt[33m 5770[2mms[22m[39m
+     [33m[2m✓[22m[39m bewegt der Abstoßungsregler das Feld, nicht die Kamera[33m 696[2mms[22m[39m
+     [33m[2m✓[22m[39m macht der Größenregler die Knoten größer, nicht die Welt weiter[33m 700[2mms[22m[39m
+     [33m[2m✓[22m[39m merkt sich die Stellung über ein neues Bild[33m 714[2mms[22m[39m
+     [33m[2m✓[22m[39m setzt Zurück auf die gestimmten Konstanten[33m 825[2mms[22m[39m
+   [32m✓[39m Die Legende nimmt dem eingepassten Bild nichts weg [2m(2)[22m
+     [33m[2m✓[22m[39m lässt keinen Knoten unter die Legende reichen[33m 5383[2mms[22m[39m
+     [33m[2m✓[22m[39m schrumpft das Bild nicht zur Briefmarke, damit die Legende frei bleibt[33m 5399[2mms[22m[39m
+   [32m✓[39m Der Baum faltet sich, was nicht in seine Leinwand passt [2m(4)[22m
+     [33m[2m✓[22m[39m hält seine Zeilen im Rahmen und nennt es[33m 897[2mms[22m[39m
+     [33m[2m✓[22m[39m gibt die Faltung her, wenn jemand alles sehen will[33m 1266[2mms[22m[39m
+     [33m[2m✓[22m[39m schneidet keine Zeile an der Leinwandkante ab[33m 895[2mms[22m[39m
+     [33m[2m✓[22m[39m lässt einen kleinen Baum ganz entfaltet[33m 890[2mms[22m[39m
+   [32m✓[39m Nachzug: die Flaeche fuellt das Netz, das die Tuer fuer offen haelt [2m(3)[22m
+     [33m[2m✓[22m[39m startet den Lauf, nennt was er hinzugefuegt hat, und holt das Netz neu[33m 332[2mms[22m[39m
+     [33m[2m✓[22m[39m ruft nichts und sagt nichts, wenn die Tuer keinen Bedarf meldet[33m 320[2mms[22m[39m
+     [33m[2m✓[22m[39m zeigt die Verweigerung, wenn die Sicherung fehlt[33m 321[2mms[22m[39m
+
+[2m Test Files [22m [1m[32m2 passed[39m[22m[90m (2)[39m
+[2m      Tests [22m [1m[32m172 passed[39m[22m[90m (172)[39m
+[2m   Start at [22m 14:02:08
+[2m   Duration [22m 135.49s[2m (tests 99%)[22m
+
