@@ -98,6 +98,83 @@ describe("README: kein versprochener Installer, den es nicht gibt", () => {
   });
 });
 
+/**
+ * #94 — die Route-Tabelle nannte `/api/memories/:id` ohne Methode. Gelesen als
+ * „die Tür gibt mir eine Notiz" und die Tür antwortet 404: auf dem Pfad registriert
+ * sind nur `DELETE` und `POST …/restore`. Dasselbe Fach wie die Installer-Zeile oben:
+ * ein Versprechen im Text, das das Objekt nicht hält.
+ */
+function registrierteRouten(): Set<string> {
+  const wurzel = process.cwd();
+  const dateien = [path.join(wurzel, "server.ts")];
+  const sammle = (ordner: string) => {
+    for (const eintrag of fs.readdirSync(ordner, { withFileTypes: true })) {
+      const voll = path.join(ordner, eintrag.name);
+      if (eintrag.isDirectory()) sammle(voll);
+      else if (eintrag.name.endsWith(".ts")) dateien.push(voll);
+    }
+  };
+  sammle(path.join(wurzel, "server"));
+  const menge = new Set<string>();
+  const re = /\b(?:app|router)\.(get|post|put|delete|patch)\(\s*["'`]([^"'`]+)["'`]/g;
+  for (const datei of dateien) {
+    let m: RegExpExecArray | null;
+    while ((m = re.exec(fs.readFileSync(datei, "utf8"))) !== null) {
+      menge.add(`${m[1]!.toUpperCase()} ${m[2]}`);
+    }
+  }
+  return menge;
+}
+
+describe("README: keine Route, die die Tür nicht hat", () => {
+  const echt = registrierteRouten();
+
+  /**
+   * Die Tabelle führt mehrere Pfade in EINER Zelle, durch Komma getrennt. Wer die Zelle
+   * als Ganzes vergleicht, sieht keinen einzigen Pfad — und eine Wache, die nichts sieht,
+   * meldet grün. Also: Zeile → Zellen → Stückchen, Klammer-Ticks und Leerzeichen ab.
+   */
+  function stucken(): string[] {
+    const out: string[] = [];
+    for (const z of zeilen) {
+      if (!z.includes("| `")) continue;
+      for (const zelle of z.split("|")) {
+        for (const stueck of zelle.split(",")) {
+          const glatt = stueck.trim().replace(/^`|`$/g, "");
+          if (glatt.startsWith("/api/")) out.push(glatt);
+          else if (/^(GET|POST|PUT|PATCH|DELETE)\s+\/api\//.test(glatt)) out.push(glatt);
+        }
+      }
+    }
+    return out;
+  }
+
+  it("nannt an der Einzel-Notiz keine Methode, die der Pfad nicht hat", () => {
+    const betreff = stucken().filter((s) => s.endsWith("/api/memories/:id"));
+    expect(betreff.length, "die Tabelle muss die Einzel-Notiz führen").toBeGreaterThan(0);
+    const erlaubt = [...echt].filter((r) => r.endsWith(" /api/memories/:id")).sort();
+    const erfunden = betreff.filter((s) => !erlaubt.includes(s));
+    expect(
+      erfunden,
+      `kahl oder erfunden — die Tür hat auf dem Pfad nur: ${erlaubt.join(", ")}; die Tabelle nennt: ${betreff.join(", ")}`,
+    ).toEqual([]);
+  });
+
+  it("sagt, wo der Körper einer einzelnen Notiz liegt, wenn es keinen Einzelabruf gibt", () => {
+    const ehrlich = zeilen.some((z) =>
+      /no single-note GET|GET \/api\/memories\/:id does not exist/i.test(z),
+    );
+    expect(ehrlich, "die README muss sagen, wie man eine Notiz wirklich liest (Liste, Suche)").toBe(true);
+  });
+
+  it("erfindet in der ganzen Tabelle keine Methode, die der Server nicht anmeldet", () => {
+    const genannt = stucken().filter((s) => /^(GET|POST|PUT|PATCH|DELETE)\s/.test(s));
+    expect(genannt.length, "die Tabelle muss methodenscharfe Routen nennen").toBeGreaterThan(0);
+    const fremd = genannt.filter((r) => !echt.has(r));
+    expect(fremd, `README behauptet Routen, die der Server nicht hat: ${fremd.join(", ")}`).toEqual([]);
+  });
+});
+
 function BELEGZEILEN(pfad: string): string[] {
   return fs.readFileSync(path.join(process.cwd(), pfad), "utf-8").split("\n");
 }
