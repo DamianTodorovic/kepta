@@ -1296,6 +1296,69 @@ var KeptaStore = class _KeptaStore {
     }
     return ids;
   }
+  /**
+   * Setzt die Begriffe und Kanten **einer** Notiz neu — derselbe Name wie in der App
+   * (`kepta-app/src/core/store.ts:950`), damit die Paritaet grepbar bleibt. Der Kern
+   * liest hier keinen Text: die Begriffe kommen von dem, der schreibt (Agentenkanal,
+   * Import). Zwei Naturen, zwei Worte: Titel -> Begriff ist `mentions`, zwei Begriffe
+   * aus derselben Aussage sind `co-mentions`.
+   *
+   * Verglichen wird (Ende, Ende, **Wort**), nicht (Ende, Ende): ein Paar, das frueher
+   * ein anderes Wort trug, wird beim naechsten Setzen umgeschrieben, statt dass zwei
+   * Worte fuer dieselbe Aussage stehen. Und weil jede Kante zu *einer* Notiz gehoert,
+   * faellt sie mit ihr — `addRelation` allein ist ein nacktes INSERT, und ein
+   * Wieder-Speichern des Agentenkanals legte denselben Stich bisher noch einmal.
+   *
+   * Gekappt auf die ersten acht Begriffe fuer die Paarbildung: aus 14 Namen wuerden 91
+   * Paare, und eine lange Notiz waere ein Knotenwerk statt einer Aussage.
+   */
+  verknuepfeNotiz(memoryId, titel, namen) {
+    const t = String(titel ?? "").trim().toLowerCase();
+    const knoten = /* @__PURE__ */ new Set();
+    if (t.length >= 2) knoten.add(t);
+    const paare = /* @__PURE__ */ new Map();
+    const schluessel = (a, b, wort) => a + "|" + b + "|" + wort;
+    for (const roh of namen ?? []) {
+      const n = String(roh ?? "").trim().toLowerCase();
+      if (n.length < 2 || n === t) continue;
+      knoten.add(n);
+      paare.set(schluessel(t, n, "mentions"), [t, n, "mentions"]);
+    }
+    const fuerPaare = [...knoten].filter((k) => k !== t).slice(0, 8);
+    for (let i = 0; i < fuerPaare.length; i++) {
+      for (let j = i + 1; j < fuerPaare.length; j++) {
+        const a = fuerPaare[i];
+        const b = fuerPaare[j];
+        const von = a < b ? a : b;
+        const nach = a < b ? b : a;
+        paare.set(schluessel(von, nach, "co-mentions"), [von, nach, "co-mentions"]);
+      }
+    }
+    const setzen = this.db.transaction(() => {
+      const ids = [];
+      for (const name of [...knoten].slice(0, 40)) ids.push(this.ensureEntity(name));
+      const erlaubt = new Set(ids);
+      const eintrag = this.db.prepare("INSERT OR IGNORE INTO memory_entities (memory_id, entity_id) VALUES (?, ?)");
+      for (const eid of ids) eintrag.run(memoryId, eid);
+      const traeger = this.db.prepare("SELECT entity_id FROM memory_entities WHERE memory_id = ?").all(memoryId);
+      const entfaernen = this.db.prepare("DELETE FROM memory_entities WHERE memory_id = ? AND entity_id = ?");
+      for (const r of traeger) if (!erlaubt.has(r.entity_id)) entfaernen.run(memoryId, r.entity_id);
+      const vorhanden = this.db.prepare("SELECT id, source_id, target_id, relation FROM relations WHERE memory_id = ?").all(memoryId);
+      const gewollt = /* @__PURE__ */ new Set();
+      for (const [, [quelle, ziel, wort]] of paare) {
+        const sid = this.ensureEntity(quelle);
+        const zid = this.ensureEntity(ziel);
+        gewollt.add(schluessel(String(sid), String(zid), wort));
+        if (!vorhanden.some((v) => v.source_id === sid && v.target_id === zid && v.relation === wort)) {
+          this.addRelation(quelle, ziel, wort, memoryId);
+        }
+      }
+      const loeschen = this.db.prepare("DELETE FROM relations WHERE id = ?");
+      for (const v of vorhanden) if (!gewollt.has(schluessel(String(v.source_id), String(v.target_id), v.relation))) loeschen.run(v.id);
+      return gewollt.size;
+    });
+    return setzen();
+  }
   addRelation(source, target, relation, memoryId, validFrom = null, validTo = null) {
     const sid = this.ensureEntity(source);
     const tid = this.ensureEntity(target);
@@ -2633,11 +2696,7 @@ function saveWithIndex(store, args) {
   const { record, created } = store.upsertMemory(input);
   indexMemory(store, record.id);
   const links = extractWikiLinks(`${record.title} ${record.content}`);
-  store.linkEntities(record.id, [record.title, ...links]);
-  const titleEntity = record.title.trim().toLowerCase();
-  for (const link of links) {
-    if (link !== titleEntity) store.addRelation(titleEntity, link, "mentions", record.id);
-  }
+  store.verknuepfeNotiz(record.id, record.title, links);
   return { created, record: store.getMemory(record.id) };
 }
 var VERSIONEN_ABSTEIGEND = [...PROTOCOL_VERSIONS].sort().reverse();
