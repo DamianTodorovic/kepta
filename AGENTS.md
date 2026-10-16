@@ -30,6 +30,7 @@ Use the K3PTA MCP tools as your persistent memory, across sessions:
 ## Hard-won rules
 - **Local packaging:** delete `node_modules/better-sqlite3-multiple-ciphers/build/Release/.forge-meta` before every `electron-builder` run, check the result with `node scripts/pruefe-native.mjs release`, then `npm rebuild better-sqlite3-multiple-ciphers` so Node can load the module again.
 - **Check heuristics against real data before a release** — contradictions, classification, the privacy shield. Clean test data hides false alarms: the first contradiction detector passed every test and still raised 17 false alarms on a real knowledge base.
+- **A run that dies must leave nothing behind.** Put sandbox cleanup in a `finally`, and check the process id before deleting a temp home — on 16.10. a crashed probe exited before its own cleanup, so a server kept listening while its temp home was deleted underneath it, and a second worker reported "nothing is running" on top of that. *Tell: a port that answers after its owner says it is closed.*
 - **Never open the maintainer's database directly** and never load `dist/server.cjs` to inspect it — it starts a server against the real data. Read through the running app's API (the port is in `~/.kepta/endpoint.json`; the app allows 180 requests a minute).
 - Never delete notes for good — the trash, with a backup and a list of ids to restore.
 - **Probe checklist before the first shot (three traps, each found the hard way in `~/kepta-app` on 16.10):**
