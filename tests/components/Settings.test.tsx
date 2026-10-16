@@ -563,11 +563,12 @@ describe("Settings: was die Flaeche verspricht, zeigt sie auch", () => {
 });
 
 describe("Settings: die Quittung nach dem Speichern", () => {
-  // Flaeche-Punkt aus dem SET1-Papier 19, von der Leitung aufgegeben: die Quittung
-  // lebt zwei Sekunden. Das ist an sich eine Entwurfs-Entscheidung — aber der Timer wird
+  // Flaeche-Punkt aus dem SET1-Papier 19, von der Leitung aufgegeben und 17:32 entschieden:
+  // die Quittung lebt 6 000 ms (QUITTUNG_MS, eine Lebensdauer fuer alle persistierenden). Das
+  // ist an sich eine Entwurfs-Entscheidung — aber der Timer wird
   // bei jedem Speichern neu gelegt, ohne den alten zu loeschen. Wer zweimal
   // speichert, sieht die Bestaetigung der zweiten Speicherung fast sofort verschwinden.
-  it("zaehlt zwei Sekunden ab der letzten Speicherung, nicht ab der ersten", () => {
+  it("zaehlt 6 000 ms ab der letzten Speicherung, nicht ab der ersten", () => {
     vi.useFakeTimers();
     try {
       const { container } = render(<Settings />);
@@ -579,10 +580,85 @@ describe("Settings: die Quittung nach dem Speichern", () => {
       fireEvent.click(knopf());
       act(() => { vi.advanceTimersByTime(200); });
       expect(knopf().textContent, "die zweite Speicherung hat neu zu zaehlen — der alte Timer darf ihr die Quittung nicht wegnehmen").toMatch(/Configuration saved/);
-      act(() => { vi.advanceTimersByTime(1900); });
+      act(() => { vi.advanceTimersByTime(6_001); });
       expect(knopf().textContent).toMatch(/Save/);
     } finally {
       vi.useRealTimers();
     }
+  });
+});
+
+// --- #26 Richtung B — die Meldung an der geaenderten Zeile ---------------------
+// Der Befund aus dem Browser (17:31–17:44, Protokoll 26-zustaende-b.log.txt): die
+// Verbindungsmeldung erscheint an der Zeile, die angefasst wurde, und nach dem
+// Zurueckrollen nicht mehr im Fenster. Beides ist hier geprueft: die STELLE (eine
+// Meldung, in der geaenderten Sektion, keine an einer andern) und die DAUER
+// (5 999 ms ja, 6 001 ms nein — ein Fall, der beide Enden prueft, nicht eines).
+describe("Settings: #26 Richtung B — Meldung an der geaenderten Zeile", () => {
+  const quittungen = (container: HTMLElement) =>
+    [...container.querySelectorAll("[data-quittung]")].map((e) => e.getAttribute("data-quittung"));
+
+  // Der leere Zustand ist der erste, den ein Mensch sieht. Heute startet `ortZuletzt`
+  // mit "anbieter" — ein Speichern ohne jede Aenderung malt deshalb eine gruene Zeile
+  // unter einen Anbieter, den niemand angefasst hat.
+  it("malt bei Speichern ohne jede Aenderung keine Meldung an eine Zeile", () => {
+    const { container } = render(<Settings />);
+    fireEvent.click(screen.getByRole("button", { name: /^Save$/ }));
+    expect(quittungen(container), "die Meldung nennt eine Zeile, die nie angefasst wurde").toEqual([]);
+  });
+
+  it("meldet genau einmal, in der Sektion des geaenderten Felds, und nicht an einer andern", async () => {
+    const { container } = render(<Settings />);
+    await waitFor(() => expect(container.textContent).toMatch(/Artificial intelligence/));
+    const feld = screen.getByPlaceholderText(/https:\/\/api\.example\.com\/v1/);
+    fireEvent.change(feld, { target: { value: "https://beispiel.example/v1" } });
+    fireEvent.click(screen.getByRole("button", { name: /Save/ }));
+    await waitFor(() => expect(quittungen(container)).toEqual(["endpunkt"]));
+    const meldung = container.querySelector("[data-quittung]") as Element;
+    // enthaelt die Sektion die Meldung, oder liegt sie nur im selben Blatt?
+    expect(meldung.closest("[data-abschnitt]")?.getAttribute("data-abschnitt")).toBe("verbindung");
+    // und die andre Sektion bleibt leer
+    const modelle = container.querySelector('[data-abschnitt="modelle"]') as HTMLElement;
+    expect(modelle.querySelector("[data-quittung]")).toBeNull();
+  });
+
+  it("lebt 6 000 ms — bei 5 999 steht die Meldung, eine Millisekunde spaeter nicht mehr", async () => {
+    vi.useFakeTimers();
+    try {
+      const { container } = render(<Settings />);
+      const feld = screen.getByPlaceholderText(/https:\/\/api\.example\.com\/v1/);
+      fireEvent.change(feld, { target: { value: "https://beispiel.example/v1" } });
+      fireEvent.click(screen.getByRole("button", { name: /Save/ }));
+      await act(async () => { vi.advanceTimersByTime(0); });
+      expect(quittungen(container)).toEqual(["endpunkt"]);
+      await act(async () => { vi.advanceTimersByTime(5_999); });
+      expect(quittungen(container)).toEqual(["endpunkt"]);        // 5 999: noch da
+      await act(async () => { vi.advanceTimersByTime(2); });
+      expect(quittungen(container)).toEqual([]);                  // 6 001: weg
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  // Sicherung ohne Bestand: der leere Zustand ist der erste, den ein frisch
+  // installierter Mensch sieht. Die Meldung nennt eine Zahl, keine Rundung — und sie
+  // bleibt an ihrem Knopf, es malt nichts an einer Zeile des Formulars.
+  it("sichert einen leeren Bestand, nennt die Null und malt keine Zeile im Formular an", async () => {
+    const { container } = render(<Settings />);
+    await waitFor(() => expect(container.textContent).toMatch(/Artificial intelligence/));
+    const sichern = [...container.querySelectorAll("button")].find((b) => /Back up|Backup/i.test(b.textContent || "")) as HTMLButtonElement;
+    expect(sichern, "der Sicherungs-Knopf steht nicht im Blatt").toBeTruthy();
+    fireEvent.click(sichern);
+    await waitFor(() => expect(sichern.textContent).toMatch(/Backup created/i));
+    expect(sichern.textContent, "die leere Sicherung muss ihre Null nennen").toMatch(/\b0\b.*nodes/);
+    expect([...container.querySelectorAll("[data-quittung]")]).toEqual([]);
+  });
+
+  it("zaehlt Knopfe getrennt: einer im Formular, keiner gebunden ausserhalb", async () => {
+    const { container } = render(<Settings />);
+    await waitFor(() => expect(container.querySelector("form")).toBeTruthy());
+    const formular = container.querySelector("form") as HTMLFormElement;
+    expect(formular.querySelectorAll('button[type="submit"]')).toHaveLength(1);
+    expect([...container.querySelectorAll("button[form]")]).toHaveLength(0);
   });
 });

@@ -101,6 +101,24 @@ function schemaKurz(w: McpWerkzeug): string {
   return teile.length ? `{ ${teile.join(', ')} }` : '{}';
 }
 
+/** #26 Regel 1 — EINE Lebensdauer fuer alle persistierenden Quittungen.
+ *  Vorher: 2 000 ms Verbindung, 6 000 ms Sicherung, 1 800 ms Auto-learn und
+ *  1 800 ms Extraktionsmodell — vier Stellen, drei Zahlen. Eine Bestaetigung, die
+ *  verschwindet, bevor der Mensch den Kopf hebt, ist keine. */
+const QUITTUNG_MS = 6_000;
+
+/** #26 Richtung B — die Meldung gehoert an die Zeile, die sich geaendert hat.
+ *  Sie traegt ihren Ort selbst ("data-quittung"), damit ein Fall zaehlen kann,
+ *  wie viele Meldungen im Blatt stehen und wo. */
+function Meldung({ meldung, ort }: { meldung: { ort: string; text: string } | null; ort: string }) {
+  if (!meldung || meldung.ort !== ort) return null;
+  return (
+    <p data-quittung={ort} className="text-xs mt-2 flex items-center gap-1.5" style={{ color: 'var(--ok)' }}>
+      <CheckCircle2 className="w-3.5 h-3.5" /> {meldung.text}
+    </p>
+  );
+}
+
 export function Settings() {
   const [activeTab, setActiveTab] = useState<TabId>('system');
   const [zoom, setZoomState] = useState<number>(getZoom());
@@ -125,6 +143,8 @@ export function Settings() {
   // --- System-Tab state (bestehend) ---
   const [settings, setSettings] = useState<AISettings>(loadAISettings());
   const [saved, setSaved] = useState(false);
+  const [meldung, setMeldung] = useState<{ ort: string; text: string } | null>(null);
+  const ortZuletzt = useRef<string | null>(null);   // null = es wurde noch keine Zeile angefasst
   // Die Quittung lebt zwei Sekunden ab der LETZTEN Speicherung. Ohne den Griff auf
   // den laufenden Timer nahm der erste Speichern-Knopf dem zweiten die Bestaetigung
   // weg: wer innerhalb von zwei Sekunden zweimal speicherte, sah "Save" statt der
@@ -335,7 +355,13 @@ export function Settings() {
     return () => { cancelled = true; };
   }, [activeTab]);
 
-  const update = (patch: Partial<AISettings>) => setSettings(prev => ({ ...prev, ...patch }));
+  const update = (patch: Partial<AISettings>) => {
+    if (patch.providerId !== undefined) ortZuletzt.current = "anbieter";
+    if (patch.baseUrl !== undefined) ortZuletzt.current = "endpunkt";
+    if (patch.apiKey !== undefined) ortZuletzt.current = "schluessel";
+    if (patch.model !== undefined) ortZuletzt.current = "modelle";
+    setSettings(prev => ({ ...prev, ...patch }));
+  };
 
   const selectProvider = (id: string) => {
     const p = providerById(id);
@@ -353,8 +379,12 @@ export function Settings() {
     e.preventDefault();
     saveAISettings(settings);
     setSaved(true);
+    // #26, leerer Zustand: eine Meldung an einer Zeile, die niemand angefasst hat, ist
+    // eine Behauptung. Gemalt wird nur, wo etwas stand — und danach ist nichts mehr an.
+    setMeldung(ortZuletzt.current ? { ort: ortZuletzt.current, text: 'Saved — the change is on this computer.' } : null);
+    ortZuletzt.current = null;
     window.clearTimeout(quittung.current);
-    quittung.current = window.setTimeout(() => setSaved(false), 2000);
+    quittung.current = window.setTimeout(() => { setSaved(false); setMeldung(null); }, QUITTUNG_MS);
   };
 
   // Beim Verlassen der Platte darf kein Timer nachlaufen.
@@ -420,7 +450,7 @@ export function Settings() {
     URL.revokeObjectURL(url);
 
     setSicherung({ knoten: knoten.length });
-    setTimeout(() => setSicherung(null), 6000);
+    setTimeout(() => setSicherung(null), QUITTUNG_MS);
   };
 
   /** KI-Verlauf (ChatGPT/Claude-Export) übernehmen — WS5: „Switch to K3PTA, keep your memory." */
@@ -605,7 +635,7 @@ export function Settings() {
               </div>
             </div>
 
-            <form onSubmit={handleSave} className="space-y-6">
+            <form data-abschnitt="verbindung" onSubmit={handleSave} className="space-y-6">
               <div className="space-y-5">
                 <div className="flex items-center gap-2">
                   <Cpu className="w-4 h-4" style={{ color: 'var(--accent)' }} />
@@ -624,6 +654,7 @@ export function Settings() {
                     ))}
                   </select>
                   <p className="text-xs mt-2" style={{ color: 'var(--text-3)' }}>{provider.hint}</p>
+                  <Meldung meldung={meldung} ort="anbieter" />
                 </div>
 
                 <div>
@@ -659,9 +690,10 @@ export function Settings() {
                     placeholder="https://api.example.com/v1"
                     className={inputClass}
                   />
+                  <Meldung meldung={meldung} ort="endpunkt" />
                 </div>
 
-                <div>
+                <div data-abschnitt="modelle">
                   <label className="hud-label block mb-2">Model</label>
                   <div className="flex gap-2">
                     <input
@@ -733,7 +765,7 @@ export function Settings() {
                     </div>
                   </div>
                   <label className="relative inline-flex h-6 w-11 items-center rounded-full transition-colors cursor-pointer shrink-0" style={{ background: autoLearn ? 'var(--accent)' : 'var(--bg-inset-strong)', border: autoLearn ? '1px solid transparent' : '1px solid var(--border-subtle)' }}>
-                    <input type="checkbox" aria-label="Auto-learn" checked={autoLearn} onChange={e=>{ const v=e.target.checked; setAutoLearn(v); localStorage.setItem('ki_gehirn_autolearn', String(v)); setAutoLearnSaved(true); setTimeout(()=>setAutoLearnSaved(false),1800); }} className="sr-only" />
+                    <input type="checkbox" aria-label="Auto-learn" checked={autoLearn} onChange={e=>{ const v=e.target.checked; setAutoLearn(v); localStorage.setItem('ki_gehirn_autolearn', String(v)); setAutoLearnSaved(true); setTimeout(()=>setAutoLearnSaved(false),QUITTUNG_MS); }} className="sr-only" />
                     <span className={`inline-block h-4 w-4 transform rounded-full bg-white shadow transition-transform ${autoLearn ? 'translate-x-6' : 'translate-x-1'}`} />
                   </label>
                 </div>
@@ -745,7 +777,7 @@ export function Settings() {
                       type="text"
                       value={extractModel}
                       onChange={(e) => setExtractModel(e.target.value)}
-                      onBlur={() => { const s = loadAISettings(); saveAISettings({ ...s, extractModel: extractModel.trim() }); setExtractSaved(true); setTimeout(()=>setExtractSaved(false),1800); }}
+                      onBlur={() => { const s = loadAISettings(); saveAISettings({ ...s, extractModel: extractModel.trim() }); setExtractSaved(true); setTimeout(()=>setExtractSaved(false),QUITTUNG_MS); }}
                       placeholder="e.g. llama3.2:3b — empty = the chat model"
                       className="w-full text-sm rounded-lg px-3 py-2"
                       style={{ background: 'var(--bg-inset-strong)', border: '1px solid var(--border-subtle)', color: 'var(--text-1)' }}
@@ -783,7 +815,7 @@ export function Settings() {
                 </div>
               </div>
 
-                <div className="mt-6 pt-6" style={{ borderTop: '1px solid var(--border-subtle)' }}>
+                <div data-abschnitt="sicherung" className="mt-6 pt-6" style={{ borderTop: '1px solid var(--border-subtle)' }}>
                   <div className="flex items-center gap-2 mb-4">
                     <HardDriveDownload className="w-4 h-4" style={{ color: 'var(--accent)' }} />
                     <h3 className="settings-h" style={{ color: 'var(--text-1)' }}>Data management</h3>
