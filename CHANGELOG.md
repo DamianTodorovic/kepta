@@ -1,3 +1,41 @@
+## [3.2.16]
+
+### Fixed
+
+- **A save that changed nothing no longer congratulates you.** `ortZuletzt` opened
+  with `"anbieter"`, so pressing Save on a pristine form painted a green receipt
+  under a provider nobody had touched — and all four earlier cases stayed green
+  because every one of them typed first. The ref now starts at `null`, and the
+  place resets to `null` after painting, so a second click without a new change
+  paints nothing. Witness: red at 19:12:52 (`expected [ 'anbieter' ] to deeply
+  equal []`), green at 19:13:39 (42/42), and the mutation re-run by the
+  lead at 19:21:33 reproduced the same red line for line.
+- **The receipt arrives at the row you edited.** Sections carry `data-abschnitt`
+  (connection / models / backup) and the message carries `data-quittung`, and the
+  case asserts containment — `meldung.closest('[data-abschnitt]')` must be
+  `'verbindung'` while the models section stays empty — not mere presence
+  somewhere in the document. The four persistent receipts now live 6 000 ms and
+  are proven at both ends (standing at 5 999 ms, gone at 6 001); the clipboard
+  confirmation stays at 2 000 ms because it confirms an instant act rather than a
+  save.
+- **At phone width the sidebar was eating the Save click.** At 390 px the drawer
+  covers 256 of the 390 px (`Sidebar.tsx:72` sets `w-64`; the strongest
+  brightness step in the before-image sits at x = 255), so the click at
+  190,422 landed on `DIV.seiten-kante-oben`, `dirty` was never set, nothing was
+  stored and nothing was said. Choosing a view while the window is narrow now
+  returns the drawer, and the same click lands on `BUTTON.btn-primary`.
+  Red at 18:24:24 (`expected 'sidebar-glass …' to match /w-0/`), green at
+  18:28:30.
+
+### Known
+
+- One action still carries two names: the drawer's control is labelled
+  „Focus mode" while its title says „Hide sidebar", and the drawer still covers
+  the page when it was opened without choosing a view.
+- A package older than the commit it should contain cannot contain it — the
+  release chain asks about version and encryption, not about content, and that
+  is how 3.2.15 shipped without these two fixes for an hour.
+
 ## [3.2.15]
 
 ### Fixed
