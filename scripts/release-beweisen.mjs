@@ -119,6 +119,48 @@ for (const k of KAPSELN) {
     gesundheit.version === version && gesundheit.encryption?.aktiv === true);
 }
 
+// 1b) Artefakt-INHALT: Marker aus dem Quelltext muessen im Paket stehen.
+//   Warum eine eigne Zeile: der Kapselstart oben fragt die Laufzeit ab (Version,
+//   Verschluesselung) — ein Paket, dem eine Flaechenheilung fehlt, laeuft trotzdem und
+//   wird fuer ausgeliefert gehalten. Gemessen 16.10.: app.asar geschrieben 17:55, der
+//   Commit der Heilung 18:54; die Kette meldete "laeuft". Und zaehlen darf man nur
+//   Zeichenketten: ein Bundle wird minifiziert, Kennungen (`setIsFocusMode`,
+//   `QUITTUNG_MS`) kommen im Paket 0-mal vor, obwohl der Code drin ist — ein 0 bei
+//   einem Identifier beweist nichts, ein 0 bei einem Text beweist alles.
+const MARKER = ["data-abschnitt", "data-quittung"];
+const imQuelltext = (marker) => {
+  let n = 0;
+  const geht = (ordner) => {
+    for (const e of fs.readdirSync(ordner, { withFileTypes: true })) {
+      const p = path.join(ordner, e.name);
+      if (e.isDirectory()) { geht(p); continue; }
+      if (!/\.(ts|tsx)$/.test(e.name)) continue;
+      n += (fs.readFileSync(p, "utf8").match(new RegExp(marker, "g")) || []).length;
+    }
+  };
+  geht(path.join(HIER, "src"));
+  return n;
+};
+const imPaket = (asar, marker) => {
+  try {
+    return execFileSync("grep", ["-a", "-o", marker, asar],
+      { maxBuffer: 1 << 28, stdio: ["ignore", "pipe", "ignore"] }).toString().split("\n").filter(Boolean).length;
+  } catch { return 0; }
+};
+for (const k of KAPSELN) {
+  const ordner = path.join(RELEASE, k.ordner);
+  const marken = fs.existsSync(ordner) ? fs.readdirSync(ordner).filter(n => n.endsWith(".app")) : [];
+  if (marken.length !== 1) continue;                       // Schritt 1 meldet das schon
+  const asar = path.join(ordner, marken[0], "Contents/Resources/app.asar");
+  if (!fs.existsSync(asar)) { meld(`${k.ordner}: kein app.asar unter ${asar} — Inhalt ist nicht pruefbar`, false); continue; }
+  for (const m of MARKER) {
+    const soll = imQuelltext(m), ist = imPaket(asar, m);
+    if (soll === 0) { meld(`${k.ordner}: ${m} — Quelltext nennt den Marker 0-mal, nichts zu pruefen`, true); continue; }
+    meld(`${k.ordner}: ${m} — Quelltext ${soll}-mal, Paket ${ist}-mal` +
+      (ist === 0 ? " — die Heilung steckt NICHT in dem Paket, das ausgeliefert wuerde" : ""), ist > 0);
+  }
+}
+
 // 2) SHA256SUMS.txt
 const summe = path.join(RELEASE, "SHA256SUMS.txt");
 if (fs.existsSync(summe)) {

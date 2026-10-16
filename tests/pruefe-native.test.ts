@@ -251,6 +251,12 @@ describe("Die Bindungsprobe der Release-Stelle", () => {
     expect(quelle).toMatch(/electronBindung\(\{ programm, bin, laufen \}/);
     expect(quelle, "ein fehlendes entpacktes Modul darf nicht als Erfolg enden").toMatch(/kein entpacktes SQLite-Modul[\s\S]{0,120}false/);
     expect(quelle, "die Meldung traegt das Ergebnis, nicht eine Vermutung").toMatch(/\$\{bindung\.ok \?/);
+    // 1b) Artefakt-INHALT, gemeldet 16.10. 19:21:43: Quelltext-Zaehler gegen Paket-Zaehler.
+    //     Ohne diese drei Zeilen laeuft ein Paket durch die Kette, dem die Flaeche fehlt —
+    //     dasselbe Blatt meldete "laeuft, version 3.2.15" und enthielt 0 von 3 Ankern.
+    expect(quelle, "keine Markerliste — niemand weiss, was im Paket stehen muesste").toMatch(/const MARKER = \[[^\]]*data-abschnitt/);
+    expect(quelle, "der Paket-Zaehler fehlt — Inhalt wird nicht gesehen").toMatch(/imPaket\(asar, m\)/);
+    expect(quelle, "ein Marker im Quelltext ohne Gegenstueck im Paket muss FEHLER sein").toMatch(/ist > 0\)/);
   });
 
   it("die Sonde fragt das native Binary, nicht das Paket — `bindings` bleibt im asar", () => {
