@@ -1,4 +1,47 @@
-## [3.2.12]
+## [3.2.13]
+
+### Fixed
+
+- **The backup button backed up a page.** „Download every memory node as a JSON
+  backup" read `getMemoriesSync()` — the store cache, filled by
+  `fetch('/api/memories')` without `alle=1`, capped at `SEITE_STD = 100`
+  (`server/helfer/api-form.ts:78`) — and reported „Backup created". On his
+  21,066-node base that is 0,47 %; on a fresh start, before anything has
+  refreshed the cache, it is **nothing at all**. The button now asks the door for
+  `?alle=1`, names the number it wrote („Backup created · 21,066 nodes"), and
+  says what failed instead of claiming success. Case red before the fix (100
+  against 250), mutation after it (drop `alle=1` → 100 again). The store already
+  knew: `seiteIstBegrenzt()` has no consumer anywhere in `src/`. **The same class
+  was recorded on 14.10. and left to sit for two days.**
+- **The MCP panel listed three of eight tools.** `src/core/mcp.ts` advertises
+  eight; the settings surface hand-set three (`memory_search`, `memory_save`,
+  `memory_list`) — so `memory_update`, `memory_delete`, `memory_graph`,
+  `memory_consolidate` and `memory_forget` were unexplainable to the person
+  wiring up their agent, on the very page that configures it, while
+  `SystemStatus.tsx` printed „8 tools" two screens away. The list is no longer
+  typed out: it is fetched from the running door at load, with its own count, its
+  own error state and its own empty state. Verified against the door itself, not
+  the source — `tools/list` over `POST /mcp` answers 200 with exactly eight.
+  The witness that should have caught this was green while checking three names
+  under a case titled „nennt die acht Werkzeuge"; it now derives its expectation
+  from `mcp.ts` and refuses to pass on fewer than eight.
+- **A sold number was a stale number.** The system panel claimed „62 % Hit@1" for
+  lexical search. That was a real measurement once (`CHANGELOG.md:1460`); today
+  two independent evaluations measure **71 %** (`docs/belege/tag-13-10/
+  eval-korpus-1413.log.txt:17`, `ablation-beine-1144.log.txt:10`). The guard that
+  was supposed to protect it accepted *any* number between 45 and 75 — a band
+  cannot kill a wrong figure, it can only tolerate one, and it would have
+  rejected a correct 76. The allowed values now come out of the evidence file
+  itself, and the guard fails loudly if the file stops naming them.
+- **One strip, two number dresses.** His own screenshot from 15.10. showed
+  „92 Notes **10996** Files **9978** Code" and, one line below, „in the
+  **21,066** stored". Five counts in the index strip now go through one helper, so
+  the thousands separator is either there for all of them or missing for all.
+  2,622 cases never saw this because the fixture counted 100/30/20/150 — below a
+  thousand, a separator is invisible. A case whose numbers cannot express the
+  defect is not a case.
+
+
 
 ### Fixed
 
