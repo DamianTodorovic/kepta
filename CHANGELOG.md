@@ -1,3 +1,26 @@
+## [3.2.17]
+
+### Fixed
+
+- **A closed sidebar can be opened again in every view.** The control lived only in
+  the memories header, inside a container that is `hidden` outside that view — so it
+  was in the document but had no hit area, and the settings view has no header at all.
+  Choosing a view at 390 px closed the drawer (the #27 fix) and left no way back: six
+  of seven views were a dead end. The control now sits in the shared frame whenever the
+  drawer is closed and the view brings no header of its own; memories keeps its header
+  copy, so exactly one is ever reachable. Cases: one per view (today, chat, graph,
+  dossier, activity, settings), each asserting the precondition, the count of *hittable*
+  controls, and the click that reopens. Mutation: with the strip disabled all six fail
+  with "0 hittable open controls (1 in the document)".
+
+### Known
+
+- The reopen path is verified in jsdom only. A presentation change needs a browser
+  look at 390 px and — because the strip now also applies at wide widths in manual
+  focus mode — at 1440 px, with two images whose sha256 differ.
+- One action, two names: the drawer's control is labelled „Focus mode" while its
+  title says „Hide sidebar".
+
 ## [3.2.16]
 
 ### Fixed
