@@ -78,3 +78,8 @@ npm/*.tgz
 # Foerderantraege — persoenliche Unterlagen, gehoeren nicht ins oeffentliche Repo
 antraege/
 tools/longmemeval/datensatz/
+
+# Testkapsel: tests/testkapsel.test.ts:189 setzt HOME in den Baum ("heim"), und ein
+# Lauf hinterlaesst dort eine echte, verschluesselte kepta.db. Ein `git add -A`
+# haette sie ins Repo geholt. Die Wache heisst scripts/heim-wache.mjs.
+heim/
