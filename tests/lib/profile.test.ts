@@ -73,6 +73,38 @@ describe("detectLocalAIs", () => {
     expect(ollama?.models).toContain("llama3.2");
     expect(lm?.available).toBe(false);
   });
+
+  it("findet Ollama auch, wenn der Blick aus dem Fenster durch CORS blockiert ist", async () => {
+    // K2 — `profile.ts:136-143` versprach seit 2.13 eine Server-Probe „falls CORS
+    // blockt, aber Server kann" und fuehrte im einzigen Zweig einen Kommentar aus.
+    // Der Fall stellt genau diesen Zustand her: der direkte Griff aus dem Fenster
+    // wirft, der Server erreicht Ollama aber — und die App meldet Ollama trotzdem
+    // als „nicht da", waehrend der Nutzer im Assistenten vor einem leeren Feld steht.
+    const gesendet: string[] = [];
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async (url: string, init?: RequestInit) => {
+        if (url.includes("11434/api/tags") || url.includes("1234")) throw new TypeError("Failed to fetch");
+        if (url.includes("/api/models")) {
+          gesendet.push(String((init?.body as string) ?? "").slice(0, 200));
+          const body = JSON.parse(String(init?.body ?? "{}")) as { baseUrl?: string };
+          if (String(body.baseUrl).includes("11434")) {
+            return { ok: true, json: async () => ({ models: ["llama3.2", "qwen2.5"] }) } as unknown as Response;
+          }
+          return { ok: false, status: 500, json: async () => ({ error: "upstream refused" }) } as unknown as Response;
+        }
+        throw new Error("unbekannte Sonde: " + url);
+      })
+    );
+    const res = await detectLocalAIs();
+    const ollama = res.find((r) => r.id === "ollama");
+    expect(ollama?.available, "der Server sieht Ollama, also darf die Flaeche es nicht als fehlen melden").toBe(true);
+    expect(ollama?.models).toEqual(["llama3.2", "qwen2.5"]);
+    const lm = res.find((r) => r.id === "lmstudio");
+    expect(lm?.available, "ein abgelehnter Nachzug macht nichts verfuegbar").toBe(false);
+    expect(gesendet.length, "der Nachzug geht durch die Server-Tuer, nicht ins offene Netz").toBeGreaterThan(0);
+    for (const b of gesendet) expect(b).toContain("/v1");
+  });
 });
 
 describe("suggestProvider", () => {

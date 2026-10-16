@@ -2,7 +2,7 @@
 import { readFileSync } from "node:fs";
 import path from "node:path";
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
-import { render, screen, waitFor, within } from "@testing-library/react";
+import { act, render, screen, waitFor, within, fireEvent } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { Settings } from "../../src/components/Settings";
 import { TEXTE } from "../../src/lib/uiText";
@@ -558,6 +558,31 @@ describe("Settings: was die Flaeche verspricht, zeigt sie auch", () => {
     expect(genannt.length, "die Sonde sieht keine Platzhalter-Anweisung — diese Wache ist taub").toBeGreaterThan(0);
     for (const p of genannt) {
       expect(kasten.join("\n"), `die Anleitung heisst „${p}“ zu ersetzen — so etwas steht in keinem Kasten`).toContain(p);
+    }
+  });
+});
+
+describe("Settings: die Quittung nach dem Speichern", () => {
+  // Flaeche-Punkt aus dem SET1-Papier 19, von der Leitung aufgegeben: die Quittung
+  // lebt zwei Sekunden. Das ist an sich eine Entwurfs-Entscheidung — aber der Timer wird
+  // bei jedem Speichern neu gelegt, ohne den alten zu loeschen. Wer zweimal
+  // speichert, sieht die Bestaetigung der zweiten Speicherung fast sofort verschwinden.
+  it("zaehlt zwei Sekunden ab der letzten Speicherung, nicht ab der ersten", () => {
+    vi.useFakeTimers();
+    try {
+      const { container } = render(<Settings />);
+      const knopf = () => container.querySelector("button[type=submit]") as HTMLButtonElement;
+      expect(knopf(), "die Sonde sieht den Speichern-Knopf nicht").toBeTruthy();
+      fireEvent.click(knopf());
+      expect(knopf().textContent).toMatch(/Configuration saved/);
+      act(() => { vi.advanceTimersByTime(1900); });
+      fireEvent.click(knopf());
+      act(() => { vi.advanceTimersByTime(200); });
+      expect(knopf().textContent, "die zweite Speicherung hat neu zu zaehlen — der alte Timer darf ihr die Quittung nicht wegnehmen").toMatch(/Configuration saved/);
+      act(() => { vi.advanceTimersByTime(1900); });
+      expect(knopf().textContent).toMatch(/Save/);
+    } finally {
+      vi.useRealTimers();
     }
   });
 });

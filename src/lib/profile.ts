@@ -133,14 +133,27 @@ export async function detectLocalAIs(): Promise<DetectedAI[]> {
       results.push({ id: c.id, label: c.label, available: false, models: [] });
     }
   }
-  // Server-Probe für Ollama via Proxy (falls CORS blockt, aber Server kann)
-  try {
-    const r = await fetch('/api/health', { signal: AbortSignal.timeout(1000) });
-    if (r.ok) {
-      // Server ist da — versuche zusätzlich /api/models via Ollama proxy
-      // wird von adaptive UI separat genutzt
-    }
-  } catch {}
+  // CORS kann dem Fenster den Blick auf Ollama oder LM Studio versperren, obwohl
+  // dieselben Adressen vom Server aus erreichbar sind. Der Nachzug geht durch die
+  // eigne Tuer (`POST /api/models`) — bis zum 16.10. stand in diesem Zweig nur ein
+  // Kommentar, und der Assistent meldete ein laufendes Ollama als „nicht da".
+  for (const r of results) {
+    if (r.available) continue;
+    const ziel = checks.find((c) => c.id === r.id);
+    if (!ziel) continue;
+    try {
+      const antwort = await fetch("/api/models", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ protocol: "openai", baseUrl: new URL(ziel.url).origin + "/v1", apiKey: "" }),
+        signal: AbortSignal.timeout(2500),
+      });
+      if (!antwort.ok) continue;
+      const d = (await antwort.json()) as { models?: unknown };
+      const modelle = Array.isArray(d.models) ? d.models.filter((m): m is string => typeof m === "string" && m.length > 0) : [];
+      if (modelle.length) { r.available = true; r.models = modelle; }
+    } catch { /* der Server kann auch nicht — dann stimmt das „nicht da" */ }
+  }
   return results;
 }
 

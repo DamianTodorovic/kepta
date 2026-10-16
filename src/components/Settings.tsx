@@ -125,6 +125,11 @@ export function Settings() {
   // --- System-Tab state (bestehend) ---
   const [settings, setSettings] = useState<AISettings>(loadAISettings());
   const [saved, setSaved] = useState(false);
+  // Die Quittung lebt zwei Sekunden ab der LETZTEN Speicherung. Ohne den Griff auf
+  // den laufenden Timer nahm der erste Speichern-Knopf dem zweiten die Bestaetigung
+  // weg: wer innerhalb von zwei Sekunden zweimal speicherte, sah "Save" statt der
+  // Quittung, die er gerade ausgelost hatte (gemessen 16.10. 15:32:29).
+  const quittung = useRef<number | undefined>(undefined);
   const [sicherung, setSicherung] = useState<{ knoten: number } | { fehler: string } | null>(null);
   /**
    * Nachsortieren nach Wissensart.
@@ -348,8 +353,12 @@ export function Settings() {
     e.preventDefault();
     saveAISettings(settings);
     setSaved(true);
-    setTimeout(() => setSaved(false), 2000);
+    window.clearTimeout(quittung.current);
+    quittung.current = window.setTimeout(() => setSaved(false), 2000);
   };
+
+  // Beim Verlassen der Platte darf kein Timer nachlaufen.
+  useEffect(() => () => window.clearTimeout(quittung.current), []);
 
   const loadModels = async () => {
     setLoadingModels(true);
