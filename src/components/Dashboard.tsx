@@ -1304,7 +1304,13 @@ export function Dashboard() {
         }}
         onClearTags={() => setSelectedTags([])}
         currentView={currentView}
-        onNavigate={setCurrentView}
+        onNavigate={(ansicht) => {
+          setCurrentView(ansicht);
+          // #27: bei schmalem Fenster liegt eine offene Leiste ueber der Flaeche — wer
+          // dort eine Ansicht waehlt, hat gewaehlt, also rueckt sie zurueck. Sonst geht
+          // der naechste Klick an die Leiste, nicht an das Formular dahinter.
+          if (schmal) setIsFocusMode(true);
+        }}
         totalMemories={tuerBestand ?? memories.length}
         tagsAusLadung={ladung}
         appsLive={appsLive}

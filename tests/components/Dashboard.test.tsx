@@ -831,6 +831,27 @@ describe("Bei schmalem Fenster rückt die Seitenleiste zurück", () => {
     });
     expect(leiste(container)?.className).toMatch(/w-64/);
   });
+
+  // #27, gemessen im echten Fenster 17:37:42 und 18:12:30 (SET1-Papier §32–§33):
+  // bei 390 px blieb die Leiste nach der Wahl von „Settings" stehen und lag ueber
+  // dem Formular — der Klick auf „Save" traf DIV.seiten-kante-oben, es wurde nichts
+  // gespeichert, ohne jede Meldung.
+  it("schließt die Leiste wieder, wenn der Mensch bei schmalem Fenster eine Ansicht wählt", async () => {
+    fenster(390);
+    const { container } = await zeige([note({ title: "Fristen" })]);
+    await act(async () => {
+      fireEvent.click(screen.getByRole("button", { name: "Show sidebar" }));
+      await new Promise((r) => setTimeout(r, 60));
+    });
+    expect(leiste(container)?.className, "die Leiste ist offen — das ist die Voraussetzung").toMatch(/w-64/);
+    const nav = [...container.querySelectorAll(".sidebar-nav-btn")].find((b) => /Settings/.test(b.textContent || "")) as HTMLElement;
+    expect(nav, "die Seitenleiste zeigt ihren Settings-Punkt nicht").toBeTruthy();
+    await act(async () => {
+      fireEvent.click(nav);
+      await new Promise((r) => setTimeout(r, 60));
+    });
+    expect(leiste(container)?.className, "die Leiste bleibt ueber der Flaeche stehen — der naechste Klick geht an sie, nicht an das Formular").toMatch(/w-0/);
+  });
 });
 
 // A7-06, nachgemessen am 09.10. im echten Browser (Tabelle B, letzte Zeile je
