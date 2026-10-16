@@ -162,6 +162,11 @@ describe("Verknüpfung aus dem REST-Schreibweg", () => {
     const erste = await request(app)
       .post("/api/memories")
       .send({ title: "Bürgschaft Weber", content: "Für die [[Kestrel Software]]." });
+    // Ohne diese Zeile stirbt der Fall mit „Cannot read properties of undefined
+    // (reading 'id')" und nennt nicht, was der Server wirklich antwortete. Im
+    // Vollauf 16.10. ist er so rot geworden, allein im selben Baum grün.
+    expect(erste.status, `Anlage antwortete mit ${erste.status}: ${JSON.stringify(erste.body)}`).toBe(200);
+    expect(erste.body.memory, `keine Notiz im Leib: ${JSON.stringify(erste.body)}`).toBeTruthy();
     await request(app)
       .post("/api/memories")
       .send({ id: erste.body.memory.id, content: "Für die [[Nordwind Logistics]]." });
