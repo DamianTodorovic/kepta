@@ -60,8 +60,20 @@ const KAPSELN = [
   { ordner: "mac", arch: "x64" },
 ];
 for (const k of KAPSELN) {
-  const programm = path.join(RELEASE, k.ordner, "KEPTA.app/Contents/MacOS/KEPTA");
-  if (!fs.existsSync(programm)) { meld(`${k.ordner}: programm fehlt — unbewiesen`, false); continue; }
+  // Der Programmname kommt aus dem Ordner, nicht aus dem Kopf. Die Marke hat sich
+  // schon geaendert (KEPTA -> K3PTA) und die Wache suchte weiter das alte Blatt:
+  // sie meldete "programm fehlt" undliess damit den **einzigen Test** aus, der ein
+  // native Binding fuer die falsche Laufzeit sieht — zwei Naechte hintereinander
+  // ist ein Paket mit Node-ABI durchgerutscht, die App oeffnete ein Fenster ohne Tuer.
+  const ordner = path.join(RELEASE, k.ordner);
+  const marken = fs.existsSync(ordner) ? fs.readdirSync(ordner).filter(n => n.endsWith(".app")) : [];
+  if (marken.length !== 1) {
+    meld(`${k.ordner}: erwartet genau eine .app in ${ordner}, gefunden: ${marken.join(", ") || "keine"}`, false);
+    continue;
+  }
+  const marke = marken[0].slice(0, -4);
+  const programm = path.join(ordner, marken[0], "Contents/MacOS", marke);
+  if (!fs.existsSync(programm)) { meld(`${k.ordner}: ${programm} fehlt (Marke ${marke} aus dem Ordner gewonnen)`, false); continue; }
   const kapsel = fs.mkdtempSync(path.join(os.tmpdir(), "kepta-beweis-"));
   const schluessel = crypto.randomBytes(32).toString("hex");
   const umgebung = { ...process.env, HOME: kapsel, KEPTA_DATA_DIR: path.join(kapsel, ".kepta"), KEPTA_DB_KEY: schluessel };
