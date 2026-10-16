@@ -994,3 +994,38 @@ describe("Dashboard: die neun Woerter fuehren in keine Sackgasse", () => {
     expect(blatt[2], "Code liegt auf dieser Seite nicht, im Laden schon").toBe(0);
   });
 });
+
+/**
+ * Damians Bild von 22:20 zeigt denselben Streifen in zwei Kleidern:
+ * „92 Notes  10996 Files  9978 Code" ohne Punkt, eine Zeile tiefer
+ * „in the 21,066 stored" mit Punkt. Die bisherigen Faelle konnten das nicht
+ * sehen — ihr Stub zaehlt 100/30/20/150, und unter 1 000 ist ein Tausenderpunkt
+ * unsichtbar. Ein Fall, dessen Zahlen die Krankheit nicht ausdruecken koennen,
+ * ist kein Fall.
+ */
+describe("Dashboard: der Index-Streifen kleidet jede Zahl gleich", () => {
+  function ladungGross(zahlen: { bestand: number; notes: number; files: number; code: number }): void {
+    vi.stubGlobal("fetch", vi.fn(async (url: string) => {
+      if (url.includes("/api/memories/gruppen")) {
+        return new Response(JSON.stringify({
+          ok: true, bestand: zahlen.bestand,
+          traeger: { notes: zahlen.notes, files: zahlen.files, code: zahlen.code },
+          themen: { people: 5, projects: 9, events: 3, tasks: 1, guides: 2, links: 4 },
+          ohneThema: 120, ms: 2,
+        }), { status: 200 });
+      }
+      if (url.includes("/api/memories")) return new Response(JSON.stringify(notizen), { status: 200 });
+      return new Response("{}", { status: 200 });
+    }));
+  }
+
+  it("setzt den Punkt auch bei den drei Traeger-Zahlen", async () => {
+    ladungGross({ bestand: 21_066, notes: 92, files: 10_996, code: 9_978 });
+    const { container } = await zeige([note({ title: "Erste" })]);
+    // Erst die Tür abwarten — vor ihrer Antwort steht die Zeile ohne Zahl da.
+    await waitFor(() => expect(container.textContent).toMatch(/in the 21,066 stored/), { timeout: 6000 });
+    expect(container.textContent, "10 996 ohne Punkt, direkt neben 21 066 mit Punkt").toMatch(/10,996\s*Files/);
+    expect(container.textContent).toMatch(/9,978\s*Code/);
+    expect(container.textContent, "92 bleibt unter der Tausenderstelle — das Kleid darf nicht fehlen").toMatch(/92\s*Notes/);
+  });
+});

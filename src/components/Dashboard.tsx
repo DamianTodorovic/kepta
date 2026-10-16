@@ -1650,14 +1650,14 @@ export function Dashboard() {
                         der Laden (#77), nicht das Blatt: die Heldenzahl oben ist
                         auch der Laden, und zwei Zahlen derselben Fläche müssen
                         sich auf dieselbe Menge beziehen. */}
-                    <span style={{ color: 'var(--type-semantic)' }}>{zeigeTraeger.notes} <span className="text-[10px] opacity-70">{TRAEGER_LABELS.notes}</span></span>
-                    <span style={{ color: 'var(--type-reference)' }}>{zeigeTraeger.files} <span className="text-[10px] opacity-70">{TRAEGER_LABELS.files}</span></span>
-                    <span style={{ color: 'var(--type-procedural)' }}>{zeigeTraeger.code} <span className="text-[10px] opacity-70">{TRAEGER_LABELS.code}</span></span>
+                    <span style={{ color: 'var(--type-semantic)' }}>{groessenZahl(zeigeTraeger.notes)} <span className="text-[10px] opacity-70">{TRAEGER_LABELS.notes}</span></span>
+                    <span style={{ color: 'var(--type-reference)' }}>{groessenZahl(zeigeTraeger.files)} <span className="text-[10px] opacity-70">{TRAEGER_LABELS.files}</span></span>
+                    <span style={{ color: 'var(--type-procedural)' }}>{groessenZahl(zeigeTraeger.code)} <span className="text-[10px] opacity-70">{TRAEGER_LABELS.code}</span></span>
                   </span>
                   <span className="k">where it came from · {bestandGruppen ? `in the ${groessenZahl(bestandGruppen.bestand)} stored` : ladung !== null ? `in the ${groessenZahl(ladung)} loaded` : 'in the index'}</span>
                 </div>
                 <div className="index-cell">
-                  <span className="v">{allTags.length}</span>
+                  <span className="v">{groessenZahl(allTags.length)}</span>
                   <span className="k">tags{ladung !== null ? ` in the ${groessenZahl(ladung)} loaded` : ""}</span>
                 </div>
                 <div className="index-cell ml-auto">
@@ -1798,7 +1798,7 @@ export function Dashboard() {
                         style={{ color: 'var(--text-3)' }}
                         title={`The chips run over the ${groessenZahl(memories.length)} entries loaded on this page, not over the store.`}
                       >
-                        on this page {traegerCounts.notes} · {traegerCounts.files} · {traegerCounts.code}
+                        on this page {groessenZahl(traegerCounts.notes)} · {groessenZahl(traegerCounts.files)} · {groessenZahl(traegerCounts.code)}
                       </span>
                     )}
                   </div>
