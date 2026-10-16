@@ -457,7 +457,39 @@ describe("Privatsphäre-Schild", () => {
     const probe = screen.getByRole("textbox", { name: /Try it/ });
     await user.clear(probe);
     await user.type(probe, "nothing here");
-    expect(screen.getByText("Nothing to hide in this text.")).toBeTruthy();
+    expect(screen.getByTestId("shield-preview").textContent).toBe("nothing here");
+    expect(screen.getByText(/shield is off/i)).toBeTruthy();
+  });
+
+  it("die Vorschau folgt ihrem eigenen Schalter — aus heisst, dass ein Cloud-Modell den echten Text sähe", async () => {
+    const user = userEvent.setup();
+    const stand = { chat: true, apps: true, privateNotes: 0, week: { cloudChats: 0, protectedChats: 0 } };
+    stubFetch({
+      "/api/shield": (_url, init) => {
+        if (init?.method === "PUT") {
+          const b = JSON.parse(String(init.body)) as { chat?: boolean };
+          if (typeof b.chat === "boolean") stand.chat = b.chat;
+          return { body: { chat: stand.chat, apps: stand.apps } };
+        }
+        return { body: stand };
+      },
+    });
+    mitToast(<PrivacyShield />);
+    const vorschau = await screen.findByTestId("shield-preview");
+    const schalter = await screen.findByRole("switch", { name: "Hide personal data from cloud AI" });
+    expect(vorschau.textContent).toContain("[EMAIL-1]");
+
+    await user.click(schalter);
+    await waitFor(() => expect(schalter.getAttribute("aria-checked")).toBe("false"));
+    expect(vorschau.textContent, "mit ausgeschaltetem Schild geht der echte Text raus — die Vorschau darf ihn nicht verstecken").toContain("anna@example.com");
+    expect(vorschau.textContent).not.toContain("[EMAIL-1]");
+    expect(screen.getByText(/shield is off/i)).toBeTruthy();
+    expect(screen.queryByText(/^Hidden:/)).toBeNull();
+
+    await user.click(schalter);
+    await waitFor(() => expect(schalter.getAttribute("aria-checked")).toBe("true"));
+    expect(vorschau.textContent).toContain("[EMAIL-1]");
+    expect(screen.getByText(/^Hidden:/)).toBeTruthy();
   });
 
   it("nimmt einen Schalter zurück, der nicht gespeichert werden konnte", async () => {

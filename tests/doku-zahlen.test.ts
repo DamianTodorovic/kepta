@@ -222,14 +222,21 @@ describe("Abzeichen und Anwendungstexte behaupten nichts Falsches", () => {
       .map((m) => Math.round(Number(m[1].replace(",", "."))));
     expect(gemessen.length, "der Eval-Beleg nennt keine zwei Hit@1-Zahlen — diese Wache ist taub").toBeGreaterThanOrEqual(2);
     const erlaubt = [...new Set(gemessen)];
+    // Eine Zahl ohne ihren Korpus ist eine halbe Auskunft: 71 % auf 58 Notizen
+    // und 71 % auf 2 000 Notizen sind zwei verschiedene Behauptungen. Der Korpus
+    // kommt aus derselben Datei, die auch der Eval liest (scripts/eval.ts:15).
+    const korpus = `${CORPUS.length}`;
     const zuPruefen = [
       "src/components/SystemStatus.tsx", "src/components/Settings.tsx",
       "src/components/Dashboard.tsx", "src/components/Chat.tsx",
     ];
     for (const datei of zuPruefen) {
-      const stellen = [...lies(datei).matchAll(/(\d+)\s*%\s*Hit@1/g)].map((m) => Number(m[1]));
-      for (const z of stellen) {
+      const inhalt = lies(datei);
+      for (const m of inhalt.matchAll(/(\d+)\s*%\s*Hit@1/g)) {
+        const z = Number(m[1]);
         expect(erlaubt, `${datei} behauptet ${z} % Hit@1 — der Beleg misst ${erlaubt.join(" %, ")} %`).toContain(z);
+        const umfeld = inhalt.slice(Math.max(0, (m.index ?? 0) - 220), (m.index ?? 0) + 220);
+        expect(umfeld, `${datei}: die Hit@1-Zahl ${z} % nennt keinen Korpus — welche ${korpus} Notizen sind gemeint?`).toContain(korpus);
       }
     }
   });

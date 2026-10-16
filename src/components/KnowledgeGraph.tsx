@@ -306,9 +306,11 @@ export const RANG_FOLGE: readonly Leistenglied[] = [
 ];
 
 /**
- * Das Kleid der Mengen auf dieser Fläche (#101). Die Bilanz schreibt „345 of
+ * Das Kleid der Mengen auf dieser Fläche (#101). Die Bilanz schrieb „345 of
  * 21,066 notes carry a concept", ihr eigener Kopf direkt darüber „21066 notes" —
  * dieselbe Größe, ein Zeilenabstand, zwei Schreibweisen. Eine Zahl pro Fläche.
+ * Das Beispiel ist der Stand vor #16: die Klaue nennt jetzt ein Paar aus
+ * derselben Menge, aber das Kleid gilt für beide Zahlen weiter.
  */
 function mengenzahl(n: number): string {
   return n.toLocaleString("en-US");
@@ -390,6 +392,14 @@ interface GraphApi {
    * dann sagt die Flaeche nichts ueber den Rest, statt zu raten.
    */
   bestand?: { knoten: number; kanten: number };
+  /**
+   * Wie viele der aktiven Notizen an wenigstens einem Begriff haengen — am
+   * ganzen Bestand gemessen, nicht im Auszug. Seit 3.2.13 von der Tuer gerechnet
+   * (`server/router/system.ts`, im selben Handler wie `/api/graph`). Fehlend bei
+   * einer aelteren Tuer; dann darf die Flaeche keinen Bestand behaupten, weil ihr
+   * eigener Zaehler nur das Fenster kennt.
+   */
+  deckung?: { notizen: number; gedeckt: number; anteilProzent: number } | null;
 }
 
 /**
@@ -1347,6 +1357,32 @@ export function KnowledgeGraph({ memories: memoriesAusFenster, onSelectMemory, o
     [netz]
   );
   /**
+   * Die Deckung als Paar aus **derselben Menge** — der eine Satz, den Damian
+   * ueber seinem Bestand liest (#16, 16.10.). Zwei Stellungen, keine dritte:
+   *
+   *   - Die Tuer nennt `deckung`: ihre zwei Zahlen. Die sind am ganzen Bestand
+   *     gerechnet (`store.notizenMitBegriff()` gegen `activeCount()`), Zaehler
+   *     und Nenner also aus derselben Menge.
+   *   - Die Tuer schweigt: nur das Fenster. Der eigene Zaehler kennt ausschliesslich,
+   *     was durch die Kappen des Auszugs gekommen ist, und ihn durch
+   *     `bestandNotizen` zu teilen unterschaetzt die Deckung an Damians Bestand um
+   *     den Faktor drei (gemessen 345 von 21 066 = 1,65 % statt 1 018 = 4,83 %).
+   *     Dann heisst der Satz „drawn here", und die Kopfzeile darueber nennt den
+   *     Bestand — auf dem Schirm verliert nichts an Information, nur die eine
+   *     Klaue behauptet keine Bestandsgroesse mehr.
+   *
+   * Entschieden so, weil eine zu kleine Deckungszahl Damian eine Luecke in seinem
+   * Wissen vorspiegelt, die nicht da ist. Dieselbe Klasse wie die Sicherung (100
+   * von 21 066, geheilt in 3.2.13) und der taube Kantenzaehler (#19).
+   */
+  const deckung = useMemo(() => {
+    const d = graphApi?.deckung;
+    if (d && Number.isFinite(d.gedeckt) && Number.isFinite(d.notizen) && d.notizen > 0) {
+      return { gedeckt: d.gedeckt, notizen: d.notizen, ausDerTuer: true };
+    }
+    return { gedeckt: notizenMitBegriff, notizen: memories.length, ausDerTuer: false };
+  }, [graphApi, notizenMitBegriff, memories.length]);
+  /**
    * Was die Faltung im Kraftfeld verdeckt: nur Notizen, die sonst niemand
    * trägt. Gegen `netzSichtbar` gerechnet, damit die Kopfzeile nicht etwas
    * abzieht, was der Suchfilter oder der Zeitregler längst genommen hat.
@@ -1901,16 +1937,21 @@ export function KnowledgeGraph({ memories: memoriesAusFenster, onSelectMemory, o
     // Die Deckung. Eine Punktwolke und ein Netz sehen gleich aus, solange keine
     // Zahl sagt, wie viel des Bestands überhaupt an einem Begriff hängt. Wenn
     // die Detailstufe schon ausdünnt, sagt die Zahl der Masse, was nicht malt —
-    // dieselben zwei Größen, nie zweimal. Genenner ist der Bestand der Tür,
-    // nicht die Länge der Seite.
+    // dieselben zwei Größen, nie zweimal. **Beide Zahlen aus derselben Menge**
+    // (`deckung` oben): nennt sie die Tür, stehen Bestand und Bestand; schweigt
+    // sie, steht das Fenster da und sagt „drawn here". Ein Fensterszähler vor
+    // einem Bestandsnenner war #16 — an Damians Bestand gemessen unterschlug er
+    // seine Deckung um den Faktor drei (1,65 % statt 4,83 %).
     if (feldMassen.unausgemalt > 0) {
       klausaen.push(
         `${zahl(feldMassen.unausgemalt)} notes hang under no concept and are not painted — search still finds them`
       );
-    } else if (bestandNotizen > 0 && notizenMitBegriff < bestandNotizen) {
-      const grund = `${zahl(notizenMitBegriff)} of ${zahl(bestandNotizen)} notes carry a concept`;
+    } else if (deckung.notizen > 0 && deckung.gedeckt < deckung.notizen) {
+      const grund = deckung.ausDerTuer
+        ? `${zahl(deckung.gedeckt)} of ${zahl(deckung.notizen)} notes carry a concept`
+        : `${zahl(deckung.gedeckt)} of ${zahl(deckung.notizen)} notes in this picture carry a concept`;
       klausaen.push(
-        punktwolke(bestandNotizen, notizenMitBegriff)
+        punktwolke(deckung.notizen, deckung.gedeckt)
           ? `${grund} — this field is not a network yet, the tree view groups the rest`
           : grund
       );
@@ -1946,7 +1987,7 @@ export function KnowledgeGraph({ memories: memoriesAusFenster, onSelectMemory, o
     // nicht stillschweigend weg — es ist gefaltet, und die Zahl steht in der
     // Klaue oben (der Baum) oder in der Bilanz des Feldes.
     return klausaen.join(" · ");
-  }, [bildZaehlung.knoten, memories.length, bestandNotizen, graphApi, kantenRapport, selbstkaanten, ansicht, karte, semantikFeld, autoZiffern, autoGefaeltet, notizenMitBegriff, netz, feldMassen]);
+  }, [bildZaehlung.knoten, memories.length, bestandNotizen, graphApi, deckung, kantenRapport, selbstkaanten, ansicht, karte, semantikFeld, autoZiffern, autoGefaeltet, netz, feldMassen]);
   const baumNachbarn = useMemo(() => {
     const n = new Map<string, Set<string>>();
     for (const e of baumLayout.edges) {

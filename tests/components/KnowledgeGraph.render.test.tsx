@@ -1657,7 +1657,7 @@ describe("Sichtbare Dichte: Badge und Kappungszeile", () => {
     await bilder(10);
     // Nur `docker` hat zwei Träger — die beiden Titel-Echo-Begriffe werden von
     // G-1 verborgen, mitsamt ihrer einen Kante.
-    expect(container.textContent, container.textContent ?? "").toMatch(/2 of 5 notes carry a concept/);
+    expect(container.textContent, container.textContent ?? "").toMatch(/2 of 5 notes in this picture carry a concept/);
     expect(container.textContent).toMatch(/1 claim not drawn — its term is only a note title/);
     // Und kein Verdikt über eine Basis von fünf Notizen: die Marke gilt ab 200.
     expect(container.textContent).not.toMatch(/not a network yet/);
@@ -1671,7 +1671,7 @@ describe("Sichtbare Dichte: Badge und Kappungszeile", () => {
     const { container } = await zeichne(ms);
     await bilder(10);
     expect(container.textContent, container.textContent ?? "").toMatch(
-      /0 of 240 notes carry a concept — this field is not a network yet, the tree view groups the rest/
+      /0 of 240 notes in this picture carry a concept — this field is not a network yet, the tree view groups the rest/
     );
     // Gegenprobe gegen ein leeres Bild: ohne jeden Begriff wird nicht ausgedünnt,
     // sonst stünde eine Zahl auf einer weißen Fläche.
@@ -1691,7 +1691,7 @@ describe("Sichtbare Dichte: Badge und Kappungszeile", () => {
     const ms = Array.from({ length: 400 }, (_, i) => note({ id: `p${i}`, title: `Wolke ${i}`, tags: [] }));
     const { container } = await zeichne(ms);
     await bilder(10);
-    expect(container.textContent, container.textContent ?? "").toMatch(/2 of 400 notes carry a concept/);
+    expect(container.textContent, container.textContent ?? "").toMatch(/2 of 400 notes in this picture carry a concept/);
     const info = container.querySelector('[data-testid="gang-info"]')!;
     expect(info.textContent, info.textContent).toMatch(/398 notes connect to nothing/);
     expect(info.textContent, info.textContent).toMatch(/showing 384 of 398/);

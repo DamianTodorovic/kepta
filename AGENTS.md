@@ -32,6 +32,10 @@ Use the K3PTA MCP tools as your persistent memory, across sessions:
 - **Check heuristics against real data before a release** — contradictions, classification, the privacy shield. Clean test data hides false alarms: the first contradiction detector passed every test and still raised 17 false alarms on a real knowledge base.
 - **Never open the maintainer's database directly** and never load `dist/server.cjs` to inspect it — it starts a server against the real data. Read through the running app's API (the port is in `~/.kepta/endpoint.json`; the app allows 180 requests a minute).
 - Never delete notes for good — the trash, with a backup and a list of ids to restore.
+- **Probe checklist before the first shot (three traps, each found the hard way in `~/kepta-app` on 16.10):**
+  1. In jsdom, `import.meta.url` is an **http** URL — `fileURLToPath(import.meta.url)` throws `TypeError: The URL must be of scheme file`, and the red you are looking at is your own probe, not the surface. Resolve against `process.cwd()` instead (the house way: `lies()` in `tests/doku-zahlen.test.ts`). *Tell: a TypeError from inside your helper, before any assertion ran.*
+  2. Measure a child's right edge against the panel's **content box**: `kante = rect.right − paddingRight`. Both wrong forms have been measured on this tree — `width − padding` counted twice, and a bound taken from `rect.left + (width − padL − padR)`, which forgets the left padding and inflates every child by exactly that (measured again 16.10. 06:12: 30 px at 1440, 22 px at 390, with the padding itself measured `[32,32]` / `[24,24]`). *Tell: the same number at every viewport width while `scrollWidth − clientWidth` says 0.*
+  3. A viewport screenshot of a section sitting below the fold returns **byte-identical "with" and "without" images** — hash the whole set before reading any of it. *Tell: two names, one sha256.* Then `scrollIntoView` (or `captureBeyondViewport`) and shoot again.
 
 ## Division of roles
 The K3PTA chat is a test cockpit (proving mode). The product is the memory layer for Claude Desktop and Cursor via MCP (`POST /mcp`, 8 tools, protocol 2026-07-28).

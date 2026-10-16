@@ -68,10 +68,13 @@ export function PrivacyShield() {
     }
   };
 
+  const chatAn = stand?.chat ?? true;
+
   const vorschau = useMemo(() => {
+    if (!chatAn) return { text: probe, was: '' };
     const s = new Schild();
     return { text: s.schirme(probe), was: beschreibe(s.zaehlung) };
-  }, [probe]);
+  }, [probe, chatAn]);
 
   return (
     <div data-testid="privacy-shield" className="space-y-4">
@@ -131,7 +134,9 @@ export function PrivacyShield() {
           {vorschau.text}
         </div>
         <p className="text-xs mt-1.5" style={{ color: 'var(--text-3)' }}>
-          {vorschau.was ? `Hidden: ${vorschau.was}.` : 'Nothing to hide in this text.'}
+          {chatAn
+            ? (vorschau.was ? `Hidden: ${vorschau.was}.` : 'Nothing to hide in this text.')
+            : 'The shield is off — a cloud model would see this text exactly as it is.'}
         </p>
       </div>
     </div>

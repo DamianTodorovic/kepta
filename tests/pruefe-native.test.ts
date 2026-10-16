@@ -8,7 +8,8 @@ import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import { createRequire } from "node:module";
-import { architektur, erwartet, findeApps, pruefe, abiKonflikt, pruefeNode } from "../scripts/pruefe-native.mjs";
+import { execFileSync } from "node:child_process";
+import { architektur, erwartet, findeApps, pruefe, abiKonflikt, pruefeNode, probeCode, fehlerBeimLaden } from "../scripts/pruefe-native.mjs";
 
 function machO(cpu: number): Buffer {
   const b = Buffer.alloc(32);
@@ -138,5 +139,76 @@ describe("Die Wache vor dem Testlauf", () => {
     expect(pruefeNode({ fehler: () => text, protokoll: (t: string) => zeilen.push(t) })).toBe(false);
     expect(zeilen.join(" ")).toContain("Could not locate the bindings file");
     expect(zeilen.join(" ")).not.toContain("npm rebuild");
+  });
+
+  // B9 — die Wache mass nichts, was sie nicht anfasst. Das Modul bindet sein
+  // natives Binary faul: ein nacktes require sieht den ABI-Streit nie. Die drei
+  // Faelle darunter bauen den Streit nach, ohne ein Binary umzubauen.
+  function stubModul(): { pfad: string, ordner: string } {
+    const ordner = fs.mkdtempSync(path.join(os.tmpdir(), "kepta-faulbindung-"));
+    const pfad = path.join(ordner, "faules-modul.cjs");
+    fs.writeFileSync(pfad, [
+      "module.exports = class FaulesModul {",
+      "  constructor() {",
+      `    throw new Error(${JSON.stringify(ABI_STREIT)});`,
+      "  }",
+      "};",
+      "",
+    ].join("\n"));
+    return { pfad, ordner };
+  }
+  function kind(code: string): { ging: boolean, fehlerText: string } {
+    try {
+      execFileSync(process.execPath, ["-e", code], { stdio: ["ignore", "ignore", "pipe"], timeout: 30_000 });
+      return { ging: true, fehlerText: "" };
+    } catch (e) {
+      return { ging: false, fehlerText: String((e as { stderr?: string }).stderr ?? (e as Error).message) };
+    }
+  }
+
+  it("ein Modul, das nur beim requiren laedt, taeuscht die alte Pruefung — die Probe faengt es", () => {
+    const { pfad, ordner } = stubModul();
+    try {
+      const alt = kind(`require(${JSON.stringify(pfad)});`);
+      expect(alt.ging, "das nackte require warf doch — dann ist der Nachbau keins").toBe(true);
+      const neu = kind(probeCode(pfad, path.join(ordner, "probe.db")));
+      expect(neu.ging, "die Probe liess einen faul bindenden Baustein durch").toBe(false);
+      expect(abiKonflikt(neu.fehlerText), `kein ABI-Wort im Kind: ${neu.fehlerText.slice(0, 120)}`).toBe(true);
+    } finally {
+      fs.rmSync(ordner, { recursive: true, force: true });
+    }
+  });
+
+  it("pruefeNode nennt die Heilung auch ohne geschenkten Fehlertext", () => {
+    const { pfad, ordner } = stubModul();
+    try {
+      const zeilen: string[] = [];
+      const echt = () => kind(probeCode(pfad, path.join(ordner, "probe.db"))).fehlerText;
+      expect(pruefeNode({ fehler: echt, protokoll: (t: string) => zeilen.push(t) })).toBe(false);
+      expect(zeilen.join(" ")).toContain("npm rebuild better-sqlite3-multiple-ciphers");
+      expect(zeilen.join(" ")).toContain("kein Paketbau mehr");
+    } finally {
+      fs.rmSync(ordner, { recursive: true, force: true });
+    }
+  });
+
+  it("die echte Funktion selbst faellt durch die faul bindende Tuer", () => {
+    // Nicht nur der gebaute Code wird geprueft, sondern der Griff, den die Wache
+    // wirklich tut: wer fehlerBeimLaden() auf ein nacktes require zurueckdreht,
+    // sieht hier rot — nicht erst in der naechsten Suite, die 59 Dateien verliert.
+    const { pfad, ordner } = stubModul();
+    try {
+      const text = fehlerBeimLaden(pfad);
+      expect(text, "die Wache liess einen faul bindenden Baustein durch").not.toBeNull();
+      expect(abiKonflikt(String(text)), `kein ABI-Wort: ${String(text).slice(0, 120)}`).toBe(true);
+    } finally {
+      fs.rmSync(ordner, { recursive: true, force: true });
+    }
+  });
+
+  it("die echte Probe verschluesselt auf diesem Rechner eine Probedatenbank", () => {
+    // Der gruene Zweig: dasselbe Kind, das den faul bindenden Baustein erwischt,
+    // muss am echten Modul durchkommen — sonst ist die Wache nur laut.
+    expect(fehlerBeimLaden()).toBe(null);
   });
 });

@@ -141,19 +141,50 @@ export function pruefe(release, { starten = true, protokoll = console.log } = {}
 }
 
 /**
- * Laedt das native Modul unter dem laufenden Node? null wenn ja, sonst der
- * FehlerText. Der Griff passiert in einem eigenen Prozess, damit ein Fehlversuch
- * diesen Prüfprozess nicht mit einem halb geladenen Modul zurücklässt.
+ * Der Griff, der wirklich zählt: nicht nur `require`, sondern eine verschlüsselte
+ * Probedatenbank anlegen, beschreiben und wieder lesen.
+ *
+ * Das Modul bindet sein natives Binary **faul** — `require` lädt nur `lib/index.js`,
+ * der eigentliche Griff passiert erst im Konstruktor (`lib/database.js` → `bindings`).
+ * Ein nacktes `require` sieht einen ABI-Streit therefore nie: die Wache meldete
+ * EXIT 0, während die Suite 59 von 178 Dateien verlor (gemessen 16.10., Ursache:
+ * ein `build:mac` stellte das Modul auf Electron um). Dieselbe Datei weiss es für
+ * Electron besser — `probelauf()` öffnet eine Probedatenbank. Diese Zeile ist der
+ * Node-Seite ihres Namens schuldig gewesen.
  */
-function fehlerBeimLaden() {
+export function probeCode(modul, db) {
+  return [
+    `const D = require(${JSON.stringify(modul)});`,
+    `const d = new D(${JSON.stringify(db)});`,
+    `d.pragma("cipher = 'sqlcipher'"); d.pragma("legacy = 4");`,
+    `d.pragma('key = "' + "x'" + "ab".repeat(32) + "'" + '"');`,
+    `d.exec("CREATE VIRTUAL TABLE t USING fts5(x); INSERT INTO t VALUES ('probetext')");`,
+    `const n = d.prepare("SELECT count(*) AS n FROM t WHERE t MATCH 'probetext'").get().n;`,
+    `d.close();`,
+    `if (n !== 1) throw new Error("Probedatenbank: " + n + " Treffer statt 1");`,
+    `process.stdout.write("ok");`,
+  ].join("\n");
+}
+
+/**
+ * Laedt das native Modul unter dem laufenden Node **und** verschluesselt damit eine
+ * Probedatenbank. null wenn beides geht, sonst der FehlerText. Der Griff passiert in
+ * einem eigenen Prozess, damit ein Fehlversuch diesen Prüfprozess nicht mit einem
+ * halb geladenen Modul zurücklässt.
+ */
+export function fehlerBeimLaden(modul = MODUL) {
+  const ordner = fs.mkdtempSync(path.join(os.tmpdir(), "kepta-native-node-"));
+  const db = path.join(ordner, "probe.db");
   try {
-    execFileSync(process.execPath, ["-e", `require(${JSON.stringify(MODUL)})`], {
+    execFileSync(process.execPath, ["-e", probeCode(modul, db)], {
       stdio: ["ignore", "ignore", "pipe"],
-      timeout: 30_000,
+      timeout: 60_000,
     });
     return null;
   } catch (e) {
     return String(e.stderr ?? e.message ?? e);
+  } finally {
+    fs.rmSync(ordner, { recursive: true, force: true });
   }
 }
 
@@ -181,7 +212,9 @@ export function pruefeNode({ fehler = fehlerBeimLaden, protokoll = console.error
   if (abiKonflikt(text)) {
     protokoll(
       `Kein Fehler im Code: das native SQLite-Modul ist für eine andere Laufzeit gebaut ` +
-        `(der letzte Paketbau stellt es auf Electron um). Heilung: ${HEILUNG}`
+        `(der letzte Paketbau stellt es auf Electron um). Heilung: ${HEILUNG} — ` +
+        `aber erst, wenn kein Paketbau mehr läuft: dasselbe Modul gehört der build, ` +
+        `und ein umbautes Node-ABI mitten im Bau wandert in das ausgelieferte Paket.`
     );
   } else {
     protokoll(text.trim().split("\n").slice(0, 4).join("\n"));

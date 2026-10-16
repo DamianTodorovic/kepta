@@ -5,6 +5,7 @@ import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { Settings } from "../../src/components/Settings";
+import { TEXTE } from "../../src/lib/uiText";
 
 // Die Einstellungen sind die Stelle, an der ein Schluessel eingegeben, ein
 // Anbieter gewechselt und die Wissensbasis gesichert wird. Fehler hier sind
@@ -373,6 +374,44 @@ describe("Settings: der MCP-Reiter im Ganzen", () => {
     expect(fehlen, `auf der Flaeche fehlen: ${fehlen.join(", ")} (Kern: ${kerNamen.length}, Flaeche zeigt ${kerNamen.length - fehlen.length})`).toEqual([]);
   });
 
+  it("zeigt, was die Tuer sagt — nicht was im Blatt geschrieben steht", async () => {
+    // Der eigentliche Beweis, dass die Liste abgeleitet ist: eine Tuer erfinden,
+    // die nichts von den acht weiss. Stünde auch nur ein Text der Flaeche mit der
+    // Hand im Blatt, ueberlebte er diese Tuer — und genau so ist der Fehler
+    // entstanden, den dieser Fall ersetzt.
+    const falscheTuer = [
+      { name: "memory_zebra", title: "Zebra", description: "Zebra first sentence. Second sentence must not show.", inputSchema: { properties: { q: {}, z: {} }, required: ["q"] } },
+      { name: "memory_yeti", title: "Yeti", description: "Yeti talks about snow.", inputSchema: { properties: { where: {} } } },
+      { name: "memory_quokka", title: "Quokka", description: "Quokka never frowns.", inputSchema: {} },
+    ];
+    vi.stubGlobal("fetch", vi.fn(async (url: string) => {
+      if (String(url).includes("/api/mcp/tools")) {
+        return new Response(JSON.stringify({ protocol: "2026-07-28", tools: falscheTuer }), { status: 200 });
+      }
+      return new Response(JSON.stringify({ ok: true, count: 0, uptime: 1, mcp: { protocol: "2026-07-28", tools: 3, http: "/mcp" } }), { status: 200 });
+    }));
+    const user = userEvent.setup();
+    const { container } = await zumMcp(user);
+    const text = container.textContent ?? "";
+    // Reihenfolge: die Flaeche malt in der Reihenfolge der Tuer, nicht einer eigenen.
+    const pos = (n: string) => text.indexOf(n);
+    expect(pos("memory_zebra"), "zebra fehlt ganz").toBeGreaterThanOrEqual(0);
+    expect(pos("memory_yeti"), "yeti fehlt ganz").toBeGreaterThan(pos("memory_zebra"));
+    expect(pos("memory_quokka"), "quokka fehlt ganz").toBeGreaterThan(pos("memory_yeti"));
+    // Titel und erster Satz kommen aus der Antwort, der zweite Satz bleibt draussen.
+    expect(text).toContain("Zebra — Zebra first sentence.");
+    expect(text).not.toContain("Second sentence must not show.");
+    // Felder: Pflicht ohne ?, der Rest mit ?, leeres Schema als {}.
+    expect(text).toContain("{ q, z? }");
+    expect(text).toContain("{ where? }");
+    // Und nichts von der alten handgesetzten Dreier-Liste darf noch zu sehen sein.
+    for (const alt of ["Searches titles, content and tags", "Creates or updates a node", "Lists every node, paginated", "memory_search"]) {
+      expect(text, `die Flaeche malt noch Handtext: ${alt}`).not.toContain(alt);
+    }
+    // Die Zahl am Rand ist die Zahl der Tuer.
+    expect(text).toContain("3");
+  });
+
   it("kopiert jede angebotene Zeile", async () => {
     const user = userEvent.setup();
     const { container } = await zumMcp(user);
@@ -382,6 +421,18 @@ describe("Settings: der MCP-Reiter im Ganzen", () => {
     expect(kopierKnoepfe.length).toBeGreaterThan(1);
     for (const k of kopierKnoepfe.slice(0, 3)) await user.click(k);
     await waitFor(() => expect(schreibe.mock.calls.length).toBeGreaterThanOrEqual(3));
+  });
+
+  it("meldet eine ausgefallene Werkzeug-Tuer, statt still drei Namen zu zeigen", async () => {
+    vi.stubGlobal("fetch", vi.fn(async (url: string) => {
+      if (String(url).includes("/api/mcp/tools")) return new Response("{}", { status: 500 });
+      return new Response(JSON.stringify({ ok: true, count: 0, uptime: 1 }), { status: 200 });
+    }));
+    const user = userEvent.setup();
+    const { container } = await zumMcp(user);
+    const text = container.textContent ?? "";
+    expect(text).toMatch(/tool list could not be read|did not arrive/i);
+    expect(text).not.toContain("memory_search");
   });
 });
 
@@ -468,5 +519,45 @@ describe("Settings: Importe neu lesen", () => {
     render(<Settings />);
     await user.click(screen.getByRole("button", { name: "Check imported files" }));
     await waitFor(() => expect(screen.getByText(/could not be checked/)).toBeTruthy());
+  });
+});
+
+describe("Settings: was die Flaeche verspricht, zeigt sie auch", () => {
+  // B5 und B6 sind dieselbe Klasse: ein Text auf der Platte verweist auf ein
+  // Wort, das auf der Platte nicht steht. Gegen die GERENDERTE Flaeche gerechnet,
+  // nicht gegen den Quelltext — ein Umbau der Oberflaeche zieht den Fall mit,
+  // eine handgesetzte Wortliste nicht.
+
+  it("eine Anweisung in Anfuehrung nennt nur Woerter, die wirklich dastehen", async () => {
+    const { container } = render(<Settings />);
+    await waitFor(() => expect(container.textContent).toMatch(/No key yet/));
+    // Was ein Mensch links sieht, kommt aus TEXTE (Sidebar.tsx:57-66); was er
+    // auf der Platte sieht, sind die Knöpfe dieses Schirms.
+    const sitzbar = [
+      ...Object.entries(TEXTE).filter(([k]) => k.startsWith("nav.")).map(([, v]) => v),
+      ...[...container.querySelectorAll("button")].map((b) => (b.textContent ?? "").trim()),
+    ];
+    const anweisungen = [...container.querySelectorAll("div, p, span, li")]
+      .filter((e) => e.children.length === 0 && /“/.test(e.textContent ?? "") && /→/.test(e.textContent ?? ""))
+      .map((e) => (e.textContent ?? "").trim());
+    expect(anweisungen.length, "die Sonde sieht keine Anweisung — diese Wache ist taub").toBeGreaterThan(0);
+    for (const satz of anweisungen) {
+      for (const m of satz.matchAll(/“([^”]{2,24})”/g)) {
+        expect(sitzbar, `„${m[1]}“ steht nirgends — die Person sucht es vergeblich in: ${satz}`).toContain(m[1]);
+      }
+    }
+  });
+
+  it("der Platzhalter, den die Anleitung nennt, steht wirklich im Kasten", async () => {
+    const user = userEvent.setup();
+    const { container } = render(<Settings />);
+    await user.click(screen.getByRole("button", { name: "MCP / API" }));
+    const kasten = [...container.querySelectorAll("pre")].map((p) => p.textContent ?? "");
+    expect(kasten.length, "die Sonde sieht keinen Konfigurationskasten — diese Wache ist taub").toBeGreaterThan(0);
+    const genannt = [...container.querySelectorAll("p code")].map((c) => (c.textContent ?? "").trim()).filter((t) => t.startsWith("/"));
+    expect(genannt.length, "die Sonde sieht keine Platzhalter-Anweisung — diese Wache ist taub").toBeGreaterThan(0);
+    for (const p of genannt) {
+      expect(kasten.join("\n"), `die Anleitung heisst „${p}“ zu ersetzen — so etwas steht in keinem Kasten`).toContain(p);
+    }
   });
 });

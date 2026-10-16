@@ -1,3 +1,89 @@
+## [3.2.14]
+
+### Fixed
+
+- **The coverage line understated his network by a factor of three.** Over
+  21,066 notes the graph read „345 of 21,066 notes carry a concept — this field
+  is not a network yet", which told the owner of the base that his memory is
+  1,6 % connected. Measured against the running door (05:58, HTTP 200):
+  **1,018 of 21,066 = 4,83 %, 2,93× more**. The clause divided a *window*
+  numerator (`netz.erwahnungen`, whatever passes the 500-concept cap) by a *stock*
+  denominator (`bestandGroesse()`) — while `server/router/system.ts:106-116`
+  already computes the honest pair in the very same handler and the surface's
+  `GraphApi` type never knew the field existed. One rule now, in two positions:
+  **numerator and denominator come from the same set.** With `deckung` the door's
+  two numbers; without it only the window, phrased „345 of 1,050 notes **in this
+  picture** carry a concept" — the stock stays in the head line above, so nothing
+  on screen is lost, but a clause that cannot see the base no longer claims it.
+  Red first (three cases, one printed the old number verbatim), 180/180 after,
+  and a mutation (numerator back to the window) that turns the stock case red
+  while the window case stays green — a discriminating pair, not one case that
+  reacts to everything.
+- **The pretest guard reported success while 59 of 178 test files died.**
+  `scripts/pruefe-native.mjs --node` ran a child that did nothing but
+  `require(MODUL)` — and `better-sqlite3-multiple-ciphers` binds its native
+  binary **lazily, at `new Database()`**, so a naked require cannot see an ABI
+  conflict. The same file already knew better on the Electron side
+  (`probelauf()` opens a probe database with cipher, legacy, key, FTS5). Node now
+  does the same: an encrypted probe DB, an FTS5 insert and match, verified to
+  reach the constructor (a bad path errors), to write no plaintext, and to be
+  unreadable without the key. Proven with a **lazy-binding stub** rather than a
+  rebuilt binary — three cases, and turning `fehlerBeimLaden()` back into a bare
+  require goes red. **The incident it would have caught happened at 04:52: a
+  `build:mac` between 04:40 and 04:41 left the module on Electron ABI and a full
+  suite lost 529 of its 532 failing cases to one sentence about
+  `NODE_MODULE_VERSION 149`.**
+- **A security sentence was precise about the wrong thing.** The key field said
+  the API key is „sealed … never returned by the settings API" — true of the API
+  (`server/router/settings.ts:50-55,156-166`) and silent about
+  `src/lib/ai.ts:409-411`, which keeps a working copy in this installation's
+  local storage so the model survives a restart. The sentence now says so.
+  Nothing was retracted; it was made complete.
+- **A sold number named its corpus.** „71 % Hit@1" is now „71 % Hit@1 over the
+  58-note, 45-question test corpus that ships with K3PTA", and the doc guard
+  refuses any `N % Hit@1` claim whose surrounding text does not name the corpus
+  size — **derived from `CORPUS.length`**, the same file `scripts/eval.ts:15`
+  imports, not typed in. 71 % on 58 notes and 71 % on 2,000 notes are two
+  different claims.
+- **The tool list is proven derived, not restated.** Two cases feed the surface
+  an **invented** door (`memory_zebra/yeti/quokka`, own titles, two-sentence
+  descriptions, a `required` field) and require its order, its first sentence
+  only, and `{ q, z? }` field marks — while every hand-written string from the
+  old three-tool list must be *absent*. A second case takes a 500 from the tool
+  door and shows no name at all, only „tool list could not be read". Had any
+  text still been typed into the file, it would have survived the invented door.
+
+- **The privacy preview ignored its own switch.** The box under „Hide personal
+  data from cloud AI" promised „Try it — this is what a cloud model would see"
+  and then ran `new Schild()` unconditionally (`PrivacyShield.tsx:71-74`), while
+  the real path gates on the switch (`server/router/chat.ts:51`
+  `schild = aktiv ? new Schild() : null`). Switch off, and the preview kept
+  hiding — a privacy panel that showed the opposite of the product. It now
+  follows its switch: off means the address is printed exactly as a cloud model
+  would get it, with the sentence „The shield is off — a cloud model would see
+  this text exactly as it is." Proven both ways in one case: on → `[EMAIL-1]`,
+  click → the real address and no `Hidden:` line, click back → masked again.
+
+### Docs
+
+- Three probe traps are in `AGENTS.md` under „Hard-won rules": in jsdom
+  `import.meta.url` is an **http** URL, so `fileURLToPath` throws before any
+  assertion runs; measure a child against the panel's **content box**, not
+  `width − padding` counted twice; and a viewport shot of a section below the
+  fold returns **byte-identical** with/without images — hash the set before
+  reading it.
+- **The privacy preview ignored its own switch.** The box under „Hide personal
+  data from cloud AI" promised „Try it — this is what a cloud model would see"
+  and then ran `new Schild()` unconditionally (`PrivacyShield.tsx:71-74`), while
+  the real path gates on the switch (`server/router/chat.ts:51`
+  `schild = aktiv ? new Schild() : null`). Switch off, and the preview kept
+  hiding — a privacy panel that showed the opposite of the product. It now
+  follows its switch: off means the address is printed exactly as a cloud model
+  would get it, with the sentence „The shield is off — a cloud model would see
+  this text exactly as it is." Proven both ways in one case: on → `[EMAIL-1]`,
+  click → the real address and no `Hidden:` line, click back → masked again.
+
+
 ## [3.2.13]
 
 ### Fixed

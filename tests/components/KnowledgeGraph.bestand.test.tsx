@@ -61,11 +61,16 @@ describe("Der Kopf nennt die gemalte Zahl und den Bestand der Tür", () => {
     const { container } = await flaeche(Array.from({ length: 100 }, note));
     const kopf = container.querySelector('[data-testid="graph-kopf"]')?.textContent ?? "";
     expect(kopf, kopf).toMatch(/100 notes of 14,702 in the store/);
-    // Und das Verdikt rechnet gegen den Bestand: 100 in der Seite wären unter
-    // der Marke von 200 Knoten, 14 702 darüber.
+    // Und das Verdikt. Seit #16 gilt: eine Bestandsdeckung darf die Fläche nur
+    // nennen, wenn die Tür sie mitliefert — hier schweigt sie (`deckung` fehlt),
+    // also zählt die Klaue das Fenster und heißt „in this picture". Unter der
+    // Marke von 200 Knoten gibt es in diesem Fenster kein Verdikt, und das ist
+    // die ehrliche Antwort auf eine halbe Auskunft. Die Bestandstellung steht in
+    // ihrem eignen Fall weiter unten.
     expect(container.textContent).toMatch(
-      /0 of 14,702 notes carry a concept — this field is not a network yet/
+      /0 of 100 notes in this picture carry a concept/
     );
+    expect(container.textContent).not.toMatch(/not a network yet/);
     expect(setzeGroesse).toBeTypeOf("function");
   });
 
@@ -131,7 +136,44 @@ describe("Der Kopf nennt die gemalte Zahl und den Bestand der Tür", () => {
     const { container } = await flaeche(Array.from({ length: 100 }, note));
     expect(container.textContent).not.toMatch(/are not painted/);
     expect(container.textContent).toMatch(
-      /0 of 14,702 notes carry a concept — this field is not a network yet/
+      /0 of 100 notes in this picture carry a concept/
     );
+  });
+
+  it("nimmt die Deckung von der Tür, nicht den Auszug des Fensters", async () => {
+    // #16 — die einzige Zahl im Fenster, die direkt über seinem Wissen steht.
+    // Die Tür sagt 1 018 von 21 066 gedeckt (4,83 %); durch die Kappen von
+    // `getGraph` lassen in diesem Auszug 345. Rechnet die Fläche den Auszug
+    // gegen den Bestand, liest Damian 1,65 % vernetztes Wissen, wo sein Bestand
+    // zu 4,83 % gedeckt ist — und die Zeile unterschätzt ihn um den Faktor drei.
+    kapsel.bestand = 21_066;
+    vi.stubGlobal("fetch", vi.fn(async () => new Response(JSON.stringify({
+      relations: [],
+      memoriesByEntity: { docker: Array.from({ length: 345 }, (_, i) => `b${i + 1}`) },
+      bestand: { notizen: 21_066, begriffe: 2_756, kanten: 2_726 },
+      deckung: {
+        notizen: 21_066, gedeckt: 1_018, anteilProzent: 4.83,
+        hinweis: "notes covered = active notes that mention at least one concept",
+      },
+    }), { status: 200 })));
+    const { container } = await flaeche(Array.from({ length: 1_050 }, note));
+    const text = container.textContent ?? "";
+    expect(text, text).toMatch(/1,018 of 21,066 notes carry a concept/);
+    expect(text, "die Fläche rechnet weiter den Auszug gegen den Bestand").not.toMatch(/345 of 21,066/);
+  });
+
+  it("erfindet keinen Bestand, wenn die Tür schweigt — auch nicht halben", async () => {
+    // Die zweite Stellung derselben Regel: ohne `deckung` darf die Zeile keinen
+    // Bestand behaupten, weil ihr Zähler dann nur das Fenster kennt. 14 702 als
+    // Nenner neben 345 aus dem Auszug ist genau die Zahl, die Damian falsch herumsagt.
+    kapsel.bestand = 14_702;
+    vi.stubGlobal("fetch", vi.fn(async () => new Response(JSON.stringify({
+      relations: [],
+      memoriesByEntity: { docker: Array.from({ length: 345 }, (_, i) => `b${i + 1}`) },
+    }), { status: 200 })));
+    const { container } = await flaeche(Array.from({ length: 1_050 }, note));
+    const text = container.textContent ?? "";
+    expect(text, text).toMatch(/345 of 1,050 notes in this picture carry a concept/);
+    expect(text, "ein Fenster-Zähler vor einem Bestands-Nenner").not.toMatch(/of 14,702 notes carry a concept/);
   });
 });

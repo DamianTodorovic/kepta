@@ -178,7 +178,7 @@ export function SystemStatus() {
           ok={keyOk}
           label={`Provider: ${prov.label}`}
           detail={keyOk ? 'API key stored.' : 'No key yet — chat stays silent until you add one. Your agents read and write without a key.'}
-          fix={'“System” on the left → Settings → pick a provider → enter a key.'}
+          fix={'“Settings” on the left → “AI & data” → pick a provider → enter a key.'}
         />
         <Row
           ok={modelOk}
@@ -189,7 +189,7 @@ export function SystemStatus() {
         <Row
           ok={ollama === true}
           label="Ollama / Embeddings (optional)"
-          detail={ollama === true ? 'Ollama reachable — vector search active.' : 'Unreachable — search still runs purely lexically (71 % Hit@1 in the eval, against 51 % for naive substring search); with vectors it is stronger across languages too.'}
+          detail={ollama === true ? 'Ollama reachable — vector search active.' : 'Unreachable — search still runs purely lexically (71 % Hit@1 over the 58-note, 45-question test corpus that ships with K3PTA, against 51 % for naive substring search); with vectors it is stronger across languages too.'}
           fix="Install and start Ollama: ollama pull nomic-embed-text && ollama serve"
         />
         <Row

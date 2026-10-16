@@ -56,7 +56,7 @@ const MCP_JSON_BUILT = `{
   "mcpServers": {
     "kepta": {
       "command": "node",
-      "args": ["/PATH/TO/KEPTA-REPO/dist/mcp-server.cjs"]
+      "args": ["/PATH/TO/K3PTA-REPO/dist/mcp-server.cjs"]
     }
   }
 }`;
@@ -634,7 +634,7 @@ export function Settings() {
                     {!provider.needsKey || schluesselHuelle === null
                       ? 'The key is stored locally on your device and sent straight to the provider.'
                       : schluesselHuelle.verschlossen
-                        ? `Sealed with this installation's database key (${schluesselHuelle.ablage ?? 'the system keychain'}) — never returned by the settings API.`
+                        ? `Sealed with this installation's database key (${schluesselHuelle.ablage ?? 'the system keychain'}) — never returned by the settings API. A working copy stays in this app's local storage on this computer, so the model is reachable after a restart without asking again.`
                         : 'This knowledge base has no database key, so an API key cannot be sealed here. It stays in this window and must be entered again after a restart.'}
                   </p>
                 </div>
@@ -704,7 +704,7 @@ export function Settings() {
                 className="btn-primary flex items-center justify-center gap-2 px-6 py-2.5 rounded-xl w-full"
               >
                 {saved ? (
-                  <><ShieldCheck className="w-5 h-5" /> <span>Konfiguration gespeichert</span></>
+                  <><ShieldCheck className="w-5 h-5" /> <span>Configuration saved</span></>
                 ) : (
                   'Save'
                 )}
