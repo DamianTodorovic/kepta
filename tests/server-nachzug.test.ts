@@ -195,6 +195,39 @@ describe("N-2 — der Nachzug fuellt das Netz, das der alte Scanner leer liess",
     expect(g.deckung.notizen).toBeGreaterThanOrEqual(g.deckung.gedeckt);
     expect(g.deckung.anteilProzent).toBeCloseTo((100 * g.deckung.gedeckt) / g.deckung.notizen, 1);
   });
+
+  it("ein Widerspruch zwischen gedeckten und aktiven Notizen wird gesagt, nicht geklemmt", async () => {
+    // #25 — die Tuer rechnete bis zum 16.10. `Math.min(notizen, notizenMitBegriff())`.
+    // Beide Abfragen filtern `deleted_at IS NULL` auf `memories` (`store.ts:483` gegen
+    // `:1287-1294`), der Klammer konnte also nie greifen — und erzwang genau die
+    // Relation, die der Fall darueber verlangt: der war damit fuer immer gruen.
+    // Hier liegt die Nachbildung, die der Klammer bisher unmoeglich machte: die
+    // Begriff-Zaehlung ueberholt die Bestands-Zaehlung. Aus ihr darf keine geordnete
+    // Zahl werden; sie muss genannt werden.
+    const vorher = (await (await fetch(`${URLE}/api/graph`)).json()) as {
+      deckung: { notizen: number };
+    };
+    const notizen = vorher.deckung.notizen;
+    expect(notizen, "die Nachbildung braucht einen nicht-leeren Bestand").toBeGreaterThan(0);
+    const echt = store.notizenMitBegriff.bind(store);
+    try {
+      store.notizenMitBegriff = () => notizen + 7;
+      const g = (await (await fetch(`${URLE}/api/graph`)).json()) as {
+        deckung: { gedeckt: number; anteilProzent: number; widerspruch: string | null };
+      };
+      expect(g.deckung.gedeckt, "die Tuer muss die unbeugte Zahl zeigen, nicht die gequetschte").toBe(notizen + 7);
+      expect(g.deckung.widerspruch, "ein Widerspruch muss gesagt werden").toBeTruthy();
+      expect(String(g.deckung.widerspruch)).toContain(`${notizen}`);
+      expect(g.deckung.anteilProzent, "der Prozentsatz traegt den Widerspruch — er ist nicht die Botschaft").toBeGreaterThan(100);
+    } finally {
+      store.notizenMitBegriff = echt;
+    }
+    const wieder = (await (await fetch(`${URLE}/api/graph`)).json()) as {
+      deckung: { gedeckt: number; widerspruch: string | null };
+    };
+    expect(wieder.deckung.widerspruch, "ohne Widerspruch schweigt das Feld").toBeNull();
+    expect(wieder.deckung.gedeckt).toBeLessThanOrEqual(notizen);
+  });
 });
 
 describe("N-3 — idempotent, nicht anhaeufend", () => {

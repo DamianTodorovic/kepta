@@ -9,7 +9,7 @@ import os from "node:os";
 import path from "node:path";
 import { createRequire } from "node:module";
 import { execFileSync } from "node:child_process";
-import { architektur, erwartet, findeApps, pruefe, abiKonflikt, pruefeNode, probeCode, fehlerBeimLaden } from "../scripts/pruefe-native.mjs";
+import { architektur, erwartet, findeApps, pruefe, abiKonflikt, pruefeNode, probeCode, fehlerBeimLaden, electronBindung, ladeCode } from "../scripts/pruefe-native.mjs";
 
 function machO(cpu: number): Buffer {
   const b = Buffer.alloc(32);
@@ -210,5 +210,58 @@ describe("Die Wache vor dem Testlauf", () => {
     // Der gruene Zweig: dasselbe Kind, das den faul bindenden Baustein erwischt,
     // muss am echten Modul durchkommen — sonst ist die Wache nur laut.
     expect(fehlerBeimLaden()).toBe(null);
+  });
+});
+
+// Punkt 3 des Leitungsauftrags 16.10. 12:0x: die Release-Stelle prueft jetzt das
+// Binding gegen die Electron-Laufzeit, bevor die App startet. Der Kapselstart allein
+// haette denselben Fall gefunden — aber erst nach 36 s und ohne Grund. Diese Faelle
+// halten die Entscheidung und die Verdrahtung fest; das echte Paar (Electron gegen
+// ein Node-Binding) ist am selben Nachmittag gemessen und steht im SET1-Papier 24,
+// weil der CI-Job auf ubuntu-latest laeuft und ein Electron-Binary dort nicht existiert.
+describe("Die Bindungsprobe der Release-Stelle", () => {
+  const ELEKTRO = "/Applications/K3PTA.app/Contents/MacOS/K3PTA";
+  const BIN = "node_modules/better-sqlite3-multiple-ciphers/build/Release/better_sqlite3.node";
+
+  it("ein Node-Binding in einer Electron-Laufzeit ist ein Fehler, und er nennt die Ursache", () => {
+    const r = electronBindung({ programm: ELEKTRO, bin: BIN, laufen: () => ABI_STREIT });
+    expect(r.ok).toBe(false);
+    expect(r.abiStreit, "die Meldung ist ein ABI-Streit, keinetimeout-Erfindung").toBe(true);
+    expect(r.grund).toContain("NODE_MODULE_VERSION 149");
+  });
+
+  it("ein passendes Binding nennt die Laufzeit, die es gemeldet hat", () => {
+    const r = electronBindung({ programm: ELEKTRO, bin: BIN, laufen: () => "ok 149" });
+    expect(r.ok).toBe(true);
+    expect(r.abi).toBe("149");
+  });
+
+  it("ein fremder Fehler wird nicht zum ABI-Streit erklaert", () => {
+    const r = electronBindung({ programm: ELEKTRO, bin: BIN, laufen: () => "Error: Cannot find module 'bindings'" });
+    expect(r.ok).toBe(false);
+    expect(r.abiStreit).toBe(false);
+    expect(r.grund).toContain("Cannot find module");
+  });
+
+  it("die Release-Kette kann an der Bindungspruefung nicht vorbeikommen", () => {
+    // Ein Pruefschritt, den ein fehlendes Bauteil still ueberspringt, ist kein
+    // Pruefschritt. Genau so ist 3.2.14 durch.
+    const quelle = fs.readFileSync(path.resolve(process.cwd(), "scripts/release-beweisen.mjs"), "utf8");
+    expect(quelle, "der Helfer ist nicht eingebunden — die Pruefung findet nicht statt").toMatch(/import\s*\{\s*electronBindung\s*\}\s*from/);
+    expect(quelle).toMatch(/electronBindung\(\{ programm, bin, laufen \}/);
+    expect(quelle, "ein fehlendes entpacktes Modul darf nicht als Erfolg enden").toMatch(/kein entpacktes SQLite-Modul[\s\S]{0,120}false/);
+    expect(quelle, "die Meldung traegt das Ergebnis, nicht eine Vermutung").toMatch(/\$\{bindung\.ok \?/);
+  });
+
+  it("die Sonde fragt das native Binary, nicht das Paket — `bindings` bleibt im asar", () => {
+    // Gemessen 16.10. 12:18:50 an der installierten App: ueber das Paket endet der
+    // Griff mit „Cannot find module", obwohl das Binding passt — electron-builder
+    // packt nur das native Modul aus. Ein Rueckfall aufs Paket waere eine Wache,
+    // die jeden richtigen Bau durchfaellt.
+    const code = ladeCode("x/y/better_sqlite3.node");
+    expect(code).toContain('require("x/y/better_sqlite3.node")');
+    expect(code, "kein Weg ueber die JS-Huelle des Pakets").not.toMatch(/bindings/);
+    const quelle = fs.readFileSync(path.resolve(process.cwd(), "scripts/release-beweisen.mjs"), "utf8");
+    expect(quelle, "die Release-Kette betet das Binary an, nicht das Paket").toMatch(/build\/Release\/better_sqlite3\.node/);
   });
 });

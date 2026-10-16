@@ -105,11 +105,19 @@ export function mountSystem(app: express.Express, ctx: AppKontext): void {
       // (2.756 Begriffe, 2.726 Kanten, aber nur ~1.018 von 21.066 Notizen gedeckt).
       deckung: (() => {
         const notizen = activeCount();
-        const gedeckt = Math.min(notizen, store.notizenMitBegriff());
+        const gedeckt = store.notizenMitBegriff();
         return {
           notizen,
           gedeckt,
           anteilProzent: notizen > 0 ? Number(((100 * gedeckt) / notizen).toFixed(2)) : 0,
+          // Der Weg war bis zum 16.10. ein Math.min. Beide Abfragen filtern
+          // `deleted_at IS NULL` auf `memories` (`store.ts:483` gegen `:1287-1294`),
+          // also konnte er nie greifen — und erzwang genau die Relation, die
+          // `tests/server-nachzug.test.ts` verlangt, wodurch dieser Fall fuer immer
+          // gruen war. Die Zahl bleibt unbeugt; was ueber den Bestand hinauslaeuft,
+          // steht als Widerspruch da, weil der Satz die Botschaft traegt und nicht
+          // eine Prozentzahl ueber 100.
+          widerspruch: gedeckt > notizen ? `${gedeckt} notes carry a concept but only ${notizen} notes are active` : null,
           hinweis: "notes covered = active notes that mention at least one concept; the base's own size is in `bestand`",
         };
       })(),

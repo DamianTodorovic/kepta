@@ -22,6 +22,7 @@ import { execFileSync } from "node:child_process";
 import crypto from "node:crypto";
 import fs from "node:fs";
 import path from "node:path";
+import { electronBindung } from "./pruefe-native.mjs";
 
 const HIER = path.resolve(import.meta.dirname, "..");
 const RELEASE = path.join(HIER, "release");
@@ -74,6 +75,24 @@ for (const k of KAPSELN) {
   const marke = marken[0].slice(0, -4);
   const programm = path.join(ordner, marken[0], "Contents/MacOS", marke);
   if (!fs.existsSync(programm)) { meld(`${k.ordner}: ${programm} fehlt (Marke ${marke} aus dem Ordner gewonnen)`, false); continue; }
+  // 1b) Das Binding gegen die Electron-Laufzeit, die es tragen muss — vor dem Start.
+  //     Der Start haette denselben Fall auch gefunden, aber erst nach 36 s und ohne
+  //     Grund („antwortet nicht"). Hier steht der Name des Fehlers, und ein Paket
+  //     ohne entpacktes Modul ist keine bestandene Pruefung, sondern eine fehlende.
+  //     Gefragt wird das native Binary, nicht das Paket: `bindings` bleibt im asar
+  //     und ist von aussen nicht ladbar (gemessen 16.10. 12:18:50).
+  const bin = path.join(ordner, marken[0], "Contents/Resources/app.asar.unpacked/node_modules/better-sqlite3-multiple-ciphers/build/Release/better_sqlite3.node");
+  if (!fs.existsSync(bin)) {
+    meld(`${k.ordner}: kein entpacktes SQLite-Modul unter app.asar.unpacked — die Laufzeit bleibt ungewiss`, false);
+  } else {
+    const laufen = k.arch === process.arch ? undefined : (p, code) => {
+      try {
+        return String(execFileSync("arch", ["-x86_64", p, "-e", code], { env: { ...process.env, ELECTRON_RUN_AS_NODE: "1" }, stdio: ["ignore", "pipe", "pipe"], timeout: 60_000 }) ?? "").trim();
+      } catch (e) { return String(e.stderr ?? e.message ?? e); }
+    };
+    const bindung = electronBindung({ programm, bin, laufen });
+    meld(`${k.ordner}: Binding gegen Electron (${k.arch}) — ${bindung.ok ? `passt, NODE_MODULE_VERSION ${bindung.abi ?? "gemeldet ohne Zahl"}` : bindung.grund}`, bindung.ok);
+  }
   const kapsel = fs.mkdtempSync(path.join(os.tmpdir(), "kepta-beweis-"));
   const schluessel = crypto.randomBytes(32).toString("hex");
   const umgebung = { ...process.env, HOME: kapsel, KEPTA_DATA_DIR: path.join(kapsel, ".kepta"), KEPTA_DB_KEY: schluessel };

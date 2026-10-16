@@ -162,8 +162,53 @@ export function probeCode(modul, db) {
     `const n = d.prepare("SELECT count(*) AS n FROM t WHERE t MATCH 'probetext'").get().n;`,
     `d.close();`,
     `if (n !== 1) throw new Error("Probedatenbank: " + n + " Treffer statt 1");`,
-    `process.stdout.write("ok");`,
+    `process.stdout.write("ok " + process.versions.modules);`,
   ].join("\n");
+}
+
+/**
+ * Das native Binary **im Paket** gegen die Electron-Laufzeit, die es tragen muss —
+ * vor dem Start der App, damit ein falscher Fall einen Namen hat statt nach 36 s
+ * „antwortet nicht" zu bleiben.
+ *
+ * Geprueft wird das `.node` selbst, nicht das Paket: `electron-builder` packt nur
+ * das native Modul aus (`asarUnpack`), seine JS-Nachbarn (`bindings`) bleiben im
+ * asar. Von außen ist das Paket also nicht ladbar — gemessen 16.10. 12:18:50 an der
+ * installierten App, wo derselbe Griff ueber das Paket mit „Cannot find module"
+ * endete, obwohl das Binding passte. Das Laden des Binaries unterscheidet die
+ * Laufzeit trotzdem: ein Node-Binding in Electron wirft den echten ABI-Streit.
+ *
+ * Der Laeufer ist ein Argument, weil der Gegenbeweis an einem echten Paar gefaehrt
+ * werden muss, nicht an einem erfundenen Text.
+ */
+export function ladeCode(bin) {
+  return `require(${JSON.stringify(bin)}); process.stdout.write("ok " + process.versions.modules);`;
+}
+
+export function electronBindung({ programm, bin, laufen }) {
+  const code = ladeCode(bin);
+  let text;
+  try {
+    if (laufen) {
+      text = String(laufen(programm, code) ?? "");
+    } else {
+      try {
+        const aus = execFileSync(programm, ["-e", code], {
+          env: { ...process.env, ELECTRON_RUN_AS_NODE: "1" },
+          stdio: ["ignore", "pipe", "pipe"],
+          timeout: 60_000,
+        });
+        text = String(aus ?? "").trim();
+      } catch (e) {
+        text = String(e.stderr ?? e.message ?? e);
+      }
+    }
+  } catch (e) {
+    text = String(e?.message ?? e);
+  }
+  if (/^ok(\s|$)/.test(text)) return { ok: true, abi: text.replace(/^ok\s*/, "").trim() || null, text };
+  const grund = text.split("\n").map((z) => z.trim()).filter(Boolean).slice(0, 3).join(" / ");
+  return { ok: false, grund, abiStreit: abiKonflikt(text), text };
 }
 
 /**

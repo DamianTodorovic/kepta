@@ -60,6 +60,47 @@ describe("SystemStatus: was die App ueber sich behauptet", () => {
     expect(screen.getByText(/npm run dev/)).toBeTruthy();
   });
 
+  // K1 — gemessen 16.10. im Sandkasten (SET1-Papier 19): nach einem Neustart steht
+  // auf dieser Zeile 174 ms lang „No key yet — chat stays silent until you add one"
+  // samt Reparatur-Anweisung, obwohl die Verbindung in der Datenbank liegt. Der
+  // Grund ist ein Griff, der die Antwort nicht abwartet: `loadAISettings()` liest
+  // localStorage synchron, die Hydration aus `ai_connection` kommt asynchronous.
+  // Die Nachbildung hier haelt die Hydration zurueck, damit derselbe Zustand
+  // betretbar wird, ohne auf einen Zeitpunkt zu wetten.
+  const providerZeile = (container: HTMLElement) => {
+    const blatt = [...container.querySelectorAll("div")].find((d) => d.children.length === 0 && /^Provider/.test((d.textContent ?? "").trim()));
+    return blatt?.parentElement?.textContent ?? "";
+  };
+
+  it("behauptet keinen fehlenden Schluessel, waehrend die Verbindung noch gelesen wird", async () => {
+    const wartend = { los: null as (() => void) | null };
+    vi.stubGlobal("fetch", vi.fn(async (url: string) => {
+      if (url.includes("/api/health")) return new Response(JSON.stringify(GESUND), { status: 200 });
+      if (url.includes("/api/embed")) return new Response("{}", { status: 503 });
+      if (url.includes("/api/settings")) {
+        await new Promise<void>((los) => { wartend.los = los; });
+        return new Response("{}", { status: 200 });
+      }
+      return new Response("{}", { status: 200 });
+    }));
+    const { container } = render(<SystemStatus />);
+    await waitFor(() => expect(container.textContent).toMatch(/412 nodes/));
+    const zeile = providerZeile(container);
+    expect(zeile, "die Sonde sieht keine Provider-Zeile — Flaeche geaendert?").not.toBe("");
+    expect(zeile, "sie darf nichts behaupten, bevor sie gelesen hat").not.toMatch(/No key yet/);
+    expect(zeile).not.toMatch(/How to fix it/);
+    expect(zeile, "stattdessen sagt sie, was sie gerade tut").toMatch(/reading the connection/i);
+    wartend.los?.();
+    await waitFor(() => expect(providerZeile(container)).toMatch(/No key yet/));
+  });
+
+  it("nennt die gelesene Verbindung, sobald die Hydration geantwortet hat", async () => {
+    localStorage.setItem("aiVerbindung", JSON.stringify({ providerId: "openai", apiKey: "sk-set1-probe", baseUrl: "https://api.openai.com/v1", model: "gpt-4o-mini" }));
+    const { container } = render(<SystemStatus />);
+    await waitFor(() => expect(providerZeile(container)).toMatch(/API key stored\./));
+    expect(providerZeile(container)).toMatch(/Provider: OpenAI/);
+  });
+
   it("rechnet die Embedding-Abdeckung aus", async () => {
     render(<SystemStatus />);
     await waitFor(() => expect(screen.getByText(/coverage 75 %/)).toBeTruthy());

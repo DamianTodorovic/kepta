@@ -2,7 +2,7 @@
 import { useEffect, useState } from 'react';
 import { CheckCircle2, XCircle, Copy, Check, Send, Loader2, ShieldCheck } from "../lib/icons";
 import { APP_VERSION } from '../core/version';
-import { PROVIDERS, providerById, loadAISettings } from '../lib/ai';
+import { PROVIDERS, providerById, loadAISettings, hydrateAISettings } from '../lib/ai';
 import { RecoveryKey } from './RecoveryKey';
 import { getJsonOderNull } from '../lib/api';
 
@@ -55,18 +55,20 @@ function schluesselOrt(ablage?: string): string {
   return `, key in the ${ablage}`;
 }
 
-function Row({ ok, label, detail, fix, seal }: { ok: boolean; label: string; detail: string; fix?: string; seal?: boolean }) {
+function Row({ ok, label, detail, fix, seal, unknown }: { ok: boolean; label: string; detail: string; fix?: string; seal?: boolean; unknown?: boolean }) {
   return (
     <div className="flex items-start gap-3 py-2.5">
-      {ok
-        ? seal
-          ? <ShieldCheck className="w-4.5 h-4.5 mt-0.5 shrink-0" style={{ color: 'var(--accent)' }} />
-          : <CheckCircle2 className="w-4 h-4 mt-0.5 shrink-0" style={{ color: 'var(--ok)' }} />
-        : <XCircle className="w-4 h-4 mt-0.5 shrink-0" style={{ color: '#e6a100' }} />}
+      {unknown
+        ? <Loader2 className="w-4 h-4 mt-0.5 shrink-0 animate-spin" style={{ color: 'var(--text-3)' }} />
+        : ok
+          ? seal
+            ? <ShieldCheck className="w-4.5 h-4.5 mt-0.5 shrink-0" style={{ color: 'var(--accent)' }} />
+            : <CheckCircle2 className="w-4 h-4 mt-0.5 shrink-0" style={{ color: 'var(--ok)' }} />
+          : <XCircle className="w-4 h-4 mt-0.5 shrink-0" style={{ color: '#e6a100' }} />}
       <div className="min-w-0">
         <div className="text-sm font-medium" style={{ color: 'var(--text-1)' }}>{label}</div>
         <div className="text-xs mt-0.5" style={{ color: 'var(--text-2)' }}>{detail}</div>
-        {!ok && fix && <div className="text-xs mt-1 font-medium" style={{ color: '#d97706' }}>How to fix it: {fix}</div>}
+        {!unknown && !ok && fix && <div className="text-xs mt-1 font-medium" style={{ color: '#d97706' }}>How to fix it: {fix}</div>}
       </div>
     </div>
   );
@@ -78,6 +80,20 @@ export function SystemStatus() {
   const [testing, setTesting] = useState(false);
   const [testResult, setTestResult] = useState<{ ok: boolean; msg: string } | null>(null);
   const [copied, setCopied] = useState<string | null>(null);
+  // K1 — die Verbindung liegt in der verschluesselten Datenbank (`ai_connection`)
+  // und wird nach einem Neustart asynchronous zurueckgelesen. Vorher traegt
+  // localStorage nichts, und ein Behaupten ueber sie war ein Raten: gemessen 174 ms
+  // lang „No key yet" auf dem Schirm, obwohl der Schluessel da war.
+  const [bereit, setBereit] = useState(false);
+
+  useEffect(() => {
+    let vorbei = false;
+    hydrateAISettings().then(
+      () => { if (!vorbei) setBereit(true); },
+      () => { if (!vorbei) setBereit(true); },
+    );
+    return () => { vorbei = true; };
+  }, []);
 
   useEffect(() => {
     void (async () => {
@@ -175,15 +191,19 @@ export function SystemStatus() {
           fix="Close other programs that use K3PTA (AI agents over MCP) and restart K3PTA — it encrypts the file as soon as it has it to itself."
         />
         <Row
+          unknown={!bereit}
           ok={keyOk}
-          label={`Provider: ${prov.label}`}
-          detail={keyOk ? 'API key stored.' : 'No key yet — chat stays silent until you add one. Your agents read and write without a key.'}
+          label={bereit ? `Provider: ${prov.label}` : 'Provider'}
+          detail={bereit
+            ? (keyOk ? 'API key stored.' : 'No key yet — chat stays silent until you add one. Your agents read and write without a key.')
+            : 'Reading the connection stored on this computer…'}
           fix={'“Settings” on the left → “AI & data” → pick a provider → enter a key.'}
         />
         <Row
+          unknown={!bereit}
           ok={modelOk}
           label="Model selected"
-          detail={modelOk ? `Active: ${s.model}` : 'No model set.'}
+          detail={bereit ? (modelOk ? `Active: ${s.model}` : 'No model set.') : 'Reading the connection stored on this computer…'}
           fix="Settings → load and pick a model from the list."
         />
         <Row
