@@ -1,3 +1,41 @@
+## [3.2.15]
+
+### Fixed
+
+- **The door stopped bending its own coverage number.** `server/router/system.ts`
+  produced `covered = Math.min(notes, coveredFromEntities())` while both queries
+  filter the same set (`store.ts:483` vs `:1287-1294`), so the clamp could never
+  fire — and `tests/server-nachzug.test.ts:195` asserted exactly that relation,
+  which made a green witness that could never go red. The count is now taken
+  unbent and anything exceeding the base is stated in a `widerspruch` field,
+  because a sentence carries the message, not a percentage above 100. Red with
+  the clamp squeezing 21 down to 14, green after, mutation (clamp back) turns the
+  new case red.
+- **The status row no longer reports a fact it has not read yet.** It called
+  `loadAISettings()` synchronously in the render line and claimed „No key yet —
+  chat stays silent until you add one" plus an amber fix instruction for 174 ms
+  after a start, while the key was there (measured: lie at +196 ms, truth at
+  +370 ms). Unknown is now a third face: a loader, no tick, no cross, and no
+  instruction before hydration answers.
+- **The promised Ollama probe was an empty `if`.** `src/lib/profile.ts:136-143`
+  polled `/api/health` after two direct pings and then held only comment lines, so
+  the surface said „Ollama — not found" where the server could see the model list.
+  The follow-up now goes through our own door (`POST /api/models`,
+  `{protocol:'openai', baseUrl:<target>/v1}`); no address leaves the machine, and a
+  refused follow-up makes nothing available.
+- **A second save no longer loses its own receipt.** One timer took the
+  confirmation away from the next save; it is now a ref, cleared before each new
+  timer and on unmount. All four receipts that persist something live 6 000 ms
+  (one constant) — the clipboard copy keeps its 2 000 ms, because it confirms a
+  moment rather than a save.
+
+### Notes
+
+- `npm run release:beweisen -- <version>` exists now, and the checker derives the
+  app bundle from the folder instead of naming a brand: it had been looking for
+  `KEPTA.app` since the rename, which silently skipped the only test that sees a
+  native binding built for the wrong runtime.
+
 ## [3.2.14]
 
 ### Fixed
