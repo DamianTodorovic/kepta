@@ -1,9 +1,9 @@
 import { useState, useEffect, useRef, FormEvent } from 'react';
-import { Key, ShieldCheck, SettingsIcon, Download, CheckCircle2, RefreshCw, Cpu, HardDriveDownload, Server, Plug, Copy, Terminal, Braces, Globe, Search, Save, Layers, ExternalLink, Sparkles } from "../lib/icons";
+import { Key, ShieldCheck, SettingsIcon, Download, CheckCircle2, AlertTriangle, RefreshCw, Cpu, HardDriveDownload, Server, Plug, Copy, Terminal, Braces, Globe, Search, Save, Layers, ExternalLink, Sparkles } from "../lib/icons";
 import { motion } from 'motion/react';
 import { PROVIDERS, providerById, loadAISettings, hydrateAISettings, saveAISettings, kiSchluesselStatus, type AISchluesselStatus, type AISettings } from '../lib/ai';
 import { AUTO_LEARN_TIMEOUT_MS } from '../lib/autolearn';
-import { getMemoriesSync, refreshMemories } from '../lib/store';
+import { refreshMemories } from '../lib/store';
 import { SystemStatus } from './SystemStatus';
 import PraxisSync from './PraxisSync';
 import { KeptaMark } from './KeptaMark';
@@ -65,6 +65,42 @@ const CLAUDE_PATHS = [
   { os: 'Windows', pfad: '%APPDATA%\\Claude\\claude_desktop_config.json' },
 ];
 
+/**
+ * Was die lokale Tür advertiert, steht bei der Tür — nicht in diesem Text.
+ * Die Fläche zeigte drei Werkzeuge, während `GET /api/health` auf demselben
+ * Schirm acht meldete (`server/router/system.ts:45`, `src/core/mcp.ts:84`).
+ */
+type McpWerkzeug = {
+  name: string;
+  title?: string;
+  description?: string;
+  inputSchema?: { properties?: Record<string, unknown>; required?: unknown };
+};
+
+/** Ikonen sind Schmuck; die Namen kommen von der Tür. */
+const WERKZEUGIKON: Record<string, typeof Search> = {
+  memory_search: Search,
+  memory_save: Save,
+  memory_list: Layers,
+};
+
+/** Erster Satz der Werkzeugbeschreibung, an einer Wortgrenze gekappt. */
+function bescheid(w: McpWerkzeug): string {
+  const satz = ((w.description ?? '').trim().split(/(?<=[.!?])\s/)[0] ?? '').trim();
+  if (satz.length <= 110) return satz;
+  const knappe = satz.slice(0, 110);
+  const letzteLuecke = knappe.lastIndexOf(' ');
+  return `${knappe.slice(0, letzteLuecke > 60 ? letzteLuecke : 110).trimEnd()}…`;
+}
+
+/** Die Felder der Tür als Kurzform: Pflicht ohne ?, alles andre mit ?. */
+function schemaKurz(w: McpWerkzeug): string {
+  const eigentum = w.inputSchema?.properties ?? {};
+  const pflicht = new Set(Array.isArray(w.inputSchema?.required) ? (w.inputSchema.required as unknown[]).map(String) : []);
+  const teile = Object.keys(eigentum).map((k) => `${k}${pflicht.has(k) ? '' : '?'}`);
+  return teile.length ? `{ ${teile.join(', ')} }` : '{}';
+}
+
 export function Settings() {
   const [activeTab, setActiveTab] = useState<TabId>('system');
   const [zoom, setZoomState] = useState<number>(getZoom());
@@ -89,7 +125,7 @@ export function Settings() {
   // --- System-Tab state (bestehend) ---
   const [settings, setSettings] = useState<AISettings>(loadAISettings());
   const [saved, setSaved] = useState(false);
-  const [exported, setExported] = useState(false);
+  const [sicherung, setSicherung] = useState<{ knoten: number } | { fehler: string } | null>(null);
   /**
    * Nachsortieren nach Wissensart.
    *
@@ -149,6 +185,8 @@ export function Settings() {
   const [copied, setCopied] = useState<string | null>(null);
   const [health, setHealth] = useState<{ ok?: boolean; count?: number; uptime?: number; mcp?: { stdio?: { command: string; args: string[]; env: Record<string, string> } | null } } | null>(null);
   const [healthError, setHealthError] = useState<string | null>(null);
+  const [werkzeuge, setWerkzeuge] = useState<McpWerkzeug[]>([]);
+  const [werkzeugeFehler, setWerkzeugeFehler] = useState<string | null>(null);
 
   const provider = providerById(settings.providerId);
   // In der fertigen App: der mitgelieferte MCP-Server, gestartet vom K3PTA-Programm
@@ -271,6 +309,23 @@ export function Settings() {
       } catch (e: unknown) {
         if (!cancelled) setHealthError(e instanceof Error ? e.message : String(e));
       }
+      // Dieselbe Tür, die auch die Agenten lesen: was sie advertiert, wird
+      // gezeigt. Ein Fetch, ein Tab — und keine Zahl, die die Fläche erfindet.
+      try {
+        const t = await fetch(`${API_BASE}/api/mcp/tools`);
+        if (!t.ok) throw new Error(`HTTP ${t.status}`);
+        const d = await t.json();
+        const liste = Array.isArray((d as { tools?: unknown })?.tools) ? (d as { tools: McpWerkzeug[] }).tools : null;
+        if (!cancelled) {
+          setWerkzeuge(liste ?? []);
+          setWerkzeugeFehler(liste ? null : 'The tool list did not arrive — the local server answered without a list.');
+        }
+      } catch (e: unknown) {
+        if (!cancelled) {
+          setWerkzeuge([]);
+          setWerkzeugeFehler(`The tool list could not be read: ${e instanceof Error ? e.message : String(e)}`);
+        }
+      }
     })();
     return () => { cancelled = true; };
   }, [activeTab]);
@@ -320,9 +375,32 @@ export function Settings() {
     }
   };
 
-  const handleExport = () => {
-    const data = getMemoriesSync();
-    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+  /**
+   * Die Sicherung holt den Bestand, nicht den Seiten-Cache. Vorher gab
+   * `getMemoriesSync()` den Cache aus `fetch('/api/memories')` zurück — eine
+   * Seite von `SEITE_STD = 100` (server/helfer/api-form.ts:78), und auf frischem
+   * Start gar nichts, weil der Cache erst nach dem ersten Refresh gefüllt ist.
+   * Die Fläche meldete in beiden Fällen „Backup created". Ein Knopf, der
+   * „every memory node" verspricht, darf nicht fragen, was ein Fenster zufällig
+   * geladen hat.
+   */
+  const handleExport = async () => {
+    setSicherung(null);
+    let knoten: unknown[];
+    try {
+      const res = await fetch('/api/memories?alle=1');
+      if (!res.ok) {
+        setSicherung({ fehler: `Backup failed — the memory service answered ${res.status}. No file was written.` });
+        return;
+      }
+      const daten = await res.json();
+      knoten = Array.isArray(daten) ? daten
+        : Array.isArray((daten as { memories?: unknown[] })?.memories) ? (daten as { memories: unknown[] }).memories : [];
+    } catch {
+      setSicherung({ fehler: 'Backup failed — the memory service did not answer. No file was written.' });
+      return;
+    }
+    const blob = new Blob([JSON.stringify(knoten, null, 2)], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
@@ -332,8 +410,8 @@ export function Settings() {
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
 
-    setExported(true);
-    setTimeout(() => setExported(false), 3000);
+    setSicherung({ knoten: knoten.length });
+    setTimeout(() => setSicherung(null), 6000);
   };
 
   /** KI-Verlauf (ChatGPT/Claude-Export) übernehmen — WS5: „Switch to K3PTA, keep your memory." */
@@ -708,8 +786,10 @@ export function Settings() {
                   onClick={handleExport}
                   className="btn-ghost flex items-center justify-center gap-2 px-6 py-2.5 rounded-xl font-medium w-full"
                 >
-                  {exported ? (
-                    <><CheckCircle2 className="w-5 h-5" style={{ color: 'var(--ok)' }} /> <span style={{ color: 'var(--ok)' }}>Backup created</span></>
+                  {sicherung && 'knoten' in sicherung ? (
+                    <><CheckCircle2 className="w-5 h-5" style={{ color: 'var(--ok)' }} /> <span style={{ color: 'var(--ok)' }}>Backup created · {sicherung.knoten.toLocaleString('en-US')} nodes</span></>
+                  ) : sicherung ? (
+                    <><AlertTriangle className="w-5 h-5" style={{ color: 'var(--warn)' }} /> <span style={{ color: 'var(--warn)' }}>{sicherung.fehler}</span></>
                   ) : (
                     <><Download className="w-5 h-5" /> Download JSON backup</>
                   )}
@@ -947,27 +1027,40 @@ export function Settings() {
               </div>
             </div>
 
-            {/* Tools Preview */}
+            {/* Tools Preview — die Liste kommt von der Tür, nicht aus diesem Text */}
             <div>
               <div className="flex items-center gap-2 mb-3">
                 <Braces className="w-4 h-4" style={{ color: 'var(--accent)' }} />
                 <h3 className="settings-h" style={{ color: 'var(--text-1)' }}>MCP Tools</h3>
+                {werkzeuge.length > 0 && (
+                  <span className="ml-auto chip tnum !px-2" title="Tools the local server advertises over MCP">{werkzeuge.length}</span>
+                )}
               </div>
+              {werkzeugeFehler && (
+                <p className="text-sm mb-2" style={{ color: 'var(--warn)' }}>{werkzeugeFehler}</p>
+              )}
+              {!werkzeugeFehler && werkzeuge.length === 0 && (
+                <p className="text-sm mb-2" style={{ color: 'var(--text-2)' }}>Asking the local server which tools agents get…</p>
+              )}
               <div className="grid gap-2">
-                {[
-                  { icon: Search, name: 'memory_search', desc: 'Searches titles, content and tags', schema: '{ query: string, limit?: number, tags?: string[] }' },
-                  { icon: Save, name: 'memory_save', desc: 'Creates or updates a node', schema: '{ title: string, content: string, tags?: string[], id?: string }' },
-                  { icon: Layers, name: 'memory_list', desc: 'Lists every node, paginated', schema: '{ limit?: number, offset?: number }' },
-                ].map(t => (
-                  <div key={t.name} className="hud-inset rounded-xl px-3 py-2.5 flex gap-3">
-                    <t.icon className="w-4 h-4 mt-0.5 shrink-0" style={{ color: 'var(--accent)' }} />
-                    <div className="min-w-0 flex-1">
-                      <p className="text-xs font-mono font-semibold" style={{ color: 'var(--text-1)' }}>{t.name}</p>
-                      <p className="text-xs" style={{ color: 'var(--text-2)' }}>{t.desc}</p>
-                      <code className="text-[11px] font-mono block mt-1 truncate" style={{ color: 'var(--text-3)' }}>{t.schema}</code>
+                {werkzeuge.map((w) => {
+                  const Icon = WERKZEUGIKON[w.name] ?? Braces;
+                  return (
+                    <div key={w.name} className="hud-inset rounded-xl px-3 py-2.5 flex gap-3 min-w-0">
+                      <Icon className="w-4 h-4 mt-0.5 shrink-0" style={{ color: 'var(--accent)' }} />
+                      <div className="min-w-0 flex-1">
+                        <p className="text-xs font-mono font-semibold" style={{ color: 'var(--text-1)' }}>{w.name}</p>
+                        <p className="text-xs" style={{ color: 'var(--text-2)' }}>
+                          {w.title ? `${w.title} — ` : ''}{bescheid(w)}
+                        </p>
+                        {/* Kein `truncate`: die Felderliste ist die Auskunft. Umbricht
+                            sie, bleibt sie lesbar; gekappt wäre sie wieder eine Zahl
+                            ohne Sinn — bei 390 px waren es 288 px Überstand. */}
+                        <code className="text-[11px] font-mono block mt-1 break-words" style={{ color: 'var(--text-3)' }}>{schemaKurz(w)}</code>
+                      </div>
                     </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             </div>
 

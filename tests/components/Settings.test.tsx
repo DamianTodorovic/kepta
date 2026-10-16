@@ -1,4 +1,6 @@
 // @vitest-environment jsdom
+import { readFileSync } from "node:fs";
+import path from "node:path";
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
@@ -9,6 +11,22 @@ import { Settings } from "../../src/components/Settings";
 // teuer: ein Schluessel, der beim Anbieterwechsel haengen bleibt, geht an den
 // falschen Dienst.
 
+/**
+ * Welche Werkzeuge die Agenten wirklich bekommen, steht im Kern — nicht in
+ * diesem Test und nicht in der Flaeche. Gelesen statt importiert: `src/core/mcp.ts`
+ * zieht `saveWithIndex` und damit Server-Code in den jsdom-Baum.
+ */
+function werkzeugeAusDemKern(): string[] {
+  // Gegen das Arbeitsverzeichnis, nicht gegen `import.meta.url`: im jsdom-Lauf
+  // ist diese URL eine http-Adresse, und `fileURLToPath` wirft („The URL must be
+  // of scheme file") — ein Rot an der Sonde, nicht an der Flaeche.
+  const quelltext = readFileSync(path.resolve(process.cwd(), "src/core/mcp.ts"), "utf8");
+  const anfang = quelltext.indexOf("export const TOOLS");
+  if (anfang === -1) throw new Error("src/core/mcp.ts hat kein export const TOOLS — Sonde geaendert?");
+  const stueck = quelltext.slice(anfang, quelltext.indexOf("\n]", anfang));
+  return [...stueck.matchAll(/name:\s*"([^"]+)"/g)].map((m) => m[1]);
+}
+
 function stubFetch(over: { models?: string[]; modelsOk?: boolean; modelsError?: string } = {}) {
   vi.stubGlobal("fetch", vi.fn(async (url: string) => {
     if (url.includes("/api/models")) {
@@ -16,6 +34,12 @@ function stubFetch(over: { models?: string[]; modelsOk?: boolean; modelsError?: 
       return new Response(JSON.stringify({ models: over.models ?? ["llama3.2", "mistral"] }), { status: 200 });
     }
     if (url.includes("/api/health")) return new Response(JSON.stringify({ ok: true, count: 7, uptime: 12 }), { status: 200 });
+    if (url.includes("/api/mcp/tools") || url.includes("/api/tools")) {
+      return new Response(JSON.stringify({
+        protocol: "2026-07-28",
+        tools: werkzeugeAusDemKern().map((name) => ({ name, description: `${name} — Werkszeug aus dem Kern`, inputSchema: { type: "object" } })),
+      }), { status: 200 });
+    }
     return new Response("{}", { status: 200 });
   }));
 }
@@ -194,6 +218,58 @@ describe("Settings: Sicherung", () => {
     await waitFor(() => expect(screen.getByText(/Backup created/i)).toBeTruthy());
     expect(URL.createObjectURL).toHaveBeenCalled();
   });
+
+  /**
+   * Der Fall oben ist gruen und schuetzt nichts: sein Stub bedient
+   * `/api/memories` ueberhaupt nicht, die Sicherung ist also ein leerer Blatt
+   * und die Flaeche meldet trotzdem Erfolg. SET1 hat 16.10. gemessen, was ein
+   * Nutzer mit 21 066 Knoten bekommt: `getMemoriesSync()` gibt den
+   * Seiten-Cache (src/lib/store.ts:64, gefuellt aus `fetch('/api/memories')`
+   * ohne `alle=1`, Kappe `SEITE_STD = 100` in server/helfer/api-form.ts:78),
+   * die Flaeche sagt „Backup created" und der Nutzer haelt 100 Knoten fuer
+   * seine Wissensbasis. Geprueft wird hier der INHALT des Blattes, nicht die
+   * Beschriftung des Knopfs.
+   */
+  it("sichert den ganzen Bestand, nicht die Seite, und nennt die Zahl", async () => {
+    const notiz = (i: number) => ({
+      id: `m${i}`, userId: "local", title: `Notiz ${i}`, content: `Inhalt ${i}`,
+      tags: [], type: "semantic", createdAt: 1, updatedAt: 1,
+    });
+    const wegen: string[] = [];
+    const blobs: Blob[] = [];
+    vi.stubGlobal("fetch", vi.fn(async (url: string) => {
+      wegen.push(String(url));
+      if (String(url).includes("alle=1")) {
+        return new Response(JSON.stringify(Array.from({ length: 250 }, (_, i) => notiz(i))), { status: 200 });
+      }
+      if (String(url).includes("/api/memories")) {
+        return new Response(JSON.stringify(Array.from({ length: 100 }, (_, i) => notiz(i))), {
+          status: 200, headers: { "x-kepta-total": "250", "x-kepta-begrenzt": "1" },
+        });
+      }
+      if (String(url).includes("/api/health")) return new Response(JSON.stringify({ ok: true, count: 250, uptime: 1 }), { status: 200 });
+      if (String(url).includes("/api/models")) return new Response(JSON.stringify({ models: [] }), { status: 200 });
+      return new Response("{}", { status: 200 });
+    }));
+    Object.defineProperty(URL, "createObjectURL", {
+      configurable: true,
+      value: vi.fn((b: Blob) => { blobs.push(b); return "blob:x"; }),
+    });
+
+    const user = userEvent.setup();
+    render(<Settings />);
+    await user.click(screen.getByRole("button", { name: /Download JSON backup/i }));
+    await waitFor(() => expect(screen.getByText(/Backup created/i)).toBeTruthy());
+
+    await waitFor(() => expect(blobs.length, "die Flaeche hat ueberhaupt kein Blatt erzeugt").toBe(1));
+    const gesichert = JSON.parse(await blobs[0].text());
+    expect(Array.isArray(gesichert) ? gesichert.length : gesichert.memories?.length ?? 0,
+      "die Sicherung haelt eine Seite, nicht den Bestand").toBe(250);
+    expect(wegen.some((u) => u.includes("alle=1")),
+      "kein Abruf des ganzen Bestands — der Download haengt am Seiten-Cache").toBe(true);
+    expect(screen.getByText(/Backup created/i).textContent,
+      "eine Sicherung ohne Zahl ist ein Versprechen ohne Beleg").toMatch(/250/);
+  });
 });
 
 describe("Settings: MCP-Anschluss", () => {
@@ -285,12 +361,16 @@ describe("Settings: der MCP-Reiter im Ganzen", () => {
     expect(container.textContent).toMatch(/curl/);
   });
 
-  it("nennt die acht Werkzeuge, die Agenten bekommen", async () => {
+  it("nennt jedes Werkzeug, das die Tuer advertiert — keine abgeschriebene Shortlist", async () => {
+    const kerNamen = werkzeugeAusDemKern();
+    // Eine Sonde, die nichts findet, ist kein Beweis. Unter acht Namen ist die
+    // Aufloesung taub — ein gruenes Urteil ueber eine halbleere Liste waere
+    // genau der Fall, den dieser Test ersetzen soll.
+    expect(kerNamen.length, `der Kern nennt nur ${kerNamen.length} Werkzeuge — Aufloesung pruefen`).toBeGreaterThanOrEqual(8);
     const user = userEvent.setup();
     const { container } = await zumMcp(user);
-    for (const werkzeug of ["memory_search", "memory_save", "memory_list"]) {
-      expect(container.textContent, `${werkzeug} fehlt`).toMatch(new RegExp(werkzeug));
-    }
+    const fehlen = kerNamen.filter((w) => !(container.textContent ?? "").includes(w));
+    expect(fehlen, `auf der Flaeche fehlen: ${fehlen.join(", ")} (Kern: ${kerNamen.length}, Flaeche zeigt ${kerNamen.length - fehlen.length})`).toEqual([]);
   });
 
   it("kopiert jede angebotene Zeile", async () => {

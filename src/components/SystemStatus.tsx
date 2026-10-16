@@ -189,7 +189,7 @@ export function SystemStatus() {
         <Row
           ok={ollama === true}
           label="Ollama / Embeddings (optional)"
-          detail={ollama === true ? 'Ollama reachable — vector search active.' : 'Unreachable — search still runs purely lexically (62 % Hit@1 in the eval, against 51 % for naive substring search); with vectors it is stronger across languages too.'}
+          detail={ollama === true ? 'Ollama reachable — vector search active.' : 'Unreachable — search still runs purely lexically (71 % Hit@1 in the eval, against 51 % for naive substring search); with vectors it is stronger across languages too.'}
           fix="Install and start Ollama: ollama pull nomic-embed-text && ollama serve"
         />
         <Row

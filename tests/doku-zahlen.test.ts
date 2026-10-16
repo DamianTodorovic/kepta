@@ -213,12 +213,24 @@ describe("Abzeichen und Anwendungstexte behaupten nichts Falsches", () => {
   });
 
   it("die Anwendung nennt eine Trefferquote, die der Eval entspricht", () => {
-    const status = lies("src/components/SystemStatus.tsx");
-    const zahlen = [...status.matchAll(/(\d+)\s*%\s*Hit@1/g)].map((m) => Number(m[1]));
-    for (const z of zahlen) {
-      // Die Eval meldet 62 % fuer die Engine und 51 % fuer die naive Suche.
-      expect(z, `SystemStatus nennt ${z} % Hit@1 — das liefert die Eval nicht`).toBeLessThanOrEqual(75);
-      expect(z).toBeGreaterThanOrEqual(45);
+    // Vorher war das hier ein Band: jede Zahl zwischen 45 und 75 durfte durch,
+    // auch die von gestern. Ein Band schuetzt keine Messung, es dekoriert sie.
+    // Die erlaubten Werte kommen jetzt aus dem Beleg selbst — und der Beleg ist
+    // die gefaehrliche Stelle: heisst er anders, muss diese Wache rot werden.
+    const belegt = lies("docs/belege/tag-13-10/eval-korpus-1413.log.txt");
+    const gemessen = [...belegt.matchAll(/Hit@1:\s+(\d+(?:[.,]\d+)?)\s*%/g)]
+      .map((m) => Math.round(Number(m[1].replace(",", "."))));
+    expect(gemessen.length, "der Eval-Beleg nennt keine zwei Hit@1-Zahlen — diese Wache ist taub").toBeGreaterThanOrEqual(2);
+    const erlaubt = [...new Set(gemessen)];
+    const zuPruefen = [
+      "src/components/SystemStatus.tsx", "src/components/Settings.tsx",
+      "src/components/Dashboard.tsx", "src/components/Chat.tsx",
+    ];
+    for (const datei of zuPruefen) {
+      const stellen = [...lies(datei).matchAll(/(\d+)\s*%\s*Hit@1/g)].map((m) => Number(m[1]));
+      for (const z of stellen) {
+        expect(erlaubt, `${datei} behauptet ${z} % Hit@1 — der Beleg misst ${erlaubt.join(" %, ")} %`).toContain(z);
+      }
     }
   });
 });
