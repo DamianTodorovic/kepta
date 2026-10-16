@@ -852,6 +852,49 @@ describe("Bei schmalem Fenster rückt die Seitenleiste zurück", () => {
     });
     expect(leiste(container)?.className, "die Leiste bleibt ueber der Flaeche stehen — der naechste Klick geht an sie, nicht an das Formular").toMatch(/w-0/);
   });
+
+  // #32, gemessen 20:10:23 bei 390x844 (SET1, eigner Rückfall): nachdem die
+  // Ansichtswahl die Leiste schliesst (#27), gab es in den Einstellungen keinen
+  // Auf-Weg mehr. Der Schalter lebte in der Kopfzeile der memories-Ansicht, und
+  // deren Behaelter ist ausserhalb von `memories` auf `hidden` gestellt — im Blatt
+  // war er also wohl, anfassbar aber nicht (display:none erbt keine Trefferflaeche).
+  // Gefordert ist deshalb beides: genau EIN Schalter, und keiner in einem
+  // display-none-Vorfahren. Pro Ansicht ein Durchgang, nicht einer fuer sieben.
+  it.each(["Today", "Chat", "Graph", "Dossier", "Activity", "Settings"])(
+    "lässt die Leiste in %s wieder auf, und der Schalter ist anfassbar",
+    async (ziel) => {
+      fenster(390);
+      const { container } = await zeige([note({ title: "Fristen" })]);
+      await act(async () => {
+        fireEvent.click(screen.getByRole("button", { name: "Show sidebar" }));
+        await new Promise((r) => setTimeout(r, 60));
+      });
+      const nav = [...container.querySelectorAll(".sidebar-nav-btn")].find(
+        (b) => new RegExp(ziel as string).test(b.textContent || "")
+      ) as HTMLElement;
+      expect(nav, `die Seitenleiste zeigt ihren Punkt "${ziel}" nicht`).toBeTruthy();
+      await act(async () => {
+        fireEvent.click(nav);
+        await new Promise((r) => setTimeout(r, 60));
+      });
+      expect(leiste(container)?.className, "Voraussetzung: die Ansichtswahl hat die Leiste geschlossen").toMatch(/w-0/);
+      const knopfe = screen.getAllByRole("button", { name: "Show sidebar" });
+      // jsdom kennt keine CSS-Kaskade: ein Behaelter mit Klasse `hidden` ist hier
+      // weiterhin im Baum, obwohl ein echter Browser ihn auf display:none setzt und
+      // damit aus dem Zugriffsbaum nimmt. Gezaehlt wird deshalb nicht das Blatt,
+      // sondern das, was ein Mensch treffen kann — ein Schalter ohne display-none-Vorfahr.
+      const erreichbar = knopfe.filter((k) => !k.closest(".hidden"));
+      expect(
+        erreichbar.length,
+        `in ${ziel} sind ${erreichbar.length} anfassbare Auf-Schalter (im Blatt ${knopfe.length}) — eines davon ist der Weg zurück`
+      ).toBe(1);
+      await act(async () => {
+        fireEvent.click(erreichbar[0]);
+        await new Promise((r) => setTimeout(r, 60));
+      });
+      expect(leiste(container)?.className, `in ${ziel} oeffnet kein Steuer die Leiste wieder`).toMatch(/w-64/);
+    }
+  );
 });
 
 // A7-06, nachgemessen am 09.10. im echten Browser (Tabelle B, letzte Zeile je

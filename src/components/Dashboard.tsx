@@ -1322,6 +1322,27 @@ export function Dashboard() {
       />
 
       <main className="flex-1 flex flex-col min-w-0 overflow-hidden my-2.5 mr-2.5 panel rounded-2xl relative z-10">
+        {/**
+         * #32: der Auf-Schalter lebte bisher nur in der Kopfzeile der memories-Ansicht.
+         * Die andern Ansichten sitzen in denselben Rahmen, haben aber keine Kopfzeile —
+         * und ihr Behaelter ist ausserhalb von `memories` auf `hidden` gestellt, also ist
+         * der Knopf zwar im Blatt, aber nicht anfassbar (display:none erbt keine Treffer-
+         * flaeche). Wer bei schmalem Fenster eine Ansicht waehlt, schliesst damit die
+         * Leiste (#27) und fand in den Einstellungen keinen Weg zurueck. Dieser Streif
+         * gilt fuer jede Ansicht ohne eigne Kopfzeile; in `memories` uebernimmt weiterhin
+         * deren Kopf den Schalter, damit das Steuer nie zweimal zaehlt.
+         */}
+        {isFocusMode && currentView !== 'memories' && (
+          <div className="h-12 px-3 flex items-center shrink-0 border-gradient-b">
+            <button
+              onClick={() => setIsFocusMode(false)}
+              className="btn-ghost p-2 rounded-lg"
+              aria-label="Show sidebar"
+            >
+              <PanelLeftOpen className="w-4.5 h-4.5" />
+            </button>
+          </div>
+        )}
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
