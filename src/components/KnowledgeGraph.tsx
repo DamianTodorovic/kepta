@@ -2671,7 +2671,7 @@ export function KnowledgeGraph({ memories: memoriesAusFenster, onSelectMemory, o
 
     // --- Knoten ---
     const sp = holeSprites(notenFarbenRef.current, nodeRim, nodeHi);
-    const beschriftbar: { n: LayoutNode; m: Memory; r: number }[] = [];
+    const beschriftbar: { n: LayoutNode; m: Memory; r: number; rb: number }[] = [];
     /** Wie viele der gemalten Notizen ausgegraut sind — die vierte Zahl des Titel-Etats. */
     let verblasen = 0;
     /**
@@ -2746,7 +2746,7 @@ export function KnowledgeGraph({ memories: memoriesAusFenster, onSelectMemory, o
         const punkte = winzig.get(schluessel);
         if (punkte) punkte.push(n.x - rr, n.y - rr, rr * 2);
         else winzig.set(schluessel, [n.x - rr, n.y - rr, rr * 2]);
-        if (!zeitInaktiv && !gedimmt) beschriftbar.push({ n, m, r: rr });
+        if (!zeitInaktiv && !gedimmt) beschriftbar.push({ n, m, r: rr, rb: rrBasis });
         else verblasen++;
         continue;
       }
@@ -2839,7 +2839,7 @@ export function KnowledgeGraph({ memories: memoriesAusFenster, onSelectMemory, o
         ctx.stroke();
       }
       ctx.globalAlpha = 1;
-      if (!zeitInaktiv && !gedimmt) beschriftbar.push({ n, m, r: rr });
+      if (!zeitInaktiv && !gedimmt) beschriftbar.push({ n, m, r: rr, rb: rrBasis });
       else verblasen++;
     }
 
@@ -2958,7 +2958,10 @@ export function KnowledgeGraph({ memories: memoriesAusFenster, onSelectMemory, o
       modus === "keine" || modus === "alle"
         ? kandidaten
         : kandidaten.filter(
-            ({ n, r }) => hov === n.id || nachbarn?.has(n.id) || r * t.k >= mindestRadius * stufe.pforte
+            // Die Pforte urteilt ueber die WAHRE Groesse. `r` ist auf dem Bildschirm
+            // auf MIN_KNOTEN_PX angehoben, damit man den Knoten sieht; gegen diesen
+            // Boden zu pruefen kann nie schlagen — nur die Rundung tat es.
+            ({ n, rb }) => hov === n.id || nachbarn?.has(n.id) || rb * t.k >= mindestRadius * stufe.pforte
           );
     /** Wie viele Kandidaten an der Pforte fielen (sechster Grund des Titel-Etats). */
     const pforteFallaeller = kandidaten.length - durchDiePforte.length;
