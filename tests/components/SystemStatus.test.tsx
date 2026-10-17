@@ -33,7 +33,43 @@ beforeEach(() => {
 });
 afterEach(() => { vi.unstubAllGlobals(); vi.restoreAllMocks(); });
 
+/**
+ * Den Text einer Zeile der Tafel greifen — ueber ihre Beschriftung.
+ * Eine Zeile ist ein Blatt mit dem Label plus eine Detail-Zeile darunter;
+ * ihr Elternknoten traegt beide, und nur dort laesst sich lesen, was die
+ * Flaeche ueber einen Zustand behauptet.
+ */
+function zeile(anfang: RegExp, wurzel: ParentNode = document.body): string {
+  const blatt = [...wurzel.querySelectorAll("div")].find((d) => d.children.length === 0 && anfang.test((d.textContent ?? "").trim()));
+  return blatt?.parentElement?.textContent ?? "";
+}
+const kernZeile = (wurzel: ParentNode = document.body) => zeile(/^Brain \(/, wurzel);
+
 describe("SystemStatus: was die App ueber sich behauptet", () => {
+  // Gemessen 17.10. 16:0x am ausgelieferten Objekt 3.2.17 (CDP, eigener Portblock
+  // 9941): GET /api/health braucht im Stand 2,5 s (drei Laeufe: 2,55 / 2,50 / 2,61),
+  // im geoeffneten Fenster unter Nebenlast 20,1 s. Waehrend dieser Zeit sagte die
+  // Tafel „Server unreachable", „The knowledge base file is not encrypted" und
+  // „0 nodes" — dreimal das Gegenteil von dem, was dieselbe Tuer im selben
+  // Augenblick meldete (ok true, Schluessel true, 21 066 Knoten). Eine Anzeige,
+  // die waehrend des Lesens verneint, luegt.
+  it("behauptet nichts, waehrend die eigene Auskunft noch unterwegs ist", async () => {
+    const { container } = render(<SystemStatus />);
+    // Vor dem ersten Aufloesen: genau der Zustand, in dem die Tafel 2,5 bis 20 s steht.
+    const text = container.textContent ?? "";
+    expect(zeile(/^Brain \(/, container), "die Sonde sieht die Kern-Zeile nicht").not.toBe("");
+    expect(text).not.toMatch(/Server unreachable/i);
+    expect(text, "waehrend des Lesens ist die Verschluesselung unbekannt, nicht verneint").not.toMatch(/is not encrypted/);
+    expect(kernZeile(container)).toMatch(/asking|answer/i);
+    expect(zeile(/^Encryption/, container)).toMatch(/not (known|read) yet|asking|waiting/i);
+    expect(zeile(/^Knowledge base/, container)).toMatch(/not (known|read) yet|asking|waiting/i);
+    // Dieselbe Klasse, dritte Zeile: die Ollama-Sonde laeuft noch, „Unreachable"
+    // waere eine Behauptung ueber einen Zustand, der nicht gemessen ist.
+    expect(text, "Ollama ist nicht unerreichbar, nur noch ungeprueft").not.toMatch(/Unreachable/);
+    // Und sie ruft nicht nach einer Reparatur, die sie nicht braucht.
+    expect(text).not.toMatch(/How to fix it/);
+  });
+
   it("nennt keine Trefferquote, die die Eval nicht liefert", async () => {
     stubFetch({ embedOk: false });
     const { container } = render(<SystemStatus />);
@@ -53,11 +89,15 @@ describe("SystemStatus: was die App ueber sich behauptet", () => {
     expect(screen.getByText(/8 tools/)).toBeTruthy();
   });
 
-  it("sagt klar, was zu tun ist, wenn der Server nicht antwortet", async () => {
+  it("sagt einem Menschen, was er tun kann, wenn die Auskunft wirklich ausbleibt", async () => {
+    // Entwicklersprache ist hier eine Zumutung: die Flaeche liest, wer die
+    // Kommandozeile nie anfasst. Der Befehl war bis 17.10. „Start the app with
+    // npm run dev" — ein Weg, den ein Nutzer dieser App nicht gehen kann.
     stubFetch({ healthOk: false });
     render(<SystemStatus />);
-    await waitFor(() => expect(screen.getByText(/Server unreachable/i)).toBeTruthy());
-    expect(screen.getByText(/npm run dev/)).toBeTruthy();
+    await waitFor(() => expect(kernZeile(document.body)).toMatch(/did not answer/i));
+    const zeile = kernZeile(document.body);
+    expect(zeile).not.toMatch(/npm|npx|curl|POST \/|localhost|:\d{4}/);
   });
 
   // K1 — gemessen 16.10. im Sandkasten (SET1-Papier 19): nach einem Neustart steht
@@ -119,7 +159,7 @@ describe("SystemStatus: was die App ueber sich behauptet", () => {
     unmount();
     stubFetch({ embedOk: false });
     render(<SystemStatus />);
-    await waitFor(() => expect(screen.getByText(/Unreachable/)).toBeTruthy());
+    await waitFor(() => expect(screen.getByText(/No answer from Ollama/)).toBeTruthy());
   });
 });
 

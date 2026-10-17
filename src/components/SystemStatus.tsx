@@ -74,8 +74,22 @@ function Row({ ok, label, detail, fix, seal, unknown }: { ok: boolean; label: st
   );
 }
 
+/**
+ * Was die Tafel ueber die Auskunft weiss — drei Zustände, nicht zwei.
+ *
+ * Gemessen 17.10. am ausgelieferten 3.2.17: `GET /api/health` braucht im Stand
+ * 2,5 s, im geoeffneten Fenster unter Nebenlast 20,1 s. Bis dahin gab es nur
+ * „hat geantwortet" und „hat nicht geantwortet", und die ausstehende Antwort
+ * fiel in dieselbe Schublade wie der Ausfall — die Tafel verneinte, was die
+ * Tuer im selben Augenblick bejahte („Server unreachable", „not encrypted",
+ * „0 nodes" bei 21 066 Knoten und Schluessel True). Ein ausstehender Messwert
+ * ist kein Befund.
+ */
+type Auskunft = 'laeuft' | 'da' | 'weg';
+
 export function SystemStatus() {
   const [health, setHealth] = useState<Health | null>(null);
+  const [antwort, setAntwort] = useState<Auskunft>('laeuft');
   const [ollama, setOllama] = useState<boolean | null>(null);
   const [testing, setTesting] = useState(false);
   const [testResult, setTestResult] = useState<{ ok: boolean; msg: string } | null>(null);
@@ -99,6 +113,7 @@ export function SystemStatus() {
     void (async () => {
       const h = await getJsonOderNull<Parameters<typeof normalisiereHealth>[0]>('/api/health');
       setHealth(h ? normalisiereHealth(h) : null);
+      setAntwort(h ? 'da' : 'weg');
       try {
         const res = await fetch('/api/embed', {
           method: 'POST',
@@ -176,19 +191,28 @@ export function SystemStatus() {
           detail="The running app — also reported over MCP and /api/health."
         />
         <Row
+          unknown={antwort === 'laeuft'}
           ok={!!health?.ok}
           label="Brain (SQLite + engine)"
-          detail={health ? `${health.count} nodes · ${health.dbPath} · MCP ${health.mcp.protocol} (${health.mcp.tools} tools, ${health.mcp.http})` : 'Server unreachable — is the app running?'}
-          fix="Start the app with npm run dev, or the desktop app."
+          detail={
+            antwort === 'laeuft' ? 'Asking K3PTA itself…'
+              : antwort === 'weg' ? 'K3PTA did not answer this time.'
+                : health ? `${health.count} nodes · ${health.dbPath} · MCP ${health.mcp.protocol} (${health.mcp.tools} tools, ${health.mcp.http})`
+                  : 'K3PTA answered, but not in a form this panel can read.'
+          }
+          fix={antwort === 'weg' ? 'Close K3PTA and open it again.' : undefined}
         />
         <Row
+          unknown={antwort === 'laeuft'}
           ok={!!health?.encryption.aktiv}
           seal={!!health?.encryption.aktiv}
           label="Encryption at rest"
-          detail={health?.encryption.aktiv
-            ? `The knowledge base file is encrypted (SQLCipher 4 format, AES-256${schluesselOrt(health.encryption.ablage)}).`
-            : health?.encryption.hinweis ?? 'The knowledge base file is not encrypted.'}
-          fix="Close other programs that use K3PTA (AI agents over MCP) and restart K3PTA — it encrypts the file as soon as it has it to itself."
+          detail={antwort === 'laeuft' ? 'Not known yet — this line fills in with the rest.'
+            : !health ? 'K3PTA could not read its own state. That says nothing about the file.'
+              : health.encryption.aktiv
+                ? `The knowledge base file is encrypted (SQLCipher 4 format, AES-256${schluesselOrt(health.encryption.ablage)}).`
+                : health.encryption.hinweis ?? 'The knowledge base file is not encrypted.'}
+          fix={health && !health.encryption.aktiv ? "Close other programs that use K3PTA (AI agents over MCP) and restart K3PTA — it encrypts the file as soon as it has it to itself." : undefined}
         />
         <Row
           unknown={!bereit}
@@ -207,16 +231,20 @@ export function SystemStatus() {
           fix="Settings → load and pick a model from the list."
         />
         <Row
+          unknown={ollama === null}
           ok={ollama === true}
           label="Ollama / Embeddings (optional)"
-          detail={ollama === true ? 'Ollama reachable — vector search active.' : 'Unreachable — search still runs purely lexically (71 % Hit@1 over the 58-note, 45-question test corpus that ships with K3PTA, against 51 % for naive substring search); with vectors it is stronger across languages too.'}
-          fix="Install and start Ollama: ollama pull nomic-embed-text && ollama serve"
+          detail={ollama === null ? 'Checking whether Ollama answers on this computer…' : ollama ? 'Ollama reachable — vector search active.' : 'No answer from Ollama — search still runs purely lexically (71 % Hit@1 over the 58-note, 45-question test corpus that ships with K3PTA, against 51 % for naive substring search); with vectors it is stronger across languages too.'}
+          fix={ollama === false ? 'Optional: install Ollama from ollama.com and start it — K3PTA picks it up on its own.' : undefined}
         />
         <Row
+          unknown={antwort === 'laeuft'}
           ok={!!health && health.count > 0}
           label="Knowledge base"
-          detail={health && health.count > 0 ? `${health.count} nodes migrated or present · embedding coverage ${coverage} %` : '0 nodes — import notes, or let an agent save something.'}
-          fix="Drag files into the index window, or use the Obsidian import (POST /api/import/markdown)."
+          detail={antwort === 'laeuft' ? 'Not read yet — the count comes with the answer.'
+            : health && health.count > 0 ? `${health.count} nodes migrated or present · embedding coverage ${coverage} %`
+              : '0 nodes — import notes, or let an agent save something.'}
+          fix={health ? 'Drag files into the K3PTA window, or import a folder of notes.' : undefined}
         />
       </div>
 

@@ -1,3 +1,48 @@
+## [3.2.18]
+
+### Fixed
+
+- **No control is smaller than the finger that aims at it.** Measured in the delivered
+  object 3.2.17 (CDP, own port block, four widths, seven views, hit-test filter): one
+  control under 24 px, and every control under 44 px. The 20 px element is the URL field
+  in the import bar (`Dashboard.tsx`), not the search field at the top — that one already
+  stands 38 px high. One rule now carries the floor: the token `--ziel-boden` at 36 px on
+  the desk, 44 px from 440 px down, applied to `button, a[href], summary, select,
+  [role="button"], [role="tab"], input` and the row of every switch. The blind 1×1 fields
+  behind the switch captions and the real checkboxes and radio buttons are excluded by
+  name — their row grows, not their box. Guard: `tests/zielgroesse.test.ts` reads the rule
+  out of `src/index.css` (jsdom knows no layout measures) and was red before the rule
+  existed (4/4, 16:01:37); it bites on three mutations — a narrowed selector list, a phone
+  floor under the desk floor, the floor set in more than one rule.
+- **The status panel no longer denies while it is still asking.** `GET /api/health` needs
+  2,5 s standing alone (three runs: 2,55 / 2,50 / 2,61) and needed 20,1 s in an open
+  window under its own load. Until now an answer that had not arrived counted as an
+  answer that said no, so the panel read „Server unreachable", „The knowledge base file
+  is not encrypted" and „0 nodes" while the same door reported ok true, key true and
+  21 066 nodes — three denials of the truth, in a panel a person reads on its own word.
+  The panel now distinguishes *asking*, *answered*, *did not answer*: a pending line
+  names itself as unknown and shows no repair instruction, and a real failure is said in
+  human words instead of „Start the app with npm run dev". Same class, third line: Ollama
+  was „Unreachable" before its probe had replied. Cases: red first at 16:00:06 (2 failed),
+  green at 16:00:49 (28/28).
+- **The title gate judges the true node size.** The node radius is lifted to
+  `MIN_KNOTEN_PX` (1,5 px) so a tiny node stays visible; the gate compared *that* lifted
+  value against its own threshold, so it could never reject — only rounding did. It now
+  compares the unlifted measure. Case: `tests/components/KnowledgeGraph.pforte.test.tsx`
+  places the picture on the half-open „Many" gate, where the two versions part by a
+  factor of two, and states its arithmetic on both sides. Mutation: with the lifted value
+  the case goes red and the surface says „22 crowded out by a name already there" where
+  it must say „too small for a name at this zoom".
+
+### Known
+
+- The target sizes are proven by the rule and by the measurement of the old object; the
+  same sweep against this build, four widths, with images, is the acceptance and is
+  reported in `audit-2026-10-09/ZIELGROESSE-17-10.md`.
+- `/api/health` answering in 2,5 s is its own finding: the panel is honest about waiting,
+  but the wait is the reason the lie was readable for so long. Counting chunks and
+  memories over 21 066 notes is the named cost; no query plan was changed here.
+
 ## [3.2.17]
 
 ### Fixed

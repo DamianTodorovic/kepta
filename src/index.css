@@ -170,6 +170,13 @@
   --r-chip: 4px;
   --r-badge: 3px;
 
+  /* Zielgroessen-Latte (#44). Gemessen 17.10. im ausgelieferten Objekt 3.2.17 —
+     vier Breiten, sieben Ansichten, jede Steuerung mit Treffertest: unter 24 px
+     genau eine, unter 44 px alle. Beschlossen: 36 px Boden auf dem Schreibtisch
+     (eine Maus trifft 36 px sicher), 44 px ab Telefonbreite (ein Daumen nicht).
+     Ein Token, eine Selektorliste, eine Stufe — nicht dreißig Flicken. */
+  --ziel-boden: 36px;
+
   /* ============================================================
      SCHRIFTSTUFEN — D1-08 maß 15 Größen im selben Fenster, davon
      sieben mit halben Pixelschritten, und deklariert bis 8,5 px.
@@ -735,6 +742,23 @@ button:focus-visible, a:focus-visible, [role="button"]:focus-visible,
 .switch:focus-visible, summary:focus-visible {
   outline: 2px solid var(--fokus);
   outline-offset: 2px;
+}
+
+/* ---------- Zielgroessen-Latte (#44) ----------
+   Eine Regel für jede anfassbare Steuerung, zwei Stufen über ein Token.
+   Die Ausnahmen sind keine Bequemlichkeit, sie sind der Treffertest:
+   die 1x1-Pixel-Felder hinter den Blendbeschriftungen der Schalter und die
+   echten Kästchen und Radios sind nicht die Fläche, die ein Finger trifft —
+   ihre Zeile ist es (darum `label:has(...)`), und ein 36 px hohes Kästchen
+   wäre ein kaputter Schalter. */
+button, a[href], summary, select, [role="button"], [role="tab"],
+input:not([type="hidden"]):not([type="checkbox"]):not([type="radio"]):not(.sr-only),
+label:has(.switch), label:has(input[type="checkbox"]), label:has(input[type="radio"]) {
+  min-height: var(--ziel-boden);
+}
+
+@media (max-width: 440px) {
+  :root { --ziel-boden: 44px; }
 }
 
 /* Sidebar-Navigation: Registerlaschen — die aktive Stelle trägt einen

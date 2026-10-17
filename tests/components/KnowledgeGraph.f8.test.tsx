@@ -67,6 +67,27 @@ function notizschriften() {
 }
 
 /**
+ * Hereinzoomen, bis die Flaeche ueberhaupt Titel malt, und ihre Zahl zurueckgeben.
+ *
+ * Seit der Pforte-Urteilsfrage (#30, 0e065b0) gilt: ein Knoten, dessen WAHRES
+ * Mass unter 1,5 Bildpunkten liegt, bekommt keinen Namen. In einem eng
+ * gesetzten Bild — 60 Notizen in 300×220 — ist das bei eingepasstem Zoom
+ * jeder Knoten, und die Flaeche malt null Titel. Das ist Verhalten, kein
+ * Defekt, und die Bilanz sagt es mit Zahl („N too small for a name at this
+ * zoom"). Ein Fall, der die Groesse von Titeln messen will, braucht gemalte
+ * Titel; er darf sich nur nicht auf einen Zoom stellen, der keine hat.
+ */
+async function bisZumErstenTitel(container: HTMLElement, schritte = 16) {
+  for (let i = 0; i < schritte; i++) {
+    if (notizschriften().length > 0) return notizschriften().length;
+    const kn = [...container.querySelectorAll("button")].find((b) => (b.getAttribute("title") || "") === "Zoom in");
+    expect(kn, "der Zoom-in-Knopf fehlt — die Flaeche ist nicht mehr zu bedienen").toBeTruthy();
+    await act(async () => { kn!.click(); await new Promise((r) => setTimeout(r, 90)); });
+  }
+  return notizschriften().length;
+}
+
+/**
  * Zuege je Deckkraft, so wie der Browser-Rekorder es zaehlt: die moveTo-Anzahl
  * zwischen zwei stroke() ist die Zahl der Linien in diesem Batch.
  */
@@ -186,13 +207,21 @@ describe("A7-02: die Titel schrumpfen unter die Lesbarkeit", () => {
     const { container } = await feld(notizen, [300, 220]);
     await act(async () => { await new Promise((r) => setTimeout(r, 300)); });
     const k = zoom();
+    // Was bei diesem Zoom gilt, sagt die Bilanz selbst: jeder Knoten liegt unter
+    // der Pforte, also malt die Flaeche keinen Titel — und verschweigt nicht,
+    // warum nicht. (Der Fall auf die Titelgroesse braucht gemalte Titel, darum
+    // zoomt er danach herein.)
+    const bilanz = container.querySelector('[data-testid="graph-benannt"]')?.textContent ?? "";
+    expect(bilanz, `Zoom ${k.toFixed(3)}: "${bilanz}"`).toMatch(/60 too small for a name at this zoom/);
+    const gemalt = await bisZumErstenTitel(container);
     const titel = notizschriften();
-    expect(titel.length, "Es wird gar kein Notiztitel gemalt — die Flaeche hat nichts zu messen").toBeGreaterThan(0);
+    expect(gemalt, "auch hereinzoomend malt die Flaeche keinen Titel").toBeGreaterThan(0);
+    expect(titel.length).toBe(gemalt);
     const kleinste = Math.min(...titel.map((t) => t.px));
     // Die Latte der Flaeche: E1s unterste Schriftstufe, 11 px auf dem Schirm,
     // bei JEDEM Zoom. Vorher stand hier 9 px — das Ziel, das A7 gesetzt hatte,
     // bevor die Leiter gezoge war.
-    expect(kleinste, `kleinster Titel ${kleinste.toFixed(1)} px bei Zoom ${k.toFixed(3)} (${titel.length} Titel)`).toBeGreaterThanOrEqual(11);
+    expect(kleinste, `kleinster Titel ${kleinste.toFixed(1)} px bei Zoom ${zoom().toFixed(3)} (${titel.length} Titel, eingepasst war ${k.toFixed(3)})`).toBeGreaterThanOrEqual(11);
     expect(container).toBeTruthy();
   });
 
@@ -201,6 +230,9 @@ describe("A7-02: die Titel schrumpfen unter die Lesbarkeit", () => {
     const baum = [...container.querySelectorAll("button")].find((b) => (b.getAttribute("title") || "").startsWith("Dendrogram"));
     expect(baum, "Der Baum-Knopf fehlt").toBeTruthy();
     await act(async () => { baum!.click(); await new Promise((r) => setTimeout(r, 500)); });
+    // Derselbe Stand wie im Feld: eingepasst liegt jeder Knoten unter der Pforte,
+    // der Baum malt nichts. Gemessen wird erst, was Titel hat.
+    await bisZumErstenTitel(container);
     const titel = leinwand.schriften().filter((s) => /^F8 Notiz \d+/.test(s.text));
     expect(titel.length, "Der Baum malt keine Notiztitel").toBeGreaterThan(0);
     const kleinste = Math.min(...titel.map((t) => t.px));
@@ -265,6 +297,11 @@ describe("Titel-Etat: die Bilanz nennt, wie viele ohne Namen blieben — und war
     const notizen = Array.from({ length: 400 }, () => note());
     const { container } = await feld(notizen, [900, 640]);
     await act(async () => { await new Promise((r) => setTimeout(r, 300)); });
+    // Eingepasst fallen alle 400 durch die Pforte — die Bilanz nennt das, und der
+    // Etat ist auch dann eine Rechnung. Pruefbar wird sie an einem Bild mit
+    // gemalten Titeln, also hereinzoomen, bis eine Zahl auf der Leinwand steht.
+    expect(notizschriften().length, "bei eingepasstem Zoom malt die Pforte Titel — Erwartung geaendert?").toBe(0);
+    await bisZumErstenTitel(container);
     const gemalt = notizschriften().length;
     const e = etat(container);
     expect(e.benannt, `Gemeldet ${e.benannt}, auf der Leinwand ${gemalt} Titel`).toBe(gemalt);
