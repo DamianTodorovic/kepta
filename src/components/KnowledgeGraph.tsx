@@ -33,6 +33,10 @@ import {
   notizEtikett,
   GANG_SPALTEN,
   GANG_ABSTAND,
+  gangKuerzungZeichen,
+  titelEtatAusLeinwand,
+  GANG_PROBE_PAAR,
+  GANG_PROBE_AUSLASSUNG,
   gangZeilen,
   gangSeiten,
   gangPlaetzeProSeite,
@@ -149,8 +153,8 @@ const KEIL_AB_ZOOM = 0.5;
 /**
  * Wie viel Beschriftung die Flaeche zeigt — eine **Dichtestufe**, nicht drei
  * Knöpfe für Textmenge. Z-12 verlangt eine Entscheidung, die man treffen kann;
- * die Stufen stehen bei `NAMEN_STUFE` (unter `MAX_LABELS`), weil ihr Budget
- * diese Zahl braucht.
+ * die Stufen stehen bei `NAMEN_STUFE`, und ihr Etat kommt aus der Leinwand
+ * (`titelEtatAusLeinwand`), nicht aus einer Zahl im Quelltext.
  */
 const ETIKETT_KEY = "kepta_graph_labels";
 type EtikettModus = "keine" | "wenig" | "mehr" | "alle";
@@ -559,12 +563,9 @@ function useRollenHexe(): Record<string, string> {
   return hexe;
 }
 
-/** So viele Beschriftungen zeigt der Graph hoechstens gleichzeitig. */
-const MAX_LABELS = 140;
 /**
- * Die drei Dichtestufen und ihre Flucht: `kuerzung` in Zeichen, `budget` in
- * Etiketten, `raster` = weicht ein Titel dem bereits gemalten aus,
- * `kantentext` = der Typ steht an der Linie.
+ * Die drei Dichtestufen und ihre Flucht: `kuerzung` in Zeichen, `raster` = weicht
+ * ein Titel dem bereits gemalten aus, `kantentext` = der Typ steht an der Linie.
  *
  * Was eine Stufe verspricht, ist eine Zahl im Bild, kein Gefühl: der Anteil
  * benannter Notizen. Der Hebel ist die Kuerzungslaenge — F8 hat ihn benannt und
@@ -575,13 +576,18 @@ const MAX_LABELS = 140;
  * bleibt, wo die Flaeche ihn schon jetzt zeigt: unter Zeiger und Tastatur.
  * Und weil „mehr Namen" den Platz fuer die Meta braucht, tritt in dieser Stufe
  * der Typ an der Linie zurueck — Meta faellt weg, Inhalt bleibt (Z-12).
+ *
+ * Wie viele Namen eine Stufe *zeigen darf*, steht hier nicht mehr: das rechnet
+ * `titelEtatAusLeinwand` aus dem Fenster und der Breite, die die Stufe selbst
+ * baut (#29). Ein Etat aus dem Bestand war eine Zahl, die niemand gemessen hat.
  */
 const NAMEN_STUFE: Record<
   EtikettModus,
   {
     wort: string;
     kuerzung: number;
-    budget: number;
+    /** Ob die Stufe „ueberhaupt alles" meint — nur dann gilt kein Etat. */
+    grenzenlos: boolean;
     raster: boolean;
     kantentext: boolean;
     /** Wieweit die Pforte der Kandidaten offen steht, in Einheiten von `mindestRadius`. */
@@ -594,7 +600,7 @@ const NAMEN_STUFE: Record<
     pforte: 1,
     wort: "None",
     kuerzung: 0,
-    budget: 0,
+    grenzenlos: false,
     raster: true,
     kantentext: false,
     erklaerung: "No labels — hover or arrow-key to a node and its full title comes back",
@@ -604,7 +610,7 @@ const NAMEN_STUFE: Record<
     pforte: 1,
     wort: "Few",
     kuerzung: 26,
-    budget: MAX_LABELS,
+    grenzenlos: false,
     raster: true,
     kantentext: true,
     erklaerung: "Few names, whole ones — the busiest nodes first, as many as fit without overlap",
@@ -617,7 +623,7 @@ const NAMEN_STUFE: Record<
     // Name trotzdem lesbar, weil der Titel selbst in festen Bildpixeln steht.
     pforte: 0.5,
     kuerzung: 14,
-    budget: MAX_LABELS * 2,
+    grenzenlos: false,
     raster: true,
     kantentext: false,
     erklaerung: "More names, shorter ones — titles are cut so more fit, and the kind steps back from the links",
@@ -627,7 +633,7 @@ const NAMEN_STUFE: Record<
     pforte: 1,
     wort: "All",
     kuerzung: 26,
-    budget: Number.MAX_SAFE_INTEGER,
+    grenzenlos: true,
     raster: false,
     kantentext: true,
     erklaerung: "Every node named, however crowded. A choice, not a starting point.",
@@ -1687,7 +1693,12 @@ export function KnowledgeGraph({ memories: memoriesAusFenster, onSelectMemory, o
    * neu gelesen werden. Ein Etikett gilt einmal pro Notizliste, nicht 60-mal
    * die Sekunde.
    */
-  const etikettVorratRef = useRef<Map<string, NotizEtikett>>(new Map());
+  /**
+   * Gelesene Etikette, einer pro Notiz — mit der Grenze, für die sie gilt. Die
+   * Gang-Kuerzung fragt den Zoom (#17), also ist ein Etikett nur so lange
+   * gültig, wie seine Reihe dieselbe Breite hat.
+   */
+  const etikettVorratRef = useRef<Map<string, { grenze: number; etikett: NotizEtikett }>>(new Map());
   const zielRef = useRef<Map<string, { x: number; y: number }>>(new Map());
   /** Baum→Kraftfeld-Übergang: Ziele, auf die die Knoten gleiten, bevor die Physik übernimmt. */
   const uebergangRef = useRef<Map<string, { x: number; y: number }>>(new Map());
@@ -2947,7 +2958,31 @@ export function KnowledgeGraph({ memories: memoriesAusFenster, onSelectMemory, o
         : beschriftbar;
     /** Wie viele Kandidaten in zu engen Gang-Reihen standen (fuenfter Grund des Titel-Etats). */
     const reihtenZuEng = beschriftbar.length - kandidaten.length;
-    const budget = stufe.budget * (baumAnsicht ? 3 : 1);
+    // Zwei Breiten, die nur die Flaeche selbst kennt: was ein Zeichen und was die
+    // Auslassung in dem Schnitt kostet, mit dem sie gleich malt. Beides traegt
+    // hier eine Rechnung, die vorher eine Konstante war — die Kuerzung des Gangs
+    // (#17) und der Etat des Bildes (#29).
+    const fs = ETIKETT_PX;
+    const schriftDerFlaeche = `600 ${fs}px ui-sans-serif, system-ui, -apple-system, sans-serif`;
+    const schriftVorher = ctx.font;
+    ctx.font = schriftDerFlaeche;
+    const paarBreite = ctx.measureText(GANG_PROBE_PAAR).width;
+    const auslassungBreite = ctx.measureText(GANG_PROBE_AUSLASSUNG).width;
+    ctx.font = schriftVorher;
+    const zeichenBreite = paarBreite / 2;
+    /** Eine Rasterzelle: die Titelhoehe plus ihr Atemzug — dieselbe Zahl wie unten. */
+    const zellHoehe = fs + 3;
+    const gangGrenze = gangKuerzungZeichen(t.k, paarBreite, auslassungBreite);
+    // Der Etat ist, was das Fenster fasst: Zellen des Belegungsrasters, geteilt
+    // durch die Zellen, die ein Titel dieser Stufe belegt. Der Baum traegt mehr,
+    // weil seine Zeilen schon ein Raster sind (A7-02).
+    const kapazitaet = titelEtatAusLeinwand(
+      dimensions.w,
+      dimensions.h,
+      stufe.kuerzung * zeichenBreite + auslassungBreite,
+      zellHoehe,
+    );
+    const budget = stufe.grenzenlos ? Number.MAX_SAFE_INTEGER : kapazitaet * (baumAnsicht ? 3 : 1);
     // Die engere Pforte als die breitere Stufe: was im Feld als
     // Kandidat durchfaellt, kann kein Raster und kein Budget der Welt
     // benennen. Bei 400 Notizen auf 27 % Zoom standen dort 0 von 400 —
@@ -2984,14 +3019,13 @@ export function KnowledgeGraph({ memories: memoriesAusFenster, onSelectMemory, o
     ctx.save();
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
 
-    const fs = ETIKETT_PX;
     ctx.lineJoin = "round";
 
     // Belegungsraster in BILDSCHIRM-Koordinaten: ein Etikett, das ein bereits
     // gezeichnetes ueberdeckt, wird weggelassen. Ohne das entsteht bei dichten
     // Buendeln der Teppich aus uebereinanderliegenden Titeln, den man in der
-    // Aufnahme sieht — lesbar ist dort nichts mehr.
-    const zellHoehe = fs + 3;
+    // Aufnahme sieht — lesbar ist dort nichts mehr. Seine Zellhohe ist dieselbe
+    // Zahl, aus der oben der Etat gerechnet wird.
     const belegt = new Set<string>();
     const freiUndBelegen = (mx: number, my: number, breite: number): boolean => {
       const halb = breite / 2;
@@ -3062,10 +3096,15 @@ export function KnowledgeGraph({ memories: memoriesAusFenster, onSelectMemory, o
       // genau dann will jemand den ganzen Namen lesen.
       const gehalten = n.id === gehaltenId;
       const vorrat = etikettVorratRef.current;
-      let gelesen = vorrat.get(n.id);
+      // Ein Gang-Titel wohnt in einer Reihe von `GANG_ABSTAND · k` Bildpixeln —
+      // er darf nicht länger sein, als die Reihe breit ist. Ausserhalb des
+      // Gangs entscheidet allein die Stufe, dort hängt kein Titel an einer Zelle.
+      const grenze = sim.gangIds?.has(n.id) ? Math.min(stufe.kuerzung, gangGrenze) : stufe.kuerzung;
+      const gespeichert = vorrat.get(n.id);
+      let gelesen = gespeichert && gespeichert.grenze === grenze ? gespeichert.etikett : undefined;
       if (!gelesen) {
-        gelesen = notizEtikett(m, stufe.kuerzung);
-        vorrat.set(n.id, gelesen);
+        gelesen = notizEtikett(m, grenze);
+        vorrat.set(n.id, { grenze, etikett: gelesen });
       }
       const { text: titel, platzhalter } = gehalten ? notizEtikett(m, Infinity) : gelesen;
       const mitteX = n.x * t.k + t.x;

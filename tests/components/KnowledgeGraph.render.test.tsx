@@ -4381,11 +4381,22 @@ describe("Gang-Masse: eine Seite Punkte, ein Blätterer, und die Zahl sagt alles
     const teil = GANG_ABSTAND * (prozent / 100);
     const kurzen = gemalteTitel(/^G\d/);
     expect(kurzen.length, `bei ${prozent} % (Teil ${Math.round(teil)} px) malt der Gang nicht einmal seine kurzen Titel`).toBeGreaterThan(0);
-    const langen = gemalteTitel(/^LANG/);
+    // /^LAN/, nicht /^LANG/: seit #17 darf der Titel kurz genug sein, um in
+    // seine Reihe zu passen, und dann steht im Bild „LAN…". Wer hier den vollen
+    // Anfang verlangt, zaehlt die Heilung als Fehlen.
+    const langen = gemalteTitel(/^LAN/);
     for (const t of langen) {
       expect(t.px, `ein ${Math.round(t.px)} px breiter Titel steht über einem ${Math.round(teil)} px breiten Spaltenteil`).toBeLessThanOrEqual(teil);
     }
-    expect(langen, `der Gang malt ${langen.length} Titel, die über ihren Spaltenteil (${Math.round(teil)} px) spannen`).toHaveLength(0);
+    // #17 hat die zweite Haelfte geheilt: die Flaeche verschmaeht einen langen
+    // Titel nicht mehr, sie baut ihn so kurz, dass er in seine Reihe passt. Ein
+    // fehlender Titel erfuellt diese Latte nicht — ein gekuerzter, der passt,
+    // schon. Vor #17 war diese Zeile `toHaveLength(0)` und pruefte damit den
+    // Mechanismus "wegwerfen" statt die Sache "passt nicht drueber".
+    expect(
+      langen.length,
+      `der Gang wirft seine langen Titel bei ${prozent} % (Teil ${Math.round(teil)} px) weiter weg, statt sie zu kuerzen`,
+    ).toBeGreaterThan(0);
   });
 
   it("gibt die Gang-Titel zurück, sobald ihr Spaltenteil breit genug ist", async () => {

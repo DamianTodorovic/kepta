@@ -829,6 +829,71 @@ export const GANG_ABSTAND = 26;
  */
 export const GANG_RAND = 140;
 
+/**
+ * #17 — wie viele Zeichen ein Gang-Titel bei diesem Zoom tragen darf.
+ *
+ * Die Reihe steht in WELTeinheiten (`GANG_ABSTAND`) und schrumpft mit dem Zoom,
+ * der Titel aber wird in BILDPIXELn gemalt. Eine Kuerzung, die nur die Stufe
+ * kennt und den Zoom nicht, baut einen Titel von 26 Zeichen in eine Reihe von
+ * 26 Bildpunkten — gemessen an seinem Bestand: Median 145,27 Bildpixel, und die
+ * Breiten-Schalte wirft ihn. Genau das war das zweite Tor, das das erste
+ * schloss: unter 93,08 % warf die Höhen-Schalte alle 384 Reihen-Punkte, und ab
+ * 93,08 % verlangte die Breite einen Zoom, den der Einpass-Deckel bei 400 %
+ * nie hergibt.
+ *
+ * Die Grenze kommt aus zwei Breiten, die die Flaeche selbst misst: einem
+ * Zeichenpaar (geteilt durch zwei — ein Einzelzeichen wäre gerundeter) und der
+ * Auslassung, die `kuerze()` HINTER die Zeichen setzt. Beides in Bildpixeln,
+ * derselbe Schriftschnitt, dasselbe Raster.
+ */
+export function gangKuerzungZeichen(
+  zoom: number,
+  paarBreite: number,
+  auslassungBreite: number,
+  abstand = GANG_ABSTAND,
+): number {
+  const reihe = abstand * zoom;
+  const zeichen = paarBreite / 2;
+  if (!(reihe > 0) || !(zeichen > 0)) return 0;
+  const platz = reihe - auslassungBreite;
+  return platz > 0 ? Math.floor(platz / zeichen) : 0;
+}
+
+/** Der Schriftrest, aus dem `gangKuerzungZeichen` seine Zeichenbreite nimmt. */
+export const GANG_PROBE_PAAR = "nn";
+/** Das Zeichen, das `kuerze()` anhängt — es braucht Platz in derselben Reihe. */
+export const GANG_PROBE_AUSLASSUNG = "…";
+
+/**
+ * #29 — wie viele Namen in ein Bild passen, gerechnet aus seiner Leinwand.
+ *
+ * Bis hierhin stand eine gesetzte Zahl im Quelltext (`MAX_LABELS = 140`). Die
+ * Flaeche entscheidet aber ueber ein Belegungsraster in BILDSCHIRMkoordinaten:
+ * eine Zelle ist `fs + 3` hoch, und ein Titel belegt zwei Rasterzeilen und so
+ * viele Spalten, wie seine Breite braucht. Genau diese Rechnung — pro Achse
+ * gefloorft, weil `freiUndBelegen` das auch tut — ist der Etat.
+ *
+ * Der Markt rechnet so: SiYuan nimmt `max(32, floor(w·h/2400))` aus der
+ * Fensterflaeche (`labelRenderer.ts:53`, GQ3), nicht aus dem Bestand. Der
+ * Unterschied ist keine Geschmacksfrage: eine Zahl aus dem Bestand kappt Namen,
+ * die das Fenster laengst hergeben, und laesst Namen zu, die kein Raster frei
+ * hat. Weil die Titelbreite selbst aus der Stufe und dem Zoom kommt (#17),
+ * waechst der Etat mit jedem kuerzeren Titel von allein.
+ */
+export function titelEtatAusLeinwand(
+  breite: number,
+  hoehe: number,
+  titelBreite: number,
+  zellHoehe: number,
+): number {
+  if (!(breite > 0) || !(hoehe > 0) || !(titelBreite > 0) || !(zellHoehe > 0)) return 0;
+  const zellen = Math.floor(breite / zellHoehe) * Math.floor(hoehe / zellHoehe);
+  // Zwei Rasterzeilen, weil der Text mit der Oberkante auf seiner Achse sitzt;
+  // so viele Spalten, wie seine Breite braucht, aufgerundet.
+  const proTitel = 2 * Math.ceil(titelBreite / zellHoehe);
+  return proTitel > 0 ? Math.floor(zellen / proTitel) : 0;
+}
+
 /** Der i-te Platz im Gang, relativ zum Anker: Spalten zuerst, dann Zeilen. */
 export function gangPlatz(
   i: number,
