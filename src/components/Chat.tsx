@@ -696,7 +696,7 @@ export function Chat({ activeMemories, onSaveToBrain, onSaveToBrainWithMeta, isF
   return (
     <div className="flex flex-col h-full w-full relative">
       {/* ---------- Header ---------- */}
-      <div className="px-6 py-4 flex items-center justify-between z-10 border-gradient-b shrink-0" style={{ borderBottom: "1px solid var(--border-subtle)" }}>
+      <div className="px-6 py-4 flex flex-wrap items-center justify-between gap-y-2 z-10 border-gradient-b shrink-0" style={{ borderBottom: "1px solid var(--border-subtle)" }}>
         <div className="flex items-center gap-3">
           {isFocusMode && (
             <button onClick={onToggleFocus} className="btn-ghost p-1.5 -ml-2 rounded-lg" aria-label="Leave focus mode">

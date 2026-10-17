@@ -40,6 +40,20 @@ describe("Zielgroessen-Latte in src/index.css", () => {
     expect(stellen.length, `${stellen.length} Stellen setzen den Boden; es soll eine einzige Regel sein`).toBe(1);
   });
 
+  it("gilt in beiden Richtungen — ein 36 px breiter Icon-Knopf ist kein Ziel", async () => {
+    // Gemessen 17.10. 16:4x im Fenster gegen die erste Fassung der Regel: Hoehen
+    // gehalten, Breiten nicht. „Clear chat" stand 30x36, „Focus mode" 36x44,
+    // „Scan" 39x44, „Send" 40x44 — die Kante ist die kleinere Seite, und die
+    // Latte sagt 44 ab Telefonbreite, nicht 44 in einer Richtung.
+    const hoehen = [...css.matchAll(/min-height:\s*var\(--ziel-boden\)/g)];
+    const breiten = [...css.matchAll(/min-width:\s*var\(--ziel-boden\)/g)];
+    expect(breiten.length, `${breiten.length} Stellen setzen die Breite; es soll dieselbe eine Regel sein`).toBe(hoehen.length);
+    for (let i = 0; i < hoehen.length; i++) {
+      expect(selektorVon(breiten[i].index), "Breite und Hohe werden nicht an derselben Liste gesetzt")
+        .toBe(selektorVon(hoehen[i].index));
+    }
+  });
+
   it("traegt jede anfassbare Steuerung und keine blende Beschriftung", () => {
     const [stelle] = [...css.matchAll(/min-height:\s*var\(--ziel-boden\)/g)];
     expect(stelle, "die Boden-Regel fehlt — damit ist auch dieser Fall blind").toBeTruthy();

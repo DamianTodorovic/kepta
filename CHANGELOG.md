@@ -14,6 +14,17 @@
   out of `src/index.css` (jsdom knows no layout measures) and was red before the rule
   existed (4/4, 16:01:37); it bites on three mutations — a narrowed selector list, a phone
   floor under the desk floor, the floor set in more than one rule.
+- **The floor holds in both directions.** The first window run of that rule showed why
+  height alone is not a target: buttons stood 36 and 44 px *tall* but 30–42 px *wide*
+  („Clear chat 30×36", „Focus mode 36×44", „Scan 39×44", „Send 40×44"). The edge is the
+  shorter side, so the same rule now sets `min-width` too — written as a failing case
+  first („0 Stellen setzen die Breite"). Measured again over four widths: 390 px went from
+  70 controls under 44 px to **0**, 1440 px from 19 under 36 px to **0**.
+- **The chat header stops cutting its own button off.** At 820 px „Clear chat" sat at
+  793,41 inside a container ending at 809 — 14 px clipped, already in 3.2.17, and 20 px
+  once the button grew to 36 px wide. The header now wraps its action group
+  (`flex-wrap gap-y-2`); measured again: 36×36 at 624,93 with **0 px clipped by any
+  ancestor**.
 - **The status panel no longer denies while it is still asking.** `GET /api/health` needs
   2,5 s standing alone (three runs: 2,55 / 2,50 / 2,61) and needed 20,1 s in an open
   window under its own load. Until now an answer that had not arrived counted as an
@@ -36,9 +47,13 @@
 
 ### Known
 
-- The target sizes are proven by the rule and by the measurement of the old object; the
-  same sweep against this build, four widths, with images, is the acceptance and is
-  reported in `audit-2026-10-09/ZIELGROESSE-17-10.md`.
+- The four-width sweep above ran against **this frontend bundle served locally**
+  (`vite build --outDir`, the door's API proxied), not against the packaged app — the
+  package was not built, because the machine held 8,4 Gi free against the 9,85 Gi the
+  build needs. The numbers are the surface's, the packaging is still to be proven.
+- The title gate has its case and its mutation, but no window proof yet: the graph view
+  did not mount in that run (60 s waited, no canvas, while `/api/health` took 37,7 s and
+  the machine reported a one-minute load of 72,60 on ten cores).
 - `/api/health` answering in 2,5 s is its own finding: the panel is honest about waiting,
   but the wait is the reason the lie was readable for so long. Counting chunks and
   memories over 21 066 notes is the named cost; no query plan was changed here.

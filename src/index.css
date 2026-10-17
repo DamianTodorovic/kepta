@@ -755,6 +755,7 @@ button, a[href], summary, select, [role="button"], [role="tab"],
 input:not([type="hidden"]):not([type="checkbox"]):not([type="radio"]):not(.sr-only),
 label:has(.switch), label:has(input[type="checkbox"]), label:has(input[type="radio"]) {
   min-height: var(--ziel-boden);
+  min-width: var(--ziel-boden);
 }
 
 @media (max-width: 440px) {
