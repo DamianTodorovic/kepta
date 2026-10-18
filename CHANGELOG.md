@@ -1,3 +1,62 @@
+## [3.2.19]
+
+### Fixed
+
+- **A row now decides how much of its own title it can carry.** The density stage
+  „Few" cut every title at 26 characters regardless of zoom, while a second gate
+  threw any row title wider than its row (`GANG_ABSTAND × zoom`, in image pixels).
+  Measured on the real inventory in a real Chromium (1 000 of his 21 066 titles,
+  `600 11px ui-sans-serif, system-ui`): a 26-character title is **145,27 px** at the
+  median, 175,94 px at its widest, one character of the surface's own probe is
+  **6,805 px**, the ellipsis alone is 10,01 px — and a row at 100 % zoom is 26 px
+  wide. So the width gate threw everything, and the height gate above it
+  (`26·k ≥ 24,2`, i.e. 93,08 %) never opened in a view the fit can reach (the cap is
+  400 %). **There was no built-in look in which both gates were open.** The limit is
+  now derived — `gangKuerzungZeichen()` in `src/lib/graphLayout.ts`, fed by two
+  widths the surface measures itself in the type it is about to paint — and the
+  label cache is keyed by that limit, so a zoom can no longer be served a title an
+  earlier zoom built. Case: `tests/components/KnowledgeGraph.titelbreite.test.tsx`
+  (four derived cases on invented sizes, two window cases). Before the fix the
+  surface reported „67 a title wider than its row"; after it, that reason is gone and
+  the widest painted row title stays inside its row at 100 % and at 300 %. Held
+  against mutation: ignoring the zoom turns both window cases red again.
+- **The number of names comes out of the window, not out of a constant.**
+  `MAX_LABELS = 140` was a set number; the surface decides names on a coverage
+  raster in screen coordinates (cell = font height + 3 = 14 px). Measured on his
+  canvas at 1440×900 — **1130×740** CSS px, 12 px shorter than the 3.2.10 geometry
+  this figure came from — that is 80 × 52 = 4 160 cells, and a title of 145,27 px
+  occupies 22 of them: **189 names fit his picture**, not 140. Once the row stops
+  throwing titles, 140 becomes the real edge, which is exactly where the market is
+  ahead (SiYuan counts `max(32, floor(w·h/2400))` from its window). `budget` is gone
+  from the density stages — „All" is now the only setting without a budget, marked
+  `grenzenlos` — and the raster cell height and the budget are the same number, so
+  the budget cannot compute against a grid the surface does not use. Cases:
+  `tests/components/KnowledgeGraph.etat-leinwand.test.tsx`, including a guard that
+  `MAX_LABELS` no longer appears in the surface and a run over two canvases where
+  half the window must yield a smaller number.
+- **Four older cases stopped leaning on a coincidental zoom.** They had asserted
+  what happens at a low zoom while only *happening to* sit at a low zoom because the
+  fit dropped them there. They now drive the camera with the same control a person
+  uses (`rausZoomen`, the row's own Zoom-out button) and say so in the case. A7-08's
+  frame check measures the node's **centre** rather than a sprite's top edge, and
+  states the rule that replaced plain containment: what leaves the frame has to be
+  counted by the surface, not merely absent.
+
+### Not in this release, said plainly
+
+- **The force field still has no readability floor.** The tree refuses to zoom
+  itself below legibility (`fitBaumAnsicht` / `zeilenKMin`); the field takes
+  `fitView` down to 2 %. A floor was built and measured this session — it holds the
+  field at 93,08 %, and its own case went from „the field starts at 16 %, a row
+  measures 4,16 px" to green — and it was taken out again before the commit. Reason,
+  measured: at the floored zoom A7-08's picture overflows its 140-px frame **and**
+  the surface does not name the notes standing outside, so the disclosure the floor
+  depends on is not yet true. The floor ships with that fix, not without it. Commit
+  `6b621a6` named „Boden im Feld"; `einpassMitBoden` stands 0 times in the tree —
+  this entry is the correction, not that line.
+- First-view proof pictures for both fixes at 1440/820/390 px are taken from the
+  installed object, not from a build folder.
+
 ## [3.2.18]
 
 ### Fixed

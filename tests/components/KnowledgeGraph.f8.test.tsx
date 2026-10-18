@@ -88,6 +88,27 @@ async function bisZumErstenTitel(container: HTMLElement, schritte = 16) {
 }
 
 /**
+ * Hinauszoomen über den Boden des Feldes, damit ein Fall in dem Regime misst,
+ * das er prüft.
+ *
+ * Seit #28 startet das Kraftfeld nicht mehr bei 4 %, sondern bei 93 % — der
+ * Lesbarkeitsboden hält die Kamera dort, wo eine Titelzeile Platz hat. Was
+ * vorher der eingepasste Blick von selbst hergab (ein Feld, dessen Punkte
+ * breiter sind als ihre Zelle, eine Bildflächen-Kappe, die greift, der
+ * Sammel-Pfad statt der Sprites), ist jetzt eine Stellung, die man anfahren
+ * muss — mit demselben Steuer, das ein Mensch benutzt: der Knopf in der Zeile.
+ */
+async function rausZoomen(container: HTMLElement, schritte: number) {
+  const kn = [...container.querySelectorAll("button")].find((b) => (b.getAttribute("title") || "") === "Zoom out");
+  expect(kn, "der Zoom-out-Knopf fehlt — die Fläche ist nicht mehr zu bedienen").toBeTruthy();
+  for (let i = 0; i < schritte; i++) {
+    await act(async () => { kn!.click(); await new Promise((r) => setTimeout(r, 90)); });
+  }
+  await act(async () => { await new Promise((r) => setTimeout(r, 140)); });
+  return zoom();
+}
+
+/**
  * Zuege je Deckkraft, so wie der Browser-Rekorder es zaehlt: die moveTo-Anzahl
  * zwischen zwei stroke() ist die Zahl der Linien in diesem Batch.
  */
@@ -206,6 +227,11 @@ describe("A7-02: die Titel schrumpfen unter die Lesbarkeit", () => {
     const notizen = Array.from({ length: 60 }, () => note());
     const { container } = await feld(notizen, [300, 220]);
     await act(async () => { await new Promise((r) => setTimeout(r, 300)); });
+    // Der Lesbarkeitsboden (#28) hält das Feld jetzt bei 93 % — unter der Pforte
+    // liegt diese Blende nicht mehr. Sechs Schritte auf demselben Knopf, den ein
+    // Mensch nimmt, fahren sie an: 0,93 · 0,8^6 = 0,23, ein Knoten von vier
+    // Welteinheiten misst dann 0,93 Bildpixel gegen die Schwelle von 1,5.
+    await rausZoomen(container, 6);
     const k = zoom();
     // Was bei diesem Zoom gilt, sagt die Bilanz selbst: jeder Knoten liegt unter
     // der Pforte, also malt die Flaeche keinen Titel — und verschweigt nicht,
@@ -297,10 +323,13 @@ describe("Titel-Etat: die Bilanz nennt, wie viele ohne Namen blieben — und war
     const notizen = Array.from({ length: 400 }, () => note());
     const { container } = await feld(notizen, [900, 640]);
     await act(async () => { await new Promise((r) => setTimeout(r, 300)); });
-    // Eingepasst fallen alle 400 durch die Pforte — die Bilanz nennt das, und der
-    // Etat ist auch dann eine Rechnung. Pruefbar wird sie an einem Bild mit
-    // gemalten Titeln, also hereinzoomen, bis eine Zahl auf der Leinwand steht.
-    expect(notizschriften().length, "bei eingepasstem Zoom malt die Pforte Titel — Erwartung geaendert?").toBe(0);
+    // Eingepasst fallen bei 400 Knoten nicht mehr alle durch die Pforte: der
+    // Lesbarkeitsboden (#28) startet das Feld seit 17.10. bei 93 %, und dort ist
+    // ein Knoten von vier Welteinheiten 3,7 Bildpixel gross. Was dieser Fall
+    // prüft, ist die Rechnung des Etats — benannt + namenlos = Umfang, und jeder
+    // Grund mit Zahl. Die Kante der Pforte hat ihre eigne Wache in
+    // `KnowledgeGraph.feldboden.test.tsx`, die Blende darunter ihr eigne in
+    // `KnowledgeGraph.titelbreite.test.tsx`.
     await bisZumErstenTitel(container);
     const gemalt = notizschriften().length;
     const e = etat(container);
@@ -359,6 +388,11 @@ describe("A7-04: dem Kraftfeld fehlte jede Dichte-Kappe", () => {
     begriffsFeld(notizen, 3);
     const { container } = await feld(notizen, [180, 140]);
     await act(async () => { await new Promise((r) => setTimeout(r, 250)); });
+    // Zwölf Schritte hinaus: 0,93 · 0,8^12 = 0,055 — das ganze Begriffsnetz liegt
+    // wieder im Bild, und die Kappe kann greifen, wie sie es in dem 180×140-Fenster
+    // immer gemessen hat. Der Boden (#28) nimmt dem Feld die Blende nicht weg, er
+    // stellt sie nur nicht mehr von selbst ein.
+    await rausZoomen(container, 12);
 
     const zuege = zuegeJeDeckkraft();
     const erwaehnungen = zuege.filter((z) => Math.abs(z.alpha - 0.34) < 0.001).reduce((n, z) => n + z.teile, 0);
@@ -394,6 +428,7 @@ describe("A7-04: dem Kraftfeld fehlte jede Dichte-Kappe", () => {
     const notizen = Array.from({ length: 60 }, () => note());
     begriffsFeld(notizen, 3);
     const { container } = await feld(notizen, [180, 140]);
+    await rausZoomen(container, 12);
     const c = container.querySelector('[data-testid="graph-canvas"]') as HTMLCanvasElement;
     // In einem 180 × 140 px Bild ist kein Notiztitel mehr unterzubringen — aber
     // das Geruest steht zuerst im Raster: der Begriff ist der Haltbare Punkt.
@@ -431,7 +466,7 @@ describe("A7-08 (App-Haelfte): die Projektion wurde seitlich 8:1 gestaucht", () 
     // die untere Haelfte des Bildes faellt aus dem Kasten, ohne dass jemand
     // scrollen koennte.
     const notizen = Array.from({ length: 12 }, () => note());
-    await feld(notizen, [180, 140]);
+    const { container } = await feld(notizen, [180, 140]);
     await act(async () => { await new Promise((r) => setTimeout(r, 250)); });
     let tx = 0, ty = 0, k = 0;
     for (const a of leinwand.letzterRahmen()) {
@@ -439,14 +474,33 @@ describe("A7-08 (App-Haelfte): die Projektion wurde seitlich 8:1 gestaucht", () 
       if (a.op === "scale" && k === 0) k = Number(a.args[0]);
     }
     expect(k, "der letzte Rahmen setzt keine Transformation").toBeGreaterThan(0);
-    // Alle gemalten Winzlinge (fillRect in Weltpunkten) muessen auf dem Schirm
-    // liegen: yWelt * k + ty < 140.
+    // Alle gemalten Winzlinge (in Weltpunkten) muessen mit ihrer Mitte auf dem
+    // Schirm liegen: (y + hoehe/2) * k + ty < 140. Gemalt wird in zwei Kleidern —
+    // der Sammel-Pfad setzt Rechtecke, ab 0,6251 Zoom die Sprites — und die
+    // Rahmenrechnung gilt beiden. Gelesen wird die Mitte, nicht die Oberkante:
+    // die Flaeche zaehlt eine Note als „im Bild" nach ihrer Lage, und ein Sprite
+    // ragt mit seiner Haelfte ueber diese Lage hinaus.
     const welten = leinwand.letzterRahmen()
-      .filter((a) => a.op === "fillRect")
-      .map((a) => Number(a.args[1]) * k + ty);
+      .filter((a) => a.op === "fillRect" || a.op === "drawImage")
+      .map((a) => (Number(a.args[1]) + Number(a.args[3]) / 2) * k + ty);
     expect(welten.length, "es wird nichts gemalt").toBeGreaterThan(0);
     const tiefste = Math.max(...welten);
-    expect(tiefste, `unterste gemalte Zeile bei ${tiefste.toFixed(1)} px — der Rahmen war 320, die Leinwand 140`).toBeLessThan(140 + 4);
+    // A7-08 gilt unveraendert: der Fit rechnet in der Leinwand, nicht in einem
+    // 320-px-Puffer. Was sich geaendert hat, ist die letzte Instanz — seit #28
+    // darf das Feld ueber den Rahmen hinausgehen, weil es sich sonst unter die
+    // Lesbarkeit hinauszoomt. Dann, aber auch nur dann, muss die Flaeche sagen,
+    // wie viele Noten draussen stehen. Beides zusammen ist die Latte.
+    const draussen = [...container.querySelectorAll("div,span,p")]
+      .map((e) => (e.textContent ?? "").trim())
+      .find((t) => /unfolded notes are in this picture/.test(t));
+    if (tiefste < 140 + 4) {
+      expect(draussen, `alles liegt im Rahmen, und die Flaeche meldet doch Noten draussen: "${draussen}"`).toBeUndefined();
+    } else {
+      expect(
+        draussen,
+        `unterste gemalte Zeile bei ${tiefste.toFixed(1)} px in einem 140-px-Rahmen, und keine Zeile sagt, was draussen liegt`,
+      ).toMatch(/of [\d,]+ unfolded notes are in this picture/);
+    }
     void tx;
   });
 });
