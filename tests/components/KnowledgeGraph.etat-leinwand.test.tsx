@@ -73,7 +73,13 @@ describe("Die Flaeche meldet ihren Etat aus dem Fenster (#29)", () => {
   afterEach(() => { vi.unstubAllGlobals(); vi.restoreAllMocks(); document.documentElement.removeAttribute("style"); });
 
   const etat = (c: HTMLElement) => (c.querySelector('[data-testid="graph-benannt"]')?.textContent ?? "").trim();
-  const budget = (c: HTMLElement) => Number((etat(c).match(/over the ([\d.,]+) names/) ?? ["0", "0"])[1].replace(/,/g, ""));
+  /** Der Etat, den die Flaeche gemessen hat: zuerst ihre eigne Zahl am Bild, dann
+   *  die Klage am Satz — die erscheint nur, wenn etwas am Budget fiel. */
+  const budget = (c: HTMLElement) => {
+    const amBild = c.querySelector('[data-testid="graph-benannt"]')?.getAttribute("data-etat");
+    if (amBild) return Number(amBild.replace(/,/g, ""));
+    return Number((etat(c).match(/over the ([\d.,]+) names/) ?? ["0", "0"])[1].replace(/,/g, ""));
+  };
   const zoomAnzeige = (c: HTMLElement) =>
     Number(((c.querySelector('[title="Current zoom"]')?.textContent ?? "").match(/([\d.,]+)\s*%/) ?? ["0", "0"])[1].replace(",", "."));
 

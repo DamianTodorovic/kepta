@@ -1,3 +1,71 @@
+## [3.2.21]
+
+### Fixed
+
+- **The graph's first look now has to stay readable.** The field's camera fitted
+  the whole store into the frame, and on a large store that fit is the picture:
+  measured in the installed 3.2.20 on an invented 1 500-note store (own encrypted
+  home, own key, no account), the surface opened at **26 %** zoom at 1440 px and
+  named **10 of 1 134** notes in the picture; at 820 px (**18 %**) and 390 px
+  (**6 %**) it named **0**, and the only words on screen were concept labels,
+  which are not notes. On the real store the same measurement read **0 of 729**
+  at 4 % zoom. Both gates had already said why — „384 in rows too tight for a
+  title", „750 too small for a name at this zoom" — the camera just ignored them.
+  The fit now has a floor, and the floor is the surface's own row threshold
+  (`TITEL_REIHE_PX = ETIKETT_PX × 2,2` = 24,2 px, one constant, both consumers),
+  so the camera may show less but never less readable — the twin of what the tree
+  view has done since `fitBaumAnsicht`. Zooming out by hand stays free: the floor
+  sits in the fit, not in the zoom control. Cases:
+  `tests/components/KnowledgeGraph.erster-blick.test.tsx` (three cases — the row
+  distance read out of the painted frame rather than the rounded percentage
+  display, at least one note named at the surface's own start view, and the tree
+  keeping its own readability line). Two of the three were **red before** the
+  change on untouched `48a22b4`.
+- **The frame line counts what is inside, not what is painted near the edge.** A
+  note now counts as in view by its painted radius, where before the count
+  accepted a centre point while the sprite could hang over the edge — the state
+  A7-08 has reported since it was found. The disclosure the floor depends on is
+  this line: what lies outside the frame is named there instead of quietly
+  disappearing from the user's head.
+- **A small window keeps its budget number when it has nothing to complain
+  about.** The budget only ever left the picture as a grievance („over the N names
+  this picture allows"), and a grievance needs something to have fallen over the
+  edge — with the floor in place, a half-size window names everything it holds,
+  the sentence goes silent, and the number went with it. The budget the paint pass
+  had already computed now sits on the line as `data-etat`; no visible word
+  changed, and the complaint stays as the second channel. Case:
+  `tests/components/KnowledgeGraph.etat-leinwand.test.tsx` — red between the two
+  changes (measured: „bei einer halben Leinwand meldet die Flaeche keinen Etat:
+  9 of 17 notes in this picture carry a title"), green with this one.
+
+### What this costs, said plainly
+
+The first picture holds **fewer** notes than the old fit crammed in, and says so:
+at 1440 px the frame line states how many of the store's unfolded notes stand
+inside it, and the balance line states its own parts (named, nameless, and each
+reason with its number). Showability in the window is the measure; coverage is
+diagnosis.
+
+### Testing
+
+Three new cases, red before and green after, and 2 721 cases in 185 files through
+the full run of this state (`npm test`, `test-results/vitest.json`), with
+`npm run lint` at 0 errors. Proof pictures of the first look at 1440/820/390 px
+are taken from the installed object in an isolated home, not from a build folder.
+
+### Not in this release, said plainly
+
+- **The budget prices 26 characters while the rows paint 3.** `kapazitaet` computes
+  with the stage's cut, the row path cuts to `min(stage, gangGrenze)`, and at the
+  floored zoom that limit is 3 characters — so the half-size window's 875 raster
+  cells could hold ~218 names while the budget caps at 39. Measured by hand, not
+  shipped: it changes the visible number of names, so it needs its own stroke with
+  its own pictures.
+- **The shelf is still not drawn**, and the concept window is still capped at 500
+  of 2 756 terms. Both named, both open.
+- **x64 packages, the `release/mac` folder and `SHA256SUMS`** remain release care
+  (#22) — installable here is not the same as deliverable there.
+
 ## [3.2.20]
 
 ### Fixed

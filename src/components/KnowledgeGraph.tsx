@@ -672,6 +672,15 @@ function leseNamenStufe(roh: string | null): EtikettModus {
  * Messgrundlage: vorher der ganze Text des Bildes, tiefste Stufe 9 px.
  */
 const ETIKETT_PX = 11;
+/**
+ * Wie hoch eine Gang-Reihe auf dem SCHIRM sein muss, damit ein Titel in ihr
+ * wohnen kann: zwei Titelzeilen und ihr Atemzug. Die Zahl stand als Faktor im
+ * Mal-Pass (`ETIKETT_PX * 2,2`) und ist die Schwelle, an der die Fläche ihre
+ * Reihen-Punkte abweist — und genau dieselbe Schwelle sagt der Kamera, wie weit
+ * sie herauszoomen darf. Einmal gesetzt, damit die zwei Stellen nicht
+ * auseinanderlaufen können.
+ */
+export const TITEL_REIHE_PX = ETIKETT_PX * 2.2;
 
 /**
  * Wie oft die Flaeche den Nachzug fragt, waehrend er laeuft. 600 ms sind bei
@@ -2082,10 +2091,10 @@ export function KnowledgeGraph({ memories: memoriesAusFenster, onSelectMemory, o
           maxX: Math.max(...punkte.map((p) => p.x)) + 70,
           maxY: Math.max(...punkte.map((p) => p.y)) + 70,
         };
-        transformRef.current = fitTransform(grenzen, einpassFlaeche());
+        transformRef.current = feldTransform(grenzen);
         setZoomAnzeige(transformRef.current.k);
       } else {
-        transformRef.current = fitTransform(layoutBounds(sim.nodes, randFuerAnsicht(sim.nodes)), einpassFlaeche());
+        transformRef.current = feldTransform(layoutBounds(sim.nodes, randFuerAnsicht(sim.nodes)));
         setZoomAnzeige(transformRef.current.k);
       }
       nutzerBewegt.current = false;
@@ -2276,11 +2285,35 @@ export function KnowledgeGraph({ memories: memoriesAusFenster, onSelectMemory, o
     []
   );
 
+  /**
+   * Der Ausschnitt des Feldes, an EINER Stelle gerechnet.
+   *
+   * #28 — der Zwilling dessen, was der Baum seit F8-N1 tut (`fitBaumAnsicht`):
+   * die Kamera darf weniger zeigen, aber nie weniger lesbar. Der Boden ist keine
+   * erfundene Zahl, sondern `TITEL_REIHE_PX` — dieselbe Schwelle, die die Flaeche
+   * an ihren eignen Gang-Reihen anlegt. Bei 21 066 Punkten presste das Einpassen
+   * die Welt auf 4 %: unter dieser Schwelle, und darum trug dort keine der 729
+   * Notizen im Bild einen Namen. Was ausserhalb liegt, sagt die Zeile am Rand,
+   * und Herauszoomen von Hand bleibt frei.
+   */
+  const feldTransform = useCallback(
+    (grenzen: ReturnType<typeof layoutBounds>) => {
+      const ein = einpassFlaeche();
+      const fit = fitTransform(grenzen, ein);
+      const boden = zeilenKMin(TITEL_REIHE_PX, GANG_ABSTAND);
+      const k = Math.max(fit.k, boden);
+      const mitteX = (grenzen.minX + grenzen.maxX) / 2;
+      const mitteY = (grenzen.minY + grenzen.maxY) / 2;
+      return { k, x: ein.w / 2 - mitteX * k, y: ein.h / 2 - mitteY * k };
+    },
+    [einpassFlaeche]
+  );
+
   // --- Der Ausschnitt, der alles zeigt ---
   const fitView = useCallback(() => {
     const sim = simRef.current;
     if (!sim || sim.nodes.length === 0) return;
-    transformRef.current = fitTransform(layoutBounds(sim.nodes, randFuerAnsicht(sim.nodes)), einpassFlaeche());
+    transformRef.current = feldTransform(layoutBounds(sim.nodes, randFuerAnsicht(sim.nodes)));
     setZoomAnzeige(transformRef.current.k);
     zeichneNoetig.current = true;
   }, [dimensions]);
@@ -2364,7 +2397,7 @@ export function KnowledgeGraph({ memories: memoriesAusFenster, onSelectMemory, o
     if (!sim || sim.nodes.length === 0) return;
     if (ansichtRef.current === "dendrogram") { fitBaumAnsicht(); return; }
     if (ansichtRef.current === "semantic") { fitKarte(zielRef.current); return; }
-    transformRef.current = fitTransform(layoutBounds(sim.nodes, randFuerAnsicht(sim.nodes)), einpassFlaeche());
+    transformRef.current = feldTransform(layoutBounds(sim.nodes, randFuerAnsicht(sim.nodes)));
     setZoomAnzeige(transformRef.current.k);
     zeichneNoetig.current = true;
   }, [dimensions, fitBaumAnsicht, fitKarte]);
@@ -2441,6 +2474,18 @@ export function KnowledgeGraph({ memories: memoriesAusFenster, onSelectMemory, o
       y1: (dimensions.h - t.y) / t.k + 80,
     };
     const imBild = (n: LayoutNode) => !n.versteckt && n.x >= sicht.x0 && n.x <= sicht.x1 && n.y >= sicht.y0 && n.y <= sicht.y1;
+    /**
+     * Der Rahmen OHNE den Mal-Margin. `sicht` gibt 80 Welteinheiten zu, damit
+     * ein Knoten, der halb über der Kante liegt, noch gemalt wird — richtig zum
+     * Malen, falsch zum Sagen. Die Zeile „N of M unfolded notes are in this
+     * picture" verspricht einen Rahmen, den man nachzählen kann; wer mit dem
+     * Margin zählt, behauptet „alles drin", während Pixels über die Kante laufen
+     * (A7-08, gefangen von `:502` in KnowledgeGraph.f8.test.tsx). Gezählt wird
+     * die Mitte ZUZÜGLICH des gemalten Halbmessers.
+     */
+    const kern = { x0: -t.x / t.k, y0: -t.y / t.k, x1: (dimensions.w - t.x) / t.k, y1: (dimensions.h - t.y) / t.k };
+    const imRahmen = (n: LayoutNode, halbmesser: number) =>
+      n.x - halbmesser >= kern.x0 && n.x + halbmesser <= kern.x1 && n.y - halbmesser >= kern.y0 && n.y + halbmesser <= kern.y1;
 
     // Welche Knoten gab es zum gewählten Zeitpunkt? (Regel in lib/graphTime)
     // Der effektive Stand: im Kraftfeld live beim Ziehen, sonst committet.
@@ -2698,6 +2743,8 @@ export function KnowledgeGraph({ memories: memoriesAusFenster, onSelectMemory, o
      */
     const winzig = new Map<string, number[]>();
     let imRahmenNoten = 0;
+    /** Wie viele davon mit ihrer gemalten Ausdehnung im Rahmen stehen — die Zahl der Rahmen-Zeile. */
+    let imStrengeNoten = 0;
     // Die drei Zeichen, die einen Stand in der Zeit tragen: der gestrichelte
     // Ring, die leisere Tinte, der Akzentring. A8-05 zahlte sie vor — sie
     // kommen in der Legende nicht vor, und genau sie entscheiden, ob ein
@@ -2733,6 +2780,10 @@ export function KnowledgeGraph({ memories: memoriesAusFenster, onSelectMemory, o
       // aus der Punktwolke wieder eine lesbare Dichte.
       const rrBasis = istHov ? r + 3 / t.k : r;
       const rr = Math.max(rrBasis, MIN_KNOTEN_PX / t.k);
+      // Die Rahmen-Auskunft zählt streng: nur was mit seiner gemalten Ausdehnung
+      // im Rahmen steht, gilt als „in this picture". Der Umfang der Titel-Bilanz
+      // bleibt die Maleihe — beide Zeilen müssen aus derselben Menge rechnen.
+      if (imRahmen(n, rr)) imStrengeNoten += 1;
       const herkunftArt = aktiverKanalRef.current === "herkunft" ? herkunftRef.current.get(n.id) : undefined;
       const typ = herkunftArt ?? (m.type && sp[m.type] ? m.type : "neutral");
       const farbe = notenFarbenRef.current[typ];
@@ -2951,7 +3002,7 @@ export function KnowledgeGraph({ memories: memoriesAusFenster, onSelectMemory, o
     // Punkten der naechsten und ueber der Zahl am Band (gemessen 15.10. im
     // 820-er Fenster, leitung-bilder/ausschnitt-legende-820.png). Was an Namen
     // fehlt, sagt die Zahl am Band selbst, und beim Hereinzoomen kommen die Titel.
-    const gangZuEng = GANG_ABSTAND * t.k < ETIKETT_PX * 2.2;
+    const gangZuEng = GANG_ABSTAND * t.k < TITEL_REIHE_PX;
     const kandidaten =
       gangZuEng && (sim.gangIds?.size ?? 0) > 0
         ? beschriftbar.filter(({ n }) => !sim.gangIds?.has(n.id) || n.id === gehaltenId)
@@ -3320,6 +3371,11 @@ export function KnowledgeGraph({ memories: memoriesAusFenster, onSelectMemory, o
                 [zuBreit, "a title wider than its row"],
                 [verdraengt, "crowded out by a name already there"],
               ];
+        // Was das Fenster fasst, ist eine Messung des Bildes — keine Klage: der
+        // Grund am Satz erscheint nur, wenn etwas am Budget fiel, und ein kleines
+        // Fenster benennt oft alles, was es faesst.
+        const etatZahl = modus === "keine" || stufe.grenzenlos ? "" : mengenzahl(budget);
+        if (zeile.dataset.etat !== etatZahl) zeile.dataset.etat = etatZahl;
         const meldung = titelEtat(benannt, umfang, gruende);
         if (zeile.textContent !== meldung) zeile.textContent = meldung;
         const anzeige = meldung === "" ? "none" : "";
@@ -3353,11 +3409,11 @@ export function KnowledgeGraph({ memories: memoriesAusFenster, onSelectMemory, o
       const rahmenZeile = imRahmenRef.current;
       if (rahmenZeile) {
         const gesamt = imBildRef.current;
-        const meldung = imRahmenNoten >= gesamt
+        const meldung = imStrengeNoten >= gesamt
           ? ""
-          : imRahmenNoten === 0
+          : imStrengeNoten === 0
             ? "no unfolded notes are in this picture — the tree is taller than its frame, pan to read it"
-            : `${mengenzahl(imRahmenNoten)} of ${mengenzahl(gesamt)} unfolded notes are in this picture`;
+            : `${mengenzahl(imStrengeNoten)} of ${mengenzahl(gesamt)} unfolded notes are in this picture`;
         if (rahmenZeile.textContent !== meldung) rahmenZeile.textContent = meldung;
         const anzeige = meldung === "" ? "none" : "";
         if (rahmenZeile.style.display !== anzeige) rahmenZeile.style.display = anzeige;
@@ -3469,7 +3525,7 @@ export function KnowledgeGraph({ memories: memoriesAusFenster, onSelectMemory, o
               // willkuerlichen Ausschnitts mitten im Knaeuel.
               if (autoFitOffen.current && isSettled(sim) && sim.nodes.length > 0) {
                 autoFitOffen.current = false;
-                transformRef.current = fitTransform(layoutBounds(sim.nodes, randFuerAnsicht(sim.nodes)), einpassFlaeche());
+                transformRef.current = feldTransform(layoutBounds(sim.nodes, randFuerAnsicht(sim.nodes)));
                 setZoomAnzeige(transformRef.current.k);
               }
             } else if (refitFaellig(autoFitOffen.current, bewegt, sim.nodes.length)) {
@@ -3478,7 +3534,7 @@ export function KnowledgeGraph({ memories: memoriesAusFenster, onSelectMemory, o
               // (Filterwechsel) durchlief den Bewegungszweig nie und blieb auf dem
               // Ausschnitt sitzen, der fuer seine Ausgangspositionen gerechnet war.
               autoFitOffen.current = false;
-              transformRef.current = fitTransform(layoutBounds(sim.nodes, randFuerAnsicht(sim.nodes)), einpassFlaeche());
+              transformRef.current = feldTransform(layoutBounds(sim.nodes, randFuerAnsicht(sim.nodes)));
               setZoomAnzeige(transformRef.current.k);
               zeichneNoetig.current = true;
             }
