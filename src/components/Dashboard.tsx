@@ -7,6 +7,7 @@ import { MemoryPreview } from './MemoryPreview';
 import { Chat } from './Chat';
 import { hydrateAISettings } from '../lib/ai';
 import { hydratePrefs, spiegelePrefs } from '../lib/prefs';
+import { QUITTUNG_MS } from '../lib/quittung';
 import { Settings } from './Settings';
 import { KnowledgeGraph } from './KnowledgeGraph';
 import { TodayView } from './TodayView';
@@ -242,6 +243,10 @@ export function Dashboard() {
     };
   }, []);
   const [copied, setCopied] = useState(false);
+  // `copied` ist ein Umschalter, keine Marke: zwei Kopien in Folge teilen sich
+  // dasselbe true. Jeder neue Klick wirft deshalb den alten Timer weg — sonst
+  // löscht er die frische Bestätigung, bevor die sechs Sekunden um sind.
+  const kopierTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   /**
    * Die Leiste ist 256 px breit. In einem Fenster unter der `md`-Grenze sind das
    * zwei Drittel des Bildschirms, und die Fläche daneben — der Graph, die Liste —
@@ -359,9 +364,21 @@ export function Dashboard() {
 
   // Erstes Laden: Skeletons statt leerem Grid
   const [initialLoaded, setInitialLoaded] = useState(false);
+  // Eine abgewiesene Tür ist kein leerer Speicher. Gemessen 18.10. mit zwei
+  // Läufen durch dieselbe Fläche: an einer Tür, die 500 antwortet, stand
+  // exakt derselbe Satz wie bei einem leeren Bestand („No entries yet",
+  // 0 von 0 Einträgen, 217 gegen 216 Knoten im Sieht) — kein Hinweis, kein
+  // Knopf. `void` vor `.finally` warf die Ablehnung still weg (Zeile 363).
+  const [ladFehler, setLadFehler] = useState<string | null>(null);
+  const [ladVersuch, setLadVersuch] = useState(0);
   useEffect(() => {
-    void refreshMemories().finally(() => setInitialLoaded(true));
-  }, []);
+    let abgebrochen = false;
+    refreshMemories()
+      .then(() => { if (!abgebrochen) setLadFehler(null); })
+      .catch((e: unknown) => { if (!abgebrochen) setLadFehler(e instanceof Error ? e.message : String(e)); })
+      .finally(() => { if (!abgebrochen) setInitialLoaded(true); });
+    return () => { abgebrochen = true; };
+  }, [ladVersuch]);
   // Fenster-Fokus: Agenten schreiben evtl. aus anderen Prozessen — auffrischen
   useEffect(() => {
     const onFocus = () => void refreshMemories();
@@ -468,11 +485,15 @@ export function Dashboard() {
     try {
       const r = await fetch('/api/inbox/scan', {method:'POST'});
       const d = await r.json();
-      setImportMsg(`Inbox: ${d.scanned} files scanned, ${d.imported} nodes imported`);
-      setTimeout(()=> setImportMsg(null), 3000);
+      const marke = `Inbox: ${d.scanned} files scanned, ${d.imported} nodes imported`;
+      setImportMsg(marke);
+      setTimeout(()=> setImportMsg((c) => (c === marke ? null : c)), QUITTUNG_MS);
       refreshInbox();
-    } catch { setImportErr('Inbox scan failed'); setTimeout(()=> setImportErr(null), 2500); }
-    finally { setInboxScanBusy(false); }
+    } catch {
+      const marke = 'Inbox scan failed';
+      setImportErr(marke);
+      setTimeout(() => setImportErr((c) => (c === marke ? null : c)), QUITTUNG_MS);
+    } finally { setInboxScanBusy(false); }
   };
 
   // Duplikate: erkannt in src/lib/duplicates (Blocking statt Alle-gegen-alle,
@@ -959,8 +980,9 @@ export function Dashboard() {
     )).join('\n');
     const prompt = `[CONTEXT]\n${contextText}\n[/CONTEXT]\n\nPlease use this context when answering my questions.`;
     navigator.clipboard.writeText(prompt);
+    if (kopierTimer.current) clearTimeout(kopierTimer.current);
     setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
+    kopierTimer.current = setTimeout(() => { setCopied(false); kopierTimer.current = null; }, QUITTUNG_MS);
   };
 
   const handleSaveToBrain = (content: string) => {
@@ -992,8 +1014,9 @@ export function Dashboard() {
   const processFiles = useCallback(async (files: FileList | File[]) => {
     const list = Array.from(files).filter((f) => /\.(pdf|md|txt|json)$/i.test(f.name) || f.type.startsWith("text/") || f.type === "application/json" || f.type === "application/pdf");
     if (list.length === 0) {
-      setImportErr("No supported files (PDF, MD, TXT, JSON).");
-      setTimeout(() => setImportErr(null), 3000);
+      const marke = "No supported files (PDF, MD, TXT, JSON).";
+      setImportErr(marke);
+      setTimeout(() => setImportErr((c) => (c === marke ? null : c)), QUITTUNG_MS);
       return;
     }
     setImporting(true);
@@ -1020,12 +1043,14 @@ export function Dashboard() {
       }
       // D2(c) Z7: eine Zahl spricht wie ein Mensch — „3 file(s)" war eine
       // Klammer, wo ein Wort hingehört.
-      setImportMsg(`Imported ${totalNodes} ${totalNodes === 1 ? "node" : "nodes"} from ${list.length} ${list.length === 1 ? "file" : "files"}.`);
-      setTimeout(() => setImportMsg(null), 3500);
+      const marke = `Imported ${totalNodes} ${totalNodes === 1 ? "node" : "nodes"} from ${list.length} ${list.length === 1 ? "file" : "files"}.`;
+      setImportMsg(marke);
+      setTimeout(() => setImportMsg((c) => (c === marke ? null : c)), QUITTUNG_MS);
     } catch (e: unknown) {
       const msg = e instanceof Error ? e.message : String(e);
-      setImportErr(msg || "Import failed");
-      setTimeout(() => setImportErr(null), 3500);
+      const marke = msg || "Import failed";
+      setImportErr(marke);
+      setTimeout(() => setImportErr((c) => (c === marke ? null : c)), QUITTUNG_MS);
     } finally {
       setImporting(false);
     }
@@ -1055,13 +1080,14 @@ export function Dashboard() {
       const content: string = data.content || "";
       const tags = ["clip", new URL(url).hostname.replace(/^www\./, "")];
       await saveMemory({ title, content: `Source: ${data.url || url}\n\n${content}`, tags });
-      setClipOk(`„${title.slice(0, 48)}“ importiert`);
+      const marke = `„${title.slice(0, 48)}“ importiert`;
+      setClipOk(marke);
       setClipUrl("");
-      setTimeout(() => setClipOk(null), 3000);
+      setTimeout(() => setClipOk((c) => (c === marke ? null : c)), QUITTUNG_MS);
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : String(err);
       setClipErr(msg);
-      setTimeout(() => setClipErr(null), 4000);
+      setTimeout(() => setClipErr((c) => (c === msg ? null : c)), QUITTUNG_MS);
     } finally {
       setClipping(false);
     }
@@ -1875,7 +1901,21 @@ export function Dashboard() {
                       Zweige wie die Zeilen: ein Klick auf ein Wort, das die
                       geladene Seite nicht trifft, darf die Kontrolle nicht
                       mitnehmen, die ihn zuruecknimmt (GF, v6-code-leer.png). */}
-                  {displayedMemories.length === 0 ? (
+                  {ladFehler && displayedMemories.length === 0 ? (
+                    <div className="flex-1 flex flex-col items-center justify-center text-center" role="status" data-testid="lad-fehler">
+                      <div className="w-16 h-16 rounded-2xl flex items-center justify-center mb-4" style={{ background: 'var(--danger-soft)', border: '1px solid var(--border-subtle)' }}>
+                        <AlertCircle className="w-6 h-6" style={{ color: 'var(--danger)' }} />
+                      </div>
+                      <h3 className="text-[15px] font-semibold mb-1.5" style={{ color: 'var(--text-1)' }}>The server did not answer</h3>
+                      <p className="text-[13px] mb-4 max-w-[420px]" style={{ color: 'var(--text-3)' }}>{ladFehler}</p>
+                      <button
+                        className="btn-ghost px-3 py-1.5 text-[13px]"
+                        onClick={() => { setLadFehler(null); setLadVersuch((v) => v + 1); }}
+                      >
+                        Try again
+                      </button>
+                    </div>
+                  ) : displayedMemories.length === 0 ? (
                     <div className="flex-1 flex flex-col items-center justify-center text-center">
                       <div className="w-16 h-16 rounded-2xl flex items-center justify-center mb-4" style={{ background: 'var(--bg-inset)', border: '1px solid var(--border-subtle)', boxShadow: 'inset 0 1px 0 var(--edge-light)' }}>
                         <KeptaMark size={34} />

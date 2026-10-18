@@ -3,6 +3,7 @@ import { Key, ShieldCheck, SettingsIcon, Download, CheckCircle2, AlertTriangle, 
 import { motion } from 'motion/react';
 import { PROVIDERS, providerById, loadAISettings, hydrateAISettings, saveAISettings, kiSchluesselStatus, type AISchluesselStatus, type AISettings } from '../lib/ai';
 import { AUTO_LEARN_TIMEOUT_MS } from '../lib/autolearn';
+import { QUITTUNG_MS } from '../lib/quittung';
 import { refreshMemories } from '../lib/store';
 import { SystemStatus } from './SystemStatus';
 import PraxisSync from './PraxisSync';
@@ -70,6 +71,24 @@ const CLAUDE_PATHS = [
 ];
 
 /**
+ * G-9b: dreizehn Kopier-Knöpfe an sechs Rufstellen, eine Zustandsmarke. Die
+ * Marke ist eine Kennung, kein Wort — angesagt werden muss das Objekt, sonst
+ * hört jemand nur "Copied" und weiß nicht, was in der Zwischenablage liegt.
+ * Eine unbekannte Marke sagt ihre eigene Kennung an, niemals nichts.
+ */
+function kopierZiel(id: string): string {
+  if (id.startsWith('/')) return `the curl command for ${id}`;
+  if (id.startsWith('claude-path-')) return `the Claude config path for ${id.slice('claude-path-'.length)}`;
+  switch (id) {
+    case 'base': return 'the server URL';
+    case 'mcp-npx': return 'mcp.json for Cursor and Zed';
+    case 'mcp-built': return 'the built mcp.json';
+    case 'curl': return 'the three curl test commands';
+    default: return id;
+  }
+}
+
+/**
  * Was die lokale Tür advertiert, steht bei der Tür — nicht in diesem Text.
  * Die Fläche zeigte drei Werkzeuge, während `GET /api/health` auf demselben
  * Schirm acht meldete (`server/router/system.ts:45`, `src/core/mcp.ts:84`).
@@ -104,12 +123,6 @@ function schemaKurz(w: McpWerkzeug): string {
   const teile = Object.keys(eigentum).map((k) => `${k}${pflicht.has(k) ? '' : '?'}`);
   return teile.length ? `{ ${teile.join(', ')} }` : '{}';
 }
-
-/** #26 Regel 1 — EINE Lebensdauer fuer alle persistierenden Quittungen.
- *  Vorher: 2 000 ms Verbindung, 6 000 ms Sicherung, 1 800 ms Auto-learn und
- *  1 800 ms Extraktionsmodell — vier Stellen, drei Zahlen. Eine Bestaetigung, die
- *  verschwindet, bevor der Mensch den Kopf hebt, ist keine. */
-const QUITTUNG_MS = 6_000;
 
 /** #26 Richtung B — die Meldung gehoert an die Zeile, die sich geaendert hat.
  *  Sie traegt ihren Ort selbst ("data-quittung"), damit ein Fall zaehlen kann,
@@ -554,14 +567,16 @@ export function Settings() {
    * unbehandelte Ausnahme.
    */
   const copy = async (text: string, id: string) => {
+    let marke = id;
     try {
       if (!navigator.clipboard?.writeText) throw new Error("no clipboard");
       await navigator.clipboard.writeText(text);
-      setCopied(id);
+      setCopied(marke);
     } catch {
-      setCopied(`error:${id}`);
+      marke = `error:${id}`;
+      setCopied(marke);
     }
-    setTimeout(() => setCopied(null), 2000);
+    setTimeout(() => setCopied((c) => (c === marke ? null : c)), QUITTUNG_MS);
   };
 
   const inputClass = "hud-input w-full rounded-xl px-4 py-3 text-sm";
@@ -709,8 +724,9 @@ export function Settings() {
                 </div>
 
                 <div>
-                  <label className="hud-label block mb-2">Provider</label>
+                  <label className="hud-label block mb-2" htmlFor="ai-anbieter">Provider</label>
                   <select
+                    id="ai-anbieter"
                     value={settings.providerId}
                     onChange={(e) => selectProvider(e.target.value)}
                     className={inputClass}
@@ -724,11 +740,12 @@ export function Settings() {
                 </div>
 
                 <div>
-                  <label className="flex items-center gap-2 hud-label mb-2">
+                  <label className="flex items-center gap-2 hud-label mb-2" htmlFor="ai-schluessel">
                     <Key className="w-3.5 h-3.5" />
                     API Key {provider.needsKey ? '' : '(not needed for local providers)'}
                   </label>
                   <input
+                    id="ai-schluessel"
                     type="password"
                     value={settings.apiKey === 'local' ? '' : settings.apiKey}
                     onChange={(e) => update({ apiKey: e.target.value })}
@@ -747,10 +764,11 @@ export function Settings() {
                 </div>
 
                 <div>
-                  <label className="hud-label block mb-2">
+                  <label className="hud-label block mb-2" htmlFor="ai-endpunkt">
                     API endpoint {provider.id === 'custom' ? '(required)' : '(optional override)'}
                   </label>
                   <input
+                    id="ai-endpunkt"
                     type="text"
                     value={settings.baseUrl}
                     onChange={(e) => update({ baseUrl: e.target.value })}
@@ -761,9 +779,10 @@ export function Settings() {
                 </div>
 
                 <div data-abschnitt="modelle">
-                  <label className="hud-label block mb-2">Model</label>
+                  <label className="hud-label block mb-2" htmlFor="ai-modell">Model</label>
                   <div className="flex gap-2">
                     <input
+                      id="ai-modell"
                       type="text"
                       value={settings.model}
                       onChange={(e) => update({ model: e.target.value })}
@@ -787,6 +806,7 @@ export function Settings() {
                   </datalist>
                   {models.length > 0 && (
                     <select
+                      aria-label="Loaded models"
                       value=""
                       onChange={(e) => e.target.value && update({ model: e.target.value })}
                       className={inputClass + " mt-2"}
@@ -848,8 +868,9 @@ export function Settings() {
                 )}
                 {autoLearn && (
                   <div className="mt-4 pt-4" style={{ borderTop: '1px solid var(--border-subtle)' }}>
-                    <label className="text-xs font-semibold block mb-1.5" style={{color:'var(--text-1)'}}>Extraction model <span style={{color:'var(--text-3)'}}>— optional</span></label>
+                    <label className="text-xs font-semibold block mb-1.5" htmlFor="ai-extraktionsmodell" style={{color:'var(--text-1)'}}>Extraction model <span style={{color:'var(--text-3)'}}>— optional</span></label>
                     <input
+                      id="ai-extraktionsmodell"
                       type="text"
                       value={extractModel}
                       onChange={(e) => setExtractModel(e.target.value)}
@@ -863,7 +884,11 @@ export function Settings() {
                           setExtractQuittung({ art: 'ok', text: 'Saved on this computer.' });
                         } catch (err: unknown) {
                           const grund = err instanceof Error ? err.message : String(err);
-                          setExtractQuittung({ art: 'warn', text: `Not saved — the local server refused it (${grund}). The small model lives in this window only.` });
+                          // P4-15: `spiegle` (src/lib/ai.ts:401) wirft `HTTP <status>` nur, wenn eine
+                          // Antwort da war. Ohne Antwort bringt der Fetch eine TypeError — zwei Faelle,
+                          // zwei Worte, dasselbe Paar wie :257 und :269.
+                          const hatGeantwortet = /^HTTP \d{3}$/.test(grund);
+                          setExtractQuittung({ art: 'warn', text: `Not saved — the local server ${hatGeantwortet ? `refused it (${grund})` : `did not answer (${grund})`}. The small model lives in this window only.` });
                         }
                         extractTimer.current = window.setTimeout(() => setExtractQuittung(null), QUITTUNG_MS);
                       }}
@@ -892,8 +917,9 @@ export function Settings() {
                 </div>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
-                    <label className="text-xs block mb-1.5" style={{ color: 'var(--text-3)' }}>Text size</label>
+                    <label className="text-xs block mb-1.5" htmlFor="display-textgroesse" style={{ color: 'var(--text-3)' }}>Text size</label>
                     <select
+                      id="display-textgroesse"
                       value={String(zoom)}
                       onChange={(e) => { const v = Number(e.target.value); setZoom(v); wendeZoomAn(); }}
                       className="w-full px-3 py-2 rounded-lg text-sm bg-transparent"
@@ -1163,7 +1189,7 @@ export function Settings() {
               <div className="hud-inset rounded-xl p-3 flex items-center gap-3">
                 <Globe className="w-4 h-4 shrink-0" style={{ color: 'var(--text-2)' }} />
                 <code className="text-sm font-mono flex-1 truncate" style={{ color: 'var(--text-1)' }}>{API_BASE}</code>
-                <button onClick={() => copy(API_BASE, 'base')} className="btn-ghost p-2 rounded-lg shrink-0" title={copied === 'error:base' ? 'Copying failed — your clipboard was blocked' : 'Copy'}>
+                <button onClick={() => copy(API_BASE, 'base')} className="btn-ghost p-2 rounded-lg shrink-0" aria-label="Copy the server URL" title={copied === 'error:base' ? 'Copying failed — your clipboard was blocked' : 'Copy'}>
                   {copied === 'base' ? <CheckCircle2 className="w-4 h-4" style={{ color: 'var(--ok)' }} /> : copied === 'error:base' ? <AlertTriangle className="w-4 h-4" style={{ color: 'var(--warn)' }} /> : <Copy className="w-4 h-4" />}
                 </button>
                 <a href={`${API_BASE}/api/health`} target="_blank" rel="noreferrer" className="btn-ghost p-2 rounded-lg shrink-0" title="Open health">
@@ -1195,7 +1221,7 @@ export function Settings() {
                     <span className="method-badge" data-method={e.m}>{e.m}</span>
                     <code className="text-xs font-mono flex-1 truncate" style={{ color: 'var(--text-1)' }}>{e.p}</code>
                     <span className="text-xs hidden sm:block shrink-0" style={{ color: 'var(--text-3)' }}>{e.d}</span>
-                    <button onClick={() => copy(e.c, e.p)} className="btn-ghost p-1.5 rounded-lg shrink-0" title={copied === `error:${e.p}` ? 'Copying failed — your clipboard was blocked' : 'Copy the curl command'}>
+                    <button onClick={() => copy(e.c, e.p)} className="btn-ghost p-1.5 rounded-lg shrink-0" aria-label={`Copy the curl command for ${e.p}`} title={copied === `error:${e.p}` ? 'Copying failed — your clipboard was blocked' : 'Copy the curl command'}>
                       {copied === e.p ? <CheckCircle2 className="w-3.5 h-3.5" style={{ color: 'var(--ok)' }} /> : copied === `error:${e.p}` ? <AlertTriangle className="w-3.5 h-3.5" style={{ color: 'var(--warn)' }} /> : <Copy className="w-3.5 h-3.5" />}
                     </button>
                   </div>
@@ -1333,6 +1359,23 @@ curl -X POST ${API_BASE}/api/memory \\
 
             <p className="text-xs text-center leading-relaxed" style={{ color: 'var(--text-3)' }}>
               Docs and more examples: see <code>README.md → MCP &amp; API</code> and <code>mcp-config.json</code> in the project root.
+            </p>
+
+            {/* G-9b: derselbe Ausgang, den die drei Textknöpfe zeigen, jetzt für
+             *  alle dreizehn — angesagt, nicht gemalt. Im Ruhezustand bleibt die
+             *  Zeile leer, damit ein Lesegerät beim Öffnen des Reiters nichts spricht. */}
+            <p
+              role="status"
+              aria-live="polite"
+              aria-atomic="true"
+              data-testid="kopier-quitte"
+              className="sr-only"
+            >
+              {copied === null
+                ? ''
+                : copied.startsWith('error:')
+                  ? `Copying failed — ${kopierZiel(copied.slice('error:'.length))} was not copied`
+                  : `Copied ${kopierZiel(copied)}`}
             </p>
           </div>
         )}

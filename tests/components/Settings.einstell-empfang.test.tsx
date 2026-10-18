@@ -297,3 +297,46 @@ describe("P4-14: die Richtlinien-Auskunft ueberlebt den Tod der Tuer nicht", () 
     expect(container.textContent).not.toMatch(/No organization policies/);
   });
 });
+
+// P4-15 (Folgesitzung 18.10. 18:27, Punkt 4 Schlag 1): die Quittung der Extraktionszeile
+// haelt zwei Faelle fuer einen. src/lib/ai.ts:401 wirft `HTTP <status>` nur, wenn eine
+// Antwort da war; ein Fetch ohne Antwort wirft eine TypeError. Vor dem Flicken stand in
+// beiden Faellen "refused it" — die Zeile beschuldigte eine Tuer, die gar nicht fragte.
+// Dasselbe Wortpaar trennt Settings.tsx:257 und :269 fuer die Richtliniens-Auskunft schon.
+describe("P4-15: Extraktionsquittung — 'antwortete nicht' ist nicht 'wies ab'", () => {
+  it("sagt der Transportabbruch als Stille, nicht als Abweisung", async () => {
+    stubFetch({ "/api/settings": (u, init) => {
+      if (init?.method === "PUT") throw new TypeError("Failed to fetch");
+      return new Response("{}", { status: 200 });
+    } });
+    const { container } = render(<Settings />);
+    await waitFor(() => expect(container.textContent).toMatch(/Artificial intelligence/));
+    fireEvent.click(screen.getByRole("checkbox", { name: "Auto-learn" }));
+    const feld = (await waitFor(() => screen.getByPlaceholderText(/llama3\.2:3b/))) as HTMLInputElement;
+    fireEvent.change(feld, { target: { value: "gemma3:4b" } });
+    fireEvent.blur(feld);
+    await waitFor(() => expect(container.querySelector('[data-extract-quittung="warn"]')).toBeTruthy());
+    const zeile = container.querySelector('[data-extract-quittung="warn"]')?.textContent ?? "";
+    expect(zeile, "eine Tuer, die nie antwortete, kann nichts abgewiesen haben").toMatch(/did not answer/i);
+    expect(zeile, "Stille heisst Stille").not.toMatch(/refused/i);
+  });
+
+  // KONTROLLE, kein neuer Befund: dieser Fall ist vor DEM Flicken gruen (die Abweisungs-Zeile
+  // bleibt Wort fuer Wort gleich). Er haelt die andere Richtung — ohne ihn koennte die
+  // Heilung das Wort bloeg vertauschen. Er wirft, sobald "did not answer" auch den 413 erfindet.
+  it("KONTROLLE: eine echte 413-Abweisung behaelt ihr Wort und ihren Status", async () => {
+    stubFetch({ "/api/settings": (u, init) => (init?.method === "PUT"
+      ? new Response(JSON.stringify({ error: "Settings too large" }), { status: 413 })
+      : new Response("{}", { status: 200 })) });
+    const { container } = render(<Settings />);
+    await waitFor(() => expect(container.textContent).toMatch(/Artificial intelligence/));
+    fireEvent.click(screen.getByRole("checkbox", { name: "Auto-learn" }));
+    const feld = (await waitFor(() => screen.getByPlaceholderText(/llama3\.2:3b/))) as HTMLInputElement;
+    fireEvent.change(feld, { target: { value: "gemma3:4b" } });
+    fireEvent.blur(feld);
+    await waitFor(() => expect(container.querySelector('[data-extract-quittung="warn"]')).toBeTruthy());
+    const zeile = container.querySelector('[data-extract-quittung="warn"]')?.textContent ?? "";
+    expect(zeile, "413 ist eine Abweisung und muss sie nennen").toMatch(/refused it \(HTTP 413\)/);
+    expect(zeile, "413 ist keine stumme Tuer").not.toMatch(/did not answer/i);
+  });
+});

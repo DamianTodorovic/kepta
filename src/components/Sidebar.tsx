@@ -70,7 +70,13 @@ export function Sidebar({ tags, selectedTags, onSelectTag, onClearTags, currentV
     <div className={cn(
       "sidebar-glass seiten-leiste flex flex-col h-full shrink-0 transition-[width] duration-300",
       isFocusMode ? "w-0 overflow-hidden border-none" : "w-64"
-    )}>
+    )}
+      // w-0 versteckt nur die Farbe: die 13 Knöpfe der Leiste blieben im Tab-Weg
+      // und waren bei 390 px nicht zu treffen. Gemessen 18.10. mit der Tastatur
+      // (tastatur.mjs): 13 von 16 Tab-Schritten fielen auf Knöpfe bei x = -22.
+      inert={isFocusMode}
+      aria-hidden={isFocusMode}
+    >
       {/* Marke */}
       <div className="seiten-kante-unten h-[64px] px-4 flex items-center gap-2.5 shrink-0">
         <KeptaMark size={26} />

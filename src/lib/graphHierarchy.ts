@@ -715,17 +715,34 @@ export function lesePfad(m: { title?: string; content?: string; tags?: readonly 
   return roh;
 }
 
-/** Das Worum-Fach eines Stuecks: Betreff, sonst Ordnerzweig, sonst ein ehrliches Restfach. */
-export function regalFach(
-  m: { title?: string; content?: string; tags?: readonly string[]; quelle?: string },
-  vorspann: readonly string[] = [],
+/** Ein Stueck, wie die Flaeche es hat: mit den Feldern, die der Puffer sieht. */
+interface RegalEingang {
+  id?: string;
+  title?: string;
+  content?: string;
+  tags?: readonly string[];
+  quelle?: string;
+  updatedAt?: number;
+}
+
+/**
+ * Das Worum-Fach aus dem, was schon gerechnet ist.
+ *
+ * Ausgelagert, damit `baueRegal` Traeger, Betreff und Pfad je Stueck nur EINMAL
+ * rechnen muss. An seinem Bestand (21 066) war die Kette: ungebuffert und in drei
+ * Runden 1 485 ms, gepuffert 551 ms, gepuffert in einer Runde 511 ms kalt / 40 ms
+ * warm. Der Puffer hat also mehr gebracht als die Passzahl — beide zusammen sind es,
+ * weil ein Memo bei jeder Aenderung des Zeitreglers neu faellt.
+ */
+function fachAus(
+  g: Gruppe,
+  pfad: string | null,
+  vorspann: readonly string[],
 ): { name: string; herkunft: RegalFach["herkunft"] } {
-  const g = gruppen({ title: m.title ?? "", content: m.content ?? "", tags: m.tags ?? [] });
   if (g.themen.length > 0) {
     const betreff = [...g.themen].sort((a, b) => a.localeCompare(b))[0];
     return { name: THEMA_LABELS[betreff] ?? betreff, herkunft: "betreff" };
   }
-  const pfad = lesePfad({ title: m.title, content: m.content, tags: m.tags, quelle: (m as { quelle?: string }).quelle });
   if (!pfad) return { name: "Unfiled", herkunft: "ohne beides" };
   if (pfad.startsWith("netz://")) return { name: pfad.slice(7), herkunft: "netz" };
   const teile = pfad.split("/").filter(Boolean);
@@ -741,21 +758,36 @@ export function regalFach(
   return { name: ordner[ordner.length - 1] ?? "Unfiled", herkunft: "ordner" };
 }
 
+/**
+ * Das Worum-Fach eines einzelnen Stuecks: Betreff, sonst Ordnerzweig, sonst ein
+ * ehrliches Restfach.
+ *
+ * Rechnet ueber den Puffer (`gruppenVonNotiz`, schluessel id + updatedAt), nicht
+ * direkt durch `gruppen`: ein Lauf ueber 21 066 Stuecke kostet ungebuffert bei
+ * jedem Ansatz 1 485 ms gegen 511 ms kalt und 40 ms warm — gemessen 18.10. an
+ * seinem Bestand, unter Last (load 4,76). Ein umbenanntes oder neu getaggtes Stueck
+ * rechnet hier also von selbst neu, und die Flaeche haengt nicht an jedem Klick.
+ */
+export function regalFach(
+  m: RegalEingang,
+  vorspann: readonly string[] = [],
+): { name: string; herkunft: RegalFach["herkunft"] } {
+  return fachAus(gruppenVonNotiz(m), lesePfad(m), vorspann);
+}
+
 function zaehleFaecher(
-  einen: (m: Memory) => { name: string; herkunft: RegalFach["herkunft"] },
-  memories: readonly Memory[],
+  faecher: readonly { name: string; herkunft: RegalFach["herkunft"] }[],
   /** false = jedes Fach bekommt seine Zeile. Fuer eine Achse, die nur drei Werte
    *  haben kann und die ein Mensch nach exactly diesen drei fragt. */
   mitSchwelle = true,
 ): RegalFach[] {
   const koerbe = new Map<string, { n: number; herkunft: RegalFach["herkunft"] }>();
-  for (const m of memories) {
-    const f = einen(m);
+  for (const f of faecher) {
     const alt = koerbe.get(f.name);
     if (alt) alt.n += 1;
     else koerbe.set(f.name, { n: 1, herkunft: f.herkunft });
   }
-  const gesamt = memories.length || 1;
+  const gesamt = faecher.length || 1;
   const schwelle = mitSchwelle ? (REGAL_SCHWELLE_PROZENT / 100) * gesamt : 0;
   const sortiert = [...koerbe].sort((a, b) => b[1].n - a[1].n || a[0].localeCompare(b[0]));
   const grosse = sortiert.filter(([, v]) => v.n >= schwelle);
@@ -779,19 +811,29 @@ function zaehleFaecher(
  * der Achse, nicht das Ergebnis eines Kampfs mit dem Rahmen.
  */
 export function baueRegal(memories: readonly Memory[]): Regal {
-  const pfade: string[] = [];
-  for (const m of memories) {
-    const p = lesePfad({ title: m.title, content: m.content, tags: m.tags, quelle: (m as { quelle?: string }).quelle });
-    if (p && !p.startsWith("netz://")) pfade.push(p);
+  // Erste und einzige Runde ueber die teure Arbeit: Traeger, Betreff und Pfad werden
+  // je Stueck EINMAL gerechnet. Die drei Runden davor kosteten an seinem Bestand
+  // 1 485 ms bei jedem Ansatz, diese zwei Schleifen 511 ms kalt und 40 ms warm
+  // (21 066 Stuecke, load 4,76, `regal-kosten2.json`). Was an 511 ms bleibt, ist die
+  // Regex-Runde selbst — dieselbe Arbeit, die die Traeger-Chips der Kartenliste tun,
+  // und ueber `gruppenVonNotiz` geteilt: wer zuerst rendert, zahlt sie einmal.
+  const eingang: { gruppe: Gruppe; pfad: string | null }[] = new Array(memories.length);
+  const absolutePfade: string[] = [];
+  let ohneBetreff = 0, ohnePfad = 0, ohneMarke = 0;
+  for (let i = 0; i < memories.length; i++) {
+    const m = memories[i];
+    const gruppe = gruppenVonNotiz(m);
+    const pfad = lesePfad(m);
+    eingang[i] = { gruppe, pfad };
+    if (gruppe.themen.length === 0) ohneBetreff += 1;
+    if (!pfad) ohnePfad += 1;
+    else if (!pfad.startsWith("netz://")) absolutePfade.push(pfad);
+    if (!(m.tags ?? []).some((t) => String(t).trim())) ohneMarke += 1;
   }
-  const vorspann = maschinenVorspann(pfade);
+  const vorspann = maschinenVorspann(absolutePfade);
   const gesamt = memories.length || 1;
   const woher = zaehleFaecher(
-    (m) => {
-      const g = gruppen({ title: m.title ?? "", content: m.content ?? "", tags: m.tags ?? [] });
-      return { name: TRAEGER_LABELS[g.traeger], herkunft: "ordner" as RegalFach["herkunft"] };
-    },
-    memories,
+    eingang.map(({ gruppe }) => ({ name: TRAEGER_LABELS[gruppe.traeger], herkunft: "ordner" as RegalFach["herkunft"] })),
     // Ohne Schwelle: die Achse hat drei Werte, und nach genau diesen dreien fragt
     // ein Mensch. Am echten Bestand (18.10.) haette die Schwelle die 92 Notes —
     // 0,44 % — in eine Schwanzzeile "1 smaller shelves" gestellt. Das ist die Zahl,
@@ -800,14 +842,7 @@ export function baueRegal(memories: readonly Memory[]): Regal {
     // verschluckt, darf nicht bauen.
     false,
   );
-  const worum = zaehleFaecher((m) => regalFach(m, vorspann), memories);
-  let ohneBetreff = 0, ohnePfad = 0, ohneMarke = 0;
-  for (const m of memories) {
-    const g = gruppen({ title: m.title ?? "", content: m.content ?? "", tags: m.tags ?? [] });
-    if (g.themen.length === 0) ohneBetreff += 1;
-    if (!lesePfad({ title: m.title, content: m.content, tags: m.tags, quelle: (m as { quelle?: string }).quelle })) ohnePfad += 1;
-    if (!(m.tags ?? []).some((t) => String(t).trim())) ohneMarke += 1;
-  }
+  const worum = zaehleFaecher(eingang.map(({ gruppe, pfad }) => fachAus(gruppe, pfad, vorspann)));
   const groesstes = worum.reduce((n, f) => Math.max(n, f.notizen), 0);
   const unterDeckel = worum
     .filter((f) => (100 * f.notizen) / gesamt < REGAL_DECKEL_PROZENT)

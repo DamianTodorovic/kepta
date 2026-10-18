@@ -1,3 +1,141 @@
+## [3.2.22]
+
+### Fixed
+
+- **A colour you pick for a knowledge type can no longer out-shine the type
+  ladder.** The picked tone lands in a token that other surfaces read as *text*
+  in the same breath — index numbers, the card edge, the legend word — so one
+  drag of a colour slider could set body copy below the house's own 4,5:1, and a
+  tone that an older build had already stored kept doing it quietly on every
+  start. `tintetauglich()` (`src/components/KnowledgeGraph.tsx:554`) now admits a
+  choice only when it holds 4,5:1 as text on both papers of the dark theme
+  (#070708 table, #38383a sheet), and the same filter runs over what
+  `localStorage` already carries. Computed with the source's own formula:
+  `#ff3366` reads 5,68:1 on the table but **3,30:1** on the sheet and is refused,
+  `#ffee66` reads 16,95:1 and 9,86:1 and is kept. Three cases in
+  `tests/components/KnowledgeGraph.render.test.tsx` (group „Farben und Groesse"):
+  one keeps a ladder-holding pick, one refuses a ladder-breaking pick (nothing
+  painted, nothing stored), one ignores a tone an older build saved. Both gates
+  are falsifiable on their own — switch the pick gate off and the refusal case
+  goes red; switch the mount filter off and the legacy case goes red.
+- **One receipt lifetime for every persistent confirmation.** Six surfaces carried
+  six numbers for the same gesture: 2 000 ms (connection), 6 000 ms (backup),
+  1 800 ms twice (auto-learn, extraction model), 2 000 ms (copy in Settings),
+  1 600 ms („Copied") and 2 400 ms („Copying failed") in the system status, plus
+  four in the dashboard's import and clipboard lines. `QUITTUNG_MS = 6_000`
+  (`src/lib/quittung.ts`) is now the only one, and every timer clears the state
+  it set rather than any state (`setCopied((c) => (c === marke ? null : c))`), so
+  a second click cannot be erased by the first click's timer.
+- **A copy button says what it copied.** Thirteen copy buttons over six call
+  sites announced bare „Copied" — a person who hears that still does not know
+  what is on the clipboard. Each press now carries its object
+  (`kopierZiel(id)` in `src/components/Settings.tsx`): *the server URL*,
+  *the curl command for /api/memories*, *the Claude config path for Windows*,
+  *mcp.json for Cursor and Zed*, *the three curl test commands*. An unknown
+  marker names its own id instead of saying nothing, and the failure path keeps
+  the same object with the error prefix.
+- **Fields that had no reader have one.** `Provider` sat above its `<select>` as
+  a `hud-label` with no binding; it is now `htmlFor="ai-anbieter"` with the id on
+  the control, and the same for the fields that were wrapped or aria-labelled
+  only by accident. Zensus, not eye: the settings surface reports every field with
+  its reader and its kind (`label[for]` / `aria-label` / `aria-labelledby` /
+  wrapper), measured in the installed object at four widths.
+- **Half-pixel font sizes are lifted onto the ladder where they are painted.**
+  The surfaces write their sizes as arbitrary values (`text-[12.5px]` 41 times,
+  `text-[11.5px]` 11, `text-[10px]` 12, `text-[10.5px]` 7, `text-[13.5px]` 3,
+  `text-[15px]` 4, `text-[17px]` 3, `text-[9px]` 2, `text-[8.5px]` 1 — 83 carriers
+  counted in `src/**/*.tsx`, measured 12-22 text positions per view on half
+  pixels in the window). Nine rules outside the Tailwind layers
+  (`src/index.css:806-808`) snap those nine values to `--fs-1 / --fs-3 / --fs-5`,
+  which is the *edge* and not the cure: the clean fix stays the patch at the
+  surfaces themselves. Same stroke: the sidebar's two hard-coded overlay whites
+  (0,1 and 0,09) became `--side-auswahl-heben` and `--side-marke-auswahl`, and
+  `.btn-ghost:disabled` got the 0,45 step its two siblings already had — measured
+  in the window at 3,29:1 declared against 3,30:1 painted on the import button.
+- **A waiting skeleton is now lighter than the surface it waits on.** The card
+  skeleton carried `--bg-inset` (L\* 1,93) on a `--bg-panel` card (L\* 23,74):
+  **1,68:1**, a black hole instead of a waiting mark, and its shimmer peak
+  (`--bg-inset-strong`, L\* 14,73) was darker than the card it was supposed to
+  run over. Both are edge steps of the same ladder now (`--kante-dekor`,
+  `--kante-stark`), which sit on the right side in both themes.
+- **The tree reads its store in two bands before anyone climbs it.** New
+  `src/components/GraphRegal.tsx` over the dendrogram: band one says *where* a
+  piece came from (Notes / Files / Code), band two says *what it is about*, and
+  the hole the reading leaves stands there instead of being silent. Reason is
+  measured, not stylistic: at the real store (21 066 notes, 18.10.) the tree's own
+  second level put **18 993 pieces = 90,16 %** into one compartment named
+  `#machine-scan`, so the first picture was a bracket around the whole shop.
+  Deliberately **no click target** — a row in this panel is 14 px and the house
+  line for anything a hand hits is 44 px, so a filtering row would be a control
+  under the line; the grip on a compartment is the next stroke with its own row
+  height. Six cases in `tests/components/GraphRegal.test.tsx` (rendered in Node,
+  no browser), including an empty store that must throw neither a picture nor a
+  number.
+- **The design gate stopped lying about itself**, three times, all under a red
+  case rather than by eye: (a) the dead-style census cut class names at a CSS
+  escape, so the new ladder rules `.text-\[8\.5px\]` registered a compartment
+  called `text-` that no surface can name as a bare word — a phantom nineteenth
+  orphan, healed in `scripts/design-wache.mjs` by skipping a token that a
+  backslash follows; (b) `schuld()` overwrote the register's seat count with its
+  own measurement and printed it as the threshold, so every tolerated line
+  reported its own height as its limit — a gate that cannot lose; it now keeps
+  the register and files the measurement under `gemessen`; (c) the orphan
+  register still wrote „20 rules … a 21st makes it red" while seating 18. The
+  register prose goes with the number now. Proved falsifiable the other way too:
+  a deliberately dead rule added to `src/index.css` lifts the census to 19 and
+  turns the line red again.
+- **`regal-woher-fach` is no longer a claim without a rule.** The shelf called a
+  class that no stylesheet in the house defined; it now owns
+  `min-width: 1px` (`src/index.css:988`), which is what the component had
+  already promised in its own comment: a compartment under one pixel stays a
+  stroke instead of vanishing while the line under it still names it.
+
+### What this costs, said plainly
+
+The shelf answers a question and is not the way to the answer: it has no grip,
+and its second band shows eight compartments of a store with thousands. The
+ladder rules in CSS are a guard rail, not the surfaces moving onto the ladder —
+83 arbitrary values are still written in the components and still snap upward at
+paint time. And a refused colour refuses without saying why: the slider returns
+to the register tone, which reads as a stuck control to a person who just wanted
+magenta.
+
+### Testing
+
+**2 731 cases in 186 files, 0 red** (`npm test`, judged only from
+`test-results/vitest.json`, 955 854 B, written 2026-10-18 22:46 MESZ),
+`npm run lint` at **0 errors, 53 warnings** — the same 53 the previous state
+counted, none of them new. `scripts/doku-check.mjs` names the number and the
+stamp, and `README.md` carries it at its three carriers (badge, prose, command
+comment). Two full runs failed on *time* cases before the clean one, and the
+house's own rest guard said what it was: 14 `node` processes over the tolerated
+5, a 3 000-note layout that hit its hard 60 s cap, and a tree case that waits a
+fixed 500 ms and then measures row distance (11,2 px instead of ≥ 13 px). Those
+are the graph slice's cases and were left untouched here; under load
+`doku-check` refuses the verdict („Zeitfälle unter fremder Last sind kein
+Befund"), and the clean run is the one this section quotes.
+
+### Not in this release, said plainly
+
+- **The load-error surface still cannot fire.** `Dashboard.tsx:378` catches a
+  rejection of `refreshMemories()` and paints „The server did not answer" with a
+  Try-again button — but `src/lib/store.ts:106` promises *rejected NIE*: a door
+  that answers 500 is swallowed, the stale cache is kept, and the view shows the
+  empty start again. The fix belongs in the store, not in the surface; the
+  prepared measurement (a CDP `Fetch` door forced to 500 in the installed object)
+  will say whether it holds.
+- **The ladder the colour gate demands is not held by the house's own tone.**
+  `--type-semantic` of the dark theme is #2d4964 — 2,16:1 on the table and
+  1,25:1 on the sheet by the same formula, and `Dashboard.tsx:1706` reads that
+  token as text. A user pick is refused for it; the register is not.
+- The gate reads the two papers of the *dark* theme only. A bright tone that is
+  correct there is unreadable on the light theme's paper, because the chosen
+  value is written inline on the document element and survives a theme switch.
+- The graph camera and the field's first picture are another slice's work;
+  nothing here touches `feldTransform` or the centring.
+- The shelf's compartments are not clickable, and the 44 px line is met by not
+  being a control rather than by building one.
+
 ## [3.2.21]
 
 ### Fixed

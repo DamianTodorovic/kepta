@@ -152,6 +152,11 @@
   --side-kante-heben: oklch(0.6029 0.0026 286.0); /* Hover-Kante: 3,96 gegen den Stahl, die ruhende hält 3,05 */
   --side-flaeche: oklch(1 0 0 / 0.045);        /* Lage über dem Stahl: hover */
   --side-auswahl: oklch(1 0 0 / 0.07);         /* Lage über dem Stahl: die aktive Stelle */
+  /* Zwei Stufen, die die Fläche schon malte, bevor sie hier standen: 0,1 und 0,09
+     standen als Hartwert in .sidebar-nav-btn bzw. .sidebar-tag-btn (Zensus 18.10.,
+     im ausgelieferten Bündel gemessen: 1 Fremd-Farbe je Ansicht). */
+  --side-auswahl-heben: oklch(1 0 0 / 0.1);    /* die aktive Stelle unter der Hand */
+  --side-marke-auswahl: oklch(1 0 0 / 0.09);   /* ein gewähltes Tag-Wort */
 
   /* Schatten liegen flach auf dem Tisch, nichts schwebt */
   --shadow-sm: 0 1px 2px rgba(20, 28, 34, 0.12);
@@ -347,6 +352,8 @@
   --side-leise: oklch(0.6425 0.0097 91.6);
   --side-kante-heben: oklch(0.6029 0.0026 286.0);
   --side-auswahl: oklch(1 0 0 / 0.07);
+  --side-auswahl-heben: oklch(1 0 0 / 0.1);
+  --side-marke-auswahl: oklch(1 0 0 / 0.09);
 
   --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.4);
   --shadow-md: 0 2px 10px rgba(0, 0, 0, 0.45);
@@ -723,6 +730,11 @@ input[type="checkbox"], input[type="radio"] { accent-color: var(--accent); }
 }
 .btn-ghost:hover { background: var(--bg-inset-strong); border-color: var(--border-strong); }
 .btn-ghost:active { transform: scale(0.985); }
+/* Ausfall-Stellung: .btn-primary und .apple-seg-btn hatten 0,45, .btn-ghost
+   nichts — die Fläche half sich mit `disabled:opacity-40` aus der Utility-Kiste.
+   Im Fenster gemessen (Knowledge 1440/820/390): der Import-Knopf bei 3,29:1
+   deklariert, 3,30:1 gemalt. Eine Stufe für alle drei Knöpfe. */
+.btn-ghost:disabled { opacity: 0.45; cursor: not-allowed; transform: none; }
 
 .btn-danger-ghost {
   background: transparent;
@@ -768,13 +780,41 @@ label:has(.switch), label:has(input[type="checkbox"]), label:has(input[type="rad
   border: 1px solid transparent;
   transition: background var(--dur) ease, color var(--dur) ease, border-color var(--dur) ease, box-shadow var(--dur) ease;
 }
-.sidebar-nav-btn:hover, .sidebar-tag-btn:hover { background: rgba(255, 255, 255, 0.045); }
+.sidebar-nav-btn:hover, .sidebar-tag-btn:hover { background: var(--side-flaeche); }
 .sidebar-nav-btn[data-active="true"] {
-  background: rgba(255, 255, 255, 0.07);
+  background: var(--side-auswahl);
   box-shadow: inset 2px 0 0 var(--accent);
 }
-.sidebar-nav-btn[data-active="true"]:hover { background: rgba(255, 255, 255, 0.1); }
-.sidebar-tag-btn[data-active="true"] { background: rgba(255, 255, 255, 0.09); }
+.sidebar-nav-btn[data-active="true"]:hover { background: var(--side-auswahl-heben); }
+.sidebar-tag-btn[data-active="true"] { background: var(--side-marke-auswahl); }
+
+/* ============================================================
+   DIE LEITER HALTEN — 18.10., im ausgelieferten Bündel gemessen
+   (3.2.19, baytgleich zu dem, was seine App ausliefert).
+   Die Flächen schreiben ihre Schriftgröße als Willkürwert
+   (text-[12.5px] 41-mal, text-[11.5px] 11-mal, text-[10.5px] 7-mal,
+   text-[10px] 12-mal, text-[13.5px] 3-mal, text-[15px] 4-mal,
+   text-[17px] 3-mal, text-[9px] 2-mal, text-[8.5px] 1-mal). Im Fenster
+   waren das je Ansicht 12-22 Textstellen auf halben Pixeln — genau das
+   Maß, das D1-08 schon einmal zählte und das die Leiter verbietet.
+   Diese Regeln stehen Absichtlich außer-halb der Tailwind-Ebenen: eine
+   Regel außerhalb von @layer schlägt die Utility-Klasse, ohne dass
+   jemand 80 Stellen in zehn Dateien anfassen muss. Der Flicken an den
+   Flächen selbst (die Klassen weg) bleibt die saubere Heilung; dieser
+   hier ist die Kante, bis sie gefahren ist.
+   ============================================================ */
+.text-\[8\.5px\], .text-\[9px\], .text-\[10px\], .text-\[10\.5px\] { font-size: var(--fs-1); }
+.text-\[11\.5px\], .text-\[12\.5px\], .text-\[13\.5px\] { font-size: var(--fs-3); }
+.text-\[15px\], .text-\[17px\] { font-size: var(--fs-5); }
+.seiten-marke { font-size: var(--fs-3); letter-spacing: 0; }
+.sidebar-nav-btn { font-size: var(--fs-3); }
+/* Die Leiter kennt drei Gewichte (400/600/700). 500 ist kein Stufenwert
+   und kollabiert auf Segoe UI (Windows) — die aktive Zeile darf nicht auf
+   einer Stufe stehen, die es auf dem andern Rechner nicht gibt. */
+.sidebar-nav-btn { font-weight: var(--fw-ruhig); }
+.sidebar-nav-btn[data-active="true"] { font-weight: var(--fw-halbfest); }
+.sidebar-tag-btn { font-weight: var(--fw-ruhig); }
+.sidebar-tag-btn[data-active="true"] { font-weight: var(--fw-halbfest); }
 
 /* ---------- Abschnitte ---------- */
 
@@ -939,6 +979,14 @@ label:has(.switch), label:has(input[type="checkbox"]), label:has(input[type="rad
 .graph-datum:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 .graph-datum::-webkit-calendar-picker-indicator { filter: invert(0.7); cursor: pointer; }
 
+/* Das Regal über seinem Bestand (GraphRegal.tsx): ein Fach im Woher-Band trägt
+   seine Breite als Anteil, und 0,44 % von einem schmalen Panel sind unter einem
+   Pixel — ohne diese Regel verschwindet das kleinste Fach, obwohl der Text
+   darunter es nennt. Das Baustein-Kommentar verspricht «bleibt als Strich
+   stehen»; hier steht das Versprechen. 18.10.: die Klasse war ein nackter
+   Rufer (gerufen, nirgends definiert) und die Wache hielt die Fläche an. */
+.regal-woher-fach { min-width: 1px; }
+
 /* ---------- Chips & Badges — kleine Tintenstücke ---------- */
 .chip {
   display: inline-flex;
@@ -1043,10 +1091,17 @@ label:has(.switch), label:has(input[type="checkbox"]), label:has(input[type="rad
 }
 
 /* ---------- Skeletons ---------- */
+/* Gemessen 18.10. im ausgelieferten Bündel an einer absichtlich langsamen Tür
+   (Wissens-Fläche, 56 Gerüst-Kästen, 42 davon im Sieht): der Kasten trug
+   --bg-inset (L* 1,93) auf einer Karte mit --bg-panel (L* 23,74) — 1,68:1,
+   ein schwarzes Loch statt einer Wartespur — und der Schimmerhöchstton war
+   --bg-inset-strong (L* 14,73), also dunkler als die Karte, die er überlaufen
+   soll. Wartespuren brauchen einen Ton ÜBER ihrer Fläche; beide Kantenstufen
+   liegen in beiden Themen auf der richtigen Seite. */
 .skeleton {
   position: relative;
   overflow: hidden;
-  background: var(--bg-inset);
+  background: var(--kante-dekor);
   border-radius: 6px;
 }
 .skeleton::after {
@@ -1054,7 +1109,7 @@ label:has(.switch), label:has(input[type="checkbox"]), label:has(input[type="rad
   position: absolute;
   inset: 0;
   transform: translateX(-100%);
-  background: linear-gradient(90deg, transparent, var(--bg-inset-strong), transparent);
+  background: linear-gradient(90deg, transparent, var(--kante-stark), transparent);
 }
 /* Shimmer ist erlaubt, weil er eine laufende Arbeit anzeigt — aber nur,
    wenn Bewegung zugelassen ist. */

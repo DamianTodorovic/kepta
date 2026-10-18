@@ -5,6 +5,7 @@ import { APP_VERSION } from '../core/version';
 import { PROVIDERS, providerById, loadAISettings, hydrateAISettings } from '../lib/ai';
 import { RecoveryKey } from './RecoveryKey';
 import { getJsonOderNull } from '../lib/api';
+import { QUITTUNG_MS } from '../lib/quittung';
 
 interface Health {
   ok: boolean;
@@ -143,7 +144,7 @@ export function SystemStatus() {
     void zwischenablage.writeText(text).then(
       () => {
         setCopied(id);
-        setTimeout(() => setCopied((c) => (c === id ? null : c)), 1600);
+        setTimeout(() => setCopied((c) => (c === id ? null : c)), QUITTUNG_MS);
       },
       () => setCopyError(id)
     );
@@ -151,7 +152,7 @@ export function SystemStatus() {
 
   function setCopyError(id: string) {
     setCopied(`fehler:${id}`);
-    setTimeout(() => setCopied((c) => (c === `fehler:${id}` ? null : c)), 2400);
+    setTimeout(() => setCopied((c) => (c === `fehler:${id}` ? null : c)), QUITTUNG_MS);
   }
 
   const runTest = async () => {

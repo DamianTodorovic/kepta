@@ -462,12 +462,16 @@ const SCHULD = new Map([
   ["icons:groesse-fremd", { sitze: 33, seit: "10.10.", wer: "E2/E3 (Bausteine)", warum: "w-2.5/w-3-Sitzungen; die Untergrenze --icon-min in index.css hebt sie beim Rendern auf 14 px, die Klasse selbst bleibt" }],
   ["icons:name-fremd", { sitze: 2, seit: "10.10.", wer: "DS, benannt", warum: "RefreshCw->loader (der Körper IST zwei Kreiselpfeile = erneuern) und PartyPopper->rocket (Namensrest aus der Phosphor-Zeit, Bild passt zur Absicht)" }],
   ["css:radius-waisen", { sitze: 9, seit: "11.10.", wer: "DS (eigene Scheibe)", warum: "2/4/6/8 px stehen wörtlich in index.css außer-halb der Kapsel (999px). Auf die Stufen --r-* gehoben werden sie in einer eigenen Bewegung, weil jede Änderung an einem Radius Flächen von E2 und E3 mitverschiebt, während die Welle läuft. Eine neue Waise macht rot." }],
-  ["css:klassen-waisen", { sitze: 18, seit: "14.10. (vorher 20 — .tap und .tap-reihum ziehen seit 14.10. in Chat.tsx)", wer: "DS (eigene Scheibe)", warum: "Der Zensus 13.10. zählt 20 Regeln in index.css, die kein Baustein ruft — darunter die Ikonenstufen .ikone-1…4 und die Tastmaße .tap/.tap-min/.tap-reihum: der Vertrag ist geschrieben, aber an keiner Fläche gezogen. Gelöscht wird hier nichts, solange die Welle läuft (E2/E3 können uncommittete Rufer haben); gemeldet wird jede Verschiebung, und eine 21. Waise macht rot." }],
+  ["css:klassen-waisen", { sitze: 18, seit: "14.10. (vorher 20 — .tap und .tap-reihum ziehen seit 14.10. in Chat.tsx)", wer: "DS (eigene Scheibe)", warum: "Der Zensus 13.10. zählte 20 Regeln in index.css, die kein Baustein ruft; seit 14.10. ziehen .tap und .tap-reihum in Chat.tsx, also 18 Sitze — darunter die Ikonenstufen .ikone-1…4 und die Tastmaße .tap-min: der Vertrag ist geschrieben, aber an keiner Fläche gezogen. Gelöscht wird hier nichts, solange die Welle läuft (E2/E3 können uncommittete Rufer haben); gemeldet wird jede Verschiebung, und eine 19. Waise macht rot. Selektoren mit Escape (.text-[8.5px]) sind keine Waise — sie nennen keinen Baustein, sondern eine Utility-Klasse, die eine Wortliste nicht fassen kann (18.10.)." }],
 ]);
-const schuld = (key, sitze) => {
+const schuld = (key, gemessen) => {
   const s = SCHULD.get(key);
   if (!s) return null;
-  return { ...s, sitze, treffer: sitze <= s.sitze };
+  // `sitze` bleibt der registrierte Stand. Vorher überschrieb die gemessene Zahl
+  // das Register im eignen Objekt, und jede Zeile druckte ihre eigne Höhe als
+  // Schwelle — 18.10. meldete die Waise „benannt: 19" in einem Register mit 18
+  // Sitzen. Eine Schwelle, die sich nach dem Messwert benennt, ist keine.
+  return { ...s, gemessen, treffer: gemessen <= s.sitze };
 };
 
 // ---------------------------------------------------------------- Messung
@@ -1737,8 +1741,21 @@ meld("css", `Deklarationen außerhalb von Regeln`, String(PAR.weisen.length), "0
 // ist, war dem Haus ganz unsichtbar (hud-raised in PraxisSync.tsx:172,183).
 {
   const klassen = new Set();
+  // Ein Selektor mit Escape-Folge (`.text-\[8\.5px\]`) nennt keinen Haus-Baustein,
+  // sondern übergreift eine Tailwind-Willkürklasse — und keine Wortliste eines
+  // Bausteins nennt ein `[`. Die alte Sonde brach den Namen am Backslash ab und
+  // erfand eine Waise namens `text-`: 18.10. gemessen, als die Leiter-Regeln in
+  // index.css einzogen (drei Selektoren, 10 Willkürgrößen).
+  const klassenAus = (selektor) => {
+    const out = [];
+    for (const m of selektor.matchAll(/\.([a-zA-Z][-\w]*)/g)) {
+      if (selektor[m.index + m[0].length] === "\\") continue;
+      out.push(m[1]);
+    }
+    return out;
+  };
   for (const r of PAR.regeln) {
-    for (const m of r.selektor.matchAll(/\.([a-zA-Z][-\w]*)/g)) klassen.add(m[1]);
+    for (const k of klassenAus(r.selektor)) klassen.add(k);
   }
   // Rufer sind: className-Wortlisten, Strings in cn()/clsx(), classList-Setzer und
   // Selektoren im Code. Tailwind-Formen sind keine eigenen Klassen.
@@ -1749,7 +1766,7 @@ meld("css", `Deklarationen außerhalb von Regeln`, String(PAR.weisen.length), "0
     for (const regel of zeilenVon(rel).join("\n").replace(/\/\*[\s\S]*?\*\//g, "").split("}")) {
       const selektor = regel.slice(0, regel.indexOf("{"));
       if (selektor === regel) continue;
-      for (const m of selektor.matchAll(/\.([a-zA-Z][-\w]*)/g)) klassen.add(m[1]);
+      for (const k of klassenAus(selektor)) klassen.add(k);
     }
   }
   const geruft = new Set();

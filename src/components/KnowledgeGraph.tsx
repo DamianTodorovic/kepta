@@ -67,9 +67,11 @@ import {
   BLATT_ABSTAND,
   stepDendrogram,
   TYP_BESCHREIBUNG,
+  baueRegal,
   type HierarchieKnoten,
   type StrukturKnoten,
 } from "../lib/graphHierarchy";
+import { GraphRegal } from "./GraphRegal";
 import { layoutSemantik, SEMANTIK_KAPPE, type SemantikKarte } from "../lib/graphSemantik";
 import { schemaInventar, SCHEMA_SCHLUESSEL, type SchemaKante } from "../lib/graphSchema";
 import { HERKUNFT, herkunftsBild, HERKUNFT_TOKEN, HERKUNFT_LABELS } from "../lib/graphHerkunft";
@@ -534,6 +536,29 @@ const ROLLEN_TOKEN: Record<string, string> = { ...TYP_TOKEN, ...HERKUNFT_TOKEN }
 function setTypVar(rolle: string, wert: string) {
   document.documentElement.style.setProperty(`--type-${rolle}`, wert);
   document.documentElement.style.setProperty(`--type-${rolle}-hex`, wert);
+}
+
+/**
+ * Eine eigene Farbwahl schreibt in ein Token, das im selben Moment als SCHRIFT
+ * gelesen wird: Index-Zahlen, Karten-Grat, Legenden-Wort (der Kommentar oben,
+ * Zeile 1183, nennt das „app-weit"). Ein `#rrggbb` aus dem Regler kann deshalb
+ * die Leiter ausstechen, und ein Wert, den eine alte Fassung gespeichert hat,
+ * tut es ohne dass jemand wählt. Gemessen 18.10. am echten Bestand (21 066):
+ * die gespeicherten Töne #cc00bb, #00ff55, #007bff, #ffffff malten die
+ * Index-Zahlen mit 3,12:1 (Pixel, auf dem Panel #252526) und die Legende als
+ * reines Weiß — die Leiter verlangt 4,65 gegen das härteste Papier.
+ *
+ * `tintetauglich` lässt eine Wahl nur gelten, wenn sie als Schrift auf beiden
+ * Papieren des dunklen Themas 4,5:1 hält; sonst bleibt der Registerton stehen.
+ */
+function tintetauglich(wert: string): boolean {
+  const m = /^#?([0-9a-fA-F]{6})$/.exec((wert || "").trim());
+  if (!m) return false;
+  const zahl = parseInt(m[1], 16);
+  const k = (n: number) => { const s = n / 255; return s <= 0.03928 ? s / 12.92 : Math.pow((s + 0.055) / 1.055, 2.4); };
+  const tinte = 0.2126 * k((zahl >> 16) & 255) + 0.7152 * k((zahl >> 8) & 255) + 0.0722 * k(zahl & 255);
+  const papiere = [0.00213, 0.0396]; /* #070708 Tisch, #38383a Blatt */
+  return papiere.every((grund) => (Math.max(tinte, grund) + 0.05) / (Math.min(tinte, grund) + 0.05) >= 4.5);
 }
 
 function leseRollenHexe(): Record<string, string> {
@@ -1159,7 +1184,12 @@ export function KnowledgeGraph({ memories: memoriesAusFenster, onSelectMemory, o
   );
 
   const [customTypeColors, setCustomTypeColors] = useState<Record<string, string>>(() => {
-    try { return JSON.parse(localStorage.getItem("kepta_type_colors") || "{}"); } catch { return {}; }
+    // Nur was die Leiter hält, kommt durch: sonst überschreibt ein Wert, den
+    // eine alte Fassung gespeichert hat, bis heute Index-Zahlen und Legende.
+    try {
+      const gespeichert = JSON.parse(localStorage.getItem("kepta_type_colors") || "{}") as Record<string, string>;
+      return Object.fromEntries(Object.entries(gespeichert).filter(([, wert]) => tintetauglich(wert)));
+    } catch { return {}; }
   });
   const rollenHexe = useRollenHexe();
   const TYPE_COLORS = useMemo(() => {
@@ -1194,6 +1224,9 @@ export function KnowledgeGraph({ memories: memoriesAusFenster, onSelectMemory, o
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
   const setTypeColor = (t: string, c: string) => {
+    // Eine Wahl unter der Leiter wird nicht gemalt: der Regler snappt sichtbar
+    // auf den Registerton zurück, weil `value` an TYPE_COLORS hängt.
+    if (!tintetauglich(c)) return;
     setTypVar(t, c);
     setCustomTypeColors((prev) => {
       const next = { ...prev, [t]: c };
@@ -1800,6 +1833,16 @@ export function KnowledgeGraph({ memories: memoriesAusFenster, onSelectMemory, o
   const baum = useMemo(
     () => (ansicht === "dendrogram" ? buildHierarchy(baumMemories, entitaeten, konzeptNamen) : null),
     [baumMemories, entitaeten, konzeptNamen, ansicht]
+  );
+  /**
+   * Die Lesung desselben Bestands in zwei Baendern — nur im Baum, nur ueber dem,
+   * was der Zeitregler gerade gelten laesst. Der Baum antwortet auf "welcher Art";
+   * wenn seine zweite Ebene 90,16 % in ein Fach legt, ist die Art keine Antwort
+   * mehr, und dann steht diese hier.
+   */
+  const regal = useMemo(
+    () => (ansicht === "dendrogram" ? baueRegal(baumMemories) : null),
+    [baumMemories, ansicht]
   );
   /**
    * Wie viele Zeilen die Leinwand bei lesbarem Abstand hält. Der Rahmen ist der
@@ -4924,6 +4967,9 @@ export function KnowledgeGraph({ memories: memoriesAusFenster, onSelectMemory, o
               Show everything
             </button>
           )}
+          {/* Die zwei Baender ueber dem Bestand — damit der erste Blick nicht eine
+              Klammer um den ganzen Laden ist, sondern seine Groessenordnung. */}
+          {regal && <GraphRegal regal={regal} />}
           <div className="hud-label">
             {ansicht === "dendrogram"
               ? uiT("hint.tree")

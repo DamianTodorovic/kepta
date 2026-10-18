@@ -485,20 +485,56 @@ describe("Bedienung", () => {
 });
 
 describe("Farben und Groesse", () => {
-  it("bietet eine Farbe je Wissensart an und merkt sich eine Aenderung", async () => {
+  /**
+   * Der Griff am Regler: der Wert muss durch den Prototype-Setter, damit React
+   * die Aenderung sieht (ein direktes `w.value =` ueberspringt den Listener).
+   */
+  async function greifeRegler(w: HTMLInputElement, wert: string) {
+    await act(async () => {
+      const setter = Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, "value")!.set!;
+      setter.call(w, wert);
+      w.dispatchEvent(new Event("change", { bubbles: true }));
+      await new Promise((r) => setTimeout(r, 40));
+    });
+  }
+
+  // 18.10., Leiter-Tor (`tintetauglich` in KnowledgeGraph.tsx): eine eigene
+  // Wissens-Farbe wird app-weit als SCHRIFT gelesen (Index-Zahlen, Karten-Grat,
+  // Legenden-Wort). Sie gilt nur, wenn sie auf beiden Papieren des dunklen Themas
+  // 4,5:1 haelt. Nachgerechnet mit derselben Formel wie die Quelle, gegen dieselben
+  // zwei Papiere (#070708 Tisch L 0,00213 / #38383a Blatt L 0,0396):
+  //   #ffee66 L 0,8337 -> 16,95:1 und 9,86:1  (haelt)
+  //   #ff3366 L 0,2459 ->  5,68:1 und 3,30:1  (faellt durchs Blatt)
+  // Der Fall hielte hier vor dem Tor auf eine Farbe, die die Flaeche seit 18.10.
+  // gar nicht mehr malt, und die Meldung "combination of arguments (null and
+  // string)" war die Folge: localStorage blieb leer, die Sonde verglich null.
+  it("bietet eine Farbe je Wissensart an und merkt sich eine Leiter-haltende Aenderung", async () => {
     const { container } = await zeichne([note()]);
     const waehler = container.querySelectorAll('input[type="color"]');
     // Vier Wissensarten: Fakt, Ereignis, Anleitung, Beleg.
     expect(waehler).toHaveLength(4);
-    await act(async () => {
-      const w = waehler[0] as HTMLInputElement;
-      const setter = Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, "value")!.set!;
-      setter.call(w, "#ff3366");
-      w.dispatchEvent(new Event("change", { bubbles: true }));
-      await new Promise((r) => setTimeout(r, 40));
-    });
-    expect(localStorage.getItem("kepta_type_colors")).toContain("ff3366");
-    expect(document.documentElement.style.getPropertyValue("--type-semantic")).toBe("#ff3366");
+    await greifeRegler(waehler[0] as HTMLInputElement, "#ffee66");
+    expect(localStorage.getItem("kepta_type_colors")).toContain("ffee66");
+    expect(document.documentElement.style.getPropertyValue("--type-semantic")).toBe("#ffee66");
+  });
+
+  it("weist eine Leiter-brechende Farbe ab: nichts gemalt, nichts gespeichert", async () => {
+    const { container } = await zeichne([note()]);
+    const waehler = container.querySelectorAll('input[type="color"]');
+    await greifeRegler(waehler[0] as HTMLInputElement, "#ff3366");
+    // Gegenstueck zum Fall oben: ohne ihn waere "nichts gespeichert" auch dann
+    // gruen, wenn die Flaeche JEDE Wahl verwirft.
+    expect(localStorage.getItem("kepta_type_colors")).toBeNull();
+    expect(document.documentElement.style.getPropertyValue("--type-semantic")).toBe("");
+  });
+
+  it("uebersieht einen Ton, den eine alte Fassung gespeichert hat", async () => {
+    // Das Tor gilt auch rueckwaerts: ein Wert, der vor 18.10. gespeichert wurde,
+    // darf beim naechsten Start keine Schrift mehr ausstechen.
+    localStorage.setItem("kepta_type_colors", JSON.stringify({ semantic: "#ff3366" }));
+    await zeichne([note()]);
+    expect(document.documentElement.style.getPropertyValue("--type-semantic")).toBe("");
+    expect(localStorage.getItem("kepta_type_colors")).toContain("ff3366"); // der Mensch-Datensatz bleibt, nur die Wirkung ist raus
   });
 
   it("passt die Ansicht neu ein, wenn sich das Fenster aendert", async () => {
