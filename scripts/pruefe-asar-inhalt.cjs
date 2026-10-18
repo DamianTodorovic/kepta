@@ -28,6 +28,16 @@ const erwartet = [
   ["58-note, 45-question", 1],
   ["Configuration saved", 1],
   ["alle=1", 1],
+  // 3.2.22, gemessen am ausgelieferten Paket (app.asar 49 060 793 B, mtime 2026-10-18T20:58:45Z):
+  // die Regal-Flaeche, ihr Fach mit der einen Regel, die Lebensdauer einer Quittung und ihr
+  // Objekt, und die Ladefehler-Flaeche. Zaehlt nur String-Literale — Kennungen verbiegt der Minifier.
+  ["graph-regal", 1],
+  ["regal-woher-fach", 1],
+  [".regal-woher-fach", 1],
+  ["min-width:1px", 1],
+  ["in two bands", 1],
+  ["the three curl test commands", 1],
+  ["The server did not answer", 1],
 ];
 let fehl = 0;
 for (const [m, min] of erwartet) {
