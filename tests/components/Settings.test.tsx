@@ -568,17 +568,21 @@ describe("Settings: die Quittung nach dem Speichern", () => {
   // ist an sich eine Entwurfs-Entscheidung — aber der Timer wird
   // bei jedem Speichern neu gelegt, ohne den alten zu loeschen. Wer zweimal
   // speichert, sieht die Bestaetigung der zweiten Speicherung fast sofort verschwinden.
-  it("zaehlt 6 000 ms ab der letzten Speicherung, nicht ab der ersten", () => {
+  it("zaehlt 6 000 ms ab der letzten Speicherung, nicht ab der ersten", async () => {
     vi.useFakeTimers();
     try {
       const { container } = render(<Settings />);
       const knopf = () => container.querySelector("button[type=submit]") as HTMLButtonElement;
       expect(knopf(), "die Sonde sieht den Speichern-Knopf nicht").toBeTruthy();
+      // P4-02 (18.10.) hat handleSave asynchron gemacht: gemalt wird erst nach der Antwort
+      // der Spiegelung. Der Fall liest die Quittung also nach dem fluend gemachten Antwort-
+      // schlag — was er schuetzt, ist unveraendert: der Timer beginnt bei jeder Speicherung neu.
       fireEvent.click(knopf());
+      await act(async () => { await vi.advanceTimersByTimeAsync(0); });
       expect(knopf().textContent).toMatch(/Configuration saved/);
       act(() => { vi.advanceTimersByTime(1900); });
       fireEvent.click(knopf());
-      act(() => { vi.advanceTimersByTime(200); });
+      await act(async () => { await vi.advanceTimersByTimeAsync(200); });
       expect(knopf().textContent, "die zweite Speicherung hat neu zu zaehlen — der alte Timer darf ihr die Quittung nicht wegnehmen").toMatch(/Configuration saved/);
       act(() => { vi.advanceTimersByTime(6_001); });
       expect(knopf().textContent).toMatch(/Save/);

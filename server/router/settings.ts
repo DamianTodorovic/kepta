@@ -174,16 +174,40 @@ export function mountSettings(app: express.Express, ctx: AppKontext): void {
       }
       const bestand = store.einstellungen();
       const aenderungen: Record<string, string | null> = {};
+      const abgelehnt: { name: string; grund: string }[] = [];
       // Nur Zeichenketten: der Browserspeicher kennt nichts anderes, und so
       // kann von hier auch nichts Unerwartetes in die Oberflaeche zurueckfliessen.
+      //
+      // P4-09 (18.10.): Uebergangen wurde bisher schweigend, und die Antwort hiefs
+      // trotzdem `ok: true` — ein Klient, der eine Zahl sandte, hielt sie fuer gesetzt.
+      // Dieselbe Hausform wie die Profil-Route zwei Zeilen weiter oben: was die Route
+      // nicht formsicher speichern kann, steht beim Namen (`felderUebersprungen`, :88-94).
       for (const [k, v] of Object.entries(body)) {
-        if (typeof k !== "string" || k.length === 0 || k.length > 120) continue;
+        if (typeof k !== "string" || k.length === 0) { abgelehnt.push({ name: String(k), grund: "no usable name" }); continue; }
+        if (k.length > 120) { abgelehnt.push({ name: `${k.slice(0, 24)}…`, grund: "name longer than 120 characters" }); continue; }
         if (v === null) { aenderungen[k] = null; delete bestand[k]; continue; }
-        if (typeof v !== "string") continue;
+        if (typeof v !== "string") { abgelehnt.push({ name: k, grund: `value is ${v === undefined ? "missing" : typeof v}, and only strings are stored here` }); continue; }
         aenderungen[k] = bestand[k] = v.slice(0, 20000);
       }
-      if (JSON.stringify(bestand, null, 2).length > MAX_SETTINGS_BYTES) return res.status(413).json({ error: "Settings too large" });
-      res.json({ ok: true, keys: store.setzeEinstellungen(aenderungen) });
+      if (Object.keys(aenderungen).length === 0) {
+        return res.status(400).json({
+          error: `Nothing to store — ${abgelehnt.length} field(s) rejected, the stored settings are unchanged.`,
+          abgelehnt,
+        });
+      }
+      if (JSON.stringify(bestand, null, 2).length > MAX_SETTINGS_BYTES) {
+        return res.status(413).json({ error: `Settings too large (max ${MAX_SETTINGS_BYTES} bytes) — nothing was written; the stored settings are unchanged.` });
+      }
+      const gesetzt = store.setzeEinstellungen(aenderungen);
+      res.json({
+        ok: true,
+        keys: gesetzt,
+        ...(abgelehnt.length > 0 ? { abgelehnt } : {}),
+        // Keine Zahl ohne Wort (Hausregel, Profil-Route :125-135): die Antwort sagt,
+        // wie viel von dem Gesandten wirklich ankam.
+        hinweis: `${gesetzt} of ${Object.keys(body).length} sent field(s) stored`
+          + (abgelehnt.length ? `; rejected: ${abgelehnt.map((a) => `${a.name} (${a.grund})`).join(", ")}` : ""),
+      });
     } catch {
       res.status(500).json({ error: "The settings could not be saved" });
     }

@@ -101,19 +101,23 @@ describe("buildHierarchy", () => {
     expect(finde(baum, "9")?.label).toBe("Rechnung 2024/07 vom Kanal");
   });
 
-  it("Notizen ohne Entitaet, aber mit Tag, werden nach erstem Tag gruppiert", () => {
+  it("Notizen ohne Entitaet, aber mit Tag, werden nach der trennendsten Marke gruppiert", () => {
+    // Die erste Marke war der Fehler: der Scan haengt `machine-scan` vorn an, und
+    // am echten Bestand (21 066) landeten 18 993 Notizen — 90,16 % — in EINEM Fach
+    // dieses Namens. Was eine Notiz unterscheidet, ist ihre seltenste Marke.
     const baum = buildHierarchy([
       mem({ id: "1", type: "semantic", tags: ["maschine-scan", "json"] }),
       mem({ id: "2", type: "semantic", tags: ["MASCHINE-SCAN"] }),
       mem({ id: "3", type: "semantic", tags: [] }),
     ]);
     const typ = finde(baum, "__typ:semantic")!;
-    // Tag-Gruppe (alphabetisch vor direkten Blaettern) + untagged Blatt
-    expect(typ.children.map((c) => c.id)).toEqual(["__tag:maschine-scan", "3"]);
-    const gruppe = finde(baum, "__tag:maschine-scan")!;
+    // Zwei Tag-Gruppen (alphabetisch) + das untagte Blatt
+    expect(typ.children.map((c) => c.id)).toEqual(["__tag:json", "__tag:maschine-scan", "3"]);
+    const gruppe = finde(baum, "__tag:json")!;
     expect(gruppe.kind).toBe("group");
-    expect(gruppe.label).toBe("#maschine-scan");
-    expect(gruppe.children.map((c) => c.id)).toEqual(["1", "2"]);
+    expect(gruppe.label).toBe("#json");
+    expect(gruppe.children.map((c) => c.id)).toEqual(["1"]);
+    expect(finde(baum, "__tag:maschine-scan")!.children.map((c) => c.id)).toEqual(["2"]);
   });
 
   it("Notizen mit Entitaet haengen unter einem Entitaetsknoten; Entitaeten alphabetisch", () => {

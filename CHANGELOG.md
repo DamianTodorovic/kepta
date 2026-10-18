@@ -1,3 +1,101 @@
+## [3.2.20]
+
+### Fixed
+
+- **Every changed settings row now has a place that receives its receipt.** The
+  save path set four values (provider, endpoint, key, models) but only two rows
+  painted a confirmation, so changing just the key or just the model left the
+  green line away while the whole answer sat in a button label that faded after
+  6 s. Measured as `P4-01`, two cases.
+- **"Saved" waits for the database now.** The mirror into the encrypted store was
+  a fire-and-forget throw whose status was never checked, while the surface
+  already claimed "the change is on this computer". That claim is exactly what
+  browser storage cannot guarantee: it hangs on the random port origin, so a
+  refused mirror (`413` full state, `429` write edge, `500`) lost the connection
+  over the next restart after the row had said it was saved. The mirror is now
+  awaited, its status checked, and a refusal paints at the row that changed while
+  the button stays on "Save". Measured as `P4-02` against a `413`.
+- **Disconnecting the AI reports when it did not land.** Same class one line away
+  (`src/lib/ai.ts`): a refused disconnect left the old connection in place after
+  the restart, so "disconnected" was a surface illusion.
+- **Not knowing is called not knowing.** The policy fetch turned every transport
+  failure into "nothing here", which the surface rendered as "Personal install —
+  every setting on this page is yours" before the door had answered, and again on
+  a `429` that carries a JSON body. Three states now: unknown with its reason,
+  waiting without a claim, and managed-with-no-rules, which used to print the
+  heading "Active policies:" above a list with no children. Measured as `P4-04`,
+  three cases.
+- **A refused re-sort says so and keeps its picture.** Both calls had
+  `try … finally` without a `catch`, so a refusal stopped the spinner, left the
+  before-picture standing and printed no line — whether anything had been sorted
+  was unanswerable. Measured as `P4-05` with a `429`.
+- **The reason the section promises is now shown.** The text says "…and sorts it —
+  and tells you why" while the only consumer of the reasons the route returns was
+  a server test. Three examples with their reason now appear under the number, and
+  the `after` field that was set and never read is gone. Measured as `P4-06`.
+- **Auto-learn on without a model warns at the switch.** The runner returned
+  silently when no model was set, so the switch stayed green under "the brain
+  extends itself" and never learned anything. Measured as `P4-07`.
+- **A backup is counted against the door's own number.** The export counted only
+  the response body and ignored `x-kepta-total` / `x-kepta-begrenzt` in the same
+  answer's headers, so a short page could be sold as a full backup — the failure
+  class of 14.10., when 100 of 21 066 notes were reported as the whole store.
+  A short answer now reads "Backup short — N of M nodes" and writes no file.
+  Measured as `P4-08` against 2 of 21 066 with `begrenzt=1`.
+- **All six copy buttons say when the clipboard refuses.** Three of six swallowed
+  the failure and showed the empty copy icon again, so a click looked like a copy.
+  Measured as `P4-09`.
+- **The endpoint table states its own measure.** `GET /api/memories` was
+  advertised as "All nodes" while without `alle=1` it returns a page of 100, and
+  the row beside it called a three-track hybrid search "Full-text search".
+- **An empty store gets its own sentence.** "0 imported files checked — everything
+  reads fine, nothing to repair" was a verdict over files that are not there.
+  Measured as `P4-10`/`P4-11`.
+- **The extraction model behaves like the rest of the page.** Its blur saved
+  unconditionally, painted "Saved" before any answer, and had no refusal path: an
+  unchanged blur now paints nothing, a refused mirror warns at the field, and the
+  ok-receipt appears only after the mirror answered. Measured as `P4-12`, three
+  cases.
+- **A model list that nobody answers no longer stays green.** The local-model
+  auto-poll left `models` untouched on failure, so a green line kept standing over
+  a service that had gone quiet. Measured as `P4-13`.
+- **The policy answer does not outlive the door's death.** A transport that throws
+  now reads as unknown instead of "No organization policies". Measured as `P4-14`.
+- **The knowledge tree splits by what separates, not by what comes first.** Its
+  second level grouped by the first tag, and the computer scan prepends
+  `machine-scan` to everything, so one bin held **18 993 of 21 066 notes =
+  90,16 %** — what looked like an outline was a bracket around the whole shop.
+  Grouping now takes the most separating tag: the largest bin is **8 179 =
+  38,83 %** on the same inventory. One existing case was re-based on the new rule;
+  the 21 new cases were measured **20 red** before the change and **66 green**
+  with the 45 existing after it.
+- **New: a shelf that reads the store in two bands.** `baueRegal` asks where a
+  piece came from and what it is about, names the whole inventory in 16 rows with
+  a count and a share each, keeps the *first* words at 390 px (those are the
+  distinguishing ones), and returns its own quality together with its own gaps —
+  12 153 pieces with no subject, 122 with no readable path, 3 with no tag. Computed
+  and tested; the surface does not draw it yet.
+
+Eighteen settings cases and twenty-one shelf cases came with this release. The run
+that carries it measures **2718** cases over **184** files, and the README is held
+to that number by `tests/doku-zahlen.test.ts` rather than by memory.
+
+### Not in this release, said plainly
+
+- **His first look at the graph is unchanged.** At the blend the fit gives him, the
+  surface still paints almost no names (measured 18.10.: 2 of 729 at 1440 px,
+  0 at 820 px). That is the point he set first, it is being measured now, and no
+  wording here should read as if this release answered it.
+- **The shelf is not on the screen yet.** The two area patches bend
+  `src/components/KnowledgeGraph.tsx`, which is the file the graph work is open in;
+  they are queued behind it so one surface is never changed by two points at once.
+- **The settings audit has eleven more findings** (G-1 … G-11) outside this patch
+  set — among them four different lifetimes for one confirmation, seven controls
+  without a programmatic name, and a green "API key stored" for a provider that
+  needs no key.
+- **x64 packages, the `release/mac` folder and `SHA256SUMS`** remain release care
+  (#22); this build is for the machine it was made on.
+
 ## [3.2.19]
 
 ### Fixed

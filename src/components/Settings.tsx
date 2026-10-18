@@ -30,7 +30,11 @@ function beschreibeReparatur(s: ReparaturStand, fertig: boolean): string {
     saetze.push(`${s.clips} web ${s.clips === 1 ? 'clip' : 'clips'} ${fertig ? 'cleaned of menu lines' : verlieren}.`);
   }
   if (saetze.length === 0) {
-    saetze.push(`${s.geprueft} imported ${s.geprueft === 1 ? 'file' : 'files'} checked — everything reads fine, nothing to repair.`);
+    // P4-10 (18.10.): "everything reads fine" ueber einem Bestand von null Dateien ist
+    // eine Aussage ueber Dinge, die nicht da sind. Der leere Zustand hat eigne Worte.
+    saetze.push(s.geprueft === 0
+      ? 'No imported files in this store — there is nothing to re-read.'
+      : `${s.geprueft} imported ${s.geprueft === 1 ? 'file' : 'files'} checked — everything reads fine, nothing to repair.`);
   }
   if (s.fehler && s.fehler.length > 0) saetze.push(`Could not read: ${s.fehler.join('; ')}`);
   return (fertig ? 'Done: ' : '') + saetze.join(' ');
@@ -110,11 +114,12 @@ const QUITTUNG_MS = 6_000;
 /** #26 Richtung B — die Meldung gehoert an die Zeile, die sich geaendert hat.
  *  Sie traegt ihren Ort selbst ("data-quittung"), damit ein Fall zaehlen kann,
  *  wie viele Meldungen im Blatt stehen und wo. */
-function Meldung({ meldung, ort }: { meldung: { ort: string; text: string } | null; ort: string }) {
+function Meldung({ meldung, ort }: { meldung: { ort: string; text: string; art?: 'ok' | 'warn' } | null; ort: string }) {
   if (!meldung || meldung.ort !== ort) return null;
+  const absage = meldung.art === 'warn';
   return (
-    <p data-quittung={ort} className="text-xs mt-2 flex items-center gap-1.5" style={{ color: 'var(--ok)' }}>
-      <CheckCircle2 className="w-3.5 h-3.5" /> {meldung.text}
+    <p data-quittung={ort} data-art={absage ? 'warn' : 'ok'} className="text-xs mt-2 flex items-center gap-1.5" style={{ color: absage ? 'var(--warn)' : 'var(--ok)' }}>
+      {absage ? <AlertTriangle className="w-3.5 h-3.5" /> : <CheckCircle2 className="w-3.5 h-3.5" />} {meldung.text}
     </p>
   );
 }
@@ -143,7 +148,7 @@ export function Settings() {
   // --- System-Tab state (bestehend) ---
   const [settings, setSettings] = useState<AISettings>(loadAISettings());
   const [saved, setSaved] = useState(false);
-  const [meldung, setMeldung] = useState<{ ort: string; text: string } | null>(null);
+  const [meldung, setMeldung] = useState<{ ort: string; text: string; art?: 'ok' | 'warn' } | null>(null);
   const ortZuletzt = useRef<string | null>(null);   // null = es wurde noch keine Zeile angefasst
   // Die Quittung lebt zwei Sekunden ab der LETZTEN Speicherung. Ohne den Griff auf
   // den laufenden Timer nahm der erste Speichern-Knopf dem zweiten die Bestaetigung
@@ -158,7 +163,14 @@ export function Settings() {
    * gar keinen Typ, also fiel alles auf "Fakt" zurueck. Erst schauen, dann —
    * nach ausdruecklicher Bestaetigung — schreiben.
    */
-  const [sortierVorschau, setSortierVorschau] = useState<{ changed: number; after: Record<string, number> } | null>(null);
+  const [sortierVorschau, setSortierVorschau] = useState<{
+    changed: number;
+    examples?: { title: string; von: string; nach: string; grund: string }[];
+  } | null>(null);
+  // P4-05 (18.10.): beide Nachsortier-Aufrufe hatten keinen Fehlerzweig. Bei 429, 500 oder
+  // 413 drehte der Knopf leer — und niemand sagte, ob etwas sortiert wurde oder nicht.
+  const [sortierFehler, setSortierFehler] = useState<string | null>(null);
+  const [gruppenFehlt, setGruppenFehlt] = useState(false);
   const [bestandGruppen, setBestandGruppen] = useState<{ bestand: number; traeger: Record<Traeger, number>; themen: Record<Thema, number> } | null>(null);
   const [sortiertLaeuft, setSortiertLaeuft] = useState(false);
   const [sortiertFertig, setSortiertFertig] = useState<number | null>(null);
@@ -187,12 +199,20 @@ export function Settings() {
     }
   };
   const [models, setModels] = useState<string[]>([]);
+  // P4-13 (Leitungs-Brief 18.10. 14:45, Schlag 2): der Poll lies die Modelliste stehen, als
+  // der Dienst verstummte — die gruene Zeile behielt recht, waehrend schon nichts mehr antwortete.
+  // `sondeWeg` ist die Antwort der letzten Sonde, nicht die gemerkte Liste.
+  const [sondeWeg, setSondeWeg] = useState(false);
   const [loadingModels, setLoadingModels] = useState(false);
   const [modelError, setModelError] = useState<string | null>(null);
   const [autoLearn, setAutoLearn] = useState<boolean>(()=>{ try{ return localStorage.getItem('ki_gehirn_autolearn') === 'true'; }catch{ return false; }});
   const [autoLearnSaved, setAutoLearnSaved] = useState(false);
   const [extractModel, setExtractModel] = useState<string>(()=>{ try{ return loadAISettings().extractModel ?? ''; }catch{ return ''; }});
-  const [extractSaved, setExtractSaved] = useState(false);
+  // P4-12 (Leitungs-Brief 18.10. 14:45, Schlag 1): dieselbe Zeilen-Klasse wie P4-02, an der
+  // zweiten Steuerung. Vorher: Blur -> schreiben -> "Saved", ohne die Antwort der Spiegelung.
+  // Dazu der leere Zustand: ein Blur allein ist keine Aenderung, also auch keine Meldung.
+  const [extractQuittung, setExtractQuittung] = useState<{ art: 'ok' | 'warn'; text: string } | null>(null);
+  const extractTimer = useRef<number | undefined>(undefined);
   /**
    * Wo der KI-Schluessel wirklich liegt (F13): versiegelt mit dem
    * Datenbankschluessel dieser Installation, oder — wenn es den nicht gibt —
@@ -214,6 +234,8 @@ export function Settings() {
   const [werkzeugeFehler, setWerkzeugeFehler] = useState<string | null>(null);
 
   const provider = providerById(settings.providerId);
+  /** "local" sagt nur, wer eine lokale Adresse befragt — der Anbietername allein reicht nicht. */
+  const adresseLokal = /localhost|127\.0\.0\.1|\[::1\]/i.test(settings.baseUrl || provider.baseUrl || '');
   // In der fertigen App: der mitgelieferte MCP-Server, gestartet vom K3PTA-Programm
   // selbst — kein Node.js, kein npm. Außerhalb der App bleibt es beim Weg über npx.
   const mcpAusApp = health?.mcp?.stdio ? JSON.stringify({ mcpServers: { kepta: health.mcp.stdio } }, null, 2) : null;
@@ -224,17 +246,28 @@ export function Settings() {
     managed: boolean;
     policies: Record<string, string>;
   } | null>(null);
+  // P4-04 (18.10.): der Grund, warum die Auskunft fehlt, ist eine Auskunft. Ohne ihn
+  // stand beim ersten Anstrich "No organization policies", bevor die Tuer geantwortet hatte.
+  const [policyGrund, setPolicyGrund] = useState<string | null>(null);
   useEffect(() => {
     const lade = () => {
       void (async () => {
         try {
-          const richtlinien = await fetch('/api/policies').then(r => r.json()).catch(() => null);
-          if (!richtlinien) return;
+          const antwort = await fetch('/api/policies');
+          if (!antwort.ok) { setOrgInfo(null); setPolicyGrund(`the local server answered HTTP ${antwort.status}`); return; }
+          const richtlinien = await antwort.json().catch(() => null);
+          if (!richtlinien || typeof richtlinien !== 'object') { setOrgInfo(null); setPolicyGrund('the answer held no policy list'); return; }
+          setPolicyGrund(null);
           setOrgInfo({
             managed: richtlinien.managed === true,
             policies: richtlinien.policies ?? {},
           });
-        } catch { /* Settings bleibt ohne Organisations-Panel */ }
+        } catch {
+          // P4-14: war die Tuer einmal beantwortet und verstummt sie dann, durfte die alte
+          // Auskunft nicht stehenbleiben. Ein abgebrochener Transport ist Unwissen, kein Bestand.
+          setOrgInfo(null);
+          setPolicyGrund('the local server did not answer');
+        }
       })();
     };
     lade();
@@ -265,6 +298,7 @@ export function Settings() {
         });
         const data = await res.json();
         if (!cancelled && res.ok && Array.isArray(data.models)) {
+          setSondeWeg(false);
           setModels(prev => {
             const next = (data.models as string[]).sort();
             // nur updaten wenn sich Liste ändert, um Flackern zu vermeiden
@@ -272,8 +306,13 @@ export function Settings() {
             return next;
           });
           setModelError(null);
+        } else if (!cancelled) {
+          setSondeWeg(true);
         }
-      } catch { /* silent for auto-poll */ }
+      } catch {
+        // Der Abbruch ist eine Auskunft, kein Rauschen: die Liste bleibt, die gruene Zeile nicht.
+        if (!cancelled) setSondeWeg(true);
+      }
     };
     silentLoad();
     const id = setInterval(silentLoad, 12000);
@@ -367,6 +406,7 @@ export function Settings() {
     const p = providerById(id);
     setModels([]);
     setModelError(null);
+    setSondeWeg(false);
     update({
       providerId: id,
       baseUrl: p.baseUrl,
@@ -375,20 +415,32 @@ export function Settings() {
     });
   };
 
-  const handleSave = (e: FormEvent) => {
+  const handleSave = async (e: FormEvent) => {
     e.preventDefault();
-    saveAISettings(settings);
-    setSaved(true);
-    // #26, leerer Zustand: eine Meldung an einer Zeile, die niemand angefasst hat, ist
-    // eine Behauptung. Gemalt wird nur, wo etwas stand — und danach ist nichts mehr an.
-    setMeldung(ortZuletzt.current ? { ort: ortZuletzt.current, text: 'Saved — the change is on this computer.' } : null);
+    const ort = ortZuletzt.current;
     ortZuletzt.current = null;
     window.clearTimeout(quittung.current);
+    // #26, leerer Zustand: eine Meldung an einer Zeile, die niemand angefasst hat, ist
+    // eine Behauptung. Gemalt wird nur, wo etwas stand — und danach ist nichts mehr an.
+    //
+    // P4-02 (18.10.): das "Saved" stand vor der Antwort der Datenbank. Der Browserspeicher
+    // traegt nur diese Sitzung — der Port ist bei jedem Start ein andrer, also ist die
+    // Spiegelung der einzige Weg, der den Neustart ueberlebt. Ward sie abgewiesen (413,
+    // 429, 500), blieb die gruene Zeile trotzdem stehen.
+    try {
+      await saveAISettings(settings);
+      setSaved(true);
+      setMeldung(ort ? { ort, text: 'Saved — the change is on this computer.' } : null);
+    } catch (err: unknown) {
+      setSaved(false);
+      const grund = err instanceof Error ? err.message : String(err);
+      setMeldung(ort ? { ort, art: 'warn', text: `Not saved — the local server refused it (${grund}). The change lives in this window only and is gone after a restart.` } : null);
+    }
     quittung.current = window.setTimeout(() => { setSaved(false); setMeldung(null); }, QUITTUNG_MS);
   };
 
   // Beim Verlassen der Platte darf kein Timer nachlaufen.
-  useEffect(() => () => window.clearTimeout(quittung.current), []);
+  useEffect(() => () => { window.clearTimeout(quittung.current); window.clearTimeout(extractTimer.current); }, []);
 
   const loadModels = async () => {
     setLoadingModels(true);
@@ -426,6 +478,8 @@ export function Settings() {
   const handleExport = async () => {
     setSicherung(null);
     let knoten: unknown[];
+    let gesamt: number | null = null;
+    let geklemmt = false;
     try {
       const res = await fetch('/api/memories?alle=1');
       if (!res.ok) {
@@ -435,8 +489,20 @@ export function Settings() {
       const daten = await res.json();
       knoten = Array.isArray(daten) ? daten
         : Array.isArray((daten as { memories?: unknown[] })?.memories) ? (daten as { memories: unknown[] }).memories : [];
+      // P4-08 (18.10.): dieselbe Antwort traegt die Bestandszahl schon im Kopf
+      // (server/router/memories.ts:298-302: x-kepta-total, x-kepta-begrenzt). Wer nur den
+      // Koerper zaehlt, meldet jeden Abschnitt als erfolgreiche Sicherung — so war es am
+      // 14.10. (100 von 21 066 Knoten als "Backup created" verkauft).
+      const roh = res.headers.get('x-kepta-total');
+      const gez = roh === null ? Number.NaN : parseInt(roh, 10);
+      gesamt = Number.isFinite(gez) ? gez : null;
+      geklemmt = res.headers.get('x-kepta-begrenzt') === '1';
     } catch {
       setSicherung({ fehler: 'Backup failed — the memory service did not answer. No file was written.' });
+      return;
+    }
+    if (gesamt !== null && (geklemmt || knoten.length !== gesamt)) {
+      setSicherung({ fehler: `Backup short — ${knoten.length} of ${gesamt.toLocaleString('en-US')} nodes came through${geklemmt ? ' and the server flagged the answer as capped' : ''}. No file was written.` });
       return;
     }
     const blob = new Blob([JSON.stringify(knoten, null, 2)], { type: 'application/json' });
@@ -677,6 +743,7 @@ export function Settings() {
                         ? `Sealed with this installation's database key (${schluesselHuelle.ablage ?? 'the system keychain'}) — never returned by the settings API. A working copy stays in this app's local storage on this computer, so the model is reachable after a restart without asking again.`
                         : 'This knowledge base has no database key, so an API key cannot be sealed here. It stays in this window and must be entered again after a restart.'}
                   </p>
+                  <Meldung meldung={meldung} ort="schluessel" />
                 </div>
 
                 <div>
@@ -731,8 +798,12 @@ export function Settings() {
                   {modelError && (
                     <p className="text-xs mt-2" style={{ color: '#f87171' }}>{modelError}</p>
                   )}
-                  {!provider.needsKey && models.length > 0 && (
-                    <p className="text-xs mt-2 flex items-center gap-1.5" style={{ color: 'var(--ok)' }}><CheckCircle2 className="w-3.5 h-3.5" /> {models.length} local models connected — new downloads appear automatically (every 12s + on focus)</p>
+                  <Meldung meldung={meldung} ort="modelle" />
+                  {!provider.needsKey && models.length > 0 && !sondeWeg && (
+                    <p className="text-xs mt-2 flex items-center gap-1.5" style={{ color: 'var(--ok)' }}><CheckCircle2 className="w-3.5 h-3.5" /> {models.length} models connected{adresseLokal ? ' locally' : ''} — new downloads appear automatically (every 12s + on focus)</p>
+                  )}
+                  {sondeWeg && models.length > 0 && (
+                    <p data-sonde="weg" className="text-xs mt-2 flex items-center gap-1.5" style={{ color: 'var(--warn)' }}><AlertTriangle className="w-3.5 h-3.5" /> The model service stopped answering — the {models.length} models listed here were seen earlier, not now.</p>
                   )}
                   {!provider.needsKey && models.length === 0 && !loadingModels && !modelError && (
                     <p className="text-xs mt-2 leading-relaxed" style={{ color: 'var(--text-3)' }}>No local models found. Start Ollama (`ollama serve` + `ollama pull llama3.2`) or LM Studio — they show up here immediately.</p>
@@ -770,6 +841,11 @@ export function Settings() {
                   </label>
                 </div>
                 {autoLearnSaved && <div className="text-xs mt-2 flex items-center gap-1.5" style={{color:'var(--ok)'}}><CheckCircle2 className="w-3.5 h-3.5"/> {autoLearn ? 'Auto-learn active — the brain extends itself' : 'Auto-learn off'}</div>}
+                {/* P4-07 (18.10.): src/components/Chat.tsx:651 kehrt stumm um, wenn kein
+                    Modell gesetzt ist — der Schalter stand an und lernte nichts. */}
+                {autoLearn && !settings.model.trim() && (
+                  <div className="text-xs mt-2 flex items-center gap-1.5" style={{color:'var(--warn)'}}><AlertTriangle className="w-3.5 h-3.5"/> Auto-learn is on but nothing will be learned: no model is set. Choose one under Artificial intelligence and save it.</div>
+                )}
                 {autoLearn && (
                   <div className="mt-4 pt-4" style={{ borderTop: '1px solid var(--border-subtle)' }}>
                     <label className="text-xs font-semibold block mb-1.5" style={{color:'var(--text-1)'}}>Extraction model <span style={{color:'var(--text-3)'}}>— optional</span></label>
@@ -777,19 +853,36 @@ export function Settings() {
                       type="text"
                       value={extractModel}
                       onChange={(e) => setExtractModel(e.target.value)}
-                      onBlur={() => { const s = loadAISettings(); saveAISettings({ ...s, extractModel: extractModel.trim() }); setExtractSaved(true); setTimeout(()=>setExtractSaved(false),QUITTUNG_MS); }}
+                      onBlur={async () => {
+                        const wert = extractModel.trim();
+                        const bestand = loadAISettings();
+                        if ((bestand.extractModel ?? '') === wert) return;   // nichts geaendert — nichts gemalt
+                        window.clearTimeout(extractTimer.current);
+                        try {
+                          await saveAISettings({ ...bestand, extractModel: wert });
+                          setExtractQuittung({ art: 'ok', text: 'Saved on this computer.' });
+                        } catch (err: unknown) {
+                          const grund = err instanceof Error ? err.message : String(err);
+                          setExtractQuittung({ art: 'warn', text: `Not saved — the local server refused it (${grund}). The small model lives in this window only.` });
+                        }
+                        extractTimer.current = window.setTimeout(() => setExtractQuittung(null), QUITTUNG_MS);
+                      }}
                       placeholder="e.g. llama3.2:3b — empty = the chat model"
                       className="w-full text-sm rounded-lg px-3 py-2"
                       style={{ background: 'var(--bg-inset-strong)', border: '1px solid var(--border-subtle)', color: 'var(--text-1)' }}
                     />
-                    {extractSaved && <div className="text-xs mt-1.5 flex items-center gap-1.5" style={{color:'var(--ok)'}}><CheckCircle2 className="w-3.5 h-3.5"/> Saved</div>}
+                    {extractQuittung && (
+                      <div data-extract-quittung={extractQuittung.art} className="text-xs mt-1.5 flex items-center gap-1.5" style={{ color: extractQuittung.art === 'warn' ? 'var(--warn)' : 'var(--ok)' }}>
+                        {extractQuittung.art === 'warn' ? <AlertTriangle className="w-3.5 h-3.5" /> : <CheckCircle2 className="w-3.5 h-3.5" />} {extractQuittung.text}
+                      </div>
+                    )}
                     <p className="text-xs mt-2 leading-relaxed" style={{color:'var(--text-3)'}}>
                       A small model is plenty for a title and three tags. Large reasoning models take minutes per answer and often return no clean JSON — auto-learn then gives up after {Math.round(AUTO_LEARN_TIMEOUT_MS/1000)} seconds and tells you so.
                     </p>
                   </div>
                 )}
 
-                <p className="text-xs mt-2 leading-relaxed" style={{color:'var(--text-3)'}}>The switch lives in <code>localStorage ki_gehirn_autolearn</code>. For every AI answer of 60 characters or more, a short extraction call runs in the background and saves <code>title/tags/summary</code> as a new node. Both success and failure are reported as a notification.</p>
+                <p className="text-xs mt-2 leading-relaxed" style={{color:'var(--text-3)'}}>The switch lives in <code>localStorage ki_gehirn_autolearn</code>. For every AI answer of 60 characters or more — or any shorter answer that spans more than one line — a short extraction call runs in the background and saves <code>title/tags/summary</code> as a new node. Both success and failure are reported as a notification.</p>
               </div>
 
               <div>
@@ -838,9 +931,18 @@ export function Settings() {
 
                 <div className="mt-6 pt-6" style={{ borderTop: '1px solid var(--border-subtle)' }}>
                   <h3 className="settings-h mb-2" style={{ color: 'var(--text-1)' }}>Organization</h3>
-                  {orgInfo?.managed ? (
+                  {policyGrund ? (
+                    <p className="text-sm" style={{ color: 'var(--warn)' }}>
+                      Whether this install is managed is <strong style={{ color: 'var(--text-1)' }}>unknown</strong> — {policyGrund}. This is not the same as "no policies"; refocus the window to ask again.
+                    </p>
+                  ) : orgInfo === null ? (
+                    <p className="text-sm" style={{ color: 'var(--text-3)' }}>Asking the local server whether this install is managed…</p>
+                  ) : orgInfo.managed ? (
                     <div className="text-sm" style={{ color: 'var(--text-2)' }}>
-                      <p className="mb-1.5">This installation is <strong style={{ color: 'var(--text-1)' }}>managed by your organization</strong> (managed-settings.json). Active policies:</p>
+                      <p className="mb-1.5">This installation is <strong style={{ color: 'var(--text-1)' }}>managed by your organization</strong> (managed-settings.json). {
+                        orgInfo.policies.chat_cloud === 'deny' || orgInfo.policies.machine_scan === 'deny' || orgInfo.policies.privacy_shield === 'force_on'
+                          ? 'Active policies:'
+                          : 'It sets no model, scan or shield rule — only team roles.'}</p>
                       <ul className="list-disc pl-5 space-y-1">
                         {orgInfo.policies.chat_cloud === 'deny' && <li>Cloud models are disabled — local models (e.g. Ollama) only</li>}
                         {orgInfo.policies.machine_scan === 'deny' && <li>The computer scan is disabled</li>}
@@ -898,6 +1000,9 @@ export function Settings() {
                     decided. This looks at every note again and sorts it — and tells you why. Nothing is
                     written until you confirm.
                   </p>
+                  {sortierFehler && (
+                    <div className="text-sm mb-3" style={{ color: 'var(--warn)' }}>{sortierFehler}</div>
+                  )}
                   {sortiertFertig !== null ? (
                     <div className="text-sm" style={{ color: 'var(--ok)' }}>{sortiertFertig} notes sorted.</div>
                   ) : sortierVorschau ? (
@@ -924,17 +1029,42 @@ export function Settings() {
                             </div>
                           </div>
                         )}
+                        {gruppenFehlt && (
+                          <div className="mt-1.5 text-[12.5px]" style={{ color: 'var(--warn)' }}>
+                            The two-row counts did not arrive — only the change count is known.
+                          </div>
+                        )}
+                        {/* P4-06 (18.10.): der Text verspricht "and tells you why". Die
+                            Erklaerung liefert die Route langst (server/router/memories.ts:175,
+                            grund je Beispiel) — gezeigt wurde sie nirgends. */}
+                        {sortierVorschau.examples && sortierVorschau.examples.length > 0 && (
+                          <div className="mt-1.5 space-y-1">
+                            {sortierVorschau.examples.slice(0, 3).map((b) => (
+                              <div key={`${b.title}-${b.von}-${b.nach}`} className="text-[12.5px]">
+                                <span style={{ color: 'var(--text-1)' }}>{b.title}</span>{' '}
+                                <span>{b.von} → {b.nach}</span>{' '}
+                                <span style={{ color: 'var(--text-3)' }}>({b.grund})</span>
+                              </div>
+                            ))}
+                            <div className="text-[11.5px]" style={{ color: 'var(--text-3)' }}>
+                              first {Math.min(3, sortierVorschau.examples.length)} of {sortierVorschau.changed} that would change
+                            </div>
+                          </div>
+                        )}
                       </div>
                       <div className="flex gap-2">
-                        <button onClick={() => setSortierVorschau(null)} className="btn-ghost px-4 py-2 rounded-xl text-sm">Cancel</button>
+                        <button onClick={() => { setSortierVorschau(null); setSortierFehler(null); }} className="btn-ghost px-4 py-2 rounded-xl text-sm">Cancel</button>
                         <button
                           disabled={sortiertLaeuft}
                           onClick={async () => {
                             setSortiertLaeuft(true);
+                            setSortierFehler(null);
                             try {
                               const d = await sendJson<{ changed: number }>('/api/memories/reclassify', { apply: true });
                               setSortiertFertig(d.changed);
                               setSortierVorschau(null);
+                            } catch (err: unknown) {
+                              setSortierFehler(err instanceof Error ? err.message : String(err));
                             } finally { setSortiertLaeuft(false); }
                           }}
                           className="btn-primary px-4 py-2 rounded-xl text-sm flex-1"
@@ -946,9 +1076,14 @@ export function Settings() {
                       disabled={sortiertLaeuft}
                       onClick={async () => {
                         setSortiertLaeuft(true);
+                        setSortierFehler(null);
                         try {
-                          setSortierVorschau(await sendJson<{ changed: number; after: Record<string, number> }>('/api/memories/reclassify', {}));
-                          try { setBestandGruppen(await (await fetch('/api/memories/gruppen')).json()); } catch { /* die Zahl fehlt dann */ }
+                          setSortierVorschau(await sendJson<{ changed: number; examples?: { title: string; von: string; nach: string; grund: string }[] }>('/api/memories/reclassify', {}));
+                          const koppen = await fetch('/api/memories/gruppen');
+                          if (koppen.ok) { setBestandGruppen(await koppen.json()); setGruppenFehlt(false); }
+                          else setGruppenFehlt(true);
+                        } catch (err: unknown) {
+                          setSortierFehler(err instanceof Error ? err.message : String(err));
                         } finally { setSortiertLaeuft(false); }
                       }}
                       className="btn-ghost flex items-center justify-center gap-2 px-6 py-2.5 rounded-xl font-medium w-full"
@@ -1028,8 +1163,8 @@ export function Settings() {
               <div className="hud-inset rounded-xl p-3 flex items-center gap-3">
                 <Globe className="w-4 h-4 shrink-0" style={{ color: 'var(--text-2)' }} />
                 <code className="text-sm font-mono flex-1 truncate" style={{ color: 'var(--text-1)' }}>{API_BASE}</code>
-                <button onClick={() => copy(API_BASE, 'base')} className="btn-ghost p-2 rounded-lg shrink-0" title="Copy">
-                  {copied === 'base' ? <CheckCircle2 className="w-4 h-4" style={{ color: 'var(--ok)' }} /> : <Copy className="w-4 h-4" />}
+                <button onClick={() => copy(API_BASE, 'base')} className="btn-ghost p-2 rounded-lg shrink-0" title={copied === 'error:base' ? 'Copying failed — your clipboard was blocked' : 'Copy'}>
+                  {copied === 'base' ? <CheckCircle2 className="w-4 h-4" style={{ color: 'var(--ok)' }} /> : copied === 'error:base' ? <AlertTriangle className="w-4 h-4" style={{ color: 'var(--warn)' }} /> : <Copy className="w-4 h-4" />}
                 </button>
                 <a href={`${API_BASE}/api/health`} target="_blank" rel="noreferrer" className="btn-ghost p-2 rounded-lg shrink-0" title="Open health">
                   <ExternalLink className="w-4 h-4" />
@@ -1049,8 +1184,8 @@ export function Settings() {
               <div className="space-y-2">
                 {[
                   { m: 'GET', p: '/api/health', d: 'Health check', c: `curl ${API_BASE}/api/health` },
-                  { m: 'GET', p: '/api/memories', d: 'All nodes', c: `curl ${API_BASE}/api/memories` },
-                  { m: 'GET', p: '/api/memories/search?q=...&limit=20', d: 'Full-text search', c: `curl "${API_BASE}/api/memories/search?q=ollama&limit=5"` },
+                  { m: 'GET', p: '/api/memories', d: 'One page of 100 nodes — add ?alle=1 for the whole base', c: `curl ${API_BASE}/api/memories?alle=1` },
+                  { m: 'GET', p: '/api/memories/search?q=...&limit=20', d: 'Hybrid search (words, vectors, graph) — up to 500', c: `curl "${API_BASE}/api/memories/search?q=ollama&limit=5"` },
                   { m: 'POST', p: '/api/memory', d: 'Save (alias)', c: `curl -X POST ${API_BASE}/api/memory -H "Content-Type: application/json" -d '{"title":"T","content":"C","tags":["a"]}'` },
                   { m: 'POST', p: '/api/mcp/search', d: 'MCP search (plain / JSON-RPC)', c: `curl -X POST ${API_BASE}/api/mcp/search -H "Content-Type: application/json" -d '{"query":"rezept","limit":3}'` },
                   { m: 'POST', p: '/api/mcp/save', d: 'MCP save', c: `curl -X POST ${API_BASE}/api/mcp/save -H "Content-Type: application/json" -d '{"title":"T","content":"C","tags":[]}'` },
@@ -1060,8 +1195,8 @@ export function Settings() {
                     <span className="method-badge" data-method={e.m}>{e.m}</span>
                     <code className="text-xs font-mono flex-1 truncate" style={{ color: 'var(--text-1)' }}>{e.p}</code>
                     <span className="text-xs hidden sm:block shrink-0" style={{ color: 'var(--text-3)' }}>{e.d}</span>
-                    <button onClick={() => copy(e.c, e.p)} className="btn-ghost p-1.5 rounded-lg shrink-0" title="Copy the curl command">
-                      {copied === e.p ? <CheckCircle2 className="w-3.5 h-3.5" style={{ color: 'var(--ok)' }} /> : <Copy className="w-3.5 h-3.5" />}
+                    <button onClick={() => copy(e.c, e.p)} className="btn-ghost p-1.5 rounded-lg shrink-0" title={copied === `error:${e.p}` ? 'Copying failed — your clipboard was blocked' : 'Copy the curl command'}>
+                      {copied === e.p ? <CheckCircle2 className="w-3.5 h-3.5" style={{ color: 'var(--ok)' }} /> : copied === `error:${e.p}` ? <AlertTriangle className="w-3.5 h-3.5" style={{ color: 'var(--warn)' }} /> : <Copy className="w-3.5 h-3.5" />}
                     </button>
                   </div>
                 ))}
@@ -1150,8 +1285,8 @@ export function Settings() {
                   <div key={os} className="flex items-center gap-2 mt-2 hud-inset rounded-lg px-3 py-2">
                     <span className="text-xs shrink-0" style={{ color: 'var(--text-2)' }}>{os}</span>
                     <code className="text-xs font-mono flex-1 truncate" style={{ color: 'var(--text-1)' }}>{pfad}</code>
-                    <button onClick={() => copy(pfad, `claude-path-${os}`)} className="btn-ghost p-1.5 rounded-lg shrink-0" aria-label={`Copy the ${os} path`}>
-                      {copied === `claude-path-${os}` ? <CheckCircle2 className="w-3.5 h-3.5" style={{ color: 'var(--ok)' }} /> : <Copy className="w-3.5 h-3.5" />}
+                    <button onClick={() => copy(pfad, `claude-path-${os}`)} className="btn-ghost p-1.5 rounded-lg shrink-0" aria-label={`Copy the ${os} path`} title={copied === `error:claude-path-${os}` ? 'Copying failed — your clipboard was blocked' : undefined}>
+                      {copied === `claude-path-${os}` ? <CheckCircle2 className="w-3.5 h-3.5" style={{ color: 'var(--ok)' }} /> : copied === `error:claude-path-${os}` ? <AlertTriangle className="w-3.5 h-3.5" style={{ color: 'var(--warn)' }} /> : <Copy className="w-3.5 h-3.5" />}
                     </button>
                   </div>
                 ))}

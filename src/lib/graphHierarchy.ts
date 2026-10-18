@@ -10,7 +10,7 @@
 // LayoutEdge): der Zeichencode in KnowledgeGraph.tsx bleibt unveraendert — nur
 // die Positionen kommen hierher statt aus der Physik.
 import type { Memory } from "../types";
-import { gruppen, type Gruppe, type Traeger, type Thema } from "../core/klassifikation";
+import { gruppen, quellpfad, type Gruppe, type Traeger, type Thema } from "../core/klassifikation";
 import { notizEtikett } from "./graphLayout";
 import type { LayoutEdge, LayoutNode, Bounds } from "./graphLayout";
 
@@ -191,12 +191,57 @@ export function entitiesByMemory(
 }
 
 /**
- * Baum: Wurzel -> Typ -> Entitaet/Tag-Gruppe -> Notiz.
+ * Wie oft jede Marke im sichtbaren Bestand vorkommt. Ein Zensus ueber die Liste,
+ * damit die zweite Ebene des Baums eine Wahl hat und keine Reihenfolge.
+ */
+export function markenHaeufigkeit(memories: readonly Memory[]): Map<string, number> {
+  const aus = new Map<string, number>();
+  for (const m of memories) {
+    for (const roh of new Set((m.tags ?? []).map((t) => String(t).trim().toLowerCase()).filter(Boolean))) {
+      aus.set(roh, (aus.get(roh) ?? 0) + 1);
+    }
+  }
+  return aus;
+}
+
+/**
+ * Die trennendste Marke eines Stuecks — nicht die erste.
  *
- * Notizen OHNE Entitaet werden nach ihrem ersten Tag gruppiert (#tag) — sonst
+ * Gemessen 18.10. an Damians echtem Bestand (21 066 Notizen, GET /api/memories?alle=1):
+ * 20 974 Stuecke tragen die Marke `machine-scan` als ERSTES Element, und der Scan
+ * haengt die Dateiendung dahinter (`md`, `json`, `txt`, `html`). Die erste Marke
+ * legt also 99,56 % des Bestands in EIN Fach — ein Fach, das nichts einteilt. Ueber
+ * die seltenste Marke derselben Notiz fallen groesstes Fach 43,02 % (md) und 64 Facher.
+ * Das ist kein Gewinn, den man kaufen kann, ohne ihn zu sehen: beide Zahlen nennt
+ * die Wache in `tests/lib/gruppen-regal.test.ts`.
+ *
+ * Der Rest bleibt offen benannt: was uebrig bleibt, sind Dateiformate, keine
+ * Betreffs. Fuer Betreffs ist `baueRegal` da.
+ */
+export function trennendsteMarke(
+  m: { tags?: readonly string[] },
+  haeufigkeit: ReadonlyMap<string, number>,
+): string | null {
+  let beste: string | null = null;
+  let besteZahl = Infinity;
+  for (const roh of new Set((m.tags ?? []).map((t) => String(t).trim().toLowerCase()).filter(Boolean))) {
+    const n = haeufigkeit.get(roh) ?? 0;
+    if (n < besteZahl || (n === besteZahl && beste !== null && roh < beste)) {
+      beste = roh;
+      besteZahl = n;
+    }
+  }
+  return beste;
+}
+
+/**
+ * Baum: Wurzel -> Typ -> trennendste Marke / Begriff -> Notiz.
+ *
+ * Notizen OHNE Entitaet werden nach ihrer trennendsten Marke gruppiert — sonst
  * artet der Baum bei Massen-Importen (z. B. Maschinen-Scan) in ein ebenes
- * Fächerung aus tausenden direkten Blaettern aus, die keine Hierarchie zeigt.
- * Notizen ohne Entitaet UND ohne Tag landen unter "Other". Typen ohne Notizen
+ * Fächerung aus tausenden direkten Blaettern aus, die keine Hierarchie zeigt,
+ * oder in EIN Fach namens `#machine-scan` mit 99,56 % des Ladens.
+ * Notizen ohne Entitaet UND ohne Marke landen unter "Other". Typen ohne Notizen
  * entfallen; leere Eingabe ergibt eine einzelne Wurzel ohne Kinder.
  */
 export function buildHierarchy(
@@ -211,6 +256,7 @@ export function buildHierarchy(
   konzepte?: ReadonlySet<string>
 ): HierarchieKnoten {
   const wurzel: HierarchieKnoten = { id: "__wurzel", kind: "root", label: "Knowledge", children: [] };
+  const haeufigkeit = markenHaeufigkeit(memories);
   const nachTyp = new Map<string, Memory[]>();
   for (const m of memories) {
     // Die API liefert ueber die drei bekannten hinaus auch andere Typen
@@ -236,6 +282,7 @@ export function buildHierarchy(
     };
     const nachEntitaet = new Map<string, Memory[]>();
     const nachTag = new Map<string, Memory[]>();
+    const markeZeigt = new Map<string, string>();
     const ohne: Memory[] = [];
     for (const m of nachTyp.get(t)!) {
       const e = entitaeten.get(m.id);
@@ -245,11 +292,14 @@ export function buildHierarchy(
         liste.push(m);
         continue;
       }
-      const tag = m.tags.find((x) => x.trim());
-      if (tag) {
-        const k = tag.trim().toLowerCase();
-        let liste = nachTag.get(k);
-        if (!liste) { liste = []; nachTag.set(k, liste); }
+      const marke = trennendsteMarke(m, haeufigkeit);
+      if (marke) {
+        if (!markeZeigt.has(marke)) {
+          const roh = (m.tags ?? []).map((x) => String(x).trim()).find((x) => x.toLowerCase() === marke);
+          markeZeigt.set(marke, roh ?? marke);
+        }
+        let liste = nachTag.get(marke);
+        if (!liste) { liste = []; nachTag.set(marke, liste); }
         liste.push(m);
       } else {
         ohne.push(m);
@@ -270,7 +320,7 @@ export function buildHierarchy(
       typKnoten.children.push({
         id: `__tag:${k}`,
         kind: "group",
-        label: `#${nachTag.get(k)![0].tags.find((x) => x.trim())!.trim()}`,
+        label: `#${markeZeigt.get(k) ?? k}`,
         children: nachTag.get(k)!
           .slice()
           .sort((a, b) => (a.title || "").localeCompare(b.title || ""))
@@ -567,4 +617,208 @@ export function stepDendrogram(
     }
   }
   return bewegt;
+}
+
+// ---------- Das Regal: zwei Bänder, nicht vier Körbe ----------
+//
+// Der Baum antwortet auf die Frage "welcher Art ist das Stueck". Die Antwort ist
+// an einem echten Bestand aus dem Maschinen-Scan keine Antwort mehr: 19 283 von
+// 21 066 Notizen (91,54 %) liegen in EINEM Typ-Fach, und die zweite Ebene — die
+// erste Marke — faesst 99,56 % in `#machine-scan`. Was der Leser sieht, ist eine
+// Klammer um seinen ganzen Laden.
+//
+// Das Regal fragt anders und in zwei Bändern, die sich nicht in die Quere kommen:
+//
+//   Band 1 "woher"  — Traeger, in echten Proportionen (notes 92 / files 10 996 / code 9 978)
+//   Band 2 "worum"  — ein Fach je Stueck: Betreff wo einer greift, sonst der
+//                     Ordnerzweig, sonst ein ehrliches Restfach
+//
+// Gemessen 18.10. an denselben 21 066: Band 2 nennt den ganzen Bestand in 12 Zeilen,
+// groesstes Fach 33,69 %, und die Zeilen halten bei 390 px Breite — weil ein Fach
+// hier ein Name ist und kein Pfad, der am Rand abgeschnitten wird. Die Richtung mit
+// dem vollen Ordnerpfad trennt feiner (groesstes Fach 10,47 %) aber braucht 38 Zeilen,
+// wiederholt `Desktop / ki gehirn` in 20 davon und verliert am Telefon genau das
+// Ende des Pfads, das die Zeile unterscheidet. Sie bleibt der Griff IN ein Fach
+// hinein, nicht das Bild obendrauf.
+//
+// Was das Regal nicht versteckt: 12 153 Stuecke (57,69 %) haben keinen Betreff, und
+// `events` (4 496) ist ein Datum im Text, kein Ereignis. Beide Zahlen stehen in
+// `luecken` und muessen in der Flaeche dastehen, sonst verkauft das Regal eine
+// Trennschaerfe, die die Regexe nicht haben.
+
+/** Ein Fach ueber dieser Schwelle bekommt keine eigene Zeile, sondern eine Zahl. */
+export const REGAL_SCHWELLE_PROZENT = 1;
+/** Ein Fach ueber diesem Anteil teilt das Regal nicht — es ist ein Korb. */
+export const REGAL_DECKEL_PROZENT = 10;
+
+export interface RegalFach {
+  /** Was der Leser sieht — kein Schluessel, kein Pfad, kein Fachwort. */
+  name: string;
+  notizen: number;
+  prozent: number;
+  /** Wo das Fach herkommt: Betreff, Ordner, Netzadresse oder gar keines von beiden. */
+  herkunft: "betreff" | "ordner" | "netz" | "ohne beides" | "schwanz";
+}
+
+export interface Regal {
+  bestand: number;
+  woher: RegalFach[];
+  worum: RegalFach[];
+  /** Die Luecken, die das Regal laesst — als Zahlen, nicht als Schweigen. */
+  luecken: { ohneBetreff: number; ohnePfad: number; ohneMarke: number };
+  groesstesFachProzent: number;
+  /** Wie viel Bestand in Faechern unter REGAL_DECKEL_PROZENT liegt. */
+  unterDeckelProzent: number;
+  /** Zeilen, die das Regal braucht — die Flaeche muss sie nicht falten. */
+  zeilen: number;
+}
+
+/**
+ * Der Vorspann, den die Maschine setzt — nicht der, an dem sich Wissen unterscheidet.
+ *
+ * Ein hartcodierter Heimordner wäre Damians privater Pfad im ausgelieferten Code,
+ * ein strikt gemeinsamer Prefix funktioniert nicht: ein einziger Pfad ausserhalb
+ * seines Kontos (im echten Bestand waren es fuenf) macht den Vorspann leer und das
+ * groesste Fach heisst "Users / damiantodorovic" mit 57,43 %. Also: eine Stufe faellt,
+ * solange sie praktisch ALLE teilen (Schwelle 95 %). Im echten Bestand fallen damit
+ * `Users` und `damiantodorovic`, `Desktop` (63,51 %) bleibt stehen — es ist schon
+ * eine Antwort und nicht mehr die Maschine.
+ */
+export function maschinenVorspann(pfade: readonly string[], schwelleProzent = 95): string[] {
+  const teile = pfade.map((p) => p.split("/").filter(Boolean));
+  const gesamt = teile.length;
+  if (gesamt === 0) return [];
+  const vorspann: string[] = [];
+  for (let i = 0; ; i++) {
+    const zaehler = new Map<string, number>();
+    for (const t of teile) if (t[i]) zaehler.set(t[i], (zaehler.get(t[i]) ?? 0) + 1);
+    const [name, n] = [...zaehler].sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]))[0] ?? [];
+    if (!name || !n || (100 * n) / gesamt < schwelleProzent) break;
+    vorspann.push(name);
+  }
+  return vorspann;
+}
+
+/**
+ * Der Pfad, den ein Mensch lesen kann — oder null.
+ *
+ * `quellpfad` holt, was der Scan anhaengt. Ein Teil davon ist kein Pfad: 122 von
+ * 21 066 Stuecken nennen Prosa, weil die Regel eine Zeile nach "Source:" sucht und
+ * nicht prueft, ob eine Zeile wie ein Pfad aussieht. Diese Funktion prueft es —
+ * sonst gruppiert sie bald "): 4336" als Ordner.
+ */
+export function lesePfad(m: { title?: string; content?: string; tags?: readonly string[]; quelle?: string }): string | null {
+  const roh = quellpfad({ title: m.title ?? "", content: m.content ?? "", tags: m.tags ?? [], quelle: m.quelle }).trim();
+  if (!roh) return null;
+  if (/^https?:\/\//i.test(roh)) return `netz://${roh.replace(/^https?:\/\//, "").split("/")[0]}`;
+  if (!roh.startsWith("/")) return null;
+  return roh;
+}
+
+/** Das Worum-Fach eines Stuecks: Betreff, sonst Ordnerzweig, sonst ein ehrliches Restfach. */
+export function regalFach(
+  m: { title?: string; content?: string; tags?: readonly string[]; quelle?: string },
+  vorspann: readonly string[] = [],
+): { name: string; herkunft: RegalFach["herkunft"] } {
+  const g = gruppen({ title: m.title ?? "", content: m.content ?? "", tags: m.tags ?? [] });
+  if (g.themen.length > 0) {
+    const betreff = [...g.themen].sort((a, b) => a.localeCompare(b))[0];
+    return { name: THEMA_LABELS[betreff] ?? betreff, herkunft: "betreff" };
+  }
+  const pfad = lesePfad({ title: m.title, content: m.content, tags: m.tags, quelle: (m as { quelle?: string }).quelle });
+  if (!pfad) return { name: "Unfiled", herkunft: "ohne beides" };
+  if (pfad.startsWith("netz://")) return { name: pfad.slice(7), herkunft: "netz" };
+  const teile = pfad.split("/").filter(Boolean);
+  // Der letzte Teil ist die Datei selbst, kein Ordner. Wer ihn mitnimmt, macht aus
+  // jedem Stueck ein eignes Fach — im Nachweislauf passierte genau das: 200 Fächer zu
+  // einer Notiz, alle unter der Schwelle, und das Regal endete in EINER Zeile
+  // "200 smaller shelves" mit 100 % des Bestands.
+  const ordner = teile.slice(0, -1);
+  let i = 0;
+  while (i < vorspann.length && i < ordner.length && ordner[i] === vorspann[i]) i++;
+  const zweig = ordner.slice(i, i + 2).filter(Boolean);
+  if (zweig.length) return { name: zweig.join(" / "), herkunft: "ordner" };
+  return { name: ordner[ordner.length - 1] ?? "Unfiled", herkunft: "ordner" };
+}
+
+function zaehleFaecher(
+  einen: (m: Memory) => { name: string; herkunft: RegalFach["herkunft"] },
+  memories: readonly Memory[],
+  /** false = jedes Fach bekommt seine Zeile. Fuer eine Achse, die nur drei Werte
+   *  haben kann und die ein Mensch nach exactly diesen drei fragt. */
+  mitSchwelle = true,
+): RegalFach[] {
+  const koerbe = new Map<string, { n: number; herkunft: RegalFach["herkunft"] }>();
+  for (const m of memories) {
+    const f = einen(m);
+    const alt = koerbe.get(f.name);
+    if (alt) alt.n += 1;
+    else koerbe.set(f.name, { n: 1, herkunft: f.herkunft });
+  }
+  const gesamt = memories.length || 1;
+  const schwelle = mitSchwelle ? (REGAL_SCHWELLE_PROZENT / 100) * gesamt : 0;
+  const sortiert = [...koerbe].sort((a, b) => b[1].n - a[1].n || a[0].localeCompare(b[0]));
+  const grosse = sortiert.filter(([, v]) => v.n >= schwelle);
+  const klein = sortiert.filter(([, v]) => v.n < schwelle);
+  const aus: RegalFach[] = grosse.map(([name, v]) => ({
+    name,
+    notizen: v.n,
+    prozent: Number(((100 * v.n) / gesamt).toFixed(2)),
+    herkunft: v.herkunft,
+  }));
+  if (klein.length) {
+    const n = klein.reduce((s, [, v]) => s + v.n, 0);
+    aus.push({ name: `${klein.length} smaller shelves`, notizen: n, prozent: Number(((100 * n) / gesamt).toFixed(2)), herkunft: "schwanz" });
+  }
+  return aus;
+}
+
+/**
+ * Das Regal ueber einem Bestand. Zwei Bänder, ein Fach je Stueck je Band, und die
+ * Luecken als Zahlen. Kein Baum, keine Faltung: die Zeilenzahl ist die Wahrheit
+ * der Achse, nicht das Ergebnis eines Kampfs mit dem Rahmen.
+ */
+export function baueRegal(memories: readonly Memory[]): Regal {
+  const pfade: string[] = [];
+  for (const m of memories) {
+    const p = lesePfad({ title: m.title, content: m.content, tags: m.tags, quelle: (m as { quelle?: string }).quelle });
+    if (p && !p.startsWith("netz://")) pfade.push(p);
+  }
+  const vorspann = maschinenVorspann(pfade);
+  const gesamt = memories.length || 1;
+  const woher = zaehleFaecher(
+    (m) => {
+      const g = gruppen({ title: m.title ?? "", content: m.content ?? "", tags: m.tags ?? [] });
+      return { name: TRAEGER_LABELS[g.traeger], herkunft: "ordner" as RegalFach["herkunft"] };
+    },
+    memories,
+    // Ohne Schwelle: die Achse hat drei Werte, und nach genau diesen dreien fragt
+    // ein Mensch. Am echten Bestand (18.10.) haette die Schwelle die 92 Notes —
+    // 0,44 % — in eine Schwanzzeile "1 smaller shelves" gestellt. Das ist die Zahl,
+    // mit der dieser Auftrag anfing: ein Screenshot "92 Notes / 10 996 Files /
+    // 9 978 Code". Eine Gruppierung, die das kleinste Fach ihres eigenen Belegs
+    // verschluckt, darf nicht bauen.
+    false,
+  );
+  const worum = zaehleFaecher((m) => regalFach(m, vorspann), memories);
+  let ohneBetreff = 0, ohnePfad = 0, ohneMarke = 0;
+  for (const m of memories) {
+    const g = gruppen({ title: m.title ?? "", content: m.content ?? "", tags: m.tags ?? [] });
+    if (g.themen.length === 0) ohneBetreff += 1;
+    if (!lesePfad({ title: m.title, content: m.content, tags: m.tags, quelle: (m as { quelle?: string }).quelle })) ohnePfad += 1;
+    if (!(m.tags ?? []).some((t) => String(t).trim())) ohneMarke += 1;
+  }
+  const groesstes = worum.reduce((n, f) => Math.max(n, f.notizen), 0);
+  const unterDeckel = worum
+    .filter((f) => (100 * f.notizen) / gesamt < REGAL_DECKEL_PROZENT)
+    .reduce((s, f) => s + f.notizen, 0);
+  return {
+    bestand: memories.length,
+    woher,
+    worum,
+    luecken: { ohneBetreff, ohnePfad, ohneMarke },
+    groesstesFachProzent: Number(((100 * groesstes) / gesamt).toFixed(2)),
+    unterDeckelProzent: Number(((100 * unterDeckel) / gesamt).toFixed(2)),
+    zeilen: woher.length + worum.length,
+  };
 }

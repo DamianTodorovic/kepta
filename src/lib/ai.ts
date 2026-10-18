@@ -391,11 +391,14 @@ async function spiegle(s: AISettings): Promise<void> {
   const { text, haelt } = await spiegelbild(s);
   const leib: Record<string, string | null> = { [SPIEGEL_NAME]: text };
   if (haelt) for (const alt of ALTE_ABLAGEN) leib[alt] = null;
-  await fetch('/api/settings', {
+  const antwort = await fetch('/api/settings', {
     method: 'PUT',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(leib),
   });
+  // P4-02: die Antwort war bisher ein blinder Wurf. 413 (Etat voll), 429 (Schreibkante)
+  // und 500 (Datenbank) liefen als Erfolg weiter, weil die Kette sie schluckte.
+  if (!antwort.ok) throw new Error(`HTTP ${antwort.status}`);
 }
 
 /** Die Spiegelung laeuft hinterher her und der Reihenfolge nach — nie durcheinander. */
@@ -411,8 +414,13 @@ export function saveAISettings(s: AISettings): Promise<void> {
   // nimmt die gespiegelte Reihe mit: removeItem laeuft durch die Huelle von
   // src/lib/settings.ts und loescht damit auch die Zeile in der Datenbank
   localStorage.removeItem(ALTE_SITZUNGS_NAME);
-  spiegelKette = spiegelKette.then(() => spiegle(s)).catch(() => { /* offline: localStorage traegt weiter */ });
-  return spiegelKette;
+  const lauf = spiegelKette.then(() => spiegle(s));
+  // P4-02: wer wartet, sieht den Fehlschlag; wer ignoriert, nicht. Die Kette haelt an
+  // einem abgewiesenen Spiegel zusammen, aber der Rueckweg bleibt offen — der Handler
+  // an `lauf` verhindert zugleich jede unbehandelte Ablehnung an den drei Aufrufstellen,
+  // die nicht warten (Chat.tsx:135, OnboardingWizard.tsx:86, Settings.tsx:780).
+  spiegelKette = lauf.catch(() => { /* offline: localStorage traegt weiter */ });
+  return lauf;
 }
 
 function legeFest(s: AISettings): void {
@@ -501,7 +509,10 @@ export function disconnectAI(): AISettings {
     apiKey: p.needsKey ? '' : s.apiKey,
     extractModel: '',
   };
-  saveAISettings(getrennt);
+  // P4-03: der Trenner wartete nicht und wusste darum nicht, ob die Trennung in der
+  // Datenbank landete. Jetzt: die Spiegelung traegt die Trennung, sonst sagt der
+  // ruecklesende Pfad sie erneut an — und die Kette bricht nicht an ihr.
+  void saveAISettings(getrennt).catch(() => { /* die Trennung sitzt im Browserspeicher */ });
   return getrennt;
 }
 
