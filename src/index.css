@@ -1497,3 +1497,29 @@ button.row-quiet { cursor: pointer; border-color: var(--kante-kontrolle); }
   }
 }
 /* === Ende increased contrast === */
+
+/* ============================================================
+   LEGENDEN-KAPPE BEI SCHMALER BREITE — Punkt 2, 19.10.
+   Die Legende erklaert das Bild: ihre Zahl, ihre Typ-Punkte, ihre
+   Link-Arten, und — wenn etwas fehlt — ihre Zustandszeilen. Alles
+   andre an ihr ist Prosa ueber den Bestand. Gemessen 19.10. an der
+   ausgelieferten 3.2.22 (eigne lesende Wand vor Port 60487, echter
+   Bestand 21 066 Knoten, chrome-headless-shell, 390x844): die Legende
+   war 289,5 bis 331 px hoch bei 628 px Leinwand — 46,1 % bis 52,7 %
+   des Rahmens waren Beschriftung, und die Haelfte davon waren fuenf
+   Saetze ueber den Bestand.
+
+   Diese Kappe verbirgt NUR die Prosa (`.legende-prosa`), und NUR bis
+   440 px — dieselbe Schwelle, ab der auch die Zielgroessen-Latte auf
+   44 px geht (:773). Die Zustandszeilen (`graph-im-bild`,
+   `graph-benannt`, `graph-kappen`, `graph-zustaende`) bleiben stehen:
+   sie sind der Grund, warum die Kappe ueberhaupt eine Marke braucht.
+   Der erste Entwurf haengte an `:nth-child(3,6,8,9,10)`; nachdem 3.2.23
+   die Bilanz-Zeilen benannt hat, traefe genau die Zustandszeile, die
+   meldet, wenn nichts im Bild steht. Eine Stellenangabe ist kein Halter.
+
+   Halt: tests/components/KnowledgeGraph.legende-schmal.test.tsx
+   ============================================================ */
+@media (max-width: 440px) {
+  .legende-prosa { display: none; }
+}

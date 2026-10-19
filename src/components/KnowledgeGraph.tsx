@@ -4961,7 +4961,9 @@ export function KnowledgeGraph({ memories: memoriesAusFenster, onSelectMemory, o
                 ))}
           </div>
           {/* Was in der Scheibe steht, erklaert an der Stelle, die die Farben nennt. */}
-          <div className="hud-label" style={{ color: "var(--text-2)" }}>{uiT("legend.glyph")}</div>
+          {/* Prosa ueber das Zeichen, nicht das Zeichen selbst — bei schmaler
+              Breite tritt sie hinter die Bild-Erklaerung zurueck (index.css). */}
+          <div className="hud-label legende-prosa" style={{ color: "var(--text-2)" }}>{uiT("legend.glyph")}</div>
           {/* Was die drei Geschichtszeichen bedeuten — nur wo eines im Bild
               steht. A8-05: der gestrichelte Ring, die leisere Tinte und der
               Akzentring trugen die ganze Geschichtlichkeit des Bestands und
@@ -4998,7 +5000,7 @@ export function KnowledgeGraph({ memories: memoriesAusFenster, onSelectMemory, o
           )}
           {/* Die Bilanz des Ausschnitts — nur wo etwas fehlt. */}
           {dichteZeile && (
-            <div className="hud-label tnum" style={{ color: "var(--text-2)" }}>{dichteZeile}</div>
+            <div className="hud-label tnum legende-prosa" style={{ color: "var(--text-2)" }}>{dichteZeile}</div>
           )}
           {/* Wie viele der entfalteten Notizen wirklich im Bild stehen. Der Baum
               zoomt sich nicht mehr unter die Lesbarkeit, also liegt bei grossen
@@ -5041,7 +5043,10 @@ export function KnowledgeGraph({ memories: memoriesAusFenster, onSelectMemory, o
           {/* Die zwei Baender ueber dem Bestand — damit der erste Blick nicht eine
               Klammer um den ganzen Laden ist, sondern seine Groessenordnung. */}
           {regal && <GraphRegal regal={regal} />}
-          <div className="hud-label">
+          {/* Die Griffe erklaert die Flaeche schon an den Werkzeugen selbst; auf dem
+              Telefon sind sie teils nicht einmal vorhanden (kein Hover, kein Rad).
+              Bei schmaler Breite tritt die Zeile zurueck — index.css, `.legende-prosa`. */}
+          <div className="hud-label legende-prosa">
             {ansicht === "dendrogram"
               ? uiT("hint.tree")
               : ansicht === "semantic"
