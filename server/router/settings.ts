@@ -143,12 +143,11 @@ export function mountSettings(app: express.Express, ctx: AppKontext): void {
   uebernimmSettingsDatei(store, path.join(ctx.datenOrdner, "settings.json"));
 
   app.get("/api/settings", (_req, res) => {
-    let bestand: Record<string, string>;
-    try {
-      bestand = store.einstellungen();
-    } catch {
-      bestand = {};
-    }
+    // Ein Wurf des Speichers geht an `sichererFehler` (server/app.ts:109-112): 500,
+    // Grund im Log. Der weggenommene Fang antwortete `200 {}` und machte einen
+    // unlesbaren Bestand von einem leeren ununterscheidbar — der Volllauf
+    // 18.10. 15:35:55 verlor so das theme, ohne den Schenkel zu nennen.
+    const bestand = store.einstellungen();
     // A3-09: diese Route war die Klartext-Tuer zu dem, was die verschluesselte
     // Datei hueltet. Geschrieben wird weiter ueber PUT, die Datenbank bleibt der
     // unveraenderte Speicher — und der Rueckweg der App (`ai_connection`, darin

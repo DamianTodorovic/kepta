@@ -396,7 +396,13 @@ describe("Storage, Import/Export, Convenience-Routen", () => {
     // Neustart bekam damit einen leeren Speicher.
     expect((await request(app).get("/api/settings")).body).toEqual({});
 
-    await request(app).put("/api/settings").send({ theme: "dark", ki_gehirn_topK: "50" });
+    // P4-13 (18.10.): der Volllauf 15:35:55 verlor hier das theme und konnte nicht
+    // sagen, welcher Schenkel fehlte — die Quittung des PUT wurde weggeworfen.
+    const setzt = await request(app).put("/api/settings").send({ theme: "dark", ki_gehirn_topK: "50" });
+    expect(setzt.status).toBe(200);
+    expect(setzt.body).toMatchObject({ ok: true, keys: 2 });
+    expect(store.einstellungen().theme).toBe("dark");
+
     let stand = (await request(app).get("/api/settings")).body;
     expect(stand.theme).toBe("dark");
     expect(stand.ki_gehirn_topK).toBe("50");
@@ -412,6 +418,21 @@ describe("Storage, Import/Export, Convenience-Routen", () => {
     stand = (await request(app).get("/api/settings")).body;
     expect(stand.theme).toBeUndefined();
     expect(stand.ki_gehirn_topK).toBe("50");
+  });
+
+  it("P4-13: ein kaputter Speicher antwortet nicht wie ein leerer", async () => {
+    // Kontrolle: ein leerer Bestand ist ein Erfolg — 200 und ein leerer Leib.
+    const leer = await request(app).get("/api/settings");
+    expect(leer.status).toBe(200);
+    expect(leer.body).toEqual({});
+
+    // Ausfall: derselbe Weg, aber die Datenbankverbindung ist zu. Vor dem Flicken
+    // antwortet die Route hier `200 {}` — von der Kontrolle nicht zu unterscheiden.
+    expect((await request(app).put("/api/settings").send({ theme: "dark" })).status).toBe(200);
+    store.close();
+    const kaputt = await request(app).get("/api/settings");
+    expect(kaputt.status).toBeGreaterThanOrEqual(500);
+    expect(kaputt.body).not.toEqual({});
   });
 
   it("Einstellungen nehmen nur Zeichenketten und weisen Unsinn ab", async () => {
