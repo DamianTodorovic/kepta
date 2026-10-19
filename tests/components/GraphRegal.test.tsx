@@ -105,4 +105,59 @@ describe("GraphRegal", () => {
     expect(t).not.toContain("NaN");
     expect(t).not.toContain("Infinity");
   });
+
+  // --- Kupplung Traeger-NAME -> Farb-TOKEN und Reihenfolge (Punkt 5, 19.10.) ---
+  //
+  // Warum diese beiden Faellige hier stehen und die Design-Wache nicht ersetzen: die
+  // Wache prueft Klassen gegen Regeln (scripts/design-wache.mjs:1800, Soll 0), aber niemand
+  // prueft die zwei Woerter, an denen das Regal Farbe und Reihenfolge aufhaengt. Zieht
+  // jemand TRAEGER_LABELS (src/lib/graphHierarchy.ts:110-114) um, ohne TRAEGER_TOKEN
+  // (src/components/GraphRegal.tsx:19-24) nachzuziehen, faellt jedes Fach auf
+  // var(--type-neutral) zurueck — drei graue Streifen, und weil TRAEGER_REIHENFOLGE
+  // (GraphRegal.tsx:19) fuer alle drei -1 liefert, kippt die Reihenfolge stumm auf Menge.
+  // Kein Fehler, keine Wache, kein roter Fall: bis hierher.
+  //
+  // Die Muster unten sind NICHT geraten: react-dom/server 19.2.8 schreibt
+  //   class="regal-woher-fach" data-notizen="92" style="width:0.43672268109750306%;background:var(--type-semantic)"
+  // gemessen 19.10. 11:0x an der eignen Kapsel (Beleg feldzug/belege-1910/
+  // p5-react-format-berichtigt-*.log.txt), in derselben Attribut-Reihenfolge, die das
+  // ausgelieferte BUndel zeigt (graph-DgfS6ZzQ.js, Fundstelle 102887). Ein "className="
+  // in der Markierung waere ein Fehler der Sonde, nicht der Flaeche — die erste Fassung
+  // dieses Flickens hatte genau diesen Fehler und traf 0 von 3 Segmenten.
+  //
+  // Was hier NICHT bewiesen wird: Pixel. Die 1-Kante des Fachs (src/index.css:988,
+  // min-width:1px) und die Zeilenhoehe 14 px (GraphRegal.tsx:12) brauchen einen Viewport.
+  it("die drei Traeger-Namen sind die drei, an denen Farbe und Reihenfolge haengen", () => {
+    expect(regal.woher.map((f) => f.name).sort()).toEqual(["Code", "Files", "Notes"]);
+  });
+
+  it("jedes Traeger-Fach haelt ein eignes Token — kein Fach faellt aufs Restgrau", () => {
+    const html = renderToStaticMarkup(createElement(GraphRegal, { regal }));
+    const segmente = [...html.matchAll(
+      /class="regal-woher-fach" data-notizen="\d+" style="width:[\d.]+%;background:var\((--type-[a-z-]+)\)/g,
+    )].map((m) => m[1]);
+    // Erste Behauptung: die Sonde sieht wirklich alle Faelle. Ohne sie waere ein leerer
+    // Schnitt ein gruener Fall — genau die Form, die diesem Haus schon angerechnet wurde.
+    expect(segmente.length).toBe(regal.woher.length);
+    expect(new Set(segmente).size).toBe(3);
+    expect([...segmente].sort()).toEqual(["--type-procedural", "--type-reference", "--type-semantic"]);
+    expect(html).not.toMatch(/regal-woher-fach[^>]*--type-neutral/);
+  });
+
+  it("die Baender stehen in der Reihenfolge des Hauses, nicht in der der Menge", () => {
+    const html = renderToStaticMarkup(createElement(GraphRegal, { regal }));
+    const notizen = [...html.matchAll(/class="regal-woher-fach" data-notizen="(\d+)"/g)].map((m) => Number(m[1]));
+    const haus = ["Notes", "Files", "Code"] as const;
+    const erwartet = haus.map((name) => regal.woher.find((f) => f.name === name)?.notizen);
+    expect(notizen.length).toBe(3);
+    // Keine Fixture-Zahl hier drin: verglichen wird nur, was `baueRegal` selbst gerechnet
+    // hat. Aendert jemand den Bestand-Fixture, darf dieser Fall nicht aus dem Grund rot.
+    expect(notizen).toEqual(erwartet);
+    // Das Gegenstueck: das kleinste Fach steht zuerst, nur weil das Haus Notes zuerst
+    // nennt. Zieht jemand die Labels um, liefert TRAEGER_REIHENFOLGE fuer alle drei -1
+    // und die Folge kippt auf Menge — dann ist sie absteigend sortiert, und dieser
+    // Ausschnitt faellt.
+    expect(notizen[0]).toBeLessThanOrEqual(Math.min(...notizen));
+    expect(notizen).not.toEqual([...notizen].sort((a, b) => b - a));
+  });
 });
