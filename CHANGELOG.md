@@ -23,14 +23,19 @@
   accessibility tree, and the line carries them as `title` and `aria-label`.
 - **Two reads that walked the whole table now walk an index.** The graph's per-term
   lookup of mentioning notes filtered `memory_entities` by `entity_id`, which the
-  primary key (starting with `memory_id`) cannot serve — a full scan per term, and
-  the graph asks for about 500 of them per request. `idx_memory_entities_entity`
-  covers it. And the embedding coverage count tested `embedding IS NOT NULL`, which
-  forces SQLite to open every chunk row — every 3 KB blob page, every decryption —
-  for a number that only needs the model column: `embeddingStats()` now counts
-  `embedding_model IS NOT NULL` and has `idx_chunks_embedding_model` for it. Both
-  indexes are created with `IF NOT EXISTS` in the schema that runs on every open, so
-  an existing knowledge base gets them on the first start of this version.
+  primary key (starting with `memory_id`) cannot serve — a full scan per term, and the
+  graph asks for about 500 of them per request. `idx_memory_entities_entity` covers it.
+  And the embedding coverage count tested `embedding IS NOT NULL`, which forces SQLite
+  to open every chunk row — every 3 KB blob page, every decryption — for a number.
+  `chunks` now carries a generated column `embedding_hat` that derives exactly that
+  test (`CASE WHEN embedding IS NOT NULL THEN 1 ELSE 0 END`, VIRTUAL), and
+  `idx_chunks_hat_model` serves both counts from it, including the group-by, without a
+  sort. The definition stays the vector itself: counting the model column instead was
+  measured wrong on purpose (17:50 on a sandbox copy — 1 001 vectors, 1 000 with a
+  model, one legacy row that has a vector and no model), and one case in
+  `tests/store.test.ts` now holds that line. Both changes are created with
+  `IF NOT EXISTS`/`ALTER … catch` in the schema that runs on every open, so an existing
+  knowledge base gets them on the first start of this version.
 
 ### Performance
 

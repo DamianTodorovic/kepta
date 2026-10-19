@@ -294,16 +294,6 @@ export class KeptaStore {
         PRIMARY KEY (memory_id, seq)
       );
 
-      -- embeddingStats() zaehlt eingebettete Abschnitte bei jeder Anfrage, und ohne Index muss
-      -- dafuer jede Zeile der Tabelle geoeffnet werden — mit ihrem BLOB, also mit ihrer Seite,
-      -- also mit ihrer Entschluesselung. Gemessen 19.10. 16:53 an einer eignen Kapsel (64 163
-      -- Zeilen, 3 072-Byte-BLOB je Zeile, plain SQLite 3.51.0): COUNT(*) ueber die Tabelle =
-      -- 0,040 s, mit diesem Index = 0,001 s; GROUP BY embedding_model = 0,044 s gegen 0,001 s.
-      -- Der Index kostet 389 Seiten gegen 64 580 Seiten Tabelle (0,6 % der Datei), die Zahlung
-      -- beruehrt hoechstens diese 389 statt aller 64 580 — an einer verschluesselten Platte ist
-      -- das die Frage, wie viele Seiten entschluesselt werden muessen.
-      CREATE INDEX IF NOT EXISTS idx_chunks_embedding_model ON chunks(embedding_model);
-
       CREATE TABLE IF NOT EXISTS entities (
         id INTEGER PRIMARY KEY,
         name TEXT UNIQUE NOT NULL
@@ -382,6 +372,24 @@ export class KeptaStore {
         // Spalte existiert bereits
       }
     }
+
+    // Dieselbe Masche fuer chunks: embeddingStats() oeffnete ohne diese Spalte jede Zeile der
+    // Tabelle, weil ihr Praedikat auf einem BLOB steht — also jede Seite, also jede
+    // Entschluesselung. Die generierte Spalte haelt die Wahrheit von selbst ab: sie leitet
+    // `embedding IS NOT NULL` ab, sie wird von keinem Schreibweg gesetzt. An der eignen Kapsel
+    // 19.10. 17:50 gezaehlt: Wahrheit 1 001, generiert 1 001, gegen embedding_model 1 000
+    // (eine Zeile mit Vektor ohne Modell) — deshalb zaehlt diese Fassung NICHT die Modell-Spalte.
+    try {
+      this.db.exec(
+        `ALTER TABLE chunks ADD COLUMN embedding_hat INTEGER GENERATED ALWAYS AS (CASE WHEN embedding IS NOT NULL THEN 1 ELSE 0 END) VIRTUAL`,
+      );
+    } catch {
+      // Spalte existiert bereits
+    }
+    // (embedding_hat, embedding_model) bedient beide Zahlungen ohne BLaetterbaum:
+    // `WHERE embedding_hat = 1` und `… GROUP BY embedding_model`. Plan gemessen in der Kapsel:
+    // vorher "SCAN chunks" (+ "USE TEMP B-TREE FOR GROUP BY"), nachher "SEARCH chunks USING INDEX".
+    this.db.exec("CREATE INDEX IF NOT EXISTS idx_chunks_hat_model ON chunks(embedding_hat, embedding_model)");
   }
 
   // ---------- Einstellungen ----------
@@ -961,17 +969,13 @@ export class KeptaStore {
 
   embeddingStats(): { total: number; embedded: number; models: Record<string, number> } {
     const total = (this.db.prepare("SELECT COUNT(*) c FROM chunks").get() as { c: number }).c;
-    // Zaehlt gegen embedding_model statt gegen embedding, weil die Zahlung sonst jede Zeile der
-    // Tabelle oeffnet — also jede Seite, also jede Entschluesselung. Gemessen an der echten Tuer
-    // 2 256 ms Median (n=10, 3.2.23, Port 64433, 64 163 Abschnitte) fuer 842 Byte, gegen 4,4 ms
-    // fuer /api/memories?limit=1 in demselben Lauf.
-    // Gleichwertig, weil beide Spalten an allen drei Schreibwegen zusammen entstehen und zusammen
-    // verschwinden: INSERT setzt beide NULL (src/core/store.ts:777), UPDATE schreibt beide in einem
-    // Satz (:801), DELETE nimmt die ganze Zeile (:712, :776). Wer je nur die Modell-Spalte fuellt,
-    // muss zurueck auf embedding IS NOT NULL.
-    const embedded = (this.db.prepare("SELECT COUNT(*) c FROM chunks WHERE embedding_model IS NOT NULL").get() as { c: number }).c;
+    // Beiden Zahlungen laufen gegen die generierte Spalte, damit der Planer den Index benutzen
+    // kann. `embedding IS NOT NULL` bleibt die Definition — die Spalte leitet sie ab, niemand setzt
+    // sie. Gemessen an der echten Tuer 2 256 ms Median (n=10, 3.2.23, Port 64433, 64 163
+    // Abschnitte) fuer 842 Byte, gegen 4,4 ms fuer /api/memories?limit=1 in demselben Lauf.
+    const embedded = (this.db.prepare("SELECT COUNT(*) c FROM chunks WHERE embedding_hat = 1").get() as { c: number }).c;
     const modelRows = this.db
-      .prepare("SELECT embedding_model m, COUNT(*) c FROM chunks WHERE embedding_model IS NOT NULL GROUP BY embedding_model")
+      .prepare("SELECT embedding_model m, COUNT(*) c FROM chunks WHERE embedding_hat = 1 GROUP BY embedding_model")
       .all() as Record<string, unknown>[];
     const models: Record<string, number> = {};
     for (const r of modelRows) models[String(r.m ?? "unknown")] = Number(r.c);

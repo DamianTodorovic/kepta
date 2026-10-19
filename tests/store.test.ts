@@ -106,6 +106,26 @@ describe("Chunks & Embeddings", () => {
     expect(stats).toEqual({ total: 2, embedded: 1, models: { "test-model": 1 } });
   });
 
+  it("embeddingStats zählt den Vektor, nicht die Modell-Spalte", () => {
+    const store = freshStore();
+    const m = store.createMemory({ title: "T", content: "C" });
+    store.replaceChunks(m.id, ["chunk a", "chunk b"]);
+    store.setEmbedding(m.id, 0, new Float32Array([1, 2, 3]), "test-model");
+    // Ein Altbestand, den dieser Quelltext nie geschrieben hat: ein Vektor, dessen Modell-Spalte
+    // nie gefüllt wurde. Die generierte Spalte leuchtet trotzdem — die Modell-Spalte zu zählen
+    // wäre ein stiller Deckungsverlust in der Einstellungen-Tafel.
+    store.db.prepare("UPDATE chunks SET embedding_model = NULL WHERE memory_id = ? AND seq = 0").run(m.id);
+    const stats = store.embeddingStats();
+    expect(stats.embedded).toBe(1);
+    expect(stats.models).toEqual({ unknown: 1 });
+    // Dieselbe Zeile, gegen die Modell-Spalte gezaehlt — der Zahlenstreit in einem Fall:
+    // diese Zahlung saehe hier 0, also einen verlorenen Abschnitt, den es nicht gibt.
+    const gegenModell = (
+      store.db.prepare("SELECT COUNT(*) c FROM chunks WHERE embedding_model IS NOT NULL").get() as { c: number }
+    ).c;
+    expect(gegenModell).toBe(0);
+  });
+
   it("chunksNeedingEmbedding wählt Modell-Mismatch (Re-Embed nach Modellwechsel)", () => {
     const store = freshStore();
     const m = store.createMemory({ title: "T", content: "C" });
