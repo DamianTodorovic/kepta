@@ -47,6 +47,16 @@ const erwartet = [
   // Kein Marker fuer den Ein-Durchstich-Leseweg (`59dabea`, store.ts): seine einzigen SQL-Literale
   // ("deleted_at IS NULL" / "IS NOT NULL") standen schon im alten Objekt, ein Wort darauf waere
   // eine Pruefung, die nie schlagen kann. Der Weg ist durch seinen Fall gedeckt, nicht durch ein Literal.
+  // 3.2.24 (HEAD 0af0f59 plus p5-g/p6-51 am Baum). Gegen das ausgelieferte 3.2.23-Objekt
+  // (49 065 686 B, mtime 2026-10-19T12:05:15Z) gemessen: alle vier Literalen dort **0** Treffer.
+  ["idx_memory_entities_entity", 1],
+  ["idx_chunks_embedding_model", 1],
+  ["FROM chunks WHERE embedding_model IS NOT NULL", 1],
+  ["absolute left-0 right-0 top-0 z-10 h-[3px] pointer-events-none", 1],
+  // P4-16 und P4-13 bleiben ohne Marker, nicht aus Bequemlichkeit: P4-16 verwendet dieselben
+  // Worte wie die Extraktionszeile aus 3.2.22 ("did not answer (" steht im alten Objekt schon
+  // 1 mal), P4-13 nimmt nur einen try/fang weg und schreibt kein neues Literal. Beide haengen
+  // an ihren Faellen (je einer, vorher rot gemeldet), nicht an einem Wort.
 ];
 let fehl = 0;
 for (const [m, min] of erwartet) {

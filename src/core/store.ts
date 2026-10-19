@@ -294,6 +294,16 @@ export class KeptaStore {
         PRIMARY KEY (memory_id, seq)
       );
 
+      -- embeddingStats() zaehlt eingebettete Abschnitte bei jeder Anfrage, und ohne Index muss
+      -- dafuer jede Zeile der Tabelle geoeffnet werden — mit ihrem BLOB, also mit ihrer Seite,
+      -- also mit ihrer Entschluesselung. Gemessen 19.10. 16:53 an einer eignen Kapsel (64 163
+      -- Zeilen, 3 072-Byte-BLOB je Zeile, plain SQLite 3.51.0): COUNT(*) ueber die Tabelle =
+      -- 0,040 s, mit diesem Index = 0,001 s; GROUP BY embedding_model = 0,044 s gegen 0,001 s.
+      -- Der Index kostet 389 Seiten gegen 64 580 Seiten Tabelle (0,6 % der Datei), die Zahlung
+      -- beruehrt hoechstens diese 389 statt aller 64 580 — an einer verschluesselten Platte ist
+      -- das die Frage, wie viele Seiten entschluesselt werden muessen.
+      CREATE INDEX IF NOT EXISTS idx_chunks_embedding_model ON chunks(embedding_model);
+
       CREATE TABLE IF NOT EXISTS entities (
         id INTEGER PRIMARY KEY,
         name TEXT UNIQUE NOT NULL
@@ -303,6 +313,22 @@ export class KeptaStore {
         entity_id INTEGER NOT NULL REFERENCES entities(id) ON DELETE CASCADE,
         PRIMARY KEY (memory_id, entity_id)
       );
+      -- Der Primarschluessel oben deckt (memory_id, entity_id) — die Nachschlage des
+      -- Graphen filtert aber NACH entity_id: server/router/system.ts:97 ruft
+      -- store.memoryIdsForEntities([id]) je Begriff des Fensters, also 500 mal pro
+      -- /api/graph-Abruf. Die Abfrage steht auf src/core/store.ts:1341, dieselbe Form
+      -- auf src/core/store.ts:551, und src/core/engine.ts:390 ruft sie gebuendelt.
+      -- Ohne Index ist das ein Vollscan je Begriff.
+      -- Gemessen 19.10. 15:24 MESZ an der eignen Kapsel (SQLite 3.53.2 aus dem
+      -- ausgelieferten BUndel, eigne Tabellen, sein Bestand nie geoeffnet):
+      --   3 054 Erwaehnungen: 500 Nachschlaege = 22,46 ms | ein IN(500) = 0,21 ms
+      --  30 540 Erwaehnungen: 500 Nachschlaege = 209,59 ms | ein IN(500) = 1,92 ms
+      --  mit diesem Index: 2,25 ms statt 209,59 ms (Plan: SEARCH … USING INDEX,
+      --  vorher SCAN memory_entities) — 93x.
+      --  Schreiblast, gleiche Kapsel, getrennte Zeilmengen: 6 000 Erwaehnungen
+      --  0,0007 ms je Zeile ohne Index, 0,0010 ms mit (+0,0003 ms, +50,6 %, absolut
+      --  +2,1 ms auf 6 000 Zeilen); Anlegen 3,37 ms.
+      CREATE INDEX IF NOT EXISTS idx_memory_entities_entity ON memory_entities(entity_id);
       CREATE TABLE IF NOT EXISTS relations (
         id INTEGER PRIMARY KEY,
         source_id INTEGER NOT NULL REFERENCES entities(id) ON DELETE CASCADE,
@@ -935,9 +961,17 @@ export class KeptaStore {
 
   embeddingStats(): { total: number; embedded: number; models: Record<string, number> } {
     const total = (this.db.prepare("SELECT COUNT(*) c FROM chunks").get() as { c: number }).c;
-    const embedded = (this.db.prepare("SELECT COUNT(*) c FROM chunks WHERE embedding IS NOT NULL").get() as { c: number }).c;
+    // Zaehlt gegen embedding_model statt gegen embedding, weil die Zahlung sonst jede Zeile der
+    // Tabelle oeffnet — also jede Seite, also jede Entschluesselung. Gemessen an der echten Tuer
+    // 2 256 ms Median (n=10, 3.2.23, Port 64433, 64 163 Abschnitte) fuer 842 Byte, gegen 4,4 ms
+    // fuer /api/memories?limit=1 in demselben Lauf.
+    // Gleichwertig, weil beide Spalten an allen drei Schreibwegen zusammen entstehen und zusammen
+    // verschwinden: INSERT setzt beide NULL (src/core/store.ts:777), UPDATE schreibt beide in einem
+    // Satz (:801), DELETE nimmt die ganze Zeile (:712, :776). Wer je nur die Modell-Spalte fuellt,
+    // muss zurueck auf embedding IS NOT NULL.
+    const embedded = (this.db.prepare("SELECT COUNT(*) c FROM chunks WHERE embedding_model IS NOT NULL").get() as { c: number }).c;
     const modelRows = this.db
-      .prepare("SELECT embedding_model m, COUNT(*) c FROM chunks WHERE embedding IS NOT NULL GROUP BY embedding_model")
+      .prepare("SELECT embedding_model m, COUNT(*) c FROM chunks WHERE embedding_model IS NOT NULL GROUP BY embedding_model")
       .all() as Record<string, unknown>[];
     const models: Record<string, number> = {};
     for (const r of modelRows) models[String(r.m ?? "unknown")] = Number(r.c);

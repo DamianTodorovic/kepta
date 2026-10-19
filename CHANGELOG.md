@@ -1,3 +1,44 @@
+## [3.2.24]
+
+### Fixed
+
+- **A knowledge base that cannot be read is no longer reported as empty.** The
+  settings endpoint caught any failure of the store and answered `200 {}`, which
+  looks exactly like a base with nothing in it — so a lost change carried no trace of
+  which side failed (seen on the full run 18.10. 15:35:55, which lost the theme and
+  could not name the reason). A dead connection now answers `500` with the reason in
+  the log, and an actually empty base still answers `200 {}`. Guarded by
+  `tests/server.test.ts:423`, red before the fix.
+- **The status line in Settings tells silence and refusal apart.** A change that
+  never reached the local server used to read „Not saved — the local server refused
+  it", which blames a door that was never asked: `spiegle` only raises `HTTP <status>`
+  when something answered, and a transport failure arrives as a `TypeError`. The two
+  cases now get two sentences („did not answer" / „refused it"), the same separation
+  the extraction line already made. Guarded by
+  `tests/components/Settings.einstell-empfang.test.tsx:350`, red before the fix.
+- **The graph's pull-progress is an edge, not a panel over the picture.** The
+  in-progress notice used to sit in a box at the top-left of the canvas and covered
+  part of the drawing while it was on screen. It is now a 3 px accent line along the
+  top edge (`KnowledgeGraph.tsx`), still a live region: the words stay in the
+  accessibility tree, and the line carries them as `title` and `aria-label`.
+- **Two reads that walked the whole table now walk an index.** The graph's per-term
+  lookup of mentioning notes filtered `memory_entities` by `entity_id`, which the
+  primary key (starting with `memory_id`) cannot serve — a full scan per term, and
+  the graph asks for about 500 of them per request. `idx_memory_entities_entity`
+  covers it. And the embedding coverage count tested `embedding IS NOT NULL`, which
+  forces SQLite to open every chunk row — every 3 KB blob page, every decryption —
+  for a number that only needs the model column: `embeddingStats()` now counts
+  `embedding_model IS NOT NULL` and has `idx_chunks_embedding_model` for it. Both
+  indexes are created with `IF NOT EXISTS` in the schema that runs on every open, so
+  an existing knowledge base gets them on the first start of this version.
+
+### Performance
+
+- `/api/health` measured 2.25 s median (n=10, 19.10., 3.2.23, port 64433) for 842
+  bytes, against 4.4 ms for the note list in the same run; the coverage count above
+  is the reason. The number after this release is measured at the door, not promised
+  here.
+
 ## [3.2.23]
 
 ### Fixed
