@@ -134,6 +134,19 @@ describe("Gang-Titel in der Startstufe „Few“ (#17)", () => {
     return zoomAnzeige(c);
   }
 
+  /**
+   * Zurueck ins Ganze fahren, bevor der Fall hineinzoomt. Seit 3.2.23 steht die
+   * Anfangskamera auf der Gegend, die Namen traegt, und der namenlose Gang liegt
+   * nicht mehr im Bild. Dieser Fall will den Gang sehen und nimmt dafuer den
+   * Knopf, den ein Mensch nimmt: „Fit the whole graph into view".
+   */
+  async function fahreInsGanze(c: HTMLElement) {
+    const kn = [...c.querySelectorAll("button")].find((b) => b.title === "Fit the whole graph into view");
+    expect(kn, "der Einpass-Knopf fehlt — der Fall greift nicht").toBeTruthy();
+    await act(async () => { kn!.click(); await new Promise((r) => setTimeout(r, 80)); });
+    await bilder(6);
+  }
+
   /** Die Dichtestufe, die das Raster abstellt — nur dort malt der Gang alles,
    *  was er bauen kann, und die Breite zeigt sich ohne jeden zweiten Grund. */
   async function stufe(c: HTMLElement, wort: string) {
@@ -147,6 +160,7 @@ describe("Gang-Titel in der Startstufe „Few“ (#17)", () => {
     hub(10);
     const view = await zeichne(masse(1000));
     await bilder(10);
+    await fahreInsGanze(view.container);
     const prozent = await zoomeNach(100, view.container);
     expect(prozent, "der Zoom erreicht 100 % nicht — der Fall prüft nichts").toBeGreaterThanOrEqual(100);
     const teil = GANG_ABSTAND * (prozent / 100);
@@ -166,6 +180,7 @@ describe("Gang-Titel in der Startstufe „Few“ (#17)", () => {
     await bilder(10);
     await stufe(view.container, "All");
 
+    await fahreInsGanze(view.container);
     await zoomeNach(100, view.container);
     const eng = gemalt(view.container, /^T\d/);
     expect(eng.length, "bei 100 % malt der Gang keinen einzigen langen Titel").toBeGreaterThan(0);

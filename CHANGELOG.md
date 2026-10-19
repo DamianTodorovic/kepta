@@ -1,3 +1,56 @@
+## [3.2.23]
+
+### Fixed
+
+- **The first look at the graph fills the canvas instead of framing its empty
+  middle, and no longer cuts its own names.** The camera centred on the middle of
+  the bounding box of *every* node; in a knowledge base whose groups have drifted
+  apart that middle is empty space, so the picture showed names stuck in one
+  corner with two of them sliced by the right edge (measured 18.10. on 1 500
+  notes: 35 names, all upper-right, „Forschung Datensatz…" cut off). The field
+  now anchors on `dichtesteWeltMitte()` (`src/lib/graphLayout.ts`) — the window
+  that holds the most content at the blend the readability floor allows — and the
+  blend itself is untouched at 93,08 %, still guarded by
+  `KnowledgeGraph.erster-blick.test.tsx`. Measured on the **built** bundle
+  (`vite build --outDir dist-p1build`, chunk `graph-Bvm1XJKd.js`, own server,
+  seed 64 381, 1 500 notes, four settled polls): **37 / 28 / 14 names** at
+  1440 / 820 / 390 px and **zero titles over the canvas edge** at all three,
+  nearest title exactly 11 px from the edge against the 11 px the surface keeps
+  (`TITEL_KANTEN_PX = ETIKETT_PX`). A label that cannot fit even centred is now
+  refused with its own reason — „wider than the picture itself", the eighth
+  reason of the title budget — rather than painted in halves.
+- **„Fit the whole graph into view" shows the whole graph again.** The anchor
+  above had been threaded through `fitView` too, so the button centred on the
+  densest window while its own title promises everything (`:2390`). Four
+  gang-title cases had been riding on the old accident — the world-box middle
+  happened to sit inside the nameless aisle rows — and went red once the camera
+  stopped parking there (176/180). They now drive to the aisle with the control a
+  person uses, the same button, and nothing was softened: **180 / 180** in
+  `KnowledgeGraph.render.test.tsx` and `KnowledgeGraph.titelbreite.test.tsx`.
+- **The first-glance case reads the picture, not only the receipt line.** The
+  surface deliberately says nothing when its picture names everything it holds
+  (`titelEtat()` returns the empty message, `:3493`), and the case parsed that
+  silence as a number — `NaN > 0`. It now counts the painted titles as its first
+  witness and only checks the line's number when the line speaks. Falsifiable on
+  the same run: switch the field's readability floor off and the case goes red
+  with the thing named — „Blende 10,9 % — das stehende Bild trägt keinen einzigen
+  Notiztitel (0 Texte in diesem Rahmen)".
+
+### Known, measured, not fixed
+
+- **Phone width cannot satisfy „emptiness ≤ painted" against the whole canvas.**
+  At 360 × 544 CSS pixels the legend panel is **314 px tall**, and the surface
+  frames its camera in `einpassFlaeche` — the canvas minus that panel, 230 px.
+  Against the full canvas the measure reads emptiness 292,5 px against painted
+  237,4 px with the centre outside the painted band; against the rectangle the
+  surface itself computes, the same picture reads 14 px against 237,4 px with the
+  centre inside. Two candidate rules were built and measured here and both were
+  rejected on numbers, not on taste: aiming the camera at the previously painted
+  titles is a contraction inward (14 names → 9 at 390 px), and spreading the
+  title budget across the queue instead of taking the first `budget` candidates
+  lifted the band only 237,4 → 240,5 px while costing two names at 820 px
+  (28 → 26). The remaining lever is the legend's own height at narrow widths.
+
 ## [3.2.22]
 
 ### Fixed

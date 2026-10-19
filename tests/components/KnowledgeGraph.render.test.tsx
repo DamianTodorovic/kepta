@@ -4371,6 +4371,23 @@ describe("Gang-Masse: eine Seite Punkte, ein Blätterer, und die Zahl sagt alles
       content: `einzigartiger Inhalt ${i}`, tags: [],
     }));
 
+  /**
+   * Zurueck ins Ganze fahren, bevor der Fall hineinzoomt.
+   *
+   * Seit 3.2.23 steht die Anfangskamera auf der Gegend, die Namen traegt; der
+   * namenlose Gang liegt dann nicht mehr im Bild, und dieser Fall will gerade
+   * ihn sehen. Der Weg ist kein Pruefungs-Trick, sondern der Knopf des Nutzers:
+   * „Fit the whole graph into view" setzt die Weltbox, von dort zoomt der Fall
+   * hinein. Ohne diesen Schritt haengt die Pruefung an einem Zufall der
+   * Anfangskamera — und den hat 3.2.23 absichtlich geaendert.
+   */
+  async function fahreInsGanze(container: HTMLElement) {
+    const kn = [...container.querySelectorAll("button")].find((b) => b.title === "Fit the whole graph into view");
+    expect(kn, "der Einpass-Knopf fehlt — der Fall greift nicht").toBeTruthy();
+    await act(async () => { kn!.click(); await new Promise((r) => setTimeout(r, 80)); });
+    await bilder(6);
+  }
+
   /** Hereinzoomen bis die Anzeige sagt, was der Fall braucht. */
   async function zoomeNach(prozent: number, container: HTMLElement) {
     const anzeige = () => {
@@ -4408,6 +4425,7 @@ describe("Gang-Masse: eine Seite Punkte, ein Blätterer, und die Zahl sagt alles
     const view = await zeichne(gangTitelMasse(1000));
     await bilder(10);
     await alleStufe(view.container);
+    await fahreInsGanze(view.container);
     const prozent = await zoomeNach(100, view.container);
     expect(prozent, "der Zoom erreicht 100 % nicht — der Fall prüft nichts").toBeGreaterThanOrEqual(100);
     // Kontrolle, dass der Gang wirklich im Bild steht: ohne Punkte wäre „kein
@@ -4440,6 +4458,7 @@ describe("Gang-Masse: eine Seite Punkte, ein Blätterer, und die Zahl sagt alles
     const view = await zeichne(gangTitelMasse(1000));
     await bilder(10);
     await alleStufe(view.container);
+    await fahreInsGanze(view.container);
     const prozent = await zoomeNach(900, view.container);
     const teil = GANG_ABSTAND * (prozent / 100);
     const langen = gemalteTitel(/^LANG/);

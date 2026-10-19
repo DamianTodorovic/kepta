@@ -1319,6 +1319,80 @@ export function layoutBounds(nodes: readonly LayoutNode[], padding = 0): Bounds 
 }
 
 /**
+ * Die Mitte des Bildes, in dem wirklich etwas steht.
+ *
+ * `layoutBounds` kennt nur die aeussersten Punkte der Welt. Bei einem Bestand mit
+ * einem Haufen verbundener Notizen und einem weiten Feld Vereinzelte liegt die
+ * Mitte dieser Box dort, wo nichts ist: die Flaeche zentriert ins Leere, der
+ * Inhalt klebt an eine Kante, und die Titelkoepfe laufen ueber die Leinwand hinaus
+ * (gemessen 18.10. an 1 500 Notizen: 35 Namen, alle rechts oben, der Rand
+ * durchschneidet „Forschung Datensatz…").
+ *
+ * Gesucht ist deshalb nicht die Boxmitte, sondern die Mitte des **dichtesten
+ * Ausschnitts**: das Fenster, das in dieser Blende die meisten Punkte fasst. Zwei
+ * Paeße (erst x, dann y, dann die Punkte in beiden) trennen Weltmitte von
+ * Bildmitte und kosten O(n log n) — die Kamera rechnet einmal pro Einpassen,
+ * nicht pro Bild.
+ *
+ * `randPx` ist der Atemzug an jeder Leinwandkante in Bildpixeln: der Ausschnitt
+ * wird um den Rand verkleinert, damit ein Punkt, der zaehlt, auch seinen Titel
+ * ganz im Bild hat. Passt die ganze Welt in das Fenster, gibt es nichts zu
+ * waehlen — dann ist die Boxmitte die richtige Antwort.
+ */
+export function dichtesteWeltMitte(
+  knoten: readonly { x: number; y: number; versteckt?: boolean }[],
+  k: number,
+  viewport: { w: number; h: number },
+  randPx = 0,
+): { x: number; y: number } | null {
+  const sichtbare = knoten.filter((n) => !n.versteckt);
+  const menge = sichtbare.length > 0 ? sichtbare : knoten;
+  if (menge.length === 0 || !(k > 0) || viewport.w <= 0 || viewport.h <= 0) return null;
+  const fensterB = (viewport.w - 2 * randPx) / k;
+  const fensterH = (viewport.h - 2 * randPx) / k;
+  if (fensterB <= 0 || fensterH <= 0) return null;
+
+  // Der dichteste Streifen entlang einer Achse: maximales Haeufigkeit, bei Gleichstand
+  // der engste Inhalt — ein enger Inhalt laesst mehr Luft an den Kanten.
+  const streifen = (werte: number[], fenster: number): { lo: number; hi: number } | null => {
+    if (werte.length === 0) return null;
+    const xs = [...werte].sort((a, b) => a - b);
+    let bestAnzahl = -1;
+    let bestLo = xs[0]!;
+    let bestHi = xs[0]!;
+    let i = 0;
+    for (let j = 0; j < xs.length; j++) {
+      while (xs[j]! - xs[i]! > fenster) i++;
+      const anzahl = j - i + 1;
+      const span = xs[j]! - xs[i]!;
+      const besser = anzahl > bestAnzahl || (anzahl === bestAnzahl && span < bestHi - bestLo);
+      if (besser) {
+        bestAnzahl = anzahl;
+        bestLo = xs[i]!;
+        bestHi = xs[j]!;
+      }
+    }
+    return { lo: bestLo, hi: bestHi };
+  };
+
+  const bx = streifen(menge.map((n) => n.x), fensterB);
+  if (!bx) return null;
+  const inX = menge.filter((n) => n.x >= bx.lo && n.x <= bx.hi);
+  const by = streifen(inX.map((n) => n.y), fensterH);
+  if (!by) return null;
+  const im = inX.filter((n) => n.y >= by.lo && n.y <= by.hi);
+  if (im.length === 0) return null;
+  let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+  for (const n of im) {
+    if (n.x < minX) minX = n.x;
+    if (n.y < minY) minY = n.y;
+    if (n.x > maxX) maxX = n.x;
+    if (n.y > maxY) maxY = n.y;
+  }
+  return { x: (minX + maxX) / 2, y: (minY + maxY) / 2 };
+}
+
+/**
  * Ab wann ist das Kraftfeld kein Netz, sondern eine Punktwolke, die sich für
  * eines ausgibt?
  *

@@ -157,10 +157,26 @@ describe("KnowledgeGraph: der erste Blick", () => {
   it("nennt bei seinem eigenen Startausschnitt mindestens eine Notiz", async () => {
     const { container } = await zeichne();
     const k = malstab();
+    // Erster Zeuge: die gemalten Titel selbst. Um sie geht es diesem Fall —
+    // Namen im Bild, nicht eine Zahl am Rand.
+    const gemalt = gemalteNotizen().length;
     expect(
-      benannt(container),
-      `Blende ${(k * 100).toFixed(1)} % — die Fläche schreibt über ihre eignen Namen: „${zeile(container)}"`
+      gemalt,
+      `Blende ${(k * 100).toFixed(1)} % — das stehende Bild traegt keinen einzigen Notiztitel (${buch.texteImRahmen().length} Texte in diesem Rahmen)`
     ).toBeGreaterThan(0);
+    // Zweiter Zeuge: was die Flaeche darueber meldet. Sie **schweigt absichtlich**,
+    // wenn ihr Bild alles benennt, was sie fasst (`titelEtat` gibt dann die leere
+    // Meldung, `KnowledgeGraph.tsx:3493`) — gemessen 19.10. im Volllauf 08:39 und
+    // in zwei von drei Wiederholungen 08:46: derselbe Bestand, einmal mit Satz,
+    // einmal stumm. Stille ist in diesem Zweig die beste Auskunft, die das Bild
+    // geben kann, also gewinnt sie den Fall. Spricht die Zeile aber, muss sie
+    // Namen zaehlen: ein „0 of 1 424" darf nicht durch einen leeren Satz
+    // hindurchkommen, und ein Fall, der nur die gemalten Titel zaehlt, sähe eine
+    // Flaeche, die ihre eigne Bilanz luegt.
+    const zeilentext = zeile(container);
+    if (zeilentext !== "") {
+      expect(benannt(container), `die Fläche schreibt über ihre eignen Namen: „${zeilentext}"`).toBeGreaterThan(0);
+    }
   });
 
   it("hält die Zwillingsschwester: der Baum bleibt bei seiner eignen Lesbarkeitszeile", async () => {

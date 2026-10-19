@@ -51,6 +51,7 @@ import {
   ENTITAETS_PRAEFIX,
   KANTEN_GREIF_PX,
   knotenRadius,
+  dichtesteWeltMitte,
   type LayoutEdge,
   type LayoutNode,
   type Simulation,
@@ -706,6 +707,13 @@ const ETIKETT_PX = 11;
  * auseinanderlaufen können.
  */
 export const TITEL_REIHE_PX = ETIKETT_PX * 2.2;
+/**
+ * Der Atemzug, den ein Titel an einer Leinwandkante braucht, in Bildpixeln.
+ * Dieselbe Zahl, die die Titelhoehe traegt (`ETIKETT_PX`): ein Wort, das die
+ * Kante beruehrt, ist keine Auskunft, sondern eine Haelfte — und die Flaeche
+ * weiss selbst nicht, welche Haelfte sie abschneidet.
+ */
+export const TITEL_KANTEN_PX = ETIKETT_PX;
 
 /**
  * Wie oft die Flaeche den Nachzug fragt, waehrend er laeuft. 600 ms sind bei
@@ -2134,10 +2142,10 @@ export function KnowledgeGraph({ memories: memoriesAusFenster, onSelectMemory, o
           maxX: Math.max(...punkte.map((p) => p.x)) + 70,
           maxY: Math.max(...punkte.map((p) => p.y)) + 70,
         };
-        transformRef.current = feldTransform(grenzen);
+        transformRef.current = feldTransform(grenzen, punkte);
         setZoomAnzeige(transformRef.current.k);
       } else {
-        transformRef.current = feldTransform(layoutBounds(sim.nodes, randFuerAnsicht(sim.nodes)));
+        transformRef.current = feldTransform(layoutBounds(sim.nodes, randFuerAnsicht(sim.nodes)), titelAnker(sim));
         setZoomAnzeige(transformRef.current.k);
       }
       nutzerBewegt.current = false;
@@ -2338,16 +2346,42 @@ export function KnowledgeGraph({ memories: memoriesAusFenster, onSelectMemory, o
    * die Welt auf 4 %: unter dieser Schwelle, und darum trug dort keine der 729
    * Notizen im Bild einen Namen. Was ausserhalb liegt, sagt die Zeile am Rand,
    * und Herauszoomen von Hand bleibt frei.
+   *
+   * Der Boden allein machte daraus ein Bild, dessen Haelfte leer ist: die Boxmitte
+   * der WELT liegt bei einem weiten Feld Vereinzelte neben dem Haufen, nicht in
+   * ihm (gemessen 18.10. an 1 500 Notizen: 35 Namen, alle rechts oben, vier Titel
+   * vom Rand durchschnitten). Darum sitzt die Kamera auf dem dichtesten Ausschnitt
+   * der Knoten, nicht auf der Boxmitte — `dichtesteWeltMitte`, mit dem Titelrand
+   * als Luft an beiden Kanten.
    */
+  /**
+   * Die Punkte, deren Namen die Kamera suchen muss.
+   *
+   * Der Vereinzelte-Staub liegt in Reihen (Gang) und nennt sich dort nicht
+   * einzeln. Zaehlte man ihn mit, setzte die Kamera auf die dichteste Punktwolke
+   * und liesse die Nachbarschaft mit den Namen am Rand stehen — gemessen in der
+   * Kratzbaum-Kopie: 5 Titel vorher, 2 nachher. Die Rahmen-Zeile am Rand zaehlt
+   * laengst dieselbe Menge: die entfalteten Notizen.
+   *
+   * Der Anker ist die Stelle, an der der Titel haengt (`(y + r) · k`), nicht die
+   * Knotenachse: sonst liegt in schmalen Fenstern die halbe Titelzone unter der
+   * Bildmitte und die Mitte gilt als leer, waehrend Namen gemalt werden.
+   */
+  const titelAnker = (sim: Simulation) => {
+    const offene = sim.nodes.filter((n) => !n.versteckt && !sim.gangIds?.has(n.id));
+    const menge = offene.length > 0 ? offene : sim.nodes.filter((n) => !n.versteckt);
+    return menge.map((n) => ({ x: n.x, y: n.y + n.r }));
+  };
+
   const feldTransform = useCallback(
-    (grenzen: ReturnType<typeof layoutBounds>) => {
-      const ein = einpassFlaeche();
+    (grenzen: ReturnType<typeof layoutBounds>, knoten?: readonly { x: number; y: number; versteckt?: boolean }[]) => {      const ein = einpassFlaeche();
       const fit = fitTransform(grenzen, ein);
       const boden = zeilenKMin(TITEL_REIHE_PX, GANG_ABSTAND);
       const k = Math.max(fit.k, boden);
-      const mitteX = (grenzen.minX + grenzen.maxX) / 2;
-      const mitteY = (grenzen.minY + grenzen.maxY) / 2;
-      return { k, x: ein.w / 2 - mitteX * k, y: ein.h / 2 - mitteY * k };
+      const mitte =
+        dichtesteWeltMitte(knoten ?? [], k, ein, TITEL_KANTEN_PX) ??
+        { x: (grenzen.minX + grenzen.maxX) / 2, y: (grenzen.minY + grenzen.maxY) / 2 };
+      return { k, x: ein.w / 2 - mitte.x * k, y: ein.h / 2 - mitte.y * k };
     },
     [einpassFlaeche]
   );
@@ -2356,6 +2390,12 @@ export function KnowledgeGraph({ memories: memoriesAusFenster, onSelectMemory, o
   const fitView = useCallback(() => {
     const sim = simRef.current;
     if (!sim || sim.nodes.length === 0) return;
+    // OHNE Anker: dieser Knopf heisst „Fit the whole graph into view" und schuldet
+    // die ganze Welt, nicht die Gegend mit den meisten Namen. Die Anfangskamera
+    // sucht ihren Anker im Gemalten — wer ihn hier durchreichte, machte den Knopf
+    // zu einer zweiten Anfangskamera und bräuchte einen andern Wort. (Gemessen
+    // 19.10.: mit Anker fielen vier Gang-Faelle, weil sie ueber diesen Knopf
+    // zurueck ins Ganze fahren wollen.)
     transformRef.current = feldTransform(layoutBounds(sim.nodes, randFuerAnsicht(sim.nodes)));
     setZoomAnzeige(transformRef.current.k);
     zeichneNoetig.current = true;
@@ -2440,7 +2480,7 @@ export function KnowledgeGraph({ memories: memoriesAusFenster, onSelectMemory, o
     if (!sim || sim.nodes.length === 0) return;
     if (ansichtRef.current === "dendrogram") { fitBaumAnsicht(); return; }
     if (ansichtRef.current === "semantic") { fitKarte(zielRef.current); return; }
-    transformRef.current = feldTransform(layoutBounds(sim.nodes, randFuerAnsicht(sim.nodes)));
+    transformRef.current = feldTransform(layoutBounds(sim.nodes, randFuerAnsicht(sim.nodes)), titelAnker(sim));
     setZoomAnzeige(transformRef.current.k);
     zeichneNoetig.current = true;
   }, [dimensions, fitBaumAnsicht, fitKarte]);
@@ -3134,6 +3174,26 @@ export function KnowledgeGraph({ memories: memoriesAusFenster, onSelectMemory, o
       return true;
     };
 
+    /**
+     * Die Kante, an der ein Titel stehen darf.
+     *
+     * Die Kamera setzt schon auf den dichtesten Ausschnitt (`dichtesteWeltMitte`),
+     * aber ein Etikett sitzt auf seinem Knoten und der kann an jeder Kante liegen:
+     * gemessen 18.10. im ausgelieferten 3.2.21 waren bei 1440 px vier von 35 Titeln
+     * vom Rand durchschnitten („Forschung Datensatz…"). Ein Wort, das die Kante
+     * beruehrt, ist eine Haelfte ohne Auskunft — also weicht der Text in das Bild
+     * hinein, der Knoten bleibt, wo er ist. `null`, wenn das Wort selbst mittig
+     * nicht fasst: dann faellt es, und es hat einen eignen Grund.
+     */
+    const kantigX = (mx: number, breite: number): number | null => {
+      const halb = breite / 2 + TITEL_KANTEN_PX;
+      if (halb * 2 > dimensions.w) return null;
+      return Math.min(Math.max(mx, halb), dimensions.w - halb);
+    };
+    /** Dieselbe Luft oben und unten — ein abgeschnittener Kopf ist kein Kopf. */
+    const kantigY = (my: number, hoehe: number): number =>
+      Math.min(Math.max(my, TITEL_KANTEN_PX), Math.max(TITEL_KANTEN_PX, dimensions.h - hoehe - TITEL_KANTEN_PX));
+
     // --- Gerüst-Etiketten (nur Baum): zuerst, und sie belegen das Raster ---
     // Vorher liefen sie als einziger Text außerhalb des Rasters und in derselben
     // Schrift wie der Inhalt: die Ebenen standen wie eine zweite Titelspalte im
@@ -3185,6 +3245,8 @@ export function KnowledgeGraph({ memories: memoriesAusFenster, onSelectMemory, o
     let benannt = 0;
     let zuBreit = 0;
     let verdraengt = 0;
+    /** Titel, die selbst mittig nicht in das Bild faessen — achter Grund des Etat. */
+    let anDerKante = 0;
     for (const { n, m, r } of etiketten) {
       // Der Peek: was der Zeiger oder die Tastatur haelt, wird nicht gekuerzt —
       // genau dann will jemand den ganzen Namen lesen.
@@ -3216,25 +3278,33 @@ export function KnowledgeGraph({ memories: memoriesAusFenster, onSelectMemory, o
       // Der Knoten unter dem Zeiger und seine Nachbarn haben Vorrang und
       // ueberschreiben notfalls; alles andere weicht aus.
       const bevorzugt = hov === n.id || nachbarn?.has(n.id) === true;
-      if (!ohneRaster && !freiUndBelegen(mitteX, mitteY, breite) && !bevorzugt) {
+      // Erst die Kante, dann das Raster: das Etikett soll dort belegen, wo es
+      // wirklich steht, nicht dort, wo sein Knoten liegt.
+      const xKantig = kantigX(mitteX, breite);
+      if (xKantig === null) {
+        anDerKante++;
+        continue;
+      }
+      const yKantig = kantigY(mitteY, fs);
+      if (!ohneRaster && !freiUndBelegen(xKantig, yKantig, breite) && !bevorzugt) {
         verdraengt++;
         continue;
       }
       ctx.lineWidth = 3;
       ctx.strokeStyle = grundFarbe;
-      ctx.strokeText(titel, mitteX, mitteY);
+      ctx.strokeText(titel, xKantig, yKantig);
       // Ein Etikett aus dem ersten Satz der Notiz ist ein Platzhalter und sieht
       // aus wie einer — eine Notiz ohne Titel darf nicht so tun, als haette sie
       // einen.
       ctx.fillStyle = platzhalter ? schwach : textFarbe;
-      ctx.fillText(titel, mitteX, mitteY);
+      ctx.fillText(titel, xKantig, yKantig);
       benannt++;
       if (hov === n.id && m.tags.length > 0) {
         const tags = m.tags.slice(0, 3).join(" · ");
         ctx.font = `400 ${fs}px ui-sans-serif, system-ui, sans-serif`;
-        ctx.strokeText(tags, mitteX, mitteY + fs * 1.15);
+        ctx.strokeText(tags, xKantig, kantigY(yKantig + fs * 1.15, fs));
         ctx.fillStyle = schwach;
-        ctx.fillText(tags, mitteX, mitteY + fs * 1.15);
+        ctx.fillText(tags, xKantig, kantigY(yKantig + fs * 1.15, fs));
         ctx.font = `600 ${fs}px ui-sans-serif, system-ui, sans-serif`;
       }
     }
@@ -3413,6 +3483,7 @@ export function KnowledgeGraph({ memories: memoriesAusFenster, onSelectMemory, o
                 [ueberBudget, `over the ${mengenzahl(budget)} names this picture allows`],
                 [zuBreit, "a title wider than its row"],
                 [verdraengt, "crowded out by a name already there"],
+                [anDerKante, "wider than the picture itself"],
               ];
         // Was das Fenster fasst, ist eine Messung des Bildes — keine Klage: der
         // Grund am Satz erscheint nur, wenn etwas am Budget fiel, und ein kleines
@@ -3568,7 +3639,7 @@ export function KnowledgeGraph({ memories: memoriesAusFenster, onSelectMemory, o
               // willkuerlichen Ausschnitts mitten im Knaeuel.
               if (autoFitOffen.current && isSettled(sim) && sim.nodes.length > 0) {
                 autoFitOffen.current = false;
-                transformRef.current = feldTransform(layoutBounds(sim.nodes, randFuerAnsicht(sim.nodes)));
+                transformRef.current = feldTransform(layoutBounds(sim.nodes, randFuerAnsicht(sim.nodes)), titelAnker(sim));
                 setZoomAnzeige(transformRef.current.k);
               }
             } else if (refitFaellig(autoFitOffen.current, bewegt, sim.nodes.length)) {
@@ -3577,7 +3648,7 @@ export function KnowledgeGraph({ memories: memoriesAusFenster, onSelectMemory, o
               // (Filterwechsel) durchlief den Bewegungszweig nie und blieb auf dem
               // Ausschnitt sitzen, der fuer seine Ausgangspositionen gerechnet war.
               autoFitOffen.current = false;
-              transformRef.current = feldTransform(layoutBounds(sim.nodes, randFuerAnsicht(sim.nodes)));
+              transformRef.current = feldTransform(layoutBounds(sim.nodes, randFuerAnsicht(sim.nodes)), titelAnker(sim));
               setZoomAnzeige(transformRef.current.k);
               zeichneNoetig.current = true;
             }
