@@ -447,7 +447,11 @@ export function Settings() {
     } catch (err: unknown) {
       setSaved(false);
       const grund = err instanceof Error ? err.message : String(err);
-      setMeldung(ort ? { ort, art: 'warn', text: `Not saved — the local server refused it (${grund}). The change lives in this window only and is gone after a restart.` } : null);
+      // P4-16: dieselbe Trennung wie an der Extraktionszeile (:870, `p4-h`). `spiegle`
+      // (src/lib/ai.ts:401) wirft `HTTP <status>` nur, wenn eine Antwort da war; ohne
+      // Antwort bringt der Fetch eine TypeError — zwei Faelle, zwei Worte.
+      const hatGeantwortet = /^HTTP \d{3}$/.test(grund);
+      setMeldung(ort ? { ort, art: 'warn', text: `Not saved — the local server ${hatGeantwortet ? `refused it (${grund})` : `did not answer (${grund})`}. The change lives in this window only and is gone after a restart.` } : null);
     }
     quittung.current = window.setTimeout(() => { setSaved(false); setMeldung(null); }, QUITTUNG_MS);
   };

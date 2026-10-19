@@ -340,3 +340,46 @@ describe("P4-15: Extraktionsquittung — 'antwortete nicht' ist nicht 'wies ab'"
     expect(zeile, "413 ist keine stumme Tuer").not.toMatch(/did not answer/i);
   });
 });
+
+// P4-16 (Uebernahme-Lauf 18.10. 20:05, Punkt 4): dieselbe Wunde, die zweite Fundstelle.
+// `p4-h` trennte die Worte an der Extraktionszeile (Settings.tsx:870). Die Haupt-Zeile
+// :437 (`handleSave`) blieb beim einen Wort fuer zwei Faelle: `spiegle` wirft
+// `HTTP <status>` nur, wenn eine Antwort da war (src/lib/ai.ts:401); ohne Antwort
+// bringt der Fetch eine TypeError, und die Zeile beschuldigte eine Tuer, die nie fragte.
+// Der erste Fall ist vor DEM Flicken rot, die KONTROLLE ist in beiden Ständen gruen.
+describe("P4-16: die Quittung der Hauptzeile trennt Stille und Abweisung", () => {
+  it("sagt den Transportabbruch an der Endpunkt-Zeile als Stille, nicht als Abweisung", async () => {
+    stubFetch({ "/api/settings": (u, init) => {
+      if (init?.method === "PUT") throw new TypeError("Failed to fetch");
+      return new Response("{}", { status: 200 });
+    } });
+    const { container } = render(<Settings />);
+    await waitFor(() => expect(container.textContent).toMatch(/Artificial intelligence/));
+    const feld = screen.getByPlaceholderText(/https:\/\/api\.example\.com\/v1/) as HTMLInputElement;
+    fireEvent.change(feld, { target: { value: "https://beispiel.example/v1" } });
+    fireEvent.click(screen.getByRole("button", { name: /^Save$/ }));
+    await waitFor(() => expect(container.querySelector('[data-quittung="endpunkt"]')).toBeTruthy());
+    const zeile = container.querySelector('[data-quittung="endpunkt"]')?.textContent ?? "";
+    expect(zeile, "eine Tuer, die nie antwortete, kann nichts abgewiesen haben").toMatch(/did not answer/i);
+    expect(zeile, "Stille heisst Stille").not.toMatch(/refused/i);
+    expect(container.querySelector('[data-art="warn"]'), "die Absage bleibt eine Absage").toBeTruthy();
+  });
+
+  // KONTROLLE, kein neuer Befund: vor DEM Flicken gruen, nach ihm Wort fuer Wort gleich.
+  // Ohne ihn koennte die Heilung das Wort bloeg vertauschen. Er wirft, sobald
+  // "did not answer" auch eine echte 413 erfindet.
+  it("KONTROLLE: eine echte 413-Abweisung der Hauptzeile behaelt ihr Wort und ihren Status", async () => {
+    stubFetch({ "/api/settings": (u, init) => (init?.method === "PUT"
+      ? new Response(JSON.stringify({ error: "Settings too large" }), { status: 413 })
+      : new Response("{}", { status: 200 })) });
+    const { container } = render(<Settings />);
+    await waitFor(() => expect(container.textContent).toMatch(/Artificial intelligence/));
+    const feld = screen.getByPlaceholderText(/https:\/\/api\.example\.com\/v1/) as HTMLInputElement;
+    fireEvent.change(feld, { target: { value: "https://beispiel.example/v1" } });
+    fireEvent.click(screen.getByRole("button", { name: /^Save$/ }));
+    await waitFor(() => expect(container.querySelector('[data-quittung="endpunkt"]')).toBeTruthy());
+    const zeile = container.querySelector('[data-quittung="endpunkt"]')?.textContent ?? "";
+    expect(zeile, "413 ist eine Abweisung und muss sie nennen").toMatch(/refused it \(HTTP 413\)/);
+    expect(zeile, "413 ist keine stumme Tuer").not.toMatch(/did not answer/i);
+  });
+});
