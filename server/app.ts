@@ -128,16 +128,11 @@ export function createApp(store: KeptaStore, optionen: AppOptionen = {}) {
   // First of all, so that no route registered below can be reached around it.
   app.use(nurDieserRechner({ bindHost: process.env.KEPTA_HOST }));
 
-  // --- Vollständige Liste via Paginierung — listMemories deckelt pro Seite ---
+  // --- Vollständige Liste in einem Durchstich — Begruendung und Messung bei
+  // store.alleMemories (src/core/store.ts); die Schleife hier warf je Seite einen
+  // eignen Sortierbaum ueber denselben Bestand.
   function listAllMemories(opts: { trash?: boolean } = {}): CoreMemory[] {
-    const out: CoreMemory[] = [];
-    const pageSize = 1000;
-    for (let offset = 0; ; offset += pageSize) {
-      const page = store.listMemories({ limit: pageSize, offset, ...opts });
-      out.push(...page);
-      if (page.length < pageSize) break;
-    }
-    return out;
+    return store.alleMemories(opts);
   }
 
   const limiter = erstelleLimiter();

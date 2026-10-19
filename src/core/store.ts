@@ -272,6 +272,18 @@ export class KeptaStore {
       CREATE INDEX IF NOT EXISTS idx_memories_type ON memories(type);
       CREATE INDEX IF NOT EXISTS idx_memories_deleted ON memories(deleted_at);
       CREATE INDEX IF NOT EXISTS idx_memories_updated ON memories(updated_at);
+      -- Die Zaehler-Route und der Graph-Leseweg sortieren nach updated_at UND filtern
+      -- deleted_at IS NULL. Einer der beiden Indizes allein genugt dem Planer nicht:
+      -- erklaerplan 19.10. an einer eignen Kapsel (21 066 Zeilen) sagte je Seite
+      -- "SEARCH memories USING INDEX idx_memories_deleted | USE TEMP B-TREE FOR ORDER BY".
+      -- Mit diesem Index faellt der Sortierbaum ganz: erklaerplan zeigt nur noch den
+      -- Index, gemessene Zeit fuer denselben Bestand auf derselben Engine
+      -- (SQLite 3.53.2): 2 936 ms Schleife gegen 39 ms mit Index; zweiter Anlauf bei
+      -- 27 066 Zeilen: 3 199 ms gegen 40 ms. Anlegen + ANALYZE kosten 42 ms und 0,4 MiB
+      -- Datei. Schreiblast gemessen 19.10. 13:44 an derselben Kapsel: 3 000 einzelne
+      -- Schreibungen 0,259 ms je Zeile ohne Index, 0,286 ms mit — +0,027 ms (10,4 %),
+      -- ueber den vollen Bestand 21 066 also rund +0,57 s, verteilt ueber den Lauf.
+      CREATE INDEX IF NOT EXISTS idx_memories_deleted_updated ON memories(deleted_at, updated_at DESC, rid);
 
       CREATE TABLE IF NOT EXISTS chunks (
         memory_id TEXT NOT NULL REFERENCES memories(id) ON DELETE CASCADE,
@@ -476,6 +488,32 @@ export class KeptaStore {
     const sql = `SELECT ${KeptaStore.COLS} FROM memories WHERE ${where.join(" AND ")} ORDER BY updated_at DESC LIMIT ? OFFSET ?`;
     params.push(limit, offset);
     const rows = this.db.prepare(sql).all(...params) as Record<string, unknown>[];
+    return rows.map((r) => this.rowToRecord(r));
+  }
+
+  /**
+   * Der ganze Bestand in EINEM Durchstich, nicht in Seitenchleifen.
+   *
+   * Warum das hier steht: "ORDER BY updated_at DESC LIMIT ? OFFSET ?" ist ueber dem
+   * nicht-eindeutigen Schluessel nicht dasselbe wie ein Durchstich. Gemessen 19.10.
+   * an einer eignen Kapsel (21 066 Zeilen, drei verschiedene updated_at-Werte, also
+   * maximaller Gleichstand; eigne DB, nicht Damians Bestand): **0 doppelte und 0
+   * fehlende Zeilen**, die Reihenfolge war ueber zwei Anlaeufe **gleich**, aber
+   * **Seite 3 der Schleife teilte keine einzige Position mit Zeile 2000..2999 des
+   * Durchstichs (0/1000)**. Ein Leib, ueber dem ein ETag steht
+   * (`server/router/memories.ts`, Zeile 294), haengt damit an der Blattaufteilung,
+   * nicht am Bestand.
+   *
+   * Der zweite Grund ist die Zahl selbst: je Seite faellt ein Sortierbaum
+   * ("USE TEMP B-TREE FOR ORDER BY",erklaerplan gemessen), bei 21 066 Zeilen und
+   * Seite 1000 also 22 mal. Derselbe Bestand, dieselbe Engine (SQLite 3.53.2,
+   * better-sqlite3 12.11.1): **2 936 ms Schleife gegen 93 ms Durchstich**.
+   */
+  alleMemories(opts: { trash?: boolean } = {}): MemoryRecord[] {
+    const wo = opts.trash ? "deleted_at IS NOT NULL" : "deleted_at IS NULL";
+    const rows = this.db.prepare(
+      `SELECT ${KeptaStore.COLS} FROM memories WHERE ${wo} ORDER BY updated_at DESC`,
+    ).all() as Record<string, unknown>[];
     return rows.map((r) => this.rowToRecord(r));
   }
 
