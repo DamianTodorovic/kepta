@@ -4696,15 +4696,17 @@ export function KnowledgeGraph({ memories: memoriesAusFenster, onSelectMemory, o
                   ? `Network filled: +${nachzug.neuBegriffe.toLocaleString("en-US")} concepts, +${nachzug.neuKanten.toLocaleString("en-US")} links`
                   : "";
           return (
-            <p
+            <div
               data-testid="nachzug-info"
               role="status"
               aria-live="polite"
-              className={zeile ? "absolute left-3 top-3 z-10 hud-panel rounded-md px-2.5 py-1 pointer-events-none" : "sr-only"}
-              style={zeile ? { color: "var(--text-2)" } : undefined}
+              className={zeile ? "absolute left-0 right-0 top-0 z-10 h-[3px] pointer-events-none" : "sr-only"}
+              style={zeile ? { background: "var(--accent-kante)" } : undefined}
+              title={zeile || undefined}
+              aria-label={zeile || undefined}
             >
-              {zeile}
-            </p>
+              <span className="sr-only">{zeile}</span>
+            </div>
           );
         })()}
         <canvas
