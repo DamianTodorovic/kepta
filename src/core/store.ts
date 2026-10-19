@@ -284,6 +284,38 @@ export class KeptaStore {
       -- Schreibungen 0,259 ms je Zeile ohne Index, 0,286 ms mit — +0,027 ms (10,4 %),
       -- ueber den vollen Bestand 21 066 also rund +0,57 s, verteilt ueber den Lauf.
       CREATE INDEX IF NOT EXISTS idx_memories_deleted_updated ON memories(deleted_at, updated_at DESC, rid);
+      -- Die Deckungs-Zaehlung der Graph-Route ('notizenMitBegriff()', src/core/store.ts:1362)
+      -- filtert 'm.deleted_at IS NULL' und braucht von 'memories' weiter nichts als 'm.id'.
+      -- Ohne diese zwei Spalten in einem Index muss sie fuer jede Trefferzeile in die
+      -- Tabellenblaetter — an seiner verschluesselten Platte heisst das: jede Seite, jede
+      -- Entschluesselung. Kapsel mit dem WORTLICHEN DDL-Satz von 'migrate()' (alle Indizes der
+      -- beiden Tabellen, 16-Spalten-Zeilen zu ~1 400 B Inhalt, Chiffre wie 'store.ts:1490', WAL,
+      -- Engine des ausgelieferten Buendels, SQLite 3.53.2), Korpus in Realstruktur: 21 066 aktive
+      -- Notizen + 502 Papierkorb, 2 756 Begriffe, 3 054 Erwaehnungen auf 1 018 gedeckte.
+      -- Zwei Durchlaeufe, 19.10. 20:55 und 20:57 MESZ, auf derselben Kapsel. Zeilen: vorher
+      -- 21 568 / 23 568, nachher 22 568 / 24 568 — je ein Schreiblast-Zweig zu 1 000 Notizen liegt
+      -- zwischen der vorher- und der nachher-Lesung. Je fuenf Anlaeufe: Zaehlung **189,42 ms** und
+      -- **206,46 ms** Median (Spannen der vier
+      -- waermeren Anlaeufe 188,50-210,14 und 203,51-208,33; der erste Anlauf in frischer Verbindung
+      -- 197,40 und 358,64 ms) gegen **2,51 ms** und **2,29 ms** Median (waermere 2,32-2,60 und
+      -- 2,28-2,29; erster Anlauf 6,04 und 4,32 ms) = **75x** und **90x**.
+      -- Die Zahl selbst aendert der Index nicht: 1 018 gedeckte in beiden Plaenen. Plan vorher
+      -- 'SEARCH m USING INDEX idx_memories_deleted', nachher 'SEARCH m USING COVERING INDEX
+      -- idx_memories_deleted_id'. Anlegen 595,62 ms und 234,65 ms, Datei jeweils +0,4 MiB.
+      -- Schreiblast, je 1 000 Notizen auf getrennten Zeilmengen: Durchlauf 1 0,0252 ms ohne gegen
+      -- 0,0310 ms mit (+0,0058 ms je Zeile), Durchlauf 2 0,0225 ohne gegen 0,0236 mit (+0,0011 ms).
+      -- Der Zuwachs ist klein, aber von Durchlauf zu Durchlauf NICHT stabil — ueber den vollen
+      -- Bestand sind das 0,02 bis 0,12 s, verteilt ueber viele Schreibungen.
+      -- An der Tuer gemessen (3.2.23 @ 64433, n=20): die Kontroll-Lesung ohne Begriffs-Fund
+      -- kostet **p50 298,5 ms**. Von den 189-206 ms, die diese Kapsel fuer die Zahlung braucht,
+      -- nimmt der Index dort alles ausser 2-3 ms; die restlichen ~90-110 ms der Kontroll-Lesung
+      -- erklaert er **nicht** — dafuer fehlt ein Zeitsensor im Prozess, und die laufende Tuer
+      -- traegt ausserdem weder diese Fassung noch diesen Index.
+      -- Nebenbefund, gegen meine eigne Behauptung geprueft: nach diesem Index aendert das
+      -- Wegfallen von 'idx_memories_deleted' (Zeile 273) an drei geprueften Lesungen (Deckung,
+      -- Durchstich, Blaetterliste) keinen Plan. Das sind drei Pruefungen, nicht die ganze Route —
+      -- die Raeumentscheidung bleibt die Leitung, dieser Flicken ruehrt nichts an.
+      CREATE INDEX IF NOT EXISTS idx_memories_deleted_id ON memories(deleted_at, id);
 
       CREATE TABLE IF NOT EXISTS chunks (
         memory_id TEXT NOT NULL REFERENCES memories(id) ON DELETE CASCADE,

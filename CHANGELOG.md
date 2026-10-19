@@ -36,6 +36,24 @@
   `tests/store.test.ts` now holds that line. Both changes are created with
   `IF NOT EXISTS`/`ALTER … catch` in the schema that runs on every open, so an existing
   knowledge base gets them on the first start of this version.
+- **The graph's term-coverage count reads an index instead of the table.** Per term the
+  graph asks which notes mention it; the count filtered `memories` by `deleted_at` and
+  then opened the table to reach the id. `idx_memories_deleted_id (deleted_at, id)`
+  covers it. Measured on a sandbox copy built from the literal DDL (21 066 live notes,
+  502 trashed, 2 756 terms, 3 054 mentions): **189,42 ms and 206,46 ms → 2,51 ms and
+  2,29 ms** (two runs at 20:55 and 20:57, five starts each), plan `USING INDEX` →
+  `USING COVERING INDEX`, and the counted number stays 1 018 covered notes. Creating it
+  cost 596 ms / 235 ms and +0,4 MiB; write cost rose 0,0011–0,0058 ms per note, small
+  and not stable between runs, about 0,02–0,12 s over a whole base.
+- **One receipt lifetime instead of two numbers.** The copy buttons in the chat and in
+  the note editor carried their own timeout literals; they now share `QUITTUNG_MS`, so
+  the saved-confirmation cannot live longer in one place than in another.
+- **Controls say what they are.** Eleven controls across the command palette, the note
+  editor, the preview, the import screens, the wizard and the recovery panel had no
+  accessible name; they now carry `aria-label` or a real `<label for>` paired with the
+  field's `id`.
+- **The shelf names its view.** The graph's shelf line said only how many notes it held;
+  with the view name appended it says whether that is the field or the tree.
 
 ### Performance
 

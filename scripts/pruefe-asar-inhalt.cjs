@@ -47,13 +47,14 @@ const erwartet = [
   // Kein Marker fuer den Ein-Durchstich-Leseweg (`59dabea`, store.ts): seine einzigen SQL-Literale
   // ("deleted_at IS NULL" / "IS NOT NULL") standen schon im alten Objekt, ein Wort darauf waere
   // eine Pruefung, die nie schlagen kann. Der Weg ist durch seinen Fall gedeckt, nicht durch ein Literal.
-  // 3.2.24 (HEAD 1b694bf plus p5-g und die generierte Spalte aus p6-health-2s). Gegen das
-  // ausgelieferte 3.2.23-Objekt (49 065 686 B, mtime 2026-10-19T12:05:15Z) gemessen: alle fünf
+  // 3.2.24 (HEAD 9881e79 plus p5-g, die generierte Spalte aus p6-health-2s und p5-i-v2). Gegen das
+  // ausgelieferte 3.2.23-Objekt (49 065 686 B, mtime 2026-10-19T12:05:15Z) gemessen: alle sechs
   // Literalen dort **0** Treffer, ebenso das Wort `embedding_hat` selbst.
   ["idx_memory_entities_entity", 1],
   ["idx_chunks_hat_model", 1],
   ["FROM chunks WHERE embedding_hat = 1", 1],
   ["CASE WHEN embedding IS NOT NULL THEN 1 ELSE 0 END", 1],
+  ["idx_memories_deleted_id ON memories(deleted_at, id)", 1],
   ["absolute left-0 right-0 top-0 z-10 h-[3px] pointer-events-none", 1],
   // P4-16 und P4-13 bleiben ohne Marker, nicht aus Bequemlichkeit: P4-16 verwendet dieselben
   // Worte wie die Extraktionszeile aus 3.2.22 ("did not answer (" steht im alten Objekt schon

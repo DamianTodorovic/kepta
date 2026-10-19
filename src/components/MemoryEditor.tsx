@@ -217,8 +217,9 @@ export function MemoryEditor({ memory, onSave, onClose, onDelete }: MemoryEditor
         <form onSubmit={handleSubmit} className="flex-1 flex flex-col min-h-0 overflow-y-auto">
           <div className="p-8 flex-1 flex flex-col gap-6">
             <div>
-              <div className="hud-label mb-2">Title</div>
+              <label htmlFor="memory-titel" className="hud-label mb-2">Title</label>
               <input
+                id="memory-titel"
                 type="text"
                 placeholder="Title of this entry"
                 value={title}
@@ -272,8 +273,9 @@ export function MemoryEditor({ memory, onSave, onClose, onDelete }: MemoryEditor
             </div>
 
             <div className="flex-1 flex flex-col min-h-[240px]">
-              <div className="hud-label mb-2">Content</div>
+              <label htmlFor="memory-inhalt" className="hud-label mb-2">Content</label>
               <textarea
+                id="memory-inhalt"
                 placeholder="Knowledge, notes, code… [[wiki links]] are connected automatically."
                 value={content}
                 onChange={(e) => setContent(e.target.value)}
@@ -282,7 +284,7 @@ export function MemoryEditor({ memory, onSave, onClose, onDelete }: MemoryEditor
             </div>
 
             <div className="pt-2">
-              <div className="hud-label mb-2">Tags</div>
+              <label htmlFor="memory-schlagwort" className="hud-label mb-2">Tags</label>
               <div className="hud-input flex flex-wrap gap-2 items-center p-2 rounded-xl">
                 {tags.map(tag => (
                   <span
@@ -302,6 +304,7 @@ export function MemoryEditor({ memory, onSave, onClose, onDelete }: MemoryEditor
                   </span>
                 ))}
                 <input
+                  id="memory-schlagwort"
                   type="text"
                   placeholder={tags.length === 0 ? "Type and press Enter…" : ""}
                   value={tagsInput}

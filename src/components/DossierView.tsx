@@ -1,10 +1,11 @@
 // A dossier: everything K3PTA knows about one person, project or topic — on
 // one page, ready to copy into a document or keep as a note.
-import { FormEvent, useEffect, useState } from 'react';
+import { FormEvent, useEffect, useRef, useState } from 'react';
 import { FileText, Copy, Check, Save, Loader2, AlertTriangle } from '../lib/icons';
 import { useToast } from './ui/Toast';
 import { inForm } from '../lib/antwort';
 import { DOSSIER_TITEL } from '../lib/dossierTitel';
+import { QUITTUNG_MS } from '../lib/quittung';
 
 interface Eintrag { id: string; title: string; sentence: string; at: number }
 /** Ein Widerspruch im Dossier — mit ids, wenn der Server sie liefert (tut er). */
@@ -74,6 +75,7 @@ export function DossierView({ onOpenMemory, onEditMemory, dossierThema }: { onOp
   const [fehler, setFehler] = useState<string | null>(null);
   const [vorschlaege, setVorschlaege] = useState<Vorschlaege | null>(null);
   const [kopiert, setKopiert] = useState(false);
+  const kopierTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [gespeichert, setGespeichert] = useState(false);
   /** Was mit einem Widerspruch geschehen ist — ehrlich auch im Fehlerfall. */
   const [entschieden, setEntschieden] = useState<Record<string, string>>({});
@@ -144,8 +146,9 @@ export function DossierView({ onOpenMemory, onEditMemory, dossierThema }: { onOp
     try {
       if (!navigator.clipboard?.writeText) throw new Error('no clipboard');
       await navigator.clipboard.writeText(daten.markdown);
+      if (kopierTimer.current) clearTimeout(kopierTimer.current);
       setKopiert(true);
-      setTimeout(() => setKopiert(false), 1800);
+      kopierTimer.current = setTimeout(() => { setKopiert(false); kopierTimer.current = null; }, QUITTUNG_MS);
     } catch {
       toast.push({ message: 'Copying failed — your system did not allow access to the clipboard.', kind: 'warn' });
     }

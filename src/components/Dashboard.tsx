@@ -1399,6 +1399,7 @@ export function Dashboard() {
               <input
                 ref={searchInputRef}
                 type="text"
+                aria-label="Search your memory"
                 placeholder={schmal ? "Search" : "Search your memory"}
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
@@ -1656,6 +1657,7 @@ export function Dashboard() {
                   value={clipUrl}
                   onChange={(e) => setClipUrl(e.target.value)}
                   onKeyDown={(e) => { if (e.key === "Enter") handleClip(); }}
+                  aria-label="Paste a URL to import"
                   placeholder="Paste a URL…"
                   className="flex-1 min-w-0 bg-transparent text-sm outline-none"
                   style={{ color: "var(--text-1)" }}

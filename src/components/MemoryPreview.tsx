@@ -2,7 +2,7 @@
 // statt direkt den Editor. Der komplette Text, sauber formatiert, mit der
 // klickbaren Quelle zurueck zur Original-Datei bzw. zum Weblink. Bearbeiten
 // uebergibt an den bestehenden Editor.
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { motion } from "motion/react";
 import { formatDistanceToNow } from "date-fns";
 import { Memory } from "../types";
@@ -11,6 +11,7 @@ import { useToast } from "./ui/Toast";
 import { TYP_BESCHREIBUNG } from "../lib/graphHierarchy";
 import { t } from "../lib/uiText";
 import { inhaltOhneQuelle, oeffneQuelle, parseChunkTitel, parseQuelle } from "../lib/quelle";
+import { QUITTUNG_MS } from "../lib/quittung";
 
 interface MemoryPreviewProps {
   memory: Memory;
@@ -25,6 +26,7 @@ const TYPE_LABEL = TYP_BESCHREIBUNG;
 export function MemoryPreview({ memory, onClose, onEdit }: MemoryPreviewProps) {
   const toast = useToast();
   const [kopiert, setKopiert] = useState(false);
+  const kopierTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const quelle = parseQuelle(memory);
   const chunk = parseChunkTitel(memory.title);
   const text = inhaltOhneQuelle(memory.content) || memory.content;
@@ -46,8 +48,9 @@ export function MemoryPreview({ memory, onClose, onEdit }: MemoryPreviewProps) {
   const texteKopieren = async () => {
     try {
       await navigator.clipboard.writeText(`${memory.title}\n\n${text}`);
+      if (kopierTimer.current) clearTimeout(kopierTimer.current);
       setKopiert(true);
-      setTimeout(() => setKopiert(false), 1600);
+      kopierTimer.current = setTimeout(() => { setKopiert(false); kopierTimer.current = null; }, QUITTUNG_MS);
     } catch { /* Clipboard verweigert — still halten */ }
   };
 

@@ -348,10 +348,11 @@ export function MachineScan({ open, onClose, onImported, autoPreview = false }: 
               </div>
 
               <div>
-                <label className="text-[12px] block mb-1" style={{ color: "var(--text-2)" }}>
+                <label htmlFor="scan-ausgelassen" className="text-[12px] block mb-1" style={{ color: "var(--text-2)" }}>
                   Folder names to leave out (comma separated):
                 </label>
                 <input
+                  id="scan-ausgelassen"
                   value={ausgelassen}
                   onChange={(e) => setAusgelassen(e.target.value)}
                   onBlur={() => void sichereAuswahl(endungen, ausgelassen)}

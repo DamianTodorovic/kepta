@@ -9,6 +9,7 @@ import { loadAISettings, saveAISettings, providerById, resolveAIConnection, disc
 import { detectLocalAIs, type DetectedAI } from "../lib/profile";
 import { shouldLearn, buildExtractPrompt, parseNode, AUTO_LEARN_TIMEOUT_MS, isAutoLearnEnabled, shouldShowHint, AUTOLEARN_KEY, AUTOLEARN_HINT_KEY } from "../lib/autolearn";
 import { useToast } from "./ui/Toast";
+import { QUITTUNG_MS } from "../lib/quittung";
 
 /** Extrahiert Rohtext aus ReactMarkdown-Children (für Copy-Buttons). */
 function extractCodeText(node: unknown): string {
@@ -378,7 +379,7 @@ export function Chat({ activeMemories, onSaveToBrain, onSaveToBrainWithMeta, isF
       toast.push({ message: "Copying failed — your browser did not allow access to the clipboard.", kind: "warn" });
       return;
     }
-    setTimeout(() => setCopiedId(null), 1800);
+    setTimeout(() => setCopiedId((c) => (c === id ? null : c)), QUITTUNG_MS);
   };
 
   const buildSystemPrompt = (mems: Memory[]) => {
@@ -924,7 +925,7 @@ export function Chat({ activeMemories, onSaveToBrain, onSaveToBrainWithMeta, isF
                               onClick={() => {
                                 void navigator.clipboard?.writeText(codeText);
                                 setCopiedCodeId(msg.id);
-                                setTimeout(() => setCopiedCodeId((id) => (id === msg.id ? null : id)), 1600);
+                                setTimeout(() => setCopiedCodeId((id) => (id === msg.id ? null : id)), QUITTUNG_MS);
                               }}
                               className="absolute top-2 right-2 flex items-center justify-center p-1.5 rounded-lg tap transition-opacity"
                               style={{ background: "var(--bg-inset-strong)", border: "1px solid var(--border-subtle)", color: copiedCodeId === msg.id ? "var(--ok)" : "var(--text-2)" }}

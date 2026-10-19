@@ -2,8 +2,9 @@
 // Passwort-Manager ablegen. Im Alltag braucht ihn niemand — die App und die
 // Agenten holen den Schluessel selbst aus dem Schluesselbund. Er ist die
 // Versicherung fuer einen neuen Rechner oder eine zurueckgespielte Sicherung.
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { Copy, Check } from '../lib/icons';
+import { QUITTUNG_MS } from '../lib/quittung';
 
 /** 64 Hex-Zeichen in Achtergruppen — lesbar, beim Kopieren bleibt es roh. */
 export function gruppiere(hex: string): string {
@@ -14,6 +15,7 @@ export function RecoveryKey() {
   const [key, setKey] = useState<string | null>(null);
   const [fehler, setFehler] = useState<string | null>(null);
   const [kopiert, setKopiert] = useState(false);
+  const kopierTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [laedt, setLaedt] = useState(false);
 
   const zeigen = async () => {
@@ -35,7 +37,11 @@ export function RecoveryKey() {
     const ablage = navigator.clipboard;
     if (!ablage?.writeText) { setFehler('Copying is not available here — select the key instead.'); return; }
     void ablage.writeText(key).then(
-      () => { setKopiert(true); setTimeout(() => setKopiert(false), 1800); },
+      () => {
+        if (kopierTimer.current) clearTimeout(kopierTimer.current);
+        setKopiert(true);
+        kopierTimer.current = setTimeout(() => { setKopiert(false); kopierTimer.current = null; }, QUITTUNG_MS);
+      },
       () => setFehler('Copying failed — select the key instead.'),
     );
   };

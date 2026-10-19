@@ -47,7 +47,7 @@ export function GraphRegal({ regal, ansichtsName }: GraphRegalEigenschaften) {
   return (
     <div data-testid="graph-regal" className="flex flex-col gap-1">
       <div className="hud-label" style={{ color: "var(--text-3)" }}>
-        His {zahl(gesamt)} notes, in two bands{ansichtsName ? ` — ${ansichtsName}` : ""}
+        {zahl(gesamt)} notes, in two bands{ansichtsName ? ` — ${ansichtsName}` : ""}
       </div>
 
       {/* Band 1 — woher. Die Breiten sind der Bestand, nicht eine Rangfolge: wer

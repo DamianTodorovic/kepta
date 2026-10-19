@@ -73,6 +73,7 @@ export function CommandPalette({ open, onClose, actions }: CommandPaletteProps) 
             ref={inputRef}
             value={query}
             onChange={(e) => setQuery(e.target.value)}
+            aria-label="Command or search"
             placeholder="Command or search… (e.g. graph, new node, settings)"
             className="flex-1 bg-transparent outline-none text-sm placeholder:text-[var(--text-3)]"
             style={{ color: "var(--text-1)" }}

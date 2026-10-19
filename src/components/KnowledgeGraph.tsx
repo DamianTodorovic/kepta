@@ -5044,7 +5044,7 @@ export function KnowledgeGraph({ memories: memoriesAusFenster, onSelectMemory, o
           )}
           {/* Die zwei Baender ueber dem Bestand — damit der erste Blick nicht eine
               Klammer um den ganzen Laden ist, sondern seine Groessenordnung. */}
-          {regal && <GraphRegal regal={regal} />}
+          {regal && <GraphRegal regal={regal} ansichtsName={ansicht === "dendrogram" ? "the tree" : "the field"} />}
           {/* Die Griffe erklaert die Flaeche schon an den Werkzeugen selbst; auf dem
               Telefon sind sie teils nicht einmal vorhanden (kein Hover, kein Rad).
               Bei schmaler Breite tritt die Zeile zurueck — index.css, `.legende-prosa`. */}

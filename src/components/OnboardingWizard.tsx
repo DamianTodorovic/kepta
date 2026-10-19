@@ -149,15 +149,15 @@ export function OnboardingWizard({ open, onClose, onComplete }: Props) {
             <motion.div key="s1" initial={{x:20, opacity:0}} animate={{x:0, opacity:1}} exit={{x:-20, opacity:0}} className="space-y-5">
               <div className="flex items-center gap-2 hud-label"><User className="w-3.5 h-3.5" style={{color:'var(--accent)'}}/> Who are you?</div>
               <div>
-                <label className="hud-label block mb-2">Name (what should K3PTA call you?)</label>
-                <input value={name} onChange={e=>setName(e.target.value)} placeholder="e.g. Alex" autoFocus className="hud-input w-full rounded-xl px-4 py-3 text-sm" />
+                <label htmlFor="onboarding-name" className="hud-label block mb-2">Name (what should K3PTA call you?)</label>
+                <input id="onboarding-name" value={name} onChange={e=>setName(e.target.value)} placeholder="e.g. Alex" autoFocus className="hud-input w-full rounded-xl px-4 py-3 text-sm" />
               </div>
               <div>
-                <label className="hud-label block mb-2 flex items-center gap-2"><Target className="w-3.5 h-3.5"/> What you want from K3PTA (optional)</label>
+                <label htmlFor="onboarding-goal" className="hud-label block mb-2 flex items-center gap-2"><Target className="w-3.5 h-3.5"/> What you want from K3PTA (optional)</label>
                 {/* Gemessen: der lange Beispieltext brauchte 387,6 px in 338 px
                     Raum und schnitt im schmaleren Täfelchen hart ab. Das Beispiel
                     soll zünden, nicht die Zeile füllen. */}
-                <input value={goal} onChange={e=>setGoal(e.target.value)} placeholder="e.g. find things faster" className="hud-input w-full rounded-xl px-4 py-3 text-sm" />
+                <input id="onboarding-goal" value={goal} onChange={e=>setGoal(e.target.value)} placeholder="e.g. find things faster" className="hud-input w-full rounded-xl px-4 py-3 text-sm" />
                 {/* Gemessen an Chat.tsx:385-402: goal, Name und Themen stehen am
                     Anfang jeder Anfrage. „Systemprompt" ist der Name dafuer im
                     Code, nicht die Sprache, die ein Erstanwender braucht. */}
@@ -188,6 +188,7 @@ export function OnboardingWizard({ open, onClose, onComplete }: Props) {
               <div className="hud-label flex items-center gap-2"><Database className="w-3.5 h-3.5" style={{color:'var(--accent)'}}/> What do you work with? (optional, up to {MAX_TOPICS})</div>
               <div className="space-y-2">
                 <input
+                  aria-label="Add a topic"
                   value={topicInput}
                   onChange={e=>setTopicInput(e.target.value)}
                   onKeyDown={e=>{ if(e.key==='Enter'||e.key===','){ e.preventDefault(); addTopics(topicInput); } }}
