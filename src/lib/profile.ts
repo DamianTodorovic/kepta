@@ -95,10 +95,16 @@ export function loadProfile(): UserProfileAdaptive | null {
   } catch { return null; }
 }
 
-export function saveProfile(p: UserProfileAdaptive) {
+export function saveProfile(p: UserProfileAdaptive): Promise<void> {
   localStorage.setItem(PROFILE_KEY, JSON.stringify(p));
-  // auch an Server spiegeln für MCP / Backup
-  fetch('/api/profile', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(p) }).catch(()=>{});
+  // Der einzige Spiegel an die Tuer. Wer warten will (etwa der Assistent,
+  // der danach Notizen anlegt), haelt diesen Rueckgabewert in der Hand — ein
+  // zweiter POST desselben Leibs ist nicht noetig und fuehrt nur zweimal
+  // dieselben Felder zusammen. Scheitert die Tuer, bleibt der Stand im
+  // localStorage: ein Grund, hier nicht zu werfen, aber auch kein Erfolg.
+  return fetch('/api/profile', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(p) })
+    .then(() => {})
+    .catch(() => {});
 }
 
 export function createDefaultProfile(): UserProfileAdaptive {

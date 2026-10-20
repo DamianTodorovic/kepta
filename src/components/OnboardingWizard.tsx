@@ -98,9 +98,10 @@ export function OnboardingWizard({ open, onClose, onComplete }: Props) {
         createdAt: Date.now(),
         updatedAt: Date.now(),
       };
-      saveProfile(profile);
-      // Auf Server spiegeln (best effort)
-      try { await fetch('/api/profile', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(profile) }); } catch{}
+      // saveProfile spiegelt selbst — hier wird nur gewartet, nicht noch einmal
+      // geschrieben (der zweite POST fuehrte dieselben Felder ein zweites Mal
+      // zusammen und setzte updatedAt zweimal).
+      await saveProfile(profile);
 
       // Starter importieren
       let imported = 0;

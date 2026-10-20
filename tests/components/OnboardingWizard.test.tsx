@@ -376,9 +376,18 @@ describe("OnboardingWizard: Rueckwaerts und freiwillige Angaben", () => {
     // genau dieser Sichttext verlangt. Ein Verbot, das der eigene Fall bricht, ist
     // ein zu weiter Schnitt, kein kaputter Zug.
     const quelle = require("node:fs").readFileSync("src/components/OnboardingWizard.tsx", "utf-8");
+    const speicher = require("node:fs").readFileSync("src/lib/profile.ts", "utf-8");
     expect(quelle).toMatch(/~\/\.kepta\/kepta\.db/);
     expect(quelle).toMatch(/\/api\/memory/);
-    expect(quelle).toMatch(/\/api\/profile/);
+    // Die Route lebt bei ihrem Besitzer: `/api/profile` wird in `src/lib/profile.ts`
+    // verlangt, nicht mehr in der Flaeche. Zieht ein Koerper die Route in ihren
+    // echten Besitzer um, darf diese Wache nicht zuschlagen — sie haelt die Sache,
+    // nicht den Ort (Leitung, Entscheidung 20.10. 19:55, Unterpunkt Eins).
+    expect(speicher).toMatch(/\/api\/profile/);
+    // Und damit die Flaeche nicht ohne den Spiegel dasteht: sie ruft ihn, statt
+    // selbst an die Tuer zu schreiben — Import und Aufruf von `saveProfile` bleiben noetig.
+    expect(quelle).toMatch(/import\s*\{[^}]*\bsaveProfile\b[^}]*\}\s*from\s*['"]\.\.\/lib\/profile['"]/);
+    expect(quelle).toMatch(/\bsaveProfile\w*\(/);
     // Ein Pfad mit dem alten Wort bleibt erlaubt; die neue Form an seiner Stelle nicht.
     expect(quelle, "ein Pfad oder eine Route ist verbogen worden").not.toMatch(
       /\.k3pta\/|k3pta\.db|\/api\/k3pta/i,

@@ -1,3 +1,28 @@
+## [3.2.29]
+
+### Fixed
+
+- **The onboarding profile is mirrored exactly once.** `saveProfile()` already posts
+  the profile to `/api/profile` (`src/lib/profile.ts:105`), and the wizard posted the
+  same body a second time right after calling it — two POSTs of one body into one merge
+  route, with `updatedAt` set twice and no field exchanged in between. The wizard now
+  waits for the mirror instead of writing it again
+  (`src/components/OnboardingWizard.tsx:104`), and `saveProfile` returns it, so a caller
+  that wants the answer can hold it. Guarded by
+  `tests/kein-doppelter-profispiegel.test.ts` (two cases), which names the missing second
+  POST in the wizard and the returned mirror in the store.
+- **The brand guard follows the route, not the file.** It read
+  `src/components/OnboardingWizard.tsx` and required the literal `/api/profile` there, so
+  the move above broke it even though the route was intact and doing the same work one
+  file over. It now reads the route at its owner (`src/lib/profile.ts`) and, on top of
+  that, requires both the `saveProfile` import and its call in the wizard
+  (`tests/components/OnboardingWizard.test.tsx:379`, `:389-390`) - so the check holds the
+  behaviour and not the accident of where a string sat. A trap run proves it: with the
+  mirror fetch replaced by an immediate resolved promise, the guard fails. The case count
+  of that file is unchanged (25 before, 25 after; 414 lines became 423).
+
+Suite 20.10. 20:46:14 MESZ: 2 781 cases, 2 781 passed, 0 failed, 195 files.
+
 ## [3.2.28]
 
 ### Fixed
