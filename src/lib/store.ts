@@ -38,6 +38,16 @@ function notify() {
 let bestand: number | null = null;
 let begrenzt = false;
 
+// Die Kappe der Tuer, nicht eine eigne Zahl: `SEITE_MAX` in `server/helfer/api-form.ts:79` ist 200,
+// und die Route klemmt jeden Wunsch selbst dorthin (`server/router/memories.ts:274`). `alle=1` bleibt
+// verboten — die Tuer warnt in ihrem eignen Hinweis vor dem schweren Pfad (`memories.ts:375`).
+export const SEITE_NACHLAD = 200;
+let pendingMehr: Promise<number> | null = null;
+let letzterSeitenfehler: string | null = null;
+// Eine Seite, die nichts Neues bringt, obwohl die Tür mehr meldet, ist ein Widerspruch — nicht eine
+// Einladung zum Wiederholen. Bis zum naechsten Erfolg gilt hier: Sackgasse.
+let seitenSackgasse = false;
+
 function zahl(wert: unknown): number | null {
   if (typeof wert === 'number') return Number.isFinite(wert) && wert >= 0 ? wert : null;
   if (typeof wert === 'string' && wert.trim() !== '') {
@@ -69,6 +79,61 @@ export function getMemoriesSync(): Memory[] {
 /* Grund der letzten Tuer-Antwort, oder null, wenn die letzte Antwort galt. */
 export function ladeFehler(): string | null {
   return letzterLadefehler;
+}
+
+/* Grund des letzten Seiten-Nachladens, oder null, wenn die Seite galt. Ein stummer Fang war der
+ * Zweitbefund des Briefs — hier wird der Grund weitergereicht, statt verschluckt. */
+export function seitenFehler(): string | null {
+  return letzterSeitenfehler;
+}
+
+/**
+ * Holt die naechste Seite und **haengt an**, statt die Seite still zu ersetzen. Gibt die Zahl der
+ * neu aufgenommenen Knoten zurueck (0, wenn die Tür keine Kappe mehr meldet oder nichts bringt).
+ *
+ * Warum das existiert: `doRefresh` ruft `/api/memories` ohne Parameter, die Tür antwortet mit ihrem
+ * Default (100), und die Blätter-Fläche hat nie wieder gefragt — von 21 066 Notizen waren die ersten
+ * hundert erreichbar (`BRIEF-SEITE-100-20-10.md`). Der Abgleich der `id` haelt Doppelknoten fern:
+ * ein Offset verschiebt sich, wenn zwischen zwei Seiten etwas geschrieben oder geloescht wird.
+ */
+export function mehrAnholen(): Promise<number> {
+  if (pendingMehr) return pendingMehr;
+  if (!begrenzt || seitenSackgasse) return Promise.resolve(0);
+  pendingMehr = (async () => {
+    const offset = cache.length;
+    try {
+      const res = await fetch(`/api/memories?limit=${SEITE_NACHLAD}&offset=${offset}`);
+      // Status zuerst: eine Antwort ab 400 darf weder die Zahl umbiegen noch den Cache antasten.
+      const status = (res as { status?: number }).status ?? 200;
+      if (status >= 400) throw new Error(`the local server answered HTTP ${status} on the next page`);
+      bestand = kopfZahl(res, 'x-kepta-total') ?? bestand;
+      const kapp = kopfZahl(res, 'x-kepta-begrenzt');
+      if (kapp !== null) begrenzt = kapp === 1;
+      const data = await res.json();
+      // Der Leib gewinnt ueber den Kopf — derselbe Vertrag, den `doRefresh` liest (F12).
+      const totalAusLeib = zahl(data?.total);
+      if (totalAusLeib !== null) bestand = totalAusLeib;
+      if (typeof data?.begrenzt === 'boolean') begrenzt = data.begrenzt;
+      const neue = Array.isArray(data) ? data : Array.isArray(data?.memories) ? data.memories : [];
+      const gesehen = new Set(cache.map((m) => m.id));
+      const frisch = (neue as Memory[]).filter((m) => m && typeof m.id === 'string' && !gesehen.has(m.id));
+      if (frisch.length > 0) {
+        cache = [...cache, ...frisch];
+        letzterSeitenfehler = null;
+        notify();
+      } else if (begrenzt) {
+        letzterSeitenfehler = `the door says more notes follow at offset ${offset} but this page sent none — the page stops here`;
+        seitenSackgasse = true;
+      }
+      return frisch.length;
+    } catch (err: unknown) {
+      letzterSeitenfehler = err instanceof Error ? err.message : String(err);
+      throw err;
+    } finally {
+      pendingMehr = null;
+    }
+  })();
+  return pendingMehr;
 }
 
 async function doRefresh(): Promise<Memory[]> {
@@ -115,6 +180,10 @@ async function doRefresh(): Promise<Memory[]> {
       cache = Array.isArray(data) ? data : Array.isArray(data?.memories) ? data.memories : [];
       etag = neuesEtag;
       letzterLadefehler = null;
+      // Ein frischer Anfang ist eine frische Geschichte: die Sackgasse einer Seite gilt nur bis zur
+      // nächsten ganzen Antwort, sonst sperrt ein einzelner Widerspruch das Nachladen für immer.
+      letzterSeitenfehler = null;
+      seitenSackgasse = false;
     } catch (err: unknown) {
       // Ein Fehler der Tuer ist kein leerer Anfang: Cache behalten, Grund
       // merken, die Subscriber holen beides — und der Grund wird weiterge-

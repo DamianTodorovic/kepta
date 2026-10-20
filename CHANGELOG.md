@@ -1,3 +1,32 @@
+## [3.2.27]
+
+### Fixed
+
+- **The list no longer stops at the first hundred notes.** `doRefresh` asked
+  `/api/memories` without parameters, so the door answered with its default page of
+  100 and the surface never asked again — of 21 066 notes, a hundred were reachable.
+  Scrolling to the end now fetches the next page through one path shared by the scroll
+  observer and the keyboard-reachable button (`mehrAnholen()` in `src/lib/store.ts`,
+  `holeNaechsteSeite()` in `src/components/Dashboard.tsx`), the page size is the door's
+  own cap of 200 rather than an invented number, and the merge matches on `id` because
+  an offset moves when something is written between two pages. A page that brings
+  nothing new while the door reports more is named a dead end until the next success,
+  and the reason of a failed fetch is handed on (`seitenFehler()`) instead of swallowed.
+  Guarded by `tests/lib/store-seiten.test.ts` (eight cases) and
+  `tests/components/dashboard-seiten-wache.test.ts` (five cases), red before.
+- **The trash can no longer look like an empty bin when it is broken.** Its fetch
+  caught and ignored every failure, so a broken trash and an empty one painted the same
+  sentence; the footer now names the reason, and a reported cap is shown as a page, not
+  as the whole basket.
+- **The graph depth has a control.** 3.2.26 gave the stored `kepta_graph_depth` marker
+  a reader; it still had no writer. The rail now carries four steps — the four the door
+  knows (`server/router/system.ts:62-64` clamps 1..4 and defaults to 2) — and the button
+  writes through the same helper that reads, so one clamp and one default exist. State
+  follows the clamped value, never the requested one: what the door rejects never lands
+  in the URL. Guarded by
+  `tests/components/KnowledgeGraph.graph-tiefe-steuerung.test.tsx` (four cases). The
+  measurement in a real window is still owed and is deliberately not claimed here.
+
 ## [3.2.26]
 
 ### Fixed

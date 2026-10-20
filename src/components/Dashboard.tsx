@@ -15,7 +15,7 @@ import { DossierView } from './DossierView';
 import { TeamView } from './TeamView';
 import { ActivityView } from './ActivityView';
 import { CommandPalette, useCommandPaletteHotkey, buildPaletteActions } from './CommandPalette';
-import { saveMemory, deleteMemory, subscribeMemories, refreshMemories, deleteMemories, restoreMemories, bestandGroesse, ladeFehler, getMemoriesSync } from '../lib/store';
+import { saveMemory, deleteMemory, subscribeMemories, refreshMemories, deleteMemories, restoreMemories, bestandGroesse, ladeFehler, getMemoriesSync, mehrAnholen, seiteIstBegrenzt, seitenFehler, SEITE_NACHLAD } from '../lib/store';
 import { subscribeActivity } from '../lib/activity';
 import { inForm } from '../lib/antwort';
 import { useToast } from './ui/Toast';
@@ -73,6 +73,20 @@ function mengensatz(gemalt: number, bestand: number | null, menge = 'in the stor
   if (bestand === null) return entries(gemalt);
   if (bestand > gemalt) return `${zahl(gemalt)} of ${zahl(bestand)} ${menge}`;
   return entries(bestand);
+}
+
+/**
+ * Der eine Weg zur nächsten Seite — Scroll-Beobachter und Knopf gehen beide hier durch, damit die
+ * Fläche nie zwei Arten hat, dieselbe Seite zu holen. Der Grund eines Ausfalls wird gesetzt, nie
+ * verschluckt (`BRIEF-SEITE-100-20-10.md`, Zweitbefund).
+ */
+async function holeNaechsteSeite(setzen: (text: string | null) => void): Promise<void> {
+  try {
+    const neu = await mehrAnholen();
+    setzen(neu > 0 ? null : seitenFehler());
+  } catch {
+    setzen(seitenFehler());
+  }
 }
 
 const ALL_RESULTS = 10_000;
@@ -165,6 +179,9 @@ export function Dashboard() {
   const [memories, setMemories] = useState<Memory[]>([]);
   /** Was die Tür über den Bestand sagt — `null`, wenn sie schweigt. */
   const [tuerBestand, setTuerBestand] = useState<number | null>(null);
+  /** Grund des letzten Seiten-Nachladens, oder null. Ein stiller Fang wäre der Zweitbefund des
+   *  Briefs `BRIEF-SEITE-100-20-10.md` — die Fußzeile malt ihn, statt ihn zu verschlucken. */
+  const [seitenHinweis, setSeitenHinweis] = useState<string | null>(null);
   /** Was das FELD malt, gemeldet von der Graph-Fläche (#101). `null`, solange
    *  sie noch nichts weiß — dann nennt der Kopf die Liste, die er wirklich hat. */
   const [feldZaehlung, setzeFeldZaehlung] = useState<number | null>(null);
@@ -347,17 +364,35 @@ export function Dashboard() {
   const [trashOpen, setTrashOpen] = useState(false);
   const [trashedMemories, setTrashedMemories] = useState<Memory[]>([]);
   const [trashCount, setTrashCount] = useState(0);
+  /** Grund des letzten Papierkorb-Abrufs, oder null. `catch { /* ignore *\/ }` war der Zweitbefund
+   *  des Briefs: ein kaputter Korb malte exakt denselben Satz wie ein leerer. */
+  const [papierkorbGrund, setPapierkorbGrund] = useState<string | null>(null);
+  /** Meldet die Tür eine Kappe, zeigt die Fläche eine Seite — nicht den ganzen Korb. */
+  const [papierkorbKappe, setPapierkorbKappe] = useState<{ gezeigt: number; gesamt: number } | null>(null);
   useEffect(() => {
     if (!trashOpen) return;
     let cancelled = false;
     void (async () => {
       try {
         const res = await fetch('/api/memories?trash=1');
+        const status = (res as { status?: number }).status ?? 200;
+        // Defensiv gelesen wie in `store.ts`: eine Mock-Antwort ohne Status gilt als 200, eine ab 400
+        // wirft — und ihr Grund malt die Zeile, statt im Fang zu verschwinden.
+        if (status >= 400) throw new Error(`the local server answered HTTP ${status}`);
         const data = await res.json();
         // API liefert ein nacktes Array — defensiv auch {memories:[]} akzeptieren
         const list = Array.isArray(data) ? data : Array.isArray(data?.memories) ? data.memories : [];
-        if (!cancelled) setTrashedMemories(list as Memory[]);
-      } catch { /* ignore */ }
+        if (cancelled) return;
+        setTrashedMemories(list as Memory[]);
+        setPapierkorbGrund(null);
+        const gesamt = typeof data?.total === 'number' ? data.total : null;
+        setPapierkorbKappe(gesamt !== null && gesamt > list.length ? { gezeigt: list.length, gesamt } : null);
+      } catch (err: unknown) {
+        if (cancelled) return;
+        setTrashedMemories([]);
+        setPapierkorbKappe(null);
+        setPapierkorbGrund(err instanceof Error ? err.message : String(err));
+      }
     })();
     return () => { cancelled = true; };
   }, [trashOpen]);
@@ -1268,7 +1303,6 @@ export function Dashboard() {
       )}
       {visibleCount < displayedMemories.length && (
         <>
-          <div ref={loadMoreRef} className="h-1" aria-hidden />
           <div className="flex justify-center pt-6">
             <button
               onClick={() => setVisibleCount((c) => Math.min(c + PAGE_SIZE, displayedMemories.length))}
@@ -1282,34 +1316,59 @@ export function Dashboard() {
           </div>
         </>
       )}
+      {/* Der Anker hängt jetzt außerhalb beider Blöcke: vorher verschwand er genau in dem
+          Augenblick, in dem die Fläche ihn brauchte — beim Erreichen des Caches. So kann der
+          Beobachter auch die nächste Seite fragen, nicht nur die nächsten 48 Karten. */}
+      <div ref={loadMoreRef} className="h-1" aria-hidden />
+      {visibleCount >= displayedMemories.length && seiteIstBegrenzt() && (
+        <div className="flex justify-center pt-3">
+          <button
+            onClick={() => void holeNaechsteSeite(setSeitenHinweis)}
+            className="btn-ghost px-4 py-2 rounded-lg text-[13px] font-medium"
+          >
+            More in the store — fetch the next {SEITE_NACHLAD.toLocaleString('en-GB')}
+          </button>
+        </div>
+      )}
       {visibleCount >= displayedMemories.length && displayedMemories.length > PAGE_SIZE && (
         <div className="text-center text-[11px] mt-4 tnum" style={{ color: 'var(--text-3)' }}>
           {/* „All 100 entries shown" über einer Tür, die 14.702 hält, war die
-              stille Kappe: das „All" galt der Ladung, nicht dem Bestand. */}
-          {tuerBestand !== null && tuerBestand > displayedMemories.length
-            ? <>All {displayedMemories.length.toLocaleString('en-GB')} loaded · {tuerBestand.toLocaleString('en-GB')} in the store</>
-            : <>All {displayedMemories.length.toLocaleString('en-GB')} entries shown</>}
+              stille Kappe: das „All" galt der Ladung, nicht dem Bestand. Seit dem
+              Brief gilt die Kappe selbst als Zeugnis — nicht nur die Zahl. */}
+          {seiteIstBegrenzt() || (tuerBestand !== null && tuerBestand > displayedMemories.length)
+            ? <>All {displayedMemories.length.toLocaleString('en-GB')} loaded{tuerBestand !== null ? ` · ${groessenZahl(tuerBestand)} in the store` : ' · the door says more follow'}</>
+            : <>All {groessenZahl(displayedMemories.length)} entries shown</>}
+          {seitenHinweis && <> · {seitenHinweis}</>}
         </div>
       )}
     </>
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  ), [gruppen, sichtbareGruppen, paginatedMemories, displayedMemories, visibleCount, scoredMap, serverScored, loadMoreRef]);
+  ), [gruppen, sichtbareGruppen, paginatedMemories, displayedMemories, visibleCount, scoredMap, serverScored, loadMoreRef, seitenHinweis]);
 
   // Reset Paginierung bei Filter-/Suche-Wechsel
   useEffect(() => {
     setVisibleCount(PAGE_SIZE);
   }, [debouncedSearchQuery, selectedTags, semanticEnabled, topK]);
 
-  // IntersectionObserver: automatisches Nachladen beim Scrollen (400px Vorlauf)
+  // IntersectionObserver: automatisches Nachladen beim Scrollen (400px Vorlauf).
+  // Zwei Wege, ein Anker: solange der Cache Karten hat, die noch nicht gemalt sind, wächst das
+  // Fenster; ist der Cache am Ende und meldet die Tür `begrenzt`, holt die Fläche die nächste Seite.
+  // Vorher endete dieser Effekt genau an der Stelle, an der die Frage hätte beginnen müssen
+  // (`BRIEF-SEITE-100-20-10.md`, Auftrag 3 — hier und nur hier hat `seiteIstBegrenzt()` seinen
+  // Verbraucher; die Wache `tests/components/dashboard-seiten-wache.test.ts` hält den Faden fest).
   useEffect(() => {
-    if (visibleCount >= displayedMemories.length) return;
     const el = loadMoreRef.current;
     if (!el) return;
+    const cacheAmEnde = visibleCount >= displayedMemories.length;
+    if (cacheAmEnde && !seiteIstBegrenzt()) return;
     const obs = new IntersectionObserver(
       (entries) => {
-        if (entries[0]?.isIntersecting) {
+        if (!entries[0]?.isIntersecting) return;
+        if (visibleCount < displayedMemories.length) {
           setVisibleCount((c) => Math.min(c + PAGE_SIZE, displayedMemories.length));
+          return;
         }
+        void holeNaechsteSeite(setSeitenHinweis);
       },
       { rootMargin: "400px" }
     );
@@ -1460,12 +1519,17 @@ export function Dashboard() {
             <div className="px-5 py-3 shrink-0 overflow-auto" style={{ borderBottom: '1px solid var(--border-subtle)', background: 'var(--bg-inset)', maxHeight: '30vh' }}>
               <div className="flex items-center justify-between mb-2">
                 <span className="text-[12px] font-medium" style={{ color: 'var(--text-2)' }}>
-                  Trash — {trashedMemories.length} deleted entries, all restorable
+                  {papierkorbKappe
+                    ? <>Trash — first {trashedMemories.length} of {groessenZahl(papierkorbKappe.gesamt)} deleted entries</>
+                    : <>Trash — {trashedMemories.length} deleted entries, all restorable</>}
                 </span>
                 <button onClick={() => setTrashOpen(false)} className="btn-ghost px-2 py-1 rounded-md text-[11px]">Close</button>
               </div>
+              {papierkorbGrund && (
+                <p className="text-xs mb-2" style={{ color: 'var(--text-3)' }}>{papierkorbGrund} — the trash may hold more than this page.</p>
+              )}
               {trashedMemories.length === 0 ? (
-                <p className="text-xs" style={{ color: 'var(--text-3)' }}>Empty.</p>
+                <p className="text-xs" style={{ color: 'var(--text-3)' }}>{papierkorbGrund ? 'Nothing loaded.' : 'Empty.'}</p>
               ) : (
                 <ul className="space-y-1">
                   {trashedMemories.map((m) => (

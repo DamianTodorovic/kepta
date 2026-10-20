@@ -231,6 +231,7 @@ export type Leistenglied =
   | "krafte"
   | "selbst"
   | "kanal"
+  | "tiefe"
   | "farben";
 
 /**
@@ -263,6 +264,10 @@ export const BREITE_PX_GELIED: Record<Leistenglied, number> = {
   krafte: 95,
   selbst: 60,
   kanal: 154,
+  // Vier Stufen zu je einer Ziffer in der geteilten Schiene. **Ansetz, kein
+  // Massband** — nachgemessen wird im echten Fenster (Hausregel der Tabelle);
+  // 116 px sind die Kanalschiene (154) minus eines ihrer zwei langen Woerter.
+  tiefe: 116,
   farben: 102,
 };
 /** Der „More"-Knopf mit seiner Zahl („More (10)" sind 94 px), dazu die Luecke. */
@@ -309,6 +314,7 @@ export const RANG_FOLGE: readonly Leistenglied[] = [
   "krafte",
   "selbst",
   "kanal",
+  "tiefe",
   "farben",
 ];
 
@@ -1291,6 +1297,15 @@ export function KnowledgeGraph({ memories: memoriesAusFenster, onSelectMemory, o
     };
     window.addEventListener("storage", horche);
     return () => window.removeEventListener("storage", horche);
+  }, []);
+  /**
+   * #42, die zweite Haelfte: die Marke hatte einen Leser, aber keinen Schreiber.
+   * Der Knopf setzt sie durch **denselben** Helfer, der sie liest — eine Klemme,
+   * ein Default, kein zweiter Spielraum. Der Zustand folgt dem **geklemmten**
+   * Wert, nicht dem gerufenen: was die Tuer ablehnt, steht nie in der URL.
+   */
+  const wechsleTiefe = useCallback((tiefe: number) => {
+    setGraphTiefe(graphTiefeSchreiben(tiefe));
   }, []);
   useEffect(() => {
     let abgebrochen = false;
@@ -4493,6 +4508,26 @@ export function KnowledgeGraph({ memories: memoriesAusFenster, onSelectMemory, o
       )}
     </div>
   );
+  /**
+   * #42, sichtbar: wie viele Schritte das Netz um einen Begriff herum die Tuer
+   * fragen soll. Vier Glieder, weil die Tuer vier kennt
+   * (`server/router/system.ts:62-64` klemmt 1..4, defaultet 2) — die Flaeche
+   * erfindet keine fünfte Stufe, und was sie zeigt, ist genau das, was sie ruft.
+   */
+  const schieneTiefe = (
+    <div className="apple-seg shrink-0" role="group" aria-label="Network depth" data-testid="graph-schiene-tiefe">
+      {[GRAPH_TIEFE_MIN, 2, 3, GRAPH_TIEFE_MAX].map((t) => segment(
+        graphTiefe === t,
+        t === GRAPH_TIEFE_MIN
+          ? "One step — a concept and the notes that name it. The fastest picture."
+          : t === GRAPH_TIEFE_MAX
+            ? "Four steps — the whole neighbourhood around a concept. Slower, and the door caps what it can carry."
+            : `${t} steps — how far the picture reaches from each concept.`,
+        () => wechsleTiefe(t),
+        String(t)
+      ))}
+    </div>
+  );
   const farbenReihe = (
     <div className="flex items-center gap-0.5 shrink-0" title="Node colours — each colour tints its type across the graph, cards and index">
       {TYP_FOLGE.map((t) => (
@@ -4529,6 +4564,7 @@ export function KnowledgeGraph({ memories: memoriesAusFenster, onSelectMemory, o
       case "ansicht": return schieneAnsicht;
       case "namen": return schieneNamen;
       case "kanal": return schieneKanal;
+      case "tiefe": return schieneTiefe;
       case "farben": return farbenReihe;
       case "aehnlichkeit": return schalterAehnlichkeit;
       case "selbst": return schalterSelbst;
@@ -4555,6 +4591,7 @@ export function KnowledgeGraph({ memories: memoriesAusFenster, onSelectMemory, o
       case "ansicht": return "Which picture: claims as a field, knowledge as a tree, meaning as a map.";
       case "namen": return `Density of names. Now: ${NAMEN_STUFE[etikettenModus].wort.toLowerCase()} — ${NAMEN_STUFE[etikettenModus].erklaerung.toLowerCase()}.`;
       case "kanal": return "What the colours mean: kind of knowledge, or where the note came from.";
+      case "tiefe": return `How many steps the picture asks the door for around each concept. Now: ${graphTiefe}. The door knows 1 to 4 and defaults to 2 — a fifth step is not invented here.`;
       case "farben": return "The four kind colours, reused by the cards and the index.";
       case "aehnlichkeit": return "Similarity links are guesses from shared tags and titles. Off, the graph claims nothing.";
       case "selbst": return "A concept talking about itself, looped at its own node.";
@@ -4603,6 +4640,7 @@ export function KnowledgeGraph({ memories: memoriesAusFenster, onSelectMemory, o
         {drin("schema") && schalterSchema}
         {drin("krafte") && schalterKrafte}
         {drin("kanal") && schieneKanal}
+        {drin("tiefe") && schieneTiefe}
         {drin("farben") && farbenReihe}
         <div className="flex items-center gap-2 ml-auto shrink-0">
           {zeitAchse && drin("zeitstand") && zeitStand}
