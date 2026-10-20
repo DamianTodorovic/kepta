@@ -554,7 +554,7 @@ export function Settings() {
       const d = await r.json().catch(() => ({}));
       if (!r.ok) { setChatImportFehler(d.error ?? `The server rejected the file (${r.status}).`); return; }
       setChatImportErgebnis(d);
-      void refreshMemories();
+      void refreshMemories().catch(() => { /* der Import gelang; die Liste meldet einen Ladegrund selbst */ });
     } catch {
       setChatImportFehler('The export could not be read — is the file a valid conversations.json?');
     } finally {

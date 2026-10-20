@@ -1,3 +1,23 @@
+## [3.2.26]
+
+### Fixed
+
+- **A knowledge base that cannot be read is no longer shown as an empty start.** The
+  store kept swallowing every door failure ("never rejects"), so the list's error
+  line — which exists, with a Try-again button — could never be painted, and a
+  broken base looked exactly like no notes at all. The store now keeps the last
+  content *and* reports the failure; both halves are one case in
+  `tests/lib/store.test.ts`. Three fire-and-forget re-syncs
+  (`src/lib/store.ts:235/253/289`) that would otherwise have thrown past their
+  callers now catch. Found as three silent rejections behind a green test list.
+- **The graph's depth now follows the door's own rule.** The surface asked a fixed
+  `depth=2`; a stored value of 0 was clamped to the default 2, while the door
+  clamps 0 to 1 (`server/router/system.ts:73-74`). One rule in both places: only a
+  non-number falls back to the default. Guarded by
+  `tests/components/KnowledgeGraph.graph-tiefe.test.tsx`, five cases, red before.
+  A visible control is deliberately **not** part of this change — `setzeGraphTiefe`
+  is ready for it, but the surface it belongs to is a separate slice.
+
 ## [3.2.25]
 
 ### Fixed

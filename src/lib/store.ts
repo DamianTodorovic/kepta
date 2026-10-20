@@ -16,6 +16,7 @@ let pendingRefresh: Promise<Memory[]> | null = null;
 // Jeder eigene Schreibvorgang wirft ihn weg: der nächste Refresh lädt dann
 // garantiert den neuen Bestand, statt sich auf einen alten ETag zu verlassen.
 let etag: string | null = null;
+let letzterLadefehler: string | null = null;
 function etagVergessen(): void {
   etag = null;
 }
@@ -65,6 +66,11 @@ export function getMemoriesSync(): Memory[] {
   return cache;
 }
 
+/* Grund der letzten Tuer-Antwort, oder null, wenn die letzte Antwort galt. */
+export function ladeFehler(): string | null {
+  return letzterLadefehler;
+}
+
 async function doRefresh(): Promise<Memory[]> {
   // Request-Dedup: wiederverwende pending promise
   if (pendingRefresh) return pendingRefresh;
@@ -82,11 +88,18 @@ async function doRefresh(): Promise<Memory[]> {
       // Die Köpfe zuerst lesen: eine 304-Antwort bringt keinen Leib, aber sie
       // nennt Bestand und Kappung weiter — und ein leerer Leib darf die Zahl
       // nicht tilgen, indem er übersprungen wird.
+      // Der Status entscheidet zuerst: eine Antwort ab 400 darf weder die Zahl
+      // tilgen noch die Kappung umbiegen noch den Cache ueberschreiben — ein
+      // kaputter Bestand sieht sonst aus wie ein leerer Anfang.
+      const status = (res as { status?: number }).status ?? 200;
+      if (status >= 400) throw new Error(`the local server answered HTTP ${status}`);
       bestand = kopfZahl(res, 'x-kepta-total');
       begrenzt = kopfZahl(res, 'x-kepta-begrenzt') === 1;
       // Defensiv gelesen: ältere Test-Mocks bauen Responses ohne status/headers.
-      if ((res as { status?: number }).status === 304) {
+      if (status === 304) {
         // Bestand unverändert — Cache behalten, die Oberfläche nicht anfassen.
+        // Eine 304 heisst: die Tuer hat geantwortet und der Bestand gilt.
+        letzterLadefehler = null;
         return cache;
       }
       const neuesEtag = res.headers?.get?.('etag') ?? null;
@@ -101,10 +114,15 @@ async function doRefresh(): Promise<Memory[]> {
       // API liefert ein nacktes Array (ältere Clients erwarteten {memories:[]})
       cache = Array.isArray(data) ? data : Array.isArray(data?.memories) ? data.memories : [];
       etag = neuesEtag;
-    } catch {
-      // Server nicht erreichbar (oder Storage defekt) -> Cache behalten.
-      // doRefresh verspricht: rejected NIE — so darf die Konvergenz einfach
-      // mit `void doRefresh()` feuern, ohne unhandled rejections zu riskieren.
+      letzterLadefehler = null;
+    } catch (err: unknown) {
+      // Ein Fehler der Tuer ist kein leerer Anfang: Cache behalten, Grund
+      // merken, die Subscriber holen beides — und der Grund wird weiterge-
+      // gereicht. `doRefresh` versprach 'rejected NIE' und machte damit jede
+      // Absage unsichtbar; genau dieses Versprechen ist der Defekt.
+      letzterLadefehler = err instanceof Error ? err.message : String(err);
+      notify();
+      throw err;
     }
     notify();
     return cache;
@@ -161,7 +179,7 @@ async function migrateLegacyIfNeeded() {
 export function subscribeMemories(callback: (memories: Memory[]) => void): () => void {
   listeners.add(callback);
   callback(cache);
-  void refreshMemories();
+  void refreshMemories().catch(() => { /* gemalt durch ladeFehler(), nicht durch diesen Fang */ });
   return () => {
     listeners.delete(callback);
   };
@@ -204,15 +222,18 @@ export async function saveMemory(memoryData: Partial<Memory>): Promise<Memory | 
     const data = await res.json();
     if (!res.ok) throw new Error(data.error);
     // Server-Antwort abgleichen: optimistischen Eintrag durch echte Daten ersetzen (Debounce 300ms)
-    await refreshMemories();
+    await refreshMemories().catch(() => { /* die Schreibzung gelang; der Grund der Liste liegt im Speicher */ });
     return data.memory;
   } catch {
     // Rollback: optimistischen Stand zurücknehmen...
     cache = previous;
     notify();
     // ...und danach auf den serverseitigen Stand konvergieren (der Snapshot
-    // könnte konkurrierende Agenten-Änderungen verdecken). doRefresh rejected nie.
-    void doRefresh();
+    // könnte konkurrierende Agenten-Änderungen verdecken). der Grund der Liste liegt im Speicher (ladeFehler),
+    // diese Zung bleibt bei ihrem Erfolg — eine gelungene Schreibaktion darf
+    // nicht als Fehlschlag gemalt werden.
+    void doRefresh().catch(() => { /* Konvergenz-Resync bleibt still: der neue Stand kommt mit der
+        naechsten Antwort, und ein Wurf hier waere eine unhandled rejection hinter der Quittung. */ });
     return null;
   }
 }
@@ -225,12 +246,13 @@ export async function deleteMemory(id: string): Promise<void> {
   notify();
   try {
     await fetch(`/api/memories/${encodeURIComponent(id)}`, { method: 'DELETE' });
-    await refreshMemories();
+    await refreshMemories().catch(() => { /* die Schreibzung gelang; der Grund der Liste liegt im Speicher */ });
   } catch {
     // Rollback: Snapshot zurücknehmen, dann auf Server-Stand konvergieren
     cache = previous;
     notify();
-    void doRefresh();
+    void doRefresh().catch(() => { /* Konvergenz-Resync bleibt still: der neue Stand kommt mit der
+        naechsten Antwort, und ein Wurf hier waere eine unhandled rejection hinter der Quittung. */ });
   }
 }
 
@@ -261,12 +283,13 @@ export async function deleteMemories(ids: string[]): Promise<{
     });
     if (!res.ok) throw new Error(`bulk-delete: ${res.status}`);
     const daten = (await res.json()) as { deleted?: number; ids?: string[] };
-    await refreshMemories();
+    await refreshMemories().catch(() => { /* die Schreibzung gelang; der Grund der Liste liegt im Speicher */ });
     return { deleted: daten.deleted ?? 0, ids: daten.ids ?? [] };
   } catch {
     cache = previous;
     notify();
-    void doRefresh();
+    void doRefresh().catch(() => { /* Konvergenz-Resync bleibt still: der neue Stand kommt mit der
+        naechsten Antwort, und ein Wurf hier waere eine unhandled rejection hinter der Quittung. */ });
     return { deleted: 0, ids: [] };
   }
 }
@@ -283,7 +306,7 @@ export async function restoreMemories(ids: string[]): Promise<number> {
     });
     if (!res.ok) return 0;
     const daten = (await res.json()) as { restored?: number };
-    await refreshMemories();
+    await refreshMemories().catch(() => { /* die Schreibzung gelang; der Grund der Liste liegt im Speicher */ });
     return daten.restored ?? 0;
   } catch {
     return 0;
@@ -301,6 +324,6 @@ export async function importMemories(
   });
   const data = await res.json();
   if (!res.ok) throw new Error(data.error || 'Import failed');
-  await refreshMemories();
+  await refreshMemories().catch(() => { /* die Schreibzung gelang; der Grund der Liste liegt im Speicher */ });
   return data;
 }

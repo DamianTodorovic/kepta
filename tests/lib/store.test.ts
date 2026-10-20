@@ -46,15 +46,30 @@ describe("refreshMemories + Cache", () => {
     expect(mod.getMemoriesSync()[0]?.id).toBe("b");
   });
 
-  it("behält den Cache bei Server-Fehler", async () => {
+  it("behält den Cache bei Server-Fehler und meldet den Fehler", async () => {
+    // Fall A, beide Haelften in einem Fall: die erste Antwort bringt Inhalt, die zweite wirft.
+    // Der Inhalt muss bleiben (sonst verliert die Flaeche bei einem Ausfall ihr Bild) UND der
+    // Fehler muss oben ankommen (sonst malt `Dashboard.tsx:1906` nie seine Fehlerzeile und ein
+    // kaputter Bestand ist von einem leeren nicht zu unterscheiden).
+    let versuch = 0;
     vi.stubGlobal("fetch", vi.fn(async () => {
+      versuch++;
+      if (versuch === 1) return jsonResponse([{ id: "bleibt" }]);
       throw new Error("offline");
     }));
     const mod = await freshModule();
-    const p = mod.refreshMemories();
+    let p = mod.refreshMemories();
     await vi.advanceTimersByTimeAsync(300);
     await p;
-    expect(mod.getMemoriesSync()).toEqual([]);
+
+    // Der zweite Aufruf wirft. Die Abwehr wird Synchron angehangen, sonst meldet Vitest eine
+    // unhandled rejection statt den erwarteten Fehler.
+    p = mod.refreshMemories();
+    const abwehr = expect(p).rejects.toThrow("offline");
+    await vi.advanceTimersByTimeAsync(300);
+    await abwehr;
+    const seen = (mod.getMemoriesSync() as Array<{ id: string }>).map((m) => m.id);
+    expect(seen).toEqual(["bleibt"]);
   });
 });
 

@@ -15,7 +15,7 @@ import { DossierView } from './DossierView';
 import { TeamView } from './TeamView';
 import { ActivityView } from './ActivityView';
 import { CommandPalette, useCommandPaletteHotkey, buildPaletteActions } from './CommandPalette';
-import { saveMemory, deleteMemory, subscribeMemories, refreshMemories, deleteMemories, restoreMemories, bestandGroesse, getMemoriesSync } from '../lib/store';
+import { saveMemory, deleteMemory, subscribeMemories, refreshMemories, deleteMemories, restoreMemories, bestandGroesse, ladeFehler, getMemoriesSync } from '../lib/store';
 import { subscribeActivity } from '../lib/activity';
 import { inForm } from '../lib/antwort';
 import { useToast } from './ui/Toast';
@@ -381,7 +381,7 @@ export function Dashboard() {
   }, [ladVersuch]);
   // Fenster-Fokus: Agenten schreiben evtl. aus anderen Prozessen — auffrischen
   useEffect(() => {
-    const onFocus = () => void refreshMemories();
+    const onFocus = () => void refreshMemories().catch(() => { /* Fenster-Fokus: Grund liegt im Speicher, gemalt 1906 */ });
     window.addEventListener('focus', onFocus);
     return () => window.removeEventListener('focus', onFocus);
   }, []);
@@ -583,6 +583,9 @@ export function Dashboard() {
     const empfang = (neue: Memory[]) => {
       setMemories(neue);
       setTuerBestand(bestandGroesse());
+      // Die Tuer nennt ihren Grund in derselben Nachricht: der Speicher merkt ihn,
+      // die schon vorhandene Zeile malt ihn. Keine neue Flaeche, kein neuer Knopf.
+      setLadFehler(ladeFehler());
     };
     const unsubscribe = subscribeMemories(empfang);
     empfang(getMemoriesSync());
@@ -665,7 +668,7 @@ export function Dashboard() {
       setBrainPulse((p) => p + 1);
       // Liste live aktualisieren, wenn sich der Speicher ändert (auch via MCP!)
       if (evt.type === 'save' || evt.type === 'update' || evt.type === 'delete' || evt.type === 'consolidate') {
-        void refreshMemories();
+        void refreshMemories().catch(() => { /* der Speicher meldet den Grund, die Liste zeigt ihn */ });
         void holeGesundheit();
         void holeGruppen();
       }
@@ -704,7 +707,7 @@ export function Dashboard() {
         const e = schreibend[0];
         const verb = e.tool === 'memory_save' ? 'saved' : e.tool === 'memory_update' ? 'changed' : e.tool === 'memory_delete' ? 'moved to the trash' : 'marked as outdated';
         toast.push({ message: `${e.who} ${verb}${e.text ? ` “${e.text.slice(0, 60)}”` : ''}${schreibend.length > 1 ? ` — and ${schreibend.length - 1} more` : ''}.`, kind: 'info' });
-        void refreshMemories();
+        void refreshMemories().catch(() => { /* der Speicher meldet den Grund, die Liste zeigt ihn */ });
       } catch { /* the next round tries again */ }
     };
     void holen();
@@ -951,7 +954,7 @@ export function Dashboard() {
     const victim = memories.find(m => m.id === id);
     // Sofort aus dem Grid nehmen — der Refresh kam früher erst mit dem nächsten
     // Event, die gelöschte Karte stand sichtbar im Raum (Funktionsbefund 5.9.).
-    void deleteMemory(id).then(() => void refreshMemories());
+    void deleteMemory(id).then(() => void refreshMemories().catch(() => { /* geloescht ist geloescht; der Grund der Liste liegt im Speicher */ }));
     if (editingMemory?.id === id) {
       setIsEditorOpen(false);
       setEditingMemory(null);
@@ -964,7 +967,7 @@ export function Dashboard() {
         onClick: async () => {
           try {
             await fetch(`/api/memories/${encodeURIComponent(id)}/restore`, { method: 'POST' });
-            void refreshMemories();
+            void refreshMemories().catch(() => { /* Restore gemalt; der Grund der Liste liegt im Speicher */ });
             toast.push({ message: 'Restored', kind: 'success' });
           } catch {
             toast.push({ message: 'Restore failed', kind: 'warn' });
@@ -1473,7 +1476,7 @@ export function Dashboard() {
                           try {
                             await fetch(`/api/memories/${encodeURIComponent(m.id)}/restore`, { method: 'POST' });
                             setTrashedMemories((prev) => prev.filter((x) => x.id !== m.id));
-                            void refreshMemories();
+                            void refreshMemories().catch(() => { /* Papierkorb-Zeile gemalt; der Grund liegt im Speicher */ });
                           } catch { /* ignore */ }
                         }}
                         className="btn-ghost px-2 py-1 rounded-md text-[11px] shrink-0"
@@ -2082,7 +2085,7 @@ export function Dashboard() {
         autoPreview={scanAusAssistent}
         onClose={() => { setScanOpen(false); setScanAusAssistent(false); }}
         onImported={(n) => {
-          void refreshMemories();
+          void refreshMemories().catch(() => { /* Importzahl gemalt; der Grund liegt im Speicher */ });
           if (n > 0) toast.push({ message: `${n} notes imported from this computer — tagged “machine-scan”.`, kind: 'info' });
         }}
       />

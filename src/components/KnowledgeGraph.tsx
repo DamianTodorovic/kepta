@@ -716,6 +716,43 @@ export const TITEL_REIHE_PX = ETIKETT_PX * 2.2;
 export const TITEL_KANTEN_PX = ETIKETT_PX;
 
 /**
+ * Aufgabe #42: die Tuer kann eine Tiefe (`server/router/system.ts:62-64` liest
+ * `?depth=`, klemmt auf 1..4 und Default 2; `store.getGraph` ebenda,
+ * `src/core/store.ts:1264`), die Flaeche fragte hart nach `depth=2`. Neu: die Flaeche
+ * fragt die **gespeicherte** Tiefe, mit **derselben** Klemme wie die Tuer — eine Zahl,
+ * zwei Verbraucher, kein eigener Spielraum. Ohne gesetzte Marke bleibt alles beim
+ * bisherigen Default 2, also aendert sich am gelieferten Bild nichts, bis jemand die
+ * Tiefe setzt. Die **sichtbare** Haelfte (ein Glied in der Leiste, das diese Funktion
+ * bedient) ist nicht Teil dieses Flickens: sie ruehrt `Leistenglied` (:220),
+ * `RANG_FOLGE` (:298), die Kontroll-Schalter (:4484) und die Erklaerungs-Schalter
+ * (:4510) an — das ist Punkt 2's Zeichen, und `setzeGraphTiefe` liegt hier fuer ihn bereit.
+ */
+export const GRAPH_TIEFE_MIN = 1;
+export const GRAPH_TIEFE_MAX = 4;
+export const GRAPH_TIEFE_DEFAULT = 2;
+const GRAPH_TIEFE_MARKE = "kepta_graph_depth";
+
+/** Liest die gespeicherte Tiefe; wirft nie, auch wenn `localStorage` tot ist. */
+export function graphTiefeLesen(): number {
+  let roh: string | null = null;
+  try { roh = localStorage.getItem(GRAPH_TIEFE_MARKE); } catch { return GRAPH_TIEFE_DEFAULT; }
+  const n = roh === null ? NaN : parseInt(roh, 10);
+  return Number.isFinite(n) ? Math.min(Math.max(n, GRAPH_TIEFE_MIN), GRAPH_TIEFE_MAX) : GRAPH_TIEFE_DEFAULT;
+}
+
+/** Setzt die Tiefe, klemmt vorher und schreibt die Marke; still bei kaputtem Speicher.
+ *  Dieselbe Regel wie die Tuer (`server/router/system.ts:73-74`) und wie der Leseweg oben:
+ *  nur was keine Zahl ist, faellt auf den Default — eine 0 ist eine Zahl und klemmt auf 1. */
+export function graphTiefeSchreiben(tiefe: number): number {
+  const roh = typeof tiefe === "number" ? Math.round(tiefe) : NaN;
+  const geklemmt = Number.isFinite(roh)
+    ? Math.min(Math.max(roh, GRAPH_TIEFE_MIN), GRAPH_TIEFE_MAX)
+    : GRAPH_TIEFE_DEFAULT;
+  try { localStorage.setItem(GRAPH_TIEFE_MARKE, String(geklemmt)); } catch { /* keine Marke, keine Dauer */ }
+  return geklemmt;
+}
+
+/**
  * Wie oft die Flaeche den Nachzug fragt, waehrend er laeuft. 600 ms sind bei
  * 500-Notizen-Stapeln (~100 ms je Stapel) acht Fragen je Sekunde — genug fuer
  * eine Zahl, die sich visibly bewegt, und ein Zehntel der Last, die das Bild
@@ -1246,17 +1283,26 @@ export function KnowledgeGraph({ memories: memoriesAusFenster, onSelectMemory, o
   // --- Echte Relationen aus der Graph-DB ---
   const [graphApi, setGraphApi] = useState<GraphApi | null>(null);
   const [netzLade, setNetzLade] = useState(0);
+  // Aufgabe #42: die Tiefe kommt aus der gespeicherten Marke, nicht aus der URL-Zahl.
+  const [graphTiefe, setGraphTiefe] = useState<number>(() => graphTiefeLesen());
+  useEffect(() => {
+    const horche = (e: StorageEvent) => {
+      if (e.key === GRAPH_TIEFE_MARKE || e.key === null) setGraphTiefe(graphTiefeLesen());
+    };
+    window.addEventListener("storage", horche);
+    return () => window.removeEventListener("storage", horche);
+  }, []);
   useEffect(() => {
     let abgebrochen = false;
     void (async () => {
       try {
-        const res = await fetch("/api/graph?depth=2");
+        const res = await fetch(`/api/graph?depth=${graphTiefe}`);
         const data = await res.json();
         if (!abgebrochen && data && Array.isArray(data.relations)) setGraphApi(data as GraphApi);
       } catch { /* Engine nicht erreichbar — Aehnlichkeitskanten bleiben */ }
     })();
     return () => { abgebrochen = true; };
-  }, [memories.length, netzLade]);
+  }, [memories.length, netzLade, graphTiefe]);
 
   /**
    * Der Nachzug (Aufgabe #96): was der Scanner vor dem Begriff-Produzenten
