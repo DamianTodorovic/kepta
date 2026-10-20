@@ -34,8 +34,11 @@ const erwartet = [
   ["graph-regal", 1],
   ["regal-woher-fach", 1],
   [".regal-woher-fach", 1],
+  // "in two bands" war die Regal-Zeile aus 3.2.22 und ist seit 3.2.25 andrer Wortlaut (das Regal
+  // hat ein drittes Band: die Zeit). Der aktuelle Beleg steht unten bei den 3.2.25-Markern als
+  // "notes, in three bands" — ein Marker auf eine verschwundene Prosa waere eine Pruefung, die
+  // wegen einer bewussten Aenderung schlaegt, nicht wegen eines Fehlers.
   ["min-width:1px", 1],
-  ["in two bands", 1],
   ["the three curl test commands", 1],
   ["The server did not answer", 1],
   // 3.2.23 (HEAD 59dabea, gemessen am ausgelieferten Paket: app.asar 49 065 686 B, mtime
@@ -61,7 +64,7 @@ const erwartet = [
   // hier genannten Literalen dort **0** Treffer.
   ["x-kepta-teilzeiten", 1],
   ["notes, in three bands", 1],
-  [".graph-legende { bottom: 3.25rem", 1],
+  ["bottom:3.25rem", 1],
   ["graph-legende absolute left-3 bottom-3", 1],
   // P4-16 und P4-13 bleiben ohne Marker, nicht aus Bequemlichkeit: P4-16 verwendet dieselben
   // Worte wie die Extraktionszeile aus 3.2.22 ("did not answer (" steht im alten Objekt schon
