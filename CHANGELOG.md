@@ -5,7 +5,7 @@
 - **The graph's loading edge now says when it is done.** The progress loop
   returned one step before painting, so the second-to-last message stayed on
   screen; it now paints the final state and then leaves
-  (`src/components/KnowledgeGraph.tsx:1378`). And a counter that has reached
+  (`src/components/KnowledgeGraph.tsx:1380`). And a counter that has reached
   its total no longer renders the fill message that never ends: it names the
   reason instead — `Finishing the network — all 1 500 notes read, the last
   links are still being written`. The reason lives in the door, which raises
