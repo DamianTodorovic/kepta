@@ -4261,6 +4261,36 @@ describe("Nachzug: die Flaeche fuellt das Netz, das die Tuer fuer offen haelt", 
     expect(knoten, "eine abgelehnte Fuellung ist ein Befund, kein schweigender Rahmen").not.toBeNull();
     expect(knoten!.textContent).toMatch(/backup/i);
   });
+
+  it("mahnt den Grund an, statt bei vollem Zaehler stehen zu bleiben (#53)", async () => {
+    // Die Tuer meldet `running` noch, nachdem der letzte Stapel den Zaehler auf
+    // den Gesamtstand gehoben hat (`server/router/nachzug.ts:131` vor `:137`).
+    // Daraus darf die Flaeche keine Fuell-Meldung machen, die nie endet.
+    tür([{ needed: true, running: true, phase: "indexing", total: 1500, seen: 1500, concepts: 40, edges: 90, addedConcepts: 0, addedEdges: 0, error: null }]);
+    const view = await zeichne([note(), note(), note()]);
+    await bilder(8);
+    const knoten = view.container.querySelector('[data-testid="nachzug-info"]');
+    expect(knoten, "die Auskunft bleibt hörbar, auch wenn sie mahnt").not.toBeNull();
+    expect(knoten!.textContent ?? "", "kein nacktes 1 500 von 1 500").not.toMatch(/1,500 of 1,500/);
+    expect(knoten!.textContent ?? "", "der Grund steht im Satz").toMatch(/Finishing the network/i);
+  });
+
+  it("zieht die Auskunft beim Ende des Laufs ab, statt sie stehen zu lassen (#53)", async () => {
+    // Erster Stand: laufend bei vollem Zaehler. Zweiter: die Tuer ist fertig und
+    // meldet keinen Bedarf. Ohne das letzte zeige() in der Schleife
+    // (`KnowledgeGraph.tsx:1380` vor `:1381`) bliebe der erste Satz im Bild.
+    tür([
+      { needed: true, running: true, phase: "indexing", total: 1500, seen: 1500, concepts: 40, edges: 90, addedConcepts: 0, addedEdges: 0, error: null },
+      { needed: false, running: false, phase: "done", total: 1500, seen: 1500, concepts: 44, edges: 99, addedConcepts: 0, addedEdges: 0, error: null },
+    ]);
+    const view = await zeichne([note(), note(), note()]);
+    await bilder(8);
+    const stehend = view.container.querySelector('[data-testid="nachzug-info"]');
+    expect(stehend!.textContent ?? "").toMatch(/Finishing the network/i);
+    await bilder(45); // 900 ms — ein Poll-Abstand (NACHZUG_FRAGE_MS = 600) muss verstrichen sein
+    const knoten = view.container.querySelector('[data-testid="nachzug-info"]');
+    expect(knoten!.textContent ?? "", "fertig ohne Zuwachs ist keine Behauptung, die im Bild bleibt").toBe("");
+  });
 });
 
 describe("Gang-Masse: eine Seite Punkte, ein Blätterer, und die Zahl sagt alles", () => {

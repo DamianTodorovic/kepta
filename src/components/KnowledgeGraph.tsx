@@ -1377,7 +1377,14 @@ export function KnowledgeGraph({ memories: memoriesAusFenster, onSelectMemory, o
         stand = gefoelgt;
       }
       for (;;) {
-        if (!stand.running && !stand.needed) return; // nichts zu tun, nichts zu sagen
+        if (!stand.running && !stand.needed) {
+          // Der letzte Stand wird gemalt, nicht uebergangen. Ohne dieses
+          // zeige() bleibt die vorletzte Auskunft im Bild stehen — gemessen
+          // 19.10. an der ausgelieferten 3.2.23: "Filling the network —
+          // 1 500 of 1 500 notes", und der Rand ging nie aus (#53).
+          zeige(stand);
+          return;
+        }
         zeige(stand);
         if (!stand.running) {
           if (Number(stand.addedEdges ?? 0) > 0 || Number(stand.addedConcepts ?? 0) > 0) setNetzLade((n) => n + 1);
@@ -4774,7 +4781,13 @@ export function KnowledgeGraph({ memories: memoriesAusFenster, onSelectMemory, o
               ? `Network not filled: ${nachzug.fehler}`
               : nachzug.laufen
                 ? nachzug.gesamt > 0
-                  ? `Filling the network — ${nachzug.gesehen.toLocaleString("en-US")} of ${nachzug.gesamt.toLocaleString("en-US")} notes`
+                  // Die Tuer haelt `running` noch, nachdem der letzte Stapel den
+                  // Zaehler auf den Gesamtstand gehoben hat (server/router/
+                  // nachzug.ts:131 vor :137). Ein voller Zaehler ist keine
+                  // Fuell-Meldung, die nie endet — also wird der Grund gemalt.
+                  ? nachzug.gesehen >= nachzug.gesamt
+                    ? `Finishing the network — all ${nachzug.gesamt.toLocaleString("en-US")} notes read, the last links are still being written`
+                    : `Filling the network — ${nachzug.gesehen.toLocaleString("en-US")} of ${nachzug.gesamt.toLocaleString("en-US")} notes`
                   : "Filling the network…"
                 : nachzug.neuBegriffe > 0 || nachzug.neuKanten > 0
                   ? `Network filled: +${nachzug.neuBegriffe.toLocaleString("en-US")} concepts, +${nachzug.neuKanten.toLocaleString("en-US")} links`

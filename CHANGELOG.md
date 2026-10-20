@@ -1,3 +1,19 @@
+## [3.2.28]
+
+### Fixed
+
+- **The graph's loading edge now says when it is done.** The progress loop
+  returned one step before painting, so the second-to-last message stayed on
+  screen; it now paints the final state and then leaves
+  (`src/components/KnowledgeGraph.tsx:1378`). And a counter that has reached
+  its total no longer renders the fill message that never ends: it names the
+  reason instead — `Finishing the network — all 1 500 notes read, the last
+  links are still being written`. The reason lives in the door, which raises
+  `seen` to the capped total before it clears `running`
+  (`server/router/nachzug.ts:131` before `:137`). Two cases in
+  `tests/components/KnowledgeGraph.render.test.tsx` hold both branches; the
+  finished-run message is untouched.
+
 ## [3.2.27]
 
 ### Fixed
