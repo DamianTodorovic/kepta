@@ -1,12 +1,12 @@
-// Das Regal ueber seinem Wissen — die Lesung des Bestands in zwei Baendern.
+// Das Regal ueber seinem Wissen — die Lesung des Bestands in drei Baendern.
 //
 // Warum dieses Stueck neben dem Baum steht und nicht statt ihm: der Baum teilt nach
 // Art und Marke, und an seinem echten Bestand (21 066 Notizen, 18.10.) legt seine
 // zweite Ebene 18 993 Stuecke = 90,16 % in EIN Fach namens `#machine-scan`. Was der
-// Leser sieht, ist eine Klammer um den ganzen Laden. Das Regal fragt dagegen zwei
-// Dinge, die ein Mensch wirklich fragt: **woher** kam das Stueck, und **worum** geht
-// es. Gerechnet wird das in `src/lib/graphHierarchy.ts → baueRegal`; hier steht nur
-// die Zeile, die es sagt.
+// Leser sieht, ist eine Klammer um den ganzen Laden. Das Regal fragt dagegen drei
+// Dinge, die ein Mensch wirklich fragt: **woher** kam das Stueck, **worum** geht es,
+// und **wann** es geschrieben wurde. Gerechnet wird das in
+// `src/lib/graphHierarchy.ts → baueRegal`; hier steht nur die Zeile, die es sagt.
 //
 // Bewusst **keine Klickfläche**: eine Zeile in diesem Panel ist 14 px hoch. Die
 // Steuerungs-Latte des Hauses verlangt 44 px für alles, was eine Hand trifft — eine
@@ -34,7 +34,7 @@ export interface GraphRegalEigenschaften {
 }
 
 export function GraphRegal({ regal, ansichtsName }: GraphRegalEigenschaften) {
-  const { woher, worum } = regal;
+  const { woher, worum, wann } = regal;
   // Band 1 in der Reihenfolge des Hauses, nicht in der der Groesse: der Leser hat
   // Notes, Files, Code schon in der Legende und sucht sie dort.
   const geordnet = [...woher].sort(
@@ -47,7 +47,7 @@ export function GraphRegal({ regal, ansichtsName }: GraphRegalEigenschaften) {
   return (
     <div data-testid="graph-regal" className="flex flex-col gap-1">
       <div className="hud-label" style={{ color: "var(--text-3)" }}>
-        {zahl(gesamt)} notes, in two bands{ansichtsName ? ` — ${ansichtsName}` : ""}
+        {zahl(gesamt)} notes, in three bands{ansichtsName ? ` — ${ansichtsName}` : ""}
       </div>
 
       {/* Band 1 — woher. Die Breiten sind der Bestand, nicht eine Rangfolge: wer
@@ -71,6 +71,17 @@ export function GraphRegal({ regal, ansichtsName }: GraphRegalEigenschaften) {
       <div className="hud-label tnum" style={{ color: "var(--text-2)" }}>
         {geordnet.map((f) => `${f.name} ${zahl(f.notizen)}`).join(" · ")}
       </div>
+
+      {/* Band 3 — wann. Eine Zeile, kein Streifen: die Achse hat bis zu sechs Koerbe,
+          und sechs Farben auf sechs Pixeln haetten gegen die Kontrast-Latte des Hauses
+          keine Chance. Die Frage "was habe ich vor zwei Wochen geschrieben" steht hier
+          in seinen Worten, ohne dass er einen Schluessel kennen muss. */}
+      {wann.length > 0 && (
+        <div className="hud-label tnum" style={{ color: "var(--text-2)" }}>
+          <span style={{ color: "var(--text-3)" }}>when </span>
+          {wann.map((f) => `${f.name} ${zahl(f.notizen)}`).join(" · ")}
+        </div>
+      )}
 
       {/* Band 2 — worum. Ein Fach je Stueck, Betreff wo einer greift, sonst der
           Ordnerzweig, sonst das Restfach. Sortiert nach Menge, damit die erste

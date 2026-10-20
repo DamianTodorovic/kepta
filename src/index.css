@@ -1522,4 +1522,10 @@ button.row-quiet { cursor: pointer; border-color: var(--kante-kontrolle); }
    ============================================================ */
 @media (max-width: 440px) {
   .legende-prosa { display: none; }
+  /* #54: Der Blaetterer (`gang-blaetterer`, KnowledgeGraph.tsx:4655) haengt an
+     derselben Bodenkante wie die Legende — beide `bottom-3`. Bei Telefonbreite
+     reicht ihr Kasten unter ihn, also hebt sie sich ueber ihn (3,25 rem = seine
+     Hoehe rund 36,5 px plus seine 12 px Kante) und bleibt in der Breite im Bild.
+     Halter ist eine Klasse, keine Stellenangabe — dieselbe Regel wie oben. */
+  .graph-legende { bottom: 3.25rem; max-width: calc(100% - 1.5rem); }
 }

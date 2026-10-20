@@ -56,6 +56,13 @@ const erwartet = [
   ["CASE WHEN embedding IS NOT NULL THEN 1 ELSE 0 END", 1],
   ["idx_memories_deleted_id ON memories(deleted_at, id)", 1],
   ["absolute left-0 right-0 top-0 z-10 h-[3px] pointer-events-none", 1],
+  // 3.2.25 (drei Flicken von der Bank, am 20.10. 14:20 angelegt; zwei weitere gingen zurueck,
+  // weil ihr eigner Fall rot war). Gegen das installierte 3.2.24-Objekt gezaehlt: alle vier
+  // hier genannten Literalen dort **0** Treffer.
+  ["x-kepta-teilzeiten", 1],
+  ["notes, in three bands", 1],
+  [".graph-legende { bottom: 3.25rem", 1],
+  ["graph-legende absolute left-3 bottom-3", 1],
   // P4-16 und P4-13 bleiben ohne Marker, nicht aus Bequemlichkeit: P4-16 verwendet dieselben
   // Worte wie die Extraktionszeile aus 3.2.22 ("did not answer (" steht im alten Objekt schon
   // 1 mal), P4-13 nimmt nur einen try/fang weg und schreibt kein neues Literal. Beide haengen

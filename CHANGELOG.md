@@ -1,3 +1,25 @@
+## [3.2.25]
+
+### Fixed
+
+- **At phone width the legend no longer sits on top of the pager.** The legend box and
+  the pager both hung on the same bottom edge, so at 390 px the legend covered the
+  arrows you need to move through the graph. The legend now lifts above the pager
+  (`.graph-legende { bottom: 3.25rem }`, a class, not a magic offset) and stays inside
+  the picture's width.
+- **The shelf answers "what did I write two weeks ago".** The band list grouped only by
+  kind and origin, so time was nowhere. It now carries a third band set in human words —
+  today, this week, 1–2 weeks ago, 2–4 weeks ago, older, no date — with its own tray, so
+  undated notes are not hidden under "older".
+
+### Added
+
+- **The reading routes now say where their time goes.** `server/helfer/zeitnahme.ts`
+  splits each read into parts and answers them in `x-kepta-teilzeiten` headers on the
+  health, memory-list and graph routes. Without it every latency number at the door was
+  a total with no explanation — which is why an earlier index win could not be proven
+  against the running door.
+
 ## [3.2.24]
 
 ### Fixed

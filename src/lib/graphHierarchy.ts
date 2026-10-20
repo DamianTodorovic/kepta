@@ -664,6 +664,10 @@ export interface Regal {
   bestand: number;
   woher: RegalFach[];
   worum: RegalFach[];
+  /** Wann das Stueck geschrieben wurde, in Koerben, die ein Mensch sagt ("this week",
+   *  "2–4 weeks ago"). Eigene, schmale Form: die Achse hat nie eine Herkunft, weil sie
+   *  keine Fundstelle ist, und `RegalFach["herkunft"]` bleibt unangetastet. */
+  wann: { name: string; notizen: number; prozent: number }[];
   /** Die Luecken, die das Regal laesst — als Zahlen, nicht als Schweigen. */
   luecken: { ohneBetreff: number; ohnePfad: number; ohneMarke: number };
   groesstesFachProzent: number;
@@ -806,7 +810,26 @@ function zaehleFaecher(
 }
 
 /**
- * Das Regal ueber einem Bestand. Zwei Bänder, ein Fach je Stueck je Band, und die
+ * Die dritte Achse: wann. Ein Mensch fragt nicht nach einem Schluessel, sondern
+ * "was habe ich vor zwei Wochen geschrieben" — also Koerbe in seiner Sprache, und
+ * eine einzige Funktion, die ein Test an einer gepinnten Uhr pruefen kann.
+ * `null` ist kein Datum, sondern eine Notiz ohne Zeitangabe; sie faellt in ein
+ * eigenes Fach und wird nicht unter "aelter" versteckt.
+ */
+export const WANN_KOERBE = ["today", "this week", "1–2 weeks ago", "2–4 weeks ago", "older", "no date"] as const;
+export type WannKoerb = (typeof WANN_KOERBE)[number];
+
+export function wannKoerb(alterTage: number | null): WannKoerb {
+  if (alterTage === null || !Number.isFinite(alterTage)) return "no date";
+  if (alterTage < 1) return "today";
+  if (alterTage < 7) return "this week";
+  if (alterTage < 14) return "1–2 weeks ago";
+  if (alterTage < 28) return "2–4 weeks ago";
+  return "older";
+}
+
+/**
+ * Das Regal ueber einem Bestand. Drei Bänder, ein Fach je Stueck je Band, und die
  * Luecken als Zahlen. Kein Baum, keine Faltung: die Zeilenzahl ist die Wahrheit
  * der Achse, nicht das Ergebnis eines Kampfs mit dem Rahmen.
  */
@@ -820,6 +843,8 @@ export function baueRegal(memories: readonly Memory[]): Regal {
   const eingang: { gruppe: Gruppe; pfad: string | null }[] = new Array(memories.length);
   const absolutePfade: string[] = [];
   let ohneBetreff = 0, ohnePfad = 0, ohneMarke = 0;
+  const jetzt = Date.now();
+  const wannKoerbe = new Map<WannKoerb, number>();
   for (let i = 0; i < memories.length; i++) {
     const m = memories[i];
     const gruppe = gruppenVonNotiz(m);
@@ -829,6 +854,11 @@ export function baueRegal(memories: readonly Memory[]): Regal {
     if (!pfad) ohnePfad += 1;
     else if (!pfad.startsWith("netz://")) absolutePfade.push(pfad);
     if (!(m.tags ?? []).some((t) => String(t).trim())) ohneMarke += 1;
+    // Dieselbe Runde, kein zweiter Durchgang: die Achse "wann" braucht nur die
+    // Erstellungszeit, und die liegt schon in der Hand, die gerade gelesen wurde.
+    const at = typeof m.createdAt === "number" && m.createdAt > 0 ? m.createdAt : null;
+    const koerb = wannKoerb(at === null ? null : (jetzt - at) / 86_400_000);
+    wannKoerbe.set(koerb, (wannKoerbe.get(koerb) ?? 0) + 1);
   }
   const vorspann = maschinenVorspann(absolutePfade);
   const gesamt = memories.length || 1;
@@ -843,6 +873,12 @@ export function baueRegal(memories: readonly Memory[]): Regal {
     false,
   );
   const worum = zaehleFaecher(eingang.map(({ gruppe, pfad }) => fachAus(gruppe, pfad, vorspann)));
+  // In der Reihenfolge der Achse, nicht der Groesse: "today" steht vorn, weil der
+  // Leser nach heute sucht und nicht nach dem groesten Korb.
+  const wann = WANN_KOERBE.filter((k) => (wannKoerbe.get(k) ?? 0) > 0).map((k) => {
+    const n = wannKoerbe.get(k) ?? 0;
+    return { name: k, notizen: n, prozent: Number(((100 * n) / gesamt).toFixed(2)) };
+  });
   const groesstes = worum.reduce((n, f) => Math.max(n, f.notizen), 0);
   const unterDeckel = worum
     .filter((f) => (100 * f.notizen) / gesamt < REGAL_DECKEL_PROZENT)
@@ -851,6 +887,7 @@ export function baueRegal(memories: readonly Memory[]): Regal {
     bestand: memories.length,
     woher,
     worum,
+    wann,
     luecken: { ohneBetreff, ohnePfad, ohneMarke },
     groesstesFachProzent: Number(((100 * groesstes) / gesamt).toFixed(2)),
     unterDeckelProzent: Number(((100 * unterDeckel) / gesamt).toFixed(2)),

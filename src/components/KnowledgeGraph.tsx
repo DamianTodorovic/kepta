@@ -4919,7 +4919,7 @@ export function KnowledgeGraph({ memories: memoriesAusFenster, onSelectMemory, o
         <div
           ref={legendenRef}
           data-testid="graph-legende"
-          className="absolute left-3 bottom-3 hud-panel rounded-lg px-3 py-2 pointer-events-none space-y-1"
+          className="graph-legende absolute left-3 bottom-3 hud-panel rounded-lg px-3 py-2 pointer-events-none space-y-1"
         >
           {/* Was im Bild steht. Die Zahlengruppe sass bisher am Ende der Leiste
               und war damit das erste, was aus dem Fenster fiel (D1-01), und das
@@ -4947,7 +4947,7 @@ export function KnowledgeGraph({ memories: memoriesAusFenster, onSelectMemory, o
               ? `${mengenzahl(baumLayout.edges.length)} ${baumLayout.edges.length === 1 ? "link" : "links"}`
               : `${mengenzahl(kanten.echt)} ${kanten.echt === 1 ? "link" : "links"}${aehnlichkeitsZeile(kanten.aehnlichkeit, edges.length, zoomAnzeige)}`}
           </div>
-          <div className="flex items-center gap-3 hud-label">
+          <div className="flex flex-wrap items-center gap-3 hud-label">
             {/* Die Legende erklärt den Kanal, der gerade färbt — nicht den, den
                 man eben abgeschaltet hat. */}
             {aktiverKanal === "herkunft"
@@ -4976,7 +4976,7 @@ export function KnowledgeGraph({ memories: memoriesAusFenster, onSelectMemory, o
             ref={zustandRef}
             style={{ color: "var(--text-2)", display: "none" }}
           />
-          <div className="flex items-center gap-3 hud-label">
+          <div className="flex flex-wrap items-center gap-3 hud-label">
             <svg width="26" height="6"><line x1="0" y1="3" x2="26" y2="3" stroke="var(--accent)" strokeWidth="2" /></svg>{" "}
             {ansicht === "dendrogram" ? uiT("legend.hierarchy") : uiT("legend.claim")}
             {ansicht !== "dendrogram" && (

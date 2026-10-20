@@ -8,6 +8,7 @@ import { sanitizeText, sanitizeTitle, sanitizeTags } from "../../src/core/saniti
 import { sanitizeScope, sanitizeId, istGueltigeId } from "../helfer/ids";
 import { toApi, maxActiveMemories, grenzHinweis, MAX_BULK_IDS, SEITE_MIN, SEITE_MAX, seiteUmwelt, type MemoryRecord } from "../helfer/api-form";
 import { bodyOf } from "../helfer/body";
+import { zeitnahme } from "../helfer/zeitnahme";
 import type { AppKontext } from "../kontext";
 
 const GUELTIGE_TYPEN = ["semantic", "episodic", "procedural", "reference"];
@@ -229,17 +230,25 @@ export function mountMemories(app: express.Express, ctx: AppKontext): void {
    */
   app.get("/api/memories/gruppen", (_req, res) => {
     const started = Date.now();
+    const zeit = zeitnahme();
     const traeger: Record<Traeger, number> = { notes: 0, files: 0, code: 0 };
     const themen: Record<Thema, number> = { people: 0, projects: 0, events: 0, tasks: 0, guides: 0, links: 0 };
     let ohneThema = 0;
     let gezahlt = 0;
-    for (const m of ctx.listAllMemories()) {
+    // Lesen und Klassifizieren sind zwei Arbeiten: die Route kostet 45,5–70,0 µs je Notiz
+    // (Punkt 6, Leiter 20.10. 00:52–01:44, n = 8 je Stufe), und der `ms`-Wert im Leib nennt
+    // beides zusammen in 1-ms-Korn. Die Marke trennt es in µs — der Leib bleibt, wie er ist.
+    const alle = ctx.listAllMemories();
+    zeit.marke("lesen");
+    for (const m of alle) {
       const g = gruppen({ title: m.title, content: m.content, tags: m.tags });
       traeger[g.traeger] += 1;
       if (g.themen.length === 0) ohneThema += 1;
       for (const t of g.themen) themen[t] += 1;
       gezahlt += 1;
     }
+    zeit.marke("klassifikation");
+    res.setHeader("x-kepta-teilzeiten", zeit.kopf());
     res.json({ ok: true, bestand: gezahlt, traeger, themen, ohneThema, ms: Date.now() - started });
   });
 
@@ -247,7 +256,9 @@ export function mountMemories(app: express.Express, ctx: AppKontext): void {
     const { ganzerBestand } = leseGrenzwerte(req, res);
     if (res.headersSent) return;
     const trash = req.query.trash === "1";
+    const zeit = zeitnahme();
     const bestand = store.countMemories();
+    zeit.marke("zaehlung");
     const total = trash ? bestand.trashed : bestand.active;
     const einheit = trash ? "trashed notes" : "notes";
 
@@ -268,7 +279,12 @@ export function mountMemories(app: express.Express, ctx: AppKontext): void {
       if (umgebung.unverstanden) geklemmt = [geklemmt, umgebung.unverstanden].filter(Boolean).join(" ");
     }
 
-    const memories = (ganzerBestand ? ctx.listAllMemories({ trash }) : store.listMemories({ limit: seite, offset, trash })).map(toApi);
+    // Zaehlen, Lesen und Formen sind drei Arbeiten an einem Griff; ohne Marke war der Kopf wertlos
+    // fuer jede Frage, ab welcher Groesse die Route reisst (Punkt 6, Auftrag 20.10. 00:46).
+    const gelesen = ganzerBestand ? ctx.listAllMemories({ trash }) : store.listMemories({ limit: seite, offset, trash });
+    zeit.marke("lesen");
+    const memories = gelesen.map(toApi);
+    zeit.marke("formen");
     const begrenzt = offset + memories.length < total;
     const hinweis = [
       geklemmt,
@@ -291,8 +307,10 @@ export function mountMemories(app: express.Express, ctx: AppKontext): void {
     // Ueber dem ganzen String einer 31-Megabyte-Liste hing ein zweiter Vollzugriff,
     // bevor die Antwort ueberhaupt begonnen hatte.
     const body = JSON.stringify(korpus);
+    zeit.marke("serialisieren");
     const hash = crypto.createHash("sha1").update(body).digest("hex");
     const etag = `"${hash}"`;
+    zeit.marke("etag");
     res.setHeader("ETag", etag);
     res.setHeader("Cache-Control", "private, max-age=0, must-revalidate");
     res.setHeader("x-kepta-count", String(memories.length));
@@ -301,6 +319,7 @@ export function mountMemories(app: express.Express, ctx: AppKontext): void {
     res.setHeader("x-kepta-offset", String(offset));
     res.setHeader("x-kepta-begrenzt", begrenzt ? "1" : "0");
     res.setHeader("x-kepta-hinweis", hinweis);
+    res.setHeader("x-kepta-teilzeiten", zeit.kopf());
     if (req.headers["if-none-match"] === etag) {
       return res.status(304).end();
     }

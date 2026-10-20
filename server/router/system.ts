@@ -9,6 +9,7 @@ import { APP_VERSION } from "../../src/core/version";
 import { memoryToMarkdown } from "../../src/core/obsidian";
 import { TOOLS as MCP_TOOLS } from "../../src/core/mcp";
 import { mcpStartInDerApp } from "../helfer/mcp-start";
+import { zeitnahme } from "../helfer/zeitnahme";
 import { semantikVomBestand } from "../helfer/semantik";
 import { leseUmwelt, gewonneneUmweltNamen, ohneWert } from "../../src/core/umwelt";
 import { serverVerzeichnis, resolveDistDir } from "../helfer/pfad";
@@ -20,6 +21,16 @@ export function mountSystem(app: express.Express, ctx: AppKontext): void {
 
   // --- Health ---
   app.get("/api/health", (_req, res) => {
+    // Teilzeiten: Bestandszahl und Einbettungs-Zaehlung sind zwei Arbeiten in einer Antwort.
+    // Punkt 6 musste die 2 256 ms von health am 19.10. aus der DIFFERENZ zweier Routen
+    // erschliessen (storage-info ruft dieselbe Zaehlung und kostet dasselbe) — mit diesem
+    // Kopf steckt die Aufteilung in der Antwort selbst.
+    const zeit = zeitnahme();
+    const count = activeCount();
+    zeit.marke("zaehlung");
+    const embeddings = store.embeddingStats();
+    zeit.marke("einbettung");
+    res.setHeader("x-kepta-teilzeiten", zeit.kopf());
     res.json({
       ok: true,
       status: "ok",
@@ -27,8 +38,8 @@ export function mountSystem(app: express.Express, ctx: AppKontext): void {
       version: APP_VERSION,
       uptime: process.uptime(),
       dbPath: store.dbPath,
-      count: activeCount(),
-      embeddings: store.embeddingStats(),
+      count,
+      embeddings,
       encryption: store.verschluesselung,
       // Aufgabe #64: welche Namensform der Umgebung wirklich läuft. Ein Betreiber,
       // der beide Formen gesetzt hat, soll es hier sehen und nicht raten müssen.
@@ -61,7 +72,9 @@ export function mountSystem(app: express.Express, ctx: AppKontext): void {
     const entity = typeof req.query.entity === "string" && req.query.entity.trim() ? req.query.entity.trim() : undefined;
     const depthRaw = req.query.depth ? parseInt(String(req.query.depth), 10) : 2;
     const depth = Number.isFinite(depthRaw) ? Math.min(Math.max(depthRaw, 1), 4) : 2;
+    const zeit = zeitnahme();
     const g = store.getGraph(entity, depth);
+    zeit.marke("fenster");
     const nameById = new Map(g.entities.map((e) => [e.id, e.name]));
     // Diese Masche war bisher eine stille Lucke: Kanten, deren anderes Ende nicht im
     // Auszug liegt, verschwanden, ohne dass die Antwort eine Zahl dafuer nannte.
@@ -70,8 +83,42 @@ export function mountSystem(app: express.Express, ctx: AppKontext): void {
     // 14.000-Kunstbestand. GFs Flaeche zeigte darum "0 links" bei vollen Taschen.
     const kanten = g.relations.filter((r) => nameById.has(r.sourceId) && nameById.has(r.targetId));
     const bestand = store.graphBestand();
+    zeit.marke("masche");
+    // entity → memory-IDs (für Graph-Rendering über Memories hinweg)
+    // Nach der Masche, vor dem Leib: die 500 Nachschlage je Begriff (eine je Knoten des
+    // Fensters) sind die Stelle, an der der Index idx_memory_entities_entity
+    // (src/core/store.ts:353) arbeitet. Ohne Marke war sein Gewinn an der laufenden Tuer
+    // nicht zu zeigen — Punkt 6, ARBEITSLISTE.md:52.
+    const memoriesByEntity = Object.fromEntries(g.entities.map((e) => [e.name, [...store.memoryIdsForEntities([e.id])]]));
+    zeit.marke("begriffsmemorien");
+    // Die Deckung: wie viele der aktiven Notizen an wenigstens einem Begriff
+    // haengen. Eine Zahl, die nur Begriffe und Kanten nennt, laesst den Leser
+    // raten, ob das Netz weit ist oder knapp — gemessen 15.10. an Damians Bestand
+    // (2.756 Begriffe, 2.726 Kanten, aber nur ~1.018 von 21.066 Notizen gedeckt).
+    const deckung = (() => {
+      const notizen = activeCount();
+      const gedeckt = store.notizenMitBegriff();
+      return {
+        notizen,
+        gedeckt,
+        anteilProzent: notizen > 0 ? Number(((100 * gedeckt) / notizen).toFixed(2)) : 0,
+        // Der Weg war bis zum 16.10. ein Math.min. Beide Abfragen filtern
+        // `deleted_at IS NULL` auf `memories` (`store.ts:483` gegen `:1287-1294`),
+        // also konnte er nie greifen — und erzwang genau die Relation, die
+        // `tests/server-nachzug.test.ts` verlangt, wodurch dieser Fall fuer immer
+        // gruen war. Die Zahl bleibt unbeugt; was ueber den Bestand hinauslaeuft,
+        // steht als Widerspruch da, weil der Satz die Botschaft traegt und nicht
+        // eine Prozentzahl ueber 100.
+        widerspruch: gedeckt > notizen ? `${gedeckt} notes carry a concept but only ${notizen} notes are active` : null,
+        hinweis: "notes covered = active notes that mention at least one concept; the base's own size is in `bestand`",
+      };
+    })();
+    zeit.marke("deckung");
     const verworfen = g.relations.length - kanten.length;
     const begrenzt = g.entities.length < bestand.knoten || kanten.length < bestand.kanten;
+    // Der Kopf geht vor res.json: was Express aus dem Objekt macht (Rendern und Senden
+    // des Leibs), steht darum nicht in den Teilzeiten — nur was die Route selbst tat.
+    res.setHeader("x-kepta-teilzeiten", zeit.kopf());
     res.json({
       entities: g.entities,
       relations: kanten
@@ -93,34 +140,12 @@ export function mountSystem(app: express.Express, ctx: AppKontext): void {
           validFrom: r.validFrom,
           validTo: r.validTo,
         })),
-      // entity → memory-IDs (für Graph-Rendering über Memories hinweg)
-      memoriesByEntity: Object.fromEntries(g.entities.map((e) => [e.name, [...store.memoryIdsForEntities([e.id])]])),
+      memoriesByEntity,
       // Der ganze Bestand, nicht nur was durch die Kappen von `getGraph`
       // durchgekommen ist. Die Fläche sagt damit, dass sie einen Ausschnitt
       // zeigt, statt die gelieferte Zahl als Bestandszahl auszugeben.
       bestand,
-      // Und die Deckung: wie viele der aktiven Notizen an wenigstens einem Begriff
-      // haengen. Eine Zahl, die nur Begriffe und Kanten nennt, laesst den Leser
-      // raten, ob das Netz weit ist oder knapp — gemessen 15.10. an Damians Bestand
-      // (2.756 Begriffe, 2.726 Kanten, aber nur ~1.018 von 21.066 Notizen gedeckt).
-      deckung: (() => {
-        const notizen = activeCount();
-        const gedeckt = store.notizenMitBegriff();
-        return {
-          notizen,
-          gedeckt,
-          anteilProzent: notizen > 0 ? Number(((100 * gedeckt) / notizen).toFixed(2)) : 0,
-          // Der Weg war bis zum 16.10. ein Math.min. Beide Abfragen filtern
-          // `deleted_at IS NULL` auf `memories` (`store.ts:483` gegen `:1287-1294`),
-          // also konnte er nie greifen — und erzwang genau die Relation, die
-          // `tests/server-nachzug.test.ts` verlangt, wodurch dieser Fall fuer immer
-          // gruen war. Die Zahl bleibt unbeugt; was ueber den Bestand hinauslaeuft,
-          // steht als Widerspruch da, weil der Satz die Botschaft traegt und nicht
-          // eine Prozentzahl ueber 100.
-          widerspruch: gedeckt > notizen ? `${gedeckt} notes carry a concept but only ${notizen} notes are active` : null,
-          hinweis: "notes covered = active notes that mention at least one concept; the base's own size is in `bestand`",
-        };
-      })(),
+      deckung,
       // Und jetzt in Zahlen, was zwischen Bestand, Kappe und Masche verloren geht —
       // gezeigt + verworfen = im Auszug, damit eine Flaeche nie eine Bilanzzahl fuer
       // einen Bruchteil ausgeben kann.
