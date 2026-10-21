@@ -66,11 +66,31 @@ const erwartet = [
   ["notes, in three bands", 1],
   ["bottom:3.25rem", 1],
   ["graph-legende absolute left-3 bottom-3", 1],
+  // p4-w (landet in 3.2.32) und p5-m (landet in 3.2.33), am **installierten** Objekt gezaehlt:
+  // app.asar 49 084 029 B, mtime 21.10. 19:14:48 MESZ. Treffer dort: der Titel-Sichttext 1,
+  // "Look for a local model" 1, "regal-wann" 1, "regal-koerb" 3. Die Icon-Klasse des Flickens
+  // ("w-3.5 h-3.5") ist **kein** Marker: sie steht 83 mal im Objekt, also beweist ihre
+  // Anwesenheit nichts ueber diesen einen Koerper.
+  ["Look for a local model", 1],
+  ["Ask this machine whether Ollama or LM Studio is running", 1],
+  ["regal-wann", 1],
+  ["regal-koerb", 1],
   // P4-16 und P4-13 bleiben ohne Marker, nicht aus Bequemlichkeit: P4-16 verwendet dieselben
   // Worte wie die Extraktionszeile aus 3.2.22 ("did not answer (" steht im alten Objekt schon
   // 1 mal), P4-13 nimmt nur einen try/fang weg und schreibt kein neues Literal. Beide haengen
   // an ihren Faellen (je einer, vorher rot gemeldet), nicht an einem Wort.
 ];
+// Die Liste darf nur ASCII-Zeichen enthalten. Grund, gemessen 21.10. 19:16 MESZ am
+// installierten Objekt: das Wort "Looking" plus echtes U+2026 steht dort 2 mal, diese
+// Sonde zaehlt davon **0**, weil latin1 das Zeichen in zwei Byte-Fetzen zerlegt und das
+// Muster dann sein eignes Ziel nicht mehr trifft. Ein Nicht-ASCII-Marker ist hier keine
+// Pruefung, sondern ein Dauer-Null — also abbrechen, statt zu schlagen.
+const nichtAscii = erwartet.filter(([m]) => /[^\x20-\x7E]/.test(m)).map(([m]) => m);
+if (nichtAscii.length) {
+  console.log("  NICHT FAHRBAR: Marker mit Nicht-ASCII-Zeichen in der Liste -- " + nichtAscii.join(" | "));
+  console.log("  (latin1-Lesung zerlegt sie in Bytes, ihre Zaehlung waere immer 0)");
+  process.exit(2);
+}
 let fehl = 0;
 for (const [m, min] of erwartet) {
   const n = s.split(m).length - 1;
