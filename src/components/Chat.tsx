@@ -109,22 +109,29 @@ export function Chat({ activeMemories, onSaveToBrain, onSaveToBrainWithMeta, isF
   const [detectedLocal, setDetectedLocal] = useState<DetectedAI | null>(null);
   const [connectHint, setConnectHint] = useState(0); // erzwingt Re-Render nach Provider-Wechsel
 
+  const [suchLaeuft, setSuchLaeuft] = useState(false);
+
   useEffect(() => {
     let cancelled = false;
+    // Der Schalter wird gefragt, BEVOR gerufen wird. Die beiden Hafen-Adressen stehen
+    // in src/lib/profile.ts:127 (Ollama) und :128 (LM Studio) und werden von dort
+    // direkt aus dem Fenster angeplopft — bis hierher geschah das bei jedem Aufbau
+    // des Chats, auch wenn der sichtbare Anbieter ein Schluessel-Anbieter ist und
+    // :121-127 die Antwort danach verwirft. Am Werksstandard (src/lib/ai.ts:17-22,
+    // openai, needsKey true) klingelt die Flaeche also an zwei Ports, die niemand
+    // bestellt hat; die Konsole meldet net::ERR_CONNECTION_REFUSED, und der Nachzug
+    // durch die eigne Tuer (profile.ts:151) haengt an einer Anfrage, die ohne jede
+    // Frage laeuft.
+    const cur = providerById(loadAISettings().providerId);
+    if (cur.needsKey) {
+      setLocalReachable(null);
+      return () => { cancelled = true; };
+    }
     (async () => {
-      // Lokale KIs erkennen (Ollama/LM Studio) — kurzer, nicht-blockierender Probe.
       const found = await detectLocalAIs().catch(() => [] as DetectedAI[]);
       if (cancelled) return;
-      const available = found.find((d) => d.available && d.models.length > 0) ?? found.find((d) => d.available) ?? null;
-      setDetectedLocal(available);
-      // Ist der aktuell gewählte Provider ein lokaler? Dann dessen Erreichbarkeit bestimmen.
-      const cur = providerById(loadAISettings().providerId);
-      if (!cur.needsKey) {
-        const match = found.find((d) => d.id === cur.id);
-        setLocalReachable(!!match?.available);
-      } else {
-        setLocalReachable(null);
-      }
+      const match = found.find((d) => d.id === cur.id);
+      setLocalReachable(!!match?.available);
     })();
     return () => { cancelled = true; };
   }, [connectHint]);
@@ -140,6 +147,18 @@ export function Chat({ activeMemories, onSaveToBrain, onSaveToBrainWithMeta, isF
       model: d.models[0] || prov.defaultModel || s.model,
     });
     setConnectHint((n) => n + 1); // Re-Probe + Re-Render
+  }, []);
+
+  // Die Suche nach einer lokalen KI ist jetzt eine Bestellung der Flaeche, nicht mehr
+  // ein Nebenbefund beim Aufbau: dieselbe Liste, derselbe Nachzug durch die Tuer — nur
+  // dass ein Klick dahintersteht, den der Nutzer sieht (Hausform wie der „Scan again"-
+  // Knopf in src/components/OnboardingWizard.tsx:268).
+  const sucheLokaleKI = useCallback(async () => {
+    setSuchLaeuft(true);
+    const found = await detectLocalAIs().catch(() => [] as DetectedAI[]);
+    const available = found.find((d) => d.available && d.models.length > 0) ?? found.find((d) => d.available) ?? null;
+    setDetectedLocal(available);
+    setSuchLaeuft(false);
   }, []);
 
   const connection = resolveAIConnection(settings, provider, localReachable);
@@ -734,6 +753,17 @@ export function Chat({ activeMemories, onSaveToBrain, onSaveToBrainWithMeta, isF
               ) : (
                 <>
                   <span style={{ color: "var(--text-2)" }}>No AI connected</span>
+                  {!detectedLocal && (
+                    <button
+                      onClick={() => void sucheLokaleKI()}
+                      className="inline-flex items-center gap-1 min-h-6 px-2 rounded text-[11px] border transition-colors hover:opacity-80"
+                      style={{ borderColor: "var(--border-subtle)", color: "var(--text-2)" }}
+                      title="Ask this machine whether Ollama or LM Studio is running — nothing is contacted until you click"
+                    >
+                      <Sparkles className="w-3.5 h-3.5" />
+                      {suchLaeuft ? "Looking…" : "Look for a local model"}
+                    </button>
+                  )}
                   {detectedLocal && (
                     <button
                       onClick={() => connectLocal(detectedLocal)}

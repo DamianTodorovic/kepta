@@ -1,3 +1,36 @@
+## [3.2.32]
+
+### Fixed
+
+- **The chat asks its harbours only when the switch has been asked, and a click can order
+  the search.** Until this version every mount of `src/components/Chat.tsx` ran
+  `detectLocalAIs()` (`src/lib/profile.ts:124`) *before* it looked at which provider is
+  chosen, so a machine on the factory default (`src/lib/ai.ts:17-22` — `openai`,
+  `needsKey: true`) knocked on both harbour ports anyway, `localhost:11434` (`profile.ts:127`)
+  and `localhost:1234` (`profile.ts:128`), with a 1200 ms timeout each (`:133`). The console
+  filled with `net::ERR_CONNECTION_REFUSED` for addresses nobody had ordered, the answer was
+  thrown away one screen later, and the reload through the app's own door (`profile.ts:151`)
+  hung behind a request that ran without asking. The probe now sits behind the switch: a key
+  provider sets `localReachable = null` and returns, a local provider is still asked for its
+  own reach. And the scan that used to be a side-effect of building the panel is now an order
+  the surface issues — `sucheLokaleKI()` on a button the user sees ("Look for a local model",
+  its own `suchLaeuft` state, the same class string as the two buttons it stands beside) — so
+  the list runs when a click is behind it and not while the panel is assembled. Its Sparkles
+  icon is `w-3.5 h-3.5`, exactly 14 px: this is the third throw of the body, the first two
+  wrote `w-2.5` (10 px) and were pulled back at the design watch, which measures the class in
+  the source (`src/index.css:227` `--icon-min: 14px`), not the pixel the renderer lifts it to.
+- `tests/components/Chat-hafen-frage-folgt-dem-schalter.test.tsx` holds it in four cases: a
+  key provider without a key mounts with no harbour touched and nothing remote, a local
+  provider is probed for its own reach (11434 seen), a key provider plus one click is the
+  only way the list runs, and the wall bites a forbidden remote call — it must both reject
+  and see it, otherwise its silence is worthless.
+
+### Still open, and not claimed here
+
+- The button is measured in the source and counted in the delivered object, not seen in a
+  real window: no picture of "Look for a local model" came out of this round, and the row it
+  joins carries `min-h-6` (24 px) against the surface-wide tap debt of 44 px.
+
 ## [3.2.31]
 
 ### Added
