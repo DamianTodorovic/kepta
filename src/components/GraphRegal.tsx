@@ -12,6 +12,14 @@
 // oeffnen die Liste ihrer Stuecke (zweiter Klick schliesst). Die Zeilen von Band 1 und 2
 // bleiben Text und damit 14 px hoch — eine Zeile, die beim Klick filtert, ohne ein Ziel
 // von der Steuerungs-Latte des Hauses zu sein, waere eine Steuerung unter der Latte.
+//
+// Zwei Eigenschaften, die kein Mass sieht und nur eine Hand prueft (beides gemessen an der
+// ausgelieferten 3.2.33, 21.10. 20:05 MESZ): das Panel haengt in der Legende, und die weist
+// Zeiger ab (`KnowledgeGraph.tsx:5019`, Klasse `pointer-events-none`) — also braucht jeder
+// Korb seine eigne Zeiger-Eigenschaft, sonst geht der Klick durch ihn hindurch ins Bild.
+// Und die Liste waechst nach oben, weil die Legende am unteren Rand klebt: ungekapped
+// schubst sie ihren eignen Schliess-Knopf aus dem Fenster (Mitte y 628 -> -417 bei 1440 px).
+// Deshalb Rolle mit Obergrenze, und eine Rolle, die niemand greifen kann, ist keine Rolle.
 import { useState } from "react";
 import type { Regal, WannKoerb } from "../lib/graphHierarchy";
 
@@ -97,6 +105,7 @@ export function GraphRegal({ regal, ansichtsName }: GraphRegalEigenschaften) {
               border: "1px solid var(--kante-kontrolle)",
               borderRadius: 6,
               cursor: "pointer",
+              pointerEvents: "auto",
             }}
           >
             {f.name} {zahl(f.notizen)}
@@ -107,7 +116,11 @@ export function GraphRegal({ regal, ansichtsName }: GraphRegalEigenschaften) {
         const k = wann.find((f) => f.name === offen);
         if (!k) return null;
         return (
-          <div data-testid="regal-koerb-liste" className="flex flex-col gap-1">
+          <div
+            data-testid="regal-koerb-liste"
+            className="flex flex-col gap-1"
+            style={{ maxHeight: 320, overflowY: "auto", pointerEvents: "auto" }}
+          >
             {k.notizen === 0 ? (
               <div className="hud-label" style={{ color: "var(--text-3)" }}>
                 nothing in this basket yet

@@ -1,3 +1,25 @@
+## [3.2.34]
+
+### Fixed
+
+- **The baskets on the time axis take a click now.** They shipped in 3.2.33 inside the graph
+  legend, and the legend refuses pointers on purpose — `KnowledgeGraph.tsx:5019` puts
+  `pointer-events-none` on it so that dragging the map never grabs the panel — which meant every
+  basket inherited `pointer-events: none` and a click passed straight through to the picture
+  underneath. Measured on the delivered 3.2.33 (21.10., own profile, own CDP ports, console empty
+  throughout): `document.elementFromPoint` at the centre of each of the six baskets answers
+  `graph-canvas`, never the button, while the same handler called from inside opens the list at
+  once — one basket open, one list, fifty pieces. So the control was dead at its edge, not in its
+  function. Each basket and its list now declare `pointerEvents: "auto"` for themselves; the whole
+  panel deliberately stays transparent to the mouse, and a case guards exactly that, so pan and
+  zoom under the shelf cannot die by a fix that reaches too wide. The list is also capped at
+  320 px with a scroll of its own, because it grows upward out of a legend pinned to the bottom
+  edge: uncapped, it pushed its own close button out of the window (centre y 628 → -417 at 1440 px,
+  436 → -609 at 390 px). Three cases in
+  `tests/components/GraphRegal.korb-ist-treffbar.test.tsx`, two of them red against `7907189`
+  before the body ran; jsdom knows no cascade, so those cases read the property on the node
+  itself, and the coordinate click is proven in a real window at four widths.
+
 ## [3.2.33]
 
 ### Added
