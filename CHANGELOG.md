@@ -1,3 +1,32 @@
+## [3.2.30]
+
+### Fixed
+
+- **The models route names its reason and never dials a stranger it was not told.**
+  With no provider set, `POST /api/models` fell back to
+  `https://api.openai.com/v1` (`server/router/chat.ts:157` at 3.2.29) — on a machine
+  that had never named that provider, so the door guessed and reached api.openai.com
+  over the outbound. Measured on the running door: `POST {}` answered **500** in
+  0,313517 s with `{"error":"Missing bearer authentication in header"}` (the guess,
+  answered by the real service) and `POST localhost:1234/v1` answered **500** with
+  `fetch failed` — a number with no information in it. The route now answers
+  **400 `grund: "kein-anbieter"`** before any fetch, **502
+  `grund: "anbieter-nicht-erreichbar"`** with the address and the `cause.code` when a
+  provider that *was* configured stays silent, and **405** with `Allow: POST` and
+  `grund: "nur-post"` to a GET. A provider's own rejection keeps its committed **500**
+  (`tests/server.test.ts:883`) — the number a delivered case asks for stays, only the
+  reason beside it is new. `tests/server-models-grund.test.ts` (four cases) holds it:
+  the first case checks the outbound attempt before anything else, and the second
+  orders `https://api.openai.com/v1` explicitly and requires the fetch hood to *see*
+  the attempt while the door still answers 502 — so the guard cannot pass by accident.
+  A trap run on unhealed bytes fails with `kein einziger ausgehender Versuch: expected
+  [ 'https://api.openai.com/v1/models' ] to deeply equal []`.
+- **Still open in the same task, and not fixed here:** the boot ping in
+  `src/components/Chat.tsx:112-130` runs `detectLocalAIs()` on mount with no switch,
+  and `src/lib/profile.ts:127-128` probes `localhost:11434/api/tags` and
+  `localhost:1234/v1/models` straight from the window. That half needs a click in the
+  real window to be proven, so it stays task #60 rather than a claim in this section.
+
 ## [3.2.29]
 
 ### Fixed

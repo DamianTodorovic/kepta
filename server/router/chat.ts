@@ -150,21 +150,60 @@ export function mountChat(app: express.Express, ctx: AppKontext): void {
     }
   });
 
-  // Verfügbare Modelle eines Anbieters abrufen
+  // Verfügbare Modelle eines Anbieters abrufen.
+  // Drei Antworten, drei Gründe. Die Zahl allein ist keine Auskunft, und ein
+  // fehlender Anbieter ist kein Grund, api.openai.com zu ruehren: die Route
+  // waehlt nichts, sie fragt die Einstellungen. Ein Anbieter, der nicht
+  // antwortet, nennt Adresse und Ursache — damit die Flaeche einen Satz malen
+  // kann statt "fetch failed".
+  app.get("/api/models", (_req, res) => {
+    res.setHeader("Allow", "POST");
+    res.status(405).json({
+      error: "Modelle abfragen braucht protocol, baseUrl und apiKey — diese Route antwortet nur auf POST",
+      grund: "nur-post",
+    });
+  });
+
   app.post("/api/models", ctx.limiter.chat, async (req, res) => {
     const { protocol, baseUrl, apiKey } = bodyOf<{ protocol: string; baseUrl: string; apiKey: string }>(req);
+    const base = trimSlash(baseUrl || "");
+    if (!base) {
+      return res.status(400).json({
+        error: "kein Modell-Anbieter gesetzt — die Route rueft keinen Anbieter, sie fragt die Einstellungen",
+        grund: "kein-anbieter",
+      });
+    }
+    const headers: Record<string, string> = {};
+    if (apiKey && protocol !== "anthropic") headers["Authorization"] = `Bearer ${apiKey}`;
+    if (protocol === "anthropic") {
+      headers["x-api-key"] = apiKey || "";
+      headers["anthropic-version"] = "2023-06-01";
+    }
+    const url = protocol === "anthropic" ? `${base}/v1/models` : `${base}/models`;
+    let r: Response;
     try {
-      const base = trimSlash(baseUrl || "https://api.openai.com/v1");
-      const headers: Record<string, string> = {};
-      if (apiKey && protocol !== "anthropic") headers["Authorization"] = `Bearer ${apiKey}`;
-      if (protocol === "anthropic") {
-        headers["x-api-key"] = apiKey || "";
-        headers["anthropic-version"] = "2023-06-01";
-      }
-      const url = protocol === "anthropic" ? `${base}/v1/models` : `${base}/models`;
-      const r = await fetch(url, { headers });
+      r = await fetch(url, { headers });
+    } catch (fehler: unknown) {
+      const code = (fehler as { cause?: { code?: string } })?.cause?.code || "unbekannt";
+      return res.status(502).json({
+        error: `der Anbieter antwortet nicht auf ${url} (${code})`,
+        grund: "anbieter-nicht-erreichbar",
+        url,
+        hinweis: code,
+      });
+    }
+    try {
       const data = await r.json() as { error?: { message?: string }; data?: unknown[]; models?: unknown[] };
-      if (!r.ok) throw new Error(data?.error?.message || `API error (${r.status})`);
+      if (!r.ok) {
+        // Die Abweisung des Anbieters bleibt eine 500, weil genau die Zahl gelieferte
+        // Erwartung ist (tests/server.test.ts:883). Beugen hiesse still entfernen;
+        // neu ist allein der Grund daneben.
+        return res.status(500).json({
+          error: data?.error?.message || `der Anbieter lehnt ab (${r.status})`,
+          grund: "anbieter-lehnt-ab",
+          status: r.status,
+        });
+      }
       let models = ((data?.data || data?.models || []) as unknown[])
         .map((m: unknown) => (m as { id?: string; name?: string }).id || (m as { name?: string }).name)
         .filter(Boolean) as string[];
@@ -184,7 +223,7 @@ export function mountChat(app: express.Express, ctx: AppKontext): void {
       res.json({ models: models.sort() });
     } catch (error: unknown) {
       const msg = error instanceof Error ? error.message : "Interner Serverfehler";
-      res.status(500).json({ error: msg });
+      res.status(500).json({ error: msg, grund: "antwort-nicht-lesbar" });
     }
   });
 
