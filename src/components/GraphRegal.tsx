@@ -8,12 +8,12 @@
 // und **wann** es geschrieben wurde. Gerechnet wird das in
 // `src/lib/graphHierarchy.ts → baueRegal`; hier steht nur die Zeile, die es sagt.
 //
-// Bewusst **keine Klickfläche**: eine Zeile in diesem Panel ist 14 px hoch. Die
-// Steuerungs-Latte des Hauses verlangt 44 px für alles, was eine Hand trifft — eine
-// Zeile, die beim Klick filtert, wäre eine Steuerung unter der Latte. Der Griff auf
-// ein Fach ist der naechste Schlag und braucht eine echte Zeilenhoehe; bis dahin ist
-// das hier die Antwort auf die Frage, nicht der Weg dorthin.
-import type { Regal } from "../lib/graphHierarchy";
+// Klickflaeche, aber nur wo sie fuehrt: die **Wann-Koerbe** sind Knöpfe von 44 px und
+// oeffnen die Liste ihrer Stuecke (zweiter Klick schliesst). Die Zeilen von Band 1 und 2
+// bleiben Text und damit 14 px hoch — eine Zeile, die beim Klick filtert, ohne ein Ziel
+// von der Steuerungs-Latte des Hauses zu sein, waere eine Steuerung unter der Latte.
+import { useState } from "react";
+import type { Regal, WannKoerb } from "../lib/graphHierarchy";
 
 /** Die drei Traeger, in der Reihenfolge, in der die Flaeche sie nennt. */
 const TRAEGER_REIHENFOLGE = ["Notes", "Files", "Code"] as const;
@@ -35,6 +35,9 @@ export interface GraphRegalEigenschaften {
 
 export function GraphRegal({ regal, ansichtsName }: GraphRegalEigenschaften) {
   const { woher, worum, wann } = regal;
+  /** Welcher Wann-Korb gerade offen ist. Einer auf einmal: zwei offene Listen in einem
+   *  Panel von sechs Zeilen sind keine Auswahl, sondern ein Stapel. */
+  const [offen, setOffen] = useState<WannKoerb | null>(null);
   // Band 1 in der Reihenfolge des Hauses, nicht in der der Groesse: der Leser hat
   // Notes, Files, Code schon in der Legende und sucht sie dort.
   const geordnet = [...woher].sort(
@@ -72,16 +75,70 @@ export function GraphRegal({ regal, ansichtsName }: GraphRegalEigenschaften) {
         {geordnet.map((f) => `${f.name} ${zahl(f.notizen)}`).join(" · ")}
       </div>
 
-      {/* Band 3 — wann. Eine Zeile, kein Streifen: die Achse hat bis zu sechs Koerbe,
-          und sechs Farben auf sechs Pixeln haetten gegen die Kontrast-Latte des Hauses
-          keine Chance. Die Frage "was habe ich vor zwei Wochen geschrieben" steht hier
-          in seinen Worten, ohne dass er einen Schluessel kennen muss. */}
-      {wann.length > 0 && (
-        <div className="hud-label tnum" style={{ color: "var(--text-2)" }}>
-          <span style={{ color: "var(--text-3)" }}>when </span>
-          {wann.map((f) => `${f.name} ${zahl(f.notizen)}`).join(" · ")}
-        </div>
-      )}
+      {/* Band 3 — wann. Jeder Korb ist ein Knopf: die Achse hat bis zu sechs Werte, und
+          einer davon ist oft klein genug, dass ein Mensch ihn ganz lesen kann ("2–4 weeks
+          ago": dreissig Stuecke an seinem Bestand). Ein Klick oeffnet die Liste, der
+          zweite schliesst sie, und ein leerer Korb antwortet mit seinem leeren Satz. */}
+      <div className="flex flex-wrap items-center gap-1" data-testid="regal-wann">
+        <span className="hud-label" style={{ color: "var(--text-3)" }}>when </span>
+        {wann.map((f) => (
+          <button
+            key={f.name}
+            type="button"
+            data-testid="regal-koerb"
+            aria-expanded={offen === f.name}
+            onClick={() => setOffen(offen === f.name ? null : (f.name as WannKoerb))}
+            className="hud-label tnum"
+            style={{
+              minHeight: 44,
+              padding: "0 10px",
+              color: "var(--text-2)",
+              background: "transparent",
+              border: "1px solid var(--kante-kontrolle)",
+              borderRadius: 6,
+              cursor: "pointer",
+            }}
+          >
+            {f.name} {zahl(f.notizen)}
+          </button>
+        ))}
+      </div>
+      {(() => {
+        const k = wann.find((f) => f.name === offen);
+        if (!k) return null;
+        return (
+          <div data-testid="regal-koerb-liste" className="flex flex-col gap-1">
+            {k.notizen === 0 ? (
+              <div className="hud-label" style={{ color: "var(--text-3)" }}>
+                nothing in this basket yet
+              </div>
+            ) : (
+              <>
+                {k.stuecke.map((s) => (
+                  <div
+                    key={s.kennung}
+                    data-testid="regal-koerb-stueck"
+                    className="hud-label tnum flex items-baseline gap-2"
+                    style={{ color: "var(--text-2)" }}
+                  >
+                    <span className="min-w-0 flex-1 truncate" style={{ color: "var(--text-1)" }}>
+                      {s.titel}
+                    </span>
+                    <span style={{ color: "var(--text-3)" }}>
+                      {s.alterTage === null ? "no date" : `${s.alterTage.toFixed(1).replace(".", ",")} d`}
+                    </span>
+                  </div>
+                ))}
+                {k.uebrig > 0 && (
+                  <div className="hud-label" style={{ color: "var(--text-3)" }}>
+                    {zahl(k.uebrig)} more in this basket — the page shows {zahl(k.stuecke.length)}
+                  </div>
+                )}
+              </>
+            )}
+          </div>
+        );
+      })()}
 
       {/* Band 2 — worum. Ein Fach je Stueck, Betreff wo einer greift, sonst der
           Ordnerzweig, sonst das Restfach. Sortiert nach Menge, damit die erste

@@ -1,3 +1,21 @@
+## [3.2.33]
+
+### Added
+
+- **The baskets on the time axis open, and an empty basket stays on the shelf.** Until this
+  version `baueRegal()` (`src/lib/graphHierarchy.ts:849`) dropped every `WANN_KOERBE` value with
+  zero notes and handed each remaining basket a number only, so the shelf could answer "how much
+  did I write two weeks ago" but never "show me", and a reader who had written nothing that day
+  could not see the day at all. Each basket now carries its own pieces (`stuecke`, newest first,
+  capped at `REGAL_SEITEN_LAENGE` = 50, `src/lib/graphHierarchy.ts:832`) together with `uebrig`,
+  the count the page does not show, so a list names its own remainder instead of swallowing it.
+  `src/components/GraphRegal.tsx` turns every basket into a 44 px control that opens that list on
+  the first click and closes it on the second, one basket at a time; bands 1 and 2 stay plain
+  text at their 14 px line height, and the old guard case now counts buttons and the 44 px
+  minimum instead of forbidding any click area, so nobody can make a second band clickable in
+  silence (`tests/components/GraphRegal.test.tsx:81`). Four cases cover the click, the empty
+  answer and the counted remainder in `tests/components/GraphRegal.korb-klick.test.tsx`.
+
 ## [3.2.32]
 
 ### Fixed

@@ -81,11 +81,18 @@ describe("GraphRegal", () => {
     expect(t).toContain(regal.luecken.ohneBetreff.toLocaleString("en-US"));
   });
 
-  it("ist kein Griff: keine Klickflaeche, keine Taste, kein Link", () => {
-    // Eine Zeile im Panel ist 14 px hoch. Etwas Klickbares waere eine Steuerung
-    // unter der Latte des Hauses (44 px) — also darf das Panel nichts vortaeuschen.
+  it("ist ausser den Wann-Koerben kein Griff: Band 1 und 2 bleiben Text", () => {
+    // Eine Zeile in Band 1 und 2 ist 14 px hoch. Etwas Klickbares waere dort eine
+    // Steuerung unter der Latte des Hauses (44 px). Ausgenommen sind seit 21.10. die
+    // Wann-Koerbe: sie sind Knöpfe von 44 px und fuehren ihre Stuecke — geprueft wird
+    // hier die Zahl der Knöpfe, damit niemand ein zweites Band anklickbar macht, ohne
+    // es zu sagen. (Der Klick selbst: `GraphRegal.korb-klick.test.tsx`.)
     const html = renderToStaticMarkup(createElement(GraphRegal, { regal }));
-    expect(/onClick|<button|<a /u.test(html)).toBe(false);
+    const knoepfe = (html.match(/<button/gu) ?? []).length;
+    const latte = (html.match(/min-height:44px/gu) ?? []).length;
+    expect(knoepfe).toBe(regal.wann.length);
+    expect(latte).toBe(regal.wann.length);
+    expect(/<a /u.test(html)).toBe(false);
   });
 
   it("zeichnet die Bandbreite als Anteil, nicht als Rangfolge", () => {

@@ -667,7 +667,15 @@ export interface Regal {
   /** Wann das Stueck geschrieben wurde, in Koerben, die ein Mensch sagt ("this week",
    *  "2–4 weeks ago"). Eigene, schmale Form: die Achse hat nie eine Herkunft, weil sie
    *  keine Fundstelle ist, und `RegalFach["herkunft"]` bleibt unangetastet. */
-  wann: { name: string; notizen: number; prozent: number }[];
+  wann: {
+    name: string;
+    notizen: number;
+    prozent: number;
+    /** Die Stuecke des Korbs, hoechstens `REGAL_SEITEN_LAENGE`, neueste zuerst. */
+    stuecke: KoerbStueck[];
+    /** Was die Seite nicht zeigt — als Zahl, nicht als Schweigen. */
+    uebrig: number;
+  }[];
   /** Die Luecken, die das Regal laesst — als Zahlen, nicht als Schweigen. */
   luecken: { ohneBetreff: number; ohnePfad: number; ohneMarke: number };
   groesstesFachProzent: number;
@@ -817,6 +825,11 @@ function zaehleFaecher(
  * eigenes Fach und wird nicht unter "aelter" versteckt.
  */
 export const WANN_KOERBE = ["today", "this week", "1–2 weeks ago", "2–4 weeks ago", "older", "no date"] as const;
+
+/** Wie viele Stuecke ein geoeffneter Korb zeigen darf. Der Rest wird gezahlt, nicht
+ *  verschluckt — eine Liste ohne ihre eigene Zahl ist dieselbe Luege wie ein Band,
+ *  das nur Mengen kennt. */
+export const REGAL_SEITEN_LAENGE = 50;
 export type WannKoerb = (typeof WANN_KOERBE)[number];
 
 export function wannKoerb(alterTage: number | null): WannKoerb {
@@ -874,10 +887,19 @@ export function baueRegal(memories: readonly Memory[]): Regal {
   );
   const worum = zaehleFaecher(eingang.map(({ gruppe, pfad }) => fachAus(gruppe, pfad, vorspann)));
   // In der Reihenfolge der Achse, nicht der Groesse: "today" steht vorn, weil der
-  // Leser nach heute sucht und nicht nach dem groesten Korb.
-  const wann = WANN_KOERBE.filter((k) => (wannKoerbe.get(k) ?? 0) > 0).map((k) => {
+  // Leser nach heute sucht und nicht nach dem groesten Korb. **Leer ist kein Grund zu
+  // schweigen:** ein Korb, den die Flaeche nicht zeigt, kann auch nicht geklickt werden,
+  // und die ehrliche Antwort auf den leeren Korb waere sonst ein Raten.
+  const wann = WANN_KOERBE.map((k) => {
     const n = wannKoerbe.get(k) ?? 0;
-    return { name: k, notizen: n, prozent: Number(((100 * n) / gesamt).toFixed(2)) };
+    const seite = stueckeAusKoerb(memories, k, REGAL_SEITEN_LAENGE);
+    return {
+      name: k,
+      notizen: n,
+      prozent: Number(((100 * n) / gesamt).toFixed(2)),
+      stuecke: seite.stuecke,
+      uebrig: seite.uebrig,
+    };
   });
   const groesstes = worum.reduce((n, f) => Math.max(n, f.notizen), 0);
   const unterDeckel = worum
