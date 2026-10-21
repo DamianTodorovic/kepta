@@ -1,3 +1,24 @@
+## [3.2.31]
+
+### Added
+
+- **A basket on the "when" axis names its pieces.** Until this version the shelf only
+  ever counted: a basket said 30 and never said which thirty. `stueckeAusKoerb()` in
+  `src/lib/graphHierarchy.ts` turns one basket into a list — newest first, at most 50
+  pieces, **and the remainder is counted instead of swallowed**. A list that shows 30
+  and stays quiet about what stands behind it tells the same lie as a band that only
+  knows numbers. Pieces that carry no date stay at the back, in the order of the stock,
+  because `sort` is stable and that order must not shuffle itself. The function reuses
+  the axis and the edges the band already draws (`wannKoerb`), so it needs no second
+  pass over the stock and no new door route. `tests/lib/regal-koerb.test.ts` holds it in
+  one case: the two-to-four-weeks basket returns its pieces newest-first, the sum over
+  every basket equals the stock, and 60 pieces under a cap of 50 report 10 remaining. A
+  trap run that removes the sort line fails on a deep-equal, so the case hangs on the
+  order and not on the wording.
+- **Still open, and not claimed here:** this is a pure function with a test, not a
+  click. Nothing in the surface opens a basket yet, and the shelf rows stay 14 px under
+  the house tap target of 44 px.
+
 ## [3.2.30]
 
 ### Fixed

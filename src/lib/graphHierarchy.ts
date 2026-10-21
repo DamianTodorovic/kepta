@@ -894,3 +894,50 @@ export function baueRegal(memories: readonly Memory[]): Regal {
     zeilen: woher.length + worum.length,
   };
 }
+
+/** Ein Stueck, das ein Korb hergibt: Kennung, Titel, Alter in Tagen (null, wenn die
+ *  Notiz keine Zeit traegt). */
+export interface KoerbStueck {
+  kennung: string;
+  titel: string;
+  alterTage: number | null;
+}
+
+/**
+ * Ein Korb der Wann-Achse oeffnet seine Stuecke — der Schritt von der Zahl zur Liste.
+ *
+ * Warum als eigener Griff und nicht in `baueRegal` hinein: das Regal nennt bis heute nur
+ * Mengen je Korb, und eine Menge fuehrt kein Stueck beim Namen. Diese Funktion braucht
+ * keinen zweiten Durchgang durch den Bestand und keine neue Tuer-Route — sie rechnet mit
+ * derselben Achse, die das Band schon malt (`wannKoerb`, dieselben Kanten).
+ *
+ * Neueste zuerst, hoechstens `seitenLaenge` Stuecke, **und der Rest wird gezahlt statt
+ * verschluckt**: eine Liste, die 30 Stuecke zeigt und nicht sagt, wie viele noch dahinter
+ * liegen, ist dieselbe Luege wie ein Band, das nur Zahlen kennt. Stuecke ohne Zeit stehen
+ * hinten, in der Reihenfolge des Bestands — `sort` ist stabil, also faellt das nicht um.
+ */
+export function stueckeAusKoerb(
+  memories: readonly Memory[],
+  koerb: WannKoerb,
+  seitenLaenge = 50,
+): { koerb: WannKoerb; gesamt: number; uebrig: number; stuecke: KoerbStueck[] } {
+  const jetzt = Date.now();
+  const kante = Math.max(0, seitenLaenge);
+  const treffer: { at: number | null; stueck: KoerbStueck }[] = [];
+  for (const m of memories) {
+    const at = typeof m.createdAt === "number" && m.createdAt > 0 ? m.createdAt : null;
+    const alterTage = at === null ? null : (jetzt - at) / 86_400_000;
+    if (wannKoerb(alterTage) !== koerb) continue;
+    treffer.push({
+      at,
+      stueck: {
+        kennung: m.id,
+        titel: (m.title ?? "").trim() || "(ohne Betreff)",
+        alterTage: alterTage === null ? null : Number(alterTage.toFixed(3)),
+      },
+    });
+  }
+  treffer.sort((a, b) => (b.at ?? -1) - (a.at ?? -1));
+  const stuecke = treffer.slice(0, kante).map((t) => t.stueck);
+  return { koerb, gesamt: treffer.length, uebrig: treffer.length - stuecke.length, stuecke };
+}
