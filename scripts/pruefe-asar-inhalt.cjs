@@ -84,6 +84,15 @@ const erwartet = [
   ["graph-verbindungsdicke", 1],
   ["No model provider is chosen yet", 1],
   ["This provider needs an API key", 1],
+  // 3.2.38 (P5-Achsen): gemessen 22.10. 22:12:53 MESZ im gebauten Renderer-Paket
+  // (`vite build --outDir dist-marken-mess`, Exit 0) — jede der drei Ketten steht genau
+  // einmal, in `assets/graph-*.js`. Ohne diese drei Marken waere die Landung am Objekt
+  // unbewiesen: der Streifen-Flicken aus 3.2.37 lebt in Dashboard.tsx, die Achsenwoerter
+  // in gruppen.ts und beide Flaechen — ein Paket ohne sie laeuft trotzdem und sagt
+  // still dieselbe Sache in zwei Sprachen.
+  ["what you work on", 1],
+  ["no note carries it yet", 1],
+  ["click a name to open the notes you filed under it", 1],
   // P4-16 und P4-13 bleiben ohne Marker, nicht aus Bequemlichkeit: P4-16 verwendet dieselben
   // Worte wie die Extraktionszeile aus 3.2.22 ("did not answer (" steht im alten Objekt schon
   // 1 mal), P4-13 nimmt nur einen try/fang weg und schreibt kein neues Literal. Beide haengen
