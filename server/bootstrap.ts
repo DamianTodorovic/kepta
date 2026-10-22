@@ -12,7 +12,7 @@ import { teamPolicy } from "../src/lib/team";
 import { schluesselbundKeyProvider } from "../src/core/schluessel";
 import { migrateFromLegacyJson } from "../src/core/migrate";
 import { EmbeddingQueue } from "../src/core/embeddings";
-import { aktiviereSuchCacheDelta } from "../src/core/engine";
+import { aktiviereSuchCacheDelta, waermeSuchCache } from "../src/core/engine";
 import { TOOLS as MCP_TOOLS } from "../src/core/mcp";
 import { createApp, sichererFehler } from "./app";
 import { resolveDistDir } from "./helfer/pfad";
@@ -110,6 +110,21 @@ export async function startServer() {
       );
     } catch { /* nicht schreibbar — Clients nutzen dann KEPTA_URL oder den Standardport */ }
     if (process.send) process.send('server-ready');
+    // P6-79: der erste Suchlauf darf keinen Volllauf zahlen. Gewaermt wird erst NACH dem
+    // Ready-Melden und nach dem Schreiben von endpoint.json — die Bootzeit der Tuer bleibt
+    // damit, was sie gemessen ist (1 s bis endpoint.json bei 20 000 Notizen, 22:38:48 MESZ),
+    // und die erste Anfrage des Nutzers zahlt nicht mehr 801,60 ms fuer etwas, das im Leerlauf
+    // 382,61 ms kostet. Der Verzug von 250 ms ist Absicht: er haelt die Waermung hinter dem
+    // ersten Anmeldebildschirm, das setTimeout haelt sie hinter dem Antwortpfad.
+    setTimeout(() => {
+      try {
+        waermeSuchCache(store);
+      } catch (e) {
+        // Horubar, aber nicht still: die Waermung ist eine Verbesserung, ihr Fehlen darf
+        // nie wie eine wirken — die erste Anfrage zahlt dann wieder den Volllauf.
+        console.warn(`Such-Vorwaermung ausgeblieben (erste Anfrage zahlt den Volllauf): ${e instanceof Error ? e.message : String(e)}`);
+      }
+    }, 250);
   });
   // Listen-Fehler sauber behandeln — z. B. EADDRINUSE durch getFreePort-TOCTOU in der
   // Electron-Shell: klare Logausgabe statt unbehandeltem Crash-Dialog.

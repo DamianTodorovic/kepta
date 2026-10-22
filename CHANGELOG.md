@@ -1,3 +1,28 @@
+## [3.2.39]
+
+### Fixed
+
+- **The panel that opens over the footer stopped hiding its own tail.** Its height was capped at 55 %
+  of the window, so on a phone the fold fell into the middle of the list: measured in the shipped
+  object at 390 px before this line, **382 of 1 576 px** of content sit under the edge and the three
+  items that carry the picture sit **258.1 / 347.1 / 436.1 px** out of view. The panel is bound to the
+  footer now (`bottom-2`, `max-h-[calc(100%-56px)]`) and reads two columns from 820 px up. Measured in
+  the object at 1440, 1024 and 820 px the content fits whole; **at 390 px two of those three items
+  still lie 89 px and 178 px under the edge** — this line heals the class, not every margin, and the
+  remainder stays on the list. The 49-image Zensur behind these numbers is Punkt 2's own run, shot in
+  the built object, not re-shot here.
+
+- **The first search is no longer the lag.** `registriereDelta` deliberately leaves an already-filled
+  database alone, so the price was paid by the first query a person typed: measured on Punkt 6's own
+  capsule doors, **20 000 notes — first request 801.60 ms against 382.61 ms warm** (22:39:01 MESZ),
+  **120 000 notes — 12 778.12 ms against 2 844.09 ms** (17:46:41 MESZ, on 3.2.35). The index is built
+  before the first request now, and the build answers with the number of active notes it took in. The
+  generation trigger stays as the safety net, so nothing about correctness moved. 3 cases in one new
+  file: `tests/p6-suchcache-beim-start.test.ts` (the suite went from 2 866 to 2 869 executed cases,
+  213 files, measured 23:17:51 and 23:21:28 MESZ on these bytes, 0 red). **Still open, named rather
+  than glossed:** the *after* picture of the first request on a large base is not measured yet — the
+  before-values above are the measured half.
+
 ## [3.2.38]
 
 ### Added

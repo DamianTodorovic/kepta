@@ -5021,7 +5021,12 @@ export function KnowledgeGraph({ memories: memoriesAusFenster, onSelectMemory, o
           role="group"
           aria-label="Controls that did not fit the row"
           data-testid="graph-mehr-panel"
-          className="hud-panel absolute left-2 right-2 top-[47px] z-30 rounded-lg px-3 py-2 space-y-2 max-h-[55%] overflow-y-auto"
+          /* Die Klappe kappt sich nicht mehr bei 55 %: gemessen 22.10. 22:37 MESZ an der
+             ausgelieferten 3.2.38 zeigt sie bei 390 px 382 von 1 576 px Inhalt, und die drei
+             bild-wirksamen Glieder liegen 258,1 / 347,1 / 436,1 px unter der Kante. Am Fuss
+             der Leinwand sind es 788 px, und ab 820 px Breite tragen zwei Kolonnen die 17
+             Glieder in neun Reihen. */
+          className="hud-panel absolute left-2 right-2 top-[47px] bottom-2 z-30 rounded-lg px-3 py-2 space-y-2 max-h-[calc(100%-56px)] overflow-y-auto min-[820px]:columns-2 min-[820px]:gap-x-4"
         >
           <div className="flex items-center justify-between gap-3">
             <div className="hud-label" style={{ color: "var(--text-2)" }}>
