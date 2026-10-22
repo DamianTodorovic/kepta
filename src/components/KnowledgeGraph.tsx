@@ -85,6 +85,9 @@ import {
   gruppeHinzufuegen,
   gruppeEntfernen,
   gruppenFarbeSetzen,
+  achseFuerMenschen,
+  achsenSatz,
+  ACHSEN,
 } from "../lib/gruppen";
 
 export type GraphAnsicht = "force" | "dendrogram" | "semantic";
@@ -2118,6 +2121,16 @@ export function KnowledgeGraph({ memories: memoriesAusFenster, onSelectMemory, o
     [baumMemories, farbgruppen]
   );
   gruppenBildRef.current = gruppenZuordnung;
+  /**
+   * Die drei Achsen in Menschensprache. Der Satz daneben und der Satz im Regal sind **derselbe
+   * Aufruf** (`achsenSatz`), also kann der Gang nicht eine andre Zahl nennen als das Regal.
+   * Die Zeit-Achse traegt nur, was die Koerbe schon wissen; im Kraftfeld sind sie nicht gebaut,
+   * dann nennt die Achse dafuer keine Zahl — sie schweigt, statt zu raten.
+   */
+  const achsen = useMemo(
+    () => achseFuerMenschen(baumMemories, farbgruppen, regal?.wann ?? []),
+    [baumMemories, farbgruppen, regal]
+  );
   const gruppenSteuerung = useMemo(
     () => ({
       baue: (marke: string) => { gruppeHinzufuegen(marke); setGruppenStand((n) => n + 1); },
@@ -5479,25 +5492,25 @@ export function KnowledgeGraph({ memories: memoriesAusFenster, onSelectMemory, o
               className={SCHALTER_KLASSE}
               style={{ pointerEvents: "auto", minHeight: 44 }}
               title={
-                farbgruppen.gruppen.length === 0
-                  ? "Groups — no group yet. Pick a tag in the shelf below and this colours by it."
-                  : "Groups — colour the nodes by the tag groups you made. Notes outside every group keep the neutral register."
+                aktiverKanal === "gruppe"
+                  ? "Groups are painting the nodes — click again to go back to the type colours. Notes outside every group keep the neutral register."
+                  : farbgruppen.gruppen.length === 0
+                    ? "Groups — no group yet. Pick a tag in the shelf below and this colours by it."
+                    : "Groups — click to colour the nodes by the tag groups you made. Notes outside every group keep the neutral register."
               }
             >
               {punkt(aktiverKanal === "gruppe")}
-              Groups
+              {ACHSEN.find((a) => a.id === "arbeit")?.frage ?? "Groups"}
             </button>
             <span
               className="hud-label tnum"
               data-testid="graph-farbgruppe-stand"
               style={{ color: "var(--text-3)", pointerEvents: "none" }}
             >
-              {farbgruppen.bestand - farbgruppen.ohneGruppe} of {farbgruppen.bestand} notes carry a group you made
-              {farbgruppen.ohneGruppe > 0 ? ` · ${farbgruppen.ohneGruppe} carry none` : ""}
-              {farbgruppen.mehrfach > 0 ? ` · ${farbgruppen.mehrfach} carry two` : ""}
+              {achsenSatz(achsen, farbgruppen)}
             </span>
           </div>
-          {regal && <GraphRegal regal={regal} ansichtsName={ansicht === "dendrogram" ? "the tree" : "the field"} gruppen={farbgruppen} steuerung={gruppenSteuerung} />}
+          {regal && <GraphRegal regal={regal} ansichtsName={ansicht === "dendrogram" ? "the tree" : "the field"} gruppen={farbgruppen} achsen={achsen} steuerung={gruppenSteuerung} />}
           {/* Die Griffe erklaert die Flaeche schon an den Werkzeugen selbst; auf dem
               Telefon sind sie teils nicht einmal vorhanden (kein Hover, kein Rad).
               Bei schmaler Breite tritt die Zeile zurueck — index.css, `.legende-prosa`. */}

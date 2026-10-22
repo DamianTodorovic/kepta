@@ -194,7 +194,10 @@ describe("G-72 zweiter Schlag — die Gruppe faerbt den Gang", () => {
     const view = await flaeche(["vergessen"], "dendrogram");
     const gang = wert(view, "graph-farbgruppe-stand") ?? "";
     expect(gang).toContain("0 of 7");
-    expect(gang.toLowerCase(), "die Flaeche tut klein, statt ihre Null zu nennen").toContain("none");
+    // Erwartung bewegt, nicht geloescht (22.10., Achsen-Schlag): das Wort "none" ist durch
+    // den Grund ersetzt, den der Auftrag verlangt — "no note carries it". Die Absicht
+    // ("eine Null sagt, warum sie null ist") ist dieselbe und jetzt wuertiger geprueft.
+    expect(gang.toLowerCase(), "die Flaeche tut klein, statt ihre Null zu nennen").toContain("no note carries it");
     const regal = wert(view, "regal-farbgruppe") ?? "";
     expect(regal).toContain("0 of 7");
   });

@@ -22,7 +22,7 @@
 // Deshalb Rolle mit Obergrenze, und eine Rolle, die niemand greifen kann, ist keine Rolle.
 import { useState } from "react";
 import type { Regal, WannKoerb } from "../lib/graphHierarchy";
-import type { FarbGruppen, GruppenSteuerung } from "../lib/gruppen";
+import { achsenSatz, type Achsen, type FarbGruppen, type GruppenSteuerung } from "../lib/gruppen";
 
 /** Die drei Traeger, in der Reihenfolge, in der die Flaeche sie nennt. */
 const TRAEGER_REIHENFOLGE = ["Notes", "Files", "Code"] as const;
@@ -52,11 +52,18 @@ export interface GraphRegalEigenschaften {
    * Band und keine halbe Wahrheit.
    */
   gruppen?: FarbGruppen;
+  /**
+   * Die drei Achsen in Menschensprache. Der Satz ueber diesem Band kommt aus
+   * `achsenSatz(achsen, gruppen)` — und derselbe Satz steht neben dem Knopf im Gang. Zwei
+   * Flaechen, die eine Sache in zwei Worten sagen, hoeren hier auf, weil sie denselben
+   * Aufruf lesen.
+   */
+  achsen?: Achsen;
   /** Die Griffe ans Modell. Ohne sie zeigt das Band Zahlen ohne Knöpfe — kein toter Knopf. */
   steuerung?: GruppenSteuerung;
 }
 
-export function GraphRegal({ regal, ansichtsName, gruppen, steuerung }: GraphRegalEigenschaften) {
+export function GraphRegal({ regal, ansichtsName, gruppen, achsen, steuerung }: GraphRegalEigenschaften) {
   const { woher, worum, wann } = regal;
   /** Welcher Wann-Korb gerade offen ist. Einer auf einmal: zwei offene Listen in einem
    *  Panel von sechs Zeilen sind keine Auswahl, sondern ein Stapel. */
@@ -175,10 +182,9 @@ export function GraphRegal({ regal, ansichtsName, gruppen, steuerung }: GraphReg
       {gruppen && (
         <div data-testid="regal-farbgruppe" className="flex flex-col gap-1">
           <div className="hud-label" style={{ color: "var(--text-3)" }}>
-            grouped by your tags · {zahl(gruppen.bestand - gruppen.ohneGruppe)} of {zahl(gruppen.bestand)} notes
-            carry a group you made
-            {gruppen.mehrfach > 0 ? ` · ${zahl(gruppen.mehrfach)} carry two of them` : ""}
-            {gruppen.ohneGruppe > 0 ? ` · ${zahl(gruppen.ohneGruppe)} carry none` : ""}
+            {achsen
+              ? achsenSatz(achsen, gruppen)
+              : `grouped by your tags · ${zahl(gruppen.bestand - gruppen.ohneGruppe)} of ${zahl(gruppen.bestand)} notes carry a group you made${gruppen.mehrfach > 0 ? ` · ${zahl(gruppen.mehrfach)} carry two of them` : ""}${gruppen.ohneGruppe > 0 ? ` · ${zahl(gruppen.ohneGruppe)} carry none` : ""}`}
           </div>
           {gruppen.gruppen.length === 0 && (
             <div className="hud-label" style={{ color: "var(--text-3)" }}>

@@ -18,7 +18,7 @@
 // wenn sie auf nichts trifft — ein leerer Korb, der seine Null sagt, ist ehrlicher als eine
 // Zeile, die verschwindet. Die Farbe ist pro Gruppe gesetzt und liegt bei der Gruppe, nicht
 // bei ihrem Platz: wer eine Gruppe loescht, faerbt die andern nicht neu um.
-import { markenHaeufigkeit } from "./graphHierarchy";
+import { markenHaeufigkeit, gruppenVonNotiz } from "./graphHierarchy";
 import type { Memory } from "../types";
 
 /** Hausform: ein Schluessel mit `kepta_`-Praefix wird von `src/lib/settings.ts` ueber den
@@ -196,6 +196,114 @@ export function baueFarbGruppen(
   einstellung: GruppenEinstellung = leseEinstellung(),
 ): FarbGruppen {
   return zaehleGruppen(memories, einstellung);
+}
+
+/**
+ * Der Satz ueber der Achse — EIN Text fuer beide Flaechen.
+ *
+ * Das Regal setzt ihn ueber sein Band, der Gang neben seinen Knopf. Zwei Flaechen, die eine
+ * Sache in zwei Worten sagen, sind die zwei Vokabulare, die Damian am Bild von 19:02 kritisiert;
+ * dieser Funktionsaufruf ist der Grund, warum sie nicht auseinanderlaufen koennen.
+ *
+ * Die Bestandsgroesse steht einmal im Satz, und eine Null bleibt nicht ohne Grund: trifft eine
+ * gesetzte Gruppe nichts, sagt der Satz, warum.
+ */
+export function achsenSatz(achsen: Achsen, gruppen: FarbGruppen): string {
+  const band = achsen.baender.find((b) => b.id === "arbeit");
+  if (!band) return "";
+  const zahl = (n: number) => n.toLocaleString("en-US");
+  const teile = [
+    band.frage,
+    `${zahl(band.notizen)} of ${zahl(achsen.bestand)} notes carry a group you made`,
+  ];
+  if (band.notizen === 0) teile.push("no note carries it yet");
+  else {
+    if (gruppen.ohneGruppe > 0) teile.push(`${zahl(gruppen.ohneGruppe)} carry none`);
+    if (gruppen.mehrfach > 0) teile.push(`${zahl(gruppen.mehrfach)} carry two`);
+  }
+  teile.push(band.klick);
+  return teile.join(" · ");
+}
+
+/** Die drei Achsen in Menschensprache — EIN Wortvorrat fuer zwei Flaechen.
+ *
+ * Das Regal nennt seine Baender nicht nach dem Speicher (Notiz / Datei / Code), sondern nach
+ * den drei Fragen, die ein Mensch stellt: woran gearbeitet, von wem, wann. Der Gang muss
+ * dieselben drei Worte brauchen, sonst hat das Produkt zwei Vokabulare fuer eine Sache — und
+ * der Leser raeumt eines davon weg.
+ *
+ * `klick` ist eine Handlung, keine Beschreibung: ein Band, das nicht sagt, was ein Klick
+ * oeffnet, ist eine Zahl mit Schmuck.
+ */
+export const ACHSEN = [
+  {
+    id: "arbeit",
+    frage: "what you work on",
+    klick: "click a name to open the notes you filed under it",
+  },
+  {
+    id: "menschen",
+    frage: "who it is about",
+    klick: "click the count to open the people named in these notes",
+  },
+  { id: "zeit", frage: "when", klick: "click a span of time to open the notes from it" },
+] as const;
+
+export type AchsenId = (typeof ACHSEN)[number]["id"];
+
+export interface AchsenBand {
+  id: AchsenId;
+  /** Die Frage in Menschensprache, so wie beide Flaechen sie nennen. */
+  frage: string;
+  /** Was ein Klick oeffnet — ein Verb, keine Fachkategorie. */
+  klick: string;
+  notizen: number;
+  prozent: number;
+  facher: { name: string; notizen: number }[];
+}
+
+export interface Achsen {
+  bestand: number;
+  baender: AchsenBand[];
+}
+
+/**
+ * Die Achse ueber dem Bestand — gerechnet aus den Quellen, die es schon gibt, in EINEM Durchgang:
+ *   arbeit   = die Gruppen, die `zaehleGruppen` schon deckt (kein zweites Zaehlen)
+ *   menschen = die Themen-Ebene aus `gruppenVonNotiz` (gepuffert je Notiz, dieselbe Rechnung wie
+ *              die About-Chips im Dashboard)
+ *   zeit     = die Koerbe, die `baueRegal` schon zaehlt — hier nur weitergegeben
+ *
+ * `wann` ist ein Pflichtteil: ohne die fertigen Koerbe zu uebergeben muesste diese Funktion
+ * selbst koerben, und dann stuenden zwei Zahlen derselben Menge im Haus.
+ */
+export function achseFuerMenschen(
+  memories: readonly Memory[],
+  gruppen: FarbGruppen,
+  wann: { name: string; notizen: number }[],
+): Achsen {
+  const bestand = memories.length;
+  const anteil = (n: number) => (bestand > 0 ? (100 * n) / bestand : 0);
+  const gedeckt = gruppen.bestand - gruppen.ohneGruppe;
+  let menschen = 0;
+  for (const m of memories) if (gruppenVonNotiz(m).themen.includes("people")) menschen++;
+  const zeitSumme = wann.reduce((n, k) => n + k.notizen, 0);
+  const baender: AchsenBand[] = ACHSEN.map((a) => {
+    if (a.id === "arbeit") {
+      return {
+        id: a.id, frage: a.frage, klick: a.klick, notizen: gedeckt, prozent: anteil(gedeckt),
+        facher: gruppen.gruppen.map((g) => ({ name: g.marke, notizen: g.notizen })),
+      };
+    }
+    if (a.id === "menschen") {
+      return { id: a.id, frage: a.frage, klick: a.klick, notizen: menschen, prozent: anteil(menschen), facher: [] };
+    }
+    return {
+      id: a.id, frage: a.frage, klick: a.klick, notizen: zeitSumme, prozent: anteil(zeitSumme),
+      facher: wann.map((k) => ({ name: k.name, notizen: k.notizen })),
+    };
+  });
+  return { bestand, baender };
 }
 
 /**

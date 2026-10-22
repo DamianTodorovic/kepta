@@ -1,3 +1,22 @@
+## [3.2.38]
+
+### Added
+
+- **The shelf and the aisle answer one question, in one set of words.** Before this, the shelf head
+  said `grouped by your tags · 197 of 21,066 notes carry a group you made` while the aisle named the
+  same three axes in its own vocabulary, so a reader could not tell that the two surfaces are about
+  the same thing — and a band that held nothing showed a bare zero, which is decoration, not
+  information. One producer writes the sentence now: `achsenSatz(achsen, gruppen)`
+  (`src/lib/gruppen.ts:211`) reads the axis table `ACHSEN` (`:238`) and the plain-word picker
+  `achseFuerMenschen` (`:280`), and both surfaces call it — `what you work on · who it is about ·
+  people`. An empty band says in one word why it is empty (`no note carries it yet`), every control
+  says something different in each of its two states, a band carries its own id and its target
+  accepts the mouse, and the number in the shelf is the number in the aisle because both read one
+  run. 19 cases in four files: `tests/lib/gruppen-achse.test.ts` (4),
+  `tests/components/GraphRegal.achse.test.tsx` (5), `tests/components/KnowledgeGraph.achse.test.tsx`
+  (4), `tests/components/KnowledgeGraph.farbgruppe.test.tsx` (6, one anchor moved with the sentence).
+
+
 ## [3.2.37]
 
 ### Fixed
