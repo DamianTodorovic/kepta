@@ -18,8 +18,10 @@
   **120 000 notes — 12 778.12 ms against 2 844.09 ms** (17:46:41 MESZ, on 3.2.35). The index is built
   before the first request now, and the build answers with the number of active notes it took in. The
   generation trigger stays as the safety net, so nothing about correctness moved. 3 cases in one new
-  file: `tests/p6-suchcache-beim-start.test.ts` (the suite went from 2 866 to 2 869 executed cases,
-  213 files, measured 23:17:51 and 23:21:28 MESZ on these bytes, 0 red). **Still open, named rather
+  file: `tests/p6-suchcache-beim-start.test.ts` (the suite went from 2 866 to 2 869 executed cases across
+  213 files; four runs were measured on the night of 22.10. — the first at 23:13:52 MESZ red on the document
+  guard alone, then green at 23:17:51, 23:21:28 and 23:34:18 MESZ, 0 red, the last two on the bytes this
+  release carries). **Still open, named rather
   than glossed:** the *after* picture of the first request on a large base is not measured yet — the
   before-values above are the measured half.
 
