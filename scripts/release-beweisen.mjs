@@ -95,7 +95,11 @@ for (const k of KAPSELN) {
   }
   const kapsel = fs.mkdtempSync(path.join(os.tmpdir(), "kepta-beweis-"));
   const schluessel = crypto.randomBytes(32).toString("hex");
+  // ELECTRON_RUN_AS_NODE muss raus: geerbt aus der Agenten-Shell startet das Paket
+  // dann als nackter Node-Kopf — Exit 0, kein Fenster, keine Tür, kein endpoint.json.
+  // 22.10. hat diese eine Variable drei Builds (3.2.34/36/37) für tot erklärt.
   const umgebung = { ...process.env, HOME: kapsel, KEPTA_DATA_DIR: path.join(kapsel, ".kepta"), KEPTA_DB_KEY: schluessel };
+  delete umgebung.ELECTRON_RUN_AS_NODE;
   const kinder = k.arch === process.arch
     ? spawn(programm, [], { cwd: kapsel, env: umgebung, stdio: "ignore", detached: true })
     : spawn("arch", ["-x86_64", programm], { cwd: kapsel, env: umgebung, stdio: "ignore", detached: true });
