@@ -10,6 +10,7 @@ import { detectLocalAIs, type DetectedAI } from "../lib/profile";
 import { shouldLearn, buildExtractPrompt, parseNode, AUTO_LEARN_TIMEOUT_MS, isAutoLearnEnabled, shouldShowHint, AUTOLEARN_KEY, AUTOLEARN_HINT_KEY } from "../lib/autolearn";
 import { useToast } from "./ui/Toast";
 import { QUITTUNG_MS } from "../lib/quittung";
+import { grundText } from "../lib/tuergrund";
 
 /** Extrahiert Rohtext aus ReactMarkdown-Children (für Copy-Buttons). */
 function extractCodeText(node: unknown): string {
@@ -548,7 +549,8 @@ export function Chat({ activeMemories, onSaveToBrain, onSaveToBrainWithMeta, isF
         try {
           const txt = await res.text();
           const j = JSON.parse(txt);
-          if (j.error) msg = j.error;
+          // Die Tuer nennt eine Kennung; der Mensch sieht ihren Satz, nicht ihren inneren Text.
+          msg = grundText(j.grund) || (j.error ? String(j.error) : msg);
         } catch {
           // ignore
         }
@@ -1080,7 +1082,7 @@ export function Chat({ activeMemories, onSaveToBrain, onSaveToBrainWithMeta, isF
         )}
 
         {error && (
-          <div className="flex items-start gap-3 p-4 rounded-xl text-sm" style={{ background: "rgba(239,68,68,0.08)", border: "1px solid rgba(239,68,68,0.25)", color: "#f87171" }}>
+          <div role="alert" aria-live="polite" className="flex items-start gap-3 p-4 rounded-xl text-sm" style={{ background: "rgba(239,68,68,0.08)", border: "1px solid rgba(239,68,68,0.25)", color: "#f87171" }}>
             <AlertTriangle className="w-5 h-5 shrink-0 mt-0.5" />
             <div className="flex-1">
               <div className="font-medium">Error</div>

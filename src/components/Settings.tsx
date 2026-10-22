@@ -2,6 +2,7 @@ import { useState, useEffect, useRef, FormEvent } from 'react';
 import { Key, ShieldCheck, SettingsIcon, Download, CheckCircle2, AlertTriangle, RefreshCw, Cpu, HardDriveDownload, Server, Plug, Copy, Terminal, Braces, Globe, Search, Save, Layers, ExternalLink, Sparkles } from "../lib/icons";
 import { motion } from 'motion/react';
 import { PROVIDERS, providerById, loadAISettings, hydrateAISettings, saveAISettings, kiSchluesselStatus, type AISchluesselStatus, type AISettings } from '../lib/ai';
+import { grundText } from '../lib/tuergrund';
 import { AUTO_LEARN_TIMEOUT_MS } from '../lib/autolearn';
 import { QUITTUNG_MS } from '../lib/quittung';
 import { refreshMemories } from '../lib/store';
@@ -321,6 +322,10 @@ export function Settings() {
           setModelError(null);
         } else if (!cancelled) {
           setSondeWeg(true);
+          // Die Tuer nennt eine Kennung: die Zeile zeigt ihren Satz, statt einen Grund zu raten.
+          const grund = typeof data?.grund === 'string' ? data.grund : '';
+          const satz = typeof data?.error === 'string' ? data.error : null;
+          setModelError(grundText(grund) || satz);
         }
       } catch {
         // Der Abbruch ist eine Auskunft, kein Rauschen: die Liste bleibt, die gruene Zeile nicht.
@@ -820,7 +825,7 @@ export function Settings() {
                     </select>
                   )}
                   {modelError && (
-                    <p className="text-xs mt-2" style={{ color: '#f87171' }}>{modelError}</p>
+                    <p role="alert" aria-live="polite" className="text-xs mt-2" style={{ color: '#f87171' }}>{modelError}</p>
                   )}
                   <Meldung meldung={meldung} ort="modelle" />
                   {!provider.needsKey && models.length > 0 && !sondeWeg && (

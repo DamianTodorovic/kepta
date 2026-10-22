@@ -1,3 +1,46 @@
+## [3.2.36]
+
+### Added
+
+- **You can set how thick the links are (G-76).** The graph bar gained a `graph-verbindungsdicke`
+  slider — 1 to 3 in half steps, default 1, held in `kepta_graph_verbindungsdicke`, and any value
+  outside the range is rejected rather than clamped into a lie. The multiplier is read at both
+  places that draw a link, the same way the arrow direction is read, and the new item carries its
+  own measured width in the bar-fit table (`BREITE_PX_GELIED`) and ranks behind
+  *only-with-connections*, so it cannot silently push another control out of the bar. Before this
+  version the id existed nowhere: measured 22.10. at 17:51:24 against the installed 3.2.35 object
+  (`/Applications/K3PTA.app/Contents/Resources/app.asar`, `graph-DsSvdhHM.js`, 187 732 B),
+  `graph-verbindungsdicke` counts 0 and the counter-marker `markerEnd` counts 0. Six cases, one of
+  which reads the painted stroke width out of the canvas call log instead of out of a label, and
+  one walks the More panel at telephone width. To keep the measurement honest the cases switch
+  motion off first (`kepta_graph_bewegung = "0"`) and compare one finished frame against the next,
+  because two frames of the same settling picture do not paint the same number of links.
+
+- **Tag groups now colour the graph, not just the shelf (G-72).** Until this version a group was
+  something the time shelf knew: `src/lib/gruppen.ts` (270 lines) holds the model and reads its
+  census from `markenHaeufigkeit` (`src/lib/gruppen.ts:21`) — the same count the shelf and the
+  sidebar already use — and nothing in the picture consulted it. The control now sits in the graph
+  bar under its own id (`KnowledgeGraph.tsx:5392`, `data-testid="graph-farbgruppe"`), keeps its
+  state in `kepta_tag_gruppen` (`src/lib/gruppen.ts:26`) and `kepta_graph_farbkanal`
+  (`KnowledgeGraph.tsx:100`), and paints the group colour onto the nodes. Two of the twenty cases
+  are the reason this was worth building: one reads the node colour out of the canvas call log
+  rather than out of a word, and one asserts **the same number in both surfaces in the same run**
+  — a head that says 1 018 while the shelf says 966 is exactly the failure this guards. The graph
+  does not recompute groups; a case fails if it starts to (`rechnet die Gruppe kein zweites Mal`).
+  Empty state is stated, not hidden: a group that matches nothing says so and keeps its row.
+
+- **The surface shows the reason the door gave (#67, shown half).** `server/helfer/upstream.ts` and
+  the two chat routes answer `400` with a `grund` (`kein-anbieter`, `kein-schluessel`) since 3.2.35,
+  but the area still answered with its own guesswork: measured red before this body — Settings ran
+  `0 gruen / 3 rot` at 17:11:46 with `expected 'SettingsAI connection...' not to contain 'No local
+  models found. Start Ollama'`, i.e. it suggested Ollama where the door had said *no provider
+  chosen*. `src/lib/tuergrund.ts` (40 lines) is now the single translation from `grund` to a
+  sentence with a way out, used by `Chat.tsx:13` and `Settings.tsx:5`. Thirteen cases, including a
+  mutation probe: with `grundText` forced to null, the door/table run loses 1 of 7, chat 2 of 3,
+  settings 3 of 3. **What this does not do:** the surface still prefills a cloud address
+  (`src/lib/ai.ts:20`, `:350`–`:351` with `apiKey: ''`, passed on at `Settings.tsx:308`) — the
+  address itself is untouched, only the answer it produces is now honest.
+
 ## [3.2.35]
 
 ### Added

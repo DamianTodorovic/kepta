@@ -77,6 +77,15 @@ import { GraphRegal } from "./GraphRegal";
 import { layoutSemantik, SEMANTIK_KAPPE, type SemantikKarte } from "../lib/graphSemantik";
 import { schemaInventar, SCHEMA_SCHLUESSEL, type SchemaKante } from "../lib/graphSchema";
 import { HERKUNFT, herkunftsBild, HERKUNFT_TOKEN, HERKUNFT_LABELS } from "../lib/graphHerkunft";
+import {
+  baueFarbGruppen,
+  gruppenBild,
+  gruppenFarbenVon,
+  leseEinstellung,
+  gruppeHinzufuegen,
+  gruppeEntfernen,
+  gruppenFarbeSetzen,
+} from "../lib/gruppen";
 
 export type GraphAnsicht = "force" | "dendrogram" | "semantic";
 const ANSICHT_KEY = "kepta_graph_view";
@@ -87,7 +96,7 @@ const RICHTUNG_KEY = "kepta_graph_richtung";
  * die die Fläche zuerst beantwortet. Die Herkunft kommt dazu, wenn sie etwas zu
  * unterscheiden hat.
  */
-type FarbKanal = "typ" | "herkunft";
+type FarbKanal = "typ" | "herkunft" | "gruppe";
 const FARB_KANAL_KEY = "kepta_graph_farbkanal";
 /**
  * Die Stellung der vier Regler unter „Forces" (P-13). 1 ist der Stand der
@@ -180,6 +189,22 @@ const BEWEGUNG_KEY = "kepta_graph_bewegung";
 const TAG_FILTER_KEY = "kepta_graph_tag_filter";
 const NUR_MIT_KEY = "kepta_graph_nur_mit_verbindungen";
 /**
+ * G-76 — die Dicke der gemalten Verbindungen. Eine Masste, die das Bild hoert:
+ * 1x ist eigne Schwere, 3x malt jede Aussage dreimal so dick. Was ausserhalb
+ * dieser Masste liegt — eine verdaute Marke, ein Textfeld, eine Zahl von einer
+ * andern Flaeche — wird nicht geglaubt, sondern auf die Werksmasse zurueckgesetzt.
+ */
+const DICKE_KEY = "kepta_graph_verbindungsdicke";
+const DICKE_MIN = 1;
+const DICKE_MAX = 3;
+const DICKE_SCHRITT = 0.5;
+const DICKE_WERK = 1;
+function klemmeDicke(ro: unknown): number {
+  const n = typeof ro === "string" ? Number(ro) : typeof ro === "number" ? ro : Number.NaN;
+  if (!Number.isFinite(n) || n < DICKE_MIN || n > DICKE_MAX) return DICKE_WERK;
+  return n;
+}
+/**
  * Ab diesem Zoom steht der Typ der Aussage an der Linie. Darunter wäre das
  * Etikett kleiner als ein Leser — weit herausgezoomt will man die Form des
  * Netzes sehen, nicht tausend Worte darüber.
@@ -246,7 +271,8 @@ export type Leistenglied =
   | "farben"
   | "bewegung"
   | "tagfilter"
-  | "nurmit";
+  | "nurmit"
+  | "dicke";
 
 /**
  * Was ein Glied braucht, in Bildpunkten. Gemessen am vorher-Stand (400 Notizen,
@@ -294,6 +320,14 @@ export const BREITE_PX_GELIED: Record<Leistenglied, number> = {
   bewegung: 68,
   tagfilter: 108,
   nurmit: 89,
+  // G-76 — **im echten Fenster gemessen**, nicht aus der Regel geraten: 2 560 px
+  // (Zeile 2 252 px), Grube `/tmp/p1-4e49c17`, Fassung 3.2.35, 60 Notizen, Schlag
+  // 17:22:04 MESZ (`belege-2210/g76-breite-1721/g76-breite.json`): Gehaeuse aus
+  // Wort, Regler und Wertwort **214,4 px** breit, 36 px hoch, seitlicher Ueberlauf 0 —
+  // der Regler allein ist 132 px, und wer diese Zahl einträgt, beluegt die Zeile um
+  // 82 px. Aufgerundet auf ganze Bildpixel. Bei 1 440/1 024/390 px traegt die Zeile
+  // das Glied nicht (Menue `More (13)/(16)/(17)`, Ueberlauf je 0).
+  dicke: 215,
 };
 /** Der „More"-Knopf mit seiner Zahl („More (10)" sind 94 px), dazu die Luecke. */
 export const MENUE_PX = 98;
@@ -350,6 +384,12 @@ export const RANG_FOLGE: readonly Leistenglied[] = [
   "bewegung",
   "tagfilter",
   "nurmit",
+  // G-76 hinter die neuen Glieder, und diese ganze Gruppe hinter die Zeit- und
+  // Richtungstruppe (Leitung, 13:04): bei 1 440 px traegt die Zeile sechs Glieder
+  // und laesst 45 px frei — das Gehaeuse ist im echten Fenster 214,4 px breit, also
+  // kann es dort nicht stehen, ohne ein Starkes zu verdraengen. Fuehren tut es das
+  // Menue, und der Klickpfad ist bei 362 px wie bei 1 440 px gemessen.
+  "dicke",
   "aehnlichkeit",
   "schema",
   "krafte",
@@ -1017,12 +1057,22 @@ export function KnowledgeGraph({ memories: memoriesAusFenster, onSelectMemory, o
   });
   /** Welcher Kanal die Knoten färbt. Gemerkt wie die Ansicht; Art ist der Standard. */
   const [kanal, setKanal] = useState<FarbKanal>(() => {
-    try { return localStorage.getItem(FARB_KANAL_KEY) === "herkunft" ? "herkunft" : "typ"; } catch { return "typ"; }
+    try {
+      const v = localStorage.getItem(FARB_KANAL_KEY);
+      return v === "herkunft" || v === "gruppe" ? v : "typ";
+    } catch { return "typ"; }
   });
   const wechsleKanal = (v: FarbKanal) => {
     setKanal(v);
     try { localStorage.setItem(FARB_KANAL_KEY, v); } catch { /* ignore */ }
   };
+  /**
+   * Der Zaehler, der die Gruppen neu rechnet, wenn jemand im Regal eine Gruppe baut,
+   * loescht oder umfaerbt. Die Gruppen selbst leben in `kepta_tag_gruppen`
+   * (`src/lib/gruppen.ts`) — hier liegt keine zweite Liste, nur die Nachricht, dass
+   * sich die eine geaendert hat.
+   */
+  const [gruppenStand, setGruppenStand] = useState(0);
   const wechsleRichtung = () => {
     const v = !richtung;
     setRichtung(v);
@@ -1085,6 +1135,21 @@ export function KnowledgeGraph({ memories: memoriesAusFenster, onSelectMemory, o
       if (t) localStorage.setItem(TAG_FILTER_KEY, t);
       else localStorage.removeItem(TAG_FILTER_KEY);
     } catch { /* ignore */ }
+  };
+  /**
+   * G-76 — die Dicke der Verbindungen. Gelesen aus der Marke, und was dort nicht
+   * in der Masste liegt, gilt nicht als Wunsch, sondern als Defekt: Werksmasse.
+   */
+  const [verbindungsdicke, setzeVerbindungsdicke] = useState<number>(() => {
+    try { return klemmeDicke(localStorage.getItem(DICKE_KEY)); } catch { return DICKE_WERK; }
+  });
+  const setzeDicke = (ro: unknown) => {
+    const v = klemmeDicke(ro);
+    setzeVerbindungsdicke(v);
+    try { localStorage.setItem(DICKE_KEY, String(v)); } catch { /* ignore */ }
+    // Das Bild muss neu gemalt werden, auch wenn es schon zur Ruhe gekommen war:
+    // ohne diesen Schlag bleibt die alte Dicke stehen und der Regler ist taub.
+    zeichneNoetig.current = true;
   };
   /**
    * Zugeklappte Gruppen im Baum. Der Baum startet entfaltet — eine Faltung ist
@@ -1341,14 +1406,17 @@ export function KnowledgeGraph({ memories: memoriesAusFenster, onSelectMemory, o
     () => herkunftsBild(memories.map((m) => ({ id: m.id, tags: m.tags }))),
     [memories]
   );
-  const aktiverKanal: FarbKanal = herkunft.verfügbar ? kanal : "typ";
+  const aktiverKanal: FarbKanal = kanal === "herkunft" ? (herkunft.verfügbar ? "herkunft" : "typ") : kanal;
   const notenFarben = useMemo(() => {
+    // Der Gruppen-Kanal faerbt aus der Einstellung, nicht aus einer zweiten Zaehlung:
+    // die Zahl der gedeckten Notizen holt sich die Flaeche aus `baueFarbGruppen`.
+    if (aktiverKanal === "gruppe") return gruppenFarbenVon(leseEinstellung(), TYPE_COLORS.neutral ?? "");
     if (aktiverKanal !== "herkunft") return TYPE_COLORS;
     const aus: Record<string, string> = {};
     for (const art of Object.values(HERKUNFT)) if (rollenHexe[art]) aus[art] = rollenHexe[art];
     if (rollenHexe.neutral) aus.neutral = rollenHexe.neutral;
     return aus;
-  }, [aktiverKanal, TYPE_COLORS, rollenHexe]);
+  }, [aktiverKanal, TYPE_COLORS, rollenHexe, gruppenStand]);
 
   // Eine Typ-Farbe wirkt app-weit (Karten-Grat, Typ-Label, Index-Zahlen).
   useEffect(() => {
@@ -1896,6 +1964,8 @@ export function KnowledgeGraph({ memories: memoriesAusFenster, onSelectMemory, o
    */
   const notenFarbenRef = useRef<Record<string, string>>(TYPE_COLORS);
   const herkunftRef = useRef<Map<string, string>>(new Map());
+  /** Welche Gruppe an einem Knoten zieht — dasselbe Bild, das das Regal zaehlt. */
+  const gruppenBildRef = useRef<Map<string, string>>(new Map());
   const aktiverKanalRef = useRef<FarbKanal>("typ");
   degreeRef.current = degree;
   nachbarnRef.current = neighborsOf;
@@ -1911,6 +1981,10 @@ export function KnowledgeGraph({ memories: memoriesAusFenster, onSelectMemory, o
   // nur über Refs.
   const richtungRef = useRef(richtung);
   richtungRef.current = richtung;
+  // G-76 — der Zeichenpfad hoert die Masste durch dieselbe Spiegelung wie die
+  // Richtung: der Regelkreis darf nicht von einem neuen Abschluss abhaengen.
+  const dickeRef = useRef(verbindungsdicke);
+  dickeRef.current = verbindungsdicke;
   const etikettenModusRef = useRef(etikettenModus);
   etikettenModusRef.current = etikettenModus;
   /**
@@ -2027,6 +2101,30 @@ export function KnowledgeGraph({ memories: memoriesAusFenster, onSelectMemory, o
   const regal = useMemo(
     () => (ansicht === "dendrogram" ? baueRegal(baumMemories) : null),
     [baumMemories, ansicht]
+  );
+  /**
+   * G-72 — die Gruppen, die ein Mensch aus einem Tag baut. **Ein Aufruf, ein Korpus:**
+   * dieselbe Zahl, die das Regal in seinem vierten Band nennt, faerbt hier die Knoten.
+   * Wer an dieser Stelle eine zweite Zaehlung ueber den Bestand aufmacht, bekommt genau
+   * den Fehler, den der Kopf schon hatte: eine Zahl im Gang, eine andre im Regal.
+   * Der Korpus ist `baumMemories` — dieselbe Liste, aus der auch `regal` baut.
+   */
+  const farbgruppen = useMemo(
+    () => baueFarbGruppen(baumMemories),
+    [baumMemories, gruppenStand]
+  );
+  const gruppenZuordnung = useMemo(
+    () => gruppenBild(baumMemories, farbgruppen),
+    [baumMemories, farbgruppen]
+  );
+  gruppenBildRef.current = gruppenZuordnung;
+  const gruppenSteuerung = useMemo(
+    () => ({
+      baue: (marke: string) => { gruppeHinzufuegen(marke); setGruppenStand((n) => n + 1); },
+      entferne: (marke: string) => { gruppeEntfernen(marke); setGruppenStand((n) => n + 1); },
+      farbe: (marke: string, farbe: string) => { gruppenFarbeSetzen(marke, farbe); setGruppenStand((n) => n + 1); },
+    }),
+    []
   );
   /**
    * Wie viele Zeilen die Leinwand bei lesbarem Abstand hält. Der Rahmen ist der
@@ -2860,7 +2958,10 @@ export function KnowledgeGraph({ memories: memoriesAusFenster, onSelectMemory, o
         // liegen darüber und sind die Aussage.
         if (art === "vermutung" && nurEcht) continue;
         ctx.strokeStyle = art === "erwaehnung" ? textFarbe : art === "vermutung" ? schwach : akzent;
-        ctx.lineWidth = breiten[band] / skalar;
+        // G-76 — die vom Nutzer gesetzte Masste liegt auf der eignen Schwere der
+        // Art, sie ersetzt sie nicht: eine Vermutung bleibt duenner als eine
+        // Behauptung, auch bei 3x.
+        ctx.lineWidth = (breiten[band] * dickeRef.current) / skalar;
         ctx.setLineDash(
           art === "abgelaufen"
             ? [4 / skalar, 3 / skalar]
@@ -2976,7 +3077,7 @@ export function KnowledgeGraph({ memories: memoriesAusFenster, onSelectMemory, o
       const s = selbstSchleife(knoten.x, knoten.y, knoten.r);
       const band = Math.min(BREITE_PX.behauptung.length - 1, dickeBand(e));
       ctx.strokeStyle = akzent;
-      ctx.lineWidth = BREITE_PX.behauptung[band] / skalar;
+      ctx.lineWidth = (BREITE_PX.behauptung[band] * dickeRef.current) / skalar;
       ctx.globalAlpha = Math.min(1, (hov === e.source ? 0.9 : 0.55) * kantenVerstaerkung);
       ctx.beginPath();
       ctx.arc(s.cx, s.cy, s.rad, 0, Math.PI * 2);
@@ -3044,7 +3145,10 @@ export function KnowledgeGraph({ memories: memoriesAusFenster, onSelectMemory, o
       // bleibt die Maleihe — beide Zeilen müssen aus derselben Menge rechnen.
       if (imRahmen(n, rr)) imStrengeNoten += 1;
       const herkunftArt = aktiverKanalRef.current === "herkunft" ? herkunftRef.current.get(n.id) : undefined;
-      const typ = herkunftArt ?? (m.type && sp[m.type] ? m.type : "neutral");
+      // Gruppen-Kanal: die Marke des Knotens, sonst das neutrale Register — nicht die
+      // Art-Farbe, sonst malte ein halber Kanal zwei Systeme uebereinander.
+      const gruppenArt = aktiverKanalRef.current === "gruppe" ? (gruppenBildRef.current.get(n.id) ?? "neutral") : undefined;
+      const typ = herkunftArt ?? gruppenArt ?? (m.type && sp[m.type] ? m.type : "neutral");
       const farbe = notenFarbenRef.current[typ];
 
       // Winzig: sammeln statt einzeln malen.
@@ -3848,7 +3952,7 @@ export function KnowledgeGraph({ memories: memoriesAusFenster, onSelectMemory, o
     return () => { laeuft = false; cancelAnimationFrame(raf); };
   }, [zeichne, dimensions, fitBaumAnsicht, sichtbar, fensterSichtbar, bewegungAn]);
 
-  useEffect(() => { zeichneNoetig.current = true; }, [timeFilter, TYPE_COLORS, hovered]);
+  useEffect(() => { zeichneNoetig.current = true; }, [timeFilter, TYPE_COLORS, hovered, aktiverKanal, farbgruppen]);
   // Das Spotlight ist reine Darstellung: kein Neu-Layout, ein Bild.
   useEffect(() => { zeichneNoetig.current = true; }, [spot]);
   // Live-Dimmen: schon während des Ziehens neu zeichnen (billig — nur Alpha im
@@ -4728,6 +4832,35 @@ export function KnowledgeGraph({ memories: memoriesAusFenster, onSelectMemory, o
     </select>
   );
 
+  /**
+   * G-76 — die Dicke der Verbindungen. Wort, Regler, Wert: das Wertwort ist
+   * keine Zierde, es ist die Zahl, die die Flaeche malt, und der Fall prueft
+   * beide gegeneinander.
+   */
+  const steuerelementDicke = (
+    <span
+      className="inline-flex items-center gap-1.5 shrink-0"
+      title="Connection thickness — 1x is the picture's own weight; every claim keeps its own rank, 3x only draws them all thicker"
+    >
+      <span className="hud-label" style={{ color: "var(--text-2)" }}>Thickness</span>
+      <input
+        type="range"
+        min={DICKE_MIN}
+        max={DICKE_MAX}
+        step={DICKE_SCHRITT}
+        value={verbindungsdicke}
+        data-testid="graph-verbindungsdicke"
+        className="graph-time"
+        aria-label="Connection thickness"
+        style={{ boxSizing: "content-box", paddingBlock: "14px", marginBlock: "-14px" }}
+        onChange={(e) => setzeDicke(e.target.value)}
+      />
+      <span className="hud-label tnum" data-testid="graph-verbindungsdicke-wert" style={{ color: "var(--text-1)" }}>
+        {`${verbindungsdicke}x`}
+      </span>
+    </span>
+  );
+
   const geraet = (g: Leistenglied): ReactNode => {
     switch (g) {
       case "suche": return sucheBlock;
@@ -4744,6 +4877,7 @@ export function KnowledgeGraph({ memories: memoriesAusFenster, onSelectMemory, o
       case "bewegung": return schalterBewegung;
       case "tagfilter": return steuerelementTagFilter;
       case "nurmit": return schalterNurMit;
+      case "dicke": return steuerelementDicke;
       case "zeitstand": return zeitStand;
       case "zeitregler": return zeitRegler(true);
       case "datum": return datumsFeld;
@@ -4778,6 +4912,7 @@ export function KnowledgeGraph({ memories: memoriesAusFenster, onSelectMemory, o
       case "nurmit": return nurMitVerbindungen
         ? `Only notes with a connection. Hidden right now: ${grundMasse.alleinVersteckt}.`
         : "Notes that nothing links to stay in the picture, counted in the aisle below.";
+      case "dicke": return `How thick every link is drawn. Now: ${verbindungsdicke}x — 1x is the picture's own weight, and a guess stays thinner than a claim.`;
       default: return "";
     }
   };
@@ -4824,6 +4959,7 @@ export function KnowledgeGraph({ memories: memoriesAusFenster, onSelectMemory, o
         {drin("farben") && farbenReihe}
         {drin("tagfilter") && steuerelementTagFilter}
         {drin("nurmit") && schalterNurMit}
+        {drin("dicke") && steuerelementDicke}
         {drin("bewegung") && schalterBewegung}
         <div className="flex items-center gap-2 ml-auto shrink-0">
           {zeitAchse && drin("zeitstand") && zeitStand}
@@ -5329,7 +5465,39 @@ export function KnowledgeGraph({ memories: memoriesAusFenster, onSelectMemory, o
           )}
           {/* Die zwei Baender ueber dem Bestand — damit der erste Blick nicht eine
               Klammer um den ganzen Laden ist, sondern seine Groessenordnung. */}
-          {regal && <GraphRegal regal={regal} ansichtsName={ansicht === "dendrogram" ? "the tree" : "the field"} />}
+          {/* G-72 — die Gruppe hoert nicht im Regal auf. Der Knopf sitzt in der Legende,
+              und die weist Zeiger ab (`pointer-events-none`), darum tragt das Ziel seine
+              eigne Eigenschaft: ohne sie ist es ein Wort, kein Knopf. Der Stand nennt die
+              Zahl aus demselben Modellaufruf, der auch das Regal fuellt — und seine Null,
+              wenn eine gesetzte Gruppe nichts trifft. */}
+          <div className="flex items-center gap-2 flex-wrap" style={{ pointerEvents: "none" }}>
+            <button
+              type="button"
+              onClick={() => wechsleKanal(aktiverKanal === "gruppe" ? "typ" : "gruppe")}
+              data-testid="graph-farbgruppe"
+              aria-pressed={aktiverKanal === "gruppe" ? "true" : "false"}
+              className={SCHALTER_KLASSE}
+              style={{ pointerEvents: "auto", minHeight: 44 }}
+              title={
+                farbgruppen.gruppen.length === 0
+                  ? "Groups — no group yet. Pick a tag in the shelf below and this colours by it."
+                  : "Groups — colour the nodes by the tag groups you made. Notes outside every group keep the neutral register."
+              }
+            >
+              {punkt(aktiverKanal === "gruppe")}
+              Groups
+            </button>
+            <span
+              className="hud-label tnum"
+              data-testid="graph-farbgruppe-stand"
+              style={{ color: "var(--text-3)", pointerEvents: "none" }}
+            >
+              {farbgruppen.bestand - farbgruppen.ohneGruppe} of {farbgruppen.bestand} notes carry a group you made
+              {farbgruppen.ohneGruppe > 0 ? ` · ${farbgruppen.ohneGruppe} carry none` : ""}
+              {farbgruppen.mehrfach > 0 ? ` · ${farbgruppen.mehrfach} carry two` : ""}
+            </span>
+          </div>
+          {regal && <GraphRegal regal={regal} ansichtsName={ansicht === "dendrogram" ? "the tree" : "the field"} gruppen={farbgruppen} steuerung={gruppenSteuerung} />}
           {/* Die Griffe erklaert die Flaeche schon an den Werkzeugen selbst; auf dem
               Telefon sind sie teils nicht einmal vorhanden (kein Hover, kein Rad).
               Bei schmaler Breite tritt die Zeile zurueck — index.css, `.legende-prosa`. */}

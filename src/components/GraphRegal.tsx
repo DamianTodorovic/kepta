@@ -22,6 +22,7 @@
 // Deshalb Rolle mit Obergrenze, und eine Rolle, die niemand greifen kann, ist keine Rolle.
 import { useState } from "react";
 import type { Regal, WannKoerb } from "../lib/graphHierarchy";
+import type { FarbGruppen, GruppenSteuerung } from "../lib/gruppen";
 
 /** Die drei Traeger, in der Reihenfolge, in der die Flaeche sie nennt. */
 const TRAEGER_REIHENFOLGE = ["Notes", "Files", "Code"] as const;
@@ -35,13 +36,27 @@ function zahl(n: number): string {
   return n.toLocaleString("en-US");
 }
 
+function prozent(p: number): string {
+  return p.toFixed(1).replace(".", ",");
+}
+
 export interface GraphRegalEigenschaften {
   regal: Regal;
   /** Der Titel der Flaeche, an den sich die Zeile haengt ("the tree" / "the field"). */
   ansichtsName?: string;
+  /**
+   * Band 4 — die Gruppen, die ein Mensch selbst aus einem Tag baut. Es kommt aus
+   * `src/lib/gruppen.ts → zaehleGruppen`, und der Gang ruft **denselben** Aufruf auf
+   * demselben Bestand: deshalb kann diese Zeile nie eine andre Zahl nennen als spaeter
+   * die Farbe im Bilde. `undefined` heisst: niemand hat gezaehlt — dann steht hier kein
+   * Band und keine halbe Wahrheit.
+   */
+  gruppen?: FarbGruppen;
+  /** Die Griffe ans Modell. Ohne sie zeigt das Band Zahlen ohne Knöpfe — kein toter Knopf. */
+  steuerung?: GruppenSteuerung;
 }
 
-export function GraphRegal({ regal, ansichtsName }: GraphRegalEigenschaften) {
+export function GraphRegal({ regal, ansichtsName, gruppen, steuerung }: GraphRegalEigenschaften) {
   const { woher, worum, wann } = regal;
   /** Welcher Wann-Korb gerade offen ist. Einer auf einmal: zwei offene Listen in einem
    *  Panel von sechs Zeilen sind keine Auswahl, sondern ein Stapel. */
@@ -152,6 +167,109 @@ export function GraphRegal({ regal, ansichtsName }: GraphRegalEigenschaften) {
           </div>
         );
       })()}
+
+      {/* Band 4 — die Gruppen, die ein Mensch selbst baut. Die Zahlen kommen aus
+          `src/lib/gruppen.ts`, und der Gang ruft dieselbe Funktion auf demselben Bestand,
+          darum kann dieses Band nie eine andre Zahl nennen als spaeter die Farbe im Bilde.
+          Ohne Steuerung stehen hier Zahlen ohne Knöpfe; ohne Modell steht hier gar nichts. */}
+      {gruppen && (
+        <div data-testid="regal-farbgruppe" className="flex flex-col gap-1">
+          <div className="hud-label" style={{ color: "var(--text-3)" }}>
+            grouped by your tags · {zahl(gruppen.bestand - gruppen.ohneGruppe)} of {zahl(gruppen.bestand)} notes
+            carry a group you made
+            {gruppen.mehrfach > 0 ? ` · ${zahl(gruppen.mehrfach)} carry two of them` : ""}
+            {gruppen.ohneGruppe > 0 ? ` · ${zahl(gruppen.ohneGruppe)} carry none` : ""}
+          </div>
+          {gruppen.gruppen.length === 0 && (
+            <div className="hud-label" style={{ color: "var(--text-3)" }}>
+              no groups yet — pick a tag below and it becomes one
+            </div>
+          )}
+          <div
+            className="flex flex-col gap-1"
+            style={{ maxHeight: 200, overflowY: "auto", pointerEvents: "auto" }}
+          >
+            {gruppen.gruppen.map((g) => (
+              <div
+                key={g.marke}
+                data-testid="regal-farbgruppe-zeile"
+                className="hud-label tnum flex items-center gap-2"
+                style={{ color: "var(--text-2)" }}
+              >
+                {steuerung ? (
+                  <input
+                    type="color"
+                    data-testid="regal-farbgruppe-farbe"
+                    value={g.farbe}
+                    aria-label={`Colour for group ${g.marke}`}
+                    title="This group's colour — the aisle paints its nodes with it"
+                    onChange={(e) => steuerung.farbe(g.marke, e.target.value)}
+                    className="graph-swatch shrink-0"
+                    style={{ pointerEvents: "auto", minHeight: 44 }}
+                  />
+                ) : (
+                  <span
+                    aria-hidden
+                    style={{ width: 8, height: 8, borderRadius: 99, flex: "0 0 auto", background: g.farbe }}
+                  />
+                )}
+                <span className="min-w-0 flex-1 truncate" style={{ color: "var(--text-1)" }}>
+                  #{g.marke}
+                </span>
+                <span>{zahl(g.notizen)}</span>
+                <span style={{ color: "var(--text-3)" }}>{prozent(g.prozent)} %</span>
+                {steuerung && (
+                  <button
+                    type="button"
+                    data-testid="regal-farbgruppe-loeschen"
+                    onClick={() => steuerung.entferne(g.marke)}
+                    aria-label={`Remove group ${g.marke}`}
+                    className="hud-label tnum shrink-0"
+                    style={{
+                      minHeight: 44,
+                      padding: "0 10px",
+                      color: "var(--text-2)",
+                      background: "transparent",
+                      border: "1px solid var(--kante-kontrolle)",
+                      borderRadius: 6,
+                      cursor: "pointer",
+                      pointerEvents: "auto",
+                    }}
+                  >
+                    remove
+                  </button>
+                )}
+              </div>
+            ))}
+          </div>
+          {steuerung && gruppen.baubar.length > 0 && (
+            <div className="flex flex-wrap items-center gap-1">
+              {gruppen.baubar.map((b) => (
+                <button
+                  key={b.marke}
+                  type="button"
+                  data-testid="regal-farbgruppe-bauen"
+                  onClick={() => steuerung.baue(b.marke)}
+                  aria-label={`Make a group from tag ${b.marke}`}
+                  className="hud-label tnum"
+                  style={{
+                    minHeight: 44,
+                    padding: "0 10px",
+                    color: "var(--text-2)",
+                    background: "transparent",
+                    border: "1px solid var(--kante-kontrolle)",
+                    borderRadius: 6,
+                    cursor: "pointer",
+                    pointerEvents: "auto",
+                  }}
+                >
+                  + #{b.marke} {zahl(b.notizen)}
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Band 2 — worum. Ein Fach je Stueck, Betreff wo einer greift, sonst der
           Ordnerzweig, sonst das Restfach. Sortiert nach Menge, damit die erste
