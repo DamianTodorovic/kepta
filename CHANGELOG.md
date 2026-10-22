@@ -1,3 +1,43 @@
+## [3.2.35]
+
+### Added
+
+- **Three controls the picture itself obeys: motion, tag filter, only-with-connections.** Before
+  this version the installed object carried none of them — measured 22.10. at 16:53:19 on
+  `/Applications/K3PTA.app` 3.2.34 with `scripts/pruefe-appknoepf.mjs --objekt --vorher`, the graph
+  chunk (`graph-D36kvDbS.js`, 184 189 B) answers `data-testid "graph-bewegung"` 0,
+  `"graph-tag-filter"` 0, `"graph-nur-mit-verbindungen"` 0. Each now holds its own state under
+  `kepta_graph_bewegung` / `kepta_graph_tag_filter` / `kepta_graph_nur_mit_verbindungen` and says
+  what it does to the surface:
+  - *Motion* stops the frame loop, and the proof is the loop, not a word: the case counts frames
+    by their `clearRect` calls in one span before and after one click: the state lives in
+    `KnowledgeGraph.tsx:1053` and gates the motion step at `KnowledgeGraph.tsx:3791`, and
+    `tests/components/KnowledgeGraph.bewegung-tag-verbindungen.test.tsx` counts the frames.
+  - *Tag filter* draws its options from `markenHaeufigkeit` — the same source the sidebar already
+    uses — so the two surfaces can never offer different tags, and the head number moves with the
+    filter. When a tag hits nothing the area says so in `graph-tag-leer` and names the tag,
+    instead of showing a small population and letting it look like a small vault.
+  - *Only-with-connections* takes the stand-alone notes out of the drawn set and reports how many
+    it hid in `graph-versteckt-allein` (`data-anzahl`), so an empty-looking picture explains
+    itself.
+  Eleven cases cover all three, and one of them walks the click path at 362 px, where the control
+  bar cannot carry the three and the More panel has to lead them.
+
+### Fixed
+
+- **A chat request no longer reaches an address nobody chose.** `server/helfer/upstream.ts:68`
+  used to answer an unnamed `baseUrl` with a guess — `https://api.openai.com/v1`, or
+  `https://api.anthropic.com` for the other protocol — so a body without a provider could still
+  open a socket to a cloud host, and with no key it left the machine keyless. Both `/api/chat` and
+  `/api/chat/stream` now refuse before the socket: `400` with a `grund` the surface can paint
+  (`kein-anbieter`, `kein-schluessel`), and the helper keeps its own throw as a second layer so a
+  future caller cannot fall back into guessing. Five cases in
+  `tests/server-chat-wand-ruft-keinen-ungewaehlten-anbieter.test.ts`. Two older privacy cases in
+  `tests/enterprise-api.test.ts` now name a key for their stubbed cloud provider: they test what
+  the shield does on the way out, not the address, and the wall is exactly what they used to
+  borrow from the fallback. No expectation was removed — and the surface prefill (#67) is a
+  separate open point, not claimed here.
+
 ## [3.2.34]
 
 ### Fixed

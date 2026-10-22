@@ -69,6 +69,7 @@ import {
   stepDendrogram,
   TYP_BESCHREIBUNG,
   baueRegal,
+  markenHaeufigkeit,
   type HierarchieKnoten,
   type StrukturKnoten,
 } from "../lib/graphHierarchy";
@@ -169,6 +170,16 @@ type EtikettModus = "keine" | "wenig" | "mehr" | "alle";
  */
 const SELBST_KEY = "kepta_graph_selbstkaanten";
 /**
+ * G-73, G-74, G-75 (Leitung 22.10., Brief G-73-75). Drei Schalter, die die Fläche bedienen, nicht
+ * nur beschriften: Bewegung aus = es werden keine Bilder mehr gerechnet; Tag gesetzt = das Feld
+ * wird kleiner und der Kopf sagt dieselbe Zahl; „nur mit Verbindungen" = was allein steht, wird
+ * ausgeblendet und die Zahl der Ausgeblendeten wird genannt. Alle drei bleiben über den Neustart
+ * erhalten, wie die andern Marken der Fläche.
+ */
+const BEWEGUNG_KEY = "kepta_graph_bewegung";
+const TAG_FILTER_KEY = "kepta_graph_tag_filter";
+const NUR_MIT_KEY = "kepta_graph_nur_mit_verbindungen";
+/**
  * Ab diesem Zoom steht der Typ der Aussage an der Linie. Darunter wäre das
  * Etikett kleiner als ein Leser — weit herausgezoomt will man die Form des
  * Netzes sehen, nicht tausend Worte darüber.
@@ -232,7 +243,10 @@ export type Leistenglied =
   | "selbst"
   | "kanal"
   | "tiefe"
-  | "farben";
+  | "farben"
+  | "bewegung"
+  | "tagfilter"
+  | "nurmit";
 
 /**
  * Was ein Glied braucht, in Bildpunkten. Gemessen am vorher-Stand (400 Notizen,
@@ -269,6 +283,17 @@ export const BREITE_PX_GELIED: Record<Leistenglied, number> = {
   // 116 px sind die Kanalschiene (154) minus eines ihrer zwei langen Woerter.
   tiefe: 116,
   farben: 102,
+  // G-73 / G-74 / G-75 — **im echten Fenster gemessen**, nicht aus der Regel geraten:
+  // 1 440 px, geladenes und vorgeholtes Fenster, 1 500 Notizen, Saat 44863
+  // (`belege-2210/g73-end-2/g73-end.json`, 12:56:20 MESZ): Bewegung 67,1 px, Tag-Filter 108,0 px,
+  // nur mit Verbindungen 88,6 px — aufgerundet auf ganze Bildpixel, damit die Summe nicht zu knapp
+  // ausfällt. Gemessen sind sie in dem Schlag, als die drei **vor** `suche` in der Zeile standen
+  // (die weichen mussten `suche` und `zeitregler`, Menü `More (11)`, seitlicher Überlauf 0). Nach
+  // dem Umsortieren um 13:04 stehen die drei bei 1 440 px im Menü — die Breite ist eine Eigenschaft
+  // des Glieds, nicht seines Platzes, also bleibt die Zahl die gemessene.
+  bewegung: 68,
+  tagfilter: 108,
+  nurmit: 89,
 };
 /** Der „More"-Knopf mit seiner Zahl („More (10)" sind 94 px), dazu die Luecke. */
 export const MENUE_PX = 98;
@@ -309,6 +334,22 @@ export const RANG_FOLGE: readonly Leistenglied[] = [
   "zeitregler",
   "richtung",
   "datum",
+  // G-73/G-74/G-75 rücken **hinter** die Zeit- und Richtungstruppe (Leitung, 13:04). Der Tausch
+  // ist gerechnet, nicht geglaubt: bei 1 440 px misst die Zeile 1 132 px, und nach Abzug des
+  // Menü-Knopfes (98 px) plus acht px Atemzug bleiben 1 026 px. Die Zeile trägt damit genau
+  // **sechs** Glieder — `zoom, zeitstand, ansicht, namen, suche, zeitregler` — und das ist nach
+  // dieser Rangfolge **dieselbe Zeile wie in den ausgelieferten Bytes 3.2.34**: nichts, was vorher
+  // sichtbar war, weicht. Nur das Menü wächst von 8 auf 11. `richtung` und `datum` lagen schon in
+  // 3.2.34 hinter dem Klick (die Truppe bis `datum` braucht 1 244 px gegen 1 026 px).
+  // Was die Entscheidung von 07:09 („ein Pflicht-Schalter darf nicht hinter einem Klick liegen")
+  // damit kostet: die drei neuen Glieder liegen bei 1 440 px im Menü. Beides zusammen ist
+  // arithmetisch nicht fahrbar — die drei kosten **305 px** (67,1 + 108,0 + 88,6, jeder mit seinem
+  // Atemzug), die Zeile hat bei 1 440 px **45 px** frei. Gerechnet bis **1 948 px** Fensterbreite:
+  // ab dort stehen alle drei in der Zeile, ohne dass die Zeittruppe weicht. Gemeldet, nicht still
+  // entschieden.
+  "bewegung",
+  "tagfilter",
+  "nurmit",
   "aehnlichkeit",
   "schema",
   "krafte",
@@ -1006,6 +1047,46 @@ export function KnowledgeGraph({ memories: memoriesAusFenster, onSelectMemory, o
     try { localStorage.setItem(SELBST_KEY, v ? "1" : "0"); } catch { /* ignore */ }
   };
   /**
+   * G-73 — Bewegung. Werksmasse ist die Antwort des Betriebssystems: wer Reduktion will, bekommt
+   * ein stehendes Bild. Die eigne Entscheidung ueberschreibt sie und ueberlebt den Neustart.
+   */
+  const [bewegungAn, setBewegungAn] = useState<boolean>(() => {
+    try {
+      const gemerkt = localStorage.getItem(BEWEGUNG_KEY);
+      if (gemerkt === "1") return true;
+      if (gemerkt === "0") return false;
+    } catch { /* ohne Marke gilt die Werksmasse */ }
+    return !(typeof window !== "undefined" && window.matchMedia?.("(prefers-reduced-motion: reduce)").matches);
+  });
+  const wechsleBewegung = () => {
+    const v = !bewegungAn;
+    setBewegungAn(v);
+    try { localStorage.setItem(BEWEGUNG_KEY, v ? "1" : "0"); } catch { /* ignore */ }
+    // Auch beim Abschalten muss das Bild einmal neu gemalt werden: der letzte Stand
+    // war vielleicht mitten in einer Bewegung gezeichnet.
+    zeichneNoetig.current = true;
+  };
+  /** G-75 — nur, was eine Verbindung hat. Standard aus, wie am Markt: das Bild zeigt den Bestand. */
+  const [nurMitVerbindungen, setNurMitVerbindungen] = useState<boolean>(() => {
+    try { return localStorage.getItem(NUR_MIT_KEY) === "1"; } catch { return false; }
+  });
+  const wechsleNurMit = () => {
+    const v = !nurMitVerbindungen;
+    setNurMitVerbindungen(v);
+    try { localStorage.setItem(NUR_MIT_KEY, v ? "1" : "0"); } catch { /* ignore */ }
+  };
+  /** G-74 — Tag-Filter. Leere Zeichenkette heißt „alle", nie „keiner". */
+  const [tagFilter, setTagFilter] = useState<string>(() => {
+    try { return localStorage.getItem(TAG_FILTER_KEY) || ""; } catch { return ""; }
+  });
+  const setzeTagFilter = (t: string) => {
+    setTagFilter(t);
+    try {
+      if (t) localStorage.setItem(TAG_FILTER_KEY, t);
+      else localStorage.removeItem(TAG_FILTER_KEY);
+    } catch { /* ignore */ }
+  };
+  /**
    * Zugeklappte Gruppen im Baum. Der Baum startet entfaltet — eine Faltung ist
    * eine Handlung, nie ein Anfangszustand. Nicht gemerkt: ein Merken ueber das
    * Neuladen liess Notizen verschwinden, die niemand mehr vermisst.
@@ -1528,8 +1609,35 @@ export function KnowledgeGraph({ memories: memoriesAusFenster, onSelectMemory, o
    * ausgedünnt (sonst stünde ein leeres Bild mit einer Zahl darauf), und unter
    * drei gemalten Dingen bleibt die Ausmalung ganz.
    */
+  /**
+   * G-74 — die Tags, aus **derselben** Rechnung wie das Regal (`markenHaeufigkeit` über
+   * denselben `memories`), nicht aus einer zweiten Zählung der Fläche.
+   */
+  const tagAngebot = useMemo(
+    () => [...markenHaeufigkeit(memories).keys()].sort((a, b) => a.localeCompare(b)),
+    [memories]
+  );
+  /** G-75 — die Notizen, an denen mindestens eine Verbindung hängt. */
+  const mitVerbindung = useMemo(() => {
+    const s = new Set<string>();
+    for (const [notizId] of netz.erwahnungen) s.add(notizId);
+    return s;
+  }, [netz]);
+  /**
+   * G-74 und G-75 greifen **vor** dem Feld. Was hier fällt, fehlt in `feldNotizen` und damit in
+   * `bildZaehlung.knoten` — Kopf, Bilanz und Bild nennen so von selbst dieselbe Zahl, statt dass
+   * eine zweite Rechnung sie nachträgt.
+   */
+  const grundMasse = useMemo(() => {
+    const basis = verborgen.size === 0 ? filtered : filtered.filter((m) => !verborgen.has(m.id));
+    const nachTag = tagFilter ? basis.filter((m) => m.tags.some((t) => t.toLowerCase().trim() === tagFilter)) : basis;
+    const alleinVersteckt = nurMitVerbindungen ? nachTag.reduce((n, m) => n + (mitVerbindung.has(m.id) ? 0 : 1), 0) : 0;
+    const nachVerbindung = nurMitVerbindungen ? nachTag.filter((m) => mitVerbindung.has(m.id)) : nachTag;
+    return { notizen: nachVerbindung, alleinVersteckt, tagTreffer: nachVerbindung.length };
+  }, [filtered, verborgen, tagFilter, nurMitVerbindungen, mitVerbindung]);
+
   const feldMassen = useMemo(() => {
-    const grund = verborgen.size === 0 ? filtered : filtered.filter((m) => !verborgen.has(m.id));
+    const grund = grundMasse.notizen;
     if (filter.trim() !== "" || netz.knoten.length === 0 || !punktwolke(bestandNotizen, notizenMitBegriff)) {
       return { notizen: grund, unausgemalt: 0 };
     }
@@ -1551,7 +1659,7 @@ export function KnowledgeGraph({ memories: memoriesAusFenster, onSelectMemory, o
       return { notizen: grund, unausgemalt: 0 };
     }
     return { notizen: gemalt, unausgemalt: unbedeckt };
-  }, [filtered, verborgen, filter, netz, bestandNotizen, notizenMitBegriff]);
+  }, [grundMasse, filter, netz, bestandNotizen, notizenMitBegriff]);
   const feldNotizen = feldMassen.notizen;
   /** Wie viele Notizen je gefaltetem Begriff wirklich weg sind — das Malzeichen darf nur das zählen. */
   const verdecktJeKonzept = useMemo(() => {
@@ -3680,7 +3788,7 @@ export function KnowledgeGraph({ memories: memoriesAusFenster, onSelectMemory, o
         if (ansichtRef.current === "dendrogram" || ansichtRef.current === "semantic") {
           // Baum und Projektion: kein Physik-Loop — die Knoten gleiten auf ihre
           // Zielstellen und ruhen dann. Loslassen einer Bewegung = Auto-Fit.
-          const bewegt = stepDendrogram(sim.nodes, zielRef.current, reduzierteBewegung.current ? 1 : undefined);
+          const bewegt = bewegungAn ? stepDendrogram(sim.nodes, zielRef.current, reduzierteBewegung.current ? 1 : undefined) : false;
           if (bewegt) zeichneNoetig.current = true;
           if (autoFitOffen.current && !bewegt && sim.nodes.length > 0) {
             autoFitOffen.current = false;
@@ -3691,7 +3799,7 @@ export function KnowledgeGraph({ memories: memoriesAusFenster, onSelectMemory, o
           if (uebergang.size > 0) {
             // Baum→Kraftfeld: erst der weiche Übergang auf die letzten
             // Kraftfeld-Positionen, DANACH übernimmt die Physik.
-            const gleitet = stepDendrogram(sim.nodes, uebergang, reduzierteBewegung.current ? 1 : undefined);
+            const gleitet = bewegungAn ? stepDendrogram(sim.nodes, uebergang, reduzierteBewegung.current ? 1 : undefined) : false;
             if (gleitet) {
               zeichneNoetig.current = true;
             } else {
@@ -3699,7 +3807,7 @@ export function KnowledgeGraph({ memories: memoriesAusFenster, onSelectMemory, o
               zeichneNoetig.current = true;
             }
           } else {
-            const bewegt = !isSettled(sim) || draggingRef.current !== null;
+            const bewegt = (bewegungAn && !isSettled(sim)) || draggingRef.current !== null;
             if (bewegt) {
               stepSimulation(sim);
               zeichneNoetig.current = true;
@@ -3738,7 +3846,7 @@ export function KnowledgeGraph({ memories: memoriesAusFenster, onSelectMemory, o
     }
     raf = requestAnimationFrame(schleife);
     return () => { laeuft = false; cancelAnimationFrame(raf); };
-  }, [zeichne, dimensions, fitBaumAnsicht, sichtbar, fensterSichtbar]);
+  }, [zeichne, dimensions, fitBaumAnsicht, sichtbar, fensterSichtbar, bewegungAn]);
 
   useEffect(() => { zeichneNoetig.current = true; }, [timeFilter, TYPE_COLORS, hovered]);
   // Das Spotlight ist reine Darstellung: kein Neu-Layout, ein Bild.
@@ -4323,12 +4431,14 @@ export function KnowledgeGraph({ memories: memoriesAusFenster, onSelectMemory, o
       {wort}
     </button>
   );
+  /** Das Kleid jedes Schalters — ein Halter, damit ein Knopf nicht zwei Kleider traegt. */
+  const SCHALTER_KLASSE = "btn-ghost px-2 py-1.5 rounded-lg text-[11px] inline-flex items-center gap-1.5 whitespace-nowrap shrink-0";
   const schalter = (an: boolean, titel: string, onClick: () => void, wort: string, zeichen?: ReactNode) => (
     <button
       type="button"
       onClick={onClick}
       aria-pressed={an ? "true" : "false"}
-      className="btn-ghost px-2 py-1.5 rounded-lg text-[11px] inline-flex items-center gap-1.5 whitespace-nowrap shrink-0"
+      className={SCHALTER_KLASSE}
       title={titel}
     >
       {punkt(an)}
@@ -4565,6 +4675,59 @@ export function KnowledgeGraph({ memories: memoriesAusFenster, onSelectMemory, o
   }, "Forces", <SlidersHorizontal className="w-3.5 h-3.5" />);
 
   /** Ein Geraet, gerufen nach dem Glied, das die Zeile nicht trug. */
+  /** G-73 — Bewegung. Aus heißt: das Feld schreitet nicht mehr, es werden keine Bilder mehr gerechnet. */
+  // G-73 und G-75 tragen ihre Kennung als Wort, nicht durch eine Variable: die Knopfprobe
+  // am ausgelieferten Buendel zaehlt nur die kompilierte Form `"data-testid": "…"`, und die
+  // entsteht nur, wenn der Name hier selbst steht. Darum zwei Knoepfe ausgeschrieben, im
+  // selben Kleid (`SCHALTER_KLASSE`) und mit demselben Zeichen (`punkt`).
+  const schalterBewegung = (
+    <button
+      type="button"
+      onClick={wechsleBewegung}
+      data-testid="graph-bewegung"
+      aria-pressed={bewegungAn ? "true" : "false"}
+      className={SCHALTER_KLASSE}
+      title="Motion — the field keeps settling for a moment after every change. Off stops that: the picture stays where it is, and panning still works."
+    >
+      {punkt(bewegungAn)}
+      Motion
+    </button>
+  );
+  /** G-75 — nur, was eine Verbindung hat. Was fällt, wird gezählt und gesagt. */
+  const schalterNurMit = (
+    <button
+      type="button"
+      onClick={wechsleNurMit}
+      data-testid="graph-nur-mit-verbindungen"
+      aria-pressed={nurMitVerbindungen ? "true" : "false"}
+      className={SCHALTER_KLASSE}
+      title="Only with connections — hide the notes that nothing links to. The number hidden is said out loud, never left to guess."
+    >
+      {punkt(nurMitVerbindungen)}
+      Connected
+    </button>
+  );
+  /**
+   * G-74 — Tag-Filter. Ein `select`, weil eine Liste von Namen keine Folge von Knöpfen ist;
+   * die Angebote zieht er aus `markenHaeufigkeit` über demselben Bestand wie das Regal.
+   */
+  const steuerelementTagFilter = (
+    <select
+      data-testid="graph-tag-filter"
+      className="hud-label text-[11px] px-2 py-1.5 rounded-lg shrink-0 max-w-[150px]"
+      style={{ background: "var(--glass-panel)", color: "var(--text-1)", border: "1px solid var(--border-subtle)" }}
+      value={tagFilter}
+      onChange={(e) => setzeTagFilter(e.target.value)}
+      title="Tag filter — only the notes that carry this tag stay in the picture"
+      aria-label="Filter by tag"
+    >
+      <option value="">All tags</option>
+      {tagAngebot.map((t) => (
+        <option key={t} value={t}>{t}</option>
+      ))}
+    </select>
+  );
+
   const geraet = (g: Leistenglied): ReactNode => {
     switch (g) {
       case "suche": return sucheBlock;
@@ -4578,6 +4741,9 @@ export function KnowledgeGraph({ memories: memoriesAusFenster, onSelectMemory, o
       case "richtung": return schalterRichtung;
       case "schema": return schalterSchema;
       case "krafte": return schalterKrafte;
+      case "bewegung": return schalterBewegung;
+      case "tagfilter": return steuerelementTagFilter;
+      case "nurmit": return schalterNurMit;
       case "zeitstand": return zeitStand;
       case "zeitregler": return zeitRegler(true);
       case "datum": return datumsFeld;
@@ -4605,6 +4771,13 @@ export function KnowledgeGraph({ memories: memoriesAusFenster, onSelectMemory, o
       case "richtung": return "Wide end = who claims, narrow end = of whom. Below 50 % zoom the wedge is too small to draw, and the legend says so.";
       case "schema": return "What the store holds: kinds, concepts, claims.";
       case "krafte": return "How hard the field gathers, repels and spaces itself.";
+      case "bewegung": return `Whether the picture moves by itself. Now: ${bewegungAn ? "on — the field settles after each change" : "off — the picture holds still, and a pan still paints"}.`;
+      case "tagfilter": return tagFilter
+        ? `Only notes tagged “${tagFilter}”. The tag list is the same census the shelf uses.`
+        : "All tags — every note the time and search allow is in the picture.";
+      case "nurmit": return nurMitVerbindungen
+        ? `Only notes with a connection. Hidden right now: ${grundMasse.alleinVersteckt}.`
+        : "Notes that nothing links to stay in the picture, counted in the aisle below.";
       default: return "";
     }
   };
@@ -4649,6 +4822,9 @@ export function KnowledgeGraph({ memories: memoriesAusFenster, onSelectMemory, o
         {drin("kanal") && schieneKanal}
         {drin("tiefe") && schieneTiefe}
         {drin("farben") && farbenReihe}
+        {drin("tagfilter") && steuerelementTagFilter}
+        {drin("nurmit") && schalterNurMit}
+        {drin("bewegung") && schalterBewegung}
         <div className="flex items-center gap-2 ml-auto shrink-0">
           {zeitAchse && drin("zeitstand") && zeitStand}
           {zeitAchse && drin("datum") && datumsFeld}
@@ -5026,6 +5202,18 @@ export function KnowledgeGraph({ memories: memoriesAusFenster, onSelectMemory, o
               Gezaehlt wird, was im Bild steht, nicht was die Datenbank
               hergeben wuerde; beide Ansichten nennen dasselbe Paar, weil sie
               dasselbe Netz meinen. */}
+          {/* G-74 und G-75: was die Fläche nicht zeigt, weil der Nutzer es so gesetzt hat, wird
+              gesagt — eine Zahl, die fehlt, ohne Grund, ist die halbe Auskunft. */}
+          {tagFilter !== "" && grundMasse.notizen.length === 0 && (
+            <div className="hud-label" data-testid="graph-tag-leer" style={{ color: "var(--text-2)" }}>
+              {`No note carries the tag “${tagFilter}” in what is left — the picture is empty because of the filter, not because the store is small.`}
+            </div>
+          )}
+          {nurMitVerbindungen && grundMasse.alleinVersteckt > 0 && (
+            <div className="hud-label tnum" data-testid="graph-versteckt-allein" data-anzahl={grundMasse.alleinVersteckt} style={{ color: "var(--text-2)" }}>
+              {`${mengenzahl(grundMasse.alleinVersteckt)} notes with no connection are hidden by “Only with connections”.`}
+            </div>
+          )}
           <div className="hud-label tnum" data-testid="graph-kopf">
             {/* Die gemalte Zahl, und dahinter die Größe des Bestands, wenn die
                 Fläche weniger malt, als die Tür hat. Ohne diesen zweiten Teil

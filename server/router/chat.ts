@@ -26,6 +26,32 @@ export function mountChat(app: express.Express, ctx: AppKontext): void {
       ? null
       : "Cloud models are disabled by your organization's policy. Local models (e.g. Ollama) remain available.";
   }
+  /**
+   * Die Wand von #61, vor jedem Aufbruch: keine Route ruft eine Adresse, die
+   * niemand gewaehlt hat, und keine Adresse ausserhalb dieses Rechners ohne
+   * Schluessel. Beides war vorher moeglich — `body.baseUrl || "https://api.openai.com/v1"`
+   * (server/helfer/upstream.ts:68) und, am Werksstandard, `apiKey: ''`
+   * (src/lib/ai.ts:351) mit weitergegebenem Grund (src/components/Settings.tsx:308).
+   * Zurueckkommt ein Grund, den die Flaeche malen kann — 400, kein Socket.
+   */
+  function anbieterSperre(body: { baseUrl?: string; apiKey?: string }): { status: number; error: string; grund: string } | null {
+    const basis = trimSlash(body.baseUrl || "");
+    if (!basis) {
+      return {
+        status: 400,
+        error: "kein Anbieter gewaehlt — die Route rueft keine Adresse, die niemand genannt hat",
+        grund: "kein-anbieter",
+      };
+    }
+    if (!istLokaleAdresse(basis) && !(body.apiKey || "").trim()) {
+      return {
+        status: 400,
+        error: `der Anbieter ${basis} braucht einen Schluessel — ohne ihn geht kein Paket aus dem Rechner`,
+        grund: "kein-schluessel",
+      };
+    }
+    return null;
+  }
 
   /**
    * The privacy shield for the chat: nothing personal reaches a cloud model.
@@ -80,6 +106,9 @@ export function mountChat(app: express.Express, ctx: AppKontext): void {
     if (fehler) return res.status(fehler === "System prompt too large" ? 413 : 400).json({ error: fehler });
     const cloudFehler = cloudVerboten(body);
     if (cloudFehler) return res.status(403).json({ error: cloudFehler });
+    const sperre = anbieterSperre(body);
+    if (sperre) return res.status(sperre.status).json({ error: sperre.error, grund: sperre.grund });
+
     res.writeHead(200, {
       "Content-Type": "text/event-stream",
       "Cache-Control": "no-cache",
@@ -135,6 +164,9 @@ export function mountChat(app: express.Express, ctx: AppKontext): void {
     if (fehler) return res.status(fehler === "System prompt too large" ? 413 : 400).json({ error: fehler });
     const cloudFehler = cloudVerboten(body);
     if (cloudFehler) return res.status(403).json({ error: cloudFehler });
+    const sperre = anbieterSperre(body);
+    if (sperre) return res.status(sperre.status).json({ error: sperre.error, grund: sperre.grund });
+
     const controller = new AbortController();
     // Client-Disconnect bricht auch den blockierenden Upstream-Call ab
     req.on("close", () => controller.abort());
@@ -173,6 +205,13 @@ export function mountChat(app: express.Express, ctx: AppKontext): void {
         grund: "kein-anbieter",
       });
     }
+    if (!istLokaleAdresse(base) && !(apiKey || "").trim()) {
+      return res.status(400).json({
+        error: `der Anbieter ${base} braucht einen Schluessel — ohne ihn geht kein Paket aus dem Rechner`,
+        grund: "kein-schluessel",
+      });
+    }
+
     const headers: Record<string, string> = {};
     if (apiKey && protocol !== "anthropic") headers["Authorization"] = `Bearer ${apiKey}`;
     if (protocol === "anthropic") {

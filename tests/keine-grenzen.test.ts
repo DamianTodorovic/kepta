@@ -73,7 +73,7 @@ describe("die kostenlose App ist unbegrenzt", () => {
     const abruf = providerAttrappe();
     try {
       for (let i = 0; i < 12; i++) {
-        const res = await request(app).post("/api/chat").send({ messages: [{ role: "user", content: "hi" }] });
+        const res = await request(app).post("/api/chat").send({ protocol: "openai", baseUrl: "http://127.0.0.1:9/v1", messages: [{ role: "user", content: "hi" }] });
         expect(res.status, `Nachricht ${i + 1}: ${res.status} · ${res.text.slice(0, 160)}`).toBe(200);
       }
       expect(abruf).toHaveBeenCalledTimes(12);

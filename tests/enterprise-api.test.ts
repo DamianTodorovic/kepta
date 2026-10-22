@@ -134,6 +134,11 @@ describe("Privatsphäre-Schild", () => {
     expect(audit.map((e: { actor: string; action: string }) => e.action)).toEqual(expect.arrayContaining(["search"]));
   });
 
+  // Seit #61 verlangen die Chat-Routen einen Schluessel, wenn der Anbieter ausserhalb dieses
+  // Rechners liegt. Diese beiden Faelle pruefen das Schild auf dem Weg nach draussen, nicht die
+  // Adresse, und nennen darum einen Schluessel, den der gestubbte fetch nie zu sehen bekommt.
+  // Keine Erwartung ist geloescht; die Sperre selbst hat eigne Faelle in
+  // tests/server-chat-wand-ruft-keinen-ungewaehlten-anbieter.test.ts.
   it("Chat mit einem Cloud-Modell: nichts Persönliches geht hinaus, die Antwort zeigt die echten Werte", async () => {
     const privat = store.createMemory({ title: "Diagnosis", content: "Private medical note", scope: "private" });
     let gesendet = "";
@@ -152,6 +157,7 @@ describe("Privatsphäre-Schild", () => {
       .send({
         protocol: "openai",
         baseUrl: "https://api.example.com/v1",
+        apiKey: "test-schluessel",
         model: "m1",
         system: `Context\n\n[ID: a | TAGS:  | TITEL: Lumen]\nContact anna@lumen.example, IBAN DE89 3704 0044 0532 0130 00\n\n[ID: ${privat.id} | TAGS:  | TITEL: Diagnosis]\nPrivate medical note\n\n`,
         messages: [{ role: "user", content: "Where do I send the invoice for anna@lumen.example?" }],
@@ -191,7 +197,7 @@ describe("Privatsphäre-Schild", () => {
       return new Response(JSON.stringify({ choices: [{ message: { content: "ok" } }] }), { status: 200 });
     }));
     const privat = store.createMemory({ title: "P", content: "secret", scope: "private" });
-    await request(app).post("/api/chat").send({ protocol: "openai", baseUrl: "https://api.example.com/v1", system: `[ID: ${privat.id} | TAGS:  | TITEL: P]\nsecret\n\n`, messages: [{ role: "user", content: "mail anna@lumen.example" }] });
+    await request(app).post("/api/chat").send({ protocol: "openai", baseUrl: "https://api.example.com/v1", apiKey: "test-schluessel", system: `[ID: ${privat.id} | TAGS:  | TITEL: P]\nsecret\n\n`, messages: [{ role: "user", content: "mail anna@lumen.example" }] });
     expect(gesendet).toContain("anna@lumen.example");
     expect(gesendet).not.toContain("secret");
   });

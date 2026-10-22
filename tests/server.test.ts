@@ -9,6 +9,14 @@ import { defaultExtensions } from "../src/core/extensions";
 import { indexMemory } from "../src/core/engine";
 import { DEFAULT_EMBED_MODEL } from "../src/core/embeddings";
 import { APP_VERSION } from "../src/core/version";
+// Seit #61 verlangen die Chat-Routen einen genannten Anbieter: die sechs Faelle unten
+// pruefen die Upstream-Formate (SSE-Stuecke, Fehlerweitergabe, Anthropic-Textbloecke),
+// nicht die Adresse. Sie nennen darum eine rueckkopfloese, an der nichts horcht — der
+// fetch ist ohnehin gestubbt. Keine Erwartung ist geloescht; jede nennt jetzt, was sie
+// vorher aus dem Default der Route geliehen bekam. (Grund: server/helfer/upstream.ts:68
+// riet https://api.openai.com/v1, und ohne Schluessel waere das Packet draussen.)
+const UPSTREAM_OHNE_HORCHER = "http://127.0.0.1:9/v1";
+
 
 // server.ts startet beim Import normalerweise automatisch — mit KEPTA_NO_AUTOSTART=1
 // wird nur createApp exportiert, ohne Port zu binden.
@@ -808,7 +816,7 @@ describe("Chat-Proxy (Provider gemockt)", () => {
       ])) as unknown as typeof fetch;
     const res = await request(app)
       .post("/api/chat/stream")
-      .send({ protocol: "openai", messages: [{ role: "user", content: "Hi" }] });
+      .send({ protocol: "openai", baseUrl: UPSTREAM_OHNE_HORCHER, messages: [{ role: "user", content: "Hi" }] });
     expect(res.status).toBe(200);
     expect(res.text).toContain("Hallo");
     expect(res.text).toContain("Welt");
@@ -823,7 +831,7 @@ describe("Chat-Proxy (Provider gemockt)", () => {
       ])) as unknown as typeof fetch;
     const res = await request(app)
       .post("/api/chat/stream")
-      .send({ protocol: "anthropic", messages: [{ role: "user", content: "Hi" }] });
+      .send({ protocol: "anthropic", baseUrl: UPSTREAM_OHNE_HORCHER, messages: [{ role: "user", content: "Hi" }] });
     expect(res.status).toBe(200);
     expect(res.text).toContain("Servus");
   });
@@ -833,7 +841,7 @@ describe("Chat-Proxy (Provider gemockt)", () => {
       ({ ok: false, status: 401, body: null, text: async () => JSON.stringify({ error: { message: "Kein Key" } }) }) as unknown as Response) as unknown as typeof fetch;
     const res = await request(app)
       .post("/api/chat/stream")
-      .send({ protocol: "openai", messages: [{ role: "user", content: "Hi" }] });
+      .send({ protocol: "openai", baseUrl: UPSTREAM_OHNE_HORCHER, messages: [{ role: "user", content: "Hi" }] });
     expect(res.status).toBe(200);
     expect(res.text).toContain("Kein Key");
   });
@@ -843,7 +851,7 @@ describe("Chat-Proxy (Provider gemockt)", () => {
       ({ ok: true, status: 200, json: async () => ({ choices: [{ message: { content: "Antwort" } }] }) }) as unknown as Response) as unknown as typeof fetch;
     const res = await request(app)
       .post("/api/chat")
-      .send({ protocol: "openai", messages: [{ role: "user", content: "Frage" }] });
+      .send({ protocol: "openai", baseUrl: UPSTREAM_OHNE_HORCHER, messages: [{ role: "user", content: "Frage" }] });
     expect(res.status).toBe(200);
     expect(res.body.text).toBe("Antwort");
   });
@@ -853,7 +861,7 @@ describe("Chat-Proxy (Provider gemockt)", () => {
       ({ ok: true, status: 200, json: async () => ({ content: [{ type: "text", text: "A" }, { type: "text", text: "B" }] }) }) as unknown as Response) as unknown as typeof fetch;
     const res = await request(app)
       .post("/api/chat")
-      .send({ protocol: "anthropic", messages: [{ role: "user", content: "x" }] });
+      .send({ protocol: "anthropic", baseUrl: UPSTREAM_OHNE_HORCHER, messages: [{ role: "user", content: "x" }] });
     expect(res.body.text).toContain("A");
     expect(res.body.text).toContain("B");
   });
@@ -863,7 +871,7 @@ describe("Chat-Proxy (Provider gemockt)", () => {
       ({ ok: false, status: 500, json: async () => ({ error: { message: "kaputt" } }) }) as unknown as Response) as unknown as typeof fetch;
     const res = await request(app)
       .post("/api/chat")
-      .send({ protocol: "openai", messages: [{ role: "user", content: "x" }] });
+      .send({ protocol: "openai", baseUrl: UPSTREAM_OHNE_HORCHER, messages: [{ role: "user", content: "x" }] });
     expect(res.status).toBe(500);
   });
 

@@ -64,8 +64,27 @@ function buildUpstreamHeaders(req: ChatRequest): Record<string, string> {
   return headers;
 }
 
+/**
+ * Ein Anbieter fehlt: kein Fehler im Sinn eines Absturzes, sondern eine Auskunft.
+ * Die Routen fangen ihn und antworten mit 400 und grund; der Wurf bleibt als zweite
+ * Schicht stehen, damit kein Aufrufer der Helfer-Datei blind raten kann.
+ */
+class KeinAnbieterFehler extends Error {
+  readonly grund = "kein-anbieter";
+  constructor() {
+    super("kein Anbieter gewaehlt — die Route rueft keine Adresse, die niemand genannt hat");
+    this.name = "KeinAnbieterFehler";
+  }
+}
+
 function upstreamUrl(req: ChatRequest) {
-  const base = trimSlash(req.baseUrl || (req.protocol === "anthropic" ? "https://api.anthropic.com" : "https://api.openai.com/v1"));
+  // Die Wand (#61): kein Default mehr. Bis hierhin riet die Route
+  // https://api.openai.com/v1 (anthropisch: api.anthropic.com), wenn der Korper
+  // keinen baseUrl nannte — ein Griff nach einer Adresse, die niemand gewaehlt hat,
+  // und ohne Schluessel einer ohne Kopf. Die Routen sperren jetzt vorher; dieser
+  // Wurf ist die zweite Schicht, damit kein kuenftiger Aufrufer blind raten kann.
+  const base = trimSlash(req.baseUrl || "");
+  if (!base) throw new KeinAnbieterFehler();
   return req.protocol === "anthropic" ? `${base}/v1/messages` : `${base}/chat/completions`;
 }
 
