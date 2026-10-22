@@ -1042,8 +1042,10 @@ describe("Dashboard: die neun Woerter fuehren in keine Sackgasse", () => {
   it("zaehlt den Laden im Streifen und das Blatt an den Chips, getrennt", async () => {
     const { container } = await zeige(ohneCode());
     // Erst die Karten abwarten — der Speicher lädt mit 300 ms Sammelzeit, und
-    // ohne sie steht die Zeile noch gar nicht im Baum.
-    await waitFor(() => expect(container.textContent).toMatch(/in the 150 stored/), { timeout: 6000 });
+    // ohne sie steht die Zeile noch gar nicht im Baum. Seit Damians Bild von
+    // 19:02 nennt die Zeile die Menge, ohne ihre Zahl zu wiederholen ("the
+    // whole store"); die Zahl selbst steht eine Zelle weiter als Heldenzahl.
+    await waitFor(() => expect(container.textContent).toMatch(/where it came from · the whole store/), { timeout: 6000 });
     // Der Streifen spricht fuer den Laden: 150 Stuecke, 20 davon Code.
     expect(container.textContent).toMatch(/100\s*Notes/);
     expect(container.textContent).toMatch(/30\s*Files/);
@@ -1060,12 +1062,17 @@ describe("Dashboard: die neun Woerter fuehren in keine Sackgasse", () => {
 });
 
 /**
- * Damians Bild von 22:20 zeigt denselben Streifen in zwei Kleidern:
+ * Damians Bild von 22:20 zeigte denselben Streifen in zwei Kleidern:
  * „92 Notes  10996 Files  9978 Code" ohne Punkt, eine Zeile tiefer
  * „in the 21,066 stored" mit Punkt. Die bisherigen Faelle konnten das nicht
  * sehen — ihr Stub zaehlt 100/30/20/150, und unter 1 000 ist ein Tausenderpunkt
  * unsichtbar. Ein Fall, dessen Zahlen die Krankheit nicht ausdruecken koennen,
  * ist kein Fall.
+ *
+ * Zweit Befund, sein Bild von 19:02: „150 Notes  0 Files  0 Code". Zwei von drei
+ * Zahlen sagen nichts, und die dritte steht schon als Heldenzahl. Der Streifen
+ * zeigt darum nur, was da ist, und die Zeile darunter nennt die Menge, ohne ihre
+ * Zahl zu wiederholen.
  */
 describe("Dashboard: der Index-Streifen kleidet jede Zahl gleich", () => {
   function ladungGross(zahlen: { bestand: number; notes: number; files: number; code: number }): void {
@@ -1086,10 +1093,23 @@ describe("Dashboard: der Index-Streifen kleidet jede Zahl gleich", () => {
   it("setzt den Punkt auch bei den drei Traeger-Zahlen", async () => {
     ladungGross({ bestand: 21_066, notes: 92, files: 10_996, code: 9_978 });
     const { container } = await zeige([note({ title: "Erste" })]);
-    // Erst die Tür abwarten — vor ihrer Antwort steht die Zeile ohne Zahl da.
-    await waitFor(() => expect(container.textContent).toMatch(/in the 21,066 stored/), { timeout: 6000 });
-    expect(container.textContent, "10 996 ohne Punkt, direkt neben 21 066 mit Punkt").toMatch(/10,996\s*Files/);
+    // Erst die Tür abwarten — vor ihrer Antwort steht die Zeile ohne die Menge da.
+    await waitFor(() => expect(container.textContent).toMatch(/where it came from · the whole store/), { timeout: 6000 });
+    expect(container.textContent, "10 996 ohne Punkt, direkt neben 92 ohne Punkt").toMatch(/10,996\s*Files/);
     expect(container.textContent).toMatch(/9,978\s*Code/);
     expect(container.textContent, "92 bleibt unter der Tausenderstelle — das Kleid darf nicht fehlen").toMatch(/92\s*Notes/);
+  });
+
+  /** Der Befund aus Damians Bild: ein Fach mit null Stuecken ist keine Auskunft. */
+  it("zeigt kein Fach mit null Stuecken und keine Zahl zweimal", async () => {
+    ladungGross({ bestand: 150, notes: 150, files: 0, code: 0 });
+    const { container } = await zeige([note({ title: "Erste" })]);
+    await waitFor(() => expect(container.textContent).toMatch(/where it came from · the whole store/), { timeout: 6000 });
+    expect(container.textContent, "150 Notes muss stehen — das Fach ist gefuellt").toMatch(/150\s*Notes/);
+    expect(container.textContent, "0 Files ist Schmuck, keine Auskunft").not.toMatch(/0\s*Files/);
+    expect(container.textContent, "0 Code ebenso").not.toMatch(/0\s*Code/);
+    const zellen = container.querySelectorAll(".index-cell .v");
+    const textDerZellen = [...zellen].map((z) => z.textContent ?? "").join(" ");
+    expect(textDerZellen.match(/150/g) || [], "die Heldenzahl und das Fach zaehlen dieselbe Menge zweimal").toHaveLength(1);
   });
 });

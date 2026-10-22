@@ -1,3 +1,28 @@
+## [3.2.37]
+
+### Fixed
+
+- **The index strip no longer shows empty shelves, and no longer says one number twice.**
+  `Dashboard.tsx` painted all three carriers of the store side by side whatever they held, and put
+  the same total under them again: measured on the delivered 3.2.36, a reader with 150 notes and
+  nothing else saw `150 Notes  0 Files  0 Code` and, one line down,
+  `where it came from · in the 150 stored` — two of three figures said nothing, and the third was
+  already standing one cell further left as the hero number. A carrier with zero pieces is now not
+  drawn, a store with nothing in any carrier says `nothing here yet`, and the line names the set it
+  counted (`the whole store`, or `counting the N loaded` while the door has not answered) instead of
+  repeating its size. One new case counts the zeros away and checks that `150` appears once in the
+  strip; the two cases that carried #77 keep their meaning — the strip speaks for the store, the
+  chips for the page — only their waiting anchor moved.
+
+- **A trap in our own contrast guard, found by falling into it.** While doing the above, the token
+  colours were moved into a table whose field was called `farbe`. The suite went red on
+  `tests/design-wache.test.ts` — not because a colour got worse, but because
+  `scripts/design-wache.mjs` collects the colours that appear as text by matching the word
+  `color:` in the source, so a renamed field makes three tokens invisible and the measured lines
+  fell from 22 to 16. The values themselves were fine (`keine Schrift unter 4,50`), which is exactly
+  how a silent gap behaves. The field is called `color` again, the guard is back at 22 lines, and
+  the reason is written above the table so the next refactor does not repeat it.
+
 ## [3.2.36]
 
 ### Added

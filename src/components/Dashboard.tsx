@@ -137,6 +137,18 @@ async function extractTextFromFile(file: File): Promise<string> {
  */
 const SATZ_BREITE_MIN = 390;
 
+/**
+ * Die drei Fächer des Index-Streifens mit ihrer Farbe. Die Eigenschaft heisst `color`,
+ * nicht `farbe`: `scripts/design-wache.mjs` sammelt Schriftfarben über das Wort
+ * `color: var(--…)`, und ein umgetauftes Feld verschwindet still aus der Kontrast-Wache —
+ * gemessen 22.10. 21:09:14, wo die Ruhe-Ebenen-Wache von 22 auf 16 Zeilen fiel.
+ */
+const TRAEGER_KLEID: { key: Traeger; color: string }[] = [
+  { key: 'notes', color: 'var(--type-semantic)' },
+  { key: 'files', color: 'var(--type-reference)' },
+  { key: 'code', color: 'var(--type-procedural)' },
+];
+
 export function Dashboard() {
   const toast = useToast();
   // Die Textgroesse gilt ab dem ersten Bild; geaendert wird sie in den Einstellungen.
@@ -1771,12 +1783,32 @@ export function Dashboard() {
                         Farbe zeigt die Ebene, das Wort ist Zeile 1. Gezählt wird
                         der Laden (#77), nicht das Blatt: die Heldenzahl oben ist
                         auch der Laden, und zwei Zahlen derselben Fläche müssen
-                        sich auf dieselbe Menge beziehen. */}
-                    <span style={{ color: 'var(--type-semantic)' }}>{groessenZahl(zeigeTraeger.notes)} <span className="text-[10px] opacity-70">{TRAEGER_LABELS.notes}</span></span>
-                    <span style={{ color: 'var(--type-reference)' }}>{groessenZahl(zeigeTraeger.files)} <span className="text-[10px] opacity-70">{TRAEGER_LABELS.files}</span></span>
-                    <span style={{ color: 'var(--type-procedural)' }}>{groessenZahl(zeigeTraeger.code)} <span className="text-[10px] opacity-70">{TRAEGER_LABELS.code}</span></span>
+                        sich auf dieselbe Menge beziehen.
+                        Ein Fach mit null Stücken ist keine Auskunft, sondern
+                        Schmuck (Damians Bild von 19:02: „150 Notes 0 Files 0
+                        Code" — zwei von drei Zahlen sagen nichts). Darum steht
+                        hier nur, was da ist; fehlt alles, sagt die Zeile es.
+                        Die Token stehen als eigne Zeile da, nicht als
+                        zusammengebaute Zeichenkette: `scripts/design-wache.mjs`
+                        liest die wörtlichen Namen aus der Quelle, und ein
+                        `var(--type-${t})` wäre für sie unsichtbar — gemessen
+                        22.10. 21:09:14, wo die Ruhe-Ebenen-Wache von 20 auf 16
+                        Zeilen fiel. */}
+                    {TRAEGER_KLEID.filter((k) => zeigeTraeger[k.key] > 0).map((k) => (
+                      <span key={k.key} style={{ color: k.color }}>
+                        {groessenZahl(zeigeTraeger[k.key])} <span className="text-[10px] opacity-70">{TRAEGER_LABELS[k.key]}</span>
+                      </span>
+                    ))}
+                    {zeigeTraeger.notes === 0 && zeigeTraeger.files === 0 && zeigeTraeger.code === 0 && (
+                      <span style={{ color: 'var(--text-3)' }}>nothing here yet</span>
+                    )}
                   </span>
-                  <span className="k">where it came from · {bestandGruppen ? `in the ${groessenZahl(bestandGruppen.bestand)} stored` : ladung !== null ? `in the ${groessenZahl(ladung)} loaded` : 'in the index'}</span>
+                  {/* Der Satz nennt die Menge, die diese Zahlen zählen — nicht noch
+                      einmal ihre Grösse: die steht zwei Zellen weiter als Heldenzahl,
+                      und dieselbe Zahl zweimal in einem Streifen ist die Krankheit,
+                      die #77 gerade nicht wollte. Solange die Tür nicht geantwortet
+                      hat, sagt die Zeile, wie weit sie überhaupt gesehen hat. */}
+                  <span className="k">where it came from · {bestandGruppen ? 'the whole store' : ladung !== null ? `counting the ${groessenZahl(ladung)} loaded` : 'in the index'}</span>
                 </div>
                 <div className="index-cell">
                   <span className="v">{groessenZahl(allTags.length)}</span>
