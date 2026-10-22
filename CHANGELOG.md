@@ -19,9 +19,11 @@
   before the first request now, and the build answers with the number of active notes it took in. The
   generation trigger stays as the safety net, so nothing about correctness moved. 3 cases in one new
   file: `tests/p6-suchcache-beim-start.test.ts` (the suite went from 2 866 to 2 869 executed cases across
-  213 files; four runs were measured on the night of 22.10. — the first at 23:13:52 MESZ red on the document
-  guard alone, then green at 23:17:51, 23:21:28 and 23:34:18 MESZ, 0 red, the last two on the bytes this
-  release carries). **Still open, named rather
+  213 files; six runs were measured on the night of 22./23.10. — the first at 23:13:52 MESZ red on the
+  document guard alone, then green at 23:17:51, 23:21:28, 23:34:18, 00:55:42 and 00:58:08 MESZ, 0 red,
+  the last two on the packaging bytes this release carries. `CHANGELOG.md` is not a packaging input —
+  the delivery chain names `src index.html vite.config.ts electron.js package.json package-lock.json public
+  assets` — so citing these times cannot date the object they describe). **Still open, named rather
   than glossed:** the *after* picture of the first request on a large base is not measured yet — the
   before-values above are the measured half.
 
