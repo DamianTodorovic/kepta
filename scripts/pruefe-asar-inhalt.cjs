@@ -75,6 +75,15 @@ const erwartet = [
   ["Ask this machine whether Ollama or LM Studio is running", 1],
   ["regal-wann", 1],
   ["regal-koerb", 1],
+  // p5-p (G-72) und p1-q (G-76) und p4-y, am **gelandeten** Objekt gezaehlt 22.10. 19:16 MESZ
+  // (app.asar 49 097 685 B, 19:05): "graph-farbgruppe" 2 (das zweite ist "-stand"),
+  // "graph-verbindungsdicke" 2 (das zweite ist "-wert"), die beiden Saetze je 1. Kappen sind
+  // auf 1 gesetzt, weil sie eine Untergrenze sind: ein zusaetzliches Vorkommen ist erlaubt,
+  // ein fehlendes nicht.
+  ["graph-farbgruppe", 1],
+  ["graph-verbindungsdicke", 1],
+  ["No model provider is chosen yet", 1],
+  ["This provider needs an API key", 1],
   // P4-16 und P4-13 bleiben ohne Marker, nicht aus Bequemlichkeit: P4-16 verwendet dieselben
   // Worte wie die Extraktionszeile aus 3.2.22 ("did not answer (" steht im alten Objekt schon
   // 1 mal), P4-13 nimmt nur einen try/fang weg und schreibt kein neues Literal. Beide haengen
