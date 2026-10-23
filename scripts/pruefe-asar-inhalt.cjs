@@ -64,8 +64,17 @@ const erwartet = [
   // hier genannten Literalen dort **0** Treffer.
   ["x-kepta-teilzeiten", 1],
   ["notes, in three bands", 1],
-  ["bottom:3.25rem", 1],
-  ["graph-legende absolute left-3 bottom-3", 1],
+  // 3.2.44 (Punkt 5s Fuss-Kappe, Kopf 48712f4): die Heilung zieht `bottom:3.25rem` in die
+  // Variable `--panel-fuss` und laesst `bottom-3` aus der Klassenkette der Legende fallen.
+  // Beide alten Ketten messen im gebauten 3.2.44-Objekt **0** (18:01:07 MESZ, diese Sonde;
+  // Gegenprobe 18:02:5x MESZ mit LC_ALL=C grep -aoE am gebauten asar, 49 102 581 B, mtime
+  // 18:00:46), im installierten 3.2.43 steht `bottom:3.25rem` dagegen **1** mal. Die drei
+  // neuen Marken sind samt Grund gegen das **installierte** 3.2.43 geprueft, bevor etwas
+  // getauscht wurde (18:03:12 MESZ, alle drei = 0, Pfad
+  // /Applications/K3PTA.app/Contents/Resources/app.asar, 49 101 261 B, mtime 17:14:07 MESZ).
+  ["--panel-fuss:3.25rem", 1],
+  ["--panel-fuss:.75rem", 1],
+  ["graph-legende absolute left-3 hud-panel", 1],
   // p4-w (landet in 3.2.32) und p5-m (landet in 3.2.33), am **installierten** Objekt gezaehlt:
   // app.asar 49 084 029 B, mtime 21.10. 19:14:48 MESZ. Treffer dort: der Titel-Sichttext 1,
   // "Look for a local model" 1, "regal-wann" 1, "regal-koerb" 3. Die Icon-Klasse des Flickens
@@ -99,15 +108,20 @@ const erwartet = [
   // stehen im neuen Objekt genau **1** mal und im alten **0** — also schlagen sie,
   // wenn einer der zwei Koerper fehlt. Die Gegenprobe am alten Objekt meldete sie
   // Zeile fuer Zeile FEHLT.
-  // Das Wort `graph-legende absolute left-3 bottom-3` (Zeile oben) bleibt unveraendert
-  // 1 Treffer in beiden Objekten: es ist der gemeinsame Vorlauf der alten und neuen
-  // Klasse, beweiset also diese Heilung nicht und ist kein Test auf sie.
+  // Das Wort `graph-legende absolute left-3 bottom-3` galt bis 3.2.43 als gemeinsamer
+  // Vorlauf beider Klassen und traf in beiden Objekten 1 mal. **Seit 3.2.44 ist die Kette
+  // weg** (der Fuss zieht in `--panel-fuss`, `bottom-3` faellt aus der Klasse) — die Zeile
+  // oben prueft jetzt die neue Form `graph-legende absolute left-3 hud-panel`.
   // Die alte Klassenkette `hud-panel rounded-lg px-3 py-2 pointer-events-none space-y-1`
   // ist im neuen Objekt **0** mal — gemeldet, nicht geprueft: diese Liste kennt nur
   // Untergrenzen, und eine Kappe auf 0 waer eine zweite Klasse von Pruefung.
   ["max-h-[calc(100%-56px)]", 1],
   ["min-[820px]:columns-2", 1],
-  ['maxHeight:"calc(100% - 1.5rem)"', 1],
+  // 3.2.41 setzte hier `maxHeight:"calc(100% - 1.5rem)"`; 3.2.44 tauscht die Zahl gegen die
+  // Variable des Fusses, also schlaegt die alte Kette fehl (gemessen 0 im gebauten Objekt
+  // 18:01:07 MESZ) und die neue tritt an ihre Stelle — Kappe 1, Gegenprobe am installierten
+  // 3.2.43 = 0 (18:03:12 MESZ).
+  ['maxHeight:"calc(100% - 2 * var(--panel-fuss, 0.75rem))"', 1],
   ['apiKey:"",baseUrl:"",model:""', 1],
   // Die Vorwaermung des Such-Index (3.2.39, `src/core/engine.ts` und `server/bootstrap.ts`)
   // hatte bis hierher keinen Marker, weil eine Gegenprobe kurz vor 11:05 MESZ ins Leere lief:
