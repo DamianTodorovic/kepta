@@ -998,6 +998,61 @@ const MIN_KNOTEN_PX = 1.5;
  */
 const KLEIN_AB_PX = 2.5;
 /**
+ * Gang-Lichtung (#102).
+ *
+ * Der Gang steht mit `GANG_ABSTAND` = 26 Welteinheiten Reihenabstand, die
+ * Tinten-Untergrenze aber bei 2 * MIN_KNOTEN_PX = 3 Schirm-Pixeln je Punkt. Ab
+ * k = 3 / 26 = 0,115 (mit dem Rasterabgleich unten: 0,154) liegen die Punkte
+ * naeher zusammen, als sie gemalt werden -- aus der Menge wird eine Flaeche.
+ * Der Weg dagegen ist nicht, die Untergrenze wegzunehmen (die wurde gebaut,
+ * damit ein 25 000er Feld nicht zu Staub zerfaellt), sondern duenner zu malen:
+ * jedes n-te Glied der Reihe bleibt, der Rest wird gezaehlt und die Zahl steht
+ * im Bild.
+ *
+ * `GANG_LICHT_LUECKE_PX` ist der Rasterabgleich, der zwei Quadrate schon als
+ * beruehrend zaehlt (gemessen am eignen Fall: erste Verschmelzung bei 0,125,
+ * Trennung bei 0,156 -- ohne Abgleich faellt die Linie auf 0,115).
+ *
+ * `GANG_SICHT_BREITE_PX` ist die Schwelle, unter der die Seite des Gangs kein
+ * Raster mehr ist, sondern ein Klecks: 32 Spalten a 26 Einheiten sind bei
+ * k = 0,029 rund 24 Schirm-Pixel breit. Darunter malt die Flaeche den Gang nicht
+ * mehr -- sie sagt seine Zahl.
+ */
+const GANG_LICHT_LUECKE_PX = 1;
+const GANG_SICHT_BREITE_PX = 24;
+
+/** Wie stark der Gang bei dieser Blende gelichtet wird, und ob er noch malt. */
+export function gangLichtung(
+  k: number,
+  kantePx = MIN_KNOTEN_PX * 2,
+  abstand = GANG_ABSTAND
+): { schirm: number; faktor: number; maltNicht: boolean } {
+  const schirm = abstand * Math.max(0.01, k);
+  const faktor = Math.max(1, Math.ceil((kantePx + GANG_LICHT_LUECKE_PX) / schirm));
+  return { schirm, faktor, maltNicht: schirm * GANG_SPALTEN < GANG_SICHT_BREITE_PX };
+}
+
+/**
+ * Wie viele der Punkte einer Gang-Seite bei diesem Faktor wirklich gemalt
+ * werden. Dieselbe Zeilenfolge, die der Mal-Pass prueft -- hier vorgespielt,
+ * damit die Zahl im Bild die Zahl auf dem Schirm ist und nicht eine Absicht.
+ */
+export function gangLichtungZaehlen(
+  aufDerSeite: number,
+  faktor: number,
+  maltNicht: boolean,
+  spalten = GANG_SPALTEN
+): { gemalt: number; nichtGemalt: number } {
+  const alle = Math.max(0, aufDerSeite);
+  if (maltNicht) return { gemalt: 0, nichtGemalt: alle };
+  if (faktor <= 1) return { gemalt: alle, nichtGemalt: 0 };
+  let gemalt = 0;
+  for (let i = 0; i < alle; i++) {
+    if (i % spalten % faktor === 0 && Math.floor(i / spalten) % faktor === 0) gemalt++;
+  }
+  return { gemalt, nichtGemalt: alle - gemalt };
+}
+/**
  * Ab dieser Strecke gilt eine Geste als Ziehen und nicht mehr als Klick.
  * Wer einen Knoten nur antippt, will ihn nicht festnageln.
  */
@@ -3127,6 +3182,9 @@ export function KnowledgeGraph({ memories: memoriesAusFenster, onSelectMemory, o
     let abgelaufenImBild = 0;
     let ersetztImBild = 0;
     let angeheftetImBild = 0;
+    // Gang-Lichtung (#102): ab dieser Blende wird das Gang-Raster duenner gemalt.
+    const lichtung = gangLichtung(t.k);
+    let gangZaehler = 0;
     for (const n of sim.nodes) {
       if (!imBild(n)) continue;
       const m = byIdRef.current.get(n.id);
@@ -3134,6 +3192,16 @@ export function KnowledgeGraph({ memories: memoriesAusFenster, onSelectMemory, o
       // Eine Notiz, die im Rahmen steht — die Zahl hinter ihr ist die, die ein
       // Mensch mit eigenen Augen nachzaehlen kann (F8-N1).
       imRahmenNoten += 1;
+      if (sim.gangIds?.has(n.id)) {
+        // Die Reihe wird zeilenweise gelegt, also ist die Reihenfolge in diesem
+        // Durchgang der Rasterindex. Was nicht gemalt wird, zaehlt weiter in
+        // `imRahmenNoten` und in der Zahl des Satzes — es ist im Bild, nur nicht
+        // auf dem Schirm.
+        const spalte = gangZaehler % GANG_SPALTEN;
+        const zeile = Math.floor(gangZaehler / GANG_SPALTEN);
+        gangZaehler += 1;
+        if (lichtung.maltNicht || spalte % lichtung.faktor !== 0 || zeile % lichtung.faktor !== 0) continue;
+      }
       const r = n.r;
       const istHov = hov === n.id;
       const gedimmt = (hov !== null && !istHov && !nachbarn?.has(n.id)) || (!!spot && !spot.has(n.id));
@@ -3711,8 +3779,16 @@ export function KnowledgeGraph({ memories: memoriesAusFenster, onSelectMemory, o
       const letzteZeile = ankerY + (Math.max(1, zeileZahl) - 1) * GANG_ABSTAND * t.k;
       if (ankerY > -40 && letzteZeile < dimensions.h + 80) {
         const seiten = sim.gangSeiten ?? 0;
+        // Die Lichtung sagt, was von der Seite wirklich gemalt wird — beide
+        // Zahlen stehen im Bild, damit "duenn gemalt" nie "vergessen" heisst.
+        const lichtungZahl = gangLichtungZaehlen(sim.gangIds?.size ?? 0, lichtung.faktor, lichtung.maltNicht);
         const text = `${sim.allein.toLocaleString("en-US")} notes connect to nothing in this picture`
-          + (seiten > 1 ? ` · page ${(sim.gangSeite ?? 0) + 1} of ${seiten.toLocaleString("en-US")}` : "");
+          + (seiten > 1 ? ` · page ${(sim.gangSeite ?? 0) + 1} of ${seiten.toLocaleString("en-US")}` : "")
+          + (lichtung.faktor > 1
+            ? lichtung.maltNicht
+              ? ` · too tight to paint at this zoom · ${lichtungZahl.nichtGemalt.toLocaleString("en-US")} counted, not painted`
+              : ` · ${lichtungZahl.gemalt.toLocaleString("en-US")} painted at this zoom · ${lichtungZahl.nichtGemalt.toLocaleString("en-US")} counted, not painted`
+            : "");
         ctx.globalAlpha = 0.34;
         ctx.strokeStyle = textFarbe;
         ctx.lineWidth = 1;
@@ -5069,6 +5145,14 @@ export function KnowledgeGraph({ memories: memoriesAusFenster, onSelectMemory, o
               + (gangInfo.seiten > 0
                 ? ` · showing ${gangInfo.gezeigt.toLocaleString("en-US")} of ${gangInfo.allein.toLocaleString("en-US")} · page ${gangInfo.seite + 1} of ${gangInfo.seiten.toLocaleString("en-US")}`
                 : "")
+              + (() => {
+                const licht = gangLichtung(zoomAnzeige);
+                if (licht.faktor <= 1) return "";
+                const zahl = gangLichtungZaehlen(gangInfo.gezeigt, licht.faktor, licht.maltNicht);
+                return licht.maltNicht
+                  ? ` · too tight to paint at this zoom · ${zahl.nichtGemalt.toLocaleString("en-US")} counted, not painted`
+                  : ` · ${zahl.gemalt.toLocaleString("en-US")} painted at this zoom · ${zahl.nichtGemalt.toLocaleString("en-US")} counted, not painted`;
+              })()
             : ""}
         </p>
         {gangInfo && gangInfo.seiten > 1 && (

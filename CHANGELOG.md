@@ -1,3 +1,34 @@
+## [3.2.42]
+
+### Fixed
+
+- **The gang stopped turning into a blue area when you zoom out; it says what it stopped
+  painting.** Its rows sit `GANG_ABSTAND` = 26 world units apart, while the ink floor is 3 screen
+  pixels per dot — from `k` ≈ 0.115 (0.154 with the grid check below) the points lie closer than
+  they are drawn, and a field of thousands reads as one surface. The floor was built so a 25 000
+  note store does not dissolve into dust, so the cure is not to remove it but to **paint thinner**:
+  every *n*-th member of the row survives as a regular sub-grid (`spalte % faktor`,
+  `zeile % faktor` — no shuffling), the factor comes from the surface's own floor and its own row
+  distance, and **both numbers stand in the picture**: `96 painted at this zoom · 288 counted, not
+  painted`, on the canvas and in the `gang-info` node. Below the point where a gang page is narrower
+  than 24 screen pixels the surface paints **nothing** and says the count instead
+  (`too tight to paint at this zoom · 384 counted, not painted`) — a smear is not an overview.
+  Measured by hand P1 against the shipped code in its own cases: at `k = 0.1` the painted count is
+  312, 304 of them alone, largest blob 2 (`belege-2310/p1-masse-hoehe-treu-113018/`, cases green
+  11:55:01 and 11:59:38 MESZ, 202 neighbour cases 11:57:55 MESZ). The ink floor itself is
+  unchanged, and the number the sentence shows is replayed from the same row sequence the paint pass
+  walks, so it cannot drift from the ink.
+
+### Offen, gemessen, nicht erledigt
+
+`#17` and `#59` stay open with P1's capacity table: one character costs 6.805 px at the font the
+surface itself sets, an ellipsis 10.012 px, a row at 100 % zoom carries **2** characters and at
+65 % only **1**, so a full title needs **618 %** zoom (745 % with an ellipsis) — below 46 % the row
+holds none at all. And `#102`'s sibling remains: at very small zoom the whole *page* of the gang is
+still a colour field, because 32 columns × 26 units is under 24 px — which is exactly the case this
+body now names in words instead of painting. Five cases in one new file:
+`tests/components/KnowledgeGraph.kleinzoom-flaeche.test.tsx`.
+
 ## [3.2.41]
 
 ### Fixed
