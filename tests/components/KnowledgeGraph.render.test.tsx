@@ -430,6 +430,14 @@ describe("Bedienung", () => {
     expect(anzeige()).toMatch(/%/);
   });
 
+  it("der Fit-Knopf traegt sein Wort sichtbar, und der title bleibt der volle Satz", async () => {
+    const { container } = await zeichne([note(), note(), note()]);
+    const knopf = container.querySelector('button[title="Fit the whole graph into view"]') as HTMLButtonElement;
+    expect(knopf, "Fit-Knopf ueber den title nicht gefunden").toBeTruthy();
+    expect((knopf.textContent ?? "").trim(), "sichtbares Wort am Knopf").toBe("Fit");
+    expect(knopf.querySelector("svg"), "Symbol bleibt neben dem Wort").toBeTruthy();
+  });
+
   it("oeffnet eine Notiz bei Doppelklick auf einen Knoten", async () => {
     const onSelect = vi.fn();
     const { container } = await zeichne([note()], onSelect);

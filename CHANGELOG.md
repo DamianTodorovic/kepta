@@ -1,3 +1,13 @@
+## [3.2.47]
+
+### Changed
+
+- **The fit control now wears its word.** The third zoom control was an icon whose name lived only
+  in `title`; it now carries the visible word `Fit` beside the symbol, the title stays the full
+  sentence, and the button keeps its 36/44 px target. At 390 px the word holds in one line with no
+  overflow; the zoom percentage stays hidden below 768 px by the existing `hidden md:inline-block`
+  class (a separate body, not this one). Body: `src/components/KnowledgeGraph.tsx`, one render test.
+
 ## [3.2.46]
 
 ### Fixed

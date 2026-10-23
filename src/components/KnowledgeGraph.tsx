@@ -4741,7 +4741,8 @@ export function KnowledgeGraph({ memories: memoriesAusFenster, onSelectMemory, o
       </span>
       <button onClick={() => zoom(1.25)} className="btn-ghost p-2 rounded-lg" title="Zoom in"><ZoomIn className="w-4 h-4" /></button>
       <button onClick={() => zoom(0.8)} className="btn-ghost p-2 rounded-lg" title="Zoom out"><ZoomOut className="w-4 h-4" /></button>
-      <button onClick={fitView} className="btn-ghost p-2 rounded-lg" title="Fit the whole graph into view"><Maximize2 className="w-4 h-4" /></button>
+      {/* .hud-label setzt --text-2; das Wort soll --text-1 tragen wie das Symbol daneben. */}
+      <button onClick={fitView} className="btn-ghost p-2 rounded-lg inline-flex items-center gap-1" title="Fit the whole graph into view"><Maximize2 className="w-4 h-4" /><span className="hud-label" style={{ color: "var(--text-1)" }}>Fit</span></button>
       {angeheftet > 0 && (
         <button
           onClick={loeseAlle}
