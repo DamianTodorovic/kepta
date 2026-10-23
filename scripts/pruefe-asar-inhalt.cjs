@@ -116,7 +116,12 @@ const erwartet = [
   // ist im neuen Objekt **0** mal — gemeldet, nicht geprueft: diese Liste kennt nur
   // Untergrenzen, und eine Kappe auf 0 waer eine zweite Klasse von Pruefung.
   ["max-h-[calc(100%-56px)]", 1],
-  ["min-[820px]:columns-2", 1],
+  // ABGELOEST 3.2.50: `min-[820px]:columns-2` verlangte die Multicol-Klasse zurueck, die Punkt 2s
+  // Raster-Flicken (p2-raster-2310.patch) durch ein zweispaltiges Grid ersetzt -- Grund: bei
+  // 1024 x 768 legte Multicol eine dritte Spalte hinter der rechten Kante an (Reihen bei x 988
+  // bis 1 317 gegen Klappe 985, kein Rollweg). Die Zeile ist damit kein Beweis mehr, sondern eine
+  // Forderung nach dem alten Fehler. Was jetzt gepraeft wird, steht am Ende dieser Liste:
+  // `min-[820px]:grid`. Die Fuss-Kappe von 3.2.40 bleibt unangetastet (Zeile darueber, 1 Treffer).
   // 3.2.41 setzte hier `maxHeight:"calc(100% - 1.5rem)"`; 3.2.44 tauscht die Zahl gegen die
   // Variable des Fusses, also schlaegt die alte Kette fehl (gemessen 0 im gebauten Objekt
   // 18:01:07 MESZ) und die neue tritt an ihre Stelle — Kappe 1, Gegenprobe am installierten
