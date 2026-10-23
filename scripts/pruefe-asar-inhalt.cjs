@@ -131,6 +131,21 @@ const erwartet = [
   // beweist ueber diesen Koerper nichts. Kein Marker fuer `kappeListe` und `KAPPE_PANEL`:
   // Kennungen verbiegt der Minifier (`function Li(e=320,t="45vh")`).
   ["45vh", 1],
+  // 3.2.42 (Punkt 1s Gang-Lichtung #102), gemessen 12:37:34 MESZ am gebauten Objekt
+  // (`release/mac-arm64/.../app.asar`, 49 100 741 B, mtime 12:36:43 MESZ): 45 Pruefungen ok, EXIT 0.
+  // Nach dem Kommentar-Lauf 12:37:54 MESZ gilt dieselbe Liste unveraendert ("Inhalt passt").
+  // Gegenprobe 12:37:35 MESZ am zu diesem Zeitpunkt installierten 3.2.41
+  // (`/Applications/K3PTA.app`, 49 099 570 B, mtime 12:16:28 MESZ): 43 ok, beide neuen Ketten FEHLT,
+  // EXIT 1. Gegenprobe **vor** dem Tausch, Pfad, Groesse und Schreibzeit in der Zeile -- die Regel,
+  // die diese Tafel zweimal gelehrt hat.
+  // **Kappen auf 2, nicht auf 1, mit Grund:** der Satz mit der Zahl steht an zwei Orten, auf der
+  // Leinwand und im `gang-info`-Knoten. Fehlt einer der beiden, malt die Flaeche eine Zahl, die
+  // der Mensch an der andern Stelle nicht sieht -- genau die Klasse, die dieses Haus "eine Zahl,
+  // die niemand liest" nennt. Ein dritter Aufrufort ist erlaubt (Kappe = Untergrenze), einer
+  // weniger nicht. `counted, not painted` zaehlt 4 (beide Saetze, beide Orte) und steht deshalb
+  // nicht eigner Liste: es ist durch die zwei Ketten oben gedeckt.
+  ["painted at this zoom", 2],
+  ["too tight to paint at this zoom", 2],
   // Kein Marker fuer die zwei Heilungen der Sonde, die nur ein Wort wegnehmen:
   // `baseUrl:""` (2 -> 3) und `model:""` (1 -> 2) stehen schon im alten Objekt, eine
   // Pruefung darauf kann nie schlagen. Nur die volle Kette oben ist neu.
