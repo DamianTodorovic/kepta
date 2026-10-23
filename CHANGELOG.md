@@ -1,3 +1,15 @@
+## [3.2.48]
+
+### Changed
+
+- **The grouping palette is assigned by occupancy, not by hash.** The twelve saved groups were
+  sharing five tones (machine-scan and md both steel blue, json and ini moss, txt and csv
+  turquoise, html and kepta orange, pdf and three others brass); the three free tones now go to
+  the three largest colliding groups (`md` green, `json` berry, `txt` lavender), chosen by a
+  contrast-weighted occupancy, and the remaining collisions keep a second channel (the glyph).
+  Body: `src/lib/gruppen.ts`, `src/components/KnowledgeGraph.tsx`, one new test file (seven
+  cases). No new strings; the palette hexes already existed.
+
 ## [3.2.47]
 
 ### Changed

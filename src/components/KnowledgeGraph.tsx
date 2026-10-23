@@ -81,12 +81,15 @@ import {
   baueFarbGruppen,
   gruppenBild,
   gruppenFarbenVon,
+  gruppenGlyph,
   leseEinstellung,
   gruppeHinzufuegen,
   gruppeEntfernen,
   gruppenFarbeSetzen,
   achseFuerMenschen,
   achsenSatz,
+  vergabeNachBelegung,
+  zaehleGruppen,
   ACHSEN,
 } from "../lib/gruppen";
 import { KAPPE_PANEL } from "../lib/kappe";
@@ -102,6 +105,14 @@ const RICHTUNG_KEY = "kepta_graph_richtung";
  */
 type FarbKanal = "typ" | "herkunft" | "gruppe";
 const FARB_KANAL_KEY = "kepta_graph_farbkanal";
+/**
+ * Die Gruppen, die laut Leitung (23.10. abends) ihre geteilten Toene aufgeben und je einen
+ * freien Palettenton nehmen — Beere, Lavendel, Gruen nach Kontrast. **Die Auswahl ist eine
+ * Entscheidung, nicht aus der Belegung abgeleitet**: `machine-scan` ist die groesste
+ * kollidierende Gruppe und muesste nach jeder "groesste zuerst"-Regel mitziehen.
+ * `vergabeNachBelegung` entscheidet nur, welche der drei freien Toene welche Gruppe bekommt.
+ */
+const VERGABE_BEWEGEN = ["md", "json", "txt"] as const;
 /**
  * Die Stellung der vier Regler unter „Forces" (P-13). 1 ist der Stand der
  * gestimmten Konstanten: wer nichts verstellt, bekommt exakt das Bild von vor
@@ -1466,16 +1477,26 @@ export function KnowledgeGraph({ memories: memoriesAusFenster, onSelectMemory, o
     [memories]
   );
   const aktiverKanal: FarbKanal = kanal === "herkunft" ? (herkunft.verfügbar ? "herkunft" : "typ") : kanal;
+  /**
+   * Die Vergabe nach Belegung — EIN Aufruf ueber den ganzen Bestand, damit Legende und
+   * Leinwand dieselbe Zuordnung lesen und nicht zwei Zahlen entstehen. Bewusst OHNE
+   * Zeitfilter: eine Farbe, die beim Ziehen des Zeitreglers wandert, waere ein Rueckschritt
+   * gegen die Regel, dass eine Gruppe ihre Farbe behaelt.
+   */
+  const vergabe = useMemo(
+    () => vergabeNachBelegung(zaehleGruppen(memories).gruppen, VERGABE_BEWEGEN),
+    [memories, gruppenStand]
+  );
   const notenFarben = useMemo(() => {
     // Der Gruppen-Kanal faerbt aus der Einstellung, nicht aus einer zweiten Zaehlung:
     // die Zahl der gedeckten Notizen holt sich die Flaeche aus `baueFarbGruppen`.
-    if (aktiverKanal === "gruppe") return gruppenFarbenVon(leseEinstellung(), TYPE_COLORS.neutral ?? "");
+    if (aktiverKanal === "gruppe") return gruppenFarbenVon(leseEinstellung(), TYPE_COLORS.neutral ?? "", vergabe);
     if (aktiverKanal !== "herkunft") return TYPE_COLORS;
     const aus: Record<string, string> = {};
     for (const art of Object.values(HERKUNFT)) if (rollenHexe[art]) aus[art] = rollenHexe[art];
     if (rollenHexe.neutral) aus.neutral = rollenHexe.neutral;
     return aus;
-  }, [aktiverKanal, TYPE_COLORS, rollenHexe, gruppenStand]);
+  }, [aktiverKanal, TYPE_COLORS, rollenHexe, gruppenStand, vergabe]);
 
   // Eine Typ-Farbe wirkt app-weit (Karten-Grat, Typ-Label, Index-Zahlen).
   useEffect(() => {
@@ -2169,8 +2190,8 @@ export function KnowledgeGraph({ memories: memoriesAusFenster, onSelectMemory, o
    * Der Korpus ist `baumMemories` — dieselbe Liste, aus der auch `regal` baut.
    */
   const farbgruppen = useMemo(
-    () => baueFarbGruppen(baumMemories),
-    [baumMemories, gruppenStand]
+    () => baueFarbGruppen(baumMemories, leseEinstellung(), vergabe),
+    [baumMemories, gruppenStand, vergabe]
   );
   const gruppenZuordnung = useMemo(
     () => gruppenBild(baumMemories, farbgruppen),
@@ -3302,7 +3323,11 @@ export function KnowledgeGraph({ memories: memoriesAusFenster, onSelectMemory, o
         // Der Buchstabe der Art, erst ab der Vektorgroesse: auf einem Sprite
         // (unter 15 Bildpunkten) wäre er ein Fussel, und dieser Pfad malt
         // Zehntausende Knoten — dort darf nichts on top kommen.
-        const buchstabe = GLYPH_FUER_ART[m.type ?? ""];
+        //
+        // Im Gruppen-Kanal traegt das Zeichen die GRUPPE, nicht die Art: zwei Gruppen, die
+        // sich einen Ton teilen, sind sonst nicht zu unterscheiden. Die Art bleibt im
+        // Art-Kanal, wo ihre Farbe dieselbe Frage schon beantwortet.
+        const buchstabe = aktiverKanalRef.current === "gruppe" ? gruppenGlyph(typ) : GLYPH_FUER_ART[m.type ?? ""];
         if (buchstabe) zeichneGlyph(ctx, n.x, n.y, rr, buchstabe, farbe, t.k);
       } else {
         const bild = sp[typ];
