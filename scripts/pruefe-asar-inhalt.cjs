@@ -118,6 +118,19 @@ const erwartet = [
   // Gegenprobe: das alte Objekt nach einem Tausch an seinem Lagerpfad messen, nicht an
   // `/Applications` — und Pfad, Groesse und mtime in die Zeile schreiben.
   ["Such-Vorwaermung ausgeblieben", 1],
+  // 3.2.41 (Punkt 5s Klassen-Kappe), gemessen 12:14:13 MESZ am gebauten Objekt
+  // (`release/mac-arm64/.../app.asar`, 49 099 570 B, mtime 12:12:54 MESZ): 43 Pruefungen ok, EXIT 0.
+  // Gegenprobe 12:14:14 MESZ — noch VOR dem Tausch — am installierten 3.2.40
+  // (`/Applications/K3PTA.app`, 49 099 436 B, mtime 10:58:13 MESZ): 42 ok, `45vh` FEHLT, EXIT 1.
+  // Die letzte Gegenprobe war nach einem Tausch gefahren und hatte ihr eignes neues Objekt als den
+  // alten Stand gelesen; deshalb steht die Zahl hier mit Pfad, Groesse und Schreibzeit.
+  // `45vh` steht im neuen Objekt 1 mal und im alten 0: die Zahlen der neuen Rechnung
+  // (`min(<fest>px, <blickfeld>)`) sind Vorlagen, also ueberlebt nur der Blickfeld-Anteil als Wort.
+  // Kein Marker fuer den Klick, der die Liste holt: `block:"nearest"` zaehlt 8 im neuen und 7 im
+  // alten Objekt — eine Untergrenze auf ein Muster, das die Flaeche vorher schon sieben mal benutzte,
+  // beweist ueber diesen Koerper nichts. Kein Marker fuer `kappeListe` und `KAPPE_PANEL`:
+  // Kennungen verbiegt der Minifier (`function Li(e=320,t="45vh")`).
+  ["45vh", 1],
   // Kein Marker fuer die zwei Heilungen der Sonde, die nur ein Wort wegnehmen:
   // `baseUrl:""` (2 -> 3) und `model:""` (1 -> 2) stehen schon im alten Objekt, eine
   // Pruefung darauf kann nie schlagen. Nur die volle Kette oben ist neu.
