@@ -81,82 +81,6 @@ export function normaliereMarke(roh: string): string {
   return String(roh ?? "").trim().replace(/^#+/, "").trim().toLowerCase();
 }
 
-/** Relative Leuchtdichte nach WCAG 2.x — die Zahl, auf der der Kanten-Kontrast des Hauses fusst. */
-function leuchtdichte(hex: string): number {
-  const kanal = (i: number) => {
-    const s = parseInt(hex.slice(i, i + 2), 16) / 255;
-    return s <= 0.04045 ? s / 12.92 : ((s + 0.055) / 1.055) ** 2.4;
-  };
-  return 0.2126 * kanal(1) + 0.7152 * kanal(3) + 0.0722 * kanal(5);
-}
-
-/** WCAG-Kontrast zweier Farben: 1 heisst gleicher Leuchtwert, 21 heisst Schwarz gegen Weiss. */
-export function kontrastVerhaeltnis(a: string, b: string): number {
-  const la = leuchtdichte(a);
-  const lb = leuchtdichte(b);
-  return (Math.max(la, lb) + 0.05) / (Math.min(la, lb) + 0.05);
-}
-
-/**
- * Der Buchstabe einer Gruppe — der zweite Kanal neben dem Ton.
- *
- * Er traegt nur, wo der Knoten gross genug ist, um ein Zeichen zu zeigen (dieselbe
- * Schwelle wie der Art-Buchstabe, `GLYPH_FUER_ART`). Der Rand traegt nicht: er ist eine
- * Konstante ohne Gruppen-Eingang, und seine gezeichnete Dicke liegt unter einem Bildpunkt.
- */
-export function gruppenGlyph(marke: string): string {
-  const m = normaliereMarke(marke);
-  if (!m || m === "neutral") return "";
-  return m.replace(/[^a-z0-9]/g, "").slice(0, 1).toUpperCase();
-}
-
-/**
- * Vergabe nach Belegung: die genannten Gruppen geben ihren geteilten Ton auf und nehmen je
- * einen freien Palettenton. **Welche Gruppe welchen bekommt, entscheidet der Kontrast,
- * gewichtet mit der Belegung** — eine Gruppe mit 20 974 Knoten wiegt schwerer als eine mit 8,
- * weil der Leser sie haeufiger neben den andern sieht. Gleiche Punktzahl entscheidet die
- * Reihenfolge der Palette, damit die Zuordnung nicht vom Zufall abhaengt.
- *
- * Die AUSWAHL der Gruppen ist eine Entscheidung der Leitung, nicht aus der Belegung
- * ableitbar: `machine-scan` ist die groesste kollidierende Gruppe und muesste nach jeder
- * "groesste zuerst"-Regel mitziehen. Diese Funktion entscheidet nur die ZUORDNUNG.
- */
-export function vergabeNachBelegung(
-  gruppen: readonly FarbGruppe[],
-  bewegen: readonly string[],
-  palette: readonly string[] = GRUPPEN_PALETTE,
-): Record<string, string> {
-  const belegt = new Set(gruppen.map((g) => g.farbe.toLowerCase()));
-  const frei = palette.filter((f) => !belegt.has(f.toLowerCase()));
-  if (frei.length === 0 || bewegen.length === 0) return {};
-  const bewegt = bewegen
-    .map((m) => gruppen.find((g) => g.marke === m))
-    .filter((g): g is FarbGruppe => !!g)
-    .sort((a, b) => b.notizen - a.notizen || a.marke.localeCompare(b.marke));
-  const bewegtMarken = new Set(bewegt.map((g) => g.marke));
-  /** Was auf einem Ton stehen bleibt, nachdem die bewegten Gruppen ihn verlassen haben. */
-  const gewicht = new Map<string, number>();
-  for (const g of gruppen) {
-    if (bewegtMarken.has(g.marke)) continue;
-    gewicht.set(g.farbe, (gewicht.get(g.farbe) ?? 0) + g.notizen);
-  }
-  const aus: Record<string, string> = {};
-  const rest = [...frei];
-  for (const g of bewegt) {
-    const punkte = rest.map((farbe) => {
-      let summe = 0;
-      for (const [fest, w] of gewicht) summe += w * kontrastVerhaeltnis(farbe, fest);
-      return { farbe, summe };
-    });
-    punkte.sort((a, b) => b.summe - a.summe || palette.indexOf(a.farbe) - palette.indexOf(b.farbe));
-    const wahl = punkte[0].farbe;
-    aus[g.marke] = wahl;
-    rest.splice(rest.indexOf(wahl), 1);
-    gewicht.set(wahl, (gewicht.get(wahl) ?? 0) + g.notizen);
-  }
-  return aus;
-}
-
 /** Dieselbe Regel wie `markenHaeufigkeit`: trimmen, kleinschreiben, je Notiz entdoppeln. */
 function markenVon(m: Memory): Set<string> {
   return new Set((m.tags ?? []).map((t) => String(t).trim().toLowerCase()).filter(Boolean));
@@ -236,7 +160,6 @@ export function schreibeEinstellung(e: GruppenEinstellung): GruppenEinstellung {
 export function zaehleGruppen(
   memories: readonly Memory[],
   einstellung: GruppenEinstellung = leseEinstellung(),
-  vergabe: Record<string, string> = {},
 ): FarbGruppen {
   const zensus = markenHaeufigkeit(memories as Memory[]);
   const bestand = memories.length;
@@ -246,7 +169,7 @@ export function zaehleGruppen(
     const notizen = zensus.get(marke) ?? 0;
     return {
       marke,
-      farbe: einstellung.farben?.[marke] ?? vergabe[marke] ?? palettenFarbe(marke),
+      farbe: einstellung.farben?.[marke] ?? palettenFarbe(marke),
       notizen,
       prozent: bestand > 0 ? (100 * notizen) / bestand : 0,
     };
@@ -271,9 +194,8 @@ export function zaehleGruppen(
 export function baueFarbGruppen(
   memories: readonly Memory[],
   einstellung: GruppenEinstellung = leseEinstellung(),
-  vergabe: Record<string, string> = {},
 ): FarbGruppen {
-  return zaehleGruppen(memories, einstellung, vergabe);
+  return zaehleGruppen(memories, einstellung);
 }
 
 /**
@@ -416,14 +338,10 @@ export function gruppenBild(memories: readonly Memory[], gruppen: FarbGruppen): 
  * Register. Kommt aus der Einstellung, nicht aus der Zaehlung — der Kanal braucht
  * die Farben, die Zahl holt sich die Flaeche aus `baueFarbGruppen`.
  */
-export function gruppenFarbenVon(
-  einstellung: GruppenEinstellung,
-  neutral: string,
-  vergabe: Record<string, string> = {},
-): Record<string, string> {
+export function gruppenFarbenVon(einstellung: GruppenEinstellung, neutral: string): Record<string, string> {
   const aus: Record<string, string> = { neutral };
   for (const marke of [...new Set((einstellung.marken ?? []).map((m) => normaliereMarke(String(m))).filter(Boolean))]) {
-    aus[marke] = einstellung.farben?.[marke] ?? vergabe[marke] ?? palettenFarbe(marke);
+    aus[marke] = einstellung.farben?.[marke] ?? palettenFarbe(marke);
   }
   return aus;
 }
