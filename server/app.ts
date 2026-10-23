@@ -71,6 +71,23 @@ function menschenGroesse(bytes: number): string {
 }
 
 /**
+ * P4-91 (23.10.): der Satz einer 4xx, die ein Werfer als `expose:true` markiert hat.
+ *
+ * Die Zeile darunter im Handler kopierte bis heute `e.message` - und `expose` setzt in
+ * dieser App niemand selbst, also kam der Wortlaut ausschliesslich aus fremden
+ * Bibliotheken. Ein fremder Exception-Satz geht nicht an die Flaeche; je Statusklasse
+ * steht hier ein eigener Satz, `expose` bleibt der Schalter dafuer.
+ */
+const EXPOSE_TEXTE: Record<number, string> = {
+  400: "The request was not usable as sent. Nothing was changed.",
+  401: "This request needs a key. Nothing was changed.",
+  403: "This request is not allowed from here. Nothing was changed.",
+  404: "There is nothing under that address. Nothing was changed.",
+  409: "The request conflicts with the current state. Nothing was changed.",
+  429: "Too many requests in a short time. Nothing was changed.",
+};
+
+/**
  * A3-04/Q-19 — die einzige Fehlermittelware, identisch zum Kern
  * (`~/kepta-core/server.ts`, sichererFehler). Die App hatte schon einen Haenger,
  * aber er gab `err.message` ungeprueft nach aussen: bei einer 500 stand der
@@ -110,10 +127,11 @@ export function sichererFehler(err: unknown, req: express.Request, res: express.
     console.error(`kepta: request failed (${req.method} ${req.path}) — ${err instanceof Error ? (err.stack ?? err.message) : String(err)}`);
     return res.status(status).json({ error: "The request failed inside the server. The reason is in the server log, not in this answer." });
   }
-  // 4xx mit expose:true sind nach http-errors-eigener Regel ungefaehrlich;
-  // alles andere in dieser Klasse bekommt den Wortlaut ohne Detail.
-  const grund = e.expose === true && typeof e.message === "string" ? e.message : "The request could not be handled.";
-  res.status(status).json({ error: grund });
+  // 4xx mit expose:true sind nach http-errors-eigener Regel ungefaehrlich; der Wortlaut
+  // ist aber unserer, nie der einer fremden Exception (P4-91). Alles andere in dieser
+  // Klasse bekommt den Satz ohne Detail.
+  const exposeText = e.expose === true ? EXPOSE_TEXTE[status] : undefined;
+  res.status(status).json({ error: exposeText ?? "The request could not be handled." });
 }
 
 export function createApp(store: KeptaStore, optionen: AppOptionen = {}) {

@@ -80,7 +80,7 @@ import { HERKUNFT, herkunftsBild, HERKUNFT_TOKEN, HERKUNFT_LABELS } from "../lib
 import {
   baueFarbGruppen,
   gruppenBild,
-  gruppenFarbenVon,
+  gruppenGlyph,
   leseEinstellung,
   gruppeHinzufuegen,
   gruppeEntfernen,
@@ -102,6 +102,17 @@ const RICHTUNG_KEY = "kepta_graph_richtung";
  */
 type FarbKanal = "typ" | "herkunft" | "gruppe";
 const FARB_KANAL_KEY = "kepta_graph_farbkanal";
+/**
+ * Die Gruppen, die laut Leitung (23.10. abends) ihre geteilten Toene aufgeben und je einen
+ * freien Palettenton nehmen — Beere, Lavendel, Gruen nach Kontrast. **Die Auswahl ist eine
+ * Entscheidung, nicht aus der Belegung abgeleitet**: `machine-scan` ist die groesste
+ * kollidierende Gruppe und muesste nach jeder "groesste zuerst"-Regel mitziehen. Die
+ * Reihenfolge entscheidet, wer zuerst waehlen darf.
+ *
+ * Die Zuordnung selbst rechnet `baueFarbGruppen` — **im selben einen Aufruf**, der die
+ * Gruppen zaehlt (G-72: kein zweiter Zaehler in dieser Flaeche).
+ */
+const VERGABE_BEWEGEN = ["md", "json", "txt"] as const;
 /**
  * Die Stellung der vier Regler unter „Forces" (P-13). 1 ist der Stand der
  * gestimmten Konstanten: wer nichts verstellt, bekommt exakt das Bild von vor
@@ -1439,6 +1450,43 @@ export function KnowledgeGraph({ memories: memoriesAusFenster, onSelectMemory, o
     [leistenBreite, zeitAchse]
   );
 
+  /**
+   * Was unter der Kante der Klappe liegt - die Zahl, die der Hinweis nennt.
+   * Sie kommt aus den Rechtecken der Reihen gegen die Unterkante der Oeffnung,
+   * nicht aus `plan.menue.length`: das ist die Zahl der Glieder im Kasten (17
+   * bei 390), nicht die der verdeckten (11 bei 390, gemessen 23.10. 18:51:50).
+   *
+   * 9 px = 1 px Rand + 8 px `py-2`: dieselbe Kante, gegen die die Kappe rechnet.
+   * Gezaehlt wird auch eine angeschnittene Reihe - sie ist der Grund, warum ein
+   * Mensch ueberhaupt rollt.
+   */
+  const klappeRef = useRef<HTMLDivElement | null>(null);
+  const [mehrDraussen, setzeMehrDraussen] = useState(0);
+  const menueAnzahl = plan.menue.length;
+  useEffect(() => {
+    if (!mehrOffen) {
+      setzeMehrDraussen(0);
+      return;
+    }
+    const kasten = klappeRef.current;
+    if (!kasten) return;
+    const messen = () => {
+      const unterkante = kasten.getBoundingClientRect().bottom - 9;
+      let n = 0;
+      kasten.querySelectorAll<HTMLElement>("[data-mehr-reihe]").forEach((reihe) => {
+        if (reihe.getBoundingClientRect().bottom > unterkante + 0.5) n += 1;
+      });
+      setzeMehrDraussen(n);
+    };
+    messen();
+    kasten.addEventListener("scroll", messen, { passive: true });
+    window.addEventListener("resize", messen);
+    return () => {
+      kasten.removeEventListener("scroll", messen);
+      window.removeEventListener("resize", messen);
+    };
+  }, [mehrOffen, menueAnzahl]);
+
   const [customTypeColors, setCustomTypeColors] = useState<Record<string, string>>(() => {
     // Nur was die Leiter hält, kommt durch: sonst überschreibt ein Wert, den
     // eine alte Fassung gespeichert hat, bis heute Index-Zahlen und Legende.
@@ -1466,16 +1514,8 @@ export function KnowledgeGraph({ memories: memoriesAusFenster, onSelectMemory, o
     [memories]
   );
   const aktiverKanal: FarbKanal = kanal === "herkunft" ? (herkunft.verfügbar ? "herkunft" : "typ") : kanal;
-  const notenFarben = useMemo(() => {
-    // Der Gruppen-Kanal faerbt aus der Einstellung, nicht aus einer zweiten Zaehlung:
-    // die Zahl der gedeckten Notizen holt sich die Flaeche aus `baueFarbGruppen`.
-    if (aktiverKanal === "gruppe") return gruppenFarbenVon(leseEinstellung(), TYPE_COLORS.neutral ?? "");
-    if (aktiverKanal !== "herkunft") return TYPE_COLORS;
-    const aus: Record<string, string> = {};
-    for (const art of Object.values(HERKUNFT)) if (rollenHexe[art]) aus[art] = rollenHexe[art];
-    if (rollenHexe.neutral) aus.neutral = rollenHexe.neutral;
-    return aus;
-  }, [aktiverKanal, TYPE_COLORS, rollenHexe, gruppenStand]);
+  // `notenFarben` steht weiter unten, hinter `farbgruppen`: der Gruppen-Kanal liest seine
+  // Farben aus dem EINEN Modellaufruf (G-72), nicht aus einer zweiten Zaehlung.
 
   // Eine Typ-Farbe wirkt app-weit (Karten-Grat, Typ-Label, Index-Zahlen).
   useEffect(() => {
@@ -2030,7 +2070,6 @@ export function KnowledgeGraph({ memories: memoriesAusFenster, onSelectMemory, o
   nachbarnRef.current = neighborsOf;
   byIdRef.current = byId;
   farbenRef.current = TYPE_COLORS;
-  notenFarbenRef.current = notenFarben;
   herkunftRef.current = herkunft.träger;
   aktiverKanalRef.current = aktiverKanal;
   // Baum-Ansicht: Hervorhebung und Nachbarn entlang der Eltern-Kind-Kanten.
@@ -2169,7 +2208,7 @@ export function KnowledgeGraph({ memories: memoriesAusFenster, onSelectMemory, o
    * Der Korpus ist `baumMemories` — dieselbe Liste, aus der auch `regal` baut.
    */
   const farbgruppen = useMemo(
-    () => baueFarbGruppen(baumMemories),
+    () => baueFarbGruppen(baumMemories, leseEinstellung(), VERGABE_BEWEGEN),
     [baumMemories, gruppenStand]
   );
   const gruppenZuordnung = useMemo(
@@ -2177,6 +2216,25 @@ export function KnowledgeGraph({ memories: memoriesAusFenster, onSelectMemory, o
     [baumMemories, farbgruppen]
   );
   gruppenBildRef.current = gruppenZuordnung;
+  /**
+   * Die Farben des Kanals — **aus dem einen Modellaufruf**, nicht aus einer zweiten Zaehlung.
+   * Hier stand vorher `gruppenFarbenVon(leseEinstellung(), …)`; seit die Vergabe nach Belegung
+   * die Toene im Modell setzt, waere das eine zweite Wahrheit neben dem Regal (G-72:
+   * `tests/components/KnowledgeGraph.farbgruppe.test.tsx:209` verlangt genau einen Aufruf).
+   */
+  const notenFarben = useMemo(() => {
+    if (aktiverKanal === "gruppe") {
+      const aus: Record<string, string> = { neutral: TYPE_COLORS.neutral ?? "" };
+      for (const g of farbgruppen.gruppen) aus[g.marke] = g.farbe;
+      return aus;
+    }
+    if (aktiverKanal !== "herkunft") return TYPE_COLORS;
+    const aus: Record<string, string> = {};
+    for (const art of Object.values(HERKUNFT)) if (rollenHexe[art]) aus[art] = rollenHexe[art];
+    if (rollenHexe.neutral) aus.neutral = rollenHexe.neutral;
+    return aus;
+  }, [aktiverKanal, TYPE_COLORS, rollenHexe, farbgruppen]);
+  notenFarbenRef.current = notenFarben;
   /**
    * Die drei Achsen in Menschensprache. Der Satz daneben und der Satz im Regal sind **derselbe
    * Aufruf** (`achsenSatz`), also kann der Gang nicht eine andre Zahl nennen als das Regal.
@@ -3302,7 +3360,11 @@ export function KnowledgeGraph({ memories: memoriesAusFenster, onSelectMemory, o
         // Der Buchstabe der Art, erst ab der Vektorgroesse: auf einem Sprite
         // (unter 15 Bildpunkten) wäre er ein Fussel, und dieser Pfad malt
         // Zehntausende Knoten — dort darf nichts on top kommen.
-        const buchstabe = GLYPH_FUER_ART[m.type ?? ""];
+        //
+        // Im Gruppen-Kanal traegt das Zeichen die GRUPPE, nicht die Art: zwei Gruppen, die
+        // sich einen Ton teilen, sind sonst nicht zu unterscheiden. Die Art bleibt im
+        // Art-Kanal, wo ihre Farbe dieselbe Frage schon beantwortet.
+        const buchstabe = aktiverKanalRef.current === "gruppe" ? gruppenGlyph(typ) : GLYPH_FUER_ART[m.type ?? ""];
         if (buchstabe) zeichneGlyph(ctx, n.x, n.y, rr, buchstabe, farbe, t.k);
       } else {
         const bild = sp[typ];
@@ -5099,6 +5161,7 @@ export function KnowledgeGraph({ memories: memoriesAusFenster, onSelectMemory, o
           role="group"
           aria-label="Controls that did not fit the row"
           data-testid="graph-mehr-panel"
+          ref={klappeRef}
           /* Die Klappe kappt sich nicht mehr bei 55 %: gemessen 22.10. 22:37 MESZ an der
              ausgelieferten 3.2.38 zeigt sie bei 390 px 382 von 1 576 px Inhalt, und die drei
              bild-wirksamen Glieder liegen 258,1 / 347,1 / 436,1 px unter der Kante. Am Fuss
@@ -5115,13 +5178,22 @@ export function KnowledgeGraph({ memories: memoriesAusFenster, onSelectMemory, o
             </button>
           </div>
           {plan.menue.map((g) => (
-            <div key={g} className="flex flex-wrap items-center gap-x-3 gap-y-1" data-testid={`graph-mehr-${g}`}>
+            <div key={g} className="flex flex-wrap items-center gap-x-3 gap-y-1" data-testid={`graph-mehr-${g}`} data-mehr-reihe={g}>
               <div className="shrink-0">{geraet(g)}</div>
               {erklaerung(g) && (
                 <span className="hud-label" style={{ color: "var(--text-2)" }}>{erklaerung(g)}</span>
               )}
             </div>
           ))}
+          {mehrDraussen > 0 && (
+            <div
+              data-testid="graph-mehr-draussen"
+              className="sticky bottom-0 z-10 -mx-3 -mb-2 border-t px-3 py-2 hud-label pointer-events-none"
+              style={{ background: "var(--bg-panel-solid)", color: "var(--text-2)", borderColor: "var(--border-subtle)" }}
+            >
+              {mehrDraussen} more below - keep scrolling
+            </div>
+          )}
         </div>
       )}
 

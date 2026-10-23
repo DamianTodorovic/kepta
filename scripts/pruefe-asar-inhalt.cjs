@@ -207,6 +207,19 @@ const erwartet = [
   ["An older key is still in the database under a masked name", 1],
   ["No copy of the key is kept in this app", 1],
   ["It stays in this app", 1],
+  // 3.2.48, DREI Koerper in einem Zug (Leitung, 24.10. 00:0x MESZ). Marken an dem, was der
+  // Minifier woertlich ueberlaesst: zwei Saetze/Klassen aus den Flaechen, ein Array aus der
+  // Zuordnung. Vor dem Tausch gemessen am dann installierten 3.2.47 (49 103 416 B, mtime
+  // 23:12:48 MESZ): alle drei je 0 Treffer, die 53 aeltern Marken je ok (EXIT 1, die fehlenden
+  // drei namentlich). P1s Sammelmarke hatte eine vierte Marke ("core as one marker"); dieser
+  // Koerper ist zurueckgebaut und faellt nicht durch, also ist auch seine Marke nicht drin.
+  // P2 Faltkante: der Hinweis am Fusse der More-Klappe traegt seine Klasse.
+  ["graph-mehr-draussen", 1],
+  // P4 c: fremder Bibliotheks-Wortlaut wird nicht mehr kopiert, die Klasse antwortet eigne.
+  ["The request was not usable as sent", 1],
+  // P5 v2: die Zuordnung laeuft ueber die bewegte Liste, im einen Aufruf. Kennungen verbiegt
+  // der Minifier (`vergabeNachBelegung` = 0 in beiden Objekten), das Array ueberlebt.
+  ['["md","json","txt"]', 1],
 ];
 // Die Liste darf nur ASCII-Zeichen enthalten. Grund, gemessen 21.10. 19:16 MESZ am
 // installierten Objekt: das Wort "Looking" plus echtes U+2026 steht dort 2 mal, diese

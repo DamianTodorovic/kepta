@@ -1,3 +1,24 @@
+## [3.2.48]
+
+### Fixed
+
+- **An error answer never repeats a foreign sentence.** When a library threw with
+  `expose` set, its raw message was copied into the `error` field of the response and shown
+  in the app. Each status class now answers with our own sentence (400, 401, 403, 404, 409,
+  429), each ending in "Nothing was changed."; `expose` stays the switch, foreign wording is
+  gone. Body: `server/app.ts`, guarded by `tests/server-fehler-wortlaut.test.ts`.
+
+### Changed
+
+- **Group colors are chosen once the load is known.** The color assignment now runs inside
+  the single grouping call instead of a second count, so `md`, `json` and `txt` each get a
+  free tone from the tones actually in use, and removing a group no longer repaints the
+  others. Bodies: `src/lib/gruppen.ts`, `src/components/KnowledgeGraph.tsx`.
+- **The details fold announces what hangs below the edge.** On a phone-width screen the
+  list that does not fit now ends with a sticky "N more below - keep scrolling" line that
+  counts the rows under the edge, cannot be clicked through, and disappears at the scroll
+  stop; the Close control stays free. Body: `src/components/KnowledgeGraph.tsx`.
+
 ## [3.2.47]
 
 ### Changed

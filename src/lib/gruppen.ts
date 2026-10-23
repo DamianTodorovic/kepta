@@ -81,6 +81,79 @@ export function normaliereMarke(roh: string): string {
   return String(roh ?? "").trim().replace(/^#+/, "").trim().toLowerCase();
 }
 
+/** Relative Leuchtdichte nach WCAG 2.x — die Zahl, auf der der Kanten-Kontrast des Hauses fusst. */
+function leuchtdichte(hex: string): number {
+  const kanal = (i: number) => {
+    const s = parseInt(hex.slice(i, i + 2), 16) / 255;
+    return s <= 0.04045 ? s / 12.92 : ((s + 0.055) / 1.055) ** 2.4;
+  };
+  return 0.2126 * kanal(1) + 0.7152 * kanal(3) + 0.0722 * kanal(5);
+}
+
+/** WCAG-Kontrast zweier Farben: 1 heisst gleicher Leuchtwert, 21 heisst Schwarz gegen Weiss. */
+export function kontrastVerhaeltnis(a: string, b: string): number {
+  const la = leuchtdichte(a);
+  const lb = leuchtdichte(b);
+  return (Math.max(la, lb) + 0.05) / (Math.min(la, lb) + 0.05);
+}
+
+/**
+ * Der Buchstabe einer Gruppe — der zweite Kanal neben dem Ton.
+ *
+ * Er traegt nur, wo der Knoten gross genug ist, um ein Zeichen zu zeigen (dieselbe
+ * Schwelle wie der Art-Buchstabe, `GLYPH_FUER_ART`). Der Rand traegt nicht: er ist eine
+ * Konstante ohne Gruppen-Eingang, und seine gezeichnete Dicke liegt unter einem Bildpunkt.
+ */
+export function gruppenGlyph(marke: string): string {
+  const m = normaliereMarke(marke);
+  if (!m || m === "neutral") return "";
+  return m.replace(/[^a-z0-9]/g, "").slice(0, 1).toUpperCase();
+}
+
+/**
+ * Vergabe nach Belegung: die genannten Gruppen geben ihren geteilten Ton auf und nehmen je
+ * einen freien Palettenton.
+ *
+ * **Die Zuordnung entscheidet der Kontrast, und zwar als schlechtestes Paar** (Maximin): ein
+ * Kandidat ist nur so gut wie sein Abstand zu dem Ton, dem er am naechsten liegt. Damit haengt
+ * das Ergebnis an den TOENEN allein, nicht an den Knotenzahlen — Farben duerfen nicht wandern,
+ * wenn der Zeitregler den Bestand filtert (die Regel des Blatts: wer eine Gruppe loescht,
+ * faerbt die andern nicht um). Gleicher Mindestabstand entscheidet die Palettenreihenfolge.
+ *
+ * Die AUSWAHL der Gruppen ist eine Entscheidung der Leitung, nicht aus der Belegung
+ * ableitbar: `machine-scan` ist die groesste kollidierende Gruppe und muesste nach jeder
+ * "groesste zuerst"-Regel mitziehen. Die REIHENFOLGE der Liste entscheidet, wer zuerst
+ * waehlen darf — sie ist die Reihenfolge der Bestellung.
+ */
+export function vergabeNachBelegung(
+  gruppen: readonly FarbGruppe[],
+  bewegen: readonly string[],
+  palette: readonly string[] = GRUPPEN_PALETTE,
+): Record<string, string> {
+  const belegt = new Set(gruppen.map((g) => g.farbe.toLowerCase()));
+  const frei = palette.filter((f) => !belegt.has(f.toLowerCase()));
+  const tonVon = new Map(gruppen.map((g) => [g.marke, g.farbe]));
+  const bewegt = bewegen.filter((m) => tonVon.has(m));
+  if (frei.length === 0 || bewegt.length === 0) return {};
+  const bewegtMarken = new Set(bewegt);
+  /** Die Toene, die stehen bleiben, nachdem die bewegten Gruppen sie verlassen haben. */
+  const bleibt = [...new Set(gruppen.filter((g) => !bewegtMarken.has(g.marke)).map((g) => g.farbe))];
+  const aus: Record<string, string> = {};
+  const rest = [...frei];
+  for (const marke of bewegt) {
+    const punkte = rest.map((farbe) => ({
+      farbe,
+      min: bleibt.length ? Math.min(...bleibt.map((t) => kontrastVerhaeltnis(farbe, t))) : 0,
+    }));
+    punkte.sort((a, b) => b.min - a.min || palette.indexOf(a.farbe) - palette.indexOf(b.farbe));
+    const wahl = punkte[0].farbe;
+    aus[marke] = wahl;
+    rest.splice(rest.indexOf(wahl), 1);
+    bleibt.push(wahl);
+  }
+  return aus;
+}
+
 /** Dieselbe Regel wie `markenHaeufigkeit`: trimmen, kleinschreiben, je Notiz entdoppeln. */
 function markenVon(m: Memory): Set<string> {
   return new Set((m.tags ?? []).map((t) => String(t).trim().toLowerCase()).filter(Boolean));
@@ -194,8 +267,18 @@ export function zaehleGruppen(
 export function baueFarbGruppen(
   memories: readonly Memory[],
   einstellung: GruppenEinstellung = leseEinstellung(),
+  bewegen: readonly string[] = [],
 ): FarbGruppen {
-  return zaehleGruppen(memories, einstellung);
+  const basis = zaehleGruppen(memories, einstellung);
+  // Eine von Hand gesetzte Farbe schlaegt jede Rechnung — solche Gruppen werden nicht bewegt.
+  const frei = bewegen.filter((m) => !einstellung.farben?.[m]);
+  if (frei.length === 0) return basis;
+  const zuordnung = vergabeNachBelegung(basis.gruppen, frei);
+  if (Object.keys(zuordnung).length === 0) return basis;
+  return {
+    ...basis,
+    gruppen: basis.gruppen.map((g) => (zuordnung[g.marke] ? { ...g, farbe: zuordnung[g.marke] } : g)),
+  };
 }
 
 /**
