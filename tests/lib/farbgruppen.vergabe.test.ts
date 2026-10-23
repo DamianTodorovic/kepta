@@ -20,7 +20,7 @@ import {
   GRUPPEN_PALETTE,
   kontrastVerhaeltnis,
   vergabeNachBelegung,
-  gruppenGlyph,
+  gruppenGlyphen,
   baueFarbGruppen,
   type FarbGruppe,
 } from "../../src/lib/gruppen";
@@ -116,11 +116,29 @@ describe("Vergabe nach Belegung", () => {
   });
 
   it("gibt jeder Gruppe eines geteilten Tons einen eignen Buchstaben", () => {
+    const glyphen = gruppenGlyphen(GRUPPEN.map((g) => g.marke));
     for (const [ton, gs] of geteilte(vergabeNachBelegung(GRUPPEN, BEWEGEN))) {
-      const buchstaben = gs.map(gruppenGlyph);
+      const buchstaben = gs.map((m) => glyphen[m]);
       expect(buchstaben, `Ton ${ton}`).toHaveLength(new Set(buchstaben).size);
-      for (const b of buchstaben) expect(b).toMatch(/^[A-Z0-9]$/);
+      for (const b of buchstaben) expect(b).toMatch(/^[A-Z0-9]{1,2}$/);
     }
+  });
+
+  // #89 — die gelandete Wache oben prueft nur INNERHALB eines geteilten Tons und schlaegt
+  // darum nie rot, auch wenn zwei Gruppen verschiedenen Tons denselben Buchstaben tragen.
+  // Dieser Fall prueft ALLE Paare.
+  it("gibt JEDER Gruppe einen eignen Buchstaben — ueber alle Paare", () => {
+    const marken = GRUPPEN.map((g) => g.marke);
+    const glyphen = gruppenGlyphen(marken);
+    const doppelt: string[] = [];
+    for (let i = 0; i < marken.length; i++) {
+      for (let j = i + 1; j < marken.length; j++) {
+        if (glyphen[marken[i]] === glyphen[marken[j]]) doppelt.push(`${marken[i]}/${marken[j]}:${glyphen[marken[i]]}`);
+      }
+    }
+    expect(doppelt, "Gruppen mit demselben Buchstaben").toEqual([]);
+    expect(new Set(Object.values(glyphen)).size, "verschiedene Buchstaben").toBe(marken.length);
+    for (const b of Object.values(glyphen)) expect(b).toMatch(/^[A-Z0-9]{1,2}$/);
   });
 
   it("rechnet den Kontrast nach WCAG und in beide Richtungen gleich", () => {

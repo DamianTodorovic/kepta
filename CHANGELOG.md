@@ -1,3 +1,34 @@
+## [3.2.50]
+
+### Performance
+
+- **A search no longer reads every candidate.** The full-text term check ran over each FTS
+  candidate (up to 10 000 per query at a large topK); it now runs only over the hits that are
+  actually returned, and the counter `suchPfadZaehler.volltextScans` in `src/core/engine.ts`
+  makes that countable. The response itself is unchanged: matched terms still travel with each hit.
+
+### Added
+
+- **A note shows the text it had before.** The preview now lists the stands of a note
+  (`GET /api/memories/:id/stande`), one click opens the full earlier text, "Back to current"
+  returns, and the current text is never touched by opening a stand. A note without stands says
+  so instead of showing an empty box. Free tier, no key.
+
+### Changed
+
+- **Every group gets its own letter.** `md` carried the same M as `machine-scan` and `toml` the
+  same T as `txt`; letters are now assigned uniquely across all groups, and the guard checks
+  uniqueness over the whole set instead of only inside a shared tone.
+- **The group legend names a number.** Each tone shows how many nodes are actually painted in it,
+  so `json` - whose notes all carry an earlier mark too - reads 0 instead of promising a berry no
+  node wears.
+- **The details fold grids instead of columning.** `columns-2` at 820 px and up pushed the last
+  rows past the right edge (measured at 1024 x 768: rows at x 988 to 1 317 against a fold that
+  ends at 985, with no scroll path). A two-column grid keeps the flow vertical, where the
+  "more below" hint can reach it.
+- **One rule for "local".** Settings no longer keeps its own regex for a local address; it calls
+  the same `istLokaleAdresse` the door and the chat use, so the three readings cannot drift.
+
 ## [3.2.49]
 
 ### Added

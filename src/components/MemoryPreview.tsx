@@ -23,6 +23,14 @@ interface MemoryPreviewProps {
 // hier steht, ist dieselbe Beschreibung wie im Editor und in der Liste.
 const TYPE_LABEL = TYP_BESCHREIBUNG;
 
+interface Stand {
+  id: number;
+  memoryId: string;
+  title: string;
+  content: string;
+  createdAt: number;
+}
+
 export function MemoryPreview({ memory, onClose, onEdit }: MemoryPreviewProps) {
   const toast = useToast();
   const [kopiert, setKopiert] = useState(false);
@@ -40,6 +48,26 @@ export function MemoryPreview({ memory, onClose, onEdit }: MemoryPreviewProps) {
       .then((r) => (r.ok ? r.json() : null))
       .then((d: { readers?: { who: string; times: number; last: number }[] } | null) => {
         if (!vorbei && d && Array.isArray(d.readers)) setLeser(d.readers);
+      })
+      .catch(() => undefined);
+    return () => { vorbei = true; };
+  }, [memory.id]);
+
+  // Staende (BAU-P3-11, Latte-Zeile 8): die Texte VOR den Aenderungen. Gelesen wird nur, wenn die
+  // Vorschau offen ist; ein Klick zeigt den alten Text vollstaendig, "Back to current" geht zurueck.
+  // Der aktuelle Text wird dabei nicht angefasst - es gibt hier keinen Schreibweg.
+  const [staende, setStaende] = useState<Stand[] | null>(null);
+  const [staendeOffen, setStaendeOffen] = useState(false);
+  const [gewaehlterStand, setGewaehlterStand] = useState<Stand | null>(null);
+  useEffect(() => {
+    let vorbei = false;
+    setStaende(null);
+    setStaendeOffen(false);
+    setGewaehlterStand(null);
+    fetch(`/api/memories/${encodeURIComponent(memory.id)}/stande`)
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d: { staende?: Stand[] } | null) => {
+        if (!vorbei && d && Array.isArray(d.staende)) setStaende(d.staende);
       })
       .catch(() => undefined);
     return () => { vorbei = true; };
@@ -169,9 +197,69 @@ export function MemoryPreview({ memory, onClose, onEdit }: MemoryPreviewProps) {
           )}
 
           {/* Der komplette Text, Absatz fuer Absatz — kein Formular, kein Markup-Zwang */}
-          <article className="text-[14px] leading-[1.75] whitespace-pre-wrap break-words" style={{ color: "var(--text-1)" }}>
-            {text}
-          </article>
+          {staende !== null && staende.length > 0 && (
+            <div data-testid="preview-stands" className="mb-4">
+              <button
+                onClick={() => setStaendeOffen((v) => !v)}
+                className="w-full flex items-center justify-between gap-2 px-3 py-2 rounded-xl text-[12px]"
+                style={{ background: "var(--bg-inset)", color: "var(--text-2)", border: "1px solid var(--border-subtle)" }}
+                data-testid="preview-stands-open"
+                aria-expanded={staendeOffen}
+              >
+                <span>Earlier stands ({staende.length})</span>
+                <span style={{ color: "var(--text-3)" }}>{staendeOffen ? "Hide" : "Show"}</span>
+              </button>
+              {staendeOffen && (
+                <ul className="mt-1.5 space-y-1">
+                  {staende.map((s) => (
+                    <li key={s.id}>
+                      <button
+                        onClick={() => setGewaehlterStand(s)}
+                        className="w-full text-left px-3 py-2 rounded-lg text-[12px]"
+                        style={{ background: gewaehlterStand?.id === s.id ? "var(--bg-inset)" : "transparent", color: "var(--text-2)", border: "1px solid var(--border-subtle)" }}
+                        data-testid="preview-stand-row"
+                      >
+                        <span className="tnum">{formatDistanceToNow(new Date(s.createdAt), { addSuffix: true })}</span>
+                        <span className="block truncate" style={{ color: "var(--text-3)" }}>{s.content.replace(/\s+/g, " ").slice(0, 90)}</span>
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
+          )}
+          {staende !== null && staende.length === 0 && (
+            <p data-testid="preview-stands-none" className="mb-4 text-[12px]" style={{ color: "var(--text-3)" }}>
+              No earlier stands - this note has not been edited since it was written.
+            </p>
+          )}
+          {gewaehlterStand ? (
+            <>
+              <div
+                data-testid="preview-stand-flag"
+                className="mb-2 flex items-center justify-between gap-2 rounded-xl px-3 py-2 text-[12px]"
+                style={{ background: "var(--bg-inset)", color: "var(--text-2)" }}
+              >
+                <span>
+                  Earlier stand - <span className="tnum">{formatDistanceToNow(new Date(gewaehlterStand.createdAt), { addSuffix: true })}</span>
+                </span>
+                <button
+                  onClick={() => setGewaehlterStand(null)}
+                  className="btn-ghost px-2 py-1 rounded-lg text-[11px] shrink-0"
+                  data-testid="preview-stand-back"
+                >
+                  Back to current
+                </button>
+              </div>
+              <article data-testid="preview-stand-text" className="text-[14px] leading-[1.75] whitespace-pre-wrap break-words" style={{ color: "var(--text-1)" }}>
+                {gewaehlterStand.content}
+              </article>
+            </>
+          ) : (
+            <article data-testid="preview-text" className="text-[14px] leading-[1.75] whitespace-pre-wrap break-words" style={{ color: "var(--text-1)" }}>
+              {text}
+            </article>
+          )}
         </div>
 
         <footer className="flex items-center justify-between gap-3 p-5 pt-4 shrink-0" style={{ borderTop: "1px solid var(--border-subtle)" }}>

@@ -97,4 +97,25 @@ describe("More-Klappe: die Faltkante nennt den Rest und deckt den Kopf nicht", (
     expect(ende, "der Hinweis hat kein Ende").toBeGreaterThan(hinweis);
     expect(block.slice(hinweis, ende), "der Hinweis zitiert die Zahl der Glieder").not.toContain("plan.menue.length");
   });
+
+  /**
+   * #87, gemessen 24.10. 00:18 MESZ an 3.2.48 (1024 x 768, eigne Grube): `columns-2` legte
+   * eine dritte Kolonne an - `farben` lag bei x 988..1 317, die Klappe endet bei 985,
+   * `clientHeight == scrollHeight == 612`: kein Rollweg, und der Hinweis zaehlt nur nach
+   * unten (`0 unter der Kante`). Das Glied war unsichtbar und ungewarnt.
+   *
+   * jsdom kennt kein Layout; darum haelt dieser Fall die URSACHE am Quelltext (Multicol ->
+   * Raster, Kopf und Balken ueber beide Spalten, Raster ohne Fremdabstaende). Den Beweis
+   * liefern die Bilder: 1024 mit Hinweis "3 more below", 1440 mit 0 unter/0 rechts.
+   */
+  it("kein Multicol mehr: das Raster ab 820 fliesst nur senkrecht", () => {
+    const klappe = klassenAb(block, kasten);
+    expect(klappe, "die Klappe traegt ab 820 kein Raster").toMatch(/min-\[820px\]:grid/);
+    expect(klappe, "das Raster hat keine zwei Spalten").toMatch(/min-\[820px\]:grid-cols-2/);
+    expect(klappe, "Multicol legt bei Ueberlauf eine dritte Spalte an").not.toMatch(/min-\[820px\]:columns-2/);
+    expect(klappe, "das Raster nimmt die Reihenabstaende nicht mit (space-y bleibt)").toMatch(/min-\[820px\]:space-y-0/);
+    expect(klappe, "dem Raster fehlt der Spaltenabstand").toMatch(/min-\[820px\]:gap-2/);
+    // Kopf und Balken muessen ueber beide Spalten laufen, sonst sitzen sie in einer Zelle.
+    expect((block.match(/min-\[820px\]:col-span-full/g) || []).length, "nicht genau zwei Elemente spannen ueber beide Spalten").toBe(2);
+  });
 });

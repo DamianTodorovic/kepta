@@ -62,9 +62,16 @@ export interface GraphRegalEigenschaften {
   achsen?: Achsen;
   /** Die Griffe ans Modell. Ohne sie zeigt das Band Zahlen ohne Knöpfe — kein toter Knopf. */
   steuerung?: GruppenSteuerung;
+  /**
+   * Marke -> Zahl der Knoten, die diesen Ton WIRKLICH tragen (#90). Ohne diese Zahl
+   * verspricht die Zeile eine Farbe, die am Bestand auf keinem Knoten liegt (`json`:
+   * 8 485 Mitglieder, 0 gemalt). `undefined` heisst: niemand hat gezaehlt — dann steht
+   * hier keine halbe Wahrheit, sondern gar keine Zahl.
+   */
+  gemalt?: Record<string, number>;
 }
 
-export function GraphRegal({ regal, ansichtsName, gruppen, achsen, steuerung }: GraphRegalEigenschaften) {
+export function GraphRegal({ regal, ansichtsName, gruppen, achsen, steuerung, gemalt }: GraphRegalEigenschaften) {
   const { woher, worum, wann } = regal;
   /** Welcher Wann-Korb gerade offen ist. Einer auf einmal: zwei offene Listen in einem
    *  Panel von sechs Zeilen sind keine Auswahl, sondern ein Stapel. */
@@ -238,6 +245,15 @@ export function GraphRegal({ regal, ansichtsName, gruppen, achsen, steuerung }: 
                 </span>
                 <span>{zahl(g.notizen)}</span>
                 <span style={{ color: "var(--text-3)" }}>{prozent(g.prozent)} %</span>
+                {gemalt && (
+                  <span
+                    data-testid="regal-farbgruppe-gemalt"
+                    style={{ color: "var(--text-3)" }}
+                    title="Nodes that really wear this group's colour — a note in two groups is painted in the first group's tone"
+                  >
+                    {zahl(gemalt[g.marke] ?? 0)} painted
+                  </span>
+                )}
                 {steuerung && (
                   <button
                     type="button"

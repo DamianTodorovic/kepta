@@ -80,7 +80,7 @@ import { HERKUNFT, herkunftsBild, HERKUNFT_TOKEN, HERKUNFT_LABELS } from "../lib
 import {
   baueFarbGruppen,
   gruppenBild,
-  gruppenGlyph,
+  gruppenGlyphen,
   leseEinstellung,
   gruppeHinzufuegen,
   gruppeEntfernen,
@@ -88,6 +88,7 @@ import {
   achseFuerMenschen,
   achsenSatz,
   ACHSEN,
+  gemalteZahlen,
 } from "../lib/gruppen";
 import { KAPPE_PANEL } from "../lib/kappe";
 
@@ -2104,6 +2105,7 @@ export function KnowledgeGraph({ memories: memoriesAusFenster, onSelectMemory, o
   const herkunftRef = useRef<Map<string, string>>(new Map());
   /** Welche Gruppe an einem Knoten zieht — dasselbe Bild, das das Regal zaehlt. */
   const gruppenBildRef = useRef<Map<string, string>>(new Map());
+  const gruppenGlyphenRef = useRef<Record<string, string>>({});
   const aktiverKanalRef = useRef<FarbKanal>("typ");
   degreeRef.current = degree;
   nachbarnRef.current = neighborsOf;
@@ -2256,6 +2258,15 @@ export function KnowledgeGraph({ memories: memoriesAusFenster, onSelectMemory, o
   );
   gruppenBildRef.current = gruppenZuordnung;
   /**
+   * Die Buchstaben aller Gruppen — **ein Aufruf ueber das ganze Modell**, nicht je Knoten.
+   * #89: erst hier, mit allen Marken im Blick, kann die Regel eindeutig werden (`MD`, `TO`).
+   */
+  const gruppenBuchstaben = useMemo(
+    () => gruppenGlyphen(farbgruppen.gruppen.map((g) => g.marke)),
+    [farbgruppen]
+  );
+  gruppenGlyphenRef.current = gruppenBuchstaben;
+  /**
    * Die Farben des Kanals — **aus dem einen Modellaufruf**, nicht aus einer zweiten Zaehlung.
    * Hier stand vorher `gruppenFarbenVon(leseEinstellung(), …)`; seit die Vergabe nach Belegung
    * die Toene im Modell setzt, waere das eine zweite Wahrheit neben dem Regal (G-72:
@@ -2291,6 +2302,16 @@ export function KnowledgeGraph({ memories: memoriesAusFenster, onSelectMemory, o
       farbe: (marke: string, farbe: string) => { gruppenFarbeSetzen(marke, farbe); setGruppenStand((n) => n + 1); },
     }),
     []
+  );
+  /**
+   * Die gemalten Zahlen je Gruppe (#90) — aus derselben Zuordnung, die der Kanal malt.
+   * Die Zeile im Regal nennt damit die Mitglieder UND die wirklich gemalten Knoten.
+   * (Steht absichtlich hier und nicht neben `farbgruppen`: dort liegt der Buchstaben-Memo
+   * aus #89, und zwei Flicken auf derselben Zeile lassen sich nicht einzeln legen.)
+   */
+  const gemalt = useMemo(
+    () => gemalteZahlen(farbgruppen.gruppen, gruppenZuordnung),
+    [farbgruppen, gruppenZuordnung]
   );
   /**
    * Wie viele Zeilen die Leinwand bei lesbarem Abstand hält. Der Rahmen ist der
@@ -3415,7 +3436,7 @@ export function KnowledgeGraph({ memories: memoriesAusFenster, onSelectMemory, o
         // Im Gruppen-Kanal traegt das Zeichen die GRUPPE, nicht die Art: zwei Gruppen, die
         // sich einen Ton teilen, sind sonst nicht zu unterscheiden. Die Art bleibt im
         // Art-Kanal, wo ihre Farbe dieselbe Frage schon beantwortet.
-        const buchstabe = aktiverKanalRef.current === "gruppe" ? gruppenGlyph(typ) : GLYPH_FUER_ART[m.type ?? ""];
+        const buchstabe = aktiverKanalRef.current === "gruppe" ? (gruppenGlyphenRef.current[typ] ?? "") : GLYPH_FUER_ART[m.type ?? ""];
         if (buchstabe) zeichneGlyph(ctx, n.x, n.y, rr, buchstabe, farbe, t.k);
       } else {
         const bild = sp[typ];
@@ -5246,9 +5267,9 @@ export function KnowledgeGraph({ memories: memoriesAusFenster, onSelectMemory, o
              bild-wirksamen Glieder liegen 258,1 / 347,1 / 436,1 px unter der Kante. Am Fuss
              der Leinwand sind es 788 px, und ab 820 px Breite tragen zwei Kolonnen die 17
              Glieder in neun Reihen. */
-          className="hud-panel absolute left-2 right-2 top-[47px] bottom-2 z-30 rounded-lg px-3 pt-2 pb-0 space-y-2 max-h-[calc(100%-56px)] overflow-y-auto min-[820px]:columns-2 min-[820px]:gap-x-4"
+          className="hud-panel absolute left-2 right-2 top-[47px] bottom-2 z-30 rounded-lg px-3 pt-2 pb-0 space-y-2 max-h-[calc(100%-56px)] overflow-y-auto min-[820px]:grid min-[820px]:grid-cols-2 min-[820px]:gap-2 min-[820px]:space-y-0 min-[820px]:items-start"
         >
-          <div className="flex items-center justify-between gap-3">
+          <div className="flex items-center justify-between gap-3 min-[820px]:col-span-full">
             <div className="hud-label" style={{ color: "var(--text-2)" }}>
               {plan.menue.length} out of the row — everything here works the same
             </div>
@@ -5267,7 +5288,7 @@ export function KnowledgeGraph({ memories: memoriesAusFenster, onSelectMemory, o
           {mehrDraussen > 0 && (
             <div
               data-testid="graph-mehr-draussen"
-              className="sticky bottom-0 z-10 -mx-3 border-t px-3 py-2 hud-label pointer-events-none"
+              className="sticky bottom-0 z-10 -mx-3 border-t px-3 py-2 hud-label pointer-events-none min-[820px]:col-span-full"
               style={{ background: "var(--bg-panel-solid)", color: "var(--text-2)", borderColor: "var(--border-subtle)" }}
             >
               {mehrDraussen} more below - keep scrolling
@@ -5768,7 +5789,7 @@ export function KnowledgeGraph({ memories: memoriesAusFenster, onSelectMemory, o
               {achsenSatz(achsen, farbgruppen)}
             </span>
           </div>
-          {regal && <GraphRegal regal={regal} ansichtsName={ansicht === "dendrogram" ? "the tree" : "the field"} gruppen={farbgruppen} achsen={achsen} steuerung={gruppenSteuerung} />}
+          {regal && <GraphRegal regal={regal} ansichtsName={ansicht === "dendrogram" ? "the tree" : "the field"} gruppen={farbgruppen} achsen={achsen} steuerung={gruppenSteuerung} gemalt={gemalt} />}
           {/* Die Griffe erklaert die Flaeche schon an den Werkzeugen selbst; auf dem
               Telefon sind sie teils nicht einmal vorhanden (kein Hover, kein Rad).
               Bei schmaler Breite tritt die Zeile zurueck — index.css, `.legende-prosa`. */}

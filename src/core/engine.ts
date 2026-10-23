@@ -149,6 +149,10 @@ function loadActive(store: KeptaStore): ActiveMemory[] {
 // jede Schreiboperation (auch direkte DB-Zugriffe wie Importe) invalidiert
 // selbst. Verbraucher dürfen die gelieferten Objekte nur lesen, nicht ändern.
 export const suchCacheStatistik = { vollaufbauten: 0, deltapatches: 0 };
+// P6-Aufgabe #10: zaehlt die Volltext-Pruefungen je Anfrage. Vorher lief die Pruefung ueber
+// JEDEN Kandidaten (bis ftsTiefe, also 10 000 bei grossem topK), gebraucht wird sie nur fuer die
+// ausgegebenen Treffer.
+export const suchPfadZaehler = { volltextScans: 0 };
 
 const aktiverCache = new WeakMap<KeptaStore, { generation: number; aktiv: ActiveMemory[]; byId: Map<string, ActiveMemory> }>();
 const deltaRegistriert = new WeakSet<KeptaStore>();
@@ -464,7 +468,7 @@ export async function searchMemories(store: KeptaStore, params: SearchParams): P
     const rerank = localRerankScore(query, r);
     if (rerank !== null) score *= 1 + rerank * RERANK_MAX_BOOST;
 
-    const matchedTerms = queryTerms.filter((t) => m.titleLower.includes(t) || m.contentLower.includes(t));
+    const matchedTerms: string[] = [];
     hits.push({
       memory: r,
       score,
@@ -491,6 +495,15 @@ export async function searchMemories(store: KeptaStore, params: SearchParams): P
 
   hits.sort((a, b) => b.score - a.score || b.memory.updatedAt - a.memory.updatedAt);
   const top = hits.slice(0, limit);
+  // P6-Aufgabe #10: die Matched-Terms gehoeren zum Leib der Antwort, nicht zur Rechnung. Sie
+  // werden deshalb erst fuer die ausgegebenen Treffer bestimmt — vorher lief die Volltext-Pruefung
+  // fuer jeden Kandidaten, bei topK 20 000 also bis zu 10 000 mal je Anfrage.
+  for (const h of top) {
+    const m = byId.get(h.memory.id);
+    if (!m) continue;
+    h.matchedTerms = queryTerms.filter((t) => m.titleLower.includes(t) || m.contentLower.includes(t));
+    suchPfadZaehler.volltextScans += 1;
+  }
   // Zugriffs-Statistik für die Retention aktualisieren (fire-and-forget-semantisch, aber sync)
   // Retention nur für Gegenwarts-Suchen zählen — Zeitreise verfälscht die Statistik nicht
   if (query && !timeTravel && top.length > 0) {

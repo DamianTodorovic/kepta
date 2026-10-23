@@ -103,11 +103,32 @@ export function kontrastVerhaeltnis(a: string, b: string): number {
  * Er traegt nur, wo der Knoten gross genug ist, um ein Zeichen zu zeigen (dieselbe
  * Schwelle wie der Art-Buchstabe, `GLYPH_FUER_ART`). Der Rand traegt nicht: er ist eine
  * Konstante ohne Gruppen-Eingang, und seine gezeichnete Dicke liegt unter einem Bildpunkt.
+ *
+ * **Der erste Buchstabe allein reicht nicht (#89):** `machine-scan` und `md` teilen M,
+ * `txt` und `toml` teilen T. Darum rechnet diese Funktion die Buchstaben ALLER Gruppen in
+ * einem Zug und haelt sie eindeutig: ist ein Buchstabe vergeben, waechst er um je eine
+ * Stelle des Stamms (`M` → `MD`, `T` → `TO`), und wenn der ganze Stamm vergeben ist, kommt
+ * eine laufende Nummer dazu. Die Reihenfolge der Liste entscheidet, wer den kurzen
+ * Buchstaben behaelt — es ist dieselbe Reihenfolge, die auch die Farbe vergibt.
  */
-export function gruppenGlyph(marke: string): string {
-  const m = normaliereMarke(marke);
-  if (!m || m === "neutral") return "";
-  return m.replace(/[^a-z0-9]/g, "").slice(0, 1).toUpperCase();
+export function gruppenGlyphen(marken: readonly string[]): Record<string, string> {
+  const aus: Record<string, string> = {};
+  const vergeben = new Set<string>();
+  for (const roh of marken) {
+    const m = normaliereMarke(roh);
+    if (!m || m === "neutral") continue;
+    const stamm = (m.replace(/[^a-z0-9]/g, "") || m).toUpperCase();
+    let kandidat = stamm.slice(0, 1);
+    for (let i = 2; i <= stamm.length && vergeben.has(kandidat); i++) kandidat = stamm.slice(0, i);
+    let n = 2;
+    while (vergeben.has(kandidat)) {
+      kandidat = stamm.slice(0, 1) + String(n);
+      n++;
+    }
+    vergeben.add(kandidat);
+    aus[m] = kandidat;
+  }
+  return aus;
 }
 
 /**
@@ -413,6 +434,26 @@ export function gruppenBild(memories: readonly Memory[], gruppen: FarbGruppen): 
       }
     }
   }
+  return aus;
+}
+
+/**
+ * Wie viele Notizen eine Gruppe WIRKLICH malt — die Zahl hinter dem Farbfeld (#90).
+ *
+ * `notizen` in `FarbGruppe` ist die Mitgliedschaft: wie viele Notizen die Marke tragen.
+ * Gemalt wird aber nur die **erste** Marke der gespeicherten Reihenfolge (`gruppenBild`).
+ * Deshalb kann eine Gruppe viele Mitglieder haben und null Knoten malen — `json` liegt ganz
+ * in `machine-scan` und traegt am Bestand 0 Knoten in Beere. Diese Funktion zaehlt aus der
+ * Zuordnung, die die Flaeche ohnehin schon hat; sie macht aus dem Mitglieder-Band eine
+ * gemalte Zahl, ohne ein zweites Mal zu zaehlen.
+ */
+export function gemalteZahlen(
+  gruppen: readonly FarbGruppe[],
+  zuordnung: Map<string, string>,
+): Record<string, number> {
+  const aus: Record<string, number> = {};
+  for (const g of gruppen) aus[g.marke] = 0;
+  for (const marke of zuordnung.values()) if (aus[marke] !== undefined) aus[marke] += 1;
   return aus;
 }
 

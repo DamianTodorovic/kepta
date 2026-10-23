@@ -3,6 +3,7 @@ import { Key, ShieldCheck, SettingsIcon, Download, CheckCircle2, AlertTriangle, 
 import { motion } from 'motion/react';
 import { PROVIDERS, providerById, loadAISettings, hydrateAISettings, saveAISettings, kiSchluesselStatus, type AISchluesselStatus, type AISettings } from '../lib/ai';
 import { grundText } from '../lib/tuergrund';
+import { istLokaleAdresse } from '../lib/schild';
 import { AUTO_LEARN_TIMEOUT_MS } from '../lib/autolearn';
 import { QUITTUNG_MS } from '../lib/quittung';
 import { refreshMemories } from '../lib/store';
@@ -250,7 +251,9 @@ export function Settings() {
   const provider = providerById(settings.providerId);
   /** "local" sagt nur, wer eine lokale Adresse befragt — der Anbietername allein reicht nicht. */
   // Geprueft wird nur, was jemand genannt hat: die Katalogadresse gilt nicht als Ansage.
-  const adresseLokal = /localhost|127\.0\.0\.1|\[::1\]/i.test(settings.baseUrl || '');
+  // Aufgabe #8 (24.10.): der dritte Ausdruck fuer dasselbe Urteil ist weg - die Flaeche fragt
+  // dieselbe Funktion wie die Tuer (src/lib/schild.ts:213, server/router/chat.ts:46).
+  const adresseLokal = istLokaleAdresse(settings.baseUrl);
   // In der fertigen App: der mitgelieferte MCP-Server, gestartet vom K3PTA-Programm
   // selbst — kein Node.js, kein npm. Außerhalb der App bleibt es beim Weg über npx.
   const mcpAusApp = health?.mcp?.stdio ? JSON.stringify({ mcpServers: { kepta: health.mcp.stdio } }, null, 2) : null;
@@ -297,7 +300,8 @@ export function Settings() {
 
   // Auto-Erkennung für lokale Modelle: Ollama/LM Studio sofort + alle 12s + bei Fenster-Fokus
   useEffect(() => {
-    const isLocal = !provider.needsKey || settings.baseUrl.includes('localhost') || settings.baseUrl.includes('127.0.0.1');
+    // Aufgabe #8: dasselbe Urteil wie die Tuer, nicht drei Teilstring-Tests (siehe :256).
+    const isLocal = !provider.needsKey || istLokaleAdresse(settings.baseUrl);
     if (!isLocal) return;
     let cancelled = false;
     const silentLoad = async () => {
@@ -343,7 +347,8 @@ export function Settings() {
 
   // Für Remote-Anbieter mit Key: einmalig beim Open auto-laden (kein Polling, um Rate-Limits zu schonen)
   useEffect(() => {
-    const isLocal = !provider.needsKey || settings.baseUrl.includes('localhost') || settings.baseUrl.includes('127.0.0.1');
+    // Aufgabe #8: dasselbe Urteil wie die Tuer, nicht drei Teilstring-Tests (siehe :256).
+    const isLocal = !provider.needsKey || istLokaleAdresse(settings.baseUrl);
     if (isLocal) return;
     if (!settings.apiKey || settings.apiKey === 'local') return;
     let cancelled = false;

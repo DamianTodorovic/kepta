@@ -67,7 +67,11 @@ describe("Klappe am Fuss: die Kappe zieht ab, was ihre eigne Verankerung braucht
     expect(klasse, "eine Klappe ohne eigne Rolle schneidet den Rest ab").toMatch(/overflow-y-auto/);
   });
 
-  it("zwei Kolonnen tragen erst ab 820 px — unterhalb waere die Kappe hoeher als ihr Inhalt breit ist", () => {
-    expect(klasse).toMatch(/min-\[820px\]:columns-2/);
+  it("ab 820 px traegt ein Raster zwei Spalten; Multicol legt bei Ueberlauf eine dritte an", () => {
+    // Befund 24.10. 00:18 MESZ, 1024 x 768: `columns-2` schob `farben` nach x 988..1 317,
+    // die Klappe endet bei 985; clientHeight == scrollHeight == 612, also kein Rollweg.
+    expect(klasse, "die Klappe traegt kein Raster ab 820").toMatch(/min-\[820px\]:grid/);
+    expect(klasse, "das Raster hat keine zwei Spalten").toMatch(/min-\[820px\]:grid-cols-2/);
+    expect(klasse, "Multicol kann hinter der rechten Kante eine dritte Spalte anlegen").not.toMatch(/min-\[820px\]:columns-2/);
   });
 });

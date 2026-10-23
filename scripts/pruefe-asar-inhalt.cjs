@@ -228,6 +228,16 @@ const erwartet = [
   ["Local endpoint - this address needs no key.", 1],
   ["px-3 pt-2 pb-0", 1],
   ["core as one marker", 1],
+  // 3.2.50, SECHS Koerper (Leitung, 24.10. 01:2x MESZ). Vier davon haben ein Wort, das der
+  // Minifier woertlich laesst; zwei haben keins und das steht hier als Befund, nicht als Luecke:
+  // P5-v (gruppenGlyphen) und P8b (istLokaleAdresse in Settings) sind Kennungen, die beim Bauen
+  // umbenannt werden -- gemessen je 0 Treffer im Leib, eine Pruefung darauf kann nie schlagen.
+  // Gegenprobe VOR dem Tausch am dann installierten 3.2.49 (49 111 921 B, mtime 00:41:46 MESZ):
+  // alle vier Ketten muessen dort 0 sein.
+  ["volltextScans", 1],
+  ["is painted in the first group", 1],
+  ["preview-stands-none", 1],
+  ["min-[820px]:grid", 1],
 ];
 // Die Liste darf nur ASCII-Zeichen enthalten. Grund, gemessen 21.10. 19:16 MESZ am
 // installierten Objekt: das Wort "Looking" plus echtes U+2026 steht dort 2 mal, diese
