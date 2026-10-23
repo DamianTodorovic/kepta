@@ -11,7 +11,15 @@
  * ist hier ein Anzeigefehler, kein Akzent.
  */
 
-/** Die Kennungen, die die Tuer heute schreibt, und ihr Satz fuer einen Menschen. */
+/**
+ * Die Kennungen, die die Flaeche zeigt, und ihr Satz fuer einen Menschen.
+ *
+ * Nicht jede Kennung der Tuer steht hier: die fuenf der Wiederherstellungs-Route
+ * (`fremder-host`, `fremde-herkunft`, `ohne-wiederherstellungs-kopf`,
+ * `schluessel-nicht-lesbar`, `nicht-verschluesselt`) haben heute keinen Leser in
+ * der Flaeche - `baueHuelle` fragt nur `r.ok`. Ein Satz ohne Leser waere Schmuck,
+ * also steht er hier nicht, bis ein Leser da ist.
+ */
 const GRUND_TEXTE: Record<string, string> = {
   "kein-anbieter":
     "No model provider is chosen yet, so nothing was sent. Pick one under Settings, then ask again.",
@@ -25,6 +33,14 @@ const GRUND_TEXTE: Record<string, string> = {
     "The answer could not be read. Try again, or choose another model under Settings.",
   "nur-post":
     "That address only accepts POST requests - a form cannot trigger it; this is a note for the logs.",
+  "chat-fehlgeschlagen":
+    "The answer failed inside K3PTA. The reason is in the logs, not in the answer; ask again, or pick another model under Settings.",
+  "import-leer":
+    "The file arrived empty, so nothing was read. Pick the conversations.json from your export again; the logs show what came in.",
+  "import-kein-json":
+    "The file is not valid JSON, so nothing was read. Export conversations.json again from ChatGPT or Claude; the logs keep the first error.",
+  "import-unbekanntes-format":
+    "This file is neither a ChatGPT nor a Claude export, so nothing was imported. Pick conversations.json from one of those exports; the logs name the shape that arrived.",
 };
 
 /** Ein Satz fuer die Kennung, oder null, wenn die Kennung neu oder fehlt. */

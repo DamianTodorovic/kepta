@@ -66,7 +66,12 @@ describe("POST /api/recovery-key", () => {
     expect(r.headers["cache-control"]).toBe("no-store");
     const gesperrt = await request(app2).post("/api/recovery-key").set("X-KEPTA-Recovery", "1");
     expect(gesperrt.status).toBe(500);
-    expect(gesperrt.body.error).toContain("Keychain locked");
+    // P4-2310 (c), 23.10.: der Ausnahmewortlaut bleibt im Protokoll, nach aussen geht
+    // ein fester Satz mit Kennung. Bis hierher verlangte dieser Fall das Gegenteil -
+    // "Keychain locked" war der fremde Wortlaut, den die Entscheidung verbietet.
+    expect(gesperrt.body.error).toMatch(/recovery key could not be read/i);
+    expect(gesperrt.body.error).not.toContain("Keychain locked");
+    expect(gesperrt.body.grund).toBe("schluessel-nicht-lesbar");
     verschluesselt.close();
   });
 });

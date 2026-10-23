@@ -1,3 +1,21 @@
+## [3.2.46]
+
+### Fixed
+
+- **A masked key row is reported, never silently deleted.** The boot still carried a fallback that
+  only accepted a string from `ai_settings`, while the door has returned `{gesetzt, ende}` since
+  A3-09 — the line could never be true, and the mirror deleted the row unread. The dead fallback is
+  gone; `altFund` now carries `form: "maske" | "klartext"`, so every old row is a find that stays in
+  place and is reported (a store whose door still returns the row unmasked is reported, not
+  migrated), and the session cache that hid a later find is removed. Body: `src/lib/ai.ts`,
+  `src/components/Settings.tsx`, five delivered cases adjusted with their reason, one new case.
+- **The three doors name their reason.** `server/router/chat.ts` (500), `recovery-key.ts`
+  (403/404/500) and `importe.ts` (400) returned a raw `error` sentence; they now carry `grund`, and
+  the surface reads it. The global handler keeps `expose`; the foreign-exception wording at
+  `server/app.ts:116` is reported, not changed. Body: three routers, one new case.
+- Red first: both new cases red at the plain head, green with the bodies; neighborhood 205/205;
+  `tsc` and `eslint` exit 0. The suite adds two cases.
+
 ## [3.2.45]
 
 ### Changed

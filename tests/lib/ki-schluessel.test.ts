@@ -149,40 +149,47 @@ describe("F13: die Wanderung des Bestands von vor dem Update", () => {
     kern.gesendet.length = 0;
   }
 
-  it("liest den Klartext-Blob, verschliesst ihn und tilgt ihn", async () => {
-    const { hydrateAISettings } = await sitzung();
-    const kern = kiRouten(false); // die App-Route war unmaskiert — nur so ist der Blob lesbar
+  it("liest einen unmaskierten Altbestand NICHT mehr - er wird gemeldet und bleibt liegen", async () => {
+    // P4-2310 (a), 23.10.: der Rueckfall auf einen lesbaren Altbestand ist entfernt
+    // (decision der Leitung). Diese Zeile hiess bis dahin "liest den Klartext-Blob,
+    // verschliesst ihn und tilgt ihn" - das konnte gegen die maskierende Tuer nie
+    // wahr werden. Jetzt gilt: nicht lesen, melden, liegen lassen.
+    const { hydrateAISettings, kiSchluesselStatus } = await sitzung();
+    const kern = kiRouten(false); // eine Tuer von vor der Maske: die Zeile kaeme lesbar heraus
     vi.stubGlobal("fetch", kern.anfrage);
     await legeAltenBlob(kern);
     expect(kern.bestand.ai_settings).toContain(verbindung.apiKey);
 
     localStorage.clear();
     const s = await hydrateAISettings();
-    expect(s.apiKey).toBe(verbindung.apiKey);
+    expect(s.apiKey).toBe("");
+    const status = await kiSchluesselStatus();
+    expect(status.altFund).toMatchObject({ name: "ai_settings", gesetzt: true, form: "klartext" });
 
-    // danach: kein Klartext mehr im Bestand, die Verbindung trotzdem gehalten
-    expect(kern.bestand.ai_settings).toBeUndefined();
-    expect(JSON.stringify(kern.bestand)).not.toContain(verbindung.apiKey);
-
-    kern.gesendet.length = 0;
-    localStorage.clear();
-    expect((await hydrateAISettings()).apiKey).toBe(verbindung.apiKey);
+    await new Promise((r) => setTimeout(r, 50));
+    expect(kern.bestand.ai_settings).toContain(verbindung.apiKey);
+    expect(JSON.stringify(kern.bestand)).toContain(verbindung.apiKey);
   });
 
-  it("kann der Umschlag nicht gebaut werden, bleibt der alte Blob stehen — kein Nutzer wird ausgesperrt", async () => {
-    const { hydrateAISettings } = await sitzung();
+  it("ohne Verschluss bleibt ein Altbestand liegen - gemeldet, nicht geloescht, nicht gelesen", async () => {
+    // P4-2310 (a): derselbe Grund wie im Fall darueber. Der alte Titel versprach ein
+    // Wandern; seit der Entscheidung wandert nichts mehr, und der Fund bleibt stehen.
+    const { hydrateAISettings, kiSchluesselStatus } = await sitzung();
     const kern = kiRouten(false, null); // keine Verschluesselung → kein Verschluss zur Hand
     vi.stubGlobal("fetch", kern.anfrage);
     await legeAltenBlob(kern);
 
     localStorage.clear();
     const s = await hydrateAISettings();
-    expect(s.apiKey).toBe(verbindung.apiKey);
+    expect(s.apiKey).toBe("");
     expect(kern.bestand.ai_settings).toBeDefined();
+    expect((await kiSchluesselStatus()).altFund?.form).toBe("klartext");
   });
 
-  it("ist der alte Blob nur als Anzeige zu sehen, erfindet die App keinen Schluessel", async () => {
-    const { hydrateAISettings } = await sitzung();
+  it("ist der alte Blob nur als Anzeige zu sehen, meldet die Flaeche den Fund", async () => {
+    // P4-2310 (a): was der Fall schon hielt (kein erfundener Schluessel, nichts
+    // zurueckgeschrieben), bleibt - neu ist die Meldung des Fundes durch den Leser.
+    const { hydrateAISettings, kiSchluesselStatus } = await sitzung();
     const kern = kiRouten(true); // maskiert: der Wert ist von hier nicht mehr zu holen
     vi.stubGlobal("fetch", kern.anfrage);
     await legeAltenBlob(kern);
@@ -191,6 +198,7 @@ describe("F13: die Wanderung des Bestands von vor dem Update", () => {
     localStorage.clear();
     const s = await hydrateAISettings();
     expect(s.apiKey).toBe("");
+    expect((await kiSchluesselStatus()).altFund).toMatchObject({ name: "ai_settings", form: "maske" });
     await new Promise((r) => setTimeout(r, 50));
     expect(kern.gesendet.length).toBe(0); // nichts wird zurueckgeschrieben
     expect(kern.bestand.ai_settings).toContain(verbindung.apiKey); // der Blob bleibt liegen, wie er war

@@ -149,16 +149,16 @@ export function mountChatImport(app: express.Express, ctx: AppKontext): void {
   const { store } = ctx;
   app.post("/api/import/chat", ctx.limiter.write, express.json({ limit: "40mb" }), (req, res) => {
     const roh = typeof req.body?.content === "string" ? req.body.content : "";
-    if (!roh.trim()) return res.status(400).json({ error: "content (the raw conversations.json text) is required" });
+    if (!roh.trim()) return res.status(400).json({ error: "content (the raw conversations.json text) is required", grund: "import-leer" });
     let daten: unknown;
     try {
       daten = JSON.parse(roh);
     } catch {
-      return res.status(400).json({ error: "content is not valid JSON — send the conversations.json from your export as text" });
+      return res.status(400).json({ error: "content is not valid JSON — send the conversations.json from your export as text", grund: "import-kein-json" });
     }
     const ergebnis = chatExportZuMarkdown(daten);
     if (!ergebnis) {
-      return res.status(400).json({ error: "This file is not a ChatGPT or Claude export (no conversations with mapping or chat_messages found)." });
+      return res.status(400).json({ error: "This file is not a ChatGPT or Claude export (no conversations with mapping or chat_messages found).", grund: "import-unbekanntes-format" });
     }
     const scope = `${ergebnis.format}-import`;
     const summary = ergebnis.dateien.length ? importObsidianVault(store, ergebnis.dateien, { scope }) : { imported: 0, updated: 0, skipped: 0, errors: [] };

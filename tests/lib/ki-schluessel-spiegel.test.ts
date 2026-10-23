@@ -65,18 +65,20 @@ describe("F13: die Einstellungs-Spiegelung darf das Geheimnis nicht tragen", () 
     expect(kern.bestand.ai_connection).toBeDefined();
   });
 
-  it("die Reihe aus einer alteren Version wird gelesen, versiegelt und getilgt", async () => {
-    const { hydrateAISettings } = await sitzung();
+  it("die Reihe aus einer alteren Version wird gemeldet und bleibt liegen, nicht gelesen", async () => {
+    // P4-2310 (a), 23.10.: der Rueckfall auf einen lesbaren Altbestand ist entfernt.
+    // Der Fund wird gemeldet; geloescht wird er nicht (das war der blinde Wurf bis 3.2.44).
+    const { hydrateAISettings, kiSchluesselStatus } = await sitzung();
     // so legte es die alte Version ab: gespiegelter localStorage-Inhalt in der DB
     kern.bestand.ki_gehirn_ai_settings = JSON.stringify(verbindung);
     localStorage.clear();
 
     const s = await hydrateAISettings();
-    expect(s.apiKey).toBe(verbindung.apiKey);
+    expect(s.apiKey).toBe("");
+    expect((await kiSchluesselStatus()).altFund?.name).toBe("ki_gehirn_ai_settings");
     await ruhe();
 
-    expect(kern.bestand.ki_gehirn_ai_settings, "bleibt die Reihe stehen, gibt die Route den Klartext weiter").toBeUndefined();
-    expect(JSON.stringify(kern.bestand)).not.toContain(verbindung.apiKey);
+    expect(kern.bestand.ki_gehirn_ai_settings).toBeDefined();
   });
 
   it("der Sitzungsname bleibt in der Page — die Datenbank kennt ihn nicht", async () => {

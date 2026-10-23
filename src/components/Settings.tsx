@@ -559,7 +559,9 @@ export function Settings() {
         body: JSON.stringify({ content }),
       });
       const d = await r.json().catch(() => ({}));
-      if (!r.ok) { setChatImportFehler(d.error ?? `The server rejected the file (${r.status}).`); return; }
+      // P4-2310: die Tuer schreibt jetzt eine Kennung zu ihren Absagen; sie wird
+      // zuerst gelesen. Ohne Kennung bleibt der Wortlaut der Tuer stehen.
+      if (!r.ok) { setChatImportFehler(grundText(d.grund) ?? d.error ?? `The server rejected the file (${r.status}).`); return; }
       setChatImportErgebnis(d);
       void refreshMemories().catch(() => { /* der Import gelang; die Liste meldet einen Ladegrund selbst */ });
     } catch {

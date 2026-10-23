@@ -14,17 +14,19 @@ export function mountRecoveryKey(app: express.Express, ctx: AppKontext): void {
   const { store } = ctx;
 
   app.post("/api/recovery-key", ctx.limiter.write, (req, res) => {
-    if (!/^(127\.0\.0\.1|localhost):\d+$/.test(req.headers.host ?? "")) return res.status(403).json({ error: "Forbidden host." });
+    if (!/^(127\.0\.0\.1|localhost):\d+$/.test(req.headers.host ?? "")) return res.status(403).json({ error: "Forbidden host.", grund: "fremder-host" });
     const herkunft = req.headers.origin;
-    if (herkunft && !/^http:\/\/(127\.0\.0\.1|localhost):\d+$/.test(herkunft)) return res.status(403).json({ error: "Forbidden origin." });
-    if (req.get("x-kepta-recovery") !== "1") return res.status(403).json({ error: "This request must come from the K3PTA window." });
+    if (herkunft && !/^http:\/\/(127\.0\.0\.1|localhost):\d+$/.test(herkunft)) return res.status(403).json({ error: "Forbidden origin.", grund: "fremde-herkunft" });
+    if (req.get("x-kepta-recovery") !== "1") return res.status(403).json({ error: "This request must come from the K3PTA window.", grund: "ohne-wiederherstellungs-kopf" });
     let schluessel: string | null;
     try {
       schluessel = store.wiederherstellungsSchluessel();
     } catch (e) {
-      return res.status(500).json({ error: `The key could not be read: ${e instanceof Error ? e.message : String(e)}` });
+      // Der Fehlertext der Ausnahme bleibt im Protokoll; nach aussen geht die Kennung.
+      console.error("kepta: recovery key could not be read", e);
+      return res.status(500).json({ error: "The recovery key could not be read. The reason is in the server log.", grund: "schluessel-nicht-lesbar" });
     }
-    if (!schluessel) return res.status(404).json({ error: "The knowledge base is not encrypted — there is no recovery key." });
+    if (!schluessel) return res.status(404).json({ error: "The knowledge base is not encrypted — there is no recovery key.", grund: "nicht-verschluesselt" });
     res.set("Cache-Control", "no-store").json({ key: schluessel, storedIn: store.verschluesselung.ablage ?? null });
   });
 }

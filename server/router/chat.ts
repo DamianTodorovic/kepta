@@ -177,8 +177,13 @@ export function mountChat(app: express.Express, ctx: AppKontext): void {
     } catch (error: unknown) {
       if (res.destroyed) return;
       console.error("Chat API Error:", error);
-      const msg = error instanceof Error ? error.message : "Interner Serverfehler";
-      res.status(500).json({ error: msg });
+      // Der Wortlaut der Ausnahme bleibt im Protokoll (Zeile 179). Nach aussen geht
+      // ein fester Satz mit Kennung - derselbe Grund wie in server/app.ts:75-81, wo
+      // eine 500 den internen Grund frueher beim Client zeigte.
+      res.status(500).json({
+        error: "The answer failed inside K3PTA. The reason is in the server log, not in this answer.",
+        grund: "chat-fehlgeschlagen",
+      });
     }
   });
 

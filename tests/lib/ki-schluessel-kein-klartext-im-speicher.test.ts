@@ -125,7 +125,10 @@ describe("#31: die Maskierung hat einen Leser", () => {
     const { kiSchluesselStatus } = await kiSitzung();
     const status = await kiSchluesselStatus();
     expect(status.verschlossen).toBe(true);
-    expect(status.altFund).toEqual({ name: "ai_settings", gesetzt: true, ende: altbestand.slice(-4) });
+    // P4-2310 (a): das Feld `form` sagt seit dem 23.10., wie die Reihe aus der Tuer
+    // kommt - "maske" hier, "klartext" waere eine Tuer von vor der Maske. Gelesen
+    // wird sie in beiden Faellen nicht mehr (der Rueckfall ist entfernt).
+    expect(status.altFund).toEqual({ name: "ai_settings", gesetzt: true, ende: altbestand.slice(-4), form: "maske" });
   });
 
   it("5: ein unlesbarer Altbestand wird von der Spiegelung nicht geloescht", async () => {

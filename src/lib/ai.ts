@@ -339,10 +339,16 @@ async function oeffne(wert: string): Promise<string> {
 export interface AltFund {
   /** Der Reihenname, den die Maske traegt. */
   name: string;
-  /** true = die Tuer meldet einen Wert, ohne ihn zu nennen. */
+  /** true = die Tuer meldet einen Wert. */
   gesetzt: boolean;
   /** Die letzten vier Zeichen, die die Tuer zeigt, oder null. */
   ende: string | null;
+  /**
+   * Wie die Reihe aus der Tuer kommt: "maske" = nur die Anzeige, "klartext" = die
+   * Tuer gaebe sie lesbar heraus. Gelesen wird sie seit 3.2.45 in keinem Fall mehr;
+   * die Form sagt nur, was die Flaeche einem Menschen erzaehlen darf.
+   */
+  form: "maske" | "klartext";
 }
 
 export interface AISchluesselStatus {
@@ -424,34 +430,28 @@ async function spiegelbild(s: AISettings): Promise<{ text: string; haelt: boolea
 /** Die Reihen, in denen aeltere Versionen den Klartext ablegten. */
 const ALTE_ABLAGEN = [ALTER_BLOB, ALTE_SITZUNGS_NAME];
 
-/** Ein Wurf pro Sitzung: der Bestand der Tuer aendert sich nicht, waehrend das Blatt lebt. */
-let altFundGemerkt: AltFund | null | undefined;
 
 /**
- * Der Leser der Maske. Eine Zeichenkette unter einem der alten Namen ist lesbar und
- * damit traegbar; ein Objekt `{gesetzt, ende}` ist ein Wert, den die Tuer nicht
- * herausgibt. Beides ist hier unterschiedlich behandelt: nur das Lesbare darf
- * verschwinden, nachdem es versiegelt wurde.
+ * Der Leser der Maske. Jede der alten Reihen ist ein Fund, egal in welcher Form sie
+ * kommt: als Anzeige `{gesetzt, ende}` (Maske) oder als Zeichenkette (eine Tuer von
+ * vor der Maske). Gelesen wird sie in keinem Fall mehr - seit 3.2.45 gibt es keinen
+ * Rueckfall auf einen lesbaren Altbestand. Was bleibt, ist die Meldung an den
+ * Menschen und die Regel, dass `spiegle` einen Fund nicht loescht.
  */
 async function altFund(): Promise<AltFund | null> {
-  if (altFundGemerkt !== undefined) return altFundGemerkt;
   try {
     const r = await fetch('/api/settings');
-    if (!r.ok) { altFundGemerkt = null; return altFundGemerkt; }
+    if (!r.ok) return null;
     const d = (await r.json()) as Record<string, unknown>;
     for (const name of ALTE_ABLAGEN) {
       const wert = d[name];
-      if (typeof wert === 'string') continue; // lesbar: kein Fund, die Spiegelung darf raeumen
+      if (typeof wert === 'string' && wert) return { name, gesetzt: true, ende: null, form: 'klartext' };
       if (wert && typeof wert === 'object' && (wert as { gesetzt?: unknown }).gesetzt === true) {
-        altFundGemerkt = { name, gesetzt: true, ende: (wert as { ende?: string | null }).ende ?? null };
-        return altFundGemerkt;
+        return { name, gesetzt: true, ende: (wert as { ende?: string | null }).ende ?? null, form: 'maske' };
       }
     }
-    altFundGemerkt = null;
-  } catch {
-    altFundGemerkt = null;
-  }
-  return altFundGemerkt;
+  } catch { /* offline: kein Fund */ }
+  return null;
 }
 
 async function spiegle(s: AISettings): Promise<boolean> {
@@ -579,25 +579,12 @@ export async function hydrateAISettings(): Promise<AISettings> {
       } catch { /* kaputter Spiegel: die Defaults tragen weiter */ }
     }
 
-    const alt = ALTE_ABLAGEN.map((name) => (typeof d[name] === 'string' ? (d[name] as string) : '')).find((t) => t);
-    if (alt) {
-      try {
-        const vorF13 = JSON.parse(alt) as Partial<AISettings>;
-        if (vorF13?.model) {
-          const p = providerById(vorF13.providerId ?? '');
-          const s: AISettings = {
-            providerId: p.id,
-            apiKey: typeof vorF13.apiKey === 'string' ? vorF13.apiKey : '',
-            baseUrl: vorF13.baseUrl ?? p.baseUrl,
-            model: vorF13.model,
-            ...(vorF13.extractModel ? { extractModel: vorF13.extractModel } : {}),
-          };
-          await saveAISettings(s);
-          return s;
-        }
-      } catch { /* auch der alte Blob kann kaputt sein — Defaults, kein Absturz */ }
-    }
-
+    // Hier stand bis 3.2.45 der Rueckfall auf einen lesbaren Altbestand
+    // (`typeof d[name] === 'string'`). Die Einstellungs-Route maskiert genau diese
+    // Reihen seit A3-09 (server/router/settings.ts:51), also konnte der Zweig gegen
+    // die ausgelieferte Tuer nie wahr werden. Was von ihm bleibt, ist der Leser der
+    // Maske: `altFund` meldet den Fund, `spiegle` loescht ihn nicht (ai.ts:436 und
+    // :463). Ein Bestand aus der Zeit vor der Maske erreicht damit niemanden mehr.
     return loadAISettings();
   } catch {
     return loadAISettings();
