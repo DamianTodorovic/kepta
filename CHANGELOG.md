@@ -1,3 +1,30 @@
+## [3.2.49]
+
+### Added
+
+- **An edited note keeps the text it had before.** `updateMemory` used to overwrite in place, so
+  "go back" had nothing to go back to and every stand route answered 404. A real text change now
+  stores the previous line in `memory_stande` inside the same transaction, and
+  `GET /api/memories/:id/stande` serves it as a page: newest first, cap 200, `begrenzt` and
+  `hinweis` named, header `x-kepta-begrenzt`. Free tier, no key, no flag. Tag-only, type-only and
+  identical-text edits write no stand, and nothing pretends a history that predates this release.
+
+### Fixed
+
+- **A local model endpoint is no longer refused for want of a key.** The door asked
+  `istLokaleAdresse(baseUrl)` while the area asked `needsKey && !apiKey`, so LM Studio on
+  `127.0.0.1:1234/v1` was blocked in the window while the door would have answered it. Both now
+  read the same rule, and the status line says "Local endpoint - this address needs no key."
+  instead of claiming "No key yet".
+- **The details fold covers its own bottom edge.** The hint bar stopped 8 px above the fold, which
+  left a strip where a clipped control showed through, and at the scroll stop it flickered back on
+  while the last row was already fully visible. The fold padding, the bar's negative margin and the
+  measured edge (now `bottom - 1`) are corrected; the four criteria hold at 390 px.
+- **At or below 5 percent zoom the graph core is one marker, not a blue mass.** The marker carries
+  the counted number, the canvas and the list read the same stand, ghost and dimmed nodes stay
+  batched, and at least one square always stays visible far out. Above 5 percent the painting path
+  is untouched.
+
 ## [3.2.48]
 
 ### Fixed

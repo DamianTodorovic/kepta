@@ -87,6 +87,14 @@ export interface Verschluesselung {
   hinweis?: string;
 }
 
+export interface Stand {
+  id: number;
+  memoryId: string;
+  title: string;
+  content: string;
+  createdAt: number;
+}
+
 export class KeptaStore {
   readonly db: Database.Database;
   readonly dbPath: string;
@@ -284,6 +292,19 @@ export class KeptaStore {
       -- Schreibungen 0,259 ms je Zeile ohne Index, 0,286 ms mit — +0,027 ms (10,4 %),
       -- ueber den vollen Bestand 21 066 also rund +0,57 s, verteilt ueber den Lauf.
       CREATE INDEX IF NOT EXISTS idx_memories_deleted_updated ON memories(deleted_at, updated_at DESC, rid);
+      -- Standfolge (BAU-P3-11, 24.10.): der Text VOR einer Aenderung, damit ein Mensch
+      -- zurueckgehen kann. Bewusst eine eigene Tabelle statt einer zweiten Zeile in
+      -- 'memories': die Notiz bleibt eine Notiz, ihre Suche und ihr Graph aendern sich nicht.
+      -- Geschrieben wird nur bei einem echten Textwechsel (updateMemory), nie bei Tags,
+      -- Typ, Zeigern oder einem Schreibvorgang mit identischem Text.
+      CREATE TABLE IF NOT EXISTS memory_stande (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        memory_id TEXT NOT NULL,
+        title TEXT NOT NULL,
+        content TEXT NOT NULL,
+        created_at INTEGER NOT NULL
+      );
+      CREATE INDEX IF NOT EXISTS idx_memory_stande_note ON memory_stande(memory_id, created_at DESC, id DESC);
       -- Die Deckungs-Zaehlung der Graph-Route ('notizenMitBegriff()', src/core/store.ts:1362)
       -- filtert 'm.deleted_at IS NULL' und braucht von 'memories' weiter nichts als 'm.id'.
       -- Ohne diese zwei Spalten in einem Index muss sie fuer jede Trefferzeile in die
@@ -624,6 +645,34 @@ export class KeptaStore {
     return map;
   }
 
+  /** Die Staende EINER Notiz, neueste zuerst (BAU-P3-11, gratis, ohne Schluessel). */
+  listStande(
+    memoryId: string,
+    opts: { limit?: number; offset?: number } = {},
+  ): { staende: Stand[]; total: number } {
+    const limit = Math.max(0, Math.min(Math.floor(opts.limit ?? 20), 200));
+    const offset = Math.max(0, Math.floor(opts.offset ?? 0));
+    const kopf = this.db
+      .prepare("SELECT COUNT(*) AS n FROM memory_stande WHERE memory_id = ?")
+      .get(memoryId) as { n: number } | undefined;
+    const total = Number(kopf?.n ?? 0);
+    const rows = this.db
+      .prepare(
+        "SELECT id, memory_id, title, content, created_at FROM memory_stande WHERE memory_id = ? ORDER BY created_at DESC, id DESC LIMIT ? OFFSET ?",
+      )
+      .all(memoryId, limit, offset) as Array<Record<string, unknown>>;
+    return {
+      staende: rows.map((r) => ({
+        id: Number(r.id),
+        memoryId: String(r.memory_id),
+        title: String(r.title),
+        content: String(r.content),
+        createdAt: Number(r.created_at),
+      })),
+      total,
+    };
+  }
+
   getMemory(id: string): MemoryRecord | null {
     const row = this.getRow(id);
     if (!row) return null;
@@ -767,13 +816,27 @@ export class KeptaStore {
     }
     if (sets.length === 0) return this.rowToRecord(row);
     // Explizites updatedAt (Import/Resync) gewinnt — sonst "jetzt"
+    const jetzt = patch.updatedAt ?? Date.now();
     sets.push("updated_at = ?");
-    params.push(patch.updatedAt ?? Date.now());
+    params.push(jetzt);
     params.push(id);
     if (!this.extensions.policy.canWrite(this.actor(), { id, scope: String(row.scope), type: String(row.type) })) {
       throw new Error("Write denied (PolicyGate)");
     }
-    this.db.prepare(`UPDATE memories SET ${sets.join(", ")} WHERE id = ?`).run(...params);
+    // Standfolge (BAU-P3-11): nur ein echter Textwechsel legt einen Stand an, und der Stand
+    // traegt die Zeile, die JETZT in der Tabelle steht. Beides in einem Umschlag, damit es
+    // keinen halben Zustand gibt (Stand ohne Update oder Update ohne Stand).
+    const neuerTitel = patch.title !== undefined ? (cleanText(patch.title, 200) || "Untitled") : String(row.title);
+    const neuerInhalt = patch.content !== undefined ? cleanText(patch.content, 200_000) : String(row.content);
+    const textWechselt = neuerTitel !== String(row.title) || neuerInhalt !== String(row.content);
+    this.db.transaction(() => {
+      if (textWechselt) {
+        this.db
+          .prepare("INSERT INTO memory_stande (memory_id, title, content, created_at) VALUES (?, ?, ?, ?)")
+          .run(id, String(row.title), String(row.content), jetzt);
+      }
+      this.db.prepare(`UPDATE memories SET ${sets.join(", ")} WHERE id = ?`).run(...params);
+    })();
     // Content-Änderung macht Chunks + Embeddings obsolet
     if (patch.content !== undefined) this.db.prepare("DELETE FROM chunks WHERE memory_id = ?").run(id);
     this.audit("update", id);

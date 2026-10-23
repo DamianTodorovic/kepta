@@ -443,7 +443,11 @@ export function Chat({ activeMemories, onSaveToBrain, onSaveToBrainWithMeta, isF
 
     const settingsLive = loadAISettings();
     const provLive = providerById(settingsLive.providerId);
-    if (provLive.needsKey && !settingsLive.apiKey) {
+    // Aufgabe #8 (24.10.): die Tuer fragt `istLokaleAdresse(baseUrl)` (server/router/chat.ts:46) -
+    // ein lokaler Endpunkt braucht keinen Schluessel, auch wenn der Anbieter sonst einen verlangt.
+    // Diese Sperre las nur `needsKey && !apiKey` und liess die Flaeche verweigern, was die Tuer
+    // annimmt. Jetzt lesen beide dieselbe Bedingung.
+    if (provLive.needsKey && !settingsLive.apiKey && !istLokaleAdresse(settingsLive.baseUrl)) {
       setError(`Quick setup (30 seconds): ① "System" on the left → Settings ② pick a provider ③ enter an API key ④ press "Test request" — the cockpit answers after that. No key? Starting Ollama locally is enough too (then pick a model named "ollama/…").`);
       return;
     }

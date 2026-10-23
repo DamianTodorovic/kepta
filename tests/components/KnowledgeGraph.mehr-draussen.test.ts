@@ -22,8 +22,6 @@ import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 
 const QUELLE = "src/components/KnowledgeGraph.tsx";
-/** Tailwinds Rasterschritt: 1 Eintrag = 0,25 rem = 4 px bei 16 px Grundgroesse. */
-const PX_PRO_EINTRAG = 4;
 
 /** Der Abschnitt der Klappe, von ihrer Kennung bis zum Rahmen der Leinwand. */
 function klappenBlock(): string {
@@ -62,14 +60,22 @@ describe("More-Klappe: die Faltkante nennt den Rest und deckt den Kopf nicht", (
     expect(klasse, "der Hinweis faengt Klicks").toMatch(/\bpointer-events-none\b/);
   });
 
-  it("sein Fuss ist der Fuss der Klappe: -mb-2 nimmt die 8 px py-2 zurueck", () => {
+  /**
+   * 24.10., gemessen am Bau 3.2.48 in eigner Grube (23:16 MESZ): der Balken endete auf
+   * 803,0, die Klappe auf 812,0 - in den 8 px dazwischen stand der angeschnittene
+   * `Motion`-Knopf (Pixel 7,7,8 gegen Panel-Grund 37,37,38). Die Reparatur nimmt der
+   * Klappe den Polster (`pb-0`) und dem Balken die negative Untermargin; dann deckt er
+   * bis 811,0, und der Streifen traegt ueberall den Balken-Grund (56,56,58).
+   */
+  it("sein Fuss ist der Fuss der Klappe: kein Polster unten, keine negative Untermargin, Schwelle 1 px", () => {
     const klappe = klassenAb(block, kasten);
-    expect(klappe, "die Klappe polstert unten nicht mit py-2").toMatch(/\bpy-2\b/);
+    expect(klappe, "die Klappe polstert unten noch - der Streifen bleibt").toMatch(/\bpb-0\b/);
+    expect(klappe, "die Klappe hat oben kein pt-2 mehr").toMatch(/\bpt-2\b/);
     expect(klappe, "die Klappe haengt nicht an bottom-2").toMatch(/\bbottom-2\b/);
     const klasse = klassenAb(block, hinweis);
-    const rueck = klasse.match(/(?:^|\s)-mb-(\d+(?:\.\d+)?)(?:\s|$)/);
-    expect(rueck, "der Hinweis nimmt den Polster der Klappe nicht zurueck").toBeTruthy();
-    expect(Number(rueck![1]) * PX_PRO_EINTRAG, "8 px Fuss gegen 8 px Polster").toBe(2 * PX_PRO_EINTRAG);
+    expect(klasse, "der Balken zieht sich mit negativer Untermargin vom Fuss weg").not.toMatch(/(?:^|\s)-mb-/);
+    const quelltext = readFileSync(QUELLE, "utf8");
+    expect(quelltext, "die Messung rechnet noch mit 9 px (Rand + altes py-2) statt mit dem 1 px Rand").toMatch(/getBoundingClientRect\(\)\.bottom - 1;/);
   });
 
   it("seine Zahl ist gemessen, nicht abgeschrieben: Reihen gegen die Oeffnung", () => {

@@ -220,6 +220,14 @@ const erwartet = [
   // P5 v2: die Zuordnung laeuft ueber die bewegte Liste, im einen Aufruf. Kennungen verbiegt
   // der Minifier (`vergabeNachBelegung` = 0 in beiden Objekten), das Array ueberlebt.
   ['["md","json","txt"]', 1],
+  // 3.2.49, VIER Koerper (Leitung, 24.10. 00:3x MESZ): Punkt 3s Standfolge, Punkt 4s lokale
+  // Adresse, Punkt 2s Streifen-Reparatur, Punkt 1s Sammelmarke v4. Marken sind Wortlaute, die der
+  // Minifier woertlich laesst. Gegenprobe VOR dem Tausch am dann installierten 3.2.48
+  // (49 105 753 B, mtime 00:09 MESZ): jede dieser vier Ketten muss dort 0 sein.
+  ["memory_stande", 1],
+  ["Local endpoint - this address needs no key.", 1],
+  ["px-3 pt-2 pb-0", 1],
+  ["core as one marker", 1],
 ];
 // Die Liste darf nur ASCII-Zeichen enthalten. Grund, gemessen 21.10. 19:16 MESZ am
 // installierten Objekt: das Wort "Looking" plus echtes U+2026 steht dort 2 mal, diese

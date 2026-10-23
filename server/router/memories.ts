@@ -252,6 +252,45 @@ export function mountMemories(app: express.Express, ctx: AppKontext): void {
     res.json({ ok: true, bestand: gezahlt, traeger, themen, ohneThema, ms: Date.now() - started });
   });
 
+  // Standfolge (BAU-P3-11, zweiter Schritt): die Texte VOR den Aenderungen einer Notiz,
+  // neueste zuerst, mit derselben Seiten-Kappe wie die Liste. Gratis-Stufe: kein Schluessel,
+  // keine Fahne, kein Bezahlwort - der Leseweg gehoert jeder Installation.
+  app.get("/api/memories/:id/stande", (req, res) => {
+    const id = String(req.params.id);
+    if (!istGueltigeId(id)) return res.status(400).json({ error: "Invalid id" });
+    if (!store.getMemory(id)) return res.status(404).json({ error: "Node not found" });
+
+    const rohLimit = typeof req.query.limit === "string" ? Number.parseInt(req.query.limit, 10) : Number.NaN;
+    const gewollt = Number.isFinite(rohLimit) ? rohLimit : 20;
+    const seite = Math.min(Math.max(gewollt, SEITE_MIN), SEITE_MAX);
+    const rohOffset = typeof req.query.offset === "string" ? Number.parseInt(req.query.offset, 10) : 0;
+    const offset = Number.isFinite(rohOffset) ? Math.max(rohOffset, 0) : 0;
+
+    const { staende, total } = store.listStande(id, { limit: seite, offset });
+    const begrenzt = offset + staende.length < total;
+    const geklemmt = seite !== gewollt
+      ? `limit=${gewollt} is outside ${SEITE_MIN}..${SEITE_MAX} - the page was pinned to ${seite}.`
+      : undefined;
+    const rest = total - offset - staende.length;
+    const hinweis = [
+      geklemmt,
+      total === 0
+        ? "This note has no earlier stand yet - it has not been edited since it was written."
+        : `This page holds ${staende.length} of ${total} earlier ${total === 1 ? "stand" : "stands"}${begrenzt ? `; ${rest} more follow at offset ${offset + staende.length}` : " - the whole stand list fits in this page"}.`,
+    ].filter(Boolean).join(" ");
+
+    res.setHeader("x-kepta-begrenzt", begrenzt ? "1" : "0");
+    return res.json({
+      count: staende.length,
+      total,
+      limit: seite,
+      offset,
+      begrenzt,
+      hinweis,
+      staende: staende.map((s) => ({ id: s.id, memoryId: s.memoryId, title: s.title, content: s.content, createdAt: s.createdAt })),
+    });
+  });
+
   app.get("/api/memories", (req, res) => {
     const { ganzerBestand } = leseGrenzwerte(req, res);
     if (res.headersSent) return;

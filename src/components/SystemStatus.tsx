@@ -6,6 +6,7 @@ import { PROVIDERS, providerById, loadAISettings, hydrateAISettings } from '../l
 import { RecoveryKey } from './RecoveryKey';
 import { getJsonOderNull } from '../lib/api';
 import { QUITTUNG_MS } from '../lib/quittung';
+import { istLokaleAdresse } from '../lib/schild';
 
 interface Health {
   ok: boolean;
@@ -128,7 +129,11 @@ export function SystemStatus() {
 
   const s = loadAISettings();
   const prov = providerById(s.providerId);
-  const keyOk = !prov.needsKey || !!s.apiKey;
+  // Aufgabe #8 (24.10.): dieselbe Bedingung wie die Tuer (server/router/chat.ts:46). Ein
+  // lokaler Endpunkt traegt die Anfrage ohne Schluessel - die Zeile sagt das jetzt, statt
+  // "No key yet" zu behaupten und damit etwas zu versprechen, das nicht stimmt.
+  const lokalOhneSchluessel = prov.needsKey && !s.apiKey && istLokaleAdresse(s.baseUrl);
+  const keyOk = !prov.needsKey || !!s.apiKey || lokalOhneSchluessel;
   const modelOk = !!s.model;
 
   /**
@@ -220,7 +225,8 @@ export function SystemStatus() {
           ok={keyOk}
           label={bereit ? `Provider: ${prov.label}` : 'Provider'}
           detail={bereit
-            ? (keyOk ? 'API key stored.' : 'No key yet — chat stays silent until you add one. Your agents read and write without a key.')
+            ? (lokalOhneSchluessel ? 'Local endpoint - this address needs no key.'
+              : keyOk ? 'API key stored.' : 'No key yet — chat stays silent until you add one. Your agents read and write without a key.')
             : 'Reading the connection stored on this computer…'}
           fix={'“Settings” on the left → “AI & data” → pick a provider → enter a key.'}
         />

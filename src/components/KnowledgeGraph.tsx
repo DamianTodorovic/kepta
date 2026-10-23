@@ -1063,6 +1063,41 @@ export function gangLichtungZaehlen(
   }
   return { gemalt, nichtGemalt: alle - gemalt };
 }
+
+/**
+ * Die Sammelmarke des Kerns.
+ *
+ * Bei 2 Prozent ist der Kern kein Feld von Punkten mehr, sondern Staub: am
+ * 23.10. um 23:32 MESZ lagen 145 Knoten in 13 x 14 Bildpunkten. Duennen half
+ * nicht (vier Stuecke, 1/4 = 25 Prozent Quote, Nenner kollabiert), also steht
+ * dort EINE Marke mit der Zahl der zusammengefassten Knoten — ein Ort, ein
+ * lesbarer Wert. Ab 5 Prozent wird nicht gedeckelt: dort ist der Kern lesbar
+ * und die 4,11 Prozent bei 10 Prozent bleiben unberuehrt.
+ *
+ * Geister (zeitInaktiv) und Gedimmte bleiben immer im Malweg: die
+ * Geister-Buendelung ist ein gelieferter Vertrag (render.test.tsx:1121).
+ */
+export const KERN_MARKE_AB_ZOOM = 0.05;
+export const KERN_MARKE_RADIUS_PX = 4;
+export const KERN_MARKE_SCHRIFT_PX = 11;
+
+export function kernMarke(
+  k: number,
+  knoten: { x: number; y: number }[]
+): { marke: boolean; wx: number; wy: number; zahl: number } {
+  let x0 = Infinity;
+  let y0 = Infinity;
+  let x1 = -Infinity;
+  let y1 = -Infinity;
+  for (const n of knoten) {
+    if (n.x < x0) x0 = n.x;
+    if (n.x > x1) x1 = n.x;
+    if (n.y < y0) y0 = n.y;
+    if (n.y > y1) y1 = n.y;
+  }
+  const marke = k <= KERN_MARKE_AB_ZOOM && knoten.length >= 8;
+  return { marke, wx: (x0 + x1) / 2, wy: (y0 + y1) / 2, zahl: knoten.length };
+}
 /**
  * Ab dieser Strecke gilt eine Geste als Ziehen und nicht mehr als Klick.
  * Wer einen Knoten nur antippt, will ihn nicht festnageln.
@@ -1456,7 +1491,8 @@ export function KnowledgeGraph({ memories: memoriesAusFenster, onSelectMemory, o
    * nicht aus `plan.menue.length`: das ist die Zahl der Glieder im Kasten (17
    * bei 390), nicht die der verdeckten (11 bei 390, gemessen 23.10. 18:51:50).
    *
-   * 9 px = 1 px Rand + 8 px `py-2`: dieselbe Kante, gegen die die Kappe rechnet.
+   * 1 px Rand: die Klappe polstert unten nicht mehr (`pb-0`), damit der Balken
+   * bis an die Kante deckt. Die Schwelle muss dieselbe Kante sein wie der Balken.
    * Gezaehlt wird auch eine angeschnittene Reihe - sie ist der Grund, warum ein
    * Mensch ueberhaupt rollt.
    */
@@ -1471,7 +1507,7 @@ export function KnowledgeGraph({ memories: memoriesAusFenster, onSelectMemory, o
     const kasten = klappeRef.current;
     if (!kasten) return;
     const messen = () => {
-      const unterkante = kasten.getBoundingClientRect().bottom - 9;
+      const unterkante = kasten.getBoundingClientRect().bottom - 1;
       let n = 0;
       kasten.querySelectorAll<HTMLElement>("[data-mehr-reihe]").forEach((reihe) => {
         if (reihe.getBoundingClientRect().bottom > unterkante + 0.5) n += 1;
@@ -2026,6 +2062,9 @@ export function KnowledgeGraph({ memories: memoriesAusFenster, onSelectMemory, o
   const simRef = useRef<Simulation | null>(null);
   const transformRef = useRef<Transform>({ x: 0, y: 0, k: 1 });
   const [zoomAnzeige, setZoomAnzeige] = useState(1);
+  /** Die Marken-Zahl des LETZTEN Bildes — Malweg und DOM lesen denselben Stand. */
+  const [kernStand, setKernStand] = useState<{ marke: boolean; zahl: number } | null>(null);
+  const kernStandRef = useRef<{ marke: boolean; zahl: number } | null>(null);
   // Die Zeigerform hing vorher an Refs — die loesen kein Rendern aus, also blieb
   // der Cursor beim Ziehen unveraendert und die Geste fuehlte sich tot an.
   const [greift, setGreift] = useState(false);
@@ -3243,6 +3282,14 @@ export function KnowledgeGraph({ memories: memoriesAusFenster, onSelectMemory, o
     // Gang-Lichtung (#102): ab dieser Blende wird das Gang-Raster duenner gemalt.
     const lichtung = gangLichtung(t.k);
     let gangZaehler = 0;
+    const kernInhalt = sim.nodes.filter((n) => !sim.gangIds?.has(n.id) && imBild(n));
+    const kernMarkeBild = kernMarke(t.k, kernInhalt);
+    const kernNeu = { marke: kernMarkeBild.marke, zahl: kernMarkeBild.zahl };
+    const kernAlt = kernStandRef.current;
+    if (!kernAlt || kernAlt.marke !== kernNeu.marke || kernAlt.zahl !== kernNeu.zahl) {
+      kernStandRef.current = kernNeu;
+      setKernStand(kernNeu);
+    }
     for (const n of sim.nodes) {
       if (!imBild(n)) continue;
       const m = byIdRef.current.get(n.id);
@@ -3267,6 +3314,10 @@ export function KnowledgeGraph({ memories: memoriesAusFenster, onSelectMemory, o
       const ersetzt = !!m.supersededBy;
       if (ersetzt) ersetztImBild++;
       ctx.globalAlpha = zeitInaktiv ? 0.06 : gedimmt ? 0.14 : ersetzt ? 0.55 : 1;
+      // Die Marke ersetzt NUR den festen Kern. Geister und Gedimmte bleiben im
+      // gebuendelten Malweg, und der Knoten unter dem Zeiger bleibt immer.
+      if (kernMarkeBild.marke && !sim.gangIds?.has(n.id) && !gedimmt && !zeitInaktiv
+        && !istHov && !n.pinned && !ersetzt) continue;
 
       // Kein Groessendeckel mehr: die Kollision haelt die Knoten auseinander,
       // also darf Heranzoomen wieder einfach groesser bedeuten.
@@ -3430,6 +3481,33 @@ export function KnowledgeGraph({ memories: memoriesAusFenster, onSelectMemory, o
       ctx.globalAlpha = 1;
     }
 
+    if (kernMarkeBild.marke) {
+      // Eine Marke statt Duennen: die Zahl ist der Kern, den das Bild nicht mehr
+      // als Einzelne zeigen kann. Ein Ort, ein lesbarer Wert. Dazu EIN Quadrat,
+      // damit auch die fernste Blende etwas Sichtbares stehen laesst.
+      const markeText = kernMarkeBild.zahl.toLocaleString("en-US");
+      const quadrat = 2 * MIN_KNOTEN_PX;
+      ctx.globalAlpha = 1;
+      ctx.fillStyle = textFarbe;
+      ctx.fillRect(
+        kernMarkeBild.wx - quadrat / 2 / t.k,
+        kernMarkeBild.wy - quadrat / 2 / t.k,
+        quadrat / t.k,
+        quadrat / t.k
+      );
+      ctx.beginPath();
+      ctx.arc(kernMarkeBild.wx, kernMarkeBild.wy, KERN_MARKE_RADIUS_PX / t.k, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.font = `600 ${KERN_MARKE_SCHRIFT_PX / t.k}px ui-sans-serif, system-ui, -apple-system, sans-serif`;
+      ctx.textAlign = "left";
+      ctx.textBaseline = "middle";
+      ctx.lineWidth = 3 / t.k;
+      ctx.strokeStyle = grundFarbe;
+      ctx.strokeText(markeText, kernMarkeBild.wx + (KERN_MARKE_RADIUS_PX + 4) / t.k, kernMarkeBild.wy);
+      ctx.fillStyle = textFarbe;
+      ctx.fillText(markeText, kernMarkeBild.wx + (KERN_MARKE_RADIUS_PX + 4) / t.k, kernMarkeBild.wy);
+    }
+
     // --- Gerüst-Knoten: im Baum Wurzel/Typen/Entitäten, im Feld die Konzepte ---
     // Sie haben keine Memory — der Knoten-Durchgang oben ueberspringt sie, sie
     // tragen aber die Hierarchie und brauchen Farbe, Ring und Hervorhebung.
@@ -3443,6 +3521,7 @@ export function KnowledgeGraph({ memories: memoriesAusFenster, onSelectMemory, o
       for (const n of sim.nodes) {
         const s = struktur.get(n.id);
         if (!s || !imBild(n)) continue;
+        if (kernMarkeBild.marke && hov !== n.id) continue;
         // Ein Gerüst-Knoten ohne Art trägt die neutrale Rolle desselben
         // Registers, nicht eine Handfarbe: Wurzel, Typ und Entität sind keine
         // Notiz.
@@ -5167,7 +5246,7 @@ export function KnowledgeGraph({ memories: memoriesAusFenster, onSelectMemory, o
              bild-wirksamen Glieder liegen 258,1 / 347,1 / 436,1 px unter der Kante. Am Fuss
              der Leinwand sind es 788 px, und ab 820 px Breite tragen zwei Kolonnen die 17
              Glieder in neun Reihen. */
-          className="hud-panel absolute left-2 right-2 top-[47px] bottom-2 z-30 rounded-lg px-3 py-2 space-y-2 max-h-[calc(100%-56px)] overflow-y-auto min-[820px]:columns-2 min-[820px]:gap-x-4"
+          className="hud-panel absolute left-2 right-2 top-[47px] bottom-2 z-30 rounded-lg px-3 pt-2 pb-0 space-y-2 max-h-[calc(100%-56px)] overflow-y-auto min-[820px]:columns-2 min-[820px]:gap-x-4"
         >
           <div className="flex items-center justify-between gap-3">
             <div className="hud-label" style={{ color: "var(--text-2)" }}>
@@ -5188,7 +5267,7 @@ export function KnowledgeGraph({ memories: memoriesAusFenster, onSelectMemory, o
           {mehrDraussen > 0 && (
             <div
               data-testid="graph-mehr-draussen"
-              className="sticky bottom-0 z-10 -mx-3 -mb-2 border-t px-3 py-2 hud-label pointer-events-none"
+              className="sticky bottom-0 z-10 -mx-3 border-t px-3 py-2 hud-label pointer-events-none"
               style={{ background: "var(--bg-panel-solid)", color: "var(--text-2)", borderColor: "var(--border-subtle)" }}
             >
               {mehrDraussen} more below - keep scrolling
@@ -5226,6 +5305,9 @@ export function KnowledgeGraph({ memories: memoriesAusFenster, onSelectMemory, o
                   ? ` · too tight to paint at this zoom · ${zahl.nichtGemalt.toLocaleString("en-US")} counted, not painted`
                   : ` · ${zahl.gemalt.toLocaleString("en-US")} painted at this zoom · ${zahl.nichtGemalt.toLocaleString("en-US")} counted, not painted`;
               })()
+              + (kernStand && kernStand.marke
+                ? ` · ${kernStand.zahl.toLocaleString("en-US")} core as one marker`
+                : "")
             : ""}
         </p>
         {gangInfo && gangInfo.seiten > 1 && (
