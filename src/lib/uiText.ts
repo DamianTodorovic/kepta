@@ -69,7 +69,7 @@ export const TEXTE: Record<string, string> = {
   // Kein Angebot, kein Preis: Fremdcode wird nicht geladen, und die Gratis-Stufe kennt darum
   // weder Schluessel noch Sperre. Der Satz steht in der Flaeche, damit die Abwesenheit eine
   // Erklaerung hat und kein leeres Regal ist.
-  "settings.keineFremderweiterungen": "K3PTA has no plugin store and loads no third-party code. Everything in this window is the app's own work, and the download is the same program on a personal machine and on a managed one — nothing is switched off for lack of a key, because nothing is switched on by payment either.",
+  "settings.keineFremderweiterungen": "K3PTA loads no third-party code: everything in this window is the app’s own work, the same program on a personal and a managed machine. A key never unlocks part of it, because nothing here is sold.",
 };
 
 /** Text zum Schluessel; fehlt er, der Schluessel selbst. */

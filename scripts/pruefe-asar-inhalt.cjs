@@ -176,7 +176,15 @@ const erwartet = [
   // Gegenprobe VOR dem Tausch, am dann installierten 3.2.42: beide Ketten muessen 0 sein,
   // sonst ist die Pruefung eine Dauer-Gruene. Gemessen 14:1x MESZ, Pfad und Zahl in der Landung.
   ["settings-keine-fremderweiterungen", 1],
-  ["has no plugin store and loads no third-party code", 1],
+  // KURZ A (Leitung 23.10. 19:50 MESZ): der Satz wurde kuerzer - 280 -> 197 Zeichen, 53 -> 36
+  // Woerter, laengster Atemzug 43 -> 24 - und traegt "plugin store" nicht mehr. Die Marke haengt
+  // deshalb an einem Teilstring, der im Quelltext genau 1 mal steht (src/lib/uiText.ts:72), vor dem
+  // Setzen in scripts/, tests/, docs/, README.md und CHANGELOG.md 0 mal (gemessen 19:58:00 MESZ),
+  // in keiner der 49 andern Marken vorkommt und kein Zeichen traegt, das der Minifier maskieren
+  // muesste. Gegenprobe am installierten 3.2.44 (49 102 581 B, mtime 18:05:39 MESZ): 0 - und die
+  // alte Marke dort 1, also ueberlebt ein Satzteil aus uiText.ts den Minifier woertlich. Zweitwahl
+  // mit denselben Zahlen, falls kuerzer gewuenscht: "A key never unlocks part of it" (30 Zeichen).
+  ["the same program on a personal and a managed machine", 1],
   // 3.2.44, ZWEITER Koerper: P4-77 (der Schluessel bleibt in der Sitzung), Auftrag Brief 76 /
   // Arbeitsaufgabe #31, Zeile 108 des Flicken-Blatts. Die Fuss-Kappe P5-t bekam ihre Marken im Zug
   // 9c3fc55, dieser Koerper hatte keine -- ohne die vier Zeilen unten waere seine Landung am Objekt

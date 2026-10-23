@@ -1,3 +1,15 @@
+## [3.2.45]
+
+### Changed
+
+- **The settings sentence about third-party code now fits one breath.** The line under "One brain
+  for every AI" had grown to 280 characters, 53 words and a 43-word breath; it now measures 197
+  characters, 36 words and a 24-word breath, and it no longer says "plugin store". The two words the
+  guard `kein-fremdcode-lader` requires ("third-party code" and "managed") stay, the README sentence
+  is untouched, and the object marker moved from the old sentence to `the same program on a personal
+  and a managed machine`. Body: `src/lib/uiText.ts`, one new test file (three cases),
+  `scripts/pruefe-asar-inhalt.cjs`; red at 280 (2 of 7), green at 197 (7 of 7), the guard 4/0.
+
 ## [3.2.44]
 
 ### Fixed
