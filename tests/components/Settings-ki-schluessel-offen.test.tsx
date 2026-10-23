@@ -39,7 +39,11 @@ describe("Settings ohne Verschluss", () => {
     await saveAISettings(verbindung);
     const { container } = render(<Settings />);
     await vi.waitFor(() => expect(container.textContent).toMatch(/cannot be sealed/i));
-    expect(container.textContent).toMatch(/entered again after a restart/i);
+    // #31 (23.10.): der zweite Anspruch war eine falsche Zusicherung. Ohne Verschluss
+    // bleibt die Arbeitskopie im Speicher der Flaeche liegen - ein Neustart verlangt
+    // sie eben NICHT neu, und die Flaeche sagt das jetzt an dieser Stelle. Geprueft
+    // wird die Wahrheit des Satzes, nicht sein gewesener Wortlaut.
+    expect(container.textContent).toMatch(/stays in this app's local storage/i);
   });
 
   it("schreibt den Schluessel nirgends hin, wo die Route ihn hergeben wuerde", async () => {

@@ -12,7 +12,10 @@
 //
 // Die zwei Formen sind nicht dasselbe und werden deshalb nicht eine Zahl:
 // - **Aussen** (`KAPPE_PANEL`): ein Panel, das in seinem Rahmen liegt. Der Rahmen hat eine
-//   bestimmte Hoehe, also darf der Panel ihn bis auf seinen eignen Atemzug ausfuellen.
+//   bestimmte Hoehe, also darf der Panel ihn bis auf zwei Atemzuege ausfuellen — und der Atemzug
+//   ist **nicht** eine Zahl dieser Datei, sondern `--panel-fuss` der Flaeche: derselbe Wert, der
+//   ihren Fuss hebt. Eine Kappe, die weniger abzieht als der Fuss hebt, schiebt die Oberkante des
+//   Panels ueber die Oberkante der Leinwand (gemessen: 28 px bei 440 px und darunter).
 // - **Innen** (`kappeListe`): eine Liste in einem Panel, der selbst nur so hoch ist wie sein
 //   Inhalt, solange er unter der Kappe bleibt. Eine Prozent-Kappe fiele dort weg — auf einem
 //   Elternkasten mit auto-Hoehe loest `max-height: 55%` zu `none` auf, und die Liste ware
@@ -29,9 +32,20 @@ export interface KappeAmRahmen {
   pointerEvents: "auto";
 }
 
-/** Ein Panel, das in seinem Rahmen liegt: hoechstens der Rahmen minus sein Atemzug. */
+/**
+ * Ein Panel, das in seinem Rahmen liegt: hoechstens der Rahmen minus **zwei** Atemzuege — den
+ * einen ueber dem Fuss, den einen darunter. Der Atemzug ist nicht diese Datei, sondern die
+ * `--panel-fuss` der Flaeche selbst (`src/index.css`, `.graph-legende`): der Fuss, der das Panel
+ * hebt, und die Kappe, die es begrenzt, lesen dieselbe Zahl. Die Fallback-Zahl haelt nur ein
+ * Panel ohne eignen Fuss am Leben; fuer die Legende gilt immer die Variable.
+ *
+ * Warum das eine Zahlstelle ist und keine Geschmacksfrage: am ausgelieferten 3.2.42 lag die
+ * Oberkante der Legende bei 390, 439 und 440 px **28 px ueber** der Oberkante der Leinwand
+ * (13:01:27 MESZ, Bestand 21 066), weil der Fuss mit 3,25rem hob und die Kappe mit 1,5rem
+ * abzog. Zwei Zahlen, eine Differenz, und kein Test las die zweite.
+ */
 export const KAPPE_PANEL: KappeAmRahmen = {
-  maxHeight: "calc(100% - 1.5rem)",
+  maxHeight: "calc(100% - 2 * var(--panel-fuss, 0.75rem))",
   overflowY: "auto",
   pointerEvents: "auto",
 };

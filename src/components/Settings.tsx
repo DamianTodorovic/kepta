@@ -768,9 +768,14 @@ export function Settings() {
                     {!provider.needsKey || schluesselHuelle === null
                       ? 'The key is stored locally on your device and sent straight to the provider.'
                       : schluesselHuelle.verschlossen
-                        ? `Sealed with this installation's database key (${schluesselHuelle.ablage ?? 'the system keychain'}) — never returned by the settings API. A working copy stays in this app's local storage on this computer, so the model is reachable after a restart without asking again.`
-                        : 'This knowledge base has no database key, so an API key cannot be sealed here. It stays in this window and must be entered again after a restart.'}
+                        ? `Sealed with this installation's database key (${schluesselHuelle.ablage ?? 'the system keychain'}) and never returned by the settings API. No copy of the key is kept in this app's local storage: the working value lives in this window and is opened from the sealed row again after a restart.`
+                        : `This knowledge base has no database key, so an API key cannot be sealed here. It stays in this app's local storage on this computer, and the settings API does not return it.`}
                   </p>
+                  {schluesselHuelle?.altFund && (
+                    <p className="text-xs mt-1" role="status" style={{ color: 'var(--warn)' }}>
+                      {`An older key is still in the database under a masked name (${schluesselHuelle.altFund.name}${schluesselHuelle.altFund.ende ? `, last characters ${schluesselHuelle.altFund.ende}` : ''}). The settings API will not hand it over, so nothing was carried across and nothing was deleted: enter the key once to seal it.`}
+                    </p>
+                  )}
                   <Meldung meldung={meldung} ort="schluessel" />
                 </div>
 

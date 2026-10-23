@@ -17,7 +17,11 @@ import { KAPPE_PANEL, kappeListe } from "../../src/lib/kappe";
 
 describe("kappe: eine Flaeche, die mit dem Bestand waechst, kappt sich am Rahmen", () => {
   it("das Panel kappt sich an seinem Rahmen, nicht an einer gesetzten Zahl", () => {
-    expect(KAPPE_PANEL.maxHeight).toBe("calc(100% - 1.5rem)");
+    // Brief 78: die Zahl ist nicht mehr diese Datei. Der Atemzug ist `--panel-fuss` der Flaeche —
+    // derselbe Wert, der ihren Fuss hebt — und die Kappe zieht sein Zweifaches ab, damit oben und
+    // unten derselbe Abstand gilt. Dass Fuss und Kappe sich nicht mehr widersprechen koennen,
+    // haelt `tests/components/KnowledgeGraph.legende-fuss.test.ts`.
+    expect(KAPPE_PANEL.maxHeight).toBe("calc(100% - 2 * var(--panel-fuss, 0.75rem))");
     expect(KAPPE_PANEL.overflowY).toBe("auto");
     expect(KAPPE_PANEL.pointerEvents, "eine Rolle, die niemand greifen kann, ist keine Rolle").toBe("auto");
   });

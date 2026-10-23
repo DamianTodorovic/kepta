@@ -53,7 +53,16 @@ describe("AI-Settings: DB-Spiegelung überlebt den Portwechsel", () => {
       return kern.anfrage(url, init);
     });
     await saveAISettings({ providerId: "openai", apiKey: "sk-test-123", baseUrl: "https://api.openai.com/v1", model: "gpt-4o-mini" });
-    expect(JSON.parse(localStorage.getItem(KEY)!).apiKey).toBe("sk-test-123");
+    // Aufgabe #31 (23.10.): diese Zeile verlangte bisher den Klartext im
+    // Browserspeicher - genau das ist der Befund, nicht die Erwartung. Der Speicher
+    // traegt weiter die Verbindung (Seite A: Modell und Anbieter ueberleben), aber
+    // nicht den Schluessel (Seite B: die Platte und die rohe Anfrage sehen ihn nicht).
+    const gespeichert = JSON.parse(localStorage.getItem(KEY)!) as { apiKey?: string; providerId?: string; model?: string };
+    expect(gespeichert.providerId).toBe("openai");
+    expect(gespeichert.model).toBe("gpt-4o-mini");
+    expect(gespeichert.apiKey).toBe("");
+    expect(JSON.stringify(localStorage)).not.toContain("sk-test-123");
+    expect(loadAISettings().apiKey).toBe("sk-test-123");
     expect(calls.some((c) => c.url === "/api/settings" && c.init?.method === "PUT")).toBe(true);
 
     // der Spiegel trägt die Verbindung; der Schlüssel liegt darin nur als Umschlag
@@ -79,7 +88,11 @@ describe("AI-Settings: DB-Spiegelung überlebt den Portwechsel", () => {
     expect(s.model).toBe("claude-sonnet-4-20250514");
     expect(s.providerId).toBe("anthropic");
     expect(s.apiKey).toBe("sk-ant-alt");
-    expect(JSON.parse(localStorage.getItem(KEY)!).apiKey).toBe("sk-ant-alt");
+    // #31 (23.10.): der Rueckweg gilt der Sitzung, nicht dem Speicher. Zeile 90 war
+    // bisher der Beweis, dass die Flaeche den Klartext in localStorage ablegte; die
+    // Verbindung selbst ueberlebt unveraendert (Zeilen 88-90).
+    expect(JSON.parse(localStorage.getItem(KEY)!).apiKey).toBe("");
+    expect(JSON.stringify(localStorage)).not.toContain("sk-ant-alt");
   });
 
   it("vorhandene lokale Settings bleiben unangetastet — der Spiegel fügt nichts ein", async () => {

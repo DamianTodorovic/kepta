@@ -5443,7 +5443,7 @@ export function KnowledgeGraph({ memories: memoriesAusFenster, onSelectMemory, o
         <div
           ref={legendenRef}
           data-testid="graph-legende"
-          className="graph-legende absolute left-3 bottom-3 hud-panel rounded-lg px-3 py-2 space-y-1"
+          className="graph-legende absolute left-3 hud-panel rounded-lg px-3 py-2 space-y-1"
           style={KAPPE_PANEL}
         >
           {/* Was im Bild steht. Die Zahlengruppe sass bisher am Ende der Leiste

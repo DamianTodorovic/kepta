@@ -330,22 +330,56 @@ async function oeffne(wert: string): Promise<string> {
   }
 }
 
+/**
+ * #31: die Maskierung der Einstellungs-Route mit ihrem ersten Leser. GET /api/settings
+ * zeigt secretfoermige Namen nur als `{gesetzt, ende}` (A3-09,
+ * server/router/settings.ts:50-51). Genau daraus liest die Flaeche jetzt, ob ein
+ * Altbestand in der Datenbank liegt, den sie nicht lesen kann.
+ */
+export interface AltFund {
+  /** Der Reihenname, den die Maske traegt. */
+  name: string;
+  /** true = die Tuer meldet einen Wert, ohne ihn zu nennen. */
+  gesetzt: boolean;
+  /** Die letzten vier Zeichen, die die Tuer zeigt, oder null. */
+  ende: string | null;
+}
+
 export interface AISchluesselStatus {
   /** true = der Schluessel ist versiegelt und hält einen Neustart aus. */
   verschlossen: boolean;
   /** Wo der Verschluss liegt — null, wenn diese Installation keinen hat. */
   ablage: string | null;
+  /** Ein unlesbarer Altbestand, oder null, wenn die Maske nichts verbirgt. */
+  altFund: AltFund | null;
 }
 
 export async function kiSchluesselStatus(): Promise<AISchluesselStatus> {
-  const h = await huelle();
-  return { verschlossen: h !== null, ablage: h?.ablage ?? null };
+  const [h, fund] = await Promise.all([huelle(), altFund()]);
+  return { verschlossen: h !== null, ablage: h?.ablage ?? null, altFund: fund };
+}
+
+/**
+ * #31: der Klartext des Schluessels lebt in diesem Modul, nicht im Speicher der
+ * Flaeche. `localStorage` haelt die Verbindung ohne ihn; nach einem Neustart oeffnet
+ * `hydrateAISettings` den Umschlag aus `ai_connection` und fuellt dieses Feld. Ein
+ * Feld, das maskiert aussieht und unmaskiert geschrieben wird, ist kein Verschluss.
+ */
+let sitzungsSchluessel = "";
+
+function ohneSchluessel(s: AISettings): AISettings {
+  return { ...s, apiKey: "" };
 }
 
 export function loadAISettings(): AISettings {
   try {
     const roh = localStorage.getItem(SITZUNGS_NAME) ?? localStorage.getItem(ALTE_SITZUNGS_NAME);
-    if (roh) return JSON.parse(roh);
+    if (roh) {
+      const gelesen = JSON.parse(roh) as AISettings;
+      // eine Zeile von vor diesem Schlag kann den Klartext noch tragen; der Wert der
+      // Sitzung zaehlt erst, wenn die eigene Zeile ihn nicht mehr haelt
+      return { ...gelesen, apiKey: gelesen.apiKey || sitzungsSchluessel };
+    }
   } catch { /* ignore */ }
   // Katalogzeile ja, Adresse nein: niemand hat sie gewaehlt, und die Tuer lehnt jede
   // ab, die nicht genannt ist (grund=kein-anbieter). Wer einen Anbieter waehlt, bekommt
@@ -390,10 +424,44 @@ async function spiegelbild(s: AISettings): Promise<{ text: string; haelt: boolea
 /** Die Reihen, in denen aeltere Versionen den Klartext ablegten. */
 const ALTE_ABLAGEN = [ALTER_BLOB, ALTE_SITZUNGS_NAME];
 
-async function spiegle(s: AISettings): Promise<void> {
+/** Ein Wurf pro Sitzung: der Bestand der Tuer aendert sich nicht, waehrend das Blatt lebt. */
+let altFundGemerkt: AltFund | null | undefined;
+
+/**
+ * Der Leser der Maske. Eine Zeichenkette unter einem der alten Namen ist lesbar und
+ * damit traegbar; ein Objekt `{gesetzt, ende}` ist ein Wert, den die Tuer nicht
+ * herausgibt. Beides ist hier unterschiedlich behandelt: nur das Lesbare darf
+ * verschwinden, nachdem es versiegelt wurde.
+ */
+async function altFund(): Promise<AltFund | null> {
+  if (altFundGemerkt !== undefined) return altFundGemerkt;
+  try {
+    const r = await fetch('/api/settings');
+    if (!r.ok) { altFundGemerkt = null; return altFundGemerkt; }
+    const d = (await r.json()) as Record<string, unknown>;
+    for (const name of ALTE_ABLAGEN) {
+      const wert = d[name];
+      if (typeof wert === 'string') continue; // lesbar: kein Fund, die Spiegelung darf raeumen
+      if (wert && typeof wert === 'object' && (wert as { gesetzt?: unknown }).gesetzt === true) {
+        altFundGemerkt = { name, gesetzt: true, ende: (wert as { ende?: string | null }).ende ?? null };
+        return altFundGemerkt;
+      }
+    }
+    altFundGemerkt = null;
+  } catch {
+    altFundGemerkt = null;
+  }
+  return altFundGemerkt;
+}
+
+async function spiegle(s: AISettings): Promise<boolean> {
   const { text, haelt } = await spiegelbild(s);
   const leib: Record<string, string | null> = { [SPIEGEL_NAME]: text };
-  if (haelt) for (const alt of ALTE_ABLAGEN) leib[alt] = null;
+  // #31: geloescht wird nur, was die Flaeche auch lesen konnte. Ein unlesbarer
+  // Altbestand bleibt liegen, bis jemand den Schluessel neu eingibt - ein blinder
+  // Wurf haette ihn spaetestens hier verloren, ohne dass jemand es gemerkt haette.
+  const fund = await altFund();
+  if (haelt && !fund) for (const alt of ALTE_ABLAGEN) leib[alt] = null;
   const antwort = await fetch('/api/settings', {
     method: 'PUT',
     headers: { 'Content-Type': 'application/json' },
@@ -402,6 +470,28 @@ async function spiegle(s: AISettings): Promise<void> {
   // P4-02: die Antwort war bisher ein blinder Wurf. 413 (Etat voll), 429 (Schreibkante)
   // und 500 (Datenbank) liefen als Erfolg weiter, weil die Kette sie schluckte.
   if (!antwort.ok) throw new Error(`HTTP ${antwort.status}`);
+  return haelt;
+}
+
+/**
+ * #31, die dritte Seite (Wanderung): eine Bestandsinstallation darf nicht
+ * ausgesperrt werden, nur weil ihr Klartext aus dem Browserspeicher genommen
+ * wird. Geoeffnet wird er erst, wenn die Tuer denselben Schluessel schon
+ * versiegelt haelt - ein Umschlag unter `ai_connection`, nicht die Maske.
+ */
+async function versiegeltVorhanden(): Promise<boolean> {
+  try {
+    const r = await fetch('/api/settings');
+    if (!r.ok) return false;
+    const d = (await r.json()) as Record<string, unknown>;
+    const roh = d[SPIEGEL_NAME];
+    if (typeof roh !== 'string' || !roh) return false;
+    const gespiegelt = JSON.parse(roh) as GespiegelteVerbindung;
+    const umschlag = gespiegelt?.schluessel ?? '';
+    return umschlag === LOKALER_WERT || umschlag.startsWith(UMSCHLAG_KENNUNG);
+  } catch {
+    return false;
+  }
 }
 
 /** Die Spiegelung laeuft hinterher her und der Reihenfolge nach — nie durcheinander. */
@@ -413,7 +503,11 @@ let spiegelKette: Promise<void> = Promise.resolve();
  * Rueckgabe der Kette laesst darauf warten (Tests, Wanderung).
  */
 export function saveAISettings(s: AISettings): Promise<void> {
-  localStorage.setItem(SITZUNGS_NAME, JSON.stringify(s));
+  // #31: die Sitzung traegt den Schluessel von nun an selbst. Der Browserspeicher
+  // bekommt ihn erst gar nicht neu dazu, und was darin schon steht, wird erst
+  // herausgenommen, wenn die Tuer denselben Schluessel versiegelt haelt (`haelt`).
+  sitzungsSchluessel = s.apiKey;
+  localStorage.setItem(SITZUNGS_NAME, JSON.stringify(ohneSchluessel(s)));
   // nimmt die gespiegelte Reihe mit: removeItem laeuft durch die Huelle von
   // src/lib/settings.ts und loescht damit auch die Zeile in der Datenbank
   localStorage.removeItem(ALTE_SITZUNGS_NAME);
@@ -422,12 +516,18 @@ export function saveAISettings(s: AISettings): Promise<void> {
   // einem abgewiesenen Spiegel zusammen, aber der Rueckweg bleibt offen — der Handler
   // an `lauf` verhindert zugleich jede unbehandelte Ablehnung an den drei Aufrufstellen,
   // die nicht warten (Chat.tsx:135, OnboardingWizard.tsx:86, Settings.tsx:780).
-  spiegelKette = lauf.catch(() => { /* offline: localStorage traegt weiter */ });
-  return lauf;
+  const nach = lauf.then((haelt) => {
+    // ohne Umschlag bei der Tuer waere das Herausnehmen eine Sperre: dann bleibt
+    // die Arbeitskopie im Speicher der Flaeche liegen, wie es die Zeile sagt
+    if (!haelt) localStorage.setItem(SITZUNGS_NAME, JSON.stringify(s));
+  });
+  spiegelKette = nach.catch(() => { /* offline: localStorage traegt weiter */ });
+  return nach;
 }
 
 function legeFest(s: AISettings): void {
-  localStorage.setItem(SITZUNGS_NAME, JSON.stringify(s));
+  sitzungsSchluessel = s.apiKey;
+  localStorage.setItem(SITZUNGS_NAME, JSON.stringify(ohneSchluessel(s)));
   localStorage.removeItem(ALTE_SITZUNGS_NAME);
 }
 
@@ -440,13 +540,23 @@ function legeFest(s: AISettings): void {
  * Spiegelung komplett, und der Umschlag geht mit dem Schluessel dieser
  * Installation auf.
  *
- * Ein Bestand von VOR dieser Aenderung liegt noch als Klartext-Blob in der
- * Antwort: der wird gelesen, versiegelt und erst dann geloescht, wenn der
- * Umschlag wirklich haelt.
+ * Ein Bestand von VOR dieser Aenderung liegt nicht mehr lesbar in der Antwort: die
+ * Einstellungs-Route maskiert genau diese Reihen (A3-09), und `altFund` meldet die
+ * Maskierung als Fund. Die Flaeche liest, was sie lesen kann, und loescht nichts,
+ * was sie nicht gelesen hat - der Fund bleibt liegen und wird an der Schluessel-
+ * zeile gesagt.
  */
 export async function hydrateAISettings(): Promise<AISettings> {
   try {
-    if (localStorage.getItem(SITZUNGS_NAME)) return loadAISettings();
+    if (localStorage.getItem(SITZUNGS_NAME)) {
+      // #31: eine Zeile von vor diesem Schlag kann den Klartext noch tragen. Er geht
+      // in die Sitzung ueber und wird aus dem Speicher der Flaeche nur dann
+      // herausgenommen, wenn die Tuer ihn schon versiegelt haelt - sonst ist die
+      // Wanderung eine Sperre fuer genau die Installationen, die nichts getan haben.
+      const s = loadAISettings();
+      if (s.apiKey && (await versiegeltVorhanden())) legeFest(s);
+      return s;
+    }
     const r = await fetch('/api/settings');
     if (!r.ok) return loadAISettings();
     const d = (await r.json()) as Record<string, unknown>;

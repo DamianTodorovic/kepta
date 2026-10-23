@@ -1520,12 +1520,40 @@ button.row-quiet { cursor: pointer; border-color: var(--kante-kontrolle); }
 
    Halt: tests/components/KnowledgeGraph.legende-schmal.test.tsx
    ============================================================ */
+/* ============================================================
+   DER FUSS DER LEGENDE — EINE ZAHL, Punkt 5, 23.10. (Brief 78)
+   Der Abstand zur Bodenkante stand an drei Stellen: `bottom-3`
+   (0,75rem) an der Klasse, `bottom: 3.25rem` in der Telefon-Hebung
+   hier, und die Kappe zog 1,5rem ab (`src/lib/kappe.ts`). Die
+   zweite Zahl las kein Test. Am ausgelieferten 3.2.43 gemessen
+   (17:23:00–17:24:24 MESZ, Bestand 21 066, Baum, zwei Gruppen,
+   eignes Profil, Port 9400): bei 390, 439 und 440 px liegt die
+   Oberkante der Legende **28 px ueber** der Oberkante der Leinwand
+   (Kasten y 164, Leinwand y 192), bei 441 px und 1024 px nicht
+   (−12 px). 52 px Fuss − 24 px Abzug = 28 px, und die Kante der
+   Hebung ist `max-width: 440px`. Also EINE Zahl, `--panel-fuss`:
+   der Fuss liest sie, die Kappe zieht ihr Zweifaches ab, und die
+   Kreuzung kann nicht mehr entstehen. Der Fuss bleibt 3,25rem
+   (= 52 px: des Blaetterers 36,5 px plus seine 12 px Kante, #54).
+   Halt: tests/components/KnowledgeGraph.legende-fuss.test.ts
+   Form, die die Wache zwingt: `--panel-fuss` in eigner Zeile, denn
+   `scripts/design-wache.mjs` erkennt eine Definition nur am
+   Zeilenanfang.
+   ============================================================ */
+.graph-legende {
+  --panel-fuss: 0.75rem;
+  bottom: var(--panel-fuss);
+}
 @media (max-width: 440px) {
   .legende-prosa { display: none; }
-  /* #54: Der Blaetterer (`gang-blaetterer`, KnowledgeGraph.tsx:4655) haengt an
-     derselben Bodenkante wie die Legende — beide `bottom-3`. Bei Telefonbreite
-     reicht ihr Kasten unter ihn, also hebt sie sich ueber ihn (3,25 rem = seine
-     Hoehe rund 36,5 px plus seine 12 px Kante) und bleibt in der Breite im Bild.
+  /* #54: Der Blaetterer (`gang-blaetterer`, KnowledgeGraph.tsx:5161) haengt an
+     derselben Bodenkante wie die Legende — beide 0,75rem. Bei Telefonbreite
+     reicht ihr Kasten unter ihn, also hebt sie sich ueber ihn: der Fuss traegt
+     3,25rem = seine Hoehe rund 36,5 px plus seine 12 px Kante. Gehoben wird
+     jetzt die Zahl selbst (`--panel-fuss`), damit die Kappe dieselbe liest.
      Halter ist eine Klasse, keine Stellenangabe — dieselbe Regel wie oben. */
-  .graph-legende { bottom: 3.25rem; max-width: calc(100% - 1.5rem); }
+  .graph-legende {
+    --panel-fuss: 3.25rem;
+    max-width: calc(100% - 1.5rem);
+  }
 }

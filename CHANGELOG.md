@@ -1,3 +1,29 @@
+## [3.2.44]
+
+### Fixed
+
+- **The AI key no longer sits in browser storage from the first second.** `GET /api/settings` had
+  been masked to `{gesetzt, ende}` for secret-shaped names (A3-09), but the surface still asked the
+  door for the plaintext key while booting and wrote it unmasked into `localStorage` — so the
+  encryption promise held on disk and not in the renderer. The reader now consumes the masked shape
+  it was given, `legeFest` and `saveAISettings` no longer put the key into browser storage, and the
+  value survives a restart for the human who typed it. Both sides are measured in one run: the
+  field stays filled and reloads, and a raw HTTP request plus a raw grab of
+  `Default/Local Storage` in the profile find no plaintext. Body: `src/lib/ai.ts`,
+  `src/components/Settings.tsx`, three test files, seven cases (five red at the plain head
+  `f5b1039`, 7/7 green on the laid bytes).
+- **The legend's cap now reads the same number as the foot that lifts it.** At the delivered 3.2.42
+  the legend capped itself at `1.5rem` while its foot lifts `3.25rem`, so at phone width its top
+  edge crossed the canvas edge — measured 28 px at 440 px and below. `src/index.css` now carries
+  one custom property `--panel-fuss` (`.graph-legende { bottom: var(--panel-fuss) }`, `3.25rem` in
+  the 440 px block), `KAPPE_PANEL` subtracts that variable instead of its own guess, and the basket
+  list at 390 x 844 shows **320 of 320 px** where 3.2.40 showed **103 of 320 px**. Open and named by
+  the measurement: the panel's content at 390 px is still 1 051 px inside 522 px, so the crossing is
+  reduced, not gone. Body: `src/index.css`, `src/lib/kappe.ts`, `src/components/KnowledgeGraph.tsx`,
+  two test files; the landed legend case stays green and `design-wache.mjs` reports 269 measurements
+  with 0 under the bar.
+
+
 ## [3.2.43]
 
 ### Fixed
