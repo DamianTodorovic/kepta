@@ -109,6 +109,15 @@ const erwartet = [
   ["min-[820px]:columns-2", 1],
   ['maxHeight:"calc(100% - 1.5rem)"', 1],
   ['apiKey:"",baseUrl:"",model:""', 1],
+  // Die Vorwaermung des Such-Index (3.2.39, `src/core/engine.ts` und `server/bootstrap.ts`)
+  // hatte bis hierher keinen Marker, weil eine Gegenprobe kurz vor 11:05 MESZ ins Leere lief:
+  // der Tausch um 10:58:09 hatte `/Applications/K3PTA.app` schon durch das neue Objekt ersetzt,
+  // die Sonde las also zweimal das neue Stueck und meldete 1 gegen 1. Nachgemessen 11:05:13 MESZ
+  // an der **zurueckgelegten** Fassung `/tmp/K3PTA-vor-3.2.40.app` (49 098 975 B, mtime
+  // 22.10. 22:16:08): dort **0** Treffer, im gebauten Objekt **1**. Regel fuer die
+  // Gegenprobe: das alte Objekt nach einem Tausch an seinem Lagerpfad messen, nicht an
+  // `/Applications` — und Pfad, Groesse und mtime in die Zeile schreiben.
+  ["Such-Vorwaermung ausgeblieben", 1],
   // Kein Marker fuer die zwei Heilungen der Sonde, die nur ein Wort wegnehmen:
   // `baseUrl:""` (2 -> 3) und `model:""` (1 -> 2) stehen schon im alten Objekt, eine
   // Pruefung darauf kann nie schlagen. Nur die volle Kette oben ist neu.
