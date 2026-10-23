@@ -137,13 +137,21 @@ function begriffsFeld(notizen: Memory[], gruppen: number) {
 
 describe("A7-01: der Rueckweg aus der Faltung ist mit der Maus zu treffen", () => {
   /**
-   * Der Knopf sitzt in einer Legende, die die Maus durchlaesst (`pointer-events:
-   * none` in `index.css`, damit die Flaeche darunter bedienbar bleibt). A7 hat
-   * im echten Browser gemessen: `elementFromPoint` in der Mitte des Knopfes
-   * gibt CANVAS zurueck, ein echter Mausklick aendert keinen Pixel (Tinte
-   * 2 821 → 2 821), ein DOM-Klick entfaltet sehr wohl (4 153). Ein Test mit
-   * `fireEvent.click` macht genau diesen toten Knopf grün — deshalb wird hier
-   * die Klasse am Element geprueft, und der Treffer in der Messstrasse.
+   * Der Knopf sass in einer Legende, die die Maus durchliess (`pointer-events-none`), und A7 hat
+   * das im echten Browser gemessen: `elementFromPoint` in der Mitte des Knopfes gab CANVAS
+   * zurueck, ein echter Mausklick aenderte keinen Pixel (Tinte 2 821 → 2 821), ein DOM-Klick
+   * entfaltet sehr wohl (4 153). Ein Test mit `fireEvent.click` macht genau diesen toten Knopf
+   * grün — deshalb wird hier die Klasse am Element geprueft, und der Treffer in der Messstrasse.
+   *
+   * Am 22.10. hat Heilung A (Punkt 5) die Sperre an der Legende aufgehoben: derselbe Kasten
+   * wuchs am echten Bestand auf 849 px in eine 608-px-Leinwand (1024 x 768) und 1 053 px in
+   * 628 px (390 x 844) und schob die Gruppen-Steuerung bei 390 px ganz aus dem Fenster. Er
+   * traegt seither Obergrenze, eigne Rolle und eigne Zeiger-Eigenschaft, im echten Fenster
+   * gemessen (`feldzug/p5-kappe-2210.md`, 23:04 und 23:06 MESZ). Was dieser Fall prueft, gilt
+   * unveraendert weiter: der Rueckweg-Knopf nimmt die Hand selbst an, er erbt sie nicht von
+   * einem durchlaessigen Elternknoten. Die fruehere Erwartung "die Legende muss die Maus
+   * weiterreichen" ist an die Leinwand bewegt — dritter Fall in
+   * `KnowledgeGraph.legende-kappe.test.tsx`.
    */
   it("hebt die Zeigersperre am Knopf auf, nicht an der Legende", async () => {
     // 40 Notizen an acht Begriffen: der Rahmen haelt ~20 Zeilen, also muss der
@@ -176,7 +184,8 @@ describe("A7-01: der Rueckweg aus der Faltung ist mit der Maus zu treffen", () =
     const knopf = [...container.querySelectorAll("button")].find((b) => /show everything/i.test(b.textContent ?? "")) as HTMLButtonElement;
     expect(knopf, `kein Rueckweg-Knopf in: ${legende!.textContent?.slice(0, 200)}`).toBeTruthy();
     expect(knopf.className, "der Knopf erbt die Zeigersperre der Legende").toMatch(/pointer-events-auto/);
-    expect(legende!.className, "die Legende selbst muss die Maus weiterreichen").toMatch(/pointer-events-none/);
+    // Die Zeigersperre der Legende selbst ist am 22.10. gefallen (Heilung A, Punkt 5) — ihr
+    // Schutz wohnt jetzt an der Leinwand, siehe `KnowledgeGraph.legende-kappe.test.tsx`.
   });
 });
 

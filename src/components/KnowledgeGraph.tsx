@@ -5343,10 +5343,23 @@ export function KnowledgeGraph({ memories: memoriesAusFenster, onSelectMemory, o
           </div>
         )}
 
+        {/* Heilung A, Punkt 5 (22.10.): am echten Bestand wuchs dieser Kasten in der Baum-Ansicht
+            auf 849 px ueber einer 608-px-Leinwand (1024 x 768) und auf 1 053 px ueber 628 px
+            (390 x 844) -- die Spitze lag 252 px ueber der Leinwand bei 1024 und 476 px bei 390,
+            und die Gruppen-Steuerung sass bei 390 px ausserhalb des Fensters (y -84..-40), also
+            fuer keine Hand zu erreichen.
+            Eine Obergrenze mit eigner Rolle haelt den Kasten in seiner Flaeche und bringt die
+            Steuerung zurueck ins Fenster (gemessen: 584 px bei 1024, 604 px bei 390). Dafuer nimmt
+            der Kasten die Hand an; dass die Leinwand ausserhalb weiter Pan und Zoom behaelt, ist im
+            echten Fenster gemessen (23:04 und 23:06 MESZ, `feldzug/belege-2210/p5-kappe-2210/`),
+            nicht am Quelltext. Die Gegen-Wache aus 3.2.34 ist deshalb bewegt -- sie schuetzte die
+            Durchlaessigkeit dieses Kastens, und ihr Rest sitzt jetzt an der Leinwand
+            (`KnowledgeGraph.legende-kappe.test.tsx`, dritter Fall). */}
         <div
           ref={legendenRef}
           data-testid="graph-legende"
-          className="graph-legende absolute left-3 bottom-3 hud-panel rounded-lg px-3 py-2 pointer-events-none space-y-1"
+          className="graph-legende absolute left-3 bottom-3 hud-panel rounded-lg px-3 py-2 space-y-1"
+          style={{ maxHeight: "calc(100% - 1.5rem)", overflowY: "auto", pointerEvents: "auto" }}
         >
           {/* Was im Bild steht. Die Zahlengruppe sass bisher am Ende der Leiste
               und war damit das erste, was aus dem Fenster fiel (D1-01), und das

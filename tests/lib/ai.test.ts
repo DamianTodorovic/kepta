@@ -43,11 +43,15 @@ describe("providerById", () => {
 });
 
 describe("loadAISettings / saveAISettings", () => {
-  it("liefert Default (erster Preset) bei leerem Storage", () => {
+  it("liefert bei leerem Storage die Katalogzeile, aber keine Adresse", () => {
+    // Geaendert 22.10. 22:49 MESZ (Nachtbrief Punkt 4, #67): der Fall schrieb vor, dass die
+    // Flaeche die Adresse des ersten Katalogeintrags vorlegt. Genau das war der Defekt - die
+    // Tuer lehnt eine Adresse ab, die niemand genannt hat (grund=kein-anbieter). Der Fall
+    // bleibt bestehn, er prueft jetzt die umgekehrte Wahrheit: Zeile ja, Basis und Modell nein.
     const s = loadAISettings();
     expect(s.providerId).toBe(PROVIDERS[0].id);
-    expect(s.baseUrl).toBe(PROVIDERS[0].baseUrl);
-    expect(s.model).toBe(PROVIDERS[0].defaultModel);
+    expect(s.baseUrl).toBe("");
+    expect(s.model).toBe("");
   });
 
   it("liest gespeicherte Settings (roundtrip)", () => {

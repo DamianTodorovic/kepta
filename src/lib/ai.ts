@@ -347,8 +347,11 @@ export function loadAISettings(): AISettings {
     const roh = localStorage.getItem(SITZUNGS_NAME) ?? localStorage.getItem(ALTE_SITZUNGS_NAME);
     if (roh) return JSON.parse(roh);
   } catch { /* ignore */ }
+  // Katalogzeile ja, Adresse nein: niemand hat sie gewaehlt, und die Tuer lehnt jede
+  // ab, die nicht genannt ist (grund=kein-anbieter). Wer einen Anbieter waehlt, bekommt
+  // seine Adresse zurueck - ueber selectProvider, nicht ueber diesen Weg.
   const p = PROVIDERS[0];
-  return { providerId: p.id, apiKey: '', baseUrl: p.baseUrl, model: p.defaultModel };
+  return { providerId: p.id, apiKey: '', baseUrl: '', model: '' };
 }
 
 /**

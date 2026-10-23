@@ -249,7 +249,8 @@ export function Settings() {
 
   const provider = providerById(settings.providerId);
   /** "local" sagt nur, wer eine lokale Adresse befragt — der Anbietername allein reicht nicht. */
-  const adresseLokal = /localhost|127\.0\.0\.1|\[::1\]/i.test(settings.baseUrl || provider.baseUrl || '');
+  // Geprueft wird nur, was jemand genannt hat: die Katalogadresse gilt nicht als Ansage.
+  const adresseLokal = /localhost|127\.0\.0\.1|\[::1\]/i.test(settings.baseUrl || '');
   // In der fertigen App: der mitgelieferte MCP-Server, gestartet vom K3PTA-Programm
   // selbst — kein Node.js, kein npm. Außerhalb der App bleibt es beim Weg über npx.
   const mcpAusApp = health?.mcp?.stdio ? JSON.stringify({ mcpServers: { kepta: health.mcp.stdio } }, null, 2) : null;
@@ -306,7 +307,7 @@ export function Settings() {
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             protocol: provider.protocol,
-            baseUrl: settings.baseUrl || provider.baseUrl,
+            baseUrl: settings.baseUrl,
             apiKey: settings.apiKey === 'local' ? '' : settings.apiKey,
           }),
         });
@@ -351,7 +352,7 @@ export function Settings() {
         const res = await fetch('/api/models', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ protocol: provider.protocol, baseUrl: settings.baseUrl || provider.baseUrl, apiKey: settings.apiKey }),
+          body: JSON.stringify({ protocol: provider.protocol, baseUrl: settings.baseUrl, apiKey: settings.apiKey }),
         });
         const data = await res.json();
         if (!cancelled && res.ok && Array.isArray(data.models)) {
@@ -473,12 +474,13 @@ export function Settings() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           protocol: provider.protocol,
-          baseUrl: settings.baseUrl || provider.baseUrl,
+          baseUrl: settings.baseUrl,
           apiKey: settings.apiKey === 'local' ? '' : settings.apiKey,
         }),
       });
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error || 'Could not load the models');
+      // Die Zahl allein ist keine Auskunft: erst der Grund, dann der Text der Tuer.
+      if (!res.ok) throw new Error(grundText(data?.grund) || data.error || 'Could not load the models');
       setModels(data.models || []);
       if (!data.models?.length) setModelError('No models found. Is the service running?');
     } catch (err: unknown) {

@@ -1,3 +1,26 @@
+## [3.2.40]
+
+### Fixed
+
+- **The graph legend can no longer grow out of the window.** It is anchored at the bottom and had no
+  height bound at all (`max-height`: 0 hits in `src/index.css`), so its content grew upward past the
+  top edge. Measured in the shipped object before this line: at **390 px the axis switch sits entirely
+  above the visible area** (y = -60, bottom edge -16) and at **1024 x 768 the legend stands 65 px out
+  of the window** — a reader on a phone cannot see or reach the axis the surface promises. The legend
+  now carries a height cap, scrolls, and accepts the pointer; the counter-guard from 3.2.34 that
+  forbade pointer events on that panel was **moved on purpose**, with pan and zoom re-measured in the
+  window rather than asserted. Same class as the footer panel in 3.2.39 and the basket list of 21.10.
+
+- **The settings surface stops handing out an address nobody chose.** `src/lib/ai.ts` filled the work
+  default with `p.baseUrl`, so the field showed a cloud address while the door rejects every provider
+  that was not explicitly selected (`grund=kein-anbieter`), and the chat had to be told the same thing
+  twice. The default is empty now, and a provider chosen by a human gets its address through
+  `selectProvider` — measured by three new files (`tests/lib/werksstandard-ohne-wolke.test.ts`,
+  `tests/components/settings-werksstandard-ohne-wolke.test.tsx`,
+  `tests/server-modelle-antworten-mit-grund.test.ts`) plus the moved expectations in
+  `tests/lib/ai.test.ts`.
+
+
 ## [3.2.39]
 
 ### Fixed

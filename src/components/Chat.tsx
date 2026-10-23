@@ -489,7 +489,8 @@ export function Chat({ activeMemories, onSaveToBrain, onSaveToBrainWithMeta, isF
 
     // Private notes stay home when the model runs in the cloud — the server
     // enforces it as well; leaving them out here keeps the sources honest.
-    const lokal = istLokaleAdresse(settingsLive.baseUrl || provLive.baseUrl);
+    // Nur was genannt ist, zaehlt: ohne Basis entscheidet die Tuer (400), nicht die Katalogzeile.
+    const lokal = istLokaleAdresse(settingsLive.baseUrl);
     // Die Engine-Treffer führen, der budgetierte Kontext füllt den Rest —
     // die Knotenanzahl bleibt auf dem budgetierten Stand.
     const engineIds = new Set((engineTreffer ?? []).map((r) => r.memory.id));
@@ -535,7 +536,7 @@ export function Chat({ activeMemories, onSaveToBrain, onSaveToBrainWithMeta, isF
         body: JSON.stringify({
           providerId: provLive.id,
           protocol: provLive.protocol,
-          baseUrl: settingsLive.baseUrl || provLive.baseUrl,
+          baseUrl: settingsLive.baseUrl,
           apiKey: settingsLive.apiKey,
           model: settingsLive.model,
           system: systemPrompt,

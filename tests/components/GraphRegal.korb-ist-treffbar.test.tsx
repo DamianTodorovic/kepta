@@ -11,9 +11,15 @@
 // Fensterhoehe rutscht seine Mitte von y=628 auf y=-417, bei 390 px von 436 auf -609.
 //
 // Diese Datei prueft die zwei Eigenschaften, die ein Mensch braucht und keine Zahl sieht:
-// der Knopf nimmt Zeiger an, und seine Liste bleibt im Bild. Der dritte Fall ist die
-// Gegen-Wache: er verbietet diesem Flicken, das ganze Panel treffbar zu machen — damit
-// Pan und Zoom unter dem Regal nicht sterben (das Haus hat dafuer eine Vorgeschichte).
+// der Knopf nimmt Zeiger an, und seine Liste bleibt im Bild.
+//
+// Der dritte Fall war die Gegen-Wache gegen einen treffbaren Panel. Er ist **bewegt**, nicht
+// umgeschrieben (Leitung, Brief 22:45 MESZ): die Legende des Gangs nimmt die Hand jetzt
+// absichtlich an, weil sie ohne Obergrenze ueber ihre Flaeche hinauswuchs — gemessen 849 px in
+// 608 px bei 1024 x 768 und 1 053 px in 628 px bei 390 x 844 am echten Bestand (22.10.,
+// `feldzug/p5-kappe-2210.md`). Was der Fall schuetzen wollte — Pan und Zoom auf der Leinwand —
+// steht jetzt dort, wo es wohin gehoert: dritter Fall in
+// `KnowledgeGraph.legende-kappe.test.tsx`, gemessen an der Leinwand selbst.
 //
 // Was jsdom nicht kann, steht offen: die Vererbung von der Legende her existiert nur im
 // echten Fenster, also prueft diese Datei die Eigenschaft am Knoten selbst. Dass der
@@ -21,7 +27,9 @@
 // `feldzug/belege-2110/` belegt, nicht hier.
 //
 // Gegen den committeten Stand `7907189` (3.2.33) gefahren: **zwei rot, einer gruen**
-// (Fall 1 und 2 vor dem Koerper, Fall 3 als Gegen-Wache gruen und bleibt gruen).
+// (Fall 1 und 2 vor dem Koerper, Fall 3 als Gegen-Wache gruen). Fall 3 ist am 22.10. bewegt
+// worden, weil die Legende seither eine Obergrenze hat und die Hand an nimmt; die zwei
+// verbleibenden Faelle wurden am Stand `638e95f` (3.2.38) neu gefahren und bleiben gruen.
 import { describe, it, expect, afterEach } from "vitest";
 import { render, screen, cleanup, fireEvent } from "@testing-library/react";
 import { GraphRegal } from "../../src/components/GraphRegal";
@@ -88,14 +96,5 @@ describe("regal: ein Wann-Korb muss eine Hand annehmen", () => {
     expect(["auto", "scroll"]).toContain(liste.style.overflowY);
     // Eine Rolle, die niemand greifen kann, ist keine Rolle.
     expect(eigenerZeiger(liste)).toBe("auto");
-  });
-
-  it("das Regal selbst bleibt durchsichtig — nicht der ganze Panel frisst die Maus", () => {
-    render(<GraphRegal regal={baueRegal(bestand())} ansichtsName="the tree" />);
-    const regal = screen.getByTestId("graph-regal") as HTMLElement;
-    expect(eigenerZeiger(regal)).toBe("keine eigne");
-    // Die zweite Zeile des ersten Bandes ist Text, kein Ziel: auch sie nimmt keinen Zeiger an.
-    const woher = document.querySelectorAll('[data-testid="graph-regal"] .regal-woher-fach');
-    for (const f of woher) expect(eigenerZeiger(f as HTMLElement)).toBe("keine eigne");
   });
 });
