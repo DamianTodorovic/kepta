@@ -153,6 +153,16 @@ const erwartet = [
   // Worte wie die Extraktionszeile aus 3.2.22 ("did not answer (" steht im alten Objekt schon
   // 1 mal), P4-13 nimmt nur einen try/fang weg und schreibt kein neues Literal. Beide haengen
   // an ihren Faellen (je einer, vorher rot gemeldet), nicht an einem Wort.
+  // 3.2.43 (Punkt 3s BAU-P3-07, die erklaerte Abwesenheit eines Fremdcode-Laders), Auftrag
+  // Zeile 102 des Flicken-Blatts, BEREIT gesetzt von der Leitung 12:46:32 MESZ gegen 64263c9.
+  // **Kappe auf 1, mit Grund:** die Kennung steht einmal (als Wert des JSX-Attributs der Zeile),
+  // der Satz steht einmal (als Wert in der Textsammlung). Ein zweiter Fund ist erlaubt, ein
+  // fehlender nicht. Beide Ketten sind ASCII, denn die Sonde bricht mit EXIT 2, wenn ein Marker
+  // Nicht-ASCII traegt - in ihrer latin1-Lesung waere soeine Zaehlung eine Dauer-Null.
+  // Gegenprobe VOR dem Tausch, am dann installierten 3.2.42: beide Ketten muessen 0 sein,
+  // sonst ist die Pruefung eine Dauer-Gruene. Gemessen 14:1x MESZ, Pfad und Zahl in der Landung.
+  ["settings-keine-fremderweiterungen", 1],
+  ["has no plugin store and loads no third-party code", 1],
 ];
 // Die Liste darf nur ASCII-Zeichen enthalten. Grund, gemessen 21.10. 19:16 MESZ am
 // installierten Objekt: das Wort "Looking" plus echtes U+2026 steht dort 2 mal, diese

@@ -9,7 +9,7 @@ import { refreshMemories } from '../lib/store';
 import { SystemStatus } from './SystemStatus';
 import PraxisSync from './PraxisSync';
 import { KeptaMark } from './KeptaMark';
-import { getZoom, setZoom as speichereZoom, wendeZoomAn } from '../lib/uiText';
+import { getZoom, setZoom as speichereZoom, wendeZoomAn, t } from '../lib/uiText';
 import { sendJson } from '../lib/api';
 import { TRAEGER_LABELS, TRAEGER_REIHENFOLGE, THEMA_LABELS, THEMA_REIHENFOLGE, type Traeger, type Thema } from '../lib/graphHierarchy';
 import { PrivacyShield } from './PrivacyShield';
@@ -1186,6 +1186,11 @@ export function Settings() {
                 </p>
               </div>
             </div>
+
+            {/* Kein Fremdcode-Lader — die Abwesenheit erklaert sich selbst, in der Flaeche. */}
+            <p data-testid="settings-keine-fremderweiterungen" className="hud-label text-[11px] leading-relaxed mb-4" style={{ color: 'var(--text-3)' }}>
+              {t("settings.keineFremderweiterungen")}
+            </p>
 
             {/* Base URL + Health */}
             <div>

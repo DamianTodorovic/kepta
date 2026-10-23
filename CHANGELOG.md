@@ -1,3 +1,29 @@
+## [3.2.43]
+
+### Fixed
+
+- **The free stage says out loud why it has nothing to unlock.** K3PTA loads no third-party code, so
+  there is nothing to approve, nothing to buy and nothing an organisation could switch off for you.
+  That was a silence, and a market reads a silence as a hidden lock: hand P3's parity matrix counted
+  the words of that shape in the installed reference product (`file-recovery`, `version history`,
+  `snapshot`, `restore`) and the same words **0** times in our surface and at our door. Settings now
+  answers in one sentence, in the window, under the license block:
+  `data-testid="settings-keine-fremderweiterungen"`, one key
+  `settings.keineFremderweiterungen` in `src/lib/uiText.ts`, no new text twin, and the same argument
+  written into the README bullet "No plugin store, and that is not a lock". Four cases in one new
+  file guard the shape of the absence: the key carries the sentence, the surface shows it under its
+  own identifier, the documentation says why it is not a lock, and four identifiers that would load a
+  foreign extension stand 0 times in the source
+  (`tests/lib/kein-fremdcode-lader.test.ts`, 60 lines). Suite: 2901 of 2901 cases green, 221 files,
+  measured 13:12:12 to 13:14:37 MESZ (`test-results/vitest.json`), lint 0 errors.
+
+### Offen, gemessen, nicht erledigt
+
+The sentence sits at `var(--text-3)` with no opacity change. The token guard is green token against
+token (269 measurements, 0 under the threshold, 12:45:19 MESZ, measured by the Leitung in its own
+pit), but P2's street measures in the browser: a pixel witness for this single line is still owed.
+`#17`, `#59` and the small-zoom sibling from 3.2.42 stay open and unchanged.
+
 ## [3.2.42]
 
 ### Fixed

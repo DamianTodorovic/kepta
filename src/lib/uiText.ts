@@ -66,6 +66,10 @@ export const TEXTE: Record<string, string> = {
   "team.notizen": "Team workspace notes",
   "team.notizenLeer": "No team notes yet — save a note with a team workspace to share it.",
   "team.notizenHinweis": "visible to everyone with a role in this workspace",
+  // Kein Angebot, kein Preis: Fremdcode wird nicht geladen, und die Gratis-Stufe kennt darum
+  // weder Schluessel noch Sperre. Der Satz steht in der Flaeche, damit die Abwesenheit eine
+  // Erklaerung hat und kein leeres Regal ist.
+  "settings.keineFremderweiterungen": "K3PTA has no plugin store and loads no third-party code. Everything in this window is the app's own work, and the download is the same program on a personal machine and on a managed one — nothing is switched off for lack of a key, because nothing is switched on by payment either.",
 };
 
 /** Text zum Schluessel; fehlt er, der Schluessel selbst. */
