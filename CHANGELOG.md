@@ -1,3 +1,38 @@
+## [3.2.41]
+
+### Fixed
+
+- **The shelf answered the same question with three different numbers.** Its basket list capped
+  itself at `320px`, its group list at `200px`, and the legend at `calc(100% - 1.5rem)` — three
+  heights for one problem, and the group list that caps sits inside a panel that also caps.
+  Measured in the shipped object at 3.2.40 with twelve real groups and the fullest basket open
+  (hand P5, 11:17–11:29 MESZ, `belege-2310/p5-klasse-2310/`): the open basket holds **1 042 px** of
+  content behind its 320 px cap, of which **191 px (60 %)** are inside the panel at 1024 x 768 and
+  **103 px (32 %)** at 390 x 844 — the rest lies under the panel's edge, and the group band at 390 px
+  sits entirely outside it at y **989..1435** in a panel that shows to y 768. The legend tells the
+  same story at its own size: the box holds **710 / 584 / 604 px** at 1440, 1024 and 390 px while
+  twelve real rows need **816 / 955 / 1159 px**. One module now computes the cap for the class:
+  `kappeListe()` gives `min(320px, 45vh)` — a percentage cap resolves to `none` on an auto-height
+  parent, which is exactly when the list is longest, so the number is viewport-absolute — and both
+  shelf lists and the legend read it. An opened basket now scrolls itself into view
+  (`scrollIntoView({ block: "nearest" })` on open), so what a click summons is where the eye already
+  is. Seven cases in two new files; the legend's three landed cases stay green.
+- **One guard read its own number wrong and would have called the new cap a defect.**
+  `tests/components/GraphRegal.korb-ist-treffbar.test.tsx:93` took `parseInt(style.maxHeight)`,
+  which gives `320` for `320px` and `NaN` for `min(320px, 45vh)`; it now reads the first number of
+  the value. The intent survives and can still lose: no cap, or a cap of zero, is red. Moved by the
+  landing hand, not silently — the run that found it was red at 11:59:02 MESZ (1 failed of 32)
+  before the guard was corrected.
+
+### Offen, und nicht als erledigt verkauft
+
+The double scroll is not abolished: reading all fifty rows still means scrolling the list and then
+the panel (1 042 px of content against a 768 px window at 1024). Whether fifty note lines belong in
+an overlay that sits on the picture at all is a decision about the surface, not about its edge. The
+twelve groups also draw from five colours (`#d4b23f` carries four of them), and the tree view paints
+nothing while `einpassFlaeche()` leaves it 160 of 608 pixels — both measured, both untouched by this
+body, both named in `p5-klasse-2310.md` and `p5-hoehe-2310.md`.
+
 ## [3.2.40]
 
 ### Fixed

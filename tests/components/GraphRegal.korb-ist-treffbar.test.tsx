@@ -90,7 +90,9 @@ describe("regal: ein Wann-Korb muss eine Hand annehmen", () => {
     // React schreibt den Zustand nicht, und die Liste fehlt — ein Rot aus eigner Sonde.
     fireEvent.click(gefuellt!);
     const liste = screen.getByTestId("regal-koerb-liste") as HTMLElement;
-    const kappe = Number.parseInt(liste.style.maxHeight || "", 10);
+    // Die Klasse kappt in der Form `min(320px, 45vh)`; ein parseInt auf diesem Wort gibt NaN,
+    // also die erste Zahl des Werts. Dass ueberhaupt eine Zahl da ist, prueft die Modulwache.
+    const kappe = Number((liste.style.maxHeight || "").match(/[0-9]+(?:\.[0-9]+)?/)?.[0] ?? 0);
     expect(kappe).toBeGreaterThan(0);
     expect(kappe).toBeLessThanOrEqual(360);
     expect(["auto", "scroll"]).toContain(liste.style.overflowY);

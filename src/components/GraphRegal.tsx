@@ -20,9 +20,10 @@
 // Und die Liste waechst nach oben, weil die Legende am unteren Rand klebt: ungekapped
 // schubst sie ihren eignen Schliess-Knopf aus dem Fenster (Mitte y 628 -> -417 bei 1440 px).
 // Deshalb Rolle mit Obergrenze, und eine Rolle, die niemand greifen kann, ist keine Rolle.
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import type { Regal, WannKoerb } from "../lib/graphHierarchy";
 import { achsenSatz, type Achsen, type FarbGruppen, type GruppenSteuerung } from "../lib/gruppen";
+import { kappeListe } from "../lib/kappe";
 
 /** Die drei Traeger, in der Reihenfolge, in der die Flaeche sie nennt. */
 const TRAEGER_REIHENFOLGE = ["Notes", "Files", "Code"] as const;
@@ -68,6 +69,18 @@ export function GraphRegal({ regal, ansichtsName, gruppen, achsen, steuerung }: 
   /** Welcher Wann-Korb gerade offen ist. Einer auf einmal: zwei offene Listen in einem
    *  Panel von sechs Zeilen sind keine Auswahl, sondern ein Stapel. */
   const [offen, setOffen] = useState<WannKoerb | null>(null);
+  /**
+   * Die Liste des geoeffneten Korbs. Sie bekommt beim Oeffnen ihren Blick in den Panel:
+   * die Liste liegt tief in einem Kasten, der am unteren Rand klebt, und ohne diesen Griff
+   * oeffnet ein Klick etwas unter der Kante — gemessen am Bestand 23.10. in der
+   * ausgelieferten 3.2.40: die Liste y 541..861 in einem Panel, das bis y 732 zeigt
+   * (1024 x 768) und y 665..985 in einem bis y 768 (390 x 844). Der Nutzer sieht 103 von
+   * 320 px und keine Meldung, dass darunter etwas liegt.
+   */
+  const koerbListeRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (offen && koerbListeRef.current) koerbListeRef.current.scrollIntoView({ block: "nearest" });
+  }, [offen]);
   // Band 1 in der Reihenfolge des Hauses, nicht in der der Groesse: der Leser hat
   // Notes, Files, Code schon in der Legende und sucht sie dort.
   const geordnet = [...woher].sort(
@@ -139,9 +152,10 @@ export function GraphRegal({ regal, ansichtsName, gruppen, achsen, steuerung }: 
         if (!k) return null;
         return (
           <div
+            ref={koerbListeRef}
             data-testid="regal-koerb-liste"
             className="flex flex-col gap-1"
-            style={{ maxHeight: 320, overflowY: "auto", pointerEvents: "auto" }}
+            style={kappeListe()}
           >
             {k.notizen === 0 ? (
               <div className="hud-label" style={{ color: "var(--text-3)" }}>
@@ -193,7 +207,7 @@ export function GraphRegal({ regal, ansichtsName, gruppen, achsen, steuerung }: 
           )}
           <div
             className="flex flex-col gap-1"
-            style={{ maxHeight: 200, overflowY: "auto", pointerEvents: "auto" }}
+            style={kappeListe()}
           >
             {gruppen.gruppen.map((g) => (
               <div

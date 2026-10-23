@@ -89,6 +89,7 @@ import {
   achsenSatz,
   ACHSEN,
 } from "../lib/gruppen";
+import { KAPPE_PANEL } from "../lib/kappe";
 
 export type GraphAnsicht = "force" | "dendrogram" | "semantic";
 const ANSICHT_KEY = "kepta_graph_view";
@@ -5359,7 +5360,7 @@ export function KnowledgeGraph({ memories: memoriesAusFenster, onSelectMemory, o
           ref={legendenRef}
           data-testid="graph-legende"
           className="graph-legende absolute left-3 bottom-3 hud-panel rounded-lg px-3 py-2 space-y-1"
-          style={{ maxHeight: "calc(100% - 1.5rem)", overflowY: "auto", pointerEvents: "auto" }}
+          style={KAPPE_PANEL}
         >
           {/* Was im Bild steht. Die Zahlengruppe sass bisher am Ende der Leiste
               und war damit das erste, was aus dem Fenster fiel (D1-01), und das
