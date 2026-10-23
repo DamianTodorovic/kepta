@@ -177,6 +177,27 @@ const erwartet = [
   // sonst ist die Pruefung eine Dauer-Gruene. Gemessen 14:1x MESZ, Pfad und Zahl in der Landung.
   ["settings-keine-fremderweiterungen", 1],
   ["has no plugin store and loads no third-party code", 1],
+  // 3.2.44, ZWEITER Koerper: P4-77 (der Schluessel bleibt in der Sitzung), Auftrag Brief 76 /
+  // Arbeitsaufgabe #31, Zeile 108 des Flicken-Blatts. Die Fuss-Kappe P5-t bekam ihre Marken im Zug
+  // 9c3fc55, dieser Koerper hatte keine -- ohne die vier Zeilen unten waere seine Landung am Objekt
+  // unbewiesen, und ein Paket ohne ihn laeuft trotzdem und sagt dieselbe Sache.
+  // **Zwei Objekte, gemessen 23.10. 18:08:23 MESZ, latin1 wie diese Sonde:** ausgeliefert
+  // `/Applications/K3PTA.app/Contents/Resources/app.asar` (49 102 581 B, mtime 18:05:39 MESZ) gegen
+  // das Ruecklager `/tmp/K3PTA-vor-3.2.44.app/Contents/Resources/app.asar` = das gewesene 3.2.43
+  // (49 101 261 B, mtime 17:14:07 MESZ). Gegenprobe VOR dem Tausch gefahren, also an zwei
+  // verschiedenen Stuecken und nicht an einem Spiegel.
+  // **Kappen auf 1, mit Grund:** die drei Saetze stehen an je einem Ort -- versiegelte Zeige,
+  // unversiegelte Zeige, Maschenfund-Zeile. `altFund` zaehlt 5 (Kennung als Eigenschaftsname, sie
+  // ueberlebt den Minifier), die Kappe bleibt eine Untergrenze: ein zweiter Fund ist erlaubt, ein
+  // fehlender nicht.
+  // **Kein Marker fuer den Speicher-Weg selbst:** die Kennungen des Korpers verbiegt den Minifier,
+  // gemessen je 0 in beiden Objekten -- `sitzungsSchluessel`, `ohneSchluessel`,
+  // `versiegeltVorhanden`, `kiSitzung`, `schluesselHuelle`. Eine Pruefung darauf kann nie schlagen.
+  // Der Weg haengt an P4-77s sieben Faellen, nicht an einem Wort.
+  ["altFund", 1],
+  ["An older key is still in the database under a masked name", 1],
+  ["No copy of the key is kept in this app", 1],
+  ["It stays in this app", 1],
 ];
 // Die Liste darf nur ASCII-Zeichen enthalten. Grund, gemessen 21.10. 19:16 MESZ am
 // installierten Objekt: das Wort "Looking" plus echtes U+2026 steht dort 2 mal, diese
