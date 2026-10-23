@@ -93,6 +93,25 @@ const erwartet = [
   ["what you work on", 1],
   ["no note carries it yet", 1],
   ["click a name to open the notes you filed under it", 1],
+  // 3.2.39 und 3.2.40, gemessen 23.10. 10:54 MESZ: das gebaute Pruefobjekt
+  // (`release/mac-arm64/.../app.asar`, 49 099 436 B, mtime 23.10. 10:53) gegen das
+  // installierte 3.2.38-Objekt (49 098 975 B, mtime 22.10. 22:16). Alle vier Ketten
+  // stehen im neuen Objekt genau **1** mal und im alten **0** — also schlagen sie,
+  // wenn einer der zwei Koerper fehlt. Die Gegenprobe am alten Objekt meldete sie
+  // Zeile fuer Zeile FEHLT.
+  // Das Wort `graph-legende absolute left-3 bottom-3` (Zeile oben) bleibt unveraendert
+  // 1 Treffer in beiden Objekten: es ist der gemeinsame Vorlauf der alten und neuen
+  // Klasse, beweiset also diese Heilung nicht und ist kein Test auf sie.
+  // Die alte Klassenkette `hud-panel rounded-lg px-3 py-2 pointer-events-none space-y-1`
+  // ist im neuen Objekt **0** mal — gemeldet, nicht geprueft: diese Liste kennt nur
+  // Untergrenzen, und eine Kappe auf 0 waer eine zweite Klasse von Pruefung.
+  ["max-h-[calc(100%-56px)]", 1],
+  ["min-[820px]:columns-2", 1],
+  ['maxHeight:"calc(100% - 1.5rem)"', 1],
+  ['apiKey:"",baseUrl:"",model:""', 1],
+  // Kein Marker fuer die zwei Heilungen der Sonde, die nur ein Wort wegnehmen:
+  // `baseUrl:""` (2 -> 3) und `model:""` (1 -> 2) stehen schon im alten Objekt, eine
+  // Pruefung darauf kann nie schlagen. Nur die volle Kette oben ist neu.
   // P4-16 und P4-13 bleiben ohne Marker, nicht aus Bequemlichkeit: P4-16 verwendet dieselben
   // Worte wie die Extraktionszeile aus 3.2.22 ("did not answer (" steht im alten Objekt schon
   // 1 mal), P4-13 nimmt nur einen try/fang weg und schreibt kein neues Literal. Beide haengen
