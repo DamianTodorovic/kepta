@@ -281,6 +281,13 @@ const erwartet = [
   // am ausgelieferten 3.2.54 (49 119 269 B, mtime 14:04:38 MESZ) und im eignen Bau ohne Koerper:
   // beide 0, im Bau mit Koerper 2 (Zeile und Rueckbau-Zweig) - eigne Griffe 14:39:52 MESZ.
   ["dataset.kernMarke", 1],
+  // 3.2.56, Zelle #98 erster Schritt (Leitung, 24.10. 15:33 MESZ): beide Such-Wege nennen ihre
+  // Teilzeiten (Kopf x-kepta-teilzeiten, Leib teilzeiten). Der Kopf selbst unterscheidet NICHT -
+  // er steht seit den lesenden Routen schon 4 mal im Objekt (gemessen 15:34 am ausgelieferten
+  // 3.2.55), also sind die zwei neuen Marken die Namen, die nur die Suche fuehrt. Gegenprobe am
+  // ausgelieferten 3.2.55 (49 119 613 B, mtime 15:04): beide 0.
+  ["rueckmeldung", 1],
+  ["vorarbeit", 1],
 ];
 // Die Liste darf nur ASCII-Zeichen enthalten. Grund, gemessen 21.10. 19:16 MESZ am
 // installierten Objekt: das Wort "Looking" plus echtes U+2026 steht dort 2 mal, diese

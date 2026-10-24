@@ -12,24 +12,39 @@ export function zeitnahme() {
   let bisher = start;
   const marken: Array<[string, number]> = [];
   const ms = (von: bigint, bis: bigint) => Math.round(Number(bis - von) / 1e3) / 1000;
+  /** ms je Marke, zuzueglich "gesamt" seit dem Aufruf von zeitnahme() */
+  const abschnitte = (): Record<string, number> => {
+    const out: Record<string, number> = {};
+    for (const [name, wert] of marken) out[name] = wert;
+    out.gesamt = ms(start, process.hrtime.bigint());
+    return out;
+  };
   return {
     marke(name: string): void {
       const jetzt = process.hrtime.bigint();
       marken.push([name, ms(bisher, jetzt)]);
       bisher = jetzt;
     },
-    /** ms je Marke, zuzueglich "gesamt" seit dem Aufruf von zeitnahme() */
-    werte(): Record<string, number> {
-      const out: Record<string, number> = {};
-      for (const [name, wert] of marken) out[name] = wert;
-      out.gesamt = ms(start, process.hrtime.bigint());
-      return out;
-    },
-    /** Kopf-Wert, z. B. "zaehlung=0.41;einbettung=2.10;gesamt=2.55" */
-    kopf(): string {
-      return Object.entries(this.werte())
+    werte: abschnitte,
+    /** Kopf-Wert, z. B. "zaehlung=0.41;einbettung=2.10;gesamt=2.55". Die Marken lassen sich
+     *  mitgeben, damit Leib und Kopf DERSSELBE Zahl nennen und nicht zwei, die eine
+     *  Mikrosekunde auseinanderliegen. */
+    kopf(grund: Record<string, number> = abschnitte()): string {
+      return Object.entries(grund)
         .map(([name, wert]) => `${name}=${wert.toFixed(2)}`)
         .join(";");
     },
   };
+}
+
+/**
+ * Auf dieselbe Kruemmung wie der Kopf: zwei Stellen. Leib und Kopf muessen DIESSELBE Zahl
+ * nennen — ohne diesen Griff steht im Kopf `0.05` und im Leib `0.051`, und ein Vergleich
+ * der beiden Traeger faellt, obwohl beide recht haben. (Gemessen an diesem Fall, 24.10.
+ * 15:31:41 MESZ: erwartet 0.05, erhalten 0.051.)
+ */
+export function gerundet(werte: Record<string, number>): Record<string, number> {
+  const aus: Record<string, number> = {};
+  for (const [name, wert] of Object.entries(werte)) aus[name] = Math.round(wert * 100) / 100;
+  return aus;
 }

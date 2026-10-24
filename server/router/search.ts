@@ -7,6 +7,7 @@ import { SUCH_KAPPE } from "../helfer/limiter";
 import { sanitizeText, sanitizeTags } from "../../src/core/sanitize";
 import { toApi } from "../helfer/api-form";
 import { bodyOf } from "../helfer/body";
+import { gerundet, zeitnahme } from "../helfer/zeitnahme";
 import type { AppKontext } from "../kontext";
 
 export function mountSearch(app: express.Express, ctx: AppKontext): void {
@@ -16,7 +17,12 @@ export function mountSearch(app: express.Express, ctx: AppKontext): void {
   // Zelle #95 (24.10.): die Route seitet wie die Liste - offset, begrenzt, hinweis. Und sie haengt
   // nicht mehr am Chat-Limiter (Zelle #99): die Suche ist lesend und hat ihre eigne, groessere Kante,
   // die als X-Kepta-Suche-Kappe im Kopf jeder Antwort steht.
+  // Zelle #98 (Leitung, 24.10.): die Route nennt jetzt ihre Teilzeiten. Punkt 6 mass an fuenf Booten
+  // erste Suchen von 589,65 bis 3 523,25 ms und die Gesundheit nannte dabei 10,88 bis 11,55 ms -
+  // keine Zahl davon steckte in einem Kopf, den die Such-Route schreibt. Also: vorarbeit (lesen und
+  // waschen), engine (der eigentliche Suchpfad), formen (die Api-Decke), gesamt.
   app.get("/api/memories/search", ctx.limiter.suche, async (req, res) => {
+    const zeit = zeitnahme();
     const rawQ = typeof req.query.q === "string" ? req.query.q : typeof req.query.query === "string" ? req.query.query : "";
     const q = sanitizeText(rawQ, 200);
     const limitRaw = req.query.limit ? parseInt(String(req.query.limit), 10) : 20;
@@ -25,7 +31,9 @@ export function mountSearch(app: express.Express, ctx: AppKontext): void {
     const offset = Number.isFinite(offsetRaw) ? Math.max(offsetRaw, 0) : 0;
     const tagsRaw = typeof req.query.tags === "string" ? req.query.tags : "";
     const tags = tagsRaw ? sanitizeTags(tagsRaw.split(",").map(s => s.trim()).filter(Boolean)) : [];
+    zeit.marke("vorarbeit");
     const result = await engineSearch(store, { query: q, limit, offset, tags: tags.length > 0 ? tags : undefined });
+    zeit.marke("engine");
     const begrenzt = offset + result.hits.length < result.total;
     const rest = result.total - offset - result.hits.length;
     const hinweis = result.total === 0
@@ -33,16 +41,21 @@ export function mountSearch(app: express.Express, ctx: AppKontext): void {
       : result.hits.length === 0
         ? `No matches at offset ${offset} - the last match is before this page (${result.total} in total).`
         : `This page holds ${result.hits.length} of ${result.total} matches${begrenzt ? `; ${rest} more follow at offset ${offset + result.hits.length}` : " - the whole result fits in this page"} (limit=<1..500>, offset= for the next page).`;
+    const memories = result.hits.map(h => toApi(h.memory));
+    zeit.marke("formen");
+    const teile = gerundet(zeit.werte());
     res.setHeader("X-Kepta-Suche-Kappe", `${SUCH_KAPPE};w=60`);
+    res.setHeader("x-kepta-teilzeiten", zeit.kopf(teile));
     res.json({
       query: q,
-      count: result.hits.length,
+      count: memories.length,
       total: result.total,
       limit,
       offset,
       begrenzt,
       hinweis,
-      memories: result.hits.map(h => toApi(h.memory)),
+      teilzeiten: teile,
+      memories,
     });
   });
 
@@ -50,6 +63,7 @@ export function mountSearch(app: express.Express, ctx: AppKontext): void {
   // Zelle #99: die Suche haengt nicht mehr an der Chat-Kante (20/min, gemessen 24.10. 13:41 an
   // limiter.ts:52). Sie hat ihre eigne, groessere Kante; die Zahl steht im Kopf der Antwort.
   app.post("/api/search", ctx.limiter.suche, async (req, res) => {
+    const zeit = zeitnahme();
     const { query, topK = 5, offset: rohOffset, tags, type, scope, asOf, tracks } = bodyOf<{
       query?: string;
       topK?: number;
@@ -72,6 +86,7 @@ export function mountSearch(app: express.Express, ctx: AppKontext): void {
           entity: tracks.entity !== false,
         }
       : undefined;
+    zeit.marke("vorarbeit");
     const result = await engineSearch(store, {
       query: sanitizeText(query ?? "", 500),
       limit,
@@ -82,35 +97,42 @@ export function mountSearch(app: express.Express, ctx: AppKontext): void {
       asOf: typeof asOf === "number" && Number.isFinite(asOf) ? asOf : undefined,
       tracks: beine,
     });
+    zeit.marke("engine");
     ctx.publishActivity({ type: "search", source: "app", title: result.query }, { throttleSearchMs: 2500 });
+    zeit.marke("rueckmeldung");
     res.setHeader("X-Kepta-Suche-Kappe", `${SUCH_KAPPE};w=60`);
     // Altes Response-Shape für das Frontend (cosineScore/bm25Score sind die Einzelbeine).
     // Neu (Paket 2): je Treffer die Spuren-Herkunft — welcher Retrieval-Strang
     // (BM25/Vektor/Graph) den Treffer wo im Ranking sah. Die Ränge kommen aus
     // SearchHit.components; null heißt „dieses Bein hat den Treffer nicht gesehen“.
+    const ergebnisse = result.hits.map(h => ({
+      memory: toApi(h.memory),
+      score: h.score,
+      cosineScore: h.components.vectorSimilarity ?? 0,
+      bm25Score: h.components.bm25Rank !== null ? 1 / (h.components.bm25Rank + 1) : 0,
+      rawBm25: 0,
+      matchedTerms: h.matchedTerms,
+      expired: h.expired,
+      superseded: h.superseded,
+      tracks: {
+        bm25: h.components.bm25Rank,
+        vektor: h.components.vectorRank,
+        graph: h.components.entityRank,
+        similarity: h.components.vectorSimilarity,
+      },
+    }));
+    zeit.marke("formen");
+    const teile = gerundet(zeit.werte());
+    res.setHeader("x-kepta-teilzeiten", zeit.kopf(teile));
     return res.json({
-      results: result.hits.map(h => ({
-        memory: toApi(h.memory),
-        score: h.score,
-        cosineScore: h.components.vectorSimilarity ?? 0,
-        bm25Score: h.components.bm25Rank !== null ? 1 / (h.components.bm25Rank + 1) : 0,
-        rawBm25: 0,
-        matchedTerms: h.matchedTerms,
-        expired: h.expired,
-        superseded: h.superseded,
-        tracks: {
-          bm25: h.components.bm25Rank,
-          vektor: h.components.vectorRank,
-          graph: h.components.entityRank,
-          similarity: h.components.vectorSimilarity,
-        },
-      })),
+      results: ergebnisse,
       total: result.total,
       offset,
       begrenzt: offset + result.hits.length < result.total,
       query: result.query,
       hasMatch: result.hits.length > 0,
       usedVectors: result.usedVectors,
+      teilzeiten: teile,
     });
   });
 }

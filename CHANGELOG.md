@@ -1,3 +1,18 @@
+## [3.2.56]
+
+### Added
+
+- **Searching now says where its time went.** Both search routes answer with
+  `x-kepta-teilzeiten` - the same header the list and the health endpoint already keep - and repeat
+  the identical numbers in the body as `teilzeiten`. The marks are `vorarbeit` (parse and wash the
+  request), `engine` (the retrieval itself), `rueckmeldung` (telling the surface a search happened,
+  POST route only) and `formen` (shaping the answer), with `gesamt` last. This exists because five
+  boots at five versions measured first observed searches between **589,65 ms and 3 523,25 ms** while
+  health answered `gesamt` between **10,88 and 11,55 ms** in the same second - and not one of those
+  twenty searches carried a number that could hold the penalty. Without it, "version X costs Y" is
+  not decidable, not even with two boots of the same version. A reading door that does no work of its
+  own (`GET /api/mcp/tools`) still carries no such header, and a case holds that on purpose.
+
 ## [3.2.55]
 
 ### Fixed
