@@ -94,6 +94,8 @@ export interface RelationRecord {
 export interface SearchParams {
   query: string;
   limit?: number;
+  /** Ueberspringt die ersten N Treffer der Rangliste (Seiten). Ohne Angabe 0. */
+  offset?: number;
   tags?: string[];
   type?: MemoryType;
   scope?: MemoryScope;

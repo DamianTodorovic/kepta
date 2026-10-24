@@ -305,6 +305,8 @@ export async function searchMemories(store: KeptaStore, params: SearchParams): P
   // Original bleibt vorne, damit Snippets und Anzeige dem Nutzer folgen.
   const query = erweitereQuery((params.query || "").trim());
   const limit = Math.min(Math.max(params.limit ?? 10, 1), MAX_SEARCH_LIMIT);
+  // Seiten (Zelle #95): offset schneidet die Rangliste, total bleibt der ganze Bestand.
+  const offset = Math.max(0, Math.floor(params.offset ?? 0));
   const queryLower = query.toLowerCase();
   // Zeitreise (asOf): „now“ ist dann der gefragte Zeitpunkt — Zeitregler für ALLE Zugänge
   const now = params.asOf ?? Date.now();
@@ -345,7 +347,9 @@ export async function searchMemories(store: KeptaStore, params: SearchParams): P
   // total davon ab, wie viele Treffer gerade ANGEZEIGT werden. Genau das fiel im
   // Test auf — "5 von 117" bei einem Limit von 5, "5 von 150" nach dem Umlegen
   // des Reglers. Die Zahl neben dem Ergebnis muss stehen, egal was man einstellt.
-  const ftsTiefe = Math.min(MAX_SEARCH_LIMIT, Math.max(500, limit * 2));
+  // Die Tiefe muss offset+limit decken - sonst waere eine Seite hinter 500 still leer,
+  // obwohl der Bestand Treffer hat (gemessen im Fall "jenseits der ersten 500").
+  const ftsTiefe = Math.min(MAX_SEARCH_LIMIT, Math.max(500, (offset + limit) * 2));
   const bm25Ranked: string[] = query && beine.bm25
     ? store
         .ftsSearch(query, ftsTiefe)
@@ -494,7 +498,7 @@ export async function searchMemories(store: KeptaStore, params: SearchParams): P
   }
 
   hits.sort((a, b) => b.score - a.score || b.memory.updatedAt - a.memory.updatedAt);
-  const top = hits.slice(0, limit);
+  const top = hits.slice(offset, offset + limit);
   // P6-Aufgabe #10: die Matched-Terms gehoeren zum Leib der Antwort, nicht zur Rechnung. Sie
   // werden deshalb erst fuer die ausgegebenen Treffer bestimmt — vorher lief die Volltext-Pruefung
   // fuer jeden Kandidaten, bei topK 20 000 also bis zu 10 000 mal je Anfrage.

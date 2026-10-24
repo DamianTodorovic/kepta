@@ -270,6 +270,12 @@ const erwartet = [
   // 03:09:14 MESZ): beide dort 0.
   ["graph-gruppenband", 1],
   ["Share of painted nodes per group", 1],
+  // 3.2.54, EIN Koerper mit ZWEI Zellen (Leitung, 24.10. 13:55 MESZ): Punkt 3s #95 (die Such-Tuer
+  // seitet wie die Liste) und #99 (eigne Such-Kappe statt der Chat-Kappe von 20/min). Gegenprobe VOR
+  // dem Tausch am ausgelieferten 3.2.53 (49 118 229 B, mtime 13:18:07 MESZ): beide Ketten dort 0 -
+  // eigne Griffe 13:55:34 MESZ.
+  ["X-Kepta-Suche-Kappe", 1],
+  ["the whole result fits in this page", 1],
 ];
 // Die Liste darf nur ASCII-Zeichen enthalten. Grund, gemessen 21.10. 19:16 MESZ am
 // installierten Objekt: das Wort "Looking" plus echtes U+2026 steht dort 2 mal, diese

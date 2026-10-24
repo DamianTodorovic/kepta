@@ -7,6 +7,7 @@ export interface Limiter {
   chat: ReturnType<typeof rateLimit>;
   clip: ReturnType<typeof rateLimit>;
   write: ReturnType<typeof rateLimit>;
+  suche: ReturnType<typeof rateLimit>;
 }
 
 /**
@@ -31,6 +32,16 @@ export const DATEN_KANTE = 600;
  */
 export const SCHREIB_KANTE = 600;
 
+/**
+ * Die Such-Kante je Minute. 20 war zu klein: die Suche hing am Chat-Limiter (gemessen 24.10.
+ * 13:41 MESZ an `server/helfer/limiter.ts:52`, max 20/min), und Punkt 6s zwei 20er-Laeufe waren
+ * **0 von 20 Treffern, lauter 429**. Eine Grenze, die kleiner ist als die normale Arbeit, ist ein
+ * Defekt. 240 ist zwoelfmal die Chat-Kante, zwoelfmal ein 20er-Lauf, vier je Sekunde und bleibt
+ * unter der Datenkante von 600 - die Suche ist lesend, die Kante deckelt eine Schleife, nicht
+ * einen Lauf. Die Kappe steht als `X-Kepta-Suche-Kappe` im Kopf jeder Suchantwort.
+ */
+export const SUCH_KAPPE = 240;
+
 export function erstelleLimiter(): Limiter {
   return {
     // Der Begrenzer gilt der Tuer, nicht dem Fenster. Gemessen 15.10. 04:2x: die
@@ -54,5 +65,6 @@ export function erstelleLimiter(): Limiter {
     // Schreibdrossel: groß genug für jede Aufraeumaktion, klein genug, dass ein
     // verirrter Aufruf nicht die ganze Wissensbasis in einem Rutsch bewegt.
     write: rateLimit({ windowMs: 60_000, max: SCHREIB_KANTE, standardHeaders: true, legacyHeaders: false, message: { error: `Schreib-Limit: max ${SCHREIB_KANTE}/min` } }),
+    suche: rateLimit({ windowMs: 60_000, max: SUCH_KAPPE, standardHeaders: true, legacyHeaders: false, message: { error: `Such-Limit: max ${SUCH_KAPPE}/min` } }),
   };
 }

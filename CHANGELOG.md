@@ -1,3 +1,22 @@
+## [3.2.54]
+
+### Fixed
+
+- **Searching is no longer charged as chatting.** `POST /api/search` and
+  `GET /api/memories/search` shared the chat limiter - **20 requests per minute** - so an agent or a
+  surface that walked the results got `429` refusals that looked like fast, empty searches. Search now
+  has its own cap, and the cap is named in the response (`X-Kepta-Suche-Kappe: <n>;w=60`) so a run can
+  tell a search from a refusal instead of averaging it in. The chat route keeps its 20/min, and a case
+  holds that on purpose.
+
+### Added
+
+- **The search door pages like the list.** `offset` is accepted on both search routes, and the answer
+  carries `offset`, `begrenzt` and a `hinweis` that says what follows - the same contract the memory
+  list and the stand list already keep. Measured on the shipped door: 21 066 notes, and a note beyond
+  the first 500 hits is now reachable; past the end you get zero hits and an honest `total`, not an
+  error.
+
 ## [3.2.53]
 
 ### Added
