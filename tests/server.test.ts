@@ -841,14 +841,19 @@ describe("Chat-Proxy (Provider gemockt)", () => {
     expect(res.text).toContain("Servus");
   });
 
-  it("POST /api/chat/stream leitet Upstream-Fehler als SSE-error weiter", async () => {
+  it("POST /api/chat/stream leitet Upstream-Fehler als SSE-error mit Grund weiter", async () => {
     globalThis.fetch = (async () =>
       ({ ok: false, status: 401, body: null, text: async () => JSON.stringify({ error: { message: "Kein Key" } }) }) as unknown as Response) as unknown as typeof fetch;
     const res = await request(app)
       .post("/api/chat/stream")
       .send({ protocol: "openai", baseUrl: UPSTREAM_OHNE_HORCHER, messages: [{ role: "user", content: "Hi" }] });
     expect(res.status).toBe(200);
-    expect(res.text).toContain("Kein Key");
+    // P4-92 (24.10.): der Wortlaut des Anbieters bleibt im Protokoll; nach aussen geht ein Satz
+    // in Produktsprache plus benannte Kennung. Bis hierher verlangte dieser Fall das Gegenteil -
+    // "Kein Key" war der fremde Wortlaut, den die Zelle verbietet.
+    expect(res.text).toContain('"grund":"anbieter-lehnt-ab"');
+    expect(res.text).toMatch(/provider refused this request/i);
+    expect(res.text).not.toContain("Kein Key");
   });
 
   it("POST /api/chat (non-streaming, OpenAI) liefert text", async () => {

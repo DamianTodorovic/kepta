@@ -582,14 +582,15 @@ export function Chat({ activeMemories, onSaveToBrain, onSaveToBrainWithMeta, isF
             // Ende
             continue;
           }
-          let json: { text?: string; error?: string; shield?: { text: string; privateNotes: number; provider: string } };
+          let json: { text?: string; error?: string; grund?: string; shield?: { text: string; privateNotes: number; provider: string } };
           try {
             json = JSON.parse(payload);
           } catch {
             continue;
           }
-          if (json.error) {
-            throw new Error(json.error);
+          if (json.error || json.grund) {
+            // Aufgabe #92 (24.10.): die Kennung der Tuer wird uebersetzt - nie der Ausnahmename.
+            throw new Error(grundText(json.grund) || String(json.error || ""));
           }
           if (json.shield) {
             const shield = json.shield;
@@ -735,7 +736,10 @@ export function Chat({ activeMemories, onSaveToBrain, onSaveToBrainWithMeta, isF
             <span
               className="absolute -bottom-0.5 -right-0.5 status-dot"
               style={connection.state === "connected" ? undefined : { background: "var(--text-3)", boxShadow: "none" }}
-              title={connection.state === "connected" ? "AI connected" : "No AI connected"}
+              // Aufgabe #94: derselbe Satz wie in der Zustands-Tafel fuer denselben Zustand.
+              title={connection.state === "connected"
+                ? (connection.local ? "Local endpoint - this address needs no key." : "AI connected")
+                : "No AI connected"}
             />
           </div>
           <div>
@@ -1087,7 +1091,10 @@ export function Chat({ activeMemories, onSaveToBrain, onSaveToBrainWithMeta, isF
         )}
 
         {error && (
-          <div role="alert" aria-live="polite" className="flex items-start gap-3 p-4 rounded-xl text-sm" style={{ background: "rgba(239,68,68,0.08)", border: "1px solid rgba(239,68,68,0.25)", color: "#f87171" }}>
+          // Aufgabe #93 (24.10.): die Sperre lag unter dem Rand (top 721 / unten 859 bei 840 px,
+          // Scroll-Kasten endet 721) - der Klick auf Senden tat sichtbar nichts. Sticky am Fuss
+          // der Nachrichtenflaeche haelt sie in jeder Fensterbreite im Bild.
+          <div role="alert" aria-live="polite" data-fix="sperre-sichtbar" className="sticky bottom-0 z-20 mt-3 flex items-start gap-3 p-4 rounded-xl text-sm shadow-lg" style={{ background: "rgba(38,16,16,0.97)", border: "1px solid rgba(239,68,68,0.35)", color: "#f87171" }}>
             <AlertTriangle className="w-5 h-5 shrink-0 mt-0.5" />
             <div className="flex-1">
               <div className="font-medium">Error</div>

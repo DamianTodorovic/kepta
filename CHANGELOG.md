@@ -1,3 +1,29 @@
+## [3.2.51]
+
+### Fixed
+
+- **A refusal says why.** The streaming chat route used to forward whatever text the provider or
+  the operating system produced - an unreachable local endpoint answered "fetch failed" in the
+  chat, which is an exception name, not a sentence. It now sends one product sentence plus a named
+  reason (`anbieter-lehnt-ab`, `anbieter-nicht-erreichbar`) and the upstream text stays in the log,
+  where an operator can read it. The non-streaming route already did this; the stream was the last
+  place that did not.
+- **A blocked send is visible.** With no key set, the explanation existed but sat below the fold
+  (measured at 1280 x 840: the alert box started at y 721 of an 840 px window while the scroll box
+  ended at 721) - pressing Send looked like nothing had happened. The alert now sticks to the bottom
+  of the message area, so it is in the picture at every window height.
+- **The chat header and the door agree.** Pointing a key-requiring provider at a local address made
+  the header read "No AI connected" while the same request went out and was accepted. The header
+  now uses the same local-address rule as the door, and a local endpoint reads
+  "Local endpoint - this address needs no key." in both places - the fourth and last site that kept
+  its own copy of the rule.
+
+### Added
+
+- **Five cases that hold the three fixes**, one of them a control: a far endpoint without a key must
+  still read as disconnected. The existing stream test was tightened, not relaxed - it used to
+  demand the provider's own words and now demands the reason code and forbids those words.
+
 ## [3.2.50]
 
 ### Performance

@@ -1,3 +1,6 @@
+// Aufgabe #94 (24.10.): das Lokal-Kriterium wohnt an einer Stelle - dieselbe Funktion wie die Tuer.
+import { istLokaleAdresse } from './schild';
+
 export type Protocol = 'openai' | 'anthropic';
 
 export interface ProviderPreset {
@@ -637,9 +640,12 @@ export function resolveAIConnection(
   if (!model) return { state: 'disconnected' };
 
   if (provider.needsKey) {
-    return settings.apiKey?.trim()
-      ? { state: 'connected', label: provider.label, model, local: false }
-      : { state: 'disconnected' };
+    if (settings.apiKey?.trim()) return { state: 'connected', label: provider.label, model, local: false };
+    // Aufgabe #94 (24.10.): dasselbe Kriterium wie die Tuer (server/router/chat.ts:46) - ein
+    // lokaler Endpunkt braucht keinen Schluessel. Bis heute las diese Stelle nur den Schluessel
+    // und der Chat-Kopf sagte "No AI connected", waehrend dieselbe Anfrage hinausging.
+    if (istLokaleAdresse(settings.baseUrl)) return { state: 'connected', label: provider.label, model, local: true };
+    return { state: 'disconnected' };
   }
   // Lokaler / kein-Key-Provider: verbunden nur bei erreichbarem Server.
   return localReachable === true

@@ -243,6 +243,19 @@ const erwartet = [
   ["is painted in the first group", 1],
   ["preview-stands-none", 1],
   ["min-[820px]:grid", 1],
+  // 3.2.51, EIN Koerper mit DREI Zellen (Leitung, 24.10. 02:3x MESZ): Punkt 4s #92 (Stream-Route
+  // schickt Grund statt Ausnahmewortlaut), #93 (Sperre sticky am Fuss) und #94 (Chat-Kopf ruft
+  // dasselbe Lokal-Kriterium wie die Tuer). Zwei Woerter, und warum nicht mehr:
+  // #92 kann NICHT mit `anbieter-lehnt-ab` gemessen werden - die Kennung liegt schon im
+  // ausgelieferten 3.2.50 (2 Treffer, aus der nicht-streamenden Route), ein Marker darauf
+  // schluege durch, auch ohne diesen Koerper. #94 hat gar kein moegliches Wort: `istLokaleAdresse`
+  // ist eine Kennung, die der Minifier verbiegt (gemessen 0 Treffer im Leib), das ist ein Befund
+  // und keine Luecke - Beweis sind die zwei gelandeten Faelle, einer davon die Kontrolle.
+  // Gegenprobe VOR dem Tausch am dann installierten 3.2.50 (49 115 689 B, mtime 01:22:47 MESZ):
+  // beide Ketten muessen dort 0 sein - gemessen 02:38:25 MESZ: sperre-sichtbar 0,
+  // "kepta: provider refused the stream" 0.
+  ["sperre-sichtbar", 1],
+  ["kepta: provider refused the stream", 1],
 ];
 // Die Liste darf nur ASCII-Zeichen enthalten. Grund, gemessen 21.10. 19:16 MESZ am
 // installierten Objekt: das Wort "Looking" plus echtes U+2026 steht dort 2 mal, diese

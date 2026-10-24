@@ -129,9 +129,10 @@ export function mountChat(app: express.Express, ctx: AppKontext): void {
 
       if (!upstream.ok || !upstream.body) {
         const errText = await upstream.text();
-        let message = `API error (${upstream.status})`;
-        try { message = JSON.parse(errText)?.error?.message || message; } catch { /* keine JSON-Fehlermeldung vom Provider */ }
-        res.write(`data: ${JSON.stringify({ error: message })}\n\n`);
+        // Aufgabe #92 (24.10.): der Wortlaut des Anbieters bleibt im Protokoll. Nach aussen geht
+        // ein Satz in Produktsprache plus eine benannte Kennung - nie ein Ausnahmename.
+        console.error(`kepta: provider refused the stream (${upstream.status}):`, errText.slice(0, 400));
+        res.write(`data: ${JSON.stringify({ error: "The provider refused this request. Check the key and the model name under Settings.", grund: "anbieter-lehnt-ab", status: upstream.status })}\n\n`);
         res.write("data: [DONE]\n\n");
         return res.end();
       }
@@ -146,10 +147,11 @@ export function mountChat(app: express.Express, ctx: AppKontext): void {
       if (!res.destroyed) res.write("data: [DONE]\n\n");
       res.end();
     } catch (error: unknown) {
-      const msg = error instanceof Error ? error.message : "Verbindungsfehler";
+      // Aufgabe #92: die Ausnahme bleibt im Protokoll; der Client bekommt Satz und Kennung.
+      console.error("kepta: chat stream failed", error);
       if (!res.destroyed) {
         try {
-          res.write(`data: ${JSON.stringify({ error: msg })}\n\n`);
+          res.write(`data: ${JSON.stringify({ error: "The model service did not answer. The reason is in the server log, not in this answer.", grund: "anbieter-nicht-erreichbar" })}\n\n`);
           res.write("data: [DONE]\n\n");
           res.end();
         } catch { /* Socket bereits zu */ }
