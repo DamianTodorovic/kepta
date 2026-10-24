@@ -84,7 +84,7 @@ describe("#98: die Such-Route nennt, was in ihr steckt", () => {
     expect(kopf, "die Route schreibt keinen Teilzeit-Kopf").toBeTruthy();
     const ausDemKopf = kopfZerlegen(kopf!);
     expect(Object.keys(ausDemKopf).sort(), `unerwartete Marken: ${kopf}`).toEqual(
-      ["engine", "formen", "gesamt", "vorarbeit"].sort()
+      ["engine", "formen", "gesamt", "vorarbeit", "wortlese", "einbettung", "vektor"].sort()
     );
     const leib = (await ant.json()) as { teilzeiten?: Record<string, number> };
     expect(leib.teilzeiten, "der Leib nennt keine Teilzeiten").toBeTruthy();
@@ -107,7 +107,7 @@ describe("#98: die Such-Route nennt, was in ihr steckt", () => {
     expect(kopf, "der POST-Weg schreibt keinen Teilzeit-Kopf").toBeTruthy();
     const namen = Object.keys(kopfZerlegen(kopf!));
     expect(namen.sort(), `unerwartete Marken: ${kopf}`).toEqual(
-      ["engine", "formen", "gesamt", "rueckmeldung", "vorarbeit"].sort()
+      ["engine", "formen", "gesamt", "rueckmeldung", "vorarbeit", "wortlese", "einbettung", "vektor"].sort()
     );
     const leib = (await ant.json()) as { teilzeiten?: Record<string, number>; results: unknown[] };
     expect(leib.results.length, "die Suche liefert keine Treffer, der Fall misst ins Leere").toBeGreaterThan(0);

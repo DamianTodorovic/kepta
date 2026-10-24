@@ -1,3 +1,18 @@
+## [3.2.57]
+
+### Added
+
+- **The search says which part of the engine took the time.** 3.2.56 named four marks around the
+  engine (`vorarbeit`, `engine`, `rueckmeldung`, `formen`), and the first boot of a fresh version read
+  **1 763,27 ms** in `engine` while the next five searches in the same minute read **61,37 to 110,80
+  ms** - so the penalty had a place, not a cause. The engine now measures its own three working steps
+  and hands them to the same two carriers: **`wortlese`** (reading the words of this store),
+  **`einbettung`** (embedding the one fresh query word) and **`vektor`** (the vector walk after it),
+  plus the engine's own `gesamt`. Header `x-kepta-teilzeiten` and body `teilzeiten` still name
+  identical numbers, because rounding happens after the merge, not before. Which of the three legs
+  carries a slow search is now something a caller reads from the answer it already has, instead of
+  something a report has to infer from the difference between two routes.
+
 ## [3.2.56]
 
 ### Added

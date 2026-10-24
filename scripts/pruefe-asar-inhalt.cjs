@@ -288,6 +288,14 @@ const erwartet = [
   // ausgelieferten 3.2.55 (49 119 613 B, mtime 15:04): beide 0.
   ["rueckmeldung", 1],
   ["vorarbeit", 1],
+  // 3.2.57, Zelle #98 zweiter Schritt (Punkt 3, von der Leitung 24.10. 18:29 MESZ gelegt): die
+  // Engine misst ihre eigne Arbeit und die Route fuehrt die drei Felder in Kopf UND Leib.
+  // Marke ist `wortlese` - der Name, den vor diesem Zug keine Zeile des Objekts trug.
+  // Gegenprobe am ausgelieferten 3.2.56 (49 120 066 B, mtime 15:43, eigne Zaehlung 18:28):
+  // **wortlese = 0**, waehrend `einbettung` schon 1 mal steht (die Gesundheits-Route) und
+  // `teilzeiten` 8 mal, `vektor` 17 mal — die drei sind als Marken zu blind, nur `wortlese`
+  // unterscheidet diese Fassung von der vorherigen.
+  ["wortlese", 1],
 ];
 // Die Liste darf nur ASCII-Zeichen enthalten. Grund, gemessen 21.10. 19:16 MESZ am
 // installierten Objekt: das Wort "Looking" plus echtes U+2026 steht dort 2 mal, diese

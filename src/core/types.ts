@@ -135,4 +135,7 @@ export interface SearchResult {
   total: number;
   query: string;
   usedVectors: boolean;
+  /** Arbeit DIESER Suche in ms (Zelle #98): Wortlese, Einbettung eines frischen Wortes,
+   *  Vektor-Suche und gesamt der Engine. Die Route fuehrt sie in Kopf und Leib. */
+  teilzeiten?: { wortlese: number; einbettung: number; vektor: number; gesamt: number };
 }

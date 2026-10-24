@@ -43,7 +43,15 @@ export function mountSearch(app: express.Express, ctx: AppKontext): void {
         : `This page holds ${result.hits.length} of ${result.total} matches${begrenzt ? `; ${rest} more follow at offset ${offset + result.hits.length}` : " - the whole result fits in this page"} (limit=<1..500>, offset= for the next page).`;
     const memories = result.hits.map(h => toApi(h.memory));
     zeit.marke("formen");
-    const teile = gerundet(zeit.werte());
+    // Zelle #98, Engine-Spalte: die Engine misst Wortlese, Einbettung und Vektor; sie gehoeren
+    // in denselben Kopf und Leib. gerundet() laeuft NACH dem Zusammenfuehren, damit beide
+    // Traeger dieselbe Zahl nennen (die Lehre aus 0,38 gegen 0,381, 24.10. 15:34).
+    const teile = gerundet({
+      ...zeit.werte(),
+      ...(result.teilzeiten
+        ? { wortlese: result.teilzeiten.wortlese, einbettung: result.teilzeiten.einbettung, vektor: result.teilzeiten.vektor }
+        : {}),
+    });
     res.setHeader("X-Kepta-Suche-Kappe", `${SUCH_KAPPE};w=60`);
     res.setHeader("x-kepta-teilzeiten", zeit.kopf(teile));
     res.json({
@@ -122,7 +130,15 @@ export function mountSearch(app: express.Express, ctx: AppKontext): void {
       },
     }));
     zeit.marke("formen");
-    const teile = gerundet(zeit.werte());
+    // Zelle #98, Engine-Spalte: die Engine misst Wortlese, Einbettung und Vektor; sie gehoeren
+    // in denselben Kopf und Leib. gerundet() laeuft NACH dem Zusammenfuehren, damit beide
+    // Traeger dieselbe Zahl nennen (die Lehre aus 0,38 gegen 0,381, 24.10. 15:34).
+    const teile = gerundet({
+      ...zeit.werte(),
+      ...(result.teilzeiten
+        ? { wortlese: result.teilzeiten.wortlese, einbettung: result.teilzeiten.einbettung, vektor: result.teilzeiten.vektor }
+        : {}),
+    });
     res.setHeader("x-kepta-teilzeiten", zeit.kopf(teile));
     return res.json({
       results: ergebnisse,

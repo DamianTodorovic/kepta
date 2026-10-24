@@ -299,6 +299,11 @@ function entityMentionsInQuery(store: KeptaStore, queryLower: string): string[] 
 
 /** Berechnet alle Beinheiten und fusioniert via Reciprocal Rank Fusion. */
 export async function searchMemories(store: KeptaStore, params: SearchParams): Promise<SearchResult> {
+  // Teilzeiten (Zelle #98): die gelandete Route nennt vorarbeit/engine/formen/gesamt; WOHIN die
+  // Engine-Zeit geht, sagte sie nicht (an 3.2.56: engine=1763,27 ms bei vorarbeit=0.07). Hier wird
+  // die Engine-Arbeit selbst gemessen: Wortlese, Einbettung des frischen Wortes, Vektor-Suche.
+  const messStart = process.hrtime.bigint();
+  const msSeit = (von: bigint): number => Math.round(Number(process.hrtime.bigint() - von) / 1e3) / 1000;
   // Query-Erweiterung (deutsch <-> englisch): „Wie oft wird gesichert?" muss
   // auch die Notiz „Backup schedule" finden. Die Erweiterung haengt Synonyme
   // AN die Query — alle Beine (BM25, Vektor, Reranking) profitieren; das
@@ -350,20 +355,26 @@ export async function searchMemories(store: KeptaStore, params: SearchParams): P
   // Die Tiefe muss offset+limit decken - sonst waere eine Seite hinter 500 still leer,
   // obwohl der Bestand Treffer hat (gemessen im Fall "jenseits der ersten 500").
   const ftsTiefe = Math.min(MAX_SEARCH_LIMIT, Math.max(500, (offset + limit) * 2));
+  const tWort = process.hrtime.bigint();
   const bm25Ranked: string[] = query && beine.bm25
     ? store
         .ftsSearch(query, ftsTiefe)
         .map((h) => h.id)
         .filter((id) => byId.has(id))
     : [];
+  const wortlese = msSeit(tWort);
 
   // --- Bein 2: Vektor-KNN (nur wenn Embeddings des aktuellen Modells existieren) ---
   let vectorRanked: string[] = [];
   let queryVector: Float32Array | null = null;
   let usedVectors = false;
   const vectorSim = new Map<string, number>();
+  let einbettung = 0;
+  const tVektor = process.hrtime.bigint();
   if (query && beine.vector) {
+    const tEin = process.hrtime.bigint();
     queryVector = await embedQuery(query);
+    einbettung = msSeit(tEin);
     if (queryVector) {
       // Vorgerechnete Spur (Chunk-Liste gefiltert auf das Abfragemodell + Normen
       // je Chunk, einmal pro Generation). Nur Chunks desselben Embedding-Modells
@@ -530,7 +541,18 @@ export async function searchMemories(store: KeptaStore, params: SearchParams): P
       }
     }
   }
-  return { hits: top, total: hits.length, query, usedVectors };
+  return {
+    hits: top,
+    total: hits.length,
+    query,
+    usedVectors,
+    teilzeiten: {
+      wortlese,
+      einbettung,
+      vektor: Math.max(0, msSeit(tVektor) - einbettung),
+      gesamt: msSeit(messStart),
+    },
+  };
 }
 
 // ---------- Lifecycle: Chunking + optional Embedding on write ----------
