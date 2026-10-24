@@ -256,6 +256,14 @@ const erwartet = [
   // "kepta: provider refused the stream" 0.
   ["sperre-sichtbar", 1],
   ["kepta: provider refused the stream", 1],
+  // 3.2.52, EIN Koerper (Leitung, 24.10. 03:0x MESZ): Punkt 5s #97 - der Gruppen-Name bei
+  // Telefonbreite. Der Koerper traegt keinen Fall (zwei Dateien, +19 / -2, reine Darstellung),
+  // also ist DIESE Pruefung hier sein Netz: zwei Klassen, die im gebauten CSS stehen und deren
+  // Wegfall die Heilung stumm rueckgaengig machen wuerde. Gegenprobe VOR dem Tausch am
+  // ausgelieferten 3.2.51 (49 116 667 B, mtime 02:48:02 MESZ): beide Ketten dort 0 - gemessen
+  // 03:01:07 MESZ im eignen Bau (dist-sonde): regal-marke 2, regal-zeile 3.
+  ["regal-marke", 1],
+  ["regal-zeile", 1],
 ];
 // Die Liste darf nur ASCII-Zeichen enthalten. Grund, gemessen 21.10. 19:16 MESZ am
 // installierten Objekt: das Wort "Looking" plus echtes U+2026 steht dort 2 mal, diese

@@ -1,3 +1,17 @@
+## [3.2.52]
+
+### Fixed
+
+- **A group's name is no longer cut off on a phone.** At 390 px the legend row showed `#…` instead of
+  `#json` - the name box was 21 px wide while its text needed 31 px, with `overflow: hidden` and
+  `nowrap` on it. The colour dot and the three numbers were readable, the group they described was
+  not, so a reader had to guess which tone meant what. The name now keeps its full width and the row
+  wraps under it; measured after the change all twelve names are whole at 390 x 844 (`#machine-scan`
+  86/86, `#zeitregler-test` 88/88, `#json` 31/31, none cut). The list keeps its height cap and its
+  scroll path (max-height 320 px, scrollHeight 832 against clientHeight 320), and at 1440 x 900
+  nothing moves - the row measures 1076 x 44 before and after, because the rule lives in a
+  max-width-440 block.
+
 ## [3.2.51]
 
 ### Fixed

@@ -220,7 +220,7 @@ export function GraphRegal({ regal, ansichtsName, gruppen, achsen, steuerung, ge
               <div
                 key={g.marke}
                 data-testid="regal-farbgruppe-zeile"
-                className="hud-label tnum flex items-center gap-2"
+                className="hud-label tnum flex items-center gap-2 regal-zeile"
                 style={{ color: "var(--text-2)" }}
               >
                 {steuerung ? (
@@ -240,7 +240,7 @@ export function GraphRegal({ regal, ansichtsName, gruppen, achsen, steuerung, ge
                     style={{ width: 8, height: 8, borderRadius: 99, flex: "0 0 auto", background: g.farbe }}
                   />
                 )}
-                <span className="min-w-0 flex-1 truncate" style={{ color: "var(--text-1)" }}>
+                <span className="min-w-0 flex-1 truncate regal-marke" style={{ color: "var(--text-1)" }}>
                   #{g.marke}
                 </span>
                 <span>{zahl(g.notizen)}</span>

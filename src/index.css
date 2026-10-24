@@ -1557,3 +1557,20 @@ button.row-quiet { cursor: pointer; border-color: var(--kante-kontrolle); }
     max-width: calc(100% - 1.5rem);
   }
 }
+
+/* #97 — bei Telefonbreite bekommt der Gruppen-Name seine volle Breite: die Zahlenreihe
+   (Mitglieder, Prozent, painted, remove) ist breiter als 294 px und kappte ihn zu `#…`.
+   Der Name schrumpft nicht mehr; was nicht mehr in die Zeile passt, bricht um.
+   Die Hohen-Kappe der Liste (#81, `kappeListe()`) bleibt unberuehrt — sie sitzt am
+   Listenbehaelter, nicht an der Zeile. */
+@media (max-width: 440px) {
+  .regal-zeile {
+    flex-wrap: wrap;
+  }
+  .regal-zeile .regal-marke {
+    flex: 0 0 auto;
+    overflow: visible;
+    white-space: nowrap;
+    text-overflow: clip;
+  }
+}
