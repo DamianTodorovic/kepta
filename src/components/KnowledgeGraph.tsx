@@ -74,6 +74,7 @@ import {
   type StrukturKnoten,
 } from "../lib/graphHierarchy";
 import { GraphRegal } from "./GraphRegal";
+import { GruppenBand } from "./GruppenBand";
 import { layoutSemantik, SEMANTIK_KAPPE, type SemantikKarte } from "../lib/graphSemantik";
 import { schemaInventar, SCHEMA_SCHLUESSEL, type SchemaKante } from "../lib/graphSchema";
 import { HERKUNFT, herkunftsBild, HERKUNFT_TOKEN, HERKUNFT_LABELS } from "../lib/graphHerkunft";
@@ -2312,6 +2313,19 @@ export function KnowledgeGraph({ memories: memoriesAusFenster, onSelectMemory, o
   const gemalt = useMemo(
     () => gemalteZahlen(farbgruppen.gruppen, gruppenZuordnung),
     [farbgruppen, gruppenZuordnung]
+  );
+  /**
+   * #96 — die Abschnitte des Leistenbands: je MALENDER Gruppe einer, Breite nach den
+   * GEMALTEN Knoten (nicht nach der Mitgliedschaft — die Lehre aus #90).
+   */
+  const bandSegmente = useMemo(
+    () =>
+      aktiverKanal === "gruppe"
+        ? farbgruppen.gruppen
+            .map((g) => ({ marke: g.marke, farbe: g.farbe, gemalt: gemalt[g.marke] ?? 0, summe: g.notizen }))
+            .filter((s) => s.gemalt > 0)
+        : [],
+    [aktiverKanal, farbgruppen, gemalt]
   );
   /**
    * Wie viele Zeilen die Leinwand bei lesbarem Abstand hält. Der Rahmen ist der
@@ -5397,6 +5411,7 @@ export function KnowledgeGraph({ memories: memoriesAusFenster, onSelectMemory, o
             </div>
           );
         })()}
+        {bandSegmente.length > 0 && <GruppenBand segmente={bandSegmente} />}
         <canvas
           ref={canvasRef}
           data-testid="graph-canvas"

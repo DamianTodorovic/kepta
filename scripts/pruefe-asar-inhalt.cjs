@@ -264,6 +264,12 @@ const erwartet = [
   // 03:01:07 MESZ im eignen Bau (dist-sonde): regal-marke 2, regal-zeile 3.
   ["regal-marke", 1],
   ["regal-zeile", 1],
+  // 3.2.53, DREI Stuecke (Leitung, 24.10. 13:09 MESZ): Punkt 5s #96-Leistenband, sein nachgereichter
+  // Fall zu #97, und Punkt 3s Eine-Wort-Berichtigung. Zwei Marken fuer das Band - eine Kennung, eine
+  // sichtbare Ansage; Gegenprobe VOR dem Tausch am ausgelieferten 3.2.52 (49 116 810 B, mtime
+  // 03:09:14 MESZ): beide dort 0.
+  ["graph-gruppenband", 1],
+  ["Share of painted nodes per group", 1],
 ];
 // Die Liste darf nur ASCII-Zeichen enthalten. Grund, gemessen 21.10. 19:16 MESZ am
 // installierten Objekt: das Wort "Looking" plus echtes U+2026 steht dort 2 mal, diese

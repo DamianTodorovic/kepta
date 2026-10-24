@@ -1574,3 +1574,24 @@ button.row-quiet { cursor: pointer; border-color: var(--kante-kontrolle); }
     text-overflow: clip;
   }
 }
+
+/* #96 — das Leistenband: der Ueberblick ueber die GEMALTEN Knoten je Gruppe, ohne Zoom.
+   Es liegt im freien Band ueber der Leinwand, 10 px hoch, und isst keinen Klick
+   (pointer-events: none) — der Treffertest geht an die Leinwand darunter.
+   Unter 1 px waere kein Kanal (#29/#59): jeder Abschnitt hat eine Mindestbreite. */
+.graph-gruppenband {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 0;
+  height: 10px;
+  display: flex;
+  pointer-events: none;
+  z-index: 5;
+  overflow: hidden;
+}
+.graph-gruppenband-segment {
+  display: block;
+  height: 100%;
+  min-width: 2px;
+}

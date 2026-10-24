@@ -206,6 +206,12 @@ export function GraphRegal({ regal, ansichtsName, gruppen, achsen, steuerung, ge
             {achsen
               ? achsenSatz(achsen, gruppen)
               : `grouped by your tags · ${zahl(gruppen.bestand - gruppen.ohneGruppe)} of ${zahl(gruppen.bestand)} notes carry a group you made${gruppen.mehrfach > 0 ? ` · ${zahl(gruppen.mehrfach)} carry two of them` : ""}${gruppen.ohneGruppe > 0 ? ` · ${zahl(gruppen.ohneGruppe)} carry none` : ""}`}
+            {gemalt && (() => {
+              const summe = Object.values(gemalt).reduce((n, x) => n + x, 0);
+              const top = gruppen.gruppen.reduce((best, g) => ((gemalt[g.marke] ?? 0) > (gemalt[best.marke] ?? 0) ? g : best), gruppen.gruppen[0]);
+              if (!top || summe <= 0) return null;
+              return ` · #${top.marke} carries ${prozent((100 * (gemalt[top.marke] ?? 0)) / summe)} % of the painted nodes`;
+            })()}
           </div>
           {gruppen.gruppen.length === 0 && (
             <div className="hud-label" style={{ color: "var(--text-3)" }}>

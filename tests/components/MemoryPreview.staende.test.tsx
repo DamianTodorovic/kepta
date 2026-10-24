@@ -8,7 +8,7 @@
 //
 // Am Kopf f366bc9 gibt es die Flaeche nicht - dieser Fall faellt dort rot am Verhalten.
 import { describe, it, expect, vi, afterEach } from "vitest";
-import { render, screen, waitFor } from "@testing-library/react";
+import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 const toastPush = vi.hoisted(() => vi.fn());
 vi.mock("../../src/components/ui/Toast", () => ({ useToast: () => ({ push: toastPush }) }));

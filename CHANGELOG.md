@@ -1,3 +1,23 @@
+## [3.2.53]
+
+### Added
+
+- **The overview now shows how much of it is one group.** A thin band runs across the top of the
+  canvas, one segment per group that actually paints, each segment as wide as that group's share of
+  the painted nodes and in its colour, with the group named in `title` and `aria-label`. At the
+  shipped object this says out loud what no colour or letter could: **20 974 of 21 024 painted nodes
+  (99,8 %) belong to one group** - visible without zooming, without the legend, without guessing.
+  A group that paints nothing gets no segment, and the band carries `pointer-events: none`, so it
+  never eats a drag or a click (hit-tested at the band's middle and right edge: both return the
+  canvas). It sits in the free strip above the picture, not under the legend.
+
+### Fixed
+
+- **A guard for the phone legend.** The rule that gives a group name its full width at 390 px now has
+  the case that was promised with it: the classes are required at the row and on the name, and the
+  fix is proven to bite - the case is green at this head and red at the one before it.
+- **One unused import removed** in the stand-list case file.
+
 ## [3.2.52]
 
 ### Fixed
