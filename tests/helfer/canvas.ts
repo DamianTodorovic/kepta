@@ -79,7 +79,7 @@ function schriftgroesse(font: unknown): number {
 export function installiereLeinwand(): Leinwand {
   const aufrufe: Aufruf[] = [];
 
-  const machKontext = () => {
+  const machKontext = (element?: HTMLCanvasElement) => {
     const ctx: Record<string, unknown> = {};
     for (const name of METHODEN) {
       ctx[name] = (...args: unknown[]) => { aufrufe.push({ op: name, args }); };
@@ -116,7 +116,11 @@ export function installiereLeinwand(): Leinwand {
       data: new Uint8ClampedArray(Math.max(0, w) * Math.max(0, h) * 4),
       width: w, height: h,
     });
-    ctx.canvas = null;
+    /* Die echte Schnittstelle sagt, WELCHE Leinwand dieser Kontext bedient
+       (`CanvasRenderingContext2D.canvas`). Null war hier eine Luecke, die ein
+       Koerper sofort findet: die Sammelmarke legt ihr Rechteck auf
+       `ctx.canvas.dataset` ab, und mit null brach das Bild mitten im Malen ab. */
+    ctx.canvas = element ?? null;
     return ctx as unknown as CanvasRenderingContext2D;
   };
 
@@ -128,7 +132,7 @@ export function installiereLeinwand(): Leinwand {
   ) {
     if (art !== "2d") return null;
     let k = kontexte.get(this);
-    if (!k) { k = machKontext(); kontexte.set(this, k); }
+    if (!k) { k = machKontext(this); kontexte.set(this, k); }
     return k;
   };
 

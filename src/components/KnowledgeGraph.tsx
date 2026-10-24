@@ -3533,14 +3533,36 @@ export function KnowledgeGraph({ memories: memoriesAusFenster, onSelectMemory, o
       ctx.beginPath();
       ctx.arc(kernMarkeBild.wx, kernMarkeBild.wy, KERN_MARKE_RADIUS_PX / t.k, 0, Math.PI * 2);
       ctx.fill();
-      ctx.font = `600 ${KERN_MARKE_SCHRIFT_PX / t.k}px ui-sans-serif, system-ui, -apple-system, sans-serif`;
-      ctx.textAlign = "left";
-      ctx.textBaseline = "middle";
+      const schrift = KERN_MARKE_SCHRIFT_PX / t.k;
+      ctx.font = `600 ${schrift}px ui-sans-serif, system-ui, -apple-system, sans-serif`;
+      // Die Zahl steht UEBER dem Punkt, nicht daneben: bei 390 x 844 liegt die
+      // Legenden-Karte unten im Bild und schnitt die Marke an (#88, 12:58:14).
+      ctx.textAlign = "center";
+      ctx.textBaseline = "bottom";
+      const labelBreite = ctx.measureText(markeText).width;
+      const labelY = kernMarkeBild.wy - (KERN_MARKE_RADIUS_PX + 3) / t.k;
       ctx.lineWidth = 3 / t.k;
       ctx.strokeStyle = grundFarbe;
-      ctx.strokeText(markeText, kernMarkeBild.wx + (KERN_MARKE_RADIUS_PX + 4) / t.k, kernMarkeBild.wy);
+      ctx.strokeText(markeText, kernMarkeBild.wx, labelY);
       ctx.fillStyle = textFarbe;
-      ctx.fillText(markeText, kernMarkeBild.wx + (KERN_MARKE_RADIUS_PX + 4) / t.k, kernMarkeBild.wy);
+      ctx.fillText(markeText, kernMarkeBild.wx, labelY);
+      // Die Lage als Rechteck in Bildpunkten (CSS) auf der Leinwand ablegen.
+      const rechts = kernMarkeBild.wx * t.k + t.x;
+      const unten = labelY * t.k + t.y;
+      ctx.canvas.dataset.kernMarke = JSON.stringify({
+        x: Math.round((rechts - (labelBreite * t.k) / 2) * 10) / 10,
+        y: Math.round((unten - KERN_MARKE_SCHRIFT_PX) * 10) / 10,
+        w: Math.round(labelBreite * t.k * 10) / 10,
+        h: KERN_MARKE_SCHRIFT_PX,
+        dotX: Math.round(kernMarkeBild.wx * t.k + t.x),
+        dotY: Math.round(kernMarkeBild.wy * t.k + t.y),
+      });
+      ctx.textAlign = "left";
+      ctx.textBaseline = "alphabetic";
+    } else {
+      // Kein Ruhestaender: wenn die Marke nicht malt, darf die Leinwand keine
+      // Lage behaupten, die kein Mensch sieht.
+      delete ctx.canvas.dataset.kernMarke;
     }
 
     // --- Gerüst-Knoten: im Baum Wurzel/Typen/Entitäten, im Feld die Konzepte ---

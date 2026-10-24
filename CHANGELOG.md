@@ -1,3 +1,19 @@
+## [3.2.55]
+
+### Fixed
+
+- **The core's number is no longer hidden behind the legend.** When the graph collapses its centre
+  into one marker, that number stood to the right of its dot - and at phone width the legend card
+  rises into exactly that strip, so the one readable figure in the whole picture arrived cut off.
+  The number now sits above its dot, centred on it. Measured at the shipped object (21 066 notes,
+  3 % zoom, 390 x 844): the box the number occupies now carries ink (63 bright sample points), the
+  box the old position used carries none (0 - it lies under the card, where the dot itself is dark
+  too). Nothing about the marker's meaning changed: one place, one readable value.
+- **A marker that stopped painting stops claiming a position.** The canvas now carries the
+  rectangle it drew (`kernMarke`) so any check can measure the mark against what covers it instead
+  of guessing - and above the zoom threshold, where no mark is drawn, that rectangle is removed
+  rather than left behind as a stale witness.
+
 ## [3.2.54]
 
 ### Fixed

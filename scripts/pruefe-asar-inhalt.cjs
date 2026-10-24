@@ -276,6 +276,11 @@ const erwartet = [
   // eigne Griffe 13:55:34 MESZ.
   ["X-Kepta-Suche-Kappe", 1],
   ["the whole result fits in this page", 1],
+  // 3.2.55, Punkt 1s #88 (Leitung, 24.10. 14:5x MESZ): die Sammelmarke zahlt ueber dem Punkt statt
+  // rechts daneben, und die Leinwand traegt ihr Rechteck als Kennzeichen. Gegenprobe VOR dem Tausch
+  // am ausgelieferten 3.2.54 (49 119 269 B, mtime 14:04:38 MESZ) und im eignen Bau ohne Koerper:
+  // beide 0, im Bau mit Koerper 2 (Zeile und Rueckbau-Zweig) - eigne Griffe 14:39:52 MESZ.
+  ["dataset.kernMarke", 1],
 ];
 // Die Liste darf nur ASCII-Zeichen enthalten. Grund, gemessen 21.10. 19:16 MESZ am
 // installierten Objekt: das Wort "Looking" plus echtes U+2026 steht dort 2 mal, diese
