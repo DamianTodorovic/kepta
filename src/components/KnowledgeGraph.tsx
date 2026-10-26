@@ -52,6 +52,9 @@ import {
   KANTEN_GREIF_PX,
   knotenRadius,
   dichtesteWeltMitte,
+  KANTEN_RAND_PX,
+  zeilenFlucht,
+  zeilenUmbruch,
   type LayoutEdge,
   type LayoutNode,
   type Simulation,
@@ -3784,16 +3787,31 @@ export function KnowledgeGraph({ memories: memoriesAusFenster, onSelectMemory, o
     // Aufnahme sieht — lesbar ist dort nichts mehr. Seine Zellhohe ist dieselbe
     // Zahl, aus der oben der Etat gerechnet wird.
     const belegt = new Set<string>();
-    const freiUndBelegen = (mx: number, my: number, breite: number): boolean => {
+    const zellenBereich = (mx: number, my: number, breite: number) => {
       const halb = breite / 2;
-      const c0 = Math.floor((mx - halb) / zellHoehe);
-      const c1 = Math.floor((mx + halb) / zellHoehe);
-      // Der Text sitzt mit der Oberkante auf my — er belegt zwei Rasterzeilen,
-      // sonst rutschen zwei Etiketten mit halbem Zeilenversatz ineinander.
-      const z0 = Math.floor(my / zellHoehe);
-      const z1 = Math.floor((my + zellHoehe * 0.95) / zellHoehe);
+      return {
+        c0: Math.floor((mx - halb) / zellHoehe),
+        c1: Math.floor((mx + halb) / zellHoehe),
+        // Der Text sitzt mit der Oberkante auf my — er belegt zwei Rasterzeilen,
+        // sonst rutschen zwei Etiketten mit halbem Zeilenversatz ineinander.
+        z0: Math.floor(my / zellHoehe),
+        z1: Math.floor((my + zellHoehe * 0.95) / zellHoehe),
+      };
+    };
+    /** Fragt das Raster, ohne etwas zu belegen — eine Pruefung darf nichts kosten. */
+    const frei = (mx: number, my: number, breite: number): boolean => {
+      const { c0, c1, z0, z1 } = zellenBereich(mx, my, breite);
       for (let z = z0; z <= z1; z++) for (let c = c0; c <= c1; c++) if (belegt.has(`${c},${z}`)) return false;
+      return true;
+    };
+    /** Nimmt dem Raster die Zellen eines Textes weg, nachdem die Stelle gewaehlt ist. */
+    const belegen = (mx: number, my: number, breite: number): void => {
+      const { c0, c1, z0, z1 } = zellenBereich(mx, my, breite);
       for (let z = z0; z <= z1; z++) for (let c = c0; c <= c1; c++) belegt.add(`${c},${z}`);
+    };
+    const freiUndBelegen = (mx: number, my: number, breite: number): boolean => {
+      if (!frei(mx, my, breite)) return false;
+      belegen(mx, my, breite);
       return true;
     };
 
@@ -4032,7 +4050,10 @@ export function KnowledgeGraph({ memories: memoriesAusFenster, onSelectMemory, o
       const ankerX = sim.alleinAnker.x * t.k + t.x;
       const ankerY = sim.alleinAnker.y * t.k + t.y;
       const breite = Math.min(dimensions.w - 24, GANG_SPALTEN * GANG_ABSTAND * t.k);
-      const x0 = Math.max(12, ankerX - breite / 2);
+      // Die Mitte des Bands. Der Satz liegt darunter, und wo er anfaengt, haengt
+      // an seiner eignen Breite (#106: bei 1 000 px war der Lichtungs-Satz 621 px
+      // breit und endete bei 1 044 — ueber der Kante).
+      const mitte = Math.max(12, ankerX - breite / 2);
       // Die letzte Zeile, die das Bild WIRKLICH legt — nicht die, die die Masse
       // haben wollte. Bei 18.500 allein stehenden Notizen war der Satz sonst
       // 3.712 Einheiten unter dem Anker angesetzt und damit nie im Bild.
@@ -4050,6 +4071,13 @@ export function KnowledgeGraph({ memories: memoriesAusFenster, onSelectMemory, o
               ? ` · too tight to paint at this zoom · ${lichtungZahl.nichtGemalt.toLocaleString("en-US")} counted, not painted`
               : ` · ${lichtungZahl.gemalt.toLocaleString("en-US")} painted at this zoom · ${lichtungZahl.nichtGemalt.toLocaleString("en-US")} counted, not painted`
             : "");
+        // Erst die Schrift, dann das Mass: die Kante wird an der Breite gemessen,
+        // die dieser Kontext fuer diesen Satz hergibt — nicht an einer Zahl im Quelltext.
+        ctx.font = `400 ${fs}px ui-sans-serif, system-ui, -apple-system, sans-serif`;
+        ctx.textAlign = "left";
+        ctx.textBaseline = "top";
+        const satzBreite = ctx.measureText(text).width;
+        const x0 = Math.max(12, Math.min(mitte, dimensions.w - KANTEN_RAND_PX - satzBreite));
         ctx.globalAlpha = 0.34;
         ctx.strokeStyle = textFarbe;
         ctx.lineWidth = 1;
@@ -4058,9 +4086,6 @@ export function KnowledgeGraph({ memories: memoriesAusFenster, onSelectMemory, o
         ctx.lineTo(Math.min(dimensions.w - 12, x0 + breite), ankerY - 22);
         ctx.stroke();
         ctx.globalAlpha = 1;
-        ctx.font = `400 ${fs}px ui-sans-serif, system-ui, -apple-system, sans-serif`;
-        ctx.textAlign = "left";
-        ctx.textBaseline = "top";
         // Die Zeile steht UNTER dem Band, nicht darüber — und sie darf kein
         // Etikett treffen.
         //
@@ -4073,19 +4098,39 @@ export function KnowledgeGraph({ memories: memoriesAusFenster, onSelectMemory, o
         // sonst faellt sie weg. Gemessen 15.10. 04:5x im schmalen Fenster: der Satz
         // lag ueber drei Bandtiteln und der Trennlinie (leitung-bilder/
         // ausschnitt-legende-820.png).
-        const capBreite = ctx.measureText(text).width;
+        //
+        // #106 hat zwei Kanten, und beide werden jetzt gelesen statt gesetzt. Die
+        // Flucht ging bisher nur abwaerts und brach an der unteren Bildkante ab —
+        // abwaerts liegt aber der Legendenkasten, und im schmalen Fenster war er 346
+        // von 390 Bildpunkten breit (gemessen 26.10., Punkt 2): der Satz lief unter
+        // ihn und endete mitten im Wort. Gepflaeckt wird nicht durch Kuerzen — der
+        // Satz traegt Zahlen (Seite, gemalt, nicht gemalt), und eine verlorene Zahl
+        // waer ein Verschwinden, das niemand merkt. Also: an Woertern umbrechen, die
+        // freie Breite aus der Bildgroese, und die Zeilengruppe weicht nach oben
+        // aus, wenn der Kasten im Weg steht.
+        const kastenOben = legendenRef.current?.offsetTop
+          || dimensions.h - (legendenRef.current?.offsetHeight || LEGENDE_HOEHE);
+        const capZeilen = zeilenUmbruch(text, (t) => ctx.measureText(t).width, dimensions.w - KANTEN_RAND_PX - x0);
+        // Was die Flaeche ueber ihre eigne Zeilengruppe sagt — an demselben Feld,
+        // das seit #105 `kernGrund` fuehrt. Ein Fall, ein Bild und die Pixelsonde
+        // lesen damit dieselbe Zahl, statt sie dreinander zu rechnen.
+        ctx.canvas.dataset.gangZeilen = String(capZeilen.length);
+        const capBreiten = capZeilen.map((z) => ctx.measureText(z).width);
         const capY0 = letzteZeile + GANG_ABSTAND * t.k * 0.5 + 6;
-        let capGefunden = false;
-        for (let versuch = 0; versuch < 4 && !capGefunden; versuch++) {
-          const y = capY0 + versuch * zellHoehe;
-          if (y + zellHoehe > dimensions.h - 4) break;
-          if (!ohneRaster && !freiUndBelegen(x0 + capBreite / 2, y, capBreite)) continue;
-          ctx.lineWidth = 3;
-          ctx.strokeStyle = grundFarbe;
-          ctx.strokeText(text, x0, y);
-          ctx.fillStyle = geruestFarbe;
-          ctx.fillText(text, x0, y);
-          capGefunden = true;
+        const capY = capZeilen.length
+          ? zeilenFlucht(capY0, zellHoehe, capZeilen.length * zellHoehe, kastenOben, dimensions.h, 4, (y) =>
+            ohneRaster || capZeilen.every((_, i) => frei(x0 + capBreiten[i] / 2, y + i * zellHoehe, capBreiten[i])))
+          : null;
+        if (capY !== null) {
+          for (let i = 0; i < capZeilen.length; i++) {
+            const y = capY + i * zellHoehe;
+            if (!ohneRaster) belegen(x0 + capBreiten[i] / 2, y, capBreiten[i]);
+            ctx.lineWidth = 3;
+            ctx.strokeStyle = grundFarbe;
+            ctx.strokeText(capZeilen[i], x0, y);
+            ctx.fillStyle = geruestFarbe;
+            ctx.fillText(capZeilen[i], x0, y);
+          }
         }
       }
     }

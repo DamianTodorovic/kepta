@@ -381,6 +381,11 @@ const erwartet = [
   ["graph-kern-zustand", 1],
   ["min-w-0 break-words", 1],
   ["rounded-2xl p-3 sm:p-5", 1],
+  // Punkt 106, gelegt 26.10. gegen Kopf `4181c0e`. **Dieses Wort stand im ausgelieferten
+  // 3.2.61 genau 0 mal**, gemessen 22:1x Uhr gegen dasselbe 49 126 944 B grosse Objekt mit
+  // derselben latin1-Zaehlung wie hier: der Gang-Satz hatte damals keine Zeilenzahl, weil
+  // er nie gebrochen wurde.
+  ["gangZeilen", 1],
 ];
 // Die Liste darf nur ASCII-Zeichen enthalten. Grund, gemessen 21.10. 19:16 MESZ am
 // installierten Objekt: das Wort "Looking" plus echtes U+2026 steht dort 2 mal, diese

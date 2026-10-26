@@ -31,6 +31,15 @@
   URL refused to shrink. The boxes now give their child a real width on both axes, the URL breaks
   where a URL may break, and the switch moves to its own line below 640 px rather than being pushed
   out of sight - and no `overflow-hidden` hides what was not fixed.
+- **The line under a thin graph stops at an edge, not mid-word.** Under the rows of unconnected
+  notes the picture prints its own explanation ("N notes connect to nothing in this picture ·
+  page 1 of 4 · 96 painted at this zoom · 288 counted, not painted"). It was painted as one
+  unbroken line: measured in a 390-pixel window its last bright column stood at x 364 while the
+  legend panel ends at x 358, so the words ran behind an opaque panel and stopped in the middle of
+  one. The picture now asks the panel and the canvas where their edges are, breaks the sentence at
+  word boundaries, keeps four pixels clear of every edge, and lifts the whole block above the panel
+  when the panel is in the way. Nothing is taken away: every number the sentence carries stays in
+  the picture, and the canvas records how many lines it used.
 
 ## [3.2.61]
 

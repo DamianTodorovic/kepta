@@ -830,6 +830,103 @@ export const GANG_ABSTAND = 26;
 export const GANG_RAND = 140;
 
 /**
+ * Der freie Rand, den ein gemalter Satz an einer Kante laesst — vier Bildpunkte.
+ *
+ * #106, gemessen am ausgelieferten Stueck (Punkt 2, 390 px): die letzte helle Spalte
+ * des Gang-Satzes lag bei x 364, die rechte Kante des Legendenkastens bei 358, und
+ * der Satz endete **mitten im Wort** — der Malweg kurzte nie. Ein Satz, der an einer
+ * Kante ohne Rand endet, ist nicht abgeschnitten, sondern nur nicht mehr lesbar;
+ * vier Bildpunkte sind der kleinste Abstand, der ein Zeichen atmen laesst.
+ */
+export const KANTEN_RAND_PX = 4;
+
+/**
+ * Ein Satz, der nicht passt, endet mit einem Auslassungszeichen — nie mit einer
+ * halben Silbe.
+ *
+ * Die Metrik kommt von aussen (`masse`), damit die Rechnung dieselbe ist wie die des
+ * Geraets, das gerade malt: dasselbe Wort ist in 11 px ein andrer Strich als in 15 px.
+ * Reicht der Platz fuer kein einziges Zeichen plus Punkt, ist die Antwort der leere
+ * Satz — eine halbe Silbe ist keine Auskunft, und "nichts malen" sagt die Flaeche
+ * ueber ihr Blatt (`gang-info`) weiterhin.
+ */
+export function satzKuerzen(text: string, masse: (t: string) => number, freiBreitePx: number): string {
+  const auslassung = "…";
+  if (freiBreitePx <= 0) return "";
+  if (masse(text) <= freiBreitePx) return text;
+  for (let n = text.length - 1; n >= 1; n--) {
+    if (masse(text.slice(0, n) + auslassung) <= freiBreitePx) return text.slice(0, n) + auslassung;
+  }
+  return masse(auslassung) <= freiBreitePx ? auslassung : "";
+}
+
+/**
+ * Ein Satz, der nicht passt, wird an Woertern gebrochen — kein Wortteil faellt weg.
+ *
+ * Der Gang-Satz traegt Zahlen (Seite, gemalt, nicht gemalt). Ihn an der Kante
+ * abzuschneiden waere keine Heilung, sondern ein verlustfreier Anschein: die Zahl
+ * waere fort, und der Mensch wuesste es nicht. Also: Zeilen fuer Zeilen so viel, wie
+ * in die freie Breite faellt; ein einzelnes Wort, das breiter ist als das Bild,
+ * endet mit dem Auslassungszeichen — das ist die eine Stelle, wo Tinte fehlen darf,
+ * weil sie kein andres Wort ueberdeckt.
+ */
+export function zeilenUmbruch(text: string, masse: (t: string) => number, freiBreitePx: number): string[] {
+  if (freiBreitePx <= 0) return [];
+  const woerter = text.split(" ").filter((w) => w.length > 0);
+  const zeilen: string[] = [];
+  let laufend = "";
+  for (const wort of woerter) {
+    const kandidat = laufend ? `${laufend} ${wort}` : wort;
+    if (masse(kandidat) <= freiBreitePx) {
+      laufend = kandidat;
+      continue;
+    }
+    if (laufend) {
+      zeilen.push(laufend);
+      laufend = "";
+      // Dasselbe Wort noch einmal, jetzt am Zeilenanfang.
+      if (masse(wort) <= freiBreitePx) { laufend = wort; continue; }
+      zeilen.push(satzKuerzen(wort, masse, freiBreitePx));
+      continue;
+    }
+    const gekuerzt = satzKuerzen(wort, masse, freiBreitePx);
+    if (gekuerzt) zeilen.push(gekuerzt);
+  }
+  if (laufend) zeilen.push(laufend);
+  return zeilen.filter((z) => z.length > 0);
+}
+
+/**
+ * Die erste Zeile, die im Bild liegt und vor dem Kasten Halt macht.
+ *
+ * Die Flucht ging bisher nur **abwaerts** (`KnowledgeGraph.tsx:4080`) und brach an
+ * der unteren Bildkante ab — aber der Legendenkasten sitzt am unteren Rand. Eine
+ * Zeilengruppe, die dort nicht paesst, muss deshalb nach **oben** ausweichen
+ * koennen. Probierfolge: erst die gedachte Stelle, dann ein Schritt hoch, dann
+ * runter, bis vier Schritte ausgewaehlt sind. `zusatz` ist die letzte Schwelle: das
+ * Belegungsraster der Etiketten, das ein reiner Ort nicht kennt.
+ */
+export function zeilenFlucht(
+  capY0: number,
+  schritt: number,
+  blokHoehe: number,
+  kastenOben: number,
+  bildHoehe: number,
+  maxSchritte = 4,
+  zusatz: (y: number) => boolean = () => true
+): number | null {
+  const boden = Math.min(kastenOben, bildHoehe) - KANTEN_RAND_PX;
+  for (let s = 0; s <= maxSchritte; s++) {
+    for (const richtung of s === 0 ? [0] : [-1, 1]) {
+      const y = capY0 + richtung * s * schritt;
+      if (y >= 0 && y + blokHoehe <= boden && zusatz(y)) return y;
+    }
+  }
+  return null;
+}
+
+
+/**
  * #17 — wie viele Zeichen ein Gang-Titel bei diesem Zoom tragen darf.
  *
  * Die Reihe steht in WELTeinheiten (`GANG_ABSTAND`) und schrumpft mit dem Zoom,
