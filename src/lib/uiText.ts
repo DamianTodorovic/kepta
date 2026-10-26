@@ -97,12 +97,17 @@ export function getZoomProzent(): number {
  *  zoom das Blatt ueber den Viewport hinweg - gemessen scrollWidth 1656 bei 115 %
  *  und 1872 bei 130 % auf 1440 px Fenster, also +216 px und +432 px seitlicher
  *  Ueberlauf. Der Leib bekommt darum die Gegenbreite 100% / Skala: die Schrift
- *  bleibt gleich gross, der Text schlaegt um, statt seitlich zu ueberlaufen. */
+ *  bleibt gleich gross, der Text schlaegt um, statt seitlich zu ueberlaufen.
+ *  Punkt 107, zweite Haelfte (26.10., Blatt p4-107-elementkante-2610.md): dasselbe
+ *  gilt fuer die Hoehenachse. Ohne Gegenhohe war scrollHeight 1035 bei 115 % und
+ *  1170 bei 130 % in einem 900-px-Fenster - gemessen an 3.2.61 um 16:27:37 MEZ -
+ *  und der untere Block stand unter der Kante. */
 export function wendeZoomAn(): void {
   const z = getZoom();
   const stil = document.body.style as CSSStyleDeclaration & { zoom?: string };
-  if (z === 100) { stil.zoom = ""; stil.width = ""; return; }
+  if (z === 100) { stil.zoom = ""; stil.width = ""; stil.height = ""; return; }
   const skala = String(z / 100);
   stil.zoom = skala;
   stil.width = `calc(100% / ${skala})`;
+  stil.height = `calc(100% / ${skala})`;
 }

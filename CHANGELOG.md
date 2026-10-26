@@ -16,6 +16,22 @@
   stand list stays, and the warning says plainly "Restore failed. Nothing was changed." - no
   half-written note, no silent success.
 
+### Fixed
+
+- **The core marker says why it is off.** The number beside the core counted what is inside the
+  picture, not what the concept holds - and below eight visible nodes it simply disappeared, with no
+  word and no state to explain the silence. It now names its reason: when most of the core is out of
+  view, the legend reads "The core is mostly outside this picture - N of its nodes are in view, and
+  8 are needed to count it as one"; when nothing of it is in view, it says so without inventing a
+  count. Above the zoom where a marker was never the mechanism, it stays quiet, because nothing was
+  switched off there.
+- **Nothing hangs over the edge at large text on a phone.** Four controls still reached past the
+  right window edge at 390 px and 130 % (+56.2, +56.2, +49.2 and +9.9 px, measured on the shipped
+  build), because five nested boxes spent 164 of the 213 available pixels on their own padding and a
+  URL refused to shrink. The boxes now give their child a real width on both axes, the URL breaks
+  where a URL may break, and the switch moves to its own line below 640 px rather than being pushed
+  out of sight - and no `overflow-hidden` hides what was not fixed.
+
 ## [3.2.61]
 
 ### Added

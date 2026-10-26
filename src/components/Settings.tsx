@@ -604,7 +604,7 @@ export function Settings() {
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
-        className="hud-panel rounded-2xl p-6 md:p-8"
+        className="hud-panel rounded-2xl p-4 sm:p-6 md:p-8"
       >
         <div className="flex items-center gap-4 mb-6 pb-6" style={{ borderBottom: '1px solid var(--border-subtle)' }}>
           <KeptaMark size={40} />
@@ -867,13 +867,13 @@ export function Settings() {
             </form>
 
             <div className="pt-8 space-y-6" style={{ borderTop: '1px solid var(--border-subtle)' }}>
-              <div className="rounded-xl p-4" style={{ background: 'var(--bg-inset)', border: '1px solid var(--border-subtle)' }}>
-                <div className="flex items-center justify-between gap-4">
-                  <div className="flex items-center gap-3">
+              <div className="rounded-xl p-3 sm:p-4" style={{ background: 'var(--bg-inset)', border: '1px solid var(--border-subtle)' }}>
+                <div className="flex flex-wrap items-center justify-between gap-4">
+                  <div className="flex min-w-0 items-center gap-3">
                     <div className="w-9 h-9 rounded-lg flex items-center justify-center" style={{ background: autoLearn ? 'var(--accent-soft)' : 'var(--bg-inset-strong)', border: '1px solid var(--border-subtle)' }}>
                       <Sparkles className="w-4 h-4" style={{ color: autoLearn ? 'var(--accent)' : 'var(--text-3)' }} />
                     </div>
-                    <div>
+                    <div className="min-w-0 break-words">
                       <div className="text-sm font-semibold" style={{color:'var(--text-1)'}}>Learn automatically</div>
                       <div className="text-xs" style={{color:'var(--text-2)'}}>Save the key point of every chat answer as an entry (tagged <code>auto-learn</code>). Duplicates are detected.</div>
                     </div>

@@ -182,7 +182,7 @@ export function SystemStatus() {
   const coverage = health && health.embeddings.total > 0 ? Math.round((health.embeddings.embedded / health.embeddings.total) * 100) : 0;
 
   return (
-    <div className="rounded-2xl p-5" style={{ border: '1px solid var(--border-subtle)', background: 'var(--bg-inset)' }}>
+    <div className="rounded-2xl p-3 sm:p-5" style={{ border: '1px solid var(--border-subtle)', background: 'var(--bg-inset)' }}>
       <div className="flex items-center justify-between mb-2">
         <div>
           <h3 className="text-base font-semibold" style={{ color: 'var(--text-1)' }}>System status</h3>
@@ -269,7 +269,7 @@ export function SystemStatus() {
         )}
       </div>
 
-      <div className="mt-4 rounded-xl p-3" style={{ background: 'var(--bg-panel-solid)', border: '1px dashed var(--border-subtle)' }}>
+      <div className="mt-4 rounded-xl p-2 sm:p-3" style={{ background: 'var(--bg-panel-solid)', border: '1px dashed var(--border-subtle)' }}>
         <div className="flex items-center justify-between gap-3">
           <div className="min-w-0">
             <div className="text-xs font-semibold" style={{ color: 'var(--text-1)' }}>Your brain for Claude Desktop and Cursor</div>
@@ -281,7 +281,7 @@ export function SystemStatus() {
           </button>
         </div>
         <div className="text-xs mt-1.5 flex flex-wrap items-center gap-x-1.5" style={{ color: 'var(--text-2)' }}>
-          <span>Or HTTP: <code>POST {typeof window !== 'undefined' ? window.location.origin : ''}/mcp</code> (JSON-RPC, protocol 2026-07-28)</span>
+          <span className="min-w-0">Or HTTP: <code className="break-all">POST {typeof window !== 'undefined' ? window.location.origin : ''}/mcp</code> (JSON-RPC, protocol 2026-07-28)</span>
           <button onClick={() => copy('url', `${typeof window !== 'undefined' ? window.location.origin : ''}/mcp`)} className="min-h-6 px-1 inline-flex items-center underline" style={{ color: 'var(--accent)' }}>copy</button>
         </div>
       </div>

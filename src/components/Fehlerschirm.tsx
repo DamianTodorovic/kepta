@@ -48,7 +48,7 @@ export class Fehlerschirm extends Component<{ children: ReactNode }, Zustand> {
       <div
         data-testid="fehlerschirm"
         role="alert"
-        className="min-h-screen w-full flex flex-col items-center justify-center text-center px-6"
+        className="min-h-full w-full flex flex-col items-center justify-center text-center px-6"
         style={{ background: "var(--bg-base)", color: "var(--text-1)" }}
       >
         <p className="hud-label mb-2" style={{ color: "var(--text-3)" }}>Something broke on this screen</p>

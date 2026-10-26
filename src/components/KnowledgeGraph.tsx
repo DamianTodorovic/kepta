@@ -1092,10 +1092,18 @@ export function markeKippt(dotYGenau: number, schriftPx = KERN_MARKE_SCHRIFT_PX)
   return dotYGenau - KERN_MARKE_RADIUS_PX < schriftPx + 3;
 }
 
+/**
+ * #105 - wie viele Knoten im Bild sein muessen, damit der Kern als eine Zahl
+ * steht. Unter dieser Zahl verschwand die Marke lautlos: kein Wort, kein Feld,
+ * nur eine Zahl weniger auf dem Schirm. Sie heisst jetzt einen Zustand.
+ */
+export const KERN_MARKE_MIN_KNOTEN = 8;
+export type KernMarkeGrund = "marke" | "zuwenig" | "leer" | "blende";
+
 export function kernMarke(
   k: number,
   knoten: { x: number; y: number }[]
-): { marke: boolean; wx: number; wy: number; zahl: number } {
+): { marke: boolean; grund: KernMarkeGrund; wx: number; wy: number; zahl: number } {
   let x0 = Infinity;
   let y0 = Infinity;
   let x1 = -Infinity;
@@ -1106,8 +1114,26 @@ export function kernMarke(
     if (n.y < y0) y0 = n.y;
     if (n.y > y1) y1 = n.y;
   }
-  const marke = k <= KERN_MARKE_AB_ZOOM && knoten.length >= 8;
-  return { marke, wx: (x0 + x1) / 2, wy: (y0 + y1) / 2, zahl: knoten.length };
+  const zahl = knoten.length;
+  // "blende" zuerst: oberhalb der Marke ist die Marke nicht der Mechanismus,
+  // dann ist ein leerer Ausschnitt keine Abschaltung, sondern die Regel.
+  const grund: KernMarkeGrund =
+    k > KERN_MARKE_AB_ZOOM
+      ? "blende"
+      : zahl === 0
+        ? "leer"
+        : zahl >= KERN_MARKE_MIN_KNOTEN
+          ? "marke"
+          : "zuwenig";
+  // Ohne Knoten gibt es keine Mitte: (Infinity + -Infinity) / 2 ist NaN, und ein
+  // NaN wandert durch die Rechung, ohne dass jemand ihn sieht.
+  return {
+    marke: grund === "marke",
+    grund,
+    wx: zahl === 0 ? 0 : (x0 + x1) / 2,
+    wy: zahl === 0 ? 0 : (y0 + y1) / 2,
+    zahl,
+  };
 }
 /**
  * Ab dieser Strecke gilt eine Geste als Ziehen und nicht mehr als Klick.
@@ -2082,8 +2108,8 @@ export function KnowledgeGraph({ memories: memoriesAusFenster, onSelectMemory, o
   const transformRef = useRef<Transform>({ x: 0, y: 0, k: 1 });
   const [zoomAnzeige, setZoomAnzeige] = useState(1);
   /** Die Marken-Zahl des LETZTEN Bildes — Malweg und DOM lesen denselben Stand. */
-  const [kernStand, setKernStand] = useState<{ marke: boolean; zahl: number } | null>(null);
-  const kernStandRef = useRef<{ marke: boolean; zahl: number } | null>(null);
+  const [kernStand, setKernStand] = useState<{ marke: boolean; grund: KernMarkeGrund; zahl: number } | null>(null);
+  const kernStandRef = useRef<{ marke: boolean; grund: KernMarkeGrund; zahl: number } | null>(null);
   // Die Zeigerform hing vorher an Refs — die loesen kein Rendern aus, also blieb
   // der Cursor beim Ziehen unveraendert und die Geste fuehlte sich tot an.
   const [greift, setGreift] = useState(false);
@@ -3340,9 +3366,9 @@ export function KnowledgeGraph({ memories: memoriesAusFenster, onSelectMemory, o
     let gangZaehler = 0;
     const kernInhalt = sim.nodes.filter((n) => !sim.gangIds?.has(n.id) && imBild(n));
     const kernMarkeBild = kernMarke(t.k, kernInhalt);
-    const kernNeu = { marke: kernMarkeBild.marke, zahl: kernMarkeBild.zahl };
+    const kernNeu = { marke: kernMarkeBild.marke, grund: kernMarkeBild.grund, zahl: kernMarkeBild.zahl };
     const kernAlt = kernStandRef.current;
-    if (!kernAlt || kernAlt.marke !== kernNeu.marke || kernAlt.zahl !== kernNeu.zahl) {
+    if (!kernAlt || kernAlt.marke !== kernNeu.marke || kernAlt.grund !== kernNeu.grund || kernAlt.zahl !== kernNeu.zahl) {
       kernStandRef.current = kernNeu;
       setKernStand(kernNeu);
     }
@@ -3596,6 +3622,11 @@ export function KnowledgeGraph({ memories: memoriesAusFenster, onSelectMemory, o
       // Lage behaupten, die kein Mensch sieht.
       delete ctx.canvas.dataset.kernMarke;
     }
+    // #105 - der Zustand wohnt in einem eignen Feld, nicht im Rechteck: das
+    // Rechteck darf nur dann da sein, wenn etwas gemalt ist (gelieferter Fall
+    // `kernmarke-lage.test.tsx`, zweiter), der Grund aber muss auch dann lesbar
+    // bleiben, wenn nichts gemalt wird.
+    ctx.canvas.dataset.kernGrund = kernMarkeBild.grund;
 
     // --- Gerüst-Knoten: im Baum Wurzel/Typen/Entitäten, im Feld die Konzepte ---
     // Sie haben keine Memory — der Knoten-Durchgang oben ueberspringt sie, sie
@@ -5410,7 +5441,11 @@ export function KnowledgeGraph({ memories: memoriesAusFenster, onSelectMemory, o
               })()
               + (kernStand && kernStand.marke
                 ? ` · ${kernStand.zahl.toLocaleString("en-US")} core as one marker`
-                : "")
+                : kernStand && kernStand.grund === "zuwenig"
+                  ? ` · core marker off: too few core nodes in this picture (${kernStand.zahl.toLocaleString("en-US")} of ${KERN_MARKE_MIN_KNOTEN})`
+                  : kernStand && kernStand.grund === "leer"
+                    ? " · core marker off: no core node inside this picture"
+                    : "")
             : ""}
         </p>
         {gangInfo && gangInfo.seiten > 1 && (
@@ -5723,6 +5758,24 @@ export function KnowledgeGraph({ memories: memoriesAusFenster, onSelectMemory, o
           {nurMitVerbindungen && grundMasse.alleinVersteckt > 0 && (
             <div className="hud-label tnum" data-testid="graph-versteckt-allein" data-anzahl={grundMasse.alleinVersteckt} style={{ color: "var(--text-2)" }}>
               {`${mengenzahl(grundMasse.alleinVersteckt)} notes with no connection are hidden by “Only with connections”.`}
+            </div>
+          )}
+          {/* #105 - unter acht Knoten im Bild verschwand die Zahl bisher lautlos.
+              Ein Grund, der nur im Zustandsfeld steht, ist fuer eine sehende Person
+              kein Grund: die Flaeche sagt es an der Legende, in demselben Ton wie
+              die zwei Zeilen ueber ihr. Bei "blende" schweigt sie - dort ist die
+              Marke nicht abgeschaltet, sie ist nie der Mechanismus. Die zwei neuen
+              Worte halten sich in ihrer Zeichensetzung ASCII, damit ein spaeterer
+              Marke-Griff ueber das latin1-gelesene Bundel sie zaehlen kann (der
+              Objektpruefer bricht mit Exit 2 an einem Marker mit Nicht-ASCII). */}
+          {kernStand && kernStand.grund === "zuwenig" && (
+            <div className="hud-label tnum" data-testid="graph-kern-zustand" data-grund={kernStand.grund} data-anzahl={kernStand.zahl} style={{ color: "var(--text-2)" }}>
+              {`The core is mostly outside this picture - ${mengenzahl(kernStand.zahl)} of its nodes are in view, and ${mengenzahl(KERN_MARKE_MIN_KNOTEN)} are needed to count it as one.`}
+            </div>
+          )}
+          {kernStand && kernStand.grund === "leer" && (
+            <div className="hud-label" data-testid="graph-kern-zustand" data-grund={kernStand.grund} style={{ color: "var(--text-2)" }}>
+              {`No node of the core is inside this picture - the number is off because nothing of it is here, not because the core is small. Pan or zoom out to bring it back.`}
             </div>
           )}
           <div className="hud-label tnum" data-testid="graph-kopf">

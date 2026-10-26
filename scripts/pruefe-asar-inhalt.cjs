@@ -363,6 +363,17 @@ const erwartet = [
   ["preview-stand-restore", 1],
   ["Restore this stand", 1],
   ["Restore failed. Nothing was changed.", 1],
+  // Punkt 105 und 107, gelegt 26.10. gegen Kopf `783a6c8`. **Alle fuenf Worte standen im
+  // ausgelieferten 3.2.61 genau 0 mal**, gemessen 19:23:30 und 19:23:41 gegen dasselbe
+  // 49 126 944 B grosse Objekt mit derselben latin1-Zaehlung wie hier. **Zwei Kandidaten
+  // fielen vorher durch meine eigne Messung:** `h-full overflow-y-auto` steht schon 5 mal
+  // drin (waere gruen von selbst), und `Settings-elementkante` ist ein Testdateiname —
+  // Tests werden nicht mitverpackt, die Marke waere dauerhaft 0 und jede Landung verloren.
+  ["The core is mostly outside this picture", 1],
+  ["No node of the core is inside this picture", 1],
+  ["graph-kern-zustand", 1],
+  ["min-w-0 break-words", 1],
+  ["rounded-2xl p-3 sm:p-5", 1],
 ];
 // Die Liste darf nur ASCII-Zeichen enthalten. Grund, gemessen 21.10. 19:16 MESZ am
 // installierten Objekt: das Wort "Looking" plus echtes U+2026 steht dort 2 mal, diese

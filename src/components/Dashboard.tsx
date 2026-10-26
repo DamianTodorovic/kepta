@@ -2146,7 +2146,7 @@ export function Dashboard() {
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
-          className={cn("flex-1 p-5 h-full overflow-y-auto", currentView === 'settings' ? 'block' : 'hidden')}
+          className={cn("flex-1 p-3 sm:p-5 h-full overflow-y-auto", currentView === 'settings' ? 'block' : 'hidden')}
         >
           <Settings />
         </motion.div>
