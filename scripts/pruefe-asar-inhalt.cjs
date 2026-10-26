@@ -338,6 +338,21 @@ const erwartet = [
   // diese Liste kennt nur Untergrenzen, eine Kappe auf 0 waere eine zweite Klasse von Pruefung.
   ["calc(100% / ", 1],
   ["relative h-screen w-full overflow-hidden", 1],
+  // 3.2.61, Punkt 5s #96 (Koerper p5-ac-farbsteuer-ankunft-99c15b8.patch, zwei Dateien,
+  // von der Bau-Runde 15:27:48 MEZ gelegt, Zeile 157 des Flicken-Blatts). Drei Marken, weil
+  // dieser Koerper drei verschiedene Dinge schreibt: die Kennung des neuen Knotens, den Satz
+  // den er malt, und den Namen den das Steuer traegt.
+  // Gegenprobe VOR dem Tausch, eigne Zaehlung ueber latin1-Bytes um 15:48:19 MEZ am
+  // ausgelieferten 3.2.60 (/Applications/K3PTA.app/Contents/Resources/app.asar, 49 126 415 B,
+  // mtime 15:11:25 MEZ): alle drei **0**. Zum Vergleich dieselbe Sonde auf dem gemeinsamen
+  // Vorlauf `graph-farbgruppe`: **2** Treffer (die Stand- und die Basis-Kennung), also ist
+  // nur die volle Kette `graph-farbgruppe-bild` eine Unterscheidung, nicht ihr Stamm.
+  // Kein Marker fuer die vier Kennungen des Koerpers (`gruppenAnkunftRef`, `gruppenAnzahlRef`,
+  // `strengImRahmen`, `gruppenAnkunft`): Kennungen verbiegt der Minifier, eine Pruefung darauf
+  // kann nie schlagen.
+  ["graph-farbgruppe-bild", 1],
+  ["groups arrive in this picture", 1],
+  ["colour by group", 1],
 ];
 // Die Liste darf nur ASCII-Zeichen enthalten. Grund, gemessen 21.10. 19:16 MESZ am
 // installierten Objekt: das Wort "Looking" plus echtes U+2026 steht dort 2 mal, diese

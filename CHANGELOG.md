@@ -1,3 +1,23 @@
+## [3.2.61]
+
+### Added
+
+- **The colour control now says what arrives in the picture, not only what its rule promises.**
+  Switching "colour by group" on reported a state (`aria-pressed`) and a heading about axes, while
+  the field could still be carrying one group's colour even though the model knows two: a pressed
+  button describes a rule, not a result. Next to the control the graph now reads
+  **"N of M groups arrive in this picture"**, and the number comes from the paint pass itself -
+  a group only arrives when one of its nodes is actually painted and stands with its full extent
+  inside the frame, so a group that merely holds members in the base counts as zero and a field
+  scrolled past its own edge reports the drop. The line stays silent while the colour channel is
+  off, because "nothing arrived" would be an answer to a question nobody asked. The control also
+  carries its own name (`colour by group`) instead of borrowing an axis question, so a pointer and
+  a screen reader both land on the same word. Four cases hold this together
+  (`tests/components/KnowledgeGraph.farbgruppe-ankunft.test.tsx`): the name is on the surface and
+  the click hits it, state and arrival are reported in the same breath, a group that paints
+  nothing is not counted, and the number follows the frame rather than the node count. Free, no
+  key, no upgrade panel - the same rule the rest of the app keeps.
+
 ## [3.2.60]
 
 ### Fixed

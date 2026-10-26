@@ -88,7 +88,6 @@ import {
   gruppenFarbeSetzen,
   achseFuerMenschen,
   achsenSatz,
-  ACHSEN,
   gemalteZahlen,
 } from "../lib/gruppen";
 import { KAPPE_PANEL } from "../lib/kappe";
@@ -1365,6 +1364,14 @@ export function KnowledgeGraph({ memories: memoriesAusFenster, onSelectMemory, o
   const zustandRef = useRef<HTMLDivElement | null>(null);
   /** Die Zeile am Rand, die sagt, wie viele entfaltete Notizen im Bild stehen. */
   const imRahmenRef = useRef<HTMLDivElement | null>(null);
+  /**
+   * #96 - die Zeile neben dem Farb-Steuer: wie viele Gruppen in DIESEM Bild ankommen. Der
+   * Mal-Pass schreibt sie, weil der gedruckte Zustand des Steuerers nur die Regel meldet; ohne
+   * diese Zahl kann der Knopf "true" sagen und das Bild traegt eine Gruppe statt zwei.
+   */
+  const gruppenAnkunftRef = useRef<HTMLSpanElement | null>(null);
+  /** Wie viele Gruppen das Modell setzt - gespiegelt, damit der Mal-Pass nicht auf Zustand wartet. */
+  const gruppenAnzahlRef = useRef(0);
   /** Wie viele Notizen im Bild stehen — gespiegelt, damit der Mal-Pass nicht auf Zustand wartet. */
   const imBildRef = useRef(0);
   /** Wie viele Knoten der Nutzer festgesetzt hat — nur fuer die Anzeige. */
@@ -2268,6 +2275,8 @@ export function KnowledgeGraph({ memories: memoriesAusFenster, onSelectMemory, o
     [baumMemories, farbgruppen]
   );
   gruppenBildRef.current = gruppenZuordnung;
+  /** #96 - der Nenner der Ankunft-Zeile ist dieselbe Zahl, die das Regal in seinen Reihen nennt. */
+  gruppenAnzahlRef.current = farbgruppen.gruppen.length;
   /**
    * Die Buchstaben aller Gruppen — **ein Aufruf ueber das ganze Modell**, nicht je Knoten.
    * #89: erst hier, mit allen Marken im Blick, kann die Regel eindeutig werden (`MD`, `TO`).
@@ -3316,6 +3325,8 @@ export function KnowledgeGraph({ memories: memoriesAusFenster, onSelectMemory, o
     let imRahmenNoten = 0;
     /** Wie viele davon mit ihrer gemalten Ausdehnung im Rahmen stehen — die Zahl der Rahmen-Zeile. */
     let imStrengeNoten = 0;
+    /** #96 - die Marken, deren Knoten in DIESEM Bild ankommen: gemalt und streng im Rahmen. */
+    const gruppenAnkunft = new Set<string>();
     // Die drei Zeichen, die einen Stand in der Zeit tragen: der gestrichelte
     // Ring, die leisere Tinte, der Akzentring. A8-05 zahlte sie vor — sie
     // kommen in der Legende nicht vor, und genau sie entscheiden, ob ein
@@ -3379,11 +3390,16 @@ export function KnowledgeGraph({ memories: memoriesAusFenster, onSelectMemory, o
       // Die Rahmen-Auskunft zählt streng: nur was mit seiner gemalten Ausdehnung
       // im Rahmen steht, gilt als „in this picture". Der Umfang der Titel-Bilanz
       // bleibt die Maleihe — beide Zeilen müssen aus derselben Menge rechnen.
-      if (imRahmen(n, rr)) imStrengeNoten += 1;
+      const strengImRahmen = imRahmen(n, rr);
+      if (strengImRahmen) imStrengeNoten += 1;
       const herkunftArt = aktiverKanalRef.current === "herkunft" ? herkunftRef.current.get(n.id) : undefined;
       // Gruppen-Kanal: die Marke des Knotens, sonst das neutrale Register — nicht die
       // Art-Farbe, sonst malte ein halber Kanal zwei Systeme uebereinander.
       const gruppenArt = aktiverKanalRef.current === "gruppe" ? (gruppenBildRef.current.get(n.id) ?? "neutral") : undefined;
+      // #96 - "ankommen" heisst: dieser Knoten wird gemalt, steht mit seiner vollen Ausdehnung
+      // im Rahmen, und traegt eine Gruppenfarbe. Eine Gruppe ohne solchen Knoten kommt nicht an,
+      // egal wie viele Mitglieder ihr Modell nennt.
+      if (strengImRahmen && gruppenArt !== undefined && gruppenArt !== "neutral") gruppenAnkunft.add(gruppenArt);
       const typ = herkunftArt ?? gruppenArt ?? (m.type && sp[m.type] ? m.type : "neutral");
       const farbe = notenFarbenRef.current[typ];
 
@@ -4115,6 +4131,20 @@ export function KnowledgeGraph({ memories: memoriesAusFenster, onSelectMemory, o
         if (rahmenZeile.textContent !== meldung) rahmenZeile.textContent = meldung;
         const anzeige = meldung === "" ? "none" : "";
         if (rahmenZeile.style.display !== anzeige) rahmenZeile.style.display = anzeige;
+      }
+      // #96 - der Stand neben dem Steuer sagt Mitgliedschaft im Bestand. Diese Zeile sagt, was
+      // im Bild ankommt, und sie schweigt, solange der Gruppen-Kanal aus ist: nichts ankommen
+      // zu melden, waehrend der Knopf auf "aus" steht, waere eine Zahl ohne Frage.
+      const ankunftZeile = gruppenAnkunftRef.current;
+      if (ankunftZeile) {
+        const anzahl = gruppenAnzahlRef.current;
+        const kanalAn = aktiverKanalRef.current === "gruppe";
+        const meldung = !kanalAn || anzahl === 0
+          ? ""
+          : `${mengenzahl(gruppenAnkunft.size)} of ${mengenzahl(anzahl)} groups arrive in this picture`;
+        if (ankunftZeile.textContent !== meldung) ankunftZeile.textContent = meldung;
+        const anzeige = meldung === "" ? "none" : "";
+        if (ankunftZeile.style.display !== anzeige) ankunftZeile.style.display = anzeige;
       }
     }
 
@@ -5832,7 +5862,7 @@ export function KnowledgeGraph({ memories: memoriesAusFenster, onSelectMemory, o
               }
             >
               {punkt(aktiverKanal === "gruppe")}
-              {ACHSEN.find((a) => a.id === "arbeit")?.frage ?? "Groups"}
+              {"colour by group"}
             </button>
             <span
               className="hud-label tnum"
@@ -5841,6 +5871,14 @@ export function KnowledgeGraph({ memories: memoriesAusFenster, onSelectMemory, o
             >
               {achsenSatz(achsen, farbgruppen)}
             </span>
+            {/* #96 - die Wirkung des Steuerers, nicht seine Regel: wie viele der gesetzten
+                Gruppen in diesem Bild ankommen. Der Mal-Pass schreibt die Zahl, Bild fuer Bild. */}
+            <span
+              className="hud-label tnum"
+              data-testid="graph-farbgruppe-bild"
+              ref={gruppenAnkunftRef}
+              style={{ color: "var(--text-3)", pointerEvents: "none", display: "none" }}
+            />
           </div>
           {regal && <GraphRegal regal={regal} ansichtsName={ansicht === "dendrogram" ? "the tree" : "the field"} gruppen={farbgruppen} achsen={achsen} steuerung={gruppenSteuerung} gemalt={gemalt} />}
           {/* Die Griffe erklaert die Flaeche schon an den Werkzeugen selbst; auf dem
