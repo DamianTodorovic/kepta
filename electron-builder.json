@@ -39,6 +39,16 @@
     "deleteAppDataOnUninstall": false
   },
   "asar": true,
+  "extraResources": [
+    {
+      "from": "LICENSE",
+      "to": "LICENSE"
+    },
+    {
+      "from": "THIRD-PARTY-NOTICES.txt",
+      "to": "THIRD-PARTY-NOTICES.txt"
+    }
+  ],
   "files": [
     "dist/**/*",
     "!**/*.map",
