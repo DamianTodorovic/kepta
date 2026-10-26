@@ -13,16 +13,19 @@
 // anything must not come from another website. The app window, local dev
 // servers, AI apps over MCP and scripts (which send no Origin) keep working.
 import type { RequestHandler } from "express";
+import { istDieserRechner } from "./lokalhost";
 
 const LESEND = new Set(["GET", "HEAD", "OPTIONS"]);
 
-/** localhost, *.localhost, 127.0.0.0/8 and [::1] — with or without a port. */
+/**
+ * localhost, *.localhost, 127.0.0.0/8 and [::1] - with or without a port.
+ * The list lives in src/lib/lokalhost.ts since 25.10. (Punkt 103): the chat policy carried its
+ * own copy, and the two disagreed on 127.0.0.2 and *.localhost.
+ */
 export function hostIstDieserRechner(host: string | undefined): boolean {
   // Browsers always send a Host header; a request without one is not a browser.
   if (!host) return true;
-  const h = host.trim().toLowerCase();
-  const name = h.startsWith("[") ? h.slice(0, h.indexOf("]") + 1) : h.replace(/:\d+$/, "");
-  return name === "localhost" || name.endsWith(".localhost") || /^127(\.\d{1,3}){3}$/.test(name) || name === "[::1]";
+  return istDieserRechner(host);
 }
 
 /**

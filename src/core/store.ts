@@ -645,6 +645,37 @@ export class KeptaStore {
     return map;
   }
 
+  /**
+   * Macht einen Stand wieder zur aktuellen Fassung (BAU-P3-11, dritter Koerper).
+   * Ein Umschlag, drei Schritte: (1) den Text, der ersetzt wird, als neuen Stand sichern,
+   * (2) die Policy fragen, (3) schreiben. Faellt (2) oder (3), rollt (1) mit zurueck -
+   * ein Stand fuer eine Aenderung, die nie kam, waere ein halber Zustand.
+   */
+  restoreStand(memoryId: string, standId: number): MemoryRecord | null {
+    const row = this.getRow(memoryId);
+    if (!row) return null;
+    const stand = this.db
+      .prepare("SELECT title, content FROM memory_stande WHERE id = ? AND memory_id = ?")
+      .get(standId, memoryId) as { title: string; content: string } | undefined;
+    if (!stand) return null;
+    const jetzt = Date.now();
+    this.db.transaction(() => {
+      this.db
+        .prepare("INSERT INTO memory_stande (memory_id, title, content, created_at) VALUES (?, ?, ?, ?)")
+        .run(memoryId, String(row.title), String(row.content), jetzt);
+      if (!this.extensions.policy.canWrite(this.actor(), { id: memoryId, scope: String(row.scope), type: String(row.type) })) {
+        throw new Error("Write denied (PolicyGate)");
+      }
+      this.db
+        .prepare("UPDATE memories SET title = ?, content = ?, updated_at = ? WHERE id = ?")
+        .run(stand.title, stand.content, jetzt, memoryId);
+      this.db.prepare("DELETE FROM chunks WHERE memory_id = ?").run(memoryId);
+    })();
+    this.audit("update", memoryId);
+    this.meldeMemorie(memoryId);
+    return this.getMemory(memoryId);
+  }
+
   /** Die Staende EINER Notiz, neueste zuerst (BAU-P3-11, gratis, ohne Schluessel). */
   listStande(
     memoryId: string,

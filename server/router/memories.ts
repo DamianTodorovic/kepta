@@ -255,6 +255,27 @@ export function mountMemories(app: express.Express, ctx: AppKontext): void {
   // Standfolge (BAU-P3-11, zweiter Schritt): die Texte VOR den Aenderungen einer Notiz,
   // neueste zuerst, mit derselben Seiten-Kappe wie die Liste. Gratis-Stufe: kein Schluessel,
   // keine Fahne, kein Bezahlwort - der Leseweg gehoert jeder Installation.
+  // Wiederherstellen (BAU-P3-11, dritter Koerper): ein Stand wird die aktuelle Fassung.
+  // Zwei Schritte - ohne confirm:"restore" wird nichts geschrieben. Gratis: kein Schluessel.
+  // Der ersetzte Text wird im Store VORHER als Stand gesichert; die Antwort nennt die neue Zahl.
+  app.post("/api/memories/:id/stande/:standId/restore", ctx.limiter.write, (req, res) => {
+    const id = String(req.params.id || "");
+    if (!istGueltigeId(id)) return res.status(400).json({ error: "Invalid id" });
+    const standId = Number.parseInt(String(req.params.standId || ""), 10);
+    if (!Number.isInteger(standId) || standId <= 0) return res.status(400).json({ error: "Invalid stand id" });
+    const body = bodyOf<{ confirm?: string }>(req);
+    if (!body || body.confirm !== "restore") {
+      return res.status(400).json({ error: 'confirm: "restore" is required - nothing was written' });
+    }
+    const updated = store.restoreStand(id, standId);
+    if (!updated) return res.status(404).json({ error: "Node or stand not found" });
+    indexMemory(store, updated.id);
+    store.verknuepfeNotiz(updated.id, updated.title, extractWikiLinks(`${updated.title} ${updated.content}`));
+    ctx.publishActivity({ type: "update", source: "app", title: updated.title });
+    const { total } = store.listStande(id, { limit: 1 });
+    return res.json({ ok: true, memory: toApi(updated), restoredFrom: standId, total });
+  });
+
   app.get("/api/memories/:id/stande", (req, res) => {
     const id = String(req.params.id);
     if (!istGueltigeId(id)) return res.status(400).json({ error: "Invalid id" });

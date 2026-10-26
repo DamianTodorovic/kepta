@@ -18,6 +18,7 @@
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
+import { istLokaleUrl } from "./lokalhost";
 
 export interface VerwalteteEinstellungen {
   /** Zentrale Richtlinien: Schlüssel → Zielzustand. */
@@ -130,11 +131,8 @@ export function richtlinie(schluessel: "chat_cloud" | "machine_scan" | "privacy_
  * chat_cloud=deny erlaubt genau diese — die Daten verlassen das Haus nicht.
  */
 export function istLokalerHost(url: string | undefined | null): boolean {
-  if (!url) return true; // ohne URL gibt es keinen fremden Host (Standard-Ollama läuft lokal)
-  try {
-    const host = new URL(url).hostname;
-    return host === "localhost" || host === "127.0.0.1" || host === "::1" || host === "[::1]" || host.endsWith(".local");
-  } catch {
-    return false;
-  }
+  // Ein Kriterium seit 25.10. (Punkt 103): die Liste steht in src/lib/lokalhost.ts, damit
+  // Host-Waechter und Chat-Richtlinie nicht mehr auseinanderlaufen (127.0.0.2 war hier
+  // "Ausland", dort "dieser Rechner"). Keine URL = kein fremder Host, wie bisher.
+  return istLokaleUrl(url);
 }

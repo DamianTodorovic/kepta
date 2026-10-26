@@ -1083,6 +1083,16 @@ export const KERN_MARKE_AB_ZOOM = 0.05;
 export const KERN_MARKE_RADIUS_PX = 4;
 export const KERN_MARKE_SCHRIFT_PX = 11;
 
+/**
+ * Die Randklemme: ueber dem Punkt ist weniger Platz als Schrift plus 3 px -
+ * dann kippt die Zahl UNTER den Punkt. Der Wert ist UNGERUNDET, so wie ihn der
+ * Malweg sieht (wy * k + t.y); eine gerundete 18 fuer 17,6 wuerde die Kante
+ * um einen halben Bildpunkt verfehlen.
+ */
+export function markeKippt(dotYGenau: number, schriftPx = KERN_MARKE_SCHRIFT_PX): boolean {
+  return dotYGenau - KERN_MARKE_RADIUS_PX < schriftPx + 3;
+}
+
 export function kernMarke(
   k: number,
   knoten: { x: number; y: number }[]
@@ -3538,9 +3548,13 @@ export function KnowledgeGraph({ memories: memoriesAusFenster, onSelectMemory, o
       // Die Zahl steht UEBER dem Punkt, nicht daneben: bei 390 x 844 liegt die
       // Legenden-Karte unten im Bild und schnitt die Marke an (#88, 12:58:14).
       ctx.textAlign = "center";
-      ctx.textBaseline = "bottom";
+      const dotYGenau = kernMarkeBild.wy * t.k + t.y;
+      const kippt = markeKippt(dotYGenau);
+      ctx.textBaseline = kippt ? "top" : "bottom";
       const labelBreite = ctx.measureText(markeText).width;
-      const labelY = kernMarkeBild.wy - (KERN_MARKE_RADIUS_PX + 3) / t.k;
+      const labelY = kippt
+        ? kernMarkeBild.wy + (KERN_MARKE_RADIUS_PX + 3) / t.k
+        : kernMarkeBild.wy - (KERN_MARKE_RADIUS_PX + 3) / t.k;
       ctx.lineWidth = 3 / t.k;
       ctx.strokeStyle = grundFarbe;
       ctx.strokeText(markeText, kernMarkeBild.wx, labelY);
@@ -3551,7 +3565,9 @@ export function KnowledgeGraph({ memories: memoriesAusFenster, onSelectMemory, o
       const unten = labelY * t.k + t.y;
       ctx.canvas.dataset.kernMarke = JSON.stringify({
         x: Math.round((rechts - (labelBreite * t.k) / 2) * 10) / 10,
-        y: Math.round((unten - KERN_MARKE_SCHRIFT_PX) * 10) / 10,
+        y: Math.round((kippt ? unten : unten - KERN_MARKE_SCHRIFT_PX) * 10) / 10,
+        kippt,
+        dotYGenau: Math.round(dotYGenau * 1000) / 1000,
         w: Math.round(labelBreite * t.k * 10) / 10,
         h: KERN_MARKE_SCHRIFT_PX,
         dotX: Math.round(kernMarkeBild.wx * t.k + t.x),

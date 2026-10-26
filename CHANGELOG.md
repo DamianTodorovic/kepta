@@ -1,3 +1,31 @@
+## [3.2.58]
+
+### Added
+
+- **A saved version can be stepped back to.** `restoreStand` exists on the store and behind the same
+  door as the version list: reading a past version, then restoring it writes the old text back and
+  records the current text as a new version first, so nothing is lost by going back. Measured on the
+  delivered store: **p95 0,096 ms** against the 1 ms bar, and **200 of 200** restores raise `total` by
+  exactly one while every older version id stays readable. Free, no key, no upgrade panel - the same
+  rule the version list already keeps.
+
+### Fixed
+
+- **One list decides who counts as this machine.** `src/lib/lokalhost.ts` is now the only place that
+  names the loopback addresses, and both former lists (`herkunft.ts`, `richtlinien.ts`) delegate to it.
+  The crack was measured before the fix, not claimed: `http://127.0.0.2/` and a bare `127.0.0.2` were
+  refused by one list and accepted by the other - **2 of 6** cases red on the committed head. This
+  changes who is treated as this machine, so both security papers had to stay green.
+- **The collected-marker label no longer hangs over the top edge.** The paint path asks a pure rule
+  (`markeKippt`) on the **unrounded** y of the dot and puts the number **under** the dot when there is
+  not enough room above it; the stored rectangle carries `kippt` and `dotYGenau`, so a reader of the
+  rectangle sees the same decision the painter made. Rounding only in the rectangle was the band where
+  the two disagreed.
+- **The text-size slider has a case that holds its wire.** Turning the slider sets CSS `zoom` on
+  `document.body`; removing the call that applies it made the new case fail **at the effect**
+  (`expected '' to be '1.15'`), not at the label. jsdom has no layout, so the pixel bar stays a
+  window measurement - this case guards the connection, nothing more.
+
 ## [3.2.57]
 
 ### Added
