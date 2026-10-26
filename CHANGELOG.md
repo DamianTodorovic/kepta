@@ -1,3 +1,21 @@
+## [3.2.62]
+
+### Added
+
+- **The stand view in the preview can now put a version back, not only show it.** Reading an
+  earlier stand answered "what was written before", and "Back to current" closed the view -
+  there was no way to make that older text current again without leaving the preview and typing
+  it by hand. The banner next to an opened stand now carries a named control,
+  **"Restore this stand"**, and one click opens a question instead of writing:
+  "Make this version current? The text it replaces stays in the history as an earlier stand."
+  Only the second, named button writes, and it goes through the same door the app already
+  answers on (`POST /api/memories/:id/stande/:standId/restore`), so the replaced text is
+  itself kept as a stand before the new one takes its place. Cancel writes nothing and leaves
+  the stand view open.
+- **Failure leaves the note alone.** If the door does not answer 200, the shown text stays, the
+  stand list stays, and the warning says plainly "Restore failed. Nothing was changed." - no
+  half-written note, no silent success.
+
 ## [3.2.61]
 
 ### Added

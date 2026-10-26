@@ -53,17 +53,22 @@ export function MemoryPreview({ memory, onClose, onEdit }: MemoryPreviewProps) {
     return () => { vorbei = true; };
   }, [memory.id]);
 
-  // Staende (BAU-P3-11, Latte-Zeile 8): die Texte VOR den Aenderungen. Gelesen wird nur, wenn die
-  // Vorschau offen ist; ein Klick zeigt den alten Text vollstaendig, "Back to current" geht zurueck.
-  // Der aktuelle Text wird dabei nicht angefasst - es gibt hier keinen Schreibweg.
+  // Staende (BAU-P3-11): die Texte VOR den Aenderungen. Ein Klick zeigt den alten Text vollstaendig,
+  // "Back to current" geht zurueck. Seit 26.10. gibt es EINEN Schreibweg: "Restore this stand" -
+  // zwei Schritte, mit Rueckfrage; der ersetzte Text wird dabei serverseitig als Stand gesichert.
   const [staende, setStaende] = useState<Stand[] | null>(null);
   const [staendeOffen, setStaendeOffen] = useState(false);
   const [gewaehlterStand, setGewaehlterStand] = useState<Stand | null>(null);
+  const [aktuellerInhalt, setAktuellerInhalt] = useState(text);
+  const [wiederherstellenOffen, setWiederherstellenOffen] = useState(false);
+  const [wiederherstellenLaeuft, setWiederherstellenLaeuft] = useState(false);
   useEffect(() => {
     let vorbei = false;
     setStaende(null);
     setStaendeOffen(false);
     setGewaehlterStand(null);
+    setWiederherstellenOffen(false);
+    setAktuellerInhalt(inhaltOhneQuelle(memory.content) || memory.content);
     fetch(`/api/memories/${encodeURIComponent(memory.id)}/stande`)
       .then((r) => (r.ok ? r.json() : null))
       .then((d: { staende?: Stand[] } | null) => {
@@ -72,6 +77,34 @@ export function MemoryPreview({ memory, onClose, onEdit }: MemoryPreviewProps) {
       .catch(() => undefined);
     return () => { vorbei = true; };
   }, [memory.id]);
+
+  // Der eine Schreibweg der Flaeche: erst die Rueckfrage, dann die Tuer. Antwortet sie nicht mit 200,
+  // bleibt alles, wie es war - die Warnung sagt es, der Text wird nicht angefasst.
+  const standWiederherstellen = async () => {
+    if (!gewaehlterStand || wiederherstellenLaeuft) return;
+    setWiederherstellenLaeuft(true);
+    try {
+      const r = await fetch(
+        `/api/memories/${encodeURIComponent(memory.id)}/stande/${gewaehlterStand.id}/restore`,
+        { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ confirm: "restore" }) },
+      );
+      if (!r.ok) throw new Error(`HTTP ${r.status}`);
+      const d = (await r.json()) as { memory?: { content?: string } };
+      if (typeof d.memory?.content === "string") setAktuellerInhalt(d.memory.content);
+      setGewaehlterStand(null);
+      setWiederherstellenOffen(false);
+      const r2 = await fetch(`/api/memories/${encodeURIComponent(memory.id)}/stande`);
+      if (r2.ok) {
+        const d2 = (await r2.json()) as { staende?: Stand[] };
+        if (Array.isArray(d2.staende)) setStaende(d2.staende);
+      }
+      toast.push({ message: "Restored. The replaced text is kept as an earlier stand.", kind: "success" });
+    } catch {
+      toast.push({ message: "Restore failed. Nothing was changed.", kind: "warn" });
+    } finally {
+      setWiederherstellenLaeuft(false);
+    }
+  };
 
   const texteKopieren = async () => {
     try {
@@ -237,27 +270,64 @@ export function MemoryPreview({ memory, onClose, onEdit }: MemoryPreviewProps) {
             <>
               <div
                 data-testid="preview-stand-flag"
-                className="mb-2 flex items-center justify-between gap-2 rounded-xl px-3 py-2 text-[12px]"
+                className="mb-2 flex flex-wrap items-center justify-between gap-2 rounded-xl px-3 py-2 text-[12px]"
                 style={{ background: "var(--bg-inset)", color: "var(--text-2)" }}
               >
-                <span>
+                <span className="min-w-0">
                   Earlier stand - <span className="tnum">{formatDistanceToNow(new Date(gewaehlterStand.createdAt), { addSuffix: true })}</span>
                 </span>
-                <button
-                  onClick={() => setGewaehlterStand(null)}
-                  className="btn-ghost px-2 py-1 rounded-lg text-[11px] shrink-0"
-                  data-testid="preview-stand-back"
-                >
-                  Back to current
-                </button>
+                <span className="flex flex-wrap items-center gap-2">
+                  <button
+                    onClick={() => setWiederherstellenOffen((v) => !v)}
+                    className="btn-ghost px-2 py-1 rounded-lg text-[11px]"
+                    data-testid="preview-stand-restore"
+                    aria-expanded={wiederherstellenOffen}
+                  >
+                    Restore this stand
+                  </button>
+                  <button
+                    onClick={() => setGewaehlterStand(null)}
+                    className="btn-ghost px-2 py-1 rounded-lg text-[11px]"
+                    data-testid="preview-stand-back"
+                  >
+                    Back to current
+                  </button>
+                </span>
               </div>
+              {wiederherstellenOffen && (
+                <div
+                  data-testid="preview-stand-restore-bestaetigung"
+                  className="mb-2 rounded-xl px-3 py-2 text-[12px]"
+                  style={{ background: "var(--bg-inset)", color: "var(--text-2)", border: "1px solid var(--border-subtle)" }}
+                >
+                  <p>Make this version current? The text it replaces stays in the history as an earlier stand.</p>
+                  <div className="flex flex-wrap items-center gap-2 mt-2">
+                    <button
+                      onClick={() => void standWiederherstellen()}
+                      className="btn-ghost px-2 py-1 rounded-lg text-[11px]"
+                      style={{ border: "1px solid var(--border-subtle)", color: "var(--accent)" }}
+                      data-testid="preview-stand-restore-confirm"
+                      disabled={wiederherstellenLaeuft}
+                    >
+                      Restore to this version
+                    </button>
+                    <button
+                      onClick={() => setWiederherstellenOffen(false)}
+                      className="btn-ghost px-2 py-1 rounded-lg text-[11px]"
+                      data-testid="preview-stand-restore-cancel"
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                </div>
+              )}
               <article data-testid="preview-stand-text" className="text-[14px] leading-[1.75] whitespace-pre-wrap break-words" style={{ color: "var(--text-1)" }}>
                 {gewaehlterStand.content}
               </article>
             </>
           ) : (
             <article data-testid="preview-text" className="text-[14px] leading-[1.75] whitespace-pre-wrap break-words" style={{ color: "var(--text-1)" }}>
-              {text}
+              {inhaltOhneQuelle(aktuellerInhalt) || aktuellerInhalt}
             </article>
           )}
         </div>
