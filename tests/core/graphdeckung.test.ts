@@ -52,6 +52,9 @@ afterEach(() => {
   store?.close();
   if (prevHome === undefined) delete process.env.HOME;
   else process.env.HOME = prevHome;
+  delete process.env.KEPTA_DATA_DIR;
+  // Aufgabe #112: 2 312 eigene Ordner unter $TMPDIR an diesem Abend, gemessen 21:27.
+  fs.rmSync(dir, { recursive: true, force: true });
 });
 
 /** Genau die Folge, die der Rechner-Scan faehrt: anlegen, indexieren, fertig. */

@@ -27,7 +27,11 @@ beforeEach(() => {
   dir = fs.mkdtempSync(path.join(tmpdir(), "kepta-a1x-nachbarschaft-"));
   store = new KeptaStore(path.join(dir, "t.db"));
 });
-afterEach(() => store.close());
+afterEach(() => {
+  store.close();
+  // Aufgabe #112: 544 eigene Ordner unter $TMPDIR an diesem Abend, gemessen 21:27.
+  fs.rmSync(dir, { recursive: true, force: true });
+});
 
 /** Ein Notiz-Anlage-Weg wie im Scan: anlegen, indexieren — Begriffe setzt der Kern. */
 function notiz(titel: string, koepfe: string[]): void {

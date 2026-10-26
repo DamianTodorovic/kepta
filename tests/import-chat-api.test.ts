@@ -37,6 +37,9 @@ beforeEach(async () => {
 afterEach(() => {
   if (prevHome === undefined) delete process.env.HOME;
   else process.env.HOME = prevHome;
+  delete process.env.KEPTA_DATA_DIR;
+  // Aufgabe #112: 980 eigene Ordner unter $TMPDIR an diesem Abend, gemessen 21:27.
+  fs.rmSync(dir, { recursive: true, force: true });
 });
 
 const CHATGPT = JSON.stringify([
