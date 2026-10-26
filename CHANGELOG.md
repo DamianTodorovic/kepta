@@ -1,3 +1,20 @@
+## [3.2.63]
+
+### Fixed
+
+- **The core count is no longer cut off at the edge of the picture.** When almost every note is
+  outside the frame, the field replaces the core with a single point and one number - how many
+  notes it will not draw. That number sat dead-centre over its point, and the point is allowed to
+  sit against any edge: measured on the shipped app, a point six pixels from the left edge put
+  2.9 pixels of the number outside the picture, and 16 of its 62 lit pixels - 25.8% of the digits -
+  were simply gone. Seven pixels from the right edge: 2.1 pixels cut. The number is now pulled back
+  into the picture first, and where a panel sits in the way it takes the next free position, four
+  pixels clear of every edge; the point stays exactly where it was, because it is the anchor and
+  not the answer. And because the count is drawn before any title, it now claims its cells in the
+  label grid before the first word can claim them, so no title falls on top of it. If nothing is
+  free, the number is still drawn - a count that silently disappears costs more than a count that
+  sits close to something - and the field says which of the two it is.
+
 ## [3.2.62]
 
 ### Added

@@ -386,6 +386,15 @@ const erwartet = [
   // derselben latin1-Zaehlung wie hier: der Gang-Satz hatte damals keine Zeilenzahl, weil
   // er nie gebrochen wurde.
   ["gangZeilen", 1],
+  // Punkt 109, gelegt 26.10. 23:30:14 MESZ VOR dem Bau gegen das AUSGELIEFERTE Stueck
+  // (3.2.62, /Applications/K3PTA.app/Contents/Resources/app.asar, 49 131 413 B,
+  // mtime 22:36:24, latin1-Zaehlung wie hier): **0** mal. Dieselbe Sonde zaehlt
+  // `gangZeilen` dort **1** — das ist der Beweis, dass ein Name an einem
+  // dataset-Eigenschaftszugriff den Minifier ueberlebt, und der Grund, warum diese
+  // Marke eine ist. Nicht aufgenommen: `markeLage` und `randGehalten`, beide **0**
+  // im alten wie im neuen Objekt — Kennungen verbiegt der Minifier, eine Pruefung
+  // darauf kann nie schlagen.
+  ["kernOrt", 1],
 ];
 // Die Liste darf nur ASCII-Zeichen enthalten. Grund, gemessen 21.10. 19:16 MESZ am
 // installierten Objekt: das Wort "Looking" plus echtes U+2026 steht dort 2 mal, diese
