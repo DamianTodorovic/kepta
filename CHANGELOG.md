@@ -14,6 +14,14 @@
   `GET /api/health` carries a new `vektorSpur` object (`vorwaermungen`, `suchbauten`, `zeilen`), so
   the number a person in front of the screen pays for - `suchbauten` - is visible and should stay
   near zero. Free, no key, no upgrade panel - the same rule the rest of the app keeps.
+  - **Measured limit, same day.** On the running desktop the counter still reads
+    `vorwaermungen 0` (26.10.2026 12:11:39 and 12:11:59 MESZ, door 55462), and the reason is
+    measured, not guessed: the window holds `/api/activity` open as an event stream, and the
+    counter treats any answer that has not finished as work in progress - so a window that is on
+    screen never reaches its own quiet. Proof on the same built bundle: 12 s of silence in an
+    isolated capsule gives `vorwaermungen 1`, the same run with one open stream held for 10 s
+    gives `0` (12:12:57 MESZ). The counts are honest either way, and until that one rule is
+    widened the first search still pays exactly what it paid before.
 
 ## [3.2.58]
 
