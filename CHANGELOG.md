@@ -1,3 +1,24 @@
+## [3.2.60]
+
+### Fixed
+
+- **Bigger text no longer pushes the sheet sideways past the screen.** The text-size control scales
+  the document with `zoom` on the body, while the app root sized itself to the viewport (`w-screen`
+  = 100vw). Chromium scales 100vw along with `zoom`, so the sheet asked for exactly
+  `innerWidth * stufe`: in the real window on 26.10.2026 (11:27:56-11:28:05 MESZ, campaign paper
+  `p4-107-ueberlauf-2610.md`) `documentElement.scrollWidth` read 1656 px at 115 % and 1872 px at
+  130 % inside a 1440 px window, and 448 px and 507 px inside a 390 px one - 216 px and 432 px of
+  sideways overflow at the wide window, 58 px and 117 px at the phone width, with a horizontal
+  scrollbar and content that walked out of reach. Two changes: the root now follows the body
+  (`w-full`), and any level above 100 % gives the body the counter-width `calc(100% / stufe)`, so
+  the letters keep their new size while the text wraps instead of running over. Back at 100 % both
+  styles are cleared again, which is also the control case. Four cases hold this
+  (`tests/components/Settings-textgroesse-ohne-ueberlauf.test.tsx`): the counter-width at 115 % and
+  130 %, the 100 % control that removes zoom and width, and a source guard that the root carries no
+  viewport width any more. jsdom has no layout, so those cases prove the styles and not the pixels -
+  the bar "0 px sideways overflow at 100, 115 and 130 %, each at 1440 px and 390 px" is measured on
+  the delivered object. Free, no key, no upgrade panel - the same rule the rest of the app keeps.
+
 ## [3.2.59]
 
 ### Added

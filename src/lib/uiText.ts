@@ -92,8 +92,17 @@ export function getZoomProzent(): number {
   return getZoom();
 }
 
-/** Schriftgröße anwenden — die App-Shell ist Chromium, zoom greift sauber. */
+/** Schriftgröße anwenden — die App-Shell ist Chromium, zoom greift sauber.
+ *  Punkt 107 (26.10., Blatt p4-107-ueberlauf-2610.md): ohne Gegenbreite skaliert
+ *  zoom das Blatt ueber den Viewport hinweg - gemessen scrollWidth 1656 bei 115 %
+ *  und 1872 bei 130 % auf 1440 px Fenster, also +216 px und +432 px seitlicher
+ *  Ueberlauf. Der Leib bekommt darum die Gegenbreite 100% / Skala: die Schrift
+ *  bleibt gleich gross, der Text schlaegt um, statt seitlich zu ueberlaufen. */
 export function wendeZoomAn(): void {
   const z = getZoom();
-  (document.body.style as CSSStyleDeclaration & { zoom?: string }).zoom = z === 100 ? "" : String(z / 100);
+  const stil = document.body.style as CSSStyleDeclaration & { zoom?: string };
+  if (z === 100) { stil.zoom = ""; stil.width = ""; return; }
+  const skala = String(z / 100);
+  stil.zoom = skala;
+  stil.width = `calc(100% / ${skala})`;
 }
