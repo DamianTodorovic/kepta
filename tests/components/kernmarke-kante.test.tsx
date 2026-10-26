@@ -71,6 +71,22 @@ describe("#109: die gerettete Zahl bleibt ganz im Bild und weicht dem Kasten", (
     ).toBe(true);
     expect(lage.y, "die Zahl ist nicht gewichen — der Kasten steht in ihrer Zeile").toBeLessThan(340 - 11 - KANTEN_RAND_PX);
     expect(lage.gehalten, "gewichen und trotzdem 'eng'").toBe(true);
+    expect(lage.gewichen, "sie ist gewichen, nennt sich aber nicht als gewichen").toBe(true);
+  });
+
+  it("springt ueber eine Karte hinweg, die hoeher ist als alle ihre Schritte", () => {
+    // Gemessen 26.10. 23:51:48 am ausgelieferten Stueck bei 390 x 844: die Legenden-
+    // karte nahm 275 Bildpunkte Hoehe, die Zahl fiel mit y 325 hinter sie und war
+    // unsichtbar — dieselbe Klage, die der Gang-Satz schon hatte (#106). Keiner der
+    // neun Schritte (15 px) kommt ueber so eine Karte; der Sprung an ihren Rand muss
+    // es tun, und die Grundstellung darf sie dabei nicht verlieren.
+    const kasten = { x: 2, y: 303, w: 348, h: 275 };
+    const lage = markeLage(9, 344, 11.3, { w: 360, h: 628 }, [kasten]);
+    const rechteck = { x: lage.x, y: lage.y, w: 11.3, h: KERN_MARKE_SCHRIFT_PX };
+    expect(randGehalten(rechteck, [kasten], KANTEN_RAND_PX), `die Zahl steht hinter der Karte: ${JSON.stringify(lage)}`).toBe(true);
+    expect(lage.y + rechteck.h + KANTEN_RAND_PX, "sie steht nicht ueber der Karte").toBeLessThanOrEqual(kasten.y);
+    expect(lage.x, "die Kante links ist trotzdem vier Punkte halt").toBeGreaterThanOrEqual(KANTEN_RAND_PX);
+    expect(lage.gehalten && lage.gewichen, "eine Lage ueber einer hohen Karte ist frei und gewichen").toBe(true);
   });
 
   it("gibt eine Lage zurueck, auch wenn keine frei ist — die Zahl bleibt", () => {

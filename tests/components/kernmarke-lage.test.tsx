@@ -103,7 +103,9 @@ function rechteck(view: ReturnType<typeof render>) {
   const c = view.container.querySelector("canvas")!;
   const roh = c.dataset.kernMarke;
   expect(roh, `kein Rechteck auf der Leinwand; dataset-Schluessel: ${JSON.stringify(Object.keys(c.dataset))}`).toBeTruthy();
-  return JSON.parse(roh!) as { x: number; y: number; w: number; h: number; dotX: number; dotY: number };
+  return JSON.parse(roh!) as {
+    x: number; y: number; w: number; h: number; dotX: number; dotY: number; kippt: boolean; dotYGenau: number;
+  };
 }
 
 beforeEach(() => {
@@ -167,10 +169,11 @@ describe("#88: die Sammelmarke steht ueber dem Punkt und sagt, wo sie steht", ()
   });
 
   it("#109: die Leinwand nennt ihre Lage, und ihr Wort gilt fuer ihre eigne Zahl", async () => {
-    // Ein Fall, der den Zustand nur *ablesen* wuerde, prueft nichts: "frei" oder
-    // "eng" ist jede Meldung durchgelassen. Also wird das Wort gegen die Lage
-    // gehalten, die dieselbe Leinwand im selben Feld ablegt — wer "frei" sagt und
-    // eine Zahl ueber der Kante legt, faellt hier.
+    // Ein Fall, der den Zustand nur *ablesen* wuerde, prueft nichts: jedes der drei
+    // Woerter durchzulassen ist keine Pruefung. Also rechnet der Fall das Wort aus
+    // denselben Zahlen, die die Leinwand in ihrem Rechteck ablegt — Punkt, Breite,
+    // Kippung, Blende — und wer ein Wort meldet, das seine eigne Lage nicht beschreibt,
+    // faellt.
     const view = await feld();
     await bisUnterDieBlende(view, 2);
     const c = view.container.querySelector("canvas")!;
@@ -185,9 +188,18 @@ describe("#88: die Sammelmarke steht ueber dem Punkt und sagt, wo sie steht", ()
     expect(m.y, `die Zahl beginnt ueber der oberen Kante: ${m.y}`).toBeGreaterThanOrEqual(KANTEN_RAND_PX);
     expect(m.x + m.w, `die Zahl endet ueber der rechten Kante: ${m.x + m.w} in 1000`).toBeLessThanOrEqual(1000 - KANTEN_RAND_PX);
     expect(m.y + m.h, `die Zahl endet ueber der unteren Kante: ${m.y + m.h} in 700`).toBeLessThanOrEqual(700 - KANTEN_RAND_PX);
+    // Die Grundstellung: mittig ueber (oder unter) dem Punkt, die Kante geklemmt.
+    // Nachgerechnet aus denselben Zahlen, die die Leinwand ablegt — und die legt sie
+    // gerundet ab (Punkt auf ganze Bildpunkte, Breite auf einen Zehntel), also trägt
+    // die Nachrechnung einen Fehler bis eineinhalb Zehntel: 0,45 px gemessen 23:59.
+    const SPIEL = 0.6;
+    const grundX = Math.max(KANTEN_RAND_PX, Math.min(m.dotX - m.w / 2, 1000 - KANTEN_RAND_PX - m.w));
+    const grundY = m.kippt ? m.dotYGenau + 7 : m.dotYGenau - 7 - m.h;
+    const amGrund = Math.abs(m.x - grundX) <= SPIEL && Math.abs(m.y - grundY) <= SPIEL;
     expect(
       c.dataset.kernOrt,
-      `die Leinwand nennt "${c.dataset.kernOrt}", aber ihre eigne Lage haelt die vier Punkte${gehalten ? "" : " nicht"}`
-    ).toBe(gehalten ? "frei" : "eng");
+      `die Leinwand nennt "${c.dataset.kernOrt}" — ihre Lage ist ${gehalten ? "frei" : "nicht frei"}` +
+        ` und ${amGrund ? "die Grundstellung" : "eine Ausweichstelle"} (Grund ${grundX}/${grundY}, gemalt ${m.x}/${m.y})`
+    ).toBe(gehalten ? (amGrund ? "frei" : "gewichen") : "eng");
   });
 });

@@ -915,20 +915,43 @@ export function randGehalten(marke: Rechteck, hinder: readonly Rechteck[], randP
 /**
  * Die erste freie Lage der geretteten Zahl: neun Versuche um ihre eigne Breite und
  * Hoehe (erst hoeher, dann tiefer, dann seitlich), in demselben Mass wie das
- * Rechteck selbst.
+ * Rechteck selbst, und danach zwei Spruenge an den Rand eines Hindernisses vorbei.
+ *
+ * `kanten` sagt, an wessen Rand sie springen darf — per Default an jeden. Die
+ * Flaeche gibt dort nur die Karten ein, denn die Bildkante ist kein Gegenstand:
+ * wer an ihren Rand springt, steht ausserhalb des Bildes und haelt doch jede
+ * Pruefung, weil eine Wand enddicke Buchstaben hat.
  *
  * `null` heisst: keine dieser Lagen haelt den Rand. Es heisst **nicht**, dass die
  * Zahl weg darf — sie ist die einzige Auskunft ueber einen Kern, den das Bild
  * nicht mehr als Einzelne zeigt (#105). Der Aufrufer malt sie an die beste Stelle
  * und nennt den Zustand; ein Verschwinden ohne Wort ist der alte Fehler.
  */
-export function zahlOrt(zahl: Rechteck, hinder: readonly Rechteck[], randPx: number): Rechteck | null {
+export function zahlOrt(
+  zahl: Rechteck,
+  hinder: readonly Rechteck[],
+  randPx: number,
+  kanten: readonly Rechteck[] = hinder
+): Rechteck | null {
   const vs = [
     [0, 0], [0, -1], [0, 1], [-1, 0], [1, 0], [0, -2], [0, 2], [-1, -1], [1, -1],
   ];
   for (const [dx, dy] of vs) {
     const kandidat = { x: zahl.x + dx * (zahl.w / 2), y: zahl.y + dy * (zahl.h + randPx), w: zahl.w, h: zahl.h };
     if (randGehalten(kandidat, hinder, randPx)) return kandidat;
+  }
+  // Die Schritte reichen um ihre eigne Groesse — gegen eine Karte, die bei
+  // Telefonbreite 275 Bildpunkte hoch ist (gemessen 26.10. 23:51:48 am Objekt),
+  // kommen sie nicht an. Also an ihrem Rand vorbei: erst ueber ihr, dann unter ihr.
+  // Ein Hindernis, das die Zahl nicht ueberschreiten kann, darf sie nicht
+  // verschlucken; die Flaeche malt und sagt `eng`, wenn auch hier nichts frei ist.
+  for (const h of kanten) {
+    for (const kandidat of [
+      { x: zahl.x, y: h.y - randPx - zahl.h, w: zahl.w, h: zahl.h },
+      { x: zahl.x, y: h.y + h.h + randPx, w: zahl.w, h: zahl.h },
+    ]) {
+      if (randGehalten(kandidat, hinder, randPx)) return kandidat;
+    }
   }
   return null;
 }

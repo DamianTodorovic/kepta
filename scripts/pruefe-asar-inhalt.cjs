@@ -395,6 +395,13 @@ const erwartet = [
   // im alten wie im neuen Objekt — Kennungen verbiegt der Minifier, eine Pruefung
   // darauf kann nie schlagen.
   ["kernOrt", 1],
+  // Punkt 109, zweite Haelfte, gelegt 26.10. 23:59:06 MESZ VOR dem Bau gegen das
+  // AUSGELIEFERTE Stueck (3.2.63, dasselbe Objekt von oben, 49 132 261 B,
+  // mtime 23:37:33): **0** mal. Dasselbe Feld `kernOrt` steht dort schon 2 mal -
+  // die Zahl kennt ihren Ort, aber noch nicht, dass sie ihn geraeumt hat. Nicht
+  // aufgenommen: `gewichen` als Kennung, und die Woerter `frei` (30 mal) und `eng`
+  // (26 391 mal) - ein Muster, das die Welt schon schreibt, trennt keine Fassung.
+  ["gewichen", 1],
 ];
 // Die Liste darf nur ASCII-Zeichen enthalten. Grund, gemessen 21.10. 19:16 MESZ am
 // installierten Objekt: das Wort "Looking" plus echtes U+2026 steht dort 2 mal, diese

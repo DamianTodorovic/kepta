@@ -1127,7 +1127,7 @@ export function markeLage(
   bild: { w: number; h: number },
   kasten: readonly Rechteck[],
   randPx = KANTEN_RAND_PX
-): { x: number; y: number; kippt: boolean; gehalten: boolean } {
+): { x: number; y: number; kippt: boolean; gehalten: boolean; gewichen: boolean } {
   const wand = 10_000;
   const hinder: Rechteck[] = [
     { x: -wand, y: -wand, w: wand, h: 3 * wand },
@@ -1142,8 +1142,14 @@ export function markeLage(
     ? dotYGenau + KERN_MARKE_RADIUS_PX + 3
     : dotYGenau - KERN_MARKE_RADIUS_PX - 3 - KERN_MARKE_SCHRIFT_PX;
   const grund: Rechteck = { x, y, w: breitePx, h: KERN_MARKE_SCHRIFT_PX };
-  const ort = randGehalten(grund, hinder, randPx) ? grund : (zahlOrt(grund, hinder, randPx) ?? grund);
-  return { x: ort.x, y: ort.y, kippt, gehalten: randGehalten(ort, hinder, randPx) };
+  const ort = randGehalten(grund, hinder, randPx) ? grund : (zahlOrt(grund, hinder, randPx, kasten) ?? grund);
+  return {
+    x: ort.x,
+    y: ort.y,
+    kippt,
+    gehalten: randGehalten(ort, hinder, randPx),
+    gewichen: ort !== grund,
+  };
 }
 
 /**
@@ -3682,10 +3688,13 @@ export function KnowledgeGraph({ memories: memoriesAusFenster, onSelectMemory, o
         dotX: Math.round(kernMarkeBild.wx * t.k + t.x),
         dotY: Math.round(dotYGenau),
       });
-      // #105 lehrt: ein Zustand, der nichts malt, braucht ein Wort. Dass die Zahl
-      // an ihrem Ort liegt, aber einem Nachbarn zu nahe steht, ist derselben
-      // Art — gemalt wird sie trotzdem, und `eng` sagt es.
-      ctx.canvas.dataset.kernOrt = lage.gehalten ? "frei" : "eng";
+      // #105 lehrt: ein Zustand, der nichts malt, braucht ein Wort. Drei Woerter,
+      // drei Lagen: `frei` = die Zahl steht, wo sie hingehoert, und haelt vier
+      // Punkte; `gewichen` = sie hat einen Platz weiter aussen gefunden und haelt
+      // sie dort; `eng` = nichts war frei, gemalt wird sie trotzdem. Eine
+      // unsichtbare Kernzahl ist teurer als eine enge, und ein Wort, das nie
+      // schlaegt, ist keine Auskunft.
+      ctx.canvas.dataset.kernOrt = lage.gehalten ? (lage.gewichen ? "gewichen" : "frei") : "eng";
       markeRaster = { x: lage.x, y: lage.y, w: breitePx, h: KERN_MARKE_SCHRIFT_PX };
       ctx.textAlign = "left";
       ctx.textBaseline = "alphabetic";

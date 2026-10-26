@@ -1,3 +1,18 @@
+## [3.2.64]
+
+### Fixed
+
+- **The core count now steps around the legend instead of disappearing behind it.** At phone
+  width the legend card is tall - measured on the shipped app at 390 x 844 it takes 275 pixels
+  of the picture - and the count that replaces an invisible core fell behind it: drawn, whole,
+  and not visible to anyone, because the card is opaque. The number already knew how to move
+  one line up or down; a line is 15 pixels, and 15 pixels do not clear 275. It now also tries
+  the edge of what blocks it - first above the card, then below - while still holding its four
+  pixels from every edge of the picture. The field says which of the three states it is in:
+  `frei` where it belongs, `gewichen` one place over, `eng` when nothing was free and it was
+  drawn anyway. Measured before the change: the number at x 4, y 325 behind a card that starts
+  at y 303. After: above the card, four pixels clear, and named.
+
 ## [3.2.63]
 
 ### Fixed

@@ -98,7 +98,29 @@ describe("#106 — der Satz endet an einer Kante, nie mitten im Wort", () => {
     const ort = zahlOrt(zahl, hinder, KANTEN_RAND_PX);
     expect(ort, "die Zahl hat keinen Ort, obwohl der Platz frei ist").not.toBeNull();
     expect(randGehalten(ort!, hinder, KANTEN_RAND_PX)).toBe(true);
-    // Ist alles besetzt, kommt null — und null heisst "benannt nicht gemalt".
-    expect(zahlOrt({ x: 0, y: 0, w: 40, h: 40 }, [{ x: -400, y: -400, w: 900, h: 900 }], KANTEN_RAND_PX)).toBeNull();
+    // Ist alles besetzt und gibt es keinen Rand, an den sie springen darf, kommt
+    // null — und null heisst "benannt nicht gemalt", nie "verschwunden". Ohne
+    // Hindernisliste zum Anspringen ist die Abdeckung wirklich eine Mauer: an
+    // ihrem Rand vorbei gaebe es immer einen freien Ort ausserhalb von ihr.
+    expect(zahlOrt({ x: 0, y: 0, w: 40, h: 40 }, [{ x: -400, y: -400, w: 900, h: 900 }], KANTEN_RAND_PX, [])).toBeNull();
+    // Und dieselbe Mauer, an deren Rand sie springen darf, ist keine Mauer mehr:
+    // ueber ihr liegt Platz. Das ist der Unterschied zwischen einem Hindernis und
+    // einer Bildkante — an eine Bildkante springt man nicht vorbei.
+    expect(zahlOrt({ x: 0, y: 0, w: 40, h: 40 }, [{ x: -400, y: -400, w: 900, h: 900 }], KANTEN_RAND_PX)).not.toBeNull();
+  });
+
+  it("weicht einem Kasten aus, der hoeher ist als die Zahl hoch", () => {
+    // Gemessen 26.10. 23:51:48 am ausgelieferten Stueck, 390 x 844: die Legenden-
+    // karte steht bei Telefonbreite von y 303 bis y 578 (canvas-eigne Punkte) und
+    // die Zahl fiel mit y 325 hinter sie — unsichtbar hinter einer undurchsichtigen
+    // Flaeche, genau der Satz, ueber den der Gang schon geklagt hat (#106). Die
+    // neun Schritte um ihre eigne Groesse (15 px) koennen einen 275 px hohen Kasten
+    // nicht ueberschreiten. Also: an seiner Oberkante vorbei, nicht daran vorbei.
+    const zahl = { x: 4, y: 325, w: 12, h: 11 };
+    const kasten = { x: 2, y: 303, w: 348, h: 275 };
+    const ort = zahlOrt(zahl, [kasten], KANTEN_RAND_PX);
+    expect(ort, "die Zahl hat keinen Ort, obwohl ueber dem Kasten Platz liegt").not.toBeNull();
+    expect(ort!.y + ort!.h + KANTEN_RAND_PX, `die Zahl steht nicht ueber dem Kasten: ${ort!.y} + ${ort!.h}`).toBeLessThanOrEqual(kasten.y);
+    expect(randGehalten(ort!, [kasten], KANTEN_RAND_PX)).toBe(true);
   });
 });
