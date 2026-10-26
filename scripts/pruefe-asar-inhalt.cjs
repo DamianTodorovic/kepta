@@ -307,6 +307,22 @@ const erwartet = [
   // unsichtbar geblieben.
   ["Vektor-Vorwaermung:", 1],
   ["vektorSpur", 1],
+  // 3.2.60, Punkt 4s #107 (Koerper p4-107-gegen-ueberlauf.patch, von der Bau-Runde 14:49:10 MESZ
+  // gelegt, Kopf 2a3aa64). **Diese zwei Marken setzt die Leitung selbst, 15:16 MESZ** — die
+  // Landung war ohne sie erfolgt, und die Gegenprobe hat das gezeigt: die Sonde meldete
+  // "Inhalt passt" EXIT 0 gegen die zurueckgelegte Huelle 3.2.59, waehrend sie die bestellte
+  // Version 3.2.60 nannte. Ein Pruefer, der zwei aufeinanderfolgende Objekte nicht
+  // unterscheidet, ist bei der naechsten Landung blind.
+  // Eigne Zaehlung ueber latin1-Bytes, 15:16:4x MESZ: ausgeliefert
+  // `/Applications/K3PTA.app/Contents/Resources/app.asar` (49 126 415 B, mtime 15:11:25) gegen
+  // das Ruecklager `/tmp/K3PTA-vor-3.2.60.app/.../app.asar` = das gewesene 3.2.59
+  // (49 126 346 B, mtime 12:05:01): `calc(100% / ` **1 gegen 0**,
+  // `relative h-screen w-full overflow-hidden` **1 gegen 0**.
+  // Die Gegenrichtung ist gemeldet, nicht geprueft: die alte Wurzel-Kette
+  // `relative h-screen w-screen overflow-hidden` steht im neuen Objekt **0**, im alten **1** —
+  // diese Liste kennt nur Untergrenzen, eine Kappe auf 0 waere eine zweite Klasse von Pruefung.
+  ["calc(100% / ", 1],
+  ["relative h-screen w-full overflow-hidden", 1],
 ];
 // Die Liste darf nur ASCII-Zeichen enthalten. Grund, gemessen 21.10. 19:16 MESZ am
 // installierten Objekt: das Wort "Looking" plus echtes U+2026 steht dort 2 mal, diese
