@@ -1,3 +1,20 @@
+## [3.2.59]
+
+### Added
+
+- **The first semantic search no longer pays for the vector track.** Building that track over a
+  real knowledge base costs **1 462,26 ms** and **1 493,81 ms** at two genuine cold starts
+  (measured 25.10.2026 on the app's own capsule: 3.2.57, 20 066 notes, 64 164 sections at 768
+  dimensions, with **+475,0 MiB** and **+477,8 MiB** resident memory), while the door itself starts
+  listening in **0,568 s** and **0,654 s**. So the build does not hang on boot and it does not hang
+  on the first search either: the app now watches its own quiet - no answer still in flight and the
+  last one at least **1 500 ms** old - and builds the track inside that silence, again after every
+  write that throws it away, but never in the middle of a write storm. A warm-up that fails stops
+  the runner and says so out loud; the first search then pays exactly what it pays today.
+  `GET /api/health` carries a new `vektorSpur` object (`vorwaermungen`, `suchbauten`, `zeilen`), so
+  the number a person in front of the screen pays for - `suchbauten` - is visible and should stay
+  near zero. Free, no key, no upgrade panel - the same rule the rest of the app keeps.
+
 ## [3.2.58]
 
 ### Added

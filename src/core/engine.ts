@@ -271,11 +271,26 @@ interface SuchVektoren {
   liste: ReturnType<KeptaStore["allEmbeddableChunks"]>;
   normen: Float32Array;
 }
+
+/**
+ * Wer die Spur baut, wird gezaehlt (P6-105): `suchbauten` ist der Aufbau, den ein Mensch vor
+ * seinem Bildschirm bezahlt, `vorwaermungen` derselbe Aufbau in der Stille der Tuer. Die Zahl
+ * sitzt an einem Ort, und dieselbe Ort ist der Leib von `/api/health` (`vektorSpur`) — ein
+ * Zeuge im Test und ein Zeuge an der Tuer duerfen nicht zwei Verschiedenes meinen.
+ */
+export const vektorSpurStatistik = { vorwaermungen: 0, suchbauten: 0, zeilen: 0 };
+type SpurBaumeister = "vorwaermung" | "suche";
+
 const vektorCache = new WeakMap<KeptaStore, { generation: number; spur: SuchVektoren }>();
-function suchVektoren(store: KeptaStore): SuchVektoren {
+function suchVektoren(store: KeptaStore, wer: SpurBaumeister): SuchVektoren {
   const generation = store.datenGeneration();
   const eintrag = vektorCache.get(store);
   if (eintrag && eintrag.generation === generation) return eintrag.spur;
+  // Der alte Vorrat geht vor dem Neubau von der Hand: waehrend des Lesens und Wandels
+  // (1 321,99 ms an 64 164 Abschnitten, gemessen 25.10. 12:52) waeren sonst alt und neu
+  // zugleich im Leib — in der eignen Kapsel stieg die Resident Size ueber zwei Baue auf
+  // 1 038 688 KiB, wo ein Bau 697 088 bis 730 896 KiB braucht.
+  vektorCache.delete(store);
   const liste = store.allEmbeddableChunks().filter((c) => c.model === DEFAULT_EMBED_MODEL);
   const normen = new Float32Array(liste.length);
   for (let j = 0; j < liste.length; j++) {
@@ -286,8 +301,45 @@ function suchVektoren(store: KeptaStore): SuchVektoren {
   }
   const spur = { liste, normen };
   vektorCache.set(store, { generation, spur });
+  if (wer === "vorwaermung") vektorSpurStatistik.vorwaermungen += 1;
+  else vektorSpurStatistik.suchbauten += 1;
+  vektorSpurStatistik.zeilen = liste.length;
   return spur;
 }
+
+/**
+ * Steht die Spur, oder hat die Datenwelt sie schon wieder weggenommen?
+ *
+ * Der Blick gilt der Generation, nicht dem Kalender: `store.datenGeneration()` steigt bei JEDEM
+ * Schreibfall — einer neuen Notiz, einer Textaenderung, und (das ueberrascht) auch bei jedem
+ * Einbettungs-Nachschub der Hintergrund-Queue, weil dessen `UPDATE ON chunks` einen Trigger ohne
+ * WHEN-Klausel hat (src/core/store.ts:969). Eine Vorwaermung beim Start ist darum keine Dauer
+ * -warmung: der erste Schreibfall danach wirft sie weg, und die naechste semantische Suche zahlt
+ * den Aufbau erneut. Genau das ist der Grund, dass die Tuer die Spur in jedem ruhigen Fenster neu
+ * bestellen darf — und der Grund, dass sie vorher wartet, bis die Generation stillsteht.
+ */
+export function vektorSpurSteht(store: KeptaStore): { generation: number; veraltet: boolean } {
+  const generation = store.datenGeneration();
+  const eintrag = vektorCache.get(store);
+  return { generation, veraltet: !eintrag || eintrag.generation !== generation };
+}
+
+/**
+ * Baut die Vektor-Spur, bevor die erste semantische Suche sie braucht, und liefert die Zahl der
+ * Abschnitte in der Spur.
+ *
+ * Warum es das braucht: der Bau liest, entbuergert und wandelt jeden Abschnitt des Bestands.
+ * Gemessen 25.10.2026 an der eignen Kapsel (3.2.57, 20 066 Notizen, 64 164 Abschnitte zu 768
+ * Dimensionen, verschluesselte DB 280 649 728 B): erster Griff 1 462,26 ms und 1 493,81 ms an
+ * zwei echten Kaltstarts, davon 1 321,99 ms (97,1 Prozent) Lesen und Wandeln, 39,59 ms Normen;
+ * Dauer-RSS +475,0 MiB und +477,8 MiB; warmer Vektorpfad 58,19 bis 74,65 ms. An der Boot-Achse
+ * darf dieser Lauf nicht haengen (die Tuer lauscht in 0,568 s und 0,654 s), also steht er hier
+ * als Vorlauf fuer die Stille der Tuer.
+ */
+export function waermeVektorSpur(store: KeptaStore): number {
+  return suchVektoren(store, "vorwaermung").liste.length;
+}
+
 
 function entityMentionsInQuery(store: KeptaStore, queryLower: string): string[] {
   const mentions: string[] = [];
@@ -380,7 +432,7 @@ export async function searchMemories(store: KeptaStore, params: SearchParams): P
       // je Chunk, einmal pro Generation). Nur Chunks desselben Embedding-Modells
       // sind vergleichbar — der Query-Vektor entsteht mit DEFAULT_EMBED_MODEL;
       // fremde Modelle würden unsinnige Cosine-Werte liefern.
-      const spur = suchVektoren(store);
+      const spur = suchVektoren(store, "suche");
       const liste = spur.liste;
       const normen = spur.normen;
       // Query-Norm einmal je Abfrage

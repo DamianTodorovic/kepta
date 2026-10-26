@@ -12,7 +12,8 @@ import { teamPolicy } from "../src/lib/team";
 import { schluesselbundKeyProvider } from "../src/core/schluessel";
 import { migrateFromLegacyJson } from "../src/core/migrate";
 import { EmbeddingQueue } from "../src/core/embeddings";
-import { aktiviereSuchCacheDelta, waermeSuchCache } from "../src/core/engine";
+import { aktiviereSuchCacheDelta, waermeSuchCache, vektorSpurSteht, waermeVektorSpur } from "../src/core/engine";
+import { beimLeerstand, ruheAuftrag } from "./helfer/leerstand";
 import { TOOLS as MCP_TOOLS } from "../src/core/mcp";
 import { createApp, sichererFehler } from "./app";
 import { resolveDistDir } from "./helfer/pfad";
@@ -125,6 +126,27 @@ export async function startServer() {
         console.warn(`Such-Vorwaermung ausgeblieben (erste Anfrage zahlt den Volllauf): ${e instanceof Error ? e.message : String(e)}`);
       }
     }, 250);
+    // P6-105: die Vektor-Spur beim ersten Leerlauf, nicht an der Boot-Achse und nicht an der
+    // ersten Suche des Menschen. Gemessen an der eignen Kapsel (3.2.57, 20 066 Notizen, 64 164
+    // Abschnitte zu 768 Dimensionen): der Aufbau kostet 1 462,26 ms und 1 493,81 ms bei zwei
+    // echten Kaltstarts und 475 bis 478 MiB Dauer-RSS, waehrend die Tuer selbst in 0,568 s und
+    // 0,654 s lauscht. Vor die Tuer gezogen haette das den Boot auf rund 2,1 s gestellt — also
+    // holt die Tuer ihn sich in ihrer eignen Stille, ueber den Helfer in
+    // server/helfer/leerstand.ts. Der Auftrag gilt immer wieder neu: jeder Schreibfall wirft
+    // die Spur weg, auch der Einbettungs-Nachschub der Queue, und `ruheAuftrag` wartet jeweils,
+    // bis die Generation stillsteht, statt mitten im Schreibstorm neu zu lesen.
+    // Ein fehlgeschlagener Vorlauf beendet den Laeufer und bleibt hoerbar — die erste Suche
+    // zahlt dann, was sie heute zahlt, und die Maschine holt nicht jede Sekunde neu aus.
+    beimLeerstand({
+      bedarf: ruheAuftrag({ stehe: () => vektorSpurSteht(store) }),
+      tun: () => {
+        const zeilen = waermeVektorSpur(store);
+        console.log(`Vektor-Vorwaermung: ${zeilen} Abschnitte in der Stille gebaut — die erste semantische Suche zahlt den Aufbau nicht`);
+      },
+      fehler: (grund) => {
+        console.warn(`Vektor-Vorwaermung ausgeblieben (erste Suche zahlt den Aufbau): ${grund instanceof Error ? grund.message : String(grund)}`);
+      },
+    });
   });
   // Listen-Fehler sauber behandeln — z. B. EADDRINUSE durch getFreePort-TOCTOU in der
   // Electron-Shell: klare Logausgabe statt unbehandeltem Crash-Dialog.

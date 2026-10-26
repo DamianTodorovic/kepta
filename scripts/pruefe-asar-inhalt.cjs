@@ -296,6 +296,17 @@ const erwartet = [
   // `teilzeiten` 8 mal, `vektor` 17 mal — die drei sind als Marken zu blind, nur `wortlese`
   // unterscheidet diese Fassung von der vorherigen.
   ["wortlese", 1],
+  // 3.2.59, Punkt 6s Leerlauf-Vorwaermung (Koerper p6-vektorvorwaermung-2510.patch, von dieser
+  // Runde 11:48:50 MESZ gelegt). Gegenprobe VOR dem Tausch, eigne Zaehlung ueber latin1-Bytes,
+  // 11:55:43 MESZ: beide Ketten **0** in der ausgelieferten 3.2.58 (49 124 459 B) UND **0** im
+  // Ruecklager 3.2.57 (49 120 066 B). Die erste Kette ist ein Wortlaut aus dem Logsatz, den die
+  // Vorwaermung selbst spricht (bootstrap.ts), die zweite ist der Name des neuen Feldes im
+  // Gesundheits-Leib (system.ts) - keine Kennung, die der Minifier verbiegen kann.
+  // **Warum diese zwei ueberhaupt hier stehen:** derselbe Koerper ist am Morgen schon einmal
+  // gelegt und zurueckgebaut worden; ohne Marke am Objekt waere eine verlorene Lieferung
+  // unsichtbar geblieben.
+  ["Vektor-Vorwaermung:", 1],
+  ["vektorSpur", 1],
 ];
 // Die Liste darf nur ASCII-Zeichen enthalten. Grund, gemessen 21.10. 19:16 MESZ am
 // installierten Objekt: das Wort "Looking" plus echtes U+2026 steht dort 2 mal, diese

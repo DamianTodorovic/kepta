@@ -17,6 +17,7 @@ import type { KeptaStore } from "../src/core/store";
 import { leseUmwelt } from "../src/core/umwelt";
 import type { MemoryRecord as CoreMemory } from "../src/core/types";
 import { erstelleLimiter } from "./helfer/limiter";
+import { leerstandsmittelware } from "./helfer/leerstand";
 import { mountActivity } from "./router/activity";
 import { mountImporte } from "./router/importe";
 import { mountMemories } from "./router/memories";
@@ -145,6 +146,11 @@ export function createApp(store: KeptaStore, optionen: AppOptionen = {}) {
   // Only this computer — not a website open in a browser on it (src/lib/herkunft.ts).
   // First of all, so that no route registered below can be reached around it.
   app.use(nurDieserRechner({ bindHost: process.env.KEPTA_HOST }));
+
+  // P6-105: die Rechnung ueber die offenen Antworten, vor allem andern, was nach ihr kommt —
+  // die Leerlauf-Vorwaermung (server/helfer/leerstand.ts) darf keine Antwort uebersehen, die
+  // noch laeuft, sonst baut sie 1,5 Sekunden Rechenarbeit mitten in einem laufenden Seitenaufruf.
+  app.use(leerstandsmittelware);
 
   // --- Vollständige Liste in einem Durchstich — Begruendung und Messung bei
   // store.alleMemories (src/core/store.ts); die Schleife hier warf je Seite einen

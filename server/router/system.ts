@@ -10,6 +10,7 @@ import { memoryToMarkdown } from "../../src/core/obsidian";
 import { TOOLS as MCP_TOOLS } from "../../src/core/mcp";
 import { mcpStartInDerApp } from "../helfer/mcp-start";
 import { zeitnahme } from "../helfer/zeitnahme";
+import { vektorSpurStatistik } from "../../src/core/engine";
 import { semantikVomBestand } from "../helfer/semantik";
 import { leseUmwelt, gewonneneUmweltNamen, ohneWert } from "../../src/core/umwelt";
 import { serverVerzeichnis, resolveDistDir } from "../helfer/pfad";
@@ -40,6 +41,11 @@ export function mountSystem(app: express.Express, ctx: AppKontext): void {
       dbPath: store.dbPath,
       count,
       embeddings,
+      // P6-105: wer die Vektor-Spur gebaut hat. `suchbauten` ist der Aufbau, den ein Mensch vor
+      // dem Bildschirm bezahlt — er soll bei 0 bleiben, weil die Tuer den Aufbau in ihrer eignen
+      // Stille holt (server/helfer/leerstand.ts). Das Feld nennt nur Zaehlungen: kein Text, keine
+      // Kennung, kein Wort aus dem Bestand.
+      vektorSpur: { ...vektorSpurStatistik },
       encryption: store.verschluesselung,
       // Aufgabe #64: welche Namensform der Umgebung wirklich läuft. Ein Betreiber,
       // der beide Formen gesetzt hat, soll es hier sehen und nicht raten müssen.
