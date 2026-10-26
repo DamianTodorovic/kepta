@@ -353,6 +353,16 @@ const erwartet = [
   ["graph-farbgruppe-bild", 1],
   ["groups arrive in this picture", 1],
   ["colour by group", 1],
+  // Schritt 4a, 26.10. 17:25:58 MEZ, von der Lande-Runde VOR dem Tausch gelegt, weil der
+  // Pruefer bis hierher kein Wort kannte, das nur der neue Koerper spricht. Zaehlt gegen das
+  // ausgelieferte 3.2.61 (/Applications/K3PTA.app/Contents/Resources/app.asar, 49 126 944 B,
+  // mtime 2026-10-26T14:57:10Z, latin1-Lesung 17:25:58): diese drei stehen dort **0** mal, ein
+  // eigener Bau muss sie je >= 1 tragen. Zwei Kandidaten aus demselben Koerper sind **keine
+  // Marke** und darum nicht drin: "Back to current" 1 und "preview-stand-back" 1 im alten
+  // Objekt -- sie trennen 3.2.61 nicht von 3.2.62.
+  ["preview-stand-restore", 1],
+  ["Restore this stand", 1],
+  ["Restore failed. Nothing was changed.", 1],
 ];
 // Die Liste darf nur ASCII-Zeichen enthalten. Grund, gemessen 21.10. 19:16 MESZ am
 // installierten Objekt: das Wort "Looking" plus echtes U+2026 steht dort 2 mal, diese
