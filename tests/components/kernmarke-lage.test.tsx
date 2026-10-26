@@ -17,6 +17,7 @@ import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { render, act } from "@testing-library/react";
 import { KnowledgeGraph } from "../../src/components/KnowledgeGraph";
 import { installiereLeinwand, installiereResizeObserver, installiereZeiger, setzeTheme } from "../helfer/canvas";
+import { KANTEN_RAND_PX } from "../../src/lib/graphLayout";
 import type { Memory } from "../../src/types";
 
 let zaehler = 0;
@@ -158,5 +159,35 @@ describe("#88: die Sammelmarke steht ueber dem Punkt und sagt, wo sie steht", ()
       view.container.querySelector("canvas")!.dataset.kernMarke,
       "die Marke malt nicht mehr, aber die Leinwand traegt noch ihr altes Rechteck"
     ).toBeUndefined();
+    // Dasselbe gilt fuer den Zustand der Lage: malt keine Zahl, keine Lage, kein Wort.
+    expect(
+      view.container.querySelector("canvas")!.dataset.kernOrt,
+      "die Marke malt nicht, aber die Leinwand behauptet noch einen Zustand ihrer Lage"
+    ).toBeUndefined();
+  });
+
+  it("#109: die Leinwand nennt ihre Lage, und ihr Wort gilt fuer ihre eigne Zahl", async () => {
+    // Ein Fall, der den Zustand nur *ablesen* wuerde, prueft nichts: "frei" oder
+    // "eng" ist jede Meldung durchgelassen. Also wird das Wort gegen die Lage
+    // gehalten, die dieselbe Leinwand im selben Feld ablegt — wer "frei" sagt und
+    // eine Zahl ueber der Kante legt, faellt hier.
+    const view = await feld();
+    await bisUnterDieBlende(view, 2);
+    const c = view.container.querySelector("canvas")!;
+    const m = rechteck(view);
+    expect(c.dataset.kernOrt, "die Zahl malt, aber die Leinwand nennt ihren Zustand nicht").toBeTruthy();
+    const gehalten =
+      m.x >= KANTEN_RAND_PX &&
+      m.y >= KANTEN_RAND_PX &&
+      m.x + m.w <= 1000 - KANTEN_RAND_PX &&
+      m.y + m.h <= 700 - KANTEN_RAND_PX;
+    expect(m.x, `die Zahl beginnt ueber der linken Kante: ${m.x}`).toBeGreaterThanOrEqual(KANTEN_RAND_PX);
+    expect(m.y, `die Zahl beginnt ueber der oberen Kante: ${m.y}`).toBeGreaterThanOrEqual(KANTEN_RAND_PX);
+    expect(m.x + m.w, `die Zahl endet ueber der rechten Kante: ${m.x + m.w} in 1000`).toBeLessThanOrEqual(1000 - KANTEN_RAND_PX);
+    expect(m.y + m.h, `die Zahl endet ueber der unteren Kante: ${m.y + m.h} in 700`).toBeLessThanOrEqual(700 - KANTEN_RAND_PX);
+    expect(
+      c.dataset.kernOrt,
+      `die Leinwand nennt "${c.dataset.kernOrt}", aber ihre eigne Lage haelt die vier Punkte${gehalten ? "" : " nicht"}`
+    ).toBe(gehalten ? "frei" : "eng");
   });
 });
