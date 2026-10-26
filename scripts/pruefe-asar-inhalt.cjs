@@ -307,6 +307,21 @@ const erwartet = [
   // unsichtbar geblieben.
   ["Vektor-Vorwaermung:", 1],
   ["vektorSpur", 1],
+  // NACHGESETZT 26.10. **15:22:51 MEZ (+0100)** fuer **3.2.58** (Zeile 154, Punkt 1s Randklemme #101):
+  // diese Landung trug, wie die von 3.2.60, keine Marke. Eigne Zaehlung ueber latin1-Bytes
+  // (15:21:5x bis 15:22:5x MEZ, Gegenprobe desselben Laufs) an den
+  // beiden Ruecklagern — gewesenes 3.2.57 `/tmp/K3PTA-vor-3.2.58.app/.../app.asar`
+  // (49 121 151 B, mtime 17:40:34) gegen gewesenes 3.2.58
+  // `/tmp/K3PTA-vor-3.2.59.app/.../app.asar` (49 124 459 B, mtime 11:35:37):
+  // `dotYGenau` **0 gegen 1**, und im **ausgelieferten** 3.2.60 ebenfalls **1** (49 126 415 B,
+  // mtime 15:11:25) — die Marke ueberlebt drei Fassungen, weil ein Objekt-Feldname nicht umbenannt
+  // wird. **Zwei Befunde, keine Luecken, beide gemessen:** `markeKippt` (der Funktionsname) steht in
+  // **beiden** Objekten 0 — der Minifier verbiegt ihn, eine Pruefung darauf kann nie schlagen;
+  // und der zweite Koerper derselben Fassung (Zeile 151, Punkt 3s Eine-Wort-Kriterium #103) hat
+  // **kein einziges ueberlebendes Literal**: `lokalhost` 0 gegen 0, `dieser Rechner` 0 gegen 0,
+  // `istLokaleAdresse` 1 gegen 1, `.localhost` 4 gegen 4. Sein Beweis sind die zwei gelandeten
+  // Faelle, nicht ein Wort im Leib.
+  ["dotYGenau", 1],
   // 3.2.60, Punkt 4s #107 (Koerper p4-107-gegen-ueberlauf.patch, von der Bau-Runde 14:49:10 MESZ
   // gelegt, Kopf 2a3aa64). **Diese zwei Marken setzt die Leitung selbst, 15:16 MESZ** — die
   // Landung war ohne sie erfolgt, und die Gegenprobe hat das gezeigt: die Sonde meldete
