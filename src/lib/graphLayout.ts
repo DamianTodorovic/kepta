@@ -897,6 +897,43 @@ export function zeilenUmbruch(text: string, masse: (t: string) => number, freiBr
 }
 
 /**
+ * #109 — ob ein Rechteck gegen alle Hindernisse den freien Rand haelt, auf **beiden**
+ * Achsen. Vier Bildpunkte sind kein Luxus: bei 11 px Schrift ist ein Zeichenbreitenab-
+ * stand, und was 1 px entfernt steht, liest sich als Teil des Nachbarn.
+ */
+export type Rechteck = { x: number; y: number; w: number; h: number };
+
+export function randGehalten(marke: Rechteck, hinder: readonly Rechteck[], randPx: number): boolean {
+  return hinder.every((h) =>
+    marke.x + marke.w + randPx <= h.x ||
+    h.x + h.w + randPx <= marke.x ||
+    marke.y + marke.h + randPx <= h.y ||
+    h.y + h.h + randPx <= marke.y
+  );
+}
+
+/**
+ * Die erste freie Lage der geretteten Zahl: neun Versuche um ihre eigne Breite und
+ * Hoehe (erst hoeher, dann tiefer, dann seitlich), in demselben Mass wie das
+ * Rechteck selbst.
+ *
+ * `null` heisst: keine dieser Lagen haelt den Rand. Es heisst **nicht**, dass die
+ * Zahl weg darf — sie ist die einzige Auskunft ueber einen Kern, den das Bild
+ * nicht mehr als Einzelne zeigt (#105). Der Aufrufer malt sie an die beste Stelle
+ * und nennt den Zustand; ein Verschwinden ohne Wort ist der alte Fehler.
+ */
+export function zahlOrt(zahl: Rechteck, hinder: readonly Rechteck[], randPx: number): Rechteck | null {
+  const vs = [
+    [0, 0], [0, -1], [0, 1], [-1, 0], [1, 0], [0, -2], [0, 2], [-1, -1], [1, -1],
+  ];
+  for (const [dx, dy] of vs) {
+    const kandidat = { x: zahl.x + dx * (zahl.w / 2), y: zahl.y + dy * (zahl.h + randPx), w: zahl.w, h: zahl.h };
+    if (randGehalten(kandidat, hinder, randPx)) return kandidat;
+  }
+  return null;
+}
+
+/**
  * Die erste Zeile, die im Bild liegt und vor dem Kasten Halt macht.
  *
  * Die Flucht ging bisher nur **abwaerts** (`KnowledgeGraph.tsx:4080`) und brach an

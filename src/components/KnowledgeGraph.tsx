@@ -53,8 +53,11 @@ import {
   knotenRadius,
   dichtesteWeltMitte,
   KANTEN_RAND_PX,
+  randGehalten,
   zeilenFlucht,
   zeilenUmbruch,
+  zahlOrt,
+  type Rechteck,
   type LayoutEdge,
   type LayoutNode,
   type Simulation,
@@ -1093,6 +1096,54 @@ export const KERN_MARKE_SCHRIFT_PX = 11;
  */
 export function markeKippt(dotYGenau: number, schriftPx = KERN_MARKE_SCHRIFT_PX): boolean {
   return dotYGenau - KERN_MARKE_RADIUS_PX < schriftPx + 3;
+}
+
+/**
+ * #109 — die LAGE der geretteten Zahl, gerechnet, bevor ein Strich fließt.
+ *
+ * Die Zahl sitzt mittig über ihrem Punkt, und der Punkt darf an jede Kante.
+ * Gemessen 26.10. 16:25:19 bis 16:25:22 am ausgelieferten 3.2.61: stand der Punkt
+ * bei x 6, reichte das Rechteck bis −2,9 px über die Kante, und 16 von 62 hellen
+ * Bildpunkten der Ziffern — 25,8 % — waren abgeschnitten. Sieben px vor der
+ * rechten Kante: 2,1 px Übergriff. Der Übergriff war auf ein halbes Pixel genau
+ * „halbe Breite minus Punkt-Abstand", also ist er keine Laune des Zufalls,
+ * sondern die Konstruktion.
+ *
+ * Zwei Schritte, in dieser Reihenfolge: zuerst zurück in das Bild (Klemme an der
+ * Breite, die die Fläche selbst gemessen hat), dann eine Lage weiter, wenn etwas
+ * im Weg steht (Kasten, andere Wand). Der Punkt bleibt, wo er ist — er ist der
+ * Anker, nicht die Auskunft. `gehalten` sagt, ob die Zahl am Ende wirklich vier
+ * Bildpunkte frei hat; wenn nein, wird sie trotzdem gemalt, denn #105 hat die
+ * Fläche das Verschwinden ohne Wort gelehrt, und eine unsichtbare Kernzahl ist
+ * teurer als eine enge.
+ *
+ * Die vier Kanten des Bildes sind Hindernisse wie jeder Kasten und bauen sich
+ * hier selbst: eine Zahl, die den Rand nicht nennt, kann ihn auch nicht halten.
+ */
+export function markeLage(
+  dotX: number,
+  dotYGenau: number,
+  breitePx: number,
+  bild: { w: number; h: number },
+  kasten: readonly Rechteck[],
+  randPx = KANTEN_RAND_PX
+): { x: number; y: number; kippt: boolean; gehalten: boolean } {
+  const wand = 10_000;
+  const hinder: Rechteck[] = [
+    { x: -wand, y: -wand, w: wand, h: 3 * wand },
+    { x: bild.w, y: -wand, w: wand, h: 3 * wand },
+    { x: -wand, y: -wand, w: 3 * wand, h: wand },
+    { x: -wand, y: bild.h, w: 3 * wand, h: wand },
+    ...kasten,
+  ];
+  const kippt = markeKippt(dotYGenau);
+  const x = Math.max(randPx, Math.min(dotX - breitePx / 2, bild.w - randPx - breitePx));
+  const y = kippt
+    ? dotYGenau + KERN_MARKE_RADIUS_PX + 3
+    : dotYGenau - KERN_MARKE_RADIUS_PX - 3 - KERN_MARKE_SCHRIFT_PX;
+  const grund: Rechteck = { x, y, w: breitePx, h: KERN_MARKE_SCHRIFT_PX };
+  const ort = randGehalten(grund, hinder, randPx) ? grund : (zahlOrt(grund, hinder, randPx) ?? grund);
+  return { x: ort.x, y: ort.y, kippt, gehalten: randGehalten(ort, hinder, randPx) };
 }
 
 /**
@@ -3571,6 +3622,10 @@ export function KnowledgeGraph({ memories: memoriesAusFenster, onSelectMemory, o
       ctx.globalAlpha = 1;
     }
 
+    // Die Lage der Zahl, wie sie WIRKLICH gemalt ist — in Bildpunkten. Das
+    // Belegungsraster der Titel liest sie weiter unten und hält ihre Wörter
+    // davon fern (#109).
+    let markeRaster: Rechteck | null = null;
     if (kernMarkeBild.marke) {
       // Eine Marke statt Duennen: die Zahl ist der Kern, den das Bild nicht mehr
       // als Einzelne zeigen kann. Ein Ort, ein lesbarer Wert. Dazu EIN Quadrat,
@@ -3594,36 +3649,51 @@ export function KnowledgeGraph({ memories: memoriesAusFenster, onSelectMemory, o
       // Legenden-Karte unten im Bild und schnitt die Marke an (#88, 12:58:14).
       ctx.textAlign = "center";
       const dotYGenau = kernMarkeBild.wy * t.k + t.y;
-      const kippt = markeKippt(dotYGenau);
-      ctx.textBaseline = kippt ? "top" : "bottom";
       const labelBreite = ctx.measureText(markeText).width;
-      const labelY = kippt
-        ? kernMarkeBild.wy + (KERN_MARKE_RADIUS_PX + 3) / t.k
-        : kernMarkeBild.wy - (KERN_MARKE_RADIUS_PX + 3) / t.k;
+      // #109 — die Lage steht fest, bevor der Strich fließt. Die Kanten des
+      // Bildes baut die Rechnung selbst; hier kommt nur der Kasten dazu, dessen
+      // Oberkante die Flaeche schon in der Breite misst (#88, #106).
+      const breitePx = labelBreite * t.k;
+      const kasten = legendenRef.current;
+      const kaesten: Rechteck[] =
+        kasten?.offsetWidth && kasten?.offsetHeight
+          ? [{ x: kasten.offsetLeft, y: kasten.offsetTop, w: kasten.offsetWidth, h: kasten.offsetHeight }]
+          : [];
+      const lage = markeLage(kernMarkeBild.wx * t.k + t.x, dotYGenau, breitePx, dimensions, kaesten);
+      ctx.textBaseline = lage.kippt ? "top" : "bottom";
+      // Zurück in die Welt: gemalt wird in Welteinheiten, gerechnet in Bildpunkten.
+      const weltX = (lage.x + breitePx / 2 - t.x) / t.k;
+      const weltY = (lage.y + (lage.kippt ? 0 : KERN_MARKE_SCHRIFT_PX) - t.y) / t.k;
       ctx.lineWidth = 3 / t.k;
       ctx.strokeStyle = grundFarbe;
-      ctx.strokeText(markeText, kernMarkeBild.wx, labelY);
+      ctx.strokeText(markeText, weltX, weltY);
       ctx.fillStyle = textFarbe;
-      ctx.fillText(markeText, kernMarkeBild.wx, labelY);
-      // Die Lage als Rechteck in Bildpunkten (CSS) auf der Leinwand ablegen.
-      const rechts = kernMarkeBild.wx * t.k + t.x;
-      const unten = labelY * t.k + t.y;
+      ctx.fillText(markeText, weltX, weltY);
+      // Die Lage als Rechteck in Bildpunkten (CSS) auf der Leinwand ablegen —
+      // die GEMALTE, nicht die gedachte: ein Beweis, der eine Stelle nennt, die
+      // kein Mensch sieht, ist kein Beweis.
       ctx.canvas.dataset.kernMarke = JSON.stringify({
-        x: Math.round((rechts - (labelBreite * t.k) / 2) * 10) / 10,
-        y: Math.round((kippt ? unten : unten - KERN_MARKE_SCHRIFT_PX) * 10) / 10,
-        kippt,
+        x: Math.round(lage.x * 10) / 10,
+        y: Math.round(lage.y * 10) / 10,
+        kippt: lage.kippt,
         dotYGenau: Math.round(dotYGenau * 1000) / 1000,
-        w: Math.round(labelBreite * t.k * 10) / 10,
+        w: Math.round(breitePx * 10) / 10,
         h: KERN_MARKE_SCHRIFT_PX,
         dotX: Math.round(kernMarkeBild.wx * t.k + t.x),
-        dotY: Math.round(kernMarkeBild.wy * t.k + t.y),
+        dotY: Math.round(dotYGenau),
       });
+      // #105 lehrt: ein Zustand, der nichts malt, braucht ein Wort. Dass die Zahl
+      // an ihrem Ort liegt, aber einem Nachbarn zu nahe steht, ist derselben
+      // Art — gemalt wird sie trotzdem, und `eng` sagt es.
+      ctx.canvas.dataset.kernOrt = lage.gehalten ? "frei" : "eng";
+      markeRaster = { x: lage.x, y: lage.y, w: breitePx, h: KERN_MARKE_SCHRIFT_PX };
       ctx.textAlign = "left";
       ctx.textBaseline = "alphabetic";
     } else {
       // Kein Ruhestaender: wenn die Marke nicht malt, darf die Leinwand keine
       // Lage behaupten, die kein Mensch sieht.
       delete ctx.canvas.dataset.kernMarke;
+      delete ctx.canvas.dataset.kernOrt;
     }
     // #105 - der Zustand wohnt in einem eignen Feld, nicht im Rechteck: das
     // Rechteck darf nur dann da sein, wenn etwas gemalt ist (gelieferter Fall
@@ -3814,6 +3884,14 @@ export function KnowledgeGraph({ memories: memoriesAusFenster, onSelectMemory, o
       belegen(mx, my, breite);
       return true;
     };
+    // #109, die zweite Kante: die Sammelmarke malt vor allen Wörtern und steht
+    // fuer die Knoten, die das Bild nicht mehr als Einzelne zeigt. Ein Titel, der
+    // auf diese Zahl fällt, macht beide unlesbar — also nimmt die Zahl dem Raster
+    // ihre Zellen weg, ehe das erste Wort eines bekommt. Die vier Bildpunkte sind
+    // mit den Zellen des Rasters nicht exakt zu haben (eine Zelle ist `zellHoehe`
+    // weit); was hier gilt, ist die Richtung: kein Wort liegt auf der Zahl, und
+    // der Rand zwischen beiden ist mindestens so groß, wie das Raster atmet.
+    if (markeRaster) belegen(markeRaster.x + markeRaster.w / 2, markeRaster.y, markeRaster.w);
 
     /**
      * Die Kante, an der ein Titel stehen darf.

@@ -16,7 +16,7 @@
 // nie — auch nicht nach zwanzig Herauszoom-Knoepfen und angesetztem Kastenmass,
 // versucht und verworfen 26.10. 21:55 Uhr, gemeldet statt uegangen.
 import { describe, it, expect } from "vitest";
-import { KANTEN_RAND_PX, satzKuerzen, zeilenFlucht, zeilenUmbruch } from "../../src/lib/graphLayout";
+import { KANTEN_RAND_PX, randGehalten, satzKuerzen, zahlOrt, zeilenFlucht, zeilenUmbruch } from "../../src/lib/graphLayout";
 
 describe("#106 — der Satz endet an einer Kante, nie mitten im Wort", () => {
   it("bricht an Woertern, wenn die Kante naeher ist als seine Breite", () => {
@@ -75,5 +75,30 @@ describe("#106 — der Satz endet an einer Kante, nie mitten im Wort", () => {
     expect(zeilenFlucht(196, 14, 14, 60, 300)).toBeNull();
     // Die untere Bildkante gilt weiterhin.
     expect(zeilenFlucht(290, 14, 14, 300, 300)).toBe(276);
+  });
+
+  it("haelt die gerettete Zahl auf beiden Achsen vier Bildpunkte frei", () => {
+    // Punkt 109, gemessen am ausgelieferten Stueck: die Zahl beruehrte Raster und
+    // Begriffswort mit 1 px — also genau einen Bildpunkt zu wenig fuer die Latte.
+    const zahl = { x: 100, y: 200, w: 19, h: 12 };
+    const punkt = { x: 121, y: 200, w: 6, h: 6 };
+    expect(randGehalten(zahl, [punkt], KANTEN_RAND_PX), "1 px Abstand ist keine Distanz").toBe(false);
+    // Vier Bildpunkte Abstand sind die Latte, und sie gilt auf beiden Achsen.
+    expect(randGehalten({ ...zahl, x: 100 }, [{ x: 123, y: 200, w: 6, h: 6 }], KANTEN_RAND_PX)).toBe(true);
+    expect(randGehalten(zahl, [{ x: 100, y: 215, w: 19, h: 6 }], KANTEN_RAND_PX), "senkrecht 3 px: die Latte ist 4").toBe(false);
+    // Kein Hindernis, kein Zwang.
+    expect(randGehalten(zahl, [], KANTEN_RAND_PX)).toBe(true);
+  });
+
+  it("sucht der Zahl eine freie Lage, statt sie still verschwinden zu lassen", () => {
+    const zahl = { x: 100, y: 200, w: 20, h: 10 };
+    const hinder = [{ x: 100, y: 186, w: 20, h: 10 }];
+    // Eine Zeile hoeher steht das Hindernis — also muss die Suche eine Lage finden,
+    // die nicht daneben, sondern frei ist, und sie nennt ihren Ort.
+    const ort = zahlOrt(zahl, hinder, KANTEN_RAND_PX);
+    expect(ort, "die Zahl hat keinen Ort, obwohl der Platz frei ist").not.toBeNull();
+    expect(randGehalten(ort!, hinder, KANTEN_RAND_PX)).toBe(true);
+    // Ist alles besetzt, kommt null — und null heisst "benannt nicht gemalt".
+    expect(zahlOrt({ x: 0, y: 0, w: 40, h: 40 }, [{ x: -400, y: -400, w: 900, h: 900 }], KANTEN_RAND_PX)).toBeNull();
   });
 });
