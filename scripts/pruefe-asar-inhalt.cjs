@@ -337,7 +337,14 @@ const erwartet = [
   // `relative h-screen w-screen overflow-hidden` steht im neuen Objekt **0**, im alten **1** —
   // diese Liste kennt nur Untergrenzen, eine Kappe auf 0 waere eine zweite Klasse von Pruefung.
   ["calc(100% / ", 1],
-  ["relative h-screen w-full overflow-hidden", 1],
+  // `relative h-screen w-full overflow-hidden` war die Wurzel-Marke von 3.2.60 und ist
+  // **zurückgezogen**: Punkt 4s Körper für #107 tauscht die Viewport-Höhe gegen die
+  // h-full-Kette. Gemessen 20:37:03 MEZ — im gebauten Objekt von 20:35:33 steht die alte
+  // Kette **0**, im ausgelieferten 3.2.61 **1**; die neue Kette steht **1** gegen **0**.
+  // Eine Marke, die ein späterer Körper zu Recht ablöst, wird umgestellt — nicht die
+  // Heilung weichgemacht. Die Gegenrichtung (alte Kette muss 0 sein) steht hier als
+  // Messung, weil diese Liste nur Untergrenzen kennt.
+  ["relative h-full w-full overflow-hidden", 1],
   // 3.2.61, Punkt 5s #96 (Koerper p5-ac-farbsteuer-ankunft-99c15b8.patch, zwei Dateien,
   // von der Bau-Runde 15:27:48 MEZ gelegt, Zeile 157 des Flicken-Blatts). Drei Marken, weil
   // dieser Koerper drei verschiedene Dinge schreibt: die Kennung des neuen Knotens, den Satz
