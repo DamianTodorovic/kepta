@@ -34,6 +34,10 @@ beforeEach(async () => {
 afterEach(() => {
   if (prevHome === undefined) delete process.env.HOME;
   else process.env.HOME = prevHome;
+  delete process.env.KEPTA_DATA_DIR;
+  // Aufgabe #112: 1 088 tote Ordner ueber den Abend, gemessen 26.10. 21:27 unter $TMPDIR.
+  store?.close();
+  fs.rmSync(dir, { recursive: true, force: true });
 });
 
 async function knoten(titel = "Loeschkandidat") {

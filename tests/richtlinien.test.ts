@@ -68,6 +68,11 @@ afterEach(() => {
   delete process.env.KEPTA_MANAGED_CONFIG;
   if (prevHome === undefined) delete process.env.HOME;
   else process.env.HOME = prevHome;
+  delete process.env.KEPTA_DATA_DIR;
+  // Aufgabe #112: der Ordner war die Quelle des Stapels — 1 794 tote Verzeichnisse
+  // ueber den Abend, gemessen 26.10. 21:27 unter $TMPDIR.
+  store?.close();
+  fs.rmSync(dir, { recursive: true, force: true });
 });
 
 describe("liesVerwaltet", () => {

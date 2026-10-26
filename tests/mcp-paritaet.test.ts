@@ -26,7 +26,12 @@ beforeEach(() => {
   store = new KeptaStore(path.join(dir, "test.db"));
 });
 
-afterEach(() => store.close());
+afterEach(() => {
+  store.close();
+  // Aufgabe #112: die groesste Leckstelle der Suite — 2 448 tote Ordner ueber den
+  // Abend, gemessen 26.10. 21:27 unter $TMPDIR.
+  fs.rmSync(dir, { recursive: true, force: true });
+});
 
 function lege(titel: string, inhalt: string, extra: Record<string, unknown> = {}) {
   const m = store.createMemory({ title: titel, content: inhalt, ...extra } as never);

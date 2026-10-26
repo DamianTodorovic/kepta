@@ -19,6 +19,16 @@ import { join } from "node:path";
 const echt = homedir();
 const kapsel = mkdtempSync(join(tmpdir(), "kepta-kapsel-"));
 
+// Aufgabe #112, gemeldet statt halb geheilt: eine Kapsel je Testdatei bleibt liegen —
+// gemessen 26.10. 21:27 unter $TMPDIR: 104 922 Ordner, 16,66 GiB Platte, und zwei
+// Volllaeufe legten 1 729 Ordner neu an. Ein `process.on("exit")`-Handler hier wurde
+// 22:28 Uhr gefahren und nachgemessen: die Kapseln blieben stehen (1 199 vor zwei
+// Dateien, 1 201 nachher), weil der Fork-Pool seine Kinder mit einem Signal beendet und
+// ein Exit-Handler dann nicht laeuft. Eine Kapsel, die dem laufenden Prozess den Boden
+// unter HOME wegzieht, waere dazu ein Defekt — zurueckgeben laesst sie sich nur
+// ausserhalb eines Laufs: scripts/raeume-stapel.mjs, mit Altersschwelle, Zaehlung vor
+// und nachher und `df`-Beleg.
+
 process.env.KEPTA_ECHTES_HOME = echt;
 process.env.HOME = kapsel;
 process.env.USERPROFILE = kapsel; // dieselbe Geste in der Windows-Pfadform
