@@ -23,11 +23,13 @@ let createApp: typeof import("../server").createApp;
 let store: KeptaStore;
 let app: import("express").Express;
 let prevHome: string | undefined;
+let prevDaten: string | undefined;
 let dir: string;
 
 beforeEach(async () => {
   dir = fs.mkdtempSync(path.join(tmpdir(), "kepta-ersatz-"));
   prevHome = process.env.HOME;
+  prevDaten = process.env.KEPTA_DATA_DIR;
   process.env.HOME = dir;
   process.env.KEPTA_DATA_DIR = dir;
   vi.resetModules();
@@ -39,6 +41,13 @@ beforeEach(async () => {
 afterEach(() => {
   if (prevHome === undefined) delete process.env.HOME;
   else process.env.HOME = prevHome;
+  if (prevDaten === undefined) delete process.env.KEPTA_DATA_DIR;
+  else process.env.KEPTA_DATA_DIR = prevDaten;
+  // Der Datenordner wurde bisher nie geraeumt: 17 Ordner je Lauf blieben liegen,
+  // und ein Abend mit vollen Suiten kostete gemessen 1,27 GiB Platte — 3 603 Ordner
+  // unter $TMPDIR am 26.10., und genau die Platte fehlte der Baurunde.
+  store?.close();
+  fs.rmSync(dir, { recursive: true, force: true });
 });
 
 async function fuelle(n: number, praefix = "Bestand") {
@@ -141,6 +150,13 @@ describe("Q-16 — POST /api/memories/import mit mode:\"replace\" loescht die ga
     await fuelle(3);
     // backup/ als Datei statt Ordner: mkdir und Copy schlagen fehl, der Purge darf trotzdem nicht laufen.
     fs.writeFileSync(path.join(dir, "backup"), "blockiert", "utf-8");
+    // Die Sperre ist eine Vorbedingung dieses Falls, kein Beweis: liegt an ihrer
+    // Stelle ploetzlich ein Ordner (ein andrer Lauf hat den Datenordner geraeumt
+    // oder vorher schon eine Sicherung dorthin geschrieben), schreibt der Koerper
+    // die Sicherung und antwortet 200. Dann ist das Urteil aber eine Aussage ueber
+    // die Umgebung — also zuerst die Sperre pruefen, bevor sie dem Koerper gilt.
+    expect(fs.statSync(path.join(dir, "backup")).isFile(),
+      "Vorbedingung fehlt: backup/ ist keine Datei mehr — der Fall laeuft gegen eine andre Umgebung, nicht gegen den Koerper").toBe(true);
     const res = await request(app).post("/api/memories/import").send({
       mode: "replace",
       confirm: "replace",
@@ -181,6 +197,7 @@ describe("Q-16 — POST /api/memories/import mit mode:\"replace\" loescht die ga
       }
     } finally {
       keyed.close();
+      fs.rmSync(klarOrdner, { recursive: true, force: true });
     }
   });
 
@@ -233,6 +250,11 @@ describe("Sicherungsrotation — backup/ haelt die letzten fuenf, Fremdes bleibt
     await fuelle(1);
     const letzte: Antwort[] = [];
     for (let i = 1; i <= 6; i++) { letzte.push(await volltausch(i)); await pause(); }
+    // Erst der Status, dann die Zahl: ein ausgefallener Volltausch macht die
+    // Aufbewahrung nicht kaputt, er macht nur den Ordner leer — ohne diese Zeile
+    // warf der Fall ein Rot, das dem Koerper etwas anlastete, was die Tuer nie
+    // antwoordete.
+    expect(letzte.map((a) => a.status)).toEqual([200, 200, 200, 200, 200, 200]);
     expect(eigene()).toHaveLength(5);
     const sechste = letzte[5]!;
     expect(sechste.body.backupsGehalten).toBe(5);
@@ -248,7 +270,13 @@ describe("Sicherungsrotation — backup/ haelt die letzten fuenf, Fremdes bleibt
     vi.stubEnv("KEPTA_BACKUP_KEEP", "2");
     try {
       await fuelle(1);
-      for (let i = 1; i <= 4; i++) { await volltausch(i); await pause(); }
+      const antworten: Antwort[] = [];
+      for (let i = 1; i <= 4; i++) { antworten.push(await volltausch(i)); await pause(); }
+      // Der Status wird genannt, bevor gezaehlt wird: fiel ein Volltausch aus
+      // (Drossel, Sicherung, Timeout), war die Leere im Ordner nie ein Beweis fuer
+      // eine kaputte Aufbewahrung — genau so las sich der Lauf von 21:09 Uhr.
+      expect(antworten.map((a) => a.status),
+        antworten.map((a, i) => `${i + 1}: ${a.status} ${String(a.body?.error ?? "")}`).join(" | ")).toEqual([200, 200, 200, 200]);
       expect(eigene()).toHaveLength(2);
     } finally {
       vi.unstubAllEnvs();
