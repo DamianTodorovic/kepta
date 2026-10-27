@@ -1,3 +1,18 @@
+## [3.2.74]
+
+### Fixed
+
+- **Cluster colours are now chosen by how the eye tells them apart.** The first version
+  picked tones by luminance contrast, which is the wrong axis for a set of clusters: six
+  tones came out with their closest pair at 0.110 perceptual distance - green and teal,
+  nearly the same colour, just brighter and darker versions of each other. Selection now
+  maximises distance in OKLab (hue and saturation first, lightness last): the same six
+  clusters come out at 0.166 minimum distance, 51 % wider apart, and every tone still holds
+  at least 3:1 against the dark panel (measured minimum 4.55). A background can be passed
+  for the light theme; it is not passed yet, because the panel token is written in oklch and
+  the contrast helper reads hex - wiring that up without converting would silently switch
+  the floor off, which is the same mistake the design probe made this morning.
+
 ## [3.2.73]
 
 ### Added

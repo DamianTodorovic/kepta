@@ -319,6 +319,40 @@ export function gemeinschaftenBaue(
  */
 import { GRUPPEN_PALETTE, kontrastVerhaeltnis } from "./gruppen";
 
+/** sRGB-Hex -> linear -> OKLab (Bjorn Ottosson). Fuer den Abstand zwischen Toenen. */
+function oklab(hex: string): [number, number, number] | null {
+  const m = /^#?([0-9a-f]{6})$/i.exec((hex || "").trim());
+  if (!m) return null;
+  const wert = (i: number) => parseInt(m[1].slice(i, i + 2), 16) / 255;
+  const lineal = (c: number) => (c <= 0.04045 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4);
+  const r = lineal(wert(0));
+  const g = lineal(wert(2));
+  const b = lineal(wert(4));
+  const l = Math.cbrt(0.4122214708 * r + 0.5363325363 * g + 0.0514459929 * b);
+  const mm = Math.cbrt(0.2119034982 * r + 0.6806995451 * g + 0.1073969566 * b);
+  const s = Math.cbrt(0.0883024619 * r + 0.2817188376 * g + 0.6299787005 * b);
+  return [
+    0.2104542553 * l + 0.793617785 * mm - 0.0040720468 * s,
+    1.9779984951 * l - 2.428592205 * mm + 0.4505937099 * s,
+    0.0259040371 * l + 0.7827717662 * mm - 0.808675766 * s,
+  ];
+}
+
+/**
+ * Der Abstand zweier Toene, so wie ein Auge sie unterscheidet: Ton und Saettigung
+ * zuerst, Helligkeit zuletzt. Der kleinste Paar-Abstand der alten Wahl war eine
+ * Helligkeitszahl (1,054 zwischen Beere und Lavendel) — die Toene waren verschieden,
+ * nur nicht hell und dunkel, und die Rechnung hat das falsche Mass optimiert.
+ */
+export function tonAbstand(a: string, b: string): number {
+  const x = oklab(a);
+  const y = oklab(b);
+  if (!x || !y) return 0;
+  const ton = Math.hypot(x[1] - y[1], x[2] - y[2]);
+  const hell = Math.abs(x[0] - y[0]) * 2;
+  return Math.min(ton, 1) + Math.min(hell, 1) * 0.35;
+}
+
 export interface HaufenBild {
   /** Knoten-Kennung -> Farb-Schluessel (`h0`, `h1`, …) oder `neutral`. */
   zuordnung: Map<string, string>;
@@ -341,6 +375,7 @@ export interface HaufenBild {
 export function haufenBildBaue(
   ergebnis: GemeinschaftenErgebnis,
   palette: readonly string[] = GRUPPEN_PALETTE,
+  grund?: string,
 ): HaufenBild {
   const zuordnung = new Map<string, string>();
   const farben: Record<string, string> = {};
@@ -356,13 +391,19 @@ export function haufenBildBaue(
       continue;
     }
     const rest = palette.filter((ton) => !gewaehlt.includes(ton));
+    // Gewaehlt wird der Ton, der am weitesten von allen schon gewaehlten entfernt
+    // ist (Ton und Saettigung vor Helligkeit). Der Kontrast zur Flaeche bleibt eine
+    // zweite, eigene Frage — er wird gegen `grund` geprueft, wenn einer gegeben ist.
     const ton = rest
       .map((farbe) => ({
         farbe,
-        min: gewaehlt.length ? Math.min(...gewaehlt.map((t) => kontrastVerhaeltnis(farbe, t))) : Number.MAX_SAFE_INTEGER,
+        min: gewaehlt.length
+          ? Math.min(...gewaehlt.map((t) => tonAbstand(farbe, t)))
+          : Number.MAX_SAFE_INTEGER,
+        brauchbar: grund ? kontrastVerhaeltnis(farbe, grund) >= 3 : 1,
         rang: palette.indexOf(farbe),
       }))
-      .sort((a, b) => b.min - a.min || a.rang - b.rang)[0].farbe;
+      .sort((a, b) => Number(b.brauchbar) - Number(a.brauchbar) || b.min - a.min || a.rang - b.rang)[0].farbe;
     gewaehlt.push(ton);
     const schluessel = `h${groessen.length}`;
     farben[schluessel] = ton;

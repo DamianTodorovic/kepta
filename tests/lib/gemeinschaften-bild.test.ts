@@ -10,10 +10,11 @@ import {
   gemeinschaftenBaue,
   haufenBildBaue,
   haufenNamen,
+  tonAbstand,
   unterscheidetVonArt,
   type Gemeinschaftskante,
 } from "../../src/lib/gemeinschaften";
-import { GRUPPEN_PALETTE } from "../../src/lib/gruppen";
+import { GRUPPEN_PALETTE, kontrastVerhaeltnis } from "../../src/lib/gruppen";
 
 const kante = (a: string, b: string): Gemeinschaftskante => ({ a, b });
 
@@ -92,6 +93,57 @@ describe("haufenBildBaue — Schluessel und Toene fuer die Community-Ebene", () 
 
     expect(a.farben).toEqual(b.farben);
     expect([...a.zuordnung.entries()].sort()).toEqual([...b.zuordnung.entries()].sort());
+  });
+});
+
+describe("tonAbstand — das Mass, nach dem Toene gewaehlt werden", () => {
+  it("gibt null fuer denselben Ton und fuer kaputte Angaben", () => {
+    expect(tonAbstand("#e2703a", "#e2703a")).toBe(0);
+    expect(tonAbstand("keine farbe", "#e2703a")).toBe(0);
+    expect(tonAbstand("", "")).toBe(0);
+  });
+
+  it("unterscheidet Ton und Saettigung staerker als die Helligkeit", () => {
+    // Gruen gegen Tuerkois: fast gleiche Helligkeit, naher Ton — genau das Paar,
+    // das die alte Auswahl (nach Helligkeitsabstand) zusammen nahm.
+    const grau = tonAbstand("#4fae63", "#3fbfa8");
+    const weit = tonAbstand("#e2703a", "#5b7fd4");
+    expect(weit).toBeGreaterThan(grau);
+    expect(grau).toBeGreaterThan(0);
+  });
+});
+
+describe("haufenBildBaue — sechs Haufen aus einer Achter-Palette", () => {
+  const sechs = () => {
+    const kanten: Gemeinschaftskante[] = [];
+    const knoten: string[] = [];
+    for (let f = 0; f < 6; f += 1) {
+      const mit = Array.from({ length: 4 }, (_, i) => `f${f}-${i}`);
+      knoten.push(...mit);
+      for (let i = 0; i < mit.length; i += 1) {
+        for (let j = i + 1; j < mit.length; j += 1) kanten.push({ a: mit[i], b: mit[j] });
+      }
+    }
+    return haufenBildBaue(gemeinschaftenBaue(knoten, kanten));
+  };
+
+  it("waehlt sechs Toene, die sich nach Ton und Saettigung unterscheiden", () => {
+    const tone = Object.values(sechs().farben);
+    expect(tone).toHaveLength(6);
+
+    let kleinster = Number.MAX_SAFE_INTEGER;
+    for (let i = 0; i < tone.length; i += 1) {
+      for (let j = i + 1; j < tone.length; j += 1) kleinster = Math.min(kleinster, tonAbstand(tone[i], tone[j]));
+    }
+    // Latte 0,15: gemessen 0,166 (tuerkis gegen moos). Die Auswahl nach
+    // Helligkeitsabstand lag bei 0,110 (gruen gegen tuerkis) und faellt durch.
+    expect(kleinster).toBeGreaterThanOrEqual(0.15);
+  });
+
+  it("haelt jeden Ton von der dunklen Flaeche ablesbar", () => {
+    const tone = Object.values(sechs().farben);
+    const gegen = tone.map((t) => kontrastVerhaeltnis(t, "#141619"));
+    expect(Math.min(...gegen)).toBeGreaterThanOrEqual(3);
   });
 });
 
