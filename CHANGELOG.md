@@ -1,3 +1,22 @@
+## [3.2.70]
+
+### Changed
+
+- **The layout now walks on one base.** The design census - 28 runs over seven surfaces, two
+  widths, both themes, on the shipped 3.2.69 - counted 531 distances that broke the four-pixel
+  base, and 397 of them sat on a single surface: the knowledge list. They were not five hundred
+  decisions but ten rules: the card (`gap 10`, `padding 16/16/14`), its type banner (`gap 6`),
+  its quiet chips (`padding 2/7`), its meta row (`gap 10`, `padding-top 10`), the tag lines
+  (`gap 5`, `gap 3`), the title's bottom margin (3 px), the index cells (`gap 2`, `padding-left
+  22`, `gap 6` inside the value) and the chip class (`padding 2/8`). All of them are on the base
+  now, plus 326 spacing shortcuts across twenty files, rounded up so nothing crowds together.
+  The same instrument counts 18 instances left over 28 runs, and both kinds have a reason to
+  stay: a keyboard hint keeps its one-pixel padding, because there it is the ink's hairline
+  under a key cap and not a step; the time slider keeps 14 pixels of block padding, because a
+  16-pixel control plus twice 14 is the 44-pixel touch floor the house rule asks for. Nothing
+  moved out of its window: side overflow, clipped elements and undersized targets measured
+  zero across all twenty-eight runs, before and after.
+
 ## [3.2.69]
 
 ### Fixed

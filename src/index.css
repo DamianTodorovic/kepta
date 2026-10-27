@@ -1250,7 +1250,9 @@ svg[aria-hidden="true"] { min-block-size: var(--icon-min); min-inline-size: var(
      Ohne das liefet jeder Ansichtswechsel ein Layout über alle ~165.000
      Layout-Objekte des Bestands (~1,1 s Blockade im Hauptthread). */
   content-visibility: auto;
-  contain-intrinsic-size: auto 132px;
+  /* 163 px = gemessene mittlere Kartenhoehe am gebauten Stueck (40 Karten,
+     157,5 bis 166, Mittel 162,6, 22:36), nach dem Basis-Sweep. */
+  contain-intrinsic-size: auto 163px;
 }
 .row-entry:hover { border-color: var(--border-hover); background: var(--glass-strong); }
 .row-entry:active { transform: scale(0.995); transition-duration: var(--dur-fast); }

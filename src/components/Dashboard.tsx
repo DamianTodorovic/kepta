@@ -1788,7 +1788,7 @@ export function Dashboard() {
                   <span className="k">{(tuerBestand ?? memories.length) === 1 ? 'entry in the index' : 'entries in the index'}</span>
                 </div>
                 <div className="index-cell">
-                  <span className="v" style={{ gap: 10 }}>
+                  <span className="v">
                     {/* Farben sind vorhandene Token (index.css haelt E1) — die
                         Farbe zeigt die Ebene, das Wort ist Zeile 1. Gezählt wird
                         der Laden (#77), nicht das Blatt: die Heldenzahl oben ist
