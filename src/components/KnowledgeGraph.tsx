@@ -2604,6 +2604,21 @@ export function KnowledgeGraph({ memories: memoriesAusFenster, onSelectMemory, o
     if (graphApi?.bestand && graphApi.bestand.kanten > geliefert) {
       klausaen.push(`Showing ${zahl(geliefert)} of ${zahl(graphApi.bestand.kanten)} claims in the store`);
     }
+    // #113 — die Begriffs-Haelfte der Zahlenreihe nannte ihren Nenner nicht: sie sagt
+    // "0 concepts", waehrend die Tuer 120 zaehlt und ihr eigner Auszug "nothing dropped"
+    // meldet. Zwei Grundgesamtheiten, ein Widerspruch fuer ein Auge. **Die Klaue nennt
+    // nur die zwei Zahlen, die gemessen sind** — keine Ursache: welche der drei Kanten
+    // (Einzeltraeger ohne Behauptung, Titel-Echo an einem Ende, Kappe des Auszugs) eine
+    // Null macht, steht an keiner einzelnen Zahl, und die verschluckten Behauptungen
+    // haben eine eigne Klaue weiter unten. Schweigt die Tuer ueber den Bestand, steht
+    // nichts da: eine Zahl aus der Luft ist schlechter als keine.
+    const begriffeGemalt = netz.knoten.length;
+    const begriffeBestand = graphApi?.bestand?.knoten;
+    if (begriffeBestand !== undefined && begriffeBestand > begriffeGemalt) {
+      klausaen.push(
+        `Showing ${zahl(begriffeGemalt)} of ${zahl(begriffeBestand)} concepts in the store`
+      );
+    }
     // Die Deckung. Eine Punktwolke und ein Netz sehen gleich aus, solange keine
     // Zahl sagt, wie viel des Bestands überhaupt an einem Begriff hängt. Wenn
     // die Detailstufe schon ausdünnt, sagt die Zahl der Masse, was nicht malt —

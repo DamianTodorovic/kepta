@@ -1,3 +1,15 @@
+## [3.2.67]
+
+### Changed
+
+- **The concept count names the store it comes from.** The graph's head row said "0 concepts"
+  while the store held 120 of them - and a bare zero reads as "there are none", not "the picture
+  draws none". Measured on the real store: every claim there carries a note title on one of its
+  ends, so the net admits nothing, and the row kept the cause to itself. It now says "Showing 0 of
+  120 concepts in the store" whenever the drawn count is smaller than the store's - numbers only,
+  the picture's own lines still carry the reasons. The same sentence already guarded the note count
+  on the same row; the concept half was the gap.
+
 ## [3.2.66]
 
 ### Fixed
