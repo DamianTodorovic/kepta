@@ -1,3 +1,15 @@
+## [3.2.65]
+
+### Changed
+
+- **The legend can close, and on a phone it starts closed.** At 390 pixels wide the card took
+  288 of the picture's 628 pixels - 45.8 per cent, measured on the shipped app - and the largest
+  single line in it explained a group axis that holds nothing. It now has a named control beside
+  the count: one tap closes the group row and the shelf, one tap brings them back, and the choice
+  is remembered. What stays visible is what the card is for - the counts, the type colours, the
+  lines that say what is missing from the picture - so closing never hides an answer. Wide windows
+  keep the legend open; a narrow one starts closed until the person decides otherwise.
+
 ## [3.2.64]
 
 ### Fixed

@@ -402,6 +402,14 @@ const erwartet = [
   // aufgenommen: `gewichen` als Kennung, und die Woerter `frei` (30 mal) und `eng`
   // (26 391 mal) - ein Muster, das die Welt schon schreibt, trennt keine Fassung.
   ["gewichen", 1],
+  // Punkt 54 (die Klappe der Legende), gelegt 27.10. 01:50:52 MESZ VOR dem Bau gegen das
+  // AUSGELIEFERTE Stueck (3.2.64, 49 132 423 B, mtime 00:08): beide **0** mal, mit derselben
+  // latin1-Zaehlung wie hier. Die zwei Worte sind sichtbare Fliesentexte des Knopfs und seiner
+  // Anmeldung, keine Kennung — ein Minifier findet sie nicht. Nicht genommen: der
+  // localStorage-Schluessel `kepta_graph_legende` (steht 0 im alten Objekt, ist aber eine
+  // Konstante, die auch ein andrer Zweig tragen koennte, und die zwei oben sind die Wirkung).
+  ["Show the legend", 1],
+  ["graph-legende-klappe", 1],
 ];
 // Die Liste darf nur ASCII-Zeichen enthalten. Grund, gemessen 21.10. 19:16 MESZ am
 // installierten Objekt: das Wort "Looking" plus echtes U+2026 steht dort 2 mal, diese
