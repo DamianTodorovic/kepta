@@ -6,7 +6,13 @@
 // sich von der Art-Gruppe unterscheiden — sonst ist es umlackierte Art, keine Community."
 import { describe, expect, it } from "vitest";
 
-import { gemeinschaftenBaue, haufenBildBaue, unterscheidetVonArt, type Gemeinschaftskante } from "../../src/lib/gemeinschaften";
+import {
+  gemeinschaftenBaue,
+  haufenBildBaue,
+  haufenNamen,
+  unterscheidetVonArt,
+  type Gemeinschaftskante,
+} from "../../src/lib/gemeinschaften";
 import { GRUPPEN_PALETTE } from "../../src/lib/gruppen";
 
 const kante = (a: string, b: string): Gemeinschaftskante => ({ a, b });
@@ -86,6 +92,46 @@ describe("haufenBildBaue — Schluessel und Toene fuer die Community-Ebene", () 
 
     expect(a.farben).toEqual(b.farben);
     expect([...a.zuordnung.entries()].sort()).toEqual([...b.zuordnung.entries()].sort());
+  });
+});
+
+describe("haufenNamen — ein Wort je Haufen, ohne erfundenes Oberwort", () => {
+  const kraeftig = [
+    { id: "a1", label: "Kessel Nord" }, { id: "a2", label: "Plan Nord" },
+    { id: "a3", label: "  " }, { id: "a4", label: "Brief Nord" },
+    { id: "b1", label: "Kessel Sud" }, { id: "b2", label: "Plan Sud" },
+    { id: "b3", label: "Brief Sud" }, { id: "b4", label: "" },
+  ];
+  const bildVon = () => {
+    const f = gemischteKlubs();
+    return haufenBildBaue(gemeinschaftenBaue(f.knoten, f.kanten));
+  };
+
+  it("nennt jeden Haufen nach dem am besten verbundenen Mitglied mit Namen", () => {
+    const bild = bildVon();
+    const namen = haufenNamen(bild, kraeftig, (id) => (id === "a4" || id === "b3" ? 9 : 1));
+
+    expect(namen).toEqual(["Brief Nord", "Brief Sud"]);
+  });
+
+  it("traegt nichts vor, wenn ein Haufen keinen tragbaren Namen hat", () => {
+    const bild = bildVon();
+    const namen = haufenNamen(bild, [], () => 3);
+
+    expect(namen).toEqual(["", ""]);
+  });
+
+  it("ist wiederholbar und schlaegt bei Gleichstand die fruehere Kennung", () => {
+    const bild = bildVon();
+    const grad = (id: string) => (id.endsWith("4") ? 7 : 2);
+
+    // Club Nord: a4 traegt den hoechsten Grad und heisst "Brief Nord". Club Sued: b4
+    // hat den hoechsten Grad, aber keinen Namen und zahlt nicht — also gewinnt bei
+    // Gleichstand die fruehere Kennung, b1 "Kessel Sud".
+    expect(haufenNamen(bild, kraeftig, grad)).toEqual(haufenNamen(bild, kraeftig, grad));
+    expect(haufenNamen(bild, kraeftig, grad)).toEqual(["Brief Nord", "Kessel Sud"]);
+    // Gleichstand ueber alles: dann entscheidet die Reihenfolge des Bestands, nicht die Map.
+    expect(haufenNamen(bild, kraeftig, () => 1)).toEqual(["Kessel Nord", "Kessel Sud"]);
   });
 });
 

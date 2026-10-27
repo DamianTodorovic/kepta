@@ -1,3 +1,15 @@
+## [3.2.73]
+
+### Added
+
+- **Each cluster is named by what holds it together.** A community is hard to trust when it
+  is only a colour, so the line beside the switch now says what the largest cluster is named
+  after: its best-connected member that carries a name - "named after its best-connected
+  member: <title>". No model is asked and no key is needed, and the rule can be checked by
+  hand on the picture: the same edges the colours use decide the name, and where two members
+  tie, the earlier one in the store wins. GraphRAG gets a written summary per community from
+  a model; free of charge and free of guessing, this is the version that is verifiable.
+
 ## [3.2.72]
 
 ### Fixed

@@ -96,7 +96,7 @@ import {
   achsenSatz,
   gemalteZahlen,
 } from "../lib/gruppen";
-import { gemeinschaftenBaue, haufenBildBaue, unterscheidetVonArt } from "../lib/gemeinschaften";
+import { gemeinschaftenBaue, haufenBildBaue, haufenNamen, unterscheidetVonArt } from "../lib/gemeinschaften";
 import { KAPPE_PANEL } from "../lib/kappe";
 
 export type GraphAnsicht = "force" | "dendrogram" | "semantic";
@@ -1933,7 +1933,7 @@ export function KnowledgeGraph({ memories: memoriesAusFenster, onSelectMemory, o
    * nicht ueber dem Bestand: was hier Haufen heisst, sind Haufen in diesem Bild, und
    * die Zeile darunter nennt genau diesen Nenner.
    */
-  const haufenBild = useMemo(() => {
+  const haufenKanten = useMemo(() => {
     const gezeichnet = new Set(netz.knoten.map((k) => k.id));
     const kanten = [
       ...netz.erwahnungen
@@ -1945,8 +1945,35 @@ export function KnowledgeGraph({ memories: memoriesAusFenster, onSelectMemory, o
         .filter((b) => gezeichnet.has(b.source) && gezeichnet.has(b.target))
         .map((b) => ({ a: b.source, b: b.target, gewicht: 2 })),
     ];
-    return haufenBildBaue(gemeinschaftenBaue(netz.knoten.map((k) => k.id), kanten));
+    return kanten;
   }, [netz]);
+  const haufenBild = useMemo(
+    () => haufenBildBaue(gemeinschaftenBaue(netz.knoten.map((k) => k.id), haufenKanten)),
+    [netz, haufenKanten]
+  );
+  /** Der Grad entscheidet die Namenswahl — dieselben Kanten, dieselbe Zahl. */
+  const haufenGrade = useMemo(() => {
+    const grade = new Map<string, number>();
+    for (const k of haufenKanten) {
+      grade.set(k.a, (grade.get(k.a) ?? 0) + k.gewicht);
+      grade.set(k.b, (grade.get(k.b) ?? 0) + k.gewicht);
+    }
+    return grade;
+  }, [haufenKanten]);
+  /**
+   * Ein Wort je Haufen, ohne Modell und ohne erfundenes Oberwort: der Haufen heisst
+   * nach dem am besten verbundenen Mitglied, das einen Namen traegt
+   * (`haufenNamen`, Punkt 117). GraphRAG leistet sich eine Summary je Community —
+   * gratis, ohne Schluessel und ohne Wuerfel bleibt diese Regel nachpruefbar.
+   */
+  const groessterHaufenName = useMemo(() => {
+    const namen = haufenNamen(
+      haufenBild,
+      netz.knoten.map((k) => ({ id: k.id, label: k.label })),
+      (id) => haufenGrade.get(id) ?? 0
+    );
+    return namen[0] ?? "";
+  }, [haufenBild, netz, haufenGrade]);
   const haufenUrteil = useMemo(
     () => unterscheidetVonArt(haufenBild, artVonKennung),
     [haufenBild, artVonKennung]
@@ -6265,7 +6292,7 @@ export function KnowledgeGraph({ memories: memoriesAusFenster, onSelectMemory, o
                 data-testid="graph-farbhaufen-stand"
                 style={{ color: "var(--text-3)", pointerEvents: "none" }}
               >
-                {`${haufenBild.groessen.length} communities over ${netz.knoten.length} drawn nodes · largest ${Math.round((haufenBild.groessterAnteil || 0) * 100)}%${haufenBild.neutral > 0 ? ` · ${haufenBild.neutral} unpainted` : ""}`}
+                {`${haufenBild.groessen.length} communities over ${netz.knoten.length} drawn nodes · largest ${Math.round((haufenBild.groessterAnteil || 0) * 100)}%${groessterHaufenName ? ` · named after its best-connected member: ${groessterHaufenName}` : ""}${haufenBild.neutral > 0 ? ` · ${haufenBild.neutral} unpainted` : ""}`}
               </span>
             )}
           </div>

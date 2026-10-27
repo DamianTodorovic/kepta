@@ -437,3 +437,45 @@ export function unterscheidetVonArt(bild: HaufenBild, artVon: (kennung: string) 
     ? { ja: true, deckung, grund: `${prozent} % — die Haufen durchmischen die Arten` }
     : { ja: false, deckung, grund: `die Haufen folgen zu ${prozent} % den Arten — das ist umlackierte Art` };
 }
+
+/**
+ * Ein Wort je Haufen. GraphRAG leistet das mit einem Modell (Summary je Community);
+ * gratis, ohne Schluessel und ohne Wuerfel gilt hier eine Regel, die man nachpruefen
+ * kann: Der Haufen heisst nach dem am besten verbundenen Mitglied, das einen Namen
+ * traegt. Kein erfundenes Oberwort, kein Modell, das raten muss.
+ */
+export interface HaufenKennung {
+  id: string;
+  label: string;
+}
+
+/** Ein Name je Haufen, in der Reihenfolge der Groessenordnung. Leer, wenn nichts taugt. */
+export function haufenNamen(
+  bild: HaufenBild,
+  knoten: readonly HaufenKennung[],
+  gradVon: (kennung: string) => number,
+): string[] {
+  const mitglieder = new Map<string, string[]>();
+  bild.zuordnung.forEach((schluessel, id) => {
+    if (schluessel === "neutral") return;
+    const liste = mitglieder.get(schluessel);
+    if (liste) liste.push(id);
+    else mitglieder.set(schluessel, [id]);
+  });
+  const label = new Map(knoten.map((k) => [k.id, (k.label || "").trim()]));
+  return bild.groessen.map((_, i) => {
+    const liste = mitglieder.get(`h${i}`) ?? [];
+    let bester = "";
+    let besterGrad = -1;
+    for (const id of liste) {
+      const name = label.get(id) ?? "";
+      if (!name) continue;
+      const grad = gradVon(id);
+      if (grad > besterGrad) {
+        besterGrad = grad;
+        bester = name;
+      }
+    }
+    return bester;
+  });
+}

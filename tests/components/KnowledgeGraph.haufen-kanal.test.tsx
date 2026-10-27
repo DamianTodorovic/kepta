@@ -105,6 +105,9 @@ describe("#117 der Haufen-Kanal", () => {
     const text = stand(container);
     expect(text, "die Zeile nennt keine Grundgesamtheit").toMatch(/communities over \d+ drawn nodes/);
     expect(text).toMatch(/largest \d+%/);
+    // Ein Wort je Haufen, ohne Modell: der Haufen heisst nach seinem am besten
+    // verbundenen Mitglied, und das sagt die Zeile auch so.
+    expect(text, "die Zeile nennt keinen Haufen-Namen").toMatch(/named after its best-connected member: \S/);
 
     await act(async () => { schalter(container)!.click(); await new Promise((r) => setTimeout(r, 400)); });
     expect(schalter(container)!.getAttribute("aria-pressed"), "der Rueckweg fehlt").toBe("false");
