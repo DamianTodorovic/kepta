@@ -568,7 +568,7 @@ select:focus-visible {
 .index-strip {
   display: flex;
   align-items: stretch;
-  gap: 22px;
+  gap: 24px;
   padding: 12px 4px;
   border-radius: 0;
   background: transparent;
@@ -876,7 +876,7 @@ label:has(.switch), label:has(input[type="checkbox"]), label:has(input[type="rad
 
 /* Vorschlags-Pills: Kartonzettel */
 .suggestion-pill {
-  padding: 7px 14px;
+  padding: 8px 16px;
   border-radius: 999px;
   font-size: var(--fs-2);
   font-weight: var(--fw-halbfest);
@@ -1339,14 +1339,14 @@ button.row-quiet { cursor: pointer; border-color: var(--kante-kontrolle); }
 .apple-seg {
   display: inline-flex;
   align-items: center;
-  gap: 2px;
-  padding: 3px;
+  gap: 4px;
+  padding: 4px;
   border-radius: 10px;
   background: var(--bg-inset);
   border: 1px solid var(--border-subtle);
 }
 .apple-seg-btn {
-  padding: 5px 12px;
+  padding: 4px 12px;
   border-radius: 7px;
   border: 0;
   background: transparent;

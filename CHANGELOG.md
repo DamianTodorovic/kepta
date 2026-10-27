@@ -1,3 +1,18 @@
+## [3.2.68]
+
+### Changed
+
+- **Distances walk on one base again.** The design census - 28 runs over seven surfaces, two
+  widths, both themes, on the shipped 3.2.67 - found the layout breaking its own four-pixel
+  base in fifteen distances across eleven containers, and they gathered in four families: the
+  sidebar (row gap 10, side padding 10, row padding 7, row stack 2), the segmented control
+  (gap 2, padding 3, button padding 5), the suggestion pill (7 over 14) and the index strip
+  (column gap 22). All fifteen are on the base now. Control heights did not move: the
+  touch floor is a rule of its own (36 px on the desk, 44 from phone width), not a padding, so
+  a smaller padding cannot shrink a target. One distance stays off the base on purpose: a
+  `kbd` keeps its 1-pixel padding, because there it is the ink's hairline under a key cap, not
+  a step in the layout.
+
 ## [3.2.67]
 
 ### Changed

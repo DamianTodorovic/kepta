@@ -78,7 +78,7 @@ export function Sidebar({ tags, selectedTags, onSelectTag, onClearTags, currentV
       aria-hidden={isFocusMode}
     >
       {/* Marke */}
-      <div className="seiten-kante-unten h-[64px] px-4 flex items-center gap-2.5 shrink-0">
+      <div className="seiten-kante-unten h-[64px] px-4 flex items-center gap-2 shrink-0">
         <KeptaMark size={26} />
         <div className="min-w-0">
           <div className="seiten-marke font-semibold tracking-[-0.02em] text-[13.5px] leading-none">
@@ -91,8 +91,8 @@ export function Sidebar({ tags, selectedTags, onSelectTag, onClearTags, currentV
       </div>
 
       {/* Navigation */}
-      <div className="px-2.5 py-3">
-        <div className="space-y-0.5">
+      <div className="px-3 py-3">
+        <div className="space-y-1">
           {navItems.map(item => {
             const active = currentView === item.id;
             return (
@@ -101,7 +101,7 @@ export function Sidebar({ tags, selectedTags, onSelectTag, onClearTags, currentV
                 onClick={() => onNavigate(item.id)}
                 data-active={active}
                 className={cn(
-                  "sidebar-nav-btn w-full min-h-9 flex items-center gap-2.5 px-2.5 py-[7px] rounded-lg text-[13.5px] text-left",
+                  "sidebar-nav-btn w-full min-h-9 flex items-center gap-2 px-3 py-2 rounded-lg text-[13.5px] text-left",
                   active ? "font-semibold" : "font-medium"
                 )}
               >
@@ -118,7 +118,7 @@ export function Sidebar({ tags, selectedTags, onSelectTag, onClearTags, currentV
 
       {/* Tags */}
       {tags.length > 0 && (
-        <div className="flex-1 min-h-0 px-2.5 py-2 overflow-hidden flex flex-col">
+        <div className="flex-1 min-h-0 px-3 py-2 overflow-hidden flex flex-col">
           <div className="flex items-center justify-between px-2 mb-1.5">
             <span className="seiten-kopf text-[10.5px] font-semibold tracking-[0.09em] uppercase">Tags</span>
             {selectedTags.length > 0 && (
@@ -174,7 +174,7 @@ export function Sidebar({ tags, selectedTags, onSelectTag, onClearTags, currentV
 
       {/* Fußzeile */}
       <div className="seiten-kante-oben p-2.5 space-y-2">
-        <div className="seiten-flaeche px-2 py-2 rounded-lg flex items-center gap-2.5">
+        <div className="seiten-flaeche px-2 py-2 rounded-lg flex items-center gap-2">
           <KeptaMark size={24} />
           <div className="min-w-0 flex-1">
             <div className="seiten-marke text-[12.5px] truncate font-semibold tracking-[0.01em]">
@@ -208,7 +208,7 @@ export function Sidebar({ tags, selectedTags, onSelectTag, onClearTags, currentV
           )}
           <button
             onClick={toggleTheme}
-            className="seiten-knopf flex-1 h-9 flex items-center justify-center gap-1.5 rounded-lg text-[12px] font-medium"
+            className="seiten-knopf flex-1 h-9 flex items-center justify-center gap-2 rounded-lg text-[12px] font-medium"
             aria-label="Switch theme"
           >
             {isDark ? <Sun className="w-3.5 h-3.5" /> : <Moon className="w-3.5 h-3.5" />}

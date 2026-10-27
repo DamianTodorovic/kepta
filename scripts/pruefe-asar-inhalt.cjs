@@ -427,6 +427,11 @@ const erwartet = [
   ["legende-zustand", 1],
   ["data-legende", 1],
   ["including what this view is missing", 1],
+  // Punkt Zensur/Z-05 (die Vierer-Basis) schreibt KEINEN eignen Marker: die Heilung aendert
+  // nur Zahlen (10->8, 7->8, 22->24, 5->4, 7/14->8/16) und kein Wort im Objekt. Beweis ist die
+  // Messung selbst: 435 Nicht-Vier-Abstaende auf Knowledge 1440 vor der Heilung
+  // (audit-2026-10-09/feldzug/belege-2710/p6-zensur-67-b/zensur.json), nach ihr die gleiche
+  // Sonde erneut gefahren. Eine Zahl ist hier kein Wort, und ein Wort waere eine Behauptung.
 ];
 // Die Liste darf nur ASCII-Zeichen enthalten. Grund, gemessen 21.10. 19:16 MESZ am
 // installierten Objekt: das Wort "Looking" plus echtes U+2026 steht dort 2 mal, diese
