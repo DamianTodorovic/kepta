@@ -580,9 +580,9 @@ select:focus-visible {
   display: flex;
   flex-direction: column;
   justify-content: center;
-  gap: 2px;
+  gap: 4px;
   min-width: 0;
-  padding-left: 22px;
+  padding-left: 24px;
   border-left: 1px solid var(--border-subtle);
 }
 .index-cell:first-child {
@@ -598,7 +598,7 @@ select:focus-visible {
   color: var(--text-1);
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 8px;
 }
 /* Das Legenden-Wort neben der Zahl (ein <span> im gefärbten Zahl-<span>). Es kam
    von außen mit `text-[10px] opacity-70` — 10 px stehen unter der Schriftleiter
@@ -1002,7 +1002,7 @@ label:has(.switch), label:has(input[type="checkbox"]), label:has(input[type="rad
   display: inline-flex;
   align-items: center;
   gap: 4px;
-  padding: 2px 8px;
+  padding: 4px 8px;
   border-radius: var(--r-chip);
   font-size: var(--fs-1);
   font-weight: var(--fw-halbfest);
@@ -1279,7 +1279,7 @@ svg[aria-hidden="true"] { min-block-size: var(--icon-min); min-inline-size: var(
   font-size: var(--fs-5);
   font-weight: var(--fw-halbfest);
   line-height: 1.24;
-  margin: 0 0 3px;
+  margin: 0 0 4px;
   text-wrap: balance;
 }
 .row-body p {
