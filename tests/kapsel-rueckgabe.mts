@@ -19,13 +19,15 @@
 // Zwei Laeufe kommen sich nicht in die Quere: das Manifest traegt Lauf-Marke und
 // Parent-Pid, und ein Lauf liest ausschliesslich seine eigne Liste.
 import { mkdirSync, readdirSync, rmSync, writeFileSync, existsSync, statSync } from "node:fs";
+import { execFileSync } from "node:child_process";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
 const KAPSEL_PRAEFIX = "kepta-kapsel-";
 
 export default async function kapselRueckgabe() {
-  const markt = join(tmpdir(), "kepta-kapseln", `${Date.now()}-${process.pid}`);
+  const start = Date.now();
+  const markt = join(tmpdir(), "kepta-kapseln", `${start}-${process.pid}`);
   const grund = tmpdir();
   let tragfahig = true;
   try {
@@ -72,7 +74,63 @@ export default async function kapselRueckgabe() {
     } catch {
       fehler++;
     }
+
+    // Die zweite Quelle derselben Klasse: vierzig Testdateien werfeln eigne Tempel-
+    // Ordner unter andern Praefixen (`kepta-embed-`, `kepta-engine-`, `kepta-ext-` …)
+    // und geben sie nicht zurueck. Statt vierzig Dateien zu verbiegen, fegt dieser
+    // Parent, was **waehrend seines eignen Laufs** unter $TMPDIR mit dem Haus-Praefix
+    // `kepta-` entstanden ist — und nur, wenn kein zweiter vitest-Lauf lebt. Die
+    // Zeitkante ist der Schutz vor fremder Arbeit: ein Ordner, der vor diesem Lauf
+    // da war, bleibt stehen (dafür ist scripts/raeume-stapel.mjs mit Altersschwelle).
+    let gefegt = 0;
+    let fremdeLaeufe = 0;
+    try {
+      const tafel = execFileSync("/bin/ps", ["-eo", "pid=,ppid=,args="], { encoding: "utf8" })
+        .split("\n")
+        .map((z) => z.trim().split(/\s+/))
+        .filter((t) => t.length >= 3 && Number.isFinite(Number(t[0])))
+        .map((t) => ({ pid: Number(t[0]), ppid: Number(t[1]), args: t.slice(2).join(" ") }));
+      const eltern = new Map(tafel.map((r) => [r.pid, r.ppid]));
+      const meine = new Set<number>([process.pid]);
+      // Meine Vorfahren: `npm test` -> `sh -c vitest run` -> dieser Parent. Einer von
+      // ihnen ist kein Nebenlauf, er ist der Auftrag zu diesem Lauf.
+      let oben = process.pid;
+      for (let i = 0; i < 12 && oben; i++) {
+        oben = eltern.get(oben) ?? 0;
+        if (oben) meine.add(oben);
+      }
+      // Und meine Kinder, über drei Generationen.
+      for (let tiefe = 0; tiefe < 3; tiefe++) {
+        for (const r of tafel) if (meine.has(r.ppid)) meine.add(r.pid);
+      }
+      fremdeLaeufe = tafel.filter((r) => /vitest/.test(r.args) && !meine.has(r.pid)).length;
+    } catch {
+      fremdeLaeufe = 1; // die Sonde selbst ist kein Grund zu fegen
+    }
+    if (fremdeLaeufe === 0) {
+      for (const eintrag of readdirSync(grund)) {
+        if (!eintrag.startsWith("kepta-") || eintrag.startsWith(KAPSEL_PRAEFIX)) continue;
+        const pfad = join(grund, eintrag);
+        try {
+          const st = statSync(pfad);
+          // Die Kante ist die **Geburts**-Zeit, nicht die Aenderungszeit: ein Ordner,
+          // der vor diesem Lauf entstand und waehrend ihm beschrieben wird, gehoert
+          // nicht diesem Lauf. Auf einem Dateisystem ohne birthtime zaehlt die
+          // Aenderungszeit mit — dann bleibt der Sweep konservativ.
+          const geboren = st.birthtimeMs > 0 ? st.birthtimeMs : st.mtimeMs;
+          if (!st.isDirectory() || geboren < start - 1000) continue;
+          rmSync(pfad, { recursive: true, force: true });
+          gefegt++;
+        } catch {
+          fehler++;
+        }
+      }
+    }
+
     const zeit = new Date().toLocaleTimeString("en-GB", { hour12: false, timeZone: "Europe/Berlin" });
-    console.log(`[kapsel-rueckgabe] ${geloescht} Kapseln zurueckgegeben, ${verschont} verschont, ${fehler} Fehler — ${zeit}`);
+    console.log(
+      `[kapsel-rueckgabe] ${geloescht} Kapseln zurueckgegeben, ${verschont} verschont, ${gefegt} Tempel-Ordner gefegt` +
+        `${fremdeLaeufe ? ` (Sweep aus: ${fremdeLaeufe} fremde vitest-Laeufe)` : ""}, ${fehler} Fehler — ${zeit}`
+    );
   };
 }
