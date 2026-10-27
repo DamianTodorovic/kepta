@@ -18,7 +18,7 @@
 //
 // Zwei Laeufe kommen sich nicht in die Quere: das Manifest traegt Lauf-Marke und
 // Parent-Pid, und ein Lauf liest ausschliesslich seine eigne Liste.
-import { mkdirSync, readdirSync, rmSync, writeFileSync, existsSync, statSync } from "node:fs";
+import { mkdirSync, readdirSync, rmSync, existsSync, statSync } from "node:fs";
 import { execFileSync } from "node:child_process";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
