@@ -121,7 +121,7 @@ export default function PraxisSync() {
       </div>
 
       <div className="space-y-2">
-        <label htmlFor="ps-pass" className="text-xs font-medium flex items-center gap-1.5" style={{ color: 'var(--text-2)' }}>
+        <label htmlFor="ps-pass" className="text-xs font-medium flex items-center gap-2" style={{ color: 'var(--text-2)' }}>
           <KeyRound className="w-3.5 h-3.5" /> Passphrase
         </label>
         <input
@@ -140,8 +140,8 @@ export default function PraxisSync() {
             {MIN_PASSPHRASE - passphrase.length} more — anything shorter would be worthless against an intercepted bundle.
           </p>
         )}
-        <p className="text-xs flex items-start gap-1.5" style={{ color: 'var(--text-2)' }}>
-          <AlertTriangle className="w-3.5 h-3.5 shrink-0 mt-0.5" />
+        <p className="text-xs flex items-start gap-2" style={{ color: 'var(--text-2)' }}>
+          <AlertTriangle className="w-3.5 h-3.5 shrink-0 mt-1" />
           Stored nowhere. Without it the bundle cannot be opened again — not even by you.
         </p>
       </div>
@@ -169,7 +169,7 @@ export default function PraxisSync() {
           type="button"
           onClick={exportieren}
           disabled={!bereit}
-          className="flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-medium disabled:opacity-40 disabled:cursor-not-allowed hud-raised"
+          className="flex items-center gap-2 px-4 py-3 rounded-lg text-sm font-medium disabled:opacity-40 disabled:cursor-not-allowed hud-raised"
           style={{ color: 'var(--text-1)' }}
         >
           {laeuft === 'export' ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
@@ -180,7 +180,7 @@ export default function PraxisSync() {
           type="button"
           onClick={() => dateiFeld.current?.click()}
           disabled={!bereit}
-          className="flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-medium disabled:opacity-40 disabled:cursor-not-allowed hud-raised"
+          className="flex items-center gap-2 px-4 py-3 rounded-lg text-sm font-medium disabled:opacity-40 disabled:cursor-not-allowed hud-raised"
           style={{ color: 'var(--text-1)' }}
         >
           {laeuft === 'import' ? <Loader2 className="w-4 h-4 animate-spin" /> : <Upload className="w-4 h-4" />}
@@ -198,7 +198,7 @@ export default function PraxisSync() {
       {meldung && (
         <div
           role="status"
-          className="px-3 py-2.5 rounded-lg text-sm"
+          className="px-3 py-3 rounded-lg text-sm"
           style={{ color: meldung.art === 'ok' ? 'var(--ok)' : 'var(--err, #dc2626)' }}
         >
           {meldung.text}
@@ -211,7 +211,7 @@ export default function PraxisSync() {
             <FileJson className="w-4 h-4" /> Bundle ledger
           </h4>
           {intakt !== null && (
-            <span className="text-xs flex items-center gap-1.5" style={{ color: intakt ? 'var(--ok)' : 'var(--err, #dc2626)' }}>
+            <span className="text-xs flex items-center gap-2" style={{ color: intakt ? 'var(--ok)' : 'var(--err, #dc2626)' }}>
               {intakt ? <ShieldCheck className="w-3.5 h-3.5" /> : <ShieldAlert className="w-3.5 h-3.5" />}
               {intakt ? 'Chain intact' : 'Chain broken'}
             </span>
@@ -225,7 +225,7 @@ export default function PraxisSync() {
             Nothing recorded yet — the journal fills with the first bundle that goes out or comes in.
           </p>
         ) : (
-          <ul className="space-y-1.5">
+          <ul className="space-y-2">
             {journal.slice(-8).reverse().map((e) => (
               <li key={e.hash} className="text-xs flex flex-wrap items-center gap-x-3 gap-y-1 px-3 py-2 rounded-lg hud-inset">
                 <span style={{ color: 'var(--text-1)' }}>#{e.seq}</span>

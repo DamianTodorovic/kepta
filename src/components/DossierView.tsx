@@ -52,7 +52,7 @@ function Liste({ titel, eintraege, mitDatum, onOpen }: { titel: string; eintraeg
   return (
     <section className="mb-6">
       <h3 className="text-[13px] font-semibold mb-2" style={{ color: 'var(--text-1)' }}>{titel}</h3>
-      <ul className="space-y-2.5">
+      <ul className="space-y-3">
         {eintraege.map((e) => (
           <li key={e.id} className="text-[13px] leading-relaxed" style={{ color: 'var(--text-2)' }}>
             {mitDatum && <span className="tnum text-[11.5px] mr-2" style={{ color: 'var(--text-3)' }}>{tag(e.at)}</span>}
@@ -187,17 +187,17 @@ export function DossierView({ onOpenMemory, onEditMemory, dossierThema }: { onOp
           onChange={(e) => setEingabe(e.target.value)}
           placeholder="A person, a client, a project, a topic…"
           aria-label="Who or what is the dossier about?"
-          className="hud-input flex-1 rounded-xl px-4 py-2.5 text-sm"
+          className="hud-input flex-1 rounded-xl px-4 py-3 text-sm"
         />
-        <button type="submit" disabled={laedt || !eingabe.trim()} className="btn-primary px-4 py-2.5 rounded-xl text-sm font-medium flex items-center gap-2 disabled:opacity-50">
+        <button type="submit" disabled={laedt || !eingabe.trim()} className="btn-primary px-4 py-3 rounded-xl text-sm font-medium flex items-center gap-2 disabled:opacity-50">
           {laedt ? <Loader2 className="w-4 h-4 animate-spin" /> : <FileText className="w-4 h-4" />} Create dossier
         </button>
       </form>
       {chips.length > 0 && !daten && (
-        <div className="flex flex-wrap gap-1.5 mb-6">
+        <div className="flex flex-wrap gap-2 mb-6">
           <span className="text-[12px] self-center mr-1" style={{ color: 'var(--text-2)' }}>For example:</span>
           {chips.map((c) => (
-            <button key={c.name} onClick={() => void erstelle(c.name)} className="min-h-7 inline-flex items-center px-2.5 py-1 rounded-full text-[12px]" style={{ background: 'var(--bg-inset-strong)', color: 'var(--text-2)' }}>
+            <button key={c.name} onClick={() => void erstelle(c.name)} className="min-h-7 inline-flex items-center px-3 py-1 rounded-full text-[12px]" style={{ background: 'var(--bg-inset-strong)', color: 'var(--text-2)' }}>
               {c.name}
             </button>
           ))}
@@ -222,10 +222,10 @@ export function DossierView({ onOpenMemory, onEditMemory, dossierThema }: { onOp
               </p>
             </div>
             <div className="flex gap-2">
-              <button onClick={() => void kopieren()} className="btn-ghost px-3 py-1.5 rounded-lg text-[12.5px] flex items-center gap-1.5" style={{ border: '1px solid var(--border-subtle)' }}>
+              <button onClick={() => void kopieren()} className="btn-ghost px-3 py-2 rounded-lg text-[12.5px] flex items-center gap-2" style={{ border: '1px solid var(--border-subtle)' }}>
                 {kopiert ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />} {kopiert ? 'Copied' : 'Copy as Markdown'}
               </button>
-              <button onClick={() => void speichern()} disabled={gespeichert} className="btn-ghost px-3 py-1.5 rounded-lg text-[12.5px] flex items-center gap-1.5 disabled:opacity-50" style={{ border: '1px solid var(--border-subtle)' }}>
+              <button onClick={() => void speichern()} disabled={gespeichert} className="btn-ghost px-3 py-2 rounded-lg text-[12.5px] flex items-center gap-2 disabled:opacity-50" style={{ border: '1px solid var(--border-subtle)' }}>
                 <Save className="w-3.5 h-3.5" /> {gespeichert ? 'Saved' : 'Save as note'}
               </button>
             </div>
@@ -237,7 +237,7 @@ export function DossierView({ onOpenMemory, onEditMemory, dossierThema }: { onOp
           {daten.todos.length > 0 && (
             <section className="mb-6">
               <h3 className="text-[13px] font-semibold mb-2" style={{ color: 'var(--text-1)' }}>Open to-dos</h3>
-              <ul className="space-y-1.5">
+              <ul className="space-y-2">
                 {daten.todos.map((t, i) => (
                   <li key={`${t.id}-${i}`} className="text-[13px]" style={{ color: 'var(--text-1)' }}>
                     ☐ {t.text} <button onClick={() => onOpenMemory(t.id)} className="text-[11px] hover:underline" style={{ color: 'var(--text-3)' }}>({t.title})</button>
@@ -248,7 +248,7 @@ export function DossierView({ onOpenMemory, onEditMemory, dossierThema }: { onOp
           )}
           {daten.contradictions.length > 0 && (
             <section className="mb-6">
-              <h3 className="text-[13px] font-semibold mb-2 flex items-center gap-1.5" style={{ color: 'var(--text-1)' }}>
+              <h3 className="text-[13px] font-semibold mb-2 flex items-center gap-2" style={{ color: 'var(--text-1)' }}>
                 <AlertTriangle className="w-3.5 h-3.5" style={{ color: 'var(--warn)' }} /> To check
               </h3>
               {/* Paket 3: die Auflösung passiert im Fluss — je Karte drei Entscheidungen.
@@ -274,10 +274,10 @@ export function DossierView({ onOpenMemory, onEditMemory, dossierThema }: { onOp
                       <p role="status" className="text-[12.5px] mt-3" style={{ color: 'var(--ok)' }}>{entschieden[w.key]}</p>
                     ) : w.newer.id && w.older.id ? (
                       <div className="flex flex-wrap gap-2 mt-3">
-                        <button onClick={() => void loese(w, 'newer')} className="btn-primary px-3 py-1.5 rounded-lg text-[12.5px] font-medium">Newer wins</button>
-                        <button onClick={() => void loese(w, 'window')} className="btn-ghost px-3 py-1.5 rounded-lg text-[12.5px]" title="Both stay valid — the older note ends where the newer one began.">Both hold — cap the older</button>
+                        <button onClick={() => void loese(w, 'newer')} className="btn-primary px-3 py-2 rounded-lg text-[12.5px] font-medium">Newer wins</button>
+                        <button onClick={() => void loese(w, 'window')} className="btn-ghost px-3 py-2 rounded-lg text-[12.5px]" title="Both stay valid — the older note ends where the newer one began.">Both hold — cap the older</button>
                         {onEditMemory && (
-                          <button onClick={() => onEditMemory(w.newer.id!)} className="btn-ghost px-3 py-1.5 rounded-lg text-[12.5px]">Edit</button>
+                          <button onClick={() => onEditMemory(w.newer.id!)} className="btn-ghost px-3 py-2 rounded-lg text-[12.5px]">Edit</button>
                         )}
                       </div>
                     ) : (
@@ -291,10 +291,10 @@ export function DossierView({ onOpenMemory, onEditMemory, dossierThema }: { onOp
             </section>
           )}
           {daten.related.length > 0 && (
-            <div className="flex flex-wrap gap-1.5 items-center pt-4" style={{ borderTop: '1px solid var(--border-subtle)' }}>
+            <div className="flex flex-wrap gap-2 items-center pt-4" style={{ borderTop: '1px solid var(--border-subtle)' }}>
               <span className="text-[11px] mr-1" style={{ color: 'var(--text-3)' }}>Related:</span>
               {daten.related.map((r) => (
-                <button key={r.tag} onClick={() => void erstelle(r.tag)} className="px-2 py-0.5 rounded-full text-[12px]" style={{ background: 'var(--bg-inset-strong)', color: 'var(--text-2)' }}>
+                <button key={r.tag} onClick={() => void erstelle(r.tag)} className="px-2 py-1 rounded-full text-[12px]" style={{ background: 'var(--bg-inset-strong)', color: 'var(--text-2)' }}>
                   #{r.tag}
                 </button>
               ))}

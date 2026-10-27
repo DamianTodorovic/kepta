@@ -63,7 +63,7 @@ export class Fehlerschirm extends Component<{ children: ReactNode }, Zustand> {
           type="button"
           data-testid="fehlerschirm-weiter"
           onClick={this.weiter}
-          className="btn-ghost px-3 py-1.5 rounded-lg text-[13px]"
+          className="btn-ghost px-3 py-2 rounded-lg text-[13px]"
           style={{ color: "var(--accent)" }}
         >
           Try this screen again

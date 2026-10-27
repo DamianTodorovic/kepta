@@ -275,7 +275,7 @@ export function MachineScan({ open, onClose, onImported, autoPreview = false }: 
         <div className="flex items-start gap-3 px-5 py-4 shrink-0" style={{ borderBottom: "1px solid var(--border-subtle)" }}>
           <div className="flex-1 min-w-0">
             <div className="hud-label">Scan this computer</div>
-            <h2 className="text-[17px] font-semibold mt-0.5" style={{ color: "var(--text-1)" }}>
+            <h2 className="text-[17px] font-semibold mt-1" style={{ color: "var(--text-1)" }}>
               Let K3PTA read your documents
             </h2>
             <p className="text-[12.5px] mt-1" style={{ color: "var(--text-2)" }}>
@@ -289,7 +289,7 @@ export function MachineScan({ open, onClose, onImported, autoPreview = false }: 
 
         <div className="flex-1 overflow-y-auto px-5 py-4 space-y-4">
           {/* Was nie gelesen wird — steht bewusst VOR dem Knopf. */}
-          <div className="rounded-xl p-3.5 space-y-2" style={{ background: "var(--bg-inset)", border: "1px solid var(--border-subtle)" }}>
+          <div className="rounded-xl p-4 space-y-2" style={{ background: "var(--bg-inset)", border: "1px solid var(--border-subtle)" }}>
             <div className="flex items-center gap-2 text-[13px] font-medium" style={{ color: "var(--text-1)" }}>
               <ShieldCheck className="w-4 h-4" style={{ color: "var(--ok)" }} /> Never read — and you cannot switch this off
             </div>
@@ -302,7 +302,7 @@ export function MachineScan({ open, onClose, onImported, autoPreview = false }: 
           </div>
 
           {/* Der Punkt, den man ohne Aufforderung sagen muss. */}
-          <div className="rounded-xl p-3.5 space-y-2" style={{ background: "var(--warn-soft)", border: "1px solid transparent" }}>
+          <div className="rounded-xl p-4 space-y-2" style={{ background: "var(--warn-soft)", border: "1px solid transparent" }}>
             <div className="flex items-center gap-2 text-[13px] font-medium" style={{ color: "var(--warn)" }}>
               <ShieldAlert className="w-4 h-4" /> What you should know before you agree
             </div>
@@ -314,17 +314,17 @@ export function MachineScan({ open, onClose, onImported, autoPreview = false }: 
           </div>
 
           {regelwerk && !status && (
-            <div className="rounded-xl p-3.5 space-y-3" style={{ background: "var(--bg-inset)", border: "1px solid var(--border-subtle)" }}>
+            <div className="rounded-xl p-4 space-y-3" style={{ background: "var(--bg-inset)", border: "1px solid var(--border-subtle)" }}>
               <div className="flex items-center gap-2">
                 <div className="hud-label">What K3PTA may read</div>
-                <button onClick={() => setZeigeRegeln((v) => !v)} className="btn-ghost px-2 py-0.5 rounded text-[11px] ml-auto">
+                <button onClick={() => setZeigeRegeln((v) => !v)} className="btn-ghost px-2 py-1 rounded text-[11px] ml-auto">
                   {zeigeRegeln ? "Hide the full rules" : "Show the full rules"}
                 </button>
               </div>
 
               <div>
-                <div className="text-[12px] mb-1.5" style={{ color: "var(--text-2)" }}>File types — untick anything you do not want read:</div>
-                <div className="flex flex-wrap gap-1.5">
+                <div className="text-[12px] mb-2" style={{ color: "var(--text-2)" }}>File types — untick anything you do not want read:</div>
+                <div className="flex flex-wrap gap-2">
                   {regelwerk.lesbar.endungen.map((e) => {
                     const an = endungen.includes(e);
                     return (
@@ -335,7 +335,7 @@ export function MachineScan({ open, onClose, onImported, autoPreview = false }: 
                           setEndungen(neu);
                           void sichereAuswahl(neu, ausgelassen);
                         }}
-                        className="px-2 py-0.5 rounded text-[11.5px] tnum"
+                        className="px-2 py-1 rounded text-[11.5px] tnum"
                         style={{
                           background: an ? "var(--accent-soft)" : "transparent",
                           color: an ? "var(--accent)" : "var(--text-3)",
@@ -357,7 +357,7 @@ export function MachineScan({ open, onClose, onImported, autoPreview = false }: 
                   onChange={(e) => setAusgelassen(e.target.value)}
                   onBlur={() => void sichereAuswahl(endungen, ausgelassen)}
                   placeholder="e.g. archive, private, old"
-                  className="hud-input w-full px-2.5 py-1.5 rounded-lg text-[12.5px]"
+                  className="hud-input w-full px-3 py-2 rounded-lg text-[12.5px]"
                 />
               </div>
 
@@ -369,7 +369,7 @@ export function MachineScan({ open, onClose, onImported, autoPreview = false }: 
                 <div className="space-y-2 pt-2 text-[11.5px]" style={{ borderTop: "1px solid var(--border-subtle)", color: "var(--text-2)" }}>
                   <div>
                     <strong style={{ color: "var(--warn)" }}>The exact list that is never read:</strong>
-                    <div className="mt-0.5">{regelwerk.niemals.erklaerung}</div>
+                    <div className="mt-1">{regelwerk.niemals.erklaerung}</div>
                     <div className="mt-1 font-mono text-[10.5px]" style={{ color: "var(--text-3)" }}>{regelwerk.niemals.ordner.join(" · ")}</div>
                     <div className="mt-1" style={{ color: "var(--text-3)" }}>{regelwerk.niemals.dateimuster.length} file patterns (keys, tokens, passwords, certificates)</div>
                   </div>
@@ -398,15 +398,15 @@ export function MachineScan({ open, onClose, onImported, autoPreview = false }: 
           {vorschau && !status && (
             <div className="space-y-3">
               <div className="grid grid-cols-3 gap-2 text-center">
-                <div className="hud-inset rounded-lg p-2.5">
+                <div className="hud-inset rounded-lg p-3">
                   <div className="text-lg font-semibold tnum" style={{ color: "var(--text-1)" }}>{vorschau.found}</div>
                   <div className="hud-label">{TRAEGER_LABELS.files}</div>
                 </div>
-                <div className="hud-inset rounded-lg p-2.5">
+                <div className="hud-inset rounded-lg p-3">
                   <div className="text-lg font-semibold tnum" style={{ color: "var(--text-1)" }}>{formatBytes(vorschau.totalBytes)}</div>
                   <div className="hud-label">of text</div>
                 </div>
-                <div className="hud-inset rounded-lg p-2.5">
+                <div className="hud-inset rounded-lg p-3">
                   {/* „left out" war die Zahl der Dateien, die im Lauf durchfielen.
                       Ein Ordner, den die Regel von vornherein nicht betritt, ist
                       nie „gesehen" worden — auf dem echten Schirm stand deshalb
@@ -417,16 +417,16 @@ export function MachineScan({ open, onClose, onImported, autoPreview = false }: 
               </div>
 
               {vorschau.truncated && (
-                <div className="flex items-start gap-2 text-[12.5px] rounded-lg p-2.5" style={{ background: "var(--warn-soft)", color: "var(--text-2)" }}>
-                  <AlertTriangle className="w-3.5 h-3.5 mt-0.5 shrink-0" style={{ color: "var(--warn)" }} />
+                <div className="flex items-start gap-2 text-[12.5px] rounded-lg p-3" style={{ background: "var(--warn-soft)", color: "var(--text-2)" }}>
+                  <AlertTriangle className="w-3.5 h-3.5 mt-1 shrink-0" style={{ color: "var(--warn)" }} />
                   There is more than K3PTA imports in one pass. The first {vorschau.found} documents are taken; run it again afterwards.
                 </div>
               )}
 
               {vorschau.byFolder.length > 0 && (
                 <div>
-                  <div className="hud-label mb-1.5">Where they come from</div>
-                  <div className="flex flex-wrap gap-1.5">
+                  <div className="hud-label mb-2">Where they come from</div>
+                  <div className="flex flex-wrap gap-2">
                     {vorschau.byFolder.map((f) => {
                       // „(top level)" ist kein Ordnername, sondern der Korb fuer
                       // die Dateien nebenan — ein Ausschluss ins Leere waere ein
@@ -461,7 +461,7 @@ export function MachineScan({ open, onClose, onImported, autoPreview = false }: 
                     </div>
                   )}
                   {ausgelassen.trim() !== "" && (
-                    <div className="flex flex-wrap items-center gap-1.5 mt-1.5">
+                    <div className="flex flex-wrap items-center gap-2 mt-2">
                       <span className="text-[11.5px]" style={{ color: "var(--text-3)" }}>left out by you:</span>
                       {ausgelassen.split(",").map((x) => x.trim()).filter(Boolean).map((x) => (
                         <button
@@ -484,11 +484,11 @@ export function MachineScan({ open, onClose, onImported, autoPreview = false }: 
 
               {(vorschau.skipped.length > 0 || vorschau.skippedFolders > 0) && (
                 <div>
-                  <div className="hud-label mb-1.5">
+                  <div className="hud-label mb-2">
                     Left out{vorschau.skippedFolders > 0 ? ` — ${vorschau.skippedFolders} folder${vorschau.skippedFolders === 1 ? "" : "s"} not entered` : ""}
                   </div>
                   {vorschau.skipped.length > 0 && (
-                    <div className="flex flex-wrap gap-1.5">
+                    <div className="flex flex-wrap gap-2">
                       {vorschau.skipped.map((s) => (
                         <span key={s.grund} className="chip tnum">{s.label} <span style={{ color: "var(--text-3)" }}>{s.anzahl}</span></span>
                       ))}
@@ -499,9 +499,9 @@ export function MachineScan({ open, onClose, onImported, autoPreview = false }: 
                       Auskunft — sonst sieht niemand, dass ein gesuchter Ordner
                       zufaellig auf einer Ausschlussliste steht. */}
                   {vorschau.leftOutFolders.some((f) => f.ordner) && (
-                    <div className="mt-1.5 space-y-0.5" data-testid="links-out-ordner">
+                    <div className="mt-2 space-y-1" data-testid="links-out-ordner">
                       {vorschau.leftOutFolders.filter((f) => f.ordner).slice(0, 8).map((f, i) => (
-                        <div key={`${f.ordner}-${i}`} className="text-[11.5px] flex items-baseline gap-1.5 min-w-0">
+                        <div key={`${f.ordner}-${i}`} className="text-[11.5px] flex items-baseline gap-2 min-w-0">
                           <span className="font-mono truncate" style={{ color: "var(--text-2)" }} title={f.ordner}>{f.ordner}</span>
                           <span style={{ color: "var(--text-3)" }}>{lassGrund(f.grund)}</span>
                         </div>
@@ -521,7 +521,7 @@ export function MachineScan({ open, onClose, onImported, autoPreview = false }: 
                   <summary className="px-3 py-2 text-[12.5px] cursor-pointer" style={{ color: "var(--text-2)" }}>
                     See the first {vorschau.sample.length} files by name
                   </summary>
-                  <ul className="px-3 pb-2 space-y-0.5">
+                  <ul className="px-3 pb-2 space-y-1">
                     {vorschau.sample.map((f) => (
                       <li key={f.path} className="text-[11.5px] font-mono truncate" style={{ color: "var(--text-3)" }} title={f.path}>{f.path}</li>
                     ))}
@@ -530,14 +530,14 @@ export function MachineScan({ open, onClose, onImported, autoPreview = false }: 
               )}
 
               <div className="space-y-2 pt-1">
-                <label className="flex items-start gap-2.5 cursor-pointer">
-                  <input type="checkbox" checked={verstandenLokal} onChange={(e) => setVerstandenLokal(e.target.checked)} className="mt-0.5" />
+                <label className="flex items-start gap-3 cursor-pointer">
+                  <input type="checkbox" checked={verstandenLokal} onChange={(e) => setVerstandenLokal(e.target.checked)} className="mt-1" />
                   <span className="text-[12.5px]" style={{ color: "var(--text-2)" }}>
                     I want K3PTA to read these {vorschau.found} documents and save them as notes on this computer.
                   </span>
                 </label>
-                <label className="flex items-start gap-2.5 cursor-pointer">
-                  <input type="checkbox" checked={verstandenAgenten} onChange={(e) => setVerstandenAgenten(e.target.checked)} className="mt-0.5" />
+                <label className="flex items-start gap-3 cursor-pointer">
+                  <input type="checkbox" checked={verstandenAgenten} onChange={(e) => setVerstandenAgenten(e.target.checked)} className="mt-1" />
                   <span className="text-[12.5px]" style={{ color: "var(--text-2)" }}>
                     I understand that AI assistants connected over MCP can then read them.
                   </span>
@@ -549,9 +549,9 @@ export function MachineScan({ open, onClose, onImported, autoPreview = false }: 
           {status && (
             <div className="space-y-3">
               <div className="grid grid-cols-3 gap-2 text-center">
-                <div className="hud-inset rounded-lg p-2.5"><div className="text-lg font-semibold tnum" style={{ color: "var(--text-1)" }}>{status.seen}</div><div className="hud-label">files seen</div></div>
-                <div className="hud-inset rounded-lg p-2.5"><div className="text-lg font-semibold tnum" style={{ color: "var(--text-1)" }}>{status.found}</div><div className="hud-label">{TRAEGER_LABELS.files}</div></div>
-                <div className="hud-inset rounded-lg p-2.5"><div className="text-lg font-semibold tnum" style={{ color: "var(--ok)" }}>{status.imported}</div><div className="hud-label">notes written</div></div>
+                <div className="hud-inset rounded-lg p-3"><div className="text-lg font-semibold tnum" style={{ color: "var(--text-1)" }}>{status.seen}</div><div className="hud-label">files seen</div></div>
+                <div className="hud-inset rounded-lg p-3"><div className="text-lg font-semibold tnum" style={{ color: "var(--text-1)" }}>{status.found}</div><div className="hud-label">{TRAEGER_LABELS.files}</div></div>
+                <div className="hud-inset rounded-lg p-3"><div className="text-lg font-semibold tnum" style={{ color: "var(--ok)" }}>{status.imported}</div><div className="hud-label">notes written</div></div>
               </div>
               {status.running ? (
                 <div className="flex items-center gap-2 text-[12.5px]" style={{ color: "var(--text-2)" }}>
@@ -573,8 +573,8 @@ export function MachineScan({ open, onClose, onImported, autoPreview = false }: 
                         : ".")}
                 </div>
               )}
-              <div className="flex items-start gap-2 text-[12px] rounded-lg p-2.5" style={{ background: "var(--bg-inset)", color: "var(--text-3)" }}>
-                <Bot className="w-3.5 h-3.5 mt-0.5 shrink-0" />
+              <div className="flex items-start gap-2 text-[12px] rounded-lg p-3" style={{ background: "var(--bg-inset)", color: "var(--text-3)" }}>
+                <Bot className="w-3.5 h-3.5 mt-1 shrink-0" />
                 Everything landed under the tag <code>machine-scan</code> — filter by it to review or delete the lot.
               </div>
               {(status.masked ?? 0) > 0 && (
@@ -583,9 +583,9 @@ export function MachineScan({ open, onClose, onImported, autoPreview = false }: 
                 // Das Beispiel steht fuer sich: inline zerriss der Satz bei
                 // 1440 px (Bild scan-maske-1440px.png, 14.10. — die Monospace-
                 // Insel brach mitten im Wort und warf „value" hinter die Klammer).
-                <div className="text-[12px] rounded-lg p-2.5" style={{ background: "var(--bg-inset)", color: "var(--text-2)" }} data-testid="maskiert-meldung">
+                <div className="text-[12px] rounded-lg p-3" style={{ background: "var(--bg-inset)", color: "var(--text-2)" }} data-testid="maskiert-meldung">
                   <div className="flex items-start gap-2">
-                    <ShieldCheck className="w-3.5 h-3.5 mt-0.5 shrink-0" style={{ color: "var(--ok)" }} />
+                    <ShieldCheck className="w-3.5 h-3.5 mt-1 shrink-0" style={{ color: "var(--ok)" }} />
                     <span>
                       {status.masked} key-shaped {status.masked === 1 ? "value was" : "values were"} masked before saving. The note keeps the kind and the length — never the value.
                     </span>
@@ -599,11 +599,11 @@ export function MachineScan({ open, onClose, onImported, autoPreview = false }: 
           )}
 
           {fehler && (
-            <div className="rounded-lg p-2.5 text-[12.5px]" style={{ background: "var(--warn-soft)", color: "var(--warn)" }}>{fehler}</div>
+            <div className="rounded-lg p-3 text-[12.5px]" style={{ background: "var(--warn-soft)", color: "var(--warn)" }}>{fehler}</div>
           )}
         </div>
 
-        <div className="flex items-center gap-2 px-5 py-3.5 shrink-0" style={{ borderTop: "1px solid var(--border-subtle)" }}>
+        <div className="flex items-center gap-2 px-5 py-4 shrink-0" style={{ borderTop: "1px solid var(--border-subtle)" }}>
           <span className="text-[12px]" style={{ color: "var(--text-3)" }}>
             {status?.running
               ? "You can stop this at any time."
@@ -616,22 +616,22 @@ export function MachineScan({ open, onClose, onImported, autoPreview = false }: 
           </span>
           <div className="ml-auto flex items-center gap-2">
             {status?.running ? (
-              <button onClick={abbrechen} className="btn-ghost px-3 py-1.5 rounded-lg text-[12.5px]">Stop</button>
+              <button onClick={abbrechen} className="btn-ghost px-3 py-2 rounded-lg text-[12.5px]">Stop</button>
             ) : fertig ? (
-              <button onClick={onClose} className="btn-primary px-4 py-1.5 rounded-lg text-[12.5px]">Close</button>
+              <button onClick={onClose} className="btn-primary px-4 py-2 rounded-lg text-[12.5px]">Close</button>
             ) : (
               <>
-                <button onClick={onClose} className="btn-ghost px-3 py-1.5 rounded-lg text-[12.5px]">Not now</button>
+                <button onClick={onClose} className="btn-ghost px-3 py-2 rounded-lg text-[12.5px]">Not now</button>
                 {/* Vor der ersten Vorschau liegt der Knopf unten, nicht in der
                     Mitte des Inhalts: bei 1440×900 (gemessen 14.10., Bild
                     e3-bilder/scan-vorschau-1440px-vorher.png) stand er halb
                     hinter der Fußzeile, und ein Klick traf die Fußzeile. */}
                 {!vorschau ? (
-                  <button onClick={starteVorschau} disabled={laeuftVorschau} className="btn-primary px-4 py-1.5 rounded-lg text-[12.5px] flex items-center gap-2 disabled:opacity-40">
+                  <button onClick={starteVorschau} disabled={laeuftVorschau} className="btn-primary px-4 py-2 rounded-lg text-[12.5px] flex items-center gap-2 disabled:opacity-40">
                     {laeuftVorschau ? <><Loader2 className="w-3.5 h-3.5 animate-spin" /> Looking through your folders…</> : <><FolderOpen className="w-3.5 h-3.5" /> Show me what would be imported</>}
                   </button>
                 ) : (
-                  <button onClick={starteImport} disabled={!bereit} className="btn-primary px-4 py-1.5 rounded-lg text-[12.5px] disabled:opacity-40">
+                  <button onClick={starteImport} disabled={!bereit} className="btn-primary px-4 py-2 rounded-lg text-[12.5px] disabled:opacity-40">
                     {vorschau ? `Import ${vorschau.found} documents` : "Import"}
                   </button>
                 )}

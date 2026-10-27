@@ -178,7 +178,7 @@ export function MemoryEditor({ memory, onSave, onClose, onDelete }: MemoryEditor
               <h2 className="text-[15px] font-semibold" style={{ color: 'var(--text-1)' }}>
                 {memory?.id ? 'Edit note' : 'New note'}
               </h2>
-              <div className="hud-label mt-0.5 flex items-center gap-1.5">
+              <div className="hud-label mt-1 flex items-center gap-2">
                 {memory?.id ? (
                   <>
                     <Clock className="w-3 h-3" />
@@ -233,7 +233,7 @@ export function MemoryEditor({ memory, onSave, onClose, onDelete }: MemoryEditor
             {/* Zeile 1 und 2 — was die Regeln aus dem Text machen, solange er
                 getippt wird. Read-only: der Nutzer waehlt den Inhalt, die
                 Ablage folgt daraus. */}
-            <div className="flex flex-wrap items-center gap-1.5 mb-3" aria-label="Filed under">
+            <div className="flex flex-wrap items-center gap-2 mb-3" aria-label="Filed under">
               <span className="hud-label shrink-0">Filed under</span>
               <span className="row-quiet" title={ablage.grund}>{TRAEGER_LABELS[ablage.traeger]}</span>
               {ablage.themen.map((t) => (
@@ -248,8 +248,8 @@ export function MemoryEditor({ memory, onSave, onClose, onDelete }: MemoryEditor
 
             {/* Memory-Typ: segmented control */}
             <div>
-              <div className="hud-label mb-2 flex items-center gap-1.5"><Brain className="w-3.5 h-3.5" /> Memory type</div>
-              <div className="grid grid-cols-3 gap-1.5 p-1 rounded-xl hud-inset">
+              <div className="hud-label mb-2 flex items-center gap-2"><Brain className="w-3.5 h-3.5" /> Memory type</div>
+              <div className="grid grid-cols-3 gap-2 p-1 rounded-xl hud-inset">
                 {KINDS.map((k) => (
                   <button
                     key={k.key}
@@ -267,7 +267,7 @@ export function MemoryEditor({ memory, onSave, onClose, onDelete }: MemoryEditor
                   </button>
                 ))}
               </div>
-              <p className="text-xs mt-1.5 ml-1" style={{ color: 'var(--text-3)' }}>
+              <p className="text-xs mt-2 ml-1" style={{ color: 'var(--text-3)' }}>
                 {KINDS.find((k) => k.key === kind)?.hint}
               </p>
             </div>
@@ -289,7 +289,7 @@ export function MemoryEditor({ memory, onSave, onClose, onDelete }: MemoryEditor
                 {tags.map(tag => (
                   <span
                     key={tag}
-                    className="flex items-center gap-1 px-2.5 py-1 rounded-lg text-sm font-medium hud-inset"
+                    className="flex items-center gap-1 px-3 py-1 rounded-lg text-sm font-medium hud-inset"
                     style={{ color: 'var(--accent)' }}
                   >
                     <Hash className="w-3.5 h-3.5 opacity-60" />
@@ -354,17 +354,17 @@ export function MemoryEditor({ memory, onSave, onClose, onDelete }: MemoryEditor
                   className="px-4 pb-4 flex flex-col gap-4 overflow-hidden"
                 >
                   <div className="grid grid-cols-2 gap-3">
-                    <label className="flex flex-col gap-1.5">
+                    <label className="flex flex-col gap-2">
                       <span className="text-xs" style={{ color: 'var(--text-3)' }}>Valid from</span>
                       <input type="date" value={validFrom} onChange={(e) => setValidFrom(e.target.value)} className="hud-input rounded-lg px-3 py-2 text-sm" />
                     </label>
-                    <label className="flex flex-col gap-1.5">
+                    <label className="flex flex-col gap-2">
                       <span className="text-xs" style={{ color: 'var(--text-3)' }}>Valid until (empty = no end date)</span>
                       <input type="date" value={validTo} onChange={(e) => setValidTo(e.target.value)} className="hud-input rounded-lg px-3 py-2 text-sm" />
                     </label>
                   </div>
-                  <label className="flex flex-col gap-1.5">
-                    <span className="text-xs flex items-center gap-1.5" style={{ color: 'var(--text-3)' }}>
+                  <label className="flex flex-col gap-2">
+                    <span className="text-xs flex items-center gap-2" style={{ color: 'var(--text-3)' }}>
                       <Zap className="w-3 h-3" /> Confidence — {Math.round(confidence * 100)} % (how reliable is this memory?)
                     </span>
                     <input
@@ -384,8 +384,8 @@ export function MemoryEditor({ memory, onSave, onClose, onDelete }: MemoryEditor
           {warnUnsaved && dirty && (
             <div role="alert" className="mx-5 mb-1 flex items-center gap-3 px-3 py-2 rounded-lg text-[12.5px]" style={{ background: 'var(--danger-soft)', border: '1px solid var(--danger)' }}>
               <span style={{ color: 'var(--text-1)' }}>Unsaved changes. Press Esc again to discard, or save first.</span>
-              <button type="button" onClick={onClose} className="ml-auto text-xs font-semibold px-2.5 py-1 rounded-lg btn-danger-ghost">Discard</button>
-              <button type="button" onClick={() => setWarnUnsaved(false)} className="text-xs font-semibold px-2.5 py-1 rounded-lg btn-ghost">Keep editing</button>
+              <button type="button" onClick={onClose} className="ml-auto text-xs font-semibold px-3 py-1 rounded-lg btn-danger-ghost">Discard</button>
+              <button type="button" onClick={() => setWarnUnsaved(false)} className="text-xs font-semibold px-3 py-1 rounded-lg btn-ghost">Keep editing</button>
             </div>
           )}
           <footer className="p-5 shrink-0 flex items-center justify-between" style={{ borderTop: '1px solid var(--border-subtle)' }}>

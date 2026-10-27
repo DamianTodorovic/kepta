@@ -106,9 +106,9 @@ function Satz({ satz, wert }: { satz: string; wert: string }) {
 function Abschnitt({ titel, zahl, children }: { titel: string; zahl?: number; children: React.ReactNode }) {
   return (
     <section className="mb-7">
-      <h3 className="text-[13px] font-semibold mb-2.5 flex items-center gap-2" style={{ color: 'var(--text-1)' }}>
+      <h3 className="text-[13px] font-semibold mb-3 flex items-center gap-2" style={{ color: 'var(--text-1)' }}>
         {titel}
-        {typeof zahl === 'number' && <span className="text-[11px] tnum px-1.5 rounded-md" style={{ background: 'var(--bg-inset-strong)', color: 'var(--text-3)' }}>{zahl}</span>}
+        {typeof zahl === 'number' && <span className="text-[11px] tnum px-2 rounded-md" style={{ background: 'var(--bg-inset-strong)', color: 'var(--text-3)' }}>{zahl}</span>}
       </h3>
       {children}
     </section>
@@ -118,7 +118,7 @@ function Abschnitt({ titel, zahl, children }: { titel: string; zahl?: number; ch
 /** Die Kategorie einer Bewegung: neu, aktualisiert, abgelöst, gelöscht. */
 function ArtTag({ children }: { children: React.ReactNode }) {
   return (
-    <span className="text-[10px] px-1.5 py-0.5 rounded-md shrink-0 translate-y-[-1px]" style={{ background: 'var(--bg-inset-strong)', color: 'var(--text-3)' }}>
+    <span className="text-[10px] px-2 py-1 rounded-md shrink-0 translate-y-[-1px]" style={{ background: 'var(--bg-inset-strong)', color: 'var(--text-3)' }}>
       {children}
     </span>
   );
@@ -193,7 +193,7 @@ export function TodayView({ aktiv, onOpenMemory, onGo }: Props) {
               [daten.todos.total, daten.todos.total === 1 ? 'open to-do' : 'open to-dos'],
               [daten.contradictions.length, 'to check'],
             ].map(([n, text]) => (
-              <span key={String(text)} className="px-2.5 py-1 rounded-full text-[12px] tnum" style={{ background: 'var(--bg-inset-strong)', color: 'var(--text-2)' }}>
+              <span key={String(text)} className="px-3 py-1 rounded-full text-[12px] tnum" style={{ background: 'var(--bg-inset-strong)', color: 'var(--text-2)' }}>
                 <strong style={{ color: 'var(--text-1)' }}>{n}</strong> {text}
               </span>
             ))}
@@ -227,7 +227,7 @@ export function TodayView({ aktiv, onOpenMemory, onGo }: Props) {
       {fehler && (
         <div className="hud-inset rounded-xl p-4 text-sm flex items-center gap-3" style={{ color: 'var(--warn)' }}>
           Today could not be loaded — {fehler}
-          <button onClick={() => void laden()} className="btn-ghost px-2.5 py-1 rounded-lg text-xs flex items-center gap-1"><RefreshCw className="w-3.5 h-3.5" /> Try again</button>
+          <button onClick={() => void laden()} className="btn-ghost px-3 py-1 rounded-lg text-xs flex items-center gap-1"><RefreshCw className="w-3.5 h-3.5" /> Try again</button>
         </div>
       )}
       {!daten && !fehler && <p className="text-sm" style={{ color: 'var(--text-2)' }}>Getting your day ready…</p>}
@@ -256,9 +256,9 @@ export function TodayView({ aktiv, onOpenMemory, onGo }: Props) {
                       <p role="status" className="text-[12.5px] mt-3" style={{ color: 'var(--ok)' }}>{erledigt[w.key]}</p>
                     ) : (
                       <div className="flex flex-wrap gap-2 mt-3">
-                        <button onClick={() => void loese(w, 'newer')} className="btn-primary px-3 py-1.5 rounded-lg text-[12.5px] font-medium">Keep the newer</button>
-                        <button onClick={() => void loese(w, 'older')} className="btn-ghost px-3 py-1.5 rounded-lg text-[12.5px]" style={{ border: '1px solid var(--border-subtle)' }}>Keep the older</button>
-                        <button onClick={() => void loese(w, 'both')} className="btn-ghost px-3 py-1.5 rounded-lg text-[12.5px]">Both are right</button>
+                        <button onClick={() => void loese(w, 'newer')} className="btn-primary px-3 py-2 rounded-lg text-[12.5px] font-medium">Keep the newer</button>
+                        <button onClick={() => void loese(w, 'older')} className="btn-ghost px-3 py-2 rounded-lg text-[12.5px]" style={{ border: '1px solid var(--border-subtle)' }}>Keep the older</button>
+                        <button onClick={() => void loese(w, 'both')} className="btn-ghost px-3 py-2 rounded-lg text-[12.5px]">Both are right</button>
                       </div>
                     )}
                   </div>
@@ -280,7 +280,7 @@ export function TodayView({ aktiv, onOpenMemory, onGo }: Props) {
                 )}
                 {/* Konsolidiert (Paket 3): jede Bewegung der Wahrheit in ihrer Kategorie —
                     neu, aktualisiert, abgelöst (mit Nachfolger als Klickziel), gelöscht. */}
-                <ul className="space-y-1.5">
+                <ul className="space-y-2">
                   {daten.created.notes.map((n) => (
                     <li key={`new-${n.id}-${n.at}`} className="text-[13px] flex items-baseline gap-2">
                       <ArtTag>new</ArtTag>
@@ -328,7 +328,7 @@ export function TodayView({ aktiv, onOpenMemory, onGo }: Props) {
 
           {daten.todos.total > 0 && (
             <Abschnitt titel="Open to-dos" zahl={daten.todos.total}>
-              <ul className="space-y-1.5">
+              <ul className="space-y-2">
                 {daten.todos.items.map((t, i) => (
                   <li key={`${t.id}-${i}`} className="text-[13px] flex items-baseline gap-2" style={{ color: 'var(--text-1)' }}>
                     <span aria-hidden className="w-3 h-3 rounded-[3px] shrink-0 translate-y-0.5" style={{ border: '1.5px solid var(--text-3)' }} />
@@ -345,7 +345,7 @@ export function TodayView({ aktiv, onOpenMemory, onGo }: Props) {
 
           {(daten.expiring.length > 0 || daten.expired.length > 0) && (
             <Abschnitt titel="Due" zahl={daten.expiring.length + daten.expired.length}>
-              <ul className="space-y-1.5">
+              <ul className="space-y-2">
                 {daten.expiring.map((n) => (
                   <li key={n.id} className="text-[13px] flex items-baseline gap-2">
                     <Clock className="w-3.5 h-3.5 shrink-0 translate-y-0.5" style={{ color: 'var(--warn)' }} />
@@ -370,10 +370,10 @@ export function TodayView({ aktiv, onOpenMemory, onGo }: Props) {
                 No AI app has used K3PTA since then.{' '}
                 {/* min-h-6: gemessen 20 px hohe Textstelle ohne Polster — die
                     Untergrenze, nicht mehr. */}
-                <button onClick={() => onGo('activity')} className="min-h-6 px-0.5 inline-flex items-center underline underline-offset-2" style={{ color: 'var(--accent)' }}>Connect an app</button>
+                <button onClick={() => onGo('activity')} className="min-h-6 px-1 inline-flex items-center underline underline-offset-2" style={{ color: 'var(--accent)' }}>Connect an app</button>
               </p>
             ) : (
-              <ul className="space-y-1.5">
+              <ul className="space-y-2">
                 {daten.apps.map((a) => (
                   <li key={a.who} className="text-[13px] flex items-center gap-2" style={{ color: 'var(--text-1)' }}>
                     <Bot className="w-3.5 h-3.5" style={{ color: 'var(--accent)' }} />

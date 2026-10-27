@@ -112,7 +112,7 @@ export function PrivacyShield() {
             <Schalter an={stand.apps} onChange={(v) => void schalte('apps', v)} label="Hide secrets from AI apps" />
           </div>
           <div className="hud-inset rounded-xl p-3 flex gap-3 items-start">
-            <Lock className="w-4 h-4 mt-0.5 shrink-0" style={{ color: 'var(--accent)' }} />
+            <Lock className="w-4 h-4 mt-1 shrink-0" style={{ color: 'var(--accent)' }} />
             <p className="text-xs" style={{ color: 'var(--text-2)' }}>
               <strong style={{ color: 'var(--text-1)' }}>
                 {stand.privateNotes === 0 ? 'No private notes yet.' : `${stand.privateNotes} private ${stand.privateNotes === 1 ? 'note' : 'notes'}.`}
@@ -133,7 +133,7 @@ export function PrivacyShield() {
         <div data-testid="shield-preview" className="hud-inset rounded-xl px-3 py-2 mt-2 text-sm whitespace-pre-wrap break-words" style={{ color: 'var(--text-1)' }}>
           {vorschau.text}
         </div>
-        <p className="text-xs mt-1.5" style={{ color: 'var(--text-3)' }}>
+        <p className="text-xs mt-2" style={{ color: 'var(--text-3)' }}>
           {chatAn
             ? (vorschau.was ? `Hidden: ${vorschau.was}.` : 'Nothing to hide in this text.')
             : 'The shield is off — a cloud model would see this text exactly as it is.'}

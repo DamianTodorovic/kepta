@@ -5108,7 +5108,7 @@ export function KnowledgeGraph({ memories: memoriesAusFenster, onSelectMemory, o
     </button>
   );
   /** Das Kleid jedes Schalters — ein Halter, damit ein Knopf nicht zwei Kleider traegt. */
-  const SCHALTER_KLASSE = "btn-ghost px-2 py-1.5 rounded-lg text-[11px] inline-flex items-center gap-1.5 whitespace-nowrap shrink-0";
+  const SCHALTER_KLASSE = "btn-ghost px-2 py-2 rounded-lg text-[11px] inline-flex items-center gap-2 whitespace-nowrap shrink-0";
   const schalter = (an: boolean, titel: string, onClick: () => void, wort: string, zeichen?: ReactNode) => (
     <button
       type="button"
@@ -5148,7 +5148,7 @@ export function KnowledgeGraph({ memories: memoriesAusFenster, onSelectMemory, o
       {zeitStandMs !== null && (
         <button
           onClick={() => setzeSlider(100)}
-          className="btn-ghost px-1.5 py-1 rounded text-[11px] ml-1"
+          className="btn-ghost px-2 py-1 rounded text-[11px] ml-1"
           title="Back to now"
         >
           Today
@@ -5171,7 +5171,7 @@ export function KnowledgeGraph({ memories: memoriesAusFenster, onSelectMemory, o
    */
   const zeitRegler = (imMenue = false) => (
     <span
-      className="inline-flex items-center gap-1.5 shrink-0"
+      className="inline-flex items-center gap-2 shrink-0"
       title={
         zeitAchse
           ? `Scrub the time — left is ${datumKurz(zeitAchse.min)}, right is today`
@@ -5323,7 +5323,7 @@ export function KnowledgeGraph({ memories: memoriesAusFenster, onSelectMemory, o
     </div>
   );
   const farbenReihe = (
-    <div className="flex items-center gap-0.5 shrink-0" title="Node colours — each colour tints its type across the graph, cards and index">
+    <div className="flex items-center gap-1 shrink-0" title="Node colours — each colour tints its type across the graph, cards and index">
       {TYP_FOLGE.map((t) => (
         <input
           key={t}
@@ -5391,7 +5391,7 @@ export function KnowledgeGraph({ memories: memoriesAusFenster, onSelectMemory, o
   const steuerelementTagFilter = (
     <select
       data-testid="graph-tag-filter"
-      className="hud-label text-[11px] px-2 py-1.5 rounded-lg shrink-0 max-w-[150px]"
+      className="hud-label text-[11px] px-2 py-2 rounded-lg shrink-0 max-w-[150px]"
       style={{ background: "var(--glass-panel)", color: "var(--text-1)", border: "1px solid var(--border-subtle)" }}
       value={tagFilter}
       onChange={(e) => setzeTagFilter(e.target.value)}
@@ -5412,7 +5412,7 @@ export function KnowledgeGraph({ memories: memoriesAusFenster, onSelectMemory, o
    */
   const steuerelementDicke = (
     <span
-      className="inline-flex items-center gap-1.5 shrink-0"
+      className="inline-flex items-center gap-2 shrink-0"
       title="Connection thickness — 1x is the picture's own weight; every claim keeps its own rank, 3x only draws them all thicker"
     >
       <span className="hud-label" style={{ color: "var(--text-2)" }}>Thickness</span>
@@ -5554,7 +5554,7 @@ export function KnowledgeGraph({ memories: memoriesAusFenster, onSelectMemory, o
               }}
               aria-expanded={mehrOffen ? "true" : "false"}
               aria-controls="graph-mehr-panel"
-              className="btn-ghost px-2 py-1.5 rounded-lg text-[11px] inline-flex items-center gap-1.5 whitespace-nowrap shrink-0"
+              className="btn-ghost px-2 py-2 rounded-lg text-[11px] inline-flex items-center gap-2 whitespace-nowrap shrink-0"
               title={`${plan.menue.length} controls do not fit this row — they are here, each with its explanation`}
               data-testid="graph-mehr"
             >
@@ -5658,14 +5658,14 @@ export function KnowledgeGraph({ memories: memoriesAusFenster, onSelectMemory, o
         {gangInfo && gangInfo.seiten > 1 && (
           <div
             data-testid="gang-blaetterer"
-            className="absolute right-3 bottom-3 z-10 hud-panel rounded-lg px-1.5 py-1 flex items-center gap-1"
+            className="absolute right-3 bottom-3 z-10 hud-panel rounded-lg px-2 py-1 flex items-center gap-1"
           >
             <button
               type="button"
               data-testid="gang-zurueck"
               onClick={() => blaettereGang(-1)}
               disabled={gangInfo.seite === 0}
-              className="btn-ghost p-1.5 rounded-lg disabled:opacity-40"
+              className="btn-ghost p-2 rounded-lg disabled:opacity-40"
               title="Earlier notes that connect to nothing"
               aria-label="Previous page of unconnected notes"
             >
@@ -5679,7 +5679,7 @@ export function KnowledgeGraph({ memories: memoriesAusFenster, onSelectMemory, o
               data-testid="gang-weiter"
               onClick={() => blaettereGang(1)}
               disabled={gangInfo.seite >= gangInfo.seiten - 1}
-              className="btn-ghost p-1.5 rounded-lg disabled:opacity-40"
+              className="btn-ghost p-2 rounded-lg disabled:opacity-40"
               title="More notes that connect to nothing"
               aria-label="Next page of unconnected notes"
             >
@@ -5762,7 +5762,7 @@ export function KnowledgeGraph({ memories: memoriesAusFenster, onSelectMemory, o
             data-testid="graph-semantik-leer"
             className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none text-center px-6"
           >
-            <div className="hud-label mb-1.5">Semantic map</div>
+            <div className="hud-label mb-2">Semantic map</div>
             <p className="text-sm max-w-sm" style={{ color: "var(--text-2)" }}>
               {karteFehler ? (
                 <>The vectors could not be read from the engine, so there is nothing to project. Force and Tree need only the notes themselves.</>
@@ -5780,7 +5780,7 @@ export function KnowledgeGraph({ memories: memoriesAusFenster, onSelectMemory, o
 
         {filtered.length === 0 && (
           <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none text-center px-6">
-            <div className="hud-label mb-1.5">No match</div>
+            <div className="hud-label mb-2">No match</div>
             <p className="text-sm max-w-sm" style={{ color: "var(--text-2)" }}>
               Nothing here matches “{filter.trim().slice(0, 40)}”. Clear the filter to get the whole graph back.
             </p>
@@ -5795,7 +5795,7 @@ export function KnowledgeGraph({ memories: memoriesAusFenster, onSelectMemory, o
         {schemaOffen && (
           <div
             data-testid="graph-schema"
-            className="hud-panel absolute right-3 top-3 rounded-lg px-3 py-2 space-y-1.5 max-h-[calc(100%-1.5rem)] overflow-y-auto w-[218px] max-w-[calc(100%-1.5rem)]"
+            className="hud-panel absolute right-3 top-3 rounded-lg px-3 py-2 space-y-2 max-h-[calc(100%-1.5rem)] overflow-y-auto w-[218px] max-w-[calc(100%-1.5rem)]"
           >
             <div className="hud-label">Schema of the store</div>
             <div className="hud-label tnum" style={{ color: "var(--text-3)" }}>
@@ -5803,7 +5803,7 @@ export function KnowledgeGraph({ memories: memoriesAusFenster, onSelectMemory, o
               {inventar.gesamtKnoten.toLocaleString("en-US")} nodes ·{" "}
               {behauptungen.toLocaleString("en-US")} claims in the store
             </div>
-            <div className="pt-0.5">
+            <div className="pt-1">
               <div className="hud-label mb-1" style={{ color: "var(--text-2)" }}>Nodes</div>
               {inventar.knoten.map((z) => (
                 <button
@@ -5811,7 +5811,7 @@ export function KnowledgeGraph({ memories: memoriesAusFenster, onSelectMemory, o
                   data-testid="graph-schema-row"
                   aria-pressed={spot === z.schluessel ? "true" : "false"}
                   onClick={() => setSpot((v) => (v === z.schluessel ? null : z.schluessel))}
-                  className="w-full flex items-baseline text-left text-[12px] py-0.5 rounded hover:bg-[var(--bg-hover)]"
+                  className="w-full flex items-baseline text-left text-[12px] py-1 rounded hover:bg-[var(--bg-hover)]"
                   style={spot === z.schluessel ? { color: "var(--accent)" } : { color: "var(--text-1)" }}
                 >
                   <span className="truncate">{z.label}</span>{" "}
@@ -5834,7 +5834,7 @@ export function KnowledgeGraph({ memories: memoriesAusFenster, onSelectMemory, o
                     data-testid="graph-schema-row"
                     aria-pressed={spot === z.schluessel ? "true" : "false"}
                     onClick={() => setSpot((v) => (v === z.schluessel ? null : z.schluessel))}
-                    className="w-full flex items-baseline text-left text-[12px] py-0.5 rounded hover:bg-[var(--bg-hover)]"
+                    className="w-full flex items-baseline text-left text-[12px] py-1 rounded hover:bg-[var(--bg-hover)]"
                     style={spot === z.schluessel ? { color: "var(--accent)" } : { color: "var(--text-1)" }}
                   >
                     <span className="truncate">{z.label}</span>{" "}
@@ -5912,10 +5912,10 @@ export function KnowledgeGraph({ memories: memoriesAusFenster, onSelectMemory, o
             ref={kantTooltipRef}
             role="tooltip"
             data-testid="graph-kante-tooltip"
-            className="hud-panel absolute left-0 top-0 rounded-lg px-2.5 py-1.5 pointer-events-none space-y-0.5 max-w-[280px]"
+            className="hud-panel absolute left-0 top-0 rounded-lg px-3 py-2 pointer-events-none space-y-1 max-w-[280px]"
             style={{ transform: `translate(${Math.round(kantInfo.x)}px, ${Math.round(kantInfo.y)}px) translate(-50%, 0)` }}
           >
-            <div className="flex items-center gap-1.5 text-[12px]" style={{ color: "var(--text-1)" }}>
+            <div className="flex items-center gap-2 text-[12px]" style={{ color: "var(--text-1)" }}>
               <span className="truncate">{kantInfo.quelle}</span>
               <ChevronRight className="w-3 h-3 shrink-0" style={{ color: "var(--accent)" }} />
               <span className="truncate">{kantInfo.ziel}</span>
@@ -6057,12 +6057,12 @@ export function KnowledgeGraph({ memories: memoriesAusFenster, onSelectMemory, o
                 man eben abgeschaltet hat. */}
             {aktiverKanal === "herkunft"
               ? herkunft.arten.map((a) => (
-                  <span key={a} className="flex items-center gap-1.5">
+                  <span key={a} className="flex items-center gap-2">
                     <span className="w-2 h-2 rounded-full" style={{ background: `var(${HERKUNFT_TOKEN[a]})` }} /> {HERKUNFT_LABELS[a]}
                   </span>
                 ))
               : TYP_FOLGE.map((t) => (
-                  <span key={t} className="flex items-center gap-1.5">
+                  <span key={t} className="flex items-center gap-2">
                     <span className="w-2 h-2 rounded-full" style={{ background: `var(${TYP_TOKEN[t]})` }} /> {TYP_BESCHREIBUNG[t]}
                   </span>
                 ))}

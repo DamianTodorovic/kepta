@@ -59,17 +59,17 @@ function schluesselOrt(ablage?: string): string {
 
 function Row({ ok, label, detail, fix, seal, unknown }: { ok: boolean; label: string; detail: string; fix?: string; seal?: boolean; unknown?: boolean }) {
   return (
-    <div className="flex items-start gap-3 py-2.5">
+    <div className="flex items-start gap-3 py-3">
       {unknown
-        ? <Loader2 className="w-4 h-4 mt-0.5 shrink-0 animate-spin" style={{ color: 'var(--text-3)' }} />
+        ? <Loader2 className="w-4 h-4 mt-1 shrink-0 animate-spin" style={{ color: 'var(--text-3)' }} />
         : ok
           ? seal
-            ? <ShieldCheck className="w-4.5 h-4.5 mt-0.5 shrink-0" style={{ color: 'var(--accent)' }} />
-            : <CheckCircle2 className="w-4 h-4 mt-0.5 shrink-0" style={{ color: 'var(--ok)' }} />
-          : <XCircle className="w-4 h-4 mt-0.5 shrink-0" style={{ color: '#e6a100' }} />}
+            ? <ShieldCheck className="w-4.5 h-4.5 mt-1 shrink-0" style={{ color: 'var(--accent)' }} />
+            : <CheckCircle2 className="w-4 h-4 mt-1 shrink-0" style={{ color: 'var(--ok)' }} />
+          : <XCircle className="w-4 h-4 mt-1 shrink-0" style={{ color: '#e6a100' }} />}
       <div className="min-w-0">
         <div className="text-sm font-medium" style={{ color: 'var(--text-1)' }}>{label}</div>
-        <div className="text-xs mt-0.5" style={{ color: 'var(--text-2)' }}>{detail}</div>
+        <div className="text-xs mt-1" style={{ color: 'var(--text-2)' }}>{detail}</div>
         {!unknown && !ok && fix && <div className="text-xs mt-1 font-medium" style={{ color: '#d97706' }}>How to fix it: {fix}</div>}
       </div>
     </div>
@@ -186,7 +186,7 @@ export function SystemStatus() {
       <div className="flex items-center justify-between mb-2">
         <div>
           <h3 className="text-base font-semibold" style={{ color: 'var(--text-1)' }}>System status</h3>
-          <p className="text-xs mt-0.5" style={{ color: 'var(--text-3)' }}>What works — and what is missing for everything to work.</p>
+          <p className="text-xs mt-1" style={{ color: 'var(--text-3)' }}>What works — and what is missing for everything to work.</p>
         </div>
       </div>
 
@@ -275,12 +275,12 @@ export function SystemStatus() {
             <div className="text-xs font-semibold" style={{ color: 'var(--text-1)' }}>Your brain for Claude Desktop and Cursor</div>
             <code className="text-[11px] block truncate mt-1" style={{ color: 'var(--text-3)' }}>{mcpJson.replaceAll('\n', ' ')}</code>
           </div>
-          <button onClick={() => copy('mcp', mcpJson)} className="btn-ghost flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs shrink-0">
+          <button onClick={() => copy('mcp', mcpJson)} className="btn-ghost flex items-center gap-2 px-3 py-2 rounded-lg text-xs shrink-0">
             {copied === 'mcp' ? <Check className="w-3.5 h-3.5" style={{ color: 'var(--ok)' }} /> : <Copy className="w-3.5 h-3.5" />}
             {copied === 'mcp' ? 'Copied' : copied === 'fehler:mcp' ? 'Copying failed' : 'Copy config'}
           </button>
         </div>
-        <div className="text-xs mt-1.5 flex flex-wrap items-center gap-x-1.5" style={{ color: 'var(--text-2)' }}>
+        <div className="text-xs mt-2 flex flex-wrap items-center gap-x-2" style={{ color: 'var(--text-2)' }}>
           <span className="min-w-0">Or HTTP: <code className="break-all">POST {typeof window !== 'undefined' ? window.location.origin : ''}/mcp</code> (JSON-RPC, protocol 2026-07-28)</span>
           <button onClick={() => copy('url', `${typeof window !== 'undefined' ? window.location.origin : ''}/mcp`)} className="min-h-6 px-1 inline-flex items-center underline" style={{ color: 'var(--accent)' }}>copy</button>
         </div>

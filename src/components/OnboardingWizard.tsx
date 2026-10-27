@@ -124,7 +124,7 @@ export function OnboardingWizard({ open, onClose, onComplete }: Props) {
   return (
     <aside
       data-testid="wizard-taefelchen"
-      className="wizard-taefelchen relative z-[80] flex min-w-0 my-2.5 mr-2.5"
+      className="wizard-taefelchen relative z-[80] flex min-w-0 my-3 mr-3"
       aria-label="Set up K3PTA"
     >
       <motion.div initial={{scale:0.96, opacity:0}} animate={{scale:1, opacity:1}} exit={{scale:0.96, opacity:0}}
@@ -134,13 +134,13 @@ export function OnboardingWizard({ open, onClose, onComplete }: Props) {
         <div className="h-1 w-full flex gap-1 p-1" style={{background:'var(--bg-inset)'}}>
           {[1,2,3,4].map(i=> <div key={i} className="flex-1 rounded-full transition-[width] duration-200" style={{background: step>=i ? 'var(--accent)' : 'var(--bg-inset-strong)'}} />)}
         </div>
-        <div className="px-7 pt-6 pb-4 flex items-center gap-3.5" style={{borderBottom:'1px solid var(--border-subtle)'}}>
+        <div className="px-7 pt-6 pb-4 flex items-center gap-4" style={{borderBottom:'1px solid var(--border-subtle)'}}>
           <KeptaMark size={38} />
           <div className="flex-1">
             <h2 className="text-[16px] font-semibold tracking-[-0.015em]" style={{color:'var(--text-1)'}}>Set up K3PTA</h2>
             {/* „one minute" war eine ungeprüfte Anwerbung und {step}/4 stand
                 zweimal auf demselben Schirm — einmal in Worten, einmal in Ziffern. */}
-            <p className="text-xs mt-0.5" style={{color:'var(--text-2)'}}>Step {step} of 4 — four questions, all on this computer.</p>
+            <p className="text-xs mt-1" style={{color:'var(--text-2)'}}>Step {step} of 4 — four questions, all on this computer.</p>
           </div>
         </div>
 
@@ -171,7 +171,7 @@ export function OnboardingWizard({ open, onClose, onComplete }: Props) {
                   Gemessen 13.10. 21:2x: die Lange dieser Zeilen machte Schritt 1
                   bei 1024 px blätterbar (162 px) und bei 390 px (362 px), ausser
                   die Vorschau auf Schritt 3 — die steht dort selbst. */}
-              <div className="hud-inset rounded-xl p-3 space-y-1.5">
+              <div className="hud-inset rounded-xl p-3 space-y-2">
                 <p className="text-xs leading-relaxed" style={{color:'var(--text-2)'}}>
                   <strong style={{color:'var(--text-1)'}}>Where your notes live.</strong> One file here: <code className="font-mono">~/.kepta/kepta.db</code>. No account, no cloud of ours.
                 </p>
@@ -196,15 +196,15 @@ export function OnboardingWizard({ open, onClose, onComplete }: Props) {
                   onBlur={()=>addTopics(topicInput)}
                   disabled={topics.length>=MAX_TOPICS}
                   placeholder="Type a topic and press Enter — whatever you actually do"
-                  className="hud-input w-full rounded-xl px-4 py-2.5 text-sm disabled:opacity-40"
+                  className="hud-input w-full rounded-xl px-4 py-3 text-sm disabled:opacity-40"
                 />
                 <p className="text-xs" style={{color:'var(--text-3)'}}>
                   Your words, not a menu. They shape how the assistant answers — nothing is written into your notes.
                 </p>
                 {topics.length>0 && (
-                  <div className="flex flex-wrap gap-1.5">
+                  <div className="flex flex-wrap gap-2">
                     {topics.map(t=> (
-                      <button key={t} onClick={()=>removeTopic(t)} className="px-2.5 py-1 rounded-lg text-xs hud-inset flex items-center gap-1.5" style={{color:'var(--text-1)'}} aria-label={`Remove ${t}`}>
+                      <button key={t} onClick={()=>removeTopic(t)} className="px-3 py-1 rounded-lg text-xs hud-inset flex items-center gap-2" style={{color:'var(--text-1)'}} aria-label={`Remove ${t}`}>
                         {t} <span style={{color:'var(--text-3)'}}>×</span>
                       </button>
                     ))}
@@ -213,7 +213,7 @@ export function OnboardingWizard({ open, onClose, onComplete }: Props) {
               </div>
               <div className="hud-inset rounded-xl p-3">
                 <div className="hud-label mb-2">K3PTA starts with {starterPreview.length} notes about itself — nothing else</div>
-                <div className="flex flex-wrap gap-1.5 max-h-28 overflow-y-auto">
+                <div className="flex flex-wrap gap-2 max-h-28 overflow-y-auto">
                   {starterPreview.map(n=> <span key={n.title} className="px-2 py-1 rounded-lg text-xs hud-inset" style={{color:'var(--text-2)'}}>{n.title}</span>)}
                 </div>
               </div>
@@ -242,7 +242,7 @@ export function OnboardingWizard({ open, onClose, onComplete }: Props) {
                             um, und nur die Liste bleibt gekappt (vier + Zahl). */}
                         <div className="text-xs break-words" style={{color:'var(--text-3)'}}>{d.models.length ? d.models.slice(0,4).join(', ') + (d.models.length>4?` +${d.models.length-4}`:'') : d.available ? 'answering, but no model loaded — in a terminal: ollama pull llama3.2' : 'not installed'}</div>
                       </div>
-                      {d.available && <span className="text-xs hud-label px-1.5 py-1 rounded hud-inset" style={{color:'var(--ok)'}}>{d.latencyMs}ms</span>}
+                      {d.available && <span className="text-xs hud-label px-2 py-1 rounded hud-inset" style={{color:'var(--ok)'}}>{d.latencyMs}ms</span>}
                     </div>
                   ))}
                   <div className="rounded-xl p-3" style={{background:'var(--accent-soft)', border:'1px solid var(--border-subtle)'}}>
@@ -288,25 +288,25 @@ export function OnboardingWizard({ open, onClose, onComplete }: Props) {
                     die Beschriftung 35–40 px, die Zelle ließ 32 — „entries“ (vorher)
                     und „topics“/„models“ (nachher) waren abgeschnitten. Die Zellen
                     bekommen ihren Rand waagerecht dünner, die Höhe bleibt. */}
-                <div className="grid grid-cols-3 gap-1.5 text-center">
-                  <div className="hud-inset rounded-lg px-1 py-2.5"><div className="text-lg font-semibold tnum" style={{color:'var(--text-1)'}}>{starterPreview.length}</div><div className="hud-label">notes</div></div>
-                  <div className="hud-inset rounded-lg px-1 py-2.5"><div className="text-lg font-semibold tnum" style={{color:'var(--text-1)'}}>{topics.length}</div><div className="hud-label">topics</div></div>
-                  <div className="hud-inset rounded-lg px-1 py-2.5"><div className="text-lg font-semibold tnum" style={{color:'var(--ok)'}}>{detected?.reduce((n,d)=> n + (d.available ? d.models.length : 0), 0) || 0}</div><div className="hud-label">models</div></div>
+                <div className="grid grid-cols-3 gap-2 text-center">
+                  <div className="hud-inset rounded-lg px-1 py-3"><div className="text-lg font-semibold tnum" style={{color:'var(--text-1)'}}>{starterPreview.length}</div><div className="hud-label">notes</div></div>
+                  <div className="hud-inset rounded-lg px-1 py-3"><div className="text-lg font-semibold tnum" style={{color:'var(--text-1)'}}>{topics.length}</div><div className="hud-label">topics</div></div>
+                  <div className="hud-inset rounded-lg px-1 py-3"><div className="text-lg font-semibold tnum" style={{color:'var(--ok)'}}>{detected?.reduce((n,d)=> n + (d.available ? d.models.length : 0), 0) || 0}</div><div className="hud-label">models</div></div>
                 </div>
-                <ul className="text-xs space-y-1.5" style={{color:'var(--text-2)'}}>
-                  <li className="flex gap-2"><Check className="w-3.5 h-3.5 mt-0.5" style={{color:'var(--ok)'}}/> The {starterPreview.length} notes about K3PTA land in your memory — you can edit or delete every one</li>
+                <ul className="text-xs space-y-2" style={{color:'var(--text-2)'}}>
+                  <li className="flex gap-2"><Check className="w-3.5 h-3.5 mt-1" style={{color:'var(--ok)'}}/> The {starterPreview.length} notes about K3PTA land in your memory — you can edit or delete every one</li>
                   {/* Die zwei Zeilen darunter waren Behauptungen: der Anbieter wurde
                       nur gesetzt, wenn ein lokaler Dienst ein Modell meldete, und
                       „adapts to your goal" stand auch da, wenn das Feld leer war. */}
                   {providerWirdGesetzt ? (
-                    <li className="flex gap-2"><Check className="w-3.5 h-3.5 mt-0.5" style={{color:'var(--ok)'}}/> Answers will come from {prov.label}, model {modellZumSetzen} — change it any time in Settings</li>
+                    <li className="flex gap-2"><Check className="w-3.5 h-3.5 mt-1" style={{color:'var(--ok)'}}/> Answers will come from {prov.label}, model {modellZumSetzen} — change it any time in Settings</li>
                   ) : (
-                    <li className="flex gap-2"><AlertCircle className="w-3.5 h-3.5 mt-0.5" style={{color:'var(--warn)'}}/> Nothing was set: no AI on this machine reported a model. K3PTA stores your notes anyway — pick an AI in Settings for answers</li>
+                    <li className="flex gap-2"><AlertCircle className="w-3.5 h-3.5 mt-1" style={{color:'var(--warn)'}}/> Nothing was set: no AI on this machine reported a model. K3PTA stores your notes anyway — pick an AI in Settings for answers</li>
                   )}
                   {goal.trim() ? (
-                    <li className="flex gap-2"><Check className="w-3.5 h-3.5 mt-0.5" style={{color:'var(--ok)'}}/> Your goal is put in front of every question: „{goal.trim()}“</li>
+                    <li className="flex gap-2"><Check className="w-3.5 h-3.5 mt-1" style={{color:'var(--ok)'}}/> Your goal is put in front of every question: „{goal.trim()}“</li>
                   ) : (
-                    <li className="flex gap-2"><Info className="w-3.5 h-3.5 mt-0.5" style={{color:'var(--text-2)'}}/> No goal given — the assistant answers from your notes alone</li>
+                    <li className="flex gap-2"><Info className="w-3.5 h-3.5 mt-1" style={{color:'var(--text-2)'}}/> No goal given — the assistant answers from your notes alone</li>
                   )}
                 </ul>
               </div>
@@ -315,7 +315,7 @@ export function OnboardingWizard({ open, onClose, onComplete }: Props) {
                   type="checkbox"
                   checked={scanAngefragt}
                   onChange={(e)=> setScanAngefragt(e.target.checked)}
-                  className="mt-0.5 shrink-0"
+                  className="mt-1 shrink-0"
                 />
                 <span className="text-xs leading-relaxed" style={{color:'var(--text-2)'}}>
                   <strong style={{color:'var(--text-1)'}}>Also look through this computer for documents.</strong>{' '}
@@ -325,7 +325,7 @@ export function OnboardingWizard({ open, onClose, onComplete }: Props) {
                 </span>
               </label>
               <div className="hud-inset rounded-xl p-3 flex gap-3">
-                <Globe className="w-4 h-4 mt-0.5 shrink-0" style={{color:'var(--text-3)'}}/>
+                <Globe className="w-4 h-4 mt-1 shrink-0" style={{color:'var(--text-3)'}}/>
                 <p className="text-xs leading-relaxed" style={{color:'var(--text-2)'}}>After this: drop a file on the window or paste a link, and K3PTA keeps learning. Your whole memory is one file — <code className="font-mono">~/.kepta/kepta.db</code> — so you can back it up, move it, or delete it whenever you like.</p>
               </div>
               {importResult && <div className="rounded-xl p-3 text-sm text-center" style={{background:'color-mix(in srgb, var(--ok) 12%, transparent)', border:'1px solid color-mix(in srgb, var(--ok) 30%, transparent)', color:'var(--ok)'}}>{importResult}</div>}
@@ -337,11 +337,11 @@ export function OnboardingWizard({ open, onClose, onComplete }: Props) {
         <div className="p-4 flex items-center justify-between" style={{borderTop:'1px solid var(--border-subtle)'}}>
           <button onClick={()=> step>1 ? setStep((s=> (s-1) as Step)) : onClose()} className="btn-ghost px-4 py-2 rounded-xl text-sm flex items-center gap-2"><ChevronLeft className="w-4 h-4"/>{step===1 ? 'Later' : 'Back'}</button>
           {step<4 ? (
-            <button onClick={()=> setStep((s=> (s+1) as Step))} disabled={step===1 && !name.trim()} title={step===1 && !name.trim() ? 'A name first — or leave the setup any time with „Later".' : undefined} className="btn-primary px-6 py-2.5 rounded-xl text-sm flex items-center gap-2 disabled:opacity-40">
+            <button onClick={()=> setStep((s=> (s+1) as Step))} disabled={step===1 && !name.trim()} title={step===1 && !name.trim() ? 'A name first — or leave the setup any time with „Later".' : undefined} className="btn-primary px-6 py-3 rounded-xl text-sm flex items-center gap-2 disabled:opacity-40">
               Next <ChevronRight className="w-4 h-4"/>
             </button>
           ) : (
-            <button onClick={handleFinish} disabled={importing} className="btn-primary px-6 py-2.5 rounded-xl text-sm flex items-center gap-2">
+            <button onClick={handleFinish} disabled={importing} className="btn-primary px-6 py-3 rounded-xl text-sm flex items-center gap-2">
               {importing ? <><Loader2 className="w-4 h-4 animate-spin"/> Filling your brain…</> : <><Sparkles className="w-4 h-4"/> Create my brain — {starterPreview.length} notes</>}
             </button>
           )}

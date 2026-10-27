@@ -81,7 +81,7 @@ export function CommandPalette({ open, onClose, actions }: CommandPaletteProps) 
           <span className="hud-label hidden sm:inline-flex items-center gap-1"><span className="kbd">⌘</span>K</span>
         </div>
 
-        <div ref={listRef} className="overflow-y-auto flex-1 py-2 space-y-0.5">
+        <div ref={listRef} className="overflow-y-auto flex-1 py-2 space-y-1">
           {filtered.length === 0 && (
             <div className="py-10 px-6 text-center text-sm leading-relaxed" style={{ color: "var(--text-2)" }}>
               Nothing here answers “{query}”.
@@ -110,10 +110,10 @@ export function CommandPalette({ open, onClose, actions }: CommandPaletteProps) 
           ))}
         </div>
 
-        <div className="px-4 py-2.5 flex items-center gap-4 hud-label shrink-0" style={{ borderTop: "1px solid var(--border-subtle)" }}>
-          <span className="flex items-center gap-1.5"><span className="kbd !py-px">↑↓</span> Navigate</span>
-          <span className="flex items-center gap-1.5"><span className="kbd !py-px">↵</span> Open</span>
-          <span className="flex items-center gap-1.5"><span className="kbd !py-px">ESC</span> Close</span>
+        <div className="px-4 py-3 flex items-center gap-4 hud-label shrink-0" style={{ borderTop: "1px solid var(--border-subtle)" }}>
+          <span className="flex items-center gap-2"><span className="kbd !py-px">↑↓</span> Navigate</span>
+          <span className="flex items-center gap-2"><span className="kbd !py-px">↵</span> Open</span>
+          <span className="flex items-center gap-2"><span className="kbd !py-px">ESC</span> Close</span>
         </div>
       </div>
     </div>

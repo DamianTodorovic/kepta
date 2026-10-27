@@ -1240,8 +1240,8 @@ svg[aria-hidden="true"] { min-block-size: var(--icon-min); min-inline-size: var(
 .row-entry {
   display: flex;
   flex-direction: column;
-  gap: 10px;
-  padding: 16px 16px 14px;
+  gap: 12px;
+  padding: 16px;
   border: 1px solid var(--kante-flaeche);
   border-radius: var(--r-card);
   background: var(--glass);
@@ -1257,7 +1257,7 @@ svg[aria-hidden="true"] { min-block-size: var(--icon-min); min-inline-size: var(
 .row-type {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
+  gap: 8px;
   font-size: var(--fs-2);
   font-weight: var(--fw-halbfest);
   letter-spacing: 0.02em;
@@ -1302,7 +1302,7 @@ svg[aria-hidden="true"] { min-block-size: var(--icon-min); min-inline-size: var(
      Auf dem Tisch (#c1c1bf) misst das 6,2 gegen 5,2 — und ein kurzes Wort wie
      „Links" blieb bei der leisen Stufe unter der Kante (4,36:1, 14.10.). */
   color: var(--text-2);
-  padding: 2px 7px;
+  padding: 4px 8px;
   border: 1px solid var(--border-subtle);
   border-radius: 4px;
   background: var(--bg-inset);
@@ -1323,13 +1323,13 @@ button.row-quiet { cursor: pointer; border-color: var(--kante-kontrolle); }
   flex-direction: row;
   align-items: center;
   justify-content: space-between;
-  gap: 10px;
+  gap: 12px;
   border-top: 1px solid var(--border-subtle);
-  padding-top: 10px;
+  padding-top: 12px;
 }
 .row-pct { font-family: var(--font-display); font-size: var(--fs-5); font-weight: var(--fw-halbfest); color: var(--accent); }
-.row-tags { display: flex; flex-wrap: wrap; gap: 5px; justify-content: flex-start; min-width: 0; overflow: hidden; }
-.row-tag { display: inline-flex; align-items: center; gap: 3px; font-size: var(--fs-1); color: var(--text-2); }
+.row-tags { display: flex; flex-wrap: wrap; gap: 4px; justify-content: flex-start; min-width: 0; overflow: hidden; }
+.row-tag { display: inline-flex; align-items: center; gap: 4px; font-size: var(--fs-1); color: var(--text-2); }
 .row-time { font-size: var(--fs-1); color: var(--text-3); white-space: nowrap; margin-left: auto; }
 
 /* ---------- Apple-Segmented Control ----------

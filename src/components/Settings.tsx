@@ -133,7 +133,7 @@ function Meldung({ meldung, ort }: { meldung: { ort: string; text: string; art?:
   if (!meldung || meldung.ort !== ort) return null;
   const absage = meldung.art === 'warn';
   return (
-    <p data-quittung={ort} data-art={absage ? 'warn' : 'ok'} className="text-xs mt-2 flex items-center gap-1.5" style={{ color: absage ? 'var(--warn)' : 'var(--ok)' }}>
+    <p data-quittung={ort} data-art={absage ? 'warn' : 'ok'} className="text-xs mt-2 flex items-center gap-2" style={{ color: absage ? 'var(--warn)' : 'var(--ok)' }}>
       {absage ? <AlertTriangle className="w-3.5 h-3.5" /> : <CheckCircle2 className="w-3.5 h-3.5" />} {meldung.text}
     </p>
   );
@@ -618,21 +618,21 @@ export function Settings() {
         <div className="flex gap-2 mb-8 p-1 rounded-xl hud-inset">
           <button
             onClick={() => setActiveTab('system')}
-            className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg text-sm font-medium transition-colors ${activeTab === 'system' ? 'bg-white dark:bg-zinc-800 shadow-sm' : ''}`}
+            className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-lg text-sm font-medium transition-colors ${activeTab === 'system' ? 'bg-white dark:bg-zinc-800 shadow-sm' : ''}`}
             style={{ color: activeTab === 'system' ? 'var(--text-1)' : 'var(--text-2)' }}
           >
             <Cpu className="w-4 h-4" /> AI &amp; data
           </button>
           <button
             onClick={() => setActiveTab('mcp')}
-            className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg text-sm font-medium transition-colors ${activeTab === 'mcp' ? 'bg-white dark:bg-zinc-800 shadow-sm' : ''}`}
+            className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-lg text-sm font-medium transition-colors ${activeTab === 'mcp' ? 'bg-white dark:bg-zinc-800 shadow-sm' : ''}`}
             style={{ color: activeTab === 'mcp' ? 'var(--text-1)' : 'var(--text-2)' }}
           >
             <Plug className="w-4 h-4" /> MCP / API
           </button>
           <button
             onClick={() => setActiveTab('sync')}
-            className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg text-sm font-medium transition-colors ${activeTab === 'sync' ? 'bg-white dark:bg-zinc-800 shadow-sm' : ''}`}
+            className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-lg text-sm font-medium transition-colors ${activeTab === 'sync' ? 'bg-white dark:bg-zinc-800 shadow-sm' : ''}`}
             style={{ color: activeTab === 'sync' ? 'var(--text-1)' : 'var(--text-2)' }}
           >
             <ShieldCheck className="w-4 h-4" /> Device Sync
@@ -656,7 +656,7 @@ export function Settings() {
               </div>
               <div className="space-y-5">
                 <div>
-                  <label className="text-xs block mb-1.5" htmlFor="such-tiefe" style={{ color: 'var(--text-3)' }}>
+                  <label className="text-xs block mb-2" htmlFor="such-tiefe" style={{ color: 'var(--text-3)' }}>
                     Search depth (top-k) · <span className="tnum">{suchPrefs.tiefe}</span>
                   </label>
                   <input
@@ -671,7 +671,7 @@ export function Settings() {
                     aria-label="Search depth (top-k)"
                     title="How deep the engine searches across all three tracks before ranking. Deeper costs a little time, finds more at the edge."
                   />
-                  <div className="text-xs mt-1.5" style={{ color: 'var(--text-3)' }}>
+                  <div className="text-xs mt-2" style={{ color: 'var(--text-3)' }}>
                     The engine fuses BM25, vectors and the knowledge graph to this depth — a value of {SUCH_TIEFE_MIN}–{SUCH_TIEFE_MAX} ({SUCH_TIEFE_DEFAULT} by default).
                   </div>
                 </div>
@@ -703,13 +703,13 @@ export function Settings() {
                       );
                     })}
                   </div>
-                  <div className="text-xs mt-1.5" style={{ color: 'var(--text-3)' }}>
+                  <div className="text-xs mt-2" style={{ color: 'var(--text-3)' }}>
                     Switching a track off removes its voice from the ranking — useful to see what each track contributes.
                   </div>
                 </div>
 
                 <div>
-                  <label className="text-xs block mb-1.5" htmlFor="such-treffer" style={{ color: 'var(--text-3)' }}>
+                  <label className="text-xs block mb-2" htmlFor="such-treffer" style={{ color: 'var(--text-3)' }}>
                     Results shown · <span className="tnum">{treffer === 0 ? 'All' : treffer}</span>
                   </label>
                   <div className="flex items-center gap-2">
@@ -727,7 +727,7 @@ export function Settings() {
                     />
                     <span className="chip tnum !px-2">{treffer === 0 ? 'All' : treffer}</span>
                   </div>
-                  <div className="text-xs mt-1.5" style={{ color: 'var(--text-3)' }}>
+                  <div className="text-xs mt-2" style={{ color: 'var(--text-3)' }}>
                     Same control as the toolbar above the list — both move together.
                   </div>
                 </div>
@@ -843,10 +843,10 @@ export function Settings() {
                   )}
                   <Meldung meldung={meldung} ort="modelle" />
                   {!provider.needsKey && models.length > 0 && !sondeWeg && (
-                    <p className="text-xs mt-2 flex items-center gap-1.5" style={{ color: 'var(--ok)' }}><CheckCircle2 className="w-3.5 h-3.5" /> {models.length} models connected{adresseLokal ? ' locally' : ''} — new downloads appear automatically (every 12s + on focus)</p>
+                    <p className="text-xs mt-2 flex items-center gap-2" style={{ color: 'var(--ok)' }}><CheckCircle2 className="w-3.5 h-3.5" /> {models.length} models connected{adresseLokal ? ' locally' : ''} — new downloads appear automatically (every 12s + on focus)</p>
                   )}
                   {sondeWeg && models.length > 0 && (
-                    <p data-sonde="weg" className="text-xs mt-2 flex items-center gap-1.5" style={{ color: 'var(--warn)' }}><AlertTriangle className="w-3.5 h-3.5" /> The model service stopped answering — the {models.length} models listed here were seen earlier, not now.</p>
+                    <p data-sonde="weg" className="text-xs mt-2 flex items-center gap-2" style={{ color: 'var(--warn)' }}><AlertTriangle className="w-3.5 h-3.5" /> The model service stopped answering — the {models.length} models listed here were seen earlier, not now.</p>
                   )}
                   {!provider.needsKey && models.length === 0 && !loadingModels && !modelError && (
                     <p className="text-xs mt-2 leading-relaxed" style={{ color: 'var(--text-3)' }}>No local models found. Start Ollama (`ollama serve` + `ollama pull llama3.2`) or LM Studio — they show up here immediately.</p>
@@ -856,7 +856,7 @@ export function Settings() {
 
               <button
                 type="submit"
-                className="btn-primary flex items-center justify-center gap-2 px-6 py-2.5 rounded-xl w-full"
+                className="btn-primary flex items-center justify-center gap-2 px-6 py-3 rounded-xl w-full"
               >
                 {saved ? (
                   <><ShieldCheck className="w-5 h-5" /> <span>Configuration saved</span></>
@@ -883,15 +883,15 @@ export function Settings() {
                     <span className={`inline-block h-4 w-4 transform rounded-full bg-white shadow transition-transform ${autoLearn ? 'translate-x-6' : 'translate-x-1'}`} />
                   </label>
                 </div>
-                {autoLearnSaved && <div className="text-xs mt-2 flex items-center gap-1.5" style={{color:'var(--ok)'}}><CheckCircle2 className="w-3.5 h-3.5"/> {autoLearn ? 'Auto-learn active — the brain extends itself' : 'Auto-learn off'}</div>}
+                {autoLearnSaved && <div className="text-xs mt-2 flex items-center gap-2" style={{color:'var(--ok)'}}><CheckCircle2 className="w-3.5 h-3.5"/> {autoLearn ? 'Auto-learn active — the brain extends itself' : 'Auto-learn off'}</div>}
                 {/* P4-07 (18.10.): src/components/Chat.tsx:651 kehrt stumm um, wenn kein
                     Modell gesetzt ist — der Schalter stand an und lernte nichts. */}
                 {autoLearn && !settings.model.trim() && (
-                  <div className="text-xs mt-2 flex items-center gap-1.5" style={{color:'var(--warn)'}}><AlertTriangle className="w-3.5 h-3.5"/> Auto-learn is on but nothing will be learned: no model is set. Choose one under Artificial intelligence and save it.</div>
+                  <div className="text-xs mt-2 flex items-center gap-2" style={{color:'var(--warn)'}}><AlertTriangle className="w-3.5 h-3.5"/> Auto-learn is on but nothing will be learned: no model is set. Choose one under Artificial intelligence and save it.</div>
                 )}
                 {autoLearn && (
                   <div className="mt-4 pt-4" style={{ borderTop: '1px solid var(--border-subtle)' }}>
-                    <label className="text-xs font-semibold block mb-1.5" htmlFor="ai-extraktionsmodell" style={{color:'var(--text-1)'}}>Extraction model <span style={{color:'var(--text-3)'}}>— optional</span></label>
+                    <label className="text-xs font-semibold block mb-2" htmlFor="ai-extraktionsmodell" style={{color:'var(--text-1)'}}>Extraction model <span style={{color:'var(--text-3)'}}>— optional</span></label>
                     <input
                       id="ai-extraktionsmodell"
                       type="text"
@@ -920,7 +920,7 @@ export function Settings() {
                       style={{ background: 'var(--bg-inset-strong)', border: '1px solid var(--border-subtle)', color: 'var(--text-1)' }}
                     />
                     {extractQuittung && (
-                      <div data-extract-quittung={extractQuittung.art} className="text-xs mt-1.5 flex items-center gap-1.5" style={{ color: extractQuittung.art === 'warn' ? 'var(--warn)' : 'var(--ok)' }}>
+                      <div data-extract-quittung={extractQuittung.art} className="text-xs mt-2 flex items-center gap-2" style={{ color: extractQuittung.art === 'warn' ? 'var(--warn)' : 'var(--ok)' }}>
                         {extractQuittung.art === 'warn' ? <AlertTriangle className="w-3.5 h-3.5" /> : <CheckCircle2 className="w-3.5 h-3.5" />} {extractQuittung.text}
                       </div>
                     )}
@@ -940,7 +940,7 @@ export function Settings() {
                 </div>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
-                    <label className="text-xs block mb-1.5" htmlFor="display-textgroesse" style={{ color: 'var(--text-3)' }}>Text size</label>
+                    <label className="text-xs block mb-2" htmlFor="display-textgroesse" style={{ color: 'var(--text-3)' }}>Text size</label>
                     <select
                       id="display-textgroesse"
                       value={String(zoom)}
@@ -952,7 +952,7 @@ export function Settings() {
                       <option value="115">115 %</option>
                       <option value="130">130 %</option>
                     </select>
-                    <div className="text-xs mt-1.5" style={{ color: 'var(--text-3)' }}>Scales the whole interface — handy on high-resolution displays.</div>
+                    <div className="text-xs mt-2" style={{ color: 'var(--text-3)' }}>Scales the whole interface — handy on high-resolution displays.</div>
                   </div>
                 </div>
               </div>
@@ -967,7 +967,7 @@ export function Settings() {
                 </p>
                 <button
                   onClick={handleExport}
-                  className="btn-ghost flex items-center justify-center gap-2 px-6 py-2.5 rounded-xl font-medium w-full"
+                  className="btn-ghost flex items-center justify-center gap-2 px-6 py-3 rounded-xl font-medium w-full"
                 >
                   {sicherung && 'knoten' in sicherung ? (
                     <><CheckCircle2 className="w-5 h-5" style={{ color: 'var(--ok)' }} /> <span style={{ color: 'var(--ok)' }}>Backup created · {sicherung.knoten.toLocaleString('en-US')} nodes</span></>
@@ -988,7 +988,7 @@ export function Settings() {
                     <p className="text-sm" style={{ color: 'var(--text-3)' }}>Asking the local server whether this install is managed…</p>
                   ) : orgInfo.managed ? (
                     <div className="text-sm" style={{ color: 'var(--text-2)' }}>
-                      <p className="mb-1.5">This installation is <strong style={{ color: 'var(--text-1)' }}>managed by your organization</strong> (managed-settings.json). {
+                      <p className="mb-2">This installation is <strong style={{ color: 'var(--text-1)' }}>managed by your organization</strong> (managed-settings.json). {
                         orgInfo.policies.chat_cloud === 'deny' || orgInfo.policies.machine_scan === 'deny' || orgInfo.policies.privacy_shield === 'force_on'
                           ? 'Active policies:'
                           : 'It sets no model, scan or shield rule — only team roles.'}</p>
@@ -1024,7 +1024,7 @@ export function Settings() {
                   <button
                     onClick={() => chatImportFeld.current?.click()}
                     disabled={chatImportLaeuft}
-                    className="btn-ghost flex items-center justify-center gap-2 px-6 py-2.5 rounded-xl font-medium w-full disabled:opacity-50"
+                    className="btn-ghost flex items-center justify-center gap-2 px-6 py-3 rounded-xl font-medium w-full disabled:opacity-50"
                   >
                     {chatImportLaeuft
                       ? <><RefreshCw className="w-5 h-5 animate-spin" /> Reading export…</>
@@ -1062,7 +1062,7 @@ export function Settings() {
                             tut, bleibt Sache der Maschine — was der Nutzer sieht, sind
                             die zwei Zeilen, und ihre Zahlen kommen aus dem Laden. */}
                         {bestandGruppen && (
-                          <div className="mt-1.5 space-y-1">
+                          <div className="mt-2 space-y-1">
                             <div className="flex flex-wrap gap-x-4 gap-y-1 text-[12.5px]">
                               {TRAEGER_REIHENFOLGE.map((t) => (
                                 <span key={t}>{bestandGruppen.traeger[t].toLocaleString('en-GB')} × {TRAEGER_LABELS[t]}</span>
@@ -1079,7 +1079,7 @@ export function Settings() {
                           </div>
                         )}
                         {gruppenFehlt && (
-                          <div className="mt-1.5 text-[12.5px]" style={{ color: 'var(--warn)' }}>
+                          <div className="mt-2 text-[12.5px]" style={{ color: 'var(--warn)' }}>
                             The two-row counts did not arrive — only the change count is known.
                           </div>
                         )}
@@ -1087,7 +1087,7 @@ export function Settings() {
                             Erklaerung liefert die Route langst (server/router/memories.ts:175,
                             grund je Beispiel) — gezeigt wurde sie nirgends. */}
                         {sortierVorschau.examples && sortierVorschau.examples.length > 0 && (
-                          <div className="mt-1.5 space-y-1">
+                          <div className="mt-2 space-y-1">
                             {sortierVorschau.examples.slice(0, 3).map((b) => (
                               <div key={`${b.title}-${b.von}-${b.nach}`} className="text-[12.5px]">
                                 <span style={{ color: 'var(--text-1)' }}>{b.title}</span>{' '}
@@ -1135,7 +1135,7 @@ export function Settings() {
                           setSortierFehler(err instanceof Error ? err.message : String(err));
                         } finally { setSortiertLaeuft(false); }
                       }}
-                      className="btn-ghost flex items-center justify-center gap-2 px-6 py-2.5 rounded-xl font-medium w-full"
+                      className="btn-ghost flex items-center justify-center gap-2 px-6 py-3 rounded-xl font-medium w-full"
                     >{sortiertLaeuft ? 'Looking…' : 'Show me what would change'}</button>
                   )}
                 </div>
@@ -1174,7 +1174,7 @@ export function Settings() {
                     <button
                       disabled={reparaturLaeuft}
                       onClick={() => void pruefeImporte(false)}
-                      className="btn-ghost flex items-center justify-center gap-2 px-6 py-2.5 rounded-xl font-medium w-full"
+                      className="btn-ghost flex items-center justify-center gap-2 px-6 py-3 rounded-xl font-medium w-full"
                     >{reparaturLaeuft ? 'Reading…' : 'Check imported files'}</button>
                   )}
                 </div>
@@ -1209,7 +1209,7 @@ export function Settings() {
               <div className="flex items-center gap-2 mb-3">
                 <Server className="w-4 h-4" style={{ color: 'var(--accent)' }} />
                 <h3 className="settings-h" style={{ color: 'var(--text-1)' }}>Local server</h3>
-                <span className="ml-auto flex items-center gap-1.5 text-xs" style={{ color: health?.ok ? 'var(--ok)' : 'var(--text-3)' }}>
+                <span className="ml-auto flex items-center gap-2 text-xs" style={{ color: health?.ok ? 'var(--ok)' : 'var(--text-3)' }}>
                   <span className="w-2 h-2 rounded-full" style={{ background: health?.ok ? 'var(--ok)' : healthError ? '#f87171' : 'var(--text-3)' }} />
                   {health?.ok ? `online · ${health.count ?? 0} nodes` : healthError ? 'offline' : 'checking…'}
                 </span>
@@ -1245,11 +1245,11 @@ export function Settings() {
                   { m: 'POST', p: '/api/mcp/save', d: 'MCP save', c: `curl -X POST ${API_BASE}/api/mcp/save -H "Content-Type: application/json" -d '{"title":"T","content":"C","tags":[]}'` },
                   { m: 'GET', p: '/api/mcp/tools', d: 'Tool list', c: `curl ${API_BASE}/api/mcp/tools` },
                 ].map(e => (
-                  <div key={e.p} className="hud-inset rounded-xl px-3 py-2.5 flex items-center gap-3">
+                  <div key={e.p} className="hud-inset rounded-xl px-3 py-3 flex items-center gap-3">
                     <span className="method-badge" data-method={e.m}>{e.m}</span>
                     <code className="text-xs font-mono flex-1 truncate" style={{ color: 'var(--text-1)' }}>{e.p}</code>
                     <span className="text-xs hidden sm:block shrink-0" style={{ color: 'var(--text-3)' }}>{e.d}</span>
-                    <button onClick={() => copy(e.c, e.p)} className="btn-ghost p-1.5 rounded-lg shrink-0" aria-label={`Copy the curl command for ${e.p}`} title={copied === `error:${e.p}` ? 'Copying failed — your clipboard was blocked' : 'Copy the curl command'}>
+                    <button onClick={() => copy(e.c, e.p)} className="btn-ghost p-2 rounded-lg shrink-0" aria-label={`Copy the curl command for ${e.p}`} title={copied === `error:${e.p}` ? 'Copying failed — your clipboard was blocked' : 'Copy the curl command'}>
                       {copied === e.p ? <CheckCircle2 className="w-3.5 h-3.5" style={{ color: 'var(--ok)' }} /> : copied === `error:${e.p}` ? <AlertTriangle className="w-3.5 h-3.5" style={{ color: 'var(--warn)' }} /> : <Copy className="w-3.5 h-3.5" />}
                     </button>
                   </div>
@@ -1276,8 +1276,8 @@ export function Settings() {
                 {werkzeuge.map((w) => {
                   const Icon = WERKZEUGIKON[w.name] ?? Braces;
                   return (
-                    <div key={w.name} className="hud-inset rounded-xl px-3 py-2.5 flex gap-3 min-w-0">
-                      <Icon className="w-4 h-4 mt-0.5 shrink-0" style={{ color: 'var(--accent)' }} />
+                    <div key={w.name} className="hud-inset rounded-xl px-3 py-3 flex gap-3 min-w-0">
+                      <Icon className="w-4 h-4 mt-1 shrink-0" style={{ color: 'var(--accent)' }} />
                       <div className="min-w-0 flex-1">
                         <p className="text-xs font-mono font-semibold" style={{ color: 'var(--text-1)' }}>{w.name}</p>
                         <p className="text-xs" style={{ color: 'var(--text-2)' }}>
@@ -1303,7 +1303,7 @@ export function Settings() {
               <div className="hud-inset rounded-xl overflow-hidden">
                 <div className="flex items-center justify-between px-3 py-2" style={{ borderBottom: '1px solid var(--border-subtle)' }}>
                   <span className="text-xs font-mono" style={{ color: 'var(--text-3)' }}>{mcpAusApp ? 'mcp.json — runs inside the K3PTA app' : 'mcp.json (project root)'}</span>
-                  <button onClick={() => copy(mcpAusApp ?? MCP_JSON_NPX, 'mcp-npx')} className="btn-ghost flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs">
+                  <button onClick={() => copy(mcpAusApp ?? MCP_JSON_NPX, 'mcp-npx')} className="btn-ghost flex items-center gap-2 px-3 py-1 rounded-lg text-xs">
                     {copied === 'mcp-npx' ? <><CheckCircle2 className="w-3.5 h-3.5" style={{ color: 'var(--ok)' }} /> Copied</> : copied === 'error:mcp-npx' ? <><Copy className="w-3.5 h-3.5" /> Copying failed</> : <><Copy className="w-3.5 h-3.5" /> Copy</>}
                   </button>
                 </div>
@@ -1317,7 +1317,7 @@ export function Settings() {
               <div className="hud-inset rounded-xl overflow-hidden mt-2">
                 <div className="flex items-center justify-between px-3 py-2" style={{ borderBottom: '1px solid var(--border-subtle)' }}>
                   <span className="text-xs font-mono" style={{ color: 'var(--text-3)' }}>mcp.json (built)</span>
-                  <button onClick={() => copy(MCP_JSON_BUILT, 'mcp-built')} className="btn-ghost flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs">
+                  <button onClick={() => copy(MCP_JSON_BUILT, 'mcp-built')} className="btn-ghost flex items-center gap-2 px-3 py-1 rounded-lg text-xs">
                     {copied === 'mcp-built' ? <><CheckCircle2 className="w-3.5 h-3.5" style={{ color: 'var(--ok)' }} /> Copied</> : copied === 'error:mcp-built' ? <><Copy className="w-3.5 h-3.5" /> Copying failed</> : <><Copy className="w-3.5 h-3.5" /> Copy</>}
                   </button>
                 </div>
@@ -1339,7 +1339,7 @@ export function Settings() {
                   <div key={os} className="flex items-center gap-2 mt-2 hud-inset rounded-lg px-3 py-2">
                     <span className="text-xs shrink-0" style={{ color: 'var(--text-2)' }}>{os}</span>
                     <code className="text-xs font-mono flex-1 truncate" style={{ color: 'var(--text-1)' }}>{pfad}</code>
-                    <button onClick={() => copy(pfad, `claude-path-${os}`)} className="btn-ghost p-1.5 rounded-lg shrink-0" aria-label={`Copy the ${os} path`} title={copied === `error:claude-path-${os}` ? 'Copying failed — your clipboard was blocked' : undefined}>
+                    <button onClick={() => copy(pfad, `claude-path-${os}`)} className="btn-ghost p-2 rounded-lg shrink-0" aria-label={`Copy the ${os} path`} title={copied === `error:claude-path-${os}` ? 'Copying failed — your clipboard was blocked' : undefined}>
                       {copied === `claude-path-${os}` ? <CheckCircle2 className="w-3.5 h-3.5" style={{ color: 'var(--ok)' }} /> : copied === `error:claude-path-${os}` ? <AlertTriangle className="w-3.5 h-3.5" style={{ color: 'var(--warn)' }} /> : <Copy className="w-3.5 h-3.5" />}
                     </button>
                   </div>
@@ -1372,7 +1372,7 @@ export function Settings() {
                   <span className="text-xs font-mono" style={{ color: 'var(--text-3)' }}>Terminal</span>
                   <button
                     onClick={() => copy(`curl ${API_BASE}/api/health | jq\ncurl "${API_BASE}/api/memories/search?q=hallo&limit=3" | jq\ncurl -X POST ${API_BASE}/api/memory -H "Content-Type: application/json" -d '{"title":"Test","content":"Via API","tags":["api"]}' | jq`, 'curl')}
-                    className="btn-ghost flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs"
+                    className="btn-ghost flex items-center gap-2 px-3 py-1 rounded-lg text-xs"
                   >
                     {copied === 'curl' ? <><CheckCircle2 className="w-3.5 h-3.5" style={{ color: 'var(--ok)' }} /> Copied</> : copied === 'error:curl' ? <><Copy className="w-3.5 h-3.5" /> Copying failed</> : <><Copy className="w-3.5 h-3.5" /> Copy</>}
                   </button>

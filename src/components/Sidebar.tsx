@@ -119,7 +119,7 @@ export function Sidebar({ tags, selectedTags, onSelectTag, onClearTags, currentV
       {/* Tags */}
       {tags.length > 0 && (
         <div className="flex-1 min-h-0 px-3 py-2 overflow-hidden flex flex-col">
-          <div className="flex items-center justify-between px-2 mb-1.5">
+          <div className="flex items-center justify-between px-2 mb-2">
             <span className="seiten-kopf text-[10.5px] font-semibold tracking-[0.09em] uppercase">Tags</span>
             {selectedTags.length > 0 && (
               <button onClick={onClearTags} className="seiten-handlung min-h-6 text-[11px]">Reset</button>
@@ -140,7 +140,7 @@ export function Sidebar({ tags, selectedTags, onSelectTag, onClearTags, currentV
                   <Hash className="seiten-ikone w-3.5 h-3.5 shrink-0" />
                   <span className="truncate flex-1">{name}</span>
                   {count !== null && count > 1 && (
-                    <span className="seiten-plakette text-[10.5px] tnum px-1.5 py-px rounded-md shrink-0">{count}</span>
+                    <span className="seiten-plakette text-[10.5px] tnum px-2 py-px rounded-md shrink-0">{count}</span>
                   )}
                 </button>
               );
@@ -173,7 +173,7 @@ export function Sidebar({ tags, selectedTags, onSelectTag, onClearTags, currentV
       )}
 
       {/* Fußzeile */}
-      <div className="seiten-kante-oben p-2.5 space-y-2">
+      <div className="seiten-kante-oben p-3 space-y-2">
         <div className="seiten-flaeche px-2 py-2 rounded-lg flex items-center gap-2">
           <KeptaMark size={24} />
           <div className="min-w-0 flex-1">

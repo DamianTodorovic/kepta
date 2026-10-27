@@ -152,7 +152,7 @@ export function MemoryPreview({ memory, onClose, onEdit }: MemoryPreviewProps) {
             <h2 className="text-[17px] font-semibold leading-snug break-words" style={{ color: "var(--text-1)" }}>
               {memory.title || "Untitled"}
             </h2>
-            <div className="flex items-center flex-wrap gap-x-2.5 gap-y-1 mt-1.5 text-[11px]" style={{ color: "var(--text-3)" }}>
+            <div className="flex items-center flex-wrap gap-x-3 gap-y-1 mt-2 text-[11px]" style={{ color: "var(--text-3)" }}>
               <span>{artLabel}</span>
               <span>·</span>
               <span>{formatDistanceToNow(new Date(memory.updatedAt), { addSuffix: true })}</span>
@@ -201,7 +201,7 @@ export function MemoryPreview({ memory, onClose, onEdit }: MemoryPreviewProps) {
             <div className="mb-4">
               <button
                 onClick={() => void quelleOeffnen()}
-                className="w-full flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-left border hover:border-[var(--accent)] transition-colors group"
+                className="w-full flex items-center gap-3 px-3 py-3 rounded-xl text-left border hover:border-[var(--accent)] transition-colors group"
                 style={{ background: "var(--bg-inset)", borderColor: "var(--border-subtle)" }}
                 data-testid="preview-open-source"
                 title={quelle.art === "datei"
@@ -243,7 +243,7 @@ export function MemoryPreview({ memory, onClose, onEdit }: MemoryPreviewProps) {
                 <span style={{ color: "var(--text-3)" }}>{staendeOffen ? "Hide" : "Show"}</span>
               </button>
               {staendeOffen && (
-                <ul className="mt-1.5 space-y-1">
+                <ul className="mt-2 space-y-1">
                   {staende.map((s) => (
                     <li key={s.id}>
                       <button
@@ -333,11 +333,11 @@ export function MemoryPreview({ memory, onClose, onEdit }: MemoryPreviewProps) {
         </div>
 
         <footer className="flex items-center justify-between gap-3 p-5 pt-4 shrink-0" style={{ borderTop: "1px solid var(--border-subtle)" }}>
-          <div className="flex flex-wrap gap-1.5 min-w-0 overflow-hidden">
+          <div className="flex flex-wrap gap-2 min-w-0 overflow-hidden">
             {memory.tags.map((tag) => (
               <span
                 key={tag}
-                className="inline-flex items-center px-1.5 py-0.5 rounded-md text-[11px] font-medium border"
+                className="inline-flex items-center px-2 py-1 rounded-md text-[11px] font-medium border"
                 style={{ color: "var(--text-2)", background: "var(--bg-inset)", borderColor: "var(--border-subtle)" }}
               >
                 {tag}
@@ -347,7 +347,7 @@ export function MemoryPreview({ memory, onClose, onEdit }: MemoryPreviewProps) {
           <div className="flex items-center gap-2 shrink-0">
             <button
               onClick={() => void texteKopieren()}
-              className="btn-ghost px-3 py-2 rounded-lg text-[12px] font-medium flex items-center gap-1.5"
+              className="btn-ghost px-3 py-2 rounded-lg text-[12px] font-medium flex items-center gap-2"
               title="Copy the full text to the clipboard"
             >
               {kopiert ? <Check className="w-4 h-4" style={{ color: "var(--accent)" }} /> : <Copy className="w-4 h-4" />}
@@ -355,7 +355,7 @@ export function MemoryPreview({ memory, onClose, onEdit }: MemoryPreviewProps) {
             </button>
             <button
               onClick={() => onEdit(memory)}
-              className="btn-ghost px-3 py-2 rounded-lg text-[12px] font-medium flex items-center gap-1.5"
+              className="btn-ghost px-3 py-2 rounded-lg text-[12px] font-medium flex items-center gap-2"
               style={{ border: "1px solid var(--border-subtle)", color: "var(--accent)" }}
             >
               <EditPen className="w-4 h-4" />

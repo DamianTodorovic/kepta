@@ -71,7 +71,7 @@ export function ConnectApps() {
       {clients && clients.length > 0 && (
         <ul className="space-y-2">
           {clients.map((c) => (
-            <li key={c.id} className="hud-inset rounded-xl px-3 py-2.5 flex items-center gap-3 flex-wrap" style={{ opacity: c.installed ? 1 : 0.55 }}>
+            <li key={c.id} className="hud-inset rounded-xl px-3 py-3 flex items-center gap-3 flex-wrap" style={{ opacity: c.installed ? 1 : 0.55 }}>
               <div className="flex-1 min-w-[150px]">
                 <div className="text-sm font-medium" style={{ color: 'var(--text-1)' }}>{c.name}</div>
                 <div className="text-xs flex items-center gap-1" style={{ color: c.connected ? 'var(--ok)' : 'var(--text-3)' }}>
@@ -80,7 +80,7 @@ export function ConnectApps() {
                 </div>
               </div>
               {c.canConnect && (
-                <button onClick={() => void verbinden(c)} disabled={laeuft !== null} className="btn-primary px-3 py-1.5 rounded-lg text-sm font-medium flex items-center gap-1.5 disabled:opacity-50">
+                <button onClick={() => void verbinden(c)} disabled={laeuft !== null} className="btn-primary px-3 py-2 rounded-lg text-sm font-medium flex items-center gap-2 disabled:opacity-50">
                   {laeuft === c.id && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
                   Connect
                 </button>

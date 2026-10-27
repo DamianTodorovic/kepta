@@ -1289,7 +1289,7 @@ export function Dashboard() {
         <div className="space-y-7">
           {(sichtbareGruppen ?? []).map((g) => (
             <section key={g.schluessel}>
-              <div className="flex items-center gap-2 mb-2 px-0.5 min-w-0">
+              <div className="flex items-center gap-2 mb-2 px-1 min-w-0">
                 {g.quelle?.art === 'datei' && <FileText className="w-3.5 h-3.5 shrink-0" style={{ color: 'var(--accent)' }} />}
                 {g.quelle?.art === 'url' && <ExternalLink className="w-3.5 h-3.5 shrink-0" style={{ color: 'var(--accent)' }} />}
                 <h3 className="text-[13px] font-semibold truncate" style={{ color: 'var(--text-1)' }} title={g.quelle?.art === 'datei' ? g.quelle.pfad : g.titel}>
@@ -1301,7 +1301,7 @@ export function Dashboard() {
                 {g.quelle && (
                   <button
                     onClick={() => void oeffneQuelle(g.quelle!)}
-                    className="btn-ghost min-h-6 px-1.5 inline-flex items-center rounded text-[11px] shrink-0"
+                    className="btn-ghost min-h-6 px-2 inline-flex items-center rounded text-[11px] shrink-0"
                     title={g.quelle.art === 'datei' ? `Open file: ${g.quelle.pfad}` : `Open link: ${g.quelle.url}`}
                   >
                     {g.quelle.art === 'url' ? 'Open link' : 'Open file'}
@@ -1431,7 +1431,7 @@ export function Dashboard() {
         onOpenSetup={() => setWizardOpen(true)}
       />
 
-      <main className="flex-1 flex flex-col min-w-0 overflow-hidden my-2.5 mr-2.5 panel rounded-2xl relative z-10">
+      <main className="flex-1 flex flex-col min-w-0 overflow-hidden my-3 mr-3 panel rounded-2xl relative z-10">
         {/**
          * #32: der Auf-Schalter lebte bisher nur in der Kopfzeile der memories-Ansicht.
          * Die andern Ansichten sitzen in denselben Rahmen, haben aber keine Kopfzeile —
@@ -1492,7 +1492,7 @@ export function Dashboard() {
               />
             </div>
 
-            <div className="flex items-center gap-1.5 shrink-0">
+            <div className="flex items-center gap-2 shrink-0">
               <button
                 onClick={async () => {
                   setTrashOpen((v) => !v);
@@ -1502,7 +1502,7 @@ export function Dashboard() {
                     setTrashCount(typeof data.trashed === 'number' ? data.trashed : 0);
                   } catch { /* ignore */ }
                 }}
-                className="btn-ghost hidden sm:flex items-center gap-1.5 px-2.5 py-2 rounded-lg text-xs font-medium"
+                className="btn-ghost hidden sm:flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-medium"
                 title="Trash — restore deleted entries"
               >
                 <Trash2 className="w-4 h-4" />
@@ -1510,14 +1510,14 @@ export function Dashboard() {
               </button>
               <button
                 onClick={() => setPaletteOpen(true)}
-                className="btn-ghost hidden sm:flex items-center gap-1.5 px-2.5 py-2 rounded-lg text-xs font-medium"
+                className="btn-ghost hidden sm:flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-medium"
                 title="Command palette"
               >
                 <ScanSearch className="w-4 h-4" /> <span className="kbd !py-px">⌘K</span>
               </button>
               <button
                 onClick={copyContextForAI}
-                className="btn-ghost flex items-center gap-1.5 px-2.5 py-2 rounded-lg font-medium text-xs"
+                className="btn-ghost flex items-center gap-2 px-3 py-2 rounded-lg font-medium text-xs"
                 title={`${chatMemories.length} entries in the chat context — copy as a prompt`}
               >
                 {copied ? <CheckCircle2 className="w-4 h-4" style={{ color: 'var(--ok)' }} /> : <Copy className="w-4 h-4" />}
@@ -1528,7 +1528,7 @@ export function Dashboard() {
                   setEditingMemory(null);
                   setIsEditorOpen(true);
                 }}
-                className="btn-primary flex items-center gap-1.5 px-3 py-2 rounded-lg font-medium text-xs"
+                className="btn-primary flex items-center gap-2 px-3 py-2 rounded-lg font-medium text-xs"
               >
                 <Plus className="w-4 h-4" />
                 <span className="hidden sm:inline">New</span>
@@ -1605,7 +1605,7 @@ export function Dashboard() {
                 title="How many hits the index shows. The last step shows everything that matches."
               />
               <span
-                className="chip tnum !px-1.5"
+                className="chip tnum !px-2"
                 title={topK === 0
                   ? 'Showing every note that matches — nothing is cut off. The chat still gets only the most relevant ones.'
                   : `Showing at most ${topK} hits. Slide to the end for all of them.`}
@@ -1665,7 +1665,7 @@ export function Dashboard() {
                 <button
                   onClick={handleInboxScan}
                   disabled={inboxScanBusy}
-                  className="ml-0.5 -mr-1 min-h-6 px-1.5 inline-flex items-center rounded text-[11px] font-semibold hover:opacity-80 disabled:opacity-40"
+                  className="ml-1 -mr-1 min-h-6 px-2 inline-flex items-center rounded text-[11px] font-semibold hover:opacity-80 disabled:opacity-40"
                   style={{ color: 'var(--accent)' }}
                   title="Scan the inbox now and import"
                 >
@@ -1713,10 +1713,10 @@ export function Dashboard() {
                   <div className="text-[11px] tnum" style={{ color: "var(--text-2)" }}>
                     PDF · MD · TXT · JSON
                   </div>
-                  {importMsg && <div className="text-[11px] mt-0.5 flex items-center gap-1" style={{ color: "var(--ok)" }}><CheckCircle2 className="w-3 h-3" />{importMsg}</div>}
-                  {importErr && <div className="text-[11px] mt-0.5 flex items-center gap-1" style={{ color: "var(--danger)" }}><AlertCircle className="w-3 h-3" />{importErr}</div>}
+                  {importMsg && <div className="text-[11px] mt-1 flex items-center gap-1" style={{ color: "var(--ok)" }}><CheckCircle2 className="w-3 h-3" />{importMsg}</div>}
+                  {importErr && <div className="text-[11px] mt-1 flex items-center gap-1" style={{ color: "var(--danger)" }}><AlertCircle className="w-3 h-3" />{importErr}</div>}
                 </div>
-                <label className="btn-ghost px-3 py-1.5 text-xs font-medium cursor-pointer shrink-0">
+                <label className="btn-ghost px-3 py-2 text-xs font-medium cursor-pointer shrink-0">
                   Choose
                   <input
                     ref={fileInputRef}
@@ -1732,14 +1732,14 @@ export function Dashboard() {
               <div className="hidden lg:flex items-center px-4 py-3 shrink-0">
                 <button
                   onClick={() => setScanOpen(true)}
-                  className="btn-ghost px-3 py-1.5 text-xs font-medium flex items-center gap-1.5"
+                  className="btn-ghost px-3 py-2 text-xs font-medium flex items-center gap-2"
                   title="Let K3PTA look through this computer for documents — you see what would be imported before anything is read"
                 >
                   <HardDriveDownload className="w-3.5 h-3.5" /> Scan this computer
                 </button>
               </div>
               <div className="import-divider hidden lg:block" />
-              <div className="flex-1 hidden md:flex items-center gap-2.5 px-4 py-3">
+              <div className="flex-1 hidden md:flex items-center gap-3 px-4 py-3">
                 <Globe className="w-4 h-4 shrink-0" style={{ color: "var(--text-3)" }} />
                 <input
                   ref={clipInputRef}
@@ -1754,14 +1754,14 @@ export function Dashboard() {
                 <button
                   onClick={handleClip}
                   disabled={clipping || !clipUrl.trim()}
-                  className="btn-ghost px-3 py-1.5 text-xs font-medium shrink-0 disabled:opacity-40"
+                  className="btn-ghost px-3 py-2 text-xs font-medium shrink-0 disabled:opacity-40"
                 >
                   {clipping ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : 'Import'}
                 </button>
               </div>
             </div>
             {(clipErr || clipOk) && (
-              <div className="text-[11px] flex items-center gap-1.5 mt-1.5" style={{ color: clipErr ? "var(--danger)" : "var(--ok)" }}>
+              <div className="text-[11px] flex items-center gap-2 mt-2" style={{ color: clipErr ? "var(--danger)" : "var(--ok)" }}>
                 {clipErr ? <AlertCircle className="w-3 h-3" /> : <CheckCircle2 className="w-3 h-3" />}
                 {clipErr || clipOk}
               </div>
@@ -1887,7 +1887,7 @@ export function Dashboard() {
               )}
 
               <div className="flex items-center justify-between mb-3 shrink-0">
-                <div className="flex items-center gap-2.5 text-[12px] tnum" style={{ color: 'var(--text-3)' }}>
+                <div className="flex items-center gap-3 text-[12px] tnum" style={{ color: 'var(--text-3)' }}>
                   <span>{displayedMemories.length.toLocaleString('en-GB')} of {tagFiltered.length.toLocaleString('en-GB')} {ladung !== null ? 'on this page' : 'entries'}</span>
                   {semanticEnabled && debouncedSearchQuery.trim().length >= 2 && (
                     serverTotal !== null && serverTotal > displayedMemories.length ? (
@@ -1942,7 +1942,7 @@ export function Dashboard() {
                       Code, erschoepfend), Zeile 2 "worum" (sechs kombinierbare
                       Themen). Themen greifen nie in Code: die Sperre ist hier
                       sichtbar, nicht nur im Code. */}
-                  <div className="flex flex-wrap items-center gap-1.5 mb-1.5" role="group" aria-label="Where it came from">
+                  <div className="flex flex-wrap items-center gap-2 mb-2" role="group" aria-label="Where it came from">
                     <span className="text-[11px] shrink-0" style={{ color: 'var(--text-3)' }}>From</span>
                     {TRAEGER_REIHENFOLGE.map((t) => {
                       const an = aktiveTraeger.includes(t);
@@ -1982,7 +1982,7 @@ export function Dashboard() {
                       </span>
                     )}
                   </div>
-                  <div className="flex flex-wrap items-center gap-1.5 mb-3" role="group" aria-label="What it is about">
+                  <div className="flex flex-wrap items-center gap-2 mb-3" role="group" aria-label="What it is about">
                     <span className="text-[11px] shrink-0" style={{ color: 'var(--text-3)' }}>About</span>
                     {THEMA_REIHENFOLGE.map((t) => {
                       const an = aktiveThemen.includes(t);
@@ -2033,10 +2033,10 @@ export function Dashboard() {
                       <div className="w-16 h-16 rounded-2xl flex items-center justify-center mb-4" style={{ background: 'var(--danger-soft)', border: '1px solid var(--border-subtle)' }}>
                         <AlertCircle className="w-6 h-6" style={{ color: 'var(--danger)' }} />
                       </div>
-                      <h3 className="text-[15px] font-semibold mb-1.5" style={{ color: 'var(--text-1)' }}>The server did not answer</h3>
+                      <h3 className="text-[15px] font-semibold mb-2" style={{ color: 'var(--text-1)' }}>The server did not answer</h3>
                       <p className="text-[13px] mb-4 max-w-[420px]" style={{ color: 'var(--text-3)' }}>{ladFehler}</p>
                       <button
-                        className="btn-ghost px-3 py-1.5 text-[13px]"
+                        className="btn-ghost px-3 py-2 text-[13px]"
                         onClick={() => { setLadFehler(null); setLadVersuch((v) => v + 1); }}
                       >
                         Try again
@@ -2047,7 +2047,7 @@ export function Dashboard() {
                       <div className="w-16 h-16 rounded-2xl flex items-center justify-center mb-4" style={{ background: 'var(--bg-inset)', border: '1px solid var(--border-subtle)', boxShadow: 'inset 0 1px 0 var(--edge-light)' }}>
                         <KeptaMark size={34} />
                       </div>
-                      <h3 className="text-[15px] font-semibold mb-1.5" style={{ color: 'var(--text-1)' }}>
+                      <h3 className="text-[15px] font-semibold mb-2" style={{ color: 'var(--text-1)' }}>
                         {debouncedSearchQuery || selectedTags.length > 0
                           ? 'No matches'
                           : gruppenFilterAktiv ? `No entries ${gruppenGrund}` : 'No entries yet'}
@@ -2069,13 +2069,13 @@ export function Dashboard() {
                       {gruppenFilterAktiv && (
                         <button
                           onClick={() => { setAktiveTraeger([]); setAktiveThemen([]); }}
-                          className="mt-4 btn-ghost px-3.5 py-2 rounded-lg text-[13px] font-medium"
+                          className="mt-4 btn-ghost px-4 py-2 rounded-lg text-[13px] font-medium"
                         >
                           Show everything again
                         </button>
                       )}
                       {semanticEnabled && debouncedSearchQuery.trim().length >= 2 && displayedMemories.length === 0 && (
-                        <button onClick={() => setSemanticEnabled(false)} className="mt-4 btn-ghost px-3.5 py-2 rounded-lg text-[13px] font-medium">
+                        <button onClick={() => setSemanticEnabled(false)} className="mt-4 btn-ghost px-4 py-2 rounded-lg text-[13px] font-medium">
                           Switch to keyword search
                         </button>
                       )}
@@ -2123,7 +2123,7 @@ export function Dashboard() {
               {mengensatz(feldZaehlung ?? memories.length, tuerBestand)}{!schmal && satzPasst ? " · connected through tags, similarity and knowledge entities" : ""}
             </div>
             <div className="ml-auto shrink-0">
-              <button onClick={() => setCurrentView("memories")} className="btn-ghost px-2.5 py-1.5 rounded-md text-xs font-medium">Back to the list</button>
+              <button onClick={() => setCurrentView("memories")} className="btn-ghost px-3 py-2 rounded-md text-xs font-medium">Back to the list</button>
             </div>
           </div>
           <div className="flex-1 min-h-0 flaeche-huelle">
@@ -2254,7 +2254,7 @@ function ShortcutsSheet({ open, onClose }: { open: boolean; onClose: () => void 
             className="w-full max-w-md rounded-2xl p-6 glass-strong"
           >
             <h3 className="text-base font-semibold mb-4" style={{ color: 'var(--text-1)' }}>Shortcuts</h3>
-            <ul className="space-y-2.5">
+            <ul className="space-y-3">
               {SHORTCUTS.map((s) => (
                 <li key={s.keys} className="flex items-center justify-between gap-4">
                   <span className="text-sm" style={{ color: 'var(--text-2)' }}>{s.action}</span>
