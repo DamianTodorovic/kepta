@@ -208,6 +208,14 @@ const SELBST_KEY = "kepta_graph_selbstkaanten";
  * erhalten, wie die andern Marken der Fläche.
  */
 const BEWEGUNG_KEY = "kepta_graph_bewegung";
+/**
+ * #54 — die Klappe der Legende. Nicht gesetzt heisst: die Flaeche waehlt nach
+ * Breite (schmal zu, breit offen); gesetzt heisst: der Mensch hat gewaehlt, und
+ * seine Wahl gilt bis zu seinem naechsten Griff.
+ */
+const LEGENDE_KEY = "kepta_graph_legende";
+/** Dieselbe Grenze, an der die Legende auch in zwei Kolonnen tritt (`min-[820px]`). */
+const LEGENDE_BRUCH_PX = 820;
 const TAG_FILTER_KEY = "kepta_graph_tag_filter";
 const NUR_MIT_KEY = "kepta_graph_nur_mit_verbindungen";
 /**
@@ -2169,6 +2177,17 @@ export function KnowledgeGraph({ memories: memoriesAusFenster, onSelectMemory, o
   const [zoomAnzeige, setZoomAnzeige] = useState(1);
   /** Die Marken-Zahl des LETZTEN Bildes — Malweg und DOM lesen denselben Stand. */
   const [kernStand, setKernStand] = useState<{ marke: boolean; grund: KernMarkeGrund; zahl: number } | null>(null);
+  // #54 — die Klappe. `gewaehlt` ist null, solange niemand gerufen hat; dann
+  // entscheidet die Breite der Flaeche, und ein Dreh am Fenster entscheidet neu.
+  const [legendeGewaehlt, setLegendeGewaehlt] = useState<string | null>(() => {
+    try { return localStorage.getItem(LEGENDE_KEY); } catch { return null; }
+  });
+  const legendeVoll = legendeGewaehlt === null ? dimensions.w >= LEGENDE_BRUCH_PX : legendeGewaehlt === "offen";
+  const klappeUm = () => {
+    const neu = legendeVoll ? "zu" : "offen";
+    setLegendeGewaehlt(neu);
+    try { localStorage.setItem(LEGENDE_KEY, neu); } catch { /* ohne Speicher gilt die Wahl fuer dieses Fenster */ }
+  };
   const kernStandRef = useRef<{ marke: boolean; grund: KernMarkeGrund; zahl: number } | null>(null);
   // Die Zeigerform hing vorher an Refs — die loesen kein Rendern aus, also blieb
   // der Cursor beim Ziehen unveraendert und die Geste fuehlte sich tot an.
@@ -5910,6 +5929,12 @@ export function KnowledgeGraph({ memories: memoriesAusFenster, onSelectMemory, o
               {`No node of the core is inside this picture - the number is off because nothing of it is here, not because the core is small. Pan or zoom out to bring it back.`}
             </div>
           )}
+          {/* #54 — die Zahlenreihe und der Griff stehen immer; alles unter der
+              Klappe kann zu. Die Zeile war bisher das erste Kind und der Kasten
+              damit 288 von 628 Bildpunkten hoch (390 x 844, am Objekt gemessen
+              01:31:34); der Griff holt die Flaeche zurueck, ohne eine Zahl zu
+              verstecken. */}
+          <div className="flex items-start justify-between gap-2">
           <div className="hud-label tnum" data-testid="graph-kopf">
             {/* Die gemalte Zahl, und dahinter die Größe des Bestands, wenn die
                 Fläche weniger malt, als die Tür hat. Ohne diesen zweiten Teil
@@ -5928,6 +5953,31 @@ export function KnowledgeGraph({ memories: memoriesAusFenster, onSelectMemory, o
               ? `${mengenzahl(baumLayout.edges.length)} ${baumLayout.edges.length === 1 ? "link" : "links"}`
               : `${mengenzahl(kanten.echt)} ${kanten.echt === 1 ? "link" : "links"}${aehnlichkeitsZeile(kanten.aehnlichkeit, edges.length, zoomAnzeige)}`}
           </div>
+            <button
+              type="button"
+              data-testid="graph-legende-klappe"
+              className="hud-label shrink-0 min-h-[44px] min-w-[44px] rounded px-2"
+              style={{ color: "var(--text-2)" }}
+              aria-expanded={legendeVoll}
+              title={legendeVoll ? "Hide the legend" : "Show the legend"}
+              onClick={klappeUm}
+            >
+              {legendeVoll ? "Hide legend" : "Show legend"}
+            </button>
+          </div>
+          {/* #96 — der Ankuunfts-Zaehler schreibt Bild fuer Bild in diesen Knoten.
+              Er haengt aus der Klappe heraus, weil eine Zahl, die mit dem Rest
+              verschwindet, im stillen verloren geht (derselbe Satz wie #105). */}
+          <span
+            className="hud-label tnum"
+            data-testid="graph-farbgruppe-bild"
+            ref={gruppenAnkunftRef}
+            style={{ color: "var(--text-3)", pointerEvents: "none", display: "none" }}
+          />
+          {/* #54 — was die Klappe zudeckt, sind zwei Zeilen ueber die *Form* der
+              Linien und die Gruppen-Achse. Die Zahlenreihe, die Typ-Punkte, die
+              Zustandszeilen und die Prosa bleiben stehen: sie sind die Auskunft,
+              und drei gelieferte Faelle halten sie fest. */}
           <div className="flex flex-wrap items-center gap-3 hud-label">
             {/* Die Legende erklärt den Kanal, der gerade färbt — nicht den, den
                 man eben abgeschaltet hat. */}
@@ -6030,6 +6080,7 @@ export function KnowledgeGraph({ memories: memoriesAusFenster, onSelectMemory, o
               eigne Eigenschaft: ohne sie ist es ein Wort, kein Knopf. Der Stand nennt die
               Zahl aus demselben Modellaufruf, der auch das Regal fuellt — und seine Null,
               wenn eine gesetzte Gruppe nichts trifft. */}
+          {legendeVoll && (
           <div className="flex items-center gap-2 flex-wrap" style={{ pointerEvents: "none" }}>
             <button
               type="button"
@@ -6056,16 +6107,9 @@ export function KnowledgeGraph({ memories: memoriesAusFenster, onSelectMemory, o
             >
               {achsenSatz(achsen, farbgruppen)}
             </span>
-            {/* #96 - die Wirkung des Steuerers, nicht seine Regel: wie viele der gesetzten
-                Gruppen in diesem Bild ankommen. Der Mal-Pass schreibt die Zahl, Bild fuer Bild. */}
-            <span
-              className="hud-label tnum"
-              data-testid="graph-farbgruppe-bild"
-              ref={gruppenAnkunftRef}
-              style={{ color: "var(--text-3)", pointerEvents: "none", display: "none" }}
-            />
           </div>
-          {regal && <GraphRegal regal={regal} ansichtsName={ansicht === "dendrogram" ? "the tree" : "the field"} gruppen={farbgruppen} achsen={achsen} steuerung={gruppenSteuerung} gemalt={gemalt} />}
+          )}
+          {legendeVoll && regal && <GraphRegal regal={regal} ansichtsName={ansicht === "dendrogram" ? "the tree" : "the field"} gruppen={farbgruppen} achsen={achsen} steuerung={gruppenSteuerung} gemalt={gemalt} />}
           {/* Die Griffe erklaert die Flaeche schon an den Werkzeugen selbst; auf dem
               Telefon sind sie teils nicht einmal vorhanden (kein Hover, kein Rad).
               Bei schmaler Breite tritt die Zeile zurueck — index.css, `.legende-prosa`. */}
