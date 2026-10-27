@@ -415,7 +415,13 @@ export function unterscheidetVonArt(bild: HaufenBild, artVon: (kennung: string) 
     }
     innen.set(art, (innen.get(art) ?? 0) + 1);
   });
-  if (bemalt === 0) return { ja: false, deckung: 1, grund: "kein Knoten mit Art im bemalten Schnitt" };
+  // Eine Null aus der Leerstelle ist kein Befund ueber die Welt: ein Bild, das nur
+  // Begriffe malt, hat ueberhaupt keine Arten-Ordnung, die ein Haufen nachmalen
+  // koennte — die Arten-Farbe steht dort selbst auf neutral. Also darf der Kanal,
+  // und der Grund sagt, warum die Deckung hier nicht gemessen werden kann.
+  if (bemalt === 0) {
+    return { ja: true, deckung: 0, grund: "kein Knoten mit Art im Bild — die Arten malen hier nichts nach" };
+  }
 
   let groesteste = 0;
   zaehlen.forEach((innen) => {

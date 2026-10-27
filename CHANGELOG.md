@@ -1,3 +1,16 @@
+## [3.2.72]
+
+### Fixed
+
+- **The community switch no longer refuses on an empty population.** Measured on the shipped
+  3.2.71 in an isolated capsule (144 notes in six families, 23:08:49): the picture drew
+  concepts, and concepts carry no type - so the type legend paints nothing there. The gate
+  compared clusters against types, got "coverage 100 %" out of a population of zero typed
+  nodes, and hid the switch. A zero that comes from a missing denominator is not a finding
+  about the world: where the types paint nothing, clusters cannot be a repaint of them, and
+  the switch now appears, naming what it measured. A cluster set that really does mirror the
+  types is still refused, and so is a single cluster.
+
 ## [3.2.71]
 
 ### Added

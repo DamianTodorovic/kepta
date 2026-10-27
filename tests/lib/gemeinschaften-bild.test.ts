@@ -107,6 +107,20 @@ describe("unterscheidetVonArt — die Latte aus dem Marktbericht", () => {
     expect(urteil.grund).toMatch(/100/);
   });
 
+  // Eine Null aus der Leerstelle ist kein Befund ueber die Welt. Am ausgelieferten
+  // Stueck gemessen 23:08:49 (Kapsel, 144 Notizen, sechs Familien, CDP 9523): das gezeichnete
+  // Netz traegt dort keine Art — die Arten-Farbe malt also nichts, und ein Haufen kann
+  // nichts nachmalen. Die erste Fassung des Tors verweigerte in genau diesem Fall, weil sie
+  // eine Deckung von eins meldete, die aus einer leeren Grundgesamtheit kam.
+  it("laesst den Kanal, wo die Arten ueberhaupt nichts malen", () => {
+    const f = gemischteKlubs();
+    const urteil = unterscheidetVonArt(haufenBildBaue(gemeinschaftenBaue(f.knoten, f.kanten)), () => "");
+
+    expect(urteil.ja).toBe(true);
+    expect(urteil.deckung).toBe(0);
+    expect(urteil.grund).toMatch(/kein Knoten mit Art/);
+  });
+
   it("weist auch einen einzigen Haufen zurueck, weil eine Farbe keine Ordnung ist", () => {
     const knoten = ["x", "y", "z"];
     const kanten = [kante("x", "y"), kante("y", "z")];
