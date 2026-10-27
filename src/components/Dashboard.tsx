@@ -1853,7 +1853,7 @@ export function Dashboard() {
                       className="chip tnum"
                       title="The embedding model behind vector search and how many of the text chunks carry its vectors."
                     >
-                      Embeddings: {gehirn.embedModelle.map((m) => `${m.name} ${groessenZahl(m.anzahl)}`).join(' · ')}
+                      Embeddings: {gehirn.embedModelle.map((m) => `${m.name} ${groessenZahl(m.anzahl)} of ${groessenZahl(gehirn.embedTotal)} chunks`).join(' · ')}
                       {gehirn.embedModelle.length === 0 ? `${groessenZahl(gehirn.embedEmbedded)}/${groessenZahl(gehirn.embedTotal)} embedded` : ''}
                     </span>
                   )}

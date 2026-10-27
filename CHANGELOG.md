@@ -10,6 +10,12 @@
   has carried since October 16. It sits in the always-visible head row on purpose: the first
   draft lived in the balance prose, which the phone layout hides below 440 pixels, so the phone
   kept the bare zero while the desk had the answer.
+- **The embedding chip on the knowledge surface names its total.** With a model working, the
+  chip read "Embeddings: nomic-embed-text 256" while the store held 1,200 chunks - a count
+  without its whole, shown exactly while the queue is still filling (measured: 256 of 1,200
+  after 122 seconds, about 2.1 chunks a second). It now reads
+  "nomic-embed-text 256 of 1,200 chunks". The branch that shows "256/1,200 embedded" - the one
+  that runs when no model is reported - is unchanged.
 
 ## [3.2.66]
 

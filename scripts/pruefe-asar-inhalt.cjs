@@ -415,7 +415,11 @@ const erwartet = [
   // stehen im alten Objekt schon (Notiz-Haelfte, 3.2.66), ein Muster daraus
   // trennt keine Fassung. Der Beweis ist das Verhalten, gemessen am gebauten
   // Stueck: Kopfzeile "0 concepts of 120 in the store" bei 390 und 1440
-  // (belege-2710/p113-bild-67). Dieselbe Grenze wie 3.2.66, dort notiert.
+  // (belege-2710/p113-bild-67-kopf). Dieselbe Grenze wie 3.2.66, dort notiert.
+  // Punkt 115 (der Nenner am Einbett-Chip) ebenso: ` of ${zahl} chunks` zerfaellt in zwei
+  // Woerter, die das alte Objekt schon zaehlt — " chunks" 288 mal, " of " 10 850 mal
+  // (latin1-Zaehlung in `/Applications/K3PTA.app`, 27.10. 14:18 MESZ). Beweis ist der Fall
+  // `tests/components/dashboard-einbett-chip.test.tsx` und das Bild am Stueck.
 ];
 // Die Liste darf nur ASCII-Zeichen enthalten. Grund, gemessen 21.10. 19:16 MESZ am
 // installierten Objekt: das Wort "Looking" plus echtes U+2026 steht dort 2 mal, diese
