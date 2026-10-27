@@ -24,6 +24,13 @@
   and they come back with one tap - while the counts, the type colours and the two link kinds,
   which explain the marks themselves, stay whatever the flap does. The handle's own words say
   what is behind it.
+- **The "more below" counter no longer shows a stale number while the window is dragged.**
+  Measured on the shipped 3.2.66 (own capsule, 15:50:57 to 15:51:10): turning 390 into 1024 left
+  the bar reading "11" while the rows already counted 1 below the edge, and 400 ms later it
+  read nothing at all; the reverse jump showed "no bar" where 13 rows sat below the edge, then
+  "11". The number was not wrong for good - it was wrong for two or three frames, which is
+  exactly what a person dragging a window watches. The resize now orders the measurement for
+  the next frame, and the panel reports every change of its own box.
 
 ## [3.2.66]
 

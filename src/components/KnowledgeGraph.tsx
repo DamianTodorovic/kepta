@@ -1629,10 +1629,35 @@ export function KnowledgeGraph({ memories: memoriesAusFenster, onSelectMemory, o
     };
     messen();
     kasten.addEventListener("scroll", messen, { passive: true });
-    window.addEventListener("resize", messen);
+    /**
+     * #100, zweite Haelfte: der Zahl-Griff am `resize` las beim Breitenwechsel eine
+     * alte Rechnung stehen. Gemessen 27.10. 15:50:57 bis 15:51:10 MESZ am
+     * ausgelieferten 3.2.66 (eigne Kapsel, 60 Notizen, CDP 9484): 390 -> 1024 zeigt
+     * der Balken "11", waehrend die Zeilen schon 1 unter der Kante zaehlen, und
+     * 400 ms spaeter 0; zurueck 1024 -> 390 steht "kein Balken", wo die Zeilen 13
+     * unter der Kante haben, und 400 ms spaeter "11". Der Bericht vom 25.10.
+     * ("2 gegen 3") hat genau diesen Zwischenzustand erwischt — die Zahl ist nicht
+     * dauerhaft falsch, sie ist **fuer zwei, drei Rahmen falsch**, und ein Mensch,
+     * der das Fenster zieht, sieht genau das.
+     * Darum: der Resize misst nie selbst, sondern bestellt die Messung in den
+     * naechsten Rahmen, und der Kasten meldet jede eigne Groessenänderung.
+     */
+    let Rahmen = 0;
+    const spaeterMessen = () => {
+      if (Rahmen) cancelAnimationFrame(Rahmen);
+      Rahmen = requestAnimationFrame(() => { Rahmen = 0; messen(); });
+    };
+    window.addEventListener("resize", spaeterMessen);
+    let beobachter: ResizeObserver | null = null;
+    if (typeof ResizeObserver !== "undefined") {
+      beobachter = new ResizeObserver(spaeterMessen);
+      beobachter.observe(kasten);
+    }
     return () => {
       kasten.removeEventListener("scroll", messen);
-      window.removeEventListener("resize", messen);
+      window.removeEventListener("resize", spaeterMessen);
+      if (Rahmen) cancelAnimationFrame(Rahmen);
+      beobachter?.disconnect();
     };
   }, [mehrOffen, menueAnzahl]);
 
