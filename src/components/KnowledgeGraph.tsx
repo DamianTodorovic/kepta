@@ -1621,10 +1621,26 @@ export function KnowledgeGraph({ memories: memoriesAusFenster, onSelectMemory, o
     if (!kasten) return;
     const messen = () => {
       const unterkante = kasten.getBoundingClientRect().bottom - 1;
-      let n = 0;
-      kasten.querySelectorAll<HTMLElement>("[data-mehr-reihe]").forEach((reihe) => {
-        if (reihe.getBoundingClientRect().bottom > unterkante + 0.5) n += 1;
+      /**
+       * #100, zweite Haelfte (27.10.): gezaehlt wurden GLIEDER, gelesen wird eine
+       * ZEILE. Ab 820 px Breite traegt die Klappe zwei Kolonnen (`min-[820px]:grid
+       * min-[820px]:grid-cols-2`), dann liegen je zwei Glieder in einer Reihe, und
+       * der Balken sagt "11 more below", wo das Auge sechs Reihen unter der Kante
+       * stehen sieht (gemessen 15:58:51 am ausgelieferten 3.2.66: 17 Glieder, 11
+       * unter der Kante). Darum wird nach der oberen Kante gebuendelt: was innerhalb
+       * von 6 px anfaengt, ist dieselbe Reihe, und ihre tiefste Unterkante zaehlt.
+       */
+      const reihen = new Map<number, number>();
+      kasten.querySelectorAll<HTMLElement>("[data-mehr-reihe]").forEach((element) => {
+        const r = element.getBoundingClientRect();
+        const anfang = Math.round(r.top);
+        let schlussel = -1;
+        reihen.forEach((_, k) => { if (Math.abs(k - anfang) <= 6) schlussel = k; });
+        if (schlussel < 0) { reihen.set(anfang, r.bottom); return; }
+        if (r.bottom > (reihen.get(schlussel) ?? -Infinity)) reihen.set(schlussel, r.bottom);
       });
+      let n = 0;
+      reihen.forEach((unten) => { if (unten > unterkante + 0.5) n += 1; });
       setzeMehrDraussen(n);
     };
     messen();
