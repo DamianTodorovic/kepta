@@ -1609,6 +1609,17 @@ export function KnowledgeGraph({ memories: memoriesAusFenster, onSelectMemory, o
    * Gezaehlt wird auch eine angeschnittene Reihe - sie ist der Grund, warum ein
    * Mensch ueberhaupt rollt.
    */
+  /**
+   * #100, zweite Haelfte (27.10.): gezaehlt wurden GLIEDER, gelesen wird eine ZEILE.
+   * Ab 820 px Breite traegt die Klappe zwei Kolonnen (`min-[820px]:grid
+   * min-[820px]:grid-cols-2`), dann liegen je zwei Glieder in einer Reihe, und der
+   * Balken sagte "8 more below", wo das Auge vier Reihen unter der Kante sah
+   * (gemessen 16:02:19 am ausgelieferten 3.2.66 bei 900 x 560; am gebauten Stueck
+   * 16:04:26 dieselbe Geometrie: "4 more below"). Bei Telefonbreite faellt es nicht
+   * auf, weil dort Glied und Reihe dasselbe sind. Darum wird nach der obern Kante
+   * gebuendelt: was innerhalb von 6 px anfaengt, ist dieselbe Reihe, und ihre
+   * tiefste Unterkante zaehlt.
+   */
   const klappeRef = useRef<HTMLDivElement | null>(null);
   const [mehrDraussen, setzeMehrDraussen] = useState(0);
   const menueAnzahl = plan.menue.length;
@@ -1621,15 +1632,6 @@ export function KnowledgeGraph({ memories: memoriesAusFenster, onSelectMemory, o
     if (!kasten) return;
     const messen = () => {
       const unterkante = kasten.getBoundingClientRect().bottom - 1;
-      /**
-       * #100, zweite Haelfte (27.10.): gezaehlt wurden GLIEDER, gelesen wird eine
-       * ZEILE. Ab 820 px Breite traegt die Klappe zwei Kolonnen (`min-[820px]:grid
-       * min-[820px]:grid-cols-2`), dann liegen je zwei Glieder in einer Reihe, und
-       * der Balken sagt "11 more below", wo das Auge sechs Reihen unter der Kante
-       * stehen sieht (gemessen 15:58:51 am ausgelieferten 3.2.66: 17 Glieder, 11
-       * unter der Kante). Darum wird nach der oberen Kante gebuendelt: was innerhalb
-       * von 6 px anfaengt, ist dieselbe Reihe, und ihre tiefste Unterkante zaehlt.
-       */
       const reihen = new Map<number, number>();
       kasten.querySelectorAll<HTMLElement>("[data-mehr-reihe]").forEach((element) => {
         const r = element.getBoundingClientRect();
