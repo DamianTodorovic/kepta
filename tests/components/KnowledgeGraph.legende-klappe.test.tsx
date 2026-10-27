@@ -70,7 +70,10 @@ describe("#54: die Klappe an der Legende", () => {
     const k = knopf(view);
     expect(k, "kein Griff an der Legende — die Karte hat keine Klappe").toBeTruthy();
     expect(k!.getAttribute("aria-expanded"), "schmal startet offen, die Leinwand bleibt halb zugedeckt").toBe("false");
-    expect(k!.getAttribute("title"), "der Griff sagt nicht, was er oeffnet").toBe("Show the legend");
+    // 27.10., Punkt 114: der geschlossene Titel nennt jetzt auch, was hinter der Klappe
+    // liegt ("… — including what this view is missing"). Die Wache haelt weiter am Wort
+    // fest, das der Griff sagt — nur nicht an dem Satz, der danach kommt.
+    expect(k!.getAttribute("title"), "der Griff sagt nicht, was er oeffnet").toMatch(/^Show the legend/);
     expect(kopfZeile(view), "die Zahlenreihe ist weg — eingeklappt heisst nicht leer").toContain("notes");
     expect(
       view.container.querySelector('[data-testid="graph-farbgruppe-stand"]'),

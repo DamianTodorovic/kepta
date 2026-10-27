@@ -420,6 +420,13 @@ const erwartet = [
   // Woerter, die das alte Objekt schon zaehlt — " chunks" 288 mal, " of " 10 850 mal
   // (latin1-Zaehlung in `/Applications/K3PTA.app`, 27.10. 14:18 MESZ). Beweis ist der Fall
   // `tests/components/dashboard-einbett-chip.test.tsx` und das Bild am Stueck.
+  // Punkt 114 (die Faltung der Zustandszeilen hinter die Klappe), gelegt 27.10. 15:19 MESZ VOR dem
+  // Bau gegen das AUSGELIEFERTE Stueck (3.2.66, 49 133 243 B): alle drei **0** mal, latin1 wie hier.
+  // `legende-zustand` ist der Halter an den Zeilen, `data-legende` der Zustand an der Karte (beide
+  // ueberleben den Minifier als String), das dritte Wort ist der erweiterte Titel des Griffs.
+  ["legende-zustand", 1],
+  ["data-legende", 1],
+  ["including what this view is missing", 1],
 ];
 // Die Liste darf nur ASCII-Zeichen enthalten. Grund, gemessen 21.10. 19:16 MESZ am
 // installierten Objekt: das Wort "Looking" plus echtes U+2026 steht dort 2 mal, diese

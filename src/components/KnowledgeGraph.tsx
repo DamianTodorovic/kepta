@@ -5901,6 +5901,10 @@ export function KnowledgeGraph({ memories: memoriesAusFenster, onSelectMemory, o
         <div
           ref={legendenRef}
           data-testid="graph-legende"
+          // #114 — der Zustand der Klappe wohnt an einem ATTRIBUT, nicht in der Klasse:
+          // die Fuss-Wache (`KnowledgeGraph.legende-fuss.test.ts`) liest das Klassen-
+          // literal der Karte, und ein Template daraus machte ihren Griff taub.
+          data-legende={legendeVoll ? "auf" : "zu"}
           className="graph-legende absolute left-3 hud-panel rounded-lg px-3 py-2 space-y-1"
           style={KAPPE_PANEL}
         >
@@ -5986,7 +5990,7 @@ export function KnowledgeGraph({ memories: memoriesAusFenster, onSelectMemory, o
               className="hud-label shrink-0 rounded px-2"
               style={{ color: "var(--text-2)" }}
               aria-expanded={legendeVoll}
-              title={legendeVoll ? "Hide the legend" : "Show the legend"}
+              title={legendeVoll ? "Hide the legend" : "Show the legend — including what this view is missing"}
               onClick={klappeUm}
             >
               {legendeVoll ? "Hide legend" : "Show legend"}
@@ -6029,7 +6033,7 @@ export function KnowledgeGraph({ memories: memoriesAusFenster, onSelectMemory, o
               Akzentring trugen die ganze Geschichtlichkeit des Bestands und
               kamen in keiner Zeile vor. */}
           <div
-            className="hud-label"
+            className="hud-label legende-zustand"
             data-testid="graph-zustaende"
             ref={zustandRef}
             style={{ color: "var(--text-2)", display: "none" }}
@@ -6067,7 +6071,7 @@ export function KnowledgeGraph({ memories: memoriesAusFenster, onSelectMemory, o
               Bestaenden ein Teil ausserhalb — und das steht dazu, statt dass die
               Zahl im Kopf des Nutzers still schwindet. */}
           <div
-            className="hud-label tnum"
+            className="hud-label tnum legende-zustand"
             data-testid="graph-im-bild"
             ref={imRahmenRef}
             style={{ color: "var(--text-2)", display: "none" }}
@@ -6077,7 +6081,7 @@ export function KnowledgeGraph({ memories: memoriesAusFenster, onSelectMemory, o
               Rechnung vor dem Bild — und weil sie sich mit jedem Schwenk aendern
               kann, ohne dass die Flaeche dafuer neu zeichnen muss. */}
           <div
-            className="hud-label tnum"
+            className="hud-label tnum legende-zustand"
             data-testid="graph-benannt"
             ref={benanntRef}
             style={{ color: "var(--text-2)", display: "none" }}
@@ -6085,7 +6089,7 @@ export function KnowledgeGraph({ memories: memoriesAusFenster, onSelectMemory, o
           {/* Was die Bildflaechen-Kappe des Feldes hat fallen lassen. Auch das
               steht am Rand, damit das duenne Bild nicht als volles Bild gilt. */}
           <div
-            className="hud-label tnum"
+            className="hud-label tnum legende-zustand"
             data-testid="graph-kappen"
             ref={kappenRef}
             style={{ color: "var(--text-2)", display: "none" }}

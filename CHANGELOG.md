@@ -16,6 +16,14 @@
   after 122 seconds, about 2.1 chunks a second). It now reads
   "nomic-embed-text 256 of 1,200 chunks". The branch that shows "256/1,200 embedded" - the one
   that runs when no model is reported - is unchanged.
+- **A closed legend on a phone now costs a quarter of the picture, not a third.** Measured on
+  the built 3.2.67 (own capsule, 600 notes, 390 x 844): the closed card was 209,5 of 628
+  picture pixels - 33,4 per cent, and 41,7 per cent on the real store. What it kept showing
+  were the lines about *this view*: how much of it is inside the frame, how much is unnamed and
+  why. Those four lines now fold behind the flap with everything else that explains a section,
+  and they come back with one tap - while the counts, the type colours and the two link kinds,
+  which explain the marks themselves, stay whatever the flap does. The handle's own words say
+  what is behind it.
 
 ## [3.2.66]
 
