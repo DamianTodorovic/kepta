@@ -126,13 +126,18 @@ describe("#54: die Klappe an der Legende", () => {
     ).toBeTruthy();
   });
 
-  it("der Griff traegt die Zielkante von 44 Punkten", () => {
-    // Die Zahl selbst ist im echten Fenster gemessen; dieser Fall haelt die Kante als
-    // Vertrag, damit ein spaeterer Umbau sie nicht still auf ein Textspan reduziert.
-    const quelle = `src/components/KnowledgeGraph.tsx`;
-    const text = require("node:fs").readFileSync(require("node:path").join(process.cwd(), quelle), "utf8");
-    const stelle = text.match(/data-testid="graph-legende-klappe"[\s\S]{0,400}/u);
-    expect(stelle, "der Griff steht nicht an der Legende").toBeTruthy();
-    expect(stelle![0], "der Griff hat keine 44-Punkte-Kante").toMatch(/min-h-\[44px\]/u);
+  it("der Griff ist ein echter Knopf, damit der Haus-Boden ihn trifft", async () => {
+    // Der Boden ist eine Regel im Stylesheet, keine Klasse am Kopf: 36 px auf dem
+    // Schreibtisch, 44 px ab Telefonbreite (`--ziel-boden`, index.css:776). Eine
+    // `min-h-[...]`-Klasse an diesem Kopf verliert gegen diese Regel im Kaskaden-
+    // Layer und waere ein totes Versprechen — gemessen 27.10. 02:19 am ausgelieferten
+    // 3.2.65: 44 px bei 390 gegen 36 px bei 1440, mit Klasse am selben Kopf.
+    const view = await zeichne();
+    const klappe = knopf(view)!;
+    expect(klappe.tagName, "der Griff ist kein button, also reicht der Haus-Boden nicht an ihn").toBe("BUTTON");
+    expect(
+      klappe.className,
+      "der Griff stellt sich eine eigene Zielkante vor, die den Haus-Boden nur simulierte"
+    ).not.toMatch(/min-[hw]-\[/u);
   });
 });

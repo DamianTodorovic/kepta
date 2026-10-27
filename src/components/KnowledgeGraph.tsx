@@ -4469,6 +4469,19 @@ export function KnowledgeGraph({ memories: memoriesAusFenster, onSelectMemory, o
   }, [zeichne, dimensions, fitBaumAnsicht, sichtbar, fensterSichtbar, bewegungAn]);
 
   useEffect(() => { zeichneNoetig.current = true; }, [timeFilter, TYPE_COLORS, hovered, aktiverKanal, farbgruppen]);
+  // Die Legenden-Karte ist ein Hindernis, das ohne einen neuen Lauf wachsen und
+  // schrumpfen kann (die Klappe, ein Regal, eine Zeile, die spaeter eintrifft).
+  // Die Kernzahl weicht ihr aus — aber nur, wer malt, weicht aus. Ohne diesen
+  // Blick blieb die Zahl unter der Karte liegen, bis jemand das Bild zog
+  // (gemessen 27.10. 02:19 an 3.2.65: Rechteck y 313 in beiden Zustaenden gleich,
+  // die offene Karte reichte bis y 278 und deckte die Zahl von oben um 35 px).
+  useEffect(() => {
+    const el = legendenRef.current;
+    if (!el || typeof ResizeObserver === "undefined") return;
+    const beobachter = new ResizeObserver(() => { zeichneNoetig.current = true; });
+    beobachter.observe(el);
+    return () => beobachter.disconnect();
+  }, [legendeVoll]);
   // Das Spotlight ist reine Darstellung: kein Neu-Layout, ein Bild.
   useEffect(() => { zeichneNoetig.current = true; }, [spot]);
   // Live-Dimmen: schon während des Ziehens neu zeichnen (billig — nur Alpha im
@@ -5956,7 +5969,12 @@ export function KnowledgeGraph({ memories: memoriesAusFenster, onSelectMemory, o
             <button
               type="button"
               data-testid="graph-legende-klappe"
-              className="hud-label shrink-0 min-h-[44px] min-w-[44px] rounded px-2"
+              // Die Groesse kommt aus dem Haus-Boden (--ziel-boden: 36 px auf dem
+              // Schreibtisch, 44 px ab Telefonbreite, index.css:776). Eine
+              // `min-h-[44px]`-Hilfsklasse hier verliert gegen diese Regel im
+              // Kaskaden-Layer und waert ein totes Muster (gemessen 02:19: 36 px
+              // bei 1440 gegen 44 px bei 390, mit Klasse am selben Kopf).
+              className="hud-label shrink-0 rounded px-2"
               style={{ color: "var(--text-2)" }}
               aria-expanded={legendeVoll}
               title={legendeVoll ? "Hide the legend" : "Show the legend"}
