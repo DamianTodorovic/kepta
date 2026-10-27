@@ -24,6 +24,10 @@ export default defineConfig({
     // src/lib ist Browser-Code → die betroffenen Testdateien setzen oben
     // den Docblock `// @vitest-environment jsdom` (vitest 4: pro Datei statt Glob).
     environment: "node",
+    // Die Kapsel-Rueckgabe (Aufgabe #112): ein Parent-Prozess, der den Lauf ueberlebt,
+    // raehmt die HOME-Ordner, die seine Kinder ausgewuerfelt haben. Ein Exit-Handler im
+    // Kind greift nicht — der Fork-Pool beendet sie mit einem Signal.
+    globalSetup: ["tests/kapsel-rueckgabe.mts"],
     setupFiles: ["tests/setup.kapsel.ts", "tests/setup.http.ts", "tests/setup.horchen.ts", "tests/setup.ui.ts"],
     coverage: {
       provider: "v8",

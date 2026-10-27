@@ -12,9 +12,9 @@
 // leeres Verzeichnis, damit `~/.kepta` fuer diesen Prozess ein anderer Ort ist, die
 // Aufloesungsregel selbst aber ungeaendert getestet werden kann. Das echte HOME bleibt
 // sichtbar (`KEPTA_ECHTES_HOME`), damit die Wache unten nicht gegen sich selbst prueft.
-import { mkdtempSync, existsSync } from "node:fs";
+import { mkdtempSync, existsSync, writeFileSync } from "node:fs";
 import { tmpdir, homedir } from "node:os";
-import { join } from "node:path";
+import { join, basename } from "node:path";
 
 const echt = homedir();
 const kapsel = mkdtempSync(join(tmpdir(), "kepta-kapsel-"));
@@ -34,3 +34,16 @@ process.env.HOME = kapsel;
 process.env.USERPROFILE = kapsel; // dieselbe Geste in der Windows-Pfadform
 
 if (!existsSync(kapsel)) throw new Error(`Kapsel nicht angelegt: ${kapsel}`);
+
+// Die eigene Adresse ins Manifest dieses Laufs schreiben, damit der Parent sie
+// zurueckgibt, wenn dieser Prozess langst per Signal geendet hat
+// (`tests/kapsel-rueckgabe.mts`). Kein Manifest-Feld heisst: ein Teillauf ausserhalb
+// von vitest — dann bleibt die Kapsel liegen, und `scripts/raeume-stapel.mjs` holt
+// sie mit Altersschwelle. Ein Fehler hier darf keinen Lauf kosten: die Kapsel selbst
+// ist die Isolation, das Manifest nur ihre Rueckgabe.
+const markt = process.env.KEPTA_KAPSEL_MANIFEST;
+if (markt) {
+  try {
+    writeFileSync(join(markt, basename(kapsel)), kapsel + "\n");
+  } catch { /* ohne Manifest wird die Kapsel nur nicht zurueckgegeben */ }
+}
