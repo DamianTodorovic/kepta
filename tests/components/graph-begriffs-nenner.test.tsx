@@ -8,14 +8,18 @@ import { ToastProvider } from "../../src/components/ui/Toast";
 import { installiereResizeObserver } from "../helfer/canvas";
 import type { Memory } from "../../src/types";
 
-// Befund #113, gemessen 27.10. 02:48 bis 04:55 am ausgelieferten 3.2.66. Die Zahlenreihe der
-// Legende sagt "0 concepts", die Tuer nennt 120 und ihr eigner Auszug meldet "nothing dropped".
-// Beide Zahlen sind wahr — sie haben nur verschiedene Grundgesamtheiten. Die Notiz-Haelfte
-// derselben Zeile loest das seit dem 16.10. mit "of N in the store"; die Begriffs-Haelfte liess
-// den Nenner weg. **Diese Datei haelt genau zwei Dinge: dass der Nenner erscheint, wenn die Tuer
-// ihn nennt, und dass er NICHT erscheint, wenn die Tuer schweigt oder nichts fehlt.** Keine Klaue
-// fuehrt eine Ursache — welche der drei Kanten (Einzeltraeger ohne Behauptung, Titel-Echo an einem
-// Ende, Kappe des Auszugs) eine Null macht, steht an keiner einzelnen Zahl.
+// Befund #113, gemessen 27.10. 02:48 bis 04:55 am ausgelieferten 3.2.66, geheilt am
+// gebauten 3.2.67. Die Zahlenreihe der Legende sagt "0 concepts", die Tuer nennt 120
+// und ihr eigner Auszug meldet "nothing dropped". Beide Zahlen sind wahr — sie haben
+// nur verschiedene Grundgesamtheiten. Die Notiz-Haelfte derselben Zeile loest das
+// seit dem 16.10. mit "of N in the store". Die erste Fassung dieser Heilung stand in
+// der Bilanz-Prosa — und war damit bei schmaler Breite hinter der Prosa-Kappe
+// unsichtbar (index.css `.legende-prosa`, Punkt 2, 19.10.; am gebauten 3.2.67
+// gemessen 13:36 bis 13:38: Prosa 0 x 0 px bei 390). Der Nenner steht jetzt in der
+// Kopfzeile selbst, die immer sichtbar ist — und **diese Datei haelt genau drei
+// Dinge:** dass er erscheint, wenn die Tuer ihn nennt und etwas fehlt; dass er NICHT
+// erscheint, wenn die Tuer schweigt oder nichts fehlt; und dass die Prosa ihn nicht
+// ein zweites Mal malt. Keine Zahl fuehrt eine Ursache.
 
 const NOTIZ = (i: number): Memory => ({
   id: `n${i}`, userId: "local", title: `Werkzeug ${i}`, content: `Inhalt ${i}`,
@@ -51,7 +55,7 @@ function tuer(begiffe: Record<string, string[]>, bestand: { knoten: number; kant
     }
     if (ziel.includes("/api/inbox/status")) return new Response(JSON.stringify({ inboxDir: "/x", files: [], watching: true }), { status: 200 });
     if (ziel.includes("/api/health")) {
-      return new Response(JSON.stringify({ ok: true, count: drei.length, version: "3.2.66", embeddings: { total: 0, embedded: 0, models: {} }, encryption: { aktiv: true } }), { status: 200 });
+      return new Response(JSON.stringify({ ok: true, count: drei.length, version: "3.2.67", embeddings: { total: 0, embedded: 0, models: {} }, encryption: { aktiv: true } }), { status: 200 });
     }
     return new Response("{}", { status: 200 });
   }));
@@ -73,7 +77,9 @@ async function zeichne() {
   return view;
 }
 
-const prosa = (container: HTMLElement) =>
+const kopfText = (container: HTMLElement) =>
+  (container.querySelector('[data-testid="graph-kopf"]')?.textContent || "").replace(/\s+/g, " ").trim();
+const prosaText = (container: HTMLElement) =>
   [...container.querySelectorAll(".legende-prosa")].map((e) => (e.textContent || "").replace(/\s+/g, " ").trim()).join(" || ");
 
 // Zwei Grundformen, beide aus dem echten Bild von 02:48 gelernt. **Die erste ist die Kapsel
@@ -90,45 +96,45 @@ const gemischt = { "Nordwind GmbH": ["n1", "n2"], "Werkzeug 3": ["n3"] };
 beforeEach(() => installiereResizeObserver());
 afterEach(() => { vi.unstubAllGlobals(); });
 
-describe("#113 die Begriffs-Haelfte nennt ihren Nenner", () => {
+describe("#113 die Begriffs-Haelfte der Kopfzeile nennt ihren Nenner", () => {
   it("nennt null gemalte von 120 im Bestand, wenn jeder Begriff ein Titel-Echo ist", async () => {
     tuer(alleEchos, { knoten: 120, kanten: 60 });
     const { container } = await zeichne();
-    const text = prosa(container);
-    expect(text, `die Begriffs-Klaue fehlt — Prosa: ${text.slice(0, 400)}`).toMatch(/Showing 0 of 120 concepts in the store/);
+    const kopf = kopfText(container);
+    expect(kopf, `der Nenner fehlt in der Kopfzeile: "${kopf.slice(0, 300)}"`).toMatch(/0 concepts of 120 in the store/);
   });
 
   it("nennt die gemalte Zahl, wo sie nicht null ist: drei von 120 im Mischfall", async () => {
     tuer(gemischt, { knoten: 120, kanten: 60 });
     const { container } = await zeichne();
-    const text = prosa(container);
-    expect(text, `die Klaue malt die falsche Grundgesamtheit — Prosa: ${text.slice(0, 400)}`).toMatch(/Showing 3 of 120 concepts in the store/);
+    const kopf = kopfText(container);
+    expect(kopf, `die Kopfzeile malt die falsche Grundgesamtheit: "${kopf.slice(0, 300)}"`).toMatch(/3 concepts of 120 in the store/);
   });
 
   it("schweigt, wenn die Tuer ueber dem Bestand nichts sagt", async () => {
     tuer(alleEchos, null);
     const { container } = await zeichne();
-    const text = prosa(container);
-    expect(text, `eine Zahl ohne Bestand steht da — Prosa: ${text.slice(0, 400)}`).not.toMatch(/of \d+ concepts/);
+    const kopf = kopfText(container);
+    expect(kopf, `eine Zahl ohne Bestand steht da: "${kopf.slice(0, 300)}"`).toMatch(/0 concepts/);
+    expect(kopf, `eine Zahl ohne Bestand steht da: "${kopf.slice(0, 300)}"`).not.toMatch(/concepts of \d/);
   });
 
   it("schweigt, wenn die Flaeche jeden Begriff des Bestands malt", async () => {
     // Zwei Begriffe, je von zwei Notizen getragen: beide werden gezeichnet, die Tuer nennt genau
-    // zwei — dann hat die Klaue nichts zu melden, und ein Satz, der immer steht, ist Dekoration.
+    // zwei — dann hat die Zeile nichts zu melden, und ein Zusatz, der immer steht, ist Dekoration.
     tuer({ "Nordwind GmbH": ["n1", "n2"], "Frist Q4": ["n2", "n3"] }, { knoten: 2, kanten: 0 });
     const { container } = await zeichne();
-    const text = prosa(container);
-    expect(text, `die Klaue steht trotz voller Deckung — Prosa: ${text.slice(0, 400)}`).not.toMatch(/of 2 concepts/);
+    const kopf = kopfText(container);
+    expect(kopf, `der Zusatz steht trotz voller Deckung: "${kopf.slice(0, 300)}"`).not.toMatch(/of 2 in the store/);
   });
 
-  it("widerspricht der Zahlenreihe nicht: beide nennen dieselbe gemalte Zahl", async () => {
+  it("malt den Nenner nicht ein zweites Mal in die Bilanz-Prosa", async () => {
+    // Die erste Fassung stand in der Prosa und war bei 390 unsichtbar; die zweite steht in der
+    // Kopfzeile. Stünde sie in beiden, widerspräche die Fläche sich selbst in zwei Tönen — die
+    // Prosa-Klausel muss also weg bleiben, nicht nur dekoriert werden.
     tuer(alleEchos, { knoten: 120, kanten: 60 });
     const { container } = await zeichne();
-    const kopf = container.querySelector('[data-testid="graph-kopf"]')?.textContent || "";
-    const gemalt = Number((kopf.match(/([\d\s.,]+)\s+concepts/) || [])[1]?.replace(/[^\d]/g, "") ?? NaN);
-    const klaue = prosa(container).match(/Showing (\d+) of 120 concepts/);
-    expect(Number.isNaN(gemalt), `die Reihe nennt keine Begriffszahl: ${kopf}`).toBe(false);
-    expect(klaue, `die Klaue fehlt, waehrend die Reihe ${gemalt} malt`).not.toBeNull();
-    expect(Number(klaue![1]), `Klaue und Reihe zaehlen verschiedene Mengen: Reihe ${gemalt}, Klaue ${klaue![1]}`).toBe(gemalt);
+    const prosa = prosaText(container);
+    expect(prosa, `die Prosa malt den Nenner doppelt: "${prosa.slice(0, 400)}"`).not.toMatch(/concepts in the store/);
   });
 });

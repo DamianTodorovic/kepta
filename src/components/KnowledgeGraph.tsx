@@ -2604,21 +2604,6 @@ export function KnowledgeGraph({ memories: memoriesAusFenster, onSelectMemory, o
     if (graphApi?.bestand && graphApi.bestand.kanten > geliefert) {
       klausaen.push(`Showing ${zahl(geliefert)} of ${zahl(graphApi.bestand.kanten)} claims in the store`);
     }
-    // #113 — die Begriffs-Haelfte der Zahlenreihe nannte ihren Nenner nicht: sie sagt
-    // "0 concepts", waehrend die Tuer 120 zaehlt und ihr eigner Auszug "nothing dropped"
-    // meldet. Zwei Grundgesamtheiten, ein Widerspruch fuer ein Auge. **Die Klaue nennt
-    // nur die zwei Zahlen, die gemessen sind** — keine Ursache: welche der drei Kanten
-    // (Einzeltraeger ohne Behauptung, Titel-Echo an einem Ende, Kappe des Auszugs) eine
-    // Null macht, steht an keiner einzelnen Zahl, und die verschluckten Behauptungen
-    // haben eine eigne Klaue weiter unten. Schweigt die Tuer ueber den Bestand, steht
-    // nichts da: eine Zahl aus der Luft ist schlechter als keine.
-    const begriffeGemalt = netz.knoten.length;
-    const begriffeBestand = graphApi?.bestand?.knoten;
-    if (begriffeBestand !== undefined && begriffeBestand > begriffeGemalt) {
-      klausaen.push(
-        `Showing ${zahl(begriffeGemalt)} of ${zahl(begriffeBestand)} concepts in the store`
-      );
-    }
     // Die Deckung. Eine Punktwolke und ein Netz sehen gleich aus, solange keine
     // Zahl sagt, wie viel des Bestands überhaupt an einem Begriff hängt. Wenn
     // die Detailstufe schon ausdünnt, sagt die Zahl der Masse, was nicht malt —
@@ -5976,7 +5961,16 @@ export function KnowledgeGraph({ memories: memoriesAusFenster, onSelectMemory, o
               ? ` of ${mengenzahl(bestandNotizen)} in the store`
               : ""}{" "}
             ·{" "}
-            {mengenzahl(netz.knoten.length)} {netz.knoten.length === 1 ? "concept" : "concepts"} ·{" "}
+            {mengenzahl(netz.knoten.length)} {netz.knoten.length === 1 ? "concept" : "concepts"}
+            {/* #113 — dieselbe Heilung wie die Notiz-Haelfte ueber ihr: eine gemalte
+                Zahl gegen den Bestand, wenn die Flaeche weniger malt, als die Tuer
+                zaehlt. Die erste Fassung stand in der Bilanz-Prosa und war damit
+                bei schmaler Breite hinter der Prosa-Kappe unsichtbar (index.css
+                `.legende-prosa`, Punkt 2, 19.10.) — die Kopfzeile steht immer. */}
+            {graphApi?.bestand && graphApi.bestand.knoten > netz.knoten.length
+              ? ` of ${mengenzahl(graphApi.bestand.knoten)} in the store`
+              : ""}{" "}
+            ·{" "}
             {ansicht === "dendrogram"
               ? `${mengenzahl(baumLayout.edges.length)} ${baumLayout.edges.length === 1 ? "link" : "links"}`
               : `${mengenzahl(kanten.echt)} ${kanten.echt === 1 ? "link" : "links"}${aehnlichkeitsZeile(kanten.aehnlichkeit, edges.length, zoomAnzeige)}`}

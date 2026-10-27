@@ -4,11 +4,12 @@
 
 - **The concept count names the store it comes from.** The graph's head row said "0 concepts"
   while the store held 120 of them - and a bare zero reads as "there are none", not "the picture
-  draws none". Measured on the real store: every claim there carries a note title on one of its
-  ends, so the net admits nothing, and the row kept the cause to itself. It now says "Showing 0 of
-  120 concepts in the store" whenever the drawn count is smaller than the store's - numbers only,
-  the picture's own lines still carry the reasons. The same sentence already guarded the note count
-  on the same row; the concept half was the gap.
+  draws none". Measured on a fresh import: every concept there is the title echo of its single
+  note, so the net admits nothing. The row now reads "0 concepts of 120 in the store" whenever
+  the drawn count is smaller than the store's - the same sentence the note count on the same row
+  has carried since October 16. It sits in the always-visible head row on purpose: the first
+  draft lived in the balance prose, which the phone layout hides below 440 pixels, so the phone
+  kept the bare zero while the desk had the answer.
 
 ## [3.2.66]
 
