@@ -427,6 +427,10 @@ const erwartet = [
   ["legende-zustand", 1],
   ["data-legende", 1],
   ["including what this view is missing", 1],
+  // Punkt 116 (die Meldung ueber dem fuellenden Index), gelegt 27.10. 20:38 MESZ VOR dem Bau
+  // gegen das AUSGELIEFERTE Stueck (3.2.67): **0** mal, latin1. Der Satz ist sichtbarer
+  // Fliesentext ueber den Ergebnissen, keine Kennung — der Minifier laesst ihn stehen.
+  ["Semantic index is still filling", 1],
   // Punkt Zensur/Z-05 (die Vierer-Basis) schreibt KEINEN eignen Marker: die Heilung aendert
   // nur Zahlen (10->8, 7->8, 22->24, 5->4, 7/14->8/16) und kein Wort im Objekt. Beweis ist die
   // Messung selbst: 435 Nicht-Vier-Abstaende auf Knowledge 1440 vor der Heilung

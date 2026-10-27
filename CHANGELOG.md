@@ -2,8 +2,7 @@
 
 ### Changed
 
-- **Distances walk on one base again.** The design census - 28 runs over seven surfaces, two
-  widths, both themes, on the shipped 3.2.67 - found the layout breaking its own four-pixel
+- **Distances walk on one base again.** The design census - 28 runs over seven surfaces, two  widths, both themes, on the shipped 3.2.67 - found the layout breaking its own four-pixel
   base in fifteen distances across eleven containers, and they gathered in four families: the
   sidebar (row gap 10, side padding 10, row padding 7, row stack 2), the segmented control
   (gap 2, padding 3, button padding 5), the suggestion pill (7 over 14) and the index strip
@@ -12,6 +11,12 @@
   a smaller padding cannot shrink a target. One distance stays off the base on purpose: a
   `kbd` keeps its 1-pixel padding, because there it is the ink's hairline under a key cap, not
   a step in the layout.
+- **A filling vector index says so where you search.** After a large import the embedding queue
+  works in the background - measured on the shipped 3.2.67 at 3,000 notes: 256 of 6,000 chunks
+  after 120 seconds, about 2.1 chunks a second, so the index is only complete after some 47
+  minutes. Until then a semantic search finds less than the store holds, and nothing said so.
+  The line above the results now names both numbers and what they mean. It appears only while
+  the queue runs, and stays away when every chunk has its vector - or when there are none.
 
 ## [3.2.67]
 

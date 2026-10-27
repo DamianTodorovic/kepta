@@ -1860,6 +1860,22 @@ export function Dashboard() {
                 </div>
               )}
 
+              {/* #116 — die Queue arbeitet im Hintergrund (2,1 Stuecke je Sekunde, gemessen
+                  27.10. an 3 000 Notizen: 256 von 6 000 nach 120 s). Solange das laeuft, findet
+                  die semantische Suche weniger, als der Laden hergibt. Der Chip im Status-Streifen
+                  nennt die Zahl; diese Zeile steht ueber den Ergebnissen und sagt, was sie fuer
+                  das bedeutet, was gleich fehlt. */}
+              {gehirn && gehirn.embedTotal > 0 && gehirn.embedEmbedded < gehirn.embedTotal && (
+                <div
+                  className="chip mb-3 w-fit"
+                  data-testid="suche-fuellend"
+                  style={{ color: 'var(--warn)' }}
+                  title="The vector index is still being built in the background. Until every text chunk carries its vector, a semantic search can miss notes that are already saved — the words still find them."
+                >
+                  {`Semantic index is still filling: ${groessenZahl(gehirn.embedEmbedded)} of ${groessenZahl(gehirn.embedTotal)} pieces done — a saved note can be missing from these results`}
+                </div>
+              )}
+
               <div className="flex items-center justify-between mb-3 shrink-0">
                 <div className="flex items-center gap-2.5 text-[12px] tnum" style={{ color: 'var(--text-3)' }}>
                   <span>{displayedMemories.length.toLocaleString('en-GB')} of {tagFiltered.length.toLocaleString('en-GB')} {ladung !== null ? 'on this page' : 'entries'}</span>
