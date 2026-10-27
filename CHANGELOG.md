@@ -1,3 +1,16 @@
+## [3.2.69]
+
+### Fixed
+
+- **The filling notice follows the queue instead of freezing.** Measured on the shipped 3.2.68
+  in an isolated capsule: after a 250-note import the line above the results read "0 of 500
+  pieces done" at 21:52:28, and at 21:56:18 - by then every one of the 500 chunks had its
+  vector - it still read "0 of 500". The status strip fetches health when it mounts and again
+  after something is saved in the surface, so a queue working in the background never reached
+  it. A notice that claims "not finished" after everything finished is a wrong answer, not a
+  missing one. While any piece is missing, the surface now asks again every three seconds, and
+  the asking stops by itself when the last vector lands.
+
 ## [3.2.68]
 
 ### Changed

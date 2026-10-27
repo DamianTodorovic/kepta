@@ -75,4 +75,48 @@ describe("#116 die fuellende Vektorspur sagt es dort, wo gesucht wird", () => {
     const { container } = await zeichne();
     expect(meldung(container), "eine Zahl ohne Bestand steht da").toBe("");
   });
+
+  // Am ausgelieferten 3.2.68 gemessen 21:52:28 bis 21:56:18 (eigne Kapsel, 250 Notizen,
+  // CDP 9501): die Meldung erschien mit "0 of 500" und stand **weiter mit 0 of 500**, als die
+  // Tuer langst 500 von 500 meldete. Der Status-Streifen holt /api/health beim Einhaengen und
+  // nach einem Speichern in der Flaeche — einer Queue, die im Hintergrund laeuft, bringt er
+  // nichts bei. Ein Hinweis, der "noch nicht fertig" behauptet, wenn alles fertig ist, ist
+  // eine falsche Auskunft, keine fehlende. Also: solange eingebettet < Gesamt fragt die
+  // Flaeche die Tuer nach, und das Fragen hoert von selbst auf.
+  it("folgt der Queue und verschwindet, sobald sie fertig ist", async () => {
+    let gesundheit = 0;
+    const anfang = Date.now();
+    vi.stubGlobal("fetch", vi.fn(async (url: string) => {
+      const ziel = String(url);
+      if (ziel.includes("/api/memories")) {
+        return new Response(JSON.stringify({ count: seite.length, total: seite.length, memories: seite }), {
+          status: 200, headers: { "content-type": "application/json", "x-kepta-total": String(seite.length) },
+        });
+      }
+      if (ziel.includes("/api/search")) return new Response(JSON.stringify({ results: [], total: 0 }), { status: 200 });
+      if (ziel.includes("/api/graph")) return new Response(JSON.stringify({ relations: [], memoriesByEntity: {} }), { status: 200 });
+      if (ziel.includes("/api/inbox/status")) return new Response(JSON.stringify({ inboxDir: "/x", files: [], watching: true }), { status: 200 });
+      if (ziel.includes("/api/health")) {
+        gesundheit += 1;
+        // Die Queue fuellt mit der echten Uhr: vor 2,6 s ist nichts fertig, danach alles.
+        const fertig = Date.now() - anfang >= 2600;
+        const stand = fertig ? { total: 500, embedded: 500, models: { "nomic-embed-text": 500 } } : { total: 500, embedded: 0, models: {} };
+        return new Response(JSON.stringify({ ok: true, count: seite.length, version: "3.2.68", embeddings: stand, encryption: { aktiv: true } }), {
+          status: 200, headers: { "content-type": "application/json" },
+        });
+      }
+      return new Response("{}", { status: 200 });
+    }));
+    const view = render(
+      <AuthProvider><ThemeProvider><ToastProvider><Dashboard /></ToastProvider></ThemeProvider></AuthProvider>
+    );
+    await act(async () => { await new Promise((r) => setTimeout(r, 800)); });
+    expect(meldung(view.container), "beim ersten Blick muss die fuellende Spur stehen").toMatch(/0 of 500/);
+    expect(gesundheit, "die erste Gesundheit wurde nie gefragt").toBeGreaterThan(0);
+    // Die Nachzug-Stufe laeuft auf einer echten Uhr (gewaehlt 3 s); gemessen wird mit 4,4 s.
+    await act(async () => { await new Promise((r) => setTimeout(r, 3400)); });
+    expect(gesundheit, "die Flaeche hat die Tuer kein zweites Mal gefragt").toBeGreaterThan(1);
+    expect(meldung(view.container), "die Meldung bleibt stehen, obwohl die Queue fertig ist").toBe("");
+    view.unmount();
+  });
 });

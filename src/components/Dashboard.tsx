@@ -707,6 +707,16 @@ export function Dashboard() {
     return () => { flag.current = true; };
   }, [holeGesundheit, holeGruppen]);
 
+  // #116 — die Queue arbeitet im Hintergrund und meldet sich nicht bei der Flaeche: am
+  // ausgelieferten 3.2.68 gemessen 21:52 bis 21:56, wo der Hinweis bei "0 of 500" stehen
+  // blieb, langst 500 von 500 eingebettet war. Solange eine Zahl fehlt, fragt die Flaeche
+  // nach; ist sie voll, hoert das Fragen von selbst auf.
+  useEffect(() => {
+    if (!gehirn || gehirn.embedTotal <= 0 || gehirn.embedEmbedded >= gehirn.embedTotal) return;
+    const timer = setInterval(() => void holeGesundheit(), 3000);
+    return () => clearInterval(timer);
+  }, [gehirn, holeGesundheit]);
+
   // --- Activity-Stream: das Gehirn lebt — Agent-Aktionen live sehen ---
   const [brainPulse, setBrainPulse] = useState(0);
   const [agentActive, setAgentActive] = useState(false);
