@@ -1,3 +1,20 @@
+## [3.2.66]
+
+### Fixed
+
+- **A number that had fled the legend now flees again when the legend grows.** The big count of
+  the core moves out of the way of the legend card, but the move happened only when the picture was
+  drawn next - and opening the legend does not draw the picture. Measured on the shipped 3.2.65 at
+  390 x 844 and 3 per cent zoom: the number stayed at the same pixel in both states while the card
+  grew from 193 to 299 pixels and covered it by 35 pixels from above. The card's own size now
+  orders the next pass, so the number re-takes its place the moment the space changes - by the
+  flap, by the shelf arriving, or by a line that wraps later.
+- **The handle stopped pretending to set its own size.** It carried a 44-pixel minimum that the
+  house rule for control size overrides at desk width: measured 44 pixels at 390 and 36 pixels at
+  1440 with the class on it. The floor is one rule for every control (36 pixels on the desk, 44
+  from phone width), and the handle is a real button, so the rule reaches it. Its test now checks
+  that instead of checking a dead class.
+
 ## [3.2.65]
 
 ### Changed
