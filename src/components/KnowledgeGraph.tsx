@@ -96,6 +96,7 @@ import {
   achsenSatz,
   gemalteZahlen,
 } from "../lib/gruppen";
+import { gemeinschaftenBaue, haufenBildBaue, unterscheidetVonArt } from "../lib/gemeinschaften";
 import { KAPPE_PANEL } from "../lib/kappe";
 
 export type GraphAnsicht = "force" | "dendrogram" | "semantic";
@@ -107,7 +108,7 @@ const RICHTUNG_KEY = "kepta_graph_richtung";
  * die die Fläche zuerst beantwortet. Die Herkunft kommt dazu, wenn sie etwas zu
  * unterscheiden hat.
  */
-type FarbKanal = "typ" | "herkunft" | "gruppe";
+type FarbKanal = "typ" | "herkunft" | "gruppe" | "haufen";
 const FARB_KANAL_KEY = "kepta_graph_farbkanal";
 /**
  * Die Gruppen, die laut Leitung (23.10. abends) ihre geteilten Toene aufgeben und je einen
@@ -1269,7 +1270,7 @@ export function KnowledgeGraph({ memories: memoriesAusFenster, onSelectMemory, o
   const [kanal, setKanal] = useState<FarbKanal>(() => {
     try {
       const v = localStorage.getItem(FARB_KANAL_KEY);
-      return v === "herkunft" || v === "gruppe" ? v : "typ";
+      return v === "herkunft" || v === "gruppe" || v === "haufen" ? v : "typ";
     } catch { return "typ"; }
   });
   const wechsleKanal = (v: FarbKanal) => {
@@ -1891,6 +1892,24 @@ export function KnowledgeGraph({ memories: memoriesAusFenster, onSelectMemory, o
    *  Begriff an, und in einer vollen Basis ist die Hälfte der „Ontologie" genau
    *  das: eine Titelliste mit Kanten. */
   const titelVonId = useMemo(() => new Map(memories.map((m) => [m.id, m.title])), [memories]);
+  const artVonId = useMemo(() => new Map(memories.map((m) => [m.id, m.type])), [memories]);
+  /**
+   * Die Gegenseite einer Erw aehnung ist im Netz oft der **Titel**, nicht die
+   * Kennung (am echten Bestand gemessen 27.10., Befund 113: "0 concepts of 120" —
+   * jeder Begriff ist der Titel-Echo seiner Notiz). Fuer den Arten-Vergleich der
+   * Haufen muss der Pfad also ueber den Titel laufen koennen, sonst heisst jede
+   * Begriffs-Kennung "ohne Art" und die Deckung ist eine Messung von nichts.
+   */
+  const artVonTitel = useMemo(() => {
+    const aus = new Map<string, string>();
+    for (const m of memories) if (!aus.has(m.title)) aus.set(m.title, m.type ?? "");
+    return aus;
+  }, [memories]);
+  const artVonKennung = useCallback(
+    (kennung: string): string =>
+      artVonId.get(kennung) ?? artVonTitel.get(kennung.replace(/^__ent:/, "")) ?? "",
+    [artVonId, artVonTitel]
+  );
   const netz = useMemo(
     () =>
       entitaetsNetz(
@@ -1909,6 +1928,34 @@ export function KnowledgeGraph({ memories: memoriesAusFenster, onSelectMemory, o
    */
   const bestandNotizen = bestandGroesse() ?? memories.length;
   const geruestIds = useMemo(() => netz.knoten.map((k) => k.id), [netz]);
+  /**
+   * Punkt 117 — die Community-Ebene. Gerechnet wird ueber dem **gezeichneten** Netz,
+   * nicht ueber dem Bestand: was hier Haufen heisst, sind Haufen in diesem Bild, und
+   * die Zeile darunter nennt genau diesen Nenner.
+   */
+  const haufenBild = useMemo(() => {
+    const gezeichnet = new Set(netz.knoten.map((k) => k.id));
+    const kanten = [
+      ...netz.erwahnungen
+        .filter(([a, b]) => gezeichnet.has(a) && gezeichnet.has(b))
+        .map(([a, b]) => ({ a, b, gewicht: 1 })),
+      // Eine Behauptung wiegt doppelt wie eine Erwahnung: sie ist ein Grund fuer
+      // den Strich, kein Zusammentreffen zweier Titel im selben Text.
+      ...netz.behauptungen
+        .filter((b) => gezeichnet.has(b.source) && gezeichnet.has(b.target))
+        .map((b) => ({ a: b.source, b: b.target, gewicht: 2 })),
+    ];
+    return haufenBildBaue(gemeinschaftenBaue(netz.knoten.map((k) => k.id), kanten));
+  }, [netz]);
+  const haufenUrteil = useMemo(
+    () => unterscheidetVonArt(haufenBild, artVonKennung),
+    [haufenBild, artVonKennung]
+  );
+  const haufenAktiv = kanal === "haufen" && haufenUrteil.ja;
+  const haufenBildRef = useRef(haufenBild);
+  haufenBildRef.current = haufenBild;
+  const haufenAktivRef = useRef(haufenAktiv);
+  haufenAktivRef.current = haufenAktiv;
   /**
    * Wie viele der Notizen im Bild tatsächlich an einem Begriff hängen. Das ist
    * die Zahl auf Damians Frage vom 13.10. („12 000 Notes drauf, ich erkenn gar
@@ -2441,6 +2488,11 @@ export function KnowledgeGraph({ memories: memoriesAusFenster, onSelectMemory, o
    * `tests/components/KnowledgeGraph.farbgruppe.test.tsx:209` verlangt genau einen Aufruf).
    */
   const notenFarben = useMemo(() => {
+    if (haufenAktiv) {
+      const aus: Record<string, string> = { neutral: TYPE_COLORS.neutral ?? "" };
+      for (const [schluessel, ton] of Object.entries(haufenBild.farben)) aus[schluessel] = ton;
+      return aus;
+    }
     if (aktiverKanal === "gruppe") {
       const aus: Record<string, string> = { neutral: TYPE_COLORS.neutral ?? "" };
       for (const g of farbgruppen.gruppen) aus[g.marke] = g.farbe;
@@ -2451,7 +2503,7 @@ export function KnowledgeGraph({ memories: memoriesAusFenster, onSelectMemory, o
     for (const art of Object.values(HERKUNFT)) if (rollenHexe[art]) aus[art] = rollenHexe[art];
     if (rollenHexe.neutral) aus.neutral = rollenHexe.neutral;
     return aus;
-  }, [aktiverKanal, TYPE_COLORS, rollenHexe, farbgruppen]);
+  }, [aktiverKanal, haufenAktiv, haufenBild, TYPE_COLORS, rollenHexe, farbgruppen]);
   notenFarbenRef.current = notenFarben;
   /**
    * Die drei Achsen in Menschensprache. Der Satz daneben und der Satz im Regal sind **derselbe
@@ -3548,7 +3600,10 @@ export function KnowledgeGraph({ memories: memoriesAusFenster, onSelectMemory, o
       // im Rahmen, und traegt eine Gruppenfarbe. Eine Gruppe ohne solchen Knoten kommt nicht an,
       // egal wie viele Mitglieder ihr Modell nennt.
       if (strengImRahmen && gruppenArt !== undefined && gruppenArt !== "neutral") gruppenAnkunft.add(gruppenArt);
-      const typ = herkunftArt ?? gruppenArt ?? (m.type && sp[m.type] ? m.type : "neutral");
+      // Haufen-Kanal: der Schluessel des Haufens, sonst das neutrale Register — auch
+      // hier nicht die Art-Farbe, sonst malten zwei Systeme uebereinander.
+      const haufenArt = haufenAktivRef.current ? haufenBildRef.current.zuordnung.get(n.id) ?? "neutral" : undefined;
+      const typ = herkunftArt ?? gruppenArt ?? haufenArt ?? (m.type && sp[m.type] ? m.type : "neutral");
       const farbe = notenFarbenRef.current[typ];
 
       // Winzig: sammeln statt einzeln malen.
@@ -6181,6 +6236,38 @@ export function KnowledgeGraph({ memories: memoriesAusFenster, onSelectMemory, o
             >
               {achsenSatz(achsen, farbgruppen)}
             </span>
+            {/* Punkt 117 — die einzige Markt-Luecke, die nach dem Vermessen blieb
+                (MARKT-GRAPH-2710.md): Haufen, die niemand vordefiniert hat. Der Knopf
+                erscheint nur, wenn die Haufen wirklich etwas anderes sagen als die
+                Arten; die Latte liegt in `unterscheidetVonArt`, und ein toter Schalter
+                ist keine Auskunft, also gibt es ihn sonst nicht. */}
+            {haufenUrteil.ja && (
+              <button
+                type="button"
+                onClick={() => wechsleKanal(haufenAktiv ? "typ" : "haufen")}
+                data-testid="graph-farbhaufen"
+                aria-pressed={haufenAktiv ? "true" : "false"}
+                className={SCHALTER_KLASSE}
+                style={{ pointerEvents: "auto", minHeight: 44 }}
+                title={
+                  haufenAktiv
+                    ? `Communities are painting the nodes — click again to go back to the type colours. ${haufenBild.neutral} nodes sit outside every painted cluster and keep the neutral register.`
+                    : `Communities — click to colour the nodes by the clusters this picture forms on its own. Nobody defines these; ${haufenBild.groessen.length} clusters over ${netz.knoten.length} drawn nodes.`
+                }
+              >
+                {punkt(haufenAktiv)}
+                {"colour by community"}
+              </button>
+            )}
+            {haufenAktiv && (
+              <span
+                className="hud-label tnum"
+                data-testid="graph-farbhaufen-stand"
+                style={{ color: "var(--text-3)", pointerEvents: "none" }}
+              >
+                {`${haufenBild.groessen.length} communities over ${netz.knoten.length} drawn nodes · largest ${Math.round((haufenBild.groessterAnteil || 0) * 100)}%${haufenBild.neutral > 0 ? ` · ${haufenBild.neutral} unpainted` : ""}`}
+              </span>
+            )}
           </div>
           )}
           {legendeVoll && regal && <GraphRegal regal={regal} ansichtsName={ansicht === "dendrogram" ? "the tree" : "the field"} gruppen={farbgruppen} achsen={achsen} steuerung={gruppenSteuerung} gemalt={gemalt} />}

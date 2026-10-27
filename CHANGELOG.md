@@ -1,3 +1,19 @@
+## [3.2.71]
+
+### Added
+
+- **Colour by community - clusters nobody defined.** The market pass over sixteen graph
+  surfaces (October 27) left exactly one gap standing after the recount: clusters that are
+  not typed in by hand. This is that layer. It reads the picture you are looking at - the
+  nodes drawn right now and the lines between them, a claim weighing twice a mention - and
+  groups it with modularity (Louvain, deterministic: the same store gives the same clusters
+  every time, no dice, no dependency). A new switch in the legend, **colour by community**,
+  appears only when the clusters actually say something the types do not: if every cluster
+  is one type, the switch stays away rather than repainting the type legend, and the line
+  beside it names its population - "N communities over M drawn nodes - largest X%", with the
+  nodes left unpainted counted when there are more clusters than colours. Eight tones come
+  from the group palette, chosen for distance to each other, not in order.
+
 ## [3.2.70]
 
 ### Changed

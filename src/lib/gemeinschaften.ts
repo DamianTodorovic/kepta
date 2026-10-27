@@ -311,3 +311,123 @@ export function gemeinschaftenBaue(
     stufen,
   };
 }
+
+/**
+ * Der Ton-Vorrat und die Kontrastrechnung kommen aus dem Gruppen-Modell
+ * (`src/lib/gruppen.ts`) — dieselbe Palette, dieselbe Regel: ein Ton, der neben
+ * seinem Nachbarn verblasst, ist kein zweiter Ton.
+ */
+import { GRUPPEN_PALETTE, kontrastVerhaeltnis } from "./gruppen";
+
+export interface HaufenBild {
+  /** Knoten-Kennung -> Farb-Schluessel (`h0`, `h1`, …) oder `neutral`. */
+  zuordnung: Map<string, string>;
+  /** Schluessel -> Hex. Nur die Haufen, die einen Ton bekamen. */
+  farben: Record<string, string>;
+  /** Groessen der bemalten Haufen, groesster zuerst. */
+  groessen: number[];
+  /** Groesster Haufen, geteilt durch alle Knoten des Schnitts. */
+  groessterAnteil: number;
+  /** Knoten ohne eignen Ton, weil der Vorrat vorher erschöpft war. */
+  neutral: number;
+}
+
+/**
+ * Aus dem Rechenkern ein Bild: Haufen in Groessenordnung, Toene mit dem groessten
+ * Abstand zueinander zuerst, und ein klar benannter Rand — wer ueber dem Vorrat
+ * liegt, bleibt neutral, statt dass ein neunter erfundener Ton die ersten acht
+ * entwertet.
+ */
+export function haufenBildBaue(
+  ergebnis: GemeinschaftenErgebnis,
+  palette: readonly string[] = GRUPPEN_PALETTE,
+): HaufenBild {
+  const zuordnung = new Map<string, string>();
+  const farben: Record<string, string> = {};
+  const groessen: number[] = [];
+  const gewaehlt: string[] = [];
+  let neutral = 0;
+  const alle = ergebnis.gemeinschaften.reduce((s, g) => s + g.groesse, 0);
+
+  for (const g of ergebnis.gemeinschaften) {
+    if (gewaehlt.length >= palette.length) {
+      for (const id of g.mitglieder) zuordnung.set(id, "neutral");
+      neutral += g.groesse;
+      continue;
+    }
+    const rest = palette.filter((ton) => !gewaehlt.includes(ton));
+    const ton = rest
+      .map((farbe) => ({
+        farbe,
+        min: gewaehlt.length ? Math.min(...gewaehlt.map((t) => kontrastVerhaeltnis(farbe, t))) : Number.MAX_SAFE_INTEGER,
+        rang: palette.indexOf(farbe),
+      }))
+      .sort((a, b) => b.min - a.min || a.rang - b.rang)[0].farbe;
+    gewaehlt.push(ton);
+    const schluessel = `h${groessen.length}`;
+    farben[schluessel] = ton;
+    groessen.push(g.groesse);
+    for (const id of g.mitglieder) zuordnung.set(id, schluessel);
+  }
+
+  return {
+    zuordnung,
+    farben,
+    groessen,
+    groessterAnteil: alle > 0 ? (groessen[0] ?? 0) / alle : 0,
+    neutral,
+  };
+}
+
+export interface ArtVergleich {
+  ja: boolean;
+  /** Anteil der Knoten, deren Haufen die Art allein traegt — 1 heisst: umlackierte Art. */
+  deckung: number;
+  grund: string;
+}
+
+/**
+ * Die Latte aus MARKT-GRAPH-2710.md, Entscheidung 2: ein Haufen, der einer Art
+ * entspricht, ist keine Community. Gemessen wird die Deckung je Haufen — die
+ * haeufigste Art darin, geteilt durch seine Groesse, aufsummiert ueber alle
+ * bemalten Knoten.
+ */
+export function unterscheidetVonArt(bild: HaufenBild, artVon: (kennung: string) => string): ArtVergleich {
+  const haufen = bild.groessen.length;
+  if (haufen < 2) {
+    return { ja: false, deckung: 1, grund: `ein Haufen malt keine Ordnung — ${haufen} Haufen im Schnitt` };
+  }
+  const zaehlen = new Map<string, Map<string, number>>();
+  let bemalt = 0;
+  bild.zuordnung.forEach((schluessel, id) => {
+    if (schluessel === "neutral") return;
+    const art = artVon(id);
+    // Verglichen wird mit dem, was der Arten-Kanal ueberhaupt malt: Begriffe tragen
+    // keine Art und bleiben darum aus der Rechnung — sonst verduennt jede
+    // Begriffs-Kennung die Deckung und die Latte sagt "durchmischt" zu einer Welt,
+    // die nur aus einer Art besteht.
+    if (!art) return;
+    bemalt += 1;
+    let innen = zaehlen.get(schluessel);
+    if (!innen) {
+      innen = new Map();
+      zaehlen.set(schluessel, innen);
+    }
+    innen.set(art, (innen.get(art) ?? 0) + 1);
+  });
+  if (bemalt === 0) return { ja: false, deckung: 1, grund: "kein Knoten mit Art im bemalten Schnitt" };
+
+  let groesteste = 0;
+  zaehlen.forEach((innen) => {
+    let beste = 0;
+    innen.forEach((n) => {
+      if (n > beste) beste = n;
+    });
+    groesteste += beste;
+  });
+  const deckung = groesteste / bemalt;
+  const prozent = Math.round(deckung * 100);
+  return deckung < 0.9
+    ? { ja: true, deckung, grund: `${prozent} % — die Haufen durchmischen die Arten` }
+    : { ja: false, deckung, grund: `die Haufen folgen zu ${prozent} % den Arten — das ist umlackierte Art` };
+}

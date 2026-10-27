@@ -427,6 +427,11 @@ const erwartet = [
   ["legende-zustand", 1],
   ["data-legende", 1],
   ["including what this view is missing", 1],
+  // Punkt 117, Schnitt 2 — der Haufen-Kanal. Drei neue Woerter, alle je 0 im
+  // ausgelieferten 3.2.70 (23:21 nachgezaehlt), also tragen sie eine echte Aenderung.
+  ["colour by community", 1],
+  ["clusters over", 1],
+  ["communities over", 1],
   // Punkt 116 (die Meldung ueber dem fuellenden Index), gelegt 27.10. 20:38 MESZ VOR dem Bau
   // gegen das AUSGELIEFERTE Stueck (3.2.67): **0** mal, latin1. Der Satz ist sichtbarer
   // Fliesentext ueber den Ergebnissen, keine Kennung — der Minifier laesst ihn stehen.
