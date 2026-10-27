@@ -22,7 +22,7 @@ const NOTIZ = (i: number, art: string): Memory => ({
 });
 
 /** Zwei Klubs: 1+2 haengen an Alpha/Beta, 3+4 an Gamma/Delta — ueber beide Arten gemischt. */
-const gemischt = [NOTIZ(1, "episode"), NOTIZ(2, "semantic"), NOTIZ(3, "episode"), NOTIZ(4, "semantic")];
+const gemischt = [NOTIZ(1, "episodic"), NOTIZ(2, "semantic"), NOTIZ(3, "episodic"), NOTIZ(4, "semantic")];
 const KLUB_BEGRIFFE = { Alpha: ["n1", "n2"], Beta: ["n1", "n2"], Gamma: ["n3", "n4"], Delta: ["n3", "n4"] };
 const KLUB_RELATIONEN = [
   { source: "Alpha", target: "Beta", relation: "begruendet", memoryId: "n1" },
@@ -117,7 +117,7 @@ describe("#117 der Haufen-Kanal", () => {
     // und sagen doch nichts Neues — das ist die Latte aus dem Marktbericht
     // ("ein Haufen, der einer Art entspricht, ist keine Community"), und sie muss
     // den Schalter verweigern, statt ein zweites Wort fuer dasselbe zu malen.
-    const gleichfoermig = [NOTIZ(1, "episode"), NOTIZ(2, "episode"), NOTIZ(3, "semantic"), NOTIZ(4, "semantic")];
+    const gleichfoermig = [NOTIZ(1, "episodic"), NOTIZ(2, "episodic"), NOTIZ(3, "semantic"), NOTIZ(4, "semantic")];
     tuer(KLUB_BEGRIFFE, KLUB_RELATIONEN, gleichfoermig);
     const { container } = await zeigeGraph();
 
