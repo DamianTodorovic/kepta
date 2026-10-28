@@ -1,3 +1,20 @@
+## [3.2.77]
+
+### Fixed
+
+- **Cluster tones are chosen against the panel they sit on.** The tone picker accepts a
+  background and checks 3:1 contrast, but the surface never passed one, so that check was a
+  no-op and selection ran on distance alone. Found while accepting the community channel in
+  the light theme (canvas-buffer read 22:56:37Z on 3.2.76): six tones read as discs, yet
+  teal holds 2.18:1 and brass 1.96:1 against the light paper. The surface now resolves the
+  panel token by painting it into a one-pixel canvas and reading the byte back - oklch is
+  never guessed - and reads it again on the next frame, because the theme provider sets its
+  class in its own effect and child effects run first. Measured on six three-node clubs:
+  without a ground the picker takes teal, brass and berry (two tones under 3:1 on light, one
+  on dark); with a ground it is one tone on light - brass, since only five of the eight
+  palette tones clear 3:1 against paper, so six clusters cannot all be served - and none on
+  dark. The test asserts the count, not the colour names, so it can lose.
+
 ## [3.2.76]
 
 ### Fixed
