@@ -12,6 +12,7 @@ import { describe, expect, it } from "vitest";
 
 import {
   gemeinschaftenBaue,
+  haufenKantenAus,
   type Gemeinschaftskante,
 } from "../../src/lib/gemeinschaften";
 
@@ -169,3 +170,47 @@ function knotenRing(buchstabe: string, n: number, spruenge: number[]): Gemeinsch
   }
   return kanten;
 }
+
+describe("#119 die Kantenmenge des gezeichneten Feldes", () => {
+  const ALPHA_BETA = [
+    { source: "Alpha", target: "Beta", relation: "begruendet" },
+  ];
+  const ERWAHNUNGEN: [string, string][] = [
+    ["n1", "Alpha"], ["n2", "Alpha"], ["n1", "Beta"], ["n2", "Beta"],
+  ];
+
+  it("haelt die Erwahnung nur, wenn die Maske auch die Notiz kennt", () => {
+    // Die Form ist die Falle: eine Erwahnung ist ein Paar (notizId, begriffsId).
+    // Eine Maske aus den Begriffen allein traegt keine der beiden Kennungen
+    // zugleich — und die Notiz faellt still aus der Grundgesamtheit.
+    const nurBegriffe = new Set(["Alpha", "Beta"]);
+    expect(haufenKantenAus(nurBegriffe, ERWAHNUNGEN, ALPHA_BETA).length,
+      "die Begriffs-Maske lies vier Erwahnungen durch").toBe(1);
+    const ganzesFeld = new Set(["n1", "n2", "Alpha", "Beta"]);
+    expect(haufenKantenAus(ganzesFeld, ERWAHNUNGEN, ALPHA_BETA).length).toBe(5);
+  });
+
+  it("gewichtet die Behauptung doppelt wie die Erwahnung", () => {
+    const kanten = haufenKantenAus(
+      new Set(["n1", "n2", "Alpha", "Beta"]), ERWAHNUNGEN, ALPHA_BETA
+    );
+    expect(kanten.filter((k) => k.gewicht === 1).length).toBe(4);
+    expect(kanten.filter((k) => k.gewicht === 2).length).toBe(1);
+  });
+
+  it("nimmt die Notiz in den eignen Haufen, wenn das Feld ganz gerechnet wird", () => {
+    // Zwei Klubs, keine Kante zwischen ihnen. Wird nur ueber die Begriffe gerechnet,
+    // sind die Notizen in keiner Grundgesamtheit — ihr Ton fehlt dann im Bild, obwohl
+    // die Zeile eine Zahl nennt.
+    const erw = [...ERWAHNUNGEN, ["n3", "Gamma"] as [string, string], ["n3", "Delta"] as [string, string]];
+    const beh = [...ALPHA_BETA, { source: "Gamma", target: "Delta", relation: "begruendet" }];
+    const feld = ["n1", "n2", "n3", "Alpha", "Beta", "Gamma", "Delta"];
+    const ergebnis = gemeinschaftenBaue(feld, haufenKantenAus(new Set(feld), erw, beh));
+    expect(ergebnis.gemeinschaften.length, "zwei Klubs wurden zu einem zerflossen").toBe(2);
+    const klub = (k: string) => ergebnis.zuordnung.get(k);
+    expect(klub("n1"), "die Notiz steht in keiner Zuordnung").toBeDefined();
+    expect(klub("n1")).toBe(klub("Alpha"));
+    expect(klub("n3")).toBe(klub("Gamma"));
+    expect(klub("n1"), "die Notiz wurde in den fremden Klub gezogen").not.toBe(klub("Gamma"));
+  });
+});

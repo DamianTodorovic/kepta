@@ -104,6 +104,13 @@ describe("#117 der Haufen-Kanal", () => {
     expect(schalter(container)!.getAttribute("aria-pressed"), "gedrueckt, aber nicht gesetzt").toBe("true");
     const text = stand(container);
     expect(text, "die Zeile nennt keine Grundgesamtheit").toMatch(/communities over \d+ drawn nodes/);
+    // #119: der Nenner ist das gezeichnete Feld, nicht die Begriffsliste. Dieser
+    // Schirm traegt vier Notizen und acht Begriffe (vier genannte, vier Titel-Echos
+    // des Schreibwegs) = zwölf gezeichnete Knoten. Vor dem Flicken stand dort 4 —
+    // die Notizen waren aus der Grundgesamtheit still herausgefallen, und genau
+    // darum malte der Kanal keinen einzigen Ton (BEFUND-119-HAUFEN-TON-2810.md).
+    const nenner = Number((text.match(/over (\d+) drawn nodes/) ?? [])[1]);
+    expect(nenner, `die Zeile rechnet über ${nenner} statt über zwölf gezeichneten Knoten`).toBe(12);
     expect(text).toMatch(/largest \d+%/);
     // Ein Wort je Haufen, ohne Modell: der Haufen heisst nach seinem am besten
     // verbundenen Mitglied, und das sagt die Zeile auch so.

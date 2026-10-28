@@ -96,7 +96,7 @@ import {
   achsenSatz,
   gemalteZahlen,
 } from "../lib/gruppen";
-import { gemeinschaftenBaue, haufenBildBaue, haufenNamen, unterscheidetVonArt } from "../lib/gemeinschaften";
+import { gemeinschaftenBaue, haufenBildBaue, haufenKantenAus, haufenNamen, unterscheidetVonArt } from "../lib/gemeinschaften";
 import { KAPPE_PANEL } from "../lib/kappe";
 
 export type GraphAnsicht = "force" | "dendrogram" | "semantic";
@@ -1929,34 +1929,35 @@ export function KnowledgeGraph({ memories: memoriesAusFenster, onSelectMemory, o
   const bestandNotizen = bestandGroesse() ?? memories.length;
   const geruestIds = useMemo(() => netz.knoten.map((k) => k.id), [netz]);
   /**
-   * Punkt 117 — die Community-Ebene. Gerechnet wird ueber dem **gezeichneten** Netz,
-   * nicht ueber dem Bestand: was hier Haufen heisst, sind Haufen in diesem Bild, und
-   * die Zeile darunter nennt genau diesen Nenner.
+   * Punkt 117 — die Community-Ebene. Gerechnet wird ueber dem **gezeichneten Feld**,
+   * nicht ueber dem Bestand und nicht ueber einer Haelfte davon: das Feld traegt
+   * Begriffe UND Notizen (`KnowledgeGraph.tsx:2807` setzt die Knoten des Sim aus
+   * beiden), eine Erwahnung ist ein Paar (notizId, begriffsId)
+   * (`graphLayout.ts:2224`). Wer die Maske nur aus `netz.knoten` baut — und genau das
+   * stand hier — laesst jede Notiz still aus der Grundgesamtheit fallen, weil ihre
+   * Kennung in keiner Begriffsliste vorkommt. Gemessen am ausgelieferten Stueck
+   * (BEFUND-119-HAUFEN-TON-2810.md, 00:38:34 UTC): der Kanal malte darauf keinen
+   * einzigen Paletten-Ton, sondern schaltete das Feld auf neutral grau.
    */
-  const haufenKanten = useMemo(() => {
-    const gezeichnet = new Set(netz.knoten.map((k) => k.id));
-    const kanten = [
-      ...netz.erwahnungen
-        .filter(([a, b]) => gezeichnet.has(a) && gezeichnet.has(b))
-        .map(([a, b]) => ({ a, b, gewicht: 1 })),
-      // Eine Behauptung wiegt doppelt wie eine Erwahnung: sie ist ein Grund fuer
-      // den Strich, kein Zusammentreffen zweier Titel im selben Text.
-      ...netz.behauptungen
-        .filter((b) => gezeichnet.has(b.source) && gezeichnet.has(b.target))
-        .map((b) => ({ a: b.source, b: b.target, gewicht: 2 })),
-    ];
-    return kanten;
-  }, [netz]);
+  const gezeichnetIds = useMemo(() => {
+    const ids = new Set<string>(netzSichtbar);
+    for (const k of netz.knoten) ids.add(k.id);
+    return ids;
+  }, [netzSichtbar, netz]);
+  const haufenKanten = useMemo(
+    () => haufenKantenAus(gezeichnetIds, netz.erwahnungen, netz.behauptungen),
+    [gezeichnetIds, netz]
+  );
   const haufenBild = useMemo(
-    () => haufenBildBaue(gemeinschaftenBaue(netz.knoten.map((k) => k.id), haufenKanten)),
-    [netz, haufenKanten]
+    () => haufenBildBaue(gemeinschaftenBaue([...gezeichnetIds], haufenKanten)),
+    [gezeichnetIds, haufenKanten]
   );
   /** Der Grad entscheidet die Namenswahl — dieselben Kanten, dieselbe Zahl. */
   const haufenGrade = useMemo(() => {
     const grade = new Map<string, number>();
     for (const k of haufenKanten) {
-      grade.set(k.a, (grade.get(k.a) ?? 0) + k.gewicht);
-      grade.set(k.b, (grade.get(k.b) ?? 0) + k.gewicht);
+      grade.set(k.a, (grade.get(k.a) ?? 0) + (k.gewicht ?? 1));
+      grade.set(k.b, (grade.get(k.b) ?? 0) + (k.gewicht ?? 1));
     }
     return grade;
   }, [haufenKanten]);
@@ -3871,7 +3872,21 @@ export function KnowledgeGraph({ memories: memoriesAusFenster, onSelectMemory, o
         // Ein Gerüst-Knoten ohne Art trägt die neutrale Rolle desselben
         // Registers, nicht eine Handfarbe: Wurzel, Typ und Entität sind keine
         // Notiz.
-        const farbe = (s.farbe && farbenRef.current[s.farbe]) || farbenRef.current.neutral;
+        //
+        // Punkt 119: der Haufen-Kanal wohnt AUF diesen Kennungen — die Haufen sind
+        // Begriffe, die durch Behauptungen zusammenhalten. Fragt dieser Durchgang
+        // nur `farbenRef` (fest die Arten-Tafel, :2353), bleibt jeder Begriffs-
+        // koerper neutral, egal welcher Kanal steht; gemessen am ausgelieferten
+        // Stueck waren das 0 von 8 Paletten-Toenen und 24 057 graue Bildpunkte
+        // (BEFUND-119-HAUFEN-TON-2810.md). Also zuerst die Kanal-Tafel, dann wie
+        // bisher die Rollenfarbe, zuletzt das neutrale Register.
+        const haufenSchluessel = haufenAktivRef.current
+          ? haufenBildRef.current.zuordnung.get(n.id)
+          : undefined;
+        const farbe =
+          (haufenSchluessel ? notenFarbenRef.current[haufenSchluessel] : undefined) ||
+          (s.farbe && farbenRef.current[s.farbe]) ||
+          farbenRef.current.neutral;
         ctx.globalAlpha = 1;
         ctx.fillStyle = farbe;
         ctx.beginPath();
@@ -6279,7 +6294,7 @@ export function KnowledgeGraph({ memories: memoriesAusFenster, onSelectMemory, o
                 title={
                   haufenAktiv
                     ? `Communities are painting the nodes — click again to go back to the type colours. ${haufenBild.neutral} nodes sit outside every painted cluster and keep the neutral register.`
-                    : `Communities — click to colour the nodes by the clusters this picture forms on its own. Nobody defines these; ${haufenBild.groessen.length} clusters over ${netz.knoten.length} drawn nodes.`
+                    : `Communities — click to colour the nodes by the clusters this picture forms on its own. Nobody defines these; ${haufenBild.groessen.length} clusters over ${gezeichnetIds.size} drawn nodes.`
                 }
               >
                 {punkt(haufenAktiv)}
@@ -6292,7 +6307,7 @@ export function KnowledgeGraph({ memories: memoriesAusFenster, onSelectMemory, o
                 data-testid="graph-farbhaufen-stand"
                 style={{ color: "var(--text-3)", pointerEvents: "none" }}
               >
-                {`${haufenBild.groessen.length} communities over ${netz.knoten.length} drawn nodes · largest ${Math.round((haufenBild.groessterAnteil || 0) * 100)}%${groessterHaufenName ? ` · named after its best-connected member: ${groessterHaufenName}` : ""}${haufenBild.neutral > 0 ? ` · ${haufenBild.neutral} unpainted` : ""}`}
+                {`${haufenBild.groessen.length} communities over ${gezeichnetIds.size} drawn nodes · largest ${Math.round((haufenBild.groessterAnteil || 0) * 100)}%${groessterHaufenName ? ` · named after its best-connected member: ${groessterHaufenName}` : ""}${haufenBild.neutral > 0 ? ` · ${haufenBild.neutral} unpainted` : ""}`}
               </span>
             )}
           </div>

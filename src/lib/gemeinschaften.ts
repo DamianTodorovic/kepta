@@ -353,6 +353,32 @@ export function tonAbstand(a: string, b: string): number {
   return Math.min(ton, 1) + Math.min(hell, 1) * 0.35;
 }
 
+/**
+ * Die Kantenmenge des gezeichneten Feldes, in der Gewichtung der Flaeche: eine
+ * Erwahnung wiegt 1, eine Behauptung 2 — die Behauptung ist ein Grund fuer den
+ * Strich, die Erwahnung ein Zusammentreffen im selben Text.
+ *
+ * `gezeichnet` ist die Grundgesamtheit, und sie ist die ganze Gefahr dieser
+ * Funktion. Eine Erwahnung ist ein Paar (notizId, begriffsId); eine Maske, die
+ * nur die Begriffs-Kennungen kennt, laesst jede Notiz still herausfallen, und
+ * das Ergebnis nennt dann eine Grundgesamtheit, die niemand gezeichnet hat. Am
+ * ausgelieferten Stueck gemessen (BEFUND-119-HAUFEN-TON-2810.md, 00:38:34 UTC):
+ * genau das liess den Kanal keinen einzigen Paletten-Ton malen. Also: beide
+ * Haelften des Feldes hineingeben, Begriffe und Notizen.
+ */
+export function haufenKantenAus(
+  gezeichnet: ReadonlySet<string>,
+  erwahnungen: readonly (readonly [string, string])[],
+  behauptungen: readonly { source: string; target: string }[]
+): Gemeinschaftskante[] {
+  const kanten: Gemeinschaftskante[] = [];
+  for (const [a, b] of erwahnungen) if (gezeichnet.has(a) && gezeichnet.has(b)) kanten.push({ a, b, gewicht: 1 });
+  for (const e of behauptungen) {
+    if (gezeichnet.has(e.source) && gezeichnet.has(e.target)) kanten.push({ a: e.source, b: e.target, gewicht: 2 });
+  }
+  return kanten;
+}
+
 export interface HaufenBild {
   /** Knoten-Kennung -> Farb-Schluessel (`h0`, `h1`, …) oder `neutral`. */
   zuordnung: Map<string, string>;
