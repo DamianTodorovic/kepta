@@ -1,3 +1,20 @@
+## [3.2.76]
+
+### Fixed
+
+- **Colour by community paints communities again.** The switch set its state, its line
+  named six clusters over 156 drawn nodes, and the canvas painted none of the six tones:
+  measured on the delivered build, every type tone dropped to 0 pixels while neutral rose
+  from 14,159 to 24,057. Two places, harmless each, dead between them. The edge set built
+  its population from concept ids only, while a mention is a (note, concept) pair - so
+  every note fell out silently and the line named half the picture as its denominator. And
+  concept spheres are drawn in a second pass that asked the type table, not the channel
+  table, for their colour - the one pass that carries cluster keys was the one that never
+  looked them up. The population is now the drawn field (notes and concepts, the same pair
+  that feeds the simulation) and the concept pass asks the channel table first, then the
+  role colour as before, then neutral. Acceptance is a pixel test on the canvas buffer, not
+  a DOM state: at least six tones with their own area and a minimum side of 8 px.
+
 ## [3.2.75]
 
 ### Fixed
