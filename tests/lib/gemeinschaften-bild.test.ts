@@ -7,6 +7,9 @@
 import { describe, expect, it } from "vitest";
 
 import {
+  grundIstHell,
+  HAUFEN_PALETTE_DUNKEL,
+  HAUFEN_PALETTE_HELL,
   gemeinschaftenBaue,
   grundHexVon,
   haufenBildBaue,
@@ -274,5 +277,43 @@ describe("#119 der Grund unter den Toenen", () => {
       .toBeLessThan(schwach(ohne, "#fafaf8"));
     expect(schwach(dunkel, "#38383a"), `auf dem dunklen Blatt: ${schwach(ohne, "#38383a")} ohne Grund gegen ${schwach(dunkel, "#38383a")} mit Grund`)
       .toBeLessThanOrEqual(schwach(ohne, "#38383a"));
+  });
+
+  it("kennt pro Blatt einen Vorrat, dessen Toene dort 3:1 halten", () => {
+    // Das ist Punkt 120: der Vorrat war einer, die Prüfung zwei Blaetter. Ein Ton, der
+    // gegen sein eigenes Blatt unter 3:1 faellt, ist kein zweiter Ton, sondern ein Defekt.
+    for (const ton of HAUFEN_PALETTE_DUNKEL) {
+      expect(kontrastVerhaeltnis(ton, "#38383a"), `${ton} gegen das dunkle Blatt`).toBeGreaterThanOrEqual(3);
+    }
+    for (const ton of HAUFEN_PALETTE_HELL) {
+      expect(kontrastVerhaeltnis(ton, "#fafaf8"), `${ton} gegen das helle Blatt`).toBeGreaterThanOrEqual(3);
+    }
+    expect(grundIstHell("#fafaf8")).toBe(true);
+    expect(grundIstHell("#38383a")).toBe(false);
+    expect(grundIstHell("kein farbwort")).toBe(false);
+  });
+
+  it("liefert sechs brauchbare Toene, wenn der Grund genannt ist", () => {
+    const { knoten, kanten } = sechsKlubs();
+    const ergebnis = gemeinschaftenBaue(knoten, kanten);
+    for (const [grund, name] of [["#fafaf8", "hell"], ["#38383a", "dunkel"]] as const) {
+      const bild = haufenBildBaue(ergebnis, undefined, grund);
+      const tone = Object.values(bild.farben);
+      expect(tone.length, `${name}: sechs Klubs, sechs Toene`).toBe(6);
+      const schwach = tone.filter((ton) => kontrastVerhaeltnis(ton, grund) < 3);
+      expect(schwach, `${name}: Toene unter 3:1 auf ihrem eignen Blatt: ${schwach.join(" ")}`).toEqual([]);
+      let min = 9;
+      for (let i = 0; i < tone.length; i += 1)
+        for (let j = i + 1; j < tone.length; j += 1) min = Math.min(min, tonAbstand(tone[i], tone[j]));
+      expect(min, `${name}: engstes Paar der sechs Toene`).toBeGreaterThanOrEqual(0.15);
+    }
+  });
+
+  it("benutzt die Gruppen-Palette, wo niemand einen Grund nennt", () => {
+    const { knoten, kanten } = sechsKlubs();
+    const bild = haufenBildBaue(gemeinschaftenBaue(knoten, kanten));
+    for (const ton of Object.values(bild.farben)) {
+      expect(GRUPPEN_PALETTE as readonly string[], `${ton} liegt nicht im Gruppen-Vorrat`).toContain(ton);
+    }
   });
 });

@@ -319,6 +319,62 @@ export function gemeinschaftenBaue(
  */
 import { GRUPPEN_PALETTE, kontrastVerhaeltnis } from "./gruppen";
 
+/**
+ * Die Ton-Vorraete des Haufen-Kanals, je Blatt eine.
+ *
+ * Anlass (Punkt 120, gemessen 23:12:57Z an 3.2.77): die Wahl prueft 3:1 gegen den Grund,
+ * aber der Vorrat war einer. Auf dem dunklen Blatt haelt Beere 2,94:1, auf dem hellen
+ * Tuerkis 2,18:1 und Messing 1,96:1 — drei von acht Toenen fallen also an einem der beiden
+ * Blätter durch, und ein sechster Haufen muss einen Ton nehmen, den das Blatt schluckt.
+ *
+ * Entscheiden: zwei Vorraete, einer pro Grund, und die Zuordnung bleibt beim alten
+ * Maximin-Verfahren. Begruendung: ein Ton, der gegen sein eigenes Blatt nicht 3:1 haelt,
+ * ist kein zweiter Ton, sondern ein Defekt — und die Alternative (ein Vorrat, der beide
+ * Blaetter bedient) ist rechnerisch eng: Toene, die BOTH 3:1 halten, muessen in einem
+ * Schmalband der Leuchtdichte liegen (0,228 bis 0,289), und dort kommen sechs Toene nicht
+ * ueber 0,103 Abstand. Pro Blatt fuer sich dagegen bleiben 0,155 bis 0,226.
+ *
+ * Der dunkle Vorrat ist die Gruppen-Palette, nur Beere auf die rose-fassung gehoert
+ * (#c65b8c haelt 2,94 gegen das Blatt, #e277a8 haelt 4,14). Der helle Vorrat ist NICHT
+ * die dunkle Palette gedunkelt: das wurde gefahren und fiel durch — die Marken-Hue-Familien
+ * liegen auf hellem Blatt zu eng beieinander (Moos gegen Messing 0,074, Gruen gegen Moos
+ * 0,056), und sechs Haufen brauchen 0,15. Der helle Vorrat ist darum nach Maximin-Abstand
+ * auf diesem Blatt gesetzt (engstes Paar der acht 0,161, der ersten sechs 0,198), jedes
+ * Glied haelt 3,05 bis 5,2 gegen das Papier. Markenwort bleibt, wo es ein Markenwort ist:
+ * im Arten-Register, am Chrom und auf den Folien — hier entscheidet die Lesbarkeit.
+ */
+export const HAUFEN_PALETTE_DUNKEL = [
+  "#e2703a", // gebranntes Orange
+  "#3fbfa8", // Tuerkis
+  "#e277a8", // Beere, gehoert: gegen das dunkle Blatt 2,94 -> 4,14
+  "#7a9b3f", // Moos
+  "#5b7fd4", // Stahlblau
+  "#d4b23f", // Messing
+  "#9a6fd0", // Lavendel
+  "#4fae63", // Gruen
+] as const;
+
+export const HAUFEN_PALETTE_HELL = [
+  "#d97600", // Orange
+  "#6c969c", // Petrol
+  "#bc2f93", // Beere
+  "#876335", // Erde
+  "#4f66c4", // Stahl
+  "#c57298", // Rose
+  "#bb60fb", // Lavendel
+  "#ff1b4e", // Lohe
+] as const;
+
+/** Ein Blatt ist hell, wenn mehr als die Haelfte seiner Leuchtkraft laeuft. */
+export function grundIstHell(grund: string): boolean {
+  const m = /^#?([0-9a-f]{6})$/i.exec((grund || "").trim());
+  if (!m) return false;
+  const wert = (i: number) => parseInt(m[1].slice(i, i + 2), 16) / 255;
+  const lineal = (c: number) => (c <= 0.04045 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4);
+  const l = 0.2126 * lineal(wert(0)) + 0.7152 * lineal(wert(2)) + 0.0722 * lineal(wert(4));
+  return l > 0.5;
+}
+
 /** sRGB-Hex -> linear -> OKLab (Bjorn Ottosson). Fuer den Abstand zwischen Toenen. */
 function oklab(hex: string): [number, number, number] | null {
   const m = /^#?([0-9a-f]{6})$/i.exec((hex || "").trim());
@@ -400,9 +456,14 @@ export interface HaufenBild {
  */
 export function haufenBildBaue(
   ergebnis: GemeinschaftenErgebnis,
-  palette: readonly string[] = GRUPPEN_PALETTE,
+  palette?: readonly string[],
   grund?: string,
 ): HaufenBild {
+  // Der Vorrat folgt dem Blatt, nicht dem Kanal: ohne Grund bleibt die Gruppen-Palette
+  // (die ist zwei Themen gleichgueltig und wird von den Gruppen so gesetzt), mit Grund
+  // gilt der Vorrat, dessen Toene gegen DIESES Blatt 3:1 halten.
+  const vorrat =
+    palette ?? (grund ? (grundIstHell(grund) ? HAUFEN_PALETTE_HELL : HAUFEN_PALETTE_DUNKEL) : GRUPPEN_PALETTE);
   const zuordnung = new Map<string, string>();
   const farben: Record<string, string> = {};
   const groessen: number[] = [];
@@ -411,12 +472,12 @@ export function haufenBildBaue(
   const alle = ergebnis.gemeinschaften.reduce((s, g) => s + g.groesse, 0);
 
   for (const g of ergebnis.gemeinschaften) {
-    if (gewaehlt.length >= palette.length) {
+    if (gewaehlt.length >= vorrat.length) {
       for (const id of g.mitglieder) zuordnung.set(id, "neutral");
       neutral += g.groesse;
       continue;
     }
-    const rest = palette.filter((ton) => !gewaehlt.includes(ton));
+    const rest = vorrat.filter((ton) => !gewaehlt.includes(ton));
     // Gewaehlt wird der Ton, der am weitesten von allen schon gewaehlten entfernt
     // ist (Ton und Saettigung vor Helligkeit). Der Kontrast zur Flaeche bleibt eine
     // zweite, eigene Frage — er wird gegen `grund` geprueft, wenn einer gegeben ist.
@@ -427,7 +488,7 @@ export function haufenBildBaue(
           ? Math.min(...gewaehlt.map((t) => tonAbstand(farbe, t)))
           : Number.MAX_SAFE_INTEGER,
         brauchbar: grund ? kontrastVerhaeltnis(farbe, grund) >= 3 : 1,
-        rang: palette.indexOf(farbe),
+        rang: vorrat.indexOf(farbe),
       }))
       .sort((a, b) => Number(b.brauchbar) - Number(a.brauchbar) || b.min - a.min || a.rang - b.rang)[0].farbe;
     gewaehlt.push(ton);
