@@ -546,3 +546,25 @@ export function haufenNamen(
     return bester;
   });
 }
+
+/**
+ * Ein Farbwert in Hexform, wie die Kontrastrechnung sie braucht. `#rgb` und `#rrggbb`
+ * werden genommen, `rgb(...)`/`rgba(...)` — die Form, in der ein Browser einen Token
+ * serialisiert, wenn man ihn malt — werden gesetzt. Ein Wert in oklch oder lab wird
+ * NICHT umgerechnet: die Flaeche malt ihn in einen Canvas und liest den Bildpunkt,
+ * und was hier nicht lesbar ist, bleibt undefiniert statt geraten.
+ */
+export function grundHexVon(wert: string): string | undefined {
+  const s = (wert ?? "").trim().toLowerCase();
+  if (/^#[0-9a-f]{6}$/.test(s)) return s;
+  if (/^#[0-9a-f]{3}$/.test(s)) return "#" + s.slice(1).split("").map((c) => c + c).join("");
+  const kanaele = s.match(/^rgba?\(\s*(\d+)[\s,]+(\d+)[\s,]+(\d+)/);
+  if (!kanaele) return undefined;
+  return (
+    "#" +
+    [kanaele[1], kanaele[2], kanaele[3]]
+      .map((z) => Math.max(0, Math.min(255, Number(z))))
+      .map((k) => k.toString(16).padStart(2, "0"))
+      .join("")
+  );
+}

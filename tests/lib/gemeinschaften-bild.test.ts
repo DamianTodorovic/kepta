@@ -8,6 +8,7 @@ import { describe, expect, it } from "vitest";
 
 import {
   gemeinschaftenBaue,
+  grundHexVon,
   haufenBildBaue,
   haufenNamen,
   tonAbstand,
@@ -229,5 +230,49 @@ describe("unterscheidetVonArt — die Latte aus dem Marktbericht", () => {
 
     expect(urteil.ja).toBe(false);
     expect(urteil.grund).toMatch(/ein Haufen|1 Haufen/);
+  });
+});
+
+/**
+ * Punkt 119, zweite Haelfte: die Tonwahl prueft einen Grund, aber die Flaeche hat ihr
+ * nie einen gegeben. Diese Faelle halten beides — den Helfer, der einen gemalten
+ * Bildpunkt in Hex bringt, und die Zahl der Toene, die unter 3:1 fallen, wenn der
+ * Grund bekannt ist gegenueber dem Fall, dass er unbekannt bleibt.
+ */
+describe("#119 der Grund unter den Toenen", () => {
+  const sechsKlubs = () => {
+    const knoten: string[] = [];
+    const kanten: Gemeinschaftskante[] = [];
+    for (let k = 0; k < 6; k += 1) {
+      const namen = [0, 1, 2].map((i) => `k${k}${i}`);
+      knoten.push(...namen);
+      for (let i = 0; i < namen.length; i += 1)
+        for (let j = i + 1; j < namen.length; j += 1) kanten.push({ a: namen[i], b: namen[j] });
+    }
+    return { knoten, kanten };
+  };
+
+  it("liest einen gemalten Bildpunkt, raeet aber keinen oklch-Wert", () => {
+    expect(grundHexVon("#38383A")).toBe("#38383a");
+    expect(grundHexVon("#abc")).toBe("#aabbcc");
+    expect(grundHexVon("rgb(56, 56, 58)")).toBe("#38383a");
+    expect(grundHexVon("rgba(250, 250, 248, 1)")).toBe("#fafaf8");
+    expect(grundHexVon("oklch(0.3428 0.0026 286)"), "oklch wird nicht umgerechnet").toBeUndefined();
+    expect(grundHexVon("")).toBeUndefined();
+  });
+
+  it("waehlt weniger schwache Toene, wenn der Grund bekannt ist", () => {
+    const { knoten, kanten } = sechsKlubs();
+    const ergebnis = gemeinschaftenBaue(knoten, kanten);
+    const schwach = (bild: ReturnType<typeof haufenBildBaue>, grund: string) =>
+      Object.values(bild.farben).filter((ton) => kontrastVerhaeltnis(ton, grund) < 3).length;
+    const ohne = haufenBildBaue(ergebnis);
+    const hell = haufenBildBaue(ergebnis, undefined, "#fafaf8");
+    const dunkel = haufenBildBaue(ergebnis, undefined, "#38383a");
+    expect(Object.keys(hell.farben).length, "sechs Klubs brauchen sechs Toene").toBe(6);
+    expect(schwach(hell, "#fafaf8"), `auf dem hellen Blatt: ${schwach(ohne, "#fafaf8")} ohne Grund gegen ${schwach(hell, "#fafaf8")} mit Grund`)
+      .toBeLessThan(schwach(ohne, "#fafaf8"));
+    expect(schwach(dunkel, "#38383a"), `auf dem dunklen Blatt: ${schwach(ohne, "#38383a")} ohne Grund gegen ${schwach(dunkel, "#38383a")} mit Grund`)
+      .toBeLessThanOrEqual(schwach(ohne, "#38383a"));
   });
 });

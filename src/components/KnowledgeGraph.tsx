@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState, useMemo, useCallback, type ReactNode } from "react";
+import { useTheme } from "../contexts/ThemeContext";
 import { Memory } from "../types";
 import { existsAt, graphTimeRange, activeIdsAt, edgeVisibleAt, istStruktur, fensterOffen, type Gueltigkeit } from "../lib/graphTime";
 // Atom2 / Sitemap / Scatter / Network sind hier weg: die Ansichts-Schiene trägt
@@ -96,7 +97,7 @@ import {
   achsenSatz,
   gemalteZahlen,
 } from "../lib/gruppen";
-import { gemeinschaftenBaue, haufenBildBaue, haufenKantenAus, haufenNamen, unterscheidetVonArt } from "../lib/gemeinschaften";
+import { gemeinschaftenBaue, grundHexVon, haufenBildBaue, haufenKantenAus, haufenNamen, unterscheidetVonArt } from "../lib/gemeinschaften";
 import { KAPPE_PANEL } from "../lib/kappe";
 
 export type GraphAnsicht = "force" | "dendrogram" | "semantic";
@@ -1948,9 +1949,56 @@ export function KnowledgeGraph({ memories: memoriesAusFenster, onSelectMemory, o
     () => haufenKantenAus(gezeichnetIds, netz.erwahnungen, netz.behauptungen),
     [gezeichnetIds, netz]
   );
+  /**
+   * Der Grund, auf dem das Feld malt — in Hex, weil die Kontrastrechnung der Tonwahl
+   * Hex braucht. Das Panel-Token steht in oklch; statt es zu raten, malt die Flaeche
+   * es in einen Ein-Punkt-Canvas und holt zurueck, was wirklich liegt. Ohne Canvas
+   * (jsdom) oder ohne lesbaren Wert bleibt `undefined`, und die Tonwahl prueft dann
+   * wie bisher nur den Abstand.
+   *
+   * Der Schritt zaehlt, weil die Tonwahl bis hierher gegen keinen Grund prüfte: die
+   * dunkle Flaeche ist `#38383a` (gemessen im Puffer, 22:42:57Z), nicht der Tisch
+   * `#070708`, gegen den 3.2.74 "kleinster Wert 4,55" gerechnet hatte. Gegen das
+   * echte Blatt faellt Beere auf 2,94:1, im Licht Tuerkis auf 2,18 und Messing auf 1,96.
+   */
+  const { isDark } = useTheme();
+  const [feldGrund, setzeFeldGrund] = useState<string | undefined>(() => {
+    try {
+      return grundHexVon(getComputedStyle(document.documentElement).getPropertyValue("--bg-panel-solid").trim());
+    } catch {
+      return undefined;
+    }
+  });
+  useEffect(() => {
+    // Der Wert wird nach der Stil-Aenderung gelesen, nicht dabei: ThemeProvider setzt die
+    // Klasse in seinem eignen Effekt, und Effekte laufen Kind vor Parent. Also einmal
+    // sofort (der erste Schirm) und einmal nach dem naechsten Rahmen (der Umschaltfall).
+    const lesen = () => {
+      try {
+        const roh = getComputedStyle(document.documentElement).getPropertyValue("--bg-panel-solid").trim();
+        const c = document.createElement("canvas");
+        c.width = 1;
+        c.height = 1;
+        const g = c.getContext("2d", { willReadFrequently: true });
+        if (!g) return setzeFeldGrund(grundHexVon(roh));
+        g.fillStyle = "#010203";
+        g.fillRect(0, 0, 1, 1);
+        g.fillStyle = roh;
+        g.fillRect(0, 0, 1, 1);
+        const d = g.getImageData(0, 0, 1, 1).data;
+        if (d[0] === 1 && d[1] === 2 && d[2] === 3) return setzeFeldGrund(grundHexVon(roh));
+        setzeFeldGrund(grundHexVon(`rgb(${d[0]}, ${d[1]}, ${d[2]})`));
+      } catch {
+        setzeFeldGrund(undefined);
+      }
+    };
+    lesen();
+    const rahmen = requestAnimationFrame(lesen);
+    return () => cancelAnimationFrame(rahmen);
+  }, [isDark]);
   const haufenBild = useMemo(
-    () => haufenBildBaue(gemeinschaftenBaue([...gezeichnetIds], haufenKanten)),
-    [gezeichnetIds, haufenKanten]
+    () => haufenBildBaue(gemeinschaftenBaue([...gezeichnetIds], haufenKanten), undefined, feldGrund),
+    [gezeichnetIds, haufenKanten, feldGrund]
   );
   /** Der Grad entscheidet die Namenswahl — dieselben Kanten, dieselbe Zahl. */
   const haufenGrade = useMemo(() => {
