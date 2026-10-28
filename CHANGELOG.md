@@ -1,3 +1,23 @@
+## [3.2.78]
+
+### Fixed
+
+- **Each panel gets its own pool of cluster tones.** Measured on 3.2.76 at 23:12:57Z: brass
+  held 1.96:1 against the light paper and berry 2.94:1 against the dark panel. The picker
+  already checked 3:1 against a background - but there was only one pool, so whichever
+  background was passed, one of the eight tones was unusable on it. Decision: two pools, one
+  per panel, selection rule unchanged. The dark pool is the group palette with berry lifted to
+  a rose that holds 4.14:1 (0.065 away from the old berry, 0.155 to its nearest neighbour).
+  The light pool is deliberately not the dark pool dimmed - that was tried and failed,
+  because the brand hue families sit too close on paper (moss against brass 0.074, green
+  against moss 0.056) and six clusters need 0.15. It is chosen by maximum-minimum distance
+  on that panel: closest pair 0.161 across eight, 0.198 across the first six, every tone
+  between 3.05 and 5.2 against the paper. Brand words stay where they are brand words - the
+  type register, the chrome, the scene sheets. With no background named the group palette is
+  still used, so group colours do not move. Three cases added: every tone of each pool holds
+  3:1 on its own panel; with a named panel the six chosen tones hold 3:1 and no pair sits
+  under 0.15; with none, the group pool is used.
+
 ## [3.2.77]
 
 ### Fixed
