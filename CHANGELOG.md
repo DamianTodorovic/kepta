@@ -1,3 +1,15 @@
+## [3.2.75]
+
+### Fixed
+
+- **A node keeps its colour under the highlight.** Every sphere is drawn with a white
+  sheen at its top-left; that sheen was 0.72 in the light theme and 0.5 in the dark one,
+  which mixes the fill almost away: measured on the six cluster tones, the closest pair
+  fell from a perceptual distance of 0.166 to 0.044 at 0.72 and 0.081 at 0.5 - the tones
+  were still different, only nobody could see it. Both themes now sit at 0.34, which holds
+  0.105, and the shape of the sphere is unchanged. The scene sheet used for the social
+  images follows the same token, checked by the design watch.
+
 ## [3.2.74]
 
 ### Fixed

@@ -250,7 +250,10 @@
   --lauf-puls: 1200ms;
 
   /* Graph-Knoten: Tinte statt Glas */
-  --node-hi: 0.5;
+  /* Glanz der Knotenkugel. 28.10. 00:00 gemessen: bei 0,72 (hell) und
+     0,5 (dunkel) fiel der Abstand des engsten Ton-Paars von 0,166 auf 0,044
+     bzw. 0,081 — die Farbe wusch aus. 0,34 haelt 0,105. */
+  --node-hi: 0.34;
   --node-mid: 0.66;
   --node-low: 0.4;
   --node-rim: rgba(34, 48, 60, 0.4);
@@ -359,7 +362,7 @@
   --shadow-md: 0 2px 10px rgba(0, 0, 0, 0.45);
   --shadow-lg: 0 14px 40px rgba(0, 0, 0, 0.55);
 
-  --node-hi: 0.72;
+  --node-hi: 0.34; /* siehe dunkler Zweig: 0,72 wusch die Toene auf 0,044 auseinander */
   --node-mid: 0.4;
   --node-low: 0.18;
   --node-rim: rgba(230, 233, 225, 0.24);
