@@ -1,3 +1,16 @@
+## [3.2.80]
+
+### Changed
+
+- **The Fit control names the way out.** The readability floor stays - a whole base
+  squeezed into one frame is the "black field with dust" case measured on 18.10. - but it
+  stays a default, not a wall: the manual zoom scale is free down to 0.02 (`zoomAt`,
+  graphLayout.ts:1628) and the per-node floor keeps every disc at least a screen pixel, so
+  anyone who wants the whole world can zoom out and see it. The sentence on the button now
+  says both what happened and what to do: the edge line already counts what stays outside,
+  and the title adds "zooming out shows them all". A word that names a limit without
+  showing the exit is half an answer.
+
 ## [3.2.79]
 
 ### Fixed
