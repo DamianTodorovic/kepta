@@ -1,3 +1,18 @@
+## [3.2.87]
+
+### Fixed
+
+- **The excerpt now counts what never reaches a window.** `ausriss.kantenVerworfen` could not
+  be anything but 0 for this window: the core's edge slice (`src/core/store.ts:1443-1451`)
+  already reads only pairs whose both ends sit inside the same concept slice, and the route
+  filters against exactly that set. Measured 07:12 on a 2,120-edge base: 349 edges shown,
+  "the door dropped 0 edges" - while 1,771 never arrive. A field that always reports 0 for the
+  case it is read as proof of is not a clean bill, it is a blind spot. New: `kantenAusserhalb`
+  (and the same for concepts), named in the door's own hint so the number cannot hide behind
+  the sentence. Two stale comments were brought to today's state: the 1,593-of-2,000 figure is
+  marked as a measurement from *before* the closed slice, and a pointer that landed on a
+  closing bracket now names the filter line.
+
 ## [3.2.86]
 
 ### Fixed
