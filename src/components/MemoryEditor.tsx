@@ -328,7 +328,7 @@ export function MemoryEditor({ memory, onSave, onClose, onDelete }: MemoryEditor
             {/* Memory-Typ: segmented control */}
             <div>
               <div className="hud-label mb-2 flex items-center gap-2"><Brain className="w-3.5 h-3.5" /> Memory type</div>
-              <div className="grid grid-cols-3 gap-2 p-1 rounded-xl hud-inset">
+              <div className="grid grid-cols-3 lg:grid-cols-4 gap-2 p-1 rounded-xl hud-inset">
                 {KINDS.map((k) => (
                   <button
                     key={k.key}
@@ -351,7 +351,7 @@ export function MemoryEditor({ memory, onSave, onClose, onDelete }: MemoryEditor
               </p>
             </div>
 
-            <div className="flex-1 flex flex-col min-h-[240px]">
+            <div className="inhalt-block flex-1 flex flex-col">
               <label htmlFor="memory-inhalt" className="hud-label mb-2">Content</label>
               <textarea
                 id="memory-inhalt"

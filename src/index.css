@@ -787,6 +787,19 @@ label:has(.switch), label:has(input[type="checkbox"]), label:has(input[type="rad
   :root { --ziel-boden: 44px; }
 }
 
+/* Punkt 128b: ein kurzes Fenster (1024 x 768) schob die Behauptungsreihe gemessen
+   29.10. 14:44:38 um 120 px hinter die Kante. Zwei Stufen an einer Stelle, damit die
+   Utility-Schicht und diese Regel nicht um eine Mindesthoehe streiten. */
+.inhalt-block {
+  min-height: 240px;
+}
+
+@media (max-height: 800px) {
+  .inhalt-block {
+    min-height: 150px;
+  }
+}
+
 /* Sidebar-Navigation: Registerlaschen — die aktive Stelle trägt einen
    Siegelroten Strich am linken Blattrand (kein Layout-Shift). */
 .sidebar-nav-btn, .sidebar-tag-btn {
