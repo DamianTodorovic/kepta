@@ -19,7 +19,7 @@ import {
   type Gemeinschaftskante,
 } from "../../src/lib/gemeinschaften";
 import { GRUPPEN_PALETTE, kontrastVerhaeltnis } from "../../src/lib/gruppen";
-import { fitTitel, rahmenLeereMeldung } from "../../src/components/KnowledgeGraph";
+import { fitTitel, rahmenLeereMeldung, rahmenZeilentext } from "../../src/components/KnowledgeGraph";
 
 const kante = (a: string, b: string): Gemeinschaftskante => ({ a, b });
 
@@ -342,5 +342,19 @@ describe("#122 der Grund in der leeren Rahmenzeile", () => {
     expect(rahmenLeereMeldung(false, true)).toMatch(/one core marker/);
     expect(rahmenLeereMeldung(false, true)).not.toMatch(/tree/);
     expect(rahmenLeereMeldung(false, false)).toBe("no unfolded notes are in this picture — pan to find them");
+  });
+});
+
+describe("#123 die Rahmenzeile im uebergang zur Kern-Marke", () => {
+  it("sagt, wo die restlichen Notizen stecken, statt sie zu verlieren", () => {
+    // Zwischen 6 % und 3 % sammelt das Feld schon, zaehlt aber noch einzelne Scheiben.
+    // Die alte Zeile nannte dann "21 of 3,000 ... are in this picture" — als waeren 2 979
+    // fort. Gemessen 03:09 Uhr an 3 000 Notizen (p122-gross-3000c.log.txt).
+    expect(rahmenZeilentext(21, 3000, false, true)).toMatch(/drawn as nodes/);
+    expect(rahmenZeilentext(21, 3000, false, true)).toMatch(/the rest sits in one core marker/);
+    expect(rahmenZeilentext(21, 3000, false, true)).not.toMatch(/are in this picture$/);
+    expect(rahmenZeilentext(21, 3000, false, false)).toBe("21 of 3,000 unfolded notes are in this picture");
+    expect(rahmenZeilentext(3000, 3000, false, true), "alles im Bild — die Zeile schweigt").toBe("");
+    expect(rahmenZeilentext(0, 3000, false, true)).toMatch(/one core marker/);
   });
 });

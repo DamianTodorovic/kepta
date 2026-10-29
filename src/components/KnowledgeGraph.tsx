@@ -876,6 +876,24 @@ export function rahmenLeereMeldung(baumAnsicht: boolean, kernMarke: boolean): st
   return "no unfolded notes are in this picture — pan to find them";
 }
 
+/**
+ * Die ganze Rahmenzeile an einem Ort, damit ihr Fall Muster hat. Der dritte Zweig ist der,
+ * den keine Sonde meldete und ein Nutzer doch sieht: zwischen 6 % und 3 % sammelt das Feld
+ * schon in eine Kern-Marke, zaehlt aber noch einzelne Notizen — die Zeile sagte dann
+ * "21 of 3,000 unfolded notes are in this picture", als haette der Bestand 2 979 Notizen
+ * verloren. Gemessen 03:09 Uhr an 3 000 Notizen in 40 Familien (p122-gross-3000c.log.txt):
+ * 272 im Bild beim Einpassen, hoechstens 684 bei 30 %, dann 344 bei 6 % und 21 bei 3 % —
+ * die Zahl faellt, waehrend man rauszoomt, weil der Malweg die einzelnen Scheiben abgibt.
+ */
+export function rahmenZeilentext(imRahmen: number, gesamt: number, baumAnsicht: boolean, kernMarke: boolean): string {
+  if (imRahmen >= gesamt) return "";
+  if (imRahmen === 0) return rahmenLeereMeldung(baumAnsicht, kernMarke);
+  if (kernMarke) {
+    return `${mengenzahl(imRahmen)} of ${mengenzahl(gesamt)} unfolded notes are drawn as nodes — the rest sits in one core marker, zoom in to read them`;
+  }
+  return `${mengenzahl(imRahmen)} of ${mengenzahl(gesamt)} unfolded notes are in this picture`;
+}
+
 export const GRAPH_TIEFE_MIN = 1;
 export const GRAPH_TIEFE_MAX = 4;
 export const GRAPH_TIEFE_DEFAULT = 2;
@@ -4529,11 +4547,7 @@ export function KnowledgeGraph({ memories: memoriesAusFenster, onSelectMemory, o
       const rahmenZeile = imRahmenRef.current;
       if (rahmenZeile) {
         const gesamt = imBildRef.current;
-        const meldung = imStrengeNoten >= gesamt
-          ? ""
-          : imStrengeNoten === 0
-            ? rahmenLeereMeldung(ansichtRef.current === "dendrogram", !!kernNeu.marke)
-            : `${mengenzahl(imStrengeNoten)} of ${mengenzahl(gesamt)} unfolded notes are in this picture`;
+        const meldung = rahmenZeilentext(imStrengeNoten, gesamt, ansichtRef.current === "dendrogram", !!kernNeu.marke);
         if (rahmenZeile.textContent !== meldung) rahmenZeile.textContent = meldung;
         const anzeige = meldung === "" ? "none" : "";
         if (rahmenZeile.style.display !== anzeige) rahmenZeile.style.display = anzeige;
