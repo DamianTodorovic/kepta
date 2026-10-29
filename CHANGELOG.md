@@ -1,3 +1,18 @@
+## [3.2.81]
+
+### Fixed
+
+- **The empty frame line names its real cause.** Measured in the delivered build at 02:36
+  (90-step zoom trace, 144 notes in six families): Fit shows 111 of 144 at 93 %, the line
+  goes silent between 30 % and 6 % - everything is inside, the good case - and from 3 % down
+  it reads "no unfolded notes are in this picture - the tree is taller than its frame, pan to
+  read it" while no tree was on screen. The real reason lives in the painter: below a size
+  the field gathers the base into one core marker instead of drawing tens of thousands of
+  dust points (the same guard that fixed the "black field with dust" case). A wrong cause
+  sends people the wrong way - panning when they should zoom in. The sentence is now a pure
+  function of the view and the marker: the tree says the tree, the core says the core,
+  otherwise "pan to find them".
+
 ## [3.2.80]
 
 ### Changed
