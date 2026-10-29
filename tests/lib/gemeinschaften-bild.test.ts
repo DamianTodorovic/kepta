@@ -19,7 +19,7 @@ import {
   type Gemeinschaftskante,
 } from "../../src/lib/gemeinschaften";
 import { GRUPPEN_PALETTE, kontrastVerhaeltnis } from "../../src/lib/gruppen";
-import { fitTitel } from "../../src/components/KnowledgeGraph";
+import { fitTitel, rahmenLeereMeldung } from "../../src/components/KnowledgeGraph";
 
 const kante = (a: string, b: string): Gemeinschaftskante => ({ a, b });
 
@@ -331,5 +331,16 @@ describe("#121 der Satz am Einpass-Knopf", () => {
     // Der Satz schuldet auch den Weg nach draussen: die manuelle Zoomskala ist frei.
     expect(fitTitel(true)).toMatch(/zooming out shows them all/);
     expect(fitTitel(true).startsWith("Fit"), "beide Zeilen beginnen am selben Wort").toBe(true);
+  });
+});
+
+describe("#122 der Grund in der leeren Rahmenzeile", () => {
+  it("nennt den Baum nur, wenn der Baum steht", () => {
+    // Gemessen im Kraftfeld bei 2 % Zoom: die Zeile schob dem Nutzer den Baum zu,
+    // obgleich kein Baum zu sehen war. Der wahre Grund ist die Kern-Marke.
+    expect(rahmenLeereMeldung(true, false)).toMatch(/the tree is taller/);
+    expect(rahmenLeereMeldung(false, true)).toMatch(/one core marker/);
+    expect(rahmenLeereMeldung(false, true)).not.toMatch(/tree/);
+    expect(rahmenLeereMeldung(false, false)).toBe("no unfolded notes are in this picture — pan to find them");
   });
 });

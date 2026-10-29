@@ -863,6 +863,19 @@ export function fitTitel(bodenEntschieden: boolean): string {
     : "Fit the whole graph into view";
 }
 
+/**
+ * Der Satz, wenn keine einzige entfaltete Notiz im Bild steht. Bis hierher nannte er in
+ * JEDEM Fall den Baum — gemessen 02:36:5xZ im Kraftfeld bei 2 % Zoom: dort steht die Zeile,
+ * obwohl kein Baum zu sehen ist. Der Grund ist ein andrer: unter einer Groesse faengt das
+ * Feld den Bestand in EINE Kern-Marke, statt Zehntausende Staubkoerner zu malen. Wer den
+ * falschen Grund liest, panikt am falschen Ende.
+ */
+export function rahmenLeereMeldung(baumAnsicht: boolean, kernMarke: boolean): string {
+  if (baumAnsicht) return "no unfolded notes are in this picture — the tree is taller than its frame, pan to read it";
+  if (kernMarke) return "no unfolded notes are drawn at this zoom — the field gathers into one core marker, zoom in to read them";
+  return "no unfolded notes are in this picture — pan to find them";
+}
+
 export const GRAPH_TIEFE_MIN = 1;
 export const GRAPH_TIEFE_MAX = 4;
 export const GRAPH_TIEFE_DEFAULT = 2;
@@ -4519,7 +4532,7 @@ export function KnowledgeGraph({ memories: memoriesAusFenster, onSelectMemory, o
         const meldung = imStrengeNoten >= gesamt
           ? ""
           : imStrengeNoten === 0
-            ? "no unfolded notes are in this picture — the tree is taller than its frame, pan to read it"
+            ? rahmenLeereMeldung(ansichtRef.current === "dendrogram", !!kernNeu.marke)
             : `${mengenzahl(imStrengeNoten)} of ${mengenzahl(gesamt)} unfolded notes are in this picture`;
         if (rahmenZeile.textContent !== meldung) rahmenZeile.textContent = meldung;
         const anzeige = meldung === "" ? "none" : "";
