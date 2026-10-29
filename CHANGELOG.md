@@ -1,3 +1,17 @@
+## [3.2.83]
+
+### Fixed
+
+- **The head of the graph line says when the store is still coming.** Measured on the shipped
+  3.2.82 with a 21,000-note base at 04:46: for the first seconds the head read "2 notes of
+  21,000 in the store - 2 concepts of 42,700 in the store - 4 links", and it stayed there -
+  quiet only after 32 s. The door answered stably meanwhile (500 concepts, 1,422 edges, every
+  reading of a 40 s trace identical), so the two was the page the window carried while the
+  aisle's own whole-base request was still in flight. Every number there was true; what was
+  missing was one word about its state, and without it a person reads two notes as their
+  memory. The head now distinguishes three states: arriving, refused (with the reason, not a
+  store count), and settled - the last one says nothing at all.
+
 ## [3.2.82]
 
 ### Fixed
