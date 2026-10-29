@@ -482,6 +482,16 @@ const erwartet = [
   // der Satz 1 mal (KnowledgeGraph.tsx, `handWortZeile`) — die ASCII-Mitte, weil die Tafel nur
   // ASCII traegt und der Zahlteil ("none of these 5 lines") mit der Bestandsgroesse wandert.
   ["carries a word you wrote", 1],
+  // Punkt 5, erster Schlag (3.2.93): die Traeger-Zeile fragt nach der FORM, nicht mehr nach dem
+  // Kommen — "where it came from" ist die Frage der Herkunfts-Achse, und eine Zahl unter dem
+  // falschen Wort ist keine Auskunft. Gegenprobe VOR dem Tausch, an der installierten 3.2.92
+  // (app.asar 49 153 368 B), gelesen 21:13:30 von derselben Sonde: "where it came from" **2** mal
+  // (Beileitung und Gruppen-Etikett), "Sort knowledge by kind" **1** mal, "In what form" **0** mal.
+  // Die Tafel rechnet nur Mindestwerte (">=") und kann eine Abwesenheit nicht bestellen — dass die
+  // zwei alten Worte nach dem Tausch 0 sind, zaehlt die Leitung am Objekt nach, von Hand, im BELEG.
+  ["In what form", 1],
+  ["in what form", 1],
+  ["Sort knowledge by form and what it is about", 1],
 ];
 // Die Liste darf nur ASCII-Zeichen enthalten. Grund, gemessen 21.10. 19:16 MESZ am
 // installierten Objekt: das Wort "Looking" plus echtes U+2026 steht dort 2 mal, diese
