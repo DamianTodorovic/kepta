@@ -1,3 +1,21 @@
+## [3.2.89]
+
+### Added
+
+- **You can now say what two terms actually claim.** The graph has drawn the type of a claim on
+  its line for a long time, and since 3.2.88 it names the zoom it waits for. Measured 08:19 on
+  a real 21,066-note store: 1,468 relations, **1,468 of them words the system gives itself**
+  (`co-mentions` 776, `mentions` 692) and **zero** claims with a word from a person - not because
+  the surface hides them, but because no path in the app could write one: the per-note setter
+  only ever wrote `mentions`/`co-mentions`, the alias half of a wiki link was cut off before the
+  word, and none of the 17 route files could write a relation at all. The note editor now has a
+  **Claims on this note** block - who, does what, whom - that reads what already stands
+  (`GET /api/memories/:id/behauptungen`), lets you remove a line, and saves the whole set with
+  the note. A claim that uses a word the graph reserves for mentions is refused before anything
+  is written, and the refusal says what to type instead. Terms you name are added to the note,
+  so a line never hangs between two ends that nothing carries. A note saved *without* the field
+  keeps its claims - an agent saving the same text must not erase what a hand wrote.
+
 ## [3.2.88]
 
 ### Fixed
