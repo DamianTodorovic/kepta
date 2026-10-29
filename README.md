@@ -426,7 +426,7 @@ The app bundle itself **is** signed, ad-hoc. That is not notarisation and does n
 
 ## 🧪 Quality & tests
 
-**3186 tests** (measured 2026-10-30), run with Vitest and v8 coverage — the cases a run actually executed, skipped ones not included. The coverage thresholds are a hard gate: a commit that falls below any of them fails the run — and so does a README that names the wrong number of tests. `npm test` writes that run's JSON report and `node scripts/doku-check.mjs` holds the README to exactly that number; `tests/doku-zahlen.test.ts` listens to the same report and refuses to compare when it cannot be trusted — missing, older than the suite, or written by a partial run — instead of checking a value out of the drawer.
+**3186 tests** (measured 2026-10-29), run with Vitest and v8 coverage — the cases a run actually executed, skipped ones not included. The coverage thresholds are a hard gate: a commit that falls below any of them fails the run — and so does a README that names the wrong number of tests. `npm test` writes that run's JSON report and `node scripts/doku-check.mjs` holds the README to exactly that number; `tests/doku-zahlen.test.ts` listens to the same report and refuses to compare when it cannot be trusted — missing, older than the suite, or written by a partial run — instead of checking a value out of the drawer.
 
 ```bash
 npm run lint       # typecheck (tsc) + ESLint — 0 errors required
