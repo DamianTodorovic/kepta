@@ -1,3 +1,18 @@
+## [3.2.82]
+
+### Fixed
+
+- **The frame line stops reporting lost notes.** Measured on a 3,000-note base at 03:09 (motion
+  off, 90-step zoom trace): Fit frames 272 of 3,000 at 93 %, the best is 684 at 30 %, then it
+  falls - 344 at 6 %, 21 at 3 % - and below that the field gathers into one core marker. In
+  that band the line read "21 of 3,000 unfolded notes are in this picture", which sounds like
+  the base lost 2,979 notes. Nothing was lost: below a size the painter deliberately gathers
+  the base into a single core instead of drawing tens of thousands of sub-pixel discs, and the
+  count only ever covers individually drawn nodes. The line now says what is on screen:
+  "…are drawn as nodes - the rest sits in one core marker, zoom in to read them". The three
+  earlier sentences moved into one pure function so all four branches have a case, including
+  the silent one.
+
 ## [3.2.81]
 
 ### Fixed
