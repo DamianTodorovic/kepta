@@ -526,6 +526,12 @@ interface GraphApi {
    * eigener Zaehler nur das Fenster kennt.
    */
   deckung?: { notizen: number; gedeckt: number; anteilProzent: number } | null;
+  /**
+   * Was zwischen Bestand, Kappe und Masche verloren geht — von der Tuer gerechnet
+   * (`server/router/system.ts:158-168`). Fehlend bei einer aelteren Tuer; dann darf
+   * die Flaeche kein Fenster behaupten, das sie nicht kennt.
+   */
+  ausriss?: { begriffe: number; kantenImAuszug: number; kantenGezeigt: number; kantenVerworfen: number; begrenzt: boolean } | null;
 }
 
 /**
@@ -910,6 +916,27 @@ export function kopfLadeSatz(stand: "kommt" | "da" | "fort"): string {
   if (stand === "kommt") return " - the whole store is still arriving, this is what has come in so far";
   if (stand === "fort") return " - the store did not answer, this picture is only the page the list brought";
   return "";
+}
+
+/**
+ * Der Satz ueber dem Fenster, das die Tuer liefert.
+ *
+ * Gemessen 05:28 Uhr am installierten 3.2.83 an 21 000 Notizen
+ * (Mappe: BEFUND-124-FENSTER-2910.md): die Tuer haelt 500 Begriffe von 42 700 und 2 000 Kanten
+ * von 150 600 (`begrenzt true`) und sagt das in ihrem eignen Hinweis — die Flaeche las es nie.
+ * Was ein Nutzer stattdessen sah, war "1,104 of 21,000 unfolded notes are in this picture":
+ * als Zahl richtig, als Erwartung falsch, denn was ausserhalb des Fensters liegt, kann kein
+ * Zoom hereinholen. Also der eine Satz, und nur wenn die Tuer die Kappe meldet: eine fehlende
+ * `ausriss` (aeltere Tuer) raet die Flaeche nicht.
+ */
+export function fensterZeile(
+  ausriss: { begriffe: number; kantenGezeigt: number; begrenzt: boolean } | null | undefined,
+  bestand: { knoten: number; kanten: number } | null | undefined
+): string {
+  if (!ausriss || !ausriss.begrenzt || !bestand) return "";
+  return `${mengenzahl(ausriss.begriffe)} of ${mengenzahl(bestand.knoten)} concepts and `
+    + `${mengenzahl(ausriss.kantenGezeigt)} of ${mengenzahl(bestand.kanten)} claims reach this picture - `
+    + "no zoom can bring in what the window left out";
 }
 
 export const GRAPH_TIEFE_MIN = 1;
@@ -6189,6 +6216,17 @@ export function KnowledgeGraph({ memories: memoriesAusFenster, onSelectMemory, o
           {nurMitVerbindungen && grundMasse.alleinVersteckt > 0 && (
             <div className="hud-label tnum" data-testid="graph-versteckt-allein" data-anzahl={grundMasse.alleinVersteckt} style={{ color: "var(--text-2)" }}>
               {`${mengenzahl(grundMasse.alleinVersteckt)} notes with no connection are hidden by “Only with connections”.`}
+            </div>
+          )}
+          {/* #124 — die Tuer meldet ihr Fenster seit langem, die Flaeche schwieg darueber.
+              Gemessen 05:28 Uhr an 21 000 Notizen: 500 Begriffe von 42 700 und 2 000 Kanten von
+              150 600 kommen ueberhaupt an, und die Rahmenzeile zaehlt "1,104 of 21,000", als
+              koennten alle ins Bild. Was ausserhalb des Fensters liegt, kann kein Zoom
+              hereinholen — das steht jetzt dabei, in derselben Zeilenfamilie wie die zwei
+              ueber ihr, und nur wenn die Tuer die Kappe selbst meldet. */}
+          {fensterZeile(graphApi?.ausriss, graphApi?.bestand) !== "" && (
+            <div className="hud-label tnum" data-testid="graph-fenster" style={{ color: "var(--text-2)" }}>
+              {fensterZeile(graphApi?.ausriss, graphApi?.bestand)}
             </div>
           )}
           {/* #105 - unter acht Knoten im Bild verschwand die Zahl bisher lautlos.
