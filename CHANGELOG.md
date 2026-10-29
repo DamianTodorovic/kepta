@@ -1,3 +1,14 @@
+## [3.2.86]
+
+### Fixed
+
+- **The window now shows in the head line, not only behind the folded legend.** Measured on
+  the shipped 3.2.85 at 05:55: the long sentence about the door's window lives in the legend's
+  row family, and the legend is closed when a large picture opens (`aria-expanded=false`, read
+  in the same run) - an answer about the picture that appears only after a click is half an
+  answer when the picture starts too small. The head carries a short form without numbers, in
+  both views; the loading clause that already lived there now applies to the tree as well,
+  which is what it always should have.
 ## [3.2.85]
 
 ### Fixed
