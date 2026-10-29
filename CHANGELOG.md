@@ -1,3 +1,18 @@
+## [3.2.91]
+
+### Changed
+
+- **The claims row is inside the first look on a laptop window.** 3.2.90 was accepted at 14:30:10
+  in the shipped object and one width fell: at 1024 x 768 the block's head stood above the fold
+  while its three inputs sat past it — field top 701, bottom 887, fold at 767 — so **120 px of
+  scrolling** lay between a hand and its first word. Two items above it carried that cost, both
+  read in the same run: the four memory types wrapped into two rows at that width (143 px), and
+  the content box asked for a 240 px minimum whatever the window. The types now sit in one row
+  from 1024 px up; the content minimum drops to 150 px only when the window is 800 px tall or
+  shorter and keeps 240 px above that. The bar did not move: 1440 x 900 and 1024 x 768 both still
+  demand the whole field without a scroll, and the phone keeps its 44 px floors. Measured before
+  the change, same probe: 1440 pass, 1024 fall, 820 pass, 390 pass with the row after 303 px.
+
 ## [3.2.90]
 
 ### Changed
