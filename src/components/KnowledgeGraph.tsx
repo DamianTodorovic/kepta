@@ -894,6 +894,24 @@ export function rahmenZeilentext(imRahmen: number, gesamt: number, baumAnsicht: 
   return `${mengenzahl(imRahmen)} of ${mengenzahl(gesamt)} unfolded notes are in this picture`;
 }
 
+/**
+ * Der Zusatz am Kopf der Graph-Zeile, wenn der Bestand noch nicht da ist.
+ *
+ * Gemessen 04:46 Uhr am ausgelieferten 3.2.82 an 21 000 Notizen: in den ersten Sekunden
+ * lautete der Kopf "2 notes of 21,000 in the store · 2 concepts of 42,700 in the store ·
+ * 4 links" und blieb dabei, bis der eigne Ganzbestands-Ruf (`/api/memories?alle=1`)
+ * durch war — die Tuer antwortete derweil stabil mit 500 Begriffen (TUER-SPUR, 04:54 Uhr).
+ * Jede Zahl an diesem Ort war richtig. Es fehlte das eine Wort darueber, dass das Bild
+ * noch kommt: ohne ihn liest ein Mensch zwei Notizen als seinen Bestand.
+ *
+ * ASCII in der Zeichensetzung, weil der Objektpruefer das Bundel latin1-gelesen durchgeht.
+ */
+export function kopfLadeSatz(stand: "kommt" | "da" | "fort"): string {
+  if (stand === "kommt") return " - the whole store is still arriving, this is what has come in so far";
+  if (stand === "fort") return " - the store did not answer, this picture is only the page the list brought";
+  return "";
+}
+
 export const GRAPH_TIEFE_MIN = 1;
 export const GRAPH_TIEFE_MAX = 4;
 export const GRAPH_TIEFE_DEFAULT = 2;
@@ -1281,16 +1299,23 @@ export function KnowledgeGraph({ memories: memoriesAusFenster, onSelectMemory, o
    * den ganzen Bestand einmal je Sitzung, die Liste bleibt leicht.
    */
   const [ganzerBestand, setzeGanzenBestand] = useState<Memory[]>([]);
+  /** "kommt" bis der eigne Ganzbestands-Ruf geantwortet hat, "fort" wenn er scheiterte. */
+  const [bestandStand, setzeBestandStand] = useState<"kommt" | "da" | "fort">("kommt");
   useEffect(() => {
     let abgebrochen = false;
     void (async () => {
       try {
         const res = await fetch("/api/memories?alle=1");
-        if (!res.ok || abgebrochen) return;
+        if (abgebrochen) return;
+        if (!res.ok) { setzeBestandStand("fort"); return; }
         const daten = await res.json();
         const liste = Array.isArray(daten) ? daten : Array.isArray(daten?.memories) ? daten.memories : [];
-        if (!abgebrochen && liste.length > 0) setzeGanzenBestand(liste as Memory[]);
-      } catch { /* Tuer nicht erreichbar: die Fensterseite traegt das Bild, bis sie antwortet */ }
+        if (abgebrochen) return;
+        if (liste.length > 0) setzeGanzenBestand(liste as Memory[]);
+        setzeBestandStand("da");
+      } catch { /* Tuer nicht erreichbar: die Fensterseite traegt das Bild, bis sie antwortet */
+        if (!abgebrochen) setzeBestandStand("fort");
+      }
     })();
     return () => { abgebrochen = true; };
   }, []);
@@ -6215,7 +6240,7 @@ export function KnowledgeGraph({ memories: memoriesAusFenster, onSelectMemory, o
             ·{" "}
             {ansicht === "dendrogram"
               ? `${mengenzahl(baumLayout.edges.length)} ${baumLayout.edges.length === 1 ? "link" : "links"}`
-              : `${mengenzahl(kanten.echt)} ${kanten.echt === 1 ? "link" : "links"}${aehnlichkeitsZeile(kanten.aehnlichkeit, edges.length, zoomAnzeige)}`}
+              : `${mengenzahl(kanten.echt)} ${kanten.echt === 1 ? "link" : "links"}${aehnlichkeitsZeile(kanten.aehnlichkeit, edges.length, zoomAnzeige)}${kopfLadeSatz(bestandStand)}`}
           </div>
             <button
               type="button"

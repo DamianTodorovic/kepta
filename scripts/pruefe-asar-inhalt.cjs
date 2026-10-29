@@ -42,6 +42,7 @@ const erwartet = [
   ["the three curl test commands", 1],
   ["the field gathers into one core marker", 1],
   ["the rest sits in one core marker", 1],
+  ["the whole store is still arriving", 1],
   ["The server did not answer", 1],
   // 3.2.23 (HEAD 59dabea, gemessen am ausgelieferten Paket: app.asar 49 065 686 B, mtime
   // 2026-10-19T12:05:15Z, gegen das vorige Objekt 49 060 793 B / 2026-10-18T20:58:45Z):
