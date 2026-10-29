@@ -461,7 +461,12 @@ const erwartet = [
   ["Claims on this note", 1],
   ["A claim needs three parts", 1],
   ["This note claims nothing yet", 1],
-  ["/behauptungen", 1],
+  // **Kappe auf 2, nicht auf 1, mit Grund:** der Pfad steht an zwei Orten — der Leser im
+  // Buendel (`src/lib/store.ts`, haelt die URL aus zwei Stuecken) und die Route am Server
+  // (`server/router/memories.ts`). Gemessen am gebauten Objekt 09:29:25 MESZ: 2 Treffer.
+  // Fehlt einer der beiden, sieht die Flaeche ein Feld ohne Grund, weil ihr Reader ins
+  // Leere laeuft — genau die Klasse "eine Zahl, die niemand liest", nur mit einem Pfad.
+  ["/behauptungen", 2],
 ];
 // Die Liste darf nur ASCII-Zeichen enthalten. Grund, gemessen 21.10. 19:16 MESZ am
 // installierten Objekt: das Wort "Looking" plus echtes U+2026 steht dort 2 mal, diese
