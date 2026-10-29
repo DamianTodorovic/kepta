@@ -113,6 +113,27 @@ export const TRAEGER_LABELS: Record<Traeger, string> = {
   code: "Code",
 };
 
+/**
+ * Die Frage hinter den Traeger-Zahlen — ein Wort, eine Achse (Punkt 5, 29.10.).
+ *
+ * Bis hierher stand ueber "Notes / Files / Code" der Satz "where it came from"
+ * (`Dashboard.tsx:1829`), waehrend dasselbe Wort im Graph die HERKUNFT meint
+ * (`graphHerkunft.ts:47`: geschrieben, aus einer Datei, von diesem Rechner). Zwei
+ * Achsen, ein Wort: der Leser muss raten, welche Zahl was sagt. Die Marktzaehlung
+ * von heute (feldzug/belege-2910/markt/MARKT-FUNKTIONEN-GRUPPIERUNG-2910.md,
+ * Abschnitt E1) nennt keine einzige Bibliothek, die ihre erste Achse anders benennt
+ * als ihre Zahlen zaehlen.
+ */
+export const TRAEGER_FRAGE = "In what form";
+/**
+ * Dasselbe Wort am Anfang einer Zeile, wo die Flaeche klein anfängt. Geschrieben,
+ * nicht gerechnet: ein `.toLowerCase()` ueber einem Wort mit Marke biegt die Marke
+ * (Hausregel 14.10., "written in k3pta"), und hier haengt an dem Wort die Menge.
+ */
+export const TRAEGER_FRAGE_SATZ = "in what form";
+/** Die Frage der zweiten Zeile — dieselbe Regel, ein Wort, eine Achse. */
+export const THEMA_FRAGE = "What it is about";
+
 /** Ein Satz, der erklaert, ohne ein Fachwort zu brauchen. */
 export const TRAEGER_HINWEISE: Record<Traeger, string> = {
   notes: "typed here — no file behind it",

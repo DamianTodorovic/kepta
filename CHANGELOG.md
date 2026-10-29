@@ -1,3 +1,34 @@
+## [3.2.93]
+
+### Changed
+
+- **Each grouping row now asks the question its own numbers answer.** Damian's screenshot at
+  20:39 showed the list's index strip reading `92 Notes · 10,996 Files · 9,978 Code` under the
+  words `where it came from · the whole store`. Those three figures sum to 21 066 — the whole
+  store, measured at this app's own door at 15:51:39 — and they count *carriers* (a note typed
+  here, a document from a folder, a program), which is not where anything came from. Where a
+  note came from is a different axis this app already has (`Written in K3PTA` / `From a file` /
+  `From this computer`, `src/lib/graphHerkunft.ts:47`) and which the graph colours by
+  (`KnowledgeGraph.tsx:5619`). One word, two axes: the reader had to guess. The carrier row got
+  its own words — `In what form` above the chips, `in what form · the whole store` under the
+  figures, lead word `Form` — and the provenance axis kept `came from`, which was always its
+  only honest use. All three questions are now named once, in code: `TRAEGER_FRAGE`,
+  `THEMA_FRAGE` (`src/lib/graphHierarchy.ts:116-135`) and `HERKUNFT_FRAGE`
+  (`src/lib/graphHerkunft.ts:62`), and `tests/components/dashboard-achsenwort.test.tsx` refuses
+  two axes sharing a word. The settings heading `Sort knowledge by kind` became `Sort knowledge
+  by form and what it is about`, because the pass behind it writes carrier and topic, never the
+  four knowledge types.
+- **Why this is first and not a polish.** A market census of 17 products written today
+  (`audit-2026-10-09/feldzug/belege-2910/markt/MARKT-FUNKTIONEN-GRUPPIERUNG-2910.md`, Abschnitt
+  B and E1) found no library that names its first grouping axis with a word belonging to
+  another: Capacities shows object types on its type page, Tana its Supertags, Obsidian its
+  folders. The same census measured our own grouping at the real store and found the deeper
+  problem this change does not pretend to fix: 99,56 % of the notes carry one carrier mark and
+  57,69 % (12 153) have no subject at all (`src/lib/graphHierarchy.ts:210-216`, `:644-645`),
+  while the app's own shelf already refuses any basket above `REGAL_DECKEL_PROZENT = 10`
+  (`src/lib/graphHierarchy.ts:650`). Naming the axes correctly is the floor; grouping that
+  actually divides a person's knowledge is the next piece of work.
+
 ## [3.2.92]
 
 ### Changed

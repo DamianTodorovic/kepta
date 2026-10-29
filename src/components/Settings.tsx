@@ -1042,9 +1042,9 @@ export function Settings() {
                 </div>
 
                 <div className="mt-6 pt-6" style={{ borderTop: '1px solid var(--border-subtle)' }}>
-                  <h3 className="settings-h mb-2" style={{ color: 'var(--text-1)' }}>Sort knowledge by kind</h3>
+                  <h3 className="settings-h mb-2" style={{ color: 'var(--text-1)' }}>Sort knowledge by form and what it is about</h3>
                   <p className="text-sm mb-4" style={{ color: 'var(--text-2)' }}>
-                    Every note came from somewhere and is about something — that is what the two rows on
+                    Every note is in some form and is about something — that is what the two rows on
                     the list say. Imported notes used to land in one basket by default, because nothing ever
                     decided. This looks at every note again and sorts it — and tells you why. Nothing is
                     written until you confirm.

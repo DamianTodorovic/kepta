@@ -31,7 +31,7 @@ import { KeptaMark } from './KeptaMark';
 import { Memory } from '../types';
 import { parseQuelle, oeffneQuelle, type Quelle } from '../lib/quelle';
 import { pdfTextAusBuffer } from '../lib/pdfText';
-import { TYP_BESCHREIBUNG, TRAEGER_LABELS, TRAEGER_REIHENFOLGE, TRAEGER_HINWEISE, THEMA_LABELS, THEMA_REIHENFOLGE, THEMA_HINWEISE, gruppenVonNotiz, type Traeger, type Thema } from '../lib/graphHierarchy';
+import { TYP_BESCHREIBUNG, TRAEGER_FRAGE, TRAEGER_FRAGE_SATZ, THEMA_FRAGE, TRAEGER_LABELS, TRAEGER_REIHENFOLGE, TRAEGER_HINWEISE, THEMA_LABELS, THEMA_REIHENFOLGE, THEMA_HINWEISE, gruppenVonNotiz, type Traeger, type Thema } from '../lib/graphHierarchy';
 import { t, wendeZoomAn } from '../lib/uiText';
 import { Search, Plus, CheckCircle2, Copy, PanelLeftOpen, ScanSearch, UploadCloud, Globe, Loader2, AlertCircle, Sparkles, Trash2, HardDriveDownload, FileText, ExternalLink, ShieldCheck } from "../lib/icons";
 import { motion, AnimatePresence } from 'motion/react';
@@ -1826,7 +1826,7 @@ export function Dashboard() {
                       und dieselbe Zahl zweimal in einem Streifen ist die Krankheit,
                       die #77 gerade nicht wollte. Solange die Tür nicht geantwortet
                       hat, sagt die Zeile, wie weit sie überhaupt gesehen hat. */}
-                  <span className="k">where it came from · {bestandGruppen ? 'the whole store' : ladung !== null ? `counting the ${groessenZahl(ladung)} loaded` : 'in the index'}</span>
+                  <span className="k">{TRAEGER_FRAGE_SATZ} · {bestandGruppen ? 'the whole store' : ladung !== null ? `counting the ${groessenZahl(ladung)} loaded` : 'in the index'}</span>
                 </div>
                 <div className="index-cell">
                   <span className="v">{groessenZahl(allTags.length)}</span>
@@ -1946,12 +1946,16 @@ export function Dashboard() {
                       kann — ein leerer Bestand ohne Auswahl braucht sie nicht. */}
                   {(displayedMemories.length > 0 || gruppenFilterAktiv || memories.length > 0) && (
                   <>
-                  {/* NEUN WOERTER, ZWEI ZEILEN — Zeile 1 "woher" (Notes · Files ·
-                      Code, erschoepfend), Zeile 2 "worum" (sechs kombinierbare
+                  {/* NEUN WOERTER, ZWEI ZEILEN — Zeile 1 nach FORM (Notes · Files ·
+                      Code, erschoepfend), Zeile 2 nach WORUM (sechs kombinierbare
                       Themen). Themen greifen nie in Code: die Sperre ist hier
-                      sichtbar, nicht nur im Code. */}
-                  <div className="flex flex-wrap items-center gap-2 mb-2" role="group" aria-label="Where it came from">
-                    <span className="text-[11px] shrink-0" style={{ color: 'var(--text-3)' }}>From</span>
+                      sichtbar, nicht nur im Code. Das Wort der Zeile 1 heisst seit
+                      29.10. "In what form" und nicht "Where it came from": das
+                      zweite Wort gehoert der Herkunft im Graphen
+                      (`graphHerkunft.ts → HERKUNFT_FRAGE`), und eine Zahl unter
+                      dem falschen Wort ist keine Auskunft. */}
+                  <div className="flex flex-wrap items-center gap-2 mb-2" role="group" aria-label={TRAEGER_FRAGE}>
+                    <span className="text-[11px] shrink-0" style={{ color: 'var(--text-3)' }}>Form</span>
                     {TRAEGER_REIHENFOLGE.map((t) => {
                       const an = aktiveTraeger.includes(t);
                       return (
@@ -1990,7 +1994,7 @@ export function Dashboard() {
                       </span>
                     )}
                   </div>
-                  <div className="flex flex-wrap items-center gap-2 mb-3" role="group" aria-label="What it is about">
+                  <div className="flex flex-wrap items-center gap-2 mb-3" role="group" aria-label={THEMA_FRAGE}>
                     <span className="text-[11px] shrink-0" style={{ color: 'var(--text-3)' }}>About</span>
                     {THEMA_REIHENFOLGE.map((t) => {
                       const an = aktiveThemen.includes(t);

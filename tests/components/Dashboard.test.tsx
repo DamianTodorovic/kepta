@@ -987,7 +987,7 @@ describe("Dashboard: die neun Woerter fuehren in keine Sackgasse", () => {
       note({ title: "Vertrag", content: "— Source: /tmp/d.pdf", tags: ["machine-scan"] }),
     ];
   }
-  const zeile1 = () => within(screen.getByRole("group", { name: /where it came from/i }));
+  const zeile1 = () => within(screen.getByRole("group", { name: /in what form/i }));
   const zeile2 = () => within(screen.getByRole("group", { name: /what it is about/i }));
 
   it("zeigt beide Zeilen, bevor irgendetwas leer ist", async () => {
@@ -1001,7 +1001,7 @@ describe("Dashboard: die neun Woerter fuehren in keine Sackgasse", () => {
     const { container } = await zeige(ohneCode());
     await user.click(zeile1().getByRole("button", { name: "Code" }));
     await waitFor(() => expect(container.textContent).toMatch(/no entries/i), { timeout: 4000 });
-    expect(screen.getByRole("group", { name: /where it came from/i }), "Zeile 1 ist bei leerem Filter aus dem Baum — die Sackgasse").toBeTruthy();
+    expect(screen.getByRole("group", { name: /in what form/i }), "Zeile 1 ist bei leerem Filter aus dem Baum — die Sackgasse").toBeTruthy();
     expect(screen.getByRole("group", { name: /what it is about/i }), "Zeile 2 ist bei leerem Filter aus dem Baum — die Sackgasse").toBeTruthy();
   });
 
@@ -1028,7 +1028,7 @@ describe("Dashboard: die neun Woerter fuehren in keine Sackgasse", () => {
     const { container } = await zeige(ohneCode());
     await user.click(zeile2().getByRole("button", { name: "Tasks" }));
     await waitFor(() => expect(container.textContent).toMatch(/no entries filed under tasks/i), { timeout: 4000 });
-    expect(screen.getByRole("group", { name: /where it came from/i })).toBeTruthy();
+    expect(screen.getByRole("group", { name: /in what form/i })).toBeTruthy();
     expect(screen.getByRole("group", { name: /what it is about/i })).toBeTruthy();
     await user.click(screen.getByRole("button", { name: /show everything again/i }));
     await waitFor(() => expect(container.textContent).not.toMatch(/no entries/i), { timeout: 4000 });
@@ -1045,7 +1045,7 @@ describe("Dashboard: die neun Woerter fuehren in keine Sackgasse", () => {
     // ohne sie steht die Zeile noch gar nicht im Baum. Seit Damians Bild von
     // 19:02 nennt die Zeile die Menge, ohne ihre Zahl zu wiederholen ("the
     // whole store"); die Zahl selbst steht eine Zelle weiter als Heldenzahl.
-    await waitFor(() => expect(container.textContent).toMatch(/where it came from · the whole store/), { timeout: 6000 });
+    await waitFor(() => expect(container.textContent).toMatch(/in what form · the whole store/), { timeout: 6000 });
     // Der Streifen spricht fuer den Laden: 150 Stuecke, 20 davon Code.
     expect(container.textContent).toMatch(/100\s*Notes/);
     expect(container.textContent).toMatch(/30\s*Files/);
@@ -1094,7 +1094,7 @@ describe("Dashboard: der Index-Streifen kleidet jede Zahl gleich", () => {
     ladungGross({ bestand: 21_066, notes: 92, files: 10_996, code: 9_978 });
     const { container } = await zeige([note({ title: "Erste" })]);
     // Erst die Tür abwarten — vor ihrer Antwort steht die Zeile ohne die Menge da.
-    await waitFor(() => expect(container.textContent).toMatch(/where it came from · the whole store/), { timeout: 6000 });
+    await waitFor(() => expect(container.textContent).toMatch(/in what form · the whole store/), { timeout: 6000 });
     expect(container.textContent, "10 996 ohne Punkt, direkt neben 92 ohne Punkt").toMatch(/10,996\s*Files/);
     expect(container.textContent).toMatch(/9,978\s*Code/);
     expect(container.textContent, "92 bleibt unter der Tausenderstelle — das Kleid darf nicht fehlen").toMatch(/92\s*Notes/);
@@ -1104,7 +1104,7 @@ describe("Dashboard: der Index-Streifen kleidet jede Zahl gleich", () => {
   it("zeigt kein Fach mit null Stuecken und keine Zahl zweimal", async () => {
     ladungGross({ bestand: 150, notes: 150, files: 0, code: 0 });
     const { container } = await zeige([note({ title: "Erste" })]);
-    await waitFor(() => expect(container.textContent).toMatch(/where it came from · the whole store/), { timeout: 6000 });
+    await waitFor(() => expect(container.textContent).toMatch(/in what form · the whole store/), { timeout: 6000 });
     expect(container.textContent, "150 Notes muss stehen — das Fach ist gefuellt").toMatch(/150\s*Notes/);
     expect(container.textContent, "0 Files ist Schmuck, keine Auskunft").not.toMatch(/0\s*Files/);
     expect(container.textContent, "0 Code ebenso").not.toMatch(/0\s*Code/);

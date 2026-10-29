@@ -51,6 +51,17 @@ export const HERKUNFT_LABELS: Record<HerkunftsArt, string> = {
 };
 
 /**
+ * Die Frage dieser Achse — und ab heute ihr einziges Wort.
+ *
+ * Bis 29.10. stand dieses Wort auch ueber den Traeger-Zahlen der Liste
+ * ("where it came from" ueber Notes / Files / Code, `Dashboard.tsx:1829`), obwohl
+ * die Traeger fragen, in welcher FORM ein Stueck hier liegt, nicht woher es kam.
+ * Die Herkunft ist die einzige Achse, die "came from" sagen darf; die Wache
+ * `tests/components/dashboard-achsenwort.test.tsx` haelt beide Seiten fest.
+ */
+export const HERKUNFT_FRAGE = "Where it came from";
+
+/**
  * Die gleiche Auskunft für den eingebetteten Satz („Everything here was …").
  * Geschrieben, nicht gerechnet: der Satz braucht Kleinschrift am Anfang, die
  * Marke aber ihre Schreibweise. Ein `.toLowerCase()` über LABELS ergab
