@@ -492,6 +492,12 @@ const erwartet = [
   ["In what form", 1],
   ["in what form", 1],
   ["Sort knowledge by form and what it is about", 1],
+  // Punkt 5, Fix 4 (3.2.94): die Traeger-Zeile nennt ihren Anteil, und ein Fach unter einem
+  // Zehntel Prozent sagt "< 0.1 %" statt einer gerundeten 0 %. Gegenprobe VOR dem Bau, an der
+  // installierten 3.2.93 (app.asar 49 153 460 B), gelesen 23:38:54 von derselben Sonde: **0**
+  // Treffer. Die Zahlen selbst (0.4 %, 52.2 %) taugen nicht als Marke — sie wachsen mit dem
+  // Bestand und wandern mit jeder Landung; nur die Schwelle bleibt.
+  ["< 0.1 %", 1],
 ];
 // Die Liste darf nur ASCII-Zeichen enthalten. Grund, gemessen 21.10. 19:16 MESZ am
 // installierten Objekt: das Wort "Looking" plus echtes U+2026 steht dort 2 mal, diese

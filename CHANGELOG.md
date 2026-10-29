@@ -1,3 +1,26 @@
+## [3.2.94]
+
+### Changed
+
+- **Each carrier figure now says how small it is.** The index strip counted `92 Notes · 10,996
+  Files · 9,978 Code` and stopped there. Those are Damian's real store — 92 + 10 996 + 9 978 =
+  21 066, the number the door itself reported at 15:51:39 today — and the one thing that row can
+  tell a person about their own knowledge is the ratio: **0.4 % was typed here, 99.6 % came in**.
+  An amount alone does not say that; "92" looks like any other figure on the strip. The share now
+  sits beside each amount, and its base is the set the caption already names (`the whole store`),
+  so the total is not printed twice in one strip. A basket under a tenth of a percent reads
+  `< 0.1 %`, never a rounded `0 %` — a basket holding one note is not an empty one, and "0 %"
+  dismisses what the person is looking for.
+- **New information does not get a tone under the bar.** The share is painted on `--text-3`, which
+  the token file measures at **4.65:1** (`src/index.css:299`), and not on the `opacity-70` tone the
+  label beside it uses — that tone is on record at 3.45:1 against the panel, below the house bar,
+  in `src/index.css:609`. Matching the neighbour would have made the newest fact the least readable
+  one; the old label stays as it is and is booked as design debt, not copied.
+- **Guard:** `tests/components/dashboard-achsenwort.test.tsx` gained two cases that run on his
+  figures, not on a convenient 100/30/20 — a fixture whose numbers cannot express the disease is
+  not a case. Seen red first (23:33:09, `kein Anteil an der Zeile: in what form · the whole
+  store`), then green (23:38:16, 77 passed, and the design guard exits 0 on the new token).
+
 ## [3.2.93]
 
 ### Changed

@@ -68,6 +68,24 @@ function groessenZahl(n: number): string {
   return n.toLocaleString('en-GB');
 }
 
+/**
+ * Der Anteil eines Fachs an der Menge, die die Zeile selbst schon nennt.
+ *
+ * Grund, dass die Menge allein nicht reicht (Punkt 5, Fix 4, gemessen 16.10. an Damians
+ * echtem Bestand): "92 Notes" sieht aus wie eine Zahl unter vielen, und 92 von 21 066 ist
+ * die einzige Auskunft an seinem Bild, die etwas ueber sein Wissen sagt — 0,44 % selbst
+ * getippt, der Rest hereingekommen.
+ *
+ * Unter einem Zehntel Prozent steht "< 0.1 %", nie eine gerundete 0 %: ein Fach, das ein
+ * Stueck haelt, ist mit "0 %" als leer verabschiedet, und das ist eine Absage an den Leser,
+ * keine Zahl.
+ */
+function anteilZahl(n: number, gesamt: number): string {
+  if (!(gesamt > 0)) return '';
+  const anteil = (100 * n) / gesamt;
+  return anteil < 0.1 ? '< 0.1 %' : `${anteil.toFixed(1)} %`;
+}
+
 function mengensatz(gemalt: number, bestand: number | null, menge = 'in the store'): string {
   const zahl = groessenZahl;
   const entries = (n: number) => `${zahl(n)} ${n === 1 ? 'entry' : 'entries'}`;
@@ -807,6 +825,13 @@ export function Dashboard() {
 
   /** Der Streifen zeigt den Laden, sobald die Tür geantwortet hat — vorher das Blatt. */
   const zeigeTraeger = bestandGruppen?.traeger ?? traegerCounts;
+  /**
+   * Der Nenner der Anteile ist genau die Menge, deren Zahlen darüber stehen: der Laden, wenn
+   * die Tür geantwortet hat, sonst das Blatt. Ein Anteil, dessen Grundgesamtheit eine andere
+   * ist als die der Zahl neben ihm, ist keine Auskunft, sondern ein zweiter Rechenweg.
+   */
+  const traegerNenner = bestandGruppen?.bestand
+    ?? (traegerCounts.notes + traegerCounts.files + traegerCounts.code);
   /** Die Bestandzahl genau der Gruppe, die ins Leere lief — eingelesen, nicht geschätzt. */
   const zahlDerWahl = bestandGruppen === null ? undefined
     : aktiveTraeger.length === 1 ? bestandGruppen.traeger[aktiveTraeger[0]]
@@ -1815,6 +1840,15 @@ export function Dashboard() {
                     {TRAEGER_KLEID.filter((k) => zeigeTraeger[k.key] > 0).map((k) => (
                       <span key={k.key} style={{ color: k.color }}>
                         {groessenZahl(zeigeTraeger[k.key])} <span className="text-[10px] opacity-70">{TRAEGER_LABELS[k.key]}</span>
+                        {/* Der Anteil dahinter sagt, was die Menge allein nicht sagt: an einem
+                            echten Bestand von 21 066 sind 92 selbst getippte Stuecke 0,4 %.
+                            Sein Nenner ist dieselbe Menge, die die Zeile unter ihm nennt.
+                            Kleid: --text-3 ohne Deckkraft, gemessen 4,65:1 (index.css:299) —
+                            die Ebene, die erklaert. Das Woertchen daneben traegt weiterhin
+                            opacity-70 und liegt damit in der bekannten Schuld (index.css:609,
+                            3,45 gegen die Latte 4,5); neue Auskunft bekommt keinen Ton unter
+                            der Latte, auch nicht der Gleichheit wegen. */}
+                        <span className="text-[10px]" style={{ color: 'var(--text-3)' }}> {anteilZahl(zeigeTraeger[k.key], traegerNenner)}</span>
                       </span>
                     ))}
                     {zeigeTraeger.notes === 0 && zeigeTraeger.files === 0 && zeigeTraeger.code === 0 && (

@@ -125,3 +125,64 @@ function streifenWort(container: HTMLElement): string {
   const zelle = [...container.querySelectorAll(".index-cell")].find((c) => /Notes|Files|Code/.test(c.textContent ?? ""));
   return zelle?.querySelector(".k")?.textContent ?? "(keine Zeile gefunden)";
 }
+
+/**
+ * Zweite Scheibe (Punkt 5, Fix 4 von 16.10., bis heute ungebaut): die Zeile nennt den
+ * ANTEIL, nicht nur die Menge.
+ *
+ * Grund, dass dieser Fall existiert: an Damians echtem Bestand (21 066, heute 15:51:39 an der
+ * eignen Tuer gemessen) sind 92 Stuecke selbst getippt = 0,44 %. Die Menge allein sagt ihm das
+ * nicht - "92 Notes" sieht aus wie eine Zahl unter vielen, und die einzige Zahl an seinem Bild,
+ * die etwas ueber sein Wissen aussagt, ist das Verhaeltnis. Der Nenner ist schon genannt
+ * ("the whole store" in derselben Zelle) und wird nicht wiederholt: dieselbe Zahl zweimal in
+ * einem Streifen ist die Krankheit, die #77 gerade nicht wollte.
+ *
+ * Die Faelle rechnen mit SEINEN Zahlen, nicht mit dem bequemen 100/30/20: ein Fixture, dessen
+ * Anteil die Krankheit nicht ausdruecken kann, ist kein Fall.
+ */
+async function zeigeMit(bestand: number, traeger: { notes: number; files: number; code: number }) {
+  vi.stubGlobal("fetch", vi.fn(async (url: string) => {
+    const u = String(url);
+    if (u.includes("/api/memories/gruppen")) {
+      return new Response(JSON.stringify({
+        ok: true, bestand, traeger,
+        themen: { people: 5, projects: 9, events: 3, tasks: 1, guides: 2, links: 4 },
+      }), { status: 200 });
+    }
+    if (u.includes("/api/health")) {
+      return new Response(JSON.stringify({ ok: true, version: "3.2.93", count: bestand }), { status: 200 });
+    }
+    if (u.includes("/api/license")) return new Response(JSON.stringify({ licensed: false }), { status: 200 });
+    if (u.includes("/api/memor")) {
+      return new Response(JSON.stringify([note({ title: "Gedanke" }), note({ title: "Papier", tags: ["machine-scan"] })]), { status: 200 });
+    }
+    return new Response("{}", { status: 200 });
+  }));
+  const view = render(
+    <ThemeProvider><AuthProvider><ToastProvider><Dashboard /></ToastProvider></AuthProvider></ThemeProvider>
+  );
+  await act(async () => { await new Promise((r) => setTimeout(r, 150)); });
+  return view;
+}
+
+describe("Punkt 5: die Traeger-Zeile nennt ihren Anteil", () => {
+  it("sagt zu seinen echten Zahlen, wie klein das Selbstgetippte ist", async () => {
+    const { container } = await zeigeMit(21_066, { notes: 92, files: 10_996, code: 9_978 });
+    await waitFor(() => expect(container.textContent).toMatch(/the whole store/i), { timeout: 6000 });
+    const text = container.textContent ?? "";
+    // 92 / 21 066 = 0,4367 % · 10 996 / 21 066 = 52,197 % · 9 978 / 21 066 = 47,366 %
+    expect(text, `kein Anteil an der Zeile: ${streifenWort(container)}`).toMatch(/0\.4\s*%/);
+    expect(text).toMatch(/52\.2\s*%/);
+    expect(text).toMatch(/47\.4\s*%/);
+  });
+
+  it("verschwindet nicht in einem 0-Prozent-Fach, das nur klein ist", async () => {
+    const { container } = await zeigeMit(21_066, { notes: 1, files: 10_532, code: 10_533 });
+    await waitFor(() => expect(container.textContent).toMatch(/the whole store/i), { timeout: 6000 });
+    const text = container.textContent ?? "";
+    // 1 / 21 066 = 0,0047 %. Eine gerundete 0 % an einem Fach, das ein Stueck haelt, ist eine
+    // Absage an den Leser, nicht eine Zahl: es sagt "hier ist nichts", waehrend etwas da ist.
+    expect(text, "ein Fach mit einem Stueck darf nicht als 0 % verschwinden").toMatch(/<\s*0\.1\s*%/);
+    expect(text).not.toMatch(/\b1 Notes 0(\.0)?\s*%/);
+  });
+});
