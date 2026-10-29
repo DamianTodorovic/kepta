@@ -1,3 +1,26 @@
+## [3.2.92]
+
+### Changed
+
+- **The graph now says why its lines carry no meaning.** Measured 15:21:53 against the running
+  instance (`/api/graph?limit=500`, HTTP 200 in 65 ms): **1 468 relations in the body, 1 468 of
+  them a word the store gives itself** (776 co-mentions, 692 mentions), **none a word a hand
+  wrote**. The number comes out of the door's body, not out of an assumption — that was the
+  condition before any build. The header line now names it: *none of these 5 lines carries a word
+  you wrote; a line without one says only that two things belong together.* It falls silent the
+  moment one line does carry a hand's word, and it stays beside the 3.2.88 sentence about the
+  zoom floor rather than replacing it — two causes, two sentences.
+
+### Fixed
+
+- **A word you wrote could be silenced by a mention.** Edges are merged per pair, and the merge
+  kept the first word it saw: if the mention arrived before the claim, the pair's label stayed
+  `mentions`, `kantenEtikett` refused it as a system word, and nothing was painted — the claim
+  existed and the picture lied. Found by the release case of the new test (red 15:27:18: the
+  header claimed wordlessness while a hand had written *betreut*), fixed by rank rather than by
+  order (graphLayout.ts:397): a hand word now takes a label away from a system word, and a system
+  word still labels the pair when nothing else stands over it. Green 15:32:38, seven cases.
+
 ## [3.2.91]
 
 ### Changed
