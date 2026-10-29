@@ -448,6 +448,10 @@ const erwartet = [
   // Messung selbst: 435 Nicht-Vier-Abstaende auf Knowledge 1440 vor der Heilung
   // (audit-2026-10-09/feldzug/belege-2710/p6-zensur-67-b/zensur.json), nach ihr die gleiche
   // Sonde erneut gefahren. Eine Zahl ist hier kein Wort, und ein Wort waere eine Behauptung.
+  // Punkt 118, die zweite Haelfte (3.2.88): der Bodensatz des Beziehungs-Wortes. Gewählt
+  // ohne den Gedankenstrich davor, weil die Tafel nur ASCII traegt. Gegen das installierte
+  // Stueck vor dem Bau gemessen: **0** mal — der Satz existierte noch nicht.
+  ["claim types stay hidden until", 1],
 ];
 // Die Liste darf nur ASCII-Zeichen enthalten. Grund, gemessen 21.10. 19:16 MESZ am
 // installierten Objekt: das Wort "Looking" plus echtes U+2026 steht dort 2 mal, diese

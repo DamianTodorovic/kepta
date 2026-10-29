@@ -240,8 +240,12 @@ function klemmeDicke(ro: unknown): number {
  * Ab diesem Zoom steht der Typ der Aussage an der Linie. Darunter wäre das
  * Etikett kleiner als ein Leser — weit herausgezoomt will man die Form des
  * Netzes sehen, nicht tausend Worte darüber.
+ *
+ * export, weil die Kopfzeile dieselbe Zahl nennen muss, die der Mal-Pass fragt:
+ * ein Bodensatz mit eigner Ziffer waere ein Satz ueber ein Bild, das niemand
+ * so baut (`aehnlichkeitsZeile` haelt es genauso).
  */
-const KANTEN_ETIKETT_AB_ZOOM = 0.9;
+export const KANTEN_ETIKETT_AB_ZOOM = 0.9;
 /** So viele Kanten-Etiketten gleichzeitig. Die Knotentitel haben Vorrang. */
 const MAX_KANTEN_ETIKETTEN = 40;
 /**
@@ -1017,6 +1021,39 @@ export function aehnlichkeitsZeile(aehnlichkeit: number, kantenzahl: number, zoo
   return nurEchteKanten(kantenzahl, zoom)
     ? ` · +${aehnlichkeit} similar — hidden until ${Math.round(EDGE_LOD_ZOOM * 100)} % zoom`
     : ` · +${aehnlichkeit} similar`;
+}
+
+/**
+ * Steht der Typ einer Behauptung an der Linie? Dasselbe Urteil, das der Mal-Pass
+ * fragt: eine Zeile mit einem eignen Grund waere ein Satz ueber ein Bild, das
+ * niemand so baut.
+ */
+export function kantentextFrei(kantentext: boolean, zoom: number): boolean {
+  return kantentext && zoom >= KANTEN_ETIKETT_AB_ZOOM;
+}
+
+/**
+ * Der Bodensatz des Beziehungs-Wortes: warum an einer Linie nichts steht, obwohl
+ * sie etwas behauptet.
+ *
+ * Punkt 118, gemessen am ausgelieferten Stueck: die Flaeche malt das Typwort ab 90
+ * Prozent Bildmass, die Kopfzeile zaehlt die Linien, und kein Satz sagt, dass
+ * Naeherkommen die Auskunft bringt. Wer herausgezoomt auf ein Feld mit hundert
+ * Linien schaut, sieht keine einzige Bedeutung — und hat keinen Hinweis, wo sie
+ * steckte. Das Haus benennt seine Zoom-Boeden laengst (`aehnlichkeitsZeile`, „hidden
+ * until 55 % zoom"); dieser Zug zieht den zweiten Boden nach.
+ *
+ * Zwei Ursachen, zwei Saetze: die Dichtestufe nimmt die Typen an der Linie zurueck,
+ * und ihre Erklaerung steht an ihrem eignen Knopf — darum schweigt hier, wer die
+ * Stufe fragt. Der Zoom ist die einzige Ursache, die dieser Satz eroeffnet.
+ */
+export function kantenWortZeile(kantentext: boolean, zoom: number, kanten: readonly LayoutEdge[]): string {
+  if (!kantentext || kantentextFrei(kantentext, zoom)) return "";
+  let mitWort = 0;
+  for (const e of kanten) if (kantenEtikett(e)) mitWort++;
+  return mitWort > 0
+    ? ` — claim types stay hidden until ${Math.round(KANTEN_ETIKETT_AB_ZOOM * 100)} % zoom`
+    : "";
 }
 
 /**
@@ -4422,7 +4459,7 @@ export function KnowledgeGraph({ memories: memoriesAusFenster, onSelectMemory, o
     // nie einen Titel, es fuellt nur, was frei bleibt. Und es erscheint erst,
     // wenn man nah genug am Netz sitzt — weit herausgezoomt ist die Form die
     // Auskunft, nicht der Text.
-    if (stufe.kantentext && t.k >= KANTEN_ETIKETT_AB_ZOOM && etikettenmoeglich.length > 0) {
+    if (kantentextFrei(stufe.kantentext, t.k) && etikettenmoeglich.length > 0) {
       const gehalten = hoverKanteRef.current;
       // Vorrang: die Kante unter dem Zeiger, dann die mit der meisten Evidenz.
       const rang = (e: LayoutEdge) => (e === gehalten ? 1_000_000 : 0) + (e.belege ?? 1) * 100 - kantenEtikett(e)!.length;
@@ -6292,7 +6329,7 @@ export function KnowledgeGraph({ memories: memoriesAusFenster, onSelectMemory, o
             ·{" "}
             {ansicht === "dendrogram"
               ? `${mengenzahl(baumLayout.edges.length)} ${baumLayout.edges.length === 1 ? "link" : "links"}`
-              : `${mengenzahl(kanten.echt)} ${kanten.echt === 1 ? "link" : "links"}${aehnlichkeitsZeile(kanten.aehnlichkeit, edges.length, zoomAnzeige)}`}
+              : `${mengenzahl(kanten.echt)} ${kanten.echt === 1 ? "link" : "links"}${aehnlichkeitsZeile(kanten.aehnlichkeit, edges.length, zoomAnzeige)}${kantenWortZeile(NAMEN_STUFE[etikettenModus].kantentext, zoomAnzeige, edges)}`}
             {kopfLadeSatz(bestandStand)}
             {kopfFensterSatz(Boolean(graphApi?.ausriss?.begrenzt))}
           </div>
