@@ -1,3 +1,20 @@
+## [3.2.79]
+
+### Fixed
+
+- **The Fit button says what it actually did.** The field camera is clamped to a
+  readability floor (`k = max(fit.k, floor)`), so when the floor wins the picture cannot
+  show everything - measured on the delivered build at 00:10:05Z: 120 of 144 notes in the
+  picture, the sixth cluster outside the frame. The control still promised "Fit the whole
+  graph into view". The floor stays (without it a 400-leaf tree becomes a hairline and a
+  25,000-note field becomes sub-pixel dust), but the word now comes from one pure function:
+  everything fits -> the old sentence; the floor decided -> "Fit - held at the readability
+  floor, so some notes stay outside; the line at the edge counts them". The count of what
+  stays outside was already on the edge of the picture. Four fixture lookups that matched the
+  old exact title now match its first word - in jsdom the floor always decides, measured:
+  four cases fell with "the fit control is missing" - and the title case holds both allowed
+  sentences.
+
 ## [3.2.78]
 
 ### Fixed
