@@ -6,6 +6,7 @@ import fs from "fs";
 import express from "express";
 import { spawn } from "child_process";
 import { APP_VERSION } from "../../src/core/version";
+import { GRAPH_TIEFE_MAX, GRAPH_TIEFE_MIN } from "../../src/core/store";
 import { memoryToMarkdown } from "../../src/core/obsidian";
 import { TOOLS as MCP_TOOLS } from "../../src/core/mcp";
 import { mcpStartInDerApp } from "../helfer/mcp-start";
@@ -77,7 +78,9 @@ export function mountSystem(app: express.Express, ctx: AppKontext): void {
   app.get("/api/graph", (req, res) => {
     const entity = typeof req.query.entity === "string" && req.query.entity.trim() ? req.query.entity.trim() : undefined;
     const depthRaw = req.query.depth ? parseInt(String(req.query.depth), 10) : 2;
-    const depth = Number.isFinite(depthRaw) ? Math.min(Math.max(depthRaw, 1), 4) : 2;
+    // Dieselbe Grenze wie der Kern (`src/core/store.ts:49-50`) — die Tuer erfindet keine
+    // zweite Zahl, die ein Test nur durch Zufall trifft.
+    const depth = Number.isFinite(depthRaw) ? Math.min(Math.max(depthRaw, GRAPH_TIEFE_MIN), GRAPH_TIEFE_MAX) : 2;
     const zeit = zeitnahme();
     const g = store.getGraph(entity, depth);
     zeit.marke("fenster");

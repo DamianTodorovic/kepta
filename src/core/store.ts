@@ -41,6 +41,13 @@ const VALID_TYPES: MemoryType[] = ["semantic", "episodic", "procedural", "refere
 const GRAPH_FENSTER_KNOTEN = 500;
 const GRAPH_PAAR_POOL = 8000;
 const GRAPH_RANG_POOL = 4000;
+/**
+ * Die Stufen der Tiefe, die die Flaeche zeigt und die Tuer klemmt — **eine** Zahl, nicht
+ * drei Kopien: `server/router/system.ts` klemmt an diesen Werten, und der Wachtest
+ * (`tests/core/graph-tiefe.test.ts`) faellt, wenn Tuer und Kern unterschiedlich rechnen.
+ */
+export const GRAPH_TIEFE_MIN = 1;
+export const GRAPH_TIEFE_MAX = 4;
 
 export function defaultDataDir(): string {
   // Beide Namensformen (Aufgabe #64): K3PTA_DATA_DIR zuerst, KEPTA_DATA_DIR als
@@ -1300,7 +1307,7 @@ export class KeptaStore {
    * dessen Begriffe gar nicht verknuepft sind, darf keinen leeren Graphen zeigen.
    * Zwei Aufrufe auf demselben Bestand liefern dieselbe Folge.
    */
-  private graphNachbarschaft(rang: { id: number; name: string }[]): EntityRecord[] {
+  private graphNachbarschaft(rang: { id: number; name: string }[], tiefe = GRAPH_TIEFE_MAX): EntityRecord[] {
     if (rang.length === 0) return [];
     const imFenster = new Set<number>();
 
@@ -1331,7 +1338,11 @@ export class KeptaStore {
       if (imFenster.has(samen.id)) continue;
       imFenster.add(samen.id);
       let schnitt = [samen.id];
-      while (schnitt.length > 0 && imFenster.size < GRAPH_FENSTER_KNOTEN) {
+      // Die Stufe des Nutzers ist hier, nicht nur im Entity-Zweig: ohne diese Grenze
+      // waechst ein Same ungebremst die Kette hinunter, bis die Kappe kommt, und die
+      // Tiefenstufe der Flaeche bewegt nichts (gemessen 05:28 Uhr: vier Stufen, eine
+      // Antwort auf die Byte — Mappe BEFUND-124-FENSTER-2910.md).
+      for (let schritt = 0; schritt < Math.max(1, tiefe) && schnitt.length > 0 && imFenster.size < GRAPH_FENSTER_KNOTEN; schritt++) {
         const naechster: number[] = [];
         for (const id of schnitt) {
           for (const nb of nachbarn.get(id) ?? []) {
@@ -1421,7 +1432,7 @@ export class KeptaStore {
     // die Kappe, fuellt der Rest nach Rang auf: ein Bestand, dessen Begriffe
     // ueberhaupt nicht verknuepft sind, darf keinen leeren Graphen zeigen
     // (guardiert von tests/core/graphkappe.test.ts).
-    const entities = this.graphNachbarschaft(this.graphRang(GRAPH_RANG_POOL));
+    const entities = this.graphNachbarschaft(this.graphRang(GRAPH_RANG_POOL), Math.min(Math.max(depth, GRAPH_TIEFE_MIN), GRAPH_TIEFE_MAX));
     const knotenIds = entities.map((e) => e.id);
     // Dasselbe fuer die Kanten: was hinter einer 2 000er-Scheibe liegt, darf
     // nicht die Einfuegereihenfolge entscheiden. Paare mit mehr Belegen — drei
