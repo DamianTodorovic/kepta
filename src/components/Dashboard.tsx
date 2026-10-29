@@ -15,7 +15,8 @@ import { DossierView } from './DossierView';
 import { TeamView } from './TeamView';
 import { ActivityView } from './ActivityView';
 import { CommandPalette, useCommandPaletteHotkey, buildPaletteActions } from './CommandPalette';
-import { saveMemory, deleteMemory, subscribeMemories, refreshMemories, deleteMemories, restoreMemories, bestandGroesse, ladeFehler, getMemoriesSync, mehrAnholen, seiteIstBegrenzt, seitenFehler, SEITE_NACHLAD } from '../lib/store';
+import { saveMemory, deleteMemory, subscribeMemories, refreshMemories, deleteMemories, restoreMemories, bestandGroesse, ladeFehler, getMemoriesSync, mehrAnholen, seiteIstBegrenzt, seitenFehler, SEITE_NACHLAD, letzteAblehnung } from '../lib/store';
+import type { BehauptungEingabe } from '../core/wortschatz';
 import { subscribeActivity } from '../lib/activity';
 import { inForm } from '../lib/antwort';
 import { useToast } from './ui/Toast';
@@ -959,12 +960,19 @@ export function Dashboard() {
     else toast.push({ message: 'This note is no longer there — it may have been deleted or replaced.', kind: 'warn' });
   }, [memories, toast]);
 
-  const handleSave = async (memoryData: Partial<Memory>) => {
+  const handleSave = async (memoryData: Partial<Memory> & { beziehungen?: BehauptungEingabe[] }) => {
     const result = await saveMemory(
       editingMemory?.id ? { ...memoryData, id: editingMemory.id } : memoryData
     );
     if (result === null) {
-      toast.push({ message: 'Save failed — your changes were not applied.', kind: 'warn' });
+      // Punkt 126: die Absage nennt ihr Wort. "Save failed" ohne Grund ist ein Raetsel —
+      // bei einer Behauptung, die ein Systemwort enthaelt, wuesste die Person sonst nicht,
+      // was sie andern soll, und tippte dieselbe Eingabe noch einmal.
+      const grund = letzteAblehnung();
+      toast.push({
+        message: grund ? `Not saved — ${grund}` : 'Save failed — your changes were not applied.',
+        kind: 'warn',
+      });
     } else {
       setIsEditorOpen(false);
       setEditingMemory(null);

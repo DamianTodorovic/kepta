@@ -14,6 +14,7 @@
 // statt dauerhaft Rechenzeit zu verbrennen.
 import type { Memory } from "../types";
 import type { Gueltigkeit } from "./graphTime";
+import { systemWort } from "../core/wortschatz";
 
 /**
  * Was ueber einem Paar steht: wie lange es gilt und WAS behauptet wird. Der Typ
@@ -279,16 +280,12 @@ export interface EdgeOptions {
  * der Linie sagt bereits, was sie ist. Ein Etikett davon kostet dieselbe Stelle im
  * Budget wie eine echte Aussage.
  *
- * Die dritte Natur war vergessen: gemessen 15.10. 07:54 setzte store.ts:985
- * „co-mentions", diese Menge kannte es nicht, und die Linie malte ihr rohes Wort —
- * drei Zeilen ueber dieser Datei steht die gegenteilige Absicht. Haelt jetzt
+ * Die dritte Natur war vergessen: gemessen 15.10. 07:54 setzte store.ts „co-mentions",
+ * diese Menge kannte es nicht, und die Linie malte ihr rohes Wort. Seither liegt die
+ * Liste an **einem** Ort (`src/core/wortschatz.ts`) und beide Seiten importieren sie —
+ * ein Vergleich zweier Listen ist eine Wache, eine Liste ist die Heilung. Haelt ausserdem
  * tests/lib/graphLayout.test.ts („schreibt die Wörter des Systems nicht an die Linie").
  */
-const SYSTEM_WOERTER = new Set(["mentions", "co-mentions", "related"]);
-
-function systemWort(name: string): boolean {
-  return SYSTEM_WOERTER.has(name.toLowerCase());
-}
 
 const DEFAULT_MAX_BUCKET = 140;
 

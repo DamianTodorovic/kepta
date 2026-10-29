@@ -5,6 +5,7 @@ import { indexMemory, gateDecision, writeGateEnabled } from "../../src/core/engi
 import { extractWikiLinks } from "../../src/core/mcp";
 import { klassifiziere, gruppen, type Traeger, type Thema } from "../../src/core/klassifikation";
 import { sanitizeText, sanitizeTitle, sanitizeTags } from "../../src/core/sanitize";
+import { systemWort, type BehauptungEingabe } from "../../src/core/wortschatz";
 import { sanitizeScope, sanitizeId, istGueltigeId } from "../helfer/ids";
 import { toApi, maxActiveMemories, grenzHinweis, MAX_BULK_IDS, SEITE_MIN, SEITE_MAX, seiteUmwelt, type MemoryRecord } from "../helfer/api-form";
 import { bodyOf } from "../helfer/body";
@@ -12,6 +13,55 @@ import { zeitnahme } from "../helfer/zeitnahme";
 import type { AppKontext } from "../kontext";
 
 const GUELTIGE_TYPEN = ["semantic", "episodic", "procedural", "reference"];
+
+/**
+ * Punkt 126 — die Behauptungen aus dem Leib eines Speicherns.
+ *
+ * Drei Zustände, nicht zwei: `beziehungen` **fehlt** heisst "die Hand hat das Feld nicht
+ * angefasst" und darf nichts loeschen; ein leeres Feld heisst "alle weg". Der Unterschied
+ * ist nicht kleinlaut zu haben — jeder Agent, der dieselbe Notiz speichert (MCP, Scan,
+ * Nachzug), ruft denselben Handler mit drei Feldern auf.
+ *
+ * Abgewiesen wird **vor** jedem Schreibgriff: eine Notiz, die wegen eines falschen Wortes
+ * halb anlegt, ist ein Datenverlust mit Umweg. Der Entwurf bleibt beim Client, die Absage
+ * nennt, was zu tun ist.
+ */
+function behauptungenAusBody(body: Record<string, unknown>): {
+  gesendet: boolean;
+  liste: BehauptungEingabe[];
+  ablehnung: string | null;
+} {
+  const roh = body.beziehungen;
+  if (roh === undefined) return { gesendet: false, liste: [], ablehnung: null };
+  if (!Array.isArray(roh)) {
+    return { gesendet: true, liste: [], ablehnung: "beziehungen must be a list of claims, each one {quelle, ziel, wort}" };
+  }
+  const liste: BehauptungEingabe[] = [];
+  for (const x of roh) {
+    if (!x || typeof x !== "object" || Array.isArray(x)) {
+      return { gesendet: true, liste, ablehnung: "every claim needs three parts: who, the word, whom" };
+    }
+    const o = x as Record<string, unknown>;
+    const quelle = sanitizeTitle(o.quelle);
+    const ziel = sanitizeTitle(o.ziel);
+    const wort = sanitizeTitle(o.wort);
+    if (!quelle || !ziel || !wort) {
+      return { gesendet: true, liste, ablehnung: "a claim with an empty part is not a claim - fill who, the word and whom" };
+    }
+    if (quelle.toLowerCase() === ziel.toLowerCase()) {
+      return { gesendet: true, liste, ablehnung: "who and whom are the same term - a claim needs two different ends" };
+    }
+    if (systemWort(wort)) {
+      return {
+        gesendet: true,
+        liste,
+        ablehnung: `"${wort}" is the word the graph already uses for a mention, not for a claim - pick the word that says what is claimed, like manages or blocks`,
+      };
+    }
+    liste.push({ quelle, ziel, wort });
+  }
+  return { gesendet: true, liste, ablehnung: null };
+}
 
 export function mountMemories(app: express.Express, ctx: AppKontext): void {
   const { store } = ctx;
@@ -25,6 +75,10 @@ export function mountMemories(app: express.Express, ctx: AppKontext): void {
 
     const title = sanitizeTitle(body.title);
     const content = sanitizeText(body.content, 50000);
+    // Punkt 126: erst die Behauptungen pruefen, dann irgendetwas schreiben. Eine
+    // halbe Notiz mit weggeworfenem Wort waer ein Verlust mit Umweg.
+    const beh = behauptungenAusBody(body as Record<string, unknown>);
+    if (beh.ablehnung) return res.status(400).json({ error: beh.ablehnung });
 
     if (body.id) {
       if (typeof body.id !== "string" || body.id.length > 120 || !istGueltigeId(body.id)) return res.status(400).json({ error: "Invalid id" });
@@ -43,13 +97,21 @@ export function mountMemories(app: express.Express, ctx: AppKontext): void {
       if (body.supersededBy !== undefined) patch.supersededBy = sanitizeId(body.supersededBy);
       const updated = store.updateMemory(body.id, patch);
       if (!updated) return res.status(404).json({ error: "Node not found" });
-      if (body.content !== undefined || body.title !== undefined) {
+      // Eine Behauptung ist auch ohne neuen Text eine Aenderung: sonst schrieb das
+      // Blatt die Aussage und der Graph blieb leer, weil hier nur Text und Titel
+      // zaehlen.
+      if (beh.gesendet || body.content !== undefined || body.title !== undefined) {
         indexMemory(store, updated.id);
         // Eine Notiz aus der Oberfläche verknüpft sich wie eine aus dem Agentenkanal.
-        store.verknuepfeNotiz(updated.id, updated.title, extractWikiLinks(`${updated.title} ${updated.content}`));
+        store.verknuepfeNotiz(
+          updated.id,
+          updated.title,
+          extractWikiLinks(`${updated.title} ${updated.content}`),
+          beh.gesendet ? beh.liste : undefined
+        );
       }
       ctx.publishActivity({ type: "update", source: "app", title: updated.title });
-      return res.json({ memory: toApi(updated) });
+      return res.json({ memory: toApi(updated), behauptungen: store.behauptungenVonNotiz(updated.id).length });
     }
 
     if (!title && !content) return res.status(400).json({ error: "A title or content is required" });
@@ -64,9 +126,17 @@ export function mountMemories(app: express.Express, ctx: AppKontext): void {
       });
       if (updated) {
         indexMemory(store, gate.targetId);
-        store.verknuepfeNotiz(updated.id, updated.title, extractWikiLinks(`${updated.title} ${updated.content}`));
+        store.verknuepfeNotiz(
+          updated.id,
+          updated.title,
+          extractWikiLinks(`${updated.title} ${updated.content}`),
+          beh.gesendet ? beh.liste : undefined
+        );
         ctx.publishActivity({ type: "update", source: "app", title: updated.title });
-        return res.json({ memory: toApi(updated), gateOutcome: "updated", writeGate: gate });
+        return res.json({
+          memory: toApi(updated), gateOutcome: "updated", writeGate: gate,
+          behauptungen: store.behauptungenVonNotiz(updated.id).length,
+        });
       }
       // Zielknoten zwischenzeitlich verschwunden → normal neu anlegen
     }
@@ -84,9 +154,21 @@ export function mountMemories(app: express.Express, ctx: AppKontext): void {
       scope: body.scope === undefined ? undefined : (sanitizeScope(body.scope) ?? undefined),
     });
     indexMemory(store, created.id);
-    store.verknuepfeNotiz(created.id, created.title, extractWikiLinks(`${created.title} ${created.content}`));
+    store.verknuepfeNotiz(
+      created.id,
+      created.title,
+      extractWikiLinks(`${created.title} ${created.content}`),
+      beh.gesendet ? beh.liste : undefined
+    );
     ctx.publishActivity({ type: "save", source: "app", title: created.title });
-    return res.json({ memory: toApi(created), ...(writeGateEnabled() ? { gateOutcome: "created", writeGate: gate } : {}) });
+    // Die Zahl nennt, was **stand** nach dem Schreibgriff, nicht was geschickt wurde:
+    // die Kappe des Kerns kann weniger durchlassen, und eine Antwort, die das verschweigt,
+    // laesst die Person ihre Aussage erneut tippen.
+    return res.json({
+      memory: toApi(created),
+      behauptungen: store.behauptungenVonNotiz(created.id).length,
+      ...(writeGateEnabled() ? { gateOutcome: "created", writeGate: gate } : {}),
+    });
   }
 
   app.post("/api/memories", ctx.limiter.write, handleCreateOrUpdateMemory);
@@ -309,6 +391,26 @@ export function mountMemories(app: express.Express, ctx: AppKontext): void {
       begrenzt,
       hinweis,
       staende: staende.map((s) => ({ id: s.id, memoryId: s.memoryId, title: s.title, content: s.content, createdAt: s.createdAt })),
+    });
+  });
+
+  /**
+   * Punkt 126 — die Behauptungen einer Notiz. Der Leser ist kein Schmuckstueck der
+   * Oberflaeche: ein Feld, das nur schreibt, laesst die Person ihre eigne Aussage
+   * erneut tippen, weil sie nicht sehen kann, was schon steht, und sie nicht loeschen
+   * kann, ohne zu raten. Die Zahl unten am Feld und diese Liste sind derselbe Stand.
+   */
+  app.get("/api/memories/:id/behauptungen", (req, res) => {
+    const id = String(req.params.id);
+    if (!istGueltigeId(id)) return res.status(400).json({ error: "Invalid id" });
+    if (!store.getMemory(id)) return res.status(404).json({ error: "Node not found" });
+    const liste = store.behauptungenVonNotiz(id);
+    return res.json({
+      count: liste.length,
+      behauptungen: liste,
+      hinweis: liste.length === 0
+        ? "This note claims nothing yet - the graph draws only mentions for it, and a mention says no more than that two terms appeared together."
+        : `${liste.length} claim${liste.length === 1 ? "" : "s"} written by a hand - each one is the word on its line.`,
     });
   });
 

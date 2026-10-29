@@ -5,6 +5,8 @@ import { formatDistanceToNow } from 'date-fns';
 import { Brain } from "../lib/icons";
 import { X, Save, Trash2, Hash, Clock, Zap, Lock } from "../lib/icons";
 import { KeptaMark } from './KeptaMark';
+import { holeBehauptungen } from '../lib/store';
+import type { BehauptungEingabe } from '../core/wortschatz';
 import { gruppenVonNotiz, THEMA_LABELS, TRAEGER_LABELS, TYP_BESCHREIBUNG } from '../lib/graphHierarchy';
 
 type MemoryKind = 'semantic' | 'episodic' | 'procedural' | 'reference';
@@ -33,7 +35,7 @@ function fromLocalDateInput(v: string): number | null {
 
 interface MemoryEditorProps {
   memory: Memory | null;
-  onSave: (data: Partial<Memory>) => void;
+  onSave: (data: Partial<Memory> & { beziehungen?: BehauptungEingabe[] }) => void;
   onClose: () => void;
   onDelete?: () => void;
 }
@@ -51,6 +53,23 @@ export function MemoryEditor({ memory, onSave, onClose, onDelete }: MemoryEditor
   // Private: never shown to AI apps, never sent to a cloud model (2.13).
   const [privat, setPrivat] = useState(memory?.scope === 'private');
 
+  /**
+   * Punkt 126 — die Behauptungen dieser Notiz. Der Kern setzt sie, das Tor nimmt sie an,
+   * und die Linie malt ihr Wort (seit 3.2.88 auch mit ihrem Zoom-Boden). Was fehlte, war
+   * diese Hand: gemessen 29.10. 08:19:52 an Damians echtem Bestand sind 1 468 von 1 468
+   * Kanten Systemwoerter, 0 Aussagen mit einem Wort von jemandem.
+   *
+   * `behAnfang` ist die Grundlinie, nicht das Ergebnis: ein Speichern ohne Anynderung
+   * schickt dieselbe Liste zurueck, und nur darum bleibt ein leeres Feld beim Loeschen
+   * eine Absicht — ein Feld, das nie geladen wurde, ist kein leeres Feld.
+   */
+  const [beh, setBeh] = useState<BehauptungEingabe[]>([]);
+  const [behAnfang, setBehAnfang] = useState<BehauptungEingabe[]>([]);
+  const [wer, setWer] = useState('');
+  const [was, setWas] = useState('');
+  const [wen, setWen] = useState('');
+  const [meldung, setMeldung] = useState('');
+
   useEffect(() => {
     if (memory) {
       setTitle(memory.title);
@@ -66,6 +85,32 @@ export function MemoryEditor({ memory, onSave, onClose, onDelete }: MemoryEditor
     }
   }, [memory]);
 
+  /**
+   * Punkt 126: was steht schon? Die Liste kommt vom Tor, nicht aus dem Notizobjekt —
+   * Behauptungen gehören der Relation, nicht dem Blatt. Ohne diesen Leser waere das Feld
+   * ein Blindtext: schreiben ja, sehen und loeschen nein.
+   */
+  useEffect(() => {
+    const id = memory?.id ?? '';
+    let abgebrochen = false;
+    setBeh([]);
+    setBehAnfang([]);
+    setWer(''); setWas(''); setWen('');
+    if (!id) {
+      // Noch kein Blatt: die Liste ist leer, und der Text sagt, was als naechstes kommt.
+      void holeBehauptungen('').then((r) => { if (!abgebrochen) setMeldung(r.grund ?? r.hinweis); });
+      return () => { abgebrochen = true; };
+    }
+    void holeBehauptungen(id).then((r) => {
+      if (abgebrochen) return;
+      setBeh(r.liste);
+      setBehAnfang(r.liste);
+      // Ein Lesefehler bleibt sichtbar: ohne Grund waere die leere Liste eine Behauptung.
+      setMeldung(r.grund ? r.grund : r.liste.length === 0 ? r.hinweis : '');
+    });
+    return () => { abgebrochen = true; };
+  }, [memory?.id]);
+
   // Ungespeicherte Änderungen nicht still wegwerfen: erster Schließversuch
   // warnt, der zweite (oder der Abbruch-Knopf) gibt den Datensatz frei.
   const [warnUnsaved, setWarnUnsaved] = useState(false);
@@ -77,6 +122,7 @@ export function MemoryEditor({ memory, onSave, onClose, onDelete }: MemoryEditor
     confidence !== (memory?.confidence ?? 1) ||
     validFrom !== toLocalDateInput(memory?.validFrom) ||
     validTo !== toLocalDateInput(memory?.validTo) ||
+    JSON.stringify(beh) !== JSON.stringify(behAnfang) ||
     privat !== (memory?.scope === 'private');
 
   /**
@@ -128,6 +174,36 @@ export function MemoryEditor({ memory, onSave, onClose, onDelete }: MemoryEditor
     setTags(tags.filter(tag => tag !== tagToRemove));
   };
 
+  /**
+   * Punkt 126: eine Behauptung anlegen. Die drei Teile sind Pflicht, und leere Eingaben
+   * gehen nicht durch — ein halber Satz im Netz waer eine Linie ohne Auskunft, genau das
+   * Bild, das dieser Punkt abschafft.
+   */
+  const behauptungHinzufuegen = () => {
+    const quelle = wer.trim().toLowerCase();
+    const wort = was.trim().toLowerCase();
+    const ziel = wen.trim().toLowerCase();
+    if (!quelle || !wort || !ziel) {
+      setMeldung('A claim needs three parts: who, the word, whom.');
+      return;
+    }
+    if (quelle === ziel) {
+      setMeldung('Who and whom are the same term — a claim needs two different ends.');
+      return;
+    }
+    if (beh.some((b) => b.quelle === quelle && b.ziel === ziel && b.wort === wort)) {
+      setMeldung('This claim is already on the list.');
+      return;
+    }
+    setBeh([...beh, { quelle, ziel, wort }]);
+    setWer(''); setWas(''); setWen('');
+    setMeldung('');
+  };
+
+  const behauptungEntfernen = (index: number) => {
+    setBeh(beh.filter((_, i) => i !== index));
+  };
+
   const handleSubmit = (e: FormEvent) => {
     e.preventDefault();
     if (!title.trim() && !content.trim()) return;
@@ -148,6 +224,9 @@ export function MemoryEditor({ memory, onSave, onClose, onDelete }: MemoryEditor
       confidence,
       validFrom: fromLocalDateInput(validFrom),
       validTo: fromLocalDateInput(validTo),
+      // Punkt 126: die Behauptungen gehen immer mit — auch wenn die Person nur am Text
+      // gedreht hat. Das Feld ist die volle Absicht ("so steht es danach"), nicht ein Diff.
+      beziehungen: beh,
       // Only say something about the scope when it changes to or from private.
       ...(privat ? { scope: 'private' } : memory?.scope === 'private' ? { scope: 'local' } : {}),
     });
@@ -334,6 +413,68 @@ export function MemoryEditor({ memory, onSave, onClose, onDelete }: MemoryEditor
               >
                 <span className="absolute top-0.5 rounded-full bg-white transition-all" style={{ left: privat ? 18 : 2, width: 18, height: 18 }} />
               </button>
+            </div>
+
+            {/* Punkt 126 — eine Hand legt das Wort hin. Vorher konnte niemand sagen, WAS
+                zwei Begriffe verbinden: gemessen 29.10. 08:19:52 an Damians echtem Bestand
+                sind 1 468 von 1 468 Kanten Mitennungen und 0 Aussagen mit einem Wort. */}
+            <div className="rounded-xl" style={{ border: '1px solid var(--border-subtle)' }} data-testid="behauptung-feld">
+              <div className="flex items-center justify-between gap-2 px-4 pt-3">
+                <span className="flex items-center gap-2 text-sm font-medium" style={{ color: 'var(--text-2)' }}>
+                  <Brain className="w-4 h-4" style={{ color: 'var(--text-3)' }} /> Claims on this note
+                </span>
+                <span className="hud-label tnum shrink-0" style={{ color: 'var(--text-3)' }}>
+                  {beh.length} {beh.length === 1 ? 'claim' : 'claims'}
+                </span>
+              </div>
+              <div className="px-4 py-3 flex flex-col gap-2">
+                {beh.map((b, i) => (
+                  <div key={`${b.quelle} ${b.wort} ${b.ziel}`} data-testid="behauptung-reihe" className="flex items-center gap-2 text-sm">
+                    <span className="flex-1 min-w-0 break-words" style={{ color: 'var(--text-1)' }}>{b.quelle}</span>
+                    <span className="hud-label shrink-0" style={{ color: 'var(--accent)' }}>{b.wort}</span>
+                    <span className="flex-1 min-w-0 break-words text-right" style={{ color: 'var(--text-1)' }}>{b.ziel}</span>
+                    <button
+                      type="button"
+                      data-testid="behauptung-entfernen"
+                      aria-label={`Remove the claim ${b.quelle} ${b.wort} ${b.ziel}`}
+                      onClick={() => behauptungEntfernen(i)}
+                      className="p-2 rounded-lg btn-ghost shrink-0"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+                ))}
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                  <label className="flex flex-col gap-1">
+                    <span className="text-xs" style={{ color: 'var(--text-3)' }}>Who</span>
+                    <input data-testid="behauptung-wer" value={wer} onChange={(e) => setWer(e.target.value)} className="hud-input rounded-lg px-3 py-2 text-sm" />
+                  </label>
+                  <label className="flex flex-col gap-1">
+                    <span className="text-xs" style={{ color: 'var(--text-3)' }}>Does what</span>
+                    <input data-testid="behauptung-tutwas" value={was} onChange={(e) => setWas(e.target.value)} className="hud-input rounded-lg px-3 py-2 text-sm" />
+                  </label>
+                  <label className="flex flex-col gap-1">
+                    <span className="text-xs" style={{ color: 'var(--text-3)' }}>Whom</span>
+                    <input data-testid="behauptung-wen" value={wen} onChange={(e) => setWen(e.target.value)} className="hud-input rounded-lg px-3 py-2 text-sm" />
+                  </label>
+                </div>
+                <div className="flex items-center gap-3 flex-wrap">
+                  <button
+                    type="button"
+                    data-testid="behauptung-hinzufuegen"
+                    onClick={behauptungHinzufuegen}
+                    className="btn-ghost rounded-lg px-3 py-2 text-sm"
+                  >
+                    Add claim
+                  </button>
+                  {/* Steht die Zeile, sagt sie den Grund: eine leere Liste ohne Ursache ist
+                      eine Behauptung, und eine Absage ohne Grund ein Rat. */}
+                  <span data-testid="behauptung-meldung" className="hud-label" style={{ color: 'var(--text-3)' }}>{meldung}</span>
+                </div>
+                <p className="text-xs" style={{ color: 'var(--text-3)' }}>
+                  A claim is the word on the line in the graph. Terms you name here are added to this note, so the line has both ends.
+                </p>
+              </div>
             </div>
 
             {/* Temporal & confidence — collapsible */}

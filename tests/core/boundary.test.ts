@@ -77,6 +77,12 @@ describe("memory core boundary (src/core)", () => {
       // Imports — der Store, der Schluesselanbieter und der Server lesen durch sie.
       "umwelt.ts",
       "version.ts",
+      // Punkt 126: der Wortschatz der Behauptung — welche Woerter das System selbst setzt,
+      // wie viel eine Notiz tragen darf, und die Form einer Eingabe. Ein Blatt ohne Imports,
+      // weil auch die Bueschel-Flaeche (`src/lib/graphLayout.ts`) dieselbe Liste lesen muss:
+      // die zwei Heim-Staette dieser Menge haben am 15.10. schon einmal ein rohes Etikett
+      // auf eine Linie gemalt.
+      "wortschatz.ts",
     ]);
   });
 

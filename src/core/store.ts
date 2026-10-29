@@ -15,6 +15,7 @@ import crypto from "node:crypto";
 import { klassifiziere } from "./klassifikation";
 import { leseUmwelt } from "./umwelt";
 import { begriffeAusText } from "./begiffe";
+import { BEHAUPTUNGEN_MAX, SYSTEM_WOERTER, type BehauptungEingabe } from "./wortschatz";
 import type {
   MemoryRecord,
   MemoryInput,
@@ -48,6 +49,10 @@ const GRAPH_RANG_POOL = 4000;
  */
 export const GRAPH_TIEFE_MIN = 1;
 export const GRAPH_TIEFE_MAX = 4;
+
+// Punkt 126 — was eine Hand als Aussage setzen kann, und welche Woerter keine Aussage sind:
+// beide Antworten liegen in `src/core/wortschatz.ts`, weil Kern und Flaeche dieselbe Menge
+// brauchen. Die Geschichte der zwei Listen steht dort.
 
 export function defaultDataDir(): string {
   // Beide Namensformen (Aufgabe #64): K3PTA_DATA_DIR zuerst, KEPTA_DATA_DIR als
@@ -1156,7 +1161,7 @@ export class KeptaStore {
    * Kanten gehören zu *einer* Notiz (memory_id) und fallen mit ihr: das ist die
    * Grenze, die auch der Privatheits-Floor im Agentenkanal braucht.
    */
-  verknuepfeNotiz(memoryId: string, titel: string, links: string[]): number {
+  verknuepfeNotiz(memoryId: string, titel: string, links: string[], behauptungen?: readonly BehauptungEingabe[]): number {
     const t = String(titel ?? "").trim().toLowerCase();
     // Der eigene Text spricht zuerst. Ueberschriften und Wiki-Links der Notiz sind
     // Begriffe, egal welcher Schreibweg gerade speichert — sonst gilt die Regel nur
@@ -1193,6 +1198,31 @@ export class KeptaStore {
         if (!a || !b) continue;
         paare.set(a < b ? a + "|" + b : b + "|" + a, a < b ? [a, b, "co-mentions"] : [b, a, "co-mentions"]);
       }
+    }
+
+    // Punkt 126: eine Behauptung von einer Hand. Beide Enden werden Begriffe **dieser**
+    // Notiz — `entitaetsNetz` (src/lib/graphLayout.ts:2200) zeichnet eine Aussage ohne
+    // beurkundende Notiz nur, wenn beide Enden im Bild stehen, und ein Ende, das niemand
+    // traegt, ware eine Kante ins Leere: geschrieben, gezaehlt, nicht zu sehen.
+    //
+    // Das Wort ist keine Zierde: ein Systemwort malt die Flaeche nie
+    // (`SYSTEM_WOERTER`, src/lib/graphLayout.ts:287), also setzt der Kern es gar nicht
+    // erst — lieber abgewiesen als unsichtbar gespeichert.
+    // Drei Zustände, nicht zwei: **nicht genannt** (undefined) heisst "die Hand hat die
+    // Behauptungen nicht angefasst" und haelt, was steht — jeder Agent, der dieselbe
+    // Notiz speichert, ruft diese Funktion mit drei Feldern auf, und ein viertes Feld zu
+    // erfinden, das er nicht schickt, waere das eigne Wort wegzuwischen. Ein **leeres
+    // Feld** heisst dagegen "alle weg": so loescht die Oberflaeche.
+    const gewuenschte = behauptungen ?? this.behauptungenVonNotiz(memoryId);
+    for (const roh of gewuenschte.slice(0, BEHAUPTUNGEN_MAX)) {
+      const q = String(roh?.quelle ?? "").trim().toLowerCase().slice(0, 40);
+      const z = String(roh?.ziel ?? "").trim().toLowerCase().slice(0, 40);
+      const w = String(roh?.wort ?? "").trim().toLowerCase().slice(0, 40);
+      if (q.length < 2 || z.length < 2 || q === z) continue;
+      if (w.length < 2 || SYSTEM_WOERTER.has(w)) continue;
+      knoten.add(q);
+      knoten.add(z);
+      paare.set(`${q}\u0000${z}\u0000${w}`, [q, z, w]);
     }
 
     // Ein Knoten ohne Kante ist auf der Flaeche ein Punkt, kein Netz: das
@@ -1528,6 +1558,28 @@ export class KeptaStore {
       )
       .all(memoryId) as Record<string, unknown>[];
     return rows.map((r) => String(r.name));
+  }
+
+  /**
+   * Die Behauptungen, die eine Hand an dieser Notiz gesetzt hat — nicht die Mitnennungen,
+   * die aus ihrem Text wachsen. Die Oberflaeche braucht diesen Leser: ein Feld, das
+   * schreibt, ohne zu zeigen, was schon steht, laesst die Person ihre eigne Aussage
+   * zweimal tippen oder gar nicht mehr loeschen.
+   */
+  behauptungenVonNotiz(memoryId: string): BehauptungEingabe[] {
+    const reihen = this.db
+      .prepare(
+        `SELECT q.name AS quelle, z.name AS ziel, r.relation AS wort
+           FROM relations r
+           JOIN entities q ON q.id = r.source_id
+           JOIN entities z ON z.id = r.target_id
+          WHERE r.memory_id = ?
+          ORDER BY r.id`
+      )
+      .all(memoryId) as { quelle: string; ziel: string; wort: string }[];
+    return reihen
+      .filter((x) => typeof x.wort === "string" && x.wort.length > 0 && !SYSTEM_WOERTER.has(x.wort))
+      .map((x) => ({ quelle: x.quelle, ziel: x.ziel, wort: x.wort }));
   }
 
   // ---------- FTS ----------

@@ -1,4 +1,5 @@
 import { Memory } from '../types';
+import type { BehauptungEingabe } from '../core/wortschatz';
 
 // All nodes liegen jetzt serverseitig in ~/.ki-gehirn/memories.json
 // (kein localStorage-Limit mehr). Der alte localStorage-Bestand wird
@@ -9,6 +10,24 @@ const MIGRATED_KEY = 'ki_gehirn_memories_migrated_v2';
 
 const listeners = new Set<(memories: Memory[]) => void>();
 let cache: Memory[] = [];
+
+/**
+ * Punkt 126 — der Grund, warum ein Speichern abgewiesen wurde.
+ *
+ * Die Signatur `saveMemory -> Memory | null` ist seit Wochen ausgeliefert und von mehreren
+ * Flächen benutzt; ihre Quittung heisst "Save failed — your changes were not applied" und
+ * nennt keine Ursache. Fuer eine Behauptung, die ein Wort enthält, das der Graph schon fuer
+ * Mitennungen braucht, ist das ein Rat los ohne Antwort: die Person tippt noch einmal
+ * dasselbe. Also liegt der Grund jetzt an einer eignen Stelle, und die Flächen, die ihn
+ * kennen wollen, lesen ihn — ohne dass jede Speichern-Kuelle ihre Signatur andert.
+ */
+let ablehnungsGrund: string | null = null;
+function merkeAblehnung(grund: string | null): void {
+  ablehnungsGrund = grund;
+}
+export function letzteAblehnung(): string | null {
+  return ablehnungsGrund;
+}
 
 // ---------- Performance: Request-Dedup + 300ms Debounce für refresh ----------
 let pendingRefresh: Promise<Memory[]> | null = null;
@@ -254,7 +273,7 @@ export function subscribeMemories(callback: (memories: Memory[]) => void): () =>
   };
 }
 
-export async function saveMemory(memoryData: Partial<Memory>): Promise<Memory | null> {
+export async function saveMemory(memoryData: Partial<Memory> & { beziehungen?: BehauptungEingabe[] }): Promise<Memory | null> {
   etagVergessen();
   // Optimistic Update: sofort in Cache einfügen/aktualisieren
   const previous = [...cache];
@@ -288,8 +307,16 @@ export async function saveMemory(memoryData: Partial<Memory>): Promise<Memory | 
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(memoryData),
     });
-    const data = await res.json();
-    if (!res.ok) throw new Error(data.error);
+    const data = await res.json().catch(() => null);
+    if (!res.ok) {
+      merkeAblehnung(
+        typeof data?.error === "string" && data.error.trim() !== ""
+          ? data.error.trim()
+          : `The server answered ${res.status} without saying why.`
+      );
+      throw new Error(ablehnungsGrund ?? "Save failed");
+    }
+    merkeAblehnung(null);
     // Server-Antwort abgleichen: optimistischen Eintrag durch echte Daten ersetzen (Debounce 300ms)
     await refreshMemories().catch(() => { /* die Schreibzung gelang; der Grund der Liste liegt im Speicher */ });
     return data.memory;
@@ -304,6 +331,50 @@ export async function saveMemory(memoryData: Partial<Memory>): Promise<Memory | 
     void doRefresh().catch(() => { /* Konvergenz-Resync bleibt still: der neue Stand kommt mit der
         naechsten Antwort, und ein Wurf hier waere eine unhandled rejection hinter der Quittung. */ });
     return null;
+  }
+}
+
+/**
+ * Punkt 126 — was dieses Blatt schon behauptet. Vier Zustände, nicht zwei: die Liste kann
+ * leer sein (dann sagt der Grund des Tors es), und sie kann **nicht lesbar** sein (dann
+ * raet die Flaeche nicht, sie warnt). Ein Feld, das nur schreibt, laesst die Person ihre
+ * eigne Aussage erneut tippen, weil sie nicht sieht, was steht.
+ */
+export async function holeBehauptungen(
+  id: string
+): Promise<{ liste: BehauptungEingabe[]; hinweis: string; grund: string | null }> {
+  const leer = { liste: [] as BehauptungEingabe[], hinweis: "", grund: null as string | null };
+  if (!id) return { ...leer, hinweis: "Nothing claimed yet - write the first one below, it saves with the note." };
+  try {
+    const res = await fetch(`/api/memories/${encodeURIComponent(id)}/behauptungen`);
+    const data = await res.json().catch(() => null);
+    if (!res.ok) {
+      return {
+        ...leer,
+        grund: typeof data?.error === "string" && data.error.trim() !== ""
+          ? data.error.trim()
+          : `The server answered ${res.status} without saying why.`,
+      };
+    }
+    const liste = Array.isArray(data?.behauptungen)
+      ? (data.behauptungen as unknown[])
+          .map((x) => {
+            const o = (x ?? {}) as Record<string, unknown>;
+            return {
+              quelle: typeof o.quelle === "string" ? o.quelle : "",
+              ziel: typeof o.ziel === "string" ? o.ziel : "",
+              wort: typeof o.wort === "string" ? o.wort : "",
+            };
+          })
+          .filter((x) => x.quelle && x.ziel && x.wort)
+      : [];
+    return {
+      liste,
+      hinweis: typeof data?.hinweis === "string" ? data.hinweis : "",
+      grund: null,
+    };
+  } catch (fehler) {
+    return { ...leer, grund: `Could not read the claims of this note (${String((fehler as Error)?.message ?? "no answer")}).` };
   }
 }
 

@@ -452,6 +452,16 @@ const erwartet = [
   // ohne den Gedankenstrich davor, weil die Tafel nur ASCII traegt. Gegen das installierte
   // Stueck vor dem Bau gemessen: **0** mal — der Satz existierte noch nicht.
   ["claim types stay hidden until", 1],
+  // Punkt 126 (3.2.89): eine Hand legt die Behauptung hin. Vier Traeger, weil der Koerper
+  // aus drei Stuecken besteht — Feld in der Oberflaeche, Absage des Feldes, Leser an der
+  // Tuer. Gegen das installierte 3.2.88 gemessen (08:5x, app.asar 49 143 473 B, mtime
+  // 07:15:21Z): alle vier **0** mal. Kein Marker fuer "beziehungen" als Eigenschafts-
+  // schluessel: den laesst der Minifier zwar stehen, aber er ist ein Name, kein sichtbares
+  // Wort — und die drei Zeilen oben sind die Flaeche, die ein Mensch trifft.
+  ["Claims on this note", 1],
+  ["A claim needs three parts", 1],
+  ["This note claims nothing yet", 1],
+  ["/behauptungen", 1],
 ];
 // Die Liste darf nur ASCII-Zeichen enthalten. Grund, gemessen 21.10. 19:16 MESZ am
 // installierten Objekt: das Wort "Looking" plus echtes U+2026 steht dort 2 mal, diese
