@@ -141,7 +141,7 @@ describe("Gang-Titel in der Startstufe „Few“ (#17)", () => {
    * Knopf, den ein Mensch nimmt: „Fit the whole graph into view".
    */
   async function fahreInsGanze(c: HTMLElement) {
-    const kn = [...c.querySelectorAll("button")].find((b) => b.title === "Fit the whole graph into view");
+    const kn = [...c.querySelectorAll("button")].find((b) => (b.title ?? "").startsWith("Fit"));
     expect(kn, "der Einpass-Knopf fehlt — der Fall greift nicht").toBeTruthy();
     await act(async () => { kn!.click(); await new Promise((r) => setTimeout(r, 80)); });
     await bilder(6);

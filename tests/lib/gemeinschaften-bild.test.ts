@@ -19,6 +19,7 @@ import {
   type Gemeinschaftskante,
 } from "../../src/lib/gemeinschaften";
 import { GRUPPEN_PALETTE, kontrastVerhaeltnis } from "../../src/lib/gruppen";
+import { fitTitel } from "../../src/components/KnowledgeGraph";
 
 const kante = (a: string, b: string): Gemeinschaftskante => ({ a, b });
 
@@ -315,5 +316,18 @@ describe("#119 der Grund unter den Toenen", () => {
     for (const ton of Object.values(bild.farben)) {
       expect(GRUPPEN_PALETTE as readonly string[], `${ton} liegt nicht im Gruppen-Vorrat`).toContain(ton);
     }
+  });
+});
+
+describe("#121 der Satz am Einpass-Knopf", () => {
+  it("verspricht die ganze Welt nur, wenn die Welt wirklich passt", () => {
+    // Der Knopf heisst "Fit the whole graph into view". Haelt der Lesbarkeitsboden die
+    // Kamera zurueck, bleiben Notizen ausserhalb — gemessen 23:53:46Z am ausgelieferten
+    // Stueck: 120 von 144 im Bild. Ein Wort, das mehr verspricht als das Bild zeigt, ist
+    // kein Fehler der Kamera, sondern ein Fehler des Wortes.
+    expect(fitTitel(false)).toBe("Fit the whole graph into view");
+    expect(fitTitel(true)).toMatch(/readability floor/);
+    expect(fitTitel(true)).not.toMatch(/whole graph/);
+    expect(fitTitel(true).startsWith("Fit"), "beide Zeilen beginnen am selben Wort").toBe(true);
   });
 });

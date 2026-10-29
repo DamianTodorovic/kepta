@@ -846,6 +846,18 @@ export const TITEL_KANTEN_PX = ETIKETT_PX;
  * `RANG_FOLGE` (:298), die Kontroll-Schalter (:4484) und die Erklaerungs-Schalter
  * (:4510) an — das ist Punkt 2's Zeichen, und `setzeGraphTiefe` liegt hier fuer ihn bereit.
  */
+/**
+ * Was der Einpassen-Knopf ueber sich selbst sagt. Haelt der Lesbarkeitsboden die Kamera
+ * zurueck, zeigt das Bild nicht die ganze Welt — dann schuldet der Knopf diesen Satz,
+ * nicht das Versprechen "the whole graph". Die Zahl, wie viele Notizen draussen bleiben,
+ * steht schon an der Bildkante (`graph-im-bild`); hier geht es nur um das Wort am Knopf.
+ */
+export function fitTitel(bodenEntschieden: boolean): string {
+  return bodenEntschieden
+    ? "Fit — held at the readability floor, so some notes stay outside; the line at the edge counts them"
+    : "Fit the whole graph into view";
+}
+
 export const GRAPH_TIEFE_MIN = 1;
 export const GRAPH_TIEFE_MAX = 4;
 export const GRAPH_TIEFE_DEFAULT = 2;
@@ -2340,6 +2352,8 @@ export function KnowledgeGraph({ memories: memoriesAusFenster, onSelectMemory, o
   // --- Refs, damit das Zeichnen ohne Render auskommt ---
   const simRef = useRef<Simulation | null>(null);
   const transformRef = useRef<Transform>({ x: 0, y: 0, k: 1 });
+  /** Hat der Lesbarkeitsboden die letzte Einpassung entschieden? */
+  const kameraBodenRef = useRef(false);
   const [zoomAnzeige, setZoomAnzeige] = useState(1);
   /** Die Marken-Zahl des LETZTEN Bildes — Malweg und DOM lesen denselben Stand. */
   const [kernStand, setKernStand] = useState<{ marke: boolean; grund: KernMarkeGrund; zahl: number } | null>(null);
@@ -3147,6 +3161,10 @@ export function KnowledgeGraph({ memories: memoriesAusFenster, onSelectMemory, o
     (grenzen: ReturnType<typeof layoutBounds>, knoten?: readonly { x: number; y: number; versteckt?: boolean }[]) => {      const ein = einpassFlaeche();
       const fit = fitTransform(grenzen, ein);
       const boden = zeilenKMin(TITEL_REIHE_PX, GANG_ABSTAND);
+      // Der Lesbarkeitsboden kann gegen das Einpassen entscheiden. Das ist eine
+      // Kamera-Angabe und keine Welt-Angabe, und der Knopf darf nicht das eine
+      // versprechen, wenn der Boden das andere gewaehlt hat.
+      kameraBodenRef.current = fit.k < boden;
       const k = Math.max(fit.k, boden);
       const mitte =
         dichtesteWeltMitte(knoten ?? [], k, ein, TITEL_KANTEN_PX) ??
@@ -5369,7 +5387,7 @@ export function KnowledgeGraph({ memories: memoriesAusFenster, onSelectMemory, o
       <button onClick={() => zoom(1.25)} className="btn-ghost p-2 rounded-lg" title="Zoom in"><ZoomIn className="w-4 h-4" /></button>
       <button onClick={() => zoom(0.8)} className="btn-ghost p-2 rounded-lg" title="Zoom out"><ZoomOut className="w-4 h-4" /></button>
       {/* .hud-label setzt --text-2; das Wort soll --text-1 tragen wie das Symbol daneben. */}
-      <button onClick={fitView} className="btn-ghost p-2 rounded-lg inline-flex items-center gap-1" title="Fit the whole graph into view"><Maximize2 className="w-4 h-4" /><span className="hud-label" style={{ color: "var(--text-1)" }}>Fit</span></button>
+      <button onClick={fitView} className="btn-ghost p-2 rounded-lg inline-flex items-center gap-1" title={fitTitel(kameraBodenRef.current)}><Maximize2 className="w-4 h-4" /><span className="hud-label" style={{ color: "var(--text-1)" }}>Fit</span></button>
       {angeheftet > 0 && (
         <button
           onClick={loeseAlle}

@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { render, act, fireEvent } from "@testing-library/react";
-import { KnowledgeGraph, istHell, GLYPH_FUER_ART, LEGENDE_HOEHE } from "../../src/components/KnowledgeGraph";
+import { KnowledgeGraph, fitTitel, istHell, GLYPH_FUER_ART, LEGENDE_HOEHE } from "../../src/components/KnowledgeGraph";
 import { TYP_BESCHREIBUNG } from "../../src/lib/graphHierarchy";
 import { GANG_ABSTAND } from "../../src/lib/graphLayout";
 import { installiereLeinwand, installiereResizeObserver, installiereZeiger, setzeTheme, type Leinwand } from "../helfer/canvas";
@@ -426,16 +426,22 @@ describe("Bedienung", () => {
     const raus = anzeige();
     expect(rein).not.toBe(start);
     expect(raus).not.toBe(rein);
-    await act(async () => { knopf("Fit the whole graph into view").click(); await new Promise((r) => setTimeout(r, 60)); });
+    const einpassen = [...container.querySelectorAll("button")].find((b) => (b.title ?? "").startsWith("Fit")) as HTMLButtonElement;
+    expect(einpassen, "der Einpass-Knopf fehlt — der Fall greift nicht").toBeTruthy();
+    await act(async () => { einpassen.click(); await new Promise((r) => setTimeout(r, 60)); });
     expect(anzeige()).toMatch(/%/);
   });
 
-  it("der Fit-Knopf traegt sein Wort sichtbar, und der title bleibt der volle Satz", async () => {
+  it("der Fit-Knopf traegt sein Wort sichtbar und einen title, der zu seiner Entscheidung steht", async () => {
     const { container } = await zeichne([note(), note(), note()]);
-    const knopf = container.querySelector('button[title="Fit the whole graph into view"]') as HTMLButtonElement;
+    const knopf = container.querySelector('button[title^="Fit"]') as HTMLButtonElement;
     expect(knopf, "Fit-Knopf ueber den title nicht gefunden").toBeTruthy();
     expect((knopf.textContent ?? "").trim(), "sichtbares Wort am Knopf").toBe("Fit");
     expect(knopf.querySelector("svg"), "Symbol bleibt neben dem Wort").toBeTruthy();
+    // Punkt 121: haelt der Lesbarkeitsboden die Kamera zurueck, zeigt das Bild nicht die
+    // ganze Welt — dann darf der Knopf nicht "the whole graph" versprechen.
+    expect([fitTitel(false), fitTitel(true)], "der title ist keine der beiden erlaubten Zeilen")
+      .toContain(knopf.title);
   });
 
   it("oeffnet eine Notiz bei Doppelklick auf einen Knoten", async () => {
@@ -4420,7 +4426,7 @@ describe("Gang-Masse: eine Seite Punkte, ein Blätterer, und die Zahl sagt alles
    * Anfangskamera — und den hat 3.2.23 absichtlich geaendert.
    */
   async function fahreInsGanze(container: HTMLElement) {
-    const kn = [...container.querySelectorAll("button")].find((b) => b.title === "Fit the whole graph into view");
+    const kn = [...container.querySelectorAll("button")].find((b) => (b.title ?? "").startsWith("Fit"));
     expect(kn, "der Einpass-Knopf fehlt — der Fall greift nicht").toBeTruthy();
     await act(async () => { kn!.click(); await new Promise((r) => setTimeout(r, 80)); });
     await bilder(6);
