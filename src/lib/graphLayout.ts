@@ -396,7 +396,12 @@ export function kantenBaue(memories: readonly Memory[], opts: EdgeOptions = {}):
       // aber nicht das Etikett stellen.
       if (!systemWort(name)) {
         namen.add(name);
-        if (kant.relation === undefined) kant.relation = name;
+        // Punkt 129: ein Wort von einer Hand verdeckt kein Systemwort, aber ein
+        // Systemwort darf kein Hand-Wort erschlagen. Vorher gewann die Reihenfolge
+        // der Zeilen — stand die Mitennung zuerst, blieb das Etikett stumm, obwohl
+        // jemand „betreut" geschrieben hatte. Gemessen 29.10. 15:27:18 im Fall
+        // `tests/components/graph-handwort-zeile.test.tsx`.
+        if (kant.relation === undefined || systemWort(kant.relation)) kant.relation = name;
       } else if (kant.relation === undefined) {
         // Der Systemtyp bleibt sichtbar, wenn weiter nichts ueber dem Paar
         // steht: die Kantkarte darf nicht so tun, als kenne sie den Typ nicht.

@@ -1057,6 +1057,30 @@ export function kantenWortZeile(kantentext: boolean, zoom: number, kanten: reado
 }
 
 /**
+ * Punkt 128, Stufe 3: warum traegt keine einzige Linie ein Wort von einer Hand?
+ *
+ * Gemessen 29.10. 15:21:53 an Damians laufender Instanz (`/api/graph?limit=500`, HTTP 200 in
+ * 65 ms): 1 468 Kanten im Leib, alle 1 468 mit einem Wort des Systems (776 co-mentions,
+ * 692 mentions), keine mit einem Wort von einer Hand. Die Zahl kommt aus dem Leib der Tuer,
+ * nicht aus einer Annahme — das war die Vorgabe vor diesem Bau.
+ *
+ * Der Bodensatz von 3.2.88 gilt einer andern Ursache: dort malt die Flaeche das Wort, nur
+ * weit draussen nicht. Hier gibt es kein Wort zu malen, und wer hundert Linien sieht, ohne
+ * eine einzige Bedeutung daran, hat keinen Hinweis, dass die Linien stumm sind, weil niemand
+ * je eine Aussage gesetzt hat. Zwei Ursachen, zwei Saetze — dieser tritt neben den alten.
+ *
+ * Genannt wird die Zahl der echten Linien, dieselbe, die die Kopfzeile zaehlt. Eine Zeile
+ * ohne Wort sagt nur, dass zwei Dinge zusammen vorkommen; das ist die Auskunft, die dem
+ * Menschen fehlt, bevor er eine Behauptung in ein Blatt schreibt.
+ */
+export function handWortZeile(kanten: readonly LayoutEdge[]): string {
+  const echt = kanten.filter((e) => e.real);
+  if (echt.length === 0) return "";
+  for (const e of echt) if (kantenEtikett(e)) return "";
+  return ` — none of these ${mengenzahl(echt.length)} lines carries a word you wrote; a line without one says only that two things belong together. Name a claim in a note to put a word on a line.`;
+}
+
+/**
  * Passt die Flaeche ihren Ausschnitt, wenn das Feld zur Ruhe kommt?
  *
  * A7-09, gemessen: 60 Notizen im 1440-px-Fenster — im Rasterlauf 75 % Zoom, im
@@ -6329,7 +6353,7 @@ export function KnowledgeGraph({ memories: memoriesAusFenster, onSelectMemory, o
             ·{" "}
             {ansicht === "dendrogram"
               ? `${mengenzahl(baumLayout.edges.length)} ${baumLayout.edges.length === 1 ? "link" : "links"}`
-              : `${mengenzahl(kanten.echt)} ${kanten.echt === 1 ? "link" : "links"}${aehnlichkeitsZeile(kanten.aehnlichkeit, edges.length, zoomAnzeige)}${kantenWortZeile(NAMEN_STUFE[etikettenModus].kantentext, zoomAnzeige, edges)}`}
+              : `${mengenzahl(kanten.echt)} ${kanten.echt === 1 ? "link" : "links"}${aehnlichkeitsZeile(kanten.aehnlichkeit, edges.length, zoomAnzeige)}${kantenWortZeile(NAMEN_STUFE[etikettenModus].kantentext, zoomAnzeige, edges)}${handWortZeile(edges)}`}
             {kopfLadeSatz(bestandStand)}
             {kopfFensterSatz(Boolean(graphApi?.ausriss?.begrenzt))}
           </div>

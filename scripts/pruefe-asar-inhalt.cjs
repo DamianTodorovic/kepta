@@ -476,6 +476,12 @@ const erwartet = [
   // ist kein Zaehlwert. Dass das Feld vor Tags und Privat steht, traegen zwei jsdom-Faelle
   // (Folge "ITPB" vor dem Bau, "IBTP" nachher) und die beidseitige Messung am Objekt.
   ["A claim is the word on the graph line", 1],
+  // Punkt 128, Stufe 3 (3.2.92): der Graph sagt an der Kopfzeile, wenn keine seiner Linien ein
+  // Wort von einer Hand traegt. Gegenprobe VOR dem Bau, am installierten 3.2.91 (app.asar
+  // 49 153 012 B), von derselben Sonde gelesen 15:33:09 MESZ: **0** Treffer. Im Quelltext steht
+  // der Satz 1 mal (KnowledgeGraph.tsx, `handWortZeile`) — die ASCII-Mitte, weil die Tafel nur
+  // ASCII traegt und der Zahlteil ("none of these 5 lines") mit der Bestandsgroesse wandert.
+  ["carries a word you wrote", 1],
 ];
 // Die Liste darf nur ASCII-Zeichen enthalten. Grund, gemessen 21.10. 19:16 MESZ am
 // installierten Objekt: das Wort "Looking" plus echtes U+2026 steht dort 2 mal, diese
