@@ -1,3 +1,20 @@
+## [3.2.95]
+
+### Fixed
+
+- **A single basket no longer claims to be an answer.** The share added in 3.2.94 was checked in a
+  real window at 23:51, and the picture caught the defect: the demo store fills one carrier, so the
+  row read `74 Notes 100.0 %`. One hundred percent of a set that contains nothing else is the same
+  figure wearing a second coat — the same reason the row already refuses to paint an empty basket as
+  jewellery. A carrier row now shows no share below two filled baskets, and at the other edge it
+  says `>99.9 %` rather than rounding a near-total to `100 %`, exactly as it says `< 0.1 %` rather
+  than rounding a small one down to `0 %`. Neither edge is allowed to invent a basket that is not
+  there: `100 %` claims a lone carrier, `0 %` dismisses a carrier holding a note.
+- **A witness that does not look at the accused place indicts the wrong one.** The first version of
+  both cases searched the whole surface for `100 %` and failed against the settings row
+  `Text size 100 %` — the product was right and the probe was wrong (seen 23:56:15, two cases red).
+  The assertions now read the carrier cell alone.
+
 ## [3.2.94]
 
 ### Changed

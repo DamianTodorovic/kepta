@@ -78,12 +78,20 @@ function groessenZahl(n: number): string {
  *
  * Unter einem Zehntel Prozent steht "< 0.1 %", nie eine gerundete 0 %: ein Fach, das ein
  * Stueck haelt, ist mit "0 %" als leer verabschiedet, und das ist eine Absage an den Leser,
- * keine Zahl.
+ * keine Zahl. Ebenso oben: "100 %" behauptet ein alleiniges Fach.
+ *
+ * Die 100 % haben ein Bild von sich selbst verraten — im ausgelieferten 3.2.94 stand bei einem
+ * Bestand, der nur ein Fach fuellt, "74 Notes 100.0 %" (eigner Schuss 23:51, eigne
+ * Sichtpruefung). Hundert Prozent einer Menge, aus der nichts andres kommt, sind dieselbe Zahl
+ * in einem zweiten Gewand, nicht eine Auskunft. Darum: unter zwei vollen Faechern bleibt die
+ * Zeile ohne Anteil.
  */
-function anteilZahl(n: number, gesamt: number): string {
-  if (!(gesamt > 0)) return '';
+function anteilZahl(n: number, gesamt: number, faelter: number): string {
+  if (!(gesamt > 0) || faelter < 2) return '';
   const anteil = (100 * n) / gesamt;
-  return anteil < 0.1 ? '< 0.1 %' : `${anteil.toFixed(1)} %`;
+  if (anteil < 0.1) return '< 0.1 %';
+  if (anteil > 99.9) return '>99.9 %';
+  return `${anteil.toFixed(1)} %`;
 }
 
 function mengensatz(gemalt: number, bestand: number | null, menge = 'in the store'): string {
@@ -832,6 +840,10 @@ export function Dashboard() {
    */
   const traegerNenner = bestandGruppen?.bestand
     ?? (traegerCounts.notes + traegerCounts.files + traegerCounts.code);
+  /** Wie viele Faecher ueberhaupt fuellen: unter zwei ist ein Anteil keine Auskunft. */
+  const traegerFaelter = (zeigeTraeger.notes > 0 ? 1 : 0)
+    + (zeigeTraeger.files > 0 ? 1 : 0)
+    + (zeigeTraeger.code > 0 ? 1 : 0);
   /** Die Bestandzahl genau der Gruppe, die ins Leere lief — eingelesen, nicht geschätzt. */
   const zahlDerWahl = bestandGruppen === null ? undefined
     : aktiveTraeger.length === 1 ? bestandGruppen.traeger[aktiveTraeger[0]]
@@ -1837,20 +1849,23 @@ export function Dashboard() {
                         `var(--type-${t})` wäre für sie unsichtbar — gemessen
                         22.10. 21:09:14, wo die Ruhe-Ebenen-Wache von 20 auf 16
                         Zeilen fiel. */}
-                    {TRAEGER_KLEID.filter((k) => zeigeTraeger[k.key] > 0).map((k) => (
-                      <span key={k.key} style={{ color: k.color }}>
-                        {groessenZahl(zeigeTraeger[k.key])} <span className="text-[10px] opacity-70">{TRAEGER_LABELS[k.key]}</span>
-                        {/* Der Anteil dahinter sagt, was die Menge allein nicht sagt: an einem
-                            echten Bestand von 21 066 sind 92 selbst getippte Stuecke 0,4 %.
-                            Sein Nenner ist dieselbe Menge, die die Zeile unter ihm nennt.
-                            Kleid: --text-3 ohne Deckkraft, gemessen 4,65:1 (index.css:299) —
-                            die Ebene, die erklaert. Das Woertchen daneben traegt weiterhin
-                            opacity-70 und liegt damit in der bekannten Schuld (index.css:609,
-                            3,45 gegen die Latte 4,5); neue Auskunft bekommt keinen Ton unter
-                            der Latte, auch nicht der Gleichheit wegen. */}
-                        <span className="text-[10px]" style={{ color: 'var(--text-3)' }}> {anteilZahl(zeigeTraeger[k.key], traegerNenner)}</span>
-                      </span>
-                    ))}
+                    {TRAEGER_KLEID.filter((k) => zeigeTraeger[k.key] > 0).map((k) => {
+                      /* Der Anteil dahinter sagt, was die Menge allein nicht sagt: an einem
+                         echten Bestand von 21 066 sind 92 selbst getippte Stuecke 0,4 %.
+                         Sein Nenner ist dieselbe Menge, die die Zeile unter ihm nennt.
+                         Kleid: --text-3 ohne Deckkraft, gemessen 4,65:1 (index.css:299) —
+                         die Ebene, die erklaert. Das Woertchen daneben traegt weiterhin
+                         opacity-70 und liegt damit in der bekannten Schuld (index.css:609,
+                         3,45 gegen die Latte 4,5); neue Auskunft bekommt keinen Ton unter
+                         der Latte, auch nicht der Gleichheit wegen. */
+                      const anteil = anteilZahl(zeigeTraeger[k.key], traegerNenner, traegerFaelter);
+                      return (
+                        <span key={k.key} style={{ color: k.color }}>
+                          {groessenZahl(zeigeTraeger[k.key])} <span className="text-[10px] opacity-70">{TRAEGER_LABELS[k.key]}</span>
+                          {anteil !== '' && <span className="text-[10px]" style={{ color: 'var(--text-3)' }}> {anteil}</span>}
+                        </span>
+                      );
+                    })}
                     {zeigeTraeger.notes === 0 && zeigeTraeger.files === 0 && zeigeTraeger.code === 0 && (
                       <span style={{ color: 'var(--text-3)' }}>nothing here yet</span>
                     )}

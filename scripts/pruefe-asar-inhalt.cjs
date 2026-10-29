@@ -498,6 +498,11 @@ const erwartet = [
   // Treffer. Die Zahlen selbst (0.4 %, 52.2 %) taugen nicht als Marke — sie wachsen mit dem
   // Bestand und wandern mit jeder Landung; nur die Schwelle bleibt.
   ["< 0.1 %", 1],
+  // Punkt 5, Fix 4 nach der Sichtpruefung (3.2.95): ein Fach, das fast alles fuellt, sagt
+  // ">99.9 %" statt einer gerundeten 100 %, und ein einziges Fach ueberhaupt keinen Anteil.
+  // Gegenprobe VOR dem Bau, am installierten 3.2.94 (app.asar 49 153 703 B), gelesen 23:59:00
+  // von derselben Sonde: **0** Treffer (ihr "< 0.1 %" steht dort 1 mal, die Marke von eben).
+  [">99.9 %", 1],
 ];
 // Die Liste darf nur ASCII-Zeichen enthalten. Grund, gemessen 21.10. 19:16 MESZ am
 // installierten Objekt: das Wort "Looking" plus echtes U+2026 steht dort 2 mal, diese

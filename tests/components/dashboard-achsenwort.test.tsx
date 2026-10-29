@@ -122,8 +122,19 @@ describe("Punkt 5: drei Achsen, drei Fragen", () => {
 
 /** Der Satz unter den drei Traeger-Zahlen, falls er zu finden ist - fuer die Meldung. */
 function streifenWort(container: HTMLElement): string {
-  const zelle = [...container.querySelectorAll(".index-cell")].find((c) => /Notes|Files|Code/.test(c.textContent ?? ""));
-  return zelle?.querySelector(".k")?.textContent ?? "(keine Zeile gefunden)";
+  return traegerZelle(container)?.querySelector(".k")?.textContent ?? "(keine Zeile gefunden)";
+}
+
+/**
+ * Nur die Zelle, die die Traeger-Zahlen haelt.
+ *
+ * Grund, dass der Rest des Blatts hier nicht mitgerechnet wird: die erste Fassung dieser
+ * Faelle suchte "100 %" im Text der ganzen Flaeche und verlor an der Einstellungen-Zeile
+ * "Text size 100 %" — ein Zeuge, der die angeklagte Stelle nicht ansieht, klagt die falsche
+ * an. Gesehen 23:56:15, zwei Faelle rot bei richtiger Auskunft.
+ */
+function traegerZelle(container: HTMLElement): Element | undefined {
+  return [...container.querySelectorAll(".index-cell")].find((c) => /Notes|Files|Code/.test(c.textContent ?? ""));
 }
 
 /**
@@ -184,5 +195,34 @@ describe("Punkt 5: die Traeger-Zeile nennt ihren Anteil", () => {
     // Absage an den Leser, nicht eine Zahl: es sagt "hier ist nichts", waehrend etwas da ist.
     expect(text, "ein Fach mit einem Stueck darf nicht als 0 % verschwinden").toMatch(/<\s*0\.1\s*%/);
     expect(text).not.toMatch(/\b1 Notes 0(\.0)?\s*%/);
+  });
+
+  /**
+   * Der Fall, den das ausgelieferte Bild von 3.2.94 selbst gezeigt hat (23:51, eigner Schuss,
+   * eigne Sichtpruefung): der Demo-Bestand fuellt EIN Fach und die Zeile antwortet
+   * "74 Notes 100.0 %". Hundert Prozent einer Menge, die nur aus diesem einen Fach besteht,
+   * ist keine Auskunft, sondern die Tautologie derselben Zahl in einem zweiten Gewand —
+   * dasselbe Gesetz, das leere Faecher nicht als Schmuck malt (`Dashboard.tsx`, "Ein Fach mit
+   * null Stücken ist keine Auskunft").
+   */
+  it("nennt keinen Anteil, wenn ein einziges Fach den ganzen Laden fuellt", async () => {
+    const { container } = await zeigeMit(74, { notes: 74, files: 0, code: 0 });
+    await waitFor(() => expect(container.textContent).toMatch(/the whole store/i), { timeout: 6000 });
+    const zelle = traegerZelle(container)?.textContent ?? "";
+    expect(zelle, `ein Fach, das alles ist, braucht kein hundert Prozent daneben: ${zelle}`).not.toMatch(/100(\.0)?\s*%/);
+    // Die Menge selbst bleibt stehen — ohne sie waere die Zeile leer.
+    expect(zelle).toMatch(/74\s*Notes/);
+  });
+
+  it("sagt fast alles und fast nichts, statt auf 100 und 0 zu runden", async () => {
+    const { container } = await zeigeMit(21_066, { notes: 21_060, files: 5, code: 1 });
+    await waitFor(() => expect(container.textContent).toMatch(/the whole store/i), { timeout: 6000 });
+    const zelle = traegerZelle(container)?.textContent ?? "";
+    // 21 060 / 21 066 = 99,97 % und 1 / 21 066 = 0,0047 %. Zwei Faelle, eine Regel: die Rundung
+    // darf keinen Rand erzeugen, den es nicht gibt — "100 %" behauptet ein alleiniges Fach,
+    // "0 %" behauptet ein leeres.
+    expect(zelle, `ein Fach, das fast alles ist, darf nicht als 100 % erscheinen: ${zelle}`).toMatch(/>99\.9\s*%/);
+    expect(zelle).toMatch(/<\s*0\.1\s*%/);
+    expect(zelle).not.toMatch(/100(\.0)?\s*%/);
   });
 });
