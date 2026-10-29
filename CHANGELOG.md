@@ -1,3 +1,22 @@
+## [3.2.90]
+
+### Changed
+
+- **The claims field now stands where a hand decides.** Measured 13:50 in the shipped 3.2.89 (own
+  capsule, 1440 x 900, nothing scrolled): the block began at y 894 while the fold of the editor
+  ends at 899 — five pixels of a 202 px block in view, and its three inputs at 959-997, past the
+  edge. So the field existed and nothing in it was reachable. At 390 px it began at 960 against a
+  fold at 843: 117 px of scrolling before its first word. The cause was the order, not the field —
+  Tags (83 px) and Private (62 px), plus their two gaps, stood above it. Both now stand below it,
+  and **Claims on this note** sits directly under *Content*, which is where deciding what a note
+  claims belongs. Two jsdom cases count the row order in the document; before the move they read
+  `ITPB` and named the missing step, now they read `IBTP`. The help line under the three inputs is
+  one line instead of two: arithmetic on the measured heights puts the two-line block 4 px past
+  the fold even after the move, and a sentence that hangs by four pixels is a layout problem
+  dressed as copy. Finger targets are untouched and were measured in the same run — 44 px for all
+  three inputs and *Add claim* at 390 px width, 38 px on a wide window where the house floor
+  (#44) is 36 px.
+
 ## [3.2.89]
 
 ### Added
