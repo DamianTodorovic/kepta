@@ -1,3 +1,19 @@
+## [3.2.85]
+
+### Fixed
+
+- **The graph's depth step now changes the picture.** Measured on the shipped 3.2.84 at 05:28:
+  four calls - `depth=1|2|3|4` - answer byte-identically (470,506 B, 500 concepts, 2,000
+  claims), because `depth` lived only in the entity branch of the store while the whole-base
+  path grew over edges unbounded until the cap of 500. The surface shows the step with the
+  words "How many steps the picture asks the door for around each concept", so the control was
+  a decoration. Decided: wire it, do not remove it - Obsidian's graph carries the same 1-4
+  step. The growth loop now honours the step, and the door clamps it with the **same**
+  constants as the core instead of a second copy. On a fixture built so that the chain can
+  only arrive by hops, the four steps reach 2, 3, 4 and 5 chain members - a case that had to
+  be rebuilt twice before it could actually fail, and both wrong builds are named in the test.
+  What does not change: the window still fills to exactly 500 at every step.
+
 ## [3.2.84]
 
 ### Fixed
