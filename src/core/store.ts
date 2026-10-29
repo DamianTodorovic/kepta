@@ -1441,10 +1441,13 @@ export class KeptaStore {
     // gleichem Bestand derselbe bleibt.
     //
     // Und die Scheibe muss in sich geschlossen sein: eine Kante, deren Ende der
-    // Begriffsschnitt nicht mitliefert, wird von der Tuer spater weggeworfen
-    // (server/router/system.ts:56). Gemessen: 1.593 von 2 000 Kanten auf einem
-    // echten Bestand, 1.711 von 2 000 im Test-Fixture — die Flaeche haette ihre
-    // Bilanz gegen eine Zahl gezogen, die sie nie zeichnet.
+    // Begriffsschnitt nicht mitliefert, warf die Tuer bisher weg (`system.ts:93` filtert
+    // gegen dieselbe Menge). Darum ist ihr Zaehler `kantenVerworfen` seitdem **per
+    // Konstruktion 0** — gemessen 07:12 Uhr an einem 2 120-Kanten-Bestand: "dropped 0",
+    // waehrend 1 771 Kanten nie ankommen. Was hier steht, ist die Heilung von 16.10.:
+    // 1.593 von 2 000 Kanten auf einem echten Bestand und 1.711 von 2 000 im Test-Fixture
+    // waren die Zahlen VOR dieser Scheibe; die Flaeche haette ihre Bilanz gegen eine Zahl
+    // gezogen, die sie nie zeichnet. Was heute fehlt, zaehlt `ausriss.kantenAusserhalb`.
     const kantenPlaceholders = knotenIds.map(() => "?").join(",");
     const relations = knotenIds.length === 0 ? [] : (
       this.db

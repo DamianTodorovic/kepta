@@ -85,11 +85,13 @@ export function mountSystem(app: express.Express, ctx: AppKontext): void {
     const g = store.getGraph(entity, depth);
     zeit.marke("fenster");
     const nameById = new Map(g.entities.map((e) => [e.id, e.name]));
-    // Diese Masche war bisher eine stille Lucke: Kanten, deren anderes Ende nicht im
-    // Auszug liegt, verschwanden, ohne dass die Antwort eine Zahl dafuer nannte.
-    // A1x hat die Groessenordnung gemessen (tests/core/graphdeckung.test.ts:99-104):
-    // 1.593 von 2.000 Kanten auf Damians echtem Bestand, 827 von 2.000 am
-    // 14.000-Kunstbestand. GFs Flaeche zeigte darum "0 links" bei vollen Taschen.
+    // Diese Masche war einmal eine stille Lucke: Kanten, deren anderes Ende nicht im
+    // Auszug lag, verschwanden ohne Zahl. Seit die Kantenscheibe im Kern geschlossen ist
+    // (`src/core/store.ts:1443-1451`), filtert diese Zeile gegen dieselbe Menge — ihr
+    // `kantenVerworfen` ist darum strukturell 0, und was dem Bild wirklich fehlt, steht in
+    // `kantenAusserhalb`. Die Groessenordnung von frueher (A1x, 16.10.: 1.593 von 2 000 auf
+    // Damians echtem Bestand, 827 von 2 000 am 14.000-Kunstbestand) gilt fuer den Stand VOR
+    // der geschlossenen Scheibe und ist hier nur noch Geschichte, kein heutiger Wert.
     const kanten = g.relations.filter((r) => nameById.has(r.sourceId) && nameById.has(r.targetId));
     const bestand = store.graphBestand();
     zeit.marke("masche");
@@ -124,6 +126,13 @@ export function mountSystem(app: express.Express, ctx: AppKontext): void {
     })();
     zeit.marke("deckung");
     const verworfen = g.relations.length - kanten.length;
+    // `verworfen` kann fuer dieses Fenster nie etwas anderes als 0 sein: die Kantenscheibe
+    // im Kern (`src/core/store.ts:1443-1451`) holt nur Paare, deren BEIDE Enden in derselben
+    // Begriffsscheibe liegen, und diese Zeile filtert gegen genau dieselbe Menge. Gemessen
+    // 07:12 Uhr an einem 2 120-Kanten-Bestand: "dropped 0 edges", waehrend 1 771 Kanten
+    // nie ankommen. Der Zaehler fuer das, was dem Bild fehlt, ist darum der Rest gegen den
+    // Bestand — ein Feld, das zaehlen DUERFTE, statt eines, das per Konstruktion schweigt.
+    const aussen = Math.max(0, bestand.kanten - kanten.length);
     const begrenzt = g.entities.length < bestand.knoten || kanten.length < bestand.kanten;
     // Der Kopf geht vor res.json: was Express aus dem Objekt macht (Rendern und Senden
     // des Leibs), steht darum nicht in den Teilzeiten — nur was die Route selbst tat.
@@ -163,10 +172,15 @@ export function mountSystem(app: express.Express, ctx: AppKontext): void {
         kantenImAuszug: g.relations.length,
         kantenGezeigt: kanten.length,
         kantenVerworfen: verworfen,
+        kantenAusserhalb: aussen,
+        begriffeAusserhalb: Math.max(0, bestand.knoten - g.entities.length),
         begrenzt,
         grund: "edges whose other end is not in this excerpt — the caps in getGraph (500 concepts, 2000 edges) and this filter decide together what a window can draw",
+        // Die Zahlen bleiben im Hinweis ohne Tausenderpunkt: `tests/server-graph-zahl.test.ts`
+        // haelt den Hinweis auf sein Format, und ein Feld, das ein Werkzeug liest, ist keine
+        // Prosa. Die gesprochene Zahl mit Punkt baut die Flaeche (`mengenzahl`).
         hinweis: begrenzt || verworfen
-          ? `This excerpt holds ${g.entities.length} of ${bestand.knoten} concepts and ${kanten.length} of ${bestand.kanten} edges; the door dropped ${verworfen} edges whose other end is outside the excerpt. The base holds ${bestand.knoten} concepts and ${bestand.kanten} edges.`
+          ? `This excerpt holds ${g.entities.length} of ${bestand.knoten} concepts and ${kanten.length} of ${bestand.kanten} edges; the door dropped ${verworfen} edges whose other end is outside the excerpt, and ${aussen} edges never reach a window this size. The base holds ${bestand.knoten} concepts and ${bestand.kanten} edges.`
           : `This excerpt is the whole graph: ${g.entities.length} concepts and ${kanten.length} edges, nothing dropped.`,
       },
     });
