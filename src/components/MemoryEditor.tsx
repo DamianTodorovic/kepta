@@ -362,62 +362,11 @@ export function MemoryEditor({ memory, onSave, onClose, onDelete }: MemoryEditor
               />
             </div>
 
-            <div className="pt-2">
-              <label htmlFor="memory-schlagwort" className="hud-label mb-2">Tags</label>
-              <div className="hud-input flex flex-wrap gap-2 items-center p-2 rounded-xl">
-                {tags.map(tag => (
-                  <span
-                    key={tag}
-                    className="flex items-center gap-1 px-3 py-1 rounded-lg text-sm font-medium hud-inset"
-                    style={{ color: 'var(--accent)' }}
-                  >
-                    <Hash className="w-3.5 h-3.5 opacity-60" />
-                    {tag}
-                    <button
-                      type="button"
-                      onClick={() => removeTag(tag)}
-                      className="ml-1 opacity-60 hover:opacity-100 focus:outline-none transition-opacity"
-                    >
-                      <X className="w-3.5 h-3.5" />
-                    </button>
-                  </span>
-                ))}
-                <input
-                  id="memory-schlagwort"
-                  type="text"
-                  placeholder={tags.length === 0 ? "Type and press Enter…" : ""}
-                  value={tagsInput}
-                  onChange={(e) => setTagsInput(e.target.value)}
-                  onKeyDown={handleAddTag}
-                  className="flex-1 min-w-[150px] bg-transparent text-sm focus:outline-none px-2"
-                  style={{ color: 'var(--text-1)' }}
-                />
-              </div>
-            </div>
-
-            {/* Private — never shown to AI apps, never sent to a cloud model */}
-            <div className="rounded-xl px-4 py-3 flex items-center gap-3" style={{ border: '1px solid var(--border-subtle)' }}>
-              <Lock className="w-4 h-4 shrink-0" style={{ color: privat ? 'var(--accent)' : 'var(--text-3)' }} />
-              <div className="flex-1">
-                <div className="text-sm font-medium" style={{ color: 'var(--text-1)' }}>Private</div>
-                <div className="text-xs" style={{ color: 'var(--text-3)' }}>AI apps never see this note, and it is never sent to a cloud model.</div>
-              </div>
-              <button
-                type="button"
-                role="switch"
-                aria-checked={privat}
-                aria-label="Private"
-                onClick={() => setPrivat((v) => !v)}
-                className="relative w-10 h-6 rounded-full shrink-0 transition-colors"
-                style={{ background: privat ? 'var(--accent)' : 'var(--bg-inset-strong)', border: '1px solid var(--border-subtle)' }}
-              >
-                <span className="absolute top-0.5 rounded-full bg-white transition-all" style={{ left: privat ? 18 : 2, width: 18, height: 18 }} />
-              </button>
-            </div>
-
             {/* Punkt 126 — eine Hand legt das Wort hin. Vorher konnte niemand sagen, WAS
                 zwei Begriffe verbinden: gemessen 29.10. 08:19:52 an Damians echtem Bestand
-                sind 1 468 von 1 468 Kanten Mitennungen und 0 Aussagen mit einem Wort. */}
+                sind 1 468 von 1 468 Kanten Mitennungen und 0 Aussagen mit einem Wort.
+                Punkt 128 — die Zeile steht direkt unter dem Inhalt und nicht unter Tags und
+                Privat, weil sie gemessen 29.10. 13:35 auf 1440 x 900 unter der Kante lag. */}
             <div className="rounded-xl" style={{ border: '1px solid var(--border-subtle)' }} data-testid="behauptung-feld">
               <div className="flex items-center justify-between gap-2 px-4 pt-3">
                 <span className="flex items-center gap-2 text-sm font-medium" style={{ color: 'var(--text-2)' }}>
@@ -472,9 +421,62 @@ export function MemoryEditor({ memory, onSave, onClose, onDelete }: MemoryEditor
                   <span data-testid="behauptung-meldung" className="hud-label" style={{ color: 'var(--text-3)' }}>{meldung}</span>
                 </div>
                 <p className="text-xs" style={{ color: 'var(--text-3)' }}>
-                  A claim is the word on the line in the graph. Terms you name here are added to this note, so the line has both ends.
+                  A claim is the word on the graph line. Words you name here are added to this note.
                 </p>
               </div>
+            </div>
+
+            <div className="pt-2">
+              <label htmlFor="memory-schlagwort" className="hud-label mb-2">Tags</label>
+              <div className="hud-input flex flex-wrap gap-2 items-center p-2 rounded-xl">
+                {tags.map(tag => (
+                  <span
+                    key={tag}
+                    className="flex items-center gap-1 px-3 py-1 rounded-lg text-sm font-medium hud-inset"
+                    style={{ color: 'var(--accent)' }}
+                  >
+                    <Hash className="w-3.5 h-3.5 opacity-60" />
+                    {tag}
+                    <button
+                      type="button"
+                      onClick={() => removeTag(tag)}
+                      className="ml-1 opacity-60 hover:opacity-100 focus:outline-none transition-opacity"
+                    >
+                      <X className="w-3.5 h-3.5" />
+                    </button>
+                  </span>
+                ))}
+                <input
+                  id="memory-schlagwort"
+                  type="text"
+                  placeholder={tags.length === 0 ? "Type and press Enter…" : ""}
+                  value={tagsInput}
+                  onChange={(e) => setTagsInput(e.target.value)}
+                  onKeyDown={handleAddTag}
+                  className="flex-1 min-w-[150px] bg-transparent text-sm focus:outline-none px-2"
+                  style={{ color: 'var(--text-1)' }}
+                />
+              </div>
+            </div>
+
+            {/* Private — never shown to AI apps, never sent to a cloud model */}
+            <div className="rounded-xl px-4 py-3 flex items-center gap-3" style={{ border: '1px solid var(--border-subtle)' }}>
+              <Lock className="w-4 h-4 shrink-0" style={{ color: privat ? 'var(--accent)' : 'var(--text-3)' }} />
+              <div className="flex-1">
+                <div className="text-sm font-medium" style={{ color: 'var(--text-1)' }}>Private</div>
+                <div className="text-xs" style={{ color: 'var(--text-3)' }}>AI apps never see this note, and it is never sent to a cloud model.</div>
+              </div>
+              <button
+                type="button"
+                role="switch"
+                aria-checked={privat}
+                aria-label="Private"
+                onClick={() => setPrivat((v) => !v)}
+                className="relative w-10 h-6 rounded-full shrink-0 transition-colors"
+                style={{ background: privat ? 'var(--accent)' : 'var(--bg-inset-strong)', border: '1px solid var(--border-subtle)' }}
+              >
+                <span className="absolute top-0.5 rounded-full bg-white transition-all" style={{ left: privat ? 18 : 2, width: 18, height: 18 }} />
+              </button>
             </div>
 
             {/* Temporal & confidence — collapsible */}
