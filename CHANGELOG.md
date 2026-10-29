@@ -1,3 +1,21 @@
+## [3.2.84]
+
+### Fixed
+
+- **The picture names the window it is drawn from.** Measured on the shipped 3.2.83 with a
+  21,000-note base at 05:28: the door holds 500 concepts and 2,000 claims out of 42,700 concepts
+  and 150,600 claims (`begrenzt true`), the excerpt costs 186 ms of ~220 ms and 470 KB of body -
+  and the surface never read the field it was answering with. What a person saw instead was
+  "1,104 of 21,000 unfolded notes are in this picture": true as a count, wrong as an
+  expectation, because nothing a zoom can do brings in what the window left out. The line now
+  says both ratios, in the same row family as the two above it, and stays away when an older
+  door reports no excerpt at all rather than guessing a window.
+- **Side finding of the same trace, not yet built:** depths 1, 2, 3 and 4 answer byte-identically
+  (470,506 B, 500 concepts, 2,000 claims). `depth` lives only in the entity branch
+  (`src/core/store.ts:1358-1370`) and the surface never asks with `entity=`, so the depth control
+  in the More panel moves nothing. Decided: wire it, do not delete it - Obsidian's graph has the
+  same 1-4 step control.
+
 ## [3.2.83]
 
 ### Fixed
