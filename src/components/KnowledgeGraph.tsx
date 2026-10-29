@@ -939,6 +939,20 @@ export function fensterZeile(
     + "no zoom can bring in what the window left out";
 }
 
+/**
+ * Die Kurzform derselben Auskunft, am **Kopf** — und der Kopf steht immer, auch hinter der
+ * zugeklappten Legende.
+ *
+ * Gemessen 05:55 Uhr am installierten 3.2.84: die Langform (`fensterZeile`) sitzt in der
+ * Zeilenfamilie der Legende, und die Legende ist zu, wenn ein grosses Bild geoeffnet wird
+ * (`aria-expanded=false`, im Lauf nachgelesen). Eine Auskunft ueber das Bild, die erst nach
+ * einem Klick sichtbar wird, ist bei einem Bild, das zu klein anfängt, die halbe Auskunft.
+ * Darum hier die eine Wendung ohne Zahlen — die Zahlen stehen in der Langform.
+ */
+export function kopfFensterSatz(begrenzt: boolean): string {
+  return begrenzt ? " - this is a window, not the whole store" : "";
+}
+
 export const GRAPH_TIEFE_MIN = 1;
 export const GRAPH_TIEFE_MAX = 4;
 export const GRAPH_TIEFE_DEFAULT = 2;
@@ -6278,7 +6292,9 @@ export function KnowledgeGraph({ memories: memoriesAusFenster, onSelectMemory, o
             ·{" "}
             {ansicht === "dendrogram"
               ? `${mengenzahl(baumLayout.edges.length)} ${baumLayout.edges.length === 1 ? "link" : "links"}`
-              : `${mengenzahl(kanten.echt)} ${kanten.echt === 1 ? "link" : "links"}${aehnlichkeitsZeile(kanten.aehnlichkeit, edges.length, zoomAnzeige)}${kopfLadeSatz(bestandStand)}`}
+              : `${mengenzahl(kanten.echt)} ${kanten.echt === 1 ? "link" : "links"}${aehnlichkeitsZeile(kanten.aehnlichkeit, edges.length, zoomAnzeige)}`}
+            {kopfLadeSatz(bestandStand)}
+            {kopfFensterSatz(Boolean(graphApi?.ausriss?.begrenzt))}
           </div>
             <button
               type="button"

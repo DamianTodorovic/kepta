@@ -6,7 +6,7 @@ import { AuthProvider } from "../../src/contexts/AuthContext";
 import { ThemeProvider } from "../../src/contexts/ThemeContext";
 import { ToastProvider } from "../../src/components/ui/Toast";
 import { installiereResizeObserver } from "../helfer/canvas";
-import { fensterZeile } from "../../src/components/KnowledgeGraph";
+import { fensterZeile, kopfFensterSatz } from "../../src/components/KnowledgeGraph";
 
 // Punkt 124, gemessen 05:28 Uhr am installierten 3.2.83 an 21 000 Notizen
 // (Mappe: audit-2026-10-09/feldzug/BEFUND-124-FENSTER-2910.md). Die Tuer weiss es genau:
@@ -95,6 +95,33 @@ describe("#124 die Flaeche nennt ihr Fenster", () => {
     );
     await waitFor(() => expect(zeile(container)).toMatch(/reach this picture/), { timeout: 8000 });
     expect(zeile(container)).toMatch(/^500 of 42,700 concepts and 2,000 of 150,600 claims/);
+  });
+
+  it("der Kopf traegt die Kurzform immer, die Langform nur hinter der Klappe", () => {
+    expect(kopfFensterSatz(true)).toMatch(/window, not the whole store/);
+    expect(kopfFensterSatz(false)).toBe("");
+  });
+
+  it("steht die Kappe, nennt der KOPF sie — ohne dass jemand die Legende oeffnet", async () => {
+    tuer({ begriffe: 500, kantenImAuszug: 2000, kantenGezeigt: 2000, kantenVerworfen: 0, begrenzt: true });
+    const { container } = render(
+      <ThemeProvider><AuthProvider><ToastProvider><Dashboard /></ToastProvider></AuthProvider></ThemeProvider>
+    );
+    await waitFor(() => expect(container.querySelector('[data-testid="graph-kopf"]')?.textContent)
+      .toMatch(/window, not the whole store/), { timeout: 8000 });
+    // Nicht gegen die Klappe pruefen: ihre Anfangsstellung ist eine Messung des
+    // Fensters, nicht dieser Funktion — am ausgelieferten Stueck stand sie 05:21 Uhr auf
+    // `false` (Legende zu), in jsdom steht sie auf `true`. Behauptet wird hier nur, dass
+    // der KOPF die Auskunft traegt, denn der Kopf steht in beiden Umgebungen.
+  });
+
+  it("schweigt die Kappe im Kopf, wenn die Tuer kein Fenster meldet", async () => {
+    tuer({ begriffe: 12, kantenImAuszug: 9, kantenGezeigt: 9, kantenVerworfen: 0, begrenzt: false });
+    const { container } = render(
+      <ThemeProvider><AuthProvider><ToastProvider><Dashboard /></ToastProvider></AuthProvider></ThemeProvider>
+    );
+    await waitFor(() => expect(container.querySelector('[data-testid="graph-kopf"]')).toBeTruthy(), { timeout: 8000 });
+    expect(container.querySelector('[data-testid="graph-kopf"]')?.textContent).not.toMatch(/window, not the whole store/);
   });
 
   it("schweigt die Tuer (aeltere Fassung), erfindet die Flaeche kein Fenster", async () => {
