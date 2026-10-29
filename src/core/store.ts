@@ -1441,7 +1441,7 @@ export class KeptaStore {
     // gleichem Bestand derselbe bleibt.
     //
     // Und die Scheibe muss in sich geschlossen sein: eine Kante, deren Ende der
-    // Begriffsschnitt nicht mitliefert, warf die Tuer bisher weg (`system.ts:93` filtert
+    // Begriffsschnitt nicht mitliefert, warf die Tuer bisher weg (`system.ts:95` filtert
     // gegen dieselbe Menge). Darum ist ihr Zaehler `kantenVerworfen` seitdem **per
     // Konstruktion 0** — gemessen 07:12 Uhr an einem 2 120-Kanten-Bestand: "dropped 0",
     // waehrend 1 771 Kanten nie ankommen. Was hier steht, ist die Heilung von 16.10.:
