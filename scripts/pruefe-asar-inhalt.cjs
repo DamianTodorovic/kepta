@@ -467,6 +467,15 @@ const erwartet = [
   // Fehlt einer der beiden, sieht die Flaeche ein Feld ohne Grund, weil ihr Reader ins
   // Leere laeuft — genau die Klasse "eine Zahl, die niemand liest", nur mit einem Pfad.
   ["/behauptungen", 2],
+  // Punkt 128, Stufe 1 (3.2.90): die Zeile rueckt hoeher, und ihre Hilfszeile wird ein Satz
+  // kuerzer, damit der Block bei 1440 x 900 ganz in den ersten Blick passt. Gegenprobe VOR dem
+  // Tausch, am dann installierten 3.2.89 (app.asar 49 152 914 B, mtime 09:44), 14:11:06 MESZ:
+  // der neue Wortlaut **0** mal, der alte ("A claim is the word on the line in the graph") 1 mal.
+  // Am gebauten Objekt 14:10:52 MESZ (49 152 880 B): neu 1, alt 0.
+  // KEINE Marke fuer die Reihenfolge selbst: die Tafel rechnet nur Vorkommen (">="), ein Index
+  // ist kein Zaehlwert. Dass das Feld vor Tags und Privat steht, traegen zwei jsdom-Faelle
+  // (Folge "ITPB" vor dem Bau, "IBTP" nachher) und die beidseitige Messung am Objekt.
+  ["A claim is the word on the graph line", 1],
 ];
 // Die Liste darf nur ASCII-Zeichen enthalten. Grund, gemessen 21.10. 19:16 MESZ am
 // installierten Objekt: das Wort "Looking" plus echtes U+2026 steht dort 2 mal, diese
