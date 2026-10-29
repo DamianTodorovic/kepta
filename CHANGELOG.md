@@ -1,3 +1,20 @@
+## [3.2.88]
+
+### Fixed
+
+- **The picture now names the floor under its edge words.** The graph has painted the type of a
+  claim on its line for a long time (`kantenEtikett`), but only above 90 % zoom - and no sentence
+  anywhere said so. Measured 07:57 in the shipped 3.2.87: the head line counts the links, the
+  legend counts what the door left out, and a field at 40 % shows a hundred lines with not one
+  meaning attached and no hint that coming closer is the answer. The house already names its zoom
+  floors this way ("+7,457 similar - hidden until 55 % zoom"); this closes the second one. The
+  clause and the painter now ask one function (`kantentextFrei`, `KnowledgeGraph.tsx:1031`), so
+  text and picture cannot drift apart, and the sentence stays silent when nothing is held back:
+  no claim line in the field, or a density stage that steps the words back on purpose - that one
+  explains itself at its own button. Six cases, the pair that releases the clause measured on the
+  real head line (the sentence appears below the floor and disappears above it), and the guard
+  proven by switching the floor test off - two cases go red, not zero.
+
 ## [3.2.87]
 
 ### Fixed
