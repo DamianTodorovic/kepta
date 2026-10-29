@@ -328,6 +328,8 @@ describe("#121 der Satz am Einpass-Knopf", () => {
     expect(fitTitel(false)).toBe("Fit the whole graph into view");
     expect(fitTitel(true)).toMatch(/readability floor/);
     expect(fitTitel(true)).not.toMatch(/whole graph/);
+    // Der Satz schuldet auch den Weg nach draussen: die manuelle Zoomskala ist frei.
+    expect(fitTitel(true)).toMatch(/zooming out shows them all/);
     expect(fitTitel(true).startsWith("Fit"), "beide Zeilen beginnen am selben Wort").toBe(true);
   });
 });

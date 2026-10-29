@@ -851,10 +851,15 @@ export const TITEL_KANTEN_PX = ETIKETT_PX;
  * zurueck, zeigt das Bild nicht die ganze Welt — dann schuldet der Knopf diesen Satz,
  * nicht das Versprechen "the whole graph". Die Zahl, wie viele Notizen draussen bleiben,
  * steht schon an der Bildkante (`graph-im-bild`); hier geht es nur um das Wort am Knopf.
+ *
+ * Entscheidung des Rechners, 29.10.: der Boden bleibt, weil alles-in-einem-Rahmen bei
+ * vielen Knoten schlecht aussieht — und er bleibt eine **Voreinstellung, keine Wand**:
+ * die manuelle Skala ist bei 0,02 frei (`zoomAt`, graphLayout.ts:1628), also kann jeder
+ * die ganze Welt sehen. Darum nennt der Satz den Weg nach draussen.
  */
 export function fitTitel(bodenEntschieden: boolean): string {
   return bodenEntschieden
-    ? "Fit — held at the readability floor, so some notes stay outside; the line at the edge counts them"
+    ? "Fit — held at the readability floor, so some notes stay outside; the line at the edge counts them, and zooming out shows them all"
     : "Fit the whole graph into view";
 }
 
