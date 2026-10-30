@@ -1,3 +1,31 @@
+## [3.2.100]
+
+### Added
+
+- **An agent can state a claim, not only a note.** `memory_save` grew the field
+  `beziehungen`: a list of `{quelle, ziel, wort}` — who makes the claim, the word that says
+  what is claimed, whom it is about. This is the same contract the surface already used, in the
+  same three states: leave the field out and the claims on the note stay exactly as they are,
+  send `[]` and they are all removed, send a list and that list stands (the kernel caps a note at
+  20). The answer now names `behauptungen` — what stands after the write, not what was sent,
+  because a cap that silences six claims and says nothing makes the agent believe it wrote
+  twenty.
+- **Why this was the blocker, not a nicety.** The claim has had a door for the human since
+  3.2.97, and no door for Claude or Cursor. Measured at his real store on 29.10.: of the 1 468
+  relations inside the graph window, **zero** carried a word a hand had chosen — every edge said
+  `mentions` or `co-mentions`, which is the system talking to itself. The product sold to agents
+  is a memory they write into; if only a hand can put a word on an edge, the graph stays mute in
+  every agent setup, and the header that reports concept coverage then tells an agent base it is
+  right to be mute. One claim on a note that carried no concept leaves two concepts on it: the
+  coverage path now has a second writer besides typing.
+- **One contract, two doors.** The reading and the refusal wording moved out of the REST route
+  into `src/core/behauptungen.ts`, which both `POST /api/memories` and the agent path use. Two
+  descriptions of one field is how two doors end up disagreeing about the same draft; a case
+  holds that both doors answer the same invalid claim with the same sentence.
+- **A refusal writes nothing.** A bad word is caught before the note exists, at both doors —
+  the same rule the surface already obeyed. An agent that names `mentions` as its claim word gets
+  400/`isError` with the reason and no half-saved note in the base.
+
 ## [3.2.99]
 
 ### Fixed

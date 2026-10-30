@@ -37,6 +37,11 @@ describe("memory core boundary (src/core)", () => {
       // Schreiberei sie braucht (#56: der Rechner-Scan legte nie einen Begriff,
       // und ein Bestand von 14.702 Notizen hielt 30 Begriffe).
       "begiffe.ts",
+      // Punkt 127: der Vertrag des Behauptungsfeldes. Er lebt im Kern, weil zwei Tueren ihn
+      // lesen muessen — die REST-Route und die Agentenpforte (`mcp.ts`). Ein Feld, das beide
+      // Tueren haben, darf nicht zweimal beschrieben werden; eine zweite Absage-Formel pro
+      // Tuer streitet beim ersten Entwurf, den ein Agent schickt.
+      "behauptungen.ts",
       // Kern 3.1.x: ChatGPT-Export-Import (App-Stand) und Synonym-Erweiterung
       // der Suche sind Kern-Dateien.
       "chatgpt-import.ts",

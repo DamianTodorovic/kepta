@@ -5,6 +5,7 @@ import type { KeptaStore } from "./store";
 import type { MemoryType, SearchParams } from "./types";
 import { searchMemories, indexMemory, consolidateMemories, findDuplicateForNew, gateDecision, writeGateEnabled } from "./engine";
 import { chunkText } from "./embeddings";
+import { behauptungenAus } from "./behauptungen";
 import { APP_VERSION } from "./version";
 
 export const PROTOCOL_VERSIONS = ["2026-07-28", "2025-06-18", "2024-11-05"] as const;
@@ -105,7 +106,7 @@ export const TOOLS = [
     name: "memory_save",
     title: "Save memory",
     description:
-      "Saves a knowledge node, or updates one when id is given. [[Wiki links]] in the text become linked entities.",
+      "Saves a knowledge node, or updates one when id is given. [[Wiki links]] in the text become linked entities. Own words on an edge are yours to state: beziehungen sets claims {quelle, ziel, wort}, the same contract the surface uses.",
     inputSchema: {
       type: "object",
       properties: {
@@ -118,6 +119,20 @@ export const TOOLS = [
         confidence: opt({ type: "number", description: "0..1" }),
         validFrom: opt({ type: "integer", description: "epoch milliseconds" }),
         validTo: opt({ type: "integer", description: "epoch milliseconds" }),
+        beziehungen: opt({
+          type: "array",
+          description:
+            "Claims this note states, each one {quelle, ziel, wort} in your own words. Omit the field to keep the claims already on the note; send [] to remove them all; send a list to set exactly that list (max 20).",
+          items: {
+            type: "object",
+            properties: {
+              quelle: { type: "string", description: "the term that makes the claim" },
+              ziel: { type: "string", description: "the term it is about" },
+              wort: { type: "string", description: "the word that says what is claimed, e.g. manages or blocks" },
+            },
+            required: ["quelle", "ziel", "wort"],
+          },
+        }),
       },
       required: ["title", "content"],
     },
@@ -128,6 +143,7 @@ export const TOOLS = [
         memory: { ...memoryOutSchema, type: ["object", "null"] }, // rejected → null
         duplicateWarning: { type: ["object", "null"], properties: { existingId: { type: "string" }, similarity: { type: "number" } } },
         gateOutcome: { enum: ["created", "updated", "rejected", null] },
+        behauptungen: { type: "number", description: "claims standing on this note after the write — what arrived, not what was sent" },
         writeGate: {
           type: ["object", "null"],
           properties: {
@@ -332,10 +348,20 @@ function memoryToOut(store: KeptaStore, r: ReturnType<KeptaStore["getMemory"]>):
 }
 
 /** Legt eine Memory an/aktualisiert sie und indiziert Chunks + Wiki-Link-Entitäten. */
-export function saveWithIndex(store: KeptaStore, args: Record<string, unknown>): { created: boolean; record: NonNullable<ReturnType<KeptaStore["getMemory"]>> } {
+export function saveWithIndex(store: KeptaStore, args: Record<string, unknown>): {
+  created: boolean;
+  record: NonNullable<ReturnType<KeptaStore["getMemory"]>>;
+  behauptungen: number;
+} {
   const title = String(args.title ?? "");
   const content = String(args.content ?? "");
   if (!title.trim() || !content.trim()) throw new Error("title and content are required");
+  // Punkt 127: der Agentenschreibweg kennt dieselben drei Zustaende wie die Hand, und er
+  // prueft sie **vor** dem ersten Schreibgriff. Eine Notiz, die wegen eines Systemwortes
+  // halb angelegt wird, ist ein Verlust mit Umweg — die Agentin halt den Entwurf und
+  // hoeren den Grund, statt ein Blatt ohne Kante im Bestand zu haben.
+  const beh = behauptungenAus(args);
+  if (beh.ablehnung) throw new Error(beh.ablehnung);
   const input = {
     id: args.id ? String(args.id) : undefined,
     title,
@@ -357,9 +383,10 @@ export function saveWithIndex(store: KeptaStore, args: Record<string, unknown>):
   indexMemory(store, record.id);
   // Titel + Wiki-Links als Entitäten; die Titel-Entität erhält mentions-Relationen.
   // Ein Aufruf, Ersetzungssemantik — dasselbe Verfahren wie der REST-Schreibweg,
-  // damit beide Türen genau eine Straße in den Graphen haben.
-  store.verknuepfeNotiz(record.id, record.title, extractWikiLinks(`${record.title} ${record.content}`));
-  return { created, record: store.getMemory(record.id)! };
+  // damit beide Türen genau eine Straße in den Graphen haben. Seit 127 auch mit dem
+  // vierten Feld: die Aussagen des Agenten, nicht nur die seiner Wiki-Links.
+  store.verknuepfeNotiz(record.id, record.title, extractWikiLinks(`${record.title} ${record.content}`), beh.gesendet ? beh.liste : undefined);
+  return { created, record: store.getMemory(record.id)!, behauptungen: store.behauptungenVonNotiz(record.id).length };
 }
 
 /**
@@ -437,6 +464,12 @@ export async function callTool(store: KeptaStore, name: string, args: Record<str
         return { content: [{ type: "text", text: JSON.stringify(structured, null, 2) }], structuredContent: structured };
       }
       case "memory_save": {
+        // Punkt 127, Reihenfolge: erst das Behauptungsfeld pruefen, dann das Gate fragen.
+        // Die REST-Tuer weist einen Entwurf mit falschem Wort zurueck, bevor irgendetwas
+        // anderes entscheidet — hier entschied sonst das Write-Gate (NOOP) und die Agentin
+        // hoeren nie, dass ihr ownes Wort das Systemwort eines Verweises ist.
+        const feld = behauptungenAus(args);
+        if (feld.ablehnung) throw new Error(feld.ablehnung);
         // F2: Write-Gate (Opt-in KEPTA_WRITE_GATE=on) — nur für NEUE Knoten;
         // ein explizites Update via id ist die Entscheidung des Agenten selbst.
         // Ein save mit expliziter id ist ein Update — derselbe Weg, dieselbe Grenze.
@@ -455,19 +488,21 @@ export async function callTool(store: KeptaStore, name: string, args: Record<str
             created: viaGate.created,
             gateOutcome: "updated",
             memory: memoryToOut(store, viaGate.record),
+            behauptungen: viaGate.behauptungen,
             writeGate: gate,
           };
           return { content: [{ type: "text", text: JSON.stringify(structured, null, 2) }], structuredContent: structured };
         }
         if (gate && (gate.decision === "NOOP" || gate.decision === "DELETE")) {
-          const structured = { created: false, gateOutcome: "rejected", memory: null, writeGate: gate };
+          const structured = { created: false, gateOutcome: "rejected", memory: null, behauptungen: 0, writeGate: gate };
           return { content: [{ type: "text", text: JSON.stringify(structured, null, 2) }], structuredContent: structured };
         }
-        const { created, record } = saveWithIndex(store, args);
+        const { created, record, behauptungen } = saveWithIndex(store, args);
         const duplicate = await findDuplicateForNew(store, String(args.title ?? ""), String(args.content ?? ""));
         const structured = {
           created,
           memory: memoryToOut(store, record),
+          behauptungen,
           duplicateWarning: duplicate,
           ...(writeGateEnabled() ? { gateOutcome: "created", writeGate: gate } : {}),
         };

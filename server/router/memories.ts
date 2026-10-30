@@ -5,7 +5,7 @@ import { indexMemory, gateDecision, writeGateEnabled } from "../../src/core/engi
 import { extractWikiLinks } from "../../src/core/mcp";
 import { klassifiziere, gruppen, type Traeger, type Thema } from "../../src/core/klassifikation";
 import { sanitizeText, sanitizeTitle, sanitizeTags } from "../../src/core/sanitize";
-import { systemWort, type BehauptungEingabe } from "../../src/core/wortschatz";
+import { behauptungenAus } from "../../src/core/behauptungen";
 import { sanitizeScope, sanitizeId, istGueltigeId } from "../helfer/ids";
 import { toApi, maxActiveMemories, grenzHinweis, MAX_BULK_IDS, SEITE_MIN, SEITE_MAX, seiteUmwelt, type MemoryRecord } from "../helfer/api-form";
 import { bodyOf } from "../helfer/body";
@@ -14,54 +14,10 @@ import type { AppKontext } from "../kontext";
 
 const GUELTIGE_TYPEN = ["semantic", "episodic", "procedural", "reference"];
 
-/**
- * Punkt 126 — die Behauptungen aus dem Leib eines Speicherns.
- *
- * Drei Zustände, nicht zwei: `beziehungen` **fehlt** heisst "die Hand hat das Feld nicht
- * angefasst" und darf nichts loeschen; ein leeres Feld heisst "alle weg". Der Unterschied
- * ist nicht kleinlaut zu haben — jeder Agent, der dieselbe Notiz speichert (MCP, Scan,
- * Nachzug), ruft denselben Handler mit drei Feldern auf.
- *
- * Abgewiesen wird **vor** jedem Schreibgriff: eine Notiz, die wegen eines falschen Wortes
- * halb anlegt, ist ein Datenverlust mit Umweg. Der Entwurf bleibt beim Client, die Absage
- * nennt, was zu tun ist.
- */
-function behauptungenAusBody(body: Record<string, unknown>): {
-  gesendet: boolean;
-  liste: BehauptungEingabe[];
-  ablehnung: string | null;
-} {
-  const roh = body.beziehungen;
-  if (roh === undefined) return { gesendet: false, liste: [], ablehnung: null };
-  if (!Array.isArray(roh)) {
-    return { gesendet: true, liste: [], ablehnung: "beziehungen must be a list of claims, each one {quelle, ziel, wort}" };
-  }
-  const liste: BehauptungEingabe[] = [];
-  for (const x of roh) {
-    if (!x || typeof x !== "object" || Array.isArray(x)) {
-      return { gesendet: true, liste, ablehnung: "every claim needs three parts: who, the word, whom" };
-    }
-    const o = x as Record<string, unknown>;
-    const quelle = sanitizeTitle(o.quelle);
-    const ziel = sanitizeTitle(o.ziel);
-    const wort = sanitizeTitle(o.wort);
-    if (!quelle || !ziel || !wort) {
-      return { gesendet: true, liste, ablehnung: "a claim with an empty part is not a claim - fill who, the word and whom" };
-    }
-    if (quelle.toLowerCase() === ziel.toLowerCase()) {
-      return { gesendet: true, liste, ablehnung: "who and whom are the same term - a claim needs two different ends" };
-    }
-    if (systemWort(wort)) {
-      return {
-        gesendet: true,
-        liste,
-        ablehnung: `"${wort}" is the word the graph already uses for a mention, not for a claim - pick the word that says what is claimed, like manages or blocks`,
-      };
-    }
-    liste.push({ quelle, ziel, wort });
-  }
-  return { gesendet: true, liste, ablehnung: null };
-}
+// Punkt 126/127 — die Behauptungen aus dem Leib eines Speicherns lesen jetzt beide Tueren aus
+// **einem** Vertrag (`src/core/behauptungen.ts`): drei Zustaende (nicht genannt = behalten,
+// leer = loeschen, Liste = setzen) und dieselbe Absage in REST wie MCP. Was hier stand, war ein
+// zweites Blatt; die Agentenpforte hatte keinen Vertrag zum Befolgen und verwarf das Feld still.
 
 export function mountMemories(app: express.Express, ctx: AppKontext): void {
   const { store } = ctx;
@@ -77,7 +33,7 @@ export function mountMemories(app: express.Express, ctx: AppKontext): void {
     const content = sanitizeText(body.content, 50000);
     // Punkt 126: erst die Behauptungen pruefen, dann irgendetwas schreiben. Eine
     // halbe Notiz mit weggeworfenem Wort waer ein Verlust mit Umweg.
-    const beh = behauptungenAusBody(body as Record<string, unknown>);
+    const beh = behauptungenAus(body as Record<string, unknown>);
     if (beh.ablehnung) return res.status(400).json({ error: beh.ablehnung });
 
     if (body.id) {

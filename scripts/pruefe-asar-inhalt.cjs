@@ -527,6 +527,14 @@ const erwartet = [
   // richtig **0** Treffer, falsch geschrieben **1**. Ein Feldname ist die Verabredung, nicht ein
   // Schmuck - spaeter ist es ein Bruch statt einer Korrektur.
   ["notizenOhneBegriff", 1],
+  // 3.2.100, EIN Koerper (Punkt 127, die Agenten-Pforte der Behauptung). Gegenprobe VOR dem Bau,
+  // am installierten 3.2.99 (app.asar 49 163 952 B), gelesen 23:28:08 von derselben Sonde: beide
+  // Ketten dort **0**. `beziehungen` selbst ist als Marke unbrauchbar und steht hier darum nicht:
+  // die REST-Tuer trug das Wort schon in 3.2.99 (3 Treffer gemessen), ein Marker darauf schlage
+  // durch, auch ohne diesen Koerper. Die zwei Ketten sind Woerter, die nur der Agentenvertrag
+  // sagt — die Felderklaerung in der Tafel und das Feld, das die Antwort ueber den Stand nennt.
+  ["send [] to remove them all", 1],
+  ["claims standing on this note after the write", 1],
 ];
 // Die Liste darf nur ASCII-Zeichen enthalten. Grund, gemessen 21.10. 19:16 MESZ am
 // installierten Objekt: das Wort "Looking" plus echtes U+2026 steht dort 2 mal, diese

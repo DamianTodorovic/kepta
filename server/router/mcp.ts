@@ -86,9 +86,9 @@ export function mountMcp(app: express.Express, ctx: AppKontext): void {
     if ("fehler" in vor) return res.status(403).json({ error: vor.fehler });
     const body = vor.args;
     try {
-      const { created, record } = saveWithIndex(store, body);
+      const { created, record, behauptungen } = saveWithIndex(store, body);
       ctx.publishActivity({ type: created ? "save" : "update", source: "agent", title: record.title });
-      return res.json({ memory: toApi(record), created });
+      return res.json({ memory: toApi(record), created, behauptungen });
     } catch (e) {
       return res.status(400).json({ error: e instanceof Error ? e.message : String(e) });
     }
