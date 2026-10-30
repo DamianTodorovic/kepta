@@ -1,3 +1,30 @@
+## [3.2.96]
+
+### Fixed
+
+- **The house's own image street can take pictures again, and it can fail again.** Two separate
+  defects in `scripts/screenshots.mjs`, both found while verifying something else:
+  1. **It was blind at image three of twelve.** It found the fit control with
+     `button[title^="Fit the whole graph"]` — a prefix match against a sentence. Since 3.2.79 that
+     sentence is a decision, not a name: when the readability floor bites, the same button says
+     `Fit — held at the readability floor, so some notes stay outside; …`. In the demo store the
+     floor bites, so the street walked past a control standing in front of it. Reproduced twice
+     (21:23 and 00:32), one `Error:` line each time. The button now carries
+     `data-testid="graph-fit"` and the street grabs that handle; the title stays what it was
+     meant to be — an explanation. Guard: `tests/components/graph-einpass-marke.test.tsx`, seen
+     red at 00:37:02, green at 00:38:27.
+  2. **A broken run reported success.** The catch set `process.exitCode = 1` and the `finally`
+     called `app.quit()`, which throws that number away: measured with a ten-line probe at
+     00:35:51 — error printed, exit **0**. It now calls `app.exit(gefallen)`. Both sides proved
+     on the real script: an intact run writes all twelve images and exits 0 (00:41:08), and the
+     same script with one unreachable handle exits **1** naming what it could not find (00:54:35).
+     The counter-probe ran from a copy inside `scripts/`, and the copy is gone (removed 00:54,
+     existence test failed).
+
+- **Why this was first among the error fixes:** without a working image street, no later step in
+  this wave can carry the picture proof the house now requires — every acceptance after this one
+  depends on it.
+
 ## [3.2.95]
 
 ### Fixed

@@ -178,6 +178,26 @@ const HILFEN = `
       el?.click();
       return !!el;
     },
+    /**
+     * Der Griff an einer Steuerung: die Marke, nicht ihr Wort.
+     *
+     * Grund, dass diese Hilfe ueberhaupt existiert (29./30.10.): die Strasse suchte den
+     * Einpass-Knopf mit dem Voranfang "Fit the whole graph". Seit 3.2.79 ist dieser Titel eine
+     * Entscheidung, die je nach Lesbarkeitsboden anders lautet — im Demobestand beisst der
+     * Boden, der Satz beginnt mit "Fit - held at the readability floor", und die Suche sieht
+     * ein Steuer, das vor ihr steht, nicht. Zweimal reproduziert (21:23 und 00:32), beide
+     * Male mit einer Error-Zeile im Protokoll. Eine Auskunft darf kein Griff sein.
+     *
+     * Keine Backticks in diesem Block: die ganze Hilfe lebt in einem Template-Literal, und
+     * ein zurueckgesetztes Strichlein trennt es durch — gemessen 00:38:27, wo "node --check"
+     * mit "Unexpected identifier 'titel'" abbrach.
+     */
+    marke(id) {
+      const el = document.querySelector('[data-testid="' + id + '"]');
+      if (!el) return false;
+      el.click();
+      return true;
+    },
     karte(titel) {
       const el = [...document.querySelectorAll('body *')].find((e) => e.children.length === 0 && e.textContent.trim() === titel);
       el?.click();
@@ -210,7 +230,7 @@ async function tu(win, aufruf) {
  * Stufen hineinzoomen (≈ 55 %) zeigt Wurzel, Wissensarten und lesbare Notizen.
  */
 async function baumLesbar(win) {
-  await tu(win, `titel("Fit the whole graph")`);
+  await tu(win, `marke("graph-fit")`);
   await warte(900);
   for (let i = 0; i < 5; i++) { await tu(win, `titel("Zoom in")`); await warte(250); }
   await warte(1200);
@@ -275,6 +295,8 @@ function neuerFilm(ordner) {
 
 app.whenReady().then(async () => {
   nativeTheme.themeSource = "dark";
+  /** 0 = der Lauf hat alles eingefangen, 1 = er ist irgendwo haengen geblieben. */
+  let gefallen = 0;
   let server;
   try {
     server = await starteServer();
@@ -319,7 +341,7 @@ app.whenReady().then(async () => {
 
     await tu(win, "ansicht(3)");
     await warte(8000);
-    await tu(win, `titel("Fit the whole graph")`);
+    await tu(win, `marke("graph-fit")`);
     await warte(1500);
     await aufnehmen(win, "03-graph.png");
 
@@ -334,7 +356,7 @@ app.whenReady().then(async () => {
       // und muss eingepasst werden; im Film wären das leere und winzige Bilder.
       await tu(win, `titel("Force view")`);
       await warte(5000);
-      await tu(win, `titel("Fit the whole graph")`);
+      await tu(win, `marke("graph-fit")`);
       await warte(1200);
       const film = neuerFilm(bilderOrdner);
       await tu(win, "zeit(0)");
@@ -424,13 +446,21 @@ app.whenReady().then(async () => {
     await aufnehmen(win, "10-audit.png");
   } catch (e) {
     console.error(e);
-    process.exitCode = 1;
+    gefallen = 1;
   } finally {
     // Auch ein halb fertiger Lauf schreibt, was er eingefangen hat — ein Bild
     // ohne Stand ist später nicht mehr aufklärbar.
     manifestSchreiben();
     server?.kind.kill();
     if (server) fs.rmSync(server.tmp, { recursive: true, force: true });
-    app.quit();
+    /**
+     * `app.quit()` wirft die aufgezeichnete Exit-Zahl weg. Gemessen 00:35:51 mit einer
+     * Zehn-Zeilen-Sonde: Fehler geworfen, `process.exitCode = 1` gesetzt, der Griff endete mit
+     * **0** — und zweimal hintereinander meldete genau daraus ein kaputter Bildlauf Erfolg
+     * (21:23 und 00:32, je eine Error-Zeile, EXIT 0). Gegenprobe 00:36:0x: dieselbe Sonde mit
+     * `app.exit(1)` endet mit **1**. Ein Abbruch, der als Erfolg ausgeht, ist die schwerste
+     * Fehlerart — ein halber Lauf darf nicht durchkommen, weil niemand ihn gelesen hat.
+     */
+    app.exit(gefallen);
   }
 });

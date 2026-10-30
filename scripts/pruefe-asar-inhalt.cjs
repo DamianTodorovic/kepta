@@ -503,6 +503,10 @@ const erwartet = [
   // Gegenprobe VOR dem Bau, am installierten 3.2.94 (app.asar 49 153 703 B), gelesen 23:59:00
   // von derselben Sonde: **0** Treffer (ihr "< 0.1 %" steht dort 1 mal, die Marke von eben).
   [">99.9 %", 1],
+  // D0 (3.2.96): das Einpass-Steuer traegt eine Marke, damit die Bildstrasse es findet, ohne
+  // einen Satz nachzusprechen, der eine Entscheidung ist. Gegenprobe VOR dem Bau, am
+  // installierten 3.2.95, gelesen 00:54:5x von derselben Sonde: "graph-fit" **0** mal.
+  ["graph-fit", 1],
 ];
 // Die Liste darf nur ASCII-Zeichen enthalten. Grund, gemessen 21.10. 19:16 MESZ am
 // installierten Objekt: das Wort "Looking" plus echtes U+2026 steht dort 2 mal, diese
