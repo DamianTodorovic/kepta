@@ -1,3 +1,24 @@
+## [3.2.98]
+
+### Added
+
+- **`GET /api/graph/haufen` — cluster sizes over the whole base, not over a window.** The graph
+  door answers 500 concepts and 2 000 edges (`src/core/store.ts:42`), so a cluster computed from it
+  could never say how big the clusters are — only how the window fills. This route feeds every
+  active note and every concept to the same Louvain kernel the surface already uses (same weights:
+  a mention 1, an assertion 2) and answers with a distribution: notes per cluster, how many
+  clusters, the largest bin as a percent of the base, the median, and the population under every
+  number (notes, concepts, edges, mentions, computed nodes). No note, no identifier and no concept
+  word leaves it — a case holds that, and a case holds the histogram against the population so a
+  silent drop cannot pass as a share.
+- **The lid, and the way to cheat it.** The verdict is measured against the house's own lid
+  (`REGAL_DECKEL_PROZENT = 10`). Measured 13:12:48 UTC at a base shaped like his (1 016 notes
+  carrying a concept, 19 984 carrying none): the largest cluster held 4 notes = **0.02 %**, the lid
+  was met — and the median cluster held **1**. Passing the lid by being dust is not a division, so
+  the door now says so in its own reason: *"the lid is met as dust, not as a division"*. Cost at
+  that shape was 20 ms, and 107 ms over a worst-case 43 400-node base; the answer is cached against
+  the data generation, so opening it twice computes once.
+
 ## [3.2.97]
 
 ### Changed

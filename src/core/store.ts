@@ -1541,6 +1541,61 @@ export class KeptaStore {
     return Number(row.n);
   }
 
+  /**
+   * Punkt 124b — das Feld der Haufen-Rechnung **ohne** die Kappen des Sichtfensters.
+   *
+   * Warum eine eigne Auszugsmenge und nicht `getGraph`: `getGraph` liefert 500 Begriffe und
+   * 2 000 Kanten (`GRAPH_FENSTER_KNOTEN`, Zeile 42; Schleife :1366-1393). Ein Haufen, der nur
+   * in diesem Fenster gerechnet wird, sagt nichts über die Größe der Haufen — die Antwort wäre
+   * eine Verteilung über 18 % der Begriffe, als wäre sie eine über alle. Hier steht der ganze
+   * Bestand: jede aktive Notiz, jeder Begriff, jede Erwähnung, jede Behauptung.
+   *
+   * Der Auszug ist reine Zahlenschieberei nach oben: `src/lib/haufenordnung.ts` rechnet die
+   * Verteilung, die Tür nennt sie. Diese Methode erfindet keine Rangfolge und keinen Schnitt.
+   */
+  haufenFeld(): {
+    notizen: string[];
+    begriffe: string[];
+    erwaehnungen: [string, string][];
+    behauptungen: { source: string; target: string }[];
+  } {
+    const notizen = (
+      this.db.prepare("SELECT id FROM memories WHERE deleted_at IS NULL ORDER BY id").all() as { id: string }[]
+    ).map((r) => String(r.id));
+    const begriffe = (this.db.prepare("SELECT name FROM entities ORDER BY name").all() as { name: string }[]).map((r) =>
+      String(r.name),
+    );
+    const erwaehnungen = (
+      this.db
+        .prepare(
+          `SELECT me.memory_id AS notiz, e.name AS begriff
+             FROM memory_entities me
+             JOIN memories m ON m.id = me.memory_id
+             JOIN entities e ON e.id = me.entity_id
+            WHERE m.deleted_at IS NULL
+            ORDER BY me.memory_id, e.name`
+        )
+        .all() as { notiz: string; begriff: string }[]
+    ).map((r) => [String(r.notiz), String(r.begriff)] as [string, string]);
+    const begriffSet = new Set(begriffe);
+    const behauptungen = (
+      this.db
+        .prepare(
+          `SELECT qs.name AS quelle, zs.name AS ziel
+             FROM relations r
+             JOIN entities qs ON qs.id = r.source_id
+             JOIN entities zs ON zs.id = r.target_id
+            ORDER BY r.id`
+        )
+        .all() as { quelle: string; ziel: string }[]
+    )
+      // Ein Ende ohne Begriff wäre eine Kante ins Leere: die Maske unten würde sie verwerfen,
+      // und die Antwort hätte eine Kantenzahl, die kein Knoten trägt.
+      .filter((r) => begriffSet.has(String(r.quelle)) && begriffSet.has(String(r.ziel)))
+      .map((r) => ({ source: String(r.quelle), target: String(r.ziel) }));
+    return { notizen, begriffe, erwaehnungen, behauptungen };
+  }
+
   /** Memory-IDs, die eine der Entitäten mentionen */
   memoryIdsForEntities(entityIds: number[]): Set<string> {
     if (entityIds.length === 0) return new Set();

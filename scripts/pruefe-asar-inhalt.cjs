@@ -513,6 +513,15 @@ const erwartet = [
   // derselben Sonde: beide **0** Treffer.
   ["read, not run", 1],
   ["no known form", 1],
+  // Punkt 124b (3.2.98): die Haufen-Groessenordnung ueber dem ganzen Bestand. Zwei Marken: die
+  // Tuer selbst (`/api/graph/haufen` — ohne sie ist die Rechenstelle ein Publikum ohne Saal) und
+  // der Satz, der den Erfolg nicht verkauft (`as dust, not as a division` — gemessen 13:12:48 UTC
+  // an einem Bestand in seiner Form: groesstes Fach 0,02 %, Latte erfuellt, Median 1. Wer nur die
+  // erste Zahl sieht, kauft eine Teilung, die keine ist). Gegenprobe VOR dem Bau, am
+  // installierten 3.2.97 (app.asar 49 154 498 B, mtime 02:24), gelesen 13:15 von derselben Sonde:
+  // beide **0** Treffer, wie auch `haufenFeld` und `can reach no cluster` dort 0 stehen.
+  ["/api/graph/haufen", 1],
+  ["as dust, not as a division", 1],
 ];
 // Die Liste darf nur ASCII-Zeichen enthalten. Grund, gemessen 21.10. 19:16 MESZ am
 // installierten Objekt: das Wort "Looking" plus echtes U+2026 steht dort 2 mal, diese

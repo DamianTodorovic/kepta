@@ -12,6 +12,7 @@ import { TOOLS as MCP_TOOLS } from "../../src/core/mcp";
 import { mcpStartInDerApp } from "../helfer/mcp-start";
 import { zeitnahme } from "../helfer/zeitnahme";
 import { vektorSpurStatistik } from "../../src/core/engine";
+import { haufenOrdnungVomBestand } from "../../src/lib/haufenordnung";
 import { semantikVomBestand } from "../helfer/semantik";
 import { leseUmwelt, gewonneneUmweltNamen, ohneWert } from "../../src/core/umwelt";
 import { serverVerzeichnis, resolveDistDir } from "../helfer/pfad";
@@ -184,6 +185,20 @@ export function mountSystem(app: express.Express, ctx: AppKontext): void {
           : `This excerpt is the whole graph: ${g.entities.length} concepts and ${kanten.length} edges, nothing dropped.`,
       },
     });
+  });
+
+  // --- Haufen-Groessenordnung ueber dem ganzen Bestand (Punkt 124b) ---
+  // Warum eine eigne Tuer und kein Feld in `/api/graph`: diese Antwort ist kein Ausschnitt.
+  // `/api/graph` liefert 500 Begriffe und 2 000 Kanten (`src/core/store.ts:42`), und ein Haufen,
+  // der nur in diesem Fenster gerechnet wird, sagt nichts ueber die Groesse der Haufen. Hier steht
+  // der ganze Bestand — gerechnet in `src/lib/haufenordnung.ts`, geantwortet als Verteilung:
+  // keine Notiz, keine Kennung, kein Begriffswort verlaesst diese Route.
+  app.get("/api/graph/haufen", (_req, res) => {
+    const zeit = zeitnahme();
+    const ordnung = haufenOrdnungVomBestand(store);
+    zeit.marke("haufen");
+    res.setHeader("x-kepta-teilzeiten", zeit.kopf());
+    res.json(ordnung);
   });
 
   // --- Semantische Karte: wo die Bedeutungen liegen ---
