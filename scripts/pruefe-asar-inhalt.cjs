@@ -522,6 +522,11 @@ const erwartet = [
   // beide **0** Treffer, wie auch `haufenFeld` und `can reach no cluster` dort 0 stehen.
   ["/api/graph/haufen", 1],
   ["as dust, not as a division", 1],
+  // 3.2.99: das Feld der Haufen-Tuer heisst richtig `notizenOhneBegriff`. Gegenprobe VOR dem
+  // Bau, am installierten 3.2.98 (app.asar 49 163 951 B), gelesen 14:10:32 von derselben Sonde:
+  // richtig **0** Treffer, falsch geschrieben **1**. Ein Feldname ist die Verabredung, nicht ein
+  // Schmuck - spaeter ist es ein Bruch statt einer Korrektur.
+  ["notizenOhneBegriff", 1],
 ];
 // Die Liste darf nur ASCII-Zeichen enthalten. Grund, gemessen 21.10. 19:16 MESZ am
 // installierten Objekt: das Wort "Looking" plus echtes U+2026 steht dort 2 mal, diese

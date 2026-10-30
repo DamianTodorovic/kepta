@@ -1,3 +1,16 @@
+## [3.2.99]
+
+### Fixed
+
+- **A field name spelled with a double f.** The cluster door answered with
+  `notizenOhneBegiff`. The value was right — 20 048 of 21 066 notes carry no concept — but the key
+  was wrong, and a key is what a consumer codes against. Renamed to `notizenOhneBegriff` before
+  any surface binds to it; later this becomes a breaking change instead of a typo.
+- Found while accepting 3.2.98 at the delivered object, not in the paper: the shipped
+  `app.asar` contained the misspelled key once and the correct one zero times. Five comments in
+  two other test files carry the same misspelling; they are left alone here because they belong to
+  another slice's files, and they are named so nobody has to rediscover them.
+
 ## [3.2.98]
 
 ### Added

@@ -44,7 +44,7 @@ interface HaufenAntwort {
     erwaehnungen: number;
     behauptungen: number;
     gerechneteKnoten: number;
-    notizenOhneBegiff: number;
+    notizenOhneBegriff: number;
   };
   fenster: { begrenzt: boolean; grund: string };
   haufen: {
@@ -164,7 +164,7 @@ describe("H-1 — die Haufen-Tuer nennt ihre Grundgesamtheit und ist kein Fenste
 
   it("nennt die Zahl, die kein Haufen erreichen kann: Notizen ohne jede Kante", async () => {
     const { leib } = await haufen(eng.urle);
-    expect(leib.grundgesamtheit.notizenOhneBegiff).toBe(200);
+    expect(leib.grundgesamtheit.notizenOhneBegriff).toBe(200);
   });
 
   it("sagt ausdruecklich, dass sie nicht begrenzt ist", async () => {
@@ -202,7 +202,7 @@ describe("H-2 — dieselbe Sonde: Latte erfuellen und Latte brechen", () => {
   it("an einem Bestand mit einem Korb sagt dieselbe Sonde Nein — der Biss-Test", async () => {
     const { leib } = await haufen(korb.urle);
     expect(leib.grundgesamtheit.notizen).toBe(440);
-    expect(leib.grundgesamtheit.notizenOhneBegiff).toBe(40);
+    expect(leib.grundgesamtheit.notizenOhneBegriff).toBe(40);
     // 400 Notizen haengen an denselben zwei Begriffen — und Louvain zerlegt diesen Block, das
     // ist an diesem Lauf gemessen (13:08:59): groesster Haufen 65 Notizen, also 14,77 % gegen
     // eine Latte von 10. Was hier stehen muss, ist das Urteil ueber die Achse, nicht eine
@@ -230,7 +230,7 @@ describe("H-2 — dieselbe Sonde: Latte erfuellen und Latte brechen", () => {
     indexMemory(korb.store, angelegt.id);
     const nachher = (await haufen(korb.urle)).leib;
     expect(nachher.grundgesamtheit.notizen).toBe(vorher.grundgesamtheit.notizen + 1);
-    expect(nachher.grundgesamtheit.notizenOhneBegiff).toBe(vorher.grundgesamtheit.notizenOhneBegiff + 1);
+    expect(nachher.grundgesamtheit.notizenOhneBegriff).toBe(vorher.grundgesamtheit.notizenOhneBegriff + 1);
   });
 });
 

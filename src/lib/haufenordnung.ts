@@ -46,7 +46,7 @@ export interface HaufenOrdnung {
     erwaehnungen: number;
     behauptungen: number;
     gerechneteKnoten: number;
-    notizenOhneBegiff: number;
+    notizenOhneBegriff: number;
   };
   fenster: { begrenzt: false; grund: string };
   haufen: {
@@ -123,7 +123,7 @@ export function haufenOrdnung(feld: HaufenFeld): HaufenOrdnung {
   const summe = notizenJeHaufen.reduce((s, n) => s + n, 0);
 
   const gedeckteNotizen = new Set(feld.erwaehnungen.map((paar) => paar[0]));
-  const ohneBegiff = Math.max(0, bestand - gedeckteNotizen.size);
+  const ohneBegriff = Math.max(0, bestand - gedeckteNotizen.size);
   const mittlere = median(notizenJeHaufen);
 
   let erfuellt: boolean;
@@ -145,7 +145,7 @@ export function haufenOrdnung(feld: HaufenFeld): HaufenOrdnung {
     grund = !erfuellt
       ? `the largest cluster holds ${groesstes} of ${bestand} notes — over the ${REGAL_DECKEL_PROZENT} % lid, so this axis is a basket, not a division`
       : mittlere <= 1
-        ? `no cluster holds more than ${REGAL_DECKEL_PROZENT} % of ${bestand} notes, but the median cluster holds ${mittlere} and ${ohneBegiff} notes carry no concept — the lid is met as dust, not as a division`
+        ? `no cluster holds more than ${REGAL_DECKEL_PROZENT} % of ${bestand} notes, but the median cluster holds ${mittlere} and ${ohneBegriff} notes carry no concept — the lid is met as dust, not as a division`
         : `no cluster holds more than ${REGAL_DECKEL_PROZENT} % of ${bestand} notes; the largest holds ${groesstes} and the median cluster holds ${mittlere}`;
   }
 
@@ -158,7 +158,7 @@ export function haufenOrdnung(feld: HaufenFeld): HaufenOrdnung {
       erwaehnungen: feld.erwaehnungen.length,
       behauptungen: feld.behauptungen.length,
       gerechneteKnoten: notizKeys.length + begriffKeys.length,
-      notizenOhneBegiff: ohneBegiff,
+      notizenOhneBegriff: ohneBegriff,
     },
     fenster: {
       begrenzt: false,
@@ -176,7 +176,7 @@ export function haufenOrdnung(feld: HaufenFeld): HaufenOrdnung {
     zeit: { ms: verstrichen(start), ausCache: false },
     hinweis:
       `${groesstes} of ${bestand} notes sit in the largest cluster (${prozent} % of the base) across ` +
-      `${notizenJeHaufen.length} clusters, and the median cluster holds ${mittlere}; ${ohneBegiff} of ` +
+      `${notizenJeHaufen.length} clusters, and the median cluster holds ${mittlere}; ${ohneBegriff} of ` +
       `${bestand} notes carry no concept at all and can reach no cluster. The base holds ` +
       `${feld.begriffe.length} concepts and ${feld.behauptungen.length} assertions over ` +
       `${feld.erwaehnungen.length} mentions.`,
