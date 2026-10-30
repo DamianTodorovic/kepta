@@ -174,6 +174,10 @@ const TRAEGER_KLEID: { key: Traeger; color: string }[] = [
   { key: 'notes', color: 'var(--type-semantic)' },
   { key: 'files', color: 'var(--type-reference)' },
   { key: 'code', color: 'var(--type-procedural)' },
+  // Derselbe Ton wie im Regal ueber dem Graphen (`GraphRegal.tsx → TRAEGER_TOKEN`): zwei
+  // Flaechen, die dasselbe Fach in zwei verschiedenen Farben zeigen, sind zwei Luegen.
+  { key: 'daten', color: 'var(--type-episodic)' },
+  { key: 'anderes', color: 'var(--type-neutral)' },
 ];
 
 export function Dashboard() {
@@ -826,11 +830,17 @@ export function Dashboard() {
    * kleiner war als die Zahl darueber, und niemand sah es.
    */
   const traegerCounts = useMemo(() => {
-    const c: Record<Traeger, number> = { notes: 0, files: 0, code: 0 };
+    const c: Record<Traeger, number> = { notes: 0, files: 0, code: 0, daten: 0, anderes: 0 };
     for (const m of memories) c[gruppenVonNotiz(m).traeger] += 1;
     return c;
   }, [memories]);
 
+  /**
+   * Ein Zensus ueber ALLE Traeger, nicht drei auswendig gelernte Namen. Mit fuenf Faechern
+   * haette jede festgeschriebene Dreier-Zeile still einen Korb unter den Tisch gelegt.
+   */
+  const traegerSumme = (c: Record<Traeger, number>) => TRAEGER_REIHENFOLGE.reduce((n, k) => n + c[k], 0);
+  const traegerVoll = (c: Record<Traeger, number>) => TRAEGER_REIHENFOLGE.filter((k) => c[k] > 0);
   /** Der Streifen zeigt den Laden, sobald die Tür geantwortet hat — vorher das Blatt. */
   const zeigeTraeger = bestandGruppen?.traeger ?? traegerCounts;
   /**
@@ -838,12 +848,9 @@ export function Dashboard() {
    * die Tür geantwortet hat, sonst das Blatt. Ein Anteil, dessen Grundgesamtheit eine andere
    * ist als die der Zahl neben ihm, ist keine Auskunft, sondern ein zweiter Rechenweg.
    */
-  const traegerNenner = bestandGruppen?.bestand
-    ?? (traegerCounts.notes + traegerCounts.files + traegerCounts.code);
+  const traegerNenner = bestandGruppen?.bestand ?? traegerSumme(traegerCounts);
   /** Wie viele Faecher ueberhaupt fuellen: unter zwei ist ein Anteil keine Auskunft. */
-  const traegerFaelter = (zeigeTraeger.notes > 0 ? 1 : 0)
-    + (zeigeTraeger.files > 0 ? 1 : 0)
-    + (zeigeTraeger.code > 0 ? 1 : 0);
+  const traegerFaelter = traegerVoll(zeigeTraeger).length;
   /** Die Bestandzahl genau der Gruppe, die ins Leere lief — eingelesen, nicht geschätzt. */
   const zahlDerWahl = bestandGruppen === null ? undefined
     : aktiveTraeger.length === 1 ? bestandGruppen.traeger[aktiveTraeger[0]]
@@ -851,7 +858,7 @@ export function Dashboard() {
     : undefined;
   /** Zaehlen Blatt und Laden verschieden, nennt die Chip-Zeile die Zahl des Blatts. */
   const blattWeichtAb = bestandGruppen !== null
-    && (zeigeTraeger.notes !== traegerCounts.notes || zeigeTraeger.files !== traegerCounts.files || zeigeTraeger.code !== traegerCounts.code);
+    && TRAEGER_REIHENFOLGE.some((k) => zeigeTraeger[k] !== traegerCounts[k]);
 
   // Begrüßung nach Tageszeit + Name aus dem adaptiven Profil
   const greeting = (() => {
@@ -1866,7 +1873,7 @@ export function Dashboard() {
                         </span>
                       );
                     })}
-                    {zeigeTraeger.notes === 0 && zeigeTraeger.files === 0 && zeigeTraeger.code === 0 && (
+                    {traegerVoll(zeigeTraeger).length === 0 && (
                       <span style={{ color: 'var(--text-3)' }}>nothing here yet</span>
                     )}
                   </span>
@@ -2039,7 +2046,7 @@ export function Dashboard() {
                         style={{ color: 'var(--text-3)' }}
                         title={`The chips run over the ${groessenZahl(memories.length)} entries loaded on this page, not over the store.`}
                       >
-                        on this page {groessenZahl(traegerCounts.notes)} · {groessenZahl(traegerCounts.files)} · {groessenZahl(traegerCounts.code)}
+                        on this page {TRAEGER_REIHENFOLGE.map((k) => groessenZahl(traegerCounts[k])).join(' · ')}
                       </span>
                     )}
                   </div>

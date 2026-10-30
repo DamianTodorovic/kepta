@@ -8,6 +8,7 @@ import { ThemeProvider } from "../../src/contexts/ThemeContext";
 import { ToastProvider } from "../../src/components/ui/Toast";
 import { installiereLeinwand, installiereResizeObserver, installiereZeiger } from "../helfer/canvas";
 import { schreibeSuchPrefs } from "../../src/lib/searchPrefs";
+import { TRAEGER_REIHENFOLGE } from "../../src/lib/graphHierarchy";
 import type { Memory } from "../../src/types";
 
 // Der echte PDF-Parser (pdf.js) braucht ein valides Dokument — die Tests
@@ -1050,12 +1051,15 @@ describe("Dashboard: die neun Woerter fuehren in keine Sackgasse", () => {
     expect(container.textContent).toMatch(/100\s*Notes/);
     expect(container.textContent).toMatch(/30\s*Files/);
     expect(container.textContent).toMatch(/20\s*Code/);
-    // Die Zeile an den Chips spricht fuer das Blatt — und ihre drei Zahlen
-    // summieren auf die Karten, die wirklich stehen. Ohne Seitenfesten Wert,
-    // weil der Speicher-Zustand im vollen Lauf von Test zu Test weiterlebt.
-    const treffer = /on this page (\d+) · (\d+) · (\d+)/u.exec(container.textContent ?? "");
+    // Die Zeile an den Chips spricht fuer das Blatt — und IHRE Zahlen summieren auf die
+    // Karten, die wirklich stehen. Gelesen wird die ganze Liste, nicht drei auswendig
+    // gelernte Faecher: seit 3.2.97 zaehlt die Zeile fuenf Traeger, und eine Sonde, die nur
+    // die ersten drei abnimmt, haette einen verlorenen Korb als korrekte Summe verkauft.
+    const treffer = /on this page ([\d.,\s·]+?)(?=[A-Z]|$)/u.exec(container.textContent ?? "");
     expect(treffer, "die zweite Zahl fehlt: was das Blatt haelt").not.toBeNull();
-    const blatt = [Number(treffer![1]), Number(treffer![2]), Number(treffer![3])];
+    const blatt = (treffer![1].split("·").map((t) => Number(t.trim().replace(/,/g, ""))))
+      .filter((n) => Number.isFinite(n));
+    expect(blatt.length, `die Zeile nennt ${blatt.length} Faecher, erwartet werden alle ${TRAEGER_REIHENFOLGE.length}`).toBe(TRAEGER_REIHENFOLGE.length);
     expect(blatt.reduce((a, b) => a + b, 0)).toBe(container.querySelectorAll(".row-entry").length);
     expect(blatt[2], "Code liegt auf dieser Seite nicht, im Laden schon").toBe(0);
   });

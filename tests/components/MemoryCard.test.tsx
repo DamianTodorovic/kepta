@@ -80,14 +80,14 @@ describe("MemoryCard", () => {
     expect(screen.getByText("Tasks")).toBeInTheDocument();
   });
 
-  it("setzt kein Thema auf eine Code-Karte, auch wenn alle sechs im Text stehen", () => {
+  it("setzt kein Thema auf eine echte Programm-Karte, auch wenn alle sechs im Text stehen", () => {
     render(
       <MemoryCard
         memory={mem({
           type: "reference",
-          title: "zh-TW schema",
+          title: "walker",
           content: "Kontakt: Herr Lin. Meeting 2026-10-12. TODO frist deadline. Anleitung setup step 1. https://example.org",
-          tags: ["machine-scan", "json"],
+          tags: ["machine-scan", "ts"],
         })}
         onClick={() => {}}
       />,

@@ -313,7 +313,7 @@ export function mountMemories(app: express.Express, ctx: AppKontext): void {
   app.get("/api/memories/gruppen", (_req, res) => {
     const started = Date.now();
     const zeit = zeitnahme();
-    const traeger: Record<Traeger, number> = { notes: 0, files: 0, code: 0 };
+    const traeger: Record<Traeger, number> = { notes: 0, files: 0, code: 0, daten: 0, anderes: 0 };
     const themen: Record<Thema, number> = { people: 0, projects: 0, events: 0, tasks: 0, guides: 0, links: 0 };
     let ohneThema = 0;
     let gezahlt = 0;

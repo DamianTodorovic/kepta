@@ -206,19 +206,21 @@ describe("baueRegal", () => {
     for (const f of regal.worum) expect(f.name).not.toContain(".md");
   });
 
-  it("die Woher-Zeile zeigt alle drei Traeger — auch das kleinste", () => {
+  it("die Form-Zeile zeigt jeden Traeger, den der Bestand fuellt — auch das kleinste", () => {
     // 92 Notes gegen 10 996 Files und 9 978 Code: mit Schwelle war das kleinste Fach
     // eine Schwanzzeile "1 smaller shelves". Genau diese Zahl war der Screenshot, mit
     // dem dieser Auftrag anfing — eine Gruppierung, die ihn selbst verschluckt, baut
-    // nicht.
+    // nicht. Seit JSON ein eignes Fach hat (`daten`, 3.2.97), fuellt derselbe Bestand
+    // vier Koerbe; die Zahl ist also eine Messung an diesem Fixture, kein Auswendiglernen.
     const bestand = [
       ...scanBestand(400, ["md", "json"]),
       mem({ id: "h1", title: "Von Hand", content: "Kurz notiert, ohne Datei dahinter, ohne jedes Muster." }),
     ];
     const regal = baueRegal(bestand);
     expect(regal.woher.map((f) => f.name)).toContain("Notes");
+    expect(regal.woher.map((f) => f.name)).toContain("Data");
     expect(regal.woher.some((f) => f.herkunft === "schwanz")).toBe(false);
-    expect(regal.woher.length).toBe(3);
+    expect(regal.woher.length).toBe(4);
   });
 
   it("gibt die Zeilenzahl zurueck, die die Flaeche wirklich braucht", () => {

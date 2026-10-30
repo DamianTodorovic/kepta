@@ -169,18 +169,28 @@ export function klassifiziere(eingabe: ZuOrdnendes): Zuordnung {
 // ist. Darum prueft `themen()` den Traeger selbst und nicht nur der Aufrufer.
 // ---------------------------------------------------------------------------
 
-export type Traeger = "notes" | "files" | "code";
+export type Traeger = "notes" | "files" | "code" | "daten" | "anderes";
 export type Thema = "people" | "projects" | "events" | "tasks" | "guides" | "links";
 
-/** Programme, Schemas, Configs. */
+/**
+ * Programme, Schemas, Styles — etwas, das ausgefuehrt oder uebersetzt wird.
+ *
+ * Bis 3.2.96 steckte hier auch `json`, `ini`, `toml`, `yaml`, `env` und `lock`. An seinem
+ * echten Bestand waren 9 860 von 9 978 "Code"-Stuecken JSON — die Gruppe hiess also nicht nach
+ * dem, was sie enthaelt, sondern nach dem, was die Endungsliste einmal versammelt hat.
+ */
 const CODE_ENDUNGEN = new Set([
-  "ts", "tsx", "js", "jsx", "py", "sql", "sh", "yml", "yaml", "toml", "ini",
-  "env", "json", "css", "rs", "go", "java", "lock",
+  "ts", "tsx", "js", "jsx", "py", "sql", "sh", "css", "rs", "go", "java",
+]);
+
+/** Daten und Einstellungen — gelesen, nicht ausgefuehrt; ein Vorrat, kein Programm. */
+const DATEN_ENDUNGEN = new Set([
+  "json", "csv", "ini", "toml", "yaml", "yml", "env", "lock",
 ]);
 
 /** Dokumente — Papiere, die man liest, nicht Code, den man ausführt. */
 const DOKUMENT_ENDUNGEN = new Set([
-  "md", "txt", "pdf", "docx", "xlsx", "csv", "html", "eml", "log", "rtf",
+  "md", "txt", "pdf", "docx", "xlsx", "html", "eml", "log", "rtf",
 ]);
 
 /**
@@ -208,8 +218,11 @@ function siehtNachCodeAus(inhalt: string): boolean {
 }
 
 /**
- * Zeile 1 — woher das Stück kam. Reihenfolge ist Absicht: echter Quellpfad,
+ * Zeile 1 — in welcher FORM das Stück hier liegt. Reihenfolge ist Absicht: echter Quellpfad,
  * dann die Endungs-Marke im Tag (der Scan schreibt sie), dann das Aussehen.
+ *
+ * Das Wort "woher" stand hier bis 29.10. und gehoert der Herkunfts-Achse (`graphHerkunft.ts`).
+ * Was diese Funktion teilt, ist die Form: getippt, Dokument, Programm, Daten — oder unbekannt.
  */
 export function traeger(eingabe: ZuOrdnendes): { traeger: Traeger; grund: string } {
   const tags = (eingabe.tags ?? []).map((t) => t.toLowerCase());
@@ -219,16 +232,20 @@ export function traeger(eingabe: ZuOrdnendes): { traeger: Traeger; grund: string
   const pfad = quellpfad(eingabe);
   const e = endung(pfad);
   if (e) {
+    if (DATEN_ENDUNGEN.has(e)) return { traeger: "daten", grund: `Datendatei .${e}` };
     if (CODE_ENDUNGEN.has(e)) return { traeger: "code", grund: `Quelldatei .${e}` };
     if (DOKUMENT_ENDUNGEN.has(e)) return { traeger: "files", grund: `Quelldatei .${e}` };
-    return { traeger: "files", grund: `übernommen aus .${e}` };
+    // Frueher: `files`. Ein Korb, der aufnimmt, was sonst nirgends hinguemmt hat, teilt nichts
+    // ein — er versteckt nur, wie gut die beiden Endungslisten wirklich sind.
+    return { traeger: "anderes", grund: `unbekannte Endung .${e}` };
   }
   for (const t of tags) {
+    if (DATEN_ENDUNGEN.has(t)) return { traeger: "daten", grund: `Endungs-Marke im Tag: .${t}` };
     if (CODE_ENDUNGEN.has(t)) return { traeger: "code", grund: `Endungs-Marke im Tag: .${t}` };
     if (DOKUMENT_ENDUNGEN.has(t)) return { traeger: "files", grund: `Endungs-Marke im Tag: .${t}` };
   }
   if (siehtNachCodeAus(eingabe.content ?? "")) return { traeger: "code", grund: "Aussehen: Programmtext, kein Pfad bekannt" };
-  return { traeger: "files", grund: "übernommenes Dokument, kein Pfad bekannt" };
+  return { traeger: "anderes", grund: "kein Pfad, keine Endungs-Marke, kein Programmtext" };
 }
 
 /**

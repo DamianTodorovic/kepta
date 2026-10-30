@@ -25,12 +25,18 @@ import type { Regal, WannKoerb } from "../lib/graphHierarchy";
 import { achsenSatz, type Achsen, type FarbGruppen, type GruppenSteuerung } from "../lib/gruppen";
 import { kappeListe } from "../lib/kappe";
 
-/** Die drei Traeger, in der Reihenfolge, in der die Flaeche sie nennt. */
-const TRAEGER_REIHENFOLGE = ["Notes", "Files", "Code"] as const;
+/** Die Traeger, in der Reihenfolge, in der die Flaeche sie nennt. */
+const TRAEGER_REIHENFOLGE = ["Notes", "Files", "Code", "Data", "Other"] as const;
 const TRAEGER_TOKEN: Record<string, string> = {
   Notes: "--type-semantic",
   Files: "--type-reference",
   Code: "--type-procedural",
+  // Beide neuen Faecher leihen einen Ton, statt einen zu erfinden: die Art-Familie steht an
+  // vier Stellen im Kleidregister (Licht, Dunkel, zwei Kontraststufen), ein halbjegter Token
+  // waere in drei davon leer. Dass Traeger und Wissensart dieselbe Familie teilen, ist die
+  // bekannte Schuld der Schiene "Design-Sprache" und hier benannt, nicht vermehrt.
+  Data: "--type-episodic",
+  Other: "--type-neutral",
 };
 
 function zahl(n: number): string {

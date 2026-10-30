@@ -507,6 +507,12 @@ const erwartet = [
   // einen Satz nachzusprechen, der eine Entscheidung ist. Gegenprobe VOR dem Bau, am
   // installierten 3.2.95, gelesen 00:54:5x von derselben Sonde: "graph-fit" **0** mal.
   ["graph-fit", 1],
+  // Punkt 5, Fix 1 + 2 (3.2.97): JSON heisst Daten, die Restklasse heisst Anderes. Zwei Marken,
+  // weil beide Faecher eine eigne Auskunft tragen — und weil ein Fach, das nur im Modell existiert,
+  // im Bild niemand sieht. Gegenprobe VOR dem Bau, am installierten 3.2.96, gelesen 02:17:4x von
+  // derselben Sonde: beide **0** Treffer.
+  ["read, not run", 1],
+  ["no known form", 1],
 ];
 // Die Liste darf nur ASCII-Zeichen enthalten. Grund, gemessen 21.10. 19:16 MESZ am
 // installierten Objekt: das Wort "Looking" plus echtes U+2026 steht dort 2 mal, diese

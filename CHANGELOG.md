@@ -1,3 +1,23 @@
+## [3.2.97]
+
+### Changed
+
+- **JSON is data, and the junk drawer says its own name.** Two baskets were lying at his real
+  store: `Code` held 9 978 notes of which **9 860 (98.8 %) were `.json`** — locale files, exports,
+  configs, nothing that runs — and `Files` swallowed every extension the two lists didn't know,
+  which is not a kind of knowledge but a remainder. There are now five carriers: `Notes`, `Files`,
+  `Code` (programs and sources), `Data` (settings, exports, tables — read, not run) and `Other`
+  (no known form). `Other` is deliberately a visible basket: its count is the honest measure of how
+  well the extension lists actually work, and a basket that quietly absorbs the unknown hides its
+  own gap.
+- **A side effect that is the point:** the rule "code never gets a topic word" used to silence
+  almost ten thousand notes, because they were filed as code. It now bites only real programs.
+  A case holds both halves — a `.ts` file with all six topic signals still gets none, a `.json`
+  file with a person in it gets `People`.
+- **Surface vocabulary:** nine words in two rows became eleven. The guard that keeps the rows
+  honest (`tests/kategorien-wache.test.ts`) now counts five carriers plus six topics, still as a
+  hard number, because a count derived from the same table it protects can never fail.
+
 ## [3.2.96]
 
 ### Fixed

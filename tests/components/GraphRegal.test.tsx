@@ -56,10 +56,14 @@ function text(regal: ReturnType<typeof baueRegal>): string {
 describe("GraphRegal", () => {
   const regal = baueRegal(bestand());
 
-  it("nennt den Bestand und alle drei Traeger — auch das kleinste", () => {
+  it("nennt den Bestand und jeden Traeger, den er fuellt — auch das kleinste", () => {
     const t = text(regal);
     expect(t).toContain(regal.bestand.toLocaleString("en-US"));
-    for (const name of ["Notes", "Files", "Code"]) expect(t).toContain(name);
+    // Gelesen wird die Liste, die `baueRegal` selbst gerechnet hat: behauptet wird der
+    // Weg Modell -> Flaeche, nicht eine auswendig gelernte Zahl von Faechern. Seit 3.2.97
+    // waere eine feste Drei an diesem Fixture falsch.
+    expect(regal.woher.length).toBeGreaterThan(0);
+    for (const f of regal.woher) expect(t, `${f.name} fehlt in der Zeile`).toContain(f.name);
     const notes = regal.woher.find((f) => f.name === "Notes");
     expect(notes).toBeDefined();
     expect(t).toContain(`Notes ${notes!.notizen}`);
@@ -118,10 +122,10 @@ describe("GraphRegal", () => {
   // Warum diese beiden Faellige hier stehen und die Design-Wache nicht ersetzen: die
   // Wache prueft Klassen gegen Regeln (scripts/design-wache.mjs:1800, Soll 0), aber niemand
   // prueft die zwei Woerter, an denen das Regal Farbe und Reihenfolge aufhaengt. Zieht
-  // jemand TRAEGER_LABELS (src/lib/graphHierarchy.ts:110-114) um, ohne TRAEGER_TOKEN
-  // (src/components/GraphRegal.tsx:19-24) nachzuziehen, faellt jedes Fach auf
+  // jemand TRAEGER_LABELS (`TRAEGER_LABELS`) um, ohne TRAEGER_TOKEN
+  // (`TRAEGER_TOKEN`) nachzuziehen, faellt jedes Fach auf
   // var(--type-neutral) zurueck — drei graue Streifen, und weil TRAEGER_REIHENFOLGE
-  // (GraphRegal.tsx:19) fuer alle drei -1 liefert, kippt die Reihenfolge stumm auf Menge.
+  // (`TRAEGER_REIHENFOLGE`) fuer alle -1 liefert, kippt die Reihenfolge stumm auf Menge.
   // Kein Fehler, keine Wache, kein roter Fall: bis hierher.
   //
   // Die Muster unten sind NICHT geraten: react-dom/server 19.2.8 schreibt
@@ -134,8 +138,9 @@ describe("GraphRegal", () => {
   //
   // Was hier NICHT bewiesen wird: Pixel. Die 1-Kante des Fachs (src/index.css:988,
   // min-width:1px) und die Zeilenhoehe 14 px (GraphRegal.tsx:12) brauchen einen Viewport.
-  it("die drei Traeger-Namen sind die drei, an denen Farbe und Reihenfolge haengen", () => {
-    expect(regal.woher.map((f) => f.name).sort()).toEqual(["Code", "Files", "Notes"]);
+  it("die Traeger-Namen des Bestands sind die, an denen Farbe und Reihenfolge haengen", () => {
+    // Seit 3.2.97 heisst JSON `Data`: derselbe Fixture-Bestand fuellt jetzt Notes, Files, Data.
+    expect(regal.woher.map((f) => f.name).sort()).toEqual(["Data", "Files", "Notes"]);
   });
 
   it("jedes Traeger-Fach haelt ein eignes Token — kein Fach faellt aufs Restgrau", () => {
@@ -147,14 +152,14 @@ describe("GraphRegal", () => {
     // Schnitt ein gruener Fall — genau die Form, die diesem Haus schon angerechnet wurde.
     expect(segmente.length).toBe(regal.woher.length);
     expect(new Set(segmente).size).toBe(3);
-    expect([...segmente].sort()).toEqual(["--type-procedural", "--type-reference", "--type-semantic"]);
+    expect([...segmente].sort()).toEqual(["--type-episodic", "--type-reference", "--type-semantic"]);
     expect(html).not.toMatch(/regal-woher-fach[^>]*--type-neutral/);
   });
 
   it("die Baender stehen in der Reihenfolge des Hauses, nicht in der der Menge", () => {
     const html = renderToStaticMarkup(createElement(GraphRegal, { regal }));
     const notizen = [...html.matchAll(/class="regal-woher-fach" data-notizen="(\d+)"/g)].map((m) => Number(m[1]));
-    const haus = ["Notes", "Files", "Code"] as const;
+    const haus = ["Notes", "Files", "Data"] as const;
     const erwartet = haus.map((name) => regal.woher.find((f) => f.name === name)?.notizen);
     expect(notizen.length).toBe(3);
     // Keine Fixture-Zahl hier drin: verglichen wird nur, was `baueRegal` selbst gerechnet

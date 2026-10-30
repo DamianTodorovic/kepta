@@ -1,5 +1,5 @@
 /**
- * Wache: die neun Woerter gelten auf der ganzen Flaeche (#84).
+ * Wache: die Wortliste gilt auf der ganzen Flaechee (#84).
  *
  * Anlass: die zwei Zeilen waren an fuenf Orten gebaut, und die Leitung zaehlte
  * fuenf Stellen, die noch Facts / How-tos / Documents zeigen. Abgeschrieben war
@@ -35,8 +35,8 @@ const HIER = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
  */
 const FLAECHEN = ["src/components", "src/lib", "src/App.tsx", "src/types.ts"];
 
-/** Die neun Woerter, wie die Flaeche sie spricht. */
-const NEUN = [...Object.values(TRAEGER_LABELS), ...Object.values(THEMA_LABELS)];
+/** Die Wortliste, wie die Flaeche sie spricht: fuenf Traeger und sechs Themen (elf seit 3.2.97). */
+const WORTLISTE = [...Object.values(TRAEGER_LABELS), ...Object.values(THEMA_LABELS)];
 
 /**
  * Verboten: die Etikette der vier Rechen-Arten. "Events" faellt raus — es ist
@@ -47,7 +47,7 @@ const NEUN = [...Object.values(TRAEGER_LABELS), ...Object.values(THEMA_LABELS)];
 const VERBOTEN = [
   ...new Set(
     Object.values(TYP_LABELS)
-      .filter((w) => !NEUN.includes(w))
+      .filter((w) => !WORTLISTE.includes(w))
       .flatMap((w) => [w, w.replace(/s$/u, "")])
   ),
 ];
@@ -198,7 +198,7 @@ function kategorieGlieder(text: string): string[] {
   return text
     .split(/[·,|/\n]/u)
     .map((s) => s.trim().replace(/^\d[\d .]*\s+/u, "").trim())
-    .filter((s) => NEUN.includes(s));
+    .filter((s) => WORTLISTE.includes(s));
 }
 
 /** Die Datei, in der TYP_LABELS steht, ist die Definition — kein Sichttext. */
@@ -239,9 +239,9 @@ function neunOhneQuelle() {
   return aus;
 }
 
-describe("Wache: die neun Woerter gelten auf der ganzen Flaeche", () => {
+describe("Wache: die Wortliste gilt auf der ganzen Flaechee", () => {
   it("leitet die Woerter ab, statt sie abzuschreiben", () => {
-    expect(NEUN).toHaveLength(9);
+    expect(WORTLISTE).toHaveLength(11);
     expect(VERBOTEN).not.toContain("Events");
     expect([...VERBOTEN].sort()).toEqual(["Document", "Documents", "Fact", "Facts", "How-to", "How-tos"].sort());
     expect(FLAECHEN_DATEIEN.length).toBeGreaterThan(40);
@@ -319,7 +319,7 @@ describe("Wache: die neun Woerter gelten auf der ganzen Flaeche", () => {
       id: `m${i}`, userId: "local", title: `Notiz ${i}`, content: "Text", tags: [] as string[],
       type: typ, createdAt: 1, updatedAt: 1,
     })) as unknown as Parameters<typeof buildHierarchy>[0];
-    const erlaubt = new Set([...NEUN, ...Object.values(TYP_BESCHREIBUNG), ...Object.values(TYP_LABELS)]);
+    const erlaubt = new Set([...WORTLISTE, ...Object.values(TYP_BESCHREIBUNG), ...Object.values(TYP_LABELS)]);
     type Knoten = { id?: string; label: string; kind?: string; children?: Knoten[] };
     const falscheEtikette = (knoten: Knoten[]): string[] => {
       const raus: string[] = [];

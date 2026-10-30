@@ -25,9 +25,21 @@ const gescannt = (pfad: string, endung: string, inhalt: string, titel = "stick")
 });
 
 describe("Zeile 1 — der Traeger entscheidet zuerst", () => {
-  it("gescanntes JSON ist Code", () => {
+  it("gescanntes JSON ist Daten, nicht Code — 9 860 von 9 978 am echten Bestand", () => {
     const m = gescannt("/Users/beispiel/theme/locales/zh-TW.schema.json", "json", '{ "price": "Preis" }');
+    expect(traeger(m).traeger).toBe("daten");
+  });
+
+  it("ein echtes Programm bleibt Code", () => {
+    const m = gescannt("/Users/beispiel/src/server.ts", "ts", "export const a = 1;");
     expect(traeger(m).traeger).toBe("code");
+  });
+
+  it("eine Endung, die niemand kennt, ist kein Dokument — sie heisst anderes", () => {
+    // Bis 3.2.96 fiel jede unbekannte Endung in `files` (`klassifikation.ts:224`). Ein Korb, der
+    // aufnimmt, was sonst nirgends hing, teilt nichts ein: er versteckt die eigne Luecke.
+    const m = gescannt("/Users/beispiel/Sonstiges/altedaten.xyz", "xyz", "was auch immer");
+    expect(traeger(m).traeger).toBe("anderes");
   });
 
   it("gescanntes Markdown ist Files", () => {
@@ -45,14 +57,17 @@ describe("Zeile 1 — der Traeger entscheidet zuerst", () => {
     expect(traeger(m).traeger).toBe("notes");
   });
 
-  it("liefert immer genau einen der drei Werte", () => {
+  it("liefert immer genau einen der fuenf Werte, nie einen sechsten", () => {
     const faelle = [
       { title: "a", content: "b" },
       gescannt("/x/y.ts", "ts", "export const a = 1;"),
       gescannt("/x/y.pdf", "pdf", "Vertrag"),
+      gescannt("/x/y.json", "json", '{ "a": 1 }'),
+      gescannt("/x/y.xyz", "xyz", "fremd"),
       { title: "c", content: "d", tags: ["machine-scan"] },
     ];
-    for (const m of faelle) expect(["notes", "files", "code"]).toContain(traeger(m).traeger);
+    const erlaubt = ["notes", "files", "code", "daten", "anderes"];
+    for (const m of faelle) expect(erlaubt).toContain(traeger(m).traeger);
   });
 
   it("der echte Quellpfad entscheidet, nicht das Tag — 1.420 Faelle im Bestand", () => {
@@ -62,7 +77,7 @@ describe("Zeile 1 — der Traeger entscheidet zuerst", () => {
       content: '{ "cancellation": "取消" }\n\n— Source: /Users/beispiel/theme/locales/zh-TW.schema.json',
       tags: ["machine-scan", "md"],
     };
-    expect(traeger(m).traeger).toBe("code");
+    expect(traeger(m).traeger).toBe("daten");
   });
 
   it("fehlt der Pfad, zaehlt die Endungs-Marke im Tag", () => {
@@ -79,7 +94,7 @@ describe("Zeile 1 — der Traeger entscheidet zuerst", () => {
 });
 
 describe("Zeile 2 — Themen, aber nie in Code", () => {
-  it("gescanntes JSON bekommt KEIN Themenwort, auch wenn alle sechs drinstehen", () => {
+  it("ein echtes Programm bekommt KEIN Themenwort, auch wenn alle sechs drinstehen", () => {
     const alles = [
       "Kontakt: Weber, Telefon 0153 160413, e-mail: w@example.org",
       "Projekt angelshop Sprint release",
@@ -88,12 +103,25 @@ describe("Zeile 2 — Themen, aber nie in Code", () => {
       "anleitung how-to setup schritt 1 so geht",
       "https://example.org www.example.org github",
     ].join("\n");
-    const m = gescannt("/theme/locales/zh-TW.schema.json", "json", alles);
+    const m = gescannt("/src/theme/locales.ts", "ts", alles);
     expect(traeger(m).traeger).toBe("code");
     expect(themen(m)).toEqual([]);
     const g = gruppen(m);
     expect(g.traeger).toBe("code");
     expect(g.themen).toEqual([]);
+  });
+
+  /**
+   * Die Nebenwirkung von Fix 2, ausdrucklich festgehalten: die Sperre "Code bekommt nie ein
+   * Themenwort" galt an seinem Bestand gegen 9 978 Stuecke, von denen 9 860 JSON waren
+   * (gemessen 16.10.). Seit JSON `daten` heisst, hoelt die Sperre diese fast zehntausend
+   * Notizen nicht mehr ein - sie trifft nur noch die echten Programme. Das ist kein Nebeneffekt,
+   * den man uebersieht, sondern der Grund, warum die Zeile 2 ueberhaupt etwas erzaehlt.
+   */
+  it("Daten bekommen ein Themenwort — die Sperre traf bisher JSON, nicht Programme", () => {
+    const m = gescannt("/x/y.json", "json", "Kontakt: Weber, Telefon 0153 160413, e-mail: w@example.org");
+    expect(traeger(m).traeger).toBe("daten");
+    expect(themen(m)).toContain("people");
   });
 
   it("gescanntes Markdown mit Rechnungswort ist Files mit Task- und People-Signal", () => {
@@ -133,7 +161,7 @@ describe("Zeile 2 — Themen, aber nie in Code", () => {
 
 describe("Flächenschicht — die neun Wörter kommen aus einer Quelle", () => {
   it("beide Zeilen haben je ein Etikett und einen Hinweis, in Alltagssprache", () => {
-    expect(TRAEGER_REIHENFOLGE).toEqual(["notes", "files", "code"]);
+    expect(TRAEGER_REIHENFOLGE).toEqual(["notes", "files", "code", "daten", "anderes"]);
     expect(THEMA_REIHENFOLGE).toEqual(["people", "projects", "events", "tasks", "guides", "links"]);
     expect(TRAEGER_LABELS.code).toBe("Code");
     for (const [key, hinweis] of Object.entries(TRAEGER_HINWEISE)) {
@@ -165,9 +193,14 @@ describe("Flächenschicht — die neun Wörter kommen aus einer Quelle", () => {
     expect(gruppenVonNotiz(spaeter).traeger).toBe("notes");
   });
 
-  it("Code trägt im Etikett kein Thema — die Sperre ist auch in der Fläche sichtbar", () => {
-    expect(gruppenEtikett({ title: "schema", content: '{ "price": "Preis" }\n\n— Source: /t/zh-TW.schema.json', tags: ["machine-scan", "json"] }))
+  it("ein Programm traegt im Etikett 'Code' — die Sperre ist auch in der Flaeche sichtbar", () => {
+    expect(gruppenEtikett({ title: "walker", content: "export const walk = 1;\n\n— Source: /src/walker.ts", tags: ["machine-scan", "ts"] }))
       .toBe("Code");
+  });
+
+  it("und dasselbe Etikett nennt JSON 'Data', weil JSON kein Programm ist", () => {
+    expect(gruppenEtikett({ title: "schema", content: '{ "price": "Preis" }\n\n— Source: /t/zh-TW.schema.json', tags: ["machine-scan", "json"] }))
+      .toBe("Data");
   });
 });
 

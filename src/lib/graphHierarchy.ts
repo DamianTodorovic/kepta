@@ -104,13 +104,18 @@ const BEKANNTE_TYPEN = ["semantic", "episodic", "procedural", "reference"];
 // Antworten geben wie die Tests.
 export type { Traeger, Thema, Gruppe } from "../core/klassifikation";
 
-export const TRAEGER_REIHENFOLGE: Traeger[] = ["notes", "files", "code"];
+export const TRAEGER_REIHENFOLGE: Traeger[] = ["notes", "files", "code", "daten", "anderes"];
 export const THEMA_REIHENFOLGE: Thema[] = ["people", "projects", "events", "tasks", "guides", "links"];
 
 export const TRAEGER_LABELS: Record<Traeger, string> = {
   notes: "Notes",
   files: "Files",
   code: "Code",
+  // Der Name sagt, was drin liegt: 9 860 von 9 978 "Code"-Stuecken an seinem Bestand waren JSON.
+  daten: "Data",
+  // Das letzte Fach ist die eigne Luecke der beiden Endungslisten — es zeigt sie, statt sie zu
+  // verstecken. Ein Fach, das aufnimmt, was sonst nirgends hinguemmt hat, teilt nichts ein.
+  anderes: "Other",
 };
 
 /**
@@ -138,7 +143,9 @@ export const THEMA_FRAGE = "What it is about";
 export const TRAEGER_HINWEISE: Record<Traeger, string> = {
   notes: "typed here — no file behind it",
   files: "a document from your folders",
-  code: "programs, schemas, configs",
+  code: "programs and sources — something that runs or compiles",
+  daten: "settings, exports, tables — read, not run",
+  anderes: "no known form — this is the shelf's own gap, not a kind of your knowledge",
 };
 
 export const THEMA_LABELS: Record<Thema, string> = {
