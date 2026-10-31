@@ -129,7 +129,17 @@ async function main() {
   const forderer = createRequire(path.join(WURZEL, "package.json"));
   const asar = forderer("@electron/asar");
   const hash = (b) => crypto.createHash("sha256").update(b).digest("hex").slice(0, 16);
-  const stuecke = ["index.html", "assets/index-CxpGa2va.js", "assets/index-CTwHozHf.css", "server.cjs", "mcp-server.cjs"];
+  // Die Gebinde heissen nach ihrem Inhalt (Vite haengt den Hash an den Dateinamen), also
+  // werden sie **aufgesucht**, nicht auswendig gewusst — ein harter Name waehre nach jedem Bau
+  // ein falscher Alarm (gemessen 31.10. 11:48: "FEHLT im Repo-Bundel: index-CxpGa2va.js").
+  const haupt = (name, muster) => {
+    const ordner = path.join(WURZEL, "dist", "assets");
+    const treffer = fs.readdirSync(ordner).filter((f) => muster.test(f) && !f.includes("." + name.slice(1) + "."));
+    const paare = treffer.map((f) => path.join(ordner, f)).filter((fp) => fs.existsSync(fp));
+    paare.sort((a, b) => fs.statSync(b).size - fs.statSync(a).size);
+    return paare[0] ? path.relative(path.join(WURZEL, "dist"), paare[0]) : name;
+  };
+  const stuecke = ["index.html", haupt("assets/app.js", /^index-.*\.js$/), haupt("assets/app.css", /^index-.*\.css$/), "server.cjs", "mcp-server.cjs"];
   let gleich = 0;
   for (const f of stuecke) {
     const repo = path.join(WURZEL, "dist", f);
@@ -346,7 +356,10 @@ async function main() {
     urteil("die letzte Stufe heisst alles", await stufe(6), "6");
     await schlafe(900);
     const alles = await suchZeilen("Fristenkontrolle");
-    urteil("und die Liste zeigt wieder alles", alles.zeilen, grund.zeilen);
+    // Der Grundwert von oben ist schon unter der Kappe gemessen (Stufe 5 ist der Default) —
+    // "alles" gegen ihn zu rechnen war ein Fehler des Pruefers, nicht der Flaeche.
+    urteil("und die Liste zeigt wieder alles", alles.zeilen, SAAT);
+    urteil("mehr als unter der Kappe", alles.zeilen > wenig.zeilen, true);
     await cdp.send("Page.reload", { ignoreCache: true });
     await warteBis(async () => ((await evaliere(cdp, `document.querySelectorAll('button').length`)) > 0 ? true : null), { maxMs: 90000 });
     await evaliere(cdp, `(()=>{const b=[...document.querySelectorAll('button')].find(x=>/later/i.test(x.textContent||''));if(b)b.click();})()`);
