@@ -804,6 +804,9 @@ label:has(.switch), label:has(input[type="checkbox"]), label:has(input[type="rad
    Siegelroten Strich am linken Blattrand (kein Layout-Shift). */
 .sidebar-nav-btn, .sidebar-tag-btn {
   border: 1px solid transparent;
+  /* Beide Reihen der Seitenleiste sind Griffe und tragen die Kontrollstufe — bis 31.10. standen
+     dafuer zwei Tailwind-Werte in der Bauteilkette (8 px und 6 px), ausserhalb der Stufen. */
+  border-radius: var(--r-btn);
   transition: background var(--dur) ease, color var(--dur) ease, border-color var(--dur) ease, box-shadow var(--dur) ease;
 }
 .sidebar-nav-btn:hover, .sidebar-tag-btn:hover { background: var(--side-flaeche); }

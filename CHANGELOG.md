@@ -1,3 +1,27 @@
+## [3.2.104]
+
+### Added
+
+- **The graph can hand out its own picture.** A button named "Export" sits on the zoom rail next to
+  "Fit" and writes the canvas out as `k3pta-graph-<date>.png` — the graph's own pixels, without the
+  tool strip around it. Four cases in `tests/components/graph-bild-export.test.tsx`, all four red
+  before the surface existed; the canvas stand-in in `tests/helfer/canvas.ts` now answers
+  `toDataURL` (and can refuse, the way a tainted canvas does in a real browser), so the download is
+  checked for carrying *this* canvas's size rather than any size.
+
+### Fixed
+
+- **Control radii are one family now.** The colour strip on every note card drew a 2 px corner —
+  on a 4 px wide bar that is a capsule, so it is named one (`999`, same picture, no off-scale
+  value). The two sidebar rows (sections and tags) drew 8 px and 6 px while every button beside
+  them draws the house step `--r-btn` (7 px); both now name that step. Measured in a real window
+  before and after: the census of painted corners over six surfaces at a filled base counted
+  377 corners off the scale, of which these three names held 240.
+- **The two mirrors of a setting now say which one answers first.** `settings.json` rows are read
+  before the first render (`src/main.tsx:11`), the `ui_prefs` blob later (`Dashboard.tsx:210`), and
+  each only fills what is still missing. That ordering was a fact about the code that no file
+  stated; it is stated where one of the two lives.
+
 ## [3.2.103]
 
 ### Fixed

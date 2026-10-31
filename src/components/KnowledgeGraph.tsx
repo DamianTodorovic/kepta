@@ -1551,6 +1551,12 @@ export function KnowledgeGraph({ memories: memoriesAusFenster, onSelectMemory, o
    */
   const [entfaltet, setEntfaltet] = useState<ReadonlySet<string>>(new Set());
   const [dimensions, setDimensions] = useState({ w: 800, h: 500 });
+  // Der Punkt neben dem Export-Knopf: eine Absage muss gesagt werden, nicht schweigen.
+  // Der Hook steht hier oben und nicht bei seinem Knopf, weil die Flaeche vor der Leiste an
+  // mehreren Stellen frueh zurueckgibt. Ein Hook hinter so einer Rueckgabe ist ein Fehler, den
+  // erst die naechste Anzeige zeigt: gemessen 31.10. 18:12 als 126 Faelle in 16 Dateien, alle mit
+  // "Rendered more hooks than during the previous render".
+  const [bildMeldung, setBildMeldung] = useState<string | null>(null);
   /**
    * Die Gang-Zahl in ein echtes Blatt spiegeln. Was nur auf dem canvas steht, liest niemand:
    * weder eine Vorlesesoftware noch eine Pruefung an seiner Datei, und seit 11:08 auch nicht
@@ -5542,7 +5548,6 @@ export function KnowledgeGraph({ memories: memoriesAusFenster, onSelectMemory, o
   // Die Flaeche haelt ihr Bild selbst: der Graph malt auf einer Leinwand, und eine Leinwand kann
   // ihr eignes PNG herausgeben. Ein zweiter Weg (Screenshot des Fensters) haette das Rand des
   // Programms mitgenommen — Knopfe, Leiste, Legende — und genau das will niemand zeigen.
-  const [bildMeldung, setBildMeldung] = useState<string | null>(null);
   const bildExport = () => {
     setBildMeldung(null);
     const leinwand = canvasRef.current;
