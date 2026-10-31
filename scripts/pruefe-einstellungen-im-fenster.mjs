@@ -55,6 +55,17 @@ const ARBEIT = "/tmp/kepta-fenster";
 // `release/mac-arm64`, danach das installierte Stueck. Beides sind ausgelieferte Bytes — nur der
 // Moment der Landung unterscheidet sie.
 const OBJEKT = ARG("gegen", "/Applications/K3PTA.app/Contents/Resources/app.asar");
+// Wohin die Bilder gehoeren: sie sind Beweis zu einem Stand, nicht dem naechsten.
+// Der Zielordner war fest geschrieben, und ein Lauf fuer die naechste Fassung ersetzte die
+// Bilder des vorigen Belegs — gemessen 31.10. 15:07, wo der Lauf gegen das installierte
+// Objekt drei committete Bilder des 3.2.101-Belegs ueberschrieb (nach-dem-neuladen,
+// textgroesse-nach-neuladen, vor-dem-neuladen). Also: Ordner nach der Fassung im Baum, und
+// mit `--bilder <pfad>` fuer einen bestimmten Moment setzbar.
+const FASSUNG = (() => {
+  try { return String(JSON.parse(fs.readFileSync(path.join(WURZEL, "package.json"), "utf8")).version); }
+  catch { return "unbekannt"; }
+})();
+const BILDER_ZIEL = ARG("bilder", `/Users/damiantodorovic/Desktop/ki gehirn/audit-2026-10-09/feldzug/belege-3110/fenster-${FASSUNG.split(".").pop()}`);
 const BRADE = "/Applications/Brave Browser.app/Contents/MacOS/Brave Browser";
 
 let server = null;
@@ -124,6 +135,10 @@ async function main() {
   fs.mkdirSync(`${ARBEIT}/d`, { recursive: true });
   fs.mkdirSync(`${ARBEIT}/profil`, { recursive: true });
   fs.mkdirSync(`${ARBEIT}/bilder`, { recursive: true });
+  // Der Stapel wird zu Beginn geloescht, die Bilder aber am Ende in die Mappe gelegt: ohne
+  // diese Zeile sieht ein Leser erst am Schluss, wohin ein Lauf seine Beweise legt — und der
+  // erste Lauf dieses Pruefers schrieb sie in den Ordner des Belegs davor (31.10.).
+  console.log(`  Bilder-Ziel: ${BILDER_ZIEL}`);
 
   // 1) Die Bytes, die ich fahre, sind die des installierten Objekts.
   const forderer = createRequire(path.join(WURZEL, "package.json"));
@@ -528,13 +543,16 @@ function raeumen() {
     try { process.kill(k.pid, "SIGKILL"); } catch { /* schon weg */ }
   }
   // Die Bilder gehoeren in die Mappe, der Rest der Kapsel ist Stapel ausser Haus.
-  const ziel = "/Users/damiantodorovic/Desktop/ki gehirn/audit-2026-10-09/feldzug/belege-3110/fenster-101";
+  const ziel = BILDER_ZIEL;
   try {
     fs.mkdirSync(ziel, { recursive: true });
-    for (const b of fs.existsSync(`${ARBEIT}/bilder`) ? fs.readdirSync(`${ARBEIT}/bilder`) : []) {
-      fs.copyFileSync(`${ARBEIT}/bilder/${b}`, path.join(ziel, b));
-    }
-  } catch { /* Bilder sind Beweis, nicht Bedingung */ }
+    const blaetter = fs.existsSync(`${ARBEIT}/bilder`) ? fs.readdirSync(`${ARBEIT}/bilder`) : [];
+    for (const b of blaetter) fs.copyFileSync(`${ARBEIT}/bilder/${b}`, path.join(ziel, b));
+    console.log(`  Bilder: ${blaetter.length} nach ${ziel}`);
+  } catch (e) {
+    // Bilder sind Beweis, nicht Bedingung — aber ein verlorener Beweis darf nicht schweigen.
+    console.log(`  BILDER VERLOREN: ${e.message} (Ziel ${ziel})`);
+  }
   // Der Browser haelt Profile-Dateien noch offen, wenn sein Kind gerade getoetet
   // wurde — also zweimal versuchen und danach sagen, was wirklich weg ist.
   for (let versuch = 0; versuch < 3; versuch += 1) {
