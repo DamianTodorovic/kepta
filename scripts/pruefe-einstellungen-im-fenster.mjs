@@ -230,8 +230,8 @@ async function main() {
   //     Dieselbe Route, die der Kosten-Laeufer nimmt (`POST /api/import/markdown`), ein
   //     eigner kleiner Korpus: dreissig Notizen, die all das Wort "Fristenkontrolle"
   //     fuehren — genug, damit eine Trefferzahl eine Stufe ist und nicht ein Zufall.
-  const SAAT = 30;
-  if (NUR === "" || NUR === "suche" || NUR === "treffer") {
+  const SAAT = Number(ARG("saat", 30));
+  if (NUR === "" || NUR === "suche" || NUR === "treffer" || NUR === "bild") {
     const dateien = Array.from({ length: SAAT }, (_, i) => {
       const n = String(i + 1).padStart(4, "0");
       return {
@@ -248,6 +248,40 @@ async function main() {
     urteil("der Bestand zaehlt die Saat", Number(gez) >= SAAT, true);
     console.log(`  Bestand nach der Saat: ${gez}`);
   }
+
+  // Auf die Graph-Flaeche springen und belegen, dass sie offen ist. Die Liste traegt naemlich
+  // dieselbe `.apple-seg`-Klasse wie die Graph-Leiste: ein Treffer dort gilt nicht als Beweis
+  // hier. Gemessen 31.10. 18:45, wo der Bildbeweis "kein Export-Knopf" meldete, obwohl die
+  // Flaeche nie offen war.
+  const zurGraphFlaeche = async () => {
+    // Der Assistent muss WEGKLIKTT sein, nicht nur angeklickt: im ersten Bildbeweis-Lauf stand er
+    // noch da, und die Graph-Flaeche war dadurch 372 px breit statt 1 024 — ihr Export war leer,
+    // und das war eine Folge meines Griffs, nicht der Flaeche. Geprueft wird deshalb der Rest.
+    // Der Assistent kommt SPAETER als der erste Knopf im Blatt: nach dem Neuladen wartet die
+    // Flaeche auf Daten, und der Einrichtungsraum baut sich danach. Ein Klick vor diesem Moment
+    // trifft nichts — gemessen 31.10. 19:05 als "kein Knopf mit diesem Wort", waehrend das Bild
+    // den Knopf unten rechts clearly zeigt. Also: warten, bis er da ist oder seine Frist um ist.
+    const getroffen = await warteBis(async () => await evaliere(cdp, `(()=>{const alle=[...document.querySelectorAll('button')]
+        .filter(x=>/^\\s*(Later|Skip|Back|ueberspringen)\\s*$/i.test((x.textContent||'').trim()));
+      if(!alle.length) return null;
+      const b=alle[0]; b.click();
+      return alle.length+' Treffer, erster: '+(b.className||'').slice(0,24)+' sichtbar:'+(b.getBoundingClientRect().width>0);})()`),
+      { maxMs: 12000, schritt: 700 });
+    console.log(`  Assistent-Klick: ${getroffen || "kein Knopf innerhalb 12 s"}`);
+    await schlafe(900);
+    const weg = await evaliere(cdp, `(()=>!/Set up K3PTA/.test(document.body.innerText||''))()`);
+    urteil("der Assistent ist beiseite, die Flaeche hat ihre Breite", weg, true);
+    const gesprungen = await evaliere(cdp, `(()=>{const b=[...document.querySelectorAll('.sidebar-nav-btn')]
+      .find(x=>/^\\s*Graph\\s*$/.test((x.textContent||'').trim()));
+      if(!b) return 'kein Seitenleisten-Knopf Graph'; b.click(); return (b.textContent||'').trim();})()`);
+    console.log(`  Sprung nach: ${gesprungen}`);
+    const offen = await warteBis(async () => {
+      const x = await evaliere(cdp, `(()=>{const b=[...document.querySelectorAll('.sidebar-nav-btn')].find(y=>y.getAttribute('data-active')==='true');return b?(b.textContent||'').trim():''})()`);
+      return x === "Graph" ? x : null;
+    }, { maxMs: 30000, schritt: 600 });
+    urteil("**die Graph-Flaeche ist offen**", offen, "Graph");
+    await schlafe(900);
+  };
 
   const zeileZurKnowledge = async () => { await knopf(cdp, "^\\s*(Knowledge|Wissen)\\s*$"); await warteBis(async () => (await evaliere(cdp, `!!document.querySelector('input[aria-label="Search your memory"]')`) ? true : null), { maxMs: 20000 }); };
   const stufe = async (index) => evaliere(cdp, `(()=>{const e=document.querySelector('input[aria-label="Results shown"]');if(!e)return null;
@@ -551,8 +585,7 @@ async function main() {
     // Die zwei Reglerschienen bleiben hier unerreichbar: `::-webkit-slider-runnable-track` ist
     // kein Knoten, und einen Pseudo-Griff kennt dieser Weg nicht — ihre Gleichheit ist gerechnet
     // (2 px Koerper, jede Rundung klemmt auf 1 px), nicht gemessen, und steht so im Papier.
-    await knopf(cdp, "Graph");
-    await warteBis(async () => ((await evaliere(cdp, `document.querySelectorAll('.apple-seg').length`)) > 0 ? true : null), { maxMs: 90000 });
+    await zurGraphFlaeche();
     const mass = await evaliere(cdp, `(()=>{const m=(s)=>{const e=document.querySelector(s);
       return e ? getComputedStyle(e).borderTopLeftRadius : "fehlt"};
       return { datum: m('.graph-datum'), huille: m('.apple-seg'), knopf: m('.apple-seg-btn'),
@@ -691,6 +724,88 @@ async function main() {
     urteil("**ohne lokalen Speicher kommt die Adresse aus dem Spiegel**", gelesen.adresse, ADRESSE);
     urteil("**und das Modell auch**", gelesen.modell, MODELL);
     console.log(`  Bild: ${await bild("ki-verbindung-aus-spiegel.png")}`);
+  }
+
+  // --- Zyklus L: der Bildbeweis des Graphen, geholt durch den eignen Export ------------------
+  if (NUR === "" || NUR === "bild") {
+    // Punkt 1 lautet: der Graph muss gegen den Markt bestehen, und zwar mit einem Bild, das ein
+    // Nutzer wirklich sieht. Bis 3.2.104 gab es dafuer nur Aufnahmen um den Rand herum. Jetzt
+    // holt die Flaeche ihr eignes PNG — und dieser Schenkel nimmt genau die Kette, die der
+    // Download mitbrächte, zerlegt sie in Signatur, Breite und Hoehe und schreibt sie in die Mappe.
+    // Erst neu laden, dann springen: die Saat liegt in der Tuer, aber die Seite kennt sie nicht,
+    // solange sie nicht nachgeladen hat — dieselbe Lehre wie Zyklus A um 12:19 Uhr ("seed
+    // invisible without a reload"), und derselbe Fehler von mir um 18:52: der Bericht der leeren
+    // Seite lautete "No entries yet", waehrend die Tuer 1 500 zaehlte.
+    await cdp.send("Page.reload", { ignoreCache: true });
+    await warteBis(async () => ((await evaliere(cdp, `document.querySelectorAll('button').length`)) > 0 ? true : null), { maxMs: 90000 });
+    await zurGraphFlaeche();
+    // Warten, bis die Flaeche ihr eignes Werkzeug zeigt. Bei 30 Notizen war der Knopf sofort da,
+    // bei 1500 nicht — ob das "spaeter" oder "gar nicht" heisst, steht danach in der Meldung.
+    const knopfDa = await warteBis(async () => (await evaliere(cdp,
+      `document.querySelectorAll('button[data-testid="graph-export"]').length`)) > 0 ? true : null,
+      { maxMs: 60000, schritt: 1500 });
+    if (!knopfDa) {
+      const grund = await evaliere(cdp, `(()=>{const h=[...document.querySelectorAll('h1,h2,h3,p')].map(e=>(e.textContent||'').trim()).filter(Boolean).slice(0,4).join(' | ');
+        return { knoten: document.querySelectorAll('*').length, leinwaende: document.querySelectorAll('canvas').length, texte: h.slice(0,180) };})()`);
+      console.log(`  kein Export-Knopf: ${JSON.stringify(grund)}`);
+    }
+    const hol = await evaliere(cdp, `(()=>{let gefangen=null;const echt=HTMLAnchorElement.prototype.click;
+      HTMLAnchorElement.prototype.click=function(){gefangen={name:this.getAttribute('download')||'',kette:this.href};return echt.apply(this,arguments)};
+      const b=document.querySelector('button[data-testid="graph-export"]');
+      if(!b) { HTMLAnchorElement.prototype.click=echt; return {fehler:'kein Export-Knopf'}; }
+      b.click();
+      HTMLAnchorElement.prototype.click=echt;
+      if(!gefangen) return {fehler:'der Knopf hat nichts angeboten'};
+      const theil=(gefangen.kette.split('base64,')[1]||'');
+      return {name:gefangen.name, typ:(gefangen.kette.split(';')[0]||''), laenge:theil.length, theil};})()`);
+    if (hol.fehler) console.log(`  der Export meldet: ${hol.fehler}`);
+    urteil("der Export gibt eine PNG-Kette her", String(hol.typ || "").startsWith("data:image/png"), true);
+    const puff = Buffer.from(hol.theil || "", "base64");
+    urteil("die Kette traegt eine echte PNG-Signatur",
+      puff.length > 24 && puff[0] === 0x89 && puff.slice(1, 4).toString("latin1") === "PNG", true);
+    const breite = puff.length > 24 ? puff.readUInt32BE(16) : 0;
+    const hoehe = puff.length > 24 ? puff.readUInt32BE(20) : 0;
+    // Vor jedem Urteil: der Flaeche ihre Zeit lassen. Ein einzelner Blick kurz nach dem Sprung
+    // fand bei 1 440 px 0 Flecke und im zweiten Anlauf 172 — das ist eine Rennstrecke, kein
+    // Befund. Gezaehlt wird deshalb bis zu 24 s lang, und die Zahl, die unter die Zeile kommt,
+    // ist die letzte eines Wartens, nicht die eines Augenblicks.
+    const flecke = () => evaliere(cdp, `(()=>{const c=document.querySelector('canvas');if(!c)return 0;
+      const x=c.getContext('2d');let t=0;try{const d=x.getImageData(0,0,c.width,c.height).data;
+      for(let i=0;i<d.length;i+=4000){if(d[i]+d[i+1]+d[i+2]>40)t+=1}}catch(e){return 0}
+      return t;})()`);
+    const gewartet = await warteBis(async () => { const n = await flecke(); return n > 0 ? n : null; },
+      { maxMs: 24000, schritt: 1500 });
+    console.log(`  Farbflecke nach Wartezeit: ${gewartet === null ? "null auch nach 24 s" : gewartet}`);
+    const leinwand = await evaliere(cdp, `(()=>{const c=document.querySelector('canvas');
+      return c ? { b: c.width, h: c.height } : { b: 0, h: 0 };})()`);
+    urteil(`**das Bild hat die Groesse der Leinwand (${breite} x ${hoehe} gegen ${leinwand.b} x ${leinwand.h})**`,
+      breite === leinwand.b && hoehe === leinwand.h && breite > 0, true);
+    // Zwei Wege, dasselbe Bild: die Aufnahme des Fensters (was ein Auge sieht) und die Kette des
+    // Exports (was die Hand bekommt). Ist die Aufnahme gemalt und der Export leer, luegt der
+    // Export. Sind beide leer, malt die Flaeche nach dem Groessenwechsel nicht neu — das waere
+    // ein Nutzerfehler, kein Prueferfehler.
+    console.log(`  Schirmaufnahme: ${await bild(`graph-${SAAT}-notizen-${BREITE}px-aufnahme.png`)}`);
+    const farbe = await evaliere(cdp, `(()=>{const c=document.querySelector('canvas');if(!c)return -1;
+      const x=c.getContext('2d');let t=0;try{const d=x.getImageData(0,0,c.width,c.height).data;
+      for(let i=0;i<d.length;i+=4000){if(d[i]+d[i+1]+d[i+2]>40)t+=1}}catch(e){return 'kein Zugriff'}
+      return t;})()`);
+    console.log(`  getastete Farbflecke in der Leinwand: ${farbe}`);
+    // Zwei Erklaerungen fuer ein leeres Bild: es ist nichts zu malen, oder die Kamera steht
+    // daneben. Der Knopf "Fit" entscheidet — bringt er Tinte, war es die Kamera.
+    if (farbe === 0) {
+      const fit = await evaliere(cdp, `(()=>{const b=document.querySelector('button[data-testid="graph-fit"]');
+        if(!b) return 'kein Fit-Knopf'; b.click(); return 'Fit gedrueckt';})()`);
+      await schlafe(2600);
+      const nach = await evaliere(cdp, `(()=>{const c=document.querySelector('canvas');if(!c)return -1;
+        const x=c.getContext('2d');let t=0;try{const d=x.getImageData(0,0,c.width,c.height).data;
+        for(let i=0;i<d.length;i+=4000){if(d[i]+d[i+1]+d[i+2]>40)t+=1}}catch(e){return 'kein Zugriff'}
+        return t;})()`);
+      console.log(`  ${fit}, danach Farbflecke: ${nach}`);
+    }
+    const datei = path.join(BILDER_ZIEL, `graph-${SAAT}-notizen-${BREITE}px.png`);
+    fs.mkdirSync(BILDER_ZIEL, { recursive: true });
+    fs.writeFileSync(datei, puff);
+    console.log(`  Bildbeweis: ${datei} (${puff.length} B, ${breite} x ${hoehe}, Name "${hol.name || "keiner"}")`);
   }
 
   console.log(fehl ? `  ${fehl} Pruefung(en) fehlgeschlagen` : "  alle Zyklen durch: Wert gesetzt, Fenster neu geladen, Wirkung gesehen");
