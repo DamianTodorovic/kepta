@@ -116,7 +116,11 @@ export function memoryToMarkdown(record: MemoryRecord): { filename: string; mark
 }
 
 /** Importiert eine Markdown-Datei (Obsidian-Notiz) als Memory. */
-export function importMarkdownFile(store: KeptaStore, file: MarkdownFile, opts: { scope?: string } = {}): { status: "imported" | "updated" | "skipped"; record: MemoryRecord } {
+export function importMarkdownFile(
+  store: KeptaStore,
+  file: MarkdownFile,
+  opts: { scope?: string; zeit?: (marke: string) => void } = {}
+): { status: "imported" | "updated" | "skipped"; record: MemoryRecord } {
   const { meta, body } = parseFrontmatter(file.content);
   // Obsidian zeigt und verlinkt eine Notiz über ihren Dateinamen ohne Ordner:
   // „Projekte/Atlas/Kickoff.md“ heißt dort „Kickoff“, und [[Kickoff]] findet
@@ -162,10 +166,16 @@ export function importMarkdownFile(store: KeptaStore, file: MarkdownFile, opts: 
     current.content === input.content &&
     JSON.stringify(current.tags) === JSON.stringify(normalizeTags(input.tags))
   ) {
+    // Auch die Notiz, die nicht angefasst wird, hat ihre Zeit gekostet: lesen, suchen,
+    // vergleichen. Ohne diese Marke zaehlt ein Resync eines unveraenderten Vaultes null.
+    opts.zeit?.("lesen");
     return { status: "skipped", record: current };
   }
+  opts.zeit?.("lesen");
   const { record, created } = store.upsertMemory(input);
+  opts.zeit?.("einsetzen");
   indexMemory(store, record.id);
+  opts.zeit?.("index");
 
   // Wiki-Links → Entitäten; Notiz-Titel referenziert die Link-Ziele
   const links = [...content.matchAll(/\[\[([^[\]]{2,80})\]\]/g)].map((m) => m[1]!.split("|")[0]!.trim().toLowerCase()).filter(Boolean);
@@ -178,11 +188,16 @@ export function importMarkdownFile(store: KeptaStore, file: MarkdownFile, opts: 
       if (link !== noteEntity) store.addRelation(noteEntity, link, "references", record.id);
     }
   }
+  opts.zeit?.("verknuepfen");
   return { status: created ? "imported" : "updated", record };
 }
 
 /** Importiert einen Batch von Vault-Dateien (idempotent über kepta_id/title-Dedup). */
-export function importObsidianVault(store: KeptaStore, files: MarkdownFile[], opts: { scope?: string } = {}): ImportSummary {
+export function importObsidianVault(
+  store: KeptaStore,
+  files: MarkdownFile[],
+  opts: { scope?: string; zeit?: (marke: string) => void } = {}
+): ImportSummary {
   const summary: ImportSummary = { imported: 0, updated: 0, skipped: 0, errors: [] };
   for (const file of files) {
     if (!file.content?.trim()) {

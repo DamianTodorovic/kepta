@@ -11,6 +11,7 @@ import { indexMemory } from "../../src/core/engine";
 import { sanitizeText, sanitizeTitle, sanitizeTags } from "../../src/core/sanitize";
 import { toApi, grenzHinweis } from "../helfer/api-form";
 import { bodyOf } from "../helfer/body";
+import { gerundet, zeitnahme } from "../helfer/zeitnahme";
 import { backupAufbewahrung, datenbanksicherung, halteSicherungen } from "../helfer/sicherung";
 import type { AppKontext } from "../kontext";
 import type { MemoryRecord } from "../helfer/api-form";
@@ -133,8 +134,18 @@ export function mountImporte(app: express.Express, ctx: AppKontext): void {
     const mdFiles = files
       .filter((f) => f && typeof f.content === "string")
       .map((f) => ({ name: typeof f.name === "string" ? f.name.slice(0, 200) : "notiz.md", content: f.content as string }));
-    const summary = importObsidianVault(store, mdFiles, { scope: typeof scope === "string" && scope ? scope : undefined });
-    res.json(summary);
+    // Punkt 6: der Schreibweg war die letzte Tuer ohne eigne Teilzeiten — ein Import von
+    // 40 000 Notizen lief in ~1 600 pro Minute an, und keine Zahl sagte, wie davon auf
+    // Einsetzen, Indexpflegen oder Verknuepfen entfaellt. Die Marken sammelt der Kern pro
+    // Notiz; hier werden sie zu einem Kopf und zu demselben Satz im Leib.
+    const zeit = zeitnahme();
+    const summary = importObsidianVault(store, mdFiles, {
+      scope: typeof scope === "string" && scope ? scope : undefined,
+      zeit: (marke) => zeit.marke(marke),
+    });
+    const teile = gerundet(zeit.werte());
+    res.setHeader("x-kepta-teilzeiten", zeit.kopf(teile));
+    res.json({ ...summary, teilzeiten: teile });
   }
   app.post("/api/import/markdown", ctx.limiter.write, express.json({ limit: "10mb" }), handleMarkdownImport);
 }
