@@ -998,7 +998,9 @@ label:has(.switch), label:has(input[type="checkbox"]), label:has(input[type="rad
      keinen Rand. Jetzt echte Stufen und eine Berandung in Kontrollstärke. */
   background: var(--feld);
   border: 1px solid var(--kante-kontrolle);
-  border-radius: 8px;
+  /* Die Kontrollstufe, nicht 8 px: das Feld steht in einer Reihe mit den Knopfen des
+     Graph-Panels und soll zu derselben Familie gehoren wie sie. */
+  border-radius: var(--r-btn);
   color: var(--text-1);
   font-family: inherit;
   font-size: var(--fs-2);
@@ -1130,7 +1132,7 @@ label:has(.switch), label:has(input[type="checkbox"]), label:has(input[type="rad
   position: relative;
   overflow: hidden;
   background: var(--kante-dekor);
-  border-radius: 6px;
+  border-radius: var(--r-btn);
 }
 .skeleton::after {
   content: "";
@@ -1361,7 +1363,9 @@ button.row-quiet { cursor: pointer; border-color: var(--kante-kontrolle); }
   align-items: center;
   gap: 4px;
   padding: 4px;
-  border-radius: 10px;
+  /* Kartentufe, nicht 10 px: innen liegen 7 px Knopfe, dazu 4 px Polster und 1 px Rand —
+     die Hulle ist geometrisch 12 px, und 12 px ist die Karte. */
+  border-radius: var(--r-card);
   background: var(--bg-inset);
   border: 1px solid var(--border-subtle);
 }
