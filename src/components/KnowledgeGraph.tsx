@@ -3327,12 +3327,22 @@ export function KnowledgeGraph({ memories: memoriesAusFenster, onSelectMemory, o
   };
 
   const feldTransform = useCallback(
-    (grenzen: ReturnType<typeof layoutBounds>, knoten?: readonly { x: number; y: number; versteckt?: boolean }[]) => {      const ein = einpassFlaeche();
+    (grenzen: ReturnType<typeof layoutBounds>, knoten?: readonly { x: number; y: number; versteckt?: boolean }[]) => {
+      const ein = einpassFlaeche();
       const fit = fitTransform(grenzen, ein);
+      // Der Lesbarkeits-Boden kann gegen das Einpassen entscheiden. 31.10. nachts wurde
+      // versucht, ihn fuer das Kraftfeld zu streichen (gemessen: 21,3 bis 24,7 % der
+      // oberen Kante tragen halbdurchgeschnittene Kreise) — der Versuch ist zurueck-
+      // genommen, und die drei gelieferten Beweisdateien haben ihn widerlegt:
+      // `KnowledgeGraph.kamera-kante` verlangt auf dem ersten Blick mindestens drei
+      // gemalte Notiztitel, `KnowledgeGraph.erster-blick` denselben Startausschnitt mit
+      // Zahl, `KnowledgeGraph.kleinzoom-flaeche` (#102) trennt Punkte, die sonst zu einer
+      // Flaeche enden. Ohne den Boden malt das Feld bei 1 440 px gar keine Titel mehr —
+      // ein Netz ohne jeden Namen ist schlechter als ein Rand mit angeschnittenen Kreisen.
       const boden = zeilenKMin(TITEL_REIHE_PX, GANG_ABSTAND);
-      // Der Lesbarkeitsboden kann gegen das Einpassen entscheiden. Das ist eine
-      // Kamera-Angabe und keine Welt-Angabe, und der Knopf darf nicht das eine
-      // versprechen, wenn der Boden das andere gewaehlt hat.
+      // Der Boden kann gegen das Einpassen entscheiden. Das ist eine Kamera-Angabe und
+      // keine Welt-Angabe, und der Knopf darf nicht das eine versprechen, wenn der Boden
+      // das andere gewaehlt hat.
       kameraBodenRef.current = fit.k < boden;
       const k = Math.max(fit.k, boden);
       const mitte =
@@ -3354,21 +3364,19 @@ export function KnowledgeGraph({ memories: memoriesAusFenster, onSelectMemory, o
     // 19.10.: mit Anker fielen vier Gang-Faelle, weil sie ueber diesen Knopf
     // zurueck ins Ganze fahren wollen.)
     //
-    // Die Ausnahme gilt, wo das Ganze nicht zu zeigen ist: hat der Lesbarkeits-Boden
-    // entschieden, ist die promise des Knopfs schon kassiert (er sagt es selbst im
-    // Titel). Dann die Mitte der Begrenzungsbox zu nehmen, schneidet MEHR ab als die
-    // Ankunft — gemessen 31.10. am gebauten Stand, 1 440 px, 1 500 Notizen: Tinte auf
-    // der oberen Kante 21,6 % beim Eintreffen, 30,6 % nach dem Klick (vier Laeufe,
-    // 21,3/24,0/24,7 % gegen 24,3/26,6/30,6 %). Also: nur wenn der Boden hielt und nur
-    // im Kraftfeld derselbe Anker wie bei der Ankunft; der Baum faehrt weiter ins Ganze.
-    const bodenHielt = kameraBodenRef.current && ansicht !== "dendrogram";
-    transformRef.current = feldTransform(
-      layoutBounds(sim.nodes, randFuerAnsicht(sim.nodes)),
-      bodenHielt ? titelAnker(sim) : undefined
-    );
+    // 31.10. nachts, zweiter Anlauf an derselben Stelle — und wieder zurueckgenommen.
+    // Der Knopf wurde verdaechtigt, schlechter einzupassen als die Ankunft, ein Anker-
+    // Flicker ist gebaut und gemessen worden. Die Zahl der Flaeche selbst (Notizen im
+    // Rahmen, mit einer Kontrolle ohne Klick: Drift 0 in allen Laeufen) sagte in drei
+    // Laeufen +17, -40 und -62 — dieselbe Kamera, zwei Richtungen. Der Grund: die
+    // Ankunft haelt einen Ausschnitt, der bei ihrem eignen Auto-Fit gerechnet wurde,
+    // und das Feld kuehlt danach weiter aus. Zwei Kameras an zwei Weltlagen zu
+    // vergleichen ist kein Beweis. Die Frage braucht ein gefrorenes Feld, bevor sie eine
+    // Antwort verdient (`feldzug/P1-KAMERA-ENTSCHEIDUNG-3110.md`, §9).
+    transformRef.current = feldTransform(layoutBounds(sim.nodes, randFuerAnsicht(sim.nodes)));
     setZoomAnzeige(transformRef.current.k);
     zeichneNoetig.current = true;
-  }, [dimensions, ansicht]);
+  }, [dimensions]);
 
   /**
    * Baum-Ansicht braucht einen anderen Startausschnitt: Fit-ueber-alles macht

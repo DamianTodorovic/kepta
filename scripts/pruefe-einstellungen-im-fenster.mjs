@@ -887,6 +887,69 @@ async function main() {
       // Geprueft wird am ausgelieferten Bild, nicht am Quelltext.
       urteil("**der Export traegt einen undurchsichtigen Grund**", vorDemGriff.alpha, 255);
     }
+        // Der Vergleich der zwei Kameras kommt ZUERST: die Klappe der Legende aendert die
+    // Rahmenhoehe, in die die Kamera einpasst (`einpassFlaeche` zieht ihre Hoeh' ab), und
+    // wer erst faltet und dann vergleicht, misst zwei verschiedene Rahmen als einen.
+    // Gemessen 31.10. 21:44 mit der alten Folge: 556 -> 613. Nach der Umstellung wird
+    // der Vergleich zweimal neu gefahren, bevor etwas gilt.
+    // Zwei Erklaerungen fuer ein Bild, das nicht stimmt: es ist nichts zu malen, oder die Kamera
+    // steht daneben. Der Knopf "Fit" entscheidet — bringt er ein anderes Bild, war es die Kamera.
+    const weit = vorDemGriff && (vorDemGriff.beruehrt.length > 0 ||
+      Math.max(...Object.values(vorDemGriff.freie)) > 25);
+    let nachDemGriff = null;
+    // Der Zahlengriff vor dem Bildengriff: die Bilanzzeile der Flaeche zaehlt die Notizen,
+    // die wirklich im Rahmen liegen, und sie wird Bild fuer Bild geschrieben. Gelesen zwei
+    // Sekunden vor und eineinhalb nach dem Klick, vergleicht sie dieselbe Weltlage — die
+    // Tinten-Kasten-Rechnung unten vergleicht zwei verschiedene, denn das Feld laeuft
+    // zwischen den beiden Aufnahmen weiter (gemessen 31.10. 21:49: zwei Zeugen, 545 -> 575
+    // und 589 -> 659, und beide Male war die Welt in der Zwischenzeit anders verteilt).
+    const rahmenZahl = async () => await evaliere(cdp, `(()=>{const e=document.querySelector('[data-testid="graph-im-bild"]');
+      const t=(e&&e.textContent||'').replace(/\\s+/g,' ').trim();const m=t.match(/^([\\d,]+) of ([\\d,]+)/);
+      return m?{im: Number(m[1].replace(/,/g,'')), von: Number(m[2].replace(/,/g,'')), text:t}:{im:null, von:null, text:t||'schweigt'}})()`);
+    if (gewartet === 0 || weit) {
+      const vorher = await rahmenZahl();
+      // Die Kontrolle: zweimal lesen, dazwischen NICHTS tun. Was die Zahl in der Ruhe
+      // wandert, ist die Drift des Feldes und nicht die Antwort des Knopfs — ohne sie
+      // schreibt man dem Griff eine Differenz zu, die die Physik hat.
+      await schlafe(1500);
+      const kontrolle = await rahmenZahl();
+      console.log(`  Kontrolle ohne Griff: ${vorher.im} -> ${kontrolle.im} (Drift ${Math.abs((kontrolle.im ?? 0) - (vorher.im ?? 0))})`);
+      const fit = await evaliere(cdp, `(()=>{const b=document.querySelector('button[data-testid="graph-fit"]');
+        if(!b) return 'kein Fit-Knopf'; b.click(); return 'Fit gedrueckt';})()`);
+      await schlafe(1500);
+      const nachher = await rahmenZahl();
+      const drift = Math.abs((kontrolle.im ?? 0) - (vorher.im ?? 0));
+      const verlust = (vorher.im ?? 0) - (nachher.im ?? 0);
+      console.log(`  Notizen im Bild: vorher ${vorher.im} — nach der Kontrolle ${kontrolle.im} — nach dem Fit ${nachher.im} von ${vorher.von}; Verlust gegen die Ankunft ${verlust}, Drift ohne Griff ${drift}`);
+      if (vorher.im !== null && nachher.im !== null) {
+        // Der Knopf verliert nur, was ueber der eignen Drift liegt.
+        urteil("**der Fit-Knopf zeigt nicht weniger Notizen als die Ankunft, ueber der Drift gemessen**",
+          verlust <= drift, true);
+      }
+      const ruhigNach = await ruhe(20000);
+      const zwei = await exportBild();
+      const titelNach = await evaliere(cdp, `(()=>{const b=document.querySelector('button[data-testid="graph-fit"]');
+        return b ? (b.getAttribute('title')||'') : 'kein Fit-Knopf';})()`);
+      nachDemGriff = melde(umrandung((zwei || {}).puff || Buffer.alloc(0)),
+        `dieselbe Ansicht nach ${fit} (Bild steht: ${ruhigNach === null ? "nein nach 20 s" : ruhigNach + " s"}; Titel nun: ${titelNach})`);
+      if (zwei) {
+        fs.mkdirSync(BILDER_ZIEL, { recursive: true });
+        const zweiter = path.join(BILDER_ZIEL, `graph-${SAAT}-notizen-${BREITE}px-nach-fit.png`);
+        fs.writeFileSync(zweiter, zwei.puff);
+        console.log(`  Bildbeweis nach Fit: ${zweiter} (${zwei.puff.length} B, ${zwei.b} x ${zwei.h})`);
+      }
+      if (nachDemGriff) {
+        const randTinte = (r) => Object.values(r.kantigen).reduce((s, k) => s + k.traf, 0);
+        console.log(`  nach dem Fit: Kanten beruehrt ${nachDemGriff.beruehrt.join(",") || "keine"}, ` +
+          `weiteste freie Seite ${Math.max(...Object.values(nachDemGriff.freie)).toFixed(1)} % ` +
+          `(vorher ${vorDemGriff ? Math.max(...Object.values(vorDemGriff.freie)).toFixed(1) + " %" : "kein Bild"})`);
+        if (vorDemGriff) {
+          console.log(`  Tinte auf vier Kanten: vorher ${randTinte(vorDemGriff)}, nach dem Fit ${randTinte(nachDemGriff)}`);
+          urteil("**der Fit-Knopf schneidet nicht mehr ab als die Ankunft**",
+            randTinte(nachDemGriff) <= randTinte(vorDemGriff), true);
+        }
+      }
+    }
     // Die Flaechezaehlt, was ausserhalb des Ausschnitts bleibt ("1 275 of 1 500 ... are in this
     // picture"). Diese Zeile ist die Ehrlichkeit der Kamera. Sie wohnt in der Legende — und die
     // Legende hat eine Klappe (Punkt 114: zugemacht hoechstens 25 % Deckung). Also wird beides
@@ -937,38 +1000,6 @@ async function main() {
     const wieder = await klappe("Show");
     await schlafe(900);
     console.log(`  Klappe zurueck (${wieder}): Zustand ${(await leseZeile()).zustand}`);
-    // Zwei Erklaerungen fuer ein Bild, das nicht stimmt: es ist nichts zu malen, oder die Kamera
-    // steht daneben. Der Knopf "Fit" entscheidet — bringt er ein anderes Bild, war es die Kamera.
-    const weit = vorDemGriff && (vorDemGriff.beruehrt.length > 0 ||
-      Math.max(...Object.values(vorDemGriff.freie)) > 25);
-    let nachDemGriff = null;
-    if (gewartet === 0 || weit) {
-      const fit = await evaliere(cdp, `(()=>{const b=document.querySelector('button[data-testid="graph-fit"]');
-        if(!b) return 'kein Fit-Knopf'; b.click(); return 'Fit gedrueckt';})()`);
-      const ruhigNach = await ruhe(20000);
-      const zwei = await exportBild();
-      const titelNach = await evaliere(cdp, `(()=>{const b=document.querySelector('button[data-testid="graph-fit"]');
-        return b ? (b.getAttribute('title')||'') : 'kein Fit-Knopf';})()`);
-      nachDemGriff = melde(umrandung((zwei || {}).puff || Buffer.alloc(0)),
-        `dieselbe Ansicht nach ${fit} (Bild steht: ${ruhigNach === null ? "nein nach 20 s" : ruhigNach + " s"}; Titel nun: ${titelNach})`);
-      if (zwei) {
-        fs.mkdirSync(BILDER_ZIEL, { recursive: true });
-        const zweiter = path.join(BILDER_ZIEL, `graph-${SAAT}-notizen-${BREITE}px-nach-fit.png`);
-        fs.writeFileSync(zweiter, zwei.puff);
-        console.log(`  Bildbeweis nach Fit: ${zweiter} (${zwei.puff.length} B, ${zwei.b} x ${zwei.h})`);
-      }
-      if (nachDemGriff) {
-        const randTinte = (r) => Object.values(r.kantigen).reduce((s, k) => s + k.traf, 0);
-        console.log(`  nach dem Fit: Kanten beruehrt ${nachDemGriff.beruehrt.join(",") || "keine"}, ` +
-          `weiteste freie Seite ${Math.max(...Object.values(nachDemGriff.freie)).toFixed(1)} % ` +
-          `(vorher ${vorDemGriff ? Math.max(...Object.values(vorDemGriff.freie)).toFixed(1) + " %" : "kein Bild"})`);
-        if (vorDemGriff) {
-          console.log(`  Tinte auf vier Kanten: vorher ${randTinte(vorDemGriff)}, nach dem Fit ${randTinte(nachDemGriff)}`);
-          urteil("**der Fit-Knopf schneidet nicht mehr ab als die Ankunft**",
-            randTinte(nachDemGriff) <= randTinte(vorDemGriff), true);
-        }
-      }
-    }
     if (erst) {
       const datei = path.join(BILDER_ZIEL, `graph-${SAAT}-notizen-${BREITE}px.png`);
       fs.mkdirSync(BILDER_ZIEL, { recursive: true });
