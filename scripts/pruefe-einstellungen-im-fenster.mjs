@@ -556,11 +556,17 @@ async function main() {
     const mass = await evaliere(cdp, `(()=>{const m=(s)=>{const e=document.querySelector(s);
       return e ? getComputedStyle(e).borderTopLeftRadius : "fehlt"};
       return { datum: m('.graph-datum'), huille: m('.apple-seg'), knopf: m('.apple-seg-btn'),
-               kbd: m('.kbd'), quiet: m('.row-quiet'), stamp: m('.row-stamp'), skeleton: m('.skeleton') };})()`);
+               kbd: m('.kbd'), quiet: m('.row-quiet'), stamp: m('.row-stamp'), skeleton: m('.skeleton'),
+               nav: m('.sidebar-nav-btn'), tag: m('.sidebar-tag-btn') };})()`);
     console.log("  gemessene Rundungen im Graph-Blatt: " + JSON.stringify(mass));
     urteil("**das Datumsfeld malt die Kontrollstufe (7 px)**", mass.datum, "7px");
     urteil("**die Segmenthuille malt die Kartentufe (12 px)**", mass.huille, "12px");
     urteil("der Segmentknopf malt die Kontrollstufe", mass.knopf, "7px");
+    // Die zwei Seitenleisten-Reihen zogen die Stufe erst als Utility in die Bauteilkette — von
+    // dort verschwand sie wieder, weil ein Wert im Escape fuer beide Wachen unsichtbar ist. Jetzt
+    // steht sie in `src/index.css` an der Hausregel, und gemalt werden soll dasselbe: 7 px.
+    urteil("**die Seitenleisten-Reihe malt die Kontrollstufe**", mass.nav, "7px");
+    urteil("**und die Schlagwort-Reihe auch**", mass.tag, "7px");
     console.log(`  Bild: ${await bild("radien-graph-panel.png")}`);
   }
 
@@ -630,11 +636,13 @@ async function main() {
     console.log(`  ausserhalb der Stufen: ${ordentlich.length} Namen, ${ordentlich.reduce((s, [, n]) => s + n, 0)} Stellen`);
     for (const [k, n] of ordentlich.slice(0, 14)) console.log(`      ${String(n).padStart(4)}  ${k}`);
     // Diese Zahl ist die gemessene Schuld der Bauteile, kein Fehler des Laufs — und sie ist
-    // gezaeunt: 15 Namen und 377 Stellen, gemessen 31.10. 16:03 im gefuellten Bestand (30
-    // gesaete Notizen, sechs Flaechen). Ein neuer Name macht rot, ein sitzender bleibt Meldung.
-    // Groesster Sitzender: 186 Stellen mit 2 px — die Farbplatte jeder Notizkarte
-    // (`src/components/MemoryCard.tsx:66`, dreissig Karten ueber sechs Flaechen).
-    urteil("Rundungen ausserhalb der Stufen bleiben beim gemeldeten Stand", ordentlich.length <= 15, true);
+    // gezaeunt. Erster Stand 31.10. 16:03: 15 Namen, 377 Stellen. Nach der ersten Bewegung
+    // (Notizkarte zur Kapsel, zwei Seitenleisten-Reihen auf die Kontrollstufe) gemessen
+    // 31.10. 18:34 am installierten 3.2.104: **12 Namen, 137 Stellen** — der Fall um genau
+    // 240 Stellen (186 + 42 + 12), wie gerechnet. Ein dreizehnter Name macht rot, ein
+    // sitzender bleibt Meldung. Groesster Sitzender jetzt: 30 Stellen mit 6 px und 30 mit
+    // 8 px an Bauteilen, deren erster Name eine Layout-Klasse ist (`items-center`).
+    urteil("Rundungen ausserhalb der Stufen bleiben beim gemeldeten Stand", ordentlich.length <= 12, true);
     console.log(`  MERKER: ${ordentlich.length} Namen ausserhalb der Stufen — Zaehlung aus diesem Lauf`);
     console.log(`  Bild: ${await bild("radien-flaechen.png")}`);
   }
