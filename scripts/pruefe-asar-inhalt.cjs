@@ -548,14 +548,17 @@ const erwartet = [
   // dem Bau, 31.10. 17:40:30 am installierten 3.2.103 (49 168 813 B): diese Kette dort **0**, des-
   // gleichen `graph-export`. Beide Ketten sind ASCII und kommen nur von dieser Bewegung vor.
   ["Save the graph as a PNG image", 1],
-  // Nachtrag 31.10., Punkt 2: die zwei Seitenleisten-Reihen (Seiten-Knopf und Schlagwort) ziehen
-  // die Kontrollstufe als Utility, und die Farbplatte der Notizkarte wird zur Kapsel. Gegenprobe
-  // VOR dem Bau, 31.10. 16:39:30 am installierten 3.2.103 (49 168 813 B): diese Kette dort **0** —
-  // sie kann also nur von dieser Bewegung kommen. Die zweite Stelle ist als Marke unbrauchbar:
-  // `borderRadius:999` steht im Objekt schon heute **2** mal, ein Marker darauf schlage durch.
-  // Ihre Abwesenheit wird von Hand gemessen: `borderRadius:2` zaehlt im installierten 3.2.103
-  // **1** mal und muss im naechsten Leib **0** sein.
-  ["rounded-[var(--r-btn)]", 1],
+  // 3.2.104, Punkt 2, **KEINE Marke — und das ist ein Befund, keine Luecke** (dasselbe Gesetz wie
+  // am 27.10. an der Tafel und am 31.10. frueh an der Trefferstufe): die Seitenleisten-Stufe hat
+  // kein eignes Wort. Ihr erster Beweis war die Utility `rounded-[var(--r-btn)]` in der Bauteilkette,
+  // und genau die ist wieder raus — ein Wert im Escape war fuer beide Wachen unsichtbar (die
+  // Radien-Wache liest nur `src/index.css`, die Klassen-Wache verlor durch die Klammer ihren Rufer,
+  // 18 Waisen wurden 19). Der Radius wohnt jetzt in der Hausregel `.sidebar-nav-btn,
+  // .sidebar-tag-btn`, und dort steht er zwischen drei andern desselben Worts: jede Kette dieser
+  // Art ist im Objekt schon heute vorhanden, ein Marker schlage durch, auch ohne die Bewegung.
+  // Beweis ist darum die Messung am Leib: der Radius-Schenkel des Fenster-Pruefers meldet die
+  // gemalten Werte, und die Gegenprobe von Hand zaehlt `borderRadius:2` (1 im Leib von 3.2.103,
+  // 0 im gebauten von 3.2.104).
   // 3.2.102, KEINE Marke — und das ist ein Befund, keine Luecke (dasselbe Gesetz wie am 27.10.
   // an der Tafel): dieser Koerper aendert eine Rechnung, kein Wort. Die einzige neue Kette im
   // Quelltext ("matches \u00b7 show all") traegt einen Mittel-Punkt, den der latin1-Griff
