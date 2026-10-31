@@ -564,6 +564,81 @@ async function main() {
     console.log(`  Bild: ${await bild("radien-graph-panel.png")}`);
   }
 
+  // --- Zyklus J: die Rundungen, die ein Auge wirklich sieht ---------------------------------
+  if (NUR === "" || NUR === "radien") {
+    // Die Design-Wache sieht nur `src/index.css`. Was ein Bauteil mit einer Tailwind-Klasse
+    // (`rounded-lg`, `rounded-[7px]`) malt, liegt ausserhalb ihres Gesichts — und das ist die
+    // Frage von Punkt 2: wie viele verschiedene Ecken sieht ein Nutzer wirklich?
+    // Der erste Anlauf dieses Schenkels mass SECHS MAL dieselbe Flaeche: der Assistent stand vor
+    // dem Fenster, die Klicks gingen ins Leere, und `knopf()`'s Antwort wurde weggeworfen. Darum
+    // jetzt: Assistent weg, jeder Klick wird nachgefuert, und jede Flaeche meldet ihren Kopf —
+    // zwei Flaechen mit demselben Kopf sind keine zwei Flaechen.
+    await evaliere(cdp, `(()=>{const b=[...document.querySelectorAll('button')].find(x=>/later|skip|ueberspringen/i.test(x.textContent||''));if(b)b.click();})()`);
+    await schlafe(700);
+    const flaeche = async (nam) => {
+      const geklickt = await knopf(cdp, nam);
+      urteil(`der Knopf nach ${nam} steht im Blatt`, geklickt !== null, true);
+      await schlafe(1400);
+      const r = await evaliere(cdp, `(()=>{const zaehler={};
+        for (const e of document.querySelectorAll('*')) {
+          const w = getComputedStyle(e).borderTopLeftRadius;
+          if (!w || w === '0px') continue;
+          // Der erste Klassenname ist oft eine Utility ("absolute", "flex-1") und nicht der
+          // Besitzer der Rundung — darum zuerst Kennung und Pruefname, dann erst die Klasse.
+          const namen = e.id || e.getAttribute?.("data-testid")
+            || (typeof e.className === "string" && e.className.trim() ? e.className.trim().split(/\\s+/).find(c => !/^(absolute|relative|fixed|flex|inline-flex|w-|h-|px-|py-|p-|m-|gap-|z-|text-|min-|max-)/.test(c)) : "")
+            || e.tagName.toLowerCase();
+          const schluessel = w + ' :: ' + namen.slice(0, 28);
+          zaehler[schluessel] = (zaehler[schluessel] || 0) + 1;
+        }
+        // Der Kopf allein truegt nicht: eine Grusszeile kann in der Huelle stehen und bleibt
+        // gleich, wenn die Flaeche wechselt. Die Seitenleiste fuehrt, was wirklich offen ist.
+        const aktive = [...document.querySelectorAll('.sidebar-nav-btn')]
+          .find(b => b.getAttribute('data-active') === 'true');
+        return { zaehler,
+          aktiv: aktive ? (aktive.textContent || '').trim().slice(0, 20) : "keine aktive Seite",
+          kopf: [...document.querySelectorAll('h1,h2,h3')].map(h=>(h.textContent||'').trim()).filter(Boolean).slice(0,2).join(' / ').slice(0, 46),
+          knoten: document.querySelectorAll('*').length };})()`);
+      urteil(`**${nam} ist die offene Flaeche**`, r.aktiv, nam);
+      return { flaeche: nam, ...r };
+    };
+    const gesicht = [];
+    for (const nam of ["Knowledge", "Graph", "Chat", "Dossier", "Activity", "Settings"]) {
+      const fund = await flaeche(nam);
+      gesicht.push(fund);
+      const werte = Object.entries(fund.zaehler).sort((a, b) => b[1] - a[1]);
+      const zahlen = new Set(werte.map(([k]) => k.split(" :: ")[0]));
+      console.log(`  ${nam}: ${werte.reduce((s, [, n]) => s + n, 0)} gemalte Rundungen, ${zahlen.size} Werte, offen "${fund.aktiv}", ${fund.knoten} Knoten`);
+      for (const [k, n] of werte.slice(0, 6)) console.log(`      ${String(n).padStart(4)}  ${k}`);
+    }
+    const offene = new Set(gesicht.map((g) => g.aktiv));
+    console.log("  gesehene Flaechen: " + gesicht.map((g) => `${g.flaeche}="${g.aktiv}"`).join(" | "));
+    urteil("**sechs Klicks sind sechs verschiedene Flaechen**", offene.size, 6);
+    // Die Latte ist die Stufenordnung des Hauses plus die Kapsel: 3/4/7/12/14 px, und alles ab
+    // 100 px, weil der Browser eine Kapsel auf die halbe Kantenlaenge klemmt.
+    const stufen = new Set(["3px", "4px", "7px", "12px", "14px"]);
+    const fremd = {};
+    for (const { zaehler } of gesicht) {
+      for (const [schluessel, n] of Object.entries(zaehler)) {
+        const [wert] = schluessel.split(" :: ");
+        const px = parseFloat(wert);
+        if (!Number.isFinite(px) || stufen.has(wert) || px >= 100) continue;
+        fremd[schluessel] = (fremd[schluessel] || 0) + n;
+      }
+    }
+    const ordentlich = Object.entries(fremd).sort((a, b) => b[1] - a[1]);
+    console.log(`  ausserhalb der Stufen: ${ordentlich.length} Namen, ${ordentlich.reduce((s, [, n]) => s + n, 0)} Stellen`);
+    for (const [k, n] of ordentlich.slice(0, 14)) console.log(`      ${String(n).padStart(4)}  ${k}`);
+    // Diese Zahl ist die gemessene Schuld der Bauteile, kein Fehler des Laufs — und sie ist
+    // gezaeunt: 15 Namen und 377 Stellen, gemessen 31.10. 16:03 im gefuellten Bestand (30
+    // gesaete Notizen, sechs Flaechen). Ein neuer Name macht rot, ein sitzender bleibt Meldung.
+    // Groesster Sitzender: 186 Stellen mit 2 px — die Farbplatte jeder Notizkarte
+    // (`src/components/MemoryCard.tsx:66`, dreissig Karten ueber sechs Flaechen).
+    urteil("Rundungen ausserhalb der Stufen bleiben beim gemeldeten Stand", ordentlich.length <= 15, true);
+    console.log(`  MERKER: ${ordentlich.length} Namen ausserhalb der Stufen — Zaehlung aus diesem Lauf`);
+    console.log(`  Bild: ${await bild("radien-flaechen.png")}`);
+  }
+
   console.log(fehl ? `  ${fehl} Pruefung(en) fehlgeschlagen` : "  alle Zyklen durch: Wert gesetzt, Fenster neu geladen, Wirkung gesehen");
   return fehl ? 1 : 0;
 }
