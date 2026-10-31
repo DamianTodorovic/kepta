@@ -448,6 +448,63 @@ async function main() {
     console.log("  Bild: " + await bild("schild-agenten-tuer.png"));
   }
 
+  // --- Zyklus G: das Schild vor der cloud-Frage, an der Vorschau der Flaeche ----------------
+  //     Die Flaeche hat dafuer eine eigne Probe: "Try it — this is what a cloud model would
+  //     see". Kein Schluessel noetig, kein Netzgang — die Vorschau ist genau dasselbe Wort,
+  //     das vor die Frage gelegt wuerde.
+  if (NUR === "" || NUR === "cloud") {
+    await steuere();
+    const vorschau = () => evaliere(cdp, `(()=>{const e=document.querySelector('[data-testid="shield-preview"]');return e?(e.textContent||'').trim():null})()`);
+    const vorher = await vorschau();
+    urteil("die Vorschau ist da", vorher !== null, true);
+    urteil("**mit cloud-Schild steht die Maske in der Vorschau**", /\[EMAIL-\d\]/.test(String(vorher)) && !/anna@example\.com/.test(String(vorher)), true);
+    await evaliere(cdp, `(()=>{const e=document.querySelector('button[role="switch"][aria-label="Hide personal data from cloud AI"]');if(e)e.click()})()`);
+    await schlafe(1400);
+    const nachher = await vorschau();
+    urteil("**ohne cloud-Schild steht die echte Mail in der Vorschau**", /anna@example\.com/.test(String(nachher)), true);
+    await cdp.send("Page.reload", { ignoreCache: true });
+    await warteBis(async () => ((await evaliere(cdp, `document.querySelectorAll('button').length`)) > 0 ? true : null), { maxMs: 90000 });
+    await steuere();
+    urteil("**nach dem Neuladen steht der Schalter noch auf aus**", await evaliere(cdp, `(()=>{const e=document.querySelector('button[role="switch"][aria-label="Hide personal data from cloud AI"]');return e?e.getAttribute('aria-checked'):null})()`), "false");
+    urteil("und die Vorschau bleibt unmaskiert", /anna@example\.com/.test(String(await vorschau())), true);
+    await evaliere(cdp, `(()=>{const e=document.querySelector('button[role="switch"][aria-label="Hide personal data from cloud AI"]');if(e&&e.getAttribute('aria-checked')!=='true')e.click()})()`);
+    await schlafe(1400);
+    urteil("wieder an, ist die Mail wieder verdeckt", /\[EMAIL-\d\]/.test(String(await vorschau())), true);
+    console.log("  Bild: " + await bild("cloud-schild-vorschau.png"));
+  }
+
+  // --- Zyklus H: die Passphrase, und was ihr Knopf darf --------------------------------------
+  if (NUR === "" || NUR === "sync") {
+    await steuere();
+    await knopf(cdp, "Device Sync");
+    const knopfZustand = () => evaliere(cdp, `(()=>{const b=[...document.querySelectorAll('button')].find(x=>/Create bundle/.test(x.textContent||''));
+      return b?{ deaktiviert: b.disabled===true, grund: (b.title||b.getAttribute('title')||'').slice(0,80) }:null})()`);
+    const anfang = await knopfZustand();
+    urteil("der Knopf steht am Schirm", anfang !== null, true);
+    urteil("**ohne Passphrase ist er gesperrt**", anfang.deaktiviert, true);
+    const schreibe = (t) => evaliere(cdp, `(()=>{const e=document.querySelector('input[placeholder^="At least"]');if(!e)return null;
+      const set=Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype,'value').set;set.call(e,${JSON.stringify(t)});
+      e.dispatchEvent(new Event('input',{bubbles:true}));return e.value.length})()`);
+    // Eine Zeile, eine Behauptung — die erste Fassung verknuepfte Laenge und Knopfzustand in
+    // einem Ausdruck, der auch dann haette gruen sein koennen, wenn der Knopf nie sprach.
+    const kurz = await schreibe("kurz");
+    await schlafe(600);
+    urteil(`bei ${kurz} Zeichen ist er noch zu`, (await knopfZustand()).deaktiviert, true);
+    await schreibe("zwolf oder mehr Zeichen");
+    await schlafe(600);
+    urteil("bei dreizehn Zeichen ist er offen", (await knopfZustand()).deaktiviert, false);
+    urteil("**und die Sperre kommt zurueck, wenn die Phrase verschwindet**", await (async () => { await schreibe(""); await schlafe(600); return (await knopfZustand()).deaktiviert; })(), true);
+    await schreibe("eine lange passphrase");
+    await schlafe(600);
+    console.log(`  Bild: ${await bild("passphrase-frei.png")} (Laenge vorher ${kurz})`);
+    await cdp.send("Page.reload", { ignoreCache: true });
+    await warteBis(async () => ((await evaliere(cdp, `document.querySelectorAll('button').length`)) > 0 ? true : null), { maxMs: 90000 });
+    await steuere();
+    await knopf(cdp, "Device Sync");
+    urteil("**und die Passphrase ueberlebt den Neuladen nicht — sie wird nirgends gehalten**",
+      await evaliere(cdp, `(()=>{const e=document.querySelector('input[placeholder^="At least"]');return e?(e.value||''):null})()`), "");
+  }
+
   console.log(fehl ? `  ${fehl} Pruefung(en) fehlgeschlagen` : "  alle Zyklen durch: Wert gesetzt, Fenster neu geladen, Wirkung gesehen");
   return fehl ? 1 : 0;
 }
