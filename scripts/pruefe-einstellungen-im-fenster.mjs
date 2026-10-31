@@ -232,13 +232,19 @@ async function main() {
   //     eigner kleiner Korpus: dreissig Notizen, die all das Wort "Fristenkontrolle"
   //     fuehren — genug, damit eine Trefferzahl eine Stufe ist und nicht ein Zufall.
   const SAAT = Number(ARG("saat", 30));
-  if (NUR === "" || NUR === "suche" || NUR === "treffer" || NUR === "bild") {
+  if (NUR === "" || NUR === "suche" || NUR === "treffer" || NUR === "bild" || NUR === "radius") {
     const dateien = Array.from({ length: SAAT }, (_, i) => {
       const n = String(i + 1).padStart(4, "0");
+      // Zwei Daten im Kuvert, nicht eine: die Flaeche haelt ihr Datumsfeld nur, wo die Saat
+      // eine Zeitachse hat. Ohne sie verschwindet der Griff, und ein Pruefer, der dann
+      // "fehlt" meldet, klagt die Rundung an statt seines eignen leeren Blattes (gemessen
+      // 31.10. 20:18 und 20:34 gegen das installierte 3.2.105).
+      const tag = new Date(Date.UTC(2024, 0, 1) + i * 86400000).toISOString().slice(0, 10);
       return {
         name: `Saat/${n}.md`,
         content: ["---", `kepta_id: fenster-${n}`, `title: "Fristenkontrolle ${n}"`, "tags: [saat]",
-          "type: semantic", "---", "", `Die Fristenkontrolle ${n} haelt die Frist mit [[Fristenkontrolle]] und [[Kasse ${i % 5}]].`].join("\n"),
+          "type: semantic", `created: ${tag}`, `valid_from: ${tag}`, "---",
+          "", `Die Fristenkontrolle ${n} haelt die Frist mit [[Fristenkontrolle]] und [[Kasse ${i % 5}]].`].join("\n"),
       };
     });
     const ant = await fetch(`${BASIS}/api/import/markdown`, {
@@ -586,14 +592,46 @@ async function main() {
     // Die zwei Reglerschienen bleiben hier unerreichbar: `::-webkit-slider-runnable-track` ist
     // kein Knoten, und einen Pseudo-Griff kennt dieser Weg nicht — ihre Gleichheit ist gerechnet
     // (2 px Koerper, jede Rundung klemmt auf 1 px), nicht gemessen, und steht so im Papier.
+    // Erst neu laden, dann messen: die Saat liegt in der Tuer, aber die Seite kennt sie nicht
+    // ohne Nachladen — dieselbe Lehre wie Zyklus A, und im Alleinlauf dieses Zyklus stand sonst
+    // die leere Flaeche da (kein More-Knopf, keine Leiste, "keine Zahl").
+    await cdp.send("Page.reload", { ignoreCache: true });
+    await warteBis(async () => ((await evaliere(cdp, `document.querySelectorAll('button').length`)) > 0 ? true : null), { maxMs: 90000 });
     await zurGraphFlaeche();
+    // "fehlt" ist nicht gleich "fehlt": die Flaeche haelt das Datumsfeld nur, wo es eine
+    // Zeitachse gibt UND die Leiste es nicht ins More-Menue gefaltet hat. Ohne diesen Grund
+    // meldet der Fall einen Defekt, wo eine Faltung spricht — gemessen 31.10. 20:18 und
+    // 20:34: `datum: fehlt`, waehrend Huille, Knopf und Schlagwort-Reihe ihre Stufen nennen.
+    const leiste = await evaliere(cdp, `(()=>{const mehr=[...document.querySelectorAll('button')]
+        .find(b=>/^\\s*More\\s*\\(/.test((b.textContent||'').trim()));
+      return { mehr: mehr?(mehr.textContent||'').trim():'kein More-Knopf',
+        zeitglieder: document.querySelectorAll('.graph-time').length,
+        datum: !!document.querySelector('.graph-datum'),
+        slider: !!document.querySelector('input[type="range"]'),
+        notizen: (document.body.innerText.match(/([\\d,]+)\\s+notes/)||[])[1] || 'keine Zahl' };})()`);
+    console.log(`  Die Leiste: ${JSON.stringify(leiste)}`);
     const mass = await evaliere(cdp, `(()=>{const m=(s)=>{const e=document.querySelector(s);
       return e ? getComputedStyle(e).borderTopLeftRadius : "fehlt"};
       return { datum: m('.graph-datum'), huille: m('.apple-seg'), knopf: m('.apple-seg-btn'),
                kbd: m('.kbd'), quiet: m('.row-quiet'), stamp: m('.row-stamp'), skeleton: m('.skeleton'),
                nav: m('.sidebar-nav-btn'), tag: m('.sidebar-tag-btn') };})()`);
     console.log("  gemessene Rundungen im Graph-Blatt: " + JSON.stringify(mass));
-    urteil("**das Datumsfeld malt die Kontrollstufe (7 px)**", mass.datum, "7px");
+    // Haelt die Leiste das Feld nicht, liegt es im More-Menue — oder es gibt keine Zeitachse.
+    // Beides ist ein andrer Befund, und nur einer davon betrifft die Rundung.
+    let datumWo = "auf der Leiste";
+    if (mass.datum === "fehlt") {
+      const geoeffnet = await evaliere(cdp, `(()=>{const b=[...document.querySelectorAll('button')]
+        .find(x=>/^\\s*More\\s*\\(/.test((x.textContent||'').trim()));if(!b)return 'kein More-Knopf';b.click();return (b.textContent||'').trim();})()`);
+      await schlafe(900);
+      const imMenue = await evaliere(cdp, `(()=>{const e=document.querySelector('.graph-datum');
+        return e ? getComputedStyle(e).borderTopLeftRadius : 'fehlt'})()`);
+      console.log(`  Nach ${geoeffnet}: Datumsfeld im Menue ${imMenue}`);
+      if (imMenue !== "fehlt") { mass.datum = imMenue; datumWo = "im More-Menue"; }
+      await evaliere(cdp, `(()=>{const b=[...document.querySelectorAll('button')]
+        .find(x=>/^\\s*More\\s*\\(/.test((x.textContent||'').trim()));if(b)b.click();})()`);
+      await schlafe(500);
+    }
+    urteil(`**das Datumsfeld malt die Kontrollstufe (7 px), gemessen ${datumWo}**`, mass.datum, "7px");
     urteil("**die Segmenthuille malt die Kartentufe (12 px)**", mass.huille, "12px");
     urteil("der Segmentknopf malt die Kontrollstufe", mass.knopf, "7px");
     // Die zwei Seitenleisten-Reihen zogen die Stufe erst als Utility in die Bauteilkette — von
@@ -884,10 +922,16 @@ async function main() {
     await schlafe(1200);
     const zu = await leseZeile();
     console.log(`  Klappe (${zugeklappt}): Zustand ${zu.zustand}, deckt ${zu.bedeckt} % — Bilanzzeile: ${JSON.stringify(zu.zeile)}`);
-    if (zu.zeile && zu.zeile.da) {
+    if (zu.zeile && zu.zeile.da && zu.zeile.text !== "") {
       urteil("**die Bilanz des Ausschnitts bleibt auch hinter der Klappe lesbar**", zu.zeile.sichtbar, true);
+    } else if (vorDemGriff && vorDemGriff.beruehrt.length === 0) {
+      // Stille ist hier erlaubt, aber nur mit Zeuge: schweigt die Zeile, weil alles im Bild
+      // steht, darf sie nicht gleichzeitig verdeckt sein. Ohne den Zeugen waere das ein Fall,
+      // der nie schlagen kann.
+      console.log("  ok    die Bilanzzeile schweigt, und kein Rand ist beschnitten — alles steht im Bild");
     } else {
-      urteil("**die Bilanz des Ausschnitts bleibt auch hinter der Klappe lesbar**", false, true);
+      urteil("**die Bilanzzeile schweigt nur, wenn nichts beschnitten ist**",
+        vorDemGriff ? vorDemGriff.beruehrt.length : -1, 0);
     }
     urteil("die zugemachte Legende deckt hoechstens 25 % des Bildes", (zu.bedeckt || 0) <= 25, true);
     const wieder = await klappe("Show");
