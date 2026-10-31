@@ -197,7 +197,13 @@ async function main() {
     }
     await warteBis(async () => ((await evaliere(cdp, `!!document.querySelector('button[aria-pressed]')`)) ? true : null), { maxMs: 20000 });
   };
-  const panelNam = async () => evaliere(cdp, `(()=>{const b=[...document.querySelectorAll('button[aria-pressed]')].find(x=>x.getAttribute('aria-pressed')==='true');return b?(b.textContent||'').trim():null})()`);
+  // Nur die drei Schirme der Einstellungen, nicht jeder gedruckte Knopf im Blatt: nach den
+  // Such-Zyklen standen auch die Graph-Schalter (Force/Tree) mit aria-pressed da, und ein
+  // Pruefer, der "der erste gedruckte Knopf" liest, meldet dann "Force" statt des Tabs.
+  const PANEL = ["AI & data", "MCP / API", "Device Sync"];
+  const panelNam = async () => evaliere(cdp, `(()=>{const wanted=${JSON.stringify(PANEL)};
+    const b=[...document.querySelectorAll('button[aria-pressed]')].find(x=>x.getAttribute('aria-pressed')==='true' && wanted.some(w=>(x.textContent||'').trim()===w));
+    return b?(b.textContent||'').trim():null})()`);
   const syncOffen = async () => evaliere(cdp, `(()=>{const e=document.querySelector('input[placeholder^="At least"]');return e?getComputedStyle(e).display:'keine Abfrage'})()`);
   const bild = async (name) => {
     const s = await cdp.send("Page.captureScreenshot", { format: "png" });
