@@ -1697,7 +1697,13 @@ export function Dashboard() {
                   title={`${effectiveScored.length} hits · similarity of the best match ${Math.round(effectiveScored[0].cosineScore * 100)} %`}
                 >
                   <span className="w-1.5 h-1.5 rounded-full" style={{ background: 'var(--ok)' }} />
-                  <span>{effectiveScored.length} {effectiveScored.length === 1 ? 'hit' : 'hits'}</span>
+                  {/* Punkt 4: die Zahl im Streifen ist, was die Tuer **geschickt** hat. Passt
+                      mehr, als die Bestellung hergab, sagt der Streifen beide Zahlen — sonst
+                      steht "16 hits" ueber einer Liste, deren Rueckweg "5 of 30 matches" heisst.
+                      Gemessen 31.10. 11:51 im echten Fenster an dreissig gesaeten Notizen. */}
+                  <span>{serverTotal !== null && serverTotal > effectiveScored.length
+                    ? `${effectiveScored.length} of ${serverTotal} ${serverTotal === 1 ? 'hit' : 'hits'}`
+                    : `${effectiveScored.length} ${effectiveScored.length === 1 ? 'hit' : 'hits'}`}</span>
                   {/* Nicht der Fusionswert: der ist ein RRF-Rohwert (rund 0,02) und
                       ergibt als Prozentzahl "best 2 %" — hier steht die echte
                       Vektor-Aehnlichkeit, oder gar nichts, wenn ohne Vektoren gesucht wird. */}

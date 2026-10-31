@@ -9,13 +9,16 @@
   search depth, so ranking keeps its candidates — but what stands in the list is now the number
   the control names, and the line under it says where the rest went: "5 of 16 matches · show all".
   Clicking that lifts the cap and moves the control to its last step.
+- The status strip next to it now names both numbers when they differ: "16 of 30 hits" instead of
+  "16 hits". The strip's old number was true about the batch the engine returned and misleading
+  about the base — the line under the list already said "5 of 30 matches".
 - The cap applies to the ranked (semantic) branch only. Without semantic search there is no
   server total, so there would be no way back from a cap — hiding notes behind a control with no
   exit is worse than the mismatch it fixes. A case holds that boundary.
 
 ### Measured
 
-- Six cases, three of them red before the change; a bite test (cap removed) drops **3 of 6**.
+- Six cases, three of them red before the change; bite tests: cap removed drops **3 of 6**, the two-number strip removed drops **1 of 6**. The stub that fed these cases was itself corrected first — it had been telling the surface `total = results.length`, which the door never does.
   Neighbours: 8 Dashboard/search files, **108 cases, 0 red**. `tsc --noEmit` exit 0.
 
 ## [3.2.101]

@@ -350,6 +350,8 @@ async function main() {
     const wenig = await suchZeilen("Fristenkontrolle");
     console.log(`  Zeilen: ohne Kappe ${grund.zeilen}, auf Stufe 5 ${wenig.zeilen}`);
     urteil("**auf Stufe 5 zeigt die Liste fuenf, nicht was die Tuer bringt**", wenig.zeilen, 5);
+    // Der Streifen nennt beide Zahlen, seit 3.2.102: geschickt vs. passend.
+    urteil("**der Streifen sagt, wie viel passt, nicht nur, was kam**", /16 of 30 hits|30 hits/.test(String(wenig.grund)) || (await evaliere(cdp, `(()=>[...document.querySelectorAll('.chip,span')].some(e=>/of 30 hits/.test(e.textContent||'')))()`)), true);
     urteil("und die Liste nennt ihren Rueckweg", /of .* matches/.test(wenig.grund || "") || (await evaliere(cdp, `(()=>[...document.querySelectorAll('button')].some(b=>/show all/i.test(b.textContent||'')))()`)), true);
     console.log("  Bild: " + await bild("trefferstufe-5.png"));
     await steuere();

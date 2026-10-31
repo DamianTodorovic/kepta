@@ -33,15 +33,26 @@ const NOTIZ = (i: number): Memory => ({
   createdAt: Date.parse("2025-01-01"), updatedAt: Date.parse("2025-01-01"),
 });
 
-/** Die Tuer bringt, was die Anfrage hergibt — hier sechzehn Treffer an dreissig Notizen. */
-function tuer({ treffer, total = treffer.length }: { treffer: Memory[]; total?: number }) {
-  const alle = Array.from({ length: 30 }, (_, i) => NOTIZ(i + 1));
-  vi.stubGlobal("fetch", vi.fn(async (url: string) => {
+/**
+ * Die Tuer bringt, was die Anfrage hergibt, und sagt dazu, wie viel **passt**: der Leib traegt
+ * `results` (die bestellten Kandidaten, hier sechzehn) und `total` (alle Treffer, hier dreissig).
+ * Ein Stub, der `total = results.length` setzt, erzaehlt der Flaeche eine bessere Welt, als die
+ * Tuer liefert — gemessen 31.10. im echten Fenster, wo die Auskunft "5 of 30 matches" heisst und
+ * der Streifen "16 hits" sagte. Also: beide Zahlen, getrennt.
+ */
+function tuer({ gesamt = 30 }: { gesamt?: number } = {}) {
+  const alle = Array.from({ length: gesamt }, (_, i) => NOTIZ(i + 1));
+  vi.stubGlobal("fetch", vi.fn(async (url: string, init?: RequestInit) => {
     const ziel = String(url);
     if (ziel.includes("/api/search")) {
+      // Die echte Tuer kappt ihre Antwort selbst nach dem bestellten topK und nennt in `total`,
+      // wie viel wirklich passt. Ein Stub, der beides vermischt, verkauft der Flaeche eine Welt,
+      // die es nicht gibt — gemessen 31.10. im Fenster: "All" bringt 30, Stufe 5 bringt 16.
+      const bestellt = Number((JSON.parse(String(init?.body ?? "{}")) as { topK?: number }).topK) || gesamt;
+      const gebracht = alle.slice(0, Math.min(gesamt, bestellt));
       return new Response(JSON.stringify({
-        results: treffer.map((m) => ({ memory: m, score: 0.9, matchedTerms: ["frist"] })),
-        total, usedVectors: false, query: "frist",
+        results: gebracht.map((m) => ({ memory: m, score: 0.9, matchedTerms: ["frist"] })),
+        total: gesamt, usedVectors: false, query: "frist",
       }), { status: 200, headers: { "content-type": "application/json" } });
     }
     if (ziel.includes("/api/memories")) {
@@ -58,7 +69,6 @@ function tuer({ treffer, total = treffer.length }: { treffer: Memory[]; total?: 
   }));
 }
 
-const ZEHN = Array.from({ length: 16 }, (_, i) => NOTIZ(i + 1));
 
 async function zeichne(und: { topK?: string; semantik?: string } = {}) {
   localStorage.clear();
@@ -83,49 +93,50 @@ afterEach(() => { vi.unstubAllGlobals(); });
 
 describe("Punkt 4: die Trefferstufe kantt die Liste", () => {
   it("auf Stufe 5 stehen fuenf Zeilen, nicht sechzehn", async () => {
-    tuer({ treffer: ZEHN });
+    tuer();
     const { container } = await zeichne({ topK: "5" });
     expect(zeilen(container), `die Stufe sagt 5, die Liste zeigt ${zeilen(container)}`).toBe(5);
   });
 
   it("die Liste nennt ihre eigene Kappe und den Rueckweg", async () => {
-    tuer({ treffer: ZEHN });
+    tuer();
     const { container } = await zeichne({ topK: "5" });
-    // Die Kappe nennt sich selbst: der Chip an der Stufe nennt "5", und die Auskunft unter der
+    // Der Streifen darf nicht "16 hits" sagen, wenn 30 passen: der Chip an der Stufe nennt "5", und die Auskunft unter der
     // Liste sagt, wie viel die Tuer wirklich hat. ("Top 5" stünde nur, wenn nichts mehr passte —
     // hier ist der Rueckweg der Knopf, nicht die Kappe.)
     const stufe = [...container.querySelectorAll(".chip")].some((c) => (c.textContent || "").trim() === "5");
     expect(stufe, "die Stufe nennt ihre eigne Zahl nicht").toBe(true);
-    expect(text(container), "der Rueckweg ueber die Kappe hinweg fehlt").toMatch(/5 of 16 matches/);
+    expect(text(container), "der Streifen nennt nicht, wie viel wirklich passt").toMatch(/16 of 30 hits/);
+    expect(text(container), "der Rueckweg ueber die Kappe hinweg fehlt").toMatch(/5 of 30 matches/);
   });
 
   it("ein Klick auf den Rueckweg hebt die Kappe auf", async () => {
-    tuer({ treffer: ZEHN });
+    tuer();
     const view = await zeichne({ topK: "5" });
     const weg = [...view.container.querySelectorAll("button")].find((b) => /show all/i.test(b.textContent || ""));
     expect(weg, "der Show-all-Knopf steht nicht").toBeDefined();
     fireEvent.click(weg!);
     await act(async () => { await new Promise((r) => setTimeout(r, 1400)); });
-    expect(zeilen(view.container), "nach dem Klick ist die Liste nicht voller").toBe(16);
+    expect(zeilen(view.container), "nach dem Klick ist die Liste nicht voller").toBe(30);
     expect(localStorage.getItem("ki_gehirn_topK"), "die Stufe wurde nicht auf alles gestellt").toBe("0");
   });
 
   it("auf der letzten Stufe bleibt alles stehen", async () => {
-    tuer({ treffer: ZEHN });
+    tuer();
     const { container } = await zeichne({ topK: "0" });
-    expect(zeilen(container)).toBe(16);
+    expect(zeilen(container)).toBe(30);
     expect(text(container)).toMatch(/All matches/);
   });
 
   it("ein Bestand unter der Stufe wird nicht gekappt", async () => {
-    tuer({ treffer: ZEHN.slice(0, 3), total: 3 });
+    tuer({ gesamt: 3 });
     const { container } = await zeichne({ topK: "5" });
     expect(zeilen(container)).toBe(3);
     expect(text(container), "bei drei Treffern darf keine Show-all-Auskunft stehen").not.toMatch(/show all/i);
   });
 
   it("ohne Semantik kantt die Stufe nichts — dort gibt es keinen Rueckweg", async () => {
-    tuer({ treffer: ZEHN });
+    tuer();
     const { container } = await zeichne({ topK: "5", semantik: "false" });
     expect(zeilen(container) > 5, `ohne Semantik stehen nur ${zeilen(container)} Zeilen — die Liste kaeme ohne Rueckweg aus`).toBe(true);
   });
