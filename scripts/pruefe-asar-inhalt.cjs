@@ -566,6 +566,14 @@ const erwartet = [
   // Beweis sind stattdessen die sechs Faelle (drei davon vor dem Bau rot, ein Biss laesst drei
   // fallen) und der Weg durch das echte Fenster (`scripts/pruefe-einstellungen-im-fenster.mjs`,
   // Zyklus "treffer"): Stufe 5 -> fuenf Zeilen, Reload, wieder fuenf.
+  // 3.2.105 (Punkt 114 ohne Breite geloest, die Ausnahme der Bilanz, der Fit-Anker bei
+  // decidedem Lesbarkeits-Boden): drei Literalen, am **installierten** Objekt gezaehlt
+  // (app.asar 49 169 712 B, 31.10. 19:44 MESZ) — alle drei dort **0**, im gebauten dist je 1.
+  // Das CSS liegt minifiziert im Leib: lightningcss macht aus den zwei Regeln eine Liste und
+  // schreibt `data-legende=zu` ohne Anfuehrung, also ist die Marke die Regel, nicht ihr Wort.
+  ["hud-label tnum legende-zustand legende-bilanz", 1],
+  [":not(.legende-bilanz)", 1],
+  [".legende-griffe{display:none}", 1],
 ];
 // Die Liste darf nur ASCII-Zeichen enthalten. Grund, gemessen 21.10. 19:16 MESZ am
 // installierten Objekt: das Wort "Looking" plus echtes U+2026 steht dort 2 mal, diese

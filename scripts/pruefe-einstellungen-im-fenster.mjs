@@ -38,6 +38,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { createRequire } from "node:module";
+import { umrandung } from "./helfer/png-kante.mjs";
 
 const WURZEL = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const ARG = (name, fallback) => {
@@ -749,63 +750,187 @@ async function main() {
         return { knoten: document.querySelectorAll('*').length, leinwaende: document.querySelectorAll('canvas').length, texte: h.slice(0,180) };})()`);
       console.log(`  kein Export-Knopf: ${JSON.stringify(grund)}`);
     }
-    const hol = await evaliere(cdp, `(()=>{let gefangen=null;const echt=HTMLAnchorElement.prototype.click;
-      HTMLAnchorElement.prototype.click=function(){gefangen={name:this.getAttribute('download')||'',kette:this.href};return echt.apply(this,arguments)};
-      const b=document.querySelector('button[data-testid="graph-export"]');
-      if(!b) { HTMLAnchorElement.prototype.click=echt; return {fehler:'kein Export-Knopf'}; }
-      b.click();
-      HTMLAnchorElement.prototype.click=echt;
-      if(!gefangen) return {fehler:'der Knopf hat nichts angeboten'};
-      const theil=(gefangen.kette.split('base64,')[1]||'');
-      return {name:gefangen.name, typ:(gefangen.kette.split(';')[0]||''), laenge:theil.length, theil};})()`);
-    if (hol.fehler) console.log(`  der Export meldet: ${hol.fehler}`);
-    urteil("der Export gibt eine PNG-Kette her", String(hol.typ || "").startsWith("data:image/png"), true);
-    const puff = Buffer.from(hol.theil || "", "base64");
-    urteil("die Kette traegt eine echte PNG-Signatur",
-      puff.length > 24 && puff[0] === 0x89 && puff.slice(1, 4).toString("latin1") === "PNG", true);
-    const breite = puff.length > 24 ? puff.readUInt32BE(16) : 0;
-    const hoehe = puff.length > 24 ? puff.readUInt32BE(20) : 0;
-    // Vor jedem Urteil: der Flaeche ihre Zeit lassen. Ein einzelner Blick kurz nach dem Sprung
-    // fand bei 1 440 px 0 Flecke und im zweiten Anlauf 172 — das ist eine Rennstrecke, kein
-    // Befund. Gezaehlt wird deshalb bis zu 24 s lang, und die Zahl, die unter die Zeile kommt,
-    // ist die letzte eines Wartens, nicht die eines Augenblicks.
+    // Zaehlen, bevor gehandelt wird. Ein einzelner Blick kurz nach dem Sprung fand bei 1 440 px
+    // 0 Flecke und im zweiten Anlauf 172 — das ist eine Rennstrecke, kein Befund. Gewartet wird,
+    // bis die Zahl zweimal in Folge gleich bleibt (oder 45 s um sind); was unter die Zeile kommt,
+    // ist die letzte eines Wartens, nicht die eines Augenblicks. Der Export kommt DANACH: ein
+    // Bild von einer Leinwand, die noch nicht gemalt hat, misst die Kamera und nicht das Netz.
     const flecke = () => evaliere(cdp, `(()=>{const c=document.querySelector('canvas');if(!c)return 0;
       const x=c.getContext('2d');let t=0;try{const d=x.getImageData(0,0,c.width,c.height).data;
       for(let i=0;i<d.length;i+=4000){if(d[i]+d[i+1]+d[i+2]>40)t+=1}}catch(e){return 0}
       return t;})()`);
-    const gewartet = await warteBis(async () => { const n = await flecke(); return n > 0 ? n : null; },
-      { maxMs: 24000, schritt: 1500 });
-    console.log(`  Farbflecke nach Wartezeit: ${gewartet === null ? "null auch nach 24 s" : gewartet}`);
+    let gewartet = null, zuletzt = -1, ruhig = 0, wartend = 0;
+    while (ruhig < 2 && wartend < 45000) {
+      await schlafe(1500); wartend += 1500;
+      const n = await flecke();
+      gewartet = n;
+      if (n > 0 && n === zuletzt) ruhig += 1; else ruhig = 0;
+      zuletzt = n;
+    }
+    console.log(`  Farbflecke: ${gewartet} nach ${Math.round(wartend / 1000)} s — ` +
+      (ruhig >= 2 ? "ruhig geworden" : "nach 45 s noch in Bewegung"));
+    // Die Zahl der Flecke kann gleich bleiben, waehrend die Knoten wandern (die Sonde taste
+    // alle tausendsten Pixel). Fuer einen Vorher/Nachher-Vergleich an demselben Bild braucht
+    // der Pruefer eine strengere Ruhe: zwei Rasterabdrueke im Abstand von zwei Sekunden,
+    // Byte fuer Byte gleich. Steht das Bild nie, ist das selbst ein Befund — und der
+    // Vergleich ist gueltig als Vergleich zweier Zeiten, nicht zweier Kameras.
+    const raster = async () => await evaliere(cdp, `(()=>{const c=document.querySelector('canvas');if(!c)return '';
+      const x=c.getContext('2d');try{const d=x.getImageData(0,0,c.width,c.height).data;let s='';
+      for(let i=0;i<d.length;i+=40000){s+=d[i]+','+d[i+1]+','+d[i+2]+';'}return s;}catch(e){return ''}})()`);
+    const ruhe = async (maxMs) => {
+      const anfang = Date.now();
+      let vorher = await raster();
+      while (Date.now() - anfang < maxMs) {
+        await schlafe(2000);
+        const jetzt = await raster();
+        if (jetzt && jetzt === vorher) return Math.round((Date.now() - anfang) / 1000);
+        vorher = jetzt;
+      }
+      return null;
+    };
+    const stehend = await ruhe(30000);
+    console.log(`  Das Bild steht: ${stehend === null ? "nein — auch nach 30 s bewegt sich die Leinwand" : `nach ${stehend} s`}`);
+    // Was der Knopf anbietet, ist dasselbe, was ein Nutzer in den Download legt: die Kette wird
+    // gefangen, nicht auf die Platte geschrieben. Aufrufbar, solange die Flaeche steht.
+    const exportBild = async () => {
+      const hol = await evaliere(cdp, `(()=>{let gefangen=null;const echt=HTMLAnchorElement.prototype.click;
+        HTMLAnchorElement.prototype.click=function(){gefangen={name:this.getAttribute('download')||'',kette:this.href};return echt.apply(this,arguments)};
+        const b=document.querySelector('button[data-testid="graph-export"]');
+        if(!b) { HTMLAnchorElement.prototype.click=echt; return {fehler:'kein Export-Knopf'}; }
+        b.click();
+        HTMLAnchorElement.prototype.click=echt;
+        if(!gefangen) return {fehler:'der Knopf hat nichts angeboten'};
+        const theil=(gefangen.kette.split('base64,')[1]||'');
+        return {name:gefangen.name, typ:(gefangen.kette.split(';')[0]||''), laenge:theil.length, theil};})()`);
+      if (hol.fehler) { console.log(`  der Export meldet: ${hol.fehler}`); return null; }
+      const puff = Buffer.from(hol.theil || "", "base64");
+      return { name: hol.name, typ: hol.typ, puff,
+        b: puff.length > 24 ? puff.readUInt32BE(16) : 0,
+        h: puff.length > 24 ? puff.readUInt32BE(20) : 0 };
+    };
+    const erst = await exportBild();
+    urteil("der Export gibt eine PNG-Kette her", String((erst || {}).typ || "").startsWith("data:image/png"), true);
+    urteil("die Kette traegt eine echte PNG-Signatur",
+      !!erst && erst.puff.length > 24 && erst.puff[0] === 0x89 && erst.puff.slice(1, 4).toString("latin1") === "PNG", true);
     const leinwand = await evaliere(cdp, `(()=>{const c=document.querySelector('canvas');
       return c ? { b: c.width, h: c.height } : { b: 0, h: 0 };})()`);
-    urteil(`**das Bild hat die Groesse der Leinwand (${breite} x ${hoehe} gegen ${leinwand.b} x ${leinwand.h})**`,
-      breite === leinwand.b && hoehe === leinwand.h && breite > 0, true);
+    urteil(`**das Bild hat die Groesse der Leinwand (${(erst || {}).b} x ${(erst || {}).h} gegen ${leinwand.b} x ${leinwand.h})**`,
+      !!erst && erst.b === leinwand.b && erst.h === leinwand.h && erst.b > 0, true);
     // Zwei Wege, dasselbe Bild: die Aufnahme des Fensters (was ein Auge sieht) und die Kette des
     // Exports (was die Hand bekommt). Ist die Aufnahme gemalt und der Export leer, luegt der
     // Export. Sind beide leer, malt die Flaeche nach dem Groessenwechsel nicht neu — das waere
     // ein Nutzerfehler, kein Prueferfehler.
     console.log(`  Schirmaufnahme: ${await bild(`graph-${SAAT}-notizen-${BREITE}px-aufnahme.png`)}`);
-    const farbe = await evaliere(cdp, `(()=>{const c=document.querySelector('canvas');if(!c)return -1;
-      const x=c.getContext('2d');let t=0;try{const d=x.getImageData(0,0,c.width,c.height).data;
-      for(let i=0;i<d.length;i+=4000){if(d[i]+d[i+1]+d[i+2]>40)t+=1}}catch(e){return 'kein Zugriff'}
-      return t;})()`);
-    console.log(`  getastete Farbflecke in der Leinwand: ${farbe}`);
-    // Zwei Erklaerungen fuer ein leeres Bild: es ist nichts zu malen, oder die Kamera steht
-    // daneben. Der Knopf "Fit" entscheidet — bringt er Tinte, war es die Kamera.
-    if (farbe === 0) {
+    // Ist die Ansicht eingepasst? Gemessen am Bild, nicht am Gefuehl: die Umrandung aller Pixel,
+    // die nicht Grund sind, gegen die Kanten der Leinwand. Beruehrt das Netz eine Kante, laeuft es
+    // ueber den Rand hinaus; bleibt eine Seite weit frei, steht die Kamera neben der Arbeit.
+    // Die Umrandung holt der Pruefer aus scripts/helfer/png-kante.mjs — dort, wo die
+    // Entsorgung der gefilterten Zeilen steht und von einem Biss-Beleg gehalten wird.
+    const melde = (r, label) => {
+      if (r.meldung) { console.log(`  ${label}: ${r.meldung}`); return null; }
+      if (r.x1 < 0) { console.log(`  ${label}: gar keine Tinte im Bild`); return null; }
+      console.log(`  ${label}: Kasten ${r.x0},${r.y0} bis ${r.x1},${r.y1} in ${r.w}x${r.h} ` +
+        `(Grund ${r.grund}, Tinte ${r.traf} von ${r.w * r.h}) — frei: oben ${r.freie.oben.toFixed(1)} %, ` +
+        `unten ${r.freie.unten.toFixed(1)} %, links ${r.freie.links.toFixed(1)} %, rechts ${r.freie.rechts.toFixed(1)} %; ` +
+        `Kanten beruehrt: ${r.beruehrt.join(",") || "keine"}`);
+      for (const [seite, k] of Object.entries(r.kantigen)) {
+        if (k.traf > 0) {
+          const laenge = seite === "oben" || seite === "unten" ? r.w : r.h;
+          console.log(`    ${seite}: ${k.traf} von ${laenge} Pixels der Kante tragen Tinte ` +
+            `(${((k.traf / laenge) * 100).toFixed(1)} % ihrer Laenge), Spanne ${k.spanne[0]} bis ${k.spanne[1]}`);
+        }
+      }
+      return r;
+    };
+    const vorDemGriff = melde(umrandung((erst || {}).puff || Buffer.alloc(0)), "Ansicht beim Eintreffen");
+    if (vorDemGriff) {
+      urteil("**kein Netz laeuft ueber eine Bildkante**", vorDemGriff.beruehrt.length, 0);
+      // Befund A war: der Export hatte keinen Grund — die erste Zeile war `0, 0, 0, 0`.
+      // Geprueft wird am ausgelieferten Bild, nicht am Quelltext.
+      urteil("**der Export traegt einen undurchsichtigen Grund**", vorDemGriff.alpha, 255);
+    }
+    // Die Flaechezaehlt, was ausserhalb des Ausschnitts bleibt ("1 275 of 1 500 ... are in this
+    // picture"). Diese Zeile ist die Ehrlichkeit der Kamera. Sie wohnt in der Legende — und die
+    // Legende hat eine Klappe (Punkt 114: zugemacht hoechstens 25 % Deckung). Also wird beides
+    // gemessen: wie viel Bild die offene Legende deckt, und ob die Bilanzzeile die Klappe ueberlebt.
+    const leseZeile = async () => await evaliere(cdp, `(()=>{
+      const l=document.querySelector('[data-testid="graph-legende"]');
+      const z=document.querySelector('[data-testid="graph-im-bild"]');
+      const c=document.querySelector('canvas');
+      const lesbar=(e)=>{if(!e) return null; const r=e.getBoundingClientRect(); const s=getComputedStyle(e);
+        return { da: true, text: (e.textContent||'').trim().slice(0,110),
+          sichtbar: r.width>0 && r.height>0 && s.display!=='none' && s.visibility!=='hidden' };};
+      const aus={};
+      if (l) aus.zustand = l.getAttribute('data-legende');
+      if (c && l) { const cr=c.getBoundingClientRect(), lr=l.getBoundingClientRect();
+        const decke = Math.max(0, Math.min(cr.bottom,lr.bottom)-Math.max(cr.top,lr.top))
+                    * Math.max(0, Math.min(cr.right,lr.right)-Math.max(cr.left,lr.left));
+        aus.bedeckt = +((decke/(cr.width*cr.height))*100).toFixed(1);
+        aus.leinwand = [Math.round(cr.width), Math.round(cr.height)]; }
+      aus.zeile = lesbar(z);
+      return aus;})()`);
+    const klappe = async (wort) => await evaliere(cdp, `(()=>{const b=[...document.querySelectorAll('button')]
+      .find(x=>new RegExp('^\\\\s*(${wort})\\\\s*','i').test((x.textContent||'').trim()));
+      if(!b) return 'kein Knopf mit diesem Wort'; b.click(); return (b.textContent||'').trim();})()`);
+    const offen = await leseZeile();
+    console.log(`  Legende offen: Zustand ${offen.zustand}, deckt ${offen.bedeckt} % der Leinwand ` +
+      `(${(offen.leinwand || []).join(" x ")} px) — Bilanzzeile: ${JSON.stringify(offen.zeile)}`);
+    // Wer die Kante schneidet, ist eine Frage an die Kamera, nicht ans Bild. Die Flaeche nennt es
+    // selbst: der Fit-Knopf fuehrt im Titel, ob der Lesbarkeits-Boden entschieden hat.
+    const grund = await evaliere(cdp, `(()=>{const b=document.querySelector('button[data-testid="graph-fit"]');
+      return b ? (b.getAttribute('title')||'') : 'kein Fit-Knopf';})()`);
+    console.log(`  Der Fit-Knopf sagt ueber sich: ${grund}`);
+    const zugeklappt = await klappe("Hide");
+    await schlafe(1200);
+    const zu = await leseZeile();
+    console.log(`  Klappe (${zugeklappt}): Zustand ${zu.zustand}, deckt ${zu.bedeckt} % — Bilanzzeile: ${JSON.stringify(zu.zeile)}`);
+    if (zu.zeile && zu.zeile.da) {
+      urteil("**die Bilanz des Ausschnitts bleibt auch hinter der Klappe lesbar**", zu.zeile.sichtbar, true);
+    } else {
+      urteil("**die Bilanz des Ausschnitts bleibt auch hinter der Klappe lesbar**", false, true);
+    }
+    urteil("die zugemachte Legende deckt hoechstens 25 % des Bildes", (zu.bedeckt || 0) <= 25, true);
+    const wieder = await klappe("Show");
+    await schlafe(900);
+    console.log(`  Klappe zurueck (${wieder}): Zustand ${(await leseZeile()).zustand}`);
+    // Zwei Erklaerungen fuer ein Bild, das nicht stimmt: es ist nichts zu malen, oder die Kamera
+    // steht daneben. Der Knopf "Fit" entscheidet — bringt er ein anderes Bild, war es die Kamera.
+    const weit = vorDemGriff && (vorDemGriff.beruehrt.length > 0 ||
+      Math.max(...Object.values(vorDemGriff.freie)) > 25);
+    let nachDemGriff = null;
+    if (gewartet === 0 || weit) {
       const fit = await evaliere(cdp, `(()=>{const b=document.querySelector('button[data-testid="graph-fit"]');
         if(!b) return 'kein Fit-Knopf'; b.click(); return 'Fit gedrueckt';})()`);
-      await schlafe(2600);
-      const nach = await evaliere(cdp, `(()=>{const c=document.querySelector('canvas');if(!c)return -1;
-        const x=c.getContext('2d');let t=0;try{const d=x.getImageData(0,0,c.width,c.height).data;
-        for(let i=0;i<d.length;i+=4000){if(d[i]+d[i+1]+d[i+2]>40)t+=1}}catch(e){return 'kein Zugriff'}
-        return t;})()`);
-      console.log(`  ${fit}, danach Farbflecke: ${nach}`);
+      const ruhigNach = await ruhe(20000);
+      const zwei = await exportBild();
+      const titelNach = await evaliere(cdp, `(()=>{const b=document.querySelector('button[data-testid="graph-fit"]');
+        return b ? (b.getAttribute('title')||'') : 'kein Fit-Knopf';})()`);
+      nachDemGriff = melde(umrandung((zwei || {}).puff || Buffer.alloc(0)),
+        `dieselbe Ansicht nach ${fit} (Bild steht: ${ruhigNach === null ? "nein nach 20 s" : ruhigNach + " s"}; Titel nun: ${titelNach})`);
+      if (zwei) {
+        fs.mkdirSync(BILDER_ZIEL, { recursive: true });
+        const zweiter = path.join(BILDER_ZIEL, `graph-${SAAT}-notizen-${BREITE}px-nach-fit.png`);
+        fs.writeFileSync(zweiter, zwei.puff);
+        console.log(`  Bildbeweis nach Fit: ${zweiter} (${zwei.puff.length} B, ${zwei.b} x ${zwei.h})`);
+      }
+      if (nachDemGriff) {
+        const randTinte = (r) => Object.values(r.kantigen).reduce((s, k) => s + k.traf, 0);
+        console.log(`  nach dem Fit: Kanten beruehrt ${nachDemGriff.beruehrt.join(",") || "keine"}, ` +
+          `weiteste freie Seite ${Math.max(...Object.values(nachDemGriff.freie)).toFixed(1)} % ` +
+          `(vorher ${vorDemGriff ? Math.max(...Object.values(vorDemGriff.freie)).toFixed(1) + " %" : "kein Bild"})`);
+        if (vorDemGriff) {
+          console.log(`  Tinte auf vier Kanten: vorher ${randTinte(vorDemGriff)}, nach dem Fit ${randTinte(nachDemGriff)}`);
+          urteil("**der Fit-Knopf schneidet nicht mehr ab als die Ankunft**",
+            randTinte(nachDemGriff) <= randTinte(vorDemGriff), true);
+        }
+      }
     }
-    const datei = path.join(BILDER_ZIEL, `graph-${SAAT}-notizen-${BREITE}px.png`);
-    fs.mkdirSync(BILDER_ZIEL, { recursive: true });
-    fs.writeFileSync(datei, puff);
-    console.log(`  Bildbeweis: ${datei} (${puff.length} B, ${breite} x ${hoehe}, Name "${hol.name || "keiner"}")`);
+    if (erst) {
+      const datei = path.join(BILDER_ZIEL, `graph-${SAAT}-notizen-${BREITE}px.png`);
+      fs.mkdirSync(BILDER_ZIEL, { recursive: true });
+      fs.writeFileSync(datei, erst.puff);
+      console.log(`  Bildbeweis: ${datei} (${erst.puff.length} B, ${erst.b} x ${erst.h}, Name "${erst.name || "keiner"}")`);
+    }
   }
 
   console.log(fehl ? `  ${fehl} Pruefung(en) fehlgeschlagen` : "  alle Zyklen durch: Wert gesetzt, Fenster neu geladen, Wirkung gesehen");

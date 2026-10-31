@@ -137,6 +137,7 @@ export function installiereLeinwand(): Leinwand {
     this: HTMLCanvasElement,
     typ?: string
   ) {
+    aufrufe.push({ op: "toDataURL", args: [typ || "image/png"] });
     if (wurfGrund) throw new Error(wurfGrund);
     const mass = `${this.width}x${this.height}`;
     return `data:${typ || "image/png"};base64,${Buffer.from(mass).toString("base64")}`;

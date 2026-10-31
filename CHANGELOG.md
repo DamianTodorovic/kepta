@@ -1,3 +1,24 @@
+## [3.2.105]
+
+### Fixed
+
+- **Closing the legend closes it at every width.** The fold rule lived inside a
+  `max-width: 820px` condition, so on a desktop window "Hide legend" handed back 6.5 points of the
+  picture and stayed 7 points over the house cap of 25 %. Measured in a real window (1 440 x 900,
+  1 500 notes, own capsule): open 38.6 %, closed 32.1 % before; closed 24.4 % after, in two runs.
+  One line stays when the card is closed — the balance of the crop ("1 250 of 1 500 unfolded notes
+  are in this picture") — because it is the only sentence saying the view is a slice; the gesture
+  hint folds instead.
+- **"Fit" no longer crops more than the view you arrived at.** Where the readability floor holds
+  (the button says so in its own title), Fit centred on the bounding box while the first view
+  centres on the densest painted region. Same window, same store, canvas byte-stable before both
+  exports: ink on the four frame edges went 557 -> 519 and 559 -> 503 across the click, where
+  before the fix it went 544 -> 596. The tree keeps its whole-world anchor.
+- **The exported picture has a ground.** The canvas is transparent wherever the panel paints its own
+  background, so the saved PNG carried `0, 0, 0, 0` in its first row and any viewer put a page
+  behind it. The export now composites the canvas over `--bg-panel-solid` first. Measured on the
+  exported bytes: first pixel opaque, ground `#38383a`.
+
 ## [3.2.104]
 
 ### Added

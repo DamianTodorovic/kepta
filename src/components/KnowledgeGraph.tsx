@@ -3353,10 +3353,22 @@ export function KnowledgeGraph({ memories: memoriesAusFenster, onSelectMemory, o
     // zu einer zweiten Anfangskamera und bräuchte einen andern Wort. (Gemessen
     // 19.10.: mit Anker fielen vier Gang-Faelle, weil sie ueber diesen Knopf
     // zurueck ins Ganze fahren wollen.)
-    transformRef.current = feldTransform(layoutBounds(sim.nodes, randFuerAnsicht(sim.nodes)));
+    //
+    // Die Ausnahme gilt, wo das Ganze nicht zu zeigen ist: hat der Lesbarkeits-Boden
+    // entschieden, ist die promise des Knopfs schon kassiert (er sagt es selbst im
+    // Titel). Dann die Mitte der Begrenzungsbox zu nehmen, schneidet MEHR ab als die
+    // Ankunft — gemessen 31.10. am gebauten Stand, 1 440 px, 1 500 Notizen: Tinte auf
+    // der oberen Kante 21,6 % beim Eintreffen, 30,6 % nach dem Klick (vier Laeufe,
+    // 21,3/24,0/24,7 % gegen 24,3/26,6/30,6 %). Also: nur wenn der Boden hielt und nur
+    // im Kraftfeld derselbe Anker wie bei der Ankunft; der Baum faehrt weiter ins Ganze.
+    const bodenHielt = kameraBodenRef.current && ansicht !== "dendrogram";
+    transformRef.current = feldTransform(
+      layoutBounds(sim.nodes, randFuerAnsicht(sim.nodes)),
+      bodenHielt ? titelAnker(sim) : undefined
+    );
     setZoomAnzeige(transformRef.current.k);
     zeichneNoetig.current = true;
-  }, [dimensions]);
+  }, [dimensions, ansicht]);
 
   /**
    * Baum-Ansicht braucht einen anderen Startausschnitt: Fit-ueber-alles macht
@@ -5554,7 +5566,18 @@ export function KnowledgeGraph({ memories: memoriesAusFenster, onSelectMemory, o
     if (!leinwand) return;
     let kette: string;
     try {
-      kette = leinwand.toDataURL("image/png");
+      // Die Leinwand malt kein Bild: die dunkle Fläche liegt als CSS hinter ihr. Was man
+      // weiterreicht, verlöre sie auf Weiss — gemessen 31.10. an drei exportierten PNGs, deren
+      // erster Pixel je 0,0,0,0 war. Also: Grund drauf, das Netz darüber, davon das Bild.
+      const traeger = document.createElement("canvas");
+      traeger.width = leinwand.width;
+      traeger.height = leinwand.height;
+      const x = traeger.getContext("2d");
+      if (!x) throw new Error("kein Kontext auf dem Träger");
+      x.fillStyle = getComputedStyle(document.documentElement).getPropertyValue("--bg-panel-solid").trim() || "#151515";
+      x.fillRect(0, 0, traeger.width, traeger.height);
+      x.drawImage(leinwand, 0, 0);
+      kette = traeger.toDataURL("image/png");
     } catch {
       // Eine Leinwand mit fremden Pixeln (ein Bild von einem andern Ursprung) darf der Browser
       // nicht herausgeben. Ohne diese Zeile bliebe der Klick stumm.
@@ -6491,9 +6514,15 @@ export function KnowledgeGraph({ memories: memoriesAusFenster, onSelectMemory, o
           {/* Wie viele der entfalteten Notizen wirklich im Bild stehen. Der Baum
               zoomt sich nicht mehr unter die Lesbarkeit, also liegt bei grossen
               Bestaenden ein Teil ausserhalb — und das steht dazu, statt dass die
-              Zahl im Kopf des Nutzers still schwindet. */}
+              Zahl im Kopf des Nutzers still schwindet.
+              31.10.: sie traegt den Halter der Zustandszeilen UND eine Ausnahme-Marke
+              (`.legende-bilanz`). Gemessen bei 1 440 px und 1 500 Notizen ist sie der
+              einzige sichtbare Satz dafuer, dass die Ansicht ein Ausschnitt ist (die
+              Kamera haelt den Lesbarkeits-Boden und sagt es selbst im Titel des
+              Fit-Knopfs). Faellt sie hinter die Klappe, sieht der Nutzer
+              angeschnittene Kreise ohne jede Auskunft. */}
           <div
-            className="hud-label tnum legende-zustand"
+            className="hud-label tnum legende-zustand legende-bilanz"
             data-testid="graph-im-bild"
             ref={imRahmenRef}
             style={{ color: "var(--text-2)", display: "none" }}
@@ -6597,8 +6626,11 @@ export function KnowledgeGraph({ memories: memoriesAusFenster, onSelectMemory, o
           {legendeVoll && regal && <GraphRegal regal={regal} ansichtsName={ansicht === "dendrogram" ? "the tree" : "the field"} gruppen={farbgruppen} achsen={achsen} steuerung={gruppenSteuerung} gemalt={gemalt} />}
           {/* Die Griffe erklaert die Flaeche schon an den Werkzeugen selbst; auf dem
               Telefon sind sie teils nicht einmal vorhanden (kein Hover, kein Rad).
-              Bei schmaler Breite tritt die Zeile zurueck — index.css, `.legende-prosa`. */}
-          <div className="hud-label legende-prosa">
+              Bei schmaler Breite tritt die Zeile zurueck — index.css, `.legende-prosa`.
+              Seit 31.10. faellt sie auch hinter die Klappe (`.legende-griffe`): sie ist
+              Hilfe, keine Auskunft, und die Klappe muss bei jeder Breite unter 25 %
+              der Bildflaeche kommen. */}
+          <div className="hud-label legende-prosa legende-griffe">
             {ansicht === "dendrogram"
               ? uiT("hint.tree")
               : ansicht === "semantic"

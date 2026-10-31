@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { render, act, fireEvent, cleanup } from "@testing-library/react";
-import { installiereLeinwand, installiereResizeObserver, installiereZeiger, lassLeinwandWerfen, setzeTheme } from "../helfer/canvas";
+import { installiereLeinwand, installiereResizeObserver, installiereZeiger, lassLeinwandWerfen, setzeTheme, type Leinwand } from "../helfer/canvas";
 import type { Memory } from "../../src/types";
 
 // Punkt 9, dritter Vorschlag der Matrize (`P3-P9-PARITAETSMATRIZE-3110.md`), und Punkt 1: wer sein
@@ -22,6 +22,8 @@ function note(i: number): Memory {
     createdAt: Date.parse("2024-01-01"), updatedAt: Date.parse("2024-01-01"),
   };
 }
+
+let buch: Leinwand;
 
 const { KnowledgeGraph } = await import("../../src/components/KnowledgeGraph");
 
@@ -63,7 +65,7 @@ async function herunterladen(view: { container: HTMLElement }) {
 
 beforeEach(() => {
   lassLeinwandWerfen(null);
-  installiereLeinwand();
+  buch = installiereLeinwand();
   installiereZeiger();
   setzeTheme("dunkel");
   localStorage.clear();
@@ -105,6 +107,24 @@ describe("Punkt 9: der Graph gibt sein Bild als PNG heraus", () => {
     const groesse = base64 ? Buffer.from(base64, "base64").toString("utf8") : "";
     expect(groesse, `Bild von ${groesse}, Leinwand ${leinwand!.width}x${leinwand!.height}`)
       .toBe(`${leinwand!.width}x${leinwand!.height}`);
+  });
+
+  it("das Bild bringt den Grund der Fläche mit, nicht nur das Netz", async () => {
+    const view = await flaeche();
+    await herunterladen(view);
+    // Befund aus dem ersten Bildbeweis (31.10., 1 500 Notizen, drei Breiten): alle drei PNGs sind
+    // RGBA und beginnen mit dem durchsichtigen Pixel 0,0,0,0 — die Fläche liegt als CSS hinter der
+    // Leinwand, das exportierte Bild hat keinen Grund. Geprüft wird die Reihenfolge in dem einen
+    // Band, das die Attrappe mitschreibt: erst ein Rechteck über die ganze Breite, dann die Kette.
+    const spur = (buch.aufrufe as Array<{ op: string; args: unknown[] }>);
+    const kette = spur.findIndex((a) => a.op === "toDataURL");
+    expect(kette, "die Attrappe hat keinen Bildgriff gemerkt").toBeGreaterThan(-1);
+    const grund = spur.slice(0, kette).reverse()
+      .find((a) => a.op === "fillRect" && Number(a.args[0]) === 0 && Number(a.args[1]) === 0
+        && Number(a.args[2]) > 0 && Number(a.args[3]) > 0);
+    expect(grund, `kein Grund-Rechteck vor dem Bild (vorher: ${spur.slice(0, kette).map(a => a.op).join(",")})`).toBeTruthy();
+    const ton = spur.slice(0, spur.indexOf(grund!)).reverse().find((a) => a.op === "set:fillStyle");
+    expect(ton, "das Grund-Rechteck hat keinen Ton").toBeTruthy();
   });
 
   it("wirft die Leinwand, sagt die Fläche es — und lädt nichts herunter", async () => {

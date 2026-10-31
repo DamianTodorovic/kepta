@@ -5,13 +5,21 @@
 // 390 x 844): die geschlossene Karte ist **209,5 px hoch bei 628 px Leinwand = 33,4 Prozent**,
 // die offene 315 px = 50,2. Am echten Bestand meldet Punkt 2 262 von 628 = 41,7 Prozent.
 // Die Leitung setzt die Latte auf **25 Prozent** (Brief `BRIEF-114-KLAPPENLAST-2710.md`) und
-// nennt die Ordnung: die drei Erklaerungen des Zeichens (Zahlenreihe, Typ-Farben, Link-Arten)
-// bleiben immer stehen, **die Zustandszeilen fallen hinter die Klappe** — sie melden, was
-// DIESER Ausschnitt fehlt, und der aendert sich mit jedem Schwenk.
+// nannte die Ordnung: die drei Erklaerungen des Zeichens (Zahlenreihe, Typ-Farben, Link-Arten)
+// bleiben immer stehen, die Zustandszeilen fallen hinter die Klappe.
+//
+// Nachgemessen 31.10. am gebauten Stand (1 440 x 900, 1 500 Notizen, eigne Kapsel): die Regel
+// galt nur bis 820 px, also gab der Griff bei breitem Fenster 6,5 Punkte zurueck — offen 38,6,
+// zugemacht 32,1 Prozent. Zwei Aenderungen, beide gemessen begruendet:
+// 1. Die Faltung gilt auf der aeussersten Ebene, ohne Breite.
+// 2. Die Bilanz des Ausschnitts (`graph-im-bild`) traegt einen eignen Halter und bleibt stehen;
+//    sie ist der einzige sichtbare Satz, dass die Ansicht ein Ausschnitt ist. Neu mitgefaltet
+//    wird die Griffe-Zeile (`legende-griffe`) — Hilfe, keine Auskunft.
 //
 // Die Geometrie selbst haelt jsdom nicht (keine Media-Queries, keine Hoehen) — gehalten wird
-// hier die HALTER-KETTE: Klasse an den Zeilen, Zustand an der Karte, Regel in der Bedingung.
-// Die Zahlen am ausgelieferten Stueck stehen im Brief und in den Belegen.
+// hier die HALTER-KETTE: Klasse an den Zeilen, Zustand an der Karte, Regel ohne Bedingung.
+// Die Zahlen am ausgelieferten Stueck stehen in `feldzug/P1-BILDBEWEIS-GRAPH-3110.md` und in
+// `feldzug/belege-3110/bild-vor-landung-3110/`.
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { render, act } from "@testing-library/react";
 import fs from "node:fs";
@@ -24,6 +32,11 @@ import type { Memory } from "../../src/types";
 const HALTER = "legende-zustand";
 /** Dieselben vier Marken, die die Prosa-Kappe nie traf; jetzt tragen sie den Halter. */
 const ZUSTANDSMARKEN = ["graph-zustaende", "graph-im-bild", "graph-benannt", "graph-kappen"];
+/** Die Griffe-Zeile: Hilfe, kein Zustand — sie faellt mit, seit die Klappe oben gilt. */
+const GRIFF_HALTER = "legende-griffe";
+/** Die Ausnahme-Marke der Bilanz: sie traegt den Halter, faellt aber nicht hinter die Klappe. */
+const BILANZ = "legende-bilanz";
+const BILANZMARKE = "graph-im-bild";
 /** Was die Klappe NIEMALS verdecken darf: die Erklaerung des Zeichens selbst. */
 const IMMER = ["graph-kopf"];
 
@@ -68,6 +81,17 @@ describe("#114 die Zustandszeilen fallen hinter die Klappe", () => {
       if (!el) continue;
       expect(el.classList.contains(HALTER), `${marke} muss hinter der Klappe fallen koennen`).toBe(true);
     }
+    // Die Bilanzzeile traegt den Halter der Familie UND die Ausnahme-Marke: gemessen
+    // 31.10. 19:39 am gebauten Stand bei 1 440 px und 1 500 Notizen ist sie der einzige
+    // sichtbare Satz dafuer, dass die Ansicht ein Ausschnitt ist ("1 250 of 1 500
+    // unfolded notes are in this picture"). Faellt sie mit, schliesst die Klappe die
+    // Ehrlichkeit ein, nicht nur die Hilfe.
+    const bilanz = leg.querySelector<HTMLElement>(`[data-testid="${BILANZMARKE}"]`);
+    expect(bilanz, "die Bilanzzeile fehlt — die Flaeche sagt nichts mehr ueber ihren Ausschnitt").toBeTruthy();
+    expect(bilanz!.classList.contains(BILANZ), "die Bilanzzeile traegt ihre Ausnahme-Marke nicht").toBe(true);
+    // Die Griffe-Zeile ist Hilfe, keine Auskunft: sie traegt den zweiten Falt-Halter.
+    const griffe = leg.querySelectorAll<HTMLElement>(`.${GRIFF_HALTER}`);
+    expect(griffe.length, "keine Zeile traegt den Halter der Griffe").toBeGreaterThanOrEqual(1);
   });
 
   it("nennt den Zustand der Klappe an einem Attribut der Karte", async () => {
@@ -103,24 +127,45 @@ describe("#114 die Zustandszeilen fallen hinter die Klappe", () => {
 describe("#114 die Falt-Regel in src/index.css", () => {
   const css = fs.readFileSync(path.join(process.cwd(), "src/index.css"), "utf8");
 
-  it("verbirgt den Halter nur innerhalb der Breiten-Bedingung der Klappe", () => {
-    const m = new RegExp(`\\.${HALTER}\\s*\\{`).exec(css);
-    expect(m, "die Falt-Regel fehlt in index.css").not.toBeNull();
-    const anfang = css.lastIndexOf("@media", m!.index);
-    expect(anfang, "die Regel liegt ausserhalb jeder Bedingung").toBeGreaterThanOrEqual(0);
-    const zwischen = css.slice(anfang, m!.index);
-    expect(zwischen, "die Bedingung ist nicht die der Klappe").toMatch(/max-width:\s*820px/);
-    // Zwischen Blockoeffnung und Halter darf nichts geschlossen haben.
-    expect((zwischen.match(/\{/g) || []).length, "die Regel steht ausserhalb des Blocks").toBeGreaterThan((zwischen.match(/\}/g) || []).length);
+  /** Die Regel muss auf der aeussersten Ebene stehen: keine Breite darf sie auschalten. */
+  const obersteEbene = (regel: RegExp) => {
+    const m = regel.exec(css);
+    expect(m, `die Regel fehlt in index.css: ${regel}`).not.toBeNull();
+    const vorher = css.slice(0, m!.index);
+    const offen = (vorher.match(/\{/g) || []).length - (vorher.match(/\}/g) || []).length;
+    expect(offen, "die Regel liegt in einem Block — eine Bedingung schaltet sie aus").toBe(0);
     const block = css.slice(m!.index, m!.index + 120);
     expect(block, "die Regel versteckt nicht").toMatch(/display:\s*none/);
-  });
+    return m![0].replace(/\{\s*$/, "").trim();
+  };
 
-  it("koppelt die Regel an den zugemachten Zustand der Karte", () => {
-    const m = new RegExp(`\\.${HALTER}\\s*\\{`).exec(css)!;
-    const zeilenAnfang = css.lastIndexOf("\n", m.index) + 1;
-    const selektor = css.slice(zeilenAnfang, m.index).trim();
+  it("verbirgt die Zustandszeilen ohne Breiten-Bedingung", () => {
+    // Bis 31.10. galt die Regel nur bis 820 px. Gemessen am gebauten Stand bei
+    // 1 440 px und 1 500 Notizen: offen 38,6 %, ZUGEMACHT 32,1 % — die Klappe gab
+    // 6,5 Punkte zurueck und blieb 7 Punkte ueber der Latte von 25 %. Der Knopf
+    // heisst "Hide legend"; er muss oben ebenso falten wie unten.
+    const selektor = obersteEbene(new RegExp(`\\.graph-legende\\[data-legende="zu"\\][^{]*\\.${HALTER}[^{]*\\{`));
     expect(selektor, "der Selektor nennt nicht den zugemachten Zustand").toMatch(/\[data-legende="zu"\]/);
     expect(selektor).toMatch(/\.graph-legende/);
+    expect(selektor, "die Regel haengt an einer Breite").not.toMatch(/min-width|max-width:\s*\d/);
+    // Die Ausnahme ist Teil der Regel, nicht ein zweiter Halter am Baustein: ohne
+    // `:not(.legende-bilanz)` faelle auch die Bilanz des Ausschnitts hinter die Klappe.
+    expect(selektor, "die Bilanzzeile ist nicht ausgenommen").toMatch(/:not\(\.legende-bilanz\)/);
+  });
+
+  it("verbirgt die Griffe-Zeile in derselben Regel", () => {
+    obersteEbene(new RegExp(`\\.graph-legende\\[data-legende="zu"\\][^{]*\\.${GRIFF_HALTER}\\s*\\{`));
+  });
+
+  it("haelt die Prosa-Kappe bei 440 px unberuehrt", () => {
+    // Die schmale Kappe ist eine eigne Entscheidung (Punkt 2, 19.10.) und darf von
+    // der neuen Regel nicht mitgezogen werden: sie gilt nur unter 440 px.
+    const m = /\.legende-prosa\s*\{/.exec(css);
+    expect(m, "die Prosa-Kappe fehlt").not.toBeNull();
+    const vorher = css.slice(0, m!.index);
+    const offen = (vorher.match(/\{/g) || []).length - (vorher.match(/\}/g) || []).length;
+    expect(offen, "die Prosa-Kappe steht nicht mehr in ihrer Breite").toBe(1);
+    const anfang = vorher.lastIndexOf("@media");
+    expect(css.slice(anfang, m!.index), "die Kappe gilt nicht mehr bei 440 px").toMatch(/max-width:\s*440px/);
   });
 });
