@@ -1,3 +1,26 @@
+## [3.2.101]
+
+### Fixed
+
+- **Settings remember which panel you were in.** The tab strip (AI & data / MCP · API /
+  Device Sync) kept its choice only in memory: leave the screen and come back and it sat on
+  "AI & data" again, as if nothing had been set. The panel now lives under
+  `ki_gehirn_einstellungen_tab`, which the app's own prefix rule mirrors into the encrypted
+  settings store — the same way text size survives a restart. A value that is not one of the
+  three panels (an old edit, a hand-typed key, a broken write) falls back to the first panel and
+  never opens one that does not exist.
+- **The three panel buttons name their own state.** The chosen panel was told only by colour
+  (`text-1` against `text-2`), so a magnifier, a read-aloud, or a keyboard user could not tell
+  which of the three was open. They now carry `aria-pressed`, and a case holds that the pressed
+  button is the one whose panel is showing.
+
+### Measured
+
+- Nine cases, five of them red before the change; two bite tests: taking the write out drops
+  **5 of 9**, taking `aria-pressed` out drops **3 of 9**. Restored byte-identical after each.
+- Full run: **3 220 tests, 285 files, 0 failing**; the doc guard confirms the README names this
+  number and this stand.
+
 ## [3.2.100]
 
 ### Added

@@ -535,6 +535,12 @@ const erwartet = [
   // sagt — die Felderklaerung in der Tafel und das Feld, das die Antwort ueber den Stand nennt.
   ["send [] to remove them all", 1],
   ["claims standing on this note after the write", 1],
+  // 3.2.101, EIN Koerper (Punkt 4, erste Scheibe: das Gedaechtnis des Tabs). Gegenprobe VOR dem
+  // Bau, 31.10. 01:12 von derselben Sonde: installiert 3.2.99 (49 163 952 B) **0**, gebaut 3.2.100
+  // (49 168 016 B) **0**. Die naechsteliegende Kette ist als Marke unbrauchbar und steht darum
+  // nicht hier: `aria-pressed` traegt das Objekt schon heute **26** mal (andre Schirme), ein
+  // Marker darauf schluege durch, auch ohne diesen Koerper - die >=-Semantik kennt keine Abwesenheit.
+  ["ki_gehirn_einstellungen_tab", 1],
 ];
 // Die Liste darf nur ASCII-Zeichen enthalten. Grund, gemessen 21.10. 19:16 MESZ am
 // installierten Objekt: das Wort "Looking" plus echtes U+2026 steht dort 2 mal, diese

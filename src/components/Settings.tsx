@@ -16,6 +16,7 @@ import { TRAEGER_LABELS, TRAEGER_REIHENFOLGE, THEMA_LABELS, THEMA_REIHENFOLGE, t
 import { PrivacyShield } from './PrivacyShield';
 import { ConnectApps } from './ConnectApps';
 import { useSuchPrefs, leseTreffer, normalisiereTreffer, schreibeTreffer, SUCH_PREFS_EVENT, RESULT_STOPS, SUCH_TIEFE_MIN, SUCH_TIEFE_MAX, SUCH_TIEFE_DEFAULT } from '../lib/searchPrefs';
+import { tabLesen, tabSetzen, type EinstellungenTab } from '../lib/einstellungenTab';
 
 /** Was die Import-Reparatur gefunden (Vorschau) oder getan hat (fertig). */
 type ReparaturStand = {
@@ -43,7 +44,9 @@ function beschreibeReparatur(s: ReparaturStand, fertig: boolean): string {
   return (fertig ? 'Done: ' : '') + saetze.join(' ');
 }
 
-type TabId = 'system' | 'mcp' | 'sync';
+// Die drei Schirme und ihr Gedaechtnis liegen in `../lib/einstellungenTab` — ein Tab, den die
+// Seite nicht kennt, darf weder geoffnet noch gemerkt werden.
+type TabId = EinstellungenTab;
 
 // Immer der eigene Origin — die App läuft hinter Vite-Dev wie hinter dem
 // Electron-Server auf zufälligem Port gleich mit.
@@ -140,7 +143,11 @@ function Meldung({ meldung, ort }: { meldung: { ort: string; text: string; art?:
 }
 
 export function Settings() {
-  const [activeTab, setActiveTab] = useState<TabId>('system');
+  const [activeTab, setActiveTab] = useState<TabId>(tabLesen);
+
+  // Punkt 4: der Tab merkt sich, wo die Hand war — `useState` allein verlor ihn beim naechsten
+  // Oeffnen, und die Seite lag wieder auf 'system'.
+  const waehleTab = (id: TabId) => { setActiveTab(id); tabSetzen(id); };
   const [zoom, setZoomState] = useState<number>(getZoom());
 
   const setZoom = (z: number) => { setZoomState(z); speichereZoom(z); wendeZoomAn(); };
@@ -617,21 +624,24 @@ export function Settings() {
         {/* Tabs */}
         <div className="flex gap-2 mb-8 p-1 rounded-xl hud-inset">
           <button
-            onClick={() => setActiveTab('system')}
+            onClick={() => waehleTab('system')}
+            aria-pressed={activeTab === 'system'}
             className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-lg text-sm font-medium transition-colors ${activeTab === 'system' ? 'bg-white dark:bg-zinc-800 shadow-sm' : ''}`}
             style={{ color: activeTab === 'system' ? 'var(--text-1)' : 'var(--text-2)' }}
           >
             <Cpu className="w-4 h-4" /> AI &amp; data
           </button>
           <button
-            onClick={() => setActiveTab('mcp')}
+            onClick={() => waehleTab('mcp')}
+            aria-pressed={activeTab === 'mcp'}
             className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-lg text-sm font-medium transition-colors ${activeTab === 'mcp' ? 'bg-white dark:bg-zinc-800 shadow-sm' : ''}`}
             style={{ color: activeTab === 'mcp' ? 'var(--text-1)' : 'var(--text-2)' }}
           >
             <Plug className="w-4 h-4" /> MCP / API
           </button>
           <button
-            onClick={() => setActiveTab('sync')}
+            onClick={() => waehleTab('sync')}
+            aria-pressed={activeTab === 'sync'}
             className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-lg text-sm font-medium transition-colors ${activeTab === 'sync' ? 'bg-white dark:bg-zinc-800 shadow-sm' : ''}`}
             style={{ color: activeTab === 'sync' ? 'var(--text-1)' : 'var(--text-2)' }}
           >
