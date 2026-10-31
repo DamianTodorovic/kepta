@@ -101,7 +101,7 @@ export function Sidebar({ tags, selectedTags, onSelectTag, onClearTags, currentV
                 onClick={() => onNavigate(item.id)}
                 data-active={active}
                 className={cn(
-                  "sidebar-nav-btn w-full min-h-9 flex items-center gap-2 px-3 py-2 rounded-lg text-[13.5px] text-left",
+                  "sidebar-nav-btn w-full min-h-9 flex items-center gap-2 px-3 py-2 rounded-[var(--r-btn)] text-[13.5px] text-left",
                   active ? "font-semibold" : "font-medium"
                 )}
               >
@@ -135,7 +135,7 @@ export function Sidebar({ tags, selectedTags, onSelectTag, onClearTags, currentV
                   key={name}
                   onClick={() => onSelectTag(name)}
                   data-active={active}
-                  className="sidebar-tag-btn w-full min-h-7 flex items-center gap-2 px-2 py-[5px] rounded-md text-[13px] text-left"
+                  className="sidebar-tag-btn w-full min-h-7 flex items-center gap-2 px-2 py-[5px] rounded-[var(--r-btn)] text-[13px] text-left"
                 >
                   <Hash className="seiten-ikone w-3.5 h-3.5 shrink-0" />
                   <span className="truncate flex-1">{name}</span>

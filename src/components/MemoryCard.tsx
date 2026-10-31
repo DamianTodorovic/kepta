@@ -59,11 +59,12 @@ export const MemoryCard = memo(function MemoryCard({ memory, onClick, score, mat
       className="row-entry cursor-pointer group relative"
     >
       {/* Farbstreich links: der Typ färbt den Kartenrand */}
+      {/* 4 px breit: die Kapsel malt dasselbe Bild wie 2 px, nennt aber eine Form statt eines Werts ausserhalb der Stufen */}
       {typeColor && (
         <span
           aria-hidden
           className="absolute left-0 top-3 bottom-3 w-[4px]"
-          style={{ background: `linear-gradient(180deg, ${typeColor}, color-mix(in srgb, ${typeColor} 30%, transparent))`, borderRadius: 2 }}
+          style={{ background: `linear-gradient(180deg, ${typeColor}, color-mix(in srgb, ${typeColor} 30%, transparent))`, borderRadius: 999 }}
         />
       )}
 
