@@ -571,6 +571,13 @@ const erwartet = [
   // (app.asar 49 169 712 B, 31.10. 19:44 MESZ) — alle drei dort **0**, im gebauten dist je 1.
   // Das CSS liegt minifiziert im Leib: lightningcss macht aus den zwei Regeln eine Liste und
   // schreibt `data-legende=zu` ohne Anfuehrung, also ist die Marke die Regel, nicht ihr Wort.
+  // Zwei Spuren am Schreibweg (Punkt 6, Commits 869052d und 49b9214): beide Namen stehen im
+  // Schema-Text und damit im Bund. Am **installierten** 3.2.105 gezaehlt (app.asar
+  // 49 170 164 B, mtime 20:18:03 MESZ, Griffe 00:46:31): beide **0** Treffer. Im gebauten Bund
+  // (dist-pf1/server.cjs, 23:41) je **1**. Die Marken sind die Spuren selbst, nicht ihr Plan —
+  // der Plan ist in tests/store-titel-index.test.ts und tests/store-kanten-index.test.ts gehalten.
+  ["idx_memories_title", 1],
+  ["idx_relations_memory", 1],
   ["hud-label tnum legende-zustand legende-bilanz", 1],
   [":not(.legende-bilanz)", 1],
   [".legende-griffe{display:none}", 1],

@@ -174,8 +174,9 @@ export function importMarkdownFile(
   opts.zeit?.("lesen");
   const { record, created } = store.upsertMemory(input);
   opts.zeit?.("einsetzen");
-  indexMemory(store, record.id);
-  opts.zeit?.("index");
+  // Die Index-Arbeit markt sich selbst, in ihren zwei Teilen: chunksetzen und
+  // begriffekanten. Eine Sammelmarke "index" waere die Summe ohne Antwort.
+  indexMemory(store, record.id, opts.zeit);
 
   // Wiki-Links → Entitäten; Notiz-Titel referenziert die Link-Ziele
   const links = [...content.matchAll(/\[\[([^[\]]{2,80})\]\]/g)].map((m) => m[1]!.split("|")[0]!.trim().toLowerCase()).filter(Boolean);

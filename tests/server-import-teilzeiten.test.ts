@@ -73,7 +73,7 @@ afterAll(async () => {
   fs.rmSync(wurzel, { recursive: true, force: true });
 });
 
-const MARKEN = ["lesen", "einsetzen", "index", "verknuepfen", "gesamt"];
+const MARKEN = ["lesen", "einsetzen", "chunksetzen", "begriffekanten", "verknuepfen", "gesamt"];
 
 describe("Punkt 6: der Schreibweg nennt, was in ihm steckt", () => {
   it("POST /api/import/markdown traegt den Teilzeit-Kopf mit seinen Marken", async () => {
@@ -120,7 +120,7 @@ describe("Punkt 6: der Schreibweg nennt, was in ihm steckt", () => {
       method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ files: saat(200) }),
     });
     const werte = kopfZerlegen(ant.headers.get("x-kepta-teilzeiten") || "");
-    const phasen = (werte.lesen ?? 0) + (werte.einsetzen ?? 0) + (werte.index ?? 0) + (werte.verknuepfen ?? 0);
+    const phasen = MARKEN.filter((m) => m !== "gesamt").reduce((s, m) => s + (werte[m] ?? 0), 0);
     expect(phasen, `die vier Phasen decken nur ${phasen.toFixed(2)} von ${werte.gesamt.toFixed(2)} ms: ${JSON.stringify(werte)}`)
       .toBeGreaterThanOrEqual(werte.gesamt * 0.5);
     expect(phasen, `der Batch von 200 Notizen kostet nur ${phasen.toFixed(2)} ms Arbeit — da wurde nichts zusammengezogen`)

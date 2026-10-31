@@ -610,11 +610,16 @@ export async function searchMemories(store: KeptaStore, params: SearchParams): P
 // ---------- Lifecycle: Chunking + optional Embedding on write ----------
 
 /** Nach create/update aufrufen: zerlegt Content in Chunks; Embedding lauft asynchron via Queue. */
-export function indexMemory(store: KeptaStore, memoryId: string): void {
+export function indexMemory(store: KeptaStore, memoryId: string, zeit?: (marke: string) => void): void {
   const record = store.getMemory(memoryId);
   if (!record) return;
   const texts = [`${record.title}\n${record.tags.join(", ")}`, ...chunkText(record.content)];
   store.replaceChunks(memoryId, texts);
+  // Punkt 6: die Phase "index" war die letzte, die mit dem Bestand mitwuchs, und sie sind
+  // zwei Arbeiten — die Brocken der Notiz neu setzen und ihre Begrifskanten. Getrennt
+  // gemessen 31.10. 23:2x, weil ein Urteil ueber eine zusammengefasste Zahl ein geratenes
+  // Urteil ist.
+  zeit?.("chunksetzen");
   // Verknuepfen gehoert zum Indexieren, nicht zu einem einzelnen Schreibweg. Der
   // Scanner, die Inbox und die Importe haben bisher nur indiziert — ihre Notizen
   // standen darum im Graphen als Blatt ohne Kante (13.10.: 14.702 Notizen, 30
@@ -622,6 +627,7 @@ export function indexMemory(store: KeptaStore, memoryId: string): void {
   // dieselbe Notiz zweimal indiziert, bekommt dieselben Kanten ein zweites Mal
   // nicht dazu.
   store.verknuepfeNotiz(memoryId, record.title, []);
+  zeit?.("begriffekanten");
 }
 
 // ---------- Konsolidierung ----------

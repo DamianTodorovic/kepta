@@ -411,6 +411,13 @@ export class KeptaStore {
       );
       CREATE INDEX IF NOT EXISTS idx_relations_source ON relations(source_id);
       CREATE INDEX IF NOT EXISTS idx_relations_target ON relations(target_id);
+      CREATE INDEX IF NOT EXISTS idx_relations_memory ON relations(memory_id);
+      -- Die Frage einer Notiz nach IHREN Kanten (Punkt 6, 31.10.): verknuepfeNotiz stellt
+      -- sie pro geschriebener Notiz, und ohne diese Spur war der Plan "SCAN relations" —
+      -- die ganze Kantentabelle fuer eine Notiz. Erklaerplan gemessen 23:3x MESZ vor dem
+      -- Index: SCAN relations. Die Teilzeiten des Schreibwegs sagten dasselbe in Zahlen:
+      -- begriffekanten 311,95 -> 1 378,13 ms, waehrend chunksetzen flach blieb (62,75 ->
+      -- 82,07 ms) -- eine Phase, die mit dem Bestand mitlaeuft, nicht mit der Arbeit.
     `);
 
     // FTS5 über externe Tabelle, via Trigger synchron gehalten
