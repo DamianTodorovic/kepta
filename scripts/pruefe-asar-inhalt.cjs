@@ -541,6 +541,13 @@ const erwartet = [
   // nicht hier: `aria-pressed` traegt das Objekt schon heute **26** mal (andre Schirme), ein
   // Marker darauf schluege durch, auch ohne diesen Koerper - die >=-Semantik kennt keine Abwesenheit.
   ["ki_gehirn_einstellungen_tab", 1],
+  // 3.2.102, KEINE Marke — und das ist ein Befund, keine Luecke (dasselbe Gesetz wie am 27.10.
+  // an der Tafel): dieser Koerper aendert eine Rechnung, kein Wort. Die einzige neue Kette im
+  // Quelltext ("matches \u00b7 show all") traegt einen Mittel-Punkt, den der latin1-Griff
+  // zerlegt — ein Nicht-ASCII-Marker ist hier ein Dauer-Null, also abbrechen statt pruefen.
+  // Beweis sind stattdessen die sechs Faelle (drei davon vor dem Bau rot, ein Biss laesst drei
+  // fallen) und der Weg durch das echte Fenster (`scripts/pruefe-einstellungen-im-fenster.mjs`,
+  // Zyklus "treffer"): Stufe 5 -> fuenf Zeilen, Reload, wieder fuenf.
 ];
 // Die Liste darf nur ASCII-Zeichen enthalten. Grund, gemessen 21.10. 19:16 MESZ am
 // installierten Objekt: das Wort "Looking" plus echtes U+2026 steht dort 2 mal, diese

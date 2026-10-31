@@ -965,7 +965,14 @@ export function Dashboard() {
       const q = debouncedSearchQuery.trim();
       if (q.length >= 2) {
         if (effectiveScored.length > 0) {
-          return durchGruppenFilter(effectiveScored.map(r => r.memory), effectiveScored);
+          // Punkt 4: die Trefferstufe kantt die ANZEIGE. Die Anfrage bleibt tief
+          // (`anfrageLimit`, Zeile 517 — sonst fielen Kandidaten aus der Rangfolge), aber was
+          // dasteht, ist die Zahl, die der Regler sagt. Gemessen 31.10. 11:28 im echten Fenster:
+          // Stufe 5, Titel "Showing at most 5 hits", Liste 16 Zeilen. Der Rueckweg ueber die
+          // Kappe ist die Auskunft darunter ("5 of 16 matches · show all"), die serverTotal
+          // braucht — die gibt es nur in diesem Zweig, darum kappt er auch nur hier.
+          const gekappt = effectiveScored.length > effectiveLimit ? effectiveScored.slice(0, effectiveLimit) : effectiveScored;
+          return durchGruppenFilter(gekappt.map(r => r.memory), gekappt);
         }
         return durchGruppenFilter([] as Memory[], [] as ScoredMemory[]);
       }

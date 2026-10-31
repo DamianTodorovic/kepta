@@ -35,7 +35,6 @@
 import { spawn } from "node:child_process";
 import crypto from "node:crypto";
 import fs from "node:fs";
-import os from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { createRequire } from "node:module";
@@ -52,12 +51,15 @@ const PORT = 3601;
 const CDP_PORT = 3611;
 const BASIS = `http://127.0.0.1:${PORT}`;
 const ARBEIT = "/tmp/kepta-fenster";
+// Gegen welches Objekt die Bytes gehalten werden: vor dem Tausch ist das der gebaute Leib unter
+// `release/mac-arm64`, danach das installierte Stueck. Beides sind ausgelieferte Bytes — nur der
+// Moment der Landung unterscheidet sie.
+const OBJEKT = ARG("gegen", "/Applications/K3PTA.app/Contents/Resources/app.asar");
 const BRADE = "/Applications/Brave Browser.app/Contents/MacOS/Brave Browser";
 
 let server = null;
 let brave = null;
 let ende = null;
-const zeilen = [];
 let fehl = 0;
 function urteil(name, echt, erwartet) {
   const ok = JSON.stringify(echt) === JSON.stringify(erwartet);
@@ -113,6 +115,7 @@ async function knopf(cdp, muster) {
 }
 
 async function main() {
+  if (!fs.existsSync(OBJEKT)) { console.log("Kein Objekt unter " + OBJEKT); process.exit(2); }
   if (!fs.existsSync(BRADE)) { console.log("Kein Brave unter " + BRADE + " — der Pruefer braucht einen echten Viewport."); process.exit(2); }
   try { if ((await fetch(`${BASIS}/api/health`)).ok) { console.log(`Port ${PORT} hoert schon — fremder Diener, Abbruch.`); process.exit(2); } } catch { /* frei */ }
 
@@ -125,7 +128,6 @@ async function main() {
   // 1) Die Bytes, die ich fahre, sind die des installierten Objekts.
   const forderer = createRequire(path.join(WURZEL, "package.json"));
   const asar = forderer("@electron/asar");
-  const objektPfad = "/Applications/K3PTA.app/Contents/Resources/app.asar";
   const hash = (b) => crypto.createHash("sha256").update(b).digest("hex").slice(0, 16);
   const stuecke = ["index.html", "assets/index-CxpGa2va.js", "assets/index-CTwHozHf.css", "server.cjs", "mcp-server.cjs"];
   let gleich = 0;
@@ -133,7 +135,7 @@ async function main() {
     const repo = path.join(WURZEL, "dist", f);
     if (!fs.existsSync(repo)) { console.log("  FEHLT im Repo-Bundel: " + f); continue; }
     let ausDemObjekt;
-    try { ausDemObjekt = asar.extractFile(objektPfad, "dist/" + f); } catch { console.log("  FEHLT im Objekt: " + f); continue; }
+    try { ausDemObjekt = asar.extractFile(OBJEKT, "dist/" + f); } catch { console.log("  FEHLT im Objekt: " + f); continue; }
     if (hash(ausDemObjekt) === hash(fs.readFileSync(repo))) gleich++;
     else console.log(`  ANDERS  ${f}: repo ${hash(fs.readFileSync(repo))} / objekt ${hash(ausDemObjekt)}`);
   }
@@ -191,6 +193,40 @@ async function main() {
     const s = await cdp.send("Page.captureScreenshot", { format: "png" });
     fs.writeFileSync(path.join(ARBEIT, "bilder", name), Buffer.from(s.data, "base64"));
     return path.join(ARBEIT, "bilder", name);
+  };
+
+  // --- Die Saat: eine Suche ohne Notizen ist keine Pruefung, sondern ein leerer Blatt.
+  //     Dieselbe Route, die der Kosten-Laeufer nimmt (`POST /api/import/markdown`), ein
+  //     eigner kleiner Korpus: dreissig Notizen, die all das Wort "Fristenkontrolle"
+  //     fuehren — genug, damit eine Trefferzahl eine Stufe ist und nicht ein Zufall.
+  const SAAT = 30;
+  if (NUR === "" || NUR === "suche" || NUR === "treffer") {
+    const dateien = Array.from({ length: SAAT }, (_, i) => {
+      const n = String(i + 1).padStart(4, "0");
+      return {
+        name: `Saat/${n}.md`,
+        content: ["---", `kepta_id: fenster-${n}`, `title: "Fristenkontrolle ${n}"`, "tags: [saat]",
+          "type: semantic", "---", "", `Die Fristenkontrolle ${n} haelt die Frist mit [[Fristenkontrolle]] und [[Kasse ${i % 5}]].`].join("\n"),
+      };
+    });
+    const ant = await fetch(`${BASIS}/api/import/markdown`, {
+      method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ files: dateien }),
+    });
+    urteil("die Saat geht durch die echte Import-Tuer", ant.ok, true);
+    const gez = await warteBis(async () => { const h = await (await fetch(`${BASIS}/api/health`)).json(); return h.count >= SAAT ? h.count : null; }, { maxMs: 90000, schritt: 700 });
+    urteil("der Bestand zaehlt die Saat", Number(gez) >= SAAT, true);
+    console.log(`  Bestand nach der Saat: ${gez}`);
+  }
+
+  const zeileZurKnowledge = async () => { await knopf(cdp, "^\\s*(Knowledge|Wissen)\\s*$"); await warteBis(async () => (await evaliere(cdp, `!!document.querySelector('input[aria-label="Search your memory"]')`) ? true : null), { maxMs: 20000 }); };
+  const suchZeilen = async (wort) => {
+    await zeileZurKnowledge();
+    const r = await evaliere(cdp, `(async()=>{const e=document.querySelector('input[aria-label="Search your memory"]');if(!e)return -1;
+      const set=Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype,'value').set;
+      set.call(e,${JSON.stringify(wort)});e.dispatchEvent(new Event('input',{bubbles:true}));
+      await new Promise(r=>setTimeout(r,2600));
+      return { zeilen: document.querySelectorAll('.row-entry').length, grund: (document.querySelector('[data-testid="begruendung"]')?.textContent||'').slice(0,60) };})()`);
+    return r;
   };
 
   // --- Zyklus A: der Tab, der sein Gedaechtnis verlieren würde -------------------------------
@@ -256,6 +292,72 @@ async function main() {
     urteil("und zurueck auf 100 ist der Zoom wieder einer", await evaliere(cdp, `(()=>{const z=getComputedStyle(document.body).zoom;return z==="1"||z==="normal"})()`), true);
   }
 
+  // --- Zyklus C: die drei Spuren, Wert und Trefferzahl ---------------------------------------
+  //     Hausform fuer diese drei Werte ist '1' / '0' (src/lib/searchPrefs.ts:52-54), nicht
+  //     "true"/"false" — ein Pruefer, der die Wortform des Lesers erfindet, schlägt gegen die
+  //     eigne Erwartung, nicht gegen die App. Gefunden 31.10. beim ersten Lauf.
+  if (NUR === "" || NUR === "suche") {
+    const grund = await suchZeilen("Fristenkontrolle");
+    urteil("mit allen Spuren findet die Flaeche etwas", grund.zeilen > 0, true);
+    const alleAus = async () => {
+      await steuere();
+      return evaliere(cdp, `(()=>{const a=['Track BM25','Track Vectors','Track Graph'].map(n=>document.querySelector('input[aria-label="'+n+'"]'));
+        a.forEach(e=>{if(e&&e.checked)e.click()});return a.map(e=>e?!e.checked:null)})()`);
+    };
+    const aus = await alleAus();
+    urteil("alle drei Spuren sind aus", aus, [true, true, true]);
+    await schlafe(900);
+    const ohne = await suchZeilen("Fristenkontrolle");
+    console.log(`  Zeilen: alle Spuren an -> ${grund.zeilen}, alle drei aus -> ${ohne.zeilen}`);
+    urteil("**ohne jede Spur findet die Flaeche nichts**", ohne.zeilen, 0);
+    await cdp.send("Page.reload", { ignoreCache: true });
+    await warteBis(async () => ((await evaliere(cdp, `document.querySelectorAll('button').length`)) > 0 ? true : null), { maxMs: 90000 });
+    await evaliere(cdp, `(()=>{const b=[...document.querySelectorAll('button')].find(x=>/later/i.test(x.textContent||''));if(b)b.click();})()`);
+    const gespeichert = await evaliere(cdp, `['ki_gehirn_spur_bm25','ki_gehirn_spur_vektor','ki_gehirn_spur_graph'].map(k=>localStorage.getItem(k))`);
+    urteil("**nach dem Neuladen stehen alle drei noch auf aus**", gespeichert, ["0", "0", "0"]);
+    urteil("und die Flaeche findet weiterhin nichts", (await suchZeilen("Fristenkontrolle")).zeilen, 0);
+    await steuere();
+    await evaliere(cdp, `(()=>{const e=document.querySelector('input[aria-label="Track BM25"]');if(e&&!e.checked)e.click();})()`);
+    await schlafe(900);
+    const wieder = await suchZeilen("Fristenkontrolle");
+    urteil("die eine Spur wieder an, und die Liste füllt sich", wieder.zeilen > 0, true);
+    console.log(`  Zeilen mit nur BM25: ${wieder.zeilen}`);
+    console.log("  Bild: " + await bild("spuren-nur-bm25.png"));
+  }
+
+  // --- Zyklus D: die Trefferstufe, ihr Wert und ihre Kappe ---------------------------------
+  //     Vor dem Schnitt 3.2.102 war das gemessen und falsch: Stufe 5, Titel "Showing at most 5
+  //     hits", Liste 16 Zeilen (eigne Kapsel, 30 gesaete Notizen, 31.10. 11:28). Jetzt verlangt
+  //     der Zyklus die Zahl, die der Regler sagt, und den Rueckweg, der sie wieder oeffnet.
+  if (NUR === "" || NUR === "treffer") {
+    const grund = await suchZeilen("Fristenkontrolle");
+    await steuere();
+    const stufe = async (index) => evaliere(cdp, `(()=>{const e=document.querySelector('input[aria-label="Results shown"]');if(!e)return null;
+      const set=Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype,'value').set;set.call(e,${index});
+      e.dispatchEvent(new Event('input',{bubbles:true}));e.dispatchEvent(new Event('change',{bubbles:true}));return e.value})()`);
+    urteil("die Trefferzahl-Stufe ist da", await stufe(0), "0");
+    await schlafe(900);
+    const wenig = await suchZeilen("Fristenkontrolle");
+    console.log(`  Zeilen: ohne Kappe ${grund.zeilen}, auf Stufe 5 ${wenig.zeilen}`);
+    urteil("**auf Stufe 5 zeigt die Liste fuenf, nicht was die Tuer bringt**", wenig.zeilen, 5);
+    urteil("und die Liste nennt ihren Rueckweg", /of .* matches/.test(wenig.grund || "") || (await evaliere(cdp, `(()=>[...document.querySelectorAll('button')].some(b=>/show all/i.test(b.textContent||'')))()`)), true);
+    console.log("  Bild: " + await bild("trefferstufe-5.png"));
+    await steuere();
+    urteil("die letzte Stufe heisst alles", await stufe(6), "6");
+    await schlafe(900);
+    const alles = await suchZeilen("Fristenkontrolle");
+    urteil("und die Liste zeigt wieder alles", alles.zeilen, grund.zeilen);
+    await cdp.send("Page.reload", { ignoreCache: true });
+    await warteBis(async () => ((await evaliere(cdp, `document.querySelectorAll('button').length`)) > 0 ? true : null), { maxMs: 90000 });
+    await evaliere(cdp, `(()=>{const b=[...document.querySelectorAll('button')].find(x=>/later/i.test(x.textContent||''));if(b)b.click();})()`);
+    urteil("**nach dem Neuladen steht die Stufe noch auf alles**", await evaliere(cdp, `localStorage.getItem('ki_gehirn_topK')`), "0");
+    urteil("und die Liste zeigt dieselbe Zahl", (await suchZeilen("Fristenkontrolle")).zeilen, alles.zeilen);
+    await steuere();
+    await stufe(0);
+    await schlafe(900);
+    urteil("wieder auf 5, greift die Kappe erneut", (await suchZeilen("Fristenkontrolle")).zeilen, 5);
+  }
+
   console.log(fehl ? `  ${fehl} Pruefung(en) fehlgeschlagen` : "  alle Zyklen durch: Wert gesetzt, Fenster neu geladen, Wirkung gesehen");
   return fehl ? 1 : 0;
 }
@@ -288,7 +390,7 @@ function raeumen() {
   } catch { /* Bilder sind Beweis, nicht Bedingung */ }
   // Der Browser haelt Profile-Dateien noch offen, wenn sein Kind gerade getoetet
   // wurde — also zweimal versuchen und danach sagen, was wirklich weg ist.
-  for (const _ of [0, 1, 2]) {
+  for (let versuch = 0; versuch < 3; versuch += 1) {
     try { fs.rmSync(ARBEIT, { recursive: true, force: true, maxRetries: 4, retryDelay: 250 }); } catch { /* noch */ }
     if (!fs.existsSync(ARBEIT)) break;
     const bis = Date.now() + 900;

@@ -1,3 +1,23 @@
+## [3.2.102]
+
+### Fixed
+
+- **"Results shown" now caps the list, not just the request.** The control said "Showing at most
+  5 hits" while the list stood at sixteen. Measured in a real window on a seeded base (30 notes,
+  query "Fristenkontrolle", own capsule, 31.10. 11:28): step 5 → 16 rows, step 10 → 16, step 20 →
+  20, step 50 → 30. The request stays deep on purpose — the engine is asked for at least the
+  search depth, so ranking keeps its candidates — but what stands in the list is now the number
+  the control names, and the line under it says where the rest went: "5 of 16 matches · show all".
+  Clicking that lifts the cap and moves the control to its last step.
+- The cap applies to the ranked (semantic) branch only. Without semantic search there is no
+  server total, so there would be no way back from a cap — hiding notes behind a control with no
+  exit is worse than the mismatch it fixes. A case holds that boundary.
+
+### Measured
+
+- Six cases, three of them red before the change; a bite test (cap removed) drops **3 of 6**.
+  Neighbours: 8 Dashboard/search files, **108 cases, 0 red**. `tsc --noEmit` exit 0.
+
 ## [3.2.101]
 
 ### Fixed
