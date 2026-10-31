@@ -639,6 +639,52 @@ async function main() {
     console.log(`  Bild: ${await bild("radien-flaechen.png")}`);
   }
 
+  // --- Zyklus K: die KI-Verbindung, und ob sie ohne lokalen Speicher wiederkehrt ------------
+  if (NUR === "" || NUR === "ki") {
+    // Der Zensus 31.10. fand genau einen Speicher-Schluessel OHNE Hauspraefix: `aiVerbindung`
+    // (src/lib/ai.ts:218). Er faellt durch `gehoertUns`, wird aber auf eigne Weise gespiegelt —
+    // unter `ai_connection` in den verschluesselten Datenordner (src/lib/ai.ts:232, 462, 567).
+    // Behaupten kann das nur ein Fenster, dem man den lokalen Speicher WEGNIMMT: der Zufalls-Port
+    // der App macht jeden Neustart zu einem frischen Ursprung, und nur der Spiegel ueberlebt ihn.
+    await steuere();
+    await evaliere(cdp, `(()=>{const b=[...document.querySelectorAll('button')].find(x=>/later/i.test(x.textContent||''));if(b)b.click();})()`);
+    await schlafe(700);
+    // Die Felder wohnen auf dem ERSTEN Schirm (`src/components/Settings.tsx:808` und :822 liegen
+    // im Block `activeTab === 'system'`, Zeile 654 bis 1195), nicht unter "MCP / API" — das Bild
+    // des ersten Laufs zeigte dort nur die Apps zum Verbinden.
+    await knopf(cdp, "AI & data");
+    const schreibeFeld = (selektor, wert) => evaliere(cdp, `(()=>{const e=document.querySelector(${JSON.stringify(selektor)});
+      if(!e)return null;const set=Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype,'value').set;
+      set.call(e,${JSON.stringify(wert)});e.dispatchEvent(new Event('input',{bubbles:true}));return e.value})()`);
+    const ADRESSE = "http://127.0.0.1:4711/v1";
+    const MODELL = "sonden-modell-k1";
+    urteil(" das Adressfeld nimmt die Eingabe an", await schreibeFeld('input[placeholder="https://api.example.com/v1"]', ADRESSE), ADRESSE);
+    urteil(" das Modellfeld nimmt die Eingabe an", await schreibeFeld('input[placeholder="e.g. gpt-4o-mini"]', MODELL), MODELL);
+    // Tippen allein genuegt nicht: `update` (Settings.tsx:428) setzt nur React-Zustand, die
+    // Spiegelung beginnt erst beim Absenden des Formulars (:462, Knopf "Save" bei :868). Ohne
+    // diesen Klick meldete der Schenkel drei Ausfaelle, die der Pruefer sich selbst machte.
+    const gespeichert = await knopf(cdp, "^\\s*Save\\s*$");
+    urteil(" der Knopf zum Sichern steht am Schirm", gespeichert !== null, true);
+    await schlafe(2500);
+    const sitzung = await evaliere(cdp, `localStorage.getItem('aiVerbindung')`);
+    urteil(" die Sitzung traegt beide Werte", typeof sitzung === "string"
+      && sitzung.includes(ADRESSE) && sitzung.includes(MODELL), true);
+    // Jetzt der eigentliche Test: der lokale Speicher wird geleert, als waere das Fenster ein
+    // frischer Ursprung. Was dann zurueckkommt, kann nur aus dem Datenordner kommen.
+    await evaliere(cdp, `localStorage.removeItem('aiVerbindung'); localStorage.removeItem('ki_gehirn_ai_settings'); 'geraeumt'`);
+    await cdp.send("Page.reload", { ignoreCache: true });
+    await warteBis(async () => ((await evaliere(cdp, `document.querySelectorAll('button').length`)) > 0 ? true : null), { maxMs: 90000 });
+    await evaliere(cdp, `(()=>{const b=[...document.querySelectorAll('button')].find(x=>/later/i.test(x.textContent||''));if(b)b.click();})()`);
+    await steuere();
+    await knopf(cdp, "AI & data");
+    await schlafe(1200);
+    const gelesen = await evaliere(cdp, `(()=>({adresse:(document.querySelector('input[placeholder="https://api.example.com/v1"]')||{}).value||'',
+      modell:(document.querySelector('input[placeholder="e.g. gpt-4o-mini"]')||{}).value||''}))()`);
+    urteil("**ohne lokalen Speicher kommt die Adresse aus dem Spiegel**", gelesen.adresse, ADRESSE);
+    urteil("**und das Modell auch**", gelesen.modell, MODELL);
+    console.log(`  Bild: ${await bild("ki-verbindung-aus-spiegel.png")}`);
+  }
+
   console.log(fehl ? `  ${fehl} Pruefung(en) fehlgeschlagen` : "  alle Zyklen durch: Wert gesetzt, Fenster neu geladen, Wirkung gesehen");
   return fehl ? 1 : 0;
 }
