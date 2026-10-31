@@ -235,13 +235,21 @@ async function main() {
   }
 
   const zeileZurKnowledge = async () => { await knopf(cdp, "^\\s*(Knowledge|Wissen)\\s*$"); await warteBis(async () => (await evaliere(cdp, `!!document.querySelector('input[aria-label="Search your memory"]')`) ? true : null), { maxMs: 20000 }); };
+  const stufe = async (index) => evaliere(cdp, `(()=>{const e=document.querySelector('input[aria-label="Results shown"]');if(!e)return null;
+    const set=Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype,'value').set;set.call(e,${index});
+    e.dispatchEvent(new Event('input',{bubbles:true}));e.dispatchEvent(new Event('change',{bubbles:true}));return e.value})()`);
   const suchZeilen = async (wort) => {
     await zeileZurKnowledge();
     const r = await evaliere(cdp, `(async()=>{const e=document.querySelector('input[aria-label="Search your memory"]');if(!e)return -1;
       const set=Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype,'value').set;
       set.call(e,${JSON.stringify(wort)});e.dispatchEvent(new Event('input',{bubbles:true}));
       await new Promise(r=>setTimeout(r,2600));
-      return { zeilen: document.querySelectorAll('.row-entry').length, grund: (document.querySelector('[data-testid="begruendung"]')?.textContent||'').slice(0,60) };})()`);
+      // Der Treffer-Streifen ist kein .chip und kein testid-Knoten — gelesen wird nach dem
+      // Wort, nicht nach dem Behaelter. (Im Template-Literal stehen zwei Backslashes, sonst
+      // wird aus \\d ein d und der Griff findet nie eine Zahl.)
+      const streifen=[...document.querySelectorAll('*')].filter(e=>e.childElementCount===0)
+        .map(e=>(e.textContent||'').trim()).find(t=>/^\\d+( of \\d+)? hits?$/i.test(t))||'';
+      return { zeilen: document.querySelectorAll('.row-entry').length, grund: streifen.slice(0,60) };})()`);
     return r;
   };
 
@@ -348,9 +356,6 @@ async function main() {
   if (NUR === "" || NUR === "treffer") {
     const grund = await suchZeilen("Fristenkontrolle");
     await steuere();
-    const stufe = async (index) => evaliere(cdp, `(()=>{const e=document.querySelector('input[aria-label="Results shown"]');if(!e)return null;
-      const set=Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype,'value').set;set.call(e,${index});
-      e.dispatchEvent(new Event('input',{bubbles:true}));e.dispatchEvent(new Event('change',{bubbles:true}));return e.value})()`);
     urteil("die Trefferzahl-Stufe ist da", await stufe(0), "0");
     await schlafe(900);
     const wenig = await suchZeilen("Fristenkontrolle");
@@ -377,6 +382,70 @@ async function main() {
     await stufe(0);
     await schlafe(900);
     urteil("wieder auf 5, greift die Kappe erneut", (await suchZeilen("Fristenkontrolle")).zeilen, 5);
+  }
+
+  // --- Zyklus E: die Suchtiefe, und was sie wirklich bestellt --------------------------------
+  //     Die Tiefe hebt nur die BESTELLUNG an (`anfrageLimit = max(Stufe, Tiefe)`), die Anzeige
+  //     bleibt bei der Stufe. Beides zusammen ist die Behauptung — gemessen 13:12: "5 of 30
+  //     hits" bei Tiefe 5, "30 hits" bei Tiefe 32, und in beiden Faellen fuenf Karten.
+  if (NUR === "" || NUR === "tiefe") {
+    const tiefe = async (wert) => evaliere(cdp, `(()=>{const e=document.querySelector('input[aria-label="Search depth (top-k)"]');if(!e)return null;
+      const set=Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype,'value').set;set.call(e,'${wert}');
+      e.dispatchEvent(new Event('input',{bubbles:true}));e.dispatchEvent(new Event('change',{bubbles:true}));return e.value})()`);
+    await steuere();
+    await stufe(0);
+    await schlafe(900);
+    urteil("die Tiefe geht auf den kleinsten Wert", await tiefe(5), "5");
+    await schlafe(900);
+    const duenn = await suchZeilen("Fristenkontrolle");
+    await steuere();
+    urteil("und auf den groessten", await tiefe(32), "32");
+    await schlafe(900);
+    const dick = await suchZeilen("Fristenkontrolle");
+    console.log(`  Tiefe 5: "${duenn.grund}" / ${duenn.zeilen} Karten — Tiefe 32: "${dick.grund}" / ${dick.zeilen} Karten`);
+    urteil("**die Tiefe aendert, was die Tuer bringt**", / of 30 hits$/.test(duenn.grund) && /^30 hits$/.test(dick.grund), true);
+    urteil("**die Kappe der Stufe haelt bei beiden**", [duenn.zeilen, dick.zeilen], [5, 5]);
+    await cdp.send("Page.reload", { ignoreCache: true });
+    await warteBis(async () => ((await evaliere(cdp, `document.querySelectorAll('button').length`)) > 0 ? true : null), { maxMs: 90000 });
+    urteil("**nach dem Neuladen steht die Tiefe noch auf 32**", await evaliere(cdp, `localStorage.getItem('ki_gehirn_such_tiefe')`), "32");
+  }
+
+  // --- Zyklus F: das Schild vor der Agenten-Lesung, an der echten Agenten-Tuer ---------------
+  //     Hauswort des Schalters: er verbirgt Kennwoerter, Kartennummern, IBANs und Passwoerter
+  //     vor KI-Apps — Namen, E-Mails und Telefonnummern bleiben sichtbar. Eine Probe mit einer
+  //     E-Mail schlage also gegen das Papier, nicht gegen die Flaeche.
+  if (NUR === "" || NUR === "schild") {
+    const geheim = "Zahlungsplan Alpha: IBAN DE89 3704 0044 0532 0130 00, password: Hunter2!x";
+    const angelegt = await fetch(`${BASIS}/api/memory`, {
+      method: "POST", headers: { "content-type": "application/json" },
+      body: JSON.stringify({ title: "Zahlungsplan Alpha", content: geheim, tags: ["schild-probe"], type: "semantic" }),
+    });
+    urteil("die Probe-Notiz liegt im Bestand der Kapsel", angelegt.ok, true);
+    const lies = async () => {
+      const r = await fetch(`${BASIS}/api/mcp/search`, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ query: "Zahlungsplan Alpha", limit: 5 }) });
+      const satz = JSON.stringify(await r.json());
+      return { iban: /DE89 3704/.test(satz), pw: /Hunter2/.test(satz), maske: /\[IBAN-\d\]|\[SECRET-\d\]/.test(satz) };
+    };
+    const gesichert = await lies();
+    console.log(`  mit Schild: IBAN=${gesichert.iban} Kennwort=${gesichert.pw} Maske=${gesichert.maske}`);
+    urteil("**mit Schild bringt die Agenten-Tuer keine IBAN**", gesichert.iban, false);
+    urteil("**und kein Kennwort**", gesichert.pw, false);
+    urteil("dafuer steht die Maske im Leib", gesichert.maske, true);
+    await steuere();
+    await evaliere(cdp, `(()=>{const e=document.querySelector('button[role="switch"][aria-label="Hide secrets from AI apps"]');if(e)e.click()})()`);
+    await schlafe(1400);
+    urteil("der Schalter geht aus", await evaliere(cdp, `(()=>{const e=document.querySelector('button[role="switch"][aria-label="Hide secrets from AI apps"]');return e?e.getAttribute('aria-checked'):null})()`), "false");
+    const nackt = await lies();
+    console.log(`  ohne Schild: IBAN=${nackt.iban} Kennwort=${nackt.pw} Maske=${nackt.maske}`);
+    urteil("**ohne Schild bringt die Agenten-Tuer die echte IBAN**", nackt.iban, true);
+    await cdp.send("Page.reload", { ignoreCache: true });
+    await warteBis(async () => ((await evaliere(cdp, `document.querySelectorAll('button').length`)) > 0 ? true : null), { maxMs: 90000 });
+    urteil("**nach dem Neuladen steht das Schild noch aus**", (await (await fetch(`${BASIS}/api/shield`)).json()).apps, false);
+    await steuere();
+    await evaliere(cdp, `(()=>{const e=document.querySelector('button[role="switch"][aria-label="Hide secrets from AI apps"]');if(e&&e.getAttribute('aria-checked')!=='true')e.click()})()`);
+    await schlafe(1400);
+    urteil("und wieder an, ist die IBAN wieder verdeckt", (await lies()).iban, false);
+    console.log("  Bild: " + await bild("schild-agenten-tuer.png"));
   }
 
   console.log(fehl ? `  ${fehl} Pruefung(en) fehlgeschlagen` : "  alle Zyklen durch: Wert gesetzt, Fenster neu geladen, Wirkung gesehen");
