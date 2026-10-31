@@ -953,7 +953,9 @@ label:has(.switch), label:has(input[type="checkbox"]), label:has(input[type="rad
 .graph-time::-webkit-slider-runnable-track,
 .graph-regler::-webkit-slider-runnable-track {
   height: 2px;
-  border-radius: 2px;
+  /* Die Kapsel, nicht 2 px: bei 2 px Hohe klemmt der Browser jeden groesseren Wert auf
+     1 px — dasselbe Bild, aber ein Wert, den die Stufenordnung kennt. */
+  border-radius: 999px;
   background: linear-gradient(90deg, var(--accent-soft-2), var(--border-strong));
 }
 .graph-time::-webkit-slider-thumb,
@@ -971,7 +973,7 @@ label:has(.switch), label:has(input[type="checkbox"]), label:has(input[type="rad
 .graph-time::-webkit-slider-thumb:hover,
 .graph-regler::-webkit-slider-thumb:hover { transform: scale(1.18); }
 .graph-time::-moz-range-track,
-.graph-regler::-moz-range-track { height: 2px; border-radius: 2px; background: var(--border-strong); }
+.graph-regler::-moz-range-track { height: 2px; border-radius: 999px; background: var(--border-strong); }
 .graph-time::-moz-range-thumb,
 .graph-regler::-moz-range-thumb {
   width: 13px;
@@ -1039,7 +1041,7 @@ label:has(.switch), label:has(input[type="checkbox"]), label:has(input[type="rad
   display: inline-flex;
   align-items: center;
   padding: 1px 6px;
-  border-radius: 4px;
+  border-radius: var(--r-chip);
   font-family: var(--font-mono);
   font-size: var(--fs-1);
   background: var(--bg-inset);
@@ -1322,7 +1324,7 @@ svg[aria-hidden="true"] { min-block-size: var(--icon-min); min-inline-size: var(
   color: var(--text-2);
   padding: 4px 8px;
   border: 1px solid var(--border-subtle);
-  border-radius: 4px;
+  border-radius: var(--r-chip);
   background: var(--bg-inset);
   cursor: inherit;
 }
@@ -1333,7 +1335,7 @@ button.row-quiet { cursor: pointer; border-color: var(--kante-kontrolle); }
   letter-spacing: 0.08em;
   padding: 2px 7px;
   border: 1.5px solid;
-  border-radius: 3px;
+  border-radius: var(--r-badge);
   background: transparent;
 }
 .row-meta {
@@ -1365,7 +1367,7 @@ button.row-quiet { cursor: pointer; border-color: var(--kante-kontrolle); }
 }
 .apple-seg-btn {
   padding: 4px 12px;
-  border-radius: 7px;
+  border-radius: var(--r-btn);
   border: 0;
   background: transparent;
   color: var(--text-2);
