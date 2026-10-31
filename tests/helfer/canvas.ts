@@ -15,6 +15,11 @@ export interface Aufruf {
   args: unknown[];
 }
 
+let wurfGrund: string | null = null;
+
+/** Laesst die naechsten `toDataURL`-Rufe werfen — der befleckte Fall der echten Leinwand. */
+export function lassLeinwandWerfen(grund: string | null): void { wurfGrund = grund; }
+
 export interface Leinwand {
   aufrufe: Aufruf[];
   /** Alle Aufrufe einer Art. */
@@ -122,6 +127,19 @@ export function installiereLeinwand(): Leinwand {
        `ctx.canvas.dataset` ab, und mit null brach das Bild mitten im Malen ab. */
     ctx.canvas = element ?? null;
     return ctx as unknown as CanvasRenderingContext2D;
+  };
+
+  // `toDataURL` fehlt in jsdom ganz (ein Wurf "not implemented"), und der Bildexport der
+  // Graph-Flaeche haengt daran. Die Attrappe tut, was der echte Browser tut: sie liefert eine
+  // Datenkette, in der die Groesse der Leinwand steckt — ein Test kann also lesen, WELCHES Bild
+  // herauskaeme — und sie kann werfen, wie eine befleckte Leinwand wirft.
+  (HTMLCanvasElement.prototype as unknown as Record<string, unknown>).toDataURL = function (
+    this: HTMLCanvasElement,
+    typ?: string
+  ) {
+    if (wurfGrund) throw new Error(wurfGrund);
+    const mass = `${this.width}x${this.height}`;
+    return `data:${typ || "image/png"};base64,${Buffer.from(mass).toString("base64")}`;
   };
 
   // Jede Leinwand bekommt ihren eigenen Kontext, alle schreiben in dieselbe Liste.

@@ -4,7 +4,7 @@ import { Memory } from "../types";
 import { existsAt, graphTimeRange, activeIdsAt, edgeVisibleAt, istStruktur, fensterOffen, type Gueltigkeit } from "../lib/graphTime";
 // Atom2 / Sitemap / Scatter / Network sind hier weg: die Ansichts-Schiene trägt
 // jetzt Worte statt Bilder, und der Aehnlichkeits-Schalter seinen Punkt (Z-07).
-import { Search, Maximize2, ZoomIn, ZoomOut, Clock, ChevronRight, SlidersHorizontal } from "../lib/icons";
+import { Search, Maximize2, ZoomIn, ZoomOut, Clock, ChevronRight, SlidersHorizontal, Download } from "../lib/icons";
 import {
   kantenBaue,
   createSimulation,
@@ -5538,6 +5538,34 @@ export function KnowledgeGraph({ memories: memoriesAusFenster, onSelectMemory, o
       title="An exact moment — the scale never runs past today"
     />
   );
+  // --- Punkt 9: das Bild des Graphen herausgeben ---------------------------------------------
+  // Die Flaeche haelt ihr Bild selbst: der Graph malt auf einer Leinwand, und eine Leinwand kann
+  // ihr eignes PNG herausgeben. Ein zweiter Weg (Screenshot des Fensters) haette das Rand des
+  // Programms mitgenommen — Knopfe, Leiste, Legende — und genau das will niemand zeigen.
+  const [bildMeldung, setBildMeldung] = useState<string | null>(null);
+  const bildExport = () => {
+    setBildMeldung(null);
+    const leinwand = canvasRef.current;
+    if (!leinwand) return;
+    let kette: string;
+    try {
+      kette = leinwand.toDataURL("image/png");
+    } catch {
+      // Eine Leinwand mit fremden Pixeln (ein Bild von einem andern Ursprung) darf der Browser
+      // nicht herausgeben. Ohne diese Zeile bliebe der Klick stumm.
+      setBildMeldung("The browser would not give up this image — nothing was downloaded.");
+      return;
+    }
+    const a = document.createElement("a");
+    a.href = kette;
+    a.download = `k3pta-graph-${new Date().toISOString().slice(0, 10)}.png`;
+    // Ins Dokument haengen, ausloesen, abhaengen: ohne den ersten Schritt sieht kein Leser (und
+    // kein Test) welches Bild angeboten wurde, und ohne den letzten bliebe ein Knoten stehen.
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+  };
+
   const zoomReihe = (
     <div className="flex items-center gap-1 shrink-0">
       <span className="hud-label tnum hidden md:inline-block mr-1" title="Current zoom">
@@ -5547,6 +5575,17 @@ export function KnowledgeGraph({ memories: memoriesAusFenster, onSelectMemory, o
       <button onClick={() => zoom(0.8)} className="btn-ghost p-2 rounded-lg" title="Zoom out"><ZoomOut className="w-4 h-4" /></button>
       {/* .hud-label setzt --text-2; das Wort soll --text-1 tragen wie das Symbol daneben. */}
       <button data-testid="graph-fit" onClick={fitView} className="btn-ghost p-2 rounded-lg inline-flex items-center gap-1" title={fitTitel(kameraBodenRef.current)}><Maximize2 className="w-4 h-4" /><span className="hud-label" style={{ color: "var(--text-1)" }}>Fit</span></button>
+      <button
+        data-testid="graph-export"
+        onClick={bildExport}
+        className="btn-ghost p-2 rounded-lg inline-flex items-center gap-1"
+        title="Save the graph as a PNG image"
+      >
+        <Download className="w-4 h-4" /><span className="hud-label" style={{ color: "var(--text-1)" }}>Export</span>
+      </button>
+      {bildMeldung && (
+        <span role="alert" className="hud-label text-[11px] whitespace-nowrap" style={{ color: "var(--warn)" }}>{bildMeldung}</span>
+      )}
       {angeheftet > 0 && (
         <button
           onClick={loeseAlle}

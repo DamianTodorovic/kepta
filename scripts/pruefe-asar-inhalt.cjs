@@ -544,6 +544,10 @@ const erwartet = [
   // verbieten kann, wird seine Abwesenheit von Hand gegen den gebauten Leib gemessen und im
   // BELEG genannt (31.10., 3.2.103): `ki_gehirn_einstellungen_tab` muss dort 0 Treffer tragen.
   ["kepta_einstellungen_tab", 1],
+  // Punkt 9: der Graph gibt sein Bild heraus (Knopf "Export" an der Zoom-Reihe). Gegenprobe VOR
+  // dem Bau, 31.10. 17:40:30 am installierten 3.2.103 (49 168 813 B): diese Kette dort **0**, des-
+  // gleichen `graph-export`. Beide Ketten sind ASCII und kommen nur von dieser Bewegung vor.
+  ["Save the graph as a PNG image", 1],
   // Nachtrag 31.10., Punkt 2: die zwei Seitenleisten-Reihen (Seiten-Knopf und Schlagwort) ziehen
   // die Kontrollstufe als Utility, und die Farbplatte der Notizkarte wird zur Kapsel. Gegenprobe
   // VOR dem Bau, 31.10. 16:39:30 am installierten 3.2.103 (49 168 813 B): diese Kette dort **0** —
