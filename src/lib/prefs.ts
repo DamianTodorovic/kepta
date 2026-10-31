@@ -4,6 +4,11 @@
 // DB (/api/settings, Schlüssel „ui_prefs") überlebt den Neustart; beim Start
 // füllt die Hydration FEHLENDE Keys aus der Spiegelung — vorhandene bleiben
 // unangetastet, frischere lokale Entscheidungen gewinnen.
+// Welche der beiden Spiegelungen zuerst fuellt, ist eine Reihenfolge, keine Laune:
+// main.tsx:11 holt die Einzelzeilen aus settings.json vor dem ersten Rendern, diese hier
+// spaeter (Dashboard.tsx:210). Was beide kennen, entscheidet die erste; die zweite kann
+// nur noch Luecken fuellen — und das ist gewollt, denn beide zusammen ueberleben auch
+// eine Umgebung, in der die Huelle um localStorage nicht installiert werden konnte.
 export const PREF_KEYS = [
   'kepta_scan_wunsch',
   'ki_gehirn_adaptive_profile',
