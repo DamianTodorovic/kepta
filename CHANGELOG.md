@@ -1,3 +1,26 @@
+## [3.2.103]
+
+### Fixed
+
+- **The settings tab you left open stays open across a restart — and its key now carries the
+  house prefix.** 3.2.101 introduced a stored key named `ki_gehirn_einstellungen_tab`, after the
+  old workspace prefix. The prefix rule mirrors both families into the encrypted store, so nothing
+  was broken; the name was just the one tell that the settings layer grew out of a differently
+  named project. It is now `kepta_einstellungen_tab`, and the value is carried over: the first
+  read on a machine that stored the old name moves the value up, deletes the old key from
+  localStorage *and* from the mirrored row, so the next start cannot fetch it back. A junk value
+  under the old name is discarded rather than migrated; a value already set under the new name
+  wins. Eighteen cases in `tests/components/settings-tab-gedechtnis.test.tsx`, nine of which fail
+  with the carry-over switched off.
+- **Nine literal border radii are on the scale now.** `.kbd`, `.row-quiet`, `.row-stamp`,
+  `.apple-seg-btn` already held a step value (4/4/3/7 px) without naming it; the two slider tracks
+  are capsules (`999px`), which is what 2 px rendered as anyway at 2 px height. Three moved a
+  real pixel: the date field in the graph panel 8 → 7 px so it reads as the button family beside
+  it, the loading bars 6 → 7 px onto the control step, and the segmented control's shell 10 →
+  12 px, which is its own geometry (7 px button + 4 px padding + 1 px border). The design guard
+  lost its tolerance entry: a tenth hand-written radius now turns it red, verified by injecting
+  `border-radius: 5px` and watching the count go 0 → 1 → red.
+
 ## [3.2.102]
 
 ### Fixed

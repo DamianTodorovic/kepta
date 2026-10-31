@@ -276,7 +276,7 @@ async function main() {
     urteil("der Klick oeffnet die Geraete-Sync", schirm, "Device Sync");
     urteil("die Sync-Abfrage ist wirklich zu sehen", Boolean(await syncOffen()), true);
     console.log("  Bild: " + await bild("vor-dem-neuladen.png"));
-    urteil("der Wert liegt im Speicher", await evaliere(cdp, `localStorage.getItem('ki_gehirn_einstellungen_tab')`), "sync");
+    urteil("der Wert liegt im Speicher", await evaliere(cdp, `localStorage.getItem('kepta_einstellungen_tab')`), "sync");
 
     await cdp.send("Page.reload", { ignoreCache: true });
     await warteBis(async () => ((await evaliere(cdp, `document.querySelectorAll('button').length`)) > 0 ? true : null), { maxMs: 90000 });
@@ -286,12 +286,27 @@ async function main() {
     urteil("und die Abfrage ist wieder gemalt", Boolean(await syncOffen()), true);
     console.log("  Bild: " + await bild("nach-dem-neuladen.png"));
 
-    await knopf(cdp, "AI & data");
+    await knopf(cdp, "MCP / API");
     await cdp.send("Page.reload", { ignoreCache: true });
     await warteBis(async () => ((await evaliere(cdp, `document.querySelectorAll('button').length`)) > 0 ? true : null), { maxMs: 90000 });
     await evaliere(cdp, `(()=>{const b=[...document.querySelectorAll('button')].find(x=>/later/i.test(x.textContent||''));if(b)b.click();})()`);
     await steuere();
-    urteil("ein Zurueckklick wird ebenso gemerkt", await panelNam(), "AI & data");
+    // Nicht "AI & data" zurueckklicken: der Grundwert ist derselbe Schirm, die Auskunft waer
+    // gruen, auch wenn nirgends etwas stuende — ein Fall, der nie verlieren kann. Der mittlere
+    // Schirm ist der, den nur das Gedaechtnis holen kann.
+    urteil("ein Klick auf den mittleren Schirm wird ebenso gemerkt", await panelNam(), "MCP / API");
+
+    // Der Uebertrag vom alten Namen. Eine Installation, die vor 3.2.103 lief, hat den Wert unter
+    // `ki_gehirn_einstellungen_tab` liegen; ohne Uebertrag fiele sie auf den Anfang zurueck.
+    await evaliere(cdp, `localStorage.setItem('ki_gehirn_einstellungen_tab','sync'); localStorage.removeItem('kepta_einstellungen_tab'); 'gesetzt'`);
+    await cdp.send("Page.reload", { ignoreCache: true });
+    await warteBis(async () => ((await evaliere(cdp, `document.querySelectorAll('button').length`)) > 0 ? true : null), { maxMs: 90000 });
+    await evaliere(cdp, `(()=>{const b=[...document.querySelectorAll('button')].find(x=>/later/i.test(x.textContent||''));if(b)b.click();})()`);
+    await steuere();
+    urteil("**der alte Name hebt den Wert herueber**", await panelNam(), "Device Sync");
+    urteil("und der neue Name traegt ihn", await evaliere(cdp, `localStorage.getItem('kepta_einstellungen_tab')`), "sync");
+    urteil("**der alte Name ist danach leer — im Browser**", await evaliere(cdp, `localStorage.getItem('ki_gehirn_einstellungen_tab')`), null);
+    console.log("  Bild: " + await bild("uebertrag-alter-name.png"));
   }
 
   // --- Zyklus B: die Textgroesse, Wert und Wirkung -------------------------------------------

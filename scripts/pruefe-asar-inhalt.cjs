@@ -535,12 +535,15 @@ const erwartet = [
   // sagt — die Felderklaerung in der Tafel und das Feld, das die Antwort ueber den Stand nennt.
   ["send [] to remove them all", 1],
   ["claims standing on this note after the write", 1],
-  // 3.2.101, EIN Koerper (Punkt 4, erste Scheibe: das Gedaechtnis des Tabs). Gegenprobe VOR dem
-  // Bau, 31.10. 01:12 von derselben Sonde: installiert 3.2.99 (49 163 952 B) **0**, gebaut 3.2.100
-  // (49 168 016 B) **0**. Die naechsteliegende Kette ist als Marke unbrauchbar und steht darum
-  // nicht hier: `aria-pressed` traegt das Objekt schon heute **26** mal (andre Schirme), ein
-  // Marker darauf schluege durch, auch ohne diesen Koerper - die >=-Semantik kennt keine Abwesenheit.
-  ["ki_gehirn_einstellungen_tab", 1],
+  // 3.2.101, EIN Koerper (Punkt 4, erste Scheibe: das Gedaechtnis des Tabs), in 3.2.103 auf den
+  // Hauspraefix umbenannt. Gegenprobe VOR dem Bau, 31.10. 01:12 von derselben Sonde: installiert
+  // 3.2.99 (49 163 952 B) **0**, gebaut 3.2.100 (49 168 016 B) **0**. Die naechstliegende Kette
+  // ist als Marke unbrauchbar und steht darum nicht hier: `aria-pressed` traegt das Objekt schon
+  // heute **26** mal (andre Schirme), ein Marker darauf schluege durch, auch ohne diesen Koerper -
+  // die >=-Semantik kennt keine Abwesenheit. Weil die >=-Semantik auch den alten Namen nicht
+  // verbieten kann, wird seine Abwesenheit von Hand gegen den gebauten Leib gemessen und im
+  // BELEG genannt (31.10., 3.2.103): `ki_gehirn_einstellungen_tab` muss dort 0 Treffer tragen.
+  ["kepta_einstellungen_tab", 1],
   // 3.2.102, KEINE Marke — und das ist ein Befund, keine Luecke (dasselbe Gesetz wie am 27.10.
   // an der Tafel): dieser Koerper aendert eine Rechnung, kein Wort. Die einzige neue Kette im
   // Quelltext ("matches \u00b7 show all") traegt einen Mittel-Punkt, den der latin1-Griff
