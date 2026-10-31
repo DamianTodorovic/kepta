@@ -304,6 +304,22 @@ export class KeptaStore {
       -- Schreibungen 0,259 ms je Zeile ohne Index, 0,286 ms mit — +0,027 ms (10,4 %),
       -- ueber den vollen Bestand 21 066 also rund +0,57 s, verteilt ueber den Lauf.
       CREATE INDEX IF NOT EXISTS idx_memories_deleted_updated ON memories(deleted_at, updated_at DESC, rid);
+      -- Titel-Spur (Punkt 6, 31.10.): der Import sucht je neue Notiz ihren Titel in
+      -- findByTitle, und ohne diese Spur nimmt der Plan idx_memories_deleted_updated —
+      -- bei deleted_at IS NULL also fast alle Zeilen des Bestands, sortiert nach
+      -- updated_at. Gemessen am Schreibweg (6 000 Notizen in Brocken zu 500, eigne Kapsel,
+      -- Vektorspur aus, 23:09 MESZ): die Phase lesen laeuft von 40,34 ms auf 590,94 ms
+      -- hoch, waehrend einsetzen flach bleibt (211,20 -> 217,34). Der Index kehrt das um:
+      -- Titel ist die Gleichheit, deleted_at die Filterzeile, rid haelt den Sturz bei
+      -- doppeltem Titel eindeutig.
+      -- (Kein Backtick in diesem Kommentar: er steht in einem Template-Literal, und ein
+      -- Backtick dort schliesst die Zeichenkette — gemessen 23:14 an diesem Blatt.)
+      -- Die Sortierzeile bleibt in der Spur: ohne updated_at DESC im Index gewinnt
+      -- idx_memories_deleted_updated, weil er den Sortierbaum spart. Plan gemessen
+      -- 23:16 MESZ vor dem zweiten Versuch: SEARCH memories USING INDEX
+      -- idx_memories_deleted_updated (deleted_at=?) — die Gleichheit auf dem Titel
+      -- wurde nie gesucht.
+      CREATE INDEX IF NOT EXISTS idx_memories_title ON memories(title, deleted_at, updated_at DESC, rid);
       -- Standfolge (BAU-P3-11, 24.10.): der Text VOR einer Aenderung, damit ein Mensch
       -- zurueckgehen kann. Bewusst eine eigene Tabelle statt einer zweiten Zeile in
       -- 'memories': die Notiz bleibt eine Notiz, ihre Suche und ihr Graph aendern sich nicht.

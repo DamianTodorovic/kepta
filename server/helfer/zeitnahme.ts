@@ -12,10 +12,15 @@ export function zeitnahme() {
   let bisher = start;
   const marken: Array<[string, number]> = [];
   const ms = (von: bigint, bis: bigint) => Math.round(Number(bis - von) / 1e3) / 1000;
-  /** ms je Marke, zuzueglich "gesamt" seit dem Aufruf von zeitnahme() */
+  /** ms je Marke, zuzueglich "gesamt" seit dem Aufruf von zeitnahme().
+   *  Mehrere Marken mit demselben Namen werden ZUSAMMENGEZOGEN, nicht ueberschrieben:
+   *  der Schreibweg markt pro Notiz ("lesen", "einsetzen", "index", "verknuepfen"), und
+   *  ein Objekt, das den letzten Wert behaelt, meldet die Zeit EINES Dateisatzes als die
+   *  Zeit des ganzen Batches — gemessen 31.10. 23:04 an 500 Notizen, wo "lesen" mit 0,12
+   *  aus dem Kopf kam, waehrend "gesamt" 829,82 nannte. */
   const abschnitte = (): Record<string, number> => {
     const out: Record<string, number> = {};
-    for (const [name, wert] of marken) out[name] = wert;
+    for (const [name, wert] of marken) out[name] = (out[name] || 0) + wert;
     out.gesamt = ms(start, process.hrtime.bigint());
     return out;
   };

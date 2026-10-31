@@ -112,6 +112,21 @@ describe("Punkt 6: der Schreibweg nennt, was in ihm steckt", () => {
       .toBeGreaterThanOrEqual(Math.max(...MARKEN.map((m) => werte[m] ?? 0)) - 0.05);
   });
 
+  it("die vier Phasen decken die ganze Zeit — keine Marke verschwindet im Objekt", async () => {
+    // Der Fall, der den alten Fehler gefangen haette: die Stoppuhr schrieb je Namen EINE
+    // Zahl. Bei 500 Notizen mit je vier Marken blieb die letzte stehen, und der Kopf meldete
+    // "lesen=1.28" zu "gesamt=2515.10" — ein Anteil von 0,05 % fuer das Parsen eines Batches.
+    const ant = await fetch(`${URLE}/api/import/markdown`, {
+      method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ files: saat(200) }),
+    });
+    const werte = kopfZerlegen(ant.headers.get("x-kepta-teilzeiten") || "");
+    const phasen = (werte.lesen ?? 0) + (werte.einsetzen ?? 0) + (werte.index ?? 0) + (werte.verknuepfen ?? 0);
+    expect(phasen, `die vier Phasen decken nur ${phasen.toFixed(2)} von ${werte.gesamt.toFixed(2)} ms: ${JSON.stringify(werte)}`)
+      .toBeGreaterThanOrEqual(werte.gesamt * 0.5);
+    expect(phasen, `der Batch von 200 Notizen kostet nur ${phasen.toFixed(2)} ms Arbeit — da wurde nichts zusammengezogen`)
+      .toBeGreaterThan(50);
+  });
+
   it("Gegenfall: die Gesundheitstuer traegt ihre eignen Marken, nicht die des Imports", async () => {
     const ant = await fetch(`${URLE}/api/health`);
     const kopf = ant.headers.get("x-kepta-teilzeiten") || "";
