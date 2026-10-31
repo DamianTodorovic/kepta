@@ -311,6 +311,14 @@ async function main() {
 
   // --- Zyklus B: die Textgroesse, Wert und Wirkung -------------------------------------------
   if (NUR === "" || NUR === "groesse") {
+    // eigne Vorbedingung: der Regler liegt im System-Schirm (`src/components/Settings.tsx:654`
+    // bis :1195), und der vorherige Schenkel laesst die Flaeche auf einem andern Schirm stehen.
+    // Ein Zyklus, der den Schirm seines Vorgaengers erbt, schlaegt fehl, sobald jemand die
+    // Reihenfolge aendert — gemessen 31.10. 15:40 am installierten 3.2.103, wo der neue
+    // Uebertrag-Schenkel auf "Device Sync" endete und fuenf Pruefungen dieser Zyklus' ins Leere
+    // griffen. Also: erst den Schirm ziehen und pruefen, dass er offen ist.
+    await knopf(cdp, "AI & data");
+    urteil("Vorbedingung: der System-Schirm ist offen", await panelNam(), "AI & data");
     // Die Groehne der Wirkung ist nicht die Grundgroesse des Dokuments: `wendeZoomAn`
     // (src/lib/uiText.ts:105-113) setzt `document.body.style.zoom` und die Gegenbreite,
     // nicht `html { font-size }`. Ein Pruefen auf 16px waehre ein Fall, der nie verlieren
@@ -533,6 +541,27 @@ async function main() {
     await knopf(cdp, "Device Sync");
     urteil("**und die Passphrase ueberlebt den Neuladen nicht — sie wird nirgends gehalten**",
       await evaliere(cdp, `(()=>{const e=document.querySelector('input[placeholder^="At least"]');return e?(e.value||''):null})()`), "");
+  }
+
+  // --- Zyklus I: die Radien, gemessen im echten Blatt ----------------------------------------
+  if (NUR === "" || NUR === "radius") {
+    // Die Design-Wache rechnet Token gegen Token in `src/index.css`; was der Browser malt, sieht
+    // sie nicht. Seit 31.10. stehen neun wuertzliche Radien auf den Stufen, drei davon ruecken
+    // wirkliche Pixel — ihr Beweis ist darum eine Messung am Leib, nicht die gruene Wache.
+    // Die zwei Reglerschienen bleiben hier unerreichbar: `::-webkit-slider-runnable-track` ist
+    // kein Knoten, und einen Pseudo-Griff kennt dieser Weg nicht — ihre Gleichheit ist gerechnet
+    // (2 px Koerper, jede Rundung klemmt auf 1 px), nicht gemessen, und steht so im Papier.
+    await knopf(cdp, "Graph");
+    await warteBis(async () => ((await evaliere(cdp, `document.querySelectorAll('.apple-seg').length`)) > 0 ? true : null), { maxMs: 90000 });
+    const mass = await evaliere(cdp, `(()=>{const m=(s)=>{const e=document.querySelector(s);
+      return e ? getComputedStyle(e).borderTopLeftRadius : "fehlt"};
+      return { datum: m('.graph-datum'), huille: m('.apple-seg'), knopf: m('.apple-seg-btn'),
+               kbd: m('.kbd'), quiet: m('.row-quiet'), stamp: m('.row-stamp'), skeleton: m('.skeleton') };})()`);
+    console.log("  gemessene Rundungen im Graph-Blatt: " + JSON.stringify(mass));
+    urteil("**das Datumsfeld malt die Kontrollstufe (7 px)**", mass.datum, "7px");
+    urteil("**die Segmenthuille malt die Kartentufe (12 px)**", mass.huille, "12px");
+    urteil("der Segmentknopf malt die Kontrollstufe", mass.knopf, "7px");
+    console.log(`  Bild: ${await bild("radien-graph-panel.png")}`);
   }
 
   console.log(fehl ? `  ${fehl} Pruefung(en) fehlgeschlagen` : "  alle Zyklen durch: Wert gesetzt, Fenster neu geladen, Wirkung gesehen");
