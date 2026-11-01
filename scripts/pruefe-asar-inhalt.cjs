@@ -576,6 +576,11 @@ const erwartet = [
   // 49 170 164 B, mtime 20:18:03 MESZ, Griffe 00:46:31): beide **0** Treffer. Im gebauten Bund
   // (dist-pf1/server.cjs, 23:41) je **1**. Die Marken sind die Spuren selbst, nicht ihr Plan —
   // der Plan ist in tests/store-titel-index.test.ts und tests/store-kanten-index.test.ts gehalten.
+  // Punkt 2, 1.11. (die Rundungsskala am Token gezogen, nicht an 247 Klassenstellen geflickt):
+  // die Marke liegt im minifizierten CSS des Leibs. Im gebauten dist-p2 gezaehlt (2 Asset-Dateien,
+  // index-Dqq3qlNs.css): **1**. Gegen das installierte 3.2.105 (app.asar 49 170 164 B) gezaehlt:
+  // **0** — also eine Marke auf diesen Stand und nicht auf einen, der sie schon trug.
+  ["--radius-lg:var(--r-btn)", 1],
   ["idx_memories_title", 1],
   ["idx_relations_memory", 1],
   ["hud-label tnum legende-zustand legende-bilanz", 1],

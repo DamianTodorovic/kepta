@@ -78,6 +78,77 @@ describe("Token-Form in src/index.css", () => {
     expect((css.match(/outline:\s*2px solid var\(--fokus\)/g) ?? []).length).toBeGreaterThanOrEqual(2);
   });
 
+  // Punkt 2, 1.11. — die Rundung. Der Zensus 31.10. im echten Fenster meldete 12 Namen und
+  // 137 Stellen ausserhalb der Hausstufen, und der Zensus zaehlt gemalte Pixel, keine
+  // Klassennamen. Die Klassen kommen aus Tailwards Vorrat (rounded-lg ist dort 8 px), und
+  // bis hierher prüfte nur die Wache, was in index.css steht — nie, was eine Utility zieht.
+  // Darum leitet dieser Fall den Vorrat aus dem Paket selbst ab und fragt jede Klasse,
+  // die ein Bausteil ruft, nach ihrem Aufloesungswert. Ein neuer Name, den das Haus nicht
+  // kennt, faellt hier — nicht erst im Browser.
+  it("zieht jede gerufene Tailwind-Rundung auf eine Hausstufe", () => {
+    const stufen = new Set(
+      ["--r-panel", "--r-card", "--r-btn", "--r-chip", "--r-badge"].map((n) => {
+        const wert = dekl(block(":root"), n)[0];
+        expect(wert, `${n} fehlt in index.css`).toBeTruthy();
+        return parseFloat(wert!);
+      })
+    );
+    // Tailwards eigener Vorrat, nicht abgeschrieben, sondern nachgelesen.
+    const vorrat = fs.readFileSync(path.join(process.cwd(), "node_modules/tailwindcss/theme.css"), "utf8");
+    const basis = new Map<string, number>();
+    for (const m of vorrat.matchAll(/^\s*--radius-([a-z0-9]+):\s*([\d.]+)rem/gm)) {
+      basis.set(m[1], Math.round(parseFloat(m[2]) * 16 * 1000) / 1000);
+    }
+    expect(basis.size, "der Rundungsvorrat ist nicht zu lesen").toBeGreaterThanOrEqual(6);
+    // Was das Haus ueberschreibt, gilt; der Wert darf ein Haus-Token sein oder eine Zahl.
+    for (const m of block("@theme").join("\n").matchAll(/--radius-([a-z0-9]+):\s*([^;]+);/g)) {
+      const roh = m[2].trim();
+      const haus = roh.match(/^var\((--r-[a-z-]+)\)$/);
+      if (haus) {
+        const wert = dekl(block(":root"), haus[1])[0];
+        expect(wert, `${m[1]} zeigt auf ein Token ohne Wert: ${haus[1]}`).toBeTruthy();
+        basis.set(m[1], parseFloat(wert!));
+      } else {
+        basis.set(m[1], parseFloat(roh));
+      }
+    }
+    // Jede gerufene Utility, ueber alle Bausteine und Seiten.
+    const dateien: string[] = [];
+    for (const wurzel of ["src/components", "src/pages", "src/ui", "src/App.tsx"]) {
+      const p = path.join(process.cwd(), wurzel);
+      if (!fs.existsSync(p)) continue;
+      if (fs.statSync(p).isFile()) { dateien.push(p); continue; }
+      for (const f of fs.readdirSync(p, { recursive: true })) {
+        const voll = path.join(p, String(f));
+        if (/\.(tsx|ts)$/.test(String(f)) && fs.statSync(voll).isFile()) dateien.push(voll);
+      }
+    }
+    const rufer = new Map<string, string>();
+    for (const voll of dateien) {
+      const kurz = path.relative(process.cwd(), voll);
+      const quelltext = fs.readFileSync(voll, "utf8");
+      for (const m of quelltext.matchAll(/rounded-([a-z0-9]+|\[[\d.]+px\])/g)) {
+        if (!rufer.has(m[1])) rufer.set(m[1], `${kurz}:${quelltext.slice(0, m.index).split("\n").length}`);
+      }
+    }
+    expect([...rufer.keys()].sort(), "es ruft keine einzige Rundung").not.toHaveLength(0);
+    // Zwei Namen kennt der Browser ohne Vorrat: none ist 0, full die Kapsel.
+    const erlaubt = new Map<string, number>([...basis, ["none", 0], ["full", 9999]]);
+    const fremd: string[] = [];
+    for (const [name, wo] of rufer) {
+      if (name.startsWith("[")) {
+        const px = parseFloat(name.slice(1, -1));
+        if (!stufen.has(px)) fremd.push(`${name} (${px} px) in ${wo}`);
+        continue;
+      }
+      const px = erlaubt.get(name);
+      if (px === undefined) { fremd.push(`${name} (kein Vorrat) in ${wo}`); continue; }
+      if (px >= 100 || stufen.has(px)) continue;
+      fremd.push(`${name} (${px} px) in ${wo}`);
+    }
+    expect(fremd, `Rundungen ausserhalb der Hausstufen: ${fremd.join(" | ")}`).toEqual([]);
+  });
+
   it("hat keine Referenz auf einen nicht existierenden Token", () => {
     const definiert = new Set((css.match(/^\s*(--[\w-]+):/gm) ?? []).map((s) => s.trim().slice(0, -1)));
     const benutzt = (css.match(/var\(\s*(--[\w-]+)\s*[,)]/g) ?? []).map((s) => s.replace(/var\(\s*/, "").slice(0, -1));

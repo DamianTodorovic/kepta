@@ -1,3 +1,26 @@
+## [3.2.106]
+
+### Fixed
+
+- **Every corner the components ask for is now a house step.** The corner scale lived twice: the
+  design system kept five steps (3 / 4 / 7 / 12 / 14 px) and Tailwind shipped its own (4 / 6 / 8 /
+  12 / 16 px), and 247 call sites reached for Tailwind's names. Measured in a real window (31.10.,
+  against the delivered 3.2.104) the result was 12 corner values outside the ladder at 137 places —
+  the two largest sitters 30 places each at 6 px and at 8 px, next to the house step of 7 px.
+  The scale is drawn once, in the theme block: `md` and `lg` both take the control step (they are
+  only ever called on buttons, chips and plaquettes, where 6 against 8 was a guess and not a step),
+  `2xl` takes the panel step, and `sm` and `xl` are tied to their tokens so a package update cannot
+  move an edge in secret. A new test reads Tailwind's own table out of the installed package and
+  refuses any corner class that resolves off the ladder — including bracket values like
+  `rounded-[5px]` — so a fourteenth value cannot be introduced by typing a class name.
+- **A note asking for its own relations no longer walks the whole relation table.** The edge
+  lookup ran without an index on `relations(memory_id)`; at a store of 5 500 notes one import
+  batch measured 2 509 ms before the index and 990 ms after, 11 946 → 29 856 notes per minute,
+  confirmed by a second run. The title lookup of the same path got its own index for the same
+  reason, and the write path now reports its partial times (read, insert, index, link, total)
+  in both the response header and the body — where those marks previously overwrote each
+  other instead of adding up.
+
 ## [3.2.105]
 
 ### Fixed

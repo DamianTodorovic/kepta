@@ -7,6 +7,23 @@
 @theme {
   --default-transition-duration: var(--dur);
   --default-transition-timing-function: var(--ease-apple);
+
+  /* Punkt 2, 1.11. — die Rundung der Bauteile. Tailwind bringt einen eignen Vorrat mit
+     (sm 4, md 6, lg 8, xl 12, 2xl 16 px), und seine Namen werden gerufen: 247 Klassenstellen in
+     src/components und src/pages, davon 175 unter lg, md und 2xl. Im echten Fenster gemessen
+     31.10. am ausgelieferten 3.2.104: 12 Namen und 137 Stellen ausserhalb der Hausstufen.
+     Die Skala wird hier gesetzt, nicht an 175 Stellen geflickt — was ein Bauteil ruft, ist dann
+     die Hausstufe, und ein Name, den das Haus nicht kennt, faellt im Test
+     (tests/design-tokens.test.ts:88, der den Vorrat aus dem Paket selbst liest).
+     md und lg ziehen auf die Kontrollstufe: beide rufen Knopfe, Chips und Plaaketten, und
+     6 gegen 8 px war nie eine Stufe, sondern ein Raten. sm und xl standen schon auf ihrem
+     Wert (4 = die Chip-Stufe, 12 = die Kartentufe) und werden gefesselt, damit ein
+     Paket-Update die Kante nicht heimlich verschiebt. */
+  --radius-sm: var(--r-chip);
+  --radius-md: var(--r-btn);
+  --radius-lg: var(--r-btn);
+  --radius-xl: var(--r-card);
+  --radius-2xl: var(--r-panel);
 }
 
 @variant dark (&:where(.dark, .dark *));
