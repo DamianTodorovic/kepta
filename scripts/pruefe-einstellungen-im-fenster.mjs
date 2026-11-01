@@ -231,8 +231,14 @@ async function main() {
   //     Dieselbe Route, die der Kosten-Laeufer nimmt (`POST /api/import/markdown`), ein
   //     eigner kleiner Korpus: dreissig Notizen, die all das Wort "Fristenkontrolle"
   //     fuehren — genug, damit eine Trefferzahl eine Stufe ist und nicht ein Zufall.
+  //     1.11., eigener Fehler gezogen: der Rundungs-Zensus (`radien`) stand in dieser Liste
+  //     nicht, weil er juenger ist als die Liste. Allein gerufen sass er darum auf einem
+  //     leeren Bestand — gemessen 01:41: 113 gemalte Rundungen je Flaeche gegen 243 bis 256
+  //     im gefuellten Stand vom 31.10. Eine Zahl, die auf der leeren Flaeche 0 Stellen meldet,
+  //     ist kein Beweis ueber die gefuellte. Also auch `radien` in die Liste.
   const SAAT = Number(ARG("saat", 30));
-  if (NUR === "" || NUR === "suche" || NUR === "treffer" || NUR === "bild" || NUR === "radius") {
+  if (NUR === "" || NUR === "suche" || NUR === "treffer" || NUR === "bild" || NUR === "radius"
+    || NUR === "radien") {
     const dateien = Array.from({ length: SAAT }, (_, i) => {
       const n = String(i + 1).padStart(4, "0");
       // Zwei Daten im Kuvert, nicht eine: die Flaeche haelt ihr Datumsfeld nur, wo die Saat
@@ -651,8 +657,18 @@ async function main() {
     // dem Fenster, die Klicks gingen ins Leere, und `knopf()`'s Antwort wurde weggeworfen. Darum
     // jetzt: Assistent weg, jeder Klick wird nachgefuert, und jede Flaeche meldet ihren Kopf —
     // zwei Flaechen mit demselben Kopf sind keine zwei Flaechen.
+    // Vorbedingung, jetzt benannt (eigner Fehler, gemessen 1.11. 01:41 und 01:47): der Zensus
+    // sass auf einem Fenster, das die Saat nicht kannte. Die Tuer zaehlte 30, die Leiste "0 entries",
+    // und die vier Karten-Flaechen malten 100 Rundungen statt der 243 vom 31.10. — eine Zahl, die
+    // auf der leeren Flaeche "0 Stellen ausserhalb der Stufen" meldet, ist kein Beweis ueber die
+    // gefuellte. Darum: neu laden, dann erst messen (dieselbe Lehre wie Zyklus I), und die Saat
+    // wird im Blatt verlangt, nicht in der Tuer.
+    await cdp.send("Page.reload", { ignoreCache: true });
+    await warteBis(async () => ((await evaliere(cdp, `document.querySelectorAll('button').length`)) > 0 ? true : null), { maxMs: 90000 });
     await evaliere(cdp, `(()=>{const b=[...document.querySelectorAll('button')].find(x=>/later|skip|ueberspringen/i.test(x.textContent||''));if(b)b.click();})()`);
     await schlafe(700);
+    const eintraege = await evaliere(cdp, `(()=>{const m=document.body.innerText.match(/([\\d,]+)\\s+entries/);return m?Number(m[1].replace(/,/g,'')):0})()`);
+    urteil(`**die Flaeche kennt die Saat (${SAAT} Eintraege stehen in der Leiste)**`, eintraege >= SAAT, true);
     const flaeche = async (nam) => {
       const geklickt = await knopf(cdp, nam);
       urteil(`der Knopf nach ${nam} steht im Blatt`, geklickt !== null, true);
@@ -710,11 +726,15 @@ async function main() {
     // Diese Zahl ist die gemessene Schuld der Bauteile, kein Fehler des Laufs — und sie ist
     // gezaeunt. Erster Stand 31.10. 16:03: 15 Namen, 377 Stellen. Nach der ersten Bewegung
     // (Notizkarte zur Kapsel, zwei Seitenleisten-Reihen auf die Kontrollstufe) gemessen
-    // 31.10. 18:34 am installierten 3.2.104: **12 Namen, 137 Stellen** — der Fall um genau
-    // 240 Stellen (186 + 42 + 12), wie gerechnet. Ein dreizehnter Name macht rot, ein
-    // sitzender bleibt Meldung. Groesster Sitzender jetzt: 30 Stellen mit 6 px und 30 mit
-    // 8 px an Bauteilen, deren erster Name eine Layout-Klasse ist (`items-center`).
-    urteil("Rundungen ausserhalb der Stufen bleiben beim gemeldeten Stand", ordentlich.length <= 12, true);
+    // 31.10. 18:34 am installierten 3.2.104: 12 Namen, 137 Stellen. **Seit 1.11. 01:52 ist die
+    // Schuld null**: die Rundungsskala sitzt am Token (`src/index.css:20-24`, nicht an 175
+    // Klassenstellen geflickt), gemessen am installierten 3.2.106 im gefuellten Bestand (30
+    // Eintraege in der Leiste, 245 bis 285 gemalte Rundungen je Flaeche) — **0 Namen, 0 Stellen**.
+    // Der Zaun steht darum auf 0, und die Null ist nicht die Blindheit des Zaehlers: Biss um
+    // 01:56, indem "7px" aus der Stufenmenge genommen wurde — derselbe Lauf meldete
+    // 26 Namen und 459 Stellen und endete mit Exit 1; Datei zurueckgeschrieben und `cmp` bytegleich.
+    // Ein einziger Ausreisser macht den Fensterlauf rot.
+    urteil("Rundungen ausserhalb der Stufen bleiben auf den Hausstufen", ordentlich.length === 0, true);
     console.log(`  MERKER: ${ordentlich.length} Namen ausserhalb der Stufen — Zaehlung aus diesem Lauf`);
     console.log(`  Bild: ${await bild("radien-flaechen.png")}`);
   }
