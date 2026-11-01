@@ -1,3 +1,19 @@
+## [3.2.107]
+
+### Changed
+
+- **"Projects" no longer swallows two thirds of the store.** Measured against the real knowledge
+  base in the delivered 3.2.106 (`GET /api/memories/gruppen`, 01:59, two runs, identical): 13 600
+  of 21 064 notes carried the theme word `projects` — **64.6 %**, over the house bar for any axis
+  (no cell above 60 %). The cause was in the rule, not in the notes: seven of its fourteen words
+  were names of this product or generic build words (`kepta`, `k3pta`, `repo`, `release`,
+  `feature`, `theme`, `sprint`), and 95 % of the store is scanned out of repositories — a JSON file
+  with a `theme` key is a file, not a matter. Those seven left the rule. What still marks a
+  project is what names one: a project, a client, a firm, an order, the two named products, a shop
+  — every one of them covered by a keeper case in the new test, so the rule got narrower, not
+  deaf. The tooltip now says "a client, a case, a shop"; it no longer promises a word the rule
+  does not read.
+
 ## [3.2.106]
 
 ### Fixed

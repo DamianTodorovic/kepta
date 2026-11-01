@@ -257,7 +257,14 @@ export function traeger(eingabe: ZuOrdnendes): { traeger: Traeger; grund: string
  */
 const THEMA_MUSTER: [Thema, RegExp][] = [
   ["people", /\b(herr|frau|mr\.|mrs\.|kolleg|kunde|kundin|geburtstag|telefon|\+4[19]|e-mail:|mail:|kontakt|millers?)\b/iu],
-  ["projects", /\b(projekt|mandant|kanzlei|auftrag|angelshop|freqtrade|kepta|k3pta|sprint|release|repo|feature|theme|shop)\b/iu],
+  // 1.11. — sieben der vierzehn Woerter waren Selbst- und Werkzeugnamen seiner eignen Arbeit
+  // (kepta, k3pta, repo, release, feature, theme, sprint). 95 % des Bestands sind aus Repos
+  // gescannt, und ein JSON mit dem Schluessel "theme" ist keine Angelegenheit, sondern eine
+  // Datei: gemessen 1.11. 01:59 am echten Bestand hielt `projects` damit 13 600 von 21 064
+  // Notizen = 64,6 %, ueber der eignen Latte von 60 %. Was bleibt, sind die Woerter, die eine
+  // Angelegenheit nennen: ein Projekt, ein Mandant, eine Kanzlei, ein Auftrag, die zwei
+  // benannten Produkte, ein Shop.
+  ["projects", /\b(projekt|mandant|kanzlei|auftrag|angelshop|freqtrade|shop)\b/iu],
   ["events", /\b(20\d\d-\d\d-\d\d|\d{1,2}\.\d{1,2}\.\d{2,4}|meeting|termin|getroffen|passierte|geschah|gestern|letzte woche)\b/iu],
   ["tasks", /\b(todo|to-do|offene punkte|muss noch|erledigen|fällig|frist|deadline|action item|zu tun|nächste schritte|next steps)\b/iu],
   ["guides", /\b(anleitung|how[- ]?to|vorgehen|rezept|workflow|checkliste|so geht|setup|installation|schritt \d|step \d)\b/iu],

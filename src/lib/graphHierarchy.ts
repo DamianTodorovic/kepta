@@ -159,7 +159,7 @@ export const THEMA_LABELS: Record<Thema, string> = {
 
 export const THEMA_HINWEISE: Record<Thema, string> = {
   people: "a name, a role, a way to reach them",
-  projects: "something being built or run — a client, a repo, a shop",
+  projects: "something being built or run — a client, a case, a shop",
   events: "it happened at a time: a meeting, a call, a date",
   tasks: "still to do: open point, deadline, next step",
   guides: "how it is done: steps, setup, checklist",
