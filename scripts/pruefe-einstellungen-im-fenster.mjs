@@ -1036,6 +1036,14 @@ async function main() {
       const t=(e&&e.textContent||'').replace(/\\s+/g,' ').trim();const m=t.match(/^([\\d,]+) of ([\\d,]+)/);
       return m?{im: Number(m[1].replace(/,/g,'')), von: Number(m[2].replace(/,/g,'')), text:t}:{im:null, von:null, text:t||'schweigt'}})()`);
     if (gewartet === 0 || weit) {
+      // Das Feld erst einfrieren, dann die zwei Kameras vergleichen (die eigne Forderung aus
+      // `P1-KAMERA-ENTSCHEIDUNG-3110.md` §9: "Was ein fairer Test braucht, bevor die Frage
+      // wieder angefasst wird: das Feld einfrieren"). Ohne das hier ist ein Verlust von 27
+      // Notizen bei 1 500 nicht von der Abkuehlung des Feldes zu trennen - gemessen 14:10:29
+      // am installierten 3.2.109: Kontrolle driftet 0, und trotzdem verliert der Fit 27.
+      const erstarrt = await ruhe(90000);
+      console.log(`  Feld erstarrt nach ${erstarrt === null ? ">90 (nicht erstarrt)" : erstarrt + " s"} — Vergleich folgt auf stehender Welt`);
+      urteil("**der Kameravergleich laeuft auf erstarrtem Feld**", erstarrt !== null, true);
       const vorher = await rahmenZahl();
       // Die Kontrolle: zweimal lesen, dazwischen NICHTS tun. Was die Zahl in der Ruhe
       // wandert, ist die Drift des Feldes und nicht die Antwort des Knopfs — ohne sie
