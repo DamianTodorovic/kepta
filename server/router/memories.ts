@@ -271,6 +271,18 @@ export function mountMemories(app: express.Express, ctx: AppKontext): void {
     const zeit = zeitnahme();
     const traeger: Record<Traeger, number> = { notes: 0, files: 0, code: 0, daten: 0, anderes: 0 };
     const themen: Record<Thema, number> = { people: 0, projects: 0, events: 0, tasks: 0, guides: 0, links: 0 };
+    // Punkt 5, dritter Schritt: zwei Raender erzaehlen nicht, welches Fach ein Thema fuellt.
+    // `events` an seinem Bestand 41,1 % - in einer Prosanotiz ist ein Datum ein Termin, in
+    // einer gescannten JSON-Datei ein Feld. Die Zeilen und Spalten werden aus den beiden
+    // Rand-Listen gezogen, nicht nebenher neu erfunden: eine siebte_theme-Konstante konnte
+    // still hinter ihrer Rand-Liste herlaufen.
+    const leereZeile = () => Object.fromEntries(Object.keys(themen).map((h) => [h, 0])) as Record<Thema, number>;
+    const themenNachTraeger = Object.fromEntries(
+      Object.keys(traeger).map((t) => [t, leereZeile()])
+    ) as Record<Traeger, Record<Thema, number>>;
+    const ohneThemaNachTraeger = Object.fromEntries(
+      Object.keys(traeger).map((t) => [t, 0])
+    ) as Record<Traeger, number>;
     let ohneThema = 0;
     let gezahlt = 0;
     // Lesen und Klassifizieren sind zwei Arbeiten: die Route kostet 45,5–70,0 µs je Notiz
@@ -281,13 +293,22 @@ export function mountMemories(app: express.Express, ctx: AppKontext): void {
     for (const m of alle) {
       const g = gruppen({ title: m.title, content: m.content, tags: m.tags });
       traeger[g.traeger] += 1;
-      if (g.themen.length === 0) ohneThema += 1;
-      for (const t of g.themen) themen[t] += 1;
+      if (g.themen.length === 0) {
+        ohneThema += 1;
+        ohneThemaNachTraeger[g.traeger] += 1;
+      }
+      for (const t of g.themen) {
+        themen[t] += 1;
+        themenNachTraeger[g.traeger][t] += 1;
+      }
       gezahlt += 1;
     }
     zeit.marke("klassifikation");
     res.setHeader("x-kepta-teilzeiten", zeit.kopf());
-    res.json({ ok: true, bestand: gezahlt, traeger, themen, ohneThema, ms: Date.now() - started });
+    res.json({
+      ok: true, bestand: gezahlt, traeger, themen, ohneThema,
+      themenNachTraeger, ohneThemaNachTraeger, ms: Date.now() - started,
+    });
   });
 
   // Standfolge (BAU-P3-11, zweiter Schritt): die Texte VOR den Aenderungen einer Notiz,

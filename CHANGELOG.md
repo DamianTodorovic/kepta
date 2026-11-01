@@ -1,3 +1,19 @@
+## [3.2.108]
+
+### Added
+
+- **The grouping door can now say which kind of note fills a theme.** `GET /api/memories/gruppen`
+  already answered two edge lists — how many notes per form, how many per theme — and two edges
+  cannot show where a number comes from. It now also answers the cross table
+  (`themenNachTraeger`, plus `ohneThemaNachTraeger`), same pass, same cost, still no note content
+  leaving the door. Why this exists: after "Projects" stopped swallowing two thirds of a real
+  store (3.2.107, measured 64.6 % → 18.9 %), "Events" still holds 41.1 % and its rule is a date
+  pattern. In a typed note a date is an appointment; in a scanned JSON file a date is a field.
+  Whether those 41 % are the same misunderstanding is now a number the door can answer, not a
+  guess from the outside. Six cases hold the table: every row sums to its form, every column to
+  its theme, and the same six dates split three-and-three across prose and data — a door that only
+  copied its edge list cannot produce that.
+
 ## [3.2.107]
 
 ### Changed

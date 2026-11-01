@@ -580,6 +580,13 @@ const erwartet = [
   // Bund — die Regex als Literal, der Hinweis als Wort. Gegen das installierte 3.2.106 gezaehlt
   // (app.asar 49 174 329 B, 01:59): beide **0**. Im gebauten Stand erwartet: die Regex-Endung
   // zweimal (server.cjs und das Renderer-Chunk `graph-*.js`), der Hinweis einmal.
+  // Punkt 5, dritter Schritt, 1.11. (die Achse muss sich selbst pruefen koennen): beide Namen
+  // sind Objekt-Schluessel im Leib der Zahl-Route und ueberleben die Minifizierung — am
+  // private gebauten server.cjs (/tmp/kepta-kreuz, 13:22:21 MESZ) je **1 Zeile** gefunden. Gegen das
+  // installierte 3.2.107 gezaehlt (13:24, app.asar 49 174 237 B): beide **0** — die Gegenprobe
+  // steht im BELEG dieses Stands.
+  ["themenNachTraeger", 1],
+  ["ohneThemaNachTraeger", 1],
   ["angelshop|freqtrade|shop", 1],
   ["a client, a case, a shop", 1],
   // Punkt 2, 1.11. (die Rundungsskala am Token gezogen, nicht an 247 Klassenstellen geflickt):
