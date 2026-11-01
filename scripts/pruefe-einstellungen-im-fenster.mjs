@@ -238,7 +238,7 @@ async function main() {
   //     ist kein Beweis ueber die gefuellte. Also auch `radien` in die Liste.
   const SAAT = Number(ARG("saat", 30));
   if (NUR === "" || NUR === "suche" || NUR === "treffer" || NUR === "bild" || NUR === "radius"
-    || NUR === "radien") {
+    || NUR === "radien" || NUR === "auswahl") {
     const dateien = Array.from({ length: SAAT }, (_, i) => {
       const n = String(i + 1).padStart(4, "0");
       // Zwei Daten im Kuvert, nicht eine: die Flaeche haelt ihr Datumsfeld nur, wo die Saat
@@ -737,6 +737,115 @@ async function main() {
     urteil("Rundungen ausserhalb der Stufen bleiben auf den Hausstufen", ordentlich.length === 0, true);
     console.log(`  MERKER: ${ordentlich.length} Namen ausserhalb der Stufen — Zaehlung aus diesem Lauf`);
     console.log(`  Bild: ${await bild("radien-flaechen.png")}`);
+  }
+
+  // --- Zyklus M: die Zahl zu der Wahl, die er wirklich trifft (Punkt 5, vierter Schlag) ------
+  //     Die Flaeche filtert Thema UND Fach zusammen (`Dashboard.tsx:948-956`), und der Leerlauf
+  //     nannte bis 3.2.108 entweder eine Randzahl oder schwieg. Seit 3.2.109 liest er die Zelle
+  //     der Kreuztabelle. Bewiesen wird das am ausgelieferten Stueck, und nur dort, wo Zelle und
+  //     Rand sich unterscheiden - sonst ist der Satz gegen beide Zahlen gleich gueltig und
+  //     beweist nichts. Die Chip-Worte sind die Etikette aus `src/lib/graphHierarchy.ts`
+  //     (TRAEGER_LABELS, THEMA_LABELS); findet der Zyklus keinen Chip, sagt er das loud.
+  if (NUR === "" || NUR === "auswahl") {
+    // Drei gescannte Dokumente ohne jedes Themenwort. Ohne sie ist kein Paar zu finden, das
+    // die Zelle von BEIDEN Randzahlen unterscheidet: die Kapsel-Saat (30 Prosanotizen mit
+    // "faellig") fuehrt nur Paare, deren Zelle gleich der Fachzahl ist - und die alte Fassung
+    // nennt die Fachzahl, also waere der Fall blind (gemessen 14:02:07: "holds 0 of them" gegen
+    // 3.2.108 gruen, weil Fachzahl und Zelle dort beide 0 waren).
+    const dateien = Array.from({ length: 3 }, (_, i) => {
+      const n = String(900 + i);
+      return { name: `auswahl/Mappe-${n}.md`,
+        content: ["---", `kepta_id: auswahl-${n}`, `title: "Ablage ${n}"`, "tags: [machine-scan, md, auswahl]",
+          "type: semantic", "---", "", `Ablage ${n} ohne jedes Signal, nur ein Ordner und ein Text.`].join("\n") };
+    });
+    await fetch(`${BASIS}/api/import/markdown`, { method: "POST", headers: { "content-type": "application/json" },
+      body: JSON.stringify({ files: dateien, scope: "local" }) });
+    await schlafe(2200);
+    const zahlen = await evaliere(cdp, `fetch('/api/memories/gruppen').then(r=>r.json())`);
+    urteil("**die Tuer liefert die Kreuztabelle im ausgelieferten Stueck**", !!(zahlen && zahlen.themenNachTraeger), true);
+    const F = ["notes", "files", "code", "daten", "anderes"];
+    const H = ["people", "projects", "events", "tasks", "guides", "links"];
+    const F_LABEL = { notes: "Notes", files: "Files", code: "Code", daten: "Data", anderes: "Other" };
+    const H_LABEL = { people: "People", projects: "Projects", events: "Events", tasks: "Tasks", guides: "Guides", links: "Links" };
+    // Ein Paar, dessen Zelle sich von BEIDEN Randzahlen unterscheidet (Fachzahl und Themenrand).
+    // Der erste Entwurf brach nur aus der inneren Schleife und merkte sich darum das LETZTE
+    // Paar - gemessen 14:02:07: "Other x Tasks", wo Fachzahl und Zelle beide 0 sind und der Fall
+    // darum gegen die alte Fassung nicht verlieren kann.
+    let paar = null;
+    aussen: for (const f of F) {
+      for (const h of H) {
+        const zelle = (zahlen.themenNachTraeger?.[f]?.[h]) ?? 0;
+        const rand = (zahlen.themen?.[h] ?? 0);
+        const fach = (zahlen.traeger?.[f] ?? 0);
+        if (zelle !== rand && zelle !== fach) { paar = { f, h, zelle, rand, fach }; break aussen; }
+      }
+    }
+    if (!paar) {
+      urteil("ein Paar, dessen Zelle sich vom Rand unterscheidet", false, true);
+    } else {
+      console.log(`  Raender: ${JSON.stringify(zahlen.themen)} | Facher: ${JSON.stringify(zahlen.traeger)}`);
+      console.log(`  gesuchte Wahl: ${F_LABEL[paar.f]} x ${H_LABEL[paar.h]} — Zelle ${paar.zelle}, Rand ${paar.rand}`);
+      // Erst neu laden, dann messen — dieselbe Lehre wie Zyklus I und J, zum zweiten Mal
+      // an mir selbst gemessen (14:01:19 gegenueber 14:00:59): die Saat liegt in der Tuer, aber die Seite kennt sie
+      // ohne Nachladen nicht, und ohne Eintraege baut die Liste ihre Achsen-Reihen gar nicht.
+      await cdp.send("Page.reload", { ignoreCache: true });
+      await warteBis(async () => ((await evaliere(cdp, `document.querySelectorAll('button').length`)) > 0 ? true : null), { maxMs: 90000 });
+      // Der Assistent haelt die Liste: ohne ihn wegzuklicken ist die Achsen-Reihe gar nicht im
+      // Blatt (zwei Laeufe 13:58:57 und 14:00:25: die Knopfliste zeigte "Look for a local model"
+      // und "Summarise", aber keine Achsen-Chips und null [role="group"] im ganzen Blatt). Derselbe Griff wie in Zyklus J, vor dem Klick auf die Liste.
+      await evaliere(cdp, `(()=>{const b=[...document.querySelectorAll('button')].find(x=>/later|skip|ueberspringen/i.test(x.textContent||''));if(b)b.click();})()`);
+      await schlafe(900);
+      // Die Kapsel merkt sich die letzte Sicht im eignen Profil (localStorage unter
+      // /tmp/kepta-fenster) — gemessen 14:00:59: der Fensterlauf landete auf Settings, und die
+      // Listen-Sicht war gar nicht montiert (null [role="group"] im ganzen Blatt). Ein Klick
+      // reicht nicht, wenn die Seite noch nicht hydriert ist; also nach dem Zustand fragen.
+      let offen = null, versuche = 0;
+      while (versuche++ < 8) {
+        offen = await knopf(cdp, "Knowledge");
+        await schlafe(1200);
+        const da = await evaliere(cdp, `!!document.querySelector('[role="group"]')`);
+        if (da) break;
+      }
+      console.log(`  Liste geoeffnet ueber: ${JSON.stringify(offen)} nach ${versuche} Griff(en)`);
+      const frage = async (text) => await evaliere(cdp, `(()=>{const g=[...document.querySelectorAll('[role="group"]')]
+        .find(x=>[...x.querySelectorAll('button')].some(b=>(b.textContent||'').trim()===${JSON.stringify(text)}));
+        return g?(g.getAttribute('aria-label')||''):''})()`);
+      const fFrage = await frage(F_LABEL[paar.f]), hFrage = await frage(H_LABEL[paar.h]);
+      if (fFrage.length === 0 || hFrage.length === 0) {
+        const namen = await evaliere(cdp, `[...document.querySelectorAll('button')].map(b=>(b.textContent||'').trim()).filter(Boolean).join(' | ')`);
+        const rollen = await evaliere(cdp, `[...document.querySelectorAll('[role="group"]')].map(g=>(g.getAttribute('aria-label')||'?')+'['+[...g.querySelectorAll('button')].map(b=>(b.textContent||'').trim()).join(',')+']').join(' || ')`);
+        console.log(`  Gruppen im Blatt: ${rollen}`);
+        console.log(`  alle Knopfe: ${namen}`);
+      }
+      urteil(`der Fach-Chip "${F_LABEL[paar.f]}" steht in einer Gruppe`, fFrage.length > 0, true);
+      urteil(`und der Thema-Chip "${H_LABEL[paar.h]}" auch`, hFrage.length > 0, true);
+      const treffe = async (label) => await evaliere(cdp, `(()=>{const g=[...document.querySelectorAll('[role="group"]')]
+        .find(x=>[...x.querySelectorAll('button')].some(b=>(b.textContent||'').trim()===${JSON.stringify(label)}));
+        if(!g)return 'keine Gruppe'; const b=[...g.querySelectorAll('button')].find(x=>(x.textContent||'').trim()===${JSON.stringify(label)});
+        if(!b)return 'kein Chip'; b.click(); return 'geklickt'})()`);
+      const stellung = async (label) => await evaliere(cdp, `(()=>{const g=[...document.querySelectorAll('[role="group"]')]
+        .find(x=>[...x.querySelectorAll('button')].some(b=>(b.textContent||'').trim()===${JSON.stringify(label)}));
+        const b=g&&[...g.querySelectorAll('button')].find(x=>(x.textContent||'').trim()===${JSON.stringify(label)});
+        return b?(b.getAttribute('aria-pressed')||'?'):'kein Chip'})()`);
+      console.log(`  Gruppen: ${JSON.stringify(fFrage)} / ${JSON.stringify(hFrage)}`);
+      await treffe(F_LABEL[paar.f]);
+      await schlafe(1200);
+      console.log(`  Fach-Chip "${F_LABEL[paar.f]}": aria-pressed = ${await stellung(F_LABEL[paar.f])}`);
+      await treffe(H_LABEL[paar.h]);
+      await schlafe(1600);
+      console.log(`  Thema-Chip "${H_LABEL[paar.h]}": aria-pressed = ${await stellung(H_LABEL[paar.h])}`);
+      const satz = await evaliere(cdp, `(()=>{const p=[...document.querySelectorAll('p')].map(e=>(e.textContent||'').trim())
+        .find(t=>/the store holds/.test(t));return p||'kein Satz'})()`);
+      console.log(`  der Leerlauf-Satz: ${JSON.stringify(String(satz).slice(0, 220))}`);
+      const zahl = String(satz).match(/holds ([\d,]+) of them/);
+      const gelesen = zahl ? Number(zahl[1].replace(/,/g, "")) : null;
+      urteil(`**der Satz nennt die Zelle (${paar.zelle}) von ${F_LABEL[paar.f]} x ${H_LABEL[paar.h]}**`, gelesen, paar.zelle);
+      // Der alte Fehler war der Rand (alle Termine); der zweite alte Fehler war die Fachzahl
+      // (alle Stuecke dieses Fachs). Beide duerfen nicht dastehen, sonst ist der Fall blind.
+      urteil("und nicht den Rand des Themas", gelesen === paar.rand, false);
+      urteil("und nicht die Zahl des Fachs allein", gelesen === paar.fach, false);
+      console.log(`  Bild: ${await bild("auswahl-zelle.png")}`);
+    }
   }
 
   // --- Zyklus K: die KI-Verbindung, und ob sie ohne lokalen Speicher wiederkehrt ------------
