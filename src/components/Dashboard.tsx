@@ -31,7 +31,7 @@ import { KeptaMark } from './KeptaMark';
 import { Memory } from '../types';
 import { parseQuelle, oeffneQuelle, type Quelle } from '../lib/quelle';
 import { pdfTextAusBuffer } from '../lib/pdfText';
-import { TYP_BESCHREIBUNG, TRAEGER_FRAGE, TRAEGER_FRAGE_SATZ, THEMA_FRAGE, TRAEGER_LABELS, TRAEGER_REIHENFOLGE, TRAEGER_HINWEISE, THEMA_LABELS, THEMA_REIHENFOLGE, THEMA_HINWEISE, gruppenVonNotiz, type Traeger, type Thema } from '../lib/graphHierarchy';
+import { TYP_BESCHREIBUNG, TRAEGER_FRAGE, TRAEGER_FRAGE_SATZ, THEMA_FRAGE, TRAEGER_LABELS, TRAEGER_REIHENFOLGE, TRAEGER_HINWEISE, THEMA_LABELS, THEMA_REIHENFOLGE, THEMA_HINWEISE, gruppenVonNotiz, zahlDerAuswahl, type Traeger, type Thema, type AchsenZahlen } from '../lib/graphHierarchy';
 import { t, wendeZoomAn } from '../lib/uiText';
 import { Search, Plus, CheckCircle2, Copy, PanelLeftOpen, ScanSearch, UploadCloud, Globe, Loader2, AlertCircle, Sparkles, Trash2, HardDriveDownload, FileText, ExternalLink, ShieldCheck } from "../lib/icons";
 import { motion, AnimatePresence } from 'motion/react';
@@ -721,8 +721,8 @@ export function Dashboard() {
    * Programme. Kein Puffer auf der Seite: die Zahl kommt, wenn die Tür antwortet.
    */
   const [bestandGruppen, setBestandGruppen] = useState<{
-    bestand: number; traeger: Record<Traeger, number>; themen: Record<Thema, number>; ohneThema: number; ms: number;
-  } | null>(null);
+    bestand: number; ohneThema: number; ms: number;
+  } & AchsenZahlen | null>(null);
   const holeGruppen = useCallback(async (abgebrochen?: { current: boolean }) => {
     try {
       const r = await fetch('/api/memories/gruppen');
@@ -852,10 +852,7 @@ export function Dashboard() {
   /** Wie viele Faecher ueberhaupt fuellen: unter zwei ist ein Anteil keine Auskunft. */
   const traegerFaelter = traegerVoll(zeigeTraeger).length;
   /** Die Bestandzahl genau der Gruppe, die ins Leere lief — eingelesen, nicht geschätzt. */
-  const zahlDerWahl = bestandGruppen === null ? undefined
-    : aktiveTraeger.length === 1 ? bestandGruppen.traeger[aktiveTraeger[0]]
-    : aktiveTraeger.length === 0 && aktiveThemen.length === 1 ? bestandGruppen.themen[aktiveThemen[0]]
-    : undefined;
+  const zahlDerWahl = zahlDerAuswahl(bestandGruppen, aktiveTraeger, aktiveThemen);
   /** Zaehlen Blatt und Laden verschieden, nennt die Chip-Zeile die Zahl des Blatts. */
   const blattWeichtAb = bestandGruppen !== null
     && TRAEGER_REIHENFOLGE.some((k) => zeigeTraeger[k] !== traegerCounts[k]);

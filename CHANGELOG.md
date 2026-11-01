@@ -1,3 +1,19 @@
+## [3.2.109]
+
+### Changed
+
+- **When a filter comes back empty, the number now describes the filter you actually set.**
+  Picking a form and a theme together ("Events inside Files") is the filter the list applies —
+  and the sentence underneath named a number only for one form alone or one theme alone, staying
+  silent for the combination. It now reads the cross table the store already returns, so
+  "Events in Files" says how many the store holds in that cell. Measured against a real store of
+  21 064 notes: the theme "Events" holds 8 663 in total, but only 15 of them are in the 92 notes
+  typed by hand — the combination is the only choice that can show something useful there, and it
+  used to show nothing. Two themes at once stay without a number on purpose: that is a union, and
+  adding table rows would count a note twice. Eleven cases hold both halves — eight for the rule
+  (cell, sum over rows, edge, silence, an older store without the table) and three for the wiring
+  through the real surface.
+
 ## [3.2.108]
 
 ### Added

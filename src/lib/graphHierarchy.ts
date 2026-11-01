@@ -107,6 +107,46 @@ export type { Traeger, Thema, Gruppe } from "../core/klassifikation";
 export const TRAEGER_REIHENFOLGE: Traeger[] = ["notes", "files", "code", "daten", "anderes"];
 export const THEMA_REIHENFOLGE: Thema[] = ["people", "projects", "events", "tasks", "guides", "links"];
 
+/** Was die Zahl-Route antwortet - nur die Teile, die diese Entscheidung braucht. */
+export type AchsenZahlen = {
+  traeger: Record<Traeger, number>;
+  themen: Record<Thema, number>;
+  themenNachTraeger?: Partial<Record<Traeger, Partial<Record<Thema, number>>>>;
+};
+
+/**
+ * Die Bestandzahl genau der Wahl, die ins Leere laeuft.
+ *
+ * Die Flaeche filtert Thema und Fach zusammen (`Dashboard.tsx:948-956` sagt das auch), aber
+ * die Zahl dazu nannte bis 3.2.108 nur ein Fach allein oder ein Thema allein. Die Kreuztabelle
+ * der Route kennt die Zelle, und ein Fach schliesst sich pro Notiz aus - ueber gewaehlte
+ * Zeilen zu summieren ist darum exakt, nicht ungefaehr.
+ *
+ * Zwei Themen sind eine Vereinigung ("irgendeins davon"), und die kann ueber Zeilen doppelt
+ * zaehlen. Diese Wahl bleibt stumm: eine Zahl, die fuer ihren Fall per Konstruktion falsch
+ * sein muss, ist keine Auskunft.
+ */
+export function zahlDerAuswahl(
+  zahlen: AchsenZahlen | null,
+  gewaehlteTraeger: readonly Traeger[],
+  gewaehlteThemen: readonly Thema[],
+): number | undefined {
+  if (!zahlen) return undefined;
+  if (gewaehlteThemen.length === 1) {
+    const thema = gewaehlteThemen[0];
+    const facher = gewaehlteTraeger.length > 0 ? gewaehlteTraeger : TRAEGER_REIHENFOLGE;
+    const tabelle = zahlen.themenNachTraeger;
+    if (tabelle) return facher.reduce((n, f) => n + (tabelle[f]?.[thema] ?? 0), 0);
+    // Eine Tuer ohne Tabelle kennt nur den Rand, und der Rand gilt der ganzen Menge -
+    // also nur dann eine Zahl, wenn gar kein Fach gewaehlt ist.
+    return gewaehlteTraeger.length === 0 ? zahlen.themen[thema] : undefined;
+  }
+  if (gewaehlteThemen.length === 0 && gewaehlteTraeger.length === 1) {
+    return zahlen.traeger[gewaehlteTraeger[0]];
+  }
+  return undefined;
+}
+
 export const TRAEGER_LABELS: Record<Traeger, string> = {
   notes: "Notes",
   files: "Files",
