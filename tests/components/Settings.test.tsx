@@ -662,7 +662,7 @@ describe("Settings: #26 Richtung B — Meldung an der geaenderten Zeile", () => 
     expect(sichern, "der Sicherungs-Knopf steht nicht im Blatt").toBeTruthy();
     fireEvent.click(sichern);
     await waitFor(() => expect(sichern.textContent).toMatch(/Backup created/i));
-    expect(sichern.textContent, "die leere Sicherung muss ihre Null nennen").toMatch(/\b0\b.*nodes/);
+    expect(sichern.textContent, "die leere Sicherung muss ihre Null nennen").toMatch(/\b0\b.*notes/);
     expect([...container.querySelectorAll("[data-quittung]")]).toEqual([]);
   });
 

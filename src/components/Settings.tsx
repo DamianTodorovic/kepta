@@ -538,7 +538,7 @@ export function Settings() {
       return;
     }
     if (gesamt !== null && (geklemmt || knoten.length !== gesamt)) {
-      setSicherung({ fehler: `Backup short — ${knoten.length} of ${gesamt.toLocaleString('en-US')} nodes came through${geklemmt ? ' and the server flagged the answer as capped' : ''}. No file was written.` });
+      setSicherung({ fehler: `Backup short — ${knoten.length} of ${gesamt.toLocaleString('en-US')} notes came through${geklemmt ? ' and the server flagged the answer as capped' : ''}. No file was written.` });
       return;
     }
     const blob = new Blob([JSON.stringify(knoten, null, 2)], { type: 'application/json' });
@@ -980,7 +980,7 @@ export function Settings() {
                   className="btn-ghost flex items-center justify-center gap-2 px-6 py-3 rounded-xl font-medium w-full"
                 >
                   {sicherung && 'knoten' in sicherung ? (
-                    <><CheckCircle2 className="w-5 h-5" style={{ color: 'var(--ok)' }} /> <span style={{ color: 'var(--ok)' }}>Backup created · {sicherung.knoten.toLocaleString('en-US')} nodes</span></>
+                    <><CheckCircle2 className="w-5 h-5" style={{ color: 'var(--ok)' }} /> <span style={{ color: 'var(--ok)' }}>Backup created · {sicherung.knoten.toLocaleString('en-US')} notes</span></>
                   ) : sicherung ? (
                     <><AlertTriangle className="w-5 h-5" style={{ color: 'var(--warn)' }} /> <span style={{ color: 'var(--warn)' }}>{sicherung.fehler}</span></>
                   ) : (
@@ -1221,7 +1221,7 @@ export function Settings() {
                 <h3 className="settings-h" style={{ color: 'var(--text-1)' }}>Local server</h3>
                 <span className="ml-auto flex items-center gap-2 text-xs" style={{ color: health?.ok ? 'var(--ok)' : 'var(--text-3)' }}>
                   <span className="w-2 h-2 rounded-full" style={{ background: health?.ok ? 'var(--ok)' : healthError ? '#f87171' : 'var(--text-3)' }} />
-                  {health?.ok ? `online · ${health.count ?? 0} nodes` : healthError ? 'offline' : 'checking…'}
+                  {health?.ok ? `online · ${health.count ?? 0} notes` : healthError ? 'offline' : 'checking…'}
                 </span>
               </div>
               <div className="hud-inset rounded-xl p-3 flex items-center gap-3">
@@ -1248,7 +1248,7 @@ export function Settings() {
               <div className="space-y-2">
                 {[
                   { m: 'GET', p: '/api/health', d: 'Health check', c: `curl ${API_BASE}/api/health` },
-                  { m: 'GET', p: '/api/memories', d: 'One page of 100 nodes — add ?alle=1 for the whole base', c: `curl ${API_BASE}/api/memories?alle=1` },
+                  { m: 'GET', p: '/api/memories', d: 'One page of 100 notes — add ?alle=1 for the whole base', c: `curl ${API_BASE}/api/memories?alle=1` },
                   { m: 'GET', p: '/api/memories/search?q=...&limit=20', d: 'Hybrid search (words, vectors, graph) — up to 500', c: `curl "${API_BASE}/api/memories/search?q=ollama&limit=5"` },
                   { m: 'POST', p: '/api/memory', d: 'Save (alias)', c: `curl -X POST ${API_BASE}/api/memory -H "Content-Type: application/json" -d '{"title":"T","content":"C","tags":["a"]}'` },
                   { m: 'POST', p: '/api/mcp/search', d: 'MCP search (plain / JSON-RPC)', c: `curl -X POST ${API_BASE}/api/mcp/search -H "Content-Type: application/json" -d '{"query":"rezept","limit":3}'` },

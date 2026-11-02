@@ -29,6 +29,7 @@ export function OnboardingWizard({ open, onClose, onComplete }: Props) {
   const [scanning, setScanning] = useState(false);
   const [importing, setImporting] = useState(false);
   const [importResult, setImportResult] = useState<string | null>(null);
+  const [fehlgeschlagen, setFehlgeschlagen] = useState(false);
   // Rechner-Scan: hier wird nur GEFRAGT, ob danach danach gefragt werden soll.
   // Die eigentliche Zustimmung — mit Vorschau und dem Hinweis auf MCP-Agenten —
   // holt der Scan-Dialog selbst ein. Ein Haken im Assistenten darf nicht
@@ -109,10 +110,16 @@ export function OnboardingWizard({ open, onClose, onComplete }: Props) {
         const r = await fetch('/api/memory', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(n) });
         if (r.ok) imported++;
       }
-      setImportResult(`${imported} note${imported === 1 ? '' : 's'} created for you`);
-      setTimeout(()=> onComplete(profile, imported), 900);
+      // Punkt 4, 2.11.: der Kasten war immer grün gefärbt und der Schirm schloss sich nach
+      // 900 ms — auch bei `0 notes created for you`, wenn keine einzige Schreibung durchging.
+      setFehlgeschlagen(imported === 0);
+      setImportResult(imported === 0
+        ? 'Nothing was saved — the store refused every note.'
+        : `${imported} note${imported === 1 ? '' : 's'} created for you`);
+      if (imported > 0) setTimeout(()=> onComplete(profile, imported), 900);
     } catch (e) {
       // Ein String ohne .message warf hier „undefined" in den grünen Kasten.
+      setFehlgeschlagen(true);
       setImportResult(e instanceof Error ? e.message : String(e));
     } finally { setImporting(false); }
   };
@@ -328,7 +335,7 @@ export function OnboardingWizard({ open, onClose, onComplete }: Props) {
                 <Globe className="w-4 h-4 mt-1 shrink-0" style={{color:'var(--text-3)'}}/>
                 <p className="text-xs leading-relaxed" style={{color:'var(--text-2)'}}>After this: drop a file on the window or paste a link, and K3PTA keeps learning. Your whole memory is one file — <code className="font-mono">~/.kepta/kepta.db</code> — so you can back it up, move it, or delete it whenever you like.</p>
               </div>
-              {importResult && <div className="rounded-xl p-3 text-sm text-center" style={{background:'color-mix(in srgb, var(--ok) 12%, transparent)', border:'1px solid color-mix(in srgb, var(--ok) 30%, transparent)', color:'var(--ok)'}}>{importResult}</div>}
+              {importResult && <div className="rounded-xl p-3 text-center text-sm" style={{ background: `color-mix(in srgb, var(${fehlgeschlagen ? '--danger' : '--ok'}) 12%, transparent)`, border: `1px solid color-mix(in srgb, var(${fehlgeschlagen ? '--danger' : '--ok'}) 30%, transparent)`, color: `var(${fehlgeschlagen ? '--danger' : '--ok'})` }}>{importResult}</div>}
             </motion.div>
           )}
           </AnimatePresence>

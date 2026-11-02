@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
-import { render, screen, waitFor } from "@testing-library/react";
+import { render, screen, waitFor, act } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { OnboardingWizard } from "../../src/components/OnboardingWizard";
 
@@ -419,5 +419,33 @@ describe("A7-10: der Assistent verdeckt die Fläche nicht", () => {
     const schicht = container.firstElementChild as HTMLElement;
     expect(schicht.textContent).toMatch(/Set up K3PTA/);
     expect([...schicht.querySelectorAll("button")].some((b) => b.textContent?.trim() === "Later")).toBe(true);
+  });
+});
+
+// Punkt 4, 2.11. — dieselbe Klasse wie der Import: die Endschaft zaehlt nur `r.ok` und legt das
+// Ergebnis in den **gruenen** Kasten (OnboardingWizard.tsx:331), auch wenn keine einzige Notiz
+// durchging. Ein Nutzer, dessen Tuer zu ist, sieht "0 notes created for you" in der Farbe des
+// Erfolgs und der Schirm schliesst sich.
+describe("OnboardingWizard: die gruene Quittung fragt, ob etwas gerettet wurde", () => {
+  it("sagt, dass nichts gerettet wurde, und laesst den Schirm stehen", async () => {
+    const abgewiesen = vi.fn(async (url: string) =>
+      String(url).includes("/api/memory")
+        ? new Response(JSON.stringify({ error: "the store is closed" }), { status: 500 })
+        : new Response(JSON.stringify({ ok: true }), { status: 200 }));
+    vi.stubGlobal("fetch", abgewiesen);
+    let fertig = false;
+    const user = userEvent.setup();
+    const { container } = render(
+      <OnboardingWizard open onClose={() => {}} onComplete={() => { fertig = true; }} />
+    );
+    await zuSchrittVier(user);
+    await user.click(screen.getByRole("button", { name: /Save these/i }));
+    const kasten = await screen.findByText(/Nothing was saved/i, undefined, { timeout: 6000 });
+    expect(kasten, "die Quittung nennt nicht, dass nichts gerettet wurde").toBeTruthy();
+    expect(container.textContent, `ein Fehlschlag steht als Erfolg auf dem Schirm: ${container.textContent}`)
+      .not.toMatch(/notes created for you/);
+    // onComplete feuerte bisher nach 900 ms, gleichgueltig gegen das Ergebnis.
+    await act(async () => { await new Promise((r) => setTimeout(r, 1400)); });
+    expect(fertig, "der Schirm meldete Fertig, obwohl keine Notiz geschrieben wurde").toBe(false);
   });
 });

@@ -560,17 +560,25 @@ export function Dashboard() {
   useEffect(()=>{ refreshInbox(); const id=setInterval(refreshInbox, 12000); return ()=> clearInterval(id); }, [refreshInbox]);
   const handleInboxScan = async ()=>{
     setInboxScanBusy(true);
+    const fehler = (marke: string) => {
+      setImportErr(marke);
+      setTimeout(() => setImportErr((c) => (c === marke ? null : marke)), QUITTUNG_MS);
+    };
     try {
       const r = await fetch('/api/inbox/scan', {method:'POST'});
-      const d = await r.json();
-      const marke = `Inbox: ${d.scanned} files scanned, ${d.imported} nodes imported`;
+      // Punkt 4, 2.11.: `r.ok` wurde nie gefragt. Ein Fehlerkorper mit JSON (429, 500) gab
+      // "Inbox: undefined files scanned, undefined nodes imported" — in der Farbe des Erfolgs.
+      if (!r.ok) { fehler(`Inbox scan failed — the store answered ${r.status}.`); return; }
+      const d = await r.json().catch(() => null) as { scanned?: unknown; imported?: unknown } | null;
+      const gez = Number.isFinite(Number(d?.scanned)) ? Number(d?.scanned) : null;
+      const imp = Number.isFinite(Number(d?.imported)) ? Number(d?.imported) : null;
+      if (gez === null || imp === null) { fehler('Inbox scan failed — the answer carried no counts.'); return; }
+      const marke = `Inbox: ${gez} ${gez === 1 ? "file" : "files"} scanned, ${imp} ${imp === 1 ? "note" : "notes"} imported`;
       setImportMsg(marke);
-      setTimeout(()=> setImportMsg((c) => (c === marke ? null : c)), QUITTUNG_MS);
+      setTimeout(()=> setImportMsg((c) => (c === marke ? null : marke)), QUITTUNG_MS);
       refreshInbox();
     } catch {
-      const marke = 'Inbox scan failed';
-      setImportErr(marke);
-      setTimeout(() => setImportErr((c) => (c === marke ? null : c)), QUITTUNG_MS);
+      fehler('Inbox scan failed');
     } finally { setInboxScanBusy(false); }
   };
 
@@ -1160,7 +1168,8 @@ export function Dashboard() {
     setImporting(true);
     setImportErr(null);
     setImportMsg(null);
-    let totalNodes = 0;
+    let versuche = 0;
+    let gelungen = 0;
     try {
       for (const file of list) {
         const baseName = file.name.replace(/\.[^.]+$/, "");
@@ -1175,15 +1184,27 @@ export function Dashboard() {
           const tags = ["import", file.name.split(".").pop()?.toLowerCase() || "file"];
           if (file.name.toLowerCase().endsWith(".pdf")) tags.push("pdf");
           const content = pfad ? `${chunks[i]}\n\n— Source: ${pfad}` : chunks[i];
-          await saveMemory({ title, content, tags });
-          totalNodes++;
+          versuche += 1;
+          const gerettet = await saveMemory({ title, content, tags });
+          if (gerettet) gelungen += 1;
         }
       }
-      // D2(c) Z7: eine Zahl spricht wie ein Mensch — „3 file(s)" war eine
-      // Klammer, wo ein Wort hingehört.
-      const marke = `Imported ${totalNodes} ${totalNodes === 1 ? "node" : "nodes"} from ${list.length} ${list.length === 1 ? "file" : "files"}.`;
-      setImportMsg(marke);
-      setTimeout(() => setImportMsg((c) => (c === marke ? null : c)), QUITTUNG_MS);
+      // Punkt 4, 2.11.: die Quittung darf nur zaehlen, was die Tuer bestaetigt hat. Vorher stieg
+      // der Zaehler zu jeder Schreibung, gleichgueltig gegen ihren Ausgang — store.ts:324-335
+      // wirft jeden Fehlwurf in ein `null`, und der Wert wurde verworfen. Fuenf abgewiesene
+      // Schreibungen standen als voller Import im gruenen Kasten.
+      const quittung = gelungen === 0
+        ? `Nothing was saved — the store refused all ${versuche} ${versuche === 1 ? "write" : "writes"}.`
+        : gelungen < versuche
+          ? `${gelungen} of ${versuche} notes saved — ${versuche - gelungen} refused.`
+          : `Saved ${gelungen} ${gelungen === 1 ? "note" : "notes"} from ${list.length} ${list.length === 1 ? "file" : "files"}.`;
+      if (gelungen === versuche) {
+        setImportMsg(quittung);
+        setTimeout(() => setImportMsg((c) => (c === quittung ? null : quittung)), QUITTUNG_MS);
+      } else {
+        setImportErr(quittung);
+        setTimeout(() => setImportErr((c) => (c === quittung ? null : quittung)), QUITTUNG_MS);
+      }
     } catch (e: unknown) {
       const msg = e instanceof Error ? e.message : String(e);
       const marke = msg || "Import failed";

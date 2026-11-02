@@ -679,6 +679,21 @@ const erwartet = [
   ["a chat can leave a note behind", 1],
   ["saving your first notes", 1],
   ["Save these", 1],
+  // Punkt 4, 2.11. (3.2.119, die Quittungen, die nicht fragten, ob das Werk gelang): drei
+  // Stellen, von mir selbst nachgelesen, bevor hier etwas stand — Dashboard.tsx:1178 (der
+  // Import-Zaehler stieg zu jeder Schreibung, gleichgueltig gegen ihr Ergebnis),
+  // Dashboard.tsx:563 (der Inbox-Scan fragte `r.ok` nie und malte "undefined files scanned"
+  // im gruenen Kasten), OnboardingWizard.tsx:108 (0 von 0 geretteten Notizen stand gruen,
+  // und der Schirm schloss sich trotzdem). Gegen das installierte 3.2.118 gezaehlt: je **0**
+  // (gemessen 02.11. 14:26). Die Zeile des TEILERFOLGS ("N of M notes saved") hat hier
+  // keinen Platz: die Interpolation zerlegt sie, und "notes saved" stand schon im 118er
+  // Objekt — sie haelt allein der Fall in tests/components/quittung-ohne-beweis.test.tsx.
+  ["Nothing was saved", 1],
+  ["refused every note", 1],
+  ["the store answered", 1],
+  ["carried no counts", 1],
+  ["notes came through", 1],
+  ["One page of 100 notes", 1],
 ];
 // Die Liste darf nur ASCII-Zeichen enthalten. Grund, gemessen 21.10. 19:16 MESZ am
 // installierten Objekt: das Wort "Looking" plus echtes U+2026 steht dort 2 mal, diese

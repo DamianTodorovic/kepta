@@ -1,3 +1,23 @@
+## [3.2.119]
+
+### Fixed
+
+- **Three receipts that reported success they had not earned.** The import loop counted every
+  write it *attempted*: `saveMemory` swallows each rejection and returns `null`
+  (`src/lib/store.ts:324-335`), the return value was thrown away, and five refused writes still
+  painted "Imported 5 nodes from 1 file." in the green box. The inbox scan never asked `r.ok`, so
+  an error body with JSON became "Inbox: undefined files scanned, undefined nodes imported" —
+  also green. The setup wizard counted only `r.ok` and then wrote "0 notes created for you" into
+  the same green box before closing itself. Now the import says "Nothing was saved — the store
+  refused all 2 writes." when nothing went through, "1 of 2 notes saved — 1 refused." when only
+  part did, and keeps the green line for a complete run; the scan names the status it got
+  ("Inbox scan failed — the store answered 429.") or says the answer carried no counts; the
+  wizard refuses to close on zero and says so in the failure colour. This is the same class as
+  the backup button that sold 100 of 21,066 notes as "Backup created" on 14.10.
+- **Four more lines that counted notes but said nodes**, found by the same sweep: the short-backup
+  warning, the backup button's own count, the local-server status dot ("online · 21,064 nodes")
+  and the API table's "One page of 100 nodes". A node on the graph is still a node.
+
 ## [3.2.118]
 
 ### Changed
