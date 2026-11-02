@@ -1,3 +1,23 @@
+## [3.2.121]
+
+### Fixed
+
+- **Two surfaces changed their source without saying so.** The chat asks the search engine
+  first and, when that call fails, keeps ranking locally — the comment at `Chat.tsx:477` has
+  said "ehrlicher Fallback" for weeks, but the screen never mentioned it: the answer looked
+  identical, and the reader held a local ordering for the semantic search. A chip now says
+  "Local ranking — the search index did not answer" and only appears when the engine really
+  stayed out. The graph asked `/api/graph` for its entity links and dropped every failure
+  silently (`KnowledgeGraph.tsx:1962`, no status, no branch): the picture thinned out while
+  its own header still promised connections "through tags, similarity and knowledge entities".
+  The header now adds "the entity links did not arrive, so this picture draws tags and
+  similarity only" — and stays quiet when they do arrive.
+- **The chat's own prompt taught the model the wrong word.** It asked the model to "cite the
+  id of every node you use", announced "(No nodes are loaded right now)" and counted
+  "Context — N nodes", while every surface around it counts notes since 3.2.117. A prompt is
+  not painted, so no screenshot could ever have caught this: the case reads the body of the
+  request the chat actually sends.
+
 ## [3.2.120]
 
 ### Fixed

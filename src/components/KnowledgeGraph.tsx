@@ -951,6 +951,19 @@ export function kopfLadeSatz(stand: "kommt" | "da" | "fort"): string {
 }
 
 /**
+ * Der Satz ueber der Kantenquelle.
+ *
+ * KnowledgeGraph.tsx:1962 holt die Begriffs-Kanten von `/api/graph` und liess bisher jeden
+ * Fehlschlag stumm: kein Status, kein Zweig. Was blieb, war ein duennes Bild, das die
+ * Kopfzeile weiter als "connected through tags, similarity and knowledge entities" ausgab —
+ * die Zeile malte also den Begriff mit, den die Tuer gerade nicht geliefert hatte.
+ */
+export function kopfKanteSatz(stand: "kommt" | "da" | "fort"): string {
+  if (stand === "fort") return " - the entity links did not arrive, so this picture draws tags and similarity only";
+  return "";
+}
+
+/**
  * Der Satz ueber dem Fenster, das die Tuer liefert.
  *
  * Gemessen 05:28 Uhr am installierten 3.2.83 an 21 000 Notizen
@@ -1958,14 +1971,23 @@ export function KnowledgeGraph({ memories: memoriesAusFenster, onSelectMemory, o
   const wechsleTiefe = useCallback((tiefe: number) => {
     setGraphTiefe(graphTiefeSchreiben(tiefe));
   }, []);
+  const [kanteStand, setKanteStand] = useState<"kommt" | "da" | "fort">("kommt");
   useEffect(() => {
     let abgebrochen = false;
     void (async () => {
       try {
         const res = await fetch(`/api/graph?depth=${graphTiefe}`);
-        const data = await res.json();
-        if (!abgebrochen && data && Array.isArray(data.relations)) setGraphApi(data as GraphApi);
-      } catch { /* Engine nicht erreichbar — Aehnlichkeitskanten bleiben */ }
+        const data = await res.json().catch(() => null);
+        if (abgebrochen) return;
+        if (res.ok && data && Array.isArray(data.relations)) {
+          setGraphApi(data as GraphApi);
+          setKanteStand("da");
+        } else {
+          setKanteStand("fort");
+        }
+      } catch { /* Engine nicht erreichbar — Aehnlichkeitskanten bleiben, und die Zeile sagt es */
+        if (!abgebrochen) setKanteStand("fort");
+      }
     })();
     return () => { abgebrochen = true; };
   }, [memories.length, netzLade, graphTiefe]);
@@ -6499,6 +6521,7 @@ export function KnowledgeGraph({ memories: memoriesAusFenster, onSelectMemory, o
               ? `${mengenzahl(baumLayout.edges.length)} ${baumLayout.edges.length === 1 ? "link" : "links"}`
               : `${mengenzahl(kanten.echt)} ${kanten.echt === 1 ? "link" : "links"}${aehnlichkeitsZeile(kanten.aehnlichkeit, edges.length, zoomAnzeige)}${kantenWortZeile(NAMEN_STUFE[etikettenModus].kantentext, zoomAnzeige, edges)}${handWortZeile(edges)}`}
             {kopfLadeSatz(bestandStand)}
+            {kopfKanteSatz(kanteStand)}
             {kopfFensterSatz(Boolean(graphApi?.ausriss?.begrenzt))}
           </div>
             <button

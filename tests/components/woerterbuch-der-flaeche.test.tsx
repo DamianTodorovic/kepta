@@ -27,7 +27,7 @@ import { Chat } from "../../src/components/Chat";
 import { AuthProvider } from "../../src/contexts/AuthContext";
 import { ThemeProvider } from "../../src/contexts/ThemeContext";
 import { ToastProvider } from "../../src/components/ui/Toast";
-import { kopfLadeSatz, kopfFensterSatz } from "../../src/components/KnowledgeGraph";
+import { kopfLadeSatz, kopfFensterSatz, kopfKanteSatz } from "../../src/components/KnowledgeGraph";
 import { installiereLeinwand, installiereResizeObserver } from "../helfer/canvas";
 import type { Memory } from "../../src/types";
 
@@ -154,8 +154,11 @@ describe("Punkt 7: die Flaeche spricht in einem Woerterbuch", () => {
       .toMatch(/notes in the prompt/);
   });
 
-  it("die zwei Graph-Saetze an ihren Funktionen: kein entry, kein whole store", () => {
-    for (const satz of [kopfLadeSatz("kommt"), kopfLadeSatz("fort"), kopfFensterSatz(true)]) {
+  it("die drei Graph-Saetze an ihren Funktionen: kein entry, kein whole store", () => {
+    // kopfKanteSatz kam 3.2.121 dazu (die Begriffs-Kanten, die ohne Wort fehlen) — er wird
+    // hier an derselben Stelle gehalten wie die beiden andern, damit ein neuer Satz nicht
+    // ausserhalb des Woerterbuchs waechst.
+    for (const satz of [kopfLadeSatz("kommt"), kopfLadeSatz("fort"), kopfFensterSatz(true), kopfKanteSatz("fort")]) {
       expect(satz, "eine Funktion liefert keinen Satz — die Wache prueft ins Leere").not.toBe("");
       inOrdnung(satz, `Graph-Kopf "${satz}"`);
     }

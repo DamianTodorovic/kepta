@@ -38,7 +38,7 @@ function sseAntwort(stuecke: string[], opts: { fehler?: string } = {}): Response
 
 let anfragen: { url: string; body: Record<string, unknown> }[];
 
-function stubFetch(over: { stuecke?: string[]; status?: number; fehlerText?: string; sseFehler?: string; suchAntwort?: unknown } = {}) {
+function stubFetch(over: { stuecke?: string[]; status?: number; fehlerText?: string; sseFehler?: string; suchAntwort?: unknown; suchStatus?: number } = {}) {
   anfragen = [];
   vi.stubGlobal("fetch", vi.fn(async (url: string, init?: RequestInit) => {
     anfragen.push({ url, body: init?.body ? JSON.parse(String(init.body)) : {} });
@@ -50,6 +50,7 @@ function stubFetch(over: { stuecke?: string[]; status?: number; fehlerText?: str
     }
     if (url.includes("/api/search")) {
       // Paket 3: die Engine-Antwort mit Spuren-Herkunft — ohne Stub fällt der Chat aufs lokale Ranking zurück.
+      if (over.suchStatus) return new Response(JSON.stringify({ error: "the index is busy" }), { status: over.suchStatus });
       return new Response(JSON.stringify(over.suchAntwort ?? {}), { status: 200, headers: { "Content-Type": "application/json" } });
     }
     return new Response("{}", { status: 200 });
@@ -426,5 +427,52 @@ describe("Chat: das ganze Gehirn (Paket 3)", () => {
     await stelleFrageUndWarte(user, container);
     expect(container.textContent).toMatch(/LokaleNotiz/); // Kontext bleibt gefüllt
     expect(container.textContent).not.toMatch(/Warming the search index/); // nach leerer Antwort kein Warten mehr
+  });
+});
+
+// Punkt 4 und 7, 2.11. — der Chat wechselt seine Quelle, ohne es zu sagen, und sein Prompt
+// nennt die gespeicherten Sachen "nodes", waehrend jede Flaeche um ihn herum "notes" sagt.
+// Beides ist von mir selbst gelesen: Chat.tsx:477 (catch ohne jede Meldung, Kommentar:
+// "Server unerreichbar — die Antwort fällt auf das lokale Ranking zurück") und Chat.tsx:424/427/429
+// ("Cite the id of every node you use", "(No nodes are loaded right now…)", "Context — N nodes").
+describe("Chat: eine Quelle, die wechselt, muss es sagen", () => {
+  it("meldet das lokale Ranking, wenn die Such-Tuer nicht antwortet", async () => {
+    stubFetch({ suchStatus: 503, stuecke: ["Antwort", " ohne Engine"] });
+    const user = userEvent.setup();
+    const { container } = zeige();
+    await frage(user, "Was weisst du?");
+    const text = await waitFor(() => {
+      const t = (container.textContent || "").replace(/\s+/g, " ");
+      if (!/local ranking|search index did not answer/i.test(t)) throw new Error(`die Flaeche schweigt ueber ihre Quelle: "${t.slice(0, 240)}"`);
+      return t;
+    });
+    expect(text).toMatch(/local ranking/i);
+  });
+
+  it("behält den ruhigen Satz, wenn die Engine geantwortet hat", async () => {
+    stubFetch({ stuecke: ["Antwort", " ohne Engine"], suchAntwort: { results: [{ memory: { id: "m1", userId: "local", title: "Notiz 1", content: "Inhalt 1", tags: [], createdAt: 1, updatedAt: 1 }, score: 0.9, cosineScore: 0.8, bm25Score: 0.2, rawBm25: 0, matchedTerms: [], tracks: { bm25: 0, vektor: 1, graph: null, similarity: 0.8 } }], total: 1 } });
+    const user = userEvent.setup();
+    const { container } = zeige();
+    await frage(user, "Was weisst du?");
+    await waitFor(() => expect(container.textContent).toMatch(/Antwort ohne Engine/));
+    expect(container.textContent, "die Flaeche behauptet einen Fallback, wo die Engine antwortete")
+      .not.toMatch(/local ranking/i);
+  });
+
+  it("nennt die gespeicherten Sachen im Prompt notes, nicht nodes", async () => {
+    stubFetch({ stuecke: ["Hallo"] });
+    const user = userEvent.setup();
+    zeige();
+    await frage(user, "Was weisst du?");
+    const strom = await waitFor(() => {
+      const a = anfragen.find((x) => x.url.includes("/api/chat/stream"));
+      if (!a) throw new Error("kein Strom geschickt — die Wache prueft ins Leere");
+      return a;
+    });
+    const prompt = String(strom.body.system ?? "");
+    expect(prompt, `der Prompt bringt dem Modell das Wort der Flaeche nicht bei: ${prompt.slice(0, 260)}`)
+      .toMatch(/every note you use/i);
+    expect(prompt, `der Prompt zahlt nodes, wo die Flaeche notes zaehlt: ${prompt.slice(0, 260)}`)
+      .not.toMatch(/\bnodes\b/);
   });
 });

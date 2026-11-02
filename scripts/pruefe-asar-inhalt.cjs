@@ -701,6 +701,16 @@ const erwartet = [
   ["The seal check did not run", 1],
   ["the answer was empty", 1],
   ["No answer from the inbox", 1],
+  // Punkt 1/4/7, 2.11. (3.2.121, zwei Quellen, die ohne Wort wechselten): gegen das
+  // installierte 3.2.120 gezaehlt je **0** (gemessen 02.11. 16:30:05). Beide Saetze sind
+  // zustandsgesteuert — die antwortende Kapsel malt sie nie —, darum ist der Marker hier
+  // der Beweis am Objekt und nicht ein Bild.
+  ["entity links did not arrive", 1],
+  ["Local ranking", 1],
+  ["not from the semantic", 1],
+  ["every note you use", 1],
+  ["notes are loaded right now", 1],
+  ["notes (token budget", 1],
 ];
 // Die Liste darf nur ASCII-Zeichen enthalten. Grund, gemessen 21.10. 19:16 MESZ am
 // installierten Objekt: das Wort "Looking" plus echtes U+2026 steht dort 2 mal, diese

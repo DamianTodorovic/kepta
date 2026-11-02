@@ -178,6 +178,10 @@ export function Chat({ activeMemories, onSaveToBrain, onSaveToBrainWithMeta, isF
   const [gehirnWaermt, setGehirnWaermt] = useState(false);
   const [gehirnWarm, setGehirnWarm] = useState(false);
   const [suchDauerMs, setSuchDauerMs] = useState<number | null>(null);
+  // Punkt 4, 2.11.: die Flaeche wechselte ihre Quelle, ohne es zu sagen. Scheitert der
+  // Engine-Call, ordnet das lokale Ranking weiter (Chat.tsx:477, Kommentar seit Paket 3) —
+  // der Nutzer hielt die Reihenfolge fuer die semantische Suche.
+  const [suchWeg, setSuchWeg] = useState<"offen" | "engine" | "lokal">("offen");
 
   useEffect(() => {
     const t = setTimeout(() => setEntprellt(input.trim()), SERVER_DEBOUNCE_MS);
@@ -420,13 +424,13 @@ export function Chat({ activeMemories, onSaveToBrain, onSaveToBrainWithMeta, isF
         if (name || cases || goal || note) profileLine = `[User profile] ${name}${cases}${goal}${note}Passe Antwort-Stil und Beispiele daran an.\n\n`;
       }
     } catch {}
-    let prompt = profileLine + "You are the AI assistant. You have access to the user's personal knowledge base. Answer precisely and helpfully, based on the context below. Cite the id of every node you use where you can.\n\n";
+    let prompt = profileLine + "You are the AI assistant. You have access to the user's personal knowledge base. Answer precisely and helpfully, based on the context below. Cite the id of every note you use where you can.\n\n";
     // Date-aware prompting (arXiv:2605.08538): Zeitanker reduzieren Temporal-Fehler deutlich
     prompt += `[Today: ${new Date().toLocaleDateString('en-GB', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}]\n\n`;
     if (mems.length === 0) {
-      prompt += "(No nodes are loaded right now. Answer from general knowledge.)\n";
+      prompt += "(No notes are loaded right now. Answer from general knowledge.)\n";
     } else {
-      prompt += `Context — ${mems.length} nodes (token budget ${tokenBudget}):\n\n`;
+      prompt += `Context — ${mems.length} notes (token budget ${tokenBudget}):\n\n`;
       mems.forEach((m) => {
         const validTo = m.validTo ? ` | VALID UNTIL: ${new Date(m.validTo).toLocaleDateString('en-GB')}${m.validTo < Date.now() ? ' (EXPIRED)' : ''}` : "";
         const superseded = m.supersededBy ? " | SUPERSEDED" : "";
@@ -476,6 +480,7 @@ export function Chat({ activeMemories, onSaveToBrain, onSaveToBrainWithMeta, isF
     } catch {
       // Server unerreichbar — die Antwort fällt auf das lokale Ranking zurück.
     }
+    setSuchWeg(engineTreffer ? "engine" : "lokal");
     if (engineTreffer) {
       setSuchDauerMs(Math.round(performance.now() - sucheStart));
       setGehirnWarm(true);
@@ -809,6 +814,11 @@ export function Chat({ activeMemories, onSaveToBrain, onSaveToBrainWithMeta, isF
           {gehirnWarm && !gehirnWaermt && suchDauerMs !== null && (
             <span className="chip tnum hidden sm:inline-flex" title="The search index is ready — the time is this chat's last search, measured by this app.">
               <span className="status-dot" /> Search index warm — answer in {suchDauerMs} ms
+            </span>
+          )}
+          {suchWeg === "lokal" && (
+            <span className="chip" style={{ color: "var(--warn)" }} title="The search index did not answer — the order of the notes below comes from this app's own local ranking, not from the semantic search.">
+              <span className="status-dot" style={{ background: "var(--warn)" }} /> Local ranking — the search index did not answer
             </span>
           )}
           <div className="flex items-center gap-2" style={{ color: "var(--text-2)" }}>
