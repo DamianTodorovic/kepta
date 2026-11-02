@@ -253,7 +253,8 @@ async function main() {
   //     ist kein Beweis ueber die gefuellte. Also auch `radien` in die Liste.
   const SAAT = Number(ARG("saat", 30));
   if (NUR === "" || NUR === "suche" || NUR === "treffer" || NUR === "bild" || NUR === "radius"
-    || NUR === "radien" || NUR === "auswahl" || NUR === "gruppenzeit" || NUR === "tastmass") {
+    || NUR === "radien" || NUR === "auswahl" || NUR === "gruppenzeit" || NUR === "tastmass"
+    || NUR === "saetze") {
     const dateien = Array.from({ length: SAAT }, (_, i) => {
       const n = String(i + 1).padStart(4, "0");
       // Zwei Daten im Kuvert, nicht eine: die Flaeche haelt ihr Datumsfeld nur, wo die Saat
@@ -1258,6 +1259,38 @@ async function main() {
       fs.writeFileSync(datei, erst.puff);
       console.log(`  Bildbeweis: ${datei} (${erst.puff.length} B, ${erst.b} x ${erst.h}, Name "${erst.name || "keiner"}")`);
     }
+  }
+
+  // --- Zyklus R: der Lesekorpus (Punkt 7, zum ersten Mal ueberhaupt) --------------------------
+  //     Punkt 7 heisst woertlich "jeder muss es verstehen". Bis heute war dazu NIE etwas
+  //     gemessen — kein Blatt dieser Welle nennt einen Korpus der Saetze, die ein Nutzer wirklich
+  //     liest. Also zuerst die Aufnahme, und zwar aus dem gemalten Text des Fensters (nicht aus
+  //     dem Quelltext: was im Baum steht, wird nicht unbedingt auch gezeigt). Das Urteil darueber
+  //     spricht ein Leser ohne Projektkenntnis, nicht diese Datei.
+  if (NUR === "" || NUR === "saetze") {
+    await cdp.send("Page.reload", { ignoreCache: true });
+    await warteBis(async () => ((await evaliere(cdp, `document.querySelectorAll('button').length`)) > 0 ? true : null), { maxMs: 90000 });
+    await schlafe(1500);
+    const spaeterR = await warteBis(async () => evaliere(cdp, `(()=>{const b=[...document.querySelectorAll('button')].find(x=>/later|skip|spaeter/i.test(x.textContent||''));if(!b)return null;b.click();return (b.textContent||'').trim()})()`), { maxMs: 3000 });
+    if (spaeterR) await schlafe(700);
+    const korpus = {};
+    for (const nam of ["Knowledge", "Today", "Chat", "Graph", "Dossier", "Activity", "Settings"]) {
+      const geklickt = await knopf(cdp, `^\\s*${nam}\\s*$`);
+      urteil(`die Sicht ${nam} ist zu treffen`, geklickt !== null, true);
+      await schlafe(1400);
+      const texte = await evaliere(cdp, `(()=>{const haupt=document.querySelector('main')||document.body;
+        return haupt.innerText.split(/\\n+/).map(s=>s.replace(/\\s+/g,' ').trim()).filter(s=>s.length>1)})()`);
+      korpus[nam] = texte;
+      console.log(`  ${nam}: ${texte.length} Zeilen sichtbarer Text`);
+    }
+    const still = Object.entries(korpus).filter(([, v]) => v.length === 0).map(([k]) => k);
+    urteil("**keine Sicht bleibt stumm**", still, []);
+    fs.mkdirSync(BILDER_ZIEL, { recursive: true });
+    const pfad = path.join(BILDER_ZIEL, `saetze-korpus-${BREITE}px.json`);
+    fs.writeFileSync(pfad, JSON.stringify({ stand: new Date().toISOString(), breite: BREITE, hoehe: HOEHE, korpus }, null, 1));
+    const gesamt = Object.values(korpus).reduce((a, v) => a + v.length, 0);
+    console.log(`  Korpus: ${gesamt} Zeilen in sieben Sichten, geschrieben nach ${pfad}`);
+    console.log(`  Bild: ${await bild("saetze-korpus.png")}`);
   }
 
   // --- Zyklus Q: das Tastmass im echten Fenster (Punkt 2, der gezogene Vertrag) ---------------
