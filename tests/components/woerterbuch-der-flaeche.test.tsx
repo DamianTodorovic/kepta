@@ -36,6 +36,7 @@ const VERBOTEN: Array<[RegExp, string]> = [
   [/memory node/i, "ein gespeichertes Ding heisst note, nicht memory node"],
   [/the whole store/i, "alles Gespeicherte heisst your notes, nicht the whole store"],
   [/\bin the index\b/, "die Suchstruktur heisst search index, nicht index allein"],
+  [/\bin the store\b/, "alles Gespeicherte heisst your notes, nicht the store — 3.2.115"],
 ];
 
 function notiz(i: number): Memory {
@@ -149,6 +150,7 @@ describe("Punkt 7: die Flaeche spricht in einem Woerterbuch", () => {
     // Ohne diesen Fall kann die Wache graen bleiben, weil keine der Flaechen ueberhaupt Text
     // liefert (dasselbe Muster wie #106: ein Marker, den kein Verbraucher trifft, ist kahl).
     expect(() => inOrdnung("100 entries in the index", "Faelschung")).toThrow();
+    expect(() => inOrdnung("100 notes of 14,702 in the store", "Faelschung II")).toThrow();
     expect(() => inOrdnung("4 notes in the search index", "Falsch-Positiv-Kontrolle")).not.toThrow();
   });
 });

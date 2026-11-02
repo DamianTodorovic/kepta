@@ -630,6 +630,12 @@ const erwartet = [
   ["Title of this note", 1],
   ["notes shown", 1],
   ["not all of your notes", 1],
+  // Punkt 7, 2.11. (3.2.115, der letzte Name der Sammlung): gegen das installierte 3.2.114
+  // gezaehlt je **0**. "in the store" stand dort 7 mal — die Abwesenheit kann diese Liste nicht
+  // ausdruecken (nur `>=`), darum beweist sie der Zyklus `saetze` am gemalten Text.
+  ["notes in all", 1],
+  ["claims in all", 1],
+  ["More of your notes", 1],
 ];
 // Die Liste darf nur ASCII-Zeichen enthalten. Grund, gemessen 21.10. 19:16 MESZ am
 // installierten Objekt: das Wort "Looking" plus echtes U+2026 steht dort 2 mal, diese

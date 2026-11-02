@@ -101,14 +101,14 @@ describe("#113 die Begriffs-Haelfte der Kopfzeile nennt ihren Nenner", () => {
     tuer(alleEchos, { knoten: 120, kanten: 60 });
     const { container } = await zeichne();
     const kopf = kopfText(container);
-    expect(kopf, `der Nenner fehlt in der Kopfzeile: "${kopf.slice(0, 300)}"`).toMatch(/0 concepts of 120 in the store/);
+    expect(kopf, `der Nenner fehlt in der Kopfzeile: "${kopf.slice(0, 300)}"`).toMatch(/0 concepts of 120 in all/);
   });
 
   it("nennt die gemalte Zahl, wo sie nicht null ist: drei von 120 im Mischfall", async () => {
     tuer(gemischt, { knoten: 120, kanten: 60 });
     const { container } = await zeichne();
     const kopf = kopfText(container);
-    expect(kopf, `die Kopfzeile malt die falsche Grundgesamtheit: "${kopf.slice(0, 300)}"`).toMatch(/3 concepts of 120 in the store/);
+    expect(kopf, `die Kopfzeile malt die falsche Grundgesamtheit: "${kopf.slice(0, 300)}"`).toMatch(/3 concepts of 120 in all/);
   });
 
   it("schweigt, wenn die Tuer ueber dem Bestand nichts sagt", async () => {
@@ -125,7 +125,7 @@ describe("#113 die Begriffs-Haelfte der Kopfzeile nennt ihren Nenner", () => {
     tuer({ "Nordwind GmbH": ["n1", "n2"], "Frist Q4": ["n2", "n3"] }, { knoten: 2, kanten: 0 });
     const { container } = await zeichne();
     const kopf = kopfText(container);
-    expect(kopf, `der Zusatz steht trotz voller Deckung: "${kopf.slice(0, 300)}"`).not.toMatch(/of 2 in the store/);
+    expect(kopf, `der Zusatz steht trotz voller Deckung: "${kopf.slice(0, 300)}"`).not.toMatch(/of 2 in all/);
   });
 
   it("malt den Nenner nicht ein zweites Mal in die Bilanz-Prosa", async () => {
@@ -135,6 +135,6 @@ describe("#113 die Begriffs-Haelfte der Kopfzeile nennt ihren Nenner", () => {
     tuer(alleEchos, { knoten: 120, kanten: 60 });
     const { container } = await zeichne();
     const prosa = prosaText(container);
-    expect(prosa, `die Prosa malt den Nenner doppelt: "${prosa.slice(0, 400)}"`).not.toMatch(/concepts in the store/);
+    expect(prosa, `die Prosa malt den Nenner doppelt: "${prosa.slice(0, 400)}"`).not.toMatch(/concepts in all/);
   });
 });

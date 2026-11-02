@@ -75,7 +75,7 @@ function rahmen() {
  *
  *  Gezielt innerste Treffer: `querySelectorAll` liefert Vorfahren zuerst, und
  *  deren `textContent` schluckt GFs ehrliche Zeile im Graph darunter
- *  („Showing 100 of 14,702 notes in the store"). Ein Test, der gegen einen
+ *  („Showing 100 of 14,702 notes in all"). Ein Test, der gegen einen
  *  Vorfahren prüft, wäre grün, obwohl der Kopf die Seitenlänge zeigt — genau
  *  der false green, den ich hier zuerst hatte. */
 function graphKopf(container: HTMLElement) {

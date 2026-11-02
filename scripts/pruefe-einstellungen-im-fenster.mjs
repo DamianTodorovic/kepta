@@ -1286,6 +1286,16 @@ async function main() {
     }
     const still = Object.entries(korpus).filter(([, v]) => v.length === 0).map(([k]) => k);
     urteil("**keine Sicht bleibt stumm**", still, []);
+    // Punkt 7, 3.2.115: dasselbe Woerterbuch, das die Wache in jsdom haelt, wird hier am
+    // GEMALTEN Text des ausgelieferten Stuecks gefragt. Ein Beschluss, den nur ein Test kennt,
+    // gilt am Objekt nicht — er gilt erst, wenn das Objekt ihn spricht.
+    const verbotenQ = [[/\bentries?\b/, "entry/entries"], [/memory node/i, "memory node"],
+      [/the whole store/i, "the whole store"], [/\bin the store\b/i, "in the store"], [/\bin the index\b/i, "in the index"]];
+    const alleZeilen = Object.entries(korpus).flatMap(([namme, v]) => v.map((z) => [namme, z]));
+    for (const [muster, name] of verbotenQ) {
+      const treffer = alleZeilen.filter(([, z]) => muster.test(z));
+      urteil(`**kein Wort "${name}" auf dem Schirm**`, treffer.map(([n, z]) => `${n}: ${z.slice(0, 70)}`), []);
+    }
     fs.mkdirSync(BILDER_ZIEL, { recursive: true });
     const pfad = path.join(BILDER_ZIEL, `saetze-korpus-${BREITE}px.json`);
     fs.writeFileSync(pfad, JSON.stringify({ stand: new Date().toISOString(), breite: BREITE, hoehe: HOEHE, korpus }, null, 1));

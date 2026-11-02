@@ -11,7 +11,7 @@ import type { Memory } from "../../src/types";
 // Aufgabe #101, bewiesen an Damians eigenem Bild 18:34 MESZ
 // (`audit-2026-10-09/e1-bilder/graph-329-pannen-1440.png`):
 //
-//   Kopf    „100 of 21,066 in the store"
+//   Kopf    „100 of 21,066 in all"
 //   Bilanz  „21066 notes · 159 concepts · 1061 links"
 //   Rahmen  „729 of 21066 unfolded notes are in this picture"
 //
@@ -131,7 +131,7 @@ describe("#101 Kopf und Bilanz stellen dieselbe Menge", () => {
     expect(
       kopf!.textContent,
       "der Kopf behauptet eine Kappung, obwohl das Feld den ganzen Bestand trägt"
-    ).not.toMatch(/of\s+130\s+in the store/);
+    ).not.toMatch(/of\s+130\s+in all/);
   });
 
   it("schweigt die Tür, folgt der Kopf trotzdem dem Feld", async () => {

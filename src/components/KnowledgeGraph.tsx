@@ -2966,25 +2966,25 @@ export function KnowledgeGraph({ memories: memoriesAusFenster, onSelectMemory, o
      * es traegt.
      */
     if (ansicht === "dendrogram" && autoZiffern > 0) {
-      // „in the store" nur, wenn die Tür den Bestand nennt: 100 von 14 702 als
+      // „in all" nur, wenn die Tür den Bestand nennt: 100 von 14 702 als
       // „100 notes" auszugeben ist dieselbe stille Kappe, die dieser Schnitt
       // abschafft. Schweigt die Tür, bleibt die Liste alles, was die Fläche weiß.
       const umfang = bestandGroesse() === null
         ? `${zahl(memories.length)} notes`
-        : `${zahl(bestandNotizen)} notes in the store`;
+        : `${zahl(bestandNotizen)} notes in all`;
       klausaen.push(
         `${umfang} · ${zahl(offen)} unfolded, ${zahl(autoZiffern)} notes folded under ${zahl(autoGefaeltet)} groups`
       );
     } else if (offen < bestandNotizen) {
-      // „in the store" nur, wenn die Tür den Bestand nennt; schweigt sie, ist
+      // „in all" nur, wenn die Tür den Bestand nennt; schweigt sie, ist
       // die größere Zahl die eigene Liste und die Klaue heißt „in this view".
       klausaen.push(
-        `Showing ${zahl(offen)} of ${zahl(bestandNotizen)} notes${bestandGroesse() === null ? " in this view" : " in the store"}`
+        `Showing ${zahl(offen)} of ${zahl(bestandNotizen)} notes${bestandGroesse() === null ? " in this view" : " in all"}`
       );
     }
     const geliefert = graphApi?.relations.length ?? 0;
     if (graphApi?.bestand && graphApi.bestand.kanten > geliefert) {
-      klausaen.push(`Showing ${zahl(geliefert)} of ${zahl(graphApi.bestand.kanten)} claims in the store`);
+      klausaen.push(`Showing ${zahl(geliefert)} of ${zahl(graphApi.bestand.kanten)} claims in all`);
     }
     // Die Deckung. Eine Punktwolke und ein Netz sehen gleich aus, solange keine
     // Zahl sagt, wie viel des Bestands überhaupt an einem Begriff hängt. Wenn
@@ -6267,7 +6267,7 @@ export function KnowledgeGraph({ memories: memoriesAusFenster, onSelectMemory, o
             <div className="hud-label tnum" style={{ color: "var(--text-3)" }}>
               {memories.length.toLocaleString("en-US")} notes ·{" "}
               {inventar.gesamtKnoten.toLocaleString("en-US")} nodes ·{" "}
-              {behauptungen.toLocaleString("en-US")} claims in the store
+              {behauptungen.toLocaleString("en-US")} claims in all
             </div>
             <div className="pt-1">
               <div className="hud-label mb-1" style={{ color: "var(--text-2)" }}>Nodes</div>
@@ -6482,7 +6482,7 @@ export function KnowledgeGraph({ memories: memoriesAusFenster, onSelectMemory, o
                 der Luft. Filter, Zeitregler und Faltung ändern die gemalte Zahl
                 ohnehin — dafür steht die Bilanzzeile darunter. */}
             {bestandGroesse() !== null && bestandNotizen > bildZaehlung.knoten
-              ? ` of ${mengenzahl(bestandNotizen)} in the store`
+              ? ` of ${mengenzahl(bestandNotizen)} in all`
               : ""}{" "}
             ·{" "}
             {mengenzahl(netz.knoten.length)} {netz.knoten.length === 1 ? "concept" : "concepts"}
@@ -6492,7 +6492,7 @@ export function KnowledgeGraph({ memories: memoriesAusFenster, onSelectMemory, o
                 bei schmaler Breite hinter der Prosa-Kappe unsichtbar (index.css
                 `.legende-prosa`, Punkt 2, 19.10.) — die Kopfzeile steht immer. */}
             {graphApi?.bestand && graphApi.bestand.knoten > netz.knoten.length
-              ? ` of ${mengenzahl(graphApi.bestand.knoten)} in the store`
+              ? ` of ${mengenzahl(graphApi.bestand.knoten)} in all`
               : ""}{" "}
             ·{" "}
             {ansicht === "dendrogram"

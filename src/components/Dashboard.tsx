@@ -1426,7 +1426,7 @@ export function Dashboard() {
             onClick={() => void holeNaechsteSeite(setSeitenHinweis)}
             className="btn-ghost px-4 py-2 rounded-lg text-[13px] font-medium"
           >
-            More in the store — fetch the next {SEITE_NACHLAD.toLocaleString('en-GB')}
+            More of your notes — fetch the next {SEITE_NACHLAD.toLocaleString('en-GB')}
           </button>
         </div>
       )}

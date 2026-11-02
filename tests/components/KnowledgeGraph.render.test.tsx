@@ -3434,7 +3434,7 @@ describe("Das Schema-Inventar nennt, was der Bestand trägt", () => {
     const panel = await öffne(container);
     // 3 Notizen und 4 Begriffe sind 7 Knoten; die 9 gemalten Linien des Kopfes
     // sind 6 Erwähnungen und 3 Behauptungen — das Inventar nennt beides getrennt.
-    expect(panel.textContent).toMatch(/3 notes · 7 nodes · 3 claims in the store/);
+    expect(panel.textContent).toMatch(/3 notes · 7 nodes · 3 claims in all/);
   });
 
   it("spotlightet eine Behauptung: was sie nicht trägt, tritt zurück", async () => {

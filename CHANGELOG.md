@@ -1,3 +1,18 @@
+## [3.2.115]
+
+### Changed
+
+- **The last name for the whole collection is gone: "in the store" now reads "in all".** The
+  previous release fixed *entry*, *memory node* and *the whole store*; the census of painted text
+  found one more synonym pair still in use — the graph header ("100 notes of 14,702 in the store"),
+  its legend ("6 concepts of 36 in the store"), the claims clause, and the list footer's "More in
+  the store — fetch the next 200". They now say "… of 14,702 in all" and "More of your notes". The
+  distinction is deliberate, not a leftover: *the store did not answer* stays, because there the
+  word names the service on this computer, not the pile of your notes. The vocabulary guard gained
+  the phrase, and the window prober's `saetze` cycle now checks all five banned forms against the
+  **painted** text of the delivered object — an absence the content-marker list cannot express
+  (it only counts occurrences of what must be present), so the proof runs where the words are.
+
 ## [3.2.114]
 
 ### Changed

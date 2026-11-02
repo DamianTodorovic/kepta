@@ -8,7 +8,7 @@ import type { Memory } from "../../src/types";
 // `src/lib/store` wird gekapselt, weil hier nur die Zahl aus dem Kopf interessiert.
 //
 // Gehalten wird die Sperre der Leitung in beiden Richtungen:
-//   - sagt die Tür 14 702, muss die Fläche „100 notes of 14,702 in the store"
+//   - sagt die Tür 14 702, muss die Fläche „100 notes of 14,702 in all"
 //     nennen und ihr Verdikt gegen den Bestand rechnen (nicht gegen die Seite);
 //   - schweigt die Tür, darf die Fläche keine Bestandgröße erfinden.
 
@@ -56,11 +56,11 @@ async function flaeche(notizen: Memory[]) {
 }
 
 describe("Der Kopf nennt die gemalte Zahl und den Bestand der Tür", () => {
-  it("sagt ‚of 14,702 in the store', wenn die Seite 100 bringt", async () => {
+  it("sagt ‚of 14,702 in all', wenn die Seite 100 bringt", async () => {
     kapsel.bestand = 14_702;
     const { container } = await flaeche(Array.from({ length: 100 }, note));
     const kopf = container.querySelector('[data-testid="graph-kopf"]')?.textContent ?? "";
-    expect(kopf, kopf).toMatch(/100 notes of 14,702 in the store/);
+    expect(kopf, kopf).toMatch(/100 notes of 14,702 in all/);
     // Und das Verdikt. Seit #16 gilt: eine Bestandsdeckung darf die Fläche nur
     // nennen, wenn die Tür sie mitliefert — hier schweigt sie (`deckung` fehlt),
     // also zählt die Klaue das Fenster und heißt „in this picture". Unter der
@@ -79,7 +79,7 @@ describe("Der Kopf nennt die gemalte Zahl und den Bestand der Tür", () => {
     const { container } = await flaeche(Array.from({ length: 100 }, note));
     const kopf = container.querySelector('[data-testid="graph-kopf"]')?.textContent ?? "";
     expect(kopf, kopf).toMatch(/^100 notes/);
-    expect(kopf).not.toMatch(/in the store/);
+    expect(kopf).not.toMatch(/in all/);
     expect(container.textContent).not.toMatch(/of 14,702/);
   });
 
@@ -87,7 +87,7 @@ describe("Der Kopf nennt die gemalte Zahl und den Bestand der Tür", () => {
     kapsel.bestand = 100;
     const { container } = await flaeche(Array.from({ length: 100 }, note));
     const kopf = container.querySelector('[data-testid="graph-kopf"]')?.textContent ?? "";
-    expect(kopf, kopf).not.toMatch(/in the store/);
+    expect(kopf, kopf).not.toMatch(/in all/);
   });
 
   it("dünnt im GEKLEMMTEN Fenster: zwei gedeckte Notizen von 14 702", async () => {
@@ -103,7 +103,7 @@ describe("Der Kopf nennt die gemalte Zahl und den Bestand der Tür", () => {
     }), { status: 200 })));
     const { container } = await flaeche(Array.from({ length: 100 }, note));
     const kopf = container.querySelector('[data-testid="graph-kopf"]')?.textContent ?? "";
-    expect(kopf, kopf).toMatch(/^2 notes of 14,702 in the store · 1 concept/);
+    expect(kopf, kopf).toMatch(/^2 notes of 14,702 in all · 1 concept/);
     expect(container.textContent).toMatch(
       /98 notes hang under no concept and are not painted — search still finds them/
     );
@@ -123,7 +123,7 @@ describe("Der Kopf nennt die gemalte Zahl und den Bestand der Tür", () => {
     kapsel.bestand = 14_702;
     const { container } = await flaeche(Array.from({ length: 1050 }, note));
     const kopf = container.querySelector('[data-testid="graph-kopf"]')?.textContent ?? "";
-    expect(kopf, kopf).toMatch(/^1,050 notes of 14,702 in the store/);
+    expect(kopf, kopf).toMatch(/^1,050 notes of 14,702 in all/);
     expect(kopf, "rohe Menge neben formatierter im selben Kopf").not.toMatch(/^1050 notes/);
   });
 
