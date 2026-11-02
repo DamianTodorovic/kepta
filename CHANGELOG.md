@@ -1,3 +1,27 @@
+## [3.2.114]
+
+### Changed
+
+- **The surface now uses one word for one thing.** Two first-time readers, given only the text
+  captured from the running window (451 lines across seven screens) and no other file, both
+  returned the same complaint independently: the stored item had six names — *entry*, *entries*,
+  *note*, *node*, *memory node*, *piece* — and the whole collection had six more: *the index*, *the
+  whole store*, *the store*, *knowledge base*, *your memory*, *the brain*. A user who does not know
+  what their own saved thing is called cannot look for it. The vocabulary is now fixed: **note** for
+  one stored item, **your notes** for everything saved, **search index** for the structure behind it
+  — about twenty sentences across Knowledge, the sidebar, Chat, the editor, Settings, the graph
+  header and the sync panel. Two carve-outs are named, not silently kept: an audit log has
+  *entries* (a log does), and on the graph a *node* is the drawn picture, not the stored thing.
+  A new guard holds this at the **rendered** text of each surface, not at the source — a grep over
+  `src/` would also flag `Object.entries` and miss a sentence two components build together.
+
+### Fixed
+
+- **Today's span no longer reads "in the last a day".** The previous release replaced a doubled
+  direction ("since less than a minute ago") and introduced its own grammar fault at the single
+  unit. The span helper now returns the bare noun, so the sentence is "in the last minute / hour /
+  3 days". Caught by reading the rendered text of the app, not the diff.
+
 ## [3.2.113]
 
 ### Changed

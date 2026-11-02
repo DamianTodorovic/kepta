@@ -94,12 +94,12 @@ function anteilZahl(n: number, gesamt: number, faelter: number): string {
   return `${anteil.toFixed(1)} %`;
 }
 
-function mengensatz(gemalt: number, bestand: number | null, menge = 'in the store'): string {
+function mengensatz(gemalt: number, bestand: number | null, menge = 'notes'): string {
   const zahl = groessenZahl;
-  const entries = (n: number) => `${zahl(n)} ${n === 1 ? 'entry' : 'entries'}`;
-  if (bestand === null) return entries(gemalt);
+  const notizen = (n: number) => `${zahl(n)} ${n === 1 ? 'note' : 'notes'}`;
+  if (bestand === null) return notizen(gemalt);
   if (bestand > gemalt) return `${zahl(gemalt)} of ${zahl(bestand)} ${menge}`;
-  return entries(bestand);
+  return notizen(bestand);
 }
 
 /**
@@ -1374,7 +1374,7 @@ export function Dashboard() {
                   {g.titel}
                 </h3>
                 <span className="text-[11px] tnum whitespace-nowrap" style={{ color: 'var(--text-3)' }}>
-                  {g.memories.length} {g.memories.length === 1 ? 'entry' : 'entries'}{g.typMix ? ` · ${g.typMix}` : ''}
+                  {g.memories.length} {g.memories.length === 1 ? 'note' : 'notes'}{g.typMix ? ` · ${g.typMix}` : ''}
                 </span>
                 {g.quelle && (
                   <button
@@ -1436,8 +1436,8 @@ export function Dashboard() {
               stille Kappe: das „All" galt der Ladung, nicht dem Bestand. Seit dem
               Brief gilt die Kappe selbst als Zeugnis — nicht nur die Zahl. */}
           {seiteIstBegrenzt() || (tuerBestand !== null && tuerBestand > displayedMemories.length)
-            ? <>All {displayedMemories.length.toLocaleString('en-GB')} loaded{tuerBestand !== null ? ` · ${groessenZahl(tuerBestand)} in the store` : ' · the door says more follow'}</>
-            : <>All {groessenZahl(displayedMemories.length)} entries shown</>}
+            ? <>All {displayedMemories.length.toLocaleString('en-GB')} loaded{tuerBestand !== null ? ` · ${groessenZahl(tuerBestand)} notes saved` : ' · the door says more follow'}</>
+            : <>All {groessenZahl(displayedMemories.length)} notes shown</>}
           {seitenHinweis && <> · {seitenHinweis}</>}
         </div>
       )}
@@ -1581,7 +1581,7 @@ export function Dashboard() {
                   } catch { /* ignore */ }
                 }}
                 className="btn-ghost hidden sm:flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-medium"
-                title="Trash — restore deleted entries"
+                title="Trash — restore deleted notes"
               >
                 <Trash2 className="w-4 h-4" />
                 {trashCount > 0 && <span className="tnum">{trashCount}</span>}
@@ -1596,7 +1596,7 @@ export function Dashboard() {
               <button
                 onClick={copyContextForAI}
                 className="btn-ghost flex items-center gap-2 px-3 py-2 rounded-lg font-medium text-xs"
-                title={`${chatMemories.length} entries in the chat context — copy as a prompt`}
+                title={`${chatMemories.length} notes in the chat context — copy as a prompt`}
               >
                 {copied ? <CheckCircle2 className="w-4 h-4" style={{ color: 'var(--ok)' }} /> : <Copy className="w-4 h-4" />}
                 <span className="hidden sm:inline">{copied ? 'Copied' : `Context (${chatMemories.length})`}</span>
@@ -1620,8 +1620,8 @@ export function Dashboard() {
               <div className="flex items-center justify-between mb-2">
                 <span className="text-[12px] font-medium" style={{ color: 'var(--text-2)' }}>
                   {papierkorbKappe
-                    ? <>Trash — first {trashedMemories.length} of {groessenZahl(papierkorbKappe.gesamt)} deleted entries</>
-                    : <>Trash — {trashedMemories.length} deleted entries, all restorable</>}
+                    ? <>Trash — first {trashedMemories.length} of {groessenZahl(papierkorbKappe.gesamt)} deleted notes</>
+                    : <>Trash — {trashedMemories.length} deleted notes, all restorable</>}
                 </span>
                 <button onClick={() => setTrashOpen(false)} className="btn-ghost px-2 py-1 rounded-md text-[11px]">Close</button>
               </div>
@@ -1869,7 +1869,7 @@ export function Dashboard() {
               <div className="index-strip mb-4 shrink-0 flex-wrap gap-y-3">
                 <div className="index-cell" style={{ flex: '0 1 auto' }}>
                   <span className="num-hero">{(tuerBestand ?? memories.length).toLocaleString('en-GB')}</span>
-                  <span className="k">{(tuerBestand ?? memories.length) === 1 ? 'entry in the index' : 'entries in the index'}</span>
+                  <span className="k">{(tuerBestand ?? memories.length) === 1 ? 'note in the search index' : 'notes in the search index'}</span>
                 </div>
                 <div className="index-cell">
                   <span className="v">
@@ -1914,7 +1914,7 @@ export function Dashboard() {
                       und dieselbe Zahl zweimal in einem Streifen ist die Krankheit,
                       die #77 gerade nicht wollte. Solange die Tür nicht geantwortet
                       hat, sagt die Zeile, wie weit sie überhaupt gesehen hat. */}
-                  <span className="k">{TRAEGER_FRAGE_SATZ} · {bestandGruppen ? 'the whole store' : ladung !== null ? `counting the ${groessenZahl(ladung)} loaded` : 'in the index'}</span>
+                  <span className="k">{TRAEGER_FRAGE_SATZ} · {bestandGruppen ? 'all of your notes' : ladung !== null ? `counting the ${groessenZahl(ladung)} loaded` : 'in the search index'}</span>
                 </div>
                 <div className="index-cell">
                   <span className="v">{groessenZahl(allTags.length)}</span>
@@ -1987,7 +1987,7 @@ export function Dashboard() {
 
               <div className="flex items-center justify-between mb-3 shrink-0">
                 <div className="flex items-center gap-3 text-[12px] tnum" style={{ color: 'var(--text-3)' }}>
-                  <span>{displayedMemories.length.toLocaleString('en-GB')} of {tagFiltered.length.toLocaleString('en-GB')} {ladung !== null ? 'on this page' : 'entries'}</span>
+                  <span>{displayedMemories.length.toLocaleString('en-GB')} of {tagFiltered.length.toLocaleString('en-GB')} {ladung !== null ? 'on this page' : 'notes'}</span>
                   {semanticEnabled && debouncedSearchQuery.trim().length >= 2 && (
                     serverTotal !== null && serverTotal > displayedMemories.length ? (
                       <button
@@ -2083,7 +2083,7 @@ export function Dashboard() {
                       <span
                         className="text-[11px] shrink-0 tnum"
                         style={{ color: 'var(--text-3)' }}
-                        title={`The chips run over the ${groessenZahl(memories.length)} entries loaded on this page, not over the store.`}
+                        title={`The chips run over the ${groessenZahl(memories.length)} notes loaded on this page, not over everything you have saved.`}
                       >
                         on this page {TRAEGER_REIHENFOLGE.map((k) => groessenZahl(traegerCounts[k])).join(' · ')}
                       </span>
@@ -2150,22 +2150,22 @@ export function Dashboard() {
                       </button>
                     </div>
                   ) : displayedMemories.length === 0 ? (
-                    <div className="flex-1 flex flex-col items-center justify-center text-center">
+                    <div className="flex-1 flex flex-col items-center justify-center text-center" data-testid="leerer-zustand">
                       <div className="w-16 h-16 rounded-2xl flex items-center justify-center mb-4" style={{ background: 'var(--bg-inset)', border: '1px solid var(--border-subtle)', boxShadow: 'inset 0 1px 0 var(--edge-light)' }}>
                         <KeptaMark size={34} />
                       </div>
                       <h3 className="text-[15px] font-semibold mb-2" style={{ color: 'var(--text-1)' }}>
                         {debouncedSearchQuery || selectedTags.length > 0
                           ? 'No matches'
-                          : gruppenFilterAktiv ? `No entries ${gruppenGrund}` : 'No entries yet'}
+                          : gruppenFilterAktiv ? `No notes ${gruppenGrund}` : 'No notes yet'}
                       </h3>
                       <p className="text-[13px] max-w-sm mx-auto leading-relaxed" style={{ color: 'var(--text-2)' }}>
                         {debouncedSearchQuery || selectedTags.length > 0
                           ? semanticEnabled && debouncedSearchQuery.trim().length >= 2
                             ? `Nothing found for “${debouncedSearchQuery.trim().slice(0, 48)}”. Try different terms, raise the result count, or switch to keyword search.`
-                            : "No entries match the search criteria."
+                            : "No notes match the search criteria."
                           : gruppenFilterAktiv
-                            ? `Nothing ${gruppenGrund} among the ${groessenZahl(memories.length)} loaded entries` +
+                            ? `Nothing ${gruppenGrund} among the ${groessenZahl(memories.length)} loaded notes` +
                               (zahlDerWahl !== undefined
                                 ? ` — the store holds ${groessenZahl(zahlDerWahl)} of them, and this filter only sees what is loaded.`
                                 : tuerBestand !== null && tuerBestand > memories.length

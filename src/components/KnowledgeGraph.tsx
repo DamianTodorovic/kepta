@@ -945,7 +945,7 @@ export function rahmenZeilentext(imRahmen: number, gesamt: number, baumAnsicht: 
  * ASCII in der Zeichensetzung, weil der Objektpruefer das Bundel latin1-gelesen durchgeht.
  */
 export function kopfLadeSatz(stand: "kommt" | "da" | "fort"): string {
-  if (stand === "kommt") return " - the whole store is still arriving, this is what has come in so far";
+  if (stand === "kommt") return " - all of your notes are still arriving, this is what has come in so far";
   if (stand === "fort") return " - the store did not answer, this picture is only the page the list brought";
   return "";
 }
@@ -982,7 +982,7 @@ export function fensterZeile(
  * Darum hier die eine Wendung ohne Zahlen — die Zahlen stehen in der Langform.
  */
 export function kopfFensterSatz(begrenzt: boolean): string {
-  return begrenzt ? " - this is a window, not the whole store" : "";
+  return begrenzt ? " - this is a window, not all of your notes" : "";
 }
 
 export const GRAPH_TIEFE_MIN = 1;

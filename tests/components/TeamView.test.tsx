@@ -47,7 +47,7 @@ describe("TeamView", () => {
     expect(rollen.textContent).toContain("admin");
     expect(rollen.textContent).toContain("(this computer)");
     // Team-Notizen gezählt, lokale nicht mitgezählt:
-    expect(screen.getByTestId("team-notizen-count").textContent).toContain("1 entry");
+    expect(screen.getByTestId("team-notizen-count").textContent).toContain("1 note");
     // Eine Stufe wird nirgends mehr behauptet.
     expect(screen.queryByTestId("team-edition")).toBeNull();
     expect(screen.queryByTestId("team-seats")).toBeNull();

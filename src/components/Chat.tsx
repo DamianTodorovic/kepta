@@ -843,7 +843,7 @@ export function Chat({ activeMemories, onSaveToBrain, onSaveToBrainWithMeta, isF
                 <span className="px-2 py-1 rounded-md text-[11px] font-semibold tnum" style={{ background: "var(--bg-panel)", border: "1px solid var(--border-subtle)", color: "var(--text-1)" }}>
                   {tokenBudget.toLocaleString("en-GB")}
                 </span>
-                <span>· {budgetedMemories.length} entries active</span>
+                <span>· {budgetedMemories.length} notes in play</span>
               </span>
             </div>
             <div className="relative h-7 flex items-center">
@@ -907,7 +907,7 @@ export function Chat({ activeMemories, onSaveToBrain, onSaveToBrainWithMeta, isF
             </div>
             <div className="hud-label mb-2">Ready</div>
             <p className="text-[13px] max-w-sm leading-relaxed" style={{ color: "var(--text-2)" }}>
-              Ask something about your entries — {budgetedMemories.length} of {activeMemories.length} fit the budget ({tokenBudget.toLocaleString("en-GB")} tokens).
+              Ask something about your notes — {budgetedMemories.length} of {activeMemories.length} fit the budget ({tokenBudget.toLocaleString("en-GB")} tokens).
             </p>
             <div className="mt-5 flex flex-wrap gap-2 justify-center max-w-md">
               {["Summarise", "Find contradictions", "Next steps", "As a table"].map((s) => (

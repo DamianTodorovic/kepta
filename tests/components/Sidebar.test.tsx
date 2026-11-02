@@ -54,10 +54,10 @@ describe("Sidebar: Navigation", () => {
 describe("Sidebar: Zaehlung und Tags", () => {
   it("zaehlt Eintraege im Singular und Plural", () => {
     const { unmount } = zeige({ totalMemories: 1 });
-    expect(screen.getByText("1 entry")).toBeTruthy();
+    expect(screen.getByText("1 note")).toBeTruthy();
     unmount();
     zeige({ totalMemories: 42 });
-    expect(screen.getByText("42 entries")).toBeTruthy();
+    expect(screen.getByText("42 notes")).toBeTruthy();
   });
 
   it("zeigt Tags mit ihrer Haeufigkeit", () => {

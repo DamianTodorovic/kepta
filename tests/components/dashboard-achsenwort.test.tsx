@@ -103,16 +103,16 @@ describe("Punkt 5: drei Achsen, drei Fragen", () => {
 
   it("nennt die Traeger-Zahlen im Streifen bei ihrer eignen Frage", async () => {
     const { container } = await zeige();
-    await waitFor(() => expect(container.textContent).toMatch(/the whole store/i), { timeout: 6000 });
+    await waitFor(() => expect(container.textContent).toMatch(/all of your notes/i), { timeout: 6000 });
     expect(container.textContent, `der Streifen steht unter falschem Wort: ${streifenWort(container)}`)
-      .toMatch(/in what form · the whole store/);
+      .toMatch(/in what form · all of your notes/);
     expect(container.textContent, "unter den Traeger-Zahlen steht wieder die Herkunfts-Frage")
-      .not.toMatch(/where it came from · the whole store/);
+      .not.toMatch(/where it came from · all of your notes/);
   });
 
   it("fuehrt die Chips-Gruppe mit demselben Wort wie den Streifen", async () => {
     const { container } = await zeige();
-    await waitFor(() => expect(container.textContent).toMatch(/the whole store/i), { timeout: 6000 });
+    await waitFor(() => expect(container.textContent).toMatch(/all of your notes/i), { timeout: 6000 });
     expect(screen.getByRole("group", { name: new RegExp(TRAEGER_FRAGE, "i") }),
       "die Traeger-Chips tragen ein andres Wort als ihre Zahlen oben").toBeTruthy();
     expect(screen.queryByRole("group", { name: /where it came from/i }),
@@ -145,7 +145,7 @@ function traegerZelle(container: HTMLElement): Element | undefined {
  * eignen Tuer gemessen) sind 92 Stuecke selbst getippt = 0,44 %. Die Menge allein sagt ihm das
  * nicht - "92 Notes" sieht aus wie eine Zahl unter vielen, und die einzige Zahl an seinem Bild,
  * die etwas ueber sein Wissen aussagt, ist das Verhaeltnis. Der Nenner ist schon genannt
- * ("the whole store" in derselben Zelle) und wird nicht wiederholt: dieselbe Zahl zweimal in
+ * ("all of your notes" in derselben Zelle) und wird nicht wiederholt: dieselbe Zahl zweimal in
  * einem Streifen ist die Krankheit, die #77 gerade nicht wollte.
  *
  * Die Faelle rechnen mit SEINEN Zahlen, nicht mit dem bequemen 100/30/20: ein Fixture, dessen
@@ -179,7 +179,7 @@ async function zeigeMit(bestand: number, traeger: { notes: number; files: number
 describe("Punkt 5: die Traeger-Zeile nennt ihren Anteil", () => {
   it("sagt zu seinen echten Zahlen, wie klein das Selbstgetippte ist", async () => {
     const { container } = await zeigeMit(21_066, { notes: 92, files: 10_996, code: 9_978 });
-    await waitFor(() => expect(container.textContent).toMatch(/the whole store/i), { timeout: 6000 });
+    await waitFor(() => expect(container.textContent).toMatch(/all of your notes/i), { timeout: 6000 });
     const text = container.textContent ?? "";
     // 92 / 21 066 = 0,4367 % · 10 996 / 21 066 = 52,197 % · 9 978 / 21 066 = 47,366 %
     expect(text, `kein Anteil an der Zeile: ${streifenWort(container)}`).toMatch(/0\.4\s*%/);
@@ -189,7 +189,7 @@ describe("Punkt 5: die Traeger-Zeile nennt ihren Anteil", () => {
 
   it("verschwindet nicht in einem 0-Prozent-Fach, das nur klein ist", async () => {
     const { container } = await zeigeMit(21_066, { notes: 1, files: 10_532, code: 10_533 });
-    await waitFor(() => expect(container.textContent).toMatch(/the whole store/i), { timeout: 6000 });
+    await waitFor(() => expect(container.textContent).toMatch(/all of your notes/i), { timeout: 6000 });
     const text = container.textContent ?? "";
     // 1 / 21 066 = 0,0047 %. Eine gerundete 0 % an einem Fach, das ein Stueck haelt, ist eine
     // Absage an den Leser, nicht eine Zahl: es sagt "hier ist nichts", waehrend etwas da ist.
@@ -207,7 +207,7 @@ describe("Punkt 5: die Traeger-Zeile nennt ihren Anteil", () => {
    */
   it("nennt keinen Anteil, wenn ein einziges Fach den ganzen Laden fuellt", async () => {
     const { container } = await zeigeMit(74, { notes: 74, files: 0, code: 0 });
-    await waitFor(() => expect(container.textContent).toMatch(/the whole store/i), { timeout: 6000 });
+    await waitFor(() => expect(container.textContent).toMatch(/all of your notes/i), { timeout: 6000 });
     const zelle = traegerZelle(container)?.textContent ?? "";
     expect(zelle, `ein Fach, das alles ist, braucht kein hundert Prozent daneben: ${zelle}`).not.toMatch(/100(\.0)?\s*%/);
     // Die Menge selbst bleibt stehen — ohne sie waere die Zeile leer.
@@ -216,7 +216,7 @@ describe("Punkt 5: die Traeger-Zeile nennt ihren Anteil", () => {
 
   it("sagt fast alles und fast nichts, statt auf 100 und 0 zu runden", async () => {
     const { container } = await zeigeMit(21_066, { notes: 21_060, files: 5, code: 1 });
-    await waitFor(() => expect(container.textContent).toMatch(/the whole store/i), { timeout: 6000 });
+    await waitFor(() => expect(container.textContent).toMatch(/all of your notes/i), { timeout: 6000 });
     const zelle = traegerZelle(container)?.textContent ?? "";
     // 21 060 / 21 066 = 99,97 % und 1 / 21 066 = 0,0047 %. Zwei Faelle, eine Regel: die Rundung
     // darf keinen Rand erzeugen, den es nicht gibt — "100 %" behauptet ein alleiniges Fach,

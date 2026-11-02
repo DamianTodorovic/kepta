@@ -72,7 +72,7 @@ export default function PraxisSync() {
       a.remove();
       URL.revokeObjectURL(url);
 
-      setMeldung({ art: 'ok', text: `${d.bundle.count} entries encrypted and downloaded.` });
+      setMeldung({ art: 'ok', text: `${d.bundle.count} notes encrypted and downloaded.` });
       void journalLaden();
     } catch (e) {
       setMeldung({ art: 'fehler', text: e instanceof Error ? e.message : 'Export failed' });
@@ -160,7 +160,7 @@ export default function PraxisSync() {
           style={{ color: 'var(--text-1)' }}
         />
         <p className="text-xs" style={{ color: 'var(--text-2)' }}>
-          Only entries in this scope go into the bundle, so client A stays out of client B's file.
+          Only notes in this scope go into the bundle, so client A stays out of client B's file.
         </p>
       </div>
 
@@ -230,7 +230,7 @@ export default function PraxisSync() {
               <li key={e.hash} className="text-xs flex flex-wrap items-center gap-x-3 gap-y-1 px-3 py-2 rounded-lg hud-inset">
                 <span style={{ color: 'var(--text-1)' }}>#{e.seq}</span>
                 <span style={{ color: 'var(--text-1)' }}>{e.direction === 'export' ? 'Export' : 'Import'}</span>
-                <span style={{ color: 'var(--text-2)' }}>{e.count} entries</span>
+                <span style={{ color: 'var(--text-2)' }}>{e.count} notes</span>
                 <span style={{ color: 'var(--text-2)' }}>{e.scope}</span>
                 <span style={{ color: 'var(--text-2)' }}>{new Date(e.at).toLocaleString()}</span>
                 <code style={{ color: 'var(--text-2)' }}>{e.payloadHash.slice(0, 12)}…</code>

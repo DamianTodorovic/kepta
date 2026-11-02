@@ -30,16 +30,16 @@ describe("Punkt 7: die Spanne seit dem letzten Besuch ist ein Satzteil, keine Ri
   it("zaehlt Minuten von zwei an, und sagt eine Stunde, nicht 1 hours", () => {
     expect(spannenText(JETZT - 2 * MIN, JETZT)).toBe("2 minutes");
     expect(spannenText(JETZT - 37 * MIN, JETZT)).toBe("37 minutes");
-    expect(spannenText(JETZT - 61 * MIN, JETZT)).toBe("an hour");
+    expect(spannenText(JETZT - 61 * MIN, JETZT)).toBe("hour");
     expect(spannenText(JETZT - 3 * STU, JETZT)).toBe("3 hours");
   });
 
   it("sagt a day und a year, nicht 1 days und 1 years", () => {
-    expect(spannenText(JETZT - 25 * STU, JETZT)).toBe("a day");
+    expect(spannenText(JETZT - 25 * STU, JETZT)).toBe("day");
     expect(spannenText(JETZT - 3 * TAG, JETZT)).toBe("3 days");
-    expect(spannenText(JETZT - 31 * TAG, JETZT)).toBe("a month");
+    expect(spannenText(JETZT - 31 * TAG, JETZT)).toBe("month");
     expect(spannenText(JETZT - 65 * TAG, JETZT)).toBe("2 months");
-    expect(spannenText(JETZT - 400 * TAG, JETZT)).toBe("a year");
+    expect(spannenText(JETZT - 400 * TAG, JETZT)).toBe("year");
     expect(spannenText(JETZT - 800 * TAG, JETZT)).toBe("2 years");
   });
 
@@ -65,7 +65,7 @@ describe("Punkt 7: der gemalte Untertitel sagt, was er meint", () => {
     await waitFor(() => expect(container.textContent).toMatch(/what happened/));
     const satz = ((container.textContent || "").match(/what happened[^·]*/) ?? [""])[0].trim();
     expect(satz, `der Untertitel nennt keine Spanne: "${satz}"`)
-      .toMatch(/in the last (minute|a minute|an hour|\d+ (minutes|hours|days|months|years)|a (day|month|year))/);
+      .toMatch(/in the last (minute|hour|day|month|year|\d+ (minutes|hours|days|months|years))/);
     expect(satz, `der Untertitel nennt seine Richtung zweimal: "${satz}"`).not.toMatch(/\bsince\b.*\bago\b/i);
     expect(satz, `ein Werkzeugkasten-Wort steht in einem Nutzersatz: "${satz}"`)
       .not.toMatch(/less than a minute ago|about 1 hour/i);

@@ -885,7 +885,7 @@ export function Settings() {
                     </div>
                     <div className="min-w-0 break-words">
                       <div className="text-sm font-semibold" style={{color:'var(--text-1)'}}>Learn automatically</div>
-                      <div className="text-xs" style={{color:'var(--text-2)'}}>Save the key point of every chat answer as an entry (tagged <code>auto-learn</code>). Duplicates are detected.</div>
+                      <div className="text-xs" style={{color:'var(--text-2)'}}>Save the key point of every chat answer as a note (tagged <code>auto-learn</code>). Duplicates are detected.</div>
                     </div>
                   </div>
                   <label className="relative inline-flex h-6 w-11 items-center rounded-full transition-colors cursor-pointer shrink-0" style={{ background: autoLearn ? 'var(--accent)' : 'var(--bg-inset-strong)', border: autoLearn ? '1px solid transparent' : '1px solid var(--border-subtle)' }}>
@@ -973,7 +973,7 @@ export function Settings() {
                     <h3 className="settings-h" style={{ color: 'var(--text-1)' }}>Data management</h3>
                   </div>
                 <p className="text-sm mb-4" style={{ color: 'var(--text-2)' }}>
-                  Download every memory node as a JSON backup. Your data lives on this device and nowhere else.
+                  Download every note as a JSON backup. Your data lives on this device and nowhere else.
                 </p>
                 <button
                   onClick={handleExport}
@@ -1084,7 +1084,7 @@ export function Settings() {
                               ))}
                             </div>
                             <div className="text-[11.5px]" style={{ color: 'var(--text-3)' }}>
-                              counted over all {bestandGruppen.bestand.toLocaleString('en-GB')} entries in the store
+                              counted over all {bestandGruppen.bestand.toLocaleString('en-GB')} of your notes
                             </div>
                           </div>
                         )}

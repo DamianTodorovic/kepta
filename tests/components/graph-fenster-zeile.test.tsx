@@ -98,7 +98,7 @@ describe("#124 die Flaeche nennt ihr Fenster", () => {
   });
 
   it("der Kopf traegt die Kurzform immer, die Langform nur hinter der Klappe", () => {
-    expect(kopfFensterSatz(true)).toMatch(/window, not the whole store/);
+    expect(kopfFensterSatz(true)).toMatch(/window, not all of your notes/);
     expect(kopfFensterSatz(false)).toBe("");
   });
 
@@ -108,7 +108,7 @@ describe("#124 die Flaeche nennt ihr Fenster", () => {
       <ThemeProvider><AuthProvider><ToastProvider><Dashboard /></ToastProvider></AuthProvider></ThemeProvider>
     );
     await waitFor(() => expect(container.querySelector('[data-testid="graph-kopf"]')?.textContent)
-      .toMatch(/window, not the whole store/), { timeout: 8000 });
+      .toMatch(/window, not all of your notes/), { timeout: 8000 });
     // Nicht gegen die Klappe pruefen: ihre Anfangsstellung ist eine Messung des
     // Fensters, nicht dieser Funktion — am ausgelieferten Stueck stand sie 05:21 Uhr auf
     // `false` (Legende zu), in jsdom steht sie auf `true`. Behauptet wird hier nur, dass
@@ -121,7 +121,7 @@ describe("#124 die Flaeche nennt ihr Fenster", () => {
       <ThemeProvider><AuthProvider><ToastProvider><Dashboard /></ToastProvider></AuthProvider></ThemeProvider>
     );
     await waitFor(() => expect(container.querySelector('[data-testid="graph-kopf"]')).toBeTruthy(), { timeout: 8000 });
-    expect(container.querySelector('[data-testid="graph-kopf"]')?.textContent).not.toMatch(/window, not the whole store/);
+    expect(container.querySelector('[data-testid="graph-kopf"]')?.textContent).not.toMatch(/window, not all of your notes/);
   });
 
   it("schweigt die Tuer (aeltere Fassung), erfindet die Flaeche kein Fenster", async () => {

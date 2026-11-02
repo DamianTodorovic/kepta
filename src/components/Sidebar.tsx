@@ -85,7 +85,7 @@ export function Sidebar({ tags, selectedTags, onSelectTag, onClearTags, currentV
             K3PTA
           </div>
           <div className="seiten-zahl text-[11px] mt-1 tnum">
-            {totalMemories.toLocaleString('en-GB')} {totalMemories === 1 ? 'entry' : 'entries'}
+            {totalMemories.toLocaleString('en-GB')} {totalMemories === 1 ? 'note' : 'notes'}
           </div>
         </div>
       </div>

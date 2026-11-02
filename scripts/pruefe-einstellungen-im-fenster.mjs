@@ -867,8 +867,9 @@ async function main() {
   // --- Zyklus N: was der Nutzer in den ersten Sekunden sieht (Punkt 6, Aufgabe 34) -----------
   //     Gemessen an seiner eignen Tuer (1.11. 13:34, Bestand 21 064): `GET /api/memories/gruppen`
   //     braucht 1 351 und 1 304 ms, weil die Route beim Fragen teilt und nichts gespeichert ist.
-  //     Die Flaeche haelt fuer die Zeit ein Wort bereit ("counting the N loaded" gegen
-  //     "the whole store", `Dashboard.tsx:1895`) - ob es ankommt, wann es wechselt und ob die
+  //     Die Flaeche haelt fuer die Zeit ein Wort bereit ("counting the N loaded" gegen die ganze
+  //     Menge - seit 3.2.114 "all of your notes", vorher "the whole store", darum fragt dieser
+  //     Zyklus nach BEIDEN Formen) - ob es ankommt, wann es wechselt und ob die
   //     Zeile je leer ist, war nicht gemessen.
   if (NUR === "" || NUR === "gruppenzeit") {
     // Der erste Entwurf (06:41) lud neu, wartete auf Knopfe, klickte die Liste - und begann
@@ -883,7 +884,7 @@ async function main() {
       const text = await evaliere(cdp, `(()=>{const e=[...document.querySelectorAll('span')].find(x=>/in what form/.test(x.textContent||''));
         return e?(e.textContent||'').trim():''})()`).catch(() => "");
       spur.push([Date.now() - anfang, String(text || "")]);
-      if (String(text).includes("the whole store")) ziel = spur.length - 1;
+      if (/the whole store|all of your notes/.test(String(text))) ziel = spur.length - 1;
       await schlafe(100);
     }
     const spurAlt = spur;
@@ -892,8 +893,8 @@ async function main() {
     // index", Probe 3 bei 225 ms nennt die ganze Menge). Gefragt wird darum die Zeit, in der
     // die Zeile steht - und ob sie in dieser Zeit je eine Zahl ohne Grundgesamtheit zeigt.
     urteil("**sobald die Zeile steht, nennt sie eine Grundgesamtheit**",
-      spurAlt.slice(Math.max(0, spurAlt.findIndex(([, s]) => s.length > 0))).every(([, s]) => /in the index|counting the|the whole store/.test(s)), true);
-    const stadien = spurAlt.filter(([, text]) => /counting the|in the index/.test(text)).length;
+      spurAlt.slice(Math.max(0, spurAlt.findIndex(([, s]) => s.length > 0))).every(([, s]) => /in the (?:search )?index|counting the|the whole store|all of your notes/.test(s)), true);
+    const stadien = spurAlt.filter(([, text]) => /counting the|in the (?:search )?index/.test(text)).length;
     const erste = spurAlt.findIndex(([, text]) => text.length > 0);
     console.log(`  Verlauf: ${spurAlt.length} Griffe in ${spurAlt[spurAlt.length - 1][0]} ms, ` +
       `${stadien} Proben nennen die Grundgesamtheit "geladen", ` +
@@ -1311,7 +1312,7 @@ async function main() {
     // Der Neuladen kann den Assistenten zurueckbringen; derselbe Weg wie oben, wieder gefragt.
     const spaeterQ = await warteBis(async () => evaliere(cdp, `(()=>{const b=[...document.querySelectorAll('button')].find(x=>/later|skip|spaeter/i.test(x.textContent||''));if(!b)return null;b.click();return (b.textContent||'').trim()})()`), { maxMs: 3000 });
     if (spaeterQ) await schlafe(700);
-    const inLeiste = Number(await evaliere(cdp, `(()=>{const m=(document.body.innerText||'').match(/(\\d+)\\s+entries in the index/);return m?Number(m[1]):-1})()`));
+    const inLeiste = Number(await evaliere(cdp, `(()=>{const m=(document.body.innerText||'').match(/(\\d+)\\s+(?:entries|notes) in the (?:search )?index/);return m?Number(m[1]):-1})()`));
     urteil(`**die Flaeche kennt die Saat (${SAAT} Eintraege stehen in der Leiste)**`, inLeiste >= SAAT, true);
     console.log(`  Leiste sagt: ${inLeiste} Eintraege (Tuer: ${SAAT} gesaet)`);
     const BREITE_IST = Number(await evaliere(cdp, `window.innerWidth`));

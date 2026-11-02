@@ -42,9 +42,11 @@ const erwartet = [
   ["the three curl test commands", 1],
   ["the field gathers into one core marker", 1],
   ["the rest sits in one core marker", 1],
-  ["the whole store is still arriving", 1],
+  // 3.2.114 zieht den Satz um (Punkt 7, Woerterbuch): "the whole store" war einer von sechs
+  // Namen fuer dieselbe Sache. Der Marker folgt der Flaeche, nicht der Erinnerung.
+  ["all of your notes are still arriving", 1],
   ["no zoom can bring in what the window left out", 1],
-  ["this is a window, not the whole store", 1],
+  ["this is a window, not all of your notes", 1],
   ["never reach a window this size", 1],
   ["The server did not answer", 1],
   // 3.2.23 (HEAD 59dabea, gemessen am ausgelieferten Paket: app.asar 49 065 686 B, mtime
@@ -621,6 +623,13 @@ const erwartet = [
   ["pieces ready", 1],
   ["saved as a new note", 1],
   ["what happened in the last", 1],
+  // Punkt 7, 2.11. (das Woerterbuch der Flaeche, 3.2.114): gegen das installierte 3.2.109 gezaehlt
+  // **0** fuer jede dieser vier Ketten — die alte Flaeche sagt "entries in the index", "42 entries",
+  // "Title of this entry" und "not all of your notes" nirgends.
+  ["notes in the search index", 1],
+  ["Title of this note", 1],
+  ["notes shown", 1],
+  ["not all of your notes", 1],
 ];
 // Die Liste darf nur ASCII-Zeichen enthalten. Grund, gemessen 21.10. 19:16 MESZ am
 // installierten Objekt: das Wort "Looking" plus echtes U+2026 steht dort 2 mal, diese

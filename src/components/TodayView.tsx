@@ -74,8 +74,9 @@ export function besuchSeit(jetzt = Date.now()): number {
 }
 
 /**
- * Die gemessene Spanne seit einem Zeitpunkt, als Wort, das ein Mensch in einen Satz setzen kann:
- * "minute", "3 hours", "2 days". Absichtlich ohne date-fns: dessen Text traegt seine eigne
+ * Die gemessene Spanne seit einem Zeitpunkt, als Wort, das hinter "in the last" einen Satz
+ * ergibt: "in the last minute", "in the last hour", "in the last 3 days". Darum steht hier
+ * kein Artikel - "in the last a day" ist derselbe Fehler, den der Fall unten verbietet. Absichtlich ohne date-fns: dessen Text traegt seine eigne
  * Richtungsangabe ("2 hours ago", "about 1 hour", "less than a minute"), und die Flaeche schrieb
  * sie hinter "since" — heraus kam "what happened since less than a minute ago", ein Satz, den
  * beide Erstleser dieses Haus-Tests (2.11.) als unlesbar zurueckgewiesen haben. Eine Zahl, die
@@ -87,13 +88,13 @@ export function spannenText(seit: number, jetzt = Date.now()): string {
   if (m < 2) return "minute";
   if (m < 60) return `${m} minutes`;
   const h = Math.floor(m / 60);
-  if (h < 24) return h === 1 ? "an hour" : `${h} hours`;
+  if (h < 24) return h === 1 ? "hour" : `${h} hours`;
   const t = Math.floor(h / 24);
-  if (t < 31) return t === 1 ? "a day" : `${t} days`;
+  if (t < 31) return t === 1 ? "day" : `${t} days`;
   const mo = Math.floor(t / 30);
-  if (mo < 12) return mo === 1 ? "a month" : `${mo} months`;
+  if (mo < 12) return mo === 1 ? "month" : `${mo} months`;
   const j = Math.floor(t / 365);
-  return j === 1 ? "a year" : `${j} years`;
+  return j === 1 ? "year" : `${j} years`;
 }
 
 export function gruss(stunde: number): string {

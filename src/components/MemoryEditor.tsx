@@ -266,7 +266,7 @@ export function MemoryEditor({ memory, onSave, onClose, onDelete }: MemoryEditor
                     {formatDistanceToNow(new Date(memory.updatedAt), { addSuffix: true })}
                   </>
                 ) : (
-                  'A new entry in your local knowledge base'
+                  'A new note in your local knowledge base'
                 )}
               </div>
             </div>
@@ -300,7 +300,7 @@ export function MemoryEditor({ memory, onSave, onClose, onDelete }: MemoryEditor
               <input
                 id="memory-titel"
                 type="text"
-                placeholder="Title of this entry"
+                placeholder="Title of this note"
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
                 className="w-full text-3xl font-bold focus:outline-none bg-transparent pb-2 placeholder:text-[var(--text-3)]"

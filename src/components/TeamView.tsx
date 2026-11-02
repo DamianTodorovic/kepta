@@ -105,7 +105,7 @@ export function TeamView({ aktiv }: { aktiv: boolean }) {
         <p className="text-sm" data-testid="team-notizen-count" style={{ color: "var(--text-muted)" }}>
           {teamNotizen.length === 0
             ? t("team.notizenLeer")
-            : `${teamNotizen.length} ${teamNotizen.length === 1 ? "entry" : "entries"} · ${t("team.notizenHinweis")}`}
+            : `${teamNotizen.length} ${teamNotizen.length === 1 ? "note" : "notes"} · ${t("team.notizenHinweis")}`}
         </p>
       </div>
     </div>

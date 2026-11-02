@@ -107,8 +107,18 @@ async function zeige(vorrat: Memory[] = []) {
 describe("Dashboard: der leere Zustand", () => {
   it("erklaert, was zu tun ist, statt eine leere Flaeche zu zeigen", async () => {
     const { container } = await zeige([]);
-    await waitFor(() => expect(container.textContent).toMatch(/No entries yet/i));
-    expect(container.textContent).toMatch(/Drop files here/i);
+    // Geholt wird der leere Zustand DER LISTE, nicht irgendein Text im Rahmen: die
+    // Graph-Flaeche sagt seit je "No notes yet. Write one - its [[wiki links]] ..." und
+    // ein waitFor ueber container.textContent erwacht an DEM Wort, ehe die Liste ueberhaupt
+    // geladen hat. Genau so ist der Fall am 2.11. umgefallen, nachdem die Liste dasselbe
+    // Wort bekam: nicht die Flaeche war kaputt, sondern die Sonde fragte den ganzen Rahmen.
+    const feld = await waitFor(() => {
+      const e = container.querySelector('[data-testid="leerer-zustand"]');
+      if (!e) throw new Error("der leere Zustand der Liste ist nicht gemalt");
+      return e;
+    });
+    expect(feld.textContent).toMatch(/No notes yet/i);
+    expect(feld.textContent).toMatch(/Drop files here/i);
   });
 
   it("zeigt die Navigation auch ohne Wissen", async () => {
@@ -150,7 +160,7 @@ describe("Dashboard: Wissen anzeigen", () => {
     const { container } = await zeige([note({ title: "Fristen" }), note({ title: "Mandat" })]);
     await waitFor(() => expect(container.textContent).toMatch(/Fristen/));
     expect(container.textContent).toMatch(/Mandat/);
-    expect(container.textContent).toMatch(/2 of 2 entries/);
+    expect(container.textContent).toMatch(/2 of 2 notes/);
   });
 
   it("filtert ueber die Tag-Leiste", async () => {
@@ -386,7 +396,7 @@ describe("Dashboard: viele Notizen", () => {
     const user = userEvent.setup();
     const viele = Array.from({ length: 70 }, (_, i) => note({ title: `Eintrag ${i}` }));
     const { container } = await zeige(viele);
-    await waitFor(() => expect(container.textContent).toMatch(/70 of 70 entries/));
+    await waitFor(() => expect(container.textContent).toMatch(/70 of 70 notes/));
     expect(container.textContent).toMatch(/Load more/);
     await user.click(screen.getByRole("button", { name: /Load more/i }));
     await waitFor(() => expect(container.textContent).not.toMatch(/Load more/));
@@ -534,7 +544,7 @@ describe("Dashboard: Tastatur", () => {
     // Die Ansichten bleiben gemountet und werden nur ein-/ausgeblendet —
     // deshalb ueber den sichtbaren Inhalt pruefen, nicht ueber das Vorhandensein.
     await user.keyboard("{Meta>}1{/Meta}");
-    await waitFor(() => expect(container.textContent).toMatch(/entries in the index|of 1 entries/));
+    await waitFor(() => expect(container.textContent).toMatch(/notes in the search index|of 1 notes/));
   });
 
   it("oeffnet den Editor mit Befehlstaste und N", async () => {
@@ -716,7 +726,7 @@ describe("Dashboard: Gruppierungen und Vorschau", () => {
       expect(text).toContain("What happened");
       expect(text).toContain("How it's done");
       expect(text).toContain("Papers");
-      expect(text).toMatch(/1 entry/);
+      expect(text).toMatch(/1 note/);
     });
   });
 
@@ -793,7 +803,7 @@ describe("Dashboard: eine Teilantwort wirft nicht die ganze Fläche", () => {
     it(`hält durch, wenn die Inbox-Antwort ein ${name} ist`, async () => {
       const { container } = await zeigeMitInbox(antwort);
       // Die Fläche steht noch — und zählt sichtbar null, statt zu verschwinden.
-      expect(container.textContent).toMatch(/in the index/i);
+      expect(container.textContent).toMatch(/in the search index/i);
       expect(container.textContent).toMatch(/0 in Inbox/);
     });
   }
@@ -1001,7 +1011,7 @@ describe("Dashboard: die neun Woerter fuehren in keine Sackgasse", () => {
     const user = userEvent.setup();
     const { container } = await zeige(ohneCode());
     await user.click(zeile1().getByRole("button", { name: "Code" }));
-    await waitFor(() => expect(container.textContent).toMatch(/no entries/i), { timeout: 4000 });
+    await waitFor(() => expect(container.textContent).toMatch(/no notes/i), { timeout: 4000 });
     expect(screen.getByRole("group", { name: /in what form/i }), "Zeile 1 ist bei leerem Filter aus dem Baum — die Sackgasse").toBeTruthy();
     expect(screen.getByRole("group", { name: /what it is about/i }), "Zeile 2 ist bei leerem Filter aus dem Baum — die Sackgasse").toBeTruthy();
   });
@@ -1010,29 +1020,29 @@ describe("Dashboard: die neun Woerter fuehren in keine Sackgasse", () => {
     const user = userEvent.setup();
     const { container } = await zeige(ohneCode());
     await user.click(zeile1().getByRole("button", { name: "Code" }));
-    await waitFor(() => expect(container.textContent).toMatch(/no entries/i), { timeout: 4000 });
+    await waitFor(() => expect(container.textContent).toMatch(/no notes/i), { timeout: 4000 });
     await user.click(screen.getByRole("button", { name: /show everything again/i }));
     await waitFor(() => expect(container.textContent).toMatch(/Papier/), { timeout: 4000 });
-    expect(container.textContent).not.toMatch(/no entries/i);
+    expect(container.textContent).not.toMatch(/no notes/i);
   });
 
   it("nennt die Gruppe als Grund der Leerheit, nicht 'No entries yet'", async () => {
     const user = userEvent.setup();
     const { container } = await zeige(ohneCode());
     await user.click(zeile1().getByRole("button", { name: "Code" }));
-    await waitFor(() => expect(container.textContent).toMatch(/no entries in code/i), { timeout: 4000 });
-    expect(container.textContent, "vier Notizen sind geladen — 'noch keine Eintraege' ist eine Luege").not.toMatch(/No entries yet/i);
+    await waitFor(() => expect(container.textContent).toMatch(/no notes in code/i), { timeout: 4000 });
+    expect(container.textContent, "vier Notizen sind geladen — 'noch keine Eintraege' ist eine Luege").not.toMatch(/No notes yet/i);
   });
 
   it("faengt auch das duenne Themenwort ab: Tasks ohne Treffer", async () => {
     const user = userEvent.setup();
     const { container } = await zeige(ohneCode());
     await user.click(zeile2().getByRole("button", { name: "Tasks" }));
-    await waitFor(() => expect(container.textContent).toMatch(/no entries filed under tasks/i), { timeout: 4000 });
+    await waitFor(() => expect(container.textContent).toMatch(/no notes filed under tasks/i), { timeout: 4000 });
     expect(screen.getByRole("group", { name: /in what form/i })).toBeTruthy();
     expect(screen.getByRole("group", { name: /what it is about/i })).toBeTruthy();
     await user.click(screen.getByRole("button", { name: /show everything again/i }));
-    await waitFor(() => expect(container.textContent).not.toMatch(/no entries/i), { timeout: 4000 });
+    await waitFor(() => expect(container.textContent).not.toMatch(/no notes/i), { timeout: 4000 });
   });
 
   /**
@@ -1046,7 +1056,7 @@ describe("Dashboard: die neun Woerter fuehren in keine Sackgasse", () => {
     // ohne sie steht die Zeile noch gar nicht im Baum. Seit Damians Bild von
     // 19:02 nennt die Zeile die Menge, ohne ihre Zahl zu wiederholen ("the
     // whole store"); die Zahl selbst steht eine Zelle weiter als Heldenzahl.
-    await waitFor(() => expect(container.textContent).toMatch(/in what form · the whole store/), { timeout: 6000 });
+    await waitFor(() => expect(container.textContent).toMatch(/in what form · all of your notes/), { timeout: 6000 });
     // Der Streifen spricht fuer den Laden: 150 Stuecke, 20 davon Code.
     expect(container.textContent).toMatch(/100\s*Notes/);
     expect(container.textContent).toMatch(/30\s*Files/);
@@ -1098,7 +1108,7 @@ describe("Dashboard: der Index-Streifen kleidet jede Zahl gleich", () => {
     ladungGross({ bestand: 21_066, notes: 92, files: 10_996, code: 9_978 });
     const { container } = await zeige([note({ title: "Erste" })]);
     // Erst die Tür abwarten — vor ihrer Antwort steht die Zeile ohne die Menge da.
-    await waitFor(() => expect(container.textContent).toMatch(/in what form · the whole store/), { timeout: 6000 });
+    await waitFor(() => expect(container.textContent).toMatch(/in what form · all of your notes/), { timeout: 6000 });
     expect(container.textContent, "10 996 ohne Punkt, direkt neben 92 ohne Punkt").toMatch(/10,996\s*Files/);
     expect(container.textContent).toMatch(/9,978\s*Code/);
     expect(container.textContent, "92 bleibt unter der Tausenderstelle — das Kleid darf nicht fehlen").toMatch(/92\s*Notes/);
@@ -1108,7 +1118,7 @@ describe("Dashboard: der Index-Streifen kleidet jede Zahl gleich", () => {
   it("zeigt kein Fach mit null Stuecken und keine Zahl zweimal", async () => {
     ladungGross({ bestand: 150, notes: 150, files: 0, code: 0 });
     const { container } = await zeige([note({ title: "Erste" })]);
-    await waitFor(() => expect(container.textContent).toMatch(/in what form · the whole store/), { timeout: 6000 });
+    await waitFor(() => expect(container.textContent).toMatch(/in what form · all of your notes/), { timeout: 6000 });
     expect(container.textContent, "150 Notes muss stehen — das Fach ist gefuellt").toMatch(/150\s*Notes/);
     expect(container.textContent, "0 Files ist Schmuck, keine Auskunft").not.toMatch(/0\s*Files/);
     expect(container.textContent, "0 Code ebenso").not.toMatch(/0\s*Code/);

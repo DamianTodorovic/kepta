@@ -36,8 +36,8 @@ describe("Der Kappenzähler hat einen Verbraucher", () => {
     expect(effekt).toContain("holeNaechsteSeite(");
   });
 
-  it("Die Fusszeile darf 'entries shown' nicht sagen, solange die Tuer begrenzt meldet", () => {
-    const zeile = flaeche.split("\n").find((l) => l.includes("entries shown</>")) || "";
+  it("Die Fusszeile darf 'notes shown' nicht sagen, solange die Tuer begrenzt meldet", () => {
+    const zeile = flaeche.split("\n").find((l) => l.includes("notes shown</>")) || "";
     expect(zeile).not.toBe("");
     // Der Zweig, der „shown" malt, darf nur gelten, wenn weder die Kappe noch die Zahl mehr verspricht.
     const bedingung = flaeche.split("\n").find((l) => l.includes("seiteIstBegrenzt() || (tuerBestand")) || "";

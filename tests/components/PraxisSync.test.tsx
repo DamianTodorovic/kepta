@@ -109,7 +109,7 @@ describe("PraxisSync: Paket erzeugen", () => {
     await user.type(screen.getByLabelText(/Scope/i), "kanzlei");
     await user.click(screen.getByRole("button", { name: /Create bundle/i }));
 
-    await waitFor(() => expect(screen.getByRole("status").textContent).toMatch(/12 entries encrypted/));
+    await waitFor(() => expect(screen.getByRole("status").textContent).toMatch(/12 notes encrypted/));
     const ex = aufrufe.find((a) => a.url.includes("/api/sync/export"));
     expect(ex?.body).toMatchObject({ passphrase: GUT, scope: "kanzlei" });
   });
@@ -180,7 +180,7 @@ describe("PraxisSync: Mitschnitt", () => {
   it("zeigt die Vorgaenge mit Richtung, Anzahl und Bereich", async () => {
     render(<PraxisSync />);
     await waitFor(() => expect(screen.getByText("#2")).toBeTruthy());
-    expect(screen.getAllByText(/12 entries/).length).toBeGreaterThan(0);
+    expect(screen.getAllByText(/12 notes/).length).toBeGreaterThan(0);
     expect(screen.getAllByText("kanzlei").length).toBeGreaterThan(0);
   });
 

@@ -187,7 +187,7 @@ describe("MemoryEditor: Inhalt und Schliessen", () => {
     const user = userEvent.setup();
     const onClose = vi.fn();
     render(<MemoryEditor memory={memory()} onSave={() => {}} onClose={onClose} />);
-    const titel = screen.getByPlaceholderText("Title of this entry");
+    const titel = screen.getByPlaceholderText("Title of this note");
     await user.type(titel, " (bearbeitet)");
     await user.keyboard("{Escape}");
     expect(onClose).not.toHaveBeenCalled();
