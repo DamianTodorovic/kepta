@@ -43,7 +43,7 @@ function zeile(anfang: RegExp, wurzel: ParentNode = document.body): string {
   const blatt = [...wurzel.querySelectorAll("div")].find((d) => d.children.length === 0 && anfang.test((d.textContent ?? "").trim()));
   return blatt?.parentElement?.textContent ?? "";
 }
-const kernZeile = (wurzel: ParentNode = document.body) => zeile(/^Brain \(/, wurzel);
+const kernZeile = (wurzel: ParentNode = document.body) => zeile(/^The database on this computer/, wurzel);
 
 describe("SystemStatus: was die App ueber sich behauptet", () => {
   // Gemessen 17.10. 16:0x am ausgelieferten Objekt 3.2.17 (CDP, eigener Portblock
@@ -57,11 +57,11 @@ describe("SystemStatus: was die App ueber sich behauptet", () => {
     const { container } = render(<SystemStatus />);
     // Vor dem ersten Aufloesen: genau der Zustand, in dem die Tafel 2,5 bis 20 s steht.
     const text = container.textContent ?? "";
-    expect(zeile(/^Brain \(/, container), "die Sonde sieht die Kern-Zeile nicht").not.toBe("");
+    expect(zeile(/^The database on this computer/, container), "die Sonde sieht die Kern-Zeile nicht").not.toBe("");
     expect(text).not.toMatch(/Server unreachable/i);
     expect(text, "waehrend des Lesens ist die Verschluesselung unbekannt, nicht verneint").not.toMatch(/is not encrypted/);
     expect(kernZeile(container)).toMatch(/asking|answer/i);
-    expect(zeile(/^Encryption/, container)).toMatch(/not (known|read) yet|asking|waiting/i);
+    expect(zeile(/^Encrypted on this disk/, container)).toMatch(/not (known|read) yet|asking|waiting/i);
     expect(zeile(/^Knowledge base/, container)).toMatch(/not (known|read) yet|asking|waiting/i);
     // Dieselbe Klasse, dritte Zeile: die Ollama-Sonde laeuft noch, „Unreachable"
     // waere eine Behauptung ueber einen Zustand, der nicht gemessen ist.
@@ -83,8 +83,8 @@ describe("SystemStatus: was die App ueber sich behauptet", () => {
 
   it("meldet den Kern als erreichbar samt Knotenzahl und MCP-Angaben", async () => {
     render(<SystemStatus />);
-    // "412 nodes" steht in zwei Zeilen: Kern und Wissensbasis.
-    await waitFor(() => expect(screen.getAllByText(/412 nodes/).length).toBeGreaterThan(0));
+    // "412 notes" steht in zwei Zeilen: Kern und Wissensbasis.
+    await waitFor(() => expect(screen.getAllByText(/412 notes/).length).toBeGreaterThan(0));
     expect(screen.getAllByText(/2026-07-28/).length).toBeGreaterThan(0);
     expect(screen.getByText(/8 tools/)).toBeTruthy();
   });
@@ -124,7 +124,7 @@ describe("SystemStatus: was die App ueber sich behauptet", () => {
       return new Response("{}", { status: 200 });
     }));
     const { container } = render(<SystemStatus />);
-    await waitFor(() => expect(container.textContent).toMatch(/412 nodes/));
+    await waitFor(() => expect(container.textContent).toMatch(/412 notes/));
     const zeile = providerZeile(container);
     expect(zeile, "die Sonde sieht keine Provider-Zeile — Flaeche geaendert?").not.toBe("");
     expect(zeile, "sie darf nichts behaupten, bevor sie gelesen hat").not.toMatch(/No key yet/);
@@ -143,13 +143,13 @@ describe("SystemStatus: was die App ueber sich behauptet", () => {
 
   it("rechnet die Embedding-Abdeckung aus", async () => {
     render(<SystemStatus />);
-    await waitFor(() => expect(screen.getByText(/coverage 75 %/)).toBeTruthy());
+    await waitFor(() => expect(screen.getByText(/75 % of their text is searchable by meaning/)).toBeTruthy());
   });
 
   it("kommt mit einer leeren Wissensbasis zurecht, ohne durch null zu teilen", async () => {
     stubFetch({ health: { ...GESUND, count: 0, embeddings: { total: 0, embedded: 0 } } });
     const { container } = render(<SystemStatus />);
-    await waitFor(() => expect(screen.getByText(/0 nodes — import notes/)).toBeTruthy());
+    await waitFor(() => expect(screen.getByText(/No notes yet — drop files/)).toBeTruthy());
     expect(container.textContent).not.toMatch(/NaN/);
   });
 

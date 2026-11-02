@@ -207,8 +207,8 @@ describe("Bestand statt Seitenlänge: die Fläche nennt, was die Tür sagt", () 
     // Kleider, ein Bildschirm — der Mensch hält sie für zwei Bestände.
     const { container } = rahmen();
     const chip = () => container.querySelector('[data-testid="gehirn-status"]');
-    await waitFor(() => expect(chip()?.textContent).toMatch(/nodes in the brain/), { timeout: 6000 });
-    expect(chip()!.textContent).toMatch(/14,702 nodes in the brain/);
+    await waitFor(() => expect(chip()?.textContent).toMatch(/notes stored/), { timeout: 6000 });
+    expect(chip()!.textContent).toMatch(/14,702 notes stored/);
     expect(chip()!.textContent, "dieselbe Größe ohne Tausenderpunkt").not.toMatch(/\b14702\b/);
   });
 

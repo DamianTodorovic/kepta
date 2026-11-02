@@ -1942,8 +1942,8 @@ export function Dashboard() {
                       K3PTA {gehirn.version}
                     </span>
                   )}
-                  <span className="chip tnum" title="Active nodes in the local database.">
-                    {groessenZahl(gehirn.count)} {gehirn.count === 1 ? 'node' : 'nodes'} in the brain
+                  <span className="chip tnum" title="Notes in the database on this computer — the same count the sidebar shows.">
+                    {groessenZahl(gehirn.count)} {gehirn.count === 1 ? 'note' : 'notes'} stored
                   </span>
                   {gehirn.hatVerschluesselung && (
                     <span

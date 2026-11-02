@@ -644,6 +644,15 @@ const erwartet = [
   // Chip, nicht ein Zaehler.
   ["No questions yet", 1],
   ["nothing is sent until you press Enter", 1],
+  // Punkt 7, 2.11. (3.2.117, die Zustands-Tafel): gegen das installierte 3.2.116 gezaehlt je **0**.
+  // Die Zeile "No notes yet - drop files…" waere ein Nicht-ASCII-Marker (Gedankenstrich) und ist
+  // darum durch den ASCII-freien Teil derselben Zeile ersetzt — ein Nicht-ASCII-Marker zaehlt hier
+  // immer 0, also keine Pruefung, sondern ein Dauer-Null.
+  ["notes stored", 1],
+  ["The database on this computer", 1],
+  ["searchable by meaning", 1],
+  ["Encrypted on this disk", 1],
+  ["drop files into the window", 1],
 ];
 // Die Liste darf nur ASCII-Zeichen enthalten. Grund, gemessen 21.10. 19:16 MESZ am
 // installierten Objekt: das Wort "Looking" plus echtes U+2026 steht dort 2 mal, diese

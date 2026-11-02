@@ -199,11 +199,11 @@ export function SystemStatus() {
         <Row
           unknown={antwort === 'laeuft'}
           ok={!!health?.ok}
-          label="Brain (SQLite + engine)"
+          label="The database on this computer"
           detail={
             antwort === 'laeuft' ? 'Asking K3PTA itself…'
               : antwort === 'weg' ? 'K3PTA did not answer this time.'
-                : health ? `${health.count} nodes · ${health.dbPath} · MCP ${health.mcp.protocol} (${health.mcp.tools} tools, ${health.mcp.http})`
+                : health ? `${health.count} notes · file: ${health.dbPath} · ${health.mcp.tools} tools for AI apps (MCP ${health.mcp.protocol} at ${health.mcp.http})`
                   : 'K3PTA answered, but not in a form this panel can read.'
           }
           fix={antwort === 'weg' ? 'Close K3PTA and open it again.' : undefined}
@@ -212,7 +212,7 @@ export function SystemStatus() {
           unknown={antwort === 'laeuft'}
           ok={!!health?.encryption.aktiv}
           seal={!!health?.encryption.aktiv}
-          label="Encryption at rest"
+          label="Encrypted on this disk"
           detail={antwort === 'laeuft' ? 'Not known yet — this line fills in with the rest.'
             : !health ? 'K3PTA could not read its own state. That says nothing about the file.'
               : health.encryption.aktiv
@@ -249,8 +249,8 @@ export function SystemStatus() {
           ok={!!health && health.count > 0}
           label="Knowledge base"
           detail={antwort === 'laeuft' ? 'Not read yet — the count comes with the answer.'
-            : health && health.count > 0 ? `${health.count} nodes migrated or present · embedding coverage ${coverage} %`
-              : '0 nodes — import notes, or let an agent save something.'}
+            : health && health.count > 0 ? `${health.count} notes on this computer · ${coverage} % of their text is searchable by meaning`
+              : 'No notes yet — drop files into the window, or let an agent save something.'}
           fix={health ? 'Drag files into the K3PTA window, or import a folder of notes.' : undefined}
         />
       </div>

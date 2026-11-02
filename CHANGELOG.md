@@ -1,3 +1,18 @@
+## [3.2.117]
+
+### Changed
+
+- **The status panel counts notes, not nodes.** On the delivered build the sidebar said "30 notes"
+  while two cells further down the same screen said "30 nodes in the brain", and the settings
+  status panel titled itself "Brain (SQLite + engine) — 30 nodes". One reader, no project context:
+  "'30 nodes in the brain' — the notes? 'nodes' is graph language." The badge now reads "30 notes
+  stored", the panel row "The database on this computer — 412 notes · file: … · 8 tools for AI apps
+  (MCP 2026-07-28 at /mcp)", and the coverage line says what the percentage lets you do: "412 notes
+  on this computer · 75 % of their text is searchable by meaning" instead of "embedding coverage
+  75 %". "Encrypted on this disk" replaces "Encryption at rest", which needed a translation before
+  it meant anything. What stays: a node on the **graph** is still a node — it is the drawn picture,
+  not the stored thing, and that is the line the vocabulary draws rather than erases.
+
 ## [3.2.116]
 
 ### Fixed
