@@ -253,7 +253,7 @@ async function main() {
   //     ist kein Beweis ueber die gefuellte. Also auch `radien` in die Liste.
   const SAAT = Number(ARG("saat", 30));
   if (NUR === "" || NUR === "suche" || NUR === "treffer" || NUR === "bild" || NUR === "radius"
-    || NUR === "radien" || NUR === "auswahl" || NUR === "gruppenzeit") {
+    || NUR === "radien" || NUR === "auswahl" || NUR === "gruppenzeit" || NUR === "tastmass") {
     const dateien = Array.from({ length: SAAT }, (_, i) => {
       const n = String(i + 1).padStart(4, "0");
       // Zwei Daten im Kuvert, nicht eine: die Flaeche haelt ihr Datumsfeld nur, wo die Saat
@@ -1268,6 +1268,19 @@ async function main() {
   //     1440 lief). Gezahlt wird, was der Finger trifft: gemalt, sichtbar, nicht `inert`,
   //     nicht `pointer-events: none`.
   if (NUR === "" || NUR === "tastmass") {
+    // Erst neu laden, dann zaehlen. Ohne diesen Schritt stand die Flaeche auf ihrem Stand von
+    // VOR der Saat: das Bild meldete "0 entries in the index" und "No entries yet", waehrend die
+    // Tuer 30 zaehlte — derselbe Prueferfehler, den `radien` (31.10.), `auswahl` und `gruppenzeit`
+    // schon je einmal gezogen haben, hier zum vierten Mal an mir selbst (gemessen 02.11. 07:24).
+    await cdp.send("Page.reload", { ignoreCache: true });
+    await warteBis(async () => ((await evaliere(cdp, `document.querySelectorAll('button').length`)) > 0 ? true : null), { maxMs: 90000 });
+    await schlafe(1500);
+    // Der Neuladen kann den Assistenten zurueckbringen; derselbe Weg wie oben, wieder gefragt.
+    const spaeterQ = await warteBis(async () => evaliere(cdp, `(()=>{const b=[...document.querySelectorAll('button')].find(x=>/later|skip|spaeter/i.test(x.textContent||''));if(!b)return null;b.click();return (b.textContent||'').trim()})()`), { maxMs: 3000 });
+    if (spaeterQ) await schlafe(700);
+    const inLeiste = Number(await evaliere(cdp, `(()=>{const m=(document.body.innerText||'').match(/(\\d+)\\s+entries in the index/);return m?Number(m[1]):-1})()`));
+    urteil(`**die Flaeche kennt die Saat (${SAAT} Eintraege stehen in der Leiste)**`, inLeiste >= SAAT, true);
+    console.log(`  Leiste sagt: ${inLeiste} Eintraege (Tuer: ${SAAT} gesaet)`);
     const BREITE_IST = Number(await evaliere(cdp, `window.innerWidth`));
     console.log(`  Fenster: ${BREITE_IST} x ${await evaliere(cdp, `window.innerHeight`)} px (bestellt ${BREITE} x ${HOEHE})`);
     urteil("das Fenster ist so breit, wie der Lauf bestellt", BREITE_IST, BREITE);
@@ -1311,6 +1324,10 @@ async function main() {
       console.log(`  ${seite.name}: ${ziele.length} Ziele, ${unter.length} unter dem Boden — ` +
         `kleinstes ${ziele.length ? JSON.stringify(ziele.reduce((a, b) => (Math.min(b.w, b.h) < Math.min(a.w, a.h) ? b : a))) : "keins"}`);
       console.log(`    ausgelassen: ${mess.aus.leer} ohne Rechteck, ${mess.aus.unsichtbar} unsichtbar oder nicht treffbar, ${mess.aus.inert} hinter der eingeklappten Leiste`);
+      // Das Bild pro Sicht, nicht eins am Ende: die Frage "was bleibt bei 390 am Graphen
+      // uebrig?" ist am Bild zu entscheiden, und der letzte Klick vor dem alten Knipser war
+      // Settings — das Graph-Bild gab es nie (gemessen 02.11. 07:22).
+      console.log(`    Bild: ${await bild(`tastmass-${BREITE_IST}-${seite.name}.png`)}`);
     }
     // Die eine Pruefung, die nie verlieren kann, ist ein Zensus ueber null Elemente. Also erst
     // der Zensus selbst, dann die Latte.
