@@ -42,14 +42,29 @@ export function MemoryPreview({ memory, onClose, onEdit }: MemoryPreviewProps) {
   const privat = memory.scope === "private";
   // Which AI apps read this note, how often, when last — from the audit log.
   const [leser, setLeser] = useState<{ who: string; times: number; last: number }[]>([]);
+  const [leserGrund, setLeserGrund] = useState<string | null>(null);
+  // "da" heisst: die Tuer hat geantwortet, auch wenn die Liste leer ist. Nur dann darf die
+  // Reihe eine Aussage ueber die Leser machen — "offen" und "fort" tun sie nicht.
+  const [leserStand, setLeserStand] = useState<"offen" | "da" | "fort">("offen");
   useEffect(() => {
     let vorbei = false;
     fetch(`/api/memories/${encodeURIComponent(memory.id)}/readers`)
-      .then((r) => (r.ok ? r.json() : null))
-      .then((d: { readers?: { who: string; times: number; last: number }[] } | null) => {
-        if (!vorbei && d && Array.isArray(d.readers)) setLeser(d.readers);
+      .then((r) => {
+        // Punkt 7, 2.11.: die Reihe verschwand bei einer Absage genauso wie bei der Antwort
+        // "niemand" — und "niemand hat das gelesen" ist genau die privacy-Antwort, die ein
+        // Nutzer sehen will. Also: Antwort zeigt ihr Ergebnis, Absage zeigt ihren Grund.
+        if (!r.ok) {
+          if (!vorbei) { setLeserGrund(`Who has read this note — the audit log did not answer (it said ${r.status}).`); setLeserStand("fort"); }
+          return null;
+        }
+        return r.json().catch(() => null);
       })
-      .catch(() => undefined);
+      .then((d: { readers?: { who: string; times: number; last: number }[] } | null) => {
+        if (vorbei) return;
+        if (d && Array.isArray(d.readers)) { setLeser(d.readers); setLeserGrund(null); setLeserStand("da"); }
+        else { setLeserGrund('Who has read this note — the audit log gave no list.'); setLeserStand("fort"); }
+      })
+      .catch(() => { if (!vorbei) { setLeserGrund('Who has read this note — the audit log did not answer.'); setLeserStand("fort"); } });
     return () => { vorbei = true; };
   }, [memory.id]);
 
@@ -57,6 +72,7 @@ export function MemoryPreview({ memory, onClose, onEdit }: MemoryPreviewProps) {
   // "Back to current" geht zurueck. Seit 26.10. gibt es EINEN Schreibweg: "Restore this stand" -
   // zwei Schritte, mit Rueckfrage; der ersetzte Text wird dabei serverseitig als Stand gesichert.
   const [staende, setStaende] = useState<Stand[] | null>(null);
+  const [staendeGrund, setStaendeGrund] = useState<string | null>(null);
   const [staendeOffen, setStaendeOffen] = useState(false);
   const [gewaehlterStand, setGewaehlterStand] = useState<Stand | null>(null);
   const [aktuellerInhalt, setAktuellerInhalt] = useState(text);
@@ -70,11 +86,17 @@ export function MemoryPreview({ memory, onClose, onEdit }: MemoryPreviewProps) {
     setWiederherstellenOffen(false);
     setAktuellerInhalt(inhaltOhneQuelle(memory.content) || memory.content);
     fetch(`/api/memories/${encodeURIComponent(memory.id)}/stande`)
-      .then((r) => (r.ok ? r.json() : null))
-      .then((d: { staende?: Stand[] } | null) => {
-        if (!vorbei && d && Array.isArray(d.staende)) setStaende(d.staende);
+      .then((r) => {
+        if (!r.ok) { if (!vorbei) setStaendeGrund(`Earlier versions could not be read — the store answered ${r.status}.`); return null; }
+        return r.json().catch(() => null);
       })
-      .catch(() => undefined);
+      .then((d: { staende?: Stand[] } | null) => {
+        if (!vorbei) {
+          if (d && Array.isArray(d.staende)) { setStaende(d.staende); setStaendeGrund(null); }
+          else setStaendeGrund('Earlier versions could not be read — the store gave no list.');
+        }
+      })
+      .catch(() => { if (!vorbei) setStaendeGrund('Earlier versions could not be read — the store did not answer.'); });
     return () => { vorbei = true; };
   }, [memory.id]);
 
@@ -186,13 +208,17 @@ export function MemoryPreview({ memory, onClose, onEdit }: MemoryPreviewProps) {
         </header>
 
         <div className="flex-1 min-h-0 overflow-y-auto px-5 py-4">
-          {(privat || leser.length > 0) && (
+          {(privat || leserStand !== "offen") && (
             <div data-testid="preview-readers" className="mb-4 text-[12px] flex items-start gap-2 rounded-xl px-3 py-2" style={{ background: "var(--bg-inset)", color: "var(--text-2)" }}>
               {privat ? <Lock className="w-3.5 h-3.5 mt-px shrink-0" style={{ color: "var(--accent)" }} /> : <Bot className="w-3.5 h-3.5 mt-px shrink-0" style={{ color: "var(--accent)" }} />}
               <span>
                 {privat
                   ? "Private — AI apps and cloud AI never see this note."
-                  : `Read by AI apps: ${leser.map((l) => `${l.who} ${l.times}× (last ${formatDistanceToNow(new Date(l.last), { addSuffix: true })})`).join(", ")}`}
+                  : leserGrund
+                    ? leserGrund
+                    : leser.length === 0
+                      ? "No AI app has read this note."
+                      : `Read by AI apps: ${leser.map((l) => `${l.who} ${l.times}× (last ${formatDistanceToNow(new Date(l.last), { addSuffix: true })})`).join(", ")}`}
               </span>
             </div>
           )}
@@ -230,6 +256,9 @@ export function MemoryPreview({ memory, onClose, onEdit }: MemoryPreviewProps) {
           )}
 
           {/* Der komplette Text, Absatz fuer Absatz — kein Formular, kein Markup-Zwang */}
+          {staendeGrund && (
+            <p role="status" data-testid="preview-staende-grund" className="text-[12px] mb-3" style={{ color: 'var(--warn)' }}>{staendeGrund}</p>
+          )}
           {staende !== null && staende.length > 0 && (
             <div data-testid="preview-stands" className="mb-4">
               <button

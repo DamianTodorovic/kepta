@@ -720,6 +720,13 @@ const erwartet = [
   ["the scan did not answer", 1],
   ["Models could not be loaded", 1],
   ["Suggestions did not arrive", 1],
+  // Punkt 4/7, 2.11. abend (3.2.123, die Absage, die wie eine Leere aussah): gegen das
+  // installierte 3.2.122 gezaehlt je **0** (gemessen 02.11. 17:44:58). Wieder Zustandstexte —
+  // eine antwortende Kapsel malt "did not answer" nie, also haelt sie der Marker am Objekt.
+  ["The journal did not answer", 1],
+  ["No AI app has read this note", 1],
+  ["the audit log did not answer", 1],
+  ["Earlier versions could not be read", 1],
 ];
 // Die Liste darf nur ASCII-Zeichen enthalten. Grund, gemessen 21.10. 19:16 MESZ am
 // installierten Objekt: das Wort "Looking" plus echtes U+2026 steht dort 2 mal, diese

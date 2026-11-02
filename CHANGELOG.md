@@ -1,3 +1,20 @@
+## [3.2.123]
+
+### Fixed
+
+- **A refusal no longer looks like an empty shelf.** The sync journal asked `/api/sync/journal`,
+  dropped any non-2xx on the floor, and its list stayed empty — so the panel asserted "Nothing
+  recorded yet — the journal fills with the first bundle that goes out or comes in", a claim
+  about your history derived from a door that never answered. The note preview had the mirror
+  problem: the "Read by AI apps" row only renders when there is something to show, so a refused
+  audit log and an honest "nobody has read this note" looked identical — and the second one is
+  the privacy answer you came for. Same for "Earlier stands". Now the journal says "The journal
+  did not answer — it was asked and the store said 509."; the preview says "No AI app has read
+  this note." when the log answered with none, and "Who has read this note — the audit log did
+  not answer (it said 503)." when it did not. Deliberately *not* changed: the agents dot on the
+  Activity item (`Dashboard.tsx:818`) — a missing green dot states nothing, and inventing a
+  sentence for it would be noise in the sidebar.
+
 ## [3.2.122]
 
 ### Fixed

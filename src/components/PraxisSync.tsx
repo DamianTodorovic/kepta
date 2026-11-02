@@ -30,18 +30,23 @@ export default function PraxisSync() {
   const [laeuft, setLaeuft] = useState<'export' | 'import' | null>(null);
   const [meldung, setMeldung] = useState<Meldung>(null);
   const [journal, setJournal] = useState<JournalEintrag[]>([]);
+  const [journalGrund, setJournalGrund] = useState<string | null>(null);
   const [intakt, setIntakt] = useState<boolean | null>(null);
   const dateiFeld = useRef<HTMLInputElement>(null);
 
   const journalLaden = useCallback(async () => {
     try {
       const r = await fetch('/api/sync/journal');
-      if (!r.ok) return;
-      const d = await r.json();
-      setJournal(Array.isArray(d.entries) ? d.entries : []);
+      // Punkt 4, 2.11.: `if (!r.ok) return;` liess `journal` bei [], und :223 behauptete
+      // "Nothing recorded yet" — eine Aussage ueber seinen Bestand, aus einer Absage abgeleitet.
+      if (!r.ok) { setJournalGrund(`The journal did not answer — it was asked and the store said ${r.status}.`); return; }
+      const d = await r.json().catch(() => null);
+      if (!d || !Array.isArray(d.entries)) { setJournalGrund('The journal could not be read — its answer had no entries.'); return; }
+      setJournalGrund(null);
+      setJournal(d.entries);
       setIntakt(typeof d.intact === 'boolean' ? d.intact : null);
     } catch {
-      // Der Mitschnitt ist Beiwerk der Ansicht — sein Fehlen darf nichts blockieren.
+      setJournalGrund('The journal did not answer — nothing is known about what went out or came in.');
     }
   }, []);
 
@@ -220,11 +225,7 @@ export default function PraxisSync() {
         <p className="text-xs" style={{ color: 'var(--text-2)' }}>
           Records which bundle went which way and when — through hashes, without knowing the contents.
         </p>
-        {journal.length === 0 ? (
-          <p className="text-xs" style={{ color: 'var(--text-2)' }}>
-            Nothing recorded yet — the journal fills with the first bundle that goes out or comes in.
-          </p>
-        ) : (
+        {journal.length > 0 ? (
           <ul className="space-y-2">
             {journal.slice(-8).reverse().map((e) => (
               <li key={e.hash} className="text-xs flex flex-wrap items-center gap-x-3 gap-y-1 px-3 py-2 rounded-lg hud-inset">
@@ -237,6 +238,12 @@ export default function PraxisSync() {
               </li>
             ))}
           </ul>
+        ) : journalGrund ? (
+          <p role="status" className="text-xs" style={{ color: 'var(--warn)' }}>{journalGrund}</p>
+        ) : (
+          <p className="text-xs" style={{ color: 'var(--text-2)' }}>
+            Nothing recorded yet — the journal fills with the first bundle that goes out or comes in.
+          </p>
         )}
       </div>
     </div>
