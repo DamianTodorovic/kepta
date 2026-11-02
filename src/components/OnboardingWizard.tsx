@@ -272,7 +272,7 @@ export function OnboardingWizard({ open, onClose, onComplete }: Props) {
           )}
           {step===4 && (
             <motion.div key="s4" initial={{x:20, opacity:0}} animate={{x:0, opacity:1}} exit={{x:-20, opacity:0}} className="space-y-4">
-              <div className="hud-label flex items-center gap-2"><PartyPopper className="w-3.5 h-3.5" style={{color:'var(--accent)'}}/> Almost there — filling your brain</div>
+              <div className="hud-label flex items-center gap-2"><PartyPopper className="w-3.5 h-3.5" style={{color:'var(--accent)'}}/> Almost there — saving your first notes</div>
               <div className="hud-panel rounded-xl p-4 space-y-3">
                 <div className="flex gap-3">
                   <div className="w-10 h-10 rounded-lg flex items-center justify-center shrink-0" style={{background:'var(--accent-soft)'}}><User className="w-4.5 h-4.5" style={{color:'var(--accent)'}}/></div>
@@ -342,7 +342,7 @@ export function OnboardingWizard({ open, onClose, onComplete }: Props) {
             </button>
           ) : (
             <button onClick={handleFinish} disabled={importing} className="btn-primary px-6 py-3 rounded-xl text-sm flex items-center gap-2">
-              {importing ? <><Loader2 className="w-4 h-4 animate-spin"/> Filling your brain…</> : <><Sparkles className="w-4 h-4"/> Create my brain — {starterPreview.length} notes</>}
+              {importing ? <><Loader2 className="w-4 h-4 animate-spin"/> Saving your notes…</> : <><Sparkles className="w-4 h-4"/> Save these {starterPreview.length} notes</>}
             </button>
           )}
         </div>

@@ -1697,14 +1697,14 @@ export function Dashboard() {
                   Zugriff einmal auf und patcht ihn danach nur noch — die App
                   misst die Antwortzeit und zeigt, wenn das Gehirn warm ist. */}
               {gehirnWaermt && (
-                <span className="chip" title="The search cache is being built once — from now on, every write only patches it.">
-                  <span className="agent-dot" /> Brain warming up…
+                <span className="chip" title="The search index is built once — from now on, every saved note only patches it.">
+                  <span className="agent-dot" /> Warming the search index…
                 </span>
               )}
               {gehirnWarm && !gehirnWaermt && (
-                <span className="chip tnum" title="Search cache warm — every write patches it instead of rebuilding. The time is the last search as measured by the app.">
+                <span className="chip tnum" title="The search index is ready — every saved note only patches it. The time is your last search, measured by this app.">
                   <span className="status-dot" />
-                  Brain warm — answer in {suchDauerMs ?? 0} ms
+                  Search index warm — answer in {suchDauerMs ?? 0} ms
                 </span>
               )}
               {/* Die Zahl muss zu den gezeigten Karten passen: hier stand vorher das
@@ -2371,7 +2371,7 @@ function ShortcutsSheet({ open, onClose }: { open: boolean; onClose: () => void 
                 </li>
               ))}
             </ul>
-            <p className="hud-label mt-4">Agents use the same brain over MCP — watch the activity live in the index.</p>
+            <p className="hud-label mt-4">Agents read and write the same notes over MCP — watch them live in Activity.</p>
           </motion.div>
         </motion.div>
       )}

@@ -802,13 +802,13 @@ export function Chat({ activeMemories, onSaveToBrain, onSaveToBrainWithMeta, isF
           {/* Such-Cache-Status (Paket 3): der Chat misst die eigene Engine-Anfrage —
               das Delta-Cache-Signal aus Paket 2 gilt hier genauso wie im Dashboard. */}
           {gehirnWaermt && (
-            <span className="chip hidden sm:inline-flex" title="The search cache is being built once — from now on, every write only patches it.">
-              <span className="agent-dot" /> Brain warming up…
+            <span className="chip hidden sm:inline-flex" title="The search index is built once — from now on, every saved note only patches it.">
+              <span className="agent-dot" /> Warming the search index…
             </span>
           )}
           {gehirnWarm && !gehirnWaermt && suchDauerMs !== null && (
-            <span className="chip tnum hidden sm:inline-flex" title="Search cache warm — the time is the chat's last brain query as measured by the app.">
-              <span className="status-dot" /> Brain warm — answer in {suchDauerMs} ms
+            <span className="chip tnum hidden sm:inline-flex" title="The search index is ready — the time is this chat's last search, measured by this app.">
+              <span className="status-dot" /> Search index warm — answer in {suchDauerMs} ms
             </span>
           )}
           <div className="flex items-center gap-2" style={{ color: "var(--text-2)" }}>
@@ -1155,7 +1155,7 @@ export function Chat({ activeMemories, onSaveToBrain, onSaveToBrainWithMeta, isF
         <div className="max-w-4xl mx-auto mt-2 flex justify-between items-center text-[10px]" style={{ color: "var(--text-3)" }}>
           <span className="hud-label normal-case tracking-normal text-[10px] flex items-center gap-3">
             <span className="flex items-center gap-1">
-              <FileText className="w-3 h-3" /> {budgetedMemories.length} nodes in the prompt
+              <FileText className="w-3 h-3" /> {budgetedMemories.length} notes in the prompt
             </span>
             <span className="tnum">~{contextTokens.toLocaleString("en-GB")} tokens</span>
           </span>

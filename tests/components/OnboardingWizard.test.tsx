@@ -158,7 +158,7 @@ describe("OnboardingWizard: Angebot, den Rechner anzusehen", () => {
     const user = userEvent.setup();
     oeffne();
     await zuSchrittVier(user);
-    await user.click(screen.getByRole("button", { name: /Create my brain/i }));
+    await user.click(screen.getByRole("button", { name: /Save these/i }));
     await waitFor(() => expect(localStorage.getItem("kepta_scan_wunsch")).toBeNull());
   });
 
@@ -167,7 +167,7 @@ describe("OnboardingWizard: Angebot, den Rechner anzusehen", () => {
     oeffne();
     await zuSchrittVier(user);
     await user.click(screen.getAllByRole("checkbox").at(-1) as HTMLInputElement);
-    await user.click(screen.getByRole("button", { name: /Create my brain/i }));
+    await user.click(screen.getByRole("button", { name: /Save these/i }));
     await waitFor(() => expect(localStorage.getItem("kepta_scan_wunsch")).toBe("1"));
   });
 });

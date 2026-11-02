@@ -893,7 +893,7 @@ export function Settings() {
                     <span className={`inline-block h-4 w-4 transform rounded-full bg-white shadow transition-transform ${autoLearn ? 'translate-x-6' : 'translate-x-1'}`} />
                   </label>
                 </div>
-                {autoLearnSaved && <div className="text-xs mt-2 flex items-center gap-2" style={{color:'var(--ok)'}}><CheckCircle2 className="w-3.5 h-3.5"/> {autoLearn ? 'Auto-learn active — the brain extends itself' : 'Auto-learn off'}</div>}
+                {autoLearnSaved && <div className="text-xs mt-2 flex items-center gap-2" style={{color:'var(--ok)'}}><CheckCircle2 className="w-3.5 h-3.5"/> {autoLearn ? 'Auto-learn is on — a chat can leave a note behind' : 'Auto-learn off'}</div>}
                 {/* P4-07 (18.10.): src/components/Chat.tsx:651 kehrt stumm um, wenn kein
                     Modell gesetzt ist — der Schalter stand an und lernte nichts. */}
                 {autoLearn && !settings.model.trim() && (
@@ -1202,9 +1202,9 @@ export function Settings() {
                 <Plug className="w-5 h-5 text-white" />
               </div>
               <div>
-                <p className="text-sm font-semibold" style={{ color: 'var(--text-1)' }}>One brain for every AI</p>
+                <p className="text-sm font-semibold" style={{ color: 'var(--text-1)' }}>One set of notes for every AI app</p>
                 <p className="text-xs mt-1 leading-relaxed" style={{ color: 'var(--text-2)' }}>
-                  The same local store (<code>~/.kepta/kepta.db</code>, SQLite) over the HTTP API and MCP stdio — usable from Claude Desktop, Cursor, Zed, Windsurf, your own scripts and shortcuts.
+                  The same notes, kept in one file on this computer (<code>~/.kepta/kepta.db</code>, SQLite), reachable over the HTTP API and MCP — from Claude Desktop, Cursor, Zed, Windsurf, your own scripts and shortcuts.
                 </p>
               </div>
             </div>

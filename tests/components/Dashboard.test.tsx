@@ -248,7 +248,7 @@ describe("Dashboard: eine Notiz anlegen und loeschen", () => {
     const user = userEvent.setup();
     await zeige([]);
     await user.click(screen.getByRole("button", { name: /^New$/ }));
-    await waitFor(() => expect(document.body.textContent).toMatch(/Memory type|Fact/));
+    await waitFor(() => expect(document.body.textContent).toMatch(/Type of this note|Fact/));
   });
 
   it("loescht eine Notiz und bietet das Rueckgaengigmachen an", async () => {
@@ -259,7 +259,7 @@ describe("Dashboard: eine Notiz anlegen und loeschen", () => {
     await user.click(screen.getAllByText("Weg damit")[0]);
     await waitFor(() => expect(document.querySelector('[data-testid="memory-preview"]')).toBeTruthy());
     await user.click(screen.getByRole("button", { name: /Edit/i }));
-    await waitFor(() => expect(document.body.textContent).toMatch(/Memory type|Fact/));
+    await waitFor(() => expect(document.body.textContent).toMatch(/Type of this note|Fact/));
     // Nur im Editor suchen: die Werkzeugleiste hat einen Papierkorb-Knopf, der
     // auf dieselbe Beschreibung passt, aber die Papierkorb-ANSICHT oeffnet.
     const editor = [...document.querySelectorAll("div")]
@@ -551,7 +551,7 @@ describe("Dashboard: Tastatur", () => {
     const user = userEvent.setup();
     await zeige([]);
     await user.keyboard("{Meta>}n{/Meta}");
-    await waitFor(() => expect(document.body.textContent).toMatch(/Memory type|Fact/));
+    await waitFor(() => expect(document.body.textContent).toMatch(/Type of this note|Fact/));
   });
 
   it("zeigt die Tastenuebersicht mit dem Fragezeichen", async () => {
@@ -675,7 +675,7 @@ describe("Dashboard: Suche mit der Server-Engine", () => {
     const { container } = await zeige([note({ title: "Docker" })]);
     // Vor der ersten Antwort wärmt sich das Gehirn — spätestens danach ist es warm.
     await user.type(screen.getByPlaceholderText(/Search your memory/), "docker");
-    await waitFor(() => expect(container.textContent).toMatch(/Brain warm — answer in \d+ ms/), { timeout: 4000 });
+    await waitFor(() => expect(container.textContent).toMatch(/Search index warm — answer in \d+ ms/), { timeout: 4000 });
   });
 
   it("zeigt je Treffer die Spuren-Herkunft (Paket 2: welches Bein die Notiz sah)", async () => {

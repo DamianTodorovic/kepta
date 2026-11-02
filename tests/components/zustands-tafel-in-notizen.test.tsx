@@ -89,6 +89,27 @@ describe("Punkt 7: eine Zahl, ein Wort — auch in der Zustands-Tafel", () => {
     expect(basis, `die Zahl nennt nicht, was sie zulaesst: ${basis}`).toMatch(/searchable by meaning/i);
   });
 
+  // 3.2.118, die zwei Funde, die der gemalte Korpus des ausgelieferten 3.2.117 noch zeigt
+  // (belege-0211/zustands-tafel/nach-landung/saetze-korpus-1440px.json, Stand 12:28:56Z):
+  // eine Zeile, die aus Erreichbarkeit einen Einsatz behauptet, und eine Ueberschrift, die
+  // "brain" sagt, wo die Seitenleiste "notes" sagt.
+  it("behauptet keinen Vektor-Einsatz aus der Erreichbarkeit von Ollama", async () => {
+    const { container } = render(<SystemStatus />);
+    await waitFor(() => expect(container.textContent).toMatch(/Ollama/), { timeout: 8000 });
+    const ollama = zeile(/^Ollama \/ Embeddings/i, container);
+    expect(ollama, `die Ollama-Zeile fehlt: "${ollama}"`).not.toBe("");
+    expect(ollama, `erreichbar wird als Einsatz gemalt: ${ollama}`).not.toMatch(/vector search active/i);
+    expect(ollama, `die Zeile nennt nicht, wo die Zahl steht: ${ollama}`).toMatch(/how many of your notes have a vector/i);
+  });
+
+  it("ueberschreibt den MCP-Kasten ohne das Wort brain", async () => {
+    const { container } = render(<SystemStatus />);
+    await waitFor(() => expect(container.textContent).toMatch(/Copy config|Copied/i), { timeout: 8000 });
+    const text = (container.textContent || "").replace(/\s+/g, " ");
+    expect(text, `der Kasten heisst weiter brain: ${text.slice(0, 400)}`).not.toMatch(/your brain for/i);
+    expect(text, `der Kasten sagt nicht, wofuer er da ist: ${text.slice(0, 400)}`).toMatch(/Connect Claude Desktop and Cursor/i);
+  });
+
   it("malt auf der Wissens-Flaeche notes statt nodes in the brain", async () => {
     const { container } = render(
       <ThemeProvider><AuthProvider><ToastProvider><Dashboard /></ToastProvider></AuthProvider></ThemeProvider>

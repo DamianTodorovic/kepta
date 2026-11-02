@@ -142,9 +142,9 @@ describe("Chat: wenn etwas schiefgeht", () => {
 });
 
 describe("Chat: Kontext und Kosten", () => {
-  it("nennt, wie viele Knoten im Kontext liegen", () => {
+  it("nennt, wie viele Notizen im Kontext liegen", () => {
     const { container } = zeige({ activeMemories: [note(), note(), note()] });
-    expect(container.textContent).toMatch(/3 nodes/);
+    expect(container.textContent).toMatch(/3 notes/);
   });
 
   it("laesst das Token-Budget einstellen", async () => {
@@ -416,7 +416,7 @@ describe("Chat: das ganze Gehirn (Paket 3)", () => {
     expect(container.textContent).toMatch(/bm25 #1/);
     expect(container.textContent).toMatch(/vector #2/);
     expect(container.textContent).not.toMatch(/graph #/);
-    expect(container.textContent).toMatch(/Brain warm — answer in \d+ ms/);
+    expect(container.textContent).toMatch(/Search index warm — answer in \d+ ms/);
   });
 
   it("wenn die Engine nichts liefert, ordnet das lokale Ranking weiter — nichts bricht", async () => {
@@ -425,6 +425,6 @@ describe("Chat: das ganze Gehirn (Paket 3)", () => {
     const { container } = zeige({ activeMemories: [note({ title: "LokaleNotiz" })] });
     await stelleFrageUndWarte(user, container);
     expect(container.textContent).toMatch(/LokaleNotiz/); // Kontext bleibt gefüllt
-    expect(container.textContent).not.toMatch(/Brain warming up/); // nach leerer Antwort kein Warten mehr
+    expect(container.textContent).not.toMatch(/Warming the search index/); // nach leerer Antwort kein Warten mehr
   });
 });

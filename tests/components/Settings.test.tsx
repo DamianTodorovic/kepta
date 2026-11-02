@@ -110,7 +110,7 @@ describe("Settings: die drei Reiter", () => {
     const user = userEvent.setup();
     const { container } = render(<Settings />);
     await user.click(screen.getByRole("button", { name: /MCP \/ API/i }));
-    await waitFor(() => expect(container.textContent).toMatch(/One brain for every AI/));
+    await waitFor(() => expect(container.textContent).toMatch(/One set of notes for every AI app/));
     await user.click(screen.getByRole("button", { name: /AI & data/i }));
     await waitFor(() => expect(container.textContent).toMatch(/Data management/));
   });
@@ -337,7 +337,7 @@ describe("Settings: der MCP-Reiter im Ganzen", () => {
   async function zumMcp(user: ReturnType<typeof userEvent.setup>) {
     const view = render(<Settings />);
     await user.click(screen.getByRole("button", { name: /MCP \/ API/i }));
-    await waitFor(() => expect(view.container.textContent).toMatch(/One brain for every AI/));
+    await waitFor(() => expect(view.container.textContent).toMatch(/One set of notes for every AI app/));
     return view;
   }
 

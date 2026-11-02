@@ -1290,7 +1290,11 @@ async function main() {
     // GEMALTEN Text des ausgelieferten Stuecks gefragt. Ein Beschluss, den nur ein Test kennt,
     // gilt am Objekt nicht — er gilt erst, wenn das Objekt ihn spricht.
     const verbotenQ = [[/\bentries?\b/, "entry/entries"], [/memory node/i, "memory node"],
-      [/the whole store/i, "the whole store"], [/\bin the store\b/i, "in the store"], [/\bin the index\b/i, "in the index"]];
+      [/the whole store/i, "the whole store"], [/\bin the store\b/i, "in the store"], [/\bin the index\b/i, "in the index"],
+      // 3.2.118, dieselben drei Woerter, die die jsdom-Wache haelt — am gemalten Text des
+      // ausgelieferten Stuecks. Ein Beschluss, den nur ein Test kennt, gilt am Objekt nicht.
+      [/\bbrain\b/i, "brain"], [/memory type/i, "memory type"], [/search cache/i, "search cache"],
+      [/vector search active/i, "vector search active"], [/\bnodes in the prompt\b/i, "nodes in the prompt"]];
     const alleZeilen = Object.entries(korpus).flatMap(([namme, v]) => v.map((z) => [namme, z]));
     for (const [muster, name] of verbotenQ) {
       const treffer = alleZeilen.filter(([, z]) => muster.test(z));
@@ -1310,6 +1314,12 @@ async function main() {
       ["Knowledge", /\b[\d,]+ notes stored\b/, "N notes stored (Streifen der Wissens-Sicht)"],
       ["Settings", /The database on this computer/, "The database on this computer"],
       ["Settings", /Encrypted on this disk/, "Encrypted on this disk"],
+      // 3.2.118, zwei von drei Heilungen sind im Korpus erreichbar; die dritte
+      // ("One set of notes for every AI app") sitzt auf einem andern Tab und die zwei
+      // Index-Streifen nur in einem Zustand, der hier nie eintritt — die haelt der
+      // Inhalts-Pruefer am Buendel, nicht dieses Bild.
+      ["Chat", /\b[\d,]+ notes in the prompt\b/, "N notes in the prompt (Kontext-Streifen)"],
+      ["Settings", /Connect Claude Desktop and Cursor/, "Connect Claude Desktop and Cursor"],
     ];
     for (const [namme, muster, name] of vorgeschrieben) {
       const treffer = (korpus[namme] || []).filter((z) => muster.test(z));

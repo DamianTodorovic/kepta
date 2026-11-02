@@ -37,6 +37,17 @@ const VERBOTEN: Array<[RegExp, string]> = [
   [/the whole store/i, "alles Gespeicherte heisst your notes, nicht the whole store"],
   [/\bin the index\b/, "die Suchstruktur heisst search index, nicht index allein"],
   [/\bin the store\b/, "alles Gespeicherte heisst your notes, nicht the store — 3.2.115"],
+  // 3.2.118, dieselbe Klasse an drei Stellen, die der gemalte Korpus des ausgelieferten
+  // 3.2.117 noch zeigt (belege-0211/zustands-tafel/nach-landung, Stand 12:28:56Z):
+  [/\bnodes in the prompt\b/i, "im Chat sind es notes — dieselben Objekte heissen eine Zeile tiefer notes in play (Chat.tsx:846)"],
+  [/vector search active/i, "erreichbar ist nicht im Einsatz; die Zahl dazu steht in der Wissensbasis-Zeile — 3.2.118"],
+  // Der Feger ueber die KLASSE, nicht ueber die drei Funde: `grep -rni brain src` nannte am
+  // 2.11. dreizehn Stellen, davon neun in gemaltem Text (zwei davon zustandsgesteuert, also im
+  // Korpus von 12:28:56Z unsichtbar — der Streifen "Warming the search index" malt erst beim
+  // ersten Suchlauf). brain, memory type und search cache sind drei Namen fuer zwei Sachen.
+  [/\bbrain\b/i, "die gespeicherten Sachen sind your notes, die Struktur heisst search index — 3.2.118"],
+  [/memory type/i, "das gespeicherte Ding heisst note — 3.2.118"],
+  [/search cache/i, "die Struktur heisst search index — 3.2.118"],
 ];
 
 function notiz(i: number): Memory {
@@ -137,6 +148,10 @@ describe("Punkt 7: die Flaeche spricht in einem Woerterbuch", () => {
   it("der Chat nennt das gespeicherte Ding note", async () => {
     const text = await gemalterText(<ToastProvider><Chat activeMemories={SEITE} /></ToastProvider>, /Chat/);
     inOrdnung(text, "Chat");
+    // 3.2.118 positiv: der Kontext-Streifen unter dem Eingabefeld zaehlt dieselben Objekte,
+    // die eine Zeile tiefer "notes in play" heissen. Gemalt, nicht im Quelltext geglaubt.
+    expect(text, `der Kontext-Streifen nennt seine Stuecke nicht beim Wort der Notizen: ${text.slice(0, 300)}`)
+      .toMatch(/notes in the prompt/);
   });
 
   it("die zwei Graph-Saetze an ihren Funktionen: kein entry, kein whole store", () => {
@@ -152,5 +167,15 @@ describe("Punkt 7: die Flaeche spricht in einem Woerterbuch", () => {
     expect(() => inOrdnung("100 entries in the index", "Faelschung")).toThrow();
     expect(() => inOrdnung("100 notes of 14,702 in the store", "Faelschung II")).toThrow();
     expect(() => inOrdnung("4 notes in the search index", "Falsch-Positiv-Kontrolle")).not.toThrow();
+    // Die drei neuen Verbote, je an ihrem Fund von 12:28:56Z — ohne diese Zeilen koennen sie
+    // graen bleiben, weil keine der Flaechen den Text ueberhaupt liefert.
+    expect(() => inOrdnung("5 nodes in the prompt", "Faelschung III")).toThrow();
+    expect(() => inOrdnung("Your brain for Claude Desktop and Cursor", "Faelschung IV")).toThrow();
+    expect(() => inOrdnung("Ollama reachable — vector search active.", "Faelschung V")).toThrow();
+    expect(() => inOrdnung("5 notes in the prompt", "Falsch-Positiv-Kontrolle II")).not.toThrow();
+    expect(() => inOrdnung("One brain for every AI", "Faelschung VI")).toThrow();
+    expect(() => inOrdnung("Memory type", "Faelschung VII")).toThrow();
+    expect(() => inOrdnung("Search cache warm", "Faelschung VIII")).toThrow();
+    expect(() => inOrdnung("Warming the search index — 4 notes in the prompt", "Falsch-Positiv-Kontrolle III")).not.toThrow();
   });
 });

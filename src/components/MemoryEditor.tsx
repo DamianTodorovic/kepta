@@ -327,7 +327,7 @@ export function MemoryEditor({ memory, onSave, onClose, onDelete }: MemoryEditor
 
             {/* Memory-Typ: segmented control */}
             <div>
-              <div className="hud-label mb-2 flex items-center gap-2"><Brain className="w-3.5 h-3.5" /> Memory type</div>
+              <div className="hud-label mb-2 flex items-center gap-2"><Brain className="w-3.5 h-3.5" /> Type of this note</div>
               <div className="grid grid-cols-3 lg:grid-cols-4 gap-2 p-1 rounded-xl hud-inset">
                 {KINDS.map((k) => (
                   <button

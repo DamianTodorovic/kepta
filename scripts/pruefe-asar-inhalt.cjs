@@ -660,6 +660,25 @@ const erwartet = [
   ["searchable by meaning", 1],
   ["Encrypted on this disk", 1],
   ["drop files into the window", 1],
+  // Punkt 7/4, 2.11. (3.2.118, die Klasse hinter den drei Funden): dreizehn "brain"-Stellen in
+  // `grep -rni brain src`, davon neun in gemaltem Text. Zwei davon waren im Korpus von 12:28:56Z
+  // unsichtbar, weil zustandsgesteuert (die warm-Streifen des Suchindex) — ihr Beweis ist darum
+  // dieser Pruefer am ausgelieferten Objekt, nicht das Bild.
+  // Alle zwölf gegen das installierte 3.2.116/3.2.117 gezaehlt: je **0** (gemessen 02.11. 13:36).
+  // Jeder Marker ist ein zusammenhaengendes Literal im Buendel — keine Wortfolge ueber eine
+  // JSX-Interpolation hinweg (die Lehre von "notes stored", oben).
+  ["notes in the prompt", 1],
+  ["Warming the search index", 1],
+  ["Search index warm", 1],
+  ["One set of notes for every AI app", 1],
+  ["kept in one file on this computer", 1],
+  ["Connect Claude Desktop and Cursor", 1],
+  ["how many of your notes have a vector", 1],
+  ["Type of this note", 1],
+  ["Agents read and write the same notes over MCP", 1],
+  ["a chat can leave a note behind", 1],
+  ["saving your first notes", 1],
+  ["Save these", 1],
 ];
 // Die Liste darf nur ASCII-Zeichen enthalten. Grund, gemessen 21.10. 19:16 MESZ am
 // installierten Objekt: das Wort "Looking" plus echtes U+2026 steht dort 2 mal, diese

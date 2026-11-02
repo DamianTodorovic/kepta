@@ -241,7 +241,7 @@ export function SystemStatus() {
           unknown={ollama === null}
           ok={ollama === true}
           label="Ollama / Embeddings (optional)"
-          detail={ollama === null ? 'Checking whether Ollama answers on this computer…' : ollama ? 'Ollama reachable — vector search active.' : 'No answer from Ollama — search still runs purely lexically (71 % Hit@1 over the 58-note, 45-question test corpus that ships with K3PTA, against 51 % for naive substring search); with vectors it is stronger across languages too.'}
+          detail={ollama === null ? 'Checking whether Ollama answers on this computer…' : ollama ? 'Ollama answers on this computer — the Knowledge base row below counts how many of your notes have a vector.' : 'No answer from Ollama — search still runs purely lexically (71 % Hit@1 over the 58-note, 45-question test corpus that ships with K3PTA, against 51 % for naive substring search); with vectors it is stronger across languages too.'}
           fix={ollama === false ? 'Optional: install Ollama from ollama.com and start it — K3PTA picks it up on its own.' : undefined}
         />
         <Row
@@ -272,7 +272,7 @@ export function SystemStatus() {
       <div className="mt-4 rounded-xl p-2 sm:p-3" style={{ background: 'var(--bg-panel-solid)', border: '1px dashed var(--border-subtle)' }}>
         <div className="flex items-center justify-between gap-3">
           <div className="min-w-0">
-            <div className="text-xs font-semibold" style={{ color: 'var(--text-1)' }}>Your brain for Claude Desktop and Cursor</div>
+            <div className="text-xs font-semibold" style={{ color: 'var(--text-1)' }}>Connect Claude Desktop and Cursor</div>
             <code className="text-[11px] block truncate mt-1" style={{ color: 'var(--text-3)' }}>{mcpJson.replaceAll('\n', ' ')}</code>
           </div>
           <button onClick={() => copy('mcp', mcpJson)} className="btn-ghost flex items-center gap-2 px-3 py-2 rounded-lg text-xs shrink-0">

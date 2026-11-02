@@ -1,3 +1,30 @@
+## [3.2.118]
+
+### Changed
+
+- **Three lines that claimed more than they had measured.** Reading the painted text of the
+  delivered 3.2.117 (seven views, 451 lines, 12:28:56Z) left three sentences in the same class as
+  the 3.2.116 findings: the chat's context strip counted "**5 nodes** in the prompt" one line above
+  its own "5 **notes** in play"; the MCP box in Settings was titled "Your **brain** for Claude
+  Desktop and Cursor"; and the Ollama row said "Ollama reachable — **vector search active**" while
+  the row two below it said "0 % of their text is searchable by meaning". Reachability is not use,
+  and one stored thing cannot be two words in one surface. The chip now says "notes in the prompt",
+  the box "Connect Claude Desktop and Cursor", and the Ollama row states only what it probed —
+  "Ollama answers on this computer — the Knowledge base row below counts how many of your notes
+  have a vector."
+- **The same sweep over the whole class, not just the three finds.** `grep -rni brain src` named
+  thirteen places, nine of them painted text: the two cache chips ("Brain warming up…", "Brain
+  warm — answer in … ms") became "Warming the search index…" / "Search index warm — answer in … ms",
+  the shortcut sheet's "Agents use the same brain over MCP — watch the activity live in
+  the index" became "Agents read and write the same notes over MCP — watch them live in Activity",
+  the auto-learn receipt became "Auto-learn is on — a chat can leave a note behind", the settings
+  card "One brain for every AI" became "One set of notes for every AI app" (with "the same local
+  store" replaced by "the same notes, kept in one file on this computer"), the wizard's "Create my
+  brain — 12 notes" became "Save these 12 notes", and the editor's group label "Memory type"
+  became "Type of this note". Two of those lines only appear in a state (the index warming during
+  the first search), so they are held by twelve new markers on the delivered bundle rather than by
+  a screenshot.
+
 ## [3.2.117]
 
 ### Changed

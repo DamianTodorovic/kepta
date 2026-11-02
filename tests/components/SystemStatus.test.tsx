@@ -155,7 +155,7 @@ describe("SystemStatus: was die App ueber sich behauptet", () => {
 
   it("meldet Ollama als erreichbar oder nicht", async () => {
     const { unmount } = render(<SystemStatus />);
-    await waitFor(() => expect(screen.getByText(/Ollama reachable/)).toBeTruthy());
+    await waitFor(() => expect(screen.getByText(/Ollama answers on this computer/)).toBeTruthy());
     unmount();
     stubFetch({ embedOk: false });
     render(<SystemStatus />);
