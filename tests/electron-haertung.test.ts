@@ -86,3 +86,45 @@ describe("Electron-Haertung", () => {
       expect(fontSrc).toContain("data:");
     });
   });
+
+// Der Rest des Zauns. Gemessen am ausgelieferten Fenster-Buendel ruft die
+// Flaeche keinen Cloud-Host und malt kein fernes Bild (P8-AUSSEN-PFADE-0211.md
+// §2b: 82 fetch-Ziele auf /api, 10 nachgelesene Variable, davon zwei localhost-
+// Modell-Sonden). Was die CSP damals trotzdem erlaubte: acht Anbieter-Hoste in
+// connect-src — eine Erlaubnis ohne Verbraucher — und jedes https-Bild in
+// img-src. Beides ist hier die Latte, damit es nicht wieder einzieht.
+describe("Der Inhalts-Sicherheitsplan ruft selber nichts nach aussen", () => {
+  const csp = quelle.match(/'Content-Security-Policy': \[(`[^`]+`)\]/)?.[1] ?? "";
+
+  /** Alle Quellen einer Richtschnur, als Einzelworte. */
+  function quellen(richtschnur: string): string[] {
+    return (csp.match(new RegExp(richtschnur + "([^;]*)"))?.[1] ?? "")
+      .trim()
+      .split(/\s+/)
+      .filter(Boolean);
+  }
+
+  it("connect-src nennt nur die eigne Flaeche und diesen Rechner", () => {
+    const auswaertig = quellen("connect-src").filter(
+      (q) => !/^'self'$/.test(q) && !/^http:\/\/(localhost|127\.0\.0\.1)(:\*)?$/.test(q),
+    );
+    expect(auswaertig, "connect-src erlaubt weiter: " + auswaertig.join(" ")).toEqual([]);
+  });
+
+  it("img-src malt kein Bild von einem Fremdrechner", () => {
+    const nackte = quellen("img-src").filter((q) => q === "https:" || q === "http:" || q === "*");
+    expect(nackte, "img-src laesst jedes ferne Bild zu: " + nackte.join(" ")).toEqual([]);
+  });
+
+  it("laesst eingebettete Bilder und die Bilder von diesem Rechner zu", () => {
+    const bild = quellen("img-src");
+    expect(bild).toContain("'self'");
+    expect(bild).toContain("data:");
+    expect(bild.some((q) => /^http:\/\/(localhost|127\.0\.0\.1)/.test(q))).toBe(true);
+  });
+
+  it("in dem Plan steht kein Anbieter-Host aus dem Katalog", () => {
+    const anbieter = csp.match(/https?:\/\/(api|models|generativelanguage)[a-z0-9.-]*\.[a-z]{2,}/gi) ?? [];
+    expect(anbieter, "der Plan nennt Anbieter-Hoste: " + [...new Set(anbieter)].join(" ")).toEqual([]);
+  });
+});

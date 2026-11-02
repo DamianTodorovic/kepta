@@ -1,3 +1,23 @@
+## [3.2.124]
+
+### Fixed
+
+- **The window can no longer reach out without being asked, and a picture in an answer can't
+  report that you read it.** Measured on the shipped bundle: all 92 network call sites in the
+  window go to K3PTA's own door on this computer, and the provider calls fall in the app's own
+  server — so the content policy still *permitted* eight cloud origins that no window code ever
+  touches. Those are gone: `connect-src` is now `'self'` plus this machine. And `img-src` allowed
+  a bare `https:` — which meant an answer containing `![x](https://example/p.gif?i=…)` fetched
+  that address the moment it rendered, telling a third party that you just read the note, silently.
+  Now the picture is withheld and *said*: "Remote image not loaded — K3PTA keeps this window
+  local.", with the host named and one way out, "Open in browser", which is your order and never
+  our fetch. Second finding in the same line: the markdown library empties `data:` addresses, so an
+  embedded base64 picture rendered as `<img src="">` — and an empty source makes Chromium download
+  the whole page again. The app now re-admits `data:image/` for png, jpeg, gif, webp and avif, so
+  embedded pictures paint and nothing paints without a source. Deliberately *not* changed: the note
+  list, cards and preview — they render no images at all (0 `<img>` in the interface source,
+  0 `new Image()` in the shipped bundle), so there was nothing to loosen there.
+
 ## [3.2.123]
 
 ### Fixed

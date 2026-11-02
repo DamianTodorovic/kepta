@@ -727,6 +727,19 @@ const erwartet = [
   ["No AI app has read this note", 1],
   ["the audit log did not answer", 1],
   ["Earlier versions could not be read", 1],
+  // Punkt 4/8, 2.11. nacht (3.2.124, die Egress-Scheibe): das Fenster darf nichts nach aussen
+  // rufen, was nicht sein eigner Rechner ist, und ein fernes Bild in einer Modell-Antwort wird
+  // nicht still verschluckt, sondern benannt abgewiesen. Gegen das installierte 3.2.123
+  // (app.asar 49 180 861 B, mtime 02.11. 17:54) gezaehlt: alle fuenf Marken **0mal**
+  // (gemessen 23:47:41 mit LC_ALL=C grep -aoc). Der Gegenbeweis liegt ausserhalb dieser Liste,
+  // weil sie nur ">=" kennt: die alte CSP-Zeile Stueck fuer Stueck
+  // "http://127.0.0.1:* https:; connect-src" steht dort **1** mal und muss nach dem Tausch 0
+  // mal stehen — ein Zaun, der nur breiter gemacht wurde, ist keine Aenderung.
+  ["Remote image not loaded", 1],
+  ["keeps this window local", 1],
+  ["bild-abgewiesen", 1],
+  ["Open in browser:", 1],
+  ["img-src 'self' data: http://localhost:* http://127.0.0.1:*; connect-src", 1],
 ];
 // Die Liste darf nur ASCII-Zeichen enthalten. Grund, gemessen 21.10. 19:16 MESZ am
 // installierten Objekt: das Wort "Looking" plus echtes U+2026 steht dort 2 mal, diese

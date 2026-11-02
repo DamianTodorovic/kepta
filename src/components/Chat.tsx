@@ -2,7 +2,8 @@ import { useState, useRef, useEffect, useMemo, useCallback, FormEvent } from "re
 import { motion } from "motion/react";
 import { Send, AlertTriangle, Database, Trash2, PanelLeftOpen, Square, Copy, Check, CheckCircle2, Coins, Hash, FileText, Sparkles, ShieldCheck } from "../lib/icons";
 import { istLokaleAdresse } from "../lib/schild";
-import ReactMarkdown from "react-markdown";
+import ReactMarkdown, { defaultUrlTransform } from "react-markdown";
+import { bildeinordnung } from "../lib/bild-politik";
 import { ChatMessage, Memory } from "../types";
 import { KeptaMark } from "./KeptaMark";
 import { loadAISettings, saveAISettings, providerById, resolveAIConnection, disconnectAI } from "../lib/ai";
@@ -20,6 +21,20 @@ function extractCodeText(node: unknown): string {
   const el = node as { props?: { children?: unknown } };
   if (el.props && "children" in el.props) return extractCodeText(el.props.children);
   return "";
+}
+
+/**
+ * Url-Umwandlung der Antwort: die Bibliothek selbst, plus eingebettete Bilder.
+ * Ihr `defaultUrlTransform` leert jede `data:`-Adresse — ein Bild in Base64
+ * endete als `<img src="">`, und eine leere Quelle laedt im Chromium die Seite
+ * selbst noch einmal. Nur Bild-Data-Uri werden zurueckgeholt; alles, was die
+ * Bibliothek aus einem andern Grund leert (javascript: und Verwandte), bleibt
+ * leer und faengt bei `img` eine benannte Zeile statt eines Bildes.
+ */
+function antwortUrlPfad(url: string): string {
+  const erlaubt = defaultUrlTransform(url);
+  if (erlaubt) return erlaubt;
+  return /^data:image\/(png|jpe?g|gif|webp|avif);base64,[a-z0-9+/=]+$/i.test(url) ? url : "";
 }
 import { hybridSearch, type ScoredMemory } from "../lib/semantic";
 import { useSuchPrefs } from "../lib/searchPrefs";
@@ -951,6 +966,7 @@ export function Chat({ activeMemories, onSaveToBrain, onSaveToBrainWithMeta, isF
               <div className="msg-ai w-full">
                 <div className="chat-prose prose prose-sm max-w-none break-words" style={{ color: "var(--text-1)" }}>
                   <ReactMarkdown
+                    urlTransform={antwortUrlPfad}
                     components={{
                       h1: ({ children }) => <h1 className="text-base font-bold mt-3 mb-2" style={{ color: "var(--text-1)" }}>{children}</h1>,
                       h2: ({ children }) => <h2 className="text-[15px] font-semibold mt-3 mb-2" style={{ color: "var(--text-1)" }}>{children}</h2>,
@@ -961,6 +977,33 @@ export function Chat({ activeMemories, onSaveToBrain, onSaveToBrainWithMeta, isF
                           {children}
                         </a>
                       ),
+                      // Ein fernes Bild waere ein Abzug bei der Gegenstelle, bevor
+                      // der Nutzer etwas sieht: die Adresse in der Antwort nennt ihn
+                      // beim Host. Darum bleibt das Bild aus und die Zeile sagt es —
+                      // mit Namen der Gegenstelle und dem Weg, den nur die Hand geht.
+                      img: ({ src, alt }) => {
+                        const beschluss = bildeinordnung(String(src ?? ""));
+                        if (beschluss.art === "malen") {
+                          return <img src={beschluss.src} alt={alt ?? ""} className="max-w-full rounded-lg my-2" />;
+                        }
+                        return (
+                          <span
+                            data-testid="bild-abgewiesen"
+                            className="block my-2 rounded-lg px-3 py-2 text-xs leading-relaxed"
+                            style={{ background: "var(--bg-inset)", border: "1px solid var(--border-subtle)", color: "var(--text-2)" }}
+                          >
+                            {"Remote image not loaded — K3PTA keeps this window local."}
+                            {beschluss.weg && (
+                              <>
+                                {" Open in browser: "}
+                                <a href={beschluss.weg} target="_blank" rel="noreferrer" className="underline underline-offset-2" style={{ color: "var(--accent)" }}>
+                                  {beschluss.gegenstelle}
+                                </a>
+                              </>
+                            )}
+                          </span>
+                        );
+                      },
                       ul: ({ children }) => <ul className="list-disc pl-5 my-2 space-y-1 marker:text-[var(--accent)]">{children}</ul>,
                       ol: ({ children }) => <ol className="list-decimal pl-5 my-2 space-y-1 marker:text-[var(--accent)]">{children}</ol>,
                       li: ({ children }) => <li className="leading-relaxed" style={{ color: "var(--text-1)" }}>{children}</li>,
