@@ -209,8 +209,15 @@ async function main() {
   await warteBis(async () => ((await evaliere(cdp, `document.querySelectorAll('button').length`)) > 0 ? true : null), { maxMs: 90000 });
 
   // 4) Ein leerer Bestand oeffnet den Assistenten ueber der Flaeche; "Later" ist der Weg vorbei.
-  const spaeter = await evaliere(cdp, `(()=>{const b=[...document.querySelectorAll('button')].find(x=>/later|skip|spaeter/i.test(x.textContent||''));if(b){b.click();return (b.textContent||'').trim()}return null})()`);
-  console.log(`  Assistent: ${spaeter ? `Weg über "${spaeter}"` : "stand keiner im Weg"}`);
+  //    Gemessen 2.11. 07:21: dieser Griff lief einmal, kurz nachdem der erste Knopf gemalt war —
+  //    da war der Assistent noch nicht da, und das Protokoll meldete "stand keiner im Weg",
+  //    obwohl das Bild desselben Laufs den offenen Schirm zeigt. Also: fragen, bis einer
+  //    antwortet oder vier Sekunden um sind, und danach **nachlesen**, ob der Schirm wirklich zu
+  //    ist. Ein gruener Wert hinter einem offenen Overlay ist kein Beweis (Hausform vom 16.10.).
+  const spaeter = await warteBis(async () => evaliere(cdp, `(()=>{const b=[...document.querySelectorAll('button')].find(x=>/later|skip|spaeter/i.test(x.textContent||''));if(!b)return null;b.click();return (b.textContent||'').trim()})()`), { maxMs: 4000 });
+  await schlafe(700);
+  const schirm = await evaliere(cdp, `(()=>/Step 1 of 4|Set up K3PTA/.test(document.body.innerText||''))()`);
+  console.log(`  Assistent: ${spaeter ? `Weg ueber "${spaeter}"` : "kein Knopf in vier Sekunden"}; Schirm danach ${schirm ? "STEHT NOCH DA" : "zu"}`);
   await schlafe(700);
 
   const steuere = async () => {
@@ -1251,6 +1258,67 @@ async function main() {
       fs.writeFileSync(datei, erst.puff);
       console.log(`  Bildbeweis: ${datei} (${erst.puff.length} B, ${erst.b} x ${erst.h}, Name "${erst.name || "keiner"}")`);
     }
+  }
+
+  // --- Zyklus Q: das Tastmass im echten Fenster (Punkt 2, der gezogene Vertrag) ---------------
+  //     `src/index.css` schreibt 28 px Default und 20 px Boden vor (.tap / .tap-min), und die
+  //     Design-Wache meldet `.tap-min` als Waise: keine Flaeche ruft ihn. Geglaubt wird hier
+  //     nicht dem Quelltext, sondern dem gemalten Rechteck — eine Klassen-Kette aus dem Baum
+  //     greifen ist keine Messung (Hausregel vom 27.10., als 44 px bei 390 gegen 36 px bei
+  //     1440 lief). Gezahlt wird, was der Finger trifft: gemalt, sichtbar, nicht `inert`,
+  //     nicht `pointer-events: none`.
+  if (NUR === "" || NUR === "tastmass") {
+    const BREITE_IST = Number(await evaliere(cdp, `window.innerWidth`));
+    console.log(`  Fenster: ${BREITE_IST} x ${await evaliere(cdp, `window.innerHeight`)} px (bestellt ${BREITE} x ${HOEHE})`);
+    urteil("das Fenster ist so breit, wie der Lauf bestellt", BREITE_IST, BREITE);
+    const zensus = async (seite) => {
+      await knopf(cdp, seite.regex);
+      await schlafe(1200);
+      return await evaliere(cdp, `(()=>{const out=[];const aus={leer:0,unsichtbar:0,inert:0};
+        for (const e of document.querySelectorAll('button,a[href],[role="button"],[role="tab"],input,select,summary')) {
+          const r = e.getBoundingClientRect();
+          if (r.width <= 0 || r.height <= 0) { aus.leer += 1; continue; }
+          const st = getComputedStyle(e);
+          if (st.visibility === 'hidden' || st.display === 'none' || st.pointerEvents === 'none') { aus.unsichtbar += 1; continue; }
+          if (e.closest('[inert]')) { aus.inert += 1; continue; }
+          const name = (e.getAttribute('aria-label') || e.title || e.textContent || e.tagName).replace(/\\s+/g,' ').trim().slice(0,26);
+          // Ein 1x1-Pixel-Eingabefeld ist keine Zielscheibe, sondern der Leseweg: das Haus malt
+          // die Schalter als label um ein verstecktes input (index.css: label:has(input[type=
+          // checkbox])). Getroffen wird das Label. Also wird die Trefferflaeche gefragt, nicht der
+          // Behaelter - dieselbe Lehre wie #116 (ein Marker, den kein Verbraucher trifft, ist kahl).
+          const held = e.closest('label');
+          const hr = held ? held.getBoundingClientRect() : null;
+          const treffer = hr && hr.width >= r.width && hr.height >= r.height ? hr : r;
+          out.push({ name, w: Math.round(treffer.width), h: Math.round(treffer.height),
+            k: e.tagName.toLowerCase(), art: e.getAttribute('type') || '',
+            hinter: hr && treffer !== r ? Math.round(r.width) + "x" + Math.round(r.height) : '' });
+        }
+        return { ziele: out, aus } })()`);
+    };
+    const seitenQ = [
+      { name: "Knowledge", regex: "^\\s*(Knowledge|Wissen)\\s*$" },
+      { name: "Graph", regex: "^\\s*(Graph)\\s*$" },
+      { name: "Settings", regex: "^\\s*(Settings|Einstellungen)\\s*$" },
+    ];
+    let klein = [];
+    let gesamt = 0;
+    for (const seite of seitenQ) {
+      const mess = await zensus(seite);
+      const ziele = mess.ziele;
+      gesamt += ziele.length;
+      const unter = ziele.filter((z) => Math.min(z.w, z.h) < 20);
+      klein.push(...unter.map((z) => ({ ...z, seite: seite.name })));
+      console.log(`  ${seite.name}: ${ziele.length} Ziele, ${unter.length} unter dem Boden — ` +
+        `kleinstes ${ziele.length ? JSON.stringify(ziele.reduce((a, b) => (Math.min(b.w, b.h) < Math.min(a.w, a.h) ? b : a))) : "keins"}`);
+      console.log(`    ausgelassen: ${mess.aus.leer} ohne Rechteck, ${mess.aus.unsichtbar} unsichtbar oder nicht treffbar, ${mess.aus.inert} hinter der eingeklappten Leiste`);
+    }
+    // Die eine Pruefung, die nie verlieren kann, ist ein Zensus ueber null Elemente. Also erst
+    // der Zensus selbst, dann die Latte.
+    urteil("**der Zensus sieht ueberhaupt Ziele**", gesamt > 0, true);
+    console.log(`  gesamt: ${gesamt} Ziele in ${seitenQ.length} Sichten, ${klein.length} unter 20 px`);
+    for (const z of klein.slice(0, 12)) console.log(`    ${z.seite}  ${z.k}${z.art ? ":" + z.art : ""}  ${z.w} x ${z.h}${z.hinter ? "  (Feld " + z.hinter + " im Label)" : ""}  "${z.name}"`);
+    urteil("**kein Ziel liegt unter dem 20-px-Boden des Hauses**", klein.length, 0);
+    console.log(`  Bild: ${await bild(`tastmass-${BREITE_IST}px.png`)}`);
   }
 
   // --- Zyklus P: der FehlerPFAD, wenn die eigne Tuer stirbt (Punkt 4, zweiter Teil) ----------
