@@ -1,3 +1,19 @@
+## [3.2.120]
+
+### Fixed
+
+- **Four failure paths that had no reason.** "Load more" in the audit log read the body before
+  asking the status and had no `catch` at all: a 500 left the button standing there as if it had
+  done nothing, and the rejection went unhandled. The seal check ("Check integrity") had
+  `try/finally` without `catch`, so a failing check kept whatever result was on screen before it.
+  Both now say what happened: "More entries did not arrive — the log answered 500." / "The seal
+  check did not run — the log answered 503." The day view parsed the body *before* the status, so
+  an HTML error page (a proxy, a 502) reached the user as "Unexpected token '<' … is not valid
+  JSON"; it now names the status. And the inbox chip, which answered `if (!r.ok) return;` into an
+  empty `catch`, had been saying "Inbox…" forever — a store that stopped answering looked like a
+  folder still loading. It now has three states like the door gained in 3.2.111, and the third one
+  reads "No answer from the inbox".
+
 ## [3.2.119]
 
 ### Fixed

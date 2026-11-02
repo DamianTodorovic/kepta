@@ -167,8 +167,18 @@ export function TodayView({ aktiv, onOpenMemory, onGo }: Props) {
     setFehler(null);
     try {
       const r = await fetch(`/api/briefing?since=${seit}`);
-      const d = await r.json();
-      if (!r.ok) throw new Error(d.error ?? `HTTP ${r.status}`);
+      // Punkt 4, 2.11.: der Koerper wurde VOR dem Status gelesen. Ein HTML-Fehlerblatt (Proxy,
+      // 502) warf beim Parsen, und ihr Satz war der Nutzertext: "Unexpected token '<', ...".
+      // Der Grund der Tuer bleibt bevorzugt — EnterpriseViews.test.tsx haelt "DB locked", und
+      // eine Zahl statt eines Grunds waere ein Rueckschritt (gezogen 15:04, 3333/3335).
+      const d = await r.json().catch(() => null);
+      if (!r.ok) {
+        const grund = typeof d?.error === 'string' && d.error.trim() !== ''
+          ? d.error.trim()
+          : `the store answered ${r.status}`;
+        throw new Error(grund);
+      }
+      if (!d) throw new Error('the answer was empty');
       setDaten(inForm(d, LEERES_BRIEFING));
     } catch (e) {
       setFehler(e instanceof Error ? e.message : String(e));

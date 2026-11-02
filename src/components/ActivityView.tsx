@@ -179,15 +179,30 @@ function Protokoll() {
   const weitere = async () => {
     const letzte = eintraege[eintraege.length - 1];
     if (!letzte) return;
-    const d = await (await fetch(`/api/audit?${filter({ before: String(letzte.id) })}`)).json();
-    setEintraege((e) => [...e, ...(d.entries ?? [])]);
-    setMehr(!!d.more);
+    // Punkt 4, 2.11.: hier gab es weder eine Status-Frage noch ein catch. Die 500 warf, die
+    // Ablehnung ging unbehandelt weg, und der Knopf stand still, als haette er nichts getan.
+    try {
+      const r = await fetch(`/api/audit?${filter({ before: String(letzte.id) })}`);
+      const d = await r.json().catch(() => null);
+      if (!r.ok) { setFehler(`More entries did not arrive — the log answered ${r.status}.`); return; }
+      setEintraege((e) => [...e, ...(d?.entries ?? [])]);
+      setMehr(!!d?.more);
+      setFehler(null);
+    } catch {
+      setFehler('More entries did not arrive — the log did not answer.');
+    }
   };
 
   const pruefen = async () => {
     setPrueft(true);
     try {
-      setPruefung(await (await fetch('/api/audit/verify')).json() as Pruefung);
+      const r = await fetch('/api/audit/verify');
+      const d = await r.json().catch(() => null);
+      if (!r.ok) { setFehler(`The seal check did not run — the log answered ${r.status}.`); return; }
+      setPruefung(d as Pruefung);
+      setFehler(null);
+    } catch {
+      setFehler('The seal check did not run — the log did not answer.');
     } finally {
       setPrueft(false);
     }

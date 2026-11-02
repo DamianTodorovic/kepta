@@ -542,11 +542,15 @@ export function Dashboard() {
 
   // Inbox Auto-Import — Gehirn liest immer mit (File-Watcher)
   const [inbox, setInbox] = useState<InboxStatus | null>(null);
+  const [inboxGrund, setInboxGrund] = useState<"offen" | "da" | "verweigerte">("offen");
   const [inboxScanBusy, setInboxScanBusy] = useState(false);
   const refreshInbox = useCallback(async ()=>{
     try {
       const r = await fetch('/api/inbox/status');
-      if(!r.ok) return;
+      // Punkt 4, 2.11.: `if (!r.ok) return;` plus ein stilles catch — die Platte meldete
+      // "Inbox…" fuer immer (:1769), auch wenn der Diener seit Minuten nicht antwortete.
+      // Derselbe Zug wie die Tuer in 3.2.111: ein ausstehender Messwert ist ein Zustand.
+      if(!r.ok) { setInboxGrund("verweigerte"); return; }
       const d = await r.json();
       // An der Grenze normalisiert, nicht später abgesichert: die Fläche liest
       // inbox.files.length direkt, und eine Teilantwort (Server im Hochlauf,
@@ -555,7 +559,8 @@ export function Dashboard() {
       // hat. Auch files:"drei" wäre durchgerutscht und als „drei in Inbox"
       // aufgetaucht.
       setInbox(inForm(d, LEERE_INBOX));
-    } catch {}
+      setInboxGrund("da");
+    } catch { setInboxGrund("verweigerte"); }
   }, []);
   useEffect(()=>{ refreshInbox(); const id=setInterval(refreshInbox, 12000); return ()=> clearInterval(id); }, [refreshInbox]);
   const handleInboxScan = async ()=>{
@@ -1766,7 +1771,7 @@ export function Dashboard() {
                 title={inbox?.inboxDir ? `Inbox folder: ${inbox.inboxDir}` : 'Watch the inbox folder'}
               >
                 <UploadCloud className="w-3 h-3" style={{ color: inbox?.watching ? 'var(--ok)' : 'var(--text-3)' }} />
-                {inbox ? `${inbox.files.length} in Inbox` : 'Inbox…'}
+                {inboxGrund === "verweigerte" ? "No answer from the inbox" : inbox ? `${inbox.files.length} in Inbox` : 'Inbox…'}
                 <button
                   onClick={handleInboxScan}
                   disabled={inboxScanBusy}

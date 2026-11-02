@@ -694,6 +694,13 @@ const erwartet = [
   ["carried no counts", 1],
   ["notes came through", 1],
   ["One page of 100 notes", 1],
+  // Punkt 4, 2.11. (3.2.120, vier Fehlerpfade ohne Grund): gegen das installierte 3.2.118
+  // gezaehlt je **0** (gemessen 02.11. 15:03). Die Inbox-Zeile ist derselbe Zug wie die Tuer
+  // von 3.2.111: ein ausstehender Messwert ist ein Zustand, kein "ich lade noch" fuer immer.
+  ["More entries did not arrive", 1],
+  ["The seal check did not run", 1],
+  ["the answer was empty", 1],
+  ["No answer from the inbox", 1],
 ];
 // Die Liste darf nur ASCII-Zeichen enthalten. Grund, gemessen 21.10. 19:16 MESZ am
 // installierten Objekt: das Wort "Looking" plus echtes U+2026 steht dort 2 mal, diese
