@@ -366,12 +366,21 @@ export function Settings() {
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ protocol: provider.protocol, baseUrl: settings.baseUrl, apiKey: settings.apiKey }),
         });
-        const data = await res.json();
-        if (!cancelled && res.ok && Array.isArray(data.models)) {
+        const data = await res.json().catch(() => null);
+        if (cancelled) return;
+        if (res.ok && Array.isArray(data?.models)) {
           setModels((data.models as string[]).sort());
           setModelError(null);
+        } else {
+          // Punkt 4, 2.11.: dieser Zweig war `catch { /* silent */ }` — die Liste blieb leer,
+          // als gaebe es keine Modelle, obwohl der modelError-Kanal (role="alert", :851)
+          // laengst existiert. Ein leerer Regler ohne Grund ist kein leerer Regler.
+          const grund = typeof data?.error === 'string' && data.error.trim() !== '' ? data.error.trim() : `the provider answered ${res.status}`;
+          setModelError(`Models could not be loaded — ${grund}. Try again after a moment.`);
         }
-      } catch { /* silent */ }
+      } catch {
+        setModelError('Models could not be loaded — the provider did not answer. Try again after a moment.');
+      }
     };
     loadOnce();
     const onFocus = () => loadOnce();

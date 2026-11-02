@@ -1,3 +1,17 @@
+## [3.2.122]
+
+### Fixed
+
+- **Three settings that looked saved when they were refused.** Unticking ".pdf" in the
+  computer scan sent a PUT to `/api/scan/config` with no status check, and its rejection fell
+  into `catch { /* not saved — the default stays */ }`: the button stayed unticked on screen
+  while the old list still governed the scan. On the AI tab, a refused model list was
+  `catch { /* silent */ }` — an empty dropdown that read like "this provider has no models",
+  although a `role="alert"` channel has existed there for months. The dossier's suggestion
+  chips dropped a non-2xx into `catch(() => undefined)` and showed nothing, no reason. They
+  now name what happened: "Your choice did not stick — the scan answered 409.", "Models could
+  not be loaded — rate limited.", "Suggestions did not arrive — the store answered 503."
+
 ## [3.2.121]
 
 ### Fixed

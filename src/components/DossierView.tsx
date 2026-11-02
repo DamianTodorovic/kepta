@@ -74,6 +74,7 @@ export function DossierView({ onOpenMemory, onEditMemory, dossierThema }: { onOp
   const [laedt, setLaedt] = useState(false);
   const [fehler, setFehler] = useState<string | null>(null);
   const [vorschlaege, setVorschlaege] = useState<Vorschlaege | null>(null);
+  const [vorschlagGrund, setVorschlagGrund] = useState<string | null>(null);
   const [kopiert, setKopiert] = useState(false);
   const kopierTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [gespeichert, setGespeichert] = useState(false);
@@ -106,9 +107,14 @@ export function DossierView({ onOpenMemory, onEditMemory, dossierThema }: { onOp
   useEffect(() => {
     let vorbei = false;
     fetch('/api/dossier/suggestions')
-      .then((r) => (r.ok ? r.json() : null))
-      .then((d) => { if (!vorbei && d) setVorschlaege(d as Vorschlaege); })
-      .catch(() => undefined);
+      .then((r) => {
+        // Punkt 4, 2.11.: vorher `.catch(() => undefined)` und ein `r.ok`, das nur durchgelassen
+        // wurde — die Flaeche blieb ohne Vorschlag und ohne Grund stehen.
+        if (!r.ok) { if (!vorbei) setVorschlagGrund(`Suggestions did not arrive — the store answered ${r.status}.`); return null; }
+        return r.json().catch(() => null);
+      })
+      .then((d) => { if (!vorbei && d) { setVorschlaege(d as Vorschlaege); setVorschlagGrund(null); } })
+      .catch(() => { if (!vorbei) setVorschlagGrund('Suggestions did not arrive — the store did not answer.'); });
     return () => { vorbei = true; };
   }, []);
 
@@ -202,6 +208,9 @@ export function DossierView({ onOpenMemory, onEditMemory, dossierThema }: { onOp
             </button>
           ))}
         </div>
+      )}
+      {vorschlagGrund && chips.length === 0 && !daten && (
+        <p role="status" className="text-[12.5px] mb-4" style={{ color: 'var(--text-3)' }}>{vorschlagGrund}</p>
       )}
       {fehler && <p className="text-sm" style={{ color: 'var(--warn)' }}>{fehler}</p>}
 

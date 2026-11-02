@@ -711,6 +711,15 @@ const erwartet = [
   ["every note you use", 1],
   ["notes are loaded right now", 1],
   ["notes (token budget", 1],
+  // Punkt 4, 2.11. abend (3.2.122, drei Einstellungen, die abgewiesen wurden und gespeichert
+  // aussahen): gegen das installierte 3.2.121 gezaehlt je **0** (gemessen 02.11. 17:03:05).
+  // Alle vier sind Zustandstexte — eine antwortende Kapsel malt keinen davon —, also ist der
+  // Marker hier der Beweis am Objekt und der Fall in tests/components/einstellung-verweigert.test.tsx
+  // die Heilung.
+  ["Your choice did not stick", 1],
+  ["the scan did not answer", 1],
+  ["Models could not be loaded", 1],
+  ["Suggestions did not arrive", 1],
 ];
 // Die Liste darf nur ASCII-Zeichen enthalten. Grund, gemessen 21.10. 19:16 MESZ am
 // installierten Objekt: das Wort "Looking" plus echtes U+2026 steht dort 2 mal, diese

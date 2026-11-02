@@ -178,7 +178,7 @@ export function MachineScan({ open, onClose, onImported, autoPreview = false }: 
   /** Auswahl sichern — sie gilt fuer Vorschau UND Durchlauf. */
   const sichereAuswahl = useCallback(async (neueEndungen: string[], neuAusgelassen: string) => {
     try {
-      await fetch("/api/scan/config", {
+      const r = await fetch("/api/scan/config", {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -186,7 +186,13 @@ export function MachineScan({ open, onClose, onImported, autoPreview = false }: 
           zusaetzlichAusgelassen: neuAusgelassen.split(",").map((x) => x.trim()).filter(Boolean),
         }),
       });
-    } catch { /* nicht gesichert — die Vorgabe gilt weiter */ }
+      // Punkt 4, 2.11.: vorher stand hier kein Status-Griff und der Wurf fiel in ein stummes
+      // catch. Der Nutzer sah seinen umgeschalteten Knopf, im Regal galt die alte Auswahl.
+      if (!r.ok) { setFehler(`Your choice did not stick — the scan answered ${r.status}. Tick it again, or close and reopen this panel.`); return; }
+      setFehler(null);
+    } catch { /* keine Antwort — dieselbe Meldung, damit die Flaeche nicht gespeichert aussieht */
+      setFehler('Your choice did not stick — the scan did not answer. Tick it again, or close and reopen this panel.');
+    }
   }, []);
 
   const starteVorschau = useCallback(async () => {
