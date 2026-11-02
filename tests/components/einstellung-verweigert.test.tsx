@@ -28,7 +28,7 @@ import { saveAISettings, PROVIDERS } from "../../src/lib/ai";
 // erst, dann uebernimmt er (MachineScan.tsx:165-170), und ein zu duenner Stub laesst ihn ohne
 // Dateiarten-Knoepfe da: der erste Versuch scheiterte am falschen Grund.
 const REGELWERK = {
-  niemals: { ordner: [".ssh", "keychains"], dateimuster: ["^\.env$", "\.pem$"], erklaerung: "Keys are never read." },
+  niemals: { ordner: [".ssh", "keychains"], dateimuster: ["^\\.env$", "\\.pem$"], erklaerung: "Keys are never read." },
   uebersprungen: { ordner: ["node_modules", ".git"], erklaerung: "Build folders hold no knowledge." },
   lesbar: { endungen: [".md", ".txt", ".pdf"], erklaerung: "Only these yield text." },
   grenzen: { maxDateiBytes: 2_000_000, maxDateien: 20_000, maxTiefe: 12 },
