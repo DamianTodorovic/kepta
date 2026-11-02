@@ -1080,6 +1080,13 @@ label:has(.switch), label:has(input[type="checkbox"]), label:has(input[type="rad
   background: var(--ok);
   box-shadow: 0 0 0 3px var(--ok-soft);
 }
+/* Punkt 4 (02.11.): ein gruener Punkt, der "verbunden" sagt, ist eine Behauptung. Wenn die
+   eigne Tuer nicht antwortet, darf derselbe Punkt nicht gruen bleiben - er wird leise, ohne
+   eine neue Farbe zu erfinden: die dritte Tintenstufe des Hauses ist die Ruhe selbst. */
+.status-dot-leise {
+  background: var(--text-3);
+  box-shadow: none;
+}
 .agent-dot {
   width: 7px;
   height: 7px;

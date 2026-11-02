@@ -693,12 +693,20 @@ export function Dashboard() {
    * nodes" während die Liste längst 75 zählte und der Toast eine Agenten-
    * speicherung meldete.
    */
+  /**
+   * Punkt 4 (02.11.): ob die Tuer geantwortet hat, ist ein Zustand - nicht ein Schmuck.
+   * Gemessen im echten Fenster (Zyklus `tuerfort`): der Diener wird fortgenommen, und die
+   * Index-Zeile behauptet weiter "In sync", weil das Wort an keine Antwort gebunden war.
+   */
+  const [tuerLebt, setTuerLebt] = useState<"offen" | "antwortete" | "verweigerte">("offen");
   const holeGesundheit = useCallback(async (abgebrochen?: { current: boolean }) => {
     try {
       const r = await fetch('/api/health');
-      const d = await r.json();
       if (abgebrochen?.current) return;
-      if (!d || typeof d !== 'object') return;
+      // Ein HTTP 500 mit einem Leib ist keine Antwort, die man als Leben buchen darf.
+      if (!r.ok) { setTuerLebt("verweigerte"); return; }
+      const d = await r.json();
+      if (!d || typeof d !== 'object') { setTuerLebt("verweigerte"); return; }
       const e = (d.embeddings ?? {}) as Record<string, unknown>;
       const v = (d.encryption ?? {}) as Record<string, unknown>;
       const modelle = (e.models ?? {}) as Record<string, unknown>;
@@ -712,7 +720,12 @@ export function Dashboard() {
         embedEmbedded: typeof e.embedded === 'number' ? e.embedded : 0,
         embedModelle: Object.entries(modelle).map(([name, anzahl]) => ({ name, anzahl: Number(anzahl) })),
       });
-    } catch { /* der Server meldet sich, wenn er bereit ist */ }
+      setTuerLebt("antwortete");
+    } catch {
+      // Bis hierher war dieser Fanggrund eine Ausrede ("der Server meldet sich, wenn er
+      // bereit ist") ohne Folge: nichts auf dem Schirm aenderte, obwohl die Tuer weg war.
+      setTuerLebt("verweigerte");
+    }
   }, []);
   /**
    * #77 — die Bestandszahl der zwei Zeilen, durch dieselben Regeln wie die Flaeche.
@@ -747,6 +760,15 @@ export function Dashboard() {
     const timer = setInterval(() => void holeGesundheit(), 3000);
     return () => clearInterval(timer);
   }, [gehirn, holeGesundheit]);
+
+  // Punkt 4 (02.11.): die Tuer kann sterben, nachdem die Flaeche gebaut ist. Ohne Frage
+  // bleibt der Tod unsichtbar - der #116-Takt oben fragt nur, solange eine Einbettung fehlt.
+  // Fuenf Sekunden auf einen health-Griff von 4-6 ms Bildzeit sind kein Preis, sondern die
+  // einzige Art, wie ein Nutzer erfahrt, dass sein Speicher nicht mehr antwortet.
+  useEffect(() => {
+    const timer = setInterval(() => void holeGesundheit(), 5000);
+    return () => clearInterval(timer);
+  }, [holeGesundheit]);
 
   // --- Activity-Stream: das Gehirn lebt — Agent-Aktionen live sehen ---
   const [brainPulse, setBrainPulse] = useState(0);
@@ -1900,8 +1922,11 @@ export function Dashboard() {
                 </div>
                 <div className="index-cell ml-auto">
                   <span className="v">
-                    {agentActive ? <span className="agent-dot" /> : <span className="status-dot" />}
-                    {agentActive ? 'Agent working' : 'In sync'}
+                    {agentActive ? <span className="agent-dot" />
+                      : tuerLebt === "antwortete" ? <span className="status-dot" />
+                        : <span className="status-dot status-dot-leise" />}
+                    {agentActive ? 'Agent working' : tuerLebt === "antwortete" ? 'In sync'
+                      : tuerLebt === "verweigerte" ? 'No answer from the store' : 'Asking the store'}
                   </span>
                   <span className="k">local, private, MCP</span>
                 </div>
@@ -1984,8 +2009,12 @@ export function Dashboard() {
                       <span className="agent-dot" />
                       <span style={{ color: 'var(--accent)', fontWeight: 560 }}>Agent active</span>
                     </>
-                  ) : (
+                  ) : tuerLebt === "antwortete" ? (
                     <span className="status-dot" title="Local storage in sync" />
+                  ) : tuerLebt === "verweigerte" ? (
+                    <span className="status-dot status-dot-leise" title="The store is not answering — this window still shows what it last loaded" />
+                  ) : (
+                    <span className="status-dot status-dot-leise" title="Asking the store…" />
                   )}
                 </div>
               </div>

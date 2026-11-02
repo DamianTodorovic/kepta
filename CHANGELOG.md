@@ -1,3 +1,18 @@
+## [3.2.111]
+
+### Fixed
+
+- **The status line now says what its own door answered.** The index row promised "In sync"
+  whatever happened: the sentence was attached to nothing, so when the local store stopped
+  answering, the window kept its green dot and its promise and gave no reason at all. Measured in
+  the real window (prober cycle `tuerfort`, on the delivered 3.2.109, 2026-11-02): the process is
+  removed and the screen still reads "In sync". A non-2xx answer and a thrown fetch now both
+  record refusal, an unanswered first attempt reads as "Asking the store", and the dot goes quiet
+  — the house's third ink step, not a new colour invented for the occasion. The health poll now
+  runs on its own five-second timer instead of only while an embedding is missing, because a door
+  can die after the window was built. Three cases hold the three states, and the prober holds the
+  path a suite cannot reach: it kills its own child on its own port and reads the screen.
+
 ## [3.2.110]
 
 ### Added

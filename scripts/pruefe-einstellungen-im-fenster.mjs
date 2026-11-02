@@ -1271,6 +1271,13 @@ async function main() {
     console.log(`  was auf dem Schirm steht: ${JSON.stringify(text)}`);
     const grund = /server|not answer|did not respond|offline|cannot reach|verbindung|connection/i.test(text);
     urteil("**der Nutzer erfahrt einen Grund, wenn die Tuer fort ist**", grund, true);
+    // Die zweite Haelfte des Befunds ist ein bestimmtes Wort, und das steht in einer bestimmten
+    // Zelle — der Schirmtext oben ist auf 300 Zeichen gekappt und reicht nie bis zur Index-Zeile.
+    // Ohne diese Messung waere "die Zeile behauptet weiter In sync" eine Behauptung des Pruefers.
+    const stelle = String(await evaliere(cdp, `(()=>{const z=[...document.querySelectorAll('.index-cell')]
+      .find(e=>/local, private, MCP/.test(e.textContent||''));return (z?.textContent||'').replace(/\\s+/g,' ').trim()})()`));
+    console.log(`  die Index-Zeile sagt: ${JSON.stringify(stelle)}`);
+    urteil("**und die Index-Zeile verspricht keinen Sync, wenn die Tuer fort ist**", /in sync/i.test(stelle), false);
     const ausnahmen = cdp.ereignisse.filter((e) => e.method === "Runtime.exceptionThrown").length;
     urteil("**und das Fenster wirft dabei keine unverarbeitete Ausnahme**", ausnahmen, 0);
     console.log(`  Bild: ${await bild("tuer-fort.png")}`);

@@ -604,6 +604,13 @@ const erwartet = [
   ["hud-label tnum legende-zustand legende-bilanz", 1],
   [":not(.legende-bilanz)", 1],
   [".legende-griffe{display:none}", 1],
+  // Punkt 4, 2.11. (die Index-Zeile bindet ihr Wort an die eigne Antwort): gemessen am
+  // ausgelieferten 3.2.109 (app.asar 49 174 652 B, mtime 2026-11-01T13:10:*), vor dem Tausch
+  // gezaehlt — alle drei Marken dort **0**. "In sync" und "Local storage in sync" standen dort
+  // schon je 1 mal und taugen nicht als Marke: sie waren der Defekt, nicht die Heilung.
+  ["No answer from the store", 1],
+  ["Asking the store", 1],
+  ["status-dot status-dot-leise", 1],
 ];
 // Die Liste darf nur ASCII-Zeichen enthalten. Grund, gemessen 21.10. 19:16 MESZ am
 // installierten Objekt: das Wort "Looking" plus echtes U+2026 steht dort 2 mal, diese
