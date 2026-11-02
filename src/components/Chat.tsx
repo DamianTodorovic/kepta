@@ -733,14 +733,21 @@ export function Chat({ activeMemories, onSaveToBrain, onSaveToBrainWithMeta, isF
           )}
           <div className="w-9 h-9 rounded-xl flex items-center justify-center relative" style={{ background: "var(--accent-soft)", border: "1px solid var(--border-subtle)", boxShadow: "inset 0 1px 0 var(--edge-light)" }}>
             <KeptaMark size={24} />
-            <span
-              className="absolute -bottom-0.5 -right-0.5 status-dot"
-              style={connection.state === "connected" ? undefined : { background: "var(--text-3)", boxShadow: "none" }}
-              // Aufgabe #94: derselbe Satz wie in der Zustands-Tafel fuer denselben Zustand.
-              title={connection.state === "connected"
-                ? (connection.local ? "Local endpoint - this address needs no key." : "AI connected")
-                : "No AI connected"}
-            />
+            {/* Aufgabe #94: derselbe Satz wie in der Zustands-Tafel fuer denselben Zustand.
+                Die Ruhe ist seit 3.2.111 eine Klasse (`status-dot-leise`); diese Stelle malt sie
+                nicht mehr von Hand. Ein Zustand, den zwei Stellen verschiedentlich zeichnen, war
+                genau der Defekt, den #8 und #94 schon fuer die Worte heilen mussten. */}
+            {connection.state === "connected" ? (
+              <span
+                className="absolute -bottom-0.5 -right-0.5 status-dot"
+                title={connection.local ? "Local endpoint - this address needs no key." : "AI connected"}
+              />
+            ) : (
+              <span
+                className="absolute -bottom-0.5 -right-0.5 status-dot status-dot-leise"
+                title="No AI connected"
+              />
+            )}
           </div>
           <div>
             <h2 className="font-semibold text-sm flex items-center gap-2" style={{ color: "var(--text-1)" }}>

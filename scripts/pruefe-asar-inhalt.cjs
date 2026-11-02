@@ -611,6 +611,10 @@ const erwartet = [
   ["No answer from the store", 1],
   ["Asking the store", 1],
   ["status-dot status-dot-leise", 1],
+  // Punkt 2, 2.11. (derselbe Zustand, derselbe Sitz): der Chat-Kopf malt die Ruhe nicht mehr von
+  // Hand, sondern ruft dieselbe Klasse. Gegen das installierte 3.2.109 gezaehlt: **0** fuer die
+  // ganze Kette (`status-dot-leise` selbst war dort schon 0, die Kette ist die eigne Marke).
+  ["-right-0.5 status-dot status-dot-leise", 1],
 ];
 // Die Liste darf nur ASCII-Zeichen enthalten. Grund, gemessen 21.10. 19:16 MESZ am
 // installierten Objekt: das Wort "Looking" plus echtes U+2026 steht dort 2 mal, diese

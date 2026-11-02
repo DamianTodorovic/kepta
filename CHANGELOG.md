@@ -1,3 +1,15 @@
+## [3.2.112]
+
+### Changed
+
+- **One state, one seat: the chat header draws its dot from the same class as the index row.**
+  The quiet connection state existed twice — as a hand-written inline style in the chat header
+  (`background: var(--text-3); box-shadow: none`) and, since the previous release, as
+  `.status-dot-leise` next to the store's status line. Two drawings of one state is how #8 and #94
+  got their words apart in the first place; this is the same defect in colour. The header now calls
+  the class, and a counter-probe refuses any inline painting of the quiet state at either site — a
+  hand-written copy that comes back fails the run.
+
 ## [3.2.111]
 
 ### Fixed
