@@ -90,7 +90,13 @@ async function warteBis(hin, { maxMs = 60000, schritt = 400 } = {}) {
 
 /** Der kleinste CDP-Client, den dieses Haus braucht: Rohr, Aufruf, Antwort. */
 class Cdp {
-  constructor(ws) { this.ws = ws; this.nr = 0; this.wartend = new Map(); }
+  constructor(ws) {
+    this.ws = ws; this.nr = 0; this.wartend = new Map();
+    // Ereignisse (keine Antwort auf eine Anfrage) gingen bis hierher verloren: der Pruefer
+    // sah nur, was er selbst fragte. Punkt 4s Fehler-Feger braucht die Zeilen, die das
+    // Fenster von sich aus meldet - Konsole, Ausnahmen, fehlgeschlagene Anfragen.
+    this.ereignisse = [];
+  }
   static async verbindung(url) {
     const ws = await new Promise((res, rej) => {
       const w = new WebSocket(url);
@@ -100,8 +106,10 @@ class Cdp {
     const c = new Cdp(ws);
     ws.onmessage = (e) => {
       const m = JSON.parse(String(e.data));
-      if (m.id !== undefined && c.wartend.has(m.id)) { c.wartend.get(m.id)(m); c.wartend.delete(m.id); }
+      if (m.id !== undefined && c.wartend.has(m.id)) { c.wartend.get(m.id)(m); c.wartend.delete(m.id); return; }
+      if (m.method) c.ereignisse.push(m);
     };
+    c.ereignisse = c.ereignisse || [];
     return c;
   }
   send(methode, params = {}) {
@@ -888,6 +896,45 @@ async function main() {
       spurAlt.slice(erste, ziel + 1).every(([, text]) => text.length > 0), true);
     urteil("**die ganze Menge kommt, bevor der Nutzer zu lange schaut**", ziel >= 0 && spurAlt[ziel][0] < 8000, true);
     console.log(`  Bild: ${await bild("gruppenzeit-erste-sekunden.png")}`);
+  }
+
+  // --- Zyklus O: der Fehler-Feger ueber alle Sichten (Punkt 4, Aufgabe 31) -------------------
+  //     Punkt 4 heisst woertlich "keine Fehler in keinem Bereich". Pruefen konnte das bis
+  //     hierher nur die Einstellungen-Flaeche (zwoelf Zyklen). Was fehlte, war das Protokoll,
+  //     das das Fenster von sich aus schreibt: Konsole, Ausnahmen, fehlgeschlagene Anfragen.
+  //     Abbruch und Strome (EventSource, die beim Sichtwechsel enden) sind kein Fehler -
+  //     sie werden ausgefiltert, und die Liste der verschiedenen Zeilen wird gedruckt, damit
+  //     ein gruener Lauf nicht behauptet, es sei nichts gewesen.
+  if (NUR === "" || NUR === "fehler") {
+    for (const dom of ["Runtime.enable", "Log.enable", "Network.enable"]) {
+      try { await cdp.send(dom); } catch { console.log(`  ${dom} geht in diesem Fenster nicht`); }
+    }
+    cdp.ereignisse.length = 0;
+    for (const nam of ["Knowledge", "Today", "Chat", "Graph", "Dossier", "Activity", "Settings"]) {
+      const geklickt = await knopf(cdp, `^\\s*${nam}\\s*$`);
+      urteil(`die Sicht ${nam} ist zu treffen`, geklickt !== null, true);
+      await schlafe(1500);
+    }
+    const zeilen = [];
+    for (const e of cdp.ereignisse) {
+      const p = e.params || {};
+      if (e.method === "Runtime.consoleAPICalled" && p.type === "error") {
+        zeilen.push("konsole: " + (p.args || []).map((a) => a.value ?? a.description ?? a.subtype ?? "").join(" ").slice(0, 170));
+      } else if (e.method === "Runtime.exceptionThrown") {
+        const d = p.exceptionDetails || {};
+        zeilen.push("Ausnahme: " + String((d.exception && d.exception.description) || d.text || "").slice(0, 170));
+      } else if (e.method === "Log.entryAdded" && p.entry && p.entry.level === "error") {
+        zeilen.push(`log(${p.entry.source}): ` + String(p.entry.text).slice(0, 170));
+      } else if (e.method === "Network.loadingFailed") {
+        if (/abort|cancel/i.test(String(p.errorText || ""))) continue;
+        zeilen.push(`netz(${p.type}): ${p.errorText}`);
+      }
+    }
+    const verschiedene = [...new Set(zeilen)];
+    console.log(`  Ereignisse: ${cdp.ereignisse.length} | Fehlerzeilen: ${zeilen.length} | verschiedene: ${verschiedene.length}`);
+    for (const z of verschiedene.slice(0, 14)) console.log(`      ${z}`);
+    urteil("**keine Fehlerzeile in sieben Sichten**", verschiedene.length, 0);
+    console.log(`  Bild: ${await bild("fehler-feger.png")}`);
   }
 
   // --- Zyklus K: die KI-Verbindung, und ob sie ohne lokalen Speicher wiederkehrt ------------
