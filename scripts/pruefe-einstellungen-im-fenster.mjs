@@ -1386,9 +1386,14 @@ async function main() {
     console.log(`  Diener ${pid} wird fortgenommen (eignes Kind, eigener Port ${PORT})`);
     server.kill();
     await schlafe(5000);
-    const text = String(await evaliere(cdp, `document.body.innerText || ''`)).replace(/\s+/g, " ").slice(0, 300);
-    console.log(`  was auf dem Schirm steht: ${JSON.stringify(text)}`);
-    const grund = /server|not answer|did not respond|offline|cannot reach|verbindung|connection/i.test(text);
+    // Der ganze Schirm, nicht die ersten 300 Zeichen: die Index-Zeile sitzt am ENDE des
+    // Streifens, und ein gekappter Text kann ein Wort nicht finden, das unterhalb der Kappe
+    // steht. Gemessen 02.11. 08:46 am ausgelieferten 3.2.114 — die Zeile sagte "No answer from
+    // the store", und der Pruefer meldete trotzdem "kein Grund", weil er nur die ersten 300
+    // Zeichen und sechs Redewendungen kannte (ohne "no answer").
+    const text = String(await evaliere(cdp, `document.body.innerText || ''`)).replace(/\s+/g, " ");
+    console.log(`  was auf dem Schirm steht (erste 300): ${JSON.stringify(text.slice(0, 300))}`);
+    const grund = /server|no answer|not answer|did not respond|offline|cannot reach|verbindung|connection/i.test(text);
     urteil("**der Nutzer erfahrt einen Grund, wenn die Tuer fort ist**", grund, true);
     // Die zweite Haelfte des Befunds ist ein bestimmtes Wort, und das steht in einer bestimmten
     // Zelle — der Schirmtext oben ist auf 300 Zeichen gekappt und reicht nie bis zur Index-Zeile.
