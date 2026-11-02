@@ -1,3 +1,24 @@
+## [3.2.113]
+
+### Changed
+
+- **Three sentences stopped talking like the code.** This is the first release where the surface
+  was read by people who had never seen it: the text of all seven screens was captured from the
+  running window (451 lines, 30 notes loaded) and given to two independent first-time readers with
+  no project knowledge and the same six questions. Both, separately, returned the same three
+  sentences. Today's subtitle read "what happened since less than a minute ago" — a sentence that
+  names its direction twice, because the duration helper already carries "ago". The knowledge
+  strip read "Embeddings: 0/60 embedded" next to "0 of 60 pieces done" and a tooltip saying
+  "chunks": one thing, three words, and no reader could tell whether 60 counted their 30 notes.
+  And the auto-learn setting explained itself as "The switch lives in localStorage
+  ki_gehirn_autolearn … saves title/tags/summary as a new node" — one reader's note: "reads like a
+  note to a programmer", and the app calls the thing a *note* everywhere else. The subtitle now
+  names the span in one grammatical piece ("in the last 3 hours"), the embedding counts use one
+  word ("pieces") and say whose pieces they are ("of your 30 notes"), and the switch says what it
+  does: a key point read in the background and saved as a new note you can edit or delete, with a
+  notification either way. The setting still lives under the same storage key — a counter-probe
+  holds that, because renaming it would silently lose every existing installation's choice.
+
 ## [3.2.112]
 
 ### Changed

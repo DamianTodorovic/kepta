@@ -940,7 +940,7 @@ export function Settings() {
                   </div>
                 )}
 
-                <p className="text-xs mt-2 leading-relaxed" style={{color:'var(--text-3)'}}>The switch lives in <code>localStorage ki_gehirn_autolearn</code>. For every AI answer of 60 characters or more — or any shorter answer that spans more than one line — a short extraction call runs in the background and saves <code>title/tags/summary</code> as a new node. Both success and failure are reported as a notification.</p>
+                <p className="text-xs mt-2 leading-relaxed" style={{color:'var(--text-3)'}}>When this is on, every AI answer of 60 characters or more — or any shorter answer that spans more than one line — is read once more in the background, and its key point is saved as a new note you can edit or delete. You get a notification either way: that it saved something, or that it could not. The choice itself is kept on this computer and never leaves it.</p>
               </div>
 
               <div>

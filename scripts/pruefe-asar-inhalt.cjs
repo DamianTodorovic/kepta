@@ -615,6 +615,12 @@ const erwartet = [
   // Hand, sondern ruft dieselbe Klasse. Gegen das installierte 3.2.109 gezaehlt: **0** fuer die
   // ganze Kette (`status-dot-leise` selbst war dort schon 0, die Kette ist die eigne Marke).
   ["-right-0.5 status-dot status-dot-leise", 1],
+  // Punkt 7, 2.11. (zwei Erstleser ohne Projektkenntnis, 07:33 MESZ, derselbe Korpus, zwei
+  // unabhaengige Laeufe): die Flaeche nannte Speicherschluessel, Feldschema und "node", und Today
+  // schrieb "since … ago". Gegen das installierte 3.2.109 gezaehlt: alle drei **0**.
+  ["pieces ready", 1],
+  ["saved as a new note", 1],
+  ["what happened in the last", 1],
 ];
 // Die Liste darf nur ASCII-Zeichen enthalten. Grund, gemessen 21.10. 19:16 MESZ am
 // installierten Objekt: das Wort "Looking" plus echtes U+2026 steht dort 2 mal, diese

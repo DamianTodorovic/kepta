@@ -437,10 +437,18 @@ describe("Settings: der MCP-Reiter im Ganzen", () => {
 });
 
 describe("Settings: Selbstlernen im Detail", () => {
-  it("erklaert, wo der Schalter lebt und was er kostet", () => {
+  it("erklaert, was der Schalter tut und was er kostet — ohne den Werkzeugnamen auf der Flaeche", () => {
     const { container } = render(<Settings />);
-    expect(container.textContent).toMatch(/ki_gehirn_autolearn/);
+    // Stand bis 2.11.: dieser Fall verlangte `ki_gehirn_autolearn` **auf dem Schirm**. Zwei
+    // Erstleser ohne Projektkenntnis haben denselben Satz als Werkzeugtext zurueckgewiesen
+    // ("reads like a note to a programmer"). Die Transparenz bleibt, das Wortfeld wird ein
+    // Nutzerwort: wo die Wahl liegt (auf diesem Rechner), was passiert (eine Anfrage im
+    // Hintergrund), und was dabei entsteht (eine neue Notiz). Dass der Schlussel unter der Haube
+    // derselbe bleibt, haelt tests/components/settings-kein-werkzeugtext.test.tsx am Quelltext.
+    expect(container.textContent).toMatch(/this computer|on this device/i);
     expect(container.textContent).toMatch(/extraction call|background/i);
+    expect(container.textContent).toMatch(/new note/i);
+    expect(container.textContent, "der interne Name steht wieder auf dem Schirm").not.toMatch(/ki_gehirn_/);
   });
 
   it("laesst ein eigenes Modell fuer die Extraktion setzen", async () => {

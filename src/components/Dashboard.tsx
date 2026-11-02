@@ -1960,10 +1960,10 @@ export function Dashboard() {
                   {(gehirn.embedModelle.length > 0 || gehirn.embedTotal > 0) && (
                     <span
                       className="chip tnum"
-                      title="The embedding model behind vector search and how many of the text chunks carry its vectors."
+                      title="The model behind semantic search, and how many pieces of your notes already carry one of its vectors."
                     >
-                      Embeddings: {gehirn.embedModelle.map((m) => `${m.name} ${groessenZahl(m.anzahl)} of ${groessenZahl(gehirn.embedTotal)} chunks`).join(' · ')}
-                      {gehirn.embedModelle.length === 0 ? `${groessenZahl(gehirn.embedEmbedded)}/${groessenZahl(gehirn.embedTotal)} embedded` : ''}
+                      Embeddings: {gehirn.embedModelle.map((m) => `${m.name} ${groessenZahl(m.anzahl)} of ${groessenZahl(gehirn.embedTotal)} pieces`).join(' · ')}
+                      {gehirn.embedModelle.length === 0 ? `${groessenZahl(gehirn.embedEmbedded)} of ${groessenZahl(gehirn.embedTotal)} pieces ready` : ''}
                     </span>
                   )}
                 </div>
@@ -1981,7 +1981,7 @@ export function Dashboard() {
                   style={{ color: 'var(--warn)' }}
                   title="The vector index is still being built in the background. Until every text chunk carries its vector, a semantic search can miss notes that are already saved — the words still find them."
                 >
-                  {`Semantic index is still filling: ${groessenZahl(gehirn.embedEmbedded)} of ${groessenZahl(gehirn.embedTotal)} pieces done — a saved note can be missing from these results`}
+                  {`Semantic index is still filling: ${groessenZahl(gehirn.embedEmbedded)} of ${groessenZahl(gehirn.embedTotal)} pieces of your ${groessenZahl(tuerBestand ?? memories.length)} notes are ready — until then, a saved note can be missing from these results`}
                 </div>
               )}
 

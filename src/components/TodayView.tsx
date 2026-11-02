@@ -73,6 +73,29 @@ export function besuchSeit(jetzt = Date.now()): number {
   return seit;
 }
 
+/**
+ * Die gemessene Spanne seit einem Zeitpunkt, als Wort, das ein Mensch in einen Satz setzen kann:
+ * "minute", "3 hours", "2 days". Absichtlich ohne date-fns: dessen Text traegt seine eigne
+ * Richtungsangabe ("2 hours ago", "about 1 hour", "less than a minute"), und die Flaeche schrieb
+ * sie hinter "since" — heraus kam "what happened since less than a minute ago", ein Satz, den
+ * beide Erstleser dieses Haus-Tests (2.11.) als unlesbar zurueckgewiesen haben. Eine Zahl, die
+ * man nur mit einem Fremdwort aussprechen kann, ist kein Text fuer Nutzer.
+ */
+export function spannenText(seit: number, jetzt = Date.now()): string {
+  const s = Math.max(0, Math.floor((jetzt - seit) / 1000));
+  const m = Math.floor(s / 60);
+  if (m < 2) return "minute";
+  if (m < 60) return `${m} minutes`;
+  const h = Math.floor(m / 60);
+  if (h < 24) return h === 1 ? "an hour" : `${h} hours`;
+  const t = Math.floor(h / 24);
+  if (t < 31) return t === 1 ? "a day" : `${t} days`;
+  const mo = Math.floor(t / 30);
+  if (mo < 12) return mo === 1 ? "a month" : `${mo} months`;
+  const j = Math.floor(t / 365);
+  return j === 1 ? "a year" : `${j} years`;
+}
+
 export function gruss(stunde: number): string {
   if (stunde >= 5 && stunde < 12) return 'Good morning';
   if (stunde >= 12 && stunde < 18) return 'Good afternoon';
@@ -173,7 +196,7 @@ export function TodayView({ aktiv, onOpenMemory, onGo }: Props) {
   const jetzt = new Date();
   const fensterInfo = FENSTER[fenster]!;
   // Untertitel: beim gewohnten Blick die gemessene Spanne, sonst der Fenstertext.
-  const untertitel = fenster === 0 ? `what happened since ${vor(seit)}` : `what happened ${fensterInfo.text}`;
+  const untertitel = fenster === 0 ? `what happened in the last ${spannenText(seit)}` : `what happened ${fensterInfo.text}`;
   const abgeloest = daten?.superseded ?? { total: 0, notes: [] };
   const geloescht = daten?.deleted ?? { total: 0, notes: [] };
   return (
