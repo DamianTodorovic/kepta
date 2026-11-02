@@ -648,7 +648,14 @@ const erwartet = [
   // Die Zeile "No notes yet - drop files…" waere ein Nicht-ASCII-Marker (Gedankenstrich) und ist
   // darum durch den ASCII-freien Teil derselben Zeile ersetzt — ein Nicht-ASCII-Marker zaehlt hier
   // immer 0, also keine Pruefung, sondern ein Dauer-Null.
-  ["notes stored", 1],
+  // ["notes stored", 1] stand hier bis zum 2.11. und hat die Landung 3.2.117 verhindert — der Tausch
+  // ist nicht gefahren, das installierte Stueck blieb 3.2.116. Grund: in `{c===1?'note':'notes'} stored`
+  // reisst die JSX-Interpolation die Wortfolge auseinander, das Buendel traegt `" stored"` als eignes
+  // Literal und "notes stored" zusammen NIE (gemessen: 0 im gebauten 3.2.117, 0 im ausgelieferten 3.2.116).
+  // Sechste Form des Dauer-Nulls: nicht die Zeichensatz-Zerlegung, sondern die Bundle-Syntax.
+  // Der Ersatz ist ein echtes Literal, der title-Wert aus Dashboard.tsx:1945: 1 im gebauten
+  // 3.2.117, 0 im ausgelieferten 3.2.116 — schlaegt also in beide Richtungen.
+  ["Notes in the database on this computer", 1],
   ["The database on this computer", 1],
   ["searchable by meaning", 1],
   ["Encrypted on this disk", 1],

@@ -1303,6 +1303,19 @@ async function main() {
       const treffer = alleZeilen.filter(([, z]) => z.trim() === wort);
       urteil(`**keine Zeile behauptet allein "${wort}"**`, treffer.map(([n, z]) => `${n}: ${z}`), []);
     }
+    // 3.2.117, die positive Seite: ein Satz, den ich setze, muss am ausgelieferten Stueck auch
+    // dastehen. Gegen das installierte 3.2.116 treffen alle drei im gemalten Text nicht, also
+    // schlaegt jede einzelne, wenn die Heilung je verloren geht.
+    const vorgeschrieben = [
+      ["Knowledge", /\b[\d,]+ notes stored\b/, "N notes stored (Streifen der Wissens-Sicht)"],
+      ["Settings", /The database on this computer/, "The database on this computer"],
+      ["Settings", /Encrypted on this disk/, "Encrypted on this disk"],
+    ];
+    for (const [namme, muster, name] of vorgeschrieben) {
+      const treffer = (korpus[namme] || []).filter((z) => muster.test(z));
+      urteil(`**"${name}" steht wirklich auf dem Schirm**`, treffer.length > 0, true);
+      if (treffer.length) console.log(`  gefunden in ${namme}: ${treffer[0].slice(0, 90)}`);
+    }
     fs.mkdirSync(BILDER_ZIEL, { recursive: true });
     const pfad = path.join(BILDER_ZIEL, `saetze-korpus-${BREITE}px.json`);
     fs.writeFileSync(pfad, JSON.stringify({ stand: new Date().toISOString(), breite: BREITE, hoehe: HOEHE, korpus }, null, 1));
