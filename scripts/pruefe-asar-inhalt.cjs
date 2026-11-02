@@ -636,6 +636,14 @@ const erwartet = [
   ["notes in all", 1],
   ["claims in all", 1],
   ["More of your notes", 1],
+  // Punkt 4 und 7, 2.11. (3.2.116): gegen das installierte 3.2.115 gezaehlt je **0**.
+  // Bewusste Abweichung, benannt statt verschwiegen: der Duplett-Chip heisst jetzt "No
+  // duplicates" — dieser String stand im 3.2.115 schon 1 mal (der Panel-Text "No duplicates
+  // found"), eine Marke darauf waere eine Pruefung, die nie schlagen kann. Sein Beweis ist
+  // der Fall tests/components/dashboard-keine-duplikate-kein-befehl.test.tsx am gemalten
+  // Chip, nicht ein Zaehler.
+  ["No questions yet", 1],
+  ["nothing is sent until you press Enter", 1],
 ];
 // Die Liste darf nur ASCII-Zeichen enthalten. Grund, gemessen 21.10. 19:16 MESZ am
 // installierten Objekt: das Wort "Looking" plus echtes U+2026 steht dort 2 mal, diese

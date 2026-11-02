@@ -212,9 +212,9 @@ describe("Dashboard: Suche", () => {
 });
 
 describe("Dashboard: Duplikate", () => {
-  it("meldet 'Clean', wenn nichts doppelt ist", async () => {
+  it("meldet 'No duplicates', wenn nichts doppelt ist — kein Wort, das nach Befehl klingt", async () => {
     const { container } = await zeige([note({ title: "A" }), note({ title: "B" })]);
-    await waitFor(() => expect(container.textContent).toMatch(/Clean/));
+    await waitFor(() => expect(container.textContent).toMatch(/No duplicates/));
   });
 
   it("zaehlt Duplikate und oeffnet die Pruefansicht", async () => {

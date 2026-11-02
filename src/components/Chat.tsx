@@ -905,7 +905,7 @@ export function Chat({ activeMemories, onSaveToBrain, onSaveToBrainWithMeta, isF
             <div className="w-16 h-16 rounded-2xl flex items-center justify-center mb-4" style={{ background: 'var(--bg-inset)', border: '1px solid var(--border-subtle)', boxShadow: 'inset 0 1px 0 var(--edge-light)' }}>
               <KeptaMark size={34} />
             </div>
-            <div className="hud-label mb-2">Ready</div>
+            <div className="hud-label mb-2">No questions yet</div>
             <p className="text-[13px] max-w-sm leading-relaxed" style={{ color: "var(--text-2)" }}>
               Ask something about your notes — {budgetedMemories.length} of {activeMemories.length} fit the budget ({tokenBudget.toLocaleString("en-GB")} tokens).
             </p>
@@ -914,6 +914,10 @@ export function Chat({ activeMemories, onSaveToBrain, onSaveToBrainWithMeta, isF
                 <button
                   key={s}
                   onClick={() => setInput(s)}
+                  // Der Knopf sendet nichts — er tippt die Frage in die Zeile. Ohne dieses Wort
+                  // liest sich die Leiste wie vier fertige Befehle, und genau das haben beide
+                  // Erstleser gefragt ("what happens if I click this?").
+                  title={`Puts “${s}” in the box below — nothing is sent until you press Enter`}
                   className="suggestion-pill cursor-pointer"
                 >
                   {s}

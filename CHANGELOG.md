@@ -1,3 +1,24 @@
+## [3.2.116]
+
+### Fixed
+
+- **Two screens stopped claiming a second thing.** Both first-time readers, independently, pointed
+  at the same pair of words. The Chat screen showed "No AI connected" at the top and "Ready" in the
+  middle of the same window — one reader wrote: "Which is true?" The cause is narrow: that heading
+  was drawn whenever the *message list* was empty, so the word meant "no conversation yet" while
+  every reader takes it as "the model is reachable". It now says "No questions yet", which can only
+  be read as the state it reports. The same class sat on the knowledge strip: when nothing was
+  duplicated, a chip read "Clean", and both readers stopped there ("could delete; the word does not
+  say what", "sounds mildly dangerous with no description"). It is a status, not a button — the
+  neighbouring branch already reads "N duplicates · Review" — so it now says "No duplicates", and
+  the four suggestion pills gained the sentence they lacked: they put the question in the box, and
+  nothing is sent until you press Enter.
+- **A test that could not fail, found on the way.** The check for the removed word was written as
+  `/\bReady\b/` over `container.textContent`, which glues neighbouring elements together
+  ("…Out ~—ReadyAsk something…"), so the word boundary never matched — the case was green while the
+  word was still on screen. The probe now reads leaf nodes and joins them, and the same case is red
+  against the previous bytes.
+
 ## [3.2.115]
 
 ### Changed

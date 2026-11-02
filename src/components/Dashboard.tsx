@@ -1759,7 +1759,7 @@ export function Dashboard() {
 
               {duplicateGroups.length === 0 ? (
                 <span className="chip hidden lg:inline-flex" title="Nothing to do — the knowledge base has no obvious duplicates">
-                  <CheckCircle2 className="w-3 h-3" style={{ color: 'var(--ok)' }} /> Clean
+                  <CheckCircle2 className="w-3 h-3" style={{ color: 'var(--ok)' }} /> No duplicates
                 </span>
               ) : (
                 <button
