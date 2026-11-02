@@ -238,7 +238,7 @@ async function main() {
   //     ist kein Beweis ueber die gefuellte. Also auch `radien` in die Liste.
   const SAAT = Number(ARG("saat", 30));
   if (NUR === "" || NUR === "suche" || NUR === "treffer" || NUR === "bild" || NUR === "radius"
-    || NUR === "radien" || NUR === "auswahl") {
+    || NUR === "radien" || NUR === "auswahl" || NUR === "gruppenzeit") {
     const dateien = Array.from({ length: SAAT }, (_, i) => {
       const n = String(i + 1).padStart(4, "0");
       // Zwei Daten im Kuvert, nicht eine: die Flaeche haelt ihr Datumsfeld nur, wo die Saat
@@ -846,6 +846,48 @@ async function main() {
       urteil("und nicht die Zahl des Fachs allein", gelesen === paar.fach, false);
       console.log(`  Bild: ${await bild("auswahl-zelle.png")}`);
     }
+  }
+
+  // --- Zyklus N: was der Nutzer in den ersten Sekunden sieht (Punkt 6, Aufgabe 34) -----------
+  //     Gemessen an seiner eignen Tuer (1.11. 13:34, Bestand 21 064): `GET /api/memories/gruppen`
+  //     braucht 1 351 und 1 304 ms, weil die Route beim Fragen teilt und nichts gespeichert ist.
+  //     Die Flaeche haelt fuer die Zeit ein Wort bereit ("counting the N loaded" gegen
+  //     "the whole store", `Dashboard.tsx:1895`) - ob es ankommt, wann es wechselt und ob die
+  //     Zeile je leer ist, war nicht gemessen.
+  if (NUR === "" || NUR === "gruppenzeit") {
+    // Der erste Entwurf (06:41) lud neu, wartete auf Knopfe, klickte die Liste - und begann
+    // DANN zu fragen: 1 ms, und die Zeile nannte schon die ganze Menge. Das ist kein Verlauf,
+    // das ist ein Blick hinter die Antwort. Also: Reload lost die Anfrage der Flaeche aus, und
+    // die Proben beginnen im selben Augenblick, ohne dass dazwischen ein Griff wartet.
+    const anfang = Date.now();
+    await cdp.send("Page.reload", { ignoreCache: true });
+    const spur = [];
+    let ziel = -1;
+    while (Date.now() - anfang < 12000 && ziel < 0) {
+      const text = await evaliere(cdp, `(()=>{const e=[...document.querySelectorAll('span')].find(x=>/in what form/.test(x.textContent||''));
+        return e?(e.textContent||'').trim():''})()`).catch(() => "");
+      spur.push([Date.now() - anfang, String(text || "")]);
+      if (String(text).includes("the whole store")) ziel = spur.length - 1;
+      await schlafe(100);
+    }
+    const spurAlt = spur;
+    // Von der ERSTEN Probe an kann die Zeile nicht reden: vor dem Bergbau der Flaeche ist kein
+    // Span da (gemessen 06:47: Probe 1 bei 0 ms ist leer, Probe 2 bei 114 ms nennt "in the
+    // index", Probe 3 bei 225 ms nennt die ganze Menge). Gefragt wird darum die Zeit, in der
+    // die Zeile steht - und ob sie in dieser Zeit je eine Zahl ohne Grundgesamtheit zeigt.
+    urteil("**sobald die Zeile steht, nennt sie eine Grundgesamtheit**",
+      spurAlt.slice(Math.max(0, spurAlt.findIndex(([, s]) => s.length > 0))).every(([, s]) => /in the index|counting the|the whole store/.test(s)), true);
+    const stadien = spurAlt.filter(([, text]) => /counting the|in the index/.test(text)).length;
+    const erste = spurAlt.findIndex(([, text]) => text.length > 0);
+    console.log(`  Verlauf: ${spurAlt.length} Griffe in ${spurAlt[spurAlt.length - 1][0]} ms, ` +
+      `${stadien} Proben nennen die Grundgesamtheit "geladen", ` +
+      `Zeile zuerst nach ${erste >= 0 ? spurAlt[erste][0] : -1} ms, ` +
+      `die ganze Menge ab ${ziel >= 0 ? spurAlt[ziel][0] + " ms" : "NICHT innerhalb 12 s"}`);
+    console.log(`  Proben um die erste Zeile: ${JSON.stringify(spurAlt.slice(Math.max(0, erste - 1), erste + 4).map(([, s]) => s))}`);
+    urteil("**die Zeile ist nie leer, bevor sie eine Grundgesamtheit nennt**",
+      spurAlt.slice(erste, ziel + 1).every(([, text]) => text.length > 0), true);
+    urteil("**die ganze Menge kommt, bevor der Nutzer zu lange schaut**", ziel >= 0 && spurAlt[ziel][0] < 8000, true);
+    console.log(`  Bild: ${await bild("gruppenzeit-erste-sekunden.png")}`);
   }
 
   // --- Zyklus K: die KI-Verbindung, und ob sie ohne lokalen Speicher wiederkehrt ------------
