@@ -1011,7 +1011,26 @@ async function main() {
     };
     const vorDemGriff = melde(umrandung((erst || {}).puff || Buffer.alloc(0)), "Ansicht beim Eintreffen");
     if (vorDemGriff) {
-      urteil("**kein Netz laeuft ueber eine Bildkante**", vorDemGriff.beruehrt.length, 0);
+      // Die Latte ist NEU GEFASST, nicht erweicht. Sie verlangte bis hierher "kein Netz ueber
+      // einer Bildkante" und war bei 1 500 Notizen in jedem Lauf rot - ein Stand, der seit
+      // `P1-KAMERA-ENTSCHEIDUNG-3110.md` §8 beschlossen ist: die Kamera schneidet nicht
+      // absichtlich, sie schneidet, wo das Bild sonst aufhoert, ein Bild zu sein. Was fehlte,
+      // war der Uebergang. Geprueft wird jetzt die Übereinstimmung von Wort, Marke und Bild:
+      //  - jede Kante mit Tinte ist gemeldet, und jede gemeldete Kante traegt Tinte;
+      //  - jede gemeldete Kante malt die Marke (Band ueber neun Zehntel ihrer Laenge), und
+      //    keine ungemeldete Kante malt sie. Ein Band, das immer malt, faellt an der zweiten.
+      const kantenGemeldet = await evaliere(cdp, `(()=>{const e=document.querySelector('[data-testid="graph-im-bild"]');
+        return e ? (e.dataset.kanten || "") : ""})()`);
+      const gemeldete = String(kantenGemeldet).split(/\s+/).filter(Boolean);
+      const tintenkanten = Object.entries(vorDemGriff.kantigen).filter(([, k]) => k.traf > 0).map(([s]) => s);
+      const markenkanten = Object.entries(vorDemGriff.band).filter(([, d]) => d >= 0.9).map(([s]) => s);
+      console.log(`  Kanten: Tinte ${JSON.stringify(tintenkanten)}, gemeldet ${JSON.stringify(gemeldete)}, Marke ${JSON.stringify(markenkanten)}`);
+      urteil("**jede Kante, die Tinte traegt, ist als Beschnitt gemeldet**",
+        tintenkanten.filter((s) => !gemeldete.includes(s)), []);
+      urteil("**und jede gemeldete Kante traegt wirklich Tinte**",
+        gemeldete.filter((s) => !tintenkanten.includes(s)), []);
+      urteil("**jede gemeldete Kante malt die Marke**", gemeldete.filter((s) => !markenkanten.includes(s)), []);
+      urteil("**keine ungemeldete Kante malt eine Marke**", markenkanten.filter((s) => !gemeldete.includes(s)), []);
       // Befund A war: der Export hatte keinen Grund — die erste Zeile war `0, 0, 0, 0`.
       // Geprueft wird am ausgelieferten Bild, nicht am Quelltext.
       urteil("**der Export traegt einen undurchsichtigen Grund**", vorDemGriff.alpha, 255);

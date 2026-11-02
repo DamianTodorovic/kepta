@@ -105,5 +105,18 @@ const e = umrandung(feld(60, 60, [32, 32, 32], [250, 250, 250], 59, 59, 0, 0));
 urteil("ein einzelner Pixel an zwei Kanten",
   [e.beruehrt, e.kantigen.oben.traf, e.kantigen.rechts.traf], [["oben", "rechts"], 1, 1]);
 
+// 7 — die Kantenmarke wird an ihrer DECKUNG erkannt, nicht an ihrem Dasein. Ein Band malt ueber
+//     die Laenge der Kante (eine Reihe innerhalb, damit das erste Pixel des Bildes sein Grund
+//     bleibt); abgeschnittene Kreise malen an ein paar Stellen. Wer beides gleich laesst, meldet
+//     jede dichte Welt als "markiert" und die Latte ist ein Gummistempel.
+const f = umrandung(feld(120, 80, [32, 32, 32], [201, 183, 133], 1, 118, 1, 3));
+urteil("Band ueber die Kante, eine Reihe innerhalb", Math.round(f.band.oben * 100) / 100, 0.98);
+urteil("an der Gegenseite nichts", f.band.unten, 0);
+urteil("und an den Seitengkanten nur die Ecke des Bandes",
+  [Math.round(f.band.links * 100) / 100, Math.round(f.band.rechts * 100) / 100], [0.04, 0.04]);
+const g = umrandung(feld(120, 80, [32, 32, 32], [250, 250, 250], 5, 7, 0, 2));
+urteil("drei Spalten Tinte an der Kante sind noch keine Marke", Math.round(g.band.oben * 100) / 100, 0.03);
+urteil("aber die Kante traegt Tinte", g.kantigen.oben.traf, 3);
+
 console.log(fehl ? `  ${fehl} Biss-Pruefung(en) fehlgeschlagen` : "  der Entsorger liest gefilterte Zeilen richtig");
 process.exit(fehl ? 1 : 0);

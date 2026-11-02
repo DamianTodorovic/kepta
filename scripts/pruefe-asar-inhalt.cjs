@@ -587,6 +587,11 @@ const erwartet = [
   // steht im BELEG dieses Stands.
   ["themenNachTraeger", 1],
   ["ohneThemaNachTraeger", 1],
+  // Punkt 1, Aufgabe 25, 1.11. (die Kantenmarke): die Marke liegt im Malweg, ihr Wort ist eine
+  // Datensatz-Kennung - die ueberlebt den Minifier, weil er Eigenschaftsnamen nicht verbiegt.
+  // Gegen das installierte 3.2.109 gezaehlt: **0** (app.asar 49 174 652 B). Zaehlung am
+  // gebauten Stand steht im BELEG dieses Stands.
+  ["dataset.kanten", 1],
   ["angelshop|freqtrade|shop", 1],
   ["a client, a case, a shop", 1],
   // Punkt 2, 1.11. (die Rundungsskala am Token gezogen, nicht an 247 Klassenstellen geflickt):

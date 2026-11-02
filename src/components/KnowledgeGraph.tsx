@@ -895,6 +895,34 @@ export function rahmenLeereMeldung(baumAnsicht: boolean, kernMarke: boolean): st
  * 272 im Bild beim Einpassen, hoechstens 684 bei 30 %, dann 344 bei 6 % und 21 bei 3 % —
  * die Zahl faellt, waehrend man rauszoomt, weil der Malweg die einzelnen Scheiben abgibt.
  */
+/** Welche vier Kanten ein Rahmen hat, und welche davon Tinte tragen. */
+export type KantenBeschnitt = { oben: boolean; unten: boolean; links: boolean; rechts: boolean };
+
+/**
+ * Welche Bildkanten einen gemalten Knoten ueber den Rahmen hinaus laufen lassen.
+ *
+ * Punkt 1, Aufgabe 25. Bei 1 500 Notizen in 1 440 x 900 traegt die obere Kante in jedem Lauf
+ * Tinte (gemessen 1.11. am ausgelieferten 3.2.109: 22,0 % und 30,8 % ihrer Laenge, zwei
+ * Weltlagen). Die Kamera schneidet nicht absichtlich, sondern weil der Lesbarkeits-Boden das
+ * Einpassen ueberstimmt — was fehlte, war der Uebergang: ein angeschnittener Kreis wird als
+ * voller Kreis gelesen. Diese Funktion entscheidet ueber die Marke, und sie rechnet mit
+ * derselben Schwelle wie `imRahmen` gleich darunter, damit Wort der Bilanz und Marke der Kante
+ * nie aus zwei Mengen kommen.
+ */
+export function kantenBeschnitt(
+  kern: { x0: number; y0: number; x1: number; y1: number },
+  knoten: readonly { x: number; y: number; r: number }[],
+): KantenBeschnitt {
+  const k: KantenBeschnitt = { oben: false, unten: false, links: false, rechts: false };
+  for (const n of knoten) {
+    if (n.y - n.r < kern.y0) k.oben = true;
+    if (n.y + n.r > kern.y1) k.unten = true;
+    if (n.x - n.r < kern.x0) k.links = true;
+    if (n.x + n.r > kern.x1) k.rechts = true;
+  }
+  return k;
+}
+
 export function rahmenZeilentext(imRahmen: number, gesamt: number, baumAnsicht: boolean, kernMarke: boolean): string {
   if (imRahmen >= gesamt) return "";
   if (imRahmen === 0) return rahmenLeereMeldung(baumAnsicht, kernMarke);
@@ -3808,6 +3836,8 @@ export function KnowledgeGraph({ memories: memoriesAusFenster, onSelectMemory, o
     let imRahmenNoten = 0;
     /** Wie viele davon mit ihrer gemalten Ausdehnung im Rahmen stehen — die Zahl der Rahmen-Zeile. */
     let imStrengeNoten = 0;
+    /** Knoten, die nicht streng drin stehen: nur sie können eine Kante beschneiden. */
+    const beschnittKandidaten: { x: number; y: number; r: number }[] = [];
     /** #96 - die Marken, deren Knoten in DIESEM Bild ankommen: gemalt und streng im Rahmen. */
     const gruppenAnkunft = new Set<string>();
     // Die drei Zeichen, die einen Stand in der Zeit tragen: der gestrichelte
@@ -3875,6 +3905,10 @@ export function KnowledgeGraph({ memories: memoriesAusFenster, onSelectMemory, o
       // bleibt die Maleihe — beide Zeilen müssen aus derselben Menge rechnen.
       const strengImRahmen = imRahmen(n, rr);
       if (strengImRahmen) imStrengeNoten += 1;
+      // Was nicht streng drin ist, laeuft ueber mindestens eine Kante - und nur diese Knoten
+      // koennen eine Marke brauchen. Vollstaendig innerhalb stehende Knoten zu pruefen waere
+      // dieselbe Antwort ein zweites Mal.
+      else beschnittKandidaten.push({ x: n.x, y: n.y, r: rr });
       const herkunftArt = aktiverKanalRef.current === "herkunft" ? herkunftRef.current.get(n.id) : undefined;
       // Gruppen-Kanal: die Marke des Knotens, sonst das neutrale Register — nicht die
       // Art-Farbe, sonst malte ein halber Kanal zwei Systeme uebereinander.
@@ -4636,6 +4670,37 @@ export function KnowledgeGraph({ memories: memoriesAusFenster, onSelectMemory, o
       }
     }
 
+    // --- Die Kantenmarke (Punkt 1, Aufgabe 25) ------------------------------------------------
+    // Eine Kante, die einen Knoten abschneidet, traegt drei Bildpunkte Akzent. Nicht als
+    // Maske - die verdeckt, was sie zeigen soll -, sondern als Linie, die dem Auge sagt: hier
+    // hoert das Bild auf, der Kreis laeuft weiter. Dieselbe Menge, aus der auch die Bilanzzahl
+    // zaehlt, und dasselbe Wort am Knopf nennt den Grund.
+    const kanten = kantenBeschnitt(kern, beschnittKandidaten);
+    if (kanten.oben || kanten.unten || kanten.links || kanten.rechts) {
+      ctx.save();
+      ctx.globalAlpha = 0.75;
+      ctx.fillStyle = akzent;
+      const d = 3;
+      // Zwei Grenzen, beide gemessen, beide halten den Malweg sortiert:
+      //  - eine Reihe INNERHALB. Das erste Pixel eines Bildes ist sein Grund; ein Band auf
+      //    Zeile 0 tauscht den Grund und erklaert das ganze Bild zu Tinte (Biss-Fall 1.11.).
+      //  - als Pfad, nicht als `fillRect`. Die zwei gelieferten Zaehler der Dichte-Kappe und
+      //    der Kleinzoene-Flaeche lesen jedes Rechteck im Rahmen als gebuendelten Knoten und
+      //    werfen auf einem 998 x 3-Rechteck - mit Recht: ein Rechteck in diesem Kanal ist
+      //    Inhalt. Die Marke ist Rahmen, also kommt sie in den Pfad-Kanal (02.11., neun
+      //    Faelle dieser beiden Dateien fielen zuerst).
+      const band = (x: number, y: number, breite: number, hoehe: number) => {
+        ctx.beginPath();
+        ctx.rect(x, y, breite, hoehe);
+        ctx.fill();
+      };
+      if (kanten.oben) band(1, 1, dimensions.w - 2, d);
+      if (kanten.unten) band(1, dimensions.h - 1 - d, dimensions.w - 2, d);
+      if (kanten.links) band(1, 1, d, dimensions.h - 2);
+      if (kanten.rechts) band(dimensions.w - 1 - d, 1, d, dimensions.h - 2);
+      ctx.restore();
+    }
+
     ctx.restore();
 
     // Die Bilanz, was das Bild benennt. Geschrieben direkt an den Rand, nicht
@@ -4702,6 +4767,10 @@ export function KnowledgeGraph({ memories: memoriesAusFenster, onSelectMemory, o
         const gesamt = imBildRef.current;
         const meldung = rahmenZeilentext(imStrengeNoten, gesamt, ansichtRef.current === "dendrogram", !!kernNeu.marke);
         if (rahmenZeile.textContent !== meldung) rahmenZeile.textContent = meldung;
+        // Wort und Marke an einem Knoten, aus einer Rechnung: wer die Zeile liest, kann an
+        // diesem Attribut pruefen, ob das Bild dieselbe Kante markiert, die die Zahl nennt.
+        const kantenWert = (["oben", "unten", "links", "rechts"] as const).filter((s) => kanten[s]).join(" ");
+        if (rahmenZeile.dataset.kanten !== kantenWert) rahmenZeile.dataset.kanten = kantenWert;
         const anzeige = meldung === "" ? "none" : "";
         if (rahmenZeile.style.display !== anzeige) rahmenZeile.style.display = anzeige;
       }

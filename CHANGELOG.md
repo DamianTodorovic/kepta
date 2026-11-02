@@ -1,3 +1,20 @@
+## [3.2.110]
+
+### Added
+
+- **The graph now marks the edge where it cuts a note off.** At 1 500 notes in a 1 440 x 900
+  window the top edge carried clipped circles in every run measured on the delivered 3.2.109
+  (22.0 % and 30.8 % of its length — the same build, two layouts of the same fixture). The camera
+  does not crop on purpose: it crops where the picture would otherwise stop being a picture,
+  because the readability floor overrules fitting everything. What was missing is the
+  transition — a half circle reads as a whole one. Each edge that lets a node run past the frame
+  now carries a three-pixel mark, one row inside (the first pixel of an image is its ground, and
+  a band on row zero would swap the ground and call the whole picture ink). The mark is computed
+  from the same set the balance line counts, so the sentence "1 222 of 1 500 unfolded notes are
+  in this picture" and the edge in the picture can never come from two different tallies.
+  Six cases hold the rule and the painting, one of them by zooming in until nodes cross an edge
+  and requiring a band exactly where the line reports one.
+
 ## [3.2.109]
 
 ### Changed

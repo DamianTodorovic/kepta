@@ -96,6 +96,23 @@ export function umrandung(png) {
     links: { traf: links.length, spanne: spanne(links) },
     rechts: { traf: rechts.length, spanne: spanne(rechts) }
   };
+  // Die Kantenmarke (Punkt 1, Aufgabe 25) wird an ihrer DECKUNG erkannt, nicht an ihrem
+  // Vorhandensein: ein Band malt ueber die ganze Laenge der Kante, abgeschnittene Kreise malen
+  // nur an ein paar Stellen. Ein einzelner weicher Pixel ist deshalb noch keine Marke - gemessen
+  // braucht die Marke mehr als neun Zehntel ihrer Kante. Die Marke sitzt eine Reihe INSERHALB,
+  // weil der Grund dieses Bildes sein erstes Pixel ist: ein Band bei Zeile 0 wuerde den Grund
+  // selbst austauschen und das ganze Bild zu Tinte erklaeren (gemessen 02.11. 06:17 am Biss-Fall).
+  const bandMass = (seite) => {
+    const laenge = seite === "oben" || seite === "unten" ? b.w : b.h;
+    let ab = 0;
+    for (let i = 0; i < laenge; i++) {
+      const x = seite === "oben" || seite === "unten" ? i : seite === "links" ? 2 : b.w - 3;
+      const y = seite === "oben" ? 2 : seite === "unten" ? b.h - 3 : i;
+      if (kante(x, y)) ab += 1;
+    }
+    return laenge ? ab / laenge : 0;
+  };
+  const band = { oben: bandMass("oben"), unten: bandMass("unten"), links: bandMass("links"), rechts: bandMass("rechts") };
   const beruehrt = [
     y0 <= KANTEN_TOLERANZ_PX && "oben",
     y1 >= b.h - 1 - KANTEN_TOLERANZ_PX && "unten",
@@ -107,5 +124,5 @@ export function umrandung(png) {
     links: (x0 / b.w) * 100,
     rechts: ((b.w - 1 - x1) / b.w) * 100
   };
-  return { w: b.w, h: b.h, x0, y0, x1, y1, traf, grund, alpha, beruehrt, freie, kantigen };
+  return { w: b.w, h: b.h, x0, y0, x1, y1, traf, grund, alpha, beruehrt, freie, kantigen, band };
 }
