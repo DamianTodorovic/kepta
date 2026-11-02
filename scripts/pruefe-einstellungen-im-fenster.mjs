@@ -1253,6 +1253,29 @@ async function main() {
     }
   }
 
+  // --- Zyklus P: der FehlerPFAD, wenn die eigne Tuer stirbt (Punkt 4, zweiter Teil) ----------
+  //     Sieben Sichten ohne Fehlerzeile ist die eine Haelfte von "keine Fehler in keinem
+  //     Bereich". Die andre ist, was der Nutzer sieht, wenn etwas wirklich kaputt geht. Als
+  //     erster Pfad der groesste: der eigne Diener wird fortgenommen (eigne Kind-PID, eigner
+  //     Port - kein fremder Prozess wird je angefasst).
+  if (NUR === "" || NUR === "tuerfort") {
+    await knopf(cdp, "^\\s*(Knowledge|Wissen)\\s*$");
+    await schlafe(1400);
+    for (const dom of ["Runtime.enable", "Log.enable"]) { try { await cdp.send(dom); } catch { /* dieses Fenster kennt das Feld nicht */ } }
+    cdp.ereignisse.length = 0;
+    const pid = server.pid;
+    console.log(`  Diener ${pid} wird fortgenommen (eignes Kind, eigener Port ${PORT})`);
+    server.kill();
+    await schlafe(5000);
+    const text = String(await evaliere(cdp, `document.body.innerText || ''`)).replace(/\s+/g, " ").slice(0, 300);
+    console.log(`  was auf dem Schirm steht: ${JSON.stringify(text)}`);
+    const grund = /server|not answer|did not respond|offline|cannot reach|verbindung|connection/i.test(text);
+    urteil("**der Nutzer erfahrt einen Grund, wenn die Tuer fort ist**", grund, true);
+    const ausnahmen = cdp.ereignisse.filter((e) => e.method === "Runtime.exceptionThrown").length;
+    urteil("**und das Fenster wirft dabei keine unverarbeitete Ausnahme**", ausnahmen, 0);
+    console.log(`  Bild: ${await bild("tuer-fort.png")}`);
+  }
+
   console.log(fehl ? `  ${fehl} Pruefung(en) fehlgeschlagen` : "  alle Zyklen durch: Wert gesetzt, Fenster neu geladen, Wirkung gesehen");
   return fehl ? 1 : 0;
 }
