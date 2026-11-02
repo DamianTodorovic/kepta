@@ -1296,6 +1296,13 @@ async function main() {
       const treffer = alleZeilen.filter(([, z]) => muster.test(z));
       urteil(`**kein Wort "${name}" auf dem Schirm**`, treffer.map(([n, z]) => `${n}: ${z.slice(0, 70)}`), []);
     }
+    // 3.2.116, die andre Klasse: ein Wort, das einen Zustand meint und wie ein Befehl (oder eine
+    // Faehigkeit) gelesen wird. Als Zeile exakt getroffen, nicht als Teilwort — "Ready" in einem
+    // Satz waer erlaubt, "Ready" als Ueberschrift ist es nicht.
+    for (const wort of ["Ready", "Clean"]) {
+      const treffer = alleZeilen.filter(([, z]) => z.trim() === wort);
+      urteil(`**keine Zeile behauptet allein "${wort}"**`, treffer.map(([n, z]) => `${n}: ${z}`), []);
+    }
     fs.mkdirSync(BILDER_ZIEL, { recursive: true });
     const pfad = path.join(BILDER_ZIEL, `saetze-korpus-${BREITE}px.json`);
     fs.writeFileSync(pfad, JSON.stringify({ stand: new Date().toISOString(), breite: BREITE, hoehe: HOEHE, korpus }, null, 1));
