@@ -461,7 +461,7 @@ export function Chat({ activeMemories, onSaveToBrain, onSaveToBrainWithMeta, isF
       await navigator.clipboard.writeText(text);
       setCopiedId(id);
     } catch {
-      toast.push({ message: "Copying failed — your browser did not allow access to the clipboard.", kind: "warn" });
+      toast.push({ message: "Copying failed — the window did not get the clipboard.", kind: "warn" });
       return;
     }
     setTimeout(() => setCopiedId((c) => (c === id ? null : c)), QUITTUNG_MS);

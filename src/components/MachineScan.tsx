@@ -112,6 +112,12 @@ export function MachineScan({ open, onClose, onImported, autoPreview = false }: 
    * von der Wirklichkeit abweichen kann.
    */
   const [regelwerk, setRegelwerk] = useState<Regelwerk | null>(null);
+  /**
+   * Warum kein Regelwerk da ist. Punkt 3 aus P4-UEBRIGE-VIER (gebaut 3.11.): das Holen
+   * hatte drei stille Rueckwege (`!r.ok`, eine unbrauchbare Form, kein Netz) und der Dialog
+   * stand jeweils ohne Regeln da, ohne dass jemand gesagt haette, warum.
+   */
+  const [regelGrund, setRegelGrund] = useState<string | null>(null);
   const [endungen, setEndungen] = useState<string[]>([]);
   const [ausgelassen, setAusgelassen] = useState("");
   const [zeigeRegeln, setZeigeRegeln] = useState(false);
@@ -157,7 +163,10 @@ export function MachineScan({ open, onClose, onImported, autoPreview = false }: 
     void (async () => {
       try {
         const r = await fetch("/api/scan/policy");
-        if (!r.ok) return;
+        if (!r.ok) {
+          setRegelGrund(`The scan rules did not arrive — the store answered ${r.status}. The scan itself still works; tick file types only after this line is gone.`);
+          return;
+        }
         const d = (await r.json()) as Partial<Regelwerk>;
         // Erst pruefen, dann uebernehmen. Eine unerwartete Antwort darf den
         // Dialog nicht leeren — beim Testen hat genau das den ganzen Baum
@@ -166,12 +175,19 @@ export function MachineScan({ open, onClose, onImported, autoPreview = false }: 
           !d?.niemals?.ordner || !d?.uebersprungen?.ordner ||
           !Array.isArray(d?.lesbar?.endungen) || !d?.grenzen ||
           !Array.isArray(d?.ihreEinstellung?.endungen)
-        ) return;
+        ) {
+          setRegelGrund('The scan rules arrived but did not read as rules — the store sent an unexpected shape. The scan itself still works; the guards that cannot be switched off stay in force.');
+          return;
+        }
         const voll = d as Regelwerk;
         setRegelwerk(voll);
+        setRegelGrund(null);
         setEndungen(voll.ihreEinstellung.endungen);
         setAusgelassen((voll.ihreEinstellung.zusaetzlichAusgelassen ?? []).join(", "));
-      } catch { /* ohne Regelwerk bleibt der Dialog benutzbar */ }
+      } catch {
+        // Ohne Regelwerk bleibt der Dialog benutzbar — aber nicht ohne Auskunft.
+        setRegelGrund('The scan rules did not arrive — the store did not answer. Close and reopen this panel, or check that K3PTA is running.');
+      }
     })();
   }, [open]);
 
@@ -318,6 +334,12 @@ export function MachineScan({ open, onClose, onImported, autoPreview = false }: 
               If a document contains something you would not paste into a chat, do not import that folder.
             </p>
           </div>
+
+          {!regelwerk && regelGrund && (
+            <div className="rounded-xl p-3 text-[12.5px] leading-relaxed" style={{ background: "var(--warn-soft)", color: "var(--warn)" }} data-testid="scan-regelgrund">
+              {regelGrund}
+            </div>
+          )}
 
           {regelwerk && !status && (
             <div className="rounded-xl p-4 space-y-3" style={{ background: "var(--bg-inset)", border: "1px solid var(--border-subtle)" }}>

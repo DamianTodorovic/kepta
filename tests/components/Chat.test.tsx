@@ -236,10 +236,17 @@ describe("Chat: Kopieren", () => {
     await frage(user, "Hallo");
     await waitFor(() => expect(container.textContent).toMatch(/Hallo Welt/));
     const kopieren = [...document.querySelectorAll("button")].find((b) => /^Copy$/.test((b.textContent ?? "").trim()));
-    if (kopieren) {
-      await user.click(kopieren);
-      await waitFor(() => expect(document.body.textContent).toMatch(/Copying failed/i));
-    }
+    // Kein `if` mehr um den Klick herum: ein Kopier-Knopf, der verschwunden ist, war bis
+    // hier ein still gruener Fall — die Meldung wurde nie gesehen, weil nie geklickt wurde.
+    expect(kopieren, "kein Kopier-Knopf an der Antwort — der Fall prueft sonst nichts").toBeTruthy();
+    await user.click(kopieren!);
+    await waitFor(() => expect(document.body.textContent).toMatch(/Copying failed/i));
+    // Punkt 1 aus P4-UEBRIGE-VIER (gebaut 3.11.): die Absage beschuldigte "your browser",
+    // in einer App ohne Browser, deren eigne Policy das Schreiben ausdruecklich erlaubt
+    // (tests/electron-haertung.test.ts: "erlaubt ist nur, in die Zwischenablage zu SCHREIBEN").
+    expect(document.body.textContent, "die Absage erfindet eine Gegenstelle, die es nicht gibt")
+      .not.toMatch(/browser/i);
+    expect(document.body.textContent).toMatch(/the window did not get the clipboard/i);
   });
 });
 

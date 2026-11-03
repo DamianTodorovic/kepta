@@ -1,3 +1,39 @@
+## [3.2.129]
+
+### Fixed
+
+- **Three silent paths now say what they know.** From the self-audit of 2026-11-02
+  (`P4-UEBRIGE-VIER`), the three that are words rather than a contract change:
+  - **Copy in the chat blamed a browser that does not exist.** The refusal read "your
+    browser did not allow access to the clipboard" — in an app with no browser, whose own
+    content policy explicitly permits writing to the clipboard (guarded since October by
+    `tests/electron-haertung.test.ts`). It now reads "Copying failed — the window did not
+    get the clipboard.", which is the only cause this window can observe. The test that
+    covered this path clicked the button *inside an `if`*: when the button moved, the case
+    stayed green without ever seeing a message. That guard is gone, and the case now fails
+    if there is no copy button to click.
+  - **The scan dialog hid its rules without a reason.** Fetching the rule set had three
+    quiet exits — a non-OK answer, an answer that doesn't read as rules, and no answer at
+    all — and all three left the dialog standing there as if nothing was missing. Each now
+    names its own cause on the spot where the rules would be ("The scan rules did not
+    arrive — the store answered 500.", "…did not read as rules…", "…did not answer."), and
+    the scan stays usable either way, because the guards that cannot be switched off are in
+    the server, not in this panel.
+  - **The wizard forgot your scan decision when saving failed.** `catch { /* ignore */ }`
+    on the one switch that says whether K3PTA may look through your computer: if storage
+    refused, the app silently dropped the decision and the next start asked again, as if
+    never answered. The choice is now written *and read back*; if it did not stick, the
+    step says so — "Your scan choice will not be kept — this computer blocked saving it.
+    It still stands for this session; the next start will ask again." — and the rest of the
+    run continues, because the decision is still held in this session.
+
+  Deliberately *not* in this cut: the fourth path from that paper — a team section that
+  vanishes whether the store said "no team", said nothing, or answered 500. That is a
+  three-valued state and a sidebar contract change, so it gets its own landing.
+  Four new cases in `tests/components/fehlerpfade-nennen-ihre-ursache.test.tsx` (two of
+  them for the wizard: the blocked write and the read-back that proves the line is not
+  printed when the choice did stick), all red before the fix.
+
 ## [3.2.128]
 
 ### Fixed

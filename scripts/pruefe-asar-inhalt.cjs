@@ -785,6 +785,17 @@ const erwartet = [
   // tests/server-marke.test.ts am Quelltext, weil ein Zaun, der erst nach der Schranke
   // steht, die 401-Absagen unteschrieben liesse.
   ["x-kepta-marke", 1],
+  // Punkt 4, 3.11. abend (3.2.129, P4-UEBRIGE-VIER Punkte 1, 3, 4): drei stille Pfade
+  // nennen jetzt ihre Ursache. Gegen das installierte 3.2.128 gezaehlt (app.asar
+  // 49 183 715 B, LC_ALL=C grep -aFo | wc -l, 17:01:35): alle drei **0** mal. Der
+  // Gegenbeweis steht wieder ausserhalb dieser Liste: das alte Wort
+  // "your browser did not allow access" steht **1** mal und muss nach dem Tausch **0**
+  // mal stehen — eine Absage, die nur um eine Zeile reicher ist, waere keine Heilung.
+  // Die Saetze sind in zwei Haelften geteilt, wie im Haus ueblich: ein Marker ueber ein
+  // U+2014 wird in latin1 nicht gefunden.
+  ["the window did not get the clipboard", 1],
+  ["The scan rules did not arrive", 2],
+  ["Your scan choice will not be kept", 1],
 ];
 // Die Liste darf nur ASCII-Zeichen enthalten. Grund, gemessen 21.10. 19:16 MESZ am
 // installierten Objekt: das Wort "Looking" plus echtes U+2026 steht dort 2 mal, diese

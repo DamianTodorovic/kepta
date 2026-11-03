@@ -19,6 +19,14 @@ type Step = 1 | 2 | 3 | 4 | 5;
 // wirbt, startet nicht mit fremdem Wissen — geblieben sind die Notizen ueber
 // K3PTA selbst (siehe lib/starter.ts).
 
+/**
+ * Was der Assistent sagt, wenn die Platte die Scan-Entscheidung nicht annimmt.
+ * Ein Satz, zwei Seiten: der Wunsch gilt in dieser Sitzung (er liegt in der Hand der
+ * Komponente), aber er ueberlebt den naechsten Start nicht — beides zusammen ist die
+ * Wahrheit, und nur die Haelfte waere die alte Absage.
+ */
+const WUNSCH_ABSAGE = 'Your scan choice will not be kept — this computer blocked saving it. It still stands for this session; the next start will ask again.';
+
 export function OnboardingWizard({ open, onClose, onComplete }: Props) {
   const [step, setStep] = useState<Step>(1);
   const [name, setName] = useState('');
@@ -35,6 +43,8 @@ export function OnboardingWizard({ open, onClose, onComplete }: Props) {
   // holt der Scan-Dialog selbst ein. Ein Haken im Assistenten darf nicht
   // ausreichen, um die Festplatte zu lesen.
   const [scanAngefragt, setScanAngefragt] = useState(false);
+  /** Warum der Wunsch nicht auf der Platte liegt — null, wenn er nachgelesen wurde. */
+  const [wunschGrund, setWunschGrund] = useState<string | null>(null);
 
   useEffect(() => {
     if (!open) return;
@@ -79,7 +89,17 @@ export function OnboardingWizard({ open, onClose, onComplete }: Props) {
     try {
       if (scanAngefragt) localStorage.setItem('kepta_scan_wunsch', '1');
       else localStorage.removeItem('kepta_scan_wunsch');
-    } catch { /* ignore */ }
+      // Punkt 4 aus P4-UEBRIGE-VIER (gebaut 3.11.): bis hier stand ein `catch { /* ignore */ }`.
+      // Der Wunsch ist eine Entscheidung ueber den eignen Rechner — schlaegt die Platte sie ab
+      // und die App schweigt, fragt der Assistent heimlich von vorn. Setzen *und zuruecklesen*
+      // ist der einzige Beweis, dass der Speicher die Entscheidung angenommen hat.
+      const sitzt = scanAngefragt
+        ? localStorage.getItem('kepta_scan_wunsch') === '1'
+        : localStorage.getItem('kepta_scan_wunsch') === null;
+      setWunschGrund(sitzt ? null : WUNSCH_ABSAGE);
+    } catch {
+      setWunschGrund(WUNSCH_ABSAGE);
+    }
     try {
       // nur überschreiben wenn ein lokaler Anbieter ein Modell gemeldet hat
       const s = loadAISettings();
@@ -331,6 +351,11 @@ export function OnboardingWizard({ open, onClose, onComplete }: Props) {
                   see the folders it would take and how many documents each holds, and you can leave any of them out.
                 </span>
               </label>
+              {wunschGrund && (
+                <div className="rounded-xl p-3 text-xs leading-relaxed" style={{ background: "var(--warn-soft)", color: "var(--warn)" }} data-testid="wizard-wunsch-absage">
+                  {wunschGrund}
+                </div>
+              )}
               <div className="hud-inset rounded-xl p-3 flex gap-3">
                 <Globe className="w-4 h-4 mt-1 shrink-0" style={{color:'var(--text-3)'}}/>
                 <p className="text-xs leading-relaxed" style={{color:'var(--text-2)'}}>After this: drop a file on the window or paste a link, and K3PTA keeps learning. Your whole memory is one file — <code className="font-mono">~/.kepta/kepta.db</code> — so you can back it up, move it, or delete it whenever you like.</p>
