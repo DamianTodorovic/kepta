@@ -683,7 +683,17 @@ async function main() {
     await warteBis(async () => ((await evaliere(cdp, `document.querySelectorAll('button').length`)) > 0 ? true : null), { maxMs: 90000 });
     await evaliere(cdp, `(()=>{const b=[...document.querySelectorAll('button')].find(x=>/later|skip|ueberspringen/i.test(x.textContent||''));if(b)b.click();})()`);
     await schlafe(700);
-    const eintraege = await evaliere(cdp, `(()=>{const m=document.body.innerText.match(/([\\d,]+)\\s+entries/);return m?Number(m[1].replace(/,/g,'')):0})()`);
+    // Eigner Fehler, gemessen 4.11. 00:32 MEZ: der Neuladen liess die Flaeche auf Graph
+    // stehen, und Graph sagt kein "N entries" - die Sonde fand die Zahl nicht und meldete
+    // "die Flaeche kennt die Saat nicht", obwohl die Leiste 34 Eintraege zeigte. Verlangt
+    // wird die Zahl dort, wo die Flaeche sie ausspricht: auf Knowledge.
+    await knopf(cdp, "Knowledge");
+    await schlafe(900);
+    // Die Sonde selbst war der Defekt, nicht die Flaeche: sie suchte "N entries", und
+    // diese Fassung sagt "N notes in the search index" (dasselbe Muster wie der Tastmass-
+    // Schenkel weiter unten). Gemessen 4.11. 00:36 MEZ: mit dem alten Muster blieb der Fall
+    // false, obwohl die Leiste 34 Eintraege zeigte.
+    const eintraege = Number(await evaliere(cdp, `(()=>{const m=(document.body.innerText||'').match(/([\\d,]+)\\s+(?:entries|notes in the (?:search )?index)/);return m?Number(m[1].replace(/,/g,'')):-1})()`));
     urteil(`**die Flaeche kennt die Saat (${SAAT} Eintraege stehen in der Leiste)**`, eintraege >= SAAT, true);
     const flaeche = async (nam) => {
       const geklickt = await knopf(cdp, nam);
