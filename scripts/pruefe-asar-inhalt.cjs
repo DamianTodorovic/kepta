@@ -699,7 +699,13 @@ const erwartet = [
   // von 3.2.111: ein ausstehender Messwert ist ein Zustand, kein "ich lade noch" fuer immer.
   ["More entries did not arrive", 1],
   ["The seal check did not run", 1],
-  ["the answer was empty", 1],
+  // 3.2.120 setzte "the answer was empty" als Marker fuer die Zeile "ein ausstehender Messwert
+  // ist ein Zustand". P47/#47 (3.2.131) macht aus dem internen Wortlaut einen Satz fuer den
+  // Menschen: TodayView wirft jetzt "Today's briefing came back empty." Gezaehlt am gebauten
+  // 3.2.131 (18:30 MEZ): alte Form 0, neue Form 1 — dieselbe Auskunft, in menschenleslicher
+  // Hand. Der Fall, der die Zeile prueft, bleibt tests/components/quittung-ohne-beweis.test.tsx
+  // und die EnterpriseViews-Faelle in tests/components/EnterpriseViews.test.tsx.
+  ["Today's briefing came back empty", 1],
   ["No answer from the inbox", 1],
   // Punkt 1/4/7, 2.11. (3.2.121, zwei Quellen, die ohne Wort wechselten): gegen das
   // installierte 3.2.120 gezaehlt je **0** (gemessen 02.11. 16:30:05). Beide Saetze sind
