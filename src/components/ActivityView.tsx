@@ -295,12 +295,13 @@ export function ActivityView({ aktiv, onOpenMemory }: { aktiv: boolean; onOpenMe
         <p className="text-sm mt-1" style={{ color: 'var(--text-2)' }}>What your AI apps read and write in your memory — and a sealed record of every access.</p>
       </header>
       <div className="flex gap-1 p-1 rounded-xl hud-inset mb-6 max-w-xs" role="tablist">
-        {([['live', 'Live'], ['audit', 'Audit log']] as const).map(([id, label]) => (
+        {([['live', 'Live', 'Live shows what your AI apps are reading and writing in your memory right now'], ['audit', 'Audit log', 'The audit log is the sealed list of who read or changed what in your memory, and when']] as const).map(([id, label, erklaerung]) => (
           <button
             key={id}
             role="tab"
             aria-selected={reiter === id}
             onClick={() => setReiter(id)}
+            title={erklaerung}
             className={`flex-1 py-2 rounded-lg text-[13px] font-medium ${reiter === id ? 'bg-white dark:bg-zinc-800 shadow-sm' : ''}`}
             style={{ color: reiter === id ? 'var(--text-1)' : 'var(--text-2)' }}
           >

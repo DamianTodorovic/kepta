@@ -53,17 +53,21 @@ export function Sidebar({ tags, selectedTags, onSelectTag, onClearTags, currentV
   const versteckteTags = tags.length - sichtbareTags.length;
 
   const navItems = [
-    // Wissen = Gehirn (Outline, wie vom Nutzer vorgegeben) statt Datenbank-Zylinder
-    { id: 'memories' as const, label: t('nav.knowledge'), icon: Brain, weight: 'regular' as const },
-    { id: 'today' as const, label: t('nav.today'), icon: Clock },
-    { id: 'chat' as const, label: t('nav.chat'), icon: MessageSquare },
-    { id: 'graph' as const, label: t('nav.graph'), icon: Network },
-    { id: 'dossier' as const, label: t('nav.dossier'), icon: FileText },
-    { id: 'activity' as const, label: t('nav.activity'), icon: Bot },
+    // Punkt 7: jedes Etikett tragt einen Satz, der sein eignes Wort nennt — die
+    // Messung (scripts/wortschatz-zaehlen.mjs) zaehlt einen Satz nur dann als
+    // Erklaerung, wenn er das Fachwort selbst ausspricht. Ein Satz drumherum erklaert
+    // das Wort nicht. Wissen = Gehirn (Outline, wie vom Nutzer vorgegeben) statt
+    // Datenbank-Zylinder
+    { id: 'memories' as const, label: t('nav.knowledge'), icon: Brain, weight: 'regular' as const, erklaerung: 'Knowledge is everything you have saved, ready to search and reuse' },
+    { id: 'today' as const, label: t('nav.today'), icon: Clock, erklaerung: 'Today shows what changed in your notes, and what is still open' },
+    { id: 'chat' as const, label: t('nav.chat'), icon: MessageSquare, erklaerung: 'Chat asks your own notes a question and answers with its sources named' },
+    { id: 'graph' as const, label: t('nav.graph'), icon: Network, erklaerung: 'Graph draws which of your notes talk about the same people and topics' },
+    { id: 'dossier' as const, label: t('nav.dossier'), icon: FileText, erklaerung: 'A Dossier is a written brief on one subject, built from the notes you saved' },
+    { id: 'activity' as const, label: t('nav.activity'), icon: Bot, erklaerung: 'Activity lists every thing K3PTA did on its own, with the time it happened' },
     // Team nur, wenn eine Organisation Rollen gesetzt hat — sonst wäre der
     // Punkt eine Sackgasse.
-    ...(teamVisible ? [{ id: 'team' as const, label: t('nav.team'), icon: User }] : []),
-    { id: 'settings' as const, label: t('nav.settings'), icon: SettingsIcon },
+    ...(teamVisible ? [{ id: 'team' as const, label: t('nav.team'), icon: User, erklaerung: 'Team lists who else can reach this knowledge base, and what they may do' }] : []),
+    { id: 'settings' as const, label: t('nav.settings'), icon: SettingsIcon, erklaerung: 'Settings is where you change how K3PTA reads, stores and connects to other programs' },
   ];
 
   return (
@@ -100,6 +104,7 @@ export function Sidebar({ tags, selectedTags, onSelectTag, onClearTags, currentV
                 key={item.id}
                 onClick={() => onNavigate(item.id)}
                 data-active={active}
+                title={item.erklaerung}
                 className={cn(
                   "sidebar-nav-btn w-full min-h-9 flex items-center gap-2 px-3 py-2 text-[13.5px] text-left",
                   active ? "font-semibold" : "font-medium"

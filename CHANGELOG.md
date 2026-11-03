@@ -1,3 +1,33 @@
+## [3.2.139]
+
+### Changed
+
+- **Every label now explains itself, in the app.** A census of the words the window
+  actually shows (measured in a real viewport, screen by screen, with the assistant closed
+  and a hit-test on each block) found 17 technical word families on the surface — semantic,
+  embedding, vector, sync, dossier, activity, inbox, encrypted, endpoint, audit and seven
+  more. Thirteen were explained somewhere on the same screen; four were left for the person
+  to guess: *Semantic search*, *Embeddings*, *Dossier*, *Activity*. All 17 are explained
+  now, and the rule the census uses is strict: a sentence counts as an explanation only if
+  it names the word itself and is longer than eight words. "A written brief on one subject"
+  does not explain *Dossier*; "A Dossier is a written brief on one subject, built from the
+  notes you saved" does.
+  What changed: the seven navigation items each carry a sentence naming their own word; the
+  Live and Audit log tabs do the same; the semantic-search switch, the sync dot, the API
+  endpoint field, the HTTP Endpoints heading and the Ollama/embeddings row explain the term
+  they use; the Graph search track says "Follows the people, projects and systems your notes
+  name together" instead of "Mentions of knowledge entities".
+  Why this is a bar and not a mood: the comparable wording of five other products was
+  collected from their official pages and shipped language files. Obsidian lists about 15
+  terms a newcomer must be taught (vault, property, frontmatter, hotkey …) and explains them
+  in a help-site glossary — 0 verified inside the app. Capacities (~14) and Anytype (~15)
+  likewise put their glossary in the docs. SiYuan (~11) explains about 3 in-app, Notion
+  (~13) about 2. What could not be verified anywhere: live in-app tooltips behind a login.
+  Three cases in `tests/components/etikette-nennen-ihre-erklaerung.test.tsx` hold the
+  carriers (every navigation button and both activity tabs must carry a sentence that names
+  their own word); the guard was shown to lose: with one tooltip removed, two of the three
+  cases failed by name.
+
 ## [3.2.138]
 
 ### Fixed

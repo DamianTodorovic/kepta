@@ -702,7 +702,7 @@ export function Settings() {
                     {([
                       ['spurBm25', 'BM25', 'Lexical full-text (FTS5) — exact words win'],
                       ['spurVektor', 'Vectors', 'Meaning, not only the exact words'],
-                      ['spurGraph', 'Graph', 'Mentions of knowledge entities (people, projects, systems)'],
+                      ['spurGraph', 'Graph', 'Follows the people, projects and systems your notes name together'],
                     ] as const).map(([key, label, beschreibung]) => {
                       const an = suchPrefs[key];
                       return (
@@ -807,7 +807,11 @@ export function Settings() {
                 </div>
 
                 <div>
-                  <label className="hud-label block mb-2" htmlFor="ai-endpunkt">
+                  <label
+                    className="hud-label block mb-2"
+                    htmlFor="ai-endpunkt"
+                    title="The API endpoint is the web address K3PTA calls when it sends your question to a model"
+                  >
                     API endpoint {provider.id === 'custom' ? '(required)' : '(optional override)'}
                   </label>
                   <input
@@ -1253,7 +1257,7 @@ export function Settings() {
             <div>
               <div className="flex items-center gap-2 mb-3">
                 <Layers className="w-4 h-4" style={{ color: 'var(--accent)' }} />
-                <h3 className="settings-h" style={{ color: 'var(--text-1)' }}>HTTP Endpoints</h3>
+                <h3 className="settings-h" style={{ color: 'var(--text-1)' }} title="An HTTP endpoint is a web address on this computer that another program can call to read or search your notes">HTTP Endpoints</h3>
               </div>
               <div className="space-y-2">
                 {[

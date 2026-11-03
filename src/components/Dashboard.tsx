@@ -1700,7 +1700,7 @@ export function Dashboard() {
 
           {/* Werkzeugleiste: Suche-Modus, Kontextgröße, Quellen-Status */}
           <div className="px-5 py-3 flex flex-wrap items-center gap-x-6 gap-y-2 shrink-0" style={{ borderBottom: '1px solid var(--border-subtle)' }}>
-            <label className="flex items-center gap-2 cursor-pointer select-none">
+            <label className="flex items-center gap-2 cursor-pointer select-none" title="Semantic search looks for the meaning of your question, not only the exact words you typed">
               <input
                 type="checkbox"
                 checked={semanticEnabled}
@@ -2054,7 +2054,7 @@ export function Dashboard() {
                       <span style={{ color: 'var(--accent)', fontWeight: 560 }}>Agent active</span>
                     </>
                   ) : tuerLebt === "antwortete" ? (
-                    <span className="status-dot" title="Local storage in sync" />
+                    <span className="status-dot" title="In sync means this window shows the newest copy of your notes, stored on this computer" />
                   ) : tuerLebt === "verweigerte" ? (
                     <span className="status-dot status-dot-leise" title="The store is not answering — this window still shows what it last loaded" />
                   ) : (
