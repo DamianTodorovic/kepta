@@ -1,3 +1,39 @@
+## [3.2.130]
+
+### Fixed
+
+- **An import failure no longer prints the exception on the button.** Found by the new
+  window probe (`scripts/pfade-im-fenster.mjs`, run 2026-11-03 17:36–17:44 MEZ): when reading
+  a file threw,
+  the drop zone's own label became the exception's message — in the test,
+  `QuotaExceededError: the quota has been exceeded — /Users/a/.kepta/kepta.db`, path
+  included. The app has had a rule against this since P4-2310 (c): a fixed sentence goes to
+  the surface, the reason stays with the operator (`server/app.ts` does exactly that for
+  HTTP errors). The import path now logs the error and shows "Import did not run — K3PTA
+  stopped while reading or saving these files. The reason is in the developer console, not
+  on this button."
+  The case in `tests/components/quittung-ohne-beweis.test.tsx` was red before the fix — with
+  the fix taken back out, the raw message with its path appeared in the rendered surface,
+  which is the picture this cut is about. Counted with
+  `grep -rnE 'instanceof Error \? [a-zA-Z]+\.message' src/components/*.tsx`: 27 lines in 12
+  files hand an exception's wording to a state. Two of them are decided and stay (Settings
+  puts the reason in brackets inside a fixed sentence, because "the server refused" and "the
+  server did not answer" are different cases); the other 25 — ActivityView, Chat, Dashboard,
+  DossierView, MachineScan, OnboardingWizard, PraxisSync, PrivacyShield, RecoveryKey,
+  Settings, SystemStatus, TodayView — need one shared refusal helper and a guard that keeps
+  new sites from appearing. That is the open follow-up, not settled here.
+- **The window probe for the two new refusals.** `scripts/pfade-im-fenster.mjs` opens the
+  delivered window in a real viewport at 1440/1024/820/390 px, induces both new sentences
+  honestly (a front proxy fails `/api/scan/policy` and `/api/memory`, and
+  `Storage.prototype.setItem` is made to throw), and measures clipping, overlap with the
+  next block and side overflow, with a screenshot of each. Results: the scan refusal 3 lines
+  at 1440/1024/820 and 4 at 390, the wizard refusal 4/4/5/4 lines, 0 clipped elements and no
+  side overflow anywhere. Two probe bugs were fixed on the way, and both were probe bugs, not
+  product bugs: CDP's `Network.setBlockedURLs` did not block this same-origin call at all
+  (measured: HTTP 200 with the pattern set), and the overlap check compared the wrong
+  neighbour — the parent's next block, which is the dialog's pinned footer — so it reported
+  an overlap that the picture showed as a clear gap.
+
 ## [3.2.129]
 
 ### Fixed

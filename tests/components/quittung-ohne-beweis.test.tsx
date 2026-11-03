@@ -161,3 +161,30 @@ describe("Punkt 4: der Inbox-Scan fragt den Status, bevor er Zahlen malt", () =>
     expect(text, `der Scan zaehlt nodes, wo die Seitenleiste notes zaehlt: ${text}`).toMatch(/2 notes imported/i);
   });
 });
+
+describe("Der Import-Ausnahmewortlaut bleibt beim Betreiber, nicht auf dem Knopf", () => {
+  it("zeigt einen festen Satz statt der Ausnahme, und die Ausnahme nirgends", async () => {
+    // Aufgesucht am 3.11. um 18:58 im Fensterlauf `scripts/pfade-im-fenster.mjs`: der
+    // Vor-Diener warf absichtlich in localStorage, und der Import-Knopf hiefs danach
+    // "blockiert" — der Wortlaut einer Ausnahme, mitten auf der Flaeche. In der
+    // Wirklichkeit waere das eine Speicher- oder Bibliothekszeile, oft mit Pfad.
+    // Hausregel seit P4-2310 (c): nach aussen geht ein fester Satz, der Grund bleibt
+    // beim Betreiber.
+    const verraeter = ["QuotaExceededError", "/Users/a/.kepta", "the quota has been exceeded"];
+    // Der Weg in den Ausnahmepfad ist die Datei selbst: extractTextFromFile ruft
+    // file.text() (Dashboard.tsx:158), und eine Bibliothek, die darin wirft, ist genau
+    // der Fall, dessen Wortlaut hier nicht auf den Knopf darf.
+    stubpe(async () => new Response(JSON.stringify({ ok: true }), { status: 200 }));
+    const werf = vi.spyOn(File.prototype, "text").mockRejectedValue(
+      new Error("QuotaExceededError: the quota has been exceeded — /Users/a/.kepta/kepta.db")
+    );
+    const { container } = await zeige();
+    await dateiAblegen(container, "Inhalt eines Mandats.", "mandat.md");
+    await waitFor(() => expect(container.textContent || "").toMatch(/Import did not run/i));
+    const text = (container.textContent || "").replace(/\s+/g, " ");
+    expect(werf).toHaveBeenCalled();
+    for (const wort of verraeter) {
+      expect(text, `die Flaeche fuehrt den Wortlaut der Ausnahme: ${wort}`).not.toContain(wort);
+    }
+  });
+});

@@ -796,6 +796,12 @@ const erwartet = [
   ["the window did not get the clipboard", 1],
   ["The scan rules did not arrive", 2],
   ["Your scan choice will not be kept", 1],
+  // Punkt 4, 3.11. abend (3.2.130, Aufgabe #47): ein Import-Fehler druckte den
+  // Ausnahmewortlaut auf den Knopf, im Testlauf samt Pfad. Nach aussen geht jetzt ein
+  // fester Satz. Gegen das installierte 3.2.129 gezaehlt (app.asar 49 184 866 B,
+  // LC_ALL=C grep -aFo | wc -l, 19:36): **0** mal. Die andern Seite des Beweises ist das
+  // Bild aus scripts/pfade-im-fenster.mjs: dort stand der Wortlaut sichtbar auf der Flaeche.
+  ["Import did not run", 1],
 ];
 // Die Liste darf nur ASCII-Zeichen enthalten. Grund, gemessen 21.10. 19:16 MESZ am
 // installierten Objekt: das Wort "Looking" plus echtes U+2026 steht dort 2 mal, diese

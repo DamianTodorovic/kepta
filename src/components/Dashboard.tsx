@@ -1211,8 +1211,13 @@ export function Dashboard() {
         setTimeout(() => setImportErr((c) => (c === quittung ? null : quittung)), QUITTUNG_MS);
       }
     } catch (e: unknown) {
-      const msg = e instanceof Error ? e.message : String(e);
-      const marke = msg || "Import failed";
+      // P4-2310 (c) gilt auch hier: nach aussen geht ein fester Satz, der Wortlaut der
+      // Ausnahme bleibt beim Betreiber. Bis hierhin stand in dem Kasten, was die Ausnahme
+      // sagte — im Fensterlauf am 3.11. war das der Wortlaut eines absichtlich geworfenen
+      // Fehlers ("blockiert"), in der Wirklichkeit eine Speicher- oder Bibliothekszeile,
+      // oft mit Pfad.
+      console.error("kepta: import failed", e);
+      const marke = "Import did not run — K3PTA stopped while reading or saving these files. The reason is in the developer console, not on this button.";
       setImportErr(marke);
       setTimeout(() => setImportErr((c) => (c === marke ? null : c)), QUITTUNG_MS);
     } finally {
