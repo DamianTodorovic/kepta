@@ -4,14 +4,16 @@
 
 - **Every label now explains itself, in the app.** A census of the words the window
   actually shows (measured in a real viewport, screen by screen, with the assistant closed
-  and a hit-test on each block) found 17 technical word families on the surface — semantic,
-  embedding, vector, sync, dossier, activity, inbox, encrypted, endpoint, audit and seven
-  more. Thirteen were explained somewhere on the same screen; four were left for the person
-  to guess: *Semantic search*, *Embeddings*, *Dossier*, *Activity*. All 17 are explained
-  now, and the rule the census uses is strict: a sentence counts as an explanation only if
-  it names the word itself and is longer than eight words. "A written brief on one subject"
-  does not explain *Dossier*; "A Dossier is a written brief on one subject, built from the
-  notes you saved" does.
+  and a hit-test on each block) found 18 technical word families on the surface — semantic,
+  embedding, vector, sync, dossier, activity, inbox, encrypted, endpoint, audit and eight
+  more. Ten were explained somewhere on the same screen; eight were left for the person to
+  guess: *semantic*, *embedding*, *entity*, *sync*, *dossier*, *activity*, *endpoint*,
+  *audit*. All of them are explained now, and the rule the census uses is strict: a
+  sentence counts as an explanation only if it names the word itself and is longer than
+  eight words. "A written brief on one subject" does not explain *Dossier*; "A Dossier is a
+  written brief on one subject, built from the notes you saved" does. One family left the
+  surface altogether, which is the better kind of explanation: the Graph search track no
+  longer says "Mentions of knowledge entities" at all.
   What changed: the seven navigation items each carry a sentence naming their own word; the
   Live and Audit log tabs do the same; the semantic-search switch, the sync dot, the API
   endpoint field, the HTTP Endpoints heading and the Ollama/embeddings row explain the term
