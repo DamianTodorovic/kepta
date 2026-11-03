@@ -8,6 +8,7 @@ import { liesVerwaltet, richtlinie, istLokalerHost } from "../../src/lib/richtli
 import { schreibe as protokolliere } from "../../src/lib/pruefprotokoll";
 import { schildEinstellungen, privateIds } from "./schild";
 import { bodyOf } from "../helfer/body";
+import { einbettModell, ollamaBaseUrl } from "../../src/core/embeddings";
 import type { AppKontext } from "../kontext";
 
 export function mountChat(app: express.Express, ctx: AppKontext): void {
@@ -257,7 +258,13 @@ export function mountChat(app: express.Express, ctx: AppKontext): void {
       // Ollama: Modelle zusätzlich über die native API laden
       if (base.includes(":11434")) {
         try {
-          const tags = await fetch(`${(process.env.KEPTA_OLLAMA_URL || process.env.OLLAMA_HOST || "http://localhost:11434").replace(/\/+$/, "")}/api/tags`);
+          // Der Hafen ist die Adresse, die der Nutzer gewaehlt hat und die gerade
+          // /v1/models geantwortet hat — nicht die aus der Umgebung. Vor dem 3.11. stand
+          // hier ein dritter Loeser (KEPTA_OLLAMA_URL || OLLAMA_HOST || localhost), der an
+          // der settings-Adresse vorbeiging: eine Ollama auf einem andern Rechner wurde in
+          // der Liste ignoriert, und die Liste kam vom localhost.
+          const hafen = base.replace(/\/v1\/?$/, "").replace(/\/+$/, "");
+          const tags = await fetch(`${hafen}/api/tags`);
           if (tags.ok) {
             const tagData = await tags.json() as { models?: { name?: string }[] };
             const ollamaModels = (tagData?.models || []).map((m) => m.name).filter(Boolean) as string[];
@@ -286,8 +293,12 @@ export function mountChat(app: express.Express, ctx: AppKontext): void {
       return res.status(400).json({ error: "No input given for embedding" });
     }
     const texts: string[] = Array.isArray(rawInput) ? rawInput : [rawInput];
-    const modelName = model || process.env.OLLAMA_EMBED_MODEL || "nomic-embed-text";
-    const base = trimSlash(process.env.OLLAMA_HOST || "http://localhost:11434");
+    // Ein Loeser fuer Adresse und Modell, damit die Tafel nicht einen Dienst meldet, den
+    // der Einbett-Laeufer des Kerns nicht benutzt (Befund 3.11., Aufgabe #45): vorher las
+    // diese Route ausschliesslich OLLAMA_HOST, waehrend src/core/embeddings.ts:8
+    // KEPTA_OLLAMA_URL liest.
+    const modelName = model || einbettModell();
+    const base = ollamaBaseUrl();
 
     try {
       // Neuer Ollama Endpoint: /api/embed (batch-fähig)

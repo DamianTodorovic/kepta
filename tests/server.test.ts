@@ -715,6 +715,93 @@ describe("Storage, Import/Export, Convenience-Routen", () => {
   });
 });
 
+describe("Die Einbett-Route redet mit demselben Ollama wie der Kern (#45)", () => {
+  // Aufgesucht am 3.11. bei der Fenster-Messung von 3.2.126: die Zustands-Tafel fragt
+  // POST /api/embed, und diese Route las ausschliesslich OLLAMA_HOST
+  // (server/router/chat.ts, `mountChat`). Der Einbett-Laeufer des Kerns und die
+  // Modelle-Liste lesen KEPTA_OLLAMA_URL (src/core/embeddings.ts, `ollamaBaseUrl`). Wer
+  // den einen Dreht, sieht
+  // darum eine Tafel, die einen andern Dienst meldet als der, den die Suche benutzt —
+  // "Ollama answers on this computer", waehrend der Einbett-Lauf gegen eine andre Adresse
+  // geht. Die Route muss denselben Loeser nehmen wie der Kern.
+  const umgebung = async <T,>(werte: Record<string, string | undefined>, hin: () => Promise<T>): Promise<T> => {
+    const vorher = new Map(Object.keys(werte).map((k) => [k, process.env[k]]));
+    for (const [k, v] of Object.entries(werte)) {
+      if (v === undefined) delete process.env[k];
+      else process.env[k] = v;
+    }
+    try {
+      // erst await, dann zurueck: ein supertest-Objekt ist ein Thenable, kein Promise,
+      // und hat darum kein .finally (gemessen 3.11. — die erste Fassung verlor so die
+      // Rueckgabe der Umgebung).
+      return await hin();
+    } finally {
+      for (const [k, v] of vorher) {
+        if (v === undefined) delete process.env[k];
+        else process.env[k] = v;
+      }
+    }
+  };
+
+  it("/api/embed nimmt KEPTA_OLLAMA_URL — der Kern-Knopf gilt auch fuer die Route", async () => {
+    const orte: string[] = [];
+    const orig = globalThis.fetch;
+    globalThis.fetch = (async (u: unknown) => {
+      orte.push(String(u));
+      return { ok: true, json: async () => ({ embeddings: [[1, 2, 3]] }) };
+    }) as unknown as typeof fetch;
+    try {
+      const res = await umgebung(
+        { KEPTA_OLLAMA_URL: "http://127.0.0.1:9/kern-hafen", OLLAMA_HOST: undefined },
+        () => request(app).post("/api/embed").send({ input: "hallo" }),
+      );
+      expect(res.status).toBe(200);
+      expect(orte.length, "die Route hat ueberhaupt keinen Upstream angerufen").toBeGreaterThan(0);
+      expect(orte[0], `die Route ging nach ${orte[0]} statt nach dem Kern-Hafen`)
+        .toContain("/kern-hafen/api/embed");
+    } finally {
+      globalThis.fetch = orig;
+    }
+  });
+
+  it("OLLAMA_HOST bleibt der zweite Name desselben Dienstes", async () => {
+    const orte: string[] = [];
+    const orig = globalThis.fetch;
+    globalThis.fetch = (async (u: unknown) => {
+      orte.push(String(u));
+      return { ok: true, json: async () => ({ embeddings: [[1]] }) };
+    }) as unknown as typeof fetch;
+    try {
+      const res = await umgebung(
+        { KEPTA_OLLAMA_URL: undefined, OLLAMA_HOST: "http://127.0.0.1:9/alt-hafen" },
+        () => request(app).post("/api/embed").send({ input: "hallo" }),
+      );
+      expect(res.status).toBe(200);
+      expect(orte[0]).toContain("/alt-hafen/api/embed");
+    } finally {
+      globalThis.fetch = orig;
+    }
+  });
+
+  it("KEPTA_OLLAMA_URL gewinnt gegen OLLAMA_HOST, wie im Kern", async () => {
+    const orte: string[] = [];
+    const orig = globalThis.fetch;
+    globalThis.fetch = (async (u: unknown) => {
+      orte.push(String(u));
+      return { ok: true, json: async () => ({ embeddings: [[1]] }) };
+    }) as unknown as typeof fetch;
+    try {
+      await umgebung(
+        { KEPTA_OLLAMA_URL: "http://127.0.0.1:9/der-kern-holt", OLLAMA_HOST: "http://127.0.0.1:9/der-alias" },
+        () => request(app).post("/api/embed").send({ input: "hallo" }),
+      );
+      expect(orte[0]).toContain("/der-kern-holt/api/embed");
+    } finally {
+      globalThis.fetch = orig;
+    }
+  });
+});
+
 describe("Embed & Search (fetch gemockt)", () => {
   it("POST /api/embed ohne Input → 400", async () => {
     const res = await request(app).post("/api/embed").send({});

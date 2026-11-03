@@ -1,3 +1,27 @@
+## [3.2.127]
+
+### Fixed
+
+- **One Ollama, one address.** The app read the embedding service from three places with two
+  names, and they did not agree: the engine's embedder used `KEPTA_OLLAMA_URL`
+  (`src/core/embeddings.ts`, `ollamaBaseUrl`), the model list used
+  `KEPTA_OLLAMA_URL || OLLAMA_HOST`, and the embed route — the one the status panel asks —
+  used only `OLLAMA_HOST` (`server/router/chat.ts`, `mountChat`). Setting one knob therefore produced a panel that could say
+  "Ollama answers on this computer" while the embedding run talked to a different address, and
+  the two defaults were not even the same host (`127.0.0.1` against `localhost`). There is now
+  one resolver, `ollamaBaseUrl()`, that honours `KEPTA_OLLAMA_URL` first and `OLLAMA_HOST` as
+  the borrowed second name, and `einbettModell()` does the same for the model name; the routes
+  call them instead of reading the environment themselves. Found while measuring 3.2.126: the
+  first version of the window probe could not reach the "no Ollama" branch at all, because it
+  turned one knob while the panel asked through the other — the probe was wrong before the
+  product was asked. Second finding in the same line: when the chosen provider is an Ollama,
+  the model list fetched `/api/tags` from the *environment* address rather than from the base
+  address the user set and had just answered `/v1/models`, so an Ollama on another machine was
+  listed from the wrong host; the tags call now uses that same base. Three new cases in
+  `tests/server.test.ts` (route honours the core's knob, the alias still works, the core's name
+  wins) and five in `tests/embeddings.test.ts` — two of the first three were red before the
+  fix, and the alias case was green before and stays green, so nothing was quietly dropped.
+
 ## [3.2.126]
 
 ### Changed

@@ -3,11 +3,24 @@
 import type { KeptaStore } from "./store";
 import type { AuditSink } from "./extensions";
 
-export const DEFAULT_EMBED_MODEL = process.env.KEPTA_EMBED_MODEL || "nomic-embed-text";
-
+/**
+ * Der eine Loeser fuer die Ollama-Adresse. Seit dem 3.11. lesen ihn auch die Routen
+ * (server/router/chat.ts): vorher fragte die Modelle-Liste KEPTA_OLLAMA_URL, die
+ * Einbett-Route nur OLLAMA_HOST, und der Kern-Laeufer wieder KEPTA_OLLAMA_URL — drei
+ * Stellen, ein Dienst, zwei Knoepfe. Die Zustands-Tafel konnte "Ollama answers" melden,
+ * waehrend der Einbett-Lauf gegen eine andre Adresse ging. OLLAMA_HOST bleibt der
+ * uebernommene zweite Name (Ollama selbst benutzt ihn), KEPTA_OLLAMA_URL gewinnt.
+ */
 export function ollamaBaseUrl(): string {
-  return (process.env.KEPTA_OLLAMA_URL || "http://127.0.0.1:11434").replace(/\/+$/, "");
+  return (process.env.KEPTA_OLLAMA_URL || process.env.OLLAMA_HOST || "http://127.0.0.1:11434").replace(/\/+$/, "");
 }
+
+/** Dasselbe Muster für den Modellnamen, aber im Aufruf gelesen — eine Route darf nicht an einem Import-Wert aus dem Takt fallen. */
+export function einbettModell(): string {
+  return process.env.KEPTA_EMBED_MODEL || process.env.OLLAMA_EMBED_MODEL || "nomic-embed-text";
+}
+
+export const DEFAULT_EMBED_MODEL = einbettModell();
 
 // ---------- Chunking ----------
 

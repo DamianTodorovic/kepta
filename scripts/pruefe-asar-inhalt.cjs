@@ -763,6 +763,20 @@ const erwartet = [
   ["Meaning, not only the exact words", 1],
   ["it does not bridge languages", 1],
   ["found 4 of 15", 1],
+  // Punkt 4, 3.11. nachmittag (3.2.127, Aufgabe #45): ein Ollama, ein Loeser. Vorher lasen
+  // drei Stellen zwei verschiedene Umgebungs-Knoepfe, und die Zustands-Tafel konnte einen
+  // Dienst melden, den der Einbett-Lauf nicht benutzte. Gegen das installierte 3.2.126
+  // gezaehlt (app.asar 49 183 551 B, LC_ALL=C grep -aFo | wc -l, 15:44:32): der neue Loeser
+  // **0** mal. Die erste Fassung dieser Marke (`KEPTA_OLLAMA_URL||process.env.OLLAMA_HOST`)
+  // war **1** mal — schon am alten Objekt, weil die Modelle-Liste denselben Anfang hatte. Eine
+  // Marke, die das alte Objekt auch erfuellt, beweist nichts; sie ist ersetzt durch den Schwanz,
+  // den nur der eine Loeser schreibt. Der Gegenbeweis steht wieder ausserhalb dieser Liste:
+  // die Einbett-Route mit ihrem einzigen Namen `process.env.OLLAMA_HOST||"http://localhost:11434"`
+  // steht **2** mal und die Modelle-Liste mit drei Namen
+  // `KEPTA_OLLAMA_URL||process.env.OLLAMA_HOST||"http://localhost:11434"` **1** mal — beide
+  // muessen nach dem Tausch **0** mal stehen, sonst ist aus drei Lesern nur ein vierter
+  // gemacht worden.
+  ['process.env.OLLAMA_HOST||"http://127.0.0.1:11434"', 1],
 ];
 // Die Liste darf nur ASCII-Zeichen enthalten. Grund, gemessen 21.10. 19:16 MESZ am
 // installierten Objekt: das Wort "Looking" plus echtes U+2026 steht dort 2 mal, diese

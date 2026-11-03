@@ -117,11 +117,12 @@ async function main() {
   const diener = spawn("node", [OBJEKT], {
     cwd: WURZEL,
     // Der Ast mit dem langen Satz braucht einen schweigenden Einbett-Dienst. Statt Ollama
-    // anzufassen (das ist Damians Dienst auf diesem Rechner), zeigt die Kapsel auf tote
-    // Haefen — und zwar auf BEIDE: die Sonde der Flaeche laeuft ueber die eigne Tuer
-    // (`POST /api/embed`, server/router/chat.ts:290 liest OLLAMA_HOST), der Einbett-Laeufer
-    // des Kerns liest KEPTA_OLLAMA_URL (src/core/embeddings.ts:8). Zwei Knoepfe, ein Dienst;
-    // wer nur einen dreht, sieht eine Tafel, die einen andern Dienst meldet als der Lauf.
+    // anzufassen (das ist Damians Dienst auf diesem Rechner), zeigt die Kapsel auf einen
+    // toten Hafen — und zwar unter BEIDEN Namen. Die erste Fassung drehte nur
+    // KEPTA_OLLAMA_URL und bekam den Zweig nicht zu sehen: die Sonde der Flaeche laeuft
+    // ueber die eigne Tuer (`POST /api/embed`), und die las damals nur OLLAMA_HOST — der
+    // Befund, der daraus wurde, ist Aufgabe #45 (ein Loeser fuer Route, Liste und Kern).
+    // Beide Namen gesetzt, laeuft der Pruefer vor und nach dieser Heilung gleich.
     env: {
       ...process.env,
       HOME: path.join(ARBEIT, "h"),
@@ -156,10 +157,6 @@ async function main() {
     const cdp = await Cdp.verbindung(ziel.webSocketDebuggerUrl);
     await cdp.send("Page.enable");
     await cdp.send("Runtime.enable");
-    // Der Ast mit dem langen Satz braucht einen schweigenden Einbett-Dienst. Statt Ollama
-    // anzufassen (das ist Damians Dienst auf diesem Rechner), zeigt die Kapsel auf einen
-    // toten Hafen — KEPTA_OLLAMA_URL, src/core/embeddings.ts:8. Nur dieser Laeufer sieht
-    // keinen Dienst, und die Flaeche nimmt genau den Zweig, den ein Nutzer ohne Ollama sieht.
 
     for (const [breit, hoch] of BREITEN) {
       await cdp.send("Emulation.setDeviceMetricsOverride", { width: breit, height: hoch, deviceScaleFactor: 1, mobile: false });

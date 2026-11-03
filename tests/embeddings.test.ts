@@ -7,6 +7,7 @@ import {
   chunkText,
   cosineSimilarity,
   ollamaBaseUrl,
+  einbettModell,
   embedTexts,
   embedQuery,
   ollamaAvailable,
@@ -98,18 +99,71 @@ describe("cosineSimilarity", () => {
 });
 
 describe("ollamaBaseUrl", () => {
-  it("default ohne env", () => {
-    const prev = process.env.KEPTA_OLLAMA_URL;
+  // Der Loeser hat seit dem 3.11. zwei Namen (KEPTA_OLLAMA_URL, dann OLLAMA_HOST), weil die
+  // Routen denselben Loeser brauchen wie der Kern (Aufgabe #45). "Default" heisst darum:
+  // beide weg — nicht nur der eine.
+  const ohneBeide = (hin: () => void): void => {
+    const a = process.env.KEPTA_OLLAMA_URL;
+    const b = process.env.OLLAMA_HOST;
     delete process.env.KEPTA_OLLAMA_URL;
-    expect(ollamaBaseUrl()).toBe("http://127.0.0.1:11434");
-    if (prev !== undefined) process.env.KEPTA_OLLAMA_URL = prev;
+    delete process.env.OLLAMA_HOST;
+    try { hin(); } finally {
+      if (a !== undefined) process.env.KEPTA_OLLAMA_URL = a;
+      if (b !== undefined) process.env.OLLAMA_HOST = b;
+    }
+  };
+
+  it("default ohne env", () => {
+    ohneBeide(() => expect(ollamaBaseUrl()).toBe("http://127.0.0.1:11434"));
   });
+
+  it("OLLAMA_HOST gilt, wenn KEPTA_OLLAMA_URL fehlt", () => {
+    const a = process.env.KEPTA_OLLAMA_URL;
+    const b = process.env.OLLAMA_HOST;
+    delete process.env.KEPTA_OLLAMA_URL;
+    process.env.OLLAMA_HOST = "http://anderer-rechner:11434";
+    try {
+      expect(ollamaBaseUrl()).toBe("http://anderer-rechner:11434");
+    } finally {
+      if (a !== undefined) process.env.KEPTA_OLLAMA_URL = a;
+      if (b !== undefined) process.env.OLLAMA_HOST = b;
+      else delete process.env.OLLAMA_HOST;
+    }
+  });
+
+  it("KEPTA_OLLAMA_URL gewinnt gegen den zweiten Namen", () => {
+    const a = process.env.KEPTA_OLLAMA_URL;
+    const b = process.env.OLLAMA_HOST;
+    process.env.KEPTA_OLLAMA_URL = "http://kern-haft:11434";
+    process.env.OLLAMA_HOST = "http://alias-haft:11434";
+    try {
+      expect(ollamaBaseUrl()).toBe("http://kern-haft:11434");
+    } finally {
+      if (a !== undefined) process.env.KEPTA_OLLAMA_URL = a; else delete process.env.KEPTA_OLLAMA_URL;
+      if (b !== undefined) process.env.OLLAMA_HOST = b; else delete process.env.OLLAMA_HOST;
+    }
+  });
+
   it("env mit trailing slash wird bereinigt", () => {
     const prev = process.env.KEPTA_OLLAMA_URL;
     process.env.KEPTA_OLLAMA_URL = "http://host:1234///";
     expect(ollamaBaseUrl()).toBe("http://host:1234");
     if (prev === undefined) delete process.env.KEPTA_OLLAMA_URL;
     else process.env.KEPTA_OLLAMA_URL = prev;
+  });
+
+  it("einbettModell kennt dieselbe Reihenfolge", () => {
+    const a = process.env.KEPTA_EMBED_MODEL;
+    const b = process.env.OLLAMA_EMBED_MODEL;
+    process.env.KEPTA_EMBED_MODEL = "kern-modell";
+    process.env.OLLAMA_EMBED_MODEL = "alias-modell";
+    try {
+      expect(einbettModell()).toBe("kern-modell");
+    } finally {
+      if (a !== undefined) process.env.KEPTA_EMBED_MODEL = a; else delete process.env.KEPTA_EMBED_MODEL;
+      if (b !== undefined) process.env.OLLAMA_EMBED_MODEL = b; else delete process.env.OLLAMA_EMBED_MODEL;
+    }
+    ohneBeide(() => expect(einbettModell()).toBe("nomic-embed-text"));
   });
 });
 
