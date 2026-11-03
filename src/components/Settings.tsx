@@ -700,7 +700,7 @@ export function Settings() {
                   <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                     {([
                       ['spurBm25', 'BM25', 'Lexical full-text (FTS5) — exact words win'],
-                      ['spurVektor', 'Vectors', 'Semantic similarity across languages'],
+                      ['spurVektor', 'Vectors', 'Meaning, not only the exact words'],
                       ['spurGraph', 'Graph', 'Mentions of knowledge entities (people, projects, systems)'],
                     ] as const).map(([key, label, beschreibung]) => {
                       const an = suchPrefs[key];

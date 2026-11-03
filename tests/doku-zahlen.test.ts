@@ -217,7 +217,10 @@ describe("Abzeichen und Anwendungstexte behaupten nichts Falsches", () => {
     // auch die von gestern. Ein Band schuetzt keine Messung, es dekoriert sie.
     // Die erlaubten Werte kommen jetzt aus dem Beleg selbst — und der Beleg ist
     // die gefaehrliche Stelle: heisst er anders, muss diese Wache rot werden.
-    const belegt = lies("docs/belege/tag-13-10/eval-korpus-1413.log.txt");
+    // Seit 3.11. nennt der Beleg drei Hit@1-Zahlen statt zwei: v1, v2 ohne Vektoren
+    // und v3 mit — das ausgelieferte Retrieval. Das 71 % der Flaeche ist die Zahl des
+    // zweiten Beins, weil dieser Ast der Flaeche ohne Ollama laeuft.
+    const belegt = lies("docs/belege/tag-0311/eval-drei-beine-1352.log.txt");
     const gemessen = [...belegt.matchAll(/Hit@1:\s+(\d+(?:[.,]\d+)?)\s*%/g)]
       .map((m) => Math.round(Number(m[1].replace(",", "."))));
     expect(gemessen.length, "der Eval-Beleg nennt keine zwei Hit@1-Zahlen — diese Wache ist taub").toBeGreaterThanOrEqual(2);

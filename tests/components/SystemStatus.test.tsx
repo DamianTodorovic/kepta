@@ -1,4 +1,7 @@
 // @vitest-environment jsdom
+import { readFileSync } from "node:fs";
+import path from "node:path";
+
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
@@ -76,8 +79,20 @@ describe("SystemStatus: was die App ueber sich behauptet", () => {
     await waitFor(() => expect(container.textContent).toMatch(/Hit@1/));
     const zahlen = [...(container.textContent ?? "").matchAll(/(\d+)\s*%\s*Hit@1/g)].map((m) => Number(m[1]));
     expect(zahlen.length).toBeGreaterThan(0);
+    // Die Latte kommt aus dem Beleg, nicht aus der Hand. Bis zum 3.11. stand hier ein
+    // gesetzter Wert (75) — und dieser Wert war die Zahl des dritten Beins (75,6 %),
+    // das damals niemand gemessen hatte: eine Kappe aus der Luft, die zufaellig neben
+    // einer Messung lag, die es noch nicht gab. Jetzt gilt: keine Flaechenzahl ueber der
+    // hoechsten Hit@1, die der Eval-Lauf wirklich meldet.
+    const belegt = readFileSync(
+      path.join(process.cwd(), "docs/belege/tag-0311/eval-drei-beine-1352.log.txt"),
+      "utf8",
+    );
+    const gemessen = [...belegt.matchAll(/Hit@1:\s+(\d+(?:[.,]\d+)?)\s*%/g)].map((m) => Math.round(Number(m[1].replace(",", "."))));
+    expect(gemessen.length, "der Eval-Beleg nennt keine Hit@1-Zahlen — diese Wache ist taub").toBeGreaterThanOrEqual(2);
+    const geliefert = Math.max(...gemessen);
     for (const z of zahlen) {
-      expect(z, `Die App behauptet ${z} % Hit@1`).toBeLessThanOrEqual(75);
+      expect(z, `Die App behauptet ${z} % Hit@1 — der Beleg liefert hoechstens ${geliefert} %`).toBeLessThanOrEqual(geliefert);
     }
   });
 

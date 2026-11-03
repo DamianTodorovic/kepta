@@ -67,5 +67,17 @@ export default tseslint.config(
     rules: {
       "@typescript-eslint/no-require-imports": "off",
     },
+  },
+  {
+    // In src/ bleibt der ungenutzte Name eine Warnung: dort versteckt sich dahinter ein
+    // verwerfendes Muster oder ein optionaler Parameter. In scripts/ ist er ein Messfehler:
+    // am 3.11. trug scripts/ablation.ts nach dem Umzug des Korpusaufbaus nach
+    // scripts/eval-store.ts noch `tmpdir`, `path` und `fs` — drei Namen, die ein
+    // halbfertiger Schnitt hinterlässt. Ein Werkzeug, das totes Gepäck mitschleppt, ist
+    // nicht verlässlich genug, um eine Zahl zu tragen, die in der Oberfläche steht.
+    files: ["scripts/**/*.ts", "scripts/**/*.tsx"],
+    rules: {
+      "@typescript-eslint/no-unused-vars": ["error", { argsIgnorePattern: "^_", varsIgnorePattern: "^_" }],
+    },
   }
 );

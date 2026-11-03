@@ -1,3 +1,60 @@
+## [3.2.126]
+
+### Changed
+
+- **A sentence about languages now carries its measurement.** Two lines of the interface sold
+  the vector leg as cross-lingual — Settings said "Semantic similarity across languages", the
+  status panel said "with vectors it is stronger across languages too". Neither had ever been
+  measured. It is now, with `npm run eval:sprache`: 15 question pairs taken straight from the
+  shipped test corpus (same answers, only the language of the question moved — English
+  question, German notes), each leg scored in both languages, plus the vector leg on its own so
+  a fusion problem cannot hide as a model problem. English questions reach **26.7 %** Hit@1
+  with the default embedder, against **60.0 %** for the same questions in German
+  (`docs/belege/tag-0311/sprachuebergriff-nomic-1406.log.txt`); without vectors it is 13.3 %,
+  so vectors double the reach and leave it at one question in four. The multilingual model this
+  repository's README had been recommending to German notes since September does not solve it
+  either — **20.0 %** cross-lingual, and on the German vector leg alone 46.7 %
+  (`docs/belege/tag-0311/sprachuebergriff-bge-m3-1406.log.txt`) where the default embedder
+  reaches 73.3 % (`docs/belege/tag-0311/sprachuebergriff-nomic-1406.log.txt`) — so switching
+  the default is not a gain, and it would still mean re-embedding every stored note. Settings now reads
+  "Meaning, not only the exact words" and the panel names its numbers instead of promising.
+  The README's September caveat was corrected in the same pass, because it recommended the very
+  model this run measured as no better. What is deliberately *not* changed: the retrieval code,
+  the default model and every ranking weight — this is a claim brought down to its measurement,
+  not a search rewritten. A new guard (`tests/components/flaeche-sprach-behauptung.test.ts`)
+  refuses any interface line that talks about language without naming its number, and reads the
+  two runs above from the repository.
+
+### Fixed
+
+- **The eval measured a weaker system than the one that ships.** Since the corpus builder was
+  shared with the ablation, `scripts/eval.ts` had quietly kept building its own store — no
+  entities, fewer supersessions, and no vectors at all, while the engine turns the vector leg on
+  by default and drops it silently when nothing is embedded
+  (`src/core/engine.ts:395-396`). One word, two systems, and the figure on the status panel came
+  from the weaker one. Both tools now build the corpus from one file
+  (`scripts/eval-store.ts`), which also had to learn to anchor the corpus clock: it left the
+  timestamps unset, so the store used `Date.now()` and the recency boost drifted with the
+  calendar — the same commit could report two numbers. Three legs are measured now, and the
+  third is the delivered one: 62.2 % / 51.1 % / 0.559 for the naive search, 81.1 % / 71.1 % /
+  0.758 for the engine without vectors, **91.1 % / 75.6 % / 0.812** with them
+  (`docs/belege/tag-0311/eval-drei-beine-1352.log.txt`). The first two legs are byte-identical
+  to the run of 2026-10-13, so the coupling moved nothing but the third leg, and the 76 % the
+  ablation had reported for full fusion since October is now confirmed by a second tool. Each
+  output also breaks its mean down per question type, which shows what the single number hid:
+  paraphrased questions stay at 30 % Hit@1 even with vectors (their recall doubles, 30 % →
+  60 %), and the vector leg says *why* it was skipped when no embedder answers, instead of
+  quietly reporting two legs as the whole system. Two new guards hold the coupling
+  (`tests/eval-metrik.test.ts`, six cases now): neither tool may build a store itself, and the
+  shared builder must name its time anchor.
+- **A measurement script could carry dead code and still print a number.** Three imports left
+  over in `scripts/ablation.ts` after the corpus moved out (`tmpdir`, `path`, `fs`) were the
+  symptom, not the disease: `no-unused-vars` is a warning repo-wide, so a half-finished change
+  in a measuring tool never stopped anything. For `scripts/**/*.ts(x)` it is now an error, with
+  the dead names gone and the rule's bite verified against a throwaway file — `npm run lint`
+  exits 0 on the shipped code and reports `error 'tmpdir' is defined but never used` on a
+  planted one.
+
 ## [3.2.125]
 
 ### Fixed
@@ -3146,7 +3203,7 @@ Dichte's #102 subject, not a thing to change under a running wave.
 - **An empty filter is no longer a dead end.** Clicking `Code` (or a thin theme) on a page with no match removed both chip rows from the DOM, leaving no way back, while the strip two rows above still said `2 Notes 2 Files 0 Code`. Both rows now stay reachable, the empty heading names the group and the page scope, and one click returns everything. Reproduced red first in `tests/components/Dashboard.test.tsx`, then measured in a real browser at 1440/1024/820/390 px.
 
 ### Fixed
-- **The folder scan walked K3PTA's own backups, including the files that hold its configuration.** Four `…datensicherung-vor-…` folders are 7,300 of 13,616 files (53.6 %) of a first walk, and among them `profile.json`, `scan-config.json` and `endpoint.json` — files `server/router/scan.ts:69-72` declares sensitive metadata and encrypts at rest, which the walker would have turned into readable notes for any connected agent. A folder holding a `kepta.db` is now not entered (marker, not name, so a renamed copy is still caught), and `Downloads`/`Movies`/`Pictures`/`Music` are excluded unless the person picks one as the root. Measured over his real home: 32,329 seen / 13,616 taken in 782 ms **before**, 24,738 / **6,243** in **170 ms** after, backup files 0, config notes 0. `src/scan/walker.ts:120-126`, `tests/scan/regeln.test.ts`.
+- **The folder scan walked K3PTA's own backups, including the files that hold its configuration.** Four `…datensicherung-vor-…` folders are 7,300 of 13,616 files (53.6 %) of a first walk, and among them three of its own config files: profile.json, scan-config.json, endpoint.json — files `server/router/scan.ts:69-72` declares sensitive metadata and encrypts at rest, which the walker would have turned into readable notes for any connected agent. A folder holding a `kepta.db` is now not entered (marker, not name, so a renamed copy is still caught), and `Downloads`/`Movies`/`Pictures`/`Music` are excluded unless the person picks one as the root. Measured over his real home: 32,329 seen / 13,616 taken in 782 ms **before**, 24,738 / **6,243** in **170 ms** after, backup files 0, config notes 0. `src/scan/walker.ts:120-126`, `tests/scan/regeln.test.ts`.
 - **Key-shaped secrets are now masked before they can become a memory.** Assignments (`sk-…`, `sk-ant-…`, `ghp_…`, `xox…-`, `AKIA…`, a 64-hex run after a key-like name) collapse to family plus length, and the count per run is shown instead of a silent rewrite. The boundary is the work: over the real working folder the mask touches **15 files / 39 places and leaves 5,906 untouched**, including 111 files carrying 4,033 hex runs that are checksums, not keys; in his store, 132 of 143 hex runs sit in prose and must stay. `src/scan/maskierung.ts`, called at `server/router/scan.ts:336-341`, `tests/scan/maskierung-import.test.ts`.
 - **A test asked the product to change a file format, and following it would have emptied a real profile.** `tests/nebendateien.test.ts` expected the sidecar magic `K3PTA-NEBEN1`; the product has written `KEPTA-NEBEN1\n` since `281f5a1`, and his own `~/.kepta/profile.json` begins with exactly those bytes. `leseJsonDatei` (`src/core/nebendateien.ts:98-114`) returns `null` for an unknown magic and `server/router/settings.ts:104` turns that into `{}` — so the next save would have written an empty profile over a real one. The expectation is corrected and pinned in both directions at byte level (`:63-85`): a genuine envelope still decrypts, identical ciphertext with the new prefix yields `null`. A format on disk is not a brand word.
 - **Light-theme contrast, measured at pixels rather than at CSS values.** The level words under the graph strip read 3.45-3.49 (16 of 16 legend cases under 4.5:1); they now read **6.75-6.80** at 11 px with full coverage. The nine chips read 5.18 with `Links` at 4.36; they now read **6.65** with the weakest at 5.51 and 0 of 36 under the bar. The drawer's left edge stayed at 1.59 after its token was fixed — a 1 px `border` loses half its strength on an element under `backdrop-filter`, and two pixels of width do not help; painted as an inset line it measures **3.58 / 5.85**, and the guard now checks the line, not the token name. **17 of 63 icons in the series painted blobs; now 0**, with no cell left empty. `src/index.css` (additive: no token repurposed), `scripts/design-wache.mjs`, `tests/design-tokens.test.ts` (18 cases).

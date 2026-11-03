@@ -1,0 +1,42 @@
+sprachuebergriff-bge-m3-1406 — npm run eval:sprache mit KEPTA_EMBED_MODEL=bge-m3
+RUN v11.19.0 | KEPTA_EMBED_MODEL=bge-m3 | 2026-11-03 13:06:28 UTC | Darwin arm64
+derselbe lauf ueber das mehrsprachige modell, das die README ihren deutschen notizen seit 13.9. empfiehlt. Ergebnis: sprachuebergreifend NICHT besser — 3 von 15 englischen fragen treffen (20,0 % hit@1). Das gegeneichen im standardlauf (nomic-embed-text) steht in sprachuebergriff-nomic-1406.log.txt und wird hier nicht wiederholt, damit diese datei nur ihren eignen lauf belegt.
+dazu der gegenlauf auf dem ganzen korpus (eval-bge-m3-1404): hit@1 77,8 % gegen 75,6 %, recall@5 90,0 % gegen 91,1 % — gemischt, kein grund fuer einen umbau, zumal jeder vorhandene knoten neu eingebettet werden muesste (src/core/engine.ts:294 filtert nach model).
+--- ausgabe ---
+
+
+> kepta@3.2.125 eval:sprache
+> tsx scripts/eval-sprachuebergriff.ts
+
+
+Sprachuebergriff — 58 Notizen, 15 Anfrage-Paare, Zeitanker 2026-09-01T12:00:00.000Z
+Kategorien: lexikalisch 6, umschreibung 6, temporal 3
+Ziele geerbt aus scripts/eval-corpus.ts — nur die Sprache der Frage ist verschoben.
+Richtung: englische Anfrage gegen deutsche Notizen. Die Gegenrichtung ist nicht gemessen.
+
+  v1 naive Substring-Suche
+     deutsch  Hit@1  33.3 %   R@5 gekappt  53.3 %
+     englisch Hit@1   0.0 %   R@5 gekappt   6.7 %
+     Sprachpreis Hit@1: -33.3 Pp auf 15 Paaren
+     englisch verliert: Which database do we use? | VAT return deadline | Cancel the car insurance | Deposit and the landlord | Vaccination booster
+
+  v2 Engine ohne Vektoren (BM25 + Entitaeten + temporal)
+     deutsch  Hit@1  60.0 %   R@5 gekappt  66.7 %
+     englisch Hit@1  13.3 %   R@5 gekappt  20.0 %
+     Sprachpreis Hit@1: -46.7 Pp auf 15 Paaren
+     englisch verliert: Cancel the car insurance | Deposit and the landlord | Vaccination booster | What can I cook with pasta? | What should I do for my back? | How can I be reached? | Which running shoes do I have?
+
+  v3 Engine mit Vektoren — ausgeliefertes Retrieval
+     deutsch  Hit@1  60.0 %   R@5 gekappt  80.0 %
+     englisch Hit@1  26.7 %   R@5 gekappt  33.3 %
+     Sprachpreis Hit@1: -33.3 Pp auf 15 Paaren
+     englisch verliert: Cancel the car insurance | Deposit and the landlord | Vaccination booster | What can I cook with pasta? | What should I do for my back?
+
+  nur das Vektor-Bein (ohne BM25, ohne Graph)
+     deutsch  Hit@1  46.7 %   R@5 gekappt  60.0 %
+     englisch Hit@1  20.0 %   R@5 gekappt  26.7 %
+     Sprachpreis Hit@1: -26.7 Pp auf 15 Paaren
+     englisch verliert: VAT return deadline | Cancel the car insurance | Deposit and the landlord | By when must the VAT return be filed?
+
+  Embedder dieses Laufs: bge-m3 · http://127.0.0.1:11434
+EXIT=0

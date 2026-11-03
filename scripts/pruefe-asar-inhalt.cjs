@@ -750,6 +750,19 @@ const erwartet = [
   ["did not send a model list", 1],
   ["listed no models yet", 1],
   ["chat-verbindung", 1],
+  // Punkt 7/8, 3.11. nachmittag (3.2.126, Aufgabe #42): die Flaeche versprach
+  // Sprachkenntnis, die kein Lauf gemessen hatte. Der Lauf jetzt
+  // (docs/belege/tag-0311/sprachuebergriff-nomic-1406.log.txt) meldet 4 von 15, also nennt
+  // die Zeile eine Zahl statt eines Wunsches. Gegen das installierte 3.2.125 gezaehlt
+  // (app.asar 49 183 453 B, mtime 03.11. 06:42, LC_ALL=C grep -aFo | wc -l, 14:1x): die drei
+  // neuen Marken **0** mal. Der Beweis der andern Seite steht ausserhalb dieser Liste, weil
+  // sie nur ">=" kennt: die beiden alten Saetze "Semantic similarity across languages" und
+  // "with vectors it is stronger across languages too" stehen dort je **1** mal und muessen
+  // nach dem Tausch **0** mal stehen — sonst ist die Korrektur nur ueber der Zahl, nicht ueber
+  // dem Wort.
+  ["Meaning, not only the exact words", 1],
+  ["it does not bridge languages", 1],
+  ["found 4 of 15", 1],
 ];
 // Die Liste darf nur ASCII-Zeichen enthalten. Grund, gemessen 21.10. 19:16 MESZ am
 // installierten Objekt: das Wort "Looking" plus echtes U+2026 steht dort 2 mal, diese

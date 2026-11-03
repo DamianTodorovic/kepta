@@ -9,10 +9,11 @@
 // Vergleich, den niemand gezogen hat — und die README der App sagte ausserdem
 // "measures Hit@1 and Precision@5".
 //
-// Diese Datei prueft zwei Dinge, beide am Quelltext, weil die Rechenstelle und der
-// Name in derselben Datei stehen muessen: (1) die Silbe folgt der Rechnung, (2) die
-// beiden Werkzeuge desselben Korpus benutzen nicht dasselbe Wort fuer verschiedene
-// Nenner.
+// Diese Datei prueft vier Dinge, alle am Quelltext, weil die Rechenstelle und der Name
+// in derselben Datei stehen muessen: (1) die Silbe folgt der Rechnung, (2) die beiden
+// Werkzeuge desselben Korpus benutzen nicht dasselbe Wort fuer verschiedene Nenner,
+// (3) beide Werkzeuge bauen denselben Korpus auf — seit dem 3.11. aus einer Hand, und
+// (4) dieser Aufbau nennt seine Zeit selbst, statt sie vom Kalender zu holen.
 import { readFileSync } from "node:fs";
 import path from "node:path";
 
@@ -58,6 +59,35 @@ describe("eval-metrik: der name einer kennzahl folgt ihrer rechnung", () => {
     expect(gedruckteSilben(text, /P@5/).length, "keine ausgegebenes P@5 in der ablation").toBeGreaterThan(0);
     // Das Wort, das die Verwechslung war: dieselbe Silbe fuer beide Nenner.
     expect(text).not.toMatch(/Recall@5/);
+  });
+
+  it("beide werkzeuge bauen denselben korpus — ein aufbau, zwei werkzeuge", () => {
+    // Der Selbstblick am 2.11. fand es, die Heilung sitzt seit dem 3.11.: eval.ts baute
+    // seinen Store jahrelang selbst (ohne Entitaeten, ohne Index-Spuren), ablation.ts
+    // den geteilten mit. Dieselben Woerter, zwei Systeme, zwei Wahrheiten — und die
+    // Zahl der Flaeche stammte aus dem schwacheren. Ein eigener Aufbau in einem
+    // Messwerkzeug ist kein Detail, er ist die Messung.
+    for (const [name, text] of [
+      ["eval", evalText()],
+      ["ablation", ablationText()],
+    ] as const) {
+      expect(text, `${name} holt den Aufbau nicht mehr aus scripts/eval-store.ts`).toMatch(/from "\.\/eval-store"/);
+      expect(text, `${name} ruft korpusAufbauen nicht auf`).toMatch(/korpusAufbauen\s*\(/);
+      expect(text, `${name} baut den Speicher wieder in eigener Regie — dann ist seine Zahl nicht die des anderen Werkzeugs`)
+        .not.toMatch(/new KeptaStore\(/);
+    }
+  });
+
+  it("der geteilte Aufbau setzt die Zeit des Korpus fest, nicht den echten Kalender", () => {
+    // src/core/store.ts:759 setzt `Date.now()`, wo ein Aufrufer keine Zeit nennt. Ein
+    // Korpus ohne Zeitanker wandert mit dem Tag, an dem jemand `npm run eval` laesst:
+    // der Recency-Boost verschiebt sich, und derselbe Commit meldet zwei Zahlen.
+    const zeitAnker = /createdAt: m\.updatedAt \?\? EVAL_NOW/;
+    const text = lies("scripts/eval-store.ts");
+    expect(text, "der geteilte Aufbau nennt keine feste Zeit — das Eval ist nicht wiederholbar").toMatch(zeitAnker);
+    // Gegenprobe: ohne sie beschreibt der Fall oben einen Zustand, den niemand aendern kann.
+    const ohneAnker = text.replace(zeitAnker, "createdAt: undefined");
+    expect(ohneAnker, "der pruefer merkt den verlorenen Zeitanker nicht").not.toMatch(zeitAnker);
   });
 
   it("die flaeche behauptet keine precision, wo die engine recall meldet", () => {
