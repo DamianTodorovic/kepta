@@ -168,10 +168,11 @@ describe("Settings: Modelle", () => {
     const user = userEvent.setup();
     const { container } = render(<Settings />);
     const laden = [...container.querySelectorAll("button")].find((b) => /^Load$/i.test(b.textContent?.trim() ?? ""));
-    if (laden) {
-      await user.click(laden);
-      await waitFor(() => expect(container.textContent).toMatch(/llama3\.2/));
-    }
+    // Der Knopf wird verlangt, nicht gesucht: mit `if (laden)` konnte dieser Fall bisher
+    // gruen werden, indem die Flaeche ihn gar nicht erst zeigte.
+    expect(laden, "die Modelle-Zeile hat keinen Load-Knopf — der Fall prueft dann nichts").toBeTruthy();
+    await user.click(laden!);
+    await waitFor(() => expect(container.textContent).toMatch(/llama3\.2/));
   });
 
   it("meldet einen Fehler im Klartext, statt still zu bleiben", async () => {
@@ -179,10 +180,12 @@ describe("Settings: Modelle", () => {
     stubFetch({ modelsOk: false, modelsError: "Ollama nicht erreichbar" });
     const { container } = render(<Settings />);
     const laden = [...container.querySelectorAll("button")].find((b) => /^Load$/i.test(b.textContent?.trim() ?? ""));
-    if (laden) {
-      await user.click(laden);
-      await waitFor(() => expect(container.textContent).toMatch(/Ollama nicht erreichbar/));
-    }
+    expect(laden, "die Modelle-Zeile hat keinen Load-Knopf — der Fall prueft dann nichts").toBeTruthy();
+    await user.click(laden!);
+    // Zwei Seiten: der Satz der Flaeche nennt, WAS nicht geschah, und die Auskunft der Tuer
+    // steht daneben (P47/#47). Beides zusammen ist die Zusage, nicht einer von beiden.
+    await waitFor(() => expect(container.textContent).toMatch(/The model list did not arrive/));
+    expect(container.textContent).toMatch(/Ollama nicht erreichbar/);
   });
 
   it("sagt es, wenn gar keine Modelle da sind", async () => {
