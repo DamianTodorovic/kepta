@@ -2,6 +2,8 @@
 // Passwort-Manager ablegen. Im Alltag braucht ihn niemand — die App und die
 // Agenten holen den Schluessel selbst aus dem Schluesselbund. Er ist die
 // Versicherung fuer einen neuen Rechner oder eine zurueckgespielte Sicherung.
+import { absage } from '../lib/absage';
+import { ApiFehler, tuerSatz } from '../lib/api';
 import { useRef, useState } from 'react';
 import { Copy, Check } from '../lib/icons';
 import { QUITTUNG_MS } from '../lib/quittung';
@@ -24,10 +26,10 @@ export function RecoveryKey() {
     try {
       const res = await fetch('/api/recovery-key', { method: 'POST', headers: { 'X-KEPTA-Recovery': '1' } });
       const d = await res.json().catch(() => ({}));
-      if (!res.ok) throw new Error(d.error ?? `HTTP ${res.status}`);
+      if (!res.ok) throw new ApiFehler(tuerSatz(d.error, `HTTP ${res.status}`), res.status);
       setKey(String(d.key));
     } catch (e) {
-      setFehler(e instanceof Error ? e.message : 'The key could not be loaded.');
+      setFehler(absage("The recovery key could not be shown.", e));
     }
     setLaedt(false);
   };

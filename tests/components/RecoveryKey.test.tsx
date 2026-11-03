@@ -72,6 +72,7 @@ describe("RecoveryKey", () => {
     vi.stubGlobal("fetch", vi.fn(async () => { throw new Error("offline"); }));
     render(<RecoveryKey />);
     await userEvent.click(screen.getByRole("button", { name: "Show recovery key" }));
-    await waitFor(() => expect(screen.getByText("offline")).toBeTruthy());
+    await waitFor(() => expect(screen.getByText("The recovery key could not be shown.")).toBeTruthy());
+    expect(document.body.textContent).not.toContain("offline");
   });
 });

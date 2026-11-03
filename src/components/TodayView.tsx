@@ -1,6 +1,8 @@
 // Today: what happened since your last visit, what needs a look, what is due.
 // Read straight from the local database — no AI involved, nothing leaves the
 // computer, ready the moment the view opens.
+import { absage } from '../lib/absage';
+import { ApiFehler, tuerSatz } from '../lib/api';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { formatDistanceToNow } from 'date-fns';
 import { AlertTriangle, CheckCircle2, Bot, Clock, RefreshCw } from '../lib/icons';
@@ -176,12 +178,12 @@ export function TodayView({ aktiv, onOpenMemory, onGo }: Props) {
         const grund = typeof d?.error === 'string' && d.error.trim() !== ''
           ? d.error.trim()
           : `the store answered ${r.status}`;
-        throw new Error(grund);
+        throw new ApiFehler(grund, r.status);
       }
-      if (!d) throw new Error('the answer was empty');
+      if (!d) throw new ApiFehler("Today's briefing came back empty.", r.status);
       setDaten(inForm(d, LEERES_BRIEFING));
     } catch (e) {
-      setFehler(e instanceof Error ? e.message : String(e));
+      setFehler(absage("Today's briefing did not arrive.", e));
     }
   }, [seit]);
 
@@ -197,10 +199,10 @@ export function TodayView({ aktiv, onOpenMemory, onGo }: Props) {
         body: JSON.stringify({ keep: keep.id, drop: drop.id, both: wahl === 'both' }),
       });
       const d = await r.json().catch(() => ({}));
-      if (!r.ok) throw new Error((d as { error?: string }).error ?? `HTTP ${r.status}`);
+      if (!r.ok) throw new ApiFehler(tuerSatz((d as { error?: string }).error, `HTTP ${r.status}`), r.status);
       setErledigt((p) => ({ ...p, [w.key]: wahl === 'both' ? 'Noted — K3PTA will not ask about these two again.' : `Done — “${drop.title}” is marked as replaced by “${keep.title}”.` }));
     } catch (e) {
-      setErledigt((p) => ({ ...p, [w.key]: `That did not work: ${e instanceof Error ? e.message : String(e)}` }));
+      setErledigt((p) => ({ ...p, [w.key]: absage("That decision was not recorded. The pair is still here.", e) }));
     }
   };
 
@@ -260,7 +262,7 @@ export function TodayView({ aktiv, onOpenMemory, onGo }: Props) {
 
       {fehler && (
         <div className="hud-inset rounded-xl p-4 text-sm flex items-center gap-3" style={{ color: 'var(--warn)' }}>
-          Today could not be loaded — {fehler}
+          {fehler}
           <button onClick={() => void laden()} className="btn-ghost px-3 py-1 rounded-lg text-xs flex items-center gap-1"><RefreshCw className="w-3.5 h-3.5" /> Try again</button>
         </div>
       )}

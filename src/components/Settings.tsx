@@ -1,3 +1,5 @@
+import { ApiFehler, sendJson, tuerSatz } from '../lib/api';
+import { absage } from '../lib/absage';
 import { useState, useEffect, useRef, FormEvent } from 'react';
 import { Key, ShieldCheck, SettingsIcon, Download, CheckCircle2, AlertTriangle, RefreshCw, Cpu, HardDriveDownload, Server, Plug, Copy, Terminal, Braces, Globe, Search, Save, Layers, ExternalLink, Sparkles } from "../lib/icons";
 import { motion } from 'motion/react';
@@ -11,7 +13,6 @@ import { SystemStatus } from './SystemStatus';
 import PraxisSync from './PraxisSync';
 import { KeptaMark } from './KeptaMark';
 import { getZoom, setZoom as speichereZoom, wendeZoomAn, t } from '../lib/uiText';
-import { sendJson } from '../lib/api';
 import { TRAEGER_LABELS, TRAEGER_REIHENFOLGE, THEMA_LABELS, THEMA_REIHENFOLGE, type Traeger, type Thema } from '../lib/graphHierarchy';
 import { PrivacyShield } from './PrivacyShield';
 import { ConnectApps } from './ConnectApps';
@@ -411,7 +412,7 @@ export function Settings() {
         const d = await r.json();
         if (!cancelled) { setHealth(d); setHealthError(null); }
       } catch (e: unknown) {
-        if (!cancelled) setHealthError(e instanceof Error ? e.message : String(e));
+        if (!cancelled) setHealthError(absage("The health check did not answer. Your notes are safe.", e));
       }
       // Dieselbe Tür, die auch die Agenten lesen: was sie advertiert, wird
       // gezeigt. Ein Fetch, ein Tab — und keine Zahl, die die Fläche erfindet.
@@ -427,7 +428,7 @@ export function Settings() {
       } catch (e: unknown) {
         if (!cancelled) {
           setWerkzeuge([]);
-          setWerkzeugeFehler(`The tool list could not be read: ${e instanceof Error ? e.message : String(e)}`);
+          setWerkzeugeFehler(absage("The tool list could not be read.", e));
         }
       }
     })();
@@ -501,11 +502,11 @@ export function Settings() {
       });
       const data = await res.json();
       // Die Zahl allein ist keine Auskunft: erst der Grund, dann der Text der Tuer.
-      if (!res.ok) throw new Error(grundText(data?.grund) || data.error || 'Could not load the models');
+      if (!res.ok) throw new ApiFehler(grundText(data?.grund) || tuerSatz(data.error, 'Could not load the models'), res.status);
       setModels(data.models || []);
       if (!data.models?.length) setModelError('No models found. Is the service running?');
     } catch (err: unknown) {
-      setModelError(err instanceof Error ? err.message : String(err));
+      setModelError(absage("The model list did not arrive. Is the service running?", err));
     } finally {
       setLoadingModels(false);
     }
@@ -1132,7 +1133,7 @@ export function Settings() {
                               setSortiertFertig(d.changed);
                               setSortierVorschau(null);
                             } catch (err: unknown) {
-                              setSortierFehler(err instanceof Error ? err.message : String(err));
+                              setSortierFehler(absage("The grouping did not run. Nothing was re-sorted.", err));
                             } finally { setSortiertLaeuft(false); }
                           }}
                           className="btn-primary px-4 py-2 rounded-xl text-sm flex-1"
@@ -1151,7 +1152,7 @@ export function Settings() {
                           if (koppen.ok) { setBestandGruppen(await koppen.json()); setGruppenFehlt(false); }
                           else setGruppenFehlt(true);
                         } catch (err: unknown) {
-                          setSortierFehler(err instanceof Error ? err.message : String(err));
+                          setSortierFehler(absage("The grouping did not run. Nothing was re-sorted.", err));
                         } finally { setSortiertLaeuft(false); }
                       }}
                       className="btn-ghost flex items-center justify-center gap-2 px-6 py-3 rounded-xl font-medium w-full"

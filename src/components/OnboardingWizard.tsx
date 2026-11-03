@@ -1,3 +1,4 @@
+import { absage } from '../lib/absage';
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { Sparkles, Check, ChevronRight, ChevronLeft, Cpu, Database, Globe, User, Target, Loader2, PartyPopper, AlertCircle, Info } from "../lib/icons";
@@ -140,7 +141,7 @@ export function OnboardingWizard({ open, onClose, onComplete }: Props) {
     } catch (e) {
       // Ein String ohne .message warf hier „undefined" in den grünen Kasten.
       setFehlgeschlagen(true);
-      setImportResult(e instanceof Error ? e.message : String(e));
+      setImportResult(absage("The documents were not saved. You can import this folder later.", e));
     } finally { setImporting(false); }
   };
 

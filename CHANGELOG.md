@@ -1,3 +1,36 @@
+## [3.2.131]
+
+### Fixed
+
+- **Twenty-five more places stopped printing the exception on the surface.** 3.2.130 fixed one
+  of them; this cut fixes the class it counted: 27 lines in 12 files under `src/components/`
+  took `e.message` and put it straight into a state the user reads. Every one of them now calls
+  `absage(sentence, error)` (`src/lib/absage.ts`): the surface gets a sentence naming **what**
+  did not happen and **what it means for your notes**, the reason goes to the developer console.
+  A sentence written by K3PTA's own door is kept — it appears in brackets after the fixed
+  sentence, e.g. `The dossier did not arrive. (Tell K3PTA who or what the dossier is about.)` —
+  and only if it passes a shape check (`tuerSatz`, `src/lib/api.ts`): one line, at most 160
+  characters, no path. "Chat Rate-Limit: max 20/min" is information; "/Users/a/.kepta/kepta.db"
+  is not, and a body from a listener without our signature (`x-kepta-marke`, 3.2.128) never
+  becomes an app sentence.
+  Two sites deliberately kept their wording: `Settings.tsx` separates "the server refused it
+  (HTTP 503)" from "it did not answer" on purpose (P4-15/P4-16), and the guard names them with
+  that reason and refuses the allowance if the separation is gone.
+  Found while widening the probe: the first pattern (`instanceof Error ? e.message`) missed the
+  shape `setFehler(String(err))` and a response body field written into a state
+  (`ConnectApps.tsx` showed `d.message ?? d.error` raw). The guard now counts both shapes too.
+- **The marker check gained its other half.** `scripts/pruefe-asar-inhalt.cjs` only ever
+  demanded that a new sentence be present; "the old sentence is gone" was a claim in a comment.
+  It now carries a `verboten` list, and three superseded wordings are on it
+  (`That did not work`, `The switch could not be saved`, `Today could not be loaded` — counted
+  2, 1, 1 in the installed 3.2.130 at 2026-11-03 18:22 MEZ). A landing that reintroduces one of
+  them fails the build step instead of the reading step.
+
+### Changed
+
+- Today's view no longer prefixes "Today could not be loaded —" to whatever the error said; the
+  state itself carries the whole sentence, so the line reads as one thought at any width.
+
 ## [3.2.130]
 
 ### Fixed

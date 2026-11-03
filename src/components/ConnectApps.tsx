@@ -3,6 +3,7 @@
 // to it and changes nothing else. Used in the settings and on the Activity page.
 import { useEffect, useState } from 'react';
 import { Plug, CheckCircle2, Loader2 } from '../lib/icons';
+import { tuerSatz } from '../lib/api';
 
 export interface ClientStatus {
   id: string;
@@ -36,7 +37,9 @@ export function ConnectApps() {
       const r = await fetch(`/api/clients/${encodeURIComponent(c.id)}/connect`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{}' });
       const d = await r.json() as { message?: string; error?: string; clients?: ClientStatus[] };
       if (Array.isArray(d.clients)) setClients(d.clients);
-      setMeldung({ ok: r.ok, text: d.message ?? d.error ?? `HTTP ${r.status}` });
+      // Der Leib kommt von der eignen Tuer — gefiltert auf einen einzeiligen Kurzsatz,
+      // damit ein fremder Koerper auf demselben Port hier keinen Pfad ablegen kann.
+      setMeldung({ ok: r.ok, text: tuerSatz(d.message ?? d.error, r.ok ? 'K3PTA answered without a message.' : `HTTP ${r.status}`) });
     } catch {
       setMeldung({ ok: false, text: 'Connecting failed — please try again.' });
     } finally {

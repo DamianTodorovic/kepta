@@ -203,7 +203,8 @@ describe("SystemStatus: Testanfrage", () => {
     }));
     render(<SystemStatus />);
     await user.click(screen.getByRole("button", { name: /Send a test request/i }));
-    await waitFor(() => expect(screen.getByText(/Verbindung weg/)).toBeTruthy());
+    await waitFor(() => expect(screen.getByText(/No answer from that service/)).toBeTruthy());
+    expect(document.body.textContent).not.toContain("Verbindung weg");
   });
 });
 

@@ -1,3 +1,5 @@
+import { absage } from "../lib/absage";
+import { ApiFehler, tuerSatz } from "../lib/api";
 import { useState, useRef, useEffect, useMemo, useCallback, FormEvent } from "react";
 import { motion } from "motion/react";
 import { Send, AlertTriangle, Database, Trash2, PanelLeftOpen, Square, Copy, Check, CheckCircle2, Coins, Hash, FileText, Sparkles, ShieldCheck } from "../lib/icons";
@@ -621,11 +623,11 @@ export function Chat({ activeMemories, onSaveToBrain, onSaveToBrainWithMeta, isF
           const txt = await res.text();
           const j = JSON.parse(txt);
           // Die Tuer nennt eine Kennung; der Mensch sieht ihren Satz, nicht ihren inneren Text.
-          msg = grundText(j.grund) || (j.error ? String(j.error) : msg);
+          msg = grundText(j.grund) || tuerSatz(j.error, msg);
         } catch {
           // ignore
         }
-        throw new Error(msg);
+        throw new ApiFehler(msg, res.status);
       }
 
       const reader = res.body.getReader();
@@ -656,7 +658,7 @@ export function Chat({ activeMemories, onSaveToBrain, onSaveToBrainWithMeta, isF
           }
           if (json.error || json.grund) {
             // Aufgabe #92 (24.10.): die Kennung der Tuer wird uebersetzt - nie der Ausnahmename.
-            throw new Error(grundText(json.grund) || String(json.error || ""));
+            throw new ApiFehler(grundText(json.grund) || tuerSatz(json.error, "The answer stopped partway."));
           }
           if (json.shield) {
             const shield = json.shield;
@@ -682,7 +684,7 @@ export function Chat({ activeMemories, onSaveToBrain, onSaveToBrainWithMeta, isF
       // finalisieren – falls gar kein Text kam
       if (!accText) {
         setMessages((prev) => prev.filter((m) => m.id !== assistantId));
-        throw new Error("No answer received (empty stream).");
+        throw new ApiFehler("No answer received (empty stream).");
       } else {
         const finalOut = estimateTokens(accText);
         const finalCost = formatCost(placeholder.inputTokens || 0, finalOut, provLive.id);
@@ -702,14 +704,14 @@ export function Chat({ activeMemories, onSaveToBrain, onSaveToBrainWithMeta, isF
         setError(null);
       } else {
         // Stream-Fehler – platziere Fehler und entferne leeren placeholder ggf.
-        const msg = err instanceof Error ? err.message : String(err);
+        const msg = absage("The answer stopped partway. What you can already see stays — nothing was saved from it.", err);
         if (!accText) {
           setMessages((prev) => prev.filter((m) => m.id !== assistantId));
         } else {
           // behalte partiellen Text + Fehlerhinweis
           setMessages((prev) => prev.map((m) => (m.id === assistantId ? { ...m, content: accText } : m)));
         }
-        setError(msg || "Unknown error while streaming");
+        setError(msg);
       }
     } finally {
       setIsStreaming(false);
@@ -773,9 +775,9 @@ export function Chat({ activeMemories, onSaveToBrain, onSaveToBrainWithMeta, isF
             const aborted = e instanceof DOMException && e.name === 'AbortError';
             const grund = aborted
               ? `The model took longer than ${Math.round(AUTO_LEARN_TIMEOUT_MS / 1000)} s — pick a smaller extraction model in Settings`
-              : e instanceof Error ? e.message : 'unknown error';
+              : absage("Auto-learn did not run this time. Your question and its answer are still here.", e);
             console.warn('[auto-learn] skipped:', e);
-            toast.push({ message: `Auto-learn skipped: ${grund}`, kind: 'warn', duration: 6000 });
+            toast.push({ message: grund, kind: 'warn', duration: 6000 });
           } finally {
             clearTimeout(timer);
           }

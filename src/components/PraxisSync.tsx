@@ -1,3 +1,5 @@
+import { absage } from '../lib/absage';
+import { ApiFehler, tuerSatz } from '../lib/api';
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { Download, Upload, ShieldCheck, ShieldAlert, KeyRound, AlertTriangle, Loader2, FileJson } from '../lib/icons';
 
@@ -65,7 +67,7 @@ export default function PraxisSync() {
         body: JSON.stringify({ passphrase, scope }),
       });
       const d = await r.json();
-      if (!r.ok) throw new Error(d?.error || 'Export failed');
+      if (!r.ok) throw new ApiFehler(tuerSatz(d?.error, 'The bundle did not arrive from your own machine.'), r.status);
 
       const blob = new Blob([JSON.stringify(d.bundle, null, 2)], { type: 'application/json' });
       const url = URL.createObjectURL(blob);
@@ -80,7 +82,7 @@ export default function PraxisSync() {
       setMeldung({ art: 'ok', text: `${d.bundle.count} notes encrypted and downloaded.` });
       void journalLaden();
     } catch (e) {
-      setMeldung({ art: 'fehler', text: e instanceof Error ? e.message : 'Export failed' });
+      setMeldung({ art: 'fehler', text: absage("The bundle was not downloaded. Nothing left this computer.", e) });
     } finally {
       setLaeuft(null);
     }
@@ -95,7 +97,8 @@ export default function PraxisSync() {
       try {
         bundle = JSON.parse(text);
       } catch {
-        throw new Error('That file is not valid JSON — is it really a Device Sync bundle?');
+        setMeldung({ art: 'fehler', text: 'That file is not valid JSON — is it really a Device Sync bundle?' });
+        return;
       }
       const r = await fetch('/api/sync/import', {
         method: 'POST',
@@ -103,11 +106,11 @@ export default function PraxisSync() {
         body: JSON.stringify({ bundle, passphrase }),
       });
       const d = await r.json();
-      if (!r.ok) throw new Error(d?.error || 'Import failed');
+      if (!r.ok) throw new ApiFehler(tuerSatz(d?.error, 'The store refused this bundle.'), r.status);
       setMeldung({ art: 'ok', text: `${d.imported} imported, ${d.skipped} already there.` });
       void journalLaden();
     } catch (e) {
-      setMeldung({ art: 'fehler', text: e instanceof Error ? e.message : 'Import failed' });
+      setMeldung({ art: 'fehler', text: absage("The bundle was not imported. Your notes were not changed.", e) });
     } finally {
       setLaeuft(null);
       if (dateiFeld.current) dateiFeld.current.value = '';

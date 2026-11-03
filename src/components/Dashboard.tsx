@@ -1,3 +1,5 @@
+import { ApiFehler, tuerSatz } from '../lib/api';
+import { absage } from '../lib/absage';
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import './huelle.css';
 import { Sidebar } from './Sidebar';
@@ -421,7 +423,7 @@ export function Dashboard() {
         const status = (res as { status?: number }).status ?? 200;
         // Defensiv gelesen wie in `store.ts`: eine Mock-Antwort ohne Status gilt als 200, eine ab 400
         // wirft — und ihr Grund malt die Zeile, statt im Fang zu verschwinden.
-        if (status >= 400) throw new Error(`the local server answered HTTP ${status}`);
+        if (status >= 400) throw new ApiFehler(`the local server answered HTTP ${status}`, status);
         const data = await res.json();
         // API liefert ein nacktes Array — defensiv auch {memories:[]} akzeptieren
         const list = Array.isArray(data) ? data : Array.isArray(data?.memories) ? data.memories : [];
@@ -434,7 +436,7 @@ export function Dashboard() {
         if (cancelled) return;
         setTrashedMemories([]);
         setPapierkorbKappe(null);
-        setPapierkorbGrund(err instanceof Error ? err.message : String(err));
+        setPapierkorbGrund(absage("The deleted list did not arrive.", err));
       }
     })();
     return () => { cancelled = true; };
@@ -453,7 +455,7 @@ export function Dashboard() {
     let abgebrochen = false;
     refreshMemories()
       .then(() => { if (!abgebrochen) setLadFehler(null); })
-      .catch((e: unknown) => { if (!abgebrochen) setLadFehler(e instanceof Error ? e.message : String(e)); })
+      .catch((e: unknown) => { if (!abgebrochen) setLadFehler(absage("Your notes did not load. Nothing was changed.", e)); })
       .finally(() => { if (!abgebrochen) setInitialLoaded(true); });
     return () => { abgebrochen = true; };
   }, [ladVersuch]);
@@ -1244,7 +1246,7 @@ export function Dashboard() {
         body: JSON.stringify({ url }),
       });
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error || "Clip failed");
+      if (!res.ok) throw new ApiFehler(tuerSatz(data.error, "The page could not be read."), res.status);
       const title: string = data.title || new URL(url).hostname;
       const content: string = data.content || "";
       const tags = ["clip", new URL(url).hostname.replace(/^www\./, "")];
@@ -1254,7 +1256,7 @@ export function Dashboard() {
       setClipUrl("");
       setTimeout(() => setClipOk((c) => (c === marke ? null : c)), QUITTUNG_MS);
     } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : String(err);
+      const msg = absage("That link was not saved as a note.", err);
       setClipErr(msg);
       setTimeout(() => setClipErr((c) => (c === msg ? null : c)), QUITTUNG_MS);
     } finally {

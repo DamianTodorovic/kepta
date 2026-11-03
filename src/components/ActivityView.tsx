@@ -1,8 +1,10 @@
 // AI activity: which apps use your memory and what they do — live — and the
 // audit log, the sealed record of every access, for you and for an auditor.
+import { ApiFehler, tuerSatz } from '../lib/api';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { formatDistanceToNow } from 'date-fns';
 import { Bot, ShieldCheck, Download, Loader2, CheckCircle2, AlertTriangle } from '../lib/icons';
+import { absage } from '../lib/absage';
 import { ConnectApps } from './ConnectApps';
 
 interface Eintrag { id: number; at: number; who: string; tool: string; text: string | null; noteId: string | null; count: number | null }
@@ -163,7 +165,7 @@ function Protokoll() {
       fetch(`/api/audit?${filter()}`)
         .then(async (r) => {
           const d = await r.json();
-          if (!r.ok) throw new Error(d.error ?? `HTTP ${r.status}`);
+          if (!r.ok) throw new ApiFehler(tuerSatz(d.error, `HTTP ${r.status}`), r.status);
           if (nr !== zaehler.current) return;
           setEintraege(d.entries ?? []);
           setMehr(!!d.more);
@@ -171,7 +173,7 @@ function Protokoll() {
           setActions(d.actions ?? []);
           setFehler(null);
         })
-        .catch((e: unknown) => setFehler(e instanceof Error ? e.message : String(e)));
+        .catch((e: unknown) => setFehler(absage("The activity list did not arrive.", e)));
     }, 250);
     return () => clearTimeout(t);
   }, [filter]);
@@ -221,7 +223,7 @@ function Protokoll() {
       document.body.removeChild(a);
       URL.revokeObjectURL(url);
     } catch (e) {
-      setFehler(`The export failed: ${e instanceof Error ? e.message : String(e)}`);
+      setFehler(absage("The export did not run. Your notes were not changed — the reason is in the developer console.", e));
     }
   };
 

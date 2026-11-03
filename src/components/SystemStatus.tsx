@@ -1,4 +1,6 @@
 // System-Status — die App legt offen, was funktioniert und was fehlt (statt „funktioniert nicht"-Rätsel).
+import { absage } from '../lib/absage';
+import { tuerSatz } from '../lib/api';
 import { useEffect, useState } from 'react';
 import { CheckCircle2, XCircle, Copy, Check, Send, Loader2, ShieldCheck } from "../lib/icons";
 import { APP_VERSION } from '../core/version';
@@ -170,9 +172,9 @@ export function SystemStatus() {
         body: JSON.stringify({ providerId: s.providerId, protocol: prov.protocol, baseUrl: s.baseUrl || prov.baseUrl, apiKey: s.apiKey, model: s.model, messages: [{ role: 'user', content: 'Reply only: OK' }] }),
       });
       const data = await res.json();
-      setTestResult(res.ok ? { ok: true, msg: `Model answers: “${String(data.text ?? '').trim().slice(0, 40)}”` } : { ok: false, msg: String(data.error ?? `HTTP ${res.status}`) });
+      setTestResult(res.ok ? { ok: true, msg: `Model answers: “${String(data.text ?? '').trim().slice(0, 40)}”` } : { ok: false, msg: tuerSatz(data.error, `HTTP ${res.status}`) });
     } catch (e) {
-      setTestResult({ ok: false, msg: e instanceof Error ? e.message : 'Connection error' });
+      setTestResult({ ok: false, msg: absage("No answer from that service. The reason is in the developer console.", e) });
     } finally {
       setTesting(false);
     }

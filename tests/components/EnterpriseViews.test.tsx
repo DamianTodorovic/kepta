@@ -116,7 +116,7 @@ describe("Today", () => {
     mitToast(<TodayView aktiv onOpenMemory={vi.fn()} onGo={vi.fn()} />);
     await screen.findByText("Needs a look");
     await user.click(screen.getAllByRole("button", { name: "Keep the older" })[0]!);
-    await screen.findByText("That did not work: Pick the two notes that disagree.");
+    await screen.findByText("That decision was not recorded. The pair is still here. (Pick the two notes that disagree.)");
     expect(JSON.parse(String(aufrufe.find((a) => a.url === "/api/contradictions/resolve")!.init!.body))).toEqual({ keep: "a", drop: "b", both: false });
   });
 
@@ -163,7 +163,7 @@ describe("Today", () => {
     });
     const gehe = vi.fn();
     mitToast(<TodayView aktiv onOpenMemory={vi.fn()} onGo={gehe} />);
-    await screen.findByText(/Today could not be loaded — DB locked/);
+    await screen.findByText(/Today's briefing did not arrive\. \(DB locked\)/);
     await user.click(screen.getByRole("button", { name: /Try again/ }));
     await screen.findByText("Nothing new since your last visit.");
     expect(screen.getByText("All quiet. Nothing needs you right now.")).toBeTruthy();
@@ -226,7 +226,7 @@ describe("Dossier", () => {
     mitToast(<DossierView onOpenMemory={vi.fn()} />);
     await user.type(screen.getByRole("textbox", { name: /Who or what/ }), "Zebra");
     await user.click(screen.getByRole("button", { name: /Create dossier/ }));
-    await screen.findByText("Tell K3PTA who or what the dossier is about.");
+    await screen.findByText("The dossier did not arrive. (Tell K3PTA who or what the dossier is about.)");
   });
 
   it("löst Widersprüche im Fluss: neuerer gilt, beide gültig mit Fenster, oder der Editor", async () => {
@@ -295,7 +295,7 @@ describe("Dossier", () => {
     await user.click(await screen.findByRole("button", { name: "Atlas" }));
     const karte = await screen.findByTestId("dossier-contradiction");
     await user.click(within(karte).getByRole("button", { name: "Newer wins" }));
-    await within(karte).findByText("That did not work: Pick the two notes that disagree.");
+    await within(karte).findByText("That decision was not recorded. The pair is still here. (Pick the two notes that disagree.)");
   });
 
   it("ohne ids (alter Server-Stand) bleibt die ehrliche Textzeile ohne Aktionen — Edit öffnet den Editor für die neuere", async () => {
@@ -501,7 +501,7 @@ describe("Privatsphäre-Schild", () => {
     const schalter = await screen.findByRole("switch", { name: "Hide secrets from AI apps" });
     expect(screen.getByText("No private notes yet.")).toBeTruthy();
     await user.click(schalter);
-    await screen.findByText("The switch could not be saved: disk full");
+    await screen.findByText("The switch did not stay — it is back where it was. (disk full)");
     expect(schalter.getAttribute("aria-checked")).toBe("true");
   });
 });

@@ -134,10 +134,17 @@ describe("Chat: wenn etwas schiefgeht", () => {
 
   it("bleibt bedienbar, wenn die Verbindung ganz wegbricht", async () => {
     const user = userEvent.setup();
-    vi.stubGlobal("fetch", vi.fn(async () => { throw new Error("Netz weg"); }));
+    // Der Grund traegt, was ein Nutzer nicht lesen soll: einen Pfad auf seinem Rechner.
+    const grund = "Netz weg — /Users/a/.kepta/kepta.db";
+    vi.stubGlobal("fetch", vi.fn(async () => { throw new Error(grund); }));
+    const protokolliert = vi.spyOn(console, "error").mockImplementation(() => {});
     const { container } = zeige();
     await frage(user, "Hallo");
-    await waitFor(() => expect(container.textContent).toMatch(/Netz weg/));
+    await waitFor(() => expect(container.textContent).toMatch(/The answer stopped partway/));
+    expect(container.textContent).not.toMatch(/Netz weg/);
+    expect(container.textContent).not.toContain("/Users/a/.kepta/kepta.db");
+    expect(protokolliert).toHaveBeenCalledWith(expect.stringContaining("The answer stopped partway"), expect.any(Error));
+    protokolliert.mockRestore();
     expect(screen.getByRole("textbox")).toBeTruthy();
   });
 });

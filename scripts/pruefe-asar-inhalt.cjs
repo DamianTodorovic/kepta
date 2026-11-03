@@ -799,16 +799,41 @@ const erwartet = [
   // Punkt 4, 3.11. abend (3.2.130, Aufgabe #47): ein Import-Fehler druckte den
   // Ausnahmewortlaut auf den Knopf, im Testlauf samt Pfad. Nach aussen geht jetzt ein
   // fester Satz. Gegen das installierte 3.2.129 gezaehlt (app.asar 49 184 866 B,
-  // LC_ALL=C grep -aFo | wc -l, 19:36): **0** mal. Die andern Seite des Beweises ist das
-  // Bild aus scripts/pfade-im-fenster.mjs: dort stand der Wortlaut sichtbar auf der Flaeche.
+  // bytes.count() ueber den ganzen Koerper, 2026-11-03 17:56 MEZ, Beleg
+  // `belege-0311/landung-130/marker-paar-am-objekt.txt` in der Mappe): **0** mal. Die
+  // andre Seite des Beweises ist das Bild aus scripts/pfade-im-fenster.mjs: dort stand der
+  // Wortlaut sichtbar auf der Flaeche.
   ["Import did not run", 1],
+  // P47/#47, 3.11. 18:30 (3.2.131): die Klasse, nicht der Einzelfall. 25 Stellen gaben
+  // einer Ausnahme ihren Wortlaut direkt an die Flaeche; seit dieser Landung laeuft jede
+  // ueber absage(satz, e) aus src/lib/absage.ts. Gezaehlt gegen das installierte 3.2.130
+  // (app.asar 49 184 982 B, bytes.count(), 2026-11-03 18:22 MEZ): alle sechs **0** mal.
+  ["That decision was not recorded", 1],
+  ["The recovery key could not be shown", 1],
+  ["The switch did not stay", 1],
+  ["The activity list did not arrive", 1],
+  ["The answer stopped partway", 1],
+  ["No answer from that service", 1],
+];
+
+// Was NICHT mehr drin sein darf. Bisher war "der alte Wortlaut ist weg" eine Behauptung im
+// Kommentar ueber dem neuen Marker und keine Pruefung — diese Liste macht sie maschinell.
+// Aufgenommen ist nur, was eine bewusste Landung ersetzt hat, mit ihrem Schnitt dahinter.
+const verboten = [
+  // bis 3.2.130 Prafix an drei Flaechen (TodayView, DossierView, und der Wortlaut des
+  // Schalter-Fangs); P47/#47 nennt jetzt an jeder Stelle, WAS nicht geschah. Am
+  // installierten 3.2.130 gezaehlt 2026-11-03 18:22 MEZ: "That did not work" 2 mal,
+  // "The switch could not be saved" 1 mal, "Today could not be loaded" 1 mal.
+  "That did not work",
+  "The switch could not be saved",
+  "Today could not be loaded",
 ];
 // Die Liste darf nur ASCII-Zeichen enthalten. Grund, gemessen 21.10. 19:16 MESZ am
 // installierten Objekt: das Wort "Looking" plus echtes U+2026 steht dort 2 mal, diese
 // Sonde zaehlt davon **0**, weil latin1 das Zeichen in zwei Byte-Fetzen zerlegt und das
 // Muster dann sein eignes Ziel nicht mehr trifft. Ein Nicht-ASCII-Marker ist hier keine
 // Pruefung, sondern ein Dauer-Null — also abbrechen, statt zu schlagen.
-const nichtAscii = erwartet.filter(([m]) => /[^\x20-\x7E]/.test(m)).map(([m]) => m);
+const nichtAscii = [...erwartet.map(([m]) => m), ...verboten].filter((m) => /[^\x20-\x7E]/.test(m));
 if (nichtAscii.length) {
   console.log("  NICHT FAHRBAR: Marker mit Nicht-ASCII-Zeichen in der Liste -- " + nichtAscii.join(" | "));
   console.log("  (latin1-Lesung zerlegt sie in Bytes, ihre Zaehlung waere immer 0)");
@@ -820,6 +845,12 @@ for (const [m, min] of erwartet) {
   const ok = n >= min;
   if (!ok) fehl++;
   console.log(`  ${ok ? "ok  " : "FEHLT"}  ${String(n).padStart(3)}  ${m}${ok ? "" : `  (erwartet >= ${min})`}`);
+}
+for (const m of verboten) {
+  const n = s.split(m).length - 1;
+  const ok = n === 0;
+  if (!ok) fehl++;
+  console.log(`  ${ok ? "ok  " : "ZU VIEL"}  ${String(n).padStart(3)}  ${m}${ok ? "  (verboten)" : "  (verboten — ein frueherer Wortlaut ist zurueckgekehrt)"}`);
 }
 console.log(`  asar ${fs.statSync(p).size} B, mtime ${fs.statSync(p).mtime.toISOString()}${version ? `, bestellte Version ${version}` : ""}`);
 if (fehl) { console.log(`  ${fehl} Pruefung(en) fehlgeschlagen`); process.exit(1); }

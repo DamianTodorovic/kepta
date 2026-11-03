@@ -1,5 +1,7 @@
 // A dossier: everything K3PTA knows about one person, project or topic — on
 // one page, ready to copy into a document or keep as a note.
+import { absage } from '../lib/absage';
+import { ApiFehler, tuerSatz } from '../lib/api';
 import { FormEvent, useEffect, useRef, useState } from 'react';
 import { FileText, Copy, Check, Save, Loader2, AlertTriangle } from '../lib/icons';
 import { useToast } from './ui/Toast';
@@ -92,7 +94,7 @@ export function DossierView({ onOpenMemory, onEditMemory, dossierThema }: { onOp
         body: JSON.stringify(body),
       });
       const d = await r.json().catch(() => ({}));
-      if (!r.ok) throw new Error((d as { error?: string }).error ?? `HTTP ${r.status}`);
+      if (!r.ok) throw new ApiFehler(tuerSatz((d as { error?: string }).error, `HTTP ${r.status}`), r.status);
       setEntschieden((p) => ({
         ...p,
         [w.key]: aktion === 'newer'
@@ -100,7 +102,7 @@ export function DossierView({ onOpenMemory, onEditMemory, dossierThema }: { onOp
           : `Both hold — “${w.older.title}” now ends where “${w.newer.title}” begins.`,
       }));
     } catch (e) {
-      setEntschieden((p) => ({ ...p, [w.key]: `That did not work: ${e instanceof Error ? e.message : String(e)}` }));
+      setEntschieden((p) => ({ ...p, [w.key]: absage("That decision was not recorded. The pair is still here.", e) }));
     }
   };
 
@@ -128,10 +130,10 @@ export function DossierView({ onOpenMemory, onEditMemory, dossierThema }: { onOp
     try {
       const r = await fetch(`/api/dossier?topic=${encodeURIComponent(t)}`);
       const d = await r.json();
-      if (!r.ok) throw new Error(d.error ?? `HTTP ${r.status}`);
+      if (!r.ok) throw new ApiFehler(tuerSatz(d.error, `HTTP ${r.status}`), r.status);
       setDaten(inForm(d, LEERES_DOSSIER));
     } catch (e) {
-      setFehler(e instanceof Error ? e.message : String(e));
+      setFehler(absage("The dossier did not arrive.", e));
     } finally {
       setLaedt(false);
     }
@@ -168,7 +170,7 @@ export function DossierView({ onOpenMemory, onEditMemory, dossierThema }: { onOp
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ title: `Dossier: ${daten.topic}`, content: daten.markdown, type: 'reference', tags: ['dossier'] }),
       });
-      if (!r.ok) throw new Error(`HTTP ${r.status}`);
+      if (!r.ok) throw new ApiFehler(`HTTP ${r.status}`, r.status);
       setGespeichert(true);
       toast.push({ message: `Saved as the note “Dossier: ${daten.topic}”.`, kind: 'info' });
     } catch {

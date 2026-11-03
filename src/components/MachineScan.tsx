@@ -1,3 +1,5 @@
+import { absage } from "../lib/absage";
+import { ApiFehler, tuerSatz } from "../lib/api";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { motion } from "motion/react";
 import { X, ShieldCheck, ShieldAlert, Loader2, FolderOpen, CheckCircle2, AlertTriangle, Bot } from "../lib/icons";
@@ -216,10 +218,10 @@ export function MachineScan({ open, onClose, onImported, autoPreview = false }: 
     setFehler(null);
     try {
       const r = await fetch("/api/scan/preview", { method: "POST", headers: { "Content-Type": "application/json" }, body: "{}" });
-      if (!r.ok) throw new Error((await r.json().catch(() => ({}))).error ?? "Preview failed");
+      if (!r.ok) throw new ApiFehler(tuerSatz((await r.json().catch(() => ({}))).error, "Preview failed"), r.status);
       setVorschau(inForm(await r.json(), LEERE_VORSCHAU));
     } catch (e) {
-      setFehler(e instanceof Error ? e.message : "Preview failed");
+      setFehler(absage("The preview did not arrive. Nothing was copied.", e));
     } finally {
       setLaeuftVorschau(false);
     }
@@ -268,11 +270,11 @@ export function MachineScan({ open, onClose, onImported, autoPreview = false }: 
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ confirmed: true, roots: vorschau?.roots }),
       });
-      if (!r.ok) throw new Error((await r.json().catch(() => ({}))).error ?? "Could not start");
+      if (!r.ok) throw new ApiFehler(tuerSatz((await r.json().catch(() => ({}))).error, "Could not start"), r.status);
       gemeldet.current = false;
       setStatus({ running: true, phase: "import", seen: 0, found: vorschau?.found ?? 0, imported: 0, skippedFolders: 0, truncated: false, error: null });
     } catch (e) {
-      setFehler(e instanceof Error ? e.message : "Could not start");
+      setFehler(absage("The scan could not start. Nothing was copied yet.", e));
     }
   }, [vorschau]);
 

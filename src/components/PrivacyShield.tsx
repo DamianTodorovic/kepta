@@ -1,6 +1,8 @@
 // The privacy shield, in plain words: two switches, what they do, and a live
 // preview of what a cloud model would see. The preview runs the same code as
 // the server (src/lib/schild.ts) — right here in the window, nothing is sent.
+import { absage } from '../lib/absage';
+import { ApiFehler, tuerSatz } from '../lib/api';
 import { useEffect, useMemo, useState } from 'react';
 import { ShieldCheck, Lock } from '../lib/icons';
 import { Schild, beschreibe } from '../lib/schild';
@@ -40,7 +42,7 @@ export function PrivacyShield() {
     fetch('/api/shield')
       .then(async (r) => {
         const d = await r.json() as Partial<Stand> & { error?: string };
-        if (!r.ok) throw new Error(d.error ?? `HTTP ${r.status}`);
+        if (!r.ok) throw new ApiFehler(tuerSatz(d.error, `HTTP ${r.status}`), r.status);
         // Read field by field — an older server or an empty answer must not break the page.
         if (!vorbei) {
           setStand({
@@ -51,7 +53,7 @@ export function PrivacyShield() {
           });
         }
       })
-      .catch((e: unknown) => { if (!vorbei) setFehler(e instanceof Error ? e.message : String(e)); });
+      .catch((e: unknown) => { if (!vorbei) setFehler(absage("The privacy tally did not arrive. Nothing was switched.", e)); });
     return () => { vorbei = true; };
   }, []);
 
@@ -60,11 +62,11 @@ export function PrivacyShield() {
     try {
       const r = await fetch('/api/shield', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ [feld]: wert }) });
       const d = await r.json();
-      if (!r.ok) throw new Error(d.error ?? `HTTP ${r.status}`);
+      if (!r.ok) throw new ApiFehler(tuerSatz(d.error, `HTTP ${r.status}`), r.status);
       setStand((s) => (s ? { ...s, chat: d.chat, apps: d.apps } : s));
     } catch (e) {
       setStand((s) => (s ? { ...s, [feld]: !wert } : s));
-      setFehler(`The switch could not be saved: ${e instanceof Error ? e.message : String(e)}`);
+      setFehler(absage("The switch did not stay — it is back where it was.", e));
     }
   };
 
