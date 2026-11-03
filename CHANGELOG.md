@@ -1,3 +1,28 @@
+## [3.2.138]
+
+### Fixed
+
+- **Two key probes say when they could not look.** The app keeps its AI key sealed in an
+  envelope, and on start two questions come up: can this envelope be opened with this
+  installation's key, and does the door already hold a sealed copy (which decides whether the
+  working copy may leave the surface storage)? Both answered "no" in three different
+  situations, and only one of them is a fact about the person's data:
+  - envelope: the stored value carries no envelope marker, this installation has no sealing
+    key, the key did not fit the envelope (AES-GCM refuses)
+  - sealing probe: the door refused (with its number), the door was unreachable
+  Behaviour is unchanged and stays on the safe side — the app falls back to its defaults, and
+  a plaintext key is never taken out of the session when the question could not be asked.
+  What is new is the reason in the developer console, so "no key" and "could not check" are no
+  longer the same sentence. Fifth site group in the #31 census, same class as the chat header
+  (#43), the old-key probe (3.2.135), the restore path (3.2.136) and the list refusal (3.2.137).
+  Seven cases new in two files: `tests/lib/umschlag-nennt-seinen-grund.test.ts` (a genuinely
+  sealed foreign envelope, a value without the envelope marker, and two controls — nothing
+  stored, and the local marker — both silent) and
+  `tests/lib/versiegelung-sonde-nennt-ihren-ausfall.test.ts` (refused door with its number,
+  unreachable door, and the control — a clean answer that found nothing stays silent).
+  Red before the fix: the four failure cases wrote nothing to the console; the three controls
+  were already green.
+
 ## [3.2.137]
 
 ### Fixed

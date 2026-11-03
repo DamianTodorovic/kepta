@@ -737,6 +737,11 @@ const erwartet = [
   ["mirrored AI settings could not be read", 1],
   ["settings door refused", 1],
   ["own AI settings could not be restored", 1],
+  // #31, fuenfter Griff (3.2.138): der Umschlag und die Versiegelungs-Sonde. Beide sagten
+  // "keinen Schluessel", wenn sie nicht fragen oder nicht aufmachen konnten. Gezaehlt gegen
+  // das installierte 3.2.137 (app.asar 49 193 142 B, bytes.count()): beide **0** mal.
+  ["stored key could not be opened", 1],
+  ["sealing check did not answer", 1],
   // Punkt 1/4/7, 2.11. (3.2.121, zwei Quellen, die ohne Wort wechselten): gegen das
   // installierte 3.2.120 gezaehlt je **0** (gemessen 02.11. 16:30:05). Beide Saetze sind
   // zustandsgesteuert — die antwortende Kapsel malt sie nie —, darum ist der Marker hier

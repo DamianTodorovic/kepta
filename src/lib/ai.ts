@@ -312,15 +312,33 @@ async function versiegle(klartext: string): Promise<string | null> {
   return UMSCHLAG_KENNUNG + bytesZuBase64(paket);
 }
 
+/**
+ * #31: ein Umschlag, der nicht aufgeht, ist kein leerer Speicher. Die Auskunft bleibt leer
+ * (die App faellt auf die Defaults), aber welcher der drei Gruende es war, geht ins
+ * Protokoll - sonst steht danach "keine Verbindung" ueber jemanden, der eine hat.
+ */
+function meldetUmschlagAusfall(grund: string, ...bei: unknown[]): void {
+  console.warn(`kepta: stored key could not be opened (${grund})`, ...bei);
+}
+
 /** Macht einen Umschlag auf. Anderer Datenbankschluessel → leer, nie ein Absturz. */
 async function oeffne(wert: string): Promise<string> {
   if (!wert) return '';
   if (wert === LOKALER_WERT) return LOKALER_WERT;
-  if (!wert.startsWith(UMSCHLAG_KENNUNG)) return '';
+  if (!wert.startsWith(UMSCHLAG_KENNUNG)) {
+    meldetUmschlagAusfall('the stored value carries no envelope marker');
+    return '';
+  }
   const h = await huelle();
-  if (!h) return '';
+  if (!h) {
+    meldetUmschlagAusfall('this installation has no sealing key');
+    return '';
+  }
   const paket = base64ZuBytes(wert.slice(UMSCHLAG_KENNUNG.length));
-  if (paket.length <= 12) return '';
+  if (paket.length <= 12) {
+    meldetUmschlagAusfall('the envelope is shorter than its own start vector');
+    return '';
+  }
   try {
     const klar = await crypto.subtle.decrypt(
       { name: 'AES-GCM', iv: paket.slice(0, 12) },
@@ -328,7 +346,8 @@ async function oeffne(wert: string): Promise<string> {
       paket.slice(12),
     );
     return new TextDecoder().decode(klar);
-  } catch {
+  } catch (e) {
+    meldetUmschlagAusfall('the sealing key did not fit this envelope', e);
     return '';
   }
 }
@@ -498,14 +517,21 @@ async function spiegle(s: AISettings): Promise<boolean> {
 async function versiegeltVorhanden(): Promise<boolean> {
   try {
     const r = await fetch('/api/settings');
-    if (!r.ok) return false;
+    if (!r.ok) {
+      // #31: "nicht versiegelt" und "ich konnte die Tuer nicht fragen" sind zwei Antworten.
+      // Die Richtung bleibt die sichere - der Klartext wird nicht fortgenommen, niemand
+      // wird ausgesperrt -, aber der Ausfall steht jetzt im Protokoll.
+      console.warn(`kepta: sealing check did not answer (HTTP ${r.status})`);
+      return false;
+    }
     const d = (await r.json()) as Record<string, unknown>;
     const roh = d[SPIEGEL_NAME];
     if (typeof roh !== 'string' || !roh) return false;
     const gespiegelt = JSON.parse(roh) as GespiegelteVerbindung;
     const umschlag = gespiegelt?.schluessel ?? '';
     return umschlag === LOKALER_WERT || umschlag.startsWith(UMSCHLAG_KENNUNG);
-  } catch {
+  } catch (e) {
+    console.warn('kepta: sealing check did not answer', e);
     return false;
   }
 }
