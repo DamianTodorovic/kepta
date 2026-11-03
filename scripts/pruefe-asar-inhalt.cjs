@@ -714,6 +714,12 @@ const erwartet = [
   // schon 4 mal im Koerper, weil der Kandidaten-Vorrat sie seit #104 ebenso zaehlt — ein Marker
   // mit vorher 4 waere keine Pruefung, sondern eine Dekoration.
   ["embed_generation", 1],
+  // #31 Fehler-Feger, 3.11. spaet (3.2.133): ein Profil, das nicht in die Anfrage kam, war
+  // bis hierhin spurlos — `catch {}` ohne Wort. Gezaehlt gegen das installierte 3.2.132
+  // (app.asar 49 192 281 B, bytes.count()): **0** mal. Die dazugehoerige Zwischenablage-
+  // Meldung in der Vorschau braucht keine eigene Marke: ihr Wortlaut ist seit 3.2.129 im
+  // Koerper (chat) und wird dort schon gehalten.
+  ["user profile did not reach the prompt", 1],
   // Punkt 1/4/7, 2.11. (3.2.121, zwei Quellen, die ohne Wort wechselten): gegen das
   // installierte 3.2.120 gezaehlt je **0** (gemessen 02.11. 16:30:05). Beide Saetze sind
   // zustandsgesteuert — die antwortende Kapsel malt sie nie —, darum ist der Marker hier

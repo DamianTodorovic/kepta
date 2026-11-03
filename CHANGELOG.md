@@ -1,3 +1,18 @@
+## [3.2.133]
+
+### Fixed
+
+- **The note preview no longer swallows a refused copy.** "Copy text" in a note's preview
+  asked the clipboard and, when the window refused, did nothing at all: no mark, no message,
+  no way to tell "copied" from "not copied". The case in
+  `tests/components/MemoryPreview.test.tsx` asked for exactly that silence ("bleibt ruhig")
+  and only checked that the button was still on screen — so it could not lose. It now asks for
+  the same sentence the chat has used since 3.2.129 ("Copying failed — the window did not get
+  the clipboard.") and forbids the success mark in the same breath.
+- **A profile that did not reach the prompt says so.** Building the profile line for a chat
+  request ran inside `catch {}`; when it failed, answers quietly stopped using your profile and
+  nothing recorded why. The reason now goes to the developer console (Punkt 4, Fehler-Feger #31).
+
 ## [3.2.132]
 
 ### Performance

@@ -134,7 +134,11 @@ export function MemoryPreview({ memory, onClose, onEdit }: MemoryPreviewProps) {
       if (kopierTimer.current) clearTimeout(kopierTimer.current);
       setKopiert(true);
       kopierTimer.current = setTimeout(() => { setKopiert(false); kopierTimer.current = null; }, QUITTUNG_MS);
-    } catch { /* Clipboard verweigert — still halten */ }
+    } catch {
+      // Dieselbe Kante wie der Chat in 3.2.129: eine verweigerte Zwischenablage ist ein
+      // Ereignis, das der Nutzer sieht. "bleibt ruhig" war der Defekt, nicht der Entwurf.
+      toast.push({ message: "Copying failed — the window did not get the clipboard.", kind: "warn" });
+    }
   };
 
   const quelleOeffnen = async () => {

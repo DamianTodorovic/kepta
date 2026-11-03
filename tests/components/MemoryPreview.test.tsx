@@ -89,13 +89,19 @@ describe("MemoryPreview: Komfort", () => {
 });
 
 describe("MemoryPreview: Copy-Fehlschlag", () => {
-  it("bleibt ruhig, wenn die Zwischenablage verweigert", async () => {
+  it("sagt es, wenn die Zwischenablage verweigert — Stillheit war der Defekt", async () => {
     Object.defineProperty(navigator, "clipboard", {
       value: { writeText: async () => { throw new Error("verweigert"); } },
       configurable: true,
     });
     render(<MemoryPreview memory={mem()} onClose={() => {}} onEdit={() => {}} />);
     await userEvent.click(screen.getByRole("button", { name: /Copy text/i }));
-    await waitFor(() => expect(screen.getByText(/Copy text/i)).toBeInTheDocument());
+    // Bis 3.2.132 stand hier "bleibt ruhig" und der Fall prüfte nur, dass der Knopf noch da
+    // ist — eine Verweigerung ohne Meldung. Derselbe Defekt, den der Chat in 3.2.129
+    // bekommen hat: das Fenster hat etwas nicht getan und sagt nichts davon. Der Weg ist der
+    // Hinweis, denselben wie die Datei-Öffnungs-Absage weiter oben in dieser Datei.
+    await waitFor(() => expect(toastPush).toHaveBeenCalledOnce());
+    expect(String(toastPush.mock.calls[0][0].message)).toMatch(/the window did not get the clipboard/i);
+    expect(screen.queryByText("Copied")).toBeNull();
   });
 });

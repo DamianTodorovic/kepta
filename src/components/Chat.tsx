@@ -486,7 +486,12 @@ export function Chat({ activeMemories, onSaveToBrain, onSaveToBrainWithMeta, isF
         const note = p.customNote ? `Note: ${p.customNote}. ` : "";
         if (name || cases || goal || note) profileLine = `[User profile] ${name}${cases}${goal}${note}Passe Antwort-Stil und Beispiele daran an.\n\n`;
       }
-    } catch {}
+    } catch (e) {
+      // Die Profilzeile ist Zusatz, kein Grund eine Antwort abzubrechen — aber ihr Fehlen
+      // muss auffindbar sein: ohne diese Zeile lief der Fall "Antwort ignoriert mein Profil"
+      // spurlos durch (Punkt 4, Fehler-Feger #31).
+      console.warn("kepta: user profile did not reach the prompt", e);
+    }
     let prompt = profileLine + "You are the AI assistant. You have access to the user's personal knowledge base. Answer precisely and helpfully, based on the context below. Cite the id of every note you use where you can.\n\n";
     // Date-aware prompting (arXiv:2605.08538): Zeitanker reduzieren Temporal-Fehler deutlich
     prompt += `[Today: ${new Date().toLocaleDateString('en-GB', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}]\n\n`;
