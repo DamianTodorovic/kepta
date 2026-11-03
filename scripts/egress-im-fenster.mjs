@@ -33,8 +33,14 @@ const BRADE = "/Applications/Brave Browser.app/Contents/MacOS/Brave Browser";
 const PORT = Number(process.env.KEPTA_EGRESS_PORT || 3722);
 const CDP_PORT = 3733;
 const STUB_PORT = 3744;
-const BASIS = `http://127.0.0.1:${PORT}`;
+const ARG = (name, fallback) => {
+  const i = process.argv.indexOf(`--${name}`);
+  return i >= 0 && process.argv[i + 1] ? process.argv[i + 1] : fallback;
+};
+const BASIS_FREMDE = String(ARG("basis", ""));
+const BASIS = BASIS_FREMDE || `http://127.0.0.1:${PORT}`;
 const ARBEIT = "/tmp/kepta-egress-124";
+const ANBIETER = String(ARG("anbieter", "openai"));
 const BREITEN = [
   [1440, 900],
   [1024, 768],
@@ -120,20 +126,25 @@ function attrappeStart() {
 async function main() {
   if (!fs.existsSync(OBJEKT)) { console.log("Kein Objekt unter " + OBJEKT); process.exit(2); }
   if (!fs.existsSync(BRADE)) { console.log("Kein Brave — der Pruefer braucht einen echten Viewport."); process.exit(2); }
-  for (const p of [PORT, CDP_PORT, STUB_PORT]) {
+  const zuPruefen = BASIS_FREMDE ? [CDP_PORT, STUB_PORT] : [PORT, CDP_PORT, STUB_PORT];
+  for (const p of zuPruefen) {
     try { await fetch(`http://127.0.0.1:${p}/`); console.log(`Port ${p} hoert schon — fremder Laeufer, Abbruch.`); process.exit(2); } catch { /* frei */ }
   }
   fs.rmSync(ARBEIT, { recursive: true, force: true });
   fs.mkdirSync(path.join(ARBEIT, "bilder"), { recursive: true });
 
   const { server: attrappe, angerufe } = attrappeStart();
-  const diener = spawn("node", [path.join(WURZEL, "dist", "server.cjs")], {
+  let diener = null;
+  if (BASIS_FREMDE) console.log(`  Fremde Flaeche: ${BASIS_FREMDE} (kein eigner Diener gebaut)`);
+  else diener = spawn("node", [path.join(WURZEL, "dist", "server.cjs")], {
     cwd: WURZEL,
     env: { ...process.env, HOME: `${ARBEIT}/h`, KEPTA_DATA_DIR: `${ARBEIT}/d`, KEPTA_ENCRYPTION: "off", PORT: String(PORT) },
     stdio: ["ignore", "pipe", "pipe"],
   });
-  const prot = fs.createWriteStream(path.join(ARBEIT, "diener.log"));
-  diener.stdout.pipe(prot); diener.stderr.pipe(prot, { end: true });
+  if (diener) {
+    const prot = fs.createWriteStream(path.join(ARBEIT, "diener.log"));
+    diener.stdout.pipe(prot); diener.stderr.pipe(prot, { end: true });
+  }
 
   let brave;
   try {
@@ -189,12 +200,15 @@ async function main() {
     // fester Haefen erreichbar (Chat.tsx:147-150 zaehlt nur ollama und lmstudio) —
     // dieser Lauf ist nicht der Beweis dafuer, also der kurze Weg: openai mit
     // kuenstlichem Schluessel, Adresse auf die Attrappe.
-    const anbieter = await setzeFeld("select", "openai", "select");
+    const anbieter = await setzeFeld("select", ANBIETER, "select");
     await schlafe(900);
     const adresse = await evaliere(cdp, `(()=>{const e=[...document.querySelectorAll('input')].find(i=>/api\\.example\\.com|base|url/i.test(i.getAttribute('placeholder')||''));return e?true:false})()`);
     if (!adresse) throw new Error("die Einstellungen nennen kein Adressfeld — der Nutzerweg ist nicht der gemessene");
     const gesetzt = await setzeFeld(`input[placeholder^="https://api.example.com"]`, `http://127.0.0.1:${STUB_PORT}/v1`, "input");
-    const schluessel = await setzeFeld(`input[type="password"]`, "sk-stub-fuer-die-attrappe", "input");
+    // Ein Schluessel-Anbieter braucht einen, ein Kein-Key-Anbieter (custom) bekommt
+    // keinen — sonst bewiese der Lauf nicht den Fall aus Aufgabe #43.
+    const schluessel = ANBIETER === "custom" ? null
+      : await setzeFeld(`input[type="password"]`, "sk-stub-fuer-die-attrappe", "input");
     await schlafe(1400);
     // Modell: die Liste kommt von der Attrappe ("stub-modell"); gesetzt wird, was die
     // Flaeche dafuer bereithaelt — ein select oder ein Feld.
@@ -211,6 +225,13 @@ async function main() {
     const gespart = await evaliere(cdp, `(()=>{const b=[...document.querySelectorAll('button')].find(x=>/^(save|connect|speichern|verbinden)/i.test((x.textContent||'').trim()));if(b){b.click();return (b.textContent||'').trim()}return null})()`);
     console.log(`  Anbieter: ${anbieter}; Adresse: ${gesetzt}; Schluessel: ${schluessel ? "gesetzt" : "kein Feld"}; Modell ueber: ${modell ?? "nichts"}; Knopf: ${gespart ?? "keiner"}`);
     await schlafe(1800);
+    // Zwei Lagen, getrennt gemessen: (a) die Flaeche haelt die Verbindung, (b) der
+    // Chat merkt sich, was die Einstellungen setzen. Ein Neuladen trennt sie —
+    // ohne es waere ein stale Zustand dasselbe Bild wie eine ausgebliebene Heilung.
+    await cdp.send("Page.navigate", { url: `${BASIS}/` });
+    await warteBis(async () => (await evaliere(cdp, `document.querySelectorAll('button').length`)) > 0 ? true : null, { maxMs: 60000 });
+    await warteBis(async () => evaliere(cdp, `(()=>{const b=[...document.querySelectorAll('button')].find(x=>/later|skip|spaeter/i.test(x.textContent||''));if(!b)return null;b.click();return true})()`), { maxMs: 4000 });
+    await schlafe(900);
     const verbind = await evaliere(cdp, `(()=>{const m=(document.body.innerText||'').match(/Custom[^\\n]{0,40}|No AI connected|connected[^\\n]{0,30}/i);return m?m[0]:null})()`);
     console.log(`  Verbindung nach dem Setzen: ${verbind ?? "nichts gelesen"}`);
 
@@ -231,14 +252,42 @@ async function main() {
         console.log(`  Kein Chat-Feld — diese Felder stehen im Baum: ${JSON.stringify(feld.alle)}`);
         throw new Error("kein Textfeld im Chat — die Flaeche ist nicht die bestellte");
       }
+      console.log(`  Anbieter im Lauf: ${ANBIETER}`);
+      const sitzung = await evaliere(cdp, `(()=>{const roh=localStorage.getItem('aiVerbindung');let g=null;try{g=JSON.parse(roh||'null')}catch{}
+        return {roh, providerId:g&&g.providerId, baseUrl:g&&g.baseUrl, model:g&&g.model, schluessel:(g&&g.apiKey||'').slice(0,6)}})()`);
+      console.log(`  Sitzungs-Zeile: ${JSON.stringify(sitzung)}`);
+      console.log(`  Rufe bei der Attrappe bisher: ${JSON.stringify(angerufe.map((a) => a.url))}`);
       console.log(`  ${breite}x${hoehe} Felder: ${feld.alle.map((x) => `${x.i}:${x.platz || x.lab || "ohne Name"} ${(x.rect.width | 0)}x${x.rect.height | 0}`).join(" | ")}`);
-      const ort = await evaliere(cdp, `(()=>{const t=[...document.querySelectorAll('textarea,input[type="text"],input:not([type]),[contenteditable="true"]')][${feld.wahl}];const r=t.getBoundingClientRect();return {x:Math.round(r.x+r.width/2),y:Math.round(r.y+Math.min(r.height/2,20))}})()`);
-      for (const typ of ["mousePressed", "mouseReleased"]) {
-        await cdp.send("Input.dispatchMouseEvent", { type: typ, x: ort.x, y: ort.y, button: "left", clickCount: 1 });
-      }
-      await schlafe(300);
+      // Der Klick nach Koordinaten traf bei 1024 und 820 nicht das Feld, sondern den
+      // Hinweis ueber ihm ("K3PTA can save answers like this automatically", im 390-Bild
+      // sichtbar). Also: Hinweis schliessen, dann das Feld selbst in den Fokus nehmen —
+      // insertText geht an das fokussierte Element, Koordinaten sind nicht noetig.
+      await evaliere(cdp, `(()=>{const zu=[...document.querySelectorAll('button')].find(b=>/^\\s*(×|x|close|schließen|aus)\\s*$/i.test((b.getAttribute('aria-label')||b.textContent||'').trim()));if(zu)zu.click();return !!zu})()`);
+      await evaliere(cdp, `(()=>{const t=[...document.querySelectorAll('textarea,input[type="text"],input:not([type]),[contenteditable="true"]')].find(x=>x.getBoundingClientRect().width>200);if(t){t.scrollIntoView({block:'nearest'});t.focus();}return !!t})()`);
+      await schlafe(250);
       await cdp.send("Input.insertText", { text: "Zeig mir beide Bilder" });
       await schlafe(400);
+      // In der zweiten Breite und weiter lag der Text nicht im Feld: die Antwort des
+      // Vorlaufs steht noch auf dem Schirm, und der Klick ging daneben. Einmal nach-
+      // fassen ist billiger als ein Urteil ueber einen Knopf, der nie befragt war.
+      for (let versuch = 0; versuch < 3; versuch++) {
+        const voll = await evaliere(cdp, `(()=>{const t=[...document.querySelectorAll('textarea,input[type="text"],input:not([type]),[contenteditable="true"]')].find(x=>x.getBoundingClientRect().width>200);return !!t && /Zeig mir/.test(t.value||'')})()`);
+        if (voll) break;
+        const ortZwei = await evaliere(cdp, `(()=>{const t=[...document.querySelectorAll('textarea,input[type="text"],input:not([type]),[contenteditable="true"]')].find(x=>x.getBoundingClientRect().width>200);if(!t)return null;const r=t.getBoundingClientRect();return {x:Math.round(r.x+r.width/2),y:Math.round(r.y+12)}})()`);
+        if (!ortZwei) break;
+        await evaliere(cdp, `(()=>{const t=[...document.querySelectorAll('textarea,input[type="text"],input:not([type]),[contenteditable="true"]')].find(x=>x.getBoundingClientRect().width>200);if(t){t.scrollIntoView({block:'nearest'});t.focus();}return !!t})()`);
+        await schlafe(250);
+        await cdp.send("Input.insertText", { text: "Zeig mir beide Bilder" });
+        await schlafe(400);
+      }
+      // Kopf und Knopf JETZT lesen — nach dem Senden ist das Feld leer und der Knopf
+      // mit Recht zu. (Der erste Versuch mass sie spaeter und meldete "zu".)
+      let kopf = await evaliere(cdp, `(()=>{const txt=(document.body.innerText||'').match(/Chat[\\s\\S]{0,120}/);
+        const send=[...document.querySelectorAll('button')].find(b=>/^(send)$/i.test(((b.textContent||'')+' '+(b.getAttribute('aria-label')||'')).trim()));
+        const feld=[...document.querySelectorAll('textarea,input[type="text"],input:not([type]),[contenteditable="true"]')].find(x=>x.getBoundingClientRect().width>200);
+        return {zeile:(txt?txt[0]:'').replace(/\\s+/g,' ').slice(0,110), send: send?(send.disabled?'zu':'offen'):'keiner',
+                wert: feld?(feld.value||feld.textContent||'').slice(0,22):'kein Feld'}})()`);
+      console.log(`  Chat-Kopf nach der Frage, vor dem Senden: ${kopf.zeile} | Send: ${kopf.send} | Feld: "${kopf.wert}"`);
       const knopfstoff = await evaliere(cdp, `(()=>{const k=[...document.querySelectorAll('button')].find(b=>/^(send)$/i.test(((b.textContent||'')+' '+(b.getAttribute('aria-label')||'')).trim()));return k?{vorhanden:true, zu:!!k.disabled}:{vorhanden:false}})()`);
       if (knopfstoff.vorhanden && knopfstoff.zu) {
         // Enter als zweiter Weg — die Flaeche druckt "Enter send" in ihre Zeile.
@@ -280,6 +329,11 @@ async function main() {
         };})()`);
 
       const urteile = [
+        // Aufgabe #43: der Kopf muss die Verbindung nennen, die da ist, und der Knopf
+        // offen sein. Beides war am ausgelieferten 3.2.124 nicht so, waehrend
+        // dieselbe Adresse durch die eigne Tuer antwortete.
+        ["der Chat-Kopf nennt die Verbindung", !kopf.zeile.includes("No AI connected"), kopf.zeile.slice(0, 90)],
+        ["der Send-Knopf ist offen", kopf.send === "offen", `Send: ${kopf.send} (nach der Frage gemessen)`],
         ["kein fernes Bild geladen", m.ferne.length === 0, `gelanden: ${m.ferne.join(", ") || "keins"}`],
         ["Absage steht mit Grund", !!m.zeile && m.zeile.includes("Remote image not loaded"), m.zeile ? m.zeile.slice(0, 78) : "keine Zeile"],
         ["Gegenstelle genannt", !!m.zeile && m.zeile.includes("spur.example"), m.zeile ? (m.zeile.includes("spur.example") ? "spur.example" : "kein Host in: " + m.zeile.slice(0, 60)) : "keine Zeile"],
@@ -308,7 +362,7 @@ async function main() {
     // Also: Code merken, zurueckgeben, raumachen, und Node beendet von selbst.
     process.exitCode = 2;
   } finally {
-    try { diener.kill("SIGTERM"); } catch { /* schon weg */ }
+    if (diener) { try { diener.kill("SIGTERM"); } catch { /* schon weg */ } }
     if (brave) { try { brave.kill("SIGTERM"); } catch { /* schon weg */ } }
     attrappe.close();
   }

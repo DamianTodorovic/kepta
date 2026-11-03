@@ -1,3 +1,20 @@
+## [3.2.125]
+
+### Fixed
+
+- **A custom endpoint gets an honest header.** "Custom endpoint (OpenAI-compatible)" advertises
+  vLLM, Jan and GPT4All — but the chat decided its connection from a probe of exactly two fixed
+  ports (Ollama 11434, LM Studio 1234), so every other no-key endpoint was reported as
+  "No AI connected" *while the same address was answering through the app's own door and the
+  question went out anyway*. Measured on the delivered object with a local OpenAI-compatible
+  endpoint: the header denied the connection while the model list from that very address was
+  already on screen. The check now asks the address you set, over the same route that lists
+  models afterwards. A refusal also names its cause instead of shrugging: "Your endpoint is not
+  answering — start it, or check its address under Settings.", "Your endpoint answered, but did
+  not send a model list.", "This endpoint needs a key — add it under Settings." Deliberately
+  *not* changed: Ollama and LM Studio keep their existing one-click detection, and a provider
+  with a key is judged exactly as before.
+
 ## [3.2.124]
 
 ### Fixed

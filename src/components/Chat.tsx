@@ -7,7 +7,7 @@ import { bildeinordnung } from "../lib/bild-politik";
 import { ChatMessage, Memory } from "../types";
 import { KeptaMark } from "./KeptaMark";
 import { loadAISettings, saveAISettings, providerById, resolveAIConnection, disconnectAI } from "../lib/ai";
-import { detectLocalAIs, type DetectedAI } from "../lib/profile";
+import { detectLocalAIs, LOKALE_HAFEN, type DetectedAI } from "../lib/profile";
 import { shouldLearn, buildExtractPrompt, parseNode, AUTO_LEARN_TIMEOUT_MS, isAutoLearnEnabled, shouldShowHint, AUTOLEARN_KEY, AUTOLEARN_HINT_KEY } from "../lib/autolearn";
 import { useToast } from "./ui/Toast";
 import { QUITTUNG_MS } from "../lib/quittung";
@@ -122,6 +122,9 @@ export function Chat({ activeMemories, onSaveToBrain, onSaveToBrainWithMeta, isF
   // ---------- Echter KI-Verbindungsstatus + lokale Erkennung ----------
   // localReachable: null = noch nicht geprobt, true/false nach Probe des lokalen Servers.
   const [localReachable, setLocalReachable] = useState<boolean | null>(null);
+  // Warum die Verbindung nicht steht — in den Worten, die die Flaeche dem Nutzer
+  // schuldig ist: eine Absage ohne Grund ist halbe Auskunft (3.2.123, 3.2.124).
+  const [verbindungsGrund, setVerbindungsGrund] = useState<string | null>(null);
   const [detectedLocal, setDetectedLocal] = useState<DetectedAI | null>(null);
   const [connectHint, setConnectHint] = useState(0); // erzwingt Re-Render nach Provider-Wechsel
 
@@ -138,12 +141,55 @@ export function Chat({ activeMemories, onSaveToBrain, onSaveToBrainWithMeta, isF
     // bestellt hat; die Konsole meldet net::ERR_CONNECTION_REFUSED, und der Nachzug
     // durch die eigne Tuer (profile.ts:151) haengt an einer Anfrage, die ohne jede
     // Frage laeuft.
-    const cur = providerById(loadAISettings().providerId);
+    const sitzung = loadAISettings();
+    const cur = providerById(sitzung.providerId);
     if (cur.needsKey) {
       setLocalReachable(null);
       return () => { cancelled = true; };
     }
+    // Aufgabe #43 (am ausgelieferten 3.2.124 gemessen): "Custom endpoint
+    // (OpenAI-compatible)" — dessen eigener Hinweis vLLM, Jan und GPT4All verspricht —
+    // konnte nie verbinden. Die Sonde darunter kennt genau zwei Haefen
+    // (src/lib/profile.ts, LOKALE_HAFEN), und `found.find(d => d.id === cur.id)` war fuer
+    // jeden andern Kein-Key-Anbieter immer undefined: "No AI connected", waehrend
+    // dieselbe Adresse durch die eigne Tuer antwortete (POST /api/models) und die Tuer
+    // sie laengst zulaesst (server/router/chat.ts:216). Also: die GESETZTE Adresse
+    // fragen, nicht zwei feste Haefen. Erreichbar gilt nur, wenn sie Modelle nennt.
+    const hafen = new Set(LOKALE_HAFEN.map((h) => h.id));
+    const eigeneAdresse = !hafen.has(cur.id) && !!sitzung.baseUrl?.trim();
     (async () => {
+      if (eigeneAdresse) {
+        try {
+          const r = await fetch("/api/models", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              protocol: cur.protocol,
+              baseUrl: sitzung.baseUrl,
+              apiKey: sitzung.apiKey === "local" ? "" : sitzung.apiKey,
+            }),
+          });
+          const d = (await r.json().catch(() => ({}))) as { models?: unknown; grund?: string; status?: number };
+          if (cancelled) return;
+          const modelle = Array.isArray(d.models) ? d.models : [];
+          setLocalReachable(r.ok && modelle.length > 0);
+          setVerbindungsGrund(
+            r.ok && modelle.length > 0 ? null
+              : d.grund === "anbieter-nicht-erreichbar" ? "Your endpoint is not answering — start it, or check its address under Settings."
+              : d.grund === "antwort-nicht-lesbar" ? "Your endpoint answered, but did not send a model list."
+              : d.grund === "kein-schluessel" ? "This endpoint needs a key — add it under Settings."
+              : r.ok ? "Your endpoint listed no models yet."
+              : `Your endpoint refused the request (it said ${d.status ?? r.status}).`
+          );
+        } catch {
+          if (!cancelled) {
+            setLocalReachable(false);
+            setVerbindungsGrund("Your endpoint is not answering — start it, or check its address under Settings.");
+          }
+        }
+        return;
+      }
+      setVerbindungsGrund(null);
       const found = await detectLocalAIs().catch(() => [] as DetectedAI[]);
       if (cancelled) return;
       const match = found.find((d) => d.id === cur.id);
@@ -790,7 +836,9 @@ export function Chat({ activeMemories, onSaveToBrain, onSaveToBrainWithMeta, isF
                 </>
               ) : (
                 <>
-                  <span style={{ color: "var(--text-2)" }}>No AI connected</span>
+                  <span style={{ color: "var(--text-2)" }} data-testid="chat-verbindung">
+                    {verbindungsGrund ?? "No AI connected"}
+                  </span>
                   {!detectedLocal && (
                     <button
                       onClick={() => void sucheLokaleKI()}

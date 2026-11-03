@@ -120,13 +120,22 @@ export function createDefaultProfile(): UserProfileAdaptive {
   };
 }
 
+/**
+ * Die zwei Häfen, die dieses Haus von sich aus anplopft. Aufgabe #43 brauchte die Liste
+ * als einzelne Quelle: einem Kein-Key-Anbieter, der hier nicht steht (custom mit eigener
+ * Adresse), darf die Verbindung nicht verweigert werden, nur weil die Sonde ihn nicht
+ * kennt — also muss Chat.tsx nachlesen können, wer überhaupt ein Hafen ist, statt die
+ * zwei Namen ein zweites Mal zu schreiben.
+ */
+export const LOKALE_HAFEN: { id: string; label: string; url: string; parse: (j: any) => string[] }[] = [
+  { id: 'ollama', label: 'Ollama (local, free)', url: 'http://localhost:11434/api/tags', parse: (j) => (j.models || []).map((m: any) => m.name || m.model).filter(Boolean) },
+  { id: 'lmstudio', label: 'LM Studio (local)', url: 'http://localhost:1234/v1/models', parse: (j) => (j.data || j.models || []).map((m: any) => m.id || m.name).filter(Boolean) },
+];
+
 // Erkennt lokale KIs — clientseitig direkt, ohne Server-Roundtrip wo möglich
 export async function detectLocalAIs(): Promise<DetectedAI[]> {
   const results: DetectedAI[] = [];
-  const checks: { id: string; label: string; url: string; parse: (j:any)=>string[] }[] = [
-    { id: 'ollama', label: 'Ollama (local, free)', url: 'http://localhost:11434/api/tags', parse: (j)=> (j.models||[]).map((m:any)=>m.name||m.model).filter(Boolean) },
-    { id: 'lmstudio', label: 'LM Studio (local)', url: 'http://localhost:1234/v1/models', parse: (j)=> (j.data||j.models||[]).map((m:any)=>m.id||m.name).filter(Boolean) },
-  ];
+  const checks = LOKALE_HAFEN;
   for (const c of checks) {
     const t0 = Date.now();
     try {

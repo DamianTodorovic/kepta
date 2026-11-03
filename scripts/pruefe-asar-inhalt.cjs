@@ -740,6 +740,16 @@ const erwartet = [
   ["bild-abgewiesen", 1],
   ["Open in browser:", 1],
   ["img-src 'self' data: http://localhost:* http://127.0.0.1:*; connect-src", 1],
+  // Punkt 3/4/7, 3.11. morgen (3.2.125, Aufgabe #43): die Verbindungsmeldung des Chats
+  // muss sagen, was sie gemessen hat. Gegen das installierte 3.2.124 gezaehlt: alle vier
+  // Marken **0** mal (gemessen 06:4x, LC_ALL=C grep -aFo). Der Beweis der andern Seite ist
+  // die Sonde scripts/egress-im-fenster.mjs --anbieter custom --basis <gelieferte Flaeche>:
+  // sie meldete am Objekt "No AI connected", wo dieselbe Adresse durch die eigne Tuer
+  // antwortete, und nach der Heilung nennt sie die Verbindung beim Namen.
+  ["Your endpoint is not answering", 1],
+  ["did not send a model list", 1],
+  ["listed no models yet", 1],
+  ["chat-verbindung", 1],
 ];
 // Die Liste darf nur ASCII-Zeichen enthalten. Grund, gemessen 21.10. 19:16 MESZ am
 // installierten Objekt: das Wort "Looking" plus echtes U+2026 steht dort 2 mal, diese
