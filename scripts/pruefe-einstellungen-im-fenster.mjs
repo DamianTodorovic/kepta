@@ -66,7 +66,12 @@ const FASSUNG = (() => {
   try { return String(JSON.parse(fs.readFileSync(path.join(WURZEL, "package.json"), "utf8")).version); }
   catch { return "unbekannt"; }
 })();
-const BILDER_ZIEL = ARG("bilder", `/Users/damiantodorovic/Desktop/ki gehirn/audit-2026-10-09/feldzug/belege-3110/fenster-${FASSUNG.split(".").pop()}`);
+// Der Zielordner folgt dem Hausmuster `belege-TTMM` des Tages, nicht einem
+// mitgeschriebenen Datum: der Lauf vom 4.11. landete in `belege-3110`, weil ein
+// frueherer Tag den Pfad in die Zeile geschrieben hatte. Keiner der Beweise ist
+// damit falsch, aber einer war am falschen Ort.
+const HEUTE = (() => { const d = new Date(); return `belege-${String(d.getDate()).padStart(2, "0")}${String(d.getMonth() + 1).padStart(2, "0")}`; })();
+const BILDER_ZIEL = ARG("bilder", `/Users/damiantodorovic/Desktop/ki gehirn/audit-2026-10-09/feldzug/${HEUTE}/fenster-${FASSUNG.split(".").pop()}`);
 const BRADE = "/Applications/Brave Browser.app/Contents/MacOS/Brave Browser";
 
 let server = null;
