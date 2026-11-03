@@ -1,4 +1,5 @@
 import { Memory } from '../types';
+import { ApiFehler } from './api';
 import type { BehauptungEingabe } from '../core/wortschatz';
 
 // All nodes liegen jetzt serverseitig in ~/.ki-gehirn/memories.json
@@ -176,7 +177,11 @@ async function doRefresh(): Promise<Memory[]> {
       // tilgen noch die Kappung umbiegen noch den Cache ueberschreiben — ein
       // kaputter Bestand sieht sonst aus wie ein leerer Anfang.
       const status = (res as { status?: number }).status ?? 200;
-      if (status >= 400) throw new Error(`the local server answered HTTP ${status}`);
+      // #49: ein kahler Error erreicht die Flaeche nicht — der Absage-Helfer
+      // (src/lib/absage.ts) haelt nur einen Satz von dieser Tuer fuer tragbar, und
+      // den erkennt er an `ApiFehler`. Gemessen 21:33 MEZ: der Block im Fenster
+      // zeigte seinen eignen Satz zweimal und von der Tuer gar nichts.
+      if (status >= 400) throw new ApiFehler(`HTTP ${status}`, status);
       bestand = kopfZahl(res, 'x-kepta-total');
       begrenzt = kopfZahl(res, 'x-kepta-begrenzt') === 1;
       // Defensiv gelesen: ältere Test-Mocks bauen Responses ohne status/headers.

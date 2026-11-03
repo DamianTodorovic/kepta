@@ -182,6 +182,15 @@ const TRAEGER_KLEID: { key: Traeger; color: string }[] = [
   { key: 'anderes', color: 'var(--type-neutral)' },
 ];
 
+/**
+ * Der Satz, den die Liste an ihrer eignen Absage schreibt. Der Grund gehört dazu und
+ * kommt von der Tuer — `absage` setzt ihn in Klammern dahinter. Steht hier nur der Satz,
+ * erzaehlt die Flaeche dieselbe Klage zweimal (Ueberschrift und Leib) und laesst die Zahl
+ * weg, mit der der Mensch etwas anfangen koennte (#49, gemessen 21:33 MEZ im jsdom-Fall
+ * und 21:31 im echten Fenster).
+ */
+const SATZ_LISTEN_ABSAGE = "Your notes did not load. Nothing was changed.";
+
 export function Dashboard() {
   const toast = useToast();
   // Die Textgroesse gilt ab dem ersten Bild; geaendert wird sie in den Einstellungen.
@@ -455,7 +464,7 @@ export function Dashboard() {
     let abgebrochen = false;
     refreshMemories()
       .then(() => { if (!abgebrochen) setLadFehler(null); })
-      .catch((e: unknown) => { if (!abgebrochen) setLadFehler(absage("Your notes did not load. Nothing was changed.", e)); })
+      .catch((e: unknown) => { if (!abgebrochen) setLadFehler(absage(SATZ_LISTEN_ABSAGE, e)); })
       .finally(() => { if (!abgebrochen) setInitialLoaded(true); });
     return () => { abgebrochen = true; };
   }, [ladVersuch]);
@@ -677,8 +686,10 @@ export function Dashboard() {
       setMemories(neue);
       setTuerBestand(bestandGroesse());
       // Die Tuer nennt ihren Grund in derselben Nachricht: der Speicher merkt ihn,
-      // die schon vorhandene Zeile malt ihn. Keine neue Flaeche, kein neuer Knopf.
-      setLadFehler(ladeFehler());
+      // die schon vorhandene Zeile malt ihn. Keine neue Flaeche, kein neuer Knopf —
+      // aber Satz und Grund zusammen, damit nicht einer von beiden allein steht.
+      const grund = ladeFehler();
+      setLadFehler(grund ? absage(SATZ_LISTEN_ABSAGE, new ApiFehler(grund)) : null);
     };
     const unsubscribe = subscribeMemories(empfang);
     empfang(getMemoriesSync());

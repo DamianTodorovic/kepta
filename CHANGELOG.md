@@ -1,3 +1,29 @@
+## [3.2.137]
+
+### Fixed
+
+- **The list's refusal now names the number it left out.** When the notes route answers 400
+  or above, the list shows a block: "The server did not answer", a sentence, and *Try again*.
+  The sentence was there twice (heading and body) and the reason was nowhere — measured in
+  the real window at 390x844, with only the notes route failing on purpose: the body read
+  "Your notes did not load. Nothing was changed." and nothing more. Two causes, both ours:
+  the store threw a plain `Error`, which the refusal helper does not consider safe to put on
+  screen, and the surface then wrote its own sentence over the reason the subscriber had
+  carried. The store now throws the house's own `ApiFehler` with the status, and both writers
+  on the surface compose the same line, so the body reads
+  "Your notes did not load. Nothing was changed. (HTTP 500)".
+  Measured after the fix at 1440x900, 1024x768, 820x1180 and 390x844: the block is present,
+  its centre point is hit-testable (nothing lies over it, the assistant is closed), and it
+  overflows neither axis.
+  Five cases new: `tests/lib/store-liste-nennt-die-zahl.test.ts` (refusal carries its number,
+  also without a body, and the control — a healthy answer invents no reason) and
+  `tests/components/listen-absage-nennt-den-grund.test.tsx` (the block shows sentence *and*
+  number; the control shows no block at all). Red before the fix: the block's text contained
+  no number, and the thrown error was a bare `Error`.
+  This also settles the open question in the campaign paper: the refusal *does* appear in the
+  window — the earlier run measured it behind the still-open assistant, which is why it
+  seemed missing.
+
 ## [3.2.136]
 
 ### Fixed
