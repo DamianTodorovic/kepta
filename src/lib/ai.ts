@@ -450,7 +450,10 @@ const ALTE_ABLAGEN = [ALTER_BLOB, ALTE_SITZUNGS_NAME];
 async function altFund(): Promise<AltFund | null> {
   try {
     const r = await fetch('/api/settings');
-    if (!r.ok) return null;
+    if (!r.ok) {
+      console.warn(`kepta: legacy key check did not answer (HTTP ${r.status})`);
+      return null;
+    }
     const d = (await r.json()) as Record<string, unknown>;
     for (const name of ALTE_ABLAGEN) {
       const wert = d[name];
@@ -459,7 +462,11 @@ async function altFund(): Promise<AltFund | null> {
         return { name, gesetzt: true, ende: (wert as { ende?: string | null }).ende ?? null, form: 'maske' };
       }
     }
-  } catch { /* offline: kein Fund */ }
+  } catch (e) {
+    // #31: "kein Fund" und "wir konnten nicht fragen" sind zwei verschiedene Auskunften ueber
+    // den Bestand des Nutzers. Die eine bleibt die Antwort, der andern Grund geht ins Protokoll.
+    console.warn("kepta: legacy key check did not answer", e);
+  }
   return null;
 }
 

@@ -1,3 +1,18 @@
+## [3.2.135]
+
+### Fixed
+
+- **The check for an old plaintext key says when it could not ask.** `altFund`
+  (`src/lib/ai.ts:450-471`) answered both a silent door and a door that sent a non-contract
+  body (an HTML error page from something in front of it) with "no old key found" — one of
+  the two answers an operator can act on, the other only a missing question. The result for
+  the surface is unchanged (`null`); the difference is now in the developer console, with the
+  status number when there was one. Found as the third site in the #31 census, the second
+  where an outage turns into a statement about the user's data (the first was the chat header
+  in #43).
+  Three cases in `tests/lib/schluessel-sonde-nennt-ihren-ausfall.test.ts`: refused connection,
+  HTML body, and the control — a clean answer with nothing stored stays silent.
+
 ## [3.2.134]
 
 ### Fixed
