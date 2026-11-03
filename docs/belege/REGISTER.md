@@ -19,6 +19,8 @@ Laeufe liegt, korrekt gekuerzt, im Kern-Repo unter `docs/belege/`.
 | `tag-0311/eval-bge-m3-1404.log.txt` | 6144 B | `e136f87d902ee5e2…` |
 | `tag-0311/sprachuebergriff-nomic-1406.log.txt` | 2623 B | `390c15c2cf839f2c…` |
 | `tag-0311/sprachuebergriff-bge-m3-1406.log.txt` | 2631 B | `eb01ff875ec16b39…` |
+| `tag-0411/wortschatz-vor-3-2-138-2233.log.txt` | 1648 B | `7cf81827ff35447e…` |
+| `tag-0411/wortschatz-nach-3-2-139-0023.log.txt` | 959 B | `92084dce677a6844…` |
 | `tag-13-10/eval-korpus-1143.log.txt` | 3419 B | `8b343e7457825fa0…` |
 | `tag-13-10/eval-korpus-1413.log.txt` | 4181 B | `dcd3e42dc0021921…` |
 | `tag-13-10/ablation-beine-1144.log.txt` | 1904 B | `62d15147e59de149…` |

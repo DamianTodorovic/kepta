@@ -1,0 +1,37 @@
+# Wortschatz der Flaeche, im echten Fenster gemessen - 3.2.139, Fenster-Lauf 4.11.2026 00:23 MEZ
+# gemacht von scripts/verstaendlichkeit-im-fenster.mjs, gezaehlt von scripts/wortschatz-zaehlen.mjs
+# Kapsel: eigenes HOME, eigener Datenordner, leerer Bestand; Assistent vor jeder Messung geschlossen
+
+Korpus: 8 Schirme, 1490 Woerter, 514 verschiedene
+Terme auf der Flaeche: 17 von 39 gelisteten
+davon erklaert (Satz im Leib oder title, mehr als 8 Woerter): 17
+unerklaert: 0
+
+Saetze: 370, ueber 12 Woerter: 31 (8.4 %)
+
+Census (JSON):
+{
+ "version": "3.2.139",
+ "schirme": 8,
+ "woerter": 1490,
+ "verschieden": 514,
+ "gelistet": 39,
+ "aufFlaeche": 17,
+ "erklaert": 17,
+ "unerklaert": [],
+ "kappe": 8,
+ "saetze": 370,
+ "saetze_ueber_12": 31
+}
+
+Woerter pro Schirm (Rohtext, ohne Wortfilter):
+{
+ "Erststart@1440": 108,
+ "Knowledge@1440": 108,
+ "Today@1440": 76,
+ "Chat@1440": 85,
+ "Graph@1440": 42,
+ "Dossier@1440": 50,
+ "Activity@1440": 174,
+ "Settings@1440": 1024
+}

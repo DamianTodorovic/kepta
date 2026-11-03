@@ -1,0 +1,56 @@
+# Wortschatz der Flaeche, im echten Fenster gemessen - 3.2.138, Fenster-Lauf 3.11.2026 22:33 MEZ
+# gemacht von scripts/verstaendlichkeit-im-fenster.mjs, gezaehlt von scripts/wortschatz-zaehlen.mjs
+# Kapsel: eigenes HOME, eigener Datenordner, leerer Bestand; Assistent vor jeder Messung geschlossen
+
+Korpus: 8 Schirme, 1470 Woerter, 510 verschiedene
+Terme auf der Flaeche: 18 von 39 gelisteten
+davon erklaert (Satz im Leib oder title, mehr als 8 Woerter): 10
+unerklaert: 8
+
+Die Liste, die ein naechster Schnitt abarbeitet:
+  semantic  [Erststart@1440, Knowledge@1440]
+  embedding  [Settings@1440]
+  entity  [Settings@1440]
+  sync  [Erststart@1440, Knowledge@1440, Today@1440, Chat@1440, Graph@1440, Dossier@1440, Activity@1440, Settings@1440]
+  dossier  [Erststart@1440, Knowledge@1440, Today@1440, Chat@1440, Graph@1440, Dossier@1440, Activity@1440, Settings@1440]
+  activity  [Erststart@1440, Knowledge@1440, Today@1440, Chat@1440, Graph@1440, Dossier@1440, Activity@1440, Settings@1440]
+  endpoint  [Settings@1440]
+  audit  [Activity@1440, Settings@1440]
+
+Saetze: 369, ueber 12 Woerter: 30 (8.1 %)
+
+Census (JSON):
+{
+ "version": "3.2.138",
+ "schirme": 8,
+ "woerter": 1470,
+ "verschieden": 510,
+ "gelistet": 39,
+ "aufFlaeche": 18,
+ "erklaert": 10,
+ "unerklaert": [
+  "semantic",
+  "embedding",
+  "entity",
+  "sync",
+  "dossier",
+  "activity",
+  "endpoint",
+  "audit"
+ ],
+ "kappe": 8,
+ "saetze": 369,
+ "saetze_ueber_12": 30
+}
+
+Woerter pro Schirm (Rohtext, ohne Wortfilter):
+{
+ "Erststart@1440": 108,
+ "Knowledge@1440": 108,
+ "Today@1440": 76,
+ "Chat@1440": 85,
+ "Graph@1440": 42,
+ "Dossier@1440": 50,
+ "Activity@1440": 174,
+ "Settings@1440": 1003
+}
