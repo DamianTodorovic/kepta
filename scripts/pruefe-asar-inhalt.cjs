@@ -720,6 +720,12 @@ const erwartet = [
   // Meldung in der Vorschau braucht keine eigene Marke: ihr Wortlaut ist seit 3.2.129 im
   // Koerper (chat) und wird dort schon gehalten.
   ["user profile did not reach the prompt", 1],
+  // #31 Fehler-Feger, zweiter Griff (3.2.134): zwei eigne Einstellungen — die gewaehlte
+  // KI-Verbindung und das Profil — verschwanden wortlos, wenn sie nicht zu lesen waren.
+  // Gezaehlt gegen das installierte 3.2.133 (app.asar 49 192 436 B, bytes.count()):
+  // beide Wortlaute **0** mal.
+  ["stored AI settings could not be read", 1],
+  ["stored profile could not be read", 1],
   // Punkt 1/4/7, 2.11. (3.2.121, zwei Quellen, die ohne Wort wechselten): gegen das
   // installierte 3.2.120 gezaehlt je **0** (gemessen 02.11. 16:30:05). Beide Saetze sind
   // zustandsgesteuert — die antwortende Kapsel malt sie nie —, darum ist der Marker hier

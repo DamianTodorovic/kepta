@@ -389,7 +389,13 @@ export function loadAISettings(): AISettings {
       // Sitzung zaehlt erst, wenn die eigene Zeile ihn nicht mehr haelt
       return { ...gelesen, apiKey: gelesen.apiKey || sitzungsSchluessel };
     }
-  } catch { /* ignore */ }
+  } catch (e) {
+    // #31: ein unlesbarer eigner Wert ist ein Fakt, keine Gleichgueltigkeit. Die Flaeche
+    // faellt auf den Katalog zurueck und sagt "kein Anbieter gewaehlt" — ohne diese Zeile
+    // waere der Unterschied zwischen "niemand hat gewaehlt" und "wir konnten es nicht lesen"
+    // verloren. Der Rueckgriff bleibt, der Grund wird hoerbar.
+    console.warn("kepta: stored AI settings could not be read, falling back to the catalog", e);
+  }
   // Katalogzeile ja, Adresse nein: niemand hat sie gewaehlt, und die Tuer lehnt jede
   // ab, die nicht genannt ist (grund=kein-anbieter). Wer einen Anbieter waehlt, bekommt
   // seine Adresse zurueck - ueber selectProvider, nicht ueber diesen Weg.

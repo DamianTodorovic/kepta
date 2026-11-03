@@ -92,7 +92,12 @@ export function loadProfile(): UserProfileAdaptive | null {
       topics = normalizeTopics(p.useCases.map((uc) => LEGACY_LABELS[uc] ?? String(uc)));
     }
     return { ...p, topics };
-  } catch { return null; }
+  } catch (e) {
+    // #31: null ist hier ein Rueckgriff, aber kein Grund — ohne Zeile ist nicht zu
+    // unterscheiden, ob ein Profil fehlte oder ob ein unlesbares da war.
+    console.warn("kepta: stored profile could not be read, the wizard starts fresh", e);
+    return null;
+  }
 }
 
 export function saveProfile(p: UserProfileAdaptive): Promise<void> {

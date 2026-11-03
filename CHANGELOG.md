@@ -1,3 +1,17 @@
+## [3.2.134]
+
+### Fixed
+
+- **Two of the app's own settings no longer vanish unread.** A corrupt stored provider
+  configuration made the app say "no provider chosen" — true on its face, wrong about you:
+  you had chosen one, the value just could not be read. A corrupt stored profile restarted
+  the wizard with no trace of why. Both still fall back exactly as before; each now names
+  itself in the developer console (`src/lib/ai.ts:391`, `src/lib/profile.ts:95`), so the
+  difference between "nobody chose" and "we could not read it" survives. Found by the census
+  behind #31: 40 silent catches in `src/`, and these were the ones a user could be misled by.
+  Three cases in `tests/lib/eigne-einstellungen-nennen-ihren-grund.test.ts`, one of them the
+  control that must stay silent when nothing was stored at all.
+
 ## [3.2.133]
 
 ### Fixed
