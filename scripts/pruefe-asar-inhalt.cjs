@@ -742,6 +742,16 @@ const erwartet = [
   // das installierte 3.2.137 (app.asar 49 193 142 B, bytes.count()): beide **0** mal.
   ["stored key could not be opened", 1],
   ["sealing check did not answer", 1],
+  // Punkt 7, 4.11. (3.2.139, jedes Etikett erklaert sein eignes Wort): die sechs Saetze
+  // sind die Traeger der Erklaerung, gezaehlt gegen das installierte 3.2.138
+  // (app.asar 49 193 564 B, bytes.count()): alle sechs **0** mal. Die zwei Saetze, die
+  // sie ersetzen, stehen unten in der verbotenen Liste.
+  ["Knowledge is everything you have saved", 1],
+  ["A Dossier is a written brief", 1],
+  ["Activity lists every thing K3PTA did", 1],
+  ["Semantic search looks for the meaning", 1],
+  ["The audit log is the sealed list", 1],
+  ["Follows the people, projects and systems", 1],
   // Punkt 1/4/7, 2.11. (3.2.121, zwei Quellen, die ohne Wort wechselten): gegen das
   // installierte 3.2.120 gezaehlt je **0** (gemessen 02.11. 16:30:05). Beide Saetze sind
   // zustandsgesteuert — die antwortende Kapsel malt sie nie —, darum ist der Marker hier
@@ -868,6 +878,12 @@ const verboten = [
   "That did not work",
   "The switch could not be saved",
   "Today could not be loaded",
+  // Punkt 7 (3.2.139): die beiden Saetze waren die Fachwort-Alleingaenger — "entities"
+  // ohne Erklaerung an der Graph-Spur, und "Local storage in sync" als Titel ueber dem
+  // Sync-Punkt. Gezaehlt gegen das installierte 3.2.138: beide **1** mal; gegen das
+  // gebaute 3.2.139: beide **0** mal.
+  "Mentions of knowledge entities",
+  "Local storage in sync",
 ];
 // Die Liste darf nur ASCII-Zeichen enthalten. Grund, gemessen 21.10. 19:16 MESZ am
 // installierten Objekt: das Wort "Looking" plus echtes U+2026 steht dort 2 mal, diese
