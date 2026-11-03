@@ -707,6 +707,13 @@ const erwartet = [
   // und die EnterpriseViews-Faelle in tests/components/EnterpriseViews.test.tsx.
   ["Today's briefing came back empty", 1],
   ["No answer from the inbox", 1],
+  // P51/#21, 3.11. abend (3.2.132): die Vektor-Spur traegt nach, statt neu zu bauen. Dafuer
+  // hat der Store einen dritten Zaehler, und sein Name ist ein String-Literal — also im Koerper
+  // pruefbar. Gegen das installierte 3.2.131 gezaehlt (app.asar 49 185 874 B, bytes.count(),
+  // 3.11. 19:21 MEZ): **0** mal. Die Zahl "deltapatches" taugt hier NICHT als Marke: sie stand
+  // schon 4 mal im Koerper, weil der Kandidaten-Vorrat sie seit #104 ebenso zaehlt — ein Marker
+  // mit vorher 4 waere keine Pruefung, sondern eine Dekoration.
+  ["embed_generation", 1],
   // Punkt 1/4/7, 2.11. (3.2.121, zwei Quellen, die ohne Wort wechselten): gegen das
   // installierte 3.2.120 gezaehlt je **0** (gemessen 02.11. 16:30:05). Beide Saetze sind
   // zustandsgesteuert — die antwortende Kapsel malt sie nie —, darum ist der Marker hier

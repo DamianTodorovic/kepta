@@ -1,3 +1,32 @@
+## [3.2.132]
+
+### Performance
+
+- **A saved note no longer throws the whole vector track away.** Measured at the door on
+  40 000 notes (`audit-2026-10-09/feldzug/P51-LESE-TUER-40000-0311.md`, 2026-11-03 18:47 and
+  19:12 MEZ): the search route's `vektor` line cost **188,00 ms** on the first request and
+  **8,85 / 9,35 ms** once the track stood — and the track was thrown away by *every* write,
+  because it was held to one counter that rises on each one. At 64 164 chunks the same build
+  cost 1 321,99 ms. Now a reported note-change re-reads only that note's chunks
+  (`chunksFuerMemories`, `src/core/store.ts:1168`) and re-flattens the track in memory
+  (`src/core/engine.ts:303-395`); the full build stays for the case that really needs it —
+  when vectors themselves appear or vanish. For that the store counts a third number
+  (`embed_generation`), raised only by writes that touch an embedding, so an ordinary note with
+  its embedding-free chunks no longer forces a rebuild.
+  `vektorSpurSteht().veraltet` now means "a full build is coming", which stops the idle runner
+  from rebuilding after a plain save; the door's `x-kepta-teilzeiten` and `/api/health` keep
+  their meaning and gain `deltapatches`.
+
+### Tests
+
+- `tests/p6-vektorspur-delta.test.ts` (new, 3 cases): one write must not build again, a write
+  to an embedding must build again, and the note saved in between must still be found — the
+  speed-up is only real if the vector that just appeared is in the track.
+- `tests/p6-vektorvorwaermung-leerstand.test.ts` asked for the old behaviour in two cases
+  ("ein Schreibfall wirft die Spur, und die naechste Suche zahlt erneut"); they now name the
+  new line between a note (patch) and a vector (build). The boot-warmth guard they carry is
+  unchanged.
+
 ## [3.2.131]
 
 ### Fixed

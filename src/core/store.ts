@@ -1014,6 +1014,7 @@ export class KeptaStore {
       this.db.exec(`
         INSERT OR IGNORE INTO meta (key, value) VALUES ('daten_generation', '0');
         INSERT OR IGNORE INTO meta (key, value) VALUES ('mem_generation', '0');
+        INSERT OR IGNORE INTO meta (key, value) VALUES ('embed_generation', '0');
         CREATE TRIGGER IF NOT EXISTS daten_gen_memories_i AFTER INSERT ON memories BEGIN
           UPDATE meta SET value = CAST(value AS INTEGER) + 1 WHERE key = 'daten_generation';
           UPDATE meta SET value = CAST(value AS INTEGER) + 1 WHERE key = 'mem_generation'; END;
@@ -1036,6 +1037,15 @@ export class KeptaStore {
           UPDATE meta SET value = CAST(value AS INTEGER) + 1 WHERE key = 'daten_generation'; END;
         CREATE TRIGGER IF NOT EXISTS daten_gen_chunks_d AFTER DELETE ON chunks BEGIN
           UPDATE meta SET value = CAST(value AS INTEGER) + 1 WHERE key = 'daten_generation'; END;
+        CREATE TRIGGER IF NOT EXISTS embed_gen_chunks_u AFTER UPDATE OF embedding ON chunks
+        WHEN NEW.embedding IS NOT OLD.embedding BEGIN
+          UPDATE meta SET value = CAST(value AS INTEGER) + 1 WHERE key = 'embed_generation'; END;
+        CREATE TRIGGER IF NOT EXISTS embed_gen_chunks_i AFTER INSERT ON chunks
+        WHEN NEW.embedding IS NOT NULL BEGIN
+          UPDATE meta SET value = CAST(value AS INTEGER) + 1 WHERE key = 'embed_generation'; END;
+        CREATE TRIGGER IF NOT EXISTS embed_gen_chunks_d AFTER DELETE ON chunks
+        WHEN OLD.embedding IS NOT NULL BEGIN
+          UPDATE meta SET value = CAST(value AS INTEGER) + 1 WHERE key = 'embed_generation'; END;
         CREATE TRIGGER IF NOT EXISTS daten_gen_entities_i AFTER INSERT ON entities BEGIN
           UPDATE meta SET value = CAST(value AS INTEGER) + 1 WHERE key = 'daten_generation'; END;
         CREATE TRIGGER IF NOT EXISTS daten_gen_entities_u AFTER UPDATE ON entities BEGIN
@@ -1083,6 +1093,24 @@ export class KeptaStore {
     return Number(row?.value ?? 0);
   }
 
+  /**
+   * Zaehler NUR der Schreibfaelle, die ein Embedding beruehren (setzt, aendert, loescht).
+   *
+   * Der Grund ist die Vektor-Spur in src/core/engine.ts: sie darf nach einer gemeldeten
+   * Notiz-Aenderung ihre Zeilen fuer genau diese Notiz nachtragen, statt den ganzen Bestand
+   * wieder einzulesen. Das ist nur sicher, wenn sich ausserhalb der Notizen nichts an den
+   * Vektoren getan hat — und genau das sagt diese Zahl. Ein neuer Abschnitt ohne Embedding
+   * (der Regel-Fall beim Schreiben) ruehrt sie nicht; der Nachzug der Hintergrund-Queue ruehrt
+   * sie, und dann baut die Spur neu.
+   */
+  embedGeneration(): number {
+    this.midiereDatenGeneration();
+    const row = this.db.prepare("SELECT value FROM meta WHERE key = 'embed_generation'").get() as
+      | { value: string }
+      | undefined;
+    return Number(row?.value ?? 0);
+  }
+
   // ---------- Such-Cache-Delta ----------
   // Der Suchpfad (engine.ts) cacht die aktiven Erinnerungen an der Generation.
   // Statt bei jedem Write den teuren Volllauf zu erzwingen, meldet der Store
@@ -1119,6 +1147,30 @@ export class KeptaStore {
     const rows = this.db
       .prepare("SELECT memory_id, seq, text, embedding, embedding_model FROM chunks WHERE embedding IS NOT NULL")
       .all() as Record<string, unknown>[];
+    return rows.map((r) => ({
+      memoryId: String(r.memory_id),
+      seq: Number(r.seq),
+      text: String(r.text),
+      embedding: blobToFloat32(r.embedding as Buffer),
+      model: String(r.embedding_model ?? ""),
+    }));
+  }
+
+  /**
+   * Chunks mit Embedding NUR fuer die genannten Notizen — derselbe Zeilen-Schnitt wie
+   * `allEmbeddableChunks`, nur nicht fuer die ganze Welt.
+   *
+   * Der Aufrufer ist die Vektor-Spur in src/core/engine.ts: nach einer gemeldeten
+   * Memory-Aenderung reichen ihre eignen Zeilen, um den Vorrat nachzutragen. An der echten
+   * Tuer kostete der Volllauf 188,00 ms gegen 8,85 ms am stehenden Vorrat (P51, 3.11.2026,
+   * 40 000 Notizen) — dieser Schnitt ist der Weg, den Volllauf zu umgehen.
+   */
+  chunksFuerMemories(ids: string[]): ReturnType<KeptaStore["allEmbeddableChunks"]> {
+    if (ids.length === 0) return [];
+    const platz = ids.map(() => "?").join(",");
+    const rows = this.db
+      .prepare(`SELECT memory_id, seq, text, embedding, embedding_model FROM chunks WHERE embedding IS NOT NULL AND memory_id IN (${platz})`)
+      .all(...ids) as Record<string, unknown>[];
     return rows.map((r) => ({
       memoryId: String(r.memory_id),
       seq: Number(r.seq),

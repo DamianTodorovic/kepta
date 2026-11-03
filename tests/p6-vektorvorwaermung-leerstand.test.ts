@@ -61,6 +61,7 @@ vi.mock("../src/core/embeddings", async (importOriginal) => {
 interface Statistik {
   vorwaermungen: number;
   suchbauten: number;
+  deltapatches: number;
   zeilen: number;
 }
 
@@ -235,17 +236,23 @@ describe("P6-105 — die Vektor-Spur beim ersten Leerlauf", () => {
     expect(e.vektorSpurStatistik.suchbauten).toBe(bautenVorher);
   });
 
-  it("sieht die Tuer, wann immer die Datenwelt ihre Spur weggenommen hat", async () => {
+  it("sieht die Tuer den Unterschied zwischen einer Notiz und einem neuen Vektor", async () => {
     store = fuelleMitVektoren(k.home, k.schluessel);
     const e = await engine();
     expect(e.vektorSpurSteht(store).veraltet).toBe(true); // noch gar nicht gebaut
     e.waermeVektorSpur(store);
     expect(e.vektorSpurSteht(store).veraltet).toBe(false);
     schreibFall(store);
-    expect(e.vektorSpurSteht(store).veraltet).toBe(true); // ein Schreibfall, und die Spur ist fort
+    // Seit P51/#21 heisst "veraltet" fuer die Tuer: ein VOLLLAUF steht bevor. Eine gemeldete
+    // Notiz traegt die Spur selbst nach, darum hat die Stille hier nichts zu tun.
+    expect(e.vektorSpurSteht(store).veraltet, "ein Notiz-Schreibfall ist nachtragbar, kein Volllauf").toBe(false);
+    const c = store.chunksNeedingEmbedding(1, DEFAULT_EMBED_MODEL)[0];
+    if (!c) throw new Error("kein Abschnitt ohne Embedding — der Nachzug waere nicht erfunden");
+    store.setEmbedding(c.memoryId, c.seq, zeilenVektor(`${c.memoryId}:${c.seq}`), DEFAULT_EMBED_MODEL);
+    expect(e.vektorSpurSteht(store).veraltet, "ein neuer Vektor muss der Stille gemeldet werden").toBe(true);
   });
 
-  it("haelt fest: ein Schreibfall nach dem Boot wirft die Spur, und die naechste Suche zahlt erneut", async () => {
+  it("haelt fest: ein Notiz-Schreibfall wirft die Spur nicht mehr — die naechste Suche traegt nach", async () => {
     store = fuelleMitVektoren(k.home, k.schluessel);
     const e = await engine();
     e.waermeVektorSpur(store);
@@ -254,20 +261,32 @@ describe("P6-105 — die Vektor-Spur beim ersten Leerlauf", () => {
     await sucheMitVektor(store);
     expect(e.vektorSpurStatistik.suchbauten).toBe(bautenNachVorlauf); // der Vorlauf hat gehalten
 
+    const patchesVorher = e.vektorSpurStatistik.deltapatches;
     schreibFall(store);
     await sucheMitVektor(store);
-    // Ohne den wiederholten Auftrag waere das die Zahl, die der Mensch sieht: 1,5 s an der
-    // zweiten Suche des Tages, nur weil dazwischen etwas gespeichert wurde.
-    expect(e.vektorSpurStatistik.suchbauten).toBe(bautenNachVorlauf + 1);
+    // P51/#21: der Volllauf war die Zahl, die der Mensch sah — 188,00 ms an der Tuer gegen
+    // 8,85 ms am stehenden Vorrat, und er kehrte bei JEDEM Schreibfall wieder. Jetzt traegt
+    // die Spur die eine gemeldete Notiz nach.
+    expect(
+      e.vektorSpurStatistik.suchbauten,
+      "ein Notiz-Schreibfall baute den ganzen Vorrat neu",
+    ).toBe(bautenNachVorlauf);
+    expect(e.vektorSpurStatistik.deltapatches).toBeGreaterThan(patchesVorher);
+    expect(e.vektorSpurSteht(store).veraltet, "für einen nachtragbaren Fall hat die Stille nichts zu tun").toBe(false);
   });
 
-  it("und die Vorwaermung nach dem Schreibfall holt den Aufbau zurueck in die Stille", async () => {
+  it("und ein Schreibfall an den Vektoren selbst holt den Aufbau zurueck in die Stille", async () => {
     store = fuelleMitVektoren(k.home, k.schluessel);
     const e = await engine();
     e.waermeVektorSpur(store);
-    schreibFall(store);
-    const laeufeVorher = e.vektorSpurStatistik.vorwaermungen;
+    schreibFall(store); // der Fall, der allein nichts kostet: eine Notiz ohne neuen Vektor
+    // Der Fall, der einen Volllauf verlangt: ein Embedding entsteht, ohne als Notiz gemeldet zu sein.
+    const c = store.chunksNeedingEmbedding(1, DEFAULT_EMBED_MODEL)[0];
+    if (!c) throw new Error("kein Abschnitt ohne Embedding — der Nachzug waere nicht erfunden");
+    store.setEmbedding(c.memoryId, c.seq, zeilenVektor(`${c.memoryId}:${c.seq}`), DEFAULT_EMBED_MODEL);
+    expect(e.vektorSpurSteht(store).veraltet, "ein neuer Vektor muss der Stille gemeldet werden").toBe(true);
 
+    const laeufeVorher = e.vektorSpurStatistik.vorwaermungen;
     expect(e.waermeVektorSpur(store)).toBeGreaterThan(0);
     expect(e.vektorSpurStatistik.vorwaermungen).toBe(laeufeVorher + 1);
 

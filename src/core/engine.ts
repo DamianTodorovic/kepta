@@ -278,20 +278,32 @@ interface SuchVektoren {
  * sitzt an einem Ort, und dieselbe Ort ist der Leib von `/api/health` (`vektorSpur`) — ein
  * Zeuge im Test und ein Zeuge an der Tuer duerfen nicht zwei Verschiedenes meinen.
  */
-export const vektorSpurStatistik = { vorwaermungen: 0, suchbauten: 0, zeilen: 0 };
+export const vektorSpurStatistik = { vorwaermungen: 0, suchbauten: 0, deltapatches: 0, zeilen: 0 };
 type SpurBaumeister = "vorwaermung" | "suche";
 
-const vektorCache = new WeakMap<KeptaStore, { generation: number; spur: SuchVektoren }>();
-function suchVektoren(store: KeptaStore, wer: SpurBaumeister): SuchVektoren {
-  const generation = store.datenGeneration();
-  const eintrag = vektorCache.get(store);
-  if (eintrag && eintrag.generation === generation) return eintrag.spur;
-  // Der alte Vorrat geht vor dem Neubau von der Hand: waehrend des Lesens und Wandels
-  // (1 321,99 ms an 64 164 Abschnitten, gemessen 25.10. 12:52) waeren sonst alt und neu
-  // zugleich im Leib — in der eignen Kapsel stieg die Resident Size ueber zwei Baue auf
-  // 1 038 688 KiB, wo ein Bau 697 088 bis 730 896 KiB braucht.
-  vektorCache.delete(store);
-  const liste = store.allEmbeddableChunks().filter((c) => c.model === DEFAULT_EMBED_MODEL);
+type SpurZeile = SuchVektoren["liste"][number];
+
+/**
+ * Der Vorrat, und was er als einziges an sich heranlaesst.
+ *
+ * Zwei Zaehler, nicht einer: `memGeneration` steigt bei jedem Schreibfall an einer Notiz,
+ * `embedGeneration` nur bei einem Schreibfall, der ein Embedding setzt, aendert oder loescht
+ * (src/core/store.ts:1035-1047). Ein neuer Abschnitt ohne Embedding — der normale Fall beim
+ * Schreiben — ruehrt den zweiten nicht. Bleibt er gleich, kann sich ausserhalb der gemeldeten
+ * Notizen kein Vektor geaendert haben, und dann traegt die Spur nach, statt neu zu bauen.
+ */
+interface SpurEintrag {
+  memGen: number;
+  embedGen: number;
+  nach: Map<string, SpurZeile[]>;
+  spur: SuchVektoren;
+  dreckig: Set<string>;
+}
+
+const vektorCache = new WeakMap<KeptaStore, SpurEintrag>();
+const vektorDeltaRegistriert = new WeakSet<KeptaStore>();
+
+function normenVon(liste: SpurZeile[]): Float32Array {
   const normen = new Float32Array(liste.length);
   for (let j = 0; j < liste.length; j++) {
     const b = liste[j]!.embedding;
@@ -299,8 +311,72 @@ function suchVektoren(store: KeptaStore, wer: SpurBaumeister): SuchVektoren {
     for (let i = 0; i < b.length; i++) nb += b[i]! * b[i]!;
     normen[j] = Math.sqrt(nb);
   }
-  const spur = { liste, normen };
-  vektorCache.set(store, { generation, spur });
+  return normen;
+}
+
+function flacheSpur(nach: Map<string, SpurZeile[]>): SuchVektoren {
+  const liste: SpurZeile[] = [];
+  for (const gruppe of nach.values()) for (const z of gruppe) liste.push(z);
+  return { liste, normen: normenVon(liste) };
+}
+
+function zeilenNachNotiz(zeilen: SpurZeile[]): Map<string, SpurZeile[]> {
+  const nach = new Map<string, SpurZeile[]>();
+  for (const z of zeilen) {
+    const gruppe = nach.get(z.memoryId);
+    if (gruppe) gruppe.push(z);
+    else nach.set(z.memoryId, [z]);
+  }
+  return nach;
+}
+
+/**
+ * Meldet den Vorrat am Schreibfall-Anhoerer an (dasselbe Muster wie der Kandidaten-Vorrat in
+ * `registriereDelta`). Der Anhoerer kostet nichts, wenn kein Vorrat steht: dann liest der
+ * naechste Griff ohnehin die ganze Welt.
+ */
+function registriereVektorDelta(store: KeptaStore): void {
+  if (vektorDeltaRegistriert.has(store)) return;
+  vektorDeltaRegistriert.add(store);
+  store.onMemorieAenderung((id) => {
+    const eintrag = vektorCache.get(store);
+    if (eintrag) eintrag.dreckig.add(id);
+  });
+}
+
+function suchVektoren(store: KeptaStore, wer: SpurBaumeister): SuchVektoren {
+  registriereVektorDelta(store);
+  const memGen = store.memGeneration();
+  const embedGen = store.embedGeneration();
+  const eintrag = vektorCache.get(store);
+  if (eintrag && eintrag.memGen === memGen && eintrag.embedGen === embedGen) return eintrag.spur;
+
+  // Nachtragen statt neu bauen: ein gemeldeter Schreibfall traegt NUR seine eigne Notiz nach.
+  // An der echten Tuer war der Volllauf 188,00 ms gegen 8,85 ms am stehenden Vorrat
+  // (P51, 3.11.2026, 40 000 Notizen) — und er wiederholte sich bei JEDEM Schreibfall.
+  if (eintrag && eintrag.embedGen === embedGen && eintrag.dreckig.size > 0) {
+    const ids = [...eintrag.dreckig];
+    eintrag.dreckig.clear();
+    const neu = zeilenNachNotiz(store.chunksFuerMemories(ids).filter((z) => z.model === DEFAULT_EMBED_MODEL));
+    for (const [id, gruppe] of neu) eintrag.nach.set(id, gruppe);
+    for (const id of ids) if (!neu.has(id)) eintrag.nach.delete(id);
+    eintrag.spur = flacheSpur(eintrag.nach);
+    eintrag.memGen = memGen;
+    eintrag.embedGen = embedGen;
+    vektorSpurStatistik.deltapatches += 1;
+    vektorSpurStatistik.zeilen = eintrag.spur.liste.length;
+    return eintrag.spur;
+  }
+
+  // Volllauf — entweder steht kein Vorrat, oder die Vektoren selbst haben sich bewegt
+  // (Nachzug der Queue, ein geloeschter Abschnitt mit Embedding). Der alte Vorrat geht vor dem Neubau von der Hand: waehrend
+  // des Lesens und Wandels (1 321,99 ms an 64 164 Abschnitten, gemessen 25.10. 12:52) waeren
+  // sonst alt und neu zugleich im Leib — in der eignen Kapsel stieg die Resident Size ueber
+  // zwei Baue auf 1 038 688 KiB, wo ein Bau 697 088 bis 730 896 KiB braucht.
+  vektorCache.delete(store);
+  const liste = store.allEmbeddableChunks().filter((c) => c.model === DEFAULT_EMBED_MODEL);
+  const spur: SuchVektoren = { liste, normen: normenVon(liste) };
+  vektorCache.set(store, { memGen, embedGen, nach: zeilenNachNotiz(liste), spur, dreckig: new Set() });
   if (wer === "vorwaermung") vektorSpurStatistik.vorwaermungen += 1;
   else vektorSpurStatistik.suchbauten += 1;
   vektorSpurStatistik.zeilen = liste.length;
@@ -310,18 +386,21 @@ function suchVektoren(store: KeptaStore, wer: SpurBaumeister): SuchVektoren {
 /**
  * Steht die Spur, oder hat die Datenwelt sie schon wieder weggenommen?
  *
- * Der Blick gilt der Generation, nicht dem Kalender: `store.datenGeneration()` steigt bei JEDEM
- * Schreibfall — einer neuen Notiz, einer Textaenderung, und (das ueberrascht) auch bei jedem
- * Einbettungs-Nachschub der Hintergrund-Queue, weil dessen `UPDATE ON chunks` einen Trigger ohne
- * WHEN-Klausel hat (src/core/store.ts:969). Eine Vorwaermung beim Start ist darum keine Dauer
- * -warmung: der erste Schreibfall danach wirft sie weg, und die naechste semantische Suche zahlt
- * den Aufbau erneut. Genau das ist der Grund, dass die Tuer die Spur in jedem ruhigen Fenster neu
- * bestellen darf — und der Grund, dass sie vorher wartet, bis die Generation stillsteht.
+ * Der Blick gilt den beiden Zaehlern des Stores, nicht dem Kalender (siehe `SpurEintrag`):
+ * Memory-Faelle heben beide, Chunk-Faelle — etwa der Einbettungs-Nachschub, dessen `UPDATE ON
+ * chunks` einen Trigger ohne WHEN-Klausel hat (src/core/store.ts:1034-1055) — heben nur den
+ * einen. Seit dem Nachtragen heisst "veraltet" nicht mehr "ein Volllauf steht bevor", sondern
+ * "ein Schreibfall ist noch nicht nachgetragen".
  */
 export function vektorSpurSteht(store: KeptaStore): { generation: number; veraltet: boolean } {
   const generation = store.datenGeneration();
   const eintrag = vektorCache.get(store);
-  return { generation, veraltet: !eintrag || eintrag.generation !== generation };
+  if (!eintrag) return { generation, veraltet: true };
+  // Ein gemeldeter Notiz-Schreibfall wird nachgetragen, nicht neu gebaut: fuer ihn hat die
+  // Stille nichts zu tun. Veraltet heisst hier also "ein Volllauf steht bevor" — nur ein
+  // Schreibfall an den Vektoren selbst (Nachzug, geloeschter eingebetteter Abschnitt) kann
+  // das sein.
+  return { generation, veraltet: eintrag.embedGen !== store.embedGeneration() };
 }
 
 /**
