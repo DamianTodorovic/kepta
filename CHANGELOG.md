@@ -1,3 +1,26 @@
+## [3.2.128]
+
+### Fixed
+
+- **Every answer from the door signs itself, so a foreign listener can't pass as ours.** A full
+  suite run reported one failure — `POST /api/scan/preview` came back `401` with the body
+  `auth required`. That string is nowhere in this repository (`server/`, `src/`, `tests/`), in
+  any dependency, or in the enterprise tree; this app's own refusal reads "This request needs
+  a key. Nothing was changed." The file passes 20 of 20 on its own, and no proxy is set in the
+  environment. So something foreign answered a request aimed at the test's own door — the same
+  family as the known flake cause 9 (a listener bound without a host answers on `::`). The
+  danger is not the red run: it is the *green* one, where a stranger's answer satisfies a bare
+  status check. The door now sets `x-kepta-marke: kepta/<version>` on every response, mounted
+  before the this-machine-only fence so refusals carry it too, and
+  `tests/helfer/eigene-antwort.ts` refuses to treat an unsigned answer as ours; the two
+  directory-scope cases that flaked now go through it. Four new cases in
+  `tests/server-marke.test.ts` — including the counter-probe (an answer without the header must
+  be rejected) and a source check that the signature is mounted *before* the fence, because a
+  marker added after it would leave exactly the 401/403 answers unsigned. Deliberately *not*
+  changed: no route logic, no status code, no body — this is a signature on answers that
+  already existed, and the flake itself stays open as a question about the machine, not settled
+  by a header.
+
 ## [3.2.127]
 
 ### Fixed

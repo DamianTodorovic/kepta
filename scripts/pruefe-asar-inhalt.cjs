@@ -777,6 +777,14 @@ const erwartet = [
   // muessen nach dem Tausch **0** mal stehen, sonst ist aus drei Lesern nur ein vierter
   // gemacht worden.
   ['process.env.OLLAMA_HOST||"http://127.0.0.1:11434"', 1],
+  // Punkt 4, 3.11. spaetnachmittag (3.2.128, Aufgabe #46): die Tuer unterschreibt jede
+  // Antwort, damit ein fremder Hoerer nicht als eigne durchgeht. Gegen das installierte
+  // 3.2.127 gezaehlt (app.asar 49 183 620 B, LC_ALL=C grep -aFo | wc -l, 16:38:37): **0** mal.
+  // Der Gegenbeweis liegt wieder ausserhalb dieser Liste: die Marke muss im
+  // Server-Buendel stehen UND vor dem Rechner-Zaun montiert sein — die zweite Seite prueft
+  // tests/server-marke.test.ts am Quelltext, weil ein Zaun, der erst nach der Schranke
+  // steht, die 401-Absagen unteschrieben liesse.
+  ["x-kepta-marke", 1],
 ];
 // Die Liste darf nur ASCII-Zeichen enthalten. Grund, gemessen 21.10. 19:16 MESZ am
 // installierten Objekt: das Wort "Looking" plus echtes U+2026 steht dort 2 mal, diese

@@ -15,6 +15,7 @@ import path from "path";
 import os from "os";
 import type { KeptaStore } from "../src/core/store";
 import { leseUmwelt } from "../src/core/umwelt";
+import { APP_VERSION } from "../src/core/version";
 import type { MemoryRecord as CoreMemory } from "../src/core/types";
 import { erstelleLimiter } from "./helfer/limiter";
 import { leerstandsmittelware } from "./helfer/leerstand";
@@ -135,6 +136,22 @@ export function sichererFehler(err: unknown, req: express.Request, res: express.
   res.status(status).json({ error: exposeText ?? "The request could not be handled." });
 }
 
+/**
+ * Aufgabe #46 (3.11.): die Tuer nennt sich auf jeder Antwort selbst.
+ *
+ * Ein Volllauf der Suite meldete 401 mit dem Leib `auth required` — ein Text, den dieser
+ * Baum nirgends sendet (die eigne Absage heisst "This request needs a key. Nothing was
+ * changed."). Ein fremder Hoerer hatte auf eine eigne Anfrage geantwortet; dieselbe Klasse
+ * wie die bekannte Ursache 9 (ein Lauscher ohne Host bindet auf `::`). Solange eine Antwort
+ * nur an ihrer Zahl pruefbar ist, kann derselbe fremde Hoerer einen Fall spaeter *gruen*
+ * machen statt rot. Darum diese Zeile, als allererstes montiert — auch eine 401-Absage des
+ * Rechner-Zauns traegt sie, und `tests/helfer/eigene-antwort.ts` verlangt sie.
+ */
+function keptaMarke(_req: express.Request, res: express.Response, next: express.NextFunction): void {
+  res.setHeader("x-kepta-marke", `kepta/${APP_VERSION}`);
+  next();
+}
+
 export function createApp(store: KeptaStore, optionen: AppOptionen = {}) {
   const app = express();
 
@@ -143,8 +160,13 @@ export function createApp(store: KeptaStore, optionen: AppOptionen = {}) {
   // Bestand — kein Zug, kein Doppelbestand.
   const datenOrdner = leseUmwelt("datenordner").wert || path.join(os.homedir(), ".kepta");
 
+  // Die Marke zuerst: sie ist kein Zaun, sondern die Unterschrift, und sie muss auch auf
+  // einer Absage stehen — sonst ist der Fall, gegen den sie gebaut wurde (eine fremde
+  // Antwort auf einer eigner Anfrage), wieder nur an einer Zahl zu erkennen.
+  app.use(keptaMarke);
+
   // Only this computer — not a website open in a browser on it (src/lib/herkunft.ts).
-  // First of all, so that no route registered below can be reached around it.
+  // Erste *Schranke*, so dass keine Route unter ihr umgangen werden kann.
   app.use(nurDieserRechner({ bindHost: process.env.KEPTA_HOST }));
 
   // P6-105: die Rechnung ueber die offenen Antworten, vor allem andern, was nach ihr kommt —

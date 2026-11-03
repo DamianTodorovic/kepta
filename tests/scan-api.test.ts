@@ -4,6 +4,7 @@ import path from "node:path";
 import fs from "node:fs";
 import request from "supertest";
 import { KeptaStore } from "../src/core/store";
+import { eigeneAntwort } from "./helfer/eigene-antwort";
 
 // Der Rechner-Scan von aussen: hier laeuft er ueber ein ECHTES (temporaeres)
 // Heimverzeichnis, in dem absichtlich auch liegt, was er nie anfassen darf.
@@ -184,13 +185,17 @@ describe("POST /api/scan/preview", () => {
 
   it("laesst sich nicht auf fremde Verzeichnisse richten", async () => {
     // Ein Aufruf mit /etc oder / faellt auf das Heimverzeichnis zurueck.
-    const res = await request(app).post("/api/scan/preview").send({ roots: ["/etc", "/", "../../.."] });
+    // Die Antwort wird ueber `eigeneAntwort` geholt: genau dieser Fall bekam am 3.11. in
+    // einem Volllauf 401 mit dem Leib `auth required` — ein Text, den dieser Baum nicht
+    // sendet. Ohne die Unterschrift hiess der Befund "401 statt 200"; mit ihr heisst er
+    // "ein fremder Hoerer hat geantwortet" (Aufgabe #46).
+    const res = eigeneAntwort(await request(app).post("/api/scan/preview").send({ roots: ["/etc", "/", "../../.."] }));
     expect(res.status, `${res.status} · ${res.text.slice(0, 200)}`).toBe(200);
     expect(res.body.roots).toEqual([heim]);
   });
 
   it("nimmt einen Unterordner des Heims an", async () => {
-    const res = await request(app).post("/api/scan/preview").send({ roots: [path.join(heim, "Dokumente")] });
+    const res = eigeneAntwort(await request(app).post("/api/scan/preview").send({ roots: [path.join(heim, "Dokumente")] }));
     expect(res.status, `${res.status} · ${res.text.slice(0, 200)}`).toBe(200);
     expect(res.body.roots).toEqual([path.join(heim, "Dokumente")]);
     expect(res.body.found).toBe(2);
