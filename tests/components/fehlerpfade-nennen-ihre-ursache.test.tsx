@@ -44,7 +44,6 @@ describe("2. MachineScan: ein Regelwerk, das nicht ankommt, wird genannt", () =>
   });
 
   it("meldet das Ausbleiben, wenn die Tuer gar nicht antwortet", async () => {
-    const user = userEvent.setup();
     vi.stubGlobal(
       "fetch",
       vi.fn(async (url: string) => {
