@@ -574,7 +574,12 @@ export async function hydrateAISettings(): Promise<AISettings> {
       return s;
     }
     const r = await fetch('/api/settings');
-    if (!r.ok) return loadAISettings();
+    if (!r.ok) {
+      // #31: die Tuer hat abgewiesen. "Keine Verbindung" ist hier keine Auskunft ueber
+      // den Bestand, sondern ueber die Antwort — der Rueckgriff bleibt, die Zahl nicht.
+      console.warn(`kepta: settings door refused, the mirror was not read (HTTP ${r.status})`);
+      return loadAISettings();
+    }
     const d = (await r.json()) as Record<string, unknown>;
 
     const roh = typeof d[SPIEGEL_NAME] === 'string' ? (d[SPIEGEL_NAME] as string) : '';
@@ -592,7 +597,12 @@ export async function hydrateAISettings(): Promise<AISettings> {
           legeFest(s);
           return s;
         }
-      } catch { /* kaputter Spiegel: die Defaults tragen weiter */ }
+      } catch (e) {
+        // #31: der Spiegel war da und war nicht zu lesen. Ohne diese Zeile steht die
+        // Flaeche danach da und sagt "nichts gewaehlt" — eine falsche Aussage ueber den
+        // Bestand des Menschen: er hatte gewaehlt, nur war es kaputt.
+        console.warn("kepta: mirrored AI settings could not be read, falling back to the defaults", e);
+      }
     }
 
     // Hier stand bis 3.2.45 der Rueckfall auf einen lesbaren Altbestand
@@ -602,7 +612,12 @@ export async function hydrateAISettings(): Promise<AISettings> {
     // Maske: `altFund` meldet den Fund, `spiegle` loescht ihn nicht (ai.ts:436 und
     // :463). Ein Bestand aus der Zeit vor der Maske erreicht damit niemanden mehr.
     return loadAISettings();
-  } catch {
+  } catch (e) {
+    // #31: dieser Fang deckt drei Wege — die Tuer war nicht erreichbar, ihr Leib war
+    // kein Vertrag, und der Rueckweg durch die Sitzung warf. Genannt wird, was nicht
+    // geschah (die eigne Verbindung kam nicht an); welche der drei es war, steht in der
+    // Ausnahme selbst, die mitgeht.
+    console.warn("kepta: own AI settings could not be restored, falling back to what the session holds", e);
     return loadAISettings();
   }
 }

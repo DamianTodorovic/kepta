@@ -1,3 +1,20 @@
+## [3.2.136]
+
+### Fixed
+
+- **Restoring your own AI connection now says what stood in the way.** On start the app reads
+  the mirrored connection back from the door. Three outcomes used to collapse into one silent
+  fallback to the defaults: the door was unreachable, the door refused (any status), and the
+  mirror was there but unreadable. In the last case the surface then said "nothing selected"
+  about someone who *had* selected something — a statement about a person's own data, built
+  out of an outage. The fallback stays (the app must work without the door); the reason now
+  goes to the developer console, with the status number where there was one. Fourth site in
+  the #31 census, same class as the chat header (#43) and the old-key probe (3.2.135).
+  Four cases in `tests/lib/spiegel-nennt-seinen-ausfall.test.ts`: unreadable mirror, refused
+  door with its number, unreachable door, and the control — a clean answer with no mirror stays
+  silent. Red before the fix: the three failure cases wrote nothing to the console at all,
+  while the control was already green.
+
 ## [3.2.135]
 
 ### Fixed

@@ -730,6 +730,13 @@ const erwartet = [
   // wenn die Tuer nicht antwortete. Gezaehlt gegen das installierte 3.2.134
   // (app.asar 49 192 617 B, bytes.count()): **0** mal.
   ["legacy key check did not answer", 1],
+  // #31, vierter Griff (3.2.136): der Rueckweg der eignen Verbindung in drei stillen
+  // Faellen — Tuer nicht erreichbar, Tuer weist ab, Spiegel da aber unlesbar. Gezaehlt
+  // gegen das installierte 3.2.135 (app.asar 49 192 748 B, bytes.count()): alle drei
+  // Wortlaute **0** mal.
+  ["mirrored AI settings could not be read", 1],
+  ["settings door refused", 1],
+  ["own AI settings could not be restored", 1],
   // Punkt 1/4/7, 2.11. (3.2.121, zwei Quellen, die ohne Wort wechselten): gegen das
   // installierte 3.2.120 gezaehlt je **0** (gemessen 02.11. 16:30:05). Beide Saetze sind
   // zustandsgesteuert — die antwortende Kapsel malt sie nie —, darum ist der Marker hier
