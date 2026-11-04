@@ -1176,6 +1176,32 @@ function handWortOhneWort(kanten: readonly LayoutEdge[]): boolean {
 }
 
 /**
+ * Wie viel Breite der Nachzug-Streifen an der Oberkante haben darf — in Prozent,
+ * und 0 heisst: kein Streifen.
+ *
+ * Gemessen am ausgelieferten 3.2.150 in einem stehenden Bild bei 3 000 Notizen
+ * (`/tmp/graph-3000-150.png`, 22:05:28 MEZ): quer ueber die obere Kante lag ein
+ * Akzent-Streifen von x=13 bis x=2242 von 2256 Bildpunkten, 5 Pixel hoch, und das Feld
+ * stand seit ueber sechs Sekunden. Der Zweich, der das malt, ist der **fertige** Lauf
+ * mit Zuwachs — er bekam dieselbe volle Breite wie ein laufender. Ein Streifen ohne
+ * Zahl kann nur "es arbeitet noch" heissen; wer ihn stehen laesst, wenn die Arbeit
+ * fertig ist, malt eine Fuellung, die nie endet.
+ *
+ * Darum: Breite nur, waehrend die Tuer arbeitet (dann nach dem Zaehler, mindestens ein
+ * Prozent, damit "es hat angefangen" sichtbar bleibt), volle Breite bei einer Absage
+ * (ein Zustand, kein Fortschritt), und 0, wenn der Lauf durch ist — der Satz ueber das
+ * Ergebnis bleibt hoerbar und im Titel, nur die Behauptung "laeuft noch" faellt weg.
+ */
+export function nachzugStreifen(zug: {
+  laufen: boolean; gesamt: number; gesehen: number; neuBegriffe: number; neuKanten: number; fehler: string | null;
+} | null): number {
+  if (!zug) return 0;
+  if (zug.fehler) return 100;
+  if (zug.laufen) return zug.gesamt > 0 ? Math.min(100, Math.max(1, Math.round((100 * zug.gesehen) / zug.gesamt))) : 100;
+  return 0;
+}
+
+/**
  * Passt die Flaeche ihren Ausschnitt, wenn das Feld zur Ruhe kommt?
  *
  * A7-09, gemessen: 60 Notizen im 1440-px-Fenster — im Rasterlauf 75 % Zoom, im
@@ -6346,13 +6372,18 @@ export function KnowledgeGraph({ memories: memoriesAusFenster, onSelectMemory, o
                 : nachzug.neuBegriffe > 0 || nachzug.neuKanten > 0
                   ? `Network filled: +${nachzug.neuBegriffe.toLocaleString("en-US")} concepts, +${nachzug.neuKanten.toLocaleString("en-US")} links`
                   : "";
+          const anteil = nachzugStreifen(nachzug);
           return (
             <div
               data-testid="nachzug-info"
               role="status"
               aria-live="polite"
-              className={zeile ? "absolute left-0 right-0 top-0 z-10 h-[3px] pointer-events-none" : "sr-only"}
-              style={zeile ? { background: "var(--accent-kante)" } : undefined}
+              // Die Klasse bleibt die volle Breite, die Zahl in `style` engt sie ein:
+              // bei einer absoluten Kante mit `left` UND `right` gewinnt die angegebene
+              // Weite, und das Haus-Marktor (`pruefe-asar-inhalt.cjs`) prueft genau
+              // diese Klassenkette als geliefertes Zeichen.
+              className={anteil > 0 ? "absolute left-0 right-0 top-0 z-10 h-[3px] pointer-events-none" : "sr-only"}
+              style={anteil > 0 ? { background: "var(--accent-kante)", width: `${anteil}%` } : undefined}
               title={zeile || undefined}
               aria-label={zeile || undefined}
             >

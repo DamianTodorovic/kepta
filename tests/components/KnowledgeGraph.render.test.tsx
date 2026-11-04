@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { render, act, fireEvent } from "@testing-library/react";
-import { KnowledgeGraph, fitTitel, istHell, GLYPH_FUER_ART, LEGENDE_HOEHE } from "../../src/components/KnowledgeGraph";
+import { KnowledgeGraph, fitTitel, istHell, GLYPH_FUER_ART, LEGENDE_HOEHE, nachzugStreifen } from "../../src/components/KnowledgeGraph";
 import { TYP_BESCHREIBUNG } from "../../src/lib/graphHierarchy";
 import { GANG_ABSTAND } from "../../src/lib/graphLayout";
 import { installiereLeinwand, installiereResizeObserver, installiereZeiger, setzeTheme, type Leinwand } from "../helfer/canvas";
@@ -4304,6 +4304,51 @@ describe("Nachzug: die Flaeche fuellt das Netz, das die Tuer fuer offen haelt", 
     await bilder(45); // 900 ms — ein Poll-Abstand (NACHZUG_FRAGE_MS = 600) muss verstrichen sein
     const knoten = view.container.querySelector('[data-testid="nachzug-info"]');
     expect(knoten!.textContent ?? "", "fertig ohne Zuwachs ist keine Behauptung, die im Bild bleibt").toBe("");
+  });
+});
+
+describe("#125 der Nachzug-Streifen bedeutet Arbeit, nicht Ergebnis", () => {
+  // Gemessen am ausgelieferten 3.2.150 im Bild eines stehenden Feldes mit 3 000
+  // Notizen (`/tmp/graph-3000-150.png`, 22:05:28 MEZ): quer ueber die obere Kante
+  // liegt ein Akzent-Streifen von x=13 bis x=2242 von 2256 Bildpunkten — 99 % der
+  // Breite, 5 Bildpixel hoch — und das Feld steht seit Sekunden. Der Grund ist der
+  // Zweich `neuBegriffe > 0 || neuKanten > 0`: ein **fertiger** Nachzug malt denselben
+  // vollen Streifen wie ein laufender, und weil ein Streifen keine Zahl hat, liest der
+  // Mensch eine Fuellung, die nie endet. Der Fall zuerst, in Prozenten, weil die Zahl
+  // die Kante ist, die das Bild zeigt.
+  const zug = (t: Partial<{ laufen: boolean; gesamt: number; gesehen: number; neuBegriffe: number; neuKanten: number; fehler: string | null }>) => ({
+    laufen: false, gesamt: 0, gesehen: 0, neuBegriffe: 0, neuKanten: 0, fehler: null, ...t,
+  });
+
+  it("gibt dem fertigen Lauf mit Zuwachs keinen Streifen mehr", () => {
+    // Der Befund aus dem Bild: fertig, und die Tuer meldet Begriffe und Kanten als
+    // Zuwachs. Der Satz bleibt hoerbar (ein Ergebnis ist eine Auskunft), der Streifen
+    // nicht: eine fertige Arbeit darf nicht als laufende aussehen.
+    expect(nachzugStreifen(zug({ neuBegriffe: 6, neuKanten: 2379 })), "ein fertiger Lauf malt keinen Streifen").toBe(0);
+  });
+
+  it("zaehlt die Breite dem Fortschritt nach, wenn die Tuer eine Zahl hat", () => {
+    expect(nachzugStreifen(zug({ laufen: true, gesamt: 1500, gesehen: 400 }))).toBe(27);
+    expect(nachzugStreifen(zug({ laufen: true, gesamt: 1500, gesehen: 1500 }))).toBe(100);
+    // Ein Lauf bei null von 1 500 ist kein unsichtbarer Lauf: ein Prozent ist die
+    // kleinste Breite, die ein Mensch noch als "es tut sich etwas" sieht.
+    expect(nachzugStreifen(zug({ laufen: true, gesamt: 1500, gesehen: 0 }))).toBe(1);
+  });
+
+  it("haelt den Streifen voll, wo die Zahl fehlt oder die Tuer ablehnt", () => {
+    // Ohne Gesamtstand gibt es keinen Fortschritt zu zeigen — aber die Arbeit laeuft,
+    // und ein leerer Streifen waere die Auskunft "nichts passiert". Eine Absage ist
+    // kein Fortschritt, sondern ein Zustand: volle Breite, ihr eigner Satz (der Fall
+    // bei 4 275 oben verlangt die Auskunft, nicht die Breite).
+    expect(nachzugStreifen(zug({ laufen: true }))).toBe(100);
+    expect(nachzugStreifen(zug({ fehler: "no backup" }))).toBe(100);
+  });
+
+  it("meldet null, wenn nichts laeuft und nichts hinzukam", () => {
+    expect(nachzugStreifen(null)).toBe(0);
+    expect(nachzugStreifen(zug({}))).toBe(0);
+    // Der Fall, den #53 schon heilt: fertig **ohne** Zuwachs ist keine Behauptung.
+    expect(nachzugStreifen(zug({ gesamt: 1500, gesehen: 1500 }))).toBe(0);
   });
 });
 

@@ -1,3 +1,21 @@
+## [3.2.151]
+
+### Fixed
+
+- **A finished network backfill no longer paints a stripe that reads as "still working".**
+  The picture of a resting 3 000-note field, taken from the delivered 3.2.150
+  (`/tmp/graph-3000-150.png`, 22:05:28 MEZ, six seconds after the surface said the field
+  stands), carries an accent stripe across the top edge from x=13 to x=2242 of 2256 pixels —
+  99 % of the width, five pixels tall. The branch that paints it is the **finished** backfill
+  with additions (`KnowledgeGraph.tsx:6373`): it got the same full width as a running one,
+  and a stripe without a number can only mean "it is still working". `nachzugStreifen` now
+  decides the width alone: while the door works the stripe follows the counter (at least one
+  percent, so a start is visible), a refusal keeps the full width because it is a state and
+  not a progress, and a finished run gets **no stripe** — the result sentence stays in the
+  status text and the button title, where a result belongs. Cases: four, written first and
+  seen red (4 failed at 22:14:42 MEZ), green at 22:18:18 MEZ; the file's 181 cases pass,
+  including the two #53 cases that already refuse a full counter as a filling message.
+
 ## [3.2.150]
 
 ### Fixed

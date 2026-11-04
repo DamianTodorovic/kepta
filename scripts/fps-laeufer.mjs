@@ -55,6 +55,11 @@ const ARG = (name, fallback) => {
   const i = process.argv.indexOf(`--${name}`);
   return i >= 0 && process.argv[i + 1] ? Number(process.argv[i + 1]) : fallback;
 };
+/** Ein Pfad, keine Zahl: `--bild /tmp/x.png` schreibt das stehende Feld als Bild. */
+const ARG_TXT = (name) => {
+  const i = process.argv.indexOf(`--${name}`);
+  return i >= 0 ? process.argv[i + 1] || null : null;
+};
 const KNOTEN = ARG("knoten", 3000);
 const SEKUNDEN = ARG("sekunden", 6);
 const PORT = ARG("port", 3541);
@@ -65,6 +70,7 @@ const BASIS = `http://127.0.0.1:${PORT}`;
 const ARBEIT = "/tmp/kepta-fps";
 const BRADE = "/Applications/Brave Browser.app/Contents/MacOS/Brave Browser";
 const BEHALTEN = process.argv.includes("--behalten");
+const BILD = ARG_TXT("bild");
 
 // ---------------- der Bestand ----------------
 // Deterministisch (ein PRNG-Pfad), vier Felder, Zipf-artige Konzeptwahl — und
@@ -571,6 +577,25 @@ async function main() {
     console.log("  FEHLER: die letzte Lesung hatte keine Scheiben — Ueberlappung ist ohne Gegenstand, das Urteil wird zurueckgehalten");
   }
   const ueberlapp = await ruf("kollision");
+  // Das Bild zum Befund, auf Bestellung: `--bild /tmp/x.png`. Geroehrent wird das
+  // stehende Feld NACH dem Einpassen und VOR dem Zug — das ist der Stand, den ein
+  // Mensch sieht, wenn er die Flaeche oeffnet und wartet. Punkt 1 der neun Punkte
+  // ("Graph gegen den Markt") ist mit einer Zahl nicht abzulegen; der Zeuge ist ein
+  // Bild, und das Bild gehoert zu demselben Lauf, der die Scheiben gezaehlt hat.
+  if (BILD) {
+    const kasten = await evaliere(`(()=>{const c=document.querySelector('[data-testid="graph-canvas"]');if(!c)return null;const r=c.getBoundingClientRect();return {x:r.left,y:r.top,width:r.width,height:r.height};})()`);
+    if (!kasten) {
+      console.log(`  KEIN Leinwand-Rechteck — das Bild ist bestellt, aber nicht gemalt`);
+      process.exitCode = 1;
+    } else {
+      const schuss = await cdp.send("Page.captureScreenshot", { format: "png", clip: { ...kasten, scale: 1 }, captureBeyondViewport: false });
+      const { entpacke } = await import("./helfer/png-kante.mjs");
+      const roh = Buffer.from(schuss.data, "base64");
+      fs.writeFileSync(BILD, roh);
+      const bild = entpacke(roh);
+      console.log(`  Bild: ${BILD} — ${roh.length} B, ${bild.w ?? "?"} x ${bild.h ?? "?"} Geraetepixel, Leinwand ${Math.round(kasten.width)} x ${Math.round(kasten.height)} CSS`);
+    }
+  }
 
   // 6) Phase B: ein Knoten wird gezogen — das ist der teuerste Weg (Physik
   // heizt nach, alles malt neu). Ziel ist die groesste Scheibe, die im Bild
