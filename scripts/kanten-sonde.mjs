@@ -158,13 +158,17 @@ const SONDE = `(() => {
     const rand = (x0, y0, bw, bh) => {
       const im = tx.getImageData(x0, y0, bw, bh);
       const z = { grund: 0, akzent: 0, inhalt: 0, unsichtbar: 0 };
+      const haeufig = new Map();
       for (let i = 0; i < im.data.length; i += 4) {
         const q = [im.data[i], im.data[i+1], im.data[i+2], im.data[i+3]];
         if (q[3] < 8) { z.unsichtbar++; continue; }
+        const s = q.slice(0,3).join(',');
+        haeufig.set(s, (haeufig.get(s) || 0) + 1);
         if (gleich(q, grund, 6)) { z.grund++; continue; }
         if (gleich(q, akzent, 12)) { z.akzent++; continue; }
         z.inhalt++;
       }
+      z.top = [...haeufig.entries()].sort((a,b)=>b[1]-a[1]).slice(0, 4);
       return z;
     };
     klassenTraeger.oben = rand(1, 1, traeger.width - 2, 2);
@@ -174,7 +178,7 @@ const SONDE = `(() => {
   }
   // Und die Meldung der Flaeche selbst, aus dem Attribut am Rand der Zeile.
   const gemeldet = [...document.querySelectorAll('[data-kanten]')].map((e) => e.getAttribute('data-kanten'));
-  return { gemeldet, traeger: klassenTraeger, dpr: d, masse: { w: c.width, h: c.height }, leinwandCss: { x: Math.round(cr.x), y: Math.round(cr.y), w: Math.round(cr.width), h: Math.round(cr.height) }, kasten, kette, grund, kanten: aus };
+  return { gemeldet, traeger: klassenTraeger, dpr: d, masse: { w: c.width, h: c.height }, leinwandCss: { x: Math.round(cr.x), y: Math.round(cr.y), w: Math.round(cr.width), h: Math.round(cr.height) }, kasten, kette, grund, akzent, kanten: aus };
 })()`;
 
 async function main() {
@@ -237,6 +241,99 @@ async function main() {
     const b = await cdp.send("Page.captureScreenshot", { format: "png" });
     fs.writeFileSync(path.join(ARBEIT, `kanten-${BREITE}.png`), Buffer.from(b.data, "base64"));
     console.log("  Bild: " + path.join(ARBEIT, `kanten-${BREITE}.png`));
+
+    // Dritter Zeuge: **derselbe Schirmsschuss**, also was der Mensch wirklich sieht.
+    // Die Leinwandmisst nur ihre eignen Pixel (durchsichtig uber der CSS-Flaeche), der
+    // Traeger misst die Export-Komposition. Ohne den Schirm ist die Frage "ist die Marke
+    // im Export blasser als auf dem Schirm" nicht entscheidbar - gemessen 4.11. 01:52,
+    // wo beide Spalten eine Marke zaehlen, die der Betrachter in beiden Faellen gleich
+    // sieht oder gleich nicht sieht, und kein Lauf das trennte.
+    const { entpacke } = await import("./helfer/png-kante.mjs");
+    const schirm = entpacke(Buffer.from(b.data, "base64"));
+    if (schirm.meldung) {
+      console.log("  Schirm kann nicht gelesen werden: " + schirm.meldung);
+    } else {
+      const d = stand.dpr || 2;
+      const cx = Math.round(stand.leinwandCss.x * d);
+      const cy = Math.round(stand.leinwandCss.y * d);
+      const grund = stand.grund, akzent = stand.akzent;
+      const misch = (a) => a.map((v, i) => Math.round(0.75 * v + 0.25 * grund[i]));
+      const gemischt = misch(akzent);
+      const gleich = (p, q, k) => q && p.every((v, i) => Math.abs(v - q[i]) <= k);
+      const k = stand.masse.w, h = stand.masse.h;
+      const streifen = (x0, y0, bw, bh) => {
+        const z = { grund: 0, akzentRein: 0, akzentGemischt: 0, andres: 0, gesamt: bw * bh };
+        const haeufig = new Map();
+        for (let y = y0; y < y0 + bh; y++) {
+          for (let x = x0; x < x0 + bw; x++) {
+            const sx = cx + x, sy = cy + y;
+            if (sx < 0 || sy < 0 || sx >= schirm.w || sy >= schirm.h) continue;
+            const o = (sy * schirm.w + sx) * schirm.bpp;
+            const p = [schirm.mal[o], schirm.mal[o + 1], schirm.mal[o + 2]];
+            const schluessel = p.join(",");
+            haeufig.set(schluessel, (haeufig.get(schluessel) || 0) + 1);
+            if (gleich(p, grund, 6)) { z.grund++; continue; }
+            if (gleich(p, akzent, 12)) { z.akzentRein++; continue; }
+            if (gleich(p, gemischt, 12)) { z.akzentGemischt++; continue; }
+            z.andres++;
+          }
+        }
+        z.top = [...haeufig.entries()].sort((a, b2) => b2[1] - a[1]).slice(0, 4);
+        return z;
+      };
+      const vier = {
+        oben: streifen(1, 1, k - 2, 2),
+        unten: streifen(1, h - 3, k - 2, 2),
+        links: streifen(1, 1, 2, h - 2),
+        rechts: streifen(k - 3, 1, 2, h - 2),
+      };
+      console.log(`  Schirm-Anker: Geraetepixel ${schirm.w} x ${schirm.h}, Leinwand bei ${cx},${cy}, Grund ${grund}, Akzent ${akzent}, erwartet gemischt ${gemischt}`);
+      for (const [nam, z] of Object.entries(vier)) {
+        console.log(`    ${nam}: grund ${z.grund}, Akzent rein ${z.akzentRein}, Akzent gemischt ${z.akzentGemischt}, andres ${z.andres} von ${z.gesamt} | ${JSON.stringify(z.top)}`);
+      }
+
+      // Das Urteil, nicht noch eine Zahl: **ist die Marke auf dem Schirm dieselbe wie im
+      // Export?** Die beiden Spalten waren sich uneins, weil die Leinwand ihre eigne, noch
+      // ungemischte Farbe zaehlt, ein Mensch aber die komponierte sieht. Verglichen wird die
+      // haeufigste Farbe einer gemeldeten Kante, die weder Grund noch Karten- noch Panel-Farbe
+      // ist — auf beiden Flaechen nach demselben Suchen, Toleranz 6 je Kanal.
+      const ziffern = (s) => String(s).split(",").map(Number);
+      const nahest = (a, b2) => a && b2 && a.every((v, i) => Math.abs(v - b2[i]) <= 6);
+      const karte = ziffern((vier.oben.top[0] || ["", 0])[0]);
+      const panel = ziffern(((stand.traeger.oben || {}).top || [["", 0]])[0][0]);
+      const marke = (top, verbot) => (top || [])
+        .map(([s, n]) => [ziffern(s), n])
+        .find(([c2]) => !verbot.some((v) => nahest(c2, v)));
+      const gemeldeteKanten = (stand.gemeldet || []).join(" ").split(/\s+/).filter(Boolean);
+      // Die Latte ist nicht mein Gefuehl, sondern die Zahl, die das Haus fuer eine Grafik
+      // gelten laesst, die etwas sagen muss: **mindestens 3:1 Kontrast gegen den Grund, auf
+      // dem sie liegt** (WCAG fuer nicht-textliche Bildinhalte; 4,5:1 gilt hier nur fuer Wort).
+      // Verglichen wird auf beiden Flaechen, und gegen den *strengeren* der beiden Grunda.
+      const leuchtkraft = (c) => {
+        const e = (v) => { v /= 255; return v <= 0.03928 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4); };
+        return 0.2126 * e(c[0]) + 0.7152 * e(c[1]) + 0.0722 * e(c[2]);
+      };
+      const verhaeltnis = (a, b2) => {
+        const L1 = leuchtkraft(a), L2 = leuchtkraft(b2);
+        return (Math.max(L1, L2) + 0.05) / (Math.min(L1, L2) + 0.05);
+      };
+      console.log("  Marken-Urteil (gemeldete Kante: Schirm gegen Traeger, Latte 3:1 auf beiden Ebenen):");
+      let fehl = 0;
+      for (const nam of gemeldeteKanten) {
+        const s = marke((vier[nam] || {}).top, [grund, karte]);
+        const t = marke((stand.traeger[nam] || {}).top, [grund, panel]);
+        if (!s || !t) { console.log(`    ${nam}: keine Marke gefunden (Schirm ${JSON.stringify(s)}, Traeger ${JSON.stringify(t)})`); fehl++; continue; }
+        const sUnt = Math.min(verhaeltnis(s[0], karte), verhaeltnis(s[0], grund));
+        const tUnt = Math.min(verhaeltnis(t[0], panel), verhaeltnis(t[0], grund));
+        const abstand = Math.max(...s[0].map((v, i) => Math.abs(v - t[0][i])));
+        const ok = sUnt >= 3 && tUnt >= 3;
+        if (!ok) fehl++;
+        console.log(`    ${nam}: Schirm ${s[0].join(",")} bei ${sUnt.toFixed(2)}:1 gegen Traeger ${t[0].join(",")} bei ${tUnt.toFixed(2)}:1 — Kanal-Abstand ${abstand} (Unterschied, nicht Urteil), ${ok ? "Marke auf beiden Ebenen sichtbar" : "MARKE ZU SCHWACH"}`);
+      }
+      if (!gemeldeteKanten.length) console.log("    keine Kante gemeldet — dieser Vergleich hat hier keinen Gegenstand");
+      console.log(`  URTEIL MARKE: ${fehl ? fehl + " Kante(n) ohne Marke oder unter 3:1" : gemeldeteKanten.length ? "jede gemeldete Kante traegt eine Marke ueber 3:1, auf Schirm und im Export" : "ohne Gegenstand (keine gemeldete Kante)"}`);
+      if (fehl) process.exitCode = 1;
+    }
   } catch (e) {
     console.log("FEHLER: " + e.message);
     process.exitCode = 1;
