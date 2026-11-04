@@ -383,3 +383,82 @@ describe("P4-16: die Quittung der Hauptzeile trennt Stille und Abweisung", () =>
     expect(zeile, "413 ist keine stumme Tuer").not.toMatch(/did not answer/i);
   });
 });
+
+// P4-17 (Fehler-Feger #31, 4.11. 23:30): die Quittung trennt die zwei Faelle seit P4-15/16,
+// aber sie traegt in BEIDEN Faellen den Wort dessen, der warf. `spiegle` (src/lib/ai.ts:507)
+// wirft beim Abgewiesenen `HTTP <status>` — eigne Unterschrift, darf stehen. Alles andre, was
+// diese Zeile werfen kann, ist ein Fremder: der Browser bringt eine TypeError, und die
+// Spiegelung in den Browserspeicher wirft eine QuotaExceededError. Ihr Wortlaut traegt, was ein
+// Mensch nicht lesen soll (P48/#47: `... — /Users/a/.kepta/kepta.db` mitten im Fenster).
+// Die Kante heisst HERKUNFT, nicht Meldeadel: src/lib/absage.ts haelt sie seit 3.2.130 — hier
+// war sie bisher nicht angelegt. Der Grund bleibt im Protokoll, die Stille heisst Stille.
+describe("P4-17: die Stille behaelt ihren Wortlaut im Protokoll", () => {
+  it("sagt den Transportabbruch der Hauptzeile ohne das Wort des Browsers", async () => {
+    stubFetch({ "/api/settings": (u, init) => {
+      if (init?.method === "PUT") throw new TypeError("Failed to fetch");
+      return new Response("{}", { status: 200 });
+    } });
+    const { container } = render(<Settings />);
+    await waitFor(() => expect(container.textContent).toMatch(/Artificial intelligence/));
+    const feld = screen.getByPlaceholderText(/https:\/\/api\.example\.com\/v1/) as HTMLInputElement;
+    fireEvent.change(feld, { target: { value: "https://beispiel.example/v1" } });
+    fireEvent.click(screen.getByRole("button", { name: /^Save$/ }));
+    await waitFor(() => expect(container.querySelector('[data-quittung="endpunkt"]')).toBeTruthy());
+    const zeile = container.querySelector('[data-quittung="endpunkt"]')?.textContent ?? "";
+    expect(zeile, "Stille heisst Stille").toMatch(/did not answer/i);
+    expect(zeile, "ein Browser-Wortlaut ist keine Auskunft ueber unsre Tuer").not.toMatch(/Failed to fetch/i);
+    expect(zeile, "auch der Name des Fremden bleibt aussen").not.toMatch(/TypeError/);
+  });
+
+  it("nennt keinen Pfad, wenn die Spiegelung in den Browserspeicher den Etat sprengt", async () => {
+    // Der Fall ist nicht ausgedacht: `spiegelbild` schreibt vor der Tuer in localStorage, und
+    // genau dieser Wurf stand am 18.10. als Knopfbeschriftung im Fenster (P48/#47).
+    stubFetch({ "/api/settings": (u, init) => {
+      if (init?.method === "PUT") throw new Error("QuotaExceededError: the quota has been exceeded — /Users/a/.kepta/kepta.db");
+      return new Response("{}", { status: 200 });
+    } });
+    const { container } = render(<Settings />);
+    await waitFor(() => expect(container.textContent).toMatch(/Artificial intelligence/));
+    const feld = screen.getByPlaceholderText(/https:\/\/api\.example\.com\/v1/) as HTMLInputElement;
+    fireEvent.change(feld, { target: { value: "https://beispiel.example/v1" } });
+    fireEvent.click(screen.getByRole("button", { name: /^Save$/ }));
+    await waitFor(() => expect(container.querySelector('[data-quittung="endpunkt"]')).toBeTruthy());
+    const zeile = container.querySelector('[data-quittung="endpunkt"]')?.textContent ?? "";
+    expect(zeile).toMatch(/did not answer/i);
+    expect(zeile, "der Nutzer liest nie den Pfad seines Rechners").not.toMatch(/\/Users\//);
+    expect(zeile, "auch unsre eigne Datenbank-Datei nicht").not.toMatch(/kepta\.db/);
+    expect(zeile, "und kein Bibliotheks-Dialog").not.toMatch(/quota/i);
+  });
+
+  it("sagt den Transportabbruch der Extraktionszeile ohne das Wort des Browsers", async () => {
+    stubFetch({ "/api/settings": (u, init) => {
+      if (init?.method === "PUT") throw new TypeError("Failed to fetch");
+      return new Response("{}", { status: 200 });
+    } });
+    const { container } = render(<Settings />);
+    await waitFor(() => expect(container.textContent).toMatch(/Artificial intelligence/));
+    fireEvent.click(screen.getByRole("checkbox", { name: "Auto-learn" }));
+    const feld = (await waitFor(() => screen.getByPlaceholderText(/llama3\.2:3b/))) as HTMLInputElement;
+    fireEvent.change(feld, { target: { value: "gemma3:4b" } });
+    fireEvent.blur(feld);
+    await waitFor(() => expect(container.querySelector('[data-extract-quittung="warn"]')).toBeTruthy());
+    const zeile = container.querySelector('[data-extract-quittung="warn"]')?.textContent ?? "";
+    expect(zeile, "Stille heisst Stille").toMatch(/did not answer/i);
+    expect(zeile, "die zweite Fundstelle ist dieselbe Wunde").not.toMatch(/Failed to fetch/i);
+  });
+
+  // KONTROLLE, kein neuer Befund: vor und nach dem Flicken gruen. Ohne sie koennte die Heilung
+  // die Absage bloeg zur stummen Feststellung machen — der Grund der eignen Tuer muss bleiben.
+  it("KONTROLLE: die Zahl der eignen Tuer bleibt in der Klammer", async () => {
+    stubFetch({ "/api/settings": (u, init) => (init?.method === "PUT"
+      ? new Response(JSON.stringify({ error: "Settings too large" }), { status: 413 })
+      : new Response("{}", { status: 200 })) });
+    const { container } = render(<Settings />);
+    await waitFor(() => expect(container.textContent).toMatch(/Artificial intelligence/));
+    const feld = screen.getByPlaceholderText(/https:\/\/api\.example\.com\/v1/) as HTMLInputElement;
+    fireEvent.change(feld, { target: { value: "https://beispiel.example/v1" } });
+    fireEvent.click(screen.getByRole("button", { name: /^Save$/ }));
+    await waitFor(() => expect(container.querySelector('[data-quittung="endpunkt"]')).toBeTruthy());
+    expect(container.querySelector('[data-quittung="endpunkt"]')?.textContent).toMatch(/refused it \(HTTP 413\)/);
+  });
+});

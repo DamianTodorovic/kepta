@@ -688,8 +688,13 @@ export function Dashboard() {
       // Die Tuer nennt ihren Grund in derselben Nachricht: der Speicher merkt ihn,
       // die schon vorhandene Zeile malt ihn. Keine neue Flaeche, kein neuer Knopf —
       // aber Satz und Grund zusammen, damit nicht einer von beiden allein steht.
+      //
+      // #59 (4.11.): der Grund kommt schon gefiltert aus dem Speicher (store.ts:216 haelt nur,
+      // was unsre Unterschrift traegt). Ihn in einen `ApiFehler` zu wickeln, um ihm Passier-
+      // Recht zu geben, drehte die Herkunfts-Kante um — ein Fremder haette sie als eigner Satz
+      // passiert. Also: Klammern dran, kein erfundner Fehler.
       const grund = ladeFehler();
-      setLadFehler(grund ? absage(SATZ_LISTEN_ABSAGE, new ApiFehler(grund)) : null);
+      setLadFehler(grund ? `${SATZ_LISTEN_ABSAGE} (${grund})` : null);
     };
     const unsubscribe = subscribeMemories(empfang);
     empfang(getMemoriesSync());

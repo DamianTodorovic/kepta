@@ -1,5 +1,6 @@
 import { Memory } from '../types';
-import { ApiFehler } from './api';
+import { ApiFehler, tuerSatz } from './api';
+import { flaechenGrund } from './absage';
 import type { BehauptungEingabe } from '../core/wortschatz';
 
 // All nodes liegen jetzt serverseitig in ~/.ki-gehirn/memories.json
@@ -147,7 +148,10 @@ export function mehrAnholen(): Promise<number> {
       }
       return frisch.length;
     } catch (err: unknown) {
-      letzterSeitenfehler = err instanceof Error ? err.message : String(err);
+      // #59 (4.11.): dieser Grund geht auf die Flaeche (Dashboard.tsx:115/117). Die Herkunfts-
+      // Kante von src/lib/absage.ts gilt deshalb schon hier: nur ein Satz mit unsrer eignen
+      // Unterschrift wird weitergereicht, ein Browser- oder Laufzeit-Wortlaut bleibt im Protokoll.
+      letzterSeitenfehler = flaechenGrund(err);
       throw err;
     } finally {
       pendingMehr = null;
@@ -213,7 +217,12 @@ async function doRefresh(): Promise<Memory[]> {
       // merken, die Subscriber holen beides — und der Grund wird weiterge-
       // gereicht. `doRefresh` versprach 'rejected NIE' und machte damit jede
       // Absage unsichtbar; genau dieses Versprechen ist der Defekt.
-      letzterLadefehler = err instanceof Error ? err.message : String(err);
+      //
+      // #59 (4.11.): gemerkt wird der Grund, den wir tragen duerfen. Dashboard.tsx:692 setzt
+      // diesen String in Klammern hinter seine Absage; traefe dort jeder Wortlaut durch, waere
+      // die Herkunfts-Kante des Absage-Helfers umgedreht (P48/#47, 3.2.130). Der Fremde —
+      // TypeError des Browsers, SyntaxError der Laufzeit — steht im Protokoll, nicht im Fenster.
+      letzterLadefehler = flaechenGrund(err);
       notify();
       throw err;
     }
@@ -354,11 +363,12 @@ export async function holeBehauptungen(
     const res = await fetch(`/api/memories/${encodeURIComponent(id)}/behauptungen`);
     const data = await res.json().catch(() => null);
     if (!res.ok) {
+      // #59 (4.11.): die Flaeche malt diesen Grund direkt (MemoryEditor.tsx:104). Bisher galt
+      // ihm jedes Wort im Feld `error` — auch das eines fremden Hoerers und jeder Pfad darin.
+      // Dieselbe Formpruefung, die api.ts:42 seit 3.2.128/3.2.130 haelt, gilt jetzt auch hier.
       return {
         ...leer,
-        grund: typeof data?.error === "string" && data.error.trim() !== ""
-          ? data.error.trim()
-          : `The server answered ${res.status} without saying why.`,
+        grund: tuerSatz(data?.error, `The server answered ${res.status} without saying why.`),
       };
     }
     const liste = Array.isArray(data?.behauptungen)
@@ -379,7 +389,15 @@ export async function holeBehauptungen(
       grund: null,
     };
   } catch (fehler) {
-    return { ...leer, grund: `Could not read the claims of this note (${String((fehler as Error)?.message ?? "no answer")}).` };
+    // #59: dass die Behauptungen nicht zu lesen waren, bleibt eine Auskunft — ihr Wortlaut
+    // ist es nicht. Die Kante healtet Herkunft (src/lib/absage.ts), nicht Lesbarkeit.
+    const grund = flaechenGrund(fehler);
+    return {
+      ...leer,
+      grund: grund === null
+        ? "Could not read the claims of this note — the local server did not answer."
+        : `Could not read the claims of this note (${grund}).`,
+    };
   }
 }
 

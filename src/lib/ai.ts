@@ -1,4 +1,5 @@
 // Aufgabe #94 (24.10.): das Lokal-Kriterium wohnt an einer Stelle - dieselbe Funktion wie die Tuer.
+import { ApiFehler } from './api';
 import { istLokaleAdresse } from './schild';
 
 export type Protocol = 'openai' | 'anthropic';
@@ -504,7 +505,12 @@ async function spiegle(s: AISettings): Promise<boolean> {
   });
   // P4-02: die Antwort war bisher ein blinder Wurf. 413 (Etat voll), 429 (Schreibkante)
   // und 500 (Datenbank) liefen als Erfolg weiter, weil die Kette sie schluckte.
-  if (!antwort.ok) throw new Error(`HTTP ${antwort.status}`);
+  //
+  // 3.2.152 (Fehler-Feger #31): dieselbe Zahl, aber im eigner Typ. Ein kahler Error nennt
+  // der Flaeche nur seinen Wortlaut, und die Herkunfts-Kante (src/lib/absage.ts) darf keinen
+  // Wortlaut lesen — sie erkennt die eigne Tuer am `ApiFehler`. Also: die Zahl traegt nun,
+  // was sie schon immer war, und die Absage-Zeile in Settings bleibt wortgleich.
+  if (!antwort.ok) throw new ApiFehler(`HTTP ${antwort.status}`, antwort.status);
   return haelt;
 }
 

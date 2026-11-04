@@ -883,6 +883,14 @@ const erwartet = [
   // Gezaehlt am gebauten Renderer (dist/assets, 06:11 MEZ): die kurze Zahl bleibt **1** mal,
   // der Rat ist **1** mal neu, die alte Lange in der Kopfzeile ist **0** mal.
   ["Name a claim in a note to put a word on a line", 1],
+  // Punkt 4 / Aufgabe #59, 4.11. 23:46 MEZ (3.2.152): die Herkunfts-Kante gilt an allen fuenf
+  // Absage-Stellen, nicht nur im Helfer. Gezaehlt am installierten 3.2.151 (app.asar
+  // 49 200 864 B, mtime 22:26:45 MEZ, bytes.count() in latin1): "the wording of this thrower
+  // stays in the log" dort **0** mal — der Satz schreibt das Protokoll, seit der Grund im
+  // Speicher gefiltert wird. Keine der andern neuen Zeilen taugt als Marke: "Could not read the
+  // claims of this note" steht schon **1** mal im alten Objekt (ihr Satz verlor nur den
+  // Klammer-Inhalt), und "antwortKlausel" ist eine Kennung, die der Minifier verbiegt.
+  ["the wording of this thrower stays in the log", 1],
 ];
 
 // Was NICHT mehr drin sein darf. Bisher war "der alte Wortlaut ist weg" eine Behauptung im

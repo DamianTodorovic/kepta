@@ -537,7 +537,6 @@ async function main() {
   await ruf("an");
   await schlafe(SEKUNDEN * 1000);
   const settling = await ruf("ablesen");
-  const welt = settling.welt;
   // Nach dem Ruhen: ein Bild mehr, ohne die Stellung zu ändern, und die
   // Scheiben-Menge neu gesammelt.
   // Der Titel ist seit 3.2.145 eine Bedingung ("all N notes are in the picture", wenn der

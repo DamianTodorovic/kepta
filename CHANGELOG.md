@@ -1,3 +1,54 @@
+## [3.2.152]
+
+### Fixed
+
+- **Where a refusal reaches the window, only our own signature may speak.** The house rule since
+  3.2.130 (`src/lib/absage.ts`: a fixed sentence for the surface, the reason for the operator) was
+  enforced by one helper while five other places handed the wording of whatever threw to the user:
+  `Settings.tsx:477` and `Settings.tsx:933` printed `did not answer (Failed to fetch)` — and could
+  print `did not answer (QuotaExceededError: … /Users/a/.kepta/kepta.db)`, the exact shape that was
+  photographed in the window at 820 px and named the defect; `store.ts:150` and `store.ts:216`
+  remembered `err.message` and Dashboard paints both (`Dashboard.tsx:115/117`, `Dashboard.tsx:692`),
+  so a browser's `TypeError` and V8's `Unexpected token < in JSON…` became sentences about our door;
+  `store.ts:359` let any text in the answer field `error` through without the form check that
+  `api.ts:42` (`tuerSatz`) has held since 3.2.128. All five now go through the origin edge:
+  `flaechenGrund(e)` returns the door's own sentence or nothing, `antwortKlausel(e)` picks between
+  "refused it (HTTP 413)" and "did not answer", and a foreign wording is written to the console
+  instead of the surface. The distinction P4-15/P4-16 decided (two cases, two words) is unchanged —
+  the four cases that hold it were re-run, not rewritten.
+- **`Dashboard.tsx:692` no longer grants a stranger passage.** It read the remembered reason and
+  wrapped it in `new ApiFehler(grund)` — the one type the filter trusts. That inverted the rule:
+  any wording the store had kept would have passed as our own signature. The stored value is
+  already filtered at its source now, so the line only adds the parentheses.
+- **The settings mirror says what it is.** `ai.ts:507` threw a bare `Error("HTTP 413")`, which is
+  our form but not our type; the origin edge had to special-case the wording to keep the number
+  visible. It throws `ApiFehler(…, status)` instead, so the helper never reads an exception's text
+  and the guard's ban on that stays absolute.
+- **One German word off an English surface.** `Fehlerschirm.tsx:21` labelled a message-less render
+  failure "unbekannte Ursache"; it says "no message" and still names the component (its agreed
+  purpose since 15.10. stays: it names the failure instead of showing a grey window).
+
+### Guards
+
+- `tests/absage-statt-ausnahmewort.test.ts`: the last entry in its exemption list was `Settings.tsx`
+  with its two sites, and the list asked to be emptied when they were healed ("die Regel kann weg").
+  It is empty now, the list itself is a tripwire, the probe's self-check no longer leans on a live
+  violation (it tests its pattern against the shape the code used to write, plus the two healed
+  call sites), and the scan covers `src/lib/*.ts` as well as the components — the two witnesses in
+  `store.ts` reach the surface and were out of view. 7 cases became 9.
+- New: `tests/lib/store-herkunft.test.ts` (8 cases), `Settings.einstell-empfang.test.tsx` +4
+  (P4-17), `Fehlerschirm.test.tsx` +1. 13 new cases, all run red at 23:26 before the fix and green
+  at 23:38 after it.
+
+### Found, not fixed
+
+Four more places throw the bare `Error("HTTP " + status)` into a `catch` that then calls `absage`
+with a sentence written for silence — `Settings.tsx:411` ("The health check did not answer"),
+`Settings.tsx:421`, `ActivityView.tsx:216`, `MemoryPreview.tsx:113`. There the door *did* answer, and
+its number is dropped: the surface claims silence. Turning them into `ApiFehler` would put
+"(HTTP 503)" behind a sentence that denies an answer, so it needs the sentences reworded first —
+a separate cut, named here so it is not sold as done.
+
 ## [3.2.151]
 
 ### Fixed

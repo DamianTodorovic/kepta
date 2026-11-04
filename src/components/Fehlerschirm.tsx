@@ -18,7 +18,10 @@ interface Zustand {
 }
 
 export function fehlertext(fehler: Error | null, spur: string | null): string {
-  const grund = fehler?.message || "unbekannte Ursache";
+  // #59 (4.11.): der Rand nennt den Wurf mit Absicht — das ist seine Verabredung mit dem
+  // Betreiber seit 15.10. Nur hatte ein Wurf ohne Wort bisher ein deutsches Fallback-Wort auf
+  // einer englischen Flaeche; die Flaeche der App spricht eine Sprache (Punkt 7).
+  const grund = fehler?.message || "no message";
   const ort = spur?.split("\n").find((z) => z.trim().startsWith("at "))?.trim();
   return ort ? `${grund} — ${ort}` : grund;
 }

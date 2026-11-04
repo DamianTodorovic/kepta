@@ -1,5 +1,5 @@
 import { ApiFehler, sendJson, tuerSatz } from '../lib/api';
-import { absage } from '../lib/absage';
+import { absage, antwortKlausel } from '../lib/absage';
 import { useState, useEffect, useRef, FormEvent } from 'react';
 import { Key, ShieldCheck, SettingsIcon, Download, CheckCircle2, AlertTriangle, RefreshCw, Cpu, HardDriveDownload, Server, Plug, Copy, Terminal, Braces, Globe, Search, Save, Layers, ExternalLink, Sparkles } from "../lib/icons";
 import { motion } from 'motion/react';
@@ -474,12 +474,11 @@ export function Settings() {
       setMeldung(ort ? { ort, text: 'Saved — the change is on this computer.' } : null);
     } catch (err: unknown) {
       setSaved(false);
-      const grund = err instanceof Error ? err.message : String(err);
-      // P4-16: dieselbe Trennung wie an der Extraktionszeile (:870, `p4-h`). `spiegle`
-      // (src/lib/ai.ts:401) wirft `HTTP <status>` nur, wenn eine Antwort da war; ohne
-      // Antwort bringt der Fetch eine TypeError — zwei Faelle, zwei Worte.
-      const hatGeantwortet = /^HTTP \d{3}$/.test(grund);
-      setMeldung(ort ? { ort, art: 'warn', text: `Not saved — the local server ${hatGeantwortet ? `refused it (${grund})` : `did not answer (${grund})`}. The change lives in this window only and is gone after a restart.` } : null);
+      // P4-16: dieselbe Trennung wie an der Extraktionszeile. P4-17 (4.11.): der Halbsatz
+      // entscheidet nach HERKUNFT — `spiegle` (src/lib/ai.ts:507) wirft die eigne Zahl, die
+      // bleiben darf; ein Browser-Abbruch und eine gesprengte Spiegelung behalten ihren
+      // Wortlaut im Protokoll (P48/#47: ein Pfad stand als Knopfbeschriftung im Fenster).
+      setMeldung(ort ? { ort, art: 'warn', text: `Not saved — the local server ${antwortKlausel(err)}. The change lives in this window only and is gone after a restart.` } : null);
     }
     quittung.current = window.setTimeout(() => { setSaved(false); setMeldung(null); }, QUITTUNG_MS);
   };
@@ -930,12 +929,10 @@ export function Settings() {
                           await saveAISettings({ ...bestand, extractModel: wert });
                           setExtractQuittung({ art: 'ok', text: 'Saved on this computer.' });
                         } catch (err: unknown) {
-                          const grund = err instanceof Error ? err.message : String(err);
-                          // P4-15: `spiegle` (src/lib/ai.ts:401) wirft `HTTP <status>` nur, wenn eine
-                          // Antwort da war. Ohne Antwort bringt der Fetch eine TypeError — zwei Faelle,
-                          // zwei Worte, dasselbe Paar wie :257 und :269.
-                          const hatGeantwortet = /^HTTP \d{3}$/.test(grund);
-                          setExtractQuittung({ art: 'warn', text: `Not saved — the local server ${hatGeantwortet ? `refused it (${grund})` : `did not answer (${grund})`}. The small model lives in this window only.` });
+                          // P4-15: zwei Faelle, zwei Worte. P4-17 (4.11.): das Wort des Fremden
+                          // bleibt im Protokoll — nur die eigne Zahl oder der eigne Satz der Tuer
+                          // kommt in die Klammer.
+                          setExtractQuittung({ art: 'warn', text: `Not saved — the local server ${antwortKlausel(err)}. The small model lives in this window only.` });
                         }
                         extractTimer.current = window.setTimeout(() => setExtractQuittung(null), QUITTUNG_MS);
                       }}
