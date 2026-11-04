@@ -25,7 +25,15 @@
   list did not know "hover" or "arrow-key", so it sold good sentences as findings. Both
   corrections are in the script's comments with their numbers.
   Guarded by `scripts/pruefe-asar-inhalt.cjs`: the four new wordings must appear, the four
-  old ones must count zero.
+  old ones must count zero — and the gate earned its keep on this change: the first build
+  reported `FEHLT 0  is painted in the first group` and stopped before any swap, because the
+  language pass had replaced a sentence that an older marker pinned. The marker moved, the old
+  chain joined the forbidden list, and the rebuilt object measured 0 for the old wording.
+  Measured again at the delivered object (15:43 door read, 15:45 census): jargon sentences
+  60 -> 40 of 324, and sentences naming a technical thing without a reason and without a task
+  **25 -> 8**. The counter now holds that eight as a ratchet (`FACH_OHNE_GRUND_MAX`), because
+  one sentence moves the length share by 0.3 % while this count is what a language change
+  actually reports.
 
 ## [3.2.143]
 

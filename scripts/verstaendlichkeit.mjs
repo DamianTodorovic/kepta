@@ -34,6 +34,12 @@ const NUR_QUELLTEXT = process.argv.includes("--nur") && process.argv.includes("q
 const OBJEKT = NUR_QUELLTEXT ? null : ARG("gegen", "/Applications/K3PTA.app/Contents/Resources/app.asar");
 const SATZKAPPE = 14;
 const UNTER_KAPPE_MINDESTENS = 0.8;
+// Die zweite Latte ist ein Riegel, kein Wunsch: gemessen am ausgelieferten 3.2.144 sind es
+// **8** Saetze, die ein Fachwort nennen ohne Grund und ohne Taetigkeit (vor dem Sprachlauf
+// waren es 25, docs/belege/tag-0411/verstaendlichkeit-objekt-0800.log.txt). Ueber 8 darf es
+// nicht zurueckgehen, und ein einzelner neuer Satz bewegt die Kappenzahl um 0,3 Prozent —
+// darum haelt diese Zahl die Sprache, waehrend die Kappe nur die Laenge meldet.
+const FACH_OHNE_GRUND_MAX = 8;
 const LISTE = Number(ARG("liste", 12));
 
 // Zwei Mengen, weil sie zwei Leser haben. **Flaeche** liest ein Mensch, **Werkzeug** liest ein
@@ -221,8 +227,12 @@ async function haupt() {
   if (!getroffen) console.log("    -> der Census meldet nichts: seine Sonde trifft ihr eignes Ziel nicht.");
 
   const anteil = cFlaeche.unterKappe / Math.max(1, cFlaeche.n);
-  const urteil = !getroffen || !blind ? "TAUB" : anteil >= UNTER_KAPPE_MINDESTENS ? "HALTET" : "FAELLT";
-  console.log(`  URTEIL KAPPE: ${urteil} (Flaeche: Anteil unter ${SATZKAPPE} Woertern ${(100 * anteil).toFixed(1)} %)`);
+  const kappeHalten = anteil >= UNTER_KAPPE_MINDESTENS;
+  const riegelHalten = cFlaeche.fachOhneAlles.length <= FACH_OHNE_GRUND_MAX;
+  const taub = !getroffen || !blind;
+  const urteil = taub ? "TAUB" : kappeHalten && riegelHalten ? "HALTET" : "FAELLT";
+  console.log(`  URTEIL KAPPE: ${kappeHalten ? "HALTET" : "FAELLT"} (Flaeche: Anteil unter ${SATZKAPPE} Woertern ${(100 * anteil).toFixed(1)} %, Latte ${100 * UNTER_KAPPE_MINDESTENS} %)`);
+  console.log(`  URTEIL RIEGEL: ${riegelHalten ? "HAELT" : "FAELLT"} (Fachwort ohne Grund und ohne Taetigkeit: ${cFlaeche.fachOhneAlles.length}, gemessener Stand von 3.2.144, Max ${FACH_OHNE_GRUND_MAX})`);
   console.log(`  URTEIL GRUND: die Flaeche nennt in ${cFlaeche.mitGrund} von ${cFlaeche.n} Saetzen einen Grund oder eine Folge —`);
   console.log("  das ist der Befund dieses Laufs, nicht sein Ziel: eine Zahl ohne Vergleich ist eine Messung, noch kein Urteil.");
   console.log("  OFFEN bleibt, was dieser Lauf nicht beantworten kann: ob ein Mensch den Satz *versteht*.");

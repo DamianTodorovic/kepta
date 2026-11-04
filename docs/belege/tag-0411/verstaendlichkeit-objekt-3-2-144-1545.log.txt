@@ -1,0 +1,72 @@
+  Objekt: /Applications/K3PTA.app/Contents/Resources/app.asar (49199929 B, als Bytes und in einer leerraum-armen Lesung)
+
+  Kandidaten im Quelltext: Flaeche 335, Werkzeug 40
+  die Objekt-Gleichung verwirft: Flaeche 11, Werkzeug 16
+
+  FLAECHE (ein Mensch liest): 324 Saetze im ausgelieferten Objekt
+    unter der Kappe von 14 Woertern: 262 (80.9 %)  — Latte 80 %
+    mit Grund oder Folge: 16 (4.9 %)
+    nennt dem Menschen eine Taetigkeit: 112 (34.6 %)
+    mit mindestens einem Fachwort: 40 (12.3 %)
+    Fachwort ohne Grund und ohne Taetigkeit: 8
+    die Saetze mit Grund oder Folge (alle, gekuerzt):
+      src/components/Settings.tsx  ::  here. Every conversation with at
+                    least one answer becomes a searchable note — importing 
+      src/components/Settings.tsx  ::  How deep the engine searches across all three tracks before ranking. Deeper costs a little time, finds more 
+      src/components/Dashboard.tsx  ::  Let K3PTA look through this computer for documents — you see what would be imported before anything is read
+      src/components/Dashboard.tsx  ::  The vector index is still being built in the background. Until every text chunk carries its vector, a semant
+      src/components/OnboardingWizard.tsx  ::  Only programs you connect here. Nothing leaves unless you add a cloud key — that AI sees your question and t
+      src/components/OnboardingWizard.tsx  ::  Opening K3PTA reads nothing. Documents come in only if you drop them, or say yes at the end — after seeing t
+      src/components/Chat.tsx  ::  Ask this machine whether Ollama or LM Studio is running — nothing is contacted until you click
+      src/components/KnowledgeGraph.tsx  ::  More names, shorter ones — titles are cut so more fit, and the kind steps back from the links
+      src/components/SystemStatus.tsx  ::  No key yet — chat stays silent until you add one. Your agents read and write without a key.
+      src/components/SystemStatus.tsx  ::  Checking whether Ollama answers on this computer — embeddings are the numbers K3PTA makes of your words, so 
+      src/components/SystemStatus.tsx  ::  Ollama answers on this computer — the Knowledge base row below counts how many of your notes have a vector. 
+      src/components/MachineScan.tsx  ::  What you should know before you agree
+      src/lib/uiText.ts  ::  A team workspace is switched on by your organisation's managed settings (managed-settings.json). Nothing was
+      src/lib/uiText.ts  ::  K3PTA loads no third-party code: everything in this window is the app’s own work, the same program on a pers
+      src/lib/tuergrund.ts  ::  No model provider is chosen yet, so nothing was sent. Pick one under Settings, then ask again.
+      src/lib/tuergrund.ts  ::  This provider needs an API key, so nothing left this computer. Add the key under Settings, or start a local 
+
+  WERKZEUG (ein Agent liest): 24 Saetze im ausgelieferten Objekt
+    unter der Kappe von 14 Woertern: 22 (91.7 %)  — Latte 80 %
+    mit Grund oder Folge: 2 (8.3 %)
+    nennt dem Menschen eine Taetigkeit: 9 (37.5 %)
+    mit mindestens einem Fachwort: 6 (25.0 %)
+    Fachwort ohne Grund und ohne Taetigkeit: 3
+    die Saetze mit Grund oder Folge (alle, gekuerzt):
+      src/core/mcp.ts  ::  Existing id, to update instead of create
+      src/core/mcp.ts  ::  Trash instead of active memories
+
+  Die zwoelf laengsten Menschensaetze (Wortzahl | Quelle):
+     38  src/components/SystemStatus.tsx  ::  Ollama answers on this computer — the Knowledge base row below counts how many of your notes have a vector. Embeddings
+     36  src/lib/uiText.ts  ::  K3PTA loads no third-party code: everything in this window is the app’s own work, the same program on a personal and a
+     34  src/lib/uiText.ts  ::  A team workspace is switched on by your organisation's managed settings (managed-settings.json). Nothing was provision
+     33  src/components/Dashboard.tsx  ::  The vector index is still being built in the background. Until every text chunk carries its vector, a semantic search 
+     28  src/lib/uiText.ts  ::  Root → type → entity → note · Double-click a group: fold it, the count stays · Double-click a note: open it · Drag: pa
+     26  src/components/KnowledgeGraph.tsx  ::  Knowledge graph. Use the arrow keys to move between notes and concepts, Enter opens the note, or the dossier of a conc
+     26  src/components/SystemStatus.tsx  ::  Close other programs that use K3PTA (AI agents over MCP) and restart K3PTA — it encrypts the file as soon as it has it
+     26  src/components/SystemStatus.tsx  ::  Checking whether Ollama answers on this computer — embeddings are the numbers K3PTA makes of your words, so a search c
+     26  src/lib/uiText.ts  ::  A letter in a node is its type · A number in a concept is the notes behind it · ×N means the group is folded
+     25  src/components/MemoryCard.tsx  ::  Where the search found this note — the position in each retrieval track (BM25, vectors, knowledge graph). null means t
+     25  src/components/Chat.tsx  ::  The search index did not answer — the order of the notes below comes from this app's own local ranking, not from the s
+     25  src/components/KnowledgeGraph.tsx  ::  Motion — the field keeps settling for a moment after every change. Off stops that: the picture stays where it is, and 
+
+  Fachwort ohne Grund und ohne Taetigkeit (die ersten 12 von 8):
+    mcp  src/components/Settings.tsx  ::  works too (kepta-mcp 2.11 or newer). From your own checkout instead (after
+    endpoint  src/components/Settings.tsx  ::  The API endpoint is the web address K3PTA calls when it sends your question to a model
+    graph  src/components/Dashboard.tsx  ::  Knowledge, Chat, Graph, Settings
+    graph  src/components/Sidebar.tsx  ::  Graph draws which of your notes talk about the same people and topics
+    graph  src/components/KnowledgeGraph.tsx  ::  Fit the whole graph into view
+    semantic  src/components/KnowledgeGraph.tsx  ::  Semantic map — notes placed by what they mean, not by their words.
+    graph  src/components/KnowledgeGraph.tsx  ::  Similarity links are guesses from shared tags and titles. Off, the graph claims nothing.
+    embeddings  src/components/SystemStatus.tsx  ::  Ollama / Embeddings (optional)
+
+  Biss-Kontrolle eins: die Rate-Zeile von 3.2.143 ist im Census getroffen
+  Biss-Kontrolle zwei: ein nie ausgelieferter Satz wird richtig verworfen
+  URTEIL KAPPE: HALTET (Flaeche: Anteil unter 14 Woertern 80.9 %, Latte 80 %)
+  URTEIL RIEGEL: HAELT (Fachwort ohne Grund und ohne Taetigkeit: 8, gemessener Stand von 3.2.144, Max 8)
+  URTEIL GRUND: die Flaeche nennt in 16 von 324 Saetzen einen Grund oder eine Folge —
+  das ist der Befund dieses Laufs, nicht sein Ziel: eine Zahl ohne Vergleich ist eine Messung, noch kein Urteil.
+  OFFEN bleibt, was dieser Lauf nicht beantworten kann: ob ein Mensch den Satz *versteht*.
+  Dafuer braucht Punkt 7 einen Menschen oder ein Gegenstueck aus dem Markt.

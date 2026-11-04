@@ -31,6 +31,7 @@ Laeufe liegt, korrekt gekuerzt, im Kern-Repo unter `docs/belege/`.
 | `tag-0411/tuer-53-objekt-3-2-142-0602.log.txt` | 4479 B | `b51deb57b55e62b6…` |
 | `tag-0411/objekt-3-2-143-legende-und-fenster-0628.log.txt` | 9302 B | `0c4faa9f7dc3b646…` |
 | `tag-0411/verstaendlichkeit-objekt-0800.log.txt` | 7287 B | `7e84b56971bb47ce…` |
+| `tag-0411/verstaendlichkeit-objekt-3-2-144-1545.log.txt` | 6976 B | `5bb3fa207afa0da9…` |
 | `tag-13-10/eval-korpus-1143.log.txt` | 3419 B | `8b343e7457825fa0…` |
 | `tag-13-10/eval-korpus-1413.log.txt` | 4181 B | `dcd3e42dc0021921…` |
 | `tag-13-10/ablation-beine-1144.log.txt` | 1904 B | `62d15147e59de149…` |
@@ -40,10 +41,11 @@ Laeufe liegt, korrekt gekuerzt, im Kern-Repo unter `docs/belege/`.
 | `app-abnahme/nachzug-flaeche-gruen.log.txt` | 19204 B | `1e6eb0616a86a748…` |
 | `app-abnahme/nachzug-mutation-rot.log.txt` | 22052 B | `1c8a44f87cda8e3a…` |
 
-Summe: **141 447 Bytes in 24 Dateien** (gemessen am 4.11. um 08:03 MEZ mit `wc -c` ueber
+Summe: **148 423 Bytes in 25 Dateien** (gemessen am 4.11. um 15:46 MEZ mit `wc -c` ueber
 `find docs/belege -name '*.log.txt'`). Die fuenf Laeufe des 4.11. bis 02:21 machen 16 571
 Bytes aus, die drei von Aufgabe #53 (05:49, 05:50 und 06:02 MEZ) 13 500 Bytes, der
-Objektnachlauf von 3.2.143 (06:28 MEZ) 9 302 Bytes und der Sprach-Census (08:00 MEZ) 7 287 Bytes.
+Objektnachlauf von 3.2.143 (06:28 MEZ) 9 302 Bytes, der Sprach-Census (08:00 MEZ) 7 287 Bytes
+und sein Wiederlauf am ausgelieferten 3.2.144 (15:45 MEZ) 6 976 Bytes.
 
 Die Zeile war zwei Dateien hinterher: sie schrieb am 3.11. **"92 036 Bytes in 12 Dateien"**,
 waehrend `find` am 4.11. vor den neuen Laeufen **94 787 Bytes in 14 Dateien** meldete — die
@@ -260,3 +262,21 @@ fand sein Ziel nicht. Berichtigt auf eine Bytesuche plus eine leerraum-arme Lesu
 die jetzt gilt, ist die oben. Das Blatt von 07:52 liegt als
 `audit-2026-10-09/feldzug/belege-0411/verstaendlichkeit-objekt-0752-erste-lesung.txt` in der
 Arbeitsmappe, damit der Irrtum nachlesbar bleibt.
+
+## Der Wiederlauf nach dem Sprachlauf (4.11. 15:45 MEZ, ausgeliefertes 3.2.144)
+
+`tag-0411/verstaendlichkeit-objekt-3-2-144-1545.log.txt` ist derselbe Census gegen dasselbe
+Werkzeug, aber am **getauschten** Objekt (asar 49 199 929 B, Tuer 15:43:00 MEZ mit
+`Version 3.2.144 | Knoten 21064 | eingebettet 64163/64163`). Die zwei Zahlenspalten gehoeren
+zusammen, weil nur der Unterschied eine Aussage ist:
+
+    Grundgesamtheit der Flaeche      324  gegen  324  Saetze (unveraendert)
+    unter der Kappe von 14 Woertern  259 (79.9 %)  ->  262 (80.9 %)
+    mit mindestens einem Fachwort     60 (18.5 %)  ->   40 (12.3 %)
+    Fachwort ohne Grund und ohne Taetigkeit  25     ->    8
+
+Der Riegel steht jetzt auf dieser letzten Zahl (`FACH_OHNE_GRUND_MAX = 8` in
+`scripts/verstaendlichkeit.mjs`), mit dem Grund in seinem eigenen Kommentar: ein einzelner
+Satz bewegt die Kappenzahl um 0,3 Prozent, die Fachwortzahl ist das, was eine Sprachaenderung
+wirklich meldet. Beide Urteile lauten HALTET, Exit 0, und die zwei Biss-Kontrollen melden
+getroffen und verworfen.
