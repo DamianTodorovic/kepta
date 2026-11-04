@@ -28,6 +28,7 @@ Laeufe liegt, korrekt gekuerzt, im Kern-Repo unter `docs/belege/`.
 | `tag-0411/begriffsnamen-form-0159.log.txt` | 783 B | `a31931315d622e1a…` |
 | `tag-0411/tuer-53-vor-3-2-140-bund-0549.log.txt` | 4544 B | `418cdc25a488f34a…` |
 | `tag-0411/tuer-53-nach-3-2-142-bund-0550.log.txt` | 4477 B | `b7718ae78e8dc48a…` |
+| `tag-0411/tuer-53-objekt-3-2-142-0602.log.txt` | 4479 B | `b51deb57b55e62b6…` |
 | `tag-13-10/eval-korpus-1143.log.txt` | 3419 B | `8b343e7457825fa0…` |
 | `tag-13-10/eval-korpus-1413.log.txt` | 4181 B | `dcd3e42dc0021921…` |
 | `tag-13-10/ablation-beine-1144.log.txt` | 1904 B | `62d15147e59de149…` |
@@ -37,9 +38,9 @@ Laeufe liegt, korrekt gekuerzt, im Kern-Repo unter `docs/belege/`.
 | `app-abnahme/nachzug-flaeche-gruen.log.txt` | 19204 B | `1e6eb0616a86a748…` |
 | `app-abnahme/nachzug-mutation-rot.log.txt` | 22052 B | `1c8a44f87cda8e3a…` |
 
-Summe: **120 379 Bytes in 21 Dateien** (gemessen am 4.11. um 05:56 MEZ mit `wc -c` ueber
+Summe: **124 858 Bytes in 22 Dateien** (gemessen am 4.11. um 06:02 MEZ mit `wc -c` ueber
 `find docs/belege -name '*.log.txt'`). Die fuenf Laeufe des 4.11. bis 02:21 machen 16 571
-Bytes aus, die zwei von Aufgabe #53 (05:49 und 05:50 MEZ) 9 021 Bytes.
+Bytes aus, die drei von Aufgabe #53 (05:49, 05:50 und 06:02 MEZ) 13 500 Bytes.
 
 Die Zeile war zwei Dateien hinterher: sie schrieb am 3.11. **"92 036 Bytes in 12 Dateien"**,
 waehrend `find` am 4.11. vor den neuen Laeufen **94 787 Bytes in 14 Dateien** meldete — die
