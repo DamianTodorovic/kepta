@@ -424,11 +424,17 @@ async function main() {
   await warteBis(async () => (await evaliere(`!!document.querySelector('[data-testid="graph-canvas"]')`) ? true : null), { maxMs: 60000 });
 
   // 4) Kraftfeld, und die Flaeche muss die Zahlen selbst nennen.
-  await evaliere(`(()=>{const b=document.querySelector('[title^="Force view"]');if(b)b.click();})()`);
+  const kraftGefunden = await evaliere(`(()=>{const b=document.querySelector('[title^="Force view"]');if(!b)return false;b.click();return true})()`);
+  if (!kraftGefunden) console.log("  KEIN Kraftfeld-Knopf — die Zahlen der Flaeche stammen aus einer andern Ansicht");
   const sageDerFlaeche = await warteBis(async () => {
     const t = await evaliere(`document.querySelector('[data-testid="graph-legende"]')?.textContent || ''`);
-    const m = t.match(/(\d+) notes[^·]*·\s*(\d+) concepts[^·]*·\s*([\d,]+) links/);
-    return m ? { notizen: Number(m[1]), konzepte: Number(m[2]), kanten: Number(m[3].replace(/,/g, "")), tekst: m[0] } : null;
+    // Die Zahl der Flaeche ist gegliedert ("3,000 notes"), seit #101 gilt ein Kleid pro
+    // Flaeche. Ein Muster, das nur \d+ nimmt, liest aus "3,000" die **000** und meldet
+    // "0 notes" — gemessen 4.11. 16:06 MEZ in diesem Lauf, wo der Kopf 3,000 Notizen nannte
+    // und die Sonde 0. Also: Gruppen mit Komma zulassen und das Komma abziehen.
+    const m = t.match(/([\d,]+) notes[^·]*·\s*([\d,]+) concepts[^·]*·\s*([\d,]+) links/);
+    const zahl = (s) => Number(String(s).replace(/,/g, ""));
+    return m ? { notizen: zahl(m[1]), konzepte: zahl(m[2]), kanten: zahl(m[3]), tekst: m[0] } : null;
   }, { maxMs: 60000 });
   console.error(`die Flaeche meldet: ${sageDerFlaeche.tekst}`);
 
@@ -439,10 +445,15 @@ async function main() {
   const welt = settling.welt;
   // Nach dem Ruhen: ein Bild mehr, ohne die Stellung zu ändern, und die
   // Scheiben-Menge neu gesammelt.
-  await evaliere(`(()=>{const b=document.querySelector('[title="Fit the whole graph into view"]');if(b)b.click();})()`);
+  // Der Titel ist seit 3.2.145 eine Bedingung ("all N notes are in the picture", wenn der
+  // Rahmen alles haelt) — ein Klick, der ihn als Suchkette traegt, klickt dann ins Leere und
+  // meldet Erfolg. Gegriffen wird die stabile Kennung, und der Lauf meldet, ob der Knopf da war.
+  const fitGefunden = await evaliere(`(()=>{const b=document.querySelector('[data-testid="graph-fit"]');if(!b)return false;b.click();return true})()`);
+  console.log(`  Fit-Knopf gefunden und gedrueckt: ${fitGefunden}`);
   await schlafe(1500);
   await ruf("an");
-  await evaliere(`(()=>{const b=document.querySelector('[title="Zoom in"]');if(b)b.click();})()`);
+  const zoomGefunden = await evaliere(`(()=>{const b=document.querySelector('[title="Zoom in"]');if(!b)return false;b.click();return true})()`);
+  if (!zoomGefunden) console.log("  KEIN Zoom-in-Knopf — die ruhige Messung gilt der Ankunft, nicht dem Zoom");
   await schlafe(1200);
   const ruhig = await ruf("ablesen");
   const ueberlapp = await ruf("kollision");
