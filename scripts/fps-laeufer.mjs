@@ -282,7 +282,7 @@ class Cdp {
       const w = this.wartend.get(m.id);
       if (!w) return;
       this.wartend.delete(m.id);
-      if (m.error) w.rej(new Error(JSON.stringify(m.error).slice(0, 200)));
+      if (m.error) w.rej(new Error(JSON.stringify(m.error).slice(0, 700)));
       else w.res(m.result);
     });
   }
@@ -301,7 +301,7 @@ class Cdp {
 const schlafe = (ms) => new Promise((r) => setTimeout(r, ms));
 async function evaliere(ausdruck) {
   const r = await cdp.send("Runtime.evaluate", { expression: ausdruck, returnByValue: true, awaitPromise: true });
-  if (r.exceptionDetails) throw new Error(`${ausdruck.slice(0, 60)}: ${JSON.stringify(r.exceptionDetails).slice(0, 200)}`);
+  if (r.exceptionDetails) throw new Error(`${ausdruck.slice(0, 60)}: ${JSON.stringify(r.exceptionDetails).slice(0, 700)}`);
   return r.result.value;
 }
 async function ruf(name, args = "undefined") { return evaliere(`__fps.${name}(${args})`); }
@@ -605,7 +605,31 @@ async function main() {
   }
   if (!ziehen) ziehen = await ruf("ablesen");
   console.log(`  Schlepp-Zug: ${ziehen.arbeitende > 0 ? `Kandidat ${treffer} von ${kandidaten.length} getroffen` : `KEINER von ${kandidaten.length} grossen Scheiben getroffen — die Phase bleibt ein Nichtangriff`}`);
-  await schlafe(700);
+  // Die Geometrie NACH dem Zug. Zwei Dinge sind daran zu verstehen, und beide sind
+  // gemessen worden, bevor sie hier standen.
+  //
+  // Erstens: gesammelt wird EIN Rahmen nach der Ruhe, nicht der ganze Zug. Die
+  // Scheiben-Sammlung ist eine Vereinigung ueber alle Rahmen seit dem letzten `an`,
+  // und ein Zug malt 635 Scheiben an 99 verschiedenen Orten — die Nach-zug-Lesung von
+  // 21:15:56 MEZ lief in 99 Rahmen und endete mit `RangeError: Set maximum size
+  // exceeded` in der Paar-Pruefung. Gezahlt wird das Endbild, nicht der Flug.
+  //
+  // Zweitens: die Zusage der Flaeche ("Dragged notes stay put") wirkt, nachdem das
+  // Feld zurueckkommt — also wird die Ruhe erst abgewartet, und zwar mit demselben
+  // Zeugen wie vorher: zwei Lesungen, dieselbe Stellung.
+  let ruheVorher = null;
+  let nachZugSteht = null;
+  for (let versuch = 1; versuch <= 24; versuch++) {
+    await ruf("an");
+    await evaliere(`(()=>{const z=document.querySelector('[title="Zoom in"]');const a=document.querySelector('[title="Zoom out"]');if(z)z.click();if(a)a.click();return true})()`);
+    await schlafe(900);
+    const jetzt = await ruf("stellung");
+    const n = (jetzt || "").split("|").filter(Boolean).length;
+    if (n > 0 && ruheVorher !== null && jetzt === ruheVorher) { nachZugSteht = versuch * 0.9; break; }
+    ruheVorher = jetzt;
+  }
+  console.log(`  Nach dem Zug: ${nachZugSteht === null ? "KEINE Ruhe in 21.6 s — die Lesung gilt dem letzten Rahmen, nicht einem stehenden Feld" : `steht das Feld nach ${nachZugSteht.toFixed(1)} s`}`);
+  const ueberlappNachZug = await ruf("kollision");
 
   // Die zweite Sonde: ruhig war es vor dem Start. Waehrend der Messung kann
   // eine Suite angesprungen sein, und dann ist die Zahl wertlos. ZUERST wird
@@ -616,6 +640,9 @@ async function main() {
   const urteilAmEnde = ruedig(sonde());
   const out = {
     gemessenAm: new Date().toISOString(),
+    // Die Fassung im Leib des Artefakts, nicht nur in seinem Kopf: ein Beleg, der seine
+    // Fassung nicht selbst traegt, bezeugt nur den Stand, den jemand anders fuer ihn sagt.
+    fassung: gesund.version,
     maschine: {
       vorDemStart: beschlag(urteil.messung),
       nachDerMessung: beschlag(urteilAmEnde.messung),
@@ -629,6 +656,7 @@ async function main() {
     budgetMs: Math.round(BUDGET_MS * 100) / 100,
     phasen: { einschwingen: settling, ruheNachFit: ruhig, knotenZiehen: ziehen },
     ueberlappung: ueberlapp,
+    ueberlappungNachZug: ueberlappNachZug,
     scheiben: { groessteWelt: Math.round(settling.groesste) },
     befehl: `node scripts/fps-laeufer.mjs --knoten ${KNOTEN} --sekunden ${SEKUNDEN}`,
   };
@@ -645,11 +673,13 @@ async function main() {
       process.exitCode = 1;
     } else {
       console.log(`ueberlappung   ${out.ueberlappung.scheiben} Scheiben, geschnitten: ${out.ueberlappung.geschnitten} Paare, beruehrend: ${out.ueberlappung.beruehrend}, tiefster Schnitt ${out.ueberlappung.tiefsterSchnitt} Welt-Einheiten`);
+      const n = out.ueberlappungNachZug;
+      console.log(`nach-zug       ${n.scheiben} Scheiben, geschnitten: ${n.geschnitten} Paare, beruehrend: ${n.beruehrend}, tiefster Schnitt ${n.tiefsterSchnitt} Welt-Einheiten${n.geschnitten ? "  — der Zug hat etwas ueberlappend zurueckgelassen" : ""}`);
     }
     // Die Paare namentlich, nicht nur ihre Zahl: "1 Paar" ist ein Befund ohne Ort, und
     // ohne Ort ist keine Ursache zu pruefen (gemessen 4.11. 16:10 MEZ bei 3 000 Notizen).
-    // Seit diesem Lauf auch ohne Farbe: zwei Scheiben mit Radius 26 koennen Knoten sein
-    // (dann schuldet das Ruhe-Feld die Trennung) oder ein Ring (dann kann keine Kollision
+    // Seit diesem Lauf auch mit der Farbe, in der gemalt wird: zwei Scheiben mit Radius 26
+    // koennen Knoten sein (dann schuldet das Ruhe-Feld die Trennung) oder ein Ring (dann kann keine Kollision
     // sie trennen, weil er kein Knoten ist).
     for (const pb of out.ueberlappung.proben || []) {
       console.log(`    Paar bei (${pb.x},${pb.y}) und (${pb.dx},${pb.dy}) — Abstand ${pb.d}, Radien ${pb.r1} + ${pb.r2}, Schnitt ${pb.schnitt}, gemalt in ${pb.stil1} und ${pb.stil2}`);

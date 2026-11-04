@@ -46,6 +46,9 @@ Laeufe liegt, korrekt gekuerzt, im Kern-Repo unter `docs/belege/`.
 | `tag-0411/fps-3000-148-2054.log.txt` | 3837 B | `1361eee0e05d74b7…` |
 | `tag-0411/fps-400-148-2057.log.txt` | 3773 B | `16aece9126685ad1…` |
 | `tag-0411/fps-1500-148-2059.log.txt` | 3793 B | `fda1e10fdc7e167b…` |
+| `tag-0411/fps-3000-149-2109.log.txt` | 3900 B | `495d020de8fd380d…` |
+| `tag-0411/fps-3000-149-abbruch-2115.log.txt` | 3460 B | `df1ae59f53bff27a…` |
+| `tag-0411/fps-3000-149-nachzug-2119.log.txt` | 4039 B | `aa474a2357b5c023…` |
 | `tag-13-10/eval-korpus-1143.log.txt` | 3419 B | `8b343e7457825fa0…` |
 | `tag-13-10/eval-korpus-1413.log.txt` | 4181 B | `dcd3e42dc0021921…` |
 | `tag-13-10/ablation-beine-1144.log.txt` | 1904 B | `62d15147e59de149…` |
@@ -55,7 +58,7 @@ Laeufe liegt, korrekt gekuerzt, im Kern-Repo unter `docs/belege/`.
 | `app-abnahme/nachzug-flaeche-gruen.log.txt` | 19204 B | `1e6eb0616a86a748…` |
 | `app-abnahme/nachzug-mutation-rot.log.txt` | 22052 B | `1c8a44f87cda8e3a…` |
 
-Summe: **184 456 Bytes in 39 Dateien** (gemessen am 4.11. um 21:02 MEZ mit `wc -c` ueber
+Summe: **195 855 Bytes in 42 Dateien** (gemessen am 4.11. um 21:22 MEZ mit `wc -c` ueber
 `find docs/belege -name '*.log.txt'`). Die fuenf Laeufe des 4.11. bis 02:21 machen 16 571
 Bytes aus, die drei von Aufgabe #53 (05:49, 05:50 und 06:02 MEZ) 13 500 Bytes, der
 Objektnachlauf von 3.2.143 (06:28 MEZ) 9 302 Bytes, der Sprach-Census (08:00 MEZ) 7 287 Bytes
@@ -77,6 +80,15 @@ Fassungen melden. Die fuenf frischen Laeufe: 3 000 Notizen dreimal (Dateizeiten 
 20:52:33, 20:54:54 MEZ; 621, 646 und 625 Scheiben, jedes Mal **0 Paare**) und die zwei
 Kleineren danach (400 Notizen: 418 Scheiben, 0 Paare, 20:57:20 MEZ; 1 500 Notizen: 528
 Scheiben, 0 Paare, 20:59:38 MEZ), alle an 3.2.148.
+
+Drei Laeufe am ausgelieferten 3.2.149 gehoeren ebenso hierher: der erste (Dateizeit
+21:09:31 MEZ) bestaetigt 0 Paare bei 625 Scheiben und zeigt den Schlepp-Griff zum ersten Mal
+treffend ("Kandidat 1 von 8", 99 malende Rahmen). Der zweite (Dateizeit 21:15:59 MEZ) ist ein
+**Abbruch mit Grund** und bleibt als Zeuge liegen: die Nach-zug-Lesung zaehlte die Scheiben des
+ganzen Zuges statt eines Rahmens, die Vereinigung wuchs ueber 99 Rahmen, und die Paar-Pruefung
+warf `RangeError: Set maximum size exceeded` — Exit 1, kein Urteil. Der dritte (Dateizeit
+21:19:10 MEZ) misst nach demselben Schritt mit Ruhe-Warten und einem Rahmen: 637 Scheiben und
+0 Paare vor dem Zug, 645 Scheiben und **0 Paare** danach, das Feld steht nach 7,2 s.
 
 Die Zeile war zwei Dateien hinterher: sie schrieb am 3.11. **"92 036 Bytes in 12 Dateien"**,
 waehrend `find` am 4.11. vor den neuen Laeufen **94 787 Bytes in 14 Dateien** meldete — die

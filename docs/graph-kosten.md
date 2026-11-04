@@ -444,3 +444,36 @@ Wirkung des Nachschlags **nach** einem Zug im Browser weiterhin ungemessen. Im L
 sie es (`tests/lib/graphLayout.test.ts`, der Browser-Fund vom 4.11. und seine Nachlaeufe). Der
 Schlepp-Griff der Sonde zielt auf eine feste Bildstelle und trifft bei 3 000 Notizen oft ins
 Leere; das ist die naechste Arbeit an diesem Werkzeug, nicht an der Flaeche.
+
+## Am ausgelieferten 3.2.149, und der Zug ist kein Nichtangriff mehr (21:09 bis 21:19 MEZ)
+
+Die Fassung auf dem Stueck ist die Fassung im Protokoll: jeder Lauf druckt `fassung: 3.2.149
+(der Baum, aus dem gebaut wurde: 3.2.149)` und bricht ab, wenn die beiden Zahlen verschieden
+sind. Drei Laeufe, alle bei 3 000 Notizen:
+
+| Lauf | Scheiben vor dem Zug | Paare vor dem Zug | Schlepp-Zug | Ruhe nach dem Zug | Scheiben nach dem Zug | Paare nach dem Zug | Beleg (Dateizeit) |
+|---|---|---|---|---|---|---|---|
+| 1 | 625 | **0** | Kandidat 1 von 8 getroffen, 99 malende Rahmen | — nicht gemessen | — | — | `docs/belege/tag-0411/fps-3000-149-2109.log.txt` (21:09:31 MEZ) |
+| 2 | — Abbruch | — | Kandidat 1 von 8, 99 Rahmen | — | — | — | `docs/belege/tag-0411/fps-3000-149-abbruch-2115.log.txt` (21:15:59 MEZ) |
+| 3 | 637 | **0** | Kandidat 1 von 8 getroffen | steht nach 7,2 s | 645 | **0** | `docs/belege/tag-0411/fps-3000-149-nachzug-2119.log.txt` (21:19:10 MEZ) |
+
+**Lauf 2 ist ein Eigenfehler der Sonde, gemeldet mit seinem Zeug.** Die neue Nach-zug-Lesung
+zaehlte die Scheiben des *ganzen Zuges*: die Sammlung laeuft ueber alle Rahmen seit dem letzten
+`an`, und ein Zug malt 637 Scheiben an 99 verschiedenen Mitten. Die Vereinigung wuchs auf
+mehrere zehntausend Eintraege, und die Paar-Pruefung warf `RangeError: Set maximum size
+exceeded`. Der Lauf endete mit Exit 1 und ohne Urteil — was er nicht tat, war, eine Zahl 0 zu
+melden, die kein Feld beschreibt. Heilung: nach dem Loslassen wird die Ruhe abgewartet
+(dieselbe Kante aus zwei gleichen Lesungen wie vor dem Zug), und dann wird **ein** Rahmen gesammelt.
+
+**Damit ist der letzte Satz bewiesen, der vorher nur im Fall stand.** Die Flaeche verspricht
+"Dragged notes stay put" — dass ein gezogener Knoten liegt bleibt, wenn die Physik weiterrechnet
+(`KnowledgeGraph.tsx:5872`). Gemessen am ausgelieferten Stueck: nach dem Zug und nach 7,2 s Ruhe
+stehen 645 Scheiben da, **null Paare, null Beruehrungen, tiefster Schnitt null**. Vorher, in drei
+von fuenf Laeufen, war die Schlepp-Phase ein Nichtangriff (der Griff traf eine Leerstelle, 0
+malende Rahmen), und darum war genau dieser Beweis im Browser nie gefuehrt.
+
+**Zeitfaelle bleiben zurueckgehalten.** Die drei Phasen des Laufs von 21:19:10 MEZ rechnen 3,6 /
+8,0 / 8,7 ms median je Bild, und keiner der 448 malenden Rahmen liegt ueber 16,67 ms — aber
+dieselbe Maschine meldet am Ende des Laufs max/median 2,33 ueber ihrer Decke 1,8, also ist das
+kein Zeit-Urteil, sondern eine Geometrie-Messung, die nebenbei ihre Arbeit zeigt. Ein ruhiger
+Wiederholungslauf ist Aufgabe #56 nicht entgangen, sondern nachstehend gehalten.

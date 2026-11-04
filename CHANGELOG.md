@@ -23,6 +23,20 @@
   verdicts — the machine was not quiet at the end of these runs (max/median 2.7-3.3 against
   its own 1.8 ceiling), and geometry and time are two different measurements.
 
+### Confirmed on 3.2.149 (measured after this version landed)
+
+- The rebuilt instrument ran three times on the installed 3.2.149. Run 1 (21:09:31 MEZ):
+  625 discs, **0 intersecting pairs**, and the drag hit for the first time — "Kandidat 1 von 8
+  getroffen", 99 working frames. Run 2 (21:15:59 MEZ) is kept as a witness to its own
+  failure: the new post-drag reading counted the *whole drag* instead of one frame, its disc
+  union grew across 99 frames and the pair test threw
+  `RangeError: Set maximum size exceeded`; the run ended with exit 1 and refused to report a
+  number. Run 3 (21:19:10 MEZ), after waiting for rest the same way the pre-drag phase does
+  and then collecting a single frame: 637 discs and **0 pairs** before the drag, 645 discs and
+  **0 pairs** after it, the field standing again 7.2 s after release — which is the browser
+  proof that the surface keeps a dragged note where it was put, and that the rest-collision
+  pass reaches the node the user moved.
+
 ## [3.2.148]
 
 ### Fixed
