@@ -174,3 +174,31 @@ Port 3951); die Blaetter daneben liegen in der Arbeitsmappe
 (`audit-2026-10-09/feldzug/belege-0411/spurbau-*.mts`), weil sie an diesen einen Bestand
 gekoepft sind und keine Dauerwache des Repos sind. Die Tuer-Laeufe fährt
 `audit-2026-10-09/pf1/tuerkontrolle.mjs --nur-messen --mit-ollama`.
+
+## Die zwei Tuer-Laeufe vom 4.11. spaet: der Einbettungs-Nachzug, vorher und nachher
+
+`tag-0411/tuer-53-vor-3-2-140-bund-0549.log.txt` und
+`tag-0411/tuer-53-nach-3-2-142-bund-0550.log.txt` sind derselbe Griff an demselben Bestand
+(40 010 bis 40 013 Notizen, 80 016 bis 80 020 Abschnitte, davon 224 bis 352 mit Vektor),
+gefahren gegen zwei **Bund-Ordner**:
+`dist-pf1-vor/server.cjs` ist die ausgepackte Datei aus dem zurueckgelegten
+`/tmp/K3PTA-vor-3.2.141.app` (3.2.140), `dist-pf1/server.cjs` der Baum von 3.2.142. Kein
+git-Rueckgang, keine zweite Maschine — dasselbe Programm, zwei Bytesaetze.
+
+Der Sonde ist fuer diese Frage eine Zeile dazugekommen: sie wartet jetzt sichtbar darauf, dass
+die Einbettungs-Queue einen Abschnitt erreicht hat (`Vektor-Nachzug gelandet: ja (224 -> 256)`),
+und meldet es auch, wenn sie nicht wartet. Ohne dieses Warten misst die Suche eine Welt, in
+der der Nachzug noch gar nicht stattgefunden hat — genau der Fall, der 3.2.140 und 3.2.141 in
+einer frueheren Runde beide gleich aussehen liess.
+
+Was die beiden Laeufe melden, ist die Zeile `vektor` im Kopf, den die Route selbst schreibt:
+
+    vorher  {"ms":87,  "vektor":54.98, suchbauten 2, deltapatches 0   (256 Zeilen)
+    vorher  {"ms":245, "vektor":38.92, suchbauten 3, deltapatches 0   (288 Zeilen)
+    nachher {"ms":43,  "vektor":11.72, suchbauten 1, deltapatches 1   (320 Zeilen)
+    nachher {"ms":43,  "vektor":16.91, suchbauten 1, deltapatches 2   (352 Zeilen)
+
+Der Bau-Zaehler bleibt beim einen Kaltstart stehen, und jeder Nachzug zaehlt als Nachtrag.
+Die 245 ms des zweiten Vorher-Laufs sind nicht der Nachzug allein — in derselben Zeile stehen
+`wortlese=188.71` ms Volltext-Lesung, und die haelt diese Sonde fuer einen eignen, ungetrennten
+Ausreisser. Verglichen wird darum die Segment-Zahl, nicht die Gesamtzeit.
