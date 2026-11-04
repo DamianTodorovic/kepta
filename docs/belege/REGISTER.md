@@ -32,7 +32,7 @@ Laeufe liegt, korrekt gekuerzt, im Kern-Repo unter `docs/belege/`.
 | `tag-0411/objekt-3-2-143-legende-und-fenster-0628.log.txt` | 9302 B | `0c4faa9f7dc3b646…` |
 | `tag-0411/verstaendlichkeit-objekt-0800.log.txt` | 7287 B | `7e84b56971bb47ce…` |
 | `tag-0411/verstaendlichkeit-objekt-3-2-144-1545.log.txt` | 6976 B | `5bb3fa207afa0da9…` |
-| `tag-0411/objekt-3-2-145-fit-titel-1602.log.txt` | 3941 B | `4f705a2960539da1…` |
+| `tag-0411/objekt-3-2-145-fit-titel-1601.log.txt` | 3941 B | `4f705a2960539da1…` |
 | `tag-13-10/eval-korpus-1143.log.txt` | 3419 B | `8b343e7457825fa0…` |
 | `tag-13-10/eval-korpus-1413.log.txt` | 4181 B | `dcd3e42dc0021921…` |
 | `tag-13-10/ablation-beine-1144.log.txt` | 1904 B | `62d15147e59de149…` |
@@ -47,7 +47,7 @@ Summe: **152 364 Bytes in 26 Dateien** (gemessen am 4.11. um 16:03 MEZ mit `wc -
 Bytes aus, die drei von Aufgabe #53 (05:49, 05:50 und 06:02 MEZ) 13 500 Bytes, der
 Objektnachlauf von 3.2.143 (06:28 MEZ) 9 302 Bytes, der Sprach-Census (08:00 MEZ) 7 287 Bytes
 und sein Wiederlauf am ausgelieferten 3.2.144 6 976 Bytes (Dateizeit 15:43:53 MEZ).
-Der Fensterlauf am ausgelieferten 3.2.145 traegt 3 941 Bytes (Dateizeit 16:02:41 MEZ).
+Der Fensterlauf am ausgelieferten 3.2.145 traegt 3 941 Bytes (Dateizeit 16:01:35 MEZ).
 
 Die Zeile war zwei Dateien hinterher: sie schrieb am 3.11. **"92 036 Bytes in 12 Dateien"**,
 waehrend `find` am 4.11. vor den neuen Laeufen **94 787 Bytes in 14 Dateien** meldete — die
@@ -283,9 +283,9 @@ Satz bewegt die Kappenzahl um 0,3 Prozent, die Fachwortzahl ist das, was eine Sp
 wirklich meldet. Beide Urteile lauten HALTET, Exit 0, und die zwei Biss-Kontrollen melden
 getroffen und verworfen.
 
-## Der Fit-Titel am ausgelieferten 3.2.145 (Dateizeit 16:02:41 MEZ)
+## Der Fit-Titel am ausgelieferten 3.2.145 (Dateizeit 16:01:35 MEZ)
 
-`tag-0411/objekt-3-2-145-fit-titel-1602.log.txt` ist der Fenster-Pruefer bei 390 x 844 gegen
+`tag-0411/objekt-3-2-145-fit-titel-1601.log.txt` ist der Fenster-Pruefer bei 390 x 844 gegen
 das installierte Stueck, 150 gesaete Notizen. Er meldet die Gleichung zuerst (fuenf Artefakte
 bytegleich, 5 von 5) und dann den Satz, um den es geht:
 
