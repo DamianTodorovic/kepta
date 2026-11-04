@@ -88,6 +88,12 @@ const SONDE = `(() => {
     haeufig.set(s, (haeufig.get(s) || 0) + 1);
   }
   const grund = [...haeufig.entries()].sort((a,b)=>b[1]-a[1])[0][0].split(',').map(Number);
+  const stil = getComputedStyle(document.documentElement);
+  const rgb = (nam) => { const w = stil.getPropertyValue(nam).trim(); const m = w.match(/(\\d+)\\s+(\\d+)\\s+(\\d+)/); return m ? [+m[1], +m[2], +m[3]] : null; };
+  const arten = ['--type-semantic', '--type-episodic', '--type-procedural', '--type-document']
+    .map(rgb).filter(Boolean);
+  const text = rgb('--text-1') || [251, 251, 248];
+  const akzent = rgb('--accent') || [255, 136, 115];
   // Die vier Kanten, je zwei Bildpunkte breit, damit ein Randpixel nicht an einer
   // Rundung verloren geht.
   const kanten = {
@@ -99,19 +105,76 @@ const SONDE = `(() => {
   const aus = {};
   for (const [nam, hol] of Object.entries(kanten)) {
     const img = hol();
-    const zaehler = { grund: 0, akzent: 0, knoten: 0, text: 0, gesamt: img.width * img.height };
+    const zaehler = { grund: 0, akzent: 0, knoten: 0, text: 0, unsichtbar: 0, gesamt: img.width * img.height };
     const farben = new Map();
     for (let i = 0; i < img.data.length; i += 4) {
       const p = [img.data[i], img.data[i+1], img.data[i+2], img.data[i+3]];
+      if (p[3] < 8) { zaehler.unsichtbar++; continue; }
       const schluessel = p.slice(0,3).join(',');
       if (gleich(p, grund, 6)) { zaehler.grund++; continue; }
+      if (arten.some((a) => gleich(p, a, 10))) { zaehler.knoten++; farben.set(schluessel, (farben.get(schluessel) || 0) + 1); continue; }
+      if (gleich(p, text, 12)) { zaehler.text++; farben.set('TEXT ' + schluessel, (farben.get('TEXT ' + schluessel) || 0) + 1); continue; }
+      if (gleich(p, akzent, 10)) { zaehler.akzent++; continue; }
       zaehler.knoten++;
-      farben.set(schluessel, (farben.get(schluessel) || 0) + 1);
+      farben.set('ANDRE ' + schluessel, (farben.get('ANDRE ' + schluessel) || 0) + 1);
     }
     const top = [...farben.entries()].sort((a,b)=>b[1]-a[1]).slice(0, 6);
     aus[nam] = { ...zaehler, top };
   }
-  return { dpr: d, masse: { w: c.width, h: c.height }, grund, kanten: aus };
+  // Die Geometrie der Ebenen: Leinwand, ihr Rand, und der undurchsichtige Kasten im Bild.
+  const cr = c.getBoundingClientRect();
+  const kasten = (() => {
+    const img = g.getImageData(0, 0, c.width, c.height);
+    let x0 = c.width, y0 = c.height, x1 = -1, y1 = -1;
+    for (let y = 0; y < c.height; y++) for (let x = 0; x < c.width; x++) {
+      if (img.data[(y * c.width + x) * 4 + 3] >= 8) {
+        if (x < x0) x0 = x; if (x > x1) x1 = x;
+        if (y < y0) y0 = y; if (y > y1) y1 = y;
+      }
+    }
+    return x1 < 0 ? null : { x0, y0, x1, y1 };
+  })();
+  const kette = [];
+  for (let el = c, i = 0; el && i < 5; i++) {
+    const s = getComputedStyle(el), r = el.getBoundingClientRect();
+    kette.push({ tag: el.tagName, klasse: String(el.className || '').slice(0, 60),
+      css: { x: Math.round(r.x), y: Math.round(r.y), w: Math.round(r.width), h: Math.round(r.height) },
+      rand: s.borderTopWidth + ' ' + s.borderRightWidth, fuellung: s.paddingLeft + ' ' + s.paddingRight,
+      ecke: s.borderRadius, grund: s.backgroundColor, ueberlauf: s.overflow });
+    el = el.parentElement;
+  }
+  // Drittens: derselbe Vergleich auf dem TRAEGER, den der Bild-Export benutzt
+  // (Grund drauf, Leinwand drauf). Der Export laedt ueber einen Download - hier zaehlt
+  // dieselbe Komposition, ohne dass eine Datei den Ordner verlaengert.
+  const traeger = document.createElement('canvas');
+  traeger.width = c.width; traeger.height = c.height;
+  const tx = traeger.getContext('2d');
+  const stil2 = getComputedStyle(document.documentElement);
+  tx.fillStyle = (stil2.getPropertyValue('--bg-panel-solid') || '#151515').trim();
+  tx.fillRect(0, 0, traeger.width, traeger.height);
+  tx.drawImage(c, 0, 0);
+  const klassenTraeger = {};
+  {
+    const rand = (x0, y0, bw, bh) => {
+      const im = tx.getImageData(x0, y0, bw, bh);
+      const z = { grund: 0, akzent: 0, inhalt: 0, unsichtbar: 0 };
+      for (let i = 0; i < im.data.length; i += 4) {
+        const q = [im.data[i], im.data[i+1], im.data[i+2], im.data[i+3]];
+        if (q[3] < 8) { z.unsichtbar++; continue; }
+        if (gleich(q, grund, 6)) { z.grund++; continue; }
+        if (gleich(q, akzent, 12)) { z.akzent++; continue; }
+        z.inhalt++;
+      }
+      return z;
+    };
+    klassenTraeger.oben = rand(1, 1, traeger.width - 2, 2);
+    klassenTraeger.unten = rand(1, traeger.height - 3, traeger.width - 2, 2);
+    klassenTraeger.links = rand(1, 1, 2, traeger.height - 2);
+    klassenTraeger.rechts = rand(traeger.width - 3, 1, 2, traeger.height - 2);
+  }
+  // Und die Meldung der Flaeche selbst, aus dem Attribut am Rand der Zeile.
+  const gemeldet = [...document.querySelectorAll('[data-kanten]')].map((e) => e.getAttribute('data-kanten'));
+  return { gemeldet, traeger: klassenTraeger, dpr: d, masse: { w: c.width, h: c.height }, leinwandCss: { x: Math.round(cr.x), y: Math.round(cr.y), w: Math.round(cr.width), h: Math.round(cr.height) }, kasten, kette, grund, kanten: aus };
 })()`;
 
 async function main() {
