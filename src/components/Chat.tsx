@@ -177,16 +177,16 @@ export function Chat({ activeMemories, onSaveToBrain, onSaveToBrainWithMeta, isF
           setLocalReachable(r.ok && modelle.length > 0);
           setVerbindungsGrund(
             r.ok && modelle.length > 0 ? null
-              : d.grund === "anbieter-nicht-erreichbar" ? "Your endpoint is not answering — start it, or check its address under Settings."
-              : d.grund === "antwort-nicht-lesbar" ? "Your endpoint answered, but did not send a model list."
-              : d.grund === "kein-schluessel" ? "This endpoint needs a key — add it under Settings."
-              : r.ok ? "Your endpoint listed no models yet."
-              : `Your endpoint refused the request (it said ${d.status ?? r.status}).`
+              : d.grund === "anbieter-nicht-erreichbar" ? "The model program is not answering — start it, or check its address under Settings."
+              : d.grund === "antwort-nicht-lesbar" ? "The model program answered, but sent no list of models."
+              : d.grund === "kein-schluessel" ? "This program needs a key — add it under Settings."
+              : r.ok ? "The model program has no models loaded yet."
+              : `The model program refused the request (it said ${d.status ?? r.status}).`
           );
         } catch {
           if (!cancelled) {
             setLocalReachable(false);
-            setVerbindungsGrund("Your endpoint is not answering — start it, or check its address under Settings.");
+            setVerbindungsGrund("The model program is not answering — start it, or check its address under Settings.");
           }
         }
         return;
@@ -813,7 +813,7 @@ export function Chat({ activeMemories, onSaveToBrain, onSaveToBrainWithMeta, isF
             {connection.state === "connected" ? (
               <span
                 className="absolute -bottom-0.5 -right-0.5 status-dot"
-                title={connection.local ? "Local endpoint - this address needs no key." : "AI connected"}
+                title={connection.local ? "A local program on this machine - no key needed." : "AI connected"}
               />
             ) : (
               <span

@@ -185,7 +185,7 @@ export function MemoryPreview({ memory, onClose, onEdit }: MemoryPreviewProps) {
               {chunk && (
                 <>
                   <span>·</span>
-                  <span className="tnum" title="This file was imported in chunks">{t("preview.part")} {chunk.nr}/{chunk.von}</span>
+                  <span className="tnum" title="This file came in as separate pieces">{t("preview.part")} {chunk.nr}/{chunk.von}</span>
                 </>
               )}
               {typeof memory.confidence === "number" && (

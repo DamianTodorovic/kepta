@@ -1,3 +1,32 @@
+## [3.2.144]
+
+### Improved
+
+- **The surface now says the plain word.** A counter over every sentence the shipped app
+  shows a person (`scripts/verstaendlichkeit.mjs`, measured against the installed
+  `app.asar`, not the source tree) found **324 human sentences**, of which **25 named a
+  technical thing without a reason and without a task**. Those 25 are now rewritten:
+  "Your endpoint is not answering" is "The model program is not answering"; "This file was
+  imported in chunks" is "This file came in as separate pieces"; "Group all chunks under
+  their source file or link" is "Group every piece under the file or link it came from";
+  "To the knowledge index / Show every node" is "All your notes / Show every note you have";
+  "Tools the local server advertises over MCP" is "Tools a connected program can call here";
+  "How many hits the index shows" is "How many results to show"; the graph's longest
+  tooltips lost their jargon and their length ("Forces — how hard the field gathers, repels
+  and spaces itself, and how big the nodes are. The picture keeps its place while it
+  settles." became "Forces — how hard the picture pulls notes together and apart. It keeps
+  its place while settling.").
+  Names stay names: the view is still Graph, the field is still API endpoint, the button is
+  still "Fit the whole graph into view" (four delivered cases hold that title). What changed
+  is only the language that *explains*.
+  The counter itself was corrected twice before it was trusted: the first reading opened the
+  bundle as latin1, so every sentence containing a real em-dash (three bytes in UTF-8) was
+  invisible to it — 167 sentences and 91.0 % instead of 324 and 79.9 %; and its task-word
+  list did not know "hover" or "arrow-key", so it sold good sentences as findings. Both
+  corrections are in the script's comments with their numbers.
+  Guarded by `scripts/pruefe-asar-inhalt.cjs`: the four new wordings must appear, the four
+  old ones must count zero.
+
 ## [3.2.143]
 
 ### Fixed

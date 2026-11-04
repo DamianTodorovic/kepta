@@ -238,7 +238,7 @@ const erwartet = [
   // Minifier woertlich laesst. Gegenprobe VOR dem Tausch am dann installierten 3.2.48
   // (49 105 753 B, mtime 00:09 MESZ): jede dieser vier Ketten muss dort 0 sein.
   ["memory_stande", 1],
-  ["Local endpoint - this address needs no key.", 1],
+  ["A local program on this machine - no key needed.", 1],
   ["px-3 pt-2 pb-0", 1],
   ["core as one marker", 1],
   // 3.2.50, SECHS Koerper (Leitung, 24.10. 01:2x MESZ). Vier davon haben ein Wort, das der
@@ -797,9 +797,9 @@ const erwartet = [
   // die Sonde scripts/egress-im-fenster.mjs --anbieter custom --basis <gelieferte Flaeche>:
   // sie meldete am Objekt "No AI connected", wo dieselbe Adresse durch die eigne Tuer
   // antwortete, und nach der Heilung nennt sie die Verbindung beim Namen.
-  ["Your endpoint is not answering", 1],
-  ["did not send a model list", 1],
-  ["listed no models yet", 1],
+  ["The model program is not answering", 1],
+  ["sent no list of models", 1],
+  ["has no models loaded yet", 1],
   ["chat-verbindung", 1],
   // Punkt 7/8, 3.11. nachmittag (3.2.126, Aufgabe #42): die Flaeche versprach
   // Sprachkenntnis, die kein Lauf gemessen hatte. Der Lauf jetzt
@@ -915,6 +915,17 @@ const verboten = [
   // Klappe; die kurze Zahl bleibt. Gezaehlt am gebauten Renderer 4.11. 06:11 MEZ: die alte
   // Lange **0** mal, die kurze Zahl **1** mal, der Rat **1** mal.
   "carries a word you wrote; a line without one",
+  // Punkt 7 (3.2.144): "endpoint", "chunk" und "index" waren die drei Woerter, die die Flaeche
+  // fuer Dinge benutzte, die ein Mensch nie benennt - ein Zaehler ueber alle 324 Menschensaetze
+  // im ausgelieferten Objekt meldete 25 Saetze mit Fachwort ohne Grund und ohne Taetigkeit
+  // (scripts/verstaendlichkeit.mjs, docs/belege/tag-0411/verstaendlichkeit-objekt-0800.log.txt).
+  // Die Absagen und tooltips nennen jetzt das Werkzeug, die Stuecke und die Ergebnisse beim
+  // Alltagswort. Verboten ist die alte Wortwahl an den vier Stellen, die ein Test oder eine
+  // Marke frueher hielt; gezaehlt am gebauten Renderer: je **0** mal.
+  "Your endpoint is not answering",
+  "did not send a model list",
+  "listed no models yet",
+  "Local endpoint - this address needs no key.",
 ];
 // Die Liste darf nur ASCII-Zeichen enthalten. Grund, gemessen 21.10. 19:16 MESZ am
 // installierten Objekt: das Wort "Looking" plus echtes U+2026 steht dort 2 mal, diese

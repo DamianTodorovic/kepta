@@ -227,7 +227,7 @@ export function SystemStatus() {
           ok={keyOk}
           label={bereit ? `Provider: ${prov.label}` : 'Provider'}
           detail={bereit
-            ? (lokalOhneSchluessel ? 'Local endpoint - this address needs no key.'
+            ? (lokalOhneSchluessel ? 'A local program on this machine - no key needed.'
               : keyOk ? 'API key stored.' : 'No key yet — chat stays silent until you add one. Your agents read and write without a key.')
             : 'Reading the connection stored on this computer…'}
           fix={'“Settings” on the left → “AI & data” → pick a provider → enter a key.'}

@@ -743,7 +743,7 @@ export function Settings() {
                       onChange={(e) => setzeTreffer(RESULT_STOPS[parseInt(e.target.value, 10)] ?? 5)}
                       className="flex-1"
                       aria-label="Results shown"
-                      title="How many hits the index shows. The last step shows everything that matches."
+                      title="How many results to show. The last step shows everything that matches."
                     />
                     <span className="chip tnum !px-2">{treffer === 0 ? 'All' : treffer}</span>
                   </div>
@@ -1287,7 +1287,7 @@ export function Settings() {
                 <Braces className="w-4 h-4" style={{ color: 'var(--accent)' }} />
                 <h3 className="settings-h" style={{ color: 'var(--text-1)' }}>MCP Tools</h3>
                 {werkzeuge.length > 0 && (
-                  <span className="ml-auto chip tnum !px-2" title="Tools the local server advertises over MCP">{werkzeuge.length}</span>
+                  <span className="ml-auto chip tnum !px-2" title="Tools a connected program can call here">{werkzeuge.length}</span>
                 )}
               </div>
               {werkzeugeFehler && (

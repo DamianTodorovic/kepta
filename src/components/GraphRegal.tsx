@@ -241,7 +241,7 @@ export function GraphRegal({ regal, ansichtsName, gruppen, achsen, steuerung, ge
                     data-testid="regal-farbgruppe-farbe"
                     value={g.farbe}
                     aria-label={`Colour for group ${g.marke}`}
-                    title="This group's colour — the aisle paints its nodes with it"
+                    title="This group's colour — its notes are painted with it"
                     onChange={(e) => steuerung.farbe(g.marke, e.target.value)}
                     className="graph-swatch shrink-0"
                     style={{ pointerEvents: "auto", minHeight: 44 }}
@@ -261,7 +261,7 @@ export function GraphRegal({ regal, ansichtsName, gruppen, achsen, steuerung, ge
                   <span
                     data-testid="regal-farbgruppe-gemalt"
                     style={{ color: "var(--text-3)" }}
-                    title="Nodes that really wear this group's colour — a note in two groups is painted in the first group's tone"
+                    title="Notes that really wear this colour — two groups? The first one's colour wins."
                   >
                     {zahl(gemalt[g.marke] ?? 0)} painted
                   </span>

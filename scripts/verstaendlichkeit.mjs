@@ -30,13 +30,11 @@ const ARG = (nam, fallb) => {
   const i = process.argv.indexOf("--" + nam);
   return i > -1 && process.argv[i + 1] && !process.argv[i + 1].startsWith("--") ? process.argv[i + 1] : fallb;
 };
-const FLAG = (nam) => process.argv.includes("--" + nam);
-
-const OBJEKT = (process.argv.includes("--nur") && process.argv.includes("quelltext"))
-  ? null
-  : ARG("gegen", "/Applications/K3PTA.app/Contents/Resources/app.asar");
+const NUR_QUELLTEXT = process.argv.includes("--nur") && process.argv.includes("quelltext");
+const OBJEKT = NUR_QUELLTEXT ? null : ARG("gegen", "/Applications/K3PTA.app/Contents/Resources/app.asar");
 const SATZKAPPE = 14;
 const UNTER_KAPPE_MINDESTENS = 0.8;
+const LISTE = Number(ARG("liste", 12));
 
 // Zwei Mengen, weil sie zwei Leser haben. **Flaeche** liest ein Mensch, **Werkzeug** liest ein
 // Agent — und "jeder muss es verstehen" (Punkt 7) ist eine Frage an die Flaeche. Ein Census, der
@@ -55,8 +53,17 @@ const FACHWORTER = [
 
 // Ein Satz erklaert sich, wenn er einen Grund oder eine Folge nennt.
 const GRUND = /\b(because|since|so|which means|that is why|after you|when you|if you|instead of|rather than|before|until|unless)\b/i;
-// Ein Satz handelt, wenn er dem Menschen eine Taetigkeit nennt.
-const HANDLUNG = /\b(click|type|write|open|close|zoom|name|select|press|add|remove|switch|turn on|turn off|drag|search|unfold|fold|show|hide|save|export|edit|create|delete|try|use)\b/i;
+// Ein Satz handelt, wenn er dem Menschen eine Taetigkeit nennt. Die Liste ist weit, weil ein
+// Zaehler, der "hover" nicht kennt, einen guten Satz als Befund verkauft: gemessen 4.11. 08:12,
+// wo "No labels — hover or arrow-key to a node and its full title comes back" ohne Taetigkeit
+// zaehlte. Erst die Gegenprobe macht die Zahl lesbar.
+const HANDLUNG = /\b(click|type|write|open|close|zoom|name|select|press|add|remove|switch|turn on|turn off|drag|search|unfold|fold|show|hide|save|export|edit|create|delete|try|use|hover|arrow-key|arrow keys|move|pick|choose|keep|allow|agree|start|stop|wait|paste|drop|point|hold)\b/i;
+
+// Prompt-Texte lesen sich wie Flaeche, sind aber fuer ein Modell geschrieben. Sie zaehlen mit,
+// wenn man die Sprache eines Produkts messen will, und sie zaehlen falsch, wenn man die Sprache
+// fuer einen Menschen messen. Also raus, mit Namen, damit die Grundgesamtheit stimmt.
+const AUSSCHLUSS_PFAD = /src\/lib\/(autolearn|.*prompt.*)\.ts$/;
+const AUSSCHLUSS_WORT = /reply only|you are a|as JSON|system prompt/i;
 
 /** Kandidaten aus dem Quelltext: JSX-Text, Titel, Beschriftung, Platzhalter, Meldung. */
 function kandidatenAusQuelltext(mengen) {
@@ -83,6 +90,8 @@ function kandidatenAusQuelltext(mengen) {
       while ((e = m.exec(t))) {
         const s = e[1].trim();
         if (!istBenutzersprache(s)) continue;
+        if (AUSSCHLUSS_PFAD.test(datei.replace(WURZEL + "/", ""))) continue;
+        if (AUSSCHLUSS_WORT.test(s)) continue;
         if (!funde.has(s)) funde.set(s, datei.replace(WURZEL + "/", ""));
       }
     }
@@ -134,6 +143,9 @@ function imObjekt(suche, s) {
 function zensiere(getragen) {
   const n = getragen.length;
   const teil = (k) => (100 * k / Math.max(1, n)).toFixed(1) + " %";
+  // Ein Nenner, der nicht genannt ist, macht jede Prozentzahl zur Vermutung: gezaehlt wird der
+  // Ausschnitt, den dieses Werkzeug sieht (Flaeche, im Objekt gefunden, ohne Prompt-Texte),
+  // nicht "alle Worte, die irgendwo in der App stehen".
   return {
     n,
     unterKappe: getragen.filter((z) => z.woerter <= SATZKAPPE).length,
@@ -195,8 +207,8 @@ async function haupt() {
   console.log("\n  Die zwoelf laengsten Menschensaetze (Wortzahl | Quelle):");
   for (const z of langsten) console.log(`    ${String(z.woerter).padStart(3)}  ${z.quelle}  ::  ${z.s.slice(0, 118)}`);
 
-  console.log("\n  Fachwort ohne Grund und ohne Taetigkeit (die ersten 12 von " + cFlaeche.fachOhneAlles.length + "):");
-  for (const z of cFlaeche.fachOhneAlles.slice(0, 12)) console.log(`    ${z.fach.join(",")}  ${z.quelle}  ::  ${z.s.slice(0, 110)}`);
+  console.log("\n  Fachwort ohne Grund und ohne Taetigkeit (die ersten " + LISTE + " von " + cFlaeche.fachOhneAlles.length + "):");
+  for (const z of cFlaeche.fachOhneAlles.slice(0, LISTE)) console.log(`    ${z.fach.join(",")}  ${z.quelle}  ::  ${z.s.slice(0, 150)}`);
 
   // Zwei Kontrollen, weil ein Zaehler ohne Gegenprobe eine Behauptung ist.
   // 1) Sie MUSS ein Wort sehen, das im Objekt steht (die Rate-Zeile von 3.2.143).

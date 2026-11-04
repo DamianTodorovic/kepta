@@ -74,7 +74,9 @@ describe("Ein kein-Key-Anbieter, der nicht Ollama oder LM Studio heisst", () => 
     const { container } = await zeigeCustomVerbindung(false);
     await waitFor(() => expect(container.textContent).toMatch(/No AI connected/), { timeout: 8000 });
     // Die kurze Absage von vorhin war halb: sie verneinte, ohne Grund und ohne Weg.
-    expect(container.textContent).toMatch(/Your endpoint is not answering/);
+    // Seit dem Sprachlauf von 3.2.144 heisst das Werkzeug nicht "endpoint", sondern
+    // "model program" — der Mensch, der die Absage liest, hat nie ein Endpoint gesetzt.
+    expect(container.textContent).toMatch(/The model program is not answering/);
     expect(container.textContent).toMatch(/Settings/);
   });
 
@@ -89,7 +91,7 @@ describe("Ein kein-Key-Anbieter, der nicht Ollama oder LM Studio heisst", () => 
     }));
     const { container } = render(<ToastProvider><Chat activeMemories={[]} /></ToastProvider>);
     await waitFor(() => expect(container.textContent).toMatch(/No AI connected/), { timeout: 8000 });
-    expect(container.textContent).toMatch(/did not send a model list/);
+    expect(container.textContent).toMatch(/sent no list of models/);
   });
 
   it("der Send-Knopf ist offen, wenn die Adresse antwortet", async () => {

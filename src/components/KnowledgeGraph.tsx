@@ -161,7 +161,7 @@ const REGLER: readonly { feld: keyof KrafteStellung; name: string; min: number; 
   { feld: "gravitaet", name: "Center force", min: 0.2, max: 3, hinweis: "How hard the middle gathers the picture." },
   { feld: "abstossung", name: "Repel strength", min: 0.3, max: 4, hinweis: "How hard unrelated notes push apart — the space between topics." },
   { feld: "link", name: "Link distance", min: 0.5, max: 2.5, hinweis: "How long a link rests — the gap inside a topic." },
-  { feld: "groesse", name: "Node size", min: 0.6, max: 2, hinweis: "How big every node is drawn. The field spaces them by this size." },
+  { feld: "groesse", name: "Node size", min: 0.6, max: 2, hinweis: "How big each dot is drawn — the picture spaces notes by this size." },
 ];
 function merkeKrafte(k: KrafteStellung): void {
   try {
@@ -768,7 +768,7 @@ const NAMEN_STUFE: Record<
     grenzenlos: false,
     raster: true,
     kantentext: true,
-    erklaerung: "Few names, whole ones — the busiest nodes first, as many as fit without overlap",
+    erklaerung: "Few names, whole ones — busiest notes first, as many as fit.",
   },
   mehr: {
     // „More" ist hier nicht moeglich: der Ueberlauf-Knopf der Zeile heisst
@@ -791,7 +791,7 @@ const NAMEN_STUFE: Record<
     grenzenlos: true,
     raster: false,
     kantentext: true,
-    erklaerung: "Every node named, however crowded. A choice, not a starting point.",
+    erklaerung: "Every note named, however crowded. A choice, not a starting point.",
   },
 };
 /** Die Stufen, in der Reihenfolge der Dichte — nicht nach Alphabet. */
@@ -5756,7 +5756,7 @@ export function KnowledgeGraph({ memories: memoriesAusFenster, onSelectMemory, o
           onClick={loeseAlle}
           className="btn-ghost px-2 py-1 rounded-lg text-[11px] whitespace-nowrap"
           style={{ color: "var(--accent)" }}
-          title="Nodes you dragged stay where you put them. This puts each one back where your hand first grabbed it."
+          title="Dragged notes stay put. This puts each one back where you first grabbed it."
         >
           Release {angeheftet} pinned
         </button>
@@ -5805,7 +5805,7 @@ export function KnowledgeGraph({ memories: memoriesAusFenster, onSelectMemory, o
     <div className="apple-seg shrink-0" role="group" aria-label="Graph layout" data-testid="graph-schiene-ansicht">
       {segment(ansicht === "force", "Force view — the links as they are claimed; similarity only on request", () => wechsleAnsicht("force"), "Force")}
       {segment(ansicht === "dendrogram", "Dendrogram — knowledge as a tree: root → type → entity → note", () => wechsleAnsicht("dendrogram"), "Tree")}
-      {segment(ansicht === "semantic", "Semantic map — the same notes placed by their vectors. Distance is meaning, computed once and always the same way.", () => wechsleAnsicht("semantic"), "Semantic")}
+      {segment(ansicht === "semantic", "Semantic map — notes placed by what they mean, not by their words.", () => wechsleAnsicht("semantic"), "Semantic")}
     </div>
   );
   const schieneNamen = (
@@ -5864,14 +5864,14 @@ export function KnowledgeGraph({ memories: memoriesAusFenster, onSelectMemory, o
     </div>
   );
   const schalterAehnlichkeit = schalter(ahnlichkeit, "Show similarity links — guesses from shared tags and titles, off by default", () => setAhnlichkeit((v) => !v), "Similar");
-  const schalterSelbst = schalter(selbstkaanten, "Self claims — a concept talking about itself, looped at its own node. Off by default.", wechsleSelbstkaanten, "Self");
+  const schalterSelbst = schalter(selbstkaanten, "Self claims — a note about itself, looped on its own dot. Off by default.", wechsleSelbstkaanten, "Self");
   const schalterRichtung = schalter(richtung, "Claim direction — each link runs from its wide end to its narrow one. Off shows plain lines.", wechsleRichtung, "Direction", <ChevronRight className="w-3.5 h-3.5" />);
   const schalterSchema = schalter(schemaOffen, "Schema — what the store holds: kinds, concepts, claims. The counts beside the picture stay the picture's.", () => {
     const neu = !schemaOffen;
     setSchemaOffen(neu);
     if (neu) setzeMehrOffen(false);
   }, "Schema");
-  const schalterKrafte = schalter(krafteOffen, "Forces — how hard the field gathers, repels and spaces itself, and how big the nodes are. The picture keeps its place while it settles.", () => {
+  const schalterKrafte = schalter(krafteOffen, "Forces — how hard the picture pulls notes together and apart. It keeps its place while settling.", () => {
     const neu = !krafteOffen;
     setzeKrafteOffen(neu);
     if (neu) setzeMehrOffen(false);
@@ -5998,9 +5998,9 @@ export function KnowledgeGraph({ memories: memoriesAusFenster, onSelectMemory, o
       case "namen": return `Density of names. Now: ${NAMEN_STUFE[etikettenModus].wort.toLowerCase()} — ${NAMEN_STUFE[etikettenModus].erklaerung.toLowerCase()}.`;
       case "kanal": return "What the colours mean: kind of knowledge, or where the note came from.";
       case "tiefe": return `How many steps the picture asks the door for around each concept. Now: ${graphTiefe}. The door knows 1 to 4 and defaults to 2 — a fifth step is not invented here.`;
-      case "farben": return "The four kind colours, reused by the cards and the index.";
+      case "farben": return "The four colours of the kinds, reused on the cards.";
       case "aehnlichkeit": return "Similarity links are guesses from shared tags and titles. Off, the graph claims nothing.";
-      case "selbst": return "A concept talking about itself, looped at its own node.";
+      case "selbst": return "A note about itself, looped on its own dot.";
       case "richtung": return "Wide end = who claims, narrow end = of whom. Below 50 % zoom the wedge is too small to draw, and the legend says so.";
       case "schema": return "What the store holds: kinds, concepts, claims.";
       case "krafte": return "How hard the field gathers, repels and spaces itself.";

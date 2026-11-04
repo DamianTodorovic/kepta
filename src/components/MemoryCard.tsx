@@ -101,7 +101,7 @@ export const MemoryCard = memo(function MemoryCard({ memory, onClick, score, mat
             </span>
           )}
           {chunk && (
-            <span className="row-quiet tnum" title={`Part ${chunk.nr} of ${chunk.von} — this file was imported in chunks`}>
+            <span className="row-quiet tnum" title={`Part ${chunk.nr} of ${chunk.von} — the file came in as separate pieces`}>
               {chunk.nr}/{chunk.von}
             </span>
           )}

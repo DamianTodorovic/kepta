@@ -149,7 +149,7 @@ export function buildPaletteActions(opts: {
     { id: "search", label: "Search the index", desc: "Search the knowledge index", icon: <Search className="w-4 h-4" />, keywords: "search find filter", action: opts.onFocusSearch },
     { id: "new", label: "New node", desc: "Open an empty node in the editor", icon: <Plus className="w-4 h-4" />, hotkey: "N", keywords: "neu knoten erstellen", action: opts.onNewNode },
     { id: "graph", label: "Open graph", desc: "Show the knowledge graph", icon: <Network className="w-4 h-4" />, keywords: "graph verbindungen kanten", action: opts.onGoGraph },
-    { id: "memories", label: "To the knowledge index", desc: "Show every node", icon: <Database className="w-4 h-4" />, keywords: "index overview", action: opts.onGoMemories },
+    { id: "memories", label: "All your notes", desc: "Show every note you have", icon: <Database className="w-4 h-4" />, keywords: "index overview", action: opts.onGoMemories },
     { id: "chat", label: "Open chat", desc: "Ask with context from the knowledge base", icon: <MessageSquare className="w-4 h-4" />, keywords: "chat ai assistant", action: opts.onGoChat },
     { id: "settings", label: "Switch system or provider", desc: "Choose an AI provider and model", icon: <SettingsIcon className="w-4 h-4" />, keywords: "settings provider model", action: opts.onGoSettings },
     { id: "import", label: "Import a file", desc: "PDF / MD / TXT / JSON via a dialog", icon: <FileUp className="w-4 h-4" />, keywords: "import file upload drag drop", action: opts.onImportFileClick },

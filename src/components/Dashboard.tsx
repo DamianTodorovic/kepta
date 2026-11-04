@@ -1724,7 +1724,7 @@ export function Dashboard() {
                 onChange={(e) => setTopK(RESULT_STOPS[parseInt(e.target.value, 10)] ?? 5)}
                 className="h-7 w-24"
                 aria-label="Number of results shown"
-                title="How many hits the index shows. The last step shows everything that matches."
+                title="How many results to show. The last step shows everything that matches."
               />
               <span
                 className="chip tnum !px-2"
@@ -2165,7 +2165,7 @@ export function Dashboard() {
                         title={debouncedSearchQuery.trim()
                           ? 'Grouping is off while you search — results are ranked by relevance'
                           : key === 'alle' ? 'Flat grid, newest relevance first'
-                          : key === 'datei' ? 'Group all chunks under their source file or link'
+                          : key === 'datei' ? 'Group every piece under the file or link it came from'
                           : key === 'typ' ? Object.values(TYP_BESCHREIBUNG).join(' · ')
                           : 'Today, this week, older'}
                       >
