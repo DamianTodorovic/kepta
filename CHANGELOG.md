@@ -1,3 +1,35 @@
+## [3.2.150]
+
+### Fixed
+
+- **The suite's test listener now binds IPv4 loopback, so a foreign local process can no
+  longer answer a test's own request.** Cause 9 struck again after it was thought closed: a
+  full run at 21:22:58 MEZ failed `tests/server.test.ts > POST ohne Titel und Inhalt` with
+  `expected 401 to be 400`, while the same bytes ran green at 21:26:17 MEZ and the file alone
+  ran green at 21:25:55 MEZ. This app contains **no** 401 site (`git grep 401 -- server src`
+  returns nothing), so the answer did not come from the server the test had built. Measured
+  on this machine (`/tmp/v4v6-race.mjs`, now also two cases in
+  `tests/helfer/horchen.test.ts`): an IPv4 listener on `127.0.0.1:45991` and a dual-stack
+  listener on `:::45991` can hold the same port **at the same time**, and the request to
+  `127.0.0.1` was answered by the IPv4 holder. Supertest always connects to
+  `http://127.0.0.1:<port>` (`node_modules/supertest/lib/test.js:69`) while the harness bound
+  `listen(0)` without a host — so every one of the 403 `request(app)` sites in 34 test files
+  was exposed, and the earlier healing (one listener per app, ports no longer churning) never
+  addressed the family at all.
+- **The binding happens before the test, because Supertest reads the address inside its
+  constructor.** A bind with a host only reports its address after the `listening` event, so
+  `tests/helfer/hoerer.ts` now keeps a reserve of eight already-bound IPv4 listeners per test
+  process (`tests/setup.horchen.ts` fills it before each file and before each case) and hands
+  one to each app; the address Supertest reads is then available in the same tick. If the
+  reserve ever runs out, the file **fails with its own name** instead of silently falling back
+  to the dual stack: one file did exactly that during this work
+  (`tests/server-fehler-wortlaut.test.ts`, three apps inside a single case, lines 29-41), which
+  is why the reserve is eight and not two.
+- Cases: 3 461 (report written 21:57:16 MEZ), two more than before — `IPv4-Loopback statt
+  Doppelstapel` and the counter-probe that a foreign IPv4 listener must be refused the port
+  our own listener holds. Both were written first and seen red (2 failed | 5 passed at
+  21:47:26 MEZ) before the harness changed.
+
 ## [3.2.149]
 
 ### Documented, at the delivered object
