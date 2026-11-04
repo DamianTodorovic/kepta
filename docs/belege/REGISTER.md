@@ -50,6 +50,7 @@ Laeufe liegt, korrekt gekuerzt, im Kern-Repo unter `docs/belege/`.
 | `tag-0411/fps-3000-149-abbruch-2115.log.txt` | 3460 B | `df1ae59f53bff27a…` |
 | `tag-0411/fps-3000-149-nachzug-2119.log.txt` | 4039 B | `aa474a2357b5c023…` |
 | `tag-0411/fps-3000-149-ruhig-2132.log.txt` | 3994 B | `cd8708cfc25c3122…` |
+| `tag-0411/fenster-pruefer-3-2-151-2311.log.txt` | 20654 B | `0c69863a9ef5ceb5…` |
 | `tag-13-10/eval-korpus-1143.log.txt` | 3419 B | `8b343e7457825fa0…` |
 | `tag-13-10/eval-korpus-1413.log.txt` | 4181 B | `dcd3e42dc0021921…` |
 | `tag-13-10/ablation-beine-1144.log.txt` | 1904 B | `62d15147e59de149…` |
@@ -59,7 +60,7 @@ Laeufe liegt, korrekt gekuerzt, im Kern-Repo unter `docs/belege/`.
 | `app-abnahme/nachzug-flaeche-gruen.log.txt` | 19204 B | `1e6eb0616a86a748…` |
 | `app-abnahme/nachzug-mutation-rot.log.txt` | 22052 B | `1c8a44f87cda8e3a…` |
 
-Summe: **199 849 Bytes in 43 Dateien** (gemessen am 4.11. um 21:35 MEZ mit `wc -c` ueber
+Summe: **220 503 Bytes in 44 Dateien** (gemessen am 4.11. um 23:13 MEZ mit `wc -c` ueber
 `find docs/belege -name '*.log.txt'`). Die fuenf Laeufe des 4.11. bis 02:21 machen 16 571
 Bytes aus, die drei von Aufgabe #53 (05:49, 05:50 und 06:02 MEZ) 13 500 Bytes, der
 Objektnachlauf von 3.2.143 (06:28 MEZ) 9 302 Bytes, der Sprach-Census (08:00 MEZ) 7 287 Bytes
@@ -90,6 +91,15 @@ ganzen Zuges statt eines Rahmens, die Vereinigung wuchs ueber 99 Rahmen, und die
 warf `RangeError: Set maximum size exceeded` — Exit 1, kein Urteil. Der dritte (Dateizeit
 21:19:10 MEZ) misst nach demselben Schritt mit Ruhe-Warten und einem Rahmen: 637 Scheiben und
 0 Paare vor dem Zug, 645 Scheiben und **0 Paare** danach, das Feld steht nach 7,2 s.
+
+Der Fenster-Pruefer von 23:08:47 bis 23:11:38 MEZ
+(`fenster-pruefer-3-2-151-2311.log.txt`, 20 654 B) ist der erste Volllauf ueber **jede**
+Einstellung am ausgelieferten 3.2.151, der seine eigne Gleichheit mitbringt: die ersten
+beiden Zeilen des Protokolls sind `Artefakte bytegleich mit dem installierten Objekt: 5
+(erwartet 5)` und `Bundel: 5 Stuecke geprueft, Version laut Baum 3.2.151`. Danach 154
+`ok`-Urteile, keine `FEHLT`- und keine `NICHT`-Zeile, keine unverarbeitete Ausnahme im
+Fenster, und 23 Bilder in der Mappe unter
+`audit-2026-10-09/feldzug/belege-0411/fenster-151/`.
 
 Die Zeile war zwei Dateien hinterher: sie schrieb am 3.11. **"92 036 Bytes in 12 Dateien"**,
 waehrend `find` am 4.11. vor den neuen Laeufen **94 787 Bytes in 14 Dateien** meldete — die
