@@ -1115,10 +1115,33 @@ export function kantenWortZeile(kantentext: boolean, zoom: number, kanten: reado
  * Menschen fehlt, bevor er eine Behauptung in ein Blatt schreibt.
  */
 export function handWortZeile(kanten: readonly LayoutEdge[]): string {
+  if (!handWortOhneWort(kanten)) return "";
+  return ` — none of these ${mengenzahl(kanten.filter((e) => e.real).length)} lines carries a word you wrote`;
+}
+
+/**
+ * Der Rat zu derselben Zahl, in einer eignen Zeile hinter der Klappe.
+ *
+ * Geteilt am 4.11., weil die zugeklappte Karte die Latte von P114 (hoechstens 25 % der
+ * Leinwand) riss: der ganze Satz in der Kopfzeile brauchte bei 334 px Kastenbreite vier
+ * Zeilen, und die Kopfzeile allein war 99 von 191 Bildpunkten des zugeklappten Kastens
+ * (gemessen am Objekt, `scripts/legende-hoehe.mjs --form=markdown --saat=30 --breite=390
+ * --hoehe=844` -> "Anteil 28.5 %"). Die Zahl und ihr Befund bleiben in der Kopfzeile — die
+ * Kopfzeile steht immer, und ein Test hält sie dort an. Was hinter die Klappe zieht, ist der
+ * Rat: zwei Saetze, die sagen, was eine Linie ohne Wort bedeutet und wie man ein Wort
+ * daraufbringt. Aufgeklappt stehen sie wieder da, kein Wort geht verloren.
+ */
+export function handWortRatZeile(kanten: readonly LayoutEdge[]): string {
+  if (!handWortOhneWort(kanten)) return "";
+  return "A line without one says only that two things belong together. Name a claim in a note to put a word on a line.";
+}
+
+/** Dieselbe Bedingung fuer beide Zeilen: echte Linien, und keine einzige mit einem Wort. */
+function handWortOhneWort(kanten: readonly LayoutEdge[]): boolean {
   const echt = kanten.filter((e) => e.real);
-  if (echt.length === 0) return "";
-  for (const e of echt) if (kantenEtikett(e)) return "";
-  return ` — none of these ${mengenzahl(echt.length)} lines carries a word you wrote; a line without one says only that two things belong together. Name a claim in a note to put a word on a line.`;
+  if (echt.length === 0) return false;
+  for (const e of echt) if (kantenEtikett(e)) return false;
+  return true;
 }
 
 /**
@@ -6507,7 +6530,18 @@ export function KnowledgeGraph({ memories: memoriesAusFenster, onSelectMemory, o
               Klappe kann zu. Die Zeile war bisher das erste Kind und der Kasten
               damit 288 von 628 Bildpunkten hoch (390 x 844, am Objekt gemessen
               01:31:34); der Griff holt die Flaeche zurueck, ohne eine Zahl zu
-              verstecken. */}
+              verstecken.
+
+              Was an dieser Zeile die Latte von P114 riss, war nicht der Griff neben
+              der Zahl, sondern die Laenge des Satzes daneben: 99 von 191 Bildpunkten
+              des zugeklappten Kastens (390 x 844, 30 Notizen mit Begriffen, am Objekt
+              gemessen 4.11. 06:07 MEZ — "Anteil 28.5 %", "99 px 5 Zeile(n)"). Ein
+              Versuch, Griff und Zahl unter `sm` untereinander zu stellen, ist gefahren
+              und gemessen verworfen: der Kasten wurde hoeher, nicht niedriger
+              (118 px, 6 Zeilen, Anteil 31.3 %), weil der Griff seinen eignen
+              Haus-Boden von 44 px hat und die Zeilen sich addieren statt teilen.
+              Darum bleibt das Layout, wie es war, und der Rat zieht hinter die Klappe
+              (`handWortRatZeile`). */}
           <div className="flex items-start justify-between gap-2">
           <div className="hud-label tnum" data-testid="graph-kopf">
             {/* Die gemalte Zahl, und dahinter die Größe des Bestands, wenn die
@@ -6642,6 +6676,15 @@ export function KnowledgeGraph({ memories: memoriesAusFenster, onSelectMemory, o
             ref={imRahmenRef}
             style={{ color: "var(--text-2)", display: "none" }}
           />
+          {/* Der Rat zur Zahl der Linien ohne Wort — hinter der Klappe, weil die
+              zugeklappte Karte die Latte von P114 haelt, sobald dieser Satz nicht mehr
+              in der Kopfzeile steht. Die Zahl selbst bleibt oben (sie ist die Auskunft,
+              die der Nutzer beim Bild braucht); dieser Satz ist der Weg daraus. */}
+          {handWortRatZeile(edges) !== "" && (
+            <div className="hud-label legende-zustand" data-testid="graph-handwort-rat" style={{ color: "var(--text-2)" }}>
+              {handWortRatZeile(edges)}
+            </div>
+          )}
           {/* Wie viele Knoten im Bild einen Titel tragen. Der Mal-Pass schreibt
               die Zahl, weil sie eine Beobachtung des gemalten Bildes ist, keine
               Rechnung vor dem Bild — und weil sie sich mit jedem Schwenk aendern

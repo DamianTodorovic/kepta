@@ -136,4 +136,36 @@ describe("Kopfzeile des Graphen: der Satz steht am Zeichen und geht mit der erst
     expect(kopf, `das Bild zaehlt keine Linien, die Abwesenheit waer billig — Kopf: ${kopf}`).toMatch(/\d+ links?/);
     expect(kopf, "die Zeile behauptet eine Luecke, die das Bild nicht hat").not.toContain("carries a word you wrote");
   });
+
+  // P53 Befund C, 4.11.: die zugeklappte Legende deckte bei 390 x 844 28.5 % der Leinwand
+  // (Latte 25 %, P114), und die Kopfzeile allein nahm 99 von 191 Bildpunkten davon — weil der
+  // RAT hinter der Zahl ("a line without one says only that two things belong together. Name a
+  // claim…") in derselben Zeile stand. Geteilt: die Zahl und ihr Befund bleiben in der
+  // Kopfzeile (die steht immer, und die zwei Faelle oben halten sie), der Rat zieht als eigne
+  // Zeile hinter die Klappe. Geprüft wird die KETTE, nicht nur der Text: haelt der Halter
+  // nicht, ist die Latte beim naechsten Wort wieder gerissen.
+  it("stellt den Rat in eine eigne Zeile, die hinter die Klappe fallen kann", async () => {
+    strecke([
+      { source: "nordwind", target: "elena", relation: "mentions" },
+      { source: "nordwind", target: "elena", relation: "co-mentions" },
+    ]);
+    const container = await flaeche();
+    const rat = container.querySelector<HTMLElement>('[data-testid="graph-handwort-rat"]');
+    expect(rat, "der Rat steht nicht mehr in der Kopfzeile — und ist auch nicht aufgetaucht").toBeTruthy();
+    expect(String(rat!.textContent ?? ""), `der Rat sagt nicht, was er schuldet: "${rat!.textContent}"`).toContain("Name a claim in a note");
+    expect(rat!.classList.contains("legende-zustand"), "der Rat traegt den Halter der Zustandszeilen nicht — die Klappe koennte ihn nie verdecken").toBe(true);
+    expect(kopfVon(container), "die Kopfzeile fuehrt den Rat weiter, dann ist die Teilung nur eine Doppelung").not.toContain("Name a claim in a note");
+    // Die Zahl selbst muss bleiben: sie ist die Auskunft, die der Nutzer beim Bild braucht.
+    expect(kopfVon(container), "die Zahl fiel mit dem Rat aus der Kopfzeile").toContain("carries a word you wrote");
+  });
+
+  it("laesst den Rat weg, wenn eine Hand ein Wort gesetzt hat — beide Zeilen an derselben Bedingung", async () => {
+    strecke([
+      { source: "nordwind", target: "elena", relation: "mentions" },
+      { source: "nordwind", target: "elena", relation: "betreut" },
+    ]);
+    const container = await flaeche();
+    expect(container.querySelector('[data-testid="graph-handwort-rat"]'),
+      "der Rat steht da, wo das Bild ein Wort von einer Hand hat").toBeNull();
+  });
 });

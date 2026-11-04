@@ -105,13 +105,37 @@ async function main() {
   try {
     const gesund = await warteBis(async () => { const r = await fetch(`${BASIS}/api/health`); return r.ok ? await r.json() : null; }, { maxMs: 60000 });
     if (!gesund) throw new Error("Der Diener kam nicht hoch");
-    await fetch(`${BASIS}/api/memories/import`, {
-      method: "POST", headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ memories: Array.from({ length: 30 }, (_, i) => ({
-        title: `Notiz ${i}`, content: `Inhalt ${i} ` + "Wort ".repeat(20), tags: ["saat"], type: "semantic",
-      })) }),
-    });
-    console.log(`  Diener: Version ${gesund.version}`);
+    // Zwei Formen der Saat, weil die Kopfzeile der Legende von der LAenge ihrer Zahl lebt:
+    // --form=import (Default) setzt Notizen ohne Begriffe, --form=markdown setzt dieselbe
+    // Saat wie der Fenster-Pruefer — mit [[Wiki-Links]], also concepts und links, und damit
+    // eine Kopfzeile, die bei 334 px in drei Zeilen faellt. Nur in dieser Form ist die Zahl
+    // des Pruefers reproduzierbar (gemessen 26.1 % gegen 23.3 % ohne Begriffe).
+    const SAAT = Number(ARG("saat", 30));
+    const FORM = ARG("form", "import");
+    const BEGRIFFE = Number(ARG("begriffe", 5));
+    if (FORM === "markdown") {
+      const dateien = Array.from({ length: SAAT }, (_, i) => {
+        const n = String(i + 1).padStart(4, "0");
+        const tag = new Date(Date.UTC(2024, 0, 1) + i * 86400000).toISOString().slice(0, 10);
+        return {
+          name: `Saat/${n}.md`,
+          content: ["---", `kepta_id: legende-${n}`, `title: "Fristenkontrolle ${n}"`, "tags: [saat]",
+            "type: semantic", `created: ${tag}`, `valid_from: ${tag}`, "---",
+            "", `Die Fristenkontrolle ${n} haelt die Frist mit [[Fristenkontrolle]] und [[Kasse ${i % BEGRIFFE}]].`].join("\n"),
+        };
+      });
+      await fetch(`${BASIS}/api/import/markdown`, {
+        method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ files: dateien }),
+      });
+    } else {
+      await fetch(`${BASIS}/api/memories/import`, {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ memories: Array.from({ length: SAAT }, (_, i) => ({
+          title: `Notiz ${i}`, content: `Inhalt ${i} ` + "Wort ".repeat(20), tags: ["saat"], type: "semantic",
+        })) }),
+      });
+    }
+    console.log(`  Diener: Version ${gesund.version} | Saat ${SAAT} in Form ${FORM}`);
 
     brave = spawn(BRAVE, ["--headless=new", `--remote-debugging-port=${CDP_PORT}`, `--user-data-dir=${path.join(ARBEIT, "profil")}`,
       "--no-first-run", "--disable-gpu", "--hide-scrollbars", `--window-size=${BREITE},${HOEHE}`, "about:blank"],

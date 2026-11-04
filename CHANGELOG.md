@@ -1,3 +1,25 @@
+## [3.2.143]
+
+### Fixed
+
+- **The folded legend no longer covers a quarter of your picture on a phone.** Measured in a
+  real viewport at 390 x 844 with 30 notes and concepts: the closed legend covered **28.5 %**
+  of the canvas (a box 334 x 191 px) against the house bar of 25 %, and the legend's first row
+  alone took **99 of those 191 pixels** — five wrapped lines. The cause was not the button
+  beside the numbers, and the first try (stacking them under each other below `sm`) was
+  measured and rejected: the box grew to 210 px / 31.3 %, because the button keeps its own
+  44 px touch floor and the lines add instead of sharing.
+  What actually took the space was a *second sentence* living in the always-visible head row:
+  after "65 links — none of these 65 lines carries a word you wrote" it went on to explain
+  what an unlabelled line means and how to put a word on one. The number and its finding stay
+  in the head row (that row is never folded, and two delivered cases hold it there); the
+  advice now sits in its own row **behind the fold**, where the legend's state rows already
+  live. Opening the legend shows every word again.
+  Measured after the split: **21.1 %** at 390 x 844, **20.5 %** at 820, **10.8 %** at 1440.
+  Guarded by two new cases in `tests/components/graph-handwort-zeile.test.tsx` (9 in the
+  file): the advice row must carry the fold holder, the head row must no longer contain it,
+  and both rows must appear and disappear on the same condition as the finding itself.
+
 ## [3.2.142]
 
 ### Fixed

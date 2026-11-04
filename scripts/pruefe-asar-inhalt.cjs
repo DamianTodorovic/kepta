@@ -877,6 +877,12 @@ const erwartet = [
   // 05:50 MEZ): "vektorZeilen" 2 mal. Am zurueckgelegten 3.2.140-Bund (dist-pf1-vor,
   // ausgepackt aus /tmp/K3PTA-vor-3.2.141.app): 0 mal.
   ["vektorZeilen", 1],
+  // Punkt 1 / Aufgabe #51, 4.11. (3.2.143): der Rat zur Zahl der Linien ohne Wort steht nicht
+  // mehr in der Kopfzeile, sondern in einer eignen Zeile hinter der Klappe - sonst reisst die
+  // zugeklappte Legende die Latte von P114 (28.5 % gegen 25 %, gemessen am Objekt 06:07 MEZ).
+  // Gezaehlt am gebauten Renderer (dist/assets, 06:11 MEZ): die kurze Zahl bleibt **1** mal,
+  // der Rat ist **1** mal neu, die alte Lange in der Kopfzeile ist **0** mal.
+  ["Name a claim in a note to put a word on a line", 1],
 ];
 
 // Was NICHT mehr drin sein darf. Bisher war "der alte Wortlaut ist weg" eine Behauptung im
@@ -903,6 +909,12 @@ const verboten = [
   // (docs/belege/tag-0411/tuer-48-vor-3-2-139-0123.log.txt). Gezaehlt am installierten
   // 3.2.139: 2 mal; am gebauten 3.2.140: 0 mal.
   "entityNamen",
+  // Punkt 1 / Aufgabe #51 (3.2.143): die Lange gehoerte in die Kopfzeile, und die Kopfzeile
+  // steht immer - darum war sie der Grund, warum die zugeklappte Legende bei 390 x 844 28.5 %
+  // der Leinwand deckte (Latte 25 %, P114). Der Rat zieht in eine eigne Zeile hinter die
+  // Klappe; die kurze Zahl bleibt. Gezaehlt am gebauten Renderer 4.11. 06:11 MEZ: die alte
+  // Lange **0** mal, die kurze Zahl **1** mal, der Rat **1** mal.
+  "carries a word you wrote; a line without one",
 ];
 // Die Liste darf nur ASCII-Zeichen enthalten. Grund, gemessen 21.10. 19:16 MESZ am
 // installierten Objekt: das Wort "Looking" plus echtes U+2026 steht dort 2 mal, diese
