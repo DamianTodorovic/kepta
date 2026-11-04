@@ -332,6 +332,27 @@ describe("#121 der Satz am Einpass-Knopf", () => {
     expect(fitTitel(true)).toMatch(/zooming out shows them all/);
     expect(fitTitel(true).startsWith("Fit"), "beide Zeilen beginnen am selben Wort").toBe(true);
   });
+
+  it("behauptet keinen Verlust, wenn der Rahmen alles haelt", () => {
+    // Gemessen 4.11. 15:45 MEZ am ausgelieferten 3.2.144, 390 x 844, 150 gesaete Notizen:
+    // der Lesbarkeitsboden entschied die Groesse (der Knopf nannte den Boden), und **keine**
+    // Notiz blieb draussen — die Bilanzzeile schwieg, und der Pruefer meldete "Kanten
+    // beruehrt: keine". Ein Knopf, der "some notes stay outside" sagt, wo alle drin sind,
+    // ist dieselbe Klasse wie der Chat-Kopf, der "Ready" sagt, waehrend er "No AI connected"
+    // sagt: eine Flaeche, die zwei Zustande zugleich behauptet.
+    const titel = fitTitel(true, 0, 150);
+    expect(titel, "der Titel darf keinen Ausschnitt behaupten, wo keiner ist").not.toMatch(/stay outside/);
+    expect(titel).toMatch(/all 150 notes are in the picture/);
+    expect(titel).toMatch(/readability floor/);
+    expect(titel.startsWith("Fit"), "alle drei Zeilen beginnen am selben Wort").toBe(true);
+    // Ohne Zahl bleibt der Satz wahr, er nennt sie nur nicht.
+    expect(fitTitel(true, 0)).toMatch(/every note is in the picture/);
+    // Die Gegenprobe: mit Notizen draussen bleibt der alte Satz stehen, samt seinem Weg raus.
+    expect(fitTitel(true, 6)).toMatch(/some notes stay outside/);
+    expect(fitTitel(true, 6)).toMatch(/zooming out shows them all/);
+    // Und ohne Entscheidung ist die Zahl gleichgueltig.
+    expect(fitTitel(false, 0, 150)).toBe("Fit the whole graph into view");
+  });
 });
 
 describe("#122 der Grund in der leeren Rahmenzeile", () => {

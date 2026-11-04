@@ -1,3 +1,23 @@
+## [3.2.145]
+
+### Fixed
+
+- **The Fit button no longer claims a loss that the picture does not show.** Measured at the
+  delivered 3.2.144, 390 x 844 with 150 sown notes: the readability floor decided the size, so
+  the title read "held at the readability floor, so some notes stay outside; the line at the
+  edge counts them" — while the balance line stayed silent, the prober reported `Kanten
+  beruehrt: keine`, and every one of the 150 notes was inside the frame. One surface, two
+  claims at the same time: the same class as the chat header that says "Ready" while it says
+  "No AI connected".
+  The title hung on the *camera decision*; it now hangs on the same arithmetic that silences
+  the balance line (`gesamt - imStrengeNoten`), so the sentence and the number cannot disagree.
+  New wording when the frame holds everything: "Fit — held at the readability floor, and all
+  150 notes are in the picture". When notes really do stay outside, the old sentence stands,
+  including the way out. Guarded by a new case in `tests/lib/gemeinschaften-bild.test.ts`
+  (seen red first: `expected ... not to match /stay outside/`), plus the counter-probes for
+  `aussen = 6`, no count, and the floor not deciding.
+  The window prober names the silent branch instead of printing `null von null` and moving on.
+
 ## [3.2.144]
 
 ### Improved

@@ -1194,6 +1194,11 @@ async function main() {
         // Der Knopf verliert nur, was ueber der eignen Drift liegt.
         urteil("**der Fit-Knopf zeigt nicht weniger Notizen als die Ankunft, ueber der Drift gemessen**",
           verlust <= drift, true);
+      } else {
+        // Stille ist ein benannter Zweig, kein gruener Fall: gemessen 4.11. 15:45 MEZ am
+        // ausgelieferten 3.2.144, wo die Bilanzzeile schwieg, weil der Rahmen alle 150 hielt.
+        // Ohne diese Zeile liest ein Bericht "null von null" und haelt es fuer einen Ausfall.
+        console.log("  Bilanzzeile schweigt (der Rahmen haelt alles) — dieser Vergleich hat in diesem Lauf keinen Gegenstand; die Wache fahrt ihn mit 34 Notizen bei 390 x 628");
       }
       const ruhigNach = await ruhe(20000);
       const zwei = await exportBild();

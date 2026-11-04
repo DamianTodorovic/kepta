@@ -866,11 +866,22 @@ export const TITEL_KANTEN_PX = ETIKETT_PX;
  * vielen Knoten schlecht aussieht — und er bleibt eine **Voreinstellung, keine Wand**:
  * die manuelle Skala ist bei 0,02 frei (`zoomAt`, graphLayout.ts:1628), also kann jeder
  * die ganze Welt sehen. Darum nennt der Satz den Weg nach draussen.
+ *
+ * Dritte Fassung, gemessen 4.11. 15:45 MEZ am ausgelieferten Stueck: der Knopf nannte den
+ * Boden und damit "some notes stay outside", wo der Rahmen **alle 150** hielt (die Bilanz-
+ * zeile schwieg, der Pruefer meldete "Kanten beruehrt: keine"). Der Titel hing an der
+ * Entscheidung der Kamera, nicht an dem, was das Bild zeigt. Darum jetzt die Zahl mit:
+ * `aussen` ist die Anzahl der Notizen, die der Rahmen nicht faengt; 0 heisst, dass der
+ * Boden die Groesse hielt **und** alles drin ist.
  */
-export function fitTitel(bodenEntschieden: boolean): string {
-  return bodenEntschieden
-    ? "Fit — held at the readability floor, so some notes stay outside; the line at the edge counts them, and zooming out shows them all"
-    : "Fit the whole graph into view";
+export function fitTitel(bodenEntschieden: boolean, aussen?: number, gesamt?: number): string {
+  if (!bodenEntschieden) return "Fit the whole graph into view";
+  if (aussen === 0) {
+    return typeof gesamt === "number" && gesamt > 0
+      ? `Fit — held at the readability floor, and all ${mengenzahl(gesamt)} notes are in the picture`
+      : "Fit — held at the readability floor, and every note is in the picture";
+  }
+  return "Fit — held at the readability floor, so some notes stay outside; the line at the edge counts them, and zooming out shows them all";
 }
 
 /**
@@ -1693,6 +1704,15 @@ export function KnowledgeGraph({ memories: memoriesAusFenster, onSelectMemory, o
   /** Die Schlingen des letzten Kantlaufes — gezeichnet und gegriffen aus derselben Liste. */
   const selbstRef = useRef<LayoutEdge[]>([]);
   const kantTooltipRef = useRef<HTMLDivElement | null>(null);
+  /**
+   * Wie viele entfaltete Notizen der Rahmen **nicht** faengt, und wie viele es gesamt sind.
+   * Der Einpass-Knopf haengt daran (4.11. 15:45 MEZ gemessen: er nannte "some notes stay
+   * outside", wo alle 150 drin waren), also muss die Zahl aus dem Mal-Pass hierher finden.
+   * Ein Ref genuegt nicht, weil der Titel beim Malen nicht neu gerendert wird; gesetzt wird
+   * nur, wenn die Zahl ihre Seite wechselt (null -> etwas -> null), nicht bei jedem Rahmen.
+   */
+  const aussenStandRef = useRef<{ aussen: number | null; gesamt: number } | null>(null);
+  const [aussenStand, setAussenStand] = useState<{ aussen: number | null; gesamt: number } | null>(null);
   // Die Groesse der Leinwand brauchte der Zeigerhandler — als Zustand ware er
   // beim ersten Hover noch die Startmasse.
   const masseRef = useRef({ w: 800, h: 500 });
@@ -4825,6 +4845,15 @@ export function KnowledgeGraph({ memories: memoriesAusFenster, onSelectMemory, o
       const rahmenZeile = imRahmenRef.current;
       if (rahmenZeile) {
         const gesamt = imBildRef.current;
+        // Dieselbe Rechnung, die die Bilanzzeile zum Schweigen bringt, entscheidet jetzt
+        // auch das Wort am Einpass-Knopf: aussen === 0 heisst, der Rahmen haelt alles.
+        const aussenNeu = gesamt > 0 ? Math.max(0, gesamt - imStrengeNoten) : null;
+        const stand = aussenStandRef.current;
+        if (!stand || stand.aussen !== aussenNeu || stand.gesamt !== gesamt) {
+          const neuerStand = { aussen: aussenNeu, gesamt };
+          aussenStandRef.current = neuerStand;
+          setAussenStand(neuerStand);
+        }
         const meldung = rahmenZeilentext(imStrengeNoten, gesamt, ansichtRef.current === "dendrogram", !!kernNeu.marke);
         if (rahmenZeile.textContent !== meldung) rahmenZeile.textContent = meldung;
         // Wort und Marke an einem Knoten, aus einer Rechnung: wer die Zeile liest, kann an
@@ -5739,7 +5768,7 @@ export function KnowledgeGraph({ memories: memoriesAusFenster, onSelectMemory, o
       <button onClick={() => zoom(1.25)} className="btn-ghost p-2 rounded-lg" title="Zoom in"><ZoomIn className="w-4 h-4" /></button>
       <button onClick={() => zoom(0.8)} className="btn-ghost p-2 rounded-lg" title="Zoom out"><ZoomOut className="w-4 h-4" /></button>
       {/* .hud-label setzt --text-2; das Wort soll --text-1 tragen wie das Symbol daneben. */}
-      <button data-testid="graph-fit" onClick={fitView} className="btn-ghost p-2 rounded-lg inline-flex items-center gap-1" title={fitTitel(kameraBodenRef.current)}><Maximize2 className="w-4 h-4" /><span className="hud-label" style={{ color: "var(--text-1)" }}>Fit</span></button>
+      <button data-testid="graph-fit" onClick={fitView} className="btn-ghost p-2 rounded-lg inline-flex items-center gap-1" title={fitTitel(kameraBodenRef.current, aussenStand?.aussen ?? undefined, aussenStand?.gesamt)}><Maximize2 className="w-4 h-4" /><span className="hud-label" style={{ color: "var(--text-1)" }}>Fit</span></button>
       <button
         data-testid="graph-export"
         onClick={bildExport}
