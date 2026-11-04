@@ -42,6 +42,53 @@ const VALID_TYPES: MemoryType[] = ["semantic", "episodic", "procedural", "refere
 const GRAPH_FENSTER_KNOTEN = 500;
 const GRAPH_PAAR_POOL = 8000;
 const GRAPH_RANG_POOL = 4000;
+
+/**
+ * Der Etat der Rueckwaertssuche im Entity-Bein (`begriffeImWortlaut`), drei Zahlen am selben Ort.
+ *
+ * Die Stueck-Kappe ist ein Etat, keine Weltgrenze: gemessen 4.11. an der 40 000-Notizen-Kapsel
+ * kostet eine Lesung mit 4 000 Stuecken 2,22 ms, und was ueber der Kappe faellt, sind die
+ * Theilstuecke innerhalb der Woerter — die ganzen Woerter und Wortfolgen stehen zuerst in der
+ * Liste und gehen nie verloren.
+ */
+const BEGRIFF_STUECKE_MAX = 4000;
+/**
+ * Bis zu dieser Laenge wird ein Wort der Anfrage in Theilstuecke zerlegt ("frist" in
+ * "fristenkontrolle"). Die Zahl sitzt ueber der Laenge, die die Welt kennt: kein Begriff wird
+ * laenger als 40 Zeichen gesetzt (`begiffe.ts:32`), laengere Theilstuecke kann es also nicht
+ * geben, und ein kuerzerer Begriff findet sich in einem Wort bis 48 Zeichen immer.
+ */
+const BEGRIFF_STUECK_LAENGE = 48;
+/** Mehrwortige Begriffe werden als Wortfolge bis vier Woerter gesucht — so lang ist der langste, den `begiffe.ts:33` durchlaesst. */
+const BEGRIFF_WORTFOLGE_MAX = 4;
+
+/**
+ * Welche Namen der Wortlaut selbst hergibt: die ganzen Woerter, dann Wortfolgen bis
+ * `BEGRIFF_WORTFOLGE_MAX` Woerter, dann die Theilstuecke innerhalb eines Wortes. In dieser
+ * Reihenfolge, damit eine Kappe immer zuerst die Form trifft, die am seltensten einen Begriff
+ * ergibt: die Theilstuecke innerhalb eines Wortes.
+ */
+function wortstueckeAus(wortlaut: string): string[] {
+  const worter = wortlaut.trim().toLowerCase().split(/\s+/).filter((w) => w.length > 0);
+  if (worter.length === 0) return [];
+  const stuecke = new Set<string>();
+  for (const w of worter) if (w.length >= 3) stuecke.add(w);
+  for (let a = 0; a < worter.length; a++) {
+    let folge = worter[a]!;
+    for (let b = a + 1; b < worter.length && b - a < BEGRIFF_WORTFOLGE_MAX; b++) {
+      folge = `${folge} ${worter[b]!}`;
+      stuecke.add(folge);
+    }
+  }
+  for (const w of worter) {
+    const kern = w.slice(0, BEGRIFF_STUECK_LAENGE);
+    for (let i = 0; i < kern.length; i++) {
+      for (let e = i + 3; e <= kern.length && e - i <= BEGRIFF_STUECK_LAENGE; e++) stuecke.add(kern.slice(i, e));
+    }
+  }
+  return [...stuecke].slice(0, BEGRIFF_STUECKE_MAX);
+}
+
 /**
  * Die Stufen der Tiefe, die die Flaeche zeigt und die Tuer klemmt — **eine** Zahl, nicht
  * drei Kopien: `server/router/system.ts` klemmt an diesen Werten, und der Wachtest
@@ -1354,13 +1401,43 @@ export class KeptaStore {
   }
 
   /**
-   * Der Namensvorrat fuer die Such-Erweiterung: Begriffe in Rangfolge, tiefer als
-   * das Sichtfenster der Graphflaeche. Getrennt, weil beide verschiedene Dinge sind
-   * — seit #83 ist das Fenster eine Nachbarschaft, und eine Nachbarschaft von 500
-   * ist ein schlechter Vorrat aller Namen, die eine Anfrage nennen koennte.
+   * Die Begriffe, die ein Wortlaut nennt — umgekehrt gefragt: nicht die Rangfolge der Begriffe
+   * durchgehen und pruefen, welcher darin vorkommt, sondern die Stuecke des Wortlauts gegen den
+   * Namensindex (`entities.name UNIQUE`) lesen.
+   *
+   * Warum: der Vorrat war eine Zusammenrechnung ueber den ganzen Bestand — gemessen 4.11. an der
+   * 40 000-Notizen-Kapsel (40 008 Begriffe, 360 000 Kanten, 160 000 Verknuepfungen) 63,90 ms warm
+   * und 123,41 ms kalt, und jeder Notiz-Schreibfall hebt `daten_generation`, an der der Vorrat in
+   * `engine.ts` haengt. Die erste Anfrage nach einem Speichern zahlte sie: 134,74 ms von 157 ms
+   * an der Tuer. Diese Lesung waechst stattdessen mit der Laenge der Anfrage (2,22 ms fuer
+   * 4 000 Stuecke) und findet jeden Begriff, auch ausserhalb eines Pools — Treffer koennen nur
+   * mehr werden.
+   *
+   * Die Folge ist die Reihenfolge der Anfrage, nicht die Rangfolge der Bedeutung; ein Begriff,
+   * der zweimal vorkommt, zaehlt einmal.
+   *
+   * Was nicht gefragt wird: ein Name, der in der MITTE eines Anfrage-Wortes beginnt und in der
+   * Mitte des naechsten endet. Der alte Vorrat fand ihn durch die rohe Teilzeichenkette; die
+   * Stuecke hier halten die Wortgrenze. Diese Form kann kein Name annehmen, den die Flaeche je
+   * setzt: Begriffe sind Woerterfolgen bis vier Woerter, kein Theil zweier Woerter
+   * (`begiffe.ts:31-33`: `NAME`, `MAX_LAENGE`, `MAX_WOERTER`).
    */
-  entityNamen(pool = GRAPH_RANG_POOL): string[] {
-    return this.graphRang(pool).map((e) => e.name);
+  begriffeImWortlaut(wortlaut: string): { id: number; name: string }[] {
+    const stuecke = wortstueckeAus(wortlaut);
+    if (stuecke.length === 0) return [];
+    const zeilen = this.db
+      .prepare(`SELECT id, name FROM entities WHERE name IN (${stuecke.map(() => "?").join(",")})`)
+      .all(...stuecke) as { id: number; name: string }[];
+    const nachName = new Map(zeilen.map((z) => [z.name, Number(z.id)]));
+    const funde: { id: number; name: string }[] = [];
+    const schon = new Set<number>();
+    for (const stueck of stuecke) {
+      const id = nachName.get(stueck);
+      if (id === undefined || schon.has(id)) continue;
+      schon.add(id);
+      funde.push({ id, name: stueck });
+    }
+    return funde;
   }
 
   /**

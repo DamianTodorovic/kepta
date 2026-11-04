@@ -865,6 +865,13 @@ const erwartet = [
   ["The activity list did not arrive", 1],
   ["The answer stopped partway", 1],
   ["No answer from that service", 1],
+  // Punkt 6, 4.11. (3.2.140): das Entity-Bein fragt die Stuecke der ANFRAGE gegen den
+  // Namensindex, statt die Rangfolge aller Begriffe durchzugehen. Gezaehlt am gebauten Bund
+  // dieses Baums (dist-pf1/server.cjs, gebaut 01:41, gezaehlt 02:04 MEZ am 4.11.):
+  // "begriffeImWortlaut" 2 mal,
+  // "graphRang" 2 mal (die Rangfolge bleibt dem Graphfenster), "entityNamen" 0 mal. Am
+  // installierten 3.2.139: "begriffeImWortlaut" 0 mal, "entityNamen" 2 mal.
+  ["begriffeImWortlaut", 1],
 ];
 
 // Was NICHT mehr drin sein darf. Bisher war "der alte Wortlaut ist weg" eine Behauptung im
@@ -884,6 +891,13 @@ const verboten = [
   // gebaute 3.2.139: beide **0** mal.
   "Mentions of knowledge entities",
   "Local storage in sync",
+  // Punkt 6 (3.2.140): der alte Weg des Entity-Beins. `entityNamen` hielt die Rangfolge aller
+  // Begriffe als Vorrat, geachtet an `datenGeneration`, und jeder Schreibfall hob diese Zahl -
+  // die erste Anfrage danach baute die Rangfolge ueber 360 000 Kanten und 40 008 Begriffe neu:
+  // 134.74 ms von 157 ms an der Tuer, gemessen 4.11. an 40 000 Notizen
+  // (docs/belege/tag-0411/tuer-48-vor-3-2-139-0123.log.txt). Gezaehlt am installierten
+  // 3.2.139: 2 mal; am gebauten 3.2.140: 0 mal.
+  "entityNamen",
 ];
 // Die Liste darf nur ASCII-Zeichen enthalten. Grund, gemessen 21.10. 19:16 MESZ am
 // installierten Objekt: das Wort "Looking" plus echtes U+2026 steht dort 2 mal, diese

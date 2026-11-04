@@ -1,3 +1,30 @@
+## [3.2.140]
+
+### Fixed
+
+- **Saving a note no longer makes the next search wait.** Measured on a capsule of 40,000
+  notes (40,008 entity names, 360,000 edges, 160,000 note-links, counted in that same
+  capsule), the first search after a save took **157 ms**, and **129 ms** of that was a
+  single job that has nothing to do with the question: rebuilding the ranked list of every
+  entity name in the store, so the search could check whether the question happens to name
+  one of them. That list is 40,008 names long, and the ranking adds up all 360,000 edges and
+  160,000 note-links each time it is built — measured at the same capsule: 63.90 ms warm,
+  123.41 ms cold. Because every save raises the data counter the list is cached under, the
+  wait came back after each save, forever, and the window sat there while it was counted.
+  The search now asks the other way round: instead of walking the list of all names, it
+  takes the pieces the question itself offers — its words, word runs up to four words (the
+  longest name the extractor can produce, `begiffe.ts:33`) and the parts inside each word —
+  and looks those up in the name index. Measured at the same store: **0.20 ms for 400
+  pieces, 2.22 ms for 4,000**. The cost now grows with the length of the question, not with
+  the size of the store.
+  Same door, same store, same query, vector leg running in both runs: **157 ms became
+  31 ms**, **193 ms became 34 ms**; the `vektor` segment went from 134.74 ms to 5.82 ms.
+  A name is also found now when it sits outside the old top-4000 ranking, so this leg can
+  fire more often and never less. One form is no longer asked, and it is a form no name can
+  have: a name that starts inside one word of the question and ends inside the next.
+  Guarded by `tests/p6-begriffsbein-ohne-namensvorrat.test.ts` (8 cases), which fails if the
+  search touches the ranking again — measured 3450 cases in 327 files.
+
 ## [3.2.139]
 
 ### Changed

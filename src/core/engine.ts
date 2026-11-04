@@ -250,19 +250,6 @@ function embeddbareChunks(store: KeptaStore): ReturnType<KeptaStore["allEmbeddab
   return chunks;
 }
 
-const graphCache = new WeakMap<KeptaStore, { generation: number; namen: string[] }>();
-function graphNamen(store: KeptaStore): string[] {
-  const generation = store.datenGeneration();
-  const eintrag = graphCache.get(store);
-  if (eintrag && eintrag.generation === generation) return eintrag.namen;
-  // Der Namensvorrat ist nicht das Sichtfenster: seit #83 waehlt die Graphflaeche
-  // eine Nachbarschaft, und eine Nachbarschaft von 500 Begriffen ist ein schlechter
-  // Vorrat fuer das, was eine Anfrage zufaellig nennt.
-  const namen = store.entityNamen();
-  graphCache.set(store, { generation, namen });
-  return namen;
-}
-
 // Vektor-Spur vorgerechnet: Chunk-Normen werden pro Generation EINMAL gebildet,
 // die Suche rechnet dann nur noch dot(a, b) / (normA · normB) — das spart die
 // doppelte Norm-Arbeit pro Chunk bei jeder Abfrage (bei 20k×768-dim-Chunks der
@@ -420,12 +407,16 @@ export function waermeVektorSpur(store: KeptaStore): number {
 }
 
 
-function entityMentionsInQuery(store: KeptaStore, queryLower: string): string[] {
-  const mentions: string[] = [];
-  for (const name of graphNamen(store)) {
-    if (name.length >= 3 && queryLower.includes(name)) mentions.push(name);
-  }
-  return mentions;
+/**
+ * Benennt die Anfrage einen Begriff? Die Antwort holt `store.begriffeImWortlaut` — die Stuecke
+ * der Anfrage gegen den Namensindex. Der alte Weg ging umgekehrt: er hielt die Rangfolge aller
+ * Begriffe als Vorrat und suchte sie in der Anfrage; jeder Schreibfall hob den Vorrat, und die
+ * erste Anfrage danach zahlte die Zusammenrechnung ueber den ganzen Bestand — 134.74 ms von
+ * 157 ms an der Tuer, gemessen 4.11. an 40 000 Notizen
+ * (`docs/belege/tag-0411/tuer-48-vor-3-2-139-0123.log.txt`).
+ */
+function entityMentionsInQuery(store: KeptaStore, queryLower: string): number[] {
+  return store.begriffeImWortlaut(queryLower).map((e) => e.id);
 }
 
 /** Berechnet alle Beinheiten und fusioniert via Reciprocal Rank Fusion. */
@@ -548,11 +539,8 @@ export async function searchMemories(store: KeptaStore, params: SearchParams): P
   // --- Bein 3: Entity-Match ---
   let entityRanked: string[] = [];
   if (query && beine.entity) {
-    const mentions = entityMentionsInQuery(store, queryLower);
-    if (mentions.length > 0) {
-      const entityIds = mentions
-        .map((name) => store.getEntityByName(name)?.id)
-        .filter((id): id is number => id !== undefined);
+    const entityIds = entityMentionsInQuery(store, queryLower);
+    if (entityIds.length > 0) {
       const memIds = store.memoryIdsForEntities(entityIds);
       entityRanked = [...memIds].filter((id) => byId.has(id));
     }
