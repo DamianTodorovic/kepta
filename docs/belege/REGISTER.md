@@ -23,6 +23,7 @@ Laeufe liegt, korrekt gekuerzt, im Kern-Repo unter `docs/belege/`.
 | `tag-0411/wortschatz-nach-3-2-139-0023.log.txt` | 959 B | `92084dce677a6844…` |
 | `tag-0411/tuer-48-vor-3-2-139-0123.log.txt` | 4355 B | `31bcebfde0182eb1…` |
 | `tag-0411/tuer-48-nach-der-heilung-am-baum-0150.log.txt` | 4388 B | `7428ed38b6e73497…` |
+| `tag-0411/tuer-48-landung-3-2-140-0220.log.txt` | 4394 B | `d1ee4f7532d02440…` |
 | `tag-0411/spurbau-grundlagen-40000-0136.log.txt` | 2651 B | `48847604a5ff01ac…` |
 | `tag-0411/begriffsnamen-form-0159.log.txt` | 783 B | `a31931315d622e1a…` |
 | `tag-13-10/eval-korpus-1143.log.txt` | 3419 B | `8b343e7457825fa0…` |
@@ -34,8 +35,8 @@ Laeufe liegt, korrekt gekuerzt, im Kern-Repo unter `docs/belege/`.
 | `app-abnahme/nachzug-flaeche-gruen.log.txt` | 19204 B | `1e6eb0616a86a748…` |
 | `app-abnahme/nachzug-mutation-rot.log.txt` | 22052 B | `1c8a44f87cda8e3a…` |
 
-Summe: **106 964 Bytes in 18 Dateien** (gemessen am 4.11. um 02:05 MEZ mit `wc -c` ueber
-`find docs/belege -name '*.log.txt'`). Die vier neuen vom 4.11. machen 12 177 Bytes davon aus.
+Summe: **111 358 Bytes in 19 Dateien** (gemessen am 4.11. um 02:21 MEZ mit `wc -c` ueber
+`find docs/belege -name '*.log.txt'`). Die fuenf neuen vom 4.11. machen 16 571 Bytes davon aus.
 
 Die Zeile war zwei Dateien hinterher: sie schrieb am 3.11. **"92 036 Bytes in 12 Dateien"**,
 waehrend `find` am 4.11. vor den neuen Laeufen **94 787 Bytes in 14 Dateien** meldete — die
@@ -137,7 +138,7 @@ Die Belege hier sind Laeufe **mit** Vektor-Bein (der Dienst stand 12.10. nachts,
 12:14 UTC und am 3.11. um 13:06 UTC), und die Zeile in der README nennt diesen Pfad, damit ein
 Leser weiss, was er sieht, wenn er es selbst versucht.
 
-## Die vier Laeufe vom 4.11.: wo die 129 ms her kamen
+## Die fuenf Laeufe vom 4.11.: wo die 129 ms her kamen
 
 `tag-0411/tuer-48-vor-3-2-139-0123.log.txt` und
 `tag-0411/tuer-48-nach-der-heilung-am-baum-0150.log.txt` sind derselbe Griff an derselben
@@ -146,9 +147,13 @@ Schreibfall meldet dort `ms: 157` mit `vektor=134.74` und `ms: 193` mit `vektor=
 meldet hier `ms: 31` mit `vektor=5.82` und `ms: 34` mit `vektor=5.96`. Der Nachtrag der Spur
 steht in beiden Laeufen (`deltapatches` 1 und 2), das Vektor-Bein ging in beiden mit — die
 beiden Zeilen vergleichen also dieselbe Arbeit. Der hintere Lauf ist am **gebauten Baum**
-gemessen (3.2.139 stand noch in `package.json`, die Heilung schon in `src/`), nicht am
-ausgelieferten Stueck; das ausgelieferte Stueck steht nach der Landung in
-`tag-0411/tuer-48-landung-3-2-140-*.log.txt`.
+gemessen (3.2.139 stand noch in `package.json`, die Heilung schon in `src/`). Nach der Landung
+fuehrt dieselbe Sonde denselben Griff am **ausgelieferten Stueck**
+(`tag-0411/tuer-48-landung-3-2-140-0220.log.txt`): 33 ms mit `vektor=5.79` und 39 ms mit
+`vektor=6.21`, beide Schreibfaelle sichtbar gelandet, `deltapatches` 1 und 2. Der dafuer
+benutzte Bund ist bytegleich zum Objekt - `dist/server.cjs` und die aus dem installierten
+`app.asar` ausgepackte Datei tragen dieselbe sha256 (`ddf76cd9f2c23fc5…`); gemessen wird also
+das ausgelieferte Programm, nur gegen die Kapsel statt gegen den Bestand des Rechners.
 
 `tag-0411/spurbau-grundlagen-40000-0136.log.txt` nennt die Grundgesamtheit und die einzelnen
 Lesungen: `entities: 40008`, `memory_entities: 160000`, `relations: 360000`, und die

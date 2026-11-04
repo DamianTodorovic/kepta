@@ -19,6 +19,8 @@
   the size of the store.
   Same door, same store, same query, vector leg running in both runs: **157 ms became
   31 ms**, **193 ms became 34 ms**; the `vektor` segment went from 134.74 ms to 5.82 ms.
+  Re-run against the installed 3.2.140 package with the same probe: 33 ms and 39 ms
+  (`vektor=5.79`, `vektor=6.21`).
   A name is also found now when it sits outside the old top-4000 ranking, so this leg can
   fire more often and never less. One form is no longer asked, and it is a form no name can
   have: a name that starts inside one word of the question and ends inside the next.
