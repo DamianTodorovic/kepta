@@ -1,0 +1,14 @@
+platten-wache: frei — stufe leicht, Schwelle 2 Gi, geprüft: /Users/damiantodorovic/kepta-app 13.85 Gi, /var/folders/ct/jl4tc0wd7672rpl4_gbvg7c80000gn/T 13.85 Gi
+Maschine: Median 5.98 ms, max/median 1.15, 4 node-Prozesse, load1/cpu 0.18 auf 10 Kernen
+bestand: 3000 Notizen (Rohtext-Erwaehnungen 18950)
+die Flaeche meldet: 3,000 notes · 6 concepts of 3,027 in all · 2,379 links
+  Fit-Knopf gefunden und gedrueckt: true
+einschwingen   rame   324 (malende   309)   Arbeit/Bild  median 3.6 ms  p95 9.6 ms  max 13 ms   ueber 16,67 ms: 0/309   Rame-Abstand median 16.7 ms
+ruheNachFit    rame    70 (malende    13)   Arbeit/Bild  median 0.1 ms  p95 0.1 ms  max 18.6 ms   ueber 16,67 ms: 1/13   Rame-Abstand median 16.6 ms
+knotenZiehen   rame    98 (malende    98)   Arbeit/Bild  median 8.5 ms  p95 9.5 ms  max 12.8 ms   ueber 16,67 ms: 0/98   Rame-Abstand median 32.2 ms
+ueberlappung   707 Scheiben, geschnitten: 1 Paare, beruehrend: 1, tiefster Schnitt 11 Welt-Einheiten
+bestand        3000 notes · 6 concepts · 2379 links   (die Flaeche sagt das selbst)
+maschine         vorher: Maschine: Median 5.98 ms, max/median 1.15, 4 node-Prozesse, load1/cpu 0.18 auf 10 Kernen
+                 nachher: Maschine: Median 6.81 ms, max/median 2.25, 4 node-Prozesse, load1/cpu 0.22 auf 10 Kernen  — NICHT RUHIG, Zahl nicht veröffentlichen
+befehl         node scripts/fps-laeufer.mjs --knoten 3000 --sekunden 6
+aufgeraeumt: /tmp/kepta-fps/profil, /tmp/kepta-fps/d (Bundle bleibt; --behalten laesst alles liegen)

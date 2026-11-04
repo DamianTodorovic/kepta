@@ -33,6 +33,9 @@ Laeufe liegt, korrekt gekuerzt, im Kern-Repo unter `docs/belege/`.
 | `tag-0411/verstaendlichkeit-objekt-0800.log.txt` | 7287 B | `7e84b56971bb47ce…` |
 | `tag-0411/verstaendlichkeit-objekt-3-2-144-1545.log.txt` | 6976 B | `5bb3fa207afa0da9…` |
 | `tag-0411/objekt-3-2-145-fit-titel-1601.log.txt` | 3941 B | `4f705a2960539da1…` |
+| `tag-0411/fps-400-1614.log.txt` | 1494 B | `4794122f31b6f168…` |
+| `tag-0411/fps-1500-1616.log.txt` | 1498 B | `80d505454daa6c4b…` |
+| `tag-0411/fps-3000-1610.log.txt` | 1502 B | `c4fd4233a647584e…` |
 | `tag-13-10/eval-korpus-1143.log.txt` | 3419 B | `8b343e7457825fa0…` |
 | `tag-13-10/eval-korpus-1413.log.txt` | 4181 B | `dcd3e42dc0021921…` |
 | `tag-13-10/ablation-beine-1144.log.txt` | 1904 B | `62d15147e59de149…` |
@@ -42,12 +45,14 @@ Laeufe liegt, korrekt gekuerzt, im Kern-Repo unter `docs/belege/`.
 | `app-abnahme/nachzug-flaeche-gruen.log.txt` | 19204 B | `1e6eb0616a86a748…` |
 | `app-abnahme/nachzug-mutation-rot.log.txt` | 22052 B | `1c8a44f87cda8e3a…` |
 
-Summe: **152 364 Bytes in 26 Dateien** (gemessen am 4.11. um 16:03 MEZ mit `wc -c` ueber
+Summe: **156 858 Bytes in 29 Dateien** (gemessen am 4.11. um 16:22 MEZ mit `wc -c` ueber
 `find docs/belege -name '*.log.txt'`). Die fuenf Laeufe des 4.11. bis 02:21 machen 16 571
 Bytes aus, die drei von Aufgabe #53 (05:49, 05:50 und 06:02 MEZ) 13 500 Bytes, der
 Objektnachlauf von 3.2.143 (06:28 MEZ) 9 302 Bytes, der Sprach-Census (08:00 MEZ) 7 287 Bytes
 und sein Wiederlauf am ausgelieferten 3.2.144 6 976 Bytes (Dateizeit 15:43:53 MEZ).
-Der Fensterlauf am ausgelieferten 3.2.145 traegt 3 941 Bytes (Dateizeit 16:01:35 MEZ).
+Der Fensterlauf am ausgelieferten 3.2.145 traegt 3 941 Bytes (Dateizeit 16:01:35 MEZ),
+und die drei Kosten-Laeufe (400, 1 500, 3 000 Notizen) zusammen 4 494 Bytes
+(Dateizeiten 16:14:19, 16:16:34 und 16:10:38 MEZ).
 
 Die Zeile war zwei Dateien hinterher: sie schrieb am 3.11. **"92 036 Bytes in 12 Dateien"**,
 waehrend `find` am 4.11. vor den neuen Laeufen **94 787 Bytes in 14 Dateien** meldete — die
@@ -306,3 +311,18 @@ habe. Die gemessenen mtimes sind 07:49:58, 07:55:36 und 15:43:53 MEZ (`stat -f %
 gegriffen 16:03 MEZ). Die Namen bleiben, weil sie in Commits und Paapieren stehen; die
 wahren Zeiten stehen jetzt in diesem Register und in den Papieren, und die Regel, die hier
 gebrochen wurde, ist die aeltere als dieses Blatt: **`date` und `stat` fragen, nie fuehlen.**
+
+## Die drei Kosten-Laeufe (Dateizeiten 16:10, 16:14 und 16:16 MEZ)
+
+`fps-400-1614`, `fps-1500-1616` und `fps-3000-1610` sind `node scripts/fps-laeufer.mjs`
+mit `--knoten` 400, 1 500 und 3 000, gegen den aus dem committeten Baum gebauten Bund —
+derselbe Koerper, den der Fenster-Pruefer um 16:01:35 als bytegleich mit dem installierten
+Objekt bestaetigt hatte. Jedes Blatt nennt seinen Bestand, die Zahl der gemalten Scheiben,
+die geschnittenen Paare, den tiefsten Schnitt, die Arbeit pro Bild und — wichtig — den
+Maschinenstand vor und nach dem Lauf.
+
+Der 3 000er meldet `geschnitten: 1 Paare, tiefster Schnitt 11 Welt-Einheiten` und, in derselben
+Zeile, `NICHT RUHIG, Zahl nicht veröffentlichen`. Die Geometrie wird daraus zitiert, die
+Millisekunden werden nicht zugesagt. Der erste 3 000er-Lauf (16:07:05) ist **nicht** abgelegt:
+er gehoert zu der Sonde vor ihrer Berichtigung und meldete `0 notes` und `1602`-Titel-Klick ins
+Leere; sein Nachfolger ab 16:10 ist der, der zaehlt.

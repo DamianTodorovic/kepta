@@ -259,3 +259,44 @@ measured refusal would itself be a timing under load. One number is deliberately
 outside the gate: the cache-hit promise (5 ms) — measured 0,1 ms at a 6,3 ms baseline and
 0,2 ms at a 31,4 ms baseline, so it is invariant to the neighbourhood, and gating it would
 only mute a claim that demonstrably holds.
+
+## The same three sizes in the delivered view, on this desk (4 November, 16:12–16:20)
+
+`node scripts/fps-laeufer.mjs` (own ports 3541/3741, own HOME, own profile, own data dir; the
+bundle it serves is built from the committed tree, which the window prober had already proved
+byte-identical to the installed `app.asar` at 16:01:35 — 5 of 5 artefacts).
+
+| base | discs painted | intersecting pairs | deepest cut | work/frame median | p95 | max | frames over 16.67 ms | frame interval median |
+|---|---|---|---|---|---|---|---|---|
+| 400 notes | 243 | **0** | 0 | 4.7 ms | 5.4 ms | 10.5 ms | 0 of 275 | 21.5 ms |
+| 1 500 notes | 386 | **0** | 0 | 4.9 ms | 9.0 ms | 10.4 ms | 0 of 309 | 16.7 ms |
+| 3 000 notes | 707 | **1** | 11 world units | 3.6 ms | 9.6 ms | 13 ms | 0 of 309 | 16.7 ms |
+
+At 3 000 the drag phase (the most expensive path: physics reheats, everything repaints) cost
+median 8.5 ms of work per frame with 0 of 98 frames over budget, while the frame *interval*
+was 32.2 ms — headless Chrome has no vsync there, so the interval is not a user's rhythm and
+only the work figure is read.
+
+**The timing verdict is withheld, by the instrument itself.** Its own machine probe reported
+max/median 1.15 before and 2.25 after the 3 000-note run and printed
+`NICHT RUHIG, Zahl nicht veröffentlichen`. Three long-running processes that are not mine held
+the machine: a `hyperframes preview` up 15 h 42 min, a `playwright-mcp` and a
+`chrome-devtools` telemetry watchdog, each around 48 min. None was touched. What is published
+here is therefore the **geometry** (pairs, discs, deepest cut) and the work-per-frame as
+measured, with the machine state named beside it; no millisecond is claimed as a verdict.
+
+Against the baseline this doc recorded on 11 October in the same browser path — 547 of 3 027
+discs intersecting, deepest cut 21 world units — today's 3 000-note field meets **one** pair,
+11 units deep. One is not zero, so the README sentence that cites the layout test now also
+names the browser number instead of letting the test speak for the product.
+
+Two probe faults surfaced in these runs and are fixed in `scripts/fps-laeufer.mjs`
+(commit `23cf484`), both of them the instrument's, not the surface's:
+
+1. The head-row reader matched `(\d+) notes` and read `000` out of the grouped `3,000 notes`,
+   printing "0 notes" for a base of 3 000. The surface had been right; the sieve was blind to
+   its own house format (#101).
+2. The Fit click searched `[title="Fit the whole graph into view"]`. Since 3.2.145 that title
+   is a condition, so in exactly the case this run measures the selector found nothing, the
+   click was a no-op, and the run reported success. It now grips `data-testid="graph-fit"` and
+   prints whether the button was there; the force-view and zoom clicks answer too.
