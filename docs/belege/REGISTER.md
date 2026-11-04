@@ -49,6 +49,7 @@ Laeufe liegt, korrekt gekuerzt, im Kern-Repo unter `docs/belege/`.
 | `tag-0411/fps-3000-149-2109.log.txt` | 3900 B | `495d020de8fd380d…` |
 | `tag-0411/fps-3000-149-abbruch-2115.log.txt` | 3460 B | `df1ae59f53bff27a…` |
 | `tag-0411/fps-3000-149-nachzug-2119.log.txt` | 4039 B | `aa474a2357b5c023…` |
+| `tag-0411/fps-3000-149-ruhig-2132.log.txt` | 3994 B | `cd8708cfc25c3122…` |
 | `tag-13-10/eval-korpus-1143.log.txt` | 3419 B | `8b343e7457825fa0…` |
 | `tag-13-10/eval-korpus-1413.log.txt` | 4181 B | `dcd3e42dc0021921…` |
 | `tag-13-10/ablation-beine-1144.log.txt` | 1904 B | `62d15147e59de149…` |
@@ -58,7 +59,7 @@ Laeufe liegt, korrekt gekuerzt, im Kern-Repo unter `docs/belege/`.
 | `app-abnahme/nachzug-flaeche-gruen.log.txt` | 19204 B | `1e6eb0616a86a748…` |
 | `app-abnahme/nachzug-mutation-rot.log.txt` | 22052 B | `1c8a44f87cda8e3a…` |
 
-Summe: **195 855 Bytes in 42 Dateien** (gemessen am 4.11. um 21:22 MEZ mit `wc -c` ueber
+Summe: **199 849 Bytes in 43 Dateien** (gemessen am 4.11. um 21:35 MEZ mit `wc -c` ueber
 `find docs/belege -name '*.log.txt'`). Die fuenf Laeufe des 4.11. bis 02:21 machen 16 571
 Bytes aus, die drei von Aufgabe #53 (05:49, 05:50 und 06:02 MEZ) 13 500 Bytes, der
 Objektnachlauf von 3.2.143 (06:28 MEZ) 9 302 Bytes, der Sprach-Census (08:00 MEZ) 7 287 Bytes

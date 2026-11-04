@@ -480,7 +480,7 @@ Wiederholungslauf ist Aufgabe #56 nicht entgangen, sondern nachstehend gehalten.
 
 ## Warum das Zeit-Urteil weiter offen ist (21:34 MEZ, ruhiger Versuch an 3.2.149)
 
-Ein Lauf war bestellfrei angesetzt: keine eigne Suite, kein Bau, `pgrep` nach vitest/vite/
+Ein Lauf war bestellfrei angesetzt (`docs/belege/tag-0411/fps-3000-149-ruhig-2132.log.txt`, Dateizeit 21:32:20 MEZ): keine eigne Suite, kein Bau, `pgrep` nach vitest/vite/
 electron-rebuild gab 0. Die **Vor**-Lesung war ruhig (Median 6,21 ms, max/median 1,23,
 load1/cpu 0,20 auf 10 Kernen), und der Lauf brachte die Ruhe-Zeit, die als Urteil dienen
 koennte: einschwingen 3,6 ms median an 378 malenden Rahmen, Ruhe nach dem Einpassen 8,0 ms an
