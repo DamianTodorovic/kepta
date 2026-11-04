@@ -477,3 +477,22 @@ malende Rahmen), und darum war genau dieser Beweis im Browser nie gefuehrt.
 dieselbe Maschine meldet am Ende des Laufs max/median 2,33 ueber ihrer Decke 1,8, also ist das
 kein Zeit-Urteil, sondern eine Geometrie-Messung, die nebenbei ihre Arbeit zeigt. Ein ruhiger
 Wiederholungslauf ist Aufgabe #56 nicht entgangen, sondern nachstehend gehalten.
+
+## Warum das Zeit-Urteil weiter offen ist (21:34 MEZ, ruhiger Versuch an 3.2.149)
+
+Ein Lauf war bestellfrei angesetzt: keine eigne Suite, kein Bau, `pgrep` nach vitest/vite/
+electron-rebuild gab 0. Die **Vor**-Lesung war ruhig (Median 6,21 ms, max/median 1,23,
+load1/cpu 0,20 auf 10 Kernen), und der Lauf brachte die Ruhe-Zeit, die als Urteil dienen
+koennte: einschwingen 3,6 ms median an 378 malenden Rahmen, Ruhe nach dem Einpassen 8,0 ms an
+39 von 39 Rahmen, Zug 8,8 ms an 97 von 98 Rahmen, und **kein** Rahmen ueber 16,67 ms in allen
+drei Phasen. Die **Nach**-Lesung meldete dennoch 2,30 gegen die Decke 1,8, und die Zahl bleibt
+zurueckgehalten.
+
+Der Grund ist an der Maschine gelesen, nicht gedaechtnisst: `top` zeigt in dieser Minute
+WindowServer mit 38,6 % und die Agenten-Anwendung mit 19,2 + 14,3 + 10,7 % — dasselbe
+Programm, das den Lauf befehligt. Die Sonde hoert ihre eigne Umgebung: die Nach-Lesung fällt
+in das Fenster, bevor der Agenten-Bildschirm zurueckgeht. Ein Zeit-Urteil auf diesem Rechner
+braucht darum einen Lauf ohne Leitungs-Sitzung (nachts, oder aus einer Automations-Runde, die
+selbst nichts weiter malt), und nicht eine weichere Decke. Die Geometrie aus demselben Lauf
+ist davon unberuehrt und steht fest: 628 Scheiben, null Paare vor dem Zug; 649 Scheiben, null
+Paare nach dem Zug; das Feld steht 7,2 s nach dem Loslassen.
