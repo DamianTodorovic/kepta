@@ -1,3 +1,23 @@
+## [3.2.141]
+
+### Fixed
+
+- **The Fit button no longer shows fewer notes than the picture already showed.** Measured
+  in a real phone-width viewport (390 x 628) on a settled 34-note field: the view on arrival
+  held **33 of 34** notes, pressing Fit held **32**, and the ink clipped at the canvas edges
+  rose from 18 to 50 pixels. The scale was not the cause — both cameras use the same scale,
+  because the readability floor sets it. The centre was. Every other camera on this surface
+  (arrival, tree view, the two track buttons) centres on the region where names are actually
+  drawn; only Fit centred on the middle of the whole world's box. That is right when the
+  world fits, and simply the emptier place when it cannot.
+  Fit keeps its promise where it can: if the whole graph fits at a readable scale, it frames
+  the whole world exactly as before. If the readability floor holds the scale — which the
+  button already says in its own tooltip — it centres on the densest region instead, and
+  shows no fewer notes than were visible before the click.
+  Guarded by `tests/components/graph-fit-390-keine-verlust.test.tsx` (2 cases, with a bite
+  check: the case aborts rather than passing when a run does not hit the floor condition —
+  the same fixture measured 30 before the click and 29 after it, before this fix).
+
 ## [3.2.140]
 
 ### Fixed

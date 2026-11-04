@@ -3423,7 +3423,22 @@ export function KnowledgeGraph({ memories: memoriesAusFenster, onSelectMemory, o
     // und das Feld kuehlt danach weiter aus. Zwei Kameras an zwei Weltlagen zu
     // vergleichen ist kein Beweis. Die Frage braucht ein gefrorenes Feld, bevor sie eine
     // Antwort verdient (`feldzug/P1-KAMERA-ENTSCHEIDUNG-3110.md`, §9).
-    transformRef.current = feldTransform(layoutBounds(sim.nodes, randFuerAnsicht(sim.nodes)));
+    const grenzen = layoutBounds(sim.nodes, randFuerAnsicht(sim.nodes));
+    transformRef.current = feldTransform(grenzen);
+    // Das gefrorene Feld ist am 4.11. gefroren worden, und der Befund blieb: bei 390 px
+    // zeigte die Ankunft 33 von 34 Notizen, der Druck 32, und die Tinte an den Kanten stieg
+    // von 18 auf 50 Bildpunkte (P53, Befund B; in der Wache
+    // `tests/components/graph-fit-390-keine-verlust.test.tsx` sind es 30 gegen 29). An der
+    // Groesse liegt es nicht — beide Kameras rechnen denselben Massstab, weil der
+    // Lesbarkeits-Boden ihn haelt. Es liegt an der Mitte: die Boxmitte einer Welt, die nicht
+    // in den Rahmen passt, ist schlicht die leerere Stelle, und jede andre Kamera dieser
+    // Flaeche (Anfang, Baum, die zwei Knopfe unten) sucht ihre Mitte im Gemalten.
+    //
+    // Also die Ordnung, nicht die Grosse: passt die ganze Welt, schuldet der Knopf die ganze
+    // Welt (Anker aus, wie 31.10. beschlossen). Haelt der Boden die Groesse, ist die ganze
+    // Welt in diesem Massstab nicht zu haben, und der Knopf zeigt die dichteste Gegend —
+    // niemals weniger, als vor dem Druck zu sehen war.
+    if (kameraBodenRef.current) transformRef.current = feldTransform(grenzen, titelAnker(sim));
     setZoomAnzeige(transformRef.current.k);
     zeichneNoetig.current = true;
   }, [dimensions]);
