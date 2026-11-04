@@ -37,8 +37,17 @@
   call sites), and the scan covers `src/lib/*.ts` as well as the components — the two witnesses in
   `store.ts` reach the surface and were out of view. 7 cases became 9.
 - New: `tests/lib/store-herkunft.test.ts` (8 cases), `Settings.einstell-empfang.test.tsx` +4
-  (P4-17), `Fehlerschirm.test.tsx` +1. 13 new cases, all run red at 23:26 before the fix and green
-  at 23:38 after it.
+  (P4-17), `Fehlerschirm.test.tsx` +1; the guard `tests/absage-statt-ausnahmewort.test.ts` went
+  from 7 to 9 cases. 15 cases in all: **9 ran red at 23:26 MEZ** and green at 23:38, the other 6
+  are controls that were written to stay green on both sides (they are what stops the cure from
+  blanking a reason that is allowed, or from swapping one word for another).
+
+### Berichtigung
+
+The commit message of `89c6b3d` names "Zwölf Faelle erst rot". False — the run at 23:26:03 MEZ
+reported `9 failed | 28 passed`; thirteen cases were new outside this guard file, four of them
+controls. The number that belongs to the run is in this section, not in that subject line, and
+the object was built after the correction.
 
 ### Found, not fixed
 
