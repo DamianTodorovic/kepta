@@ -51,6 +51,7 @@ Laeufe liegt, korrekt gekuerzt, im Kern-Repo unter `docs/belege/`.
 | `tag-0411/fps-3000-149-nachzug-2119.log.txt` | 4039 B | `aa474a2357b5c023…` |
 | `tag-0411/fps-3000-149-ruhig-2132.log.txt` | 3994 B | `cd8708cfc25c3122…` |
 | `tag-0411/fenster-pruefer-3-2-151-2311.log.txt` | 20654 B | `0c69863a9ef5ceb5…` |
+| `tag-0411/einstellungen-tab-152-2349.log.txt` | 1573 B | `37088707f8a3c371…` |
 | `tag-13-10/eval-korpus-1143.log.txt` | 3419 B | `8b343e7457825fa0…` |
 | `tag-13-10/eval-korpus-1413.log.txt` | 4181 B | `dcd3e42dc0021921…` |
 | `tag-13-10/ablation-beine-1144.log.txt` | 1904 B | `62d15147e59de149…` |
@@ -60,7 +61,7 @@ Laeufe liegt, korrekt gekuerzt, im Kern-Repo unter `docs/belege/`.
 | `app-abnahme/nachzug-flaeche-gruen.log.txt` | 19204 B | `1e6eb0616a86a748…` |
 | `app-abnahme/nachzug-mutation-rot.log.txt` | 22052 B | `1c8a44f87cda8e3a…` |
 
-Summe: **220 503 Bytes in 44 Dateien** (gemessen am 4.11. um 23:13 MEZ mit `wc -c` ueber
+Summe: **222 076 Bytes in 45 Dateien** (gemessen am 4.11. um 23:51 MEZ mit `find` und `stat` ueber die Datei groesst, ohne `REGISTER.md` selbst; die Zeile von 23:13 meldete 220 503 in 44 — der Unterschied ist genau der eine neue Lauf unten, 1 573 B. Der Ordner hat 45 Artefakte und die Tabelle 45 Zeilen — gezaehlt am 4.11. um 23:53 MEZ, indem jeder Pfad der Tabelle gegen `find docs/belege -name '*.log.txt'` gestellt wurde (ein Zaehlversuch mit dem Muster `^| \`tag-` sah die `app-abnahme/`-Zeilen nicht und setzte sie doppelt; der Fehler ist zurueckgebaut, die Zeile steht jetzt einmal je Datei). Und `scripts/zahlen-belege.mjs` oeffnet jeden Zitat-Pfad, den ein Satz nennt. Die Summen-Zeile prueft die Datei nach, nicht das Wort:
 `find docs/belege -name '*.log.txt'`). Die fuenf Laeufe des 4.11. bis 02:21 machen 16 571
 Bytes aus, die drei von Aufgabe #53 (05:49, 05:50 und 06:02 MEZ) 13 500 Bytes, der
 Objektnachlauf von 3.2.143 (06:28 MEZ) 9 302 Bytes, der Sprach-Census (08:00 MEZ) 7 287 Bytes
