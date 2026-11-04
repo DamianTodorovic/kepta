@@ -1,3 +1,29 @@
+## [3.2.142]
+
+### Fixed
+
+- **A finished embedding batch no longer forces the next search to re-read the whole store.**
+  The vector track could already patch a note that was just saved. It could not patch a note
+  that was just *embedded*: the background queue writes the vector onto the chunk, which
+  raises a second counter, and the rule said "if that counter moved, build everything again".
+  Measured on a 40,000-note store with the batch waited for (so the search really runs after
+  it): **87 ms with 54.98 ms in the vector segment, and 245 ms with 38.92 ms** — the build
+  counter rose once per batch, and the cost scales with the number of chunks in the store,
+  not with the batch. On a fully embedded store the same read is measured
+  **1 321.99 ms for 64,164 chunks** (25.10.), which is the size of a real library: this stall
+  was seconds, once per batch, in the middle of a search.
+  The track now patches the vectors this process wrote and **checks its own work with a
+  number**: after the patch it must hold exactly as many rows for the query model as the
+  database counts through the index (`store.vektorZeilen`). If the numbers agree, nothing
+  happened outside this process and the patch is complete. If they disagree — another program
+  wrote or deleted vectors — the full build stands, as it must. Measured on the same store
+  with the same instrument: **43 ms with 11.72 ms in the vector segment, and 43 ms with
+  16.91 ms**, the build counter staying at its single cold start and both batches counted as
+  patches. The two counter-cases are in the suite: a foreign vector write and a foreign vector
+  delete both still rebuild, and the rebuild must leave the row count equal to the database's.
+  The same read now uses the index (`WHERE embedding_hat = 1`) instead of scanning every chunk
+  row for a non-null blob.
+
 ## [3.2.141]
 
 ### Fixed

@@ -318,17 +318,27 @@ function zeilenNachNotiz(zeilen: SpurZeile[]): Map<string, SpurZeile[]> {
 }
 
 /**
- * Meldet den Vorrat am Schreibfall-Anhoerer an (dasselbe Muster wie der Kandidaten-Vorrat in
- * `registriereDelta`). Der Anhoerer kostet nichts, wenn kein Vorrat steht: dann liest der
- * naechste Griff ohnehin die ganze Welt.
+ * Meldet den Vorrat an beiden Anhoerern an (dasselbe Muster wie der Kandidaten-Vorrat in
+ * `registriereDelta`): der Notiz-Anhoerer meldet, wenn ein Text geschrieben wird, der
+ * Vektor-Anhoerer meldet, wenn die Hintergrund-Queue einen Abschnitt einbettet. Der Anhoerer
+ * kostet nichts, wenn kein Vorrat steht: dann liest der naechste Griff ohnehin die ganze Welt.
  */
 function registriereVektorDelta(store: KeptaStore): void {
   if (vektorDeltaRegistriert.has(store)) return;
   vektorDeltaRegistriert.add(store);
-  store.onMemorieAenderung((id) => {
+  const markiere = (id: string) => {
     const eintrag = vektorCache.get(store);
     if (eintrag) eintrag.dreckig.add(id);
-  });
+  };
+  store.onMemorieAenderung(markiere);
+  store.onVektorAenderung(markiere);
+}
+
+/** Wie viele Zeilen ein Vorrat haelt — ueber die Gruppen gezaehlt, ohne ein Blob anzufassen. */
+function zeilenImVorrat(nach: Map<string, SpurZeile[]>): number {
+  let n = 0;
+  for (const gruppe of nach.values()) n += gruppe.length;
+  return n;
 }
 
 function suchVektoren(store: KeptaStore, wer: SpurBaumeister): SuchVektoren {
@@ -341,22 +351,33 @@ function suchVektoren(store: KeptaStore, wer: SpurBaumeister): SuchVektoren {
   // Nachtragen statt neu bauen: ein gemeldeter Schreibfall traegt NUR seine eigne Notiz nach.
   // An der echten Tuer war der Volllauf 188,00 ms gegen 8,85 ms am stehenden Vorrat
   // (P51, 3.11.2026, 40 000 Notizen) — und er wiederholte sich bei JEDEM Schreibfall.
-  if (eintrag && eintrag.embedGen === embedGen && eintrag.dreckig.size > 0) {
+  //
+  // Seit 4.11. gilt der Nachzug auch fuer den Einbettungs-Nachschub, und zwar nur mit einer
+  // Pruefung, die nichts kostet: der Vorrat muss hinterher genauso viele Zeilen mit dem
+  // Abfragemodell halten, wie die Datenbank zaehlt (`store.vektorZeilen` — ein Index-Griff auf
+  // `idx_chunks_hat_model`, ohne ein einziges Blob). Geht die Zahl auf, hat dieser Prozess
+  // alles gesehen, was sich bewegt hat. Geht sie nicht auf, hat ein andrer geschrieben oder
+  // geloescht, und der Zweig faellt durch zum Volllauf unten. Ohne die Gleichung waere der
+  // Nachzug schneller und falscher — gemessen 4.11. an der Tuer: 60.34 ms Volllauf fuer 32
+  // neue Zeilen, und am gefuellten Index 1 321.99 ms fuer 64 164 Abschnitte.
+  if (eintrag && eintrag.dreckig.size > 0) {
     const ids = [...eintrag.dreckig];
     eintrag.dreckig.clear();
     const neu = zeilenNachNotiz(store.chunksFuerMemories(ids).filter((z) => z.model === DEFAULT_EMBED_MODEL));
     for (const [id, gruppe] of neu) eintrag.nach.set(id, gruppe);
     for (const id of ids) if (!neu.has(id)) eintrag.nach.delete(id);
-    eintrag.spur = flacheSpur(eintrag.nach);
-    eintrag.memGen = memGen;
-    eintrag.embedGen = embedGen;
-    vektorSpurStatistik.deltapatches += 1;
-    vektorSpurStatistik.zeilen = eintrag.spur.liste.length;
-    return eintrag.spur;
+    if (zeilenImVorrat(eintrag.nach) === store.vektorZeilen(DEFAULT_EMBED_MODEL)) {
+      eintrag.spur = flacheSpur(eintrag.nach);
+      eintrag.memGen = memGen;
+      eintrag.embedGen = embedGen;
+      vektorSpurStatistik.deltapatches += 1;
+      vektorSpurStatistik.zeilen = eintrag.spur.liste.length;
+      return eintrag.spur;
+    }
   }
 
-  // Volllauf — entweder steht kein Vorrat, oder die Vektoren selbst haben sich bewegt
-  // (Nachzug der Queue, ein geloeschter Abschnitt mit Embedding). Der alte Vorrat geht vor dem Neubau von der Hand: waehrend
+  // Volllauf — entweder steht kein Vorrat, oder die Vektoren haben sich ausserhalb dieses
+  // Prozesses bewegt. Der alte Vorrat geht vor dem Neubau von der Hand: waehrend
   // des Lesens und Wandels (1 321,99 ms an 64 164 Abschnitten, gemessen 25.10. 12:52) waeren
   // sonst alt und neu zugleich im Leib — in der eignen Kapsel stieg die Resident Size ueber
   // zwei Baue auf 1 038 688 KiB, wo ein Bau 697 088 bis 730 896 KiB braucht.

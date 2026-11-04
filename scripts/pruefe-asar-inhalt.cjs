@@ -872,6 +872,11 @@ const erwartet = [
   // "graphRang" 2 mal (die Rangfolge bleibt dem Graphfenster), "entityNamen" 0 mal. Am
   // installierten 3.2.139: "begriffeImWortlaut" 0 mal, "entityNamen" 2 mal.
   ["begriffeImWortlaut", 1],
+  // Punkt 6 / Aufgabe #53, 4.11. (3.2.142): die Vektor-Spur prueft ihren Nachtrag an einer
+  // Zahl, die sie vorher nicht kannte. Gezaehlt am gebauten Bund des Baums (dist-pf1,
+  // 05:50 MEZ): "vektorZeilen" 2 mal. Am zurueckgelegten 3.2.140-Bund (dist-pf1-vor,
+  // ausgepackt aus /tmp/K3PTA-vor-3.2.141.app): 0 mal.
+  ["vektorZeilen", 1],
 ];
 
 // Was NICHT mehr drin sein darf. Bisher war "der alte Wortlaut ist weg" eine Behauptung im

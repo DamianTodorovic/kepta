@@ -13,7 +13,11 @@
 // vergisst, ist schneller und falscher.
 //
 // WIE ER FAHRT:  npx vitest run tests/p6-vektorspur-delta.test.ts
-// Erwartung HEUTE: Fall 1 rot (suchtbauten 2 statt 1), Fall 2 gruen.
+//
+// Erwartung an den drei Faellen unten: der NOTIZ-Schreibfall traegt nach (seit 3.2.132), der
+// EINBETTUNGS-Nachzug traegt seit dieser Zelle nach — und die beiden Gegenproben (ein fremder
+// Schreibfall setzt einen Vektor, ein fremder loescht einen) müssen weiterhin den Volllauf
+// zeigen. Wer den Nachzug am falschen Ende erlaubt, sieht das nur an den beiden Gegenproben.
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
@@ -134,15 +138,23 @@ describe("P51/#21: ein Schreibfall darf die Vektor-Spur nicht jedes Mal neu baue
     expect(e.vektorSpurStatistik.deltapatches, "der Schreibfall muss als Nachtrag gezaehlt sein, nicht als spurloser Erfolg").toBeGreaterThan(0);
   });
 
-  it("baut voll, wenn ein Einbettungs-Schreibfall die Vektoren selbst bewegt — das Sicherheitsnetz", async () => {
+  it("traegt den Einbettungs-Nachzug nach, statt neu zu bauen — und nennt die Zahl, die das erlaubt", async () => {
     const e = (await import("../src/core/engine")) as typeof import("../src/core/engine");
     const { searchMemories } = e;
     await searchMemories(store, { query: "Haltestelle", limit: 10, tracks: { vector: true } } as never);
     const vorher = e.vektorSpurStatistik.suchbauten;
+    const zeilenVorher = e.vektorSpurStatistik.zeilen;
 
-    // Der Nachzug der Hintergrund-Queue schreibt an einem Abschnitt, nicht an einer Notiz:
-    // kein gemeldeter Schreibfall, aber ein neuer Vektor. Wer hier nur nachtrage, verleerte
-    // den neuen Vektor still — dieser Fall ist der Grund, dass der Zaehler dafuer existiert.
+    // Der Nachzug der Hintergrund-Queue schreibt durch `store.setEmbedding` — derselbe Weg,
+    // den die App geht. Bis 3.2.141 warf genau dieser Schreibfall den ganzen Vorrat: an der
+    // Tuer 60.34 ms fuer 32 neue Zeilen (4.11., 40 000 Notizen), und am gefuellten Index ist
+    // derselbe Volllauf am Bestand gemessen 1 321.99 ms fuer 64 164 Abschnitte.
+    //
+    // Nachtragen darf er nur, weil die Spur hinterher pruefen KANN, dass nichts fehlt: die
+    // Zahl der Zeilen mit Vektor, die sie haelt, muss der Zahl gleich sein, die die
+    // Datenbank nennt (`WHERE embedding_hat = 1 AND embedding_model = ?`, ein reiner
+    // Index-Griff). Ein fremder Schreibfall, den dieser Prozess nicht meldet, kann diese
+    // Gleichung nicht erfuellen — der Faelfall danach ist die Gegenprobe.
     const c = store.chunksNeedingEmbedding(1, DEFAULT_EMBED_MODEL)[0]!;
     const v = new Float32Array(DIM).fill(1 / Math.sqrt(DIM));
     store.setEmbedding(c.memoryId, c.seq, v, DEFAULT_EMBED_MODEL);
@@ -150,7 +162,71 @@ describe("P51/#21: ein Schreibfall darf die Vektor-Spur nicht jedes Mal neu baue
     await searchMemories(store, { query: "Haltestelle", limit: 10, tracks: { vector: true } } as never);
     expect(
       e.vektorSpurStatistik.suchbauten,
-      "ein Embedding wurde gesetzt, und die Spur tat so, als waere nichts gewesen — der neue Vektor fehlt der Suche still",
+      `ein Einbettungs-Nachzug baute die Spur neu (${e.vektorSpurStatistik.zeilen} Zeilen, gebaut ` +
+      `${e.vektorSpurStatistik.suchbauten - vorher} mal) — verlangt ist der Nachtrag, weil die ` +
+      "Zeilenzahl der Spur und die der Datenbank danach gleich sind",
+    ).toBe(vorher);
+    expect(
+      e.vektorSpurStatistik.zeilen,
+      "der neue Vektor muss in der Spur stehen, sonst ist der Nachtrag schneller und falscher",
+    ).toBe(zeilenVorher + 1);
+    expect(
+      e.vektorSpurStatistik.deltapatches,
+      "der Nachzug muss als Nachtrag gezaehlt sein, nicht als spurloser Erfolg"
+    ).toBeGreaterThan(0);
+  });
+
+  it("baut voll, wenn ein ANDRER Prozess einen Vektor setzt — das Sicherheitsnetz an der Zahl", async () => {
+    const e = (await import("../src/core/engine")) as typeof import("../src/core/engine");
+    const { searchMemories } = e;
+    await searchMemories(store, { query: "Haltestelle", limit: 10, tracks: { vector: true } } as never);
+    const vorher = e.vektorSpurStatistik.suchbauten;
+
+    // An der Datenbank geschrieben, nicht durch den Store: dieser Prozess meldet nichts, und
+    // seine gemerkten Notizen koennen die neue Zeile nicht kennen. Die Gleichung der
+    // Zeilenzahlen geht nicht auf, also muss der Volllauf stehen bleiben — sonst verleert
+    // die Spur einen Vektor still, und die Suche findet eine Notiz, die sie nie gesehen hat.
+    const c = store.chunksNeedingEmbedding(1, DEFAULT_EMBED_MODEL)[0]!;
+    const v = new Float32Array(DIM).fill(1 / Math.sqrt(DIM * DIM));
+    store.db
+      .prepare("UPDATE chunks SET embedding = ?, embedding_model = ? WHERE memory_id = ? AND seq = ?")
+      .run(Buffer.from(v.buffer, v.byteOffset, v.byteLength), DEFAULT_EMBED_MODEL, c.memoryId, c.seq);
+
+    await searchMemories(store, { query: "Haltestelle", limit: 10, tracks: { vector: true } } as never);
+    expect(
+      e.vektorSpurStatistik.suchbauten,
+      "ein fremder Vektor-Schreibfall blieb ohne Volllauf — die Zahl der Zeilen in der Spur kann nicht stimmen",
+    ).toBeGreaterThan(vorher);
+    const inDerDatenbank = Number(
+      (store.db.prepare("SELECT COUNT(*) AS n FROM chunks WHERE embedding_hat = 1 AND embedding_model = ?")
+        .get(DEFAULT_EMBED_MODEL) as { n: number }).n
+    );
+    expect(
+      e.vektorSpurStatistik.zeilen,
+      `der Volllauf haelt ${e.vektorSpurStatistik.zeilen} Zeilen, die Datenbank zaehlt ${inDerDatenbank} — nach einem Neubau muss die Gleichung aufgehen`
+    ).toBe(inDerDatenbank);
+  });
+
+  it("baut voll, wenn ein ANDRER Prozess einen Vektor loescht — die Gleichung gilt nach unten ebenso", async () => {
+    const e = (await import("../src/core/engine")) as typeof import("../src/core/engine");
+    const { searchMemories } = e;
+    await searchMemories(store, { query: "Haltestelle", limit: 10, tracks: { vector: true } } as never);
+    const vorher = e.vektorSpurStatistik.suchbauten;
+    const zeilenVorher = e.vektorSpurStatistik.zeilen;
+
+    const mitVektor = store.db
+      .prepare("SELECT memory_id, seq FROM chunks WHERE embedding_hat = 1 AND embedding_model = ? LIMIT 1")
+      .get(DEFAULT_EMBED_MODEL) as { memory_id: string; seq: number };
+    expect(mitVektor, "die Kapsel hat keinen einzigen Vektor — dieser Fall kann nichts loeschen").toBeTruthy();
+    store.db
+      .prepare("UPDATE chunks SET embedding = NULL, embedding_model = NULL WHERE memory_id = ? AND seq = ?")
+      .run(mitVektor.memory_id, mitVektor.seq);
+
+    await searchMemories(store, { query: "Haltestelle", limit: 10, tracks: { vector: true } } as never);
+    expect(
+      e.vektorSpurStatistik.suchbauten,
+      `ein fremder Vektor wurde geloescht, und die Spur baute nicht neu (${zeilenVorher} gegen ` +
+      `${e.vektorSpurStatistik.zeilen} Zeilen) — sie behielt eine Zeile, die es nicht mehr gibt`,
     ).toBeGreaterThan(vorher);
   });
 

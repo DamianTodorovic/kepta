@@ -287,8 +287,17 @@ describe("P6-105 — die Vektor-Spur beim ersten Leerlauf", () => {
     expect(e.vektorSpurSteht(store).veraltet, "ein neuer Vektor muss der Stille gemeldet werden").toBe(true);
 
     const laeufeVorher = e.vektorSpurStatistik.vorwaermungen;
+    const patchesVorher = e.vektorSpurStatistik.deltapatches;
     expect(e.waermeVektorSpur(store)).toBeGreaterThan(0);
-    expect(e.vektorSpurStatistik.vorwaermungen).toBe(laeufeVorher + 1);
+    // Was die Stille tut, ist seit 4.11. nicht mehr noetigenderweise der Volllauf: ein
+    // Vektor, den DIESER Prozess gemeldet hat, wird nachgetragen, und die Zeilenzahl der
+    // Spur gegen `store.vektorZeilen` sagt, ob das reicht. Geprüft wird die Arbeit, nicht
+    // ihre Art — und dass die Welt danach nicht mehr veraltet ist.
+    expect(
+      e.vektorSpurStatistik.vorwaermungen + e.vektorSpurStatistik.deltapatches,
+      "die Stille hat den neuen Vektor nicht angefasst"
+    ).toBeGreaterThan(laeufeVorher + patchesVorher);
+    expect(e.vektorSpurSteht(store).veraltet, "nach der Stille darf die Suche nichts mehr zu tun haben").toBe(false);
 
     const bautenVorher = e.vektorSpurStatistik.suchbauten;
     await sucheMitVektor(store);

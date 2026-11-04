@@ -1,0 +1,34 @@
+Diener http://127.0.0.1:3951 | Version 3.2.140 | Verschluesselung true | Vektorspur an
+  (am Altbund gemessen, bestellt: 3.2.140 gegen 3.2.141)
+Bestand: 40010 nach 0.0 min (gehalten, nicht neu gesaet)
+  Vektoren laut Tuer: 224/80016
+
+Messungen (fuenf mal dieselbe Bitte, dann die andern Tueren):
+  {"name":"memories 1","url":"http://127.0.0.1:3951/api/memories","status":200,"ms":6,"teilzeiten":"zaehlung=0.36;lesen=0.14;formen=0.05;serialisieren=1.54;etag=0.02;gesamt=2.11","bytes":34381,"count":100,"total":40010}
+  {"name":"memories 2","url":"http://127.0.0.1:3951/api/memories","status":200,"ms":3,"teilzeiten":"zaehlung=0.39;lesen=0.13;formen=0.01;serialisieren=0.09;etag=0.02;gesamt=0.65","bytes":34381,"count":100,"total":40010}
+  {"name":"memories 3","url":"http://127.0.0.1:3951/api/memories","status":200,"ms":3,"teilzeiten":"zaehlung=0.35;lesen=0.10;formen=0.01;serialisieren=0.08;etag=0.02;gesamt=0.56","bytes":34381,"count":100,"total":40010}
+  {"name":"memories 4","url":"http://127.0.0.1:3951/api/memories","status":200,"ms":3,"teilzeiten":"zaehlung=0.43;lesen=0.12;formen=0.01;serialisieren=0.10;etag=0.02;gesamt=0.69","bytes":34381,"count":100,"total":40010}
+  {"name":"memories 5","url":"http://127.0.0.1:3951/api/memories","status":200,"ms":3,"teilzeiten":"zaehlung=0.37;lesen=0.12;formen=0.01;serialisieren=0.08;etag=0.02;gesamt=0.60","bytes":34381,"count":100,"total":40010}
+  {"name":"memories?limit=1","url":"http://127.0.0.1:3951/api/memories?limit=1","status":200,"ms":2,"teilzeiten":"zaehlung=0.37;lesen=0.04;formen=0.00;serialisieren=0.05;etag=0.01;gesamt=0.47","bytes":580,"count":1,"total":40010}
+  {"name":"memories/gruppen","url":"http://127.0.0.1:3951/api/memories/gruppen","status":200,"ms":126,"teilzeiten":"lesen=41.74;klassifikation=82.16;gesamt=123.92","bytes":681}
+  {"name":"search","url":"http://127.0.0.1:3951/api/memories/search?q=Fristenkontrolle&limit=10","status":200,"ms":243,"teilzeiten":"vorarbeit=0.08;engine=239.42;formen=0.03;gesamt=239.54;wortlese=18.09;einbettung=43.36;vektor=177.45","bytes":3765}
+  {"name":"search-wiederholt","url":"http://127.0.0.1:3951/api/memories/search?q=Fristenkontrolle&limit=10","status":200,"ms":51,"teilzeiten":"vorarbeit=0.02;engine=49.43;formen=0.01;gesamt=49.46;wortlese=4.23;einbettung=39.10;vektor=6.03","bytes":3759}
+  {"name":"search-anderer-text","url":"http://127.0.0.1:3951/api/memories/search?q=Kassentermin&limit=10","status":200,"ms":61,"teilzeiten":"vorarbeit=0.02;engine=58.06;formen=0.01;gesamt=58.09;wortlese=7.01;einbettung=44.13;vektor=6.77","bytes":3738}
+  Schreibfall dazwischen: HTTP 200 | 40010 Notizen standen vorher
+  Schreibfall gelandet: ja
+  Vektor-Nachzug gelandet: ja (224 -> 256)
+  {"name":"search-nach-schreibfall","url":"http://127.0.0.1:3951/api/memories/search?q=Fristenkontrolle&limit=10","status":200,"ms":87,"teilzeiten":"vorarbeit=0.05;engine=84.26;formen=0.01;gesamt=84.33;wortlese=11.23;einbettung=17.91;vektor=54.98","bytes":3798,"count":10,"total":518}
+  Spur-Zaehler nach dem ersten Schreibfall: {"vorwaermungen":0,"suchbauten":2,"deltapatches":0,"zeilen":256}
+  zweiter Schreibfall: HTTP 200 | 40011 Notizen standen vorher
+  zweiter Schreibfall gelandet: ja
+  Vektor-Nachzug gelandet: ja (256 -> 288)
+  {"name":"search-nach-zweiterschreibfall","url":"http://127.0.0.1:3951/api/memories/search?q=Fristenkontrolle&limit=10","status":200,"ms":245,"teilzeiten":"vorarbeit=0.03;engine=241.94;formen=0.01;gesamt=241.98;wortlese=188.71;einbettung=14.25;vektor=38.92","bytes":3837,"count":10,"total":519}
+  Spur-Zaehler nach dem zweiten Schreibfall: {"vorwaermungen":0,"suchbauten":3,"deltapatches":0,"zeilen":288}
+  Spur-Zaehler aus /api/health: {"vorwaermungen":0,"suchbauten":3,"deltapatches":0,"zeilen":288}
+  {"name":"graph","url":"http://127.0.0.1:3951/api/graph?limit=500","status":200,"ms":946,"teilzeiten":"fenster=796.33;masche=20.41;begriffsmemorien=58.89;deckung=38.23;gesamt=913.88","bytes":1674554}
+  {"name":"health","url":"http://127.0.0.1:3951/api/health","status":200,"ms":7,"teilzeiten":"zaehlung=0.44;einbettung=4.68;gesamt=5.12","bytes":786}
+  {"name":"memories?alle=1","url":"http://127.0.0.1:3951/api/memories?alle=1","status":200,"ms":153,"teilzeiten":"zaehlung=0.41;lesen=80.69;formen=1.36;serialisieren=15.42;etag=5.16;gesamt=103.08","bytes":13666013}
+
+Hinweis zur Lesart: `teilzeiten` ist der Kopf, den die Route selbst schreibt — er
+nennt Zaehlen, Lesen, Formen, Serialisieren und ETag an demselben Griff. Die Zahl
+`ms` hier ist die ganze Bitte vom Kunden aus, der Kopf ist die Rechnung darin.

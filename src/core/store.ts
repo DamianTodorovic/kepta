@@ -1042,6 +1042,28 @@ export class KeptaStore {
     this.db
       .prepare("UPDATE chunks SET embedding = ?, embedding_model = ? WHERE memory_id = ? AND seq = ?")
       .run(float32ToBlob(embedding), model, memoryId, seq);
+    // Die Vektor-Spur in src/core/engine.ts traegt genau diese Notiz nach, statt die ganze
+    // Welt einzulesen. Dafuer muss sie wissen, dass ihr Prozess den Vektor gesetzt hat —
+    // gemeldet wird hier, nicht ueber `meldeMemorie`: die Notiz selbst ist unveraendert, und
+    // der Erinnerungs-Vorrat darf wegen eines Vektors nicht neu rechnen.
+    this.meldeVektor(memoryId);
+  }
+
+  /**
+   * Zeilen mit Vektor, die die Datenbank fuer ein Modell haelt — ein reiner Index-Griff auf
+   * `idx_chunks_hat_model`, ohne ein einziges Blob zu beruehren.
+   *
+   * Die Zahl ist die Gleichung, die der Nachzug der Vektor-Spruefuellung braucht: haelt die
+   * Spur danach dieselbe Menge wie die Datenbank, hat dieser Prozess alles gesehen; wenn
+   * nicht, hat ein andrer geschrieben oder geloescht, und nur der Volllauf ist ehrlich.
+   */
+  vektorZeilen(modell: string): number {
+    this.midiereDatenGeneration();
+    return Number(
+      (this.db
+        .prepare("SELECT COUNT(*) AS n FROM chunks WHERE embedding_hat = 1 AND embedding_model = ?")
+        .get(modell) as { n: number }).n
+    );
   }
 
   // Daten-Generation: JEDE Mutation an memories/chunks/entities/relations/
@@ -1144,11 +1166,12 @@ export class KeptaStore {
    * Zaehler NUR der Schreibfaelle, die ein Embedding beruehren (setzt, aendert, loescht).
    *
    * Der Grund ist die Vektor-Spur in src/core/engine.ts: sie darf nach einer gemeldeten
-   * Notiz-Aenderung ihre Zeilen fuer genau diese Notiz nachtragen, statt den ganzen Bestand
-   * wieder einzulesen. Das ist nur sicher, wenn sich ausserhalb der Notizen nichts an den
-   * Vektoren getan hat — und genau das sagt diese Zahl. Ein neuer Abschnitt ohne Embedding
-   * (der Regel-Fall beim Schreiben) ruehrt sie nicht; der Nachzug der Hintergrund-Queue ruehrt
-   * sie, und dann baut die Spur neu.
+   * Aenderung ihre Zeilen fuer genau die gemeldeten Notizen nachtragen, statt den ganzen
+   * Bestand wieder einzulesen. Sicher ist das nur, wenn sich ausserhalb dessen, was dieser
+   * Prozess meldet, nichts an den Vektoren getan hat — entschieden wird das nicht an dieser Zahl,
+   * sondern an `vektorZeilen`: die Spur muss nach dem Nachtrag genauso viele Zeilen halten,
+   * wie die Datenbank zaehlt. Ein neuer Abschnitt ohne Embedding (der Regel-Fall beim
+   * Schreiben) ruehrt sie nicht; der Nachzug der Queue ruehrt sie, und die Gleichung geht auf.
    */
   embedGeneration(): number {
     this.midiereDatenGeneration();
@@ -1176,6 +1199,23 @@ export class KeptaStore {
     for (const fn of this.memorieZuhörer) fn(id);
   }
 
+  /**
+   * Der zweite Kanal, fuer die andre Zeile der Welt: die Notizen, deren **Vektoren** dieser
+   * Prozess gesetzt hat. Die Vektor-Spur traegt genau diese Zeilen nach, statt die ganze Welt
+   * einzulesen, und `vektorZeilen` sagt ihr danach, ob das reicht — ein fremder Schreibfall
+   * meldet hier nichts, und dann gilt die Zahl nicht.
+   */
+  private vektorZuhörer = new Set<(id: string) => void>();
+
+  onVektorAenderung(fn: (id: string) => void): () => void {
+    this.vektorZuhörer.add(fn);
+    return () => this.vektorZuhörer.delete(fn);
+  }
+
+  private meldeVektor(id: string): void {
+    for (const fn of this.vektorZuhörer) fn(id);
+  }
+
   /** Chunks ohne Embedding oder mit veraltetem Modell (für die Hintergrund-Queue) */
   chunksNeedingEmbedding(limit = 64, model?: string): { memoryId: string; seq: number; text: string }[] {
     // Mit Modell-Argument zählt auch ein Modell-Mismatch als "braucht Embedding" —
@@ -1192,7 +1232,7 @@ export class KeptaStore {
   /** Chunk-Text + Embedding aller aktiven Memories (für die Vektor-Suche) */
   allEmbeddableChunks(): { memoryId: string; seq: number; text: string; embedding: Float32Array; model: string }[] {
     const rows = this.db
-      .prepare("SELECT memory_id, seq, text, embedding, embedding_model FROM chunks WHERE embedding IS NOT NULL")
+      .prepare("SELECT memory_id, seq, text, embedding, embedding_model FROM chunks WHERE embedding_hat = 1")
       .all() as Record<string, unknown>[];
     return rows.map((r) => ({
       memoryId: String(r.memory_id),
@@ -1216,7 +1256,7 @@ export class KeptaStore {
     if (ids.length === 0) return [];
     const platz = ids.map(() => "?").join(",");
     const rows = this.db
-      .prepare(`SELECT memory_id, seq, text, embedding, embedding_model FROM chunks WHERE embedding IS NOT NULL AND memory_id IN (${platz})`)
+      .prepare(`SELECT memory_id, seq, text, embedding, embedding_model FROM chunks WHERE embedding_hat = 1 AND memory_id IN (${platz})`)
       .all(...ids) as Record<string, unknown>[];
     return rows.map((r) => ({
       memoryId: String(r.memory_id),
