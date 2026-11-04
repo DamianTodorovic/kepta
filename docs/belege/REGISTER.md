@@ -32,6 +32,7 @@ Laeufe liegt, korrekt gekuerzt, im Kern-Repo unter `docs/belege/`.
 | `tag-0411/objekt-3-2-143-legende-und-fenster-0628.log.txt` | 9302 B | `0c4faa9f7dc3b646…` |
 | `tag-0411/verstaendlichkeit-objekt-0800.log.txt` | 7287 B | `7e84b56971bb47ce…` |
 | `tag-0411/verstaendlichkeit-objekt-3-2-144-1545.log.txt` | 6976 B | `5bb3fa207afa0da9…` |
+| `tag-0411/objekt-3-2-145-fit-titel-1602.log.txt` | 3941 B | `4f705a2960539da1…` |
 | `tag-13-10/eval-korpus-1143.log.txt` | 3419 B | `8b343e7457825fa0…` |
 | `tag-13-10/eval-korpus-1413.log.txt` | 4181 B | `dcd3e42dc0021921…` |
 | `tag-13-10/ablation-beine-1144.log.txt` | 1904 B | `62d15147e59de149…` |
@@ -41,11 +42,12 @@ Laeufe liegt, korrekt gekuerzt, im Kern-Repo unter `docs/belege/`.
 | `app-abnahme/nachzug-flaeche-gruen.log.txt` | 19204 B | `1e6eb0616a86a748…` |
 | `app-abnahme/nachzug-mutation-rot.log.txt` | 22052 B | `1c8a44f87cda8e3a…` |
 
-Summe: **148 423 Bytes in 25 Dateien** (gemessen am 4.11. um 15:46 MEZ mit `wc -c` ueber
+Summe: **152 364 Bytes in 26 Dateien** (gemessen am 4.11. um 16:03 MEZ mit `wc -c` ueber
 `find docs/belege -name '*.log.txt'`). Die fuenf Laeufe des 4.11. bis 02:21 machen 16 571
 Bytes aus, die drei von Aufgabe #53 (05:49, 05:50 und 06:02 MEZ) 13 500 Bytes, der
 Objektnachlauf von 3.2.143 (06:28 MEZ) 9 302 Bytes, der Sprach-Census (08:00 MEZ) 7 287 Bytes
-und sein Wiederlauf am ausgelieferten 3.2.144 (15:45 MEZ) 6 976 Bytes.
+und sein Wiederlauf am ausgelieferten 3.2.144 6 976 Bytes (Dateizeit 15:43:53 MEZ).
+Der Fensterlauf am ausgelieferten 3.2.145 traegt 3 941 Bytes (Dateizeit 16:02:41 MEZ).
 
 Die Zeile war zwei Dateien hinterher: sie schrieb am 3.11. **"92 036 Bytes in 12 Dateien"**,
 waehrend `find` am 4.11. vor den neuen Laeufen **94 787 Bytes in 14 Dateien** meldete — die
@@ -239,9 +241,9 @@ bewusst nicht dagegen gehalten, weil er alles zeigen soll. Vor der Aufloesung de
 derselbe Kasten bei 390 x 844 und zugeklappt auf 334 x 191 px (28.5 %) — gemessen und
 verworfen in der selben Scheibe, Beleg in der Arbeitsmappe (`BELEG-3.2.143.md`).
 
-## Der Sprach-Census am Objekt (4.11. 08:00 MEZ) — Punkt 7 zum ersten Mal gemessen
+## Der Sprach-Census am Objekt (Dateizeit 07:55:33 MEZ) — Punkt 7 zum ersten Mal gemessen
 
-`tag-0411/verstaendlichkeit-objekt-0800.log.txt` ist der erste Lauf von
+`tag-0411/verstaendlichkeit-objekt-0800.log.txt` ist der erste richtige Lauf von
 `scripts/verstaendlichkeit.mjs`: er liest die Menschensprache aus `src/components`, `src/lib`
 und `src/pages`, und zaehlt einen Satz nur, wenn dieselben Bytes im **installierten** app.asar
 stehen. 336 Kandidaten, 11 von der Gleichung verworfen, also **325 Saetze, die ein Mensch in
@@ -256,14 +258,14 @@ der ausgelieferten Faeche wirklich lesen kann**.
 Der Lauf meldet zwei Biss-Kontrollen: die Rate-Zeile von 3.2.143 wird getroffen, und ein Satz,
 der nie ausgeliefert wurde, wird verworfen. Exit 0.
 
-Ein frueherer Lauf um 07:52 meldete **167 Saetze und 91.0 %** und war falsch: die Sonde las das
+Ein frueherer Lauf (Dateizeit 07:49:58) meldete **167 Saetze und 91.0 %** und war falsch: die Sonde las das
 Buendel als latin1, und jeder Satz mit einem echten Gedankenstrich (U+2014, drei Bytes in UTF-8)
 fand sein Ziel nicht. Berichtigt auf eine Bytesuche plus eine leerraum-arme Lesung; die Zahl,
 die jetzt gilt, ist die oben. Das Blatt von 07:52 liegt als
 `audit-2026-10-09/feldzug/belege-0411/verstaendlichkeit-objekt-0752-erste-lesung.txt` in der
 Arbeitsmappe, damit der Irrtum nachlesbar bleibt.
 
-## Der Wiederlauf nach dem Sprachlauf (4.11. 15:45 MEZ, ausgeliefertes 3.2.144)
+## Der Wiederlauf nach dem Sprachlauf (Dateizeit 15:43:53 MEZ, ausgeliefertes 3.2.144)
 
 `tag-0411/verstaendlichkeit-objekt-3-2-144-1545.log.txt` ist derselbe Census gegen dasselbe
 Werkzeug, aber am **getauschten** Objekt (asar 49 199 929 B, Tuer 15:43:00 MEZ mit
@@ -280,3 +282,27 @@ Der Riegel steht jetzt auf dieser letzten Zahl (`FACH_OHNE_GRUND_MAX = 8` in
 Satz bewegt die Kappenzahl um 0,3 Prozent, die Fachwortzahl ist das, was eine Sprachaenderung
 wirklich meldet. Beide Urteile lauten HALTET, Exit 0, und die zwei Biss-Kontrollen melden
 getroffen und verworfen.
+
+## Der Fit-Titel am ausgelieferten 3.2.145 (Dateizeit 16:02:41 MEZ)
+
+`tag-0411/objekt-3-2-145-fit-titel-1602.log.txt` ist der Fenster-Pruefer bei 390 x 844 gegen
+das installierte Stueck, 150 gesaete Notizen. Er meldet die Gleichung zuerst (fuenf Artefakte
+bytegleich, 5 von 5) und dann den Satz, um den es geht:
+
+    Titel nach dem Druck: Fit — held at the readability floor, and all 150 notes are in the picture
+    Bilanzzeile: schweigt (der Rahmen haelt alles) — der Vergleich ist ohne Gegenstand
+    Kanten beruehrt: keine   (vorher und nachher)
+
+Vor dem Flicken sagte derselbe Knopf an demselben Ort "some notes stay outside", wo keine
+Notiz draussen war. Der Gegenfall — Notizen bleiben wirklich draussen — ist nicht in diesem
+Lauf gemessen, weil die Lage des Feldes 32 Zufallsbits traegt und dieser Bestand bei diesem
+Rahmen alles faengt; er steht als Fall in `tests/lib/gemeinschaften-bild.test.ts`
+(`fitTitel(true, 6)` behaelt den alten Satz samt dem Weg nach draussen).
+
+## Zeitzusatz: drei Namen in diesem Ordner sind gefuehlt, nicht gemessen
+
+Die Dateinamen `-0752-`, `-0800-` und `-1545-` stammen aus einer Uhr, die ich nicht gefragt
+habe. Die gemessenen mtimes sind 07:49:58, 07:55:36 und 15:43:53 MEZ (`stat -f %Sm`,
+gegriffen 16:03 MEZ). Die Namen bleiben, weil sie in Commits und Paapieren stehen; die
+wahren Zeiten stehen jetzt in diesem Register und in den Papieren, und die Regel, die hier
+gebrochen wurde, ist die aeltere als dieses Blatt: **`date` und `stat` fragen, nie fuehlen.**
