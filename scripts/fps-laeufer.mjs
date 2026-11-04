@@ -41,7 +41,7 @@
 // Datenbank — gemessen 0,115 Gi für einen vollen 3 000-Knoten-Lauf. Die Wache
 // prüft Repo UND /tmp, nennt Wert und geprüften Pfad, und ihr Exit-Code 75 heißt
 // „kein Start". Profil und Datenordner räumt der Läufer am Ende selbst weg
-// (`--behalten` lässt sie liegen); der Bundle bleibt, er ist die Wiederverwendung.
+// (`--behalten` lässt sie liegen); der Bundle wird jeden Lauf neu gebaut und bleibt als Ordner stehen.
 import { spawn } from "node:child_process";
 import fs from "node:fs";
 import os from "node:os";
@@ -579,21 +579,32 @@ async function main() {
   // Griff unter die Legende waere kein Knotengriff, sondern ein Schwenk.
   const [zk, zx, zky, zy] = ruhig.weltT || [];
   const cRect = await evaliere(`(()=>{const r=document.querySelector('[data-testid="graph-canvas"]').getBoundingClientRect();return [r.left,r.top,r.width,r.height];})()`);
-  const kandidat = welt
+  // Der Zug ist nur ein Zug, wenn ein Knoten daran haengt. Gemessen 4.11.: in drei
+  // von fuenf Laeufen arbeitete die Flaeche in keinem einzigen Rahmen des Schlepp-Zugs —
+  // der Griff traf eine Leerstelle, und die Phase, die als einziger Browser-Beweis fuer
+  // "ein gezogener Knoten bleibt getrennt" taugen soll, war ein Nichtangriff. Also:
+  // die groessten acht Scheiben der Reihe nach, und jeder Versuch wird an der Arbeit
+  // der Flaeche geprueft, nicht am eignen Willen.
+  const kandidaten = welt
     .map((s) => ({ s, sx: s[0] * zk + zx, sy: s[1] * zky + zy }))
     .filter((p) => Number.isFinite(p.sx) && p.sx > 40 && p.sy > 40 && p.sx < cRect[2] - 40 && p.sy < cRect[3] * 0.55)
-    .sort((a, b) => b.s[2] - a.s[2])[0];
-  await ruf("an");
-  if (kandidat) {
-    const zx2 = Math.round(cRect[0] + kandidat.sx), zy2 = Math.round(cRect[1] + kandidat.sy);
+    .sort((a, b) => b.s[2] - a.s[2]).slice(0, 8);
+  let ziehen = null;
+  let treffer = 0;
+  for (let i = 0; i < kandidaten.length; i++) {
+    await ruf("an");
+    const zx2 = Math.round(cRect[0] + kandidaten[i].sx), zy2 = Math.round(cRect[1] + kandidaten[i].sy);
     await maus("mousePressed", zx2, zy2);
-    for (let i = 1; i <= 24; i++) {
-      await maus("mouseMoved", zx2 + i * 9, zy2 + i * 5);
+    for (let j = 1; j <= 24; j++) {
+      await maus("mouseMoved", zx2 + j * 9, zy2 + j * 5);
       await schlafe(120);
     }
     await maus("mouseReleased", zx2 + 216, zy2 + 120);
+    const lesung = await ruf("ablesen");
+    if (lesung.arbeitende > 0) { ziehen = lesung; treffer = i + 1; break; }
   }
-  const ziehen = await ruf("ablesen");
+  if (!ziehen) ziehen = await ruf("ablesen");
+  console.log(`  Schlepp-Zug: ${ziehen.arbeitende > 0 ? `Kandidat ${treffer} von ${kandidaten.length} getroffen` : `KEINER von ${kandidaten.length} grossen Scheiben getroffen — die Phase bleibt ein Nichtangriff`}`);
   await schlafe(700);
 
   // Die zweite Sonde: ruhig war es vor dem Start. Waehrend der Messung kann
@@ -650,13 +661,14 @@ async function main() {
   }
   fs.writeFileSync(`${ARBEIT}/ergebnis.json`, JSON.stringify(out, null, 1));
   // Der Stapel nach sich selbst: Profil und Datenordner sind Wegwerfware, der
-  // Bundle ist die Wiederverwendung. Ohne diesen Schritt haette jeder Lauf
+  // Profil und Datenordner sind Wegwerfware, der Bund wird jeden Lauf neu gebaut.
+  // Ohne diesen Schritt haette jeder Lauf
   // ~110 MB hinterlassen — der Anfang dieses Nachtrags.
   if (!BEHALTEN) {
     for (const weg of [`${ARBEIT}/profil`, `${ARBEIT}/d`, `${ARBEIT}/brave.log`]) {
       try { fs.rmSync(weg, { recursive: true, force: true }); } catch { /* schon weg */ }
     }
-    console.error(`aufgeraeumt: ${ARBEIT}/profil, ${ARBEIT}/d (Bundle bleibt; --behalten laesst alles liegen)`);
+    console.error(`aufgeraeumt: ${ARBEIT}/profil, ${ARBEIT}/d (der Bund wird jeden Lauf neu gebaut; --behalten laesst alles liegen)`);
   }
 }
 

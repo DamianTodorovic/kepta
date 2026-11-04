@@ -41,6 +41,11 @@ Laeufe liegt, korrekt gekuerzt, im Kern-Repo unter `docs/belege/`.
 | `tag-0411/fps-3000-verweigerung-146.log.txt` | 373 B | `3e1fe12981f18c81…` |
 | `tag-0411/begriffskurve-3000-2009.log.txt` | 2373 B | `aa9e1661b751ac1b…` |
 | `tag-0411/fps-3000-mit-kopf-und-farbe-2014.log.txt` | 2121 B | `ecadeef466000735…` |
+| `tag-0411/fps-3000-148-2049.log.txt` | 3923 B | `5e97e489a1d36976…` |
+| `tag-0411/fps-3000-148-2052.log.txt` | 3928 B | `7caf4c7efeb5f306…` |
+| `tag-0411/fps-3000-148-2054.log.txt` | 3837 B | `1361eee0e05d74b7…` |
+| `tag-0411/fps-400-148-2057.log.txt` | 3773 B | `16aece9126685ad1…` |
+| `tag-0411/fps-1500-148-2059.log.txt` | 3793 B | `fda1e10fdc7e167b…` |
 | `tag-13-10/eval-korpus-1143.log.txt` | 3419 B | `8b343e7457825fa0…` |
 | `tag-13-10/eval-korpus-1413.log.txt` | 4181 B | `dcd3e42dc0021921…` |
 | `tag-13-10/ablation-beine-1144.log.txt` | 1904 B | `62d15147e59de149…` |
@@ -50,7 +55,7 @@ Laeufe liegt, korrekt gekuerzt, im Kern-Repo unter `docs/belege/`.
 | `app-abnahme/nachzug-flaeche-gruen.log.txt` | 19204 B | `1e6eb0616a86a748…` |
 | `app-abnahme/nachzug-mutation-rot.log.txt` | 22052 B | `1c8a44f87cda8e3a…` |
 
-Summe: **165 202 Bytes in 34 Dateien** (gemessen am 4.11. um 20:28 MEZ mit `wc -c` ueber
+Summe: **184 456 Bytes in 39 Dateien** (gemessen am 4.11. um 21:02 MEZ mit `wc -c` ueber
 `find docs/belege -name '*.log.txt'`). Die fuenf Laeufe des 4.11. bis 02:21 machen 16 571
 Bytes aus, die drei von Aufgabe #53 (05:49, 05:50 und 06:02 MEZ) 13 500 Bytes, der
 Objektnachlauf von 3.2.143 (06:28 MEZ) 9 302 Bytes, der Sprach-Census (08:00 MEZ) 7 287 Bytes
@@ -62,6 +67,16 @@ und die drei Kosten-Laeufe (400, 1 500, 3 000 Notizen) zusammen 4 494 Bytes
 und die beiden des spaeten Nachmittags 2 373 + 2 121 = 4 494 Bytes: die Begriffs-Kurve an der
 Route (Dateizeit 20:09:12 MEZ) und der Kostenlauf, der zum ersten Mal den vollen Kopf der
 Flaeche und die Farbe jeder Scheibe zeigt (Dateizeit 20:14:55 MEZ).
+
+**Die fuenf Laeufe ab 20:49:52 MEZ sind die ersten mit frischem Bund.** Die Sonde baute ihren
+eignen Bundle bis dahin nur, wenn er noch nicht da war; der Bundle auf der Platte stammte von
+16:06 MEZ, und vier Laeufe danach (19:38, 19:54, 20:14, 20:36 MEZ) massesen dieselben alten
+Bytes, waehrend ihre Protokolle 3.2.146 und 3.2.147 nannten. Seit demselben Schritt druckt der
+Laeufer `fassung:` vor der ersten Zahl und bricht ab, wenn Server und Baum verschiedene
+Fassungen melden. Die fuenf frischen Laeufe: 3 000 Notizen dreimal (Dateizeiten 20:49:52,
+20:52:33, 20:54:54 MEZ; 621, 646 und 625 Scheiben, jedes Mal **0 Paare**) und die zwei
+Kleineren danach (400 Notizen: 418 Scheiben, 0 Paare, 20:57:20 MEZ; 1 500 Notizen: 528
+Scheiben, 0 Paare, 20:59:38 MEZ), alle an 3.2.148.
 
 Die Zeile war zwei Dateien hinterher: sie schrieb am 3.11. **"92 036 Bytes in 12 Dateien"**,
 waehrend `find` am 4.11. vor den neuen Laeufen **94 787 Bytes in 14 Dateien** meldete — die

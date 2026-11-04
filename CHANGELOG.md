@@ -1,3 +1,28 @@
+## [3.2.149]
+
+### Documented, at the delivered object
+
+- **The delivered picture is pair-free, and the README now says it with five runs behind
+  it.** Measured 20:49-20:59 MEZ on the installed 3.2.148, each run rebuilding its own bundle
+  and printing `fassung: 3.2.148` before counting anything: **0 intersecting pairs at 400 notes
+  (418 discs), 0 at 1 500 (528 discs) and 0 at 3 000 in three separate runs (621, 646 and 625
+  discs, deepest cut 0 world units each)** — `docs/belege/tag-0411/fps-3000-148-2049.log.txt`,
+  `docs/belege/tag-0411/fps-3000-148-2052.log.txt`, `docs/belege/tag-0411/fps-3000-148-2054.log.txt`,
+  `docs/belege/tag-0411/fps-400-148-2057.log.txt`, `docs/belege/tag-0411/fps-1500-148-2059.log.txt`.
+  The pass is visible in the same lines: the rest phase computed in 27 of 27, 39 of 39 and 42 of
+  42 frames at a median of 8.0-8.3 ms, where the cached-build runs computed in 6-18 of 70-71
+  frames at 0.1 ms. No product code changed in this version; it carries the corrected sentences.
+
+### Instrument
+
+- `scripts/fps-laeufer.mjs` no longer drags at one fixed spot and hopes. It walks the eight
+  largest painted discs and keeps the first attempt in which the surface actually worked,
+  printing which candidate hit. Measured 4.11.: in three of five runs the old single attempt
+  moved nothing (`knotenZiehen`: 0 working frames), which made the only browser witness for
+  "a dragged node stays separated" a non-attack. The millisecond phases stay unpublished as
+  verdicts — the machine was not quiet at the end of these runs (max/median 2.7-3.3 against
+  its own 1.8 ceiling), and geometry and time are two different measurements.
+
 ## [3.2.148]
 
 ### Fixed

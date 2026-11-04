@@ -402,3 +402,45 @@ uebrig bleibt, entscheidet der naechste `fps-laeufer`-Lauf auf den getauschten B
 da ist, bleibt der Satz oben stehen: **ein Paar bei 3 000 Notizen in der Ruhe, gemessen am
 ausgelieferten Stueck** — jetzt mit Grund, und ohne die Behauptung, dass der Grund schon
 heilt.
+
+## Am ausgelieferten 3.2.148 gemessen (20:49 bis 20:59 MEZ) — null Paare, fuenf Laeufe, und der Bund ist frisch
+
+Zum ersten Mal misst die Sonde das, was sie beschreibt: sie baut ihren Bund jetzt **jeden**
+Lauf und druckt die Fassung vor der ersten Zahl. Der Kopf jedes Laufs lautet `fassung: 3.2.148
+(der Baum, aus dem gebaut wurde: 3.2.148)`; nennt der Server eine andre Zahl als der Baum,
+bricht der Lauf mit Exit 2 ab. Grund: der Bund auf der Platte war von 16:06 MEZ, und die vier
+Abendlaeufe von 19:38 bis 20:36 MEZ haben ihn gelesen, waehrend ihre Papiere 3.2.146 und
+3.2.147 nannten.
+
+| Bestand | Scheiben | geschnittene Paare | beruehrend | tiefster Schnitt | Ruhe-Rahmen | malende Ruhe-Rahmen | Arbeit je Bild | Beleg (Dateizeit) |
+|---|---|---|---|---|---|---|---|---|
+| 3 000 | 621 | **0** | 0 | 0 | 27 | 27 | Median 8,2 ms | `docs/belege/tag-0411/fps-3000-148-2049.log.txt` (20:49:52 MEZ) |
+| 3 000 | 646 | **0** | 0 | 0 | 39 | 39 | Median 8,3 ms | `docs/belege/tag-0411/fps-3000-148-2052.log.txt` (20:52:33 MEZ) |
+| 3 000 | 625 | **0** | 0 | 0 | 46 | 37 | Median 8,0 ms | `docs/belege/tag-0411/fps-3000-148-2054.log.txt` (20:54:54 MEZ) |
+| 400 | 418 | **0** | 0 | 0 | 50 | 50 | Median 4,7 ms | `docs/belege/tag-0411/fps-400-148-2057.log.txt` (20:57:20 MEZ) |
+| 1 500 | 528 | **0** | 0 | 0 | 42 | 42 | Median 6,7 ms | `docs/belege/tag-0411/fps-1500-148-2059.log.txt` (20:59:38 MEZ) |
+
+**Der Nachschlag ist im Bild zu sehen, nicht nur im Fall.** Vorher rechnete die Ruhe in 70
+Rahmen 6-18 mal etwas, bei Median 0,1 ms; jetzt rechnet sie in 27 von 27, 39 von 39 und 42 von
+42 Rahmen, bei 8,0 bis 8,3 ms median. Und das Warten auf die Ruhe ist laenger geworden — der
+erste Lauf meldet "Feld steht: ja, nach 6,3 s" gegen 1,8 s in den alten Laeufen, weil die
+Flaeche nach der Bewegung noch drei Sekunden an der Kante arbeitet, bevor sie nichts mehr zu
+bewegen hat. Die Groessenordnung ist damit am selben Gegenstand gelesen, an dem sie wirkt:
+weniger als ein Zehntel Bildzeit pro Rahmen, und der Nachschlag hoert fruher auf, sobald er
+nichts mehr bewegt.
+
+**Was damit gilt.** Der README sagt jetzt: null Paare bei 400, 1 500 und 3 000 Notizen im
+ausgelieferten Bild, mit den fuenf Laeufen als Zeugen. Der eine Satz aus 3.2.145 (ein Paar bei
+3 000, Schnitt 11, 707 Scheiben, `docs/belege/tag-0411/fps-3000-1610.log.txt`, 16:10:38 MEZ)
+bleibt als Messung seiner eignen Fassung stehen und ist nicht mehr das Bild, das die Auslieferung
+zeigt. Die Zeitfaelle (ms je Phase) bleiben unveroeffentlicht als Urteil: die Maschine war am
+Ende jedes Laufs nicht ruhig (max/median 2,7 bis 3,3 ueber der Decke 1,8), und zwei der fuenf
+Laeufe koennen ihr Feld nicht fuer ein Zeit-Urteil beanspruchen — Geometrie und Zeit sind zwei
+Messungen, und die Sonde haelt sie auseinander.
+
+**Was der Satz nicht deckt.** Das Schleppen ist in diesen Laeufen ein Nichtangriff: der Griff
+traf keinen Knoten (`knotenZiehen`: 0 malende Rahmen, in drei von fuenf Laeufen), darum ist die
+Wirkung des Nachschlags **nach** einem Zug im Browser weiterhin ungemessen. Im Layout-Fall ist
+sie es (`tests/lib/graphLayout.test.ts`, der Browser-Fund vom 4.11. und seine Nachlaeufe). Der
+Schlepp-Griff der Sonde zielt auf eine feste Bildstelle und trifft bei 3 000 Notizen oft ins
+Leere; das ist die naechste Arbeit an diesem Werkzeug, nicht an der Flaeche.
