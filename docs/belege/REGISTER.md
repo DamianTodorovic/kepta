@@ -36,6 +36,9 @@ Laeufe liegt, korrekt gekuerzt, im Kern-Repo unter `docs/belege/`.
 | `tag-0411/fps-400-1614.log.txt` | 1494 B | `4794122f31b6f168…` |
 | `tag-0411/fps-1500-1616.log.txt` | 1498 B | `80d505454daa6c4b…` |
 | `tag-0411/fps-3000-1610.log.txt` | 1502 B | `c4fd4233a647584e…` |
+| `tag-0411/fps-3000-1938.log.txt` | 1761 B | `298741b05e73018c…` |
+| `tag-0411/fps-3000-nach-146.log.txt` | 1716 B | `6a2b7d8fe3ec1970…` |
+| `tag-0411/fps-3000-verweigerung-146.log.txt` | 373 B | `3e1fe12981f18c81…` |
 | `tag-13-10/eval-korpus-1143.log.txt` | 3419 B | `8b343e7457825fa0…` |
 | `tag-13-10/eval-korpus-1413.log.txt` | 4181 B | `dcd3e42dc0021921…` |
 | `tag-13-10/ablation-beine-1144.log.txt` | 1904 B | `62d15147e59de149…` |
@@ -45,7 +48,7 @@ Laeufe liegt, korrekt gekuerzt, im Kern-Repo unter `docs/belege/`.
 | `app-abnahme/nachzug-flaeche-gruen.log.txt` | 19204 B | `1e6eb0616a86a748…` |
 | `app-abnahme/nachzug-mutation-rot.log.txt` | 22052 B | `1c8a44f87cda8e3a…` |
 
-Summe: **156 858 Bytes in 29 Dateien** (gemessen am 4.11. um 16:22 MEZ mit `wc -c` ueber
+Summe: **160 708 Bytes in 32 Dateien** (gemessen am 4.11. um 20:04 MEZ mit `wc -c` ueber
 `find docs/belege -name '*.log.txt'`). Die fuenf Laeufe des 4.11. bis 02:21 machen 16 571
 Bytes aus, die drei von Aufgabe #53 (05:49, 05:50 und 06:02 MEZ) 13 500 Bytes, der
 Objektnachlauf von 3.2.143 (06:28 MEZ) 9 302 Bytes, der Sprach-Census (08:00 MEZ) 7 287 Bytes
@@ -326,3 +329,22 @@ Zeile, `NICHT RUHIG, Zahl nicht veröffentlichen`. Die Geometrie wird daraus zit
 Millisekunden werden nicht zugesagt. Der erste 3 000er-Lauf (16:07:05) ist **nicht** abgelegt:
 er gehoert zu der Sonde vor ihrer Berichtigung und meldete `0 notes` und `1602`-Titel-Klick ins
 Leere; sein Nachfolger ab 16:10 ist der, der zaehlt.
+
+## Der Nachlauf nach 3.2.146, und die dritte Verweigerung (20:04 MEZ)
+
+`fps-3000-1938.log.txt` ist der Lauf vor der Heilung, mit dem ersten Stand der berichtigten
+Sonde: 707 Scheiben, ein Paar, Radien 26 + 26, Abstand 41, Schnitt 11 Einheiten, und — neu
+gedruckt — der Grund, warum der fruehere Lauf `0 notes` gemeldet hatte: die Flaeche sagt beim
+ersten Griff `0 concepts · 0 links` und nach der Ruhe `6 concepts of 3,027 in all · 2,379 links`.
+
+`fps-3000-nach-146.log.txt` ist derselbe Griff nach dem Nachschlag, am getauschten Stueck
+(Tuer 19:54:14 MEZ, `Version 3.2.146 | Knoten 21064 | eingebettet 64163/64163`): 693 Scheiben,
+**weiter ein Paar** (Abstand 47, Radien 26 + 26, Schnitt 5), und die Flaeche meldet in beiden
+Lesungen `0 concepts · 0 links`. Die zwei Laeufe sind also nicht derselbe Bestand im selben
+Zustand, und
+das ist der Grund, warum die Heilung im Browser nicht belegt ist — siehe
+`docs/graph-kosten.md`, Abschnitt "Nach der Heilung".
+
+`fps-3000-verweigerung-146.log.txt` (373 B) ist der dritte Versuch, der nie gemessen hat: die
+eigne Ruhe-Sonde verweigerte mit `max/median 2.36 ueber 1.8`. Die Verweigerung ist ein
+Ergebnis, kein Ausfall, und ihr Zeuge liegt hier, damit niemand die Zahl ohne sie zitiert.

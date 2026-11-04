@@ -14,9 +14,16 @@
   The fix is a bounded follow-up pass: when the field reaches rest, the collision runs once
   per frame while it still improves something, up to 60 frames, and stops the moment it
   reports no correction. Nothing else about cooling, forces or the readability floor moved.
-  Re-measured at 3 000 notes on the delivered bytes: **0 intersecting pairs** (see
-  `docs/graph-kosten.md`), and the README's browser sentence now names the resting number
-  instead of the moment.
+  **Re-measured at 3 000 notes on the delivered bytes: still one pair.** The sweep is in the
+  shipped code and the layout test proves the mechanism (step 308: 1 pair; after follow-up
+  passes: 0), but the browser did not clear — `docs/belege/tag-0411/fps-3000-nach-146.log.txt`
+  (19:54 MEZ): 693 discs, 1 pair, r 26 + 26, distance 47, cut 5 world units. Two more things
+  came out of that run, and both are open, not smoothed: the same fixture reported
+  `0 concepts · 0 links` where the 19:38 run reported `6 concepts of 3,027 · 2,379 links`, and
+  the instrument's own third attempt refused to judge at all (`MASCHINE NICHT RUHIG`,
+  max/median 2.36 over its 1.8 ceiling). So this version ships a proven mechanism whose
+  browser effect is **not yet shown**, and the sentence in `docs/graph-kosten.md` says exactly
+  that.
   The instrument grew three honesty checks in the same sweep (`23cf484`, and this change):
   it prints the intersecting pair with its coordinates and radii, it waits for the surface to
   say the same thing twice before quoting its counts, and an empty disc collection is now a

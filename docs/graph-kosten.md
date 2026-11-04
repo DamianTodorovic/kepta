@@ -300,3 +300,26 @@ Two probe faults surfaced in these runs and are fixed in `scripts/fps-laeufer.mj
    is a condition, so in exactly the case this run measures the selector found nothing, the
    click was a no-op, and the run reported success. It now grips `data-testid="graph-fit"` and
    prints whether the button was there; the force-view and zoom clicks answer too.
+
+## Nach der Heilung, am ausgelieferten 3.2.146 gemessen (19:54 MEZ) — das Paar ist noch da
+
+`node scripts/fps-laeufer.mjs --knoten 3000` gegen die getauschten Bytes
+(`docs/belege/tag-0411/fps-3000-nach-146.log.txt`):
+
+    Feld steht: ja, nach 1.8 s (693 Scheiben in der letzten Lesung)
+    ueberlappung 693 Scheiben, geschnitten: 1 Paar, beruehrend: 1, tiefster Schnitt 5 Einheiten
+      Paar bei (2046,150) und (2086,126) — Abstand 47, Radien 26 + 26
+    die Flaeche meldet gleichbleibend: 3,000 notes · 0 concepts · 0 links
+
+Der Nachschlag ist gebaut und im Layout-Fall bewiesen (Schritt 308: ein Paar; nach den
+Nachlaeufen: null). Im Browser hat er das Paar nicht weggenommen. Zwei Erklaerungen sind
+offen und werden nicht geraten: (1) die beiden Laeufe zaehlen **verschiedene Welten** —
+19:38 mit sechs Begriffen und 2 379 Kanten, 19:54 ohne Begriff und ohne Kante, und ein Feld
+ohne Kanten verankert seine einsigen Knoten, wo die Kollision einem verankerten Paar nicht
+ausweichen kann; (2) der Nachschlag koennte in der Flaeche an einer andern Stelle enden als im
+Test. Ein dritter Lauf wurde von der Sonde selbst verweigert (`MASCHINE NICHT RUHIG`,
+max/median 2.36 ueber ihrer Decke 1,8), und die Verweigerung ist richtig: die Abhol-Runde der
+Wache laeuft alle sechs Minuten ueber dieselbe Maschine.
+
+Was der README und diese Datei bis auf weiteres sagen: **ein Paar bei 3 000 Notizen in der
+Ruhe, gemessen am ausgelieferten Stueck**, mit dem Befehl und den zwei Laeufen als Zeugen.
