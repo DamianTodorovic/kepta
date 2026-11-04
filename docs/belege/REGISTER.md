@@ -29,6 +29,7 @@ Laeufe liegt, korrekt gekuerzt, im Kern-Repo unter `docs/belege/`.
 | `tag-0411/tuer-53-vor-3-2-140-bund-0549.log.txt` | 4544 B | `418cdc25a488f34a…` |
 | `tag-0411/tuer-53-nach-3-2-142-bund-0550.log.txt` | 4477 B | `b7718ae78e8dc48a…` |
 | `tag-0411/tuer-53-objekt-3-2-142-0602.log.txt` | 4479 B | `b51deb57b55e62b6…` |
+| `tag-0411/objekt-3-2-143-legende-und-fenster-0628.log.txt` | 9302 B | `0c4faa9f7dc3b646…` |
 | `tag-13-10/eval-korpus-1143.log.txt` | 3419 B | `8b343e7457825fa0…` |
 | `tag-13-10/eval-korpus-1413.log.txt` | 4181 B | `dcd3e42dc0021921…` |
 | `tag-13-10/ablation-beine-1144.log.txt` | 1904 B | `62d15147e59de149…` |
@@ -38,9 +39,10 @@ Laeufe liegt, korrekt gekuerzt, im Kern-Repo unter `docs/belege/`.
 | `app-abnahme/nachzug-flaeche-gruen.log.txt` | 19204 B | `1e6eb0616a86a748…` |
 | `app-abnahme/nachzug-mutation-rot.log.txt` | 22052 B | `1c8a44f87cda8e3a…` |
 
-Summe: **124 858 Bytes in 22 Dateien** (gemessen am 4.11. um 06:02 MEZ mit `wc -c` ueber
+Summe: **134 160 Bytes in 23 Dateien** (gemessen am 4.11. um 06:29 MEZ mit `wc -c` ueber
 `find docs/belege -name '*.log.txt'`). Die fuenf Laeufe des 4.11. bis 02:21 machen 16 571
-Bytes aus, die drei von Aufgabe #53 (05:49, 05:50 und 06:02 MEZ) 13 500 Bytes.
+Bytes aus, die drei von Aufgabe #53 (05:49, 05:50 und 06:02 MEZ) 13 500 Bytes und der
+Objektnachlauf von 3.2.143 (06:28 MEZ) 9 302 Bytes.
 
 Die Zeile war zwei Dateien hinterher: sie schrieb am 3.11. **"92 036 Bytes in 12 Dateien"**,
 waehrend `find` am 4.11. vor den neuen Laeufen **94 787 Bytes in 14 Dateien** meldete — die
@@ -203,3 +205,33 @@ Der Bau-Zaehler bleibt beim einen Kaltstart stehen, und jeder Nachzug zaehlt als
 Die 245 ms des zweiten Vorher-Laufs sind nicht der Nachzug allein — in derselben Zeile stehen
 `wortlese=188.71` ms Volltext-Lesung, und die haelt diese Sonde fuer einen eignen, ungetrennten
 Ausreisser. Verglichen wird darum die Segment-Zahl, nicht die Gesamtzeit.
+
+## Die Nachlaeufe am ausgelieferten Stueck (4.11. 06:02 und 06:28 MEZ)
+
+`tag-0411/tuer-53-objekt-3-2-142-0602.log.txt` ist derselbe Schreibfall-Griff wie die beiden
+Bund-Laeufe oben, aber gegen die **installierte** Fassung 3.2.142 gefahren
+(`audit-2026-10-09/pf1/tuerkontrolle.mjs`, Kopfzeile `Version 3.2.142`,
+Verschluesselung true, Bestand 40 014 Notizen). Er fuehrt die Heilung am Objekt: nach dem
+ersten Schreibfall `vektor=14.44` ms mit `deltapatches 1` und 384 Zeilen, nach dem zweiten
+2 Nachtraege und 416 Zeilen, und die Zahl aus `/api/health` ist dieselbe wie die im Kopf der
+Route — die Sonde und die Tuer widersprechen sich nicht.
+
+`tag-0411/objekt-3-2-143-legende-und-fenster-0628.log.txt` ist eine Kette in vier Schritten
+(06:27:48 bis 06:28:49 MEZ, alle vier mit Exit 0). Schritt eins ist der Fenster-Pruefer bei
+390 x 844 mit 150 gesaeeten Notizen, und er beginnt mit der Gleichung, die allen vier Schritten
+gilt: **die fuenf tragenden Artefakte sind bytegleich mit dem installierten app.asar (5 von 5)**.
+Erst danach zaehlen seine Latten, und zwei davon gehoeren der zugeklappten Legende:
+`die Bilanz des Ausschnitts bleibt auch hinter der Klappe lesbar: true` und
+`die zugemachte Legende deckt hoechstens 25 % des Bildes: true`.
+Die Schritte zwei bis drei und vier sind dieselbe Messung an drei Fensterbreiten
+(`scripts/legende-hoehe.mjs --form=markdown --saat=30`), also an 30 Prosanotizen, Klappe zu
+gegen Klappe auf, Anteil an der **Leinwand der Graph-Flaeche**, nicht am Browserfenster:
+
+    390 x  844  zu 21.1 % (Kasten 334 x 141 px)   auf 50.4 % (334 x 337 px)
+    820 x 1180  zu 14.9 % (Kasten 496 x 157 px)   auf 33.6 % (496 x 353 px)
+    1440 x  900  zu 10.8 % (Kasten 638 x 140 px)  auf 25.8 % (869 x 246 px)
+
+Die 25-Prozent-Latte steht nur fuer den zugeklappten Zustand; der aufgeklappte ist hier
+bewusst nicht dagegen gehalten, weil er alles zeigen soll. Vor der Aufloesung des Rates lag
+derselbe Kasten bei 390 x 844 und zugeklappt auf 334 x 191 px (28.5 %) — gemessen und
+verworfen in der selben Scheibe, Beleg in der Arbeitsmappe (`BELEG-3.2.143.md`).
