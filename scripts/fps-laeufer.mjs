@@ -588,21 +588,69 @@ async function main() {
       console.log(`  KEIN Leinwand-Rechteck — das Bild ist bestellt, aber nicht gemalt`);
       process.exitCode = 1;
     } else {
+      const vorBlur = await evaliere(`(()=>{const c=document.querySelector('[data-testid="graph-canvas"]');return c.matches(':focus-visible')?'Fokus auf der Leinwand':'kein Fokus auf der Leinwand'})()`);
+      await evaliere(`(()=>{if(document.activeElement&&document.activeElement.blur)document.activeElement.blur();return true})()`);
+      await schlafe(250);
+      console.log(`  Bild-Vorher: ${vorBlur} (der Fokusring in --fokus ist eine Tastatur-Auskunft, kein Teil des Bildes)`);
       const schuss = await cdp.send("Page.captureScreenshot", { format: "png", clip: { ...kasten, scale: 1 }, captureBeyondViewport: false });
       const { entpacke } = await import("./helfer/png-kante.mjs");
       const roh = Buffer.from(schuss.data, "base64");
       fs.writeFileSync(BILD, roh);
       const bild = entpacke(roh);
+      // Ein Bild ohne seinen Zustand ist ein Bild von einem unbekannten Schirm. Also
+      // derselbe Moment in Zahlen: wer den Fokus haelt, was die Tuer als Nachzug meldet,
+      // und wie breit die Spalte neben der Leinwand ist — denn ein Akzentrand um die
+      // ganze Leinwand ist ein andrer Befund als ein Fuell-Streifen an ihrer Oberkante.
+      const zustand = await evaliere(`(()=>{const a=document.activeElement;const info=document.querySelector('[data-testid="nachzug-info"]');const r=info?info.getBoundingClientRect():null;const lein=document.querySelector('[data-testid="graph-canvas"]');const spalte=lein&&lein.parentElement?lein.parentElement.getBoundingClientRect():null;return {fokus:a?((a.getAttribute('data-testid')||a.tagName)+(a.className?' .'+String(a.className).split(' ').slice(0,3).join('.'):'')):'keinen', infoKlasse:info?info.className:'fehlt', infoRechteck:r?[Math.round(r.x),Math.round(r.y),Math.round(r.width),Math.round(r.height)]:null, infoTitel:info?(info.getAttribute('title')||''):'', leinwand:spalte?[Math.round(spalte.width),Math.round(spalte.height)]:null};})()`);
+      console.log(`  Zustand im Bild: Fokus ${zustand.fokus} | nachzug-info "${zustand.infoKlasse}" Rechteck ${JSON.stringify(zustand.infoRechteck)} | Titel "${zustand.infoTitel}" | Leinwand-Spalte ${JSON.stringify(zustand.leinwand)} CSS`);
       console.log(`  Bild: ${BILD} — ${roh.length} B, ${bild.w ?? "?"} x ${bild.h ?? "?"} Geraetepixel, Leinwand ${Math.round(kasten.width)} x ${Math.round(kasten.height)} CSS`);
+      // Und die Frage, die ein Bild nicht selbst beantwortet: WELCHES Element liegt auf
+      // den vier Kanten und in der Mitte? Ein Akzentrand rund um die Leinwand ist ein
+      // andrer Befund als ein Fuell-Streifen an ihrer Oberkante, und die Pixel allein
+      // unterscheiden die beiden nicht.
+      const kanten = await evaliere(`(()=>{const c=document.querySelector('[data-testid="graph-canvas"]');const r=c.getBoundingClientRect();const n=(x,y)=>{const e=document.elementFromPoint(x,y);return e?((e.getAttribute('data-testid')||e.tagName)+(e.className&&typeof e.className==='string'?' .'+e.className.split(' ').slice(0,2).join('.'):'')):'—';};return {oben:n(r.left+r.width/2,r.top+1),unten:n(r.left+r.width/2,r.bottom-2),links:n(r.left+1,r.top+r.height/2),rechts:n(r.right-2,r.top+r.height/2),mitte:n(r.left+r.width/2,r.top+r.height/2)};})()`);
+      console.log(`  Kanten des Bildes: oben ${kanten.oben} | unten ${kanten.unten} | links ${kanten.links} | rechts ${kanten.rechts} | mitte ${kanten.mitte}`);
+      // Und ob der Rand gemalt oder gelegt ist: die Leinwand-Pixel an der Kante gegen
+      // ihre eigne CSS-Auszeichnung. Ein Akzentrand, den `focus-visible` malt, ist eine
+      // Tastatur-Auskunft; ein Rand, der in den Pixeln liegt, ist ein Bildbefund.
+      const rand = await evaliere(`(()=>{const c=document.querySelector('[data-testid="graph-canvas"]');const s=getComputedStyle(c);let p=[0,0,0,0];try{const g=c.getContext('2d');p=[...g.getImageData(1,1,1,1).data].map(Number);}catch(e){p='kein Leseweg: '+e.message;}return {outline:s.outlineWidth+' '+s.outlineStyle+' '+s.outlineColor,fokusVisible:c.matches(':focus-visible'),border:s.borderTopWidth+' '+s.borderTopColor,pixel:p};})()`);
+      console.log(`  Rand der Leinwand: outline ${rand.outline} | border ${rand.border} | focus-visible ${rand.fokusVisible} | erstes Pixel ${JSON.stringify(rand.pixel)}`);
+      // Wer den Rand malt, ist noch nicht gefragt: die Leinwand selbst ist an der Kante
+      // durchsichtig (alpha 0), also liegt der Akzent an einem ihrer Eltern. Eine Kette
+      // von Grossvätern mitihren Rändern ist die Antwort, nicht ein Verdacht.
+      const kette = await evaliere(`(()=>{const out=[];let e=document.querySelector('[data-testid="graph-canvas"]');for(let i=0;i<6&&e;i++){const s=getComputedStyle(e);out.push((e.getAttribute('data-testid')||e.tagName)+' '+Math.round(e.getBoundingClientRect().width)+'x'+Math.round(e.getBoundingClientRect().height)+' Rand '+s.borderTopWidth+'/'+s.borderTopColor+' Um '+s.outlineWidth+' '+s.outlineStyle+' Schein '+s.boxShadow.slice(0,42));e=e.parentElement;}return out;})()`);
+      for (const z of kette) console.log(`  Elternkante: ${z}`);
+      // Wer die Kante malt, ist damit noch nicht gesagt. Also: die Geschwister der
+      // Leinwand in derselben Spalte, mit ihrem Rechteck und ihren Farben — und nur die
+      // interessiert, deren Rand die Bildkante beruehrt.
+      const faerber = await evaliere(`(()=>{const c=document.querySelector('[data-testid="graph-canvas"]');const vater=c.parentElement;const r=c.getBoundingClientRect();const out=[];for(const e of vater.querySelectorAll('*')){if(e===c||e.contains(c))continue;const b=e.getBoundingClientRect();const kante=Math.abs(b.left-r.left)<3||Math.abs(b.right-r.right)<3||Math.abs(b.top-r.top)<3||Math.abs(b.bottom-r.bottom)<3;if(!kante)continue;const st=getComputedStyle(e);out.push((e.getAttribute('data-testid')||e.tagName)+' '+(typeof e.className==='string'?e.className.split(' ').slice(0,3).join('.'):'')+' @'+Math.round(b.x-r.left)+','+Math.round(b.y-r.top)+' '+Math.round(b.width)+'x'+Math.round(b.height)+' Rand '+st.borderTopWidth+'/'+st.borderTopColor+' Grund '+st.backgroundColor+' Um '+st.outlineWidth+' '+st.outlineStyle+'/'+st.outlineColor+' Schein '+st.boxShadow.slice(0,26));}return out.slice(0,8);})()`);
+      for (const f of faerber) console.log(`  Kantennachbar: ${f}`);
+      // Die Frage, die die Pixel noch offen lassen: WELCHE Elemente liegen an der Kante
+      // uebereinander, und was steht in der Leinwand selbst? `elementsFromPoint` nennt
+      // den ganzen Stapel, `getImageData` die Pixel der Leinwand — zusammen trennen sie
+      // "von der Flaeche gemalt" von "von einem Element darueber gelegt".
+      const stapel = await evaliere(`(()=>{const c=document.querySelector('[data-testid="graph-canvas"]');const r=c.getBoundingClientRect();const pkt=(x,y)=>{const st=document.elementsFromPoint(x,y).slice(0,4).map(e=>(e.getAttribute('data-testid')||e.tagName)+(typeof e.className==='string'&&e.className?'.'+e.className.split(' ')[0]:''));const g=c.getContext('2d');let px='—';try{const d=g.getImageData(Math.max(0,Math.min(c.width-1,Math.round((x-r.left)*2))),Math.max(0,Math.min(c.height-1,Math.round((y-r.top)*2))),1,1).data;px=[...d].join(',');}catch(e){px='kein Leseweg';}return {punkt:Math.round(x-r.left)+','+Math.round(y-r.top),stapel:px+' | '+st.join(' > ')};};return [pkt(r.left+r.width/2,r.top+2),pkt(r.left+2,r.top+r.height/2),pkt(r.right-3,r.top+r.height/2),pkt(r.left+r.width/2,r.bottom-3)];})()`);
+      for (const st of stapel) console.log(`  Kantenstapel ${st.punkt}: ${st.stapel}`);
+      if (!faerber.length) console.log("  Kantennachbar: kein Geschwister-Element beruehrt die Bildkante");
     }
   }
 
   // 6) Phase B: ein Knoten wird gezogen — das ist der teuerste Weg (Physik
   // heizt nach, alles malt neu). Ziel ist die groesste Scheibe, die im Bild
-  // auch wirklich zu greifen ist: die Transformations kommt aus dem Rahmen,
-  // in dem die Scheiben gemalt wurden (siehe `halteTransformation`), und ein
-  // Griff unter die Legende waere kein Knotengriff, sondern ein Schwenk.
-  const [zk, zx, zky, zy] = ruhig.weltT || [];
+  // auch wirklich zu greifen ist.
+  //
+  // Stellung, Transformationsmaess und Leinwand-Kasten MUESSEN aus demselben Rahmen
+  // kommen wie der Griff selbst: gemessen 22:05 und 22:27 MEZ war die Leinwand beim
+  // Bild noch 1 128 CSS-Pixel breit und beim darauf folgenden Kasten-Griff 696 — eine
+  // Seitentafel war aufgegangen. Die Scheiben der alten Ruhe-Lesung lagen damit
+  // ausserhalb des neuen Zielbereichs, die Kandidatenliste war leer ("Kandidat 0 von
+  // 0 getroffen"), und die Phase, die den Zug beweisen soll, war zum zweiten Mal ein
+  // Nichtangriff — diesmal an der eignen Sonde, nicht an der Flaeche.
+  await ruf("an");
+  await evaliere(`(()=>{const z=document.querySelector('[title="Zoom in"]');const a=document.querySelector('[title="Zoom out"]');if(z)z.click();if(a)a.click();return true})()`);
+  await schlafe(900);
+  const vorZug = await ruf("ablesen");
+  const [zk, zx, zky, zy] = vorZug.weltT || [];
   const cRect = await evaliere(`(()=>{const r=document.querySelector('[data-testid="graph-canvas"]').getBoundingClientRect();return [r.left,r.top,r.width,r.height];})()`);
   // Der Zug ist nur ein Zug, wenn ein Knoten daran haengt. Gemessen 4.11.: in drei
   // von fuenf Laeufen arbeitete die Flaeche in keinem einzigen Rahmen des Schlepp-Zugs —
@@ -610,10 +658,13 @@ async function main() {
   // "ein gezogener Knoten bleibt getrennt" taugen soll, war ein Nichtangriff. Also:
   // die groessten acht Scheiben der Reihe nach, und jeder Versuch wird an der Arbeit
   // der Flaeche geprueft, nicht am eignen Willen.
-  const kandidaten = welt
+  const kandidaten = (vorZug.welt || [])
     .map((s) => ({ s, sx: s[0] * zk + zx, sy: s[1] * zky + zy }))
     .filter((p) => Number.isFinite(p.sx) && p.sx > 40 && p.sy > 40 && p.sx < cRect[2] - 40 && p.sy < cRect[3] * 0.55)
     .sort((a, b) => b.s[2] - a.s[2]).slice(0, 8);
+  if (!kandidaten.length) {
+    console.log(`  KEINE Kandidatin: ${(vorZug.welt || []).length} Scheiben in der Rahmen-Lesung, Maess ${JSON.stringify(vorZug.weltT)}, Kasten ${JSON.stringify((cRect || []).map((v) => Math.round(v)))}`);
+  }
   let ziehen = null;
   let treffer = 0;
   for (let i = 0; i < kandidaten.length; i++) {
