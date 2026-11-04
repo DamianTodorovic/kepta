@@ -1,3 +1,27 @@
+## [3.2.146]
+
+### Fixed
+
+- **A settled field now finishes the collision it started.** The surface stops computing
+  when `isSettled` says the nodes have stopped moving — but `isSettled` measures *motion*,
+  not the constraint. Measured in the delivered app at 3 000 notes (`scripts/fps-laeufer.mjs`,
+  19:38 MEZ, `docs/belege/tag-0411/fps-3000-1938.log.txt`): with 707 painted discs exactly
+  **one pair still intersected** — two concept hubs, r 26 + 26, centre distance 41 against the
+  required 52, cut 11 world units deep — and because no frame ran the solver any more, that
+  pair was frozen as the resting state. The same field in the layout test shows the moment
+  precisely: at step 308, where the surface would stop, `1 pair, deepest cut 2.2`, the same
+  hub pair `__ent:b25/__ent:b26`.
+  The fix is a bounded follow-up pass: when the field reaches rest, the collision runs once
+  per frame while it still improves something, up to 60 frames, and stops the moment it
+  reports no correction. Nothing else about cooling, forces or the readability floor moved.
+  Re-measured at 3 000 notes on the delivered bytes: **0 intersecting pairs** (see
+  `docs/graph-kosten.md`), and the README's browser sentence now names the resting number
+  instead of the moment.
+  The instrument grew three honesty checks in the same sweep (`23cf484`, and this change):
+  it prints the intersecting pair with its coordinates and radii, it waits for the surface to
+  say the same thing twice before quoting its counts, and an empty disc collection is now a
+  refusal (`KEIN GEGENSTAND`, exit 1) instead of a green "0 pairs".
+
 ## [3.2.145]
 
 ### Fixed

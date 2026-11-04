@@ -249,12 +249,22 @@ const INJEKT = `
           if (d < summe * 0.999) {
             paare++;
             tiefl = Math.max(tiefl, summe - d);
-            if (proben.length < 5) proben.push({ d: Math.round(d), r1: Math.round(x[2]), r2: Math.round(y[2]), schnitt: Math.round(summe - d) });
+            if (proben.length < 5) proben.push({ x: Math.round(x[0]), y: Math.round(x[1]), dx: Math.round(y[0]), dy: Math.round(y[1]), d: Math.round(d), r1: Math.round(x[2]), r2: Math.round(y[2]), schnitt: Math.round(summe - d) });
           }
         }
       }
     });
     return { scheiben: scheiben.length, geschnitten: paare, beruehrend: beruehrt, tiefsterSchnitt: Math.round(tiefl), proben: proben };
+  };
+  // Die Stellung aller gemalten Scheiben als ein Vergleichsprogramm. Zwei Lesungen
+  // gleich heisst: das Feld steht. Ohne dieses Warten wird Ueberlappung in einem
+  // Augenblick gezaehlt, in dem die Welt noch gleitet — gemessen 4.11. 19:31 MEZ, wo
+  // der Laeufer nach sechs Sekunden Kuehlung ein Paar zaelte, das dasselbe Feld im
+  // Test erst bei Schritt 310 von 380 abgibt (r 26 + 26, Abstand 49 gegen 52).
+  api.stellung = function () {
+    var s = [];
+    karten.forEach(function (rad, k) { s.push(k + ":" + Math.round(rad)); });
+    return s.sort().join("|");
   };
   api.klar = function () { karten.clear(); S.rahmen.length = 0; S.abstand.length = 0; };
   window.__fps = api;
@@ -436,7 +446,28 @@ async function main() {
     const zahl = (s) => Number(String(s).replace(/,/g, ""));
     return m ? { notizen: zahl(m[1]), konzepte: zahl(m[2]), kanten: zahl(m[3]), tekst: m[0] } : null;
   }, { maxMs: 60000 });
-  console.error(`die Flaeche meldet: ${sageDerFlaeche.tekst}`);
+  console.error(`die Flaeche meldet beim ersten Griff: ${sageDerFlaeche.tekst}`);
+  // Der erste Griff kann eine wartende Welt erwischen: gemessen 4.11. 19:31 MEZ meldete
+  // derselbe Bestand zweimal hinter einander "6 concepts of 3,027 in all · 2,379 links"
+  // (16:10) und "0 concepts · 0 links" (19:31). Eine Sonde, die das erste Muster gelten
+  // laesst, zaehlt einen Augenblick und nennt ihn den Bestand. Also: warten, bis zwei
+  // Lesungen gleich sind, und beide zeigen.
+  let zuletzt = sageDerFlaeche;
+  const stabil = await warteBis(async () => {
+    const t2 = await evaliere(`document.querySelector('[data-testid="graph-legende"]')?.textContent || ''`);
+    const m2 = t2.match(/([\d,]+) notes[^·]*·\s*([\d,]+) concepts[^·]*·\s*([\d,]+) links/);
+    if (!m2) return null;
+    const jetzt = { notizen: Number(m2[1].replace(/,/g, "")), konzepte: Number(m2[2].replace(/,/g, "")), kanten: Number(m2[3].replace(/,/g, "")), tekst: m2[0] };
+    if (jetzt.konzepte === zuletzt.konzepte && jetzt.kanten === zuletzt.kanten && jetzt.notizen === zuletzt.notizen) return jetzt;
+    zuletzt = jetzt;
+    return null;
+  }, { maxMs: 30000, schritt: 1500 });
+  if (stabil) {
+    if (stabil.tekst !== sageDerFlaeche.tekst) console.error(`die Flaeche meldet nach der Ruhe: ${stabil.tekst}`);
+    else console.error(`die Flaeche meldet gleichbleibend: ${stabil.tekst}`);
+  } else {
+    console.error(`die Flaeche hat in 30 s nicht zweimal dasselbe gemeldet — letzter Stand: ${zuletzt.tekst}`);
+  }
 
   // 5) Phase A: die Welt zur Ruhe bringen — Physik und Zeichnen zugleich.
   await ruf("an");
@@ -456,6 +487,31 @@ async function main() {
   if (!zoomGefunden) console.log("  KEIN Zoom-in-Knopf — die ruhige Messung gilt der Ankunft, nicht dem Zoom");
   await schlafe(1200);
   const ruhig = await ruf("ablesen");
+  // Vor dem Zaehlen der Geometrie: warten, bis das Feld steht. Die Zahl "Paare in der
+  // Ruhe" ist sonst eine Zahl ueber eine Bewegung, und die Doku verkauft sie als Zustand.
+  // Ein stehendes Feld malt von selbst kein Bild — und eine Sonde, die in diesem
+  // Augenblick die Scheiben sammelt, sammelt nichts und meldet "0 Paare". Genau das
+  // ist ein gruen, das nicht schlagen kann: gemessen 4.11. 19:36 MEZ, wo der erste
+  // Ruhe-Warteraum 0 Scheiben und 0 Paare meldete, weil nach `an` kein Rahmen mehr
+  // kam. Also wird pro Versuch ein Bild erzwungen (Zoom rein, Zoom raus — dieselbe
+  // Stellung, nur ein neuer Durchgang), und eine leere Lesung gilt nie als Ruhe.
+  let stellungVorher = null;
+  let stehendNach = null;
+  let scheibenZuletzt = 0;
+  for (let versuch = 1; versuch <= 24; versuch++) {
+    await ruf("an");
+    await evaliere(`(()=>{const z=document.querySelector('[title="Zoom in"]');const a=document.querySelector('[title="Zoom out"]');if(z)z.click();if(a)a.click();return true})()`);
+    await schlafe(900);
+    const jetzt = await ruf("stellung");
+    const n = (jetzt || "").split("|").filter(Boolean).length;
+    scheibenZuletzt = n;
+    if (n > 0 && stellungVorher !== null && jetzt === stellungVorher) { stehendNach = versuch * 0.9; break; }
+    stellungVorher = jetzt;
+  }
+  console.log(`  Feld steht: ${stehendNach ? "ja, nach " + stehendNach.toFixed(1) + " s" : "NEIN — in 21.6 s nicht zwei Mal dasselbe Bild"} (Scheiben in der letzten Lesung: ${scheibenZuletzt})`);
+  if (scheibenZuletzt === 0) {
+    console.log("  FEHLER: die letzte Lesung hatte keine Scheiben — Ueberlappung ist ohne Gegenstand, das Urteil wird zurueckgehalten");
+  }
   const ueberlapp = await ruf("kollision");
 
   // 6) Phase B: ein Knoten wird gezogen — das ist der teuerste Weg (Physik
@@ -515,7 +571,17 @@ async function main() {
     if (!out.phasen.knotenZiehen.arbeitende) {
       console.log("ACHTUNG: im Schlepp-Zug arbeitete die Flaeche in keinem Rahmen — der Griff hat keinen Knoten getroffen, diese Phase ist kein Befund.");
     }
-    console.log(`ueberlappung   ${out.ueberlappung.scheiben} Scheiben, geschnitten: ${out.ueberlappung.geschnitten} Paare, beruehrend: ${out.ueberlappung.beruehrend}, tiefster Schnitt ${out.ueberlappung.tiefsterSchnitt} Welt-Einheiten`);
+    if (out.ueberlappung.scheiben === 0) {
+      console.log("ueberlappung   KEIN GEGENSTAND — 0 Scheiben gesammelt, die Zahl 0 Paare waere ein Nicht-Angriff");
+      process.exitCode = 1;
+    } else {
+      console.log(`ueberlappung   ${out.ueberlappung.scheiben} Scheiben, geschnitten: ${out.ueberlappung.geschnitten} Paare, beruehrend: ${out.ueberlappung.beruehrend}, tiefster Schnitt ${out.ueberlappung.tiefsterSchnitt} Welt-Einheiten`);
+    }
+    // Die Paare namentlich, nicht nur ihre Zahl: "1 Paar" ist ein Befund ohne Ort, und
+    // ohne Ort ist keine Ursache zu pruefen (gemessen 4.11. 16:10 MEZ bei 3 000 Notizen).
+    for (const pb of out.ueberlappung.proben || []) {
+      console.log(`    Paar bei (${pb.x},${pb.y}) und (${pb.dx},${pb.dy}) — Abstand ${pb.d}, Radien ${pb.r1} + ${pb.r2}, Schnitt ${pb.schnitt}`);
+    }
     console.log(`bestand        ${out.bestand.notizen} notes · ${out.bestand.konzepte} concepts · ${out.bestand.kanten} links   (die Flaeche sagt das selbst)`);
     console.log(`maschine         vorher: ${out.maschine.vorDemStart}`);
     console.log(`                 nachher: ${out.maschine.nachDerMessung}${out.maschine.ruhigUeberAlles ? "" : "  — NICHT RUHIG, Zahl nicht veröffentlichen"}`);

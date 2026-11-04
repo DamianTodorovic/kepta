@@ -2458,6 +2458,32 @@ describe("never overlap: ein dichter Bestand muss sich selbst trennen", () => {
     expect(schnitte(sim.nodes).paare, `Ruhe bei 3 000: ${JSON.stringify(schnitte(sim.nodes))}`).toBe(0);
   });
 
+  it("trennt auch dort, wo die Flaeche zu rechnen aufhoert (der Browser-Fund vom 4.11.)", () => {
+    // Der ausgelieferte Graph haelt bei 3 000 Notizen **ein** ueberlappendes Paar in der
+    // Ruhe fest — gemessen 4.11. 19:38 MEZ mit `scripts/fps-laeufer.mjs --knoten 3000`
+    // (docs/belege/tag-0411/fps-3000-1938.log.txt): 707 gemalte Scheiben, ein Paar
+    // r 26 + 26, Abstand 41 gegen verlangte 52, Schnitt 11 Welteinheiten. Die Flaeche
+    // stoppt ihre Rechnung, sobald `isSettled` wahr ist (KnowledgeGraph.tsx:4979), und
+    // `isSettled` misst BEWEGUNG, nicht die Bedingung. Ein Feld kann also "ruhen",
+    // waehrend zwei Scheiben sich noch schneiden.
+    const sim = cliqueFeld(3000, 27);
+    let schritt = 0;
+    while (!isSettled(sim) && schritt < 1200) { stepSimulation(sim); schritt++; }
+    expect(isSettled(sim), "der Fall kommt nie zur Ruhe — die Messung waere wertlos").toBe(true);
+    const imAugenblickDesStopps = schnitte(sim.nodes);
+    // Nachweis der Klasse, nicht Behauptung: entweder zeigt das Feld hier dasselbe Paar
+    // (dann ist die Reproduktion geglueckt), oder es zeigt keins und der Browser-Fund
+    // hat eine andre Ursache — beides ist hier eine Zahl, kein Verdacht.
+    console.log(`  Ruhe bei Schritt ${schritt}: ${imAugenblickDesStopps.paare} Paare, tiefster Schnitt ${imAugenblickDesStopps.tief}, Proben ${imAugenblickDesStopps.proben.join(" | ")}`);
+    // Was die Flaeche schuldet: ein Nachschlag der Kollision, wenn sie sonst nichts mehr
+    // rechnet. Dieselbe Kraft, dieselbe Grenze, nur ein letztes Mal ausgefuehrt.
+    let nachlaeufe = 0;
+    while (nachlaeufe < 40 && resolveCollisions(sim.nodes) > 0) nachlaeufe++;
+    const nach = schnitte(sim.nodes);
+    expect(nach.paare, `nach ${nachlaeufe} Nachlaeufen bleiben ${nach.paare} Paare (vorher ${imAugenblickDesStopps.paare}): ${JSON.stringify(nach)}`).toBe(0);
+    expect(nachlaeufe, "ein Nachschlag von null heisst: die Bedingung war schon erfuellt, der Fall reproduziert den Fund nicht").toBeGreaterThan(0);
+  });
+
   it("sieht das Raster ein ueberlappendes Paar in der Nachbarzelle", () => {
     // Die Scheidung der zwei Kandidaten, als Bau gefasst: Uebersaehe das Raster
     // Nachbarzellen (Kandidat b), trennte dieser Nachlauf das Paar nicht.

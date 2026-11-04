@@ -12,6 +12,7 @@ import {
   reuseSimulation,
   isSettled,
   stepSimulation,
+  resolveCollisions,
   layoutBounds,
   randFuerAnsicht,
   fitTransform,
@@ -434,6 +435,8 @@ export const RANG_FOLGE: readonly Leistenglied[] = [
   "tiefe",
   "farben",
 ];
+
+const NACHSCHLAG_BUDGET = 60;
 
 /**
  * Das Kleid der Mengen auf dieser Fläche (#101). Die Bilanz schrieb „345 of
@@ -1700,6 +1703,17 @@ export function KnowledgeGraph({ memories: memoriesAusFenster, onSelectMemory, o
   const hoverKanteRef = useRef<LayoutEdge | null>(null);
   // Badges: Nachbarn, die der Kantengrenze zum Opfer fielen. Die Zahlen entstehen
   // einmal je Kantenneubau — nicht pro Bild fuer jeden Knoten.
+  /**
+   * Nachlaeufe, die das Feld nach der Ruhe noch schuldet. `isSettled` misst Bewegung
+   * unter einer Schwelle — nicht, ob die Kollisionsbedingung erfuellt ist. Gemaehlt am
+   * ausgelieferten Stueck bei 3 000 Notizen (4.11. 19:38 MEZ, fps-laeufer): im Moment,
+   * in dem die Flaeche das Rechnen einstellt, schneiden sich zwei Begriffs-Hube
+   * (r 26 + 26, Abstand 41 gegen verlangte 52, Schnitt 11 Welteinheiten), und weil
+   * danach kein Bild mehr rechnet, bleibt genau dieses Paar stehen. Der Nachschlag
+   * laeuft nur, solange er etwas bewegt, und hoert auf, sobald nichts mehr zu
+   * verbessern ist oder sein Budget leer ist.
+   */
+  const nachschlagRef = useRef(0);
   const versteckteRef = useRef<Map<string, number>>(new Map());
   /** Die Schlingen des letzten Kantlaufes — gezeichnet und gegriffen aus derselben Liste. */
   const selbstRef = useRef<LayoutEdge[]>([]);
@@ -4979,6 +4993,7 @@ export function KnowledgeGraph({ memories: memoriesAusFenster, onSelectMemory, o
             const bewegt = (bewegungAn && !isSettled(sim)) || draggingRef.current !== null;
             if (bewegt) {
               stepSimulation(sim);
+              if (isSettled(sim) && nachschlagRef.current === 0) nachschlagRef.current = NACHSCHLAG_BUDGET;
               zeichneNoetig.current = true;
               // Sobald das Layout steht, einmal alles zeigen — statt eines
               // willkuerlichen Ausschnitts mitten im Knaeuel.
@@ -4987,6 +5002,11 @@ export function KnowledgeGraph({ memories: memoriesAusFenster, onSelectMemory, o
                 transformRef.current = feldTransform(layoutBounds(sim.nodes, randFuerAnsicht(sim.nodes)), titelAnker(sim));
                 setZoomAnzeige(transformRef.current.k);
               }
+            } else if (nachschlagRef.current > 0 && sim.nodes.length > 1) {
+              const korrekturen = resolveCollisions(sim.nodes);
+              nachschlagRef.current -= 1;
+              if (korrekturen === 0) nachschlagRef.current = 0;
+              else zeichneNoetig.current = true;
             } else if (refitFaellig(autoFitOffen.current, bewegt, sim.nodes.length)) {
               // A7-09: dasselbe Ruhe-Ereignis, wenn das Feld beim ersten Bild des
               // Loops SCHON stand — ein wiedergenommener, ausgekuehlter Bestand
