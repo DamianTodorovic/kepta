@@ -1,0 +1,19 @@
+platten-wache: frei — stufe leicht, Schwelle 2 Gi, geprüft: /Users/damiantodorovic/kepta-app 13.37 Gi, /var/folders/ct/jl4tc0wd7672rpl4_gbvg7c80000gn/T 13.37 Gi
+Maschine: Median 6.25 ms, max/median 1.18, 4 node-Prozesse, load1/cpu 0.23 auf 10 Kernen
+bestand: 3000 Notizen (Rohtext-Erwaehnungen 18950)
+die Flaeche meldet beim ersten Griff: 3,000 notes · 6 concepts of 3,027 in all · 2,379 links
+die Flaeche meldet gleichbleibend: 3,000 notes · 6 concepts of 3,027 in all · 2,379 links
+der Kopf der Flaeche in voller Laenge: 3,000 notes · 6 concepts of 3,027 in all · 2,379 links — none of these 2,379 lines carries a word you wrote - this is a window, not all of your notes
+  Fit-Knopf gefunden und gedrueckt: true
+  Feld steht: ja, nach 1.8 s (Scheiben in der letzten Lesung: 648)
+einschwingen   rame   307 (malende   306)   Arbeit/Bild  median 3.4 ms  p95 8.1 ms  max 10 ms   ueber 16,67 ms: 0/306   Rame-Abstand median 16.7 ms
+ruheNachFit    rame    70 (malende    18)   Arbeit/Bild  median 0.1 ms  p95 0.1 ms  max 10.1 ms   ueber 16,67 ms: 0/18   Rame-Abstand median 16.7 ms
+knotenZiehen   rame     0 (malende     0)   Arbeit/Bild  median null ms  p95 null ms  max null ms   ueber 16,67 ms: 0/0   Rame-Abstand median null ms
+ACHTUNG: im Schlepp-Zug arbeitete die Flaeche in keinem Rahmen — der Griff hat keinen Knoten getroffen, diese Phase ist kein Befund.
+ueberlappung   648 Scheiben, geschnitten: 1 Paare, beruehrend: 1, tiefster Schnitt 11 Welt-Einheiten
+    Paar bei (1773,529) und (1791,492) — Abstand 41, Radien 26 + 26, Schnitt 11, gemalt in #acacac und #acacac
+bestand        3000 notes · 6 concepts · 2379 links   (die Flaeche sagt das selbst)
+maschine         vorher: Maschine: Median 6.25 ms, max/median 1.18, 4 node-Prozesse, load1/cpu 0.23 auf 10 Kernen
+                 nachher: Maschine: Median 7.11 ms, max/median 3.19, 4 node-Prozesse, load1/cpu 0.24 auf 10 Kernen  — NICHT RUHIG, Zahl nicht veröffentlichen
+befehl         node scripts/fps-laeufer.mjs --knoten 3000 --sekunden 6
+aufgeraeumt: /tmp/kepta-fps/profil, /tmp/kepta-fps/d (Bundle bleibt; --behalten laesst alles liegen)

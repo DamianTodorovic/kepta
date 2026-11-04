@@ -1172,6 +1172,30 @@ export function refitFaellig(autoFitOffen: boolean, bewegt: boolean, knoten: num
   return autoFitOffen && !bewegt && knoten > 0;
 }
 
+/**
+ * Wann das stehende Feld den Kollisions-Nachschlag bekommt (#123, zweite Fassung).
+ *
+ * Vier Fragen, eine Antwort. Ein Nachschlag, der schon laeuft (`budget > 0`), braucht
+ * keinen neuen; ein Feld, das noch gleitet (`!steht`), schuldet nichts, weil die
+ * Physik die Kanten selbst rechnet. Was bleibt, sind die zwei Wege in die Ruhe:
+ *
+ *  - `bewegtGerade` — der Rahmen hat gerade gerechnet und ist zur Ruhe gekommen.
+ *    Das war die einzige Waffe in 3.2.146, und sie hing an `if (bewegt)`.
+ *  - angekommen und niemand hat gerechnet — die Stellen kommen fertige aus dem Bau,
+ *    wenn ein Netznachzug das Feld neu aufsetzt. Dann war `bewegt` vom ersten Bild
+ *    an false, der Uebergang fand nie statt, und das Bild blieb mit ueberlappenden
+ *    Scheiben stehen. Genau davor warnt A7-09 (:1161) schon eine Ebene hoeher:
+ *    die Zusage haengt am Ruhe-Ereignis, nicht an der Bewegung.
+ *
+ * `gefechtert` ist derselbe Stand, an dem der Nachschlag schon zu Ende ist. Ohne
+ * diese Kante bewaffnete sich der Nachschlag in jedem ruhenden Rahmen neu, und ein
+ * Feld, das an einer Ueberlappung nicht vorbeikommt, hoerte nie auf zu rechnen.
+ */
+export function nachschlagFaellig(budget: number, steht: boolean, bewegtGerade: boolean, gefechtert: boolean): boolean {
+  if (budget > 0 || !steht) return false;
+  return bewegtGerade || !gefechtert;
+}
+
 export function istHell(farbe: string): boolean {
   const s = farbe.trim();
   let r = 0, g = 0, b = 0;
@@ -1714,6 +1738,13 @@ export function KnowledgeGraph({ memories: memoriesAusFenster, onSelectMemory, o
    * verbessern ist oder sein Budget leer ist.
    */
   const nachschlagRef = useRef(0);
+  /**
+   * Der Stand, an dem der Nachschlag schon zu Ende ist. Ein Feld wird bei jedem
+   * Netznachzug neu gebaut (anderes Objekt, dieselbe Welt), und ohne diese Marke
+   * bewaffnete sich der Nachschlag in jedem ruhenden Rahmen von vorn — ein Feld,
+   * das an einer Ueberlappung nicht vorbeikommt, hoerte nie auf zu rechnen.
+   */
+  const nachschlagFertigRef = useRef<Simulation | null>(null);
   const versteckteRef = useRef<Map<string, number>>(new Map());
   /** Die Schlingen des letzten Kantlaufes — gezeichnet und gegriffen aus derselben Liste. */
   const selbstRef = useRef<LayoutEdge[]>([]);
@@ -4990,14 +5021,16 @@ export function KnowledgeGraph({ memories: memoriesAusFenster, onSelectMemory, o
               zeichneNoetig.current = true;
             }
           } else {
-            const bewegt = (bewegungAn && !isSettled(sim)) || draggingRef.current !== null;
+            const steht = isSettled(sim);
+            const bewegt = (bewegungAn && !steht) || draggingRef.current !== null;
             if (bewegt) {
               stepSimulation(sim);
-              if (isSettled(sim) && nachschlagRef.current === 0) nachschlagRef.current = NACHSCHLAG_BUDGET;
+              const stehtJetzt = isSettled(sim);
+              if (nachschlagFaellig(nachschlagRef.current, stehtJetzt, true, false)) nachschlagRef.current = NACHSCHLAG_BUDGET;
               zeichneNoetig.current = true;
               // Sobald das Layout steht, einmal alles zeigen — statt eines
               // willkuerlichen Ausschnitts mitten im Knaeuel.
-              if (autoFitOffen.current && isSettled(sim) && sim.nodes.length > 0) {
+              if (autoFitOffen.current && stehtJetzt && sim.nodes.length > 0) {
                 autoFitOffen.current = false;
                 transformRef.current = feldTransform(layoutBounds(sim.nodes, randFuerAnsicht(sim.nodes)), titelAnker(sim));
                 setZoomAnzeige(transformRef.current.k);
@@ -5005,8 +5038,11 @@ export function KnowledgeGraph({ memories: memoriesAusFenster, onSelectMemory, o
             } else if (nachschlagRef.current > 0 && sim.nodes.length > 1) {
               const korrekturen = resolveCollisions(sim.nodes);
               nachschlagRef.current -= 1;
-              if (korrekturen === 0) nachschlagRef.current = 0;
-              else zeichneNoetig.current = true;
+              if (korrekturen > 0) zeichneNoetig.current = true;
+              if (korrekturen === 0 || nachschlagRef.current === 0) {
+                nachschlagRef.current = 0;
+                nachschlagFertigRef.current = sim;
+              }
             } else if (refitFaellig(autoFitOffen.current, bewegt, sim.nodes.length)) {
               // A7-09: dasselbe Ruhe-Ereignis, wenn das Feld beim ersten Bild des
               // Loops SCHON stand — ein wiedergenommener, ausgekuehlter Bestand
@@ -5016,6 +5052,17 @@ export function KnowledgeGraph({ memories: memoriesAusFenster, onSelectMemory, o
               transformRef.current = feldTransform(layoutBounds(sim.nodes, randFuerAnsicht(sim.nodes)), titelAnker(sim));
               setZoomAnzeige(transformRef.current.k);
               zeichneNoetig.current = true;
+            } else if (sim.nodes.length > 1 && nachschlagFaellig(nachschlagRef.current, steht, false, nachschlagFertigRef.current === sim)) {
+              // #124, die zweite Haelfte derselben Lehre: ein Feld, das ausserhalb
+              // dieses Loops gebaut wurde — ein Netznachzug setzt die Stellen fertige
+              // und die Ruhe gilt ab dem ersten Bild — betrat den Bewegungszweig nie
+              // und schuldet die Kollision darum trotzdem. Gemessen 4.11. 20:14:55 MEZ am
+              // ausgelieferten 3.2.146 bei 3 000 Notizen: von 70 Ruhe-Rahmen rechneten
+              // 18 ueberhaupt etwas (Median 0,1 ms), und das Paar aus zwei
+              // Begriffsscheiben (Radius 26 + 26, 11 Einheiten Schnitt) stand unveraendert
+              // an denselben Bildpunkten wie in 3.2.145 — der Nachschlag hat in diesem
+              // Lauf nie gebrannt.
+              nachschlagRef.current = NACHSCHLAG_BUDGET;
             }
           }
         }

@@ -323,3 +323,64 @@ Wache laeuft alle sechs Minuten ueber dieselbe Maschine.
 
 Was der README und diese Datei bis auf weiteres sagen: **ein Paar bei 3 000 Notizen in der
 Ruhe, gemessen am ausgelieferten Stueck**, mit dem Befehl und den zwei Laeufen als Zeugen.
+
+## Die zwei Welten waren eine Sonde, und das Paar hat eine Ursache (4.11., 20:09 bis 20:26 MEZ)
+
+**Frage 1 aus dem Abschnitt oben ist gemessen, nicht gedaechtnisst.** Ein neuer Griff ohne
+Browser (`Mappe: scripts/graph-begriffskurve.mjs`) startet denselben Build in einer eignen
+Kapsel, saet denselben Korpus wie `fps-laeufer.mjs` und fragt die Route selbst
+(`docs/belege/tag-0411/begriffskurve-3000-2009.log.txt`, 20:09:12 MEZ):
+
+    Import:  lesen=94.01; einsetzen=393.77; chunksetzen=162.97; begriffekanten=857.71; verknuepfen=490.38; gesamt=2007.35
+    +  0 s      46 ms  Begriffsauszug 500  Kantenauszug 2000  ausserhalb 27375  Bestand 3027 Begriffe / 29375 Kanten
+    + 24 s      67 ms  Begriffsauszug 500  Kantenauszug 2000  ausserhalb 27375  Bestand 3027 Begriffe / 29375 Kanten
+    Abfragen ueber zwei Sekunden: 0 von 7
+
+Begriffe und Kanten entstehen **im Import**, die Tuer antwortet bei null Sekunden in 46 ms,
+und der Bestand von 3 027 Begriffen ist dieselbe Zahl, die die Flaeche eine Stunde vorher
+nannte. Eine langsame Begriffs-Ebene gibt es nicht.
+
+Was es gibt, ist ein abgeschnittener Satz. Die Sonde las mit einem Muster, das nach der
+dritten Zahl endet, und die Flaeche haengt ihren Grund **hinter** die Zahlen. Der volle Kopf
+des Laufs von 20:14:55 MEZ (`docs/belege/tag-0411/fps-3000-mit-kopf-und-farbe-2014.log.txt`):
+
+    3,000 notes · 6 concepts of 3,027 in all · 2,379 links — none of these 2,379 lines carries a word you wrote - this is a window, not all of your notes
+
+Ein Lauf, dessen Begriff-Bein nicht ankam, sagt "the entity links did not arrive, so this
+picture draws tags and similarity only". Die Sonde zeigte den Anfang und liess das Ende weg —
+daraus war "zwei Welten" geworden. Sie druckt jetzt den ganzen Kopf, und ein Feld, das null
+Begriffe meldet, **ohne** dass die Flaeche den Grund nennt, bricht den Lauf mit Exit 1 ab:
+eine Ueberlappungszahl aus einem Feld, dessen Begriff-Bein nicht entschieden war ist kein Urteil ueber das ausgelieferte
+Stueck.
+
+**Frage 2 ist ebenfalls gemessen.** Die Sonde zeichnet zu jeder Scheibe die Farbe mit auf, mit
+der sie gemalt wird. Das Paar kam `#acacac` und `#acacac` zurueck — `--type-neutral-hex`, die
+Rolle, in der die Flaeche ihre Geruest-Knoten malt (Wurzel, Typ, Entitaet;
+`KnowledgeGraph.tsx:4255`), Radius 26 = die Kappe von `knotenRadius`. Begriffe werden mit
+`n.r` gemalt (`:4276`), demselben Radius, den die Kollision liest; `pinned` wird auf `false`
+geboren (`graphLayout.ts:506`), und in diesem Lauf zog die Sonde keinen Knoten
+(`knotenZiehen`: 0 malende Rahmen). Also: echte Simulationsknoten, keine Ringe, keine
+Verankerung. Die Erklaerung "(1) verschiedene Welten" aus dem Abschnitt oben ist damit
+erledigt, und mit ihr die Hoffnung, dass ein verankertes Paar die Ursache sei.
+
+**Die Ursache ist der Nachschlag selbst, und sie steht in einer Zeile.** 3.2.146 ruestet ihn
+an `if (bewegt)` — der Rahmen, in dem die Bewegung endet. Ein Feld, das ausserhalb des Loops
+gebaut und fertige uebergeben wird (ein Netznachzug), betrat diesen Zweig nie und stand vom
+ersten Bild an still. Zeuge dafuer ist die Zeit derselben Ruhe:
+
+    ruheNachFit  rame 70 (malende 18)  Arbeit/Bild median 0.1 ms  p95 0.1 ms  max 10.1 ms
+
+Eine Kollision ueber 3 027 Knoten kostet mehrere Millisekunden je Rahmen. In der Ruhe wurden
+in 70 Rahmen 18 malende gezaehlt, mit Median 0,1 ms — der Nachschlag hat in diesem Lauf nie
+gebrannt, und das Paar stand auf denselben Bildpunkten wie in 3.2.145. Das ist dieselbe Falle,
+vor der A7-09 im gleichen File eine Ebene hoeher warnt: die Zusage haengt am Ruhe-Ereignis,
+nicht an der Bewegung.
+
+**Was hier bis zur naechsten Messung steht, ist ein Fall, kein Bild.** Die Pruefstelle
+`nachschlagFaellig` (rote Datei um 20:22:09 MEZ, gruen um 20:23:24 MEZ, 22 von 22 in
+`tests/components/KnowledgeGraph.f8.test.tsx`) deckt beide Wege in die Ruhe ab und haelt den
+Nachschlag pro Stand einmal an. Ob bei 3 000 Notizen in der Auslieferung kein Paar mehr
+uebrig bleibt, entscheidet der naechste `fps-laeufer`-Lauf auf den getauschten Bytes. Bis er
+da ist, bleibt der Satz oben stehen: **ein Paar bei 3 000 Notizen in der Ruhe, gemessen am
+ausgelieferten Stueck** — jetzt mit Grund, und ohne die Behauptung, dass der Grund schon
+heilt.

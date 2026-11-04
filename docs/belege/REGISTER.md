@@ -39,6 +39,8 @@ Laeufe liegt, korrekt gekuerzt, im Kern-Repo unter `docs/belege/`.
 | `tag-0411/fps-3000-1938.log.txt` | 1761 B | `298741b05e73018c…` |
 | `tag-0411/fps-3000-nach-146.log.txt` | 1716 B | `6a2b7d8fe3ec1970…` |
 | `tag-0411/fps-3000-verweigerung-146.log.txt` | 373 B | `3e1fe12981f18c81…` |
+| `tag-0411/begriffskurve-3000-2009.log.txt` | 2373 B | `aa9e1661b751ac1b…` |
+| `tag-0411/fps-3000-mit-kopf-und-farbe-2014.log.txt` | 2121 B | `ecadeef466000735…` |
 | `tag-13-10/eval-korpus-1143.log.txt` | 3419 B | `8b343e7457825fa0…` |
 | `tag-13-10/eval-korpus-1413.log.txt` | 4181 B | `dcd3e42dc0021921…` |
 | `tag-13-10/ablation-beine-1144.log.txt` | 1904 B | `62d15147e59de149…` |
@@ -48,14 +50,18 @@ Laeufe liegt, korrekt gekuerzt, im Kern-Repo unter `docs/belege/`.
 | `app-abnahme/nachzug-flaeche-gruen.log.txt` | 19204 B | `1e6eb0616a86a748…` |
 | `app-abnahme/nachzug-mutation-rot.log.txt` | 22052 B | `1c8a44f87cda8e3a…` |
 
-Summe: **160 708 Bytes in 32 Dateien** (gemessen am 4.11. um 20:04 MEZ mit `wc -c` ueber
+Summe: **165 202 Bytes in 34 Dateien** (gemessen am 4.11. um 20:28 MEZ mit `wc -c` ueber
 `find docs/belege -name '*.log.txt'`). Die fuenf Laeufe des 4.11. bis 02:21 machen 16 571
 Bytes aus, die drei von Aufgabe #53 (05:49, 05:50 und 06:02 MEZ) 13 500 Bytes, der
 Objektnachlauf von 3.2.143 (06:28 MEZ) 9 302 Bytes, der Sprach-Census (08:00 MEZ) 7 287 Bytes
 und sein Wiederlauf am ausgelieferten 3.2.144 6 976 Bytes (Dateizeit 15:43:53 MEZ).
 Der Fensterlauf am ausgelieferten 3.2.145 traegt 3 941 Bytes (Dateizeit 16:01:35 MEZ),
 und die drei Kosten-Laeufe (400, 1 500, 3 000 Notizen) zusammen 4 494 Bytes
-(Dateizeiten 16:14:19, 16:16:34 und 16:10:38 MEZ).
+(Dateizeiten 16:14:19, 16:16:34 und 16:10:38 MEZ). Die drei Abendlaeufe am selben Bestand
+(19:38, 19:54, und die Verweigerung des dritten) machen 1 761 + 1 716 + 373 = 3 850 Bytes aus,
+und die beiden des spaeten Nachmittags 2 373 + 2 121 = 4 494 Bytes: die Begriffs-Kurve an der
+Route (Dateizeit 20:09:12 MEZ) und der Kostenlauf, der zum ersten Mal den vollen Kopf der
+Flaeche und die Farbe jeder Scheibe zeigt (Dateizeit 20:14:55 MEZ).
 
 Die Zeile war zwei Dateien hinterher: sie schrieb am 3.11. **"92 036 Bytes in 12 Dateien"**,
 waehrend `find` am 4.11. vor den neuen Laeufen **94 787 Bytes in 14 Dateien** meldete — die

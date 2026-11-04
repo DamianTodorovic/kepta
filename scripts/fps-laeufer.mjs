@@ -153,10 +153,14 @@ const INJEKT = `
   // Knoten herum sind immer groesser als er (rr + 2, rr + 4, n.r + 4).
   var karten = new Map();
   var weltT = null;
-  function eintrag(x, y, r) {
+  function eintrag(x, y, r, stil) {
     var k = Math.round(x) + "," + Math.round(y);
     var b = karten.get(k);
-    if (!b || r < b) karten.set(k, r);
+    // Die Farbe an der Mitte: "1 Paar, beide Radius 26" ist ein Befund ohne Namen. Die
+    // Flaeche malt Begriffe, Notizen und Ringe in verschiedne Farben, und nur die Farbe
+    // sagt, ob das Paar ueberhaupt ein Paar aus dem Kraftfeld ist — ein Ring um einen
+    // Knoten her kann keine Kollision heilen, weil er gar kein Knoten ist.
+    if (!b || r < b[0]) karten.set(k, [r, String(stil === null || stil === undefined ? "?" : stil).slice(0, 40)]);
   }
   // Die Transformation GENAU hier halten: nach dem Etikett-Durchgang steht auf
   // dem Kontext wieder der Bildschirm-Satz, und daraus die Welt zu lesen war
@@ -167,15 +171,15 @@ const INJEKT = `
     weltT = [t.a / d, t.e / d, t.d / d, t.f / d];
   }
   proto.arc = function (x, y, r, s, e2, ccw) {
-    if (S.sammlen && this.canvas === haupt() && r > 0 && r < 1e5) { eintrag(x, y, r); halteTransformation(this); }
+    if (S.sammlen && this.canvas === haupt() && r > 0 && r < 1e5) { eintrag(x, y, r, this.fillStyle); halteTransformation(this); }
     return arc.call(this, x, y, r, s, e2, ccw);
   };
   proto.fillRect = function (x, y, w, h) {
-    if (S.sammlen && this.canvas === haupt() && w > 0 && w === h && w < 1e4) { eintrag(x + w / 2, y + h / 2, w / 2); halteTransformation(this); }
+    if (S.sammlen && this.canvas === haupt() && w > 0 && w === h && w < 1e4) { eintrag(x + w / 2, y + h / 2, w / 2, this.fillStyle); halteTransformation(this); }
     return rect.apply(this, arguments);
   };
   proto.drawImage = function (img, dx, dy, dw, dh) {
-    if (S.sammlen && this.canvas === haupt() && arguments.length >= 5 && dw === dh && dw > 0) { eintrag(dx + dw / 2, dy + dh / 2, dw / 2); halteTransformation(this); }
+    if (S.sammlen && this.canvas === haupt() && arguments.length >= 5 && dw === dh && dw > 0) { eintrag(dx + dw / 2, dy + dh / 2, dw / 2, this.fillStyle); halteTransformation(this); }
     return bild.apply(this, arguments);
   };
   var api = {};
@@ -190,9 +194,9 @@ const INJEKT = `
     var a = S.abstand.slice().sort(function (x, y) { return x - y; });
     var qa = function (p) { return a.length ? a[Math.min(a.length - 1, Math.floor(p * (a.length - 1)))] : null; };
     var scheiben = [];
-    karten.forEach(function (rad, k) {
+    karten.forEach(function (v, k) {
       var t = k.split(",");
-      scheiben.push([Number(t[0]), Number(t[1]), rad]);
+      scheiben.push([Number(t[0]), Number(t[1]), v[0], v[1]]);
     });
     return {
       ramen: S.rahmen.length,
@@ -214,9 +218,9 @@ const INJEKT = `
   // Paare pruefen muessen.
   api.kollision = function () {
     var scheiben = [];
-    karten.forEach(function (rad, k) {
+    karten.forEach(function (v, k) {
       var t = k.split(",");
-      scheiben.push([Number(t[0]), Number(t[1]), rad]);
+      scheiben.push([Number(t[0]), Number(t[1]), v[0], v[1]]);
     });
     var maxr = scheiben.reduce(function (m, s2) { return Math.max(m, s2[2]); }, 1);
     var zelle = Math.max(1, maxr * 2);
@@ -249,7 +253,7 @@ const INJEKT = `
           if (d < summe * 0.999) {
             paare++;
             tiefl = Math.max(tiefl, summe - d);
-            if (proben.length < 5) proben.push({ x: Math.round(x[0]), y: Math.round(x[1]), dx: Math.round(y[0]), dy: Math.round(y[1]), d: Math.round(d), r1: Math.round(x[2]), r2: Math.round(y[2]), schnitt: Math.round(summe - d) });
+            if (proben.length < 5) proben.push({ x: Math.round(x[0]), y: Math.round(x[1]), dx: Math.round(y[0]), dy: Math.round(y[1]), d: Math.round(d), r1: Math.round(x[2]), r2: Math.round(y[2]), schnitt: Math.round(summe - d), stil1: x[3], stil2: y[3] });
           }
         }
       }
@@ -263,7 +267,7 @@ const INJEKT = `
   // Test erst bei Schritt 310 von 380 abgibt (r 26 + 26, Abstand 49 gegen 52).
   api.stellung = function () {
     var s = [];
-    karten.forEach(function (rad, k) { s.push(k + ":" + Math.round(rad)); });
+    karten.forEach(function (v, k) { s.push(k + ":" + Math.round(v[0])); });
     return s.sort().join("|");
   };
   api.klar = function () { karten.clear(); S.rahmen.length = 0; S.abstand.length = 0; };
@@ -468,6 +472,42 @@ async function main() {
   } else {
     console.error(`die Flaeche hat in 30 s nicht zweimal dasselbe gemeldet — letzter Stand: ${zuletzt.tekst}`);
   }
+  // Der volle Kopf, nicht sein Anfang. Die Zahl "0 concepts" ist zwei verschiedene
+  // Welten: ein Bestand ohne Begriffe, und ein Begriff-Bein, das den Lauf nicht
+  // erreichte — die Flaeche sagt den Unterschied in ihrem eignen Satz
+  // (kopfKanteSatz: "the entity links did not arrive"), und der Satz steht HINTER
+  // dem dritten Number, den das Muster oben abschneidet. Gemessen 4.11.: zwei Laeufe
+  // desselben Bestands meldeten "6 concepts of 3,027 in all" und "0 concepts" ohne
+  // Zusatz, und die Sonde hielt beide fuer den Bestand. Die Tuer selbst antwortete in
+  // beiden Faellen bei 0 s mit 500 Begriffen und 2 000 Kanten (Mappe:
+  // scripts/graph-begriffskurve.mjs, 3 000 Notizen, 29 375 Kanten im Bestand) — der
+  // Unterschied lag an der Flaeche, nicht am Kern. Also: Kopf voll zeigen, und ein
+  // Lauf, dessen Begriff-Bein nie entschieden ist, gilt nicht als Messung.
+  const kopfVoll = await evaliere(`document.querySelector('[data-testid="graph-kopf"]')?.textContent || 'kein Kopf'`);
+  console.error(`der Kopf der Flaeche in voller Laenge: ${kopfVoll}`);
+  const absage = /did not arrive/i.test(kopfVoll);
+  if (zuletzt.konzepte === 0 && zuletzt.kanten === 0 && !absage) {
+    const entschieden = await warteBis(async () => {
+      const k = await evaliere(`document.querySelector('[data-testid="graph-kopf"]')?.textContent || ''`);
+      const z = (k.match(/([\d,]+) concepts/) || [])[1];
+      if (/did not arrive/i.test(k)) return { grund: "die Flaeche nennt die Absage", konzepte: 0 };
+      if (z && Number(z.replace(/,/g, "")) > 0) return { grund: "die Begriffe sind angekommen", konzepte: Number(z.replace(/,/g, "")) };
+      return null;
+    }, { maxMs: 60000, schritt: 2000 });
+    if (!entschieden) {
+      console.log("ABBRUCH: die Flaeche meldete null Begriffe und nannte keinen Grund — das Begriff-Bein war in 60 s nicht entschieden. "
+        + "Ein Ueberlappungsurteil aus diesem Feld ist kein Urteil ueber das ausgelieferte Stueck.");
+      process.exitCode = 1;
+      return;
+    }
+    console.error(`  Begriff-Bein entschieden nach dem Warteraum: ${entschieden.grund} (${entschieden.konzepte} Begriffe) — Kopf neu gelesen`);
+    const neu = await evaliere(`document.querySelector('[data-testid="graph-legende"]')?.textContent || ''`);
+    const m3 = neu.match(/([\d,]+) notes[^·]*·\s*([\d,]+) concepts[^·]*·\s*([\d,]+) links/);
+    if (m3) {
+      zuletzt = { notizen: Number(m3[1].replace(/,/g, "")), konzepte: Number(m3[2].replace(/,/g, "")), kanten: Number(m3[3].replace(/,/g, "")), tekst: m3[0] };
+      console.error(`die Flaeche meldet fuer diese Messung: ${zuletzt.tekst}`);
+    }
+  }
 
   // 5) Phase A: die Welt zur Ruhe bringen — Physik und Zeichnen zugleich.
   await ruf("an");
@@ -556,7 +596,7 @@ async function main() {
       last1: Math.round(os.loadavg()[0] * 100) / 100,
       os: os.release(),
     },
-    bestand: { notizen: sageDerFlaeche.notizen, konzepte: sageDerFlaeche.konzepte, kanten: sageDerFlaeche.kanten, health: zaehlung.count },
+    bestand: { notizen: zuletzt.notizen, konzepte: zuletzt.konzepte, kanten: zuletzt.kanten, health: zaehlung.count, absage: absage, kopf: kopfVoll },
     budgetMs: Math.round(BUDGET_MS * 100) / 100,
     phasen: { einschwingen: settling, ruheNachFit: ruhig, knotenZiehen: ziehen },
     ueberlappung: ueberlapp,
@@ -579,8 +619,11 @@ async function main() {
     }
     // Die Paare namentlich, nicht nur ihre Zahl: "1 Paar" ist ein Befund ohne Ort, und
     // ohne Ort ist keine Ursache zu pruefen (gemessen 4.11. 16:10 MEZ bei 3 000 Notizen).
+    // Seit diesem Lauf auch ohne Farbe: zwei Scheiben mit Radius 26 koennen Knoten sein
+    // (dann schuldet das Ruhe-Feld die Trennung) oder ein Ring (dann kann keine Kollision
+    // sie trennen, weil er kein Knoten ist).
     for (const pb of out.ueberlappung.proben || []) {
-      console.log(`    Paar bei (${pb.x},${pb.y}) und (${pb.dx},${pb.dy}) — Abstand ${pb.d}, Radien ${pb.r1} + ${pb.r2}, Schnitt ${pb.schnitt}`);
+      console.log(`    Paar bei (${pb.x},${pb.y}) und (${pb.dx},${pb.dy}) — Abstand ${pb.d}, Radien ${pb.r1} + ${pb.r2}, Schnitt ${pb.schnitt}, gemalt in ${pb.stil1} und ${pb.stil2}`);
     }
     console.log(`bestand        ${out.bestand.notizen} notes · ${out.bestand.konzepte} concepts · ${out.bestand.kanten} links   (die Flaeche sagt das selbst)`);
     console.log(`maschine         vorher: ${out.maschine.vorDemStart}`);

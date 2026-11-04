@@ -1,0 +1,31 @@
+  Kapsel: /tmp/kepta-kurve | Port 3963 | Bestand 3000 Notizen | Wartefenster 300 s
+  Diener: Version 3.2.146
+  Import gerufen: Rohtext-Erwaehnungen 18950, importiert 3000, Teilzeiten lesen=94.01;einsetzen=393.77;chunksetzen=162.97;begriffekanten=857.71;verknuepfen=490.38;gesamt=2007.35
+  Bestand nach 4.0 s: 3000 Notizen
+  +   0 s      46 ms  HTTP 200
+            Begriffsauszug 500  Kantenauszug 2000  ausserhalb 27375  Bestand 3027 Begriffe / 29375 Kanten  gedeckte Notizen 3000
+            Teilzeiten: fenster=35.39;masche=0.20;begriffsmemorien=3.31;deckung=1.18;gesamt=40.11
+  +   4 s      64 ms  HTTP 200
+            Begriffsauszug 500  Kantenauszug 2000  ausserhalb 27375  Bestand 3027 Begriffe / 29375 Kanten  gedeckte Notizen 3000
+            Teilzeiten: fenster=51.87;masche=0.19;begriffsmemorien=3.76;deckung=1.24;gesamt=57.10
+  +   8 s      64 ms  HTTP 200
+            Begriffsauszug 500  Kantenauszug 2000  ausserhalb 27375  Bestand 3027 Begriffe / 29375 Kanten  gedeckte Notizen 3000
+            Teilzeiten: fenster=52.19;masche=0.15;begriffsmemorien=3.58;deckung=1.29;gesamt=57.24
+  +  12 s      64 ms  HTTP 200
+            Begriffsauszug 500  Kantenauszug 2000  ausserhalb 27375  Bestand 3027 Begriffe / 29375 Kanten  gedeckte Notizen 3000
+            Teilzeiten: fenster=52.30;masche=0.14;begriffsmemorien=3.54;deckung=1.29;gesamt=57.30
+  +  16 s      64 ms  HTTP 200
+            Begriffsauszug 500  Kantenauszug 2000  ausserhalb 27375  Bestand 3027 Begriffe / 29375 Kanten  gedeckte Notizen 3000
+            Teilzeiten: fenster=52.24;masche=0.17;begriffsmemorien=4.17;deckung=1.28;gesamt=57.88
+  +  20 s      65 ms  HTTP 200
+            Begriffsauszug 500  Kantenauszug 2000  ausserhalb 27375  Bestand 3027 Begriffe / 29375 Kanten  gedeckte Notizen 3000
+            Teilzeiten: fenster=53.31;masche=0.13;begriffsmemorien=3.50;deckung=1.28;gesamt=58.25
+  +  24 s      67 ms  HTTP 200
+            Begriffsauszug 500  Kantenauszug 2000  ausserhalb 27375  Bestand 3027 Begriffe / 29375 Kanten  gedeckte Notizen 3000
+            Teilzeiten: fenster=55.15;masche=0.17;begriffsmemorien=3.45;deckung=1.27;gesamt=60.07
+
+  Begriffe zuerst nach 0 s
+  letzte Abfrage: 67 ms, Auszug 500 Begriffe / 2000 Kanten, Bestand 3027 / 29375, ausserhalb 27375
+  Abfragen ueber zwei Sekunden: 0 von 7
+  Kurve: /tmp/kepta-kurve/kurve.json
+  Protokoll: /tmp/kepta-kurve/server.log

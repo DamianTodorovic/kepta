@@ -8,7 +8,7 @@
 // gruen gemalt — bei 12 % Zoom sind aus den 15 px 1,4 px geworden.
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { render, act } from "@testing-library/react";
-import { KnowledgeGraph, aehnlichkeitsZeile, refitFaellig } from "../../src/components/KnowledgeGraph";
+import { KnowledgeGraph, aehnlichkeitsZeile, nachschlagFaellig, refitFaellig } from "../../src/components/KnowledgeGraph";
 import { installiereLeinwand, installiereResizeObserver, installiereZeiger, setzeTheme, type Leinwand } from "../helfer/canvas";
 import type { Memory } from "../../src/types";
 
@@ -544,6 +544,28 @@ describe("A7-09: der Landemaßstab hing davon ab, wann die Messung zusah", () =>
     expect(refitFaellig(true, true, 40)).toBe(false);
     expect(refitFaellig(false, false, 40)).toBe(false);
     expect(refitFaellig(true, false, 0)).toBe(false);
+  });
+});
+
+describe("#124 der Nachschlag hat dieselbe Falle, eine Ebene tiefer", () => {
+  it("schuldet die Kollision auch einem Feld, das beim Ankommen schon steht", () => {
+    // 3.2.146 ruestet den Nachschlag in `if (bewegt)` — genau die Stelle, vor der
+    // A7-09 schon einmal gewarnt hat. Gemessen 4.11. 20:16 MEZ am ausgelieferten
+    // 3.2.146 bei 3 000 Notizen: zwei Begiffscheiben mit Radius 26 schnitten 11
+    // Einheiten, und die Ruhe-Phase rechnete in 18 von 70 Rahmen ueberhaupt etwas
+    // (Median 0,1 ms) — der Nachschlag hat in diesem Lauf nie gebrannt. Der Grund:
+    // die Stellen kommen fertige aus dem Bau (ein Netznachzug baut das Feld neu),
+    // darum ist `bewegt` vom ersten Bild an false und der Uebergangs-Zweig nie
+    // betreten worden. Angekommene Ruhe ist dieselbe Schuld wie eintretende.
+    expect(nachschlagFaellig(0, true, false, false)).toBe(true);
+    // Dieselbe Antwort beim echten Uebergang: das Feld stand eben noch in Bewegung.
+    expect(nachschlagFaellig(0, true, true, false)).toBe(true);
+    // Und dreimal nein: waehrend es noch gleitet, waehrend ein Nachschlag laeuft,
+    // und wenn genau dieser stehende Stand schon zu Ende gefeiert ist — sonst
+    // bewaffnet sich der Nachschlag pro Rahmen neu und das Feld hoert nie auf.
+    expect(nachschlagFaellig(0, false, true, false)).toBe(false);
+    expect(nachschlagFaellig(60, true, true, false)).toBe(false);
+    expect(nachschlagFaellig(0, true, false, true)).toBe(false);
   });
 });
 

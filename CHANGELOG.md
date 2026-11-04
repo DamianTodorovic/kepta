@@ -1,3 +1,42 @@
+## [3.2.147]
+
+### Fixed
+
+- **The rest-collision pass now arms for a field that arrives already at rest.** 3.2.146
+  armed it inside `if (bewegt)` — the frame where motion stops. A field built outside the
+  render loop (a network backfill hands over finished positions) never enters that branch,
+  so it was never at rest *and* moving in the same frame, and the pass never ran. Measured
+  on the delivered 3.2.146 at 3 000 notes (`scripts/fps-laeufer.mjs`, 20:14:55 MEZ,
+  `docs/belege/tag-0411/fps-3000-mit-kopf-und-farbe-2014.log.txt`): the rest phase computed in
+  only **18 of 70 frames, median 0.1 ms** — a collision pass over 3 027 nodes costs several
+  milliseconds per frame — and the pair stood at the *same* image points as in 3.2.145
+  (648 discs, 1 pair, r 26 + 26, distance 41, cut 11). This is the same trap A7-09 documents
+  one layer up in the same file: the promise belongs to the *rest event*, not to motion.
+- **Both discs of that pair are concept hubs, painted as real simulation nodes.** The
+  instrument now records the colour each disc is painted with, and the pair came back
+  `#acacac` on both sides — `--type-neutral-hex`, the role the surface uses for scaffold
+  nodes (root, type, entity; `KnowledgeGraph.tsx:4255`). Hubs are drawn with `n.r`, the same
+  radius the solver reads, so they are nodes and not decoration; `pinned` is born `false`
+  (`graphLayout.ts:506`) and this run dragged nothing (`knotenZiehen`: 0 working frames).
+  The two remaining excuses from 3.2.146 — "it is a ring" and "both hubs are held still" —
+  are measured out, not argued away.
+
+### Instrument
+
+- `scripts/fps-laeufer.mjs` prints the surface's **whole** head line and refuses a run whose
+  concept leg never decided itself: a field reporting 0 concepts *without* the surface's own
+  reason ("the entity links did not arrive") now aborts with exit 1 instead of lending its
+  geometry to a document. This closes the open question from 3.2.146: the two runs that
+  looked like two worlds (`6 concepts of 3,027 · 2,379 links` against `0 concepts · 0 links`)
+  were one world and one truncated pattern — the door itself answers in 46 ms at the first
+  grab, with 500 concepts and 2 000 edges out of a base of 3 027 / 29 375
+  (`Mappe: scripts/graph-begriffskurve.mjs`, 20:09:12 MEZ). The run's quoted base counts now
+  come from the last settled reading, not the first grab.
+
+**What this version does not claim:** that the delivered picture is pair-free. That is the
+next measurement on the landed bytes, and `docs/graph-kosten.md` keeps saying "proven in the
+case, not yet in the picture" until the browser agrees.
+
 ## [3.2.146]
 
 ### Fixed
