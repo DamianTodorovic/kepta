@@ -248,7 +248,7 @@ const erwartet = [
   // Gegenprobe VOR dem Tausch am dann installierten 3.2.49 (49 111 921 B, mtime 00:41:46 MESZ):
   // alle vier Ketten muessen dort 0 sein.
   ["volltextScans", 1],
-  ["is painted in the first group", 1],
+  ["The first one's colour wins", 1],   // 3.2.144: derselbe Befund, jetzt in Alltagsworten
   ["preview-stands-none", 1],
   ["min-[820px]:grid", 1],
   // 3.2.51, EIN Koerper mit DREI Zellen (Leitung, 24.10. 02:3x MESZ): Punkt 4s #92 (Stream-Route
@@ -926,6 +926,13 @@ const verboten = [
   "did not send a model list",
   "listed no models yet",
   "Local endpoint - this address needs no key.",
+  // Punkt 7 (3.2.144), dieselbe Stelle in der Regal-Flaeche: der alte Wortlaut nannte
+  // die Farbe "painted in the first group's tone" und war die 15-Woerter-Zeile, die der
+  // Sprachzaehler als Fachwort ohne Grund meldete. Ersetzt durch "two groups? The first
+  // one's colour wins." Gezaehlt am gebauten Objekt 4.11. 15:41 MEZ: die alte Kette 0 mal,
+  // die neue 1 mal. Der Inhaltsgate hat den Bruch selbst gemeldet (FEHLT 0, INHALT_EXIT=1),
+  // bevor etwas getauscht wurde -- dafuer sitzt er in der Kette.
+  "is painted in the first group",
 ];
 // Die Liste darf nur ASCII-Zeichen enthalten. Grund, gemessen 21.10. 19:16 MESZ am
 // installierten Objekt: das Wort "Looking" plus echtes U+2026 steht dort 2 mal, diese
