@@ -351,8 +351,17 @@ async function main() {
 
   // 1) Eigener Bundle, eigener Server, eigener Datenordner, eigenes HOME.
   //    Das gemeinsame `dist/` ist Leitungseigentum — hier wird weder hinein-
-  //    gebaut noch daraus gestartet. Der Laeufer baut sich einmal selbst nach
-  //    /tmp/kepta-fps/bundle (vite + esbuild), danach läuft er aus dem Speicher.
+  //    gebaut noch daraus gestartet. Der Laeufer baut sich seinen Bundle selbst
+  //    nach /tmp/kepta-fps/bundle (vite + esbuild).
+  //
+  //    DER BAU FAEHRT JEDEN LAUF. Bis zum 4.11. 20:36 MEZ galt der Ordner als
+  //    Wiederverwendung (`if existsSync server.cjs`), und was auf der Platte lag, war
+  //    ein Bundle von 16:06 MEZ — aus der Fassung vor dem Nachschlag. Vier Laeufe
+  //    danach, zwei davon als "am ausgelieferten 3.2.146/3.2.147 gemessen" in die Doku
+  //    gegangen, haben dieselben alten Bytes gelesen. Eine Zahl, die nicht dieselben
+  //    Bytes misst wie das Stueck, das sie beschreibt, ist kein Beweis. Darum steht
+  //    jetzt vor jedem Lauf die Fassung auf dem Protokoll, und der Lauf bricht ab, wenn
+  //    die Antwort des Servers eine andre Zahl nennt als der Baum, aus dem gebaut wurde.
   const BUEND = process.env.FPS_BUNDLE || `${ARBEIT}/bundle`;
   const lauf = (befehl, args) => new Promise((res, rej) => {
     const p = spawn(befehl, args, { cwd: WURZEL, stdio: ["ignore", "pipe", "pipe"] });
@@ -360,13 +369,14 @@ async function main() {
     p.stderr.on("data", (b) => process.stderr.write(b));
     p.on("exit", (c) => (c === 0 ? res() : rej(new Error(`${befehl} exit ${c}`))));
   });
-  if (!fs.existsSync(path.join(BUEND, "server.cjs"))) {
-    console.error(`baue eigenen Bundle nach ${BUEND} — dist/ bleibt unberuehrt`);
-    await lauf("npx", ["vite", "build", "--outDir", BUEND, "--emptyOutDir"]);
-    await lauf("npx", ["esbuild", "server.ts", "--bundle", "--platform=node", "--format=cjs",
-      "--packages=external", "--external:vite", "--external:esbuild", "--external:lightningcss",
-      "--keep-names", `--outfile=${BUEND}/server.cjs`]);
-  }
+  const BAUM_VERSION = (fs.readFileSync(path.join(WURZEL, "src/core/version.ts"), "utf8").match(/APP_VERSION = "([\d.]+)"/) || [])[1] || "keine Zahl";
+  const bauAnfang = Date.now();
+  console.error(`baue eigenen Bundle nach ${BUEND} — dist/ bleibt unberuehrt (Baum-Fassung ${BAUM_VERSION})`);
+  await lauf("npx", ["vite", "build", "--outDir", BUEND, "--emptyOutDir"]);
+  await lauf("npx", ["esbuild", "server.ts", "--bundle", "--platform=node", "--format=cjs",
+    "--packages=external", "--external:vite", "--external:esbuild", "--external:lightningcss",
+    "--keep-names", `--outfile=${BUEND}/server.cjs`]);
+  console.error(`  Bundle gebaut in ${((Date.now() - bauAnfang) / 1000).toFixed(1)} s`);
   // `--packages=external` laesst express & Co. im Bundle stehen — Node sucht sie
   // aber von der Datei aus, nicht vom Arbeitsverzeichnis. Ohne diesen Zeiger
   // startet der eigene Server nicht („Cannot find module 'express'"), mit ihm
@@ -392,6 +402,14 @@ async function main() {
     return null;
   })();
   if (!gesund) { throw new Error(`Server startet nicht — ${ARBEIT}/server.log`); }
+  // Die Fassung auf dem Protokoll, bevor eine Zahl gezaehlt wird. Ein Lauf ueber
+  // alten Bytes nennt die neue Fassung sein Eigen — gemessen 4.11., wo vier Laeufe
+  // denselben Bundle von 16:06 MEZ benutzten und als 3.2.146/3.2.147 galten.
+  console.error(`fassung: ${gesund.version} (der Baum, aus dem gebaut wurde: ${BAUM_VERSION})`);
+  if (gesund.version !== BAUM_VERSION) {
+    console.error(`ABBRUCH: der Server meldet ${gesund.version}, der Baum sagt ${BAUM_VERSION} — dieses Urteil gehoert keiner der beiden Fassungen.`);
+    process.exit(2);
+  }
 
   // 2) Der Bestand über die echte Import-Route.
   const { dateien, kantenRohtext } = baueKorpus(KNOTEN);

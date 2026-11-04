@@ -436,7 +436,24 @@ export const RANG_FOLGE: readonly Leistenglied[] = [
   "farben",
 ];
 
-const NACHSCHLAG_BUDGET = 60;
+/**
+ * Wie viele Bilder das stehende Feld die Kollision noch rechnen darf.
+ *
+ * Die Zahl ist aus einer Messung, nicht aus einer Rundung. Am ausgelieferten 3.2.147 bei
+ * 3 000 Notizen (20:36:22 MEZ, `scripts/fps-laeufer.mjs`) war das Bild in der Ruhe:
+ * 704 Scheiben, ein Paar, Schnitt 3 Einheiten, Abstand 49 gegen 52 verlangte — und dieselbe
+ * Ruhe rechnete in 71 Rahmen nur 6 mal etwas, Median 0,1 ms. Ein Paar, das im gemalten Stand
+ * des Feldes steht, ist ein Paar in den Knoten selbst (die Flaeche malt einen Begriff mit
+ * `n.r`, Zeile 4324), und ein Nachschlag, der es sieht, muss es schieben. Also war in diesem
+ * Moment kein Nachschlag mehr uebrig: sein Budget war vor der letzten Ruhe verbrauchte. Die
+ * Kante des Feldes ist damit nicht die Mechanik, sondern die Zahl der Bilder.
+ *
+ * 180 Bilder sind drei Sekunden bei 60 Hz, und der Nachschlag hoert fruher auf, sobald er
+ * nichts mehr zu bewegen hat: ein gesundes Feld zahlt ein Bild. Die Groessenordnung der
+ * Arbeit ist am selben Lauf gelesen — die volle Physik kostet dort 3,6 ms median je Bild,
+ * und der Nachschlag tut weniger als die Physik.
+ */
+const NACHSCHLAG_BUDGET = 180;
 
 /**
  * Das Kleid der Mengen auf dieser Fläche (#101). Die Bilanz schrieb „345 of

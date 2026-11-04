@@ -1,3 +1,42 @@
+## [3.2.148]
+
+### Fixed
+
+- **The rest-collision pass gets three seconds, not one.** 3.2.147 armed the pass for a
+  field that arrives already at rest; this version only raises how long it may keep working.
+  The number is measured, not rounded: on the bytes this instrument rebuilt (see
+  Instrument below) the resting picture at 3 000 notes still held one intersecting pair —
+  two concept hubs, r 26 + 26, centre distance 49 against the required 52 — while the rest
+  phase computed in 6 of 71 frames at a 0.1 ms median. A pair that sits in the painted
+  field sits in the nodes themselves (hubs are drawn with `n.r`), and a pass that sees it
+  must push it; so no pass was left when the field came to rest again: its budget had run
+  out *before* the last settling. 180 frames are three seconds at 60 Hz, and the pass stops
+  as soon as it moves nothing, which a healthy field does after one frame.
+
+### Corrected — and this is the heavier entry of the two
+
+- **Four evening runs measured the wrong bytes, and two sentences in the 3.2.146 and
+  3.2.147 notes rest on them.** `scripts/fps-laeufer.mjs` treated `/tmp/kepta-fps/bundle`
+  as reuse: it built its own bundle only `if existsSync server.cjs`. The bundle on disk was
+  from 16:06 MEZ — the build before the rest-collision pass existed. Every run after that
+  (19:38, 19:54, 20:14, 20:36 MEZ) started *those* bytes and reported them as the delivered
+  3.2.146 and 3.2.147. What was actually shown is therefore this: the pair stood at
+  identical image points in 3.2.145, 3.2.146 and 3.2.147 because it was *one and the same
+  build*, not because a shipped pass failed to fire. `docs/graph-kosten.md` now says so in
+  its own words, and the claims that survive the mistake are the ones that never needed
+  those bytes: the arming hole is read from the source (the pass was armed only inside
+  `if (bewegt)`, one layer below the trap A7-09 documents in the same file), it is covered
+  by a case written before the fix (red 20:22:09 MEZ, green 20:23:24 MEZ), and the surface
+  does name a missing concept leg in a sentence the old pattern truncated.
+
+### Instrument
+
+- `scripts/fps-laeufer.mjs` builds its bundle on **every** run, prints
+  `fassung: <version> (der Baum, aus dem gebaut wurde: <version>)` before it counts
+  anything, and aborts with exit 2 when the running server names a different version than
+  the tree it was built from. The reuse it replaced was three lines and cost an evening of
+  evidence.
+
 ## [3.2.147]
 
 ### Fixed

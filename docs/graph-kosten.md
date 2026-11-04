@@ -301,9 +301,19 @@ Two probe faults surfaced in these runs and are fixed in `scripts/fps-laeufer.mj
    click was a no-op, and the run reported success. It now grips `data-testid="graph-fit"` and
    prints whether the button was there; the force-view and zoom clicks answer too.
 
-## Nach der Heilung, am ausgelieferten 3.2.146 gemessen (19:54 MEZ) — das Paar ist noch da
+## Nach der Heilung, "am ausgelieferten 3.2.146 gemessen" (19:54 MEZ) — die Ueberschrift ist ueberholt, der Lauf war einer von 3.2.145
 
-`node scripts/fps-laeufer.mjs --knoten 3000` gegen die getauschten Bytes
+**Korrektur 20:52 MEZ, und sie gilt fuer diesen ganzen Abschnitt:** der Sonde ihr Bundle war
+gepuffert (`if existsSync server.cjs`), und der gepufferte Bundle stammte von 16:06 MEZ — aus
+der Fassung vor dem Nachschlag. Der Lauf von 19:54 MEZ hat also **nicht** die getauschten
+3.2.146-Bytes gemessen, sondern dieselben 3.2.145-Bytes wie der Lauf von 19:38 MEZ. Was der
+Abschnitt ueber das Bild sagt, gilt damit fuer 3.2.145; was er ueber die Flaeche und ihre
+Sonde sagt (Kopfzeile, abgeschnittener Grund, Scheibengeometrie), bleibt gelten, weil es an
+denselben Bytes wahr war. Die Heilung ist in diesem Abschnitt **nicht** geprueft worden, und
+der Satz "der Nachschlag hat in diesem Lauf nie gebrannt" war eine Deutung von identischen
+Bildpunkten, die identische Bytes als Grund hatten.
+
+`node scripts/fps-laeufer.mjs --knoten 3000` gegen den Bund von 16:06 MEZ
 (`docs/belege/tag-0411/fps-3000-nach-146.log.txt`):
 
     Feld steht: ja, nach 1.8 s (693 Scheiben in der letzten Lesung)
@@ -356,25 +366,33 @@ Stueck.
 **Frage 2 ist ebenfalls gemessen.** Die Sonde zeichnet zu jeder Scheibe die Farbe mit auf, mit
 der sie gemalt wird. Das Paar kam `#acacac` und `#acacac` zurueck — `--type-neutral-hex`, die
 Rolle, in der die Flaeche ihre Geruest-Knoten malt (Wurzel, Typ, Entitaet;
-`KnowledgeGraph.tsx:4255`), Radius 26 = die Kappe von `knotenRadius`. Begriffe werden mit
-`n.r` gemalt (`:4276`), demselben Radius, den die Kollision liest; `pinned` wird auf `false`
+`KnowledgeGraph.tsx:4303`), Radius 26 = die Kappe von `knotenRadius`. Begriffe werden mit
+`n.r` gemalt (`:4324`), demselben Radius, den die Kollision liest; `pinned` wird auf `false`
 geboren (`graphLayout.ts:506`), und in diesem Lauf zog die Sonde keinen Knoten
 (`knotenZiehen`: 0 malende Rahmen). Also: echte Simulationsknoten, keine Ringe, keine
 Verankerung. Die Erklaerung "(1) verschiedene Welten" aus dem Abschnitt oben ist damit
 erledigt, und mit ihr die Hoffnung, dass ein verankertes Paar die Ursache sei.
 
-**Die Ursache ist der Nachschlag selbst, und sie steht in einer Zeile.** 3.2.146 ruestet ihn
-an `if (bewegt)` — der Rahmen, in dem die Bewegung endet. Ein Feld, das ausserhalb des Loops
-gebaut und fertige uebergeben wird (ein Netznachzug), betrat diesen Zweig nie und stand vom
-ersten Bild an still. Zeuge dafuer ist die Zeit derselben Ruhe:
+**Die Ursache ist eine Lesestelle im Quelltext, und ihr Zeuge ist der Quelltext, nicht der
+Browser.** 3.2.146 ruestet den Nachschlag an `if (bewegt)` — den Rahmen, in dem die Bewegung
+endet. Ein Feld, das ausserhalb des Loops gebaut und fertige uebergeben wird (ein Netznachzug
+setzt die Stellen), betrat diesen Zweig nie und stand vom ersten Bild an still. Das ist an den
+Zeilen zu lesen und braucht keinen Lauf: die einzige Rueststelle lag im Bewegungszweig. Es ist
+dieselbe Falle, vor der A7-09 im gleichen File eine Ebene hoeher warnt — die Zusage haengt am
+Ruhe-Ereignis, nicht an der Bewegung — und die Pruefstelle `nachschlagFaellig` ist der Fall
+dazu, geschrieben, bevor die Zeile umzog (rot 20:22:09 MEZ, gruen 20:23:24 MEZ).
+
+Was die vier Abendlaeufe ueber das **Bild** behaupten konnten, ist null. Der Bundle der Sonde
+war gepuffert und stammte von 16:06 MEZ; 19:38, 19:54, 20:14 und 20:36 MEZ haben
+ausschliesslich dieselben 3.2.145-Bytes gemessen. Die Ruhe-Zeit
 
     ruheNachFit  rame 70 (malende 18)  Arbeit/Bild median 0.1 ms  p95 0.1 ms  max 10.1 ms
 
-Eine Kollision ueber 3 027 Knoten kostet mehrere Millisekunden je Rahmen. In der Ruhe wurden
-in 70 Rahmen 18 malende gezaehlt, mit Median 0,1 ms — der Nachschlag hat in diesem Lauf nie
-gebrannt, und das Paar stand auf denselben Bildpunkten wie in 3.2.145. Das ist dieselbe Falle,
-vor der A7-09 im gleichen File eine Ebene hoeher warnt: die Zusage haengt am Ruhe-Ereignis,
-nicht an der Bewegung.
+ist also die Zeit eines Feldes **ohne** Nachschlag, und das Paar auf denselben Bildpunkten in
+zwei "verschiedenen" Fassungen ist kein Beweis dafuer, dass ein Nachschlag nicht brannte,
+sondern dafuer, dass dasselbe Programm zweimal lief. Die Sonde baut jetzt jeden Lauf neu und
+bricht mit Exit 2 ab, wenn der Server eine andre Fassung nennt als der Baum, aus dem gebaut
+wurde.
 
 **Was hier bis zur naechsten Messung steht, ist ein Fall, kein Bild.** Die Pruefstelle
 `nachschlagFaellig` (rote Datei um 20:22:09 MEZ, gruen um 20:23:24 MEZ, 22 von 22 in
