@@ -481,13 +481,14 @@ select:focus-visible {
      zum Rendern zwangen); 5.11. nennt der Baustein die Stufe selbst, und die
      Kante-Regeln sind fort -- eine Regel, die niemand ruft, verbietet §10.
      Kein Baustein schreibt mehr eine Zahl: tests/leitern-in-den-bausteinen.test.ts.
-     Gerufen werden fs-1 bis fs-5; die drei Stufen darueber (20/28/40) bleiben in den
-     Klassen .num-hero und .index-cell, weil dort niemand eine Utility ruft (§10). */
+     Gerufen werden fs-1 bis fs-5 und fs-7; die Stufen 20 und 40 bleiben in den Klassen
+     .num-hero und .index-cell, weil dort niemand eine Utility ruft (§10). */
 @utility fs-1 { font-size: var(--fs-1); }
 @utility fs-2 { font-size: var(--fs-2); }
 @utility fs-3 { font-size: var(--fs-3); }
 @utility fs-4 { font-size: var(--fs-4); }
 @utility fs-5 { font-size: var(--fs-5); }
+@utility fs-7 { font-size: var(--fs-7); }   /* 28 px: die Zahl, die vorher text-3xl hiess */
 
 /* Dominante Zahl des Registers — Ziffern wie in ein Protokoll gesetzt */
 .num-hero {
