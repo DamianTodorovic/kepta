@@ -1,3 +1,27 @@
+## [3.2.170]
+
+### Added
+
+- **The graph's More menu is now measured, and it answers for every control.** No cycle of
+  `scripts/pruefe-einstellungen-im-fenster.mjs` had ever opened that menu: it carries thirteen
+  controls at 1440 px and seventeen at 390 px, and each one owes the reader a line of text (the
+  house moved these explanations out of `title` attributes in 3.2.142). Measured 6.11.2026 00:07:23 MEZ in
+  a real window: 13 rows, one of them silent -- `datum`, the as-of date field, fell through the
+  explanation switch to `default: return ""` while its two time-axis neighbours explained
+  themselves. It now reads "The day the picture is read from, so later notes stay out." (12
+  words, inside the census cap). The new cycle `erklaerungen` checks the button's own number
+  against the rows it opens, names any row without an explanation, and reports clipped text --
+  at both widths.
+
+### Fixed
+
+- **The probe that found it was itself wrong first, and is documented as such.** A global
+  `.hud-label` read counted the rail's short words ("Now", "102 %", "Fit", "Export") and one
+  icon-only span with no text, so it reported 31 labels with one "empty" (6.11.2026 00:04:37 MEZ) and, at
+  the tag-filter row, read the chip list instead of the sentence -- "All tagssaat". The row is
+  now addressed by its own `data-testid` and the explanation by `:scope > .hud-label`, which is
+  the markup the component actually writes (`KnowledgeGraph.tsx:6305`).
+
 ## [3.2.169]
 
 ### Changed

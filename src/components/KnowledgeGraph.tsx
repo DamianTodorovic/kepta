@@ -6182,6 +6182,10 @@ export function KnowledgeGraph({ memories: memoriesAusFenster, onSelectMemory, o
       case "richtung": return "Wide end claims; narrow end is claimed. Under 50 % the legend says why.";
       case "schema": return "What the store holds: kinds, concepts, claims.";
       case "krafte": return "How hard the field gathers, repels and spaces itself.";
+      // P81: `datum` fehlte in dieser Weiche und fiel auf `default: return ""` -- das
+      // Menue-Glied zeigte sein Feld, aber keine Auskunft. Gemessen 6.11.2026 00:07:23 MEZ im
+      // Fensterlauf: 13 Glieder, eines ohne Erklaerung ("datum").
+      case "datum": return "The day the picture is read from, so later notes stay out.";
       case "bewegung": return `Whether the picture moves by itself. Now: ${bewegungAn ? "on — the field settles after each change" : "off — the picture holds still, and a pan still paints"}.`;
       case "tagfilter": return tagFilter
         ? `Only notes tagged “${tagFilter}”. The tag list is the same census the shelf uses.`

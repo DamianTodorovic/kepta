@@ -272,7 +272,7 @@ async function main() {
   const SAAT = Number(ARG("saat", 30));
   if (NUR === "" || NUR === "suche" || NUR === "treffer" || NUR === "bild" || NUR === "radius"
     || NUR === "radien" || NUR === "auswahl" || NUR === "gruppenzeit" || NUR === "tastmass"
-    || NUR === "saetze") {
+    || NUR === "saetze" || NUR === "erklaerungen") {
     const dateien = Array.from({ length: SAAT }, (_, i) => {
       const n = String(i + 1).padStart(4, "0");
       // Zwei Daten im Kuvert, nicht eine: die Flaeche haelt ihr Datumsfeld nur, wo die Saat
@@ -842,6 +842,73 @@ async function main() {
     // zehn text-lg-Sitze und der eine text-3xl-Sitz sind jetzt fs-5 und fs-7 -- 16 und 28 px.
     urteil("keine Stufe ausserhalb der Leiter bleibt im Bild", fremd.length === 0, true);
     console.log(`  Bild: ${await bild("schriftstufen-flaechen.png")}`);
+  }
+
+  // --- Zyklus "erklaerungen": das More-Menue des Graphen ist Text, kein Tooltip (P80) --------
+  //     A8-08 zaehlte: 21 von 22 Erklaerungen der Leiste steckten in einem `title`, also hinter
+  //     einer Sekunde Schweben. Seit 3.2.142 sind es Menue-Zeilen (`KnowledgeGraph.tsx:6307`).
+  //     Bis 3.2.169 oeffnete kein Zyklus dieses Menue -- P80 anderte genau dort einen Satz, und
+  //     ohne diesen Blick waere die Heilung ein Byte-Beweis geblieben, kein Bild.
+  if (NUR === "" || NUR === "erklaerungen") {
+    // Der Sprung auf die Graph-Flaeche ist eine eigne Hilfe (`zurGraphFlaeche`, Zeile 304): sie
+    // wartet auf `data-active="Graph"`. Mein erster Griff -- ein nackter Knopf auf "Graph" --
+    // traf den ersten Knopf, dessen Text /graph/i enthaelt, und sass danach auf der
+    // Knowledge-Flaeche: gemessen 5.11.2026 23:59:37 MEZ, 35 Knopfnamen ohne Leiste, "More" null.
+    // Die Saat laeuft vor diesem Zyklus durch die echte Import-Tuer, aber die Seite war
+    // aelter als der Bestand: gemessen 6.11.2026 00:02:00 MEZ meldete `/api/health` 30 Notizen, das
+    // Bild "Graph 0 notes", und der Zyklus klagte "kein More-Knopf". Also erst
+    // Neuladen, dann Sprung, dann die Zahl -- in dieser Reihenfolge, damit die Leiste Daten hat.
+    await cdp.send("Page.reload", { ignoreCache: true });
+    await warteBis(async () => ((await evaliere(cdp, `document.querySelectorAll('button').length`)) > 0 ? true : null), { maxMs: 90000 });
+    await zurGraphFlaeche();
+    // Der Kopf der Flaeche nennt den Bestand -- und ein leerer Blatt ist hier kein Beweis ueber
+    // die Leiste. Gemessen 6.11.2026 00:01 MEZ: das Bild zeigte "Graph 0 notes", waehrend der Zyklus
+    // "kein More-Knopf" klagte. Also wird die Fuellung erst geprueft, dann die Leiste.
+    const grundZahl = await evaliere(cdp, `(()=>{const m=(document.body.innerText||'').match(/([\\d,]+)\\s+notes/);return m?m[1]:'keine Zahl'})()`);
+    urteil(`die Kapsel traegt die Saat (${SAAT} Notizen erwartet)`,
+      Number(String(grundZahl).replace(/,/g, "")) >= SAAT, true);
+    const offen = await knopf(cdp, "More");
+    urteil("das More-Menue des Graphen oeffnet sich", offen !== null, true);
+    if (offen === null) {
+      const namen = await evaliere(cdp, `(()=>[...document.querySelectorAll('button')].map(b=>(b.textContent||'').replace(/\\s+/g,' ').trim().slice(0,28)).filter(Boolean))()`);
+      console.log(`  Knopfnamen in dieser Lage (${namen.length}): ${namen.slice(0, 24).join(" | ")}`);
+    } else {
+      console.log(`  geoeffnet mit: ${offen}`);
+    }
+    await schlafe(800);
+    // Das Menue traegt seine Glieder als `data-testid="graph-mehr-<glied>"` mit
+    // `data-mehr-reihe` (KnowledgeGraph.tsx:6305). Ein globaler `.hud-label`-Schnitt zaehlt
+    // auch die Leiste mit ("Now", "102 %", "Fit", "Export") und eine icon-only Stelle ohne
+    // Text -- gemessen 6.11.2026 00:04:37 MEZ: 31 Stellen, davon 13 Saetze, eine leer. Also wird pro
+    // Menue-Reihe gelesen: jedes Glied schuldet dem Leser eine Erklaerung als Text. Der Griff
+    // ist das direkte Kind (`:scope > .hud-label`): gemessen 6.11.2026 00:06:38 MEZ las ein globales
+    // querySelector bei `tagfilter` den Chip-Vorrat und meldete "All tagssaat" statt der
+    // Erklaerung, und die Kopfzeile `panel` ("13 out of the row") zahlte als 14. Glied.
+    const versprochen = Number((String(offen || '').match(/\((\d+)\)/) || [])[1] || 0);
+    const reihen = await evaliere(cdp, `(()=>{const out=[];
+      for (const r of document.querySelectorAll('[data-testid^="graph-mehr-"]')) {
+        const e = r.querySelector(':scope > .hud-label');
+        out.push({ reihe: r.getAttribute('data-mehr-reihe') || (r.getAttribute('data-testid')||'').replace('graph-mehr-',''),
+          t: e ? (e.textContent||'').replace(/\\s+/g,' ').trim() : '',
+          sichtbar: r.getClientRects().length > 0,
+          breit: e ? e.scrollWidth > e.clientWidth + 1 : false,
+          hoch: e ? e.scrollHeight > e.clientHeight + 1 : false });
+      }
+      return out;})()`);
+    const glieder = reihen.filter((z) => z.sichtbar && z.reihe !== "draussen" && z.reihe !== "panel");
+    const ohne = glieder.filter((z) => z.t.length === 0);
+    console.log(`  Menue-Glieder sichtbar: ${glieder.length}, Knopf verspricht: ${versprochen}`);
+    for (const z of glieder.slice(0, 5)) console.log(`      ${z.reihe}: ${z.t.slice(0, 88)}`);
+    urteil("die Zahl des More-Knopfs ist die Zahl der Glieder im Menue", glieder.length === versprochen, true);
+    if (ohne.length) console.log(`  Glieder ohne Erklaerung: ${ohne.map((z) => z.reihe).join(", ")}`);
+    urteil("**jedes Menue-Glied nennt eine Erklaerung als Text**", ohne.length === 0, true);
+    urteil("die neue Richtungserklaerung steht im Menue",
+      glieder.some((z) => z.t.startsWith("Wide end claims; narrow end is claimed")), true);
+    const beschnitten = glieder.filter((z) => z.breit || z.hoch);
+    console.log(`  beschnittene Erklaerungen: ${beschnitten.length}`);
+    for (const z of beschnitten.slice(0, 4)) console.log(`      ${z.reihe}: ${z.t.slice(0, 64)}`);
+    urteil("keine Erklaerung wird beschnitten", beschnitten.length === 0, true);
+    console.log(`  Bild: ${await bild("erklaerungen-menue.png")}`);
   }
 
   // --- Zyklus M: die Zahl zu der Wahl, die er wirklich trifft (Punkt 5, vierter Schlag) ------

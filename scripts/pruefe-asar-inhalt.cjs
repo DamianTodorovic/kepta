@@ -855,6 +855,11 @@ const erwartet = [
   // src/lib/tuergrund.ts. Heilung ist eine Klasse, nicht ein Fund: beide Stellen jetzt
   // gleich, 9 Woerter, eigne Marke am Gebauten (1 mal im Server-Bund).
   ["the server log keeps the reason", 1],
+  // P81 (3.2.170): das More-Menue des Graphen verspricht eine Zahl und haelt Glieder --
+  // gemessen 6.11.2026 00:07:23 MEZ im Fenster waren 13 Glieder sichtbar und eines ohne Auskunft
+  // ("datum", die Weiche fiel auf `default: return ""`). Die Erklaerung ist jetzt Text,
+  // 12 Woerter, und der neue Zyklus `erklaerungen` meldet jedes stumme Glied beim Namen.
+  ["The day the picture is read from", 1],
   // Punkt 4, 3.11. abend (3.2.130, Aufgabe #47): ein Import-Fehler druckte den
   // Ausnahmewortlaut auf den Knopf, im Testlauf samt Pfad. Nach aussen geht jetzt ein
   // fester Satz. Gegen das installierte 3.2.129 gezaehlt (app.asar 49 184 866 B,
