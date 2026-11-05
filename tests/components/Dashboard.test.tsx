@@ -1127,3 +1127,31 @@ describe("Dashboard: der Index-Streifen kleidet jede Zahl gleich", () => {
     expect(textDerZellen.match(/150/g) || [], "die Heldenzahl und das Fach zaehlen dieselbe Menge zweimal").toHaveLength(1);
   });
 });
+
+// P63 (Leitung 5.11. 10:56 MEZ, Punkt 4 / #31, dritte Census-Runde): der Clipper las den
+// Koerper, BEVOR er die Antwort fragte. Ein HTML-Fehlerblatt eines Proxy (502) warf beim
+// JSON-Lesen, der Fang nannte nur den festen Satz, und die Zahl der eignen Tuer fehlte.
+// Erwartung VOR dem Flicken: rot, weil "HTTP 502" nirgends steht.
+describe("Dashboard: eine unlesbare Antwort der Clipper-Tuer nennt ihre Zahl", () => {
+  it("zeigt 502, statt die Antwort als grundlos enden zu lassen", async () => {
+    const user = userEvent.setup();
+    vi.stubGlobal("fetch", vi.fn(async (url: string, init?: RequestInit) => {
+      if (url.includes("/api/license")) return new Response(JSON.stringify({ licensed: true }), { status: 200 });
+      if (url.includes("/api/clip")) return new Response("<html><body>502 Bad Gateway</body></html>", { status: 502 });
+      if (url.includes("/api/memories") && (init?.method ?? "GET") === "GET") return new Response(JSON.stringify(notizen), { status: 200 });
+      if (url.includes("/api/inbox/status")) return new Response(JSON.stringify({ files: [], watching: true }), { status: 200 });
+      return new Response("{}", { status: 200 });
+    }));
+    const { container } = await zeige([]);
+    await user.type(screen.getByPlaceholderText(/Paste a URL/i), "https://kaputt.example");
+    await user.keyboard("{Enter}");
+    const grund = await waitFor(() => {
+      const t = (container.textContent || "").replace(/\s+/g, " ");
+      if (!/not saved|did not save|Import/i.test(t)) throw new Error(`keine Absage auf dem Schirm: "${t.slice(0, 220)}"`);
+      return t;
+    });
+    expect(grund, "502 ist eine Antwort der eignen Tuer — sie gehoert auf den Schirm").toMatch(/HTTP 502/);
+    expect(grund, "der feste Satz bleibt stehen").toMatch(/That link was not saved as a note\./);
+    expect(grund, "und der V8-Wortlaut bleibt im Protokoll").not.toMatch(/Unexpected token|is not valid JSON/i);
+  });
+});

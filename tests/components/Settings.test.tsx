@@ -677,3 +677,27 @@ describe("Settings: #26 Richtung B — Meldung an der geaenderten Zeile", () => 
     expect([...container.querySelectorAll("button[form]")]).toHaveLength(0);
   });
 });
+
+// P63 (Leitung 5.11. 10:56 MEZ, Punkt 4 / #31): derselbe Fehler in der Modell-Liste.
+describe("Settings: eine unlesbare Antwort der Modell-Tuer nennt ihre Zahl", () => {
+  it("zeigt 429, statt die Antwort als grundlose Leere enden zu lassen", async () => {
+    vi.stubGlobal("fetch", vi.fn(async (url: string) => {
+      if (url.includes("/api/models")) return new Response("<html><body>429 Too Many Requests</body></html>", { status: 429 });
+      if (url.includes("/api/health")) return new Response(JSON.stringify({ ok: true, count: 7, uptime: 12 }), { status: 200 });
+      return new Response("{}", { status: 200 });
+    }));
+    const user = userEvent.setup();
+    const { container } = render(<Settings />);
+    await waitFor(() => expect(container.textContent).toMatch(/Artificial intelligence/));
+    const knopf = container.querySelector('button[title="Load available models from the provider"]') as HTMLButtonElement;
+    expect(knopf, "der Knopf, der die Modell-Liste holt, fuehrt keinen Titel mehr").toBeTruthy();
+    await user.click(knopf);
+    const grund = await waitFor(() => {
+      const t = (container.textContent || "").replace(/\s+/g, " ");
+      if (!/model list did not arrive/i.test(t)) throw new Error(`keine Absage: "${t.slice(0, 220)}"`);
+      return t;
+    });
+    expect(grund, "429 ist eine Antwort der eignen Tuer").toMatch(/HTTP 429/);
+    expect(grund, "und der JSON-Wortlaut bleibt im Protokoll").not.toMatch(/Unexpected token|not valid JSON/i);
+  });
+});

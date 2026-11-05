@@ -597,3 +597,28 @@ describe("P61: ein abgelehnter Audit-Export nennt die Zahl der eignen Tuer", () 
     expect(grund, "der Browser-Wortlaut bleibt beim Betreiber").not.toMatch(/Failed to fetch/i);
   });
 });
+
+// P63 (Leitung 5.11. 10:56 MEZ, Punkt 4 / #31): derselbe Fehler am Schild-Schalter.
+describe("P63: ein Schild-Schalter nennt die Zahl einer unlesbaren Antwort", () => {
+  it("zeigt 500, statt die Antwort grundlos verstreichen zu lassen", async () => {
+    const user = userEvent.setup();
+    // Das Lesen antwortet gesund (sonst gibt es keine Schalter zu treffen); erst der PUT
+    // bringt das Fehlerblatt. Der Fall trifft also die Schaltung, nicht die Umgebung.
+    stubFetch({
+      "/api/shield": (url, init) => ((init?.method ?? "GET").toUpperCase() === "PUT"
+        ? { status: 500, body: "<html><body>500</body></html>" as unknown as object }
+        : { body: { chat: true, apps: true } }),
+      "/api/clients": { body: { clients: [] } },
+    });
+    mitToast(<PrivacyShield />);
+    const schalter = await screen.findAllByRole("switch");
+    await user.click(schalter[0]);
+    const grund = await waitFor(() => {
+      const t = (document.body.textContent || "").replace(/\s+/g, " ");
+      if (!/switch did not stay/i.test(t)) throw new Error(`keine Absage: "${t.slice(0, 220)}"`);
+      return t;
+    });
+    expect(grund, "500 ist eine Antwort — ihre Zahl gehoert auf den Schirm").toMatch(/HTTP 500/);
+    expect(grund, "und der Schalter ist zurueck, wo er war").toMatch(/back where it was/i);
+  });
+});

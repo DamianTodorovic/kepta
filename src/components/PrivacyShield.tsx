@@ -61,9 +61,13 @@ export function PrivacyShield() {
     setStand((s) => (s ? { ...s, [feld]: wert } : s));
     try {
       const r = await fetch('/api/shield', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ [feld]: wert }) });
-      const d = await r.json();
-      if (!r.ok) throw new ApiFehler(tuerSatz(d.error, `HTTP ${r.status}`), r.status);
-      setStand((s) => (s ? { ...s, chat: d.chat, apps: d.apps } : s));
+      // P63: Status zuerst, Koerper verzeihend gelesen.
+      const d = (await r.json().catch(() => null)) as Partial<Stand> & { error?: unknown } | null;
+      if (!r.ok) throw new ApiFehler(tuerSatz(d?.error, `HTTP ${r.status}`), r.status);
+      if (!d) throw new ApiFehler("The tally arrived without readable text.", r.status);
+      // Ein Feld, das die Tuer nicht nennt, schreibt die Flaeche nicht auf undefined --
+      // sonst sieht ein Schalter aus wie ausgeschaltet, ohne dass ihn jemand ausschaltete.
+      setStand((s) => (s ? { ...s, chat: d.chat ?? s.chat, apps: d.apps ?? s.apps } : s));
     } catch (e) {
       setStand((s) => (s ? { ...s, [feld]: !wert } : s));
       setFehler(absage("The switch did not stay — it is back where it was.", e));

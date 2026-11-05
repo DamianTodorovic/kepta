@@ -222,3 +222,25 @@ describe("PraxisSync: Sprache", () => {
     expect(text).toMatch(/Encrypted exchange between your own devices/);
   });
 });
+
+// P63 (Leitung 5.11. 10:56 MEZ, Punkt 4 / #31): derselbe Fehler im Bundle-Weg.
+describe("PraxisSync: eine unlesbare Antwort der Bundle-Tuer nennt ihre Zahl", () => {
+  it("zeigt 502, statt die Antwort grundlos enden zu lassen", async () => {
+    const user = userEvent.setup();
+    aufrufe = [];
+    vi.stubGlobal("fetch", vi.fn(async (url: string) => {
+      if (String(url).includes("/api/sync/journal")) return new Response(JSON.stringify(JOURNAL), { status: 200 });
+      return new Response("<html><body>502 Bad Gateway</body></html>", { status: 502 });
+    }));
+    render(<PraxisSync />);
+    await user.type(screen.getByLabelText(/Passphrase/i), GUT);
+    await user.click(screen.getByRole("button", { name: /Create bundle/i }));
+    const grund = await waitFor(() => {
+      const t = (document.body.textContent || "").replace(/\s+/g, " ");
+      if (!/bundle was not downloaded/i.test(t)) throw new Error(`keine Absage: "${t.slice(0, 220)}"`);
+      return t;
+    });
+    expect(grund, "502 ist eine Antwort der eignen Tuer").toMatch(/HTTP 502/);
+    expect(grund, "und ihr JSON-Wortlaut bleibt im Protokoll").not.toMatch(/Unexpected token|not valid JSON/i);
+  });
+});

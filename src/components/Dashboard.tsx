@@ -1261,8 +1261,12 @@ export function Dashboard() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ url }),
       });
-      const data = await res.json();
-      if (!res.ok) throw new ApiFehler(tuerSatz(data.error, "The page could not be read."), res.status);
+      // P63 (dritte Census-Runde): die Antwort wird zuerst gefragt, der Koerper verzeihend
+      // gelesen. Vorher warf ein unlesbarer Koerper (ein HTML-Fehlerblatt eines Proxy) schon
+      // beim JSON-Lesen, und die eigne Zahl der Tuer ging im Fang unter.
+      const data = (await res.json().catch(() => null)) as { title?: string; content?: string; url?: string; error?: unknown } | null;
+      if (!res.ok) throw new ApiFehler(tuerSatz(data?.error, `HTTP ${res.status}`), res.status);
+      if (!data) throw new ApiFehler("The page arrived without readable text.", res.status);
       const title: string = data.title || new URL(url).hostname;
       const content: string = data.content || "";
       const tags = ["clip", new URL(url).hostname.replace(/^www\./, "")];

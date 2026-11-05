@@ -504,9 +504,12 @@ export function Settings() {
           apiKey: settings.apiKey === 'local' ? '' : settings.apiKey,
         }),
       });
-      const data = await res.json();
+      // P63: die Antwort wird zuerst gefragt. Ein unlesbarer Koerper warf bisher beim
+      // JSON-Lesen, und die eigne Zahl der Tuer fehlte auf der Flaeche.
+      const data = (await res.json().catch(() => null)) as { models?: string[]; grund?: unknown; error?: unknown } | null;
       // Die Zahl allein ist keine Auskunft: erst der Grund, dann der Text der Tuer.
-      if (!res.ok) throw new ApiFehler(grundText(data?.grund) || tuerSatz(data.error, 'Could not load the models'), res.status);
+      if (!res.ok) throw new ApiFehler(grundText(data?.grund) || tuerSatz(data?.error, `HTTP ${res.status}`), res.status);
+      if (!data) throw new ApiFehler('The model list arrived without readable text.', res.status);
       setModels(data.models || []);
       if (!data.models?.length) setModelError('No models found. Is the service running?');
     } catch (err: unknown) {

@@ -77,3 +77,21 @@ describe("Eine Teilantwort wirft das Dossier nicht raus", () => {
     expect(container.textContent).not.toMatch(/Something went wrong|Cannot read/);
   });
 });
+
+// P63 (Leitung 5.11. 10:56 MEZ, Punkt 4 / #31): dieselbe Reihenfolge im Dossier-Weg.
+describe("DossierView: eine unlesbare Antwort nennt ihre Zahl", () => {
+  it("zeigt 502, statt die Antwort grundlos verstreichen zu lassen", async () => {
+    vi.stubGlobal("fetch", vi.fn(async (url: string) => {
+      if (String(url).includes("/api/dossier/suggestions")) return new Response(JSON.stringify({ tags: [], topics: [] }), { status: 200 });
+      return new Response("<html><body>502 Bad Gateway</body></html>", { status: 502 });
+    }));
+    const { container } = zeige({ onOpenMemory: () => {}, dossierThema: { text: "Elena Weiss", nr: 1 } });
+    const grund = await waitFor(() => {
+      const t = (container.textContent || "").replace(/\s+/g, " ");
+      if (!/dossier did not arrive/i.test(t)) throw new Error(`keine Absage: "${t.slice(0, 220)}"`);
+      return t;
+    });
+    expect(grund, "502 ist eine Antwort — die Zahl gehoert auf den Schirm").toMatch(/HTTP 502/);
+    expect(grund, "kein JSON-Wortlaut der Laufzeit").not.toMatch(/Unexpected token|not valid JSON/i);
+  });
+});

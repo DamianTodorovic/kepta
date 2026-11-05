@@ -66,8 +66,11 @@ export default function PraxisSync() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ passphrase, scope }),
       });
-      const d = await r.json();
-      if (!r.ok) throw new ApiFehler(tuerSatz(d?.error, 'The bundle did not arrive from your own machine.'), r.status);
+      // P63: dieselbe Reihenfolge -- die Zahl der eignen Tuer bleibt sichtbar, wenn ihr Koerper
+      // nicht als JSON ankommt.
+      const d = (await r.json().catch(() => null)) as { bundle: { count: number; scope: string }; error?: unknown } | null;
+      if (!r.ok) throw new ApiFehler(tuerSatz(d?.error, `HTTP ${r.status}`), r.status);
+      if (!d) throw new ApiFehler('The bundle arrived without readable text.', r.status);
 
       const blob = new Blob([JSON.stringify(d.bundle, null, 2)], { type: 'application/json' });
       const url = URL.createObjectURL(blob);

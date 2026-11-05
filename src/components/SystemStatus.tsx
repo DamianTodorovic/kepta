@@ -171,8 +171,12 @@ export function SystemStatus() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ providerId: s.providerId, protocol: prov.protocol, baseUrl: s.baseUrl || prov.baseUrl, apiKey: s.apiKey, model: s.model, messages: [{ role: 'user', content: 'Reply only: OK' }] }),
       });
-      const data = await res.json();
-      setTestResult(res.ok ? { ok: true, msg: `Model answers: “${String(data.text ?? '').trim().slice(0, 40)}”` } : { ok: false, msg: tuerSatz(data.error, `HTTP ${res.status}`) });
+      // P62: der Status wird zuerst gefragt, der Koerper verzeihend gelesen. Vorher warf das
+      // JSON-Lesen auch bei einer geantworteten, aber unlesbaren Antwort (ein HTML-Fehlerblatt
+      // eines Proxy, ein abgeschnittener Strom), und der Fang meldete Stille, wo die Tuer
+      // geantwortet hatte. Die Stille bleibt ein eigner Zweig -- sie hat ihren eignen Satz.
+      const data = (await res.json().catch(() => null)) as { text?: unknown; error?: unknown } | null;
+      setTestResult(res.ok ? { ok: true, msg: `Model answers: “${String(data?.text ?? '').trim().slice(0, 40)}”` } : { ok: false, msg: tuerSatz(data?.error, `HTTP ${res.status}`) });
     } catch (e) {
       setTestResult({ ok: false, msg: absage("No answer from that service. The reason is in the developer console.", e) });
     } finally {

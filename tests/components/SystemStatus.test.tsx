@@ -336,3 +336,49 @@ describe("SystemStatus: eine kaputte Antwort darf nichts umwerfen", () => {
     expect(h.mcp.tools).toBe(0);
   });
 });
+
+// P62 (Leitung 5.11. 10:52 MEZ, Punkt 4 / #31, der dritte Census): der Test-Knopf las den
+// Koerper, BEVOR er die Antwort fragte. Eine Tuer, die 500 mit einem unlesbaren Koerper
+// antwortet -- ein HTML-Fehlerblatt eines Proxy, ein abgeschnittener Strom -- warf beim
+// JSON-Lesen, und der Fang behauptete "No answer from that service". Die Tuer hatte
+// geantwortet. Faelle zuerst: der erste ist vor dem Flicken rot, die Kontrolle ist in beiden
+// Staenden gruen und haelt den Satz der Tuer, wo die Tuer einen schreibt.
+describe("P62: eine geantwortete, aber unlesbare Antwort ist keine Stille", () => {
+  it("nennt die 500 eines unlesbaren Koerpers, statt Abwesenheit zu behaupten", async () => {
+    const user = userEvent.setup();
+    vi.stubGlobal("fetch", vi.fn(async (url: string) => {
+      if (url.includes("/api/health")) return new Response(JSON.stringify(GESUND), { status: 200 });
+      if (url.includes("/api/chat")) return new Response("<html><body>502 Bad Gateway</body></html>", { status: 500 });
+      return new Response("{}", { status: 200 });
+    }));
+    render(<SystemStatus />);
+    await user.click(screen.getByRole("button", { name: /Send a test request/i }));
+    const grund = await waitFor(() => {
+      const t = document.body.textContent || "";
+      if (!/HTTP 500|No answer from that service/.test(t)) throw new Error(`keine Auskunft auf dem Schirm: "${t.slice(0, 240)}"`);
+      return t.replace(/\s+/g, " ");
+    });
+    expect(grund, "500 ist eine Antwort — ihre Zahl gehoert auf den Schirm").toMatch(/HTTP 500/);
+    expect(grund, "und die Zeile darf nicht Stille behaupten, wo die Tuer antwortete").not.toMatch(/No answer from that service/i);
+    expect(grund, "der Grund steht auf der Flaeche, nicht erst in der Konsole").not.toMatch(/reason is in the developer console/i);
+  });
+
+  // KONTROLLE, in beiden Staenden gruen: schreibt die Tuer einen eigner Satz, bleibt er stehen.
+  it("KONTROLLE: der Satz der Tuer ueberlebt die neue Reihenfolge", async () => {
+    const user = userEvent.setup();
+    vi.stubGlobal("fetch", vi.fn(async (url: string) => {
+      if (url.includes("/api/health")) return new Response(JSON.stringify(GESUND), { status: 200 });
+      if (url.includes("/api/chat")) return new Response(JSON.stringify({ error: "storage unreadable" }), { status: 500 });
+      return new Response("{}", { status: 200 });
+    }));
+    render(<SystemStatus />);
+    await user.click(screen.getByRole("button", { name: /Send a test request/i }));
+    const grund = await waitFor(() => {
+      const t = document.body.textContent || "";
+      if (!/storage unreadable/.test(t)) throw new Error(`der Satz der Tuer fehlt: "${t.slice(0, 240)}"`);
+      return t.replace(/\s+/g, " ");
+    });
+    expect(grund).toMatch(/storage unreadable/);
+    expect(grund).not.toMatch(/No answer from that service/i);
+  });
+});

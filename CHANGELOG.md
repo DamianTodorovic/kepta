@@ -1,4 +1,30 @@
-## [3.2.153]
+## [3.2.154]
+
+### Fixed
+
+- **An answered door with an unreadable body is not a reasonless failure.** The third census over
+  the body reads (`await x.json()` before `if (!x.ok)`) found six places that asked the body
+  first: `SystemStatus.tsx:177` (the connection test), `Dashboard.tsx:1264` (clip a page),
+  `DossierView.tsx:132`, `PraxisSync.tsx:69` (create a bundle), `PrivacyShield.tsx:64` (a
+  switch), `Settings.tsx:507` (load the model list). A proxy's HTML error page or a truncated
+  stream threw while parsing JSON, *before* the status was consulted, so the surface kept its
+  fixed sentence and the door's own number was lost — "answered 502" and "nobody answered"
+  looked the same. Each site now asks the status first, reads the body forgivingly, and says in
+  plain words when a 200 arrives without readable text.
+- **A switch no longer writes `undefined` into a boolean.** `PrivacyShield.tsx:68` copied
+  `d.chat`/`d.apps` straight from the reply; a reply missing one of those fields made the
+  switch look switched off, which nobody had switched. A field the door does not name now keeps
+  the value on the screen, and the state stays honest.
+
+### Tests
+
+Seven cases in six files, all run red first at 10:58-11:04 MEZ (`/tmp/red-p63.json`,
+`/tmp/red-p63-zwei.json`) for the intended reason — the sentence on screen, the number missing.
+Four of them failed at first for the *wrong* reason (a wrong prop, a stub that broke the read
+before the write, a missing button, a sentence I had not read); each harness was corrected and
+re-run red before any production line changed. Suite: 3495 cases in 329 files, verdict run green.
+
+## [3.2.153]## [3.2.153]
 
 ### Fixed
 

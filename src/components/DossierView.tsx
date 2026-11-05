@@ -129,8 +129,11 @@ export function DossierView({ onOpenMemory, onEditMemory, dossierThema }: { onOp
     setGespeichert(false);
     try {
       const r = await fetch(`/api/dossier?topic=${encodeURIComponent(t)}`);
-      const d = await r.json();
-      if (!r.ok) throw new ApiFehler(tuerSatz(d.error, `HTTP ${r.status}`), r.status);
+      // P63: Status zuerst, Koerper verzeihend -- eine geantwortete, aber unlesbare Antwort
+      // nennt ihre Zahl, statt im Fang grundlos zu enden.
+      const d = (await r.json().catch(() => null)) as Record<string, unknown> | null;
+      if (!r.ok) throw new ApiFehler(tuerSatz(d?.error, `HTTP ${r.status}`), r.status);
+      if (!d) throw new ApiFehler("The dossier arrived without readable text.", r.status);
       setDaten(inForm(d, LEERES_DOSSIER));
     } catch (e) {
       setFehler(absage("The dossier did not arrive.", e));

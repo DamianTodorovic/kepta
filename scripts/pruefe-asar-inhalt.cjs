@@ -890,6 +890,13 @@ const erwartet = [
   // Zustand, den keine Flaeche malt, ist im Objekt unsichtbar und darum keine Pruefung.
   ["The health check did not arrive", 1],
   ["settings-health-grund", 1],
+  // Punkt 4 / Aufgabe #61, 5.11. 12:12 MEZ (3.2.154): die dritte Census-Runde fand sechs Wege,
+  // die den Koerper vor der Antwort lasen -- ein HTML-Fehlerblatt warf beim JSON-Lesen, und die
+  // eigne Zahl der Tuer ging im Fang unter. Jetzt nennt jeder Weg sie, und jeder sagt aus, wenn
+  // eine 200-Antwort ohne lesbaren Text ankommt. Gezaehlt am installierten 3.2.153 (asar
+  // 49 201 094 B, 12:11 MEZ, bytes.count() in latin1): "arrived without readable text" **0** mal
+  // (fuenf Saetze dieser Form sind neu, die Sonde haelt die Untergrenze 1).
+  ["arrived without readable text", 1],
   // Punkt 4 / Aufgabe #59, 4.11. 23:46 MEZ (3.2.152): die Herkunfts-Kante gilt an allen fuenf
   // Absage-Stellen, nicht nur im Helfer. Gezaehlt am installierten 3.2.151 (app.asar
   // 49 200 864 B, mtime 22:26:45 MEZ, bytes.count() in latin1): "the wording of this thrower
