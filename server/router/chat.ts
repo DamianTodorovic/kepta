@@ -184,7 +184,7 @@ export function mountChat(app: express.Express, ctx: AppKontext): void {
       // ein fester Satz mit Kennung - derselbe Grund wie in server/app.ts:75-81, wo
       // eine 500 den internen Grund frueher beim Client zeigte.
       res.status(500).json({
-        error: "The answer failed inside K3PTA. The reason is in the server log, not in this answer.",
+        error: "K3PTA failed the answer; the server log keeps the reason.",
         grund: "chat-fehlgeschlagen",
       });
     }

@@ -850,6 +850,11 @@ const erwartet = [
   // die der Census seit 3.2.139 an der Flaeche misst -- und sie war dem Raster unsichtbar,
   // weil ihr Semikolon und ihr U+2014 sie als Code aussehen liessen. Neu: 14 Woerter, ASCII.
   ["Next start asks again", 1],
+  // P80, zweite Stelle: der Inhaltsgate meldete um 23:39:55 MEZ "ZU VIEL 1" fuer die
+  // verbotene K3PTA-Absage -- server/router/chat.ts:187 trug denselben alten Wortlaut wie
+  // src/lib/tuergrund.ts. Heilung ist eine Klasse, nicht ein Fund: beide Stellen jetzt
+  // gleich, 9 Woerter, eigne Marke am Gebauten (1 mal im Server-Bund).
+  ["the server log keeps the reason", 1],
   // Punkt 4, 3.11. abend (3.2.130, Aufgabe #47): ein Import-Fehler druckte den
   // Ausnahmewortlaut auf den Knopf, im Testlauf samt Pfad. Nach aussen geht jetzt ein
   // fester Satz. Gegen das installierte 3.2.129 gezaehlt (app.asar 49 184 866 B,
@@ -964,7 +969,7 @@ const erwartet = [
   ["Unexpected rule shape, so none were read", 1],
   ["this view shows, never edits", 1],
   ["The logs keep it.", 1],
-  ["the logs keep why. Ask again or pick another model", 1],
+  ["the logs say why. Ask again or pick another model", 1],
   ["the logs show the rest", 1],
   ["Pick its conversations.json", 1],
   ["Searches your notes three ways at once", 1],
