@@ -183,17 +183,29 @@ async function main() {
   const vers = JSON.parse(fs.readFileSync(path.join(WURZEL, "package.json"), "utf8"));
   console.log(`  Bundel: ${stuecke.length} Stuecke geprueft, Version laut Baum ${vers.version ?? "?"}`);
 
-  // 2) Der Diener in der Kapsel.
-  server = spawn("node", [path.join(WURZEL, "dist", "server.cjs")], {
-    cwd: WURZEL,
-    env: { ...process.env, HOME: `${ARBEIT}/h`, KEPTA_DATA_DIR: `${ARBEIT}/d`, KEPTA_ENCRYPTION: "off", PORT: String(PORT), },
-    stdio: ["ignore", "pipe", "pipe"],
-  });
-  const prot = fs.createWriteStream(`${ARBEIT}/server.log`);
-  server.stdout.pipe(prot); server.stderr.pipe(prot, { end: true });
-  const gesund = await warteBis(async () => { const r = await fetch(`${BASIS}/api/health`); return r.ok ? await r.json() : null; }, { maxMs: 60000 });
-  if (!gesund) { console.log("  Der Kapsel-Diener kam nicht hoch — " + ARBEIT + "/server.log"); process.exit(2); }
-  console.log(`  Diener: Version ${gesund.version}, Bestand ${gesund.count} (eigne Kapsel, Verschluesselung aus)`);
+  // 2) Der Diener in der Kapsel — als Helfer, nicht als einmaliger Schlag.
+  //    Grund, gemessen 5.11.2026 20:11:30 MEZ: Zyklus P nimmt den Diener absichtlich fort
+  //    (die Flaeche soll ihre Tuerlosigkeit zeigen), Zyklus Q braucht genau diese Stille.
+  //    Die Zyklen danach liefen darum gegen einen toten Dienst: der Gegenlauf von
+  //    gruppethema meldete "ohne Gegenstand", und die Grenzsonde zeigte, dass auch die
+  //    Kontrollanfrage /api/health netzwerktop war — nicht die Route, der ganze Diener.
+  let protNr = 0;
+  async function dienerStarte({ meldung = "Diener" } = {}) {
+    protNr++;
+    const protPfad = protNr === 1 ? `${ARBEIT}/server.log` : `${ARBEIT}/server-${protNr}.log`;
+    server = spawn("node", [path.join(WURZEL, "dist", "server.cjs")], {
+      cwd: WURZEL,
+      env: { ...process.env, HOME: `${ARBEIT}/h`, KEPTA_DATA_DIR: `${ARBEIT}/d`, KEPTA_ENCRYPTION: "off", PORT: String(PORT), },
+      stdio: ["ignore", "pipe", "pipe"],
+    });
+    const prot = fs.createWriteStream(protPfad);
+    server.stdout.pipe(prot); server.stderr.pipe(prot, { end: true });
+    const gesund = await warteBis(async () => { const r = await fetch(`${BASIS}/api/health`); return r.ok ? await r.json() : null; }, { maxMs: 60000 });
+    if (!gesund) { console.log(`  Der Kapsel-Diener kam nicht hoch — ${protPfad}`); process.exit(2); }
+    console.log(`  ${meldung}: Version ${gesund.version}, Bestand ${gesund.count} (eigne Kapsel, Verschluesselung aus, Protokoll ${protPfad.split("/").pop()})`);
+    return gesund;
+  }
+  await dienerStarte();
 
   // 3) Der echte Viewport.
   brave = spawn(BRADE, ["--headless=new", `--remote-debugging-port=${CDP_PORT}`, `--user-data-dir=${ARBEIT}/profil`,
@@ -1583,6 +1595,15 @@ async function main() {
   // sie ueber ihren Text gesucht und der Text selbst gemessen. Der Werfer ist die Datei
   // selbst: extractTextFromFile ruft `file.text()`, und eine Bibliothek, die darin wirft,
   // ist genau der Fall, dessen Wortlaut nicht auf den Knopf darf (P4-2310 c, P71).
+  // Nach den zwei Zyklen, die die Stille selbst pruefen, wird der eigne Diener wieder hoch-
+  // gefahren: importwurf und gruppethema messen Schreibwirkung und Achsenzahl an einer
+  // lebenden Tuer. Ohne diesen Schlag laufen sie gegen einen toten Dienst und melden
+  // "ohne Gegenstand" — gemessen 5.11. 19:00 und 20:11 MEZ, zweimal hintereinander.
+  if (NUR === "" || NUR === "importwurf" || NUR === "gruppethema") {
+    const vor = await evaliere(cdp, `(async()=>{try{const r=await fetch('/api/health');return r.ok}catch(e){return false}})()`);
+    if (!vor) await dienerStarte({ meldung: "Diener neu gestartet" });
+  }
+
   if (NUR === "" || NUR === "importwurf") {
     // Der.healthgrund-Zyklus laesst die Flaeche auf den Einstellungen stehen; das
     // Dateifeld wohnt in der Wissens-Flaeche (Dashboard.tsx:1866), also zuerst hin.
@@ -1591,19 +1612,45 @@ async function main() {
       if(!b) return 'kein Seitenleisten-Knopf Knowledge'; b.click(); return (b.textContent||'').trim();})()`);
     console.log(`  Sprung nach: ${gesprungen}`);
     await schlafe(1200);
-    const geworfen = await evaliere(cdp, `(async () => {
-      File.prototype.text = () => Promise.reject(new Error("QuotaExceededError: the quota has been exceeded - /Users/a/.kepta/kepta.db"));
+    // Zwei Wuerfe, weil die Quittung zwei Zweige hat (Dashboard.tsx:1253-1256):
+    //   gelungen == 0 -> "Import did not run. No note was written."
+    //   gelungen >  0 -> "Import stopped after N of M writes. ..."
+    // Bis 5.11. fuhr nur der erste: die Attrappe warf bei JEDEM Datei-Lesen, also wurde
+    // nie eine Note geschrieben, und der gezaehlte Zweig war im echten Fenster nie gesehen
+    // (gemessen 20:16:47 MEZ, beide Laeufe meldeten "Import did not run"). Jetzt wirft die
+    // Attrappe erst bei der zweiten Datei -- die erste geht durch die Tuer, der Wurf kommt
+    // mitten im Import, und die Flaeche muss den halben Bestand benennen.
+    const werfen = async (abWann) => await evaliere(cdp, `(async () => {
+      const echte = File.prototype.text;
+      File.prototype.text = function () {
+        const name = String(this.name || "");
+        const nr = Number((name.match(/mandat-(\\d+)/) || [0, 99])[1]);
+        if (nr >= ${abWann}) return Promise.reject(new Error("QuotaExceededError: the quota has been exceeded - /Users/a/.kepta/kepta.db"));
+        return echte.call(this);
+      };
       const i = document.querySelector('input[type="file"]');
       if (!i) return "kein Dateifeld in der Flaeche";
       const dt = new DataTransfer();
-      dt.items.add(new File(["Inhalt eines Mandats."], "mandat.md", { type: "text/markdown" }));
+      dt.items.add(new File(["Inhalt eines Mandats."], "mandat-1.md", { type: "text/markdown" }));
+      dt.items.add(new File(["Inhalt einer zweiten Akte."], "mandat-2.md", { type: "text/markdown" }));
       i.files = dt.files;
       i.dispatchEvent(new Event("change", { bubbles: true }));
       return "abgegeben";
     })()`);
-    console.log(`  Abgabe: ${JSON.stringify(String(geworfen))}`);
+    const geworfen = await werfen(2);
+    console.log(`  Abgabe (Wurf bei Datei 2): ${JSON.stringify(String(geworfen))}`);
     urteil("**die Flaeche hat ein Dateifeld, das die Abgabe annimmt**", String(geworfen), "abgegeben");
-    await schlafe(1500);
+    await schlafe(2200);
+    const gezaehlt = await evaliere(cdp, `(()=>{const alle=[...document.querySelectorAll('div')]
+      .filter(d=>/Import stopped after/.test(d.textContent||''));
+      const t=alle.length?alle[alle.length-1]:null;
+      return t?(t.textContent||'').replace(/\\s+/g,' ').trim():null})()`);
+    console.log(`  gezaehlter Zweig: ${JSON.stringify(gezaehlt)}`);
+    urteil("**ein halber Import nennt die geretteten Schreibungen**", /Import stopped after 1 of 1 writes/.test(String(gezaehlt)), true);
+    urteil("**und sagt, was mit dem Geretteten geschieht**", /stays in your notes/.test(String(gezaehlt)), true);
+    const bestandDanach = Number(await evaliere(cdp, `(async()=>{try{const r=await fetch('/api/memories?limit=1');const d=await r.json();return d.total??-1}catch(e){return -1}})()`));
+    console.log(`  Bestand nach dem halben Import: ${bestandDanach}`);
+    urteil("**die gerettete Note ist wirklich in der Tuer**", bestandDanach > 0, true);
     const fund = await evaliere(cdp, `(() => {
       // Der tiefste Treffer ist die Quittung selbst: Vorfahren kommen zuerst in der
       // Dokumentordnung, also ist der letzte dieser Liste der engste Kasten.
@@ -1626,6 +1673,19 @@ async function main() {
     }
     urteil("**und die Zeile bleibt im Fenster**", fund ? (fund.kasten[2] >= 0 && fund.kasten[3] <= breitIst) : null, true);
     console.log(`  Bild: ${await bild(`import-wurf-${breitIst}px.png`)}`);
+    // Zweiter Wurf: die Attrappe wirft schon bei der ersten Datei. Der andre Zweig der
+    // Quittung muss ebenfalls im echten Fenster gesehen sein -- ein jsdom-Fall malt eine
+    // Zeile, die niemand bekommen hat.
+    const nullWurf = await werfen(1);
+    urteil("**auch der zweite Wurf geht durchs Dateifeld**", String(nullWurf), "abgegeben");
+    await schlafe(2200);
+    const nullFund = await evaliere(cdp, `(()=>{const alle=[...document.querySelectorAll('div')]
+      .filter(d=>/Import did not run/.test(d.textContent||''));
+      const t=alle.length?alle[alle.length-1]:null;
+      return t?(t.textContent||'').replace(/\\s+/g,' ').trim():null})()`);
+    console.log(`  Null-Zweig: ${JSON.stringify(nullFund)}`);
+    urteil("**ein Wurf vor der ersten Schreibung sagt, dass nichts geschrieben wurde**",
+      /Import did not run\. No note was written\./.test(String(nullFund)), true);
   }
 
   // --- Punkt 5 / #63: die neue Themen-Gruppierung im echten Fenster (Zyklus `gruppethema`) ---
@@ -1650,7 +1710,38 @@ async function main() {
     // Die Tuer wird verzeihend gelesen: ein Tausch mitten im Lauf (die Zyklen nehmen
     // ihren eignen Diener fort) darf einen Zyklus nicht als Wurf enden lassen -- ohne
     // Lesung ist die Stille ein benannter Zweig, kein gruener Fall (Hausregel 19.10.).
-    const tuer = await evaliere(cdp, `(async()=>{try{const r=await fetch('/api/memories/gruppen');if(!r.ok)return null;const d=await r.json();return {ohneThema:d.ohneThema, bestand:d.bestand}}catch(e){return null}})()`);
+    // Die Tuer wird mit begrenztem Wiederversuch gelesen und meldet ihren Status.
+    // Grund, gemessen 5.11. 19:00 und 19:42 MEZ: beide Laeufe sagten "ohne Gegenstand",
+    // weil eine einzige Lesung durch eine 429-Rate-Kappe oder einen Neustart ins Leere lief
+    // -- und der Vergleich dann still uebersprungen wurde. Diese Tuer ist der Dienst, den
+    // dieser Lauf selbst gestartet hat: wenn er nicht antwortet, ist das ein Befund, keine
+    // Weltgrenze. Ein Ausweichen bleibt nur, wenn der Status nach den Versuchen bekannt ist.
+    const gruppenLesung = async (mitThemen, { versuche = 8, schritt = 700 } = {}) => {
+      let status = "keine Antwort";
+      for (let v = 1; v <= versuche; v++) {
+        const r = await evaliere(cdp, `(async()=>{try{
+            const r=await fetch('/api/memories/gruppen');
+            if(!r.ok)return {fehler:'HTTP '+r.status};
+            const d=await r.json();
+            return {bestand:d.bestand, ohneThema:d.ohneThema${mitThemen ? ", themen:d.themen||{}" : ""}};
+          }catch(e){return {fehler:'Netz '+String(e&&e.message||e).slice(0,40)}}})()`);
+        if (r && !r.fehler) return { lesung: r, versuch: v, status: "ok" };
+        status = r ? r.fehler : "Sonde ohne Rueckgabe";
+        await schlafe(schritt);
+      }
+      return { lesung: null, versuch: versuche, status, grund: await grenzgrund(cdp) };
+    };
+    // Zwei Ursachen sehen gleich aus ("Failed to fetch"), sind aber verschiedene Befunde:
+    // der eigne Dienst ist fort, oder nur diese Route fehlt. Darum an der Grenze messen:
+    // Herkunft der Seite, Status einer Kontrollanfrage (/api/health), Status der Route selbst.
+    const grenzgrund = async (cdp) => await evaliere(cdp, `(async()=>{
+      const ort = location.origin;
+      const frage = async (pfad) => { try { const r = await fetch(pfad); return 'HTTP ' + r.status; } catch (e) { return 'Netz ' + String(e && e.message || e).slice(0, 30); } };
+      return { ort, kontrolle: await frage('/api/health'), route: await frage('/api/memories/gruppen') };
+    })()`);
+    const erste = await gruppenLesung(false);
+    const tuer = erste.lesung;
+    console.log(`  Tuer-Lesung 1: ${erste.status} nach ${erste.versuch} Versuch(en)`);
     // Der Kopf ist ein section: h3 traegt den Titel, die naechste Span die Zahl
     // (Dashboard.tsx:1453-1458). Das kable h3-Raster fand in keiner Zeile eine Ziffer, der
     // Gegenlauf meldete 17:17:12 MEZ "Kopf kein Kopf" fuer alle sechs Achsen.
@@ -1673,7 +1764,8 @@ async function main() {
     if (tuer) {
       urteil("**das Fach ohne Thema erscheint genau dann, wenn die Tuer eine Zahl dafuer hat**", hatOhneFach, Number(tuer.ohneThema) > 0);
     } else {
-      console.log("  die Tuer antwortete in diesem Augenblick nicht — dieser Vergleich hat hier keinen Gegenstand, die Achsen-Pruefung unten faehrt weiter");
+      console.log(`  Grenze: Seite ${erste.grund?.ort || "?"} | Kontrolle ${erste.grund?.kontrolle || "?"} | Route ${erste.grund?.route || "?"}`);
+      urteil("**die Tuer antwortet der Flaeche, wenn die Flaeche nach ihr fragt**", erste.status, "ok");
     }
     const Achsen = ["People", "Projects", "Events", "Tasks", "Guides", "Links"];
     urteil("**und ein Kopf nennt eine der sechs Achsen**", Achsen.some((a) => Liste.some((k) => k.startsWith(a))), true);
@@ -1683,7 +1775,9 @@ async function main() {
     // Notizen schrieb ein spaeterer Zyklus. Zwei Augenblicke zu vergleichen ist kein
     // Gegenlauf. Darum: frische Lesung, und nur wenn sie denselben Bestand nennt wie die
     // Lesung vor dem Klick, wird Gleichheit verlangt; sonst ist es ein benannter Zweig.
-    const achsen = await evaliere(cdp, `(async()=>{try{const r=await fetch('/api/memories/gruppen');if(!r.ok)return null;const d=await r.json();return {bestand:d.bestand, ohneThema:d.ohneThema, themen:d.themen||{}}}catch(e){return null}})()`);
+    const zweite = await gruppenLesung(true);
+    const achsen = zweite.lesung;
+    console.log(`  Tuer-Lesung 2: ${zweite.status} nach ${zweite.versuch} Versuch(en)`);
     if (achsen && tuer && Number(achsen.bestand) === Number(tuer.bestand) && Number(achsen.bestand) <= 200) {
       const Faelle = [];
       for (const [achse, n] of Object.entries(achsen.themen)) {
@@ -1700,7 +1794,15 @@ async function main() {
       console.log(`  Gegenlauf (frisch, Bestand ${achsen.bestand}): ${JSON.stringify(Liste).slice(0, 300)} — Tuer ${JSON.stringify(achsen.themen)} ohneThema ${achsen.ohneThema}`);
       urteil("**Kopfzahl und Achsenzahl der Tuer sind dieselbe Zahl, in derselben Welt**", Faelle, []);
     } else {
-      console.log(`  Gegenlauf ohne Gegenstand: frische Lesung ${achsen ? "Bestand " + achsen.bestand : "keine"}, Vorrat ${tuer ? "Bestand " + tuer.bestand : "keine"} — die Welt hat sich zwischen den beiden Lesungen geaendert oder die Tuer antwortet nicht`);
+      // Zwei Auswege, klar getrennt: die Tuer schweigt (Befund, weil dieser Lauf ihren
+      // Dienst selbst gestartet hat) oder die Welt aenderte sich zwischen den Lesungen
+      // (benannter Zweig, gemessen 17:30:47 MEZ, wo ein spaeterer Zyklus vier Notizen
+      // schrieb). Nur der zweite darf still sein.
+      if (!achsen || !tuer) {
+        urteil("**beide Tuer-Lesungen haben einen Gegenstand**", `${erste.status}/${zweite.status}`, "ok/ok");
+      } else {
+        console.log(`  Gegenlauf ohne Gegenstand: Bestand ${tuer.bestand} gegen ${achsen.bestand} — die Welt hat sich zwischen den Lesungen geaendert (benannter Zweig, kein Fehler)`);
+      }
     }
     const breitIst = Number(await evaliere(cdp, `window.innerWidth`));
     console.log(`  Bild: ${await bild(`gruppethema-${breitIst}px.png`)}`);
