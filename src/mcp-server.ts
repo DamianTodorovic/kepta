@@ -87,7 +87,7 @@ rl.on("line", (line) => {
     write({
       jsonrpc: "2.0",
       id: null,
-      error: { code: -32600, message: "Batching is not supported (MCP 2026-07-28 removed it)" },
+      error: { code: -32600, message: "Batching is gone from MCP 2026-07-28, send one request at a time." },
     });
     return;
   }

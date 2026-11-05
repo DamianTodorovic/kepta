@@ -44,7 +44,7 @@ function welt(staende: Stand[], inhalt: string) {
     if (/\/stande\/\d+\/restore$/.test(u) && method === "POST") {
       const id = Number(u.match(/\/stande\/(\d+)\/restore$/)![1]);
       const ziel = zustand.staende.find((s) => s.id === id);
-      if (!ziel) return new Response(JSON.stringify({ error: "Node or stand not found" }), { status: 404 });
+      if (!ziel) return new Response(JSON.stringify({ error: "No note or saved version with that id, so nothing was restored." }), { status: 404 });
       zustand.staende = [stand(90, zustand.inhalt), ...zustand.staende];
       zustand.inhalt = ziel.content;
       return new Response(JSON.stringify({ ok: true, memory: { ...mem(), content: ziel.content }, restoredFrom: id, total: zustand.staende.length }), { status: 200 });

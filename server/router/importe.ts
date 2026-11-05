@@ -29,7 +29,7 @@ export function mountImporte(app: express.Express, ctx: AppKontext): void {
     if (!Array.isArray(incoming)) {
       return res.status(400).json({ error: "Not a valid backup file (a memories array was expected)" });
     }
-    if (incoming.length > 5000) return res.status(413).json({ error: "Too many nodes (max 5000)" });
+    if (incoming.length > 5000) return res.status(413).json({ error: "This backup holds more than 5000 notes, so nothing was imported." });
 
     const cleaned = incoming
       .filter(m => m && typeof m === "object")

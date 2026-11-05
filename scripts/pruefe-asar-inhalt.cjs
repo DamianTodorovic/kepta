@@ -864,6 +864,15 @@ const erwartet = [
   // 6.11.2026 00:19:31 MEZ: 17 Glieder, `zeitregler` ohne Auskunft; am installierten
   // 3.2.170 stand der neue Satz dort 0 mal). Gezaehlt am installierten 3.2.171: 1 mal.
   ["right is today, applied on release", 1],
+  // P82 (3.2.172): `server/` ist eine Census-Lage geworden, weil fuenf Stellen den Leib
+  // einer Antwort in die Flaeche schreiben (Settings.tsx:340 und :379, Chat.tsx:680,
+  // store.ts:327 und :489). Gezaehlt am installierten 3.2.171 (6.11.2026 00:34:11 MEZ,
+  // latin1): die vier alten Kurzfassungen 1, 2, 1, 1 mal; die neuen Enden 0 mal. Im
+  // gebauten 3.2.172 kehrt sich das um.
+  ["so nothing was restored", 1],
+  ["Batching is gone from MCP 2026-07-28", 1],
+  ["there was nothing to embed", 1],
+  ["more than 5000 notes", 1],
   // Punkt 4, 3.11. abend (3.2.130, Aufgabe #47): ein Import-Fehler druckte den
   // Ausnahmewortlaut auf den Knopf, im Testlauf samt Pfad. Nach aussen geht jetzt ein
   // fester Satz. Gegen das installierte 3.2.129 gezaehlt (app.asar 49 184 866 B,
@@ -1044,6 +1053,12 @@ const verboten = [
   // als Code verwirft -- ein Werkzeugsatz, den der Riegel nicht sieht, meldet 0 Funde, egal ob
   // er einen hat. Gezaehlt am installierten 3.2.167: **2** mal; am gebauten 3.2.168: **0** mal.
   "default 2; use 1",
+  // P82 (3.2.172): die vier knappen Diener-Absagen, die ein Fachwort ohne Grund und
+  // ohne Taetigkeit liessen (gemessen 00:30:54 MEZ als 4 der 5 Funde in 62 Kandidaten).
+  "Node or stand not found",
+  "Batching is not supported (MCP 2026-07-28 removed it)",
+  "No input given for embedding",
+  "Too many nodes (max 5000)",
   // P80 (3.2.169): die alten Formen derselben elf Saetze. Verboten, weil die Kuerze und der
   // Grund der Schnitt sind -- nicht, weil sie nie existiert haetten: gemessen am
   // installierten 3.2.168 steht jede Kette 1 mal (Flaeche) bzw. 2 mal (Server-Bund).

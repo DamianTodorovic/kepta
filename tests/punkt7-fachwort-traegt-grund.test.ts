@@ -12,6 +12,7 @@ import { describe, expect, it } from "vitest";
 import { execFileSync, spawnSync } from "node:child_process";
 import path from "node:path";
 import {
+  DIENER,
   FLAECHE,
   WERKZEUG,
   istBenutzersprache,
@@ -121,6 +122,37 @@ describe("Punkt 7: Fachwort-Saetze der Flaeche tragen Grund oder Taetigkeit", ()
     const satze = [...kandidatenAusQuelltext(FLAECHE)];
     const c = zensiere(satze.map(([s, quelle]) => ({ ...zaehle(s), s, quelle }))) as Census;
     expect(c.unterKappe / Math.max(1, c.n), `${c.unterKappe} von ${c.n} unter der Kappe`).toBeGreaterThanOrEqual(0.8);
+  });
+
+  it("die Diener-Lage hat denselben Riegel: ihr Text erreicht die Flaeche", () => {
+    // `server/` war keine Census-Menge, obwohl fuenf Stellen den Leib einer Antwort in die
+    // Flaeche schreiben: Settings.tsx:340 und :379, Chat.tsx:680 (`tuerSatz(json.error, …)`),
+    // store.ts:327 und :489. Gemessen 00:30:54 MEZ: 62 Kandidaten, 5 Funde, Kappe 82,3 %.
+    // Dieselbe Sonde, dieselbe Regel, eigne Menge -- und eigne Untergrenze.
+    const funde = kandidatenAusQuelltext(DIENER);
+    const getragen = [...funde].map(([s, quelle]) => ({ ...zaehle(s), s, quelle }));
+    const c = zensiere(getragen) as Census;
+    const liste = c.fachOhneAlles.map((z: Fund) => `    ${z.fach.join(",")}  ${z.quelle}  ::  ${z.s.slice(0, 84)}`).join("\n");
+    expect(c.fachOhneAlles.length, `\n  ${c.fachOhneAlles.length} Funde in ${c.n} Diener-Saetzen:\n${liste}`).toBe(0);
+    expect(c.n, `nur ${c.n} Diener-Saetze gezaehlt -- die Menge ist kleiner als gemessen`).toBeGreaterThanOrEqual(62);
+  });
+
+  it("erklaerende Verben und das Senden des Agenten sind Grund und Taetigkeit", () => {
+    // P82, gemessen 00:30:54 MEZ: "a mention says no more than that two terms appeared
+    // together" erklaert das Fachwort, indem es sagt, was es bedeutet -- und das Raster sah
+    // darin keinen Grund. Ein Satz, der eine Bedeutung nennt, ist erklaert; ein Satz, der dem
+    // Leser eine Nachricht wegschicken heisst, ist eine Taetigkeit.
+    // Der gemessene Fall von 00:30:54 MEZ in voller Laenge -- sein Fachwort ist "graph",
+    // die Erklaerung steckt im that-Satz ueber die Maennung.
+    const erklaert = zaehle("This note claims nothing yet - the graph draws only mentions for it, and a mention says no more than that two terms appeared together.");
+    expect(erklaert.fach.length).toBeGreaterThan(0);
+    expect(erklaert.grund, "sagen, was ein Wort bedeutet, ist ein Grund").toBe(true);
+    const sendend = zaehle("Send one request at a time, because the protocol removed batching.");
+    expect(sendend.handlung, "dem Leser senden heisst, dem Leser eine Taetigkeit nennen").toBe(true);
+    // Die Biss-Kante bleibt: ein nackter Fachwort-Satz ohne Bedeutung und ohne Senden.
+    const taub = zaehle("The graph lists entities and their embeddings.");
+    expect(taub.fach.length).toBeGreaterThan(0);
+    expect(taub.grund || taub.handlung).toBe(false);
   });
 
   it("der Import des Census faehrt ihn nicht selbst", () => {

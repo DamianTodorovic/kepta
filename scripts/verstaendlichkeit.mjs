@@ -53,6 +53,11 @@ const LISTE = Number(ARG("liste", 12));
 export const FLAECHE = ["src/components", "src/pages", "src/lib"].filter((d) => fs.existsSync(path.join(WURZEL, d)));
 export const WERKZEUG = ["src/core"].filter((d) => fs.existsSync(path.join(WURZEL, d)));
 
+// P82: der Diener schreibt seinen Text in den Leib einer Antwort, und fuenf Stellen
+// holen ihn in die Flaeche zurueck (Settings.tsx:340 und :379, Chat.tsx:680,
+// store.ts:327 und :489). Eine Menge, die der Nutzer sieht, ist keine interne Notiz.
+export const DIENER = ["server"].filter((d) => fs.existsSync(path.join(WURZEL, d)));
+
 // Fachwoerter, die ein Mensch nicht mitbringt. Absichtlich die Menge, die in unserem eignen
 // Wortschatz vorkommt — nicht die, die ein Papiertext haben darf.
 export const FACHWORTER = [
@@ -63,12 +68,19 @@ export const FACHWORTER = [
 ];
 
 // Ein Satz erklaert sich, wenn er einen Grund oder eine Folge nennt.
-export const GRUND = /\b(because|since|so|which means|that is why|after you|when you|if you|instead of|rather than|before|until|unless)\b/i;
+// P82, gemessen 00:30:54 MEZ: "a mention says no more than that two terms appeared
+// together" erklaert sein Fachwort, indem es die Bedeutung nennt -- das Raster sah
+// darin keinen Grund. Neu gilt ein Definitionssatz -- sagen/zeigen/bedeuten *mit* einem
+// that-Satz (gemessen 00:33:33 MEZ: nackt erlaubt stieg der Grund-Anteil der Flaeche von
+// 27 auf 69 von 348, weil "shows" allein noch nichts erklaert; mit that-Satz ist er wieder
+// eine Zahl, die etwas behauptet).
+export const GRUND = /\b(because|since|so|which means|that is why|after you|when you|if you|instead of|rather than|before|until|unless)\b|\b(says|say|means|mean|shows|show|reads|read|tells|tell)\b[^.]{0,60}\bthat\b/i;
 // Ein Satz handelt, wenn er dem Menschen eine Taetigkeit nennt. Die Liste ist weit, weil ein
 // Zaehler, der "hover" nicht kennt, einen guten Satz als Befund verkauft: gemessen 4.11. 08:12,
 // wo "No labels — hover or arrow-key to a node and its full title comes back" ohne Taetigkeit
 // zaehlte. Erst die Gegenprobe macht die Zahl lesbar.
-export const HANDLUNG = /\b(click|type|write|open|close|zoom|name|select|press|add|remove|switch|turn on|turn off|drag|search|unfold|fold|show|hide|save|export|edit|create|delete|try|use|hover|arrow-key|arrow keys|move|pick|choose|keep|allow|agree|start|stop|wait|paste|drop|point|hold)\b/i;
+// P82: der Leser dieser Saetze ist ein Agent, und seine Taetigkeit heisst senden.
+export const HANDLUNG = /\b(click|type|write|open|close|zoom|name|select|press|add|remove|switch|turn on|turn off|drag|search|unfold|fold|show|hide|save|export|edit|create|delete|try|use|hover|arrow-key|arrow keys|move|pick|choose|keep|allow|agree|start|stop|wait|paste|drop|point|hold|send|sends|sent)\b/i;
 
 // Prompt-Texte lesen sich wie Flaeche, sind aber fuer ein Modell geschrieben. Sie zaehlen mit,
 // wenn man die Sprache eines Produkts messen will, und sie zaehlen falsch, wenn man die Sprache
@@ -222,15 +234,18 @@ async function haupt() {
 
   const flaeche = baue(FLAECHE);
   const werkzeug = baue(WERKZEUG);
-  console.log(`\n  Kandidaten im Quelltext: Flaeche ${flaeche.zeilen.length}, Werkzeug ${werkzeug.zeilen.length}`);
+  const diener = baue(DIENER);
+  console.log(`\n  Kandidaten im Quelltext: Flaeche ${flaeche.zeilen.length}, Werkzeug ${werkzeug.zeilen.length}, Diener ${diener.zeilen.length}`);
   if (suche) {
-    console.log(`  die Objekt-Gleichung verwirft: Flaeche ${flaeche.zeilen.length - flaeche.getragen.length}, Werkzeug ${werkzeug.zeilen.length - werkzeug.getragen.length}`);
+    console.log(`  die Objekt-Gleichung verwirft: Flaeche ${flaeche.zeilen.length - flaeche.getragen.length}, Werkzeug ${werkzeug.zeilen.length - werkzeug.getragen.length}, Diener ${diener.zeilen.length - diener.getragen.length}`);
   }
 
   const cFlaeche = zensiere(flaeche.getragen);
   const cWerkzeug = zensiere(werkzeug.getragen);
+  const cDiener = zensiere(diener.getragen);
   melde("FLAECHE (ein Mensch liest)", cFlaeche, flaeche.getragen);
   melde("WERKZEUG (ein Agent liest)", cWerkzeug, werkzeug.getragen);
+  melde("DIENER (ein Mensch oder ein Agent liest die Antwort mit)", cDiener, diener.getragen);
 
   const langsten = [...flaeche.getragen].sort((a, b) => b.woerter - a.woerter).slice(0, 12);
   console.log("\n  Die zwoelf laengsten Menschensaetze (Wortzahl | Quelle):");
@@ -239,6 +254,7 @@ async function haupt() {
   const alleFunde = [
     ...cFlaeche.fachOhneAlles.map((z) => ({ ...z, lage: "Flaeche" })),
     ...cWerkzeug.fachOhneAlles.map((z) => ({ ...z, lage: "Werkzeug" })),
+    ...cDiener.fachOhneAlles.map((z) => ({ ...z, lage: "Diener" })),
   ];
   console.log("\n  Fachwort ohne Grund und ohne Taetigkeit (die ersten " + LISTE + " von " + alleFunde.length + "):");
   for (const z of alleFunde.slice(0, LISTE)) console.log(`    ${z.lage}  ${z.fach.join(",")}  ${z.quelle}  ::  ${z.s.slice(0, 150)}`);
@@ -255,11 +271,11 @@ async function haupt() {
 
   const anteil = cFlaeche.unterKappe / Math.max(1, cFlaeche.n);
   const kappeHalten = anteil >= UNTER_KAPPE_MINDESTENS;
-  const riegelHalten = cFlaeche.fachOhneAlles.length <= FACH_OHNE_GRUND_MAX && cWerkzeug.fachOhneAlles.length <= FACH_OHNE_GRUND_MAX;
+  const riegelHalten = [cFlaeche, cWerkzeug, cDiener].every((c) => c.fachOhneAlles.length <= FACH_OHNE_GRUND_MAX);
   const taub = !getroffen || !blind;
   const urteil = taub ? "TAUB" : kappeHalten && riegelHalten ? "HALTET" : "FAELLT";
   console.log(`  URTEIL KAPPE: ${kappeHalten ? "HALTET" : "FAELLT"} (Flaeche: Anteil unter ${SATZKAPPE} Woertern ${(100 * anteil).toFixed(1)} %, Latte ${100 * UNTER_KAPPE_MINDESTENS} %)`);
-  console.log(`  URTEIL RIEGEL: ${riegelHalten ? "HAELT" : "FAELLT"} (Fachwort ohne Grund und ohne Taetigkeit: Flaeche ${cFlaeche.fachOhneAlles.length} von ${cFlaeche.n}, Werkzeug ${cWerkzeug.fachOhneAlles.length} von ${cWerkzeug.n}, Max je Gruppe ${FACH_OHNE_GRUND_MAX} — der Wert ist am 5.11. und 6.11.2026 an beiden Lagen gemessen)`);
+  console.log(`  URTEIL RIEGEL: ${riegelHalten ? "HAELT" : "FAELLT"} (Fachwort ohne Grund und ohne Taetigkeit: Flaeche ${cFlaeche.fachOhneAlles.length} von ${cFlaeche.n}, Werkzeug ${cWerkzeug.fachOhneAlles.length} von ${cWerkzeug.n}, Diener ${cDiener.fachOhneAlles.length} von ${cDiener.n}, Max je Gruppe ${FACH_OHNE_GRUND_MAX} — der Wert ist am 5.11. und 6.11.2026 an allen drei Lagen gemessen)`);
   console.log(`  URTEIL GRUND: die Flaeche nennt in ${cFlaeche.mitGrund} von ${cFlaeche.n} Saetzen einen Grund oder eine Folge —`);
   console.log("  das ist der Befund dieses Laufs, nicht sein Ziel: eine Zahl ohne Vergleich ist eine Messung, noch kein Urteil.");
   console.log("  OFFEN bleibt, was dieser Lauf nicht beantworten kann: ob ein Mensch den Satz *versteht*.");

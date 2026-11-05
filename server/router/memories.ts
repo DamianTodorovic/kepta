@@ -327,7 +327,7 @@ export function mountMemories(app: express.Express, ctx: AppKontext): void {
       return res.status(400).json({ error: 'confirm: "restore" is required - nothing was written' });
     }
     const updated = store.restoreStand(id, standId);
-    if (!updated) return res.status(404).json({ error: "Node or stand not found" });
+    if (!updated) return res.status(404).json({ error: "No note or saved version with that id, so nothing was restored." });
     indexMemory(store, updated.id);
     store.verknuepfeNotiz(updated.id, updated.title, extractWikiLinks(`${updated.title} ${updated.content}`));
     ctx.publishActivity({ type: "update", source: "app", title: updated.title });

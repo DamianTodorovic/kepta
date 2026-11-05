@@ -30,7 +30,7 @@ export function mountMcp(app: express.Express, ctx: AppKontext): void {
     if (!body || typeof body !== "object" || Array.isArray(body)) {
       // JSON-Array = Batch-Request: MCP 2026-07-28 hat Batching gestrichen →
       // einzelnes Error-Objekt statt stiller 200/leerer Antwort
-      return res.status(400).json({ jsonrpc: "2.0", id: null, error: { code: -32600, message: "Batching is not supported (MCP 2026-07-28 removed it)" } });
+      return res.status(400).json({ jsonrpc: "2.0", id: null, error: { code: -32600, message: "Batching is gone from MCP 2026-07-28, send one request at a time." } });
     }
     try {
       const reply = await bearbeiteMcp(mcpKontext(), body as never);

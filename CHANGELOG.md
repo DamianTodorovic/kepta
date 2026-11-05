@@ -1,3 +1,28 @@
+## [3.2.172]
+
+### Added
+
+- **The server is now a measured layer of language, because its words reach the surface.** Five
+  places copy an answer body into what a person or an agent reads: `Settings.tsx:340` and `:379`,
+  `Chat.tsx:680` (`tuerSatz(json.error, …)`), `store.ts:327` and `:489`. The census had never
+  opened `server/`. Measured 6.11.2026 00:30:54 MEZ: 62 candidate sentences, 5 of them naming a
+  technical term with neither a reason nor a task, 82,3 % under the 14-word cap. Four were
+  rewritten into short sentences that say what happened and what follows -- "No note or saved
+  version with that id, so nothing was restored.", "Batching is gone from MCP 2026-07-28, send one request at a time.", "The request carried no text, so there was nothing to embed.", "This backup
+  holds more than 5000 notes, so nothing was imported." The fifth was a false alarm the fence
+  itself caused (below). The census prints and gates all three layers now: surface, tools, server.
+
+### Fixed
+
+- **A reason is a clause, not a word.** The fence only recognised a fixed list of connectives, so
+  "a mention says no more than that two terms appeared together" -- a plain definition of the
+  jargon it was accused of hiding -- counted as unexplained. Adding the bare verbs
+  (`says|means|shows|tells`) fixed that sentence but broke the measure: the surface's
+  reason-share jumped from 27 to 69 of 348 in one edit (00:33:33 MEZ), because "the panel shows
+  entities" is not an explanation. The rule now requires the definition *clause* -- a
+  says/means/shows/tells verb followed by a "that" phrase -- and the measured count is back to an
+  honest 31 of 352, with the bite control still catching a bare term list.
+
 ## [3.2.171]
 
 ### Fixed

@@ -290,7 +290,7 @@ export function mountChat(app: express.Express, ctx: AppKontext): void {
     }>(req);
     const rawInput = input ?? inputs ?? prompt;
     if (rawInput === undefined || (Array.isArray(rawInput) && rawInput.length === 0) || (typeof rawInput === "string" && !rawInput.trim())) {
-      return res.status(400).json({ error: "No input given for embedding" });
+      return res.status(400).json({ error: "The request carried no text, so there was nothing to embed." });
     }
     const texts: string[] = Array.isArray(rawInput) ? rawInput : [rawInput];
     // Ein Loeser fuer Adresse und Modell, damit die Tafel nicht einen Dienst meldet, den
