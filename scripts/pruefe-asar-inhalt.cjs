@@ -903,6 +903,10 @@ const erwartet = [
   // Die Knopf-Zeile selbst ("Trash — the count did not arrive") taugt nicht als Marke: sie traegt
   // einen echten Gedankenstrich, und die Sonde bricht mit EXIT 2 ueber einem Nicht-ASCII-Marker.
   ["The count did not arrive in this answer", 1],
+  // Punkt 4 / Aufgabe #61 und Punkt 7, 5.11. 12:58 MEZ (3.2.157): der Grund des lokalen
+  // Rankings hat drei Zweige bekommen. Gezaehlt am installierten 3.2.154 (asar 49 201 527 B,
+  // 12:57:5x MEZ, bytes.count() in latin1): "the search index answered without a list" **0** mal.
+  ["the search index answered without a list", 1],
   // Punkt 4 / Aufgabe #59, 4.11. 23:46 MEZ (3.2.152): die Herkunfts-Kante gilt an allen fuenf
   // Absage-Stellen, nicht nur im Helfer. Gezaehlt am installierten 3.2.151 (app.asar
   // 49 200 864 B, mtime 22:26:45 MEZ, bytes.count() in latin1): "the wording of this thrower

@@ -490,3 +490,66 @@ describe("Chat: eine Quelle, die wechselt, muss es sagen", () => {
       .not.toMatch(/\bnodes\b/);
   });
 });
+
+// P66 (Leitung 5.11. 13:00 MEZ, Punkt 4 / #31 und Punkt 7): der Chip ueber den Treffern nannte
+// einen einzigen Grund fuer drei verschiedene. Die Engine konnte schweigen (Transport um), konnte
+// antworten und ablehnen (500), konnte antworten und keine Liste bringen ({} oder ein
+// unlesbarer Koerper) -- in allen drei Faellen sagte dieselbe Zeile "the search index did not
+// answer". Das ist eine Behauptung ueber die eigne Tuer, die in zwei der drei Faelle falsch ist.
+// Erwartung VOR dem Flicken: die drei Grund-Faelle rot, die Kontrolle gruen.
+describe("P66: der lokale Grund nennt seinen eigentlichen Grund", () => {
+  async function frageUndText(user: ReturnType<typeof userEvent.setup>, container: HTMLElement) {
+    await frage(user, "Was weisst du?");
+    return waitFor(() => {
+      const t = (container.textContent || "").replace(/\s+/g, " ");
+      if (!/local ranking/i.test(t)) throw new Error(`kein lokaler Grund auf dem Schirm: "${t.slice(0, 240)}"`);
+      return t;
+    });
+  }
+
+  it("unterscheidet eine Abweisung von einer Stille", async () => {
+    stubFetch({ suchStatus: 500 });
+    const user = userEvent.setup();
+    const { container } = zeige();
+    const text = await frageUndText(user, container);
+    expect(text, "500 ist eine Antwort — die Zeile darf keine Stille behaupten").not.toMatch(/did not answer/i);
+    expect(text, "und die Zahl steht dabei").toMatch(/HTTP 500/);
+  });
+
+  it("unterscheidet eine leere Liste von einer Stille", async () => {
+    stubFetch({ suchAntwort: {} });
+    const user = userEvent.setup();
+    const { container } = zeige();
+    const text = await frageUndText(user, container);
+    expect(text, "eine Antwort ohne Trefferliste ist keine ausgebliebene Antwort").not.toMatch(/did not answer/i);
+    expect(text, "sie sagt, dass die Liste fehlt").toMatch(/answered without a list/i);
+  });
+
+  it("nennt einen unlesbaren Koerper als fehlende Liste, nicht als Stille und nicht als V8-Text", async () => {
+    vi.stubGlobal("fetch", vi.fn(async (url: string) => {
+      if (String(url).includes("/api/search")) return new Response("<html><body>200 OK</body></html>", { status: 200 });
+      if (String(url).includes("/api/chat/stream")) return sseAntwort(["Antwort", " ohne Engine"]);
+      return new Response("{}", { status: 200 });
+    }));
+    const user = userEvent.setup();
+    const { container } = zeige();
+    const text = await frageUndText(user, container);
+    expect(text).not.toMatch(/did not answer/i);
+    expect(text, "der Wortlaut der Laufzeit bleibt im Protokoll").not.toMatch(/Unexpected token|not valid JSON/i);
+    expect(text, "ein unlesbarer Koerper ist eine Antwort ohne Liste").toMatch(/answered without a list/i);
+  });
+
+  // KONTROLLE, in beiden Staenden gruen: die echte Stille behaelt ihr Wort.
+  it("KONTROLLE: ein Abbruch ohne jede Antwort heisst weiterhin Stille", async () => {
+    vi.stubGlobal("fetch", vi.fn(async (url: string) => {
+      if (String(url).includes("/api/search")) throw new TypeError("Failed to fetch");
+      if (String(url).includes("/api/chat/stream")) return sseAntwort(["Antwort", " ohne Engine"]);
+      return new Response("{}", { status: 200 });
+    }));
+    const user = userEvent.setup();
+    const { container } = zeige();
+    const text = await frageUndText(user, container);
+    expect(text, "Stille heisst Stille").toMatch(/did not answer/i);
+    expect(text, "und keine erfundne Zahl").not.toMatch(/HTTP \d/);
+  });
+});

@@ -1,4 +1,24 @@
-## [3.2.156]
+## [3.2.157]
+
+### Fixed
+
+- **The local-ranking chip names the reason it fell back.** One sentence covered three
+  different events: the index never answered, the index answered and refused (HTTP 500), and
+  the index answered with a body that carried no list (`{}`, or an HTML error page at 200,
+  which threw while parsing and landed in the same "Server unerreichbar" catch as a dead
+  transport). The chip now has three branches — "did not answer", "refused (HTTP 500)",
+  "answered without a list" — and the search call asks the status before the body.
+  `Chat.tsx:546`, `Chat.tsx:890`.
+
+### Tests
+
+Four cases in `tests/components/Chat.test.tsx`: three red at 12:52 MEZ for the intended reason
+(`/tmp/red-p66.json`), one control that keeps the true silence named as silence. Two assertions
+of mine were written against wording I then chose differently; they were aligned to the decided
+surface copy, not loosened — the guard in each case stays "this is not called silence".
+Suite: 3507 cases in 329 files, verdict run green.
+
+## [3.2.156]## [3.2.156]
 
 ### Fixed
 

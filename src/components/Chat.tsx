@@ -245,6 +245,11 @@ export function Chat({ activeMemories, onSaveToBrain, onSaveToBrainWithMeta, isF
   // Engine-Call, ordnet das lokale Ranking weiter (Chat.tsx:477, Kommentar seit Paket 3) —
   // der Nutzer hielt die Reihenfolge fuer die semantische Suche.
   const [suchWeg, setSuchWeg] = useState<"offen" | "engine" | "lokal">("offen");
+  // P66: drei Gruende fuehren aufs lokale Ranking, und die Zeile nannte sie einen --
+  // "the search index did not answer", auch wenn die Engine antwortete und ablehnte oder eine
+  // Antwort ohne Liste brachte. Eine Behauptung ueber die eigne Tuer muss die Tuer treffen.
+  const [suchGrund, setSuchGrund] = useState<"stumm" | "abgewiesen" | "ohne Liste" | null>(null);
+  const [suchStatus, setSuchStatus] = useState<number | null>(null);
 
   useEffect(() => {
     const t = setTimeout(() => setEntprellt(input.trim()), SERVER_DEBOUNCE_MS);
@@ -533,6 +538,7 @@ export function Chat({ activeMemories, onSaveToBrain, onSaveToBrainWithMeta, isF
     // Scheitert der Call, ordnet das lokale Ranking weiter (ehrlicher Fallback).
     const sucheStart = performance.now();
     let engineTreffer: ScoredMemory[] | null = null;
+    let grund: "stumm" | "abgewiesen" | "ohne Liste" = "stumm";
     try {
       const suchRes = await fetch("/api/search", {
         method: "POST",
@@ -543,12 +549,20 @@ export function Chat({ activeMemories, onSaveToBrain, onSaveToBrainWithMeta, isF
           tracks: { bm25: suchPrefs.spurBm25, vector: suchPrefs.spurVektor, entity: suchPrefs.spurGraph },
         }),
       });
-      const suchData = await suchRes.json();
-      if (Array.isArray(suchData?.results) && suchData.results.length > 0) engineTreffer = suchData.results as ScoredMemory[];
-    } catch {
-      // Server unerreichbar — die Antwort fällt auf das lokale Ranking zurück.
+      // P66: Status zuerst, Koerper verzeihend. Ein HTML-Blatt bei 200 warf bisher beim Lesen
+      // und landete bei "Server unerreichbar" -- dabei hatte die Engine geantwortet.
+      const suchData = (await suchRes.json().catch(() => null)) as { results?: unknown; error?: unknown } | null;
+      if (!suchRes.ok) { grund = "abgewiesen"; setSuchStatus(suchRes.status); }
+      else if (!Array.isArray(suchData?.results) || suchData.results.length === 0) grund = "ohne Liste";
+      else engineTreffer = suchData.results as ScoredMemory[];
+    } catch (e: unknown) {
+      // Echte Stille: nach der Tuer wurde gefragt, sie hat nicht geantwortet.
+      grund = "stumm";
+      console.warn("kepta: the search index did not answer, the local ranking takes over", e);
     }
     setSuchWeg(engineTreffer ? "engine" : "lokal");
+    setSuchGrund(engineTreffer ? null : grund);
+    if (engineTreffer) setSuchStatus(null);
     if (engineTreffer) {
       setSuchDauerMs(Math.round(performance.now() - sucheStart));
       setGehirnWarm(true);
@@ -887,8 +901,24 @@ export function Chat({ activeMemories, onSaveToBrain, onSaveToBrainWithMeta, isF
             </span>
           )}
           {suchWeg === "lokal" && (
-            <span className="chip" style={{ color: "var(--warn)" }} title="The search index did not answer — the order of the notes below comes from this app's own local ranking, not from the semantic search.">
-              <span className="status-dot" style={{ background: "var(--warn)" }} /> Local ranking — the search index did not answer
+            <span
+              className="chip"
+              style={{ color: "var(--warn)" }}
+              title={
+                (suchGrund === "abgewiesen"
+                  ? "The search index answered and refused this question — the order of the notes below comes from this app's own local ranking, not from the semantic search."
+                  : suchGrund === "ohne Liste"
+                    ? "The search index answered, but its list did not arrive — the order of the notes below comes from this app's own local ranking, not from the semantic search."
+                    : "The search index did not answer — the order of the notes below comes from this app's own local ranking, not from the semantic search.") +
+                (suchGrund === "abgewiesen" && suchStatus !== null ? ` (HTTP ${suchStatus})` : "")
+              }
+            >
+              <span className="status-dot" style={{ background: "var(--warn)" }} />
+              {suchGrund === "abgewiesen"
+                ? `Local ranking — the search index refused (HTTP ${suchStatus ?? "?"})`
+                : suchGrund === "ohne Liste"
+                  ? "Local ranking — the search index answered without a list"
+                  : "Local ranking — the search index did not answer"}
             </span>
           )}
           <div className="flex items-center gap-2" style={{ color: "var(--text-2)" }}>
