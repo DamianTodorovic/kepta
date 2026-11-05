@@ -943,6 +943,12 @@ const erwartet = [
   ["so answers stay small", 1],
   ["use 1 for a quick lookup", 1],
   ["the model answered fewer vectors than lines", 1],
+  // Punkt 7 / P79, 5.11.2026 22:39 MEZ (3.2.168): der depth-Satz von 3.2.167 war dem Riegel
+  // entglitten -- sein Semikolon trifft die Code-Kante der Sonde, also zaehlt er nicht und
+  // kann nichts melden. Nachgewiesen an drei Formen: alt ohne Semikolon Kandidat, mit
+  // Semikolon verworfen, mit Komma und "and" Kandidat. Gezaehlt am installierten 3.2.167
+  // (app.asar 49 200 915 B, latin1): "default 2, and use 1" 0 mal, "default 2; use 1" 2 mal.
+  ["default 2, and use 1 for a quick lookup", 1],
 ];
 
 // Was NICHT mehr drin sein darf. Bisher war "der alte Wortlaut ist weg" eine Behauptung im
@@ -1000,6 +1006,10 @@ const verboten = [
   // die eigne Zahl auf der Flaeche stehen darf (Export, 1 mal alt).
   "The health check did not answer",
   "the reason is in the developer console",
+  // Punkt 7 / P79 (3.2.168): die Halbsatz-Schreibung mit Semikolon ist die Form, die die Sonde
+  // als Code verwirft -- ein Werkzeugsatz, den der Riegel nicht sieht, meldet 0 Funde, egal ob
+  // er einen hat. Gezaehlt am installierten 3.2.167: **2** mal; am gebauten 3.2.168: **0** mal.
+  "default 2; use 1",
 ];
 // Die Liste darf nur ASCII-Zeichen enthalten. Grund, gemessen 21.10. 19:16 MESZ am
 // installierten Objekt: das Wort "Looking" plus echtes U+2026 steht dort 2 mal, diese

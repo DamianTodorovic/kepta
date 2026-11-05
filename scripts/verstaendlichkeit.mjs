@@ -256,4 +256,9 @@ async function haupt() {
   if (urteil === "TAUB") process.exitCode = 3;
 }
 
-haupt();
+// Ein Import ist keine Fahrt. Bis 3.2.167 endete diese Datei auf einem nackten `haupt()`,
+// also las jeder Import -- und die Suite importiert die Regel in zwei Dateien -- den Census
+// gegen das installierte Objekt (49 200 915 B) und druckte siebzig Zeilen in den Lauf.
+// Zeuge: 5.11.2026 22:39:38 MEZ, der Einzelfall-Lauf meldete den Census im Testausdruck.
+const direkt = process.argv[1] && path.resolve(process.argv[1]) === path.resolve(import.meta.filename);
+if (direkt) await haupt();

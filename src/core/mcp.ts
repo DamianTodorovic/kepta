@@ -219,7 +219,7 @@ export const TOOLS = [
       type: "object",
       properties: {
         entity: opt(stringSchema("Entity name (optional)")),
-        depth: opt({ type: "integer", description: "Graph depth 1-4, default 2; use 1 for a quick lookup" }),
+        depth: opt({ type: "integer", description: "Graph depth 1-4, default 2, and use 1 for a quick lookup" }),
       },
     },
     outputSchema: {

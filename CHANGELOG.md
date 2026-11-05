@@ -1,3 +1,30 @@
+## [3.2.168]
+
+### Fixed
+
+- **A sentence the fence cannot see cannot be guarded.** The depth guidance landed in 3.2.167
+  written as "Graph depth 1-4, default 2; use 1 for a quick lookup" -- and the semicolon put it
+  outside the census: the probe discards any candidate carrying a code character (`{`, `}`, `=`,
+  `;`, `=>`, `foo(`) so that source fragments never count as user language. Measured 5.11.2026
+  22:39 MEZ: the tool set read 32 candidates instead of the 33 measured at 21:05, and the fence
+  went on reporting "0 findings" over a set that had quietly shrunk. The wording now reads
+  "Graph depth 1-4, default 2, and use 1 for a quick lookup", which the probe sees. Two new
+  cases hold it: the sentence must be a candidate, and the tool denominator must not fall below
+  33 -- a floor, not a decoration, because a smaller field is a worse measurement, not a better
+  result.
+- **Importing the census no longer runs it.** `scripts/verstaendlichkeit.mjs` ended in a bare
+  `haupt()`, so every import executed the full census: the suite read the delivered 49 200 915-byte
+  object and printed some seventy lines into the run, twice over, on a machine that may not even
+  have that object. The census now runs only when the file is started directly, proven both ways
+  by a test that requires the import to stay silent and the direct start to speak.
+- **Seven tool sentences are still hidden from the fence, and they are named.** Measured 22:40 MEZ
+  in `src/core`: two carry braces (a wiki-link note and a field list), four carry `=` (the
+  knowledge-type table, two "true = ..." notices, one mode notice), and one is prose killed only
+  by a semicolon -- "Hybrid retrieval (BM25 + vectors + knowledge graph) over K3PTA memory…",
+  the most jargon-dense string an agent reads. That is the next cut: the code-character guard has
+  to tell a fragment of code from a comma-spliced sentence, and until it does, the tool layer's
+  zero findings is a claim over a partly sighted set.
+
 ## [3.2.167]
 
 ### Changed
