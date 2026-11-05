@@ -1,3 +1,15 @@
+## [3.2.171]
+
+### Fixed
+
+- **The second silent control in the graph's More menu, found by the same cycle at the narrow
+  width.** 3.2.170 gave `datum` its line; the 390 px pass then named the next one: at a phone
+  width the time slider moves into the menu, where the explanation switch had no case for it, so
+  the row showed a control and said nothing (measured 6.11.2026 00:19:31 MEZ: 17 rows, one
+  silent). It now reads "Scrub time: left is the oldest note, right is today, applied on
+  release." -- 13 words, inside the cap, and it says the part a person only learns by being
+  surprised: the picture does not move while you drag, it moves when you let go.
+
 ## [3.2.170]
 
 ### Added
