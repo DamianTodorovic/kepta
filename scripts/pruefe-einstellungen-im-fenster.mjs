@@ -1590,8 +1590,22 @@ async function main() {
     // ihren eignen Diener fort) darf einen Zyklus nicht als Wurf enden lassen -- ohne
     // Lesung ist die Stille ein benannter Zweig, kein gruener Fall (Hausregel 19.10.).
     const tuer = await evaliere(cdp, `(async()=>{try{const r=await fetch('/api/memories/gruppen');if(!r.ok)return null;const d=await r.json();return {ohneThema:d.ohneThema, bestand:d.bestand}}catch(e){return null}})()`);
-    const koepfe = await evaliere(cdp, `(()=>[...document.querySelectorAll('h3')].map((h)=>(h.textContent||'').replace(/\\s+/g,' ').trim()).filter((t)=>t&&t.length<48))()`);
-    const Liste = Array.isArray(koepfe) ? koepfe : [];
+    // Der Kopf ist ein section: h3 traegt den Titel, die naechste Span die Zahl
+    // (Dashboard.tsx:1453-1458). Das kable h3-Raster fand in keiner Zeile eine Ziffer, der
+    // Gegenlauf meldete 17:17:12 MEZ "Kopf kein Kopf" fuer alle sechs Achsen.
+    const koepfe = await evaliere(cdp, `(() => {
+      const out = [];
+      for (const sec of document.querySelectorAll('section')) {
+        const h = sec.querySelector('h3'); if (!h) continue;
+        const span = h.parentElement ? h.parentElement.querySelector('span') : null;
+        const m = span ? (span.textContent || '').match(/(\\d[\\d,]*)/) : null;
+        const t = (h.textContent || '').replace(/\\s+/g, ' ').trim();
+        if (t) out.push({ titel: t, zahl: m ? Number(m[1].replace(/,/g, '')) : null });
+      }
+      return out;
+    })()`);
+    const Liste = (Array.isArray(koepfe) ? koepfe : []).map((k) => (k.zahl === null ? k.titel : `${k.titel} ${k.zahl}`));
+    console.log(`  alle Koenigs-Texte: ${JSON.stringify(Liste).slice(0, 700)}`);
     console.log(`  Tuer: ohneThema ${tuer ? tuer.ohneThema : "keine Lesung"} von ${tuer ? tuer.bestand : "?"} — Faelle: ${Liste.join(" | ") || "keine"}`);
     urteil("**die Themen-Gruppierung malt Koepfe, keine flache Liste**", Liste.length > 0, true);
     const hatOhneFach = Liste.some((k) => /No topic yet/i.test(k));
@@ -1602,6 +1616,31 @@ async function main() {
     }
     const Achsen = ["People", "Projects", "Events", "Tasks", "Guides", "Links"];
     urteil("**und ein Kopf nennt eine der sechs Achsen**", Achsen.some((a) => Liste.some((k) => k.startsWith(a))), true);
+    // Der Gegenlauf: Kopfzahl gegen Achsenzahl. Gelesen wird HIER und JETZT aus dem Blatt,
+    // nicht aus einem Vorrat von der Saat -- gemessen 17:30:47 MEZ brachte der Vorrat
+    // bestand 30 / ohneThema 0, die Koenige aber "Tasks 30" und "No topic yet 4": vier
+    // Notizen schrieb ein spaeterer Zyklus. Zwei Augenblicke zu vergleichen ist kein
+    // Gegenlauf. Darum: frische Lesung, und nur wenn sie denselben Bestand nennt wie die
+    // Lesung vor dem Klick, wird Gleichheit verlangt; sonst ist es ein benannter Zweig.
+    const achsen = await evaliere(cdp, `(async()=>{try{const r=await fetch('/api/memories/gruppen');if(!r.ok)return null;const d=await r.json();return {bestand:d.bestand, ohneThema:d.ohneThema, themen:d.themen||{}}}catch(e){return null}})()`);
+    if (achsen && tuer && Number(achsen.bestand) === Number(tuer.bestand) && Number(achsen.bestand) <= 200) {
+      const Faelle = [];
+      for (const [achse, n] of Object.entries(achsen.themen)) {
+        const K = Achsen.find((a) => a.toLowerCase() === achse);
+        if (!K) continue;
+        const Kopf = Liste.find((k) => k.startsWith(K));
+        const Ziffer = Kopf ? Kopf.replace(K, "").match(/\d+/) : null;
+        if (Number(n) > 0 && !Ziffer) Faelle.push(`${K}: Tuer ${n}, kein Kopf`);
+        else if (Number(n) === 0 && Kopf) Faelle.push(`${K}: Kopf, Tuer null`);
+        else if (Ziffer && Number(Ziffer[0]) !== Number(n)) Faelle.push(`${K}: Kopf ${Ziffer[0]}, Tuer ${n}`);
+      }
+      if (Number(achsen.ohneThema) > 0 && !Liste.some((k) => /No topic yet/i.test(k))) Faelle.push("No topic yet: Tuer hat eine Zahl, kein Kopf");
+      if (Number(achsen.ohneThema) === 0 && Liste.some((k) => /No topic yet/i.test(k))) Faelle.push("No topic yet: Kopf gemalt, Tuer hat null");
+      console.log(`  Gegenlauf (frisch, Bestand ${achsen.bestand}): ${JSON.stringify(Liste).slice(0, 300)} — Tuer ${JSON.stringify(achsen.themen)} ohneThema ${achsen.ohneThema}`);
+      urteil("**Kopfzahl und Achsenzahl der Tuer sind dieselbe Zahl, in derselben Welt**", Faelle, []);
+    } else {
+      console.log(`  Gegenlauf ohne Gegenstand: frische Lesung ${achsen ? "Bestand " + achsen.bestand : "keine"}, Vorrat ${tuer ? "Bestand " + tuer.bestand : "keine"} — die Welt hat sich zwischen den beiden Lesungen geaendert oder die Tuer antwortet nicht`);
+    }
     const breitIst = Number(await evaliere(cdp, `window.innerWidth`));
     console.log(`  Bild: ${await bild(`gruppethema-${breitIst}px.png`)}`);
   }
