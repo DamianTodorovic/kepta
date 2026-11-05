@@ -18,14 +18,20 @@ import {
 
 const LATE = 0;
 
+/** Die Form dessen, was `zensiere` zurueckgibt. Der Census ist JavaScript ohne Typdecke,
+    also wird die Form hier benannt -- ein implizites `any` in einem Fall, der eine Zahl
+    verteidigt, waere ein Fall, der nichts behauptet. */
+type Fund = { s: string; quelle: string; fach: string[]; grund: boolean; handlung: boolean; woerter: number };
+type Census = { n: number; unterKappe: number; mitGrund: number; mitHandlung: number; mitFach: number; fachOhneAlles: Fund[] };
+
 describe("Punkt 7: Fachwort-Saetze der Flaeche tragen Grund oder Taetigkeit", () => {
   const funde = kandidatenAusQuelltext(FLAECHE);
   const getragen = [...funde].map(([s, quelle]) => ({ ...zaehle(s), s, quelle }));
-  const census = zensiere(getragen);
+  const census = zensiere(getragen) as Census;
 
   it("kein Satz der Flaeche nennt ein Fachwort, ohne zu erklaeren oder zu handeln", () => {
     const liste = census.fachOhneAlles
-      .map((z) => `    ${z.fach.join(",")}  ${z.quelle}  ::  ${z.s.slice(0, 96)}`)
+      .map((z: Fund) => `    ${z.fach.join(",")}  ${z.quelle}  ::  ${z.s.slice(0, 96)}`)
       .join("\n");
     expect(census.fachOhneAlles.length, `\n  ${census.fachOhneAlles.length} Funde:\n${liste}`).toBeLessThanOrEqual(LATE);
   });
