@@ -1239,7 +1239,15 @@ export function Dashboard() {
       // Fehlers ("blockiert"), in der Wirklichkeit eine Speicher- oder Bibliothekszeile,
       // oft mit Pfad.
       console.error("kepta: import failed", e);
-      const marke = "Import did not run — K3PTA stopped while reading or saving these files. The reason is in the developer console, not on this button.";
+      // P71: kein Verweis auf die Konsole. Die Flaeche nennt, was sie weiss -- und das
+      // ist die eigne Zaehlung. Gemessen 5.11. 15:13:16 MEZ am ausgelieferten 3.2.160
+      // trug das Objekt die verbotene Zeile zweimal: die Sonde schrieb ihr Muster klein,
+      // der Flaeschen-satz begann gross -- dieselbe Zeile, an der Grossschrift vorbei.
+      // Wirft eine Bibliothek oder der Speicher, steht ihr Wortlaut beim Betreiber
+      // (console.error oben), auf dem Knopf steht die Zahl.
+      const marke = gelungen > 0
+        ? `Import stopped after ${gelungen} of ${versuche} writes. What is saved stays in your notes.`
+        : "Import did not run. No note was written.";
       setImportErr(marke);
       setTimeout(() => setImportErr((c) => (c === marke ? null : c)), QUITTUNG_MS);
     } finally {

@@ -72,7 +72,7 @@ describe("absage: die Herkunft entscheidet, was der Nutzer sieht", () => {
   });
 
   it("zeigt einer Bibliotheks-Ausnahme nur den festen Satz — der Grund bleibt im Protokoll", () => {
-    const fest = "Import did not run — the reason is in the developer console.";
+    const fest = "Import did not run. No note was written.";
     const wurf = new TypeError("Failed to fetch /Users/a/.kepta/kepta.db");
     expect(absage(fest, wurf)).toBe(fest);
     expect(console.error).toHaveBeenCalledWith(`kepta: ${fest}`, wurf);

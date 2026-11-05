@@ -905,8 +905,16 @@ const erwartet = [
   ["The count did not arrive in this answer", 1],
   // Punkt 4 / Aufgabe #61 und Punkt 7, 5.11. 12:58 MEZ (3.2.157): der Grund des lokalen
   // Rankings hat drei Zweige bekommen. Gezaehlt am installierten 3.2.154 (asar 49 201 527 B,
-  // 12:57:5x MEZ, bytes.count() in latin1): "the search index answered without a list" **0** mal.
+  // 12:57 MEZ, Sekunde nicht gemessen, bytes.count() in latin1): "the search index answered without a list" **0** mal.
   ["the search index answered without a list", 1],
+  // Punkt 4 / Aufgabe #31, 5.11. 15:13:16 MEZ (3.2.160): die Objekt-Sonde kannte das
+  // Verbot der Konsole nur in Kleinschreibung, das Objekt trug denselben Wortlaut mit
+  // grosssem Anfang zweimal (Dashboard.tsx:1242, SystemStatus.tsx:181). Jetzt nennt die
+  // Import-Quittung ihre eigne Zaehlung, und die Sonde faehrt jedes verbotene Muster in
+  // beiden Anfangsformen. Gezaehlt am installierten 3.2.160 vor der Heilung: beide neuen
+  // Saetze 0 mal.
+  ["No note was written", 1],
+  ["What is saved stays in your notes", 1],
   // Punkt 4 / Aufgabe #59, 4.11. 23:46 MEZ (3.2.152): die Herkunfts-Kante gilt an allen fuenf
   // Absage-Stellen, nicht nur im Helfer. Gezaehlt am installierten 3.2.151 (app.asar
   // 49 200 864 B, mtime 22:26:45 MEZ, bytes.count() in latin1): "the wording of this thrower
@@ -992,10 +1000,19 @@ for (const [m, min] of erwartet) {
   console.log(`  ${ok ? "ok  " : "FEHLT"}  ${String(n).padStart(3)}  ${m}${ok ? "" : `  (erwartet >= ${min})`}`);
 }
 for (const m of verboten) {
-  const n = s.split(m).length - 1;
+  // Grosse oder kleine Anfangsbuchstabe: die Liste steht klein, die Flaeche schreibt
+  // ihre Saetze mit grosssem Anfang. Gemessen 5.11. 15:12 MEZ am ausgelieferten 3.2.160:
+  // `the reason is in the developer console` war verboten und wurde 0 mal gezaehlt,
+  // waehrend das Objekt denselben Wortlaut mit grosssem Anfang an zwei Stellen trug
+  // (Dashboard.tsx:1242 und SystemStatus.tsx:181). Eine Sonde, die an der Grossschrift
+  // vorbeisieht, meldet Sauberkeit fuer Ungelesenes -- also jedes verbotene Muster in
+  // beiden Anfangsformen, und die Zeile nennt die Trefferform.
+  const varianten = (() => { const gross = m.charAt(0).toUpperCase() + m.slice(1); return gross === m ? [m] : [m, gross]; })();
+  const n = varianten.reduce((a, x) => a + (s.split(x).length - 1), 0);
+  const treffer = varianten.filter((x) => (s.split(x).length - 1) > 0).map((x) => `[${x}] ${s.split(x).length - 1}x`).join(", ") || "keine Form";
   const ok = n === 0;
   if (!ok) fehl++;
-  console.log(`  ${ok ? "ok  " : "ZU VIEL"}  ${String(n).padStart(3)}  ${m}${ok ? "  (verboten)" : "  (verboten — ein frueherer Wortlaut ist zurueckgekehrt)"}`);
+  console.log(`  ${ok ? "ok  " : "ZU VIEL"}  ${String(n).padStart(3)}  ${m}${ok ? "  (verboten, beide Anfangsformen)" : `  (verboten — ein frueherer Wortlaut ist zurueckgekehrt: ${treffer})`}`);
 }
 console.log(`  asar ${fs.statSync(p).size} B, mtime ${fs.statSync(p).mtime.toISOString()}${version ? `, bestellte Version ${version}` : ""}`);
 if (fehl) { console.log(`  ${fehl} Pruefung(en) fehlgeschlagen`); process.exit(1); }

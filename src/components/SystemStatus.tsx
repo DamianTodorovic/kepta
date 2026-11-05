@@ -178,7 +178,10 @@ export function SystemStatus() {
       const data = (await res.json().catch(() => null)) as { text?: unknown; error?: unknown } | null;
       setTestResult(res.ok ? { ok: true, msg: `Model answers: “${String(data?.text ?? '').trim().slice(0, 40)}”` } : { ok: false, msg: tuerSatz(data?.error, `HTTP ${res.status}`) });
     } catch (e) {
-      setTestResult({ ok: false, msg: absage("No answer from that service. The reason is in the developer console.", e) });
+      // P71, zweiter Ort (gemessen 15:13:16 MEZ am ausgelieferten Objekt): der Verweis
+      // auf die Konsole ist die eine Auskunft, die der Flaeche verboten ist -- `absage`
+      // haengt den Grund der Tuer an, eine fremde Ausnahme bleibt beim Betreiber.
+      setTestResult({ ok: false, msg: absage("No answer from that service.", e) });
     } finally {
       setTesting(false);
     }

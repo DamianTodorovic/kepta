@@ -186,5 +186,53 @@ describe("Der Import-Ausnahmewortlaut bleibt beim Betreiber, nicht auf dem Knopf
     for (const wort of verraeter) {
       expect(text, `die Flaeche fuehrt den Wortlaut der Ausnahme: ${wort}`).not.toContain(wort);
     }
+    // P71 (5.11.): dieselbe Zeile verweist auch nicht mehr auf die Konsole. Gemessen am
+    // ausgelieferten 3.2.160 trug das Objekt den Verweis zweimal, weil die Objekt-Sonde
+    // ihn nur in Kleinschreibung kannte.
+    expect(text, `der Satz schickt den Nutzer in die Konsole: ${text}`).not.toMatch(/developer console/i);
+    // Und er nennt die eigne Zaehlung: hier warf die erste Datei, also wurde nichts geschrieben.
+    expect(text).toMatch(/No note was written/i);
+  });
+
+  it("zaehlt die geretteten Schreibungen, wenn der Wurf mitten im Stapel kommt", async () => {
+    // Der Fall hinter der ersten Haelfte des Satzes: eine Datei geht durch, die naechste
+    // wirft. "No note was written" waere dann eine Luege -- die Flaeche schuldet die Zahl.
+    let aufruf = 0;
+    // saveMemory (store.ts:338) liefert die Bestaetigung NUR aus `data.memory` — ein
+    // Rumpf ohne dieses Feld laesst die Quittung bei null stehen und der Fall wuerde
+    // den andern Zweig treffen. Also antwortet die Tuer hier wie im echten Lauf.
+    stubpe(async (url, init) => {
+      const meth = String(init?.method ?? "GET").toUpperCase();
+      if (url === "/api/memories" && meth === "POST") {
+        return new Response(JSON.stringify({ ok: true, memory: { id: "m-erste", userId: "local", title: "erste", content: "Inhalt der ersten Datei.", tags: ["import", "md"], createdAt: 1, updatedAt: 1 } }), { status: 200 });
+      }
+      return new Response(JSON.stringify({ ok: true, memories: [], total: 0 }), { status: 200 });
+    });
+    vi.spyOn(File.prototype, "text").mockImplementation(async () => {
+      aufruf += 1;
+      if (aufruf === 1) return "Inhalt der ersten Datei.";
+      throw new Error("QuotaExceededError: the quota has been exceeded — /Users/a/.kepta/kepta.db");
+    });
+    const { container } = await zeige();
+    // Beide Dateien in EINEM Abgabe-Vorgang: zwei Aufrufe hinter einander wuerden die
+    // erste Quittung loeschen, bevor die zweite entsteht (QUITTUNG_MS), und der Wurf
+    // muss den Stapel mitten im Lauf treffen.
+    const eingabe = container.querySelector('input[type="file"]') as HTMLInputElement;
+    expect(eingabe, "kein Dateifeld in der Flaeche").toBeTruthy();
+    Object.defineProperty(eingabe, "files", {
+      value: [new File(["Inhalt der ersten Datei."], "erste.md", { type: "text/markdown" }),
+              new File(["Inhalt der zweiten Datei."], "zweite.md", { type: "text/markdown" })],
+      configurable: true,
+    });
+    await act(async () => {
+      eingabe.dispatchEvent(new Event("change", { bubbles: true }));
+      await new Promise((r) => setTimeout(r, 600));
+    });
+    await waitFor(() => expect(container.textContent || "").toMatch(/Import stopped after/i));
+    const text = (container.textContent || "").replace(/\s+/g, " ");
+    expect(text, `die Quittung nennt keine Zahl: ${text}`).toMatch(/1 of 1 writes/);
+    expect(text).toMatch(/What is saved stays in your notes/i);
+    expect(text).not.toMatch(/developer console/i);
+    for (const wort of ["QuotaExceededError", "/Users/a/.kepta"]) expect(text).not.toContain(wort);
   });
 });

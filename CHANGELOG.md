@@ -1,3 +1,35 @@
+## [3.2.161]
+
+### Fixed
+
+- **The import receipt counts, instead of sending the user to the console.** Measured 5.11.
+  15:13:16 MEZ on the delivered 3.2.160: the object carried "The reason is in the developer
+  console" twice -- `Dashboard.tsx:1242` (import drop path) and `SystemStatus.tsx:181` (the
+  model-answer test). The ban on that wording is the house's own since 3.2.155, and two
+  component tests already refuse it (`tests/components/SystemStatus.test.tsx:363`,
+  `tests/components/EnterpriseViews.test.tsx:573`) -- yet the object kept it, because the
+  object checker's forbidden list held only the lowercase form while the surface writes
+  sentences with a capital. The import path now names its own counting: with nothing saved
+  "Import did not run. No note was written.", with a throw in the middle of the stack
+  "Import stopped after N of M writes. What is saved stays in your notes."; the thrower's
+  wording stays with the operator (`console.error`). `SystemStatus` keeps `absage()`, which
+  appends the door's reason and never points at a console.
+- A case for the counted branch: two files dropped in ONE event (two events would clear the
+  first receipt), the door answering with `data.memory` as `store.ts:338` demands, and the
+  second read throwing. It failed first as `expected ... to match /Import stopped after/i`
+  (measured 15:15 MEZ) -- the first version of the case asked the door for a body without
+  `memory`, so `gelungen` stayed 0 and the surface told the truth about a different branch.
+
+### Changed
+
+- **The object checker now reads every forbidden wording in both starting cases.** The hole
+  is measured, not assumed: the same line, capitalised, passed the gate at 15:03:19 MEZ with
+  `INHALT_EXIT=0` while the object carried it twice. Each forbidden pattern is counted as
+  written and with a capital first letter, and the line names which form hit.
+- One padded clock in my own comment corrected: `scripts/pruefe-asar-inhalt.cjs:908` claimed
+  "12:57:5x MEZ" for a count whose seconds were never measured. It now says the minute and
+  names the missing second.
+
 ## [3.2.160]
 
 ### Removed
