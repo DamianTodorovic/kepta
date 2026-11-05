@@ -1516,6 +1516,57 @@ async function main() {
     console.log(`  Bild: ${await bild(`health-absage-${breitIst}px.png`)}`);
   }
 
+  // --- P71 / Aufgabe #31: der Import-Wurf im echten Fenster (Zyklus `importwurf`) ---
+  // Die Quittung des Datei-Imports ist der einzige Absage-Ort des Hauses, der keinen
+  // eignen Daten-Namen traegt (Dashboard.tsx:1876 -- ein div ohne data-testid), also wird
+  // sie ueber ihren Text gesucht und der Text selbst gemessen. Der Werfer ist die Datei
+  // selbst: extractTextFromFile ruft `file.text()`, und eine Bibliothek, die darin wirft,
+  // ist genau der Fall, dessen Wortlaut nicht auf den Knopf darf (P4-2310 c, P71).
+  if (NUR === "" || NUR === "importwurf") {
+    // Der.healthgrund-Zyklus laesst die Flaeche auf den Einstellungen stehen; das
+    // Dateifeld wohnt in der Wissens-Flaeche (Dashboard.tsx:1866), also zuerst hin.
+    const gesprungen = await evaliere(cdp, `(()=>{const b=[...document.querySelectorAll('.sidebar-nav-btn')]
+      .find(x=>/^\s*Knowledge\s*$/.test((x.textContent||'').trim()));
+      if(!b) return 'kein Seitenleisten-Knopf Knowledge'; b.click(); return (b.textContent||'').trim();})()`);
+    console.log(`  Sprung nach: ${gesprungen}`);
+    await schlafe(1200);
+    const geworfen = await evaliere(cdp, `(async () => {
+      File.prototype.text = () => Promise.reject(new Error("QuotaExceededError: the quota has been exceeded - /Users/a/.kepta/kepta.db"));
+      const i = document.querySelector('input[type="file"]');
+      if (!i) return "kein Dateifeld in der Flaeche";
+      const dt = new DataTransfer();
+      dt.items.add(new File(["Inhalt eines Mandats."], "mandat.md", { type: "text/markdown" }));
+      i.files = dt.files;
+      i.dispatchEvent(new Event("change", { bubbles: true }));
+      return "abgegeben";
+    })()`);
+    console.log(`  Abgabe: ${JSON.stringify(String(geworfen))}`);
+    urteil("**die Flaeche hat ein Dateifeld, das die Abgabe annimmt**", String(geworfen), "abgegeben");
+    await schlafe(1500);
+    const fund = await evaliere(cdp, `(() => {
+      // Der tiefste Treffer ist die Quittung selbst: Vorfahren kommen zuerst in der
+      // Dokumentordnung, also ist der letzte dieser Liste der engste Kasten.
+      const alle = [...document.querySelectorAll('div')].filter((d) => /Import did not run|Import stopped after/.test(d.textContent || ''));
+      const treffer = alle.length ? alle[alle.length - 1] : null;
+      if (!treffer) return null;
+      treffer.scrollIntoView({ block: 'center' });
+      const r = treffer.getBoundingClientRect();
+      return { text: (treffer.textContent || '').replace(/\\s+/g, ' ').trim(), kasten: [Math.round(r.width), Math.round(r.height), Math.round(r.left), Math.round(r.right)] };
+    })()`);
+    const breitIst = Number(await evaliere(cdp, `window.innerWidth`));
+    const text = fund ? fund.text : "";
+    console.log(`  die Import-Quittung sagt: ${JSON.stringify(text)}`);
+    console.log(`  ihr Kasten bei ${breitIst} px: ${JSON.stringify(fund ? fund.kasten : null)}`);
+    urteil("**der Wurf malt eine Quittung, statt zu schweigen**", text.length > 0, true);
+    urteil("**sie nennt ihre eigne Zaehlung**", /no note was written|of \d+ writes/i.test(text), true);
+    urteil("**und verweist nicht in die Konsole**", /developer console/i.test(text), false);
+    for (const verraeter of ["QuotaExceededError", "/Users/a/.kepta", "the quota has been exceeded"]) {
+      urteil(`**der Wortlaut des Werfers bleibt beim Betreiber (${verraeter})**`, text.includes(verraeter), false);
+    }
+    urteil("**und die Zeile bleibt im Fenster**", fund ? (fund.kasten[2] >= 0 && fund.kasten[3] <= breitIst) : null, true);
+    console.log(`  Bild: ${await bild(`import-wurf-${breitIst}px.png`)}`);
+  }
+
   console.log(fehl ? `  ${fehl} Pruefung(en) fehlgeschlagen` : "  alle Zyklen durch: Wert gesetzt, Fenster neu geladen, Wirkung gesehen");
   return fehl ? 1 : 0;
 }
