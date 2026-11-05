@@ -932,6 +932,17 @@ const erwartet = [
   // claims of this note" steht schon **1** mal im alten Objekt (ihr Satz verlor nur den
   // Klammer-Inhalt), und "antwortKlausel" ist eine Kennung, die der Minifier verbiegt.
   ["the wording of this thrower stays in the log", 1],
+  // Punkt 7 / P78, 5.11.2026 21:05 MEZ (3.2.167): die Werkzeug-Lage nannte Fachwoerter ohne
+  // Grund, und ihr Leser ist ein Modell. Gezaehlt am installierten 3.2.166 (app.asar
+  // 49 200 667 B) gegen das gebaute 3.2.167 (49 200 915 B), latin1: "so answers stay small"
+  // 0 -> 2, "use 1 for a quick lookup" 0 -> 2, "the model answered fewer vectors than lines"
+  // 0 -> 2. Zwei der drei alten Woerter konnten nicht verboten werden, weil sie Vorsilben der
+  // neuen sind: "Graph depth 1-4, default 2" steht 2 mal in beiden, "Embedding count does not
+  // match" ebenso -- darum buergen hier die neuen Enden, und die alte memory_graph-Zeile ist
+  // unten in `verboten`.
+  ["so answers stay small", 1],
+  ["use 1 for a quick lookup", 1],
+  ["the model answered fewer vectors than lines", 1],
 ];
 
 // Was NICHT mehr drin sein darf. Bisher war "der alte Wortlaut ist weg" eine Behauptung im
