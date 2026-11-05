@@ -1,3 +1,34 @@
+## [3.2.159]
+
+### Fixed
+
+- **A hierarchy label no longer runs off the edge of the graph.** Measured 5.11. 14:16:51 MEZ on
+  the delivered 3.2.158 at 390 x 844: the outermost pixel column of the picture carried ink at
+  "rechts", while the surface named a cut only at "links". Read from the saved image itself
+  (716 x 1248 device pixels): three runs of 2 to 3 pixels in height around y 255-267, colours
+  142,141,138 and 164,163,157 -- text grey, so a word, not a disc. The skeleton path painted its
+  `mitteX` without the edge rule that the content path applies a few lines below it (the rule
+  itself is not new: measured 18.10. on 3.2.21, four of 35 titles were cut by the border). The
+  rule now lives once, in `titelKante`, and knows the difference between a centred label and a
+  left-aligned one -- for the skeleton path the END is what must stay inside, not the middle, and
+  the old clamp would have let 50 pixels of a 100-pixel name through the edge. Five cases in
+  `tests/graph-titel-kante.test.ts` bite in both directions. No new sentence reaches the surface,
+  so this landing carries no object marker: the proof is the window run, named as a deviation
+  rather than a number invented for the gate.
+
+### Changed
+
+- **The second edge ladder of the window checker asked the wrong body.** It demanded ink in
+  pixel row zero of every edge the surface reports as cut. Measured: the surface paints that
+  marker one CSS row inside (`KnowledgeGraph.tsx:4865-4868`), so at 2x device zoom columns 0 and
+  1 are always ground -- the ladder failed a truthful report twice, at 13:58:33 and 14:01:26 MEZ,
+  while the same run wrote "33 of 34 unfolded notes are in this picture" and painted the marker.
+  It now asks the number that carries the word's reason: a reported edge needs at least one note
+  outside the picture, and notes outside need a reported edge (`scripts/helfer/kanten-urteil.mjs`,
+  five cases including both directions). A silent balance line is a named branch -- "the frame
+  holds everything" -- not a missing reading. The first direction (border ink must be reported)
+  stays, and it is the one that found the label above.
+
 ## [3.2.158]
 
 ### Added

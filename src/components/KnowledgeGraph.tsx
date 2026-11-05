@@ -954,6 +954,39 @@ export function kantenBeschnitt(
   return k;
 }
 
+/**
+ * Die Kante, an der ein Titel stehen darf -- fuer jede Malstrasse dieselbe.
+ *
+ * Die Regel existierte schon (18.10., ausgeliefert 3.2.21: vier von 35 Titeln vom
+ * Rand durchschnitten), aber sie wohnte nur in einer der zwei Wege, die Etiketten
+ * malen. Gemessen 5.11. 14:16:51 MEZ am ausgelieferten 3.2.158 bei 390 x 844: die
+ * aeusserste Pixelreihe des Bildes traegte Tinte an "rechts", die Flaeche meldete
+ * nur "links". Gelesen am Bild: drei Läufe von 2 bis 3 Geraete-Pixeln Hoehe um
+ * y 255 bis 267, Farben 142,141,138 und 164,163,157 -- Textgrau, keine Scheibe.
+ * Es war ein Geruest-Etikett, und der Geruest-Weg rechnete sein `mitteX` ohne die
+ * Kantenregel, die der Inhaltsweg direkt darunter faehrt. Ein Titel, der die Kante
+ * beruehrt, ist eine Haelfte ohne Auskunft -- an beiden Wegen.
+ *
+ * `null`, wenn das Wort selbst mittig nicht in das Bild fasst: dann faellt es,
+ * und es hat einen eignen Grund (dasselbe Wort wie in der Regel darunter).
+ */
+export function titelKante(
+  mx: number,
+  breite: number,
+  w: number,
+  kantenPx: number = TITEL_KANTEN_PX,
+  ausrichtung: "mitte" | "links" = "mitte"
+): number | null {
+  if (ausrichtung === "links") {
+    // Der Anfang ist gesetzt, das Ende ist die Stelle, die die Kante halten muss.
+    if (breite + 2 * kantenPx > w) return null;
+    return Math.min(Math.max(mx, kantenPx), w - breite - kantenPx);
+  }
+  const halb = breite / 2 + kantenPx;
+  if (halb * 2 > w) return null;
+  return Math.min(Math.max(mx, halb), w - halb);
+}
+
 export function rahmenZeilentext(imRahmen: number, gesamt: number, baumAnsicht: boolean, kernMarke: boolean): string {
   if (imRahmen >= gesamt) return "";
   if (imRahmen === 0) return rahmenLeereMeldung(baumAnsicht, kernMarke);
@@ -4529,11 +4562,10 @@ export function KnowledgeGraph({ memories: memoriesAusFenster, onSelectMemory, o
      * hinein, der Knoten bleibt, wo er ist. `null`, wenn das Wort selbst mittig
      * nicht fasst: dann faellt es, und es hat einen eignen Grund.
      */
-    const kantigX = (mx: number, breite: number): number | null => {
-      const halb = breite / 2 + TITEL_KANTEN_PX;
-      if (halb * 2 > dimensions.w) return null;
-      return Math.min(Math.max(mx, halb), dimensions.w - halb);
-    };
+    const kantigX = (mx: number, breite: number): number | null => titelKante(mx, breite, dimensions.w);
+    // Das Geruest malt linksbuendig -- seine Kante ist sein Ende, nicht seine Mitte.
+    const kantigXLinks = (mx: number, breite: number): number | null =>
+      titelKante(mx, breite, dimensions.w, TITEL_KANTEN_PX, "links");
     /** Dieselbe Luft oben und unten — ein abgeschnittener Kopf ist kein Kopf. */
     const kantigY = (my: number, hoehe: number): number =>
       Math.min(Math.max(my, TITEL_KANTEN_PX), Math.max(TITEL_KANTEN_PX, dimensions.h - hoehe - TITEL_KANTEN_PX));
@@ -4568,13 +4600,20 @@ export function KnowledgeGraph({ memories: memoriesAusFenster, onSelectMemory, o
         const mitteX = (n.x + n.r) * t.k + t.x + 3;
         const mitteY = n.y * t.k + t.y;
         const breite = ctx.measureText(titel).width;
+        // Die Kantenregel gilt auch hier: ein Geruest-Wort, das den Rand
+        // durchschneidet, ist eine Haelfte ohne Auskunft. Das Halten ist ausgenommen,
+        // weil die Antwort des Zeigers Vorrang hat (dasselbe Wort wie unten).
+        const kantig = kantigXLinks(mitteX, breite);
+        if (kantig === null && !gehalten) continue;
+        const xGeruest = kantig ?? mitteX;
+        const yGeruest = kantigY(mitteY, fs);
         // halbe Zeilenhoehe hoch, weil der Text mittig auf der Achse sitzt
-        if (!gehalten && !ohneRaster && !freiUndBelegen(mitteX, mitteY - zellHoehe / 2, breite)) continue;
+        if (!gehalten && !ohneRaster && !freiUndBelegen(xGeruest, yGeruest - zellHoehe / 2, breite)) continue;
         ctx.lineWidth = 3;
         ctx.strokeStyle = grundFarbe;
-        ctx.strokeText(titel, mitteX, mitteY);
+        ctx.strokeText(titel, xGeruest, yGeruest);
         ctx.fillStyle = gehalten ? akzent : geruestFarbe;
-        ctx.fillText(titel, mitteX, mitteY);
+        ctx.fillText(titel, xGeruest, yGeruest);
       }
     }
 

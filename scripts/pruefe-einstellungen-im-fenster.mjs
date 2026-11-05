@@ -38,6 +38,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { createRequire } from "node:module";
+import { kantenUrteil } from "./helfer/kanten-urteil.mjs";
 import { umrandung } from "./helfer/png-kante.mjs";
 
 const WURZEL = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
@@ -1122,6 +1123,12 @@ async function main() {
       }
       return r;
     };
+    // Der Zahlengriff steht jetzt VOR der Kanten-Latte (5.11.): dieselbe Bilanzzahl, die unten
+    // den Kameravergleich traegt, ist auch der Grund der gemeldeten Kante. Ein Leser, zwei Orte.
+    const rahmenZahl = async () => await evaliere(cdp, `(()=>{const e=document.querySelector('[data-testid="graph-im-bild"]');
+      const t=(e&&e.textContent||'').replace(/\\s+/g,' ').trim();const m=t.match(/^([\\d,]+) of ([\\d,]+)/);
+      return m?{im: Number(m[1].replace(/,/g,'')), von: Number(m[2].replace(/,/g,'')), text:t}:{im:null, von:null, text:t||'schweigt'}})()`);
+
     const vorDemGriff = melde(umrandung((erst || {}).puff || Buffer.alloc(0)), "Ansicht beim Eintreffen");
     if (vorDemGriff) {
       // Die Latte ist NEU GEFASST, nicht erweicht. Sie verlangte bis hierher "kein Netz ueber
@@ -1140,8 +1147,17 @@ async function main() {
       console.log(`  Kanten: Tinte ${JSON.stringify(tintenkanten)}, gemeldet ${JSON.stringify(gemeldete)}, Marke ${JSON.stringify(markenkanten)}`);
       urteil("**jede Kante, die Tinte traegt, ist als Beschnitt gemeldet**",
         tintenkanten.filter((s) => !gemeldete.includes(s)), []);
-      urteil("**und jede gemeldete Kante traegt wirklich Tinte**",
-        gemeldete.filter((s) => !tintenkanten.includes(s)), []);
+      // Die zweite Richtung war blind, gemessen am ausgelieferten Objekt: sie verlangte Tinte in
+      // der nullten Pixelreihe, die Flaeche malt ihre Marke aber eine CSS-Reihe innerhalb
+      // (KnowledgeGraph.tsx:4865-4868) -- bei doppeltem Zoom Spalte 2 bis 7, Spalte 0 und 1
+      // bleiben Grund. Gefragt wird jetzt die Zahl, die dem Wort denselben Grund gibt: eine
+      // gemeldete Kante braucht eine Zahl ausserhalb, und Zahlen ausserhalb brauchen eine
+      // gemeldete Kante. Der Biss liegt in scripts/helfer/kanten-urteil.mjs, Fall zwei und drei.
+      const bilanz = await rahmenZahl();
+      const kU = kantenUrteil({ gemeldete, im: bilanz.im, von: bilanz.von });
+      console.log(`  Wort gegen Zahl: ${kU.begruendung} (Zeile: ${bilanz.text})`);
+      urteil("**jede gemeldete Kante hat ihre Zahl ausserhalb, und keine Zahl ausserhalb bleibt ohne Kante**",
+        kU.fehl, []);
       urteil("**jede gemeldete Kante malt die Marke**", gemeldete.filter((s) => !markenkanten.includes(s)), []);
       urteil("**keine ungemeldete Kante malt eine Marke**", markenkanten.filter((s) => !gemeldete.includes(s)), []);
       // Befund A war: der Export hatte keinen Grund — die erste Zeile war `0, 0, 0, 0`.
@@ -1164,9 +1180,6 @@ async function main() {
     // Tinten-Kasten-Rechnung unten vergleicht zwei verschiedene, denn das Feld laeuft
     // zwischen den beiden Aufnahmen weiter (gemessen 31.10. 21:49: zwei Zeugen, 545 -> 575
     // und 589 -> 659, und beide Male war die Welt in der Zwischenzeit anders verteilt).
-    const rahmenZahl = async () => await evaliere(cdp, `(()=>{const e=document.querySelector('[data-testid="graph-im-bild"]');
-      const t=(e&&e.textContent||'').replace(/\\s+/g,' ').trim();const m=t.match(/^([\\d,]+) of ([\\d,]+)/);
-      return m?{im: Number(m[1].replace(/,/g,'')), von: Number(m[2].replace(/,/g,'')), text:t}:{im:null, von:null, text:t||'schweigt'}})()`);
     if (gewartet === 0 || weit) {
       // Das Feld erst einfrieren, dann die zwei Kameras vergleichen (die eigne Forderung aus
       // `P1-KAMERA-ENTSCHEIDUNG-3110.md` §9: "Was ein fairer Test braucht, bevor die Frage
