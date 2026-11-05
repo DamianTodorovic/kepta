@@ -214,12 +214,12 @@ export const TOOLS = [
   {
     name: "memory_graph",
     title: "Knowledge graph",
-    description: "Entities and relations around one entity, or the whole graph, capped.",
+    description: "Entities and relations around one entity, or the whole graph, capped so answers stay small.",
     inputSchema: {
       type: "object",
       properties: {
         entity: opt(stringSchema("Entity name (optional)")),
-        depth: opt({ type: "integer", description: "Graph depth 1-4, default 2" }),
+        depth: opt({ type: "integer", description: "Graph depth 1-4, default 2; use 1 for a quick lookup" }),
       },
     },
     outputSchema: {

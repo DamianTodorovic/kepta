@@ -114,7 +114,7 @@ export async function embedTexts(
     const data = (await res.json()) as { embeddings?: number[][] };
     const vecs = (data.embeddings ?? []).map((e) => Float32Array.from(e));
     if (vecs.length !== inputs.length) {
-      return { ok: false, embeddings: [], model, error: "Embedding count does not match" };
+      return { ok: false, embeddings: [], model, error: "Embedding count does not match: the model answered fewer vectors than lines, so retry or rebuild the index" };
     }
     return { ok: true, embeddings: vecs, model };
   } catch (e) {

@@ -1,3 +1,20 @@
+## [3.2.167]
+
+### Changed
+
+- **The words an agent reads as its instructions obey the same rule as the words a person
+  reads.** Punkt 7 holds that a technical term must come with its reason or the task it points
+  to; the fence measured the surface only, so the tool layer was ungoverned territory -- and its
+  reader is a model that guesses. Measured 5.11.2026 21:05 MEZ against the delivered 3.2.166:
+  three of the thirty-three tool sentences named a term with neither (`memory_graph` said
+  "capped." and "Graph depth 1-4, default 2"; the embedding failure said "Embedding count does
+  not match"). All three now carry the reason and, where there is a next step, the step:
+  "capped so answers stay small", "default 2; use 1 for a quick lookup", "the model answered
+  fewer vectors than lines, so retry or rebuild the index". A fourth suite case runs the same
+  probe over the tool set, so the rule can no longer be kept on the surface and broken at the
+  door. The census verdict now names both groups instead of only the surface, and no longer
+  quotes an old measurement moment as if it were this run's.
+
 ## [3.2.166]
 
 ### Changed

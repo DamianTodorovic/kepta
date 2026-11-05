@@ -11,6 +11,7 @@
 import { describe, expect, it } from "vitest";
 import {
   FLAECHE,
+  WERKZEUG,
   kandidatenAusQuelltext,
   zaehle,
   zensiere,
@@ -43,6 +44,19 @@ describe("Punkt 7: Fachwort-Saetze der Flaeche tragen Grund oder Taetigkeit", ()
     const taub = zaehle("The graph lists entities and their embeddings.");
     expect(taub.fach.length).toBeGreaterThan(0);
     expect(taub.grund || taub.handlung).toBe(false);
+  });
+
+  it("die Werkzeug-Lage hat denselben Riegel: kein Fachwort ohne Grund", () => {
+    // Punkt 7 gilt auch fuer den Leser, der ein Modell ist. Gemessen 5.11.2026 21:05 MEZ
+    // am ausgelieferten 3.2.166: 3 von 33 Werkzeug-Saetzen nannten ein Fachwort ohne Grund
+    // oder Taetigkeit -- zwei in `src/core/mcp.ts` (memory_graph: "capped." und "default 2"),
+    // einer in `src/core/embeddings.ts` ("Embedding count does not match").
+    // Dieselbe Regel, dieselbe Sonde, eigne Menge.
+    const funde = kandidatenAusQuelltext(WERKZEUG);
+    const getragen = [...funde].map(([s, quelle]) => ({ ...zaehle(s), s, quelle }));
+    const c = zensiere(getragen) as Census;
+    const liste = c.fachOhneAlles.map((z: Fund) => `    ${z.fach.join(",")}  ${z.quelle}  ::  ${z.s.slice(0, 84)}`).join("\n");
+    expect(c.fachOhneAlles.length, `\n  ${c.fachOhneAlles.length} Funde in ${c.n} Werkzeug-Saetzen:\n${liste}`).toBe(0);
   });
 
   it("der Nenner der Flaeche ist eine Zahl, keine Luecke", () => {

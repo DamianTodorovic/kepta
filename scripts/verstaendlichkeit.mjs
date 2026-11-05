@@ -51,7 +51,7 @@ const LISTE = Number(ARG("liste", 12));
 // Agent — und "jeder muss es verstehen" (Punkt 7) ist eine Frage an die Flaeche. Ein Census, der
 // beide vermischt, verkauft eine Maschinenbeschreibung als Menschensatz.
 export const FLAECHE = ["src/components", "src/pages", "src/lib"].filter((d) => fs.existsSync(path.join(WURZEL, d)));
-const WERKZEUG = ["src/core"].filter((d) => fs.existsSync(path.join(WURZEL, d)));
+export const WERKZEUG = ["src/core"].filter((d) => fs.existsSync(path.join(WURZEL, d)));
 
 // Fachwoerter, die ein Mensch nicht mitbringt. Absichtlich die Menge, die in unserem eignen
 // Wortschatz vorkommt — nicht die, die ein Papiertext haben darf.
@@ -224,8 +224,12 @@ async function haupt() {
   console.log("\n  Die zwoelf laengsten Menschensaetze (Wortzahl | Quelle):");
   for (const z of langsten) console.log(`    ${String(z.woerter).padStart(3)}  ${z.quelle}  ::  ${z.s.slice(0, 118)}`);
 
-  console.log("\n  Fachwort ohne Grund und ohne Taetigkeit (die ersten " + LISTE + " von " + cFlaeche.fachOhneAlles.length + "):");
-  for (const z of cFlaeche.fachOhneAlles.slice(0, LISTE)) console.log(`    ${z.fach.join(",")}  ${z.quelle}  ::  ${z.s.slice(0, 150)}`);
+  const alleFunde = [
+    ...cFlaeche.fachOhneAlles.map((z) => ({ ...z, lage: "Flaeche" })),
+    ...cWerkzeug.fachOhneAlles.map((z) => ({ ...z, lage: "Werkzeug" })),
+  ];
+  console.log("\n  Fachwort ohne Grund und ohne Taetigkeit (die ersten " + LISTE + " von " + alleFunde.length + "):");
+  for (const z of alleFunde.slice(0, LISTE)) console.log(`    ${z.lage}  ${z.fach.join(",")}  ${z.quelle}  ::  ${z.s.slice(0, 150)}`);
 
   // Zwei Kontrollen, weil ein Zaehler ohne Gegenprobe eine Behauptung ist.
   // 1) Sie MUSS ein Wort sehen, das im Objekt steht (die Rate-Zeile von 3.2.143).
@@ -239,11 +243,11 @@ async function haupt() {
 
   const anteil = cFlaeche.unterKappe / Math.max(1, cFlaeche.n);
   const kappeHalten = anteil >= UNTER_KAPPE_MINDESTENS;
-  const riegelHalten = cFlaeche.fachOhneAlles.length <= FACH_OHNE_GRUND_MAX;
+  const riegelHalten = cFlaeche.fachOhneAlles.length <= FACH_OHNE_GRUND_MAX && cWerkzeug.fachOhneAlles.length <= FACH_OHNE_GRUND_MAX;
   const taub = !getroffen || !blind;
   const urteil = taub ? "TAUB" : kappeHalten && riegelHalten ? "HALTET" : "FAELLT";
   console.log(`  URTEIL KAPPE: ${kappeHalten ? "HALTET" : "FAELLT"} (Flaeche: Anteil unter ${SATZKAPPE} Woertern ${(100 * anteil).toFixed(1)} %, Latte ${100 * UNTER_KAPPE_MINDESTENS} %)`);
-  console.log(`  URTEIL RIEGEL: ${riegelHalten ? "HAELT" : "FAELLT"} (Fachwort ohne Grund und ohne Taetigkeit: ${cFlaeche.fachOhneAlles.length}, gemessen 5.11.2026 18:41 MEZ an der Quelle, Max ${FACH_OHNE_GRUND_MAX})`);
+  console.log(`  URTEIL RIEGEL: ${riegelHalten ? "HAELT" : "FAELLT"} (Fachwort ohne Grund und ohne Taetigkeit: Flaeche ${cFlaeche.fachOhneAlles.length} von ${cFlaeche.n}, Werkzeug ${cWerkzeug.fachOhneAlles.length} von ${cWerkzeug.n}, Max je Gruppe ${FACH_OHNE_GRUND_MAX} — der Wert ist am 5.11.2026 an beiden Lagen gemessen)`);
   console.log(`  URTEIL GRUND: die Flaeche nennt in ${cFlaeche.mitGrund} von ${cFlaeche.n} Saetzen einen Grund oder eine Folge —`);
   console.log("  das ist der Befund dieses Laufs, nicht sein Ziel: eine Zahl ohne Vergleich ist eine Messung, noch kein Urteil.");
   console.log("  OFFEN bleibt, was dieser Lauf nicht beantworten kann: ob ein Mensch den Satz *versteht*.");
