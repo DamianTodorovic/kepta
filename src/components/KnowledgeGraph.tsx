@@ -895,7 +895,7 @@ export const TITEL_KANTEN_PX = ETIKETT_PX;
  * Boden die Groesse hielt **und** alles drin ist.
  */
 export function fitTitel(bodenEntschieden: boolean, aussen?: number, gesamt?: number): string {
-  if (!bodenEntschieden) return "Fit the whole graph into view";
+  if (!bodenEntschieden) return "Fit the whole graph into view, so every note is on the screen";
   if (aussen === 0) {
     return typeof gesamt === "number" && gesamt > 0
       ? `Fit — held at the readability floor, and all ${mengenzahl(gesamt)} notes are in the picture`
@@ -5983,7 +5983,7 @@ export function KnowledgeGraph({ memories: memoriesAusFenster, onSelectMemory, o
     <div className="apple-seg shrink-0" role="group" aria-label="Graph layout" data-testid="graph-schiene-ansicht">
       {segment(ansicht === "force", "Force view — the links as they are claimed; similarity only on request", () => wechsleAnsicht("force"), "Force")}
       {segment(ansicht === "dendrogram", "Dendrogram — knowledge as a tree: root → type → entity → note", () => wechsleAnsicht("dendrogram"), "Tree")}
-      {segment(ansicht === "semantic", "Semantic map — notes placed by what they mean, not by their words.", () => wechsleAnsicht("semantic"), "Semantic")}
+      {segment(ansicht === "semantic", "Semantic map — placed by meaning, not words, so similar notes sit together.", () => wechsleAnsicht("semantic"), "Semantic")}
     </div>
   );
   const schieneNamen = (
@@ -6177,7 +6177,7 @@ export function KnowledgeGraph({ memories: memoriesAusFenster, onSelectMemory, o
       case "kanal": return "What the colours mean: kind of knowledge, or where the note came from.";
       case "tiefe": return `How many steps the picture asks the door for around each concept. Now: ${graphTiefe}. The door knows 1 to 4 and defaults to 2 — a fifth step is not invented here.`;
       case "farben": return "The four colours of the kinds, reused on the cards.";
-      case "aehnlichkeit": return "Similarity links are guesses from shared tags and titles. Off, the graph claims nothing.";
+      case "aehnlichkeit": return "Similarity links guess from shared tags. Off, the graph claims nothing, so check first.";
       case "selbst": return "A note about itself, looped on its own dot.";
       case "richtung": return "Wide end = who claims, narrow end = of whom. Below 50 % zoom the wedge is too small to draw, and the legend says so.";
       case "schema": return "What the store holds: kinds, concepts, claims.";

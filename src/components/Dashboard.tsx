@@ -2429,7 +2429,7 @@ const SHORTCUTS: { keys: string; action: string }[] = [
   { keys: '⌘N', action: 'New knowledge node' },
   { keys: '?', action: 'This overview' },
   { keys: 'Esc', action: 'Close dialog' },
-  { keys: '⌘1–4', action: 'Knowledge, Chat, Graph, Settings' },
+  { keys: '⌘1–4', action: 'Open Knowledge, Chat, Graph, or Settings' },
   { keys: '⌘5–7', action: 'Today, Dossier, Activity' },
 ];
 

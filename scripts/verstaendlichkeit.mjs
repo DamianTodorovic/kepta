@@ -32,25 +32,30 @@ const ARG = (nam, fallb) => {
 };
 const NUR_QUELLTEXT = process.argv.includes("--nur") && process.argv.includes("quelltext");
 const OBJEKT = NUR_QUELLTEXT ? null : ARG("gegen", "/Applications/K3PTA.app/Contents/Resources/app.asar");
-const SATZKAPPE = 14;
+export const SATZKAPPE = 14;
 const UNTER_KAPPE_MINDESTENS = 0.8;
-// Die zweite Latte ist ein Riegel, kein Wunsch: gemessen am ausgelieferten 3.2.144 sind es
-// **8** Saetze, die ein Fachwort nennen ohne Grund und ohne Taetigkeit (vor dem Sprachlauf
-// waren es 25, docs/belege/tag-0411/verstaendlichkeit-objekt-0800.log.txt). Ueber 8 darf es
-// nicht zurueckgehen, und ein einzelner neuer Satz bewegt die Kappenzahl um 0,3 Prozent —
-// darum haelt diese Zahl die Sprache, waehrend die Kappe nur die Laenge meldet.
-const FACH_OHNE_GRUND_MAX = 8;
+// Die zweite Latte ist ein Riegel, kein Wunsch. Ihr Max war 8 — gemessen am ausgelieferten
+// 3.2.144, nachdem ein Sprachlauf von 25 auf 8 gefallen war. Am 5.11.2026 sass der Riegel auf
+// seinem eignen Anschlag: 8 Funde bei erlaubten 8, also meldete er "haelt", waehrend nichts
+// mehr erlaubt war. Seit diesem Schnitt ist der Spielraum wieder real: die acht Saetze nennen
+// ihren Grund oder eine Taetigkeit, gemessen 18:41 MEZ = **0** Funde, und das Max ist auf 0
+// gezogen. Dazu liegt die Regel jetzt in der Suite (tests/punkt7-fachwort-traegt-grund.test.ts),
+// weil ein Wert in einem Skript niemanden anruft, wenn eine Zeile ihn bricht.
+// Nebenbefund des Laufs: drei der elf Funde an der Quelle waren Kommentar-Zitate im Quelltext
+// (Dashboard.tsx:595, TodayView.tsx:173, Chat.tsx:152) — kein Mensch liest sie auf der Flaeche,
+// also streicht der Zaehler Kommentare, bevor er Kandidaten sucht.
+export const FACH_OHNE_GRUND_MAX = 0;
 const LISTE = Number(ARG("liste", 12));
 
 // Zwei Mengen, weil sie zwei Leser haben. **Flaeche** liest ein Mensch, **Werkzeug** liest ein
 // Agent — und "jeder muss es verstehen" (Punkt 7) ist eine Frage an die Flaeche. Ein Census, der
 // beide vermischt, verkauft eine Maschinenbeschreibung als Menschensatz.
-const FLAECHE = ["src/components", "src/pages", "src/lib"].filter((d) => fs.existsSync(path.join(WURZEL, d)));
+export const FLAECHE = ["src/components", "src/pages", "src/lib"].filter((d) => fs.existsSync(path.join(WURZEL, d)));
 const WERKZEUG = ["src/core"].filter((d) => fs.existsSync(path.join(WURZEL, d)));
 
 // Fachwoerter, die ein Mensch nicht mitbringt. Absichtlich die Menge, die in unserem eignen
 // Wortschatz vorkommt — nicht die, die ein Papiertext haben darf.
-const FACHWORTER = [
+export const FACHWORTER = [
   "embedding", "embeddings", "vector", "vectors", "cosine", "recall", "precision", "chunk",
   "chunks", "index", "latency", "token", "tokens", "mcp", "bm25", "entity", "entities",
   "semantic", "episodic", "procedural", "retrieval", "dedupe", "duplicate", "cipher",
@@ -58,12 +63,12 @@ const FACHWORTER = [
 ];
 
 // Ein Satz erklaert sich, wenn er einen Grund oder eine Folge nennt.
-const GRUND = /\b(because|since|so|which means|that is why|after you|when you|if you|instead of|rather than|before|until|unless)\b/i;
+export const GRUND = /\b(because|since|so|which means|that is why|after you|when you|if you|instead of|rather than|before|until|unless)\b/i;
 // Ein Satz handelt, wenn er dem Menschen eine Taetigkeit nennt. Die Liste ist weit, weil ein
 // Zaehler, der "hover" nicht kennt, einen guten Satz als Befund verkauft: gemessen 4.11. 08:12,
 // wo "No labels — hover or arrow-key to a node and its full title comes back" ohne Taetigkeit
 // zaehlte. Erst die Gegenprobe macht die Zahl lesbar.
-const HANDLUNG = /\b(click|type|write|open|close|zoom|name|select|press|add|remove|switch|turn on|turn off|drag|search|unfold|fold|show|hide|save|export|edit|create|delete|try|use|hover|arrow-key|arrow keys|move|pick|choose|keep|allow|agree|start|stop|wait|paste|drop|point|hold)\b/i;
+export const HANDLUNG = /\b(click|type|write|open|close|zoom|name|select|press|add|remove|switch|turn on|turn off|drag|search|unfold|fold|show|hide|save|export|edit|create|delete|try|use|hover|arrow-key|arrow keys|move|pick|choose|keep|allow|agree|start|stop|wait|paste|drop|point|hold)\b/i;
 
 // Prompt-Texte lesen sich wie Flaeche, sind aber fuer ein Modell geschrieben. Sie zaehlen mit,
 // wenn man die Sprache eines Produkts messen will, und sie zaehlen falsch, wenn man die Sprache
@@ -72,7 +77,7 @@ const AUSSCHLUSS_PFAD = /src\/lib\/(autolearn|.*prompt.*)\.ts$/;
 const AUSSCHLUSS_WORT = /reply only|you are a|as JSON|system prompt/i;
 
 /** Kandidaten aus dem Quelltext: JSX-Text, Titel, Beschriftung, Platzhalter, Meldung. */
-function kandidatenAusQuelltext(mengen) {
+export function kandidatenAusQuelltext(mengen) {
   const funde = new Map();
   const dateien = [];
   for (const d of mengen) {
@@ -89,7 +94,13 @@ function kandidatenAusQuelltext(mengen) {
     /'([A-Z][^'\\]{20,300}?)'/g,
   ];
   for (const datei of dateien) {
-    const t = fs.readFileSync(datei, "utf8");
+    // Kommentare sind nicht die Flaeche. Gemessen 5.11.2026 18:39 MEZ: drei der elf Funde
+    // waren Begruendungszeilen im Quelltext (Dashboard.tsx:595, TodayView.tsx:173, Chat.tsx:152),
+    // die einen fruehern Befund zitieren — ein Mensch liest sie nirgends. Ein Zaehler, der
+    // Zitate aus dem Bau-text fuehrt, meldet Mangel, wo ein Vermerk steht.
+    const t = fs.readFileSync(datei, "utf8")
+      .replace(/\/\*[\s\S]*?\*\//g, "")
+      .replace(/^\s*\/\/.*$/gm, "");
     for (const m of muster) {
       m.lastIndex = 0;
       let e;
@@ -119,7 +130,7 @@ function istBenutzersprache(s) {
   return true;
 }
 
-function zaehle(s) {
+export function zaehle(s) {
   const woerter = s.split(/\s+/).filter(Boolean);
   const klein = s.toLowerCase();
   const fach = FACHWORTER.filter((w) => new RegExp("\\b" + w + "\\b").test(klein));
@@ -146,7 +157,7 @@ function imObjekt(suche, s) {
 }
 
 /** Ein Census ueber einer Menge von Saetzen, mit seiner eignen Biss-Kontrolle. */
-function zensiere(getragen) {
+export function zensiere(getragen) {
   const n = getragen.length;
   const teil = (k) => (100 * k / Math.max(1, n)).toFixed(1) + " %";
   // Ein Nenner, der nicht genannt ist, macht jede Prozentzahl zur Vermutung: gezaehlt wird der
@@ -232,7 +243,7 @@ async function haupt() {
   const taub = !getroffen || !blind;
   const urteil = taub ? "TAUB" : kappeHalten && riegelHalten ? "HALTET" : "FAELLT";
   console.log(`  URTEIL KAPPE: ${kappeHalten ? "HALTET" : "FAELLT"} (Flaeche: Anteil unter ${SATZKAPPE} Woertern ${(100 * anteil).toFixed(1)} %, Latte ${100 * UNTER_KAPPE_MINDESTENS} %)`);
-  console.log(`  URTEIL RIEGEL: ${riegelHalten ? "HAELT" : "FAELLT"} (Fachwort ohne Grund und ohne Taetigkeit: ${cFlaeche.fachOhneAlles.length}, gemessener Stand von 3.2.144, Max ${FACH_OHNE_GRUND_MAX})`);
+  console.log(`  URTEIL RIEGEL: ${riegelHalten ? "HAELT" : "FAELLT"} (Fachwort ohne Grund und ohne Taetigkeit: ${cFlaeche.fachOhneAlles.length}, gemessen 5.11.2026 18:41 MEZ an der Quelle, Max ${FACH_OHNE_GRUND_MAX})`);
   console.log(`  URTEIL GRUND: die Flaeche nennt in ${cFlaeche.mitGrund} von ${cFlaeche.n} Saetzen einen Grund oder eine Folge —`);
   console.log("  das ist der Befund dieses Laufs, nicht sein Ziel: eine Zahl ohne Vergleich ist eine Messung, noch kein Urteil.");
   console.log("  OFFEN bleibt, was dieser Lauf nicht beantworten kann: ob ein Mensch den Satz *versteht*.");

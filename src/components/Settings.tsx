@@ -817,7 +817,7 @@ export function Settings() {
                   <label
                     className="hud-label block mb-2"
                     htmlFor="ai-endpunkt"
-                    title="The API endpoint is the web address K3PTA calls when it sends your question to a model"
+                    title="The API endpoint is where your questions go, so changing it moves them elsewhere"
                   >
                     API endpoint {provider.id === 'custom' ? '(required)' : '(optional override)'}
                   </label>
@@ -1358,7 +1358,7 @@ export function Settings() {
               </div>
               <p className="text-xs mt-2 leading-relaxed" style={{ color: 'var(--text-3)' }}>
                 {mcpAusApp
-                  ? <>In Cursor: Settings → Features → MCP. In Zed: <code>settings.json → experimental.mcp</code>. This starts the MCP server that ships inside K3PTA — no Node.js, no npm. With Node.js 22.13 or newer, <code>npx -y kepta-mcp</code> works too (kepta-mcp 2.11 or newer). From your own checkout instead (after <code>npm run build:mcp</code>):</>
+                  ? <>In Cursor: Settings → Features → MCP. In Zed: <code>settings.json → experimental.mcp</code>. This starts the MCP server that ships inside K3PTA — no Node.js, no npm. With Node.js 22.13 or newer, <code>npx -y kepta-mcp</code> works too — it runs the same server from npm, so nothing is built by hand (kepta-mcp 2.11 or newer). From your own checkout instead (after <code>npm run build:mcp</code>):</>
                   : <>In Cursor: Settings → Features → MCP. In Zed: <code>settings.json → experimental.mcp</code>. Nothing to build — <code>npx</code> fetches the server on first use. From your own checkout instead (after <code>npm run build:mcp</code>):</>}
               </p>
               <div className="hud-inset rounded-xl overflow-hidden mt-2">

@@ -249,7 +249,7 @@ export function SystemStatus() {
         <Row
           unknown={ollama === null}
           ok={ollama === true}
-          label="Ollama / Embeddings (optional)"
+          label="Ollama / Embeddings (optional — start it and K3PTA picks it up)"
           detail={ollama === null ? 'Checking whether Ollama answers on this computer — embeddings are the numbers K3PTA makes of your words, so a search can match meaning instead of spelling.' : ollama ? 'Ollama answers on this computer — the Knowledge base row below counts how many of your notes have a vector. Embeddings are the numbers K3PTA makes of your words, so a search can match meaning instead of spelling.' : 'No answer from Ollama — search still runs purely lexically (71 % Hit@1 over the 58-note, 45-question test corpus that ships with K3PTA, against 51 % for naive substring search). A local model lifts that same 58-note corpus to 76 % Hit@1; it does not bridge languages — for English questions over German notes it found 4 of 15. Embeddings are the numbers K3PTA makes of your words, so a search can match meaning instead of spelling.'}
           fix={ollama === false ? 'Optional: install Ollama from ollama.com and start it — K3PTA picks it up on its own.' : undefined}
         />

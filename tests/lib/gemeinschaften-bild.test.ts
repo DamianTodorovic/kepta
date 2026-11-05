@@ -325,7 +325,7 @@ describe("#121 der Satz am Einpass-Knopf", () => {
     // Kamera zurueck, bleiben Notizen ausserhalb — gemessen 23:53:46Z am ausgelieferten
     // Stueck: 120 von 144 im Bild. Ein Wort, das mehr verspricht als das Bild zeigt, ist
     // kein Fehler der Kamera, sondern ein Fehler des Wortes.
-    expect(fitTitel(false)).toBe("Fit the whole graph into view");
+    expect(fitTitel(false)).toBe("Fit the whole graph into view, so every note is on the screen");
     expect(fitTitel(true)).toMatch(/readability floor/);
     expect(fitTitel(true)).not.toMatch(/whole graph/);
     // Der Satz schuldet auch den Weg nach draussen: die manuelle Zoomskala ist frei.
@@ -351,7 +351,7 @@ describe("#121 der Satz am Einpass-Knopf", () => {
     expect(fitTitel(true, 6)).toMatch(/some notes stay outside/);
     expect(fitTitel(true, 6)).toMatch(/zooming out shows them all/);
     // Und ohne Entscheidung ist die Zahl gleichgueltig.
-    expect(fitTitel(false, 0, 150)).toBe("Fit the whole graph into view");
+    expect(fitTitel(false, 0, 150)).toBe("Fit the whole graph into view, so every note is on the screen");
   });
 });
 

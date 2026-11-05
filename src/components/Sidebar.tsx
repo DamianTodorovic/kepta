@@ -61,7 +61,7 @@ export function Sidebar({ tags, selectedTags, onSelectTag, onClearTags, currentV
     { id: 'memories' as const, label: t('nav.knowledge'), icon: Brain, weight: 'regular' as const, erklaerung: 'Knowledge is everything you have saved, ready to search and reuse' },
     { id: 'today' as const, label: t('nav.today'), icon: Clock, erklaerung: 'Today shows what changed in your notes, and what is still open' },
     { id: 'chat' as const, label: t('nav.chat'), icon: MessageSquare, erklaerung: 'Chat asks your own notes a question and answers with its sources named' },
-    { id: 'graph' as const, label: t('nav.graph'), icon: Network, erklaerung: 'Graph draws which of your notes talk about the same people and topics' },
+    { id: 'graph' as const, label: t('nav.graph'), icon: Network, erklaerung: 'Graph shows which of your notes talk about the same people and topics — open it to follow a link' },
     { id: 'dossier' as const, label: t('nav.dossier'), icon: FileText, erklaerung: 'A Dossier is a written brief on one subject, built from the notes you saved' },
     { id: 'activity' as const, label: t('nav.activity'), icon: Bot, erklaerung: 'Activity lists every thing K3PTA did on its own, with the time it happened' },
     // Team nur, wenn eine Organisation Rollen gesetzt hat — sonst wäre der

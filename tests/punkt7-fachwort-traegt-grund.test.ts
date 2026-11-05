@@ -1,0 +1,46 @@
+/* Punkt 7, der Riegel: jedes Fachwort auf der Flaeche schuldet seinen Grund oder eine Taetigkeit.
+
+   Gemessen 5.11.2026 18:35 MEZ am ausgelieferten 3.2.162: acht Saetze standen ohne beides, und
+   der Riegel des Censes (`scripts/verstaendlichkeit.mjs`) hielt die Zahl nur, weil er auf ihrem
+   eignen Anschlag sass (Max 8 bei gemessenen 8). Ein Riegel ohne Spiel ist eine Meldungszeile.
+
+   Die Suite faehrt hier dieselbe Regel, die der Census fährt — importiert, nicht nachgebaut.
+   Ein zweites Regex- Paar in diesem Fall wuerde bei jeder Regel-Aenderung still gruen.
+   Gezaehlt wird die Quelle, nicht das Buendel: das Objekt ist auf fremden Rechnern ein anderes,
+   die Sprache, die wir schreiben, ist dieselbe. */
+import { describe, expect, it } from "vitest";
+import {
+  FLAECHE,
+  kandidatenAusQuelltext,
+  zaehle,
+  zensiere,
+} from "../scripts/verstaendlichkeit.mjs";
+
+const LATE = 0;
+
+describe("Punkt 7: Fachwort-Saetze der Flaeche tragen Grund oder Taetigkeit", () => {
+  const funde = kandidatenAusQuelltext(FLAECHE);
+  const getragen = [...funde].map(([s, quelle]) => ({ ...zaehle(s), s, quelle }));
+  const census = zensiere(getragen);
+
+  it("kein Satz der Flaeche nennt ein Fachwort, ohne zu erklaeren oder zu handeln", () => {
+    const liste = census.fachOhneAlles
+      .map((z) => `    ${z.fach.join(",")}  ${z.quelle}  ::  ${z.s.slice(0, 96)}`)
+      .join("\n");
+    expect(census.fachOhneAlles.length, `\n  ${census.fachOhneAlles.length} Funde:\n${liste}`).toBeLessThanOrEqual(LATE);
+  });
+
+  it("der Census ist nicht taub: ein Satz ohne Grund und ohne Taetigkeit wird getroffen", () => {
+    const blind = zaehle("The graph shows the notes that share an entity, so you can follow a name.");
+    expect(blind.fach.length).toBeGreaterThan(0);
+    expect(blind.grund || blind.handlung).toBe(true);
+    const taub = zaehle("The graph lists entities and their embeddings.");
+    expect(taub.fach.length).toBeGreaterThan(0);
+    expect(taub.grund || taub.handlung).toBe(false);
+  });
+
+  it("der Nenner der Flaeche ist eine Zahl, keine Luecke", () => {
+    // Ein Census ueber null Saetzen waere grün und wertlos.
+    expect(census.n).toBeGreaterThan(300);
+  });
+});
