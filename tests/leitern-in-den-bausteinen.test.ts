@@ -60,11 +60,21 @@ describe("Punkt 2: die Schriftleiter gilt in den Bausteinen", () => {
     expect(halbe, `${halbe.length} halbe Schritte: ${halbe.slice(0, 8).join(", ")}`).toEqual([]);
   });
 
+  it("kein Baustein ruft eine Tailwind-Stufe, die unsere Leiter nicht kennt", () => {
+    // text-sm (14) und text-xs (12), text-base (16), text-xl (20) treffen eine Leiterstufe --
+    // sie nennen sie nur unter Tailwinds Namen. text-lg (18) und text-3xl (30) treffen keine:
+    // gemessen 5.11.2026 19:27:14 MEZ im Fenster als "18px :: text-lg" in den Statistik-Kaesten.
+    const verboten = /\btext-(2xl|3xl|4xl|5xl|lg)\b/g;
+    const sitze = dateien.map((d) => (d.text.match(verboten) ?? []).map(() => d.rel)).flat();
+    expect(sitze, `${sitze.length} Sitze rufen eine fremde Stufe: ${[...new Set(sitze)].join(", ")}`).toEqual([]);
+  });
+
   it("Biss-Kontrolle: ein Willkuerwert und ein halber Schritt werden getroffen", () => {
     const sonde = funde('<div className="text-[12.5px]" style={{ fontSize: 13 }}>');
     expect(sonde.length).toBe(2);
     expect(sonde.some((f) => f.wert === 12.5 && !Number.isInteger(f.wert))).toBe(true);
     // und ein Leiterwert in Token-Form faellt durch beide Raster
     expect(funde('<div className="fs-3 leading-none">')).toEqual([]);
+    expect("text-lg".match(/\btext-(2xl|3xl|4xl|5xl|lg)\b/g)).toEqual(["text-lg"]);
   });
 });

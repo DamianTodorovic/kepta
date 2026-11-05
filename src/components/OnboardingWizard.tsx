@@ -317,9 +317,9 @@ export function OnboardingWizard({ open, onClose, onComplete }: Props) {
                     und „topics“/„models“ (nachher) waren abgeschnitten. Die Zellen
                     bekommen ihren Rand waagerecht dünner, die Höhe bleibt. */}
                 <div className="grid grid-cols-3 gap-2 text-center">
-                  <div className="hud-inset rounded-lg px-1 py-3"><div className="text-lg font-semibold tnum" style={{color:'var(--text-1)'}}>{starterPreview.length}</div><div className="hud-label">notes</div></div>
-                  <div className="hud-inset rounded-lg px-1 py-3"><div className="text-lg font-semibold tnum" style={{color:'var(--text-1)'}}>{topics.length}</div><div className="hud-label">topics</div></div>
-                  <div className="hud-inset rounded-lg px-1 py-3"><div className="text-lg font-semibold tnum" style={{color:'var(--ok)'}}>{detected?.reduce((n,d)=> n + (d.available ? d.models.length : 0), 0) || 0}</div><div className="hud-label">models</div></div>
+                  <div className="hud-inset rounded-lg px-1 py-3"><div className="fs-5 font-semibold tnum" style={{color:'var(--text-1)'}}>{starterPreview.length}</div><div className="hud-label">notes</div></div>
+                  <div className="hud-inset rounded-lg px-1 py-3"><div className="fs-5 font-semibold tnum" style={{color:'var(--text-1)'}}>{topics.length}</div><div className="hud-label">topics</div></div>
+                  <div className="hud-inset rounded-lg px-1 py-3"><div className="fs-5 font-semibold tnum" style={{color:'var(--ok)'}}>{detected?.reduce((n,d)=> n + (d.available ? d.models.length : 0), 0) || 0}</div><div className="hud-label">models</div></div>
                 </div>
                 <ul className="text-xs space-y-2" style={{color:'var(--text-2)'}}>
                   <li className="flex gap-2"><Check className="w-3.5 h-3.5 mt-1" style={{color:'var(--ok)'}}/> The {starterPreview.length} notes about K3PTA land in your memory — you can edit or delete every one</li>

@@ -810,13 +810,25 @@ async function main() {
     }
     const alle = new Map();
     for (const { z } of gesicht) for (const [k, n] of Object.entries(z)) alle.set(k, (alle.get(k) || 0) + n);
-    const halbe = [...alle].filter(([k]) => { const px = parseFloat(k); return Number.isFinite(px) && !Number.isInteger(px); });
+    const halbe = [...alle].filter(([k]) => { const px = parseFloat(k.split(" :: ")[0]); return Number.isFinite(px) && !Number.isInteger(px); });
     console.log(`  halbe Pixelschritte im gerechneten Fenster: ${halbe.length} Namen, ${halbe.reduce((t, [, n]) => t + n, 0)} Stellen`);
     for (const [k, n] of halbe.slice(0, 10)) console.log(`      ${String(n).padStart(4)}  ${k}`);
     urteil("keine halbe Pixelschrift bleibt im Bild", halbe.length === 0, true);
-    const fremd = [...alle].filter(([k]) => { const px = parseFloat(k); return Number.isFinite(px) && px < 100 && !LEITER.has(k); });
+    // Der Schluessel ist "13px :: span" -- gegen die Leiter muss der WERT, nicht die Zeile.
+    // Gemessen 5.11. 19:26:55 MEZ im ersten Lauf: mit dem ganzen Schluessel meldete der Zaun
+    // 49 Namen und 261 Stellen "ausserhalb", darunter 13px, 11px und 40px -- lauter Stufen.
+    const fremd = [...alle].filter(([k]) => {
+      const [wert] = k.split(" :: ");
+      const px = parseFloat(wert);
+      return Number.isFinite(px) && px < 100 && !LEITER.has(wert);
+    });
     console.log(`  ausserhalb der Leiter: ${fremd.length} Namen, ${fremd.reduce((t, [, n]) => t + n, 0)} Stellen`);
     for (const [k, n] of fremd.slice(0, 14)) console.log(`      ${String(n).padStart(4)}  ${k}`);
+    // Der Zaun steht auf null, und die Null ist nicht die Blindheit des Zaehlers: derselbe
+    // Lauf meldete 5.11. 19:27:14 MEZ einen Ausreisser (18px :: text-lg in den
+    // Statistik-Kaesten), weil Tailwind eine Stufe kennt, die unsere Leiter nicht hat. Die
+    // zehn text-lg-Sitze und der eine text-3xl-Sitz sind jetzt fs-5 und fs-7 -- 16 und 28 px.
+    urteil("keine Stufe ausserhalb der Leiter bleibt im Bild", fremd.length === 0, true);
     console.log(`  Bild: ${await bild("schriftstufen-flaechen.png")}`);
   }
 

@@ -633,7 +633,7 @@ export function Settings() {
         <div className="flex items-center gap-4 mb-6 pb-6" style={{ borderBottom: '1px solid var(--border-subtle)' }}>
           <KeptaMark size={40} />
           <div>
-            <h2 className="text-lg font-semibold" style={{ color: 'var(--text-1)' }}>Settings</h2>
+            <h2 className="fs-5 font-semibold" style={{ color: 'var(--text-1)' }}>Settings</h2>
             <p className="text-sm mt-1" style={{ color: 'var(--text-2)' }}>AI connection, data and MCP</p>
           </div>
         </div>

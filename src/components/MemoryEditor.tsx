@@ -303,7 +303,7 @@ export function MemoryEditor({ memory, onSave, onClose, onDelete }: MemoryEditor
                 placeholder="Title of this note"
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
-                className="w-full text-3xl font-bold focus:outline-none bg-transparent pb-2 placeholder:text-[var(--text-3)]"
+                className="w-full fs-7 font-bold focus:outline-none bg-transparent pb-2 placeholder:text-[var(--text-3)]"
                 style={{ color: 'var(--text-1)' }}
                 autoFocus
               />

@@ -429,11 +429,11 @@ export function MachineScan({ open, onClose, onImported, autoPreview = false }: 
             <div className="space-y-3">
               <div className="grid grid-cols-3 gap-2 text-center">
                 <div className="hud-inset rounded-lg p-3">
-                  <div className="text-lg font-semibold tnum" style={{ color: "var(--text-1)" }}>{vorschau.found}</div>
+                  <div className="fs-5 font-semibold tnum" style={{ color: "var(--text-1)" }}>{vorschau.found}</div>
                   <div className="hud-label">{TRAEGER_LABELS.files}</div>
                 </div>
                 <div className="hud-inset rounded-lg p-3">
-                  <div className="text-lg font-semibold tnum" style={{ color: "var(--text-1)" }}>{formatBytes(vorschau.totalBytes)}</div>
+                  <div className="fs-5 font-semibold tnum" style={{ color: "var(--text-1)" }}>{formatBytes(vorschau.totalBytes)}</div>
                   <div className="hud-label">of text</div>
                 </div>
                 <div className="hud-inset rounded-lg p-3">
@@ -441,7 +441,7 @@ export function MachineScan({ open, onClose, onImported, autoPreview = false }: 
                       Ein Ordner, den die Regel von vornherein nicht betritt, ist
                       nie „gesehen" worden — auf dem echten Schirm stand deshalb
                       „0 left out", während 52 Dateien in drei Ordnern lagen. */}
-                  <div className="text-lg font-semibold tnum" style={{ color: "var(--text-3)" }}>{vorschau.seen - vorschau.found}</div>
+                  <div className="fs-5 font-semibold tnum" style={{ color: "var(--text-3)" }}>{vorschau.seen - vorschau.found}</div>
                   <div className="hud-label">not readable</div>
                 </div>
               </div>
@@ -579,9 +579,9 @@ export function MachineScan({ open, onClose, onImported, autoPreview = false }: 
           {status && (
             <div className="space-y-3">
               <div className="grid grid-cols-3 gap-2 text-center">
-                <div className="hud-inset rounded-lg p-3"><div className="text-lg font-semibold tnum" style={{ color: "var(--text-1)" }}>{status.seen}</div><div className="hud-label">files seen</div></div>
-                <div className="hud-inset rounded-lg p-3"><div className="text-lg font-semibold tnum" style={{ color: "var(--text-1)" }}>{status.found}</div><div className="hud-label">{TRAEGER_LABELS.files}</div></div>
-                <div className="hud-inset rounded-lg p-3"><div className="text-lg font-semibold tnum" style={{ color: "var(--ok)" }}>{status.imported}</div><div className="hud-label">notes written</div></div>
+                <div className="hud-inset rounded-lg p-3"><div className="fs-5 font-semibold tnum" style={{ color: "var(--text-1)" }}>{status.seen}</div><div className="hud-label">files seen</div></div>
+                <div className="hud-inset rounded-lg p-3"><div className="fs-5 font-semibold tnum" style={{ color: "var(--text-1)" }}>{status.found}</div><div className="hud-label">{TRAEGER_LABELS.files}</div></div>
+                <div className="hud-inset rounded-lg p-3"><div className="fs-5 font-semibold tnum" style={{ color: "var(--ok)" }}>{status.imported}</div><div className="hud-label">notes written</div></div>
               </div>
               {status.running ? (
                 <div className="flex items-center gap-2 fs-3" style={{ color: "var(--text-2)" }}>
