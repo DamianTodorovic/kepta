@@ -32,15 +32,15 @@ const GRUND_TEXTE: Record<string, string> = {
   "antwort-nicht-lesbar":
     "The answer could not be read. Try again, or choose another model under Settings.",
   "nur-post":
-    "That address only accepts POST requests - a form cannot trigger it; this is a note for the logs.",
+    "This address takes POST only; a form cannot trigger it. The logs keep it.",
   "chat-fehlgeschlagen":
-    "The answer failed inside K3PTA. The reason is in the logs, not in the answer; ask again, or pick another model under Settings.",
+    "K3PTA failed the answer; the logs say why. Ask again or pick another model.",
   "import-leer":
-    "The file arrived empty, so nothing was read. Pick the conversations.json from your export again; the logs show what came in.",
+    "The file arrived empty. Pick conversations.json again; the logs show the rest.",
   "import-kein-json":
-    "The file is not valid JSON, so nothing was read. Export conversations.json again from ChatGPT or Claude; the logs keep the first error.",
+    "Not valid JSON, so nothing was read. Export conversations.json again; the logs keep it.",
   "import-unbekanntes-format":
-    "This file is neither a ChatGPT nor a Claude export, so nothing was imported. Pick conversations.json from one of those exports; the logs name the shape that arrived.",
+    "Neither a ChatGPT nor a Claude export, so nothing was imported. Pick its conversations.json.",
 };
 
 /** Ein Satz fuer die Kennung, oder null, wenn die Kennung neu oder fehlt. */

@@ -178,7 +178,7 @@ export function MachineScan({ open, onClose, onImported, autoPreview = false }: 
           !Array.isArray(d?.lesbar?.endungen) || !d?.grenzen ||
           !Array.isArray(d?.ihreEinstellung?.endungen)
         ) {
-          setRegelGrund('The scan rules arrived but did not read as rules — the store sent an unexpected shape. The scan itself still works; the guards that cannot be switched off stay in force.');
+          setRegelGrund('Unexpected rule shape, so none were read. Your scan works; fixed guards stay.');
           return;
         }
         const voll = d as Regelwerk;

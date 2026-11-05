@@ -1,3 +1,36 @@
+## [3.2.169]
+
+### Changed
+
+- **The jargon fence now sees eleven sentences it had been blind to.** Its guard against source
+  fragments threw out any string carrying `{`, `}`, `;` or `=` — which is right for
+  `semantic=fact, episodic=event` and wrong for prose. Measured 5.11.2026 22:40 MEZ in
+  `src/core`: seven tool sentences were invisible, three of them the plain instructions an agent
+  reads before it decides what to send (`memory_search`, `memory_save`, the `beziehungen` field).
+  The guard now splits the signals: `=>`, `if(`, `for(`, `foo(` still mean code, while `{};=`
+  only disqualify a string that never looked like a sentence. Shape is the capital letter at the
+  start — measured 23:25 MEZ against "Graph depth 1-4, default 2; use 1 for a quick lookup",
+  which we ship without a full stop and which the stricter test had wrongly rejected.
+- **What became visible was not all good.** Two tool sentences named a term without a reason
+  (the fence caught them the moment it could see them), and nine surface sentences stood over the
+  14-word cap. All eleven are rewritten, so the census reads 0 findings in both groups and the
+  surface holds its 80 % cap with the sentences it actually shows: 350 candidates measured at the
+  source (was 335), 281 under the cap = 80,3 %. The two rewritten descriptions now say what the
+  three tracks are for ("words (BM25), meaning (vectors), links (the graph), so one question
+  finds the exact phrase and the same idea in other words") and what a wiki link becomes ("links
+  you can follow, so a name you write joins the graph on its own").
+- **The suite holds the new numbers as floors:** 38 tool sentences must still be counted (was
+  33), and the surface cap must stay at or above 80 %. A fence that quietly measures less is not
+  a better result, which is the lesson 3.2.167 taught and this cut makes unfalsifiable.
+
+### Fixed
+
+- **The census verdict no longer decides a test's exit.** The import-silence case starts the
+  census as its positive control; the census exits 1 when a latte falls, and the case read that
+  as a broken tool. It now checks what the tool *says*, not whether the product passes — proven
+  against the installed 3.2.168, where the cap legitimately falls to 79,8 % until the new
+  sentences ship.
+
 ## [3.2.168]
 
 ### Fixed

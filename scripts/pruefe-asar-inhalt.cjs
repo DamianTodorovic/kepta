@@ -846,7 +846,10 @@ const erwartet = [
   // U+2014 wird in latin1 nicht gefunden.
   ["the window did not get the clipboard", 1],
   ["The scan rules did not arrive", 2],
-  ["Your scan choice will not be kept", 1],
+  // P80 (3.2.169): die Onboarding-Absage war 25 Woerter lang und damit ausserhalb der Kappe,
+  // die der Census seit 3.2.139 an der Flaeche misst -- und sie war dem Raster unsichtbar,
+  // weil ihr Semikolon und ihr U+2014 sie als Code aussehen liessen. Neu: 14 Woerter, ASCII.
+  ["Next start asks again", 1],
   // Punkt 4, 3.11. abend (3.2.130, Aufgabe #47): ein Import-Fehler druckte den
   // Ausnahmewortlaut auf den Knopf, im Testlauf samt Pfad. Nach aussen geht jetzt ein
   // fester Satz. Gegen das installierte 3.2.129 gezaehlt (app.asar 49 184 866 B,
@@ -949,6 +952,23 @@ const erwartet = [
   // Semikolon verworfen, mit Komma und "and" Kandidat. Gezaehlt am installierten 3.2.167
   // (app.asar 49 200 915 B, latin1): "default 2, and use 1" 0 mal, "default 2; use 1" 2 mal.
   ["default 2, and use 1 for a quick lookup", 1],
+  // P80 (3.2.169), gemessen 23:22 MEZ an der Quelle: die Sonde sah neun Flaechen-Saetze und
+  // zwei Werkzeug-Beschreibungen nicht, weil ihr Semikolon, ihr Gleichheitszeichen oder ihre
+  // Klammer sie als Code lesen liess. Nach dem Raster-Fix (Satzgestalt schuetzt) sind sie
+  // da -- und jeder Satz wurde kuerzer oder bekommt seinen Grund. Gezaehlt am installierten
+  // 3.2.168 (app.asar 49 200 923 B, latin1) sind die neuen Enden 0 mal, und die alten Formen
+  // unten in `verboten` stehen dort 1 mal (die neun Flaechen-Saetze, ein Bund) bzw. 2 mal
+  // (K3PTA-Absage, memory_search, memory_save -- in zwei Bunds). Am gebauten 3.2.169 kehrt
+  // sich das um: neue Enden je 1 bis 2, alte Formen 0.
+  ["Under 50 % the legend says why", 1],
+  ["Unexpected rule shape, so none were read", 1],
+  ["this view shows, never edits", 1],
+  ["The logs keep it.", 1],
+  ["the logs keep why. Ask again or pick another model", 1],
+  ["the logs show the rest", 1],
+  ["Pick its conversations.json", 1],
+  ["Searches your notes three ways at once", 1],
+  ["so a name you write joins the graph on its own", 1],
 ];
 
 // Was NICHT mehr drin sein darf. Bisher war "der alte Wortlaut ist weg" eine Behauptung im
@@ -1010,6 +1030,20 @@ const verboten = [
   // als Code verwirft -- ein Werkzeugsatz, den der Riegel nicht sieht, meldet 0 Funde, egal ob
   // er einen hat. Gezaehlt am installierten 3.2.167: **2** mal; am gebauten 3.2.168: **0** mal.
   "default 2; use 1",
+  // P80 (3.2.169): die alten Formen derselben elf Saetze. Verboten, weil die Kuerze und der
+  // Grund der Schnitt sind -- nicht, weil sie nie existiert haetten: gemessen am
+  // installierten 3.2.168 steht jede Kette 1 mal (Flaeche) bzw. 2 mal (Server-Bund).
+  "this computer blocked saving it",
+  "Wide end = who claims",
+  "The scan rules arrived but did not read as rules",
+  "Roles are centrally managed",
+  "That address only accepts POST requests",
+  "The answer failed inside K3PTA.",
+  "The file arrived empty, so nothing was read.",
+  "The file is not valid JSON, so nothing was read.",
+  "This file is neither a ChatGPT nor a Claude export",
+  "Hybrid retrieval (BM25 + vectors + knowledge graph) over K3PTA memory.",
+  "become linked entities",
 ];
 // Die Liste darf nur ASCII-Zeichen enthalten. Grund, gemessen 21.10. 19:16 MESZ am
 // installierten Objekt: das Wort "Looking" plus echtes U+2026 steht dort 2 mal, diese

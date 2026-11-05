@@ -64,7 +64,7 @@ export const TEXTE: Record<string, string> = {
   "team.rollen": "Roles",
   "team.rollenLeer": "No roles assigned yet — your admin lists them in the managed settings file.",
   "team.dieserRechner": "this computer",
-  "team.mdmHinweis": "Roles are centrally managed (managed-settings.json via MDM). This view shows them; it does not edit them.",
+  "team.mdmHinweis": "Roles come from managed-settings.json via MDM; this view shows, never edits.",
   "team.notizen": "Team workspace notes",
   "team.notizenLeer": "No team notes yet — save a note with a team workspace to share it.",
   "team.notizenHinweis": "visible to everyone with a role in this workspace",

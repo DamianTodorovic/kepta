@@ -26,7 +26,7 @@ type Step = 1 | 2 | 3 | 4 | 5;
  * Komponente), aber er ueberlebt den naechsten Start nicht — beides zusammen ist die
  * Wahrheit, und nur die Haelfte waere die alte Absage.
  */
-const WUNSCH_ABSAGE = 'Your scan choice will not be kept — this computer blocked saving it. It still stands for this session; the next start will ask again.';
+const WUNSCH_ABSAGE = 'Blocked saving, so your scan choice will not be kept. Next start asks again.';
 
 export function OnboardingWizard({ open, onClose, onComplete }: Props) {
   const [step, setStep] = useState<Step>(1);

@@ -116,12 +116,24 @@ export function kandidatenAusQuelltext(mengen) {
   return funde;
 }
 
-function istBenutzersprache(s) {
+export function istBenutzersprache(s) {
   if (s.length < 20) return false;
   const woerter = s.split(/\s+/).filter(Boolean);
   if (woerter.length < 4) return false;
   if (/[A-Za-z0-9._-]+\/[A-Za-z0-9._-]+/.test(s)) return false;         // Pfade
-  if (/[{};=]|=>|\bif\(|\bfor\(|\.\w+\(/.test(s)) return false;         // Code
+  if (/=>|\bif\(|\bfor\(|\.\w+\(/.test(s)) return false;                // starke Codezeichen
+  // `{};=` treffen auch Prosa. Gemessen 5.11.2026 22:40 MEZ in `src/core`: sieben
+  // Werkzeug-Saetze fielen durch das alte eine Raster, drei davon waren ausgeschrieben
+  // Satze, die ein Modell wortlich liest (memory_search, memory_save, memory_consolidate).
+  // Ein Satz mit Grossbuchstabe am Anfang und Satzzeichen am Ende ist keine Quelltextzeile;
+  // Notation ohne diese Gestalt ("semantic=fact, episodic=event", "true = delete permanently")
+  // bleibt draussen, weil sie Werte listet statt Sprache erklaert.
+  // Die Gestalt entscheidet der Grossbuchstabe am Anfang -- ein Punkt am Ende ist keine
+  // Bedingung: gemessen 23:25 MEZ fiel "Graph depth 1-4, default 2; use 1 for a quick
+  // lookup" durch die Schlusszeichen-Kante, obwohl der Satz ohne Semikolon geliefert
+  // wird. Notation bleibt draussen, weil sie klein anfing ("semantic=fact…", "true = …").
+  const satzgestalt = /^[A-ZÄÖÜ]/.test(s.trim());
+  if (!satzgestalt && /[{};=]/.test(s)) return false;
   if (/^[a-z-]+(:| |,)[a-z-]+/.test(s) && !/\s[a-z]+\s[a-z]+/.test(s)) return false; // CSS
   if (/%[sd]|\\n|\$\{/.test(s)) return false;                          // Formatierer
   const buchstaben = (s.match(/[A-Za-z]/g) || []).length;

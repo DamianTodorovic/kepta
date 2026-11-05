@@ -9,11 +9,12 @@
    Gezaehlt wird die Quelle, nicht das Buendel: das Objekt ist auf fremden Rechnern ein anderes,
    die Sprache, die wir schreiben, ist dieselbe. */
 import { describe, expect, it } from "vitest";
-import { execFileSync } from "node:child_process";
+import { execFileSync, spawnSync } from "node:child_process";
 import path from "node:path";
 import {
   FLAECHE,
   WERKZEUG,
+  istBenutzersprache,
   kandidatenAusQuelltext,
   zaehle,
   zensiere,
@@ -76,12 +77,50 @@ describe("Punkt 7: Fachwort-Saetze der Flaeche tragen Grund oder Taetigkeit", ()
   });
 
   it("die Werkzeug-Menge hat einen Nenner, keine Luecke", () => {
-    // 33 Kandidaten gemessen 21:05 MEZ an der Quelle (der rote Lauf meldete sie), 32 gemessen
-    // 22:36 MEZ -- die Eine, die fehlte, war der Semikolon-Fund. Die Untergrenze sitzt hier,
-    // damit ein Schrumpfen der Menge nie als Erfolg durchgeht; der Nenner ist eine Zahl,
-    // keine Behauptung, und der Fall darueber zaehlt nur, wenn er etwas findet.
+    // 33 Kandidaten gemessen 21:05 MEZ an der Quelle (der rote Lauf meldete sie), 32 um
+    // 22:36 MEZ -- die Eine, die fehlte, war der Semikolon-Fund. Nach dem Raster-Fix sind es
+    // 38, gemessen 23:22 MEZ: die sieben verdeckten Saetze sind da, drei davon in mehrere
+    // Zaehlbare zerlegt. Die Untergrenze sitzt hier, damit ein Schrumpfen der Menge nie als
+    // Erfolg durchgeht; der Nenner ist eine Zahl, keine Behauptung.
     const satze = [...kandidatenAusQuelltext(WERKZEUG).keys()];
-    expect(satze.length, `nur ${satze.length} Werkzeug-Saetze gezaehlt — die Sonde sieht weniger als die Tuer hat`).toBeGreaterThanOrEqual(33);
+    expect(satze.length, `nur ${satze.length} Werkzeug-Saetze gezaehlt — die Sonde sieht weniger als die Tuer hat`).toBeGreaterThanOrEqual(38);
+  });
+
+  it("Satzgestalt schuetzt vor dem Code-Raster, Notation nicht", () => {
+    // Das Raster wirft Quelltextfragmente aus der Benutzersprache. Bis hierhin traf es auch
+    // jeden Satz mit einem Semikolon oder einer geschweiften Klammer -- gemessen 22:40 MEZ
+    // sieben Werkzeug-Saetze, darunter die memory_search-Beschreibung, die ein Modell wirklich
+    // liest. Neu: starke Codezeichen (`=>`, `if(`, `for(`, `.wort(`) bleiben absolute Absage;
+    // `{`, `}`, `;`, `=` nur, wenn der Satz keine Satzgestalt hat.
+    const suche = "Hybrid retrieval (BM25 + vectors + knowledge graph) over K3PTA memory. Expired and superseded memories are flagged as such.";
+    expect(istBenutzersprache(suche), "die naechste Zeile ist ein Satz, kein Codefragment").toBe(true);
+    expect(istBenutzersprache("Graph depth 1-4, default 2; use 1 for a quick lookup")).toBe(true);
+    // Notation ohne Satzgestalt bleibt draussen: sie erklaert keine Sprache, sie listet Werte.
+    expect(istBenutzersprache("semantic=fact, episodic=event, procedural=how-to, reference=imported document")).toBe(false);
+    expect(istBenutzersprache("true = delete permanently")).toBe(false);
+    expect(istBenutzersprache("mode=expire only, defaults to now")).toBe(false);
+    // und ein echtes Codefragment bleibt es auch mit Punkt am Ende
+    expect(istBenutzersprache("Call foo(bar) and if(x) else y, then return z.")).toBe(false);
+  });
+
+  it("die drei lange unsichtbaren Werkzeug-Beschreibungen sind Kandidaten", () => {
+    // src/core/mcp.ts: die Beschreibungen von memory_search, memory_save und dem Feld
+    // `beziehungen` in memory_consolidate. Ihre Merk-Woerter sind so gewaehlt, dass sie einen
+    // Wortlautwechsel ueberleben: BM25, Wiki links, beziehungen -- nicht ein ganzer Satz.
+    const satze = [...kandidatenAusQuelltext(WERKZEUG).keys()];
+    for (const merk of ["BM25", "[[Wiki links]]", "beziehungen sets claims"]) {
+      expect(satze.some((s: string) => s.includes(merk)), `${merk} steht in keinem Kandidaten -- die Sonde sieht den Satz nicht`).toBe(true);
+    }
+  });
+
+  it("die Satzkappe der Flaeche haelt 80 Prozent", () => {
+    // Der Census meldet die Kappe nur auf der Platte; die Suite hielt sie nicht. Seit dem
+    // Raster-Fix 3.2.169 sind neun lange Saetze sichtbar, gemessen 23:22 MEZ: 279 von 344
+    // unter 14 Woertern = 81,1 %. Ohne diesen Fall haette die Gruppe still unter die Latte
+    // rutschen koennen, waehrend der Riegel weiter 0 Funde meldete.
+    const satze = [...kandidatenAusQuelltext(FLAECHE)];
+    const c = zensiere(satze.map(([s, quelle]) => ({ ...zaehle(s), s, quelle }))) as Census;
+    expect(c.unterKappe / Math.max(1, c.n), `${c.unterKappe} von ${c.n} unter der Kappe`).toBeGreaterThanOrEqual(0.8);
   });
 
   it("der Import des Census faehrt ihn nicht selbst", () => {
@@ -89,12 +128,16 @@ describe("Punkt 7: Fachwort-Saetze der Flaeche tragen Grund oder Taetigkeit", ()
     // Import -- und die Suite importiert die Regel, um sie zu fahren -- las darum die
     // 49 200 915 B des ausgelieferten app.asar und druckte siebzig Zeilen in den Lauf.
     // Zwei Seiten, weil ein einzelnes Nullresultat nichts beweist: der Import muss stumm
-    // bleiben, und derselbe Befehl muss beim direkten Start melden. Zeuge fuer die eine
-    // Seite, gemessen 23:05:52 MEZ: ein reiner `import()` meldet keine einzige Zeile.
+    // bleiben, und derselbe Befehl muss beim direkten Start melden. Gemessen 23:05:52 MEZ:
+    // ein reiner `import()` meldet keine einzige Zeile.
+    // Der direkte Start wird mit spawnSync gefahren, nicht mit execFileSync: der Census gibt
+    // 1 zurueck, wenn eine Latte faellt (gemessen 23:26:25 MEZ gegen das installierte
+    // 3.2.168: URTEIL KAPPE FAELLT, weil die neun neuen Saetze dort noch nicht stehen), und
+    // dieser Fall prueft die Sprache des Werkzeugs, nicht das Urteil des Produkts.
     const stumm = execFileSync("node", ["--input-type=module", "-e", `await import("file://${WURZEL}/scripts/verstaendlichkeit.mjs")`], { encoding: "utf8" });
     expect(stumm.trim(), "der Import meldet einen Census — die Suite laeuft dann gegen ein Objekt, das sie nicht bestellt hat").toBe("");
-    const laut = execFileSync("node", [path.join(WURZEL, "scripts", "verstaendlichkeit.mjs")], { encoding: "utf8" });
-    expect(laut).toContain("URTEIL KAPPE");
+    const laut = spawnSync("node", [path.join(WURZEL, "scripts", "verstaendlichkeit.mjs")], { encoding: "utf8" });
+    expect(laut.stdout).toContain("URTEIL KAPPE");
   });
 
   it("der Nenner der Flaeche ist eine Zahl, keine Luecke", () => {

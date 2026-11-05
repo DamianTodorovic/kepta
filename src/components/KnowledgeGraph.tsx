@@ -6179,7 +6179,7 @@ export function KnowledgeGraph({ memories: memoriesAusFenster, onSelectMemory, o
       case "farben": return "The four colours of the kinds, reused on the cards.";
       case "aehnlichkeit": return "Similarity links guess from shared tags. Off, the graph claims nothing, so check first.";
       case "selbst": return "A note about itself, looped on its own dot.";
-      case "richtung": return "Wide end = who claims, narrow end = of whom. Below 50 % zoom the wedge is too small to draw, and the legend says so.";
+      case "richtung": return "Wide end claims; narrow end is claimed. Under 50 % the legend says why.";
       case "schema": return "What the store holds: kinds, concepts, claims.";
       case "krafte": return "How hard the field gathers, repels and spaces itself.";
       case "bewegung": return `Whether the picture moves by itself. Now: ${bewegungAn ? "on — the field settles after each change" : "off — the picture holds still, and a pan still paints"}.`;

@@ -87,7 +87,7 @@ export const TOOLS = [
     name: "memory_search",
     title: "Search memory",
     description:
-      "Hybrid retrieval (BM25 + vectors + knowledge graph) over K3PTA memory. Expired and superseded memories are flagged as such; memories the owner marked private never appear here.",
+      "Searches your notes three ways at once: words (BM25), meaning (vectors), links (the graph), so one question finds the exact phrase and the same idea in other words. Expired or superseded notes are flagged as such; notes the owner marked private never appear.",
     inputSchema: {
       type: "object",
       properties: {
@@ -106,7 +106,7 @@ export const TOOLS = [
     name: "memory_save",
     title: "Save memory",
     description:
-      "Saves a knowledge node, or updates one when id is given. [[Wiki links]] in the text become linked entities. Own words on an edge are yours to state: beziehungen sets claims {quelle, ziel, wort}, the same contract the surface uses.",
+      "Saves a knowledge node, or updates one when id is given. [[Wiki links]] in the text become links you can follow, so a name you write joins the graph on its own. Words on a link are yours to state: beziehungen sets claims {quelle, ziel, wort}, the same contract the surface uses.",
     inputSchema: {
       type: "object",
       properties: {
