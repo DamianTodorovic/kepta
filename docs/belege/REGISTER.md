@@ -61,7 +61,7 @@ Laeufe liegt, korrekt gekuerzt, im Kern-Repo unter `docs/belege/`.
 | `app-abnahme/nachzug-flaeche-gruen.log.txt` | 19204 B | `1e6eb0616a86a748…` |
 | `app-abnahme/nachzug-mutation-rot.log.txt` | 22052 B | `1c8a44f87cda8e3a…` |
 
-Summe: **222 076 Bytes in 45 Dateien** (gemessen am 4.11. um 23:51 MEZ mit `find` und `stat` ueber die Datei groesst, ohne `REGISTER.md` selbst; die Zeile von 23:13 meldete 220 503 in 44 — der Unterschied ist genau der eine neue Lauf unten, 1 573 B. Der Ordner hat 45 Artefakte und die Tabelle 45 Zeilen — gezaehlt am 4.11. um 23:53 MEZ, indem jeder Pfad der Tabelle gegen `find docs/belege -name '*.log.txt'` gestellt wurde (ein Zaehlversuch mit dem Muster `^| \`tag-` sah die `app-abnahme/`-Zeilen nicht und setzte sie doppelt; der Fehler ist zurueckgebaut, die Zeile steht jetzt einmal je Datei). Und `scripts/zahlen-belege.mjs` oeffnet jeden Zitat-Pfad, den ein Satz nennt. Die Summen-Zeile prueft die Datei nach, nicht das Wort:
+Summe: **248 397 Bytes in 50 Dateien** (gemessen am 5.11. um 10:47 MEZ mit `find` ueber den Ordner und `stat` je Datei, ohne `REGISTER.md` selbst; die Zeile von 4.11. 23:53 MEZ meldete 222 076 in 45 — der Unterschied ist diese Landung. Zeilen und Dateien sind gegeneinander gezaehlt: jede Zeile eine Datei, jede Datei eine Zeile:
 `find docs/belege -name '*.log.txt'`). Die fuenf Laeufe des 4.11. bis 02:21 machen 16 571
 Bytes aus, die drei von Aufgabe #53 (05:49, 05:50 und 06:02 MEZ) 13 500 Bytes, der
 Objektnachlauf von 3.2.143 (06:28 MEZ) 9 302 Bytes, der Sprach-Census (08:00 MEZ) 7 287 Bytes
@@ -169,6 +169,11 @@ erfunden, in beiden Sprachen gemessen und mit dem Vektor-Bein auch allein:
 |---|---|---|---|
 | `sprachuebergriff-nomic-1406` (Standard-Embedder) | 60,0 % | **26,7 %** = 4 von 15 | 26,7 % |
 | `sprachuebergriff-bge-m3-1406` (mehrsprachig) | 60,0 % | **20,0 %** = 3 von 15 | 20,0 % |
+| `tag-0511/einstellungen-tab-153-1040.log.txt` | 1573 B | `fc352a20adde1a31…` |
+| `tag-0511/einstellungen-tab-153-390.log.txt` | 1573 B | `8befa1a85b37e279…` |
+| `tag-0511/fenster-volllauf-153-1041.log.txt` | 20637 B | `38e4f6635ed13d0c…` |
+| `tag-0511/health-absage-153-1440.log.txt` | 1271 B | `58d93ee902dec9e7…` |
+| `tag-0511/health-absage-153-390.log.txt` | 1267 B | `d48614bb77db8ddb…` |
 
 Drei Folgen, aufgeschrieben, weil sie die Zahl nicht schoener machen:
 

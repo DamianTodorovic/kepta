@@ -1467,6 +1467,42 @@ async function main() {
     console.log(`  Bild: ${await bild("tuer-fort.png")}`);
   }
 
+  // --- Zyklus Q: die Gesundheits-Absage im echten Fenster (Punkt 4 / Aufgabe #60, 5.11.) ----
+  //     Die Zeile ist neu, und ein Grund, den nur ein jsdom-Fall malt, ist kein Grund fuer einen
+  //     Menschen. Nach Zyklus P ist der eigne Diener fort: die Tuer antwortet nicht mehr, also
+  //     muss die Flaeche die Stille nennen -- ohne eine Zahl zu erfinden und ohne den Wortlaut
+  //     des Browsers. Fuer den Alleinlauf wird der eigne Kind-Prozess hier fortgenommen.
+  if (NUR === "healthgrund") {
+    const pid = server.pid;
+    console.log(`  Diener ${pid} wird fortgenommen (eignes Kind, eigener Port ${PORT})`);
+    server.kill();
+    await schlafe(4000);
+  }
+  if (NUR === "" || NUR === "healthgrund") {
+    await knopf(cdp, "^\\s*(Settings|Einstellungen)\\s*$");
+    await schlafe(900);
+    await knopf(cdp, "MCP / API");
+    await schlafe(2600);
+    const breitIst = Number(await evaliere(cdp, `window.innerWidth`));
+    // Bei Telefonbreite sitzt die Zeile unter dem Falz: ohne das Fenster heraufzuholen zeigt
+    // das Bild den Kopf der Flaeche und nicht den Befund (Klick- und Messregel des Hauses).
+    await evaliere(cdp, `(()=>{const e=document.querySelector('[data-testid="settings-health-grund"]');if(e)e.scrollIntoView({block:'center'});return true})()`);
+    await schlafe(400);
+    const zeile = String(await evaliere(cdp, `(()=>{const e=document.querySelector('[data-testid="settings-health-grund"]');return e?(e.textContent||'').replace(/\\s+/g,' ').trim():''})()`));
+    const kasten = await evaliere(cdp, `(()=>{const e=document.querySelector('[data-testid="settings-health-grund"]');if(!e)return null;const r=e.getBoundingClientRect();return [Math.round(r.width),Math.round(r.height),Math.round(r.left),Math.round(r.right)]})()`);
+    console.log(`  die Gesundheits-Zeile sagt: ${JSON.stringify(zeile)}`);
+    console.log(`  ihr Kasten (breite, hoehe, links, rechts) bei ${breitIst} px: ${JSON.stringify(kasten)}`);
+    urteil("**die Absage malt eine Zeile, statt nur die Farbe zu wechseln**", zeile.length > 0, true);
+    urteil("**und die Stille erhaelt keine erfundne Zahl**", /HTTP \\d/.test(zeile), false);
+    urteil("**auch nicht das Wort des Browsers**", /Failed to fetch|TypeError|net::/i.test(zeile), false);
+    urteil("**sonst ihren eignen Satz: Ankunft fehlt**", /did not arrive/i.test(zeile), true);
+    const rechte = Array.isArray(kasten) ? (kasten[2] >= 0 && kasten[3] <= breitIst) : null;
+    urteil("**und die Zeile bleibt im Fenster**", rechte, true);
+    // Der Name traegt die Weite: zwei Laeufe desselben Zyklus duerfen einander nicht ueberschreiben
+    // (gemessen 31.10. 15:07, wo ein Lauf die committeten Bilder des vorigen ersetzte).
+    console.log(`  Bild: ${await bild(`health-absage-${breitIst}px.png`)}`);
+  }
+
   console.log(fehl ? `  ${fehl} Pruefung(en) fehlgeschlagen` : "  alle Zyklen durch: Wert gesetzt, Fenster neu geladen, Wirkung gesehen");
   return fehl ? 1 : 0;
 }
