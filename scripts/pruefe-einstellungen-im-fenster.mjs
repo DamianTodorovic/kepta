@@ -1526,7 +1526,7 @@ async function main() {
     // Der.healthgrund-Zyklus laesst die Flaeche auf den Einstellungen stehen; das
     // Dateifeld wohnt in der Wissens-Flaeche (Dashboard.tsx:1866), also zuerst hin.
     const gesprungen = await evaliere(cdp, `(()=>{const b=[...document.querySelectorAll('.sidebar-nav-btn')]
-      .find(x=>/^\s*Knowledge\s*$/.test((x.textContent||'').trim()));
+      .find(x=>/^\\s*Knowledge\\s*$/.test((x.textContent||'').trim()));
       if(!b) return 'kein Seitenleisten-Knopf Knowledge'; b.click(); return (b.textContent||'').trim();})()`);
     console.log(`  Sprung nach: ${gesprungen}`);
     await schlafe(1200);
@@ -1570,18 +1570,18 @@ async function main() {
   // --- Punkt 5 / #63: die neue Themen-Gruppierung im echten Fenster (Zyklus `gruppethema`) ---
   if (NUR === "" || NUR === "gruppethema") {
     const gesprungen = await evaliere(cdp, `(()=>{const b=[...document.querySelectorAll('.sidebar-nav-btn')]
-      .find(x=>/^\s*Knowledge\s*$/.test((x.textContent||'').trim()));
+      .find(x=>/^\\s*Knowledge\\s*$/.test((x.textContent||'').trim()));
       if(!b) return 'kein Seitenleisten-Knopf Knowledge'; b.click(); return (b.textContent||'').trim();})()`);
     console.log(`  Sprung nach: ${gesprungen}`);
     await schlafe(1200);
     const knopftext = await evaliere(cdp, `(()=>{const b=[...document.querySelectorAll('.apple-seg-btn')]
-      .find(x=>/^\s*By topic\s*$/.test((x.textContent||'').trim()));
+      .find(x=>/^\\s*By topic\\s*$/.test((x.textContent||'').trim()));
       if(!b) return 'kein Knopf "By topic"'; b.click(); return (b.textContent||'').trim();})()`);
     console.log(`  Gruppenknopf: ${JSON.stringify(knopftext)}`);
     urteil("**die Flaeche hat ein benanntes Steuer fuer die Themen-Gruppierung**", knopftext, "By topic");
     await schlafe(1200);
     const lage = await evaliere(cdp, `(()=>{const b=[...document.querySelectorAll('.apple-seg-btn')]
-      .find(x=>/^\s*By topic\s*$/.test((x.textContent||'').trim()));return b?b.getAttribute('data-on'):'kein Knopf'})()`);
+      .find(x=>/^\\s*By topic\\s*$/.test((x.textContent||'').trim()));return b?b.getAttribute('data-on'):'kein Knopf'})()`);
     urteil("**und das Steuer merkt sich den Stand**", lage, "true");
     // Kopf und Zahl kommen aus derselben Quelle wie die Achsenzahl an der Seitenleiste:
     // die Tuer nennt `ohneThema`. Ist dort eine Zahl, muss die Flaeche ein benanntes Fach
