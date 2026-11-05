@@ -1,4 +1,30 @@
-## [3.2.157]
+## [3.2.158]
+
+### Added
+
+- **`design/DESIGN.md` — the surface now has a contract, not only measurements.** The file did
+  not exist (measured 13:38 MEZ: no `kepta-app/design/` folder), while its rules were already
+  being measured in `scripts/design-wache.mjs`, `scripts/pruefe-einstellungen-im-fenster.mjs`,
+  `scripts/legende-hoehe.mjs` and `tests/absage-statt-ausnahmewort.test.ts`. Eleven sections
+  state what holds: one thing one word, a number names its denominator and its moment, the
+  ladder and its contrast floors (2,26:1 at `--text-3`, 6,70-6,80 painted legend pixels, the
+  4,45 edge), the two-channel rule (measured ΔL 0,0009), the 20 px target floor (113 targets,
+  0 under it), steps instead of one-offs, the 25 % fold budget, what the graph may paint, the
+  origin rule for every error path, and the four questions before any sign-off.
+- **A guard that couples the contract to its instruments** (`tests/design-vertrag.test.ts`,
+  four cases): every rule seat the wache counts must be named in the contract, every
+  instrument the contract cites must exist, and the number of dead CSS rules in the contract
+  must be the number the wache holds.
+
+### Tests
+
+One case ran red at 13:41 MEZ for the right reason (`schrift:gewichte-fremd` was measured by
+the wache but named by nobody); the other three were green on first run. Deviation from
+test-first, named here: the contract file was written before its guard, so the case "the file
+exists" was never watched failing — the absence was measured instead (no folder at 13:38 MEZ).
+Suite: 3511 cases in 330 files.
+
+## [3.2.157]## [3.2.157]
 
 ### Fixed
 
