@@ -1647,6 +1647,9 @@ async function main() {
       return t?(t.textContent||'').replace(/\\s+/g,' ').trim():null})()`);
     console.log(`  gezaehlter Zweig: ${JSON.stringify(gezaehlt)}`);
     urteil("**ein halber Import nennt die geretteten Schreibungen**", /Import stopped after 1 of 1 writes/.test(String(gezaehlt)), true);
+    // Zwei Dateien abgegeben, eine gelesen: die Zahl der Schreibungen allein laesst den
+    // Menschen glauben, der Stapel sei durch. Seit 3.2.165 nennt die Zeile die Fehlende.
+    urteil("**und nennt die Datei, die nie gelesen wurde**", /1 file left unread/.test(String(gezaehlt)), true);
     urteil("**und sagt, was mit dem Geretteten geschieht**", /stays in your notes/.test(String(gezaehlt)), true);
     const bestandDanach = Number(await evaliere(cdp, `(async()=>{try{const r=await fetch('/api/memories?limit=1');const d=await r.json();return d.total??-1}catch(e){return -1}})()`));
     console.log(`  Bestand nach dem halben Import: ${bestandDanach}`);

@@ -1,3 +1,28 @@
+## [3.2.165]
+
+### Changed
+
+- **A half-finished import now says which file was never read.** Measured 5.11.2026 20:25:08
+  MEZ in the real window: dropping two files and throwing on the second printed "Import
+  stopped after 1 of 1 writes. What is saved stays in your notes." -- the count of writes was
+  honest, and it hid that a second file existed at all. The sentence now names it: "Import
+  stopped after 1 of 1 writes. 1 file left unread. What is saved stays in your notes." The
+  clause only appears when a file was actually left unread, so an import that dies during a
+  write does not claim a missing file.
+- **The window probe grew a second throw.** Until now the `importwurf` cycle made every file
+  read fail, so only the zero branch of the receipt was ever seen in the delivered object and
+  the counted branch lived in jsdom alone. It now throws on the second file (counted branch,
+  store 34 to 35 through the door) and on the first file (zero branch) in the same run.
+
+### Fixed
+
+- **The window probe no longer runs the last cycles against its own dead server.** Cycles P
+  and Q take the capsule server away on purpose -- that is what they test -- but `importwurf`
+  and `gruppethema` ran after them and every door read came back empty. Measured twice
+  (19:00 and 20:11 MEZ) as "Gegenlauf ohne Gegenstand"; the boundary probe showed the control
+  request /api/health failing at the network layer too, so it was the server, not the route.
+  The server is started again before those cycles, and a door that still refuses to answer is
+  now a failure rather than a silence.
 ## [3.2.164]
 
 ### Changed

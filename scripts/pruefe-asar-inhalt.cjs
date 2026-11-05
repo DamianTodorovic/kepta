@@ -920,6 +920,10 @@ const erwartet = [
   ["No topic yet", 1],
   ["No note was written", 1],
   ["What is saved stays in your notes", 1],
+  // Punkt 4 / Aufgabe #31, 5.11.2026 20:30 MEZ (3.2.165): ein halber Import nannte nur die
+  // Schreibungen, obwohl die zweite Datei nie gelesen wurde. Gezaehlt am installierten
+  // 3.2.164 (asar 49 202 497 B): "left unread" dort 0 mal -- der Satz existierte nicht.
+  ["left unread", 1],
   // Punkt 4 / Aufgabe #59, 4.11. 23:46 MEZ (3.2.152): die Herkunfts-Kante gilt an allen fuenf
   // Absage-Stellen, nicht nur im Helfer. Gezaehlt am installierten 3.2.151 (app.asar
   // 49 200 864 B, mtime 22:26:45 MEZ, bytes.count() in latin1): "the wording of this thrower

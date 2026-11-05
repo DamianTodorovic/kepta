@@ -231,6 +231,11 @@ describe("Der Import-Ausnahmewortlaut bleibt beim Betreiber, nicht auf dem Knopf
     await waitFor(() => expect(container.textContent || "").toMatch(/Import stopped after/i));
     const text = (container.textContent || "").replace(/\s+/g, " ");
     expect(text, `die Quittung nennt keine Zahl: ${text}`).toMatch(/1 of 1 writes/);
+    // Die Zahl der Schreibungen allein ist die halbe Wahrheit: zwei Dateien wurden
+    // abgegeben, die zweite wurde nie gelesen. Wer das nicht nennt, laesst den Menschen
+    // glauben, der Stapel sei durchgelaufen. Gemessen im echten Fenster 5.11. 20:25:08
+    // MEZ: "Import stopped after 1 of 1 writes." -- ohne Wort ueber die fehlende Datei.
+    expect(text, `die Quittung verschweigt die ungelesene Datei: ${text}`).toMatch(/1 file left unread/);
     expect(text).toMatch(/What is saved stays in your notes/i);
     expect(text).not.toMatch(/developer console/i);
     for (const wort of ["QuotaExceededError", "/Users/a/.kepta"]) expect(text).not.toContain(wort);

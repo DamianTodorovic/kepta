@@ -1202,10 +1202,14 @@ export function Dashboard() {
     setImportMsg(null);
     let versuche = 0;
     let gelungen = 0;
+    // Wie viele Dateien wirklich gelesen wurden: wirft das Lesen der zweiten,
+    // ist die zweite nicht gezehlt, und die Quittung schuldet ihr Wort.
+    let gelesen = 0;
     try {
       for (const file of list) {
         const baseName = file.name.replace(/\.[^.]+$/, "");
         const text = await extractTextFromFile(file);
+        gelesen += 1;
         const chunks = chunkText(text, 2000);
         // Electron liefert den Pfad mit — damit die Karte spaeter zur
         // Original-Datei zurueckfuehren kann (dieselbe Konvention wie der
@@ -1250,8 +1254,11 @@ export function Dashboard() {
       // der Flaeschen-satz begann gross -- dieselbe Zeile, an der Grossschrift vorbei.
       // Wirft eine Bibliothek oder der Speicher, steht ihr Wortlaut beim Betreiber
       // (console.error oben), auf dem Knopf steht die Zahl.
+      const uebrig = Math.max(0, list.length - gelesen);
       const marke = gelungen > 0
-        ? `Import stopped after ${gelungen} of ${versuche} writes. What is saved stays in your notes.`
+        ? `Import stopped after ${gelungen} of ${versuche} writes.`
+          + (uebrig > 0 ? ` ${uebrig} file${uebrig === 1 ? "" : "s"} left unread.` : "")
+          + " What is saved stays in your notes."
         : "Import did not run. No note was written.";
       setImportErr(marke);
       setTimeout(() => setImportErr((c) => (c === marke ? null : c)), QUITTUNG_MS);
