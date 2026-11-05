@@ -1,4 +1,27 @@
-## [3.2.154]
+## [3.2.155]
+
+### Fixed
+
+- **The trash counter tells "not read" apart from "read: nothing deleted".** Its handler asked
+  the body before the status and then collapsed every failure into a number: a refused
+  `GET /api/storage-info` answered 500, `data.trashed` was missing, and the button was set to
+  `0` — a door that refused looked like an empty trash. A thrown parse landed in
+  `catch { /* ignore */ }`, so a value read earlier could keep standing there as if current.
+  The counter is now `number | null` (`null` = not read), the status is asked first, the body is
+  read forgivingly, and the button carries the reason in its own words: the door's sentence when
+  it wrote one ("… (storage busy)"), its number when it wrote none ("… (HTTP 502)"), and never
+  the wording of the runtime or the browser.
+
+### Tests
+
+Four cases in `tests/components/Dashboard.test.tsx`: two red first at 12:26 MEZ for the right
+reason (the title stayed the fixed one), two controls green in both states — a read 3 still
+shows 3, a read 0 keeps the plain title (a read empty trash is not a failure). One assertion of
+mine was wrong before the fix and is corrected in the same commit: it demanded the number while
+the door had written a sentence, and the house rule of `absage` puts the *sentence* in the
+parenthesis. Suite: 3499 cases in 329 files, verdict run green with EXIT 0.
+
+## [3.2.154]## [3.2.154]
 
 ### Fixed
 

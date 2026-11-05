@@ -1155,3 +1155,82 @@ describe("Dashboard: eine unlesbare Antwort der Clipper-Tuer nennt ihre Zahl", (
     expect(grund, "und der V8-Wortlaut bleibt im Protokoll").not.toMatch(/Unexpected token|is not valid JSON/i);
   });
 });
+
+// P64 (Leitung 5.11. 12:26 MEZ, Punkt 4 / #31, vierte Census-Runde): der Papierkorb-Zaehler.
+// Die Zahl kam von `/api/storage-info`; ein Fehlschlag wurde zu `0` und der Fang zu "ignore".
+// Eine Tuer, die 500 sagt, liess den Knopf also aussehen wie ein gelesener leerer Papierkorb --
+// und ein vorher gelesener Wert haette als aktueller stehen koennen. Der Zaehler unterscheidet
+// jetzt "nicht gelesen" von "null".
+// Erwartung VOR dem Flicken: die beiden Fehlschlag-Faelle rot (der Titel bleibt der feste,
+// kein Grund auf dem Knopf); die beiden Kontrollen sind in beiden Staenden gruen.
+describe("Dashboard: der Papierkorb-Zaehler unterscheidet nicht gelesen von null", () => {
+  const TITEL_FEST = "Trash — restore deleted notes";
+  async function öffneKnopf(antwort: Response) {
+    const user = userEvent.setup();
+    vi.stubGlobal("fetch", vi.fn(async (url: string, init?: RequestInit) => {
+      if (String(url).includes("/api/storage-info")) return antwort;
+      if (String(url).includes("/api/license")) return new Response(JSON.stringify({ licensed: true }), { status: 200 });
+      if (String(url).includes("/api/memories") && (init?.method ?? "GET") === "GET") return new Response(JSON.stringify(notizen), { status: 200 });
+      if (String(url).includes("/api/inbox/status")) return new Response(JSON.stringify({ files: [], watching: true }), { status: 200 });
+      return new Response("{}", { status: 200 });
+    }));
+    const { container } = await zeige([]);
+    const knopf = container.querySelector(`button[title="${TITEL_FEST}"]`) as HTMLButtonElement;
+    expect(knopf, "der Papierkorb-Knopf fuehrt keinen festen Titel mehr").toBeTruthy();
+    await user.click(knopf);
+    return knopf;
+  }
+
+  it("sagt den Abweis der Zaehler-Tuer am Knopf, statt ihn als null zu setzen", async () => {
+    const knopf = await öffneKnopf(new Response(JSON.stringify({ error: "storage busy" }), { status: 500 }));
+    await waitFor(() => expect(knopf.getAttribute("title")).not.toBe(TITEL_FEST));
+    const titel = String(knopf.getAttribute("title"));
+    // Der Hausvertrag der Absage: hat die eigne Tuer einen Satz, steht ER in der Klammer; die
+    // Zahl tritt erst zurueck, wenn die Tuer keinen schreibt (der naechste Fall).
+    expect(titel, "500 mit eigner Auskunft — der Satz der Tuer steht in der Klammer").toMatch(/storage busy/);
+    expect(titel, "und die Zeile sagt, WAS fehlt").toMatch(/count did not arrive/i);
+  });
+
+  it("sagt einen unlesbaren Koerper der Zaehler-Tuer, ohne den Wortlaut der Laufzeit", async () => {
+    const knopf = await öffneKnopf(new Response("<html><body>502</body></html>", { status: 502 }));
+    await waitFor(() => expect(knopf.getAttribute("title")).not.toBe(TITEL_FEST));
+    const titel = String(knopf.getAttribute("title"));
+    expect(titel, "auch ein unlesbarer Koerper ist eine Antwort").toMatch(/HTTP 502/);
+    expect(titel, "der JSON-Wortlaut bleibt im Protokoll").not.toMatch(/Unexpected token|not valid JSON/i);
+  });
+
+  // KONTROLLE, in beiden Staenden gruen: eine gelesene Zahl ist eine Zahl.
+  it("KONTROLLE: eine gelesene drei steht als drei auf dem Knopf", async () => {
+    const { container } = await (async () => {
+      const user = userEvent.setup();
+      vi.stubGlobal("fetch", vi.fn(async (url: string, init?: RequestInit) => {
+        if (String(url).includes("/api/storage-info")) return new Response(JSON.stringify({ trashed: 3 }), { status: 200 });
+        if (String(url).includes("/api/memories") && (init?.method ?? "GET") === "GET") return new Response(JSON.stringify(notizen), { status: 200 });
+        if (String(url).includes("/api/inbox/status")) return new Response(JSON.stringify({ files: [], watching: true }), { status: 200 });
+        return new Response("{}", { status: 200 });
+      }));
+      const view = await zeige([]);
+      const knopf = view.container.querySelector(`button[title="${TITEL_FEST}"]`) as HTMLButtonElement;
+      await user.click(knopf);
+      await waitFor(() => expect(knopf.textContent).toContain("3"));
+      return view;
+    })();
+    expect(container.querySelector(`button[title="${TITEL_FEST}"]`), "eine gelesene Zahl laesst den festen Titel stehen").toBeTruthy();
+  });
+
+  // KONTROLLE, in beiden Staenden gruen: ein gelesener leerer Papierkorb ist kein Fehlschlag.
+  it("KONTROLLE: eine gelesene null behaelt den festen Titel", async () => {
+    const user = userEvent.setup();
+    vi.stubGlobal("fetch", vi.fn(async (url: string, init?: RequestInit) => {
+      if (String(url).includes("/api/storage-info")) return new Response(JSON.stringify({ trashed: 0 }), { status: 200 });
+      if (String(url).includes("/api/memories") && (init?.method ?? "GET") === "GET") return new Response(JSON.stringify(notizen), { status: 200 });
+      if (String(url).includes("/api/inbox/status")) return new Response(JSON.stringify({ files: [], watching: true }), { status: 200 });
+      return new Response("{}", { status: 200 });
+    }));
+    const { container } = await zeige([]);
+    const knopf = container.querySelector(`button[title="${TITEL_FEST}"]`) as HTMLButtonElement;
+    await user.click(knopf);
+    await waitFor(() => expect(knopf.getAttribute("title")).toBe(TITEL_FEST));
+    expect(knopf.textContent, "null deleted notes ist kein Grund fuer eine Zahl auf dem Knopf").not.toContain("0");
+  });
+});

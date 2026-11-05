@@ -417,7 +417,11 @@ export function Dashboard() {
   // Papierkorb
   const [trashOpen, setTrashOpen] = useState(false);
   const [trashedMemories, setTrashedMemories] = useState<Memory[]>([]);
-  const [trashCount, setTrashCount] = useState(0);
+  // P64: der Zaehler unterscheidet "nicht gelesen" (null) von "gelesen: null Notizen". Vorher
+  // wurde ein Abweis der Tuer zu 0 und ein Wurf zu "ignore" -- der Knopf sah aus wie ein
+  // gelesener leerer Papierkorb, und ein vorher gelesener Wert konnte als aktueller stehen.
+  const [trashCount, setTrashCount] = useState<number | null>(null);
+  const [trashGrund, setTrashGrund] = useState<string | null>(null);
   /** Grund des letzten Papierkorb-Abrufs, oder null. `catch { /* ignore *\/ }` war der Zweitbefund
    *  des Briefs: ein kaputter Korb malte exakt denselben Satz wie ein leerer. */
   const [papierkorbGrund, setPapierkorbGrund] = useState<string | null>(null);
@@ -1629,15 +1633,25 @@ export function Dashboard() {
                   setTrashOpen((v) => !v);
                   try {
                     const res = await fetch('/api/storage-info');
-                    const data = await res.json();
-                    setTrashCount(typeof data.trashed === 'number' ? data.trashed : 0);
-                  } catch { /* ignore */ }
+                    // P64: Status zuerst, Koerper verzeihend gelesen, und der Grund durch den
+                    // Helfer -- die eigne Zahl der Tuer darf auf dem Knopf stehen.
+                    const data = (await res.json().catch(() => null)) as { trashed?: unknown; error?: unknown } | null;
+                    if (!res.ok) throw new ApiFehler(tuerSatz(data?.error, `HTTP ${res.status}`), res.status);
+                    if (typeof data?.trashed !== 'number') throw new ApiFehler('The count did not arrive in this answer.', res.status);
+                    setTrashCount(data.trashed);
+                    setTrashGrund(null);
+                  } catch (err: unknown) {
+                    // "nicht gelesen" ist kein leerer Papierkorb: der Zaehler geht auf null,
+                    // und ein alter Wert steht nicht als aktueller da.
+                    setTrashCount(null);
+                    setTrashGrund(absage("Trash — the count did not arrive", err));
+                  }
                 }}
                 className="btn-ghost hidden sm:flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-medium"
-                title="Trash — restore deleted notes"
+                title={trashGrund ?? "Trash — restore deleted notes"}
               >
                 <Trash2 className="w-4 h-4" />
-                {trashCount > 0 && <span className="tnum">{trashCount}</span>}
+                {trashCount !== null && trashCount > 0 && <span className="tnum">{trashCount}</span>}
               </button>
               <button
                 onClick={() => setPaletteOpen(true)}

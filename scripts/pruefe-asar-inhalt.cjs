@@ -897,6 +897,12 @@ const erwartet = [
   // 49 201 094 B, 12:11 MEZ, bytes.count() in latin1): "arrived without readable text" **0** mal
   // (fuenf Saetze dieser Form sind neu, die Sonde haelt die Untergrenze 1).
   ["arrived without readable text", 1],
+  // Punkt 4 / Aufgabe #61, 5.11. 12:28 MEZ (3.2.155): der Papierkorb-Zaehler unterschied nicht
+  // "nicht gelesen" von "gelesen: null". Gezaehlt am installierten 3.2.154 (asar 49 201 527 B,
+  // 12:27:36 MEZ, bytes.count() in latin1): "The count did not arrive in this answer" **0** mal.
+  // Die Knopf-Zeile selbst ("Trash — the count did not arrive") taugt nicht als Marke: sie traegt
+  // einen echten Gedankenstrich, und die Sonde bricht mit EXIT 2 ueber einem Nicht-ASCII-Marker.
+  ["The count did not arrive in this answer", 1],
   // Punkt 4 / Aufgabe #59, 4.11. 23:46 MEZ (3.2.152): die Herkunfts-Kante gilt an allen fuenf
   // Absage-Stellen, nicht nur im Helfer. Gezaehlt am installierten 3.2.151 (app.asar
   // 49 200 864 B, mtime 22:26:45 MEZ, bytes.count() in latin1): "the wording of this thrower
