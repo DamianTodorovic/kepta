@@ -1,3 +1,43 @@
+## [3.2.160]
+
+### Removed
+
+- **Eighteen dead rules left the stylesheet.** `design/DESIGN.md` section 10 forbids "a rule in
+  CSS that nobody calls" -- and the file itself carried eighteen of them (measured 5.11.
+  14:39:18 MEZ: `scripts/design-wache.mjs` named `ambient-glow app-ambient badge-type glass
+  grid-bg hud-card hud-scan ikone ikone-1 ikone-2 ikone-3 ikone-4 inset label label-caps
+  stat-tile tap-min text-gradient`). Three independent methods found no caller: a token census
+  over every `className` word list in `src` (0 exact callers for all eighteen), a scan of
+  `class=` strings across `src`, `index.html`, `scripts` and `tests` (0 hits), and a scan of
+  `querySelector`/`classList` selector strings (0 hits). Fifteen rule blocks and six alias
+  entries in shared selector lists went -- `#root, .app-ambient` keeps `#root`, the five
+  `.card, .hud-card` selectors keep `.card`, and `.inset, .hud-inset` keeps `.hud-inset`, which
+  twelve components call. `src/index.css` went from 69 659 to 67 612 bytes (2047 B). The four
+  `--icon-stufe-*` tokens went with the `.ikone-*` rules that were their only readers, so the
+  cut does not leave four orphan tokens behind.
+- The reason for keeping them was the wache's own: "nothing is deleted while the wave runs,
+  E2/E3 may have uncommitted callers". Measured 5.11.: the tree was clean at `104cf2e`, so a
+  caller that is not in the committed tree cannot exist in the shipped object either. Decided,
+  because a contract nobody pulls is dead weight, not a promise.
+
+### Changed
+
+- **The tap-size line of the design wache now measures what exists.** It read `.tap` and
+  `.tap-min` and expected 28 px default with a 20 px floor; `.tap-min` was one of the eighteen
+  dead rules and never had a caller, so the 20 px floor was never carried by that class. The
+  floor is carried by two living places -- `--icon-min` lifts every `aria-hidden` symbol to
+  14 px at render, and the window census hits 113 targets with none under 20 px
+  (`scripts/pruefe-einstellungen-im-fenster.mjs`, cycle `tastmass`, measured 14:36:59 MEZ). The
+  line now reads `.tap` and `.tap-reihum` and requires all three of their measurements at 28 px.
+- **The orphan sonde's bite no longer hangs on the file's content.** `tests/design-wache.test.ts`
+  held the word-scheme to "at least 16 orphans" and demanded that `glass`, `inset`, `ikone`
+  and `label` appear in the live list -- a control that turns into a standstill the moment the
+  dead rules are gone. The sonde is now a pure module (`scripts/helfer/klassen-sonde.mjs`) and
+  the case feeds it planted bait: four orphans that an `includes()` scan would have waved
+  through, one naked caller (`fehl-stein`), five Tailwind forms that must not be mistaken for
+  missing building blocks, and the escape rule that stops the phantom class `text-` (18.10.).
+  The live file must answer "keine".
+
 ## [3.2.159]
 
 ### Fixed

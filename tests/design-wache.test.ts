@@ -4,6 +4,7 @@ import { execFileSync } from "node:child_process";
 type Befund = { sektion: string; befund: string; zahl: string; schwelle: string; fund: string; ok: boolean };
 type Ergebnis = { rot: number; messungen: number; linien: Befund[]; schwelle: Record<string, number> };
 import path from "node:path";
+import { klassenAusSelektor, klassenAusWortlisten, waisenUndNackte } from "../scripts/helfer/klassen-sonde.mjs";
 
 // Die Design-Wache ist das Gate dieser Scheibe: sie rechnet die Token-Werte
 // aus src/index.css und src/lib/kepta-icons.tsx, kein Mensch prüft per Auge.
@@ -92,19 +93,51 @@ describe("Design-Wache", () => {
     // 1. Die tote-Stil-Zeile verglich den Quelltext mit `includes(k)` — `glass`
     //    galt als gerufen, weil `glass-strong` dasteht, `inset` wegen `hud-inset`,
     //    `ikone` wegen `ikone-1`, `label` wegen `hud-label`. Sie meldete 16, es
-    //    sind 20. 2. Die Gegenrichtung fehlte ganz: hud-raised (PraxisSync.tsx:172)
+    //    waren 20. 2. Die Gegenrichtung fehlte ganz: hud-raised (PraxisSync.tsx:172)
     //    und row-type-label (MemoryCard.tsx:65) wurden gerufen, ohne definiert zu
     //    sein. Beide sind jetzt Regeln in src/index.css.
+    //
+    // SEIT 5.11. haengt der Biss nicht mehr an der Zahl der Datei. Der Waisen-Schnitt
+    // (P68/P69, Fassung 3.2.160) hat die 18 Sitze geloescht, weil der Vertrag in
+    // design/DESIGN.md §10 die Regel verbietet, die niemand ruft; die lebende Datei
+    // meldet "keine", und die Latte der Wache steht auf 0. Eine Kontrolle "mindestens
+    // 16 Waisen" waere damit Stillstand geworden, keine Pruefung — also fuettert der
+    // Fall dieselbe Sonde mit eingesetzten Baelle (scripts/helfer/klassen-sonde.mjs).
     const tot = ergebnis.linien.find((l) => /toter Stil/.test(l.befund));
     expect(tot, "Zeile tote-r-Stil fehlt").toBeTruthy();
-    expect(Number(/^(\d+)/.exec(tot!.zahl)?.[1] ?? 0), "die Wort-Sonde meldet weniger als die Teilzeichenketten-Sonde").toBeGreaterThanOrEqual(16);
-    for (const k of ["glass", "inset", "ikone", "label"]) expect(tot!.zahl, `${k} fehlt in der Waisenliste`).toContain(k);
+    expect(tot!.zahl, `die Datei meldet noch Waisen: ${tot!.zahl}`).toBe("keine");
+    expect(tot!.ok, "die Waisen-Latte ist nicht erfuedt").toBe(true);
     const fremd = ergebnis.linien.find((l) => /nackter Rufer/.test(l.befund));
     expect(fremd, "Zeile nackter-Rufer fehlt").toBeTruthy();
     expect(fremd!.ok, `nackte Rufer: ${fremd!.zahl}`).toBe(true);
     const kontrolle = ergebnis.linien.find((l) => /Teilzeichenketten-Rufer/.test(l.befund));
     expect(kontrolle, "positive Kontrolle fehlt").toBeTruthy();
     expect(kontrolle!.ok).toBe(true);
+  });
+
+  it("beisst: eine Waise faellt der Sonde auf, eine Teilzeichenkette nicht", () => {
+    // Einsatz statt Datei: eine Regel ohne Rufer muss gefunden werden, eine
+    // Tailwind-Form darf keine Waise erfinden, und ein Selektor mit Escape-Folge
+    // keinen Namen `text-` (18.10., als die Leiter-Regeln in index.css einzogen).
+    const selektoren = [".spott-klasse", ".card:hover, .hud-card:hover", ".glass, .glass-strong",
+                        ".hud-inset", ".inset", ".text-\\[8\\.5px\\]"];
+    const klassen = new Set(selektoren.flatMap(klassenAusSelektor));
+    const geruft = klassenAusWortlisten([
+      '<div className="glass-strong" />',
+      '<div className="hud-inset inset-0 flex items-center" />',
+      '<div className={cn("card", aktiv === "chat" ? "peer" : "container")} />',
+      '<div className="fehl-stein" />',
+    ].join("\n"));
+    const { tot, fremd } = waisenUndNackte(klassen, geruft);
+    // Vier Waisen, die eine includes()-Sonde als gerufen verkannt haette: glass
+    // (wegen glass-strong), inset (wegen inset-0), hud-card, spott-klasse.
+    expect(tot).toEqual(["glass", "hud-card", "inset", "spott-klasse"]);
+    // Nackter Rufer: fehl-stein hat keine Regel; inset-0, flex, items-center, peer
+    // und container sind Tailwind-Formen, kein fehlender Baustein.
+    expect(fremd).toEqual(["fehl-stein"]);
+    // Die Escape-Regel an ihrem eignen Fall, und die Wortliste an einem gewoehnlichen.
+    expect(klassenAusSelektor(".text-\\[8\\.5px\\]")).toEqual([]);
+    expect(klassenAusSelektor(".card:hover, .hud-card:hover")).toEqual(["card", "hud-card"]);
   });
 
   it("hält die Zeichen-Wache: kein Bild unter zwei Namen", () => {

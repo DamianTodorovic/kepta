@@ -242,10 +242,6 @@
   /* Icons — Vertrag aus Z-06: unterste Stufe 14 px. Bei 10 px messe ich
      0,63 px Strich (1,5 × 10/24) — subpixel, im Rendering grau. */
   --icon-min: 14px;
-  --icon-stufe-1: 14px;
-  --icon-stufe-2: 16px;
-  --icon-stufe-3: 20px;
-  --icon-stufe-4: 24px;
 
   /* ============================================================
      ZEITMASS — D1-13 maß: das deklarierte 200 ms kam auf keiner Fläche
@@ -429,7 +425,7 @@ select:focus-visible {
 }
 
 /* Ambienter Grund: ein Hauch Tinte unten, ein Hauch Siegel oben — kaum da */
-#root, .app-ambient {
+#root {
   position: relative;
   min-height: 100%;
   height: 100%;
@@ -461,21 +457,6 @@ select:focus-visible {
 ::-webkit-scrollbar-thumb:hover { background: var(--text-3); }
 
 /* ---------- Typografie ---------- */
-.label {
-  font-size: var(--fs-1);
-  font-weight: var(--fw-halbfest);
-  letter-spacing: 0.01em;
-  color: var(--text-2);
-}
-/* Keine Versalien-Labels: das Register spricht in normaler Schrift,
-   die Hierarchie kommt aus Größe und Tinte */
-.label-caps {
-  font-size: var(--fs-1);
-  font-weight: var(--fw-halbfest);
-  letter-spacing: 0.01em;
-  text-transform: none;
-  color: var(--text-2);
-}
 .mono { font-family: var(--font-mono); font-size: var(--fs-2); }
 .tnum { font-variant-numeric: tabular-nums; }
 .hud-label {
@@ -506,17 +487,6 @@ select:focus-visible {
 }
 
 /* ---------- Flächen — Pappe und Papier, kein Glas ---------- */
-.glass {
-  background: var(--glass);
-  backdrop-filter: blur(6px);
-  -webkit-backdrop-filter: blur(6px);
-  border: 1px solid var(--kante-flaeche);
-  /* Die innere Linie ist keine Zierde: auf einem Element mit backdrop-filter verliert
-     der 1-px-Border die Hälfte seiner Kraft (gemalt #9d9d9c statt #626260, 1,59:1
-     gegen das gedimmte Blatt; zwei Pixel Breite helfen nicht — 1,64). Dieselbe
-     Kante als inset-Linie gemalt hält 3,69 nach außen und 5,85 nach innen. */
-  box-shadow: inset 0 0 0 1px var(--kante-flaeche), var(--shadow-sm);
-}
 .glass-strong {
   background: var(--glass-strong);
   backdrop-filter: blur(8px);
@@ -539,7 +509,7 @@ select:focus-visible {
   border-radius: var(--r-panel);
   box-shadow: var(--shadow-sm);
 }
-.inset, .hud-inset {
+.hud-inset {
   background: var(--bg-inset);
   border: 1px solid var(--border-subtle);
 }
@@ -555,7 +525,7 @@ select:focus-visible {
 }
 
 /* Kartentitel in Serif: jede Notiz liest sich wie ein Dokumentkopf */
-.card h3, .hud-card h3 {
+.card h3 {
   font-family: var(--font-display);
   font-weight: var(--fw-halbfest);
   letter-spacing: 0.002em;
@@ -566,7 +536,7 @@ select:focus-visible {
 
 /* Karten — Aktenblätter: flach, haarlinien-getrennt. Hover vertieft
    nur die Tinte, nichts hebt ab. */
-.card, .hud-card {
+.card {
   position: relative;
   background: var(--glass);
   border: 1px solid var(--kante-flaeche);
@@ -574,12 +544,12 @@ select:focus-visible {
   box-shadow: var(--shadow-sm);
   transition: border-color var(--dur) var(--ease-apple), background var(--dur) var(--ease-apple), box-shadow var(--dur-slow) var(--ease-apple);
 }
-.card:hover, .hud-card:hover {
+.card:hover {
   border-color: var(--border-hover);
   background: var(--glass-strong);
   box-shadow: var(--shadow-md);
 }
-.card:active, .hud-card:active {
+.card:active {
   background: var(--glass);
 }
 
@@ -1050,15 +1020,6 @@ label:has(.switch), label:has(input[type="checkbox"]), label:has(input[type="rad
   border: 1px solid var(--border-subtle);
   color: var(--text-2);
 }
-.badge-type {
-  display: inline-flex;
-  align-items: center;
-  padding: 1px 7px;
-  border-radius: var(--r-badge);
-  font-size: var(--fs-1);
-  font-weight: var(--fw-halbfest);
-  letter-spacing: 0.05em;
-}
 .kbd {
   display: inline-flex;
   align-items: center;
@@ -1196,15 +1157,6 @@ label:has(.switch), label:has(input[type="checkbox"]), label:has(input[type="rad
   30% { transform: translateY(-3px); opacity: 1; }
 }
 
-/* Stat-Kacheln der Index-Ansicht */
-.stat-tile {
-  border-radius: var(--r-card);
-  padding: 10px 14px;
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  min-width: 0;
-}
 
 /* ---------- Verträge, die die Komponenten nachziehen ----------
    Diese drei Klassen sind das Angebot aus dieser Scheibe: ein Maß für
@@ -1216,7 +1168,6 @@ label:has(.switch), label:has(input[type="checkbox"]), label:has(input[type="rad
    ist iOS). D1-10 maß „Scan" 13 px und „copy" 17 px. */
 .tap { min-block-size: 28px; min-inline-size: 28px; }
 .tap-reihum { min-block-size: 28px; }
-.tap-min { min-block-size: 20px; min-inline-size: 20px; }
 
 /* Kein Icon unter 14 px. Die drei Legenden-Regeln der Graph-Fläche sind
    26×6-<svg>-Striche und gar keine Icons — sie tragen kein aria-hidden
@@ -1224,17 +1175,9 @@ label:has(.switch), label:has(input[type="checkbox"]), label:has(input[type="rad
    geblasen). */
 svg[aria-hidden="true"] { min-block-size: var(--icon-min); min-inline-size: var(--icon-min); }
 
-.ikone { display: inline-flex; align-items: center; justify-content: center; }
-.ikone-1 { width: var(--icon-stufe-1); height: var(--icon-stufe-1); }
-.ikone-2 { width: var(--icon-stufe-2); height: var(--icon-stufe-2); }
-.ikone-3 { width: var(--icon-stufe-3); height: var(--icon-stufe-3); }
-.ikone-4 { width: var(--icon-stufe-4); height: var(--icon-stufe-4); }
 
 /* ---------- Alt-Klassen (Rückwärtskompatibilität) ---------- */
-.text-gradient { color: var(--text-1); }
 .border-gradient-b { border-bottom: 1px solid var(--border-subtle); }
-.grid-bg, .ambient-glow { display: none; }
-.hud-scan::after { display: none; }
 
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {
@@ -1243,7 +1186,7 @@ svg[aria-hidden="true"] { min-block-size: var(--icon-min); min-inline-size: var(
     transition-duration: 0.01ms !important;
     scroll-behavior: auto !important;
   }
-  .card:hover, .hud-card:hover, .btn-primary:active, .btn-ghost:active { transform: none; }
+  .card:hover, .btn-primary:active, .btn-ghost:active { transform: none; }
 }
 
 /* ---------- Weniger Durchsicht ----------

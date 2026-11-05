@@ -111,7 +111,7 @@ geprüft), `tests/lib/store-herkunft.test.ts`, Zyklus `healthgrund` im Fensterl�
 
 `min-h-screen` und `min-h-[100dvh]` (skaliert mit Zoom), `overflow-hidden` als Beweis für
 Überlauf, ein zweiter Titel für dasselbe Steuer, ein Tooltip als einziger Träger einer Auskunft,
-und eine Regel in CSS, die niemand ruft (Sitz: 18 tote Regeln, siehe Wache).
+und eine Regel in CSS, die niemand ruft (Sitz: 0 tote Regeln -- die 18 Sitze vom 14.10. sind am 5.11. geloescht, siehe Wache).
 
 ## 11. Abnahme vor jeder Unterschrift
 

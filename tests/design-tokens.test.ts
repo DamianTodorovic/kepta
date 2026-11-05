@@ -210,7 +210,13 @@ describe("Token-Form in src/index.css", () => {
     expect(schublade, "die Kante muss als innere Linie gemalt werden, nicht als Border").toMatch(
       /box-shadow:[^;]*inset\s+0 0 0 1px var\(--kante-flaeche\)/,
     );
-    expect(css.match(/\.glass\s*\{[^}]*\}/)?.[0] ?? "").toContain("var(--kante-flaeche)");
+    // Die dritte Zeile dieser Art sah frueher auch die Regel `.glass` -- die hatte aber
+    // keinen Rufer (Waisen-Zensus 5.11.: null Token-Rufer in src, null class=-Treffer,
+    // null Selektor-String) und ist am 5.11. mit den uebrigen 17 toten Regeln gefallen.
+    // Die gehaltene Zahl ist die der lebenden Flaeche oben: `.glass-strong` ruft die
+    // Vorschau und der Editor, und deren inset-Mass wird unveraendert geprueft. Eine
+    // doppelte Wache "die Regel fehlt nun" faehrt die Design-Wache schon -- sie meldet
+    // jede Regel ohne Rufer, und die Latte steht seit diesem Schnitt auf null Sitzen.
   });
 
   // H-3 Die neun Wörter (WAs Umbau 17:35) sind die Hauptfilter der Fläche, .row-quiet

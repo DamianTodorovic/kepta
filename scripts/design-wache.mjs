@@ -18,6 +18,7 @@
 //        seitenleiste|var|schrift|icons|css] [--leise]
 
 import fs from "node:fs";
+import { klassenAusSelektor, klassenAusWortlisten, waisenUndNackte } from "./helfer/klassen-sonde.mjs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -461,7 +462,7 @@ const SCHULD = new Map([
   ["schrift:gewichte-fremd", { sitze: 3, seit: "10.10.", wer: "E2/E3 (Bausteine)", warum: "500 (Tailwind font-medium), 560 und 740 — eine statische Segoe UI hat diese Stufen nicht" }],
   ["icons:groesse-fremd", { sitze: 33, seit: "10.10.", wer: "E2/E3 (Bausteine)", warum: "w-2.5/w-3-Sitzungen; die Untergrenze --icon-min in index.css hebt sie beim Rendern auf 14 px, die Klasse selbst bleibt" }],
   ["icons:name-fremd", { sitze: 2, seit: "10.10.", wer: "DS, benannt", warum: "RefreshCw->loader (der Körper IST zwei Kreiselpfeile = erneuern) und PartyPopper->rocket (Namensrest aus der Phosphor-Zeit, Bild passt zur Absicht)" }],
-  ["css:klassen-waisen", { sitze: 18, seit: "14.10. (vorher 20 — .tap und .tap-reihum ziehen seit 14.10. in Chat.tsx)", wer: "DS (eigene Scheibe)", warum: "Der Zensus 13.10. zählte 20 Regeln in index.css, die kein Baustein ruft; seit 14.10. ziehen .tap und .tap-reihum in Chat.tsx, also 18 Sitze — darunter die Ikonenstufen .ikone-1…4 und die Tastmaße .tap-min: der Vertrag ist geschrieben, aber an keiner Fläche gezogen. Gelöscht wird hier nichts, solange die Welle läuft (E2/E3 können uncommittete Rufer haben); gemeldet wird jede Verschiebung, und eine 19. Waise macht rot. Selektoren mit Escape (.text-[8.5px]) sind keine Waise — sie nennen keinen Baustein, sondern eine Utility-Klasse, die eine Wortliste nicht fassen kann (18.10.)." }],
+  ["css:klassen-waisen", { sitze: 0, seit: "5.11. (gemeldeter Stand zuvor 18, seit 14.10.)", wer: "DS (eigene Scheibe)", warum: "Zensus 13.10.: 20 Regeln in index.css, die kein Baustein ruft; 14.10.: 18 Sitze, weil .tap und .tap-reihum in Chat.tsx anzogen. Entscheidung 5.11.: geloescht, nicht gemeldet -- der Vertrag selbst verbietet 'eine Regel in CSS, die niemand ruft' (design/DESIGN.md §10), und die einzige Begruendung, das Aufschieben zu lassen (E2/E3 koennten uncommittete Rufer haben), fiel mit dem ledigen Baum bei 104cf2e. Zwei eigne Methoden, null Rufer: Token-Zensus in src (className-Worte, getrennt an Whitespace und Klammern, damit inset-0 nicht .inset ruft) und class=-Suche in src, index.html, scripts, tests. Eine neue Waise macht rot." }],
 ]);
 const schuld = (key, gemessen) => {
   const s = SCHULD.get(key);
@@ -1643,11 +1644,18 @@ meld("css", `Deklarationen außerhalb von Regeln`, String(PAR.weisen.length), "0
     `src/index.css:${stufen[0]?.zeile ?? "?"}`, stufen.length >= 6 && stufen.length <= 8 && halbe.length === 0 && fremd.length === 0);
   const wachst = stufen.every((s, i) => i === 0 || s.px > stufen[i - 1].px);
   meld("css", `Raster wächst monoton`, wachst ? "ja" : "Nein", "ja", "src/index.css --s-*", wachst);
-  const tippen = PAR.regeln.filter((r) => /\.tap\b|\.tap-min\b/.test(r.selektor))
+  // .tap-min existiert nicht mehr (5.11., Waisen-Schnitt): die Klasse zog an keiner
+  // Flaeche, und der 20-px-Boden ist trotzdem gehalten -- gemessen an den treffbaren
+  // Zielen selbst, nicht an einem Klassennamen. Der Boden wohnt jetzt an zwei lebenden
+  // Orten: `--icon-min` hebt jedes aria-hidden-Symbol auf 14 px, und der Fensterzensus
+  // trifft 113 Ziele, keins unter 20 px (scripts/pruefe-einstellungen-im-fenster.mjs,
+  // Zyklus tastmass). Diese Zeile prueft die 28 px der beiden rufergetragenen Klassen.
+  const tippen = PAR.regeln.filter((r) => /(^|[\s,.(])\.tap(-rehium)?\b/.test(r.selektor))
     .flatMap((r) => (r.dekl ?? []).filter((d) => /^min-(block|inline)-size$/.test(d.prop))
       .map((d) => Number(/^\s*([0-9]+)px/.exec(d.wert)?.[1])));
-  meld("css", `Tastmaß in .tap und .tap-min`, tippen.join(" · ") || "keine", "28 px Default, 20 px floor",
-    "src/index.css .tap/.tap-min", tippen.includes(28) && tippen.includes(20));
+  meld("css", `Tastmaß in .tap und .tap-reihum`, tippen.join(" · ") || "keine", "drei Mass, alle 28 px Default",
+    "src/index.css .tap/.tap-reihum — der 20-px-Boden liegt im Fensterzensus (tastmass) und in --icon-min, nicht in einer Klasse",
+    tippen.length >= 3 && tippen.every((v) => v === 28));
 
   // Radien: die Stufen als Token, dazu die Waisen. Diese Zahl ist die Wahrheit
   // hinter dem Satz „Radius als Hierarchie" — nicht die Wunschzahl.
@@ -1738,26 +1746,10 @@ meld("css", `Deklarationen außerhalb von Regeln`, String(PAR.weisen.length), "0
 // 20 Waisen statt 16. Hier zählt jetzt dasselbe Wort-Raster, und die Gegenrich-
 // tung ist neu: eine Klasse, die ein Baustein ruft, die aber nirgends definiert
 // ist, war dem Haus ganz unsichtbar (hud-raised in PraxisSync.tsx:172,183).
+
 {
   const klassen = new Set();
-  // Ein Selektor mit Escape-Folge (`.text-\[8\.5px\]`) nennt keinen Haus-Baustein,
-  // sondern übergreift eine Tailwind-Willkürklasse — und keine Wortliste eines
-  // Bausteins nennt ein `[`. Die alte Sonde brach den Namen am Backslash ab und
-  // erfand eine Waise namens `text-`: 18.10. gemessen, als die Leiter-Regeln in
-  // index.css einzogen (drei Selektoren, 10 Willkürgrößen).
-  const klassenAus = (selektor) => {
-    const out = [];
-    for (const m of selektor.matchAll(/\.([a-zA-Z][-\w]*)/g)) {
-      if (selektor[m.index + m[0].length] === "\\") continue;
-      out.push(m[1]);
-    }
-    return out;
-  };
-  for (const r of PAR.regeln) {
-    for (const k of klassenAus(r.selektor)) klassen.add(k);
-  }
-  // Rufer sind: className-Wortlisten, Strings in cn()/clsx(), classList-Setzer und
-  // Selektoren im Code. Tailwind-Formen sind keine eigenen Klassen.
+  for (const r of PAR.regeln) for (const k of klassenAusSelektor(r.selektor)) klassen.add(k);
   const quelltext = DATEIEN.filter((rel) => rel.endsWith(".tsx")).map((rel) => zeilenVon(rel).join("\n")).join("\n");
   // Andere CSS-Dateien als index.css (huelle.css) tragen ebenfalls Regeln — ohne
   // sie erschiene jede Klasse davon als nackter Rufer.
@@ -1765,37 +1757,16 @@ meld("css", `Deklarationen außerhalb von Regeln`, String(PAR.weisen.length), "0
     for (const regel of zeilenVon(rel).join("\n").replace(/\/\*[\s\S]*?\*\//g, "").split("}")) {
       const selektor = regel.slice(0, regel.indexOf("{"));
       if (selektor === regel) continue;
-      for (const k of klassenAus(selektor)) klassen.add(k);
+      for (const k of klassenAusSelektor(selektor)) klassen.add(k);
     }
   }
-  const geruft = new Set();
-  const wort = (t) => String(t).replace(/\$\{[^}]*\}/g, " ").split(/\s+/).filter((k) => /^[A-Za-z_][-\w]*$/.test(k));
-  for (const m of quelltext.matchAll(/className\s*=\s*(?:"([^"]*)"|\{`([^`]*)`\}|\{\s*"([^"]*)"\s*\})/g))
-    for (const k of wort(m[1] ?? m[2] ?? m[3])) geruft.add(k);
-  for (const m of quelltext.matchAll(/\b(?:cn|clsx|twMerge)\(([^)]*)\)/g))
-    for (const q of m[1].matchAll(/(["'`])([^"'`]*)\1/g)) {
-      // currentView === 'chat' ist eine Fläche, keine Klasse
-      if (/(?:===|!==|==|!=|>=|<=)$/.test(m[1].slice(0, q.index).trimEnd())) continue;
-      for (const k of wort(q[2])) geruft.add(k);
-    }
-  for (const m of quelltext.matchAll(/classList\.(?:add|remove|toggle|replace)\(\s*["']([^"']+)["']/g))
-    for (const k of wort(m[1])) geruft.add(k);
-  // Tailwind-Erkennung: Stamm als Präfix-Schnitt, weil Stämme selbst Bindestriche
-  // tragen (max-h, pointer-events, line-clamp).
-  const STAMM = new Set(("flex grid block inline hidden absolute relative fixed sticky overflow truncate w h size min-w min-h max-w max-h p px py pt pb pl pr m mx my mt mb ml mr space gap place items justify content self basis grow shrink top right bottom left inset z border rounded bg text font leading tracking whitespace break indent align list decoration underline no-underline normal-case uppercase lowercase capitalize italic shadow outline ring opacity blur backdrop transition delay duration ease animate scale rotate translate transform origin cursor select resize touch fill stroke antialiased sr not-sr pointer-events divide prose appearance line-clamp caret columns object aspect group peer container").split(" "));
-  const istTailwind = (k) =>
-    /^(sm|md|lg|xl|2xl|hover|focus|focus-visible|focus-within|active|disabled|first|last|odd|even|aria|data|max-min)-/.test(k) ||
-    (() => {
-      const t = k.split(/-(?=\d|[$[{a-z])/);
-      return t.some((_, i) => STAMM.has(t.slice(0, i + 1).join("-")));
-    })();
-  const tot = [...klassen].filter((k) => !geruft.has(k) && !/^dark$/.test(k)).sort();
+  const geruft = klassenAusWortlisten(quelltext);
+  const { tot, fremd } = waisenUndNackte(klassen, geruft);
   const wSchuld = schuld("css:klassen-waisen", tot.length);
   meld("css", `Klassenregeln ohne Baustein (toter Stil)`, tot.length ? `${tot.length}: ${tot.join(" ")}` : "keine",
     wSchuld ? `benannt: ${wSchuld.sitze} (${wSchuld.wer})` : "0",
     wSchuld ? wSchuld.warum : "src/index.css Selektoren gegen Wortlisten in src/**/*.tsx",
     wSchuld ? wSchuld.treffer : tot.length === 0);
-  const fremd = [...geruft].filter((k) => !klassen.has(k) && !istTailwind(k)).sort();
   meld("css", `gerufene Klasse ohne Regel (nackter Rufer)`, fremd.length ? fremd.join(" ") : "keine", "0",
     "Wortlisten in src/**/*.tsx gegen src/index.css — neu: 13.10. gefunden (hud-raised)",
     fremd.length === 0);
