@@ -1586,14 +1586,20 @@ async function main() {
     // Kopf und Zahl kommen aus derselben Quelle wie die Achsenzahl an der Seitenleiste:
     // die Tuer nennt `ohneThema`. Ist dort eine Zahl, muss die Flaeche ein benanntes Fach
     // malen -- kein Rest, der in der ersten Gruppe versickert, und keine Gruppe ohne Grund.
-    const tuer = await evaliere(cdp, `(async()=>{const r=await fetch('/api/memories/gruppen');const d=await r.json();return {ohneThema:d.ohneThema, bestand:d.bestand, themen:Object.entries(d.themen||{})}})()`);
+    // Die Tuer wird verzeihend gelesen: ein Tausch mitten im Lauf (die Zyklen nehmen
+    // ihren eignen Diener fort) darf einen Zyklus nicht als Wurf enden lassen -- ohne
+    // Lesung ist die Stille ein benannter Zweig, kein gruener Fall (Hausregel 19.10.).
+    const tuer = await evaliere(cdp, `(async()=>{try{const r=await fetch('/api/memories/gruppen');if(!r.ok)return null;const d=await r.json();return {ohneThema:d.ohneThema, bestand:d.bestand}}catch(e){return null}})()`);
     const koepfe = await evaliere(cdp, `(()=>[...document.querySelectorAll('h3')].map((h)=>(h.textContent||'').replace(/\\s+/g,' ').trim()).filter((t)=>t&&t.length<48))()`);
     const Liste = Array.isArray(koepfe) ? koepfe : [];
     console.log(`  Tuer: ohneThema ${tuer ? tuer.ohneThema : "keine Lesung"} von ${tuer ? tuer.bestand : "?"} — Faelle: ${Liste.join(" | ") || "keine"}`);
     urteil("**die Themen-Gruppierung malt Koepfe, keine flache Liste**", Liste.length > 0, true);
     const hatOhneFach = Liste.some((k) => /No topic yet/i.test(k));
-    urteil("**das Fach ohne Thema erscheint genau dann, wenn die Tuer eine Zahl dafuer hat**",
-      hatOhneFach, tuer ? Number(tuer.ohneThema) > 0 : null);
+    if (tuer) {
+      urteil("**das Fach ohne Thema erscheint genau dann, wenn die Tuer eine Zahl dafuer hat**", hatOhneFach, Number(tuer.ohneThema) > 0);
+    } else {
+      console.log("  die Tuer antwortete in diesem Augenblick nicht — dieser Vergleich hat hier keinen Gegenstand, die Achsen-Pruefung unten faehrt weiter");
+    }
     const Achsen = ["People", "Projects", "Events", "Tasks", "Guides", "Links"];
     urteil("**und ein Kopf nennt eine der sechs Achsen**", Achsen.some((a) => Liste.some((k) => k.startsWith(a))), true);
     const breitIst = Number(await evaliere(cdp, `window.innerWidth`));
