@@ -118,12 +118,12 @@ export function DuplicatesPanel({ memories, open, onClose, onDelete, onDeleteMan
         <div className="flex items-start gap-3 px-5 py-4 shrink-0" style={{ borderBottom: "1px solid var(--border-subtle)" }}>
           <div className="flex-1 min-w-0">
             <div className="hud-label">Duplicates</div>
-            <h2 className="text-[17px] font-semibold mt-1" style={{ color: "var(--text-1)" }}>
+            <h2 className="fs-5 font-semibold mt-1" style={{ color: "var(--text-1)" }}>
               {groups.length === 0
                 ? "Nothing to clean up"
                 : `${groups.length} ${groups.length === 1 ? "group" : "groups"} · ${ueberzaehlig} redundant ${ueberzaehlig === 1 ? "note" : "notes"}`}
             </h2>
-            <p className="text-[12.5px] mt-1" style={{ color: "var(--text-2)" }}>
+            <p className="fs-3 mt-1" style={{ color: "var(--text-2)" }}>
               Deleting moves a note to the trash — you can undo it. The suggested keeper is the richest copy.
             </p>
           </div>
@@ -146,21 +146,21 @@ export function DuplicatesPanel({ memories, open, onClose, onDelete, onDeleteMan
             <div key={g.key} className="rounded-xl overflow-hidden" style={{ border: "1px solid var(--border-subtle)", background: "var(--bg-inset)" }}>
               <div className="flex items-center gap-2 px-4 py-3" style={{ borderBottom: "1px solid var(--border-subtle)" }}>
                 <AlertCircle className="w-3.5 h-3.5 shrink-0" style={{ color: "var(--warn)" }} />
-                <span className="text-[12.5px] font-medium" style={{ color: "var(--text-1)" }}>
+                <span className="fs-3 font-medium" style={{ color: "var(--text-1)" }}>
                   {reasonLabel(g.reason, g.similarity)}
                 </span>
                 <span className="hud-label">{g.members.length} copies</span>
                 <div className="ml-auto flex items-center gap-2">
                   <button
                     onClick={() => verwerfe(g)}
-                    className="btn-ghost px-2 py-1 rounded-md text-[11px] font-medium"
+                    className="btn-ghost px-2 py-1 rounded-md fs-1 font-medium"
                     title="Keep both — this pair will not be reported again"
                   >
                     Not a duplicate
                   </button>
                   <button
                     onClick={() => behalteNur(g, g.keepId)}
-                    className="btn-primary px-3 py-1 rounded-md text-[11px]"
+                    className="btn-primary px-3 py-1 rounded-md fs-1"
                     title="Delete every copy except the suggested one"
                   >
                     Keep suggested
@@ -183,10 +183,10 @@ export function DuplicatesPanel({ memories, open, onClose, onDelete, onDeleteMan
                         )}
                       </div>
                       <div className="flex-1 min-w-0">
-                        <div className="text-[13.5px] font-medium truncate" style={{ color: "var(--text-1)" }}>
+                        <div className="fs-3 font-medium truncate" style={{ color: "var(--text-1)" }}>
                           {m.title || "Untitled"}
                         </div>
-                        <p className="text-[12px] mt-1 line-clamp-2" style={{ color: "var(--text-2)" }}>
+                        <p className="fs-2 mt-1 line-clamp-2" style={{ color: "var(--text-2)" }}>
                           {m.content.slice(0, 220) || "—"}
                         </p>
                         <div className="flex items-center gap-2 mt-1 hud-label">
@@ -223,7 +223,7 @@ export function DuplicatesPanel({ memories, open, onClose, onDelete, onDeleteMan
 
         {groups.length > 0 && (
           <div className="flex items-center gap-2 px-5 py-4 shrink-0" style={{ borderTop: "1px solid var(--border-subtle)" }}>
-            <span className="text-[12.5px]" style={{ color: "var(--text-2)" }}>
+            <span className="fs-3" style={{ color: "var(--text-2)" }}>
               {bestaetigeAlle
                 ? `This moves ${ueberzaehlig} ${ueberzaehlig === 1 ? "note" : "notes"} to the trash.`
                 : "One click per group, or clean up everything at once."}
@@ -231,13 +231,13 @@ export function DuplicatesPanel({ memories, open, onClose, onDelete, onDeleteMan
             <div className="ml-auto flex items-center gap-2">
               {bestaetigeAlle ? (
                 <>
-                  <button onClick={() => setBestaetigeAlle(false)} className="btn-ghost px-3 py-2 rounded-lg text-[12.5px]">Cancel</button>
-                  <button onClick={raeumeAlleAuf} className="btn-primary px-3 py-2 rounded-lg text-[12.5px]">
+                  <button onClick={() => setBestaetigeAlle(false)} className="btn-ghost px-3 py-2 rounded-lg fs-3">Cancel</button>
+                  <button onClick={raeumeAlleAuf} className="btn-primary px-3 py-2 rounded-lg fs-3">
                     Yes, move {ueberzaehlig} to the trash
                   </button>
                 </>
               ) : (
-                <button onClick={() => setBestaetigeAlle(true)} className="btn-ghost px-3 py-2 rounded-lg text-[12.5px]">
+                <button onClick={() => setBestaetigeAlle(true)} className="btn-ghost px-3 py-2 rounded-lg fs-3">
                   Clean up all {groups.length} {groups.length === 1 ? 'group' : 'groups'}
                 </button>
               )}

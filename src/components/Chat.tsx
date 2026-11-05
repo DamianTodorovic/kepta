@@ -839,16 +839,16 @@ export function Chat({ activeMemories, onSaveToBrain, onSaveToBrainWithMeta, isF
           <div>
             <h2 className="font-semibold text-sm flex items-center gap-2" style={{ color: "var(--text-1)" }}>
               Chat
-              {isStreaming && <span className="inline-flex items-center gap-1 text-[10px] font-normal px-2 py-1 rounded hud-inset" style={{ color: "var(--accent)" }}><span className="w-1.5 h-1.5 rounded-full bg-[var(--accent)] animate-pulse" /> streaming…</span>}
+              {isStreaming && <span className="inline-flex items-center gap-1 fs-1 font-normal px-2 py-1 rounded hud-inset" style={{ color: "var(--accent)" }}><span className="w-1.5 h-1.5 rounded-full bg-[var(--accent)] animate-pulse" /> streaming…</span>}
             </h2>
             <div className="hud-label mt-1 flex items-center gap-2">
               {connection.state === "connected" ? (
                 <>
                   <span>{connection.label} — {connection.model}</span>
-                  {connection.local && <span className="px-1 py-0 rounded text-[9px] border" style={{ borderColor: "var(--border-subtle)", color: "var(--ok)" }}>local</span>}
+                  {connection.local && <span className="px-1 py-0 rounded fs-1 border" style={{ borderColor: "var(--border-subtle)", color: "var(--ok)" }}>local</span>}
                   <button
                     onClick={() => { disconnectAI(); stossVerbindungAn((n) => n + 1); }}
-                    className="inline-flex items-center gap-1 min-h-6 px-2 rounded text-[11px] border transition-colors hover:opacity-80"
+                    className="inline-flex items-center gap-1 min-h-6 px-2 rounded fs-1 border transition-colors hover:opacity-80"
                     style={{ borderColor: "var(--border-subtle)", color: "var(--text-2)" }}
                     title="Disconnect this AI — nothing is deleted, you can reconnect any time"
                   >
@@ -863,7 +863,7 @@ export function Chat({ activeMemories, onSaveToBrain, onSaveToBrainWithMeta, isF
                   {!detectedLocal && (
                     <button
                       onClick={() => void sucheLokaleKI()}
-                      className="inline-flex items-center gap-1 min-h-6 px-2 rounded text-[11px] border transition-colors hover:opacity-80"
+                      className="inline-flex items-center gap-1 min-h-6 px-2 rounded fs-1 border transition-colors hover:opacity-80"
                       style={{ borderColor: "var(--border-subtle)", color: "var(--text-2)" }}
                       title="Ask this machine whether Ollama or LM Studio is running — nothing is contacted until you click"
                     >
@@ -874,7 +874,7 @@ export function Chat({ activeMemories, onSaveToBrain, onSaveToBrainWithMeta, isF
                   {detectedLocal && (
                     <button
                       onClick={() => connectLocal(detectedLocal)}
-                      className="inline-flex items-center gap-1 min-h-6 px-2 rounded text-[11px] border transition-colors hover:opacity-80"
+                      className="inline-flex items-center gap-1 min-h-6 px-2 rounded fs-1 border transition-colors hover:opacity-80"
                       style={{ borderColor: "var(--border-subtle)", color: "var(--accent)", background: "var(--accent-soft)" }}
                       title={`${detectedLocal.label} detected locally — connect it`}
                     >
@@ -949,8 +949,8 @@ export function Chat({ activeMemories, onSaveToBrain, onSaveToBrainWithMeta, isF
                 <Sparkles className="w-3 h-3" style={{ color: "var(--accent)" }} />
                 Context &amp; token budget
               </span>
-              <span className="text-[11px] flex items-center gap-2" style={{ color: "var(--text-2)" }}>
-                <span className="px-2 py-1 rounded-md text-[11px] font-semibold tnum" style={{ background: "var(--bg-panel)", border: "1px solid var(--border-subtle)", color: "var(--text-1)" }}>
+              <span className="fs-1 flex items-center gap-2" style={{ color: "var(--text-2)" }}>
+                <span className="px-2 py-1 rounded-md fs-1 font-semibold tnum" style={{ background: "var(--bg-panel)", border: "1px solid var(--border-subtle)", color: "var(--text-1)" }}>
                   {tokenBudget.toLocaleString("en-GB")}
                 </span>
                 <span>· {budgetedMemories.length} notes in play</span>
@@ -980,7 +980,7 @@ export function Chat({ activeMemories, onSaveToBrain, onSaveToBrainWithMeta, isF
                 {budgetedMemories.slice(0, 8).map((m) => (
                   <span
                     key={m.id}
-                    className="inline-flex items-center gap-1 px-2 py-1 rounded-md text-[10.5px] font-medium border truncate max-w-[140px]"
+                    className="inline-flex items-center gap-1 px-2 py-1 rounded-md fs-1 font-medium border truncate max-w-[140px]"
                     style={{ background: budgetedIds.has(m.id) ? "var(--accent-soft)" : "var(--bg-panel)", borderColor: "var(--border-subtle)", color: "var(--text-2)" }}
                     title={`${m.title} — ${m.id}`}
                   >
@@ -989,7 +989,7 @@ export function Chat({ activeMemories, onSaveToBrain, onSaveToBrainWithMeta, isF
                   </span>
                 ))}
                 {budgetedMemories.length > 8 && (
-                  <span className="text-[10.5px] px-2 py-1 rounded-md" style={{ color: "var(--text-3)" }}>
+                  <span className="fs-1 px-2 py-1 rounded-md" style={{ color: "var(--text-3)" }}>
                     +{budgetedMemories.length - 8}
                   </span>
                 )}
@@ -998,10 +998,10 @@ export function Chat({ activeMemories, onSaveToBrain, onSaveToBrainWithMeta, isF
           </div>
           <div className="hidden lg:flex flex-col items-end gap-1 text-xs min-w-[130px] shrink-0">
             <span className="hud-label">Cost estimate</span>
-            <span className="mono text-[13px]" style={{ color: pricing.input === 0 ? "var(--ok)" : "var(--text-1)" }}>
+            <span className="mono fs-3" style={{ color: pricing.input === 0 ? "var(--ok)" : "var(--text-1)" }}>
               {estimatedCostNow}
             </span>
-            <span className="text-[10.5px] mono tnum" style={{ color: "var(--text-3)" }}>
+            <span className="fs-1 mono tnum" style={{ color: "var(--text-3)" }}>
               In ~{totalInputTokensEstimate} · Out ~{liveOutputTokens || "—"}
             </span>
           </div>
@@ -1016,7 +1016,7 @@ export function Chat({ activeMemories, onSaveToBrain, onSaveToBrainWithMeta, isF
               <KeptaMark size={34} />
             </div>
             <div className="hud-label mb-2">No questions yet</div>
-            <p className="text-[13px] max-w-sm leading-relaxed" style={{ color: "var(--text-2)" }}>
+            <p className="fs-3 max-w-sm leading-relaxed" style={{ color: "var(--text-2)" }}>
               Ask something about your notes — {budgetedMemories.length} of {activeMemories.length} fit the budget ({tokenBudget.toLocaleString("en-GB")} tokens).
             </p>
             <div className="mt-5 flex flex-wrap gap-2 justify-center max-w-md">
@@ -1054,7 +1054,7 @@ export function Chat({ activeMemories, onSaveToBrain, onSaveToBrainWithMeta, isF
                     urlTransform={antwortUrlPfad}
                     components={{
                       h1: ({ children }) => <h1 className="text-base font-bold mt-3 mb-2" style={{ color: "var(--text-1)" }}>{children}</h1>,
-                      h2: ({ children }) => <h2 className="text-[15px] font-semibold mt-3 mb-2" style={{ color: "var(--text-1)" }}>{children}</h2>,
+                      h2: ({ children }) => <h2 className="fs-5 font-semibold mt-3 mb-2" style={{ color: "var(--text-1)" }}>{children}</h2>,
                       h3: ({ children }) => <h3 className="text-sm font-semibold mt-3 mb-1" style={{ color: "var(--text-1)" }}>{children}</h3>,
                       p: ({ children }) => <p className="my-2 leading-relaxed" style={{ color: "var(--text-1)" }}>{children}</p>,
                       a: ({ children, href }) => (
@@ -1147,13 +1147,13 @@ export function Chat({ activeMemories, onSaveToBrain, onSaveToBrainWithMeta, isF
                 <div className="mt-3 space-y-2">
                   {msg.sources && msg.sources.length > 0 && (
                     <div className="flex flex-wrap gap-2 items-center">
-                      <span className="hud-label text-[9px] flex items-center gap-1">
+                      <span className="hud-label fs-1 flex items-center gap-1">
                         <Hash className="w-3 h-3" /> Sources:
                       </span>
                       {msg.sources.slice(0, 6).map((s) => (
                         <span
                           key={s.id}
-                          className="inline-flex flex-col items-start px-2 py-1 rounded-lg text-[10px] font-medium border max-w-[180px]"
+                          className="inline-flex flex-col items-start px-2 py-1 rounded-lg fs-1 font-medium border max-w-[180px]"
                           style={{ background: "var(--accent-soft)", borderColor: "var(--border-subtle)", color: "var(--text-1)" }}
                           title={s.id}
                         >
@@ -1164,7 +1164,7 @@ export function Chat({ activeMemories, onSaveToBrain, onSaveToBrainWithMeta, isF
                           {/* Herkunfts-Badge (Paket 3): welches Bein (BM25/Vektor/Graph) den
                               Knoten wo im Ranking sah — dieselbe Wahrheit wie auf der Karte. */}
                           {spurenSichtbar(s.tracks) && (
-                            <span className="flex flex-wrap gap-1 font-mono text-[8.5px] font-normal leading-none">
+                            <span className="flex flex-wrap gap-1 font-mono fs-1 font-normal leading-none">
                               {s.tracks!.bm25 !== null && <span style={{ color: "var(--accent)" }}>bm25 #{s.tracks!.bm25 + 1}</span>}
                               {s.tracks!.vektor !== null && <span style={{ color: "var(--accent)" }}>vector #{s.tracks!.vektor + 1}</span>}
                               {s.tracks!.graph !== null && <span style={{ color: "var(--accent)" }}>graph #{s.tracks!.graph + 1}</span>}
@@ -1173,12 +1173,12 @@ export function Chat({ activeMemories, onSaveToBrain, onSaveToBrainWithMeta, isF
                         </span>
                       ))}
                       {msg.sources.length > 6 && (
-                        <span className="text-[10px] hud-label">+{msg.sources.length - 6}</span>
+                        <span className="fs-1 hud-label">+{msg.sources.length - 6}</span>
                       )}
                     </div>
                   )}
                   {msg.shield && (
-                    <div data-testid="chat-shield" className="flex items-center gap-2 text-[11px]" style={{ color: "var(--ok)" }}>
+                    <div data-testid="chat-shield" className="flex items-center gap-2 fs-1" style={{ color: "var(--ok)" }}>
                       <ShieldCheck className="w-3.5 h-3.5 shrink-0" />
                       <span>
                         {[
@@ -1189,7 +1189,7 @@ export function Chat({ activeMemories, onSaveToBrain, onSaveToBrainWithMeta, isF
                       </span>
                     </div>
                   )}
-                  <div className="flex flex-wrap items-center gap-2 text-[10px] font-mono" style={{ color: "var(--text-3)" }}>
+                  <div className="flex flex-wrap items-center gap-2 fs-1 font-mono" style={{ color: "var(--text-3)" }}>
                     {typeof msg.inputTokens === "number" && <span className="inline-flex items-center gap-1"><Hash className="w-3 h-3" /> In {msg.inputTokens}</span>}
                     {typeof msg.outputTokens === "number" && <span className="inline-flex items-center gap-1">→ {msg.outputTokens} tokens</span>}
                     {msg.costLabel && <span className="inline-flex items-center gap-1"><Coins className="w-3 h-3" /> {msg.costLabel}</span>}
@@ -1198,7 +1198,7 @@ export function Chat({ activeMemories, onSaveToBrain, onSaveToBrainWithMeta, isF
                   <div className="flex justify-end gap-2 pt-1">
                     <button
                       onClick={() => handleCopy(msg.content, msg.id)}
-                      className="flex items-center gap-2 text-[11px] font-medium px-2 py-1 rounded hud-inset tap-reihum hover:!border-[color-mix(in_srgb,var(--accent)_45%,transparent)] transition-colors"
+                      className="flex items-center gap-2 fs-1 font-medium px-2 py-1 rounded hud-inset tap-reihum hover:!border-[color-mix(in_srgb,var(--accent)_45%,transparent)] transition-colors"
                       style={{ color: "var(--text-2)" }}
                       aria-label={copiedId === msg.id ? "Answer copied" : "Copy answer"}
                     >
@@ -1215,7 +1215,7 @@ export function Chat({ activeMemories, onSaveToBrain, onSaveToBrainWithMeta, isF
                           onSaveToBrain?.(msg.content);
                         }
                       }}
-                      className="flex items-center gap-2 text-[11px] font-medium px-2 py-1 rounded hud-inset hover:!border-[color-mix(in_srgb,var(--accent)_45%,transparent)] transition-colors"
+                      className="flex items-center gap-2 fs-1 font-medium px-2 py-1 rounded hud-inset hover:!border-[color-mix(in_srgb,var(--accent)_45%,transparent)] transition-colors"
                       style={{ color: "var(--text-2)" }}
                     >
                       <Database className="w-3 h-3" style={{ color: "var(--accent)" }} /> Save as a node
@@ -1290,8 +1290,8 @@ export function Chat({ activeMemories, onSaveToBrain, onSaveToBrainWithMeta, isF
             </button>
           </div>
         </form>
-        <div className="max-w-4xl mx-auto mt-2 flex justify-between items-center text-[10px]" style={{ color: "var(--text-3)" }}>
-          <span className="hud-label normal-case tracking-normal text-[10px] flex items-center gap-3">
+        <div className="max-w-4xl mx-auto mt-2 flex justify-between items-center fs-1" style={{ color: "var(--text-3)" }}>
+          <span className="hud-label normal-case tracking-normal fs-1 flex items-center gap-3">
             <span className="flex items-center gap-1">
               <FileText className="w-3 h-3" /> {budgetedMemories.length} notes in the prompt
             </span>

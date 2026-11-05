@@ -132,9 +132,9 @@ function Satz({ satz, wert }: { satz: string; wert: string }) {
 function Abschnitt({ titel, zahl, children }: { titel: string; zahl?: number; children: React.ReactNode }) {
   return (
     <section className="mb-7">
-      <h3 className="text-[13px] font-semibold mb-3 flex items-center gap-2" style={{ color: 'var(--text-1)' }}>
+      <h3 className="fs-3 font-semibold mb-3 flex items-center gap-2" style={{ color: 'var(--text-1)' }}>
         {titel}
-        {typeof zahl === 'number' && <span className="text-[11px] tnum px-2 rounded-md" style={{ background: 'var(--bg-inset-strong)', color: 'var(--text-3)' }}>{zahl}</span>}
+        {typeof zahl === 'number' && <span className="fs-1 tnum px-2 rounded-md" style={{ background: 'var(--bg-inset-strong)', color: 'var(--text-3)' }}>{zahl}</span>}
       </h3>
       {children}
     </section>
@@ -144,7 +144,7 @@ function Abschnitt({ titel, zahl, children }: { titel: string; zahl?: number; ch
 /** Die Kategorie einer Bewegung: neu, aktualisiert, abgelöst, gelöscht. */
 function ArtTag({ children }: { children: React.ReactNode }) {
   return (
-    <span className="text-[10px] px-2 py-1 rounded-md shrink-0 translate-y-[-1px]" style={{ background: 'var(--bg-inset-strong)', color: 'var(--text-3)' }}>
+    <span className="fs-1 px-2 py-1 rounded-md shrink-0 translate-y-[-1px]" style={{ background: 'var(--bg-inset-strong)', color: 'var(--text-3)' }}>
       {children}
     </span>
   );
@@ -229,7 +229,7 @@ export function TodayView({ aktiv, onOpenMemory, onGo }: Props) {
               [daten.todos.total, daten.todos.total === 1 ? 'open to-do' : 'open to-dos'],
               [daten.contradictions.length, 'to check'],
             ].map(([n, text]) => (
-              <span key={String(text)} className="px-3 py-1 rounded-full text-[12px] tnum" style={{ background: 'var(--bg-inset-strong)', color: 'var(--text-2)' }}>
+              <span key={String(text)} className="px-3 py-1 rounded-full fs-2 tnum" style={{ background: 'var(--bg-inset-strong)', color: 'var(--text-2)' }}>
                 <strong style={{ color: 'var(--text-1)' }}>{n}</strong> {text}
               </span>
             ))}
@@ -254,7 +254,7 @@ export function TodayView({ aktiv, onOpenMemory, onGo }: Props) {
           />
           <div className="flex justify-between mt-1">
             {FENSTER.map((f, i) => (
-              <span key={f.label} className="text-[10px]" style={i === fenster ? { color: 'var(--text-1)', fontWeight: 600 } : { color: 'var(--text-3)' }}>{f.label}</span>
+              <span key={f.label} className="fs-1" style={i === fenster ? { color: 'var(--text-1)', fontWeight: 600 } : { color: 'var(--text-3)' }}>{f.label}</span>
             ))}
           </div>
         </div>
@@ -275,26 +275,26 @@ export function TodayView({ aktiv, onOpenMemory, onGo }: Props) {
               <div className="space-y-3">
                 {daten.contradictions.map((w) => (
                   <div key={w.key} className="hud-inset rounded-xl p-4" data-testid="contradiction">
-                    <div className="text-[13px] mb-3 flex items-center gap-2" style={{ color: 'var(--text-1)' }}>
+                    <div className="fs-3 mb-3 flex items-center gap-2" style={{ color: 'var(--text-1)' }}>
                       <AlertTriangle className="w-4 h-4 shrink-0" style={{ color: 'var(--warn)' }} />
                       Two notes disagree{w.about ? ` about “${w.about}”` : ''}.
                     </div>
-                    <div className="grid sm:grid-cols-2 gap-3 text-[13px]" style={{ color: 'var(--text-2)' }}>
+                    <div className="grid sm:grid-cols-2 gap-3 fs-3" style={{ color: 'var(--text-2)' }}>
                       {([['Newer', w.newer], ['Older', w.older]] as const).map(([label, s]) => (
                         <div key={s.id}>
-                          <div className="text-[11px] mb-1" style={{ color: 'var(--text-3)' }}>{label} · {vor(s.updatedAt)}</div>
+                          <div className="fs-1 mb-1" style={{ color: 'var(--text-3)' }}>{label} · {vor(s.updatedAt)}</div>
                           <Titel id={s.id} title={s.title} onOpen={onOpenMemory} />
                           <p className="mt-1"><Satz satz={s.sentence} wert={s.value} /></p>
                         </div>
                       ))}
                     </div>
                     {erledigt[w.key] ? (
-                      <p role="status" className="text-[12.5px] mt-3" style={{ color: 'var(--ok)' }}>{erledigt[w.key]}</p>
+                      <p role="status" className="fs-3 mt-3" style={{ color: 'var(--ok)' }}>{erledigt[w.key]}</p>
                     ) : (
                       <div className="flex flex-wrap gap-2 mt-3">
-                        <button onClick={() => void loese(w, 'newer')} className="btn-primary px-3 py-2 rounded-lg text-[12.5px] font-medium">Keep the newer</button>
-                        <button onClick={() => void loese(w, 'older')} className="btn-ghost px-3 py-2 rounded-lg text-[12.5px]" style={{ border: '1px solid var(--border-subtle)' }}>Keep the older</button>
-                        <button onClick={() => void loese(w, 'both')} className="btn-ghost px-3 py-2 rounded-lg text-[12.5px]">Both are right</button>
+                        <button onClick={() => void loese(w, 'newer')} className="btn-primary px-3 py-2 rounded-lg fs-3 font-medium">Keep the newer</button>
+                        <button onClick={() => void loese(w, 'older')} className="btn-ghost px-3 py-2 rounded-lg fs-3" style={{ border: '1px solid var(--border-subtle)' }}>Keep the older</button>
+                        <button onClick={() => void loese(w, 'both')} className="btn-ghost px-3 py-2 rounded-lg fs-3">Both are right</button>
                       </div>
                     )}
                   </div>
@@ -309,7 +309,7 @@ export function TodayView({ aktiv, onOpenMemory, onGo }: Props) {
             ) : (
               <>
                 {daten.created.bySource.length > 0 && (
-                  <p className="text-[12.5px] mb-2" style={{ color: 'var(--text-2)' }}>
+                  <p className="fs-3 mb-2" style={{ color: 'var(--text-2)' }}>
                     {daten.created.bySource.map((q) => `${q.who}: ${q.count} new`).join(' · ')}
                     {daten.changed.total > 0 ? ` · ${daten.changed.total} changed` : ''}
                   </p>
@@ -318,24 +318,24 @@ export function TodayView({ aktiv, onOpenMemory, onGo }: Props) {
                     neu, aktualisiert, abgelöst (mit Nachfolger als Klickziel), gelöscht. */}
                 <ul className="space-y-2">
                   {daten.created.notes.map((n) => (
-                    <li key={`new-${n.id}-${n.at}`} className="text-[13px] flex items-baseline gap-2">
+                    <li key={`new-${n.id}-${n.at}`} className="fs-3 flex items-baseline gap-2">
                       <ArtTag>new</ArtTag>
                       <Titel id={n.id} title={n.title} onOpen={onOpenMemory} />
-                      <span className="text-[11px]" style={{ color: 'var(--text-3)' }}>{n.by ? `by ${n.by} · ` : ''}{vor(n.at)}</span>
+                      <span className="fs-1" style={{ color: 'var(--text-3)' }}>{n.by ? `by ${n.by} · ` : ''}{vor(n.at)}</span>
                     </li>
                   ))}
                   {daten.changed.notes.map((n) => (
-                    <li key={`upd-${n.id}-${n.at}`} className="text-[13px] flex items-baseline gap-2">
+                    <li key={`upd-${n.id}-${n.at}`} className="fs-3 flex items-baseline gap-2">
                       <ArtTag>updated</ArtTag>
                       <Titel id={n.id} title={n.title} onOpen={onOpenMemory} />
-                      <span className="text-[11px]" style={{ color: 'var(--text-3)' }}>{vor(n.at)}</span>
+                      <span className="fs-1" style={{ color: 'var(--text-3)' }}>{vor(n.at)}</span>
                     </li>
                   ))}
                   {abgeloest.notes.map((n) => (
-                    <li key={`sup-${n.id}-${n.at}`} className="text-[13px] flex items-baseline gap-2">
+                    <li key={`sup-${n.id}-${n.at}`} className="fs-3 flex items-baseline gap-2">
                       <ArtTag>replaced</ArtTag>
                       <span style={{ color: 'var(--text-3)' }}>{n.title}</span>
-                      <span className="text-[11px]" style={{ color: 'var(--text-3)' }}>
+                      <span className="fs-1" style={{ color: 'var(--text-3)' }}>
                         → replaced by{' '}
                         <button onClick={() => onOpenMemory(n.supersededBy)} className="hover:underline underline-offset-2" style={{ color: 'var(--accent)' }}>
                           {n.replacedBy || n.supersededBy.slice(0, 8)}
@@ -344,10 +344,10 @@ export function TodayView({ aktiv, onOpenMemory, onGo }: Props) {
                     </li>
                   ))}
                   {geloescht.notes.map((n) => (
-                    <li key={`del-${n.id}-${n.at}`} className="text-[13px] flex items-baseline gap-2">
+                    <li key={`del-${n.id}-${n.at}`} className="fs-3 flex items-baseline gap-2">
                       <ArtTag>deleted</ArtTag>
                       <span style={{ color: 'var(--text-3)' }}>{n.title}</span>
-                      <span className="text-[11px]" style={{ color: 'var(--text-3)' }}>in the trash — restore it there</span>
+                      <span className="fs-1" style={{ color: 'var(--text-3)' }}>in the trash — restore it there</span>
                     </li>
                   ))}
                 </ul>
@@ -355,7 +355,7 @@ export function TodayView({ aktiv, onOpenMemory, onGo }: Props) {
                   const gezeigt = daten.created.notes.length + daten.changed.notes.length + abgeloest.notes.length + geloescht.notes.length;
                   const alles = daten.created.total + daten.changed.total + abgeloest.total + geloescht.total;
                   return alles > gezeigt ? (
-                    <p className="text-[11px] mt-2" style={{ color: 'var(--text-3)' }}>and {alles - gezeigt} more</p>
+                    <p className="fs-1 mt-2" style={{ color: 'var(--text-3)' }}>and {alles - gezeigt} more</p>
                   ) : null;
                 })()}
               </>
@@ -366,15 +366,15 @@ export function TodayView({ aktiv, onOpenMemory, onGo }: Props) {
             <Abschnitt titel="Open to-dos" zahl={daten.todos.total}>
               <ul className="space-y-2">
                 {daten.todos.items.map((t, i) => (
-                  <li key={`${t.id}-${i}`} className="text-[13px] flex items-baseline gap-2" style={{ color: 'var(--text-1)' }}>
+                  <li key={`${t.id}-${i}`} className="fs-3 flex items-baseline gap-2" style={{ color: 'var(--text-1)' }}>
                     <span aria-hidden className="w-3 h-3 rounded-[3px] shrink-0 translate-y-0.5" style={{ border: '1.5px solid var(--text-3)' }} />
                     <span className="flex-1">{t.text}</span>
-                    <button onClick={() => onOpenMemory(t.id)} className="text-[11px] hover:underline shrink-0" style={{ color: 'var(--text-3)' }}>{t.title}</button>
+                    <button onClick={() => onOpenMemory(t.id)} className="fs-1 hover:underline shrink-0" style={{ color: 'var(--text-3)' }}>{t.title}</button>
                   </li>
                 ))}
               </ul>
               {daten.todos.total > daten.todos.items.length && (
-                <p className="text-[11px] mt-2" style={{ color: 'var(--text-3)' }}>and {daten.todos.total - daten.todos.items.length} more in your notes</p>
+                <p className="fs-1 mt-2" style={{ color: 'var(--text-3)' }}>and {daten.todos.total - daten.todos.items.length} more in your notes</p>
               )}
             </Abschnitt>
           )}
@@ -383,17 +383,17 @@ export function TodayView({ aktiv, onOpenMemory, onGo }: Props) {
             <Abschnitt titel="Due" zahl={daten.expiring.length + daten.expired.length}>
               <ul className="space-y-2">
                 {daten.expiring.map((n) => (
-                  <li key={n.id} className="text-[13px] flex items-baseline gap-2">
+                  <li key={n.id} className="fs-3 flex items-baseline gap-2">
                     <Clock className="w-3.5 h-3.5 shrink-0 translate-y-0.5" style={{ color: 'var(--warn)' }} />
                     <Titel id={n.id} title={n.title} onOpen={onOpenMemory} />
-                    <span className="text-[11px]" style={{ color: 'var(--text-3)' }}>valid until {datum(n.validTo)}</span>
+                    <span className="fs-1" style={{ color: 'var(--text-3)' }}>valid until {datum(n.validTo)}</span>
                   </li>
                 ))}
                 {daten.expired.map((n) => (
-                  <li key={n.id} className="text-[13px] flex items-baseline gap-2">
+                  <li key={n.id} className="fs-3 flex items-baseline gap-2">
                     <Clock className="w-3.5 h-3.5 shrink-0 translate-y-0.5" style={{ color: 'var(--text-3)' }} />
                     <Titel id={n.id} title={n.title} onOpen={onOpenMemory} />
-                    <span className="text-[11px]" style={{ color: 'var(--text-2)' }}>expired {datum(n.validTo)} — still true?</span>
+                    <span className="fs-1" style={{ color: 'var(--text-2)' }}>expired {datum(n.validTo)} — still true?</span>
                   </li>
                 ))}
               </ul>
@@ -411,7 +411,7 @@ export function TodayView({ aktiv, onOpenMemory, onGo }: Props) {
             ) : (
               <ul className="space-y-2">
                 {daten.apps.map((a) => (
-                  <li key={a.who} className="text-[13px] flex items-center gap-2" style={{ color: 'var(--text-1)' }}>
+                  <li key={a.who} className="fs-3 flex items-center gap-2" style={{ color: 'var(--text-1)' }}>
                     <Bot className="w-3.5 h-3.5" style={{ color: 'var(--accent)' }} />
                     <strong>{a.who}</strong>
                     <span style={{ color: 'var(--text-2)' }}>
@@ -420,7 +420,7 @@ export function TodayView({ aktiv, onOpenMemory, onGo }: Props) {
                   </li>
                 ))}
                 <li>
-                  <button onClick={() => onGo('activity')} className="text-[12px] hover:underline" style={{ color: 'var(--accent)' }}>See everything they did</button>
+                  <button onClick={() => onGo('activity')} className="fs-2 hover:underline" style={{ color: 'var(--accent)' }}>See everything they did</button>
                 </li>
               </ul>
             )}

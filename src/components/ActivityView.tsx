@@ -110,7 +110,7 @@ function Live({ aktiv, onOpenMemory }: { aktiv: boolean; onOpenMemory: (id: stri
         {apps.map((a) => {
           const live = Date.now() - a.lastSeen < LIVE_MS;
           return (
-            <span key={a.who} className="px-3 py-2 rounded-full text-[12.5px] flex items-center gap-2" style={{ background: 'var(--bg-inset-strong)', color: 'var(--text-1)' }}>
+            <span key={a.who} className="px-3 py-2 rounded-full fs-3 flex items-center gap-2" style={{ background: 'var(--bg-inset-strong)', color: 'var(--text-1)' }}>
               <span aria-hidden className={live ? 'animate-pulse' : ''} style={{ width: 8, height: 8, borderRadius: 999, background: live ? 'var(--ok)' : 'var(--text-3)' }} />
               <strong>{a.who}</strong>
               <span style={{ color: 'var(--text-3)' }}>{live ? 'active now' : vor(a.lastSeen)} · {a.calls} {a.calls === 1 ? 'call' : 'calls'}</span>
@@ -122,19 +122,19 @@ function Live({ aktiv, onOpenMemory }: { aktiv: boolean; onOpenMemory: (id: stri
         {eintraege.map((e) => (
           <li key={e.id} className="flex gap-3 items-start px-3 py-2 rounded-lg hover:bg-[var(--bg-inset)]">
             <Bot className="w-4 h-4 mt-1 shrink-0" style={{ color: /save|update|delete|forget/.test(e.tool) ? 'var(--accent)' : 'var(--text-3)' }} />
-            <div className="min-w-0 text-[13px]" style={{ color: 'var(--text-2)' }}>
+            <div className="min-w-0 fs-3" style={{ color: 'var(--text-2)' }}>
               <strong style={{ color: 'var(--text-1)' }}>{e.who}</strong> {VERB[e.tool] ?? e.tool.replace(/^memory_/, '').replace(/_/g, ' ')}{' '}
               {e.text && (e.noteId
                 ? <button onClick={() => onOpenMemory(e.noteId!)} className="font-medium hover:underline underline-offset-2" style={{ color: 'var(--text-1)' }}>{e.text}</button>
                 : <strong style={{ color: 'var(--text-1)' }}>{e.tool === 'memory_search' ? `“${e.text}”` : e.text}</strong>)}
               {e.tool === 'memory_search' && e.count !== null && <span style={{ color: 'var(--text-3)' }}> · {e.count} {e.count === 1 ? 'note' : 'notes'}</span>}
-              <div className="text-[11px]" style={{ color: 'var(--text-3)' }}>{vor(e.at)}</div>
+              <div className="fs-1" style={{ color: 'var(--text-3)' }}>{vor(e.at)}</div>
             </div>
           </li>
         ))}
       </ul>
       <details className="mt-6">
-        <summary className="text-[13px] cursor-pointer" style={{ color: 'var(--accent)' }}>Connect another app</summary>
+        <summary className="fs-3 cursor-pointer" style={{ color: 'var(--accent)' }}>Connect another app</summary>
         <div className="mt-3"><ConnectApps /></div>
       </details>
     </div>
@@ -237,15 +237,15 @@ function Protokoll() {
         if anyone changes or removes an entry, the check below shows it.
       </p>
       <div className="flex flex-wrap gap-2 mb-4">
-        <button onClick={() => void pruefen()} disabled={prueft} className="btn-primary px-3 py-2 rounded-lg text-[13px] font-medium flex items-center gap-2 disabled:opacity-50">
+        <button onClick={() => void pruefen()} disabled={prueft} className="btn-primary px-3 py-2 rounded-lg fs-3 font-medium flex items-center gap-2 disabled:opacity-50">
           {prueft ? <Loader2 className="w-4 h-4 animate-spin" /> : <ShieldCheck className="w-4 h-4" />} Check integrity
         </button>
-        <button onClick={() => void exportieren()} className="btn-ghost px-3 py-2 rounded-lg text-[13px] flex items-center gap-2" style={{ border: '1px solid var(--border-subtle)' }}>
+        <button onClick={() => void exportieren()} className="btn-ghost px-3 py-2 rounded-lg fs-3 flex items-center gap-2" style={{ border: '1px solid var(--border-subtle)' }}>
           <Download className="w-4 h-4" /> Export CSV
         </button>
       </div>
       {pruefung && (
-        <p role="status" data-testid="audit-check" className="text-[13px] mb-4 rounded-lg px-3 py-2 flex items-center gap-2" style={{ color: pruefung.ok ? 'var(--ok)' : 'var(--danger)', border: `1px solid ${pruefung.ok ? 'var(--ok)' : 'var(--danger)'}` }}>
+        <p role="status" data-testid="audit-check" className="fs-3 mb-4 rounded-lg px-3 py-2 flex items-center gap-2" style={{ color: pruefung.ok ? 'var(--ok)' : 'var(--danger)', border: `1px solid ${pruefung.ok ? 'var(--ok)' : 'var(--danger)'}` }}>
           {pruefung.ok ? <CheckCircle2 className="w-4 h-4" /> : <AlertTriangle className="w-4 h-4" />}
           {pruefung.ok
             ? `Intact — ${pruefung.entries} ${pruefung.entries === 1 ? 'entry' : 'entries'}, none changed or removed.`
@@ -255,15 +255,15 @@ function Protokoll() {
         </p>
       )}
       <div className="flex flex-wrap gap-2 mb-3">
-        <select aria-label="Who" value={wer} onChange={(e) => setWer(e.target.value)} className="hud-input rounded-lg px-3 py-2 text-[13px]">
+        <select aria-label="Who" value={wer} onChange={(e) => setWer(e.target.value)} className="hud-input rounded-lg px-3 py-2 fs-3">
           <option value="">Everyone</option>
           {actors.map((a) => <option key={a} value={a}>{a}</option>)}
         </select>
-        <select aria-label="What" value={was} onChange={(e) => setWas(e.target.value)} className="hud-input rounded-lg px-3 py-2 text-[13px]">
+        <select aria-label="What" value={was} onChange={(e) => setWas(e.target.value)} className="hud-input rounded-lg px-3 py-2 fs-3">
           <option value="">Every action</option>
           {actions.map((a) => <option key={a} value={a}>{AKTION[a] ?? a}</option>)}
         </select>
-        <input aria-label="Search the log" value={suche} onChange={(e) => setSuche(e.target.value)} placeholder="Search a note, a query…" className="hud-input flex-1 min-w-[160px] rounded-lg px-3 py-2 text-[13px]" />
+        <input aria-label="Search the log" value={suche} onChange={(e) => setSuche(e.target.value)} placeholder="Search a note, a query…" className="hud-input flex-1 min-w-[160px] rounded-lg px-3 py-2 fs-3" />
       </div>
       {fehler && <p className="text-sm mb-2" style={{ color: 'var(--warn)' }}>{fehler}</p>}
       {eintraege.length === 0 ? (
@@ -271,12 +271,12 @@ function Protokoll() {
       ) : (
         <ul className="divide-y" style={{ borderColor: 'var(--border-subtle)' }} data-testid="audit-list">
           {eintraege.map((e) => (
-            <li key={e.id} className="py-2 text-[13px]" style={{ borderColor: 'var(--border-subtle)' }}>
+            <li key={e.id} className="py-2 fs-3" style={{ borderColor: 'var(--border-subtle)' }}>
               <div style={{ color: 'var(--text-2)' }}>
                 <strong style={{ color: 'var(--text-1)' }}>{e.actor}</strong> {AKTION[e.action] ?? e.action}
                 {e.target && <> <span style={{ color: 'var(--text-1)' }}>{e.action === 'search' ? `“${e.target}”` : e.target}</span></>}
               </div>
-              <div className="text-[11px] mt-1 break-words" style={{ color: 'var(--text-3)' }}>
+              <div className="fs-1 mt-1 break-words" style={{ color: 'var(--text-3)' }}>
                 {new Date(e.at).toLocaleString('en-GB', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}
                 {lesbareDetails(e.detail) ? ` · ${lesbareDetails(e.detail)}` : ''}
               </div>
@@ -284,7 +284,7 @@ function Protokoll() {
           ))}
         </ul>
       )}
-      {mehr && <button onClick={() => void weitere()} className="btn-ghost mt-3 px-3 py-2 rounded-lg text-[12.5px]">Load more</button>}
+      {mehr && <button onClick={() => void weitere()} className="btn-ghost mt-3 px-3 py-2 rounded-lg fs-3">Load more</button>}
     </div>
   );
 }
@@ -305,7 +305,7 @@ export function ActivityView({ aktiv, onOpenMemory }: { aktiv: boolean; onOpenMe
             aria-selected={reiter === id}
             onClick={() => setReiter(id)}
             title={erklaerung}
-            className={`flex-1 py-2 rounded-lg text-[13px] font-medium ${reiter === id ? 'bg-white dark:bg-zinc-800 shadow-sm' : ''}`}
+            className={`flex-1 py-2 rounded-lg fs-3 font-medium ${reiter === id ? 'bg-white dark:bg-zinc-800 shadow-sm' : ''}`}
             style={{ color: reiter === id ? 'var(--text-1)' : 'var(--text-2)' }}
           >
             {label}

@@ -723,8 +723,8 @@ export function Settings() {
                           />
                           <span className="switch" data-on={an}><span className="knob" /></span>
                           <span>
-                            <span className="text-[13px] font-medium block" style={{ color: an ? 'var(--text-1)' : 'var(--text-2)' }}>{label}</span>
-                            <span className="text-[11px] block" style={{ color: 'var(--text-3)' }}>{beschreibung}</span>
+                            <span className="fs-3 font-medium block" style={{ color: an ? 'var(--text-1)' : 'var(--text-2)' }}>{label}</span>
+                            <span className="fs-1 block" style={{ color: 'var(--text-3)' }}>{beschreibung}</span>
                           </span>
                         </label>
                       );
@@ -1092,23 +1092,23 @@ export function Settings() {
                             die zwei Zeilen, und ihre Zahlen kommen aus dem Laden. */}
                         {bestandGruppen && (
                           <div className="mt-2 space-y-1">
-                            <div className="flex flex-wrap gap-x-4 gap-y-1 text-[12.5px]">
+                            <div className="flex flex-wrap gap-x-4 gap-y-1 fs-3">
                               {TRAEGER_REIHENFOLGE.map((t) => (
                                 <span key={t}>{bestandGruppen.traeger[t].toLocaleString('en-GB')} × {TRAEGER_LABELS[t]}</span>
                               ))}
                             </div>
-                            <div className="flex flex-wrap gap-x-4 gap-y-1 text-[12.5px]" style={{ color: 'var(--text-3)' }}>
+                            <div className="flex flex-wrap gap-x-4 gap-y-1 fs-3" style={{ color: 'var(--text-3)' }}>
                               {THEMA_REIHENFOLGE.map((t) => (
                                 <span key={t}>{bestandGruppen.themen[t].toLocaleString('en-GB')} × {THEMA_LABELS[t]}</span>
                               ))}
                             </div>
-                            <div className="text-[11.5px]" style={{ color: 'var(--text-3)' }}>
+                            <div className="fs-3" style={{ color: 'var(--text-3)' }}>
                               counted over all {bestandGruppen.bestand.toLocaleString('en-GB')} of your notes
                             </div>
                           </div>
                         )}
                         {gruppenFehlt && (
-                          <div className="mt-2 text-[12.5px]" style={{ color: 'var(--warn)' }}>
+                          <div className="mt-2 fs-3" style={{ color: 'var(--warn)' }}>
                             The two-row counts did not arrive — only the change count is known.
                           </div>
                         )}
@@ -1118,13 +1118,13 @@ export function Settings() {
                         {sortierVorschau.examples && sortierVorschau.examples.length > 0 && (
                           <div className="mt-2 space-y-1">
                             {sortierVorschau.examples.slice(0, 3).map((b) => (
-                              <div key={`${b.title}-${b.von}-${b.nach}`} className="text-[12.5px]">
+                              <div key={`${b.title}-${b.von}-${b.nach}`} className="fs-3">
                                 <span style={{ color: 'var(--text-1)' }}>{b.title}</span>{' '}
                                 <span>{b.von} → {b.nach}</span>{' '}
                                 <span style={{ color: 'var(--text-3)' }}>({b.grund})</span>
                               </div>
                             ))}
-                            <div className="text-[11.5px]" style={{ color: 'var(--text-3)' }}>
+                            <div className="fs-3" style={{ color: 'var(--text-3)' }}>
                               first {Math.min(3, sortierVorschau.examples.length)} of {sortierVorschau.changed} that would change
                             </div>
                           </div>
@@ -1239,7 +1239,7 @@ export function Settings() {
             </div>
 
             {/* Kein Fremdcode-Lader — die Abwesenheit erklaert sich selbst, in der Flaeche. */}
-            <p data-testid="settings-keine-fremderweiterungen" className="hud-label text-[11px] leading-relaxed mb-4" style={{ color: 'var(--text-3)' }}>
+            <p data-testid="settings-keine-fremderweiterungen" className="hud-label fs-1 leading-relaxed mb-4" style={{ color: 'var(--text-3)' }}>
               {t("settings.keineFremderweiterungen")}
             </p>
 
@@ -1333,7 +1333,7 @@ export function Settings() {
                         {/* Kein `truncate`: die Felderliste ist die Auskunft. Umbricht
                             sie, bleibt sie lesbar; gekappt wäre sie wieder eine Zahl
                             ohne Sinn — bei 390 px waren es 288 px Überstand. */}
-                        <code className="text-[11px] font-mono block mt-1 break-words" style={{ color: 'var(--text-3)' }}>{schemaKurz(w)}</code>
+                        <code className="fs-1 font-mono block mt-1 break-words" style={{ color: 'var(--text-3)' }}>{schemaKurz(w)}</code>
                       </div>
                     </div>
                   );

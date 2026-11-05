@@ -55,18 +55,18 @@ export class Fehlerschirm extends Component<{ children: ReactNode }, Zustand> {
         style={{ background: "var(--bg-base)", color: "var(--text-1)" }}
       >
         <p className="hud-label mb-2" style={{ color: "var(--text-3)" }}>Something broke on this screen</p>
-        <p className="text-[15px] max-w-xl mb-1">
+        <p className="fs-5 max-w-xl mb-1">
           K3PTA caught the failure instead of showing you an empty window. Your knowledge is untouched —
           this is the view, not the store.
         </p>
-        <p className="text-[12px] max-w-xl mb-4 break-words" style={{ color: "var(--text-2)" }}>
+        <p className="fs-2 max-w-xl mb-4 break-words" style={{ color: "var(--text-2)" }}>
           {fehlertext(fehler, this.state.spur)}
         </p>
         <button
           type="button"
           data-testid="fehlerschirm-weiter"
           onClick={this.weiter}
-          className="btn-ghost px-3 py-2 rounded-lg text-[13px]"
+          className="btn-ghost px-3 py-2 rounded-lg fs-3"
           style={{ color: "var(--accent)" }}
         >
           Try this screen again

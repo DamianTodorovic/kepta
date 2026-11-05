@@ -85,10 +85,10 @@ export function Sidebar({ tags, selectedTags, onSelectTag, onClearTags, currentV
       <div className="seiten-kante-unten h-[64px] px-4 flex items-center gap-2 shrink-0">
         <KeptaMark size={26} />
         <div className="min-w-0">
-          <div className="seiten-marke font-semibold tracking-[-0.02em] text-[13.5px] leading-none">
+          <div className="seiten-marke font-semibold tracking-[-0.02em] fs-3 leading-none">
             K3PTA
           </div>
-          <div className="seiten-zahl text-[11px] mt-1 tnum">
+          <div className="seiten-zahl fs-1 mt-1 tnum">
             {totalMemories.toLocaleString('en-GB')} {totalMemories === 1 ? 'note' : 'notes'}
           </div>
         </div>
@@ -106,7 +106,7 @@ export function Sidebar({ tags, selectedTags, onSelectTag, onClearTags, currentV
                 data-active={active}
                 title={item.erklaerung}
                 className={cn(
-                  "sidebar-nav-btn w-full min-h-9 flex items-center gap-2 px-3 py-2 text-[13.5px] text-left",
+                  "sidebar-nav-btn w-full min-h-9 flex items-center gap-2 px-3 py-2 fs-3 text-left",
                   active ? "font-semibold" : "font-medium"
                 )}
               >
@@ -125,9 +125,9 @@ export function Sidebar({ tags, selectedTags, onSelectTag, onClearTags, currentV
       {tags.length > 0 && (
         <div className="flex-1 min-h-0 px-3 py-2 overflow-hidden flex flex-col">
           <div className="flex items-center justify-between px-2 mb-2">
-            <span className="seiten-kopf text-[10.5px] font-semibold tracking-[0.09em] uppercase">Tags</span>
+            <span className="seiten-kopf fs-1 font-semibold tracking-[0.09em] uppercase">Tags</span>
             {selectedTags.length > 0 && (
-              <button onClick={onClearTags} className="seiten-handlung min-h-6 text-[11px]">Reset</button>
+              <button onClick={onClearTags} className="seiten-handlung min-h-6 fs-1">Reset</button>
             )}
           </div>
           <div className="flex-1 overflow-y-auto space-y-px pr-1">
@@ -140,12 +140,12 @@ export function Sidebar({ tags, selectedTags, onSelectTag, onClearTags, currentV
                   key={name}
                   onClick={() => onSelectTag(name)}
                   data-active={active}
-                  className="sidebar-tag-btn w-full min-h-7 flex items-center gap-2 px-2 py-[5px] text-[13px] text-left"
+                  className="sidebar-tag-btn w-full min-h-7 flex items-center gap-2 px-2 py-[5px] fs-3 text-left"
                 >
                   <Hash className="seiten-ikone w-3.5 h-3.5 shrink-0" />
                   <span className="truncate flex-1">{name}</span>
                   {count !== null && count > 1 && (
-                    <span className="seiten-plakette text-[10.5px] tnum px-2 py-px rounded-md shrink-0">{count}</span>
+                    <span className="seiten-plakette fs-1 tnum px-2 py-px rounded-md shrink-0">{count}</span>
                   )}
                 </button>
               );
@@ -153,7 +153,7 @@ export function Sidebar({ tags, selectedTags, onSelectTag, onClearTags, currentV
             {versteckteTags > 0 && (
               <button
                 onClick={() => setAlleTags(true)}
-                className="seiten-handlung w-full min-h-7 text-left px-2 py-[5px] rounded-md text-[12px]"
+                className="seiten-handlung w-full min-h-7 text-left px-2 py-[5px] rounded-md fs-2"
               >
                 {versteckteTags} more…
               </button>
@@ -161,7 +161,7 @@ export function Sidebar({ tags, selectedTags, onSelectTag, onClearTags, currentV
             {alleTags && tags.length > TAGS_SICHTBAR && (
               <button
                 onClick={() => setAlleTags(false)}
-                className="seiten-zahl w-full min-h-7 text-left px-2 py-[5px] rounded-md text-[12px]"
+                className="seiten-zahl w-full min-h-7 text-left px-2 py-[5px] rounded-md fs-2"
               >
                 Show fewer
               </button>
@@ -169,7 +169,7 @@ export function Sidebar({ tags, selectedTags, onSelectTag, onClearTags, currentV
             {/* Die Zählung neben jedem Tag kann nur zählen, was liegt. Ohne diese
                 Zeile wäre „bestand 25" eine Behauptung über 250. */}
             {typeof tagsAusLadung === 'number' && tagsAusLadung > 0 && (
-              <div className="seiten-erklarung px-2 pt-2 pb-1 text-[11px] leading-snug">
+              <div className="seiten-erklarung px-2 pt-2 pb-1 fs-1 leading-snug">
                 counts cover the {tagsAusLadung.toLocaleString('en-GB')} loaded notes
               </div>
             )}
@@ -182,7 +182,7 @@ export function Sidebar({ tags, selectedTags, onSelectTag, onClearTags, currentV
         <div className="seiten-flaeche px-2 py-2 rounded-lg flex items-center gap-2">
           <KeptaMark size={24} />
           <div className="min-w-0 flex-1">
-            <div className="seiten-marke text-[12.5px] truncate font-semibold tracking-[0.01em]">
+            <div className="seiten-marke fs-3 truncate font-semibold tracking-[0.01em]">
               {/* Branding 3.1.1: schlicht K3PTA — keine Stufen-Anzeige mehr.
                   Seit 09.10.2026 sagt auch die zweite Zeile nichts über Grenzen,
                   weil es sie nicht mehr gibt: die App läuft unbegrenzt.
@@ -190,7 +190,7 @@ export function Sidebar({ tags, selectedTags, onSelectTag, onClearTags, currentV
                   sie bleibt über Systemstatus und /api/health abrufbar. */}
               {'K3PTA'}
             </div>
-            <div className="seiten-erklarung text-[11px] truncate">
+            <div className="seiten-erklarung fs-1 truncate">
               {/* Vorher: „local · private · encrypted". Die App hat im selben
                   Fenster einen Zustand dafür — die Chip-Leiste meldet
                   „Not encrypted", gemessen am selben Lauf (e3-screens/
@@ -213,7 +213,7 @@ export function Sidebar({ tags, selectedTags, onSelectTag, onClearTags, currentV
           )}
           <button
             onClick={toggleTheme}
-            className="seiten-knopf flex-1 h-9 flex items-center justify-center gap-2 rounded-lg text-[12px] font-medium"
+            className="seiten-knopf flex-1 h-9 flex items-center justify-center gap-2 rounded-lg fs-2 font-medium"
             aria-label="Switch theme"
           >
             {isDark ? <Sun className="w-3.5 h-3.5" /> : <Moon className="w-3.5 h-3.5" />}

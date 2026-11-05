@@ -165,7 +165,7 @@ export function OnboardingWizard({ open, onClose, onComplete }: Props) {
         <div className="px-7 pt-6 pb-4 flex items-center gap-4" style={{borderBottom:'1px solid var(--border-subtle)'}}>
           <KeptaMark size={38} />
           <div className="flex-1">
-            <h2 className="text-[16px] font-semibold tracking-[-0.015em]" style={{color:'var(--text-1)'}}>Set up K3PTA</h2>
+            <h2 className="fs-5 font-semibold tracking-[-0.015em]" style={{color:'var(--text-1)'}}>Set up K3PTA</h2>
             {/* „one minute" war eine ungeprüfte Anwerbung und {step}/4 stand
                 zweimal auf demselben Schirm — einmal in Worten, einmal in Ziffern. */}
             <p className="text-xs mt-1" style={{color:'var(--text-2)'}}>Step {step} of 4 — four questions, all on this computer.</p>

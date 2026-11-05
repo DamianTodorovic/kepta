@@ -53,11 +53,11 @@ function Liste({ titel, eintraege, mitDatum, onOpen }: { titel: string; eintraeg
   if (!eintraege.length) return null;
   return (
     <section className="mb-6">
-      <h3 className="text-[13px] font-semibold mb-2" style={{ color: 'var(--text-1)' }}>{titel}</h3>
+      <h3 className="fs-3 font-semibold mb-2" style={{ color: 'var(--text-1)' }}>{titel}</h3>
       <ul className="space-y-3">
         {eintraege.map((e) => (
-          <li key={e.id} className="text-[13px] leading-relaxed" style={{ color: 'var(--text-2)' }}>
-            {mitDatum && <span className="tnum text-[11.5px] mr-2" style={{ color: 'var(--text-3)' }}>{tag(e.at)}</span>}
+          <li key={e.id} className="fs-3 leading-relaxed" style={{ color: 'var(--text-2)' }}>
+            {mitDatum && <span className="tnum fs-3 mr-2" style={{ color: 'var(--text-3)' }}>{tag(e.at)}</span>}
             <button onClick={() => onOpen(e.id)} className="font-medium hover:underline underline-offset-2 text-left" style={{ color: 'var(--text-1)' }}>{e.title}</button>
             {e.sentence && e.sentence !== e.title && <> — {e.sentence}</>}
           </li>
@@ -206,16 +206,16 @@ export function DossierView({ onOpenMemory, onEditMemory, dossierThema }: { onOp
       </form>
       {chips.length > 0 && !daten && (
         <div className="flex flex-wrap gap-2 mb-6">
-          <span className="text-[12px] self-center mr-1" style={{ color: 'var(--text-2)' }}>For example:</span>
+          <span className="fs-2 self-center mr-1" style={{ color: 'var(--text-2)' }}>For example:</span>
           {chips.map((c) => (
-            <button key={c.name} onClick={() => void erstelle(c.name)} className="min-h-7 inline-flex items-center px-3 py-1 rounded-full text-[12px]" style={{ background: 'var(--bg-inset-strong)', color: 'var(--text-2)' }}>
+            <button key={c.name} onClick={() => void erstelle(c.name)} className="min-h-7 inline-flex items-center px-3 py-1 rounded-full fs-2" style={{ background: 'var(--bg-inset-strong)', color: 'var(--text-2)' }}>
               {c.name}
             </button>
           ))}
         </div>
       )}
       {vorschlagGrund && chips.length === 0 && !daten && (
-        <p role="status" className="text-[12.5px] mb-4" style={{ color: 'var(--text-3)' }}>{vorschlagGrund}</p>
+        <p role="status" className="fs-3 mb-4" style={{ color: 'var(--text-3)' }}>{vorschlagGrund}</p>
       )}
       {fehler && <p className="text-sm" style={{ color: 'var(--warn)' }}>{fehler}</p>}
 
@@ -230,16 +230,16 @@ export function DossierView({ onOpenMemory, onEditMemory, dossierThema }: { onOp
           <div className="flex items-start justify-between gap-3 mb-5 flex-wrap">
             <div>
               <h2 className="text-xl font-semibold" style={{ color: 'var(--text-1)' }}>{daten.topic}</h2>
-              <p className="text-[12px] mt-1 tnum" style={{ color: 'var(--text-3)' }}>
+              <p className="fs-2 mt-1 tnum" style={{ color: 'var(--text-3)' }}>
                 {daten.total} {daten.total === 1 ? 'note' : 'notes'}
                 {daten.first !== null && daten.last !== null ? ` · ${tag(daten.first)} – ${tag(daten.last)}` : ''}
               </p>
             </div>
             <div className="flex gap-2">
-              <button onClick={() => void kopieren()} className="btn-ghost px-3 py-2 rounded-lg text-[12.5px] flex items-center gap-2" style={{ border: '1px solid var(--border-subtle)' }}>
+              <button onClick={() => void kopieren()} className="btn-ghost px-3 py-2 rounded-lg fs-3 flex items-center gap-2" style={{ border: '1px solid var(--border-subtle)' }}>
                 {kopiert ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />} {kopiert ? 'Copied' : 'Copy as Markdown'}
               </button>
-              <button onClick={() => void speichern()} disabled={gespeichert} className="btn-ghost px-3 py-2 rounded-lg text-[12.5px] flex items-center gap-2 disabled:opacity-50" style={{ border: '1px solid var(--border-subtle)' }}>
+              <button onClick={() => void speichern()} disabled={gespeichert} className="btn-ghost px-3 py-2 rounded-lg fs-3 flex items-center gap-2 disabled:opacity-50" style={{ border: '1px solid var(--border-subtle)' }}>
                 <Save className="w-3.5 h-3.5" /> {gespeichert ? 'Saved' : 'Save as note'}
               </button>
             </div>
@@ -250,11 +250,11 @@ export function DossierView({ onOpenMemory, onEditMemory, dossierThema }: { onOp
           <Liste titel={DOSSIER_TITEL.papiere} eintraege={daten.documents} onOpen={onOpenMemory} />
           {daten.todos.length > 0 && (
             <section className="mb-6">
-              <h3 className="text-[13px] font-semibold mb-2" style={{ color: 'var(--text-1)' }}>Open to-dos</h3>
+              <h3 className="fs-3 font-semibold mb-2" style={{ color: 'var(--text-1)' }}>Open to-dos</h3>
               <ul className="space-y-2">
                 {daten.todos.map((t, i) => (
-                  <li key={`${t.id}-${i}`} className="text-[13px]" style={{ color: 'var(--text-1)' }}>
-                    ☐ {t.text} <button onClick={() => onOpenMemory(t.id)} className="text-[11px] hover:underline" style={{ color: 'var(--text-3)' }}>({t.title})</button>
+                  <li key={`${t.id}-${i}`} className="fs-3" style={{ color: 'var(--text-1)' }}>
+                    ☐ {t.text} <button onClick={() => onOpenMemory(t.id)} className="fs-1 hover:underline" style={{ color: 'var(--text-3)' }}>({t.title})</button>
                   </li>
                 ))}
               </ul>
@@ -262,7 +262,7 @@ export function DossierView({ onOpenMemory, onEditMemory, dossierThema }: { onOp
           )}
           {daten.contradictions.length > 0 && (
             <section className="mb-6">
-              <h3 className="text-[13px] font-semibold mb-2 flex items-center gap-2" style={{ color: 'var(--text-1)' }}>
+              <h3 className="fs-3 font-semibold mb-2 flex items-center gap-2" style={{ color: 'var(--text-1)' }}>
                 <AlertTriangle className="w-3.5 h-3.5" style={{ color: 'var(--warn)' }} /> To check
               </h3>
               {/* Paket 3: die Auflösung passiert im Fluss — je Karte drei Entscheidungen.
@@ -270,13 +270,13 @@ export function DossierView({ onOpenMemory, onEditMemory, dossierThema }: { onOp
               <div className="space-y-3">
                 {daten.contradictions.map((w) => (
                   <div key={w.key} className="hud-inset rounded-xl p-4" data-testid="dossier-contradiction">
-                    <div className="text-[13px] mb-2 flex items-center gap-2" style={{ color: 'var(--text-1)' }}>
+                    <div className="fs-3 mb-2 flex items-center gap-2" style={{ color: 'var(--text-1)' }}>
                       Two notes disagree{w.about ? ` about “${w.about}”` : ''}.
                     </div>
-                    <div className="grid sm:grid-cols-2 gap-2 text-[13px]" style={{ color: 'var(--text-2)' }}>
+                    <div className="grid sm:grid-cols-2 gap-2 fs-3" style={{ color: 'var(--text-2)' }}>
                       {([['Newer', w.newer], ['Older', w.older]] as const).map(([label, s]) => (
                         <div key={label}>
-                          <span className="text-[11px] mr-1" style={{ color: 'var(--text-3)' }}>{label}</span>
+                          <span className="fs-1 mr-1" style={{ color: 'var(--text-3)' }}>{label}</span>
                           <strong style={{ color: 'var(--text-1)' }}>{s.value}</strong> in{' '}
                           {s.id ? (
                             <button onClick={() => onOpenMemory(s.id!)} className="hover:underline underline-offset-2" style={{ color: 'var(--text-1)' }}>{s.title}</button>
@@ -285,17 +285,17 @@ export function DossierView({ onOpenMemory, onEditMemory, dossierThema }: { onOp
                       ))}
                     </div>
                     {entschieden[w.key] ? (
-                      <p role="status" className="text-[12.5px] mt-3" style={{ color: 'var(--ok)' }}>{entschieden[w.key]}</p>
+                      <p role="status" className="fs-3 mt-3" style={{ color: 'var(--ok)' }}>{entschieden[w.key]}</p>
                     ) : w.newer.id && w.older.id ? (
                       <div className="flex flex-wrap gap-2 mt-3">
-                        <button onClick={() => void loese(w, 'newer')} className="btn-primary px-3 py-2 rounded-lg text-[12.5px] font-medium">Newer wins</button>
-                        <button onClick={() => void loese(w, 'window')} className="btn-ghost px-3 py-2 rounded-lg text-[12.5px]" title="Both stay valid — the older note ends where the newer one began.">Both hold — cap the older</button>
+                        <button onClick={() => void loese(w, 'newer')} className="btn-primary px-3 py-2 rounded-lg fs-3 font-medium">Newer wins</button>
+                        <button onClick={() => void loese(w, 'window')} className="btn-ghost px-3 py-2 rounded-lg fs-3" title="Both stay valid — the older note ends where the newer one began.">Both hold — cap the older</button>
                         {onEditMemory && (
-                          <button onClick={() => onEditMemory(w.newer.id!)} className="btn-ghost px-3 py-2 rounded-lg text-[12.5px]">Edit</button>
+                          <button onClick={() => onEditMemory(w.newer.id!)} className="btn-ghost px-3 py-2 rounded-lg fs-3">Edit</button>
                         )}
                       </div>
                     ) : (
-                      <p className="text-[13px] mt-2" style={{ color: 'var(--text-2)' }}>
+                      <p className="fs-3 mt-2" style={{ color: 'var(--text-2)' }}>
                         <strong style={{ color: 'var(--text-1)' }}>{w.newer.value}</strong> in {w.newer.title}, but <strong style={{ color: 'var(--text-1)' }}>{w.older.value}</strong> in {w.older.title}
                       </p>
                     )}
@@ -306,9 +306,9 @@ export function DossierView({ onOpenMemory, onEditMemory, dossierThema }: { onOp
           )}
           {daten.related.length > 0 && (
             <div className="flex flex-wrap gap-2 items-center pt-4" style={{ borderTop: '1px solid var(--border-subtle)' }}>
-              <span className="text-[11px] mr-1" style={{ color: 'var(--text-3)' }}>Related:</span>
+              <span className="fs-1 mr-1" style={{ color: 'var(--text-3)' }}>Related:</span>
               {daten.related.map((r) => (
-                <button key={r.tag} onClick={() => void erstelle(r.tag)} className="px-2 py-1 rounded-full text-[12px]" style={{ background: 'var(--bg-inset-strong)', color: 'var(--text-2)' }}>
+                <button key={r.tag} onClick={() => void erstelle(r.tag)} className="px-2 py-1 rounded-full fs-2" style={{ background: 'var(--bg-inset-strong)', color: 'var(--text-2)' }}>
                   #{r.tag}
                 </button>
               ))}

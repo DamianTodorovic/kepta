@@ -5752,7 +5752,7 @@ export function KnowledgeGraph({ memories: memoriesAusFenster, onSelectMemory, o
   const segment = (an: boolean, titel: string, onClick: () => void, wort: string, zu = false) => (
     <button
       type="button"
-      className="apple-seg-btn text-[11px] font-medium"
+      className="apple-seg-btn fs-1 font-medium"
       data-on={an ? "true" : "false"}
       aria-pressed={an ? "true" : "false"}
       disabled={zu}
@@ -5763,7 +5763,7 @@ export function KnowledgeGraph({ memories: memoriesAusFenster, onSelectMemory, o
     </button>
   );
   /** Das Kleid jedes Schalters — ein Halter, damit ein Knopf nicht zwei Kleider traegt. */
-  const SCHALTER_KLASSE = "btn-ghost px-2 py-2 rounded-lg text-[11px] inline-flex items-center gap-2 whitespace-nowrap shrink-0";
+  const SCHALTER_KLASSE = "btn-ghost px-2 py-2 rounded-lg fs-1 inline-flex items-center gap-2 whitespace-nowrap shrink-0";
   const schalter = (an: boolean, titel: string, onClick: () => void, wort: string, zeichen?: ReactNode) => (
     <button
       type="button"
@@ -5803,7 +5803,7 @@ export function KnowledgeGraph({ memories: memoriesAusFenster, onSelectMemory, o
       {zeitStandMs !== null && (
         <button
           onClick={() => setzeSlider(100)}
-          className="btn-ghost px-2 py-1 rounded text-[11px] ml-1"
+          className="btn-ghost px-2 py-1 rounded fs-1 ml-1"
           title="Back to now"
         >
           Today
@@ -5927,12 +5927,12 @@ export function KnowledgeGraph({ memories: memoriesAusFenster, onSelectMemory, o
         <Download className="w-4 h-4" /><span className="hud-label" style={{ color: "var(--text-1)" }}>Export</span>
       </button>
       {bildMeldung && (
-        <span role="alert" className="hud-label text-[11px] whitespace-nowrap" style={{ color: "var(--warn)" }}>{bildMeldung}</span>
+        <span role="alert" className="hud-label fs-1 whitespace-nowrap" style={{ color: "var(--warn)" }}>{bildMeldung}</span>
       )}
       {angeheftet > 0 && (
         <button
           onClick={loeseAlle}
-          className="btn-ghost px-2 py-1 rounded-lg text-[11px] whitespace-nowrap"
+          className="btn-ghost px-2 py-1 rounded-lg fs-1 whitespace-nowrap"
           style={{ color: "var(--accent)" }}
           title="Dragged notes stay put. This puts each one back where you first grabbed it."
         >
@@ -6095,7 +6095,7 @@ export function KnowledgeGraph({ memories: memoriesAusFenster, onSelectMemory, o
   const steuerelementTagFilter = (
     <select
       data-testid="graph-tag-filter"
-      className="hud-label text-[11px] px-2 py-2 rounded-lg shrink-0 max-w-[150px]"
+      className="hud-label fs-1 px-2 py-2 rounded-lg shrink-0 max-w-[150px]"
       style={{ background: "var(--glass-panel)", color: "var(--text-1)", border: "1px solid var(--border-subtle)" }}
       value={tagFilter}
       onChange={(e) => setzeTagFilter(e.target.value)}
@@ -6258,7 +6258,7 @@ export function KnowledgeGraph({ memories: memoriesAusFenster, onSelectMemory, o
               }}
               aria-expanded={mehrOffen ? "true" : "false"}
               aria-controls="graph-mehr-panel"
-              className="btn-ghost px-2 py-2 rounded-lg text-[11px] inline-flex items-center gap-2 whitespace-nowrap shrink-0"
+              className="btn-ghost px-2 py-2 rounded-lg fs-1 inline-flex items-center gap-2 whitespace-nowrap shrink-0"
               title={`${plan.menue.length} controls do not fit this row — they are here, each with its explanation`}
               data-testid="graph-mehr"
             >
@@ -6297,7 +6297,7 @@ export function KnowledgeGraph({ memories: memoriesAusFenster, onSelectMemory, o
             <div className="hud-label" style={{ color: "var(--text-2)" }}>
               {plan.menue.length} out of the row — everything here works the same
             </div>
-            <button onClick={() => setzeMehrOffen(false)} className="btn-ghost px-2 py-1 rounded text-[11px]" title="Close">
+            <button onClick={() => setzeMehrOffen(false)} className="btn-ghost px-2 py-1 rounded fs-1" title="Close">
               Close
             </button>
           </div>
@@ -6520,7 +6520,7 @@ export function KnowledgeGraph({ memories: memoriesAusFenster, onSelectMemory, o
                   data-testid="graph-schema-row"
                   aria-pressed={spot === z.schluessel ? "true" : "false"}
                   onClick={() => setSpot((v) => (v === z.schluessel ? null : z.schluessel))}
-                  className="w-full flex items-baseline text-left text-[12px] py-1 rounded hover:bg-[var(--bg-hover)]"
+                  className="w-full flex items-baseline text-left fs-2 py-1 rounded hover:bg-[var(--bg-hover)]"
                   style={spot === z.schluessel ? { color: "var(--accent)" } : { color: "var(--text-1)" }}
                 >
                   <span className="truncate">{z.label}</span>{" "}
@@ -6533,7 +6533,7 @@ export function KnowledgeGraph({ memories: memoriesAusFenster, onSelectMemory, o
             <div>
               <div className="hud-label mb-1" style={{ color: "var(--text-2)" }}>Links</div>
               {inventar.kanten.length === 0 ? (
-                <div className="text-[12px]" style={{ color: "var(--text-3)" }}>
+                <div className="fs-2" style={{ color: "var(--text-3)" }}>
                   Nothing claimed yet — links appear when a note names two things together.
                 </div>
               ) : (
@@ -6543,7 +6543,7 @@ export function KnowledgeGraph({ memories: memoriesAusFenster, onSelectMemory, o
                     data-testid="graph-schema-row"
                     aria-pressed={spot === z.schluessel ? "true" : "false"}
                     onClick={() => setSpot((v) => (v === z.schluessel ? null : z.schluessel))}
-                    className="w-full flex items-baseline text-left text-[12px] py-1 rounded hover:bg-[var(--bg-hover)]"
+                    className="w-full flex items-baseline text-left fs-2 py-1 rounded hover:bg-[var(--bg-hover)]"
                     style={spot === z.schluessel ? { color: "var(--accent)" } : { color: "var(--text-1)" }}
                   >
                     <span className="truncate">{z.label}</span>{" "}
@@ -6574,7 +6574,7 @@ export function KnowledgeGraph({ memories: memoriesAusFenster, onSelectMemory, o
             <div className="hud-label">Forces in the field</div>
             {REGLER.map((r) => (
               <label key={r.feld} className="block">
-                <span className="flex items-baseline text-[12px]" style={{ color: "var(--text-1)" }}>
+                <span className="flex items-baseline fs-2" style={{ color: "var(--text-1)" }}>
                   {r.name}
                   <span
                     className="tnum ml-auto pl-2 shrink-0"
@@ -6599,7 +6599,7 @@ export function KnowledgeGraph({ memories: memoriesAusFenster, onSelectMemory, o
                 />
               </label>
             ))}
-            <div className="text-[11px] leading-snug" style={{ color: "var(--text-3)" }}>
+            <div className="fs-1 leading-snug" style={{ color: "var(--text-3)" }}>
               Repulsion is what separates topics; the rest holds a topic together.
             </div>
             <button
@@ -6624,14 +6624,14 @@ export function KnowledgeGraph({ memories: memoriesAusFenster, onSelectMemory, o
             className="hud-panel absolute left-0 top-0 rounded-lg px-3 py-2 pointer-events-none space-y-1 max-w-[280px]"
             style={{ transform: `translate(${Math.round(kantInfo.x)}px, ${Math.round(kantInfo.y)}px) translate(-50%, 0)` }}
           >
-            <div className="flex items-center gap-2 text-[12px]" style={{ color: "var(--text-1)" }}>
+            <div className="flex items-center gap-2 fs-2" style={{ color: "var(--text-1)" }}>
               <span className="truncate">{kantInfo.quelle}</span>
               <ChevronRight className="w-3 h-3 shrink-0" style={{ color: "var(--accent)" }} />
               <span className="truncate">{kantInfo.ziel}</span>
             </div>
             <div className="hud-label">{kantZeilen!.grund}</div>
             {kantZeilen!.frist && (
-              <div className="text-[11px] tnum" style={{ color: "var(--text-3)" }}>
+              <div className="fs-1 tnum" style={{ color: "var(--text-3)" }}>
                 {kantZeilen!.frist}
               </div>
             )}

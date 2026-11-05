@@ -254,7 +254,7 @@ export function MemoryEditor({ memory, onSave, onClose, onDelete }: MemoryEditor
           <div className="flex items-center gap-3">
             <KeptaMark size={30} />
             <div>
-              <h2 className="text-[15px] font-semibold" style={{ color: 'var(--text-1)' }}>
+              <h2 className="fs-5 font-semibold" style={{ color: 'var(--text-1)' }}>
                 {memory?.id ? 'Edit note' : 'New note'}
               </h2>
               <div className="hud-label mt-1 flex items-center gap-2">
@@ -525,7 +525,7 @@ export function MemoryEditor({ memory, onSave, onClose, onDelete }: MemoryEditor
           </div>
 
           {warnUnsaved && dirty && (
-            <div role="alert" className="mx-5 mb-1 flex items-center gap-3 px-3 py-2 rounded-lg text-[12.5px]" style={{ background: 'var(--danger-soft)', border: '1px solid var(--danger)' }}>
+            <div role="alert" className="mx-5 mb-1 flex items-center gap-3 px-3 py-2 rounded-lg fs-3" style={{ background: 'var(--danger-soft)', border: '1px solid var(--danger)' }}>
               <span style={{ color: 'var(--text-1)' }}>Unsaved changes. Press Esc again to discard, or save first.</span>
               <button type="button" onClick={onClose} className="ml-auto text-xs font-semibold px-3 py-1 rounded-lg btn-danger-ghost">Discard</button>
               <button type="button" onClick={() => setWarnUnsaved(false)} className="text-xs font-semibold px-3 py-1 rounded-lg btn-ghost">Keep editing</button>
@@ -535,7 +535,7 @@ export function MemoryEditor({ memory, onSave, onClose, onDelete }: MemoryEditor
             <span className="hud-label">Everything stays local on this device</span>
             <button
               type="submit"
-              className="btn-primary flex items-center gap-2 px-5 py-2 rounded-lg text-[13px] font-medium"
+              className="btn-primary flex items-center gap-2 px-5 py-2 rounded-lg fs-3 font-medium"
             >
               <Save className="w-4 h-4" />
               Save

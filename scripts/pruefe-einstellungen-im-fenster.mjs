@@ -771,6 +771,55 @@ async function main() {
     console.log(`  Bild: ${await bild("radien-flaechen.png")}`);
   }
 
+  // --- Zyklus S: die Schriftstufen im gerechneten Fenster (Punkt 2, zweite Haelfte) ---------
+  //     18.10. mass D1-08 "15 Größen im selben Fenster, davon sieben mit halben Pixelschritten".
+  //     Seither hielt index.css die Leiter von aussen (drei Kante-Regeln, die text-[12.5px] & co.
+  //     zum Rendern zwangen). 5.11. nennt der Baustein die Stufe selbst -- dieser Lauf beweist,
+  //     dass das Bild gleich bleibt und dass keine halbe Stufe mehr gemalt wird. Gezaehlt wird
+  //     nur, was ein Mensch wirklich sieht: ein Element mit eignem Text und eigenen Rects.
+  if (NUR === "" || NUR === "schrift") {
+    const LEITER = new Set(["11px", "12px", "13px", "14px", "16px", "20px", "28px", "40px"]);
+    const stufen = async (nam) => {
+      const geklickt = await knopf(cdp, nam);
+      urteil(`der Knopf nach ${nam} steht im Blatt`, geklickt !== null, true);
+      await schlafe(1400);
+      return await evaliere(cdp, `(()=>{const zaehler={};
+        for (const e of document.querySelectorAll('*')) {
+          if (!e.childNodes.length) continue;
+          let text = "";
+          for (const k of e.childNodes) if (k.nodeType === 3) text += k.textContent;
+          if (!text.trim()) continue;
+          if (!e.getClientRects().length) continue;
+          const w = getComputedStyle(e).fontSize;
+          const namen = e.id || e.getAttribute?.("data-testid")
+            || (typeof e.className === "string" && e.className.trim() ? e.className.trim().split(/\\s+/).find(c => !/^(absolute|relative|fixed|flex|inline-flex|w-|h-|px-|py-|p-|m-|gap-|z-|min-|max-)/.test(c)) : "")
+            || e.tagName.toLowerCase();
+          const schluessel = w + ' :: ' + namen.slice(0, 26);
+          zaehler[schluessel] = (zaehler[schluessel] || 0) + 1;
+        }
+        return zaehler;})()`);
+    };
+    const gesicht = [];
+    for (const nam of ["Knowledge", "Graph", "Chat", "Dossier", "Activity", "Settings"]) {
+      const z = await stufen(nam);
+      gesicht.push({ flaeche: nam, z });
+      const werte = Object.entries(z).sort((a, b) => b[1] - a[1]);
+      const zahlen = new Set(werte.map(([k]) => k.split(" :: ")[0]));
+      console.log(`  ${nam}: ${werte.reduce((t, [, n]) => t + n, 0)} gemalte Textstellen, ${zahlen.size} Werte, offen "${[...zahlen].sort().join(" ")}"`);
+      for (const [k, n] of werte.slice(0, 5)) console.log(`      ${String(n).padStart(4)}  ${k}`);
+    }
+    const alle = new Map();
+    for (const { z } of gesicht) for (const [k, n] of Object.entries(z)) alle.set(k, (alle.get(k) || 0) + n);
+    const halbe = [...alle].filter(([k]) => { const px = parseFloat(k); return Number.isFinite(px) && !Number.isInteger(px); });
+    console.log(`  halbe Pixelschritte im gerechneten Fenster: ${halbe.length} Namen, ${halbe.reduce((t, [, n]) => t + n, 0)} Stellen`);
+    for (const [k, n] of halbe.slice(0, 10)) console.log(`      ${String(n).padStart(4)}  ${k}`);
+    urteil("keine halbe Pixelschrift bleibt im Bild", halbe.length === 0, true);
+    const fremd = [...alle].filter(([k]) => { const px = parseFloat(k); return Number.isFinite(px) && px < 100 && !LEITER.has(k); });
+    console.log(`  ausserhalb der Leiter: ${fremd.length} Namen, ${fremd.reduce((t, [, n]) => t + n, 0)} Stellen`);
+    for (const [k, n] of fremd.slice(0, 14)) console.log(`      ${String(n).padStart(4)}  ${k}`);
+    console.log(`  Bild: ${await bild("schriftstufen-flaechen.png")}`);
+  }
+
   // --- Zyklus M: die Zahl zu der Wahl, die er wirklich trifft (Punkt 5, vierter Schlag) ------
   //     Die Flaeche filtert Thema UND Fach zusammen (`Dashboard.tsx:948-956`), und der Leerlauf
   //     nannte bis 3.2.108 entweder eine Randzahl oder schwieg. Seit 3.2.109 liest er die Zelle

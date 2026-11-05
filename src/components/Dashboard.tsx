@@ -1451,16 +1451,16 @@ export function Dashboard() {
               <div className="flex items-center gap-2 mb-2 px-1 min-w-0">
                 {g.quelle?.art === 'datei' && <FileText className="w-3.5 h-3.5 shrink-0" style={{ color: 'var(--accent)' }} />}
                 {g.quelle?.art === 'url' && <ExternalLink className="w-3.5 h-3.5 shrink-0" style={{ color: 'var(--accent)' }} />}
-                <h3 className="text-[13px] font-semibold truncate" style={{ color: 'var(--text-1)' }} title={g.quelle?.art === 'datei' ? g.quelle.pfad : g.titel}>
+                <h3 className="fs-3 font-semibold truncate" style={{ color: 'var(--text-1)' }} title={g.quelle?.art === 'datei' ? g.quelle.pfad : g.titel}>
                   {g.titel}
                 </h3>
-                <span className="text-[11px] tnum whitespace-nowrap" style={{ color: 'var(--text-3)' }}>
+                <span className="fs-1 tnum whitespace-nowrap" style={{ color: 'var(--text-3)' }}>
                   {g.memories.length} {g.memories.length === 1 ? 'note' : 'notes'}{g.typMix ? ` · ${g.typMix}` : ''}
                 </span>
                 {g.quelle && (
                   <button
                     onClick={() => void oeffneQuelle(g.quelle!)}
-                    className="btn-ghost min-h-6 px-2 inline-flex items-center rounded text-[11px] shrink-0"
+                    className="btn-ghost min-h-6 px-2 inline-flex items-center rounded fs-1 shrink-0"
                     title={g.quelle.art === 'datei' ? `Open file: ${g.quelle.pfad}` : `Open link: ${g.quelle.url}`}
                   >
                     {g.quelle.art === 'url' ? 'Open link' : 'Open file'}
@@ -1487,12 +1487,12 @@ export function Dashboard() {
           <div className="flex justify-center pt-6">
             <button
               onClick={() => setVisibleCount((c) => Math.min(c + PAGE_SIZE, displayedMemories.length))}
-              className="btn-ghost px-4 py-2 rounded-lg text-[13px] font-medium"
+              className="btn-ghost px-4 py-2 rounded-lg fs-3 font-medium"
             >
               Load more ({displayedMemories.length - visibleCount} more)
             </button>
           </div>
-          <div className="text-center text-[11px] mt-2 tnum" style={{ color: 'var(--text-3)' }}>
+          <div className="text-center fs-1 mt-2 tnum" style={{ color: 'var(--text-3)' }}>
             {paginatedMemories.length.toLocaleString('en-GB')} of {displayedMemories.length.toLocaleString('en-GB')} shown
           </div>
         </>
@@ -1505,14 +1505,14 @@ export function Dashboard() {
         <div className="flex justify-center pt-3">
           <button
             onClick={() => void holeNaechsteSeite(setSeitenHinweis)}
-            className="btn-ghost px-4 py-2 rounded-lg text-[13px] font-medium"
+            className="btn-ghost px-4 py-2 rounded-lg fs-3 font-medium"
           >
             More of your notes — fetch the next {SEITE_NACHLAD.toLocaleString('en-GB')}
           </button>
         </div>
       )}
       {visibleCount >= displayedMemories.length && displayedMemories.length > PAGE_SIZE && (
-        <div className="text-center text-[11px] mt-4 tnum" style={{ color: 'var(--text-3)' }}>
+        <div className="text-center fs-1 mt-4 tnum" style={{ color: 'var(--text-3)' }}>
           {/* „All 100 entries shown" über einer Tür, die 14.702 hält, war die
               stille Kappe: das „All" galt der Ladung, nicht dem Bestand. Seit dem
               Brief gilt die Kappe selbst als Zeugnis — nicht nur die Zahl. */}
@@ -1629,7 +1629,7 @@ export function Dashboard() {
             )}
             <div className="flex items-center gap-2 shrink-0" style={{ color: 'var(--text-1)' }}>
               <KeptaMark size={22} />
-              <span className="hidden md:block font-semibold text-[13px] tracking-[-0.02em]">K3PTA</span>
+              <span className="hidden md:block font-semibold fs-3 tracking-[-0.02em]">K3PTA</span>
             </div>
             <div className="flex-1 max-w-xl relative group">
               <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 transition-colors" style={{ color: 'var(--text-3)' }} />
@@ -1709,12 +1709,12 @@ export function Dashboard() {
           {trashOpen && (
             <div className="px-5 py-3 shrink-0 overflow-auto" style={{ borderBottom: '1px solid var(--border-subtle)', background: 'var(--bg-inset)', maxHeight: '30vh' }}>
               <div className="flex items-center justify-between mb-2">
-                <span className="text-[12px] font-medium" style={{ color: 'var(--text-2)' }}>
+                <span className="fs-2 font-medium" style={{ color: 'var(--text-2)' }}>
                   {papierkorbKappe
                     ? <>Trash — first {trashedMemories.length} of {groessenZahl(papierkorbKappe.gesamt)} deleted notes</>
                     : <>Trash — {trashedMemories.length} deleted notes, all restorable</>}
                 </span>
-                <button onClick={() => setTrashOpen(false)} className="btn-ghost px-2 py-1 rounded-md text-[11px]">Close</button>
+                <button onClick={() => setTrashOpen(false)} className="btn-ghost px-2 py-1 rounded-md fs-1">Close</button>
               </div>
               {papierkorbGrund && (
                 <p className="text-xs mb-2" style={{ color: 'var(--text-3)' }}>{papierkorbGrund} — the trash may hold more than this page.</p>
@@ -1724,7 +1724,7 @@ export function Dashboard() {
               ) : (
                 <ul className="space-y-1">
                   {trashedMemories.map((m) => (
-                    <li key={m.id} className="flex items-center justify-between gap-3 text-[13px]">
+                    <li key={m.id} className="flex items-center justify-between gap-3 fs-3">
                       <span className="truncate" style={{ color: 'var(--text-2)' }}>{m.title || 'Untitled'}</span>
                       <button
                         onClick={async () => {
@@ -1734,7 +1734,7 @@ export function Dashboard() {
                             void refreshMemories().catch(() => { /* Papierkorb-Zeile gemalt; der Grund liegt im Speicher */ });
                           } catch { /* ignore */ }
                         }}
-                        className="btn-ghost px-2 py-1 rounded-md text-[11px] shrink-0"
+                        className="btn-ghost px-2 py-1 rounded-md fs-1 shrink-0"
                       >
                         Restore
                       </button>
@@ -1755,13 +1755,13 @@ export function Dashboard() {
                 className="sr-only"
               />
               <span className="switch" data-on={semanticEnabled}><span className="knob" /></span>
-              <span className="text-[13px] font-medium" style={{ color: semanticEnabled ? 'var(--text-1)' : 'var(--text-2)' }}>
+              <span className="fs-3 font-medium" style={{ color: semanticEnabled ? 'var(--text-1)' : 'var(--text-2)' }}>
                 Semantic search
               </span>
             </label>
 
             <div className="flex items-center gap-2">
-              <span className="text-[12.5px]" style={{ color: 'var(--text-2)' }}>Results</span>
+              <span className="fs-3" style={{ color: 'var(--text-2)' }}>Results</span>
               <input
                 type="range"
                 min={0}
@@ -1840,7 +1840,7 @@ export function Dashboard() {
                 <button
                   onClick={handleInboxScan}
                   disabled={inboxScanBusy}
-                  className="ml-1 -mr-1 min-h-6 px-2 inline-flex items-center rounded text-[11px] font-semibold hover:opacity-80 disabled:opacity-40"
+                  className="ml-1 -mr-1 min-h-6 px-2 inline-flex items-center rounded fs-1 font-semibold hover:opacity-80 disabled:opacity-40"
                   style={{ color: 'var(--accent)' }}
                   title="Scan the inbox now and import"
                 >
@@ -1878,18 +1878,18 @@ export function Dashboard() {
               <div className="flex-1 flex items-center gap-3 px-4 py-3">
                 {importing ? <Loader2 className="w-4 h-4 animate-spin shrink-0" style={{ color: "var(--accent)" }} /> : <UploadCloud className="w-4 h-4 shrink-0" style={{ color: dragOver ? "var(--accent)" : "var(--text-3)" }} />}
                 <div className="flex-1 min-w-0">
-                  <div className="text-[13px] font-medium truncate" style={{ color: "var(--text-1)" }}>
+                  <div className="fs-3 font-medium truncate" style={{ color: "var(--text-1)" }}>
                     {importing ? "Importing…" : dragOver ? "Drop to import" : "Drag files here"}
                   </div>
                   {/* Die Formate auf eigener Zeile: in einer Reihe mit dem Satz
                       abgeschnitten, gemessen +137 px bei 1 024 px und +130 px bei
                       820 px Fensterbreite — ein `sm:inline` misst die Breite des
                       Fensters, die Zeile kriegt die Breite der Fläche. */}
-                  <div className="text-[11px] tnum" style={{ color: "var(--text-2)" }}>
+                  <div className="fs-1 tnum" style={{ color: "var(--text-2)" }}>
                     PDF · MD · TXT · JSON
                   </div>
-                  {importMsg && <div className="text-[11px] mt-1 flex items-center gap-1" style={{ color: "var(--ok)" }}><CheckCircle2 className="w-3 h-3" />{importMsg}</div>}
-                  {importErr && <div className="text-[11px] mt-1 flex items-center gap-1" style={{ color: "var(--danger)" }}><AlertCircle className="w-3 h-3" />{importErr}</div>}
+                  {importMsg && <div className="fs-1 mt-1 flex items-center gap-1" style={{ color: "var(--ok)" }}><CheckCircle2 className="w-3 h-3" />{importMsg}</div>}
+                  {importErr && <div className="fs-1 mt-1 flex items-center gap-1" style={{ color: "var(--danger)" }}><AlertCircle className="w-3 h-3" />{importErr}</div>}
                 </div>
                 <label className="btn-ghost px-3 py-2 text-xs font-medium cursor-pointer shrink-0">
                   Choose
@@ -1936,7 +1936,7 @@ export function Dashboard() {
               </div>
             </div>
             {(clipErr || clipOk) && (
-              <div className="text-[11px] flex items-center gap-2 mt-2" style={{ color: clipErr ? "var(--danger)" : "var(--ok)" }}>
+              <div className="fs-1 flex items-center gap-2 mt-2" style={{ color: clipErr ? "var(--danger)" : "var(--ok)" }}>
                 {clipErr ? <AlertCircle className="w-3 h-3" /> : <CheckCircle2 className="w-3 h-3" />}
                 {clipErr || clipOk}
               </div>
@@ -1950,7 +1950,7 @@ export function Dashboard() {
                 <h1 className="display">
                   {greeting}{profileName ? `, ${profileName}` : ''}
                 </h1>
-                <p className="text-[13px] mt-1" style={{ color: 'var(--text-2)' }}>
+                <p className="fs-3 mt-1" style={{ color: 'var(--text-2)' }}>
                   {new Date().toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long' })}
                   {agentActive ? ' — an agent is working right now' : ''}
                 </p>
@@ -1991,8 +1991,8 @@ export function Dashboard() {
                       const anteil = anteilZahl(zeigeTraeger[k.key], traegerNenner, traegerFaelter);
                       return (
                         <span key={k.key} style={{ color: k.color }}>
-                          {groessenZahl(zeigeTraeger[k.key])} <span className="text-[10px] opacity-70">{TRAEGER_LABELS[k.key]}</span>
-                          {anteil !== '' && <span className="text-[10px]" style={{ color: 'var(--text-3)' }}> {anteil}</span>}
+                          {groessenZahl(zeigeTraeger[k.key])} <span className="fs-1 opacity-70">{TRAEGER_LABELS[k.key]}</span>
+                          {anteil !== '' && <span className="fs-1" style={{ color: 'var(--text-3)' }}> {anteil}</span>}
                         </span>
                       );
                     })}
@@ -2027,7 +2027,7 @@ export function Dashboard() {
                   Erinnerungs-Zähler, Verschlüsselung samt Schlüssel-Ablage und das
                   Embedding-Modell mit seinem Zähler. Was /api/health weiß, steht hier. */}
               {gehirn && (
-                <div className="mb-4 shrink-0 flex flex-wrap items-center gap-2 text-[11.5px]" data-testid="gehirn-status">
+                <div className="mb-4 shrink-0 flex flex-wrap items-center gap-2 fs-3" data-testid="gehirn-status">
                   {gehirn.version && (
                     <span className="chip" title="The running version — also reported over MCP and /api/health.">
                       K3PTA {gehirn.version}
@@ -2077,7 +2077,7 @@ export function Dashboard() {
               )}
 
               <div className="flex items-center justify-between mb-3 shrink-0">
-                <div className="flex items-center gap-3 text-[12px] tnum" style={{ color: 'var(--text-3)' }}>
+                <div className="flex items-center gap-3 fs-2 tnum" style={{ color: 'var(--text-3)' }}>
                   <span>{displayedMemories.length.toLocaleString('en-GB')} of {tagFiltered.length.toLocaleString('en-GB')} {ladung !== null ? 'on this page' : 'notes'}</span>
                   {semanticEnabled && debouncedSearchQuery.trim().length >= 2 && (
                     serverTotal !== null && serverTotal > displayedMemories.length ? (
@@ -2094,11 +2094,11 @@ export function Dashboard() {
                     )
                   )}
                 </div>
-                <div className="flex items-center gap-2 text-[12px]" style={{ color: 'var(--text-3)' }}>
+                <div className="flex items-center gap-2 fs-2" style={{ color: 'var(--text-3)' }}>
                   {agentActive ? (
                     <>
                       <span className="agent-dot" />
-                      <span style={{ color: 'var(--accent)', fontWeight: 560 }}>Agent active</span>
+                      <span style={{ color: 'var(--accent)', fontWeight: 'var(--fw-halbfest)' }}>Agent active</span>
                     </>
                   ) : tuerLebt === "antwortete" ? (
                     <span className="status-dot" title="In sync means this window shows the newest copy of your notes, stored on this computer" />
@@ -2141,7 +2141,7 @@ export function Dashboard() {
                       (`graphHerkunft.ts → HERKUNFT_FRAGE`), und eine Zahl unter
                       dem falschen Wort ist keine Auskunft. */}
                   <div className="flex flex-wrap items-center gap-2 mb-2" role="group" aria-label={TRAEGER_FRAGE}>
-                    <span className="text-[11px] shrink-0" style={{ color: 'var(--text-3)' }}>Form</span>
+                    <span className="fs-1 shrink-0" style={{ color: 'var(--text-3)' }}>Form</span>
                     {TRAEGER_REIHENFOLGE.map((t) => {
                       const an = aktiveTraeger.includes(t);
                       return (
@@ -2172,7 +2172,7 @@ export function Dashboard() {
                         das der Filter wirklich laeuft. */}
                     {blattWeichtAb && (
                       <span
-                        className="text-[11px] shrink-0 tnum"
+                        className="fs-1 shrink-0 tnum"
                         style={{ color: 'var(--text-3)' }}
                         title={`The chips run over the ${groessenZahl(memories.length)} notes loaded on this page, not over everything you have saved.`}
                       >
@@ -2181,7 +2181,7 @@ export function Dashboard() {
                     )}
                   </div>
                   <div className="flex flex-wrap items-center gap-2 mb-3" role="group" aria-label={THEMA_FRAGE}>
-                    <span className="text-[11px] shrink-0" style={{ color: 'var(--text-3)' }}>About</span>
+                    <span className="fs-1 shrink-0" style={{ color: 'var(--text-3)' }}>About</span>
                     {THEMA_REIHENFOLGE.map((t) => {
                       const an = aktiveThemen.includes(t);
                       return (
@@ -2207,7 +2207,7 @@ export function Dashboard() {
                         key={key}
                         onClick={() => setGruppierung(key)}
                         disabled={!!debouncedSearchQuery.trim()}
-                        className="apple-seg-btn min-h-7 text-[11px] font-medium disabled:opacity-40"
+                        className="apple-seg-btn min-h-7 fs-1 font-medium disabled:opacity-40"
                         data-on={effektivGruppierung === key ? "true" : "false"}
                         title={debouncedSearchQuery.trim()
                           ? 'Grouping is off while you search — results are ranked by relevance'
@@ -2232,10 +2232,10 @@ export function Dashboard() {
                       <div className="w-16 h-16 rounded-2xl flex items-center justify-center mb-4" style={{ background: 'var(--danger-soft)', border: '1px solid var(--border-subtle)' }}>
                         <AlertCircle className="w-6 h-6" style={{ color: 'var(--danger)' }} />
                       </div>
-                      <h3 className="text-[15px] font-semibold mb-2" style={{ color: 'var(--text-1)' }}>The server did not answer</h3>
-                      <p className="text-[13px] mb-4 max-w-[420px]" style={{ color: 'var(--text-3)' }}>{ladFehler}</p>
+                      <h3 className="fs-5 font-semibold mb-2" style={{ color: 'var(--text-1)' }}>The server did not answer</h3>
+                      <p className="fs-3 mb-4 max-w-[420px]" style={{ color: 'var(--text-3)' }}>{ladFehler}</p>
                       <button
-                        className="btn-ghost px-3 py-2 text-[13px]"
+                        className="btn-ghost px-3 py-2 fs-3"
                         onClick={() => { setLadFehler(null); setLadVersuch((v) => v + 1); }}
                       >
                         Try again
@@ -2246,12 +2246,12 @@ export function Dashboard() {
                       <div className="w-16 h-16 rounded-2xl flex items-center justify-center mb-4" style={{ background: 'var(--bg-inset)', border: '1px solid var(--border-subtle)', boxShadow: 'inset 0 1px 0 var(--edge-light)' }}>
                         <KeptaMark size={34} />
                       </div>
-                      <h3 className="text-[15px] font-semibold mb-2" style={{ color: 'var(--text-1)' }}>
+                      <h3 className="fs-5 font-semibold mb-2" style={{ color: 'var(--text-1)' }}>
                         {debouncedSearchQuery || selectedTags.length > 0
                           ? 'No matches'
                           : gruppenFilterAktiv ? `No notes ${gruppenGrund}` : 'No notes yet'}
                       </h3>
-                      <p className="text-[13px] max-w-sm mx-auto leading-relaxed" style={{ color: 'var(--text-2)' }}>
+                      <p className="fs-3 max-w-sm mx-auto leading-relaxed" style={{ color: 'var(--text-2)' }}>
                         {debouncedSearchQuery || selectedTags.length > 0
                           ? semanticEnabled && debouncedSearchQuery.trim().length >= 2
                             ? `Nothing found for “${debouncedSearchQuery.trim().slice(0, 48)}”. Try different terms, raise the result count, or switch to keyword search.`
@@ -2268,13 +2268,13 @@ export function Dashboard() {
                       {gruppenFilterAktiv && (
                         <button
                           onClick={() => { setAktiveTraeger([]); setAktiveThemen([]); }}
-                          className="mt-4 btn-ghost px-4 py-2 rounded-lg text-[13px] font-medium"
+                          className="mt-4 btn-ghost px-4 py-2 rounded-lg fs-3 font-medium"
                         >
                           Show everything again
                         </button>
                       )}
                       {semanticEnabled && debouncedSearchQuery.trim().length >= 2 && displayedMemories.length === 0 && (
-                        <button onClick={() => setSemanticEnabled(false)} className="mt-4 btn-ghost px-4 py-2 rounded-lg text-[13px] font-medium">
+                        <button onClick={() => setSemanticEnabled(false)} className="mt-4 btn-ghost px-4 py-2 rounded-lg fs-3 font-medium">
                           Switch to keyword search
                         </button>
                       )}
@@ -2306,7 +2306,7 @@ export function Dashboard() {
           className={cn("flex-1 flex flex-col h-full min-h-0 overflow-hidden px-2 py-3 md:px-5", currentView === 'graph' ? 'flex' : 'hidden')}
         >
           <div className="flex items-center gap-3 mb-2 shrink-0">
-            <div className="text-[13px] font-medium shrink-0" style={{ color: 'var(--text-1)' }}>Graph</div>
+            <div className="fs-3 font-medium shrink-0" style={{ color: 'var(--text-1)' }}>Graph</div>
             {/* Der lange Satz ist schmückende Auskunft, keine Zahl: in einem
                 Fenster, das ihn nicht trägt, bricht er um und rückt das Bild
                 nach unten (A7-06). Die Zählung bleibt stehen, der Rest nicht.
@@ -2318,7 +2318,7 @@ export function Dashboard() {
                 Geräteklasse: der Satz bleibt nur stehen, wenn er passt. Der Kasten
                 wird vom Inhalt nicht gedehnt (min-w-0 und truncate in einer
                 flex-Zeile), also misst die Beobachtung die verfügbare Breite. */}
-            <div ref={satzKastenRef} className="text-[12px] tnum min-w-0 truncate" style={{ color: 'var(--text-3)' }}>
+            <div ref={satzKastenRef} className="fs-2 tnum min-w-0 truncate" style={{ color: 'var(--text-3)' }}>
               {mengensatz(feldZaehlung ?? memories.length, tuerBestand)}{!schmal && satzPasst ? " · connected through tags, similarity and knowledge entities" : ""}
             </div>
             <div className="ml-auto shrink-0">

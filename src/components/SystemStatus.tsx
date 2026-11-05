@@ -282,7 +282,7 @@ export function SystemStatus() {
         <div className="flex items-center justify-between gap-3">
           <div className="min-w-0">
             <div className="text-xs font-semibold" style={{ color: 'var(--text-1)' }}>Connect Claude Desktop and Cursor</div>
-            <code className="text-[11px] block truncate mt-1" style={{ color: 'var(--text-3)' }}>{mcpJson.replaceAll('\n', ' ')}</code>
+            <code className="fs-1 block truncate mt-1" style={{ color: 'var(--text-3)' }}>{mcpJson.replaceAll('\n', ' ')}</code>
           </div>
           <button onClick={() => copy('mcp', mcpJson)} className="btn-ghost flex items-center gap-2 px-3 py-2 rounded-lg text-xs shrink-0">
             {copied === 'mcp' ? <Check className="w-3.5 h-3.5" style={{ color: 'var(--ok)' }} /> : <Copy className="w-3.5 h-3.5" />}

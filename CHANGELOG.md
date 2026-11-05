@@ -1,3 +1,28 @@
+## [3.2.164]
+
+### Changed
+
+- **The type ladder is now named by the components, not enforced from outside.** Measured
+  5.11.2026 19:24:27 MEZ against the committed tree (`git grep` at HEAD, the 3.2.163 bytes):
+  248 seats written as `text-[Npx]` across 17 components, 14 different values, 65 of them on
+  half pixels -- while `src/index.css` held eight whole-pixel steps and the warden reported no
+  arbitrary value there. Since 18.10 three unlayered
+  rules in `index.css` forced those back to the ladder at render time, so the picture was right
+  while the source still lied. Now every seat calls a step (`fs-1` to `fs-5`, registered with
+  `@utility`), the three enforcement rules are gone (an unlayered rule nobody needs is forbidden
+  by design/DESIGN.md section 10), and `tests/leitern-in-den-bausteinen.test.ts` holds the count
+  at zero -- four cases, including a bite control that catches a half step and a token form that
+  passes.
+- **Two weights left the arbitrary band.** `Dashboard.tsx:2101` wrote 560 and `KeptaMark.tsx:25`
+  wrote 740; a non-variable font renders neither, so they now sit on 600 and 700. What remains
+  named in the warden's debt register is `font-medium` (500) at 77 seats: on Windows it collapses
+  to 400 and halves the hierarchy. Moving those is its own cut with its own image street, because
+  it changes the weight of 77 places rather than the name of a class.
+- **The warden learned `@utility`.** Measured the same minute: with the new steps in place it
+  reported five naked callers and three orphans -- it only knew `.name {` rules, so a Tailwind v4
+  utility looked like a caller without a rule and a ladder step looked like dead style. Both
+  readings were wrong about the same eight lines.
+
 ## [3.2.163]
 
 ### Changed

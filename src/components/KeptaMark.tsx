@@ -22,7 +22,7 @@ export function KeptaMark({ size = 32 }: { size?: number }) {
 
 export function KeptaWordmark({ className }: { className?: string }) {
   return (
-    <span className={className} style={{ fontWeight: 740, letterSpacing: '-0.03em', fontSize: '15px', lineHeight: 1, color: 'var(--text-1)' }}>
+    <span className={className} style={{ fontWeight: 'var(--fw-fest)', letterSpacing: '-0.03em', fontSize: 'var(--fs-5)', lineHeight: 1, color: 'var(--text-1)' }}>
       K3PTA
     </span>
   );

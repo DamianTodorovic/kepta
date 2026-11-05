@@ -85,7 +85,7 @@ export function CommandPalette({ open, onClose, actions }: CommandPaletteProps) 
           {filtered.length === 0 && (
             <div className="py-10 px-6 text-center text-sm leading-relaxed" style={{ color: "var(--text-2)" }}>
               Nothing here answers “{query}”.
-              <span className="block text-[12px] mt-1" style={{ color: "var(--text-2)" }}>
+              <span className="block fs-2 mt-1" style={{ color: "var(--text-2)" }}>
                 One word of a title, a tag, or the first letters of a command — Esc closes this.
               </span>
             </div>

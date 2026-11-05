@@ -458,8 +458,7 @@ function textToken() {
    Der Schlüssel ist der Text, nicht die Zeile — Bausteine verschieben sich.
    ============================================================ */
 const SCHULD = new Map([
-  ["schrift:größen-fremd", { sitze: 14, seit: "10.10.", wer: "E2/E3 (Bausteine)", warum: "14 verschiedene Größen in src/components (8,5 bis 44 px, davon 5 halbe Schritte); die Leiter in index.css ist gesetzt und die Bausteine ziehen nach — weniger Stufen hier ist Fortschritt, eine neue Stufe macht rot" }],
-  ["schrift:gewichte-fremd", { sitze: 3, seit: "10.10.", wer: "E2/E3 (Bausteine)", warum: "500 (Tailwind font-medium), 560 und 740 — eine statische Segoe UI hat diese Stufen nicht" }],
+  ["schrift:gewichte-fremd", { sitze: 1, seit: "5.11. (gemeldeter Stand zuvor 3)", wer: "E2/E3 (Bausteine)", warum: "560 (Dashboard.tsx:2101) und 740 (KeptaMark.tsx:25) sind auf die Stufen 600/700 gesetzt; bleibt 500 = Tailwind font-medium, 77 Sitze. Auf einer nicht-variablem Schrift kollabiert 500 auf 400, die Hierarchie halbiert sich — die Umstellung auf --fw-halbfest ist ein eigner Schnitt mit Bildstraße, weil sie das Gewicht von 77 Stellen wirklich hebt" }],
   ["icons:groesse-fremd", { sitze: 33, seit: "10.10.", wer: "E2/E3 (Bausteine)", warum: "w-2.5/w-3-Sitzungen; die Untergrenze --icon-min in index.css hebt sie beim Rendern auf 14 px, die Klasse selbst bleibt" }],
   ["icons:name-fremd", { sitze: 2, seit: "10.10.", wer: "DS, benannt", warum: "RefreshCw->loader (der Körper IST zwei Kreiselpfeile = erneuern) und PartyPopper->rocket (Namensrest aus der Phosphor-Zeit, Bild passt zur Absicht)" }],
   ["css:klassen-waisen", { sitze: 0, seit: "5.11. (gemeldeter Stand zuvor 18, seit 14.10.)", wer: "DS (eigene Scheibe)", warum: "Zensus 13.10.: 20 Regeln in index.css, die kein Baustein ruft; 14.10.: 18 Sitze, weil .tap und .tap-reihum in Chat.tsx anzogen. Entscheidung 5.11.: geloescht, nicht gemeldet -- der Vertrag selbst verbietet 'eine Regel in CSS, die niemand ruft' (design/DESIGN.md §10), und die einzige Begruendung, das Aufschieben zu lassen (E2/E3 koennten uncommittete Rufer haben), fiel mit dem ledigen Baum bei 104cf2e. Zwei eigne Methoden, null Rufer: Token-Zensus in src (className-Worte, getrennt an Whitespace und Klammern, damit inset-0 nicht .inset ruft) und class=-Suche in src, index.html, scripts, tests. Eine neue Waise macht rot." }],
@@ -1750,6 +1749,13 @@ meld("css", `Deklarationen außerhalb von Regeln`, String(PAR.weisen.length), "0
 {
   const klassen = new Set();
   for (const r of PAR.regeln) for (const k of klassenAusSelektor(r.selektor)) klassen.add(k);
+  // @utility ist eine Regel, die Tailwind v4 als `.name` ausgibt. Wer sie nicht kennt,
+  // zaehlt jeden Rufer einer eignen Stufe als nackten Rufer -- gemessen 5.11. mit fs-1 bis
+  // fs-8, den Schriftstufen, die die Bausteine seit diesem Schnitt rufen.
+  for (const z of zeilenVon("src/index.css")) {
+    const m = z.match(/^\s*@utility\s+([a-z0-9-]+)\s*\{/);
+    if (m) klassen.add(m[1]);
+  }
   const quelltext = DATEIEN.filter((rel) => rel.endsWith(".tsx")).map((rel) => zeilenVon(rel).join("\n")).join("\n");
   // Andere CSS-Dateien als index.css (huelle.css) tragen ebenfalls Regeln — ohne
   // sie erschiene jede Klasse davon als nackter Rufer.

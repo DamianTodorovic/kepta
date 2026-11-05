@@ -180,10 +180,10 @@ export function MemoryPreview({ memory, onClose, onEdit }: MemoryPreviewProps) {
       >
         <header className="flex items-start justify-between gap-3 p-5 pb-4 shrink-0" style={{ borderBottom: "1px solid var(--border-subtle)" }}>
           <div className="min-w-0">
-            <h2 className="text-[17px] font-semibold leading-snug break-words" style={{ color: "var(--text-1)" }}>
+            <h2 className="fs-5 font-semibold leading-snug break-words" style={{ color: "var(--text-1)" }}>
               {memory.title || "Untitled"}
             </h2>
-            <div className="flex items-center flex-wrap gap-x-3 gap-y-1 mt-2 text-[11px]" style={{ color: "var(--text-3)" }}>
+            <div className="flex items-center flex-wrap gap-x-3 gap-y-1 mt-2 fs-1" style={{ color: "var(--text-3)" }}>
               <span>{artLabel}</span>
               <span>·</span>
               <span>{formatDistanceToNow(new Date(memory.updatedAt), { addSuffix: true })}</span>
@@ -209,7 +209,7 @@ export function MemoryPreview({ memory, onClose, onEdit }: MemoryPreviewProps) {
           </div>
           <button
             onClick={onClose}
-            className="btn-ghost px-2 py-1 rounded-lg text-[11px] shrink-0"
+            className="btn-ghost px-2 py-1 rounded-lg fs-1 shrink-0"
             aria-label="Close preview"
           >
             {t("preview.close")}
@@ -218,7 +218,7 @@ export function MemoryPreview({ memory, onClose, onEdit }: MemoryPreviewProps) {
 
         <div className="flex-1 min-h-0 overflow-y-auto px-5 py-4">
           {(privat || leserStand !== "offen") && (
-            <div data-testid="preview-readers" className="mb-4 text-[12px] flex items-start gap-2 rounded-xl px-3 py-2" style={{ background: "var(--bg-inset)", color: "var(--text-2)" }}>
+            <div data-testid="preview-readers" className="mb-4 fs-2 flex items-start gap-2 rounded-xl px-3 py-2" style={{ background: "var(--bg-inset)", color: "var(--text-2)" }}>
               {privat ? <Lock className="w-3.5 h-3.5 mt-px shrink-0" style={{ color: "var(--accent)" }} /> : <Bot className="w-3.5 h-3.5 mt-px shrink-0" style={{ color: "var(--accent)" }} />}
               <span>
                 {privat
@@ -247,15 +247,15 @@ export function MemoryPreview({ memory, onClose, onEdit }: MemoryPreviewProps) {
               >
                 <FileText className="w-4 h-4 shrink-0" style={{ color: "var(--accent)" }} />
                 <span className="min-w-0 flex-1">
-                  <span className="block text-[13px] font-medium truncate" style={{ color: "var(--text-1)" }}>
+                  <span className="block fs-3 font-medium truncate" style={{ color: "var(--text-1)" }}>
                     {quelle.name}
                   </span>
-                  <span className="block text-[11px] truncate" style={{ color: "var(--text-3)" }}>
+                  <span className="block fs-1 truncate" style={{ color: "var(--text-3)" }}>
                     {quelle.art === "datei" ? quelle.pfad : quelle.art === "url" ? quelle.url : `Imported from inbox · ${quelle.name}`}
                   </span>
                 </span>
                 {quelle.art !== "inbox" && (
-                  <span className="shrink-0 text-[11px] font-medium flex items-center gap-1 opacity-70 group-hover:opacity-100" style={{ color: "var(--accent)" }}>
+                  <span className="shrink-0 fs-1 font-medium flex items-center gap-1 opacity-70 group-hover:opacity-100" style={{ color: "var(--accent)" }}>
                     {quelle.art === "url" ? <ExternalLink className="w-3.5 h-3.5" /> : <FileText className="w-3.5 h-3.5" />}
                     {t("preview.open")}
                   </span>
@@ -266,13 +266,13 @@ export function MemoryPreview({ memory, onClose, onEdit }: MemoryPreviewProps) {
 
           {/* Der komplette Text, Absatz fuer Absatz — kein Formular, kein Markup-Zwang */}
           {staendeGrund && (
-            <p role="status" data-testid="preview-staende-grund" className="text-[12px] mb-3" style={{ color: 'var(--warn)' }}>{staendeGrund}</p>
+            <p role="status" data-testid="preview-staende-grund" className="fs-2 mb-3" style={{ color: 'var(--warn)' }}>{staendeGrund}</p>
           )}
           {staende !== null && staende.length > 0 && (
             <div data-testid="preview-stands" className="mb-4">
               <button
                 onClick={() => setStaendeOffen((v) => !v)}
-                className="w-full flex items-center justify-between gap-2 px-3 py-2 rounded-xl text-[12px]"
+                className="w-full flex items-center justify-between gap-2 px-3 py-2 rounded-xl fs-2"
                 style={{ background: "var(--bg-inset)", color: "var(--text-2)", border: "1px solid var(--border-subtle)" }}
                 data-testid="preview-stands-open"
                 aria-expanded={staendeOffen}
@@ -286,7 +286,7 @@ export function MemoryPreview({ memory, onClose, onEdit }: MemoryPreviewProps) {
                     <li key={s.id}>
                       <button
                         onClick={() => setGewaehlterStand(s)}
-                        className="w-full text-left px-3 py-2 rounded-lg text-[12px]"
+                        className="w-full text-left px-3 py-2 rounded-lg fs-2"
                         style={{ background: gewaehlterStand?.id === s.id ? "var(--bg-inset)" : "transparent", color: "var(--text-2)", border: "1px solid var(--border-subtle)" }}
                         data-testid="preview-stand-row"
                       >
@@ -300,7 +300,7 @@ export function MemoryPreview({ memory, onClose, onEdit }: MemoryPreviewProps) {
             </div>
           )}
           {staende !== null && staende.length === 0 && (
-            <p data-testid="preview-stands-none" className="mb-4 text-[12px]" style={{ color: "var(--text-3)" }}>
+            <p data-testid="preview-stands-none" className="mb-4 fs-2" style={{ color: "var(--text-3)" }}>
               No earlier stands - this note has not been edited since it was written.
             </p>
           )}
@@ -308,7 +308,7 @@ export function MemoryPreview({ memory, onClose, onEdit }: MemoryPreviewProps) {
             <>
               <div
                 data-testid="preview-stand-flag"
-                className="mb-2 flex flex-wrap items-center justify-between gap-2 rounded-xl px-3 py-2 text-[12px]"
+                className="mb-2 flex flex-wrap items-center justify-between gap-2 rounded-xl px-3 py-2 fs-2"
                 style={{ background: "var(--bg-inset)", color: "var(--text-2)" }}
               >
                 <span className="min-w-0">
@@ -317,7 +317,7 @@ export function MemoryPreview({ memory, onClose, onEdit }: MemoryPreviewProps) {
                 <span className="flex flex-wrap items-center gap-2">
                   <button
                     onClick={() => setWiederherstellenOffen((v) => !v)}
-                    className="btn-ghost px-2 py-1 rounded-lg text-[11px]"
+                    className="btn-ghost px-2 py-1 rounded-lg fs-1"
                     data-testid="preview-stand-restore"
                     aria-expanded={wiederherstellenOffen}
                   >
@@ -325,7 +325,7 @@ export function MemoryPreview({ memory, onClose, onEdit }: MemoryPreviewProps) {
                   </button>
                   <button
                     onClick={() => setGewaehlterStand(null)}
-                    className="btn-ghost px-2 py-1 rounded-lg text-[11px]"
+                    className="btn-ghost px-2 py-1 rounded-lg fs-1"
                     data-testid="preview-stand-back"
                   >
                     Back to current
@@ -335,14 +335,14 @@ export function MemoryPreview({ memory, onClose, onEdit }: MemoryPreviewProps) {
               {wiederherstellenOffen && (
                 <div
                   data-testid="preview-stand-restore-bestaetigung"
-                  className="mb-2 rounded-xl px-3 py-2 text-[12px]"
+                  className="mb-2 rounded-xl px-3 py-2 fs-2"
                   style={{ background: "var(--bg-inset)", color: "var(--text-2)", border: "1px solid var(--border-subtle)" }}
                 >
                   <p>Make this version current? The text it replaces stays in the history as an earlier stand.</p>
                   <div className="flex flex-wrap items-center gap-2 mt-2">
                     <button
                       onClick={() => void standWiederherstellen()}
-                      className="btn-ghost px-2 py-1 rounded-lg text-[11px]"
+                      className="btn-ghost px-2 py-1 rounded-lg fs-1"
                       style={{ border: "1px solid var(--border-subtle)", color: "var(--accent)" }}
                       data-testid="preview-stand-restore-confirm"
                       disabled={wiederherstellenLaeuft}
@@ -351,7 +351,7 @@ export function MemoryPreview({ memory, onClose, onEdit }: MemoryPreviewProps) {
                     </button>
                     <button
                       onClick={() => setWiederherstellenOffen(false)}
-                      className="btn-ghost px-2 py-1 rounded-lg text-[11px]"
+                      className="btn-ghost px-2 py-1 rounded-lg fs-1"
                       data-testid="preview-stand-restore-cancel"
                     >
                       Cancel
@@ -359,12 +359,12 @@ export function MemoryPreview({ memory, onClose, onEdit }: MemoryPreviewProps) {
                   </div>
                 </div>
               )}
-              <article data-testid="preview-stand-text" className="text-[14px] leading-[1.75] whitespace-pre-wrap break-words" style={{ color: "var(--text-1)" }}>
+              <article data-testid="preview-stand-text" className="fs-4 leading-[1.75] whitespace-pre-wrap break-words" style={{ color: "var(--text-1)" }}>
                 {gewaehlterStand.content}
               </article>
             </>
           ) : (
-            <article data-testid="preview-text" className="text-[14px] leading-[1.75] whitespace-pre-wrap break-words" style={{ color: "var(--text-1)" }}>
+            <article data-testid="preview-text" className="fs-4 leading-[1.75] whitespace-pre-wrap break-words" style={{ color: "var(--text-1)" }}>
               {inhaltOhneQuelle(aktuellerInhalt) || aktuellerInhalt}
             </article>
           )}
@@ -375,7 +375,7 @@ export function MemoryPreview({ memory, onClose, onEdit }: MemoryPreviewProps) {
             {memory.tags.map((tag) => (
               <span
                 key={tag}
-                className="inline-flex items-center px-2 py-1 rounded-md text-[11px] font-medium border"
+                className="inline-flex items-center px-2 py-1 rounded-md fs-1 font-medium border"
                 style={{ color: "var(--text-2)", background: "var(--bg-inset)", borderColor: "var(--border-subtle)" }}
               >
                 {tag}
@@ -385,7 +385,7 @@ export function MemoryPreview({ memory, onClose, onEdit }: MemoryPreviewProps) {
           <div className="flex items-center gap-2 shrink-0">
             <button
               onClick={() => void texteKopieren()}
-              className="btn-ghost px-3 py-2 rounded-lg text-[12px] font-medium flex items-center gap-2"
+              className="btn-ghost px-3 py-2 rounded-lg fs-2 font-medium flex items-center gap-2"
               title="Copy the full text to the clipboard"
             >
               {kopiert ? <Check className="w-4 h-4" style={{ color: "var(--accent)" }} /> : <Copy className="w-4 h-4" />}
@@ -393,7 +393,7 @@ export function MemoryPreview({ memory, onClose, onEdit }: MemoryPreviewProps) {
             </button>
             <button
               onClick={() => onEdit(memory)}
-              className="btn-ghost px-3 py-2 rounded-lg text-[12px] font-medium flex items-center gap-2"
+              className="btn-ghost px-3 py-2 rounded-lg fs-2 font-medium flex items-center gap-2"
               style={{ border: "1px solid var(--border-subtle)", color: "var(--accent)" }}
             >
               <EditPen className="w-4 h-4" />
