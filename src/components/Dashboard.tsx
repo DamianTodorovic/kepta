@@ -33,7 +33,7 @@ import { KeptaMark } from './KeptaMark';
 import { Memory } from '../types';
 import { parseQuelle, oeffneQuelle, type Quelle } from '../lib/quelle';
 import { pdfTextAusBuffer } from '../lib/pdfText';
-import { TYP_BESCHREIBUNG, TRAEGER_FRAGE, TRAEGER_FRAGE_SATZ, THEMA_FRAGE, TRAEGER_LABELS, TRAEGER_REIHENFOLGE, TRAEGER_HINWEISE, THEMA_LABELS, THEMA_REIHENFOLGE, THEMA_HINWEISE, gruppenVonNotiz, zahlDerAuswahl, type Traeger, type Thema, type AchsenZahlen } from '../lib/graphHierarchy';
+import { TYP_BESCHREIBUNG, TRAEGER_FRAGE, TRAEGER_FRAGE_SATZ, THEMA_FRAGE, TRAEGER_LABELS, TRAEGER_REIHENFOLGE, TRAEGER_HINWEISE, THEMA_LABELS, THEMA_REIHENFOLGE, THEMA_HINWEISE, gruppenVonNotiz, themenFaecher, zahlDerAuswahl, type Traeger, type Thema, type AchsenZahlen } from '../lib/graphHierarchy';
 import { t, wendeZoomAn } from '../lib/uiText';
 import { Search, Plus, CheckCircle2, Copy, PanelLeftOpen, ScanSearch, UploadCloud, Globe, Loader2, AlertCircle, Sparkles, Trash2, HardDriveDownload, FileText, ExternalLink, ShieldCheck } from "../lib/icons";
 import { motion, AnimatePresence } from 'motion/react';
@@ -256,11 +256,16 @@ export function Dashboard() {
   // Fokuswechsel nachfragen, weil die Datei im Betrieb ergänzt werden kann.
   const [teamVorhanden, setTeamVorhanden] = useState(false);
   // Gruppierung der Liste: Alle (flach), Nach Datei, Nach Typ, Zeitraum.
-  const [gruppierung, setGruppierung] = useState<'alle' | 'datei' | 'typ' | 'zeitraum'>(() => {
+  // Punkt 5 / #63: "thema" ist die fuenfte Art und die neue Vorbelegung. Gemessen
+  // 5.11. 15:38:17 MEZ an seinem Bestand (21 064 Notizen): nur die Themen-Achse teilt in
+  // vier Faelle zwischen 7,90 und 48,38 %; der Traeger halbiert (51,08 / 48,48 %), und
+  // Tags sind Staub (95,17 % seiner Notizen tragen kein Wort, 30.10.). Eine eigene
+  // Vorbelegung hebt das auf -- ein gemachter Stand wird nicht umgestellt.
+  const [gruppierung, setGruppierung] = useState<'alle' | 'datei' | 'typ' | 'thema' | 'zeitraum'>(() => {
     try {
       const v = localStorage.getItem('ki_gehirn_gruppierung');
-      return v === 'datei' || v === 'typ' || v === 'zeitraum' ? v : 'alle';
-    } catch { return 'alle'; }
+      return v === 'datei' || v === 'typ' || v === 'zeitraum' || v === 'alle' ? v : 'thema';
+    } catch { return 'thema'; }
   });
   useEffect(() => {
     try { localStorage.setItem('ki_gehirn_gruppierung', gruppierung); } catch { /* ignore */ }
@@ -1347,6 +1352,16 @@ export function Dashboard() {
         else if (q?.art === 'url') hinueber(`url:${q.url}`, q.name, 'Web', q, m);
         else if (q?.art === 'inbox') hinueber(`inbox:${q.name}`, q.name, 'Inbox', null, m);
         else hinueber('ohne', t('list.noSource'), 'Handnotiz o. Agent', null, m);
+      } else if (effektivGruppierung === 'thema') {
+        // Dasselbe Fach fuer jedes Thema der Notiz -- die Seitenleisten-Zahl und der
+        // Gruppenkopf muessen dieselbe Menge zaehlen (`themenFaecher`, 5.11.).
+        for (const fach of themenFaecher(m)) {
+          if (fach === 'ohne-thema') hinueber('ohne-thema', t('list.noTopic'), 'nothing filed under a topic yet', null, m);
+          else {
+            const th = fach.slice(6) as Thema;
+            hinueber(fach, THEMA_LABELS[th] ?? th, THEMA_HINWEISE[th] ?? '', null, m);
+          }
+        }
       } else if (effektivGruppierung === 'typ') {
         const typ = m.type ?? 'semantic';
         hinueber(`typ:${typ}`, TYP_BESCHREIBUNG[typ] ?? typ, '', null, m);
@@ -1361,8 +1376,9 @@ export function Dashboard() {
     }
     const liste = [...map.values()];
     // „Ohne Quelle“ nach hinten; im Typ-/Zeitraum-Modus bleibt die Auffolge.
-    if (effektivGruppierung === 'datei') {
-      liste.sort((a, b) => (a.schluessel === 'ohne' ? 1 : 0) - (b.schluessel === 'ohne' ? 1 : 0));
+    if (effektivGruppierung === 'datei' || effektivGruppierung === 'thema') {
+      const hinten = effektivGruppierung === 'thema' ? 'ohne-thema' : 'ohne';
+      liste.sort((a, b) => (a.schluessel === hinten ? 1 : 0) - (b.schluessel === hinten ? 1 : 0));
     }
     for (const g of liste) {
       // Die Mischung unter einer Gruppe spricht die Menschensprache: erst der
@@ -2186,7 +2202,7 @@ export function Dashboard() {
                   </div>
 
                   <div className="apple-seg mb-3" role="group" aria-label="Grouping of the list">
-                    {([['alle', t('list.all')], ['datei', t('list.byFile')], ['typ', t('list.byType')], ['zeitraum', t('list.period')]] as const).map(([key, label]) => (
+                    {([['alle', t('list.all')], ['datei', t('list.byFile')], ['thema', t('list.byTopic')], ['typ', t('list.byType')], ['zeitraum', t('list.period')]] as const).map(([key, label]) => (
                       <button
                         key={key}
                         onClick={() => setGruppierung(key)}
@@ -2197,6 +2213,7 @@ export function Dashboard() {
                           ? 'Grouping is off while you search — results are ranked by relevance'
                           : key === 'alle' ? 'Flat grid, newest relevance first'
                           : key === 'datei' ? 'Group every piece under the file or link it came from'
+                          : key === 'thema' ? 'Group every piece under each topic it carries; a piece can stand in more than one topic, and the last group names the pieces without one'
                           : key === 'typ' ? Object.values(TYP_BESCHREIBUNG).join(' · ')
                           : 'Today, this week, older'}
                       >

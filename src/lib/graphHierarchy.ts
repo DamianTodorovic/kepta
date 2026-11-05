@@ -232,6 +232,22 @@ export function gruppenVonNotiz(m: { id?: string; title?: string; content?: stri
   return berechnet;
 }
 
+/**
+ * Die Faecher, in denen eine Notiz bei der Gruppierung "nach Thema" steht.
+ *
+ * Punkt 5 / #63, gemessen 5.11. 15:38:17 MEZ an seinem Bestand (21 064 Notizen, durch die
+ * eigne Tuer der laufenden Auslieferung): die Themen-Achse teilt in vier Faelle zwischen
+ * 7,90 und 48,38 %, und 3 156 Notizen (14,98 %) tragen kein Thema. Die Tuer zaehlt eine
+ * Notiz in JEDES ihrer Themen (server/router/memories.ts:299) -- gruppierte die Flaeche
+ * nur nach dem ersten, stuenden zwei Zahlen desselben Wortes da, ohne erklaerten
+ * Unterschied. Also: jedes Thema ein Fach, und das Fach ohne Thema ist benannt.
+ */
+export function themenFaecher(m: { title?: string; content?: string; tags?: readonly string[]; id?: string; updatedAt?: number }): string[] {
+  const g = gruppenVonNotiz(m);
+  if (!g.themen.length) return ["ohne-thema"];
+  return g.themen.map((t) => `thema:${t}`);
+}
+
 /** Die Menschenschrift fuer eine Notiz: "Files · People, Projects". Code hat keine Themen. */
 export function gruppenEtikett(m: { title?: string; content?: string; tags?: readonly string[] }): string {
   const g = gruppenVonNotiz(m);

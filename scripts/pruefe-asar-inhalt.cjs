@@ -913,6 +913,11 @@ const erwartet = [
   // Import-Quittung ihre eigne Zaehlung, und die Sonde faehrt jedes verbotene Muster in
   // beiden Anfangsformen. Gezaehlt am installierten 3.2.160 vor der Heilung: beide neuen
   // Saetze 0 mal.
+  // Punkt 5 / Aufgabe #63, 5.11. 15:38 MEZ an seinem Bestand (21 064 Notizen, durch die
+  // eigne Tuer gemessen): die Themen-Achse ist die einzige, die in vier Faelle zwischen
+  // 7,90 und 48,38 % teilt. Neu an der Flaeche: der Gruppenknopf und die benannte Gruppe.
+  ["By topic", 1],
+  ["No topic yet", 1],
   ["No note was written", 1],
   ["What is saved stays in your notes", 1],
   // Punkt 4 / Aufgabe #59, 4.11. 23:46 MEZ (3.2.152): die Herkunfts-Kante gilt an allen fuenf

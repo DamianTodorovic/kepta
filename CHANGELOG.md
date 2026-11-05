@@ -1,3 +1,35 @@
+## [3.2.162]
+
+### Added
+
+- **The list can group by topic, and the topic-less get a named drawer.** Measured 5.11.
+  15:38:17 to 15:38:59 MEZ against his own store, read through the delivered object's own
+  door (`127.0.0.1:55600`, PID 48641, ports held by `lsof`; aggregate counts only -- no note
+  content, no write, and `~/.kepta/kepta.db` was not opened): of 21 064 notes the topic axis
+  divides into four drawers between 7,90 % and 48,38 % (events 8 663 / 48,38 %, projects
+  3 985 / 22,25 %, links 3 197 / 17,85 %, guides 1 415 / 7,90 %), with people 340 (1,90 %)
+  and tasks 308 (1,72 %) below the band, and 3 156 notes (14,98 %) carrying no topic at all.
+  The carrier axis only halves the store (files 10 759 / 51,08 %, daten 10 211 / 48,48 %), and
+  tags are dust on his corpus (measured 30.10.: 95,17 % of his notes carry no word, biggest
+  drawer 0,35 % at median 1). Decided, because: grouping follows the axis that actually
+  divides, the carrier stays a filter, and the topic-less is a named group instead of a
+  remainder that sinks into the first drawer.
+- The grouping keys come from `themenFaecher` in `src/lib/graphHierarchy.ts`, which mirrors
+  the door's own rule (`server/router/memories.ts:299` counts a note in EVERY topic it
+  carries). Grouping by the first topic alone would have left two numbers for one word --
+  the sidebar axis count and the group header -- with an unexplained difference. Four cases
+  in `tests/lib/themen-faecher.test.ts`: every topic becomes its own key, no topic is lost,
+  no key is duplicated, and an empty note still lands in the named drawer.
+- Default for a fresh profile is "By topic". A saved choice always wins: a stand somebody
+  made is not moved by a wave.
+
+### Changed
+
+- The window checker drives the new control in a real viewport (`gruppethema`): the button
+  must carry its visible name and remember its state, heads must be painted, and the
+  "No topic yet" drawer must appear exactly when the door reports a number for it -- a
+  ladder that fails in both directions.
+
 ## [3.2.161]
 
 ### Fixed

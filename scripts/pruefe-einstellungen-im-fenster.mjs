@@ -1567,6 +1567,39 @@ async function main() {
     console.log(`  Bild: ${await bild(`import-wurf-${breitIst}px.png`)}`);
   }
 
+  // --- Punkt 5 / #63: die neue Themen-Gruppierung im echten Fenster (Zyklus `gruppethema`) ---
+  if (NUR === "" || NUR === "gruppethema") {
+    const gesprungen = await evaliere(cdp, `(()=>{const b=[...document.querySelectorAll('.sidebar-nav-btn')]
+      .find(x=>/^\s*Knowledge\s*$/.test((x.textContent||'').trim()));
+      if(!b) return 'kein Seitenleisten-Knopf Knowledge'; b.click(); return (b.textContent||'').trim();})()`);
+    console.log(`  Sprung nach: ${gesprungen}`);
+    await schlafe(1200);
+    const knopftext = await evaliere(cdp, `(()=>{const b=[...document.querySelectorAll('.apple-seg-btn')]
+      .find(x=>/^\s*By topic\s*$/.test((x.textContent||'').trim()));
+      if(!b) return 'kein Knopf "By topic"'; b.click(); return (b.textContent||'').trim();})()`);
+    console.log(`  Gruppenknopf: ${JSON.stringify(knopftext)}`);
+    urteil("**die Flaeche hat ein benanntes Steuer fuer die Themen-Gruppierung**", knopftext, "By topic");
+    await schlafe(1200);
+    const lage = await evaliere(cdp, `(()=>{const b=[...document.querySelectorAll('.apple-seg-btn')]
+      .find(x=>/^\s*By topic\s*$/.test((x.textContent||'').trim()));return b?b.getAttribute('data-on'):'kein Knopf'})()`);
+    urteil("**und das Steuer merkt sich den Stand**", lage, "true");
+    // Kopf und Zahl kommen aus derselben Quelle wie die Achsenzahl an der Seitenleiste:
+    // die Tuer nennt `ohneThema`. Ist dort eine Zahl, muss die Flaeche ein benanntes Fach
+    // malen -- kein Rest, der in der ersten Gruppe versickert, und keine Gruppe ohne Grund.
+    const tuer = await evaliere(cdp, `(async()=>{const r=await fetch('/api/memories/gruppen');const d=await r.json();return {ohneThema:d.ohneThema, bestand:d.bestand, themen:Object.entries(d.themen||{})}})()`);
+    const koepfe = await evaliere(cdp, `(()=>[...document.querySelectorAll('h3')].map((h)=>(h.textContent||'').replace(/\\s+/g,' ').trim()).filter((t)=>t&&t.length<48))()`);
+    const Liste = Array.isArray(koepfe) ? koepfe : [];
+    console.log(`  Tuer: ohneThema ${tuer ? tuer.ohneThema : "keine Lesung"} von ${tuer ? tuer.bestand : "?"} — Faelle: ${Liste.join(" | ") || "keine"}`);
+    urteil("**die Themen-Gruppierung malt Koepfe, keine flache Liste**", Liste.length > 0, true);
+    const hatOhneFach = Liste.some((k) => /No topic yet/i.test(k));
+    urteil("**das Fach ohne Thema erscheint genau dann, wenn die Tuer eine Zahl dafuer hat**",
+      hatOhneFach, tuer ? Number(tuer.ohneThema) > 0 : null);
+    const Achsen = ["People", "Projects", "Events", "Tasks", "Guides", "Links"];
+    urteil("**und ein Kopf nennt eine der sechs Achsen**", Achsen.some((a) => Liste.some((k) => k.startsWith(a))), true);
+    const breitIst = Number(await evaliere(cdp, `window.innerWidth`));
+    console.log(`  Bild: ${await bild(`gruppethema-${breitIst}px.png`)}`);
+  }
+
   console.log(fehl ? `  ${fehl} Pruefung(en) fehlgeschlagen` : "  alle Zyklen durch: Wert gesetzt, Fenster neu geladen, Wirkung gesehen");
   return fehl ? 1 : 0;
 }
