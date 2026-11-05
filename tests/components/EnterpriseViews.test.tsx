@@ -539,3 +539,61 @@ describe("Seitenleiste", () => {
     expect(screen.queryByText(/unlimited|key|limit/i)).toBeNull();
   });
 });
+
+// P61 (Leitung 5.11. 09:40:44 MEZ, Punkt 4, die andre Richtung der Herkunfts-Kante): der
+// Audit-Export warf `Error("HTTP " + status)` in einen Fang, dessen Satz die Zahl nicht
+// nennt -- und behauptete zusaetzlich, der Grund stehe in der Entwickler-Konsole, obwohl die
+// eigne Tuer ihn auf der Flaeche haelt. Faelle zuerst: der Zahl-Fall ist vor dem Flicken rot,
+// die Kontrolle ist in beiden Staenden gruen.
+describe("P61: ein abgelehnter Audit-Export nennt die Zahl der eignen Tuer", () => {
+  async function auditOffnen() {
+    const user = userEvent.setup();
+    mitToast(<ActivityView aktiv onOpenMemory={vi.fn()} />);
+    await user.click(screen.getByRole("tab", { name: "Audit log" }));
+    await screen.findByTestId("audit-list");
+    return user;
+  }
+
+  it("nennt die 500 der Export-Tuer auf dem Schirm", async () => {
+    stubFetch({
+      "/api/agents": { body: { entries: [], agents: [] } },
+      "/api/clients": { body: { clients: [] } },
+      // ein Eintrag, sonst malt die Flaeche ihr Feld nicht und der Weg endet vor der Absage
+      "/api/audit": { body: { entries: [{ id: 1, at: Date.now(), actor: "You", action: "save", target: "Notiz", detail: null }], more: false, actors: ["You"], actions: ["save"] } },
+      "/api/audit/export.csv": { status: 500, body: { error: "storage unreadable" } },
+    });
+    const user = await auditOffnen();
+    await user.click(screen.getByRole("button", { name: /Export CSV/i }));
+    const grund = await waitFor(() => {
+      const t = document.body.textContent || "";
+      if (!/export did not run/i.test(t)) throw new Error(`die Absage fehlt: "${t.slice(0, 240)}"`);
+      return t.replace(/\s+/g, " ");
+    });
+    expect(grund, "500 ist eine Antwort der eignen Tuer — sie gehoert auf den Schirm").toMatch(/HTTP 500/);
+    expect(grund, "und der Satz verweist nicht mehr auf die Konsole, wenn die Zahl hier steht").not.toMatch(/developer console/i);
+  });
+
+  // KONTROLLE, in beiden Staenden gruen: ohne Antwort darf die Zeile weder eine Zahl erfinden
+  // noch das Wort des Browsers zeigen.
+  it("KONTROLLE: ein Export ohne jede Antwort bleibt ohne Zahl und ohne Fremd-Wortlaut", async () => {
+    // Ein Eintrag in der Liste, sonst ist das Blatt leer und der Pruefweg findet sein Feld
+    // nicht — der erste Versuch scheiterte an diesem Grund, nicht an der Absage.
+    vi.stubGlobal("fetch", vi.fn(async (url: string) => {
+      const ziel = String(url);
+      if (ziel.includes("/api/audit/export.csv")) throw new TypeError("Failed to fetch");
+      if (ziel.includes("/api/agents")) return new Response(JSON.stringify({ entries: [], agents: [] }), { status: 200 });
+      if (ziel.includes("/api/clients")) return new Response(JSON.stringify({ clients: [] }), { status: 200 });
+      if (ziel.includes("/api/audit")) return new Response(JSON.stringify({ entries: [{ id: 1, at: Date.now(), actor: "You", action: "save", target: "Notiz", detail: null }], more: false, actors: ["You"], actions: ["save"] }), { status: 200 });
+      return new Response(JSON.stringify({ ok: true }), { status: 200 });
+    }));
+    const user = await auditOffnen();
+    await user.click(screen.getByRole("button", { name: /Export CSV/i }));
+    const grund = await waitFor(() => {
+      const t = document.body.textContent || "";
+      if (!/export did not run/i.test(t)) throw new Error(`die Absage fehlt: "${t.slice(0, 240)}"`);
+      return t.replace(/\s+/g, " ");
+    });
+    expect(grund).not.toMatch(/HTTP \d/);
+    expect(grund, "der Browser-Wortlaut bleibt beim Betreiber").not.toMatch(/Failed to fetch/i);
+  });
+});

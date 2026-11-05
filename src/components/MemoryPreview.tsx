@@ -8,6 +8,8 @@ import { formatDistanceToNow } from "date-fns";
 import { Memory } from "../types";
 import { FileText, ExternalLink, EditPen, Copy, Check, Lock, Bot } from "../lib/icons";
 import { useToast } from "./ui/Toast";
+import { ApiFehler } from "../lib/api";
+import { absage } from "../lib/absage";
 import { TYP_BESCHREIBUNG } from "../lib/graphHierarchy";
 import { t } from "../lib/uiText";
 import { inhaltOhneQuelle, oeffneQuelle, parseChunkTitel, parseQuelle } from "../lib/quelle";
@@ -110,7 +112,8 @@ export function MemoryPreview({ memory, onClose, onEdit }: MemoryPreviewProps) {
         `/api/memories/${encodeURIComponent(memory.id)}/stande/${gewaehlterStand.id}/restore`,
         { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ confirm: "restore" }) },
       );
-      if (!r.ok) throw new Error(`HTTP ${r.status}`);
+      // P61: die Antwort der Tuer verliert ihre Zahl nicht mehr in einem grundlosen Fang.
+      if (!r.ok) throw new ApiFehler(`HTTP ${r.status}`, r.status);
       const d = (await r.json()) as { memory?: { content?: string } };
       if (typeof d.memory?.content === "string") setAktuellerInhalt(d.memory.content);
       setGewaehlterStand(null);
@@ -121,8 +124,10 @@ export function MemoryPreview({ memory, onClose, onEdit }: MemoryPreviewProps) {
         if (Array.isArray(d2.staende)) setStaende(d2.staende);
       }
       toast.push({ message: "Restored. The replaced text is kept as an earlier stand.", kind: "success" });
-    } catch {
-      toast.push({ message: "Restore failed. Nothing was changed.", kind: "warn" });
+    } catch (e: unknown) {
+      // P61: derselbe Satz, aber mit dem Grund, den die Tuer gab — oder mit der Stille, wenn
+      // niemand antwortete. Beides entscheidet src/lib/absage.ts, nicht diese Zeile.
+      toast.push({ message: absage("Restore failed. Nothing was changed.", e), kind: "warn" });
     } finally {
       setWiederherstellenLaeuft(false);
     }

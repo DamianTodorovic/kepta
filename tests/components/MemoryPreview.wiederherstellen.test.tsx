@@ -136,3 +136,49 @@ describe("Flaeche: einen Stand zur aktuellen Fassung machen", () => {
     expect(screen.getByTestId("preview-text").textContent).toBe("Der aktuelle Text");
   });
 });
+
+// P61 (Leitung 5.11. 09:40:44 MEZ, Punkt 4): der Wiederherstellungs-Weg fing jeden Fehler mit
+// `catch { toast("Restore failed. Nothing was changed.") }` — ohne Grund, ohne Zahl, und ohne
+// Unterschied zwischen "die Tuer lehnte ab" und "es antwortete niemand". Die Quittung nennt
+// seitdem beides: die Zahl der eignen Tuer, oder die Stille.
+describe("P61: die Wiederherstellungs-Quittung nennt, was die Tuer tat", () => {
+  async function bisBestaetigung(fetchMock: ReturnType<typeof vi.fn>) {
+    vi.stubGlobal("fetch", fetchMock);
+    render(<MemoryPreview memory={mem()} onClose={() => {}} onEdit={() => {}} />);
+    const user = userEvent.setup();
+    await user.click(await screen.findByTestId("preview-stands-open", {}, { timeout: 1500 }));
+    await user.click(screen.getAllByTestId("preview-stand-row")[0]);
+    await user.click(screen.getByRole("button", { name: /restore this stand/i }));
+    await user.click(screen.getByRole("button", { name: /restore to this version/i }));
+    await waitFor(() => expect(toastPush).toHaveBeenCalled());
+    return String(toastPush.mock.calls[0][0]?.message ?? "");
+  }
+
+  const staende = () => new Response(JSON.stringify({ count: 1, total: 1, limit: 20, offset: 0, begrenzt: false, hinweis: "", staende: [stand(1, "Der alte Text")] }), { status: 200 });
+
+  it("nennt die 500 der Schreib-Tuer in der Quittung", async () => {
+    const meldung = await bisBestaetigung(vi.fn(async (url: RequestInfo | URL, init?: RequestInit) => {
+      const u = String(url);
+      if (String(init?.method ?? "GET").toUpperCase() === "POST") return new Response(JSON.stringify({ error: "storage unreadable" }), { status: 500 });
+      if (u.includes("/stande")) return staende();
+      return new Response(JSON.stringify({ readers: [] }), { status: 200 });
+    }));
+    expect(meldung, "500 ist eine Antwort der eignen Tuer — die Zahl gehoert in die Quittung").toMatch(/HTTP 500/);
+    expect(meldung).toMatch(/Restore failed\. Nothing was changed\./);
+  });
+
+  // KONTROLLE, in beiden Staenden gruen: ohne Antwort erfindet die Quittung keine Zahl und
+  // zeigt nicht das Wort des Browsers. Die Unterscheidung Stille/Abweisung liegt an der Zahl,
+  // nicht an einem Wort -- ein erfundnes "did not answer" waehre eine zweite Behauptung.
+  it("KONTROLLE: ein Abbruch ohne Antwort bleibt ohne Zahl und ohne Fremd-Wortlaut", async () => {
+    const meldung = await bisBestaetigung(vi.fn(async (url: RequestInfo | URL, init?: RequestInit) => {
+      const u = String(url);
+      if (String(init?.method ?? "GET").toUpperCase() === "POST") throw new TypeError("Failed to fetch");
+      if (u.includes("/stande")) return staende();
+      return new Response(JSON.stringify({ readers: [] }), { status: 200 });
+    }));
+    expect(meldung, "Stille hat keine Zahl").not.toMatch(/HTTP \d/);
+    expect(meldung, "und ihr Wortlaut bleibt im Protokoll").not.toMatch(/Failed to fetch/i);
+    expect(meldung, "der feste Satz bleibt der feste Satz").toMatch(/Restore failed\. Nothing was changed\./);
+  });
+});

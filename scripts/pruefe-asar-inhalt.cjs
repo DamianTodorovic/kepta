@@ -883,6 +883,13 @@ const erwartet = [
   // Gezaehlt am gebauten Renderer (dist/assets, 06:11 MEZ): die kurze Zahl bleibt **1** mal,
   // der Rat ist **1** mal neu, die alte Lange in der Kopfzeile ist **0** mal.
   ["Name a claim in a note to put a word on a line", 1],
+  // Punkt 4 / Aufgabe #60, 5.11. 09:47 MEZ (3.2.153): die Gesundheits-Tuer nennt ihre Zahl, und
+  // die Zeile, die den Grund traegt, wird gemalt. Gezaehlt am installierten 3.2.152 (app.asar
+  // 49 200 848 B, 09:46:35 MEZ, bytes.count() in latin1): "The health check did not arrive" **0**
+  // mal, "settings-health-grund" **0** mal. Die Marke ist die Zeile selbst, nicht das Wort: ein
+  // Zustand, den keine Flaeche malt, ist im Objekt unsichtbar und darum keine Pruefung.
+  ["The health check did not arrive", 1],
+  ["settings-health-grund", 1],
   // Punkt 4 / Aufgabe #59, 4.11. 23:46 MEZ (3.2.152): die Herkunfts-Kante gilt an allen fuenf
   // Absage-Stellen, nicht nur im Helfer. Gezaehlt am installierten 3.2.151 (app.asar
   // 49 200 864 B, mtime 22:26:45 MEZ, bytes.count() in latin1): "the wording of this thrower
@@ -941,6 +948,13 @@ const verboten = [
   // die neue 1 mal. Der Inhaltsgate hat den Bruch selbst gemeldet (FEHLT 0, INHALT_EXIT=1),
   // bevor etwas getauscht wurde -- dafuer sitzt er in der Kette.
   "is painted in the first group",
+  // Punkt 4 / Aufgabe #60 (3.2.153): "did not answer" war eine Behauptung ueber die eigne Tuer,
+  // wo sie 503 antwortete -- der Grund fiel unter den Tisch, weil ein kahler Error dem
+  // Absage-Helfer ein Fremder ist. Gezaehlt am installierten 3.2.152: **1** mal; am gebauten
+  // 3.2.153: **0** mal. Ebenso die Ausrede, der Grund stehe in der Entwickler-Konsole, waehrend
+  // die eigne Zahl auf der Flaeche stehen darf (Export, 1 mal alt).
+  "The health check did not answer",
+  "the reason is in the developer console",
 ];
 // Die Liste darf nur ASCII-Zeichen enthalten. Grund, gemessen 21.10. 19:16 MESZ am
 // installierten Objekt: das Wort "Looking" plus echtes U+2026 steht dort 2 mal, diese

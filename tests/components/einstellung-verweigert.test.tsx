@@ -99,3 +99,97 @@ describe("Punkt 4: eine abgewiesene Einstellung darf nicht gespeichert aussehen"
     expect(grund).toMatch(/503|did not arrive|did not answer/i);
   });
 });
+
+// P61 (Leitung 5.11. 09:39:53 MEZ, Punkt 4) — die ANDRE Richtung derselben Kante. 3.2.152 hielt
+// den Wortlaut eines Fremden von der Flaeche zurueck. Vier Stellen warfen aber einen kahlen
+// `Error("HTTP " + status)` in einen Fang, der mit `absage` einen Satz fuer STILLE malt:
+// Settings.tsx:411 (Gesundheit), Settings.tsx:421 (Werkzeugliste), ActivityView.tsx:216
+// (Audit-Export), MemoryPreview.tsx:113 (Stand zurueckholen). Die Tuer hatte geantwortet — 503,
+// 429, 500 — und ihre Zahl fiel unter den Tisch, waehrend der Satz behauptete, sie habe nicht
+// geantwortet. Das ist eine falsche Auskunft ueber den Zustand der eignen Tuer, nicht nur eine
+// fehlende Zahl.
+//
+// Faelle zuerst, gefahren: 3 rot bei 4 gruen (09:39:53 gesetzt, direkt danach gelesen). Die
+// Messung des ganzen Rot-Stands liegt in /tmp/red-p61.json (mtime 09:40:44 MEZ). Erwartung VOR
+// dem Flicken: die vier Zahl-Faelle rot (kein HTTP-Wert auf dem
+// Schirm) und der Gesundheits-Stille-Fall rot (der Satz behauptet Stille, wo er Ankuft sagen
+// muss). Die Kontrollen sind in beiden Staenden gruen und verhindern, dass die Heilung den
+// rohen Wortlaut eines Fremden durchlaesst.
+describe("P61: eine Antwort der Tuer heisst nicht Stille", () => {
+  /** Die Geraete-Schublade ist die einzige Flaeche, die diese zwei Türen fragt. */
+  async function schublade() {
+    const user = userEvent.setup();
+    render(<ToastProvider><Settings /></ToastProvider>);
+    await waitFor(() => expect(document.body.textContent).toMatch(/AI & data/));
+    await user.click(screen.getByRole("button", { name: /MCP \/ API/i }));
+    return user;
+  }
+
+  it("nennt die 503 der Gesundheits-Tuer, statt zu behaupten, sie habe nicht geantwortet", async () => {
+    vi.stubGlobal("fetch", vi.fn(async (url: string) => {
+      const ziel = String(url);
+      if (ziel.includes("/api/health")) return new Response(JSON.stringify({ error: "store busy" }), { status: 503 });
+      if (ziel.includes("/api/mcp/tools")) return new Response(JSON.stringify({ tools: [] }), { status: 200 });
+      return new Response(JSON.stringify({ ok: true }), { status: 200 });
+    }));
+    await schublade();
+    const grund = await waitFor(() => {
+      const t = document.body.textContent || "";
+      if (!/health check/i.test(t)) throw new Error(`die Zeile fehlt: "${t.slice(0, 240)}"`);
+      return t.replace(/\s+/g, " ");
+    });
+    expect(grund, "503 ist eine Antwort — die Zahl gehoert auf den Schirm").toMatch(/HTTP 503/);
+    expect(grund, "und der Satz darf keine Stille behaupten, wo eine Antwort stand").not.toMatch(/did not answer/i);
+  });
+
+  it("sagt die Stille der Gesundheits-Tuer als Stille, ohne das Wort des Browsers", async () => {
+    vi.stubGlobal("fetch", vi.fn(async (url: string) => {
+      const ziel = String(url);
+      if (ziel.includes("/api/health")) throw new TypeError("Failed to fetch");
+      if (ziel.includes("/api/mcp/tools")) return new Response(JSON.stringify({ tools: [] }), { status: 200 });
+      return new Response(JSON.stringify({ ok: true }), { status: 200 });
+    }));
+    await schublade();
+    const grund = await waitFor(() => {
+      const t = document.body.textContent || "";
+      if (!/health check did not/i.test(t)) throw new Error(`die Stille wird nicht gemeldet: "${t.slice(0, 240)}"`);
+      return t.replace(/\s+/g, " ");
+    });
+    expect(grund, "ohne Antwort heisst die Zeile Ankuft, nicht Antwort").toMatch(/did not arrive/i);
+    expect(grund, "und ihr Wortlaut bleibt im Protokoll").not.toMatch(/Failed to fetch/i);
+  });
+
+  it("nennt die 429 der Werkzeug-Tuer, statt den Grund fallen zu lassen", async () => {
+    vi.stubGlobal("fetch", vi.fn(async (url: string) => {
+      const ziel = String(url);
+      if (ziel.includes("/api/health")) return new Response(JSON.stringify({ ok: true, count: 0 }), { status: 200 });
+      if (ziel.includes("/api/mcp/tools")) return new Response(JSON.stringify({ error: "Write limit" }), { status: 429 });
+      return new Response(JSON.stringify({ ok: true }), { status: 200 });
+    }));
+    await schublade();
+    const grund = await waitFor(() => {
+      const t = document.body.textContent || "";
+      if (!/tool list could not be read/i.test(t)) throw new Error(`die Absage fehlt: "${t.slice(0, 240)}"`);
+      return t.replace(/\s+/g, " ");
+    });
+    expect(grund, "429 ist eine Antwort der eignen Tuer und darf nicht als Grundlos enden").toMatch(/HTTP 429/);
+  });
+
+  // KONTROLLE, in beiden Staenden gruen: die Heilung darf den Fremden nicht durchlassen.
+  it("KONTROLLE: ein Abbruch ohne Antwort bleibt ohne Zahl und ohne Wort des Browsers", async () => {
+    vi.stubGlobal("fetch", vi.fn(async (url: string) => {
+      const ziel = String(url);
+      if (ziel.includes("/api/health")) return new Response(JSON.stringify({ ok: true, count: 0 }), { status: 200 });
+      if (ziel.includes("/api/mcp/tools")) throw new TypeError("Failed to fetch");
+      return new Response(JSON.stringify({ ok: true }), { status: 200 });
+    }));
+    await schublade();
+    const grund = await waitFor(() => {
+      const t = document.body.textContent || "";
+      if (!/tool list could not be read/i.test(t)) throw new Error(`die Absage fehlt: "${t.slice(0, 240)}"`);
+      return t.replace(/\s+/g, " ");
+    });
+    expect(grund, "Stille hat keine Zahl").not.toMatch(/HTTP \d/);
+    expect(grund, "und kein Wort von aussen").not.toMatch(/Failed to fetch/i);
+  });
+});

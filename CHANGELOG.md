@@ -1,3 +1,32 @@
+## [3.2.153]
+
+### Fixed
+
+- **An answered door is not silence.** Four places threw a bare `Error("HTTP " + status)` into a
+  catch whose sentence was written for *no answer at all*, so the number was dropped and the
+  surface claimed a state it did not have: `Settings.tsx:411` (health), `Settings.tsx:421` (the
+  tool list), `ActivityView.tsx:216` (audit CSV export), `MemoryPreview.tsx:113` (restore a
+  stand). They throw `ApiFehler` — our own type for our own answer — and the sentences now name
+  what is missing ("did not arrive", "did not run") instead of denying a reply. The export line
+  no longer sends the reader to the developer console for a number the door wrote itself.
+- **The health reason was a state no surface painted.** `healthError` decided a colour and the
+  single word "offline"; the sentence built for it was never rendered. It is a line now
+  (`data-testid="settings-health-grund"`), so 503 and "nobody answered" are two different things
+  on the screen, and a reason that exists is a reason a person can read.
+
+### Tests
+
+Eight cases in three files, run red first at 09:39:53-09:40:44 MEZ (3 red in the settings file,
+4 red in the other two; `/tmp/red-p61.json`), green at 09:46 after the cut. Two of them are
+controls that stay green on both sides — they are what stops the cure from inventing a number for
+a silent door or letting a browser's wording through. Suite: 3488 cases in 329 files, verdict run
+green with EXIT 0.
+
+### Also
+
+`README.md` names 3488 (badge, prose, command comment); the content gate carries the two new
+markers and forbids both replaced wordings, counted against the installed 3.2.152 at 09:46:35 MEZ.
+
 ## [3.2.152]
 
 ### Fixed

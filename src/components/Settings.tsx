@@ -408,17 +408,22 @@ export function Settings() {
     (async () => {
       try {
         const r = await fetch(`${API_BASE}/api/health`);
-        if (!r.ok) throw new Error(`HTTP ${r.status}`);
+        // P61: die eigne Antwort in der eigner Unterschrift. Ein kahler Error("HTTP 503") war
+        // dem Absage-Helfer ein Fremder, also fiel die Zahl unter den Tisch -- und der Satz
+        // behauptete Stille, wo die Tuer geantwortet hatte.
+        if (!r.ok) throw new ApiFehler(`HTTP ${r.status}`, r.status);
         const d = await r.json();
         if (!cancelled) { setHealth(d); setHealthError(null); }
       } catch (e: unknown) {
-        if (!cancelled) setHealthError(absage("The health check did not answer. Your notes are safe.", e));
+        // "did not arrive" nennt, WAS fehlt; die Klammer sagt, ob die Tuer antwortete.
+        if (!cancelled) setHealthError(absage("The health check did not arrive. Your notes are safe.", e));
       }
       // Dieselbe Tür, die auch die Agenten lesen: was sie advertiert, wird
       // gezeigt. Ein Fetch, ein Tab — und keine Zahl, die die Fläche erfindet.
       try {
         const t = await fetch(`${API_BASE}/api/mcp/tools`);
-        if (!t.ok) throw new Error(`HTTP ${t.status}`);
+        // P61: dieselbe Trennung — eine Abweisung nennt ihre Zahl, ein Abbruch bleibt ohne.
+        if (!t.ok) throw new ApiFehler(`HTTP ${t.status}`, t.status);
         const d = await t.json();
         const liste = Array.isArray((d as { tools?: unknown })?.tools) ? (d as { tools: McpWerkzeug[] }).tools : null;
         if (!cancelled) {
@@ -1245,6 +1250,14 @@ export function Settings() {
                   <ExternalLink className="w-4 h-4" />
                 </a>
               </div>
+              {/* P61: `healthError` war ein Zustand, den niemand las — die Zeile sagte nur
+                  "offline", ob die Tuer 503 antwortete oder gar nicht. Ein Grund, den keine
+                  Flaeche malt, ist kein Grund, sondern Buchfuehrung. */}
+              {healthError && (
+                <p data-testid="settings-health-grund" className="text-xs mt-2 flex items-start gap-2" style={{ color: 'var(--warn)' }}>
+                  <AlertTriangle className="w-3.5 h-3.5 shrink-0 mt-0.5" /> {healthError}
+                </p>
+              )}
               <p className="text-xs mt-2" style={{ color: 'var(--text-3)' }}>
                 Running locally ({API_BASE || 'this origin'}). By default the server binds to 127.0.0.1 only — change that with <code>KEPTA_HOST</code>.
               </p>

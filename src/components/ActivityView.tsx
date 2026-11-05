@@ -213,7 +213,8 @@ function Protokoll() {
   const exportieren = async () => {
     try {
       const r = await fetch(`/api/audit/export.csv?${filter()}`);
-      if (!r.ok) throw new Error(`HTTP ${r.status}`);
+      // P61: die Zahl der eignen Tuer in der eigner Unterschrift, sonst endet die Absage grundlos.
+      if (!r.ok) throw new ApiFehler(`HTTP ${r.status}`, r.status);
       const url = URL.createObjectURL(await r.blob());
       const a = document.createElement('a');
       a.href = url;
@@ -223,7 +224,9 @@ function Protokoll() {
       document.body.removeChild(a);
       URL.revokeObjectURL(url);
     } catch (e) {
-      setFehler(absage("The export did not run. Your notes were not changed — the reason is in the developer console.", e));
+      // P61: der Verweis auf die Konsole ist eine Ausrede, seit die eigne Zahl auf der Flaeche
+      // stehen darf; was in der Konsole bleibt, ist der Wortlaut eines Fremden.
+      setFehler(absage("The export did not run. Your notes were not changed.", e));
     }
   };
 
