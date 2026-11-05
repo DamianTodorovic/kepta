@@ -860,6 +860,10 @@ const erwartet = [
   // ("datum", die Weiche fiel auf `default: return ""`). Die Erklaerung ist jetzt Text,
   // 12 Woerter, und der neue Zyklus `erklaerungen` meldet jedes stumme Glied beim Namen.
   ["The day the picture is read from", 1],
+  // P81b (3.2.171): die zweite stumme Menue-Stelle, bei 390 px gefunden (gemessen
+  // 6.11.2026 00:19:31 MEZ: 17 Glieder, `zeitregler` ohne Auskunft; am installierten
+  // 3.2.170 stand der neue Satz dort 0 mal). Gezaehlt am installierten 3.2.171: 1 mal.
+  ["right is today, applied on release", 1],
   // Punkt 4, 3.11. abend (3.2.130, Aufgabe #47): ein Import-Fehler druckte den
   // Ausnahmewortlaut auf den Knopf, im Testlauf samt Pfad. Nach aussen geht jetzt ein
   // fester Satz. Gegen das installierte 3.2.129 gezaehlt (app.asar 49 184 866 B,
