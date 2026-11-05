@@ -1,0 +1,306 @@
+  Bilder-Ziel: /Users/damiantodorovic/Desktop/ki gehirn/audit-2026-10-09/feldzug/belege-0511/fenster-154
+  ok    Artefakte bytegleich mit dem installierten Objekt: 5 (erwartet 5)
+  Bundel: 5 Stuecke geprueft, Version laut Baum 3.2.154
+  Diener: Version 3.2.154, Bestand 0 (eigne Kapsel, Verschluesselung aus)
+  Assistent: Weg ueber "Later"; Schirm danach zu
+  ok    die Saat geht durch die echte Import-Tuer: true (erwartet true)
+  ok    der Bestand zaehlt die Saat: true (erwartet true)
+  Bestand nach der Saat: 30
+  ok    beim ersten Oeffnen steht der erste Schirm: "AI & data" (erwartet "AI & data")
+  ok    der Klick oeffnet die Geraete-Sync: "Device Sync" (erwartet "Device Sync")
+  ok    die Sync-Abfrage ist wirklich zu sehen: true (erwartet true)
+  Bild: /tmp/kepta-fenster/bilder/vor-dem-neuladen.png
+  ok    der Wert liegt im Speicher: "sync" (erwartet "sync")
+  ok    **nach dem Neuladen steht wieder derselbe Schirm offen**: "Device Sync" (erwartet "Device Sync")
+  ok    und die Abfrage ist wieder gemalt: true (erwartet true)
+  Bild: /tmp/kepta-fenster/bilder/nach-dem-neuladen.png
+  ok    ein Klick auf den mittleren Schirm wird ebenso gemerkt: "MCP / API" (erwartet "MCP / API")
+  ok    **der alte Name hebt den Wert herueber**: "Device Sync" (erwartet "Device Sync")
+  ok    und der neue Name traegt ihn: "sync" (erwartet "sync")
+  ok    **der alte Name ist danach leer — im Browser**: null (erwartet null)
+  Bild: /tmp/kepta-fenster/bilder/uebertrag-alter-name.png
+  ok    Vorbedingung: der System-Schirm ist offen: "AI & data" (erwartet "AI & data")
+  ok    die Textgroesse-Steuerung ist da: true (erwartet true)
+  vorher: zoom 1, Breite 1440, Wert null
+  nachher: zoom 1.3, Breite 1108, Wert 130
+  ok    der Wert ist gesetzt: "130" (erwartet "130")
+  ok    und das Blatt malt einen andern Zoom: true (erwartet true)
+  ok    die Gegenbreite haelt den Text im Fenster: true (erwartet true)
+  Bild: /tmp/kepta-fenster/bilder/textgroesse-vor-neuladen.png
+  ok    **nach dem Neuladen malt das Blatt denselben Zoom**: "1.3" (erwartet "1.3")
+  ok    und der Wert ist nicht weg: "130" (erwartet "130")
+  ok    die Steuerung zeigt ihn auch: "130" (erwartet "130")
+  Bild: /tmp/kepta-fenster/bilder/textgroesse-nach-neuladen.png
+  ok    und zurueck auf 100 ist der Zoom wieder einer: true (erwartet true)
+  ok    mit allen Spuren findet die Flaeche etwas: true (erwartet true)
+  ok    alle drei Spuren sind aus: [true,true,true] (erwartet [true,true,true])
+  Zeilen: alle Spuren an -> 5, alle drei aus -> 0
+  ok    **ohne jede Spur findet die Flaeche nichts**: 0 (erwartet 0)
+  ok    **nach dem Neuladen stehen alle drei noch auf aus**: ["0","0","0"] (erwartet ["0","0","0"])
+  ok    und die Flaeche findet weiterhin nichts: 0 (erwartet 0)
+  ok    die eine Spur wieder an, und die Liste füllt sich: true (erwartet true)
+  Zeilen mit nur BM25: 5
+  Bild: /tmp/kepta-fenster/bilder/spuren-nur-bm25.png
+  ok    die Trefferzahl-Stufe ist da: "0" (erwartet "0")
+  Zeilen: ohne Kappe 5, auf Stufe 5 5
+  ok    **auf Stufe 5 zeigt die Liste fuenf, nicht was die Tuer bringt**: 5 (erwartet 5)
+  ok    **der Streifen sagt, wie viel passt, nicht nur, was kam**: true (erwartet true)
+  ok    und die Liste nennt ihren Rueckweg: true (erwartet true)
+  Bild: /tmp/kepta-fenster/bilder/trefferstufe-5.png
+  ok    die letzte Stufe heisst alles: "6" (erwartet "6")
+  ok    und die Liste zeigt wieder alles: 30 (erwartet 30)
+  ok    mehr als unter der Kappe: true (erwartet true)
+  ok    **nach dem Neuladen steht die Stufe noch auf alles**: "0" (erwartet "0")
+  ok    und die Liste zeigt dieselbe Zahl: 30 (erwartet 30)
+  ok    wieder auf 5, greift die Kappe erneut: 5 (erwartet 5)
+  ok    die Tiefe geht auf den kleinsten Wert: "5" (erwartet "5")
+  ok    und auf den groessten: "32" (erwartet "32")
+  Tiefe 5: "5 of 30 hits" / 5 Karten — Tiefe 32: "30 hits" / 5 Karten
+  ok    **die Tiefe aendert, was die Tuer bringt**: true (erwartet true)
+  ok    **die Kappe der Stufe haelt bei beiden**: [5,5] (erwartet [5,5])
+  ok    **nach dem Neuladen steht die Tiefe noch auf 32**: "32" (erwartet "32")
+  ok    die Probe-Notiz liegt im Bestand der Kapsel: true (erwartet true)
+  mit Schild: IBAN=false Kennwort=false Maske=true
+  ok    **mit Schild bringt die Agenten-Tuer keine IBAN**: false (erwartet false)
+  ok    **und kein Kennwort**: false (erwartet false)
+  ok    dafuer steht die Maske im Leib: true (erwartet true)
+  ok    der Schalter geht aus: "false" (erwartet "false")
+  ohne Schild: IBAN=true Kennwort=true Maske=false
+  ok    **ohne Schild bringt die Agenten-Tuer die echte IBAN**: true (erwartet true)
+  ok    **nach dem Neuladen steht das Schild noch aus**: false (erwartet false)
+  ok    und wieder an, ist die IBAN wieder verdeckt: false (erwartet false)
+  Bild: /tmp/kepta-fenster/bilder/schild-agenten-tuer.png
+  ok    die Vorschau ist da: true (erwartet true)
+  ok    **mit cloud-Schild steht die Maske in der Vorschau**: true (erwartet true)
+  ok    **ohne cloud-Schild steht die echte Mail in der Vorschau**: true (erwartet true)
+  ok    **nach dem Neuladen steht der Schalter noch auf aus**: "false" (erwartet "false")
+  ok    und die Vorschau bleibt unmaskiert: true (erwartet true)
+  ok    wieder an, ist die Mail wieder verdeckt: true (erwartet true)
+  Bild: /tmp/kepta-fenster/bilder/cloud-schild-vorschau.png
+  ok    der Knopf steht am Schirm: true (erwartet true)
+  ok    **ohne Passphrase ist er gesperrt**: true (erwartet true)
+  ok    bei 4 Zeichen ist er noch zu: true (erwartet true)
+  ok    bei dreizehn Zeichen ist er offen: false (erwartet false)
+  ok    **und die Sperre kommt zurueck, wenn die Phrase verschwindet**: true (erwartet true)
+  Bild: /tmp/kepta-fenster/bilder/passphrase-frei.png (Laenge vorher 4)
+  ok    **und die Passphrase ueberlebt den Neuladen nicht — sie wird nirgends gehalten**: "" (erwartet "")
+  Assistent-Klick: kein Knopf innerhalb 12 s
+  ok    der Assistent ist beiseite, die Flaeche hat ihre Breite: true (erwartet true)
+  Sprung nach: Graph
+  ok    **die Graph-Flaeche ist offen**: "Graph" (erwartet "Graph")
+  Die Leiste: {"mehr":"More (13)","zeitglieder":1,"datum":false,"slider":true,"notizen":"31"}
+  gemessene Rundungen im Graph-Blatt: {"datum":"fehlt","huille":"12px","knopf":"7px","kbd":"4px","quiet":"4px","stamp":"fehlt","skeleton":"fehlt","nav":"7px","tag":"7px"}
+  Nach More (13): Datumsfeld im Menue 7px
+  ok    **das Datumsfeld malt die Kontrollstufe (7 px), gemessen im More-Menue**: "7px" (erwartet "7px")
+  ok    **die Segmenthuille malt die Kartentufe (12 px)**: "12px" (erwartet "12px")
+  ok    der Segmentknopf malt die Kontrollstufe: "7px" (erwartet "7px")
+  ok    **die Seitenleisten-Reihe malt die Kontrollstufe**: "7px" (erwartet "7px")
+  ok    **und die Schlagwort-Reihe auch**: "7px" (erwartet "7px")
+  Bild: /tmp/kepta-fenster/bilder/radien-graph-panel.png
+  ok    **die Flaeche kennt die Saat (30 Eintraege stehen in der Leiste)**: true (erwartet true)
+  ok    der Knopf nach Knowledge steht im Blatt: true (erwartet true)
+  ok    **Knowledge ist die offene Flaeche**: "Knowledge" (erwartet "Knowledge")
+  Knowledge: 242 gemalte Rundungen, 6 Werte, offen "Knowledge", 1482 Knoten
+        41  4px :: row-quiet
+        31  12px :: row-entry
+        31  999px :: left-0
+        17  7px :: apple-seg-btn
+        15  7px :: btn-ghost
+        10  7px :: items-center
+  ok    der Knopf nach Graph steht im Blatt: true (erwartet true)
+  ok    **Graph ist die offene Flaeche**: "Graph" (erwartet "Graph")
+  Graph: 217 gemalte Rundungen, 6 Werte, offen "Graph", 1441 Knoten
+        41  4px :: row-quiet
+        31  12px :: row-entry
+        31  999px :: left-0
+        11  7px :: apple-seg-btn
+        10  7px :: btn-ghost
+        10  7px :: items-center
+  ok    der Knopf nach Chat steht im Blatt: true (erwartet true)
+  ok    **Chat ist die offene Flaeche**: "Chat" (erwartet "Chat")
+  Chat: 244 gemalte Rundungen, 6 Werte, offen "Chat", 1486 Knoten
+        41  4px :: row-quiet
+        31  12px :: row-entry
+        31  999px :: left-0
+        17  7px :: apple-seg-btn
+        15  7px :: btn-ghost
+        10  7px :: items-center
+  ok    der Knopf nach Dossier steht im Blatt: true (erwartet true)
+  ok    **Dossier ist die offene Flaeche**: "Dossier" (erwartet "Dossier")
+  Dossier: 244 gemalte Rundungen, 6 Werte, offen "Dossier", 1486 Knoten
+        41  4px :: row-quiet
+        31  12px :: row-entry
+        31  999px :: left-0
+        17  7px :: apple-seg-btn
+        15  7px :: btn-ghost
+        10  7px :: items-center
+  ok    der Knopf nach Activity steht im Blatt: true (erwartet true)
+  ok    **Activity ist die offene Flaeche**: "Activity" (erwartet "Activity")
+  Activity: 257 gemalte Rundungen, 6 Werte, offen "Activity", 1546 Knoten
+        41  4px :: row-quiet
+        31  12px :: row-entry
+        31  999px :: left-0
+        17  7px :: apple-seg-btn
+        15  7px :: btn-ghost
+        12  12px :: hud-inset
+  ok    der Knopf nach Settings steht im Blatt: true (erwartet true)
+  ok    **Settings ist die offene Flaeche**: "Settings" (erwartet "Settings")
+  Settings: 257 gemalte Rundungen, 6 Werte, offen "Settings", 1546 Knoten
+        41  4px :: row-quiet
+        31  12px :: row-entry
+        31  999px :: left-0
+        17  7px :: apple-seg-btn
+        15  7px :: btn-ghost
+        12  12px :: hud-inset
+  gesehene Flaechen: Knowledge="Knowledge" | Graph="Graph" | Chat="Chat" | Dossier="Dossier" | Activity="Activity" | Settings="Settings"
+  ok    **sechs Klicks sind sechs verschiedene Flaechen**: 6 (erwartet 6)
+  ausserhalb der Stufen: 0 Namen, 0 Stellen
+  ok    Rundungen ausserhalb der Stufen bleiben auf den Hausstufen: true (erwartet true)
+  MERKER: 0 Namen ausserhalb der Stufen — Zaehlung aus diesem Lauf
+  Bild: /tmp/kepta-fenster/bilder/radien-flaechen.png
+  ok    **die Tuer liefert die Kreuztabelle im ausgelieferten Stueck**: true (erwartet true)
+  Raender: {"people":0,"projects":0,"events":0,"tasks":30,"guides":0,"links":0} | Facher: {"notes":31,"files":3,"code":0,"daten":0,"anderes":0}
+  gesuchte Wahl: Files x Tasks — Zelle 0, Rand 30
+  Liste geoeffnet ueber: "Knowledge" nach 1 Griff(en)
+  ok    der Fach-Chip "Files" steht in einer Gruppe: true (erwartet true)
+  ok    und der Thema-Chip "Tasks" auch: true (erwartet true)
+  Gruppen: "In what form" / "What it is about"
+  Fach-Chip "Files": aria-pressed = true
+  Thema-Chip "Tasks": aria-pressed = true
+  der Leerlauf-Satz: "Nothing in Files about Tasks among the 34 loaded notes — the store holds 0 of them, and this filter only sees what is loaded."
+  ok    **der Satz nennt die Zelle (0) von Files x Tasks**: 0 (erwartet 0)
+  ok    und nicht den Rand des Themas: false (erwartet false)
+  ok    und nicht die Zahl des Fachs allein: false (erwartet false)
+  Bild: /tmp/kepta-fenster/bilder/auswahl-zelle.png
+  ok    **sobald die Zeile steht, nennt sie eine Grundgesamtheit**: true (erwartet true)
+  Verlauf: 2 Griffe in 112 ms, 0 Proben nennen die Grundgesamtheit "geladen", Zeile zuerst nach 112 ms, die ganze Menge ab 112 ms
+  Proben um die erste Zeile: ["","in what form · all of your notes"]
+  ok    **die Zeile ist nie leer, bevor sie eine Grundgesamtheit nennt**: true (erwartet true)
+  ok    **die ganze Menge kommt, bevor der Nutzer zu lange schaut**: true (erwartet true)
+  Bild: /tmp/kepta-fenster/bilder/gruppenzeit-erste-sekunden.png
+  ok    die Sicht Knowledge ist zu treffen: true (erwartet true)
+  ok    die Sicht Today ist zu treffen: true (erwartet true)
+  ok    die Sicht Chat ist zu treffen: true (erwartet true)
+  ok    die Sicht Graph ist zu treffen: true (erwartet true)
+  ok    die Sicht Dossier ist zu treffen: true (erwartet true)
+  ok    die Sicht Activity ist zu treffen: true (erwartet true)
+  ok    die Sicht Settings ist zu treffen: true (erwartet true)
+  Ereignisse: 73 | Fehlerzeilen: 0 | verschiedene: 0
+  ok    **keine Fehlerzeile in sieben Sichten**: 0 (erwartet 0)
+  Bild: /tmp/kepta-fenster/bilder/fehler-feger.png
+  ok     das Adressfeld nimmt die Eingabe an: "http://127.0.0.1:4711/v1" (erwartet "http://127.0.0.1:4711/v1")
+  ok     das Modellfeld nimmt die Eingabe an: "sonden-modell-k1" (erwartet "sonden-modell-k1")
+  ok     der Knopf zum Sichern steht am Schirm: true (erwartet true)
+  ok     die Sitzung traegt beide Werte: true (erwartet true)
+  ok    **ohne lokalen Speicher kommt die Adresse aus dem Spiegel**: "http://127.0.0.1:4711/v1" (erwartet "http://127.0.0.1:4711/v1")
+  ok    **und das Modell auch**: "sonden-modell-k1" (erwartet "sonden-modell-k1")
+  Bild: /tmp/kepta-fenster/bilder/ki-verbindung-aus-spiegel.png
+  Assistent-Klick: kein Knopf innerhalb 12 s
+  ok    der Assistent ist beiseite, die Flaeche hat ihre Breite: true (erwartet true)
+  Sprung nach: Graph
+  ok    **die Graph-Flaeche ist offen**: "Graph" (erwartet "Graph")
+  Farbflecke: 94 nach 8 s — ruhig geworden
+  Das Bild steht: nach 2 s
+  ok    der Export gibt eine PNG-Kette her: true (erwartet true)
+  ok    die Kette traegt eine echte PNG-Signatur: true (erwartet true)
+  ok    **das Bild hat die Groesse der Leinwand (2256 x 1468 gegen 2256 x 1468)**: true (erwartet true)
+  Schirmaufnahme: /tmp/kepta-fenster/bilder/graph-30-notizen-1440px-aufnahme.png
+  Ansicht beim Eintreffen: Kasten 601,142 bis 1621,839 in 2256x1468 (Grund #38383a, Tinte 65104 von 3311808) — frei: oben 9.7 %, unten 42.8 %, links 26.6 %, rechts 28.1 %; Kanten beruehrt: keine
+  Kanten: Tinte [], gemeldet [], Marke []
+  ok    **jede Kante, die Tinte traegt, ist als Beschnitt gemeldet**: [] (erwartet [])
+  ok    **und jede gemeldete Kante traegt wirklich Tinte**: [] (erwartet [])
+  ok    **jede gemeldete Kante malt die Marke**: [] (erwartet [])
+  ok    **keine ungemeldete Kante malt eine Marke**: [] (erwartet [])
+  ok    **der Export traegt einen undurchsichtigen Grund**: 255 (erwartet 255)
+  Feld erstarrt nach 2 s — Vergleich folgt auf stehender Welt
+  ok    **der Kameravergleich laeuft auf erstarrtem Feld**: true (erwartet true)
+  Kontrolle ohne Griff: null -> null (Drift 0)
+  Notizen im Bild: vorher null — nach der Kontrolle null — nach dem Fit null von null; Verlust gegen die Ankunft 0, Drift ohne Griff 0
+  Bilanzzeile schweigt (der Rahmen haelt alles) — dieser Vergleich hat in diesem Lauf keinen Gegenstand; die Wache fahrt ihn mit 34 Notizen bei 390 x 628
+  dieselbe Ansicht nach Fit gedrueckt (Bild steht: 2 s; Titel nun: Fit the whole graph into view): Kasten 601,152 bis 1621,849 in 2256x1468 (Grund #38383a, Tinte 68397 von 3311808) — frei: oben 10.4 %, unten 42.1 %, links 26.6 %, rechts 28.1 %; Kanten beruehrt: keine
+  Bildbeweis nach Fit: /Users/damiantodorovic/Desktop/ki gehirn/audit-2026-10-09/feldzug/belege-0511/fenster-154/graph-30-notizen-1440px-nach-fit.png (281153 B, 2256 x 1468)
+  nach dem Fit: Kanten beruehrt keine, weiteste freie Seite 42.1 % (vorher 42.8 %)
+  Tinte auf vier Kanten: vorher 0, nach dem Fit 0
+  ok    **der Fit-Knopf schneidet nicht mehr ab als die Ankunft**: true (erwartet true)
+  Legende offen: Zustand auf, deckt 25.8 % der Leinwand (1128 x 734 px) — Bilanzzeile: {"da":true,"text":"","sichtbar":false}
+  Der Fit-Knopf sagt ueber sich: Fit the whole graph into view
+  Klappe (Hide legend): Zustand zu, deckt 10.8 % — Bilanzzeile: {"da":true,"text":"","sichtbar":false}
+  ok    die Bilanzzeile schweigt, und kein Rand ist beschnitten — alles steht im Bild
+  ok    die zugemachte Legende deckt hoechstens 25 % des Bildes: true (erwartet true)
+  Klappe zurueck (Show legend): Zustand auf
+  Bildbeweis: /Users/damiantodorovic/Desktop/ki gehirn/audit-2026-10-09/feldzug/belege-0511/fenster-154/graph-30-notizen-1440px.png (267999 B, 2256 x 1468, Name "k3pta-graph-2026-11-05.png")
+  ok    die Sicht Knowledge ist zu treffen: true (erwartet true)
+  Knowledge: 192 Zeilen sichtbarer Text
+  ok    die Sicht Today ist zu treffen: true (erwartet true)
+  Today: 16 Zeilen sichtbarer Text
+  ok    die Sicht Chat ist zu treffen: true (erwartet true)
+  Chat: 31 Zeilen sichtbarer Text
+  ok    die Sicht Graph ist zu treffen: true (erwartet true)
+  Graph: 31 Zeilen sichtbarer Text
+  ok    die Sicht Dossier ist zu treffen: true (erwartet true)
+  Dossier: 15 Zeilen sichtbarer Text
+  ok    die Sicht Activity ist zu treffen: true (erwartet true)
+  Activity: 33 Zeilen sichtbarer Text
+  ok    die Sicht Settings ist zu treffen: true (erwartet true)
+  Settings: 105 Zeilen sichtbarer Text
+  ok    **keine Sicht bleibt stumm**: [] (erwartet [])
+  ok    **kein Wort "entry/entries" auf dem Schirm**: [] (erwartet [])
+  ok    **kein Wort "memory node" auf dem Schirm**: [] (erwartet [])
+  ok    **kein Wort "the whole store" auf dem Schirm**: [] (erwartet [])
+  ok    **kein Wort "in the store" auf dem Schirm**: [] (erwartet [])
+  ok    **kein Wort "in the index" auf dem Schirm**: [] (erwartet [])
+  ok    **kein Wort "brain" auf dem Schirm**: [] (erwartet [])
+  ok    **kein Wort "memory type" auf dem Schirm**: [] (erwartet [])
+  ok    **kein Wort "search cache" auf dem Schirm**: [] (erwartet [])
+  ok    **kein Wort "vector search active" auf dem Schirm**: [] (erwartet [])
+  ok    **kein Wort "nodes in the prompt" auf dem Schirm**: [] (erwartet [])
+  ok    **keine Zeile behauptet allein "Ready"**: [] (erwartet [])
+  ok    **keine Zeile behauptet allein "Clean"**: [] (erwartet [])
+  ok    **"N notes stored (Streifen der Wissens-Sicht)" steht wirklich auf dem Schirm**: true (erwartet true)
+  gefunden in Knowledge: 34 notes stored
+  ok    **"The database on this computer" steht wirklich auf dem Schirm**: true (erwartet true)
+  gefunden in Settings: The database on this computer
+  ok    **"Encrypted on this disk" steht wirklich auf dem Schirm**: true (erwartet true)
+  gefunden in Settings: Encrypted on this disk
+  ok    **"N notes in the prompt (Kontext-Streifen)" steht wirklich auf dem Schirm**: true (erwartet true)
+  gefunden in Chat: 5 notes in the prompt
+  ok    **"Connect Claude Desktop and Cursor" steht wirklich auf dem Schirm**: true (erwartet true)
+  gefunden in Settings: Connect Claude Desktop and Cursor
+  Korpus: 423 Zeilen in sieben Sichten, geschrieben nach /Users/damiantodorovic/Desktop/ki gehirn/audit-2026-10-09/feldzug/belege-0511/fenster-154/saetze-korpus-1440px.json
+  Bild: /tmp/kepta-fenster/bilder/saetze-korpus.png
+  ok    **die Flaeche kennt die Saat (30 Eintraege stehen in der Leiste)**: true (erwartet true)
+  Leiste sagt: 34 Eintraege (Tuer: 30 gesaet)
+  Fenster: 1440 x 900 px (bestellt 1440 x 900)
+  ok    das Fenster ist so breit, wie der Lauf bestellt: 1440 (erwartet 1440)
+  Knowledge: 41 Ziele, 0 unter dem Boden — kleinstes {"name":"saat30","w":227,"h":36,"k":"button","art":"","hinter":""}
+    ausgelassen: 88 ohne Rechteck, 0 unsichtbar oder nicht treffbar, 0 hinter der eingeklappten Leiste
+    Bild: /tmp/kepta-fenster/bilder/tastmass-1440-Knowledge.png
+  Graph: 32 Ziele, 0 unter dem Boden — kleinstes {"name":"saat30","w":227,"h":36,"k":"button","art":"","hinter":""}
+    ausgelassen: 78 ohne Rechteck, 0 unsichtbar oder nicht treffbar, 0 hinter der eingeklappten Leiste
+    Bild: /tmp/kepta-fenster/bilder/tastmass-1440-Graph.png
+  Settings: 40 Ziele, 0 unter dem Boden — kleinstes {"name":"saat30","w":227,"h":36,"k":"button","art":"","hinter":""}
+    ausgelassen: 89 ohne Rechteck, 0 unsichtbar oder nicht treffbar, 0 hinter der eingeklappten Leiste
+    Bild: /tmp/kepta-fenster/bilder/tastmass-1440-Settings.png
+  ok    **der Zensus sieht ueberhaupt Ziele**: true (erwartet true)
+  gesamt: 113 Ziele in 3 Sichten, 0 unter 20 px
+  ok    **kein Ziel liegt unter dem 20-px-Boden des Hauses**: 0 (erwartet 0)
+  Bild: /tmp/kepta-fenster/bilder/tastmass-1440px.png
+  Diener 74591 wird fortgenommen (eignes Kind, eigener Port 3601)
+  was auf dem Schirm steht (erste 300): "K3PTA 34 notes Knowledge Today Chat Graph Dossier Activity Settings TAGS saat 30 auswahl 3 machine-scan 3 md 3 schild-probe K3PTA local · private Light K3PTA ⌘K Context (5) New Semantic search Results 5 No answer from the inbox Scan No duplicates Drag files here PDF · MD · TXT · JSON Choose Scan thi"
+  ok    **der Nutzer erfahrt einen Grund, wenn die Tuer fort ist**: true (erwartet true)
+  die Index-Zeile sagt: "No answer from the storelocal, private, MCP"
+  ok    **und die Index-Zeile verspricht keinen Sync, wenn die Tuer fort ist**: false (erwartet false)
+  ok    **und das Fenster wirft dabei keine unverarbeitete Ausnahme**: 0 (erwartet 0)
+  Bild: /tmp/kepta-fenster/bilder/tuer-fort.png
+  die Gesundheits-Zeile sagt: "The health check did not arrive. Your notes are safe."
+  ihr Kasten (breite, hoehe, links, rechts) bei 1440 px: [606,16,539,1145]
+  ok    **die Absage malt eine Zeile, statt nur die Farbe zu wechseln**: true (erwartet true)
+  ok    **und die Stille erhaelt keine erfundne Zahl**: false (erwartet false)
+  ok    **auch nicht das Wort des Browsers**: false (erwartet false)
+  ok    **sonst ihren eignen Satz: Ankunft fehlt**: true (erwartet true)
+  ok    **und die Zeile bleibt im Fenster**: true (erwartet true)
+  Bild: /tmp/kepta-fenster/bilder/health-absage-1440px.png
+  alle Zyklen durch: Wert gesetzt, Fenster neu geladen, Wirkung gesehen
+  Bilder: 24 nach /Users/damiantodorovic/Desktop/ki gehirn/audit-2026-10-09/feldzug/belege-0511/fenster-154
+  Kapsel noch da? nein
+  eigne Kinder: Server 74591, Browser 74593
