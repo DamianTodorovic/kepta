@@ -887,7 +887,7 @@ export function Chat({ activeMemories, onSaveToBrain, onSaveToBrainWithMeta, isF
             </div>
           </div>
         </div>
-        <div className="flex items-center gap-2 sm:gap-4 text-xs font-medium">
+        <div className="flex items-center gap-2 sm:gap-4 text-xs font-semibold">
           {/* Such-Cache-Status (Paket 3): der Chat misst die eigene Engine-Anfrage —
               das Delta-Cache-Signal aus Paket 2 gilt hier genauso wie im Dashboard. */}
           {gehirnWaermt && (
@@ -980,7 +980,7 @@ export function Chat({ activeMemories, onSaveToBrain, onSaveToBrainWithMeta, isF
                 {budgetedMemories.slice(0, 8).map((m) => (
                   <span
                     key={m.id}
-                    className="inline-flex items-center gap-1 px-2 py-1 rounded-md fs-1 font-medium border truncate max-w-[140px]"
+                    className="inline-flex items-center gap-1 px-2 py-1 rounded-md fs-1 font-semibold border truncate max-w-[140px]"
                     style={{ background: budgetedIds.has(m.id) ? "var(--accent-soft)" : "var(--bg-panel)", borderColor: "var(--border-subtle)", color: "var(--text-2)" }}
                     title={`${m.title} — ${m.id}`}
                   >
@@ -1153,7 +1153,7 @@ export function Chat({ activeMemories, onSaveToBrain, onSaveToBrainWithMeta, isF
                       {msg.sources.slice(0, 6).map((s) => (
                         <span
                           key={s.id}
-                          className="inline-flex flex-col items-start px-2 py-1 rounded-lg fs-1 font-medium border max-w-[180px]"
+                          className="inline-flex flex-col items-start px-2 py-1 rounded-lg fs-1 font-semibold border max-w-[180px]"
                           style={{ background: "var(--accent-soft)", borderColor: "var(--border-subtle)", color: "var(--text-1)" }}
                           title={s.id}
                         >
@@ -1198,7 +1198,7 @@ export function Chat({ activeMemories, onSaveToBrain, onSaveToBrainWithMeta, isF
                   <div className="flex justify-end gap-2 pt-1">
                     <button
                       onClick={() => handleCopy(msg.content, msg.id)}
-                      className="flex items-center gap-2 fs-1 font-medium px-2 py-1 rounded hud-inset tap-reihum hover:!border-[color-mix(in_srgb,var(--accent)_45%,transparent)] transition-colors"
+                      className="flex items-center gap-2 fs-1 font-semibold px-2 py-1 rounded hud-inset tap-reihum hover:!border-[color-mix(in_srgb,var(--accent)_45%,transparent)] transition-colors"
                       style={{ color: "var(--text-2)" }}
                       aria-label={copiedId === msg.id ? "Answer copied" : "Copy answer"}
                     >
@@ -1215,7 +1215,7 @@ export function Chat({ activeMemories, onSaveToBrain, onSaveToBrainWithMeta, isF
                           onSaveToBrain?.(msg.content);
                         }
                       }}
-                      className="flex items-center gap-2 fs-1 font-medium px-2 py-1 rounded hud-inset hover:!border-[color-mix(in_srgb,var(--accent)_45%,transparent)] transition-colors"
+                      className="flex items-center gap-2 fs-1 font-semibold px-2 py-1 rounded hud-inset hover:!border-[color-mix(in_srgb,var(--accent)_45%,transparent)] transition-colors"
                       style={{ color: "var(--text-2)" }}
                     >
                       <Database className="w-3 h-3" style={{ color: "var(--accent)" }} /> Save as a node
@@ -1246,7 +1246,7 @@ export function Chat({ activeMemories, onSaveToBrain, onSaveToBrainWithMeta, isF
           <div role="alert" aria-live="polite" data-fix="sperre-sichtbar" className="sticky bottom-0 z-20 mt-3 flex items-start gap-3 p-4 rounded-xl text-sm shadow-lg" style={{ background: "rgba(38,16,16,0.97)", border: "1px solid rgba(239,68,68,0.35)", color: "#f87171" }}>
             <AlertTriangle className="w-5 h-5 shrink-0 mt-1" />
             <div className="flex-1">
-              <div className="font-medium">Error</div>
+              <div className="font-semibold">Error</div>
               <div className="opacity-90 break-words">{error}</div>
               <button onClick={() => setError(null)} className="mt-2 text-xs underline opacity-80 hover:opacity-100">Close</button>
             </div>
@@ -1272,7 +1272,7 @@ export function Chat({ activeMemories, onSaveToBrain, onSaveToBrainWithMeta, isF
               <button
                 type="button"
                 onClick={handleStop}
-                className="h-full px-3 flex items-center gap-2 rounded-lg font-medium text-xs"
+                className="h-full px-3 flex items-center gap-2 rounded-lg font-semibold text-xs"
                 style={{ background: "rgba(239,68,68,0.12)", border: "1px solid rgba(239,68,68,0.3)", color: "#f87171" }}
                 title="Stop answer (abort)"
               >

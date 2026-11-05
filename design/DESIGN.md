@@ -66,8 +66,15 @@ Radien und Größen leben in Stufen (`--r-panel`, `--r-card`, `--r-btn`, `--r-ch
 Eine neue Stufe für einen Einzelfall ist verboten; der Einzelfall irrt, die Stufe bleibt.
 Rundung wird am Token gerundet, nicht an der Zeile.
 
-**Hält:** `scripts/design-wache.mjs` (`css:klassen-waisen`, `schrift:größen-fremd`,
-`schrift:gewichte-fremd`, `icons:groesse-fremd`, `icons:name-fremd`), Zyklus `radien` im Fensterläufer.
+**Hält:** `scripts/design-wache.mjs` (`css:klassen-waisen`, `icons:groesse-fremd`,
+`icons:name-fremd`), Zyklus `radien` und Zyklus `schrift` im Fensterläufer,
+`tests/leitern-in-den-bausteinen.test.ts`.
+**Getilgt, nicht gestrichen:** `schrift:größen-fremd` (248 Willkürwerte in 17 Bausteinen auf
+die Stufen gesetzt, 3.2.164, gemessen 5.11.2026 19:24:27 MEZ vorher und 0 Ausreisser im
+gerechneten Fenster nachher) und `schrift:gewichte-fremd` (560 und 740 auf 600 und 700,
+`font-medium` an 77 Sitzen auf `font-semibold`, 3.2.166). Ein getilgter Sitz verlässt das
+Schuldregister der Wache und damit auch diesen Vertrag -- die Regel selbst bleibt stehen,
+sie ist jetzt ohne Ausnahme.
 
 ## 7. Was eine Klappe verdecken darf
 

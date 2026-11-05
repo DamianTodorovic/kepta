@@ -643,7 +643,7 @@ export function Settings() {
           <button
             onClick={() => waehleTab('system')}
             aria-pressed={activeTab === 'system'}
-            className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-lg text-sm font-medium transition-colors ${activeTab === 'system' ? 'bg-white dark:bg-zinc-800 shadow-sm' : ''}`}
+            className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-lg text-sm font-semibold transition-colors ${activeTab === 'system' ? 'bg-white dark:bg-zinc-800 shadow-sm' : ''}`}
             style={{ color: activeTab === 'system' ? 'var(--text-1)' : 'var(--text-2)' }}
           >
             <Cpu className="w-4 h-4" /> AI &amp; data
@@ -651,7 +651,7 @@ export function Settings() {
           <button
             onClick={() => waehleTab('mcp')}
             aria-pressed={activeTab === 'mcp'}
-            className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-lg text-sm font-medium transition-colors ${activeTab === 'mcp' ? 'bg-white dark:bg-zinc-800 shadow-sm' : ''}`}
+            className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-lg text-sm font-semibold transition-colors ${activeTab === 'mcp' ? 'bg-white dark:bg-zinc-800 shadow-sm' : ''}`}
             style={{ color: activeTab === 'mcp' ? 'var(--text-1)' : 'var(--text-2)' }}
           >
             <Plug className="w-4 h-4" /> MCP / API
@@ -659,7 +659,7 @@ export function Settings() {
           <button
             onClick={() => waehleTab('sync')}
             aria-pressed={activeTab === 'sync'}
-            className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-lg text-sm font-medium transition-colors ${activeTab === 'sync' ? 'bg-white dark:bg-zinc-800 shadow-sm' : ''}`}
+            className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-lg text-sm font-semibold transition-colors ${activeTab === 'sync' ? 'bg-white dark:bg-zinc-800 shadow-sm' : ''}`}
             style={{ color: activeTab === 'sync' ? 'var(--text-1)' : 'var(--text-2)' }}
           >
             <ShieldCheck className="w-4 h-4" /> Device Sync
@@ -723,7 +723,7 @@ export function Settings() {
                           />
                           <span className="switch" data-on={an}><span className="knob" /></span>
                           <span>
-                            <span className="fs-3 font-medium block" style={{ color: an ? 'var(--text-1)' : 'var(--text-2)' }}>{label}</span>
+                            <span className="fs-3 font-semibold block" style={{ color: an ? 'var(--text-1)' : 'var(--text-2)' }}>{label}</span>
                             <span className="fs-1 block" style={{ color: 'var(--text-3)' }}>{beschreibung}</span>
                           </span>
                         </label>
@@ -848,7 +848,7 @@ export function Settings() {
                       type="button"
                       onClick={loadModels}
                       disabled={loadingModels}
-                      className="btn-ghost shrink-0 flex items-center gap-2 px-4 rounded-xl text-sm font-medium"
+                      className="btn-ghost shrink-0 flex items-center gap-2 px-4 rounded-xl text-sm font-semibold"
                       title="Load available models from the provider"
                     >
                       <RefreshCw className={`w-4 h-4 ${loadingModels ? 'animate-spin' : ''}`} />
@@ -996,7 +996,7 @@ export function Settings() {
                 </p>
                 <button
                   onClick={handleExport}
-                  className="btn-ghost flex items-center justify-center gap-2 px-6 py-3 rounded-xl font-medium w-full"
+                  className="btn-ghost flex items-center justify-center gap-2 px-6 py-3 rounded-xl font-semibold w-full"
                 >
                   {sicherung && 'knoten' in sicherung ? (
                     <><CheckCircle2 className="w-5 h-5" style={{ color: 'var(--ok)' }} /> <span style={{ color: 'var(--ok)' }}>Backup created · {sicherung.knoten.toLocaleString('en-US')} notes</span></>
@@ -1053,7 +1053,7 @@ export function Settings() {
                   <button
                     onClick={() => chatImportFeld.current?.click()}
                     disabled={chatImportLaeuft}
-                    className="btn-ghost flex items-center justify-center gap-2 px-6 py-3 rounded-xl font-medium w-full disabled:opacity-50"
+                    className="btn-ghost flex items-center justify-center gap-2 px-6 py-3 rounded-xl font-semibold w-full disabled:opacity-50"
                   >
                     {chatImportLaeuft
                       ? <><RefreshCw className="w-5 h-5 animate-spin" /> Reading export…</>
@@ -1174,7 +1174,7 @@ export function Settings() {
                           setSortierFehler(absage("The grouping did not run. Nothing was re-sorted.", err));
                         } finally { setSortiertLaeuft(false); }
                       }}
-                      className="btn-ghost flex items-center justify-center gap-2 px-6 py-3 rounded-xl font-medium w-full"
+                      className="btn-ghost flex items-center justify-center gap-2 px-6 py-3 rounded-xl font-semibold w-full"
                     >{sortiertLaeuft ? 'Looking…' : 'Show me what would change'}</button>
                   )}
                 </div>
@@ -1213,7 +1213,7 @@ export function Settings() {
                     <button
                       disabled={reparaturLaeuft}
                       onClick={() => void pruefeImporte(false)}
-                      className="btn-ghost flex items-center justify-center gap-2 px-6 py-3 rounded-xl font-medium w-full"
+                      className="btn-ghost flex items-center justify-center gap-2 px-6 py-3 rounded-xl font-semibold w-full"
                     >{reparaturLaeuft ? 'Reading…' : 'Check imported files'}</button>
                   )}
                 </div>

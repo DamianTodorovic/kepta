@@ -132,7 +132,7 @@ export default function PraxisSync() {
       </div>
 
       <div className="space-y-2">
-        <label htmlFor="ps-pass" className="text-xs font-medium flex items-center gap-2" style={{ color: 'var(--text-2)' }}>
+        <label htmlFor="ps-pass" className="text-xs font-semibold flex items-center gap-2" style={{ color: 'var(--text-2)' }}>
           <KeyRound className="w-3.5 h-3.5" /> Passphrase
         </label>
         <input
@@ -158,7 +158,7 @@ export default function PraxisSync() {
       </div>
 
       <div className="space-y-2">
-        <label htmlFor="ps-scope" className="text-xs font-medium" style={{ color: 'var(--text-2)' }}>
+        <label htmlFor="ps-scope" className="text-xs font-semibold" style={{ color: 'var(--text-2)' }}>
           Scope (keeps clients apart)
         </label>
         <input
@@ -180,7 +180,7 @@ export default function PraxisSync() {
           type="button"
           onClick={exportieren}
           disabled={!bereit}
-          className="flex items-center gap-2 px-4 py-3 rounded-lg text-sm font-medium disabled:opacity-40 disabled:cursor-not-allowed hud-raised"
+          className="flex items-center gap-2 px-4 py-3 rounded-lg text-sm font-semibold disabled:opacity-40 disabled:cursor-not-allowed hud-raised"
           style={{ color: 'var(--text-1)' }}
         >
           {laeuft === 'export' ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
@@ -191,7 +191,7 @@ export default function PraxisSync() {
           type="button"
           onClick={() => dateiFeld.current?.click()}
           disabled={!bereit}
-          className="flex items-center gap-2 px-4 py-3 rounded-lg text-sm font-medium disabled:opacity-40 disabled:cursor-not-allowed hud-raised"
+          className="flex items-center gap-2 px-4 py-3 rounded-lg text-sm font-semibold disabled:opacity-40 disabled:cursor-not-allowed hud-raised"
           style={{ color: 'var(--text-1)' }}
         >
           {laeuft === 'import' ? <Loader2 className="w-4 h-4 animate-spin" /> : <Upload className="w-4 h-4" />}

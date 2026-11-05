@@ -334,7 +334,7 @@ export function MemoryEditor({ memory, onSave, onClose, onDelete }: MemoryEditor
                     key={k.key}
                     type="button"
                     onClick={() => setKind(k.key)}
-                    className="px-3 py-2 rounded-lg text-sm font-medium transition-colors"
+                    className="px-3 py-2 rounded-lg text-sm font-semibold transition-colors"
                     style={{
                       background: kind === k.key ? 'var(--accent-soft)' : 'transparent',
                       color: kind === k.key ? 'var(--accent)' : 'var(--text-2)',
@@ -369,7 +369,7 @@ export function MemoryEditor({ memory, onSave, onClose, onDelete }: MemoryEditor
                 Privat, weil sie gemessen 29.10. 13:35 auf 1440 x 900 unter der Kante lag. */}
             <div className="rounded-xl" style={{ border: '1px solid var(--border-subtle)' }} data-testid="behauptung-feld">
               <div className="flex items-center justify-between gap-2 px-4 pt-3">
-                <span className="flex items-center gap-2 text-sm font-medium" style={{ color: 'var(--text-2)' }}>
+                <span className="flex items-center gap-2 text-sm font-semibold" style={{ color: 'var(--text-2)' }}>
                   <Brain className="w-4 h-4" style={{ color: 'var(--text-3)' }} /> Claims on this note
                 </span>
                 <span className="hud-label tnum shrink-0" style={{ color: 'var(--text-3)' }}>
@@ -432,7 +432,7 @@ export function MemoryEditor({ memory, onSave, onClose, onDelete }: MemoryEditor
                 {tags.map(tag => (
                   <span
                     key={tag}
-                    className="flex items-center gap-1 px-3 py-1 rounded-lg text-sm font-medium hud-inset"
+                    className="flex items-center gap-1 px-3 py-1 rounded-lg text-sm font-semibold hud-inset"
                     style={{ color: 'var(--accent)' }}
                   >
                     <Hash className="w-3.5 h-3.5 opacity-60" />
@@ -463,7 +463,7 @@ export function MemoryEditor({ memory, onSave, onClose, onDelete }: MemoryEditor
             <div className="rounded-xl px-4 py-3 flex items-center gap-3" style={{ border: '1px solid var(--border-subtle)' }}>
               <Lock className="w-4 h-4 shrink-0" style={{ color: privat ? 'var(--accent)' : 'var(--text-3)' }} />
               <div className="flex-1">
-                <div className="text-sm font-medium" style={{ color: 'var(--text-1)' }}>Private</div>
+                <div className="text-sm font-semibold" style={{ color: 'var(--text-1)' }}>Private</div>
                 <div className="text-xs" style={{ color: 'var(--text-3)' }}>AI apps never see this note, and it is never sent to a cloud model.</div>
               </div>
               <button
@@ -484,7 +484,7 @@ export function MemoryEditor({ memory, onSave, onClose, onDelete }: MemoryEditor
               <button
                 type="button"
                 onClick={() => setShowTemporal((v) => !v)}
-                className="w-full flex items-center justify-between px-4 py-3 text-sm font-medium"
+                className="w-full flex items-center justify-between px-4 py-3 text-sm font-semibold"
                 style={{ color: 'var(--text-2)' }}
               >
                 <span className="flex items-center gap-2"><Clock className="w-4 h-4" style={{ color: 'var(--text-3)' }} /> Validity & confidence</span>
@@ -535,7 +535,7 @@ export function MemoryEditor({ memory, onSave, onClose, onDelete }: MemoryEditor
             <span className="hud-label">Everything stays local on this device</span>
             <button
               type="submit"
-              className="btn-primary flex items-center gap-2 px-5 py-2 rounded-lg fs-3 font-medium"
+              className="btn-primary flex items-center gap-2 px-5 py-2 rounded-lg fs-3 font-semibold"
             >
               <Save className="w-4 h-4" />
               Save

@@ -110,7 +110,7 @@ const datum = (ms: number) => new Date(ms).toLocaleDateString('en-GB', { day: 'n
 
 function Titel({ id, title, onOpen }: { id: string; title: string; onOpen: (id: string) => void }) {
   return (
-    <button onClick={() => onOpen(id)} className="text-left font-medium hover:underline underline-offset-2" style={{ color: 'var(--text-1)' }}>
+    <button onClick={() => onOpen(id)} className="text-left font-semibold hover:underline underline-offset-2" style={{ color: 'var(--text-1)' }}>
       {title || 'Untitled'}
     </button>
   );
@@ -292,7 +292,7 @@ export function TodayView({ aktiv, onOpenMemory, onGo }: Props) {
                       <p role="status" className="fs-3 mt-3" style={{ color: 'var(--ok)' }}>{erledigt[w.key]}</p>
                     ) : (
                       <div className="flex flex-wrap gap-2 mt-3">
-                        <button onClick={() => void loese(w, 'newer')} className="btn-primary px-3 py-2 rounded-lg fs-3 font-medium">Keep the newer</button>
+                        <button onClick={() => void loese(w, 'newer')} className="btn-primary px-3 py-2 rounded-lg fs-3 font-semibold">Keep the newer</button>
                         <button onClick={() => void loese(w, 'older')} className="btn-ghost px-3 py-2 rounded-lg fs-3" style={{ border: '1px solid var(--border-subtle)' }}>Keep the older</button>
                         <button onClick={() => void loese(w, 'both')} className="btn-ghost px-3 py-2 rounded-lg fs-3">Both are right</button>
                       </div>

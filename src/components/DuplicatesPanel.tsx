@@ -146,14 +146,14 @@ export function DuplicatesPanel({ memories, open, onClose, onDelete, onDeleteMan
             <div key={g.key} className="rounded-xl overflow-hidden" style={{ border: "1px solid var(--border-subtle)", background: "var(--bg-inset)" }}>
               <div className="flex items-center gap-2 px-4 py-3" style={{ borderBottom: "1px solid var(--border-subtle)" }}>
                 <AlertCircle className="w-3.5 h-3.5 shrink-0" style={{ color: "var(--warn)" }} />
-                <span className="fs-3 font-medium" style={{ color: "var(--text-1)" }}>
+                <span className="fs-3 font-semibold" style={{ color: "var(--text-1)" }}>
                   {reasonLabel(g.reason, g.similarity)}
                 </span>
                 <span className="hud-label">{g.members.length} copies</span>
                 <div className="ml-auto flex items-center gap-2">
                   <button
                     onClick={() => verwerfe(g)}
-                    className="btn-ghost px-2 py-1 rounded-md fs-1 font-medium"
+                    className="btn-ghost px-2 py-1 rounded-md fs-1 font-semibold"
                     title="Keep both — this pair will not be reported again"
                   >
                     Not a duplicate
@@ -183,7 +183,7 @@ export function DuplicatesPanel({ memories, open, onClose, onDelete, onDeleteMan
                         )}
                       </div>
                       <div className="flex-1 min-w-0">
-                        <div className="fs-3 font-medium truncate" style={{ color: "var(--text-1)" }}>
+                        <div className="fs-3 font-semibold truncate" style={{ color: "var(--text-1)" }}>
                           {m.title || "Untitled"}
                         </div>
                         <p className="fs-2 mt-1 line-clamp-2" style={{ color: "var(--text-2)" }}>

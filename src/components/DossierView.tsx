@@ -58,7 +58,7 @@ function Liste({ titel, eintraege, mitDatum, onOpen }: { titel: string; eintraeg
         {eintraege.map((e) => (
           <li key={e.id} className="fs-3 leading-relaxed" style={{ color: 'var(--text-2)' }}>
             {mitDatum && <span className="tnum fs-3 mr-2" style={{ color: 'var(--text-3)' }}>{tag(e.at)}</span>}
-            <button onClick={() => onOpen(e.id)} className="font-medium hover:underline underline-offset-2 text-left" style={{ color: 'var(--text-1)' }}>{e.title}</button>
+            <button onClick={() => onOpen(e.id)} className="font-semibold hover:underline underline-offset-2 text-left" style={{ color: 'var(--text-1)' }}>{e.title}</button>
             {e.sentence && e.sentence !== e.title && <> — {e.sentence}</>}
           </li>
         ))}
@@ -200,7 +200,7 @@ export function DossierView({ onOpenMemory, onEditMemory, dossierThema }: { onOp
           aria-label="Who or what is the dossier about?"
           className="hud-input flex-1 rounded-xl px-4 py-3 text-sm"
         />
-        <button type="submit" disabled={laedt || !eingabe.trim()} className="btn-primary px-4 py-3 rounded-xl text-sm font-medium flex items-center gap-2 disabled:opacity-50">
+        <button type="submit" disabled={laedt || !eingabe.trim()} className="btn-primary px-4 py-3 rounded-xl text-sm font-semibold flex items-center gap-2 disabled:opacity-50">
           {laedt ? <Loader2 className="w-4 h-4 animate-spin" /> : <FileText className="w-4 h-4" />} Create dossier
         </button>
       </form>
@@ -288,7 +288,7 @@ export function DossierView({ onOpenMemory, onEditMemory, dossierThema }: { onOp
                       <p role="status" className="fs-3 mt-3" style={{ color: 'var(--ok)' }}>{entschieden[w.key]}</p>
                     ) : w.newer.id && w.older.id ? (
                       <div className="flex flex-wrap gap-2 mt-3">
-                        <button onClick={() => void loese(w, 'newer')} className="btn-primary px-3 py-2 rounded-lg fs-3 font-medium">Newer wins</button>
+                        <button onClick={() => void loese(w, 'newer')} className="btn-primary px-3 py-2 rounded-lg fs-3 font-semibold">Newer wins</button>
                         <button onClick={() => void loese(w, 'window')} className="btn-ghost px-3 py-2 rounded-lg fs-3" title="Both stay valid — the older note ends where the newer one began.">Both hold — cap the older</button>
                         {onEditMemory && (
                           <button onClick={() => onEditMemory(w.newer.id!)} className="btn-ghost px-3 py-2 rounded-lg fs-3">Edit</button>

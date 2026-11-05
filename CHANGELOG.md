@@ -1,3 +1,28 @@
+## [3.2.166]
+
+### Changed
+
+- **The surface no longer leans on a weight that half of its machines do not have.** Measured
+  5.11.2026 20:43 MEZ: 77 seats in 19 components called `font-medium` -- 500, which macOS
+  renders as a real step and Windows (static Segoe UI) collapses onto 400. The same product
+  therefore carried two hierarchies. All 77 now call `font-semibold` (600), the ladder's
+  `--fw-halbfest`, and the warden's weight register is cleared: what remains is 400, 600 and
+  700 only. Measured in the window at 1440 and 390 px before and after (see the landing note),
+  because this one changes the picture rather than the name.
+- **The design contract keeps its paid-off debts as history.** `design/DESIGN.md` listed five
+  warden registers; two are now settled (`schrift:größen-fremd` in 3.2.164,
+  `schrift:gewichte-fremd` in 3.2.166) and the contract says so with the measured numbers
+  instead of silently dropping the lines. The rules stay in force -- they simply have no
+  exception left.
+
+### Fixed
+
+- **A registry floor that punished paying off debt.** `tests/design-vertrag.test.ts` demanded
+  more than three register entries, a number that was really "the probe still works". After
+  two debts were paid the count fell to three and the test went red on progress. It now
+  checks the shape: the two structural registers must be found, which still fails loudly when
+  the pattern or the file breaks.
+
 ## [3.2.165]
 
 ### Changed

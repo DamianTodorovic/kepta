@@ -26,7 +26,13 @@ describe("Punkt 2: der Design-Vertrag hält zu seiner Wache", () => {
   it("nennt jeden Regel-Sitz, den die Wache rechnet", () => {
     const sitzText = readFileSync(wache, "utf-8");
     const sitze = [...sitzText.matchAll(/\["((?:css|schrift|icons|typfarben|farbe):[a-zöüßä:-]+)"/g)].map((m) => m[1]);
-    expect(sitze.length, "die Wache nennt keine Regel-Sitze — Muster oder Datei ist kaputt").toBeGreaterThan(3);
+    // Der Boden ist keine Schuldzahl, die mit den Jahren fallen muss: gemessen 5.11.2026
+    // 20:46 MEZ waren es drei Sitze, weil zwei Schulden getilgt sind (Größen und Gewichte in
+    // den Bausteinen). Ein Boden "mehr als 3" hätte die Tilgung rot gemeldet. Also wird die
+    // Form geprüft: die Blende muss die beiden strukturellen Sitze sehen, sonst ist das
+    // Muster oder die Datei kaputt -- bei null Treffern wäre sie es.
+    expect(sitze, "die Wache nennt keine Regel-Sitze — Muster oder Datei ist kaputt").toEqual(
+      expect.arrayContaining(["css:klassen-waisen", "icons:groesse-fremd"]));
     const text = readFileSync(vertrag, "utf-8");
     const fehlend = sitze.filter((s) => !text.includes(s));
     expect(fehlend, `diese Regel-Sitze der Wache stehen in keinem Vertrag: ${fehlend.join(", ")}`).toEqual([]);

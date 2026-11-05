@@ -70,9 +70,9 @@ function Row({ ok, label, detail, fix, seal, unknown }: { ok: boolean; label: st
             : <CheckCircle2 className="w-4 h-4 mt-1 shrink-0" style={{ color: 'var(--ok)' }} />
           : <XCircle className="w-4 h-4 mt-1 shrink-0" style={{ color: '#e6a100' }} />}
       <div className="min-w-0">
-        <div className="text-sm font-medium" style={{ color: 'var(--text-1)' }}>{label}</div>
+        <div className="text-sm font-semibold" style={{ color: 'var(--text-1)' }}>{label}</div>
         <div className="text-xs mt-1" style={{ color: 'var(--text-2)' }}>{detail}</div>
-        {!unknown && !ok && fix && <div className="text-xs mt-1 font-medium" style={{ color: '#d97706' }}>How to fix it: {fix}</div>}
+        {!unknown && !ok && fix && <div className="text-xs mt-1 font-semibold" style={{ color: '#d97706' }}>How to fix it: {fix}</div>}
       </div>
     </div>
   );
@@ -267,12 +267,12 @@ export function SystemStatus() {
       {health?.encryption.aktiv && <RecoveryKey />}
 
       <div className="flex items-center gap-2 mt-3">
-        <button onClick={runTest} disabled={testing} className="btn-primary flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium">
+        <button onClick={runTest} disabled={testing} className="btn-primary flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold">
           {testing ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
           Send a test request
         </button>
         {testResult && (
-          <span className="text-xs font-medium" style={{ color: testResult.ok ? 'var(--ok)' : '#d97706' }}>
+          <span className="text-xs font-semibold" style={{ color: testResult.ok ? 'var(--ok)' : '#d97706' }}>
             {testResult.ok ? '✓ ' : '✗ '}{testResult.msg}
           </span>
         )}

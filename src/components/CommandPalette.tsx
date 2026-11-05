@@ -102,7 +102,7 @@ export function CommandPalette({ open, onClose, actions }: CommandPaletteProps) 
             >
               <span className="shrink-0 flex items-center justify-center" style={{ color: i === idx ? "var(--accent)" : "var(--text-3)" }}>{a.icon}</span>
               <span className="flex-1 min-w-0">
-                <span className="block text-sm font-medium truncate">{a.label}</span>
+                <span className="block text-sm font-semibold truncate">{a.label}</span>
                 {a.desc && <span className="block text-xs truncate" style={{ color: "var(--text-3)" }}>{a.desc}</span>}
               </span>
               {a.hotkey && <span className="kbd shrink-0">{a.hotkey}</span>}

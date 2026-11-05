@@ -98,7 +98,7 @@ export function PrivacyShield() {
         <>
           <div className="hud-inset rounded-xl p-3 flex gap-3 items-start">
             <div className="flex-1">
-              <div className="text-sm font-medium" style={{ color: 'var(--text-1)' }}>Hide personal data from cloud AI</div>
+              <div className="text-sm font-semibold" style={{ color: 'var(--text-1)' }}>Hide personal data from cloud AI</div>
               <p className="text-xs mt-1" style={{ color: 'var(--text-2)' }}>
                 Email addresses, phone numbers, IBANs, card numbers, passwords and keys are swapped for placeholders before a question
                 goes to OpenAI, Anthropic or any other cloud model. The answer shows the real values again. A model running on this
@@ -109,7 +109,7 @@ export function PrivacyShield() {
           </div>
           <div className="hud-inset rounded-xl p-3 flex gap-3 items-start">
             <div className="flex-1">
-              <div className="text-sm font-medium" style={{ color: 'var(--text-1)' }}>Hide secrets from AI apps</div>
+              <div className="text-sm font-semibold" style={{ color: 'var(--text-1)' }}>Hide secrets from AI apps</div>
               <p className="text-xs mt-1" style={{ color: 'var(--text-2)' }}>
                 Claude, Cursor and other AI apps read your notes without passwords, keys, card numbers and IBANs. If an app changes
                 such a note, the real values stay. Names, emails and phone numbers stay visible — apps need them to help you.

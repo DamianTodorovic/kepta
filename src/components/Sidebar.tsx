@@ -107,7 +107,7 @@ export function Sidebar({ tags, selectedTags, onSelectTag, onClearTags, currentV
                 title={item.erklaerung}
                 className={cn(
                   "sidebar-nav-btn w-full min-h-9 flex items-center gap-2 px-3 py-2 fs-3 text-left",
-                  active ? "font-semibold" : "font-medium"
+                  active ? "font-semibold" : "font-semibold"
                 )}
               >
                 <item.icon className="seiten-ikone w-4 h-4 shrink-0" weight={item.weight ?? 'duotone'} />
@@ -213,7 +213,7 @@ export function Sidebar({ tags, selectedTags, onSelectTag, onClearTags, currentV
           )}
           <button
             onClick={toggleTheme}
-            className="seiten-knopf flex-1 h-9 flex items-center justify-center gap-2 rounded-lg fs-2 font-medium"
+            className="seiten-knopf flex-1 h-9 flex items-center justify-center gap-2 rounded-lg fs-2 font-semibold"
             aria-label="Switch theme"
           >
             {isDark ? <Sun className="w-3.5 h-3.5" /> : <Moon className="w-3.5 h-3.5" />}

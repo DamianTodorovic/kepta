@@ -125,7 +125,7 @@ function Live({ aktiv, onOpenMemory }: { aktiv: boolean; onOpenMemory: (id: stri
             <div className="min-w-0 fs-3" style={{ color: 'var(--text-2)' }}>
               <strong style={{ color: 'var(--text-1)' }}>{e.who}</strong> {VERB[e.tool] ?? e.tool.replace(/^memory_/, '').replace(/_/g, ' ')}{' '}
               {e.text && (e.noteId
-                ? <button onClick={() => onOpenMemory(e.noteId!)} className="font-medium hover:underline underline-offset-2" style={{ color: 'var(--text-1)' }}>{e.text}</button>
+                ? <button onClick={() => onOpenMemory(e.noteId!)} className="font-semibold hover:underline underline-offset-2" style={{ color: 'var(--text-1)' }}>{e.text}</button>
                 : <strong style={{ color: 'var(--text-1)' }}>{e.tool === 'memory_search' ? `“${e.text}”` : e.text}</strong>)}
               {e.tool === 'memory_search' && e.count !== null && <span style={{ color: 'var(--text-3)' }}> · {e.count} {e.count === 1 ? 'note' : 'notes'}</span>}
               <div className="fs-1" style={{ color: 'var(--text-3)' }}>{vor(e.at)}</div>
@@ -237,7 +237,7 @@ function Protokoll() {
         if anyone changes or removes an entry, the check below shows it.
       </p>
       <div className="flex flex-wrap gap-2 mb-4">
-        <button onClick={() => void pruefen()} disabled={prueft} className="btn-primary px-3 py-2 rounded-lg fs-3 font-medium flex items-center gap-2 disabled:opacity-50">
+        <button onClick={() => void pruefen()} disabled={prueft} className="btn-primary px-3 py-2 rounded-lg fs-3 font-semibold flex items-center gap-2 disabled:opacity-50">
           {prueft ? <Loader2 className="w-4 h-4 animate-spin" /> : <ShieldCheck className="w-4 h-4" />} Check integrity
         </button>
         <button onClick={() => void exportieren()} className="btn-ghost px-3 py-2 rounded-lg fs-3 flex items-center gap-2" style={{ border: '1px solid var(--border-subtle)' }}>
@@ -305,7 +305,7 @@ export function ActivityView({ aktiv, onOpenMemory }: { aktiv: boolean; onOpenMe
             aria-selected={reiter === id}
             onClick={() => setReiter(id)}
             title={erklaerung}
-            className={`flex-1 py-2 rounded-lg fs-3 font-medium ${reiter === id ? 'bg-white dark:bg-zinc-800 shadow-sm' : ''}`}
+            className={`flex-1 py-2 rounded-lg fs-3 font-semibold ${reiter === id ? 'bg-white dark:bg-zinc-800 shadow-sm' : ''}`}
             style={{ color: reiter === id ? 'var(--text-1)' : 'var(--text-2)' }}
           >
             {label}

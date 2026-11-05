@@ -247,7 +247,7 @@ export function MemoryPreview({ memory, onClose, onEdit }: MemoryPreviewProps) {
               >
                 <FileText className="w-4 h-4 shrink-0" style={{ color: "var(--accent)" }} />
                 <span className="min-w-0 flex-1">
-                  <span className="block fs-3 font-medium truncate" style={{ color: "var(--text-1)" }}>
+                  <span className="block fs-3 font-semibold truncate" style={{ color: "var(--text-1)" }}>
                     {quelle.name}
                   </span>
                   <span className="block fs-1 truncate" style={{ color: "var(--text-3)" }}>
@@ -255,7 +255,7 @@ export function MemoryPreview({ memory, onClose, onEdit }: MemoryPreviewProps) {
                   </span>
                 </span>
                 {quelle.art !== "inbox" && (
-                  <span className="shrink-0 fs-1 font-medium flex items-center gap-1 opacity-70 group-hover:opacity-100" style={{ color: "var(--accent)" }}>
+                  <span className="shrink-0 fs-1 font-semibold flex items-center gap-1 opacity-70 group-hover:opacity-100" style={{ color: "var(--accent)" }}>
                     {quelle.art === "url" ? <ExternalLink className="w-3.5 h-3.5" /> : <FileText className="w-3.5 h-3.5" />}
                     {t("preview.open")}
                   </span>
@@ -375,7 +375,7 @@ export function MemoryPreview({ memory, onClose, onEdit }: MemoryPreviewProps) {
             {memory.tags.map((tag) => (
               <span
                 key={tag}
-                className="inline-flex items-center px-2 py-1 rounded-md fs-1 font-medium border"
+                className="inline-flex items-center px-2 py-1 rounded-md fs-1 font-semibold border"
                 style={{ color: "var(--text-2)", background: "var(--bg-inset)", borderColor: "var(--border-subtle)" }}
               >
                 {tag}
@@ -385,7 +385,7 @@ export function MemoryPreview({ memory, onClose, onEdit }: MemoryPreviewProps) {
           <div className="flex items-center gap-2 shrink-0">
             <button
               onClick={() => void texteKopieren()}
-              className="btn-ghost px-3 py-2 rounded-lg fs-2 font-medium flex items-center gap-2"
+              className="btn-ghost px-3 py-2 rounded-lg fs-2 font-semibold flex items-center gap-2"
               title="Copy the full text to the clipboard"
             >
               {kopiert ? <Check className="w-4 h-4" style={{ color: "var(--accent)" }} /> : <Copy className="w-4 h-4" />}
@@ -393,7 +393,7 @@ export function MemoryPreview({ memory, onClose, onEdit }: MemoryPreviewProps) {
             </button>
             <button
               onClick={() => onEdit(memory)}
-              className="btn-ghost px-3 py-2 rounded-lg fs-2 font-medium flex items-center gap-2"
+              className="btn-ghost px-3 py-2 rounded-lg fs-2 font-semibold flex items-center gap-2"
               style={{ border: "1px solid var(--border-subtle)", color: "var(--accent)" }}
             >
               <EditPen className="w-4 h-4" />

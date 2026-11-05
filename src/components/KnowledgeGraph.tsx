@@ -5752,7 +5752,7 @@ export function KnowledgeGraph({ memories: memoriesAusFenster, onSelectMemory, o
   const segment = (an: boolean, titel: string, onClick: () => void, wort: string, zu = false) => (
     <button
       type="button"
-      className="apple-seg-btn fs-1 font-medium"
+      className="apple-seg-btn fs-1 font-semibold"
       data-on={an ? "true" : "false"}
       aria-pressed={an ? "true" : "false"}
       disabled={zu}

@@ -262,7 +262,7 @@ export function OnboardingWizard({ open, onClose, onComplete }: Props) {
                           und gilt in beiden Themen gleich — Z-13. */}
                       <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{background: d.available ? 'var(--ok)' : 'var(--text-3)', boxShadow: d.available ? '0 0 8px var(--ok)' : undefined}}/>
                       <div className="flex-1 min-w-0">
-                        <div className="text-sm font-medium" style={{color:'var(--text-1)'}}>{d.label} {d.available ? '— available' : '— not found'}</div>
+                        <div className="text-sm font-semibold" style={{color:'var(--text-1)'}}>{d.label} {d.available ? '— available' : '— not found'}</div>
                         {/* Gemessen 13.10. 21:2x: `truncate` schnitt die Modelliste
                             bei jeder Breite ab (522 px_needed gegen 267/174/109/227
                             px Sicht). Ein Modell, das der Nutzer nicht lesen kann,

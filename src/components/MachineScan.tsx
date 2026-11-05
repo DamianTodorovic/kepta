@@ -314,7 +314,7 @@ export function MachineScan({ open, onClose, onImported, autoPreview = false }: 
         <div className="flex-1 overflow-y-auto px-5 py-4 space-y-4">
           {/* Was nie gelesen wird — steht bewusst VOR dem Knopf. */}
           <div className="rounded-xl p-4 space-y-2" style={{ background: "var(--bg-inset)", border: "1px solid var(--border-subtle)" }}>
-            <div className="flex items-center gap-2 fs-3 font-medium" style={{ color: "var(--text-1)" }}>
+            <div className="flex items-center gap-2 fs-3 font-semibold" style={{ color: "var(--text-1)" }}>
               <ShieldCheck className="w-4 h-4" style={{ color: "var(--ok)" }} /> Never read — and you cannot switch this off
             </div>
             <ul className="fs-3 space-y-1" style={{ color: "var(--text-2)" }}>
@@ -327,7 +327,7 @@ export function MachineScan({ open, onClose, onImported, autoPreview = false }: 
 
           {/* Der Punkt, den man ohne Aufforderung sagen muss. */}
           <div className="rounded-xl p-4 space-y-2" style={{ background: "var(--warn-soft)", border: "1px solid transparent" }}>
-            <div className="flex items-center gap-2 fs-3 font-medium" style={{ color: "var(--warn)" }}>
+            <div className="flex items-center gap-2 fs-3 font-semibold" style={{ color: "var(--warn)" }}>
               <ShieldAlert className="w-4 h-4" /> What you should know before you agree
             </div>
             <p className="fs-3 leading-relaxed" style={{ color: "var(--text-2)" }}>

@@ -1494,7 +1494,7 @@ export function Dashboard() {
           <div className="flex justify-center pt-6">
             <button
               onClick={() => setVisibleCount((c) => Math.min(c + PAGE_SIZE, displayedMemories.length))}
-              className="btn-ghost px-4 py-2 rounded-lg fs-3 font-medium"
+              className="btn-ghost px-4 py-2 rounded-lg fs-3 font-semibold"
             >
               Load more ({displayedMemories.length - visibleCount} more)
             </button>
@@ -1512,7 +1512,7 @@ export function Dashboard() {
         <div className="flex justify-center pt-3">
           <button
             onClick={() => void holeNaechsteSeite(setSeitenHinweis)}
-            className="btn-ghost px-4 py-2 rounded-lg fs-3 font-medium"
+            className="btn-ghost px-4 py-2 rounded-lg fs-3 font-semibold"
           >
             More of your notes — fetch the next {SEITE_NACHLAD.toLocaleString('en-GB')}
           </button>
@@ -1678,7 +1678,7 @@ export function Dashboard() {
                     setTrashGrund(absage("Trash — the count did not arrive", err));
                   }
                 }}
-                className="btn-ghost hidden sm:flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-medium"
+                className="btn-ghost hidden sm:flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-semibold"
                 title={trashGrund ?? "Trash — restore deleted notes"}
               >
                 <Trash2 className="w-4 h-4" />
@@ -1686,14 +1686,14 @@ export function Dashboard() {
               </button>
               <button
                 onClick={() => setPaletteOpen(true)}
-                className="btn-ghost hidden sm:flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-medium"
+                className="btn-ghost hidden sm:flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-semibold"
                 title="Command palette"
               >
                 <ScanSearch className="w-4 h-4" /> <span className="kbd !py-px">⌘K</span>
               </button>
               <button
                 onClick={copyContextForAI}
-                className="btn-ghost flex items-center gap-2 px-3 py-2 rounded-lg font-medium text-xs"
+                className="btn-ghost flex items-center gap-2 px-3 py-2 rounded-lg font-semibold text-xs"
                 title={`${chatMemories.length} notes in the chat context — copy as a prompt`}
               >
                 {copied ? <CheckCircle2 className="w-4 h-4" style={{ color: 'var(--ok)' }} /> : <Copy className="w-4 h-4" />}
@@ -1704,7 +1704,7 @@ export function Dashboard() {
                   setEditingMemory(null);
                   setIsEditorOpen(true);
                 }}
-                className="btn-primary flex items-center gap-2 px-3 py-2 rounded-lg font-medium text-xs"
+                className="btn-primary flex items-center gap-2 px-3 py-2 rounded-lg font-semibold text-xs"
               >
                 <Plus className="w-4 h-4" />
                 <span className="hidden sm:inline">New</span>
@@ -1716,7 +1716,7 @@ export function Dashboard() {
           {trashOpen && (
             <div className="px-5 py-3 shrink-0 overflow-auto" style={{ borderBottom: '1px solid var(--border-subtle)', background: 'var(--bg-inset)', maxHeight: '30vh' }}>
               <div className="flex items-center justify-between mb-2">
-                <span className="fs-2 font-medium" style={{ color: 'var(--text-2)' }}>
+                <span className="fs-2 font-semibold" style={{ color: 'var(--text-2)' }}>
                   {papierkorbKappe
                     ? <>Trash — first {trashedMemories.length} of {groessenZahl(papierkorbKappe.gesamt)} deleted notes</>
                     : <>Trash — {trashedMemories.length} deleted notes, all restorable</>}
@@ -1762,7 +1762,7 @@ export function Dashboard() {
                 className="sr-only"
               />
               <span className="switch" data-on={semanticEnabled}><span className="knob" /></span>
-              <span className="fs-3 font-medium" style={{ color: semanticEnabled ? 'var(--text-1)' : 'var(--text-2)' }}>
+              <span className="fs-3 font-semibold" style={{ color: semanticEnabled ? 'var(--text-1)' : 'var(--text-2)' }}>
                 Semantic search
               </span>
             </label>
@@ -1885,7 +1885,7 @@ export function Dashboard() {
               <div className="flex-1 flex items-center gap-3 px-4 py-3">
                 {importing ? <Loader2 className="w-4 h-4 animate-spin shrink-0" style={{ color: "var(--accent)" }} /> : <UploadCloud className="w-4 h-4 shrink-0" style={{ color: dragOver ? "var(--accent)" : "var(--text-3)" }} />}
                 <div className="flex-1 min-w-0">
-                  <div className="fs-3 font-medium truncate" style={{ color: "var(--text-1)" }}>
+                  <div className="fs-3 font-semibold truncate" style={{ color: "var(--text-1)" }}>
                     {importing ? "Importing…" : dragOver ? "Drop to import" : "Drag files here"}
                   </div>
                   {/* Die Formate auf eigener Zeile: in einer Reihe mit dem Satz
@@ -1898,7 +1898,7 @@ export function Dashboard() {
                   {importMsg && <div className="fs-1 mt-1 flex items-center gap-1" style={{ color: "var(--ok)" }}><CheckCircle2 className="w-3 h-3" />{importMsg}</div>}
                   {importErr && <div className="fs-1 mt-1 flex items-center gap-1" style={{ color: "var(--danger)" }}><AlertCircle className="w-3 h-3" />{importErr}</div>}
                 </div>
-                <label className="btn-ghost px-3 py-2 text-xs font-medium cursor-pointer shrink-0">
+                <label className="btn-ghost px-3 py-2 text-xs font-semibold cursor-pointer shrink-0">
                   Choose
                   <input
                     ref={fileInputRef}
@@ -1914,7 +1914,7 @@ export function Dashboard() {
               <div className="hidden lg:flex items-center px-4 py-3 shrink-0">
                 <button
                   onClick={() => setScanOpen(true)}
-                  className="btn-ghost px-3 py-2 text-xs font-medium flex items-center gap-2"
+                  className="btn-ghost px-3 py-2 text-xs font-semibold flex items-center gap-2"
                   title="Let K3PTA look through this computer for documents — you see what would be imported before anything is read"
                 >
                   <HardDriveDownload className="w-3.5 h-3.5" /> Scan this computer
@@ -1936,7 +1936,7 @@ export function Dashboard() {
                 <button
                   onClick={handleClip}
                   disabled={clipping || !clipUrl.trim()}
-                  className="btn-ghost px-3 py-2 text-xs font-medium shrink-0 disabled:opacity-40"
+                  className="btn-ghost px-3 py-2 text-xs font-semibold shrink-0 disabled:opacity-40"
                 >
                   {clipping ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : 'Import'}
                 </button>
@@ -2214,7 +2214,7 @@ export function Dashboard() {
                         key={key}
                         onClick={() => setGruppierung(key)}
                         disabled={!!debouncedSearchQuery.trim()}
-                        className="apple-seg-btn min-h-7 fs-1 font-medium disabled:opacity-40"
+                        className="apple-seg-btn min-h-7 fs-1 font-semibold disabled:opacity-40"
                         data-on={effektivGruppierung === key ? "true" : "false"}
                         title={debouncedSearchQuery.trim()
                           ? 'Grouping is off while you search — results are ranked by relevance'
@@ -2275,13 +2275,13 @@ export function Dashboard() {
                       {gruppenFilterAktiv && (
                         <button
                           onClick={() => { setAktiveTraeger([]); setAktiveThemen([]); }}
-                          className="mt-4 btn-ghost px-4 py-2 rounded-lg fs-3 font-medium"
+                          className="mt-4 btn-ghost px-4 py-2 rounded-lg fs-3 font-semibold"
                         >
                           Show everything again
                         </button>
                       )}
                       {semanticEnabled && debouncedSearchQuery.trim().length >= 2 && displayedMemories.length === 0 && (
-                        <button onClick={() => setSemanticEnabled(false)} className="mt-4 btn-ghost px-4 py-2 rounded-lg fs-3 font-medium">
+                        <button onClick={() => setSemanticEnabled(false)} className="mt-4 btn-ghost px-4 py-2 rounded-lg fs-3 font-semibold">
                           Switch to keyword search
                         </button>
                       )}
@@ -2313,7 +2313,7 @@ export function Dashboard() {
           className={cn("flex-1 flex flex-col h-full min-h-0 overflow-hidden px-2 py-3 md:px-5", currentView === 'graph' ? 'flex' : 'hidden')}
         >
           <div className="flex items-center gap-3 mb-2 shrink-0">
-            <div className="fs-3 font-medium shrink-0" style={{ color: 'var(--text-1)' }}>Graph</div>
+            <div className="fs-3 font-semibold shrink-0" style={{ color: 'var(--text-1)' }}>Graph</div>
             {/* Der lange Satz ist schmückende Auskunft, keine Zahl: in einem
                 Fenster, das ihn nicht trägt, bricht er um und rückt das Bild
                 nach unten (A7-06). Die Zählung bleibt stehen, der Rest nicht.
@@ -2329,7 +2329,7 @@ export function Dashboard() {
               {mengensatz(feldZaehlung ?? memories.length, tuerBestand)}{!schmal && satzPasst ? " · connected through tags, similarity and knowledge entities" : ""}
             </div>
             <div className="ml-auto shrink-0">
-              <button onClick={() => setCurrentView("memories")} className="btn-ghost px-3 py-2 rounded-md text-xs font-medium">Back to the list</button>
+              <button onClick={() => setCurrentView("memories")} className="btn-ghost px-3 py-2 rounded-md text-xs font-semibold">Back to the list</button>
             </div>
           </div>
           <div className="flex-1 min-h-0 flaeche-huelle">

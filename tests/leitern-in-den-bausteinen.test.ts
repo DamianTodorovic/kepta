@@ -69,6 +69,16 @@ describe("Punkt 2: die Schriftleiter gilt in den Bausteinen", () => {
     expect(sitze, `${sitze.length} Sitze rufen eine fremde Stufe: ${[...new Set(sitze)].join(", ")}`).toEqual([]);
   });
 
+  it("kein Baustein ruft ein Gewicht, das eine nicht-variable Schrift nicht hat", () => {
+    // Die Leiter kennt 400/600/700 (--fw-ruhig/halbfest/fest). Tailwinds font-medium ist 500:
+    // auf macOS (variable System-Schrift) sichtbar, auf Windows (statische Segoe UI) kollabiert
+    // es auf 400 -- dasselbe Produkt, zwei Hierarchien. Gemessen 5.11.2026 20:43 MEZ:
+    // 77 Sitze in 19 Bausteinen, davon 34 an Steuern, 26 an Fliesstext, 17 andere.
+    const verboten = /\bfont-(thin|extralight|light|medium)\b/g;
+    const sitze = dateien.map((d) => (d.text.match(verboten) ?? []).map((w) => `${w} in ${d.rel}`)).flat();
+    expect(sitze, `${sitze.length} Sitze rufen eine Zwischenstufe: ${[...new Set(sitze.map((x) => x.split(" in ")[0]))].join(", ")}`).toEqual([]);
+  });
+
   it("Biss-Kontrolle: ein Willkuerwert und ein halber Schritt werden getroffen", () => {
     const sonde = funde('<div className="text-[12.5px]" style={{ fontSize: 13 }}>');
     expect(sonde.length).toBe(2);
@@ -76,5 +86,6 @@ describe("Punkt 2: die Schriftleiter gilt in den Bausteinen", () => {
     // und ein Leiterwert in Token-Form faellt durch beide Raster
     expect(funde('<div className="fs-3 leading-none">')).toEqual([]);
     expect("text-lg".match(/\btext-(2xl|3xl|4xl|5xl|lg)\b/g)).toEqual(["text-lg"]);
+    expect("font-medium".match(/\bfont-(thin|extralight|light|medium)\b/g)).toEqual(["font-medium"]);
   });
 });
