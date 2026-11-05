@@ -462,3 +462,42 @@ describe("P4-17: die Stille behaelt ihren Wortlaut im Protokoll", () => {
     expect(container.querySelector('[data-quittung="endpunkt"]')?.textContent).toMatch(/refused it \(HTTP 413\)/);
   });
 });
+
+// P65 (Leitung 5.11. 12:46 MEZ, Punkt 4 / #31, vierte Census-Runde): die Nachsortier-Vorschau
+// zog die Gruppierungszahlen *innerhalb* ihres eignen Versuchs nach. Brachte die Zahlengruppe
+// einen unlesbaren Koerper (ein HTML-Fehlerblatt bei 200), warf das JSON-Lesen, und die Flaeche
+// behauptete "The grouping did not run. Nothing was re-sorted." -- dabei war die Vorschau
+// laengst da. Zwei Faelle: der erste ist vor dem Flicken rot, die Kontrolle ist in beiden
+// Staenden gruen.
+describe("P65: ein Zaehler-Lesefehler ist keine gescheiterte Nachsortierung", () => {
+  it("sagt das Ausbleiben der Zahlen an den Zahlen, nicht der Nachsortierung", async () => {
+    stubFetch({
+      "/api/memories/reclassify": () => new Response(JSON.stringify({ ok: true, applied: false, total: 10, changed: 4, examples: [] }), { status: 200 }),
+      "/api/memories/gruppen": () => new Response("<html><body>200 OK</body></html>", { status: 200 }),
+    });
+    const { container } = render(<Settings />);
+    await waitFor(() => expect(container.textContent).toMatch(/Artificial intelligence/));
+    fireEvent.click(screen.getByRole("button", { name: /Show me what would change/ }));
+    const grund = await waitFor(() => {
+      const t = (container.textContent || "").replace(/\s+/g, " ");
+      if (!/4 notes would change/i.test(t)) throw new Error(`die Vorschau fehlt: "${t.slice(0, 240)}"`);
+      return t;
+    });
+    expect(grund, "die Vorschau ist gelaufen -- die Nachsortierung darf nicht geleugnet werden").not.toMatch(/grouping did not run/i);
+    expect(grund, "und das Ausbleiben der Zahlen steht an den Zahlen").toMatch(/two-row counts did not arrive/i);
+  });
+
+  // KONTROLLE, in beiden Staenden gruen: lehnt die Vorschau-Route selbst ab, bleibt ihre Absage.
+  it("KONTROLLE: eine echte Abweisung der Vorschau behaelt ihre Absage und ihre Zahl", async () => {
+    stubFetch({ "/api/memories/reclassify": () => new Response(JSON.stringify({ error: "Write limit reached" }), { status: 429 }) });
+    const { container } = render(<Settings />);
+    await waitFor(() => expect(container.textContent).toMatch(/Artificial intelligence/));
+    fireEvent.click(screen.getByRole("button", { name: /Show me what would change/ }));
+    const grund = await waitFor(() => {
+      const t = (container.textContent || "").replace(/\s+/g, " ");
+      if (!/grouping did not run/i.test(t)) throw new Error(`die Absage fehlt: "${t.slice(0, 240)}"`);
+      return t;
+    });
+    expect(grund).toMatch(/HTTP 429|Write limit reached/);
+  });
+});

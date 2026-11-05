@@ -1,4 +1,39 @@
-## [3.2.155]
+## [3.2.156]
+
+### Fixed
+
+- **A missing number is no longer blamed on the grouping it followed.** The reclassify preview
+  refreshed the axis counts *inside its own try*: a 200 answer with an unreadable body threw
+  while parsing, and the surface said "The grouping did not run. Nothing was re-sorted." —
+  about a preview that had already arrived (`Settings.tsx:1160`). The count refresh now has its
+  own guard and lands in its own line ("The two-row counts did not arrive — only the change
+  count is known."), which the surface has had since P4-14.
+- **A refused connect names its reason.** `ConnectApps.tsx:38` read the body before the status,
+  so an HTML error page threw into a catch whose only sentence was "Connecting failed — please
+  try again." A door that answered 500 looked like a dead transport. The status is asked first,
+  the body read forgivingly: the door's own sentence when it wrote one, otherwise
+  "Connecting failed — HTTP 500."; the catch is left for a real silence.
+- **Checked, not broken:** `Dashboard.tsx:774` (the grouping counts) has no status guard either,
+  but its absence is *used* honestly — the label at `Dashboard.tsx:1984` switches to "counting
+  the N loaded" / "in the search index" instead of claiming the whole store. No cut there.
+  `ActivityView.tsx:167`, `ai.ts:283`, `PrivacyShield.tsx:44` turned out to guard after the
+  read in a way that cannot lose an answer; read, no case, no change.
+
+### Tests
+
+Four cases (two red first at 12:39-12:41 MEZ, `/tmp/red-p65.json`; two controls green in both
+states). One of my own assertions was wrong while writing them: it expected the refusal to keep
+the old bare sentence — corrected by reading the existing case at
+`EnterpriseViews.test.tsx:421` instead of changing it. Suite: 3503 cases in 329 files.
+
+### No object marker, named as a deviation
+
+3.2.156 adds no new ASCII string literal to the bundle: the only new sentence carries a real em
+dash, and the content gate breaks on a non-ASCII marker. The landing is therefore held by its
+behaviour cases, not by a marker — the house exception for "a body without a word in the object"
+(27.10.), written down here rather than quietly skipped.
+
+## [3.2.155]## [3.2.155]
 
 ### Fixed
 

@@ -1157,9 +1157,19 @@ export function Settings() {
                         setSortierFehler(null);
                         try {
                           setSortierVorschau(await sendJson<{ changed: number; examples?: { title: string; von: string; nach: string; grund: string }[] }>('/api/memories/reclassify', {}));
-                          const koppen = await fetch('/api/memories/gruppen');
-                          if (koppen.ok) { setBestandGruppen(await koppen.json()); setGruppenFehlt(false); }
-                          else setGruppenFehlt(true);
+                          // P65: der Nachzug der Zahlen gehoert nicht in den Versuch der
+                          // Nachsortierung. Ein unlesbarer Koerper warf hier beim JSON-Lesen, und
+                          // die Flaeche leugnete die Nachsortierung, deren Vorschau laengst da
+                          // stand. Sein Fehlschlag ist ein fehlender Zahlenstreifen -- der hat
+                          // schon seit P4-14 eine eigne Zeile.
+                          try {
+                            const koppen = await fetch('/api/memories/gruppen');
+                            const zahlen = koppen.ok
+                              ? (await koppen.json().catch(() => null)) as { bestand: number; traeger: Record<Traeger, number>; themen: Record<Thema, number> } | null
+                              : null;
+                            if (zahlen) { setBestandGruppen(zahlen); setGruppenFehlt(false); }
+                            else setGruppenFehlt(true);
+                          } catch { setGruppenFehlt(true); }
                         } catch (err: unknown) {
                           setSortierFehler(absage("The grouping did not run. Nothing was re-sorted.", err));
                         } finally { setSortiertLaeuft(false); }

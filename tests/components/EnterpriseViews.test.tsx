@@ -622,3 +622,41 @@ describe("P63: ein Schild-Schalter nennt die Zahl einer unlesbaren Antwort", () 
     expect(grund, "und der Schalter ist zurueck, wo er war").toMatch(/back where it was/i);
   });
 });
+
+// P65 (Leitung 5.11. 12:46 MEZ, Punkt 4 / #31): das App-Verbinden las den Koerper vor der
+// Antwort. Ein Fehlerblatt warf beim JSON-Lesen, und die Meldung wurde zu "please try again" --
+// ohne die Zahl, die die eigne Tuer geschrieben hatte.
+describe("P65: eine unlesbare Antwort des Verbindens nennt ihre Zahl", () => {
+  const apps = (verbunden: boolean): ClientStatus[] => [
+    { id: "cursor", name: "Cursor", installed: true, connected: verbunden, config: "/z", canConnect: !verbunden },
+  ];
+
+  it("zeigt 500, statt die Antwort in einem grundlosen Versuch enden zu lassen", async () => {
+    const user = userEvent.setup();
+    stubFetch({
+      "/api/clients/cursor/connect": { status: 500, body: "<html><body>500</body></html>" as unknown as object },
+      "/api/clients": { body: { clients: apps(false) } },
+    });
+    mitToast(<ConnectApps />);
+    await user.click(await screen.findByRole("button", { name: "Connect" }));
+    const grund = await waitFor(() => {
+      const t = (document.body.textContent || "").replace(/\s+/g, " ");
+      if (!/connecting failed/i.test(t)) throw new Error(`keine Absage: "${t.slice(0, 220)}"`);
+      return t;
+    });
+    expect(grund, "500 ist eine Antwort der eignen Tuer — ihre Zahl gehoert auf den Schirm").toMatch(/HTTP 500/);
+    expect(grund, "und der Wortlaut der Laufzeit bleibt im Protokoll").not.toMatch(/Unexpected token|not valid JSON/i);
+  });
+
+  // KONTROLLE, in beiden Staenden gruen: der Satz der Tuer steht, wenn sie einen schreibt.
+  it("KONTROLLE: eine 400 mit eigner Auskunft behaelt ihren Satz", async () => {
+    const user = userEvent.setup();
+    stubFetch({
+      "/api/clients/cursor/connect": { status: 400, body: { ok: false, error: "The config file is not plain JSON." } },
+      "/api/clients": { body: { clients: apps(false) } },
+    });
+    mitToast(<ConnectApps />);
+    await user.click(await screen.findByRole("button", { name: "Connect" }));
+    await screen.findByText("The config file is not plain JSON.");
+  });
+});

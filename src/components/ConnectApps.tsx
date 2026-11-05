@@ -4,6 +4,7 @@
 import { useEffect, useState } from 'react';
 import { Plug, CheckCircle2, Loader2 } from '../lib/icons';
 import { tuerSatz } from '../lib/api';
+import { absage } from '../lib/absage';
 
 export interface ClientStatus {
   id: string;
@@ -35,13 +36,24 @@ export function ConnectApps() {
     setMeldung(null);
     try {
       const r = await fetch(`/api/clients/${encodeURIComponent(c.id)}/connect`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{}' });
-      const d = await r.json() as { message?: string; error?: string; clients?: ClientStatus[] };
-      if (Array.isArray(d.clients)) setClients(d.clients);
+      // P65: die Antwort wird zuerst gefragt, der Koerper verzeihend gelesen. Ein HTML-Blatt
+      // warf beim JSON-Lesen, und die Meldung wurde zu einem grundlosen "please try again".
+      const d = (await r.json().catch(() => null)) as { message?: string; error?: string; clients?: ClientStatus[] } | null;
+      if (d && Array.isArray(d.clients)) setClients(d.clients);
       // Der Leib kommt von der eignen Tuer — gefiltert auf einen einzeiligen Kurzsatz,
       // damit ein fremder Koerper auf demselben Port hier keinen Pfad ablegen kann.
-      setMeldung({ ok: r.ok, text: tuerSatz(d.message ?? d.error, r.ok ? 'K3PTA answered without a message.' : `HTTP ${r.status}`) });
-    } catch {
-      setMeldung({ ok: false, text: 'Connecting failed — please try again.' });
+      // P65: zwei Zweige, zwei Saelle. Eine Abweisung nennt, WAS nicht geschah, und dahinter
+      // den Satz der Tuer -- oder ihre Zahl, wenn die Tuer keinen Satz schrieb. Die nackte Zahl
+      // allein war vorher die ganze Meldung, und das ist keine Auskunft.
+      if (r.ok) { setMeldung({ ok: true, text: tuerSatz(d?.message, 'K3PTA answered without a message.') }); }
+      else {
+        // Hat die Tuer einen Satz geschrieben, steht er allein -- er sagt schon, was schlug.
+        // Die Vorrede kommt nur, wenn ausser der Zahl nichts da war.
+        const grund = tuerSatz(d?.error, '');
+        setMeldung({ ok: false, text: grund || `Connecting failed — HTTP ${r.status}.` });
+      }
+    } catch (e: unknown) {
+      setMeldung({ ok: false, text: absage('Connecting failed — please try again.', e) });
     } finally {
       setLaeuft(null);
     }
