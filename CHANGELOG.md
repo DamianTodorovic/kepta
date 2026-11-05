@@ -1,3 +1,25 @@
+## [3.2.163]
+
+### Changed
+
+- **Eight sentences on the surface stopped asserting and started explaining.** Measured
+  5.11.2026 18:35:37 MEZ against the delivered 3.2.162: the understandability census kept two
+  ladders, and its second one sat on its own stop -- 8 findings against a maximum of 8, so it
+  could no longer lose. The real number sat under it: 16 of 333 surface sentences named a
+  reason or a consequence. Now the eight jargon sentences say what they mean (the endpoint row
+  says where your questions go and what changing it moves, the fit button says every note is on
+  the screen, the semantic switch says similar notes sit together, the similarity switch says
+  to check first, the Ollama row says to start it, the sidebar point says to open it, the
+  shortcut row says Open, and the npm line says nothing is built by hand). The bolt maximum was
+  pulled from 8 to 0 -- measured 18:41 MEZ at the source, and the rule now runs inside the suite
+  (tests/punkt7-fachwort-traegt-grund.test.ts, three cases including a bite control), because a
+  number in a script calls nobody when a line breaks it.
+- **The census no longer reads build comments as user text.** Three of the eleven source-level
+  findings were quoted from code comments (Dashboard.tsx:595, TodayView.tsx:173, Chat.tsx:152);
+  no person reads those on the surface, so comments are stripped before candidates are sought.
+  Shortening three of my own sentences back under the 14-word cap was needed to keep the first
+  ladder honest (79,7 % -> 80,6 %); the cap itself was not moved.
+
 ## [3.2.162]
 
 ### Added
