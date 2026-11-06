@@ -1,10 +1,10 @@
 {
  "dateien": {
   "README.md": {
-   "saetze": 412,
-   "absolut": 130,
-   "mit_zeug": 46,
-   "ohne_zeug": 84
+   "saetze": 413,
+   "absolut": 132,
+   "mit_zeug": 49,
+   "ohne_zeug": 83
   },
   "SECURITY.md": {
    "saetze": 33,
@@ -26,15 +26,15 @@
   }
  },
  "zusammen": {
-  "saetze": 572,
-  "absolut": 173,
-  "mit_zeug": 55,
-  "ohne_zeug": 118
+  "saetze": 573,
+  "absolut": 175,
+  "mit_zeug": 58,
+  "ohne_zeug": 117
  },
  "abschnitt": {
   "README.md": {
-   "absolut": 130,
-   "mit_zeug": 56,
+   "absolut": 132,
+   "mit_zeug": 58,
    "ohne_zeug": 74
   },
   "SECURITY.md": {
@@ -54,14 +54,14 @@
   }
  },
  "zusammen_abschnitt": {
-  "absolut": 173,
-  "mit_zeug": 59,
+  "absolut": 175,
+  "mit_zeug": 61,
   "ohne_zeug": 114
  },
  "maschinell_pruefbar": {
   "README.md": {
-   "absolut": 130,
-   "maschinell": 27
+   "absolut": 132,
+   "maschinell": 29
   },
   "SECURITY.md": {
    "absolut": 9,
@@ -76,7 +76,7 @@
    "maschinell": 2
   }
  },
- "summe_pruefbar": 32,
+ "summe_pruefbar": 34,
  "pruefbar_liste": [
   {
    "datei": "README.md",
@@ -86,6 +86,16 @@
   {
    "datei": "README.md",
    "satz": "On macOS the key never sits in a file; on Windows it is the DPAPI-sealed database-key.dpapi in the data folder, readable only under the same account, and a headless install with KEPTA_DB_KEY keeps it in the process envir",
+   "zeuge": true
+  },
+  {
+   "datei": "README.md",
+   "satz": "Every memory carries a type and a confidence score — the type is the rules' answer when nobody set one, never a silent fall-back to *fact*, and an unset confidence reads as 1 (tests/core/notiz-drei-felder.test.ts:53, :67",
+   "zeuge": true
+  },
+  {
+   "datei": "README.md",
+   "satz": "The validity window is the one field a note really can lack: the row then holds null, and the reader decides — no start means the note's own creation date, no end means it never expires (:75 reads both nulls back, :87 an",
    "zeuge": true
   },
   {
@@ -353,10 +363,6 @@
   {
    "datei": "README.md",
    "satz": "Claude Desktop, Cursor, Gemini CLI, Cline, Codex — anything that speaks MCP shares the same encrypted knowledge base, plus anything that only speaks HTTP through the REST API."
-  },
-  {
-   "datei": "README.md",
-   "satz": "Every memory carries a type, a validity window and a confidence score."
   },
   {
    "datei": "README.md",

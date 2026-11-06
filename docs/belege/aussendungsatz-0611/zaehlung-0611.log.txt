@@ -1,4 +1,4 @@
-Zeit: 7.11.2026, 00:35:29 MEZ
+Zeit: 7.11.2026, 00:53:38 MEZ
 Dateien: README.md, SECURITY.md, ROADMAP.md, .github/release-notes.md — Einheiten ueber 25 Zeichen.
 Riss: satz-riss.mjs (P128, markdown-fest). Vorher: Satzende + Leerzeichen ueber dem
 ganzen Text, wodurch Aufzaehlungen, Tabellenzeilen und `<summary>`-Kuelsen als EIN
@@ -9,33 +9,35 @@ Satz zaehlten. Unter beiden Naivlingen, in diesem Lauf nachgerechnet:
 
 | Datei | Saetze | absolute | mit Messzeug | ohne Messzeug | Anteil ohne |
 |---|---|---|---|---|---|
-| `README.md` | 412 | 130 | 46 | 84 | 64.6 % |
+| `README.md` | 413 | 132 | 49 | 83 | 62.9 % |
 | `SECURITY.md` | 33 | 9 | 4 | 5 | 55.6 % |
 | `ROADMAP.md` | 77 | 16 | 4 | 12 | 75.0 % |
 | `.github/release-notes.md` | 50 | 18 | 1 | 17 | 94.4 % |
-| **zusammen** | **572** | **173** | **55** | **118** | **68.2 %** |
+| **zusammen** | **573** | **175** | **58** | **117** | **66.9 %** |
 
-Nenner fuer den Anteil: 173 absolute Behauptungen in 572 Saetzen der vier Texte.
+Nenner fuer den Anteil: 175 absolute Behauptungen in 573 Saetzen der vier Texte.
 
 Zweite Lesung — der Zeuge darf im selben Abschnitt stehen (Absatz, Tabelle, Aufzaehlung):
 | Datei | absolute | mit Messzeug | ohne Messzeug |
 |---|---|---|---|
-| `README.md` | 130 | 56 | 74 |
+| `README.md` | 132 | 58 | 74 |
 | `SECURITY.md` | 9 | 3 | 6 |
 | `ROADMAP.md` | 16 | 0 | 16 |
 | `.github/release-notes.md` | 18 | 0 | 18 |
-| zusammen | 173 | 59 | 114 |
-   mit Messzeug im selben Abschnitt: 59 von 173 = 34.1 % (gegen 55 von 173 = 31.8 % in der engen Lesung).
+| zusammen | 175 | 61 | 114 |
+   mit Messzeug im selben Abschnitt: 61 von 175 = 34.9 % (gegen 58 von 175 = 33.1 % in der engen Lesung).
 
 Die schmalere Klasse — Saetze, die ein Werkzeug widerlegen koennte (never/always/cannot/0 %/100 %):
-   README.md                  27 von 130 absoluten
+   README.md                  29 von 132 absoluten
    SECURITY.md                2 von 9 absoluten
    ROADMAP.md                 1 von 16 absoluten
    .github/release-notes.md   2 von 18 absoluten
-   zusammen 32 von 173 — der Rest ist Produktcopy ("no password to type"), keine Behauptung ueber eine Maschine.
+   zusammen 34 von 175 — der Rest ist Produktcopy ("no password to type"), keine Behauptung ueber eine Maschine.
    Die Liste, in Lesereihenfolge, mit dem Marker „Zeug", wenn derselbe Satz schon ein Messzeug nennt:
    [README.md] ZEUG While it cools at 3 000 notes a few pairs still touch for a moment; tests/lib/graphLayout.test.ts:2455-2458 pins that funnel at ≤ 40 pairs by step 250, ≤ 40 again by step 310 and zero by step 380, so no sentence here say
    [README.md] ZEUG On macOS the key never sits in a file; on Windows it is the DPAPI-sealed database-key.dpapi in the data folder, readable only under the same account, and a headless install with KEPTA_DB_KEY keeps it in the process envir
+   [README.md] ZEUG Every memory carries a type and a confidence score — the type is the rules' answer when nobody set one, never a silent fall-back to *fact*, and an unset confidence reads as 1 (tests/core/notiz-drei-felder.test.ts:53, :67
+   [README.md] ZEUG The validity window is the one field a note really can lack: the row then holds null, and the reader decides — no start means the note's own creation date, no end means it never expires (:75 reads both nulls back, :87 an
    [README.md] ZEUG Keys, credentials, browser profiles, keychains and system folders are never read, and that cannot be switched off (tests/scan/regeln.test.ts tries to open the barrier with a widened file-type list and is refused) — becau
    [README.md] ZEUG Private notes — one switch in the editor: a private note is never shown to an AI app and never sent to a cloud model — in the app (tests/mcp.test.ts refuses it over MCP even when an agent asks by scope; tests/enterprise-
    [README.md] ZEUG Expired entries are marked, never quietly hidden (tests/engine.test.ts:78-83 asks for an expired note, gets it back with expired: true, and sees it ranked below the fresh one rather than missing)
@@ -71,7 +73,7 @@ Zwei von ihnen nachgegriffen, im selben Lauf:
    "no screenshot of it here yet" (Semantic-Ansicht): README nennt 20 Bilder (12 in Markdown, 8 als <img alt>), davon 0 mit "Semantic"; der Satz steht noch da — haltbar.
    "no embedding ever travels into the view": 8 von 8 benannten Flaechen-Dateien gelesen, zusammen 0 Nennung(en) "embedding"; das Wort liegt in 34 Test-Dateien des Repos. Fehlende Dateien: keine.
 
-Die 118 ohne Messzeug, in Lesereihenfolge der Dateien (erste 40):
+Die 117 ohne Messzeug, in Lesereihenfolge der Dateien (erste 40):
    [README.md] Your AI forgets you after every chat.
    [README.md] Desktop app · no cloud · no account · encrypted at rest SQLite · hybrid retrieval · knowledge graph · MCP
    [README.md] Every entry is a node, every connection an edge — real connections drawn solid, mere similarity dashed.
@@ -88,7 +90,6 @@ Die 118 ohne Messzeug, in Lesereihenfolge der Dateien (erste 40):
    [README.md] No upload, no account, no telemetry.
    [README.md] One brain for every AI tool.
    [README.md] Claude Desktop, Cursor, Gemini CLI, Cline, Codex — anything that speaks MCP shares the same encrypted knowledge base, plus anything that only speaks HTTP through the REST API.
-   [README.md] Every memory carries a type, a validity window and a confidence score.
    [README.md] On a four-note check (npm run embed:sprachtest) the default model answers 4 of 4 English paraphrase questions and 1 of 4 of the same questions translated into German.
    [README.md] Changing the default would also mean re-embedding every stored note, because each chunk is keyed to the model that produced it (npm run eval:sprache reruns both sides).
    [README.md] Everything lives in ~/.kepta/, encrypted on disk, no account, no telemetry.
@@ -112,3 +113,4 @@ Die 118 ohne Messzeug, in Lesereihenfolge der Dateien (erste 40):
    [README.md] Model discovery for Ollama and LM Studio in one click, no key required
    [README.md] Source citations: every answer shows which memories it used
    [README.md] Duplicate review — every group side by side, one click to keep the richest copy or dismiss the pair for good.
+   [README.md] Every card shows where it came from and which part it is (2/5), and a file source opens in its default application.

@@ -107,7 +107,7 @@ describe("P129, der Wortschatz: ein benanntes Instrument ist ein Messzeug", () =
     expect(zeug.test(einheiten[0]), "das Messzeug steht im selben Satz, wird aber nicht gesehen").toBe(true);
   });
 
-  it("am echten Bestand: 55 von 173 absoluten Behauptungen nennen ihr Messzeug", () => {
+  it("am echten Bestand: 58 von 175 absoluten Behauptungen nennen ihr Messzeug", () => {
     let absoluten = 0;
     let mit = 0;
     for (const datei of DATEIEN) {
@@ -118,12 +118,11 @@ describe("P129, der Wortschatz: ein benanntes Instrument ist ein Messzeug", () =
         if (zeug.test(s)) mit++;
       }
     }
-    // Gemessen 6.11. 00:31:24 MEZ mit dem Zaehler selbst (docs/belege/aussendungsatz-0611/
-    // zaehlung-0611.log.txt): P141 teilte README.md:128 in zwei Saetze und bewaffnete den einen —
-    // Nenner 173, Zaehler 55. Der Bruch wachst, weil Zeugen geschrieben werden; der Nenner wachst
-    // mit, weil ein Satz, der zwei Behauptungen traegt, in zwei Saetze gehoert.
-    expect(absoluten, "der Nenner ist nicht mehr 173 — der Riss oder die Klasse hat sich bewegt").toBe(173);
-    expect(mit, `${mit} von ${absoluten} nennen ein Messzeug — erwartet war 55`).toBe(55);
+    // Gemessen 7.11. 00:47:11 MEZ mit dem Zaehler selbst (docs/belege/aussendungsatz-0611/
+    // zaehlung-0611.log.txt): P142 teilte README.md:86 — ein Bullet mit einer Ueber-behauptung und
+    // einem Halbsatz — in drei Saetze und bewaffnete alle drei. Nenner 173 -> 175, Zaehler 55 -> 58.
+    expect(absoluten, "der Nenner ist nicht mehr 175 — der Riss oder die Klasse hat sich bewegt").toBe(175);
+    expect(mit, `${mit} von ${absoluten} nennen ein Messzeug — erwartet war 58`).toBe(58);
     expect(mit / absoluten, "Anteil ohne Nenner ist ein Urteil").toBeGreaterThan(0.3);
     expect(maschine.source.length, "die schmale Klasse wurde nicht mitgeändert").toBeGreaterThan(10);
   });

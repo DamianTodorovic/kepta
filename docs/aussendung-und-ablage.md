@@ -1085,6 +1085,62 @@ notes match in total" schreibt dem Index eine Auskunft zu, die der Streifen übe
 (`src/components/Dashboard.tsx:1818`), und was dort steht, ist ein Paar (gezeigt / insgesamt), nicht
 eine Totalzahl. Die Fläche sagt „3 of 7 hits", und so steht es jetzt da.
 
+## 30. P142 — „Every memory carries a validity window": zwei Drittel stimmen, eines nicht (7.11. 00:43 MEZ)
+
+Der sechste Fund, dass eine nach außen getragene Behauptung **zu stark** war — nicht falsch im
+Sinne von Lüge, sondern falsch im Sinne von „die Maschine sagt etwas anderes". README.md:86:
+
+    Every memory carries a type, a validity window and a confidence score.
+
+Die Ordnung (`src/core/store.ts:280-286`) hat für `type` und `confidence` ein `NOT NULL` mit
+Default, für `valid_from` und `valid_to` **keins** — die Spalten sind nullbar, und der Schreibweg
+(`:828`) schreibt ausdrücklich null, wenn niemand ein Fenster gesetzt hat. Was die Behauptung
+tatsächlich deckt, ist eine Leseregel: `src/core/engine.ts:475` macht in der Zeitreise aus einem
+fehlenden Anfang das Anlegedatum, `:477` lässt ein fehlendes Ende nie verjähren. „carries a
+validity window" verkauft also eine Zeile, die kein Feld enthält, als ein Feld mit offener Flanke.
+
+**Und die Suite hatte dazu nichts.** Kein Fall in `tests/` bewies die Klammer des Vertrauens, die
+Typentscheidung im Schreibweg, oder was eine Zeitreise mit einem fehlenden Anfang tut. Neu:
+`tests/core/notiz-drei-felder.test.ts`, sechs Fälle — `:53` Typ aus den Regeln (nicht
+Spalten-Default), `:67` Vertrauen: ohne Angabe 1, außerhalb 0..1 zurückgeholt, `:75` die beiden
+anderen Felder sind in jeder Zeile und das Fenster nicht, `:87` fehlender Anfang = Anlegedatum,
+`:102` offenes Ende verjährt nie gegen ein gesetztes, das als abgelaufen gemeldet wird, `:121` die
+Zeitreise blendet nach einem gesetzten Ende aus.
+
+**Sechs Sonden, jede Datei danach bytegleich** (`cp` aus der eignen Sicherung, `cmp`,
+`git status` leer):
+
+| Sonde | Uhr | Rot |
+|---|---|---|
+| `clampConfidence` → `return 0.5` | 00:45:38 | 1 von 6 (Fall :67) |
+| Regeltyp → `"semantic"` | 00:45:44 | 1 von 6 (Fall :53) |
+| `?? r.createdAt` → `?? 0` (`engine.ts:475`) | 00:45:50 | 1 von 6 (Fall :87) |
+| `expired` → `false` (`engine.ts:618`) | 00:46:02 | 1 von 6 (Fall :102) |
+| Zeitreise-Ende → `if (false)` (`engine.ts:477`) | 00:46:02 | 1 von 6 (Fall :121) |
+| `validFrom ?? null` → `?? 0` (Schreibweg) | 00:46:09 | 2 von 6 (Fälle :75, :87) |
+
+**Nach außen** ist der Bullet jetzt drei Sätze, jeder mit eignem Zeugen; der mittlere ist die
+Berichtigung („the row then holds null, and the reader decides"), der dritte nennt die beiden
+Flächenzeichen (`tests/components/MemoryCard.test.tsx:47`, `:52`) und das Suchzeichen
+(`tests/engine.test.ts:268`).
+
+### Die Zählung
+
+Zensus 00:47:11 MEZ, Exit 0: 573 Einheiten, **175** absolute Behauptungen, **58** mit Messzeug
+= **33,1 %** (vorher 55 von 173 = 31,8 %), 117 ohne. Schmale Klasse **34**, davon **29** mit
+Zeugen → **5 Arbeit**, unverändert.
+
+Dabei ein Fund am Muster selbst, und meine erste Reparatur war falsch: die Zahlen-Einheitensuche
+`\\d[\\d., ]*(%|ms|MiB|GiB|notes|queries|of|von)` begrenzt „of" nicht nach hinten, also zählt
+mein eignes Zitat „…:268 off the search hit" als Zahlenbehauptung (Gegenprobe: „off" → „beside",
+und der Satz ist nicht mehr absolut; gemessen 00:48:43). Die erste Annahme „`\\b` hinter die ganze
+Alternation" ist widerlegt: nachgezählt mit einer Vorsonde warft sie **8** Sätze aus dem Nenner
+(175 → 167), davon **6** echte Prozentbehauptungen („97 % of lines", „100, 115 or 130 %",
+„Hit@1 71 %"), weil `%` an einem Leerzeichen keine Wortgrenze findet. Der richtige Kandidat
+begrenzt nur die Wörter (`of\\b|von\\b|ms\\b|…`, `%` ohne Kante) und wirft genau einen Satz:
+meinen. P143 fährt das als eigne Arbeit — gemeldet, nicht heimlich gezogen, weil die 175 sonst
+eine Zahl enthielte, deren Grund ein Fehler im Muster ist.
+
 
 ## Fehler in diesem Schlag, die ich selbst gefunden habe
 
@@ -1245,3 +1301,24 @@ eine Totalzahl. Die Fläche sagt „3 of 7 hits", und so steht es jetzt da.
     `container`; statt die Rückgabe des Harness zu benutzen, schrieb ich
     `const { container } = { container: document.body }`. Das ist dasselbe Blatt, das der Fall gerade
     nicht prüft. In demselben Zug zurückgebaut auf `const { container } = await zeige(drei)`.
+32. **Drei Fälle ohne `await`.** `searchMemories` ist ein Versprechen; der erste Lauf 00:45:04 fiel
+    mit `TypeError: Cannot read properties of undefined (reading 'map')`. Das war kein Urteil,
+    sondern ein Gebrauchfehler — und nach der Regel hätte ich ihn erst reparieren und dann neu
+    messen dürfen, nicht „schnell weiter". Nach dem `await`: 6 von 6 grün.
+33. **Ein Biss-Abschnitt stand im Datei-Kopf, bevor die Sonden gefahren waren.** Ich schrieb
+    „macht Fall 2 rot; Fall 1 rot; Fall 3 rot" in die Kommentarzeilen und fuhr die Sonden danach.
+    Zwei Zuordnungen stimmten, eine nicht: der `?? 0`-Patch an `engine.ts:475` macht Fall `:87`
+    rot, nicht Fall `:75`. Dasselbe Gesetz, das ich in P141 für Zahlen gelten ließ (eine Zahl, die
+    ein Artefakt trägt, muss von dem Artefakt hergestellt werden), galt hier für Fall-Nummern — und
+    ich hatte es an demselben Abend schon zweimal gebrochen.
+34. **Vier Nicht-ASCII-Zeilen in meinem eignen Papier, eine davon im Satz über den Fehler.** Ein
+    CJK-Wort (U+51C6 U+5907) mitten in „vorbereitet", dreimal ein Umlaut, wo eine Umschreibung
+    stehen sollte — einer davon in dem Satz, der einen Umlautfehler meldet. Der Sweep nach jedem
+    Schreibgriff fand alle vier, bevor irgendetwas committet war. Es ist der fünfte CJK-
+    Gleiter dieses Abends, und alle fünf stehen in Sätzen, in denen ich ein deutsches Wort
+    umschreibe, das ich eben auf Englisch gedacht hatte.
+35. **Meine erste Reparatur des „of"-Musters war gefühlt, nicht nachgerechnet.** „Dann einfach
+    `\b` hinter die ganze Alternation" — damit wirft die Vorsonde 8 Sätze aus dem Nenner, davon 6
+    echte Prozentbehauptungen, weil `%` an einem Leerzeichen keine Wortgrenze findet. Richtig ist
+    die Begrenzung nur für die Wörter; gemessen wirft sie genau einen Satz. Der Fund bleibt in
+    Abschnitt 30 stehen und wird P143, statt dass ich die Zahl still verbessere.
