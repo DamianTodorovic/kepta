@@ -178,6 +178,12 @@ erfunden, in beiden Sprachen gemessen und mit dem Vektor-Bein auch allein:
 | `konkurrenz-0211/mem0-fakten-3b.log.txt` | 1491 B | `86b0edecc78a5ef0…` |
 | `konkurrenz-0211/spur-fakten-3b-vollstaendig.jsonl` | 18726 B | `60fd05398df850c1…` |
 | `konkurrenz-0211/unser-eval-0211.log.txt` | 3799 B | `84b1f8b6298ee82e…` |
+| `konkurrenz-0611/spur-fair-0611.jsonl` | 14125 B | `2c92cd1827953d8d…` |
+| `konkurrenz-0611/spur-fair-0611-zwei.jsonl` | 14126 B | `a8d5ce24745c3522…` |
+| `konkurrenz-0611/ergebnis-fair-0611.json` | 494 B | `6fc4af90e64fc6b1…` |
+| `konkurrenz-0611/ergebnis-fair-0611-zwei.json` | 494 B | `3c3d8b3e08540801…` |
+| `konkurrenz-0611/lauf-fair.py.txt` | 4218 B | `51c49e20fb8294de…` |
+| `konkurrenz-0611/lauf-fair.log.txt` | 2340 B | `30505b675a38ad91…` |
 
 Drei Folgen, aufgeschrieben, weil sie die Zahl nicht schoener machen:
 

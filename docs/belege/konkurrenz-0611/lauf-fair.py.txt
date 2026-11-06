@@ -1,0 +1,107 @@
+"""P102: der faire mem0-Lauf, dessen Artefakt dem 2.11. verloren ging.
+
+Konfiguration, entschieden, weil sie die Frage trennt: ganzes Notiz-Stueck als ein
+Gedaechtnis (keine Fakt-Zerlegung) und infer=False -- damit entscheidet nicht ein
+LLM-Prompt ueber die Trefferquote, sondern mem0s eigne Rangfolge. Einbettung lokal
+ueber Ollama (nomic-embed-text), Vektoren in qdrant-local unter /tmp. Kein Netz nach
+aussen, kein Projekt-Pfad, rueckgaengig mit rm -rf.
+
+Der Trace schreibt dieselben Feldnamen wie der dauerhafte 2.11-Trace, damit
+tests/konkurrenz-mem0-latte.test.ts beide Artefakte mit demselben Code lesen kann.
+"""
+import json
+import os
+import resource
+import time
+import sys
+
+from mem0 import Memory
+
+HEIM = os.path.join(os.path.dirname(os.path.abspath(__file__)), "heim-fair")
+SPUR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "spur-fair-0611.jsonl")
+ERG = os.path.join(os.path.dirname(os.path.abspath(__file__)), "ergebnis-fair-0611.json")
+USER = "k58fair"
+
+cfg = {
+    "vector_store": {"provider": "qdrant", "config": {"collection_name": "k58fair", "path": HEIM, "embedding_model_dims": 768}},
+    "llm": {"provider": "ollama", "config": {"model": "llama3.2:3b", "ollama_base_url": "http://127.0.0.1:11434"}},
+    "embedder": {"provider": "ollama", "config": {"model": "nomic-embed-text", "ollama_base_url": "http://127.0.0.1:11434", "embedding_dims": 768}},
+    "history_db_path": os.path.join(os.path.dirname(os.path.abspath(__file__)), "history-fair.db"),
+}
+
+korpus = json.load(open(os.path.join(os.path.dirname(os.path.abspath(__file__)), "korpus.json")))
+fragen = json.load(open(os.path.join(os.path.dirname(os.path.abspath(__file__)), "fragen.json")))
+
+
+def zeit():
+    return time.strftime("%H:%M:%S")
+
+
+def rss_gib():
+    # macOS: ru_maxrss in Bytes
+    return resource.getrusage(resource.RUSAGE_SELF).ru_maxrss / (1024 ** 3)
+
+
+out = open(SPUR, "w")
+
+
+def schreibe(zeile):
+    out.write(json.dumps(zeile, ensure_ascii=False) + "\n")
+    out.flush()
+
+
+t0 = time.time()
+schreibe({"art": "start", "zeit": zeit(), "llm": "llama3.2:3b", "infer": False,
+          "heim": HEIM, "notizen": len(korpus), "anfragen": len(fragen)})
+print("START", zeit(), "| Notizen", len(korpus), "| Anfragen", len(fragen), flush=True)
+
+m = Memory.from_config(cfg)
+print("Memory gebaut", zeit(), flush=True)
+
+for i, notiz in enumerate(korpus, 1):
+    t = time.time()
+    m.add(notiz["text"], user_id=USER, metadata={"note": notiz["id"]}, infer=False)
+    schreibe({"art": "setze", "i": i, "note": notiz["id"], "sek": round(time.time() - t, 1)})
+    if i % 10 == 0:
+        print("gesetzt", i, "von", len(korpus), zeit(), "RSS %.2f GiB" % rss_gib(), flush=True)
+
+treffer = 0
+r5 = 0
+nach_kat = {}
+for q in fragen:
+    t = time.time()
+    r = m.search(q["frage"], top_k=5, filters={"user_id": USER})
+    ergebnisse = r.get("results", [])
+    liste = [(e.get("metadata") or {}).get("note") for e in ergebnisse]
+    top = liste[0] if liste else None
+    hit = top in q["erwartet"]
+    in5 = any(x in q["erwartet"] for x in liste[:5])
+    treffer += 1 if hit else 0
+    r5 += 1 if in5 else 0
+    k = q["kategorie"]
+    nach_kat.setdefault(k, [0, 0])
+    nach_kat[k][0] += 1 if hit else 0
+    nach_kat[k][1] += 1
+    schreibe({"art": "suche", "id": q["frage"], "kategorie": k, "frage": q["frage"],
+              "erwartet": q["erwartet"], "top": top, "treffer": bool(hit),
+              "liste": liste, "sek": round(time.time() - t, 1)})
+
+n = len(fragen)
+ergebnis = {
+    "lauf": "fair-0611",
+    "zeit": zeit(),
+    "konfiguration": {"ganzes_stueck": True, "infer": False, "einbett": "nomic-embed-text",
+                      "llm": "llama3.2:3b", "top_k": 5},
+    "korpus": {"notizen": len(korpus), "anfragen": n},
+    "hit1": treffer,
+    "hit1_prozent": round(100 * treffer / n, 1),
+    "recall5_in_den_5": r5,
+    "recall5_prozent": round(100 * r5 / n, 1),
+    "nach_kategorie": {k: "%d/%d" % (v[0], v[1]) for k, v in nach_kat.items()},
+    "dauer_sek": round(time.time() - t0, 1),
+    "rss_gib": round(rss_gib(), 2),
+}
+json.dump(ergebnis, open(ERG, "w"), ensure_ascii=False, indent=1)
+schreibe({"art": "fertig", "zeit": zeit(), **ergebnis})
+out.close()
+print(json.dumps(ergebnis, ensure_ascii=False), flush=True)

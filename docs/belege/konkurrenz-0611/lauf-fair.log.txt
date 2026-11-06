@@ -1,0 +1,23 @@
+START 11:08:34 | Notizen 58 | Anfragen 45
+[PostHog] Multiple active PostHog clients detected for the same project API key and host. Reuse one Posthog instance per app or process when possible to avoid competing background queues and missed shutdown flushes. Multiple clients are supported when intentional.
+Memory gebaut 11:08:34
+Failed to load spaCy lemma model: spaCy is not installed. Install it with: pip install mem0ai[nlp]
+gesetzt 10 von 58 11:08:35 RSS 0.15 GiB
+gesetzt 20 von 58 11:08:35 RSS 0.15 GiB
+gesetzt 30 von 58 11:08:35 RSS 0.15 GiB
+gesetzt 40 von 58 11:08:35 RSS 0.15 GiB
+gesetzt 50 von 58 11:08:36 RSS 0.15 GiB
+Failed to load spaCy full model: spaCy is not installed. Install it with: pip install mem0ai[nlp]
+{"lauf": "fair-0611", "zeit": "11:08:37", "konfiguration": {"ganzes_stueck": true, "infer": false, "einbett": "nomic-embed-text", "llm": "llama3.2:3b", "top_k": 5}, "korpus": {"notizen": 58, "anfragen": 45}, "hit1": 23, "hit1_prozent": 51.1, "recall5_in_den_5": 26, "recall5_prozent": 57.8, "nach_kategorie": {"lexikalisch": "18/25", "umschreibung": "1/10", "graph": "3/3", "ablenkung": "0/4", "temporal": "1/3"}, "dauer_sek": 2.4, "rss_gib": 0.15}
+Exception ignored while calling deallocator <function QdrantClient.__del__ at 0x113bb9640>:
+Traceback (most recent call last):
+  File "/private/tmp/konk-mem0-fair-0611/venv/lib/python3.14/site-packages/qdrant_client/qdrant_client.py", line 172, in __del__
+  File "/private/tmp/konk-mem0-fair-0611/venv/lib/python3.14/site-packages/qdrant_client/qdrant_client.py", line 181, in close
+  File "/private/tmp/konk-mem0-fair-0611/venv/lib/python3.14/site-packages/qdrant_client/local/qdrant_local.py", line 113, in close
+ImportError: sys.meta_path is None, Python is likely shutting down
+Exception ignored while calling deallocator <function QdrantClient.__del__ at 0x113bb9640>:
+Traceback (most recent call last):
+  File "/private/tmp/konk-mem0-fair-0611/venv/lib/python3.14/site-packages/qdrant_client/qdrant_client.py", line 172, in __del__
+  File "/private/tmp/konk-mem0-fair-0611/venv/lib/python3.14/site-packages/qdrant_client/qdrant_client.py", line 181, in close
+  File "/private/tmp/konk-mem0-fair-0611/venv/lib/python3.14/site-packages/qdrant_client/local/qdrant_local.py", line 113, in close
+ImportError: sys.meta_path is None, Python is likely shutting down
