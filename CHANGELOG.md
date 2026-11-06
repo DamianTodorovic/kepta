@@ -1,3 +1,27 @@
+## [3.2.191]
+
+### Fixed
+
+- **A shipped line ended its clause with a bare hyphen, and no bar could see it.**
+  `KnowledgeGraph.tsx:1048` builds its window sentence from three parts:
+  `` `… of … concepts and ` `` `+` `` `… claims reach this picture - ` `` `+`
+  `"no zoom can bring in what the window left out"`. The delivered text reads
+  "… reach this picture - no zoom …", which is the one dash the house never ships.
+  Neither eye saw it: the sentence bar needs a word *after* the dash inside the same
+  string, and the literal sweep reads one line at a time. Measured 18:25:07 MEZ with the
+  census's own gates, after teaching the instruction pattern that `+` is an instruction
+  position too (129 fields checked, **10 candidates that were in no corpus**, **1** at a
+  dash junction). The clause now ends in a semicolon, the bar counts junctions, and
+  `URTEIL STRICH` prints them: *"… dazu 0 an einer Fuge"*.
+
+### Changed
+
+- **`+` is an instruction position.** A template field hung onto another with `+` is the
+  same delivered sentence as one after `return` or `:`. Werkzeug gained 9 candidates
+  (49 → 58) and surface 4 (499 → 503) — measured against the installed 3.2.190 before the
+  swap: `die Objekt-Gleichung verwirft: Flaeche 1, Werkzeug 5, Diener 0`, where the 1 is
+  exactly the line this cut changes.
+
 ## [3.2.190]
 
 ### Changed

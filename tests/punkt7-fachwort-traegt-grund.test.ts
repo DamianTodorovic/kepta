@@ -998,3 +998,55 @@ describe("Punkt 114, die Reichweite beider Augen: ein Satz ueber einer Zeilengre
     expect(funde, funde.map((f) => `${f.woerter} ${f.quelle}`).join(", ")).toEqual([]);
   });
 });
+
+describe("Punkt 117, der Strich an der Fuge: ein Feld endet auf \" - \", das naechste beginnt mit einem Wort", () => {
+  /* Gemessen 18:25:07 MEZ (/tmp/p117-fuge-dt, Sonde mit den Toren des Census): `+` als
+     Anfihrung bringt 129 geprüfte Felder, **10 neue Kandidaten**, und **einen** Treffer
+     an einer Fuge:
+
+       src/components/KnowledgeGraph.tsx:1048
+         return `${…} of ${…} concepts and `
+           + `${…} of ${…} claims reach this picture - `
+           + "no zoom can bring in what the window left out";
+
+     Die ausgelieferte Zeile lautet also "… claims reach this picture - no zoom can bring
+     in what the window left out" -- ein nackter Bindestrich in Prosa, vierte Instanz der
+     P109-Klasse, und kein einziges Auge sah ihn: die Satz-Latte braucht ein Wort HINTER
+     dem Strich innerhalb desselben Stuecks, und das zweite Auge liest keine Fuge zwischen
+     zwei Feldern. Der Gedankenstrich des Hauses ("—") ist erlaubt; verboten ist der
+     ASCII-Bindestrich an der Fuge. */
+
+  it("der Fugen-Rayer existiert und unterscheidet Hausstrich von nacktem Bindestrich", () => {
+    expect(typeof (census as any).fugeNackt, "der Census kennt keine Fuge").toBe("function");
+    expect((census as any).fugeNackt("N of N claims reach this picture -")).toBe(true);
+    expect((census as any).fugeNackt("N of N claims reach this picture —")).toBe(false);
+    expect((census as any).fugeNackt("claims reach this picture; no zoom")).toBe(false);
+    expect((census as any).fugeNackt("- no zoom can bring in what the window left out")).toBe(true);
+  });
+
+  it("ein mit + angesetztes Feld ist ein Kandidat", () => {
+    const t = "function zeile(): string {\n  return `one part of the sentence that a person reads`\n    + `the second part ends here - ` + \"and the next carries on\";\n}\n";
+    const f = (census as any).satzAusText(t, "src/components/Probe.tsx").map((z: { s: string }) => z.s);
+    expect(f.some((s: string) => s.includes("the second part ends here")), "ein + -Feld erreicht kein Muster: " + JSON.stringify(f)).toBe(true);
+  });
+
+  it("am Baum meldet der Census keine Fuge mit nacktem Bindestrich", () => {
+    const laut = spawnSync("node", [path.join(WURZEL, "scripts", "verstaendlichkeit.mjs"), "--nur", "quelltext"], { encoding: "utf8" });
+    expect(laut.stdout).toMatch(/Fugen-Strich: \d+ Kandidaten enden oder beginnen mit einem nackten Bindestrich/);
+    const zeile = laut.stdout.split("\n").find((x) => x.includes("Fugen-Strich:")) || "";
+    expect(Number((zeile.match(/Fugen-Strich: (\d+)/) || [0, "9"])[1]), zeile).toBe(0);
+  });
+
+  it("die ausgelieferte Graph-Zeile endet nicht mehr auf einem Bindestrich", () => {
+    const t = (census as any).menschenText(path.join(WURZEL, "src", "components", "KnowledgeGraph.tsx"));
+    expect(t.includes("reach this picture - "), "die Quelle schreibt noch den nackten Strich an der Fuge").toBe(false);
+    expect(t.includes("reach this picture; ")).toBe(true);
+  });
+
+  it("URTEIL STRICH nennt die Fuge und haelt", () => {
+    const laut = spawnSync("node", [path.join(WURZEL, "scripts", "verstaendlichkeit.mjs"), "--nur", "quelltext"], { encoding: "utf8" });
+    const zeile = laut.stdout.split("\n").find((x) => x.includes("URTEIL STRICH")) || "";
+    expect(zeile).toContain("Fuge");
+    expect(zeile).toContain("HALTET");
+  });
+});

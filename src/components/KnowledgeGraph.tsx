@@ -1045,7 +1045,7 @@ export function fensterZeile(
 ): string {
   if (!ausriss || !ausriss.begrenzt || !bestand) return "";
   return `${mengenzahl(ausriss.begriffe)} of ${mengenzahl(bestand.knoten)} concepts and `
-    + `${mengenzahl(ausriss.kantenGezeigt)} of ${mengenzahl(bestand.kanten)} claims reach this picture - `
+    + `${mengenzahl(ausriss.kantenGezeigt)} of ${mengenzahl(bestand.kanten)} claims reach this picture; `
     + "no zoom can bring in what the window left out";
 }
 

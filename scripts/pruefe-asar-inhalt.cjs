@@ -1129,6 +1129,10 @@ const erwartet = [
   // die alte Form 1 mal (sie steht unten in `verboten`).
   ["Nothing was carried across, and nothing was deleted.", 1],
   ["Enter the key once to seal it.", 1],
+  // P117 (landet in 3.2.191): die Graph-Zeile endet nicht mehr auf einem nackten
+  // Bindestrich an der Fuge zu ihrem naechsten Feld. Gezaehlt am installierten 3.2.190
+  // um 18:27:40 MEZ (latin1): neue Kette 0 mal, alte Kette 1 mal (unten in `verboten`).
+  ["claims reach this picture; ", 1],
 ];
 
 // Was NICHT mehr drin sein darf. Bisher war "der alte Wortlaut ist weg" eine Behauptung im
@@ -1328,6 +1332,9 @@ const verboten = [
   // P116: der 24-Woerter-Satz. Ein Satz, der kuerzer gemeldet wird, aber am alten Wortlaut
   // im Objekt haengt, ist keine Kuerzung, sondern ein zweiter Text.
   "so nothing was carried across and nothing was deleted: enter the key once to seal it",
+  // P117: das eine Wort an der Fuge zweier Felder. Die Latte sieht es erst, seit `+` als
+  // Anfuehrung gilt -- und dann ist der Bindestrich ein zweites Mal derselbe Fehler wie P109.
+  "claims reach this picture - ",
 ];
 // Die Liste darf nur ASCII-Zeichen enthalten. Grund, gemessen 21.10. 19:16 MESZ am
 // installierten Objekt: das Wort "Looking" plus echtes U+2026 steht dort 2 mal, diese

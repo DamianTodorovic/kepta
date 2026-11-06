@@ -154,7 +154,11 @@ const SATZ_MUSTER = [
   // Klassenkleid (`flex items-center gap-2 rounded-lg`) besteht aus Huell-Woertern. Der Test
   // ist eine Folge, keine Liste: vier alphabetische Woerter hintereinander schreibt keine
   // Utility-Kette und jede Sprache.
-  { re: /(?:return|case|:|=|\?|\|\||\(|,)\s*`([^`]{20,400})`/g, art: "anweisung", prosa: vierWortlauf },
+  // P106: die Anweisungsposition. P117: ein Feld, das mit `+` an das vorherige
+  // gesetzt wird, ist dieselbe Position -- gemessen 18:25:07 MEZ brachte `+` 129
+  // geprüfte Felder, 10 davon waren in keinem Korpus, und eines endete auf " - "
+  // (`KnowledgeGraph.tsx:1048`), also ein nackter Bindestrich in ausgelieferter Prosa.
+  { re: /(?:return|case|:|=|\?|\|\||\(|,|\+)\s*`([^`]{20,400})`/g, art: "anweisung", prosa: vierWortlauf },
   { re: /"([A-Z][^"\\]{20,300}?)"/g, art: "literal" },
   { re: /'([A-Z][^'\\]{20,300}?)'/g, art: "literal" },
 ];
@@ -574,6 +578,16 @@ function literalStuecke(zeile, tiefe = 0) {
 // Interpolations-Ende sein (`}` oder ein oeffnendes Quotezeichen), die rechte auch eine
 // Interpolation (`$`) -- gemessen 15:05:41 MEZ sitzt genau dort ein Satz:
 // "... for the whole base` : ` from N up`} - ${wert} is neither."
+/** P117: die Fuge. Ein Kandidat, der auf einem nackten Bindestrich endet oder mit ihm
+    beginnt, hoert nicht dort auf -- das naechste Feld fuehrt das Wort weiter, und der
+    Mensch liest "picture - no zoom". Der Hausstrich ("\u2014") ist erlaubt; verboten ist
+    der ASCII-Bindestrich an der Fuge. Gemessen 18:25:07 MEZ: ein Treffer,
+    `KnowledgeGraph.tsx:1048`. */
+export function fugeNackt(s) {
+  const k = String(s).trim();
+  return /-$/.test(k) && !/[\u2014\u2013]$/.test(k) ? true : /^-(?!\d)/.test(k);
+}
+
 const NACKT_IN_LITERAL = /(?:^|["A-Za-z,.!?;:}]) - (?=["'$A-Za-z])/;
 // Was kein Menschensatz ist: eine Rechnung, ein CSS-Mass, ein Aufzaehlungspunkt.
 const CODE_RAUSCHEN = /(?:%|\d)\s*-\s*[\d(]|(?:^|\n|\s{2,})-\s+\w/;
@@ -1118,7 +1132,14 @@ async function haupt() {
   const anteil = cFlaeche.unterKappe / Math.max(1, cFlaeche.n);
   const kappeHalten = anteil >= UNTER_KAPPE_MINDESTENS;
   const riegelHalten = [cFlaeche, cWerkzeug, cDiener].every((c) => c.fachOhneAlles.length <= FACH_OHNE_GRUND_MAX);
-  const strichHalten = strichFunde.length === 0 && literaleFunde.length === 0 && nacktGrenze.length === 0;
+  const fugenFunde = [
+    ...flaeche.getragen.map((z) => ({ ...z, lage: "Flaeche" })),
+    ...werkzeug.getragen.map((z) => ({ ...z, lage: "Werkzeug" })),
+    ...diener.getragen.map((z) => ({ ...z, lage: "Diener" })),
+  ].filter((z) => fugeNackt(z.s));
+  console.log(`\n  Fugen-Strich: ${fugenFunde.length} Kandidaten enden oder beginnen mit einem nackten Bindestrich (der Hausstrich ist erlaubt; ein Treffer ist eine Zeile, deren naechstes Feld das Wort weiterfuehrt):`);
+  for (const z of fugenFunde) console.log(`    ${z.lage}  ${z.quelle}  ::  ${z.s.slice(0, 130)}`);
+  const strichHalten = strichFunde.length === 0 && literaleFunde.length === 0 && nacktGrenze.length === 0 && fugenFunde.length === 0;
   // Biss-Kontrolle drei: dieselbe Rechnung muss die ALTE Form treffen, sonst ist die Latte
   // ein Wunsch ohne Messzeug.
   const strichBiss = NACKTER_STRICH.test("A local program on this machine - no key needed.");
@@ -1130,7 +1151,7 @@ async function haupt() {
   // die Marge ist 0 -- ein einziger langer Satz kippt das Urteil.
   const marge = Math.floor(cFlaeche.unterKappe - UNTER_KAPPE_MINDESTENS * cFlaeche.n);
   console.log(`  Die Marge der Kappe: ${marge} Saetze Spiel bei ${cFlaeche.unterKappe} von ${cFlaeche.n} (${(100 * anteil).toFixed(3)} % genau)`);
-  console.log(`  URTEIL STRICH: ${strichHalten ? "HALTET" : "FAELLT"} (${strichFunde.length} Saetze mit nacktem Bindestrich ueber allen drei Lagen, dazu ${literaleFunde.length} in ${literaleGrund} Literalen, die kein Kandidat sind, dazu ${nacktGrenze.length} an einer Zeilengrenze unter ${mehrzeilig.length} mehrzeiligen Kandidaten; Biss-Kontrolle ${strichBiss ? "trifft die alte Form" : "FEHLT — die Latte hat kein Messzeug"})`);
+  console.log(`  URTEIL STRICH: ${strichHalten ? "HALTET" : "FAELLT"} (${strichFunde.length} Saetze mit nacktem Bindestrich ueber allen drei Lagen, dazu ${literaleFunde.length} in ${literaleGrund} Literalen, die kein Kandidat sind, dazu ${nacktGrenze.length} an einer Zeilengrenze unter ${mehrzeilig.length} mehrzeiligen Kandidaten, dazu ${fugenFunde.length} an einer Fuge; Biss-Kontrolle ${strichBiss ? "trifft die alte Form" : "FEHLT — die Latte hat kein Messzeug"})`);
   console.log(`  URTEIL RIEGEL: ${riegelHalten ? "HAELT" : "FAELLT"} (Fachwort ohne Grund und ohne Taetigkeit: Flaeche ${cFlaeche.fachOhneAlles.length} von ${cFlaeche.n}, Werkzeug ${cWerkzeug.fachOhneAlles.length} von ${cWerkzeug.n}, Diener ${cDiener.fachOhneAlles.length} von ${cDiener.n}, Max je Gruppe ${FACH_OHNE_GRUND_MAX} — der Wert ist am 5.11. und 6.11.2026 an allen drei Lagen gemessen)`);
   console.log(`  URTEIL GRUND: die Flaeche nennt in ${cFlaeche.mitGrund} von ${cFlaeche.n} Saetzen einen Grund oder eine Folge —`);
   console.log("  das ist der Befund dieses Laufs, nicht sein Ziel: eine Zahl ohne Vergleich ist eine Messung, noch kein Urteil.");
