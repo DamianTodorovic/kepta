@@ -564,7 +564,7 @@ describe("Punkt 7, ein Ding, ein Wort: die Flaeche sagt nicht zweimal dasselbe",
 });
 
 describe("Punkt 105, die Reichweite der Namens-Latte: jeder Wortlaut, jede Lage", () => {
-  /* Gemessen 6.11.2026 12:08:36 MEZ: die Latte meldete "HALTET (0 von 761 Stellen)", und
+  /* Gemessen 6.11.2026 13:08:36 MEZ: die Latte meldete "HALTET (0 von 761 Stellen)", und
      dieselbe Suite warf vier Woerter zurueck, die in keinem ihrer Muster standen. Nachgezaehlt
      am Baum: 15 ausgelieferte Wortlaute nannten das Ding beim alten Namen, und keiner der 15
      lag in der Liste, die die Latte geoeffnet hatte. Die Latte war nicht gruen -- sie war blind. */
@@ -586,7 +586,7 @@ describe("Punkt 105, die Reichweite der Namens-Latte: jeder Wortlaut, jede Lage"
   });
 
   it("ein Einwort-Token nennt nichts: Specifier, Programmname und Stil-Token bleiben draussen", () => {
-    // Die Form ist eine Messung, keine Bequemlichkeit: gezaehlt 12:13:07 MEZ nannte in der
+    // Die Form ist eine Messung, keine Bequemlichkeit: gezaehlt 13:13:07 MEZ nannte in der
     // ganzen Auslieferung kein Einwort-Wortlaut das Ding auf der Flaeche -- bis der Fallback
     // in Dashboard.tsx:1139 gefunden wurde (`victim?.title || 'Node'`). Also gilt die Gestalt
     // einer Benennung: grossgeschrieben und bloss Buchstaben. Gemessen 12:20:16 MEZ hebt die
@@ -622,7 +622,7 @@ describe("Punkt 105, die Reichweite der Namens-Latte: jeder Wortlaut, jede Lage"
 
   it("die Gleichung einer Legende ist kein Codezeichen", () => {
     // Die Kante gegen Quelltext traf auch die Legende des Graphen: "Size = connections".
-    // Gemessen 12:05:11 MEZ war das in der ganzen Flaeche genau ein Satz -- der einzige,
+    // Gemessen 13:05:11 MEZ war das in der ganzen Flaeche genau ein Satz -- der einzige,
     // der die Namensregel brach.
     expect(istBenutzersprache("Drag: a dot stays where you drop it · Wheel: zoom · Size = connections"), "eine Legende mit Gleichheitszeichen faellt durch die Sonde").toBe(true);
     // Die zwei Formen, fuer die die Kante gebaut wurde, bleiben draussen.

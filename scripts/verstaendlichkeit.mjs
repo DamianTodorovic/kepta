@@ -241,7 +241,7 @@ export function istBenutzersprache(s, optionen = {}) {
   // um einen einzigen Ternaer zu treffen. Gemessen 06:04:57 MEZ; zwei Nenner-Latten der
   // Suite (Werkzeug 38, Diener 62) schlugen mich am naechsten Lauf zurecht (06:01:36 MEZ).
   const stuecke = s.split(/\s+/);
-  // P105: das blossen `=` ist hier kein Ausschlussgrund mehr. Gemessen 6.11.2026 12:05:11 MEZ
+  // P105: das blossen `=` ist hier kein Ausschlussgrund mehr. Gemessen 6.11.2026 13:05:11 MEZ
   // am Baum: die Kante vertrieb in der ganzen Flaeche genau einen Satz -- die Graph-Legende
   // "Size = connections · Width = claims", und ein Gleichheitzeichen zwischen zwei Woertern
   // ist eine Legende, keine Zuweisung. Dieser eine Satz war der einzige, der ein Ding beim
@@ -426,7 +426,7 @@ export function etikettNenntAlgorithmus(etiketten) {
    --------------------------------------------------------------------------- */
 export const DOPPELNAMEN = [
   { re: /\bnodes?\b/i, falsch: "node", richtig: "note (das Ding) oder dot (der Punkt im Bild)" },
-  // Die Einwort-Form, grossgeschrieben. Grund, gemessen 12:19:22 MEZ am Baum: die Zwei-Woerter-
+  // Die Einwort-Form, grossgeschrieben. Grund, gemessen 13:19:22 MEZ am Baum: die Zwei-Woerter-
   // Form der Wortlaut-Inventare liess einen einzigen Fallback durch -- `victim?.title || 'Node'`
   // in Dashboard.tsx:1139 malt das Wort allein in eine Toast-Zeile. Grossbuchstabe trifft die
   // Benennung, der kleine bleibt verschont: "command": "node" ist ein Programmname, "node:fs"
@@ -455,7 +455,7 @@ export function satzAusQuelltextMitEtiketten(mengen = FLAECHE) {
 }
 
 /* ---------------------------------------------------------------------------
-   Die Reichweite der Namens-Latte. Gemessen 6.11.2026 12:08:36 MEZ meldete sie
+   Die Reichweite der Namens-Latte. Gemessen 6.11.2026 13:08:36 MEZ meldete sie
    "HALTET (0 von 761 Stellen)", und dieselbe Suite warf vier Woerter zurueck, die in
    keinem ihrer Muster standen. Drei Luecken, jede fuer sich gezaehlt:
      - Anweisungsposition: 76 ausgelieferte Wortlaute stehen in einem Backtick ohne
@@ -469,7 +469,7 @@ export function satzAusQuelltextMitEtiketten(mengen = FLAECHE) {
    Woertern, Kommentare gestrichen, Prompt-Dateien ausgeschlossen (Hausentscheid 5.11.:
    ein Prompt liest ein Modell, kein Mensch). Ein Raster, das Saelze nach ihrem Inhalt
    aussortiert, ist keine Latte, sondern ein Wunsch.
-   Die Zwei-Woerter-Form ist eine Messung, keine Gewalt: gemessen 12:13:07 MEZ nennt in der
+   Die Zwei-Woerter-Form ist eine Messung, keine Gewalt: gemessen 13:13:07 MEZ nennt in der
    ganzen Auslieferung kein einziger Einwort-Wortlaut das Ding beim alten Namen; die
    Funde waren ein Modulspecifier ("node:fs"), ein Programmname ("command": "node") und
    sieben Stil-Token (--node-hi und Geschwister) -- keine davon steht auf einer Flaeche.
@@ -477,13 +477,14 @@ export function satzAusQuelltextMitEtiketten(mengen = FLAECHE) {
 export const NAMEN_LAGEN = [...FLAECHE, ...DIENER, ...WERKZEUG, "src"].filter((d) => fs.existsSync(path.join(WURZEL, d)));
 const WORTLAUT_MUSTER = /"([^"\\\n]{2,300})"|'([^'\\\n]{2,300})'|`([^`\\\n]{2,400})`/g;
 
-/** Die Grundgesamtheit der Namens-Latte. Gemessen 12:12:43 MEZ am Baum: 2 839 Wortlaute
-    (6 540 Stellen, dedupliziert). Die Latte selbst haelt 0 Funde -- unter diese Zahl darf
-    ihr Nenner nicht fallen, sonst meldet ein leeres Gesicht Sauberkeit. */
+/** Die Grundgesamtheit der Namens-Latte. Gemessen am Baum: 2 839 Wortlaute ohne den
+    Ketten-Inhalt (13:12:43 MEZ), **2 983** mit ihm -- zweimal gezehrt, 13:21:26 und
+    13:31:58 MEZ. Die Latte selbst haelt 0 Funde -- unter die Untergrenze darf ihr Nenner
+    nicht fallen, sonst meldet ein leeres Gesicht Sauberkeit. */
 export const NAMEN_MINDESTENS = 2500;
 
 /** Jeder Wortlaut eines Quelltextes, der ein Mensch oder ein Modell woertlich liest.
-    Ein Backtick frisst seine eignen Anfuehrungszeichen: gemessen 12:20:30 MEZ verschwand
+    Ein Backtick frisst seine eignen Anfuehrungszeichen: gemessen 13:20:30 MEZ verschwand
     `victim?.title || 'Node'` hinter der Template-Kette und wurde als "N" geebnet, also ist
     der Inhalt einer jeden Kette ein zweites Mal offen zu legen (eine Tiefe genuegt; tiefer
     schachtelt kein ausgelieferter Wortlaut). */
@@ -501,7 +502,7 @@ export function wortlautAusText(t, datei) {
       const roh = e[1] ?? e[2] ?? e[3];
       const s = glaetteInterpolation(roh);
       // Zwei Woerter sind die Grundform; ein einzelnes Wort nur, wenn es die Gestalt einer
-      // Benennung traegt (grossgeschrieben, bloss Buchstaben). Gemessen 12:19:22 MEZ: diese
+      // Benennung traegt (grossgeschrieben, bloss Buchstaben). Gemessen 13:19:22 MEZ: diese
       // Form laesst "node" (Programmname), "node:fs" (Specifier) und "--node-rim" (Stil-Token)
       // draussen und holt den einen Einwort-Fallback der Flaeche herein ('Node').
       if (!/\s/.test(s) && !/^[A-Z][A-Za-z]*$/.test(s)) continue;
@@ -698,7 +699,7 @@ async function haupt() {
     console.log(`    [${f.art}] "${f.s}"  ${f.quelle}`);
 
   // Die vierte Latte: ein Ding, ein Wort. Sie laeuft ueber der Wortlaut-Inventar, weil ein
-  // Name keine Satzform braucht -- gemessen 12:08:36 MEZ standen 15 von 15 Funden ausserhalb
+  // Name keine Satzform braucht -- gemessen 13:08:36 MEZ standen 15 von 15 Funden ausserhalb
   // der alten Liste, und die Latte meldete trotzdem HALTET.
   const lese = wortlautInventar();
   const doppel = doppelteNamen(lese);

@@ -32,7 +32,7 @@
   exactly one sentence — the graph legend `Size = connections` — which was the sentence breaking
   the rule. The bar now gathers **wordings, not sentences**: every string in every delivered
   layer, comments stripped, prompt files excluded, and a template's own content opened a second
-  time (a backtick was swallowing the fallback title `'Node'` inside itself, measured 12:20:30
+  time (a backtick was swallowing the fallback title `'Node'` inside itself, measured 13:20:30
   MEZ). Denominator **2 983 wordings**, floor 2 500, findings **0**. The fifteen wordings are
   fixed in this release: `Node size` → `Dot size` (the same slider whose own hint already said
   dot), `drawn as nodes` → `drawn as dots`, `too few core nodes` / `no core node` → dots,

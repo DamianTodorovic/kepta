@@ -476,7 +476,7 @@ const erwartet = [
   ["the links as your notes claim them", 1],
   ["placed by what notes mean", 1],
   // P105 (landet in 3.2.185): ein Ding, ein Wort. Gezaehlt am installierten 3.2.184 um
-  // 12:18:18 MEZ, latin1: jede neue Kette 0 mal, jede alte Form 1 bis 2 mal. Zwei alte Formen
+  // 13:31:58 MEZ (nach dem Bau, gegen dasselbe installierte 3.2.184), latin1: jede neue Kette 0 mal, jede alte Form 1 bis 2 mal. Zwei alte Formen
   // sind trotzdem NICHT verboten, und der Grund ist eine Messung, keine Bequemlichkeit:
   // "Node not found" steht 8 mal im Objekt, unser Quelltext schreibt davon 3 -- die uebrigen
   // fuenf gehoeren pdf.js (dist/assets/pdf.worker.min-*.mjs), und ein Verbot, das wir nicht
@@ -1249,7 +1249,7 @@ const verboten = [
   "placed by meaning, not words",
   "Force and Tree need only the notes themselves",
   // P105 (landet in 3.2.185): "ein Ding, ein Wort". Jede Kette hier stand am installierten
-  // 3.2.184 zwischen 1 und 8 mal in den Bytes, die ein Mensch bekommt (Gegenprobe 12:18:18
+  // 3.2.184 zwischen 1 und 8 mal in den Bytes, die ein Mensch bekommt (Gegenprobe 13:31:58
   // MEZ, latin1). Drei alte Formen sind bewusst NICHT aufgenommen, und der Grund ist eine
   // Messung: "Node not found" 8 mal bei 3 eignen Stellen (pdf.js besitzt den Rest), "Saves a
   // knowledge node, or updates one" 2 mal bei 1 eigner Stelle (die zweite liegt im Bundel,
