@@ -3,8 +3,8 @@
   "README.md": {
    "saetze": 410,
    "absolut": 128,
-   "mit_zeug": 35,
-   "ohne_zeug": 93
+   "mit_zeug": 36,
+   "ohne_zeug": 92
   },
   "SECURITY.md": {
    "saetze": 31,
@@ -28,8 +28,8 @@
  "zusammen": {
   "saetze": 568,
   "absolut": 169,
-  "mit_zeug": 37,
-  "ohne_zeug": 132
+  "mit_zeug": 38,
+  "ohne_zeug": 131
  },
  "abschnitt": {
   "README.md": {
@@ -190,8 +190,8 @@
   },
   {
    "datei": "README.md",
-   "satz": "The data is never hostage.",
-   "zeuge": false
+   "satz": "The data is never hostage (tests/keine-grenzen.test.ts:102-116 shows the licence route answers nothing, read or write, and no part of the surface asks it; tests/server.test.ts:327 writes the store out as Markdown files).",
+   "zeuge": true
   },
   {
    "datei": "README.md",
@@ -554,10 +554,6 @@
   {
    "datei": "README.md",
    "satz": "K3PTA loads no third-party code, so there is nothing to approve, nothing to buy and nothing an organisation could switch off for you: the app's own features run the same in the free download as in a managed deployment."
-  },
-  {
-   "datei": "README.md",
-   "satz": "The data is never hostage."
   },
   {
    "datei": "README.md",

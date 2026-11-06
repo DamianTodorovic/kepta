@@ -796,7 +796,7 @@ Die Regel aus P132 — erst suchen, dann bauen — läuft jetzt ohne Reibung. Dr
 | Satz | Wo | Zeuge | Was er wirklich hält |
 |---|---|---|---|
 | „markup scaffolding, repeated table rows — never becomes a note" | README.md:229 | `tests/core/klassifikation.test.ts:112`, `:83`, `:78` | Skript/Stil/Auszeichnung werden Text; eine Tabelle nur gleicher Zeilen wird abgewiesen; nackte HTML-Zeilennummern ebenso |
-| „There is no key that could revoke it" / „The data is never hostage" | README.md:360 | `tests/keine-grenzen.test.ts:102-116`, `tests/server.test.ts:327` | die Lizenz-Route antwortet nicht (lesend wie schreibend) und nichts in der Fläche fragt sie; der Bestand geht als Markdown nach draußen |
+| „The data is never hostage" **und** „There is no key that could revoke it" | README.md:360 | `tests/keine-grenzen.test.ts:102-116`, `tests/server.test.ts:327` | die Lizenz-Route antwortet nicht (lesend wie schreibend), nichts in der Fläche fragt sie, und der Bestand geht als Markdown nach draußen — beide Sätze mit eignem Zeugen |
 | „the other is marked as replaced, never deleted" | README.md:169 (zweite Hälfte) | `tests/enterprise-api.test.ts:215`, `tests/engine.test.ts:167` | die ersetzte Notiz liest sich zurück mit `supersededBy` — sie ist noch da; nach einer Konsolidierung zählen weiter beide als aktiv |
 
 Der dritte Satz zählte schon vorher als gedeckt (P132 hat die *Both-are-right*-Hälfte bewaffnet). Die
@@ -815,9 +815,15 @@ steht hier als Grund, nicht als Kennzahl.
 
 ### Die Zählung
 
-Zensus 23:19:21 MEZ, Exit 0: 568 Einheiten, 169 absolute Behauptungen, **37 mit Messzeug im selben
-Satz = 21,9 %** (vorher 35 = 20,7 %), 132 ohne. Schmale Klasse 29, davon **19** mit Messzeug →
-**10 Arbeit**. Reihe über acht Schläge: 4, 5, 8, 11, 14, 15, 18, 19.
+Zensus 23:26:38 MEZ, Exit 0: 568 Einheiten, 169 absolute Behauptungen, **38 mit Messzeug im selben
+Satz = 22,5 %** (vor dem Schlag 35 = 20,7 %), 131 ohne. Schmale Klasse 29, davon **20** mit Messzeug →
+**9 Arbeit**. Reihe über acht Schläge: 4, 5, 8, 11, 14, 15, 18, 20.
+
+Die Korrektur mitten im Schlag: ich setzte den Zeugen hinter *„There is no key that could revoke it"*
+und meldete damit auch *„The data is never hostage"* als gedeckt — zwei Einheiten, ein Zeuge. Die Zahl
+stieg deshalb zunächst nur auf 37, und erst die Liste im Artefakt zeigte, dass die Fett-Zeile blind
+blieb. Seither steht der Zeuge in beiden Sätzen (gemessen 38). Der Zensus zählt Sätze, nicht Absätze —
+wer eine Zeile bewaffnet, bewaffnet nicht das, was drunter steht.
 
 Die Abschnittslesung ist dabei von 56 auf **55 (32,5 %)** gefallen. Grund: der umgeschriebene
 Sync-Absatz aus P134 steht jetzt anders im Blatt, und ein Zeuge, vorher im Nachbarabschnitt, liegt
@@ -958,3 +964,8 @@ gehoben.
     verwechselte. Vor dem Committen berichtigt auf die tatsächlich gemessenen Stände (129 / 132 /
     172 / 170 / 169) mit ihren Schlagsnummern. Derselbe Grund wie 16.10. im Wachbuch: eine Reihe,
     die ich nicht nachgezählt habe, ist keine Messung, sondern ein Gedächtnis.
+27. **Ein eigner Bericht war zu weit.** Im P135-Text (und im Commit) hieß es, README.md:360 sei mit
+    dem einen Klammerzusatz gedeckt. Der Zensus zählt Sätze: die Fett-Zeile „The data is never
+    hostage" blieb blind, nur der Satz darunter war gedeckt. Aus der Artefaktliste gelesen, beide
+    Sätze bewaffnet, Zahl und Papier nachgezogen (37 → 38). Ein Zeuge in einer Zeile bewaffnet nicht,
+    was in derselben Zeile noch steht.

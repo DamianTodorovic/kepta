@@ -1,4 +1,4 @@
-Zeit: 6.11.2026, 23:19:21 MEZ
+Zeit: 6.11.2026, 23:26:38 MEZ
 Dateien: README.md, SECURITY.md, ROADMAP.md, .github/release-notes.md — Einheiten ueber 25 Zeichen.
 Riss: satz-riss.mjs (P128, markdown-fest). Vorher: Satzende + Leerzeichen ueber dem
 ganzen Text, wodurch Aufzaehlungen, Tabellenzeilen und `<summary>`-Kuelsen als EIN
@@ -9,11 +9,11 @@ Satz zaehlten. Unter beiden Naivlingen, in diesem Lauf nachgerechnet:
 
 | Datei | Saetze | absolute | mit Messzeug | ohne Messzeug | Anteil ohne |
 |---|---|---|---|---|---|
-| `README.md` | 410 | 128 | 35 | 93 | 72.7 % |
+| `README.md` | 410 | 128 | 36 | 92 | 71.9 % |
 | `SECURITY.md` | 31 | 7 | 1 | 6 | 85.7 % |
 | `ROADMAP.md` | 77 | 16 | 0 | 16 | 100.0 % |
 | `.github/release-notes.md` | 50 | 18 | 1 | 17 | 94.4 % |
-| **zusammen** | **568** | **169** | **37** | **132** | **78.1 %** |
+| **zusammen** | **568** | **169** | **38** | **131** | **77.5 %** |
 
 Nenner fuer den Anteil: 169 absolute Behauptungen in 568 Saetzen der vier Texte.
 
@@ -25,7 +25,7 @@ Zweite Lesung — der Zeuge darf im selben Abschnitt stehen (Absatz, Tabelle, Au
 | `ROADMAP.md` | 16 | 0 | 16 |
 | `.github/release-notes.md` | 18 | 0 | 18 |
 | zusammen | 169 | 55 | 114 |
-   mit Messzeug im selben Abschnitt: 55 von 169 = 32.5 % (gegen 37 von 169 = 21.9 % in der engen Lesung).
+   mit Messzeug im selben Abschnitt: 55 von 169 = 32.5 % (gegen 38 von 169 = 22.5 % in der engen Lesung).
 
 Die schmalere Klasse — Saetze, die ein Werkzeug widerlegen koennte (never/always/cannot/0 %/100 %):
    README.md                  25 von 128 absoluten
@@ -56,7 +56,7 @@ Die schmalere Klasse — Saetze, die ein Werkzeug widerlegen koennte (never/alwa
    [README.md] ZEUG Nothing is sent by the app itself, and the store never syncs on its own: the device sync hands you an AES-256-GCM bundle and stops at that answer (server/router/sync.ts:40 returns it to the window, it posts it nowhere), 
    [README.md] ZEUG There is nothing to activate and nothing to buy inside the window, so the app also never asks for it — no key field, no counter, no trial clock, no "first day free" and no message about a limit (tests/keine-grenzen.test.
    [README.md]      It was never a lock — but it was counting, and counting needed places to hide the tally (an authenticated state in the database, a keychain anchor, a hidden file).
-   [README.md]      The data is never hostage.
+   [README.md] ZEUG The data is never hostage (tests/keine-grenzen.test.ts:102-116 shows the licence route answers nothing, read or write, and no part of the surface asks it; tests/server.test.ts:327 writes the store out as Markdown files).
    [README.md]      They are built from this source and never published here, so they are untested against a real installer download; treat them as source builds, not as shipped products.
    [README.md] ZEUG src/scan (machine-scan rules) | must not fall under 98 % of lines · must hold 100 % of functions (both in vitest.config.ts, key "src/scan/") | what may be read, and what never is
    [SECURITY.md] ZEUG It never leaves the keychain on its own — what that means is checked, not promised: tests/core/schluessel.test.ts:111 reads the argument list of every launch and finds the key absent there (it travels in the child's envi
@@ -68,7 +68,7 @@ Zwei von ihnen nachgegriffen, im selben Lauf:
    "no screenshot of it here yet" (Semantic-Ansicht): README nennt 20 Bilder (12 in Markdown, 8 als <img alt>), davon 0 mit "Semantic"; der Satz steht noch da — haltbar.
    "no embedding ever travels into the view": 8 von 8 benannten Flaechen-Dateien gelesen, zusammen 0 Nennung(en) "embedding"; das Wort liegt in 34 Test-Dateien des Repos. Fehlende Dateien: keine.
 
-Die 132 ohne Messzeug, in Lesereihenfolge der Dateien (erste 40):
+Die 131 ohne Messzeug, in Lesereihenfolge der Dateien (erste 40):
    [README.md] Your AI forgets you after every chat.
    [README.md] Desktop app · no cloud · no account · encrypted at rest SQLite · hybrid retrieval · knowledge graph · MCP
    [README.md] Every entry is a node, every connection an edge — real connections drawn solid, mere similarity dashed.
