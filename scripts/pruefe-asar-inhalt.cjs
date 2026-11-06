@@ -238,7 +238,13 @@ const erwartet = [
   // Minifier woertlich laesst. Gegenprobe VOR dem Tausch am dann installierten 3.2.48
   // (49 105 753 B, mtime 00:09 MESZ): jede dieser vier Ketten muss dort 0 sein.
   ["memory_stande", 1],
-  ["A local program on this machine - no key needed.", 1],
+  // P94 (3.2.180) zieht diese Marke nach: sie nannte den Wortlaut mit nacktem Bindestrich,
+  // und der ist jetzt der Gedankenstrich des Hauses. Ein Marker kann das Zeichen nicht
+  // tragen (latin1-Lesung), also bleibt der ASCII-Rumpf -- dass der Strich selbst richtig
+  // ist, beweisen unten "no key needed." (2) und die Verbotliste ("machine - no key
+  // needed", 0). Gezaehlt 05:36:28 MEZ im gebauten Objekt: der Rumpf steht 2 mal (Chat-Kopf
+  // und System-Status), die alte Kette 0 mal.
+  ["A local program on this machine", 2],
   ["px-3 pt-2 pb-0", 1],
   ["core as one marker", 1],
   // 3.2.50, SECHS Koerper (Leitung, 24.10. 01:2x MESZ). Vier davon haben ein Wort, das der
