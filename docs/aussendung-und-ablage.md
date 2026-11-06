@@ -166,10 +166,13 @@ README) tatsächlich einlöst. Er braucht die Bau-Kante, also Punkt 1 oder 2 zue
 
 ## 8. Was offen bleibt, mit Namen
 
-- Die **oeffentliche** README (`~/kepta-core/README.md:83`) trägt denselben falschen Pfad
-  `/Applications/KEPTA.app` und ist bereits veröffentlicht. Ich habe sie nicht angefasst: ändern ist lokal
-  möglich, veröffentlichen ist Damians Wort, und der Kern-Baum hat seine eigne Taktung. Eine Zeile,
-  drei Wörter.
+- Die **oeffentliche** README (`~/kepta-core/README.md:83`) nennt denselben Befehl mit dem alten
+  Stamm — und für ihren Leser ist das **richtig**, nicht falsch: gemessen tragen alle
+  herunterladbaren dmg- und zip-Namen der 9 öffentlichen Releases (58 Assete insgesamt) den Stamm
+  `KEPTA`, ihr Bundel heißt also `KEPTA.app`. Der Bruch ist ein Namens-Entschluss, kein
+  Textfehler: Sobald eine Fassung mit `productName: K3PTA` veröffentlicht wird, muss diese Zeile
+  mitziehen, und die neue Wache im App-Repo hält nur unsre eigne Seite. Ändern an der Kern-README
+  ist lokal möglich, veröffentlichen ist Damians Wort.
 - Der erste Start eines quarantäne-behafteten Bundels auf macOS 26 — siehe Abschnitt 4.
 - x64 und Summen in der Landungs-Kette (Abschnitt 7, Punkt 3).
 - Die 32 alten Fassungen in `release/` und die drei Rücklager: sein Wort, nicht meins.
@@ -188,3 +191,8 @@ README) tatsächlich einlöst. Er braucht die Bau-Kante, also Punkt 1 oder 2 zue
 4. Die Wache, die den Pfad übersah, prüfte das Kommando und nicht den Operanden
    (`tests/mac-signing.test.ts:55-58`). Ein Test, der den Default des geprüften Werts teilt, prüft
    nichts — hier: er prüfte den Text, der noch stimmte, und ließ den Text, der nicht mehr stimmte.
+5. In der ersten Fassung dieses Papiers hieß es, die öffentliche Kern-README (Zeile 83) trage
+   „dieselbe falsche Pfad". Nachgemessen: für ihren Leser ist er **richtig**, weil alle
+   herunterladbaren dmg- und zip-Namen der 9 öffentlichen Releases den Stamm `KEPTA` tragen. Was
+   übrig bleibt, ist ein Namens-Entschluss für den Tag einer neuen Veröffentlichung, kein
+   Fehlertext. Berichtigt in diesem Schlag, bevor die Zeile irgendwo zitiert wird.
