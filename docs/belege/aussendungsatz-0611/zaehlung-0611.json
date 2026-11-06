@@ -1,10 +1,10 @@
 {
  "dateien": {
   "README.md": {
-   "saetze": 407,
-   "absolut": 129,
-   "mit_zeug": 29,
-   "ohne_zeug": 100
+   "saetze": 408,
+   "absolut": 128,
+   "mit_zeug": 30,
+   "ohne_zeug": 98
   },
   "SECURITY.md": {
    "saetze": 31,
@@ -26,15 +26,15 @@
   }
  },
  "zusammen": {
-  "saetze": 565,
-  "absolut": 170,
-  "mit_zeug": 31,
-  "ohne_zeug": 139
+  "saetze": 566,
+  "absolut": 169,
+  "mit_zeug": 32,
+  "ohne_zeug": 137
  },
  "abschnitt": {
   "README.md": {
-   "absolut": 129,
-   "mit_zeug": 51,
+   "absolut": 128,
+   "mit_zeug": 50,
    "ohne_zeug": 78
   },
   "SECURITY.md": {
@@ -54,14 +54,14 @@
   }
  },
  "zusammen_abschnitt": {
-  "absolut": 170,
-  "mit_zeug": 52,
+  "absolut": 169,
+  "mit_zeug": 51,
   "ohne_zeug": 118
  },
  "maschinell_pruefbar": {
   "README.md": {
-   "absolut": 129,
-   "maschinell": 26
+   "absolut": 128,
+   "maschinell": 25
   },
   "SECURITY.md": {
    "absolut": 7,
@@ -76,7 +76,7 @@
    "maschinell": 2
   }
  },
- "summe_pruefbar": 30,
+ "summe_pruefbar": 29,
  "pruefbar_liste": [
   {
    "datei": "README.md",
@@ -140,8 +140,8 @@
   },
   {
    "datei": "README.md",
-   "satz": "Card numbers must pass the Luhn check and IBANs the mod-97 check; dates are never taken for phone numbers.",
-   "zeuge": false
+   "satz": "Card numbers must pass the Luhn check and IBANs the mod-97 check; dates are never taken for phone numbers (tests/lib/schild.test.ts:39 runs both validators head-on — one shifted IBAN digit and an all-zero card number fai",
+   "zeuge": true
   },
   {
    "datei": "README.md",
@@ -202,11 +202,6 @@
    "datei": "README.md",
    "satz": "src/scan (machine-scan rules) | must not fall under 98 % of lines · must hold 100 % of functions (both in vitest.config.ts, key \"src/scan/\") | what may be read, and what never is",
    "zeuge": true
-  },
-  {
-   "datei": "README.md",
-   "satz": "The routers and helpers count towards the overall coverage gate; the only exclusion is the bootstrap, which binds a port and never runs in a unit test.",
-   "zeuge": false
   },
   {
    "datei": "SECURITY.md",
@@ -450,10 +445,6 @@
   },
   {
    "datei": "README.md",
-   "satz": "Card numbers must pass the Luhn check and IBANs the mod-97 check; dates are never taken for phone numbers."
-  },
-  {
-   "datei": "README.md",
    "satz": "Both protections are on by default, and every cloud request is in the audit log"
   },
   {
@@ -643,10 +634,6 @@
   {
    "datei": "README.md",
    "satz": "The server code lives in server/ — server/app.ts assembles the middleware chain and mounts the routers, server/router/ holds one module per feature area, server/helfer/ the shared helpers, and server.ts itself is only th"
-  },
-  {
-   "datei": "README.md",
-   "satz": "The routers and helpers count towards the overall coverage gate; the only exclusion is the bootstrap, which binds a port and never runs in a unit test."
   },
   {
    "datei": "README.md",

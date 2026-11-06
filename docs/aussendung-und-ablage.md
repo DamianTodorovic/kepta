@@ -670,6 +670,74 @@ Beides steht so nicht im README-Satz — der sagt „never asked again" über di
 ist in diesem Lauf beantwortet. Wer die Neustart-Festigkeit behaupten will, braucht einen zweiten
 Zeugen.
 
+## 21. P133 — Der Zensus erwischt eine falsche Aussage, nicht nur eine nackte (6.11. 23:02 MEZ)
+
+P132 hatte die Regel gesetzt: erst die vorhandenen Wachen durchsuchen, dann bauen. Die Queue
+lieferte damit einen Satz, der gar kein Instrument brauchte (README.md:180, Prüfziffern), einen
+neuen Fallblock (README.md:448) — und **eine Behauptung, die falsch war**.
+
+### Der Fund
+
+README.md:448 sagte nach aussen: *"the only exclusion is the bootstrap, which binds a port and never
+runs in a unit test"*. `vitest.config.ts` tut das nicht. Gemessen an der Datei (Zeilen 40-61):
+
+- `exclude:` enthält **drei** Einträge: `src/**/types.ts`, `**/*.d.ts`, `src/lib/pdfText.ts`.
+- Der Bootstrap `server.ts` steht in `include:` — er wird also **mitgezählt**, nicht ausgenommen.
+
+Ein Satz, der eine Liste beschreibt, ohne sie zu lesen, war hier seit unbekannter Zeit falsch. Der
+Zensus hat ihn gefunden, weil er zur schmalen Klasse gehört (`never runs in a unit test`) und keinen
+Zeugen nannte; die Suche nach dem Zeugen war die Korrektur.
+
+### Die Wache, damit er nicht zurückkehrt
+
+Neu: `tests/doku-deckung.test.ts`, sechs Fälle. Sie liest `include:` und `exclude:` **aus der
+Konfiguration** (nicht aus dem README) und verlangt in beide Richtungen:
+
+- jede Ausnahme, die die Konfiguration macht, steht beim Namen im Satz (`:47`);
+- kein Pfad, den der Ausnahmeteil in Backticks als Ausnahme zeigt, fehlt in der Liste (`:54`) —
+  Verweise auf `tests/`, `scripts/`, `docs/` und auf `vitest.config.ts` selbst sind keine
+  behaupteten Ausnahmen, alles andere muss in der Liste stehen;
+- `server.ts` steht in der mitzählenden Liste, und der Satz behauptet keine "only exclusion" (`:73`);
+- Biss-Kontrolle: eine vierte Ausnahme, in die Konfigurationskopie gesetzt, wird vom Leser gezählt
+  (`:80`); eine leere gelesene Liste ist kein Prüfgrund (`:87`).
+
+Rot zuerst gesehen, dreifach und aus dem richtigen Grund: 22:56:23 MEZ meldete die Wache
+"die Konfiguration lässt `src/**/types.ts` aus, der README-Satz kennt den Namen nicht" und
+"der Satz behauptet weiter eine einzige Ausnahme". Zwei eigene Fehler auf dem Weg: der Leser griff
+auf das **erste** `include:` der Datei zu (das ist der Test-Glob, nicht die Rechnung) und ließ ein
+`[` als Eintrag durch; ein `ReferenceError` aus einer umbenannten Variable wurde zweimal
+hingerichtet, bevor ich die Datei las. Danach: grün (22:57:59 MEZ, 6 von 6).
+
+### Der zweite Fund: die Konfiguration kommentiert sich zu gut
+
+Der Ausnahmekommentar in `vitest.config.ts` (Zeile 59, zur Ausnahme auf Zeile 60) behauptet, `src/lib/pdfText.ts` werde "indirekt
+über den Dashboard-PDF-Import-Test gedeckt". Die Datei tut das nicht:
+`tests/components/Dashboard.test.tsx:17` **mockt** `src/lib/pdfText` weg. Der README-Satz sagt jetzt
+die schwächere, wahre Dinge — jsdom treibt keinen Worker und keine CMap-URL, und der eine Test, der
+den Importpfad berührt, mockt das Modul, "so that the glue is honestly outside the count rather than
+covered from behind". Der Kommentar in der Konfigurationsdatei bleibt stehen, weil er eine Absicht
+beschreibt und kein Messzeug ist; dass er zu weit ging, steht hier.
+
+### Der Satz, der nichts kostete
+
+README.md:180 ("Card numbers must pass the Luhn check and IBANs the mod-97 check; dates are never
+taken for phone numbers") war schon gemessen: `tests/lib/schild.test.ts:39` hält beide Prüfziffern
+head-on (eine verschobene IBAN-Ziffer und eine Nullenkarte fallen durch) und `:34` legt Datum, Uhrzeit,
+Version, Bestellnummer und eine Karte mit falscher Endziffer vor — und findet nichts. Kosten: ein
+Klammerzusatz. Die Zeitzahlen habe ich **vor** dem Schreiben nachgesehen; der erste Entwurf nannte
+:31/:36, die Fällen sitzen auf :34/:39.
+
+### Die Zählung danach
+
+Nenner bewegt: 566 Einheiten, **169** absolute Behauptungen (eine weniger — der alte Satzteil
+"never runs in a unit test" war die eine, und er ist weg), 32 mit Messzeug im selben Satz = 18,9 %.
+Abschnittslesung 51 = 30,2 %. Schmale Klasse 29, davon 15 mit Messzeug → **14 Arbeit**.
+Die Reihe über sechs Schläge: 4, 5, 8, 11, 14, 15.
+
+Ein Anteil, der steigt, während der Nenner fällt, ist kein Fortschrittsbeweis — beide Zahlen stehen
+oben, und die Pinne in `tests/aussendungs-riss.test.ts` hält 32 von 169 fest.
+
+
 ## Fehler in diesem Schlag, die ich selbst gefunden habe
 
 1. `du -sk /tmp` meldete 0 GiB Stapel, weil `/tmp` ein Symlink ist; der erste Lauf schrieb diese Null.
@@ -790,3 +858,11 @@ Zeugen.
     stand kopflos im Blatt. Entdeckt beim Nachlesen der Grenze (nicht durch ein Werkzeug, die Wache
     prüft keine Überschriften), wiederhergestellt und hier vermerkt: ein Anker, der größer ist als
     die Änderung, ist genau die Falle aus 18. — dieselbe Klasse, dritter Auftritt.
+24. **Dieselbe Falle, zweiter Auftritt, zwei Stunden später.** Ich setzte §21 und gab erneut die
+    Überschrift der Fehlerliste als Anker — sie war wieder weg. Diesmal fiel es mir im selben Zug auf
+    (der Text endete mitten in der Nummerierung), weil 23. zwei Stunden vorher steht. Eine Klasse,
+    zweimal in einem Abend, ist kein Versehen mehr: ein Anker, der eine Überschrift enthält, wird
+    künftig *unter* der Überschrift gesetzt.
+25. **Zwei Zeitziffern geraten, statt gelesen.** Der erste Entwurf der Schild-Zitate nannte
+    `schild.test.ts:31` und `:36`; die Fällen sitzen auf :34 und :39. Vor dem Committen nachgesehen —
+    die Berichtigung steht im Text, nicht im Commit.
