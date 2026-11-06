@@ -245,6 +245,49 @@ describe("Abzeichen und Anwendungstexte behaupten nichts Falsches", () => {
   });
 });
 
+// P100: die vierte Zahl des Ollama-Zweigs. Die drei Hit@1-Werte oben sind an den
+// Drei-Beine-Beleg gekoppelt; der Sprachuebergriff und die Baseline-Ohne-Vektoren-Zahl
+// waren es nicht -- eine Zahl, die niemand nachrechnet, ist eine Behauptung.
+describe("Dokumentation: Sprachuebergriff und Baseline nennen ihren Beleg", () => {
+  it("die Flaeche nennt den Sprachuebergriff mit seinem Nenner, seiner Zahl und dem Beleg dahinter", () => {
+    // Der Ollama-Zweig der Flaeche sagt seit 3.2.131, dass Englisch ueber deutsche
+    // Notizen schwach ist. Die Zahl war wahr -- sie stand in
+    // docs/belege/tag-0311/sprachuebergriff-nomic-1406.log.txt ("Gemessen sind 4 von 15
+    // treffern (26,7 %)") -- aber sie war die einzige der vier Flaechenzahlen ohne Wache,
+    // und der Nenner (15 Paare) war nicht als Nenner geschrieben. Gemessen im Fenster
+    // 6.11.2026 10:29:39 MEZ: "it found 4 of 15" ohne Prozent und ohne Paar-Wort.
+    const belegt = lies("docs/belege/tag-0311/sprachuebergriff-nomic-1406.log.txt");
+    const m = /Gemessen sind (\d+) von (\d+) treffern/.exec(belegt);
+    expect(m, "der Sprachuebergriff-Beleg nennt keine Treffer-Zahl — diese Wache ist taub").not.toBeNull();
+    const treffer = Number(m![1]);
+    const paare = Number(m![2]);
+    const inhalt = lies("src/components/SystemStatus.tsx");
+    const s = /found (\d+) of (\d+) cross-language pairs \((\d+) %\)/.exec(inhalt);
+    expect(s, "die Flaeche nennt den Sprachuebergriff nicht mit Paar-Nenner und Prozent").not.toBeNull();
+    expect(Number(s![1]), `die Flaeche behauptet ${s![1]} Treffer — der Beleg misst ${treffer}`).toBe(treffer);
+    expect(Number(s![2]), `die Flaeche behauptet ${s![2]} Paare — der Beleg faehrt ${paare}`).toBe(paare);
+    expect(Number(s![3]), `die Flaeche rundet auf ${s![3]} % — ${treffer} von ${paare} sind ${Math.round((100 * treffer) / paare)} %`).toBe(Math.round((100 * treffer) / paare));
+    // Biss-Kontrolle: die nackte alte Form (Zahl ohne Paar-Wort und ohne Prozent) darf
+    // nicht durchgehen, sonst ist diese Wache ein Band, das alles lasst.
+    const alt = "it found 4 of 15. Embeddings are the numbers";
+    expect(/found \d+ of \d+ cross-language pairs \(\d+ %\)/.test(alt), "die Gegenprobe trifft die alte Form nicht").toBe(false);
+  });
+
+  it("die Baseline ohne Vektoren heisst auf der Flaeche, was sie im Beleg ist", () => {
+    // "51 % for naive substring search" ist die v1-Zahl des Drei-Beine-Laufs. Die
+    // Hit@1-Wache oben sieht sie nicht, weil ihr Muster "Zahl % Hit@1" verlangt und
+    // dieser Satz die Abkuerzung meidet. Also hier: Zahl und ihr Name, am Beleg.
+    const belegt = lies("docs/belege/tag-0311/eval-drei-beine-1352.log.txt");
+    const v1 = /── v1-Baseline[^\n]*\n[\s\S]*?Hit@1:\s+(\d+(?:[.,]\d+)?)\s*%/.exec(belegt);
+    expect(v1, "der Beleg nennt keine v1-Baseline — diese Wache ist taub").not.toBeNull();
+    const erlaubt = Math.round(Number(v1![1].replace(",", ".")));
+    const inhalt = lies("src/components/SystemStatus.tsx");
+    const s = /(\d+) % for naive substring search/.exec(inhalt);
+    expect(s, "die Flaeche nennt keine Baseline-Zahl fuer die Suche ohne Vektoren").not.toBeNull();
+    expect(Number(s![1]), `die Flaeche behauptet ${s![1]} % — der Beleg misst in der v1-Legbe ${erlaubt} %`).toBe(erlaubt);
+  });
+});
+
 // Nachtrag 10.9.2026: "Gesamt-Coverage ~91 %" stand in den READMEs, gemessen
 // waren 89,0 % der Zeilen — die Zahl war schlicht zu hoch. Seitdem nennen die
 // READMEs die Schwellen, die die CI wirklich erzwingt, statt einer

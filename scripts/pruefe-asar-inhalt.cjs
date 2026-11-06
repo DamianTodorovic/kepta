@@ -99,6 +99,9 @@ const erwartet = [
   ["rank in words, vectors, graph. Absent means unseen", 1],
   ["Thickness changes the drawing, never the ranking", 1],
   ["Built once", 2],
+  // P100 (landet in 3.2.182): der Sprachuebergriff auf der Flaeche nennt jetzt seinen
+  // Nenner. Marke am neuen Wortlaut, Verbot am alten nackten Bruch.
+  ["cross-language pairs", 1],
   ["regal-wann", 1],
   ["regal-koerb", 1],
   // p5-p (G-72) und p1-q (G-76) und p4-y, am **gelandeten** Objekt gezaehlt 22.10. 19:16 MESZ
@@ -1082,6 +1085,7 @@ const verboten = [
   // ist, sondern ein zweiter Text. Gezaehlt am **installierten** 3.2.180 vor dem Tausch:
   // jede dieser Ketten muss dort 1 sein (Gegenprobe, see the run log of 10:10 MEZ).
   "Ask this machine whether Ollama or LM Studio is running",
+  "found 4 of 15. Embeddings",
   "Semantic search looks for the meaning",
   "the position in each retrieval track",
   "The vector index is still being built in the background",

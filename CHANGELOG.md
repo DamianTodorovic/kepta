@@ -1,3 +1,30 @@
+## [3.2.182]
+
+### Changed
+
+- **The cross-language number on the status surface now names its own denominator.** The
+  Ollama branch said "for English questions over German notes it found 4 of 15" — true,
+  and sourced (`docs/belege/tag-0311/sprachuebergriff-nomic-1406.log.txt`: "Gemessen sind
+  4 von 15 treffern (26,7 %)"), but 15 of *what* was left to the reader, and the fraction
+  had no percentage. It now reads **"it found 4 of 15 cross-language pairs (27 %)"**.
+  Measured in the real window at 6.11.2026 10:29:39 MEZ before the change; the number
+  itself is unchanged because nothing was re-run — this cut only makes an existing
+  measurement checkable, it does not refresh it.
+
+### Added
+
+- Two guards in `tests/doku-zahlen.test.ts`, because three of the four numbers on this
+  surface branch were already tied to their evidence and the fourth was not:
+  `die Flaeche nennt den Sprachuebergriff mit seinem Nenner, seiner Zahl und dem Beleg
+  dahinter` (treffer, pairs and the rounded percentage all read out of the evidence file,
+  with a bite control that runs the old bare form through the same pattern and must miss
+  it), and `die Baseline ohne Vektoren heisst auf der Flaeche, was sie im Beleg ist`
+  (the "51 % for naive substring search" line is now tied to the v1 leg of the
+  three-leg run — 51.1 % rounds to 51). Red first at 10:35:35 MEZ (`expected null not to
+  be null` — the surface did not yet carry the pair noun), green after the text change.
+- The content gate carries the new wording as a marker and the old bare form as a ban, so
+  the delivered object is the one that says it.
+
 ## [3.2.181]
 
 ### Changed
