@@ -107,7 +107,7 @@ describe("P129, der Wortschatz: ein benanntes Instrument ist ein Messzeug", () =
     expect(zeug.test(einheiten[0]), "das Messzeug steht im selben Satz, wird aber nicht gesehen").toBe(true);
   });
 
-  it("am echten Bestand: 47 von 169 absoluten Behauptungen nennen ihr Messzeug", () => {
+  it("am echten Bestand: 50 von 171 absoluten Behauptungen nennen ihr Messzeug", () => {
     let absoluten = 0;
     let mit = 0;
     for (const datei of DATEIEN) {
@@ -118,9 +118,9 @@ describe("P129, der Wortschatz: ein benanntes Instrument ist ein Messzeug", () =
         if (zeug.test(s)) mit++;
       }
     }
-    expect(absoluten, "der Nenner ist nicht mehr 169 — der Riss oder die Klasse hat sich bewegt").toBe(169);
-    expect(mit, `${mit} von ${absoluten} nennen ein Messzeug — erwartet war 47`).toBe(47);
-    expect(mit / absoluten, "Anteil ohne Nenner ist ein Urteil").toBeGreaterThan(0.27);
+    expect(absoluten, "der Nenner ist nicht mehr 171 — der Riss oder die Klasse hat sich bewegt").toBe(171);
+    expect(mit, `${mit} von ${absoluten} nennen ein Messzeug — erwartet war 50`).toBe(50);
+    expect(mit / absoluten, "Anteil ohne Nenner ist ein Urteil").toBeGreaterThan(0.28);
     expect(maschine.source.length, "die schmale Klasse wurde nicht mitgeändert").toBeGreaterThan(10);
   });
 });

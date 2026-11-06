@@ -6,7 +6,7 @@ Please report vulnerabilities privately to Damian Todorovic via [LinkedIn](https
 
 ## Hardening in place
 
-- Only this computer: the HTTP API refuses requests whose `Host` header does not name this machine (DNS rebinding) and requests from other websites that would change anything (cross-site requests)
+- Only this computer: the HTTP API refuses requests whose `Host` header does not name this machine (DNS rebinding) and requests from other websites that would change anything (cross-site requests) — `tests/herkunft.test.ts:66` smuggles a note from a sandboxed frame and nothing lands, `:76` reads behind a foreign `Host` and gets nothing, live stream included, while `:85` keeps the window, local dev servers, scripts and MCP clients working and `:101` allows a network `Host` only once `KEPTA_HOST` asks for it
 - helmet, rate limiting, 1 MB JSON cap, CORS restricted to localhost, SSRF blocking, XSS sanitising, path-traversal checks, ETag + compression
 - Electron: `nodeIntegration: false`, `contextIsolation: true`, `sandbox: true`, CSP
 
@@ -14,13 +14,18 @@ Please report vulnerabilities privately to Damian Todorovic via [LinkedIn](https
 
 Since 2.11 the knowledge base (`~/.kepta/kepta.db`) is encrypted: SQLCipher 4
 format through SQLite3 Multiple Ciphers — AES-256 for every page, an
-HMAC-SHA512 over every page, a random 256-bit key. The key is created on the
+HMAC-SHA512 over every page, a random 256-bit key (`tests/core/store-verschluesselung.test.ts:76` reads the raw file and finds ciphertext from the first page, WAL included; `:91` demands exactly 256 bits — a shorter key opens nothing). The key is created on the
 first start and stored in the system keychain: the macOS Keychain (service
 `app.kepta.database`, account `kepta`), Windows DPAPI (`database-key.dpapi` in
 the data folder, readable only under the same Windows account) or the Secret
 Service on Linux. Headless installs use `KEPTA_DB_KEY` (64 hex characters),
 which is weaker: the key then sits in the process environment. The settings,
-including the AI provider key, live inside the encrypted file.
+including the AI provider key, live inside the encrypted file. The three keychain paths are covered by
+`tests/core/schluessel.test.ts` — `:101` reads a Windows entry through the injected command runner
+with the path passed in the environment, `:111` proves the key never sits in the argument list, `:152`
+checks that a `win32` host is handed "Windows DPAPI". Those cases replace the system command, so what
+is proven here is K3PTA's own side of the call; the round-trip against a real Keychain, DPAPI or
+Secret Service runs only on that operating system.
 
 **What it protects against:** anyone who gets the file — a copy, a backup, a
 synced folder, a disk taken out of the machine. Without the key the file is

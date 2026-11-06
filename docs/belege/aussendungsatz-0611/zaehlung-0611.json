@@ -7,10 +7,10 @@
    "ohne_zeug": 87
   },
   "SECURITY.md": {
-   "saetze": 31,
-   "absolut": 7,
-   "mit_zeug": 1,
-   "ohne_zeug": 6
+   "saetze": 33,
+   "absolut": 9,
+   "mit_zeug": 4,
+   "ohne_zeug": 5
   },
   "ROADMAP.md": {
    "saetze": 77,
@@ -26,10 +26,10 @@
   }
  },
  "zusammen": {
-  "saetze": 568,
-  "absolut": 169,
-  "mit_zeug": 47,
-  "ohne_zeug": 122
+  "saetze": 570,
+  "absolut": 171,
+  "mit_zeug": 50,
+  "ohne_zeug": 121
  },
  "abschnitt": {
   "README.md": {
@@ -38,8 +38,8 @@
    "ohne_zeug": 72
   },
   "SECURITY.md": {
-   "absolut": 7,
-   "mit_zeug": 1,
+   "absolut": 9,
+   "mit_zeug": 3,
    "ohne_zeug": 6
   },
   "ROADMAP.md": {
@@ -54,8 +54,8 @@
   }
  },
  "zusammen_abschnitt": {
-  "absolut": 169,
-  "mit_zeug": 57,
+  "absolut": 171,
+  "mit_zeug": 59,
   "ohne_zeug": 112
  },
  "maschinell_pruefbar": {
@@ -64,8 +64,8 @@
    "maschinell": 25
   },
   "SECURITY.md": {
-   "absolut": 7,
-   "maschinell": 1
+   "absolut": 9,
+   "maschinell": 2
   },
   "ROADMAP.md": {
    "absolut": 16,
@@ -76,7 +76,7 @@
    "maschinell": 2
   }
  },
- "summe_pruefbar": 29,
+ "summe_pruefbar": 30,
  "pruefbar_liste": [
   {
    "datei": "README.md",
@@ -201,6 +201,11 @@
   {
    "datei": "README.md",
    "satz": "src/scan (machine-scan rules) | must not fall under 98 % of lines · must hold 100 % of functions (both in vitest.config.ts, key \"src/scan/\") | what may be read, and what never is",
+   "zeuge": true
+  },
+  {
+   "datei": "SECURITY.md",
+   "satz": "The three keychain paths are covered by tests/core/schluessel.test.ts — :101 reads a Windows entry through the injected command runner with the path passed in the environment, :111 proves the key never sits in the argume",
    "zeuge": true
   },
   {
@@ -629,15 +634,11 @@
   },
   {
    "datei": "SECURITY.md",
-   "satz": "- Only this computer: the HTTP API refuses requests whose Host header does not name this machine (DNS rebinding) and requests from other websites that would change anything (cross-site requests)"
-  },
-  {
-   "datei": "SECURITY.md",
-   "satz": "Since 2.11 the knowledge base (~/.kepta/kepta.db) is encrypted: SQLCipher 4 format through SQLite3 Multiple Ciphers — AES-256 for every page, an HMAC-SHA512 over every page, a random 256-bit key."
-  },
-  {
-   "datei": "SECURITY.md",
    "satz": "The key is created on the first start and stored in the system keychain: the macOS Keychain (service app.kepta.database, account kepta), Windows DPAPI (database-key.dpapi in the data folder, readable only under the same "
+  },
+  {
+   "datei": "SECURITY.md",
+   "satz": "Those cases replace the system command, so what is proven here is K3PTA's own side of the call; the round-trip against a real Keychain, DPAPI or Secret Service runs only on that operating system."
   },
   {
    "datei": "SECURITY.md",

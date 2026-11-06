@@ -958,6 +958,37 @@ Die „drei Wände" von P136 sind damit auf vier Sätze geschrumpft, und einer d
 Windows/Linux-Quellbau) ist die einzige Grenze, die diese Maschine wirklich zieht. Der Rest ist
 Damians Wort (README.md:181, release-notes zweimal) oder ein früherer Stand (README.md:357).
 
+## 27. P139 — SECURITY.md: drei Sätze, und der Nenner wächst, weil ich ihn bewaffe (7.11. 00:04 MEZ)
+
+SECURITY.md trug sechs absolute Behauptungen ohne Messzeug. Drei sind jetzt gedeckt — und beim
+Schreiben fiel eine Grenze auf, die ich vorher nicht benannt hatte.
+
+| Satz | Wo | Zeuge |
+|---|---|---|
+| „refuses requests whose `Host` header does not name this machine … and requests from other websites that would change anything" | SECURITY.md:9 | `tests/herkunft.test.ts:66` (Notiz aus einem Sandbox-Frame einschleusen — nichts landet), `:76` (fremder Host → nichts lesbar, Live-Stream mit), `:85` (Fenster, Dev-Server, Skripte, MCP arbeiten weiter), `:101` (Netzwerk-Host nur mit `KEPTA_HOST`) |
+| „AES-256 for every page, an HMAC-SHA512 over every page, a random 256-bit key" | SECURITY.md:15-17 | `tests/core/store-verschluesselung.test.ts:76` (Rohdatei: ab Seite eins Chiffre, WAL mit), `:91` (genau 256 Bit — ein kürzerer Schlüssel öffnet nichts) |
+| „stored in the system keychain: macOS … Windows DPAPI … Secret Service on Linux" | SECURITY.md:17-21 | `tests/core/schluessel.test.ts:101` (Windows-Eintrag über den eingespritzten Aufrufer, Pfad in der Umgebung), `:111` (der Schlüssel steht in keiner Argumentliste), `:152` (`win32` bekommt „Windows DPAPI" zugewiesen) |
+
+### Was die drei Fälle *nicht* beweisen — und jetzt dabeisteht
+
+`schluessel.test.ts` **ersetzt das Systemkommando**. Bewiesen ist K3PTAs eigene Seite des Aufrufs:
+Leseweg, Schreibweg ohne Argumentliste, Auswahl der Plattform. Der Round-Trip gegen eine echte
+Keychain, eine echte DPAPI-Umgebung oder `secret-tool` läuft nur auf diesem Betriebssystem. Der Satz
+nach aussen sagt das jetzt selbst, statt es als Beweis auszugeben — dieselbe Lektion wie P136 beim
+Fit-Knopf und P137 bei „zeros": **eine Wache, die eine Grenze zieht, gehört mit der Grenze zitiert.**
+
+### Die Zählung — der Nenner wächst mit der Bewaffnung
+
+Zensus 00:03:54 MEZ, Exit 0: **570** Einheiten, **171** absolute Behauptungen, **50** mit Messzeug im
+selben Satz = **29,2 %**, 121 ohne. Abschnittslesung 59 = 34,5 %. Schmale Klasse 30, davon 25 mit
+Zeugen → **5 Arbeit**.
+
+Der Nenner ist von 169 auf 171 gestiegen, und die schmale Klasse von 29 auf 30: **meine eignen
+Zusätze enthalten absolute Wörter** („nothing lands", „only once"). Wer Zeugen einschreibt, schreibt
+neue Behauptungen — die Anteilzahl steigt deshalb langsamer als die Anzahl der Zeugen (47 → 50 bei
+gleichzeitig 169 → 171). Beide Zahlen stehen darum immer zusammen da; die Pinne hält 50 von 171, die
+Kante > 0,28.
+
 ## Fehler in diesem Schlag, die ich selbst gefunden habe
 
 1. `du -sk /tmp` meldete 0 GiB Stapel, weil `/tmp` ein Symlink ist; der erste Lauf schrieb diese Null.
