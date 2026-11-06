@@ -1,3 +1,19 @@
+## [3.2.177]
+
+### Changed
+
+- **Every class a building block calls must now have a rule in the shipped CSS.** Measured
+  6.11.2026 03:29:51 MEZ against the delivered 3.2.176: 455 class words called by the
+  components against 1 537 rules in the shipped CSS, and three found nothing — `prose` and
+  `prose-sm` (Chat.tsx:1052) plus the marker `group/code` (Chat.tsx:1110). The marker is a
+  relative-name flag that never owns a rule, so the new check counts and prints markers
+  instead of swallowing them. The other two were leftovers of a typography plugin that was
+  never registered: the answer is painted by `.chat-prose` (src/index.css:664), so the two
+  names are gone and the rendering is unchanged.
+- The check runs inside the content gate (`scripts/pruefe-klassen-im-objekt.cjs`, called from
+  `scripts/pruefe-asar-inhalt.cjs`), so a class without a rule stops a landing rather than
+  waiting for someone to look.
+
 ## [3.2.176]
 
 ### Changed

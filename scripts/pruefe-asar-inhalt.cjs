@@ -1149,6 +1149,20 @@ for (const m of verboten) {
   if (!ok) fehl++;
   console.log(`  ${ok ? "ok  " : "ZU VIEL"}  ${String(n).padStart(3)}  ${m}${ok ? "  (verboten, beide Anfangsformen)" : `  (verboten — ein frueherer Wortlaut ist zurueckgekehrt: ${treffer})`}`);
 }
+// P88 (3.2.177): jede Klasse, die ein Baustein ruft, muss im ausgelieferten CSS eine Regel
+// finden. Von Hand gemessen 6.11.2026 03:29:51 MEZ am ausgelieferten 3.2.176: 455 gerufene
+// Klassenwoerter gegen 1537 Regeln, und zwei Woerter fanden keine -- `prose` und `prose-sm`,
+// Ueberreste eines Typography-Plugins, das nie eingetragen war (die Antwort malt `.chat-prose`,
+// src/index.css:664). Ein Name ohne Regel ist eine Verabredung, die niemand haelt.
+const { spawnSync } = require("node:child_process");
+const klassen = spawnSync(process.execPath,
+  [require("path").join(__dirname, "pruefe-klassen-im-objekt.cjs"), p], { encoding: "utf8" });
+for (const z of (klassen.stdout || "").split("\n").filter(Boolean)) console.log("  " + z.trim());
+for (const z of (klassen.stderr || "").split("\n").filter(Boolean)) console.log("  FEHLER " + z.trim());
+if (klassen.status !== 0) {
+  fehl++;
+  console.log("  (Klassendeckung fehlgeschlagen — Exit " + klassen.status + ")");
+}
 console.log(`  asar ${fs.statSync(p).size} B, mtime ${fs.statSync(p).mtime.toISOString()}${version ? `, bestellte Version ${version}` : ""}`);
 if (fehl) { console.log(`  ${fehl} Pruefung(en) fehlgeschlagen`); process.exit(1); }
 console.log("  Inhalt passt.");

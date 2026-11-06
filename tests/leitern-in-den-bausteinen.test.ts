@@ -122,6 +122,28 @@ describe("Punkt 2: die Schriftleiter gilt in den Bausteinen", () => {
     expect(offen, `offene Gefahr-Stellen: ${offen.join(", ")}`).toEqual(["border-red-500/40 in src/components/Chat.tsx"]);
   });
 
+  it("kein Baustein ruft eine Klasse, die das Haus nicht malt", () => {
+    // P88: am ausgelieferten 3.2.176 gemessen 03:29:51 MEZ -- 455 gerufene Klassenwoerter
+    // gegen 1537 Regeln im ausgelieferten CSS, und drei Woerter fanden keine Regel:
+    // `prose`, `prose-sm` (Chat.tsx:1052) und `group/code` (Chat.tsx:1110). Das dritte ist
+    // ein Marker des Rahmenwerks, der nie eine eigne Regel hat -- er wird in der Wache
+    // gezaehlt und gedruckt, nicht verschluckt. Die zwei andern waren Ueberreste eines
+    // Typography-Plugins, der nie eingetragen war: die Regel, die die Antwort wirklich
+    // malt, heisst `.chat-prose` (src/index.css:664). Ein Name ohne Regel ist eine
+    // Verabredung, die niemand haelt -- und der naechste Leser haelt sie fuer Stil.
+    const rufer = dateien
+      .map((d) => [...d.text.matchAll(/class(?:Name)?\s*=\s*(?:\{)?\s*["'`]([^"'`]*)["'`]/g)]
+        .flatMap((m) => m[1].split(/\s+/))
+        .filter((w) => /^(prose|prose-sm|prose-lg|prose-xl)$/.test(w))
+        .map(() => d.rel))
+      .flat();
+    expect(rufer, `${rufer.length} Sitze rufen Typography-Klassen ohne Regel: ${[...new Set(rufer)].join(", ")}`).toEqual([]);
+    // Biss-Kontrolle: derselbe Zaehler trifft einen Probesitz.
+    const probe = [...'className="chat-prose prose prose-sm max-w-none"'.matchAll(/class(?:Name)?\s*=\s*["'`]([^"'`]*)["'`]/g)]
+      .flatMap((m) => m[1].split(/\s+/)).filter((w) => /^(prose|prose-sm)$/.test(w));
+    expect(probe).toEqual(["prose", "prose-sm"]);
+  });
+
   it("Biss-Kontrolle: ein Willkuerwert und ein halber Schritt werden getroffen", () => {
     const sonde = funde('<div className="text-[12.5px]" style={{ fontSize: 13 }}>');
     expect(sonde.length).toBe(2);

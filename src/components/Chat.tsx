@@ -1049,7 +1049,7 @@ export function Chat({ activeMemories, onSaveToBrain, onSaveToBrainWithMeta, isF
               <div className="msg-user whitespace-pre-wrap break-words">{msg.content}</div>
             ) : (
               <div className="msg-ai w-full">
-                <div className="chat-prose prose prose-sm max-w-none break-words" style={{ color: "var(--text-1)" }}>
+                <div className="chat-prose max-w-none break-words" style={{ color: "var(--text-1)" }}>
                   <ReactMarkdown
                     urlTransform={antwortUrlPfad}
                     components={{
