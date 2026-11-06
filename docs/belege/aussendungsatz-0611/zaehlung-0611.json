@@ -15,8 +15,8 @@
   "ROADMAP.md": {
    "saetze": 77,
    "absolut": 16,
-   "mit_zeug": 0,
-   "ohne_zeug": 16
+   "mit_zeug": 3,
+   "ohne_zeug": 13
   },
   ".github/release-notes.md": {
    "saetze": 50,
@@ -28,8 +28,8 @@
  "zusammen": {
   "saetze": 568,
   "absolut": 169,
-  "mit_zeug": 41,
-  "ohne_zeug": 128
+  "mit_zeug": 44,
+  "ohne_zeug": 125
  },
  "abschnitt": {
   "README.md": {
@@ -681,14 +681,6 @@
   },
   {
    "datei": "ROADMAP.md",
-   "satz": "Encrypted knowledge base | SQLCipher 4 format through SQLite3 Multiple Ciphers: AES-256 and an HMAC-SHA512 over every page, search fully intact — the whole file is encrypted, not single fields, so FTS5 and vectors keep w"
-  },
-  {
-   "datei": "ROADMAP.md",
-   "satz": "Safe conversion | An existing base is converted only when K3PTA has it to itself: copy, encrypt, verify every table and the integrity check, replace in one step, overwrite the old file with zeros"
-  },
-  {
-   "datei": "ROADMAP.md",
    "satz": "English only | The German interface switch from 2.10 is gone"
   },
   {
@@ -706,10 +698,6 @@
   {
    "datei": "ROADMAP.md",
    "satz": "## ✅ v2.13 — September 2026: your memory, every day"
-  },
-  {
-   "datei": "ROADMAP.md",
-   "satz": "This computer only (2.13.2) | The HTTP server refuses foreign Host headers and write requests from other websites"
   },
   {
    "datei": "ROADMAP.md",

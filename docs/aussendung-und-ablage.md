@@ -894,6 +894,39 @@ drei Wände**: zwei Damians Wort (Enterprise, MDM-Ablage) und eine physische Gre
 (Windows/Linux). Das ist ein ehrlicherer Endzustand als eine Prozentzahl, die nach zwei weiteren
 Schlägen „100 %" melden würde.
 
+## 25. P137 — ROADMAP geöffnet: drei Zeilen, die hielten, und eine vierte falsche, die nicht kam (6.11. 23:47 MEZ)
+
+ROADMAP.md hatte 16 absolute Behauptungen und **keine einzige** mit Messzeug. Die Zeile war der
+verdächtigste Ort im Blatt — und die Prüfung fiel anders aus als erwartet.
+
+**Drei Zeilen hielten, alle drei waren schon gemessen:**
+
+| Zeile | Was sie verspricht | Der Zeuge, den sie nicht nannte |
+|---|---|---|
+| ROADMAP.md:60 | ganzes File verschlüsselt, Suche intakt | `tests/core/store-verschluesselung.test.ts:76` liest die Rohdatei ab der ersten Seite (WAL mit) und `:163` findet nach dem Wiederöffnen Notizen, Suche und Einstellungen unverändert |
+| ROADMAP.md:62 | Umbau nur unter Vierhand, Kopie → Verschlüsselung → Prüfung → Austausch, alte Datei mit Nullen | `:180` lässt eine Datei, die ein anderes Programm hält, im Klartext; `:210` lässt beim scheiternden Austausch das Original heil und die Kopie verschwinden; `:196` findet in der alten Datei nur Nullen |
+| ROADMAP.md:84 | fremde `Host`-Köpfe und Schreibversuche von Webseiten abgewiesen | `tests/herkunft.test.ts:76` liest hinter einem fremden Host nichts mehr, auch nicht im Live-Stream; `:101` lässt ein Netzwerk-Host nur gelten, wenn `KEPTA_HOST` ihn ruft |
+
+**Die vierte falsche Aussage fiel aus, bevor ich sie schrieb.** ROADMAP.md:62 endete mit „overwrite
+the old file with zeros". Ich hielt das für einen aspirativen Satz — `grep` über `src/`, `server/`,
+`scripts/` fand kein zweites Wort dazu. Es existiert doch: `src/core/store.ts:2151` `ersetzeUndNulle`
+schreibt 64-KiB-Blöcke Nullen über die alte Datei und `:2163` markiert das als Zugabe, weil die
+verschlüsselte Datei schon liegt. Und der Fall `:196` prüft ihn — mit `skipIf(win32)`, weil der
+Windows-Weg schließt und ersetzt statt zu nullen. **Der Satz war also wahr, aber plattformlos**:
+er galt ohne Einschränkung, während die Wache selbst ihre Grenze nennt. Berichtigt, indem die
+Zeile jetzt die Plattformkante dazusagt.
+
+## Die Zählung
+
+Zensus 23:47:09 MEZ, Exit 0: 568 Einheiten, 169 absolute Behauptungen, **44 mit Messzeug = 26,0 %**
+(vorher 41 = 24,3 %), 125 ohne. Abschnittslesung unverändert 55 = 32,5 %. Schmale Klasse bleibt 29
+mit **23** Zeugen → **6 Arbeit** (die drei ROADMAP-Zeilen gehören nicht zur maschinen-widerlegbaren
+Klasse — „fully intact" und „only when" treffen das Muster nicht). Kante auf > 0,25.
+
+Der Weg der letzten vier Schläge in derselben Klasse: 14, 15, 18, 20, 23. Die sechs Verbleibenden
+sind nachgesehen und gehören zu drei Wänden (Damians Wort: Enterprise und MDM; die Grenze dieses
+Rechners: Windows/Linux; ein früherer Stand: README.md:357; eine ROADMAP-Absage: asOf).
+
 ## Fehler in diesem Schlag, die ich selbst gefunden habe
 
 1. `du -sk /tmp` meldete 0 GiB Stapel, weil `/tmp` ein Symlink ist; der erste Lauf schrieb diese Null.

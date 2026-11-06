@@ -57,9 +57,9 @@ K3PTA's interface is English, one language done properly.
 
 | Feature | What shipped |
 |---|---|
-| **Encrypted knowledge base** | SQLCipher 4 format through SQLite3 Multiple Ciphers: AES-256 and an HMAC-SHA512 over every page, search fully intact — the whole file is encrypted, not single fields, so FTS5 and vectors keep working |
+| **Encrypted knowledge base** | SQLCipher 4 format through SQLite3 Multiple Ciphers: AES-256 and an HMAC-SHA512 over every page, search fully intact — the whole file is encrypted, not single fields, so FTS5 and vectors keep working (`tests/core/store-verschluesselung.test.ts:76` reads the raw file from the first page, WAL included; `:163` reopens with the key and finds notes, search and settings unchanged) |
 | **Key in the system keychain** | 256 random bits, created on first start; macOS Keychain, Windows DPAPI, Linux Secret Service, `KEPTA_DB_KEY` for headless installs |
-| **Safe conversion** | An existing base is converted only when K3PTA has it to itself: copy, encrypt, verify every table and the integrity check, replace in one step, overwrite the old file with zeros |
+| **Safe conversion** | An existing base is converted only when K3PTA has it to itself: copy, encrypt, verify every table and the integrity check, replace in one step, overwrite the old file with zeros (`tests/core/store-verschluesselung.test.ts:180` leaves a base another program holds open as plaintext, `:210` keeps the original untouched and removes the copy when the swap fails, `:196` finds only zeros in the old file afterwards — that last one is skipped on Windows, where the swap closes and replaces instead) |
 | **Settings inside** | The settings, the AI key included, moved from `settings.json` into the encrypted file |
 | **English only** | The German interface switch from 2.10 is gone |
 
@@ -81,7 +81,7 @@ K3PTA's interface is English, one language done properly.
 | **AI apps** | Connect Claude Desktop, Claude Code, Cursor, Windsurf and VS Code in one click; live activity with names; a sealed, checkable audit log |
 | **Privacy** | The privacy shield before cloud models and for AI apps; private notes |
 | **Tiers and deployment (2.13.1)** | Licenses carry the tier and seats; import of ChatGPT and Claude history; centrally managed policies the app enforces (`src/lib/richtlinien.ts`: `chat_cloud`, `machine_scan`, `privacy_shield`); Windows installers. (2.13.3 folded the public Business tier into Enterprise — team memory ships with Enterprise. SSO, the workspaces UI and MDM enrolment did not: they are sold as roadmap, see README.) |
-| **This computer only (2.13.2)** | The HTTP server refuses foreign `Host` headers and write requests from other websites |
+| **This computer only (2.13.2)** | The HTTP server refuses foreign `Host` headers and write requests from other websites (`tests/herkunft.test.ts:76` reads nothing at all behind a foreign Host, live stream included; `:101` allows a network Host only after `KEPTA_HOST` asks for it and keeps foreign websites blocked) |
 | **Files next to the database (2.13.4)** | `profile.json`, `scan-config.json` and the sync journal get the same 256-bit key as the knowledge base (AES-256-GCM, `src/core/nebendateien.ts`); older plaintext files are read and re-encrypted on the next write. Readable by design: `endpoint.json` (no secret, it is how local tools find the port) and the inbox with the user's own source files |
 
 ## 🔭 Next (deliberately planned follow-up work)
