@@ -3,8 +3,8 @@
   "README.md": {
    "saetze": 410,
    "absolut": 128,
-   "mit_zeug": 33,
-   "ohne_zeug": 95
+   "mit_zeug": 35,
+   "ohne_zeug": 93
   },
   "SECURITY.md": {
    "saetze": 31,
@@ -28,14 +28,14 @@
  "zusammen": {
   "saetze": 568,
   "absolut": 169,
-  "mit_zeug": 35,
-  "ohne_zeug": 134
+  "mit_zeug": 37,
+  "ohne_zeug": 132
  },
  "abschnitt": {
   "README.md": {
    "absolut": 128,
-   "mit_zeug": 55,
-   "ohne_zeug": 73
+   "mit_zeug": 54,
+   "ohne_zeug": 74
   },
   "SECURITY.md": {
    "absolut": 7,
@@ -55,8 +55,8 @@
  },
  "zusammen_abschnitt": {
   "absolut": 169,
-  "mit_zeug": 56,
-  "ohne_zeug": 113
+  "mit_zeug": 55,
+  "ohne_zeug": 114
  },
  "maschinell_pruefbar": {
   "README.md": {
@@ -125,7 +125,7 @@
   },
   {
    "datei": "README.md",
-   "satz": "*Keep the newer*, *Keep the older* (the other is marked as replaced, never deleted) or *Both are right* (never asked again — tests/enterprise-api.test.ts:227 settles a pair that way, reads the list back empty and shows t",
+   "satz": "*Keep the newer*, *Keep the older* (the other is marked as replaced, never deleted — tests/enterprise-api.test.ts:215 reads the replaced note back with supersededBy set, and tests/engine.test.ts:167 counts both notes sti",
    "zeuge": true
   },
   {
@@ -160,8 +160,8 @@
   },
   {
    "datei": "README.md",
-   "satz": "HTML is turned into text before import, and content that carries no knowledge — markup scaffolding, repeated table rows — never becomes a note",
-   "zeuge": false
+   "satz": "HTML is turned into text before import, and content that carries no knowledge — markup scaffolding, repeated table rows — never becomes a note (tests/core/klassifikation.test.ts:112 strips script, style and tags into rea",
+   "zeuge": true
   },
   {
    "datei": "README.md",
@@ -469,10 +469,6 @@
   },
   {
    "datei": "README.md",
-   "satz": "HTML is turned into text before import, and content that carries no knowledge — markup scaffolding, repeated table rows — never becomes a note"
-  },
-  {
-   "datei": "README.md",
    "satz": "Every card shows where it came from and which part it is (2/5), and a file source opens in its default application."
   },
   {
@@ -562,10 +558,6 @@
   {
    "datei": "README.md",
    "satz": "The data is never hostage."
-  },
-  {
-   "datei": "README.md",
-   "satz": "There is no key that could revoke it."
   },
   {
    "datei": "README.md",
