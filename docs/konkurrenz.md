@@ -212,14 +212,45 @@ Aehnlichkeit gleich sind (Toleranz 1e-12, float64 und float32):
 Das ist die Antwort, die vor dem Verkaufsatz stehen muss: **das Wuerfeln ist die
 Mitbewerber-Seite.** Keine einzige Anfrage der nomic-Stufe haengt an einem Platz-1-
 Gleichstand, und die einzige der bge-Stufe ist genau die, die 31 von 30 trennt. Unsre
-Rangfolge entscheidet dieselbe Anfrage **ohne den Gleichstand**: sie setzt m36 auf Platz 1 --
-eine Notiz, die zur Gleichstands-Gruppe gar nicht gehoert (0,4992953 gegen 0,5002722) und
-ein gueltiger Ausweis ist. Der Grund ist das Verfahren, nicht der Sortierstall: m36 ist die
-Hetzner-Notiz, und BM25, Entitaeten und Zeitstrahl heben sie -- dieselben Bausteine, die
-P111 als Antwort auf die Modell-Aussage *dazu* genommen hat. Tiefer in den ersten fuenf
-liegen weitere Gleichstaende (5 Anfragen an der nomic-, 2 an der bge-Stufe, stets m16 gegen
-m17); sie aendern an der Rangordnung des Mitbewerbers nichts am ersten Treffer, und deshalb
-ist die Zahl, die dort schwankt, genau eine.
+Rangfolge entscheidet dieselbe Anfrage ausserhalb des Gleichstands: sie setzt m36 auf
+Platz 1 -- eine Notiz, die zur Gleichstands-Gruppe gar nicht gehoert (0,4992953 gegen
+0,5002722) und ein gueltiger Ausweis ist. Tiefer in den ersten fuenf liegen weitere
+Gleichstaende (5 Anfragen an der nomic-, 2 an der bge-Stufe, stets m16 gegen m17); sie
+aendern am ersten Treffer des Mitbewerbers nichts, und deshalb ist die Zahl, die dort
+schwankt, genau eine.
+
+**Welches Bein hebt m36?** Gemessen, nicht gefuehlt: `beine-auf-gleichstand.ts`
+(19:16:27 und 19:16:38 MEZ, acht Bein-Kombinationen, beide Stufen, Beleg
+`docs/belege/konkurrenz-0611e/beine-auf-gleichstand-0611.txt`). Erste Stelle auf
+`"Hetzner"`:
+
+| Fahrnis | nomic-Stufe | bge-Stufe (die trennende) |
+|---|---|---|
+| alle drei Beine (ausgeliefert) | m36, traegt | m36, traegt |
+| nur BM25 | m16 -- gueltig, aber **in der Gleichstands-Gruppe** | m16, in der Gruppe |
+| nur Vektor | m36, traegt | **leere Liste** (kein Treffer moeglich) |
+| nur Entitaeten | m36, traegt | m36, traegt |
+| BM25 + Vektor | m36, traegt | m16, in der Gruppe |
+| BM25 + Entitaeten | m36, traegt | m36, traegt |
+| Vektor + Entitaeten | m36, traegt | m36, traegt |
+| kein Bein | leer | leer |
+
+Die Zuordnung ist damit die **Entitaeten-Lage**: sie allein setzt m36 an die erste Stelle,
+an beiden Stufen, und das ist der Grund, warum unsre Antwort auf dieser Anfrage ausserhalb
+des Gleichstands liegt. BM25 allein wuerde m16 nennen -- gueltig, aber an denselben Wurf
+gebunden wie der Mitbewerber. **Der Zeitstrahl ist aus diesem Satz gestrichen**: die Engine
+schaltet drei Beine (`src/core/engine.ts:485` -- bm25, vector, entity), ein temporal-Bein
+als Schalter gibt es nicht, und was nicht schaltbar ist, kann hier nichts beigetragen
+haben. (Die fruehere Fassung dieses Abschnitts schrieb "BM25, Entitaeten und Zeitstrahl" --
+das war eine Aufzaehlung von Bausteinen, keine Messung, und in der Messung ist es die
+Entitaeten-Lage.)
+
+Zwei offene Punkte aus derselben Fahrnis: an der **bge-Stufe gibt das Vektor-Bein allein
+fuer "Hetzner" eine leere Liste** zurueck (Diagnose-Fahrnis, nicht die ausgelieferte -- aber
+eine Luecke mit Namen), und auf `"Welcher Server ist gemeint?"` (ablenkung, erwartet m01)
+nennt **jede** Bein-Kombination m16 als erste Stelle, auch die Auslieferung: die
+Ablenkungsfrage an einem Nahe-Duplett verlieren wir, waehrend der Mitbewerber sie an beiden
+Stufen ebenfalls verliert.
 
 **Nebenbefund, und er gehört zu P112:** unsre eigne Spur aus 17:09 MEZ
 (`konkurrenz-0611c`) schreibt ins Feld `erwartet` nur den **ersten** gültigen Ausweis
@@ -235,6 +266,61 @@ auseinander, gleiche Rangfolge.
 **Was dieser Schnitt nicht heilt:** er sagt nichts über txtai (#30 bleibt offen), nichts über
 die Geschwindigkeit an einem echten Bestand (58 Notizen sind ein Korpus, kein Bestand), und
 er ändert **nichts am ausgelieferten Objekt** -- keine neue Fassung, kein Tausch.
+
+## P120, 19:21 MEZ: unsre eigne Vektor-Stimme schweigt unter einer Grenze, die an einem Modell geeicht ist
+
+P119 fiel eine Zeile auf, die nicht ins Verfahren passte: mit `tracks = {bm25:false,
+vector:true, entity:false}` und `KEPTA_EMBED_MODEL=bge-m3` antwortet die Engine auf
+`"Hetzner"` mit einer **leeren Liste** — an der nomic-Stufe mit vier Notizen. Der Grund
+steht in `src/core/engine.ts:551`:
+
+    const untergrenze = Math.max(VECTOR_FLOOR, bestSim * VECTOR_BAND)
+
+mit `VECTOR_BAND = 0,86` (engine.ts:37) und **`VECTOR_FLOOR = 0,58`** (engine.ts:51). Der
+Bandteil ist modelgleich — `bestSim * 0,86` liegt immer unter `bestSim`, also bleibt der
+beste Kandidat in jeder Stufe stehen. Der absolute Teil ist es nicht: liegt der beste
+Cosinus einer Anfrage unter 0,58, faellt die *ganze* Kandidatenliste durch die Masche.
+
+Gemessen an allen 45 Anfragen, beide Stufen, dieselbe Engine, derselbe Aufbau
+(`docs/belege/konkurrenz-0611e/vektor-bein-stumm.ts`, 19:21:28 und 19:21:30 MEZ, Exit 0):
+
+| Fahrnis nur mit dem Vektor-Bein | nomic-Stufe | bge-Stufe |
+|---|---|---|
+| Anfragen mit leerer Liste | **1 von 45 = 2,2 %** | **13 von 45 = 28,9 %** |
+| Kategorien der 13 | -- | 6 umschreibung, 3 graph, 3 lexikalisch, 1 ablenkung |
+| davon trifft unsre Fusion trotzdem | 1 | **8** |
+| Anfragen, auf denen die **ganze Fusion** leer zurueckkommt | **0** | **2** |
+
+Die zwei endgueltig leeren sind benannt: `"Was mag meine Grossmutter?"` (erwartet m18) und
+`"Wie lege ich Geld an?"` (erwartet m49). An der ausgelieferten nomic-Stufe gibt es **keine**
+leere Fusions-Antwort; die zwei entstehen, wenn jemand `KEPTA_EMBED_MODEL=bge-m3` setzt. Die
+Robustheit der Fusion verdeckt den Defekt meist (8 von 13), aber nicht immer. Die
+Flaeche ist in diesem Fall **nicht stumm**, das war mein erster Satz und er war falsch:
+`src/components/Dashboard.tsx:2265` sagt bei einer Suchanfrage ohne Treffer (und der Wortlaut ist **im installierten Objekt** gezaehlt: `scripts/pruefe-asar-inhalt.cjs` meldet ihn am Bundel der 3.2.190 um 19:34:36 MEZ 1 mal, bei 420 geoeffneten Pruefungen)
+`Nothing found for "…". Try different terms, raise the result count, or switch to keyword
+search.` — drei naechste Schritte, und der dritte (zurueck zum Wort-Bein) trifft genau das
+Verhalten, das hier schweigt. Was der Hinweis **nicht** nennt, ist die Ursache: dass die
+eigne Vektor-Stimme wegen einer an nomic geeichten Untergrenze ausgefallen ist. Geoeffnet
+bleibt damit ein einziger Satz: die Flaeche erklaert den leeren Zustand, aber nicht
+*warum* das Bein leer war.
+
+**Was damit nicht mehr geschrieben werden darf:** "die Engine ist modelgleich" und
+"ein andres Einbett ist nur eine Frage der Qualitaet". Eine Konstante ist an einer Stufe
+geeicht, und das ist kein Qualitaetsunterschied, sondern ein Schaltverhalten.
+
+**Der Flicken ist fertig und nicht angewandt** (Grund: es ist ein Objekt-Schnitt, und die
+Bau-Kante haelt — 9,23 Gi frei gegen 9,9 Gi, gemessen 19:13:55 MEZ):
+
+    const band = Math.max(VECTOR_FLOOR, bestSim * VECTOR_BAND);
+    const untergrenze = Math.min(bestSim, band);
+
+Der absolute Wert greift dann nur noch als Obergrenze des Bandes, nicht mehr als Mundkorb;
+der Unrat-Schutz bleibt, weil die Band-Enge wirkt, sobald `bestSim >= 0,58 / 0,86 = 0,6744`.
+Dazugehoert der zweite Teil: wenn das Bein trotz allem leer bleibt (gar keine Embeddings der
+fragenden Stufe), muss der **Grund** in der Antwort stehen, nicht die Stille. Reihenfolge beim
+Landen: erst den Fall "mindestens ein Treffer auf einer stummen Anfrage" rot sehen, dann
+zaehlen, dass die Zahl der leeren Listen nicht still auf 0 faellt, dann Census und Abnahme im
+echten Fenster. Papier in der Mappe: `audit-2026-10-09/feldzug/P120-VEKTOR-STUMM-0611.md`.
 
 ## Was die letzte Zeile sagt, und was sie nicht sagt
 

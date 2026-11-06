@@ -1133,6 +1133,11 @@ const erwartet = [
   // Bindestrich an der Fuge zu ihrem naechsten Feld. Gezaehlt am installierten 3.2.190
   // um 18:27:40 MEZ (latin1): neue Kette 0 mal, alte Kette 1 mal (unten in `verboten`).
   ["claims reach this picture; ", 1],
+  // P120: der trefferlose Such-Hinweis ist eine Auskunft der FLAECHe, nicht nur des
+  // Quelltextes. Gezaehlt am installierten 3.2.190 um 19:33:42 MEZ (latin1): die Kette
+  // steht 1 mal. Der Ledger-Satz "die Flaeche erklaert den leeren Zustand" gilt damit
+  // nur, solange das Bundel sie traegt -- und die Kette prueft es bei jeder Landung.
+  ["Try different terms, raise the result count, or switch to keyword search", 1],
 ];
 
 // Was NICHT mehr drin sein darf. Bisher war "der alte Wortlaut ist weg" eine Behauptung im

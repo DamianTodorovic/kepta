@@ -48,6 +48,9 @@ const KNN_NOMIC = path.join(FREMD, "spur-sqlitevec-0611.jsonl");
 const KNN_BGE = path.join(FREMD, "spur-sqlitevec-bge-m3.jsonl");
 const AUSWERTUNG = path.join(NEU, "auswertung-chroma-0611.txt");
 const ZENSUS = path.join(NEU, "gleichstands-zensus-0611.txt");
+const BEINE = path.join(NEU, "beine-auf-gleichstand-0611.txt");
+const STUMM = path.join(NEU, "vektor-bein-stumm-0611.txt");
+const DASHBOARD = path.join(WURZEL, "src/components/Dashboard.tsx");
 
 const ANZAHL = QUERIES.length; // 45
 const ERWARTUNG = new Map(QUERIES.map((q) => [q.query, new Set(q.relevant)]));
@@ -259,6 +262,38 @@ describe("Punkt 8 / P118: chroma als zweite reine Vektor-Stufe", () => {
     expect(t).not.toContain("Gruppe ['m16', 'm17', 'm36']");
   });
 
+  it("die Beine-Fahrnis weist die Entitaeten-Lage als Urheber der ersten Stelle aus", () => {
+    const t = fs.readFileSync(BEINE, "utf8");
+    // bge-Stufe (die trennende Anfrage): nur Entitaeten hebt m36, nur BM25 laesst m16 stehen.
+    const bge = t.slice(t.indexOf("Fahrnis 2"));
+    expect(bge).toContain('Anfrage "Hetzner" [graph] erwartet m01, m16, m36, m37');
+    const hetzner = bge.slice(bge.indexOf('Anfrage "Hetzner"'));
+    const zeilen = hetzner.split("\n").filter((z) => z.includes("erste Stelle")).slice(0, 8);
+    expect(zeilen[0]).toMatch(/alle drei Beine.*m36.*traegt=JA/);
+    expect(zeilen[1]).toMatch(/nur BM25.*m16.*traegt=JA/);
+    expect(zeilen[3]).toMatch(/nur Entitaeten.*m36.*traegt=JA/);
+    expect(zeilen[2]).toContain("nur Vektor");
+    expect(zeilen[2]).toMatch(/nur Vektor.*leere Liste|\(leer\)/);
+  });
+
+  it("der Ledger behauptet den Zeitstrahl nicht mehr als Urheber, weil er gar nicht schaltbar ist", () => {
+    const t = fs.readFileSync(LEDGER, "utf8");
+    expect(t).not.toContain("BM25, Entitaeten und Zeitstrahl heben sie");
+    expect(t).toContain("Der Zeitstrahl ist aus diesem Satz gestrichen");
+    expect(t).toMatch(/src\/core\/engine\.ts:485/);
+  });
+
+  it("die leere Vektor-Liste an der bge-Stufe steht als offner Punkt im Ledger", () => {
+    const t = fs.readFileSync(BEINE, "utf8");
+    const bge = t.slice(t.indexOf("Fahrnis 2"));
+    const vektorZeile = bge.slice(bge.indexOf('Anfrage "Hetzner"')).split("\n").find((z) => z.includes("nur Vektor"));
+    expect(vektorZeile).toMatch(/erste Stelle \(leer\).*Fenster \[\]/);
+    expect(vektorZeile).not.toMatch(/Fenster \["m/);
+    const l = fs.readFileSync(LEDGER, "utf8");
+    expect(l).toContain("leere Liste");
+    expect(l).toContain("eine Luecke mit Namen");
+  });
+
   it("der Ledger nennt chroma mit Stufe und Werkzeug, und die Zahl steht in seiner Zeile", () => {    const t = fs.readFileSync(LEDGER, "utf8");
     // Die Regel gilt fuer die Zeilen, die eine Zahl ausliefern -- nicht fuer jeden
     // erwaehnenden Satz. Ein Prosa-Satz ueber chroma darf keine Stufe enthalten.
@@ -271,5 +306,45 @@ describe("Punkt 8 / P118: chroma als zweite reine Vektor-Stufe", () => {
     }
     expect(t).toContain("42,2 %");
     expect(t).toContain("68,9 %");
+  });
+
+  it("das Vektor-Bein allein schweigt an der bge-Stufe auf 13 von 45 Anfragen, an der nomic-Stufe auf einer", () => {
+    expect(fs.existsSync(STUMM), path.basename(STUMM)).toBe(true);
+    const t = fs.readFileSync(STUMM, "utf8");
+    expect(t).toContain("Stufe: nomic-embed-text");
+    expect(t).toContain("Vektor-Bein allein: 1 von 45 Anfragen liefern eine leere Liste");
+    expect(t).toContain("Vektor-Bein allein: 13 von 45 Anfragen liefern eine leere Liste");
+    const stumm = (abschnitt: string) => (abschnitt.match(/STUMM/g) || []).length;
+    const [nomic, bge] = t.split("Fahrnis 2");
+    expect(stumm(nomic)).toBe(1);
+    expect(stumm(bge)).toBe(13);
+  });
+
+  it("der Ledger nennt die Konstante, die das Bein zum Schweigen bringt, und den Flicken als nicht angewandt", () => {
+    const l = fs.readFileSync(LEDGER, "utf8");
+    expect(l).toContain("VECTOR_FLOOR = 0,58");
+    expect(l).toContain("src/core/engine.ts:551");
+    expect(l).toContain('`"Was mag meine Grossmutter?"`');
+    expect(l).toContain("Der Flicken ist fertig und nicht angewandt");
+    expect(l).toContain("Was damit nicht mehr geschrieben werden darf");
+  });
+
+  it("die Flaeche laesst einen trefferlosen Suchlauf nicht ohne Wort -- und der Ledger behauptet keine Stille", () => {
+    const d = fs.readFileSync(DASHBOARD, "utf8");
+    expect(d).toContain("Nothing found for");
+    expect(d).toContain("Try different terms, raise the result count, or switch to keyword search");
+    const l = fs.readFileSync(LEDGER, "utf8");
+    expect(l).toContain("ist in diesem Fall **nicht stumm**");
+    expect(l).toContain("Dashboard.tsx:2265");
+    expect(l).not.toContain("ein leerer Zustand, den nichts erklaert");
+  });
+
+  it("der dritte Schritt des Hinweises nennt genau das Bein, das bei der Grenze schweigt", () => {
+    const d = fs.readFileSync(DASHBOARD, "utf8");
+    expect(d).toContain("switch to keyword search");
+    const s = fs.readFileSync(STUMM, "utf8");
+    expect(s).toContain("Vektor-Bein allein: 13 von 45 Anfragen liefern eine leere Liste");
+    const l = fs.readFileSync(LEDGER, "utf8");
+    expect(l).toContain("Was der Hinweis **nicht** nennt, ist die Ursache");
   });
 });

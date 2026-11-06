@@ -222,7 +222,7 @@ erfunden, in beiden Sprachen gemessen und mit dem Vektor-Bein auch allein:
 | `konkurrenz-0611e/gleichstand-hetzner.py` | 3294 B | `097293680c6d25ef…` |
 | `konkurrenz-0611e/korpus-aus-repo.json` | 16983 B | `982234a1ba4b50e7…` |
 | `konkurrenz-0611e/korpus-export.ts` | 991 B | `f0266f2ceb281862…` |
-| `konkurrenz-0611e/lauf-0611.log.txt` | 9833 B | `4d5985da2da86d72…` |
+| `konkurrenz-0611e/lauf-0611.log.txt` | 14607 B | `6a5771ae47cdc7c6…` |
 | `konkurrenz-0611e/lauf-chroma.py` | 9126 B | `c594a315b3fcaa08…` |
 | `konkurrenz-0611e/sonde.py` | 3216 B | `e30f716507603fc6…` |
 | `konkurrenz-0611e/spur-chroma-bge-m3-eins.jsonl` | 21264 B | `4221042cd98f66f3…` |
@@ -236,6 +236,10 @@ erfunden, in beiden Sprachen gemessen und mit dem Vektor-Bein auch allein:
 | `konkurrenz-0611e/spur-uns-nomic-0611e.jsonl` | 9521 B | `3a6d77d7b056413f…` |
 | `konkurrenz-0611e/gleichstands-zensus-0611.txt` | 1577 B | `26f9b46a5272d56f…` |
 | `konkurrenz-0611e/gleichstands-zensus.py` | 4624 B | `e298adbec15ea388…` |
+| `konkurrenz-0611e/beine-auf-gleichstand-0611.txt` | 8647 B | `c584294a96721d57…` |
+| `konkurrenz-0611e/beine-auf-gleichstand.ts` | 3022 B | `0a7c3ad0f49873b0…` |
+| `konkurrenz-0611e/vektor-bein-stumm-0611.txt` | 8256 B | `52832c2048021dc4…` |
+| `konkurrenz-0611e/vektor-bein-stumm.ts` | 2365 B | `950f0dc68fca08fe…` |
 
 Drei Folgen, aufgeschrieben, weil sie die Zahl nicht schoener machen:
 
