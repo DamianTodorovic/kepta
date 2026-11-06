@@ -354,7 +354,7 @@ app.whenReady().then(async () => {
       // Das Demo: der Graph wächst über 18 Monate, dann derselbe Bestand als Baum.
       // Die Umschaltung bleibt ungefilmt — der Baum erscheint erst beim alten Zoom
       // und muss eingepasst werden; im Film wären das leere und winzige Bilder.
-      await tu(win, `titel("Force view")`);
+      await tu(win, `titel("Claims view")`);
       await warte(5000);
       await tu(win, `marke("graph-fit")`);
       await warte(1200);

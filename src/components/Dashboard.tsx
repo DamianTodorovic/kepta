@@ -35,6 +35,7 @@ import { parseQuelle, oeffneQuelle, type Quelle } from '../lib/quelle';
 import { pdfTextAusBuffer } from '../lib/pdfText';
 import { TYP_BESCHREIBUNG, TRAEGER_FRAGE, TRAEGER_FRAGE_SATZ, THEMA_FRAGE, TRAEGER_LABELS, TRAEGER_REIHENFOLGE, TRAEGER_HINWEISE, THEMA_LABELS, THEMA_REIHENFOLGE, THEMA_HINWEISE, gruppenVonNotiz, themenFaecher, zahlDerAuswahl, type Traeger, type Thema, type AchsenZahlen } from '../lib/graphHierarchy';
 import { t, wendeZoomAn } from '../lib/uiText';
+import { ansichtLabel } from '../lib/ansichten';
 import { Search, Plus, CheckCircle2, Copy, PanelLeftOpen, ScanSearch, UploadCloud, Globe, Loader2, AlertCircle, Sparkles, Trash2, HardDriveDownload, FileText, ExternalLink, ShieldCheck } from "../lib/icons";
 import { motion, AnimatePresence } from 'motion/react';
 import { cn } from '../lib/utils';
@@ -509,7 +510,7 @@ export function Dashboard() {
     return () => window.removeEventListener('keydown', onKey);
   }, []);
 
-  // Semantic search: Toggle + Top-k
+  // Bedeutungssuche: Schalter + Trefferzahl
   const [semanticEnabled, setSemanticEnabled] = useState<boolean>(() => {
     try { const v = localStorage.getItem('ki_gehirn_semantic'); return v === null ? true : v !== 'false'; } catch { return true; }
   });
@@ -1763,7 +1764,7 @@ export function Dashboard() {
               />
               <span className="switch" data-on={semanticEnabled}><span className="knob" /></span>
               <span className="fs-3 font-semibold" style={{ color: semanticEnabled ? 'var(--text-1)' : 'var(--text-2)' }}>
-                Semantic search
+                {ansichtLabel("semantic")} search
               </span>
             </label>
 
@@ -2079,7 +2080,7 @@ export function Dashboard() {
                   style={{ color: 'var(--warn)' }}
                   title="Still building — word search still works; meaning search may miss notes"
                 >
-                  {`Semantic index is still filling: ${groessenZahl(gehirn.embedEmbedded)} of ${groessenZahl(gehirn.embedTotal)} pieces of your ${groessenZahl(tuerBestand ?? memories.length)} notes are ready — until then, a saved note can be missing from these results`}
+                  {`${ansichtLabel("semantic")} index is still filling: ${groessenZahl(gehirn.embedEmbedded)} of ${groessenZahl(gehirn.embedTotal)} pieces of your ${groessenZahl(tuerBestand ?? memories.length)} notes are ready — until then, a saved note can be missing from these results`}
                 </div>
               )}
 

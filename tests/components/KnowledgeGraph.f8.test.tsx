@@ -164,7 +164,7 @@ describe("A7-01: der Rueckweg aus der Faltung ist mit der Maus zu treffen", () =
     vi.stubGlobal("fetch", vi.fn(async () => new Response(JSON.stringify({ relations: [], memoriesByEntity: byEntity }), { status: 200 })));
 
     const { container } = await feld(notizen, [900, 420]);
-    const baum = [...container.querySelectorAll("button")].find((b) => (b.getAttribute("title") || "").startsWith("Dendrogram"));
+    const baum = [...container.querySelectorAll("button")].find((b) => (b.getAttribute("title") || "").startsWith("Tree view"));
     await act(async () => { baum!.click(); await new Promise((r) => setTimeout(r, 400)); });
 
     // Erste Zusage: der Baum zeigt Notizen, nicht nur Gruppenzahlen.
@@ -262,7 +262,7 @@ describe("A7-02: die Titel schrumpfen unter die Lesbarkeit", () => {
 
   it("laesst die Titel auch im Baum nicht auf Welt-Pixel schrumpfen", async () => {
     const { container } = await feld(Array.from({ length: 40 }, () => note()), [900, 640]);
-    const baum = [...container.querySelectorAll("button")].find((b) => (b.getAttribute("title") || "").startsWith("Dendrogram"));
+    const baum = [...container.querySelectorAll("button")].find((b) => (b.getAttribute("title") || "").startsWith("Tree view"));
     expect(baum, "Der Baum-Knopf fehlt").toBeTruthy();
     await act(async () => { baum!.click(); await new Promise((r) => setTimeout(r, 500)); });
     // Derselbe Stand wie im Feld: eingepasst liegt jeder Knoten unter der Pforte,
@@ -371,7 +371,7 @@ describe("Titel-Etat: die Bilanz nennt, wie viele ohne Namen blieben — und war
     await act(async () => { await new Promise((r) => setTimeout(r, 300)); });
     const feldEtat = etat(container);
     const baum = [...container.querySelectorAll("button")].find((b) =>
-      (b.getAttribute("title") || "").startsWith("Dendrogram")
+      (b.getAttribute("title") || "").startsWith("Tree view")
     );
     expect(baum, "Der Baum-Knopf fehlt").toBeTruthy();
     await act(async () => {
@@ -601,7 +601,7 @@ describe("F8-N1 (Sichtpruefung): der Baum steht nicht als Haarlinie, und die Bil
     for (let g = 0; g < 20; g++) byEntity[`begriff ${g}`] = notizen.slice(g * Math.ceil(n / 20), (g + 1) * Math.ceil(n / 20)).map((m) => m.id);
     vi.stubGlobal("fetch", vi.fn(async () => new Response(JSON.stringify({ relations: [], memoriesByEntity: byEntity }), { status: 200 })));
     const { container } = await feld(notizen, masse);
-    const baum = [...container.querySelectorAll("button")].find((b) => (b.getAttribute("title") || "").startsWith("Dendrogram"));
+    const baum = [...container.querySelectorAll("button")].find((b) => (b.getAttribute("title") || "").startsWith("Tree view"));
     await act(async () => { baum!.click(); await new Promise((r) => setTimeout(r, 500)); });
     return container;
   }
@@ -653,7 +653,7 @@ describe("F8-N1 (zweiter Blick ins eigene Bild): ein Baum ueber dem Rahmen begin
     for (let g = 0; g < 60; g++) byEntity[`begriff ${g}`] = notizen.slice(g * 3, g * 3 + 3).map((m) => m.id);
     vi.stubGlobal("fetch", vi.fn(async () => new Response(JSON.stringify({ relations: [], memoriesByEntity: byEntity }), { status: 200 })));
     const { container } = await feld(notizen, [1130, 260]);
-    const baum = [...container.querySelectorAll("button")].find((b) => (b.getAttribute("title") || "").startsWith("Dendrogram"));
+    const baum = [...container.querySelectorAll("button")].find((b) => (b.getAttribute("title") || "").startsWith("Tree view"));
     await act(async () => { baum!.click(); await new Promise((r) => setTimeout(r, 500)); });
 
     expect(leinwand.schriften().some((t) => t.text === "Knowledge"),

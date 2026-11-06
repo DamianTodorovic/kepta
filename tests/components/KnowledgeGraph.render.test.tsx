@@ -1236,7 +1236,7 @@ describe("Im Baum steht die Hierarchie hinter dem Inhalt", () => {
 
   async function inDenBaum(memories: Memory[]) {
     const { container } = await zeichne(memories);
-    const knopf = container.querySelector('button[title^="Dendrogram"]') as HTMLButtonElement;
+    const knopf = container.querySelector('button[title^="Tree view"]') as HTMLButtonElement;
     expect(knopf, "Der Baumknopf fehlt").not.toBeNull();
     await act(async () => { fireEvent.click(knopf); });
     return container;
@@ -2257,7 +2257,7 @@ describe("Kanten-Tooltip: der Zeiger fragt, die Kante antwortet", () => {
     // Richtung aus: im Baum malt die Hierarchie ihre Kanten sonst als Keile,
     // und diese Messung braucht Linien. Die Karte hängt nicht an der Richtung.
     await richteRichtung(view, false);
-    const baum = view.container.querySelector('button[title^="Dendrogram"]') as HTMLButtonElement;
+    const baum = view.container.querySelector('button[title^="Tree view"]') as HTMLButtonElement;
     expect(baum, "der Baum-Knopf fehlt").toBeTruthy();
     await act(async () => { baum.click(); await new Promise((r) => setTimeout(r, 300)); });
     await bilder(12);
@@ -2670,7 +2670,7 @@ describe("Die Legende erklärt den neuen Kanal", () => {
 describe("Faltung: ein Doppelklick faltet eine Gruppe und sagt es", () => {
   async function inDenBaum(ms: Memory[]) {
     const { container } = await zeichne(ms);
-    const knopf = container.querySelector('button[title^="Dendrogram"]') as HTMLButtonElement;
+    const knopf = container.querySelector('button[title^="Tree view"]') as HTMLButtonElement;
     expect(knopf, "Der Baumknopf fehlt").not.toBeNull();
     await act(async () => { fireEvent.click(knopf); });
     await bilder(20);
@@ -2906,7 +2906,7 @@ describe("Faltung im Kraftfeld: was der Baum gefaltet hat, fehlt auch hier", () 
 
   it("verbirgt im kraftfeld nur, was der gefaltete begriff allein trägt", async () => {
     const container = await imBaumFalten();
-    await knopfKlick(container, "Force");
+    await knopfKlick(container, "Claims");
     for (let i = 0; i < 25; i++) {
       await bilder(2);
       if (rahmen().texte.some((t) => t.charCodeAt(0) === 215)) break;
@@ -2927,7 +2927,7 @@ describe("Faltung im Kraftfeld: was der Baum gefaltet hat, fehlt auch hier", () 
 
   it("zaehlt die verdeckten notizen aus Kopfzeile und Bilanzzeile", async () => {
     const container = await imBaumFalten();
-    await knopfKlick(container, "Force");
+    await knopfKlick(container, "Claims");
     await bilder(8);
     expect(kopf(container), "Kopfzeile im Kraftfeld").toMatch(/^2 notes/);
     expect(container.textContent).toContain("Showing 2 of 5 notes");
@@ -2935,12 +2935,12 @@ describe("Faltung im Kraftfeld: was der Baum gefaltet hat, fehlt auch hier", () 
 
   it("gibt die notizen zurück, wenn die gruppe im baum wieder öffnet", async () => {
     const container = await imBaumFalten();
-    await knopfKlick(container, "Force");
+    await knopfKlick(container, "Claims");
     await bilder(8);
     await knopfKlick(container, "Tree");
     await bilder(20);
     await doppelklick(container, scheibeVon("nordwind logisti…"));
-    await knopfKlick(container, "Force");
+    await knopfKlick(container, "Claims");
     for (let i = 0; i < 25; i++) {
       await bilder(2);
       if (!rahmen().texte.some((t) => t.charCodeAt(0) === 215)) break;
@@ -3212,7 +3212,7 @@ describe("Die semantische Ansicht steht auf den Vektoren", () => {
     expect(aufrufe.filter((u) => u.includes("/api/graph/semantik")), "die Karte wurde ungefragt geholt").toHaveLength(0);
     expect(container.textContent).toMatch(/stays where you drop it/);
 
-    await ansichtWechseln(container, "Semantic");
+    await ansichtWechseln(container, "Meaning");
     expect(aufrufe.filter((u) => u.includes("/api/graph/semantik"))).toHaveLength(1);
     expect(container.textContent).toMatch(/projection/i);
   });
@@ -3223,9 +3223,9 @@ describe("Die semantische Ansicht steht auf den Vektoren", () => {
     const vorher = await ruhig();
     expect(vorher.length).toBeGreaterThan(0);
 
-    await ansichtWechseln(container, "Semantic");
+    await ansichtWechseln(container, "Meaning");
     await ruhig();
-    await ansichtWechseln(container, "Force");
+    await ansichtWechseln(container, "Claims");
     const nachher = await ruhig();
     // Die zwanzigstel Weltinheit sind die Restenergie des Feldes, die zwischen
     // zwei Aufnahmen weiterläuft. Was der Test ausschliesst, ist das, was ein
@@ -3239,11 +3239,11 @@ describe("Die semantische Ansicht steht auf den Vektoren", () => {
     const { container } = await zeichne(drei());
     await ruhig();
 
-    await ansichtWechseln(container, "Semantic");
+    await ansichtWechseln(container, "Meaning");
     const ersterBesuch = await ruhig();
-    await ansichtWechseln(container, "Force");
+    await ansichtWechseln(container, "Claims");
     await ruhig();
-    await ansichtWechseln(container, "Semantic");
+    await ansichtWechseln(container, "Meaning");
     const zweiterBesuch = await ruhig();
 
     expect(ersterBesuch.length).toBeGreaterThan(0);
@@ -3257,22 +3257,22 @@ describe("Die semantische Ansicht steht auf den Vektoren", () => {
   it("merkt sich die Ansicht und kommt darin wieder", async () => {
     semantikStub(karteVon(PUNKTE));
     const { container, unmount } = await zeichne(drei());
-    await ansichtWechseln(container, "Semantic");
+    await ansichtWechseln(container, "Meaning");
     expect(localStorage.getItem("kepta_graph_view")).toBe("semantic");
     // Das Zeichen der Auswahl ist seit E2/Z-07 das erhobene Blatt, nicht die
     // Akzentkante: Auswahl, Schalter und Primataktion durfen nicht dieselbe
     // Farbe teilen.
-    expect(knopf(container, "Semantic").getAttribute("data-on")).toBe("true");
+    expect(knopf(container, "Meaning").getAttribute("data-on")).toBe("true");
     unmount();
 
     const wieder = await zeichne(drei());
-    expect(knopf(wieder.container, "Semantic").getAttribute("data-on"), "die gemerkte Ansicht ist nicht die gewaehlte").toBe("true");
+    expect(knopf(wieder.container, "Meaning").getAttribute("data-on"), "die gemerkte Ansicht ist nicht die gewaehlte").toBe("true");
   });
 
   it("meldet laut, wie viele Notizen die Kappung aus dem Bild nimmt", async () => {
     semantikStub(karteVon(PUNKTE, { gekappt: 3 }));
     const { container } = await zeichne(drei());
-    await ansichtWechseln(container, "Semantic");
+    await ansichtWechseln(container, "Meaning");
     await bilder(8);
     expect(container.textContent).toMatch(/3 notes left out/);
     expect(container.textContent).toMatch(/the map holds 2,000 vectors/);
@@ -3283,7 +3283,7 @@ describe("Die semantische Ansicht steht auf den Vektoren", () => {
     const ms = [...drei(), note({ id: "s4", title: "Ohne Einbettung" })];
     semantikStub(karteVon(PUNKTE.slice(0, 2), { getragen: 2, gesamt: 4 }));
     const { container } = await zeichne(ms);
-    await ansichtWechseln(container, "Semantic");
+    await ansichtWechseln(container, "Meaning");
     const plaetze = await ruhig();
     expect(container.textContent).toMatch(/2 notes without a vector, parked at the rim/);
     // Gefordert: alle vier Notizen stehen im Bild. Gezählt werden die Plätze
@@ -3300,7 +3300,7 @@ describe("Die semantische Ansicht steht auf den Vektoren", () => {
   it("nennt, was die beiden Achsen tragen, und welchen Modellen sie vertrauen", async () => {
     semantikStub(karteVon(PUNKTE));
     const { container } = await zeichne(drei());
-    await ansichtWechseln(container, "Semantic");
+    await ansichtWechseln(container, "Meaning");
     await bilder(8);
     expect(container.textContent).toMatch(/two axes carry 89 % of the differences/i);
     expect(container.textContent).toMatch(/nomic-embed-text/);
@@ -3309,7 +3309,7 @@ describe("Die semantische Ansicht steht auf den Vektoren", () => {
   it("erklärt zu wenig Vektoren, statt ein schwarzes Feld zu zeigen", async () => {
     semantikStub(karteVon(PUNKTE.slice(0, 1), { getragen: 1, gesamt: 3 }));
     const { container } = await zeichne(drei());
-    await ansichtWechseln(container, "Semantic");
+    await ansichtWechseln(container, "Meaning");
     await bilder(8);
     expect(container.textContent).toMatch(/at least two notes with a vector/);
     expect(container.textContent).toMatch(/1 here/);
@@ -3318,7 +3318,7 @@ describe("Die semantische Ansicht steht auf den Vektoren", () => {
   it("versagt laut, wenn die Karte nicht kommt", async () => {
     semantikStub(null, { fehler: true });
     const { container } = await zeichne(drei());
-    await ansichtWechseln(container, "Semantic");
+    await ansichtWechseln(container, "Meaning");
     await bilder(8);
     expect(container.textContent).toMatch(/could not be read/i);
   });
@@ -3326,11 +3326,11 @@ describe("Die semantische Ansicht steht auf den Vektoren", () => {
   it("lässt Feld und Baum in Ruhe: beide Knöpfe tun weiter, was sie taten", async () => {
     semantikStub(karteVon(PUNKTE));
     const { container } = await zeichne(drei());
-    await ansichtWechseln(container, "Semantic");
+    await ansichtWechseln(container, "Meaning");
     await ansichtWechseln(container, "Tree");
     await bilder(12);
     expect(container.textContent).toMatch(/Root → type → entity → note/);
-    await ansichtWechseln(container, "Force");
+    await ansichtWechseln(container, "Claims");
     await bilder(12);
     expect(container.textContent).toMatch(/stays where you drop it/);
   });

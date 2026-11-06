@@ -143,7 +143,7 @@ describe("Z-07: ein Zeichen pro Bedeutung", () => {
 
   it("zeichnet die Auswahl als Blatt in der Schiene, nie in Akzentfarbe", async () => {
     const { container } = await flaeche();
-    const kraft = knoepfe(container).find((b) => b.textContent?.trim() === "Force")!;
+    const kraft = knoepfe(container).find((b) => b.textContent?.trim() === "Claims")!;
     expect(kraft.getAttribute("data-on"), "die gewaehlte Ansicht traegt kein Blatt").toBe("true");
     expect(kraft.getAttribute("style"), "die Auswahl malt in Akzentfarbe — das ist das Zeichen des Schalters").toBeNull();
     expect(kraft.className).toContain("apple-seg-btn");

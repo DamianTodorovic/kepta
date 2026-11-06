@@ -65,7 +65,7 @@ async function feld(memories: Memory[], masse: [number, number] = [1000, 700]) {
 
 async function imBaum(notizen: Memory[], masse: [number, number]) {
   const { container } = await feld(notizen, masse);
-  const baum = [...container.querySelectorAll("button")].find((b) => (b.getAttribute("title") || "").startsWith("Dendrogram"));
+  const baum = [...container.querySelectorAll("button")].find((b) => (b.getAttribute("title") || "").startsWith("Tree view"));
   expect(baum, "der Baum-Knopf fehlt — ohne Baum gibt es kein Geruest zu messen").toBeTruthy();
   await act(async () => { baum!.click(); await new Promise((r) => setTimeout(r, 500)); });
   return container;

@@ -1,3 +1,29 @@
+## [3.2.184]
+
+### Changed
+
+- **The graph's three view buttons are named by what they do, not by the method behind them.**
+  The rail read `Force | Tree | Semantic`, the empty-map panel said `Semantic map`, and the
+  search toggle said `Semantic search` while the banner below it said `Semantic index`. Measured
+  in the delivered 3.2.183 at 6.11.2026 12:15:16 MEZ: `Semantic map` sits twice in `app.asar`,
+  `Force view` once, `Dendrogram ` once, `Semantic index is still filling` once. The names are
+  now **Claims / Tree / Meaning**, defined once in `src/lib/ansichten.ts`, and each button's
+  tooltip starts with its own name ("Claims view — the links as your notes claim them; meaning
+  only on request"). The search toggle and the filling banner use the same word as the view, so
+  one thing has one name. `src/lib/uiText.ts` lost a key nothing read.
+- **A fourth label shape, and the class it belongs to.** The label scan of 3.2.183 looked at JSX
+  text, short attributes and data tuples; a button word passed as the last call argument
+  (`segment(on, title, click, "Force")`) was still invisible. Measured 12:04:01 MEZ: that shape
+  holds 16 labels, of which 2 name a method. `URTEIL ETIKETT` now covers it, and its forbidden
+  list grew from the retrieval family to the layout family (`semantic`, `dendrogram`, `force`).
+  Before the cut: 4 of 472 labels named a method (12:05:55 MEZ). After: 0 of 469 (12:16:40 MEZ).
+- **A self-caught instrument regression, with its own floor.** Composing the tooltip at runtime
+  (`${name} view — ${rest}`) dropped three sentences out of the census corpus — the denominator
+  went 349 → 346 while every bar still said HALTET. The descriptions are single literals again,
+  the corpus is back at 349, and `tests/punkt7-fachwort-traegt-grund.test.ts` now holds a floor
+  for the surface denominator (measured 349, floor 348; proven by raising it to 400, which
+  failed at 12:17:15 MEZ).
+
 ## [3.2.183]
 
 ### Changed

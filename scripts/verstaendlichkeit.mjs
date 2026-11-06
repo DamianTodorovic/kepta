@@ -305,10 +305,14 @@ export const ETIKETT_MAX = 24;
     also nennt es keine Methode. */
 export const ETIKETT_LATTE = 0;
 
-/** Die Namen der Verfahren, die kein Mensch kennen muss, um die Flaeche zu benutzen. */
+/** Die Namen der Verfahren, die kein Mensch kennen muss, um die Flaeche zu benutzen.
+    P103 begann mit der Such-Familie (gemessen 9 Stellen); P104 haelt dieselbe Latte fuer die
+    Ansichts-Familie des Graphen -- gemessen 12:03:42 MEZ: 2 Etikette, mit der
+    Knopf-Argument-Form 12:04:01 MEZ: 4 Stellen. */
 export const ALGORITHMEN = [
   "bm25", "fts", "fts5", "tf-idf", "tfidf", "cosine", "knn", "rrf",
   "vector", "vectors", "embedding", "embeddings", "top-k", "retrieval", "hybrid",
+  "semantic", "dendrogram", "force",
 ];
 const ALGORITHMEN_RE = new RegExp("\\b(" + ALGORITHMEN.join("|") + ")\\b", "i");
 const FACH_RE = new RegExp("\\b(" + FACHWORTER.join("|") + ")\\b", "i");
@@ -339,6 +343,10 @@ export function etikettAusText(t, datei) {
     // eine Benennungsstelle, an der die Einstellungen ihre Spuren halten, unsichtbar.
     { re: /\b(?:label|wort|titel|kopf):\s*'([^'\n]{1,60})'/g, art: "spur", gruppe: 1 },
     { re: /\b(?:label|wort|titel|kopf):\s*"([^"\n]{1,60})"/g, art: "spur", gruppe: 1 },
+    // Die vierte Form: ein Knopf, dem sein Wort als letztes Argument gegeben wird --
+    // `segment(an, "Force view — …", klick, "Force")`. Ohne dieses Muster bliebe die
+    // Ansichts-Schiene des Graphen eine blinde Stelle, genau wie vorher die Karte.
+    { re: /,\s*"([A-Za-z][^"\n]{1,24})"\s*\)/g, art: "knopf", gruppe: 1 },
   ];
   for (const { re, art, gruppe } of muster) {
     re.lastIndex = 0;
@@ -525,9 +533,9 @@ async function haupt() {
   const etikettFehlt = etikettNenntAlgorithmus(etikette);
   const etikettHalten = etikettFehlt.length === 0;
   const fachEtikette = etikettNenntFachwort(etikette);
-  console.log(`\n  Etikette, die eine Suchmethode nennen (${etikettFehlt.length}):`);
+  console.log(`\n  Etikette, die eine Methode nennen (${etikettFehlt.length}):`);
   for (const f of etikettFehlt) console.log(`    [${f.art}] "${f.s}"  ${f.quelle}`);
-  console.log(`  URTEIL ETIKETT: ${etikettHalten ? "HALTET" : "FAELLT"} (${etikettFehlt.length} von ${etikette.length} Etiketten nennen eine Suchmethode, erlaubt ${ETIKETT_LATTE})`);
+  console.log(`  URTEIL ETIKETT: ${etikettHalten ? "HALTET" : "FAELLT"} (${etikettFehlt.length} von ${etikette.length} Etiketten nennen eine Methode, erlaubt ${ETIKETT_LATTE})`);
   // Bericht, keine Latte — die Stellen bleiben sichtbar, statt aus der Liste geloescht zu werden.
   console.log(`  Bericht Etikett-Fachwort: ${fachEtikette.length} Stellen nennen ein Fachwort, davon ${etikettFehlt.length} eine Methode:`);
   for (const f of fachEtikette.filter((x) => !ALGORITHMEN_RE.test(x.s)).slice(0, LISTE))

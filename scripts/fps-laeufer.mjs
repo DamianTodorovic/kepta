@@ -462,7 +462,7 @@ async function main() {
   await warteBis(async () => (await evaliere(`!!document.querySelector('[data-testid="graph-canvas"]')`) ? true : null), { maxMs: 60000 });
 
   // 4) Kraftfeld, und die Flaeche muss die Zahlen selbst nennen.
-  const kraftGefunden = await evaliere(`(()=>{const b=document.querySelector('[title^="Force view"]');if(!b)return false;b.click();return true})()`);
+  const kraftGefunden = await evaliere(`(()=>{const b=document.querySelector('[title^="Claims view"]');if(!b)return false;b.click();return true})()`);
   if (!kraftGefunden) console.log("  KEIN Kraftfeld-Knopf — die Zahlen der Flaeche stammen aus einer andern Ansicht");
   const sageDerFlaeche = await warteBis(async () => {
     const t = await evaliere(`document.querySelector('[data-testid="graph-legende"]')?.textContent || ''`);

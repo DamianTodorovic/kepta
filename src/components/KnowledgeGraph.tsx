@@ -100,6 +100,7 @@ import {
 } from "../lib/gruppen";
 import { gemeinschaftenBaue, grundHexVon, haufenBildBaue, haufenKantenAus, haufenNamen, unterscheidetVonArt } from "../lib/gemeinschaften";
 import { KAPPE_PANEL } from "../lib/kappe";
+import { ansichtBeschreibung, ansichtLabel } from "../lib/ansichten";
 
 export type GraphAnsicht = "force" | "dendrogram" | "semantic";
 const ANSICHT_KEY = "kepta_graph_view";
@@ -5981,9 +5982,9 @@ export function KnowledgeGraph({ memories: memoriesAusFenster, onSelectMemory, o
   /** Schienen = Auswahl. */
   const schieneAnsicht = (
     <div className="apple-seg shrink-0" role="group" aria-label="Graph layout" data-testid="graph-schiene-ansicht">
-      {segment(ansicht === "force", "Force view — the links as they are claimed; similarity only on request", () => wechsleAnsicht("force"), "Force")}
-      {segment(ansicht === "dendrogram", "Dendrogram — knowledge as a tree: root → type → entity → note", () => wechsleAnsicht("dendrogram"), "Tree")}
-      {segment(ansicht === "semantic", "Semantic map — placed by meaning, not words, so similar notes sit together.", () => wechsleAnsicht("semantic"), "Semantic")}
+      {segment(ansicht === "force", ansichtBeschreibung("force"), () => wechsleAnsicht("force"), ansichtLabel("force"))}
+      {segment(ansicht === "dendrogram", ansichtBeschreibung("dendrogram"), () => wechsleAnsicht("dendrogram"), ansichtLabel("dendrogram"))}
+      {segment(ansicht === "semantic", ansichtBeschreibung("semantic"), () => wechsleAnsicht("semantic"), ansichtLabel("semantic"))}
     </div>
   );
   const schieneNamen = (
@@ -6483,10 +6484,10 @@ export function KnowledgeGraph({ memories: memoriesAusFenster, onSelectMemory, o
             data-testid="graph-semantik-leer"
             className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none text-center px-6"
           >
-            <div className="hud-label mb-2">Semantic map</div>
+            <div className="hud-label mb-2">{ansichtLabel("semantic")} map</div>
             <p className="fs-4 lh-lesbar max-w-sm" style={{ color: "var(--text-2)" }}>
               {karteFehler ? (
-                <>The vectors could not be read from the engine, so there is nothing to project. Force and Tree need only the notes themselves.</>
+                <>The vectors could not be read from the engine, so there is nothing to project. Claims and Tree need only the notes themselves.</>
               ) : karte === null ? (
                 <>Reading the vectors — the projection runs on this machine, once per change.</>
               ) : (

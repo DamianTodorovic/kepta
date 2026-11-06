@@ -32,6 +32,7 @@ import {
   zensiere,
 } from "../scripts/verstaendlichkeit.mjs";
 import { SPUR_LABELS, spurAria } from "../src/lib/spuren";
+import { ANSICHT_LABELS, ansichtBeschreibung } from "../src/lib/ansichten";
 
 /** Dieselbe Liste, dasselbe Muster: die Suite prueft gegen die Sonde, nicht gegen ein zweites Regex. */
 const ALGORITHMEN_RE = new RegExp("\\b(" + ALGORITHMEN.join("|") + ")\\b", "i");
@@ -355,7 +356,7 @@ describe("Punkt 7, die Etikette: ein kurzes sichtbares Wort schuldet einen Klarn
     expect(etikettNenntAlgorithmus(funde).length, "drei Etikette nennen eine Suchmethode").toBe(3);
   });
 
-  it("kein Etikett der Flaeche nennt eine Suchmethode", () => {
+  it("kein Etikett der Flaeche nennt eine Methode", () => {
     const fehl = etikettNenntAlgorithmus(etikette);
     const liste = fehl.map((f: Etikett) => `    [${f.art}] "${f.s}"  ${f.quelle}`).join("\n");
     expect(fehl.length, `\n  ${fehl.length} Etikette nennen eine Methode:\n${liste}`).toBe(LATE);
@@ -388,13 +389,90 @@ describe("Punkt 7, die Etikette: ein kurzes sichtbares Wort schuldet einen Klarn
     expect(pruefer, "der Pruefer sucht noch die alte Tiefen-Beschriftung").not.toContain("Search depth (top-k)");
   });
 
+  it("die Flaeche hat einen Nenner, keine Luecke", () => {
+    // Gemessen 12:16:40 MEZ: 349 Kandidaten. Der Fall entstand, weil im P104-Lauf drei Titel
+    // von festen Woertern auf zusammengesetzte umgestellt wurden ("${Name} view — …") und der
+    // Korpus auf 346 sank -- der Census sah drei Saelze nicht mehr, meldete aber weiter
+    // "HALTET". Eine Latte, die auf einer still kleineren Menge gruen wird, ist keine Messung.
+    // Die Untergrenze sitzt eine Stelle unter dem Messwert: ein einzelner Wortlautwechsel darf
+    // durch, eine Klasse, die aus der Grundgesamtheit faellt, nicht.
+    const satze = [...kandidatenAusQuelltext(FLAECHE)];
+    expect(satze.length, `nur ${satze.length} Flaeche-Saetze gezaehlt -- die Sonde sieht weniger als gemessen`).toBeGreaterThanOrEqual(348);
+  });
+
   it("der Census meldet das Etikett-Urteil, und die Fachklasse bleibt im Bericht", () => {
     const laut = spawnSync("node", [path.join(WURZEL, "scripts", "verstaendlichkeit.mjs"), "--nur", "quelltext"], { encoding: "utf8" });
-    expect(laut.stdout).toMatch(/URTEIL ETIKETT: (HALTET|FAELLT) \(\d+ von \d+ Etiketten nennen eine Suchmethode/);
-    // Die breitere Klasse (jedes Fachwort im Etikett) ist Bericht, keine Latte: zwei Etikette
-    // nennen eine Fachklasse ("Semantic search", "Semantic map"), und die drei Ansichts-Namen
-    // stehen als Trio (Force | Tree | Semantic) — ein Wort allein zu tauschen waere kein
-    // NAME, sondern ein Rest. Der Bericht haelt die Zahl sichtbar, damit sie nicht verschwindet.
+    expect(laut.stdout).toMatch(/URTEIL ETIKETT: (HALTET|FAELLT) \(\d+ von \d+ Etiketten nennen eine Methode/);
+    // Die breitere Klasse (jedes Fachwort im Etikett) ist Bericht, keine Latte: ein Etikett,
+    // das ein Fachwort nennt, kann es erklaeren, wenn der Satz daneben es tut -- "Forces"
+    // (Physik-Panel) nennt die Kraft und erklaert sie unter dem Zeiger, "MCP / API" benennt
+    // eine Tür, die der Nutzer oeffnet. Der Bericht haelt die Zahl sichtbar, damit ein
+    // Fund nicht aus einer Liste verschwindet, statt ihn zu verbieten.
     expect(laut.stdout).toMatch(/Bericht Etikett-Fachwort: \d+ Stelle/);
+  });
+});
+
+describe("Punkt 7, die Ansichts-Namen: drei Knoepfe, drei Klarnamen, eine Quelle", () => {
+  /* P103 hat die Such-Familie gemessen und die Ansichts-Familie offen gelassen, weil die drei
+     Graph-Knoepfe ein Trio sind: "Force | Tree | Semantic". Gemessen 12:05:55 MEZ am Baum, nach
+     der vierten Etikett-Form (Knopf-Argument): 4 von 472 Etiketten nennen eine Methode --
+     "Semantic search" (Dashboard), "Semantic map" (Graph-Panel), "Force" und "Semantic"
+     (die beiden Knopfworte). Ein Wort des Trios zu tauschen waere ein Rest, kein Name; also
+     werden alle drei benannt, und die Methode zieht in die Erklaerung, wo ein Satz sie traegt. */
+
+  it("die vierte Etikett-Form wird gesehen: ein Knopfwort als letztes Argument", () => {
+    const text = `segment(an, "Force view - the links as they are claimed", klick, "Force")`;
+    const funde = etikettAusText(text, "src/components/Probe.tsx");
+    expect(funde.map((f) => f.s), "ein Knopfwort als Argument wird nicht gesehen").toContain("Force");
+    expect(etikettNenntAlgorithmus(funde).length, "das Knopfwort nennt eine Methode").toBe(1);
+    // Die Erklaerung daneben ist ein Satz, kein Etikett: sie darf die Methode nennen.
+    expect(funde.map((f) => f.s).some((s) => s.startsWith("Force view - the links")), "ein langer Titel ist kein Etikett").toBe(false);
+  });
+
+  it("die drei Ansichten haben einen Namen, und der Name steht an einer Stelle", () => {
+    expect(Object.values(ANSICHT_LABELS)).toEqual(["Claims", "Tree", "Meaning"]);
+    for (const wert of Object.values(ANSICHT_LABELS))
+      expect(wert, `"${wert}" nennt eine Methode`).not.toMatch(ALGORITHMEN_RE);
+    // Die Erklaerung traegt den Namen voran, damit Knopf und Titel dieselbe Sache heissen.
+    expect(ansichtBeschreibung("force").startsWith(`${ANSICHT_LABELS.force} view`), "Titel und Knopf heissen verschieden").toBe(true);
+    const graph = fs.readFileSync(path.join(WURZEL, "src", "components", "KnowledgeGraph.tsx"), "utf8");
+    expect(graph, "der Graph erfindet eigne Ansichts-Woerter").toContain("lib/ansichten");
+    expect(graph, "der Graph malt noch eine Methode auf einen Knopf").not.toMatch(/, "Force"\)|, "Semantic"\)/);
+  });
+
+  it("das Wort der Bedeutungssuche ist dasselbe wie das der Ansichts-Karte", () => {
+    // Ein Ding, ein Name: der Schalter, die Meldung und die Ansicht heissen alle "Meaning".
+    const dashboard = fs.readFileSync(path.join(WURZEL, "src", "components", "Dashboard.tsx"), "utf8");
+    const graph = fs.readFileSync(path.join(WURZEL, "src", "components", "KnowledgeGraph.tsx"), "utf8");
+    expect(dashboard, "die Flaeche nennt die Suche noch beim Verfahren").not.toMatch(/Semantic search|Semantic index/);
+    expect(dashboard, "die Suche erfindet ein zweites Wort fuer dieselbe Sache").toContain("lib/ansichten");
+    expect(graph, "das Panel nennt die Ansicht noch beim Verfahren").not.toMatch(/Semantic map/);
+  });
+
+  it("die Instrumente und Faelle suchen die Ansichten unter den Namen, die sie traegen", () => {
+    // Ein Selektor, der ein Wort nachschreibt, ist eine harte Kopplung: ein Namenswechsel,
+    // den er nicht mitmacht, schlägt nicht die Flaeche — er schlägt blind.
+    for (const [datei, was] of [
+      ["scripts/fps-laeufer.mjs", "der Kosten-Laeufer"],
+      ["scripts/screenshots.mjs", "der Bildmacher"],
+    ]) {
+      const text = fs.readFileSync(path.join(WURZEL, datei), "utf8");
+      expect(text, `${was} klickt die Kraft-Ansicht unter einem alten Titel`).toContain(ansichtBeschreibung("force").slice(0, 11));
+      expect(text, `${was} sucht noch den alten Verfahrenstitel`).not.toContain("Force view");
+    }
+    for (const [datei, was] of [
+      ["tests/components/KnowledgeGraph.f8.test.tsx", "der F-8-Fall"],
+      ["tests/components/KnowledgeGraph.schrift.test.tsx", "der Schrift-Fall"],
+    ]) {
+      const text = fs.readFileSync(path.join(WURZEL, datei), "utf8");
+      expect(text, `${was} findet den Baum-Knopf nicht mehr`).toContain(ansichtBeschreibung("dendrogram").slice(0, 9));
+      expect(text, `${was} sucht noch das Verfahren`).not.toContain('"Dendrogram"');
+    }
+  });
+
+  it("der Census meldet die Etikett-Latte mit der neuen Wortmeldung", () => {
+    const laut = spawnSync("node", [path.join(WURZEL, "scripts", "verstaendlichkeit.mjs"), "--nur", "quelltext"], { encoding: "utf8" });
+    expect(laut.stdout).toContain("Etikette, die eine Methode nennen");
+    expect(laut.stdout).not.toContain("nennen eine Suchmethode");
   });
 });

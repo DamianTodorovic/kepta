@@ -16,7 +16,6 @@ export const TEXTE: Record<string, string> = {
   "nav.activity": "Activity",
   "nav.team": "Team",
   "search.placeholder": "Search… (⌘K for commands)",
-  "search.semantic": "Semantic search",
   "search.results": "Results",
   "action.new": "New",
   "list.all": "All",

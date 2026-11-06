@@ -468,7 +468,13 @@ const erwartet = [
   // Punkt 116 (die Meldung ueber dem fuellenden Index), gelegt 27.10. 20:38 MESZ VOR dem Bau
   // gegen das AUSGELIEFERTE Stueck (3.2.67): **0** mal, latin1. Der Satz ist sichtbarer
   // Fliesentext ueber den Ergebnissen, keine Kennung — der Minifier laesst ihn stehen.
-  ["Semantic index is still filling", 1],
+  ["index is still filling", 1],
+  // P104 (landet in 3.2.184): die drei Ansichten heissen Claims / Tree / Meaning, und die
+  // Erklaerung traegt den Namen voran. Marke ist das Stueck, das im Bundel zusammenhaengt --
+  // der Name selbst wird zur Laufzeit vorgesetzt. Gezaehlt am installierten 3.2.183 um
+  // 12:15:16 MEZ: beide neuen Ketten 0, jede alte Kette mindestens 1 (unten in "verboten").
+  ["the links as your notes claim them", 1],
+  ["placed by what notes mean", 1],
   // Punkt Zensur/Z-05 (die Vierer-Basis) schreibt KEINEN eignen Marker: die Heilung aendert
   // nur Zahlen (10->8, 7->8, 22->24, 5->4, 7/14->8/16) und kein Wort im Objekt. Beweis ist die
   // Messung selbst: 435 Nicht-Vier-Abstaende auf Knowledge 1440 vor der Heilung
@@ -1211,6 +1217,19 @@ const verboten = [
   "Retrieval tracks",
   "Search depth (top-k)",
   "rank in words, vectors, graph. Absent means unseen",
+  // P104 (landet in 3.2.184): die alten Ansichts- und Verfahrensworte. Gezaehlt am
+  // installierten 3.2.183 um 12:15:16 MEZ: "Semantic map" 2, "Force view" 1, "Dendrogram " 1
+  // -- mit Leerzeichen, denn der Gedankenstrich dahinter ist in UTF-8 drei Bytes und die Sonde
+  // liest latin1: eine Kette mit echtem Strich waere ein Dauer-Null, der ewig Sauberkeit
+  // meldet. "Semantic index is still filling" 1, "the links as they are claimed" 1,
+  // "placed by meaning, not words" 1, "Force and Tree need only the notes themselves" 1.
+  "Semantic map",
+  "Force view",
+  "Dendrogram ",
+  "Semantic index is still filling",
+  "the links as they are claimed",
+  "placed by meaning, not words",
+  "Force and Tree need only the notes themselves",
 ];
 // Die Liste darf nur ASCII-Zeichen enthalten. Grund, gemessen 21.10. 19:16 MESZ am
 // installierten Objekt: das Wort "Looking" plus echtes U+2026 steht dort 2 mal, diese
