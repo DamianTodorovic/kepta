@@ -319,7 +319,7 @@ export function MemoryEditor({ memory, onSave, onClose, onDelete }: MemoryEditor
                 <span key={t} className="row-quiet" title="A topic word in this text points here">{THEMA_LABELS[t]}</span>
               ))}
               {ablage.themen.length === 0 && (
-                <span className="text-xs" style={{ color: 'var(--text-3)' }}>
+                <span className="fs-2 lh-dicht" style={{ color: 'var(--text-3)' }}>
                   {ablage.traeger === 'code' ? 'code is never sorted by topic' : 'no topic word in this text yet'}
                 </span>
               )}
@@ -334,7 +334,7 @@ export function MemoryEditor({ memory, onSave, onClose, onDelete }: MemoryEditor
                     key={k.key}
                     type="button"
                     onClick={() => setKind(k.key)}
-                    className="px-3 py-2 rounded-lg text-sm font-semibold transition-colors"
+                    className="px-3 py-2 rounded-lg fs-4 lh-lesbar font-semibold transition-colors"
                     style={{
                       background: kind === k.key ? 'var(--accent-soft)' : 'transparent',
                       color: kind === k.key ? 'var(--accent)' : 'var(--text-2)',
@@ -346,7 +346,7 @@ export function MemoryEditor({ memory, onSave, onClose, onDelete }: MemoryEditor
                   </button>
                 ))}
               </div>
-              <p className="text-xs mt-2 ml-1" style={{ color: 'var(--text-3)' }}>
+              <p className="fs-2 lh-dicht mt-2 ml-1" style={{ color: 'var(--text-3)' }}>
                 {KINDS.find((k) => k.key === kind)?.hint}
               </p>
             </div>
@@ -358,7 +358,7 @@ export function MemoryEditor({ memory, onSave, onClose, onDelete }: MemoryEditor
                 placeholder="Knowledge, notes, code… [[wiki links]] are connected automatically."
                 value={content}
                 onChange={(e) => setContent(e.target.value)}
-                className="hud-input flex-1 w-full resize-none rounded-xl p-5 text-sm leading-relaxed"
+                className="hud-input flex-1 w-full resize-none rounded-xl p-5 fs-4 lh-prosa"
               />
             </div>
 
@@ -369,7 +369,7 @@ export function MemoryEditor({ memory, onSave, onClose, onDelete }: MemoryEditor
                 Privat, weil sie gemessen 29.10. 13:35 auf 1440 x 900 unter der Kante lag. */}
             <div className="rounded-xl" style={{ border: '1px solid var(--border-subtle)' }} data-testid="behauptung-feld">
               <div className="flex items-center justify-between gap-2 px-4 pt-3">
-                <span className="flex items-center gap-2 text-sm font-semibold" style={{ color: 'var(--text-2)' }}>
+                <span className="flex items-center gap-2 fs-4 lh-lesbar font-semibold" style={{ color: 'var(--text-2)' }}>
                   <Brain className="w-4 h-4" style={{ color: 'var(--text-3)' }} /> Claims on this note
                 </span>
                 <span className="hud-label tnum shrink-0" style={{ color: 'var(--text-3)' }}>
@@ -378,7 +378,7 @@ export function MemoryEditor({ memory, onSave, onClose, onDelete }: MemoryEditor
               </div>
               <div className="px-4 py-3 flex flex-col gap-2">
                 {beh.map((b, i) => (
-                  <div key={`${b.quelle} ${b.wort} ${b.ziel}`} data-testid="behauptung-reihe" className="flex items-center gap-2 text-sm">
+                  <div key={`${b.quelle} ${b.wort} ${b.ziel}`} data-testid="behauptung-reihe" className="flex items-center gap-2 fs-4 lh-lesbar">
                     <span className="flex-1 min-w-0 break-words" style={{ color: 'var(--text-1)' }}>{b.quelle}</span>
                     <span className="hud-label shrink-0" style={{ color: 'var(--accent)' }}>{b.wort}</span>
                     <span className="flex-1 min-w-0 break-words text-right" style={{ color: 'var(--text-1)' }}>{b.ziel}</span>
@@ -395,16 +395,16 @@ export function MemoryEditor({ memory, onSave, onClose, onDelete }: MemoryEditor
                 ))}
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
                   <label className="flex flex-col gap-1">
-                    <span className="text-xs" style={{ color: 'var(--text-3)' }}>Who</span>
-                    <input data-testid="behauptung-wer" value={wer} onChange={(e) => setWer(e.target.value)} className="hud-input rounded-lg px-3 py-2 text-sm" />
+                    <span className="fs-2 lh-dicht" style={{ color: 'var(--text-3)' }}>Who</span>
+                    <input data-testid="behauptung-wer" value={wer} onChange={(e) => setWer(e.target.value)} className="hud-input rounded-lg px-3 py-2 fs-4 lh-lesbar" />
                   </label>
                   <label className="flex flex-col gap-1">
-                    <span className="text-xs" style={{ color: 'var(--text-3)' }}>Does what</span>
-                    <input data-testid="behauptung-tutwas" value={was} onChange={(e) => setWas(e.target.value)} className="hud-input rounded-lg px-3 py-2 text-sm" />
+                    <span className="fs-2 lh-dicht" style={{ color: 'var(--text-3)' }}>Does what</span>
+                    <input data-testid="behauptung-tutwas" value={was} onChange={(e) => setWas(e.target.value)} className="hud-input rounded-lg px-3 py-2 fs-4 lh-lesbar" />
                   </label>
                   <label className="flex flex-col gap-1">
-                    <span className="text-xs" style={{ color: 'var(--text-3)' }}>Whom</span>
-                    <input data-testid="behauptung-wen" value={wen} onChange={(e) => setWen(e.target.value)} className="hud-input rounded-lg px-3 py-2 text-sm" />
+                    <span className="fs-2 lh-dicht" style={{ color: 'var(--text-3)' }}>Whom</span>
+                    <input data-testid="behauptung-wen" value={wen} onChange={(e) => setWen(e.target.value)} className="hud-input rounded-lg px-3 py-2 fs-4 lh-lesbar" />
                   </label>
                 </div>
                 <div className="flex items-center gap-3 flex-wrap">
@@ -412,7 +412,7 @@ export function MemoryEditor({ memory, onSave, onClose, onDelete }: MemoryEditor
                     type="button"
                     data-testid="behauptung-hinzufuegen"
                     onClick={behauptungHinzufuegen}
-                    className="btn-ghost rounded-lg px-3 py-2 text-sm"
+                    className="btn-ghost rounded-lg px-3 py-2 fs-4 lh-lesbar"
                   >
                     Add claim
                   </button>
@@ -420,7 +420,7 @@ export function MemoryEditor({ memory, onSave, onClose, onDelete }: MemoryEditor
                       eine Behauptung, und eine Absage ohne Grund ein Rat. */}
                   <span data-testid="behauptung-meldung" className="hud-label" style={{ color: 'var(--text-3)' }}>{meldung}</span>
                 </div>
-                <p className="text-xs" style={{ color: 'var(--text-3)' }}>
+                <p className="fs-2 lh-dicht" style={{ color: 'var(--text-3)' }}>
                   A claim is the word on the graph line. Words you name here are added to this note.
                 </p>
               </div>
@@ -432,7 +432,7 @@ export function MemoryEditor({ memory, onSave, onClose, onDelete }: MemoryEditor
                 {tags.map(tag => (
                   <span
                     key={tag}
-                    className="flex items-center gap-1 px-3 py-1 rounded-lg text-sm font-semibold hud-inset"
+                    className="flex items-center gap-1 px-3 py-1 rounded-lg fs-4 lh-lesbar font-semibold hud-inset"
                     style={{ color: 'var(--accent)' }}
                   >
                     <Hash className="w-3.5 h-3.5 opacity-60" />
@@ -453,7 +453,7 @@ export function MemoryEditor({ memory, onSave, onClose, onDelete }: MemoryEditor
                   value={tagsInput}
                   onChange={(e) => setTagsInput(e.target.value)}
                   onKeyDown={handleAddTag}
-                  className="flex-1 min-w-[150px] bg-transparent text-sm focus:outline-none px-2"
+                  className="flex-1 min-w-[150px] bg-transparent fs-4 lh-lesbar focus:outline-none px-2"
                   style={{ color: 'var(--text-1)' }}
                 />
               </div>
@@ -463,8 +463,8 @@ export function MemoryEditor({ memory, onSave, onClose, onDelete }: MemoryEditor
             <div className="rounded-xl px-4 py-3 flex items-center gap-3" style={{ border: '1px solid var(--border-subtle)' }}>
               <Lock className="w-4 h-4 shrink-0" style={{ color: privat ? 'var(--accent)' : 'var(--text-3)' }} />
               <div className="flex-1">
-                <div className="text-sm font-semibold" style={{ color: 'var(--text-1)' }}>Private</div>
-                <div className="text-xs" style={{ color: 'var(--text-3)' }}>AI apps never see this note, and it is never sent to a cloud model.</div>
+                <div className="fs-4 lh-lesbar font-semibold" style={{ color: 'var(--text-1)' }}>Private</div>
+                <div className="fs-2 lh-dicht" style={{ color: 'var(--text-3)' }}>AI apps never see this note, and it is never sent to a cloud model.</div>
               </div>
               <button
                 type="button"
@@ -484,7 +484,7 @@ export function MemoryEditor({ memory, onSave, onClose, onDelete }: MemoryEditor
               <button
                 type="button"
                 onClick={() => setShowTemporal((v) => !v)}
-                className="w-full flex items-center justify-between px-4 py-3 text-sm font-semibold"
+                className="w-full flex items-center justify-between px-4 py-3 fs-4 lh-lesbar font-semibold"
                 style={{ color: 'var(--text-2)' }}
               >
                 <span className="flex items-center gap-2"><Clock className="w-4 h-4" style={{ color: 'var(--text-3)' }} /> Validity & confidence</span>
@@ -498,16 +498,16 @@ export function MemoryEditor({ memory, onSave, onClose, onDelete }: MemoryEditor
                 >
                   <div className="grid grid-cols-2 gap-3">
                     <label className="flex flex-col gap-2">
-                      <span className="text-xs" style={{ color: 'var(--text-3)' }}>Valid from</span>
-                      <input type="date" value={validFrom} onChange={(e) => setValidFrom(e.target.value)} className="hud-input rounded-lg px-3 py-2 text-sm" />
+                      <span className="fs-2 lh-dicht" style={{ color: 'var(--text-3)' }}>Valid from</span>
+                      <input type="date" value={validFrom} onChange={(e) => setValidFrom(e.target.value)} className="hud-input rounded-lg px-3 py-2 fs-4 lh-lesbar" />
                     </label>
                     <label className="flex flex-col gap-2">
-                      <span className="text-xs" style={{ color: 'var(--text-3)' }}>Valid until (empty = no end date)</span>
-                      <input type="date" value={validTo} onChange={(e) => setValidTo(e.target.value)} className="hud-input rounded-lg px-3 py-2 text-sm" />
+                      <span className="fs-2 lh-dicht" style={{ color: 'var(--text-3)' }}>Valid until (empty = no end date)</span>
+                      <input type="date" value={validTo} onChange={(e) => setValidTo(e.target.value)} className="hud-input rounded-lg px-3 py-2 fs-4 lh-lesbar" />
                     </label>
                   </div>
                   <label className="flex flex-col gap-2">
-                    <span className="text-xs flex items-center gap-2" style={{ color: 'var(--text-3)' }}>
+                    <span className="fs-2 lh-dicht flex items-center gap-2" style={{ color: 'var(--text-3)' }}>
                       <Zap className="w-3 h-3" /> Confidence — {Math.round(confidence * 100)} % (how reliable is this memory?)
                     </span>
                     <input
@@ -527,8 +527,8 @@ export function MemoryEditor({ memory, onSave, onClose, onDelete }: MemoryEditor
           {warnUnsaved && dirty && (
             <div role="alert" className="mx-5 mb-1 flex items-center gap-3 px-3 py-2 rounded-lg fs-3" style={{ background: 'var(--danger-soft)', border: '1px solid var(--danger)' }}>
               <span style={{ color: 'var(--text-1)' }}>Unsaved changes. Press Esc again to discard, or save first.</span>
-              <button type="button" onClick={onClose} className="ml-auto text-xs font-semibold px-3 py-1 rounded-lg btn-danger-ghost">Discard</button>
-              <button type="button" onClick={() => setWarnUnsaved(false)} className="text-xs font-semibold px-3 py-1 rounded-lg btn-ghost">Keep editing</button>
+              <button type="button" onClick={onClose} className="ml-auto fs-2 lh-dicht font-semibold px-3 py-1 rounded-lg btn-danger-ghost">Discard</button>
+              <button type="button" onClick={() => setWarnUnsaved(false)} className="fs-2 lh-dicht font-semibold px-3 py-1 rounded-lg btn-ghost">Keep editing</button>
             </div>
           )}
           <footer className="p-5 shrink-0 flex items-center justify-between" style={{ borderTop: '1px solid var(--border-subtle)' }}>

@@ -80,11 +80,11 @@ export function ToastProvider({ children }: { children: ReactNode }) {
                 className="pointer-events-auto flex items-center gap-3 pl-4 pr-2 py-3 min-w-[260px] max-w-sm toast-lens"
               >
                 <Icon className="w-4 h-4 shrink-0" style={{ color: ACCENTS[t.kind ?? 'info'] }} />
-                <span className="text-sm flex-1" style={{ color: 'var(--text-1)' }}>{t.message}</span>
+                <span className="fs-4 lh-lesbar flex-1" style={{ color: 'var(--text-1)' }}>{t.message}</span>
                 {t.action && (
                   <button
                     onClick={() => { void t.action!.onClick(); dismiss(t.id); }}
-                    className="text-xs font-semibold px-3 py-2 rounded-lg transition-colors hover:opacity-80 shrink-0"
+                    className="fs-2 lh-dicht font-semibold px-3 py-2 rounded-lg transition-colors hover:opacity-80 shrink-0"
                     style={{ color: 'var(--accent)', background: 'var(--accent-soft)' }}
                   >
                     {t.action.label}

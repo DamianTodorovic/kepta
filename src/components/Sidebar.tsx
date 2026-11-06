@@ -85,7 +85,7 @@ export function Sidebar({ tags, selectedTags, onSelectTag, onClearTags, currentV
       <div className="seiten-kante-unten h-[64px] px-4 flex items-center gap-2 shrink-0">
         <KeptaMark size={26} />
         <div className="min-w-0">
-          <div className="seiten-marke font-semibold tracking-[-0.02em] fs-3 leading-none">
+          <div className="seiten-marke font-semibold tracking-[-0.02em] fs-3 lh-marke">
             K3PTA
           </div>
           <div className="seiten-zahl fs-1 mt-1 tnum">
@@ -169,7 +169,7 @@ export function Sidebar({ tags, selectedTags, onSelectTag, onClearTags, currentV
             {/* Die Zählung neben jedem Tag kann nur zählen, was liegt. Ohne diese
                 Zeile wäre „bestand 25" eine Behauptung über 250. */}
             {typeof tagsAusLadung === 'number' && tagsAusLadung > 0 && (
-              <div className="seiten-erklarung px-2 pt-2 pb-1 fs-1 leading-snug">
+              <div className="seiten-erklarung px-2 pt-2 pb-1 fs-1 lh-dicht">
                 counts cover the {tagsAusLadung.toLocaleString('en-GB')} loaded notes
               </div>
             )}

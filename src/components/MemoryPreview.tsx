@@ -180,7 +180,7 @@ export function MemoryPreview({ memory, onClose, onEdit }: MemoryPreviewProps) {
       >
         <header className="flex items-start justify-between gap-3 p-5 pb-4 shrink-0" style={{ borderBottom: "1px solid var(--border-subtle)" }}>
           <div className="min-w-0">
-            <h2 className="fs-5 font-semibold leading-snug break-words" style={{ color: "var(--text-1)" }}>
+            <h2 className="fs-5 font-semibold lh-dicht break-words" style={{ color: "var(--text-1)" }}>
               {memory.title || "Untitled"}
             </h2>
             <div className="flex items-center flex-wrap gap-x-3 gap-y-1 mt-2 fs-1" style={{ color: "var(--text-3)" }}>
@@ -359,12 +359,12 @@ export function MemoryPreview({ memory, onClose, onEdit }: MemoryPreviewProps) {
                   </div>
                 </div>
               )}
-              <article data-testid="preview-stand-text" className="fs-4 leading-[1.75] whitespace-pre-wrap break-words" style={{ color: "var(--text-1)" }}>
+              <article data-testid="preview-stand-text" className="fs-4 lh-prosa whitespace-pre-wrap break-words" style={{ color: "var(--text-1)" }}>
                 {gewaehlterStand.content}
               </article>
             </>
           ) : (
-            <article data-testid="preview-text" className="fs-4 leading-[1.75] whitespace-pre-wrap break-words" style={{ color: "var(--text-1)" }}>
+            <article data-testid="preview-text" className="fs-4 lh-prosa whitespace-pre-wrap break-words" style={{ color: "var(--text-1)" }}>
               {inhaltOhneQuelle(aktuellerInhalt) || aktuellerInhalt}
             </article>
           )}

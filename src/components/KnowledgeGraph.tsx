@@ -5709,7 +5709,7 @@ export function KnowledgeGraph({ memories: memoriesAusFenster, onSelectMemory, o
     return (
       <div className="flex-1 flex flex-col items-center justify-center p-8 text-center">
         <div className="hud-label mb-2">Knowledge graph</div>
-        <p className="text-sm max-w-sm" style={{ color: "var(--text-2)" }}>
+        <p className="fs-4 lh-lesbar max-w-sm" style={{ color: "var(--text-2)" }}>
           No notes yet. Write one — its [[wiki links]] become concepts, and concepts are what the graph connects.
         </p>
       </div>
@@ -5951,7 +5951,7 @@ export function KnowledgeGraph({ memories: memoriesAusFenster, onSelectMemory, o
           onKeyDown={onSucheKeyDown}
           placeholder="Filter the graph…"
           aria-describedby="graph-search-count"
-          className="hud-input w-full pl-8 pr-3 py-2 rounded-lg text-sm"
+          className="hud-input w-full pl-8 pr-3 py-2 rounded-lg fs-4 lh-lesbar"
           aria-label="Filter the graph"
         />
       </div>
@@ -6484,7 +6484,7 @@ export function KnowledgeGraph({ memories: memoriesAusFenster, onSelectMemory, o
             className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none text-center px-6"
           >
             <div className="hud-label mb-2">Semantic map</div>
-            <p className="text-sm max-w-sm" style={{ color: "var(--text-2)" }}>
+            <p className="fs-4 lh-lesbar max-w-sm" style={{ color: "var(--text-2)" }}>
               {karteFehler ? (
                 <>The vectors could not be read from the engine, so there is nothing to project. Force and Tree need only the notes themselves.</>
               ) : karte === null ? (
@@ -6502,7 +6502,7 @@ export function KnowledgeGraph({ memories: memoriesAusFenster, onSelectMemory, o
         {filtered.length === 0 && (
           <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none text-center px-6">
             <div className="hud-label mb-2">No match</div>
-            <p className="text-sm max-w-sm" style={{ color: "var(--text-2)" }}>
+            <p className="fs-4 lh-lesbar max-w-sm" style={{ color: "var(--text-2)" }}>
               Nothing here matches “{filter.trim().slice(0, 40)}”. Clear the filter to get the whole graph back.
             </p>
           </div>
@@ -6611,7 +6611,7 @@ export function KnowledgeGraph({ memories: memoriesAusFenster, onSelectMemory, o
                 />
               </label>
             ))}
-            <div className="fs-1 leading-snug" style={{ color: "var(--text-3)" }}>
+            <div className="fs-1 lh-dicht" style={{ color: "var(--text-3)" }}>
               Repulsion is what separates topics; the rest holds a topic together.
             </div>
             <button

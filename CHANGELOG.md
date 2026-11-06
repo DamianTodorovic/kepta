@@ -1,3 +1,26 @@
+## [3.2.174]
+
+### Changed
+
+- **Every size and line-height in the components names the ladder now, not the framework.**
+  Measured 6.11.2026 01:13:19 MEZ: 262 seats called `text-xs` (127), `text-sm` (129) or
+  `text-base` (6) in 18 building blocks, and 40 more called a line-height the framework owns
+  (`leading-relaxed` 33, `leading-snug` 3, `leading-none` 2, `leading-[1.75]` 2 — the last two
+  counted at 01:22:31 MEZ). They call `fs-2 lh-dicht`, `fs-4 lh-lesbar` and `fs-5 lh-lesbar`
+  now, and the four line-masses of the contract. Rounding happens at the token, not at the
+  row: 1.75 becomes 1.65, 1.375 becomes 1.24, 1.625 becomes 1.65. Where a seat had already
+  chosen a line-height on purpose, that choice won and the seat only gained its size — 25 of
+  them. `lh-lesbar`, `lh-prosa` and `lh-marke` are utilities now, which is what 3.2.173
+  promised: they arrive with their callers, not before them.
+- Two guards hold it: no building block may name a framework size or a framework line-height,
+  and both counters have bite controls (`tests/leitern-in-den-bausteinen.test.ts`).
+
+### Fixed
+
+- **A `//` comment in CSS is not a comment.** The design warden read two phantom classes —
+  `test` and `ts` — out of the line after one and reported dead style (01:23:27 MEZ, ROT
+  "Klassenregeln ohne Baustein: 2"). The note is a `/* */` block now.
+
 ## [3.2.173]
 
 ### Fixed

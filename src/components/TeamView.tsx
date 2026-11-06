@@ -40,10 +40,10 @@ export function TeamView({ aktiv }: { aktiv: boolean }) {
   }, [aktiv]);
 
   if (fehler) {
-    return <div className="p-5 text-sm" style={{ color: "var(--text-muted)" }}>{fehler}</div>;
+    return <div className="p-5 fs-4 lh-lesbar" style={{ color: "var(--text-muted)" }}>{fehler}</div>;
   }
   if (!info) {
-    return <div className="p-5 text-sm" style={{ color: "var(--text-muted)" }}>{t("team.loading")}</div>;
+    return <div className="p-5 fs-4 lh-lesbar" style={{ color: "var(--text-muted)" }}>{t("team.loading")}</div>;
   }
 
   if (!info.team) {
@@ -52,9 +52,9 @@ export function TeamView({ aktiv }: { aktiv: boolean }) {
         <div className="rounded-2xl border p-6" style={{ borderColor: "var(--border, rgba(255,255,255,0.1))" }}>
           <div className="flex items-center gap-2 mb-2">
             <UsersIcon className="w-5 h-5" />
-            <h2 className="text-base font-semibold">{t("team.title")}</h2>
+            <h2 className="fs-5 lh-lesbar font-semibold">{t("team.title")}</h2>
           </div>
-          <p className="text-sm" data-testid="team-keine-rollen" style={{ color: "var(--text-muted)" }}>{t("team.keineRollen")}</p>
+          <p className="fs-4 lh-lesbar" data-testid="team-keine-rollen" style={{ color: "var(--text-muted)" }}>{t("team.keineRollen")}</p>
         </div>
       </div>
     );
@@ -68,9 +68,9 @@ export function TeamView({ aktiv }: { aktiv: boolean }) {
       <div className="rounded-2xl border p-6" style={{ borderColor: "var(--border, rgba(255,255,255,0.1))" }}>
         <div className="flex items-center gap-2 mb-1">
           <UsersIcon className="w-5 h-5" />
-          <h2 className="text-base font-semibold">{info.team.name ?? t("team.title")}</h2>
+          <h2 className="fs-5 lh-lesbar font-semibold">{info.team.name ?? t("team.title")}</h2>
         </div>
-        <div className="flex items-center gap-2 text-sm" style={{ color: "var(--text-muted)" }}>
+        <div className="flex items-center gap-2 fs-4 lh-lesbar" style={{ color: "var(--text-muted)" }}>
           <span data-testid="team-meine-rolle">{info.team.meineRolle}</span>
         </div>
       </div>
@@ -78,12 +78,12 @@ export function TeamView({ aktiv }: { aktiv: boolean }) {
       <div className="rounded-2xl border p-6" style={{ borderColor: "var(--border, rgba(255,255,255,0.1))" }}>
         <div className="flex items-center gap-2 mb-3">
           <ShieldCheck className="w-5 h-5" />
-          <h3 className="text-sm font-semibold">{t("team.rollen")}</h3>
+          <h3 className="fs-4 lh-lesbar font-semibold">{t("team.rollen")}</h3>
         </div>
         {rollenListe.length === 0 ? (
-          <p className="text-sm" style={{ color: "var(--text-muted)" }}>{t("team.rollenLeer")}</p>
+          <p className="fs-4 lh-lesbar" style={{ color: "var(--text-muted)" }}>{t("team.rollenLeer")}</p>
         ) : (
-          <table className="w-full text-sm" data-testid="team-rollen">
+          <table className="w-full fs-4 lh-lesbar" data-testid="team-rollen">
             <tbody>
               {rollenListe.map(([person, rolle]) => (
                 <tr key={person} style={{ borderTop: "1px solid var(--border, rgba(255,255,255,0.07))" }}>
@@ -94,15 +94,15 @@ export function TeamView({ aktiv }: { aktiv: boolean }) {
             </tbody>
           </table>
         )}
-        <p className="text-xs mt-3" style={{ color: "var(--text-muted)" }}>{t("team.mdmHinweis")}</p>
+        <p className="fs-2 lh-dicht mt-3" style={{ color: "var(--text-muted)" }}>{t("team.mdmHinweis")}</p>
       </div>
 
       <div className="rounded-2xl border p-6" style={{ borderColor: "var(--border, rgba(255,255,255,0.1))" }}>
         <div className="flex items-center gap-2 mb-2">
           <Lock className="w-5 h-5" />
-          <h3 className="text-sm font-semibold">{t("team.notizen")}</h3>
+          <h3 className="fs-4 lh-lesbar font-semibold">{t("team.notizen")}</h3>
         </div>
-        <p className="text-sm" data-testid="team-notizen-count" style={{ color: "var(--text-muted)" }}>
+        <p className="fs-4 lh-lesbar" data-testid="team-notizen-count" style={{ color: "var(--text-muted)" }}>
           {teamNotizen.length === 0
             ? t("team.notizenLeer")
             : `${teamNotizen.length} ${teamNotizen.length === 1 ? "note" : "notes"} · ${t("team.notizenHinweis")}`}

@@ -330,7 +330,7 @@ export function MachineScan({ open, onClose, onImported, autoPreview = false }: 
             <div className="flex items-center gap-2 fs-3 font-semibold" style={{ color: "var(--warn)" }}>
               <ShieldAlert className="w-4 h-4" /> What you should know before you agree
             </div>
-            <p className="fs-3 leading-relaxed" style={{ color: "var(--text-2)" }}>
+            <p className="fs-3 lh-prosa" style={{ color: "var(--text-2)" }}>
               Everything stays on this computer — K3PTA has no cloud and no account. But an imported document becomes a
               normal note, and notes are readable by <strong style={{ color: "var(--text-1)" }}>every AI assistant you connect over MCP</strong>.
               If a document contains something you would not paste into a chat, do not import that folder.
@@ -338,7 +338,7 @@ export function MachineScan({ open, onClose, onImported, autoPreview = false }: 
           </div>
 
           {!regelwerk && regelGrund && (
-            <div className="rounded-xl p-3 fs-3 leading-relaxed" style={{ background: "var(--warn-soft)", color: "var(--warn)" }} data-testid="scan-regelgrund">
+            <div className="rounded-xl p-3 fs-3 lh-prosa" style={{ background: "var(--warn-soft)", color: "var(--warn)" }} data-testid="scan-regelgrund">
               {regelGrund}
             </div>
           )}

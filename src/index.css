@@ -217,6 +217,7 @@
   --lh-dicht: 1.24;
   --lh-lesbar: 1.55;
   --lh-prosa: 1.65;
+  --lh-marke: 1;      /* optischer Reset: Seitenmarke und Mono-Zeichen, vorher leading-none */
 
   /* Gewichte: eine nicht-variable Schrift (Segoe UI auf Windows) kennt
      300/400/600/700. Alles dazwischen — 490, 540, 560, 590, 620, 640, 680 —
@@ -490,12 +491,19 @@ select:focus-visible {
 @utility fs-5 { font-size: var(--fs-5); }
 @utility fs-6 { font-size: var(--fs-6); }   /* 20 px: Panel- und Ansichtstitel, vorher hiess das text-xl */
 @utility fs-7 { font-size: var(--fs-7); }   /* 28 px: die Zahl, die vorher text-3xl hiess */
-// P83: die Zeilenmasse des Vertrags war bis hierher nur in CSS-Regeln als nackte Zahl
-// zu haben (gemessen 00:47:52 MEZ: 0 `lh-*`-Sitze in den Bausteinen). Eine Utility ist
-// da, wo ein Sitz sie ruft -- die Wache meldet jede andere als toten Stil (00:00:16 MEZ,
-// ROT "Klassenregeln ohne Baustein: lh-lesbar lh-prosa", als ich alle drei auf einmal
-// setzte). lh-lesbar und lh-prosa kommen mit dem Sweep, der ihnen Rufer gibt.
+/* P83: die Zeilenmasse des Vertrags war bis hierher nur in CSS-Regeln als nackte Zahl zu
+   haben (gemessen 00:47:52 MEZ: 0 `lh-*`-Sitze in den Bausteinen). Eine Utility ist da, wo
+   ein Sitz sie ruft -- die Wache meldet jede andere als toten Stil (00:00:16 MEZ, ROT
+   "Klassenregeln ohne Baustein: lh-lesbar lh-prosa", als ich alle drei auf einmal setzte).
+   P84: der Sweep gibt ihnen Rufer (262 Groessen- und 40 leading-* Sitze, gemessen 01:21:41
+   und 01:22:31 MEZ im Trockenlauf), also stehen sie hier -- und kein Baustein nennt mehr
+   eine Zeilenmasse des Rahmenwerks, gewacht von der Leiter-Testdatei. Kein Doppelstrich-
+   Kommentar: `//` gilt in CSS nicht als Kommentar, und die Wache las aus der naechsten
+   Zeile zwei Klassen namens `test` und `ts` (gemessen 01:23:27 MEZ, ROT "toter Stil"). */
 @utility lh-dicht { line-height: var(--lh-dicht); }     /* 1,24: Meta, Zahlen, Titel */
+@utility lh-lesbar { line-height: var(--lh-lesbar); }   /* 1,55: Regel, Eingabe, Chat */
+@utility lh-prosa { line-height: var(--lh-prosa); }     /* 1,65: fliessender Text in Karte und Antwort */
+@utility lh-marke { line-height: var(--lh-marke); }     /* 1: optischer Reset, keine Zeile unter der Zahl */
 
 /* Dominante Zahl des Registers — Ziffern wie in ein Protokoll gesetzt */
 .num-hero {

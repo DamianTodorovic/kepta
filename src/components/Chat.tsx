@@ -837,7 +837,7 @@ export function Chat({ activeMemories, onSaveToBrain, onSaveToBrainWithMeta, isF
             )}
           </div>
           <div>
-            <h2 className="font-semibold text-sm flex items-center gap-2" style={{ color: "var(--text-1)" }}>
+            <h2 className="font-semibold fs-4 lh-lesbar flex items-center gap-2" style={{ color: "var(--text-1)" }}>
               Chat
               {isStreaming && <span className="inline-flex items-center gap-1 fs-1 font-normal px-2 py-1 rounded hud-inset" style={{ color: "var(--accent)" }}><span className="w-1.5 h-1.5 rounded-full bg-[var(--accent)] animate-pulse" /> streaming…</span>}
             </h2>
@@ -887,7 +887,7 @@ export function Chat({ activeMemories, onSaveToBrain, onSaveToBrainWithMeta, isF
             </div>
           </div>
         </div>
-        <div className="flex items-center gap-2 sm:gap-4 text-xs font-semibold">
+        <div className="flex items-center gap-2 sm:gap-4 fs-2 lh-dicht font-semibold">
           {/* Such-Cache-Status (Paket 3): der Chat misst die eigene Engine-Anfrage —
               das Delta-Cache-Signal aus Paket 2 gilt hier genauso wie im Dashboard. */}
           {gehirnWaermt && (
@@ -996,7 +996,7 @@ export function Chat({ activeMemories, onSaveToBrain, onSaveToBrainWithMeta, isF
               </div>
             )}
           </div>
-          <div className="hidden lg:flex flex-col items-end gap-1 text-xs min-w-[130px] shrink-0">
+          <div className="hidden lg:flex flex-col items-end gap-1 fs-2 lh-dicht min-w-[130px] shrink-0">
             <span className="hud-label">Cost estimate</span>
             <span className="mono fs-3" style={{ color: pricing.input === 0 ? "var(--ok)" : "var(--text-1)" }}>
               {estimatedCostNow}
@@ -1016,7 +1016,7 @@ export function Chat({ activeMemories, onSaveToBrain, onSaveToBrainWithMeta, isF
               <KeptaMark size={34} />
             </div>
             <div className="hud-label mb-2">No questions yet</div>
-            <p className="fs-3 max-w-sm leading-relaxed" style={{ color: "var(--text-2)" }}>
+            <p className="fs-3 max-w-sm lh-prosa" style={{ color: "var(--text-2)" }}>
               Ask something about your notes — {budgetedMemories.length} of {activeMemories.length} fit the budget ({tokenBudget.toLocaleString("en-GB")} tokens).
             </p>
             <div className="mt-5 flex flex-wrap gap-2 justify-center max-w-md">
@@ -1053,10 +1053,10 @@ export function Chat({ activeMemories, onSaveToBrain, onSaveToBrainWithMeta, isF
                   <ReactMarkdown
                     urlTransform={antwortUrlPfad}
                     components={{
-                      h1: ({ children }) => <h1 className="text-base font-bold mt-3 mb-2" style={{ color: "var(--text-1)" }}>{children}</h1>,
+                      h1: ({ children }) => <h1 className="fs-5 lh-lesbar font-bold mt-3 mb-2" style={{ color: "var(--text-1)" }}>{children}</h1>,
                       h2: ({ children }) => <h2 className="fs-5 font-semibold mt-3 mb-2" style={{ color: "var(--text-1)" }}>{children}</h2>,
-                      h3: ({ children }) => <h3 className="text-sm font-semibold mt-3 mb-1" style={{ color: "var(--text-1)" }}>{children}</h3>,
-                      p: ({ children }) => <p className="my-2 leading-relaxed" style={{ color: "var(--text-1)" }}>{children}</p>,
+                      h3: ({ children }) => <h3 className="fs-4 lh-lesbar font-semibold mt-3 mb-1" style={{ color: "var(--text-1)" }}>{children}</h3>,
+                      p: ({ children }) => <p className="my-2 lh-prosa" style={{ color: "var(--text-1)" }}>{children}</p>,
                       a: ({ children, href }) => (
                         <a href={href} target="_blank" rel="noreferrer" className="underline decoration-[var(--accent)] underline-offset-2 hover:opacity-80" style={{ color: "var(--accent)" }}>
                           {children}
@@ -1074,7 +1074,7 @@ export function Chat({ activeMemories, onSaveToBrain, onSaveToBrainWithMeta, isF
                         return (
                           <span
                             data-testid="bild-abgewiesen"
-                            className="block my-2 rounded-lg px-3 py-2 text-xs leading-relaxed"
+                            className="block my-2 rounded-lg px-3 py-2 fs-2 lh-prosa"
                             style={{ background: "var(--bg-inset)", border: "1px solid var(--border-subtle)", color: "var(--text-2)" }}
                           >
                             {"Remote image not loaded — K3PTA keeps this window local."}
@@ -1091,7 +1091,7 @@ export function Chat({ activeMemories, onSaveToBrain, onSaveToBrainWithMeta, isF
                       },
                       ul: ({ children }) => <ul className="list-disc pl-5 my-2 space-y-1 marker:text-[var(--accent)]">{children}</ul>,
                       ol: ({ children }) => <ol className="list-decimal pl-5 my-2 space-y-1 marker:text-[var(--accent)]">{children}</ol>,
-                      li: ({ children }) => <li className="leading-relaxed" style={{ color: "var(--text-1)" }}>{children}</li>,
+                      li: ({ children }) => <li className="lh-prosa" style={{ color: "var(--text-1)" }}>{children}</li>,
                       blockquote: ({ children }) => (
                         <blockquote className="border-l-2 pl-3 my-2 italic" style={{ borderColor: "var(--accent)", color: "var(--text-2)", background: "var(--bg-inset)", borderRadius: "0 6px 6px 0" }}>
                           {children}
@@ -1100,15 +1100,15 @@ export function Chat({ activeMemories, onSaveToBrain, onSaveToBrainWithMeta, isF
                       code: ({ children, className }) => {
                         const isBlock = !!className;
                         if (isBlock) {
-                          return <code className="font-mono text-xs break-all" style={{ color: "var(--text-1)" }}>{children}</code>;
+                          return <code className="font-mono fs-2 lh-dicht break-all" style={{ color: "var(--text-1)" }}>{children}</code>;
                         }
-                        return <code className="px-2 py-1 rounded font-mono text-xs" style={{ background: "var(--bg-inset-strong)", border: "1px solid var(--border-subtle)", color: "var(--accent)" }}>{children}</code>;
+                        return <code className="px-2 py-1 rounded font-mono fs-2 lh-dicht" style={{ background: "var(--bg-inset-strong)", border: "1px solid var(--border-subtle)", color: "var(--accent)" }}>{children}</code>;
                       },
                       pre: ({ children }) => {
                         const codeText = extractCodeText(children);
                         return (
                           <div className="relative group/code my-3">
-                            <pre className="p-3 pr-10 rounded-xl overflow-x-auto text-xs leading-relaxed hud-inset" style={{ background: "var(--bg-inset)", border: "1px solid var(--border-subtle)" }}>
+                            <pre className="p-3 pr-10 rounded-xl overflow-x-auto fs-2 lh-prosa hud-inset" style={{ background: "var(--bg-inset)", border: "1px solid var(--border-subtle)" }}>
                               {children}
                             </pre>
                             <button
@@ -1130,7 +1130,7 @@ export function Chat({ activeMemories, onSaveToBrain, onSaveToBrainWithMeta, isF
                       hr: () => <hr className="my-3" style={{ borderColor: "var(--border-subtle)" }} />,
                       strong: ({ children }) => <strong className="font-semibold" style={{ color: "var(--text-1)" }}>{children}</strong>,
                       em: ({ children }) => <em className="italic" style={{ color: "var(--text-1)" }}>{children}</em>,
-                      table: ({ children }) => <div className="overflow-x-auto my-3"><table className="w-full text-xs border-collapse hud-inset rounded-lg overflow-hidden">{children}</table></div>,
+                      table: ({ children }) => <div className="overflow-x-auto my-3"><table className="w-full fs-2 lh-dicht border-collapse hud-inset rounded-lg overflow-hidden">{children}</table></div>,
                       th: ({ children }) => <th className="text-left px-2 py-2 font-semibold hud-inset" style={{ background: "var(--bg-inset-strong)", color: "var(--text-1)" }}>{children}</th>,
                       td: ({ children }) => <td className="px-2 py-2 border-t" style={{ borderColor: "var(--border-subtle)", color: "var(--text-2)" }}>{children}</td>,
                     }}
@@ -1164,7 +1164,7 @@ export function Chat({ activeMemories, onSaveToBrain, onSaveToBrainWithMeta, isF
                           {/* Herkunfts-Badge (Paket 3): welches Bein (BM25/Vektor/Graph) den
                               Knoten wo im Ranking sah — dieselbe Wahrheit wie auf der Karte. */}
                           {spurenSichtbar(s.tracks) && (
-                            <span className="flex flex-wrap gap-1 font-mono fs-1 font-normal leading-none">
+                            <span className="flex flex-wrap gap-1 font-mono fs-1 font-normal lh-marke">
                               {s.tracks!.bm25 !== null && <span style={{ color: "var(--accent)" }}>bm25 #{s.tracks!.bm25 + 1}</span>}
                               {s.tracks!.vektor !== null && <span style={{ color: "var(--accent)" }}>vector #{s.tracks!.vektor + 1}</span>}
                               {s.tracks!.graph !== null && <span style={{ color: "var(--accent)" }}>graph #{s.tracks!.graph + 1}</span>}
@@ -1229,7 +1229,7 @@ export function Chat({ activeMemories, onSaveToBrain, onSaveToBrainWithMeta, isF
         ))}
 
         {isStreaming && messages[messages.length - 1]?.role !== "assistant" && (
-          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="msg-ai flex items-center gap-2 text-sm" style={{ color: "var(--text-2)" }}>
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="msg-ai flex items-center gap-2 fs-4 lh-lesbar" style={{ color: "var(--text-2)" }}>
             <span className="flex items-center gap-1">
               <span className="typing-dot" />
               <span className="typing-dot" />
@@ -1243,12 +1243,12 @@ export function Chat({ activeMemories, onSaveToBrain, onSaveToBrainWithMeta, isF
           // Aufgabe #93 (24.10.): die Sperre lag unter dem Rand (top 721 / unten 859 bei 840 px,
           // Scroll-Kasten endet 721) - der Klick auf Senden tat sichtbar nichts. Sticky am Fuss
           // der Nachrichtenflaeche haelt sie in jeder Fensterbreite im Bild.
-          <div role="alert" aria-live="polite" data-fix="sperre-sichtbar" className="sticky bottom-0 z-20 mt-3 flex items-start gap-3 p-4 rounded-xl text-sm shadow-lg" style={{ background: "rgba(38,16,16,0.97)", border: "1px solid rgba(239,68,68,0.35)", color: "#f87171" }}>
+          <div role="alert" aria-live="polite" data-fix="sperre-sichtbar" className="sticky bottom-0 z-20 mt-3 flex items-start gap-3 p-4 rounded-xl fs-4 lh-lesbar shadow-lg" style={{ background: "rgba(38,16,16,0.97)", border: "1px solid rgba(239,68,68,0.35)", color: "#f87171" }}>
             <AlertTriangle className="w-5 h-5 shrink-0 mt-1" />
             <div className="flex-1">
               <div className="font-semibold">Error</div>
               <div className="opacity-90 break-words">{error}</div>
-              <button onClick={() => setError(null)} className="mt-2 text-xs underline opacity-80 hover:opacity-100">Close</button>
+              <button onClick={() => setError(null)} className="mt-2 fs-2 lh-dicht underline opacity-80 hover:opacity-100">Close</button>
             </div>
           </div>
         )}
@@ -1264,7 +1264,7 @@ export function Chat({ activeMemories, onSaveToBrain, onSaveToBrainWithMeta, isF
             onChange={(e) => setInput(e.target.value)}
             placeholder={isStreaming ? "Generating an answer — Stop to cancel" : "Write a message…"}
             disabled={isStreaming}
-            className="composer w-full py-3 pl-4 pr-[92px] text-sm disabled:opacity-60 bg-transparent"
+            className="composer w-full py-3 pl-4 pr-[92px] fs-4 lh-lesbar disabled:opacity-60 bg-transparent"
             aria-label="Chat Eingabe"
           />
           <div className="absolute right-2 top-1.5 bottom-1.5 flex items-center gap-1">
@@ -1272,7 +1272,7 @@ export function Chat({ activeMemories, onSaveToBrain, onSaveToBrainWithMeta, isF
               <button
                 type="button"
                 onClick={handleStop}
-                className="h-full px-3 flex items-center gap-2 rounded-lg font-semibold text-xs"
+                className="h-full px-3 flex items-center gap-2 rounded-lg font-semibold fs-2 lh-dicht"
                 style={{ background: "rgba(239,68,68,0.12)", border: "1px solid rgba(239,68,68,0.3)", color: "#f87171" }}
                 title="Stop answer (abort)"
               >

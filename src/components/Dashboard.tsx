@@ -1654,7 +1654,7 @@ export function Dashboard() {
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 onKeyDown={(e) => { if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "k") { e.preventDefault(); setPaletteOpen(true); } }}
-                className="hud-input w-full min-w-0 truncate pl-9 pr-4 py-2 rounded-lg text-sm"
+                className="hud-input w-full min-w-0 truncate pl-9 pr-4 py-2 rounded-lg fs-4 lh-lesbar"
               />
             </div>
 
@@ -1678,7 +1678,7 @@ export function Dashboard() {
                     setTrashGrund(absage("Trash — the count did not arrive", err));
                   }
                 }}
-                className="btn-ghost hidden sm:flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-semibold"
+                className="btn-ghost hidden sm:flex items-center gap-2 px-3 py-2 rounded-lg fs-2 lh-dicht font-semibold"
                 title={trashGrund ?? "Trash — restore deleted notes"}
               >
                 <Trash2 className="w-4 h-4" />
@@ -1686,14 +1686,14 @@ export function Dashboard() {
               </button>
               <button
                 onClick={() => setPaletteOpen(true)}
-                className="btn-ghost hidden sm:flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-semibold"
+                className="btn-ghost hidden sm:flex items-center gap-2 px-3 py-2 rounded-lg fs-2 lh-dicht font-semibold"
                 title="Command palette"
               >
                 <ScanSearch className="w-4 h-4" /> <span className="kbd !py-px">⌘K</span>
               </button>
               <button
                 onClick={copyContextForAI}
-                className="btn-ghost flex items-center gap-2 px-3 py-2 rounded-lg font-semibold text-xs"
+                className="btn-ghost flex items-center gap-2 px-3 py-2 rounded-lg font-semibold fs-2 lh-dicht"
                 title={`${chatMemories.length} notes in the chat context — copy as a prompt`}
               >
                 {copied ? <CheckCircle2 className="w-4 h-4" style={{ color: 'var(--ok)' }} /> : <Copy className="w-4 h-4" />}
@@ -1704,7 +1704,7 @@ export function Dashboard() {
                   setEditingMemory(null);
                   setIsEditorOpen(true);
                 }}
-                className="btn-primary flex items-center gap-2 px-3 py-2 rounded-lg font-semibold text-xs"
+                className="btn-primary flex items-center gap-2 px-3 py-2 rounded-lg font-semibold fs-2 lh-dicht"
               >
                 <Plus className="w-4 h-4" />
                 <span className="hidden sm:inline">New</span>
@@ -1724,10 +1724,10 @@ export function Dashboard() {
                 <button onClick={() => setTrashOpen(false)} className="btn-ghost px-2 py-1 rounded-md fs-1">Close</button>
               </div>
               {papierkorbGrund && (
-                <p className="text-xs mb-2" style={{ color: 'var(--text-3)' }}>{papierkorbGrund} — the trash may hold more than this page.</p>
+                <p className="fs-2 lh-dicht mb-2" style={{ color: 'var(--text-3)' }}>{papierkorbGrund} — the trash may hold more than this page.</p>
               )}
               {trashedMemories.length === 0 ? (
-                <p className="text-xs" style={{ color: 'var(--text-3)' }}>{papierkorbGrund ? 'Nothing loaded.' : 'Empty.'}</p>
+                <p className="fs-2 lh-dicht" style={{ color: 'var(--text-3)' }}>{papierkorbGrund ? 'Nothing loaded.' : 'Empty.'}</p>
               ) : (
                 <ul className="space-y-1">
                   {trashedMemories.map((m) => (
@@ -1790,7 +1790,7 @@ export function Dashboard() {
               </span>
             </div>
 
-            <div className="ml-auto flex items-center gap-2 text-xs">
+            <div className="ml-auto flex items-center gap-2 fs-2 lh-dicht">
               {/* Such-Cache-Status: der Kern baut den Suchindex beim ersten
                   Zugriff einmal auf und patcht ihn danach nur noch — die App
                   misst die Antwortzeit und zeigt, wenn das Gehirn warm ist. */}
@@ -1898,7 +1898,7 @@ export function Dashboard() {
                   {importMsg && <div className="fs-1 mt-1 flex items-center gap-1" style={{ color: "var(--ok)" }}><CheckCircle2 className="w-3 h-3" />{importMsg}</div>}
                   {importErr && <div className="fs-1 mt-1 flex items-center gap-1" style={{ color: "var(--danger)" }}><AlertCircle className="w-3 h-3" />{importErr}</div>}
                 </div>
-                <label className="btn-ghost px-3 py-2 text-xs font-semibold cursor-pointer shrink-0">
+                <label className="btn-ghost px-3 py-2 fs-2 lh-dicht font-semibold cursor-pointer shrink-0">
                   Choose
                   <input
                     ref={fileInputRef}
@@ -1914,7 +1914,7 @@ export function Dashboard() {
               <div className="hidden lg:flex items-center px-4 py-3 shrink-0">
                 <button
                   onClick={() => setScanOpen(true)}
-                  className="btn-ghost px-3 py-2 text-xs font-semibold flex items-center gap-2"
+                  className="btn-ghost px-3 py-2 fs-2 lh-dicht font-semibold flex items-center gap-2"
                   title="Let K3PTA look through this computer for documents — you see what would be imported before anything is read"
                 >
                   <HardDriveDownload className="w-3.5 h-3.5" /> Scan this computer
@@ -1930,13 +1930,13 @@ export function Dashboard() {
                   onKeyDown={(e) => { if (e.key === "Enter") handleClip(); }}
                   aria-label="Paste a URL to import"
                   placeholder="Paste a URL…"
-                  className="flex-1 min-w-0 bg-transparent text-sm outline-none"
+                  className="flex-1 min-w-0 bg-transparent fs-4 lh-lesbar outline-none"
                   style={{ color: "var(--text-1)" }}
                 />
                 <button
                   onClick={handleClip}
                   disabled={clipping || !clipUrl.trim()}
-                  className="btn-ghost px-3 py-2 text-xs font-semibold shrink-0 disabled:opacity-40"
+                  className="btn-ghost px-3 py-2 fs-2 lh-dicht font-semibold shrink-0 disabled:opacity-40"
                 >
                   {clipping ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : 'Import'}
                 </button>
@@ -2258,7 +2258,7 @@ export function Dashboard() {
                           ? 'No matches'
                           : gruppenFilterAktiv ? `No notes ${gruppenGrund}` : 'No notes yet'}
                       </h3>
-                      <p className="fs-3 max-w-sm mx-auto leading-relaxed" style={{ color: 'var(--text-2)' }}>
+                      <p className="fs-3 max-w-sm mx-auto lh-prosa" style={{ color: 'var(--text-2)' }}>
                         {debouncedSearchQuery || selectedTags.length > 0
                           ? semanticEnabled && debouncedSearchQuery.trim().length >= 2
                             ? `Nothing found for “${debouncedSearchQuery.trim().slice(0, 48)}”. Try different terms, raise the result count, or switch to keyword search.`
@@ -2329,7 +2329,7 @@ export function Dashboard() {
               {mengensatz(feldZaehlung ?? memories.length, tuerBestand)}{!schmal && satzPasst ? " · connected through tags, similarity and knowledge entities" : ""}
             </div>
             <div className="ml-auto shrink-0">
-              <button onClick={() => setCurrentView("memories")} className="btn-ghost px-3 py-2 rounded-md text-xs font-semibold">Back to the list</button>
+              <button onClick={() => setCurrentView("memories")} className="btn-ghost px-3 py-2 rounded-md fs-2 lh-dicht font-semibold">Back to the list</button>
             </div>
           </div>
           <div className="flex-1 min-h-0 flaeche-huelle">
@@ -2459,12 +2459,12 @@ function ShortcutsSheet({ open, onClose }: { open: boolean; onClose: () => void 
             onClick={(e) => e.stopPropagation()}
             className="w-full max-w-md rounded-2xl p-6 glass-strong"
           >
-            <h3 className="text-base font-semibold mb-4" style={{ color: 'var(--text-1)' }}>Shortcuts</h3>
+            <h3 className="fs-5 lh-lesbar font-semibold mb-4" style={{ color: 'var(--text-1)' }}>Shortcuts</h3>
             <ul className="space-y-3">
               {SHORTCUTS.map((s) => (
                 <li key={s.keys} className="flex items-center justify-between gap-4">
-                  <span className="text-sm" style={{ color: 'var(--text-2)' }}>{s.action}</span>
-                  <kbd className="px-2 py-1 rounded-lg text-xs font-mono shrink-0" style={{ background: 'var(--bg-inset-strong)', border: '1px solid var(--border-subtle)', color: 'var(--text-1)' }}>
+                  <span className="fs-4 lh-lesbar" style={{ color: 'var(--text-2)' }}>{s.action}</span>
+                  <kbd className="px-2 py-1 rounded-lg fs-2 lh-dicht font-mono shrink-0" style={{ background: 'var(--bg-inset-strong)', border: '1px solid var(--border-subtle)', color: 'var(--text-1)' }}>
                     {s.keys}
                   </kbd>
                 </li>

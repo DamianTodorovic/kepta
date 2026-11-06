@@ -75,7 +75,7 @@ export function CommandPalette({ open, onClose, actions }: CommandPaletteProps) 
             onChange={(e) => setQuery(e.target.value)}
             aria-label="Command or search"
             placeholder="Command or search… (e.g. graph, new node, settings)"
-            className="flex-1 bg-transparent outline-none text-sm placeholder:text-[var(--text-3)]"
+            className="flex-1 bg-transparent outline-none fs-4 lh-lesbar placeholder:text-[var(--text-3)]"
             style={{ color: "var(--text-1)" }}
           />
           <span className="hud-label hidden sm:inline-flex items-center gap-1"><span className="kbd">⌘</span>K</span>
@@ -83,7 +83,7 @@ export function CommandPalette({ open, onClose, actions }: CommandPaletteProps) 
 
         <div ref={listRef} className="overflow-y-auto flex-1 py-2 space-y-1">
           {filtered.length === 0 && (
-            <div className="py-10 px-6 text-center text-sm leading-relaxed" style={{ color: "var(--text-2)" }}>
+            <div className="py-10 px-6 text-center fs-4 lh-prosa" style={{ color: "var(--text-2)" }}>
               Nothing here answers “{query}”.
               <span className="block fs-2 mt-1" style={{ color: "var(--text-2)" }}>
                 One word of a title, a tag, or the first letters of a command — Esc closes this.
@@ -102,8 +102,8 @@ export function CommandPalette({ open, onClose, actions }: CommandPaletteProps) 
             >
               <span className="shrink-0 flex items-center justify-center" style={{ color: i === idx ? "var(--accent)" : "var(--text-3)" }}>{a.icon}</span>
               <span className="flex-1 min-w-0">
-                <span className="block text-sm font-semibold truncate">{a.label}</span>
-                {a.desc && <span className="block text-xs truncate" style={{ color: "var(--text-3)" }}>{a.desc}</span>}
+                <span className="block fs-4 lh-lesbar font-semibold truncate">{a.label}</span>
+                {a.desc && <span className="block fs-2 lh-dicht truncate" style={{ color: "var(--text-3)" }}>{a.desc}</span>}
               </span>
               {a.hotkey && <span className="kbd shrink-0">{a.hotkey}</span>}
             </button>

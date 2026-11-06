@@ -93,11 +93,11 @@ function Live({ aktiv, onOpenMemory }: { aktiv: boolean; onOpenMemory: (id: stri
     return () => { vorbei = true; clearInterval(t); };
   }, [aktiv]);
 
-  if (eintraege === null) return <p className="text-sm" style={{ color: 'var(--text-3)' }}>Loading…</p>;
+  if (eintraege === null) return <p className="fs-4 lh-lesbar" style={{ color: 'var(--text-3)' }}>Loading…</p>;
   if (eintraege.length === 0) {
     return (
       <div className="space-y-5">
-        <p className="text-sm" style={{ color: 'var(--text-2)' }}>
+        <p className="fs-4 lh-lesbar" style={{ color: 'var(--text-2)' }}>
           No AI app has used K3PTA yet. Connect one below — every note it saves or looks up then shows up here as it happens.
         </p>
         <ConnectApps />
@@ -232,7 +232,7 @@ function Protokoll() {
 
   return (
     <div>
-      <p className="text-sm mb-4" style={{ color: 'var(--text-2)' }}>
+      <p className="fs-4 lh-lesbar mb-4" style={{ color: 'var(--text-2)' }}>
         Every access to your knowledge base — by you, by each AI app and by scripts. Each entry is sealed with the one before it:
         if anyone changes or removes an entry, the check below shows it.
       </p>
@@ -265,9 +265,9 @@ function Protokoll() {
         </select>
         <input aria-label="Search the log" value={suche} onChange={(e) => setSuche(e.target.value)} placeholder="Search a note, a query…" className="hud-input flex-1 min-w-[160px] rounded-lg px-3 py-2 fs-3" />
       </div>
-      {fehler && <p className="text-sm mb-2" style={{ color: 'var(--warn)' }}>{fehler}</p>}
+      {fehler && <p className="fs-4 lh-lesbar mb-2" style={{ color: 'var(--warn)' }}>{fehler}</p>}
       {eintraege.length === 0 ? (
-        <p className="text-sm" style={{ color: 'var(--text-3)' }}>Nothing recorded {wer || was || suche ? 'that matches' : 'yet'}.</p>
+        <p className="fs-4 lh-lesbar" style={{ color: 'var(--text-3)' }}>Nothing recorded {wer || was || suche ? 'that matches' : 'yet'}.</p>
       ) : (
         <ul className="divide-y" style={{ borderColor: 'var(--border-subtle)' }} data-testid="audit-list">
           {eintraege.map((e) => (
@@ -295,7 +295,7 @@ export function ActivityView({ aktiv, onOpenMemory }: { aktiv: boolean; onOpenMe
     <div className="max-w-3xl mx-auto py-6" data-testid="activity-view">
       <header className="mb-5">
         <h1 className="display">Activity</h1>
-        <p className="text-sm mt-1" style={{ color: 'var(--text-2)' }}>What your AI apps read and write in your memory — and a sealed record of every access.</p>
+        <p className="fs-4 lh-lesbar mt-1" style={{ color: 'var(--text-2)' }}>What your AI apps read and write in your memory — and a sealed record of every access.</p>
       </header>
       <div className="flex gap-1 p-1 rounded-xl hud-inset mb-6 max-w-xs" role="tablist">
         {([['live', 'Live', 'Live shows what your AI apps are reading and writing in your memory right now'], ['audit', 'Audit log', 'The audit log is the sealed list of who read or changed what in your memory, and when']] as const).map(([id, label, erklaerung]) => (

@@ -70,9 +70,9 @@ function Row({ ok, label, detail, fix, seal, unknown }: { ok: boolean; label: st
             : <CheckCircle2 className="w-4 h-4 mt-1 shrink-0" style={{ color: 'var(--ok)' }} />
           : <XCircle className="w-4 h-4 mt-1 shrink-0" style={{ color: '#e6a100' }} />}
       <div className="min-w-0">
-        <div className="text-sm font-semibold" style={{ color: 'var(--text-1)' }}>{label}</div>
-        <div className="text-xs mt-1" style={{ color: 'var(--text-2)' }}>{detail}</div>
-        {!unknown && !ok && fix && <div className="text-xs mt-1 font-semibold" style={{ color: '#d97706' }}>How to fix it: {fix}</div>}
+        <div className="fs-4 lh-lesbar font-semibold" style={{ color: 'var(--text-1)' }}>{label}</div>
+        <div className="fs-2 lh-dicht mt-1" style={{ color: 'var(--text-2)' }}>{detail}</div>
+        {!unknown && !ok && fix && <div className="fs-2 lh-dicht mt-1 font-semibold" style={{ color: '#d97706' }}>How to fix it: {fix}</div>}
       </div>
     </div>
   );
@@ -194,8 +194,8 @@ export function SystemStatus() {
     <div className="rounded-2xl p-3 sm:p-5" style={{ border: '1px solid var(--border-subtle)', background: 'var(--bg-inset)' }}>
       <div className="flex items-center justify-between mb-2">
         <div>
-          <h3 className="text-base font-semibold" style={{ color: 'var(--text-1)' }}>System status</h3>
-          <p className="text-xs mt-1" style={{ color: 'var(--text-3)' }}>What works — and what is missing for everything to work.</p>
+          <h3 className="fs-5 lh-lesbar font-semibold" style={{ color: 'var(--text-1)' }}>System status</h3>
+          <p className="fs-2 lh-dicht mt-1" style={{ color: 'var(--text-3)' }}>What works — and what is missing for everything to work.</p>
         </div>
       </div>
 
@@ -267,12 +267,12 @@ export function SystemStatus() {
       {health?.encryption.aktiv && <RecoveryKey />}
 
       <div className="flex items-center gap-2 mt-3">
-        <button onClick={runTest} disabled={testing} className="btn-primary flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold">
+        <button onClick={runTest} disabled={testing} className="btn-primary flex items-center gap-2 px-4 py-2 rounded-lg fs-4 lh-lesbar font-semibold">
           {testing ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
           Send a test request
         </button>
         {testResult && (
-          <span className="text-xs font-semibold" style={{ color: testResult.ok ? 'var(--ok)' : '#d97706' }}>
+          <span className="fs-2 lh-dicht font-semibold" style={{ color: testResult.ok ? 'var(--ok)' : '#d97706' }}>
             {testResult.ok ? '✓ ' : '✗ '}{testResult.msg}
           </span>
         )}
@@ -281,15 +281,15 @@ export function SystemStatus() {
       <div className="mt-4 rounded-xl p-2 sm:p-3" style={{ background: 'var(--bg-panel-solid)', border: '1px dashed var(--border-subtle)' }}>
         <div className="flex items-center justify-between gap-3">
           <div className="min-w-0">
-            <div className="text-xs font-semibold" style={{ color: 'var(--text-1)' }}>Connect Claude Desktop and Cursor</div>
+            <div className="fs-2 lh-dicht font-semibold" style={{ color: 'var(--text-1)' }}>Connect Claude Desktop and Cursor</div>
             <code className="fs-1 block truncate mt-1" style={{ color: 'var(--text-3)' }}>{mcpJson.replaceAll('\n', ' ')}</code>
           </div>
-          <button onClick={() => copy('mcp', mcpJson)} className="btn-ghost flex items-center gap-2 px-3 py-2 rounded-lg text-xs shrink-0">
+          <button onClick={() => copy('mcp', mcpJson)} className="btn-ghost flex items-center gap-2 px-3 py-2 rounded-lg fs-2 lh-dicht shrink-0">
             {copied === 'mcp' ? <Check className="w-3.5 h-3.5" style={{ color: 'var(--ok)' }} /> : <Copy className="w-3.5 h-3.5" />}
             {copied === 'mcp' ? 'Copied' : copied === 'fehler:mcp' ? 'Copying failed' : 'Copy config'}
           </button>
         </div>
-        <div className="text-xs mt-2 flex flex-wrap items-center gap-x-2" style={{ color: 'var(--text-2)' }}>
+        <div className="fs-2 lh-dicht mt-2 flex flex-wrap items-center gap-x-2" style={{ color: 'var(--text-2)' }}>
           <span className="min-w-0">Or HTTP: <code className="break-all">POST {typeof window !== 'undefined' ? window.location.origin : ''}/mcp</code> (JSON-RPC, protocol 2026-07-28)</span>
           <button onClick={() => copy('url', `${typeof window !== 'undefined' ? window.location.origin : ''}/mcp`)} className="min-h-6 px-1 inline-flex items-center underline" style={{ color: 'var(--accent)' }}>copy</button>
         </div>

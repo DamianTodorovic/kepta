@@ -976,6 +976,22 @@ const erwartet = [
   // "text-xl font-semibold" 1 mal. Die beiden nackten Woerter zaehlen je 1 -- es sind die
   // Token-Namen --fs-6 und --lh-dicht; nur das Paar ist ein Sitz, darum ist es die Marke.
   ["fs-6 lh-dicht", 1],
+  // P84 (3.2.174): der Sweep -- 262 Groessensitze und 40 Zeilenmassen-Sitze heissen jetzt
+  // Leiter. Gezaehlt am installierten 3.2.173 (latin1, Leerstand zusammengezogen,
+  // 6.11.2026 01:26:36 MEZ): "fs-2 lh-dicht" 0, "fs-4 lh-lesbar" 0, "fs-5 lh-lesbar" 0,
+  // "lh-marke" 0, "lh-prosa" 1 (das ist der Token --lh-prosa, kein Sitz). Die Unterzahl ist
+  // die Zeilenzahl in src, gemessen 01:27:13 MEZ: 105 / 126 / 6 / 2 / 35.
+  // Kein Verbot der nackten Woerter "text-xs", "text-sm", "leading-relaxed" hier: gemessen
+  // 01:26:59 MEZ stehen sie im ausgelieferten Stueck 132 / 134 / 37 mal, und die Funde sind
+  // nicht unsre -- Tailwinds eigne Variablen (--text-xs, .text-xs-Regel, --line-height) und
+  // ein Fremd-Baustein im Bundel mit `className:"text-xs font-semibold px-3 py-..."`. Ein
+  // Verbot, das wir nicht besitzen, waere eine Marke, die immer faelschlich schlaegt.
+  // Gate der Sitze ist tests/leitern-in-den-bausteinen.test.ts, und das zaehlt nur src.
+  ["fs-2 lh-dicht", 100],
+  ["fs-4 lh-lesbar", 120],
+  ["fs-5 lh-lesbar", 6],
+  ["lh-marke", 2],
+  ["lh-prosa", 30],
   // Punkt 7 / P79, 5.11.2026 22:39 MEZ (3.2.168): der depth-Satz von 3.2.167 war dem Riegel
   // entglitten -- sein Semikolon trifft die Code-Kante der Sonde, also zaehlt er nicht und
   // kann nichts melden. Nachgewiesen an drei Formen: alt ohne Semikolon Kandidat, mit

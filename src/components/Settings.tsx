@@ -137,7 +137,7 @@ function Meldung({ meldung, ort }: { meldung: { ort: string; text: string; art?:
   if (!meldung || meldung.ort !== ort) return null;
   const absage = meldung.art === 'warn';
   return (
-    <p data-quittung={ort} data-art={absage ? 'warn' : 'ok'} className="text-xs mt-2 flex items-center gap-2" style={{ color: absage ? 'var(--warn)' : 'var(--ok)' }}>
+    <p data-quittung={ort} data-art={absage ? 'warn' : 'ok'} className="fs-2 lh-dicht mt-2 flex items-center gap-2" style={{ color: absage ? 'var(--warn)' : 'var(--ok)' }}>
       {absage ? <AlertTriangle className="w-3.5 h-3.5" /> : <CheckCircle2 className="w-3.5 h-3.5" />} {meldung.text}
     </p>
   );
@@ -621,7 +621,7 @@ export function Settings() {
     setTimeout(() => setCopied((c) => (c === marke ? null : c)), QUITTUNG_MS);
   };
 
-  const inputClass = "hud-input w-full rounded-xl px-4 py-3 text-sm";
+  const inputClass = "hud-input w-full rounded-xl px-4 py-3 fs-4 lh-lesbar";
 
   return (
     <div className="max-w-2xl mx-auto py-8">
@@ -634,7 +634,7 @@ export function Settings() {
           <KeptaMark size={40} />
           <div>
             <h2 className="fs-5 font-semibold" style={{ color: 'var(--text-1)' }}>Settings</h2>
-            <p className="text-sm mt-1" style={{ color: 'var(--text-2)' }}>AI connection, data and MCP</p>
+            <p className="fs-4 lh-lesbar mt-1" style={{ color: 'var(--text-2)' }}>AI connection, data and MCP</p>
           </div>
         </div>
 
@@ -643,7 +643,7 @@ export function Settings() {
           <button
             onClick={() => waehleTab('system')}
             aria-pressed={activeTab === 'system'}
-            className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-lg text-sm font-semibold transition-colors ${activeTab === 'system' ? 'bg-white dark:bg-zinc-800 shadow-sm' : ''}`}
+            className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-lg fs-4 lh-lesbar font-semibold transition-colors ${activeTab === 'system' ? 'bg-white dark:bg-zinc-800 shadow-sm' : ''}`}
             style={{ color: activeTab === 'system' ? 'var(--text-1)' : 'var(--text-2)' }}
           >
             <Cpu className="w-4 h-4" /> AI &amp; data
@@ -651,7 +651,7 @@ export function Settings() {
           <button
             onClick={() => waehleTab('mcp')}
             aria-pressed={activeTab === 'mcp'}
-            className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-lg text-sm font-semibold transition-colors ${activeTab === 'mcp' ? 'bg-white dark:bg-zinc-800 shadow-sm' : ''}`}
+            className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-lg fs-4 lh-lesbar font-semibold transition-colors ${activeTab === 'mcp' ? 'bg-white dark:bg-zinc-800 shadow-sm' : ''}`}
             style={{ color: activeTab === 'mcp' ? 'var(--text-1)' : 'var(--text-2)' }}
           >
             <Plug className="w-4 h-4" /> MCP / API
@@ -659,7 +659,7 @@ export function Settings() {
           <button
             onClick={() => waehleTab('sync')}
             aria-pressed={activeTab === 'sync'}
-            className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-lg text-sm font-semibold transition-colors ${activeTab === 'sync' ? 'bg-white dark:bg-zinc-800 shadow-sm' : ''}`}
+            className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-lg fs-4 lh-lesbar font-semibold transition-colors ${activeTab === 'sync' ? 'bg-white dark:bg-zinc-800 shadow-sm' : ''}`}
             style={{ color: activeTab === 'sync' ? 'var(--text-1)' : 'var(--text-2)' }}
           >
             <ShieldCheck className="w-4 h-4" /> Device Sync
@@ -683,7 +683,7 @@ export function Settings() {
               </div>
               <div className="space-y-5">
                 <div>
-                  <label className="text-xs block mb-2" htmlFor="such-tiefe" style={{ color: 'var(--text-3)' }}>
+                  <label className="fs-2 lh-dicht block mb-2" htmlFor="such-tiefe" style={{ color: 'var(--text-3)' }}>
                     Search depth (top-k) · <span className="tnum">{suchPrefs.tiefe}</span>
                   </label>
                   <input
@@ -698,13 +698,13 @@ export function Settings() {
                     aria-label="Search depth (top-k)"
                     title="How deep the engine searches across all three tracks before ranking. Deeper costs a little time, finds more at the edge."
                   />
-                  <div className="text-xs mt-2" style={{ color: 'var(--text-3)' }}>
+                  <div className="fs-2 lh-dicht mt-2" style={{ color: 'var(--text-3)' }}>
                     The engine fuses BM25, vectors and the knowledge graph to this depth — a value of {SUCH_TIEFE_MIN}–{SUCH_TIEFE_MAX} ({SUCH_TIEFE_DEFAULT} by default).
                   </div>
                 </div>
 
                 <div>
-                  <span className="text-xs block mb-2" style={{ color: 'var(--text-3)' }}>Retrieval tracks</span>
+                  <span className="fs-2 lh-dicht block mb-2" style={{ color: 'var(--text-3)' }}>Retrieval tracks</span>
                   <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                     {([
                       ['spurBm25', 'BM25', 'Lexical full-text (FTS5) — exact words win'],
@@ -730,13 +730,13 @@ export function Settings() {
                       );
                     })}
                   </div>
-                  <div className="text-xs mt-2" style={{ color: 'var(--text-3)' }}>
+                  <div className="fs-2 lh-dicht mt-2" style={{ color: 'var(--text-3)' }}>
                     Switching a track off removes its voice from the ranking — useful to see what each track contributes.
                   </div>
                 </div>
 
                 <div>
-                  <label className="text-xs block mb-2" htmlFor="such-treffer" style={{ color: 'var(--text-3)' }}>
+                  <label className="fs-2 lh-dicht block mb-2" htmlFor="such-treffer" style={{ color: 'var(--text-3)' }}>
                     Results shown · <span className="tnum">{treffer === 0 ? 'All' : treffer}</span>
                   </label>
                   <div className="flex items-center gap-2">
@@ -754,7 +754,7 @@ export function Settings() {
                     />
                     <span className="chip tnum !px-2">{treffer === 0 ? 'All' : treffer}</span>
                   </div>
-                  <div className="text-xs mt-2" style={{ color: 'var(--text-3)' }}>
+                  <div className="fs-2 lh-dicht mt-2" style={{ color: 'var(--text-3)' }}>
                     Same control as the toolbar above the list — both move together.
                   </div>
                 </div>
@@ -780,7 +780,7 @@ export function Settings() {
                       <option key={p.id} value={p.id}>{p.label}</option>
                     ))}
                   </select>
-                  <p className="text-xs mt-2" style={{ color: 'var(--text-3)' }}>{provider.hint}</p>
+                  <p className="fs-2 lh-dicht mt-2" style={{ color: 'var(--text-3)' }}>{provider.hint}</p>
                   <Meldung meldung={meldung} ort="anbieter" />
                 </div>
 
@@ -798,7 +798,7 @@ export function Settings() {
                     disabled={!provider.needsKey}
                     className={inputClass}
                   />
-                  <p className="text-xs mt-2" style={{ color: 'var(--text-3)' }}>
+                  <p className="fs-2 lh-dicht mt-2" style={{ color: 'var(--text-3)' }}>
                     {!provider.needsKey || schluesselHuelle === null
                       ? 'The key is stored locally on your device and sent straight to the provider.'
                       : schluesselHuelle.verschlossen
@@ -806,7 +806,7 @@ export function Settings() {
                         : `This knowledge base has no database key, so an API key cannot be sealed here. It stays in this app's local storage on this computer, and the settings API does not return it.`}
                   </p>
                   {schluesselHuelle?.altFund && (
-                    <p className="text-xs mt-1" role="status" style={{ color: 'var(--warn)' }}>
+                    <p className="fs-2 lh-dicht mt-1" role="status" style={{ color: 'var(--warn)' }}>
                       {`An older key is still in the database under a masked name (${schluesselHuelle.altFund.name}${schluesselHuelle.altFund.ende ? `, last characters ${schluesselHuelle.altFund.ende}` : ''}). The settings API will not hand it over, so nothing was carried across and nothing was deleted: enter the key once to seal it.`}
                     </p>
                   )}
@@ -848,7 +848,7 @@ export function Settings() {
                       type="button"
                       onClick={loadModels}
                       disabled={loadingModels}
-                      className="btn-ghost shrink-0 flex items-center gap-2 px-4 rounded-xl text-sm font-semibold"
+                      className="btn-ghost shrink-0 flex items-center gap-2 px-4 rounded-xl fs-4 lh-lesbar font-semibold"
                       title="Load available models from the provider"
                     >
                       <RefreshCw className={`w-4 h-4 ${loadingModels ? 'animate-spin' : ''}`} />
@@ -870,17 +870,17 @@ export function Settings() {
                     </select>
                   )}
                   {modelError && (
-                    <p role="alert" aria-live="polite" className="text-xs mt-2" style={{ color: '#f87171' }}>{modelError}</p>
+                    <p role="alert" aria-live="polite" className="fs-2 lh-dicht mt-2" style={{ color: '#f87171' }}>{modelError}</p>
                   )}
                   <Meldung meldung={meldung} ort="modelle" />
                   {!provider.needsKey && models.length > 0 && !sondeWeg && (
-                    <p className="text-xs mt-2 flex items-center gap-2" style={{ color: 'var(--ok)' }}><CheckCircle2 className="w-3.5 h-3.5" /> {models.length} models connected{adresseLokal ? ' locally' : ''} — new downloads appear automatically (every 12s + on focus)</p>
+                    <p className="fs-2 lh-dicht mt-2 flex items-center gap-2" style={{ color: 'var(--ok)' }}><CheckCircle2 className="w-3.5 h-3.5" /> {models.length} models connected{adresseLokal ? ' locally' : ''} — new downloads appear automatically (every 12s + on focus)</p>
                   )}
                   {sondeWeg && models.length > 0 && (
-                    <p data-sonde="weg" className="text-xs mt-2 flex items-center gap-2" style={{ color: 'var(--warn)' }}><AlertTriangle className="w-3.5 h-3.5" /> The model service stopped answering — the {models.length} models listed here were seen earlier, not now.</p>
+                    <p data-sonde="weg" className="fs-2 lh-dicht mt-2 flex items-center gap-2" style={{ color: 'var(--warn)' }}><AlertTriangle className="w-3.5 h-3.5" /> The model service stopped answering — the {models.length} models listed here were seen earlier, not now.</p>
                   )}
                   {!provider.needsKey && models.length === 0 && !loadingModels && !modelError && (
-                    <p className="text-xs mt-2 leading-relaxed" style={{ color: 'var(--text-3)' }}>No local models found. Start Ollama (`ollama serve` + `ollama pull llama3.2`) or LM Studio — they show up here immediately.</p>
+                    <p className="fs-2 mt-2 lh-prosa" style={{ color: 'var(--text-3)' }}>No local models found. Start Ollama (`ollama serve` + `ollama pull llama3.2`) or LM Studio — they show up here immediately.</p>
                   )}
                 </div>
               </div>
@@ -905,8 +905,8 @@ export function Settings() {
                       <Sparkles className="w-4 h-4" style={{ color: autoLearn ? 'var(--accent)' : 'var(--text-3)' }} />
                     </div>
                     <div className="min-w-0 break-words">
-                      <div className="text-sm font-semibold" style={{color:'var(--text-1)'}}>Learn automatically</div>
-                      <div className="text-xs" style={{color:'var(--text-2)'}}>Save the key point of every chat answer as a note (tagged <code>auto-learn</code>). Duplicates are detected.</div>
+                      <div className="fs-4 lh-lesbar font-semibold" style={{color:'var(--text-1)'}}>Learn automatically</div>
+                      <div className="fs-2 lh-dicht" style={{color:'var(--text-2)'}}>Save the key point of every chat answer as a note (tagged <code>auto-learn</code>). Duplicates are detected.</div>
                     </div>
                   </div>
                   <label className="relative inline-flex h-6 w-11 items-center rounded-full transition-colors cursor-pointer shrink-0" style={{ background: autoLearn ? 'var(--accent)' : 'var(--bg-inset-strong)', border: autoLearn ? '1px solid transparent' : '1px solid var(--border-subtle)' }}>
@@ -914,15 +914,15 @@ export function Settings() {
                     <span className={`inline-block h-4 w-4 transform rounded-full bg-white shadow transition-transform ${autoLearn ? 'translate-x-6' : 'translate-x-1'}`} />
                   </label>
                 </div>
-                {autoLearnSaved && <div className="text-xs mt-2 flex items-center gap-2" style={{color:'var(--ok)'}}><CheckCircle2 className="w-3.5 h-3.5"/> {autoLearn ? 'Auto-learn is on — a chat can leave a note behind' : 'Auto-learn off'}</div>}
+                {autoLearnSaved && <div className="fs-2 lh-dicht mt-2 flex items-center gap-2" style={{color:'var(--ok)'}}><CheckCircle2 className="w-3.5 h-3.5"/> {autoLearn ? 'Auto-learn is on — a chat can leave a note behind' : 'Auto-learn off'}</div>}
                 {/* P4-07 (18.10.): src/components/Chat.tsx:651 kehrt stumm um, wenn kein
                     Modell gesetzt ist — der Schalter stand an und lernte nichts. */}
                 {autoLearn && !settings.model.trim() && (
-                  <div className="text-xs mt-2 flex items-center gap-2" style={{color:'var(--warn)'}}><AlertTriangle className="w-3.5 h-3.5"/> Auto-learn is on but nothing will be learned: no model is set. Choose one under Artificial intelligence and save it.</div>
+                  <div className="fs-2 lh-dicht mt-2 flex items-center gap-2" style={{color:'var(--warn)'}}><AlertTriangle className="w-3.5 h-3.5"/> Auto-learn is on but nothing will be learned: no model is set. Choose one under Artificial intelligence and save it.</div>
                 )}
                 {autoLearn && (
                   <div className="mt-4 pt-4" style={{ borderTop: '1px solid var(--border-subtle)' }}>
-                    <label className="text-xs font-semibold block mb-2" htmlFor="ai-extraktionsmodell" style={{color:'var(--text-1)'}}>Extraction model <span style={{color:'var(--text-3)'}}>— optional</span></label>
+                    <label className="fs-2 lh-dicht font-semibold block mb-2" htmlFor="ai-extraktionsmodell" style={{color:'var(--text-1)'}}>Extraction model <span style={{color:'var(--text-3)'}}>— optional</span></label>
                     <input
                       id="ai-extraktionsmodell"
                       type="text"
@@ -945,21 +945,21 @@ export function Settings() {
                         extractTimer.current = window.setTimeout(() => setExtractQuittung(null), QUITTUNG_MS);
                       }}
                       placeholder="e.g. llama3.2:3b — empty = the chat model"
-                      className="w-full text-sm rounded-lg px-3 py-2"
+                      className="w-full fs-4 lh-lesbar rounded-lg px-3 py-2"
                       style={{ background: 'var(--bg-inset-strong)', border: '1px solid var(--border-subtle)', color: 'var(--text-1)' }}
                     />
                     {extractQuittung && (
-                      <div data-extract-quittung={extractQuittung.art} className="text-xs mt-2 flex items-center gap-2" style={{ color: extractQuittung.art === 'warn' ? 'var(--warn)' : 'var(--ok)' }}>
+                      <div data-extract-quittung={extractQuittung.art} className="fs-2 lh-dicht mt-2 flex items-center gap-2" style={{ color: extractQuittung.art === 'warn' ? 'var(--warn)' : 'var(--ok)' }}>
                         {extractQuittung.art === 'warn' ? <AlertTriangle className="w-3.5 h-3.5" /> : <CheckCircle2 className="w-3.5 h-3.5" />} {extractQuittung.text}
                       </div>
                     )}
-                    <p className="text-xs mt-2 leading-relaxed" style={{color:'var(--text-3)'}}>
+                    <p className="fs-2 mt-2 lh-prosa" style={{color:'var(--text-3)'}}>
                       A small model is plenty for a title and three tags. Large reasoning models take minutes per answer and often return no clean JSON — auto-learn then gives up after {Math.round(AUTO_LEARN_TIMEOUT_MS/1000)} seconds and tells you so.
                     </p>
                   </div>
                 )}
 
-                <p className="text-xs mt-2 leading-relaxed" style={{color:'var(--text-3)'}}>When this is on, every AI answer of 60 characters or more — or any shorter answer that spans more than one line — is read once more in the background, and its key point is saved as a new note you can edit or delete. You get a notification either way: that it saved something, or that it could not. The choice itself is kept on this computer and never leaves it.</p>
+                <p className="fs-2 mt-2 lh-prosa" style={{color:'var(--text-3)'}}>When this is on, every AI answer of 60 characters or more — or any shorter answer that spans more than one line — is read once more in the background, and its key point is saved as a new note you can edit or delete. You get a notification either way: that it saved something, or that it could not. The choice itself is kept on this computer and never leaves it.</p>
               </div>
 
               <div>
@@ -969,19 +969,19 @@ export function Settings() {
                 </div>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
-                    <label className="text-xs block mb-2" htmlFor="display-textgroesse" style={{ color: 'var(--text-3)' }}>Text size</label>
+                    <label className="fs-2 lh-dicht block mb-2" htmlFor="display-textgroesse" style={{ color: 'var(--text-3)' }}>Text size</label>
                     <select
                       id="display-textgroesse"
                       value={String(zoom)}
                       onChange={(e) => { const v = Number(e.target.value); setZoom(v); wendeZoomAn(); }}
-                      className="w-full px-3 py-2 rounded-lg text-sm bg-transparent"
+                      className="w-full px-3 py-2 rounded-lg fs-4 lh-lesbar bg-transparent"
                       style={{ border: '1px solid var(--border-subtle)', color: 'var(--text-1)' }}
                     >
                       <option value="100">100 %</option>
                       <option value="115">115 %</option>
                       <option value="130">130 %</option>
                     </select>
-                    <div className="text-xs mt-2" style={{ color: 'var(--text-3)' }}>Scales the whole interface — handy on high-resolution displays.</div>
+                    <div className="fs-2 lh-dicht mt-2" style={{ color: 'var(--text-3)' }}>Scales the whole interface — handy on high-resolution displays.</div>
                   </div>
                 </div>
               </div>
@@ -991,7 +991,7 @@ export function Settings() {
                     <HardDriveDownload className="w-4 h-4" style={{ color: 'var(--accent)' }} />
                     <h3 className="settings-h" style={{ color: 'var(--text-1)' }}>Data management</h3>
                   </div>
-                <p className="text-sm mb-4" style={{ color: 'var(--text-2)' }}>
+                <p className="fs-4 lh-lesbar mb-4" style={{ color: 'var(--text-2)' }}>
                   Download every note as a JSON backup. Your data lives on this device and nowhere else.
                 </p>
                 <button
@@ -1010,13 +1010,13 @@ export function Settings() {
                 <div className="mt-6 pt-6" style={{ borderTop: '1px solid var(--border-subtle)' }}>
                   <h3 className="settings-h mb-2" style={{ color: 'var(--text-1)' }}>Organization</h3>
                   {policyGrund ? (
-                    <p className="text-sm" style={{ color: 'var(--warn)' }}>
+                    <p className="fs-4 lh-lesbar" style={{ color: 'var(--warn)' }}>
                       Whether this install is managed is <strong style={{ color: 'var(--text-1)' }}>unknown</strong> — {policyGrund}. This is not the same as "no policies"; refocus the window to ask again.
                     </p>
                   ) : orgInfo === null ? (
-                    <p className="text-sm" style={{ color: 'var(--text-3)' }}>Asking the local server whether this install is managed…</p>
+                    <p className="fs-4 lh-lesbar" style={{ color: 'var(--text-3)' }}>Asking the local server whether this install is managed…</p>
                   ) : orgInfo.managed ? (
-                    <div className="text-sm" style={{ color: 'var(--text-2)' }}>
+                    <div className="fs-4 lh-lesbar" style={{ color: 'var(--text-2)' }}>
                       <p className="mb-2">This installation is <strong style={{ color: 'var(--text-1)' }}>managed by your organization</strong> (managed-settings.json). {
                         orgInfo.policies.chat_cloud === 'deny' || orgInfo.policies.machine_scan === 'deny' || orgInfo.policies.privacy_shield === 'force_on'
                           ? 'Active policies:'
@@ -1028,7 +1028,7 @@ export function Settings() {
                       </ul>
                     </div>
                   ) : (
-                    <p className="text-sm" style={{ color: 'var(--text-2)' }}>
+                    <p className="fs-4 lh-lesbar" style={{ color: 'var(--text-2)' }}>
                       No organization policies. Personal install — every setting on this page is yours.
                     </p>
                   )}
@@ -1036,7 +1036,7 @@ export function Settings() {
 
                 <div className="mt-6 pt-6" style={{ borderTop: '1px solid var(--border-subtle)' }}>
                   <h3 className="settings-h mb-2" style={{ color: 'var(--text-1)' }}>Import your AI history</h3>
-                  <p className="text-sm mb-4" style={{ color: 'var(--text-2)' }}>
+                  <p className="fs-4 lh-lesbar mb-4" style={{ color: 'var(--text-2)' }}>
                     Bring your ChatGPT or Claude memory with you. Request your data export
                     (ChatGPT: Settings → Data controls → Export; Claude: Settings → Privacy → Export data),
                     unzip it and pick the <code>conversations.json</code> here. Every conversation with at
@@ -1060,32 +1060,32 @@ export function Settings() {
                       : <>Pick conversations.json</>}
                   </button>
                   {chatImportErgebnis && (
-                    <div className="text-sm mt-3" style={{ color: 'var(--ok)' }}>
+                    <div className="fs-4 lh-lesbar mt-3" style={{ color: 'var(--ok)' }}>
                       {chatImportErgebnis.imported > 0
                         ? <>{chatImportErgebnis.imported} notes imported from {chatImportErgebnis.conversations} conversations ({chatImportErgebnis.format}).</>
                         : <>Nothing new to import — {chatImportErgebnis.conversations} conversations, all already present.</>}
                       {chatImportErgebnis.emptyConversations > 0 && <> {chatImportErgebnis.emptyConversations} empty or one-sided conversations skipped.</>}
                     </div>
                   )}
-                  {chatImportFehler && <div className="text-sm mt-3" style={{ color: 'var(--warn)' }}>{chatImportFehler}</div>}
+                  {chatImportFehler && <div className="fs-4 lh-lesbar mt-3" style={{ color: 'var(--warn)' }}>{chatImportFehler}</div>}
                 </div>
 
                 <div className="mt-6 pt-6" style={{ borderTop: '1px solid var(--border-subtle)' }}>
                   <h3 className="settings-h mb-2" style={{ color: 'var(--text-1)' }}>Sort knowledge by form and what it is about</h3>
-                  <p className="text-sm mb-4" style={{ color: 'var(--text-2)' }}>
+                  <p className="fs-4 lh-lesbar mb-4" style={{ color: 'var(--text-2)' }}>
                     Every note is in some form and is about something — that is what the two rows on
                     the list say. Imported notes used to land in one basket by default, because nothing ever
                     decided. This looks at every note again and sorts it — and tells you why. Nothing is
                     written until you confirm.
                   </p>
                   {sortierFehler && (
-                    <div className="text-sm mb-3" style={{ color: 'var(--warn)' }}>{sortierFehler}</div>
+                    <div className="fs-4 lh-lesbar mb-3" style={{ color: 'var(--warn)' }}>{sortierFehler}</div>
                   )}
                   {sortiertFertig !== null ? (
-                    <div className="text-sm" style={{ color: 'var(--ok)' }}>{sortiertFertig} notes sorted.</div>
+                    <div className="fs-4 lh-lesbar" style={{ color: 'var(--ok)' }}>{sortiertFertig} notes sorted.</div>
                   ) : sortierVorschau ? (
                     <div className="space-y-3">
-                      <div className="hud-inset rounded-lg p-3 text-sm" style={{ color: 'var(--text-2)' }}>
+                      <div className="hud-inset rounded-lg p-3 fs-4 lh-lesbar" style={{ color: 'var(--text-2)' }}>
                         <div><strong style={{ color: 'var(--text-1)' }}>{sortierVorschau.changed}</strong> notes would change.</div>
                         {/* #84 mit #77: was die Sortierung in den vier inneren Arten
                             tut, bleibt Sache der Maschine — was der Nutzer sieht, sind
@@ -1131,7 +1131,7 @@ export function Settings() {
                         )}
                       </div>
                       <div className="flex gap-2">
-                        <button onClick={() => { setSortierVorschau(null); setSortierFehler(null); }} className="btn-ghost px-4 py-2 rounded-xl text-sm">Cancel</button>
+                        <button onClick={() => { setSortierVorschau(null); setSortierFehler(null); }} className="btn-ghost px-4 py-2 rounded-xl fs-4 lh-lesbar">Cancel</button>
                         <button
                           disabled={sortiertLaeuft}
                           onClick={async () => {
@@ -1145,7 +1145,7 @@ export function Settings() {
                               setSortierFehler(absage("The grouping did not run. Nothing was re-sorted.", err));
                             } finally { setSortiertLaeuft(false); }
                           }}
-                          className="btn-primary px-4 py-2 rounded-xl text-sm flex-1"
+                          className="btn-primary px-4 py-2 rounded-xl fs-4 lh-lesbar flex-1"
                         >Yes, sort {sortierVorschau.changed} notes</button>
                       </div>
                     </div>
@@ -1181,7 +1181,7 @@ export function Settings() {
 
                 <div className="mt-6 pt-6" style={{ borderTop: '1px solid var(--border-subtle)' }}>
                   <h3 className="settings-h mb-2" style={{ color: 'var(--text-1)' }}>Re-read imported files</h3>
-                  <p className="text-sm mb-4" style={{ color: 'var(--text-2)' }}>
+                  <p className="fs-4 lh-lesbar mb-4" style={{ color: 'var(--text-2)' }}>
                     PDFs imported before version 2.10 could arrive as unreadable characters — glyph names and
                     binary blocks instead of text. This reads every imported PDF again from where it came from,
                     with the current extraction, and takes menu lines (“Skip to main content”, cookie banners)
@@ -1189,26 +1189,26 @@ export function Settings() {
                     needed go to the trash, where you can restore them. Nothing is written until you confirm.
                   </p>
                   {reparaturFehler && (
-                    <div className="text-sm mb-3" style={{ color: 'var(--warn)' }}>{reparaturFehler}</div>
+                    <div className="fs-4 lh-lesbar mb-3" style={{ color: 'var(--warn)' }}>{reparaturFehler}</div>
                   )}
                   {reparaturFertig ? (
-                    <div className="text-sm" style={{ color: 'var(--ok)' }}>{beschreibeReparatur(reparaturFertig, true)}</div>
+                    <div className="fs-4 lh-lesbar" style={{ color: 'var(--ok)' }}>{beschreibeReparatur(reparaturFertig, true)}</div>
                   ) : reparaturVorschau && (reparaturVorschau.dateien > 0 || reparaturVorschau.clips > 0) ? (
                     <div className="space-y-3">
-                      <div className="hud-inset rounded-lg p-3 text-sm" style={{ color: 'var(--text-2)' }}>
+                      <div className="hud-inset rounded-lg p-3 fs-4 lh-lesbar" style={{ color: 'var(--text-2)' }}>
                         {beschreibeReparatur(reparaturVorschau, false)}
                       </div>
                       <div className="flex gap-2">
-                        <button onClick={() => setReparaturVorschau(null)} className="btn-ghost px-4 py-2 rounded-xl text-sm">Cancel</button>
+                        <button onClick={() => setReparaturVorschau(null)} className="btn-ghost px-4 py-2 rounded-xl fs-4 lh-lesbar">Cancel</button>
                         <button
                           disabled={reparaturLaeuft}
                           onClick={() => void pruefeImporte(true)}
-                          className="btn-primary px-4 py-2 rounded-xl text-sm flex-1"
+                          className="btn-primary px-4 py-2 rounded-xl fs-4 lh-lesbar flex-1"
                         >{reparaturLaeuft ? 'Repairing…' : 'Yes, repair'}</button>
                       </div>
                     </div>
                   ) : reparaturVorschau ? (
-                    <div className="text-sm" style={{ color: 'var(--ok)' }}>{beschreibeReparatur(reparaturVorschau, false)}</div>
+                    <div className="fs-4 lh-lesbar" style={{ color: 'var(--ok)' }}>{beschreibeReparatur(reparaturVorschau, false)}</div>
                   ) : (
                     <button
                       disabled={reparaturLaeuft}
@@ -1231,15 +1231,15 @@ export function Settings() {
                 <Plug className="w-5 h-5 text-white" />
               </div>
               <div>
-                <p className="text-sm font-semibold" style={{ color: 'var(--text-1)' }}>One set of notes for every AI app</p>
-                <p className="text-xs mt-1 leading-relaxed" style={{ color: 'var(--text-2)' }}>
+                <p className="fs-4 lh-lesbar font-semibold" style={{ color: 'var(--text-1)' }}>One set of notes for every AI app</p>
+                <p className="fs-2 mt-1 lh-prosa" style={{ color: 'var(--text-2)' }}>
                   The same notes, kept in one file on this computer (<code>~/.kepta/kepta.db</code>, SQLite), reachable over the HTTP API and MCP — from Claude Desktop, Cursor, Zed, Windsurf, your own scripts and shortcuts.
                 </p>
               </div>
             </div>
 
             {/* Kein Fremdcode-Lader — die Abwesenheit erklaert sich selbst, in der Flaeche. */}
-            <p data-testid="settings-keine-fremderweiterungen" className="hud-label fs-1 leading-relaxed mb-4" style={{ color: 'var(--text-3)' }}>
+            <p data-testid="settings-keine-fremderweiterungen" className="hud-label fs-1 lh-prosa mb-4" style={{ color: 'var(--text-3)' }}>
               {t("settings.keineFremderweiterungen")}
             </p>
 
@@ -1248,14 +1248,14 @@ export function Settings() {
               <div className="flex items-center gap-2 mb-3">
                 <Server className="w-4 h-4" style={{ color: 'var(--accent)' }} />
                 <h3 className="settings-h" style={{ color: 'var(--text-1)' }}>Local server</h3>
-                <span className="ml-auto flex items-center gap-2 text-xs" style={{ color: health?.ok ? 'var(--ok)' : 'var(--text-3)' }}>
+                <span className="ml-auto flex items-center gap-2 fs-2 lh-dicht" style={{ color: health?.ok ? 'var(--ok)' : 'var(--text-3)' }}>
                   <span className="w-2 h-2 rounded-full" style={{ background: health?.ok ? 'var(--ok)' : healthError ? '#f87171' : 'var(--text-3)' }} />
                   {health?.ok ? `online · ${health.count ?? 0} notes` : healthError ? 'offline' : 'checking…'}
                 </span>
               </div>
               <div className="hud-inset rounded-xl p-3 flex items-center gap-3">
                 <Globe className="w-4 h-4 shrink-0" style={{ color: 'var(--text-2)' }} />
-                <code className="text-sm font-mono flex-1 truncate" style={{ color: 'var(--text-1)' }}>{API_BASE}</code>
+                <code className="fs-4 lh-lesbar font-mono flex-1 truncate" style={{ color: 'var(--text-1)' }}>{API_BASE}</code>
                 <button onClick={() => copy(API_BASE, 'base')} className="btn-ghost p-2 rounded-lg shrink-0" aria-label="Copy the server URL" title={copied === 'error:base' ? 'Copying failed — your clipboard was blocked' : 'Copy'}>
                   {copied === 'base' ? <CheckCircle2 className="w-4 h-4" style={{ color: 'var(--ok)' }} /> : copied === 'error:base' ? <AlertTriangle className="w-4 h-4" style={{ color: 'var(--warn)' }} /> : <Copy className="w-4 h-4" />}
                 </button>
@@ -1267,11 +1267,11 @@ export function Settings() {
                   "offline", ob die Tuer 503 antwortete oder gar nicht. Ein Grund, den keine
                   Flaeche malt, ist kein Grund, sondern Buchfuehrung. */}
               {healthError && (
-                <p data-testid="settings-health-grund" className="text-xs mt-2 flex items-start gap-2" style={{ color: 'var(--warn)' }}>
+                <p data-testid="settings-health-grund" className="fs-2 lh-dicht mt-2 flex items-start gap-2" style={{ color: 'var(--warn)' }}>
                   <AlertTriangle className="w-3.5 h-3.5 shrink-0 mt-0.5" /> {healthError}
                 </p>
               )}
-              <p className="text-xs mt-2" style={{ color: 'var(--text-3)' }}>
+              <p className="fs-2 lh-dicht mt-2" style={{ color: 'var(--text-3)' }}>
                 Running locally ({API_BASE || 'this origin'}). By default the server binds to 127.0.0.1 only — change that with <code>KEPTA_HOST</code>.
               </p>
             </div>
@@ -1294,8 +1294,8 @@ export function Settings() {
                 ].map(e => (
                   <div key={e.p} className="hud-inset rounded-xl px-3 py-3 flex items-center gap-3">
                     <span className="method-badge" data-method={e.m}>{e.m}</span>
-                    <code className="text-xs font-mono flex-1 truncate" style={{ color: 'var(--text-1)' }}>{e.p}</code>
-                    <span className="text-xs hidden sm:block shrink-0" style={{ color: 'var(--text-3)' }}>{e.d}</span>
+                    <code className="fs-2 lh-dicht font-mono flex-1 truncate" style={{ color: 'var(--text-1)' }}>{e.p}</code>
+                    <span className="fs-2 lh-dicht hidden sm:block shrink-0" style={{ color: 'var(--text-3)' }}>{e.d}</span>
                     <button onClick={() => copy(e.c, e.p)} className="btn-ghost p-2 rounded-lg shrink-0" aria-label={`Copy the curl command for ${e.p}`} title={copied === `error:${e.p}` ? 'Copying failed — your clipboard was blocked' : 'Copy the curl command'}>
                       {copied === e.p ? <CheckCircle2 className="w-3.5 h-3.5" style={{ color: 'var(--ok)' }} /> : copied === `error:${e.p}` ? <AlertTriangle className="w-3.5 h-3.5" style={{ color: 'var(--warn)' }} /> : <Copy className="w-3.5 h-3.5" />}
                     </button>
@@ -1314,10 +1314,10 @@ export function Settings() {
                 )}
               </div>
               {werkzeugeFehler && (
-                <p className="text-sm mb-2" style={{ color: 'var(--warn)' }}>{werkzeugeFehler}</p>
+                <p className="fs-4 lh-lesbar mb-2" style={{ color: 'var(--warn)' }}>{werkzeugeFehler}</p>
               )}
               {!werkzeugeFehler && werkzeuge.length === 0 && (
-                <p className="text-sm mb-2" style={{ color: 'var(--text-2)' }}>Asking the local server which tools agents get…</p>
+                <p className="fs-4 lh-lesbar mb-2" style={{ color: 'var(--text-2)' }}>Asking the local server which tools agents get…</p>
               )}
               <div className="grid gap-2">
                 {werkzeuge.map((w) => {
@@ -1326,8 +1326,8 @@ export function Settings() {
                     <div key={w.name} className="hud-inset rounded-xl px-3 py-3 flex gap-3 min-w-0">
                       <Icon className="w-4 h-4 mt-1 shrink-0" style={{ color: 'var(--accent)' }} />
                       <div className="min-w-0 flex-1">
-                        <p className="text-xs font-mono font-semibold" style={{ color: 'var(--text-1)' }}>{w.name}</p>
-                        <p className="text-xs" style={{ color: 'var(--text-2)' }}>
+                        <p className="fs-2 lh-dicht font-mono font-semibold" style={{ color: 'var(--text-1)' }}>{w.name}</p>
+                        <p className="fs-2 lh-dicht" style={{ color: 'var(--text-2)' }}>
                           {w.title ? `${w.title} — ` : ''}{bescheid(w)}
                         </p>
                         {/* Kein `truncate`: die Felderliste ist die Auskunft. Umbricht
@@ -1349,26 +1349,26 @@ export function Settings() {
               </div>
               <div className="hud-inset rounded-xl overflow-hidden">
                 <div className="flex items-center justify-between px-3 py-2" style={{ borderBottom: '1px solid var(--border-subtle)' }}>
-                  <span className="text-xs font-mono" style={{ color: 'var(--text-3)' }}>{mcpAusApp ? 'mcp.json — runs inside the K3PTA app' : 'mcp.json (project root)'}</span>
-                  <button onClick={() => copy(mcpAusApp ?? MCP_JSON_NPX, 'mcp-npx')} className="btn-ghost flex items-center gap-2 px-3 py-1 rounded-lg text-xs">
+                  <span className="fs-2 lh-dicht font-mono" style={{ color: 'var(--text-3)' }}>{mcpAusApp ? 'mcp.json — runs inside the K3PTA app' : 'mcp.json (project root)'}</span>
+                  <button onClick={() => copy(mcpAusApp ?? MCP_JSON_NPX, 'mcp-npx')} className="btn-ghost flex items-center gap-2 px-3 py-1 rounded-lg fs-2 lh-dicht">
                     {copied === 'mcp-npx' ? <><CheckCircle2 className="w-3.5 h-3.5" style={{ color: 'var(--ok)' }} /> Copied</> : copied === 'error:mcp-npx' ? <><Copy className="w-3.5 h-3.5" /> Copying failed</> : <><Copy className="w-3.5 h-3.5" /> Copy</>}
                   </button>
                 </div>
-                <pre className="p-3 text-xs font-mono overflow-x-auto leading-relaxed" style={{ color: 'var(--text-1)' }}>{mcpAusApp ?? MCP_JSON_NPX}</pre>
+                <pre className="p-3 fs-2 font-mono overflow-x-auto lh-prosa" style={{ color: 'var(--text-1)' }}>{mcpAusApp ?? MCP_JSON_NPX}</pre>
               </div>
-              <p className="text-xs mt-2 leading-relaxed" style={{ color: 'var(--text-3)' }}>
+              <p className="fs-2 mt-2 lh-prosa" style={{ color: 'var(--text-3)' }}>
                 {mcpAusApp
                   ? <>In Cursor: Settings → Features → MCP. In Zed: <code>settings.json → experimental.mcp</code>. This starts the MCP server that ships inside K3PTA — no Node.js, no npm. With Node.js 22.13 or newer, <code>npx -y kepta-mcp</code> works too — it runs the same server from npm, so nothing is built by hand (kepta-mcp 2.11 or newer). From your own checkout instead (after <code>npm run build:mcp</code>):</>
                   : <>In Cursor: Settings → Features → MCP. In Zed: <code>settings.json → experimental.mcp</code>. Nothing to build — <code>npx</code> fetches the server on first use. From your own checkout instead (after <code>npm run build:mcp</code>):</>}
               </p>
               <div className="hud-inset rounded-xl overflow-hidden mt-2">
                 <div className="flex items-center justify-between px-3 py-2" style={{ borderBottom: '1px solid var(--border-subtle)' }}>
-                  <span className="text-xs font-mono" style={{ color: 'var(--text-3)' }}>mcp.json (built)</span>
-                  <button onClick={() => copy(MCP_JSON_BUILT, 'mcp-built')} className="btn-ghost flex items-center gap-2 px-3 py-1 rounded-lg text-xs">
+                  <span className="fs-2 lh-dicht font-mono" style={{ color: 'var(--text-3)' }}>mcp.json (built)</span>
+                  <button onClick={() => copy(MCP_JSON_BUILT, 'mcp-built')} className="btn-ghost flex items-center gap-2 px-3 py-1 rounded-lg fs-2 lh-dicht">
                     {copied === 'mcp-built' ? <><CheckCircle2 className="w-3.5 h-3.5" style={{ color: 'var(--ok)' }} /> Copied</> : copied === 'error:mcp-built' ? <><Copy className="w-3.5 h-3.5" /> Copying failed</> : <><Copy className="w-3.5 h-3.5" /> Copy</>}
                   </button>
                 </div>
-                <pre className="p-3 text-xs font-mono overflow-x-auto leading-relaxed" style={{ color: 'var(--text-1)' }}>{MCP_JSON_BUILT}</pre>
+                <pre className="p-3 fs-2 font-mono overflow-x-auto lh-prosa" style={{ color: 'var(--text-1)' }}>{MCP_JSON_BUILT}</pre>
               </div>
             </div>
 
@@ -1379,28 +1379,28 @@ export function Settings() {
                 <h3 className="settings-h" style={{ color: 'var(--text-1)' }}>Claude Desktop</h3>
               </div>
               <div className="hud-inset rounded-xl p-3">
-                <p className="text-xs leading-relaxed" style={{ color: 'var(--text-2)' }}>
+                <p className="fs-2 lh-prosa" style={{ color: 'var(--text-2)' }}>
                   Config file:
                 </p>
                 {CLAUDE_PATHS.map(({ os, pfad }) => (
                   <div key={os} className="flex items-center gap-2 mt-2 hud-inset rounded-lg px-3 py-2">
-                    <span className="text-xs shrink-0" style={{ color: 'var(--text-2)' }}>{os}</span>
-                    <code className="text-xs font-mono flex-1 truncate" style={{ color: 'var(--text-1)' }}>{pfad}</code>
+                    <span className="fs-2 lh-dicht shrink-0" style={{ color: 'var(--text-2)' }}>{os}</span>
+                    <code className="fs-2 lh-dicht font-mono flex-1 truncate" style={{ color: 'var(--text-1)' }}>{pfad}</code>
                     <button onClick={() => copy(pfad, `claude-path-${os}`)} className="btn-ghost p-2 rounded-lg shrink-0" aria-label={`Copy the ${os} path`} title={copied === `error:claude-path-${os}` ? 'Copying failed — your clipboard was blocked' : undefined}>
                       {copied === `claude-path-${os}` ? <CheckCircle2 className="w-3.5 h-3.5" style={{ color: 'var(--ok)' }} /> : copied === `error:claude-path-${os}` ? <AlertTriangle className="w-3.5 h-3.5" style={{ color: 'var(--warn)' }} /> : <Copy className="w-3.5 h-3.5" />}
                     </button>
                   </div>
                 ))}
                 {mcpAusApp ? (
-                  <p className="text-xs mt-3 leading-relaxed" style={{ color: 'var(--text-2)' }}>
+                  <p className="fs-2 mt-3 lh-prosa" style={{ color: 'var(--text-2)' }}>
                     Content = the same <code>mcpServers</code> block as above — it already points to this app. Then restart Claude Desktop.
                   </p>
                 ) : (
                   <>
-                    <p className="text-xs mt-3 leading-relaxed" style={{ color: 'var(--text-2)' }}>
+                    <p className="fs-2 mt-3 lh-prosa" style={{ color: 'var(--text-2)' }}>
                       Content = the same <code>mcpServers</code> as above. Replace the placeholder <code>/PATH/TO/K3PTA-REPO</code> (get the real path with <code>pwd</code> in the project folder). Then restart Claude Desktop.
                     </p>
-                    <p className="text-xs mt-2 leading-relaxed" style={{ color: 'var(--text-2)' }}>
+                    <p className="fs-2 mt-2 lh-prosa" style={{ color: 'var(--text-2)' }}>
                       The repo root also holds <code>mcp-config.json</code> as a ready-made example — copy it straight in.
                     </p>
                   </>
@@ -1416,15 +1416,15 @@ export function Settings() {
               </div>
               <div className="hud-inset rounded-xl overflow-hidden">
                 <div className="flex items-center justify-between px-3 py-2" style={{ borderBottom: '1px solid var(--border-subtle)' }}>
-                  <span className="text-xs font-mono" style={{ color: 'var(--text-3)' }}>Terminal</span>
+                  <span className="fs-2 lh-dicht font-mono" style={{ color: 'var(--text-3)' }}>Terminal</span>
                   <button
                     onClick={() => copy(`curl ${API_BASE}/api/health | jq\ncurl "${API_BASE}/api/memories/search?q=hallo&limit=3" | jq\ncurl -X POST ${API_BASE}/api/memory -H "Content-Type: application/json" -d '{"title":"Test","content":"Via API","tags":["api"]}' | jq`, 'curl')}
-                    className="btn-ghost flex items-center gap-2 px-3 py-1 rounded-lg text-xs"
+                    className="btn-ghost flex items-center gap-2 px-3 py-1 rounded-lg fs-2 lh-dicht"
                   >
                     {copied === 'curl' ? <><CheckCircle2 className="w-3.5 h-3.5" style={{ color: 'var(--ok)' }} /> Copied</> : copied === 'error:curl' ? <><Copy className="w-3.5 h-3.5" /> Copying failed</> : <><Copy className="w-3.5 h-3.5" /> Copy</>}
                   </button>
                 </div>
-                <pre className="p-3 text-xs font-mono overflow-x-auto leading-relaxed" style={{ color: 'var(--text-1)' }}>{`curl ${API_BASE}/api/health | jq
+                <pre className="p-3 fs-2 font-mono overflow-x-auto lh-prosa" style={{ color: 'var(--text-1)' }}>{`curl ${API_BASE}/api/health | jq
 curl "${API_BASE}/api/memories/search?q=hallo&limit=3" | jq
 curl -X POST ${API_BASE}/api/memory \\
   -H "Content-Type: application/json" \\
@@ -1432,7 +1432,7 @@ curl -X POST ${API_BASE}/api/memory \\
               </div>
             </div>
 
-            <p className="text-xs text-center leading-relaxed" style={{ color: 'var(--text-3)' }}>
+            <p className="fs-2 text-center lh-prosa" style={{ color: 'var(--text-3)' }}>
               Docs and more examples: see <code>README.md → MCP &amp; API</code> and <code>mcp-config.json</code> in the project root.
             </p>
 

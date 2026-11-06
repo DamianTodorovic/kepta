@@ -123,8 +123,8 @@ export default function PraxisSync() {
   return (
     <div className="space-y-8">
       <div>
-        <h3 className="text-base font-semibold mb-1" style={{ color: 'var(--text-1)' }}>Device Sync</h3>
-        <p className="text-sm leading-relaxed" style={{ color: 'var(--text-2)' }}>
+        <h3 className="fs-5 lh-lesbar font-semibold mb-1" style={{ color: 'var(--text-1)' }}>Device Sync</h3>
+        <p className="fs-4 lh-prosa" style={{ color: 'var(--text-2)' }}>
           Encrypted exchange between your own devices. K3PTA sends nothing — you get a file
           and carry it across yourself: a USB stick, your own folder, an encrypted mail. The
           route may be read along the way; the contents may not.
@@ -132,7 +132,7 @@ export default function PraxisSync() {
       </div>
 
       <div className="space-y-2">
-        <label htmlFor="ps-pass" className="text-xs font-semibold flex items-center gap-2" style={{ color: 'var(--text-2)' }}>
+        <label htmlFor="ps-pass" className="fs-2 lh-dicht font-semibold flex items-center gap-2" style={{ color: 'var(--text-2)' }}>
           <KeyRound className="w-3.5 h-3.5" /> Passphrase
         </label>
         <input
@@ -143,22 +143,22 @@ export default function PraxisSync() {
           placeholder={`At least ${MIN_PASSPHRASE} characters`}
           autoComplete="off"
           spellCheck={false}
-          className="w-full px-3 py-2 rounded-lg text-sm hud-inset"
+          className="w-full px-3 py-2 rounded-lg fs-4 lh-lesbar hud-inset"
           style={{ color: 'var(--text-1)' }}
         />
         {zuKurz && (
-          <p className="text-xs" style={{ color: 'var(--warn, #b45309)' }}>
+          <p className="fs-2 lh-dicht" style={{ color: 'var(--warn, #b45309)' }}>
             {MIN_PASSPHRASE - passphrase.length} more — anything shorter would be worthless against an intercepted bundle.
           </p>
         )}
-        <p className="text-xs flex items-start gap-2" style={{ color: 'var(--text-2)' }}>
+        <p className="fs-2 lh-dicht flex items-start gap-2" style={{ color: 'var(--text-2)' }}>
           <AlertTriangle className="w-3.5 h-3.5 shrink-0 mt-1" />
           Stored nowhere. Without it the bundle cannot be opened again — not even by you.
         </p>
       </div>
 
       <div className="space-y-2">
-        <label htmlFor="ps-scope" className="text-xs font-semibold" style={{ color: 'var(--text-2)' }}>
+        <label htmlFor="ps-scope" className="fs-2 lh-dicht font-semibold" style={{ color: 'var(--text-2)' }}>
           Scope (keeps clients apart)
         </label>
         <input
@@ -167,10 +167,10 @@ export default function PraxisSync() {
           value={scope}
           onChange={(e) => setScope(e.target.value)}
           placeholder="local"
-          className="w-full px-3 py-2 rounded-lg text-sm hud-inset"
+          className="w-full px-3 py-2 rounded-lg fs-4 lh-lesbar hud-inset"
           style={{ color: 'var(--text-1)' }}
         />
-        <p className="text-xs" style={{ color: 'var(--text-2)' }}>
+        <p className="fs-2 lh-dicht" style={{ color: 'var(--text-2)' }}>
           Only notes in this scope go into the bundle, so client A stays out of client B's file.
         </p>
       </div>
@@ -180,7 +180,7 @@ export default function PraxisSync() {
           type="button"
           onClick={exportieren}
           disabled={!bereit}
-          className="flex items-center gap-2 px-4 py-3 rounded-lg text-sm font-semibold disabled:opacity-40 disabled:cursor-not-allowed hud-raised"
+          className="flex items-center gap-2 px-4 py-3 rounded-lg fs-4 lh-lesbar font-semibold disabled:opacity-40 disabled:cursor-not-allowed hud-raised"
           style={{ color: 'var(--text-1)' }}
         >
           {laeuft === 'export' ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
@@ -191,7 +191,7 @@ export default function PraxisSync() {
           type="button"
           onClick={() => dateiFeld.current?.click()}
           disabled={!bereit}
-          className="flex items-center gap-2 px-4 py-3 rounded-lg text-sm font-semibold disabled:opacity-40 disabled:cursor-not-allowed hud-raised"
+          className="flex items-center gap-2 px-4 py-3 rounded-lg fs-4 lh-lesbar font-semibold disabled:opacity-40 disabled:cursor-not-allowed hud-raised"
           style={{ color: 'var(--text-1)' }}
         >
           {laeuft === 'import' ? <Loader2 className="w-4 h-4 animate-spin" /> : <Upload className="w-4 h-4" />}
@@ -209,7 +209,7 @@ export default function PraxisSync() {
       {meldung && (
         <div
           role="status"
-          className="px-3 py-3 rounded-lg text-sm"
+          className="px-3 py-3 rounded-lg fs-4 lh-lesbar"
           style={{ color: meldung.art === 'ok' ? 'var(--ok)' : 'var(--err, #dc2626)' }}
         >
           {meldung.text}
@@ -218,23 +218,23 @@ export default function PraxisSync() {
 
       <div className="space-y-3">
         <div className="flex items-center justify-between">
-          <h4 className="text-sm font-semibold flex items-center gap-2" style={{ color: 'var(--text-1)' }}>
+          <h4 className="fs-4 lh-lesbar font-semibold flex items-center gap-2" style={{ color: 'var(--text-1)' }}>
             <FileJson className="w-4 h-4" /> Bundle ledger
           </h4>
           {intakt !== null && (
-            <span className="text-xs flex items-center gap-2" style={{ color: intakt ? 'var(--ok)' : 'var(--err, #dc2626)' }}>
+            <span className="fs-2 lh-dicht flex items-center gap-2" style={{ color: intakt ? 'var(--ok)' : 'var(--err, #dc2626)' }}>
               {intakt ? <ShieldCheck className="w-3.5 h-3.5" /> : <ShieldAlert className="w-3.5 h-3.5" />}
               {intakt ? 'Chain intact' : 'Chain broken'}
             </span>
           )}
         </div>
-        <p className="text-xs" style={{ color: 'var(--text-2)' }}>
+        <p className="fs-2 lh-dicht" style={{ color: 'var(--text-2)' }}>
           Records which bundle went which way and when — through hashes, without knowing the contents.
         </p>
         {journal.length > 0 ? (
           <ul className="space-y-2">
             {journal.slice(-8).reverse().map((e) => (
-              <li key={e.hash} className="text-xs flex flex-wrap items-center gap-x-3 gap-y-1 px-3 py-2 rounded-lg hud-inset">
+              <li key={e.hash} className="fs-2 lh-dicht flex flex-wrap items-center gap-x-3 gap-y-1 px-3 py-2 rounded-lg hud-inset">
                 <span style={{ color: 'var(--text-1)' }}>#{e.seq}</span>
                 <span style={{ color: 'var(--text-1)' }}>{e.direction === 'export' ? 'Export' : 'Import'}</span>
                 <span style={{ color: 'var(--text-2)' }}>{e.count} notes</span>
@@ -245,9 +245,9 @@ export default function PraxisSync() {
             ))}
           </ul>
         ) : journalGrund ? (
-          <p role="status" className="text-xs" style={{ color: 'var(--warn)' }}>{journalGrund}</p>
+          <p role="status" className="fs-2 lh-dicht" style={{ color: 'var(--warn)' }}>{journalGrund}</p>
         ) : (
-          <p className="text-xs" style={{ color: 'var(--text-2)' }}>
+          <p className="fs-2 lh-dicht" style={{ color: 'var(--text-2)' }}>
             Nothing recorded yet — the journal fills with the first bundle that goes out or comes in.
           </p>
         )}

@@ -216,7 +216,7 @@ export function TodayView({ aktiv, onOpenMemory, onGo }: Props) {
     <div className="max-w-3xl mx-auto py-6" data-testid="today-view">
       <header className="mb-6">
         <h1 className="display">{gruss(jetzt.getHours())}</h1>
-        <p className="text-sm mt-1" style={{ color: 'var(--text-2)' }}>
+        <p className="fs-4 lh-lesbar mt-1" style={{ color: 'var(--text-2)' }}>
           {jetzt.toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long' })} · {untertitel}
         </p>
         {daten && (
@@ -261,12 +261,12 @@ export function TodayView({ aktiv, onOpenMemory, onGo }: Props) {
       </header>
 
       {fehler && (
-        <div className="hud-inset rounded-xl p-4 text-sm flex items-center gap-3" style={{ color: 'var(--warn)' }}>
+        <div className="hud-inset rounded-xl p-4 fs-4 lh-lesbar flex items-center gap-3" style={{ color: 'var(--warn)' }}>
           {fehler}
-          <button onClick={() => void laden()} className="btn-ghost px-3 py-1 rounded-lg text-xs flex items-center gap-1"><RefreshCw className="w-3.5 h-3.5" /> Try again</button>
+          <button onClick={() => void laden()} className="btn-ghost px-3 py-1 rounded-lg fs-2 lh-dicht flex items-center gap-1"><RefreshCw className="w-3.5 h-3.5" /> Try again</button>
         </div>
       )}
-      {!daten && !fehler && <p className="text-sm" style={{ color: 'var(--text-2)' }}>Getting your day ready…</p>}
+      {!daten && !fehler && <p className="fs-4 lh-lesbar" style={{ color: 'var(--text-2)' }}>Getting your day ready…</p>}
 
       {daten && (
         <>
@@ -305,7 +305,7 @@ export function TodayView({ aktiv, onOpenMemory, onGo }: Props) {
 
           <Abschnitt titel="What changed" zahl={daten.created.total + daten.changed.total + abgeloest.total + geloescht.total}>
             {daten.created.total === 0 && daten.changed.total === 0 && abgeloest.total === 0 && geloescht.total === 0 ? (
-              <p className="text-sm" style={{ color: 'var(--text-3)' }}>Nothing new {fensterInfo.text}.</p>
+              <p className="fs-4 lh-lesbar" style={{ color: 'var(--text-3)' }}>Nothing new {fensterInfo.text}.</p>
             ) : (
               <>
                 {daten.created.bySource.length > 0 && (
@@ -402,7 +402,7 @@ export function TodayView({ aktiv, onOpenMemory, onGo }: Props) {
 
           <Abschnitt titel="Your AI apps">
             {daten.apps.length === 0 ? (
-              <p className="text-sm" style={{ color: 'var(--text-2)' }}>
+              <p className="fs-4 lh-lesbar" style={{ color: 'var(--text-2)' }}>
                 No AI app has used K3PTA since then.{' '}
                 {/* min-h-6: gemessen 20 px hohe Textstelle ohne Polster — die
                     Untergrenze, nicht mehr. */}
@@ -427,7 +427,7 @@ export function TodayView({ aktiv, onOpenMemory, onGo }: Props) {
           </Abschnitt>
 
           {daten.contradictions.length === 0 && daten.todos.total === 0 && daten.created.total === 0 && daten.changed.total === 0 && abgeloest.total === 0 && geloescht.total === 0 && (
-            <p className="text-sm flex items-center gap-2" style={{ color: 'var(--ok)' }}>
+            <p className="fs-4 lh-lesbar flex items-center gap-2" style={{ color: 'var(--ok)' }}>
               <CheckCircle2 className="w-4 h-4" /> All quiet. Nothing needs you right now.
             </p>
           )}

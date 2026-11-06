@@ -79,6 +79,29 @@ describe("Punkt 2: die Schriftleiter gilt in den Bausteinen", () => {
     expect(sitze, `${sitze.length} Sitze rufen eine Zwischenstufe: ${[...new Set(sitze.map((x) => x.split(" in ")[0]))].join(", ")}`).toEqual([]);
   });
 
+  it("kein Baustein nennt eine Leiterstufe unter dem Namen des Rahmenwerks", () => {
+    // P84: text-xs (12), text-sm (14) und text-base (16) treffen fs-2, fs-4 und fs-5 -- sie
+    // nennen sie nur fremd, und der Vertrag heisst, dass der Baustein die Stufe selbst nennt.
+    // Gemessen 6.11.2026 01:13:19 MEZ: 262 Sitze in 18 Bausteinen (xs 127, sm 129, base 6),
+    // der groesste Haufen in Settings.tsx (82). Der Sitz, der 3.2.173 schon bewegt hat, ist
+    // text-xl -- die Zeile oben gateet ihn, diese gateet die drei Leiter-Treffer.
+    const verboten = /\btext-(xs|sm|base)\b/g;
+    const sitze = dateien.map((d) => (d.text.match(verboten) ?? []).map(() => d.rel)).flat();
+    expect(sitze, `${sitze.length} Sitze nennen die Stufe fremd: ${[...new Set(sitze)].join(", ")}`).toEqual([]);
+  });
+
+  it("kein Baustein ruft eine Zeilenmasse, die nicht im Vertrag steht", () => {
+    // P84: Tailwind bringt eigene Zeilenmassen mit (leading-relaxed 1,625, snug 1,375, none 1)
+    // und als Klammerwert jede Willkuerzahl (leading-[1.75] an zwei Stellen in der Vorschau).
+    // Der Vertrag kennt vier: lh-dicht 1,24, lh-lesbar 1,55, lh-prosa 1,65, lh-marke 1.
+    // Gemessen 6.11.2026 01:13:19 MEZ: 38 benannte Sitze (relaxed 33, snug 3, none 2) und
+    // 01:22:31 MEZ zwei Klammer-Sitze in MemoryPreview.tsx -- Rundung wird am Token gerundet,
+    // nicht an der Zeile, also geht 1,75 auf lh-prosa.
+    const verboten = /\bleading-(?:[a-z0-9]+|\[[^\]]+\])/g;
+    const sitze = dateien.map((d) => (d.text.match(verboten) ?? []).map((w) => `${w} in ${d.rel}`)).flat();
+    expect(sitze, `${sitze.length} Sitze rufen eine fremde Zeilenmasse: ${[...new Set(sitze.map((x) => x.split(" in ")[0]))].join(", ")}`).toEqual([]);
+  });
+
   it("Biss-Kontrolle: ein Willkuerwert und ein halber Schritt werden getroffen", () => {
     const sonde = funde('<div className="text-[12.5px]" style={{ fontSize: 13 }}>');
     expect(sonde.length).toBe(2);
@@ -89,5 +112,11 @@ describe("Punkt 2: die Schriftleiter gilt in den Bausteinen", () => {
     // P83: text-xl (20 px) ist seit 3.2.173 verboten -- der eine Sitz heisst fs-6 lh-dicht.
     expect("text-xl".match(/\btext-(2xl|3xl|4xl|5xl|lg|xl)\b/g)).toEqual(["text-xl"]);
     expect("font-medium".match(/\bfont-(thin|extralight|light|medium)\b/g)).toEqual(["font-medium"]);
+    // P84: die beiden neuen Zaehle greifen an einem Probesitz, und ein Probesatz in einem
+    // String ohne Wortgrenze faellt nicht durch (context-sm enthaelt text-sm, ist aber keins).
+    expect("text-xs text-sm text-base".match(/\btext-(xs|sm|base)\b/g)).toEqual(["text-xs", "text-sm", "text-base"]);
+    expect("leading-relaxed leading-snug leading-none leading-[1.75]".match(/\bleading-(?:[a-z0-9]+|\[[^\]]+\])/g))
+      .toEqual(["leading-relaxed", "leading-snug", "leading-none", "leading-[1.75]"]);
+    expect("context-sm text-xsomething".match(/\btext-(xs|sm|base)\b/g)).toBeNull();
   });
 });

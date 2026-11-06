@@ -136,7 +136,7 @@ export function DuplicatesPanel({ memories, open, onClose, onDelete, onDeleteMan
           {groups.length === 0 && (
             <div className="flex flex-col items-center justify-center py-14 text-center">
               <CheckCircle2 className="w-7 h-7 mb-3" style={{ color: "var(--ok)" }} />
-              <p className="text-sm" style={{ color: "var(--text-2)" }}>
+              <p className="fs-4 lh-lesbar" style={{ color: "var(--text-2)" }}>
                 No duplicates found. Anything you marked as “not a duplicate” stays hidden.
               </p>
             </div>

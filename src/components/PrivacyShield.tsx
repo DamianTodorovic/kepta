@@ -89,17 +89,17 @@ export function PrivacyShield() {
           <ShieldCheck className="w-4 h-4" style={{ color: 'var(--accent)' }} />
           <h3 className="settings-h" style={{ color: 'var(--text-1)' }}>Privacy shield</h3>
         </div>
-        <p className="text-sm" style={{ color: 'var(--text-2)' }}>
+        <p className="fs-4 lh-lesbar" style={{ color: 'var(--text-2)' }}>
           Your notes stay yours. K3PTA hides personal data before anything leaves this computer.
         </p>
       </div>
-      {fehler && <p className="text-sm" style={{ color: 'var(--warn)' }}>{fehler}</p>}
+      {fehler && <p className="fs-4 lh-lesbar" style={{ color: 'var(--warn)' }}>{fehler}</p>}
       {stand && (
         <>
           <div className="hud-inset rounded-xl p-3 flex gap-3 items-start">
             <div className="flex-1">
-              <div className="text-sm font-semibold" style={{ color: 'var(--text-1)' }}>Hide personal data from cloud AI</div>
-              <p className="text-xs mt-1" style={{ color: 'var(--text-2)' }}>
+              <div className="fs-4 lh-lesbar font-semibold" style={{ color: 'var(--text-1)' }}>Hide personal data from cloud AI</div>
+              <p className="fs-2 lh-dicht mt-1" style={{ color: 'var(--text-2)' }}>
                 Email addresses, phone numbers, IBANs, card numbers, passwords and keys are swapped for placeholders before a question
                 goes to OpenAI, Anthropic or any other cloud model. The answer shows the real values again. A model running on this
                 computer sees everything — the data never leaves it.
@@ -109,8 +109,8 @@ export function PrivacyShield() {
           </div>
           <div className="hud-inset rounded-xl p-3 flex gap-3 items-start">
             <div className="flex-1">
-              <div className="text-sm font-semibold" style={{ color: 'var(--text-1)' }}>Hide secrets from AI apps</div>
-              <p className="text-xs mt-1" style={{ color: 'var(--text-2)' }}>
+              <div className="fs-4 lh-lesbar font-semibold" style={{ color: 'var(--text-1)' }}>Hide secrets from AI apps</div>
+              <p className="fs-2 lh-dicht mt-1" style={{ color: 'var(--text-2)' }}>
                 Claude, Cursor and other AI apps read your notes without passwords, keys, card numbers and IBANs. If an app changes
                 such a note, the real values stay. Names, emails and phone numbers stay visible — apps need them to help you.
               </p>
@@ -119,7 +119,7 @@ export function PrivacyShield() {
           </div>
           <div className="hud-inset rounded-xl p-3 flex gap-3 items-start">
             <Lock className="w-4 h-4 mt-1 shrink-0" style={{ color: 'var(--accent)' }} />
-            <p className="text-xs" style={{ color: 'var(--text-2)' }}>
+            <p className="fs-2 lh-dicht" style={{ color: 'var(--text-2)' }}>
               <strong style={{ color: 'var(--text-1)' }}>
                 {stand.privateNotes === 0 ? 'No private notes yet.' : `${stand.privateNotes} private ${stand.privateNotes === 1 ? 'note' : 'notes'}.`}
               </strong>{' '}
@@ -127,7 +127,7 @@ export function PrivacyShield() {
               note private in the editor.
             </p>
           </div>
-          <p className="text-xs" style={{ color: 'var(--text-3)' }}>
+          <p className="fs-2 lh-dicht" style={{ color: 'var(--text-3)' }}>
             This week: {stand.week.cloudChats} {stand.week.cloudChats === 1 ? 'question' : 'questions'} went to a cloud model
             {stand.week.cloudChats > 0 ? `, ${stand.week.protectedChats} of them with something hidden` : ''}. Every one is in the audit log.
           </p>
@@ -135,11 +135,11 @@ export function PrivacyShield() {
       )}
       <div>
         <label className="hud-label block mb-2" htmlFor="shield-probe">Try it — this is what a cloud model would see</label>
-        <textarea id="shield-probe" value={probe} onChange={(e) => setProbe(e.target.value)} rows={3} className="hud-input w-full rounded-xl px-3 py-2 text-sm" />
-        <div data-testid="shield-preview" className="hud-inset rounded-xl px-3 py-2 mt-2 text-sm whitespace-pre-wrap break-words" style={{ color: 'var(--text-1)' }}>
+        <textarea id="shield-probe" value={probe} onChange={(e) => setProbe(e.target.value)} rows={3} className="hud-input w-full rounded-xl px-3 py-2 fs-4 lh-lesbar" />
+        <div data-testid="shield-preview" className="hud-inset rounded-xl px-3 py-2 mt-2 fs-4 lh-lesbar whitespace-pre-wrap break-words" style={{ color: 'var(--text-1)' }}>
           {vorschau.text}
         </div>
-        <p className="text-xs mt-2" style={{ color: 'var(--text-3)' }}>
+        <p className="fs-2 lh-dicht mt-2" style={{ color: 'var(--text-3)' }}>
           {chatAn
             ? (vorschau.was ? `Hidden: ${vorschau.was}.` : 'Nothing to hide in this text.')
             : 'The shield is off — a cloud model would see this text exactly as it is.'}

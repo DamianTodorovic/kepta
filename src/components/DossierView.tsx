@@ -56,7 +56,7 @@ function Liste({ titel, eintraege, mitDatum, onOpen }: { titel: string; eintraeg
       <h3 className="fs-3 font-semibold mb-2" style={{ color: 'var(--text-1)' }}>{titel}</h3>
       <ul className="space-y-3">
         {eintraege.map((e) => (
-          <li key={e.id} className="fs-3 leading-relaxed" style={{ color: 'var(--text-2)' }}>
+          <li key={e.id} className="fs-3 lh-prosa" style={{ color: 'var(--text-2)' }}>
             {mitDatum && <span className="tnum fs-3 mr-2" style={{ color: 'var(--text-3)' }}>{tag(e.at)}</span>}
             <button onClick={() => onOpen(e.id)} className="font-semibold hover:underline underline-offset-2 text-left" style={{ color: 'var(--text-1)' }}>{e.title}</button>
             {e.sentence && e.sentence !== e.title && <> — {e.sentence}</>}
@@ -187,7 +187,7 @@ export function DossierView({ onOpenMemory, onEditMemory, dossierThema }: { onOp
     <div className="max-w-3xl mx-auto py-6" data-testid="dossier-view">
       <header className="mb-5">
         <h1 className="display">Dossier</h1>
-        <p className="text-sm mt-1" style={{ color: 'var(--text-2)' }}>
+        <p className="fs-4 lh-lesbar mt-1" style={{ color: 'var(--text-2)' }}>
           Everything you know about a person, a project or a topic — on one page: the statements, what happened
           when, how it's done, the files behind it and what is still open.
         </p>
@@ -198,9 +198,9 @@ export function DossierView({ onOpenMemory, onEditMemory, dossierThema }: { onOp
           onChange={(e) => setEingabe(e.target.value)}
           placeholder="A person, a client, a project, a topic…"
           aria-label="Who or what is the dossier about?"
-          className="hud-input flex-1 rounded-xl px-4 py-3 text-sm"
+          className="hud-input flex-1 rounded-xl px-4 py-3 fs-4 lh-lesbar"
         />
-        <button type="submit" disabled={laedt || !eingabe.trim()} className="btn-primary px-4 py-3 rounded-xl text-sm font-semibold flex items-center gap-2 disabled:opacity-50">
+        <button type="submit" disabled={laedt || !eingabe.trim()} className="btn-primary px-4 py-3 rounded-xl fs-4 lh-lesbar font-semibold flex items-center gap-2 disabled:opacity-50">
           {laedt ? <Loader2 className="w-4 h-4 animate-spin" /> : <FileText className="w-4 h-4" />} Create dossier
         </button>
       </form>
@@ -217,10 +217,10 @@ export function DossierView({ onOpenMemory, onEditMemory, dossierThema }: { onOp
       {vorschlagGrund && chips.length === 0 && !daten && (
         <p role="status" className="fs-3 mb-4" style={{ color: 'var(--text-3)' }}>{vorschlagGrund}</p>
       )}
-      {fehler && <p className="text-sm" style={{ color: 'var(--warn)' }}>{fehler}</p>}
+      {fehler && <p className="fs-4 lh-lesbar" style={{ color: 'var(--warn)' }}>{fehler}</p>}
 
       {daten && daten.total === 0 && (
-        <p className="text-sm mt-4" style={{ color: 'var(--text-2)' }}>
+        <p className="fs-4 lh-lesbar mt-4" style={{ color: 'var(--text-2)' }}>
           K3PTA knows nothing about “{daten.topic}” yet. Try another name — or save a first note about it.
         </p>
       )}

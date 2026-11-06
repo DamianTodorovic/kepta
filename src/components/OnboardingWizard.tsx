@@ -168,7 +168,7 @@ export function OnboardingWizard({ open, onClose, onComplete }: Props) {
             <h2 className="fs-5 font-semibold tracking-[-0.015em]" style={{color:'var(--text-1)'}}>Set up K3PTA</h2>
             {/* „one minute" war eine ungeprüfte Anwerbung und {step}/4 stand
                 zweimal auf demselben Schirm — einmal in Worten, einmal in Ziffern. */}
-            <p className="text-xs mt-1" style={{color:'var(--text-2)'}}>Step {step} of 4 — four questions, all on this computer.</p>
+            <p className="fs-2 lh-dicht mt-1" style={{color:'var(--text-2)'}}>Step {step} of 4 — four questions, all on this computer.</p>
           </div>
         </div>
 
@@ -179,18 +179,18 @@ export function OnboardingWizard({ open, onClose, onComplete }: Props) {
               <div className="flex items-center gap-2 hud-label"><User className="w-3.5 h-3.5" style={{color:'var(--accent)'}}/> Who are you?</div>
               <div>
                 <label htmlFor="onboarding-name" className="hud-label block mb-2">Name (what should K3PTA call you?)</label>
-                <input id="onboarding-name" value={name} onChange={e=>setName(e.target.value)} placeholder="e.g. Alex" autoFocus className="hud-input w-full rounded-xl px-4 py-3 text-sm" />
+                <input id="onboarding-name" value={name} onChange={e=>setName(e.target.value)} placeholder="e.g. Alex" autoFocus className="hud-input w-full rounded-xl px-4 py-3 fs-4 lh-lesbar" />
               </div>
               <div>
                 <label htmlFor="onboarding-goal" className="hud-label block mb-2 flex items-center gap-2"><Target className="w-3.5 h-3.5"/> What you want from K3PTA (optional)</label>
                 {/* Gemessen: der lange Beispieltext brauchte 387,6 px in 338 px
                     Raum und schnitt im schmaleren Täfelchen hart ab. Das Beispiel
                     soll zünden, nicht die Zeile füllen. */}
-                <input id="onboarding-goal" value={goal} onChange={e=>setGoal(e.target.value)} placeholder="e.g. find things faster" className="hud-input w-full rounded-xl px-4 py-3 text-sm" />
+                <input id="onboarding-goal" value={goal} onChange={e=>setGoal(e.target.value)} placeholder="e.g. find things faster" className="hud-input w-full rounded-xl px-4 py-3 fs-4 lh-lesbar" />
                 {/* Gemessen an Chat.tsx:385-402: goal, Name und Themen stehen am
                     Anfang jeder Anfrage. „Systemprompt" ist der Name dafuer im
                     Code, nicht die Sprache, die ein Erstanwender braucht. */}
-                <p className="text-xs mt-2" style={{color:'var(--text-3)'}}>If you write one, K3PTA puts it in front of every answer it gives you.</p>
+                <p className="fs-2 lh-dicht mt-2" style={{color:'var(--text-3)'}}>If you write one, K3PTA puts it in front of every answer it gives you.</p>
               </div>
               {/* Die drei Fragen, die ein Frischgelaedener wirklich hat, werden
                   hier beantwortet und nicht frueher: wo liegt mein Bestand, wer
@@ -200,13 +200,13 @@ export function OnboardingWizard({ open, onClose, onComplete }: Props) {
                   bei 1024 px blätterbar (162 px) und bei 390 px (362 px), ausser
                   die Vorschau auf Schritt 3 — die steht dort selbst. */}
               <div className="hud-inset rounded-xl p-3 space-y-2">
-                <p className="text-xs leading-relaxed" style={{color:'var(--text-2)'}}>
+                <p className="fs-2 lh-prosa" style={{color:'var(--text-2)'}}>
                   <strong style={{color:'var(--text-1)'}}>Where your notes live.</strong> One file here: <code className="font-mono">~/.kepta/kepta.db</code>. No account, no cloud of ours.
                 </p>
-                <p className="text-xs leading-relaxed" style={{color:'var(--text-2)'}}>
+                <p className="fs-2 lh-prosa" style={{color:'var(--text-2)'}}>
                   <strong style={{color:'var(--text-1)'}}>Who can read them.</strong> Only programs you connect here. Nothing leaves unless you add a cloud key — that AI sees your question and the notes it needs.
                 </p>
-                <p className="text-xs leading-relaxed" style={{color:'var(--text-2)'}}>
+                <p className="fs-2 lh-prosa" style={{color:'var(--text-2)'}}>
                   <strong style={{color:'var(--text-1)'}}>Your files.</strong> Opening K3PTA reads nothing. Documents come in only if you drop them, or say yes at the end — after seeing the list.
                 </p>
               </div>
@@ -224,15 +224,15 @@ export function OnboardingWizard({ open, onClose, onComplete }: Props) {
                   onBlur={()=>addTopics(topicInput)}
                   disabled={topics.length>=MAX_TOPICS}
                   placeholder="Type a topic and press Enter — whatever you actually do"
-                  className="hud-input w-full rounded-xl px-4 py-3 text-sm disabled:opacity-40"
+                  className="hud-input w-full rounded-xl px-4 py-3 fs-4 lh-lesbar disabled:opacity-40"
                 />
-                <p className="text-xs" style={{color:'var(--text-3)'}}>
+                <p className="fs-2 lh-dicht" style={{color:'var(--text-3)'}}>
                   Your words, not a menu. They shape how the assistant answers — nothing is written into your notes.
                 </p>
                 {topics.length>0 && (
                   <div className="flex flex-wrap gap-2">
                     {topics.map(t=> (
-                      <button key={t} onClick={()=>removeTopic(t)} className="px-3 py-1 rounded-lg text-xs hud-inset flex items-center gap-2" style={{color:'var(--text-1)'}} aria-label={`Remove ${t}`}>
+                      <button key={t} onClick={()=>removeTopic(t)} className="px-3 py-1 rounded-lg fs-2 lh-dicht hud-inset flex items-center gap-2" style={{color:'var(--text-1)'}} aria-label={`Remove ${t}`}>
                         {t} <span style={{color:'var(--text-3)'}}>×</span>
                       </button>
                     ))}
@@ -242,7 +242,7 @@ export function OnboardingWizard({ open, onClose, onComplete }: Props) {
               <div className="hud-inset rounded-xl p-3">
                 <div className="hud-label mb-2">K3PTA starts with {starterPreview.length} notes about itself — nothing else</div>
                 <div className="flex flex-wrap gap-2 max-h-28 overflow-y-auto">
-                  {starterPreview.map(n=> <span key={n.title} className="px-2 py-1 rounded-lg text-xs hud-inset" style={{color:'var(--text-2)'}}>{n.title}</span>)}
+                  {starterPreview.map(n=> <span key={n.title} className="px-2 py-1 rounded-lg fs-2 lh-dicht hud-inset" style={{color:'var(--text-2)'}}>{n.title}</span>)}
                 </div>
               </div>
             </motion.div>
@@ -253,7 +253,7 @@ export function OnboardingWizard({ open, onClose, onComplete }: Props) {
               {/* Die Ports gehören nicht in einen Sprechtext: „localhost:11434"
                   ist für einen Frischgelaedenen kein Grund, kein Ausweg und keine
                   Tür. Sie stehen im Titel, für den, der sie sucht. */}
-              {scanning && <div className="hud-inset rounded-xl p-6 flex items-center gap-3" title="Pings http://localhost:11434/api/tags and http://localhost:1234/v1/models"><Loader2 className="w-5 h-5 animate-spin" style={{color:'var(--accent)'}}/><span className="text-sm" style={{color:'var(--text-2)'}}>Asking this machine whether an AI is running…</span></div>}
+              {scanning && <div className="hud-inset rounded-xl p-6 flex items-center gap-3" title="Pings http://localhost:11434/api/tags and http://localhost:1234/v1/models"><Loader2 className="w-5 h-5 animate-spin" style={{color:'var(--accent)'}}/><span className="fs-4 lh-lesbar" style={{color:'var(--text-2)'}}>Asking this machine whether an AI is running…</span></div>}
               {!scanning && detected && (
                 <div className="space-y-2">
                   {detected.map(d=>(
@@ -262,19 +262,19 @@ export function OnboardingWizard({ open, onClose, onComplete }: Props) {
                           und gilt in beiden Themen gleich — Z-13. */}
                       <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{background: d.available ? 'var(--ok)' : 'var(--text-3)', boxShadow: d.available ? '0 0 8px var(--ok)' : undefined}}/>
                       <div className="flex-1 min-w-0">
-                        <div className="text-sm font-semibold" style={{color:'var(--text-1)'}}>{d.label} {d.available ? '— available' : '— not found'}</div>
+                        <div className="fs-4 lh-lesbar font-semibold" style={{color:'var(--text-1)'}}>{d.label} {d.available ? '— available' : '— not found'}</div>
                         {/* Gemessen 13.10. 21:2x: `truncate` schnitt die Modelliste
                             bei jeder Breite ab (522 px_needed gegen 267/174/109/227
                             px Sicht). Ein Modell, das der Nutzer nicht lesen kann,
                             ist keine Angabe, ein Rätsel. Jetzt bricht das lange Wort
                             um, und nur die Liste bleibt gekappt (vier + Zahl). */}
-                        <div className="text-xs break-words" style={{color:'var(--text-3)'}}>{d.models.length ? d.models.slice(0,4).join(', ') + (d.models.length>4?` +${d.models.length-4}`:'') : d.available ? 'answering, but no model loaded — in a terminal: ollama pull llama3.2' : 'not installed'}</div>
+                        <div className="fs-2 lh-dicht break-words" style={{color:'var(--text-3)'}}>{d.models.length ? d.models.slice(0,4).join(', ') + (d.models.length>4?` +${d.models.length-4}`:'') : d.available ? 'answering, but no model loaded — in a terminal: ollama pull llama3.2' : 'not installed'}</div>
                       </div>
-                      {d.available && <span className="text-xs hud-label px-2 py-1 rounded hud-inset" style={{color:'var(--ok)'}}>{d.latencyMs}ms</span>}
+                      {d.available && <span className="fs-2 lh-dicht hud-label px-2 py-1 rounded hud-inset" style={{color:'var(--ok)'}}>{d.latencyMs}ms</span>}
                     </div>
                   ))}
                   <div className="rounded-xl p-3" style={{background:'var(--accent-soft)', border:'1px solid var(--border-subtle)'}}>
-                    <p className="text-xs leading-relaxed" style={{color:'var(--text-2)'}}>
+                    <p className="fs-2 lh-prosa" style={{color:'var(--text-2)'}}>
                       <strong style={{color:'var(--text-1)'}}>So:</strong> {(() => {
                         // "ollama" ist zugleich suggestProvider's Nichts-gefunden-
                         // Default — ohne Verfügbarkeits-Check behauptete der Wizard
@@ -293,7 +293,7 @@ export function OnboardingWizard({ open, onClose, onComplete }: Props) {
                       })()}
                     </p>
                   </div>
-                  <button onClick={()=>{setScanning(true); detectLocalAIs().then(d=>{setDetected(d); setScanning(false);});}} className="btn-ghost w-full py-2 rounded-xl text-sm">Scan again</button>
+                  <button onClick={()=>{setScanning(true); detectLocalAIs().then(d=>{setDetected(d); setScanning(false);});}} className="btn-ghost w-full py-2 rounded-xl fs-4 lh-lesbar">Scan again</button>
                 </div>
               )}
             </motion.div>
@@ -305,11 +305,11 @@ export function OnboardingWizard({ open, onClose, onComplete }: Props) {
                 <div className="flex gap-3">
                   <div className="w-10 h-10 rounded-lg flex items-center justify-center shrink-0" style={{background:'var(--accent-soft)'}}><User className="w-4.5 h-4.5" style={{color:'var(--accent)'}}/></div>
                   <div>
-                    <div className="text-sm font-semibold" style={{color:'var(--text-1)'}}>{name.trim()||'You'}{topics.length ? ` — ${topics.join(', ')}` : ''}</div>
+                    <div className="fs-4 lh-lesbar font-semibold" style={{color:'var(--text-1)'}}>{name.trim()||'You'}{topics.length ? ` — ${topics.join(', ')}` : ''}</div>
                     {/* Nur das Ziel steht hier, und nur wenn es da ist. Der Satz
                         „no goal given" gehört an die Liste unten — zweimal auf
                         einem Schirm war eine Wiederholung, keine Auskunft. */}
-                    {goal.trim() ? <div className="text-xs" style={{color:'var(--text-2)'}}>{goal.trim()}</div> : null}
+                    {goal.trim() ? <div className="fs-2 lh-dicht" style={{color:'var(--text-2)'}}>{goal.trim()}</div> : null}
                   </div>
                 </div>
                 {/* Gemessen 13.10. 21:2x: in einem 262 px breiten Täfelchen brauchte
@@ -321,7 +321,7 @@ export function OnboardingWizard({ open, onClose, onComplete }: Props) {
                   <div className="hud-inset rounded-lg px-1 py-3"><div className="fs-5 font-semibold tnum" style={{color:'var(--text-1)'}}>{topics.length}</div><div className="hud-label">topics</div></div>
                   <div className="hud-inset rounded-lg px-1 py-3"><div className="fs-5 font-semibold tnum" style={{color:'var(--ok)'}}>{detected?.reduce((n,d)=> n + (d.available ? d.models.length : 0), 0) || 0}</div><div className="hud-label">models</div></div>
                 </div>
-                <ul className="text-xs space-y-2" style={{color:'var(--text-2)'}}>
+                <ul className="fs-2 lh-dicht space-y-2" style={{color:'var(--text-2)'}}>
                   <li className="flex gap-2"><Check className="w-3.5 h-3.5 mt-1" style={{color:'var(--ok)'}}/> The {starterPreview.length} notes about K3PTA land in your memory — you can edit or delete every one</li>
                   {/* Die zwei Zeilen darunter waren Behauptungen: der Anbieter wurde
                       nur gesetzt, wenn ein lokaler Dienst ein Modell meldete, und
@@ -345,7 +345,7 @@ export function OnboardingWizard({ open, onClose, onComplete }: Props) {
                   onChange={(e)=> setScanAngefragt(e.target.checked)}
                   className="mt-1 shrink-0"
                 />
-                <span className="text-xs leading-relaxed" style={{color:'var(--text-2)'}}>
+                <span className="fs-2 lh-prosa" style={{color:'var(--text-2)'}}>
                   <strong style={{color:'var(--text-1)'}}>Also look through this computer for documents.</strong>{' '}
                   K3PTA can read the documents in your home folder and turn them into notes — everything stays on this
                   machine. Keys, passwords, credentials and browser data are never read. Before anything is saved you
@@ -353,28 +353,28 @@ export function OnboardingWizard({ open, onClose, onComplete }: Props) {
                 </span>
               </label>
               {wunschGrund && (
-                <div className="rounded-xl p-3 text-xs leading-relaxed" style={{ background: "var(--warn-soft)", color: "var(--warn)" }} data-testid="wizard-wunsch-absage">
+                <div className="rounded-xl p-3 fs-2 lh-prosa" style={{ background: "var(--warn-soft)", color: "var(--warn)" }} data-testid="wizard-wunsch-absage">
                   {wunschGrund}
                 </div>
               )}
               <div className="hud-inset rounded-xl p-3 flex gap-3">
                 <Globe className="w-4 h-4 mt-1 shrink-0" style={{color:'var(--text-3)'}}/>
-                <p className="text-xs leading-relaxed" style={{color:'var(--text-2)'}}>After this: drop a file on the window or paste a link, and K3PTA keeps learning. Your whole memory is one file — <code className="font-mono">~/.kepta/kepta.db</code> — so you can back it up, move it, or delete it whenever you like.</p>
+                <p className="fs-2 lh-prosa" style={{color:'var(--text-2)'}}>After this: drop a file on the window or paste a link, and K3PTA keeps learning. Your whole memory is one file — <code className="font-mono">~/.kepta/kepta.db</code> — so you can back it up, move it, or delete it whenever you like.</p>
               </div>
-              {importResult && <div className="rounded-xl p-3 text-center text-sm" style={{ background: `color-mix(in srgb, var(${fehlgeschlagen ? '--danger' : '--ok'}) 12%, transparent)`, border: `1px solid color-mix(in srgb, var(${fehlgeschlagen ? '--danger' : '--ok'}) 30%, transparent)`, color: `var(${fehlgeschlagen ? '--danger' : '--ok'})` }}>{importResult}</div>}
+              {importResult && <div className="rounded-xl p-3 text-center fs-4 lh-lesbar" style={{ background: `color-mix(in srgb, var(${fehlgeschlagen ? '--danger' : '--ok'}) 12%, transparent)`, border: `1px solid color-mix(in srgb, var(${fehlgeschlagen ? '--danger' : '--ok'}) 30%, transparent)`, color: `var(${fehlgeschlagen ? '--danger' : '--ok'})` }}>{importResult}</div>}
             </motion.div>
           )}
           </AnimatePresence>
         </div>
 
         <div className="p-4 flex items-center justify-between" style={{borderTop:'1px solid var(--border-subtle)'}}>
-          <button onClick={()=> step>1 ? setStep((s=> (s-1) as Step)) : onClose()} className="btn-ghost px-4 py-2 rounded-xl text-sm flex items-center gap-2"><ChevronLeft className="w-4 h-4"/>{step===1 ? 'Later' : 'Back'}</button>
+          <button onClick={()=> step>1 ? setStep((s=> (s-1) as Step)) : onClose()} className="btn-ghost px-4 py-2 rounded-xl fs-4 lh-lesbar flex items-center gap-2"><ChevronLeft className="w-4 h-4"/>{step===1 ? 'Later' : 'Back'}</button>
           {step<4 ? (
-            <button onClick={()=> setStep((s=> (s+1) as Step))} disabled={step===1 && !name.trim()} title={step===1 && !name.trim() ? 'A name first — or leave the setup any time with „Later".' : undefined} className="btn-primary px-6 py-3 rounded-xl text-sm flex items-center gap-2 disabled:opacity-40">
+            <button onClick={()=> setStep((s=> (s+1) as Step))} disabled={step===1 && !name.trim()} title={step===1 && !name.trim() ? 'A name first — or leave the setup any time with „Later".' : undefined} className="btn-primary px-6 py-3 rounded-xl fs-4 lh-lesbar flex items-center gap-2 disabled:opacity-40">
               Next <ChevronRight className="w-4 h-4"/>
             </button>
           ) : (
-            <button onClick={handleFinish} disabled={importing} className="btn-primary px-6 py-3 rounded-xl text-sm flex items-center gap-2">
+            <button onClick={handleFinish} disabled={importing} className="btn-primary px-6 py-3 rounded-xl fs-4 lh-lesbar flex items-center gap-2">
               {importing ? <><Loader2 className="w-4 h-4 animate-spin"/> Saving your notes…</> : <><Sparkles className="w-4 h-4"/> Save these {starterPreview.length} notes</>}
             </button>
           )}
