@@ -204,7 +204,7 @@ export function Sidebar({ tags, selectedTags, onSelectTag, onClearTags, currentV
           {showSetup && onOpenSetup && (
             <button
               onClick={onOpenSetup}
-              className="seiten-knopf-einrichten w-9 h-9 flex items-center justify-center rounded-lg shrink-0"
+              className="seiten-knopf-einrichten treff w-9 h-9 flex items-center justify-center rounded-lg shrink-0"
               aria-label="Open setup"
               title="Open setup"
             >
@@ -221,7 +221,7 @@ export function Sidebar({ tags, selectedTags, onSelectTag, onClearTags, currentV
           </button>
           <button
             onClick={toggleFocusMode}
-            className="seiten-knopf w-9 h-9 flex items-center justify-center rounded-lg"
+            className="seiten-knopf treff w-9 h-9 flex items-center justify-center rounded-lg"
             aria-label="Focus mode"
             title="Hide sidebar"
           >

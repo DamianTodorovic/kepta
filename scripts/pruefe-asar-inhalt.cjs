@@ -997,6 +997,18 @@ const erwartet = [
   // "hover:!border-gefahr" 0 mal, "--color-gefahr" 0 mal, "border-red-500/40" 1 mal.
   ["hover:!border-gefahr", 1],
   ["--color-gefahr", 1],
+  // P93 (3.2.179): die Treffflaeche eines Knopfs ohne Wort. Gezaehlt im gebauten Bund
+  // (dist, dieselbe Normalisierung, 05:07:00 MEZ): ".treff:after" 1, "--treff:44px" 1,
+  // "btn-ghost treff" 4 (Loesch-Knopf, Zoom her, Zoom ran, Papierkorb), "seiten-knopf treff
+  // w-9 h-9" 1 (Diener), "seiten-knopf-einrichten treff" 1 (Richtknopf), "btn-primary treff"
+  // 1 (Senden). Sieben Sitze, und die Regel selbst ist im CSS -- ein Name ohne Regel faellt
+  // seit P89 die Landung, eine Regel ohne Rufer seit P83 ebenso.
+  [".treff:after", 1],
+  ["--treff:44px", 1],
+  ["btn-ghost treff", 4],
+  ["btn-primary treff", 1],
+  ["seiten-knopf treff w-9 h-9", 1],
+  ["seiten-knopf-einrichten treff", 1],
   // P86 (3.2.176): die Farb-Sitze heissen wie im Vertrag, und der Rahmenwerk-Scanner ist
   // gesetzt. Gezaehlt am installierten 3.2.175 (latin1, Leerstand zusammengezogen,
   // 6.11.2026 02:41:07 MEZ): "bg-knopf" 0, "bg-blatt" 0, das Paar "bg-white dark:bg-zinc-800"

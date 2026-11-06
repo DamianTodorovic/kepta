@@ -1678,7 +1678,7 @@ export function Dashboard() {
                     setTrashGrund(absage("Trash — the count did not arrive", err));
                   }
                 }}
-                className="btn-ghost hidden sm:flex items-center gap-2 px-3 py-2 rounded-lg fs-2 lh-dicht font-semibold"
+                className="btn-ghost treff hidden sm:flex items-center gap-2 px-3 py-2 rounded-lg fs-2 lh-dicht font-semibold"
                 title={trashGrund ?? "Trash — restore deleted notes"}
               >
                 <Trash2 className="w-4 h-4" />

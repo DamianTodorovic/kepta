@@ -257,6 +257,7 @@
   --lh-lesbar: 1.55;
   --lh-prosa: 1.65;
   --lh-marke: 1;      /* optischer Reset: Seitenmarke und Mono-Zeichen, vorher leading-none */
+  --treff: 44px;      /* Kleinste Treffflaeche eines Knopfs ohne Wort — WCAG 2.5.5 und Apple HIG, dieselbe Zahl, die P92 am Loesch-Knopf nannte */
 
   /* Gewichte: eine nicht-variable Schrift (Segoe UI auf Windows) kennt
      300/400/600/700. Alles dazwischen — 490, 540, 560, 590, 620, 640, 680 —
@@ -547,6 +548,27 @@ select:focus-visible {
 @utility lh-lesbar { line-height: var(--lh-lesbar); }   /* 1,55: Regel, Eingabe, Chat */
 @utility lh-prosa { line-height: var(--lh-prosa); }     /* 1,65: fliessender Text in Karte und Antwort */
 @utility lh-marke { line-height: var(--lh-marke); }     /* 1: optischer Reset, keine Zeile unter der Zahl */
+
+/* P93: die Treffflaeche eines Knopfs ohne Wort. Gemessen 04:59:59 MEZ im echten Fenster
+   ueber alle sieben Sichten: 19 Knopfe fuehren nur ein Icon, und 19 von 19 lagen unter
+   44 px, wenn der Zeiger 22 px vom Mittelpunkt gesetzt wurde -- nicht am Rechteck gemessen,
+   sondern an dem, was der Browser unter dem Punkt anruft. Die Heilung maelt nichts: ein
+   durchsichtiges Kind-Kaestchen, das den Punkt fangt, waehrend die Zeichnung bleibt wie sie
+   ist. Wache: derselbe Lauf verlangt, dass kein Ziel in seiner eignen Mitte einem andern
+   gehoert (Basis 0 von 158, gemessen 05:01:29 MEZ) -- eine Treffflaeche, die dem Nachbarn
+   die Mitte klaut, ist ein neuer Fehler, nicht die Heilung eines alten. */
+@utility treff {
+  position: relative;
+  &::after {
+    content: "";
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    width: max(100%, var(--treff));
+    height: max(100%, var(--treff));
+    transform: translate(-50%, -50%);
+  }
+}
 
 /* Dominante Zahl des Registers — Ziffern wie in ein Protokoll gesetzt */
 .num-hero {

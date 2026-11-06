@@ -934,7 +934,7 @@ export function Chat({ activeMemories, onSaveToBrain, onSaveToBrainWithMeta, isF
           <div className="hidden md:flex items-center gap-2 px-2 py-1 rounded hud-inset hud-label" title={`Input ${totalInputTokensEstimate} · Output ~${liveOutputTokens || 0} · ${estimatedCostNow}`}>
             <Coins className="w-3 h-3" /> {estimatedCostNow}
           </div>
-          <button onClick={clearChat} className="btn-ghost p-2 rounded-lg hover:!border-gefahr" title="Clear chat" aria-label="Clear chat">
+          <button onClick={clearChat} className="btn-ghost treff p-2 rounded-lg hover:!border-gefahr" title="Clear chat" aria-label="Clear chat">
             <Trash2 className="w-4 h-4" />
           </button>
         </div>
@@ -1282,7 +1282,7 @@ export function Chat({ activeMemories, onSaveToBrain, onSaveToBrainWithMeta, isF
             <button
               type="submit"
               disabled={!input.trim() || isStreaming}
-              className="btn-primary h-9 w-10 flex items-center justify-center disabled:opacity-40"
+              className="btn-primary treff h-9 w-10 flex items-center justify-center disabled:opacity-40"
               title="Send (Enter)"
               aria-label="Send"
             >

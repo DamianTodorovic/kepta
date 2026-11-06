@@ -1693,28 +1693,96 @@ async function main() {
           const held = e.closest('label');
           const hr = held ? held.getBoundingClientRect() : null;
           const treffer = hr && hr.width >= r.width && hr.height >= r.height ? hr : r;
+          // Ein Knopf ohne Wort fuehrt keine Schrift, der man zielen koennte: nur ein Icon.
+          // Fuer diese Klasse gilt die 44-px-Marke als Latte, gemessen am ZEIGER, nicht am
+          // Rechteck -- ein Rechteck, das niemand trifft, ist keine Treffflaeche.
+          const nurIcon = !((e.textContent || '').trim()) && !!e.querySelector('svg,iconify-icon,img');
+          let zeiger = null, ausser = false, mitte = null, mitteAusser = false;
+          const mx = treffer.left + treffer.width / 2, my = treffer.top + treffer.height / 2;
+          mitteAusser = mx < 0 || my < 0 || mx > window.innerWidth - 1 || my > window.innerHeight - 1;
+          if (!mitteAusser) {
+            // Die Mitte darf keinem andern gehoren: ein Kleberand, eine overflaelche, ein
+            // Punkt auf der Leinwand -- alles, was einen Knopf in seiner eigenen Mitte
+            // ueberdeckt, macht ihn unbrauchbar (das Haus hat dafuer schon einmal eine
+            // Maussteuerung verloren).
+            const t = document.elementFromPoint(mx, my);
+            mitte = !t ? 'nichts' : (t === e || e.contains(t) || (held && (t === held || held.contains(t)))) ? 'eigner'
+              : (t.getAttribute('aria-label') || t.title || t.textContent || t.tagName).replace(/\\s+/g, ' ').trim().slice(0, 22);
+          }
+          if (nurIcon) {
+            const cx = mx, cy = my;
+            const punkte = [[cx - 22, cy], [cx + 22, cy], [cx, cy - 22], [cx, cy + 22]];
+            ausser = punkte.some(([x, y]) => x < 0 || y < 0 || x > window.innerWidth - 1 || y > window.innerHeight - 1);
+            if (!ausser) {
+              zeiger = punkte.map(([x, y]) => {
+                const t = document.elementFromPoint(x, y);
+                if (!t) return 'nichts';
+                if (t === e || e.contains(t)) return 'eigner';
+                return (t.getAttribute('aria-label') || t.title || t.textContent || t.tagName).replace(/\\s+/g,' ').trim().slice(0, 18);
+              });
+            }
+          }
           out.push({ name, w: Math.round(treffer.width), h: Math.round(treffer.height),
-            k: e.tagName.toLowerCase(), art: e.getAttribute('type') || '',
+            k: e.tagName.toLowerCase(), art: e.getAttribute('type') || '', icon: nurIcon,
+            zeiger, ausser, mitte, mitteAusser,
             hinter: hr && treffer !== r ? Math.round(r.width) + "x" + Math.round(r.height) : '' });
         }
         return { ziele: out, aus } })()`);
     };
+    // Sieben Sichten, nicht drei. Der fruehere Zensus liess Knowledge/Graph/Settings und
+    // nannte damit Sauberkeit fuer vier Sichten, die er nie sah -- dieselbe Lehre wie bei
+    // der Klassendeckung (P88: ein Pruefer, der nur einen Teil des Baums liest, meldet
+    // den ungelesenen Teil als heil).
     const seitenQ = [
       { name: "Knowledge", regex: "^\\s*(Knowledge|Wissen)\\s*$" },
+      { name: "Today", regex: "^\\s*(Today|Heute)\\s*$" },
+      { name: "Chat", regex: "^\\s*Chat\\s*$" },
       { name: "Graph", regex: "^\\s*(Graph)\\s*$" },
+      { name: "Dossier", regex: "^\\s*(Dossier)\\s*$" },
+      { name: "Activity", regex: "^\\s*(Activity|Aktivitaet|Aktivitaetsprotokoll)\\s*$" },
       { name: "Settings", regex: "^\\s*(Settings|Einstellungen)\\s*$" },
     ];
     let klein = [];
+    let unterDerMarke = [];
+    let iconFehlt = [];
+    let mitteDiebe = [];
+    let mitteAlle = 0;
+    let iconAlle = 0;
+    let iconAusserHalf = 0;
     let gesamt = 0;
     for (const seite of seitenQ) {
       const mess = await zensus(seite);
       const ziele = mess.ziele;
       gesamt += ziele.length;
-      const unter = ziele.filter((z) => Math.min(z.w, z.h) < 20);
+      // Zwei Grenzen, zwei Rollen. 24 px ist WCAG 2.5.8 (Target Size Minimum, AA) -- eine
+      // Zahl, die das Regelwerk selbst nennt, also eine Latte. 44 px ist die Marke, die das
+      // Haus sich selbst gibt (Apple HIG 44, dieselbe Zahl, die P92 am Loesch-Knopf nannte) --
+      // eine Latte ohne eigne Heilung waere ein Wunsch, also zuerst Bericht mit Namen.
+      const unter = ziele.filter((z) => Math.min(z.w, z.h) < 24);
+      const marke = ziele.filter((z) => Math.min(z.w, z.h) < 44);
       klein.push(...unter.map((z) => ({ ...z, seite: seite.name })));
-      console.log(`  ${seite.name}: ${ziele.length} Ziele, ${unter.length} unter dem Boden — ` +
+      unterDerMarke.push(...marke.map((z) => ({ ...z, seite: seite.name })));
+      console.log(`  ${seite.name}: ${ziele.length} Ziele, ${unter.length} unter 24 px (AA), ${marke.length} unter 44 px (Marke) — ` +
         `kleinstes ${ziele.length ? JSON.stringify(ziele.reduce((a, b) => (Math.min(b.w, b.h) < Math.min(a.w, a.h) ? b : a))) : "keins"}`);
       console.log(`    ausgelassen: ${mess.aus.leer} ohne Rechteck, ${mess.aus.unsichtbar} unsichtbar oder nicht treffbar, ${mess.aus.inert} hinter der eingeklappten Leiste`);
+      // Die Icon-Klasse, am Zeiger gemessen. Ein Punkt 22 px vom Mittelpunkt muss den Knopf
+      // selbst (oder sein Kind) treffen; nennt der Punkt etwas andres, ist die Treffflaeche
+      // kleiner als 44 px -- und der Dieb hat einen Namen.
+      const iconZiele = ziele.filter((z) => z.icon);
+      const ausser = iconZiele.filter((z) => z.ausser);
+      const zeigerFehlt = iconZiele.filter((z) => Array.isArray(z.zeiger) && z.zeiger.some((n) => n !== 'eigner'));
+      iconAlle += iconZiele.length;
+      iconAusserHalf += ausser.length;
+      iconFehlt.push(...zeigerFehlt.map((z) => ({ ...z, seite: seite.name })));
+      console.log(`    Icon-Knoepfe: ${iconZiele.length}, ${zeigerFehlt.length} unter der 44-px-Treffflaeche, ${ausser.length} randfern (nicht pruefbar)`);
+      for (const z of zeigerFehlt) console.log(`      FEHLT 44  ${seite.name}  ${z.k}  ${z.w} x ${z.h}  "${z.name}"  Zeiger: ${JSON.stringify(z.zeiger)}`);
+      // Bericht zuerst, Latte spaeter: eine Diebstahl-Zahl ohne Grundgesamtheit ist eine
+      // Behauptung, und die Grundgesamtheit ist hier jede Sicht einzeln.
+      const diebe = ziele.filter((z) => !z.mitteAusser && z.mitte !== 'eigner');
+      mitteAlle += ziele.filter((z) => !z.mitteAusser).length;
+      mitteDiebe.push(...diebe.map((z) => ({ ...z, seite: seite.name })));
+      console.log(`    Mitte fremd: ${diebe.length} von ${ziele.filter((z) => !z.mitteAusser).length} Zielen, ${ziele.length - ziele.filter((z) => !z.mitteAusser).length} randfern`);
+      for (const z of diebe.slice(0, 8)) console.log(`      DIEB  ${seite.name}  ${z.k}  ${z.w} x ${z.h}  "${z.name}"  ->  "${z.mitte}"`);
       // Das Bild pro Sicht, nicht eins am Ende: die Frage "was bleibt bei 390 am Graphen
       // uebrig?" ist am Bild zu entscheiden, und der letzte Klick vor dem alten Knipser war
       // Settings — das Graph-Bild gab es nie (gemessen 02.11. 07:22).
@@ -1723,9 +1791,20 @@ async function main() {
     // Die eine Pruefung, die nie verlieren kann, ist ein Zensus ueber null Elemente. Also erst
     // der Zensus selbst, dann die Latte.
     urteil("**der Zensus sieht ueberhaupt Ziele**", gesamt > 0, true);
-    console.log(`  gesamt: ${gesamt} Ziele in ${seitenQ.length} Sichten, ${klein.length} unter 20 px`);
-    for (const z of klein.slice(0, 12)) console.log(`    ${z.seite}  ${z.k}${z.art ? ":" + z.art : ""}  ${z.w} x ${z.h}${z.hinter ? "  (Feld " + z.hinter + " im Label)" : ""}  "${z.name}"`);
-    urteil("**kein Ziel liegt unter dem 20-px-Boden des Hauses**", klein.length, 0);
+    console.log(`  gesamt: ${gesamt} Ziele in ${seitenQ.length} Sichten, ${klein.length} unter 24 px, ${unterDerMarke.length} unter 44 px`);
+    for (const z of klein.slice(0, 24)) console.log(`    UNTER-AA  ${z.seite}  ${z.k}${z.art ? ":" + z.art : ""}  ${z.w} x ${z.h}${z.hinter ? "  (Feld " + z.hinter + " im Label)" : ""}  "${z.name}"`);
+    urteil("**kein Ziel liegt unter der AA-Untergrenze von 24 px (WCAG 2.5.8)**", klein.length, 0);
+    // Bericht, keine Latte -- mit Namen und Anteil, damit die Zahl nicht als Sauberkeit gilt.
+    const anteile = {};
+    for (const z of unterDerMarke) anteile[z.seite] = (anteile[z.seite] || 0) + 1;
+    console.log(`  Unter der 44-px-Marke (Bericht, keine Latte): ${unterDerMarke.length} von ${gesamt} = ${(100 * unterDerMarke.length / Math.max(gesamt, 1)).toFixed(1)} % — je Sicht: ${JSON.stringify(anteile)}`);
+    // Die Latte gilt der Icon-Klasse: ein Knopf ohne Wort hat keine Schrift, auf die man
+    // zielen koennte, und keine groessere Gleichwertige in der Naehe. Der Nenner wird
+    // genannt, weil ein Anteil ohne Nenner eine Behauptung ist.
+    console.log(`  Icon-Klasse: ${iconAlle} Knopfe ohne Wort in ${seitenQ.length} Sichten, ${iconFehlt.length} unter der 44-px-Treffflaeche, ${iconAusserHalf} randfern (nicht pruefbar)`);
+    urteil("**kein Icon-Knopf liegt unter der 44-px-Treffflaeche**", iconFehlt.length, 0);
+    console.log(`  Fremd in der eignen Mitte: ${mitteDiebe.length} von ${mitteAlle} Zielen in ${seitenQ.length} Sichten (Bericht, noch keine Latte)`);
+    for (const z of mitteDiebe.slice(0, 20)) console.log(`    DIEB  ${z.seite}  ${z.k}  ${z.w} x ${z.h}  "${z.name}"  ->  "${z.mitte}"`);
     console.log(`  Bild: ${await bild(`tastmass-${BREITE_IST}px.png`)}`);
   }
 
