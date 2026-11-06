@@ -212,6 +212,30 @@ erfunden, in beiden Sprachen gemessen und mit dem Vektor-Bein auch allein:
 | `konkurrenz-0611d/sprache-bge-m3-0611.txt` | 1815 B | `3e66f2603be81156…` |
 | `konkurrenz-0611d/sprache-bge-m3-0611-zwei.txt` | 1815 B | `3e66f2603be81156…` |
 | `konkurrenz-0611d/lauf-0611.log.txt` | 3240 B | `d394a8b0ab6cc968…` |
+| `konkurrenz-0611e/auswertung-chroma-0611.txt` | 5149 B | `289c35814f155e39…` |
+| `konkurrenz-0611e/auswertung-chroma.py` | 10381 B | `380bf822a0c55e2c…` |
+| `konkurrenz-0611e/ergebnis-chroma-bge-m3-eins.json` | 1163 B | `bf6f004949ab7bc1…` |
+| `konkurrenz-0611e/ergebnis-chroma-bge-m3-zwei.json` | 1377 B | `95754a71ee142bb6…` |
+| `konkurrenz-0611e/ergebnis-chroma-nomic-eins.json` | 1387 B | `ecfbc8bbb18d1dc5…` |
+| `konkurrenz-0611e/ergebnis-chroma-nomic-zwei.json` | 1387 B | `36bea6c351926799…` |
+| `konkurrenz-0611e/gleichstand-hetzner-0611.txt` | 1656 B | `6f8c2fd388bd862e…` |
+| `konkurrenz-0611e/gleichstand-hetzner.py` | 3294 B | `097293680c6d25ef…` |
+| `konkurrenz-0611e/korpus-aus-repo.json` | 16983 B | `982234a1ba4b50e7…` |
+| `konkurrenz-0611e/korpus-export.ts` | 991 B | `f0266f2ceb281862…` |
+| `konkurrenz-0611e/lauf-0611.log.txt` | 9833 B | `4d5985da2da86d72…` |
+| `konkurrenz-0611e/lauf-chroma.py` | 9126 B | `c594a315b3fcaa08…` |
+| `konkurrenz-0611e/sonde.py` | 3216 B | `e30f716507603fc6…` |
+| `konkurrenz-0611e/spur-chroma-bge-m3-eins.jsonl` | 21264 B | `4221042cd98f66f3…` |
+| `konkurrenz-0611e/spur-chroma-bge-m3-zwei.jsonl` | 21264 B | `545530cb1fea0d50…` |
+| `konkurrenz-0611e/spur-chroma-nomic-eins.jsonl` | 21293 B | `9199936e17019637…` |
+| `konkurrenz-0611e/spur-chroma-nomic-zwei.jsonl` | 21293 B | `cc334357b5272d1c…` |
+| `konkurrenz-0611e/spur-leser-0611e.ts` | 3242 B | `e98239851519f7b5…` |
+| `konkurrenz-0611e/spur-uns-bge-m3-0611e-zwei.jsonl` | 8985 B | `a893ddc638a6dc81…` |
+| `konkurrenz-0611e/spur-uns-bge-m3-0611e.jsonl` | 8985 B | `a893ddc638a6dc81…` |
+| `konkurrenz-0611e/spur-uns-nomic-0611e-zwei.jsonl` | 9521 B | `3a6d77d7b056413f…` |
+| `konkurrenz-0611e/spur-uns-nomic-0611e.jsonl` | 9521 B | `3a6d77d7b056413f…` |
+| `konkurrenz-0611e/gleichstands-zensus-0611.txt` | 1577 B | `26f9b46a5272d56f…` |
+| `konkurrenz-0611e/gleichstands-zensus.py` | 4624 B | `e298adbec15ea388…` |
 
 Drei Folgen, aufgeschrieben, weil sie die Zahl nicht schoener machen:
 

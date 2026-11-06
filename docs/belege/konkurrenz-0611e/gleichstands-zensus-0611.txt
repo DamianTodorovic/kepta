@@ -1,0 +1,18 @@
+--- Stufe nomic-embed-text (768 D)
+    A. Gleichstand auf Platz 1: 0 von 45 Anfragen
+    B. davon haengt Treffer oder Fehlgriff daran: 0
+    C. Gleichstand tiefer in den ersten fuenf (nicht Platz 1): 5 Anfragen
+       'Serverzugang und Passwort' [lexikalisch] Plaetze 2 und 3: m16 gegen m17, cos 0.7331948563313703 | gueltige darunter ['m16', 'm17']
+       'Warum Rust statt Go?' [lexikalisch] Plaetze 4 und 5: m16 gegen m17, cos 0.513553070811722 | gueltige darunter []
+       'Passwörter sicher verwalten' [lexikalisch] Plaetze 3 und 4: m16 gegen m17, cos 0.7023677306361922 | gueltige darunter []
+       'Hetzner' [graph] Plaetze 3 und 4: m16 gegen m17, cos 0.6040120960802313 | gueltige darunter ['m16']
+       'Welcher Server ist gemeint?' [ablenkung] Plaetze 2 und 3: m16 gegen m17, cos 0.6782050503947971 | gueltige darunter []
+    D. unsre Fusion auf den Platz-1-Gleichstands-Anfragen: 0 von 0 getroffen
+--- Stufe bge-m3 (1024 D)
+    A. Gleichstand auf Platz 1: 1 von 45 Anfragen
+    B. davon haengt Treffer oder Fehlgriff daran: 1
+       'Hetzner' [graph] Gruppe ['m16', 'm17'] | gueltige ['m16'] | unsre erste Stelle m36 (treffer=True)
+    C. Gleichstand tiefer in den ersten fuenf (nicht Platz 1): 2 Anfragen
+       'Serverzugang und Passwort' [lexikalisch] Plaetze 4 und 5: m16 gegen m17, cos 0.5432220117887194 | gueltige darunter ['m16', 'm17']
+       'Welches Passwort gilt in der Produktion?' [ablenkung] Plaetze 2 und 3: m16 gegen m17, cos 0.5624766148138234 | gueltige darunter []
+    D. unsre Fusion auf den Platz-1-Gleichstands-Anfragen: 1 von 1 getroffen

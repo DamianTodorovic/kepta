@@ -18,6 +18,8 @@ dasselbe: **Hit@1** — die erste Antwort nennt eine der Ziel-IDs der Anfrage.
 | **sqlite-vec 0.1.9**, reines Cosinus-KNN | dieselben Texte, dasselbe Einbett (nomic-embed-text, 768 D), k=5, **nichts** ausser Vektoren | **42,2 %** (19/45) | `docs/belege/konkurrenz-0611b/spur-sqlitevec-0611.jsonl` und `…-zwei.jsonl` |
 | **sqlite-vec 0.1.9**, reines Cosinus-KNN, **zweites Einbett** | derselbe Lauf, nur `bge-m3` (1024 D) statt nomic | **66,7 %** (30/45) | `docs/belege/konkurrenz-0611b/spur-sqlitevec-bge-m3.jsonl` und `…-zwei.jsonl` |
 | K3PTA, **ausgeliefert** (v3-Bein), **zweites Einbett** | derselbe Aufbau und derselbe Suchweg, nur `bge-m3` (1024 D) statt nomic | **77,8 %** (35/45) | `docs/belege/konkurrenz-0611c/spur-uns-bge-m3-0611.jsonl` und `…-zwei.jsonl` |
+| **chroma 1.5.9**, reines Cosinus-KNN | dieselben Texte, dasselbe Einbett (nomic-embed-text, 768 D), k=5, Cosinus-Raum gesetzt und **gemessen**, nichts ausser Vektoren | **42,2 %** (19/45) | `docs/belege/konkurrenz-0611e/spur-chroma-nomic-eins.jsonl` und `…-zwei.jsonl` |
+| **chroma 1.5.9**, reines Cosinus-KNN, **zweites Einbett** | derselbe Lauf, nur `bge-m3` (1024 D) statt nomic | **68,9 %** (31/45) | `docs/belege/konkurrenz-0611e/spur-chroma-bge-m3-eins.jsonl` und `…-zwei.jsonl` |
 
 ## Berichtigung 16:52 MEZ: die Kategorie-Zahl war eine Modell-Aussage, keine Verfahrensaussage
 
@@ -74,13 +76,13 @@ Rangfolge Zeile für Zeile identisch in beiden. Das Aggregat jeder Stufe ist das
 des `npm run eval`-Ausdrucks, der zur selben Uhrzeit voll laufen gelassen wurde
 (`auswertung-nomic-0611.txt`, `auswertung-bge-m3-0611.txt`).
 
-| Stufe gewechselt (nomic → bge-m3) | K3PTA, ausgelieferte Fusion | sqlite-vec, reines KNN |
-|---|---|---|
-| Hit@1 | 75,6 % → **77,8 %** (netto +1 Anfrage) | 42,2 % → **66,7 %** (netto +11 Anfragen) |
-| Recall@5 (gekappt) | 91,1 % → **90,0 %** | — |
-| Erst-Treffer wechselt die Richtigkeit | **3 von 45** = 6,7 % | **15 von 45** = 33,3 % |
-| anderer erster Treffer überhaupt | 7 von 45 = 15,6 % | 25 von 45 = 55,6 % |
-| ganze Liste unverändert | 16 von 45 = 35,6 % | **0 von 45** = 0,0 % |
+| Stufe gewechselt (nomic → bge-m3) | K3PTA, ausgelieferte Fusion | sqlite-vec, reines KNN | chroma, reines KNN (P118) |
+|---|---|---|---|
+| Hit@1 | 75,6 % → **77,8 %** (netto +1 Anfrage) | 42,2 % → **66,7 %** (netto +11 Anfragen) | 42,2 % → **68,9 %** (netto +12 Anfragen) |
+| Recall@5 (gekappt) | 91,1 % → **90,0 %** | — | — |
+| Erst-Treffer wechselt die Richtigkeit | **3 von 45** = 6,7 % | **15 von 45** = 33,3 % | **14 von 45** = 31,1 % |
+| anderer erster Treffer überhaupt | 7 von 45 = 15,6 % | 25 von 45 = 55,6 % | 25 von 45 = 55,6 % |
+| ganze Liste unverändert | 16 von 45 = 35,6 % | **0 von 45** = 0,0 % | **0 von 45** = 0,0 % |
 
 Die Zahl, die die Tabelle trägt, ist nicht der Punktabstand, sondern **der Bruchteil der
 Anfragen, dessen Rangfolge das Modell wechselt** — dieselbe Einheit auf beiden Seiten, an
@@ -148,12 +150,91 @@ Absolute ist kein Sprachgewinn, sondern ein **Nenner, der still schrumpft** -- d
 Klasse wie P104s "Nenner, der nicht schrumpfen darf". Gemessen und gehalten wird deshalb
 jede Seite einzeln, nicht der Preis.
 
-**Was damit für #44 gilt:** die Modell-Hypothese ist geprüft und **widert** (kein Default-
+**Was damit für #44 gilt:** die Modell-Hypothese ist geprüft und **widerlegt** (kein Default-
 Wechsel, kein Umbau des Bestands -- jeder Knoten müsste neu eingebettet werden,
 `src/core/engine.ts:294` filtert nach Modell). Offen bleibt damit ein Mechanismus auf der
 **Frage-Seite** (Übersetzung oder zweisprachiger Schlüssel vor dem Einbetten), und der ist
 hier weder gebaut noch gemessen; seine Latenz wäre zuerst an `scripts/volllauf`-Art zu messen,
 nicht an 58 Notizen.
+
+## P118, 18:43 MEZ: die Zahl des reinen Vektors ist eine Spanne, kein Punkt
+
+P111 und P112 haben gezeigt, dass dieselbe Rangfolge **vom Einbett** abhängt. Diese Stufe
+zeigt, dass sie auch **vom Werkzeug** abhängt -- und misst beides an einem zweiten Produkt.
+Gefahren 18:42:37 bis 18:43:08 MEZ: chroma 1.5.9 in einer egnen Kapsel
+(`/tmp/konk-chroma-0611`, python 3.14.7), dasselbe Korpus (58 Notizen, 45 Anfragen --
+vorher aus `scripts/eval-corpus.ts` exportiert und **bytegleich** zu P110s Korpusdatei),
+dieselben Einbett-Stufen, k=5, nur Vektoren, nichts sonst. Zwei Läufe je Stufe.
+
+| chroma 1.5.9, reines Cosinus-KNN | nomic-embed-text | bge-m3 |
+|---|---|---|
+| Hit@1 | **19/45 = 42,2 %** | **31/45 = 68,9 %** |
+| in den ersten fünf | 26/45 = 57,8 % | 40/45 = 88,9 % |
+| umschreibung | 0 von 10 | 6 von 10 |
+| temporal | 0 von 3 | 1 von 3 |
+| lexikalisch | 15 von 25 | 20 von 25 |
+
+**Gleich-Stufen-Vergleich, beide Produkte, beide Stufen** (die einzige Lesart, die etwas über
+die Fusion sagt):
+
+| gegen reines Cosinus-KNN | sqlite-vec | chroma |
+|---|---|---|
+| nomic-Stufe: 34/45 gegen 19/45 | **15 Anfragen = 33,4 Pp** | **15 Anfragen = 33,4 Pp** |
+| bge-Stufe: 35/45 gegen 30 bzw. 31 | **5 Anfragen = 11,1 Pp** | **4 Anfragen = 8,9 Pp** |
+
+Der Abstand an der nomic-Stufe ist **in beiden Produkten auf die Anfrage gleich**. An der
+bge-Stufe ist er es nicht: 31 gegen 30. Die eine Anfrage, die entscheidet, heißt
+`"Hetzner"`, Kategorie graph, erwartet sind m01, m16, m36, m37. Grund, **gemessen und nicht
+vermutet** (`docs/belege/konkurrenz-0611e/gleichstand-hetzner-0611.txt`): die zwei Notizen
+m16 und m17 haben **dieselbe** Cosinus-Ähnlichkeit zur Frage --
+`0,5002722382648656` gegen `0,5002722382648656`, auf sechzehn Stellen gleich -- und beide
+Werkzeuge melden denselben Abstand `0,499727`. chroma stellt m16 zuerst (Treffer),
+sqlite-vec stellt m17 zuerst (kein Treffer). **Ein echter Gleichstand, den das Verfahren
+nicht entscheiden kann; über ihn entscheidet die Speicherordnung des Produkts.**
+
+Was daraus nach aussen steht: eine Konkurrenz-Zahl für reines KNN darf nicht als Punkt
+geschrieben werden. Richtig ist die **Spanne**: 42,2 % an der nomic-Stufe (beide Produkte),
+66,7 bis 68,9 % an der bge-Stufe. Und unsre Führung ist an der starken Stufe **vier bis fünf
+Anfragen von 45**, nicht 15 -- die 15 gelten nur, wo beide Seiten nomic fahren. Das ist
+dieselbe Ehrlichkeit, die P111 von der Modell-Aussage verlangt hat, jetzt gegen das Werkzeug.
+
+**Ist die Spanne Wuerfelglueck -- und unsre Fuehrung etwa auch?** Der
+Gleichstands-Zensus (`docs/belege/konkurrenz-0611e/gleichstands-zensus.py`, 19:01:36 bis
+19:01:41 MEZ) prueft fuer beide Stufen alle 45 Anfragen, ob die beste und die zweitbeste
+Aehnlichkeit gleich sind (Toleranz 1e-12, float64 und float32):
+
+| | nomic-Stufe | bge-Stufe |
+|---|---|---|
+| Anfragen mit Gleichstand auf Platz 1 | **0 von 45** | **1 von 45** |
+| davon haengt Treffer oder Fehlgriff daran | 0 | 1 (`"Hetzner"`: m16 gilt, m17 nicht) |
+| unsre erste Stelle auf dieser einen Anfrage | -- | **m36, ausserhalb der Gruppe, Treffer** |
+
+Das ist die Antwort, die vor dem Verkaufsatz stehen muss: **das Wuerfeln ist die
+Mitbewerber-Seite.** Keine einzige Anfrage der nomic-Stufe haengt an einem Platz-1-
+Gleichstand, und die einzige der bge-Stufe ist genau die, die 31 von 30 trennt. Unsre
+Rangfolge entscheidet dieselbe Anfrage **ohne den Gleichstand**: sie setzt m36 auf Platz 1 --
+eine Notiz, die zur Gleichstands-Gruppe gar nicht gehoert (0,4992953 gegen 0,5002722) und
+ein gueltiger Ausweis ist. Der Grund ist das Verfahren, nicht der Sortierstall: m36 ist die
+Hetzner-Notiz, und BM25, Entitaeten und Zeitstrahl heben sie -- dieselben Bausteine, die
+P111 als Antwort auf die Modell-Aussage *dazu* genommen hat. Tiefer in den ersten fuenf
+liegen weitere Gleichstaende (5 Anfragen an der nomic-, 2 an der bge-Stufe, stets m16 gegen
+m17); sie aendern an der Rangordnung des Mitbewerbers nichts am ersten Treffer, und deshalb
+ist die Zahl, die dort schwankt, genau eine.
+
+**Nebenbefund, und er gehört zu P112:** unsre eigne Spur aus 17:09 MEZ
+(`konkurrenz-0611c`) schreibt ins Feld `erwartet` nur den **ersten** gültigen Ausweis
+(`docs/belege/konkurrenz-0611c/spur-leser.ts:36`, `erwartet: q.relevant[0]`). Die
+Ledger-Zahlen waren dadurch nie falsch -- P112 rechnet gegen das Korpus, nicht gegen das
+Feld. Aber ein Leser, der das Feld für die ganze Erwartung hält, misst **30 statt 34**
+(nomic) und **31 statt 35** (bge-m3): vier Anfragen zu niedrig, und die vier liegen genau an
+den sechs Anfragen des Korpus, die mehrere gültige Ausweise haben. Heilung: die Spur
+`docs/belege/konkurrenz-0611e/spur-uns-{nomic,bge-m3}-0611e.jsonl` schreibt die ganze Liste,
+und ihre erste Stelle ist in **allen 45 Anfragen dieselbe** wie um 17:09 MEZ -- zwei Stunden
+auseinander, gleiche Rangfolge.
+
+**Was dieser Schnitt nicht heilt:** er sagt nichts über txtai (#30 bleibt offen), nichts über
+die Geschwindigkeit an einem echten Bestand (58 Notizen sind ein Korpus, kein Bestand), und
+er ändert **nichts am ausgelieferten Objekt** -- keine neue Fassung, kein Tausch.
 
 ## Was die letzte Zeile sagt, und was sie nicht sagt
 
@@ -182,6 +263,36 @@ bei 26,7 — die Latte faellt also genau dann, wenn das ausgelieferte Retrieval 
 Baseline-Niveau zurueckfaellt. Bewiesen, nicht behauptet: Schwelle probehalber auf 30
 gehoben, Fall rot mit `expected 24.5 to be greater than or equal to 30`
 (6.11.2026 11:10:56 MEZ), danach zurueck auf 20.
+
+`tests/konkurrenz-chroma-latte.test.ts` (17 Faelle, P118) haelt die dritte Stufe und
+die zwei neuen Regeln:
+
+- die Zahl des reinen Vektors wird **als Spanne** gefahren -- 19/45 an der nomic-Stufe in
+  *beiden* Produkten, 30 und 31 an der bge-Stufe, und die eine verschiedene Anfrage ist mit
+  Namen und erwartet-Menge festgehalten (`"Hetzner"`, m16 gegen m17);
+- der Fuehrungs-Abstand der Fusion ist an der nomic-Stufe **15 Anfragen gegen jedes
+  Werkzeug**, an der bge-Stufe **4 gegen chroma und 5 gegen sqlite-vec** -- ein Fall, der
+  rot wird, wenn jemand die 15 auf beide Stufen schreibt;
+- die **rechnerische Treue** der egnen Spur: `erwartet` muss die ganze Liste sein und ihre
+  Laenge `anzahl_erwartet` treffen, die erste Stelle muss auf 45 von 45 Anfragen dieselbe
+  sein wie in P112s Spur, und der Fehler der alten Feldform ist mit seiner Groesse
+  festgehalten (30 gegen 34, 31 gegen 35 -- vier Anfragen, sechs mehrdeutige Anfragen im
+  Korpus);
+- der **Gleichstands-Zensus**: 0 von 45 Anfragen haben an der nomic-Stufe einen Gleichstand
+  auf Platz 1, genau einer an der bge-Stufe, und er ist der entscheidende; unsre eigne erste
+  Stelle auf dieser Anfrage ist m36 -- eine Notiz ausserhalb der Gleichstands-Gruppe. Ein
+  Fall, der rot wird, wenn jemand die Fuehrung der Fusion als Gluecksfall stehen laesst
+  oder wenn unsre Rangfolge dort auf m16 oder m17 faellt.
+
+Bewiesen, nicht behauptet, alles am 6.11. gemessen: (a) 18:51:46 MEZ liegt P112s alter
+Feldstand ueber der berichtigten Spur -- der Form-Fall faellt rot, die Rangfolgen-Faelle
+bleiben gruen (die erste Stelle war nie betroffen); das Artefakt ist danach bytegleich
+(sha256 `3a6d77d7b056413f…` vor und nach dem Eingriff). (b) 18:53:28 MEZ wird die
+bge-Erwartung gegen chroma probehalber auf 5 Anfragen gehoben -- der Fall faellt mit
+`expected 4 to be 5`, danach zurueck auf 4. (c) 19:04:14 MEZ werden die zwei Zensus-Erwartungen
+probehalber auf "2 von 45" und auf m16 gesetzt -- beide Faelle rot
+(`expected '--- Stufe nomic-embed-text (768 D)…' to contain 'A. Gleichstand auf Platz 1:
+2 von 45'` und dieselbe Form fuer m16), um 19:04:20 MEZ zurueckgesetzt, 17 Faelle gruen.
 
 ## Die Zahl, die kein Artefakt mehr hat
 
