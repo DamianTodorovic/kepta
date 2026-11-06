@@ -14,9 +14,14 @@ import path from "node:path";
 import {
   DIENER,
   FLAECHE,
+  SATZKAPPE,
   WERKZEUG,
+  artenAusQuelltext,
   istBenutzersprache,
+  kappenZeilen,
   kandidatenAusQuelltext,
+  summenPruefung,
+  traegtKappe,
   zaehle,
   zensiere,
 } from "../scripts/verstaendlichkeit.mjs";
@@ -198,5 +203,70 @@ describe("Punkt 7: Fachwort-Saetze der Flaeche tragen Grund oder Taetigkeit", ()
   it("der Nenner der Flaeche ist eine Zahl, keine Luecke", () => {
     // Ein Census ueber null Saetzen waere grün und wertlos.
     expect(census.n).toBeGreaterThan(300);
+  });
+
+  it("die Kappe hat eine Kante, die sie selbst nennt", () => {
+    // Gemessen 6.11.2026 06:45:22 MEZ am Baum: 348 Flaeche-Saetze, davon 38 mit GENAU 14
+    // Woetern -- bei 13 Woetern sind es 20, bei 15 nur 9. Die Latte (80 Prozent) haelt mit
+    // `<= 14` bei 80,5 % und faellt mit `< 14` auf 69,5 %. Das Urteil haengt an einer
+    // Vergleichsrichtung, die das Werkzeug nirgends nannte, und die Art-Zeile des Laufs
+    // (06:43:19 MEZ) zahlte `<`, das Urteil `<=`: 242 gegen 280 aus demselben Lauf.
+    // Also zuerst die Kante selbst, an zwei eigens gezählten Saetzen.
+    const vierzehn = "one two three four five six seven eight nine ten eleven twelve thirteen fourteen";
+    const fnfzehn = vierzehn + " fifteen";
+    expect(zaehle(vierzehn).woerter, "die Sonde muss die Probe erst richtig zaehlen").toBe(14);
+    // Die Schadenregel lautet "ueber 14 Woertern verliert ein Mensch den Bezug". Genau 14
+    // ist nicht darueber, also traegt es. Wer das umdrehen will, dreht hier einen Satz um.
+    expect(traegtKappe(14), "ein Satz von genau 14 Woertern faellt nicht ueber die Kappe").toBe(true);
+    expect(traegtKappe(15), "ein Satz von 15 Woertern traegt nicht — dann ist die Kappe ohne Kante").toBe(false);
+  });
+
+  it("ein nackter Strich ist kein Wort", () => {
+    // Gemessen 6.11.2026 06:52:17 MEZ am Baum: `zaehle` trennt nur an Leerraum, und der
+    // Gedankenstrich des Hauses steht als eignes Token. 165 von 348 Flaeche-Saetzen (47,4 %)
+    // tragen mindestens ein nacktes Token, 181 an der Zahl -- jeder davon wird einen Wort
+    // zu lang gemessen. Sieben Saetze standen dadurch auf der falschen Seite der Kappe:
+    // der Korpus traegt 280 von 348 (80,5 %) mit Strich als Wort, 287 von 348 (82,5 %) ohne.
+    // Der Zaehler mass sieben Saetze zu lang, und die Marge der Latte hing an diesem Fehler.
+    const mitStrich = "The tool list did not arrive — the local server answered without a list.";
+    const ohneStrich = "The tool list did not arrive the local server answered without a list";
+    expect(zaehle(ohneStrich).woerter, "die Probe erst richtig zaehlen").toBe(13);
+    expect(zaehle(mitStrich).woerter, "ein Strich traegt keine Bedeutung, also kein Wort").toBe(13);
+    // Die Kante: Wortzeichen, auch Ziffern, zaehlen weiter. (Zuerst stand hier 3 -- ich hatte
+    // die eigne Probe falsch gezaehlt; "Restart in 5 seconds" sind vier Woerter. Die Sonde
+    // hatte recht, der Fall nicht. Gemessen im Volllauf 06:57:26 MEZ: expected 4 to be 3.)
+    expect(zaehle("Restart in 5 seconds").woerter).toBe(4);
+    expect(zaehle("Root → type → entity → note").woerter, "Pfeile sind Notation, kein Wort").toBe(4);
+  });
+
+  it("die Art-Zeilen und das Urteil rechnen auf demselben Korpus", () => {
+    // Die zwei Lesungen duerfen sich nicht um die Kante irren: die Summe der Art-Zeilen muss
+    // auf dieselbe Grundgesamtheit und denselben Zaehler kommen wie das Urteil.
+    const arten = artenAusQuelltext(FLAECHE);
+    const nachArt = [...funde].map(([s, quelle]) => ({ ...zaehle(s), s, quelle, art: arten.get(s) || "literal" }));
+    const zeilen = kappenZeilen(nachArt);
+    expect(zeilen.map((z) => z.gruppe).sort()).toEqual(["rand (Titel, Platzhalter, Vorlesername)", "sichtbar (Blatt, Meldung, Kopfzeile)"]);
+    const pruefung = summenPruefung(zeilen, census.n, census.unterKappe);
+    expect(pruefung.ok, `die eigne Rechnung des Census traegt nicht: ${pruefung.grund}`).toBe(true);
+    // Biss-Kontrolle: dieselbe Kontrolle muss ein frisiertes Paar zurückweisen, sonst ist
+    // sie ein Nachschlagen, das nie verliert.
+    expect(summenPruefung(zeilen, census.n, census.unterKappe + 1).ok, "die Kontrolle hat keinen Biss").toBe(false);
+    expect(summenPruefung(zeilen.slice(1), census.n, census.unterKappe).ok, "eine fehlende Art-Gruppe geht durch").toBe(false);
+  });
+
+  it("die Sprache des Census sagt hochstens, weil seine Rechnung <= meint", () => {
+    // Ein Werkzeug, das "unter 14" schreibt und `<= 14` zaehlt, beschreibt eine Regel, die es
+    // nicht faehrt. Ein Leser, der die Zahl nachrechnet, findet 242 und haelt den Census für
+    // falsch. Also: eine Wortmeldung, und die Selbstkontrolle muss im stdout stehen.
+    const laut = spawnSync("node", [path.join(WURZEL, "scripts", "verstaendlichkeit.mjs"), "--nur", "quelltext"], { encoding: "utf8" });
+    expect(laut.stdout).toContain("SELBSTKONTROLLE KAPPE: HALTET");
+    expect(laut.stdout).toContain(`an der Kante von genau ${SATZKAPPE} Woertern`);
+    expect(laut.stdout).toContain("Anteil mit hoechstens");
+    expect(laut.stdout).not.toContain("unter 14 Woertern");
+    expect(laut.stdout).not.toContain("unter der Kappe");
+    // Die Art-Zeilen bleiben Bericht, keine eigne Latte: die Latte gilt dem Korpus als Ganzes.
+    expect(laut.stdout).toMatch(/sichtbar \(Blatt, Meldung, Kopfzeile\): \d+ von \d+ mit hoechstens/);
+    expect(laut.stdout).toMatch(/rand \(Titel, Platzhalter, Vorlesername\): \d+ von \d+ mit hoechstens/);
+    expect(laut.stdout).toContain("Bericht, keine Latte");
   });
 });

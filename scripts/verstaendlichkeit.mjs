@@ -15,9 +15,12 @@
 // Die Latte, die hier steht, ist eine gemessene Groesse und kein Wunsch:
 //   SATZKAPPE 14 Woerter — ueber 14 Woertern verliert ein Mensch den Bezug im Lesen, und die
 //   Hausregel fuer aussen stehende Texte ist "unter 130 Woertern pro Stueck". 80 Prozent der
-//   Saetze muessen unter der Kappe bleiben; die Zahl ist eine Untergrenze, keine Schoenheit:
+//   Saetze muessen die Kappe tragen; die Zahl ist eine Untergrenze, keine Schoenheit:
 //   sie sagt, wie viele Saetze ueberhaupt lesbar sein muessen, damit ein Bestand von 21 066
-//   Notizen nicht eine Sprache spricht, die nur seiner Erfinderin paesst.
+//   Notizen nicht eine Sprache spricht, die nur seiner Erfinderin paesst. Die Vergleichs-
+//   richtung ist ein Wort wert, weil 38 von 348 Saetzen genau darauf liegen: `traegtKappe`
+//   zaehlt hoechstens 14, und ein Lauf, der an zwei Stellen verschieden rechnet, fuehrt
+//   keine Zahl, die er meldet (gemessen 6.11.2026 06:45:22 MEZ).
 // Was dieser Lauf NICHT entscheidet, steht unter dem Census als offene Zeile: ob ein Mensch
 // den Satz *versteht*, ist eine Frage an einen Menschen, nicht an einen Zaehler.
 
@@ -88,9 +91,11 @@ export const HANDLUNG = /\b(click|type|write|open|close|zoom|name|select|press|a
 const AUSSCHLUSS_PFAD = /src\/lib\/(autolearn|.*prompt.*)\.ts$/;
 const AUSSCHLUSS_WORT = /reply only|you are a|as JSON|system prompt/i;
 
-/** Kandidaten aus dem Quelltext: JSX-Text, Titel, Beschriftung, Platzhalter, Meldung. */
-export function kandidatenAusQuelltext(mengen) {
+/** Ein Durchgang durch den Quelltext: Funde und ihre Art, frisch, ohne Zustand zwischen
+    den Aufrufen. */
+function sammle(mengen) {
   const funde = new Map();
+  const arten = new Map();
   const dateien = [];
   for (const d of mengen) {
     const ordner = path.join(WURZEL, d);
@@ -98,12 +103,20 @@ export function kandidatenAusQuelltext(mengen) {
       if (rel.trim()) dateien.push(rel);
     }
   }
+  // Jedes Muster traegt seine Art mit: was ein Mensch im Blatt liest (jsx, wort, literal),
+  // und was nur am Rand erscheint -- der Titel unter dem Zeiger, der Platzhalter, der
+  // Name fuer den Vorleser (rand). Gemessen 05:36:54 MEZ: die drei Chat-Zweige der
+  // Rangfolge-Erklaerung stehen als `title=` im Quelltext, 24 bis 29 Woerter lang, und
+  // der Census zaehlt sie wie gelesenen Flaechentext. Ob das dieselbe Latte sein darf,
+  // ist eine Frage an die Zahl, nicht an den Geschmack -- also zuerst beide Zahlen.
   const muster = [
-    /> ([^<{}]{20,400}) </g,                       // JSX-Textknoten
-    /\b(?:title|placeholder|aria-label|label|text|message|hinweis|info)\s*=\s*"([^"]{20,400})"/g,
-    /\b(?:title|placeholder|aria-label|label)\s*=\s*\{`([^`]{20,400})`\}/g,
-    /"([A-Z][^"\\]{20,300}?)"/g,                    // String-Literale (Meldungen, Kopfzeilen)
-    /'([A-Z][^'\\]{20,300}?)'/g,
+    { re: /> ([^<{}]{20,400}) </g, art: "jsx" },
+    { re: /\b(?:title|placeholder|aria-label)\s*=\s*"([^"]{20,400})"/g, art: "rand" },
+    { re: /\b(?:label|text|message|hinweis|info)\s*=\s*"([^"]{20,400})"/g, art: "wort" },
+    { re: /\b(?:title|placeholder|aria-label)\s*=\s*\{`([^`]{20,400})`\}/g, art: "rand" },
+    { re: /\b(?:label|text|message|hinweis|info)\s*=\s*\{`([^`]{20,400})`\}/g, art: "wort" },
+    { re: /"([A-Z][^"\\]{20,300}?)"/g, art: "literal" },
+    { re: /'([A-Z][^'\\]{20,300}?)'/g, art: "literal" },
   ];
   for (const datei of dateien) {
     // Kommentare sind nicht die Flaeche. Gemessen 5.11.2026 18:39 MEZ: drei der elf Funde
@@ -113,19 +126,31 @@ export function kandidatenAusQuelltext(mengen) {
     const t = fs.readFileSync(datei, "utf8")
       .replace(/\/\*[\s\S]*?\*\//g, "")
       .replace(/^\s*\/\/.*$/gm, "");
-    for (const m of muster) {
-      m.lastIndex = 0;
+    for (const { re, art } of muster) {
+      re.lastIndex = 0;
       let e;
-      while ((e = m.exec(t))) {
+      while ((e = re.exec(t))) {
         const s = e[1].trim();
         if (!istBenutzersprache(s)) continue;
         if (AUSSCHLUSS_PFAD.test(datei.replace(WURZEL + "/", ""))) continue;
         if (AUSSCHLUSS_WORT.test(s)) continue;
         if (!funde.has(s)) funde.set(s, datei.replace(WURZEL + "/", ""));
+        if (!arten.has(s)) arten.set(s, art);
       }
     }
   }
-  return funde;
+  return { funde, arten };
+}
+
+/** Kandidaten aus dem Quelltext: JSX-Text, Titel, Beschriftung, Platzhalter, Meldung. */
+export function kandidatenAusQuelltext(mengen) {
+  return sammle(mengen).funde;
+}
+
+/** Zu welchem Muster ein Satz gefunden wurde: "rand" (Titel, Platzhalter, Vorlesername)
+    oder eine der sichtbaren Arten (jsx, wort, literal). */
+export function artenAusQuelltext(mengen) {
+  return sammle(mengen).arten;
 }
 
 export function istBenutzersprache(s) {
@@ -168,8 +193,18 @@ export function istBenutzersprache(s) {
   return true;
 }
 
+/** Ein Token zaehlt nur als Wort, wenn ein Buchstabe oder eine Ziffer darin steht
+    (\p{L}, \p{N}) -- einer aus Zeichen, die keine Sprache schreibt. */
+export const WORTZEICHEN = (t) => /[\p{L}\p{N}]/u.test(t);
+
 export function zaehle(s) {
-  const woerter = s.split(/\s+/).filter(Boolean);
+  // Ein Wort traegt ein Wortzeichen. Gemessen 6.11.2026 06:52:17 MEZ: der Zaehler trennte nur
+  // an Leerraum, und der Gedankenstrich des Hauses -- wie Pfeil und Punkt in der Legende --
+  // stand als eignes Token da. 165 von 348 Flaeche-Saetzen (47,4 %) trugen mindestens eines,
+  // 181 an der Zahl, und jeder wurde einen Wort zu lang gemessen. Sieben Saetze standen
+  // dadurch auf der falschen Seite der Kappe: der Korpus traegt 280 von 348 (80,5 %) mit dem
+  // Strich als Wort, 287 von 348 (82,5 %) ohne.
+  const woerter = s.split(/\s+/).filter(WORTZEICHEN);
   const klein = s.toLowerCase();
   const fach = FACHWORTER.filter((w) => new RegExp("\\b" + w + "\\b").test(klein));
   return {
@@ -199,6 +234,42 @@ export function imObjekt(suche, s) {
   return !!suche.textEntfl && (suche.textEntfl.includes(glatt(s)) || suche.textEntfl.includes(glatt(entlastet)));
 }
 
+/** Die einzige Vergleichsrichtung der Kappe. Gemessen 6.11.2026 06:45:22 MEZ am Baum: 348
+    Flaeche-Saetze, davon 38 mit GENAU 14 Woetern (bei 13 sind es 20, bei 15 nur 9). Dieselbe
+    Grundgesamtheit haelt mit `<= 14` bei 80,5 % und faellt mit `< 14` auf 69,5 % -- die Latte
+    hing an einem Vergleich, den das Werkzeug nirgends nannte, und die zwei Lesungen desselben
+    Laufs zahlten verschieden. Die Schadenregel lautet "ueber 14 Woertern verliert ein Mensch
+    den Bezug": genau 14 ist nicht darueber, also traegt es. */
+export function traegtKappe(woerter) {
+  return woerter <= SATZKAPPE;
+}
+
+/** Die Kappe nach Art des Sitzes, als Zahlen -- nicht als eigne Latte. */
+export function kappenZeilen(getragen) {
+  const gruppe = (z) => (z.art === "rand" ? "rand (Titel, Platzhalter, Vorlesername)" : "sichtbar (Blatt, Meldung, Kopfzeile)");
+  const nach = new Map();
+  for (const z of getragen) {
+    const g = gruppe(z);
+    if (!nach.has(g)) nach.set(g, { gruppe: g, n: 0, unter: 0 });
+    const e = nach.get(g);
+    e.n += 1;
+    if (traegtKappe(z.woerter)) e.unter += 1;
+  }
+  return [...nach.values()];
+}
+
+/** Die eigne Rechnung des Werkzeugs: die Art-Zeilen muessen auf dieselbe Grundgesamtheit und
+    denselben Zaehler kommen wie das Urteil. Ein Census, der sich selbst nicht zusammenaddiert,
+    meldet zwei Zahlen aus einem Lauf und fuehrt keine davon. */
+export function summenPruefung(zeilen, n, unter) {
+  const summe = zeilen.reduce((a, z) => a + z.n, 0);
+  const subere = zeilen.reduce((a, z) => a + z.unter, 0);
+  if (zeilen.some((z) => !z.gruppe)) return { ok: false, grund: "eine Art-Zeile ohne Namen" };
+  if (summe !== n) return { ok: false, grund: `die Art-Zeilen zaehlen ${summe} Saetze, das Urteil ${n}` };
+  if (subere !== unter) return { ok: false, grund: `die Art-Zeilen tragen ${subere}, das Urteil ${unter}` };
+  return { ok: true, grund: `${summe} Saetze, ${subere} tragen` };
+}
+
 /** Ein Census ueber einer Menge von Saetzen, mit seiner eignen Biss-Kontrolle. */
 export function zensiere(getragen) {
   const n = getragen.length;
@@ -208,7 +279,7 @@ export function zensiere(getragen) {
   // nicht "alle Worte, die irgendwo in der App stehen".
   return {
     n,
-    unterKappe: getragen.filter((z) => z.woerter <= SATZKAPPE).length,
+    unterKappe: getragen.filter((z) => traegtKappe(z.woerter)).length,
     mitGrund: getragen.filter((z) => z.grund).length,
     mitHandlung: getragen.filter((z) => z.handlung).length,
     mitFach: getragen.filter((z) => z.fach.length > 0).length,
@@ -225,7 +296,7 @@ function melde(name, c, getragen, gate, korpus) {
     ? `  — Latte ${100 * UNTER_KAPPE_MINDESTENS} %`
     : "  — Bericht, keine Latte (URTEIL KAPPE misst nur die Flaeche)";
   console.log(`\n  ${name}: ${c.n} Saetze ${korpus}`);
-  console.log(`    unter der Kappe von ${SATZKAPPE} Woertern: ${c.unterKappe} (${c.teil(c.unterKappe)})${kappe}`);
+  console.log(`    mit hoechstens ${SATZKAPPE} Woertern (genau ${SATZKAPPE} traegt): ${c.unterKappe} (${c.teil(c.unterKappe)})${kappe}`);
   console.log(`    mit Grund oder Folge: ${c.mitGrund} (${c.teil(c.mitGrund)})`);
   console.log(`    nennt dem Menschen eine Taetigkeit: ${c.mitHandlung} (${c.teil(c.mitHandlung)})`);
   console.log(`    mit mindestens einem Fachwort: ${c.mitFach} (${c.teil(c.mitFach)})`);
@@ -264,10 +335,10 @@ async function haupt() {
   }
 
   const baue = (mengen) => {
-    const funde = kandidatenAusQuelltext(mengen);
+    const { funde, arten } = sammle(mengen);
     const zeilen = [];
     for (const [s, quelle] of funde) {
-      zeilen.push({ s, quelle, ...zaehle(s), imObjekt: suche ? imObjekt(suche, s) : null });
+      zeilen.push({ s, quelle, art: arten.get(s) || "literal", ...zaehle(s), imObjekt: suche ? imObjekt(suche, s) : null });
     }
     const getragen = suche ? zeilen.filter((z) => z.imObjekt) : zeilen;
     return { zeilen, getragen };
@@ -288,6 +359,24 @@ async function haupt() {
   melde("FLAECHE (ein Mensch liest)", cFlaeche, flaeche.getragen, true, korpus);
   melde("WERKZEUG (ein Agent liest)", cWerkzeug, werkzeug.getragen, false, korpus);
   melde("DIENER (ein Mensch oder ein Agent liest die Antwort mit)", cDiener, diener.getragen, false, korpus);
+
+  // Die Kappe-Latte gilt dem Corpus als Ganzes. Diese Zeilen sind die Frage dahinter, noch
+  // ohne Urteil: wie viel davon ueberhaupt im Blatt steht. Gemessen 05:36:54 MEZ: die
+  // laengsten Saetze der Flaeche sind Titel unter dem Zeiger (`title=` im Quelltext),
+  // 24 bis 29 Woerter, und ein Hover ist nicht derselbe Lesefall wie ein Satz im Text.
+  // Entscheiden, weil die Latte nicht dorthin wandern darf, wo sie am leichtesten haelt:
+  // die Art-Zeilen sind Bericht, das Urteil bleibt am ganzen Korpus (06:45:22 MEZ: sichtbar
+  // 236 von 286 = 82,5 %, rand 44 von 62 = 71,0 %, ganzer Korpus 80,5 % -- die engste
+  // Grundgesamtheit waerer das leichteste Urteil, also bleibt der Nenner der harte).
+  const artZeilen = kappenZeilen(flaeche.getragen);
+  const kante = flaeche.getragen.filter((z) => z.woerter === SATZKAPPE).length;
+  console.log("\n  Die Kappe nach Art des Sitzes (Flaeche, Bericht ohne Latte):");
+  for (const z of artZeilen) console.log(`    ${z.gruppe}: ${z.unter} von ${z.n} mit hoechstens ${SATZKAPPE} Woertern = ${(100 * z.unter / Math.max(1, z.n)).toFixed(1)} %`);
+  // Das Gewicht des Vergleichs, sichtbar gemacht: ohne die Kante faellt die Latte.
+  console.log(`    an der Kante von genau ${SATZKAPPE} Woertern: ${kante} Saetze (${(100 * kante / Math.max(1, flaeche.getragen.length)).toFixed(1)} % des Korpers) — ohne sie traegt der Korpus ${cFlaeche.unterKappe - kante} von ${cFlaeche.n} = ${(100 * (cFlaeche.unterKappe - kante) / Math.max(1, cFlaeche.n)).toFixed(1)} %`);
+  const summen = summenPruefung(artZeilen, cFlaeche.n, cFlaeche.unterKappe);
+  console.log(`  SELBSTKONTROLLE KAPPE: ${summen.ok ? "HALTET" : "BRICHT"} (${summen.grund})`);
+  if (!summen.ok) process.exitCode = 2;
 
   // Der Abstand zwischen Baum und Objekt, mit Namen. Gemessen 05:57:31 MEZ: drei
   // Werkzeug-Saetze stehen im Baum, nicht im Objekt -- es sind die CLI-Zeilen von
@@ -348,7 +437,7 @@ async function haupt() {
   const strichBiss = NACKTER_STRICH.test("A local program on this machine - no key needed.");
   const taub = !getroffen || !blind || !strichBiss;
   const urteil = taub ? "TAUB" : kappeHalten && riegelHalten && strichHalten ? "HALTET" : "FAELLT";
-  console.log(`  URTEIL KAPPE: ${kappeHalten ? "HALTET" : "FAELLT"} (Flaeche: Anteil unter ${SATZKAPPE} Woertern ${(100 * anteil).toFixed(1)} %, Latte ${100 * UNTER_KAPPE_MINDESTENS} %)`);
+  console.log(`  URTEIL KAPPE: ${kappeHalten ? "HALTET" : "FAELLT"} (Flaeche: Anteil mit hoechstens ${SATZKAPPE} Woertern ${(100 * anteil).toFixed(1)} %, Latte ${100 * UNTER_KAPPE_MINDESTENS} %)`);
   // Die Marge in Saetzen, nicht in Prozent: wie viele der kurzen Saetze lang werden
   // duerfen, bevor die Latte faellt. Gemessen 05:57:31 MEZ: 276 von 345 = genau 80,000 %,
   // die Marge ist 0 -- ein einziger langer Satz kippt das Urteil.
