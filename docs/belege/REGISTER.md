@@ -245,11 +245,11 @@ erfunden, in beiden Sprachen gemessen und mit dem Vektor-Bein auch allein:
 | `aussendung-0611/aussendung-0611.log.txt` | 3400 B | `8377e3c64c89e082…` |
 | `aussendung-0611/beweisen-3-2-190-0611.txt` | 1094 B | `21c9789fca4692a5…` |
 | `aussendung-0611/github-releases-0611.json` | 153795 B | `56f94e5bd9c71d1c…` |
-| `aussendungsatz-0611/zaehlen.mjs` | 12489 B | `3055055cf52e71e4…` |
+| `aussendungsatz-0611/zaehlen.mjs` | 13425 B | `28f5a607e0c2b7c3…` |
 | `aussendungsatz-0611/satz-riss.mjs` | 3005 B | `abedac906ac83c5f…` |
 | `aussendungsatz-0611/messregel.mjs` | 1617 B | `7e1e7e38b586958f…` |
-| `aussendungsatz-0611/zaehlung-0611.json` | 34013 B | `19e7e0dce1b4054a…` |
-| `aussendungsatz-0611/zaehlung-0611.log.txt` | 13621 B | `3e4924e4264350c8…` |
+| `aussendungsatz-0611/zaehlung-0611.json` | 33484 B | `144a34e58f0fa9ba…` |
+| `aussendungsatz-0611/zaehlung-0611.log.txt` | 13863 B | `26670823631101c0…` |
 
 Drei Folgen, aufgeschrieben, weil sie die Zahl nicht schoener machen:
 

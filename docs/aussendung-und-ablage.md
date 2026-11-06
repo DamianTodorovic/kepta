@@ -585,6 +585,33 @@ Zeile für Zeile dieselbe wie zuvor, `npx tsc --noEmit` Exit 0, und die Dashboar
 laufen in der Suite grün (Suite 3737, ein Rot nur am Zahlenträger). Beim nächsten Bau ist die
 Fläche dann am Objekt geprüft, nicht nur im Baum.
 
+## 19. Drei weitere Sätze: Zeugen existierten, nur niemand nannte sie (P131, 22:26 MEZ)
+
+Kein neues Messzeug, dreimal ein Verweis — die billige, ehrliche Arbeit aus der Queue. Jeder
+Zeuge ist vorher **gelesen**, nicht aus einem Keyword-Suchlauf übernommen (der erste Triage-Lauf
+hatte für „Settings can only narrow what is read" `tests/zielgroesse.test.ts` vorgeschlagen —
+beim Nachlesen ist das die Tastengröße-Latte, kein Zeuge; das Muster blieb 22:25 MEZ ohne Kandidat,
+bis die richtigen Fälle gefunden waren).
+
+| Satz | Wo | Zeuge, nachgelesen |
+|---|---|---|
+| „Settings can only narrow what is read, never widen it" | README.md:229 | `tests/scan/regeln.test.ts:190` (redet der Sperre das Lesen von Geheimnissen über die Dateiarten nicht an) und `:199` (kleinere Größengrenze ja, größere nein) |
+| „A backup of the old file sits right next to it, every other entry stays, and a file that is not plain JSON is never touched" | README.md:177 | `tests/lib/einrichtung.test.ts:42` (Sicherung daneben, Nachbareinträge bleiben) und `:61` (eine Datei mit Kommentaren wird nicht umgeschrieben, sondern abgelehnt) |
+| „There is nothing to activate and nothing to buy inside the window, so the app also never asks for it" | README.md:355 | `tests/keine-grenzen.test.ts:102-116` (Lizenzroute antwortet nicht, kein Zähler wird geschrieben, keine Oberfläche ruft sie) |
+
+Zensus 22:25:56 MEZ, Exit 0: Nenner bleibt **170** absolute Behauptungen aus 565 Einheiten,
+mit Messzeug **28** = 16,5 %, ohne Messzeug **142** = 83,5 %; Abschnittslesung 49 = 28,8 % gegen
+121 = 71,2 %. Die schmale Klasse bleibt 30 Sätze, davon nennen **11** ihr Messzeug — **19 sind die
+Arbeit** (P130: 8/22; P129: 5/25; P128: 4/26; P127: 7/24). Der Fall
+`tests/aussendungs-riss.test.ts` („am echten Bestand") ist auf 170/28 gehoben und bleibt grün.
+
+Was an den drei Sätzen **nicht** behauptet wird: dass die Zeugen die ganze Welt abdecken.
+`einrichtung.test.ts` fährt die Connector-Routine im App-Repo; die Datei-Bytes einer
+Kommentar-JSON werden dort nicht nach dem Versuch verglichen, sondern der Connector verweigert
+vor dem Schreiben — die Verweigerung ist gemessen, ein Bitvergleich der Fremddatei nicht. Und
+`keine-grenzen.test.ts` beweist das Verschwinden der Schließfächer in dieser App, nicht in der
+Enterprise-Konsole (README.md:181, zugefroren auf Damians Wort vom 5.11. 13:24 MEZ).
+
 ## Fehler in diesem Schlag, die ich selbst gefunden habe
 
 
@@ -691,3 +718,13 @@ Fläche dann am Objekt geprüft, nicht nur im Baum.
 21. **Eine Plattenzeit falsch gepaart.** Ich schrieb „22:14 MEZ: 8,36 GiB", obwohl 8,36 GiB um
     21:58:17 MEZ gemessen war und die Platte um 22:18:32 MEZ 8,24 GiB frei hatte. Zahl und Uhr
     gehören demselben Befehl; berichtigt.
+22. **Das Artefakt zitierte eine Zahl aus einer Runde, die es nicht mehr fährt.** Im Kopf von
+    `zaehlung-0611.log.txt` standen seit P128 „45 Einheiten … gemessen 21:42 MEZ in
+    `tests/aussendungs-riss.test.ts`" und „43 unter dem zeilenweisen Naivling". Keines davon ist
+    eine Prüfung, die die Suite heute enthält: 45 war ein Lesedurchgang durch den alten Riss, der
+    nur in der Rückstufe lebte, und 43 war die *Gegenprobe* von P128 (Markup-Trennung
+    ausgeschaltet) — im Kopf fälschlich als zweiter Naivling ausgegeben. Ein Artefakt, das eine
+    Zahl trägt, muss die Zahl selbst hergeben. Jetzt rechnet `zaehlen.mjs` beide Naivlinge in
+    jedem Lauf neu: auf diesem Stand sind es **51** unter dem Punkt-Naivling und **116** unter dem
+    zeilenweisen (gemessen 22:29:05 MEZ, Exit 0). Die Nenner der Zaehlung blieben unberührt
+    (565 Einheiten, 170 Behauptungen, 28 mit Messzeug) — der Kopf maß eine andere Größe.

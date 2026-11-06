@@ -144,15 +144,29 @@ const embeddingInDerFlaeche = embeddingFunde.reduce((a, e) => a + (e.funde ?? 0)
 const testsMitEmbeddingWort = grepp(["-rl", "-E", "embedding", "tests"]).split("\n").filter(Boolean).length;
 
 
+// Die beiden Naivlinge, unter denen der Riss entstanden ist, hier jedes Mal neu
+// nachgerechnet: das Papier nennt sonst eine Zahl aus einer frueheren Runde, und
+// die vier Texte haben sich seitdem bewegt. Punkt-Naivling = Satzende plus
+// Leerzeichen ueber dem ganzen Text; zeilenweis = jede Zeile fuer sich.
+const naivBlock = { punkt: 0, zeile: 0 };
+for (const f of DATEIEN) {
+  const t = fs.readFileSync(path.join(HIER, f), "utf8");
+  const punkt = t.split(/(?<=[.!?])\s+/).map((s) => s.replace(/\s+/g, " ").trim()).filter((s) => s.length > 25);
+  const zeile = t.split(/\n/).map((s) => s.replace(/\s+/g, " ").trim()).filter((s) => s.length > 25);
+  naivBlock.punkt += punkt.filter((s) => BLOCKMARKER.test(s)).length;
+  naivBlock.zeile += zeile.filter((s) => BLOCKMARKER.test(s)).length;
+}
+
 const zeilen = [];
 const say = (t) => { zeilen.push(t); console.log(t); };
 say(`Zeit: ${new Date().toLocaleString("de-DE", { timeZone: "Europe/Berlin", hour12: false })} MEZ`);
 say(`Dateien: ${DATEIEN.join(", ")} — Einheiten ueber 25 Zeichen.`);
 say("Riss: satz-riss.mjs (P128, markdown-fest). Vorher: Satzende + Leerzeichen ueber dem\n" +
   "ganzen Text, wodurch Aufzaehlungen, Tabellenzeilen und `<summary>`-Kuelsen als EIN\n" +
-  "Satz zaehlten — 45 Einheiten trugen noch Block-Struktur, gemessen 21:42 MEZ in\n" +
-  "  tests/aussendungs-riss.test.ts; die eigne Kontrolle hier meldet 43 unter dem\n" +
-  "  zeilenweisen Naivling (21:43 MEZ).");
+  `Satz zaehlten. Unter beiden Naivlingen, in diesem Lauf nachgerechnet:\n` +
+  `  ${naivBlock.punkt} Einheiten trugen nach dem Punkt-Naivling noch Block-Struktur,\n` +
+  `  ${naivBlock.zeile} nach dem zeilenweisen. Ein Zitat aus einer frueheren Runde stünde hier\n` +
+  "  nicht — die Zahl soll diejenige sein, die dieser Stand der vier Texte hergibt.");
 say("");
 say("| Datei | Saetze | absolute | mit Messzeug | ohne Messzeug | Anteil ohne |");
 say("|---|---|---|---|---|---|");

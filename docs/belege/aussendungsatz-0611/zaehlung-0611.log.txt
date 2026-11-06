@@ -1,30 +1,31 @@
-Zeit: 6.11.2026, 22:17:59 MEZ
+Zeit: 6.11.2026, 22:29:05 MEZ
 Dateien: README.md, SECURITY.md, ROADMAP.md, .github/release-notes.md — Einheiten ueber 25 Zeichen.
 Riss: satz-riss.mjs (P128, markdown-fest). Vorher: Satzende + Leerzeichen ueber dem
 ganzen Text, wodurch Aufzaehlungen, Tabellenzeilen und `<summary>`-Kuelsen als EIN
-Satz zaehlten — 45 Einheiten trugen noch Block-Struktur, gemessen 21:42 MEZ in
-  tests/aussendungs-riss.test.ts; die eigne Kontrolle hier meldet 43 unter dem
-  zeilenweisen Naivling (21:43 MEZ).
+Satz zaehlten. Unter beiden Naivlingen, in diesem Lauf nachgerechnet:
+  51 Einheiten trugen nach dem Punkt-Naivling noch Block-Struktur,
+  116 nach dem zeilenweisen. Ein Zitat aus einer frueheren Runde stünde hier
+  nicht — die Zahl soll diejenige sein, die dieser Stand der vier Texte hergibt.
 
 | Datei | Saetze | absolute | mit Messzeug | ohne Messzeug | Anteil ohne |
 |---|---|---|---|---|---|
-| `README.md` | 407 | 129 | 23 | 106 | 82.2 % |
+| `README.md` | 407 | 129 | 26 | 103 | 79.8 % |
 | `SECURITY.md` | 31 | 7 | 1 | 6 | 85.7 % |
 | `ROADMAP.md` | 77 | 16 | 0 | 16 | 100.0 % |
 | `.github/release-notes.md` | 50 | 18 | 1 | 17 | 94.4 % |
-| **zusammen** | **565** | **170** | **25** | **145** | **85.3 %** |
+| **zusammen** | **565** | **170** | **28** | **142** | **83.5 %** |
 
 Nenner fuer den Anteil: 170 absolute Behauptungen in 565 Saetzen der vier Texte.
 
 Zweite Lesung — der Zeuge darf im selben Abschnitt stehen (Absatz, Tabelle, Aufzaehlung):
 | Datei | absolute | mit Messzeug | ohne Messzeug |
 |---|---|---|---|
-| `README.md` | 129 | 49 | 80 |
+| `README.md` | 129 | 48 | 81 |
 | `SECURITY.md` | 7 | 1 | 6 |
 | `ROADMAP.md` | 16 | 0 | 16 |
 | `.github/release-notes.md` | 18 | 0 | 18 |
-| zusammen | 170 | 50 | 120 |
-   mit Messzeug im selben Abschnitt: 50 von 170 = 29.4 % (gegen 25 von 170 = 14.7 % in der engen Lesung).
+| zusammen | 170 | 49 | 121 |
+   mit Messzeug im selben Abschnitt: 49 von 170 = 28.8 % (gegen 28 von 170 = 16.5 % in der engen Lesung).
 
 Die schmalere Klasse — Saetze, die ein Werkzeug widerlegen koennte (never/always/cannot/0 %/100 %):
    README.md                  26 von 129 absoluten
@@ -43,17 +44,17 @@ Die schmalere Klasse — Saetze, die ein Werkzeug widerlegen koennte (never/alwa
    [README.md]      - Zoom, pan, draggable nodes, and fit-to-view that always frames the whole graph — the whole graph includes the strip the legend takes at the bottom
    [README.md]      The second channel switches itself off with the reason when the base holds only one kind of arrival; it never paints everything grey.
    [README.md]      *Keep the newer*, *Keep the older* (the other is marked as replaced, never deleted) or *Both are right* (never asked again).
-   [README.md]      A backup of the old file sits right next to it, every other entry stays, and a file that is not plain JSON is never touched
+   [README.md] ZEUG A backup of the old file sits right next to it, every other entry stays, and a file that is not plain JSON is never touched (tests/lib/einrichtung.test.ts:42 checks the backup and the untouched neighbours, :61 hands a co
    [README.md] ZEUG Private notes never reach an app or a cloud model — the same two checks apply here: tests/mcp.test.ts refuses a private note at the MCP door even when an agent asks for it by scope, and tests/enterprise-api.test.ts reads
    [README.md]      Card numbers must pass the Luhn check and IBANs the mod-97 check; dates are never taken for phone numbers.
    [README.md]      Managed deployment & central policies — IT deploys one managed-settings.json (the macOS MDM path, since the app ships macOS only; the Windows and Linux paths are in the same reader for self-built packages — or set KEPTA_
    [README.md]      Without a reachable local LLM it always degrades to ADD — the gate can never block you.
-   [README.md]      Settings can only narrow what is read, never widen it: keys, credentials, browser profiles, keychains and wallets stay blocked, the size cap stays capped, and roots outside your home folder are refused.
+   [README.md] ZEUG Settings can only narrow what is read, never widen it (tests/scan/regeln.test.ts:190 tries to talk the barrier into reading secrets by ticking file types and is refused; :199 allows a smaller size cap and refuses a bigge
    [README.md]      HTML is turned into text before import, and content that carries no knowledge — markup scaffolding, repeated table rows — never becomes a note
    [README.md] ZEUG The list groups by file, by kind or by period, and *Load more* never cuts a group in half (tests/lib/gruppenfenster.test.ts pins the window rule: a group that starts is shown whole, so a five-part file never appears as t
    [README.md] ZEUG GET /api/memories/:id therefore stays unimplemented until a client needs a body it cannot already reach; until then this table names only the methods the server registers, and tests/doku-plattform.test.ts fails if the tw
    [README.md]      It is off until you add a key, and the memory store is never synced anywhere.
-   [README.md]      There is nothing to activate and nothing to buy inside the window, so the app also never asks for it — no key field, no counter, no trial clock, no "first day free" and no message about a limit.
+   [README.md] ZEUG There is nothing to activate and nothing to buy inside the window, so the app also never asks for it — no key field, no counter, no trial clock, no "first day free" and no message about a limit (tests/keine-grenzen.test.
    [README.md]      It was never a lock — but it was counting, and counting needed places to hide the tally (an authenticated state in the database, a keychain anchor, a hidden file).
    [README.md]      The data is never hostage.
    [README.md]      They are built from this source and never published here, so they are untested against a real installer download; treat them as source builds, not as shipped products.
@@ -68,7 +69,7 @@ Zwei von ihnen nachgegriffen, im selben Lauf:
    "no screenshot of it here yet" (Semantic-Ansicht): README nennt 20 Bilder (12 in Markdown, 8 als <img alt>), davon 0 mit "Semantic"; der Satz steht noch da — haltbar.
    "no embedding ever travels into the view": 8 von 8 benannten Flaechen-Dateien gelesen, zusammen 0 Nennung(en) "embedding"; das Wort liegt in 34 Test-Dateien des Repos. Fehlende Dateien: keine.
 
-Die 145 ohne Messzeug, in Lesereihenfolge der Dateien (erste 40):
+Die 142 ohne Messzeug, in Lesereihenfolge der Dateien (erste 40):
    [README.md] Your AI forgets you after every chat.
    [README.md] Desktop app · no cloud · no account · encrypted at rest SQLite · hybrid retrieval · knowledge graph · MCP
    [README.md] Every entry is a node, every connection an edge — real connections drawn solid, mere similarity dashed.

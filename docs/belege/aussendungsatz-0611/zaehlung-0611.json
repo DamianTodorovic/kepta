@@ -3,8 +3,8 @@
   "README.md": {
    "saetze": 407,
    "absolut": 129,
-   "mit_zeug": 23,
-   "ohne_zeug": 106
+   "mit_zeug": 26,
+   "ohne_zeug": 103
   },
   "SECURITY.md": {
    "saetze": 31,
@@ -28,14 +28,14 @@
  "zusammen": {
   "saetze": 565,
   "absolut": 170,
-  "mit_zeug": 25,
-  "ohne_zeug": 145
+  "mit_zeug": 28,
+  "ohne_zeug": 142
  },
  "abschnitt": {
   "README.md": {
    "absolut": 129,
-   "mit_zeug": 49,
-   "ohne_zeug": 80
+   "mit_zeug": 48,
+   "ohne_zeug": 81
   },
   "SECURITY.md": {
    "absolut": 7,
@@ -55,8 +55,8 @@
  },
  "zusammen_abschnitt": {
   "absolut": 170,
-  "mit_zeug": 50,
-  "ohne_zeug": 120
+  "mit_zeug": 49,
+  "ohne_zeug": 121
  },
  "maschinell_pruefbar": {
   "README.md": {
@@ -130,8 +130,8 @@
   },
   {
    "datei": "README.md",
-   "satz": "A backup of the old file sits right next to it, every other entry stays, and a file that is not plain JSON is never touched",
-   "zeuge": false
+   "satz": "A backup of the old file sits right next to it, every other entry stays, and a file that is not plain JSON is never touched (tests/lib/einrichtung.test.ts:42 checks the backup and the untouched neighbours, :61 hands a co",
+   "zeuge": true
   },
   {
    "datei": "README.md",
@@ -155,8 +155,8 @@
   },
   {
    "datei": "README.md",
-   "satz": "Settings can only narrow what is read, never widen it: keys, credentials, browser profiles, keychains and wallets stay blocked, the size cap stays capped, and roots outside your home folder are refused.",
-   "zeuge": false
+   "satz": "Settings can only narrow what is read, never widen it (tests/scan/regeln.test.ts:190 tries to talk the barrier into reading secrets by ticking file types and is refused; :199 allows a smaller size cap and refuses a bigge",
+   "zeuge": true
   },
   {
    "datei": "README.md",
@@ -180,8 +180,8 @@
   },
   {
    "datei": "README.md",
-   "satz": "There is nothing to activate and nothing to buy inside the window, so the app also never asks for it — no key field, no counter, no trial clock, no \"first day free\" and no message about a limit.",
-   "zeuge": false
+   "satz": "There is nothing to activate and nothing to buy inside the window, so the app also never asks for it — no key field, no counter, no trial clock, no \"first day free\" and no message about a limit (tests/keine-grenzen.test.",
+   "zeuge": true
   },
   {
    "datei": "README.md",
@@ -454,10 +454,6 @@
   },
   {
    "datei": "README.md",
-   "satz": "A backup of the old file sits right next to it, every other entry stays, and a file that is not plain JSON is never touched"
-  },
-  {
-   "datei": "README.md",
    "satz": "Audit log — every access to the knowledge base, by you, by each AI app and by scripts, with exactly the notes an app got to see."
   },
   {
@@ -499,10 +495,6 @@
   {
    "datei": "README.md",
    "satz": "Duplicate review — every group side by side, one click to keep the richest copy or dismiss the pair for good."
-  },
-  {
-   "datei": "README.md",
-   "satz": "Settings can only narrow what is read, never widen it: keys, credentials, browser profiles, keychains and wallets stay blocked, the size cap stays capped, and roots outside your home folder are refused."
   },
   {
    "datei": "README.md",
@@ -579,10 +571,6 @@
   {
    "datei": "README.md",
    "satz": "Every tool in the app runs without bound: chat, clipper, machine scan, dossiers, briefings, audit, Device Sync, all eight MCP tools."
-  },
-  {
-   "datei": "README.md",
-   "satz": "There is nothing to activate and nothing to buy inside the window, so the app also never asks for it — no key field, no counter, no trial clock, no \"first day free\" and no message about a limit."
   },
   {
    "datei": "README.md",
