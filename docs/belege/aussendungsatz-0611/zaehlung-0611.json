@@ -3,8 +3,8 @@
   "README.md": {
    "saetze": 407,
    "absolut": 129,
-   "mit_zeug": 26,
-   "ohne_zeug": 103
+   "mit_zeug": 29,
+   "ohne_zeug": 100
   },
   "SECURITY.md": {
    "saetze": 31,
@@ -28,14 +28,14 @@
  "zusammen": {
   "saetze": 565,
   "absolut": 170,
-  "mit_zeug": 28,
-  "ohne_zeug": 142
+  "mit_zeug": 31,
+  "ohne_zeug": 139
  },
  "abschnitt": {
   "README.md": {
    "absolut": 129,
-   "mit_zeug": 48,
-   "ohne_zeug": 81
+   "mit_zeug": 51,
+   "ohne_zeug": 78
   },
   "SECURITY.md": {
    "absolut": 7,
@@ -55,8 +55,8 @@
  },
  "zusammen_abschnitt": {
   "absolut": 170,
-  "mit_zeug": 49,
-  "ohne_zeug": 121
+  "mit_zeug": 52,
+  "ohne_zeug": 118
  },
  "maschinell_pruefbar": {
   "README.md": {
@@ -100,8 +100,8 @@
   },
   {
    "datei": "README.md",
-   "satz": "Local reranking: a deterministic reranker (term coverage, phrase hits, title, tags) refines the fused ranking and is exposed as rerankScore — no network, always on",
-   "zeuge": false
+   "satz": "Local reranking: a deterministic reranker (term coverage, phrase hits, title, tags) refines the fused ranking and is exposed as rerankScore — no network, always on (tests/core/lokaler-rerank.test.ts scores with the embed",
+   "zeuge": true
   },
   {
    "datei": "README.md",
@@ -110,8 +110,8 @@
   },
   {
    "datei": "README.md",
-   "satz": "It is computed on the server, so no embedding ever travels into the view",
-   "zeuge": false
+   "satz": "It is computed on the server, so no embedding ever travels into the view (tests/rest-semantik.test.ts:70 reads the raw HTTP body and refuses any word like embedding, vektor or vector in it)",
+   "zeuge": true
   },
   {
    "datei": "README.md",
@@ -125,8 +125,8 @@
   },
   {
    "datei": "README.md",
-   "satz": "*Keep the newer*, *Keep the older* (the other is marked as replaced, never deleted) or *Both are right* (never asked again).",
-   "zeuge": false
+   "satz": "*Keep the newer*, *Keep the older* (the other is marked as replaced, never deleted) or *Both are right* (never asked again — tests/enterprise-api.test.ts:227 settles a pair that way, reads the list back empty and shows t",
+   "zeuge": true
   },
   {
    "datei": "README.md",
@@ -394,10 +394,6 @@
   },
   {
    "datei": "README.md",
-   "satz": "Local reranking: a deterministic reranker (term coverage, phrase hits, title, tags) refines the fused ranking and is exposed as rerankScore — no network, always on"
-  },
-  {
-   "datei": "README.md",
    "satz": "Persistent embeddings via Ollama (nomic-embed-text), computed by a background queue instead of re-embedding on every query"
   },
   {
@@ -411,10 +407,6 @@
   {
    "datei": "README.md",
    "satz": "- A concept in the picture is a shared one: a term that exists only because it repeats the title of the single note carrying it is an echo of your filing, not knowledge, and the graph leaves it out — the concept count is"
-  },
-  {
-   "datei": "README.md",
-   "satz": "It is computed on the server, so no embedding ever travels into the view"
   },
   {
    "datei": "README.md",
@@ -435,10 +427,6 @@
   {
    "datei": "README.md",
    "satz": "Read straight from the local database: no AI involved, nothing leaves the computer"
-  },
-  {
-   "datei": "README.md",
-   "satz": "*Keep the newer*, *Keep the older* (the other is marked as replaced, never deleted) or *Both are right* (never asked again)."
   },
   {
    "datei": "README.md",

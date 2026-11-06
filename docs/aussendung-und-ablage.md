@@ -612,8 +612,65 @@ vor dem Schreiben — die Verweigerung ist gemessen, ein Bitvergleich der Fremdd
 `keine-grenzen.test.ts` beweist das Verschwinden der Schließfächer in dieser App, nicht in der
 Enterprise-Konsole (README.md:181, zugefroren auf Damians Wort vom 5.11. 13:24 MEZ).
 
-## Fehler in diesem Schlag, die ich selbst gefunden habe
+## 20. P132 — Ein Satz braucht ein Werkzeug, zwei Sätze brauchten nur ihren Namen (6.11. 22:46 MEZ)
 
+Drei Sätze aus der Queue von P131. Die Verteilung ist die eigentliche Nachricht dieses
+Abschnitts: **zwei von drei Behauptungen waren bereits gemessen** — nur nannte kein Satz den
+Zeugen. Der dritte brauchte einen neuen Fall, und der ist der einzige, der Code kostet.
+
+| Satz | Wo | Zeuge | neu gebaut? |
+|---|---|---|---|
+| „no network, always on" über den Reranker | README.md:123 | `tests/core/lokaler-rerank.test.ts:41,50,58,67` | **ja** — 4 Fälle |
+| „no embedding ever travels into the view" | README.md:142 | `tests/rest-semantik.test.ts:70` (Zeile 84: das rohe HTTP-Blatt darf kein `embedding`, `vektor`, `vector` enthalten) | nein — Zitat fehlte |
+| „Both are right (never asked again)" | README.md:169 | `tests/enterprise-api.test.ts:227` (Paar gesetzt, Liste danach leer, `supersededBy` bleibt `null`) | nein — Zitat fehlte |
+
+### Der neue Fall und sein Biss
+
+`localRerankScore` (src/core/engine.ts:75-113) ist die einzige Stelle, die `rerankScore` erzeugt.
+Vor P132 prüfte die Suite ihre *Spanne* (0..1) und ihre *Reihenfolge*
+(`tests/engine.test.ts:448-467`) — nicht die Bedingungen, unter denen sie entsteht. Der Satz nach
+aussen behauptet aber genau die: kein Netz, immer an, deterministisch.
+
+Vier Fälle: Zahl trotz abstürzendem Embedding-Dienst (41), **null** Netzaufrufe während der
+Berechnung (50), zweimal dieselbe Frage = auf die Stelle derselbe Wert (58), und ein Fall, der
+`Date.now` und `Math.random` zwischen zwei Messungen weiterlaufen lässt und Gleichheit verlangt (67)
+— derselbe Reranker, derselbe Fall, andere Frage.
+
+Der Biss ist gefahren, nicht behauptet. Sicherungskopie von `src/core/engine.ts` nach
+`/tmp/p132-riss-sicherung/`, dann zwei Sonden in die Funktion: ein `fetch`-Aufruf und ein
+`Math.random()`-Jitter, dazu `Date.now() * 0` im Rückgabeweg. Lauf 22:42:30 MEZ:
+**3 von 4 rot** (Netzaufruf, Wiederholbarkeit, Uhr/Zufall), der erste Fall bleibt grün — er prüft
+die Abhängigkeit vom Dienst, und die nahm die Sonde nicht. Zurückgebaut per Kopie aus der
+Sicherung, `cmp` meldet bytegleich, `git diff src/core/engine.ts` ist leer. Danach 4 von 4 grün
+(22:42:36 MEZ).
+
+### Die Zählung danach
+
+Zensus 22:47:52 MEZ, Exit 0 — derselbe Stand der Zählung wie im Lauf 22:43:11 MEZ, nachdem
+README.md seine Fallzahl bekommen hatte. Nenner unverändert 565 Einheiten / 170 absolute
+Behauptungen:
+
+| Lesung | mit Messzeug | ohne Messzeug |
+|---|---|---|
+| Zeuge **im selben Satz** | **31** = 18,2 % | 139 = 81,8 % |
+| Zeuge **im selben Abschnitt** | 52 = 30,6 % | 118 |
+
+Die schmale Klasse bleibt 30 Sätze, davon nennen jetzt **14** ihr Messzeug — **16** sind Arbeit.
+Ihre Reihe über die fünf Schläge: 4, 5, 8, 11, 14. Die Corpus-Pinne in
+`tests/aussendungs-riss.test.ts:110-125` steht auf 31 von 170, die Anteilskante auf > 0,18.
+
+### Was die zwei Lei-Zeugen *nicht* sagen
+
+`rest-semantik.test.ts:70` beweist, dass über **diese eine Route** kein Wort vorkommt, aus dem sich
+ein Vektor bauen ließe — gemessen am rohen Blatt, nicht am Objektbaum. Er beweist nicht, dass der
+Renderer niemals Vektoren bekommt: ein zweiter Endpunkt könnte es trotzdem tun. Und
+`enterprise-api.test.ts:227` setzt das Paar in *einem* Lauf; dass die Entscheidung beim nächsten
+Start des Programms noch gilt, prüft die Datei an der Stelle nicht (sie hält den Speicher offen).
+Beides steht so nicht im README-Satz — der sagt „never asked again" über die Frage, und die Frage
+ist in diesem Lauf beantwortet. Wer die Neustart-Festigkeit behaupten will, braucht einen zweiten
+Zeugen.
+
+## Fehler in diesem Schlag, die ich selbst gefunden habe
 
 1. `du -sk /tmp` meldete 0 GiB Stapel, weil `/tmp` ein Symlink ist; der erste Lauf schrieb diese Null.
    Berichtigt auf `du -sk /tmp/` (1,27 GiB) und in der Spur nachgemessen.
@@ -728,3 +785,8 @@ Enterprise-Konsole (README.md:181, zugefroren auf Damians Wort vom 5.11. 13:24 M
     jedem Lauf neu: auf diesem Stand sind es **51** unter dem Punkt-Naivling und **116** unter dem
     zeilenweisen (gemessen 22:29:05 MEZ, Exit 0). Die Nenner der Zaehlung blieben unberührt
     (565 Einheiten, 170 Behauptungen, 28 mit Messzeug) — der Kopf maß eine andere Größe.
+23. **Mein Edit verschluckte eine Überschrift.** Ich setzte §20 vor die Liste der eignen Fehler
+    und gab die Überschrift dieser Liste als Anker mit — sie war danach weg, und die Nummerierung
+    stand kopflos im Blatt. Entdeckt beim Nachlesen der Grenze (nicht durch ein Werkzeug, die Wache
+    prüft keine Überschriften), wiederhergestellt und hier vermerkt: ein Anker, der größer ist als
+    die Änderung, ist genau die Falle aus 18. — dieselbe Klasse, dritter Auftritt.
