@@ -1,3 +1,29 @@
+## [3.2.188]
+
+### Fixed
+
+- **The delivery equation now reads the bundle's pieces, not its own flattening.** 3.2.187
+  claimed the five leftovers "split a plural suffix in the bundle, which is no contiguous
+  chain". That was wrong, and the shipped window disproves it: the graph legend shows
+  "120 claims not drawn — its term is only a note title" while the equation called the same
+  sentence undelivered. Measured 15:31:15 and 15:31:28 MEZ against the installed 3.2.187, the
+  bundle holds `${r(M)} claim${M===1 ? "" : "s"} not drawn — its term is only a note title` —
+  the piece before the plural and the piece after it are both there, verbatim and in order.
+  The equation compared the *folded* word "claims", which exists nowhere in the bytes: my own
+  flattening had glued shut the very seam the compiler left. The sentence's raw template is
+  now what gets split, so a plural junction is a junction again. Measured 15:52:19 MEZ: the
+  equation drops **0 surface, 5 tool, 0 servant** sentences (was 4 / 5 / 1). The five tool
+  sentences are genuinely not shipped — four from `src/core/chatgpt-import.ts`, which the
+  bundle does not carry, and one licence message from `src/core/lizenz.ts`; both checked at
+  position -1 in 49 197 041 bytes at 15:32:46 MEZ.
+- **A bar that cannot see success is not a measuring tool.** The suite's equation bar read the
+  residual *list*, and the list is not printed when a layer has nothing left — so the first
+  clean run failed with "999 surface sentences rejected". The bar now parses the summary line.
+  Its limits are the measured numbers (0 / 5 / 0), not a round dozen, so a new undelivered
+  sentence is a finding instead of slack.
+- Word counting keeps the plural fold: `${n} claim${n === 1 ? "" : "s"} not drawn …` still
+  counts as eleven words, so no sentence crosses the length cap over a letter no human reads.
+
 ## [3.2.187]
 
 ### Changed
@@ -12,6 +38,8 @@
   **4 / 5 / 1**. Named reasons for the rest: four tool sentences live in
   `src/core/chatgpt-import.ts`, which is not shipped, and five split a plural suffix in the
   bundle (`"claim" + (n === 1 ? "" : "s") + " not drawn"`), which is no contiguous chain.
+  (The last clause is wrong and 3.2.188 corrects it: the two pieces *are* contiguous in the
+  bundle — it was the folded word that never was.)
 - **A number is a word; a plural letter is not.** Flattening `${…}` to a bare `N` glued it
   to the neighbour — "came through${n}" became "came throughN", one word instead of two, and
   `${n === 1 ? "" : "s"}` became a whole extra word. Measured 14:38:24 MEZ: 79 of 189 surface

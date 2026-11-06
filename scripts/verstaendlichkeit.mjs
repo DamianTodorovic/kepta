@@ -183,7 +183,7 @@ export function satzAusText(t, datei) {
       if (!istBenutzersprache(s, { gestaltPflicht: !!ausdruck })) continue;
       if (prosa && !prosa(s)) continue;
       if (AUSSCHLUSS_WORT.test(s)) continue;
-      funde.push({ s, art, ausdruck: !!ausdruck, quelle: rel });
+      funde.push({ s, roh: e[1], art, ausdruck: !!ausdruck, quelle: rel });
     }
   }
   return funde;
@@ -193,6 +193,7 @@ function sammle(mengen) {
   const funde = new Map();
   const arten = new Map();
   const formen = new Map();
+  const rohe = new Map();
   // Kommentare sind nicht die Flaeche. Gemessen 5.11.2026 18:39 MEZ: drei der elf Funde
   // waren Begruendungszeilen im Quelltext (Dashboard.tsx:595, TodayView.tsx:173, Chat.tsx:152),
   // die einen fruehern Befund zitieren — ein Mensch liest sie nirgends. Ein Zaehler, der
@@ -202,9 +203,10 @@ function sammle(mengen) {
       if (!funde.has(f.s)) funde.set(f.s, f.quelle);
       if (!arten.has(f.s)) arten.set(f.s, f.art);
       if (!formen.has(f.s)) formen.set(f.s, f.ausdruck);
+      if (!rohe.has(f.s)) rohe.set(f.s, f.roh);
     }
   }
-  return { funde, arten, formen };
+  return { funde, arten, formen, rohe };
 }
 
 /** Kandidaten aus dem Quelltext: JSX-Text, Titel, Beschriftung, Platzhalter, Meldung. */
@@ -312,7 +314,17 @@ export function zaehle(s) {
   };
 }
 
-export function imObjekt(suche, s) {
+/**
+ * Ist dieser Wortlaut in den Bytes des ausgelieferten Bundels zu finden?
+ *
+ * @param {{puffer: Buffer, textGlatt: string, textEntfl?: string}} suche
+ * @param {string} s  der geglaettete Wortlaut, so wie der Census ihn zaehlt und meldet
+ * @param {string} [roh]  der Backtick-Inhalt vor jeder Glaettung. Seine
+ *   Interpolations-Loecher sind die Stellen, an denen auch das Bundel trennt -- ohne diese
+ *   Form gilt die P107-Lesung an " N " weiter (P108, gemessen 15:31:15 MEZ).
+ * @returns {boolean}
+ */
+export function imObjekt(suche, s, roh = null) {
   // Das Buendel ist Bytes, kein Text: ein Satz mit einem echten Gedankenstrich (U+2014) ist in
   // UTF-8 drei Bytes, und ein Suchlauf, der die Datei latin1 liest, findet ihn nie. Ebenso bricht
   // JSX einen langen Menschensatz ueber mehrere Quelltextzeilen, und der Compiler wirft die
@@ -337,12 +349,25 @@ export function imObjekt(suche, s) {
   // geordnete Nah-Suche gebaut, ein Rueckwaerts- oder Querbau gilt nicht. Ein Stueck
   // unter sechs Zeichen (ein Anfuhrungszeichen, ein Wortteil) wird uebergangen, sonst
   // waere die Suche zu billig; findet sich gar kein Stueck, gilt die Abweisung.
-  const stuecke = glatt(s)
-    // P107: die Zahl steht am Rand des Satzes ("… answered N." endet mit ihr). Ein Stutzen
-    // nur auf " N " liess das Punktzeichen an ihr kleben, und das Stueck war damit nicht
-    // mehr der Wortlaut im Bundel -- gemessen 14:49:07 MEZ fielen genau so die
-    // Settings-Meldungen durch, die lang und eindeutig ausgeliefert sind.
-    .split(/\bN\b/)
+  // P108: die Stuecke sind die wahren Bundel-Stuecke, nicht meine Faltung. Gemessen
+  // 15:31:15 MEZ am ausgelieferten 3.2.187 --
+  //
+  //   c.push(`${r(M)} claim${M===1?"":"s"} not drawn — its term is only a note title`)
+  //
+  // Die Glaettung macht aus "claim" + Suffix das eine Wort "claims"; genau dort trennt das
+  // Bundel, und das gefaltete Wort steht nirgends in den Bytes. Wird an der Faltung
+  // gesucht, verwirft die Gleichung einen Satz, den das Fenster zeigt (Legende,
+  // belege-0611/fenster-187/radien-graph-panel.png). Also: die Rohform der Kette wird an
+  // ihren Interpolations-Loechern zerteilt -- ein Loch mit einer Verschachtelung (eine Ebene)
+  // zaehlt als ein Loch. Ohne Rohform bleibt die P107-Lesung an " N " gelten.
+  const stuecke = (roh !== null
+    ? String(roh).split(/\$\{(?:[^{}]|\{[^{}]*\})*\}/g)
+    : glatt(s).split(/\bN\b/)
+      // P107: die Zahl steht am Rand des Satzes ("… answered N." endet mit ihr). Ein Stutzen
+      // nur auf " N " liess das Punktzeichen an ihr kleben, und das Stueck war damit nicht
+      // mehr der Wortlaut im Bundel -- gemessen 14:49:07 MEZ fielen genau so die
+      // Settings-Meldungen durch, die lang und eindeutig ausgeliefert sind.
+  )
     .map((x) => x.trim())
     .filter((x) => x.length >= 6);
   if (stuecke.length === 0) return false;
@@ -675,10 +700,10 @@ async function haupt() {
   }
 
   const baue = (mengen) => {
-    const { funde, arten, formen } = sammle(mengen);
+    const { funde, arten, formen, rohe } = sammle(mengen);
     const zeilen = [];
     for (const [s, quelle] of funde) {
-      zeilen.push({ s, quelle, art: arten.get(s) || "literal", ausdruck: formen.get(s) === true, ...zaehle(s), imObjekt: suche ? imObjekt(suche, s) : null });
+      zeilen.push({ s, quelle, art: arten.get(s) || "literal", ausdruck: formen.get(s) === true, ...zaehle(s), imObjekt: suche ? imObjekt(suche, s, rohe.get(s) ?? null) : null });
     }
     const getragen = suche ? zeilen.filter((z) => z.imObjekt) : zeilen;
     return { zeilen, getragen };

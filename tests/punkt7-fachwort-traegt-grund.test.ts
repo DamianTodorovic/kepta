@@ -763,15 +763,83 @@ describe("Punkt 107, die Auslieferungsgleichung: eine zerlegte Kette ist kein fr
   it("der Census nennt, wie viele Baum-Saetze der Gleichung entgehen", () => {
     const laut = spawnSync("node", [path.join(WURZEL, "scripts", "verstaendlichkeit.mjs")], { encoding: "utf8" });
     expect(laut.stdout).toMatch(/die Objekt-Gleichung verwirft: Flaeche \d+, Werkzeug \d+, Diener \d+/);
-    // Die Zahl ist eine Latte, kein Bericht. Gemessen 14:51:39 MEZ am ausgelieferten 3.2.186:
-    // Flaeche 4, Werkzeug 5, Diener 1 -- vorher 145 / 14 / 28. Ueber zwoelf pro Lage darf ein
-    // Lauf nicht hinaus, sonst ist die Gleichung wieder eine Behauptung. Die Restgruende sind
-    // benannt: vier Werkzeug-Saetze stammen aus `src/core/chatgpt-import.ts`, das nicht
-    // ausgeliefert wird, und die uebrigen fuenf zerlegen ein Plural-Suffix im Bundel
-    // ("claim" + (n === 1 ? "" : "s") + " not drawn"), was keine zusammenhaengende Kette ist.
-    const zahl = (lage: string) => Number((laut.stdout.match(new RegExp(lage + ": (\\d+) von")) || [0, "999"])[1]);
-    expect(zahl("Flaeche"), `die Gleichung verwirft ${zahl("Flaeche")} Flaeche-Saetze`).toBeLessThanOrEqual(12);
-    expect(zahl("Werkzeug"), `die Gleichung verwirft ${zahl("Werkzeug")} Werkzeug-Saetze`).toBeLessThanOrEqual(12);
-    expect(zahl("Diener"), `die Gleichung verwirft ${zahl("Diener")} Diener-Saetze`).toBeLessThanOrEqual(12);
+    // Die Zahl ist eine Latte, kein Bericht. Gelesen wird die Summen-Zeile, nicht die
+    // Restliste: die Restliste nennt nur, was uebrig blieb, und faellt bei null Funden ganz
+    // weg -- gemessen 15:45:57 MEZ, als der erste grüne Lauf rot wurde, weil die Gleichung zu
+    // gut geworden war (die Sonde las 999). Eine Latte, die den Erfolg nicht sieht, ist kein
+    // Messzeug.
+    // Gemessen 15:52:19 MEZ am ausgelieferten 3.2.187, nach P108: Flaeche 0, Werkzeug 5,
+    // Diener 0 (vor P107 145/14/28, nach P107 4/5/1; die erste Lesung derselben Zahl war
+    // 15:46:09 MEZ). Die fuenf Werkzeug-Saetze sind wirklich nicht ausgeliefert: vier
+    // stammen aus `src/core/chatgpt-import.ts`, das im Bundel nicht vertreten ist, und einer
+    // ist eine Lizenz-Meldung aus `lizenz.ts` -- 15:32:46 MEZ an Position -1 in
+    // 49 197 041 Bytes nachgetreten.
+    const zeile = laut.stdout.split("\n").find((z) => z.includes("die Objekt-Gleichung verwirft:")) || "";
+    const zahl = (lage: string) => Number((zeile.match(new RegExp(lage + " (\\d+)")) || [0, "999"])[1]);
+    expect(zahl("Flaeche"), `die Gleichung verwirft ${zahl("Flaeche")} Flaeche-Saetze`).toBeLessThanOrEqual(0);
+    expect(zahl("Werkzeug"), `die Gleichung verwirft ${zahl("Werkzeug")} Werkzeug-Saetze`).toBeLessThanOrEqual(5);
+    expect(zahl("Diener"), `die Gleichung verwirft ${zahl("Diener")} Diener-Saetze`).toBeLessThanOrEqual(0);
+  });
+});
+
+describe("Punkt 108, der Plural-Bruch: die Gleichung muss die Stuecke des Bundels sehen", () => {
+  /* Gemessen 15:31:15 und 15:31:28 MEZ am ausgelieferten 3.2.187: fuenf Saetze, die das
+     Fenster zeigt, standen weiter als "nicht im Objekt". Der Bundel-Kontext druckt die
+     Gestalt --
+
+       c.push(`${r(M)} claim${M===1?"":"s"} not drawn — its term is only a note title`)
+
+     Das Stueck vor dem Plural-Suffix ("claim") und das danach ("not drawn — its term is
+     only a note title") stehen wortgleich und in Folge in den Bytes. Verworfen wurde, weil
+     meine eigne Glaettung das Suffix an sein Wort klebt: aus zwei Bundel-Stuecken wird ein
+     Wort, und das Wort ist nirgends. Die Gleichung verglich also ihre eigne Schreibweise,
+     zum zweiten Mal in Folge -- P107 war dieselbe Sorte Blindheit einen Schlag weiter.
+
+     Darum: die Rohform der Kette (der Backtick-Inhalt vor jeder Glaettung) ist der Satz,
+     den die Gleichung zerlegt. Die Wortzahl behaelt die Faltung; ein Titel darf nicht noch
+     einmal ueber ein Suffix stolpern, das kein Mensch liest. */
+
+  const bundel = (text: string) => ({
+    puffer: Buffer.from(text, "utf8"),
+    textGlatt: text.replace(/\s+/g, " "),
+    textEntfl: text.replace(/\s+/g, " "),
+  });
+
+  it("ein Plural-Bruch im Bundel ist kein fremder Satz", () => {
+    const wort = "N claims not drawn — its term is only a note title";
+    const roh = '${r(M)} claim${M===1?"":"s"} not drawn — its term is only a note title';
+    const suche = bundel('c.push(`${r(M)} claim${M===1?"":"s"} not drawn — its term is only a note title`)');
+    expect(imObjekt(suche, wort, roh), "die Gleichung verwirft einen Satz, den das Fenster zeigt").toBe(true);
+  });
+
+  it("die umgekehrte Folge der Plural-Stuecke gilt nicht", () => {
+    // Beide Stuecke ueberleben die Mindestlaenge von sechs Zeichen, darum kann die Folge
+    // hier wirklich pruefen. Der Fall mit dem fuenf Zeichen kurzen Stamm ("claim") waeme
+    // nur das lange Stueck als Beweis -- die Gleichung verlangt nie, was sie nicht halten kann.
+    const wort = "N commitments here end after today — a state on the link, not a step";
+    const roh = '${r(M)} commitment${M===1?"":"s"} here end after today — a state on the link, not a step';
+    // Derselbe Inhalt, vertauscht eingebaut: erst die Kette, spaeter der Wortstamm.
+    const suche = bundel('const ende = "here end after today — a state on the link, not a step"; const stamm = "commitment";');
+    expect(imObjekt(suche, wort, roh), "eine umgekehrte Folge gilt als Auslieferung").toBe(false);
+  });
+
+  it("ein erfundenes Stueck hinter dem Plural bleibt abgewiesen", () => {
+    const wort = "N claims not drawn — its term is only a note title";
+    const roh = '${r(M)} claim${M===1?"":"s"} not drawn — its term flies to mars';
+    const suche = bundel('c.push(`${r(M)} claim${M===1?"":"s"} not drawn — its term is only a note title`)');
+    expect(imObjekt(suche, wort, roh)).toBe(false);
+  });
+
+  it("die Wortzahl bleibt gefaltet, waehrend die Gleichung bricht", () => {
+    const roh = '${n} claim${n === 1 ? "" : "s"} not drawn — its term is only a note title';
+    expect(glaetteInterpolation(roh)).toBe("N claims not drawn — its term is only a note title");
+    expect(zaehle(glaetteInterpolation(roh)).woerter).toBe(11);
+  });
+
+  it("die alte Dreistuecke-Kette ohne Rohform wird weiter erkannt", () => {
+    // Rueckfall: wo kein Roh-Text mitkommt (Suite-Faelle, fremde Aufrufer), muss die
+    // P107-Lesung an " N " gelten -- sonst heilt dieser Schnitt, indem er etwas kaputt macht.
+    const suche = bundel('"N of N unfolded notes are drawn as dots", "(", ")", " notes left out — the picture places notes by meaning, and keeps the first ", "Zahl je mit Einheit"');
+    expect(imObjekt(suche, "N notes left out — the picture places notes by meaning, and keeps the first N")).toBe(true);
   });
 });
