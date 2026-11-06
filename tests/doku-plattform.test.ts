@@ -178,3 +178,30 @@ describe("README: keine Route, die die Tür nicht hat", () => {
 function BELEGZEILEN(pfad: string): string[] {
   return fs.readFileSync(path.join(process.cwd(), pfad), "utf-8").split("\n");
 }
+
+describe("README: die harte Sperre nennt ihren Zeugen", () => {
+  // P122 zahlte 30 Saetze, die ein Werkzeug widerlegen koennte; dieser hier ist
+  // der kundennaechste: „Keys, credentials, browser profiles, keychains and
+  // system folders are never read, and that cannot be switched off". Die
+  // Maschine haelt das — tests/scan/regeln.test.ts versucht ausdrecklich, die
+  // Sperre mit einer freigeschalteten Endung zu oeffnen, und scheitert. Was
+  // fehlte, war der Verweis: ein Satz nach aussen ohne Zeuge ist eine
+  // Behauptung, und die Wache hier prueft beides — den Satz und seinen Zeugen.
+  const satz = zeilen.filter((z) => /are never read, and that cannot be switched off/i.test(z));
+  const zeuge = "tests/scan/regeln.test.ts";
+
+  it("der Satz ueber die Sperre steht weiter in der README", () => {
+    expect(satz.length, "der Satz ist verschwunden — die Wache sieht nichts mehr").toBeGreaterThan(0);
+  });
+
+  it("er nennt die Wache, die ihn haelt", () => {
+    const mitZeuge = satz.filter((z) => z.includes(zeuge));
+    expect(mitZeuge.length, `kein Satz der Sperre nennt ${zeuge}:\n  ${satz.map((s) => s.slice(0, 150)).join("\n  ")}`).toBe(satz.length);
+  });
+
+  it("der Zeuge existiert und versucht wirklich, die Sperre zu oeffnen", () => {
+    const quelltext = fs.readFileSync(path.join(process.cwd(), zeuge), "utf-8");
+    expect(quelltext).toMatch(/NICHT zum Lesen von Geheimnissen ueberreden/);
+    expect(quelltext).toMatch(/endungen: \[".pem", ".md"\]/);
+  });
+});

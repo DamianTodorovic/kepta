@@ -33,6 +33,39 @@ for (const f of DATEIEN) {
   zaehlung[f] = { saetze: satze.length, absolut: absol.length, mit_zeug: mit.length, ohne_zeug: absol.length - mit.length };
   absol.filter((s) => !zeug.test(s)).forEach((s) => ohneZeug.push({ datei: f, satz: s.slice(0, 220) }));
 }
+// Zweit Lesung: ein Zeuge darf auch im selben Abschnitt stehen (der Punkt-
+// Absatz, die Tabellenzeile, die Aufzaehlung), nicht nur im selben Satz. Die
+// erste Lesung war zu eng: sie sah tests/scan/regeln.test.ts nicht, obwohl der
+// Satz darueber liegt.
+//
+// Beide Lesungen teilen sich den Nenner: hier wird derselbe Satz-Fuer-Preis-
+// Riss weitergereicht und nur der Abschnitt gesucht, in dem er liegt. Wuerden
+// die Saetze pro Abschnitt neu geschnitten, zaehlte die eine Lesung 131 und die
+// andere 143 — zwei Zahlen mit verschiedenen Grundgesamtheiten sind kein
+// Vergleich, sondern ein Versteckspiel.
+const alleSaetze = {};
+for (const f of DATEIEN) {
+  alleSaetze[f] = fs.readFileSync(path.join(HIER, f), "utf8")
+    .split(/(?<=[.!?])\s+/).map((s) => s.replace(/\s+/g, " ").trim()).filter((s) => s.length > 25);
+}
+const abschnittsZaehlung = {};
+for (const f of DATEIEN) {
+  const text = fs.readFileSync(path.join(HIER, f), "utf8");
+  const abschnitte = text.split(/\n\s*\n/);
+  let mitz = 0;
+  for (const s of alleSaetze[f]) {
+    if (!absolut.test(s)) continue;
+    const kern = s.replace(/\\/g, "").slice(0, 60);
+    const block = abschnitte.find((b) => b.replace(/\s+/g, " ").includes(kern));
+    if (block && zeug.test(block)) mitz++;
+  }
+  const anz = alleSaetze[f].filter((s) => absolut.test(s)).length;
+  abschnittsZaehlung[f] = { absolut: anz, mit_zeug: mitz, ohne_zeug: anz - mitz };
+}
+const summeAbschnitt = Object.values(abschnittsZaehlung).reduce((a, z) => ({
+  absolut: a.absolut + z.absolut, mit_zeug: a.mit_zeug + z.mit_zeug, ohne_zeug: a.ohne_zeug + z.ohne_zeug,
+}), { absolut: 0, mit_zeug: 0, ohne_zeug: 0 });
+
 const summe = Object.values(zaehlung).reduce((a, z) => ({
   saetze: a.saetze + z.saetze, absolut: a.absolut + z.absolut, mit_zeug: a.mit_zeug + z.mit_zeug,
   ohne_zeug: a.ohne_zeug + z.ohne_zeug,
@@ -90,6 +123,15 @@ say(`| **zusammen** | **${summe.saetze}** | **${summe.absolut}** | **${summe.mit
 say("");
 say(`Nenner fuer den Anteil: ${summe.absolut} absolute Behauptungen in ${summe.saetze} Saetzen der vier Texte.`);
 say("");
+say(`Zweite Lesung — der Zeuge darf im selben Abschnitt stehen (Absatz, Tabelle, Aufzaehlung):`);
+say(`| Datei | absolute | mit Messzeug | ohne Messzeug |`);
+say(`|---|---|---|---|`);
+for (const [f, z] of Object.entries(abschnittsZaehlung)) say(`| \`${f}\` | ${z.absolut} | ${z.mit_zeug} | ${z.ohne_zeug} |`);
+say(`| zusammen | ${summeAbschnitt.absolut} | ${summeAbschnitt.mit_zeug} | ${summeAbschnitt.ohne_zeug} |`);
+say(`   mit Messzeug im selben Abschnitt: ${summeAbschnitt.mit_zeug} von ${summeAbschnitt.absolut} ` +
+  `= ${(100 * summeAbschnitt.mit_zeug / summeAbschnitt.absolut).toFixed(1)} % (gegen ${summe.mit_zeug} von ` +
+  `${summe.absolut} = ${(100 * summe.mit_zeug / summe.absolut).toFixed(1)} % in der engen Lesung).`);
+say("");
 say(`Die schmalere Klasse — Saetze, die ein Werkzeug widerlegen koennte (never/always/cannot/0 %/100 %):`);
 for (const [f, z] of Object.entries(pruefbar)) say(`   ${f.padEnd(26)} ${z.maschinell} von ${z.absolut} absoluten`);
 say(`   zusammen ${summePruefbar} von ${summe.absolut} — der Rest ist Produktcopy ("no password to type"), keine Behauptung ueber eine Maschine.`);
@@ -107,7 +149,8 @@ say(`Die ${summe.ohne_zeug} ohne Messzeug, in Lesereihenfolge der Dateien (erste
 for (const o of ohneZeug.slice(0, 40)) say(`   [${o.datei}] ${o.satz}`);
 
 fs.writeFileSync(path.join(AUS, "zaehlung-0611.json"), JSON.stringify({
-  dateien: zaehlung, zusammen: summe, maschinell_pruefbar: pruefbar, summe_pruefbar: summePruefbar,
+  dateien: zaehlung, zusammen: summe, abschnitt: abschnittsZaehlung, zusammen_abschnitt: summeAbschnitt,
+  maschinell_pruefbar: pruefbar, summe_pruefbar: summePruefbar,
   beweise: {
     bilder_markdown: markdownBilder.length, bilder_img_tag: imgBilder.length,
     bilder_semantic: semanticBilder, readme_sagt_kein_semantic_bild: satzKeinBild,

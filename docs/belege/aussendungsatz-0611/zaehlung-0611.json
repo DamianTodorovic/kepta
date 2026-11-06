@@ -1,10 +1,10 @@
 {
  "dateien": {
   "README.md": {
-   "saetze": 248,
-   "absolut": 101,
-   "mit_zeug": 14,
-   "ohne_zeug": 87
+   "saetze": 250,
+   "absolut": 103,
+   "mit_zeug": 15,
+   "ohne_zeug": 88
   },
   "SECURITY.md": {
    "saetze": 23,
@@ -26,14 +26,41 @@
   }
  },
  "zusammen": {
-  "saetze": 318,
-  "absolut": 129,
-  "mit_zeug": 19,
-  "ohne_zeug": 110
+  "saetze": 320,
+  "absolut": 131,
+  "mit_zeug": 20,
+  "ohne_zeug": 111
+ },
+ "abschnitt": {
+  "README.md": {
+   "absolut": 103,
+   "mit_zeug": 55,
+   "ohne_zeug": 48
+  },
+  "SECURITY.md": {
+   "absolut": 6,
+   "mit_zeug": 2,
+   "ohne_zeug": 4
+  },
+  "ROADMAP.md": {
+   "absolut": 6,
+   "mit_zeug": 2,
+   "ohne_zeug": 4
+  },
+  ".github/release-notes.md": {
+   "absolut": 16,
+   "mit_zeug": 1,
+   "ohne_zeug": 15
+  }
+ },
+ "zusammen_abschnitt": {
+  "absolut": 131,
+  "mit_zeug": 60,
+  "ohne_zeug": 71
  },
  "maschinell_pruefbar": {
   "README.md": {
-   "absolut": 101,
+   "absolut": 103,
    "maschinell": 26
   },
   "SECURITY.md": {
@@ -179,11 +206,15 @@
   },
   {
    "datei": "README.md",
-   "satz": "Keys, credentials, browser profiles, keychains and system folders are never read, and that cannot be switched off — because an imported note is readable by every agent you connect over MCP."
+   "satz": "**Private, provably.** Everything lives in `~/.kepta/`, encrypted on disk, no account, no telemetry."
   },
   {
    "datei": "README.md",
-   "satz": "**Private, provably.** Everything lives in `~/.kepta/`, encrypted on disk, no account, no telemetry — and every AI access is written to a tamper-evident audit log you can check and export."
+   "satz": "Every change to the knowledge base — and every call through the MCP door, its searches included — is written to a tamper-evident audit log you can check and export."
+  },
+  {
+   "datei": "README.md",
+   "satz": "A plain HTTP read leaves no chain entry: the log records what was done to your memory, not every glance."
   },
   {
    "datei": "README.md",
@@ -411,7 +442,7 @@
   },
   {
    "datei": "README.md",
-   "satz": "```bash npm run lint # typecheck (tsc) + ESLint — 0 errors required npm test # 3696 tests (vitest) npm run test:cov # tests + coverage gate + test count in the README npm run eval # retrieval quality (Hit@1) ``` | Layer "
+   "satz": "```bash npm run lint # typecheck (tsc) + ESLint — 0 errors required npm test # 3704 tests (vitest) npm run test:cov # tests + coverage gate + test count in the README npm run eval # retrieval quality (Hit@1) ``` | Layer "
   },
   {
    "datei": "README.md",

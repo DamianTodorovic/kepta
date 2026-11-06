@@ -185,16 +185,23 @@ Ein dritter Zensus, weil P121 zwei Fehler in denselben Texten fand: wie viele S�
 `zaehlung-0611.log.txt`; die vier Texte sind `README.md`, `SECURITY.md`, `ROADMAP.md`,
 `.github/release-notes.md`.
 
-| | Sätze | absolute Behauptung | mit Messzeug | ohne Messzeug |
-|---|---|---|---|---|
-| zusammen | 318 | **129** | **19** | **110** |
+Stand des letzten Laufs (20:38 MEZ, nach allen Textänderungen dieses Schlags):
 
-Der Nenner ist genannt, weil die Zahl sonst ein Urteil wäre: **85,3 %** (110 von 129) nennen im
-Satz selbst keinen Test, kein Skript, kein Artefakt und keine Datei:Zeile. Das ist **kein** Befund
-über Falschheit — die Zählklasse ist weit und trifft auch Produktcopy („no password to type").
-Deshalb die zweite, schmalere Klasse: Sätze, die ein Werkzeug widerlegen könnte (`never`,
-`always`, `cannot`, `0 %`, `100 %`) — **30 von 129** (26 im README, 2 in der Vorlage, je 1 in
-SECURITY und ROADMAP). Die 30 stehen als Liste im Artefakt und sind die Arbeit für Punkt 7.
+| Lesung | Nenner | mit Messzeug | ohne Messzeug |
+|---|---|---|---|
+| Zeuge **im selben Satz** | 131 absolute Behauptungen (aus 320 Sätzen) | **20** = 15,3 % | **111** = 84,7 % |
+| Zeuge **im selben Abschnitt** | derselbe Nenner 131 | **60** = 45,8 % | **71** = 54,2 % |
+
+Der Nenner ist genannt, weil die Zahl sonst ein Urteil wäre. Die weite Klasse trifft auch
+Produktcopy („no password to type"), also die schmalere Klasse: Sätze, die ein Werkzeug widerlegen
+könnte (`never`, `always`, `cannot`, `0 %`, `100 %`) — **30 von 131** (26 im README, 2 in der
+Vorlage, je 1 in SECURITY und ROADMAP). Die 30 stehen als Liste im Artefakt.
+
+Beide Lesungen teilen sich den Nenner absichtlich: würde der Satzriss pro Abschnitt neu gemacht,
+zählte die eine Lesung 131 und die andere 143 — zwei Zahlen mit verschiedenen Grundgesamtheiten
+sind kein Vergleich. Der Unterschied zwischen 15,3 % und 45,8 % ist die eine Frage, ob ein Zeuge
+im Satz stehen muss oder im Absatz über ihm genügt; beide Antworten stehen hier, weil die Zahl
+allein sonst die Entscheidung trifft, die mir nicht gehört.
 
 Zwei davon in demselben Lauf nachgegriffen, beide halten:
 
@@ -251,7 +258,38 @@ bewusst nicht existiert. Richtig gemessen (Parameter zu Segmenten normalisiert):
 Formen, 14 mit Route, 1 bewusste Gegenprobe, 1 Abschneider. Die Tabelle war gesund; der Zähler
 krank — und hätte ich ihm geglaubt, hätte ich eine richtige Vertragszeile kaputt gemacht.
 
-## 11. Was daraus folgt
+## 11. Ein Satz ohne Zeugen ist eine Behauptung (P124, 20:38 MEZ)
+
+Von den 30 widerlegbaren Sätzen ist der kundennächste der Sperr-Satz in README.md:89: „Keys,
+credentials, browser profiles, keychains and system folders are never read, and that cannot be
+switched off". Nachgesehen, ob die Maschine das hält, bevor das Wort ergänzt wurde:
+
+- Die Sperre liegt in `src/scan/regeln.ts` — `GEHEIME_ORDNER` (Zeile 20, u. a. `.ssh`, `.aws`,
+  `keychains`, `1password`, `bitwarden`, `cookies`, `credentials`) und `GEHEIME_DATEIMUSTER`
+  (Zeile 83, u. a. `.netrc`, `.npmrc`, `.git-credentials`, `*.keychain-db`, `passwords*`).
+- Das Einstellbare ist per Bauweise enger als die Sperre: `ScanEinstellungen`
+  (`src/scan/regeln.ts:132`) kennt nur `endungen`, `maxDateiBytes` und
+  `zusaetzlichAusgelassen` — alles Felder, die **weiter** einschränken. Ein Schalter, der die
+  Sperre öffnet, existiert nicht; gemessen mit der Muster-Suche nach
+  `disable|skip|allowAll|KEPTA_*SCAN*` in `src/` und `server/`: 0 Funde.
+- Der Zeuge war schon da, nur unsichtbar: `tests/scan/regeln.test.ts:190`
+  („lässt sich damit NICHT zum Lesen von Geheimnissen überreden") versucht genau den Angriff —
+  `.pem` freischalten, `.env` als Endung nennen, `id_rsa` unter einer whitelisteten Endung — und
+  jede Antwort bleibt `geheim`.
+
+Was fehlte, war der Verweis nach außen. Also zuerst die Wache (`tests/doku-plattform.test.ts`,
+neue Sektion „README: die harte Sperre nennt ihren Zeugen", 3 Fälle): sie verlangt, dass der Satz
+weiter da ist (sonst ist sie taub), dass er `tests/scan/regeln.test.ts` nennt, und dass dieser
+Zeuge existiert und den Angriff wirklich probiert. Rot gesehen (1 Fall), dann der README-Satz um
+die Klammer ergänzt, jetzt 13 von 13 grün. Der Zensus misst die Änderung: enge Lesung 19 → **20**
+von 131.
+
+Daneben notiert, weil es sonst als offene Arbeit stünde: der Endpunkt-Abgleich aus P123 ist **schon
+bewacht** — `tests/doku-plattform.test.ts:129` („README: keine Route, die die Tür nicht hat")
+vergleicht jede Methodenangabe in der Tabelle gegen die echte Routenliste und enthält schon die
+Gegenprobe für den Einzelabruf.
+
+## 12. Was daraus folgt und offen bleibt
 
 
 Der Satz „die Aussendung ist geprüft" trägt nicht: 19 von 129 absoluten Behauptungen nennen ihr
@@ -281,3 +319,11 @@ tamper-evident audit log" — die letzte ist zählbar: Zugangsstellen gegen Audi
    herunterladbaren dmg- und zip-Namen der 9 öffentlichen Releases den Stamm `KEPTA` tragen. Was
    übrig bleibt, ist ein Namens-Entschluss für den Tag einer neuen Veröffentlichung, kein
    Fehlertext. Berichtigt in diesem Schlag, bevor die Zeile irgendwo zitiert wird.
+6. Die zweite Zensus-Lesung (Zeuge im selben Abschnitt) schnitt die Sätze pro Abschnitt neu und
+   kam dadurch auf 143, während die erste 131 zählte — zwei Anteile mit verschiedenen
+   Grundgesamtheiten, also kein Vergleich. Berichtigt: beide Lesungen teilen jetzt denselben
+   Satzriss, und das Artefakt weist die Nenner getrennt aus (131 und 131).
+7. Die Zahl aus Abschnitt 9 war nach jedem Texteingriff eine neue (129 → 131, 19 → 20), weil das
+   README während desselben Schlags verändert wurde. Der Zensus läuft deshalb jetzt als letzter
+   Griff vor dem Committen, damit Papier und Artefakt denselben Stand zeigen — nicht denselben
+   Lauf.
