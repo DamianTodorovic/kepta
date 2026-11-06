@@ -185,25 +185,25 @@ Ein dritter Zensus, weil P121 zwei Fehler in denselben Texten fand: wie viele S�
 `zaehlung-0611.log.txt`; die vier Texte sind `README.md`, `SECURITY.md`, `ROADMAP.md`,
 `.github/release-notes.md`.
 
-Stand des letzten Laufs (21:16:29 MEZ, nach allen Textänderungen dieses Schlags, Exit 0):
+Stand des letzten Laufs (21:33:13 MEZ, nach allen Textänderungen dieses Tages, Exit 0):
 
 | Lesung | Nenner | mit Messzeug | ohne Messzeug |
 |---|---|---|---|
-| Zeuge **im selben Satz** | 132 absolute Behauptungen (aus 321 Sätzen) | **22** = 16,7 % | **110** = 83,3 % |
+| Zeuge **im selben Satz** | 132 absolute Behauptungen (aus 321 Sätzen) | **23** = 17,4 % | **109** = 82,6 % |
 | Zeuge **im selben Abschnitt** | derselbe Nenner 132 | **61** = 46,2 % | **71** = 53,8 % |
 
 Der Nenner ist genannt, weil die Zahl sonst ein Urteil wäre. Die weite Klasse trifft auch
 Produktcopy („no password to type"), also die schmalere Klasse: Sätze, die ein Werkzeug widerlegen
 könnte (`never`, `always`, `cannot`, `0 %`, `100 %`) — **30 von 132** (26 im README, 2 in der
-Vorlage, je 1 in SECURITY und ROADMAP). Seit diesem Schlag **steht die Liste im Artefakt**, nicht
+Vorlage, je 1 in SECURITY und ROADMAP). Seit P126 **steht die Liste im Artefakt**, nicht
 nur ihre Länge: 30 Zeilen in Lesereihenfolge, jede mit dem Marker, ob derselbe Satz schon ein
-Messzeug nennt. Nachgezählt: **6 von 30 nennen es, 24 sind die Arbeit.** Vorher sagte das Artefakt
+Messzeug nennt. Nachgezählt: **7 von 30 nennen es, 23 sind die Arbeit.** Vorher sagte das Artefakt
 nur „30" und das Papier behauptete, die Liste stehe darin — ein Satz über ein Blatt, das ihn nicht
 trug (unten, Fehler 8).
 
 Beide Lesungen teilen sich den Nenner absichtlich: würde der Satzriss pro Abschnitt neu gemacht,
 zählte die eine Lesung 131 und die andere 143 — zwei Zahlen mit verschiedenen Grundgesamtheiten
-sind kein Vergleich. Der Unterschied zwischen 16,7 % und 46,2 % ist die eine Frage, ob ein Zeuge
+sind kein Vergleich. Der Unterschied zwischen 17,4 % und 46,2 % ist die eine Frage, ob ein Zeuge
 im Satz stehen muss oder im Absatz über ihm genügt; beide Antworten stehen hier, weil die Zahl
 allein sonst die Entscheidung trifft, die mir nicht gehört.
 
@@ -377,19 +377,19 @@ auch kein Text angefasst, und die Zeile bleibt ohne Zeugen — benannt, nicht ve
 
 ## 14. Was daraus folgt und offen bleibt
 
-Der Satz „die Aussendung ist geprüft" trägt nicht: **22 von 132** absoluten Behauptungen nennen ihr
-Messzeug im selben Satz, und von den schmalen 30 nennen **6** es — **24 sind die Arbeit**, und sie
-stehen jetzt als Liste im Artefakt, nicht mehr nur als Zahl. Fünf Sätze hat diese Welle abgearbeitet
-(P121 Pfad, P121 Grenz-Absatz, P123 Audit-Kette, P124 Sperr-Zusage, P125 Privat-Zusage, P126
-Telemetrie-Zusage).
+Stand nach P126: Der Satz „die Aussendung ist geprüft" trägt nicht — 22 von 132 absoluten
+Behauptungen nannten ihr Messzeug im selben Satz, und von den schmalen 30 nennen 6 es, 24 sind die
+Arbeit. Fünf Sätze hatte die Welle abgearbeitet (P121 Pfad, P121 Grenz-Absatz, P123 Audit-Kette,
+P124 Sperr-Zusage, P125 Privat-Zusage, P126 Telemetrie-Zusage). Der nächste Stand nach P127 steht
+in Abschnitt 9 (23 von 132, 7 von 30, 23 Arbeit).
 
-**Was dabei aufgefallen ist und offen bleibt.** Die Liste der 30 zeigt die Privat-Zusage zweimal:
-README.md:103 (der Aufzählungs-Punkt, seit P125 mit drei Zeugen) und **README.md:180**, der
-Privacy-shield-Punkt der Funktions-Straße, endet auf „Private notes never reach an app or a cloud
-model." — derselbe Wortlaut, gleiche Klasse, **kein** Messzeug. Genau die Klasse, die ich einmal
-heile und einmal stehen lasse, ist der Grund, warum die 30 als Liste im Artefakt stehen: eine Zahl
-ohne ihre Zeilen verschluckt den zweiten Träger. Der nächste Schnitt (P127) nennt die Zeugen auch
-in Zeile 180 und gibt die Wache von P125 auf **beide** Stellen.
+**Was dabei aufgefallen ist — und was P127 daraus gemacht hat.** Die Liste der 30 zeigte die
+Privat-Zusage **zweimal**: README.md:103 (der Aufzählungs-Punkt, seit P125 mit drei Zeugen) und
+README.md:180, der Privacy-shield-Punkt der Funktions-Straße, endete auf „Private notes never
+reach an app or a cloud model." — derselbe Wortlaut, gleiche Klasse, **kein** Messzeug. Genau die
+Klasse, die ich einmal heile und einmal stehen lasse, ist der Grund, warum die 30 als Liste im
+Artefakt stehen: eine Zahl ohne ihre Zeilen verschluckt den zweiten Träger. P127 (unten,
+Abschnitt 15) hat diese Zeile bewaffnet und die Wache von P125 auf **beide** Träger gedehnt.
 
 **Der Rückstand hat jetzt ein eignes Messzeug.** Im Suite-Lauf ab 21:02:36 MEZ fiel
 `tests/punkt7-fachwort-traegt-grund.test.ts` mit „die Gleichung verwirft 1 Flaeche-Saetze". Root
@@ -401,6 +401,43 @@ im Objekt, neue Fuge nicht im Objekt, neue Fuge im Baum); eine **zweite** Fundst
 auch bei offenem Rückstand — bewiesen mit einer geplotzten Zeile (`Flaeche 2` fällt) und drei
 Gegenproben in `rueckstandDerFuge`. Wenn 3.2.191 landet, verschwindet die Ausnahme von selbst, weil
 die Zahl auf 0 fällt.
+
+## 15. Dieselbe Zusage, ein zweiter Träger: README.md:180 (P127, 21:33 MEZ)
+
+P125 hatte README.md:103 bewaffnet und die Wache auf genau diesen Wortlaut gelegt
+(`private note is never shown to an AI app`). Die Liste der schmalen Klasse aus P126 zeigte einen
+zweiten Träger desselben Versprechens, in anderer Sprache: **README.md:180**, der
+Privacy-shield-Punkt der Funktions-Straße, endet auf „Private notes never reach an app or a cloud
+model." — und die alte Wache sah ihn nicht, weil sie nach dem Wort suchte statt nach der
+Behauptung.
+
+Gemessen mit einem wortlaut-offenen Muster über allen vier Aussendungstexten: **genau zwei
+Träger** — README.md:103 und README.md:180, nach der Heilung beide mit Zeuge (21:35:00 MEZ, die
+Sonde meldet `README.md:103 zeug=true` und `README.md:180 zeug=true`). Vor der Heilung meldete
+dasselbe Muster für :180 `zeug=false`, und die Wache selbst sah es um 21:26:27 MEZ als Rotfall.
+`ROADMAP.md:82` und `README.md:28` erwähnen private Notizen, behaupten aber kein „never" und fallen
+damit nicht in die Klasse.
+
+Zwei neue Fälle in `tests/doku-plattform.test.ts` (Sektion „die Privatzusage hat zwei Träger"):
+der erste verlangt, dass die Sonde **beide** Orte sieht — sonst ist sie taub und meldet Erfolg;
+der zweite verlangt in jedem Träger-Satz dasselbe Messzeug. Rot zuerst gesehen, 21:26:27 MEZ:
+`× jeder Traeger nennt im selben Satz ein Messzeug` — 1 Fall rot, 18 grün. Dann README.md:180
+bewaffnet mit den zwei App-Zeugen, die die Zusage wirklich halten: `tests/mcp.test.ts:119`
+(Privatheits-Floor über die MCP-Tür, auch auf Nachfrage per scope) und
+`tests/enterprise-api.test.ts:142-170` — der Fall fängt den **tatsächlich gesendeten Körper** ab
+(`init.body` des gestubbten fetch) und verlangt dreifach: Absender-Mail fehlt, IBAN fehlt, die
+private Notiz fehlt, `[EMAIL-1]` steht drin, und das Schild meldet `privateNotes: 1`. Danach 19 von
+19 grün (21:26 MEZ, zwischen dem roten Fall und der Messung um 21:26:57).
+
+Der Zensus danach (21:33:13 MEZ, Exit 0): enge Lesung **23 von 132** (17,4 %), ohne Messzeug 109;
+die schmale Klasse bleibt 30, davon nennen **7** ihr Messzeug — **23 sind die Arbeit**. Suite:
+Messung ab 21:26:57 MEZ (3 720 Fälle, 1 rot: der Zahlenträger), Prüfung 21:29:46–21:32:13 MEZ
+**3 720 / 0 rot**, Kette Exit 0, doku-check beglaubigt dieselbe Zahl.
+
+**Ein dritter Träger bleibt, mit Grund:** README.md:181 — „No license server, no phone-home, no
+extra infrastructure — one file" — ist dieselbe Klasse in der Enterprise-Zeile. Die ist auf
+Damians Wort vom 5.11. 13:24 MEZ zugefroren, und das gilt auch für ihren Text. Sie steht damit
+weiter in den 109 ohne Messzeug, und die Wache von P126 sieht sie absichtlich nicht.
 
 ## Fehler in diesem Schlag, die ich selbst gefunden habe
 
@@ -454,3 +491,15 @@ die Zahl auf 0 fällt.
     unter `src/lib/` nicht (es ist `server/router/clip.ts:31`), und die Biss-Kontrolle der
     Telemetrie-Wache ist der fünfte von neun Fällen, nicht der siebte. Beide Zeilen erst gemessen,
     dann geschrieben — und trotzdem zuerst falsch notiert, weil ich sie aus dem Kopf zitierte.
+12. **Eine strukturelle Null in eigner Sonde, in P126 gesehen, in P127 berichtigt.** Ich wollte
+    prüfen, ob der Telemetrie-Satz die Liste der ohne-Zeugen verlassen hat, und las dafür
+    `x.text` — das Artefakt schreibt seine Sätze aber unter `satz`. Alle Vergleiche trafen also
+    nichts, und die Meldung war ein verdientes 0, das nichts über die Welt sagte. Die Gegenprüfung
+    mit dem richtigen Schlüssel zeigte: ja, der Satz ist raus; **nein**, die Zahl war nie ein
+    Beweis. Erst der Schlüssel wird gelesen, dann die Zahl.
+13. **Zwei Uhrzeiten aus dem Gefühl.** Im P127-Entwurf standen „21:25:58 MEZ" für den
+    Träger-Probelauf und „21:26:44 MEZ" für den grünen Datei-Lauf, ohne dass ein `date` in diesen
+    Befehlen lief. Beide sind ersetzt: der Träger-Lauf ist jetzt selbst gemessen (21:35:00 MEZ,
+    derselbe Lauf, der die Heilung zeigt), und der Datei-Lauf steht als „21:26 MEZ, zwischen dem
+    roten Fall um 21:26:27 und der Messung um 21:26:57" — eine Spanne, die ich belegen kann, statt
+    einer Sekunde, die ich nicht hatte.

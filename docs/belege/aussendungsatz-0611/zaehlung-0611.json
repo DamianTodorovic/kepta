@@ -3,8 +3,8 @@
   "README.md": {
    "saetze": 251,
    "absolut": 104,
-   "mit_zeug": 17,
-   "ohne_zeug": 87
+   "mit_zeug": 18,
+   "ohne_zeug": 86
   },
   "SECURITY.md": {
    "saetze": 23,
@@ -28,8 +28,8 @@
  "zusammen": {
   "saetze": 321,
   "absolut": 132,
-  "mit_zeug": 22,
-  "ohne_zeug": 110
+  "mit_zeug": 23,
+  "ohne_zeug": 109
  },
  "abschnitt": {
   "README.md": {
@@ -135,8 +135,8 @@
   },
   {
    "datei": "README.md",
-   "satz": "Private notes never reach an app or a cloud model.",
-   "zeuge": false
+   "satz": "Private notes never reach an app or a cloud model — the same two checks apply here: `tests/mcp.test.ts` refuses a private note at the MCP door even when an agent asks for it by scope, and `tests/enterprise-api.test.ts` r",
+   "zeuge": true
   },
   {
    "datei": "README.md",
@@ -200,7 +200,7 @@
   },
   {
    "datei": "README.md",
-   "satz": "```bash npm run lint # typecheck (tsc) + ESLint — 0 errors required npm test # 3718 tests (vitest) npm run test:cov # tests + coverage gate + test count in the README npm run eval # retrieval quality (Hit@1) ``` | Layer ",
+   "satz": "```bash npm run lint # typecheck (tsc) + ESLint — 0 errors required npm test # 3720 tests (vitest) npm run test:cov # tests + coverage gate + test count in the README npm run eval # retrieval quality (Hit@1) ``` | Layer ",
    "zeuge": false
   },
   {
@@ -438,10 +438,6 @@
   },
   {
    "datei": "README.md",
-   "satz": "Private notes never reach an app or a cloud model."
-  },
-  {
-   "datei": "README.md",
    "satz": "Card numbers must pass the Luhn check and IBANs the mod-97 check; dates are never taken for phone numbers."
   },
   {
@@ -590,7 +586,7 @@
   },
   {
    "datei": "README.md",
-   "satz": "```bash npm run lint # typecheck (tsc) + ESLint — 0 errors required npm test # 3718 tests (vitest) npm run test:cov # tests + coverage gate + test count in the README npm run eval # retrieval quality (Hit@1) ``` | Layer "
+   "satz": "```bash npm run lint # typecheck (tsc) + ESLint — 0 errors required npm test # 3720 tests (vitest) npm run test:cov # tests + coverage gate + test count in the README npm run eval # retrieval quality (Hit@1) ``` | Layer "
   },
   {
    "datei": "README.md",

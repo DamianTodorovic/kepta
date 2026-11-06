@@ -246,8 +246,8 @@ erfunden, in beiden Sprachen gemessen und mit dem Vektor-Bein auch allein:
 | `aussendung-0611/beweisen-3-2-190-0611.txt` | 1094 B | `21c9789fca4692a5…` |
 | `aussendung-0611/github-releases-0611.json` | 153795 B | `56f94e5bd9c71d1c…` |
 | `aussendungsatz-0611/zaehlen.mjs` | 11824 B | `42cbc9a8a384dadb…` |
-| `aussendungsatz-0611/zaehlung-0611.json` | 32003 B | `63faa79ccf7d10c1…` |
-| `aussendungsatz-0611/zaehlung-0611.log.txt` | 14943 B | `0943448a86c934fa…` |
+| `aussendungsatz-0611/zaehlung-0611.json` | 32076 B | `7eb0956a71172c67…` |
+| `aussendungsatz-0611/zaehlung-0611.log.txt` | 15171 B | `220e418e0867920b…` |
 
 Drei Folgen, aufgeschrieben, weil sie die Zahl nicht schoener machen:
 

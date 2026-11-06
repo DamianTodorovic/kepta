@@ -236,3 +236,40 @@ describe("README: die Privatzusage nennt ihre Zeugen", () => {
     expect(mitKern.length, "die Haelfte ueber den Kern braucht einen eigenen, ortsbaren Zeugen").toBe(privat.length);
   });
 });
+
+describe("die Privatzusage hat zwei Traeger, und beide nennen Zeugen", () => {
+  /* P125 bewaffnete README.md:103. Der Zensus der schmalen Klasse (21:16:29 MEZ) zeigte, dass
+     dieselbe Zusage ein zweites Mal steht -- README.md:180, der Privacy-shield-Punkt der
+     Funktions-Strasse, endet auf "Private notes never reach an app or a cloud model." ohne
+     jeden Zeugen. Eine Wache, die auf einen Wortlaut-keyed ist, sieht den zweiten Traeger
+     nicht; also wird hier nach der BEHAUPTUNG gesucht, nicht nach dem Satz.
+     Gemessen 21:25:58 MEZ mit demselben Muster: genau zwei Traeger in den vier Texten --
+     :103 (Zeuge ja) und :180 (Zeuge nein). ROADMAP.md:82 und README.md:28 erwaehnen private
+     Notizen, behaupten aber kein "never", und fallen deshalb nicht in die Klasse. */
+  const AUSSEN = ["README.md", "SECURITY.md", "ROADMAP.md", ".github/release-notes.md"];
+  const behauptet = /\bprivate notes?\b[^.]{0,140}?\b(never|not)\b[^.]{0,90}\b(reach|shown|sent|visible|leave)\b/i;
+  const zeug = /(tests\/|\.test\.tsx?\b|:[0-9]{2,4}\b|DamianTodorovic\/kepta)/i;
+
+  const traeger: { datei: string; zeile: number; satz: string }[] = [];
+  for (const datei of AUSSEN) {
+    const text = fs.readFileSync(path.join(process.cwd(), datei), "utf-8").split("\n");
+    text.forEach((zeile, i) => {
+      if (!behauptet.test(zeile)) return;
+      for (const satz of zeile.split(/(?<=[.!?])\s+/)) {
+        if (behauptet.test(satz)) traeger.push({ datei, zeile: i + 1, satz: satz.replace(/\s+/g, " ") });
+      }
+    });
+  }
+
+  it("die Sonde sieht beide Traeger — sonst ist sie taub und meldet Erfolg", () => {
+    expect(traeger.length, "die Behauptung ist verschwunden oder das Muster sieht sie nicht").toBeGreaterThanOrEqual(2);
+    const orte = traeger.map((t) => `${t.datei}:${t.zeile}`);
+    expect(orte, `erwartete beide Traeger, fand: ${orte.join(", ")}`).toContain("README.md:103");
+    expect(orte, `erwartete beide Traeger, fand: ${orte.join(", ")}`).toContain("README.md:180");
+  });
+
+  it("jeder Traeger nennt im selben Satz ein Messzeug", () => {
+    const nackt = traeger.filter((t) => !zeug.test(t.satz));
+    expect(nackt, `${nackt.length} von ${traeger.length} Traegern nennen keinen Zeugen:\n  ${nackt.map((t) => `${t.datei}:${t.zeile} ${t.satz.slice(0, 120)}`).join("\n  ")}`).toHaveLength(0);
+  });
+});

@@ -1,13 +1,13 @@
-Zeit: 6.11.2026, 21:16:29 MEZ
+Zeit: 6.11.2026, 21:33:13 MEZ
 Dateien: README.md, SECURITY.md, ROADMAP.md, .github/release-notes.md — getrennt durch Satzende und Leerzeichen, Saetze ueber 25 Zeichen.
 
 | Datei | Saetze | absolute | mit Messzeug | ohne Messzeug | Anteil ohne |
 |---|---|---|---|---|---|
-| `README.md` | 251 | 104 | 17 | 87 | 83.7 % |
+| `README.md` | 251 | 104 | 18 | 86 | 82.7 % |
 | `SECURITY.md` | 23 | 6 | 1 | 5 | 83.3 % |
 | `ROADMAP.md` | 11 | 6 | 3 | 3 | 50.0 % |
 | `.github/release-notes.md` | 36 | 16 | 1 | 15 | 93.8 % |
-| **zusammen** | **321** | **132** | **22** | **110** | **83.3 %** |
+| **zusammen** | **321** | **132** | **23** | **109** | **82.6 %** |
 
 Nenner fuer den Anteil: 132 absolute Behauptungen in 321 Saetzen der vier Texte.
 
@@ -19,7 +19,7 @@ Zweite Lesung — der Zeuge darf im selben Abschnitt stehen (Absatz, Tabelle, Au
 | `ROADMAP.md` | 6 | 2 | 4 |
 | `.github/release-notes.md` | 16 | 1 | 15 |
 | zusammen | 132 | 61 | 71 |
-   mit Messzeug im selben Abschnitt: 61 von 132 = 46.2 % (gegen 22 von 132 = 16.7 % in der engen Lesung).
+   mit Messzeug im selben Abschnitt: 61 von 132 = 46.2 % (gegen 23 von 132 = 17.4 % in der engen Lesung).
 
 Die schmalere Klasse — Saetze, die ein Werkzeug widerlegen koennte (never/always/cannot/0 %/100 %):
    README.md                  26 von 104 absoluten
@@ -39,7 +39,7 @@ Die schmalere Klasse — Saetze, die ein Werkzeug widerlegen koennte (never/alwa
    [README.md]      The second channel switches itself off with the reason when the base holds only one kind of arrival; it never paints everything grey.
    [README.md]      *Keep the newer*, *Keep the older* (the other is marked as replaced, never deleted) or *Both are right* (never asked again).
    [README.md]      A backup of the old file sits right next to it, every other entry stays, and a file that is not plain JSON is never touched - **Live activity** (⌘7) — which app is active right now and what it searched, saved or changed,
-   [README.md]      Private notes never reach an app or a cloud model.
+   [README.md] ZEUG Private notes never reach an app or a cloud model — the same two checks apply here: `tests/mcp.test.ts` refuses a private note at the MCP door even when an agent asks for it by scope, and `tests/enterprise-api.test.ts` r
    [README.md]      Card numbers must pass the Luhn check and IBANs the mod-97 check; dates are never taken for phone numbers.
    [README.md] ZEUG Both protections are on by default, and every cloud request is in the audit log - **Managed deployment & central policies** — IT deploys one `managed-settings.json` (the macOS MDM path, since the app ships macOS only; th
    [README.md]      Without a reachable local LLM it always degrades to ADD — the gate can never block you.
@@ -52,7 +52,7 @@ Die schmalere Klasse — Saetze, die ein Werkzeug widerlegen koennte (never/alwa
    [README.md]      It was never a lock — but it was counting, and counting needed places to hide the tally (an authenticated state in the database, a keychain anchor, a hidden file).
    [README.md]      - **The data is never hostage.** The knowledge base file stays on disk, encrypted, and readable by the source-available engine.
    [README.md]      They are built from this source and never published here, so they are untested against a real installer download; treat them as source builds, not as shipped products.
-   [README.md]      ```bash npm run lint # typecheck (tsc) + ESLint — 0 errors required npm test # 3718 tests (vitest) npm run test:cov # tests + coverage gate + test count in the README npm run eval # retrieval quality (Hit@1) ``` | Layer 
+   [README.md]      ```bash npm run lint # typecheck (tsc) + ESLint — 0 errors required npm test # 3720 tests (vitest) npm run test:cov # tests + coverage gate + test count in the README npm run eval # retrieval quality (Hit@1) ``` | Layer 
    [README.md]      The routers and helpers count towards the overall coverage gate; the only exclusion is the bootstrap, which binds a port and never runs in a unit test.
    [SECURITY.md]      **Keep a copy of the key.** It never leaves the keychain on its own; if the keychain is lost (a fresh system, a new Windows account), a restored `kepta.db` cannot be opened.
    [ROADMAP.md] ZEUG ## ✅ v2.6.15 — September 2026: wave 1, the white-space features | Feature | What shipped | |---|---| | **Time-travel search** | `asOf` on `memory_search` and `POST /api/search` — ask what was known at any moment; time-tr
@@ -63,7 +63,7 @@ Zwei von ihnen nachgegriffen, im selben Lauf:
    "no screenshot of it here yet" (Semantic-Ansicht): README nennt 20 Bilder (12 in Markdown, 8 als <img alt>), davon 0 mit "Semantic"; der Satz steht noch da — haltbar.
    "no embedding ever travels into the view": 8 von 8 benannten Flaechen-Dateien gelesen, zusammen 0 Nennung(en) "embedding"; das Wort liegt in 34 Test-Dateien des Repos. Fehlende Dateien: keine.
 
-Die 110 ohne Messzeug, in Lesereihenfolge der Dateien (erste 40):
+Die 109 ohne Messzeug, in Lesereihenfolge der Dateien (erste 40):
    [README.md] <p align="center"><img src="public/kepta-logo.svg" width="88" alt="K3PTA"></p> <h1 align="center">K3PTA — Keeps what matters</h1> <p align="center"><strong>Your AI forgets you after every chat.<br>K3PTA remembers — on yo
    [README.md] This repository is the full desktop application.</sub></p> ## 🎬 Watch your knowledge grow <p align="center"><img src="docs/demo.gif" alt="Eighteen months of knowledge growing in the graph as the time slider runs, then s
    [README.md] The time slider replays eighteen months of a fictional advisory firm, and because every note carries a validity window, past moments show exactly what was true then.
@@ -103,4 +103,4 @@ Die 110 ohne Messzeug, in Lesereihenfolge der Dateien (erste 40):
    [README.md] Zed, Codex CLI, Continue and every other MCP client get the exact snippet to paste.
    [README.md] A backup of the old file sits right next to it, every other entry stays, and a file that is not plain JSON is never touched - **Live activity** (⌘7) — which app is active right now and what it searched, saved or changed,
    [README.md] Every entry is sealed with the SHA-256 of the one before it; *Check integrity* shows whether anything was changed, removed or cut off.
-   [README.md] Private notes never reach an app or a cloud model.
+   [README.md] Card numbers must pass the Luhn check and IBANs the mod-97 check; dates are never taken for phone numbers.
