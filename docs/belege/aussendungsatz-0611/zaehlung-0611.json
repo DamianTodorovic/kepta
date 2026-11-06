@@ -3,8 +3,8 @@
   "README.md": {
    "saetze": 250,
    "absolut": 103,
-   "mit_zeug": 15,
-   "ohne_zeug": 88
+   "mit_zeug": 16,
+   "ohne_zeug": 87
   },
   "SECURITY.md": {
    "saetze": 23,
@@ -28,8 +28,8 @@
  "zusammen": {
   "saetze": 320,
   "absolut": 131,
-  "mit_zeug": 20,
-  "ohne_zeug": 111
+  "mit_zeug": 21,
+  "ohne_zeug": 110
  },
  "abschnitt": {
   "README.md": {
@@ -219,10 +219,6 @@
   {
    "datei": "README.md",
    "satz": "## 🧩 Every feature <details open> <summary><strong>Capture &amp; store</strong></summary> - Create, edit and delete notes — **trash instead of hard delete**, with restore - **Memory types**: `semantic` (facts), `episodi"
-  },
-  {
-   "datei": "README.md",
-   "satz": "Existing notes can be sorted afterwards from Settings → Data, with a preview first - **Scope**: `user`, `agent`, `session` — separates who a memory belongs to - **Private notes** — one switch in the editor: a private not"
   },
   {
    "datei": "README.md",
@@ -442,7 +438,7 @@
   },
   {
    "datei": "README.md",
-   "satz": "```bash npm run lint # typecheck (tsc) + ESLint — 0 errors required npm test # 3704 tests (vitest) npm run test:cov # tests + coverage gate + test count in the README npm run eval # retrieval quality (Hit@1) ``` | Layer "
+   "satz": "```bash npm run lint # typecheck (tsc) + ESLint — 0 errors required npm test # 3708 tests (vitest) npm run test:cov # tests + coverage gate + test count in the README npm run eval # retrieval quality (Hit@1) ``` | Layer "
   },
   {
    "datei": "README.md",

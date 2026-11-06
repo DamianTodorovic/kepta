@@ -205,3 +205,34 @@ describe("README: die harte Sperre nennt ihren Zeugen", () => {
     expect(quelltext).toMatch(/endungen: \[".pem", ".md"\]/);
   });
 });
+
+describe("README: die Privatzusage nennt ihre Zeugen", () => {
+  // README.md:103 verspricht zweierlei: eine private Notiz wird "never shown to an AI app"
+  // (das ist der Privatheits-Floor ueber MCP) und "never sent to a cloud model" (das ist der
+  // Chatweg, der sie vor dem Absenden aus dem Kontext nimmt). Beides ist gemessen beweisen —
+  // im App-Repo und im Kern-Repo. Was fehlte, war der Verweis nach aussen: ohne Zeuge ist
+  // auch eine wahre Zusage nur ein Wort.
+  const privat = zeilen.filter((z) => /private note is never shown to an AI app/i.test(z));
+
+  it("der Satz ueber private Notizen steht weiter in der README", () => {
+    expect(privat.length, "der Satz ist verschwunden — die Wache sieht nichts mehr").toBeGreaterThan(0);
+  });
+
+  it("er nennt den Agenten-Zeugen und den Wolken-Zeugen", () => {
+    const beide = privat.filter((z) => z.includes("tests/mcp.test.ts") && z.includes("tests/enterprise-api.test.ts"));
+    expect(beide.length, `keine Zeugen genannt:\n  ${privat.map((s) => s.slice(0, 160)).join("\n  ")}`).toBe(privat.length);
+  });
+
+  it("beide Zeugen pruefen wirklich, was der Satz verspricht", () => {
+    const agent = fs.readFileSync(path.join(process.cwd(), "tests/mcp.test.ts"), "utf-8");
+    expect(agent).toMatch(/Privatheits-Floor: private Notizen verlassen K3PTA nie über MCP/);
+    const wolke = fs.readFileSync(path.join(process.cwd(), "tests/enterprise-api.test.ts"), "utf-8");
+    expect(wolke).toMatch(/privateNotes: 1/);
+    expect(wolke).toMatch(/not\.toContain\("Private medical note"\)/);
+  });
+
+  it("der Kern-Teil der Zusage wird als Kern benannt, nicht als App-Beweis verkauft", () => {
+    const mitKern = privat.filter((z) => /engine repo|source-available core|Kern-Repo/i.test(z));
+    expect(mitKern.length, "die Haelfte ueber den Kern braucht einen eigenen, ortsbaren Zeugen").toBe(privat.length);
+  });
+});

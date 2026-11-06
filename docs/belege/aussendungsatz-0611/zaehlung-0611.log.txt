@@ -1,13 +1,13 @@
-Zeit: 6.11.2026, 20:43:06 MEZ
+Zeit: 6.11.2026, 20:51:57 MEZ
 Dateien: README.md, SECURITY.md, ROADMAP.md, .github/release-notes.md — getrennt durch Satzende und Leerzeichen, Saetze ueber 25 Zeichen.
 
 | Datei | Saetze | absolute | mit Messzeug | ohne Messzeug | Anteil ohne |
 |---|---|---|---|---|---|
-| `README.md` | 250 | 103 | 15 | 88 | 85.4 % |
+| `README.md` | 250 | 103 | 16 | 87 | 84.5 % |
 | `SECURITY.md` | 23 | 6 | 1 | 5 | 83.3 % |
 | `ROADMAP.md` | 11 | 6 | 3 | 3 | 50.0 % |
 | `.github/release-notes.md` | 36 | 16 | 1 | 15 | 93.8 % |
-| **zusammen** | **320** | **131** | **20** | **111** | **84.7 %** |
+| **zusammen** | **320** | **131** | **21** | **110** | **84.0 %** |
 
 Nenner fuer den Anteil: 131 absolute Behauptungen in 320 Saetzen der vier Texte.
 
@@ -19,7 +19,7 @@ Zweite Lesung — der Zeuge darf im selben Abschnitt stehen (Absatz, Tabelle, Au
 | `ROADMAP.md` | 6 | 2 | 4 |
 | `.github/release-notes.md` | 16 | 1 | 15 |
 | zusammen | 131 | 60 | 71 |
-   mit Messzeug im selben Abschnitt: 60 von 131 = 45.8 % (gegen 20 von 131 = 15.3 % in der engen Lesung).
+   mit Messzeug im selben Abschnitt: 60 von 131 = 45.8 % (gegen 21 von 131 = 16.0 % in der engen Lesung).
 
 Die schmalere Klasse — Saetze, die ein Werkzeug widerlegen koennte (never/always/cannot/0 %/100 %):
    README.md                  26 von 103 absoluten
@@ -32,7 +32,7 @@ Zwei von ihnen nachgegriffen, im selben Lauf:
    "no screenshot of it here yet" (Semantic-Ansicht): README nennt 20 Bilder (12 in Markdown, 8 als <img alt>), davon 0 mit "Semantic"; der Satz steht noch da — haltbar.
    "no embedding ever travels into the view": 8 von 8 benannten Flaechen-Dateien gelesen, zusammen 0 Nennung(en) "embedding"; das Wort liegt in 34 Test-Dateien des Repos. Fehlende Dateien: keine.
 
-Die 111 ohne Messzeug, in Lesereihenfolge der Dateien (erste 40):
+Die 110 ohne Messzeug, in Lesereihenfolge der Dateien (erste 40):
    [README.md] <p align="center"><img src="public/kepta-logo.svg" width="88" alt="K3PTA"></p> <h1 align="center">K3PTA — Keeps what matters</h1> <p align="center"><strong>Your AI forgets you after every chat.<br>K3PTA remembers — on yo
    [README.md] This repository is the full desktop application.</sub></p> ## 🎬 Watch your knowledge grow <p align="center"><img src="docs/demo.gif" alt="Eighteen months of knowledge growing in the graph as the time slider runs, then s
    [README.md] The time slider replays eighteen months of a fictional advisory firm, and because every note carries a validity window, past moments show exactly what was true then.
@@ -56,7 +56,6 @@ Die 111 ohne Messzeug, in Lesereihenfolge der Dateien (erste 40):
    [README.md] Every change to the knowledge base — and every call through the MCP door, its searches included — is written to a tamper-evident audit log you can check and export.
    [README.md] A plain HTTP read leaves no chain entry: the log records what was done to your memory, not every glance.
    [README.md] ## 🧩 Every feature <details open> <summary><strong>Capture &amp; store</strong></summary> - Create, edit and delete notes — **trash instead of hard delete**, with restore - **Memory types**: `semantic` (facts), `episodi
-   [README.md] Existing notes can be sorted afterwards from Settings → Data, with a preview first - **Scope**: `user`, `agent`, `session` — separates who a memory belongs to - **Private notes** — one switch in the editor: a private not
    [README.md] Expired entries are marked, never quietly hidden - **Supersede chains** (`superseded_by`): contradictions displace each other and the history survives - **Files** by drag and drop: PDF, MD, TXT, JSON — chunked at 2000 ch
    [README.md] Files imported with an older extraction can be read again under *Settings → Data → Re-read imported files* — it counts first and writes only after you confirm - **URL clipper** with SSRF protection (IP literals in every 
    [README.md] `npm run ablation` divides by 5 and reports a real P@5 on the same corpus: two metrics, two names, never comparable.
@@ -73,3 +72,4 @@ Die 111 ohne Messzeug, in Lesereihenfolge der Dateien (erste 40):
    [README.md] Zed, Codex CLI, Continue and every other MCP client get the exact snippet to paste.
    [README.md] A backup of the old file sits right next to it, every other entry stays, and a file that is not plain JSON is never touched - **Live activity** (⌘7) — which app is active right now and what it searched, saved or changed,
    [README.md] Every entry is sealed with the SHA-256 of the one before it; *Check integrity* shows whether anything was changed, removed or cut off.
+   [README.md] Private notes never reach an app or a cloud model.

@@ -189,7 +189,7 @@ Stand des letzten Laufs (20:38 MEZ, nach allen Textänderungen dieses Schlags):
 
 | Lesung | Nenner | mit Messzeug | ohne Messzeug |
 |---|---|---|---|
-| Zeuge **im selben Satz** | 131 absolute Behauptungen (aus 320 Sätzen) | **20** = 15,3 % | **111** = 84,7 % |
+| Zeuge **im selben Satz** | 131 absolute Behauptungen (aus 320 Sätzen) | **21** = 16,0 % | **110** = 84,0 % |
 | Zeuge **im selben Abschnitt** | derselbe Nenner 131 | **60** = 45,8 % | **71** = 54,2 % |
 
 Der Nenner ist genannt, weil die Zahl sonst ein Urteil wäre. Die weite Klasse trifft auch
@@ -289,7 +289,31 @@ bewacht** — `tests/doku-plattform.test.ts:129` („README: keine Route, die di
 vergleicht jede Methodenangabe in der Tabelle gegen die echte Routenliste und enthält schon die
 Gegenprobe für den Einzelabruf.
 
-## 12. Was daraus folgt und offen bleibt
+## 12. Die Privatzusage nennt jetzt beide Zeugen (P125, 20:48 MEZ)
+
+README.md:103 verspricht, eine private Notiz werde „never shown to an AI app and never sent to a
+cloud model — in the app *and* in the source-available core". Beides war schon bewiesen; keiner
+der Beweise stand im Satz:
+
+- Agentenseite: `tests/mcp.test.ts:119` — „Privatheits-Floor: private Notizen verlassen K3PTA nie
+  über MCP — auch nicht per scope-Anfrage".
+- Wolken-Seite: `tests/enterprise-api.test.ts:160-175` liest den **Absendeprompt** der Cloud und
+  verlangt dreifach: die Notiz fehlt, `[EMAIL-1]` steht drin, das Ereignis meldet
+  `privateNotes: 1`; dazu der Audit-Eintrag „cloud chat".
+- Kern-Seite: die eigne Suite des Engine-Repos trägt denselben Floor und mehr — `tests/mcp.test.ts`
+  dort mit :124 (Floor), :420 (Graphkanten aus privaten Notizen), :457 (Dupletten), :481
+  (Update/Delete/Forget sehen sie nicht), :519 (supersedeBy wird verweigert).
+
+Wache zuerst: neue Sektion in `tests/doku-plattform.test.ts` („README: die Privatzusage nennt ihre
+Zeugen", 4 Fälle) — der Satz muss da sein (taub-Kontrolle), er muss beide App-Zeugen nennen, die
+Zeugen müssen die versprochenen Prüfungen wirklich enthalten, und der Kern-Teil muss als Kern
+ortbar bleiben. Gesehen: 1 Fall rot (keine Zeugen genannt), 16 grün; nach dem Nachtrag 17 von 17.
+
+Der Zensus zählt die Änderung: enge Lesung 20 → **21** von 131 (16,0 %), Abschnittslesung bleibt
+60 — der Bulle war im selben Abschnitt bereits belegt. Die Zahl der maschinell widerlegbaren
+Sätze bleibt 30: derselbe Satz, jetzt mit Zeuge.
+
+## 13. Was daraus folgt und offen bleibt
 
 
 Der Satz „die Aussendung ist geprüft" trägt nicht: 19 von 129 absoluten Behauptungen nennen ihr
