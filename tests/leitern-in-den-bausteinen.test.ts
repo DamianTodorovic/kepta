@@ -108,18 +108,21 @@ describe("Punkt 2: die Schriftleiter gilt in den Bausteinen", () => {
     // 6.11.2026 01:12:21 und 02:16:47 MEZ: **18 Sitze in 6 Bausteinen** (bg-white 11,
     // bg-zinc-800 4, text-white 1, text-zinc-900 1, text-zinc-100 1) -- und dazu eine
     // Gefahr-Stelle in einer andern Familie (border-red-500/40), die unten benannt bleibt.
-    // Die eine Ausnahme ist keine Bequemlichkeit, sie ist eine offene Stelle mit Namen:
-    // dem Vertrag fehlt eine Gefahr-Farbe, und die wird mit Kontrastmessung gesetzt, nicht
-    // aus dem Rahmenwerk gegriffen. Die Liste wird gezaehlt und gedruckt -- wer sie still
-    // erweitert, sieht den Lauf fallen.
+    // Die eine friuehere Ausnahme ist keine Bequemlichkeit mehr, sie ist geschlossen: bis
+    // 3.2.177 fehlte dem Vertrag eine Gefahr-Farbe, und der Sitz griff zu Tailwinds rot 500
+    // bei 40 % Deckkraft -- als Rand 1,57:1, unter der Bar von 3:1 (gerechnet 03:09:38 MEZ).
+    // Seit P90 heisst die Farbe --gefahr. Die Liste wird weiter gezaehlt und gedruckt -- wer
+    // sie still erweitert, sieht den Lauf fallen.
     const verboten = /\b(?:bg|text|border|ring|from|to|via|divide|placeholder)-(?:white|black|zinc-\d+|gray-\d+|neutral-\d+|slate-\d+)\b/g;
     const sitze = dateien.map((d) => (d.text.match(verboten) ?? []).map((w) => `${w} in ${d.rel}`)).flat();
     expect(sitze, `${sitze.length} Sitze malen aus der Palette: ${[...new Set(sitze)].join(", ")}`).toEqual([]);
 
-    // Die offene Stelle, mit Namen und Zahl -- keine Toleranzliste, die schweigt.
+    // Die offene Stelle aus P87 ist P90 geschlossen: der Vertrag hat jetzt eine Gefahr-Farbe
+    // (--gefahr, tests/gefahr-traegt-drei-zu-eins.test.ts), also ist die Liste leer. Sie wird
+    // weiter gezaehlt und gedruckt, damit ein Rueckfall als Zahl sichtbar wird.
     const gefahr = /\b(?:bg|text|border)-(?:red|rose|orange|amber)-\d+(?:\/\d+)?\b/g;
     const offen = dateien.map((d) => (d.text.match(gefahr) ?? []).map((w) => `${w} in ${d.rel}`)).flat();
-    expect(offen, `offene Gefahr-Stellen: ${offen.join(", ")}`).toEqual(["border-red-500/40 in src/components/Chat.tsx"]);
+    expect(offen, `offene Gefahr-Stellen: ${offen.join(", ")}`).toEqual([]);
   });
 
   it("kein Baustein ruft eine Klasse, die das Haus nicht malt", () => {

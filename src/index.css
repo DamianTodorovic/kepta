@@ -51,6 +51,7 @@
      Kommentar eine ausgelieferte Regel werden -- gemessen 02:18:38 MEZ im gebauten CSS.) */
   --color-knopf: var(--knopf);   /* der helle Punkt auf Schaltern und Reglern — #ffffff, in beiden Themen */
   --color-blatt: var(--eb-2);    /* die oberste Hebung: Karte, Menue, Toast, ausgewaehlter Reiter */
+  --color-gefahr: var(--gefahr); /* P90: die Grenze einer zerstoerischen Handlung, 3:1 als Rand */
 }
 
 @variant dark (&:where(.dark, .dark *));
@@ -123,6 +124,17 @@
   --border: var(--kante-kontrolle);
   --inset: var(--feld);
   --edge-light: rgba(255, 255, 255, 0.65);
+
+  /* P90: die Gefahr-Reihe. Der Vertrag hatte Warn (amber) und Zu (gruen), aber keine
+     Gefahr -- und der einzige Rufer griff zu Tailwinds rot 500 bei 40 % Deckkraft, was
+     als Rand 1,57:1 gegen das helle Panel ergibt (gerechnet 03:09:38 MEZ; Bar ist
+     WCAG 1.4.11, 3:1 fuer Bedienelement-Grenzen). Diese zwei Werte halten sie:
+     hell 4,82:1 gegen Panel, 4,24:1 gegen Tisch; dunkel 3,99:1 gegen Panel. Gewaehlt
+     wurde die *helle* Stufe im dunklen Thema, weil ein dunkler Rand auf fast schwarzem
+     Tisch dort verschwindet. Geprueft von tests/gefahr-traegt-drei-zu-eins.test.ts.
+     Gerechnet 03:11:28 MEZ: hell #b71824 = 3,67:1 gegen den Tisch und 4,82:1 gegen das
+     Panel; dunkel #e54c4d = 5,25:1 und 3,99:1. */
+  --gefahr: oklch(0.50 0.19 25);
 
   /* Text — Tinte. Gelöst gegen das härteste Gegenüber, das unter ihr
      liegen kann: im hellen Thema der Tisch samt Ambient-Tinktur, nicht
@@ -333,6 +345,10 @@
   --border: var(--kante-kontrolle);
   --inset: var(--feld);
   --edge-light: rgba(255, 255, 255, 0.05);
+
+  /* P90: die dunkle Stufe derselben Reihe -- 5,25:1 gegen den Tisch, 3,99:1 gegen das Panel,
+     beide ueber der Rand-Bar von 3:1 (gerechnet 03:11:28 MEZ). */
+  --gefahr: oklch(0.63 0.19 24);
 
   /* Gelöst gegen die hellste Fläche, auf der Schrift liegen kann (#38383a) */
   --text-1: oklch(0.9365 0.0027 106.5);   /* #eaeae8 — Marke bleibt, 9,89 */

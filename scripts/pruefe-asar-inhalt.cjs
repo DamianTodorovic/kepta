@@ -992,6 +992,11 @@ const erwartet = [
   ["fs-5 lh-lesbar", 6],
   ["lh-marke", 2],
   ["lh-prosa", 30],
+  // P90 (3.2.178): die Gefahr-Farbe ist ein Token, kein Rahmenwerk-Griff. Gezaehlt am
+  // installierten 3.2.177 (latin1, Leerstand zusammengezogen, 04:14:56 MEZ):
+  // "hover:!border-gefahr" 0 mal, "--color-gefahr" 0 mal, "border-red-500/40" 1 mal.
+  ["hover:!border-gefahr", 1],
+  ["--color-gefahr", 1],
   // P86 (3.2.176): die Farb-Sitze heissen wie im Vertrag, und der Rahmenwerk-Scanner ist
   // gesetzt. Gezaehlt am installierten 3.2.175 (latin1, Leerstand zusammengezogen,
   // 6.11.2026 02:41:07 MEZ): "bg-knopf" 0, "bg-blatt" 0, das Paar "bg-white dark:bg-zinc-800"
@@ -1095,6 +1100,10 @@ const verboten = [
   //selben Objekt): Fremd-Baustein und Tailwinds eigne Variablen, kein Besitz von uns.
   "bg-white dark:bg-zinc-800",
   "text-zinc-900 dark:text-zinc-100",
+  // P90 (3.2.178): die alte Gefahren-Form. Am installierten 3.2.177 1 mal (04:14:56 MEZ);
+  // sie war 1,57:1 gegen das helle Panel und 1,65:1 gegen das dunkle -- unter der Rand-Bar
+  // von 3:1. Der Vertrag heisst jetzt --gefahr.
+  "border-red-500/40",
   // P82 (3.2.172): die vier knappen Diener-Absagen, die ein Fachwort ohne Grund und
   // ohne Taetigkeit liessen (gemessen 00:30:54 MEZ als 4 der 5 Funde in 62 Kandidaten).
   "Node or stand not found",

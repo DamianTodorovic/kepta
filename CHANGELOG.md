@@ -1,3 +1,28 @@
+## [3.2.178]
+
+### Added
+
+- **A danger colour, measured rather than borrowed.** The contract had `--warn` (amber) and
+  `--ok` (green) but no danger, so the one seat that needed it reached into the framework:
+  `border-red-500/40` on the clear-chat hover. Computed 6.11.2026 03:09:38 MEZ that is
+  **1.57:1** against the light panel and **1.65:1** against the dark one — and even undiluted
+  it only reaches 2.74:1. The bar for a control boundary is 3:1 (WCAG 1.4.11). The contract
+  now names it: `--gefahr` is `oklch(0.50 0.19 25)` in the light theme (#b71824 — 3.67:1
+  against the table, 4.82:1 against the panel) and `oklch(0.63 0.19 24)` in the dark one
+  (#e54c4d — 5.25:1 and 3.99:1), registered as `--color-gefahr` so `border-gefahr` is a real
+  class. The light step in the dark theme is chosen on purpose: a dark boundary on a
+  near-black table disappears.
+- `tests/gefahr-traegt-drei-zu-eins.test.ts` reads the token values out of `src/index.css` and
+  computes the four ratios itself; its bite control runs the *old* form through the same
+  arithmetic and must see it fail, and it checks the conversion against three hex values the
+  CSS itself documents (#070708, #252526, #fafaf8).
+
+### Changed
+
+- The clear-chat hover calls `hover:!border-gefahr`. The open list in
+  `tests/leitern-in-den-bausteinen.test.ts` — the one that P87 kept printed instead of
+  tolerating silently — is now empty, and still counted and printed.
+
 ## [3.2.177]
 
 ### Changed
