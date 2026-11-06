@@ -1,78 +1,78 @@
 {
  "dateien": {
   "README.md": {
-   "saetze": 251,
-   "absolut": 104,
-   "mit_zeug": 18,
-   "ohne_zeug": 86
+   "saetze": 429,
+   "absolut": 130,
+   "mit_zeug": 16,
+   "ohne_zeug": 114
   },
   "SECURITY.md": {
-   "saetze": 23,
-   "absolut": 6,
-   "mit_zeug": 1,
-   "ohne_zeug": 5
+   "saetze": 52,
+   "absolut": 8,
+   "mit_zeug": 0,
+   "ohne_zeug": 8
   },
   "ROADMAP.md": {
-   "saetze": 11,
-   "absolut": 6,
-   "mit_zeug": 3,
-   "ohne_zeug": 3
+   "saetze": 80,
+   "absolut": 16,
+   "mit_zeug": 0,
+   "ohne_zeug": 16
   },
   ".github/release-notes.md": {
-   "saetze": 36,
-   "absolut": 16,
-   "mit_zeug": 1,
-   "ohne_zeug": 15
+   "saetze": 56,
+   "absolut": 18,
+   "mit_zeug": 0,
+   "ohne_zeug": 18
   }
  },
  "zusammen": {
-  "saetze": 321,
-  "absolut": 132,
-  "mit_zeug": 23,
-  "ohne_zeug": 109
+  "saetze": 617,
+  "absolut": 172,
+  "mit_zeug": 16,
+  "ohne_zeug": 156
  },
  "abschnitt": {
   "README.md": {
-   "absolut": 104,
-   "mit_zeug": 56,
-   "ohne_zeug": 48
+   "absolut": 130,
+   "mit_zeug": 46,
+   "ohne_zeug": 84
   },
   "SECURITY.md": {
-   "absolut": 6,
-   "mit_zeug": 2,
-   "ohne_zeug": 4
+   "absolut": 8,
+   "mit_zeug": 0,
+   "ohne_zeug": 8
   },
   "ROADMAP.md": {
-   "absolut": 6,
-   "mit_zeug": 2,
-   "ohne_zeug": 4
+   "absolut": 16,
+   "mit_zeug": 0,
+   "ohne_zeug": 16
   },
   ".github/release-notes.md": {
-   "absolut": 16,
-   "mit_zeug": 1,
-   "ohne_zeug": 15
+   "absolut": 18,
+   "mit_zeug": 0,
+   "ohne_zeug": 18
   }
  },
  "zusammen_abschnitt": {
-  "absolut": 132,
-  "mit_zeug": 61,
-  "ohne_zeug": 71
+  "absolut": 172,
+  "mit_zeug": 46,
+  "ohne_zeug": 126
  },
  "maschinell_pruefbar": {
   "README.md": {
-   "absolut": 104,
+   "absolut": 130,
    "maschinell": 26
   },
   "SECURITY.md": {
-   "absolut": 6,
+   "absolut": 8,
    "maschinell": 1
   },
   "ROADMAP.md": {
-   "absolut": 6,
+   "absolut": 16,
    "maschinell": 1
   },
   ".github/release-notes.md": {
-   "absolut": 16,
+   "absolut": 18,
    "maschinell": 2
   }
  },
@@ -85,37 +85,37 @@
   },
   {
    "datei": "README.md",
-   "satz": "Keys, credentials, browser profiles, keychains and system folders are never read, and that cannot be switched off (`tests/scan/regeln.test.ts` tries to open the barrier with a widened file-type list and is refused) — bec",
+   "satz": "Keys, credentials, browser profiles, keychains and system folders are never read, and that cannot be switched off (tests/scan/regeln.test.ts tries to open the barrier with a widened file-type list and is refused) — becau",
    "zeuge": true
   },
   {
    "datei": "README.md",
-   "satz": "Existing notes can be sorted afterwards from Settings → Data, with a preview first - **Scope**: `user`, `agent`, `session` — separates who a memory belongs to - **Private notes** — one switch in the editor: a private not",
+   "satz": "Private notes — one switch in the editor: a private note is never shown to an AI app and never sent to a cloud model — in the app (tests/mcp.test.ts refuses it over MCP even when an agent asks by scope; tests/enterprise-",
    "zeuge": true
   },
   {
    "datei": "README.md",
-   "satz": "Expired entries are marked, never quietly hidden - **Supersede chains** (`superseded_by`): contradictions displace each other and the history survives - **Files** by drag and drop: PDF, MD, TXT, JSON — chunked at 2000 ch",
+   "satz": "Expired entries are marked, never quietly hidden",
    "zeuge": false
   },
   {
    "datei": "README.md",
-   "satz": "Every transfer is recorded in a tamper-evident hash-chained ledger (`~/.kepta/sync-journal.jsonl`): the inspectable proof of what moved between devices, without the content ever being readable in transit - **Migration** ",
-   "zeuge": true
-  },
-  {
-   "datei": "README.md",
-   "satz": "`npm run ablation` divides by 5 and reports a real P@5 on the same corpus: two metrics, two names, never comparable.",
+   "satz": "Local reranking: a deterministic reranker (term coverage, phrase hits, title, tags) refines the fused ranking and is exposed as rerankScore — no network, always on",
    "zeuge": false
   },
   {
    "datei": "README.md",
-   "satz": "It is computed on the server, so no embedding ever travels into the view - Force-directed layout on an **unbounded canvas** — nodes repel each other and follow when you drag their neighbours; the layout grows with the ba",
+   "satz": "npm run ablation divides by 5 and reports a real P@5 on the same corpus: two metrics, two names, never comparable.",
    "zeuge": false
   },
   {
    "datei": "README.md",
-   "satz": "Turning a slider does not rebuild the world: the picture keeps its place and settles under the new forces, and one click returns the tuned defaults - Zoom, pan, draggable nodes, and **fit-to-view** that always frames the",
+   "satz": "It is computed on the server, so no embedding ever travels into the view",
+   "zeuge": false
+  },
+  {
+   "datei": "README.md",
+   "satz": "- Zoom, pan, draggable nodes, and fit-to-view that always frames the whole graph — the whole graph includes the strip the legend takes at the bottom",
    "zeuge": false
   },
   {
@@ -130,12 +130,12 @@
   },
   {
    "datei": "README.md",
-   "satz": "A backup of the old file sits right next to it, every other entry stays, and a file that is not plain JSON is never touched - **Live activity** (⌘7) — which app is active right now and what it searched, saved or changed,",
+   "satz": "A backup of the old file sits right next to it, every other entry stays, and a file that is not plain JSON is never touched",
    "zeuge": false
   },
   {
    "datei": "README.md",
-   "satz": "Private notes never reach an app or a cloud model — the same two checks apply here: `tests/mcp.test.ts` refuses a private note at the MCP door even when an agent asks for it by scope, and `tests/enterprise-api.test.ts` r",
+   "satz": "Private notes never reach an app or a cloud model — the same two checks apply here: tests/mcp.test.ts refuses a private note at the MCP door even when an agent asks for it by scope, and tests/enterprise-api.test.ts reads",
    "zeuge": true
   },
   {
@@ -145,8 +145,8 @@
   },
   {
    "datei": "README.md",
-   "satz": "Both protections are on by default, and every cloud request is in the audit log - **Managed deployment & central policies** — IT deploys one `managed-settings.json` (the macOS MDM path, since the app ships macOS only; th",
-   "zeuge": true
+   "satz": "Managed deployment & central policies — IT deploys one managed-settings.json (the macOS MDM path, since the app ships macOS only; the Windows and Linux paths are in the same reader for self-built packages — or set KEPTA_",
+   "zeuge": false
   },
   {
    "datei": "README.md",
@@ -160,17 +160,17 @@
   },
   {
    "datei": "README.md",
-   "satz": "HTML is turned into text before import, and content that carries no knowledge — markup scaffolding, repeated table rows — never becomes a note - **Knowledge list** — a click opens a readable preview: the full text, the s",
+   "satz": "HTML is turned into text before import, and content that carries no knowledge — markup scaffolding, repeated table rows — never becomes a note",
    "zeuge": false
   },
   {
    "datei": "README.md",
-   "satz": "The list groups by file, by kind or by period, and *Load more* never cuts a group in half - **Text size** — `100`, `115` or `130 %`, under *Settings → Display*.",
+   "satz": "The list groups by file, by kind or by period, and *Load more* never cuts a group in half",
    "zeuge": false
   },
   {
    "datei": "README.md",
-   "satz": "`GET /api/memories/:id` therefore stays unimplemented until a client needs a body it cannot already reach; until then this table names only the methods the server registers, and `tests/doku-plattform.test.ts` fails if th",
+   "satz": "GET /api/memories/:id therefore stays unimplemented until a client needs a body it cannot already reach; until then this table names only the methods the server registers, and tests/doku-plattform.test.ts fails if the tw",
    "zeuge": true
   },
   {
@@ -190,7 +190,7 @@
   },
   {
    "datei": "README.md",
-   "satz": "- **The data is never hostage.** The knowledge base file stays on disk, encrypted, and readable by the source-available engine.",
+   "satz": "The data is never hostage.",
    "zeuge": false
   },
   {
@@ -200,7 +200,7 @@
   },
   {
    "datei": "README.md",
-   "satz": "```bash npm run lint # typecheck (tsc) + ESLint — 0 errors required npm test # 3720 tests (vitest) npm run test:cov # tests + coverage gate + test count in the README npm run eval # retrieval quality (Hit@1) ``` | Layer ",
+   "satz": "src/scan (machine-scan rules) | must not fall under 98 % of lines · must hold 100 % of functions (both in vitest.config.ts, key \"src/scan/\") | what may be read, and what never is",
    "zeuge": false
   },
   {
@@ -210,13 +210,13 @@
   },
   {
    "datei": "SECURITY.md",
-   "satz": "**Keep a copy of the key.** It never leaves the keychain on its own; if the keychain is lost (a fresh system, a new Windows account), a restored `kepta.db` cannot be opened.",
+   "satz": "It never leaves the keychain on its own; if the",
    "zeuge": false
   },
   {
    "datei": "ROADMAP.md",
-   "satz": "## ✅ v2.6.15 — September 2026: wave 1, the white-space features | Feature | What shipped | |---|---| | **Time-travel search** | `asOf` on `memory_search` and `POST /api/search` — ask what was known at any moment; time-tr",
-   "zeuge": true
+   "satz": "Time-travel search | asOf on memory_search and POST /api/search — ask what was known at any moment; time-travelled queries never count as access",
+   "zeuge": false
   },
   {
    "datei": ".github/release-notes.md",
@@ -282,11 +282,15 @@
  "ohne_zeug": [
   {
    "datei": "README.md",
-   "satz": "<p align=\"center\"><img src=\"public/kepta-logo.svg\" width=\"88\" alt=\"K3PTA\"></p> <h1 align=\"center\">K3PTA — Keeps what matters</h1> <p align=\"center\"><strong>Your AI forgets you after every chat.<br>K3PTA remembers — on yo"
+   "satz": "Your AI forgets you after every chat."
   },
   {
    "datei": "README.md",
-   "satz": "This repository is the full desktop application.</sub></p> ## 🎬 Watch your knowledge grow <p align=\"center\"><img src=\"docs/demo.gif\" alt=\"Eighteen months of knowledge growing in the graph as the time slider runs, then s"
+   "satz": "Desktop app · no cloud · no account · encrypted at rest SQLite · hybrid retrieval · knowledge graph · MCP"
+  },
+  {
+   "datei": "README.md",
+   "satz": "Every entry is a node, every connection an edge — real connections drawn solid, mere similarity dashed."
   },
   {
    "datei": "README.md",
@@ -294,7 +298,7 @@
   },
   {
    "datei": "README.md",
-   "satz": "Both films were recorded on 18 September 2026 with `npm run screenshots` on an invented demo corpus — no real data, no real people."
+   "satz": "Both films were recorded on 18 September 2026 with npm run screenshots on an invented demo corpus — no real data, no real people."
   },
   {
    "datei": "README.md",
@@ -306,15 +310,19 @@
   },
   {
    "datei": "README.md",
-   "satz": "What a frame costs at each size is timed in [`docs/graph-kosten.md`](docs/graph-kosten.md), not claimed in this caption — a millisecond number is only worth the quiet machine that produced it."
+   "satz": "What a frame costs at each size is timed in [docs/graph-kosten.md](docs/graph-kosten.md), not claimed in this caption — a millisecond number is only worth the quiet machine that produced it."
   },
   {
    "datei": "README.md",
-   "satz": "The third view, *Semantic*, places the same notes by what their texts mean — no screenshot of it here yet.</sub> ### Knowledge that has a date Every memory carries a validity window, so the graph can be replayed: pull th"
+   "satz": "The third view, *Semantic*, places the same notes by what their texts mean — no screenshot of it here yet."
   },
   {
    "datei": "README.md",
-   "satz": "The same question works in search (`asOf` in the HTTP API and MCP) and in the editor, where every note shows its *valid from / valid until*."
+   "satz": "Every memory carries a validity window, so the graph can be replayed: pull the time slider back, and every note that was not true yet at that moment dims — not deleted, simply not true *yet*."
+  },
+  {
+   "datei": "README.md",
+   "satz": "The same question works in search (asOf in the HTTP API and MCP) and in the editor, where every note shows its *valid from / valid until*."
   },
   {
    "datei": "README.md",
@@ -322,11 +330,7 @@
   },
   {
    "datei": "README.md",
-   "satz": "**To use the app — no.** Download the file for your system, open it, done."
-  },
-  {
-   "datei": "README.md",
-   "satz": "<details> <summary><strong>The words used on this page, in plain terms</strong></summary> | Word | What it means here | |---|---| | **Agent** | An AI program that can use tools instead of only answering — Claude Desktop,"
+   "satz": "Agent | An AI program that can use tools instead of only answering — Claude Desktop, Cursor or Gemini CLI, for instance."
   },
   {
    "datei": "README.md",
@@ -342,23 +346,27 @@
   },
   {
    "datei": "README.md",
-   "satz": "**One brain for every AI tool.** Claude Desktop, Cursor, Gemini CLI, Cline, Codex — anything that speaks MCP shares the same encrypted knowledge base, plus anything that only speaks HTTP through the REST API."
+   "satz": "One brain for every AI tool."
   },
   {
    "datei": "README.md",
-   "satz": "**Keep agents sharp instead of letting them rot.** Every memory carries a type, a validity window and a confidence score."
+   "satz": "Claude Desktop, Cursor, Gemini CLI, Cline, Codex — anything that speaks MCP shares the same encrypted knowledge base, plus anything that only speaks HTTP through the REST API."
   },
   {
    "datei": "README.md",
-   "satz": "On a four-note check (`npm run embed:sprachtest`) the default model answers 4 of 4 English paraphrase questions and 1 of 4 of the same questions translated into German."
+   "satz": "Every memory carries a type, a validity window and a confidence score."
   },
   {
    "datei": "README.md",
-   "satz": "Changing the default would also mean re-embedding every stored note, because each chunk is keyed to the model that produced it (`npm run eval:sprache` reruns both sides)."
+   "satz": "On a four-note check (npm run embed:sprachtest) the default model answers 4 of 4 English paraphrase questions and 1 of 4 of the same questions translated into German."
   },
   {
    "datei": "README.md",
-   "satz": "**Private, provably.** Everything lives in `~/.kepta/`, encrypted on disk, no account, no telemetry."
+   "satz": "Changing the default would also mean re-embedding every stored note, because each chunk is keyed to the model that produced it (npm run eval:sprache reruns both sides)."
+  },
+  {
+   "datei": "README.md",
+   "satz": "Everything lives in ~/.kepta/, encrypted on disk, no account, no telemetry."
   },
   {
    "datei": "README.md",
@@ -370,31 +378,51 @@
   },
   {
    "datei": "README.md",
-   "satz": "## 🧩 Every feature <details open> <summary><strong>Capture &amp; store</strong></summary> - Create, edit and delete notes — **trash instead of hard delete**, with restore - **Memory types**: `semantic` (facts), `episodi"
+   "satz": "Expired entries are marked, never quietly hidden"
   },
   {
    "datei": "README.md",
-   "satz": "Expired entries are marked, never quietly hidden - **Supersede chains** (`superseded_by`): contradictions displace each other and the history survives - **Files** by drag and drop: PDF, MD, TXT, JSON — chunked at 2000 ch"
+   "satz": "Files imported with an older extraction can be read again under *Settings → Data → Re-read imported files* — it counts first and writes only after you confirm"
   },
   {
    "datei": "README.md",
-   "satz": "Files imported with an older extraction can be read again under *Settings → Data → Re-read imported files* — it counts first and writes only after you confirm - **URL clipper** with SSRF protection (IP literals in every "
+   "satz": "URL clipper with SSRF protection (IP literals in every notation, DNS resolution, every redirect hop checked); navigation lines, \"Skip to main content\" and cookie banners are stripped on import"
   },
   {
    "datei": "README.md",
-   "satz": "`npm run ablation` divides by 5 and reports a real P@5 on the same corpus: two metrics, two names, never comparable."
+   "satz": "Import your AI history: bring your ChatGPT or Claude data export here (*Settings → Data management → Import your AI history*): every conversation with at least one answer becomes a searchable note with its original date,"
   },
   {
    "datei": "README.md",
-   "satz": "</details> <details open> <summary><strong>Knowledge graph</strong></summary> - Entities and relations from `[[wiki links]]` and automatic extraction - A concept in the picture is a shared one: a term that exists only be"
+   "satz": "Every transfer is recorded in a tamper-evident hash-chained ledger (~/.kepta/sync-journal.jsonl): the inspectable proof of what moved between devices, without the content ever being readable in transit"
   },
   {
    "datei": "README.md",
-   "satz": "It is computed on the server, so no embedding ever travels into the view - Force-directed layout on an **unbounded canvas** — nodes repel each other and follow when you drag their neighbours; the layout grows with the ba"
+   "satz": "Local reranking: a deterministic reranker (term coverage, phrase hits, title, tags) refines the fused ranking and is exposed as rerankScore — no network, always on"
   },
   {
    "datei": "README.md",
-   "satz": "Turning a slider does not rebuild the world: the picture keeps its place and settles under the new forces, and one click returns the tuned defaults - Zoom, pan, draggable nodes, and **fit-to-view** that always frames the"
+   "satz": "Persistent embeddings via Ollama (nomic-embed-text), computed by a background queue instead of re-embedding on every query"
+  },
+  {
+   "datei": "README.md",
+   "satz": "Meaning search can be switched off; the result slider runs 5 · 10 · 20 · 50 · 100 · 250 · All, and the index says how many notes match in total"
+  },
+  {
+   "datei": "README.md",
+   "satz": "npm run ablation divides by 5 and reports a real P@5 on the same corpus: two metrics, two names, never comparable."
+  },
+  {
+   "datei": "README.md",
+   "satz": "- A concept in the picture is a shared one: a term that exists only because it repeats the title of the single note carrying it is an echo of your filing, not knowledge, and the graph leaves it out — the concept count is"
+  },
+  {
+   "datei": "README.md",
+   "satz": "It is computed on the server, so no embedding ever travels into the view"
+  },
+  {
+   "datei": "README.md",
+   "satz": "- Zoom, pan, draggable nodes, and fit-to-view that always frames the whole graph — the whole graph includes the strip the legend takes at the bottom"
   },
   {
    "datei": "README.md",
@@ -402,15 +430,15 @@
   },
   {
    "datei": "README.md",
-   "satz": "Dot size by number of connections - Tells a real connection apart from mere similarity - **Schema panel** — what the store holds, counted: kinds of note, concepts, and every claim type by name."
+   "satz": "Schema panel — what the store holds, counted: kinds of note, concepts, and every claim type by name."
   },
   {
    "datei": "README.md",
-   "satz": "A row is a handle: everything the store does not claim through it steps back - Double-click opens the note </details> <details open> <summary><strong>Maintenance &amp; consolidation</strong></summary> - **Duplicate detec"
+   "satz": "Settings live in the encrypted data directory, not in browser storage — the desktop shell binds to a free port that changes on every launch, and localStorage is keyed by origin, so anything kept there was gone after a re"
   },
   {
    "datei": "README.md",
-   "satz": "Read straight from the local database: no AI involved, nothing leaves the computer - **Contradictions** — two notes that name a different time, date, amount, percentage or quantity for the same thing appear side by side,"
+   "satz": "Read straight from the local database: no AI involved, nothing leaves the computer"
   },
   {
    "datei": "README.md",
@@ -418,11 +446,11 @@
   },
   {
    "datei": "README.md",
-   "satz": "Careful on purpose: only facts and how-tos are compared, both sentences must share their meaningful words, notes from the same file stay out, and so do the parts of a split file (`README — 5/17`), a note's source line an"
+   "satz": "Careful on purpose: only facts and how-tos are compared, both sentences must share their meaningful words, notes from the same file stay out, and so do the parts of a split file (README — 5/17), a note's source line and "
   },
   {
    "datei": "README.md",
-   "satz": "*Copy as Markdown* or *Save as note* </details> <details open> <summary><strong>Your AI apps — connected, visible, accountable</strong></summary> - **Connect in one click** — K3PTA finds the AI apps already installed (Cl"
+   "satz": "Connect in one click — K3PTA finds the AI apps already installed (Claude Desktop, Claude Code, Cursor, Windsurf, VS Code, Gemini CLI, Cline, Roo Code) and adds itself to their MCP settings, pointing to the server inside "
   },
   {
    "datei": "README.md",
@@ -430,7 +458,11 @@
   },
   {
    "datei": "README.md",
-   "satz": "A backup of the old file sits right next to it, every other entry stays, and a file that is not plain JSON is never touched - **Live activity** (⌘7) — which app is active right now and what it searched, saved or changed,"
+   "satz": "A backup of the old file sits right next to it, every other entry stays, and a file that is not plain JSON is never touched"
+  },
+  {
+   "datei": "README.md",
+   "satz": "Audit log — every access to the knowledge base, by you, by each AI app and by scripts, with exactly the notes an app got to see."
   },
   {
    "datei": "README.md",
@@ -442,11 +474,19 @@
   },
   {
    "datei": "README.md",
+   "satz": "Both protections are on by default, and every cloud request is in the audit log"
+  },
+  {
+   "datei": "README.md",
+   "satz": "Managed deployment & central policies — IT deploys one managed-settings.json (the macOS MDM path, since the app ships macOS only; the Windows and Linux paths are in the same reader for self-built packages — or set KEPTA_"
+  },
+  {
+   "datei": "README.md",
    "satz": "No license server, no phone-home, no extra infrastructure — one file."
   },
   {
    "datei": "README.md",
-   "satz": "All eight tools ship an `outputSchema` and return `structuredContent`."
+   "satz": "All eight tools ship an outputSchema and return structuredContent."
   },
   {
    "datei": "README.md",
@@ -454,11 +494,15 @@
   },
   {
    "datei": "README.md",
-   "satz": "| Tool | Purpose | |---|---| | `memory_search` | Hybrid retrieval with temporal weighting | | `memory_save` | Create, including type, scope and validity | | `memory_update` | Change an existing memory | | `memory_delete`"
+   "satz": "Model discovery for Ollama and LM Studio in one click, no key required"
   },
   {
    "datei": "README.md",
-   "satz": "</details> <details> <summary><strong>Interface</strong></summary> - **Command palette** (⌘K) for everything without the mouse - **Tag filter** with counts and multi-select - **Light/dark** and **focus mode** - **Setup w"
+   "satz": "Source citations: every answer shows which memories it used"
+  },
+  {
+   "datei": "README.md",
+   "satz": "Duplicate review — every group side by side, one click to keep the richest copy or dismiss the pair for good."
   },
   {
    "datei": "README.md",
@@ -466,7 +510,7 @@
   },
   {
    "datei": "README.md",
-   "satz": "HTML is turned into text before import, and content that carries no knowledge — markup scaffolding, repeated table rows — never becomes a note - **Knowledge list** — a click opens a readable preview: the full text, the s"
+   "satz": "HTML is turned into text before import, and content that carries no knowledge — markup scaffolding, repeated table rows — never becomes a note"
   },
   {
    "datei": "README.md",
@@ -474,15 +518,51 @@
   },
   {
    "datei": "README.md",
-   "satz": "The list groups by file, by kind or by period, and *Load more* never cuts a group in half - **Text size** — `100`, `115` or `130 %`, under *Settings → Display*."
+   "satz": "The list groups by file, by kind or by period, and *Load more* never cuts a group in half"
   },
   {
    "datei": "README.md",
-   "satz": "The interface is English; German notes and German queries work as well as English ones </details> <details> <summary><strong>HTTP API — 65 routes</strong></summary> | Area | Routes | |---|---| | Memories | `GET /api/memo"
+   "satz": "Text size — 100, 115 or 130 %, under *Settings → Display*."
   },
   {
    "datei": "README.md",
-   "satz": "embeddings .-> OLL ``` No service in between, no account, no telemetry."
+   "satz": "There is no single-note GET."
+  },
+  {
+   "datei": "README.md",
+   "satz": "DELETE /api/memories/:id and POST /api/memories/:id/restore are the only methods on that path — asking the door for one note by id answers 404, and that is the contract, not a bug to route around."
+  },
+  {
+   "datei": "README.md",
+   "satz": "- All data in ~/.kepta/ — one SQLite file that belongs to you"
+  },
+  {
+   "datei": "README.md",
+   "satz": "- The server binds to 127.0.0.1 only (deliberate override via KEPTA_HOST), and answers only this computer — a website using DNS rebinding gets nothing"
+  },
+  {
+   "datei": "README.md",
+   "satz": "SSRF protection in the URL clipper: normalised IP checks, DNS resolution, every redirect hop verified"
+  },
+  {
+   "datei": "README.md",
+   "satz": "- No account, no telemetry, no phone-home — and nothing to activate: the app validates no key, so there is no check of any kind to call home for."
+  },
+  {
+   "datei": "README.md",
+   "satz": "- With no AI configured, not a single byte leaves the machine"
+  },
+  {
+   "datei": "README.md",
+   "satz": "subgraph App[\"K3PTA — all on your machine\"]"
+  },
+  {
+   "datei": "README.md",
+   "satz": "ENG[\"Retrieval engine one code path for all\"]"
+  },
+  {
+   "datei": "README.md",
+   "satz": "No service in between, no account, no telemetry."
   },
   {
    "datei": "README.md",
@@ -494,15 +574,23 @@
   },
   {
    "datei": "README.md",
-   "satz": "No cream.\", tags=[\"cooking\"]) for hit in kepta.search(\"carbonara without cream\"): print(f\"{hit.score:.2f} {hit.memory.title}\") ``` Standard library only, no dependencies."
+   "satz": "No cream.\", tags=[\"cooking\"])"
   },
   {
    "datei": "README.md",
-   "satz": "Details: [python/README.md](python/README.md) · [PyPI](https://pypi.org/project/kepta/) ## 🔐 K3PTA is free, and nothing in it is locked There are two things in the world: **K3PTA Core**, free — the desktop app and the e"
+   "satz": "Standard library only, no dependencies."
   },
   {
    "datei": "README.md",
-   "satz": "- **No keys, no limits, no upgrade panel.** Every tool in the app runs without bound: chat, clipper, machine scan, dossiers, briefings, audit, Device Sync, all eight MCP tools."
+   "satz": "There are two things in the world: K3PTA Core, free — the desktop app and the engine underneath it — and K3PTA Enterprise, memory for organizations, which exists only by agreement with Damian."
+  },
+  {
+   "datei": "README.md",
+   "satz": "No keys, no limits, no upgrade panel."
+  },
+  {
+   "datei": "README.md",
+   "satz": "Every tool in the app runs without bound: chat, clipper, machine scan, dossiers, briefings, audit, Device Sync, all eight MCP tools."
   },
   {
    "datei": "README.md",
@@ -522,11 +610,15 @@
   },
   {
    "datei": "README.md",
-   "satz": "- **No plugin store, and that is not a lock.** K3PTA loads no third-party code, so there is nothing to approve, nothing to buy and nothing an organisation could switch off for you: the app's own features run the same in "
+   "satz": "No plugin store, and that is not a lock."
   },
   {
    "datei": "README.md",
-   "satz": "- **The data is never hostage.** The knowledge base file stays on disk, encrypted, and readable by the source-available engine."
+   "satz": "K3PTA loads no third-party code, so there is nothing to approve, nothing to buy and nothing an organisation could switch off for you: the app's own features run the same in the free download as in a managed deployment."
+  },
+  {
+   "datei": "README.md",
+   "satz": "The data is never hostage."
   },
   {
    "datei": "README.md",
@@ -538,15 +630,15 @@
   },
   {
    "datei": "README.md",
-   "satz": "## 🧠 The source-available core The engine underneath this app is source-available — **BUSL-1.1**, at [DamianTodorovic/kepta](https://github.com/DamianTodorovic/kepta) (each release converts to AGPL-3.0-or-later after fo"
+   "satz": "The engine underneath this app is source-available — BUSL-1.1, at [DamianTodorovic/kepta](https://github.com/DamianTodorovic/kepta) (each release converts to AGPL-3.0-or-later after four years): storage with encryption a"
   },
   {
    "datei": "README.md",
-   "satz": "No path, nothing to build — `npx` fetches the server the first time it is needed: ```json { \"mcpServers\": { \"kepta\": { \"command\": \"npx\", \"args\": [\"-y\", \"kepta-mcp\"] } } } ``` That is the whole connection, and it works wi"
+   "satz": "No path, nothing to build — npx fetches the server the first time it is needed:"
   },
   {
    "datei": "README.md",
-   "satz": "If you would rather not have npx check the registry on every start, install it once with `npm i -g kepta-mcp` and use `\"command\": \"kepta\"` instead."
+   "satz": "If you would rather not have npx check the registry on every start, install it once with npm i -g kepta-mcp and use \"command\": \"kepta\" instead."
   },
   {
    "datei": "README.md",
@@ -554,7 +646,7 @@
   },
   {
    "datei": "README.md",
-   "satz": "The desktop app is published **only for macOS** — Apple silicon and Intel."
+   "satz": "The desktop app is published only for macOS — Apple silicon and Intel."
   },
   {
    "datei": "README.md",
@@ -562,15 +654,15 @@
   },
   {
    "datei": "README.md",
-   "satz": "| Your system | File | |---|---| | Mac with Apple Silicon (M1–M4) | `K3PTA-<version>-mac-arm64.dmg` | | Mac with an Intel processor | `K3PTA-<version>-mac-x64.dmg` | | Windows or Linux | No app file is published."
+   "satz": "Windows or Linux | No app file is published."
   },
   {
    "datei": "README.md",
-   "satz": "The engine itself runs on all three (`kepta-mcp` on npm, or from source), so an MCP client on those systems talks to the same memory — only the window is missing."
+   "satz": "The engine itself runs on all three (kepta-mcp on npm, or from source), so an MCP client on those systems talks to the same memory — only the window is missing."
   },
   {
    "datei": "README.md",
-   "satz": "| Every published file carries its platform and architecture in the name."
+   "satz": "Every published file carries its platform and architecture in the name."
   },
   {
    "datei": "README.md",
@@ -578,7 +670,7 @@
   },
   {
    "datei": "README.md",
-   "satz": "The fastest way through, and the one that works on every macOS version: ```bash xattr -dr com.apple.quarantine /Applications/K3PTA.app ``` Without the terminal: **System Settings → Privacy & Security**, scroll down to th"
+   "satz": "The fastest way through, and the one that works on every macOS version:"
   },
   {
    "datei": "README.md",
@@ -586,7 +678,27 @@
   },
   {
    "datei": "README.md",
-   "satz": "```bash npm run lint # typecheck (tsc) + ESLint — 0 errors required npm test # 3720 tests (vitest) npm run test:cov # tests + coverage gate + test count in the README npm run eval # retrieval quality (Hit@1) ``` | Layer "
+   "satz": "everything together | must not fall under 89 % of lines (test.coverage.thresholds.lines, vitest.config.ts) | core, browser logic, scan rules, server and every component"
+  },
+  {
+   "datei": "README.md",
+   "satz": "src/core (engine, store, MCP, migration) | must not fall under 97 % of lines · must hold 100 % of functions (both in vitest.config.ts, key \"src/core/\") | data model, search, consolidation, MCP protocol"
+  },
+  {
+   "datei": "README.md",
+   "satz": "src/scan (machine-scan rules) | must not fall under 98 % of lines · must hold 100 % of functions (both in vitest.config.ts, key \"src/scan/\") | what may be read, and what never is"
+  },
+  {
+   "datei": "README.md",
+   "satz": "src/lib (browser logic) | must not fall under 92 % of lines (vitest.config.ts, key \"src/lib/\") | provider presets, profile, settings, sources, SSE, fetch client"
+  },
+  {
+   "datei": "README.md",
+   "satz": "src/components (UI) | must not fall under 84 % of lines (vitest.config.ts, key \"src/components/\") | every component, the graph canvas included"
+  },
+  {
+   "datei": "README.md",
+   "satz": "The server code lives in server/ — server/app.ts assembles the middleware chain and mounts the routers, server/router/ holds one module per feature area, server/helfer/ the shared helpers, and server.ts itself is only th"
   },
   {
    "datei": "README.md",
@@ -606,7 +718,7 @@
   },
   {
    "datei": "README.md",
-   "satz": "- `npm run eval` — 58 notes, 45 queries, five categories, in three legs: the naive substring search it replaced, the engine without vectors, and the engine **with** vectors, which is what actually ships."
+   "satz": "- npm run eval — 58 notes, 45 queries, five categories, in three legs: the naive substring search it replaced, the engine without vectors, and the engine with vectors, which is what actually ships."
   },
   {
    "datei": "README.md",
@@ -618,7 +730,7 @@
   },
   {
    "datei": "README.md",
-   "satz": "- `npm run eval:sprache` — the same 58-note corpus, 15 pairs drawn from its 45 queries, where only the language of the question moves: an English question over German notes, with the answer set inherited from the corpus "
+   "satz": "- npm run eval:sprache — the same 58-note corpus, 15 pairs drawn from its 45 queries, where only the language of the question moves: an English question over German notes, with the answer set inherited from the corpus ra"
   },
   {
    "datei": "README.md",
@@ -630,35 +742,103 @@
   },
   {
    "datei": "SECURITY.md",
-   "satz": "## Hardening in place - Only this computer: the HTTP API refuses requests whose `Host` header does not name this machine (DNS rebinding) and requests from other websites that would change anything (cross-site requests) -"
+   "satz": "- Only this computer: the HTTP API refuses requests whose Host header does not name this machine (DNS rebinding) and requests from other websites that would change anything (cross-site requests)"
   },
   {
    "datei": "SECURITY.md",
-   "satz": "The key is created on the first start and stored in the system keychain: the macOS Keychain (service `app.kepta.database`, account `kepta`), Windows DPAPI (`database-key.dpapi` in the data folder, readable only under the"
+   "satz": "format through SQLite3 Multiple Ciphers — AES-256 for every page, an"
   },
   {
    "datei": "SECURITY.md",
-   "satz": "- A running K3PTA: the local API (`127.0.0.1`, no authentication) serves the decrypted knowledge to programs on the same machine, as before."
+   "satz": "HMAC-SHA512 over every page, a random 256-bit key."
   },
   {
    "datei": "SECURITY.md",
-   "satz": "**Keep a copy of the key.** It never leaves the keychain on its own; if the keychain is lost (a fresh system, a new Windows account), a restored `kepta.db` cannot be opened."
+   "satz": "the data folder, readable only under the same Windows account) or the Secret"
+  },
+  {
+   "datei": "SECURITY.md",
+   "satz": "- A running K3PTA: the local API (127.0.0.1, no authentication) serves the"
+  },
+  {
+   "datei": "SECURITY.md",
+   "satz": "deliberate exceptions: endpoint.json (port, PID, start time — no secret,"
+  },
+  {
+   "datei": "SECURITY.md",
+   "satz": "It never leaves the keychain on its own; if the"
   },
   {
    "datei": "ROADMAP.md",
-   "satz": "# 🗺️ K3PTA Roadmap — v2.0 and beyond > As of September 2026 · Replaces `WHITE-SPACE-ANALYSE.md` (the v1.0 analysis, whose quick wins and big bets are all shipped)."
+   "satz": "> As of September 2026 · Replaces WHITE-SPACE-ANALYSE.md (the v1.0 analysis, whose quick wins and big bets are all shipped)."
   },
   {
    "datei": "ROADMAP.md",
-   "satz": "**One** code path for UI, HTTP API and MCP | | **Knowledge graph** | Entities and relations (from `[[wiki links]]` and auto-extraction), a graph view built on real edges | | **MCP** | Protocol 2026-07-28 (stateless core,"
+   "satz": "Every user-facing string, the MCP tool descriptions, the starter pack and the"
   },
   {
    "datei": "ROADMAP.md",
-   "satz": "Since 3.1.1 the sidebar shows the licensee's name with no tier label — the number itself is no longer on screen (it travels with the license state and the activation answer) | | **Revocation** | A revoked license number "
+   "satz": "Time-travel search | asOf on memory_search and POST /api/search — ask what was known at any moment; time-travelled queries never count as access"
+  },
+  {
+   "datei": "ROADMAP.md",
+   "satz": "Encryption at rest — evaluated | Honest assessment in docs/encryption-eval.md: SQLCipher needs a build switch, PRAGMA key silently does nothing on node:sqlite, the KeyProvider seam is free (~0 ms); recommendation: OS-lev"
+  },
+  {
+   "datei": "ROADMAP.md",
+   "satz": "Interface: Die Akte | True-black dark theme, seal-red accent, serif display type, soft depth layers, Apple-style segmented controls, typographic sidebar with brand plate, type-colour strokes on cards — every surface rewo"
+  },
+  {
+   "datei": "ROADMAP.md",
+   "satz": "Text size | 100/115/130 % (a German switch shipped here too and was removed in 2.11)"
+  },
+  {
+   "datei": "ROADMAP.md",
+   "satz": "Encrypted knowledge base | SQLCipher 4 format through SQLite3 Multiple Ciphers: AES-256 and an HMAC-SHA512 over every page, search fully intact — the whole file is encrypted, not single fields, so FTS5 and vectors keep w"
+  },
+  {
+   "datei": "ROADMAP.md",
+   "satz": "Safe conversion | An existing base is converted only when K3PTA has it to itself: copy, encrypt, verify every table and the integrity check, replace in one step, overwrite the old file with zeros"
+  },
+  {
+   "datei": "ROADMAP.md",
+   "satz": "English only | The German interface switch from 2.10 is gone"
+  },
+  {
+   "datei": "ROADMAP.md",
+   "satz": "Name and number | Activation stays name and key, offline, and every key carries a license number."
+  },
+  {
+   "datei": "ROADMAP.md",
+   "satz": "Since 3.1.1 the sidebar shows the licensee's name with no tier label — the number itself is no longer on screen (it travels with the license state and the activation answer)"
+  },
+  {
+   "datei": "ROADMAP.md",
+   "satz": "Revocation | A revoked license number no longer unlocks K3PTA from the next update on — also where it was already activated"
+  },
+  {
+   "datei": "ROADMAP.md",
+   "satz": "## ✅ v2.13 — September 2026: your memory, every day"
+  },
+  {
+   "datei": "ROADMAP.md",
+   "satz": "This computer only (2.13.2) | The HTTP server refuses foreign Host headers and write requests from other websites"
+  },
+  {
+   "datei": "ROADMAP.md",
+   "satz": "Readable by design: endpoint.json (no secret, it is how local tools find the port) and the inbox with the user's own source files"
+  },
+  {
+   "datei": "ROADMAP.md",
+   "satz": "Git-based memory versioning (in the style of Letta context repositories) — every change as a commit in a bare repo next to the DB"
   },
   {
    "datei": ".github/release-notes.md",
-   "satz": "| Your system | File | |---|---| | Mac with Apple silicon (M1 and later) | `K3PTA-<version>-mac-arm64.dmg` | | Mac with an Intel processor | `K3PTA-<version>-mac-x64.dmg` | Published installers are **macOS only**."
+   "satz": "Published installers are macOS only."
+  },
+  {
+   "datei": ".github/release-notes.md",
+   "satz": "Windows and Linux targets exist in electron-builder.json and in CI (release-windows, release-linux), but no Windows or Linux installer is published — if you need one for a pilot, ask and we cut it."
   },
   {
    "datei": ".github/release-notes.md",
@@ -666,7 +846,11 @@
   },
   {
    "datei": ".github/release-notes.md",
-   "satz": "**No license key is needed to run K3PTA.** The download is K3PTA Core and it is free, and nothing in it is metered: no day count, no cap on the endpoints, no counter in the window."
+   "satz": "No license key is needed to run K3PTA."
+  },
+  {
+   "datei": ".github/release-notes.md",
+   "satz": "The download is K3PTA Core and it is free, and nothing in it is metered: no day count, no cap on the endpoints, no counter in the window."
   },
   {
    "datei": ".github/release-notes.md",
@@ -674,35 +858,39 @@
   },
   {
    "datei": ".github/release-notes.md",
-   "satz": "The fastest way through, and the one that works on every macOS version: ```bash xattr -dr com.apple.quarantine /Applications/K3PTA.app ``` Without the terminal: **System Settings → Privacy & Security** → scroll to the K3"
+   "satz": "The fastest way through, and the one that works on every macOS version:"
   },
   {
    "datei": ".github/release-notes.md",
-   "satz": "Note: right-clicking the app and choosing *Open* no longer works — Apple removed that route in macOS 15."
+   "satz": "Note: right-clicking the app and choosing *Open* no longer works — Apple removed"
   },
   {
    "datei": ".github/release-notes.md",
-   "satz": "## 🪟 Windows and Linux Nothing to install yet: no Windows or Linux installer is published."
+   "satz": "Nothing to install yet: no Windows or Linux installer is published."
   },
   {
    "datei": ".github/release-notes.md",
-   "satz": "Before the first start of the new version, **quit every agent that uses K3PTA over MCP** (Claude Desktop, Cursor, …), so the app has the file to itself and can convert it — then start them again."
+   "satz": "quit every agent that uses K3PTA over MCP (Claude Desktop, Cursor, …), so"
   },
   {
    "datei": ".github/release-notes.md",
-   "satz": "## 🔌 Connect an agent (MCP) K3PTA ships its own MCP server — no Node.js, no npm."
+   "satz": "K3PTA ships its own MCP server — no Node.js, no npm."
   },
   {
    "datei": ".github/release-notes.md",
-   "satz": "For K3PTA in *Applications* on a Mac it is: ```json { \"mcpServers\": { \"kepta\": { \"command\": \"/Applications/K3PTA.app/Contents/MacOS/K3PTA\", \"args\": [\"/Applications/K3PTA.app/Contents/Resources/app.asar/dist/mcp-server.cj"
+   "satz": "All data stays local in ~/.kepta/ — no account, no cloud, no telemetry."
   },
   {
    "datei": ".github/release-notes.md",
-   "satz": "--- <details> <summary>🇩🇪 Deutsch — welche Datei brauche ich?</summary> | Dein System | Datei | |---|---| | Mac mit Apple Silicon (M1 und neuer) | `K3PTA-<version>-mac-arm64.dmg` | | Mac mit Intel-Prozessor | `K3PTA-<v"
+   "satz": "Veröffentlichte Installer sind nur macOS."
   },
   {
    "datei": ".github/release-notes.md",
-   "satz": "**K3PTA braucht keinen Schlüssel zum Laufen.** Der Download ist K3PTA Core und gratis, und nichts darin ist begrenzt: kein Tageszähler, keine Kappe an den Endpunkten, kein Zähler in der Fläche."
+   "satz": "K3PTA braucht keinen Schlüssel zum Laufen."
+  },
+  {
+   "datei": ".github/release-notes.md",
+   "satz": "Der Download ist K3PTA Core und gratis, und nichts darin ist begrenzt: kein Tageszähler, keine Kappe an den Endpunkten, kein Zähler in der Fläche."
   },
   {
    "datei": ".github/release-notes.md",
@@ -714,7 +902,7 @@
   },
   {
    "datei": ".github/release-notes.md",
-   "satz": "Alle Daten bleiben lokal in `~/.kepta/`."
+   "satz": "Alle Daten bleiben lokal in ~/.kepta/."
   }
  ]
 }

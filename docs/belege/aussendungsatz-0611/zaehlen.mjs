@@ -20,21 +20,35 @@ const HIER = path.resolve(import.meta.dirname, "../../..");
 const AUS = path.resolve(import.meta.dirname);
 const DATEIEN = ["README.md", "SECURITY.md", "ROADMAP.md", ".github/release-notes.md"];
 
+// Der Riss lebt in `satz-riss.mjs`, damit die Suite ihn fahren kann, ohne diesen Zaehler
+// zu laufen (P128: ein Test, der ein Skript importiert, das beim Import die Platte
+// beschreibt, ist kein Test mehr).
+import { BLOCKMARKER, satzeAusMarkdown } from "./satz-riss.mjs";
+
 const absolut = /\b(no|never|none|all|every|only|always|guarantee|keine[nr]?|nie|immer|alle|jeder|nur)\b|(\d[\d., ]*(%|ms|MiB|GiB|notes|queries|of|von))/i;
 const zeug = /(tests\/|scripts\/|docs\/belege\/|\.test\.tsx?\b|\.mjs\b|\.py\b|:[0-9]{2,4}\b|`[a-z0-9-]+\.(json|txt|log\.txt|jsonl)`)/i;
 
 const zaehlung = {};
 const ohneZeug = [];
 const absoluteErsterPass = {};
+const blockFunde = [];
 for (const f of DATEIEN) {
   const t = fs.readFileSync(path.join(HIER, f), "utf8");
-  const satze = t.split(/(?<=[.!?])\s+/).map((s) => s.replace(/\s+/g, " ").trim()).filter((s) => s.length > 25);
+  const satze = satzeAusMarkdown(t);
   const absol = satze.filter((s) => absolut.test(s));
   const mit = absol.filter((s) => zeug.test(s));
   zaehlung[f] = { saetze: satze.length, absolut: absol.length, mit_zeug: mit.length, ohne_zeug: absol.length - mit.length };
   absoluteErsterPass[f] = absol;
   absol.filter((s) => !zeug.test(s)).forEach((s) => ohneZeug.push({ datei: f, satz: s.slice(0, 220) }));
+  // Der Riss wird hier an seinem eignen Ergebnis gemessen: keine Einheit darf noch
+  // Block-Struktur tragen, sonst ist die Grundgesamtheit wieder eine Behauptung.
+  for (const s of satze) if (BLOCKMARKER.test(s)) blockFunde.push(`${f}: ${s.slice(0, 70)}`);
 }
+if (blockFunde.length) {
+  console.error(`FEHLER: ${blockFunde.length} Einheiten tragen noch Block-Struktur — den Riss hat es\n    nicht erwischt. Erste Fundstelle: ${blockFunde[0]}`);
+  process.exitCode = 2;
+}
+
 // Zweit Lesung: ein Zeuge darf auch im selben Abschnitt stehen (der Punkt-
 // Absatz, die Tabellenzeile, die Aufzaehlung), nicht nur im selben Satz. Die
 // erste Lesung war zu eng: sie sah tests/scan/regeln.test.ts nicht, obwohl der
@@ -47,8 +61,7 @@ for (const f of DATEIEN) {
 // Vergleich, sondern ein Versteckspiel.
 const alleSaetze = {};
 for (const f of DATEIEN) {
-  alleSaetze[f] = fs.readFileSync(path.join(HIER, f), "utf8")
-    .split(/(?<=[.!?])\s+/).map((s) => s.replace(/\s+/g, " ").trim()).filter((s) => s.length > 25);
+  alleSaetze[f] = satzeAusMarkdown(fs.readFileSync(path.join(HIER, f), "utf8"));
 }
 const abschnittsZaehlung = {};
 for (const f of DATEIEN) {
@@ -81,7 +94,7 @@ const pruefbar = {};
 const pruefbarListe = [];
 for (const f of DATEIEN) {
   const t = fs.readFileSync(path.join(HIER, f), "utf8");
-  const absol = t.split(/(?<=[.!?])\s+/).map((s) => s.replace(/\s+/g, " ").trim()).filter((s) => s.length > 25 && absolut.test(s));
+  const absol = satzeAusMarkdown(t).filter((s) => absolut.test(s));
   const enge = absol.filter((s) => maschine.test(s));
   pruefbar[f] = { absolut: absol.length, maschinell: enge.length };
   // Die Liste, nicht nur ihre Laenge: das Papier verspricht „die 30 stehen als Liste im
@@ -133,7 +146,12 @@ const testsMitEmbeddingWort = grepp(["-rl", "-E", "embedding", "tests"]).split("
 const zeilen = [];
 const say = (t) => { zeilen.push(t); console.log(t); };
 say(`Zeit: ${new Date().toLocaleString("de-DE", { timeZone: "Europe/Berlin", hour12: false })} MEZ`);
-say(`Dateien: ${DATEIEN.join(", ")} — getrennt durch Satzende und Leerzeichen, Saetze ueber 25 Zeichen.`);
+say(`Dateien: ${DATEIEN.join(", ")} — Einheiten ueber 25 Zeichen.`);
+say("Riss: satz-riss.mjs (P128, markdown-fest). Vorher: Satzende + Leerzeichen ueber dem\n" +
+  "ganzen Text, wodurch Aufzaehlungen, Tabellenzeilen und `<summary>`-Kuelsen als EIN\n" +
+  "Satz zaehlten — 45 Einheiten trugen noch Block-Struktur, gemessen 21:42 MEZ in\n" +
+  "  tests/aussendungs-riss.test.ts; die eigne Kontrolle hier meldet 43 unter dem\n" +
+  "  zeilenweisen Naivling (21:43 MEZ).");
 say("");
 say("| Datei | Saetze | absolute | mit Messzeug | ohne Messzeug | Anteil ohne |");
 say("|---|---|---|---|---|---|");

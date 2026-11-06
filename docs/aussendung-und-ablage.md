@@ -185,7 +185,9 @@ Ein dritter Zensus, weil P121 zwei Fehler in denselben Texten fand: wie viele S�
 `zaehlung-0611.log.txt`; die vier Texte sind `README.md`, `SECURITY.md`, `ROADMAP.md`,
 `.github/release-notes.md`.
 
-Stand des letzten Laufs (21:33:13 MEZ, nach allen Textänderungen dieses Tages, Exit 0):
+Stand des letzten Laufs **unter dem alten Riss** (21:33:13 MEZ, nach allen Textänderungen dieses
+Tages, Exit 0). Abschnitt 16 ist der stehende Stand: seine Zahlen gelten, diese hier sind die
+Vorlauf-Grössen desselben Bestands.
 
 | Lesung | Nenner | mit Messzeug | ohne Messzeug |
 |---|---|---|---|
@@ -439,6 +441,54 @@ extra infrastructure — one file" — ist dieselbe Klasse in der Enterprise-Zei
 Damians Wort vom 5.11. 13:24 MEZ zugefroren, und das gilt auch für ihren Text. Sie steht damit
 weiter in den 109 ohne Messzeug, und die Wache von P126 sieht sie absichtlich nicht.
 
+## 16. Der Riss wird markdown-fest, und die Zahl wird schlechter (P128, 21:44 MEZ)
+
+Abschnitt 9 nannte den Grund, warum dieser Schnitt fällig war: der Zensus-Riss
+(`(?<=[.!?])\s+` über den ganzen Text) hält Markdown-Blöcke für einen Satz. Gemessen in
+`tests/aussendungs-riss.test.ts` (21:42 MEZ, der rote Lauf vor der Heilung, sein `Start at` ist nicht notiert): **45 Einheiten** trugen noch Block-Struktur —
+Aufzähler, Tabellenzeilen, `<summary>`-Kapseln; die eigene Kontrolle des Zählers meldete 43 unter
+der zeilenweisen Naivfassung (21:43 MEZ). Folge nicht nur der Länge: **ein Messzeug in Bulle A
+deckte die Behauptung in Bulle B**, weil beide in derselben „Einheit" standen. Die enge Lesung war
+dadum zu gut.
+
+Neu: `docs/belege/aussendungsatz-0611/satz-riss.mjs` — ein Blatt für den Riss, damit die Suite ihn
+fahren kann, ohne den Zähler zu laufen (ein Test, der ein Skript importiert, das beim Import die
+Platte beschreibt, ist kein Test). Regeln, entschieden, weil ein Mensch sie so liest:
+
+- Ein `- **Etikett**` beginnt eine neue Einheit, **auch mitten in der Zeile** (die
+  Funktions-Straße des README schreibt mehrere Bulle in eine physische Zeile).
+- Getrennt wird erst **vor** dem Entfernen des `**`, sonst frisst ein nackter Bindestrich die
+  Grenze — genau P109s Strich; ein eigner Fall verlangt, dass
+  „keeps its place - and settles" **ein** Satz bleibt.
+- `<details>`, `<summary>`, `<img …>`, Fetzung und Backticks stehen nicht in einer Einheit;
+  Tabellenzeilen bleiben eine Einheit, eine Zeile pro Zeile.
+
+Der Lauf damit, 21:44:08 MEZ, Exit 0 — und nach den Zahlen-Trägern erneut gefahren
+(21:50:15 MEZ): dieselben Werte, also kein Lauf-Artefakt.
+
+| Lesung | Nenner | mit Messzeug | ohne Messzeug |
+|---|---|---|---|
+| Zeuge **im selben Satz** | **172** absolute Behauptungen (aus **617** Einheiten) | **16** = 9,3 % | **156** = 90,7 % |
+| Zeuge **im selben Abschnitt** | derselbe Nenner 172 | **46** = 26,7 % | **126** = 73,3 % |
+
+Die schmale Klasse bleibt **30** Sätze — jetzt aber 30 von 172, und von ihnen nennen **4** ihr
+Messzeug statt 7: **26 sind die Arbeit.** Nachgelesen, welche vier: die Sperre
+(`… cannot be switched off (tests/…)`) aus P124, beide Privat-Zusagen aus P125 und P127, und die
+GET-Zeile. P126's Telemetrie-Satz zählt in die breite Klasse mit Zeuge (er nennt kein
+`never/always/cannot`, also nicht in die schmale), P123's Audit-Satz ebenso.
+
+**Was das für die Behauptung heißt.** Die Aussendung nennt ihr Messzeug in **9,3 %** der
+absoluten Behauptungen, nicht in 17,4 %. Die Zahl ist schlechter geworden, weil das Messzeug
+ehrlicher geworden ist; alles andere wäre eine Latte gewesen, die den Erfolg nicht sieht. Die
+Vorlauf-Größen (321 / 132 / 23) stehen weiter in Abschnitt 9 und 14, jetzt als das, was sie sind:
+ein Stand unter einem Riss, der Blöcke zusammenzog.
+
+**Biss der neuen Selbstkontrolle.** `zaehlen.mjs` zählt jetzt jede Einheit mit Block-Struktur und
+verweigert den Exit 0, wenn eine einzige bleibt. Gegenprobe gefahren (21:43 MEZ): die
+Markup-Trennung in `satz-riss.mjs` ausgeschaltet → `FEHLER: 43 Einheiten tragen noch
+Block-Struktur`, Exit 2; danach per Edit zurückgebaut und mit `cmp` bytegleich gegen die vorher
+kopierte Fassung geprüft, Zensus-Lauf wieder Exit 0 mit denselben Zahlen.
+
 ## Fehler in diesem Schlag, die ich selbst gefunden habe
 
 
@@ -503,3 +553,21 @@ weiter in den 109 ohne Messzeug, und die Wache von P126 sieht sie absichtlich ni
     derselbe Lauf, der die Heilung zeigt), und der Datei-Lauf steht als „21:26 MEZ, zwischen dem
     roten Fall um 21:26:27 und der Messung um 21:26:57" — eine Spanne, die ich belegen kann, statt
     einer Sekunde, die ich nicht hatte.
+14. **Ein chinesisches Wort in meinem eignen Papier.** In Abschnitt 16 stand an einer Stelle
+    ein chinesisches Wort für „Einheit" (U+5355 U+5143) statt des deutschen Wortes — ein
+    Rutsch aus der Schreibbewegung, nicht aus einer Quelle. Ich schreibe den Fehler hier
+    mit seinen Codepoints, nicht mit dem Zeichen: ein geliefertes Blatt darf es nicht tragen. Beim Nachlesen gesehen, ersetzt
+    durch „**ein** Satz bleibt"; der Sweep danach meldet 0 CJK und 0 unsichtbare Zeichen. Genau
+    dieser Klasse wegen wird nach der letzten Schreibbewegung gefegt, nicht vorher.
+15. **Die Biss-Kontrolle prüfte den Riss, wo sie den Marker prüfen wollte.** Der erste
+    „Kontrolle gegen grünen Leerlauf"-Fall fütterte einen Block durch `satzeAusMarkdown` und
+    verlangte, dass eine Einheit den Marker trägt. Nachdem der Riss heilte, fiel genau dieser Fall
+    rot (1 rot / 5 grün, 21:42 MEZ) — die Heilung hatte die Kontrolle wertlos gemacht. Jetzt prüft
+    der Fall den Marker allein und in beide Richtungen: ein Block wird gesehen, ein nackter Satz
+    nicht.
+16. **Die Ordnung war umgekehrt, und ich habe sie umgedreht.** Ich legte `satz-riss.mjs` mit der
+    markdown-festen Teilung an, *bevor* ein roter Fall lief. Korrigiert im selben Schlag: die
+    Rückstufe (die alte Teilung, Satzende + Leerraum) wurde eingebaut, der rote Lauf gesehen
+    (4 rot / 1 grün, 21:41 MEZ), erst dann die Heilung gesetzt und gemessen (6 grün, Start
+    21:42:34 MEZ). Die Rückstufe stand als Kommentar im Blatt, damit der Trick sichtbar bleibt,
+    und ist jetzt wieder aus dem Tree.
