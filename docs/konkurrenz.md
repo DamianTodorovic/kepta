@@ -15,6 +15,31 @@ dasselbe: **Hit@1** — die erste Antwort nennt eine der Ziel-IDs der Anfrage.
 | K3PTA, **ausgeliefert** (v3-Bein) | dazu Vektoren | **75,6 %** (34/45) | dito |
 | mem0 2.2.1, Fakten-Zerlegung, `llama3.2:3b` | 2.11.2026, Leitung | **24,4 %** (11/45) | `docs/belege/konkurrenz-0211/spur-fakten-3b-vollstaendig.jsonl` |
 | mem0 2.2.1, **fair gefahren** | ganzes Stueck, `infer=False`, Wort-Suche an, nomic-embed-text lokal | **51,1 %** (23/45) | `docs/belege/konkurrenz-0611/spur-fair-0611.jsonl` und `…-zwei.jsonl` |
+| **sqlite-vec 0.1.9**, reines Cosinus-KNN | dieselben Texte, dasselbe Einbett (nomic-embed-text, 768 D), k=5, **nichts** ausser Vektoren | **42,2 %** (19/45) | `docs/belege/konkurrenz-0611b/spur-sqlitevec-0611.jsonl` und `…-zwei.jsonl` |
+
+## Was die letzte Zeile sagt, und was sie nicht sagt
+
+Sie sagt: ein reiner Vektor-Speicher — die Architektur, die gerade als "semantic memory"
+verkauft wird — liegt auf *unsrem* Korpus **unter unsrer eignen naive-Baseline** (42,2 gegen
+51,1) und **33,4 Punkte unter der ausgelieferten Rangfolge** (75,6). Sie sagt auch, wo er
+steht: nach Kategorien trifft reines KNN **0 von 3 Zeitfragen** und **0 von 10
+Umformulierungen**; nur die lexikalischen (15 von 25) und die Graph-Fragen (3 von 3) gehen
+auf. Das ist die scharfe Zahl, und sie ist ein Grund, warum K3PTA BM25, RRF, Zeitstrahl und
+Entitaeten *dazu* nimmt, statt sie wegzulassen.
+
+Sie sagt nicht: dass sqlite-vec ein Mitbewerber um das Produkt ist. sqlite-vec ist eine
+Erweiterung, kein Gedächtnisdienst — kein Speichern, kein Aktualisieren, kein Vergessen,
+keine Mandanten-Wand. Die Zeile misst das **Verfahren**, nicht das Produkt: was bleibt,
+wenn man nur die Cosinus-Naehe nimmt. Derselbe Vorwurf, der am 2.11. gegen den mem0-Fakten-
+Lauf erhoben wurde ("eine Konfiguration, die der Mitbewerber so nicht ausliefert"), gilt
+hier nicht: eine Vektortabelle mit k-NN *ist* genau das, was sqlite-vec ausliefert.
+
+Geworden ist die Zeile so: Kapsel `/tmp/konk-sqlitevec-0611` (python 3.14.7, apsw,
+sqlite-vec 0.1.9; die sqlite-Bibliothek im apsw ist 3.54.1, nicht die 3.50.4 des Systems),
+Korpus und Fragen aus `scripts/eval-corpus.ts` und **gegen die mem0-Kapsel nachgeprueft**
+(58 Notiztexte und 45 Anfragen, identisch), Einbettung über Ollama nur auf 127.0.0.1, zwei
+Läufe 16:40:55 und 16:40:58 MEZ mit **derselben Rangfolge** in beiden Traces.
+Rückgängig: `rm -rf /tmp/konk-sqlitevec-0611`.
 
 ## Was die letzte Zeile sagt, und was sie nicht sagt
 

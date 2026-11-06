@@ -1,0 +1,11 @@
+P110-Lauf, sqlite-vec als reines Cosinus-KNN, gefahren 16:40:55 und 16:40:58 MEZ
+Kapsel: /tmp/konk-sqlitevec-0611 (python 3.14.7, apsw, sqlite-vec 0.1.9; sqlite-Bibliothek im apsw: 3.54.1)
+Rueckgaengig: rm -rf /tmp/konk-sqlitevec-0611
+
+{"hit1": 19, "hit1_prozent": 42.2, "recall5_prozent": 57.8, "dauer_sek": 0.7, "rss_gib": 0.04}
+nach Kategorie: {"ablenkung": {"anfragen": 4, "hit1": 1, "hit1_prozent": 25.0}, "graph": {"anfragen": 3, "hit1": 3, "hit1_prozent": 100.0}, "lexikalisch": {"anfragen": 25, "hit1": 15, "hit1_prozent": 60.0}, "temporal": {"anfragen": 3, "hit1": 0, "hit1_prozent": 0.0}, "umschreibung": {"anfragen": 10, "hit1": 0, "hit1_prozent": 0.0}}
+---
+{"hit1": 19, "hit1_prozent": 42.2, "recall5_prozent": 57.8, "dauer_sek": 0.6, "rss_gib": 0.04}
+nach Kategorie: {"ablenkung": {"anfragen": 4, "hit1": 1, "hit1_prozent": 25.0}, "graph": {"anfragen": 3, "hit1": 3, "hit1_prozent": 100.0}, "lexikalisch": {"anfragen": 25, "hit1": 15, "hit1_prozent": 60.0}, "temporal": {"anfragen": 3, "hit1": 0, "hit1_prozent": 0.0}, "umschreibung": {"anfragen": 10, "hit1": 0, "hit1_prozent": 0.0}}
+
+Ende: 16:41:16 MEZ

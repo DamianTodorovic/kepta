@@ -184,6 +184,15 @@ erfunden, in beiden Sprachen gemessen und mit dem Vektor-Bein auch allein:
 | `konkurrenz-0611/ergebnis-fair-0611-zwei.json` | 494 B | `3c3d8b3e08540801…` |
 | `konkurrenz-0611/lauf-fair.py.txt` | 4218 B | `51c49e20fb8294de…` |
 | `konkurrenz-0611/lauf-fair.log.txt` | 2340 B | `30505b675a38ad91…` |
+| `konkurrenz-0611b/spur-sqlitevec-0611.jsonl` | 18765 B | `f90707c41e9b1757…` |
+| `konkurrenz-0611b/spur-sqlitevec-0611-zwei.jsonl` | 18765 B | `1f50fe94a91bceb7…` |
+| `konkurrenz-0611b/ergebnis-sqlitevec-0611.json` | 938 B | `ea3def7d28297e9f…` |
+| `konkurrenz-0611b/ergebnis-sqlitevec-0611-zwei.json` | 938 B | `2b1165e49bc20746…` |
+| `konkurrenz-0611b/lauf-sqlitevec.py` | 6704 B | `59d33369272039b6…` |
+| `konkurrenz-0611b/korpus-aus-repo.json` | 16982 B | `86b4307f450d4dcd…` |
+| `konkurrenz-0611b/lauf-sqlitevec-0611.log.txt` | 1118 B | `690eb10ea10d1147…` |
+| `konkurrenz-0611b/probe-laden.py` | 1056 B | `872de252c1e0f903…` |
+| `konkurrenz-0611b/smoke.py` | 1213 B | `6dc46b671206aa47…` |
 
 Drei Folgen, aufgeschrieben, weil sie die Zahl nicht schoener machen:
 

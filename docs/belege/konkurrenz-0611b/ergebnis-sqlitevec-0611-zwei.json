@@ -1,0 +1,55 @@
+{
+ "lauf": "sqlitevec-0611",
+ "zeit": "16:40:58",
+ "konfiguration": {
+  "werkzeug": "sqlite-vec v0.1.9",
+  "sqlite": "3.54.1",
+  "python": "3.14.7",
+  "einbett": "nomic-embed-text",
+  "dim": 768,
+  "k": 5,
+  "nur_vektoren": true,
+  "wort_suche": false,
+  "fusion": false,
+  "zeitstrahl": false,
+  "entitaeten": false
+ },
+ "korpus": {
+  "notizen": 58,
+  "anfragen": 45
+ },
+ "hit1": 19,
+ "hit1_prozent": 42.2,
+ "recall5_in_den_5": 26,
+ "recall5_prozent": 57.8,
+ "nach_kategorie": {
+  "ablenkung": {
+   "anfragen": 4,
+   "hit1": 1,
+   "hit1_prozent": 25.0
+  },
+  "graph": {
+   "anfragen": 3,
+   "hit1": 3,
+   "hit1_prozent": 100.0
+  },
+  "lexikalisch": {
+   "anfragen": 25,
+   "hit1": 15,
+   "hit1_prozent": 60.0
+  },
+  "temporal": {
+   "anfragen": 3,
+   "hit1": 0,
+   "hit1_prozent": 0.0
+  },
+  "umschreibung": {
+   "anfragen": 10,
+   "hit1": 0,
+   "hit1_prozent": 0.0
+  }
+ },
+ "dauer_sek": 0.6,
+ "dauer_setzen_sek": 1.0,
+ "rss_gib": 0.04
+}
