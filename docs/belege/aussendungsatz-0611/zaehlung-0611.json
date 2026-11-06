@@ -1,10 +1,10 @@
 {
  "dateien": {
   "README.md": {
-   "saetze": 410,
-   "absolut": 128,
-   "mit_zeug": 41,
-   "ohne_zeug": 87
+   "saetze": 411,
+   "absolut": 129,
+   "mit_zeug": 44,
+   "ohne_zeug": 85
   },
   "SECURITY.md": {
    "saetze": 33,
@@ -26,16 +26,16 @@
   }
  },
  "zusammen": {
-  "saetze": 570,
-  "absolut": 171,
-  "mit_zeug": 50,
-  "ohne_zeug": 121
+  "saetze": 571,
+  "absolut": 172,
+  "mit_zeug": 53,
+  "ohne_zeug": 119
  },
  "abschnitt": {
   "README.md": {
-   "absolut": 128,
+   "absolut": 129,
    "mit_zeug": 56,
-   "ohne_zeug": 72
+   "ohne_zeug": 73
   },
   "SECURITY.md": {
    "absolut": 9,
@@ -54,14 +54,14 @@
   }
  },
  "zusammen_abschnitt": {
-  "absolut": 171,
+  "absolut": 172,
   "mit_zeug": 59,
-  "ohne_zeug": 112
+  "ohne_zeug": 113
  },
  "maschinell_pruefbar": {
   "README.md": {
-   "absolut": 128,
-   "maschinell": 25
+   "absolut": 129,
+   "maschinell": 26
   },
   "SECURITY.md": {
    "absolut": 9,
@@ -76,11 +76,16 @@
    "maschinell": 2
   }
  },
- "summe_pruefbar": 30,
+ "summe_pruefbar": 31,
  "pruefbar_liste": [
   {
    "datei": "README.md",
    "satz": "While it cools at 3 000 notes a few pairs still touch for a moment; tests/lib/graphLayout.test.ts:2455-2458 pins that funnel at ≤ 40 pairs by step 250, ≤ 40 again by step 310 and zero by step 380, so no sentence here say",
+   "zeuge": true
+  },
+  {
+   "datei": "README.md",
+   "satz": "On macOS the key never sits in a file; on Windows it is the DPAPI-sealed database-key.dpapi in the data folder, readable only under the same account, and a headless install with KEPTA_DB_KEY keeps it in the process envir",
    "zeuge": true
   },
   {
@@ -330,7 +335,7 @@
   },
   {
    "datei": "README.md",
-   "satz": "K3PTA stores the database key there — no password to type, no key on the disk."
+   "satz": "K3PTA stores the database key there, so there is no password to type."
   },
   {
    "datei": "README.md",
@@ -359,14 +364,6 @@
   {
    "datei": "README.md",
    "satz": "Everything lives in ~/.kepta/, encrypted on disk, no account, no telemetry."
-  },
-  {
-   "datei": "README.md",
-   "satz": "Every change to the knowledge base — and every call through the MCP door, its searches included — is written to a tamper-evident audit log you can check and export."
-  },
-  {
-   "datei": "README.md",
-   "satz": "A plain HTTP read leaves no chain entry: the log records what was done to your memory, not every glance."
   },
   {
    "datei": "README.md",

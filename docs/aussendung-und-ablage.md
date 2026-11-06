@@ -989,6 +989,47 @@ neue Behauptungen — die Anteilzahl steigt deshalb langsamer als die Anzahl der
 gleichzeitig 169 → 171). Beide Zahlen stehen darum immer zusammen da; die Pinne hält 50 von 171, die
 Kante > 0,28.
 
+## 28. P140 — Der fünfte Fund: README und SECURITY.md widersprachen sich selbst über den Schlüssel (7.11. 00:14 MEZ)
+
+Fünf falsche oder zu starke Aussagen seit P133 — und diese hier war die erste, die **innerhalb des
+eignen Blatts** stritt.
+
+### README.md:74 gegen SECURITY.md:19
+
+README führte den Begriff *Keychain* so ein: **„no password to type, no key on the disk."**
+SECURITY.md schreibt zwei Zeilen tiefer, was Windows tut: `database-key.dpapi` **liegt im Datenordner**
+(von DPAPI nur für dasselbe Konto lesbar gemacht), und ein Headless-Aufbau mit `KEPTA_DB_KEY` hält den
+Schlüssel **in der Prozessumgebung** — SECURITY.md nennt das selbst „weaker". Beides ist ein Ort auf
+der Platte beziehungsweise im Prozess. Der README-Satz war also auf macOS wahr und als allgemeine
+Aussage falsch, und die Berichtigung stand bereits im Haus: dieselbe Datei, anderes Blatt.
+
+Jetzt steht da: kein Passwort zu tippen; auf macOS der Schlüssel nie in einer Datei; auf Windows die
+DPAPI-versiegelte Datei im Datenordner, nur für dasselbe Konto lesbar; headless die Umgebung — und der
+Verweis auf SECURITY.md, das die Unterschiede ausschreibt, plus `tests/core/schluessel.test.ts:152`
+als Zeuge dafür, welches System welchen Bund bekommt. **Ein Sicherheitswort in einem Glossar ist keine
+Zusammenfassung der Sicherheitsdatei.**
+
+### README.md:91 — die Kette, jetzt mit Zeugen
+
+| Teilsatz | Zeuge |
+|---|---|
+| „Every change … and every call through the MCP door, its searches included — is written to a tamper-evident audit log" | `tests/kette-deckt-nur-schreibwege.test.ts:55` (HTTP-Schreibweg hinterlässt den Eintrag), `:72` (Suche durch die MCP-Tuer schreibt die Kette) |
+| „A plain HTTP read leaves no chain entry" | `:62` (Leseweg ohne Eintrag) — dieselbe Datei, die den Unterschied erst erfunden hat |
+
+Die Wache heißt `kette-deckt-nur-schreibwege` und trägt fünf Fälle; README:91 war seit P123 teilweise
+bewaffnet, aber genau diese beiden Sätze nannten sie nicht.
+
+### Die Zählung
+
+Zensus 00:13:40 MEZ, Exit 0: 571 Einheiten, **172** absolute Behauptungen, **53** mit Messzeug = 30,8 %
+(vorher 50 von 171 = 29,2 %), 119 ohne. Abschnittslesung 59 = 34,3 %. Schmale Klasse 31, davon 26 mit
+Zeugen → **5 Arbeit**.
+
+Der Nenner wächst weiter mit der Arbeit (171 → 172, Klasse 30 → 31), weil **meine Berichtigung selbst
+ein absolutes Wort enthält** („never sits in a file"). Die Korrektur einer Über-behauptung schreibt die
+nächste in dieselbe Zeile — der Zensus meldet das, statt es zu glätten. Anteil und Nenner stehen
+darum immer zusammen; die Pinne hält 53 von 172, Kante > 0,30.
+
 ## Fehler in diesem Schlag, die ich selbst gefunden habe
 
 1. `du -sk /tmp` meldete 0 GiB Stapel, weil `/tmp` ein Symlink ist; der erste Lauf schrieb diese Null.
