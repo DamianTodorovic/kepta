@@ -1,3 +1,48 @@
+## [3.2.181]
+
+### Changed
+
+- **Sixteen hover titles now fit the cap that governs them.** The census counted them at
+  15 to 32 words (`Settings.tsx:699`, `Settings.tsx:1283`, seven in `Dashboard.tsx`,
+  `MemoryCard.tsx:96`, two in `Chat.tsx`, four in `KnowledgeGraph.tsx`); the 14-word cap
+  and the 80 % bar stayed exactly where they were, and the texts moved instead. Measured
+  on the tree at 6.11.2026 10:08:59 MEZ: **53 of 53** title/placeholder sentences now carry
+  the cap (was 36 of 52), the surface corpus is **304 of 349 = 87.1 %** against its 80 %
+  bar — 24 sentences of margin where 3.2.180's own tool measured 8 (287 of 348 at
+  06:53:24 MEZ). The share that had been 1 sentence of margin before P98's counter fix is
+  not quoted here, because that number described a counter that was wrong.
+- **Two shortenings gave something up on purpose, and it is named here.** The vector-index
+  title no longer explains the mechanism ("until every text chunk carries its vector") and
+  says what the user can feel instead: word search still works, meaning search may miss
+  notes. The retrieval-position title no longer spells out `BM25`, which is engine jargon
+  on a person's screen.
+- **One tooltip was corrected while it was being shortened, not just trimmed.** The old
+  line promised "`null` means that track did not see it", but the card never paints the
+  word `null` for an absent track — it paints no chip at all (`MemoryCard.tsx:98-100`,
+  three `!== null` guards). The new line describes what the surface actually shows:
+  "Absent means unseen".
+
+### Added
+
+- The census reads `aria-label` as its own kind (`vorleser`) instead of folding it into the
+  hover margin, because a spoken name is not a hovering box: the graph's 26-word keyboard
+  tour is a narration that loses nothing by being read in full. Reported with the other
+  kinds, exempted from the hover bar and the reason printed.
+- A fourth verdict, `URTEIL RAND`: **no** title or placeholder may stand over the cap —
+  absolute, not a share, because a hover is one breath and is dismissed by moving the
+  pointer. Two bite controls in `tests/punkt7-fachwort-traegt-grund.test.ts`: a fabricated
+  15-word title must be caught, and a 40-word `aria-label` must not be. Red first at
+  10:06:12 MEZ (16 titles named with file and text), green at 10:08:59 MEZ.
+- The content gate gained five markers of the new wordings and bans for four of the old
+  ones, so a shortened sentence cannot survive as a second text. Counter-probe against the
+  installed 3.2.180 before the swap (10:10:44 MEZ): all five new markers **0**, the four old
+  wordings **1, 1, 1, 2**. A first marker candidate ("every saved note only patches it")
+  was thrown away before landing because it already counted 3 in the old object — a marker
+  that is true before the change proves nothing.
+- One sentence lived in two files (`Dashboard.tsx` and `Chat.tsx` said the same thing about
+  the index being built once); the census dedupes by text, so shortening one copy revealed
+  the other and the surface denominator went 348 → 349. Kept as a fact, not smoothed away.
+
 ## [3.2.180]
 
 ### Changed

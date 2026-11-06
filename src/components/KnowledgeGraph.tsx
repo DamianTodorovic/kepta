@@ -6068,7 +6068,7 @@ export function KnowledgeGraph({ memories: memoriesAusFenster, onSelectMemory, o
       data-testid="graph-bewegung"
       aria-pressed={bewegungAn ? "true" : "false"}
       className={SCHALTER_KLASSE}
-      title="Motion — the field keeps settling for a moment after every change. Off stops that: the picture stays where it is, and panning still works."
+      title="Motion — the field keeps settling after each change. Off keeps the picture still"
     >
       {punkt(bewegungAn)}
       Motion
@@ -6082,7 +6082,7 @@ export function KnowledgeGraph({ memories: memoriesAusFenster, onSelectMemory, o
       data-testid="graph-nur-mit-verbindungen"
       aria-pressed={nurMitVerbindungen ? "true" : "false"}
       className={SCHALTER_KLASSE}
-      title="Only with connections — hide the notes that nothing links to. The number hidden is said out loud, never left to guess."
+      title="Only with connections — hides notes nothing links to, and says how many"
     >
       {punkt(nurMitVerbindungen)}
       Connected
@@ -6117,7 +6117,7 @@ export function KnowledgeGraph({ memories: memoriesAusFenster, onSelectMemory, o
   const steuerelementDicke = (
     <span
       className="inline-flex items-center gap-2 shrink-0"
-      title="Connection thickness — 1x is the picture's own weight; every claim keeps its own rank, 3x only draws them all thicker"
+      title="Thickness changes the drawing, never the ranking: 1x is the picture's own weight"
     >
       <span className="hud-label" style={{ color: "var(--text-2)" }}>Thickness</span>
       <input
@@ -6903,7 +6903,7 @@ export function KnowledgeGraph({ memories: memoriesAusFenster, onSelectMemory, o
               onClick={() => setEntfaltet(new Set(autoFaltung))}
               className="hud-label text-left w-fit pointer-events-auto"
               style={{ color: "var(--accent)" }}
-              title="Every gathered group opens — the tree grows past the canvas again, and pan and zoom are yours"
+              title="Every gathered group opens — the tree grows past the canvas again"
             >
               Show everything
             </button>

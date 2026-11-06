@@ -89,7 +89,16 @@ const erwartet = [
   // ("w-3.5 h-3.5") ist **kein** Marker: sie steht 83 mal im Objekt, also beweist ihre
   // Anwesenheit nichts ueber diesen einen Koerper.
   ["Look for a local model", 1],
-  ["Ask this machine whether Ollama or LM Studio is running", 1],
+  // P99 (landet in 3.2.181): sechzehn Titel unter dem Zeiger standen ueber der Kappe von
+  // 14 Woertern (gemessen 10:01:40 MEZ am Baum, der laengste 32 Woerter). Die Texte sind
+  // gekuerzt, die Latte nicht. Marken sind ASCII-Ruempfe der neuen Wortlaute; die alten
+  // Wortlaute stehen unten in `verboten`. Gegenprobe am **installierten** 3.2.180 vor dem
+  // Tausch: jede neue Marke muss 0 sein, jede verbotene alt 1.
+  ["Ask this machine if Ollama or LM Studio runs", 1],
+  ["word search still works; meaning search may miss notes", 1],
+  ["rank in words, vectors, graph. Absent means unseen", 1],
+  ["Thickness changes the drawing, never the ranking", 1],
+  ["Built once", 2],
   ["regal-wann", 1],
   ["regal-koerb", 1],
   // p5-p (G-72) und p1-q (G-76) und p4-y, am **gelandeten** Objekt gezaehlt 22.10. 19:16 MESZ
@@ -1066,6 +1075,14 @@ const erwartet = [
 // Kommentar ueber dem neuen Marker und keine Pruefung — diese Liste macht sie maschinell.
 // Aufgenommen ist nur, was eine bewusste Landung ersetzt hat, mit ihrem Schnitt dahinter.
 const verboten = [
+  // P99 (landet in 3.2.181): die vier alten Wortlaute der gekuerzten Hover-Titel. Sie sind
+  // hier, weil ein gekuerzter Satz, der am alten Wortlaut im Objekt haengt, keine Kuerzung
+  // ist, sondern ein zweiter Text. Gezaehlt am **installierten** 3.2.180 vor dem Tausch:
+  // jede dieser Ketten muss dort 1 sein (Gegenprobe, see the run log of 10:10 MEZ).
+  "Ask this machine whether Ollama or LM Studio is running",
+  "the position in each retrieval track",
+  "The vector index is still being built in the background",
+  "from now on, every saved note only patches it",
   // bis 3.2.130 Prafix an drei Flaechen (TodayView, DossierView, und der Wortlaut des
   // Schalter-Fangs); P47/#47 nennt jetzt an jeder Stelle, WAS nicht geschah. Am
   // installierten 3.2.130 gezaehlt 2026-11-03 18:22 MEZ: "That did not work" 2 mal,

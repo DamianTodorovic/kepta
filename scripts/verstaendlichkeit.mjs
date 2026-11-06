@@ -111,9 +111,15 @@ function sammle(mengen) {
   // ist eine Frage an die Zahl, nicht an den Geschmack -- also zuerst beide Zahlen.
   const muster = [
     { re: /> ([^<{}]{20,400}) </g, art: "jsx" },
-    { re: /\b(?:title|placeholder|aria-label)\s*=\s*"([^"]{20,400})"/g, art: "rand" },
+    // Der Vorlesername steht vor dem Rand: ein `aria-label` wird voellig gesprochen, ein
+    // `title=` malt das Betriebssystem in ein Kaestchen, das beim Zeigerwandern verschwindet.
+    // Zwei Medien, zwei Lesefaelle, also zwei Arten (gemessen 10:01:40 MEZ: 16 der 17
+    // ueberkappen Rand-Saetze sind Titel, einer ein Vorlesername).
+    { re: /\baria-label\s*=\s*"([^"]{20,400})"/g, art: "vorleser" },
+    { re: /\b(?:title|placeholder)\s*=\s*"([^"]{20,400})"/g, art: "rand" },
     { re: /\b(?:label|text|message|hinweis|info)\s*=\s*"([^"]{20,400})"/g, art: "wort" },
-    { re: /\b(?:title|placeholder|aria-label)\s*=\s*\{`([^`]{20,400})`\}/g, art: "rand" },
+    { re: /\baria-label\s*=\s*\{`([^`]{20,400})`\}/g, art: "vorleser" },
+    { re: /\b(?:title|placeholder)\s*=\s*\{`([^`]{20,400})`\}/g, art: "rand" },
     { re: /\b(?:label|text|message|hinweis|info)\s*=\s*\{`([^`]{20,400})`\}/g, art: "wort" },
     { re: /"([A-Z][^"\\]{20,300}?)"/g, art: "literal" },
     { re: /'([A-Z][^'\\]{20,300}?)'/g, art: "literal" },
@@ -147,8 +153,8 @@ export function kandidatenAusQuelltext(mengen) {
   return sammle(mengen).funde;
 }
 
-/** Zu welchem Muster ein Satz gefunden wurde: "rand" (Titel, Platzhalter, Vorlesername)
-    oder eine der sichtbaren Arten (jsx, wort, literal). */
+/** Zu welchem Muster ein Satz gefunden wurde: "rand" (Titel, Platzhalter), "vorleser"
+    (aria-label) oder eine der sichtbaren Arten (jsx, wort, literal). */
 export function artenAusQuelltext(mengen) {
   return sammle(mengen).arten;
 }
@@ -245,8 +251,9 @@ export function traegtKappe(woerter) {
 }
 
 /** Die Kappe nach Art des Sitzes, als Zahlen -- nicht als eigne Latte. */
+const GRUPPEN = { rand: "rand (Titel, Platzhalter)", vorleser: "vorleser (Name fuer den Vorleser)" };
 export function kappenZeilen(getragen) {
-  const gruppe = (z) => (z.art === "rand" ? "rand (Titel, Platzhalter, Vorlesername)" : "sichtbar (Blatt, Meldung, Kopfzeile)");
+  const gruppe = (z) => GRUPPEN[z.art] || "sichtbar (Blatt, Meldung, Kopfzeile)";
   const nach = new Map();
   for (const z of getragen) {
     const g = gruppe(z);
@@ -256,6 +263,13 @@ export function kappenZeilen(getragen) {
     if (traegtKappe(z.woerter)) e.unter += 1;
   }
   return [...nach.values()];
+}
+
+/** Die Hover-Latte, absolut: kein Titel und kein Platzhalter ueber der Kappe. Ein
+    Vorlesername ist ausgenommen -- er wird gesprochen, und ein Vorleser ueberschlaegt
+    nichts. */
+export function randUeberKappe(zeilen) {
+  return zeilen.filter((z) => z.art === "rand" && !traegtKappe(z.woerter));
 }
 
 /** Die eigne Rechnung des Werkzeugs: die Art-Zeilen muessen auf dieselbe Grundgesamtheit und
@@ -392,6 +406,16 @@ async function haupt() {
     }
   }
 
+  // Zwei Latten, weil zwei Medien: die Korpus-Latte (Anteil) und die Hover-Latte (absolut,
+  // null Titel ueber der Kappe). Der Vorlesername bleibt bei der Korpus-Latte, denn eine
+  // gesprochene Laenge ist kein Lesefall. Gemessen 10:01:40 MEZ am Baum: 16 Titel ueber der
+  // Kappe, der laengste 32 Woerter.
+  const randFehlt = randUeberKappe(flaeche.getragen);
+  const randHalten = randFehlt.length === 0;
+  console.log(`\n  Titel unter dem Zeiger ueber der Kappe (${randFehlt.length}):`);
+  for (const z of randFehlt) console.log(`    ${String(z.woerter).padStart(3)} Woerter  ${z.quelle}  ::  ${z.s.slice(0, 118)}`);
+  console.log(`  URTEIL RAND: ${randHalten ? "HALTET" : "FAELLT"} (${randFehlt.length} Titel ueber ${SATZKAPPE} Woettern von ${kappenZeilen(flaeche.getragen).find((x) => x.gruppe === GRUPPEN.rand)?.n ?? 0} Rand-Saetzen; Biss-Kontrolle im Fall)`);
+
   const langsten = [...flaeche.getragen].sort((a, b) => b.woerter - a.woerter).slice(0, 12);
   console.log("\n  Die zwoelf laengsten Menschensaetze (Wortzahl | Quelle):");
   for (const z of langsten) console.log(`    ${String(z.woerter).padStart(3)}  ${z.quelle}  ::  ${z.s.slice(0, 118)}`);
@@ -436,7 +460,7 @@ async function haupt() {
   // ein Wunsch ohne Messzeug.
   const strichBiss = NACKTER_STRICH.test("A local program on this machine - no key needed.");
   const taub = !getroffen || !blind || !strichBiss;
-  const urteil = taub ? "TAUB" : kappeHalten && riegelHalten && strichHalten ? "HALTET" : "FAELLT";
+  const urteil = taub ? "TAUB" : kappeHalten && riegelHalten && strichHalten && randHalten ? "HALTET" : "FAELLT";
   console.log(`  URTEIL KAPPE: ${kappeHalten ? "HALTET" : "FAELLT"} (Flaeche: Anteil mit hoechstens ${SATZKAPPE} Woertern ${(100 * anteil).toFixed(1)} %, Latte ${100 * UNTER_KAPPE_MINDESTENS} %)`);
   // Die Marge in Saetzen, nicht in Prozent: wie viele der kurzen Saetze lang werden
   // duerfen, bevor die Latte faellt. Gemessen 05:57:31 MEZ: 276 von 345 = genau 80,000 %,

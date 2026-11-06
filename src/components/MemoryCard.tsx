@@ -93,7 +93,7 @@ export const MemoryCard = memo(function MemoryCard({ memory, onClick, score, mat
             </span>
           )}
           {herkunft && (herkunft.bm25 !== null || herkunft.vektor !== null || herkunft.graph !== null) && (
-            <span className="row-quiet inline-flex items-center gap-1 tnum" title="Where the search found this note — the position in each retrieval track (BM25, vectors, knowledge graph). null means that track did not see it.">
+            <span className="row-quiet inline-flex items-center gap-1 tnum" title="Where the search found this note — rank in words, vectors, graph. Absent means unseen">
               <span>Found via</span>
               {herkunft.bm25 !== null && <span style={{ color: 'var(--accent)' }}>bm25 #{herkunft.bm25 + 1}</span>}
               {herkunft.vektor !== null && <span style={{ color: 'var(--accent)' }}>vector #{herkunft.vektor + 1}</span>}

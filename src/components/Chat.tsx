@@ -865,7 +865,7 @@ export function Chat({ activeMemories, onSaveToBrain, onSaveToBrainWithMeta, isF
                       onClick={() => void sucheLokaleKI()}
                       className="inline-flex items-center gap-1 min-h-6 px-2 rounded fs-1 border transition-colors hover:opacity-80"
                       style={{ borderColor: "var(--border-subtle)", color: "var(--text-2)" }}
-                      title="Ask this machine whether Ollama or LM Studio is running — nothing is contacted until you click"
+                      title="Ask this machine if Ollama or LM Studio runs — nothing leaves until you click"
                     >
                       <Sparkles className="w-3.5 h-3.5" />
                       {suchLaeuft ? "Looking…" : "Look for a local model"}
@@ -891,12 +891,12 @@ export function Chat({ activeMemories, onSaveToBrain, onSaveToBrainWithMeta, isF
           {/* Such-Cache-Status (Paket 3): der Chat misst die eigene Engine-Anfrage —
               das Delta-Cache-Signal aus Paket 2 gilt hier genauso wie im Dashboard. */}
           {gehirnWaermt && (
-            <span className="chip hidden sm:inline-flex" title="The search index is built once — from now on, every saved note only patches it.">
+            <span className="chip hidden sm:inline-flex" title="Built once — every saved note only patches it">
               <span className="agent-dot" /> Warming the search index…
             </span>
           )}
           {gehirnWarm && !gehirnWaermt && suchDauerMs !== null && (
-            <span className="chip tnum hidden sm:inline-flex" title="The search index is ready — the time is this chat's last search, measured by this app.">
+            <span className="chip tnum hidden sm:inline-flex" title="Ready — the time is this chat's last search, measured here">
               <span className="status-dot" /> Search index warm — answer in {suchDauerMs} ms
             </span>
           )}

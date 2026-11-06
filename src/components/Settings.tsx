@@ -696,7 +696,7 @@ export function Settings() {
                     onChange={(e) => setzeSuchPrefs({ ...suchPrefs, tiefe: parseInt(e.target.value, 10) })}
                     className="w-full"
                     aria-label="Search depth (top-k)"
-                    title="How deep the engine searches across all three tracks before ranking. Deeper costs a little time, finds more at the edge."
+                    title="Search depth: how far the engine looks before ranking. Deeper costs time, finds more."
                   />
                   <div className="fs-2 lh-dicht mt-2" style={{ color: 'var(--text-3)' }}>
                     The engine fuses BM25, vectors and the knowledge graph to this depth — a value of {SUCH_TIEFE_MIN}–{SUCH_TIEFE_MAX} ({SUCH_TIEFE_DEFAULT} by default).
@@ -1280,7 +1280,7 @@ export function Settings() {
             <div>
               <div className="flex items-center gap-2 mb-3">
                 <Layers className="w-4 h-4" style={{ color: 'var(--accent)' }} />
-                <h3 className="settings-h" style={{ color: 'var(--text-1)' }} title="An HTTP endpoint is a web address on this computer that another program can call to read or search your notes">HTTP Endpoints</h3>
+                <h3 className="settings-h" style={{ color: 'var(--text-1)' }} title="A web address on this machine for another program to read or search">HTTP Endpoints</h3>
               </div>
               <div className="space-y-2">
                 {[

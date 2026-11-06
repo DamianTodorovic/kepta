@@ -20,6 +20,7 @@ import {
   istBenutzersprache,
   kappenZeilen,
   kandidatenAusQuelltext,
+  randUeberKappe,
   summenPruefung,
   traegtKappe,
   zaehle,
@@ -200,6 +201,40 @@ describe("Punkt 7: Fachwort-Saetze der Flaeche tragen Grund oder Taetigkeit", ()
     expect(laut.stdout).toMatch(/URTEIL KAPPE: (HALTET|FAELLT) \(Flaeche/);
   });
 
+  it("der Vorlesername ist nicht derselbe Lesefall wie ein Titel", () => {
+    // Ein `title=` malt das Betriebssystem in ein kleines, unbestaendiges Kaestchen, das
+    // verschwindet, sobald der Zeiger wandert -- ein Hover ist kein Absatz. Ein
+    // `aria-label` wird voellig gesprochen, ein Vorleser ueberschlaegt nichts. Seit P98
+    // liefen beide unter demselben Wort "rand" (gemessen 10:01:40 MEZ: 17 Saetze ueber
+    // der Kappe, 16 davon Titel, einer der Vorlesername des Graphen). Also zwei Arten.
+    const funde = kandidatenAusQuelltext(FLAECHE);
+    const arten = artenAusQuelltext(FLAECHE);
+    const vorleser = "Knowledge graph. Use the arrow keys to move between notes and concepts, Enter opens the note, or the dossier of a concept, Escape clears the selection.";
+    expect(arten.get(vorleser), "ein Name fuer den Vorleser ist kein Schwebezettel").toBe("vorleser");
+    // Nicht an einem bestimmten Wortlaeufer haengen: ein Titeltext ist Produkttext und
+    // darf sich aendern. Geprueft wird die Art, an der Zahl der Titel und daran, dass
+    // der Vorleser eine eigne Art hat.
+    const randArten = [...arten.values()];
+    expect(randArten.filter((a) => a === "rand").length, "Titel und Platzhalter brauchen eine eigne Art").toBeGreaterThan(20);
+    expect(randArten.filter((a) => a === "vorleser").length).toBeGreaterThan(0);
+    expect(funde.size, "kein Satz darf durch die Art-Abspaltung verloren gehen").toBe(arten.size);
+  });
+
+  it("kein Titel unter dem Zeiger steht ueber der Kappe", () => {
+    // Die Latte ist absolut, nicht als Anteil: ein Hover ist ein einzelner Atemzug, und
+    // wer ihn nicht in einem Zug lesen kann, liest ihn gar nicht. Gemessen 10:01:40 MEZ
+    // am Baum: 16 Titel ueber der Kappe, die laengsten 32 Woerter.
+    const funde = kandidatenAusQuelltext(FLAECHE);
+    const arten = artenAusQuelltext(FLAECHE);
+    const zeilen = [...funde].map(([s]) => ({ s, woerter: zaehle(s).woerter, art: arten.get(s) || "literal" }));
+    const ueber = randUeberKappe(zeilen);
+    expect(ueber.map((z: { s: string; woerter: number; art: string }) => z.s), "Titel unter dem Zeiger ueber der Kappe").toEqual([]);
+    // Biss-Kontrolle: dieselbe Rechnung muss einen erfundenen langen Titel sehen.
+    expect(randUeberKappe([{ s: "x", woerter: SATZKAPPE + 1, art: "rand" }]).length, "die Latte hat kein Messzeug").toBe(1);
+    // Und der Vorlesername faellt nicht unter sie -- seine Laenge ist keine Schranke.
+    expect(randUeberKappe([{ s: "x", woerter: 40, art: "vorleser" }]).length, "der Vorleser wird von der Hover-Latte getroffen").toBe(0);
+  });
+
   it("der Nenner der Flaeche ist eine Zahl, keine Luecke", () => {
     // Ein Census ueber null Saetzen waere grün und wertlos.
     expect(census.n).toBeGreaterThan(300);
@@ -245,7 +280,7 @@ describe("Punkt 7: Fachwort-Saetze der Flaeche tragen Grund oder Taetigkeit", ()
     const arten = artenAusQuelltext(FLAECHE);
     const nachArt = [...funde].map(([s, quelle]) => ({ ...zaehle(s), s, quelle, art: arten.get(s) || "literal" }));
     const zeilen = kappenZeilen(nachArt);
-    expect(zeilen.map((z) => z.gruppe).sort()).toEqual(["rand (Titel, Platzhalter, Vorlesername)", "sichtbar (Blatt, Meldung, Kopfzeile)"]);
+    expect(zeilen.map((z) => z.gruppe).sort()).toEqual(["rand (Titel, Platzhalter)", "sichtbar (Blatt, Meldung, Kopfzeile)", "vorleser (Name fuer den Vorleser)"]);
     const pruefung = summenPruefung(zeilen, census.n, census.unterKappe);
     expect(pruefung.ok, `die eigne Rechnung des Census traegt nicht: ${pruefung.grund}`).toBe(true);
     // Biss-Kontrolle: dieselbe Kontrolle muss ein frisiertes Paar zurückweisen, sonst ist
@@ -266,7 +301,10 @@ describe("Punkt 7: Fachwort-Saetze der Flaeche tragen Grund oder Taetigkeit", ()
     expect(laut.stdout).not.toContain("unter der Kappe");
     // Die Art-Zeilen bleiben Bericht, keine eigne Latte: die Latte gilt dem Korpus als Ganzes.
     expect(laut.stdout).toMatch(/sichtbar \(Blatt, Meldung, Kopfzeile\): \d+ von \d+ mit hoechstens/);
-    expect(laut.stdout).toMatch(/rand \(Titel, Platzhalter, Vorlesername\): \d+ von \d+ mit hoechstens/);
+    expect(laut.stdout).toMatch(/rand \(Titel, Platzhalter\): \d+ von \d+ mit hoechstens/);
+    expect(laut.stdout).toMatch(/vorleser \(Name fuer den Vorleser\): \d+ von \d+ mit hoechstens/);
+    // Und die Hover-Latte ist eine eigne Zeile mit eigner Zahl.
+    expect(laut.stdout).toMatch(/URTEIL RAND: (HALTET|FAELLT) \(\d+ Titel/);
     expect(laut.stdout).toContain("Bericht, keine Latte");
   });
 });

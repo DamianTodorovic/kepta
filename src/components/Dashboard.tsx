@@ -1754,7 +1754,7 @@ export function Dashboard() {
 
           {/* Werkzeugleiste: Suche-Modus, Kontextgröße, Quellen-Status */}
           <div className="px-5 py-3 flex flex-wrap items-center gap-x-6 gap-y-2 shrink-0" style={{ borderBottom: '1px solid var(--border-subtle)' }}>
-            <label className="flex items-center gap-2 cursor-pointer select-none" title="Semantic search looks for the meaning of your question, not only the exact words you typed">
+            <label className="flex items-center gap-2 cursor-pointer select-none" title="Searches the meaning of your question, not only the words">
               <input
                 type="checkbox"
                 checked={semanticEnabled}
@@ -1795,12 +1795,12 @@ export function Dashboard() {
                   Zugriff einmal auf und patcht ihn danach nur noch — die App
                   misst die Antwortzeit und zeigt, wenn das Gehirn warm ist. */}
               {gehirnWaermt && (
-                <span className="chip" title="The search index is built once — from now on, every saved note only patches it.">
+                <span className="chip" title="Built once — every saved note only patches it afterwards">
                   <span className="agent-dot" /> Warming the search index…
                 </span>
               )}
               {gehirnWarm && !gehirnWaermt && (
-                <span className="chip tnum" title="The search index is ready — every saved note only patches it. The time is your last search, measured by this app.">
+                <span className="chip tnum" title="Ready — each note only patches it; the time is your last search here">
                   <span className="status-dot" />
                   Search index warm — answer in {suchDauerMs ?? 0} ms
                 </span>
@@ -1915,7 +1915,7 @@ export function Dashboard() {
                 <button
                   onClick={() => setScanOpen(true)}
                   className="btn-ghost px-3 py-2 fs-2 lh-dicht font-semibold flex items-center gap-2"
-                  title="Let K3PTA look through this computer for documents — you see what would be imported before anything is read"
+                  title="Scan this computer — the preview shows what would be imported before anything is read"
                 >
                   <HardDriveDownload className="w-3.5 h-3.5" /> Scan this computer
                 </button>
@@ -2058,7 +2058,7 @@ export function Dashboard() {
                   {(gehirn.embedModelle.length > 0 || gehirn.embedTotal > 0) && (
                     <span
                       className="chip tnum"
-                      title="The model behind semantic search, and how many pieces of your notes already carry one of its vectors."
+                      title="The search model, and how many of your notes carry its vectors"
                     >
                       Embeddings: {gehirn.embedModelle.map((m) => `${m.name} ${groessenZahl(m.anzahl)} of ${groessenZahl(gehirn.embedTotal)} pieces`).join(' · ')}
                       {gehirn.embedModelle.length === 0 ? `${groessenZahl(gehirn.embedEmbedded)} of ${groessenZahl(gehirn.embedTotal)} pieces ready` : ''}
@@ -2077,7 +2077,7 @@ export function Dashboard() {
                   className="chip mb-3 w-fit"
                   data-testid="suche-fuellend"
                   style={{ color: 'var(--warn)' }}
-                  title="The vector index is still being built in the background. Until every text chunk carries its vector, a semantic search can miss notes that are already saved — the words still find them."
+                  title="Still building — word search still works; meaning search may miss notes"
                 >
                   {`Semantic index is still filling: ${groessenZahl(gehirn.embedEmbedded)} of ${groessenZahl(gehirn.embedTotal)} pieces of your ${groessenZahl(tuerBestand ?? memories.length)} notes are ready — until then, a saved note can be missing from these results`}
                 </div>
@@ -2108,7 +2108,7 @@ export function Dashboard() {
                       <span style={{ color: 'var(--accent)', fontWeight: 'var(--fw-halbfest)' }}>Agent active</span>
                     </>
                   ) : tuerLebt === "antwortete" ? (
-                    <span className="status-dot" title="In sync means this window shows the newest copy of your notes, stored on this computer" />
+                    <span className="status-dot" title="In sync: this window shows the newest copy stored on this computer" />
                   ) : tuerLebt === "verweigerte" ? (
                     <span className="status-dot status-dot-leise" title="The store is not answering — this window still shows what it last loaded" />
                   ) : (
