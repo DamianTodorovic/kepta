@@ -47,9 +47,14 @@ random bytes; SQLite reports "file is not a database".
   use full-disk encryption (FileVault, BitLocker, LUKS) — it covers everything
   above that sits on the disk.
 
-**Keep a copy of the key.** It never leaves the keychain on its own; if the
-keychain is lost (a fresh system, a new Windows account), a restored
-`kepta.db` cannot be opened. Store the key in a password manager — the easiest
+**Keep a copy of the key.** It never leaves the keychain on its own — what that
+means is checked, not promised: `tests/core/schluessel.test.ts:111` reads the
+argument list of every launch and finds the key absent there (it travels in the
+child's environment, never in argv), and `tests/keine-telemetrie.test.ts` counts
+the addresses that ship at all: 26 over 20 hosts, each either a provider endpoint
+you chose yourself or a named placeholder in a comment. If the keychain is lost
+(a fresh system, a new Windows account), a restored `kepta.db` cannot be opened.
+Store the key in a password manager — the easiest
 way is *Settings → System status → Show recovery key → Copy* in the app. Or
 from a terminal:
 

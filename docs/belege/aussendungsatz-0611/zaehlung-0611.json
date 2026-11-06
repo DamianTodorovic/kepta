@@ -1,46 +1,46 @@
 {
  "dateien": {
   "README.md": {
-   "saetze": 429,
-   "absolut": 130,
-   "mit_zeug": 21,
-   "ohne_zeug": 109
+   "saetze": 407,
+   "absolut": 129,
+   "mit_zeug": 23,
+   "ohne_zeug": 106
   },
   "SECURITY.md": {
-   "saetze": 52,
-   "absolut": 8,
-   "mit_zeug": 0,
-   "ohne_zeug": 8
+   "saetze": 31,
+   "absolut": 7,
+   "mit_zeug": 1,
+   "ohne_zeug": 6
   },
   "ROADMAP.md": {
-   "saetze": 80,
+   "saetze": 77,
    "absolut": 16,
    "mit_zeug": 0,
    "ohne_zeug": 16
   },
   ".github/release-notes.md": {
-   "saetze": 56,
+   "saetze": 50,
    "absolut": 18,
    "mit_zeug": 1,
    "ohne_zeug": 17
   }
  },
  "zusammen": {
-  "saetze": 617,
-  "absolut": 172,
-  "mit_zeug": 22,
-  "ohne_zeug": 150
+  "saetze": 565,
+  "absolut": 170,
+  "mit_zeug": 25,
+  "ohne_zeug": 145
  },
  "abschnitt": {
   "README.md": {
-   "absolut": 130,
-   "mit_zeug": 46,
-   "ohne_zeug": 84
+   "absolut": 129,
+   "mit_zeug": 49,
+   "ohne_zeug": 80
   },
   "SECURITY.md": {
-   "absolut": 8,
-   "mit_zeug": 0,
-   "ohne_zeug": 8
+   "absolut": 7,
+   "mit_zeug": 1,
+   "ohne_zeug": 6
   },
   "ROADMAP.md": {
    "absolut": 16,
@@ -54,17 +54,17 @@
   }
  },
  "zusammen_abschnitt": {
-  "absolut": 172,
-  "mit_zeug": 46,
-  "ohne_zeug": 126
+  "absolut": 170,
+  "mit_zeug": 50,
+  "ohne_zeug": 120
  },
  "maschinell_pruefbar": {
   "README.md": {
-   "absolut": 130,
+   "absolut": 129,
    "maschinell": 26
   },
   "SECURITY.md": {
-   "absolut": 8,
+   "absolut": 7,
    "maschinell": 1
   },
   "ROADMAP.md": {
@@ -95,8 +95,8 @@
   },
   {
    "datei": "README.md",
-   "satz": "Expired entries are marked, never quietly hidden",
-   "zeuge": false
+   "satz": "Expired entries are marked, never quietly hidden (tests/engine.test.ts:78-83 asks for an expired note, gets it back with expired: true, and sees it ranked below the fresh one rather than missing)",
+   "zeuge": true
   },
   {
    "datei": "README.md",
@@ -165,8 +165,8 @@
   },
   {
    "datei": "README.md",
-   "satz": "The list groups by file, by kind or by period, and *Load more* never cuts a group in half",
-   "zeuge": false
+   "satz": "The list groups by file, by kind or by period, and *Load more* never cuts a group in half (tests/lib/gruppenfenster.test.ts pins the window rule: a group that starts is shown whole, so a five-part file never appears as t",
+   "zeuge": true
   },
   {
    "datei": "README.md",
@@ -210,8 +210,8 @@
   },
   {
    "datei": "SECURITY.md",
-   "satz": "It never leaves the keychain on its own; if the",
-   "zeuge": false
+   "satz": "It never leaves the keychain on its own — what that means is checked, not promised: tests/core/schluessel.test.ts:111 reads the argument list of every launch and finds the key absent there (it travels in the child's envi",
+   "zeuge": true
   },
   {
    "datei": "ROADMAP.md",
@@ -378,10 +378,6 @@
   },
   {
    "datei": "README.md",
-   "satz": "Expired entries are marked, never quietly hidden"
-  },
-  {
-   "datei": "README.md",
    "satz": "Files imported with an older extraction can be read again under *Settings → Data → Re-read imported files* — it counts first and writes only after you confirm"
   },
   {
@@ -518,10 +514,6 @@
   },
   {
    "datei": "README.md",
-   "satz": "The list groups by file, by kind or by period, and *Load more* never cuts a group in half"
-  },
-  {
-   "datei": "README.md",
    "satz": "Text size — 100, 115 or 130 %, under *Settings → Display*."
   },
   {
@@ -554,11 +546,7 @@
   },
   {
    "datei": "README.md",
-   "satz": "subgraph App[\"K3PTA — all on your machine\"]"
-  },
-  {
-   "datei": "README.md",
-   "satz": "ENG[\"Retrieval engine one code path for all\"]"
+   "satz": "mermaid flowchart LR subgraph Clients[\"Your AI apps — any of them\"] CD[\"Claude Desktop\"] CU[\"Cursor\"] GM[\"Gemini CLI · Cline · Codex Windsurf · VS Code · Zed · …\"] end subgraph App[\"K3PTA — all on your machine\"] UI[\"Desk"
   },
   {
    "datei": "README.md",
@@ -726,27 +714,19 @@
   },
   {
    "datei": "SECURITY.md",
-   "satz": "format through SQLite3 Multiple Ciphers — AES-256 for every page, an"
+   "satz": "Since 2.11 the knowledge base (~/.kepta/kepta.db) is encrypted: SQLCipher 4 format through SQLite3 Multiple Ciphers — AES-256 for every page, an HMAC-SHA512 over every page, a random 256-bit key."
   },
   {
    "datei": "SECURITY.md",
-   "satz": "HMAC-SHA512 over every page, a random 256-bit key."
+   "satz": "The key is created on the first start and stored in the system keychain: the macOS Keychain (service app.kepta.database, account kepta), Windows DPAPI (database-key.dpapi in the data folder, readable only under the same "
   },
   {
    "datei": "SECURITY.md",
-   "satz": "the data folder, readable only under the same Windows account) or the Secret"
+   "satz": "- A running K3PTA: the local API (127.0.0.1, no authentication) serves the decrypted knowledge to programs on the same machine, as before."
   },
   {
    "datei": "SECURITY.md",
-   "satz": "- A running K3PTA: the local API (127.0.0.1, no authentication) serves the"
-  },
-  {
-   "datei": "SECURITY.md",
-   "satz": "deliberate exceptions: endpoint.json (port, PID, start time — no secret,"
-  },
-  {
-   "datei": "SECURITY.md",
-   "satz": "It never leaves the keychain on its own; if the"
+   "satz": "Two deliberate exceptions: endpoint.json (port, PID, start time — no secret, and the discovery mechanism for local tools) and the inbox folder with its archive (files you dropped there yourself — user property, like the "
   },
   {
    "datei": "ROADMAP.md",
@@ -754,7 +734,7 @@
   },
   {
    "datei": "ROADMAP.md",
-   "satz": "Every user-facing string, the MCP tool descriptions, the starter pack and the"
+   "satz": "Every user-facing string, the MCP tool descriptions, the starter pack and the native date controls are English."
   },
   {
    "datei": "ROADMAP.md",
@@ -838,7 +818,7 @@
   },
   {
    "datei": ".github/release-notes.md",
-   "satz": "Note: right-clicking the app and choosing *Open* no longer works — Apple removed"
+   "satz": "Note: right-clicking the app and choosing *Open* no longer works — Apple removed that route in macOS 15."
   },
   {
    "datei": ".github/release-notes.md",
@@ -846,7 +826,7 @@
   },
   {
    "datei": ".github/release-notes.md",
-   "satz": "quit every agent that uses K3PTA over MCP (Claude Desktop, Cursor, …), so"
+   "satz": "Before the first start of the new version, quit every agent that uses K3PTA over MCP (Claude Desktop, Cursor, …), so the app has the file to itself and can convert it — then start them again."
   },
   {
    "datei": ".github/release-notes.md",

@@ -1,4 +1,5 @@
 import { ApiFehler, tuerSatz } from '../lib/api';
+import { sichtbareGruppen as sichtbareGruppenRegel } from "../lib/gruppenfenster";
 import { absage } from '../lib/absage';
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import './huelle.css';
@@ -1405,17 +1406,12 @@ export function Dashboard() {
   // Ganze Gruppen statt halber: das Sichtfenster („Load more“) schließt eine
   // Gruppe immer KOMPLETT ein, sobald ihr Anfang dran ist — eine 5-teilige
   // Akte, von der 2 Teile fehlen, sieht wie ein Bug aus.
-  const sichtbareGruppen = useMemo(() => {
-    if (!gruppen) return null;
-    const out: KarteGruppe[] = [];
-    let laufend = 0;
-    for (const g of gruppen) {
-      if (laufend >= visibleCount) break;
-      out.push(g);
-      laufend += g.memories.length;
-    }
-    return out;
-  }, [gruppen, visibleCount]);
+  // Dieselbe Regel, die tests/lib/gruppenfenster.test.ts faehrt (P130): eine Gruppe, die
+  // beginnt, wird ganz gezeigt.
+  const sichtbareGruppen = useMemo(
+    () => (gruppen ? sichtbareGruppenRegel(gruppen, visibleCount) : null),
+    [gruppen, visibleCount]
+  );
 
   // Eine Karte, an beiden Renderorten (flach + gruppiert) identisch.
   // Klick = Vorschau; der Editor kommt aus der Vorschau heraus.

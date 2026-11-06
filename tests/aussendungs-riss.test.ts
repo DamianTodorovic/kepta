@@ -96,7 +96,18 @@ describe("P129, der Wortschatz: ein benanntes Instrument ist ein Messzeug", () =
     expect(zeug.test(nackig), "erweitert zu weit: ein Satz ohne Instrument-Namen gilt als gemessen").toBe(false);
   });
 
-  it("am echten Bestand: 22 von 172 absoluten Behauptungen nennen ihr Messzeug", () => {
+  it("ein gebrochener Satz bleibt ein Satz — die Zeile ist kein Satzende", () => {
+    // Gemessen 22:12:50 MEZ, nachdem SECURITY.md bewaffnet war: der Riss von P128 trennte pro
+    // Zeile, und ein Mensch schreibt Umbriche mitten im Satz. Die Behauptung stand in der
+    // ersten Zeile, ihr Messzeug in der zweiten — der Census meldete "ohne Messzeug", obwohl
+    // derselbe Satz es nennt. Ein Riss, der einen Satz zerlegt, kann ein Zeugnis nicht halten.
+    const gebrochen = "It never leaves the keychain on its own — what that\nmeans is checked, not promised: `tests/core/schluessel.test.ts:111` reads the argv.";
+    const einheiten = satzeAusMarkdown(gebrochen);
+    expect(einheiten.length, `der Umbruch zerlegte den Satz in ${einheiten.length} Einheiten`).toBe(1);
+    expect(zeug.test(einheiten[0]), "das Messzeug steht im selben Satz, wird aber nicht gesehen").toBe(true);
+  });
+
+  it("am echten Bestand: 25 von 170 absoluten Behauptungen nennen ihr Messzeug", () => {
     let absoluten = 0;
     let mit = 0;
     for (const datei of DATEIEN) {
@@ -107,9 +118,9 @@ describe("P129, der Wortschatz: ein benanntes Instrument ist ein Messzeug", () =
         if (zeug.test(s)) mit++;
       }
     }
-    expect(absoluten, "der Nenner ist nicht mehr 172 — der Riss oder die Klasse hat sich bewegt").toBe(172);
-    expect(mit, `${mit} von ${absoluten} nennen ein Messzeug — erwartet war 22`).toBe(22);
-    expect(mit / absoluten, "Anteil ohne Nenner ist ein Urteil").toBeGreaterThan(0.12);
+    expect(absoluten, "der Nenner ist nicht mehr 170 — der Riss oder die Klasse hat sich bewegt").toBe(170);
+    expect(mit, `${mit} von ${absoluten} nennen ein Messzeug — erwartet war 25`).toBe(25);
+    expect(mit / absoluten, "Anteil ohne Nenner ist ein Urteil").toBeGreaterThan(0.14);
     expect(maschine.source.length, "die schmale Klasse wurde nicht mitgeändert").toBeGreaterThan(10);
   });
 });

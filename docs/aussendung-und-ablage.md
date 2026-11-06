@@ -505,6 +505,9 @@ und 90 Funktionen, `src/components` 84 Linien mit 80 Aussagen, 72 Funktionen und
 Mit der Erweiterung, gemessen 21:57:19 MEZ und erneut nach den
 Zahlen-Trägern 22:01:26 MEZ (beide Exit 0, beide dieselben Werte):
 
+(Stand dieses Laufs; Abschnitt 18 ist der stehende, weil dort ein Zeilenumbruch-Fund die
+Grundgesamtheit noch einmal bewegte.)
+
 | Lesung | Nenner | mit Messzeug | ohne Messzeug |
 |---|---|---|---|
 | Zeuge **im selben Satz** | 172 absolute Behauptungen (aus 617 Einheiten) | **22** = 12,8 % | **150** = 87,2 % |
@@ -527,6 +530,60 @@ eine Prozentzahl ohne Grundgesamtheit ein Urteil ist.
 
 Rot zuerst gesehen (21:57:08 MEZ): 3 Faelle rot — die beiden Namens-Faelle und der Bestand
 (meldete 16 statt 22). Grün nach der Erweiterung: **10 von 10** (21:57:19 MEZ).
+
+## 18. Drei Sätze bewaffnet — und der eigne Riss zerschnitt Sätze an Zeilenumbrüchen (P130, 22:18 MEZ)
+
+Die Queue aus Abschnitt 17 war die Arbeit; drei Sätze sind hier abgearbeitet, und der dritte hat
+einen Defekt in meinem eignen Messzeug aufgedeckt.
+
+**1) „Expired entries are marked, never quietly hidden" (README.md:105).** Der Zeuge existierte
+längst: `tests/engine.test.ts:78-83` fragt nach einer abgelaufenen Notiz, bekommt sie mit
+`expired: true` zurück und sieht sie niedriger gerankt als die frische — nicht fehlend. Der Satz
+nennt ihn jetzt im selben Satz.
+
+**2) „*Load more* never cuts a group in half" (README.md:230).** Hier gab es **keinen** Zeugen: die
+Regel lebte nur im Baum (`src/components/Dashboard.tsx:1405-1419`), kein Fall fuhr sie. Gebaut:
+`src/lib/gruppenfenster.ts` mit derselben Regel (Gruppe, die beginnt, wird ganz aufgenommen —
+`laufend >= fenster` bricht, nicht `laufend + groesse > fenster`), die Fläche ruft die Funktion,
+und `tests/lib/gruppenfenster.test.ts` (6 Faelle) faehrt sie. Rot zuerst gesehen: die ersten zwei
+Faelle fielen gegen eine absichtlich naive Fassung (`[ 'a' ]` statt `[ 'a', 'b' ]`; eine
+500-teilige erste Gruppe verschwand ganz), gruen nach der Regel. Die drei restlichen Faelle —
+exaktes Fenster, Fenster groesser als der Bestand, leere Liste, Reihenfolge — blieben grün und
+hindern die Regel daran, generös zu werden.
+
+**3) „It never leaves the keychain on its own" (SECURITY.md:50).** Bewaffnet mit
+`tests/core/schluessel.test.ts:111` (argv jeder Ausführung gelesen, der Schlüssel darin nicht
+gefunden — er geht in die Umgebung des Kindes) und `tests/keine-telemetrie.test.ts` (26 Adressen
+über 20 Hosts, jede eine gewählte Vorgabe oder ein benannter Platzhalter). **Zuerst schrieb ich
+„the key itself goes to none of them" — das war nicht gemessen** und ist zurückgenommen: kein Fall
+prüft die request bodies eines gewählten Providers auf den Datenbank-Schlüssel. Was dasteht, sind
+die zwei Prüfungen, die existieren.
+
+**Der Fund beim dritten Satz.** Beim Nachmessen meldete die Wache den Satz weiter als ohne
+Messzeug, obwohl das Messzeug in ihm stand. Der Riss aus P128 trennte **pro Zeile**, und ein Mensch
+bricht Zeilen mitten im Satz: die Behauptung stand in Zeile eins, ihr Zeugnis in Zeile zwei, zwei
+Einheiten, keine mit Zeuge. Rot gesehen 22:13:14 MEZ („der Umbruch zerlegte den Satz in 2
+Einheiten"), dann `bloesche()` in `satz-riss.mjs`: Zeilen werden zu Absätzen gefügt, bevor
+überhaupt geschnitten wird — ein Block beginnt nur, wo `- `, `#`, `|`, `1.` oder `<` steht.
+Nebenwirkung gemessen: Einheiten 617 → **565** (52 Fragmente waren keine Sätze), Nenner 172 → 170.
+
+**Der Zensus danach** (22:13:47 und 22:17:59 MEZ, beide Exit 0, beide dieselben Werte):
+
+| Lesung | Nenner | mit Messzeug | ohne Messzeug |
+|---|---|---|---|
+| Zeuge **im selben Satz** | 170 absolute Behauptungen (aus 565 Einheiten) | **25** = 14,7 % | **145** = 85,3 % |
+| Zeuge **im selben Abschnitt** | derselbe Nenner 170 | **50** = 29,4 % | **120** = 70,6 % |
+
+Die schmale Klasse ist 30 Sätze, davon nennen **8** ihr Messzeug, **22 sind die Arbeit**
+(P129: 5 von 30; P128: 4; P127: 7 unter dem alten Riss).
+
+**Was an diesem Schnitt nicht im Browser geprüft ist, und warum.** `src/` wurde geändert
+(Hilfsfunktion ausgelagert, Fläche ruft sie). Das ausgelieferte Objekt ist 3.2.190 und kann nicht
+neu gebaut werden (Platte 22:18:32 MEZ: 8,24 GiB gegen 9,90 GiB Gate), also wäre ein Browser-Blick
+ein Blick auf alte Bytes gewesen. Gehalten wird der Schnitt statt dessen durch: die Regel ist
+Zeile für Zeile dieselbe wie zuvor, `npx tsc --noEmit` Exit 0, und die Dashboard-Flächentests
+laufen in der Suite grün (Suite 3737, ein Rot nur am Zahlenträger). Beim nächsten Bau ist die
+Fläche dann am Objekt geprüft, nicht nur im Baum.
 
 ## Fehler in diesem Schlag, die ich selbst gefunden habe
 
@@ -621,3 +678,16 @@ Rot zuerst gesehen (21:57:08 MEZ): 3 Faelle rot — die beiden Namens-Faelle und
     in … / Plattform-Ziele." Entdeckt beim Nachlesen (nicht durch ein Werkzeug): die Stelle wurde
     einmal ganz neu geschrieben, und der Fehler steht hier, weil ein Edit, dessen Anker größer ist
     als die Änderung, Zeilen still verschiebt — dieselbe Lehre wie 19.10. im Wachbuch.
+19. **Eine Behauptung, die ich zu weit schrieb.** In SECURITY.md sollte der Schlüssel „to none of
+   them" gehen — kein Fall prüft die Request-Bodies eines gewählten Providers auf den
+   Datenbank-Schlüssel. Der Halbsatz war nach dem Schreiben da und vor dem Committen weg; was
+   jetzt steht, sind die zwei Prüfungen, die existieren (argv, Adresszählung).
+20. **Der eigne Riss war der Fund.** Dass ich einen Satz bewaffnete und die Wache ihn trotzdem
+    ohne Zeugen meldete, war kein Fehler im Text, sondern in meinem Messzeug aus P128: pro Zeile
+    geschnitten, und ein Mensch bricht Zeilen mitten im Satz. 52 Einheiten waren Fragmente
+    (617 → 565). Behoben mit `bloesche()`, und der Fall zuerst rot
+    (22:13:14 MEZ). Ein Instrument, das nur die Welt prüft, die es selbst schon versteht, ist
+    kein Messzeug, sondern ein Spiegel — und der dritte Rutscher dieser Klasse im selben Abend, weshalb der Sweep jetzt zwischen den Schreiben laeuft, nicht nur am Ende.
+21. **Eine Plattenzeit falsch gepaart.** Ich schrieb „22:14 MEZ: 8,36 GiB", obwohl 8,36 GiB um
+    21:58:17 MEZ gemessen war und die Platte um 22:18:32 MEZ 8,24 GiB frei hatte. Zahl und Uhr
+    gehören demselben Befehl; berichtigt.

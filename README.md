@@ -4,7 +4,7 @@
 
 <p align="center"><sub>Desktop app · no cloud · no account · encrypted at rest<br>SQLite · hybrid retrieval · knowledge graph · MCP</sub></p>
 
-<p align="center"><a href="https://github.com/DamianTodorovic/kepta/releases/latest"><img alt="Download" src="https://img.shields.io/github/v/release/DamianTodorovic/kepta?label=Download"></a> <a href="https://github.com/DamianTodorovic/kepta/actions/workflows/ci.yml"><img alt="Engine CI" src="https://github.com/DamianTodorovic/kepta/actions/workflows/ci.yml/badge.svg"></a> <a href="LICENSE"><img alt="License" src="https://img.shields.io/badge/license-Proprietary-black"></a> <img alt="Coverage gate" src="https://img.shields.io/badge/coverage%20gate-%E2%89%A5%2089%25%20of%20lines-brightgreen"> <img alt="Tests" src="https://img.shields.io/badge/tests-3730%20passing-brightgreen"> <img alt="Platform" src="https://img.shields.io/badge/platform-macOS-lightgrey"></p>
+<p align="center"><a href="https://github.com/DamianTodorovic/kepta/releases/latest"><img alt="Download" src="https://img.shields.io/github/v/release/DamianTodorovic/kepta?label=Download"></a> <a href="https://github.com/DamianTodorovic/kepta/actions/workflows/ci.yml"><img alt="Engine CI" src="https://github.com/DamianTodorovic/kepta/actions/workflows/ci.yml/badge.svg"></a> <a href="LICENSE"><img alt="License" src="https://img.shields.io/badge/license-Proprietary-black"></a> <img alt="Coverage gate" src="https://img.shields.io/badge/coverage%20gate-%E2%89%A5%2089%25%20of%20lines-brightgreen"> <img alt="Tests" src="https://img.shields.io/badge/tests-3737%20passing-brightgreen"> <img alt="Platform" src="https://img.shields.io/badge/platform-macOS-lightgrey"></p>
 
 <p align="center"><sub>The memory engine underneath is source-available (BUSL-1.1, converts to AGPL-3.0-or-later after four years): <a href="https://github.com/DamianTodorovic/kepta">DamianTodorovic/kepta</a> — the headless core with the MCP server. This repository is the full desktop application.</sub></p>
 
@@ -102,7 +102,7 @@ Every memory carries a validity window, so the graph can be replayed: pull the t
 - **Scope**: `user`, `agent`, `session` — separates who a memory belongs to
 - **Private notes** — one switch in the editor: a private note is never shown to an AI app and never sent to a cloud model — in the app (`tests/mcp.test.ts` refuses it over MCP even when an agent asks by scope; `tests/enterprise-api.test.ts` reads the outbound cloud prompt and finds the note gone, counted as `privateNotes: 1`) *and* in the source-available core, whose own MCP suite carries the same floor (`tests/mcp.test.ts` in [DamianTodorovic/kepta](https://github.com/DamianTodorovic/kepta): private notes, their graph edges, their duplicates and their pointers stay invisible to agents)
 - **Confidence** 0–1, free-form tags, automatically extracted entities
-- **Temporal validity**: `valid_from` / `valid_to`. Expired entries are marked, never quietly hidden
+- **Temporal validity**: `valid_from` / `valid_to`. Expired entries are marked, never quietly hidden (`tests/engine.test.ts:78-83` asks for an expired note, gets it back with `expired: true`, and sees it ranked below the fresh one rather than missing)
 - **Supersede chains** (`superseded_by`): contradictions displace each other and the history survives
 - **Files** by drag and drop: PDF, MD, TXT, JSON — chunked at 2000 characters. PDF text comes from pdf.js with the character maps for embedded fonts (shipped with the app, served locally), so a form reads as letters rather than glyph names. Files imported with an older extraction can be read again under *Settings → Data → Re-read imported files* — it counts first and writes only after you confirm
 - **URL clipper** with SSRF protection (IP literals in every notation, DNS resolution, every redirect hop checked); navigation lines, "Skip to main content" and cookie banners are stripped on import
@@ -227,7 +227,7 @@ The chat exists to prove retrieval works. Day-to-day use runs through MCP.
 - **Activity** (⌘7) with the live feed of your AI apps and the audit log; **Today** (⌘5) and **Dossier** (⌘6)
 - **Duplicate review** — every group side by side, one click to keep the richest copy or dismiss the pair for good. Cleaning up is a single request for the whole batch with one undo, not one request per note (which used to run into the write limiter and stop halfway without saying so)
 - **Scan this computer** — opt-in, with a preview before anything is read. You choose the folders, untick file types and name folders to leave out; the dialog shows the rules that actually apply, read from the same source that enforces them. Settings can only narrow what is read, never widen it: keys, credentials, browser profiles, keychains and wallets stay blocked, the size cap stays capped, and roots outside your home folder are refused. HTML is turned into text before import, and content that carries no knowledge — markup scaffolding, repeated table rows — never becomes a note
-- **Knowledge list** — a click opens a readable preview: the full text, the source as a chip, *Copy text*; the editor opens from there. Every card shows where it came from and which part it is (2/5), and a file source opens in its default application. The list groups by file, by kind or by period, and *Load more* never cuts a group in half
+- **Knowledge list** — a click opens a readable preview: the full text, the source as a chip, *Copy text*; the editor opens from there. Every card shows where it came from and which part it is (2/5), and a file source opens in its default application. The list groups by file, by kind or by period, and *Load more* never cuts a group in half (`tests/lib/gruppenfenster.test.ts` pins the window rule: a group that starts is shown whole, so a five-part file never appears as three)
 - **Text size** — `100`, `115` or `130 %`, under *Settings → Display*. These are the three settings values on the slider, not a measurement. The interface is English; German notes and German queries work as well as English ones
 
 </details>
@@ -428,11 +428,11 @@ The app bundle itself **is** signed, ad-hoc. That is not notarisation and does n
 
 ## 🧪 Quality & tests
 
-**3730 tests** (measured 2026-11-06), run with Vitest and v8 coverage — the cases a run actually executed, skipped ones not included. The coverage thresholds are a hard gate: a commit that falls below any of them fails the run — and so does a README that names the wrong number of tests. `npm test` writes that run's JSON report and `node scripts/doku-check.mjs` holds the README to exactly that number; `tests/doku-zahlen.test.ts` listens to the same report and refuses to compare when it cannot be trusted — missing, older than the suite, or written by a partial run — instead of checking a value out of the drawer.
+**3737 tests** (measured 2026-11-06), run with Vitest and v8 coverage — the cases a run actually executed, skipped ones not included. The coverage thresholds are a hard gate: a commit that falls below any of them fails the run — and so does a README that names the wrong number of tests. `npm test` writes that run's JSON report and `node scripts/doku-check.mjs` holds the README to exactly that number; `tests/doku-zahlen.test.ts` listens to the same report and refuses to compare when it cannot be trusted — missing, older than the suite, or written by a partial run — instead of checking a value out of the drawer.
 
 ```bash
 npm run lint       # typecheck (tsc) + ESLint — 0 errors required
-npm test           # 3730 tests (vitest)
+npm test           # 3737 tests (vitest)
 npm run test:cov   # tests + coverage gate + test count in the README
 npm run eval       # retrieval quality (Hit@1)
 ```

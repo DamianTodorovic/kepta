@@ -35,12 +35,45 @@ function einheitenAusZeile(zeile) {
     .filter((s) => s.length > 25);
 }
 
-export function satzeAusMarkdown(text) {
-  // Zeile fuer Zeile: ein Bullet ist eine Zeile, eine Tabellenzeile ist eine Zeile, und
-  // Markup, das kein Mensch liest, steht vor dem Schnitt draussen. Innerhalb der Zeile
-  // trennt weiter nur die Satzgrenze — sonst zerfaellt ein Grund-Satz in Halbsaetze.
+/** Eine Zeile, die einen neuen Block beginnt. */
+const BLOCK_ANFANG = /^\s*(-\s|\*\s|#+\s|\||\d+\.\s|<)/;
+
+/**
+ * Zeilen zu Bloeschen fuegen. Ein Mensch bricht Zeilen mitten im Satz — die Datei weicht, der
+ * Satz nicht. Ohne diesen Schritt zerlegte ein Umbruch die Behauptung in die eine Einheit und
+ * ihr Messzeug in die naechste (gemessen 22:13:14 MEZ an SECURITY.md, direkt nachdem dieser
+ * Satz bewaffnet war).
+ */
+function bloesche(text) {
   const out = [];
-  for (const zeile of text.split("\n")) for (const e of einheitenAusZeile(zeile)) out.push(e);
+  let aktuell = [];
+  const schliessen = () => {
+    if (aktuell.length) out.push(aktuell.join(" "));
+    aktuell = [];
+  };
+  for (const zeile of text.split("\n")) {
+    if (!zeile.trim()) {
+      schliessen();
+      continue;
+    }
+    if (BLOCK_ANFANG.test(zeile)) {
+      schliessen();
+      aktuell.push(zeile.trim());
+      continue;
+    }
+    if (aktuell.length === 0) aktuell.push(zeile.trim());
+    else aktuell[aktuell.length - 1] += " " + zeile.trim();
+  }
+  schliessen();
+  return out;
+}
+
+export function satzeAusMarkdown(text) {
+  // Erst Bloecke (Zeilen, die zusammen gelesen werden), dann Bullet fuer Bullet, dann Satz fuer
+  // Satz. Getrennt wird nur vor einem Aufzaeicher mit Fett-Etikett, damit ein nackter
+  // Bindestrich mitten im Satz keine Grenze ist — genau P109s Fund.
+  const out = [];
+  for (const block of bloesche(text)) for (const e of einheitenAusZeile(block)) out.push(e);
   return out;
 }
 
