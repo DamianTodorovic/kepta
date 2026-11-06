@@ -48,10 +48,10 @@ export function behauptungenAus(body: Record<string, unknown>): BehauptungenLesu
     const ziel = sanitizeTitle(o.ziel);
     const wort = sanitizeTitle(o.wort);
     if (!quelle || !ziel || !wort) {
-      return { gesendet: true, liste, ablehnung: "a claim with an empty part is not a claim - fill who, the word and whom" };
+      return { gesendet: true, liste, ablehnung: "a claim with an empty part is not a claim; fill who, the word and whom" };
     }
     if (quelle.toLowerCase() === ziel.toLowerCase()) {
-      return { gesendet: true, liste, ablehnung: "who and whom are the same term - a claim needs two different ends" };
+      return { gesendet: true, liste, ablehnung: "who and whom are the same term; a claim needs two different ends" };
     }
     if (systemWort(wort)) {
       return {

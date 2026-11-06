@@ -40,7 +40,7 @@ export function mountSearch(app: express.Express, ctx: AppKontext): void {
       ? "The query has no matches."
       : result.hits.length === 0
         ? `No matches at offset ${offset} — the last match is before this page (${result.total} in total).`
-        : `This page holds ${result.hits.length} of ${result.total} matches${begrenzt ? `; ${rest} more follow at offset ${offset + result.hits.length}` : " - the whole result fits in this page"} (limit=<1..500>, offset= for the next page).`;
+        : `This page holds ${result.hits.length} of ${result.total} matches${begrenzt ? `; ${rest} more follow at offset ${offset + result.hits.length}` : "; the whole result fits in this page"} (limit=<1..500>, offset= for the next page).`;
     const memories = result.hits.map(h => toApi(h.memory));
     zeit.marke("formen");
     // Zelle #98, Engine-Spalte: die Engine misst Wortlese, Einbettung und Vektor; sie gehoeren

@@ -42,6 +42,7 @@ import {
   zaehle,
   zensiere,
 } from "../scripts/verstaendlichkeit.mjs";
+import * as census from "../scripts/verstaendlichkeit.mjs";
 import { SPUR_LABELS, spurAria } from "../src/lib/spuren";
 import { ANSICHT_LABELS, ansichtBeschreibung } from "../src/lib/ansichten";
 
@@ -841,5 +842,64 @@ describe("Punkt 108, der Plural-Bruch: die Gleichung muss die Stuecke des Bundel
     // P107-Lesung an " N " gelten -- sonst heilt dieser Schnitt, indem er etwas kaputt macht.
     const suche = bundel('"N of N unfolded notes are drawn as dots", "(", ")", " notes left out — the picture places notes by meaning, and keeps the first ", "Zahl je mit Einheit"');
     expect(imObjekt(suche, "N notes left out — the picture places notes by meaning, and keeps the first N")).toBe(true);
+  });
+});
+
+describe("Punkt 109, das zweite Auge der Strich-Latte: ein nackter Bindestrich in einem Literal", () => {
+  /* Gemessen 15:05:41 MEZ mit einer Sonde, die den ROHEN Quelltext liest
+     (/tmp/p109-raw.mjs): URTEIL STRICH meldet "0 Saetze mit nacktem Bindestrich", und in
+     denselben drei Lagen stehen 13 String-Literale mit " - " (Flaeche 8, Werkzeug 2,
+     Diener 3). Die Kante ist nicht das Raster -- es ist die Sammlung: ein doppelt
+     quotierter Zweig in einer Schablone (server/router/search.ts:43) wird gar kein
+     Kandidat, und ein Zweig, der mit " - " beginnt, faellt zusaetzlich durch die
+     Satzgestalt. Also meldet die Latte Null, wo der Quelltext Worte hat.
+
+     Das zweite Auge liest darum Literale, nicht Kandidaten, und nennt seine eigne
+     Grundgesamtheit. Code-Rauschen bleibt draussen, und jeder Rausch-Typ ist ein eigner
+     Fall: eine Rechnung ("length - 1"), ein CSS-Mass ("calc(100% - 2 * ...)"), ein
+     YAML-Aufzaehlungspunkt. Dagegen steht der Satz, der an eine Interpolation klebt
+     ("... up} - got 5") -- dort sieht die Quelle kein Wortpaar, die Auslieferung aber schon. */
+
+  const blatt = (t: string) => (census as any).strichInLiteraln(t, "probe.ts");
+
+  it("das zweite Auge existiert", () => {
+    expect(typeof (census as any).strichInLiteraln, "die Latte hat nur ein Auge").toBe("function");
+    expect(typeof (census as any).roheStrichFunde, "der Census hat keinen Rohlauf").toBe("function");
+  });
+
+  it("ein nackter Bindestrich zwischen Woertern wird gefunden", () => {
+    const f = blatt('const h = "This page holds 3 of 3 matches - the whole result fits in this page";');
+    expect(f.length, "ein Menschensatz mit nacktem Bindestrich bleibt unsichtbar").toBe(1);
+    expect(f[0].s).toContain("the whole result fits");
+  });
+
+  it("eine Rechnung ist kein Gedankenstrich", () => {
+    expect(blatt('const x = `${n === 1 ? "" : "s"}${schreibend.length - 1} more`;').length).toBe(0);
+  });
+
+  it("ein CSS-Mass ist kein Gedankenstrich", () => {
+    expect(blatt('const w = "calc(100% - 2 * var(--panel-fuss, 0.75rem))";').length).toBe(0);
+  });
+
+  it("ein Aufzaehlungspunkt in einem Textfeld ist kein Gedankenstrich", () => {
+    expect(blatt('const y = "mcpServers:\\n  - name: kepta\\n    command: npx";').length).toBe(0);
+  });
+
+  it("ein Strich an einer Interpolation wird gefunden", () => {
+    // Die Gestalt aus server/router/memories.ts:500 (vor dem Schnitt): links schliesst ein
+    // Interpolations-Loch, rechts oeffnet das naechste -- in der Quelle steht kein Wortpaar
+    // um den Strich, in der Auslieferung steht eins.
+    expect(blatt('const e = `from ${min} up${klein} - ${wert} is neither.`;').length).toBe(1);
+  });
+
+  it("der Rohlauf ueber allen drei Lagen ist leer", () => {
+    const f = (census as any).roheStrichFunde([...FLAECHE, ...WERKZEUG, ...DIENER]);
+    const ort = f.map((x: any) => `${x.datei}:${x.zeile}  ${String(x.s).slice(0, 70)}`).join("\n    ");
+    expect(f.length, `nackte Bindestriche in ${f.length} ausgelieferten Literalen:\n    ${ort}`).toBe(0);
+  });
+
+  it("der Census nennt das zweite Auge mit seiner Grundgesamtheit", () => {
+    const laut = spawnSync("node", [path.join(WURZEL, "scripts", "verstaendlichkeit.mjs"), "--nur", "quelltext"], { encoding: "utf8" });
+    expect(laut.stdout, "der Census meldet kein zweites Auge").toMatch(/Literalueberlauf: \d+ Literale mit " - ", \d+ davon nackter Bindestrich/);
   });
 });

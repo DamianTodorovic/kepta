@@ -324,7 +324,7 @@ export function mountMemories(app: express.Express, ctx: AppKontext): void {
     if (!Number.isInteger(standId) || standId <= 0) return res.status(400).json({ error: "Invalid stand id" });
     const body = bodyOf<{ confirm?: string }>(req);
     if (!body || body.confirm !== "restore") {
-      return res.status(400).json({ error: 'confirm: "restore" is required - nothing was written' });
+      return res.status(400).json({ error: 'confirm: "restore" is required; nothing was written' });
     }
     const updated = store.restoreStand(id, standId);
     if (!updated) return res.status(404).json({ error: "No note or saved version with that id, so nothing was restored." });
@@ -349,14 +349,14 @@ export function mountMemories(app: express.Express, ctx: AppKontext): void {
     const { staende, total } = store.listStande(id, { limit: seite, offset });
     const begrenzt = offset + staende.length < total;
     const geklemmt = seite !== gewollt
-      ? `limit=${gewollt} is outside ${SEITE_MIN}..${SEITE_MAX} - the page was pinned to ${seite}.`
+      ? `limit=${gewollt} is outside ${SEITE_MIN}..${SEITE_MAX}; the page was pinned to ${seite}.`
       : undefined;
     const rest = total - offset - staende.length;
     const hinweis = [
       geklemmt,
       total === 0
         ? "This note has no earlier stand yet — it has not been edited since it was written."
-        : `This page holds ${staende.length} of ${total} earlier ${total === 1 ? "stand" : "stands"}${begrenzt ? `; ${rest} more follow at offset ${offset + staende.length}` : " - the whole stand list fits in this page"}.`,
+        : `This page holds ${staende.length} of ${total} earlier ${total === 1 ? "stand" : "stands"}${begrenzt ? `; ${rest} more follow at offset ${offset + staende.length}` : "; the whole stand list fits in this page"}.`,
     ].filter(Boolean).join(" ");
 
     res.setHeader("x-kepta-begrenzt", begrenzt ? "1" : "0");
@@ -413,7 +413,7 @@ export function mountMemories(app: express.Express, ctx: AppKontext): void {
       seite = Math.min(Math.max(gewollt, SEITE_MIN), SEITE_MAX);
       offset = typeof req.query.offset === "string" ? parseInt(req.query.offset, 10) : 0;
       if (seite !== gewollt) {
-        geklemmt = `limit=${gewollt} is outside ${SEITE_MIN}..${SEITE_MAX} - the page was pinned to ${seite}.`;
+        geklemmt = `limit=${gewollt} is outside ${SEITE_MIN}..${SEITE_MAX}; the page was pinned to ${seite}.`;
       }
       if (umgebung.unverstanden) geklemmt = [geklemmt, umgebung.unverstanden].filter(Boolean).join(" ");
     }
@@ -481,7 +481,7 @@ function leseGrenzwerte(req: express.Request, res: express.Response): { ganzerBe
   const ganzer = req.query.alle;
   if (ganzer !== undefined && ganzer !== "1" && ganzer !== "true") {
     res.status(400).json({
-      error: `alle takes exactly 1 or true - or leave it out for one page of ${seiteUmwelt().groesse} notes (limit=<${SEITE_MIN}..${SEITE_MAX}>). Nothing was read.`,
+      error: `alle takes exactly 1 or true; leave it out for one page of ${seiteUmwelt().groesse} notes (limit=<${SEITE_MIN}..${SEITE_MAX}>). Nothing was read.`,
     });
     return { ganzerBestand: false };
   }
@@ -490,14 +490,14 @@ function leseGrenzwerte(req: express.Request, res: express.Response): { ganzerBe
     const gueltigeForm = typeof wert === "string" && /^\d+$/.test(wert);
     if (!gueltigeForm) {
       res.status(400).json({
-        error: `${feld} must be a whole number${feld === "limit" ? ` from ${SEITE_MIN} to ${SEITE_MAX}, or alle=1 for the whole base` : ` from ${minimum} up`} - ${typeof wert === "string" ? `"${wert}"` : "a repeated query value"} is neither. Nothing was read.`,
+        error: `${feld} must be a whole number${feld === "limit" ? ` from ${SEITE_MIN} to ${SEITE_MAX}, or alle=1 for the whole base` : ` from ${minimum} up`}; ${typeof wert === "string" ? `"${wert}"` : "a repeated query value"} is neither. Nothing was read.`,
       });
       return null;
     }
     const n = parseInt(wert, 10);
     if (n < minimum) {
       res.status(400).json({
-        error: `${feld} must be a whole number from ${feld === "limit" ? `${SEITE_MIN} to ${SEITE_MAX}, or alle=1 for the whole base` : `${minimum} up`} - got ${n}. Nothing was read.`,
+        error: `${feld} must be a whole number from ${feld === "limit" ? `${SEITE_MIN} to ${SEITE_MAX}, or alle=1 for the whole base` : `${minimum} up`}; got ${n}. Nothing was read.`,
       });
       return null;
     }

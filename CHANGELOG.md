@@ -1,3 +1,32 @@
+## [3.2.189]
+
+### Fixed
+
+- **Fourteen shipped sentences said " - " where the house writes a dash.** The dash bar
+  reported "0 sentences with a bare hyphen" while a raw sweep of the same three layers found
+  13 string literals carrying " - " (measured 15:05:41 MEZ; surface 8, tool 2, servant 3).
+  The bar was not wrong about its corpus — its corpus was too small: a double-quoted branch
+  inside a template (`server/router/search.ts:43`) never becomes a candidate, and a branch
+  that *opens* with " - " is rejected by the sentence-shape gate as well. Four of those
+  strings sit in the graph's own head line (" - the store did not answer, this picture is
+  only the page the list brought"), two are agent-facing claim rejections, six are list and
+  paging hints; widening the sweep's left edge to a closing interpolation (`up`} - got`)
+  surfaced four more, all in `server/router/memories.ts`.
+- **The bar got a second eye, with its own denominator.** `strichInLiteraln` / `roheStrichFunde`
+  read literals instead of candidates and say what they looked at: the census now prints
+  `Literalueberlauf: 3 Literale mit " - ", 0 davon nackter Bindestrich`, and the three that
+  remain are arithmetic (`length - 1`), a CSS measure (`calc(100% - 2 * …)`) and a YAML list
+  marker — each one a case in `tests/punkt7-fachwort-traegt-grund.test.ts`, so the noise rule
+  can rot visibly instead of silently. Measured after the fix: 0 findings, 68 cases green
+  (16:19:22 MEZ).
+- **The wording stays ASCII on purpose.** The graph head strings carry a comment that the
+  object checker walks the bundle latin1-read, so an em dash there is not findable as a
+  marker; the fix therefore uses a semicolon, which satisfies the dash rule without touching
+  the checker. Twelve old forms are now banned in `scripts/pruefe-asar-inhalt.cjs` — each one
+  counted 1 to 2 times in the installed 3.2.188 at 16:18:31 MEZ, so each ban has teeth. A
+  thirteenth candidate ("whole base`} - ") counted 0 and was dropped: a ban that can never
+  fire is decoration.
+
 ## [3.2.188]
 
 ### Fixed

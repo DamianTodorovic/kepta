@@ -1299,6 +1299,26 @@ const verboten = [
   "written by a hand - each one",
   " - the whole list fits",
   "This is the heavy path - page with limit=",
+  // P109 (3.2.189): der nackte Bindestrich in Literalen, die kein Census-Kandidat sind.
+  // Gezaehlt am installierten 3.2.188 (16:18:31 MEZ, asar 49 197 041 B, latin1, eigener Lauf
+  // durch diese Sperre): **zwölf** Ketten 1 bis 2 mal, also hat jede Biss. Der Rohlauf des
+  // Census meldet nach dem Schnitt 0 Funde bei 3 Literalen Umfang (der Rest sind
+  // Rechnungen, CSS-Masse, Aufzaehlungen). Eine dreizehnte Kette hatte ich zuerst
+  // ("whole base`} - ") -- 0 mal im Leib, also ohne Biss, und darum wieder raus.
+  // "is neither" (9 mal) ist keine Marke: dieselbe Wendung lebt in geheilten Saetzen weiter,
+  // verboten ist nur der Strich davor ("up`} - got").
+  " - the whole result fits in this page",
+  " - the whole stand list fits in this page",
+  " - all of your notes are still arriving",
+  " - the store did not answer",
+  " - the entity links did not arrive",
+  " - this is a window, not all of your notes",
+  "is not a claim - fill who",
+  "the same term - a claim needs",
+  "is required - nothing was written",
+  "exactly 1 or true - or leave it out",
+  " - the page was pinned to",
+  "up`} - got",
 ];
 // Die Liste darf nur ASCII-Zeichen enthalten. Grund, gemessen 21.10. 19:16 MESZ am
 // installierten Objekt: das Wort "Looking" plus echtes U+2026 steht dort 2 mal, diese

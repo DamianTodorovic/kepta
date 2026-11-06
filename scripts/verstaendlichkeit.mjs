@@ -382,6 +382,111 @@ export function imObjekt(suche, s, roh = null) {
   return flaeche.some((text) => muster.test(text));
 }
 
+/** Die Textstuecke einer Zeile, die ein Mensch oder ein Agent lesen *koennte*: innerhalb
+    eines " '- oder `-Literals, ausserhalb jedes ${...}-Lochs. Ein // leert den Rest. */
+function literalStuecke(zeile, tiefe = 0) {
+  const stuecke = [];
+  let i = 0;
+  while (i < zeile.length) {
+    const c = zeile[i];
+    if (c === "/" && zeile[i + 1] === "/") break;
+    if (c === '"' || c === "'" || c === "`") {
+      let j = i + 1;
+      let von = j;
+      while (j < zeile.length) {
+        const d = zeile[j];
+        if (d === "\\") { j += 2; continue; }
+        if (d === c) break;
+        if (c === "`" && d === "$" && zeile[j + 1] === "{") {
+          if (j > von) stuecke.push([von, j]);
+          let klammern = 1;
+          let k = j + 2;
+          while (k < zeile.length && klammern > 0) {
+            if (zeile[k] === "{") klammern++;
+            else if (zeile[k] === "}") klammern--;
+            k++;
+          }
+          // Der Loch-Inhalt ist Code -- aber in dem Code koennen wieder Literale stehen,
+          // die ein Mensch liest. Gemessen 15:12:02 MEZ: genau so entging der Sonde der
+          // Zweig in server/router/search.ts:43, der dieser Schnitt erst finden sollte.
+          if (tiefe < 3) {
+            const innen = k - 1 - (j + 2);
+            if (innen > 0) {
+              for (const [a, b] of literalStuecke(zeile.slice(j + 2, k - 1), tiefe + 1)) {
+                stuecke.push([j + 2 + a, j + 2 + b]);
+              }
+            }
+          }
+          j = k;
+          von = k;
+          continue;
+        }
+        j++;
+      }
+      if (j > von) stuecke.push([von, j]);
+      i = j + 1;
+      continue;
+    }
+    i++;
+  }
+  return stuecke;
+}
+
+// Ein nackter Bindestrich zwischen zwei Woertern. Die linke Seite darf auch ein
+// Interpolations-Ende sein (`}` oder ein oeffnendes Quotezeichen), die rechte auch eine
+// Interpolation (`$`) -- gemessen 15:05:41 MEZ sitzt genau dort ein Satz:
+// "... for the whole base` : ` from N up`} - ${wert} is neither."
+const NACKT_IN_LITERAL = /(?:^|["A-Za-z,.!?;:}]) - (?=["'$A-Za-z])/;
+// Was kein Menschensatz ist: eine Rechnung, ein CSS-Mass, ein Aufzaehlungspunkt.
+const CODE_RAUSCHEN = /(?:%|\d)\s*-\s*[\d(]|(?:^|\n|\s{2,})-\s+\w/;
+
+/** Die Literale einer Queltextzeile, in denen ein nackter Bindestrich zwei Woerter
+    trennt. P109: die Satz-Latten lesen Kandidaten, und ein doppelt quotierter Zweig in
+    einer Schablone wird kein Kandidat -- darum meldete URTEIL STRICH "0", waehrend 13
+    Literale " - " trugen. */
+export function strichInLiteraln(t, datei) {
+  const funde = [];
+  const zeilen = String(t).split("\n");
+  for (let n = 0; n < zeilen.length; n++) {
+    for (const [von, bis] of literalStuecke(zeilen[n])) {
+      const text = zeilen[n].slice(von, bis);
+      if (!text.includes(" - ")) continue;
+      const rel = datei.replace(WURZEL + "/", "");
+      const umfeld = zeilen[n].slice(Math.max(0, von - 1), bis + 2);
+      if (!NACKT_IN_LITERAL.test(umfeld)) continue;
+      if (CODE_RAUSCHEN.test(umfeld)) continue;
+      if (AUSSCHLUSS_WORT.test(text)) continue;
+      funde.push({ s: text.trim().slice(0, 200), datei: rel, zeile: n + 1 });
+    }
+  }
+  return funde;
+}
+
+/** Dasselbe ueber ganze Lagen -- die Grundgesamtheit des zweiten Auges. */
+export function roheStrichFunde(mengen) {
+  const funde = [];
+  for (const datei of quelltextDateien(mengen)) {
+    const rel = datei.replace(WURZEL + "/", "");
+    if (AUSSCHLUSS_PFAD.test(rel)) continue;
+    funde.push(...strichInLiteraln(fs.readFileSync(datei, "utf8"), datei));
+  }
+  return funde;
+}
+
+/** Der Nenner dazu: wie viele Literale ueberhaupt ein " - " tragen, auch die, die keine
+    Menschensaetze sind (Rechnung, CSS-Mass, Aufzaehlung). Eine Zahl, die nur die Funde
+    nennt, laesst sich nicht gegen den Umfang lesen. */
+export function querstrichGrund(mengen) {
+  let n = 0;
+  for (const datei of quelltextDateien(mengen)) {
+    const rel = datei.replace(WURZEL + "/", "");
+    if (AUSSCHLUSS_PFAD.test(rel)) continue;
+    const zeilen = fs.readFileSync(datei, "utf8").split("\n");
+    for (const z of zeilen) for (const [von, bis] of literalStuecke(z)) if (z.slice(von, bis).includes(" - ")) n++;
+  }
+  return n;
+}
+
 /** Die einzige Vergleichsrichtung der Kappe. Gemessen 6.11.2026 06:45:22 MEZ am Baum: 348
     Flaeche-Saetze, davon 38 mit GENAU 14 Woetern (bei 13 sind es 20, bei 15 nur 9). Dieselbe
     Grundgesamtheit haelt mit `<= 14` bei 80,5 % und faellt mit `< 14` auf 69,5 % -- die Latte
@@ -825,6 +930,16 @@ async function haupt() {
   console.log("\n  Satz mit nacktem Bindestrich statt Gedankenstrich (" + strichFunde.length + "):");
   for (const z of strichFunde) console.log(`    ${z.lage}  ${z.quelle}  ::  ${z.s.slice(0, 130)}`);
 
+  // P109, das zweite Auge. Die Satz-Latte sieht nur, was ein Kandidat ist -- und ein
+  // doppelt quotierter Zweig in einer Schablone (server/router/search.ts:43) wird keiner.
+  // Gemessen 15:05:41 MEZ: "0 Saetze mit nacktem Bindestrich", waehrend 13 Literale der
+  // drei Lagen ein " - " trugen. Der Rohlauf liest darum Literale und nennt seinen Umfang.
+  const alleLagen = [...FLAECHE, ...WERKZEUG, ...DIENER];
+  const literaleFunde = roheStrichFunde(alleLagen);
+  const literaleGrund = querstrichGrund(alleLagen);
+  console.log(`\n  Literalueberlauf: ${literaleGrund} Literale mit " - ", ${literaleFunde.length} davon nackter Bindestrich (Grund: ${literaleGrund - literaleFunde.length} Rechnungen, CSS-Masse, Aufzaehlungen):`);
+  for (const f of literaleFunde) console.log(`    ${f.datei}:${f.zeile}  ::  ${f.s.slice(0, 130)}`);
+
   // Zwei Kontrollen, weil ein Zaehler ohne Gegenprobe eine Behauptung ist.
   // 1) Sie MUSS ein Wort sehen, das im Objekt steht (die Rate-Zeile von 3.2.143).
   const bis = "Name a claim in a note to put a word on a line";
@@ -838,7 +953,7 @@ async function haupt() {
   const anteil = cFlaeche.unterKappe / Math.max(1, cFlaeche.n);
   const kappeHalten = anteil >= UNTER_KAPPE_MINDESTENS;
   const riegelHalten = [cFlaeche, cWerkzeug, cDiener].every((c) => c.fachOhneAlles.length <= FACH_OHNE_GRUND_MAX);
-  const strichHalten = strichFunde.length === 0;
+  const strichHalten = strichFunde.length === 0 && literaleFunde.length === 0;
   // Biss-Kontrolle drei: dieselbe Rechnung muss die ALTE Form treffen, sonst ist die Latte
   // ein Wunsch ohne Messzeug.
   const strichBiss = NACKTER_STRICH.test("A local program on this machine - no key needed.");
@@ -850,7 +965,7 @@ async function haupt() {
   // die Marge ist 0 -- ein einziger langer Satz kippt das Urteil.
   const marge = Math.floor(cFlaeche.unterKappe - UNTER_KAPPE_MINDESTENS * cFlaeche.n);
   console.log(`  Die Marge der Kappe: ${marge} Saetze Spiel bei ${cFlaeche.unterKappe} von ${cFlaeche.n} (${(100 * anteil).toFixed(3)} % genau)`);
-  console.log(`  URTEIL STRICH: ${strichHalten ? "HALTET" : "FAELLT"} (${strichFunde.length} Saetze mit nacktem Bindestrich ueber allen drei Lagen; Biss-Kontrolle ${strichBiss ? "trifft die alte Form" : "FEHLT — die Latte hat kein Messzeug"})`);
+  console.log(`  URTEIL STRICH: ${strichHalten ? "HALTET" : "FAELLT"} (${strichFunde.length} Saetze mit nacktem Bindestrich ueber allen drei Lagen, dazu ${literaleFunde.length} in ${literaleGrund} Literalen, die kein Kandidat sind; Biss-Kontrolle ${strichBiss ? "trifft die alte Form" : "FEHLT — die Latte hat kein Messzeug"})`);
   console.log(`  URTEIL RIEGEL: ${riegelHalten ? "HAELT" : "FAELLT"} (Fachwort ohne Grund und ohne Taetigkeit: Flaeche ${cFlaeche.fachOhneAlles.length} von ${cFlaeche.n}, Werkzeug ${cWerkzeug.fachOhneAlles.length} von ${cWerkzeug.n}, Diener ${cDiener.fachOhneAlles.length} von ${cDiener.n}, Max je Gruppe ${FACH_OHNE_GRUND_MAX} — der Wert ist am 5.11. und 6.11.2026 an allen drei Lagen gemessen)`);
   console.log(`  URTEIL GRUND: die Flaeche nennt in ${cFlaeche.mitGrund} von ${cFlaeche.n} Saetzen einen Grund oder eine Folge —`);
   console.log("  das ist der Befund dieses Laufs, nicht sein Ziel: eine Zahl ohne Vergleich ist eine Messung, noch kein Urteil.");
