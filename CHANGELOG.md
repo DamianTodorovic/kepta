@@ -33,12 +33,17 @@
   pointer. Two bite controls in `tests/punkt7-fachwort-traegt-grund.test.ts`: a fabricated
   15-word title must be caught, and a 40-word `aria-label` must not be. Red first at
   10:06:12 MEZ (16 titles named with file and text), green at 10:08:59 MEZ.
-- The content gate gained five markers of the new wordings and bans for four of the old
+- The content gate gained six markers of the new wordings and bans for five of the old
   ones, so a shortened sentence cannot survive as a second text. Counter-probe against the
-  installed 3.2.180 before the swap (10:10:44 MEZ): all five new markers **0**, the four old
-  wordings **1, 1, 1, 2**. A first marker candidate ("every saved note only patches it")
+  installed 3.2.180 with the corrected set (10:21:42 MEZ): every new marker **0**, the old
+  wordings **1, 1, 1, 1, 2**. A first marker candidate ("every saved note only patches it")
   was thrown away before landing because it already counted 3 in the old object — a marker
-  that is true before the change proves nothing.
+  that is true before the change proves nothing. And the gate itself caught a second
+  mistake: one *pre-existing* marker pinned the old tooltip by a shorter fragment
+  ("Semantic search looks for the meaning"), which my own dependent sweep missed because I
+  had searched the longer wording — a sweep in one direction is not a sweep. The build ran
+  into it at 10:20:06 MEZ (`INHALT_EXIT=1`, abort before the swap), the marker was turned to
+  the new wording and the old fragment banned, and the chain was re-run.
 - One sentence lived in two files (`Dashboard.tsx` and `Chat.tsx` said the same thing about
   the index being built once); the census dedupes by text, so shortening one copy revealed
   the other and the surface denominator went 348 → 349. Kept as a fact, not smoothed away.

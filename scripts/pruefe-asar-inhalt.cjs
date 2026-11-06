@@ -764,7 +764,9 @@ const erwartet = [
   ["Knowledge is everything you have saved", 1],
   ["A Dossier is a written brief", 1],
   ["Activity lists every thing K3PTA did", 1],
-  ["Semantic search looks for the meaning", 1],
+  // P99: derselbe Satz, jetzt mit der Kappe getragen. Der alten Marke war dieses Fragment
+  // -- ein Kuerzer, das nur im alten Titel stand (gemessen im Bau 10:20:06 MEZ: 0).
+  ["Searches the meaning of your question", 1],
   ["The audit log is the sealed list", 1],
   ["Follows the people, projects and systems", 1],
   // Punkt 1/4/7, 2.11. (3.2.121, zwei Quellen, die ohne Wort wechselten): gegen das
@@ -1075,11 +1077,12 @@ const erwartet = [
 // Kommentar ueber dem neuen Marker und keine Pruefung — diese Liste macht sie maschinell.
 // Aufgenommen ist nur, was eine bewusste Landung ersetzt hat, mit ihrem Schnitt dahinter.
 const verboten = [
-  // P99 (landet in 3.2.181): die vier alten Wortlaute der gekuerzten Hover-Titel. Sie sind
+  // P99 (landet in 3.2.181): die fuenf alten Wortlaute der gekuerzten Hover-Titel. Sie sind
   // hier, weil ein gekuerzter Satz, der am alten Wortlaut im Objekt haengt, keine Kuerzung
   // ist, sondern ein zweiter Text. Gezaehlt am **installierten** 3.2.180 vor dem Tausch:
   // jede dieser Ketten muss dort 1 sein (Gegenprobe, see the run log of 10:10 MEZ).
   "Ask this machine whether Ollama or LM Studio is running",
+  "Semantic search looks for the meaning",
   "the position in each retrieval track",
   "The vector index is still being built in the background",
   "from now on, every saved note only patches it",
