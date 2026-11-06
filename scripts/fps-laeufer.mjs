@@ -710,9 +710,24 @@ async function main() {
   // eine Suite angesprungen sein, und dann ist die Zahl wertlos. ZUERST wird
   // die eigene Maschine entlassen — sonst hoert die Sonde ihren eigenen Browser
   // und meldet "nicht ruhig", ohne dass jemand anders laeuft.
+  // Der Satz "entlassen und zwei Sekunden gewartet" war zu kurz: gemessen
+  // 06:13:15 bis 06:15:46 MEZ meldete der erste Wurf nach `machZu()`
+  // "max/median 2,83 — NICHT RUHIG", obwohl der Vorwurf vor dem Start ruhig war
+  // (1,16) und kein fremder Laeufer lief. Das Sterben des egnen Browsers haengt
+  // nach. Also: bis zu vier Wueme, jeder einzelne gedruckt, und die Latte bleibt
+  // dieselbe (`ruhig` nach uralter Schwelle). Hoert die Sonde nach zwanzig
+  // Sekunden immer noch eine Last, ist sie nicht ruhiger erklaert -- sie ist
+  // unruhig, und der Lauf verweigert das Urteil wie bisher.
   machZu();
-  await schlafe(2000);
-  const urteilAmEnde = ruedig(sonde());
+  let urteilAmEnde = null;
+  const wuerfe = [];
+  for (let wurf = 1; wurf <= 4; wurf++) {
+    await schlafe(wurf === 1 ? 2000 : 6000);
+    const u = ruedig(sonde());
+    wuerfe.push({ wurf, zeile: beschlag(u.messung), ruhig: u.ruhig });
+    urteilAmEnde = u;
+    if (u.ruhig) break;
+  }
   const out = {
     gemessenAm: new Date().toISOString(),
     // Die Fassung im Leib des Artefakts, nicht nur in seinem Kopf: ein Beleg, der seine
@@ -721,6 +736,7 @@ async function main() {
     maschine: {
       vorDemStart: beschlag(urteil.messung),
       nachDerMessung: beschlag(urteilAmEnde.messung),
+      wuerfe,
       ruhigUeberAlles: urteilAmEnde.ruhig,
       ursachen: urteilAmEnde.ursachen,
       kerne: os.cpus().length,
@@ -762,6 +778,9 @@ async function main() {
     console.log(`bestand        ${out.bestand.notizen} notes · ${out.bestand.konzepte} concepts · ${out.bestand.kanten} links   (die Flaeche sagt das selbst)`);
     console.log(`maschine         vorher: ${out.maschine.vorDemStart}`);
     console.log(`                 nachher: ${out.maschine.nachDerMessung}${out.maschine.ruhigUeberAlles ? "" : "  — NICHT RUHIG, Zahl nicht veröffentlichen"}`);
+    // Jeder Wurf einzeln, damit ein Nachgeben hoerbar bleibt: die Schwelle ist
+    // unveraendert, nur der Moment ist der, in dem kein eignes Kind mehr lebt.
+    for (const w of out.maschine.wuerfe) console.log(`                   Wurf ${w.wurf}: ${w.zeile} — ${w.ruhig ? "ruhig" : "unruhig"}`);
     console.log(`befehl         ${out.befehl}`);
   }
   fs.writeFileSync(`${ARBEIT}/ergebnis.json`, JSON.stringify(out, null, 1));
