@@ -920,6 +920,98 @@ async function main() {
     console.log(`  Bild: ${await bild("erklaerungen-menue.png")}`);
   }
 
+  // --- Zyklus "hover": ein Rand, der erst im Zustand gemalt wird, ist nur im Zustand messbar --
+  //     P91 setzte die Gefahr-Farbe und bewies Regel, Token und Hex am ausgelieferten Stueck
+  //     (04:25:30 MEZ) -- aber kein Zyklus fuhr je den Zeiger ueber einen Knopf. Die Bar von
+  //     3:1 (WCAG 1.4.11, Bedienelement-Grenze) gilt dem gemalten Zustand, nicht der Definition:
+  //     gerechnet 03:09:38 MEZ waren es 1,57:1 (hell) und 1,65:1 (dunkel) fuer die alte Form.
+  //     Der Zeiger wird echt bewegt (`Input.dispatchMouseEvent`, mouseMoved) -- `:hover` laesst
+  //     sich in JS nicht erziehen, und ein erzogener Zustand waere eine Behauptung.
+  if (NUR === "" || NUR === "hover") {
+    await cdp.send("Page.reload", { ignoreCache: true });
+    await warteBis(async () => ((await evaliere(cdp, `document.querySelectorAll('button').length`)) > 0 ? true : null), { maxMs: 90000 });
+    // Der Sprung geht ueber die Seitenleiste, nicht ueber `knopf(cdp, "Chat")`: das Muster
+    // laeuft auch auf den aria-label, und "Clear chat" fuehrt denselben Wortteil -- gemessen
+    // 04:31 MEZ im Vorlauf, wo der erste Griff den Loesch-Knopf traf und die Flaeche wechselte.
+    const chatOffen = await warteBis(async () => await evaliere(cdp, `(()=>{
+      const s = [...document.querySelectorAll('[data-active]')].find(x => /^\\s*Chat\\s*$/i.test((x.textContent || '').trim()));
+      if (!s) return null;
+      if (s.getAttribute('data-active') !== 'true') { s.click(); return null; }
+      return "Chat ist aktiv";})()`), { maxMs: 25000, schritt: 700 });
+    urteil("die Chat-Flaeche ist offen", chatOffen !== null, true);
+
+    const mess = await evaliere(cdp, `(()=>{
+      const b = document.querySelector('[aria-label="Clear chat"]');
+      if (!b) return { fehlt: "kein Knopf mit aria-label \\"Clear chat\\"" };
+      b.scrollIntoView({ block: 'center' });
+      const r = b.getBoundingClientRect();
+      const k = getComputedStyle(b);
+      const vorher = k.borderTopColor;
+      // Die Farbe des Grundes hinter dem Knopf: die naechste Flaeche mit eigenem Hintergrund.
+      let g = b.parentElement, grund = 'rgba(0, 0, 0, 0)';
+      while (g) { const c = getComputedStyle(g).backgroundColor; if (c && c !== 'rgba(0, 0, 0, 0)' && c !== 'transparent') { grund = c; break; } g = g.parentElement; }
+      // Ein Messfaden fuer den Token selbst: dieselbe Berechnung, ohne Zustand.
+      const f = document.createElement('span');
+      f.style.color = 'var(--color-gefahr)'; f.style.position = 'absolute'; f.style.opacity = '0';
+      document.body.appendChild(f);
+      const token = getComputedStyle(f).color;
+      f.remove();
+      return { x: r.x + r.width / 2, y: r.y + r.height / 2, vorher, grund, token,
+               breite: k.borderTopWidth, stil: k.borderTopStyle,
+               // Vor dem Zeiger gepraemt, nicht danach: sonst misst die Pruefung einen
+               // Zustand, den der Lauf selbst veraendert hat. Getroffen wird der Knopf ODER
+               // ein Kind von ihm -- gemessen 04:31:32 MEZ lag der Punkt auf dem Icon im
+               // Knopf, und elementFromPoint nennt das oberste Element, nicht den Rufer.
+               // Ein Test, der das nicht weiss, erfindet einen Befund.
+               ziel: (() => { const e = document.elementFromPoint(r.x + r.width / 2, r.y + r.height / 2);
+                 return { treffer: e === b || (e !== null && b.contains(e)),
+                          name: e ? (e.tagName + '.' + String(e.className.baseVal ?? e.className ?? '')).slice(0, 44) : 'nichts' }; })() };})()`);
+    if (mess.fehlt) {
+      urteil("der Loesch-Knopf steht im Blatt", false, true);
+      console.log(`  ${mess.fehlt}`);
+    } else {
+      urteil("ohne Zeiger ist der Rand nicht die Gefahr-Farbe", mess.vorher !== mess.token, true);
+      urteil("der Punkt unter dem Zeiger traegt den Knopf", mess.ziel.treffer === true, true);
+      console.log(`  Der Punkt nennt: ${mess.ziel.name}`);
+      await cdp.send("Input.dispatchMouseEvent", { type: "mouseMoved", x: mess.x, y: mess.y, buttons: 0 });
+      await schlafe(450);
+      const nach = await evaliere(cdp, `(()=>{const b=document.querySelector('[aria-label="Clear chat"]');
+        const k=getComputedStyle(b);return {rand:k.borderTopColor, breite:k.borderTopWidth};})()`);
+      console.log(`  Rand vorher: ${mess.vorher}   nach dem Zeiger: ${nach.rand}   Token: ${mess.token}`);
+      urteil("der Zeiger malt die Gefahr-Grenze", nach.rand === mess.token, true);
+      // Kontrast im Blatt, nicht im Kopf: beide Farben durch den eignen Farbverwalter des
+      // Browsers geschickt. Die computed style kommt in `lab()` zurueck (gemessen 04:30:07
+      // MEZ: Rand lab(55.1564 60.1598 34.4482), Grund lab(14.729 0.258118 -0.944841)) --
+      // ein Rechner, der lab selbst umrechnet, ist ein zweiter Farbverwalter, und zwei
+      // Verwalter sind zwei Wahrheiten. Also: 1x1-Leinwand, fuellen, Pixel lesen.
+      const zahl = await evaliere(cdp, `(()=>{
+        const cv = document.createElement('canvas'); cv.width = 1; cv.height = 1;
+        const k = cv.getContext('2d', { willReadFrequently: true });
+        const pixel = (c) => { k.clearRect(0,0,1,1); k.fillStyle = '#000'; k.fillStyle = c;
+          k.fillRect(0,0,1,1); const d = k.getImageData(0,0,1,1).data; return [d[0]/255, d[1]/255, d[2]/255, d[3]]; };
+        const licht = (v) => { const e = (c) => (c <= 0.04045 ? c / 12.92 : Math.pow((c + 0.055) / 1.055, 2.4));
+          return 0.2126 * e(v[0]) + 0.7152 * e(v[1]) + 0.0722 * e(v[2]); };
+        const rand = pixel('${nach.rand}'), grund = pixel('${mess.grund}');
+        const la = licht(rand), lb = licht(grund);
+        return { rand: rand.slice(0,3).map(x=>Math.round(x*255)), grund: grund.slice(0,3).map(x=>Math.round(x*255)),
+                 alpha: rand[3], grundAlpha: grund[3],
+                 verhaeltnis: (Math.max(la, lb) + 0.05) / (Math.min(la, lb) + 0.05) };})()`);
+      console.log(`  Grund hinter dem Knopf: ${mess.grund}`);
+      console.log(`  Gemalte Pixel: Rand rgb(${zahl.rand.join(",")}) (Alpha ${zahl.alpha}), Grund rgb(${zahl.grund.join(",")}) (Alpha ${zahl.grundAlpha})`);
+      console.log(`  Rand gegen Grund: ${zahl.verhaeltnis.toFixed(2)}:1 (Bar 3:1, WCAG 1.4.11)`);
+      if (zahl.alpha !== 255 || zahl.grundAlpha !== 255) {
+        console.log("  FEHLT  eine der beiden Farben ist halb durchlaessig -- der Grund dahinter ist nicht der gelesene, also ist das Verhaeltnis keine Messung");
+      } else {
+        urteil("der gemalte Rand erreicht 3:1 gegen seinen Grund", zahl.verhaeltnis >= 3, true);
+      }
+      const treffer = await evaliere(cdp, `(()=>{const b=document.querySelector('[aria-label="Clear chat"]');const r=b.getBoundingClientRect();
+        return Math.round(r.width)+' x '+Math.round(r.height)+' px';})()`);
+      console.log(`  Zielgroesse des Knopfs: ${treffer} (Latte 44 px ist die Treffflaeche, nicht die Zeichnung)`);
+      console.log(`  Bild: ${await bild("hover-gefahr.png")}`);
+      await cdp.send("Input.dispatchMouseEvent", { type: "mouseMoved", x: 4, y: 4, buttons: 0 });
+    }
+  }
+
   // --- Zyklus M: die Zahl zu der Wahl, die er wirklich trifft (Punkt 5, vierter Schlag) ------
   //     Die Flaeche filtert Thema UND Fach zusammen (`Dashboard.tsx:948-956`), und der Leerlauf
   //     nannte bis 3.2.108 entweder eine Randzahl oder schwieg. Seit 3.2.109 liest er die Zelle
