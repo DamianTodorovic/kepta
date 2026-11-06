@@ -127,3 +127,50 @@ describe("Punkt 8: sqlite-vec als reines Cosinus-KNN, am selben Korpus gemessen"
     expect(e.rss_gib, "ein Lauf ueber 1 GiB ist nicht derselbe Griff").toBeLessThan(1);
   });
 });
+
+describe("Punkt 111: dasselbe Bein mit einem zweiten Einbett -- die Modell-Aussage zurueckgenommen", () => {
+  /* Die erste Fassung dieses Belegs schrieb: "reines KNN trifft 0 von 3 Zeitfragen und 0 von
+     10 Umformulierungen", und nannte das die Begruendung fuer BM25, RRF, Zeitstrahl und
+     Entitaeten. Nachgeprueft 16:52:30 und 16:52:51 MEZ mit bge-m3 (1024 D), sonst
+     unveraendert: **6 von 10 Umformulierungen, 1 von 3 Zeitfragen, Hit@1 30 von 45 = 66,7 %.**
+     Der Satz war eine Modell-Aussage, keine Verfahrensaussage. Diese Faelle halten die
+     berichtigte Lesung -- auch gegen mich selbst, wenn ich sie das naechste Mal wieder
+     vergesse. */
+
+  const SPUR_BGE = path.join(BELEG, "spur-sqlitevec-bge-m3.jsonl");
+  const SPUR_BGE_ZWEI = path.join(BELEG, "spur-sqlitevec-bge-m3-zwei.jsonl");
+  const ERG_BGE = path.join(BELEG, "ergebnis-sqlitevec-bge-m3.json");
+
+  it("das zweite Einbett ist eine andre Zahl, nicht derselbe Lauf", () => {
+    const e = JSON.parse(fs.readFileSync(ERG_BGE, "utf8")) as { konfiguration: Record<string, unknown>; hit1: number; hit1_prozent: number };
+    expect([e.konfiguration.einbett, e.konfiguration.dim], "das Artefakt nennt nicht bge-m3 mit 1024 Dimensionen").toEqual(["bge-m3", 1024]);
+    const s = suchen(SPUR_BGE);
+    expect(s.length).toBe(QUERIES.length);
+    expect(s.filter((z) => z.treffer).length, "das zweite Einbett trifft nicht 30 von 45").toBe(30);
+    expect(e.hit1_prozent).toBe(66.7);
+  });
+
+  it("auch der zweite Einbett-Lauf ist wiederholbar", () => {
+    const a = suchen(SPUR_BGE);
+    const b = suchen(SPUR_BGE_ZWEI);
+    expect(a.map((z) => z.liste), "die Rangfolge des zweiten Einbetts ist nicht wiederholbar").toEqual(b.map((z) => z.liste));
+  });
+
+  it("die berichtigte Kategorie-Zahl: Umformulierungen treffen sehr wohl", () => {
+    const nach = JSON.parse(fs.readFileSync(ERG_BGE, "utf8")) as { nach_kategorie: Record<string, { anfragen: number; hit1: number }> };
+    expect([nach.nach_kategorie.umschreibung.anfragen, nach.nach_kategorie.umschreibung.hit1], "die Berichtigung gilt nicht: Umformulierungen").toEqual([10, 6]);
+    expect([nach.nach_kategorie.temporal.anfragen, nach.nach_kategorie.temporal.hit1], "die Berichtigung gilt nicht: Zeitfragen").toEqual([3, 1]);
+    expect(nach.nach_kategorie.lexikalisch.hit1, "lexikalisch traf anders als 20 von 25").toBe(20);
+  });
+
+  it("der Abstand zur Auslieferung schrumpft auf derselben Einbettstufe -- die Latte haelt nur im Gleich-Stufen-Vergleich", () => {
+    const ausgeliefert = hit1AusBeleg("v3-Engine");
+    const gleichStufen = ausgeliefert - 42.2;
+    const andreStufe = ausgeliefert - 66.7;
+    expect(gleichStufen, "der Gleich-Stufen-Abstand ist nicht mehr der gemessene").toBeGreaterThanOrEqual(VORSPRUNG_PUNKTE);
+    // Und die ehrliche Grenze: mit einem andren Einbett gilt die Latte NICHT. Der Fall
+    // sichert die Berichtigung, nicht eine Bequemlichkeit.
+    expect(andreStufe, "die Latte haelt angeblich auch gegen ein zweites Einbett").toBeLessThan(VORSPRUNG_PUNKTE);
+    expect(Math.round((gleichStufen - andreStufe) * 10) / 10, "der Abstand zwischen den beiden Stufen ist nicht 24,5 Punkte").toBe(24.5);
+  });
+});

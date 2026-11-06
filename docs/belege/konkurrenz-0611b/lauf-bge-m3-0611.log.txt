@@ -1,0 +1,10 @@
+P111: dasselbe Bein, ein zweites Einbett. Gefahren 16:52:30 und 16:52:51 MEZ mit:
+  EINBETT=bge-m3 DIM=1024 ./bin/python lauf-sqlitevec.py spur-sqlitevec-bge-m3.jsonl ergebnis-sqlitevec-bge-m3.json
+  (dasselbe Skript, dieselben 58 Texte und 45 Anfragen, nur das Einbett ist andres)
+
+ergebnis-sqlitevec-bge-m3.json | hit1 30 66.7 % | recall5 40 88.9 % | 1.2 s
+   Kategorien: {"ablenkung": {"anfragen": 4, "hit1": 1, "hit1_prozent": 25.0}, "graph": {"anfragen": 3, "hit1": 2, "hit1_prozent": 66.7}, "lexikalisch": {"anfragen": 25, "hit1": 20, "hit1_prozent": 80.0}, "temporal": {"anfragen": 3, "hit1": 1, "hit1_prozent": 33.3}, "umschreibung": {"anfragen": 10, "hit1": 6, "hit1_prozent": 60.0}}
+   Konfiguration: {"werkzeug": "sqlite-vec v0.1.9", "sqlite": "3.54.1", "python": "3.14.7", "einbett": "bge-m3", "dim": 1024, "k": 5, "nur_vektoren": true, "wort_suche": false, "fusion": false, "zeitstrahl": false, "entitaeten": false}
+ergebnis-sqlitevec-bge-m3-zwei.json | hit1 30 66.7 % | recall5 40 88.9 % | 1.2 s
+   Kategorien: {"ablenkung": {"anfragen": 4, "hit1": 1, "hit1_prozent": 25.0}, "graph": {"anfragen": 3, "hit1": 2, "hit1_prozent": 66.7}, "lexikalisch": {"anfragen": 25, "hit1": 20, "hit1_prozent": 80.0}, "temporal": {"anfragen": 3, "hit1": 1, "hit1_prozent": 33.3}, "umschreibung": {"anfragen": 10, "hit1": 6, "hit1_prozent": 60.0}}
+   Konfiguration: {"werkzeug": "sqlite-vec v0.1.9", "sqlite": "3.54.1", "python": "3.14.7", "einbett": "bge-m3", "dim": 1024, "k": 5, "nur_vektoren": true, "wort_suche": false, "fusion": false, "zeitstrahl": false, "entitaeten": false}

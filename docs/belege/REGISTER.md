@@ -193,6 +193,11 @@ erfunden, in beiden Sprachen gemessen und mit dem Vektor-Bein auch allein:
 | `konkurrenz-0611b/lauf-sqlitevec-0611.log.txt` | 1118 B | `690eb10ea10d1147…` |
 | `konkurrenz-0611b/probe-laden.py` | 1056 B | `872de252c1e0f903…` |
 | `konkurrenz-0611b/smoke.py` | 1213 B | `6dc46b671206aa47…` |
+| `konkurrenz-0611b/spur-sqlitevec-bge-m3.jsonl` | 18751 B | `3a1ca5e0d878dc61…` |
+| `konkurrenz-0611b/spur-sqlitevec-bge-m3-zwei.jsonl` | 18751 B | `035e4668a053a871…` |
+| `konkurrenz-0611b/ergebnis-sqlitevec-bge-m3.json` | 932 B | `f2cf6d3b3afb186b…` |
+| `konkurrenz-0611b/ergebnis-sqlitevec-bge-m3-zwei.json` | 932 B | `0e7307cb4632c35f…` |
+| `konkurrenz-0611b/lauf-bge-m3-0611.log.txt` | 1580 B | `ef76a577ca82a4e3…` |
 
 Drei Folgen, aufgeschrieben, weil sie die Zahl nicht schoener machen:
 

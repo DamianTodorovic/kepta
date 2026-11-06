@@ -16,23 +16,34 @@ dasselbe: **Hit@1** — die erste Antwort nennt eine der Ziel-IDs der Anfrage.
 | mem0 2.2.1, Fakten-Zerlegung, `llama3.2:3b` | 2.11.2026, Leitung | **24,4 %** (11/45) | `docs/belege/konkurrenz-0211/spur-fakten-3b-vollstaendig.jsonl` |
 | mem0 2.2.1, **fair gefahren** | ganzes Stueck, `infer=False`, Wort-Suche an, nomic-embed-text lokal | **51,1 %** (23/45) | `docs/belege/konkurrenz-0611/spur-fair-0611.jsonl` und `…-zwei.jsonl` |
 | **sqlite-vec 0.1.9**, reines Cosinus-KNN | dieselben Texte, dasselbe Einbett (nomic-embed-text, 768 D), k=5, **nichts** ausser Vektoren | **42,2 %** (19/45) | `docs/belege/konkurrenz-0611b/spur-sqlitevec-0611.jsonl` und `…-zwei.jsonl` |
+| **sqlite-vec 0.1.9**, reines Cosinus-KNN, **zweites Einbett** | derselbe Lauf, nur `bge-m3` (1024 D) statt nomic | **66,7 %** (30/45) | `docs/belege/konkurrenz-0611b/spur-sqlitevec-bge-m3.jsonl` und `…-zwei.jsonl` |
 
-## Was die letzte Zeile sagt, und was sie nicht sagt
+## Berichtigung 16:52 MEZ: die Kategorie-Zahl war eine Modell-Aussage, keine Verfahrensaussage
 
-Sie sagt: ein reiner Vektor-Speicher — die Architektur, die gerade als "semantic memory"
-verkauft wird — liegt auf *unsrem* Korpus **unter unsrer eignen naive-Baseline** (42,2 gegen
-51,1) und **33,4 Punkte unter der ausgelieferten Rangfolge** (75,6). Sie sagt auch, wo er
-steht: nach Kategorien trifft reines KNN **0 von 3 Zeitfragen** und **0 von 10
-Umformulierungen**; nur die lexikalischen (15 von 25) und die Graph-Fragen (3 von 3) gehen
-auf. Das ist die scharfe Zahl, und sie ist ein Grund, warum K3PTA BM25, RRF, Zeitstrahl und
-Entitaeten *dazu* nimmt, statt sie wegzulassen.
+Die erste Fassung dieses Abschnitts schrieb, reines KNN treffe **"0 von 3 Zeitfragen und
+0 von 10 Umformulierungen"**, und nannte das die Begruendung fuer BM25, RRF, Zeitstrahl und
+Entitaeten. Nachgeprueft mit einem zweiten Einbett (16:52:30 und 16:52:51 MEZ, derselbe
+Korpus, dasselbe Skript, nur `bge-m3` statt `nomic-embed-text`): dasselbe reine KNN trifft
+**6 von 10 Umformulierungen** und **1 von 3 Zeitfragen**, lexikalisch 20 von 25, und kommt
+insgesamt auf **66,7 %** — 8,9 Punkte unter der Auslieferung, nicht 33,4.
 
-Sie sagt nicht: dass sqlite-vec ein Mitbewerber um das Produkt ist. sqlite-vec ist eine
-Erweiterung, kein Gedächtnisdienst — kein Speichern, kein Aktualisieren, kein Vergessen,
-keine Mandanten-Wand. Die Zeile misst das **Verfahren**, nicht das Produkt: was bleibt,
-wenn man nur die Cosinus-Naehe nimmt. Derselbe Vorwurf, der am 2.11. gegen den mem0-Fakten-
-Lauf erhoben wurde ("eine Konfiguration, die der Mitbewerber so nicht ausliefert"), gilt
-hier nicht: eine Vektortabelle mit k-NN *ist* genau das, was sqlite-vec ausliefert.
+Die Aussage war also **halb richtig und halb Modell-Aussage**: was sie gemessen hat, ist die
+Cosinus-Naehe *von nomic-embed-text*, nicht die von Vektorsuche allgemein. Richtig bleibt:
+(a) mit dem Einbett, das K3PTA ausliefert (`src/core/embeddings.ts:20` ->
+nomic-embed-text), ist der faire Gleich-Stufen-Vergleich 75,6 gegen 42,2; (b) die Fusion
+gewinnt gegen reines KNN **auf derselben Einbettstufe** 33,4 Punkte. Neu und offener als
+vorher: der Abstand **schrumpft auf 8,9 Punkte**, wenn das Einbett wechselt — und zwar für
+beide Seiten. Das ist kein Schönheitsfehler, sondern eine Frage ans Produkt: **welches
+Einbett liefert unsre Rangfolge, wenn es nicht das voreingestellte ist?** Gemessen ist die
+Gegenseite (reines KNN) für `bge-m3`; unsre eigne Rangfolge mit `bge-m3` ist **nicht**
+gemessen und steht als nächster Lauf an.
+
+Was die Zeile *nicht* sagt, bleibt: sqlite-vec ist eine Erweiterung, kein
+Gedächtnisdienst — kein Speichern, kein Aktualisieren, kein Vergessen, keine Mandanten-Wand.
+Die Zeile misst das **Verfahren**, nicht das Produkt. Und derselbe Vorwurf, der am 2.11.
+gegen den mem0-Fakten-Lauf erhoben wurde ("eine Konfiguration, die der Mitbewerber so nicht
+ausliefert"), gilt hier nicht: eine Vektortabelle mit k-NN *ist* genau das, was sqlite-vec
+ausliefert.
 
 Geworden ist die Zeile so: Kapsel `/tmp/konk-sqlitevec-0611` (python 3.14.7, apsw,
 sqlite-vec 0.1.9; die sqlite-Bibliothek im apsw ist 3.54.1, nicht die 3.50.4 des Systems),

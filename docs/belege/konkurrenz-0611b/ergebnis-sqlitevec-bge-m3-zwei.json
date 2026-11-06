@@ -1,0 +1,55 @@
+{
+ "lauf": "sqlitevec-bge-m3",
+ "zeit": "16:52:51",
+ "konfiguration": {
+  "werkzeug": "sqlite-vec v0.1.9",
+  "sqlite": "3.54.1",
+  "python": "3.14.7",
+  "einbett": "bge-m3",
+  "dim": 1024,
+  "k": 5,
+  "nur_vektoren": true,
+  "wort_suche": false,
+  "fusion": false,
+  "zeitstrahl": false,
+  "entitaeten": false
+ },
+ "korpus": {
+  "notizen": 58,
+  "anfragen": 45
+ },
+ "hit1": 30,
+ "hit1_prozent": 66.7,
+ "recall5_in_den_5": 40,
+ "recall5_prozent": 88.9,
+ "nach_kategorie": {
+  "ablenkung": {
+   "anfragen": 4,
+   "hit1": 1,
+   "hit1_prozent": 25.0
+  },
+  "graph": {
+   "anfragen": 3,
+   "hit1": 2,
+   "hit1_prozent": 66.7
+  },
+  "lexikalisch": {
+   "anfragen": 25,
+   "hit1": 20,
+   "hit1_prozent": 80.0
+  },
+  "temporal": {
+   "anfragen": 3,
+   "hit1": 1,
+   "hit1_prozent": 33.3
+  },
+  "umschreibung": {
+   "anfragen": 10,
+   "hit1": 6,
+   "hit1_prozent": 60.0
+  }
+ },
+ "dauer_sek": 1.2,
+ "dauer_setzen_sek": 2.0,
+ "rss_gib": 0.04
+}
