@@ -1,3 +1,21 @@
+## [3.2.175]
+
+### Changed
+
+- **The comprehensibility census names which layer it actually gates.** Measured 6.11.2026
+  01:16:40 MEZ at the delivered 3.2.173: the tool layer printed "18 (72.0 %) — Latte 80 %"
+  even though `URTEIL KAPPE` measures only the surface, and the server layer printed the same
+  line next to 82.3 %. A threshold shown beside a number nobody measured invents a rule — and
+  the number it invents always fails. The surface line keeps its "Latte 80 %"; the tool and
+  server lines now read "Bericht, keine Latte (URTEIL KAPPE misst nur die Fläche)".
+- The same header no longer claims the numbers are "im ausgelieferten Objekt" when the run was
+  asked for the tree with `--nur quelltext` (found at 01:50:03 MEZ while writing the test).
+
+No product sentence changed in this release: the census is a measuring instrument and is not
+part of the shipped bundle — measured 01:50:57 MEZ, "URTEIL KAPPE" appears 0 times in the
+installed `app.asar`. What ships is the guard that holds the instrument honest
+(`tests/punkt7-fachwort-traegt-grund.test.ts`, 13 cases).
+
 ## [3.2.174]
 
 ### Changed

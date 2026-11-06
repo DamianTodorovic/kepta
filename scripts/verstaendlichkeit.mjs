@@ -198,9 +198,15 @@ export function zensiere(getragen) {
   };
 }
 
-function melde(name, c, getragen) {
-  console.log(`\n  ${name}: ${c.n} Saetze im ausgelieferten Objekt`);
-  console.log(`    unter der Kappe von ${SATZKAPPE} Woertern: ${c.unterKappe} (${c.teil(c.unterKappe)})  — Latte ${100 * UNTER_KAPPE_MINDESTENS} %`);
+function melde(name, c, getragen, gate, korpus) {
+  // P85, gemessen 6.11.2026 01:16:40 MEZ am ausgelieferten 3.2.173: der Werkzeug-Block schrieb
+  // "18 (72.0 %) -- Latte 80 %", obwohl URTEIL KAPPE nur die Flaeche misst. Eine Latte neben
+  // einer nicht gemessenen Zahl erfindet eine Regel. Also: die Zeile nennt ihren Status.
+  const kappe = gate
+    ? `  — Latte ${100 * UNTER_KAPPE_MINDESTENS} %`
+    : "  — Bericht, keine Latte (URTEIL KAPPE misst nur die Flaeche)";
+  console.log(`\n  ${name}: ${c.n} Saetze ${korpus}`);
+  console.log(`    unter der Kappe von ${SATZKAPPE} Woertern: ${c.unterKappe} (${c.teil(c.unterKappe)})${kappe}`);
   console.log(`    mit Grund oder Folge: ${c.mitGrund} (${c.teil(c.mitGrund)})`);
   console.log(`    nennt dem Menschen eine Taetigkeit: ${c.mitHandlung} (${c.teil(c.mitHandlung)})`);
   console.log(`    mit mindestens einem Fachwort: ${c.mitFach} (${c.teil(c.mitFach)})`);
@@ -243,9 +249,10 @@ async function haupt() {
   const cFlaeche = zensiere(flaeche.getragen);
   const cWerkzeug = zensiere(werkzeug.getragen);
   const cDiener = zensiere(diener.getragen);
-  melde("FLAECHE (ein Mensch liest)", cFlaeche, flaeche.getragen);
-  melde("WERKZEUG (ein Agent liest)", cWerkzeug, werkzeug.getragen);
-  melde("DIENER (ein Mensch oder ein Agent liest die Antwort mit)", cDiener, diener.getragen);
+  const korpus = suche ? "im ausgelieferten Objekt" : "im Baum, nicht am ausgelieferten Objekt";
+  melde("FLAECHE (ein Mensch liest)", cFlaeche, flaeche.getragen, true, korpus);
+  melde("WERKZEUG (ein Agent liest)", cWerkzeug, werkzeug.getragen, false, korpus);
+  melde("DIENER (ein Mensch oder ein Agent liest die Antwort mit)", cDiener, diener.getragen, false, korpus);
 
   const langsten = [...flaeche.getragen].sort((a, b) => b.woerter - a.woerter).slice(0, 12);
   console.log("\n  Die zwoelf laengsten Menschensaetze (Wortzahl | Quelle):");

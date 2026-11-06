@@ -172,6 +172,29 @@ describe("Punkt 7: Fachwort-Saetze der Flaeche tragen Grund oder Taetigkeit", ()
     expect(laut.stdout).toContain("URTEIL KAPPE");
   });
 
+  it("die Kappe-Zeile nennt, ob sie an dieser Lage misst oder nur berichtet", () => {
+    // Gemessen 6.11.2026 01:16:40 MEZ am ausgelieferten 3.2.173: der Werkzeug-Block schrieb
+    // "unter der Kappe von 14 Woertern: 18 (72.0 %) -- Latte 80 %", obwohl URTEIL KAPPE nur
+    // die Flaeche misst (Diener ebenso). Eine Latte, die neben einer nicht gemessenen Zahl
+    // steht, erfindet eine Regel -- und die Zahl, die sie erfindet, faellt.
+    const laut = spawnSync("node", [path.join(WURZEL, "scripts", "verstaendlichkeit.mjs"), "--nur", "quelltext"], { encoding: "utf8" });
+    expect(laut.stdout).toContain("FLAECHE (ein Mensch liest)");
+    const flaeche = laut.stdout.split("FLAECHE (ein Mensch liest)")[1].split("WERKZEUG (")[0];
+    const werkzeug = laut.stdout.split("WERKZEUG (ein Agent liest)")[1].split("DIENER (")[0];
+    const diener = laut.stdout.split("DIENER (ein Mensch oder ein Agent")[1];
+    expect(flaeche).toContain("Latte 80 %");
+    expect(flaeche).not.toContain("Bericht, keine Latte");
+    expect(werkzeug).toContain("Bericht, keine Latte");
+    expect(werkzeug).not.toContain("— Latte 80 %");
+    expect(diener).toContain("Bericht, keine Latte");
+    // Nebenbefund aus demselben Lauf (01:50:03 MEZ): die Kopfzeile nannte die Zahl "im
+    // ausgelieferten Objekt", obwohl `--nur quelltext` gar kein Objekt liest. Ein Kopf, der
+    // eine Auslieferung meldet, die er nicht gesehen hat, ist dieselbe Krankheit.
+    expect(werkzeug).toContain("im Baum, nicht am ausgelieferten Objekt");
+    // Und das Urteil sagt weiter, welche Lage es misst.
+    expect(laut.stdout).toMatch(/URTEIL KAPPE: (HALTET|FAELLT) \(Flaeche/);
+  });
+
   it("der Nenner der Flaeche ist eine Zahl, keine Luecke", () => {
     // Ein Census ueber null Saetzen waere grün und wertlos.
     expect(census.n).toBeGreaterThan(300);
