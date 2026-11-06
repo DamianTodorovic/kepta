@@ -6327,7 +6327,7 @@ export function KnowledgeGraph({ memories: memoriesAusFenster, onSelectMemory, o
               className="sticky bottom-0 z-10 -mx-3 border-t px-3 py-2 hud-label pointer-events-none min-[820px]:col-span-full"
               style={{ background: "var(--bg-panel-solid)", color: "var(--text-2)", borderColor: "var(--border-subtle)" }}
             >
-              {mehrDraussen} more below - keep scrolling
+              {mehrDraussen} more below — keep scrolling
             </div>
           )}
         </div>
@@ -6718,7 +6718,7 @@ export function KnowledgeGraph({ memories: memoriesAusFenster, onSelectMemory, o
           )}
           {kernStand && kernStand.grund === "leer" && (
             <div className="hud-label" data-testid="graph-kern-zustand" data-grund={kernStand.grund} style={{ color: "var(--text-2)" }}>
-              {`No node of the core is inside this picture - the number is off because nothing of it is here, not because the core is small. Pan or zoom out to bring it back.`}
+              {`No node of the core is inside this picture — the number is off because nothing of it is here, not because the core is small. Pan or zoom out to bring it back.`}
             </div>
           )}
           {/* #54 — die Zahlenreihe und der Griff stehen immer; alles unter der

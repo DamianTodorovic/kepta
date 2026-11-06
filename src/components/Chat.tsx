@@ -827,7 +827,7 @@ export function Chat({ activeMemories, onSaveToBrain, onSaveToBrainWithMeta, isF
             {connection.state === "connected" ? (
               <span
                 className="absolute -bottom-0.5 -right-0.5 status-dot"
-                title={connection.local ? "A local program on this machine - no key needed." : "AI connected"}
+                title={connection.local ? "A local program on this machine — no key needed." : "AI connected"}
               />
             ) : (
               <span

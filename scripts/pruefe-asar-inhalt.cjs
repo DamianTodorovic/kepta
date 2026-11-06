@@ -1009,6 +1009,19 @@ const erwartet = [
   ["btn-primary treff", 1],
   ["seiten-knopf treff w-9 h-9", 1],
   ["seiten-knopf-einrichten treff", 1],
+  // P94 (3.2.180): der Gedankenstrich des Hauses in sechs Saetzen, die ein Mensch liest.
+  // Ein Marker darf hier kein Nicht-ASCII-Zeichen tragen (die latin1-Lesung zerlegt es in
+  // Bytes, ihre Zaehlung waere eine Dauer-Null), also gilt der Beweis von beiden Seiten:
+  // der Schwanz des Satzes muss stehen (unten), und die alte Form mit Bindestrich muss
+  // weg sein (in der Verbotsliste). Die zwei Server-Saetze sind die Ausnahme: esbuild
+  // schreibt den Strich dort als Escape, und das Escape ist ASCII -- also kann die neue
+  // Form selbst gemarkt werden. Gezaehlt im gebauten Stand 05:33:36 MEZ.
+  ["no key needed.", 2],
+  ["keep scrolling", 1],
+  ["the number is off because nothing of it is here", 1],
+  ["write the first one below, it saves with the note", 1],
+  ["earlier stand yet \\u2014 it has not been edited", 1],
+  ["claims nothing yet \\u2014 the graph draws only mentions", 1],
   // P86 (3.2.176): die Farb-Sitze heissen wie im Vertrag, und der Rahmenwerk-Scanner ist
   // gesetzt. Gezaehlt am installierten 3.2.175 (latin1, Leerstand zusammengezogen,
   // 6.11.2026 02:41:07 MEZ): "bg-knopf" 0, "bg-blatt" 0, das Paar "bg-white dark:bg-zinc-800"
@@ -1116,6 +1129,17 @@ const verboten = [
   // sie war 1,57:1 gegen das helle Panel und 1,65:1 gegen das dunkle -- unter der Rand-Bar
   // von 3:1. Der Vertrag heisst jetzt --gefahr.
   "border-red-500/40",
+  // P94 (3.2.180): die andre Seite desselben Beweises. Am installierten 3.2.179 steht jede
+  // dieser sechs Formen 1 mal (05:34:05 MEZ, eigne Zaehlung); nach dem Schnitt muss jede 0
+  // sein, waehrend ihr Satz-Schwanz oben weiter zaehlt. Ein nackter Bindestrich zwischen
+  // Woertern war keine Zierde: der Census trennt Saetze an ihm, und vier Saetze zaehlten
+  // als sechs -- die Nenner 348 und 53 wurden zu 346 und 51 (gemessen 05:32:32 MEZ).
+  "machine - no key needed",
+  "more below - keep scrolling",
+  "picture - the number is off",
+  "claimed yet - write the first one",
+  "earlier stand yet - it has not been edited",
+  "nothing yet - the graph draws only mentions",
   // P82 (3.2.172): die vier knappen Diener-Absagen, die ein Fachwort ohne Grund und
   // ohne Taetigkeit liessen (gemessen 00:30:54 MEZ als 4 der 5 Funde in 62 Kandidaten).
   "Node or stand not found",

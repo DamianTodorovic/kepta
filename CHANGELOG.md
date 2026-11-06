@@ -1,3 +1,28 @@
+## [3.2.180]
+
+### Changed
+
+- **Six sentences that a person reads now carry the house dash instead of a bare hyphen**
+  (`A local program on this machine — no key needed.`, `… more below — keep scrolling`,
+  `No node of the core is inside this picture — …`, `Nothing claimed yet — write the first
+  one below, …`, and two refusal lines in the memory router). This was not typography: the
+  census splits sentences at ` - `, so four of these counted as six and the denominators
+  moved with them. Measured 6.11.2026 05:32:32 MEZ: the surface corpus is **346 sentences**
+  (it said 348 a minute before) and the servant corpus **51** (it said 53), while the share
+  under the 14-word cap moved from 80.5 % to **80.3 %** against its 80 % bar.
+
+### Added
+
+- The census gained a third verdict, `URTEIL STRICH`: no counted sentence may use a bare
+  hyphen where the house dash belongs, across all three layers, with a bite control that
+  runs the *old* form through the same arithmetic and must see it hit. Red first at
+  05:31:59 MEZ (4 sentences named with file and text), green at 05:32:32 MEZ.
+- The content gate now proves the same change from both sides at the delivered object: the
+  sentence tails must be present, and the six hyphen forms must be gone. A marker cannot
+  carry a non-ASCII character here (the gate reads latin1 and would count a permanent zero),
+  which is why the proof is two-sided rather than one string — the two server lines are the
+  exception, since esbuild writes their dash as an ASCII escape that can be counted
+  directly.
 ## [3.2.179]
 
 ### Added

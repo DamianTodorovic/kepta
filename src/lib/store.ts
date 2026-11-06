@@ -358,7 +358,7 @@ export async function holeBehauptungen(
   id: string
 ): Promise<{ liste: BehauptungEingabe[]; hinweis: string; grund: string | null }> {
   const leer = { liste: [] as BehauptungEingabe[], hinweis: "", grund: null as string | null };
-  if (!id) return { ...leer, hinweis: "Nothing claimed yet - write the first one below, it saves with the note." };
+  if (!id) return { ...leer, hinweis: "Nothing claimed yet — write the first one below, it saves with the note." };
   try {
     const res = await fetch(`/api/memories/${encodeURIComponent(id)}/behauptungen`);
     const data = await res.json().catch(() => null);

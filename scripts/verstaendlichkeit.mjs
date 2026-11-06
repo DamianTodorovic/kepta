@@ -266,6 +266,20 @@ async function haupt() {
   console.log("\n  Fachwort ohne Grund und ohne Taetigkeit (die ersten " + LISTE + " von " + alleFunde.length + "):");
   for (const z of alleFunde.slice(0, LISTE)) console.log(`    ${z.lage}  ${z.fach.join(",")}  ${z.quelle}  ::  ${z.s.slice(0, 150)}`);
 
+  // P94: der Gedankenstrich des Hauses. Gemessen 05:30:35 MEZ: vier gelieferte Saetze
+  // nannten ihren Absatz mit einem nackten Bindestrich ("... machine - no key needed."),
+  // und einer war ueberhaupt kein Satz -- ein Quelltextausdruck, den die Sonde als Prosa
+  // zaehlte. Der Strich ist keine Zierde: der Census trennt Saetze an ihm, und ein Satz,
+  // der als zwei Zaehlungen ankommt, veraendert die Zahl der Flaeche.
+  const NACKTER_STRICH = /[A-Za-z,.!?] - [A-Za-z]/;
+  const strichFunde = [
+    ...flaeche.getragen.map((z) => ({ ...z, lage: "Flaeche" })),
+    ...werkzeug.getragen.map((z) => ({ ...z, lage: "Werkzeug" })),
+    ...diener.getragen.map((z) => ({ ...z, lage: "Diener" })),
+  ].filter((z) => NACKTER_STRICH.test(z.s));
+  console.log("\n  Satz mit nacktem Bindestrich statt Gedankenstrich (" + strichFunde.length + "):");
+  for (const z of strichFunde) console.log(`    ${z.lage}  ${z.quelle}  ::  ${z.s.slice(0, 130)}`);
+
   // Zwei Kontrollen, weil ein Zaehler ohne Gegenprobe eine Behauptung ist.
   // 1) Sie MUSS ein Wort sehen, das im Objekt steht (die Rate-Zeile von 3.2.143).
   const bis = "Name a claim in a note to put a word on a line";
@@ -279,9 +293,14 @@ async function haupt() {
   const anteil = cFlaeche.unterKappe / Math.max(1, cFlaeche.n);
   const kappeHalten = anteil >= UNTER_KAPPE_MINDESTENS;
   const riegelHalten = [cFlaeche, cWerkzeug, cDiener].every((c) => c.fachOhneAlles.length <= FACH_OHNE_GRUND_MAX);
-  const taub = !getroffen || !blind;
-  const urteil = taub ? "TAUB" : kappeHalten && riegelHalten ? "HALTET" : "FAELLT";
+  const strichHalten = strichFunde.length === 0;
+  // Biss-Kontrolle drei: dieselbe Rechnung muss die ALTE Form treffen, sonst ist die Latte
+  // ein Wunsch ohne Messzeug.
+  const strichBiss = NACKTER_STRICH.test("A local program on this machine - no key needed.");
+  const taub = !getroffen || !blind || !strichBiss;
+  const urteil = taub ? "TAUB" : kappeHalten && riegelHalten && strichHalten ? "HALTET" : "FAELLT";
   console.log(`  URTEIL KAPPE: ${kappeHalten ? "HALTET" : "FAELLT"} (Flaeche: Anteil unter ${SATZKAPPE} Woertern ${(100 * anteil).toFixed(1)} %, Latte ${100 * UNTER_KAPPE_MINDESTENS} %)`);
+  console.log(`  URTEIL STRICH: ${strichHalten ? "HALTET" : "FAELLT"} (${strichFunde.length} Saetze mit nacktem Bindestrich ueber allen drei Lagen; Biss-Kontrolle ${strichBiss ? "trifft die alte Form" : "FEHLT — die Latte hat kein Messzeug"})`);
   console.log(`  URTEIL RIEGEL: ${riegelHalten ? "HAELT" : "FAELLT"} (Fachwort ohne Grund und ohne Taetigkeit: Flaeche ${cFlaeche.fachOhneAlles.length} von ${cFlaeche.n}, Werkzeug ${cWerkzeug.fachOhneAlles.length} von ${cWerkzeug.n}, Diener ${cDiener.fachOhneAlles.length} von ${cDiener.n}, Max je Gruppe ${FACH_OHNE_GRUND_MAX} — der Wert ist am 5.11. und 6.11.2026 an allen drei Lagen gemessen)`);
   console.log(`  URTEIL GRUND: die Flaeche nennt in ${cFlaeche.mitGrund} von ${cFlaeche.n} Saetzen einen Grund oder eine Folge —`);
   console.log("  das ist der Befund dieses Laufs, nicht sein Ziel: eine Zahl ohne Vergleich ist eine Messung, noch kein Urteil.");

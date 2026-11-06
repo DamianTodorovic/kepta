@@ -355,7 +355,7 @@ export function mountMemories(app: express.Express, ctx: AppKontext): void {
     const hinweis = [
       geklemmt,
       total === 0
-        ? "This note has no earlier stand yet - it has not been edited since it was written."
+        ? "This note has no earlier stand yet — it has not been edited since it was written."
         : `This page holds ${staende.length} of ${total} earlier ${total === 1 ? "stand" : "stands"}${begrenzt ? `; ${rest} more follow at offset ${offset + staende.length}` : " - the whole stand list fits in this page"}.`,
     ].filter(Boolean).join(" ");
 
@@ -386,7 +386,7 @@ export function mountMemories(app: express.Express, ctx: AppKontext): void {
       count: liste.length,
       behauptungen: liste,
       hinweis: liste.length === 0
-        ? "This note claims nothing yet - the graph draws only mentions for it, and a mention says no more than that two terms appeared together."
+        ? "This note claims nothing yet — the graph draws only mentions for it, and a mention says no more than that two terms appeared together."
         : `${liste.length} claim${liste.length === 1 ? "" : "s"} written by a hand - each one is the word on its line.`,
     });
   });
