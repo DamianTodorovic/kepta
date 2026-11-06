@@ -301,7 +301,7 @@ const erwartet = [
   // sichtbare Ansage; Gegenprobe VOR dem Tausch am ausgelieferten 3.2.52 (49 116 810 B, mtime
   // 03:09:14 MESZ): beide dort 0.
   ["graph-gruppenband", 1],
-  ["Share of painted nodes per group", 1],
+  ["Share of painted dots per group", 1],
   // 3.2.54, EIN Koerper mit ZWEI Zellen (Leitung, 24.10. 13:55 MESZ): Punkt 3s #95 (die Such-Tuer
   // seitet wie die Liste) und #99 (eigne Such-Kappe statt der Chat-Kappe von 20/min). Gegenprobe VOR
   // dem Tausch am ausgelieferten 3.2.53 (49 118 229 B, mtime 13:18:07 MESZ): beide Ketten dort 0 -
@@ -409,7 +409,7 @@ const erwartet = [
   // drin (waere gruen von selbst), und `Settings-elementkante` ist ein Testdateiname —
   // Tests werden nicht mitverpackt, die Marke waere dauerhaft 0 und jede Landung verloren.
   ["The core is mostly outside this picture", 1],
-  ["No node of the core is inside this picture", 1],
+  ["No note of the core is inside this picture", 1],
   ["graph-kern-zustand", 1],
   ["min-w-0 break-words", 1],
   ["rounded-2xl p-3 sm:p-5", 1],
@@ -475,6 +475,24 @@ const erwartet = [
   // 12:15:16 MEZ: beide neuen Ketten 0, jede alte Kette mindestens 1 (unten in "verboten").
   ["the links as your notes claim them", 1],
   ["placed by what notes mean", 1],
+  // P105 (landet in 3.2.185): ein Ding, ein Wort. Gezaehlt am installierten 3.2.184 um
+  // 12:18:18 MEZ, latin1: jede neue Kette 0 mal, jede alte Form 1 bis 2 mal. Zwei alte Formen
+  // sind trotzdem NICHT verboten, und der Grund ist eine Messung, keine Bequemlichkeit:
+  // "Node not found" steht 8 mal im Objekt, unser Quelltext schreibt davon 3 -- die uebrigen
+  // fuenf gehoeren pdf.js (dist/assets/pdf.worker.min-*.mjs), und ein Verbot, das wir nicht
+  // besitzen, schlaegt immer faelschlich. "Saves a knowledge node, or updates one" steht 2 mal
+  // und die Haelfte gehoert dem Bundel (npm/bin/kepta.js), das die Leitung am Wellenende baut
+  // (Wand 4). Also: neue Form als Marke, alte Form ohne Verbot, die Luecke offen gemeldet.
+  ["unfolded notes are drawn as dots", 1],
+  ["core marker off: no core dot inside this picture", 1],
+  ["too few core dots in this picture", 1],
+  ["a dot stays where you drop it", 1],
+  ["New assistant note", 1],
+  ["active notes, maximum is", 1],
+  ["conflicting note ids", 1],
+  ["notes taken over from memories.json", 1],
+  ["Note not found", 1],
+  ["Extract one knowledge note from", 1],
   // Punkt Zensur/Z-05 (die Vierer-Basis) schreibt KEINEN eignen Marker: die Heilung aendert
   // nur Zahlen (10->8, 7->8, 22->24, 5->4, 7/14->8/16) und kein Wort im Objekt. Beweis ist die
   // Messung selbst: 435 Nicht-Vier-Abstaende auf Knowledge 1440 vor der Heilung
@@ -1230,6 +1248,23 @@ const verboten = [
   "the links as they are claimed",
   "placed by meaning, not words",
   "Force and Tree need only the notes themselves",
+  // P105 (landet in 3.2.185): "ein Ding, ein Wort". Jede Kette hier stand am installierten
+  // 3.2.184 zwischen 1 und 8 mal in den Bytes, die ein Mensch bekommt (Gegenprobe 12:18:18
+  // MEZ, latin1). Drei alte Formen sind bewusst NICHT aufgenommen, und der Grund ist eine
+  // Messung: "Node not found" 8 mal bei 3 eignen Stellen (pdf.js besitzt den Rest), "Saves a
+  // knowledge node, or updates one" 2 mal bei 1 eigner Stelle (die zweite liegt im Bundel,
+  // Wand 4), und ein nacktes "Node" traf in minifiziertem Drittcode immer.
+  "unfolded notes are drawn as nodes",
+  "no core node inside this picture",
+  "too few core nodes in this picture",
+  "a node stays where you drop it",
+  "New assistant node",
+  "Node size",
+  "active nodes, maximum is",
+  "active nodes exceed the limit",
+  "conflicting node ids",
+  "nodes taken over from memories.json",
+  "Extract one knowledge node from",
 ];
 // Die Liste darf nur ASCII-Zeichen enthalten. Grund, gemessen 21.10. 19:16 MESZ am
 // installierten Objekt: das Wort "Looking" plus echtes U+2026 steht dort 2 mal, diese

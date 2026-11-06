@@ -57,7 +57,7 @@ export function mountImporte(app: express.Express, ctx: AppKontext): void {
       }
       if (confirm !== "replace") {
         return res.status(400).json({
-          error: `mode:"replace" purges the whole knowledge base for good — ${vorher.active} active and ${vorher.trashed} trashed nodes, trash included. Send confirm:"replace" to do it, or dryRun:true to only see how many are affected. Nothing was changed.`,
+          error: `mode:"replace" purges the whole knowledge base for good — ${vorher.active} active and ${vorher.trashed} trashed notes, trash included. Send confirm:"replace" to do it, or dryRun:true to only see how many are affected. Nothing was changed.`,
         });
       }
       // Vor dem Purge, nicht danach: was hier fehlt, ist nach dem Purge weg.
@@ -89,7 +89,7 @@ export function mountImporte(app: express.Express, ctx: AppKontext): void {
       const raeum = halteSicherungen(path.dirname(backupPath), aufbewahrung.behalten);
       if (konflikt) {
         return res.status(409).json({
-          error: `Import failed: conflicting node ids (backup: ${backupPath})`,
+          error: `Import failed: conflicting note ids (backup: ${backupPath})`,
           backupPath,
           backupsGehalten: raeum.gehalten,
           backupsEntfernt: raeum.entfernt,

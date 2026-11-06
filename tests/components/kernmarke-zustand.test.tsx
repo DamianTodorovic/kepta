@@ -68,10 +68,10 @@ describe("#105: die Marke meldet einen benannten Zustand statt Stille", () => {
       "utf8"
     );
     expect(quelle, "kein Wort fuer den Fall 'zuwenig'").toContain("are needed to count it as one");
-    expect(quelle, "kein Wort fuer den Fall 'leer'").toContain("No node of the core is inside this picture");
+    expect(quelle, "kein Wort fuer den Fall 'leer'").toContain("No note of the core is inside this picture");
     // Das Wort zum leeren Bild nennt den Grund, ohne eine Zahl des Kerns zu
     // behaupten: nichts ist hier gezaehlt, also darf nichts dastehen wie ein Befund.
-    const leer = quelle.indexOf("No node of the core is inside this picture");
+    const leer = quelle.indexOf("No note of the core is inside this picture");
     const seinWort = quelle.slice(leer, leer + 320);
     expect(seinWort, "das Wort zum leeren Bild nennt eine Zahl, waehrend nichts gezaehlt ist").not.toMatch(/kernStand\.zahl/);
     // Und der Zustand liegt an der Leinwand, damit ein Fenster ihn lesen kann.

@@ -72,7 +72,7 @@ describe("Legende bei schmaler Breite — Marke statt Stelle", () => {
     // Wenigstens die Glyphen-Erklaerung und der Griff-Hinweis sind Prosa.
     expect(prose.length).toBeGreaterThanOrEqual(2);
     const worte = prose.map((el) => (el.textContent || "").replace(/\s+/g, " ").trim());
-    expect(worte.join(" ")).toMatch(/letter in a node/i);
+    expect(worte.join(" ")).toMatch(/letter in a dot/i);
     expect(worte.join(" ")).toMatch(/Drag|Zoom|pan/i);
   });
 

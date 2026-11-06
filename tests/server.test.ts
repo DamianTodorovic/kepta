@@ -201,7 +201,7 @@ describe("Grenze fuer aktive Knoten", () => {
     const res = await request(app).post("/api/memories").send({ title: "Zu viel", content: "x" });
     vi.unstubAllEnvs();
     expect(res.status).toBe(429);
-    expect(res.body.error).toMatch(/3 active nodes, maximum is 1/);
+    expect(res.body.error).toMatch(/3 active notes, maximum is 1/);
   });
 });
 

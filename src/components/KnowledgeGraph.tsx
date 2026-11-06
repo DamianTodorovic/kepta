@@ -163,7 +163,7 @@ const REGLER: readonly { feld: keyof KrafteStellung; name: string; min: number; 
   { feld: "gravitaet", name: "Center force", min: 0.2, max: 3, hinweis: "How hard the middle gathers the picture." },
   { feld: "abstossung", name: "Repel strength", min: 0.3, max: 4, hinweis: "How hard unrelated notes push apart — the space between topics." },
   { feld: "link", name: "Link distance", min: 0.5, max: 2.5, hinweis: "How long a link rests — the gap inside a topic." },
-  { feld: "groesse", name: "Node size", min: 0.6, max: 2, hinweis: "How big each dot is drawn — the picture spaces notes by this size." },
+  { feld: "groesse", name: "Dot size", min: 0.6, max: 2, hinweis: "How big each dot is drawn — the picture spaces notes by this size." },
 ];
 function merkeKrafte(k: KrafteStellung): void {
   try {
@@ -779,7 +779,7 @@ const NAMEN_STUFE: Record<
     grenzenlos: false,
     raster: true,
     kantentext: false,
-    erklaerung: "No labels — hover or arrow-key to a node and its full title comes back",
+    erklaerung: "No labels — hover or arrow-key to a dot and its full title comes back",
   },
   wenig: {
     // Die enge Pforte: nur Knoten ab 1,5 Bildpunkten kommen als Name in Frage.
@@ -992,7 +992,7 @@ export function rahmenZeilentext(imRahmen: number, gesamt: number, baumAnsicht: 
   if (imRahmen >= gesamt) return "";
   if (imRahmen === 0) return rahmenLeereMeldung(baumAnsicht, kernMarke);
   if (kernMarke) {
-    return `${mengenzahl(imRahmen)} of ${mengenzahl(gesamt)} unfolded notes are drawn as nodes — the rest sits in one core marker, zoom in to read them`;
+    return `${mengenzahl(imRahmen)} of ${mengenzahl(gesamt)} unfolded notes are drawn as dots — the rest sits in one core marker, zoom in to read them`;
   }
   return `${mengenzahl(imRahmen)} of ${mengenzahl(gesamt)} unfolded notes are in this picture`;
 }
@@ -5796,7 +5796,7 @@ export function KnowledgeGraph({ memories: memoriesAusFenster, onSelectMemory, o
         <span
           className="ml-1"
           data-testid="graph-zeit-spaeter"
-          title={`${zeitAchse.spaeter.length} commitment${zeitAchse.spaeter.length === 1 ? "" : "s"} in this base end${zeitAchse.spaeter.length === 1 ? "" : ""} after today — that is a state on the link, not a step on this scale`}
+          title={`${zeitAchse.spaeter.length} commitment${zeitAchse.spaeter.length === 1 ? "" : "s"} here end after today — a state on the link, not a step`}
         >
           +{zeitAchse.spaeter.length} later
         </span>
@@ -5994,7 +5994,7 @@ export function KnowledgeGraph({ memories: memoriesAusFenster, onSelectMemory, o
     </div>
   );
   const schieneKanal = (
-    <div className="apple-seg shrink-0" role="group" aria-label="Node colour channel" data-testid="graph-schiene-kanal">
+    <div className="apple-seg shrink-0" role="group" aria-label="Dot colour" data-testid="graph-schiene-kanal">
       {segment(aktiverKanal === "typ", `Colour by what each note is made of — ${Object.values(TYP_BESCHREIBUNG).join(", ")}. What the graph starts with.`, () => wechsleKanal("typ"), "Type")}
       {segment(
         aktiverKanal === "herkunft",
@@ -6028,14 +6028,14 @@ export function KnowledgeGraph({ memories: memoriesAusFenster, onSelectMemory, o
     </div>
   );
   const farbenReihe = (
-    <div className="flex items-center gap-1 shrink-0" title="Node colours — each colour tints its type across the graph, cards and index">
+    <div className="flex items-center gap-1 shrink-0" title="Dot colours — each colour tints its type across the graph, cards and list">
       {TYP_FOLGE.map((t) => (
         <input
           key={t}
           type="color"
           value={TYPE_COLORS[t] ?? ""}
           onChange={(e) => setTypeColor(t, e.target.value)}
-          title={`Colour: ${TYP_BESCHREIBUNG[t]} — tints the nodes, their card ridge and the index numbers`}
+          title={`Colour: ${TYP_BESCHREIBUNG[t]} — tints the dots, their card ridge, and their number in the list`}
           className="graph-swatch"
           style={{ color: `var(${TYP_TOKEN[t]})` }}
         />
@@ -6366,9 +6366,9 @@ export function KnowledgeGraph({ memories: memoriesAusFenster, onSelectMemory, o
               + (kernStand && kernStand.marke
                 ? ` · ${kernStand.zahl.toLocaleString("en-US")} core as one marker`
                 : kernStand && kernStand.grund === "zuwenig"
-                  ? ` · core marker off: too few core nodes in this picture (${kernStand.zahl.toLocaleString("en-US")} of ${KERN_MARKE_MIN_KNOTEN})`
+                  ? ` · core marker off: too few core dots in this picture (${kernStand.zahl.toLocaleString("en-US")} of ${KERN_MARKE_MIN_KNOTEN})`
                   : kernStand && kernStand.grund === "leer"
-                    ? " · core marker off: no core node inside this picture"
+                    ? " · core marker off: no core dot inside this picture"
                     : "")
             : ""}
         </p>
@@ -6522,11 +6522,11 @@ export function KnowledgeGraph({ memories: memoriesAusFenster, onSelectMemory, o
             <div className="hud-label">Schema of the store</div>
             <div className="hud-label tnum" style={{ color: "var(--text-3)" }}>
               {memories.length.toLocaleString("en-US")} notes ·{" "}
-              {inventar.gesamtKnoten.toLocaleString("en-US")} nodes ·{" "}
+              {inventar.konzepte.toLocaleString("en-US")} concepts ·{" "}
               {behauptungen.toLocaleString("en-US")} claims in all
             </div>
             <div className="pt-1">
-              <div className="hud-label mb-1" style={{ color: "var(--text-2)" }}>Nodes</div>
+              <div className="hud-label mb-1" style={{ color: "var(--text-2)" }}>Kinds in the store</div>
               {inventar.knoten.map((z) => (
                 <button
                   key={z.schluessel}
@@ -6714,12 +6714,12 @@ export function KnowledgeGraph({ memories: memoriesAusFenster, onSelectMemory, o
               Objektpruefer bricht mit Exit 2 an einem Marker mit Nicht-ASCII). */}
           {kernStand && kernStand.grund === "zuwenig" && (
             <div className="hud-label tnum" data-testid="graph-kern-zustand" data-grund={kernStand.grund} data-anzahl={kernStand.zahl} style={{ color: "var(--text-2)" }}>
-              {`The core is mostly outside this picture - ${mengenzahl(kernStand.zahl)} of its nodes are in view, and ${mengenzahl(KERN_MARKE_MIN_KNOTEN)} are needed to count it as one.`}
+              {`The core is mostly outside this picture — ${mengenzahl(kernStand.zahl)} of its dots are in view, and ${mengenzahl(KERN_MARKE_MIN_KNOTEN)} are needed to count it as one.`}
             </div>
           )}
           {kernStand && kernStand.grund === "leer" && (
             <div className="hud-label" data-testid="graph-kern-zustand" data-grund={kernStand.grund} style={{ color: "var(--text-2)" }}>
-              {`No node of the core is inside this picture — the number is off because nothing of it is here, not because the core is small. Pan or zoom out to bring it back.`}
+              {`No note of the core is inside this picture — the number is off because nothing of it is here, not because the core is small. Pan or zoom out to bring it back.`}
             </div>
           )}
           {/* #54 — die Zahlenreihe und der Griff stehen immer; alles unter der
@@ -6927,10 +6927,10 @@ export function KnowledgeGraph({ memories: memoriesAusFenster, onSelectMemory, o
               style={{ pointerEvents: "auto", minHeight: 44 }}
               title={
                 aktiverKanal === "gruppe"
-                  ? "Groups are painting the nodes — click again to go back to the type colours. Notes outside every group keep the neutral register."
+                  ? "Groups are painting the dots — click again to go back to the type colours. Notes outside every group keep the neutral register."
                   : farbgruppen.gruppen.length === 0
                     ? "Groups — no group yet. Pick a tag in the shelf below and this colours by it."
-                    : "Groups — click to colour the nodes by the tag groups you made. Notes outside every group keep the neutral register."
+                    : "Groups — click to colour the dots by the tag groups you made. Notes outside every group keep the neutral register."
               }
             >
               {punkt(aktiverKanal === "gruppe")}
@@ -6958,8 +6958,8 @@ export function KnowledgeGraph({ memories: memoriesAusFenster, onSelectMemory, o
                 style={{ pointerEvents: "auto", minHeight: 44 }}
                 title={
                   haufenAktiv
-                    ? `Communities are painting the nodes — click again to go back to the type colours. ${haufenBild.neutral} nodes sit outside every painted cluster and keep the neutral register.`
-                    : `Communities — click to colour the nodes by the clusters this picture forms on its own. Nobody defines these; ${haufenBild.groessen.length} clusters over ${gezeichnetIds.size} drawn nodes.`
+                    ? `Communities are painting the dots — click again to go back to the type colours. ${haufenBild.neutral} dots sit outside every painted cluster and keep the neutral register.`
+                    : `Communities — click to colour the dots by the clusters this picture forms on its own. Nobody defines these; ${haufenBild.groessen.length} clusters over ${gezeichnetIds.size} drawn dots.`
                 }
               >
                 {punkt(haufenAktiv)}
@@ -6972,7 +6972,7 @@ export function KnowledgeGraph({ memories: memoriesAusFenster, onSelectMemory, o
                 data-testid="graph-farbhaufen-stand"
                 style={{ color: "var(--text-3)", pointerEvents: "none" }}
               >
-                {`${haufenBild.groessen.length} communities over ${gezeichnetIds.size} drawn nodes · largest ${Math.round((haufenBild.groessterAnteil || 0) * 100)}%${groessterHaufenName ? ` · named after its best-connected member: ${groessterHaufenName}` : ""}${haufenBild.neutral > 0 ? ` · ${haufenBild.neutral} unpainted` : ""}`}
+                {`${haufenBild.groessen.length} communities over ${gezeichnetIds.size} drawn dots · largest ${Math.round((haufenBild.groessterAnteil || 0) * 100)}%${groessterHaufenName ? ` · named after its best-connected member: ${groessterHaufenName}` : ""}${haufenBild.neutral > 0 ? ` · ${haufenBild.neutral} unpainted` : ""}`}
               </span>
             )}
           </div>

@@ -32,7 +32,7 @@ console.error(
 );
 const migration = migrateFromLegacyJson(store);
 if (!migration.skipped) {
-  console.error(`[kepta MCP] Migration: ${migration.migrated} nodes taken over from memories.json (backup: ${migration.backupPath ?? "none"})`);
+  console.error(`[kepta MCP] Migration: ${migration.migrated} notes taken over from memories.json (backup: ${migration.backupPath ?? "none"})`);
 }
 const queue = new EmbeddingQueue(store);
 queue.start();

@@ -2656,7 +2656,7 @@ describe("Die Legende erklärt den neuen Kanal", () => {
   it("sagt, was ein Buchstabe in der Scheibe und eine Zahl im Begriff bedeutet", async () => {
     const { container } = await zeichne([note()]);
     const text = container.textContent ?? "";
-    expect(text, `Legende: ${text.slice(0, 400)}`).toContain("A letter in a node is its type");
+    expect(text, `Legende: ${text.slice(0, 400)}`).toContain("A letter in a dot is its type");
     expect(text).toContain("A number in a concept is the notes");
     // Das Malzeichen ist im Kraftfeld ohne den Baum nicht zu erklären.
     expect(text).toContain("×");
@@ -3432,9 +3432,10 @@ describe("Das Schema-Inventar nennt, was der Bestand trägt", () => {
     const { container } = await zeichne(notizen());
     await bilder(8);
     const panel = await öffne(container);
-    // 3 Notizen und 4 Begriffe sind 7 Knoten; die 9 gemalten Linien des Kopfes
-    // sind 6 Erwähnungen und 3 Behauptungen — das Inventar nennt beides getrennt.
-    expect(panel.textContent).toMatch(/3 notes · 7 nodes · 3 claims in all/);
+    // 3 Notizen und 4 Begriffe: die Flaeche nennt beide beim eigenen Wort, nicht "nodes".
+    // Die 9 gemalten Linien des Kopfes sind 6 Erwähnungen und 3 Behauptungen — das Inventar
+    // nennt beides getrennt.
+    expect(panel.textContent).toMatch(/3 notes · 4 concepts · 3 claims in all/);
   });
 
   it("spotlightet eine Behauptung: was sie nicht trägt, tritt zurück", async () => {
@@ -3928,7 +3929,7 @@ describe("Die Regler unter dem Knopf Forces", () => {
     const { container } = await zeichne(bestand());
     const panel = await kreftePanel(container);
     const namen = [...panel.querySelectorAll("input[type=range]")].map((i) => i.getAttribute("aria-label"));
-    expect(namen).toEqual(["Center force", "Repel strength", "Link distance", "Node size"]);
+    expect(namen).toEqual(["Center force", "Repel strength", "Link distance", "Dot size"]);
     expect(panel.textContent).toContain("1.0×");
   });
 
@@ -3993,7 +3994,7 @@ describe("Die Regler unter dem Knopf Forces", () => {
     await bilder(10);
     const vorher = scheiben();
     const panel = await kreftePanel(container);
-    await drehe(panel, "Node size", "2");
+    await drehe(panel, "Dot size", "2");
     const nachher = scheiben();
     expect(nachher.length).toBeGreaterThan(0);
     expect(Math.max(...nachher.map((s) => s.r))).toBeGreaterThan(Math.max(...vorher.map((s) => s.r)) * 1.5);
@@ -4013,12 +4014,12 @@ describe("Die Regler unter dem Knopf Forces", () => {
     const { container } = await zeichne(bestand());
     const panel = await kreftePanel(container);
     await drehe(panel, "Center force", "2.5");
-    await drehe(panel, "Node size", "1.6");
+    await drehe(panel, "Dot size", "1.6");
     await act(async () => {
       fireEvent.click(panel.querySelector("[data-testid='graph-krafte-reset']")!);
       await new Promise((r) => setTimeout(r, 60));
     });
-    for (const name of ["Center force", "Repel strength", "Link distance", "Node size"]) {
+    for (const name of ["Center force", "Repel strength", "Link distance", "Dot size"]) {
       expect((panel.querySelector(`input[aria-label="${name}"]`) as HTMLInputElement).value, name).toBe("1");
     }
     expect(localStorage.getItem("kepta_graph_krafte")).toBe(null);

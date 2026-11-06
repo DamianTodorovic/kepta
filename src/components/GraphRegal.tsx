@@ -216,7 +216,7 @@ export function GraphRegal({ regal, ansichtsName, gruppen, achsen, steuerung, ge
               const summe = Object.values(gemalt).reduce((n, x) => n + x, 0);
               const top = gruppen.gruppen.reduce((best, g) => ((gemalt[g.marke] ?? 0) > (gemalt[best.marke] ?? 0) ? g : best), gruppen.gruppen[0]);
               if (!top || summe <= 0) return null;
-              return ` · #${top.marke} carries ${prozent((100 * (gemalt[top.marke] ?? 0)) / summe)} % of the painted nodes`;
+              return ` · #${top.marke} carries ${prozent((100 * (gemalt[top.marke] ?? 0)) / summe)} % of the painted dots`;
             })()}
           </div>
           {gruppen.gruppen.length === 0 && (

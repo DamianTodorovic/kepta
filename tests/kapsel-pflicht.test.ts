@@ -2,7 +2,7 @@
 //
 // Anlass, gemessen 15.10. 12:08 MESZ: der Vollauf `belege-15-10/app-abnahme/app-j2.log.txt`
 // fiel in tests/server-permanent.test.ts mit dem Leib
-// `{"error":"Limit reached: 21066 active nodes, maximum is 5000 — please delete some first"}`.
+// `{"error":"Limit reached: 21066 active notes, maximum is 5000 — please delete some first"}`.
 // 21.066 ist nicht die Zahl einer Testkapsel, sondern sein Bestand — der Store hinter dieser
 // Route zeigte also auf seinen Ordner. Geschrieben ist dabei nichts (Haupt-Datei mtime
 // 08:22:55, WAL 09:42, beides aelter als der Lauf; die Abweisung kam vor dem Schreiben),

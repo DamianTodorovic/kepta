@@ -26,7 +26,7 @@ export function GruppenBand({ segmente }: { segmente: readonly BandSegment[] }) 
     <div
       data-testid="graph-gruppenband"
       className="graph-gruppenband"
-      aria-label={`Share of painted nodes per group — ${gesamt} painted`}
+      aria-label={`Share of painted dots per group — ${gesamt} painted`}
     >
       {segmente.map((s) => {
         const anteil = s.gemalt / gesamt;
@@ -39,7 +39,7 @@ export function GruppenBand({ segmente }: { segmente: readonly BandSegment[] }) 
             data-anteil={anteil.toFixed(6)}
             className="graph-gruppenband-segment"
             style={{ flexGrow: s.gemalt, flexBasis: 0, background: s.farbe }}
-            title={`${s.marke} — ${s.gemalt} of ${s.summe} notes painted (${(100 * anteil).toFixed(1)} % of the painted nodes)`}
+            title={`${s.marke} — ${s.gemalt} of ${s.summe} notes painted (${(100 * anteil).toFixed(1)} % of the painted dots)`}
             aria-label={`${s.marke}: ${s.gemalt} painted of ${gesamt}`}
           />
         );

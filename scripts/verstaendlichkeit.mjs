@@ -96,14 +96,16 @@ const AUSSCHLUSS_WORT = /reply only|you are a|as JSON|system prompt/i;
 /** Die Quelltextdateien einer Menge — dieselbe Liste fuer Saetze und fuer Etiketten.
     Eine eigne Liste pro Zaehler waere eine eigne Welt, und zwei Welten vergleichen sich nicht. */
 export function quelltextDateien(mengen) {
-  const dateien = [];
+  const dateien = new Set();
   for (const d of mengen) {
     const ordner = path.join(WURZEL, d);
     for (const rel of execFileSync("find", [ordner, "-name", "*.tsx", "-o", "-name", "*.ts"], { encoding: "utf8" }).split("\n")) {
-      if (rel.trim()) dateien.push(rel);
+      if (rel.trim()) dateien.add(rel);
     }
   }
-  return dateien;
+  // "src" und "src/components" sind zwei Namen fuer einen Baum: die Listetraeger duerfen
+  // denselben Pfad nicht zweimal zaehlen, sonst erbt die Grundgesamtheit eine Doppelung.
+  return [...dateien];
 }
 
 /** Der Quelltext ohne Kommentare: Kommentare sind nicht die Flaeche. */
@@ -114,51 +116,72 @@ function menschenText(datei) {
     .replace(/^\s*\/\/.*$/gm, "");
 }
 
+/* Jedes Muster traegt seine Art mit: was ein Mensch im Blatt liest (jsx, wort, literal),
+   und was nur am Rand erscheint -- der Titel unter dem Zeiger, der Platzhalter, der
+   Name fuer den Vorleser (rand). Gemessen 05:36:54 MEZ: die drei Chat-Zweige der
+   Rangfolge-Erklaerung stehen als `title=` im Quelltext, 24 bis 29 Woerter lang, und
+   der Census zaehlt sie wie gelesenen Flaechentext. Ob das dieselbe Latte sein darf,
+   ist eine Frage an die Zahl, nicht an den Geschmack -- also zuerst beide Zahlen.
+   `ausdruck` markiert die Formen, die in einer Expression stehen: dort ist die
+   Satzgestalt Pflicht, weil sonst ein Klassenkleid als Satz durchgeht. */
+const SATZ_MUSTER = [
+  { re: /> ([^<{}]{20,400}) </g, art: "jsx" },
+  // Der Vorlesername steht vor dem Rand: ein `aria-label` wird voellig gesprochen, ein
+  // `title=` malt das Betriebssystem in ein Kaestchen, das beim Zeigerwandern verschwindet.
+  // Zwei Medien, zwei Lesefaelle, also zwei Arten (gemessen 10:01:40 MEZ: 16 der 17
+  // ueberkappen Rand-Saetze sind Titel, einer ein Vorlesername).
+  { re: /\baria-label\s*=\s*"([^"]{20,400})"/g, art: "vorleser" },
+  { re: /\b(?:title|placeholder)\s*=\s*"([^"]{20,400})"/g, art: "rand" },
+  { re: /\b(?:label|text|message|hinweis|info)\s*=\s*"([^"]{20,400})"/g, art: "wort" },
+  { re: /\baria-label\s*=\s*\{`([^`]{20,400})`\}/g, art: "vorleser", ausdruck: true },
+  { re: /\b(?:title|placeholder)\s*=\s*\{`([^`]{20,400})`\}/g, art: "rand", ausdruck: true },
+  { re: /\b(?:label|text|message|hinweis|info)\s*=\s*\{`([^`]{20,400})`\}/g, art: "wort", ausdruck: true },
+  // P105: die Stelle, an der ein Satz ganz in einer Expression steht -- `{`…`}` als
+  // JSX-Kind. Kein altes Muster sah diese Form; gemessen 12:38:50 MEZ blieben so 25
+  // ausgelieferte Saelze unsichtbar, und zwei von ihnen verlangt die Inhaltssperre
+  // ("Share of painted nodes per group", "No node of the core is inside this picture").
+  // P105 hat beide Woerter benannt: die Schiene sagt jetzt "painted dots", das Panel
+  // "No note of the core" -- gemessen 12:50:41 MEZ: URTEIL DOPPELNAMEN HALTET (0 von 958 Stellen).
+  { re: />\s*\{`([^`]{20,400})`\s*\}/g, art: "jsx", ausdruck: true },
+  { re: /\{\s*`([^`]{20,400})`\s*\}/g, art: "meldung", ausdruck: true },
+  { re: /"([A-Z][^"\\]{20,300}?)"/g, art: "literal" },
+  { re: /'([A-Z][^'\\]{20,300}?)'/g, art: "literal" },
+];
+
+/** Die Saetze eines Quelltextes, mit Art und Fundstelle. */
+export function satzAusText(t, datei) {
+  const funde = [];
+  const rel = datei.replace(WURZEL + "/", "");
+  if (AUSSCHLUSS_PFAD.test(rel)) return funde;
+  for (const { re, art, ausdruck } of SATZ_MUSTER) {
+    re.lastIndex = 0;
+    let e;
+    while ((e = re.exec(t))) {
+      const s = glaetteInterpolation(e[1]);
+      if (!istBenutzersprache(s, { gestaltPflicht: !!ausdruck })) continue;
+      if (AUSSCHLUSS_WORT.test(s)) continue;
+      funde.push({ s, art, ausdruck: !!ausdruck, quelle: rel });
+    }
+  }
+  return funde;
+}
+
 function sammle(mengen) {
   const funde = new Map();
   const arten = new Map();
-  const dateien = quelltextDateien(mengen);
-  // Jedes Muster traegt seine Art mit: was ein Mensch im Blatt liest (jsx, wort, literal),
-  // und was nur am Rand erscheint -- der Titel unter dem Zeiger, der Platzhalter, der
-  // Name fuer den Vorleser (rand). Gemessen 05:36:54 MEZ: die drei Chat-Zweige der
-  // Rangfolge-Erklaerung stehen als `title=` im Quelltext, 24 bis 29 Woerter lang, und
-  // der Census zaehlt sie wie gelesenen Flaechentext. Ob das dieselbe Latte sein darf,
-  // ist eine Frage an die Zahl, nicht an den Geschmack -- also zuerst beide Zahlen.
-  const muster = [
-    { re: /> ([^<{}]{20,400}) </g, art: "jsx" },
-    // Der Vorlesername steht vor dem Rand: ein `aria-label` wird voellig gesprochen, ein
-    // `title=` malt das Betriebssystem in ein Kaestchen, das beim Zeigerwandern verschwindet.
-    // Zwei Medien, zwei Lesefaelle, also zwei Arten (gemessen 10:01:40 MEZ: 16 der 17
-    // ueberkappen Rand-Saetze sind Titel, einer ein Vorlesername).
-    { re: /\baria-label\s*=\s*"([^"]{20,400})"/g, art: "vorleser" },
-    { re: /\b(?:title|placeholder)\s*=\s*"([^"]{20,400})"/g, art: "rand" },
-    { re: /\b(?:label|text|message|hinweis|info)\s*=\s*"([^"]{20,400})"/g, art: "wort" },
-    { re: /\baria-label\s*=\s*\{`([^`]{20,400})`\}/g, art: "vorleser" },
-    { re: /\b(?:title|placeholder)\s*=\s*\{`([^`]{20,400})`\}/g, art: "rand" },
-    { re: /\b(?:label|text|message|hinweis|info)\s*=\s*\{`([^`]{20,400})`\}/g, art: "wort" },
-    { re: /"([A-Z][^"\\]{20,300}?)"/g, art: "literal" },
-    { re: /'([A-Z][^'\\]{20,300}?)'/g, art: "literal" },
-  ];
-  for (const datei of dateien) {
-    // Kommentare sind nicht die Flaeche. Gemessen 5.11.2026 18:39 MEZ: drei der elf Funde
-    // waren Begruendungszeilen im Quelltext (Dashboard.tsx:595, TodayView.tsx:173, Chat.tsx:152),
-    // die einen fruehern Befund zitieren — ein Mensch liest sie nirgends. Ein Zaehler, der
-    // Zitate aus dem Bau-text fuehrt, meldet Mangel, wo ein Vermerk steht.
-    const t = menschenText(datei);
-    for (const { re, art } of muster) {
-      re.lastIndex = 0;
-      let e;
-      while ((e = re.exec(t))) {
-        const s = e[1].trim();
-        if (!istBenutzersprache(s)) continue;
-        if (AUSSCHLUSS_PFAD.test(datei.replace(WURZEL + "/", ""))) continue;
-        if (AUSSCHLUSS_WORT.test(s)) continue;
-        if (!funde.has(s)) funde.set(s, datei.replace(WURZEL + "/", ""));
-        if (!arten.has(s)) arten.set(s, art);
-      }
+  const formen = new Map();
+  // Kommentare sind nicht die Flaeche. Gemessen 5.11.2026 18:39 MEZ: drei der elf Funde
+  // waren Begruendungszeilen im Quelltext (Dashboard.tsx:595, TodayView.tsx:173, Chat.tsx:152),
+  // die einen fruehern Befund zitieren — ein Mensch liest sie nirgends. Ein Zaehler, der
+  // Zitate aus dem Bau-text fuehrt, meldet Mangel, wo ein Vermerk steht.
+  for (const datei of quelltextDateien(mengen)) {
+    for (const f of satzAusText(menschenText(datei), datei)) {
+      if (!funde.has(f.s)) funde.set(f.s, f.quelle);
+      if (!arten.has(f.s)) arten.set(f.s, f.art);
+      if (!formen.has(f.s)) formen.set(f.s, f.ausdruck);
     }
   }
-  return { funde, arten };
+  return { funde, arten, formen };
 }
 
 /** Kandidaten aus dem Quelltext: JSX-Text, Titel, Beschriftung, Platzhalter, Meldung. */
@@ -172,7 +195,13 @@ export function artenAusQuelltext(mengen) {
   return sammle(mengen).arten;
 }
 
-export function istBenutzersprache(s) {
+/** Eine Interpolation wird zum Platzhalter `N`, weil ein Mensch an der Stelle eine Zahl oder
+    ein Wort sieht, nicht die Rechnung. Ohne diese Glaettung warf der Riegel jeden Satz raus,
+    der eine Zahl einsetzt -- gemessen 12:38:50 MEZ: 25 Kandidaten, darunter zwei, die die
+    Inhaltssperre im ausgelieferten Objekt verlangt. */
+export const glaetteInterpolation = (s) => s.replace(/\$\{[^{}]*\}/g, "N").replace(/\s+/g, " ").trim();
+
+export function istBenutzersprache(s, optionen = {}) {
   if (s.length < 20) return false;
   const woerter = s.split(/\s+/).filter(Boolean);
   if (woerter.length < 4) return false;
@@ -195,7 +224,12 @@ export function istBenutzersprache(s) {
   const satzgestalt = /^[A-ZÄÖÜ]/.test(s.trim());
   if (!satzgestalt && /[{};=]/.test(s)) return false;
   if (/^[a-z-]+(:| |,)[a-z-]+/.test(s) && !/\s[a-z]+\s[a-z]+/.test(s)) return false; // CSS
-  if (/%[sd]|\\n|\$\{/.test(s)) return false;                          // Formatierer
+  if (/%[sd]|\\n/.test(s)) return false;                               // Formatierer
+  // P105: `${` war hier ein Ausschlussgrund. Seit die Interpolation geglttet wird, ist sie
+  // eine Zahl im Satz -- und 25 ausgelieferte Saelze waren unsichtbar. Was bleibt, ist die
+  // Gestalt: ein Satz, der in einer Expression steht, muss gross anfangen. Sonst sind
+  // `className={...}`-Kleider und Pfad-Ketten auch "Saelze".
+  if (optionen.gestaltPflicht && !satzgestalt) return false;
   const buchstaben = (s.match(/[A-Za-z]/g) || []).length;
   if (buchstaben / s.length < 0.6) return false;                        // Zahlenkolonnen
   // Drittes Beispiel derselben Sorte, gemessen 05:56:05 MEZ: `y.source ? 1 : x.target` aus
@@ -207,7 +241,15 @@ export function istBenutzersprache(s) {
   // um einen einzigen Ternaer zu treffen. Gemessen 06:04:57 MEZ; zwei Nenner-Latten der
   // Suite (Werkzeug 38, Diener 62) schlugen mich am naechsten Lauf zurecht (06:01:36 MEZ).
   const stuecke = s.split(/\s+/);
-  if (stuecke.some((w) => w === "?" || w === ":" || w === "::" || w === "=" || w === "!")) return false;
+  // P105: das blossen `=` ist hier kein Ausschlussgrund mehr. Gemessen 6.11.2026 12:05:11 MEZ
+  // am Baum: die Kante vertrieb in der ganzen Flaeche genau einen Satz -- die Graph-Legende
+  // "Size = connections · Width = claims", und ein Gleichheitzeichen zwischen zwei Woertern
+  // ist eine Legende, keine Zuweisung. Dieser eine Satz war der einzige, der ein Ding beim
+  // falschen Namen nannte. Eine Zuweisung bleibt draussen, weil sie klein anfing
+  // ("true = delete permanently"), ein Ternaer auch, weil er `?` und `:` als eigne Woerter
+  // fuehrt (Biss: tests/punkt7-fachwort-traegt-grund.test.ts, "die Gleichung einer Legende").
+  if (stuecke.some((w) => w === "?" || w === "::" || w === ":" || w === "!")) return false;
+  if (stuecke.includes("=") && !satzgestalt) return false;
   if (/^(SELECT|INSERT|UPDATE|DELETE|PRAGMA|CREATE|ALTER|DROP|ERROR|TODO|FIXME)/i.test(s)) return false;
   return true;
 }
@@ -376,6 +418,116 @@ export function etikettNenntAlgorithmus(etiketten) {
   return etiketten.filter((f) => ALGORITHMEN_RE.test(f.s));
 }
 
+/* ---------------------------------------------------------------------------
+   Ein Ding, ein Wort. Die Flaeche hiess dasselbe Ding zwei Mal: "note" auf der
+   Karte, "node" im Befehl, im Schalter und in der Legende. Gemessen 12:43:17 MEZ,
+   nachdem die Expression-Saetze sichtbar wurden: vier Saetze und vier Etikette
+   nannten "nodes" -- die Saetze davon hatte kein Zaehler je gesehen.
+   --------------------------------------------------------------------------- */
+export const DOPPELNAMEN = [
+  { re: /\bnodes?\b/i, falsch: "node", richtig: "note (das Ding) oder dot (der Punkt im Bild)" },
+  // Die Einwort-Form, grossgeschrieben. Grund, gemessen 12:19:22 MEZ am Baum: die Zwei-Woerter-
+  // Form der Wortlaut-Inventare liess einen einzigen Fallback durch -- `victim?.title || 'Node'`
+  // in Dashboard.tsx:1139 malt das Wort allein in eine Toast-Zeile. Grossbuchstabe trifft die
+  // Benennung, der kleine bleibt verschont: "command": "node" ist ein Programmname, "node:fs"
+  // ein Modulspecifier und "--node-rim" ein Stil-Token, und keiner davon ist ein Klartextname.
+  { re: /^Nodes?$/, falsch: "Node", richtig: "Untitled (der Fallback) oder dot/note im Wortlaut" },
+];
+
+/** Ein Wortlaut, eine Stelle: die erste Form gewinnt. */
+export function einmalNachWortlaut(liste) {
+  const gesehen = new Map();
+  for (const f of liste) if (!gesehen.has(f.s)) gesehen.set(f.s, f);
+  return [...gesehen.values()];
+}
+
+/** Saetze und Etikette zusammen: die eine Liste, die ein Mensch auf der Flaeche liest.
+    Dedupliziert nach Wortlaut -- ein Etikett, das zugleich ein Satz ist, wird nicht zweimal
+    gezaehlt, sonst haelt die Latte eine Grundgesamtheit, die ihre eigne Doppelung zaehlt. */
+export function satzAusQuelltextMitEtiketten(mengen = FLAECHE) {
+  const liste = [];
+  for (const datei of quelltextDateien(mengen)) {
+    const t = menschenText(datei);
+    for (const f of satzAusText(t, datei)) liste.push({ s: f.s, art: "satz", quelle: f.quelle });
+    for (const f of etikettAusText(t, datei)) liste.push(f);
+  }
+  return einmalNachWortlaut(liste);
+}
+
+/* ---------------------------------------------------------------------------
+   Die Reichweite der Namens-Latte. Gemessen 6.11.2026 12:08:36 MEZ meldete sie
+   "HALTET (0 von 761 Stellen)", und dieselbe Suite warf vier Woerter zurueck, die in
+   keinem ihrer Muster standen. Drei Luecken, jede fuer sich gezaehlt:
+     - Anweisungsposition: 76 ausgelieferte Wortlaute stehen in einem Backtick ohne
+       Klammer herum (`return \`…\``, `cond ? "…" : \`…\``); die Muster sahen nur die
+       Formen mit JSX-Klammern und die mit Grossbuchstaben am Anfang.
+     - Der Diener und der Boden: die Latte las ausschliesslich FLAECHE. Die server-Lage
+       antwortet dem Menschen durch die Tür (90 ihrer Wortlaute waren ausserhalb des
+       Gesichts), und `src/mcp-server.ts` gehoert zu keiner der drei Mengen.
+     - Ein blosses `=` vertrieb den einen Satz, der die Regel wirklich brach.
+   Darum sammelt diese Latte Wortlaute und keine Saetze: jeder String mit mindestens zwei
+   Woertern, Kommentare gestrichen, Prompt-Dateien ausgeschlossen (Hausentscheid 5.11.:
+   ein Prompt liest ein Modell, kein Mensch). Ein Raster, das Saelze nach ihrem Inhalt
+   aussortiert, ist keine Latte, sondern ein Wunsch.
+   Die Zwei-Woerter-Form ist eine Messung, keine Gewalt: gemessen 12:13:07 MEZ nennt in der
+   ganzen Auslieferung kein einziger Einwort-Wortlaut das Ding beim alten Namen; die
+   Funde waren ein Modulspecifier ("node:fs"), ein Programmname ("command": "node") und
+   sieben Stil-Token (--node-hi und Geschwister) -- keine davon steht auf einer Flaeche.
+   --------------------------------------------------------------------------- */
+export const NAMEN_LAGEN = [...FLAECHE, ...DIENER, ...WERKZEUG, "src"].filter((d) => fs.existsSync(path.join(WURZEL, d)));
+const WORTLAUT_MUSTER = /"([^"\\\n]{2,300})"|'([^'\\\n]{2,300})'|`([^`\\\n]{2,400})`/g;
+
+/** Die Grundgesamtheit der Namens-Latte. Gemessen 12:12:43 MEZ am Baum: 2 839 Wortlaute
+    (6 540 Stellen, dedupliziert). Die Latte selbst haelt 0 Funde -- unter diese Zahl darf
+    ihr Nenner nicht fallen, sonst meldet ein leeres Gesicht Sauberkeit. */
+export const NAMEN_MINDESTENS = 2500;
+
+/** Jeder Wortlaut eines Quelltextes, der ein Mensch oder ein Modell woertlich liest.
+    Ein Backtick frisst seine eignen Anfuehrungszeichen: gemessen 12:20:30 MEZ verschwand
+    `victim?.title || 'Node'` hinter der Template-Kette und wurde als "N" geebnet, also ist
+    der Inhalt einer jeden Kette ein zweites Mal offen zu legen (eine Tiefe genuegt; tiefer
+    schachtelt kein ausgelieferter Wortlaut). */
+export function wortlautAusText(t, datei) {
+  const funde = [];
+  const rel = datei.replace(WURZEL + "/", "");
+  if (AUSSCHLUSS_PFAD.test(rel)) return funde;
+  const zeile = (index) => t.slice(0, index).split("\n").length;
+  const nimm = (text, basis, tiefe) => {
+    // Ein frisches Regex je Aufruf: eine geteilte globale Sonde wuerde beim Absteigen in den
+    // Ketteninhalt den `lastIndex` des oberen Laufs zuruecksetzen und ihn neu beginnen lassen.
+    const muster = new RegExp(WORTLAUT_MUSTER.source, "g");
+    let e;
+    while ((e = muster.exec(text))) {
+      const roh = e[1] ?? e[2] ?? e[3];
+      const s = glaetteInterpolation(roh);
+      // Zwei Woerter sind die Grundform; ein einzelnes Wort nur, wenn es die Gestalt einer
+      // Benennung traegt (grossgeschrieben, bloss Buchstaben). Gemessen 12:19:22 MEZ: diese
+      // Form laesst "node" (Programmname), "node:fs" (Specifier) und "--node-rim" (Stil-Token)
+      // draussen und holt den einen Einwort-Fallback der Flaeche herein ('Node').
+      if (!/\s/.test(s) && !/^[A-Z][A-Za-z]*$/.test(s)) continue;
+      funde.push({ s, art: "wortlaut", quelle: `${rel}:${zeile(basis + e.index)}` });
+      if (e[3] !== undefined && tiefe < 2) nimm(roh, basis + e.index + 1, tiefe + 1);
+    }
+  };
+  nimm(t, 0, 0);
+  return funde;
+}
+
+/** Die Liste, ueber die die Namens-Latte laeuft: Saetze, Etikette und jeder Wortlaut,
+    an dem ein Mensch vorbeiscrollt oder den ein Modell woertlich zurueckgibt. */
+export function wortlautInventar(mengen = NAMEN_LAGEN) {
+  const liste = [];
+  for (const datei of quelltextDateien(mengen)) {
+    const t = menschenText(datei);
+    for (const f of wortlautAusText(t, datei)) liste.push(f);
+  }
+  return einmalNachWortlaut(liste.concat(satzAusQuelltextMitEtiketten(mengen)));
+}
+
+export function doppelteNamen(liste) {
+  return liste.filter((f) => DOPPELNAMEN.some((d) => d.re.test(f.s)));
+}
+
 /** Die breitere Klasse: jedes Etikett, das ein Fachwort nennt. Bericht, keine Latte —
     die drei Ansichts-Namen der Graph-Flaeche stehen als Trio (Force | Tree | Semantic),
     und ein einzelnes Wort zu tauschen waere keine Benennung, sondern ein Rest. */
@@ -460,10 +612,10 @@ async function haupt() {
   }
 
   const baue = (mengen) => {
-    const { funde, arten } = sammle(mengen);
+    const { funde, arten, formen } = sammle(mengen);
     const zeilen = [];
     for (const [s, quelle] of funde) {
-      zeilen.push({ s, quelle, art: arten.get(s) || "literal", ...zaehle(s), imObjekt: suche ? imObjekt(suche, s) : null });
+      zeilen.push({ s, quelle, art: arten.get(s) || "literal", ausdruck: formen.get(s) === true, ...zaehle(s), imObjekt: suche ? imObjekt(suche, s) : null });
     }
     const getragen = suche ? zeilen.filter((z) => z.imObjekt) : zeilen;
     return { zeilen, getragen };
@@ -473,6 +625,10 @@ async function haupt() {
   const werkzeug = baue(WERKZEUG);
   const diener = baue(DIENER);
   console.log(`\n  Kandidaten im Quelltext: Flaeche ${flaeche.zeilen.length}, Werkzeug ${werkzeug.zeilen.length}, Diener ${diener.zeilen.length}`);
+  // P105: wie viele davon aus einer Expression kommen -- die Zahl, die vor diesem Schnitt
+  // niemand sah, weil kein Muster diese Form hatte und der Riegel `${` verbot.
+  const ausdruck = (zeilen) => zeilen.filter((z) => z.ausdruck).length;
+  console.log(`  davon aus einer Expression: ${ausdruck(flaeche.zeilen)} von ${flaeche.zeilen.length} Saetzen (Werkzeug ${ausdruck(werkzeug.zeilen)} von ${werkzeug.zeilen.length}, Diener ${ausdruck(diener.zeilen)} von ${diener.zeilen.length})`);
   if (suche) {
     console.log(`  die Objekt-Gleichung verwirft: Flaeche ${flaeche.zeilen.length - flaeche.getragen.length}, Werkzeug ${werkzeug.zeilen.length - werkzeug.getragen.length}, Diener ${diener.zeilen.length - diener.getragen.length}`);
   }
@@ -541,6 +697,16 @@ async function haupt() {
   for (const f of fachEtikette.filter((x) => !ALGORITHMEN_RE.test(x.s)).slice(0, LISTE))
     console.log(`    [${f.art}] "${f.s}"  ${f.quelle}`);
 
+  // Die vierte Latte: ein Ding, ein Wort. Sie laeuft ueber der Wortlaut-Inventar, weil ein
+  // Name keine Satzform braucht -- gemessen 12:08:36 MEZ standen 15 von 15 Funden ausserhalb
+  // der alten Liste, und die Latte meldete trotzdem HALTET.
+  const lese = wortlautInventar();
+  const doppel = doppelteNamen(lese);
+  const doppelHalten = doppel.length === 0;
+  console.log(`\n  Wortlaute, die ein Ding beim zweiten Namen nennen (${doppel.length}):`);
+  for (const f of doppel.slice(0, LISTE)) console.log(`    [${f.art}] "${f.s}"  ${f.quelle}`);
+  console.log(`  URTEIL DOPPELNAMEN: ${doppelHalten ? "HALTET" : "FAELLT"} (${doppel.length} von ${lese.length} Wortlauten nennen ein Ding beim zweiten Namen, erlaubt 0 -- Nenner-Untergrenze ${NAMEN_MINDESTENS} -- die Regel: ${DOPPELNAMEN.map((d) => `"${d.falsch}" -> ${d.richtig}`).join(", ")})`);
+
   const langsten = [...flaeche.getragen].sort((a, b) => b.woerter - a.woerter).slice(0, 12);
   console.log("\n  Die zwoelf laengsten Menschensaetze (Wortzahl | Quelle):");
   for (const z of langsten) console.log(`    ${String(z.woerter).padStart(3)}  ${z.quelle}  ::  ${z.s.slice(0, 118)}`);
@@ -585,7 +751,7 @@ async function haupt() {
   // ein Wunsch ohne Messzeug.
   const strichBiss = NACKTER_STRICH.test("A local program on this machine - no key needed.");
   const taub = !getroffen || !blind || !strichBiss;
-  const urteil = taub ? "TAUB" : kappeHalten && riegelHalten && strichHalten && randHalten && etikettHalten ? "HALTET" : "FAELLT";
+  const urteil = taub ? "TAUB" : kappeHalten && riegelHalten && strichHalten && randHalten && etikettHalten && doppelHalten ? "HALTET" : "FAELLT";
   console.log(`  URTEIL KAPPE: ${kappeHalten ? "HALTET" : "FAELLT"} (Flaeche: Anteil mit hoechstens ${SATZKAPPE} Woertern ${(100 * anteil).toFixed(1)} %, Latte ${100 * UNTER_KAPPE_MINDESTENS} %)`);
   // Die Marge in Saetzen, nicht in Prozent: wie viele der kurzen Saetze lang werden
   // duerfen, bevor die Latte faellt. Gemessen 05:57:31 MEZ: 276 von 345 = genau 80,000 %,

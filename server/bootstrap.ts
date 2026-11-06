@@ -41,7 +41,7 @@ export async function startServer() {
   });
   const migration = migrateFromLegacyJson(store);
   if (!migration.skipped) {
-    console.log(`Migration: ${migration.migrated} nodes taken over from memories.json (backup: ${migration.backupPath ?? "none"})`);
+    console.log(`Migration: ${migration.migrated} notes taken over from memories.json (backup: ${migration.backupPath ?? "none"})`);
   }
   const embeddingQueue = new EmbeddingQueue(store);
   embeddingQueue.start();

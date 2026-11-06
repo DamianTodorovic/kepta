@@ -106,7 +106,7 @@ export const TOOLS = [
     name: "memory_save",
     title: "Save memory",
     description:
-      "Saves a knowledge node, or updates one when id is given. [[Wiki links]] in the text become links you can follow, so a name you write joins the graph on its own. Words on a link are yours to state: beziehungen sets claims {quelle, ziel, wort}, the same contract the surface uses.",
+      "Saves a knowledge note, or updates one when id is given. [[Wiki links]] in the text become links you can follow, so a name you write joins the graph on its own. Words on a link are yours to state: beziehungen sets claims {quelle, ziel, wort}, the same contract the surface uses.",
     inputSchema: {
       type: "object",
       properties: {

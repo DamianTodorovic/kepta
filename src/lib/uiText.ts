@@ -39,7 +39,7 @@ export const TEXTE: Record<string, string> = {
   "legend.similarity": "Similarity",
   // Der zweite Kanal im Knoten: ein Buchstabe, der die Art auch ohne Farbe
   // nennt, und eine Zahl, die sagt, was ein Begriff traegt.
-  "legend.glyph": "A letter in a node is its type · A number in a concept is the notes behind it · ×N means the group is folded",
+  "legend.glyph": "A letter in a dot is its type · A number in a concept is the notes behind it · ×N means the group is folded",
   // Die Kantkarte: was eine Kante ist, wenn sie keinen Typ nennt.
   "edge.similar": "similarity",
   "preview.close": "Close",
@@ -49,7 +49,7 @@ export const TEXTE: Record<string, string> = {
   "preview.open": "Open",
   "preview.part": "Part",
   "preview.confidence": "Confidence",
-  "hint.force": "Drag: a node stays where you drop it · Double-click: open the note · Wheel: zoom · Size = connections · Width = claims · Hover a link to read it",
+  "hint.force": "Drag: a dot stays where you drop it · Double-click: open the note · Wheel: zoom · Size = connections · Width = claims · Hover a link to read it",
   "hint.tree": "Root → type → entity → note · Double-click a group: fold it, the count stays · Double-click a note: open it · Drag: pan · Wheel: zoom",
   "hint.semantic": "Positions: the projection of your vectors · Distance is meaning, not a claim · Drag: pan · Wheel: zoom · Double-click: open the note",
   "list.noMatch": "No match",

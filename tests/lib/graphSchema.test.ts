@@ -179,6 +179,7 @@ describe("Das Inventar ist eine Rechnung, kein Zufall", () => {
       kanten: [],
       gesamtKnoten: 0,
       gesamtKanten: 0,
+      konzepte: 0,
     });
   });
 });

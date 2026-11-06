@@ -46,6 +46,8 @@ export interface SchemaInventar {
   knoten: SchemaZeile[];
   kanten: SchemaZeile[];
   gesamtKnoten: number;
+  /** Die Begriffe allein: die Flaeche nennt sie concepts, nicht nodes. */
+  konzepte: number;
   gesamtKanten: number;
 }
 
@@ -111,6 +113,7 @@ export function schemaInventar(eingabe: SchemaEingabe): SchemaInventar {
     knoten: geordnet(knoten),
     kanten: geordnet(kanten),
     gesamtKnoten: eingabe.notizen.length + eingabe.konzepte,
+    konzepte: eingabe.konzepte,
     gesamtKanten: eingabe.kanten.length,
   };
 }

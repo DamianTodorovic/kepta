@@ -223,7 +223,7 @@ describe("Chat: Antwort ins Gehirn uebernehmen", () => {
     const { container } = zeige({ onSaveToBrain, onSaveToBrainWithMeta });
     await frage(user, "Hallo");
     await waitFor(() => expect(container.textContent).toMatch(/Hallo Welt/));
-    const speichern = [...container.querySelectorAll("button")].find((b) => /Save as a node/i.test(b.textContent ?? ""));
+    const speichern = [...container.querySelectorAll("button")].find((b) => /Save as a note/i.test(b.textContent ?? ""));
     if (speichern) {
       await user.click(speichern);
       await waitFor(() => expect(onSaveToBrainWithMeta.mock.calls.length + onSaveToBrain.mock.calls.length).toBeGreaterThan(0));
@@ -284,7 +284,7 @@ describe("Chat: was man mit einer Antwort machen kann", () => {
     const view = render(<ToastProvider><Chat activeMemories={[note()]} onSaveToBrain={onSaveToBrain} onSaveToBrainWithMeta={onSaveToBrainWithMeta} /></ToastProvider>);
     await frage(user, "Hallo");
     await waitFor(() => expect(view.container.textContent).toMatch(/Hallo Welt/));
-    const speichern = [...view.container.querySelectorAll("button")].find((b) => /Save as a node/i.test(b.textContent ?? ""));
+    const speichern = [...view.container.querySelectorAll("button")].find((b) => /Save as a note/i.test(b.textContent ?? ""));
     expect(speichern, "kein Speichern-Knopf an der Antwort").toBeTruthy();
     await user.click(speichern!);
     await waitFor(() => expect(onSaveToBrainWithMeta.mock.calls.length + onSaveToBrain.mock.calls.length).toBeGreaterThan(0));

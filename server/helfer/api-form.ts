@@ -55,7 +55,7 @@ export function maxActiveMemories(): number {
 export function grenzHinweis(aktiveKnoten: number): { warning?: string } {
   const max = maxActiveMemories();
   return aktiveKnoten > max
-    ? { warning: `${aktiveKnoten} active nodes exceed the limit of ${max}. Existing notes stay searchable, but creating new single notes is refused until you delete some.` }
+    ? { warning: `${aktiveKnoten} active notes exceed the limit of ${max}. Existing notes stay searchable, but creating new single notes is refused until you delete some.` }
     : {};
 }
 
@@ -91,6 +91,6 @@ export function seiteUmwelt(env: Record<string, string | undefined> = process.en
   if (Number.isInteger(wert) && wert >= SEITE_MIN && wert <= SEITE_MAX) return { groesse: wert };
   return {
     groesse: SEITE_STD,
-    unverstanden: `KEPTA_LIST_SEITE="${roh}" is not a whole number from ${SEITE_MIN} to ${SEITE_MAX} — pages of ${SEITE_STD} nodes are used.`,
+    unverstanden: `KEPTA_LIST_SEITE="${roh}" is not a whole number from ${SEITE_MIN} to ${SEITE_MAX} — pages of ${SEITE_STD} notes are used.`,
   };
 }

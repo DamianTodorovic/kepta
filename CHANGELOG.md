@@ -1,3 +1,50 @@
+## [3.2.185]
+
+### Changed
+
+- **One thing, one name: `node` left the surface.** The store's own word for what you write is
+  *note*, and the word for a mark in the picture is *dot*. Measured in the tree at 6.11.2026
+  12:43:17 MEZ, after the sentences below became visible: four sentences and four labels still
+  said `node(s)` — the command `New node`, the chat button `Save as a node`, the shortcut-sheet
+  line `New knowledge node`, the panel heading `Nodes`, the rail title `Node colours`, the
+  screen-reader name `Node colour channel`, the legend `A letter in a node is its type`, and
+  sentences about "painted nodes". They now read `New note`, `Save as a note`, `New note`,
+  `Kinds in the store`, `Dot colours`, `Dot colour`, `A letter in a dot…`. The schema panel also
+  stopped double-counting: it said `3 notes · 7 nodes`, where the 7 was notes *plus* concepts, so
+  the middle number is now what it is — `3 notes · 4 concepts`.
+- **The census had a blind spot, and it was hiding real defects.** Sentences written as JSX
+  templates (`{`The chips read the ${n} notes on this page…`}`) were rejected twice: no pattern
+  matched the position, and the language gate threw out any string containing `${` as a
+  "format specifier". Measured 12:38:50 MEZ: 25 candidates dropped. Two of them ship and are
+  demanded by the content gate (`Share of painted nodes per group`, `No node of the core is
+  inside this picture`). With the forms collected and interpolations flattened to a number, the
+  surface corpus went **349 → 372 sentences** — and three bars that had said HALTET turned red:
+  `URTEIL RAND` (2 tooltips over the 14-word cap), `URTEIL STRICH` (1 bare hyphen), and
+  `URTEIL RIEGEL` (4 sentences naming `nodes` with no reason and no action). All seven are fixed
+  in this release; the bars hold again (12:50:41 MEZ: RAND 0 of 66, STRICH 0, RIEGEL 0 of 372).
+- **A new bar for the naming law — and the first version of it was blind.** `URTEIL DOPPELNAMEN`
+  may find zero places that call a thing by its second name. Its first list was sentences plus
+  labels in the surface layer, and at 12:54:00 MEZ it reported HALTET (0 of 761) while fifteen
+  delivered wordings still said `node`. Counted 12:05–12:08 MEZ: no pattern looked at a wording
+  sitting in statement position (`return \`…\``, a ternary branch) — 76 of them in surface and
+  servant alone; the bar read only the surface, though the servant answers through the door (90
+  wordings) and `src/mcp-server.ts` belonged to no layer at all; and one bare `=` threw out
+  exactly one sentence — the graph legend `Size = connections` — which was the sentence breaking
+  the rule. The bar now gathers **wordings, not sentences**: every string in every delivered
+  layer, comments stripped, prompt files excluded, and a template's own content opened a second
+  time (a backtick was swallowing the fallback title `'Node'` inside itself, measured 12:20:30
+  MEZ). Denominator **2 983 wordings**, floor 2 500, findings **0**. The fifteen wordings are
+  fixed in this release: `Node size` → `Dot size` (the same slider whose own hint already said
+  dot), `drawn as nodes` → `drawn as dots`, `too few core nodes` / `no core node` → dots,
+  `Drag: a node stays where you drop it` → a dot, `New assistant node` → note, the untitled
+  fallback `'Node'` → `'Untitled'` (the house form already used in five other places), and seven
+  answers the server sends through the door (`active nodes` → `active notes`, `Node not found` →
+  `Note not found`, `conflicting node ids` → note ids, `pages of N nodes` → notes, `nodes taken
+  over` → notes, `trashed nodes` → notes). Open and named: `Node not found` still sits eight
+  times in the delivered bytes where our source writes three — the rest is pdf.js, and a ban we
+  do not own always strikes falsely; `Saves a knowledge node` is fixed at the source, and the
+  second copy belongs to the bundle, which the lead builds at the end of the wave.
+
 ## [3.2.184]
 
 ### Changed

@@ -1136,7 +1136,7 @@ export function Dashboard() {
       setEditingMemory(null);
     }
     toast.push({
-      message: `“${(victim?.title || 'Node').slice(0, 40)}” moved to the trash`,
+      message: `“${(victim?.title || 'Untitled').slice(0, 40)}” moved to the trash`,
       kind: 'info',
       action: {
         label: 'Undo',
@@ -1168,7 +1168,7 @@ export function Dashboard() {
     setEditingMemory({
       id: '',
       userId: 'local',
-      title: 'New assistant node',
+      title: 'New assistant note',
       content: content,
       tags: ['ai-log'],
       createdAt: Date.now(),
@@ -2182,7 +2182,7 @@ export function Dashboard() {
                       <span
                         className="fs-1 shrink-0 tnum"
                         style={{ color: 'var(--text-3)' }}
-                        title={`The chips run over the ${groessenZahl(memories.length)} notes loaded on this page, not over everything you have saved.`}
+                        title={`The chips read the ${groessenZahl(memories.length)} notes on this page, not everything you have saved.`}
                       >
                         on this page {TRAEGER_REIHENFOLGE.map((k) => groessenZahl(traegerCounts[k])).join(' · ')}
                       </span>
@@ -2434,7 +2434,7 @@ export function Dashboard() {
 // Shortcuts-Cheat-Sheet (per „?“)
 const SHORTCUTS: { keys: string; action: string }[] = [
   { keys: '⌘K', action: 'Command palette — quick actions and search' },
-  { keys: '⌘N', action: 'New knowledge node' },
+  { keys: '⌘N', action: 'New note' },
   { keys: '?', action: 'This overview' },
   { keys: 'Esc', action: 'Close dialog' },
   { keys: '⌘1–4', action: 'Open Knowledge, Chat, Graph, or Settings' },

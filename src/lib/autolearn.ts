@@ -124,7 +124,7 @@ export function shouldLearn(answer: string): boolean {
 
 export function buildExtractPrompt(answer: string): string {
   return (
-    'Extract one knowledge node from the following AI answer. Reply ONLY as JSON ' +
+    'Extract one knowledge note from the following AI answer. Reply ONLY as JSON ' +
     '{"title":"short title, max 60 characters","tags":["tag1","tag2"],' +
     '"summary":"a compact summary, 2-4 sentences, no filler"}. ' +
     "No preamble, no explanation, no Markdown code fence.\n\nAnswer:\n" +

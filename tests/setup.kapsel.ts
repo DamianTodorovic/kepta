@@ -2,7 +2,7 @@
 //
 // Warum eine globale Datei und nicht die Kapsel jeder Testdatei selbst: gemessen
 // 15.10. 12:08 MESZ (`belege-15-10/app-abnahme/app-j2.log.txt`) fiel ein einziger Fall mit
-// dem Leib `Limit reached: 21066 active nodes, maximum is 5000` — 21.066 ist sein Bestand,
+// dem Leib `Limit reached: 21066 active notes, maximum is 5000` — 21.066 ist sein Bestand,
 // nicht der einer Kapsel. Eine Datei, die ihr `HOME` zu spaetzt setzt (oder eine, die
 // nach einem `afterEach` in den echten Ordner zurueckfaellt), landet bei `~/.kepta`.
 // Zwei Laeufe davor und einer danach waren auf denselben Bytes gruen: die Kapsel hing an

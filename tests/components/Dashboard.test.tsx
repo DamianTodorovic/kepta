@@ -410,7 +410,7 @@ describe("Dashboard: Befehlspalette", () => {
     const knopf = document.querySelector('button[title="Command palette"]') as HTMLButtonElement;
     expect(knopf, "kein Palette-Knopf").toBeTruthy();
     await user.click(knopf);
-    await waitFor(() => expect(document.body.textContent).toMatch(/New knowledge node|Search|Switch/i));
+    await waitFor(() => expect(document.body.textContent).toMatch(/New note|Search|Switch/i));
   });
 });
 
@@ -565,7 +565,7 @@ describe("Dashboard: Tastatur", () => {
     const user = userEvent.setup();
     await zeige([note()]);
     await user.keyboard("{Meta>}k{/Meta}");
-    await waitFor(() => expect(document.body.textContent).toMatch(/New knowledge node|Switch|Search/i));
+    await waitFor(() => expect(document.body.textContent).toMatch(/New note|Switch|Search/i));
   });
 });
 

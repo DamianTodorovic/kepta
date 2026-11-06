@@ -98,10 +98,10 @@ describe("Tuer: die Standfolge einer Notiz, gratis und mit Seite", () => {
     expect(String(leib.hinweis)).toMatch(/no earlier stand/);
   });
 
-  it("unbekannte Notiz: 404 mit Node not found", async () => {
+  it("unbekannte Notiz: 404 mit Note not found", async () => {
     const { status, leib } = await staende("k-gibtesnicht-000000");
     expect(status).toBe(404);
-    expect(leib.error).toBe("Node not found");
+    expect(leib.error).toBe("Note not found");
   });
 
   it("limit ueber der Kappe wird geklemmt und im Hinweis genannt", async () => {

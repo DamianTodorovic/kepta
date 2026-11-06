@@ -74,7 +74,7 @@ export function CommandPalette({ open, onClose, actions }: CommandPaletteProps) 
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             aria-label="Command or search"
-            placeholder="Command or search… (e.g. graph, new node, settings)"
+            placeholder="Command or search… (e.g. graph, new note, settings)"
             className="flex-1 bg-transparent outline-none fs-4 lh-lesbar placeholder:text-[var(--text-3)]"
             style={{ color: "var(--text-1)" }}
           />
@@ -147,7 +147,7 @@ export function buildPaletteActions(opts: {
 }): PaletteAction[] {
   return [
     { id: "search", label: "Search the index", desc: "Search the knowledge index", icon: <Search className="w-4 h-4" />, keywords: "search find filter", action: opts.onFocusSearch },
-    { id: "new", label: "New node", desc: "Open an empty node in the editor", icon: <Plus className="w-4 h-4" />, hotkey: "N", keywords: "neu knoten erstellen", action: opts.onNewNode },
+    { id: "new", label: "New note", desc: "Open an empty note in the editor", icon: <Plus className="w-4 h-4" />, hotkey: "N", keywords: "neu knoten erstellen", action: opts.onNewNode },
     { id: "graph", label: "Open graph", desc: "Show the knowledge graph", icon: <Network className="w-4 h-4" />, keywords: "graph verbindungen kanten", action: opts.onGoGraph },
     { id: "memories", label: "All your notes", desc: "Show every note you have", icon: <Database className="w-4 h-4" />, keywords: "index overview", action: opts.onGoMemories },
     { id: "chat", label: "Open chat", desc: "Ask with context from the knowledge base", icon: <MessageSquare className="w-4 h-4" />, keywords: "chat ai assistant", action: opts.onGoChat },

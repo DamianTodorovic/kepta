@@ -27,7 +27,7 @@ export function mountMemories(app: express.Express, ctx: AppKontext): void {
     const body = bodyOf<Partial<MemoryRecord> & { tags?: unknown; title?: unknown; content?: unknown }>(req);
     // Hardened: Validierung + Sanitization + Limits
     if (body && JSON.stringify(body).length > 60000) return res.status(413).json({ error: "Payload too large (max 60k)" });
-    if (activeCount() > maxActiveMemories() && !body.id) return res.status(429).json({ error: `Limit reached: ${activeCount()} active nodes, maximum is ${maxActiveMemories()} — please delete some first` });
+    if (activeCount() > maxActiveMemories() && !body.id) return res.status(429).json({ error: `Limit reached: ${activeCount()} active notes, maximum is ${maxActiveMemories()} — please delete some first` });
 
     const title = sanitizeTitle(body.title);
     const content = sanitizeText(body.content, 50000);
@@ -52,7 +52,7 @@ export function mountMemories(app: express.Express, ctx: AppKontext): void {
       if (body.scope !== undefined) patch.scope = sanitizeScope(body.scope);
       if (body.supersededBy !== undefined) patch.supersededBy = sanitizeId(body.supersededBy);
       const updated = store.updateMemory(body.id, patch);
-      if (!updated) return res.status(404).json({ error: "Node not found" });
+      if (!updated) return res.status(404).json({ error: "Note not found" });
       // Eine Behauptung ist auch ohne neuen Text eine Aenderung: sonst schrieb das
       // Blatt die Aussage und der Graph blieb leer, weil hier nur Text und Titel
       // zaehlen.
@@ -338,7 +338,7 @@ export function mountMemories(app: express.Express, ctx: AppKontext): void {
   app.get("/api/memories/:id/stande", (req, res) => {
     const id = String(req.params.id);
     if (!istGueltigeId(id)) return res.status(400).json({ error: "Invalid id" });
-    if (!store.getMemory(id)) return res.status(404).json({ error: "Node not found" });
+    if (!store.getMemory(id)) return res.status(404).json({ error: "Note not found" });
 
     const rohLimit = typeof req.query.limit === "string" ? Number.parseInt(req.query.limit, 10) : Number.NaN;
     const gewollt = Number.isFinite(rohLimit) ? rohLimit : 20;
@@ -380,7 +380,7 @@ export function mountMemories(app: express.Express, ctx: AppKontext): void {
   app.get("/api/memories/:id/behauptungen", (req, res) => {
     const id = String(req.params.id);
     if (!istGueltigeId(id)) return res.status(400).json({ error: "Invalid id" });
-    if (!store.getMemory(id)) return res.status(404).json({ error: "Node not found" });
+    if (!store.getMemory(id)) return res.status(404).json({ error: "Note not found" });
     const liste = store.behauptungenVonNotiz(id);
     return res.json({
       count: liste.length,

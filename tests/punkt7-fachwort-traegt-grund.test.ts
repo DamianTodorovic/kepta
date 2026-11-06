@@ -21,8 +21,16 @@ import {
   artenAusQuelltext,
   etikettAusText,
   etiketteAusQuelltext,
+  doppelteNamen,
+  einmalNachWortlaut,
   etikettNenntAlgorithmus,
+  satzAusText,
   istBenutzersprache,
+  satzAusQuelltextMitEtiketten,
+  NAMEN_LAGEN,
+  NAMEN_MINDESTENS,
+  wortlautAusText,
+  wortlautInventar,
   kappenZeilen,
   kandidatenAusQuelltext,
   randUeberKappe,
@@ -33,6 +41,9 @@ import {
 } from "../scripts/verstaendlichkeit.mjs";
 import { SPUR_LABELS, spurAria } from "../src/lib/spuren";
 import { ANSICHT_LABELS, ansichtBeschreibung } from "../src/lib/ansichten";
+
+/** Die Form einer Fundstelle -- Satz oder Etikett. Der Census ist JavaScript ohne Typdecke. */
+type Stelle = { s: string; art: string; quelle: string };
 
 /** Dieselbe Liste, dasselbe Muster: die Suite prueft gegen die Sonde, nicht gegen ein zweites Regex. */
 const ALGORITHMEN_RE = new RegExp("\\b(" + ALGORITHMEN.join("|") + ")\\b", "i");
@@ -328,8 +339,6 @@ describe("Punkt 7, die Etikette: ein kurzes sichtbares Wort schuldet einen Klarn
      Ein Algorithmus-Name in einem Etikett ist die einzige Sprache, die ein Etikett nicht hat:
      es hat keinen Raum fuer einen Grund. */
   const etikette = etiketteAusQuelltext(FLAECHE);
-  /** Die Form eines Etikett-Funds, benannt: der Census ist JavaScript ohne Typdecke. */
-  type Etikett = { s: string; art: string; quelle: string };
 
   it("die Sonde sieht ein Etikett, und wirft Codefragment und Langtext raus", () => {
     // Biss-Kontrolle an einem Kunsttext: drei Etiketten-Formen muessen getroffen werden,
@@ -358,7 +367,7 @@ describe("Punkt 7, die Etikette: ein kurzes sichtbares Wort schuldet einen Klarn
 
   it("kein Etikett der Flaeche nennt eine Methode", () => {
     const fehl = etikettNenntAlgorithmus(etikette);
-    const liste = fehl.map((f: Etikett) => `    [${f.art}] "${f.s}"  ${f.quelle}`).join("\n");
+    const liste = fehl.map((f: Stelle) => `    [${f.art}] "${f.s}"  ${f.quelle}`).join("\n");
     expect(fehl.length, `\n  ${fehl.length} Etikette nennen eine Methode:\n${liste}`).toBe(LATE);
   });
 
@@ -474,5 +483,156 @@ describe("Punkt 7, die Ansichts-Namen: drei Knoepfe, drei Klarnamen, eine Quelle
     const laut = spawnSync("node", [path.join(WURZEL, "scripts", "verstaendlichkeit.mjs"), "--nur", "quelltext"], { encoding: "utf8" });
     expect(laut.stdout).toContain("Etikette, die eine Methode nennen");
     expect(laut.stdout).not.toContain("nennen eine Suchmethode");
+  });
+});
+
+describe("Punkt 7, die Expression: ein Satz, der eine Zahl einsetzt, ist kein Formatierer", () => {
+  /* Gemessen 12:38:50 MEZ: die Sprache des Census steht in immer mehr Stellen nicht als
+     nackter Text, sondern als Template -- `{`Die chips run over the ${n} notes loaded on this
+     page, not over everything you have saved.`}`. Der Riegel des Census warf jeden Kandidaten
+     mit `${` raus ("Formatierer"), und die Muster für JSX-Text in `{...}` gab es nicht.
+     Bewiesen an zwei Stellen, die ausgeliefert sind und von der Inhaltssperre verlangt werden
+     ("Share of painted dots per group" 1, "No note of the core is inside this picture" 1):
+     der Census sah sie nicht. Ein Zaehler, der einen gelieferten Satz nicht sieht, kann ihn
+     nicht schuetzen -- und sein Nenner ist kleiner, als er meldet. */
+
+  it("ein Satz in einer Expression wird gesehen, ein Klassenkleid nicht", () => {
+    const text = [
+      "<p>{`The chips run over the ${n} notes loaded on this page, not over everything you have saved.`}</p>",
+      'aria-label={`Share of painted dots per group — ${gesamt} painted`}',
+      'title={`Part ${chunk.nr} of ${chunk.von} — the file came in as separate pieces`}',
+      'aria-label={`Copy the curl command for ${e.p}`}',
+      'className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-lg fs-4 lh-lesbar font-semibold transition-colors ${aktiv}`}',
+      'const weg = `${API_BASE}/api/health`;',
+      'printf("the answer is %s here", wert);',
+    ].join("\n");
+    const funde = satzAusText(text, "src/components/Probe.tsx").map((f) => f.s);
+    expect(funde.some((s) => s.startsWith("The chips run over the")), "ein JSX-Template-Satz wird nicht gesehen").toBe(true);
+    expect(funde.some((s) => s.startsWith("Share of painted dots per group")), "ein Vorleser-Template wird nicht gesehen").toBe(true);
+    expect(funde.some((s) => s.startsWith("Part ")), "ein Titel-Template wird nicht gesehen").toBe(true);
+    expect(funde.some((s) => s.startsWith("Copy the curl command")), "eine Vorleser-Expression wird nicht gesehen").toBe(true);
+    expect(funde.some((s) => s.includes("flex-1 flex items-center")), "ein Klassenkleid ist kein Satz").toBe(false);
+    expect(funde.some((s) => s.includes("/api/health")), "ein Pfad ist kein Satz").toBe(false);
+    expect(funde.some((s) => s.includes("%s")), "ein Formatierer ist kein Satz").toBe(false);
+  });
+
+  it("die zwei ausgelieferten Saetze stehen jetzt im Korpus", () => {
+    // Merk-Woerter, kein ganzer Wortlaut: die Zahl dahinter kommt aus der Engine.
+    const satze = [...kandidatenAusQuelltext(FLAECHE)].map(([s]) => s);
+    expect(satze.some((s) => s.startsWith("Share of painted dots per group")), "der Vorlesersatz der Gruppenband-Schiene ist immer noch unsichtbar").toBe(true);
+    expect(satze.some((s) => s.startsWith("No note of the core is inside this picture")), "der Panel-Satz ueber der Zahl ist immer noch unsichtbar").toBe(true);
+  });
+
+  it("der Census nennt, wie viele Saetze aus einer Expression kommen", () => {
+    const laut = spawnSync("node", [path.join(WURZEL, "scripts", "verstaendlichkeit.mjs"), "--nur", "quelltext"], { encoding: "utf8" });
+    expect(laut.stdout).toMatch(/davon aus einer Expression: \d+ von \d+ Saetzen/);
+    expect(laut.stdout).toContain("SELBSTKONTROLLE KAPPE: HALTET");
+  });
+});
+
+describe("Punkt 7, ein Ding, ein Wort: die Flaeche sagt nicht zweimal dasselbe", () => {
+  /* Gemessen 12:43:17 MEZ, nachdem die Expression-Saetze sichtbar wurden: vier Funde nannten
+     "nodes" ohne Erklaerung, und ein Census der Etikette zaehlte vier Etikette mit dem Wort.
+     Die Flaeche hiess dasselbe Ding zwei Mal: "note" auf der Karte, "node" im Befehl, im
+     Schalter und in der Legende. Neu gilt eine eigne Latte, ueber Saetzen UND Etiketten. */
+
+  it("die Doppelnamen-Sonde trifft ein erfundenes Beispiel und verschont das korrekte", () => {
+    const text = [
+      '<span>Save as a node</span>',
+      'aria-label={`Share of painted nodes per group — ${gesamt} painted`}',
+      '<span>Save as a note</span>',
+      "<p>Hover a dot and its title comes back.</p>",
+    ].join("\n");
+    const funde = doppelteNamen(einmalNachWortlaut(satzAusText(text, "src/components/Probe.tsx").concat(etikettAusText(text, "src/components/Probe.tsx"))));
+    expect(funde.length, "zwei Stellen nennen das Ding beim alten Namen").toBe(2);
+    expect(funde.some((f: Stelle) => f.s === "Save as a node"), "ein Etikett wird nicht getroffen").toBe(true);
+    expect(funde.some((f: Stelle) => f.s === "Save as a note"), "das richtige Wort wird verwechselt").toBe(false);
+  });
+
+  it("kein sichtbarer Text der Flaeche nennt ein Ding beim zweiten Namen", () => {
+    const alle = satzAusQuelltextMitEtiketten();
+    const fehl = doppelteNamen(alle);
+    const liste = fehl.map((f: Stelle) => `    [${f.art}] "${f.s}"  ${f.quelle}`).join("\n");
+    expect(fehl.length, `\n  ${fehl.length} Stellen nennen ein Ding zweimal:\n${liste}`).toBe(LATE);
+  });
+
+  it("der Census meldet die Doppelnamen-Latte", () => {
+    const laut = spawnSync("node", [path.join(WURZEL, "scripts", "verstaendlichkeit.mjs"), "--nur", "quelltext"], { encoding: "utf8" });
+    expect(laut.stdout).toMatch(/URTEIL DOPPELNAMEN: (HALTET|FAELLT) \(\d+ von \d+ Wortlauten nennen ein Ding beim zweiten Namen/);
+    expect(laut.stdout).toContain("DOPPELNAMEN");
+  });
+});
+
+describe("Punkt 105, die Reichweite der Namens-Latte: jeder Wortlaut, jede Lage", () => {
+  /* Gemessen 6.11.2026 12:08:36 MEZ: die Latte meldete "HALTET (0 von 761 Stellen)", und
+     dieselbe Suite warf vier Woerter zurueck, die in keinem ihrer Muster standen. Nachgezaehlt
+     am Baum: 15 ausgelieferte Wortlaute nannten das Ding beim alten Namen, und keiner der 15
+     lag in der Liste, die die Latte geoeffnet hatte. Die Latte war nicht gruen -- sie war blind. */
+
+  it("ein Wortlaut in Anweisungsposition ist kein unsichtbarer Name", () => {
+    const text = [
+      "function meldung(n) {",
+      "  return `${n} unfolded notes are drawn as nodes`;",
+      "}",
+      'const warnung = voll ? "Limit reached: 3 active nodes" : "Alles frei";',
+      "function gut(n) {",
+      "  return `${n} unfolded notes are drawn as dots`;",
+      "}",
+    ].join("\n");
+    const funde = doppelteNamen(wortlautAusText(text, "src/components/Probe.tsx"));
+    expect(funde.length, "beide Anweisungs-Wortlaute bleiben unsichtbar").toBe(2);
+    expect(funde.some((f: Stelle) => /drawn as nodes/.test(f.s)), "der return-Zweig wird nicht getroffen").toBe(true);
+    expect(funde.some((f: Stelle) => /active nodes/.test(f.s)), "der Ternaer-Zweig wird nicht getroffen").toBe(true);
+  });
+
+  it("ein Einwort-Token nennt nichts: Specifier, Programmname und Stil-Token bleiben draussen", () => {
+    // Die Form ist eine Messung, keine Bequemlichkeit: gezaehlt 12:13:07 MEZ nannte in der
+    // ganzen Auslieferung kein Einwort-Wortlaut das Ding auf der Flaeche -- bis der Fallback
+    // in Dashboard.tsx:1139 gefunden wurde (`victim?.title || 'Node'`). Also gilt die Gestalt
+    // einer Benennung: grossgeschrieben und bloss Buchstaben. Gemessen 12:20:16 MEZ hebt die
+    // Form den Nenner von 2 840 auf 2 959 Wortlaute und traegt genau den einen alten Fund.
+    const text = [
+      'import fs from "node:fs";',
+      'const befehl = { command: "node", args: ["/PATH/TO/dist/mcp-server.cjs"] };',
+      'const rim = lies("--node-rim", "rgba(255,255,255,0.2)");',
+    ].join("\n");
+    expect(doppelteNamen(wortlautAusText(text, "src/components/Probe.tsx")).length, "ein Token ohne Benennungsgestalt ist kein Fund").toBe(0);
+    const fallback = 'const meldung = `moved to the trash ${victim?.title || \'Node\'}`;';
+    expect(doppelteNamen(wortlautAusText(fallback, "src/components/Probe.tsx")).length, "der grossgeschriebene Einwort-Fallback bleibt unsichtbar").toBe(1);
+  });
+
+  it("die Namens-Latte sieht Diener, Werkzeug und den Boden des Quelltextes", () => {
+    expect(NAMEN_LAGEN).toContain("server");
+    expect(NAMEN_LAGEN).toContain("src/core");
+    expect(NAMEN_LAGEN).toContain("src");
+  });
+
+  it("die Namens-Latte hat eine Grundgesamtheit, keine Luecke", () => {
+    const erfuellt = wortlautInventar();
+    expect(erfuellt.length, "ein Census ueber null Wortlaute meldet Sauberkeit fuer Ungelesenes").toBeGreaterThanOrEqual(NAMEN_MINDESTENS);
+    // Die Untergrenze muss real sein: ein Puffer, den der Bestand nie verfehlen koennte, ist eine Luecke.
+    expect(NAMEN_MINDESTENS, "die Untergrenze darf nicht ueber dem Bestand liegen").toBeLessThan(erfuellt.length);
+  });
+
+  it("keine ausgelieferte Wortmeldung nennt ein Ding beim zweiten Namen", () => {
+    const fehl = doppelteNamen(wortlautInventar());
+    const liste = fehl.map((f: Stelle) => `    [${f.art}] "${f.s}"  ${f.quelle}`).join("\n");
+    expect(fehl.length, `\n  ${fehl.length} Wortlaute nennen ein Ding zweimal:\n${liste}`).toBe(LATE);
+  });
+
+  it("die Gleichung einer Legende ist kein Codezeichen", () => {
+    // Die Kante gegen Quelltext traf auch die Legende des Graphen: "Size = connections".
+    // Gemessen 12:05:11 MEZ war das in der ganzen Flaeche genau ein Satz -- der einzige,
+    // der die Namensregel brach.
+    expect(istBenutzersprache("Drag: a dot stays where you drop it · Wheel: zoom · Size = connections"), "eine Legende mit Gleichheitszeichen faellt durch die Sonde").toBe(true);
+    // Die zwei Formen, fuer die die Kante gebaut wurde, bleiben draussen.
+    expect(istBenutzersprache("y.source ? 1 : x.target"), "ein Ternaer darf nicht als Satz zaehlen").toBe(false);
+    expect(istBenutzersprache("true = delete permanently"), "Notation darf nicht als Satz zaehlen").toBe(false);
+  });
+
+  it("der Census meldet die Wortlaut-Grundgesamtheit und ihre Untergrenze", () => {
+    const laut = spawnSync("node", [path.join(WURZEL, "scripts", "verstaendlichkeit.mjs"), "--nur", "quelltext"], { encoding: "utf8" });
+    expect(laut.stdout).toMatch(/URTEIL DOPPELNAMEN: (HALTET|FAELLT) \(\d+ von \d+ Wortlauten nennen ein Ding beim zweiten Namen/);
+    expect(laut.stdout).toContain(`Nenner-Untergrenze ${NAMEN_MINDESTENS}`);
   });
 });

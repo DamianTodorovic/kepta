@@ -10,7 +10,7 @@
     },
     {
       "title": "Shortcuts",
-      "content": "⌘K palette, ⌘N new node, focus the search, open the graph, import. The top-k slider controls how many nodes go into the chat — that is where you save tokens.",
+      "content": "⌘K opens the command list. ⌘N saves a new note. Search finds it again, and Graph draws how your notes hang together. The Context number decides how many notes travel with your question — fewer notes in, shorter answer back.",
       "tags": [
         "start",
         "shortcuts"

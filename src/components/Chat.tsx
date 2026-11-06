@@ -1219,7 +1219,7 @@ export function Chat({ activeMemories, onSaveToBrain, onSaveToBrainWithMeta, isF
                       className="flex items-center gap-2 fs-1 font-semibold px-2 py-1 rounded hud-inset hover:!border-[color-mix(in_srgb,var(--accent)_45%,transparent)] transition-colors"
                       style={{ color: "var(--text-2)" }}
                     >
-                      <Database className="w-3 h-3" style={{ color: "var(--accent)" }} /> Save as a node
+                      <Database className="w-3 h-3" style={{ color: "var(--accent)" }} /> Save as a note
                     </button>
                   </div>
                 </div>
