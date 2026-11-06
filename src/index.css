@@ -1,4 +1,19 @@
-@import "tailwindcss";
+/* P86: wo der Rahmenwerk-Scanner seine Klassen herholt. Automatic-Detection liest den
+   ganzen Ordner um diese Datei -- und fand damit auch `tests/*.ts` (seine Biss-Proben,
+   z.B. eine Zeile mit drei verbotenen Groessennamen), alte Bau-Ordner `dist-p1`, `dist-p2`,
+   `dist-pf1` und einen Messdatensatz unter `tools/longmemeval/`. Das ausgelieferte CSS trug
+   darum Regeln, die kein Baustein ruft: gemessen 02:19:25 MEZ im gebauten CSS vier tote
+   Regeln aus Zitaten (die weisse Flaeche, die dunkle Zink-Stufe 800, dazu Zink 900 und 100
+   als Text), dazu die Groessenstufen aus den Proben. §10 verbietet eine Regel, die niemand
+   ruft; also wird der Vorrat gesetzt, nicht geraten: `source(none)` und danach die zwei
+   Quellen, die das Produkt wirklich sind. (Kein Klassenwort dieser Reihen steht hier
+   ausgeschrieben, und in diesem Kommentar steht keine geschweifte Klammer: der Scanner
+   liesse aus einem ausgeschriebenen Wort eine ausgelieferte Regel werden, und die
+   Falt-Wache zaehlt ihre Einrückung an den Klammern -- gemessen 02:29:11 MEZ, wo drei
+   Faelle mit "expected 4 to be 0" fielen.) */
+@import "tailwindcss" source(none);
+@source "../src";
+@source "../index.html";
 
 /* Das Zeitmaß soll nicht nur in dieser Datei gelten: Tailwind v4 nimmt die
    Übergangs-Voreinstellung aus dem Theme-Block, also zieht die Signaturkurve
@@ -24,6 +39,18 @@
   --radius-lg: var(--r-btn);
   --radius-xl: var(--r-card);
   --radius-2xl: var(--r-panel);
+
+  /* Punkt 2, P86: dasselbe Spiel mit den Farben. Der Vertrag nennt jede Farbe -- Tinte,
+     Tisch, Panel, Blatt, Knopf, Kante, Warn, Zu. Tailwinds eigne Palette (weiss, schwarz,
+     zinc 100/800/900) steht ausserhalb davon, und die dunkle Gabelung malte eine Stufe, die
+     im Register keinen Namen hat: 18 Sitze in 6 Bausteinen, gemessen 6.11.2026 02:16:47 MEZ.
+     Hier werden die Hausnamen eingesetzt, nicht an 18 Stellen geflickt: die neuen Klassen
+     rufen dieselben Token, die .switch .knob, die Karten und `body` schon rufen. Ein Name,
+     den das Haus nicht kennt, faellt im Test. (Kein Klassenwort dieser Reihe steht
+     absichtlich als ganzes Wort hier: der Rahmenwerk-Scanner liesse sonst aus einem
+     Kommentar eine ausgelieferte Regel werden -- gemessen 02:18:38 MEZ im gebauten CSS.) */
+  --color-knopf: var(--knopf);   /* der helle Punkt auf Schaltern und Reglern — #ffffff, in beiden Themen */
+  --color-blatt: var(--eb-2);    /* die oberste Hebung: Karte, Menue, Toast, ausgewaehlter Reiter */
 }
 
 @variant dark (&:where(.dark, .dark *));

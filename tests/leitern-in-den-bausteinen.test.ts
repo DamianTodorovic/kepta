@@ -102,6 +102,26 @@ describe("Punkt 2: die Schriftleiter gilt in den Bausteinen", () => {
     expect(sitze, `${sitze.length} Sitze rufen eine fremde Zeilenmasse: ${[...new Set(sitze.map((x) => x.split(" in ")[0]))].join(", ")}`).toEqual([]);
   });
 
+  it("kein Baustein malt eine Farbe aus der Rahmenwerk-Palette", () => {
+    // P86: der Vertrag nennt jede Farbe -- Tinte, Tisch, Panel, Blatt, Knopf, Kante, Warn, Zu.
+    // Tailwinds Palette (white, black, zinc-*, gray-*) steht ausserhalb davon. Gemessen
+    // 6.11.2026 01:12:21 und 02:16:47 MEZ: **18 Sitze in 6 Bausteinen** (bg-white 11,
+    // bg-zinc-800 4, text-white 1, text-zinc-900 1, text-zinc-100 1) -- und dazu eine
+    // Gefahr-Stelle in einer andern Familie (border-red-500/40), die unten benannt bleibt.
+    // Die eine Ausnahme ist keine Bequemlichkeit, sie ist eine offene Stelle mit Namen:
+    // dem Vertrag fehlt eine Gefahr-Farbe, und die wird mit Kontrastmessung gesetzt, nicht
+    // aus dem Rahmenwerk gegriffen. Die Liste wird gezaehlt und gedruckt -- wer sie still
+    // erweitert, sieht den Lauf fallen.
+    const verboten = /\b(?:bg|text|border|ring|from|to|via|divide|placeholder)-(?:white|black|zinc-\d+|gray-\d+|neutral-\d+|slate-\d+)\b/g;
+    const sitze = dateien.map((d) => (d.text.match(verboten) ?? []).map((w) => `${w} in ${d.rel}`)).flat();
+    expect(sitze, `${sitze.length} Sitze malen aus der Palette: ${[...new Set(sitze)].join(", ")}`).toEqual([]);
+
+    // Die offene Stelle, mit Namen und Zahl -- keine Toleranzliste, die schweigt.
+    const gefahr = /\b(?:bg|text|border)-(?:red|rose|orange|amber)-\d+(?:\/\d+)?\b/g;
+    const offen = dateien.map((d) => (d.text.match(gefahr) ?? []).map((w) => `${w} in ${d.rel}`)).flat();
+    expect(offen, `offene Gefahr-Stellen: ${offen.join(", ")}`).toEqual(["border-red-500/40 in src/components/Chat.tsx"]);
+  });
+
   it("Biss-Kontrolle: ein Willkuerwert und ein halber Schritt werden getroffen", () => {
     const sonde = funde('<div className="text-[12.5px]" style={{ fontSize: 13 }}>');
     expect(sonde.length).toBe(2);
@@ -118,5 +138,9 @@ describe("Punkt 2: die Schriftleiter gilt in den Bausteinen", () => {
     expect("leading-relaxed leading-snug leading-none leading-[1.75]".match(/\bleading-(?:[a-z0-9]+|\[[^\]]+\])/g))
       .toEqual(["leading-relaxed", "leading-snug", "leading-none", "leading-[1.75]"]);
     expect("context-sm text-xsomething".match(/\btext-(xs|sm|base)\b/g)).toBeNull();
+    // P86: das Farb-Raster trifft auch die dunkle Gabelung, und ein Token-Name faellt nicht durch.
+    expect("bg-white dark:bg-zinc-800 text-zinc-100".match(/\b(?:bg|text|border|ring|from|to|via|divide|placeholder)-(?:white|black|zinc-\d+|gray-\d+|neutral-\d+|slate-\d+)\b/g))
+      .toEqual(["bg-white", "bg-zinc-800", "text-zinc-100"]);
+    expect("bg-knopf bg-blatt text-tinte".match(/\b(?:bg|text|border|ring|from|to|via|divide|placeholder)-(?:white|black|zinc-\d+|gray-\d+|neutral-\d+|slate-\d+)\b/g)).toBeNull();
   });
 });

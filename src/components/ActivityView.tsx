@@ -305,7 +305,7 @@ export function ActivityView({ aktiv, onOpenMemory }: { aktiv: boolean; onOpenMe
             aria-selected={reiter === id}
             onClick={() => setReiter(id)}
             title={erklaerung}
-            className={`flex-1 py-2 rounded-lg fs-3 font-semibold ${reiter === id ? 'bg-white dark:bg-zinc-800 shadow-sm' : ''}`}
+            className={`flex-1 py-2 rounded-lg fs-3 font-semibold ${reiter === id ? 'bg-blatt shadow-sm' : ''}`}
             style={{ color: reiter === id ? 'var(--text-1)' : 'var(--text-2)' }}
           >
             {label}

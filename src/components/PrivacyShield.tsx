@@ -27,7 +27,7 @@ function Schalter({ an, onChange, label }: { an: boolean; onChange: (v: boolean)
       className="relative w-10 h-6 rounded-full shrink-0 transition-colors"
       style={{ background: an ? 'var(--accent)' : 'var(--bg-inset-strong)', border: '1px solid var(--border-subtle)' }}
     >
-      <span className="absolute top-0.5 w-4.5 h-4.5 rounded-full bg-white transition-all" style={{ left: an ? 18 : 2, width: 18, height: 18 }} />
+      <span className="absolute top-0.5 w-4.5 h-4.5 rounded-full bg-knopf transition-all" style={{ left: an ? 18 : 2, width: 18, height: 18 }} />
     </button>
   );
 }

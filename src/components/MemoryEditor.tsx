@@ -475,7 +475,7 @@ export function MemoryEditor({ memory, onSave, onClose, onDelete }: MemoryEditor
                 className="relative w-10 h-6 rounded-full shrink-0 transition-colors"
                 style={{ background: privat ? 'var(--accent)' : 'var(--bg-inset-strong)', border: '1px solid var(--border-subtle)' }}
               >
-                <span className="absolute top-0.5 rounded-full bg-white transition-all" style={{ left: privat ? 18 : 2, width: 18, height: 18 }} />
+                <span className="absolute top-0.5 rounded-full bg-knopf transition-all" style={{ left: privat ? 18 : 2, width: 18, height: 18 }} />
               </button>
             </div>
 

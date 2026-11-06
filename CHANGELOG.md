@@ -1,3 +1,30 @@
+## [3.2.176]
+
+### Changed
+
+- **Colour comes from the contract, not from the framework.** Measured 6.11.2026 02:16:47 MEZ:
+  18 seats in 6 building blocks painted a Tailwind palette colour (bg-white 11, bg-zinc-800 4,
+  text-white 1, text-zinc-900 1, text-zinc-100 1). Knobs and slider thumbs now call
+  `bg-knopf`/`text-knopf`, the selected tab calls `bg-blatt`, and the app root no longer
+  overrides the ink that `body` already sets from `--text-1`. Two names are registered in the
+  theme (`--color-knopf`, `--color-blatt`) rather than patched at 18 places, and the dark-mode
+  fork disappears with the palette: the same element, one name, both themes.
+- **The framework's class scanner is pinned to the product's own sources.** Automatic detection
+  had been reading `tests/*.ts` (including its own bite probes), three stale build folders
+  (`dist-p1`, `dist-p2`, `dist-pf1`) and a measurement dataset under `tools/longmemeval`. The
+  shipped CSS therefore carried rules that no building block calls — measured 02:19:25 MEZ in
+  the built CSS: four dead colour rules from quotations plus the size steps from the probes.
+  After pinning: 82 986 B instead of 88 649 B, 39 rules gone, and none of them referenced by
+  `src` any more (checked name by name against the components).
+
+### Fixed
+
+- **One seat stays outside the contract, and says so.** Chat's clear-button hover still uses
+  the framework's red, because the contract has no danger colour and inventing one needs a
+  contrast measurement, not a guess. The guard counts that open list and prints it
+  (`tests/leitern-in-den-bausteinen.test.ts`): a second entry fails the run, and closing this
+  one means changing an assertion on purpose.
+
 ## [3.2.175]
 
 ### Changed

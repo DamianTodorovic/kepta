@@ -1566,7 +1566,7 @@ export function Dashboard() {
 
   return (
     <div
-      className={cn("huelle flex h-full overflow-hidden text-zinc-900 dark:text-zinc-100", schmal && "huelle-schmal")}
+      className={cn("huelle flex h-full overflow-hidden", schmal && "huelle-schmal")}
       data-fenster={schluessel ? "schluessel" : "gedaempft"}
       data-einrichtung={wizardOpen ? "offen" : undefined}
     >

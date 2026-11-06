@@ -643,7 +643,7 @@ export function Settings() {
           <button
             onClick={() => waehleTab('system')}
             aria-pressed={activeTab === 'system'}
-            className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-lg fs-4 lh-lesbar font-semibold transition-colors ${activeTab === 'system' ? 'bg-white dark:bg-zinc-800 shadow-sm' : ''}`}
+            className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-lg fs-4 lh-lesbar font-semibold transition-colors ${activeTab === 'system' ? 'bg-blatt shadow-sm' : ''}`}
             style={{ color: activeTab === 'system' ? 'var(--text-1)' : 'var(--text-2)' }}
           >
             <Cpu className="w-4 h-4" /> AI &amp; data
@@ -651,7 +651,7 @@ export function Settings() {
           <button
             onClick={() => waehleTab('mcp')}
             aria-pressed={activeTab === 'mcp'}
-            className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-lg fs-4 lh-lesbar font-semibold transition-colors ${activeTab === 'mcp' ? 'bg-white dark:bg-zinc-800 shadow-sm' : ''}`}
+            className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-lg fs-4 lh-lesbar font-semibold transition-colors ${activeTab === 'mcp' ? 'bg-blatt shadow-sm' : ''}`}
             style={{ color: activeTab === 'mcp' ? 'var(--text-1)' : 'var(--text-2)' }}
           >
             <Plug className="w-4 h-4" /> MCP / API
@@ -659,7 +659,7 @@ export function Settings() {
           <button
             onClick={() => waehleTab('sync')}
             aria-pressed={activeTab === 'sync'}
-            className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-lg fs-4 lh-lesbar font-semibold transition-colors ${activeTab === 'sync' ? 'bg-white dark:bg-zinc-800 shadow-sm' : ''}`}
+            className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-lg fs-4 lh-lesbar font-semibold transition-colors ${activeTab === 'sync' ? 'bg-blatt shadow-sm' : ''}`}
             style={{ color: activeTab === 'sync' ? 'var(--text-1)' : 'var(--text-2)' }}
           >
             <ShieldCheck className="w-4 h-4" /> Device Sync
@@ -911,7 +911,7 @@ export function Settings() {
                   </div>
                   <label className="relative inline-flex h-6 w-11 items-center rounded-full transition-colors cursor-pointer shrink-0" style={{ background: autoLearn ? 'var(--accent)' : 'var(--bg-inset-strong)', border: autoLearn ? '1px solid transparent' : '1px solid var(--border-subtle)' }}>
                     <input type="checkbox" aria-label="Auto-learn" checked={autoLearn} onChange={e=>{ const v=e.target.checked; setAutoLearn(v); localStorage.setItem('ki_gehirn_autolearn', String(v)); setAutoLearnSaved(true); setTimeout(()=>setAutoLearnSaved(false),QUITTUNG_MS); }} className="sr-only" />
-                    <span className={`inline-block h-4 w-4 transform rounded-full bg-white shadow transition-transform ${autoLearn ? 'translate-x-6' : 'translate-x-1'}`} />
+                    <span className={`inline-block h-4 w-4 transform rounded-full bg-knopf shadow transition-transform ${autoLearn ? 'translate-x-6' : 'translate-x-1'}`} />
                   </label>
                 </div>
                 {autoLearnSaved && <div className="fs-2 lh-dicht mt-2 flex items-center gap-2" style={{color:'var(--ok)'}}><CheckCircle2 className="w-3.5 h-3.5"/> {autoLearn ? 'Auto-learn is on — a chat can leave a note behind' : 'Auto-learn off'}</div>}
@@ -1228,7 +1228,7 @@ export function Settings() {
             {/* Claim */}
             <div className="rounded-xl p-4 flex gap-3" style={{ background: 'var(--accent-soft)', border: '1px solid var(--border-subtle)' }}>
               <div className="w-9 h-9 rounded-lg flex items-center justify-center shrink-0" style={{ background: 'var(--accent)' }}>
-                <Plug className="w-5 h-5 text-white" />
+                <Plug className="w-5 h-5 text-knopf" />
               </div>
               <div>
                 <p className="fs-4 lh-lesbar font-semibold" style={{ color: 'var(--text-1)' }}>One set of notes for every AI app</p>

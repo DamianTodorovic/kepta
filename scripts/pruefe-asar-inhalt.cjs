@@ -992,6 +992,15 @@ const erwartet = [
   ["fs-5 lh-lesbar", 6],
   ["lh-marke", 2],
   ["lh-prosa", 30],
+  // P86 (3.2.176): die Farb-Sitze heissen wie im Vertrag, und der Rahmenwerk-Scanner ist
+  // gesetzt. Gezaehlt am installierten 3.2.175 (latin1, Leerstand zusammengezogen,
+  // 6.11.2026 02:41:07 MEZ): "bg-knopf" 0, "bg-blatt" 0, das Paar "bg-white dark:bg-zinc-800"
+  // 4, das Paar "text-zinc-900 dark:text-zinc-100" 1. Die nackten Woerter bleiben ungeprueft
+  // -- 14 mal bg-white und 5 mal text-xs im Objekt sind Fremd-Baustein und Tailwinds eigne
+  // Variablen, gemessen 01:26:59 MEZ; ein Verbot, das wir nicht besitzen, schlaegt immer
+  // faelschlich. Die Paare dagegen schreibt nur unser Quelltext.
+  ["bg-knopf", 5],
+  ["bg-blatt", 4],
   // Punkt 7 / P79, 5.11.2026 22:39 MEZ (3.2.168): der depth-Satz von 3.2.167 war dem Riegel
   // entglitten -- sein Semikolon trifft die Code-Kante der Sonde, also zaehlt er nicht und
   // kann nichts melden. Nachgewiesen an drei Formen: alt ohne Semikolon Kandidat, mit
@@ -1079,6 +1088,13 @@ const verboten = [
   // P83 (3.2.173): Tailwinds Name fuer 20 px ist seit der fs-6-Utility kein Ausrede-Name
   // mehr -- verboten ist die Klassen-Kette, wie sie in der Flaeche stand.
   "text-xl font-semibold",
+  // P86 (3.2.176): die dunkel gegabelten Farb-Sitze. Am installierten 3.2.175 gezaehlt
+  // 02:41:18 MEZ: das Paar "bg-white dark:bg-zinc-800" 4 mal, das Paar
+  // "text-zinc-900 dark:text-zinc-100" 1 mal -- beide schreibt nur unser Quelltext, also
+  // schlagen sie. Die nackten Palettenwoerter bleiben draussen (bg-white 14, text-xs 5 am
+  //selben Objekt): Fremd-Baustein und Tailwinds eigne Variablen, kein Besitz von uns.
+  "bg-white dark:bg-zinc-800",
+  "text-zinc-900 dark:text-zinc-100",
   // P82 (3.2.172): die vier knappen Diener-Absagen, die ein Fachwort ohne Grund und
   // ohne Taetigkeit liessen (gemessen 00:30:54 MEZ als 4 der 5 Funde in 62 Kandidaten).
   "Node or stand not found",
