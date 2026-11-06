@@ -229,7 +229,7 @@ export function DossierView({ onOpenMemory, onEditMemory, dossierThema }: { onOp
         <article className="hud-panel rounded-2xl p-6 mt-4">
           <div className="flex items-start justify-between gap-3 mb-5 flex-wrap">
             <div>
-              <h2 className="text-xl font-semibold" style={{ color: 'var(--text-1)' }}>{daten.topic}</h2>
+              <h2 className="fs-6 lh-dicht font-semibold" style={{ color: 'var(--text-1)' }}>{daten.topic}</h2>
               <p className="fs-2 mt-1 tnum" style={{ color: 'var(--text-3)' }}>
                 {daten.total} {daten.total === 1 ? 'note' : 'notes'}
                 {daten.first !== null && daten.last !== null ? ` · ${tag(daten.first)} – ${tag(daten.last)}` : ''}

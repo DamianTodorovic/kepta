@@ -6173,7 +6173,11 @@ export function KnowledgeGraph({ memories: memoriesAusFenster, onSelectMemory, o
     switch (g) {
       case "suche": return "Only the matching notes stay in the picture — the rest leaves it.";
       case "ansicht": return "Which picture: claims as a field, knowledge as a tree, meaning as a map.";
-      case "namen": return `Density of names. Now: ${NAMEN_STUFE[etikettenModus].wort.toLowerCase()} — ${NAMEN_STUFE[etikettenModus].erklaerung.toLowerCase()}.`;
+      // P83: die Stufenerklaerung traegt ihren Punkt schon (`NAMEN_STUFE`, Zeile 759) --
+      // der Anhang machte aus "as many as fit." ein "fit..". Gemessen 00:58:58 MEZ im
+      // 390-Fenster, und die Wache sitzt auf der gemalten Ebene (Zyklus erklaerungen):
+      // an der Quelle ist das eine Zeichenfolge, kein Satz.
+      case "namen": { const stufe = NAMEN_STUFE[etikettenModus]; return `Density of names. Now: ${stufe.wort.toLowerCase()} — ${stufe.erklaerung.toLowerCase().replace(/\.$/, "")}.`; }
       case "kanal": return "What the colours mean: kind of knowledge, or where the note came from.";
       case "tiefe": return `How many steps the picture asks the door for around each concept. Now: ${graphTiefe}. The door knows 1 to 4 and defaults to 2 — a fifth step is not invented here.`;
       case "farben": return "The four colours of the kinds, reused on the cards.";

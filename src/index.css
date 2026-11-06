@@ -488,7 +488,14 @@ select:focus-visible {
 @utility fs-3 { font-size: var(--fs-3); }
 @utility fs-4 { font-size: var(--fs-4); }
 @utility fs-5 { font-size: var(--fs-5); }
+@utility fs-6 { font-size: var(--fs-6); }   /* 20 px: Panel- und Ansichtstitel, vorher hiess das text-xl */
 @utility fs-7 { font-size: var(--fs-7); }   /* 28 px: die Zahl, die vorher text-3xl hiess */
+// P83: die Zeilenmasse des Vertrags war bis hierher nur in CSS-Regeln als nackte Zahl
+// zu haben (gemessen 00:47:52 MEZ: 0 `lh-*`-Sitze in den Bausteinen). Eine Utility ist
+// da, wo ein Sitz sie ruft -- die Wache meldet jede andere als toten Stil (00:00:16 MEZ,
+// ROT "Klassenregeln ohne Baustein: lh-lesbar lh-prosa", als ich alle drei auf einmal
+// setzte). lh-lesbar und lh-prosa kommen mit dem Sweep, der ihnen Rufer gibt.
+@utility lh-dicht { line-height: var(--lh-dicht); }     /* 1,24: Meta, Zahlen, Titel */
 
 /* Dominante Zahl des Registers — Ziffern wie in ein Protokoll gesetzt */
 .num-hero {

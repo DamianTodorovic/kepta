@@ -61,10 +61,10 @@ describe("Punkt 2: die Schriftleiter gilt in den Bausteinen", () => {
   });
 
   it("kein Baustein ruft eine Tailwind-Stufe, die unsere Leiter nicht kennt", () => {
-    // text-sm (14) und text-xs (12), text-base (16), text-xl (20) treffen eine Leiterstufe --
+    // text-sm (14), text-xs (12) und text-base (16) treffen eine Leiterstufe -- sie nennen sie
     // sie nennen sie nur unter Tailwinds Namen. text-lg (18) und text-3xl (30) treffen keine:
     // gemessen 5.11.2026 19:27:14 MEZ im Fenster als "18px :: text-lg" in den Statistik-Kaesten.
-    const verboten = /\btext-(2xl|3xl|4xl|5xl|lg)\b/g;
+    const verboten = /\btext-(2xl|3xl|4xl|5xl|lg|xl)\b/g;
     const sitze = dateien.map((d) => (d.text.match(verboten) ?? []).map(() => d.rel)).flat();
     expect(sitze, `${sitze.length} Sitze rufen eine fremde Stufe: ${[...new Set(sitze)].join(", ")}`).toEqual([]);
   });
@@ -85,7 +85,9 @@ describe("Punkt 2: die Schriftleiter gilt in den Bausteinen", () => {
     expect(sonde.some((f) => f.wert === 12.5 && !Number.isInteger(f.wert))).toBe(true);
     // und ein Leiterwert in Token-Form faellt durch beide Raster
     expect(funde('<div className="fs-3 leading-none">')).toEqual([]);
-    expect("text-lg".match(/\btext-(2xl|3xl|4xl|5xl|lg)\b/g)).toEqual(["text-lg"]);
+    expect("text-lg".match(/\btext-(2xl|3xl|4xl|5xl|lg|xl)\b/g)).toEqual(["text-lg"]);
+    // P83: text-xl (20 px) ist seit 3.2.173 verboten -- der eine Sitz heisst fs-6 lh-dicht.
+    expect("text-xl".match(/\btext-(2xl|3xl|4xl|5xl|lg|xl)\b/g)).toEqual(["text-xl"]);
     expect("font-medium".match(/\bfont-(thin|extralight|light|medium)\b/g)).toEqual(["font-medium"]);
   });
 });

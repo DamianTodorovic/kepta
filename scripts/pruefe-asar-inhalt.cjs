@@ -969,6 +969,13 @@ const erwartet = [
   ["so answers stay small", 1],
   ["use 1 for a quick lookup", 1],
   ["the model answered fewer vectors than lines", 1],
+  // P83 (3.2.173): die 20-px-Stufe hat eine Utility und einen Rufer; der eine Sitz,
+  // der sie bisher unter Tailwinds Namen nannte (`text-xl`, DossierView.tsx:232), heisst
+  // jetzt `fs-6 lh-dicht`. Gezaehlt am installierten 3.2.172 (app.asar 49 200 999 B, latin1,
+  // Leerstand zusammengezogen, 6.11.2026 01:11:04 MEZ): "fs-6 lh-dicht" 0 mal,
+  // "text-xl font-semibold" 1 mal. Die beiden nackten Woerter zaehlen je 1 -- es sind die
+  // Token-Namen --fs-6 und --lh-dicht; nur das Paar ist ein Sitz, darum ist es die Marke.
+  ["fs-6 lh-dicht", 1],
   // Punkt 7 / P79, 5.11.2026 22:39 MEZ (3.2.168): der depth-Satz von 3.2.167 war dem Riegel
   // entglitten -- sein Semikolon trifft die Code-Kante der Sonde, also zaehlt er nicht und
   // kann nichts melden. Nachgewiesen an drei Formen: alt ohne Semikolon Kandidat, mit
@@ -1053,6 +1060,9 @@ const verboten = [
   // als Code verwirft -- ein Werkzeugsatz, den der Riegel nicht sieht, meldet 0 Funde, egal ob
   // er einen hat. Gezaehlt am installierten 3.2.167: **2** mal; am gebauten 3.2.168: **0** mal.
   "default 2; use 1",
+  // P83 (3.2.173): Tailwinds Name fuer 20 px ist seit der fs-6-Utility kein Ausrede-Name
+  // mehr -- verboten ist die Klassen-Kette, wie sie in der Flaeche stand.
+  "text-xl font-semibold",
   // P82 (3.2.172): die vier knappen Diener-Absagen, die ein Fachwort ohne Grund und
   // ohne Taetigkeit liessen (gemessen 00:30:54 MEZ als 4 der 5 Funde in 62 Kandidaten).
   "Node or stand not found",

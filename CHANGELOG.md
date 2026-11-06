@@ -1,4 +1,31 @@
+## [3.2.173]
+
+### Fixed
+
+- **A sentence with two full stops, found by looking at the picture and guarded on the painted
+  layer.** The density row of the graph's More menu read "…busiest notes first, as many as
+  fit.." (seen in `fenster-172-390/erklaerungen-menue.png`, 6.11.2026 00:56:24 MEZ): the switch
+  appended a period to a stage description that already carries one. At the source both forms
+  look like a template, so no counter could have seen it -- the new guard therefore lives in the
+  window cycle, which reads what is actually painted, and it names the row it catches (red at
+  00:58:58 MEZ before the fix).
+
+### Added
+
+- **The 20 px step is callable, and one seat stopped borrowing Tailwind's name for it.** The
+  contract has `--fs-6: 20px` and had no `@utility fs-6`; the surface's single `text-xl` seat
+  (`DossierView.tsx:232`) therefore carried Tailwind's own leading (1.556), a value the contract
+  does not know. It is now `fs-6 lh-dicht`, and `text-xl` joined the forbidden size names in
+  `tests/leitern-in-den-bausteinen.test.ts` -- with a bite control that still catches the old
+  name. The remaining 262 seats that name Tailwind's sizes are the next cut.
+- **`@utility lh-dicht` exists because a seat calls it.** The other two leading steps
+  (`lh-lesbar`, `lh-prosa`) were set in the same edit and the design warden refused them:
+  "Klassenregeln ohne Baustein (toter Stil) 2: lh-lesbar lh-prosa" (00:00:16 MEZ, Exit 1). They
+  come back with the sweep that gives them callers -- the contract's own rule, applied to my own
+  addition rather than exempted for it.
+
 ## [3.2.172]
+
 
 ### Added
 

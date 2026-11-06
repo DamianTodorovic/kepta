@@ -908,6 +908,15 @@ async function main() {
     console.log(`  beschnittene Erklaerungen: ${beschnitten.length}`);
     for (const z of beschnitten.slice(0, 4)) console.log(`      ${z.reihe}: ${z.t.slice(0, 64)}`);
     urteil("keine Erklaerung wird beschnitten", beschnitten.length === 0, true);
+    // P83: ein Satz mit zwei Punkten ist kein Rundungsfehler, sondern ein Text, den der
+    // Nutzer liest. Gemessen 00:56:24 MEZ im 390-Bild: "…busiest notes first, as many as
+    // fit.." -- die Weiche `case "namen"` (KnowledgeGraph.tsx:6175) haengt an eine
+    // eingesetzte Erklaerung, die schon einen Punkt traegt, noch einen an. An der Quelle
+    // ist das nicht zu sehen, darum steht die Wache hier: auf der gemalten Ebene.
+    const doppelpunkt = glieder.filter((z) => /\.\./.test(z.t));
+    console.log(`  Erklaerungen mit doppeltem Punkt: ${doppelpunkt.length}`);
+    for (const z of doppelpunkt.slice(0, 3)) console.log(`      ${z.reihe}: ${z.t.slice(-72)}`);
+    urteil("keine Erklaerung endet mit zwei Punkten", doppelpunkt.length === 0, true);
     console.log(`  Bild: ${await bild("erklaerungen-menue.png")}`);
   }
 
