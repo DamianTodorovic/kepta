@@ -6,10 +6,13 @@
   (`A local program on this machine — no key needed.`, `… more below — keep scrolling`,
   `No node of the core is inside this picture — …`, `Nothing claimed yet — write the first
   one below, …`, and two refusal lines in the memory router). This was not typography: the
-  census splits sentences at ` - `, so four of these counted as six and the denominators
-  moved with them. Measured 6.11.2026 05:32:32 MEZ: the surface corpus is **346 sentences**
-  (it said 348 a minute before) and the servant corpus **51** (it said 53), while the share
-  under the 14-word cap moved from 80.5 % to **80.3 %** against its 80 % bar.
+  census splits sentences at ` - `, so the two router lines counted as four. Measured on
+  the delivered object at 6.11.2026 05:44:44 MEZ: the servant corpus is **51 sentences**,
+  where 3.2.179 said 53 (measured 05:31:59 MEZ), while the surface corpus stays at **348**
+  and the share under the 14-word cap stays at **80.5 %** against its 80 % bar.
+  A reading taken at 05:32:32 MEZ said 346 and 80.3 % — that was the tree ahead of its own
+  object (the swap had not happened yet), and it is withdrawn here rather than kept as a
+  result: a census only testifies to the stand it shares with the bytes it reads.
 
 ### Added
 

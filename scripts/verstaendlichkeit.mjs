@@ -133,7 +133,11 @@ export function istBenutzersprache(s) {
   const woerter = s.split(/\s+/).filter(Boolean);
   if (woerter.length < 4) return false;
   if (/[A-Za-z0-9._-]+\/[A-Za-z0-9._-]+/.test(s)) return false;         // Pfade
-  if (/=>|\bif\(|\bfor\(|\.\w+\(/.test(s)) return false;                // starke Codezeichen
+  if (/=>|\bif\(|\bfor\(|\.\w+\(|\|\||&&/.test(s)) return false;        // starke Codezeichen
+  // P94: `||` und `&&` kamen neu, gemessen 05:47:59 MEZ im Baum -- ein Quelltextausdruck
+  // ("b.anzahl - a.anzahl || (a.label ...") lief durch das alte Raster, weil er klein
+  // anfing und kein Semikolon trug, und die Strich-Latte traf ihn als "Satz". Eine
+  // Verknuepfung ist keine Prosa: kein ausgelieferter Menschensatz nennt sie.
   // `{};=` treffen auch Prosa. Gemessen 5.11.2026 22:40 MEZ in `src/core`: sieben
   // Werkzeug-Saetze fielen durch das alte eine Raster, drei davon waren ausgeschrieben
   // Satze, die ein Modell wortlich liest (memory_search, memory_save, memory_consolidate).
@@ -170,14 +174,19 @@ function imObjekt(suche, s) {
   // Das Buendel ist Bytes, kein Text: ein Satz mit einem echten Gedankenstrich (U+2014) ist in
   // UTF-8 drei Bytes, und ein Suchlauf, der die Datei latin1 liest, findet ihn nie. Ebenso bricht
   // JSX einen langen Menschensatz ueber mehrere Quelltextzeilen, und der Compiler wirft die
-  // Umbrueche weg. Darum drei Lesungen, in dieser Reihenfolge: die rohen Bytes, die HTML-
-  // entlasteten Bytes, und die auf Leerraum zurueckgefuehrte Form gegen eine ebenso
-  // zurueckgefuehrte Datei.
+  // Umbrueche weg. Darum vier Lesungen, in dieser Reihenfolge: die rohen Bytes, die HTML-
+  // entlasteten Bytes, die auf Leerraum zurueckgefuehrte Form gegen eine ebenso zurueckgefuehrte
+  // Datei -- und seit P94 die Flucht-entlastete Form.
+  // Vierte Lesung, gemessen 05:46:43 MEZ am ausgelieferten 3.2.180: esbuild schreibt den
+  // Gedankenstrich im Server-Buendel als \u2014, sechs ASCII-Zeichen. Ohne diese Entlastung
+  // verschwindet der Satz aus der Gleichung, und der Diener-Nenner sinkt von 53 auf 51 --
+  // die Sonde meldet dann "nicht ausgeliefert" fuer etwas, das ausgeliefert ist.
   if (suche.puffer.includes(Buffer.from(s, "utf8"))) return true;
   const entlastet = s.replace(/&amp;/g, "&").replace(/&#39;|&rsquo;/g, "'").replace(/&quot;/g, '"');
   if (suche.puffer.includes(Buffer.from(entlastet, "utf8"))) return true;
   const glatt = (t) => t.replace(/\s+/g, " ").trim();
-  return suche.textGlatt.includes(glatt(s)) || suche.textGlatt.includes(glatt(entlastet));
+  if (suche.textGlatt.includes(glatt(s)) || suche.textGlatt.includes(glatt(entlastet))) return true;
+  return !!suche.textEntfl && (suche.textEntfl.includes(glatt(s)) || suche.textEntfl.includes(glatt(entlastet)));
 }
 
 /** Ein Census ueber einer Menge von Saetzen, mit seiner eignen Biss-Kontrolle. */
@@ -222,7 +231,17 @@ async function haupt() {
   if (OBJEKT) {
     if (!fs.existsSync(OBJEKT)) { console.log("KEIN OBJEKT unter " + OBJEKT); process.exitCode = 2; return; }
     const puffer = fs.readFileSync(OBJEKT);
-    suche = { puffer, textGlatt: puffer.toString("utf8").replace(/\s+/g, " ") };
+    suche = {
+      puffer,
+      textGlatt: puffer.toString("utf8").replace(/\s+/g, " "),
+      // Flucht-entlastet: \u2014 und seinesgleichen zurueck in Zeichen, damit ein Satz, der
+      // so ausgeliefert wird, nicht als "fehlt" gilt. Gemessen 05:46:43 MEZ: ohne diese
+      // Lesung ist die Router-Zeile im Objekt nicht zu finden, mit ihr schon.
+      textEntfl: puffer
+        .toString("utf8")
+        .replace(/\\u([0-9a-fA-F]{4})/g, (m, h) => String.fromCharCode(parseInt(h, 16)))
+        .replace(/\s+/g, " "),
+    };
     console.log("  Objekt: " + OBJEKT + " (" + puffer.length + " B, als Bytes und in einer leerraum-armen Lesung)");
   } else {
     console.log("  OHNE Objekt-Gleichung (--nur quelltext): die Zahl beschreibt den Baum, nicht die Auslieferung.");

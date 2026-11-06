@@ -1138,8 +1138,12 @@ const verboten = [
   // P94 (3.2.180): die andre Seite desselben Beweises. Am installierten 3.2.179 steht jede
   // dieser sechs Formen 1 mal (05:34:05 MEZ, eigne Zaehlung); nach dem Schnitt muss jede 0
   // sein, waehrend ihr Satz-Schwanz oben weiter zaehlt. Ein nackter Bindestrich zwischen
-  // Woertern war keine Zierde: der Census trennt Saetze an ihm, und vier Saetze zaehlten
-  // als sechs -- die Nenner 348 und 53 wurden zu 346 und 51 (gemessen 05:32:32 MEZ).
+  // Woertern war keine Zierde: der Census trennt Saetze an ihm, und die zwei Diener-Zeilen
+  // des Speicherverweisers zaehlten als vier. Gemessen am zugehoerigen Objekt: Diener 53
+  // (05:31:59 MEZ, 3.2.179) -> 51 (05:44:44 MEZ, 3.2.180), Flaeche bleibt 348, Kappe bleibt
+  // 80,5 % gegen ihre 80-er Latte. Eine Zwischenlesung um 05:32:32 MEZ meldete 346 und
+  // 80,3 % -- das war der Baum vor seinem eignen Objekt (der Tausch war nicht gefahren),
+  // und diese Zahl ist hier zurueckgenommen, nicht behalten.
   "machine - no key needed",
   "more below - keep scrolling",
   "picture - the number is off",
