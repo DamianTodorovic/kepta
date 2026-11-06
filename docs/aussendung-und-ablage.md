@@ -177,7 +177,52 @@ README) tatsächlich einlöst. Er braucht die Bau-Kante, also Punkt 1 oder 2 zue
 - x64 und Summen in der Landungs-Kette (Abschnitt 7, Punkt 3).
 - Die 32 alten Fassungen in `release/` und die drei Rücklager: sein Wort, nicht meins.
 
+## 9. Die Aussendung nachgezählt (Zusatzlauf 20:19 MEZ)
+
+Ein dritter Zensus, weil P121 zwei Fehler in denselben Texten fand: wie viele Sätze nach außen
+überhaupt etwas Behaupten, und wie viele davon nennen ihr Messzeug. Lauf:
+`node docs/belege/aussendungsatz-0611/zaehlen.mjs` → `zaehlung-0611.json` und
+`zaehlung-0611.log.txt`; die vier Texte sind `README.md`, `SECURITY.md`, `ROADMAP.md`,
+`.github/release-notes.md`.
+
+| | Sätze | absolute Behauptung | mit Messzeug | ohne Messzeug |
+|---|---|---|---|---|
+| zusammen | 318 | **129** | **19** | **110** |
+
+Der Nenner ist genannt, weil die Zahl sonst ein Urteil wäre: **85,3 %** (110 von 129) nennen im
+Satz selbst keinen Test, kein Skript, kein Artefakt und keine Datei:Zeile. Das ist **kein** Befund
+über Falschheit — die Zählklasse ist weit und trifft auch Produktcopy („no password to type").
+Deshalb die zweite, schmalere Klasse: Sätze, die ein Werkzeug widerlegen könnte (`never`,
+`always`, `cannot`, `0 %`, `100 %`) — **30 von 129** (26 im README, 2 in der Vorlage, je 1 in
+SECURITY und ROADMAP). Die 30 stehen als Liste im Artefakt und sind die Arbeit für Punkt 7.
+
+Zwei davon in demselben Lauf nachgegriffen, beide halten:
+
+- *„no screenshot of it here yet"* (Semantic-Ansicht): das README nennt **20** Bilder — 12 in
+  Markdown-Form, 8 als `<img alt>` —, davon **0** mit „Semantic", und der Satz steht noch.
+- *„no embedding ever travels into the view"*: **8** benannte Flächen-Dateien gelesen
+  (`KnowledgeGraph.tsx`, `GraphRegal.tsx`, `graphLayout.ts`, `graphSemantik.ts`, `graphSchema.ts`,
+  `graphHierarchy.ts`, `graphHerkunft.ts`, `graphTime.ts`), zusammen **0** Nennungen
+  „embedding"; das Wort liegt in **34** Test-Dateien des Repos, die Fläche selbst puffert also
+  nichts, was sie nicht senden dürfte.
+
+Zwei Zählerfehler, im Lauf selbst gefunden und berichtigt: zuerst zählte das Bild-Programm nur
+`alt="` und sah 8 statt 20 Bilder (Markdown-Bilder schreiben ihren Text in `![Text]`), und die
+Embedding-Sonde traf zuerst vier Dateinamen, von denen drei nicht existieren — eine Null über
+nicht existierenden Pfaden ist keine Messung, deshalb stehen die Dateien jetzt einzeln da und das
+Artefakt meldet fehlende Pfade selbst.
+
+## 10. Was daraus folgt
+
+Der Satz „die Aussendung ist geprüft" trägt nicht: 19 von 129 absoluten Behauptungen nennen ihr
+Messzeug im selben Satz, und die schmalen 30 sind die Arbeit. Angefangen wird mit den beiden, die
+ein Kunde beim ersten Start liest — Pfad (oben geheilt) und der Grenz-Absatz (oben geheilt); die
+nächsten in der Liste sind „Private notes never reach an app or a cloud model", „Keys, credentials,
+browser profiles, keychains and system folders are never read" und „every AI access is written to a
+tamper-evident audit log" — die letzte ist zählbar: Zugangsstellen gegen Audit-Schreibstellen.
+
 ## Fehler in diesem Schlag, die ich selbst gefunden habe
+
 
 1. `du -sk /tmp` meldete 0 GiB Stapel, weil `/tmp` ein Symlink ist; der erste Lauf schrieb diese Null.
    Berichtigt auf `du -sk /tmp/` (1,27 GiB) und in der Spur nachgemessen.

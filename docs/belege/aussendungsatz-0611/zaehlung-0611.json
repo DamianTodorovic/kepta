@@ -1,0 +1,545 @@
+{
+ "dateien": {
+  "README.md": {
+   "saetze": 248,
+   "absolut": 101,
+   "mit_zeug": 14,
+   "ohne_zeug": 87
+  },
+  "SECURITY.md": {
+   "saetze": 23,
+   "absolut": 6,
+   "mit_zeug": 1,
+   "ohne_zeug": 5
+  },
+  "ROADMAP.md": {
+   "saetze": 11,
+   "absolut": 6,
+   "mit_zeug": 3,
+   "ohne_zeug": 3
+  },
+  ".github/release-notes.md": {
+   "saetze": 36,
+   "absolut": 16,
+   "mit_zeug": 1,
+   "ohne_zeug": 15
+  }
+ },
+ "zusammen": {
+  "saetze": 318,
+  "absolut": 129,
+  "mit_zeug": 19,
+  "ohne_zeug": 110
+ },
+ "maschinell_pruefbar": {
+  "README.md": {
+   "absolut": 101,
+   "maschinell": 26
+  },
+  "SECURITY.md": {
+   "absolut": 6,
+   "maschinell": 1
+  },
+  "ROADMAP.md": {
+   "absolut": 6,
+   "maschinell": 1
+  },
+  ".github/release-notes.md": {
+   "absolut": 16,
+   "maschinell": 2
+  }
+ },
+ "summe_pruefbar": 30,
+ "beweise": {
+  "bilder_markdown": 12,
+  "bilder_img_tag": 8,
+  "bilder_semantic": 0,
+  "readme_sagt_kein_semantic_bild": true,
+  "flaechen_dateien": [
+   {
+    "Datei": "src/components/KnowledgeGraph.tsx",
+    "vorhanden": true,
+    "funde": 0
+   },
+   {
+    "Datei": "src/components/GraphRegal.tsx",
+    "vorhanden": true,
+    "funde": 0
+   },
+   {
+    "Datei": "src/lib/graphLayout.ts",
+    "vorhanden": true,
+    "funde": 0
+   },
+   {
+    "Datei": "src/lib/graphSemantik.ts",
+    "vorhanden": true,
+    "funde": 0
+   },
+   {
+    "Datei": "src/lib/graphSchema.ts",
+    "vorhanden": true,
+    "funde": 0
+   },
+   {
+    "Datei": "src/lib/graphHierarchy.ts",
+    "vorhanden": true,
+    "funde": 0
+   },
+   {
+    "Datei": "src/lib/graphHerkunft.ts",
+    "vorhanden": true,
+    "funde": 0
+   },
+   {
+    "Datei": "src/lib/graphTime.ts",
+    "vorhanden": true,
+    "funde": 0
+   }
+  ],
+  "embedding_in_flaechen_dateien": 0,
+  "tests_mit_embedding_wort": 34
+ },
+ "ohne_zeug": [
+  {
+   "datei": "README.md",
+   "satz": "<p align=\"center\"><img src=\"public/kepta-logo.svg\" width=\"88\" alt=\"K3PTA\"></p> <h1 align=\"center\">K3PTA — Keeps what matters</h1> <p align=\"center\"><strong>Your AI forgets you after every chat.<br>K3PTA remembers — on yo"
+  },
+  {
+   "datei": "README.md",
+   "satz": "This repository is the full desktop application.</sub></p> ## 🎬 Watch your knowledge grow <p align=\"center\"><img src=\"docs/demo.gif\" alt=\"Eighteen months of knowledge growing in the graph as the time slider runs, then s"
+  },
+  {
+   "datei": "README.md",
+   "satz": "The time slider replays eighteen months of a fictional advisory firm, and because every note carries a validity window, past moments show exactly what was true then."
+  },
+  {
+   "datei": "README.md",
+   "satz": "Both films were recorded on 18 September 2026 with `npm run screenshots` on an invented demo corpus — no real data, no real people."
+  },
+  {
+   "datei": "README.md",
+   "satz": "The machine state printed in the same artefacts says why no millisecond there is claimed as a verdict."
+  },
+  {
+   "datei": "README.md",
+   "satz": "While it cools at 3 000 notes a few pairs still touch for a moment; the same test pins that funnel at ≤ 40 pairs by step 250 and 0 by step 310, so no sentence here says „never overlaps\" without naming the moment."
+  },
+  {
+   "datei": "README.md",
+   "satz": "What a frame costs at each size is timed in [`docs/graph-kosten.md`](docs/graph-kosten.md), not claimed in this caption — a millisecond number is only worth the quiet machine that produced it."
+  },
+  {
+   "datei": "README.md",
+   "satz": "The third view, *Semantic*, places the same notes by what their texts mean — no screenshot of it here yet.</sub> ### Knowledge that has a date Every memory carries a validity window, so the graph can be replayed: pull th"
+  },
+  {
+   "datei": "README.md",
+   "satz": "The same question works in search (`asOf` in the HTTP API and MCP) and in the editor, where every note shows its *valid from / valid until*."
+  },
+  {
+   "datei": "README.md",
+   "satz": "The next day you open a fresh chat and it knows none of it."
+  },
+  {
+   "datei": "README.md",
+   "satz": "**To use the app — no.** Download the file for your system, open it, done."
+  },
+  {
+   "datei": "README.md",
+   "satz": "<details> <summary><strong>The words used on this page, in plain terms</strong></summary> | Word | What it means here | |---|---| | **Agent** | An AI program that can use tools instead of only answering — Claude Desktop,"
+  },
+  {
+   "datei": "README.md",
+   "satz": "Whoever holds only the file holds nothing readable."
+  },
+  {
+   "datei": "README.md",
+   "satz": "K3PTA stores the database key there — no password to type, no key on the disk."
+  },
+  {
+   "datei": "README.md",
+   "satz": "No upload, no account, no telemetry."
+  },
+  {
+   "datei": "README.md",
+   "satz": "**One brain for every AI tool.** Claude Desktop, Cursor, Gemini CLI, Cline, Codex — anything that speaks MCP shares the same encrypted knowledge base, plus anything that only speaks HTTP through the REST API."
+  },
+  {
+   "datei": "README.md",
+   "satz": "**Keep agents sharp instead of letting them rot.** Every memory carries a type, a validity window and a confidence score."
+  },
+  {
+   "datei": "README.md",
+   "satz": "On a four-note check (`npm run embed:sprachtest`) the default model answers 4 of 4 English paraphrase questions and 1 of 4 of the same questions translated into German."
+  },
+  {
+   "datei": "README.md",
+   "satz": "Changing the default would also mean re-embedding every stored note, because each chunk is keyed to the model that produced it (`npm run eval:sprache` reruns both sides)."
+  },
+  {
+   "datei": "README.md",
+   "satz": "Keys, credentials, browser profiles, keychains and system folders are never read, and that cannot be switched off — because an imported note is readable by every agent you connect over MCP."
+  },
+  {
+   "datei": "README.md",
+   "satz": "**Private, provably.** Everything lives in `~/.kepta/`, encrypted on disk, no account, no telemetry — and every AI access is written to a tamper-evident audit log you can check and export."
+  },
+  {
+   "datei": "README.md",
+   "satz": "## 🧩 Every feature <details open> <summary><strong>Capture &amp; store</strong></summary> - Create, edit and delete notes — **trash instead of hard delete**, with restore - **Memory types**: `semantic` (facts), `episodi"
+  },
+  {
+   "datei": "README.md",
+   "satz": "Existing notes can be sorted afterwards from Settings → Data, with a preview first - **Scope**: `user`, `agent`, `session` — separates who a memory belongs to - **Private notes** — one switch in the editor: a private not"
+  },
+  {
+   "datei": "README.md",
+   "satz": "Expired entries are marked, never quietly hidden - **Supersede chains** (`superseded_by`): contradictions displace each other and the history survives - **Files** by drag and drop: PDF, MD, TXT, JSON — chunked at 2000 ch"
+  },
+  {
+   "datei": "README.md",
+   "satz": "Files imported with an older extraction can be read again under *Settings → Data → Re-read imported files* — it counts first and writes only after you confirm - **URL clipper** with SSRF protection (IP literals in every "
+  },
+  {
+   "datei": "README.md",
+   "satz": "`npm run ablation` divides by 5 and reports a real P@5 on the same corpus: two metrics, two names, never comparable."
+  },
+  {
+   "datei": "README.md",
+   "satz": "</details> <details open> <summary><strong>Knowledge graph</strong></summary> - Entities and relations from `[[wiki links]]` and automatic extraction - A concept in the picture is a shared one: a term that exists only be"
+  },
+  {
+   "datei": "README.md",
+   "satz": "It is computed on the server, so no embedding ever travels into the view - Force-directed layout on an **unbounded canvas** — nodes repel each other and follow when you drag their neighbours; the layout grows with the ba"
+  },
+  {
+   "datei": "README.md",
+   "satz": "Turning a slider does not rebuild the world: the picture keeps its place and settles under the new forces, and one click returns the tuned defaults - Zoom, pan, draggable nodes, and **fit-to-view** that always frames the"
+  },
+  {
+   "datei": "README.md",
+   "satz": "The second channel switches itself off with the reason when the base holds only one kind of arrival; it never paints everything grey."
+  },
+  {
+   "datei": "README.md",
+   "satz": "Dot size by number of connections - Tells a real connection apart from mere similarity - **Schema panel** — what the store holds, counted: kinds of note, concepts, and every claim type by name."
+  },
+  {
+   "datei": "README.md",
+   "satz": "A row is a handle: everything the store does not claim through it steps back - Double-click opens the note </details> <details open> <summary><strong>Maintenance &amp; consolidation</strong></summary> - **Duplicate detec"
+  },
+  {
+   "datei": "README.md",
+   "satz": "Read straight from the local database: no AI involved, nothing leaves the computer - **Contradictions** — two notes that name a different time, date, amount, percentage or quantity for the same thing appear side by side,"
+  },
+  {
+   "datei": "README.md",
+   "satz": "*Keep the newer*, *Keep the older* (the other is marked as replaced, never deleted) or *Both are right* (never asked again)."
+  },
+  {
+   "datei": "README.md",
+   "satz": "Careful on purpose: only facts and how-tos are compared, both sentences must share their meaningful words, notes from the same file stay out, and so do the parts of a split file (`README — 5/17`), a note's source line an"
+  },
+  {
+   "datei": "README.md",
+   "satz": "*Copy as Markdown* or *Save as note* </details> <details open> <summary><strong>Your AI apps — connected, visible, accountable</strong></summary> - **Connect in one click** — K3PTA finds the AI apps already installed (Cl"
+  },
+  {
+   "datei": "README.md",
+   "satz": "Zed, Codex CLI, Continue and every other MCP client get the exact snippet to paste."
+  },
+  {
+   "datei": "README.md",
+   "satz": "A backup of the old file sits right next to it, every other entry stays, and a file that is not plain JSON is never touched - **Live activity** (⌘7) — which app is active right now and what it searched, saved or changed,"
+  },
+  {
+   "datei": "README.md",
+   "satz": "Every entry is sealed with the SHA-256 of the one before it; *Check integrity* shows whether anything was changed, removed or cut off."
+  },
+  {
+   "datei": "README.md",
+   "satz": "Private notes never reach an app or a cloud model."
+  },
+  {
+   "datei": "README.md",
+   "satz": "Card numbers must pass the Luhn check and IBANs the mod-97 check; dates are never taken for phone numbers."
+  },
+  {
+   "datei": "README.md",
+   "satz": "No license server, no phone-home, no extra infrastructure — one file."
+  },
+  {
+   "datei": "README.md",
+   "satz": "All eight tools ship an `outputSchema` and return `structuredContent`."
+  },
+  {
+   "datei": "README.md",
+   "satz": "Without a reachable local LLM it always degrades to ADD — the gate can never block you."
+  },
+  {
+   "datei": "README.md",
+   "satz": "| Tool | Purpose | |---|---| | `memory_search` | Hybrid retrieval with temporal weighting | | `memory_save` | Create, including type, scope and validity | | `memory_update` | Change an existing memory | | `memory_delete`"
+  },
+  {
+   "datei": "README.md",
+   "satz": "</details> <details> <summary><strong>Interface</strong></summary> - **Command palette** (⌘K) for everything without the mouse - **Tag filter** with counts and multi-select - **Light/dark** and **focus mode** - **Setup w"
+  },
+  {
+   "datei": "README.md",
+   "satz": "Settings can only narrow what is read, never widen it: keys, credentials, browser profiles, keychains and wallets stay blocked, the size cap stays capped, and roots outside your home folder are refused."
+  },
+  {
+   "datei": "README.md",
+   "satz": "HTML is turned into text before import, and content that carries no knowledge — markup scaffolding, repeated table rows — never becomes a note - **Knowledge list** — a click opens a readable preview: the full text, the s"
+  },
+  {
+   "datei": "README.md",
+   "satz": "Every card shows where it came from and which part it is (2/5), and a file source opens in its default application."
+  },
+  {
+   "datei": "README.md",
+   "satz": "The list groups by file, by kind or by period, and *Load more* never cuts a group in half - **Text size** — `100`, `115` or `130 %`, under *Settings → Display*."
+  },
+  {
+   "datei": "README.md",
+   "satz": "The interface is English; German notes and German queries work as well as English ones </details> <details> <summary><strong>HTTP API — 65 routes</strong></summary> | Area | Routes | |---|---| | Memories | `GET /api/memo"
+  },
+  {
+   "datei": "README.md",
+   "satz": "embeddings .-> OLL ``` No service in between, no account, no telemetry."
+  },
+  {
+   "datei": "README.md",
+   "satz": "Your memories are stored only in that encrypted SQLite file — there is no server of mine for them to reach."
+  },
+  {
+   "datei": "README.md",
+   "satz": "It is off until you add a key, and the memory store is never synced anywhere."
+  },
+  {
+   "datei": "README.md",
+   "satz": "No cream.\", tags=[\"cooking\"]) for hit in kepta.search(\"carbonara without cream\"): print(f\"{hit.score:.2f} {hit.memory.title}\") ``` Standard library only, no dependencies."
+  },
+  {
+   "datei": "README.md",
+   "satz": "Details: [python/README.md](python/README.md) · [PyPI](https://pypi.org/project/kepta/) ## 🔐 K3PTA is free, and nothing in it is locked There are two things in the world: **K3PTA Core**, free — the desktop app and the e"
+  },
+  {
+   "datei": "README.md",
+   "satz": "- **No keys, no limits, no upgrade panel.** Every tool in the app runs without bound: chat, clipper, machine scan, dossiers, briefings, audit, Device Sync, all eight MCP tools."
+  },
+  {
+   "datei": "README.md",
+   "satz": "There is nothing to activate and nothing to buy inside the window, so the app also never asks for it — no key field, no counter, no trial clock, no \"first day free\" and no message about a limit."
+  },
+  {
+   "datei": "README.md",
+   "satz": "It was never a lock — but it was counting, and counting needed places to hide the tally (an authenticated state in the database, a keychain anchor, a hidden file)."
+  },
+  {
+   "datei": "README.md",
+   "satz": "K3PTA's promise is a memory that is yours without supervision, so the whole mechanism was removed rather than tuned: no route, no header, no anchor, no strings."
+  },
+  {
+   "datei": "README.md",
+   "satz": "Without that file there is no team workspace — the app says so plainly instead of hiding a dead end."
+  },
+  {
+   "datei": "README.md",
+   "satz": "- **No plugin store, and that is not a lock.** K3PTA loads no third-party code, so there is nothing to approve, nothing to buy and nothing an organisation could switch off for you: the app's own features run the same in "
+  },
+  {
+   "datei": "README.md",
+   "satz": "- **The data is never hostage.** The knowledge base file stays on disk, encrypted, and readable by the source-available engine."
+  },
+  {
+   "datei": "README.md",
+   "satz": "There is no key that could revoke it."
+  },
+  {
+   "datei": "README.md",
+   "satz": "There is no self-serve checkout anywhere, and there is no longer a key to issue for the app."
+  },
+  {
+   "datei": "README.md",
+   "satz": "## 🧠 The source-available core The engine underneath this app is source-available — **BUSL-1.1**, at [DamianTodorovic/kepta](https://github.com/DamianTodorovic/kepta) (each release converts to AGPL-3.0-or-later after fo"
+  },
+  {
+   "datei": "README.md",
+   "satz": "No path, nothing to build — `npx` fetches the server the first time it is needed: ```json { \"mcpServers\": { \"kepta\": { \"command\": \"npx\", \"args\": [\"-y\", \"kepta-mcp\"] } } } ``` That is the whole connection, and it works wi"
+  },
+  {
+   "datei": "README.md",
+   "satz": "If you would rather not have npx check the registry on every start, install it once with `npm i -g kepta-mcp` and use `\"command\": \"kepta\"` instead."
+  },
+  {
+   "datei": "README.md",
+   "satz": "In the installed app that page offers a third way first: the MCP server that ships inside K3PTA, started by the app itself — no Node.js, no npm."
+  },
+  {
+   "datei": "README.md",
+   "satz": "The desktop app is published **only for macOS** — Apple silicon and Intel."
+  },
+  {
+   "datei": "README.md",
+   "satz": "No other platform has a downloadable app, and nothing here pretends otherwise."
+  },
+  {
+   "datei": "README.md",
+   "satz": "| Your system | File | |---|---| | Mac with Apple Silicon (M1–M4) | `K3PTA-<version>-mac-arm64.dmg` | | Mac with an Intel processor | `K3PTA-<version>-mac-x64.dmg` | | Windows or Linux | No app file is published."
+  },
+  {
+   "datei": "README.md",
+   "satz": "The engine itself runs on all three (`kepta-mcp` on npm, or from source), so an MCP client on those systems talks to the same memory — only the window is missing."
+  },
+  {
+   "datei": "README.md",
+   "satz": "| Every published file carries its platform and architecture in the name."
+  },
+  {
+   "datei": "README.md",
+   "satz": "The packages are self-contained; you only need Node ≥ 22.13 to build them yourself."
+  },
+  {
+   "datei": "README.md",
+   "satz": "The fastest way through, and the one that works on every macOS version: ```bash xattr -dr com.apple.quarantine /Applications/K3PTA.app ``` Without the terminal: **System Settings → Privacy & Security**, scroll down to th"
+  },
+  {
+   "datei": "README.md",
+   "satz": "They are built from this source and never published here, so they are untested against a real installer download; treat them as source builds, not as shipped products."
+  },
+  {
+   "datei": "README.md",
+   "satz": "```bash npm run lint # typecheck (tsc) + ESLint — 0 errors required npm test # 3696 tests (vitest) npm run test:cov # tests + coverage gate + test count in the README npm run eval # retrieval quality (Hit@1) ``` | Layer "
+  },
+  {
+   "datei": "README.md",
+   "satz": "The routers and helpers count towards the overall coverage gate; the only exclusion is the bootstrap, which binds a port and never runs in a unit test."
+  },
+  {
+   "datei": "README.md",
+   "satz": "The gates sit a little below what is reached, so they can only move up."
+  },
+  {
+   "datei": "README.md",
+   "satz": "Obsidian is excellent for humans — but Markdown is not a memory: no types, no validity, no MCP."
+  },
+  {
+   "datei": "README.md",
+   "satz": "Every figure below is a run of this repository's own tools, kept whole next to the sentence that uses it — disagree with the numbers by rerunning them."
+  },
+  {
+   "datei": "README.md",
+   "satz": "- `npm run eval` — 58 notes, 45 queries, five categories, in three legs: the naive substring search it replaced, the engine without vectors, and the engine **with** vectors, which is what actually ships."
+  },
+  {
+   "datei": "README.md",
+   "satz": "The status panel quotes the 71 % because that branch of the panel is exactly the case where no embedder answers."
+  },
+  {
+   "datei": "README.md",
+   "satz": "The eval's third leg, measured independently on 2026-11-03, lands on the same 76 %."
+  },
+  {
+   "datei": "README.md",
+   "satz": "- `npm run eval:sprache` — the same 58-note corpus, 15 pairs drawn from its 45 queries, where only the language of the question moves: an English question over German notes, with the answer set inherited from the corpus "
+  },
+  {
+   "datei": "README.md",
+   "satz": "An explanation counts only if the sentence names the word itself and runs longer than eight words: \"A written brief on one subject\" does not explain *Dossier*, \"A Dossier is a written brief on one subject, built from the"
+  },
+  {
+   "datei": "SECURITY.md",
+   "satz": "No public exploit before a fix exists."
+  },
+  {
+   "datei": "SECURITY.md",
+   "satz": "## Hardening in place - Only this computer: the HTTP API refuses requests whose `Host` header does not name this machine (DNS rebinding) and requests from other websites that would change anything (cross-site requests) -"
+  },
+  {
+   "datei": "SECURITY.md",
+   "satz": "The key is created on the first start and stored in the system keychain: the macOS Keychain (service `app.kepta.database`, account `kepta`), Windows DPAPI (`database-key.dpapi` in the data folder, readable only under the"
+  },
+  {
+   "datei": "SECURITY.md",
+   "satz": "- A running K3PTA: the local API (`127.0.0.1`, no authentication) serves the decrypted knowledge to programs on the same machine, as before."
+  },
+  {
+   "datei": "SECURITY.md",
+   "satz": "**Keep a copy of the key.** It never leaves the keychain on its own; if the keychain is lost (a fresh system, a new Windows account), a restored `kepta.db` cannot be opened."
+  },
+  {
+   "datei": "ROADMAP.md",
+   "satz": "# 🗺️ K3PTA Roadmap — v2.0 and beyond > As of September 2026 · Replaces `WHITE-SPACE-ANALYSE.md` (the v1.0 analysis, whose quick wins and big bets are all shipped)."
+  },
+  {
+   "datei": "ROADMAP.md",
+   "satz": "**One** code path for UI, HTTP API and MCP | | **Knowledge graph** | Entities and relations (from `[[wiki links]]` and auto-extraction), a graph view built on real edges | | **MCP** | Protocol 2026-07-28 (stateless core,"
+  },
+  {
+   "datei": "ROADMAP.md",
+   "satz": "Since 3.1.1 the sidebar shows the licensee's name with no tier label — the number itself is no longer on screen (it travels with the license state and the activation answer) | | **Revocation** | A revoked license number "
+  },
+  {
+   "datei": ".github/release-notes.md",
+   "satz": "| Your system | File | |---|---| | Mac with Apple silicon (M1 and later) | `K3PTA-<version>-mac-arm64.dmg` | | Mac with an Intel processor | `K3PTA-<version>-mac-x64.dmg` | Published installers are **macOS only**."
+  },
+  {
+   "datei": ".github/release-notes.md",
+   "satz": "Every file carries its platform and architecture in the name."
+  },
+  {
+   "datei": ".github/release-notes.md",
+   "satz": "**No license key is needed to run K3PTA.** The download is K3PTA Core and it is free, and nothing in it is metered: no day count, no cap on the endpoints, no counter in the window."
+  },
+  {
+   "datei": ".github/release-notes.md",
+   "satz": "A signed key is an artefact of a K3PTA Enterprise agreement, never something sold off a shelf."
+  },
+  {
+   "datei": ".github/release-notes.md",
+   "satz": "The fastest way through, and the one that works on every macOS version: ```bash xattr -dr com.apple.quarantine /Applications/K3PTA.app ``` Without the terminal: **System Settings → Privacy & Security** → scroll to the K3"
+  },
+  {
+   "datei": ".github/release-notes.md",
+   "satz": "Note: right-clicking the app and choosing *Open* no longer works — Apple removed that route in macOS 15."
+  },
+  {
+   "datei": ".github/release-notes.md",
+   "satz": "## 🪟 Windows and Linux Nothing to install yet: no Windows or Linux installer is published."
+  },
+  {
+   "datei": ".github/release-notes.md",
+   "satz": "Before the first start of the new version, **quit every agent that uses K3PTA over MCP** (Claude Desktop, Cursor, …), so the app has the file to itself and can convert it — then start them again."
+  },
+  {
+   "datei": ".github/release-notes.md",
+   "satz": "## 🔌 Connect an agent (MCP) K3PTA ships its own MCP server — no Node.js, no npm."
+  },
+  {
+   "datei": ".github/release-notes.md",
+   "satz": "For K3PTA in *Applications* on a Mac it is: ```json { \"mcpServers\": { \"kepta\": { \"command\": \"/Applications/K3PTA.app/Contents/MacOS/K3PTA\", \"args\": [\"/Applications/K3PTA.app/Contents/Resources/app.asar/dist/mcp-server.cj"
+  },
+  {
+   "datei": ".github/release-notes.md",
+   "satz": "--- <details> <summary>🇩🇪 Deutsch — welche Datei brauche ich?</summary> | Dein System | Datei | |---|---| | Mac mit Apple Silicon (M1 und neuer) | `K3PTA-<version>-mac-arm64.dmg` | | Mac mit Intel-Prozessor | `K3PTA-<v"
+  },
+  {
+   "datei": ".github/release-notes.md",
+   "satz": "**K3PTA braucht keinen Schlüssel zum Laufen.** Der Download ist K3PTA Core und gratis, und nichts darin ist begrenzt: kein Tageszähler, keine Kappe an den Endpunkten, kein Zähler in der Fläche."
+  },
+  {
+   "datei": ".github/release-notes.md",
+   "satz": "Ein signierter Schlüssel ist Artefakt einer Enterprise-Vereinbarung, nie ein Kaufprodukt von der Liste."
+  },
+  {
+   "datei": ".github/release-notes.md",
+   "satz": "Vor dem ersten Start alle Agenten schließen, die K3PTA über MCP nutzen (Claude Desktop, Cursor …), danach wieder starten."
+  },
+  {
+   "datei": ".github/release-notes.md",
+   "satz": "Alle Daten bleiben lokal in `~/.kepta/`."
+  }
+ ]
+}
