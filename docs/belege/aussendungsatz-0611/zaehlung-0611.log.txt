@@ -1,4 +1,4 @@
-Zeit: 6.11.2026, 23:26:38 MEZ
+Zeit: 6.11.2026, 23:36:48 MEZ
 Dateien: README.md, SECURITY.md, ROADMAP.md, .github/release-notes.md — Einheiten ueber 25 Zeichen.
 Riss: satz-riss.mjs (P128, markdown-fest). Vorher: Satzende + Leerzeichen ueber dem
 ganzen Text, wodurch Aufzaehlungen, Tabellenzeilen und `<summary>`-Kuelsen als EIN
@@ -9,11 +9,11 @@ Satz zaehlten. Unter beiden Naivlingen, in diesem Lauf nachgerechnet:
 
 | Datei | Saetze | absolute | mit Messzeug | ohne Messzeug | Anteil ohne |
 |---|---|---|---|---|---|
-| `README.md` | 410 | 128 | 36 | 92 | 71.9 % |
+| `README.md` | 410 | 128 | 39 | 89 | 69.5 % |
 | `SECURITY.md` | 31 | 7 | 1 | 6 | 85.7 % |
 | `ROADMAP.md` | 77 | 16 | 0 | 16 | 100.0 % |
 | `.github/release-notes.md` | 50 | 18 | 1 | 17 | 94.4 % |
-| **zusammen** | **568** | **169** | **38** | **131** | **77.5 %** |
+| **zusammen** | **568** | **169** | **41** | **128** | **75.7 %** |
 
 Nenner fuer den Anteil: 169 absolute Behauptungen in 568 Saetzen der vier Texte.
 
@@ -25,7 +25,7 @@ Zweite Lesung — der Zeuge darf im selben Abschnitt stehen (Absatz, Tabelle, Au
 | `ROADMAP.md` | 16 | 0 | 16 |
 | `.github/release-notes.md` | 18 | 0 | 18 |
 | zusammen | 169 | 55 | 114 |
-   mit Messzeug im selben Abschnitt: 55 von 169 = 32.5 % (gegen 38 von 169 = 22.5 % in der engen Lesung).
+   mit Messzeug im selben Abschnitt: 55 von 169 = 32.5 % (gegen 41 von 169 = 24.3 % in der engen Lesung).
 
 Die schmalere Klasse — Saetze, die ein Werkzeug widerlegen koennte (never/always/cannot/0 %/100 %):
    README.md                  25 von 128 absoluten
@@ -34,15 +34,15 @@ Die schmalere Klasse — Saetze, die ein Werkzeug widerlegen koennte (never/alwa
    .github/release-notes.md   2 von 18 absoluten
    zusammen 29 von 169 — der Rest ist Produktcopy ("no password to type"), keine Behauptung ueber eine Maschine.
    Die Liste, in Lesereihenfolge, mit dem Marker „Zeug", wenn derselbe Satz schon ein Messzeug nennt:
-   [README.md]      While it cools at 3 000 notes a few pairs still touch for a moment; the same test pins that funnel at ≤ 40 pairs by step 250 and 0 by step 310, so no sentence here says „never overlaps" without naming the moment.
+   [README.md] ZEUG While it cools at 3 000 notes a few pairs still touch for a moment; tests/lib/graphLayout.test.ts:2455-2458 pins that funnel at ≤ 40 pairs by step 250, ≤ 40 again by step 310 and zero by step 380, so no sentence here say
    [README.md] ZEUG Keys, credentials, browser profiles, keychains and system folders are never read, and that cannot be switched off (tests/scan/regeln.test.ts tries to open the barrier with a widened file-type list and is refused) — becau
    [README.md] ZEUG Private notes — one switch in the editor: a private note is never shown to an AI app and never sent to a cloud model — in the app (tests/mcp.test.ts refuses it over MCP even when an agent asks by scope; tests/enterprise-
    [README.md] ZEUG Expired entries are marked, never quietly hidden (tests/engine.test.ts:78-83 asks for an expired note, gets it back with expired: true, and sees it ranked below the fresh one rather than missing)
    [README.md] ZEUG Local reranking: a deterministic reranker (term coverage, phrase hits, title, tags) refines the fused ranking and is exposed as rerankScore — no network, always on (tests/core/lokaler-rerank.test.ts scores with the embed
-   [README.md]      npm run ablation divides by 5 and reports a real P@5 on the same corpus: two metrics, two names, never comparable.
+   [README.md] ZEUG npm run ablation divides by 5 and reports a real P@5 on the same corpus: two metrics, two names, never comparable (tests/eval-metrik.test.ts:37 pins the capped divisor, :55 pins the division by five and the P@5 name, :48
    [README.md] ZEUG It is computed on the server, so no embedding ever travels into the view (tests/rest-semantik.test.ts:70 reads the raw HTTP body and refuses any word like embedding, vektor or vector in it)
    [README.md] ZEUG At phone width a readability floor can decide the size instead of the frame; when it does, the button says so in its own title, and tests/components/graph-fit-390-keine-verlust.test.ts:73 holds the one promise that survi
-   [README.md]      The second channel switches itself off with the reason when the base holds only one kind of arrival; it never paints everything grey.
+   [README.md] ZEUG The second channel switches itself off with the reason when the base holds only one kind of arrival; it never paints everything grey (tests/components/KnowledgeGraph.render.test.tsx:3537 finds the Provenance control disa
    [README.md] ZEUG *Keep the newer*, *Keep the older* (the other is marked as replaced, never deleted — tests/enterprise-api.test.ts:215 reads the replaced note back with supersededBy set, and tests/engine.test.ts:167 counts both notes sti
    [README.md] ZEUG A backup of the old file sits right next to it, every other entry stays, and a file that is not plain JSON is never touched (tests/lib/einrichtung.test.ts:42 checks the backup and the untouched neighbours, :61 hands a co
    [README.md] ZEUG Private notes never reach an app or a cloud model — the same two checks apply here: tests/mcp.test.ts refuses a private note at the MCP door even when an agent asks for it by scope, and tests/enterprise-api.test.ts reads
@@ -68,14 +68,13 @@ Zwei von ihnen nachgegriffen, im selben Lauf:
    "no screenshot of it here yet" (Semantic-Ansicht): README nennt 20 Bilder (12 in Markdown, 8 als <img alt>), davon 0 mit "Semantic"; der Satz steht noch da — haltbar.
    "no embedding ever travels into the view": 8 von 8 benannten Flaechen-Dateien gelesen, zusammen 0 Nennung(en) "embedding"; das Wort liegt in 34 Test-Dateien des Repos. Fehlende Dateien: keine.
 
-Die 131 ohne Messzeug, in Lesereihenfolge der Dateien (erste 40):
+Die 128 ohne Messzeug, in Lesereihenfolge der Dateien (erste 40):
    [README.md] Your AI forgets you after every chat.
    [README.md] Desktop app · no cloud · no account · encrypted at rest SQLite · hybrid retrieval · knowledge graph · MCP
    [README.md] Every entry is a node, every connection an edge — real connections drawn solid, mere similarity dashed.
    [README.md] The time slider replays eighteen months of a fictional advisory firm, and because every note carries a validity window, past moments show exactly what was true then.
    [README.md] Both films were recorded on 18 September 2026 with npm run screenshots on an invented demo corpus — no real data, no real people.
    [README.md] The machine state printed in the same artefacts says why no millisecond there is claimed as a verdict.
-   [README.md] While it cools at 3 000 notes a few pairs still touch for a moment; the same test pins that funnel at ≤ 40 pairs by step 250 and 0 by step 310, so no sentence here says „never overlaps" without naming the moment.
    [README.md] What a frame costs at each size is timed in [docs/graph-kosten.md](docs/graph-kosten.md), not claimed in this caption — a millisecond number is only worth the quiet machine that produced it.
    [README.md] The third view, *Semantic*, places the same notes by what their texts mean — no screenshot of it here yet.
    [README.md] Every memory carries a validity window, so the graph can be replayed: pull the time slider back, and every note that was not true yet at that moment dims — not deleted, simply not true *yet*.
@@ -99,9 +98,7 @@ Die 131 ohne Messzeug, in Lesereihenfolge der Dateien (erste 40):
    [README.md] Every transfer is recorded in a tamper-evident hash-chained ledger (~/.kepta/sync-journal.jsonl): the inspectable proof of what moved between devices, without the content ever being readable in transit
    [README.md] Persistent embeddings via Ollama (nomic-embed-text), computed by a background queue instead of re-embedding on every query
    [README.md] Meaning search can be switched off; the result slider runs 5 · 10 · 20 · 50 · 100 · 250 · All, and the index says how many notes match in total
-   [README.md] npm run ablation divides by 5 and reports a real P@5 on the same corpus: two metrics, two names, never comparable.
    [README.md] - A concept in the picture is a shared one: a term that exists only because it repeats the title of the single note carrying it is an echo of your filing, not knowledge, and the graph leaves it out — the concept count is
-   [README.md] The second channel switches itself off with the reason when the base holds only one kind of arrival; it never paints everything grey.
    [README.md] Schema panel — what the store holds, counted: kinds of note, concepts, and every claim type by name.
    [README.md] Settings live in the encrypted data directory, not in browser storage — the desktop shell binds to a free port that changes on every launch, and localStorage is keyed by origin, so anything kept there was gone after a re
    [README.md] Read straight from the local database: no AI involved, nothing leaves the computer
@@ -109,3 +106,6 @@ Die 131 ohne Messzeug, in Lesereihenfolge der Dateien (erste 40):
    [README.md] Connect in one click — K3PTA finds the AI apps already installed (Claude Desktop, Claude Code, Cursor, Windsurf, VS Code, Gemini CLI, Cline, Roo Code) and adds itself to their MCP settings, pointing to the server inside 
    [README.md] Zed, Codex CLI, Continue and every other MCP client get the exact snippet to paste.
    [README.md] Audit log — every access to the knowledge base, by you, by each AI app and by scripts, with exactly the notes an app got to see.
+   [README.md] Every entry is sealed with the SHA-256 of the one before it; *Check integrity* shows whether anything was changed, removed or cut off.
+   [README.md] Both protections are on by default, and every cloud request is in the audit log
+   [README.md] Managed deployment & central policies — IT deploys one managed-settings.json (the macOS MDM path, since the app ships macOS only; the Windows and Linux paths are in the same reader for self-built packages — or set KEPTA_

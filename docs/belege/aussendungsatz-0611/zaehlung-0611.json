@@ -3,8 +3,8 @@
   "README.md": {
    "saetze": 410,
    "absolut": 128,
-   "mit_zeug": 36,
-   "ohne_zeug": 92
+   "mit_zeug": 39,
+   "ohne_zeug": 89
   },
   "SECURITY.md": {
    "saetze": 31,
@@ -28,8 +28,8 @@
  "zusammen": {
   "saetze": 568,
   "absolut": 169,
-  "mit_zeug": 38,
-  "ohne_zeug": 131
+  "mit_zeug": 41,
+  "ohne_zeug": 128
  },
  "abschnitt": {
   "README.md": {
@@ -80,8 +80,8 @@
  "pruefbar_liste": [
   {
    "datei": "README.md",
-   "satz": "While it cools at 3 000 notes a few pairs still touch for a moment; the same test pins that funnel at ≤ 40 pairs by step 250 and 0 by step 310, so no sentence here says „never overlaps\" without naming the moment.",
-   "zeuge": false
+   "satz": "While it cools at 3 000 notes a few pairs still touch for a moment; tests/lib/graphLayout.test.ts:2455-2458 pins that funnel at ≤ 40 pairs by step 250, ≤ 40 again by step 310 and zero by step 380, so no sentence here say",
+   "zeuge": true
   },
   {
    "datei": "README.md",
@@ -105,8 +105,8 @@
   },
   {
    "datei": "README.md",
-   "satz": "npm run ablation divides by 5 and reports a real P@5 on the same corpus: two metrics, two names, never comparable.",
-   "zeuge": false
+   "satz": "npm run ablation divides by 5 and reports a real P@5 on the same corpus: two metrics, two names, never comparable (tests/eval-metrik.test.ts:37 pins the capped divisor, :55 pins the division by five and the P@5 name, :48",
+   "zeuge": true
   },
   {
    "datei": "README.md",
@@ -120,8 +120,8 @@
   },
   {
    "datei": "README.md",
-   "satz": "The second channel switches itself off with the reason when the base holds only one kind of arrival; it never paints everything grey.",
-   "zeuge": false
+   "satz": "The second channel switches itself off with the reason when the base holds only one kind of arrival; it never paints everything grey (tests/components/KnowledgeGraph.render.test.tsx:3537 finds the Provenance control disa",
+   "zeuge": true
   },
   {
    "datei": "README.md",
@@ -301,10 +301,6 @@
   },
   {
    "datei": "README.md",
-   "satz": "While it cools at 3 000 notes a few pairs still touch for a moment; the same test pins that funnel at ≤ 40 pairs by step 250 and 0 by step 310, so no sentence here says „never overlaps\" without naming the moment."
-  },
-  {
-   "datei": "README.md",
    "satz": "What a frame costs at each size is timed in [docs/graph-kosten.md](docs/graph-kosten.md), not claimed in this caption — a millisecond number is only worth the quiet machine that produced it."
   },
   {
@@ -397,15 +393,7 @@
   },
   {
    "datei": "README.md",
-   "satz": "npm run ablation divides by 5 and reports a real P@5 on the same corpus: two metrics, two names, never comparable."
-  },
-  {
-   "datei": "README.md",
    "satz": "- A concept in the picture is a shared one: a term that exists only because it repeats the title of the single note carrying it is an echo of your filing, not knowledge, and the graph leaves it out — the concept count is"
-  },
-  {
-   "datei": "README.md",
-   "satz": "The second channel switches itself off with the reason when the base holds only one kind of arrival; it never paints everything grey."
   },
   {
    "datei": "README.md",

@@ -831,6 +831,69 @@ nicht mehr im selben. Das ist keine Verschlechterung der Texte, sondern eine Bew
 und der Grund, warum beide Lesungen immer zusammen angegeben werden. Die Anteilskante ist auf **> 0,21**
 gehoben.
 
+## 24. P136 — Dritte falsche Aussage: der Trichter schloss in dem Satz siebzig Schritte zu früh (6.11. 23:37 MEZ)
+
+Drei Sätze aus der Queue, **wieder kein neuer Fall** — und wieder eine Behauptung, die die Maschine
+nicht hergibt.
+
+### README.md:37 — „0 by step 310"
+
+Der Satz versprach, `tests/lib/graphLayout.test.ts` pinne den Trichter „at ≤ 40 pairs by step 250 and
+**0 by step 310**". Die Datei tut das nicht. Die drei Latten (:2455-2458) sind:
+
+```
+spur.get(250) <= 40
+spur.get(310) <= 40
+spur.get(380) === 0
+```
+
+Nichts wird bei 310 auf null geprüft, und der eigne Kommentar derselben Datei (Zeilen 2434-2444) hält
+die gemessene Flugkurve fest: `250 → 14`, `310 → 1`, `380 → 0`. **Der Satz war um siebzig Schritte zu
+früh fertig** — und zwar in die sichere Richtung: er behauptete eine strengere Latte, als die Wache
+fährt. Genau diese Art von Großzügigkeit nach aussen ist die gefährlichere, weil ein grüner Test sie
+nicht meldet.
+
+Berichtigt auf die drei echten Latten, mit Datei und Zeilenbereich im Satz.
+
+### README.md:131 — die zwei Nenner
+
+„`npm run ablation` divides by 5 … two metrics, two names, never comparable" war gemessen:
+`tests/eval-metrik.test.ts:37` pinnt den gekappten Nenner des Eval (`min(5, relevante)`), `:55` pinnt
+die Division durch 5 und den P@5-Namen, und `:48` wirft jedes Werkzeug raus, das *Präzision* sagt,
+während es *Recall* rechnet. Kosten: ein Klammerzusatz.
+
+### README.md:148 — der zweite Kanal
+
+„switches itself off with the reason … it never paints everything grey" war gemessen:
+`tests/components/KnowledgeGraph.render.test.tsx:3537` findet den Provenance-Knopf deaktiviert vor und
+verlangt von seinem Titel, dass er die eine Ankunft nennt *und* „nothing to tell apart" sagt; `:3546`
+gibt den Kanal bei zwei Herkünften zurück und liest beide Farben von der Leinwand.
+
+### Die Zählung
+
+Zensus 23:36:48 MEZ, Exit 0: 568 Einheiten, 169 absolute Behauptungen, **41 mit Messzeug im selben
+Satz = 24,3 %** (vorher 38 = 22,5 %), 128 ohne. Abschnittslesung unverändert 55 = 32,5 % — zum ersten
+Mal seit P132 bewegt sich eine Lesung nicht mit der anderen. Schmale Klasse 29, davon **23** mit
+Messzeug → **6 Arbeit**. Reihe über neun Schläge: 4, 5, 8, 11, 14, 15, 18, 20, 23.
+
+Anteilskante auf **> 0,24** gehoben, Pinne auf 41 von 169.
+
+### Was die sechs Verbleibenden sind — Zeilen nachgesehen, nicht geschätzt
+
+| Wo | Satz | Warum er offen bleibt |
+|---|---|---|
+| README.md:181 | „IT deploys one managed-settings.json (the macOS MDM path, since the app ships macOS only)" | die MDM-Ablage ist nicht auf diesem Rechner entscheidbar; und der Absatz gehört zur Enterprise-Konsole, die auf Damians Wort vom 5.11. 13:24 MEZ zugefroren ist |
+| README.md:357 | „It was never a lock — but it was counting, and counting needed places to hide the tally" | Geschichte über einen früheren Stand, nicht über diesen Baum; ein Zeuge müsste den alten Stand fahren |
+| README.md:427 | „built from this source and never published here, so they are untested against a real installer download" | von diesem Rechner aus **nicht** entscheidbar — Windows/Linux-Installers laufen hier nicht. Ehrliche Tat: als Quellbau benennen, nicht als geprüft verkaufen |
+| ROADMAP.md (asOf-Zeile) | „time-travelled queries never count as access" | eine Zusage an eine Tür, die die App nicht hat — ROADMAP ist Absage, nicht Befund |
+| .github/release-notes.md (englisch) | „A signed key is an artefact of a K3PTA Enterprise agreement, never something sold off a shelf" | Enterprise-Papier, zugefroren — nur meldbar |
+| .github/release-notes.md (deutsch) | derselbe Satz in Deutsch | Träger-Zensus: zwei Träger, eine Aussage (P132-Lektion aus dem Oktober: erst die Träger zählen, dann ziehen) |
+
+Die schmale Klasse ist damit fast leer, und **die letzten sechs sind keine Arbeit mehr, sondern
+drei Wände**: zwei Damians Wort (Enterprise, MDM-Ablage) und eine physische Grenze dieses Rechners
+(Windows/Linux). Das ist ein ehrlicherer Endzustand als eine Prozentzahl, die nach zwei weiteren
+Schlägen „100 %" melden würde.
+
 ## Fehler in diesem Schlag, die ich selbst gefunden habe
 
 1. `du -sk /tmp` meldete 0 GiB Stapel, weil `/tmp` ein Symlink ist; der erste Lauf schrieb diese Null.
