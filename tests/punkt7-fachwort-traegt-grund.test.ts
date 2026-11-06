@@ -27,6 +27,7 @@ import {
   satzAusText,
   istBenutzersprache,
   satzAusQuelltextMitEtiketten,
+  vierWortlauf,
   NAMEN_LAGEN,
   NAMEN_MINDESTENS,
   wortlautAusText,
@@ -634,5 +635,57 @@ describe("Punkt 105, die Reichweite der Namens-Latte: jeder Wortlaut, jede Lage"
     const laut = spawnSync("node", [path.join(WURZEL, "scripts", "verstaendlichkeit.mjs"), "--nur", "quelltext"], { encoding: "utf8" });
     expect(laut.stdout).toMatch(/URTEIL DOPPELNAMEN: (HALTET|FAELLT) \(\d+ von \d+ Wortlauten nennen ein Ding beim zweiten Namen/);
     expect(laut.stdout).toContain(`Nenner-Untergrenze ${NAMEN_MINDESTENS}`);
+  });
+});
+
+describe("Punkt 106, die Anweisungsform: ein Satz in einem Backtick ist ein Satz", () => {
+  /* Gemessen 6.11.2026 13:46:32 MEZ: 130 ausgelieferte Menschensaetze der Flaeche, 11 des
+     Werkzeugs und 28 des Dieners standen in einer Backtick-Kette ohne Klammern herum
+     (`return \`...\``, `cond ? "..." : \`...\``, ein Argument) und keins der acht Muster sah
+     sie. Die Namens-Latte hatte diese Form seit P105 im Blick; die vier Satz-Latten nicht. */
+
+  it("vier alphabetische Woerter hintereinander sind die Prosa-Form, ein Klassenkleid nicht", () => {
+    expect(vierWortlauf("flex items-center justify-center gap-2 rounded-lg font-semibold"), "ein Utility-Kleid darf nicht als Satz zaehlen").toBe(false);
+    expect(vierWortlauf("The journal did not answer"), "vier Woerter sind ein Anfang").toBe(true);
+    expect(vierWortlauf("the local server answered HTTP 429"), "auch klein anfangen ist Prosa, wenn vier Woerter folgen").toBe(true);
+    expect(vierWortlauf("rounded-lg shadow-md"), "zwei Huell-Woerter sind keine Sprache").toBe(false);
+  });
+
+  it("ein Satz in Anweisungsposition steht im Korpus, ein Klassenkleid nicht", () => {
+    const text = [
+      "function meldung(zahl) {",
+      "  return `The journal did not answer — it was asked and the store said ${zahl}`;",
+      "}",
+      'const kleid = `flex items-center justify-center gap-2 rounded-lg py-3`;',
+      'const kurz = `the local server answered HTTP ${res.status}`;',
+    ].join("\n");
+    const funde = satzAusText(text, "src/components/Probe.tsx").map((f: Stelle) => f.s);
+    expect(funde.some((s: string) => /journal did not answer/.test(s)), "der return-Satz fehlt im Korpus").toBe(true);
+    expect(funde.some((s: string) => /local server answered/.test(s)), "der kleine Fragment-Satz fehlt im Korpus").toBe(true);
+    expect(funde.some((s: string) => /items-center/.test(s)), "ein Klassenkleid zaehlt als Satz").toBe(false);
+  });
+
+  it("die drei Lagen haben nach der neuen Form ihre Nenner", () => {
+    // Gemessen 13:47:24 MEZ: Flaeche 498 (vorher 374), Werkzeug 49 (38), Diener 90 (62).
+    // Die Untergrenzen sitzen hier, damit ein still schrumpfender Korpus nie als Erfolg geht.
+    expect(kandidatenAusQuelltext(FLAECHE).size, "der Flaeche-Korpus ist geschrumpft").toBeGreaterThanOrEqual(480);
+    expect(kandidatenAusQuelltext(WERKZEUG).size, "der Werkzeug-Korpus ist geschrumpft").toBeGreaterThanOrEqual(45);
+    expect(kandidatenAusQuelltext(DIENER).size, "der Diener-Korpus ist geschrumpft").toBeGreaterThanOrEqual(85);
+  });
+
+  it("die zehn vorher unsichtbaren Stellen sind Kandidaten, und die Latten gelten ihnen", () => {
+    const flaeche = [...kandidatenAusQuelltext(FLAECHE).keys()];
+    const diener = [...kandidatenAusQuelltext(DIENER).keys()];
+    for (const suche of ["notes left out", "parked at the rim", "What the picture starts with"]) {
+      expect(flaeche.some((s: string) => s.includes(suche)), `kein Flaeche-Kandidat mit "${suche}" — die Form ist weiterhin blind`).toBe(true);
+    }
+    for (const suche of ["No matches at offset", "read from offset"]) {
+      expect(diener.some((s: string) => s.includes(suche)), `kein Diener-Kandidat mit "${suche}"`).toBe(true);
+    }
+  });
+
+  it("der Census meldet, wie viele Saetze aus der Anweisungsform kommen", () => {
+    const laut = spawnSync("node", [path.join(WURZEL, "scripts", "verstaendlichkeit.mjs"), "--nur", "quelltext"], { encoding: "utf8" });
+    expect(laut.stdout).toMatch(/davon aus der Anweisungsform: \d+ von \d+ Saetzen \(Werkzeug \d+ von \d+, Diener \d+ von \d+\)/);
   });
 });

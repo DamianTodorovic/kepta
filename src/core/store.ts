@@ -1950,7 +1950,7 @@ function setzeSchluessel(db: Database.Database, schluessel: Uint8Array, herkunft
       }
       if (groesse >= 0 && groesse % 512 !== 0) {
         throw new Error(
-          `The file at ${db.name} is not a SQLite database at all — ${groesse} bytes is not a multiple of any page size, ` +
+          `The file at ${db.name} is not a database at all — ${groesse} bytes is not a whole number of pages, ` +
             `so it is either not a database or the damaged remnant of one. No key can open it, and none was tried again. ` +
             `Nothing was changed. If a restore or another program wrote here, point KEPTA_DATA_DIR at the real knowledge base.`,
         );

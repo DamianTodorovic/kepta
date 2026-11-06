@@ -1162,6 +1162,34 @@ describe("Import: Body-Limits, Vollständigkeit, Zeitstempel", () => {
   });
 });
 
+describe("Die Kopfzeilen der Liste bleiben ASCII (P106)", () => {
+  /* Gemessen 6.11.2026 14:05:57 MEZ: ein Gedankenstrich (U+2014) in `x-kepta-hinweis` warf
+     "TypeError: Invalid character in header content" und riss 14 Testdateien mit. Der Grund
+     steht zwei Zeilen ueber dem Satz, den ich geaendert hatte: "Nur ASCII -- der Wert geht in
+     einen Kopf." Die Strich-Latte des Census darf einen Kopf nicht in Nicht-ASCII treiben;
+     was dort einen Absatz braucht, setzt einen Doppelpunkt. */
+
+  const asciiNur = (wert: string) => [...wert].every((c) => {
+    const n = c.codePointAt(0) ?? 0;
+    return n >= 0x20 && n <= 0x7e;
+  });
+
+  it("der Hinweis-Kopf der kleinen Seite nennt den Grund und bleibt ASCII", async () => {
+    store.createMemory({ title: "Eine", content: "kurz" });
+    const klein = await request(app).get("/api/memories");
+    const wert = String(klein.headers["x-kepta-hinweis"]);
+    expect(wert).toMatch(/read from offset 0/);
+    expect(asciiNur(wert), `Kopfwert mit Nicht-ASCII: ${wert}`).toBe(true);
+  });
+
+  it("auch der schwere Leseweg schreibt nur ASCII in den Kopf", async () => {
+    store.createMemory({ title: "Zwei", content: "kurz" });
+    const ganz = await request(app).get("/api/memories?alle=1");
+    const wert = String(ganz.headers["x-kepta-hinweis"]);
+    expect(asciiNur(wert), `Kopfwert mit Nicht-ASCII: ${wert}`).toBe(true);
+  });
+});
+
 describe("Sanitize: Code bleibt lesbar, Steuerzeichen werden bereinigt", () => {
   it("POST /api/memories erhält legitimen Code-Beispiel-Inhalt", async () => {
     const code = 'Beispiel: <a href="javascript:void(0)">klick</a> mit onclick="alert(1)" — nur Demo-Code';

@@ -144,21 +144,44 @@ const SATZ_MUSTER = [
   // "No note of the core" -- gemessen 12:50:41 MEZ: URTEIL DOPPELNAMEN HALTET (0 von 958 Stellen).
   { re: />\s*\{`([^`]{20,400})`\s*\}/g, art: "jsx", ausdruck: true },
   { re: /\{\s*`([^`]{20,400})`\s*\}/g, art: "meldung", ausdruck: true },
+  // P106: die Anweisungsposition. Ein Wortlaut, der in einem `return`, einem Ternaer oder
+  // einem Argument steht und nur in einer Backtick-Kette lebt, war ausserhalb aller Muster --
+  // gemessen 6.11.2026 13:46:32 MEZ: **130** ausgelieferte Menschensaetze in der Flaeche, 11
+  // im Werkzeug, 28 beim Diener. Ohne Prosa-Test frae dieser Quelltext, denn ein
+  // Klassenkleid (`flex items-center gap-2 rounded-lg`) besteht aus Huell-Woertern. Der Test
+  // ist eine Folge, keine Liste: vier alphabetische Woerter hintereinander schreibt keine
+  // Utility-Kette und jede Sprache.
+  { re: /(?:return|case|:|=|\?|\|\||\(|,)\s*`([^`]{20,400})`/g, art: "anweisung", prosa: vierWortlauf },
   { re: /"([A-Z][^"\\]{20,300}?)"/g, art: "literal" },
   { re: /'([A-Z][^'\\]{20,300}?)'/g, art: "literal" },
 ];
+
+/** Vier alphabetische Woerter hintereinander: die Form, die eine Utility-Kette nicht
+    schreibt und eine Sprache schon. Gezaehlt 6.11.2026 13:46:14 MEZ an den 130 neuen
+    Flaeche-Kandidaten -- kein Klassenkleid blieb darin, und kein ausgeliefertes Wortling. */
+export function vierWortlauf(s) {
+  let lauf = 0;
+  for (const w of s.split(/\s+/)) {
+    if (/^[A-Za-z]+$/.test(w)) {
+      lauf++;
+      if (lauf >= 4) return true;
+    } else lauf = 0;
+  }
+  return false;
+}
 
 /** Die Saetze eines Quelltextes, mit Art und Fundstelle. */
 export function satzAusText(t, datei) {
   const funde = [];
   const rel = datei.replace(WURZEL + "/", "");
   if (AUSSCHLUSS_PFAD.test(rel)) return funde;
-  for (const { re, art, ausdruck } of SATZ_MUSTER) {
+  for (const { re, art, ausdruck, prosa } of SATZ_MUSTER) {
     re.lastIndex = 0;
     let e;
     while ((e = re.exec(t))) {
       const s = glaetteInterpolation(e[1]);
       if (!istBenutzersprache(s, { gestaltPflicht: !!ausdruck })) continue;
+      if (prosa && !prosa(s)) continue;
       if (AUSSCHLUSS_WORT.test(s)) continue;
       funde.push({ s, art, ausdruck: !!ausdruck, quelle: rel });
     }
@@ -630,6 +653,10 @@ async function haupt() {
   // niemand sah, weil kein Muster diese Form hatte und der Riegel `${` verbot.
   const ausdruck = (zeilen) => zeilen.filter((z) => z.ausdruck).length;
   console.log(`  davon aus einer Expression: ${ausdruck(flaeche.zeilen)} von ${flaeche.zeilen.length} Saetzen (Werkzeug ${ausdruck(werkzeug.zeilen)} von ${werkzeug.zeilen.length}, Diener ${ausdruck(diener.zeilen)} von ${diener.zeilen.length})`);
+  // P106: dieselbe Frage fuer die Anweisungsform. Vor diesem Schnitt war sie 0, weil kein
+  // Muster sie hatte -- gemessen 13:47:24 MEZ: 130 / 11 / 28 Saetze, die ein Mensch liest.
+  const anweisung = (zeilen) => zeilen.filter((z) => z.art === "anweisung").length;
+  console.log(`  davon aus der Anweisungsform: ${anweisung(flaeche.zeilen)} von ${flaeche.zeilen.length} Saetzen (Werkzeug ${anweisung(werkzeug.zeilen)} von ${werkzeug.zeilen.length}, Diener ${anweisung(diener.zeilen)} von ${diener.zeilen.length})`);
   if (suche) {
     console.log(`  die Objekt-Gleichung verwirft: Flaeche ${flaeche.zeilen.length - flaeche.getragen.length}, Werkzeug ${werkzeug.zeilen.length - werkzeug.getragen.length}, Diener ${diener.zeilen.length - diener.getragen.length}`);
   }

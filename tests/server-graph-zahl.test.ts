@@ -135,9 +135,9 @@ describe("G-1 — die Graph-Tuer nennt, was ihre Kappen und ihr Filter verlieren
     const a = g.ausriss;
     expect(a.begrenzt).toBe(true);
     expect(String(a.hinweis)).toMatch(/of \d+ concepts/);
-    expect(String(a.hinweis)).toMatch(/of \d+ edges/);
-    expect(String(a.hinweis)).toMatch(/base holds \d+ concepts and \d+ edges/);
-    expect(String(a.hinweis)).toMatch(/dropped \d+ edge/);
+    expect(String(a.hinweis)).toMatch(/of \d+ links/);
+    expect(String(a.hinweis)).toMatch(/base holds \d+ concepts and \d+ links/);
+    expect(String(a.hinweis)).toMatch(/dropped \d+ links/);
   });
 
   it("ein enger Auszug (ein Begriff, Tiefe 1) nennt dieselbe Art von Zahl", async () => {
@@ -172,7 +172,7 @@ describe("G-1 — die Graph-Tuer nennt, was ihre Kappen und ihr Filter verlieren
       expect(json.ausriss.kantenGezeigt).toBe(1);
       expect(json.ausriss.kantenVerworfen).toBe(0);
       expect(json.ausriss.begrenzt).toBe(false);
-      expect(String(json.ausriss.hinweis)).toMatch(/whole graph/);
+      expect(String(json.ausriss.hinweis)).toMatch(/whole picture/);
     } finally {
       if (zweiterHorcher) await niederlegen(zweiterHorcher);
       zweiterStore?.close();

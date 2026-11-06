@@ -181,8 +181,8 @@ export function mountSystem(app: express.Express, ctx: AppKontext): void {
         // haelt den Hinweis auf sein Format, und ein Feld, das ein Werkzeug liest, ist keine
         // Prosa. Die gesprochene Zahl mit Punkt baut die Flaeche (`mengenzahl`).
         hinweis: begrenzt || verworfen
-          ? `This excerpt holds ${g.entities.length} of ${bestand.knoten} concepts and ${kanten.length} of ${bestand.kanten} edges; the door dropped ${verworfen} edges whose other end is outside the excerpt, and ${aussen} edges never reach a window this size. The base holds ${bestand.knoten} concepts and ${bestand.kanten} edges.`
-          : `This excerpt is the whole graph: ${g.entities.length} concepts and ${kanten.length} edges, nothing dropped.`,
+          ? `This excerpt holds ${g.entities.length} of ${bestand.knoten} concepts and ${kanten.length} of ${bestand.kanten} links; the door dropped ${verworfen} links whose other end is outside the excerpt, and ${aussen} links never reach a window this size. The base holds ${bestand.knoten} concepts and ${bestand.kanten} links.`
+          : `This excerpt is the whole picture: ${g.entities.length} concepts and ${kanten.length} links, nothing dropped.`,
       },
     });
   });

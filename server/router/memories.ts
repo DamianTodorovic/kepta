@@ -387,7 +387,7 @@ export function mountMemories(app: express.Express, ctx: AppKontext): void {
       behauptungen: liste,
       hinweis: liste.length === 0
         ? "This note claims nothing yet — the graph draws only mentions for it, and a mention says no more than that two terms appeared together."
-        : `${liste.length} claim${liste.length === 1 ? "" : "s"} written by a hand - each one is the word on its line.`,
+        : `${liste.length} claim${liste.length === 1 ? "" : "s"} written by a hand — each one is the word on its line.`,
     });
   });
 
@@ -511,10 +511,10 @@ function leseGrenzwerte(req: express.Request, res: express.Response): { ganzerBe
 /** Zahl je mit Einheit, und nie eine Kappe, die nicht genannt ist. Nur ASCII — der Wert geht in einen Kopf. */
 function hinweisDerListe(f: { ganzerBestand: boolean; seite: number; offset: number; total: number; einheit: string; begrenzt: boolean }): string {
   if (f.ganzerBestand) {
-    return `alle=1 asked for the whole base: ${f.total.toLocaleString("en-US")} ${f.einheit} in one answer. This is the heavy path - page with limit= instead if a window has to render it.`;
+    return `alle=1 asked for the whole base: ${f.total.toLocaleString("en-US")} ${f.einheit} in one answer. This is the heavy path: page with limit= instead if a window has to render it.`;
   }
   if (!f.begrenzt) {
-    return `${f.total.toLocaleString("en-US")} ${f.einheit} read from offset ${f.offset} - the whole list fits in this page (limit=${f.seite}).`;
+    return `${f.total.toLocaleString("en-US")} ${f.einheit} read from offset ${f.offset}: the whole list fits in this page (limit=${f.seite}).`;
   }
   const rest = f.total - (f.offset + f.seite);
   return `This page holds ${f.seite.toLocaleString("en-US")} of ${f.total.toLocaleString("en-US")} ${f.einheit}; ${rest.toLocaleString("en-US")} more follow at offset ${(f.offset + f.seite).toLocaleString("en-US")} (limit=<${SEITE_MIN}..${SEITE_MAX}>, offset=, alle=1 for the whole base).`;

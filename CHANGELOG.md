@@ -1,3 +1,38 @@
+## [3.2.186]
+
+### Changed
+
+- **The sentence bars finally read the sentences that live in a backtick.** A wording sitting in
+  statement position — `return `"…"`, a ternary branch, an argument — matched none of the eight
+  patterns. Counted 13:46:32 MEZ: **130** delivered human sentences in the surface, 11 in the
+  tool layer, 28 in the servant. The naming bar had seen this form since 3.2.185; the four
+  sentence bars had not. The new pattern admits a wording only if four alphabetic words follow
+  each other, which is a shape no Tailwind chain writes and every sentence has (bite:
+  `flex items-center justify-center gap-2 rounded-lg` stays out).
+  Corpus after the change: surface **498** sentences (was 374), tool 49 (was 38), servant 90
+  (was 62).
+- **Eleven of those sentences were real defects, and the bars turned red before I fixed them**
+  (13:47:24 MEZ): seven named a technical thing without a reason or an action, four used a bare
+  hyphen where the house writes a thought dash. Now: "the picture places notes by meaning, and
+  keeps the first 2 000" instead of "the map holds 2 000 vectors"; "notes with no meaning-place
+  yet, parked at the rim"; "What the picture starts with"; "tools your AI apps use (protocol …
+  at …)" instead of "tools for AI apps (MCP …)"; "is not a database at all — N bytes is not a
+  whole number of pages"; the excerpt answer says links and picture, not edges and graph; and
+  five answers now carry the dash the rest of the product uses.
+  At 13:54:41 MEZ every bar holds again: cap 86.7 %, edge 0 of 66, label 0 of 469, naming 0 of
+  2 983, dash 0, bolt 0 of 498 / 0 of 49 / 0 of 90.
+- **One fix has no bytes in the object, and that is said rather than hidden**:
+  `src/core/chatgpt-import.ts` is not shipped — measured 0 occurrences of its sentence in the
+  installed 3.2.185 (13:57:49 MEZ), so no marker or ban guards it.
+- **My own dash broke the server, and the suite caught it.** Replacing a hyphen with the house
+  dash in `x-kepta-hinweis` produced `TypeError: Invalid character in header content` and 14 red
+  test files (14:05:57 MEZ). The constraint was written two lines above the sentence I edited:
+  *"Nur ASCII — der Wert geht in einen Kopf."* A header cannot carry U+2014, so the two list
+  hints now use a colon, and a new case in `tests/server.test.ts` asserts that every
+  `x-kepta-hinweis` value is pure ASCII on both the paged and the `alle=1` read. The naming
+  lesson: a bar over the product's language must not push a value into a place that cannot hold
+  it — the bar was right about the hyphen, and wrong about where that sentence lives.
+
 ## [3.2.185]
 
 ### Changed

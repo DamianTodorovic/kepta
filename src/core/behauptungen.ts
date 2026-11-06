@@ -57,7 +57,7 @@ export function behauptungenAus(body: Record<string, unknown>): BehauptungenLesu
       return {
         gesendet: true,
         liste,
-        ablehnung: `"${wort}" is the word the graph already uses for a mention, not for a claim - pick the word that says what is claimed, like manages or blocks`,
+        ablehnung: `"${wort}" is the word the graph already uses for a mention, not for a claim — pick the word that says what is claimed, like manages or blocks`,
       };
     }
     liste.push({ quelle, ziel, wort });

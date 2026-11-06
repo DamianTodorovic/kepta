@@ -122,8 +122,8 @@ describe("falscher oder fehlender Schluessel", () => {
     const vorher = hash(p);
     let meldung = "";
     try { new KeptaStore(p, mit(SCHLUESSEL)); } catch (e) { meldung = String((e as Error).message); }
-    expect(meldung).toMatch(/is not a SQLite database at all/i);
-    expect(meldung).toMatch(/22 bytes is not a multiple of any page size/);
+    expect(meldung).toMatch(/is not a database at all/i);
+    expect(meldung).toMatch(/22 bytes is not a whole number of pages/);
     expect(meldung).not.toMatch(/keychain|does not belong/i);
     expect(hash(p)).toBe(vorher);
   });

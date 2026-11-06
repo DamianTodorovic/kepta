@@ -176,7 +176,7 @@ export function importChatgptKommando(store: KeptaStore, argumente: string[]): n
     return rel !== "" && !rel.startsWith("..") && !path.isAbsolute(rel);
   });
   if (!erlaubt) {
-    throw new Error(`Only import from a path under your home or temp - got: ${aufgeloest}`);
+    throw new Error(`Only import from a path under your home or temp — got: ${aufgeloest}`);
   }
   let daten: unknown;
   try {

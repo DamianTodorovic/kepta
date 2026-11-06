@@ -80,7 +80,7 @@ describe("der Auszug zaehlt, was ausserhalb seines Fensters liegt", () => {
 
   it("der Hinweis nennt die Zahl, damit das Feld nicht hinter dem Satz verschwindet", async () => {
     const leib = JSON.parse((await request(app).get("/api/graph")).text);
-    expect(leib.ausriss.hinweis, `hinweis: ${leib.ausriss.hinweis}`).toContain(`and ${leib.ausriss.kantenAusserhalb} edges never reach a window this size`);
+    expect(leib.ausriss.hinweis, `hinweis: ${leib.ausriss.hinweis}`).toContain(`and ${leib.ausriss.kantenAusserhalb} links never reach a window this size`);
   });
 
   it("ein Bestand unter der Kappe meldet null aussen, nicht eine erfundene Lucke", async () => {

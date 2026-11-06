@@ -3275,7 +3275,7 @@ describe("Die semantische Ansicht steht auf den Vektoren", () => {
     await ansichtWechseln(container, "Meaning");
     await bilder(8);
     expect(container.textContent).toMatch(/3 notes left out/);
-    expect(container.textContent).toMatch(/the map holds 2,000 vectors/);
+    expect(container.textContent).toMatch(/the picture places notes by meaning, and keeps the first 2,000/);
   });
 
   it("stellt die Notizen ohne Vektor an den Rand und sagt es", async () => {
@@ -3285,7 +3285,7 @@ describe("Die semantische Ansicht steht auf den Vektoren", () => {
     const { container } = await zeichne(ms);
     await ansichtWechseln(container, "Meaning");
     const plaetze = await ruhig();
-    expect(container.textContent).toMatch(/2 notes without a vector, parked at the rim/);
+    expect(container.textContent).toMatch(/2 notes with no meaning-place yet, parked at the rim/);
     // Gefordert: alle vier Notizen stehen im Bild. Gezählt werden die Plätze
     // des Rahmens — Begriffe kommen nicht vor, das Stub liefert keine
     // memoriesByEntity.

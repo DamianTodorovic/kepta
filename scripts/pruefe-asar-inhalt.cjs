@@ -493,6 +493,25 @@ const erwartet = [
   ["notes taken over from memories.json", 1],
   ["Note not found", 1],
   ["Extract one knowledge note from", 1],
+  // P106 (landet in 3.2.186): die Anweisungsform ist jetzt im Korpus der Satz-Latten, und
+  // sieben Saetze fielen durch den Riegel, fuef durch den Strich. Gezaehlt am installierten
+  // 3.2.185 um 13:57:49 MEZ (latin1): jede neue Kette 0 mal, jede alte Form 1 bis 2 mal.
+  // Eine Ausnahme, gemeldet statt verschwiegen: "home or temp - got" steht 0 mal im Objekt --
+  // src/core/chatgpt-import.ts wird nicht ausgeliefert, also ist die Heilung dort eine
+  // Quelltext-anderung ohne Byte im Bundel, und kein Marker/Verbot waehr sie.
+  ["the picture places notes by meaning", 1],
+  ["with no meaning-place yet", 1],
+  ["What the picture starts with.", 1],
+  ["tools your AI apps use", 1],
+  ["is not a database at all", 1],
+  ["links whose other end is outside the excerpt", 1],
+  ["This excerpt is the whole picture:", 1],
+  // P106-B, gemessen 14:11:10 MEZ am installierten 3.2.185: ein Gedankenstrich (U+2014) im
+  // Wert von `x-kepta-hinweis` warf "Invalid character in header content" und riss 14
+  // Testdateien. Kopf-Werte bleiben ASCII -- die beiden Liste-Hinweise setzen jetzt einen
+  // Doppelpunkt. Marke ist der Trenner selbst, denn der Rest der Kette war schon vorher da.
+  [": the whole list fits", 1],
+  ["This is the heavy path: page with limit=", 1],
   // Punkt Zensur/Z-05 (die Vierer-Basis) schreibt KEINEN eignen Marker: die Heilung aendert
   // nur Zahlen (10->8, 7->8, 22->24, 5->4, 7/14->8/16) und kein Wort im Objekt. Beweis ist die
   // Messung selbst: 435 Nicht-Vier-Abstaende auf Knowledge 1440 vor der Heilung
@@ -1265,6 +1284,21 @@ const verboten = [
   "conflicting node ids",
   "nodes taken over from memories.json",
   "Extract one knowledge node from",
+  // P106 (landet in 3.2.186): die alten Formen der sieben Riegel- und vier Strich-Saetze.
+  // Die Gedankenstrich-Faelle sind nur verbietbar, weil der nackte Bindestrich ASCII ist;
+  // die neue Form mit U+2014 waehr kein Marker, weil latin1 das Zeichen in Bytes zerlegt.
+  "the map holds",
+  "without a vector, parked at the rim",
+  "What the graph starts with.",
+  "tools for AI apps (MCP ",
+  "is not a SQLite database at all",
+  "edges; the door dropped",
+  "This excerpt is the whole graph:",
+  "not for a claim - pick",
+  " - the last match is before this page",
+  "written by a hand - each one",
+  " - the whole list fits",
+  "This is the heavy path - page with limit=",
 ];
 // Die Liste darf nur ASCII-Zeichen enthalten. Grund, gemessen 21.10. 19:16 MESZ am
 // installierten Objekt: das Wort "Looking" plus echtes U+2026 steht dort 2 mal, diese

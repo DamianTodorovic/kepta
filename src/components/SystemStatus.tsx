@@ -212,7 +212,7 @@ export function SystemStatus() {
           detail={
             antwort === 'laeuft' ? 'Asking K3PTA itself…'
               : antwort === 'weg' ? 'K3PTA did not answer this time.'
-                : health ? `${health.count} notes · file: ${health.dbPath} · ${health.mcp.tools} tools for AI apps (MCP ${health.mcp.protocol} at ${health.mcp.http})`
+                : health ? `${health.count} notes · file: ${health.dbPath} · ${health.mcp.tools} tools your AI apps use (protocol ${health.mcp.protocol} at ${health.mcp.http})`
                   : 'K3PTA answered, but not in a form this panel can read.'
           }
           fix={antwort === 'weg' ? 'Close K3PTA and open it again.' : undefined}

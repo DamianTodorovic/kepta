@@ -3215,12 +3215,12 @@ export function KnowledgeGraph({ memories: memoriesAusFenster, onSelectMemory, o
     // wie die Wissensbasis und wäre ein Stichprobenbild davon.
     if (ansicht === "semantic" && karte && karte.gekappt > 0) {
       klausaen.push(
-        `${zahl(karte.gekappt)} notes left out — the map holds ${zahl(SEMANTIK_KAPPE)} vectors`
+        `${zahl(karte.gekappt)} notes left out — the picture places notes by meaning, and keeps the first ${zahl(SEMANTIK_KAPPE)}`
       );
     }
     if (ansicht === "semantic" && semantikFeld && semantikFeld.ohneVektor > 0) {
       const n = semantikFeld.ohneVektor;
-      klausaen.push(`${zahl(n)} note${n === 1 ? "" : "s"} without a vector, parked at the rim`);
+      klausaen.push(`${zahl(n)} note${n === 1 ? "" : "s"} with no meaning-place yet, parked at the rim`);
     }
     // Was der Baum nicht zeigen kann, weil seine Zeilen nicht reichen, steht
     // nicht stillschweigend weg — es ist gefaltet, und die Zahl steht in der
@@ -5995,7 +5995,7 @@ export function KnowledgeGraph({ memories: memoriesAusFenster, onSelectMemory, o
   );
   const schieneKanal = (
     <div className="apple-seg shrink-0" role="group" aria-label="Dot colour" data-testid="graph-schiene-kanal">
-      {segment(aktiverKanal === "typ", `Colour by what each note is made of — ${Object.values(TYP_BESCHREIBUNG).join(", ")}. What the graph starts with.`, () => wechsleKanal("typ"), "Type")}
+      {segment(aktiverKanal === "typ", `Colour by what each note is made of — ${Object.values(TYP_BESCHREIBUNG).join(", ")}. What the picture starts with.`, () => wechsleKanal("typ"), "Type")}
       {segment(
         aktiverKanal === "herkunft",
         herkunft.verfügbar
