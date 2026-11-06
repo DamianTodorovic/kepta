@@ -154,6 +154,16 @@ export function istBenutzersprache(s) {
   if (/%[sd]|\\n|\$\{/.test(s)) return false;                          // Formatierer
   const buchstaben = (s.match(/[A-Za-z]/g) || []).length;
   if (buchstaben / s.length < 0.6) return false;                        // Zahlenkolonnen
+  // Drittes Beispiel derselben Sorte, gemessen 05:56:05 MEZ: `y.source ? 1 : x.target` aus
+  // KnowledgeGraph.tsx lief durch das alte Raster -- es fuehrt ein Fragezeichen und einen
+  // Doppelpunkt als eigne Woerter, und so etwas schreibt keine Flaeche an einen Menschen.
+  // Die erste Regung dieser Kante (vier woerterliche Woerter als Minimum) war zu grob: sie
+  // vertrieb fuenf echte Saelze -- "Redirect without a target", "Search a note, a query",
+  // "e.g. find things faster", "e.g. archive, private, old", "Search (Cmd-K for commands)" --
+  // um einen einzigen Ternaer zu treffen. Gemessen 06:04:57 MEZ; zwei Nenner-Latten der
+  // Suite (Werkzeug 38, Diener 62) schlugen mich am naechsten Lauf zurecht (06:01:36 MEZ).
+  const stuecke = s.split(/\s+/);
+  if (stuecke.some((w) => w === "?" || w === ":" || w === "::" || w === "=" || w === "!")) return false;
   if (/^(SELECT|INSERT|UPDATE|DELETE|PRAGMA|CREATE|ALTER|DROP|ERROR|TODO|FIXME)/i.test(s)) return false;
   return true;
 }
@@ -170,7 +180,7 @@ export function zaehle(s) {
   };
 }
 
-function imObjekt(suche, s) {
+export function imObjekt(suche, s) {
   // Das Buendel ist Bytes, kein Text: ein Satz mit einem echten Gedankenstrich (U+2014) ist in
   // UTF-8 drei Bytes, und ein Suchlauf, der die Datei latin1 liest, findet ihn nie. Ebenso bricht
   // JSX einen langen Menschensatz ueber mehrere Quelltextzeilen, und der Compiler wirft die
@@ -237,9 +247,15 @@ async function haupt() {
       // Flucht-entlastet: \u2014 und seinesgleichen zurueck in Zeichen, damit ein Satz, der
       // so ausgeliefert wird, nicht als "fehlt" gilt. Gemessen 05:46:43 MEZ: ohne diese
       // Lesung ist die Router-Zeile im Objekt nicht zu finden, mit ihr schon.
+      // Zweitens, gemessen 05:56:53 MEZ am ausgelieferten 3.2.180: der Server-Buendel
+      // schreibt Umlaute als \xFC (zwei Stellen, Latin-1), nicht als \u00FC. Ohne diese
+      // Form bleiben "Keine verschlu\u00e4sselte Nebendatei (Magie fehlt)." und fuenf
+      // weitere Werkzeug-Saetze unsichtbar -- dieselbe Sorte Blindheit, zehn Minuten
+      // nacheinander, und zum zweiten Mal von mir nicht vorhergesehen.
       textEntfl: puffer
         .toString("utf8")
         .replace(/\\u([0-9a-fA-F]{4})/g, (m, h) => String.fromCharCode(parseInt(h, 16)))
+        .replace(/\\x([0-9a-fA-F]{2})/g, (m, h) => String.fromCharCode(parseInt(h, 16)))
         .replace(/\s+/g, " "),
     };
     console.log("  Objekt: " + OBJEKT + " (" + puffer.length + " B, als Bytes und in einer leerraum-armen Lesung)");
@@ -272,6 +288,20 @@ async function haupt() {
   melde("FLAECHE (ein Mensch liest)", cFlaeche, flaeche.getragen, true, korpus);
   melde("WERKZEUG (ein Agent liest)", cWerkzeug, werkzeug.getragen, false, korpus);
   melde("DIENER (ein Mensch oder ein Agent liest die Antwort mit)", cDiener, diener.getragen, false, korpus);
+
+  // Der Abstand zwischen Baum und Objekt, mit Namen. Gemessen 05:57:31 MEZ: drei
+  // Werkzeug-Saetze stehen im Baum, nicht im Objekt -- es sind die CLI-Zeilen von
+  // `src/core/chatgpt-import.ts`, die der App-Buendel nicht mitnimmt. Eine Zahl, die
+  // schweigt, woher ihre Grundgesamtheit kommt, ist keine Grundgesamtheit.
+  if (suche) {
+    for (const [lage, gruppe] of [["Flaeche", flaeche], ["Werkzeug", werkzeug], ["Diener", diener]]) {
+      const getragen = new Set(gruppe.getragen.map((z) => z.s));
+      const fehl = gruppe.zeilen.filter((z) => !getragen.has(z.s));
+      if (!fehl.length) { console.log(`  ${lage}: alle ${gruppe.zeilen.length} Baum-Saetze sind im Objekt`); continue; }
+      console.log(`  ${lage}: ${fehl.length} von ${gruppe.zeilen.length} Baum-Saetzen NICHT im ausgelieferten Objekt`);
+      for (const z of fehl) console.log(`      ${z.quelle}  ::  ${z.s.slice(0, 110)}`);
+    }
+  }
 
   const langsten = [...flaeche.getragen].sort((a, b) => b.woerter - a.woerter).slice(0, 12);
   console.log("\n  Die zwoelf laengsten Menschensaetze (Wortzahl | Quelle):");
@@ -319,6 +349,11 @@ async function haupt() {
   const taub = !getroffen || !blind || !strichBiss;
   const urteil = taub ? "TAUB" : kappeHalten && riegelHalten && strichHalten ? "HALTET" : "FAELLT";
   console.log(`  URTEIL KAPPE: ${kappeHalten ? "HALTET" : "FAELLT"} (Flaeche: Anteil unter ${SATZKAPPE} Woertern ${(100 * anteil).toFixed(1)} %, Latte ${100 * UNTER_KAPPE_MINDESTENS} %)`);
+  // Die Marge in Saetzen, nicht in Prozent: wie viele der kurzen Saetze lang werden
+  // duerfen, bevor die Latte faellt. Gemessen 05:57:31 MEZ: 276 von 345 = genau 80,000 %,
+  // die Marge ist 0 -- ein einziger langer Satz kippt das Urteil.
+  const marge = Math.floor(cFlaeche.unterKappe - UNTER_KAPPE_MINDESTENS * cFlaeche.n);
+  console.log(`  Die Marge der Kappe: ${marge} Saetze Spiel bei ${cFlaeche.unterKappe} von ${cFlaeche.n} (${(100 * anteil).toFixed(3)} % genau)`);
   console.log(`  URTEIL STRICH: ${strichHalten ? "HALTET" : "FAELLT"} (${strichFunde.length} Saetze mit nacktem Bindestrich ueber allen drei Lagen; Biss-Kontrolle ${strichBiss ? "trifft die alte Form" : "FEHLT — die Latte hat kein Messzeug"})`);
   console.log(`  URTEIL RIEGEL: ${riegelHalten ? "HAELT" : "FAELLT"} (Fachwort ohne Grund und ohne Taetigkeit: Flaeche ${cFlaeche.fachOhneAlles.length} von ${cFlaeche.n}, Werkzeug ${cWerkzeug.fachOhneAlles.length} von ${cWerkzeug.n}, Diener ${cDiener.fachOhneAlles.length} von ${cDiener.n}, Max je Gruppe ${FACH_OHNE_GRUND_MAX} — der Wert ist am 5.11. und 6.11.2026 an allen drei Lagen gemessen)`);
   console.log(`  URTEIL GRUND: die Flaeche nennt in ${cFlaeche.mitGrund} von ${cFlaeche.n} Saetzen einen Grund oder eine Folge —`);
