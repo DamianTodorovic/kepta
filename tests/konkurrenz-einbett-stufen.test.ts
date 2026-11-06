@@ -1,8 +1,12 @@
 /* Punkt 8, dritte Stufe: dieselbe Rangfolge, zwei Einbett-Stufen, gleiche Einheit.
 
-   P111 hat die Frage selbst bestellt (`P111-EINBETT-0611.md`): "unsre eigne Rangfolge mit
+   P111 hatte die Frage so bestellt (`P111-EINBETT-0611.md`): "unsre eigne Rangfolge mit
    bge-m3 ist nicht gemessen. Wenn reines KNN mit bge-m3 66,7 % holt und unsre Fusion mit
-   nomic 75,6 %, was tut die Fusion mit bge-m3?" Gefahren 6.11.2026 17:09:25 bis 17:09:32 MEZ
+   nomic 75,6 %, was tut die Fusion mit bge-m3?" **Die Praemie war falsch**: dieselben Zahlen
+   standen seit 3.11. im Repo (`docs/belege/tag-0311/eval-bge-m3-1404.log.txt`, 3.2.125), und
+   dieser Lauf trifft sie auf die Punktstelle -- er ist eine **Reproduktion auf 3.2.189**, kein
+   Neufund (geprüft in `tests/konkurrenz-sprachstufen.test.ts`). Neu ist die zweite Zahl unten:
+   die Modell-Abhaengigkeit in derselben Einheit. Gefahren 6.11.2026 17:09:20 bis 17:09:32 MEZ
    mit dem Aufbau, den die App ausliefert (`scripts/eval-store.ts`, Korpus aus
    `scripts/eval-corpus.ts`), zwei Laeufe je Stufe.
 

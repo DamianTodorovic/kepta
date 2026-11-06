@@ -37,8 +37,10 @@ vorher: der Abstand **schrumpft auf 8,9 Punkte**, wenn das Einbett wechselt — 
 beide Seiten. Das ist kein Schönheitsfehler, sondern eine Frage ans Produkt: **welches
 Einbett liefert unsre Rangfolge, wenn es nicht das voreingestellte ist?** Gemessen ist die
 Gegenseite (reines KNN) für `bge-m3`; unsre eigne Rangfolge mit `bge-m3` war zu dem
-Zeitpunkt **nicht** gemessen und stand als nächster Lauf an — gemessen 17:09:20 bis
-17:09:32 MEZ, siehe Abschnitt P112 weiter unten.
+Zeitpunkt **nicht** gemessen und stand als nächster Lauf an — **das war falsch**, sie war
+schon am 3.11. gemessen (`docs/belege/tag-0311/eval-bge-m3-1404.log.txt`, 14:04 MEZ auf
+3.2.125), und auf dem heutigen Baum ist sie 17:09 MEZ punktgenau reproduziert. Siehe
+Abschnitt P113.
 
 Was die Zeile *nicht* sagt, bleibt: sqlite-vec ist eine Erweiterung, kein
 Gedächtnisdienst — kein Speichern, kein Aktualisieren, kein Vergessen, keine Mandanten-Wand.
@@ -55,6 +57,14 @@ Läufe 16:40:55 und 16:40:58 MEZ mit **derselben Rangfolge** in beiden Traces.
 Rückgängig: `rm -rf /tmp/konk-sqlitevec-0611`.
 
 ## P112, 17:09 MEZ: die eigne Rangfolge mit dem zweiten Einbett, in der richtigen Einheit
+
+**Vorbemerkung P113 (17:30 MEZ):** dieser Abschnitt ist **keine Neufund-Messung**. Dieselben
+sieben Zahlen standen schon am 3.11. im Repo (`docs/belege/tag-0311/eval-bge-m3-1404.log.txt`
+und `eval-drei-beine-1352.log.txt`, 14:04/13:52 MEZ auf 3.2.125). Was dieser Abschnitt neu
+gibt, ist (a) die **Reproduktion auf 3.2.189** -- 64 Fassungen später, jede Kategorie am
+gleichen Platz -- und (b) die **Modell-Abhängigkeit in derselben Einheit** gemessen, die vorher
+niemand berechnet hatte. Der Irrtum, hier sei die Frage zum ersten Mal beantwortet, ist in
+P111s Satz gewurzelt; berichtigt wird er im Abschnitt P113.
 
 Die Berichtigung oben hat eine offene Frage hinterlassen, die hier beantwortet ist: **was
 tut die Fusion mit `bge-m3`?** Gefahren 17:09:20 bis 17:09:32 MEZ mit demselben Aufbau, den
@@ -99,6 +109,51 @@ beiden Läufen bytegleich — das letzte Block, das der Ausdruck malt, ist
 Schwanzzeilen-Gleichheit war hier kein Beweis, sondern das Erwartete. Deshalb liegt jetzt
 die Zeile-für-Zeile-Spur bei den Artefakten, und ihr Aggregat ist gegen den vollen
 Ausdruck nachgerechnet (`tests/konkurrenz-einbett-stufen.test.ts`).
+
+## P113, 17:30 MEZ: die Berichtigung -- unsre bge-m3-Rangfolge war schon gemessen, und die Sprache ist kein Modell-Fund
+
+**Was hier zurückgenommen wird.** P111 schrieb um 16:52 MEZ, unsre eigne Rangfolge mit
+`bge-m3` sei "**nicht** gemessen", und P112 schrieb denselben Satz als eigne Neuerung. Beide
+waren falsch, und die Widerlegung liegt im **eignen Repo**: `docs/belege/tag-0311/eval-bge-m3-1404.log.txt`
+(npm run eval, `KEPTA_EMBED_MODEL=bge-m3`, kepta@3.2.125, 2026-11-03 13:04:56 UTC = 14:04 MEZ)
+meldet für das v3-Bein **Recall@5 90,0 %, Hit@1 77,8 %, MRR 0,825** und die Kategorien
+ablenkung 25 %, graph 100 %, lexikalisch 96 %, temporal 67 %, umschreibung 50 %. Das Sprach-Artefakt
+desselben Ordners (`sprachuebergriff-bge-m3-1406.log.txt`) zitiert diese Zahl sogar mit Händen.
+Der Lauf von heute (17:09:27 MEZ, 3.2.189) hat **jede einzelne** davon getroffen -- also ist
+die korrekte Meldekategorie nicht "neu gemessen", sondern **"über 64 Fassungen reproduziert"**.
+
+**Die Regel, die daraus folgt und die mechanisch zieht:** bevor ein Lauf als Antwort auf eine
+offene Frage verkauft wird, gehört die Frage gegen den **Beleg-Ordner** geprüft, nicht nur
+gegen die Papiere der eignen Nacht. `tests/konkurrenz-sprachstufen.test.ts` hält das jetzt
+fest, indem er die heutigen Zahlen gegen die 3.11-Artefakte rechnet (Fall 3 und Fall 7) --
+wer eine Reproduktion als Neufund ausgibt, sieht die alten Artefakte im selben Lauf stehen.
+
+**Zweitens, die Sprache unter beiden Stufen** (`scripts/eval-sprachuebergriff.ts`, 15 Paare,
+Ziele geerbt, Richtung englische Frage gegen deutsche Notizen, Gegenrichtung **nicht gemessen**;
+3.11 und heute, je Stufe zwei bytegleiche Läufe):
+
+| Bein | Stufe | deutsch Hit@1 | englisch Hit@1 | Sprachpreis |
+|---|---|---|---|---|
+| v3, ausgeliefertes Retrieval | nomic-embed-text | 60,0 % | **26,7 %** (4/15) | -33,3 Pp |
+| v3, ausgeliefertes Retrieval | bge-m3 | 60,0 % | **26,7 %** (4/15) | -33,3 Pp |
+| nur das Vektor-Bein (Diagnose) | nomic-embed-text | 73,3 % | 26,7 % | -46,7 Pp |
+| nur das Vektor-Bein (Diagnose) | bge-m3 | **46,7 %** | **20,0 %** | -26,7 Pp |
+
+Die Lesung: **das mehrsprachige Einbett ist kein Hebel für die Sprachgrenze.** Am
+ausgelieferten Bein ändert es keine einzige Anfrage (26,7 % in beiden Stufen). Am
+Diagnose-Bein wird der *Abstand* kleiner (-46,7 → -26,7 Pp) -- und das ist die Falle, die
+dieser Abschnitt zubaut: der Abstand schrumpft, weil **beide Seiten fallen** (deutsch
+73,3 → 46,7, englisch 26,7 → 20,0). Ein kleinerer Abstand bei niedrigerer englischer
+Absolute ist kein Sprachgewinn, sondern ein **Nenner, der still schrumpft** -- dieselbe
+Klasse wie P104s "Nenner, der nicht schrumpfen darf". Gemessen und gehalten wird deshalb
+jede Seite einzeln, nicht der Preis.
+
+**Was damit für #44 gilt:** die Modell-Hypothese ist geprüft und **widert** (kein Default-
+Wechsel, kein Umbau des Bestands -- jeder Knoten müsste neu eingebettet werden,
+`src/core/engine.ts:294` filtert nach Modell). Offen bleibt damit ein Mechanismus auf der
+**Frage-Seite** (Übersetzung oder zweisprachiger Schlüssel vor dem Einbetten), und der ist
+hier weder gebaut noch gemessen; seine Latenz wäre zuerst an `scripts/volllauf`-Art zu messen,
+nicht an 58 Notizen.
 
 ## Was die letzte Zeile sagt, und was sie nicht sagt
 

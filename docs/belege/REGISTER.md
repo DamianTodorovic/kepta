@@ -207,6 +207,11 @@ erfunden, in beiden Sprachen gemessen und mit dem Vektor-Bein auch allein:
 | `konkurrenz-0611c/stufen-sonde.ts` | 368 B | `378cc0309dfe98b0…` |
 | `konkurrenz-0611c/spur-leser.ts` | 2604 B | `f0d07e6d63d1f9e9…` |
 | `konkurrenz-0611c/lauf-0611.log.txt` | 3462 B | `a4736cd0f1061483…` |
+| `konkurrenz-0611d/sprache-nomic-0611.txt` | 2001 B | `816a0347bf2c6a46…` |
+| `konkurrenz-0611d/sprache-nomic-0611-zwei.txt` | 2001 B | `816a0347bf2c6a46…` |
+| `konkurrenz-0611d/sprache-bge-m3-0611.txt` | 1815 B | `3e66f2603be81156…` |
+| `konkurrenz-0611d/sprache-bge-m3-0611-zwei.txt` | 1815 B | `3e66f2603be81156…` |
+| `konkurrenz-0611d/lauf-0611.log.txt` | 3240 B | `d394a8b0ab6cc968…` |
 
 Drei Folgen, aufgeschrieben, weil sie die Zahl nicht schoener machen:
 
