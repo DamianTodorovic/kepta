@@ -93,9 +93,9 @@ const AUSSCHLUSS_WORT = /reply only|you are a|as JSON|system prompt/i;
 
 /** Ein Durchgang durch den Quelltext: Funde und ihre Art, frisch, ohne Zustand zwischen
     den Aufrufen. */
-function sammle(mengen) {
-  const funde = new Map();
-  const arten = new Map();
+/** Die Quelltextdateien einer Menge — dieselbe Liste fuer Saetze und fuer Etiketten.
+    Eine eigne Liste pro Zaehler waere eine eigne Welt, und zwei Welten vergleichen sich nicht. */
+export function quelltextDateien(mengen) {
   const dateien = [];
   for (const d of mengen) {
     const ordner = path.join(WURZEL, d);
@@ -103,6 +103,21 @@ function sammle(mengen) {
       if (rel.trim()) dateien.push(rel);
     }
   }
+  return dateien;
+}
+
+/** Der Quelltext ohne Kommentare: Kommentare sind nicht die Flaeche. */
+function menschenText(datei) {
+  return fs
+    .readFileSync(datei, "utf8")
+    .replace(/\/\*[\s\S]*?\*\//g, "")
+    .replace(/^\s*\/\/.*$/gm, "");
+}
+
+function sammle(mengen) {
+  const funde = new Map();
+  const arten = new Map();
+  const dateien = quelltextDateien(mengen);
   // Jedes Muster traegt seine Art mit: was ein Mensch im Blatt liest (jsx, wort, literal),
   // und was nur am Rand erscheint -- der Titel unter dem Zeiger, der Platzhalter, der
   // Name fuer den Vorleser (rand). Gemessen 05:36:54 MEZ: die drei Chat-Zweige der
@@ -129,9 +144,7 @@ function sammle(mengen) {
     // waren Begruendungszeilen im Quelltext (Dashboard.tsx:595, TodayView.tsx:173, Chat.tsx:152),
     // die einen fruehern Befund zitieren — ein Mensch liest sie nirgends. Ein Zaehler, der
     // Zitate aus dem Bau-text fuehrt, meldet Mangel, wo ein Vermerk steht.
-    const t = fs.readFileSync(datei, "utf8")
-      .replace(/\/\*[\s\S]*?\*\//g, "")
-      .replace(/^\s*\/\/.*$/gm, "");
+    const t = menschenText(datei);
     for (const { re, art } of muster) {
       re.lastIndex = 0;
       let e;
@@ -270,6 +283,96 @@ export function kappenZeilen(getragen) {
     nichts. */
 export function randUeberKappe(zeilen) {
   return zeilen.filter((z) => z.art === "rand" && !traegtKappe(z.woerter));
+}
+
+/* ---------------------------------------------------------------------------
+   Die dritte Lage: das Etikett. Ein Etikett ist kein Satz — Chip, Knopf,
+   Schalter-Name, Abschnittszeile. Die Kappe und der Riegel greifen ab 20
+   Zeichen, und ein Chip von sieben Zeichen faellt durch beide Masken.
+
+   Gemessen 11:26:06 MEZ am ausgelieferten 3.2.182: "bm25 #", "vector #", "graph #" stehen
+   je zweimal im asar, und auf jeder Karte liest ein Mensch "Found via bm25 #2" (Bild:
+   Mappe belege-0611/fenster-183-vor/spuren-nur-bm25.png). Ein Etikett hat keinen Raum fuer
+   einen Grund, also darf es keine Methode nennen; die Methode gehoert dorthin, wo ein Satz
+   sie erklaeren kann.
+   --------------------------------------------------------------------------- */
+
+/** Was ein Etikett lang macht: eine Zeile, die ein Knopf, ein Chip oder ein Schalter ist.
+    24 Zeichen, weil "Search depth (top-k)" 21 traegt und ein Mensch diese Zeile liest. */
+export const ETIKETT_MAX = 24;
+
+/** Die Latte des Etiketts ist absolut: ein Etikett hat keinen Raum fuer einen Grund,
+    also nennt es keine Methode. */
+export const ETIKETT_LATTE = 0;
+
+/** Die Namen der Verfahren, die kein Mensch kennen muss, um die Flaeche zu benutzen. */
+export const ALGORITHMEN = [
+  "bm25", "fts", "fts5", "tf-idf", "tfidf", "cosine", "knn", "rrf",
+  "vector", "vectors", "embedding", "embeddings", "top-k", "retrieval", "hybrid",
+];
+const ALGORITHMEN_RE = new RegExp("\\b(" + ALGORITHMEN.join("|") + ")\\b", "i");
+const FACH_RE = new RegExp("\\b(" + FACHWORTER.join("|") + ")\\b", "i");
+
+/** Ein Etikett, oder ein Stueck Quelltext, das sich als eines ausgibt. */
+function istEtikett(s) {
+  if (!s || s.length > ETIKETT_MAX) return false;
+  if (!/[A-Za-z]/.test(s)) return false;
+  if (/[{}]/.test(s)) return false; // ein Ausdruck, kein Text
+  if (/(===|!==|&&|\|\||=>|\bif\b|\belse\b|\breturn\b|\bcase\b)/.test(s)) return false;
+  if (/[?;:]$/.test(s)) return false; // "absage ?"
+  if (/^[&|;:]/.test(s)) return false; // "; themen: Record"
+  if (/^[a-z][\w$]*\s*[?:=]/.test(s)) return false; // Notation, keine Benennung
+  if (/\b(Record|string|number|boolean|null|undefined|true|false)\b/.test(s)) return false;
+  return true;
+}
+
+/** Die Etikette eines Quelltextes: JSX-Text, Kurzattribute, und die Tupel-Form, in der
+    Einstellungen ihre Zeilen halten. */
+export function etikettAusText(t, datei) {
+  const funde = [];
+  const muster = [
+    { re: />\s*([^<>\n]{1,60}?)\s*</g, art: "jsx", gruppe: 1 },
+    { re: /\b(?:title|placeholder|label|text|message|badge|tag|aria-label)\s*=\s*"([^"\n]{1,60})"/g, art: "rand", gruppe: 1 },
+    { re: /\b(?:label|text|message|badge|tag|aria-label)\s*=\s*\{`([^`\n]{1,60})`\}/g, art: "rand", gruppe: 1 },
+    { re: /\['[\w$]+',\s*'([^'\n]{1,60})'/g, art: "spur", gruppe: 1 },
+    // Die Objektform derselben Zeile: { label: 'Words', ... }. Ohne dieses Muster wäre die
+    // eine Benennungsstelle, an der die Einstellungen ihre Spuren halten, unsichtbar.
+    { re: /\b(?:label|wort|titel|kopf):\s*'([^'\n]{1,60})'/g, art: "spur", gruppe: 1 },
+    { re: /\b(?:label|wort|titel|kopf):\s*"([^"\n]{1,60})"/g, art: "spur", gruppe: 1 },
+  ];
+  for (const { re, art, gruppe } of muster) {
+    re.lastIndex = 0;
+    let e;
+    while ((e = re.exec(t))) {
+      // Ein Ausdruck in der Zeile ist keine Sprache: sein Text bleibt, seine Rechnung nicht.
+      const s = e[gruppe].replace(/\{[^{}]*\}/g, "").replace(/\s+/g, " ").trim();
+      if (!istEtikett(s)) continue;
+      funde.push({ s, art, quelle: datei.replace(WURZEL + "/", "") });
+    }
+  }
+  return funde;
+}
+
+export function etiketteAusQuelltext(mengen) {
+  const funde = [];
+  for (const datei of quelltextDateien(mengen)) {
+    const rel = datei.replace(WURZEL + "/", "");
+    if (AUSSCHLUSS_PFAD.test(rel)) continue;
+    for (const f of etikettAusText(menschenText(datei), datei))
+      if (!AUSSCHLUSS_WORT.test(f.s)) funde.push(f);
+  }
+  return funde;
+}
+
+export function etikettNenntAlgorithmus(etiketten) {
+  return etiketten.filter((f) => ALGORITHMEN_RE.test(f.s));
+}
+
+/** Die breitere Klasse: jedes Etikett, das ein Fachwort nennt. Bericht, keine Latte —
+    die drei Ansichts-Namen der Graph-Flaeche stehen als Trio (Force | Tree | Semantic),
+    und ein einzelnes Wort zu tauschen waere keine Benennung, sondern ein Rest. */
+export function etikettNenntFachwort(etiketten) {
+  return etiketten.filter((f) => FACH_RE.test(f.s));
 }
 
 /** Die eigne Rechnung des Werkzeugs: die Art-Zeilen muessen auf dieselbe Grundgesamtheit und
@@ -416,6 +519,20 @@ async function haupt() {
   for (const z of randFehlt) console.log(`    ${String(z.woerter).padStart(3)} Woerter  ${z.quelle}  ::  ${z.s.slice(0, 118)}`);
   console.log(`  URTEIL RAND: ${randHalten ? "HALTET" : "FAELLT"} (${randFehlt.length} Titel ueber ${SATZKAPPE} Woettern von ${kappenZeilen(flaeche.getragen).find((x) => x.gruppe === GRUPPEN.rand)?.n ?? 0} Rand-Saetzen; Biss-Kontrolle im Fall)`);
 
+  // Die dritte Lage: das Etikett. Kappe und Riegel sehen Texte ab 20 Zeichen; ein Chip von
+  // sieben faellt durch beide Masken, und auf der Flaeche liest ihn doch jeder.
+  const etikette = etiketteAusQuelltext(FLAECHE);
+  const etikettFehlt = etikettNenntAlgorithmus(etikette);
+  const etikettHalten = etikettFehlt.length === 0;
+  const fachEtikette = etikettNenntFachwort(etikette);
+  console.log(`\n  Etikette, die eine Suchmethode nennen (${etikettFehlt.length}):`);
+  for (const f of etikettFehlt) console.log(`    [${f.art}] "${f.s}"  ${f.quelle}`);
+  console.log(`  URTEIL ETIKETT: ${etikettHalten ? "HALTET" : "FAELLT"} (${etikettFehlt.length} von ${etikette.length} Etiketten nennen eine Suchmethode, erlaubt ${ETIKETT_LATTE})`);
+  // Bericht, keine Latte — die Stellen bleiben sichtbar, statt aus der Liste geloescht zu werden.
+  console.log(`  Bericht Etikett-Fachwort: ${fachEtikette.length} Stellen nennen ein Fachwort, davon ${etikettFehlt.length} eine Methode:`);
+  for (const f of fachEtikette.filter((x) => !ALGORITHMEN_RE.test(x.s)).slice(0, LISTE))
+    console.log(`    [${f.art}] "${f.s}"  ${f.quelle}`);
+
   const langsten = [...flaeche.getragen].sort((a, b) => b.woerter - a.woerter).slice(0, 12);
   console.log("\n  Die zwoelf laengsten Menschensaetze (Wortzahl | Quelle):");
   for (const z of langsten) console.log(`    ${String(z.woerter).padStart(3)}  ${z.quelle}  ::  ${z.s.slice(0, 118)}`);
@@ -460,7 +577,7 @@ async function haupt() {
   // ein Wunsch ohne Messzeug.
   const strichBiss = NACKTER_STRICH.test("A local program on this machine - no key needed.");
   const taub = !getroffen || !blind || !strichBiss;
-  const urteil = taub ? "TAUB" : kappeHalten && riegelHalten && strichHalten && randHalten ? "HALTET" : "FAELLT";
+  const urteil = taub ? "TAUB" : kappeHalten && riegelHalten && strichHalten && randHalten && etikettHalten ? "HALTET" : "FAELLT";
   console.log(`  URTEIL KAPPE: ${kappeHalten ? "HALTET" : "FAELLT"} (Flaeche: Anteil mit hoechstens ${SATZKAPPE} Woertern ${(100 * anteil).toFixed(1)} %, Latte ${100 * UNTER_KAPPE_MINDESTENS} %)`);
   // Die Marge in Saetzen, nicht in Prozent: wie viele der kurzen Saetze lang werden
   // duerfen, bevor die Latte faellt. Gemessen 05:57:31 MEZ: 276 von 345 = genau 80,000 %,

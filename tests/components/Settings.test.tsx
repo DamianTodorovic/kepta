@@ -6,6 +6,7 @@ import { act, render, screen, waitFor, within, fireEvent } from "@testing-librar
 import userEvent from "@testing-library/user-event";
 import { Settings } from "../../src/components/Settings";
 import { TEXTE } from "../../src/lib/uiText";
+import { spurAria } from "../../src/lib/spuren";
 
 // Die Einstellungen sind die Stelle, an der ein Schluessel eingegeben, ein
 // Anbieter gewechselt und die Wissensbasis gesichert wird. Fehler hier sind
@@ -56,10 +57,10 @@ afterEach(() => { vi.unstubAllGlobals(); vi.restoreAllMocks(); });
 describe("Settings: Suche (Paket 2 — UI-Funktionsparität)", () => {
   it("zeigt den Such-Abschnitt mit Suchtiefe (Default 16), Spuren-Schaltern und Treffer-Regler", () => {
     const { container } = render(<Settings />);
-    expect(container.textContent).toMatch(/Search depth \(top-k\)/);
-    expect(container.textContent).toMatch(/Retrieval tracks/);
-    for (const spur of ["BM25", "Vectors", "Graph"]) {
-      expect(screen.getByRole("checkbox", { name: `Track ${spur}` })).toBeTruthy();
+    expect(container.textContent).toMatch(/Search depth/);
+    expect(container.textContent).toMatch(/Search tracks/);
+    for (const spur of ["bm25", "vektor", "graph"] as const) {
+      expect(screen.getByRole("checkbox", { name: spurAria(spur) })).toBeTruthy();
     }
     expect(screen.getByLabelText(/Results shown/)).toBeTruthy();
     const tiefe = screen.getByLabelText(/Search depth/) as HTMLInputElement;
@@ -81,11 +82,11 @@ describe("Settings: Suche (Paket 2 — UI-Funktionsparität)", () => {
   it("schaltet eine Spur ab — der Schalter landet in den geteilten Präferenzen", async () => {
     const user = userEvent.setup();
     render(<Settings />);
-    const graph = screen.getByRole("checkbox", { name: "Track Graph" }) as HTMLInputElement;
+    const graph = screen.getByRole("checkbox", { name: spurAria("graph") }) as HTMLInputElement;
     expect(graph.checked).toBe(true);
     await user.click(graph);
     await waitFor(() => expect(localStorage.getItem("ki_gehirn_spur_graph")).toBe("0"));
-    expect((screen.getByRole("checkbox", { name: "Track Graph" }) as HTMLInputElement).checked).toBe(false);
+    expect((screen.getByRole("checkbox", { name: spurAria("graph") }) as HTMLInputElement).checked).toBe(false);
   });
 
   it("der Treffer-Regler schreibt denselben Schlüssel wie der Dashboard-Regler", async () => {

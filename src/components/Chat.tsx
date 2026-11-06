@@ -14,6 +14,7 @@ import { shouldLearn, buildExtractPrompt, parseNode, AUTO_LEARN_TIMEOUT_MS, isAu
 import { useToast } from "./ui/Toast";
 import { QUITTUNG_MS } from "../lib/quittung";
 import { grundText } from "../lib/tuergrund";
+import { spurChip } from "../lib/spuren";
 
 /** Extrahiert Rohtext aus ReactMarkdown-Children (für Copy-Buttons). */
 function extractCodeText(node: unknown): string {
@@ -1165,9 +1166,9 @@ export function Chat({ activeMemories, onSaveToBrain, onSaveToBrainWithMeta, isF
                               Knoten wo im Ranking sah — dieselbe Wahrheit wie auf der Karte. */}
                           {spurenSichtbar(s.tracks) && (
                             <span className="flex flex-wrap gap-1 font-mono fs-1 font-normal lh-marke">
-                              {s.tracks!.bm25 !== null && <span style={{ color: "var(--accent)" }}>bm25 #{s.tracks!.bm25 + 1}</span>}
-                              {s.tracks!.vektor !== null && <span style={{ color: "var(--accent)" }}>vector #{s.tracks!.vektor + 1}</span>}
-                              {s.tracks!.graph !== null && <span style={{ color: "var(--accent)" }}>graph #{s.tracks!.graph + 1}</span>}
+                              {s.tracks!.bm25 !== null && <span style={{ color: "var(--accent)" }}>{spurChip("bm25")} #{s.tracks!.bm25 + 1}</span>}
+                              {s.tracks!.vektor !== null && <span style={{ color: "var(--accent)" }}>{spurChip("vektor")} #{s.tracks!.vektor + 1}</span>}
+                              {s.tracks!.graph !== null && <span style={{ color: "var(--accent)" }}>{spurChip("graph")} #{s.tracks!.graph + 1}</span>}
                             </span>
                           )}
                         </span>

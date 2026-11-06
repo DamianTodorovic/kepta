@@ -9,7 +9,7 @@
 // jemand liest; dieser eine schreibt nirgends hin.
 //
 // Die Flaechen werden hier am **Inhalt** erkannt, nicht am Behaelter: das System-Feld traegt die
-// Spur "Track BM25", der Sync-Schirm seine Verschluesselungs-Abfrage. Ein Test, der auf Klassen
+// Spur "Search track: words", der Sync-Schirm seine Verschluesselungs-Abfrage. Ein Test, der auf Klassen
 // oder Farben prueft, schlaegt auch dann gruen, wenn nichts zu sehen ist.
 //
 // Der letzte Fall ist der, der weh tut: ein fremder oder kaputter Wert im Schluessel darf nicht
@@ -20,6 +20,7 @@ import { render, fireEvent, cleanup } from "@testing-library/react";
 import { Settings } from "../../src/components/Settings";
 import { ALT_SCHLUESSEL, TAB_SCHLUESSEL, tabLesen, tabSetzen } from "../../src/lib/einstellungenTab";
 import { gehoertUns, spiegleEinstellungen } from "../../src/lib/settings";
+import { spurAria } from "../../src/lib/spuren";
 
 const TABS: Array<[string, RegExp]> = [
   ["AI & data", /AI & data/i],
@@ -28,7 +29,7 @@ const TABS: Array<[string, RegExp]> = [
 ];
 
 function systemSichtbar(container: HTMLElement) {
-  return !!container.querySelector('input[aria-label="Track BM25"]');
+  return !!container.querySelector(`input[aria-label="${spurAria("bm25")}"]`);
 }
 function syncSichtbar(container: HTMLElement) {
   return !!container.querySelector('input[placeholder^="At least"]');

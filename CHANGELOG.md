@@ -1,3 +1,31 @@
+## [3.2.183]
+
+### Changed
+
+- **A label on the surface stopped naming an algorithm.** Every note card ended its row with
+  `Found via bm25 #2`, and the chat's source badges said the same. Measured in the delivered
+  3.2.182 at 6.11.2026 11:26:06 MEZ: `bm25 #`, `vector #` and `graph #` each sit twice in
+  `app.asar` (note card and chat), and the real window shows the chip on every result
+  (`audit-2026-10-09/feldzug/belege-0611/fenster-183-vor/spuren-nur-bm25.png`). A chip has no
+  room for a reason, so it may not carry a method name. The three tracks are now named once,
+  in `src/lib/spuren.ts` — **Words / Meaning / Graph** — and the card, the chat and Settings
+  read that source. Settings' section heading `Retrieval tracks` became `Search tracks`, and
+  the depth slider's label and screen-reader name dropped `(top-k)`; its tooltip already
+  explains what depth does.
+- **Why the census had never seen this.** Its patterns start at 20 characters, because they
+  measure sentences; a seven-character chip falls through both the cap and the jargon bar.
+  `scripts/verstaendlichkeit.mjs` now has a third layer: `URTEIL ETIKETT` scans visible
+  labels of 1–24 characters (JSX text, short attributes, and the `label:`/tuple forms that
+  hold them) and allows **zero** of them to name a retrieval method. Measured 11:35:04 MEZ at
+  the tree: 9 of 384 labels did. Counter-probe at 11:40:21 MEZ: re-adding one chip literal
+  makes the census report `FAELLT (1 von 428)` and exit 1; after the revert it is
+  `HALTET (0 von 427)`.
+- **Reported, not hidden:** 28 further labels still carry a domain word (`mcp-config.json`,
+  `Search the index`, `New node`), and two name a method class this bar does not cover —
+  `Semantic search` (Dashboard) and `Semantic map` (graph panel). The graph's three view
+  names are a set (`Force | Tree | Semantic`); swapping one word alone would leave a leftover
+  instead of a name, so that trio is its own cut. The census prints both numbers every run.
+
 ## [3.2.182]
 
 ### Changed

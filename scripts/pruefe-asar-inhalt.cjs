@@ -96,7 +96,7 @@ const erwartet = [
   // Tausch: jede neue Marke muss 0 sein, jede verbotene alt 1.
   ["Ask this machine if Ollama or LM Studio runs", 1],
   ["word search still works; meaning search may miss notes", 1],
-  ["rank in words, vectors, graph. Absent means unseen", 1],
+  ["rank in words, meaning, graph. Absent means unseen", 1],
   ["Thickness changes the drawing, never the ranking", 1],
   ["Built once", 2],
   // P100 (landet in 3.2.182): der Sprachuebergriff auf der Flaeche nennt jetzt seinen
@@ -104,6 +104,12 @@ const erwartet = [
   ["cross-language pairs", 1],
   ["regal-wann", 1],
   ["regal-koerb", 1],
+  // P103 (landet in 3.2.183): ein Etikett nennt keine Suchmethode mehr. Die drei Spuren
+  // heissen Words / Meaning / Graph, und der Vorlesername wird an einer Stelle gebaut --
+  // gemessen 11:35:04 MEZ am Baum: 9 von 384 Etiketten nannten eine Methode, sechs davon auf
+  // Karte und Chat. Gegenprobe am installierten 3.2.182 (11:26:06 MEZ): jede neue Marke 0,
+  // jede verbotene Kette mindestens 1.
+  ["Search track: ", 1],
   // p5-p (G-72) und p1-q (G-76) und p4-y, am **gelandeten** Objekt gezaehlt 22.10. 19:16 MESZ
   // (app.asar 49 097 685 B, 19:05): "graph-farbgruppe" 2 (das zweite ist "-stand"),
   // "graph-verbindungsdicke" 2 (das zweite ist "-wert"), die beiden Saetze je 1. Kappen sind
@@ -1194,6 +1200,17 @@ const verboten = [
   "This file is neither a ChatGPT nor a Claude export",
   "Hybrid retrieval (BM25 + vectors + knowledge graph) over K3PTA memory.",
   "become linked entities",
+  // P103 (landet in 3.2.183): die alten Etikett-Wortlaute. Gezaehlt am installierten
+  // 3.2.182 um 11:39:29 MEZ: "bm25 #" 2, "vector #" 2, "Retrieval tracks" 1,
+  // "Search depth (top-k)" 2, der alte Karten-Titel 1. "Track BM25" steht hier **nicht** --
+  // die alte Flaeche baute den Vorleser-Namen aus `Track ${label}`, im Bundel liegt also
+  // "Track " und "BM25" getrennt, und die Kette war am Objekt 0. Eine Sperre, die die Welt
+  // nicht schreibt, meldet ewig Sauberkeit.
+  "bm25 #",
+  "vector #",
+  "Retrieval tracks",
+  "Search depth (top-k)",
+  "rank in words, vectors, graph. Absent means unseen",
 ];
 // Die Liste darf nur ASCII-Zeichen enthalten. Grund, gemessen 21.10. 19:16 MESZ am
 // installierten Objekt: das Wort "Looking" plus echtes U+2026 steht dort 2 mal, diese

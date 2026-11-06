@@ -444,7 +444,7 @@ async function main() {
     urteil("mit allen Spuren findet die Flaeche etwas", grund.zeilen > 0, true);
     const alleAus = async () => {
       await steuere();
-      return evaliere(cdp, `(()=>{const a=['Track BM25','Track Vectors','Track Graph'].map(n=>document.querySelector('input[aria-label="'+n+'"]'));
+      return evaliere(cdp, `(()=>{const a=['Search track: words','Search track: meaning','Search track: graph'].map(n=>document.querySelector('input[aria-label="'+n+'"]'));
         a.forEach(e=>{if(e&&e.checked)e.click()});return a.map(e=>e?!e.checked:null)})()`);
     };
     const aus = await alleAus();
@@ -460,7 +460,7 @@ async function main() {
     urteil("**nach dem Neuladen stehen alle drei noch auf aus**", gespeichert, ["0", "0", "0"]);
     urteil("und die Flaeche findet weiterhin nichts", (await suchZeilen("Fristenkontrolle")).zeilen, 0);
     await steuere();
-    await evaliere(cdp, `(()=>{const e=document.querySelector('input[aria-label="Track BM25"]');if(e&&!e.checked)e.click();})()`);
+    await evaliere(cdp, `(()=>{const e=document.querySelector('input[aria-label="Search track: words"]');if(e&&!e.checked)e.click();})()`);
     await schlafe(900);
     const wieder = await suchZeilen("Fristenkontrolle");
     urteil("die eine Spur wieder an, und die Liste füllt sich", wieder.zeilen > 0, true);
@@ -508,7 +508,7 @@ async function main() {
   //     bleibt bei der Stufe. Beides zusammen ist die Behauptung — gemessen 13:12: "5 of 30
   //     hits" bei Tiefe 5, "30 hits" bei Tiefe 32, und in beiden Faellen fuenf Karten.
   if (NUR === "" || NUR === "tiefe") {
-    const tiefe = async (wert) => evaliere(cdp, `(()=>{const e=document.querySelector('input[aria-label="Search depth (top-k)"]');if(!e)return null;
+    const tiefe = async (wert) => evaliere(cdp, `(()=>{const e=document.querySelector('input[aria-label="Search depth"]');if(!e)return null;
       const set=Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype,'value').set;set.call(e,'${wert}');
       e.dispatchEvent(new Event('input',{bubbles:true}));e.dispatchEvent(new Event('change',{bubbles:true}));return e.value})()`);
     await steuere();

@@ -10,13 +10,18 @@
    die Sprache, die wir schreiben, ist dieselbe. */
 import { describe, expect, it } from "vitest";
 import { execFileSync, spawnSync } from "node:child_process";
+import fs from "node:fs";
 import path from "node:path";
 import {
+  ALGORITHMEN,
   DIENER,
   FLAECHE,
   SATZKAPPE,
   WERKZEUG,
   artenAusQuelltext,
+  etikettAusText,
+  etiketteAusQuelltext,
+  etikettNenntAlgorithmus,
   istBenutzersprache,
   kappenZeilen,
   kandidatenAusQuelltext,
@@ -26,6 +31,10 @@ import {
   zaehle,
   zensiere,
 } from "../scripts/verstaendlichkeit.mjs";
+import { SPUR_LABELS, spurAria } from "../src/lib/spuren";
+
+/** Dieselbe Liste, dasselbe Muster: die Suite prueft gegen die Sonde, nicht gegen ein zweites Regex. */
+const ALGORITHMEN_RE = new RegExp("\\b(" + ALGORITHMEN.join("|") + ")\\b", "i");
 
 const WURZEL = path.resolve(import.meta.dirname, "..");
 
@@ -306,5 +315,86 @@ describe("Punkt 7: Fachwort-Saetze der Flaeche tragen Grund oder Taetigkeit", ()
     // Und die Hover-Latte ist eine eigne Zeile mit eigner Zahl.
     expect(laut.stdout).toMatch(/URTEIL RAND: (HALTET|FAELLT) \(\d+ Titel/);
     expect(laut.stdout).toContain("Bericht, keine Latte");
+  });
+});
+
+describe("Punkt 7, die Etikette: ein kurzes sichtbares Wort schuldet einen Klarnamen", () => {
+  /* Ein Etikett ist kein Satz. Die Kappe und der Riegel des Census greifen an Texten ab 20
+     Zeichen, und ein Chip mit sieben Zeichen faellt durch die Maske — gemessen 11:28:51 MEZ am
+     Baum und 11:26:06 MEZ am ausgelieferten 3.2.182: "bm25 #", "vector #", "graph #" stehen je
+     zweimal im asar (MemoryCard.tsx:98-100, Chat.tsx:1168-1170), und auf jedem Kartenbild der
+     Flaeche liest ein Mensch "Found via bm25 #2" (Bild: belege-0611/fenster-183-vor/spuren-nur-bm25.png).
+     Ein Algorithmus-Name in einem Etikett ist die einzige Sprache, die ein Etikett nicht hat:
+     es hat keinen Raum fuer einen Grund. */
+  const etikette = etiketteAusQuelltext(FLAECHE);
+  /** Die Form eines Etikett-Funds, benannt: der Census ist JavaScript ohne Typdecke. */
+  type Etikett = { s: string; art: string; quelle: string };
+
+  it("die Sonde sieht ein Etikett, und wirft Codefragment und Langtext raus", () => {
+    // Biss-Kontrolle an einem Kunsttext: drei Etiketten-Formen muessen getroffen werden,
+    // zwei Nicht-Etikette duerfen nicht.
+    const text = [
+      '<span>Found via</span>',
+      '<span>bm25 #{n + 1}</span>',
+      '<input aria-label="Track BM25" />',
+      "const spur = ['spurBm25', 'BM25', 'Exact words win'];",
+      "{absage ?",
+      "; themen: Record",
+      "<p>Search depth: how far the engine looks before ranking, so a deeper search costs time.</p>",
+    ].join("\n");
+    const funde = etikettAusText(text, "src/components/Probe.tsx");
+    const worte = funde.map((f) => f.s);
+    expect(worte, "ein Chip-Etikett wird nicht gesehen").toContain("bm25 #");
+    expect(worte, "ein Vorleser-Name wird nicht gesehen").toContain("Track BM25");
+    expect(worte, "eine Spur-Beschriftung wird nicht gesehen").toContain("BM25");
+    expect(worte, "ein Codefragment ist kein Etikett").not.toContain("absage ?");
+    expect(worte, "ein Halbsatz ohne Raum ist kein Etikett").not.toContain("themen: Record");
+    expect(worte, "ein langer Satz ist kein Etikett, sondern ein Satz").not.toContain(
+      "Search depth: how far the engine looks before ranking, so a deeper search costs time."
+    );
+    expect(etikettNenntAlgorithmus(funde).length, "drei Etikette nennen eine Suchmethode").toBe(3);
+  });
+
+  it("kein Etikett der Flaeche nennt eine Suchmethode", () => {
+    const fehl = etikettNenntAlgorithmus(etikette);
+    const liste = fehl.map((f: Etikett) => `    [${f.art}] "${f.s}"  ${f.quelle}`).join("\n");
+    expect(fehl.length, `\n  ${fehl.length} Etikette nennen eine Methode:\n${liste}`).toBe(LATE);
+  });
+
+  it("die drei Spuren haben einen Namen, und der Name steht an einer Stelle", () => {
+    // Ein Name pro Sache, definiert einmal: die Karte, der Chat und die Einstellungen lesen
+    // dieselbe Quelle. Vorher standen dieselben drei Woerter an vier Stellen im Quelltext, und
+    // die P99-Kuerzung der Titel musste sie von Hand nachziehen.
+    expect(Object.values(SPUR_LABELS)).toEqual(["Words", "Meaning", "Graph"]);
+    for (const wert of Object.values(SPUR_LABELS))
+      expect(wert, `"${wert}" nennt eine Methode`).not.toMatch(ALGORITHMEN_RE);
+    for (const [datei, was] of [
+      ["src/components/MemoryCard.tsx", "die Karte"],
+      ["src/components/Chat.tsx", "der Chat"],
+      ["src/components/Settings.tsx", "die Einstellungen"],
+    ]) {
+      const quelltext = fs.readFileSync(path.join(WURZEL, datei), "utf8");
+      expect(quelltext, `${was} erfindet einen eignen Namen fuer eine Spur`).toContain("lib/spuren");
+      expect(quelltext, `${was} malt noch einen Methoden-Namen auf die Flaeche`).not.toMatch(/bm25 #|vector #/);
+    }
+  });
+
+  it("der Fenster-Pruefer nennt die Namen, die die Spur traegt", () => {
+    // Die Selektoren des Fenster-Pruefers sind harte Wortlaeufer. Ein Namenswechsel in der
+    // Quelle, den der Pruefer nicht mitmacht, schlaegt nicht die App — er schlaegt blind.
+    const pruefer = fs.readFileSync(path.join(WURZEL, "scripts", "pruefe-einstellungen-im-fenster.mjs"), "utf8");
+    for (const schluessel of Object.keys(SPUR_LABELS))
+      expect(pruefer, `der Fenster-Pruefer kennt ${spurAria(schluessel as never)} nicht`).toContain(spurAria(schluessel as never));
+    expect(pruefer, "der Pruefer sucht noch die alte Tiefen-Beschriftung").not.toContain("Search depth (top-k)");
+  });
+
+  it("der Census meldet das Etikett-Urteil, und die Fachklasse bleibt im Bericht", () => {
+    const laut = spawnSync("node", [path.join(WURZEL, "scripts", "verstaendlichkeit.mjs"), "--nur", "quelltext"], { encoding: "utf8" });
+    expect(laut.stdout).toMatch(/URTEIL ETIKETT: (HALTET|FAELLT) \(\d+ von \d+ Etiketten nennen eine Suchmethode/);
+    // Die breitere Klasse (jedes Fachwort im Etikett) ist Bericht, keine Latte: zwei Etikette
+    // nennen eine Fachklasse ("Semantic search", "Semantic map"), und die drei Ansichts-Namen
+    // stehen als Trio (Force | Tree | Semantic) — ein Wort allein zu tauschen waere kein
+    // NAME, sondern ein Rest. Der Bericht haelt die Zahl sichtbar, damit sie nicht verschwindet.
+    expect(laut.stdout).toMatch(/Bericht Etikett-Fachwort: \d+ Stelle/);
   });
 });

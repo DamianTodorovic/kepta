@@ -7,6 +7,7 @@ import { Brain } from "../lib/icons";
 import { Hash, Clock, Zap, FileText, ExternalLink, Lock } from "../lib/icons";
 import { inhaltOhneQuelle, oeffneQuelle, parseChunkTitel, parseQuelle } from '../lib/quelle';
 import { gruppenVonNotiz, THEMA_HINWEISE, THEMA_LABELS, TRAEGER_HINWEISE, TRAEGER_LABELS } from '../lib/graphHierarchy';
+import { spurChip } from '../lib/spuren';
 import { useToast } from './ui/Toast';
 
 interface MemoryCardProps {
@@ -93,11 +94,11 @@ export const MemoryCard = memo(function MemoryCard({ memory, onClick, score, mat
             </span>
           )}
           {herkunft && (herkunft.bm25 !== null || herkunft.vektor !== null || herkunft.graph !== null) && (
-            <span className="row-quiet inline-flex items-center gap-1 tnum" title="Where the search found this note — rank in words, vectors, graph. Absent means unseen">
+            <span className="row-quiet inline-flex items-center gap-1 tnum" title="Where the search found this note — rank in words, meaning, graph. Absent means unseen">
               <span>Found via</span>
-              {herkunft.bm25 !== null && <span style={{ color: 'var(--accent)' }}>bm25 #{herkunft.bm25 + 1}</span>}
-              {herkunft.vektor !== null && <span style={{ color: 'var(--accent)' }}>vector #{herkunft.vektor + 1}</span>}
-              {herkunft.graph !== null && <span style={{ color: 'var(--accent)' }}>graph #{herkunft.graph + 1}</span>}
+              {herkunft.bm25 !== null && <span style={{ color: 'var(--accent)' }}>{spurChip('bm25')} #{herkunft.bm25 + 1}</span>}
+              {herkunft.vektor !== null && <span style={{ color: 'var(--accent)' }}>{spurChip('vektor')} #{herkunft.vektor + 1}</span>}
+              {herkunft.graph !== null && <span style={{ color: 'var(--accent)' }}>{spurChip('graph')} #{herkunft.graph + 1}</span>}
             </span>
           )}
           {chunk && (

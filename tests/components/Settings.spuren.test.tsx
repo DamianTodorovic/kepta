@@ -13,12 +13,15 @@ import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { render, fireEvent } from "@testing-library/react";
 import { Settings } from "../../src/components/Settings";
 import { leseSuchPrefs } from "../../src/lib/searchPrefs";
+import { spurAria } from "../../src/lib/spuren";
 
 type Spur = "spurBm25" | "spurVektor" | "spurGraph";
+// Die Namen kommen aus der Quelle, nicht aus diesem Fall: ein Fall, der einen Wortlaeufer
+// nachschreibt, schlaegt gegen die eigne Erinnerung, nicht gegen die Flaeche.
 const SPUREN: Array<[string, Spur]> = [
-  ["Track BM25", "spurBm25"],
-  ["Track Vectors", "spurVektor"],
-  ["Track Graph", "spurGraph"],
+  [spurAria("bm25"), "spurBm25"],
+  [spurAria("vektor"), "spurVektor"],
+  [spurAria("graph"), "spurGraph"],
 ];
 
 beforeEach(() => {

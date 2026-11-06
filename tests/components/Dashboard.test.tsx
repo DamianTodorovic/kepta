@@ -700,8 +700,8 @@ describe("Dashboard: Suche mit der Server-Engine", () => {
     const { container } = await zeige([note({ title: "Docker" })]);
     await user.type(screen.getByPlaceholderText(/Search your memory/), "docker");
     await waitFor(() => expect(container.textContent).toMatch(/Found via/), { timeout: 4000 });
-    expect(container.textContent).toMatch(/bm25 #1/);
-    expect(container.textContent).toMatch(/vector #3/);
+    expect(container.textContent).toMatch(/words #1/);
+    expect(container.textContent).toMatch(/meaning #3/);
     // Das Graph-Bein hat den Treffer nicht gesehen — kein Badge, kein Lügenfeld.
     expect(container.textContent).not.toMatch(/graph #/);
   });

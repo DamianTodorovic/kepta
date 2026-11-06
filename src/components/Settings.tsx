@@ -18,6 +18,7 @@ import { PrivacyShield } from './PrivacyShield';
 import { ConnectApps } from './ConnectApps';
 import { useSuchPrefs, leseTreffer, normalisiereTreffer, schreibeTreffer, SUCH_PREFS_EVENT, RESULT_STOPS, SUCH_TIEFE_MIN, SUCH_TIEFE_MAX, SUCH_TIEFE_DEFAULT } from '../lib/searchPrefs';
 import { tabLesen, tabSetzen, type EinstellungenTab } from '../lib/einstellungenTab';
+import { spurAria, spurLabel } from '../lib/spuren';
 
 /** Was die Import-Reparatur gefunden (Vorschau) oder getan hat (fertig). */
 type ReparaturStand = {
@@ -684,7 +685,7 @@ export function Settings() {
               <div className="space-y-5">
                 <div>
                   <label className="fs-2 lh-dicht block mb-2" htmlFor="such-tiefe" style={{ color: 'var(--text-3)' }}>
-                    Search depth (top-k) · <span className="tnum">{suchPrefs.tiefe}</span>
+                    Search depth · <span className="tnum">{suchPrefs.tiefe}</span>
                   </label>
                   <input
                     id="such-tiefe"
@@ -695,7 +696,7 @@ export function Settings() {
                     value={suchPrefs.tiefe}
                     onChange={(e) => setzeSuchPrefs({ ...suchPrefs, tiefe: parseInt(e.target.value, 10) })}
                     className="w-full"
-                    aria-label="Search depth (top-k)"
+                    aria-label="Search depth"
                     title="Search depth: how far the engine looks before ranking. Deeper costs time, finds more."
                   />
                   <div className="fs-2 lh-dicht mt-2" style={{ color: 'var(--text-3)' }}>
@@ -704,22 +705,23 @@ export function Settings() {
                 </div>
 
                 <div>
-                  <span className="fs-2 lh-dicht block mb-2" style={{ color: 'var(--text-3)' }}>Retrieval tracks</span>
+                  <span className="fs-2 lh-dicht block mb-2" style={{ color: 'var(--text-3)' }}>Search tracks</span>
                   <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                     {([
-                      ['spurBm25', 'BM25', 'Lexical full-text (FTS5) — exact words win'],
-                      ['spurVektor', 'Vectors', 'Meaning, not only the exact words'],
-                      ['spurGraph', 'Graph', 'Follows the people, projects and systems your notes name together'],
-                    ] as const).map(([key, label, beschreibung]) => {
-                      const an = suchPrefs[key];
+                      { vorliebe: 'spurBm25', spur: 'bm25', beschreibung: 'Lexical full-text (FTS5) — exact words win' },
+                      { vorliebe: 'spurVektor', spur: 'vektor', beschreibung: 'Meaning, not only the exact words' },
+                      { vorliebe: 'spurGraph', spur: 'graph', beschreibung: 'Follows the people, projects and systems your notes name together' },
+                    ] as const).map(({ vorliebe, spur, beschreibung }) => {
+                      const an = suchPrefs[vorliebe];
+                      const label = spurLabel(spur);
                       return (
-                        <label key={key} className="flex items-center gap-2 cursor-pointer select-none">
+                        <label key={vorliebe} className="flex items-center gap-2 cursor-pointer select-none">
                           <input
                             type="checkbox"
                             className="sr-only"
                             checked={an}
-                            onChange={(e) => setzeSuchPrefs({ ...suchPrefs, [key]: e.target.checked })}
-                            aria-label={`Track ${label}`}
+                            onChange={(e) => setzeSuchPrefs({ ...suchPrefs, [vorliebe]: e.target.checked })}
+                            aria-label={spurAria(spur)}
                           />
                           <span className="switch" data-on={an}><span className="knob" /></span>
                           <span>

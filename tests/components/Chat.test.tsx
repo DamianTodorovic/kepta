@@ -428,8 +428,8 @@ describe("Chat: das ganze Gehirn (Paket 3)", () => {
     stubFetch({ suchAntwort: suchTreffer });
     const { container } = zeige();
     await stelleFrageUndWarte(user, container);
-    expect(container.textContent).toMatch(/bm25 #1/);
-    expect(container.textContent).toMatch(/vector #2/);
+    expect(container.textContent).toMatch(/words #1/);
+    expect(container.textContent).toMatch(/meaning #2/);
     expect(container.textContent).not.toMatch(/graph #/);
     expect(container.textContent).toMatch(/Search index warm — answer in \d+ ms/);
   });
