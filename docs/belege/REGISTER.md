@@ -240,6 +240,11 @@ erfunden, in beiden Sprachen gemessen und mit dem Vektor-Bein auch allein:
 | `konkurrenz-0611e/beine-auf-gleichstand.ts` | 3022 B | `0a7c3ad0f49873b0…` |
 | `konkurrenz-0611e/vektor-bein-stumm-0611.txt` | 8256 B | `52832c2048021dc4…` |
 | `konkurrenz-0611e/vektor-bein-stumm.ts` | 2365 B | `950f0dc68fca08fe…` |
+| `aussendung-0611/vermessen.mjs` | 15061 B | `099f212e9bb8eee8…` |
+| `aussendung-0611/aussendung-0611.json` | 4113 B | `7f213a228bd8b330…` |
+| `aussendung-0611/aussendung-0611.log.txt` | 3400 B | `8377e3c64c89e082…` |
+| `aussendung-0611/beweisen-3-2-190-0611.txt` | 1094 B | `21c9789fca4692a5…` |
+| `aussendung-0611/github-releases-0611.json` | 153795 B | `56f94e5bd9c71d1c…` |
 
 Drei Folgen, aufgeschrieben, weil sie die Zahl nicht schoener machen:
 

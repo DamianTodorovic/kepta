@@ -56,4 +56,18 @@ describe("macOS: die Anleitung fuer den ersten Start", () => {
     const t = fs.readFileSync(path.join(wurzel, datei), "utf-8");
     expect(t).toContain("xattr -dr com.apple.quarantine");
   });
+
+  // Die Zeile oben prueft das Kommando und sieht den Operanden nicht. Genau der ist
+  // aber umgezogen: seit der Marke K3PTA heisst das Bundel K3PTA.app, und ein Kunde,
+  // der die Anleitung Wort fuer Wort kopiert, bekommt "No such file" — die Antwort
+  // auf die eine Frage, die Gatekeeper ihm stellt. Gemessen 6.11. 19:49 MEZ:
+  // /Applications/KEPTA.app fehlt, /Applications/K3PTA.app vorhanden.
+  it.each(dateien)("%s nennt in jedem Pfad die Marke, die der Build wirklich erzeugt", (datei) => {
+    const t = fs.readFileSync(path.join(wurzel, datei), "utf-8");
+    const buendel = [...t.matchAll(/\/Applications\/([^/\s"`)]+)\.app/g)].map((m) => m[1]!);
+    const koepfe = [...t.matchAll(/Contents\/MacOS\/([A-Za-z0-9_-]+)/g)].map((m) => m[1]!);
+    expect(buendel.length + koepfe.length, "der Text nennt keinen /Applications-Pfad — die Sonde ist taub")
+      .toBeGreaterThan(0);
+    for (const name of new Set([...buendel, ...koepfe])) expect(name).toBe(cfg.productName);
+  });
 });

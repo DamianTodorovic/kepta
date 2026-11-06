@@ -1,0 +1,188 @@
+{
+ "pfade": {
+  "erwartet": "K3PTA",
+  "dateien": {
+   "README.md": {
+    "stellen": 1,
+    "namen": [
+     "K3PTA"
+    ],
+    "Marke": true,
+    "grenzzeilen_Gegenwart": 0
+   },
+   ".github/release-notes.md": {
+    "stellen": 5,
+    "namen": [
+     "K3PTA"
+    ],
+    "Marke": true,
+    "grenzzeilen_Gegenwart": 0
+   }
+  },
+  "vor_dem_schlag": {
+   "README.md": {
+    "stellen": 1,
+    "namen": [
+     "KEPTA"
+    ],
+    "grenzzeilen_Gegenwart": 0
+   },
+   ".github/release-notes.md": {
+    "stellen": 5,
+    "namen": [
+     "KEPTA"
+    ],
+    "grenzzeilen_Gegenwart": 2
+   }
+  },
+  "kontrolle_strasse": 0
+ },
+ "ablage": {
+  "Ordner": "/Users/damiantodorovic/kepta-app/release",
+  "Dateien": 134,
+  "Fassungen": {
+   "anzahl": 33,
+   "erste": "3.2.158",
+   "letzte": "3.2.190"
+  },
+  "Gruppen": {
+   "dmg": {
+    "anzahl": 33,
+    "KiB": 5179988
+   },
+   "dmg.blockmap": {
+    "anzahl": 33,
+    "KiB": 5423
+   },
+   "zip": {
+    "anzahl": 33,
+    "KiB": 5181962
+   },
+   "zip.blockmap": {
+    "anzahl": 33,
+    "KiB": 5312
+   },
+   "andere": {
+    "anzahl": 2,
+    "KiB": 1
+   }
+  },
+  "Summen_KiB": 10372686,
+  "Summen_GiB": 9.89,
+  "x64_Dateien": 0,
+  "SHA256SUMS_Dateien": 0,
+  "entpackte_Ordner": [
+   "mac-arm64"
+  ]
+ },
+ "summen": {
+  "yml_version": "3.2.190",
+  "eintraege": [
+   {
+    "Datei": "K3PTA-3.2.190-mac-arm64.zip",
+    "yml_groesse": 160797231,
+    "ist_groesse": 160797231,
+    "yml_sha512": "BbkXWNxxzffxlOeh26jd+rg2LBPc4G4iYXYuFlAW0XiDEfy0T9bBypHMw501nGFvWEJWoY1mZxuoFDIfeQWMWQ==",
+    "ist_sha512": "BbkXWNxxzffxlOeh26jd+rg2LBPc4G4iYXYuFlAW0XiDEfy0T9bBypHMw501nGFvWEJWoY1mZxuoFDIfeQWMWQ==",
+    "groesse_stimmt": true,
+    "sha512_stimmt": true,
+    "sha256": "ce60780a7d673681cbafb1be383a2d7b5c4c87f8a8bcfd2d78c555aabfc22257"
+   },
+   {
+    "Datei": "K3PTA-3.2.190-mac-arm64.dmg",
+    "yml_groesse": 160736038,
+    "ist_groesse": 160736038,
+    "yml_sha512": "SIQhsoZAIrS5zUrhxM6flyI0xhywXrmJp+c4LnFSgzKmj+meyA1oiP53r0Lp6aIQkqh9BCgqDenJ+oeauRKw6Q==",
+    "ist_sha512": "SIQhsoZAIrS5zUrhxM6flyI0xhywXrmJp+c4LnFSgzKmj+meyA1oiP53r0Lp6aIQkqh9BCgqDenJ+oeauRKw6Q==",
+    "groesse_stimmt": true,
+    "sha512_stimmt": true,
+    "sha256": "1515c7cd49ef10b8502336d36014d8c2d97554e1b54de9bef72a7fc6473c873a"
+   }
+  ],
+  "deckt_ab": 2,
+  "gegen": 33
+ },
+ "signatur": {
+  "installiert": {
+   "bundel": "/Applications/K3PTA.app",
+   "Identifier": "app.kepta.desktop",
+   "Signature": "adhoc",
+   "flags": "0x2(adhoc)",
+   "TeamIdentifier": "not set",
+   "CDHash": "508ef0425124561c7510c62618d10b9de59b6df7",
+   "versiegelte_Dateien": "69",
+   "Authority": [],
+   "rohe_Zeilen": 16,
+   "spctl": "/Applications/K3PTA.app: rejected",
+   "quarantine": 0
+  },
+  "installer": {
+   "bundel": "/tmp/rl0611/mnt/K3PTA.app",
+   "dmg": "K3PTA-3.2.190-mac-arm64.dmg",
+   "Identifier": "app.kepta.desktop",
+   "Signature": "adhoc",
+   "flags": "0x2(adhoc)",
+   "TeamIdentifier": "not set",
+   "CDHash": "508ef0425124561c7510c62618d10b9de59b6df7",
+   "versiegelte_Dateien": "69",
+   "Authority": [],
+   "rohe_Zeilen": 16,
+   "spctl": "/tmp/rl0611/mnt/K3PTA.app: rejected",
+   "plist_version": "3.2.190",
+   "codesign_pruefung": {
+    "exit": 0,
+    "meldung": "keine Meldung bei Exit 0 — die Signatur ist auf der Platte in Ordnung"
+   }
+  }
+ },
+ "updater": {
+  "autoUpdater": 0,
+  "electron-updater": 0,
+  "checkForUpdates": 0,
+  "latest-mac": 0,
+  "differentialPackage": 0,
+  "memory_search": 21
+ },
+ "fern": {
+  "anzahl": 9,
+  "letzte": "app-3.2.1",
+  "assete": 58,
+  "arm64": 24,
+  "x64": 23,
+  "dmg": 12,
+  "summen": 5,
+  "stems": [
+   "KEPTA"
+  ],
+  "koerper_3_2_1_worte": {
+   "com.apple.quarantine": 0,
+   "KEPTA.app": 0,
+   "K3PTA.app": 0,
+   "Tageslimiten": 0,
+   "daily limit": 0,
+   "notar": 0
+  },
+  "koerper_zeilen": 14
+ },
+ "kante": {
+  "frei_KiB": 9486420,
+  "frei_GiB": 9.05,
+  "stapel_KiB": 1332304,
+  "stapel_GiB": 1.27,
+  "ruecklager": {
+   "ordner": [
+    "K3PTA-vor-3.2.188.app",
+    "K3PTA-vor-3.2.189.app",
+    "K3PTA-vor-3.2.190.app"
+   ],
+   "KiB": 1208520,
+   "GiB": 1.15
+  },
+  "ablage_GiB": 9.89,
+  "bedarf": {
+   "bau_GiB": 9.9,
+   "tausch_GiB": 8.53,
+   "entpackt_KiB": 402840
+  }
+ }
+}

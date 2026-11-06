@@ -145,3 +145,33 @@ describe("die Härtung bleibt stehen", () => {
       .toBeTruthy();
   });
 });
+
+// Die Laufzeitfaelle oben pruefen die Tuer. Was hier fehlt, war die Aussendung:
+// .github/release-notes.md wird mit jedem Release an die Seite gehaengt, und
+// README.md ist das erste Blatt, ein Kunde liest. Beide erzaehlen bis heute vom
+// "ersten Tag ohne Grenzen" und von "Tageslimiten, die ein Schluessel entfernt" —
+// Woerter fuer einen Mechanismus, der mit 3.1.5 ausgebaut ist (README.md:357) und
+// den die Faelle oben verbieten. Ein Text, der Geld verspricht, das es nicht gibt,
+// ist kein Formfehler.
+describe("die Aussendung nach aussen", () => {
+  const wurzel = process.cwd();
+  const dateien = ["README.md", ".github/release-notes.md"];
+  const retired = /daily limit|unlimited day|Tageslimite|Tag ohne Grenzen|removes (only )?the (daily )?limits|entfernt nur die Limiten/i;
+  // Ein Satz über die abgeschaltete Zeit ist erlaubt, wenn er als Geschichte erkennbar
+  // ist ("Until 3.1.4 the app metered …"). Was verboten ist, ist diewartsform.
+  const gesetz = /until 3\.1\.4|bis 3\.1\.4|was removed|ist entfernt|entfernt wurde|stopped being read/i;
+
+  it.each(dateien)("%s verkauft Grenzen nur noch in der Vergangenheit", (datei) => {
+    const t = fs.readFileSync(path.join(wurzel, datei), "utf-8");
+    const zeilen = t.split("\n").filter((z) => retired.test(z));
+    const gegenwart = zeilen.filter((z) => !gesetz.test(z));
+    expect(gegenwart.length, `${datei} behauptet ${gegenwart.length}-mal eine Grenze in der Gegenwart:\n` +
+      gegenwart.map((z) => "  " + z.trim().slice(0, 150)).join("\n")).toBe(0);
+  });
+
+  it.each(dateien)("%s sagt offen, dass es keine Schlüssel und keine Grenzen gibt", (datei) => {
+    const t = fs.readFileSync(path.join(wurzel, datei), "utf-8");
+    expect(/no keys, no limits|no license key is needed|keine Schl(ue|ü)ssel und keine Grenzen/i.test(t),
+      `${datei} lässt den customersatz über Schlüssel und Grenzen`).toBe(true);
+  });
+});

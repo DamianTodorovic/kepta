@@ -1,0 +1,20 @@
+
+Beweis-Kette fuer K3PTA 3.2.190:
+  OK   K3PTA-3.2.190-mac-arm64.dmg vorhanden (153 MiB)
+  FEHLER K3PTA-3.2.190-mac-x64.dmg vorhanden (fehlt)
+  OK   K3PTA-3.2.190-mac-arm64.zip vorhanden (153 MiB)
+  FEHLER K3PTA-3.2.190-mac-x64.zip vorhanden (fehlt)
+  OK   K3PTA-3.2.190-mac-arm64.dmg.blockmap vorhanden (0 MiB)
+  FEHLER K3PTA-3.2.190-mac-x64.dmg.blockmap vorhanden (fehlt)
+  OK   K3PTA-3.2.190-mac-arm64.zip.blockmap vorhanden (0 MiB)
+  FEHLER K3PTA-3.2.190-mac-x64.zip.blockmap vorhanden (fehlt)
+  OK   mac-arm64: Binding gegen Electron (arm64) — passt, NODE_MODULE_VERSION 149
+  OK   mac-arm64: laeuft (arm64) — server antwortet, version 3.2.190, verschluesselung an
+  FEHLER mac: erwartet genau eine .app in /Users/damiantodorovic/kepta-app/release/mac, gefunden: keine
+  OK   mac-arm64: data-abschnitt — Quelltext 3-mal, Paket 3-mal
+  OK   mac-arm64: data-quittung — Quelltext 2-mal, Paket 1-mal
+  FEHLER SHA256SUMS.txt fehlt
+  OK   latest-mac.yml nennt Version 3.2.190
+  OK   2 Eintraege in latest-mac.yml, alle mit echtem sha512 und echtem Umfang
+
+6 FEHLER — nicht ausliefern.
