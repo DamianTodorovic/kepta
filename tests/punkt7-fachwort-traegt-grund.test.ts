@@ -978,4 +978,23 @@ describe("Punkt 114, die Reichweite beider Augen: ein Satz ueber einer Zeilengre
     expect(zeile, "das Urteil nennt die Zeilengrenzen nicht").toContain("mehrzeilig");
     expect(zeile).toContain("HALTET");
   });
+
+  it("kein gelochtes Feld liefert einen Satz ueber der Kappe", () => {
+    // Die Kappe ist anderswo ein Anteil. Fuer die gelochten Felder gilt sie pro Satz,
+    // nicht pro Feld -- gemessen 18:09:43 MEZ waeren sonst zwei Felder angeklagt, die nur
+    // mehrere Saetze aneinandersetzen (`store.ts:1981` mit 15 und 14, OnboardingWizard mit
+    // 4 und 11). Ueber der Kappe stand einer: Settings.tsx mit 24 Woetern in einem Satz.
+    const funde: { woerter: number; quelle: string; s: string }[] = [];
+    for (const datei of (census as any).quelltextDateien([...(census as any).FLAECHE, ...(census as any).WERKZEUG, ...(census as any).DIENER])) {
+      // Dasselbe Papier, das der Census liest: Kommentare sind nicht die Flaeche.
+      for (const f of (census as any).satzAusText((census as any).menschenText(datei), datei)) {
+        if (!(census as any).feldMitLochFeld(f.roh)) continue;
+        for (const teilst of (census as any).satzStuecke(f.s)) {
+          const w = (census as any).zaehle(teilst).woerter;
+          if (w > 14) funde.push({ woerter: w, quelle: f.quelle, s: teilst.slice(0, 120) });
+        }
+      }
+    }
+    expect(funde, funde.map((f) => `${f.woerter} ${f.quelle}`).join(", ")).toEqual([]);
+  });
 });

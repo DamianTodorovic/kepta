@@ -1123,6 +1123,12 @@ const erwartet = [
   ["Pick its conversations.json", 1],
   ["Searches your notes three ways at once", 1],
   ["so a name you write joins the graph on its own", 1],
+  // P116 (landet in 3.2.190): ein Satz ueber einem alten Schluessel trug 24 Woerter in
+  // einem Feld, das kein Muster las -- drei Saetze draus, jeder unter der Kappe.
+  // Gezaehlt am installierten 3.2.189 um 18:12:30 MEZ (latin1): jede neue Kette 0 mal,
+  // die alte Form 1 mal (sie steht unten in `verboten`).
+  ["Nothing was carried across, and nothing was deleted.", 1],
+  ["Enter the key once to seal it.", 1],
 ];
 
 // Was NICHT mehr drin sein darf. Bisher war "der alte Wortlaut ist weg" eine Behauptung im
@@ -1319,6 +1325,9 @@ const verboten = [
   "exactly 1 or true - or leave it out",
   " - the page was pinned to",
   "up`} - got",
+  // P116: der 24-Woerter-Satz. Ein Satz, der kuerzer gemeldet wird, aber am alten Wortlaut
+  // im Objekt haengt, ist keine Kuerzung, sondern ein zweiter Text.
+  "so nothing was carried across and nothing was deleted: enter the key once to seal it",
 ];
 // Die Liste darf nur ASCII-Zeichen enthalten. Grund, gemessen 21.10. 19:16 MESZ am
 // installierten Objekt: das Wort "Looking" plus echtes U+2026 steht dort 2 mal, diese

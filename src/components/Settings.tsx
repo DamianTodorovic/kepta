@@ -809,7 +809,7 @@ export function Settings() {
                   </p>
                   {schluesselHuelle?.altFund && (
                     <p className="fs-2 lh-dicht mt-1" role="status" style={{ color: 'var(--warn)' }}>
-                      {`An older key is still in the database under a masked name (${schluesselHuelle.altFund.name}${schluesselHuelle.altFund.ende ? `, last characters ${schluesselHuelle.altFund.ende}` : ''}). The settings API will not hand it over, so nothing was carried across and nothing was deleted: enter the key once to seal it.`}
+                      {`An older key is still in the database under a masked name (${schluesselHuelle.altFund.name}${schluesselHuelle.altFund.ende ? `, last characters ${schluesselHuelle.altFund.ende}` : ''}). The settings API will not hand it over. Nothing was carried across, and nothing was deleted. Enter the key once to seal it.`}
                     </p>
                   )}
                   <Meldung meldung={meldung} ort="schluessel" />

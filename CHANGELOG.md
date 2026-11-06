@@ -1,3 +1,29 @@
+## [3.2.190]
+
+### Changed
+
+- **A sentence the census could not reach is now three sentences.** The dash and cap bars
+  read `[^`]{20,400}` — a character class, so it stops at the first inner backtick. A field
+  whose `${…}` hole contains another field therefore entered the corpus only as its pieces,
+  never as the line a person reads. Measured 18:04:38 MEZ with the census's own gates:
+  **8 delivered sentences joined the corpus** (4 surface, 4 servant), and one of them —
+  the older-key note in Settings — was **a single 24-word sentence**. It is now three
+  sentences ("The settings API will not hand it over. Nothing was carried across, and
+  nothing was deleted. Enter the key once to seal it."), each under the 14-word cap, with
+  every fact it carried still standing. `scripts/pruefe-asar-inhalt.cjs` requires the two
+  new endings and forbids the old 24-word run-on; counted in the installed 3.2.189 at
+  18:12:30 MEZ the new chains are 0 and the old one is 1.
+- **The cap is measured per sentence, not per field.** Applying it per field flagged three
+  candidates; two of them were ordinary paragraphs with several short sentences
+  (`src/core/store.ts:1981` → 15 and 14 words, `OnboardingWizard.tsx:292` → 4 and 11). The
+  unit was wrong, so two product texts would have been rewritten to satisfy a bar that
+  never applied to them. `satzStuecke()` splits a field at its sentence ends, and the census
+  prints the longest sentence it found.
+- **A blind class now names itself.** `scripts/verstaendlichkeit.mjs` prints
+  `davon aus gelochten Feldern … 4 Fläche, 0 Werkzeug, 4 Diener` and lists every holed
+  field whose longest sentence crosses the cap, so a sentence that only this cut learned to
+  read stays under a bar instead of falling back out of sight.
+
 ## [3.2.189]
 
 ### Fixed

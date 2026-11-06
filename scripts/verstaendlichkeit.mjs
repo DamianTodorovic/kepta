@@ -112,7 +112,7 @@ export function quelltextDateien(mengen) {
 }
 
 /** Der Quelltext ohne Kommentare: Kommentare sind nicht die Flaeche. */
-function menschenText(datei) {
+export function menschenText(datei) {
   return fs
     .readFileSync(datei, "utf8")
     .replace(/\/\*[\s\S]*?\*\//g, "")
@@ -173,6 +173,116 @@ export function vierWortlauf(s) {
   return false;
 }
 
+/** Die ${...}-Loecher eines Backtick-Feldes, mit Klammer-Zaehlung, also auch ein Loch,
+    in dem wieder ein Feld steht. Gibt [von, bis] der Loch-Inhalte zurueck. */
+function loeche(raw) {
+  const out = [];
+  let i = 0;
+  while (i < raw.length) {
+    if (raw[i] === "\\") { i += 2; continue; }
+    if (raw[i] === "$" && raw[i + 1] === "{") {
+      let kl = 1;
+      let j = i + 2;
+      while (j < raw.length && kl > 0) {
+        if (raw[j] === "{") kl++;
+        else if (raw[j] === "}") kl--;
+        j++;
+      }
+      out.push([i + 2, j - 1]);
+      i = j;
+      continue;
+    }
+    i++;
+  }
+  return out;
+}
+
+/** Ein Feld, in dem ein Loch wieder ein Feld enthaelt, wird zu einem Feld mit
+    einfachen Loechern: jedes innerste Loch zaehlt als " N ". Damit kann die
+    Objekt-Gleichung in Stuecke zerlegen, die sie im Bundel in derselben Reihenfolge
+    findet (P108), statt an der verschachtelten Klammer zu scheitern. */
+function flacheLoecher(raw) {
+  let out = "";
+  let i = 0;
+  for (const [von, bis] of loeche(raw)) {
+    out += raw.slice(i, von - 2) + " N ";
+    i = bis + 1;
+  }
+  return out + raw.slice(i);
+}
+
+/** Die aeussersten Backtick-Felder eines Textes -- ausserhalb von Kommentaren und
+    anderen Feldern. P116: ein Feld in einem Loch schliesst jedes SATZ_MUSTER mit
+    `[^`]{20,400}`, lange bevor die Zeile endet. Gemessen 18:04:38 MEZ standen darum
+    **23 ausgelieferte Menschensaetze in keinem Korpus**, darunter
+    `Settings.tsx:812` mit 40 Woetern. */
+function aussenFelder(text) {
+  const out = [];
+  let i = 0;
+  while (i < text.length) {
+    const c = text[i];
+    if (c === "/" && (text[i + 1] === "/" || text[i + 1] === "*")) {
+      if (text[i + 1] === "/") { const nl = text.indexOf("\n", i); i = nl < 0 ? text.length : nl; }
+      else { const e = text.indexOf("*/", i + 2); i = e < 0 ? text.length : e + 2; }
+      continue;
+    }
+    if (c === '"' || c === "'") {
+      let j = i + 1;
+      while (j < text.length && text[j] !== c) { if (text[j] === "\\") j++; j++; }
+      i = j + 1;
+      continue;
+    }
+    if (c === "`") {
+      let tiefe = 0;
+      let j = i + 1;
+      while (j < text.length) {
+        const d = text[j];
+        if (d === "\\") { j += 2; continue; }
+        if (tiefe === 0 && d === "`") break;
+        if (d === "$" && text[j + 1] === "{") { tiefe++; j += 2; continue; }
+        if (d === "{" || d === "}") { tiefe += d === "{" ? 1 : -1; j++; continue; }
+        j++;
+      }
+      out.push({ von: i + 1, bis: j, raw: text.slice(i + 1, j) });
+      i = j + 1;
+      continue;
+    }
+    i++;
+  }
+  return out;
+}
+
+/** Ein gelochtes Feld: in einem seiner top-level Loecher steht wieder ein Backtick-Feld.
+    Nur diese Klasse war vor P116 in keinem Muster -- die Zeichenklasse bricht am inneren
+    Backtick ab, und die Zeile endet, bevor das Feld es tut. */
+export function feldMitLochFeld(raw) {
+  if (typeof raw !== "string") return false;
+  return loeche(raw).some(([a, b]) => raw.slice(a, b).includes("`"));
+}
+
+/** Ein Feld kann mehrere Saetze tragen. Die Kappe gilt pro Satz, nicht pro Absatz --
+    gemaessen 18:09:13 MEZ waren zwei der drei Funde ueber der Kappe bloss mehrsatzige
+    Felder (`store.ts:1981` mit drei, `OnboardingWizard.tsx:292` mit zwei Saetzen), und nur
+    `Settings.tsx:812` war ein einziger Satz von 38 Woetern. */
+export function satzStuecke(s) {
+  return String(s)
+    .split(/(?<=[.!?])\s+/)
+    .map((x) => x.trim())
+    .filter((x) => x.split(/\s+/).filter(WORTZEICHEN).length >= 2);
+}
+
+/** Die Textstuecke eines Feldes ausserhalb seiner top-level Loecher, in Reihenfolge. */
+function aussenStuecke(raw) {
+  const out = [];
+  let i = 0;
+  for (const [von, bis] of loeche(raw)) {
+    out.push(raw.slice(i, von - 2));
+    i = bis + 1;
+  }
+  out.push(raw.slice(i));
+  return out;
+}
+
 /** Die Saetze eines Quelltextes, mit Art und Fundstelle. */
 export function satzAusText(t, datei) {
   const funde = [];
@@ -189,6 +299,23 @@ export function satzAusText(t, datei) {
       funde.push({ s, roh: e[1], art, ausdruck: !!ausdruck, quelle: rel });
     }
   }
+
+  // P116, das gelochte Feld. Kein Muster oben kann ein Feld lesen, in dessen `${...}`
+  // wieder ein Feld steht: die Zeichenklasse bricht am inneren Backtick ab, und was
+  // uebrig bleibt, sind Stuecke -- die Stuecke waren Kandidat, die Zeile nicht.
+  // Gemessen 18:04:38 MEZ: 23 ausgelieferte Menschensaetze standen in keinem Korpus.
+  // Nur Felder mit einem Loch, in dem ein Feld steht, kommen hier herein; alles andre
+  // haben die Muster schon, und doppelte Zaehlung waere ein neuer Nenner ohne Grund.
+  for (const feld of aussenFelder(t)) {
+    if (feld.raw.length < 20 || feld.raw.length > 900) continue;
+    if (!feldMitLochFeld(feld.raw)) continue;
+    const s = glaetteInterpolation(flacheLoecher(feld.raw));
+    if (!istBenutzersprache(s, { gestaltPflicht: true })) continue;
+    if (!vierWortlauf(s)) continue;
+    if (AUSSCHLUSS_WORT.test(s)) continue;
+    funde.push({ s, roh: feld.raw, art: "lochkette", ausdruck: true, quelle: rel });
+  }
+
   return funde;
 }
 
@@ -197,6 +324,10 @@ function sammle(mengen) {
   const arten = new Map();
   const formen = new Map();
   const rohe = new Map();
+  // P116: die Art eines Wortlauts ist der erste Fund, und ein gelochtes Feld kann
+  // dasselbe Wort auch als Anweisung bringen. Die Klasse braucht darum ihre eigne Liste,
+  // sonst meldet die Kappe der gelochten Felder Null, wo vier stehen.
+  const locher = new Set();
   // Kommentare sind nicht die Flaeche. Gemessen 5.11.2026 18:39 MEZ: drei der elf Funde
   // waren Begruendungszeilen im Quelltext (Dashboard.tsx:595, TodayView.tsx:173, Chat.tsx:152),
   // die einen fruehern Befund zitieren — ein Mensch liest sie nirgends. Ein Zaehler, der
@@ -207,9 +338,10 @@ function sammle(mengen) {
       if (!arten.has(f.s)) arten.set(f.s, f.art);
       if (!formen.has(f.s)) formen.set(f.s, f.ausdruck);
       if (!rohe.has(f.s)) rohe.set(f.s, f.roh);
+      if (f.art === "lochkette") locher.add(f.s);
     }
   }
-  return { funde, arten, formen, rohe };
+  return { funde, arten, formen, rohe, locher };
 }
 
 /** Kandidaten aus dem Quelltext: JSX-Text, Titel, Beschriftung, Platzhalter, Meldung. */
@@ -363,8 +495,11 @@ export function imObjekt(suche, s, roh = null) {
   // belege-0611/fenster-187/radien-graph-panel.png). Also: die Rohform der Kette wird an
   // ihren Interpolations-Loechern zerteilt -- ein Loch mit einer Verschachtelung (eine Ebene)
   // zaehlt als ein Loch. Ohne Rohform bleibt die P107-Lesung an " N " gelten.
+  // P116: die Loecher werden mit Klammer-Zaehlung gefunden, nicht mit einer Regex, die
+  // eine Verschachtelungsebene aushaelt. Ein Feld, in dessen `${...}` wieder ein Feld
+  // steht, zerlegte sonst in Ein Stuecke mit " N " darin -- und das ist in keinem Bundel.
   const stuecke = (roh !== null
-    ? String(roh).split(/\$\{(?:[^{}]|\{[^{}]*\})*\}/g)
+    ? aussenStuecke(String(roh))
     : glatt(s).split(/\bN\b/)
       // P107: die Zahl steht am Rand des Satzes ("… answered N." endet mit ihr). Ein Stutzen
       // nur auf " N " liess das Punktzeichen an ihr kleben, und das Stueck war damit nicht
@@ -808,13 +943,13 @@ async function haupt() {
   }
 
   const baue = (mengen) => {
-    const { funde, arten, formen, rohe } = sammle(mengen);
+    const { funde, arten, formen, rohe, locher } = sammle(mengen);
     const zeilen = [];
     for (const [s, quelle] of funde) {
       zeilen.push({ s, quelle, art: arten.get(s) || "literal", ausdruck: formen.get(s) === true, roh: rohe.get(s) ?? s, ...zaehle(s), imObjekt: suche ? imObjekt(suche, s, rohe.get(s) ?? null) : null });
     }
     const getragen = suche ? zeilen.filter((z) => z.imObjekt) : zeilen;
-    return { zeilen, getragen };
+    return { zeilen, getragen, locher };
   };
 
   const flaeche = baue(FLAECHE);
@@ -829,6 +964,19 @@ async function haupt() {
   // Muster sie hatte -- gemessen 13:47:24 MEZ: 130 / 11 / 28 Saetze, die ein Mensch liest.
   const anweisung = (zeilen) => zeilen.filter((z) => z.art === "anweisung").length;
   console.log(`  davon aus der Anweisungsform: ${anweisung(flaeche.zeilen)} von ${flaeche.zeilen.length} Saetzen (Werkzeug ${anweisung(werkzeug.zeilen)} von ${werkzeug.zeilen.length}, Diener ${anweisung(diener.zeilen)} von ${diener.zeilen.length})`);
+  // P116: das gelochte Feld. Vor diesem Schnitt hatte kein Muster ein Feld gelesen, in
+  // dessen ${...} wieder ein Feld steht -- die Zeichenklasse bricht am inneren Backtick.
+  // Gemessen 18:04:38 MEZ standen 23 ausgelieferte Menschensaetze in keinem Korpus.
+  // Die Klasse zaehlt nach ihrer eigner Liste: die Art eines Wortlauts ist der erste
+  // Fund, und ein Wortlaut, den schon ein andres Muster brachte, behaelt die alte Art.
+  const lochkette = (lage) => [...lage.locher].length;
+  const lang = [...flaeche.zeilen, ...werkzeug.zeilen, ...diener.zeilen]
+    .filter((z) => [flaeche, werkzeug, diener].some((l) => l.locher.has(z.s)))
+    .map((z) => ({ ...z, langster: Math.max(0, ...satzStuecke(z.s).map((x) => zaehle(x).woerter)) }))
+    .filter((z) => z.langster > SATZKAPPE)
+    .sort((a, b) => b.langster - a.langster);
+  console.log(`  davon aus gelochten Feldern (Loch, in dem ein Feld steht; vorher in keinem Korpus): ${lochkette(flaeche)} Flaeche, ${lochkette(werkzeug)} Werkzeug, ${lochkette(diener)} Diener`);
+  for (const z of lang.slice(0, 6)) console.log(`    langster Satz ${z.langster} Woerter  ${z.quelle}  ::  ${z.s.slice(0, 120)}`);
   if (suche) {
     console.log(`  die Objekt-Gleichung verwirft: Flaeche ${flaeche.zeilen.length - flaeche.getragen.length}, Werkzeug ${werkzeug.zeilen.length - werkzeug.getragen.length}, Diener ${diener.zeilen.length - diener.getragen.length}`);
   }
