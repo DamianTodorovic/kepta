@@ -185,21 +185,25 @@ Ein dritter Zensus, weil P121 zwei Fehler in denselben Texten fand: wie viele S�
 `zaehlung-0611.log.txt`; die vier Texte sind `README.md`, `SECURITY.md`, `ROADMAP.md`,
 `.github/release-notes.md`.
 
-Stand des letzten Laufs (20:38 MEZ, nach allen Textänderungen dieses Schlags):
+Stand des letzten Laufs (21:16:29 MEZ, nach allen Textänderungen dieses Schlags, Exit 0):
 
 | Lesung | Nenner | mit Messzeug | ohne Messzeug |
 |---|---|---|---|
-| Zeuge **im selben Satz** | 131 absolute Behauptungen (aus 320 Sätzen) | **21** = 16,0 % | **110** = 84,0 % |
-| Zeuge **im selben Abschnitt** | derselbe Nenner 131 | **60** = 45,8 % | **71** = 54,2 % |
+| Zeuge **im selben Satz** | 132 absolute Behauptungen (aus 321 Sätzen) | **22** = 16,7 % | **110** = 83,3 % |
+| Zeuge **im selben Abschnitt** | derselbe Nenner 132 | **61** = 46,2 % | **71** = 53,8 % |
 
 Der Nenner ist genannt, weil die Zahl sonst ein Urteil wäre. Die weite Klasse trifft auch
 Produktcopy („no password to type"), also die schmalere Klasse: Sätze, die ein Werkzeug widerlegen
-könnte (`never`, `always`, `cannot`, `0 %`, `100 %`) — **30 von 131** (26 im README, 2 in der
-Vorlage, je 1 in SECURITY und ROADMAP). Die 30 stehen als Liste im Artefakt.
+könnte (`never`, `always`, `cannot`, `0 %`, `100 %`) — **30 von 132** (26 im README, 2 in der
+Vorlage, je 1 in SECURITY und ROADMAP). Seit diesem Schlag **steht die Liste im Artefakt**, nicht
+nur ihre Länge: 30 Zeilen in Lesereihenfolge, jede mit dem Marker, ob derselbe Satz schon ein
+Messzeug nennt. Nachgezählt: **6 von 30 nennen es, 24 sind die Arbeit.** Vorher sagte das Artefakt
+nur „30" und das Papier behauptete, die Liste stehe darin — ein Satz über ein Blatt, das ihn nicht
+trug (unten, Fehler 8).
 
 Beide Lesungen teilen sich den Nenner absichtlich: würde der Satzriss pro Abschnitt neu gemacht,
 zählte die eine Lesung 131 und die andere 143 — zwei Zahlen mit verschiedenen Grundgesamtheiten
-sind kein Vergleich. Der Unterschied zwischen 15,3 % und 45,8 % ist die eine Frage, ob ein Zeuge
+sind kein Vergleich. Der Unterschied zwischen 16,7 % und 46,2 % ist die eine Frage, ob ein Zeuge
 im Satz stehen muss oder im Absatz über ihm genügt; beide Antworten stehen hier, weil die Zahl
 allein sonst die Entscheidung trifft, die mir nicht gehört.
 
@@ -218,6 +222,16 @@ Zwei Zählerfehler, im Lauf selbst gefunden und berichtigt: zuerst zählte das B
 Embedding-Sonde traf zuerst vier Dateinamen, von denen drei nicht existieren — eine Null über
 nicht existierenden Pfaden ist keine Messung, deshalb stehen die Dateien jetzt einzeln da und das
 Artefakt meldet fehlende Pfade selbst.
+
+**Die Einheit des Zensus ist nicht überall ein Satz, und das ist seit diesem Schlag benannt.** Der
+Riss geht über `(?<=[.!?])\s+` und übersieht, dass Markdown-Aufzählungen keinen Punkt kennen:
+gemessen 21:19:19 MEZ sind **32 von 132** als „absolute Behauptung" gezählten Einheiten gar keine
+Sätze, sondern Blöcke aus mehreren Aufzählungszeilen (längste Einheit 3 364 Zeichen), also 24,2 % des
+Nenners. Was der Riss zusammenzieht, kann ein Messzeug nicht mehr auseinanderhalten — deshalb zählt
+er P125's bewaffneten Privat-Satz in README.md:103 in einer Block-Einheit mit, während derselbe
+Wortlaut in README.md:180 als eigner Satz dasteht und ohne Zeuge ist. Solange die Zahl **mit**
+diesem Grund genannt wird, ist sie brauchbar; ein markdown-fester Riss ist Arbeit für einen eignen
+Schnitt, weil er jeden der Werte in diesem Abschnitt bewegt.
 
 ## 10. Die Kette deckt Schreibwege, nicht Lesewege (P123, 20:26 MEZ)
 
@@ -311,17 +325,82 @@ ortbar bleiben. Gesehen: 1 Fall rot (keine Zeugen genannt), 16 grün; nach dem N
 
 Der Zensus zählt die Änderung: enge Lesung 20 → **21** von 131 (16,0 %), Abschnittslesung bleibt
 60 — der Bulle war im selben Abschnitt bereits belegt. Die Zahl der maschinell widerlegbaren
-Sätze bleibt 30: derselbe Satz, jetzt mit Zeuge.
+Sätze bleibt 30: derselbe Satz, jetzt mit Zeuge. (Stand damals; der letzte Lauf, Abschnitt 9, zählt
+22 von 132, und Abschnitt 14 nennt den zweiten Träger desselben Wortlauts, den dieser Schnitt
+nicht angefasst hat.)
 
-## 13. Was daraus folgt und offen bleibt
+## 13. „No telemetry" ist jetzt eine Zählung (P126, 21:16 MEZ)
 
+Der Satz in README.md:266 — „No account, no telemetry, no phone-home" — stand in der breiten Klasse
+der absoluten Behauptungen und nannte, wie 110 andere, kein Messzeug. Ihn zu beweisen ist nicht die
+Abwesenheit eines Pakets (ein `package.json` ohne Sentry sagt nichts über einen Handshake im Code),
+sondern die Anwesenheit einer **Adressliste**: jede ferne Adresse, die ein ausgeliefertes File
+kennt, muss erklärbar sein.
 
-Der Satz „die Aussendung ist geprüft" trägt nicht: 19 von 129 absoluten Behauptungen nennen ihr
-Messzeug im selben Satz, und die schmalen 30 sind die Arbeit. Angefangen wird mit den beiden, die
-ein Kunde beim ersten Start liest — Pfad (oben geheilt) und der Grenz-Absatz (oben geheilt); die
-nächsten in der Liste sind „Private notes never reach an app or a cloud model", „Keys, credentials,
-browser profiles, keychains and system folders are never read" und „every AI access is written to a
-tamper-evident audit log" — die letzte ist zählbar: Zugangsstellen gegen Audit-Schreibstellen.
+Neue Wache `tests/keine-telemetrie.test.ts`, neun Fälle, grün in den Suite-Läufen ab 21:02:36 MEZ
+(3 717 Fälle) und ab 21:10:55 MEZ (3 718 Fälle; einer rot — die Testzahl in README.md war noch die
+des Vorlaufs). Die Verteilung unten ist gemessen 21:13:43 MEZ mit einer Wegwerf-Sonde über
+dieselben Dateien wie die Wache, und die Wache pinnt ihre Summe selbst:
+
+| Gelesen | Adressen | Hosts | Erklärung |
+|---|---|---|---|
+| 148 Dateien unter `src/`, `server/`, `main.ts` | **26** | **20** | 16 Modell-Vorgaben aus `src/lib/ai.ts`, 4 benannte Ausnahmen |
+
+Die 16 Vorgaben sind die Provider, die ein Nutzer selbst aus den Presets wählt (openai 5 Adressen,
+anthropic 3, dann 14 Hosts je 1-mal: groq, mistral, deepseek, cohere, perplexity, together,
+fireworks, cerebras, novita, x.ai, openrouter, huggingface-inference, azure-inference,
+generativelanguage). Die vier Ausnahmen stehen mit Grund in der Wache: `www.w3.org` ist der
+SVG-Namensraum in `src/components/KeptaMark.tsx`, `api.example.com` ein Platzhalter in
+`src/components/Settings.tsx:831`, `spur.example` eine Beispiel-URL in einem Kommentar
+(`src/lib/bild-politik.ts:7`), `kepta.local` ein User-Agent-Text in `server/router/clip.ts:31`.
+localhost-Ziele (2 der 18 `baseUrl`-Zeilen in `src/lib/ai.ts`) sind nicht fern und werden nicht
+mitgezählt.
+
+Drei Dinge daran sind Messung, nicht Behauptung:
+
+1. **Die Zahl ist gepinnt**: `expect(FUND.length).toBe(26)` und die Host-Grundgesamtheit
+   `expect(...size).toBe(20)`, dazu `expect(ALLE.length).toBeGreaterThan(140)` als Kontrolle, dass
+   der Leser überhaupt Dateien sieht. Eine neue ferne Adresse macht die Wache rot, auch wenn sie
+   einem Provider gehört.
+2. **Die Biss-Kontrolle fährt mit**: der fünfte der neun Fälle pflanzt
+   `fetch("https://telemetry.example.org/v1/event")` in eine Probe-Datei und verlangt, dass die
+   Sonde den Host sieht — eine Wache, die nichts fände, wäre hier grün und lügt.
+3. **Die README-Zeile nennt jetzt die Zählung selbst**: README.md:266 sagt „finds 26 external
+   addresses across 20 hosts, and each one is either a provider you chose … or a named
+   placeholder … — a planted `https://telemetry…` address would fail the test". Der Zensus zählt
+   diesen Satz als Behauptung **mit** Messzeug: 21 → 22 von 131 → 132, der Nenner wuchs um
+   denselben einen Satz.
+
+Was die Wache **nicht** deckt, steht in ihrem Quelltext: README.md:181 verspricht dasselbe Wort für
+die Enterprise-Konsole. Die ist auf Damians Wort vom 5.11. 13:24 MEZ zugefroren, also wird dort
+auch kein Text angefasst, und die Zeile bleibt ohne Zeugen — benannt, nicht verschwiegen.
+
+## 14. Was daraus folgt und offen bleibt
+
+Der Satz „die Aussendung ist geprüft" trägt nicht: **22 von 132** absoluten Behauptungen nennen ihr
+Messzeug im selben Satz, und von den schmalen 30 nennen **6** es — **24 sind die Arbeit**, und sie
+stehen jetzt als Liste im Artefakt, nicht mehr nur als Zahl. Fünf Sätze hat diese Welle abgearbeitet
+(P121 Pfad, P121 Grenz-Absatz, P123 Audit-Kette, P124 Sperr-Zusage, P125 Privat-Zusage, P126
+Telemetrie-Zusage).
+
+**Was dabei aufgefallen ist und offen bleibt.** Die Liste der 30 zeigt die Privat-Zusage zweimal:
+README.md:103 (der Aufzählungs-Punkt, seit P125 mit drei Zeugen) und **README.md:180**, der
+Privacy-shield-Punkt der Funktions-Straße, endet auf „Private notes never reach an app or a cloud
+model." — derselbe Wortlaut, gleiche Klasse, **kein** Messzeug. Genau die Klasse, die ich einmal
+heile und einmal stehen lasse, ist der Grund, warum die 30 als Liste im Artefakt stehen: eine Zahl
+ohne ihre Zeilen verschluckt den zweiten Träger. Der nächste Schnitt (P127) nennt die Zeugen auch
+in Zeile 180 und gibt die Wache von P125 auf **beide** Stellen.
+
+**Der Rückstand hat jetzt ein eignes Messzeug.** Im Suite-Lauf ab 21:02:36 MEZ fiel
+`tests/punkt7-fachwort-traegt-grund.test.ts` mit „die Gleichung verwirft 1 Flaeche-Saetze". Root
+cause, gemessen 21:08:05 MEZ: der Satz ist die Fuge aus `4e1e378` (**3.2.191**), das ausgelieferte
+Objekt ist **3.2.190** (`Info.plist`), sein `app.asar` (49 197 020 B) trägt „picture - no zoom"
+1-mal und „picture; no zoom" 0-mal. Die Latte ist nicht weicher geworden: sie erlaubt genau diese
+eine Fundstelle, und nur wenn alle vier Messungen zusammenkommen (Versionspaar ungleich, alte Fuge
+im Objekt, neue Fuge nicht im Objekt, neue Fuge im Baum); eine **zweite** Fundstelle macht sie rot,
+auch bei offenem Rückstand — bewiesen mit einer geplotzten Zeile (`Flaeche 2` fällt) und drei
+Gegenproben in `rueckstandDerFuge`. Wenn 3.2.191 landet, verschwindet die Ausnahme von selbst, weil
+die Zahl auf 0 fällt.
 
 ## Fehler in diesem Schlag, die ich selbst gefunden habe
 
@@ -351,3 +430,27 @@ tamper-evident audit log" — die letzte ist zählbar: Zugangsstellen gegen Audi
    README während desselben Schlags verändert wurde. Der Zensus läuft deshalb jetzt als letzter
    Griff vor dem Committen, damit Papier und Artefakt denselben Stand zeigen — nicht denselben
    Lauf.
+8. **„Die 30 stehen als Liste im Artefakt" war falsch**, und zwar in beiden Blättern: das Artefakt
+   kannte nur die Zahl 30 und ihre Verteilung (26/1/1/2), die Liste selbst fehlte. Ein Satz über ein
+   Blatt, das ihn nicht trägt, ist dieselbe Klasse wie der falsche xattr-Pfad aus P121. Berichtigt
+   im Messzeug, nicht im Satz: `zaehlen.mjs` schreibt jetzt 30 Zeilen in json und log, jede mit dem
+   Marker, ob derselbe Satz schon ein Messzeug nennt, und mit einer Kreuzkontrolle über die zwei
+   unabhängigen Satzrisse des Programms. Gegenprobe gefahren (21:16:18 MEZ): ein eingebauter
+   zweiter Riss, der mit `**` beginnende Aufzählungszeilen überspringt, meldet „die schmale Klasse aus dem ersten
+   Satzriss ist 30, aus dem zweiten 29" und Exit 2; danach per Edit zurückgebaut und bytegleich
+   gegen die vorher kopierte Fassung geprüft.
+9. **Eine Selbstkontrolle, die nicht verlieren kann, ist keine.** Die erste Fassung derselben
+   Kreuzkontrolle verglich die Liste mit der Summe, die aus derselben Schleife kam — immer gleich,
+   also grün durch Bauweise. Ersetzt durch den Vergleich zweier getrennter Satzrisse, bevor der
+   Text irgendwo stand.
+10. **Der erste Reflex bei „Flaeche 1" war die Latte.** Ein Fall, der 0 verlangt und 1 misst, ist
+     in zwei Minuten auf `<= 1` gestellt — hier war das falsch: die Messung an `Info.plist`,
+     `package.json` und den asar-Bytes (21:08:05 MEZ) zeigte, dass das Objekt die alte Fuge trägt
+     und der Baum die neue, also ist die Fundstelle der Rückstand selbst. Die Latte bleibt bei 0
+     und bekommt eine Maschine, die den einen Grund prüft; die Gegenproben (gleiche Version,
+     neue Fuge im Objekt, keine Fuge im Objekt, `Flaeche 2`) stehen als eigne Fälle in
+     `tests/punkt7-fachwort-traegt-grund.test.ts`.
+11. Zwei Anker in meinem eignen Papier waren falsch, bevor sie irgendwer las: `clip.ts` gibt es
+    unter `src/lib/` nicht (es ist `server/router/clip.ts:31`), und die Biss-Kontrolle der
+    Telemetrie-Wache ist der fünfte von neun Fällen, nicht der siebte. Beide Zeilen erst gemessen,
+    dann geschrieben — und trotzdem zuerst falsch notiert, weil ich sie aus dem Kopf zitierte.

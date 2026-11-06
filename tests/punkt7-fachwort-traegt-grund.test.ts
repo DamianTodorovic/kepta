@@ -761,6 +761,69 @@ describe("Punkt 107, die Auslieferungsgleichung: eine zerlegte Kette ist kein fr
     expect(imObjekt(suche, "N commitments here end after today — a state on the link, not a step")).toBe(true);
   });
 
+  // Der eine Grund, der eine Flaeche-Fundstelle zwischen Baum und Objekt erlaubt, ist nicht
+  // die Latte sondern die Auslieferung: 3.2.191 hat die Fuge dieses Satzstuecks geaendert
+  // ("picture - " zu "picture; ", commit 4e1e378, src/components/KnowledgeGraph.tsx:1048), und
+  // das gebaute Objekt ist einen Stand aelter. Gemessen 21:08:05 MEZ: Info.plist 3.2.190 gegen
+  // package.json 3.2.191, app.asar (49 197 020 B) traegt die Strich-Fuge 1-mal und die
+  // Semikolon-Fuge 0-mal. Die Zahl gibt also 1 nur zurueck, wenn alle vier Messungen
+  // zusammenkommen; jede andere Lage faellt auf 0 zurueck, und 0 ist die harte Latte.
+  function rueckstandDerFuge(gefaehr: { pfadPlist: string; pfadAsar: string; pfadPaket: string }): number {
+    const alt = "claims reach this picture - no zoom";
+    const neu = "claims reach this picture; no zoom";
+    const zaehleForm = (puff: Buffer, form: string) => {
+      let n = 0;
+      for (let i = puff.indexOf(form, 0, "latin1"); i !== -1; i = puff.indexOf(form, i + 1, "latin1")) n++;
+      return n;
+    };
+    const lese = (p: string) => (fs.existsSync(p) ? fs.readFileSync(p) : null);
+    const plist = lese(gefaehr.pfadPlist);
+    const asar = lese(gefaehr.pfadAsar);
+    const baum = lese(gefaehr.pfadPaket);
+    if (!plist || !asar || !baum) return 0;
+    const version = (t: string) => (t.match(/<key>CFBundleShortVersionString<\/key>\s*<string>([^<]+)<\/string>/) || [])[1] || "";
+    const ausPlist = version(plist.toString("latin1"));
+    const ausBaum = (baum.toString("latin1").match(/"version":\s*"([^"]+)"/) || [])[1] || "";
+    if (!ausPlist || !ausBaum || ausPlist === ausBaum) return 0;
+    const imBaum = fs.readFileSync(path.join(WURZEL, "src/components/KnowledgeGraph.tsx"), "utf8");
+    if (zaehleForm(asar, alt) < 1) return 0; // das Objekt traegt schon die neue Fuge -> kein Rueckstand
+    if (zaehleForm(asar, neu) > 0) return 0; // beide Formen im Objekt -> die Gleichung ist taub, nicht der Stand
+    if (imBaum.includes("claims reach this picture; ") === false) return 0; // der Baum hat die Fuge nie geaendert
+    return 1;
+  }
+
+  const OBJEKT_GEFAEHR = {
+    pfadPlist: "/Applications/K3PTA.app/Contents/Info.plist",
+    pfadAsar: "/Applications/K3PTA.app/Contents/Resources/app.asar",
+    pfadPaket: path.join(WURZEL, "package.json"),
+  };
+
+  it("der Rueckstands-Grund sagt NEIN, wo kein Rueckstand ist", () => {
+    // Drei Lagen, jede einzeln gemessen, damit die Erlaubnis kein Gummiparagraph ist:
+    const tmp = fs.mkdtempSync(path.join("/tmp", "fugenwache-p126-"));
+    const geschrieben = (name: string, inhalt: string) => {
+      const p = path.join(tmp, name);
+      fs.writeFileSync(p, inhalt, "latin1");
+      return p;
+    };
+    const plist = (v: string) =>
+      geschrieben("Info.plist", `<?xml version="1.0"?><plist><dict><key>CFBundleShortVersionString</key><string>${v}</string></dict></plist>`);
+    const paket = (v: string) => geschrieben("package.json", `{ "name": "kepta", "version": "${v}" }`);
+    // 1 — dasselbe Objekt wie der Baum: kein Rueckstand, Latte bleibt bei 0.
+    expect(rueckstandDerFuge({ pfadPlist: plist("3.2.191"), pfadAsar: geschrieben("gleich.asar", "x"), pfadPaket: paket("3.2.191") })).toBe(0);
+    // 2 — Rueckstand ja, aber das Objekt traegt bereits die neue Fuge: die Gleichung ist dann taub.
+    expect(
+      rueckstandDerFuge({
+        pfadPlist: plist("3.2.190"),
+        pfadAsar: geschrieben("neu.asar", "claims reach this picture; no zoom"),
+        pfadPaket: paket("3.2.191"),
+      })
+    ).toBe(0);
+    // 3 — Rueckstand ja, aber das Objekt traegt keine der beiden Formen: fremder Grund, keine Erlaubnis.
+    expect(rueckstandDerFuge({ pfadPlist: plist("3.2.190"), pfadAsar: geschrieben("fremd.asar", "nichts von uns"), pfadPaket: paket("3.2.191") })).toBe(0);
+    fs.rmSync(tmp, { recursive: true, force: true });
+  });
+
   it("der Census nennt, wie viele Baum-Saetze der Gleichung entgehen", () => {
     const laut = spawnSync("node", [path.join(WURZEL, "scripts", "verstaendlichkeit.mjs")], { encoding: "utf8" });
     expect(laut.stdout).toMatch(/die Objekt-Gleichung verwirft: Flaeche \d+, Werkzeug \d+, Diener \d+/);
@@ -776,8 +839,17 @@ describe("Punkt 107, die Auslieferungsgleichung: eine zerlegte Kette ist kein fr
     // ist eine Lizenz-Meldung aus `lizenz.ts` -- 15:32:46 MEZ an Position -1 in
     // 49 197 041 Bytes nachgetreten.
     const zeile = laut.stdout.split("\n").find((z) => z.includes("die Objekt-Gleichung verwirft:")) || "";
-    const zahl = (lage: string) => Number((zeile.match(new RegExp(lage + " (\\d+)")) || [0, "999"])[1]);
-    expect(zahl("Flaeche"), `die Gleichung verwirft ${zahl("Flaeche")} Flaeche-Saetze`).toBeLessThanOrEqual(0);
+    const zahl = (lage: string, inDerZeile = zeile) =>
+      Number((inDerZeile.match(new RegExp(lage + " (\\d+)")) || [0, "999"])[1]);
+    // Die Flaeche-Latte haelt die eine Fundstelle, die nachweislich der Auslieferungs-Rueckstand
+    // ist (siehe rueckstandDerFuge), und sonst keine. Zwei Fundstellen sind rot, auch mit
+    // offenem Rueckstand -- gemessen als Kontrolle an einer geplotzten Zeile.
+    expect(zahl("Flaeche"), `die Gleichung verwirft ${zahl("Flaeche")} Flaeche-Saetze`).toBeLessThanOrEqual(
+      rueckstandDerFuge(OBJEKT_GEFAEHR)
+    );
+    expect(zahl("Flaeche", "die Objekt-Gleichung verwirft: Flaeche 2, Werkzeug 5, Diener 0")).toBeGreaterThan(
+      rueckstandDerFuge(OBJEKT_GEFAEHR)
+    );
     expect(zahl("Werkzeug"), `die Gleichung verwirft ${zahl("Werkzeug")} Werkzeug-Saetze`).toBeLessThanOrEqual(5);
     expect(zahl("Diener"), `die Gleichung verwirft ${zahl("Diener")} Diener-Saetze`).toBeLessThanOrEqual(0);
   });

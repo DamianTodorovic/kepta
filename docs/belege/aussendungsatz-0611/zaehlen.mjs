@@ -25,12 +25,14 @@ const zeug = /(tests\/|scripts\/|docs\/belege\/|\.test\.tsx?\b|\.mjs\b|\.py\b|:[
 
 const zaehlung = {};
 const ohneZeug = [];
+const absoluteErsterPass = {};
 for (const f of DATEIEN) {
   const t = fs.readFileSync(path.join(HIER, f), "utf8");
   const satze = t.split(/(?<=[.!?])\s+/).map((s) => s.replace(/\s+/g, " ").trim()).filter((s) => s.length > 25);
   const absol = satze.filter((s) => absolut.test(s));
   const mit = absol.filter((s) => zeug.test(s));
   zaehlung[f] = { saetze: satze.length, absolut: absol.length, mit_zeug: mit.length, ohne_zeug: absol.length - mit.length };
+  absoluteErsterPass[f] = absol;
   absol.filter((s) => !zeug.test(s)).forEach((s) => ohneZeug.push({ datei: f, satz: s.slice(0, 220) }));
 }
 // Zweit Lesung: ein Zeuge darf auch im selben Abschnitt stehen (der Punkt-
@@ -76,12 +78,31 @@ const summe = Object.values(zaehlung).reduce((a, z) => ({
 // die schmalere Klasse: Saetze, die ein Werkzeug widerlegen koennte.
 const maschine = /\b(never|always|cannot|is not (read|touched|sent)|no [\w ]{0,40}(ever|travels|leaves|is read)|0 %|100 %)\b|\b(nie|niemals|immer nur|cannot)\b/i;
 const pruefbar = {};
+const pruefbarListe = [];
 for (const f of DATEIEN) {
   const t = fs.readFileSync(path.join(HIER, f), "utf8");
   const absol = t.split(/(?<=[.!?])\s+/).map((s) => s.replace(/\s+/g, " ").trim()).filter((s) => s.length > 25 && absolut.test(s));
-  pruefbar[f] = { absolut: absol.length, maschinell: absol.filter((s) => maschine.test(s)).length };
+  const enge = absol.filter((s) => maschine.test(s));
+  pruefbar[f] = { absolut: absol.length, maschinell: enge.length };
+  // Die Liste, nicht nur ihre Laenge: das Papier verspricht „die 30 stehen als Liste im
+  // Artefakt", und ein Artefakt, das nur die Summe kennt, kann die Arbeit nicht weitergeben.
+  // Der Marker sagt, ob derselbe Satz schon ein Messzeug nennt oder ob er noch Arbeit ist.
+  for (const s of enge) pruefbarListe.push({ datei: f, satz: s.slice(0, 220), zeuge: zeug.test(s) });
 }
 const summePruefbar = Object.values(pruefbar).reduce((a, z) => a + z.maschinell, 0);
+// Kreuzkontrolle, eigne Liste: die erste Zaehlung (Zeile ~31) und diese Klasse (Zeile ~81)
+// schneiden die vier Texte in zwei getrennten Schleifen. Waeren die Risse verschieden,
+// waeren auch die Klassen verschieden -- gemessen 20:12 MEZ, als eine Abschnitts-Neuteilung
+// 143 gegen 131 Saetze stellte. Die Liste muss ausserdem so lang sein wie ihre Summe.
+const kreuz = Object.keys(pruefbar).reduce((a, f) => a + absoluteErsterPass[f].filter((s) => maschine.test(s)).length, 0);
+if (kreuz !== summePruefbar) {
+  console.error(`FEHLER: die schmale Klasse aus dem ersten Satzriss ist ${kreuz}, aus dem zweiten ${summePruefbar} — die Risse sind nicht derselbe`);
+  process.exitCode = 2;
+}
+if (pruefbarListe.length !== summePruefbar) {
+  console.error(`FEHLER: die Liste der schmalen Klasse traegt ${pruefbarListe.length} Saetze, ihre Summe sagt ${summePruefbar}`);
+  process.exitCode = 2;
+}
 
 // Zwei Behauptungen aus der schmalen Klasse, hier auch gleich nachgegriffen.
 // Die Bild-Zaehlung traegt beide Kanäle: Markdown-Bilder (`![Text](...)`) und
@@ -135,6 +156,8 @@ say("");
 say(`Die schmalere Klasse — Saetze, die ein Werkzeug widerlegen koennte (never/always/cannot/0 %/100 %):`);
 for (const [f, z] of Object.entries(pruefbar)) say(`   ${f.padEnd(26)} ${z.maschinell} von ${z.absolut} absoluten`);
 say(`   zusammen ${summePruefbar} von ${summe.absolut} — der Rest ist Produktcopy ("no password to type"), keine Behauptung ueber eine Maschine.`);
+say(`   Die Liste, in Lesereihenfolge, mit dem Marker „Zeug", wenn derselbe Satz schon ein Messzeug nennt:`);
+for (const p of pruefbarListe) say(`   [${p.datei}]${p.zeuge ? " ZEUG" : "     "} ${p.satz}`);
 say("");
 say(`Zwei von ihnen nachgegriffen, im selben Lauf:`);
 say(`   "no screenshot of it here yet" (Semantic-Ansicht): README nennt ${alleBilder.length} Bilder (${markdownBilder.length} in Markdown, ` +
@@ -150,7 +173,7 @@ for (const o of ohneZeug.slice(0, 40)) say(`   [${o.datei}] ${o.satz}`);
 
 fs.writeFileSync(path.join(AUS, "zaehlung-0611.json"), JSON.stringify({
   dateien: zaehlung, zusammen: summe, abschnitt: abschnittsZaehlung, zusammen_abschnitt: summeAbschnitt,
-  maschinell_pruefbar: pruefbar, summe_pruefbar: summePruefbar,
+  maschinell_pruefbar: pruefbar, summe_pruefbar: summePruefbar, pruefbar_liste: pruefbarListe,
   beweise: {
     bilder_markdown: markdownBilder.length, bilder_img_tag: imgBilder.length,
     bilder_semantic: semanticBilder, readme_sagt_kein_semantic_bild: satzKeinBild,

@@ -1,32 +1,63 @@
-Zeit: 6.11.2026, 20:51:57 MEZ
+Zeit: 6.11.2026, 21:16:29 MEZ
 Dateien: README.md, SECURITY.md, ROADMAP.md, .github/release-notes.md — getrennt durch Satzende und Leerzeichen, Saetze ueber 25 Zeichen.
 
 | Datei | Saetze | absolute | mit Messzeug | ohne Messzeug | Anteil ohne |
 |---|---|---|---|---|---|
-| `README.md` | 250 | 103 | 16 | 87 | 84.5 % |
+| `README.md` | 251 | 104 | 17 | 87 | 83.7 % |
 | `SECURITY.md` | 23 | 6 | 1 | 5 | 83.3 % |
 | `ROADMAP.md` | 11 | 6 | 3 | 3 | 50.0 % |
 | `.github/release-notes.md` | 36 | 16 | 1 | 15 | 93.8 % |
-| **zusammen** | **320** | **131** | **21** | **110** | **84.0 %** |
+| **zusammen** | **321** | **132** | **22** | **110** | **83.3 %** |
 
-Nenner fuer den Anteil: 131 absolute Behauptungen in 320 Saetzen der vier Texte.
+Nenner fuer den Anteil: 132 absolute Behauptungen in 321 Saetzen der vier Texte.
 
 Zweite Lesung — der Zeuge darf im selben Abschnitt stehen (Absatz, Tabelle, Aufzaehlung):
 | Datei | absolute | mit Messzeug | ohne Messzeug |
 |---|---|---|---|
-| `README.md` | 103 | 55 | 48 |
+| `README.md` | 104 | 56 | 48 |
 | `SECURITY.md` | 6 | 2 | 4 |
 | `ROADMAP.md` | 6 | 2 | 4 |
 | `.github/release-notes.md` | 16 | 1 | 15 |
-| zusammen | 131 | 60 | 71 |
-   mit Messzeug im selben Abschnitt: 60 von 131 = 45.8 % (gegen 21 von 131 = 16.0 % in der engen Lesung).
+| zusammen | 132 | 61 | 71 |
+   mit Messzeug im selben Abschnitt: 61 von 132 = 46.2 % (gegen 22 von 132 = 16.7 % in der engen Lesung).
 
 Die schmalere Klasse — Saetze, die ein Werkzeug widerlegen koennte (never/always/cannot/0 %/100 %):
-   README.md                  26 von 103 absoluten
+   README.md                  26 von 104 absoluten
    SECURITY.md                1 von 6 absoluten
    ROADMAP.md                 1 von 6 absoluten
    .github/release-notes.md   2 von 16 absoluten
-   zusammen 30 von 131 — der Rest ist Produktcopy ("no password to type"), keine Behauptung ueber eine Maschine.
+   zusammen 30 von 132 — der Rest ist Produktcopy ("no password to type"), keine Behauptung ueber eine Maschine.
+   Die Liste, in Lesereihenfolge, mit dem Marker „Zeug", wenn derselbe Satz schon ein Messzeug nennt:
+   [README.md]      While it cools at 3 000 notes a few pairs still touch for a moment; the same test pins that funnel at ≤ 40 pairs by step 250 and 0 by step 310, so no sentence here says „never overlaps" without naming the moment.
+   [README.md] ZEUG Keys, credentials, browser profiles, keychains and system folders are never read, and that cannot be switched off (`tests/scan/regeln.test.ts` tries to open the barrier with a widened file-type list and is refused) — bec
+   [README.md] ZEUG Existing notes can be sorted afterwards from Settings → Data, with a preview first - **Scope**: `user`, `agent`, `session` — separates who a memory belongs to - **Private notes** — one switch in the editor: a private not
+   [README.md]      Expired entries are marked, never quietly hidden - **Supersede chains** (`superseded_by`): contradictions displace each other and the history survives - **Files** by drag and drop: PDF, MD, TXT, JSON — chunked at 2000 ch
+   [README.md] ZEUG Every transfer is recorded in a tamper-evident hash-chained ledger (`~/.kepta/sync-journal.jsonl`): the inspectable proof of what moved between devices, without the content ever being readable in transit - **Migration** 
+   [README.md]      `npm run ablation` divides by 5 and reports a real P@5 on the same corpus: two metrics, two names, never comparable.
+   [README.md]      It is computed on the server, so no embedding ever travels into the view - Force-directed layout on an **unbounded canvas** — nodes repel each other and follow when you drag their neighbours; the layout grows with the ba
+   [README.md]      Turning a slider does not rebuild the world: the picture keeps its place and settles under the new forces, and one click returns the tuned defaults - Zoom, pan, draggable nodes, and **fit-to-view** that always frames the
+   [README.md]      The second channel switches itself off with the reason when the base holds only one kind of arrival; it never paints everything grey.
+   [README.md]      *Keep the newer*, *Keep the older* (the other is marked as replaced, never deleted) or *Both are right* (never asked again).
+   [README.md]      A backup of the old file sits right next to it, every other entry stays, and a file that is not plain JSON is never touched - **Live activity** (⌘7) — which app is active right now and what it searched, saved or changed,
+   [README.md]      Private notes never reach an app or a cloud model.
+   [README.md]      Card numbers must pass the Luhn check and IBANs the mod-97 check; dates are never taken for phone numbers.
+   [README.md] ZEUG Both protections are on by default, and every cloud request is in the audit log - **Managed deployment & central policies** — IT deploys one `managed-settings.json` (the macOS MDM path, since the app ships macOS only; th
+   [README.md]      Without a reachable local LLM it always degrades to ADD — the gate can never block you.
+   [README.md]      Settings can only narrow what is read, never widen it: keys, credentials, browser profiles, keychains and wallets stay blocked, the size cap stays capped, and roots outside your home folder are refused.
+   [README.md]      HTML is turned into text before import, and content that carries no knowledge — markup scaffolding, repeated table rows — never becomes a note - **Knowledge list** — a click opens a readable preview: the full text, the s
+   [README.md]      The list groups by file, by kind or by period, and *Load more* never cuts a group in half - **Text size** — `100`, `115` or `130 %`, under *Settings → Display*.
+   [README.md] ZEUG `GET /api/memories/:id` therefore stays unimplemented until a client needs a body it cannot already reach; until then this table names only the methods the server registers, and `tests/doku-plattform.test.ts` fails if th
+   [README.md]      It is off until you add a key, and the memory store is never synced anywhere.
+   [README.md]      There is nothing to activate and nothing to buy inside the window, so the app also never asks for it — no key field, no counter, no trial clock, no "first day free" and no message about a limit.
+   [README.md]      It was never a lock — but it was counting, and counting needed places to hide the tally (an authenticated state in the database, a keychain anchor, a hidden file).
+   [README.md]      - **The data is never hostage.** The knowledge base file stays on disk, encrypted, and readable by the source-available engine.
+   [README.md]      They are built from this source and never published here, so they are untested against a real installer download; treat them as source builds, not as shipped products.
+   [README.md]      ```bash npm run lint # typecheck (tsc) + ESLint — 0 errors required npm test # 3718 tests (vitest) npm run test:cov # tests + coverage gate + test count in the README npm run eval # retrieval quality (Hit@1) ``` | Layer 
+   [README.md]      The routers and helpers count towards the overall coverage gate; the only exclusion is the bootstrap, which binds a port and never runs in a unit test.
+   [SECURITY.md]      **Keep a copy of the key.** It never leaves the keychain on its own; if the keychain is lost (a fresh system, a new Windows account), a restored `kepta.db` cannot be opened.
+   [ROADMAP.md] ZEUG ## ✅ v2.6.15 — September 2026: wave 1, the white-space features | Feature | What shipped | |---|---| | **Time-travel search** | `asOf` on `memory_search` and `POST /api/search` — ask what was known at any moment; time-tr
+   [.github/release-notes.md]      A signed key is an artefact of a K3PTA Enterprise agreement, never something sold off a shelf.
+   [.github/release-notes.md]      Ein signierter Schlüssel ist Artefakt einer Enterprise-Vereinbarung, nie ein Kaufprodukt von der Liste.
 
 Zwei von ihnen nachgegriffen, im selben Lauf:
    "no screenshot of it here yet" (Semantic-Ansicht): README nennt 20 Bilder (12 in Markdown, 8 als <img alt>), davon 0 mit "Semantic"; der Satz steht noch da — haltbar.

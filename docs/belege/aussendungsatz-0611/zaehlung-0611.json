@@ -1,9 +1,9 @@
 {
  "dateien": {
   "README.md": {
-   "saetze": 250,
-   "absolut": 103,
-   "mit_zeug": 16,
+   "saetze": 251,
+   "absolut": 104,
+   "mit_zeug": 17,
    "ohne_zeug": 87
   },
   "SECURITY.md": {
@@ -26,15 +26,15 @@
   }
  },
  "zusammen": {
-  "saetze": 320,
-  "absolut": 131,
-  "mit_zeug": 21,
+  "saetze": 321,
+  "absolut": 132,
+  "mit_zeug": 22,
   "ohne_zeug": 110
  },
  "abschnitt": {
   "README.md": {
-   "absolut": 103,
-   "mit_zeug": 55,
+   "absolut": 104,
+   "mit_zeug": 56,
    "ohne_zeug": 48
   },
   "SECURITY.md": {
@@ -54,13 +54,13 @@
   }
  },
  "zusammen_abschnitt": {
-  "absolut": 131,
-  "mit_zeug": 60,
+  "absolut": 132,
+  "mit_zeug": 61,
   "ohne_zeug": 71
  },
  "maschinell_pruefbar": {
   "README.md": {
-   "absolut": 103,
+   "absolut": 104,
    "maschinell": 26
   },
   "SECURITY.md": {
@@ -77,6 +77,158 @@
   }
  },
  "summe_pruefbar": 30,
+ "pruefbar_liste": [
+  {
+   "datei": "README.md",
+   "satz": "While it cools at 3 000 notes a few pairs still touch for a moment; the same test pins that funnel at ≤ 40 pairs by step 250 and 0 by step 310, so no sentence here says „never overlaps\" without naming the moment.",
+   "zeuge": false
+  },
+  {
+   "datei": "README.md",
+   "satz": "Keys, credentials, browser profiles, keychains and system folders are never read, and that cannot be switched off (`tests/scan/regeln.test.ts` tries to open the barrier with a widened file-type list and is refused) — bec",
+   "zeuge": true
+  },
+  {
+   "datei": "README.md",
+   "satz": "Existing notes can be sorted afterwards from Settings → Data, with a preview first - **Scope**: `user`, `agent`, `session` — separates who a memory belongs to - **Private notes** — one switch in the editor: a private not",
+   "zeuge": true
+  },
+  {
+   "datei": "README.md",
+   "satz": "Expired entries are marked, never quietly hidden - **Supersede chains** (`superseded_by`): contradictions displace each other and the history survives - **Files** by drag and drop: PDF, MD, TXT, JSON — chunked at 2000 ch",
+   "zeuge": false
+  },
+  {
+   "datei": "README.md",
+   "satz": "Every transfer is recorded in a tamper-evident hash-chained ledger (`~/.kepta/sync-journal.jsonl`): the inspectable proof of what moved between devices, without the content ever being readable in transit - **Migration** ",
+   "zeuge": true
+  },
+  {
+   "datei": "README.md",
+   "satz": "`npm run ablation` divides by 5 and reports a real P@5 on the same corpus: two metrics, two names, never comparable.",
+   "zeuge": false
+  },
+  {
+   "datei": "README.md",
+   "satz": "It is computed on the server, so no embedding ever travels into the view - Force-directed layout on an **unbounded canvas** — nodes repel each other and follow when you drag their neighbours; the layout grows with the ba",
+   "zeuge": false
+  },
+  {
+   "datei": "README.md",
+   "satz": "Turning a slider does not rebuild the world: the picture keeps its place and settles under the new forces, and one click returns the tuned defaults - Zoom, pan, draggable nodes, and **fit-to-view** that always frames the",
+   "zeuge": false
+  },
+  {
+   "datei": "README.md",
+   "satz": "The second channel switches itself off with the reason when the base holds only one kind of arrival; it never paints everything grey.",
+   "zeuge": false
+  },
+  {
+   "datei": "README.md",
+   "satz": "*Keep the newer*, *Keep the older* (the other is marked as replaced, never deleted) or *Both are right* (never asked again).",
+   "zeuge": false
+  },
+  {
+   "datei": "README.md",
+   "satz": "A backup of the old file sits right next to it, every other entry stays, and a file that is not plain JSON is never touched - **Live activity** (⌘7) — which app is active right now and what it searched, saved or changed,",
+   "zeuge": false
+  },
+  {
+   "datei": "README.md",
+   "satz": "Private notes never reach an app or a cloud model.",
+   "zeuge": false
+  },
+  {
+   "datei": "README.md",
+   "satz": "Card numbers must pass the Luhn check and IBANs the mod-97 check; dates are never taken for phone numbers.",
+   "zeuge": false
+  },
+  {
+   "datei": "README.md",
+   "satz": "Both protections are on by default, and every cloud request is in the audit log - **Managed deployment & central policies** — IT deploys one `managed-settings.json` (the macOS MDM path, since the app ships macOS only; th",
+   "zeuge": true
+  },
+  {
+   "datei": "README.md",
+   "satz": "Without a reachable local LLM it always degrades to ADD — the gate can never block you.",
+   "zeuge": false
+  },
+  {
+   "datei": "README.md",
+   "satz": "Settings can only narrow what is read, never widen it: keys, credentials, browser profiles, keychains and wallets stay blocked, the size cap stays capped, and roots outside your home folder are refused.",
+   "zeuge": false
+  },
+  {
+   "datei": "README.md",
+   "satz": "HTML is turned into text before import, and content that carries no knowledge — markup scaffolding, repeated table rows — never becomes a note - **Knowledge list** — a click opens a readable preview: the full text, the s",
+   "zeuge": false
+  },
+  {
+   "datei": "README.md",
+   "satz": "The list groups by file, by kind or by period, and *Load more* never cuts a group in half - **Text size** — `100`, `115` or `130 %`, under *Settings → Display*.",
+   "zeuge": false
+  },
+  {
+   "datei": "README.md",
+   "satz": "`GET /api/memories/:id` therefore stays unimplemented until a client needs a body it cannot already reach; until then this table names only the methods the server registers, and `tests/doku-plattform.test.ts` fails if th",
+   "zeuge": true
+  },
+  {
+   "datei": "README.md",
+   "satz": "It is off until you add a key, and the memory store is never synced anywhere.",
+   "zeuge": false
+  },
+  {
+   "datei": "README.md",
+   "satz": "There is nothing to activate and nothing to buy inside the window, so the app also never asks for it — no key field, no counter, no trial clock, no \"first day free\" and no message about a limit.",
+   "zeuge": false
+  },
+  {
+   "datei": "README.md",
+   "satz": "It was never a lock — but it was counting, and counting needed places to hide the tally (an authenticated state in the database, a keychain anchor, a hidden file).",
+   "zeuge": false
+  },
+  {
+   "datei": "README.md",
+   "satz": "- **The data is never hostage.** The knowledge base file stays on disk, encrypted, and readable by the source-available engine.",
+   "zeuge": false
+  },
+  {
+   "datei": "README.md",
+   "satz": "They are built from this source and never published here, so they are untested against a real installer download; treat them as source builds, not as shipped products.",
+   "zeuge": false
+  },
+  {
+   "datei": "README.md",
+   "satz": "```bash npm run lint # typecheck (tsc) + ESLint — 0 errors required npm test # 3718 tests (vitest) npm run test:cov # tests + coverage gate + test count in the README npm run eval # retrieval quality (Hit@1) ``` | Layer ",
+   "zeuge": false
+  },
+  {
+   "datei": "README.md",
+   "satz": "The routers and helpers count towards the overall coverage gate; the only exclusion is the bootstrap, which binds a port and never runs in a unit test.",
+   "zeuge": false
+  },
+  {
+   "datei": "SECURITY.md",
+   "satz": "**Keep a copy of the key.** It never leaves the keychain on its own; if the keychain is lost (a fresh system, a new Windows account), a restored `kepta.db` cannot be opened.",
+   "zeuge": false
+  },
+  {
+   "datei": "ROADMAP.md",
+   "satz": "## ✅ v2.6.15 — September 2026: wave 1, the white-space features | Feature | What shipped | |---|---| | **Time-travel search** | `asOf` on `memory_search` and `POST /api/search` — ask what was known at any moment; time-tr",
+   "zeuge": true
+  },
+  {
+   "datei": ".github/release-notes.md",
+   "satz": "A signed key is an artefact of a K3PTA Enterprise agreement, never something sold off a shelf.",
+   "zeuge": false
+  },
+  {
+   "datei": ".github/release-notes.md",
+   "satz": "Ein signierter Schlüssel ist Artefakt einer Enterprise-Vereinbarung, nie ein Kaufprodukt von der Liste.",
+   "zeuge": false
+  }
+ ],
  "beweise": {
   "bilder_markdown": 12,
   "bilder_img_tag": 8,
@@ -438,7 +590,7 @@
   },
   {
    "datei": "README.md",
-   "satz": "```bash npm run lint # typecheck (tsc) + ESLint — 0 errors required npm test # 3708 tests (vitest) npm run test:cov # tests + coverage gate + test count in the README npm run eval # retrieval quality (Hit@1) ``` | Layer "
+   "satz": "```bash npm run lint # typecheck (tsc) + ESLint — 0 errors required npm test # 3718 tests (vitest) npm run test:cov # tests + coverage gate + test count in the README npm run eval # retrieval quality (Hit@1) ``` | Layer "
   },
   {
    "datei": "README.md",
