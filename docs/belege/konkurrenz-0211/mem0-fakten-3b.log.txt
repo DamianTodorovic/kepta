@@ -1,0 +1,17 @@
+Failed to load spaCy lemma model: spaCy is not installed. Install it with: pip install mem0ai[nlp]
+Failed to load spaCy full model: spaCy is not installed. Install it with: pip install mem0ai[nlp]
+Error parsing extraction response: Expecting ',' delimiter: line 71 column 75 (char 6498)
+Error parsing extraction response: Expecting ',' delimiter: line 50 column 136 (char 7026)
+Error parsing extraction response: Expecting ',' delimiter: line 54 column 136 (char 6679)
+Error parsing extraction response: Expecting ',' delimiter: line 64 column 99 (char 6206)
+Error parsing extraction response: Expecting ',' delimiter: line 47 column 131 (char 6044)
+Error parsing extraction response: Expecting ',' delimiter: line 42 column 124 (char 5772)
+Error parsing extraction response: Expecting ',' delimiter: line 36 column 149 (char 5505)
+Error parsing extraction response: Expecting ',' delimiter: line 36 column 172 (char 5725)
+FERTIG
+Exception ignored while calling deallocator <function QdrantClient.__del__ at 0x115078880>:
+Traceback (most recent call last):
+  File "/private/tmp/konk-mem0-ld/venv/lib/python3.14/site-packages/qdrant_client/qdrant_client.py", line 172, in __del__
+  File "/private/tmp/konk-mem0-ld/venv/lib/python3.14/site-packages/qdrant_client/qdrant_client.py", line 181, in close
+  File "/private/tmp/konk-mem0-ld/venv/lib/python3.14/site-packages/qdrant_client/local/qdrant_local.py", line 113, in close
+ImportError: sys.meta_path is None, Python is likely shutting down

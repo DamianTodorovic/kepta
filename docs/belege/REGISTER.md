@@ -175,6 +175,9 @@ erfunden, in beiden Sprachen gemessen und mit dem Vektor-Bein auch allein:
 | `tag-0511/health-absage-153-1440.log.txt` | 1271 B | `58d93ee902dec9e7…` |
 | `tag-0511/health-absage-153-390.log.txt` | 1267 B | `d48614bb77db8ddb…` |
 | `tag-0511/fenster-volllauf-154-1216.log.txt` | 21237 B | `cb3fe768e9e6c6cf…` |
+| `konkurrenz-0211/mem0-fakten-3b.log.txt` | 1491 B | `86b0edecc78a5ef0…` |
+| `konkurrenz-0211/spur-fakten-3b-vollstaendig.jsonl` | 18726 B | `60fd05398df850c1…` |
+| `konkurrenz-0211/unser-eval-0211.log.txt` | 3799 B | `84b1f8b6298ee82e…` |
 
 Drei Folgen, aufgeschrieben, weil sie die Zahl nicht schoener machen:
 
