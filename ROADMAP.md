@@ -35,7 +35,7 @@ K3PTA's interface is English, one language done properly.
 
 | Feature | What shipped |
 |---|---|
-| **Time-travel search** | `asOf` on `memory_search` and `POST /api/search` — ask what was known at any moment; time-travelled queries never count as access |
+| **Time-travel search** | `asOf` on `memory_search` and `POST /api/search` — ask what was known at any moment; time-travelled queries never count as access (`tests/engine.test.ts:254` shows the older note and hides the later one at the asked moment; `:271` reads `accessCount` back at zero after a time-travel search and above zero after an ordinary one) |
 | **Write gate** (Mem0, arXiv:2504.19413) | Opt-in via `KEPTA_WRITE_GATE=on`: the local LLM classifies each new memory as ADD/UPDATE/DELETE/NOOP on both save paths; unreachable LLM degrades to ADD |
 | **Local reranking** | Deterministic reranker (term coverage, phrase, title, tags) as a bounded boost after RRF, exposed as `rerankScore` — the seam for the cross-encoder below |
 | **Device Sync** | Device-to-device scope transfer as an AES-256-GCM bundle (scrypt passphrase) with a tamper-evident hash-chained transfer ledger (`~/.kepta/sync-journal.jsonl`) |

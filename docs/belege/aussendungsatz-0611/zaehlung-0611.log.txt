@@ -1,4 +1,4 @@
-Zeit: 6.11.2026, 23:47:09 MEZ
+Zeit: 6.11.2026, 23:55:07 MEZ
 Dateien: README.md, SECURITY.md, ROADMAP.md, .github/release-notes.md — Einheiten ueber 25 Zeichen.
 Riss: satz-riss.mjs (P128, markdown-fest). Vorher: Satzende + Leerzeichen ueber dem
 ganzen Text, wodurch Aufzaehlungen, Tabellenzeilen und `<summary>`-Kuelsen als EIN
@@ -9,23 +9,23 @@ Satz zaehlten. Unter beiden Naivlingen, in diesem Lauf nachgerechnet:
 
 | Datei | Saetze | absolute | mit Messzeug | ohne Messzeug | Anteil ohne |
 |---|---|---|---|---|---|
-| `README.md` | 410 | 128 | 39 | 89 | 69.5 % |
+| `README.md` | 410 | 128 | 41 | 87 | 68.0 % |
 | `SECURITY.md` | 31 | 7 | 1 | 6 | 85.7 % |
-| `ROADMAP.md` | 77 | 16 | 3 | 13 | 81.3 % |
+| `ROADMAP.md` | 77 | 16 | 4 | 12 | 75.0 % |
 | `.github/release-notes.md` | 50 | 18 | 1 | 17 | 94.4 % |
-| **zusammen** | **568** | **169** | **44** | **125** | **74.0 %** |
+| **zusammen** | **568** | **169** | **47** | **122** | **72.2 %** |
 
 Nenner fuer den Anteil: 169 absolute Behauptungen in 568 Saetzen der vier Texte.
 
 Zweite Lesung — der Zeuge darf im selben Abschnitt stehen (Absatz, Tabelle, Aufzaehlung):
 | Datei | absolute | mit Messzeug | ohne Messzeug |
 |---|---|---|---|
-| `README.md` | 128 | 54 | 74 |
+| `README.md` | 128 | 56 | 72 |
 | `SECURITY.md` | 7 | 1 | 6 |
 | `ROADMAP.md` | 16 | 0 | 16 |
 | `.github/release-notes.md` | 18 | 0 | 18 |
-| zusammen | 169 | 55 | 114 |
-   mit Messzeug im selben Abschnitt: 55 von 169 = 32.5 % (gegen 44 von 169 = 26.0 % in der engen Lesung).
+| zusammen | 169 | 57 | 112 |
+   mit Messzeug im selben Abschnitt: 57 von 169 = 33.7 % (gegen 47 von 169 = 27.8 % in der engen Lesung).
 
 Die schmalere Klasse — Saetze, die ein Werkzeug widerlegen koennte (never/always/cannot/0 %/100 %):
    README.md                  25 von 128 absoluten
@@ -60,7 +60,7 @@ Die schmalere Klasse — Saetze, die ein Werkzeug widerlegen koennte (never/alwa
    [README.md]      They are built from this source and never published here, so they are untested against a real installer download; treat them as source builds, not as shipped products.
    [README.md] ZEUG src/scan (machine-scan rules) | must not fall under 98 % of lines · must hold 100 % of functions (both in vitest.config.ts, key "src/scan/") | what may be read, and what never is
    [SECURITY.md] ZEUG It never leaves the keychain on its own — what that means is checked, not promised: tests/core/schluessel.test.ts:111 reads the argument list of every launch and finds the key absent there (it travels in the child's envi
-   [ROADMAP.md]      Time-travel search | asOf on memory_search and POST /api/search — ask what was known at any moment; time-travelled queries never count as access
+   [ROADMAP.md] ZEUG Time-travel search | asOf on memory_search and POST /api/search — ask what was known at any moment; time-travelled queries never count as access (tests/engine.test.ts:254 shows the older note and hides the later one at t
    [.github/release-notes.md]      A signed key is an artefact of a K3PTA Enterprise agreement, never something sold off a shelf.
    [.github/release-notes.md]      Ein signierter Schlüssel ist Artefakt einer Enterprise-Vereinbarung, nie ein Kaufprodukt von der Liste.
 
@@ -68,7 +68,7 @@ Zwei von ihnen nachgegriffen, im selben Lauf:
    "no screenshot of it here yet" (Semantic-Ansicht): README nennt 20 Bilder (12 in Markdown, 8 als <img alt>), davon 0 mit "Semantic"; der Satz steht noch da — haltbar.
    "no embedding ever travels into the view": 8 von 8 benannten Flaechen-Dateien gelesen, zusammen 0 Nennung(en) "embedding"; das Wort liegt in 34 Test-Dateien des Repos. Fehlende Dateien: keine.
 
-Die 125 ohne Messzeug, in Lesereihenfolge der Dateien (erste 40):
+Die 122 ohne Messzeug, in Lesereihenfolge der Dateien (erste 40):
    [README.md] Your AI forgets you after every chat.
    [README.md] Desktop app · no cloud · no account · encrypted at rest SQLite · hybrid retrieval · knowledge graph · MCP
    [README.md] Every entry is a node, every connection an edge — real connections drawn solid, mere similarity dashed.
@@ -81,7 +81,6 @@ Die 125 ohne Messzeug, in Lesereihenfolge der Dateien (erste 40):
    [README.md] The same question works in search (asOf in the HTTP API and MCP) and in the editor, where every note shows its *valid from / valid until*.
    [README.md] The next day you open a fresh chat and it knows none of it.
    [README.md] Agent | An AI program that can use tools instead of only answering — Claude Desktop, Cursor or Gemini CLI, for instance.
-   [README.md] Whoever holds only the file holds nothing readable.
    [README.md] K3PTA stores the database key there — no password to type, no key on the disk.
    [README.md] No upload, no account, no telemetry.
    [README.md] One brain for every AI tool.
@@ -95,7 +94,6 @@ Die 125 ohne Messzeug, in Lesereihenfolge der Dateien (erste 40):
    [README.md] Files imported with an older extraction can be read again under *Settings → Data → Re-read imported files* — it counts first and writes only after you confirm
    [README.md] URL clipper with SSRF protection (IP literals in every notation, DNS resolution, every redirect hop checked); navigation lines, "Skip to main content" and cookie banners are stripped on import
    [README.md] Import your AI history: bring your ChatGPT or Claude data export here (*Settings → Data management → Import your AI history*): every conversation with at least one answer becomes a searchable note with its original date,
-   [README.md] Every transfer is recorded in a tamper-evident hash-chained ledger (~/.kepta/sync-journal.jsonl): the inspectable proof of what moved between devices, without the content ever being readable in transit
    [README.md] Persistent embeddings via Ollama (nomic-embed-text), computed by a background queue instead of re-embedding on every query
    [README.md] Meaning search can be switched off; the result slider runs 5 · 10 · 20 · 50 · 100 · 250 · All, and the index says how many notes match in total
    [README.md] - A concept in the picture is a shared one: a term that exists only because it repeats the title of the single note carrying it is an echo of your filing, not knowledge, and the graph leaves it out — the concept count is
@@ -109,3 +107,5 @@ Die 125 ohne Messzeug, in Lesereihenfolge der Dateien (erste 40):
    [README.md] Every entry is sealed with the SHA-256 of the one before it; *Check integrity* shows whether anything was changed, removed or cut off.
    [README.md] Both protections are on by default, and every cloud request is in the audit log
    [README.md] Managed deployment & central policies — IT deploys one managed-settings.json (the macOS MDM path, since the app ships macOS only; the Windows and Linux paths are in the same reader for self-built packages — or set KEPTA_
+   [README.md] No license server, no phone-home, no extra infrastructure — one file.
+   [README.md] All eight tools ship an outputSchema and return structuredContent.

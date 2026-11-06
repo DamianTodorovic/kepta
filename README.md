@@ -70,7 +70,7 @@ Every memory carries a validity window, so the graph can be replayed: pull the t
 | **Agent** | An AI program that can use tools instead of only answering — Claude Desktop, Cursor or Gemini CLI, for instance. |
 | **MCP** | The open protocol such programs use to talk to tools. KEPTA speaks it, so your assistants can read and write your notes. |
 | **SQLite** | A database that is simply one file on your disk. Nothing to run, nothing to log into; you can copy it like a photo. |
-| **Encryption at rest** | The file is stored encrypted (AES-256, SQLCipher format). Whoever holds only the file holds nothing readable. |
+| **Encryption at rest** | The file is stored encrypted (AES-256, SQLCipher format). Whoever holds only the file holds nothing readable (`tests/core/store-verschluesselung.test.ts:102` tries a wrong key, names two ways forward and changes nothing on disk; `:149` refuses to start an empty brain over an encrypted file). |
 | **Keychain** | Where your operating system keeps secrets. K3PTA stores the database key there — no password to type, no key on the disk. |
 | **Embedding / vector** | Text turned into numbers, so a computer can tell that "car workshop" and "garage" mean nearly the same thing. |
 | **BM25 / full text** | Classic keyword search: it finds the words you actually typed. |
@@ -111,7 +111,7 @@ Every memory carries a validity window, so the graph can be replayed: pull the t
 - **Obsidian vault import**: Markdown + YAML frontmatter, `[[wiki links]]` become graph edges
 - **Import your AI history**: bring your ChatGPT or Claude data export here (*Settings → Data management → Import your AI history*): every conversation with at least one answer becomes a searchable note with its original date, tagged `chatgpt-import` / `claude-import` — so switching assistants doesn't mean starting over. Importing the same export again updates instead of duplicating
 - **Markdown export** to `~/.kepta/export/`
-- **Device Sync** — move a memory scope between your own devices as an **AES-256-GCM-encrypted bundle** (key derived from a passphrase, scrypt). Every transfer is recorded in a tamper-evident hash-chained ledger (`~/.kepta/sync-journal.jsonl`): the inspectable proof of what moved between devices, without the content ever being readable in transit
+- **Device Sync** — move a memory scope between your own devices as an **AES-256-GCM-encrypted bundle** (key derived from a passphrase, scrypt). Every transfer is recorded in a tamper-evident hash-chained ledger (`~/.kepta/sync-journal.jsonl`): the inspectable proof of what moved between devices, without the content ever being readable in transit (`tests/praxissync.test.ts:101` finds no plaintext in a bundle and refuses a wrong passphrase and a tampered package; `:120` checks that every line chains its predecessor, so an edit stays visible)
 - **Migration** from the previous version (`memories.json`) — idempotent, with a backup
 
 </details>

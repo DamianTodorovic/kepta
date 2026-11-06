@@ -3,8 +3,8 @@
   "README.md": {
    "saetze": 410,
    "absolut": 128,
-   "mit_zeug": 39,
-   "ohne_zeug": 89
+   "mit_zeug": 41,
+   "ohne_zeug": 87
   },
   "SECURITY.md": {
    "saetze": 31,
@@ -15,8 +15,8 @@
   "ROADMAP.md": {
    "saetze": 77,
    "absolut": 16,
-   "mit_zeug": 3,
-   "ohne_zeug": 13
+   "mit_zeug": 4,
+   "ohne_zeug": 12
   },
   ".github/release-notes.md": {
    "saetze": 50,
@@ -28,14 +28,14 @@
  "zusammen": {
   "saetze": 568,
   "absolut": 169,
-  "mit_zeug": 44,
-  "ohne_zeug": 125
+  "mit_zeug": 47,
+  "ohne_zeug": 122
  },
  "abschnitt": {
   "README.md": {
    "absolut": 128,
-   "mit_zeug": 54,
-   "ohne_zeug": 74
+   "mit_zeug": 56,
+   "ohne_zeug": 72
   },
   "SECURITY.md": {
    "absolut": 7,
@@ -55,8 +55,8 @@
  },
  "zusammen_abschnitt": {
   "absolut": 169,
-  "mit_zeug": 55,
-  "ohne_zeug": 114
+  "mit_zeug": 57,
+  "ohne_zeug": 112
  },
  "maschinell_pruefbar": {
   "README.md": {
@@ -210,8 +210,8 @@
   },
   {
    "datei": "ROADMAP.md",
-   "satz": "Time-travel search | asOf on memory_search and POST /api/search — ask what was known at any moment; time-travelled queries never count as access",
-   "zeuge": false
+   "satz": "Time-travel search | asOf on memory_search and POST /api/search — ask what was known at any moment; time-travelled queries never count as access (tests/engine.test.ts:254 shows the older note and hides the later one at t",
+   "zeuge": true
   },
   {
    "datei": ".github/release-notes.md",
@@ -325,10 +325,6 @@
   },
   {
    "datei": "README.md",
-   "satz": "Whoever holds only the file holds nothing readable."
-  },
-  {
-   "datei": "README.md",
    "satz": "K3PTA stores the database key there — no password to type, no key on the disk."
   },
   {
@@ -378,10 +374,6 @@
   {
    "datei": "README.md",
    "satz": "Import your AI history: bring your ChatGPT or Claude data export here (*Settings → Data management → Import your AI history*): every conversation with at least one answer becomes a searchable note with its original date,"
-  },
-  {
-   "datei": "README.md",
-   "satz": "Every transfer is recorded in a tamper-evident hash-chained ledger (~/.kepta/sync-journal.jsonl): the inspectable proof of what moved between devices, without the content ever being readable in transit"
   },
   {
    "datei": "README.md",
@@ -662,10 +654,6 @@
   {
    "datei": "ROADMAP.md",
    "satz": "Every user-facing string, the MCP tool descriptions, the starter pack and the native date controls are English."
-  },
-  {
-   "datei": "ROADMAP.md",
-   "satz": "Time-travel search | asOf on memory_search and POST /api/search — ask what was known at any moment; time-travelled queries never count as access"
   },
   {
    "datei": "ROADMAP.md",

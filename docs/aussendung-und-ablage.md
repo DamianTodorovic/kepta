@@ -927,6 +927,37 @@ Der Weg der letzten vier Schläge in derselben Klasse: 14, 15, 18, 20, 23. Die s
 sind nachgesehen und gehören zu drei Wänden (Damians Wort: Enterprise und MDM; die Grenze dieses
 Rechners: Windows/Linux; ein früherer Stand: README.md:357; eine ROADMAP-Absage: asOf).
 
+## 26. P138 — Die blinde Masse spricht zurück: drei Zeilen gehalten, und eine meiner eignen Sortierungen war falsch (6.11. 23:55 MEZ)
+
+125 absolute Behauptungen standen ohne Messzeug. Mit dem Wortfilter (Route, Datei, Schlüssel, Host,
+Sync, Prozent) blieben 57 Maschinen-Sätze — und die Prüfung der obersten drei gab drei Zeugen, **keinen
+neuen Fall**, dafür einen Fehler von mir.
+
+| Satz | Wo | Zeuge |
+|---|---|---|
+| „Whoever holds only the file holds nothing readable" | README.md:73 | `tests/core/store-verschluesselung.test.ts:102` (falscher Schlüssel: zwei Wege benannt, nichts auf der Platte verändert), `:149` (kein leeres Gehirn über einer verschlüsselten Datei) |
+| „without the content ever being readable in transit" | README.md:114 (Device Sync) | `tests/praxissync.test.ts:101` (kein Klartext im Bundle, falsche Passphrase und Manipulation fliegen), `:120` (jede Zeile verkettet die Vorgängerin) |
+| „time-travelled queries never count as access" | ROADMAP.md:38 | `tests/engine.test.ts:254` (die alte Notiz gilt zum gefragten Moment, die neue nicht), `:271` (`accessCount` bleibt 0 nach der Zeitreise, steigt nach einer normalen Suche) |
+
+### Mein Fehler, zuerst notiert
+
+P136 hatte ROADMAP:38 in die Schublade **„Zusage an eine Tür, die die App nicht hat"** gesteckt und die
+sechs Restlichen als „drei Wände" verkauft. Das war falsch, und die Widerlegung war eine Minute Arbeit:
+`server/router/search.ts:75` nimmt `asOf` an, `src/core/mcp.ts:99` wirbt dafür, `src/core/mcp.ts:326`
+weist Nicht-Ganzzahlen ab, und zwei Fälle in `tests/engine.test.ts` fahren es. Ich hatte das Wort
+ROADMAP-Zeile gelesen als „Plan" und nicht als „Zeile in einer Tabelle" — **eine Sortierung, die ich
+nicht gegen den Baum prüfe, ist eine Vermutung mit Aktenzeichen.**
+
+### Die Zählung
+
+Zensus 23:55:07 MEZ, Exit 0: 568 Einheiten, 169 absolute Behauptungen, **47 mit Messzeug = 27,8 %**
+(vorher 44 = 26,0 %), 122 ohne. Abschnittslesung 57 = 33,7 % (zwei mehr). Schmale Klasse 29, davon
+**24** mit Messzeug → **5 Arbeit**. Reihe über zehn Schläge: 4, 5, 8, 11, 14, 15, 18, 20, 23, 24.
+
+Die „drei Wände" von P136 sind damit auf vier Sätze geschrumpft, und einer davon (README.md:427,
+Windows/Linux-Quellbau) ist die einzige Grenze, die diese Maschine wirklich zieht. Der Rest ist
+Damians Wort (README.md:181, release-notes zweimal) oder ein früherer Stand (README.md:357).
+
 ## Fehler in diesem Schlag, die ich selbst gefunden habe
 
 1. `du -sk /tmp` meldete 0 GiB Stapel, weil `/tmp` ein Symlink ist; der erste Lauf schrieb diese Null.
@@ -1065,3 +1096,8 @@ Rechners: Windows/Linux; ein früherer Stand: README.md:357; eine ROADMAP-Absage
     hostage" blieb blind, nur der Satz darunter war gedeckt. Aus der Artefaktliste gelesen, beide
     Sätze bewaffnet, Zahl und Papier nachgezogen (37 → 38). Ein Zeuge in einer Zeile bewaffnet nicht,
     was in derselben Zeile noch steht.
+28. **Eine Sortierung ohne Gegenprüfung.** Ich legte ROADMAP:38 („time-travelled queries never count
+    as access") in „Zusage an eine Tür, die die App nicht hat" und verkaufte die Restlichen als drei
+    Wände. Die Funktion ist gebaut und geprüft (`server/router/search.ts:75`, `src/core/mcp.ts:99`,
+    `tests/engine.test.ts:254`, `:271`). Ein Satz aus einer Tabellenzeile ist kein Status — erst der
+    Baum sagt, ob eine Zeile Plan oder Befund ist.
