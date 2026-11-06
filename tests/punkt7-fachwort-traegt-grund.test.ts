@@ -903,3 +903,79 @@ describe("Punkt 109, das zweite Auge der Strich-Latte: ein nackter Bindestrich i
     expect(laut.stdout, "der Census meldet kein zweites Auge").toMatch(/Literalueberlauf: \d+ Literale mit " - ", \d+ davon nackter Bindestrich/);
   });
 });
+
+describe("Punkt 114, die Reichweite beider Augen: ein Satz ueber einer Zeilengrenze", () => {
+  /* Der Name des offenen Punkts aus P109 war: "das zweite Auge liest Zeilen, keine
+     mehrzeiligen Saetze". Gemessen 17:44:01 und 17:44:22 MEZ, bevor irgendein Werkzeug
+     geaendert wurde (Sonden /tmp/p114-mehrzeilig-dt/sonde.mjs und kandidaten.mjs):
+
+       - die Satz-Muster lesen `[^`]{20,400}` -- eine Zeichenklasse, kein Punkt. Sie
+         ueberschreiten Zeilengrenzen. Der Kandidaten-Korpus traegt **20 mehrzeilige
+         Kandidaten von 785**, und **0** davon ein nacktes " - ".
+       - die dateischarfe Variante desselben Literal-Lesers meldet 23 zusaetzliche
+         "Funde" -- und **23 von 23 sind kein Menschensatz**, sondern Quelltext, den ein
+         Apostroph in einem Kommentar als falsches Literal oeffnet (`src/lib/schild.ts:95`,
+         `src/lib/graphLayout.ts:1488`, `server/router/memories.ts:346`).
+
+     Die Behauptung, die hier also haelt, ist die umgekehrte: die Zeilenschaerfe des
+     zweiten Auges ist kein Versehen, sondern der Grund, warum es 0 meldet und erfindet
+     nichts. Und die Reichweite des ersten Auges -- Saetze ueber Zeilengrenzen -- war bis
+     jetzt eine Annahme ohne Zeile im Census. Also nennt der Census sie, und ein nackter
+     Strich in einem mehrzeiligen Kandidaten faellt die Latte. */
+
+  const blatt = (t: string) => (census as any).strichInLiteraln(t, "probe.ts");
+  const kandidat = (t: string) => (census as any).satzAusText(t, "src/components/Probe.tsx");
+
+  it("der Strich-Rayer ist exportiert, damit Latte und Fall dieselbe Definition teilen", () => {
+    expect(typeof (census as any).NACKTER_STRICH, "das Raster lebt nur in der Hauptschleife").toBe("object");
+  });
+
+  it("ein Kandidat darf ueber eine Zeilengrenze laufen, und die Sonde sieht ihn", () => {
+    const t = "const x = 1;\nconst k = <Panel title={`The graph gathers every note\nthat you put into this base by what they mean`} />;\n";
+    const f = kandidat(t);
+    expect(f.length, "die Satz-Muster lesen keine Zeilengrenze").toBeGreaterThan(0);
+    expect(/\n/.test(f[0].roh), "die Rohform verliert die Zeilengrenze").toBe(true);
+    expect(f[0].s.includes("\n"), "die gelaettte Lesung muss eine Zeile sein").toBe(false);
+  });
+
+  it("sitzt der nackte Strich genau an der Zeilengrenze, sieht die Latte ihn", () => {
+    const t = "const k = <Panel label={`The graph shows every note\n- that you put into this base and nothing else`} />;\n";
+    const f = kandidat(t);
+    expect(f.length).toBeGreaterThan(0);
+    expect((census as any).NACKTER_STRICH.test(f[0].s), "an der Zeilengrenze entschwindet der Strich").toBe(true);
+  });
+
+  it("ein Apostroph in einem Kommentar oeffnet kein falsches Literal ueber drei Zeilen", () => {
+    // Die dateischarfe Lesung wuerde hier einen Literal von Zeile 1 bis Zeile 3 spannen und
+    // den Quelltext dazwischen als Menschensatz mit " - " melden. Gemessen 23 von 23 so.
+    const t = [
+      "// der Kuemmert nicht -- das hier ist ein Prosa-Kommentar, denn 'die' Worte zaehlen nicht",
+      "const puffer = a.length - b.length;",
+      "// und 'noch' ein Apostroph, damit der Schein-Literal sich schliesst",
+      "",
+    ].join("\n");
+    expect(blatt(t), "das zweite Auge erfindet einen Satz aus Quelltext").toEqual([]);
+  });
+
+  it("der Census nennt die Reichweite beider Augen als eigne Zeile", () => {
+    const laut = spawnSync("node", [path.join(WURZEL, "scripts", "verstaendlichkeit.mjs"), "--nur", "quelltext"], { encoding: "utf8" });
+    expect(laut.stdout).toMatch(/Reichweite des Strichs: \d+ Kandidaten, davon \d+ mehrzeilig, \d+ davon mit nacktem Bindestrich/);
+  });
+
+  it("gemessen am Baum: es gibt mehrzeilige Kandidaten, und keiner traegt den nackten Strich", () => {
+    const laut = spawnSync("node", [path.join(WURZEL, "scripts", "verstaendlichkeit.mjs"), "--nur", "quelltext"], { encoding: "utf8" });
+    const zeile = laut.stdout.split("\n").find((x) => x.includes("Reichweite des Strichs")) || "";
+    // Die Zahl steht vor dem Wort ("13 mehrzeilig"), also muss die Suche ihr Bild kennen.
+    const zahl = (wort: string) => Number((zeile.match(new RegExp("(\\d+) " + wort)) || [0, "-1"])[1]);
+    expect(zahl("Kandidaten"), "Grundgesamtheit der Kandidaten: " + zeile).toBeGreaterThan(600);
+    expect(zahl("mehrzeilig"), "ohne mehrzeilige Kandidaten ist die Reichweiten-Zeile eine Leerage").toBeGreaterThan(0);
+    expect(zahl("davon mit nacktem Bindestrich")).toBe(0);
+  });
+
+  it("die URTEIL-STRICH-Zeile nennt ihre Reichweite, statt sie zu versprechen", () => {
+    const laut = spawnSync("node", [path.join(WURZEL, "scripts", "verstaendlichkeit.mjs"), "--nur", "quelltext"], { encoding: "utf8" });
+    const zeile = laut.stdout.split("\n").find((x) => x.includes("URTEIL STRICH")) || "";
+    expect(zeile, "das Urteil nennt die Zeilengrenzen nicht").toContain("mehrzeilig");
+    expect(zeile).toContain("HALTET");
+  });
+});

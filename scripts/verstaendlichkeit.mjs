@@ -36,6 +36,9 @@ const ARG = (nam, fallb) => {
 const NUR_QUELLTEXT = process.argv.includes("--nur") && process.argv.includes("quelltext");
 const OBJEKT = NUR_QUELLTEXT ? null : ARG("gegen", "/Applications/K3PTA.app/Contents/Resources/app.asar");
 export const SATZKAPPE = 14;
+// P114: das Raster lebt einmal. Latte, Census und Fall teilen sich diese Definition, weil
+// ein Raster, das an zwei Stellen steht, an einer davon veraltet.
+export const NACKTER_STRICH = /[A-Za-z,.!?] - [A-Za-z]/;
 const UNTER_KAPPE_MINDESTENS = 0.8;
 // Die zweite Latte ist ein Riegel, kein Wunsch. Ihr Max war 8 — gemessen am ausgelieferten
 // 3.2.144, nachdem ein Sprachlauf von 25 auf 8 gefallen war. Am 5.11.2026 sass der Riegel auf
@@ -808,7 +811,7 @@ async function haupt() {
     const { funde, arten, formen, rohe } = sammle(mengen);
     const zeilen = [];
     for (const [s, quelle] of funde) {
-      zeilen.push({ s, quelle, art: arten.get(s) || "literal", ausdruck: formen.get(s) === true, ...zaehle(s), imObjekt: suche ? imObjekt(suche, s, rohe.get(s) ?? null) : null });
+      zeilen.push({ s, quelle, art: arten.get(s) || "literal", ausdruck: formen.get(s) === true, roh: rohe.get(s) ?? s, ...zaehle(s), imObjekt: suche ? imObjekt(suche, s, rohe.get(s) ?? null) : null });
     }
     const getragen = suche ? zeilen.filter((z) => z.imObjekt) : zeilen;
     return { zeilen, getragen };
@@ -920,8 +923,8 @@ async function haupt() {
   // nannten ihren Absatz mit einem nackten Bindestrich ("... machine - no key needed."),
   // und einer war ueberhaupt kein Satz -- ein Quelltextausdruck, den die Sonde als Prosa
   // zaehlte. Der Strich ist keine Zierde: der Census trennt Saetze an ihm, und ein Satz,
-  // der als zwei Zaehlungen ankommt, veraendert die Zahl der Flaeche.
-  const NACKTER_STRICH = /[A-Za-z,.!?] - [A-Za-z]/;
+  // der als zwei Zaehlungen ankommt, veraendert die Zahl der Flaeche. Das Raster steht seit
+  // P114 im Modul-Kopf, damit Latte, Census und Fall dieselbe Definition lesen.
   const strichFunde = [
     ...flaeche.getragen.map((z) => ({ ...z, lage: "Flaeche" })),
     ...werkzeug.getragen.map((z) => ({ ...z, lage: "Werkzeug" })),
@@ -940,6 +943,20 @@ async function haupt() {
   console.log(`\n  Literalueberlauf: ${literaleGrund} Literale mit " - ", ${literaleFunde.length} davon nackter Bindestrich (Grund: ${literaleGrund - literaleFunde.length} Rechnungen, CSS-Masse, Aufzaehlungen):`);
   for (const f of literaleFunde) console.log(`    ${f.datei}:${f.zeile}  ::  ${f.s.slice(0, 130)}`);
 
+  // P114, die Reichweite beider Augen. Der offene Punkt hiess seit P109 "das zweite Auge
+  // liest Zeilen, keine mehrzeiligen Saetze". Nachgemessen 17:44:22 MEZ: die Satz-Muster
+  // lesen Zeichenklassen, keine Punkte, also *ueberschreiten* sie Zeilengrenzen -- 20 von
+  // 785 Kandidaten sind mehrzeilig, und keiner traegt einen nackten Strich. Die dateischarfe
+  // Variante des Literal-Lesers meldete 23 zusaetzliche Funde, 23 von 23 Quelltext, den ein
+  // Apostroph in einem Kommentar als falsches Literal oeffnete. Also reicht das erste Auge
+  // ueber die Zeilengrenze, und die Zeilenschaerfe des zweiten ist der Grund, warum es nichts
+  // erfindet. Die Zahl haengt jetzt an der Latte, damit die Reichweite nicht Rede bleibt.
+  const alleKandidaten = [...flaeche.zeilen, ...werkzeug.zeilen, ...diener.zeilen];
+  const mehrzeilig = alleKandidaten.filter((z) => /\n/.test(z.roh));
+  const nacktGrenze = mehrzeilig.filter((z) => NACKTER_STRICH.test(z.s));
+  console.log(`\n  Reichweite des Strichs: ${alleKandidaten.length} Kandidaten, davon ${mehrzeilig.length} mehrzeilig, ${nacktGrenze.length} davon mit nacktem Bindestrich (das erste Auge liest ueber Zeilengrenzen; das zweite liest zeilenscharf, weil ein Apostroph im Kommentar ihm sonst einen Quelltext-Literal oeffnet)`);
+  for (const z of nacktGrenze) console.log(`    ${z.quelle}  ::  ${z.s.slice(0, 130)}`);
+
   // Zwei Kontrollen, weil ein Zaehler ohne Gegenprobe eine Behauptung ist.
   // 1) Sie MUSS ein Wort sehen, das im Objekt steht (die Rate-Zeile von 3.2.143).
   const bis = "Name a claim in a note to put a word on a line";
@@ -953,7 +970,7 @@ async function haupt() {
   const anteil = cFlaeche.unterKappe / Math.max(1, cFlaeche.n);
   const kappeHalten = anteil >= UNTER_KAPPE_MINDESTENS;
   const riegelHalten = [cFlaeche, cWerkzeug, cDiener].every((c) => c.fachOhneAlles.length <= FACH_OHNE_GRUND_MAX);
-  const strichHalten = strichFunde.length === 0 && literaleFunde.length === 0;
+  const strichHalten = strichFunde.length === 0 && literaleFunde.length === 0 && nacktGrenze.length === 0;
   // Biss-Kontrolle drei: dieselbe Rechnung muss die ALTE Form treffen, sonst ist die Latte
   // ein Wunsch ohne Messzeug.
   const strichBiss = NACKTER_STRICH.test("A local program on this machine - no key needed.");
@@ -965,7 +982,7 @@ async function haupt() {
   // die Marge ist 0 -- ein einziger langer Satz kippt das Urteil.
   const marge = Math.floor(cFlaeche.unterKappe - UNTER_KAPPE_MINDESTENS * cFlaeche.n);
   console.log(`  Die Marge der Kappe: ${marge} Saetze Spiel bei ${cFlaeche.unterKappe} von ${cFlaeche.n} (${(100 * anteil).toFixed(3)} % genau)`);
-  console.log(`  URTEIL STRICH: ${strichHalten ? "HALTET" : "FAELLT"} (${strichFunde.length} Saetze mit nacktem Bindestrich ueber allen drei Lagen, dazu ${literaleFunde.length} in ${literaleGrund} Literalen, die kein Kandidat sind; Biss-Kontrolle ${strichBiss ? "trifft die alte Form" : "FEHLT — die Latte hat kein Messzeug"})`);
+  console.log(`  URTEIL STRICH: ${strichHalten ? "HALTET" : "FAELLT"} (${strichFunde.length} Saetze mit nacktem Bindestrich ueber allen drei Lagen, dazu ${literaleFunde.length} in ${literaleGrund} Literalen, die kein Kandidat sind, dazu ${nacktGrenze.length} an einer Zeilengrenze unter ${mehrzeilig.length} mehrzeiligen Kandidaten; Biss-Kontrolle ${strichBiss ? "trifft die alte Form" : "FEHLT — die Latte hat kein Messzeug"})`);
   console.log(`  URTEIL RIEGEL: ${riegelHalten ? "HAELT" : "FAELLT"} (Fachwort ohne Grund und ohne Taetigkeit: Flaeche ${cFlaeche.fachOhneAlles.length} von ${cFlaeche.n}, Werkzeug ${cWerkzeug.fachOhneAlles.length} von ${cWerkzeug.n}, Diener ${cDiener.fachOhneAlles.length} von ${cDiener.n}, Max je Gruppe ${FACH_OHNE_GRUND_MAX} — der Wert ist am 5.11. und 6.11.2026 an allen drei Lagen gemessen)`);
   console.log(`  URTEIL GRUND: die Flaeche nennt in ${cFlaeche.mitGrund} von ${cFlaeche.n} Saetzen einen Grund oder eine Folge —`);
   console.log("  das ist der Befund dieses Laufs, nicht sein Ziel: eine Zahl ohne Vergleich ist eine Messung, noch kein Urteil.");
