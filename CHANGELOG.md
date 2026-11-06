@@ -1,3 +1,28 @@
+## [3.2.187]
+
+### Changed
+
+- **A sentence the bundle splits is still the sentence it ships.** The delivery equation
+  compared a whole flattened sentence against the bundle's bytes, so anything built from
+  pieces — `zahl(a) + " notes left out \u2014 … keeps the first " + zahl(b)` — counted as
+  "not delivered". Measured 14:37:45 MEZ on the installed 3.2.186: **145 of 498** surface
+  sentences, 14 tool, 28 servant. The equation now reads the pieces **in order** (an
+  out-of-order or invented wording still fails, and both are cases in
+  `tests/punkt7-fachwort-traegt-grund.test.ts`). Measured 14:51:39 MEZ: the drop is
+  **4 / 5 / 1**. Named reasons for the rest: four tool sentences live in
+  `src/core/chatgpt-import.ts`, which is not shipped, and five split a plural suffix in the
+  bundle (`"claim" + (n === 1 ? "" : "s") + " not drawn"`), which is no contiguous chain.
+- **A number is a word; a plural letter is not.** Flattening `${…}` to a bare `N` glued it
+  to the neighbour — "came through${n}" became "came throughN", one word instead of two, and
+  `${n === 1 ? "" : "s"}` became a whole extra word. Measured 14:38:24 MEZ: 79 of 189 surface
+  chains were affected, and one 14-word tooltip crossed the cap because of the plural alone.
+  Interpolations now become their own word, punctuation stays attached to them, and a plural
+  suffix is folded into the word it belongs to.
+- **One code line left the corpus.** `MAX_BUCKET) continue; for (let i = 0; i` had been counted
+  as a human sentence since the statement-position pattern arrived; the code-sign gate now
+  knows `for (`, `return (` and `continue;`. Measured 14:51:08 MEZ: surface 496 -> 495
+  sentences, no legitimate "if (" sentence was lost (counted: 0 in the corpus).
+
 ## [3.2.186]
 
 ### Changed

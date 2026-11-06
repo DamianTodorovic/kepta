@@ -222,14 +222,27 @@ export function artenAusQuelltext(mengen) {
     ein Wort sieht, nicht die Rechnung. Ohne diese Glaettung warf der Riegel jeden Satz raus,
     der eine Zahl einsetzt -- gemessen 12:38:50 MEZ: 25 Kandidaten, darunter zwei, die die
     Inhaltssperre im ausgelieferten Objekt verlangt. */
-export const glaetteInterpolation = (s) => s.replace(/\$\{[^{}]*\}/g, "N").replace(/\s+/g, " ").trim();
+export const glaetteInterpolation = (s) => s
+  // P107: ein Plural-Anhaengsel ist kein eignes Wort. Gemessen 14:43:42 MEZ am Quelltext:
+  // sieben Ketten der Art `${x === 1 ? "" : "s"}` kleben ein Suffix an; wird daraus ein
+  // eignes `N`, zaehlt der Wortzaehler einen Wort zu viel, und ein Titel von 14 Woertern
+  // rutscht ueber die Kappe -- die Latte fiele ueber eine Zahl, die kein Mensch liest.
+  .replace(/\$\{[^{}]*===\s*1\s*\?\s*""\s*:\s*"(?:s|es)"\s*\}/g, (m) => (/"es"/.test(m) ? "es" : "s"))
+  .replace(/\$\{[^{}]*\}/g, " N ")
+  // P107: ein Satzzeichenklebt an das Zahlwort, weil es im ausgelieferten Text an ihm klebt.
+  // Sonst stünde "offset N : the whole list" mit einem eignen Doppelpunkt-Token, und die
+  // Code-Kante der Sonde wuerfe den Satz -- gemessen 14:46:25 MEZ, als der Diener-Nenner von
+  // 90 auf 89 fiel, genau weil der Liste-Hinweis des Doppelpunkts wegen verschwand.
+  .replace(/\sN\s+([:;,.!?)\]])/g, " N$1")
+  .replace(/\s+/g, " ")
+  .trim();
 
 export function istBenutzersprache(s, optionen = {}) {
   if (s.length < 20) return false;
   const woerter = s.split(/\s+/).filter(Boolean);
   if (woerter.length < 4) return false;
   if (/[A-Za-z0-9._-]+\/[A-Za-z0-9._-]+/.test(s)) return false;         // Pfade
-  if (/=>|\bif\(|\bfor\(|\.\w+\(|\|\||&&/.test(s)) return false;        // starke Codezeichen
+  if (/=>|\bif\s*\(|\bfor\s*\(|\breturn\s*\(|\b(?:continue|break);|\.\w+\(|\|\||&&/.test(s)) return false;        // starke Codezeichen
   // P94: `||` und `&&` kamen neu, gemessen 05:47:59 MEZ im Baum -- ein Quelltextausdruck
   // ("b.anzahl - a.anzahl || (a.label ...") lief durch das alte Raster, weil er klein
   // anfing und kein Semikolon trug, und die Strich-Latte traf ihn als "Satz". Eine
@@ -315,7 +328,33 @@ export function imObjekt(suche, s) {
   if (suche.puffer.includes(Buffer.from(entlastet, "utf8"))) return true;
   const glatt = (t) => t.replace(/\s+/g, " ").trim();
   if (suche.textGlatt.includes(glatt(s)) || suche.textGlatt.includes(glatt(entlastet))) return true;
-  return !!suche.textEntfl && (suche.textEntfl.includes(glatt(s)) || suche.textEntfl.includes(glatt(entlastet)));
+  if (suche.textEntfl && (suche.textEntfl.includes(glatt(s)) || suche.textEntfl.includes(glatt(entlastet)))) return true;
+  // P107, die fuenfte Lesung: die zerlegte Kette. Esbuild schreibt
+  // `zahl(a) + " notes left out — … keeps the first " + zahl(b)` als drei Stuecke, und
+  // kein "N" steht im Bundel als Wort. Gezaehlt 14:37:45 MEZ am ausgelieferten 3.2.186:
+  // 145 von 498 Flaeche-Saetzen entgingen genau deshalb, 130 davon sind ausgeliefert.
+  // Erkannt wird nur, was in der richtigen Folge steht: die Stuecke werden als
+  // geordnete Nah-Suche gebaut, ein Rueckwaerts- oder Querbau gilt nicht. Ein Stueck
+  // unter sechs Zeichen (ein Anfuhrungszeichen, ein Wortteil) wird uebergangen, sonst
+  // waere die Suche zu billig; findet sich gar kein Stueck, gilt die Abweisung.
+  const stuecke = glatt(s)
+    // P107: die Zahl steht am Rand des Satzes ("… answered N." endet mit ihr). Ein Stutzen
+    // nur auf " N " liess das Punktzeichen an ihr kleben, und das Stueck war damit nicht
+    // mehr der Wortlaut im Bundel -- gemessen 14:49:07 MEZ fielen genau so die
+    // Settings-Meldungen durch, die lang und eindeutig ausgeliefert sind.
+    .split(/\bN\b/)
+    .map((x) => x.trim())
+    .filter((x) => x.length >= 6);
+  if (stuecke.length === 0) return false;
+  const flaeche = [suche.textGlatt, suche.textEntfl || ""].filter(Boolean);
+  const entlasteteStuecke = stuecke.map((x) => x.replace(/&amp;/g, "&").replace(/&#39;|&rsquo;/g, "'").replace(/&quot;/g, '"'));
+  const steht = (x) => flaeche.some((text) => text.includes(glatt(x)));
+  // Ein einziges langes Stueck ist die Kette selbst: "N commitments here end after today — …"
+  // hat ausser der Zahl nichts Zerlegtes, und seine Anwesenheit in den Bytes ist der Beweis.
+  if (stuecke.length === 1) return steht(stuecke[0]) || steht(entlasteteStuecke[0]);
+  const baue = (liste) => liste.map((x) => x.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")).join("[\\s\\S]{0,220}?");
+  const muster = new RegExp(baue(stuecke.map(glatt)) + "|" + baue(entlasteteStuecke.map(glatt)));
+  return flaeche.some((text) => muster.test(text));
 }
 
 /** Die einzige Vergleichsrichtung der Kappe. Gemessen 6.11.2026 06:45:22 MEZ am Baum: 348

@@ -28,6 +28,8 @@ import {
   istBenutzersprache,
   satzAusQuelltextMitEtiketten,
   vierWortlauf,
+  imObjekt,
+  glaetteInterpolation,
   NAMEN_LAGEN,
   NAMEN_MINDESTENS,
   wortlautAusText,
@@ -687,5 +689,89 @@ describe("Punkt 106, die Anweisungsform: ein Satz in einem Backtick ist ein Satz
   it("der Census meldet, wie viele Saetze aus der Anweisungsform kommen", () => {
     const laut = spawnSync("node", [path.join(WURZEL, "scripts", "verstaendlichkeit.mjs"), "--nur", "quelltext"], { encoding: "utf8" });
     expect(laut.stdout).toMatch(/davon aus der Anweisungsform: \d+ von \d+ Saetzen \(Werkzeug \d+ von \d+, Diener \d+ von \d+\)/);
+  });
+});
+
+describe("Punkt 107, die Auslieferungsgleichung: eine zerlegte Kette ist kein fremder Satz", () => {
+  /* Gemessen 14:37:45 MEZ am ausgelieferten 3.2.186: die Gleichung verwirft 145 von 498
+     Flaeche-Saetzen (Werkzeug 14, Diener 28). Grund, an der Sonde gelesen
+     (scripts/verstaendlichkeit.mjs:313): sie vergleicht den geglaetteten Wortlaut mit den
+     Bytes. Esbuild schreibt `zahl(a) + " notes left out — … keeps the first " + zahl(b)` als
+     drei Stuecke, und kein "N" steht dort als Wort. 130 davon sind ausgeliefert. */
+
+  const sucheAus = (stuecke: string[]) => {
+    const text = stuecke.join("), \"(\"");
+    const puffer = Buffer.from(text, "utf8");
+    return {
+      puffer,
+      textGlatt: text.replace(/\s+/g, " "),
+      textEntfl: text.replace(/\s+/g, " "),
+    };
+  };
+
+  it("eine in drei Stuecke zerlegte Kette wird erkannt", () => {
+    const suche = sucheAus([
+      "N of N unfolded notes are drawn as dots",
+      " notes left out \u2014 the picture places notes by meaning, and keeps the first ",
+      "Zahl je mit Einheit",
+    ]);
+    const satz = "N notes left out \u2014 the picture places notes by meaning, and keeps the first N";
+    expect(imObjekt(suche, satz), "die Gleichung verwirft einen Satz, der ausgeliefert ist").toBe(true);
+  });
+
+  it("die Stuecke muessen in ihrer Reihenfolge stehen", () => {
+    // Rueckwaerts eingebaut: derselbe Inhalt, eine andere Folge -- das ist nicht der Satz.
+    const suche = sucheAus([
+      "and keeps the first \u2014 by meaning places picture the notes left out notes",
+      "unverfanglicher Quelltext an ganz anderer stelle",
+    ]);
+    const satz = "N notes left out \u2014 the picture places notes by meaning, and keeps the first N";
+    expect(imObjekt(suche, satz), "eine umgekehrte Folge gilt als Auslieferung").toBe(false);
+  });
+
+  it("ein erfundener Satz bleibt abgewiesen", () => {
+    const suche = sucheAus(["notes", "the picture", "keeps the first"]);
+    expect(imObjekt(suche, "N notes left out \u2014 the picture flies to mars, and keeps the first N")).toBe(false);
+  });
+
+  it("eine Interpolation ist ein eignes Wort, auch wenn sie festklebte", () => {
+    // Gemessen 14:38:24 MEZ: 79 von 189 Backtick-Ketten der Flaeche kleben ihre Zahl an ein
+    // Wort ("came through${n}"). Ohne Leerzeichen zaehlt der Wortzaehler die Zahl nicht mit,
+    // und die Gleichung findet ein Stueck, das im Bundel nie so dasteht.
+    expect(glaetteInterpolation("Backup short \u2014 ${a} of ${b} notes came through${c}.")).toBe(
+      "Backup short \u2014 N of N notes came through N."
+    );
+    expect(zaehle(glaetteInterpolation("${a} commitment${b} here end after today")).woerter).toBe(7);
+  });
+
+  it("ein Plural-Suffix ist kein eignes Wort", () => {
+    // Gemessen 14:43:42 MEZ am Quelltext: sieben Ketten der Art
+    // `${x === 1 ? "" : "s"}` haengen ein Plural-Anhaengsel an. Wird das ein eignes `N`,
+    // zaehlt der Wortzaehler einen Wort zu viel, und ein Titel von 14 Woertern rutscht ueber
+    // die Kappe -- die Latte fiele ueber eine Zahl, die kein Mensch liest.
+    expect(glaetteInterpolation('${n} commitment${n === 1 ? "" : "s"} here end after today')).toBe(
+      "N commitments here end after today"
+    );
+    expect(zaehle(glaetteInterpolation('${n} class${n === 1 ? "" : "es"} in the store')).woerter).toBe(5);
+  });
+
+  it("ein einziges langes Stueck gilt als ausgeliefert", () => {
+    const suche = sucheAus(["commitments here end after today — a state on the link, not a step"]);
+    expect(imObjekt(suche, "N commitments here end after today — a state on the link, not a step")).toBe(true);
+  });
+
+  it("der Census nennt, wie viele Baum-Saetze der Gleichung entgehen", () => {
+    const laut = spawnSync("node", [path.join(WURZEL, "scripts", "verstaendlichkeit.mjs")], { encoding: "utf8" });
+    expect(laut.stdout).toMatch(/die Objekt-Gleichung verwirft: Flaeche \d+, Werkzeug \d+, Diener \d+/);
+    // Die Zahl ist eine Latte, kein Bericht. Gemessen 14:51:39 MEZ am ausgelieferten 3.2.186:
+    // Flaeche 4, Werkzeug 5, Diener 1 -- vorher 145 / 14 / 28. Ueber zwoelf pro Lage darf ein
+    // Lauf nicht hinaus, sonst ist die Gleichung wieder eine Behauptung. Die Restgruende sind
+    // benannt: vier Werkzeug-Saetze stammen aus `src/core/chatgpt-import.ts`, das nicht
+    // ausgeliefert wird, und die uebrigen fuenf zerlegen ein Plural-Suffix im Bundel
+    // ("claim" + (n === 1 ? "" : "s") + " not drawn"), was keine zusammenhaengende Kette ist.
+    const zahl = (lage: string) => Number((laut.stdout.match(new RegExp(lage + ": (\\d+) von")) || [0, "999"])[1]);
+    expect(zahl("Flaeche"), `die Gleichung verwirft ${zahl("Flaeche")} Flaeche-Saetze`).toBeLessThanOrEqual(12);
+    expect(zahl("Werkzeug"), `die Gleichung verwirft ${zahl("Werkzeug")} Werkzeug-Saetze`).toBeLessThanOrEqual(12);
+    expect(zahl("Diener"), `die Gleichung verwirft ${zahl("Diener")} Diener-Saetze`).toBeLessThanOrEqual(12);
   });
 });
