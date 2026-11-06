@@ -1,10 +1,10 @@
 {
  "dateien": {
   "README.md": {
-   "saetze": 408,
+   "saetze": 410,
    "absolut": 128,
-   "mit_zeug": 30,
-   "ohne_zeug": 98
+   "mit_zeug": 33,
+   "ohne_zeug": 95
   },
   "SECURITY.md": {
    "saetze": 31,
@@ -26,16 +26,16 @@
   }
  },
  "zusammen": {
-  "saetze": 566,
+  "saetze": 568,
   "absolut": 169,
-  "mit_zeug": 32,
-  "ohne_zeug": 137
+  "mit_zeug": 35,
+  "ohne_zeug": 134
  },
  "abschnitt": {
   "README.md": {
    "absolut": 128,
-   "mit_zeug": 50,
-   "ohne_zeug": 78
+   "mit_zeug": 55,
+   "ohne_zeug": 73
   },
   "SECURITY.md": {
    "absolut": 7,
@@ -55,8 +55,8 @@
  },
  "zusammen_abschnitt": {
   "absolut": 169,
-  "mit_zeug": 51,
-  "ohne_zeug": 118
+  "mit_zeug": 56,
+  "ohne_zeug": 113
  },
  "maschinell_pruefbar": {
   "README.md": {
@@ -115,8 +115,8 @@
   },
   {
    "datei": "README.md",
-   "satz": "- Zoom, pan, draggable nodes, and fit-to-view that always frames the whole graph — the whole graph includes the strip the legend takes at the bottom",
-   "zeuge": false
+   "satz": "At phone width a readability floor can decide the size instead of the frame; when it does, the button says so in its own title, and tests/components/graph-fit-390-keine-verlust.test.ts:73 holds the one promise that survi",
+   "zeuge": true
   },
   {
    "datei": "README.md",
@@ -150,8 +150,8 @@
   },
   {
    "datei": "README.md",
-   "satz": "Without a reachable local LLM it always degrades to ADD — the gate can never block you.",
-   "zeuge": false
+   "satz": "Without a reachable local LLM it always degrades to ADD — the gate can never block you (tests/engine.test.ts:333 runs it with the embedding service at 503 and still lands on ADD without asking the model; :360 feeds it a ",
+   "zeuge": true
   },
   {
    "datei": "README.md",
@@ -175,8 +175,8 @@
   },
   {
    "datei": "README.md",
-   "satz": "It is off until you add a key, and the memory store is never synced anywhere.",
-   "zeuge": false
+   "satz": "Nothing is sent by the app itself, and the store never syncs on its own: the device sync hands you an AES-256-GCM bundle and stops at that answer (server/router/sync.ts:40 returns it to the window, it posts it nowhere), ",
+   "zeuge": true
   },
   {
    "datei": "README.md",
@@ -405,10 +405,6 @@
   },
   {
    "datei": "README.md",
-   "satz": "- Zoom, pan, draggable nodes, and fit-to-view that always frames the whole graph — the whole graph includes the strip the legend takes at the bottom"
-  },
-  {
-   "datei": "README.md",
    "satz": "The second channel switches itself off with the reason when the base holds only one kind of arrival; it never paints everything grey."
   },
   {
@@ -458,10 +454,6 @@
   {
    "datei": "README.md",
    "satz": "All eight tools ship an outputSchema and return structuredContent."
-  },
-  {
-   "datei": "README.md",
-   "satz": "Without a reachable local LLM it always degrades to ADD — the gate can never block you."
   },
   {
    "datei": "README.md",
@@ -526,10 +518,6 @@
   {
    "datei": "README.md",
    "satz": "Your memories are stored only in that encrypted SQLite file — there is no server of mine for them to reach."
-  },
-  {
-   "datei": "README.md",
-   "satz": "It is off until you add a key, and the memory store is never synced anywhere."
   },
   {
    "datei": "README.md",

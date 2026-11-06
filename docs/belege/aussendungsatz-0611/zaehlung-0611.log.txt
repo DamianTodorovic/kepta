@@ -1,4 +1,4 @@
-Zeit: 6.11.2026, 23:02:10 MEZ
+Zeit: 6.11.2026, 23:09:08 MEZ
 Dateien: README.md, SECURITY.md, ROADMAP.md, .github/release-notes.md — Einheiten ueber 25 Zeichen.
 Riss: satz-riss.mjs (P128, markdown-fest). Vorher: Satzende + Leerzeichen ueber dem
 ganzen Text, wodurch Aufzaehlungen, Tabellenzeilen und `<summary>`-Kuelsen als EIN
@@ -9,23 +9,23 @@ Satz zaehlten. Unter beiden Naivlingen, in diesem Lauf nachgerechnet:
 
 | Datei | Saetze | absolute | mit Messzeug | ohne Messzeug | Anteil ohne |
 |---|---|---|---|---|---|
-| `README.md` | 408 | 128 | 30 | 98 | 76.6 % |
+| `README.md` | 410 | 128 | 33 | 95 | 74.2 % |
 | `SECURITY.md` | 31 | 7 | 1 | 6 | 85.7 % |
 | `ROADMAP.md` | 77 | 16 | 0 | 16 | 100.0 % |
 | `.github/release-notes.md` | 50 | 18 | 1 | 17 | 94.4 % |
-| **zusammen** | **566** | **169** | **32** | **137** | **81.1 %** |
+| **zusammen** | **568** | **169** | **35** | **134** | **79.3 %** |
 
-Nenner fuer den Anteil: 169 absolute Behauptungen in 566 Saetzen der vier Texte.
+Nenner fuer den Anteil: 169 absolute Behauptungen in 568 Saetzen der vier Texte.
 
 Zweite Lesung — der Zeuge darf im selben Abschnitt stehen (Absatz, Tabelle, Aufzaehlung):
 | Datei | absolute | mit Messzeug | ohne Messzeug |
 |---|---|---|---|
-| `README.md` | 128 | 50 | 78 |
+| `README.md` | 128 | 55 | 73 |
 | `SECURITY.md` | 7 | 1 | 6 |
 | `ROADMAP.md` | 16 | 0 | 16 |
 | `.github/release-notes.md` | 18 | 0 | 18 |
-| zusammen | 169 | 51 | 118 |
-   mit Messzeug im selben Abschnitt: 51 von 169 = 30.2 % (gegen 32 von 169 = 18.9 % in der engen Lesung).
+| zusammen | 169 | 56 | 113 |
+   mit Messzeug im selben Abschnitt: 56 von 169 = 33.1 % (gegen 35 von 169 = 20.7 % in der engen Lesung).
 
 Die schmalere Klasse — Saetze, die ein Werkzeug widerlegen koennte (never/always/cannot/0 %/100 %):
    README.md                  25 von 128 absoluten
@@ -41,19 +41,19 @@ Die schmalere Klasse — Saetze, die ein Werkzeug widerlegen koennte (never/alwa
    [README.md] ZEUG Local reranking: a deterministic reranker (term coverage, phrase hits, title, tags) refines the fused ranking and is exposed as rerankScore — no network, always on (tests/core/lokaler-rerank.test.ts scores with the embed
    [README.md]      npm run ablation divides by 5 and reports a real P@5 on the same corpus: two metrics, two names, never comparable.
    [README.md] ZEUG It is computed on the server, so no embedding ever travels into the view (tests/rest-semantik.test.ts:70 reads the raw HTTP body and refuses any word like embedding, vektor or vector in it)
-   [README.md]      - Zoom, pan, draggable nodes, and fit-to-view that always frames the whole graph — the whole graph includes the strip the legend takes at the bottom
+   [README.md] ZEUG At phone width a readability floor can decide the size instead of the frame; when it does, the button says so in its own title, and tests/components/graph-fit-390-keine-verlust.test.ts:73 holds the one promise that survi
    [README.md]      The second channel switches itself off with the reason when the base holds only one kind of arrival; it never paints everything grey.
    [README.md] ZEUG *Keep the newer*, *Keep the older* (the other is marked as replaced, never deleted) or *Both are right* (never asked again — tests/enterprise-api.test.ts:227 settles a pair that way, reads the list back empty and shows t
    [README.md] ZEUG A backup of the old file sits right next to it, every other entry stays, and a file that is not plain JSON is never touched (tests/lib/einrichtung.test.ts:42 checks the backup and the untouched neighbours, :61 hands a co
    [README.md] ZEUG Private notes never reach an app or a cloud model — the same two checks apply here: tests/mcp.test.ts refuses a private note at the MCP door even when an agent asks for it by scope, and tests/enterprise-api.test.ts reads
    [README.md] ZEUG Card numbers must pass the Luhn check and IBANs the mod-97 check; dates are never taken for phone numbers (tests/lib/schild.test.ts:39 runs both validators head-on — one shifted IBAN digit and an all-zero card number fai
    [README.md]      Managed deployment & central policies — IT deploys one managed-settings.json (the macOS MDM path, since the app ships macOS only; the Windows and Linux paths are in the same reader for self-built packages — or set KEPTA_
-   [README.md]      Without a reachable local LLM it always degrades to ADD — the gate can never block you.
+   [README.md] ZEUG Without a reachable local LLM it always degrades to ADD — the gate can never block you (tests/engine.test.ts:333 runs it with the embedding service at 503 and still lands on ADD without asking the model; :360 feeds it a 
    [README.md] ZEUG Settings can only narrow what is read, never widen it (tests/scan/regeln.test.ts:190 tries to talk the barrier into reading secrets by ticking file types and is refused; :199 allows a smaller size cap and refuses a bigge
    [README.md]      HTML is turned into text before import, and content that carries no knowledge — markup scaffolding, repeated table rows — never becomes a note
    [README.md] ZEUG The list groups by file, by kind or by period, and *Load more* never cuts a group in half (tests/lib/gruppenfenster.test.ts pins the window rule: a group that starts is shown whole, so a five-part file never appears as t
    [README.md] ZEUG GET /api/memories/:id therefore stays unimplemented until a client needs a body it cannot already reach; until then this table names only the methods the server registers, and tests/doku-plattform.test.ts fails if the tw
-   [README.md]      It is off until you add a key, and the memory store is never synced anywhere.
+   [README.md] ZEUG Nothing is sent by the app itself, and the store never syncs on its own: the device sync hands you an AES-256-GCM bundle and stops at that answer (server/router/sync.ts:40 returns it to the window, it posts it nowhere), 
    [README.md] ZEUG There is nothing to activate and nothing to buy inside the window, so the app also never asks for it — no key field, no counter, no trial clock, no "first day free" and no message about a limit (tests/keine-grenzen.test.
    [README.md]      It was never a lock — but it was counting, and counting needed places to hide the tally (an authenticated state in the database, a keychain anchor, a hidden file).
    [README.md]      The data is never hostage.
@@ -68,7 +68,7 @@ Zwei von ihnen nachgegriffen, im selben Lauf:
    "no screenshot of it here yet" (Semantic-Ansicht): README nennt 20 Bilder (12 in Markdown, 8 als <img alt>), davon 0 mit "Semantic"; der Satz steht noch da — haltbar.
    "no embedding ever travels into the view": 8 von 8 benannten Flaechen-Dateien gelesen, zusammen 0 Nennung(en) "embedding"; das Wort liegt in 34 Test-Dateien des Repos. Fehlende Dateien: keine.
 
-Die 137 ohne Messzeug, in Lesereihenfolge der Dateien (erste 40):
+Die 134 ohne Messzeug, in Lesereihenfolge der Dateien (erste 40):
    [README.md] Your AI forgets you after every chat.
    [README.md] Desktop app · no cloud · no account · encrypted at rest SQLite · hybrid retrieval · knowledge graph · MCP
    [README.md] Every entry is a node, every connection an edge — real connections drawn solid, mere similarity dashed.
@@ -101,7 +101,6 @@ Die 137 ohne Messzeug, in Lesereihenfolge der Dateien (erste 40):
    [README.md] Meaning search can be switched off; the result slider runs 5 · 10 · 20 · 50 · 100 · 250 · All, and the index says how many notes match in total
    [README.md] npm run ablation divides by 5 and reports a real P@5 on the same corpus: two metrics, two names, never comparable.
    [README.md] - A concept in the picture is a shared one: a term that exists only because it repeats the title of the single note carrying it is an echo of your filing, not knowledge, and the graph leaves it out — the concept count is
-   [README.md] - Zoom, pan, draggable nodes, and fit-to-view that always frames the whole graph — the whole graph includes the strip the legend takes at the bottom
    [README.md] The second channel switches itself off with the reason when the base holds only one kind of arrival; it never paints everything grey.
    [README.md] Schema panel — what the store holds, counted: kinds of note, concepts, and every claim type by name.
    [README.md] Settings live in the encrypted data directory, not in browser storage — the desktop shell binds to a free port that changes on every launch, and localStorage is keyed by origin, so anything kept there was gone after a re
@@ -109,3 +108,4 @@ Die 137 ohne Messzeug, in Lesereihenfolge der Dateien (erste 40):
    [README.md] Careful on purpose: only facts and how-tos are compared, both sentences must share their meaningful words, notes from the same file stay out, and so do the parts of a split file (README — 5/17), a note's source line and 
    [README.md] Connect in one click — K3PTA finds the AI apps already installed (Claude Desktop, Claude Code, Cursor, Windsurf, VS Code, Gemini CLI, Cline, Roo Code) and adds itself to their MCP settings, pointing to the server inside 
    [README.md] Zed, Codex CLI, Continue and every other MCP client get the exact snippet to paste.
+   [README.md] Audit log — every access to the knowledge base, by you, by each AI app and by scripts, with exactly the notes an app got to see.

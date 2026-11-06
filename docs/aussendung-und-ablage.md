@@ -738,6 +738,56 @@ Ein Anteil, der steigt, während der Nenner fällt, ist kein Fortschrittsbeweis 
 oben, und die Pinne in `tests/aussendungs-riss.test.ts` hält 32 von 169 fest.
 
 
+## 22. P134 — Der Zensus findet eine zweite Über-behauptung, und sie widerspricht einem andern Satz desselben Blatts (6.11. 23:09 MEZ)
+
+Drei Sätze geprüft, nicht drei Sätze bewaffnet. **Zwei von ihnen waren zu stark.**
+
+### README.md:297 — „the memory store is never synced anywhere"
+
+Das Blatt bietet auf Zeile 355 ausdrücklich *Device Sync* als Werkzeug an, das ohne Grenzen läuft.
+Ein Satz, der Sync verbietet und ein Satz, der Sync zeigt, können nicht beide wahr sein. Die Datei
+sagt, was gilt: `server/router/sync.ts:40` antwortet dem Fenster mit einem AES-256-GCM-Bundle und
+**postet es nirgendwohin** — der Weg auf das zweite Gerät ist des Nutzers Hand (USB, Ordner, Mail),
+steht so im Kopfkommentar der Datei (Zeilen 1-5). Der Satz nach aussen heißt jetzt die schwächere,
+wahre Dinge: nichts geht von selbst hinaus; das Bundle hält keinen Klartext und weist falsche
+Passphrase wie Manipulation zurück (`tests/praxissync.test.ts:101`); ein Voll-Export trägt *alle*
+Notizen und nicht eine Seite davon (`:60`, über 100 Stück hinweg gepinnt).
+
+### README.md:145 — „fit-to-view that always frames the whole graph"
+
+Bei Telefonbreite entscheidet der **Lesbarkeits-Boden** über die Größe, nicht der Rahmen — genau
+dafür existiert `tests/components/graph-fit-390-keine-verlust.test.tsx:73`: er verlangt für 34 Notizen,
+dass ein Druck *nie weniger* zeigt als die Ansicht vorher, und er fährt nur, wenn der Knopf-titel in
+diesem Lauf den Boden als Entscheider nennt (`:88` ist die Drift-Kontrolle, die Zahl und Bild an
+derselben Weltlage liest). „always frames" war also falsch, „never gives notes back" ist gemessen.
+Der Satz nennt jetzt beides: den Boden als möglichen Entscheider und die eine Zusicherung, die beide
+Fälle übersteht.
+
+### README.md:190 — das Gate, nichts gebaut
+
+„Without a reachable local LLM it always degrades to ADD — the gate can never block you" war bereits
+gemessen: `tests/engine.test.ts:333` fährt das Gate bei 503 des Einbettdienstes und landet auf ADD,
+**ohne das Modell zu fragen**; `:360` füttert ihm ein Nicht-JSON und eine unbekannte Entscheidung —
+beide degradieren auf ADD. Kosten: ein Klammerzusatz.
+
+### Die Zählung
+
+Zensus 23:09:08 MEZ, Exit 0: 568 Einheiten, 169 absolute Behauptungen, **35 mit Messzeug im selben
+Satz = 20,7 %** (vorher 32 = 18,9 %), 134 ohne = 79,3 %. Abschnittslesung 56 = 33,1 %. Schmale Klasse
+29, davon **18** mit Messzeug → **11 Arbeit**. Die Reihe über sieben Schläge: 4, 5, 8, 11, 14, 15, 18.
+
+Erstmals übersteigt der Anteil 20 %, und die Kante in `tests/aussendungs-riss.test.ts` ist auf
+> 0,20 gehoben — eine Latte, die ein Rückschritt jetzt meldet. Der Nenner selbst ist über die Linie gewandert: 129 (P122) → 132 (P127, P128) → 172 (P129) →
+170 (P130-P132) → 169 (P133, P134). Das ist keine Verbesserung der Lage, sondern die Korrektur
+eines zu engen Risses — eine Anteilzahl ohne ihren Nenner wäre hier nicht lesbar gewesen.
+
+### Warum das keine Kleinarbeit ist
+
+P132 hatte die Regel gesetzt: erst die vorhandenen Wachen durchsuchen. P133 fand damit eine falsche
+Zahl, P134 findet zwei über-strichene Zusagen — eine davon im Widerspruch zu einem anderen Satz
+desselben Blatts. Eine Behauptung, die niemand prüft, altert in beide Richtungen: sie kann falscher
+werden als die Maschine und unvereinbar mit dem eigenen Text.
+
 ## Fehler in diesem Schlag, die ich selbst gefunden habe
 
 1. `du -sk /tmp` meldete 0 GiB Stapel, weil `/tmp` ein Symlink ist; der erste Lauf schrieb diese Null.
@@ -866,3 +916,8 @@ oben, und die Pinne in `tests/aussendungs-riss.test.ts` hält 32 von 169 fest.
 25. **Zwei Zeitziffern geraten, statt gelesen.** Der erste Entwurf der Schild-Zitate nannte
     `schild.test.ts:31` und `:36`; die Fällen sitzen auf :34 und :39. Vor dem Committen nachgesehen —
     die Berichtigung steht im Text, nicht im Commit.
+26. **Eine Zahlenreihe aus dem Kopf statt aus den Papieren.** Ich schrieb die Nenner-Folge
+    „129 → 132 → 172 → 172 → 170 → 169 → 169" — die 172 zweimal, weil ich Schläge miteinander
+    verwechselte. Vor dem Committen berichtigt auf die tatsächlich gemessenen Stände (129 / 132 /
+    172 / 170 / 169) mit ihren Schlagsnummern. Derselbe Grund wie 16.10. im Wachbuch: eine Reihe,
+    die ich nicht nachgezählt habe, ist keine Messung, sondern ein Gedächtnis.
