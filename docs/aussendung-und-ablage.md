@@ -212,7 +212,47 @@ Embedding-Sonde traf zuerst vier Dateinamen, von denen drei nicht existieren —
 nicht existierenden Pfaden ist keine Messung, deshalb stehen die Dateien jetzt einzeln da und das
 Artefakt meldet fehlende Pfade selbst.
 
-## 10. Was daraus folgt
+## 10. Die Kette deckt Schreibwege, nicht Lesewege (P123, 20:26 MEZ)
+
+Der riskanteste Satz aus der Queue von Abschnitt 9 stand in README.md:91: „every AI access is
+written to a tamper-evident audit log you can check and export". Gemessen, nicht gegoogelt —
+`tests/kette-deckt-nur-schreibwege.test.ts`, fünf Fälle, jede Zahl aus dem eignen Lauf gegen
+`createApp(store)` in einer Kapsel mit eigenem HOME:
+
+| Zugang | Ketteneintrag danach |
+|---|---|
+| `POST /api/memories` (Notiz schreiben) | **+1** |
+| `GET /api/memories` und `GET /api/memories/search` (zwei Lesewege) | **+0** |
+| `POST /api/mcp/search` (Suche durch die Agententür) | **+1** |
+
+Der Mechanismus dazu: geschrieben wird die Kette aus zwei Quellen: der Regeltabelle in `server/router/audit.ts`
+(14 Mutationen, aufgerufen an Zeile 81; Zeile 101 protokolliert den CSV-Export selbst) und **neun**
+ausdrücklichen Schreibstellen in sechs Dateien — `audit.ts:81`, `audit.ts:101`, `briefing.ts:41/61/71`,
+`chat.ts:86`, `clients.ts:43`, `mcp.ts:80` (die Suche durch die HTTP-Tür), `schild.ts:47`. Dazu kommt
+`src/lib/mcpwache.ts:121` mit `protokolliereMcp` für jedes Ereignis durch die MCP-Tür.
+`src/core/store.ts:584` hätte einen Senk für Leseereignisse — die App setzt ihn nie, der Default
+ist `NOOP_SINK` (`src/core/extensions.ts:136`, `:162`). Also: **Lesen über HTTP hinterlässt nichts
+in der Kette**, und der README-Satz war breiter als die Maschine.
+
+Geheilt am Wort, nicht am Code (ein Code-Flicken wäre eine zweite ungetauschte Fassung): der Satz
+nennt jetzt die Kanäle, die gemessen sind — jede Änderung an der Wissensbasis und jeder Ruf durch
+die MCP-Tür, ihre Suchen eingeschlossen — und sagt offen, dass ein nackter HTTP-Leseweg keinen
+Ketten-Eintrag hinterlässt. Die Wache darüber (`tests/kette-deckt-nur-schreibwege.test.ts:80-99`)
+liest die vier Aussendungstexte, verlangt, dass der Satz überhaupt vorkommt (sonst ist sie taub),
+und verbietet die alte Form. Vor der Heilung rot: 1 Satz; nachher grün, und „every AI access"
+steht in keinem der vier Texte mehr — auch nicht im Kern-Repo (dort gemessen: 0 Funde).
+
+Ein Zensusfehler auf dem Weg dahin, und er ist die alte Klasse: mein erster Abgleich der
+dokumentierten Endpunkte gegen die Routen meldete „2 dokumentiert, aber keine Route". Beide
+Stellen waren Sonden-Artefakte — das Muster `(GET|POST|…) /[a-z0-9/:_-]+` brach an dem großen „I"
+von `:standId` ab und erzeugte den Geisterpfad `…/stande/:stand`, und der Treffer
+`GET /api/memories/:id` stand in README.md:253 genau in dem Satz, der erklärt, dass diese Route
+bewusst nicht existiert. Richtig gemessen (Parameter zu Segmenten normalisiert): 16 dokumentierte
+Formen, 14 mit Route, 1 bewusste Gegenprobe, 1 Abschneider. Die Tabelle war gesund; der Zähler
+krank — und hätte ich ihm geglaubt, hätte ich eine richtige Vertragszeile kaputt gemacht.
+
+## 11. Was daraus folgt
+
 
 Der Satz „die Aussendung ist geprüft" trägt nicht: 19 von 129 absoluten Behauptungen nennen ihr
 Messzeug im selben Satz, und die schmalen 30 sind die Arbeit. Angefangen wird mit den beiden, die
