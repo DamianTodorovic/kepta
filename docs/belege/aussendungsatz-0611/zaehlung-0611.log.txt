@@ -1,38 +1,38 @@
-Zeit: 7.11.2026, 00:13:40 MEZ
+Zeit: 7.11.2026, 00:35:29 MEZ
 Dateien: README.md, SECURITY.md, ROADMAP.md, .github/release-notes.md — Einheiten ueber 25 Zeichen.
 Riss: satz-riss.mjs (P128, markdown-fest). Vorher: Satzende + Leerzeichen ueber dem
 ganzen Text, wodurch Aufzaehlungen, Tabellenzeilen und `<summary>`-Kuelsen als EIN
 Satz zaehlten. Unter beiden Naivlingen, in diesem Lauf nachgerechnet:
-  51 Einheiten trugen nach dem Punkt-Naivling noch Block-Struktur,
+  52 Einheiten trugen nach dem Punkt-Naivling noch Block-Struktur,
   116 nach dem zeilenweisen. Ein Zitat aus einer frueheren Runde stünde hier
   nicht — die Zahl soll diejenige sein, die dieser Stand der vier Texte hergibt.
 
 | Datei | Saetze | absolute | mit Messzeug | ohne Messzeug | Anteil ohne |
 |---|---|---|---|---|---|
-| `README.md` | 411 | 129 | 44 | 85 | 65.9 % |
+| `README.md` | 412 | 130 | 46 | 84 | 64.6 % |
 | `SECURITY.md` | 33 | 9 | 4 | 5 | 55.6 % |
 | `ROADMAP.md` | 77 | 16 | 4 | 12 | 75.0 % |
 | `.github/release-notes.md` | 50 | 18 | 1 | 17 | 94.4 % |
-| **zusammen** | **571** | **172** | **53** | **119** | **69.2 %** |
+| **zusammen** | **572** | **173** | **55** | **118** | **68.2 %** |
 
-Nenner fuer den Anteil: 172 absolute Behauptungen in 571 Saetzen der vier Texte.
+Nenner fuer den Anteil: 173 absolute Behauptungen in 572 Saetzen der vier Texte.
 
 Zweite Lesung — der Zeuge darf im selben Abschnitt stehen (Absatz, Tabelle, Aufzaehlung):
 | Datei | absolute | mit Messzeug | ohne Messzeug |
 |---|---|---|---|
-| `README.md` | 129 | 56 | 73 |
+| `README.md` | 130 | 56 | 74 |
 | `SECURITY.md` | 9 | 3 | 6 |
 | `ROADMAP.md` | 16 | 0 | 16 |
 | `.github/release-notes.md` | 18 | 0 | 18 |
-| zusammen | 172 | 59 | 113 |
-   mit Messzeug im selben Abschnitt: 59 von 172 = 34.3 % (gegen 53 von 172 = 30.8 % in der engen Lesung).
+| zusammen | 173 | 59 | 114 |
+   mit Messzeug im selben Abschnitt: 59 von 173 = 34.1 % (gegen 55 von 173 = 31.8 % in der engen Lesung).
 
 Die schmalere Klasse — Saetze, die ein Werkzeug widerlegen koennte (never/always/cannot/0 %/100 %):
-   README.md                  26 von 129 absoluten
+   README.md                  27 von 130 absoluten
    SECURITY.md                2 von 9 absoluten
    ROADMAP.md                 1 von 16 absoluten
    .github/release-notes.md   2 von 18 absoluten
-   zusammen 31 von 172 — der Rest ist Produktcopy ("no password to type"), keine Behauptung ueber eine Maschine.
+   zusammen 32 von 173 — der Rest ist Produktcopy ("no password to type"), keine Behauptung ueber eine Maschine.
    Die Liste, in Lesereihenfolge, mit dem Marker „Zeug", wenn derselbe Satz schon ein Messzeug nennt:
    [README.md] ZEUG While it cools at 3 000 notes a few pairs still touch for a moment; tests/lib/graphLayout.test.ts:2455-2458 pins that funnel at ≤ 40 pairs by step 250, ≤ 40 again by step 310 and zero by step 380, so no sentence here say
    [README.md] ZEUG On macOS the key never sits in a file; on Windows it is the DPAPI-sealed database-key.dpapi in the data folder, readable only under the same account, and a headless install with KEPTA_DB_KEY keeps it in the process envir
@@ -40,6 +40,7 @@ Die schmalere Klasse — Saetze, die ein Werkzeug widerlegen koennte (never/alwa
    [README.md] ZEUG Private notes — one switch in the editor: a private note is never shown to an AI app and never sent to a cloud model — in the app (tests/mcp.test.ts refuses it over MCP even when an agent asks by scope; tests/enterprise-
    [README.md] ZEUG Expired entries are marked, never quietly hidden (tests/engine.test.ts:78-83 asks for an expired note, gets it back with expired: true, and sees it ranked below the fresh one rather than missing)
    [README.md] ZEUG Local reranking: a deterministic reranker (term coverage, phrase hits, title, tags) refines the fused ranking and is exposed as rerankScore — no network, always on (tests/core/lokaler-rerank.test.ts scores with the embed
+   [README.md] ZEUG Meaning search can be switched off, and the result slider runs 5 · 10 · 20 · 50 · 100 · 250 · All — tests/components/Dashboard.test.tsx:206 drives all seven positions of the rendered control and reads each label back, te
    [README.md] ZEUG npm run ablation divides by 5 and reports a real P@5 on the same corpus: two metrics, two names, never comparable (tests/eval-metrik.test.ts:37 pins the capped divisor, :55 pins the division by five and the P@5 name, :48
    [README.md] ZEUG It is computed on the server, so no embedding ever travels into the view (tests/rest-semantik.test.ts:70 reads the raw HTTP body and refuses any word like embedding, vektor or vector in it)
    [README.md] ZEUG At phone width a readability floor can decide the size instead of the frame; when it does, the button says so in its own title, and tests/components/graph-fit-390-keine-verlust.test.ts:73 holds the one promise that survi
@@ -70,7 +71,7 @@ Zwei von ihnen nachgegriffen, im selben Lauf:
    "no screenshot of it here yet" (Semantic-Ansicht): README nennt 20 Bilder (12 in Markdown, 8 als <img alt>), davon 0 mit "Semantic"; der Satz steht noch da — haltbar.
    "no embedding ever travels into the view": 8 von 8 benannten Flaechen-Dateien gelesen, zusammen 0 Nennung(en) "embedding"; das Wort liegt in 34 Test-Dateien des Repos. Fehlende Dateien: keine.
 
-Die 119 ohne Messzeug, in Lesereihenfolge der Dateien (erste 40):
+Die 118 ohne Messzeug, in Lesereihenfolge der Dateien (erste 40):
    [README.md] Your AI forgets you after every chat.
    [README.md] Desktop app · no cloud · no account · encrypted at rest SQLite · hybrid retrieval · knowledge graph · MCP
    [README.md] Every entry is a node, every connection an edge — real connections drawn solid, mere similarity dashed.
@@ -95,7 +96,6 @@ Die 119 ohne Messzeug, in Lesereihenfolge der Dateien (erste 40):
    [README.md] URL clipper with SSRF protection (IP literals in every notation, DNS resolution, every redirect hop checked); navigation lines, "Skip to main content" and cookie banners are stripped on import
    [README.md] Import your AI history: bring your ChatGPT or Claude data export here (*Settings → Data management → Import your AI history*): every conversation with at least one answer becomes a searchable note with its original date,
    [README.md] Persistent embeddings via Ollama (nomic-embed-text), computed by a background queue instead of re-embedding on every query
-   [README.md] Meaning search can be switched off; the result slider runs 5 · 10 · 20 · 50 · 100 · 250 · All, and the index says how many notes match in total
    [README.md] - A concept in the picture is a shared one: a term that exists only because it repeats the title of the single note carrying it is an echo of your filing, not knowledge, and the graph leaves it out — the concept count is
    [README.md] Schema panel — what the store holds, counted: kinds of note, concepts, and every claim type by name.
    [README.md] Settings live in the encrypted data directory, not in browser storage — the desktop shell binds to a free port that changes on every launch, and localStorage is keyed by origin, so anything kept there was gone after a re
@@ -111,3 +111,4 @@ Die 119 ohne Messzeug, in Lesereihenfolge der Dateien (erste 40):
    [README.md] All eight tools ship an outputSchema and return structuredContent.
    [README.md] Model discovery for Ollama and LM Studio in one click, no key required
    [README.md] Source citations: every answer shows which memories it used
+   [README.md] Duplicate review — every group side by side, one click to keep the richest copy or dismiss the pair for good.

@@ -1,10 +1,10 @@
 {
  "dateien": {
   "README.md": {
-   "saetze": 411,
-   "absolut": 129,
-   "mit_zeug": 44,
-   "ohne_zeug": 85
+   "saetze": 412,
+   "absolut": 130,
+   "mit_zeug": 46,
+   "ohne_zeug": 84
   },
   "SECURITY.md": {
    "saetze": 33,
@@ -26,16 +26,16 @@
   }
  },
  "zusammen": {
-  "saetze": 571,
-  "absolut": 172,
-  "mit_zeug": 53,
-  "ohne_zeug": 119
+  "saetze": 572,
+  "absolut": 173,
+  "mit_zeug": 55,
+  "ohne_zeug": 118
  },
  "abschnitt": {
   "README.md": {
-   "absolut": 129,
+   "absolut": 130,
    "mit_zeug": 56,
-   "ohne_zeug": 73
+   "ohne_zeug": 74
   },
   "SECURITY.md": {
    "absolut": 9,
@@ -54,14 +54,14 @@
   }
  },
  "zusammen_abschnitt": {
-  "absolut": 172,
+  "absolut": 173,
   "mit_zeug": 59,
-  "ohne_zeug": 113
+  "ohne_zeug": 114
  },
  "maschinell_pruefbar": {
   "README.md": {
-   "absolut": 129,
-   "maschinell": 26
+   "absolut": 130,
+   "maschinell": 27
   },
   "SECURITY.md": {
    "absolut": 9,
@@ -76,7 +76,7 @@
    "maschinell": 2
   }
  },
- "summe_pruefbar": 31,
+ "summe_pruefbar": 32,
  "pruefbar_liste": [
   {
    "datei": "README.md",
@@ -106,6 +106,11 @@
   {
    "datei": "README.md",
    "satz": "Local reranking: a deterministic reranker (term coverage, phrase hits, title, tags) refines the fused ranking and is exposed as rerankScore — no network, always on (tests/core/lokaler-rerank.test.ts scores with the embed",
+   "zeuge": true
+  },
+  {
+   "datei": "README.md",
+   "satz": "Meaning search can be switched off, and the result slider runs 5 · 10 · 20 · 50 · 100 · 250 · All — tests/components/Dashboard.test.tsx:206 drives all seven positions of the rendered control and reads each label back, te",
    "zeuge": true
   },
   {
@@ -380,10 +385,6 @@
   {
    "datei": "README.md",
    "satz": "Persistent embeddings via Ollama (nomic-embed-text), computed by a background queue instead of re-embedding on every query"
-  },
-  {
-   "datei": "README.md",
-   "satz": "Meaning search can be switched off; the result slider runs 5 · 10 · 20 · 50 · 100 · 250 · All, and the index says how many notes match in total"
   },
   {
    "datei": "README.md",

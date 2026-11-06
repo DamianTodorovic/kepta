@@ -107,7 +107,7 @@ describe("P129, der Wortschatz: ein benanntes Instrument ist ein Messzeug", () =
     expect(zeug.test(einheiten[0]), "das Messzeug steht im selben Satz, wird aber nicht gesehen").toBe(true);
   });
 
-  it("am echten Bestand: 53 von 172 absoluten Behauptungen nennen ihr Messzeug", () => {
+  it("am echten Bestand: 55 von 173 absoluten Behauptungen nennen ihr Messzeug", () => {
     let absoluten = 0;
     let mit = 0;
     for (const datei of DATEIEN) {
@@ -118,8 +118,12 @@ describe("P129, der Wortschatz: ein benanntes Instrument ist ein Messzeug", () =
         if (zeug.test(s)) mit++;
       }
     }
-    expect(absoluten, "der Nenner ist nicht mehr 172 — der Riss oder die Klasse hat sich bewegt").toBe(172);
-    expect(mit, `${mit} von ${absoluten} nennen ein Messzeug — erwartet war 53`).toBe(53);
+    // Gemessen 6.11. 00:31:24 MEZ mit dem Zaehler selbst (docs/belege/aussendungsatz-0611/
+    // zaehlung-0611.log.txt): P141 teilte README.md:128 in zwei Saetze und bewaffnete den einen —
+    // Nenner 173, Zaehler 55. Der Bruch wachst, weil Zeugen geschrieben werden; der Nenner wachst
+    // mit, weil ein Satz, der zwei Behauptungen traegt, in zwei Saetze gehoert.
+    expect(absoluten, "der Nenner ist nicht mehr 173 — der Riss oder die Klasse hat sich bewegt").toBe(173);
+    expect(mit, `${mit} von ${absoluten} nennen ein Messzeug — erwartet war 55`).toBe(55);
     expect(mit / absoluten, "Anteil ohne Nenner ist ein Urteil").toBeGreaterThan(0.3);
     expect(maschine.source.length, "die schmale Klasse wurde nicht mitgeändert").toBeGreaterThan(10);
   });

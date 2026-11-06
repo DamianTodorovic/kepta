@@ -203,11 +203,65 @@ describe("Dashboard: Suche", () => {
     await waitFor(() => expect(container.textContent).not.toMatch(/Kochen/), { timeout: 3000 });
   });
 
-  it("hat einen Ergebnisregler, der bis 'Alle' geht", async () => {
+  it("der Ergebnisregler laeuft ueber genau die sieben Stufen, die README.md:128 nennt", async () => {
+    // Vorher war hier die einzige Behauptung am Regler: `Number(regler.max) > 0`. Die prueft,
+    // dass es einen Regler gibt — nicht, welche Stufen er hat. README.md:128 nennt sieben Zahlen,
+    // und diese sieben sind das Versprechen, also wird hier jede Position gefahren und ihr
+    // Etikett gelesen. Der Fall kann verlieren: eine Stufe aus `RESULT_STOPS` genommen, und die
+    // letzte Position zeigt nicht mehr "All" (Biss im Feldzug-Papier zu P141).
     const { container } = await zeige([note()]);
     const regler = container.querySelector('input[aria-label="Number of results shown"]') as HTMLInputElement;
     expect(regler).not.toBeNull();
-    expect(Number(regler.max)).toBeGreaterThan(0);
+    const etikett = () => regler.parentElement?.querySelector(".chip")?.textContent?.trim();
+    expect(Number(regler.min)).toBe(0);
+    expect(Number(regler.max)).toBe(6); // sieben Positionen, Schrittweite 1
+    expect(Number(regler.step)).toBe(1);
+
+    const erwartet = ["5", "10", "20", "50", "100", "250", "All"];
+    for (let position = 0; position <= 6; position++) {
+      await act(async () => {
+        fireEvent.change(regler, { target: { value: String(position) } });
+      });
+      expect(etikett(), `Position ${position} zeigt ein andres Etikett als versprochen`).toBe(erwartet[position]);
+    }
+    // Rueckweg: die erste Position wieder greifbar, sonst haette die letzte Stufe die Liste gefressen.
+    await act(async () => {
+      fireEvent.change(regler, { target: { value: "0" } });
+    });
+    expect(etikett()).toBe("5");
+  });
+
+  it("der Such-Streifen nennt beide Zahlen: was gezeigt wird und was die Tuer zaehlte", async () => {
+    const user = userEvent.setup();
+    // Die Tuer schickt drei Treffer und sagt, dass es insgesamt sieben waren. Der Streifen darf
+    // nicht die eine Zahl fuer zwei Dinge fuehren (Punkt 4: dort stand "16 hits" ueber einer
+    // Liste mit 261 Zeilen), also nennt er beide — und die erste muss die Zahl der Karten sein.
+    const drei = [note({ title: "Docker" }), note({ title: "Kochdocker" }), note({ title: "Dockerausbau" })];
+    vi.stubGlobal("fetch", vi.fn(async (url: string) => {
+      if (url.includes("/api/search")) {
+        return new Response(JSON.stringify({
+          results: drei.map((m, i) => ({
+            memory: m, score: 0.9 - i * 0.1, cosineScore: 0.8 - i * 0.1, bm25Score: 1, rawBm25: 1,
+            matchedTerms: ["docker"],
+          })),
+          total: 7,
+        }), { status: 200 });
+      }
+      if (url.includes("/api/memor")) return new Response(JSON.stringify(drei), { status: 200 });
+      return new Response("{}", { status: 200 });
+    }));
+    const { container } = await zeige(drei);
+    await user.type(screen.getByPlaceholderText(/Search your memory/), "docker");
+
+    const streifen = await waitFor(() => {
+      const e = [...container.querySelectorAll(".chip")].find((c) => /of 7 hits/.test(c.textContent ?? ""));
+      if (!e) throw new Error("der Streifen nennt die Zahl der Tuer nicht");
+      return e as HTMLElement;
+    }, { timeout: 4000 });
+    expect(streifen.textContent).toMatch(/3 of 7 hits/);
+    // Die erste Zahl ist keine zweite Behauptung: sie zaehlt dieselben Karten, die darunter stehen.
+    expect(container.textContent).toMatch(/Docker/);
+    expect(container.textContent).toMatch(/Dockerausbau/);
   });
 });
 

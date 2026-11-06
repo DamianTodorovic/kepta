@@ -1030,6 +1030,62 @@ ein absolutes Wort enthält** („never sits in a file"). Die Korrektur einer Ü
 nächste in dieselbe Zeile — der Zensus meldet das, statt es zu glätten. Anteil und Nenner stehen
 darum immer zusammen; die Pinne hält 53 von 172, Kante > 0,30.
 
+## 29. P141 — Der Regler, dessen sieben Stufen niemand zählte (7.11. 00:26 MEZ)
+
+README.md:128 nannte sieben Zahlen — „the result slider runs 5 · 10 · 20 · 50 · 100 · 250 · **All**".
+Die Gegenprobe in der Suite war leer: `grep -rln "RESULT_STOPS" tests/` meldete keine einzige Datei,
+und der eine Regler-Fall (`tests/components/Dashboard.test.tsx:206`) prüfte `Number(regler.max) > 0`.
+Das ist die Anwesenheit eines Reglers, nicht seine Skala. Ein Instrument, das sieben Stufen nicht von
+vier unterscheidet, lässt die Doku grün, wenn die Hälfte der Stufen verschwindet.
+
+**Erstes Instrument: `tests/lib/treffer-stufen.test.ts`, sieben Fälle.** `:47` zählt die Liste selbst
+(fünf, zehn, zwanzig, fünfzig, hundert, zweihundertfünfzig, und die null als „alles"); `:56` hält jede
+der sieben Werte gegen das Normalisieren; `:67` die Rundung nach oben (1→5, 6→10, 11→20, 21→50,
+51→100, 101→250); `:76` die Richtung für alles, was keine Stufe ist — 251, 5000, −3, NaN, ±Infinity
+fallen auf **fünf**, nie auf „alles". Die Richtung ist der Grund, dass der Fall existiert: eine Grenze,
+die niemand gesetzt hat, darf nicht in „zeige alles" kippen. `:88` dreht den Speicher um (geschrieben
+und gelesen ist dieselbe Stufe), `:98` fängt eine Zahl, die keine Stufe ist (eine 7 im localStorage
+würde dem Regler den Boden unter den Füssen wegziehen: `indexOf` = −1, Etikett „5", Schnitt 7), `:110`
+das Fenster-Event, mit dem die zweite Fläche nachzieht.
+
+**Zweites Instrument: die Fläche gefahren.** `:206` ersetzt den kahlen Fall statt ihn zu duplizieren:
+`fireEvent.change` auf jede der sieben Positionen, nach jeder Bewegung das Etikett gelesen — 5, 10,
+20, 50, 100, 250, All — dazu min 0, max 6, step 1 und der Rückweg. `:234` ist neu und zeugt die
+zweite Hälfte des Satzes: die Tür schickt drei Treffer und sagt total 7, der Streifen muss „3 of 7
+hits" nennen (`src/components/Dashboard.tsx:1818`; der Defekt, gegen den das schreibt, steht im
+Quelltext bei `:1805` — dort führte die Fläche zwei Zahlen für dieselbe Sache).
+
+**Biss, beide Male an der Produktion, beide Male zurückgebaut.** Patch: `250` aus `RESULT_STOPS`.
+Fenster 1,5 s, dann `cp` aus der eigenen Sicherung, `cmp` meldet bytegleich, `git diff` dazu leer.
+
+| Lauf | Zeit | Ergebnis |
+|---|---|---|
+| lib-Datei, erste Fassung | 00:27:15 | 2 rot, 5 grün — **zu wenig** |
+| lib-Datei, nach meinem Umbau | 00:27:40 | 3 rot, 4 grün (`:47`, `:56`, `:67`) |
+| Flächen-Fall | 00:30:43 | 1 rot: `expected 5 to be 6` — der Regler verliert eine Position |
+
+Der erste Bisslauf war der Fund, nicht das Ergebnis: `:56` hatte über `RESULT_STOPS` selbst
+geschleift, und eine Schleife über die Liste, die sie prüft, kann ein entferntes Fach nicht vermissen.
+Deshalb stehen die sieben Werte jetzt als Zahlen im Fall. Das ist die Lehre „Wache: ableiten statt
+abschreiben" in der Gegenrichtung: **eine Wache darf ihre Grundgesamtheit nicht aus dem Prüfling
+nehmen.**
+
+**Die Zählung danach** — Zensus 00:31:24 MEZ, Exit 0: 572 Einheiten, **173** absolute Behauptungen,
+**55** mit Messzeug = 31,8 % (vorher 53 von 172 = 30,8 %), 118 ohne. Abschnittslesung 59 = 34,1 %.
+Schmale Klasse **32**, davon **27** mit Zeugen → **5 Arbeit**, unverändert; die fünf sind
+wandgebunden (MDM/Enterprise, ein früherer Stand, Windows/Linux-Bau, ROADMAP asOf, zwei
+Release-Notes-Sätze).
+
+Der Nenner wuchs um eins, der Zähler um eins, und das ist die Berichtigung, nicht ein Nebenprodukt:
+README.md:128 war **ein** Satz, der **zwei** Behauptungen trug — die Stufen des Reglers und die
+Gesamtzahl der Treffer. Ein Zeuge, der eine davon stützt, darf nicht die ganze Zeile bedecken (das
+war mein Fehler 27 in P135). Jetzt sind es zwei Sätze, und der erste nennt drei Messzeuge, der zweite
+eines. Die hintere Hälfte war nicht widerlegt, aber **ungenau bezeichnet**: „the index says how many
+notes match in total" schreibt dem Index eine Auskunft zu, die der Streifen über der Liste gibt
+(`src/components/Dashboard.tsx:1818`), und was dort steht, ist ein Paar (gezeigt / insgesamt), nicht
+eine Totalzahl. Die Fläche sagt „3 of 7 hits", und so steht es jetzt da.
+
+
 ## Fehler in diesem Schlag, die ich selbst gefunden habe
 
 1. `du -sk /tmp` meldete 0 GiB Stapel, weil `/tmp` ein Symlink ist; der erste Lauf schrieb diese Null.
@@ -1173,3 +1229,19 @@ darum immer zusammen; die Pinne hält 53 von 172, Kante > 0,30.
     Wände. Die Funktion ist gebaut und geprüft (`server/router/search.ts:75`, `src/core/mcp.ts:99`,
     `tests/engine.test.ts:254`, `:271`). Ein Satz aus einer Tabellenzeile ist kein Status — erst der
     Baum sagt, ob eine Zeile Plan oder Befund ist.
+29. **Ein eigner Fall war taub, und nur der Bisslauf hat es gesagt.** `:56` der neuen lib-Datei
+    schleifte über `RESULT_STOPS` selbst — über die Liste, die er prüfte. Derselbe Patch, der zwei
+    Gegenprüfungslauf hätte ich einen Fall committed, der das Verschwinden einer Stufe nicht bemerkt.
+30. **Nicht-ASCII in meinem eignen Mappe-Papier — und hierher zurückgeschrieben.**
+    `P141-REGLER-STUFEN-0711.md` hatte nach dem ersten Schreiben drei Nicht-ASCII-Zeilen: ein
+    CJK-Wort (U+7269 U+7406) mitten in `verliert…isch`, in einem Satz, der den Bisslauf beschreibt;
+    `Der Leser fängt` (Umlaut); `aus demPruefling` (zusammengeklebt). Alle drei vor dem Committen
+    berichtigt, der Sweep danach meldet 0. **Der dritte Fund ist dieser Satz selbst:** beim
+    Aufschreiben des Fehlers kopierte ich die beiden Codepunkte in dieses Repo-Papier, statt sie zu
+    benennen. Die Hausregel seit 21.10. — eigne Zeichen umschreiben, nie kopieren — gilt also auch
+    für den Bericht über ihre Verletzung. Das Trennzeichen `·` in einem
+    README-Zitat habe ich nicht still entfernt, sondern in demselben Satz als ersetzt ausgewiesen.
+31. **Die erste Reparatur einer eignen Lücke war ein Workaround.** Im neuen Flächen-Fall brauchte ich
+    `container`; statt die Rückgabe des Harness zu benutzen, schrieb ich
+    `const { container } = { container: document.body }`. Das ist dasselbe Blatt, das der Fall gerade
+    nicht prüft. In demselben Zug zurückgebaut auf `const { container } = await zeige(drei)`.
