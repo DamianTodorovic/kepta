@@ -12,6 +12,7 @@ import { describe, expect, it } from "vitest";
 import fs from "node:fs";
 import path from "node:path";
 import { BLOCKMARKER, satzeAusMarkdown } from "../docs/belege/aussendungsatz-0611/satz-riss.mjs";
+import { absolut, maschine, zeug } from "../docs/belege/aussendungsatz-0611/messregel.mjs";
 
 const WURZEL = path.resolve(import.meta.dirname, "..");
 const DATEIEN = ["README.md", "SECURITY.md", "ROADMAP.md", ".github/release-notes.md"];
@@ -68,5 +69,47 @@ describe("P128, der Riss: eine Markdown-Einheit ist ein Satz, kein Block", () =>
       for (const e of satzeAusMarkdown(text)) if (BLOCKMARKER.test(e)) funde.push(`${datei}: ${e.slice(0, 80)}`);
     }
     expect(funde, `${funde.length} Einheiten sind keine Saetze:\n  ${funde.slice(0, 6).join("\n  ")}`).toHaveLength(0);
+  });
+});
+
+describe("P129, der Wortschatz: ein benanntes Instrument ist ein Messzeug", () => {
+  /* P128 meldete 16 von 172 absoluten Behauptungen mit Messzeug (9,3 %). Nachgelesen 21:55:40 MEZ:
+     sechs davon nannten ihr Werkzeug wohl, aber das Muster sah die Namen nicht —
+     `vitest.config.ts` mit seinen Schwellen (funf Zeilen der Coverage-Tabelle) und
+     `electron-builder.json` mit seinen Plattform-Zielen (die Vorlage). Eine Zahl, die unter einem
+     zu engen Wortschatz gemessen wird, ist keine Messung, sondern ein Verdacht; P128 hatte recht
+     mit der Richtung und unrecht mit der Groesse. */
+
+  it("ein benanntes Konfig-Instrument zaehlt als Messzeug", () => {
+    const satz = 'must not fall under 98 % of lines · must hold 100 % of functions (both in vitest.config.ts, key "src/scan/")';
+    expect(absolut.test(satz), "die Behauptung selbst faellt aus der breiten Klasse — dann ist der Fall hohl").toBe(true);
+    expect(zeug.test(satz), "vitest.config.ts ist kein Messzeug? dann sind Coverage-Zahlen nach aussen blind").toBe(true);
+  });
+
+  it("electron-builder.json heisst ein Instrument, weil die Datei das Ziel erfuellt oder nicht", () => {
+    const satz = "Windows and Linux targets exist in electron-builder.json and in CI, but no Windows or Linux installer is published";
+    expect(zeug.test(satz), "electron-builder.json ist kein Messzeug? dann nennt die Vorlage ihr Werkzeug nicht").toBe(true);
+  });
+
+  it("ein blosses Wort bleibt kein Messzeug — die Wortschatz-Erweiterung ist nicht alles", () => {
+    const nackig = "the pipeline is configured carefully and every build always works, nothing untested is shipped";
+    expect(zeug.test(nackig), "erweitert zu weit: ein Satz ohne Instrument-Namen gilt als gemessen").toBe(false);
+  });
+
+  it("am echten Bestand: 22 von 172 absoluten Behauptungen nennen ihr Messzeug", () => {
+    let absoluten = 0;
+    let mit = 0;
+    for (const datei of DATEIEN) {
+      const text = fs.readFileSync(path.join(WURZEL, datei), "utf8");
+      for (const s of satzeAusMarkdown(text)) {
+        if (!absolut.test(s)) continue;
+        absoluten++;
+        if (zeug.test(s)) mit++;
+      }
+    }
+    expect(absoluten, "der Nenner ist nicht mehr 172 — der Riss oder die Klasse hat sich bewegt").toBe(172);
+    expect(mit, `${mit} von ${absoluten} nennen ein Messzeug — erwartet war 22`).toBe(22);
+    expect(mit / absoluten, "Anteil ohne Nenner ist ein Urteil").toBeGreaterThan(0.12);
+    expect(maschine.source.length, "die schmale Klasse wurde nicht mitgeändert").toBeGreaterThan(10);
   });
 });

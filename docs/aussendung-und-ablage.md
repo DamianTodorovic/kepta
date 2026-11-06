@@ -489,6 +489,45 @@ Markup-Trennung in `satz-riss.mjs` ausgeschaltet → `FEHLER: 43 Einheiten trage
 Block-Struktur`, Exit 2; danach per Edit zurückgebaut und mit `cmp` bytegleich gegen die vorher
 kopierte Fassung geprüft, Zensus-Lauf wieder Exit 0 mit denselben Zahlen.
 
+## 17. Der Wortschatz des Zeugen: `vitest.config.ts` war unsichtbar (P129, 21:57 MEZ)
+
+P128 meldete 16 von 172 (9,3 %). Nachgelesen, welche Sätze in den 156 ohne Messzeug standen:
+**sechs nannten ihr Werkzeug wohl**, und der Zähler sah den Namen nicht. Fünf davon sind die
+Zeilen der Coverage-Tabelle, die auf ihre Schwellen verweisen, eine ist die Release-Vorlage, die
+auf ihr Plattform-Ziel verweist. Das alte Muster kannte nur `tests/`, `scripts/`,
+`docs/belege/`, `.mjs`, `.py`, eine `:Zeile` und Artefakt-Endungen.
+
+**Das heißt für die Zahl aus P128: die Richtung war richtig, die Größe nicht.** 9,3 % war ein
+Verdacht, gemessen unter einem zu engen Wortschatz. Die Schwellen, die jene Tabelle nennt, sind
+nachgelesen in vitest.config.ts, Zeilen 62 bis 110 (gesehen 21:57:43 und 21:57:54 MEZ): gesamt
+89 % Linien und 82 % Funktionen, `src/core` 97 und 100, `src/scan` 98 und 100, `src/lib` 92 Linien
+und 90 Funktionen, `src/components` 84 Linien mit 80 Aussagen, 72 Funktionen und 71 Zweigen.
+Mit der Erweiterung, gemessen 21:57:19 MEZ und erneut nach den
+Zahlen-Trägern 22:01:26 MEZ (beide Exit 0, beide dieselben Werte):
+
+| Lesung | Nenner | mit Messzeug | ohne Messzeug |
+|---|---|---|---|
+| Zeuge **im selben Satz** | 172 absolute Behauptungen (aus 617 Einheiten) | **22** = 12,8 % | **150** = 87,2 % |
+| Zeuge **im selben Abschnitt** | derselbe Nenner 172 | **46** = 26,7 % | **126** = 73,3 % |
+
+Die schmale Klasse bleibt 30 Sätze, davon nennen jetzt **5** ihr Messzeug (statt 4) — **25 sind
+die Arbeit.** Von den sechs gewonnenen Zeilen liegt nur eine in der schmalen Klasse; die übrigen
+fünf gehören der breiten, weil sie Zahlen mit Einheiten nennen statt `never/always/cannot`.
+
+**Was daran Regel ist, nicht Gefühl.** Der Wortschatz ist jetzt ein Blatt:
+`docs/belege/aussendungsatz-0611/messregel.mjs` trägt `absolut`, `zeug`, `maschine`, und
+`zaehlen.mjs` importiert sie — dasselbe Gesetz wie in P128: eine Suite, die die Regel nachbaut,
+wird bei jeder Regeländerung still grün. Vier neue Fälle in
+`tests/aussendungs-riss.test.ts` (Sektion „P129, der Wortschatz"): `vitest.config.ts` zählt (und
+die Zeile fällt vorher aus `absolut`, dann wäre der Fall hohl), `electron-builder.json` zählt, und
+**die Gegenkontrolle gegen ein Zu-viel**: „the pipeline is configured carefully and every build
+always works" darf **kein** Messzeug sein, weil kein Instrument benannt ist. Der vierte Fall pinnt
+den Bestand: Nenner 172, mit Messzeug 22, und der Anteil > 0,12 — mit dem Nenner im Text, weil
+eine Prozentzahl ohne Grundgesamtheit ein Urteil ist.
+
+Rot zuerst gesehen (21:57:08 MEZ): 3 Faelle rot — die beiden Namens-Faelle und der Bestand
+(meldete 16 statt 22). Grün nach der Erweiterung: **10 von 10** (21:57:19 MEZ).
+
 ## Fehler in diesem Schlag, die ich selbst gefunden habe
 
 
@@ -571,3 +610,14 @@ kopierte Fassung geprüft, Zensus-Lauf wieder Exit 0 mit denselben Zahlen.
     (4 rot / 1 grün, 21:41 MEZ), erst dann die Heilung gesetzt und gemessen (6 grün, Start
     21:42:34 MEZ). Die Rückstufe stand als Kommentar im Blatt, damit der Trick sichtbar bleibt,
     und ist jetzt wieder aus dem Tree.
+17. **Die Zahlen-Wache erwischte meinen eignen Beleg.** Ich schrieb „89 % Linien" in einen Absatz,
+    in dem auch `electron-builder.json` stand, und zitierte `vitest.config.ts:62-110` in
+    Backticks mit Zeilenbereich — die Wache las den nächsten Dateinamen, öffnete die Vorlage und
+    meldete „2 Werte, keiner davon 89" (Exit 1). Berichtigt: die Zahl steht jetzt direkt hinter
+    ihrem Beleg in der Form `vitest.config.ts, Zeilen 62 bis 110`, und die Wache sagt Exit 0. Eine
+    Zahl, die ihren Beleg nur *in der Nähe* hat, ist nicht belegt.
+18. **Ein Edit nach Zeilennummer hat mir den Satz zerrissen.** Ich setzte drei Zeilen an Index 497
+    — mitten in eine Klammer, die noch lief. Der Absatz las sich danach „… plus die / nachgelesen
+    in … / Plattform-Ziele." Entdeckt beim Nachlesen (nicht durch ein Werkzeug): die Stelle wurde
+    einmal ganz neu geschrieben, und der Fehler steht hier, weil ein Edit, dessen Anker größer ist
+    als die Änderung, Zeilen still verschiebt — dieselbe Lehre wie 19.10. im Wachbuch.

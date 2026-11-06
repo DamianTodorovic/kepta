@@ -3,8 +3,8 @@
   "README.md": {
    "saetze": 429,
    "absolut": 130,
-   "mit_zeug": 16,
-   "ohne_zeug": 114
+   "mit_zeug": 21,
+   "ohne_zeug": 109
   },
   "SECURITY.md": {
    "saetze": 52,
@@ -21,15 +21,15 @@
   ".github/release-notes.md": {
    "saetze": 56,
    "absolut": 18,
-   "mit_zeug": 0,
-   "ohne_zeug": 18
+   "mit_zeug": 1,
+   "ohne_zeug": 17
   }
  },
  "zusammen": {
   "saetze": 617,
   "absolut": 172,
-  "mit_zeug": 16,
-  "ohne_zeug": 156
+  "mit_zeug": 22,
+  "ohne_zeug": 150
  },
  "abschnitt": {
   "README.md": {
@@ -201,7 +201,7 @@
   {
    "datei": "README.md",
    "satz": "src/scan (machine-scan rules) | must not fall under 98 % of lines · must hold 100 % of functions (both in vitest.config.ts, key \"src/scan/\") | what may be read, and what never is",
-   "zeuge": false
+   "zeuge": true
   },
   {
    "datei": "README.md",
@@ -678,26 +678,6 @@
   },
   {
    "datei": "README.md",
-   "satz": "everything together | must not fall under 89 % of lines (test.coverage.thresholds.lines, vitest.config.ts) | core, browser logic, scan rules, server and every component"
-  },
-  {
-   "datei": "README.md",
-   "satz": "src/core (engine, store, MCP, migration) | must not fall under 97 % of lines · must hold 100 % of functions (both in vitest.config.ts, key \"src/core/\") | data model, search, consolidation, MCP protocol"
-  },
-  {
-   "datei": "README.md",
-   "satz": "src/scan (machine-scan rules) | must not fall under 98 % of lines · must hold 100 % of functions (both in vitest.config.ts, key \"src/scan/\") | what may be read, and what never is"
-  },
-  {
-   "datei": "README.md",
-   "satz": "src/lib (browser logic) | must not fall under 92 % of lines (vitest.config.ts, key \"src/lib/\") | provider presets, profile, settings, sources, SSE, fetch client"
-  },
-  {
-   "datei": "README.md",
-   "satz": "src/components (UI) | must not fall under 84 % of lines (vitest.config.ts, key \"src/components/\") | every component, the graph canvas included"
-  },
-  {
-   "datei": "README.md",
    "satz": "The server code lives in server/ — server/app.ts assembles the middleware chain and mounts the routers, server/router/ holds one module per feature area, server/helfer/ the shared helpers, and server.ts itself is only th"
   },
   {
@@ -835,10 +815,6 @@
   {
    "datei": ".github/release-notes.md",
    "satz": "Published installers are macOS only."
-  },
-  {
-   "datei": ".github/release-notes.md",
-   "satz": "Windows and Linux targets exist in electron-builder.json and in CI (release-windows, release-linux), but no Windows or Linux installer is published — if you need one for a pilot, ask and we cut it."
   },
   {
    "datei": ".github/release-notes.md",

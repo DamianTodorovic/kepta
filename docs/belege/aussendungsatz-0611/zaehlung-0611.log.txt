@@ -1,4 +1,4 @@
-Zeit: 6.11.2026, 21:50:15 MEZ
+Zeit: 6.11.2026, 22:01:26 MEZ
 Dateien: README.md, SECURITY.md, ROADMAP.md, .github/release-notes.md — Einheiten ueber 25 Zeichen.
 Riss: satz-riss.mjs (P128, markdown-fest). Vorher: Satzende + Leerzeichen ueber dem
 ganzen Text, wodurch Aufzaehlungen, Tabellenzeilen und `<summary>`-Kuelsen als EIN
@@ -8,11 +8,11 @@ Satz zaehlten — 45 Einheiten trugen noch Block-Struktur, gemessen 21:42 MEZ in
 
 | Datei | Saetze | absolute | mit Messzeug | ohne Messzeug | Anteil ohne |
 |---|---|---|---|---|---|
-| `README.md` | 429 | 130 | 16 | 114 | 87.7 % |
+| `README.md` | 429 | 130 | 21 | 109 | 83.8 % |
 | `SECURITY.md` | 52 | 8 | 0 | 8 | 100.0 % |
 | `ROADMAP.md` | 80 | 16 | 0 | 16 | 100.0 % |
-| `.github/release-notes.md` | 56 | 18 | 0 | 18 | 100.0 % |
-| **zusammen** | **617** | **172** | **16** | **156** | **90.7 %** |
+| `.github/release-notes.md` | 56 | 18 | 1 | 17 | 94.4 % |
+| **zusammen** | **617** | **172** | **22** | **150** | **87.2 %** |
 
 Nenner fuer den Anteil: 172 absolute Behauptungen in 617 Saetzen der vier Texte.
 
@@ -24,7 +24,7 @@ Zweite Lesung — der Zeuge darf im selben Abschnitt stehen (Absatz, Tabelle, Au
 | `ROADMAP.md` | 16 | 0 | 16 |
 | `.github/release-notes.md` | 18 | 0 | 18 |
 | zusammen | 172 | 46 | 126 |
-   mit Messzeug im selben Abschnitt: 46 von 172 = 26.7 % (gegen 16 von 172 = 9.3 % in der engen Lesung).
+   mit Messzeug im selben Abschnitt: 46 von 172 = 26.7 % (gegen 22 von 172 = 12.8 % in der engen Lesung).
 
 Die schmalere Klasse — Saetze, die ein Werkzeug widerlegen koennte (never/always/cannot/0 %/100 %):
    README.md                  26 von 130 absoluten
@@ -57,7 +57,7 @@ Die schmalere Klasse — Saetze, die ein Werkzeug widerlegen koennte (never/alwa
    [README.md]      It was never a lock — but it was counting, and counting needed places to hide the tally (an authenticated state in the database, a keychain anchor, a hidden file).
    [README.md]      The data is never hostage.
    [README.md]      They are built from this source and never published here, so they are untested against a real installer download; treat them as source builds, not as shipped products.
-   [README.md]      src/scan (machine-scan rules) | must not fall under 98 % of lines · must hold 100 % of functions (both in vitest.config.ts, key "src/scan/") | what may be read, and what never is
+   [README.md] ZEUG src/scan (machine-scan rules) | must not fall under 98 % of lines · must hold 100 % of functions (both in vitest.config.ts, key "src/scan/") | what may be read, and what never is
    [README.md]      The routers and helpers count towards the overall coverage gate; the only exclusion is the bootstrap, which binds a port and never runs in a unit test.
    [SECURITY.md]      It never leaves the keychain on its own; if the
    [ROADMAP.md]      Time-travel search | asOf on memory_search and POST /api/search — ask what was known at any moment; time-travelled queries never count as access
@@ -68,7 +68,7 @@ Zwei von ihnen nachgegriffen, im selben Lauf:
    "no screenshot of it here yet" (Semantic-Ansicht): README nennt 20 Bilder (12 in Markdown, 8 als <img alt>), davon 0 mit "Semantic"; der Satz steht noch da — haltbar.
    "no embedding ever travels into the view": 8 von 8 benannten Flaechen-Dateien gelesen, zusammen 0 Nennung(en) "embedding"; das Wort liegt in 34 Test-Dateien des Repos. Fehlende Dateien: keine.
 
-Die 156 ohne Messzeug, in Lesereihenfolge der Dateien (erste 40):
+Die 150 ohne Messzeug, in Lesereihenfolge der Dateien (erste 40):
    [README.md] Your AI forgets you after every chat.
    [README.md] Desktop app · no cloud · no account · encrypted at rest SQLite · hybrid retrieval · knowledge graph · MCP
    [README.md] Every entry is a node, every connection an edge — real connections drawn solid, mere similarity dashed.

@@ -24,9 +24,10 @@ const DATEIEN = ["README.md", "SECURITY.md", "ROADMAP.md", ".github/release-note
 // zu laufen (P128: ein Test, der ein Skript importiert, das beim Import die Platte
 // beschreibt, ist kein Test mehr).
 import { BLOCKMARKER, satzeAusMarkdown } from "./satz-riss.mjs";
+import { absolut, maschine, zeug } from "./messregel.mjs";
 
-const absolut = /\b(no|never|none|all|every|only|always|guarantee|keine[nr]?|nie|immer|alle|jeder|nur)\b|(\d[\d., ]*(%|ms|MiB|GiB|notes|queries|of|von))/i;
-const zeug = /(tests\/|scripts\/|docs\/belege\/|\.test\.tsx?\b|\.mjs\b|\.py\b|:[0-9]{2,4}\b|`[a-z0-9-]+\.(json|txt|log\.txt|jsonl)`)/i;
+// Die drei Regeln leben in `messregel.mjs` (P129), damit die Suite sie fahren kann,
+
 
 const zaehlung = {};
 const ohneZeug = [];
@@ -89,7 +90,7 @@ const summe = Object.values(zaehlung).reduce((a, z) => ({
 // Der erste Zaehler traegt alles, was ein Verallgemeinerungs-Wort hat — auch
 // Produktcopy ("no password to type"). Fuer die Arbeit an der Latte braucht es
 // die schmalere Klasse: Saetze, die ein Werkzeug widerlegen koennte.
-const maschine = /\b(never|always|cannot|is not (read|touched|sent)|no [\w ]{0,40}(ever|travels|leaves|is read)|0 %|100 %)\b|\b(nie|niemals|immer nur|cannot)\b/i;
+// Die schmalere Klasse kommt aus derselben Regel-Datei.
 const pruefbar = {};
 const pruefbarListe = [];
 for (const f of DATEIEN) {
