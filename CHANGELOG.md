@@ -35,9 +35,12 @@
   stays exactly as approved while the area that answers the pointer grows. Measured
   6.11.2026 05:09:55 MEZ against the delivered object at 1440 x 900: of the 76 points set
   22 px from the centre of the seven icon-only controls, **0 answered as the control's own
-  before and 38 do after** — the left and top sides, where nothing paints above. The right
-  and bottom points stay with positioned neighbours and containers; that residual is named
-  and counted below, not hidden.
+  before and **76 of 76 do after**.
+  Corrected 6.11.2026 06:25:04 MEZ: the first version of this line said 38 of 76, "the left
+  and top sides" — that was my probe standing on the boundary of the 44 px box (22,0 px from
+  the centre), where painting order decides and coverage is not what is being asked. Measured
+  at 21,9 px, inside the box, all 76 points answer as the control's own at 1440 px and all 48
+  at 390 px; the bar is absolute again and the exception drawer is gone.
 - The touch-target census walks **all seven views** instead of three, and asks the pointer
   rather than the box (`document.elementFromPoint`). Measured 05:13:56 MEZ: **181 targets,
   0 under the 24 px WCAG 2.5.8 AA minimum**. The 44 px mark stays a report for controls that

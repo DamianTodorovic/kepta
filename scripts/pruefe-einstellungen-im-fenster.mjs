@@ -1697,7 +1697,7 @@ async function main() {
           // Fuer diese Klasse gilt die 44-px-Marke als Latte, gemessen am ZEIGER, nicht am
           // Rechteck -- ein Rechteck, das niemand trifft, ist keine Treffflaeche.
           const nurIcon = !((e.textContent || '').trim()) && !!e.querySelector('svg,iconify-icon,img');
-          let zeiger = null, ausser = false, mitte = null, mitteAusser = false;
+          let zeiger = null, innen = null, ausser = false, mitte = null, mitteAusser = false;
           const mx = treffer.left + treffer.width / 2, my = treffer.top + treffer.height / 2;
           mitteAusser = mx < 0 || my < 0 || mx > window.innerWidth - 1 || my > window.innerHeight - 1;
           if (!mitteAusser) {
@@ -1711,20 +1711,27 @@ async function main() {
           }
           if (nurIcon) {
             const cx = mx, cy = my;
+            // Zwei Abstaende, gemessen, nicht entschieden: 22,0 px ist die KANTE eines
+            // 44-px-Kastens, und an einer Kante entscheidet die Malreihenfolge, nicht die
+            // Flaeche. 21,9 px liegt sicher innerhalb. Vorher wusste ich nur, was die Kante
+            // sagt.
             const punkte = [[cx - 22, cy], [cx + 22, cy], [cx, cy - 22], [cx, cy + 22]];
+            const punkteInnen = [[cx - 21.9, cy], [cx + 21.9, cy], [cx, cy - 21.9], [cx, cy + 21.9]];
             ausser = punkte.some(([x, y]) => x < 0 || y < 0 || x > window.innerWidth - 1 || y > window.innerHeight - 1);
             if (!ausser) {
-              zeiger = punkte.map(([x, y]) => {
+              const treffen = (liste) => liste.map(([x, y]) => {
                 const t = document.elementFromPoint(x, y);
                 if (!t) return 'nichts';
                 if (t === e || e.contains(t)) return 'eigner';
                 return (t.getAttribute('aria-label') || t.title || t.textContent || t.tagName).replace(/\\s+/g,' ').trim().slice(0, 18);
               });
+              zeiger = treffen(punkte);
+              innen = treffen(punkteInnen);
             }
           }
           out.push({ name, w: Math.round(treffer.width), h: Math.round(treffer.height),
             k: e.tagName.toLowerCase(), art: e.getAttribute('type') || '', icon: nurIcon,
-            zeiger, ausser, mitte, mitteAusser,
+            zeiger, innen, ausser, mitte, mitteAusser,
             hinter: hr && treffer !== r ? Math.round(r.width) + "x" + Math.round(r.height) : '' });
         }
         return { ziele: out, aus } })()`);
@@ -1770,11 +1777,20 @@ async function main() {
       // kleiner als 44 px -- und der Dieb hat einen Namen.
       const iconZiele = ziele.filter((z) => z.icon);
       const ausser = iconZiele.filter((z) => z.ausser);
-      const zeigerFehlt = iconZiele.filter((z) => Array.isArray(z.zeiger) && z.zeiger.some((n) => n !== 'eigner'));
+      // Die Latte gilt der INNENmessung (21,9 px): ein Kasten von 44 px endet bei 22,0, und
+      // auf dieser Linie entscheidet die Malreihenfolge -- dort zu pruefen war ein Test auf
+      // Malreihenfolge, nicht auf Flaeche. Gemessen 06:25:04 MEZ am ausgelieferten 3.2.180:
+      // an der Kante 0 von 19 Messungen ganz eigner, innerhalb 19 von 19. Die Kanten-Zeile
+      // bleibt als Zeuge gedruckt, sie ist nicht mehr das Urteil.
+      const zeigerFehlt = iconZiele.filter((z) => Array.isArray(z.innen) && z.innen.some((n) => n !== "eigner"));
       iconAlle += iconZiele.length;
       iconAusserHalf += ausser.length;
       iconFehlt.push(...zeigerFehlt.map((z) => ({ ...z, seite: seite.name })));
       console.log(`    Icon-Knoepfe: ${iconZiele.length}, ${zeigerFehlt.length} unter der 44-px-Treffflaeche, ${ausser.length} randfern (nicht pruefbar)`);
+      // Kante gegen Innen, beide gezehlt: ein Kasten von 44 px endet bei 22,0 px vom
+      // Mittelpunkt, und auf dieser Linie entscheidet die Malreihenfolge, nicht die Flaeche.
+      const ganz = (liste) => Array.isArray(liste) && liste.every((n) => n === "eigner");
+      console.log(`    an der Kante (22,0 px) ganz eigner: ${iconZiele.filter((z) => ganz(z.zeiger)).length} von ${iconZiele.length}; innerhalb (21,9 px) ganz eigner: ${iconZiele.filter((z) => ganz(z.innen)).length}`);
       for (const z of zeigerFehlt) console.log(`      FEHLT 44  ${seite.name}  ${z.k}  ${z.w} x ${z.h}  "${z.name}"  Zeiger: ${JSON.stringify(z.zeiger)}`);
       // Bericht zuerst, Latte spaeter: eine Diebstahl-Zahl ohne Grundgesamtheit ist eine
       // Behauptung, und die Grundgesamtheit ist hier jede Sicht einzeln.
@@ -1802,20 +1818,13 @@ async function main() {
     // zielen koennte, und keine groessere Gleichwertige in der Naehe. Der Nenner wird
     // genannt, weil ein Anteil ohne Nenner eine Behauptung ist.
     console.log(`  Icon-Klasse: ${iconAlle} Knopfe ohne Wort in ${seitenQ.length} Sichten, ${iconFehlt.length} unter der 44-px-Treffflaeche, ${iconAusserHalf} randfern (nicht pruefbar)`);
-    // Das Ausnahmefach: benannte Steuerungen, deren Punkt ein positionierter Nachbar oder
-    // ein Behaelter erbt, gemessen 05:09:55 MEZ am ausgelieferten 3.2.179. Die Latte ist
-    // die VERBITERUNG -- ein Steuer, das neu faellt, lasst den Lauf fallen, und ein Steuer,
-    // das heil wird, muss hier gestrichen werden. Kein Fach, das schweigt: der Inhalt wird
-    // gezaehlt und gedruckt.
-    const AUSNAHMEN = ["Open setup", "Focus mode", "Clear chat", "Send", "Zoom in", "Zoom out", "Trash",
-      // Bei 390 px zeigt die Seitenleiste andre Steuerungen als am breiten Fenster --
-      // gemessen 05:13:15 MEZ: "Show sidebar" und "Leave focus mode", je vier Messungen.
-      "Show sidebar", "Leave focus mode"];
-    const neuFehlend = iconFehlt.filter((z) => !AUSNAHMEN.some((a) => z.name.startsWith(a)));
-    const fach = [...new Set(iconFehlt.map((z) => z.name))];
-    console.log(`  Ausnahmefach (benannt, gezaehlt): ${iconFehlt.length} Messungen an ${fach.length} Steuerungen -- ${fach.join(" | ")}`);
-    urteil("**kein neues Steuer faellt unter die 44-px-Treffflaeche**", neuFehlend.length, 0);
-    for (const z of neuFehlend) console.log(`      NEU  ${z.seite}  ${z.k}  ${z.w} x ${z.h}  "${z.name}"  Zeiger: ${JSON.stringify(z.zeiger)}`);
+    // Die Latte ist jetzt absolut, ohne Ausnahmefach: gemessen 06:25:04 MEZ erfuellen alle
+    // 19 Messungen an allen sieben Steuerungen die 44 px innerhalb des Kastens. Das Fach,
+    // das P93 gefuellt hatte (sieben Steuerungen bei 1440 px, sechs bei 390 px), war ein
+    // Verzeichnis meiner Kantenmessung, nicht der Flaeche -- es ist geleert und damit weg.
+    // Ein Steuer, das neu faellt, laesst den Lauf fallen.
+    urteil("**kein Icon-Knopf liegt unter der 44-px-Treffflaeche**", iconFehlt.length, 0);
+    for (const z of iconFehlt) console.log(`      FEHLT 44  ${z.seite}  ${z.k}  ${z.w} x ${z.h}  "${z.name}"  innen: ${JSON.stringify(z.innen)}`);
     console.log(`  Fremd in der eignen Mitte: ${mitteDiebe.length} von ${mitteAlle} Zielen in ${seitenQ.length} Sichten (Bericht, noch keine Latte)`);
     for (const z of mitteDiebe.slice(0, 20)) console.log(`    DIEB  ${z.seite}  ${z.k}  ${z.w} x ${z.h}  "${z.name}"  ->  "${z.mitte}"`);
     console.log(`  Bild: ${await bild(`tastmass-${BREITE_IST}px.png`)}`);
