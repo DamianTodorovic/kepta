@@ -198,6 +198,15 @@ erfunden, in beiden Sprachen gemessen und mit dem Vektor-Bein auch allein:
 | `konkurrenz-0611b/ergebnis-sqlitevec-bge-m3.json` | 932 B | `f2cf6d3b3afb186b…` |
 | `konkurrenz-0611b/ergebnis-sqlitevec-bge-m3-zwei.json` | 932 B | `0e7307cb4632c35f…` |
 | `konkurrenz-0611b/lauf-bge-m3-0611.log.txt` | 1580 B | `ef76a577ca82a4e3…` |
+| `konkurrenz-0611c/spur-uns-nomic-0611.jsonl` | 9365 B | `3495a16144028dca…` |
+| `konkurrenz-0611c/spur-uns-nomic-0611-zwei.jsonl` | 9365 B | `3495a16144028dca…` |
+| `konkurrenz-0611c/spur-uns-bge-m3-0611.jsonl` | 8829 B | `98f5d1f628576ab9…` |
+| `konkurrenz-0611c/spur-uns-bge-m3-0611-zwei.jsonl` | 8829 B | `98f5d1f628576ab9…` |
+| `konkurrenz-0611c/auswertung-nomic-0611.txt` | 5839 B | `89e97ae5450b3c63…` |
+| `konkurrenz-0611c/auswertung-bge-m3-0611.txt` | 5839 B | `74ec9cf8fa2dc8db…` |
+| `konkurrenz-0611c/stufen-sonde.ts` | 368 B | `378cc0309dfe98b0…` |
+| `konkurrenz-0611c/spur-leser.ts` | 2604 B | `f0d07e6d63d1f9e9…` |
+| `konkurrenz-0611c/lauf-0611.log.txt` | 3462 B | `a4736cd0f1061483…` |
 
 Drei Folgen, aufgeschrieben, weil sie die Zahl nicht schoener machen:
 

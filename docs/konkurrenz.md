@@ -17,6 +17,7 @@ dasselbe: **Hit@1** — die erste Antwort nennt eine der Ziel-IDs der Anfrage.
 | mem0 2.2.1, **fair gefahren** | ganzes Stueck, `infer=False`, Wort-Suche an, nomic-embed-text lokal | **51,1 %** (23/45) | `docs/belege/konkurrenz-0611/spur-fair-0611.jsonl` und `…-zwei.jsonl` |
 | **sqlite-vec 0.1.9**, reines Cosinus-KNN | dieselben Texte, dasselbe Einbett (nomic-embed-text, 768 D), k=5, **nichts** ausser Vektoren | **42,2 %** (19/45) | `docs/belege/konkurrenz-0611b/spur-sqlitevec-0611.jsonl` und `…-zwei.jsonl` |
 | **sqlite-vec 0.1.9**, reines Cosinus-KNN, **zweites Einbett** | derselbe Lauf, nur `bge-m3` (1024 D) statt nomic | **66,7 %** (30/45) | `docs/belege/konkurrenz-0611b/spur-sqlitevec-bge-m3.jsonl` und `…-zwei.jsonl` |
+| K3PTA, **ausgeliefert** (v3-Bein), **zweites Einbett** | derselbe Aufbau und derselbe Suchweg, nur `bge-m3` (1024 D) statt nomic | **77,8 %** (35/45) | `docs/belege/konkurrenz-0611c/spur-uns-bge-m3-0611.jsonl` und `…-zwei.jsonl` |
 
 ## Berichtigung 16:52 MEZ: die Kategorie-Zahl war eine Modell-Aussage, keine Verfahrensaussage
 
@@ -35,8 +36,9 @@ gewinnt gegen reines KNN **auf derselben Einbettstufe** 33,4 Punkte. Neu und off
 vorher: der Abstand **schrumpft auf 8,9 Punkte**, wenn das Einbett wechselt — und zwar für
 beide Seiten. Das ist kein Schönheitsfehler, sondern eine Frage ans Produkt: **welches
 Einbett liefert unsre Rangfolge, wenn es nicht das voreingestellte ist?** Gemessen ist die
-Gegenseite (reines KNN) für `bge-m3`; unsre eigne Rangfolge mit `bge-m3` ist **nicht**
-gemessen und steht als nächster Lauf an.
+Gegenseite (reines KNN) für `bge-m3`; unsre eigne Rangfolge mit `bge-m3` war zu dem
+Zeitpunkt **nicht** gemessen und stand als nächster Lauf an — gemessen 17:09:20 bis
+17:09:32 MEZ, siehe Abschnitt P112 weiter unten.
 
 Was die Zeile *nicht* sagt, bleibt: sqlite-vec ist eine Erweiterung, kein
 Gedächtnisdienst — kein Speichern, kein Aktualisieren, kein Vergessen, keine Mandanten-Wand.
@@ -51,6 +53,52 @@ Korpus und Fragen aus `scripts/eval-corpus.ts` und **gegen die mem0-Kapsel nachg
 (58 Notiztexte und 45 Anfragen, identisch), Einbettung über Ollama nur auf 127.0.0.1, zwei
 Läufe 16:40:55 und 16:40:58 MEZ mit **derselben Rangfolge** in beiden Traces.
 Rückgängig: `rm -rf /tmp/konk-sqlitevec-0611`.
+
+## P112, 17:09 MEZ: die eigne Rangfolge mit dem zweiten Einbett, in der richtigen Einheit
+
+Die Berichtigung oben hat eine offene Frage hinterlassen, die hier beantwortet ist: **was
+tut die Fusion mit `bge-m3`?** Gefahren 17:09:20 bis 17:09:32 MEZ mit demselben Aufbau, den
+`scripts/eval.ts` für sein v3-Bein benutzt (`scripts/eval-store.ts`, `vektoren: true`),
+demselben Suchweg (`searchMemories`, limit 10) und denselben Formeln, zwei Läufe je Stufe,
+Rangfolge Zeile für Zeile identisch in beiden. Das Aggregat jeder Stufe ist dasselbe wie das
+des `npm run eval`-Ausdrucks, der zur selben Uhrzeit voll laufen gelassen wurde
+(`auswertung-nomic-0611.txt`, `auswertung-bge-m3-0611.txt`).
+
+| Stufe gewechselt (nomic → bge-m3) | K3PTA, ausgelieferte Fusion | sqlite-vec, reines KNN |
+|---|---|---|
+| Hit@1 | 75,6 % → **77,8 %** (netto +1 Anfrage) | 42,2 % → **66,7 %** (netto +11 Anfragen) |
+| Recall@5 (gekappt) | 91,1 % → **90,0 %** | — |
+| Erst-Treffer wechselt die Richtigkeit | **3 von 45** = 6,7 % | **15 von 45** = 33,3 % |
+| anderer erster Treffer überhaupt | 7 von 45 = 15,6 % | 25 von 45 = 55,6 % |
+| ganze Liste unverändert | 16 von 45 = 35,6 % | **0 von 45** = 0,0 % |
+
+Die Zahl, die die Tabelle trägt, ist nicht der Punktabstand, sondern **der Bruchteil der
+Anfragen, dessen Rangfolge das Modell wechselt** — dieselbe Einheit auf beiden Seiten, an
+demselben Korpus, mit denselben 45 Anfragen. Beim reinen Vektor hängt die Reihenfolge fast
+ganz am Einbett: keine einzige der 45 Listen bleibt unter `bge-m3` so, wie sie unter nomic
+war. Bei uns bleibt mehr als ein Drittel unverändert, und die Richtigkeit wechselt in der
+Hälfte der Fälle, die der Mitbewerber braucht — auf einem Stand, der vorher schon 33,4
+Punkte höher liegt.
+
+Das ist die messbare Lesart von *Robustheit*: Die Fusion holt den Vektor-Gewinn in die
+Rangfolge, ohne die Rangfolge an das Modell anzulehnen. **Der Satz gilt nur in dieser
+Einheit**: die zwei Punkte Hit@1, die `bge-m3` bei uns holt, sind eine Anfrage von 45, und
+dieselbe Stufe **verliert** Recall@5 (91,1 → 90,0) und eine ablenkende Anfrage. Ein
+Default-Wechsel wäre damit nicht begründet; `nomic-embed-text` bleibt
+(`src/core/embeddings.ts:20`).
+
+Die drei Anfragen, bei denen bei uns die Richtigkeit wechselt, stehen im Protokoll
+(`lauf-0611.log.txt`): zwei Umformulierungen kommen hinzu ("Wie fotografiere ich drinnen
+richtig?", "Was gibt es an Heiligabend zu essen?"), eine Ablenkung fällt weg ("Was steht zur
+Datenbank an?", MRR 1,00 → 0,50).
+
+**Der blinde Fleck auf diesem Weg, und warum die Sonde zuerst da stand:** der erste
+Vergleich der beiden Stufen verglich die letzten 22 Zeilen von `npm run eval`. Die sind in
+beiden Läufen bytegleich — das letzte Block, das der Ausdruck malt, ist
+`Details (v2-Engine)`, also das Bein **ohne Vektoren**, und das berührt kein Einbett. Eine
+Schwanzzeilen-Gleichheit war hier kein Beweis, sondern das Erwartete. Deshalb liegt jetzt
+die Zeile-für-Zeile-Spur bei den Artefakten, und ihr Aggregat ist gegen den vollen
+Ausdruck nachgerechnet (`tests/konkurrenz-einbett-stufen.test.ts`).
 
 ## Was die letzte Zeile sagt, und was sie nicht sagt
 

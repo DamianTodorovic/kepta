@@ -1,0 +1,46 @@
+P112 6.11.2026, MEZ. Baum 3.2.189 (c6ed9ea), Node v26.8.1, Ollama nur auf 127.0.0.1:11434.
+Zwei Fragen, zwei Werkzeuge: (a) tut die Stufe was fuer unsre ausgelieferte Rangfolge,
+(b) wie stark haengt diese Rangfolge am Modell -- gemessen in derselben Einheit wie der
+reine Vektor-Nachbar (Anfragen von 45, deren Zeilen sich zwischen den Stufen aendern).
+
+STUFE-SONDE (stufen-sonde.ts), 17:07:34 MEZ, drei Aufrufe hintereinander:
+  UMGEBUNG=(leer)     MARKE=nomic-embed-text  VEKTOR=768 Dimensionen
+  UMGEBUNG=bge-m3     MARKE=bge-m3            VEKTOR=1024 Dimensionen
+  UMGEBUNG=nomic-...  MARKE=nomic-embed-text  VEKTOR=768 Dimensionen
+  ADRESSE in allen drei = http://127.0.0.1:11434
+  Warum dieser Lauf zuerst da stand: die zwei eval-Ausdruecke vom 17:03 verglichen nur ihre
+  letzten 22 Zeilen und waren bytegleich. Das letzte Block, das scripts/eval.ts malt, ist
+  "Details (v2-Engine)" -- die stufe OHNE Vektoren. Sie ist modelgleich, die Gleichheit
+  bewies also nichts; die Zahl, um die es geht, steht im v3-Block darueber.
+
+npm run eval, je Stufe ein Durchgang, Vollausdruck behalten (5839 bytes beide):
+  nomic-embed-text  Start 17:07:42  Ende 17:07:46  EXIT 0  sha256 89e97ae5450b3c63  auswertung-nomic-0611.txt
+  bge-m3            Start 17:07:46  Ende 17:07:52  EXIT 0  sha256 74ec9cf8fa2dc8db  auswertung-bge-m3-0611.txt
+  Korpus in beiden: 58 Notizen, 45 Anfragen, Zeitanker 2026-09-01T12:00:00.000Z.
+  v3-Bein (ausgeliefertes Retrieval):
+    nomic  Recall@5 91,1 %  Hit@1 75,6 %  MRR 0,812
+    bge    Recall@5 90,0 %  Hit@1 77,8 %  MRR 0,825
+  v1 (62,2/51,1) und v2 (81,1/71,1, ohne Vektoren) sind in beiden Ausdruecken gleich -- sie
+  beruehren kein Einbett, und genau das war der blinde Fleck des ersten Vergleichs.
+
+SPUR-LESER (spur-leser.ts): derselbe Aufbau (scripts/eval-store.ts, vektoren:true), derselbe
+Suchweg (searchMemories, limit 10), dieselben Formeln wie scripts/eval.ts, aber Zeile fuer
+Zeile. BISS-KONTROLLE zuerst: KEPTA_EMBED_MODEL=es-ware-fehlt ->
+  Error: Der Embedder antwortet nicht (es-ware-fehlt).   (Abbruch, keine Spur geschrieben.)
+Vier Laeufe, 17:09:20 bis 17:09:32 MEZ, alle EXIT 0, Aggregat gleich dem eval-Ausdruck:
+  spur-uns-nomic-0611.jsonl         9365 bytes  sha256 3495a16144028dca  17:09:20  Hit@1 75,6 R@5 91,1 MRR 0,812
+  spur-uns-nomic-0611-zwei.jsonl    9365 bytes  sha256 3495a16144028dca  17:09:22  (bytegleich)
+  spur-uns-bge-m3-0611.jsonl        8829 bytes  sha256 98f5d1f628576ab9  17:09:27  Hit@1 77,8 R@5 90,0 MRR 0,825
+  spur-uns-bge-m3-0611-zwei.jsonl   8829 bytes  sha256 98f5d1f628576ab9  17:09:32  (bytegleich)
+  Kontrolle gegen das Nachbartool: dieselbe Rechnung an den Spuren von konkurrenz-0611b.
+
+Gerechnet an den Zeilen (45 Anfragen je Stufe):
+  netto Erst-Treffer-Richtigkeit   nomic 34/45 -> bge 35/45   = +1 Anfrage, +2,2 Punkte
+  Richtigkeit wechselt               3 von 45 =  6,7 %   (umschreibung 2 hoch, ablenkung 1 runter)
+  anderer erster Treffer ueberhaupt   7 von 45 = 15,6 %
+  ganze Liste unveraendert           16 von 45 = 35,6 %
+  reines KNN (sqlite-vec, 0611b):     15 von 45 = 33,3 % / 25 von 45 = 55,6 % / 0 von 45 = 0,0 %
+  Die drei Zeilen, die bei uns die Richtigkeit wechseln:
+    umschreibung "Wie fotografiere ich drinnen richtig?"    fehlt -> TREFFER  (MRR 0,33 -> 1,00)
+    umschreibung "Was gibt es an Heiligabend zu essen?"     fehlt -> TREFFER  (R@5 0,00 -> 1,00)
+    ablenkung    "Was steht zur Datenbank an?"              TREFFER -> fehlt  (MRR 1,00 -> 0,50)
