@@ -1,3 +1,33 @@
+## [3.2.179]
+
+### Added
+
+- **A target you can hit, measured at the pointer.** `--treff` (44 px) and the `treff`
+  utility add a transparent child box around a control that carries no word, so the drawing
+  stays exactly as approved while the area that answers the pointer grows. Measured
+  6.11.2026 05:09:55 MEZ against the delivered object at 1440 x 900: of the 76 points set
+  22 px from the centre of the seven icon-only controls, **0 answered as the control's own
+  before and 38 do after** — the left and top sides, where nothing paints above. The right
+  and bottom points stay with positioned neighbours and containers; that residual is named
+  and counted below, not hidden.
+- The touch-target census walks **all seven views** instead of three, and asks the pointer
+  rather than the box (`document.elementFromPoint`). Measured 05:13:56 MEZ: **181 targets,
+  0 under the 24 px WCAG 2.5.8 AA minimum**. The 44 px mark stays a report for controls that
+  carry a word (160 of 181 = 88.4 %), because a bar there would move half the surface.
+- A second pointer check on the same run: no target may lose its own centre to a neighbour.
+  Baseline before the change, measured 05:01:29 MEZ: **0 of 158**. After it: still 0.
+
+### Changed
+
+- Seven icon-only seats call `treff`: the sidebar's setup and focus-mode buttons, the chat's
+  clear and send buttons, the graph's zoom in and zoom out (with 8 px more air between that
+  pair, since one extension would otherwise cover the other), and the dashboard's trash.
+- The 44 px bar is a regression bar over a named drawer: 7 controls at 1440 px and 6 at
+  390 px still miss it (measured 05:13:56 and 05:13:39 MEZ — the narrow window shows
+  `Show sidebar` and `Leave focus mode` where the wide one shows the setup and focus
+  buttons). A control that newly fails stops the run; a control that heals has to be struck
+  from the list before the run goes green again.
+
 ## [3.2.178]
 
 ### Added

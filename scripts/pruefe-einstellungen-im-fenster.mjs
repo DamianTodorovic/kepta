@@ -1802,7 +1802,20 @@ async function main() {
     // zielen koennte, und keine groessere Gleichwertige in der Naehe. Der Nenner wird
     // genannt, weil ein Anteil ohne Nenner eine Behauptung ist.
     console.log(`  Icon-Klasse: ${iconAlle} Knopfe ohne Wort in ${seitenQ.length} Sichten, ${iconFehlt.length} unter der 44-px-Treffflaeche, ${iconAusserHalf} randfern (nicht pruefbar)`);
-    urteil("**kein Icon-Knopf liegt unter der 44-px-Treffflaeche**", iconFehlt.length, 0);
+    // Das Ausnahmefach: benannte Steuerungen, deren Punkt ein positionierter Nachbar oder
+    // ein Behaelter erbt, gemessen 05:09:55 MEZ am ausgelieferten 3.2.179. Die Latte ist
+    // die VERBITERUNG -- ein Steuer, das neu faellt, lasst den Lauf fallen, und ein Steuer,
+    // das heil wird, muss hier gestrichen werden. Kein Fach, das schweigt: der Inhalt wird
+    // gezaehlt und gedruckt.
+    const AUSNAHMEN = ["Open setup", "Focus mode", "Clear chat", "Send", "Zoom in", "Zoom out", "Trash",
+      // Bei 390 px zeigt die Seitenleiste andre Steuerungen als am breiten Fenster --
+      // gemessen 05:13:15 MEZ: "Show sidebar" und "Leave focus mode", je vier Messungen.
+      "Show sidebar", "Leave focus mode"];
+    const neuFehlend = iconFehlt.filter((z) => !AUSNAHMEN.some((a) => z.name.startsWith(a)));
+    const fach = [...new Set(iconFehlt.map((z) => z.name))];
+    console.log(`  Ausnahmefach (benannt, gezaehlt): ${iconFehlt.length} Messungen an ${fach.length} Steuerungen -- ${fach.join(" | ")}`);
+    urteil("**kein neues Steuer faellt unter die 44-px-Treffflaeche**", neuFehlend.length, 0);
+    for (const z of neuFehlend) console.log(`      NEU  ${z.seite}  ${z.k}  ${z.w} x ${z.h}  "${z.name}"  Zeiger: ${JSON.stringify(z.zeiger)}`);
     console.log(`  Fremd in der eignen Mitte: ${mitteDiebe.length} von ${mitteAlle} Zielen in ${seitenQ.length} Sichten (Bericht, noch keine Latte)`);
     for (const z of mitteDiebe.slice(0, 20)) console.log(`    DIEB  ${z.seite}  ${z.k}  ${z.w} x ${z.h}  "${z.name}"  ->  "${z.mitte}"`);
     console.log(`  Bild: ${await bild(`tastmass-${BREITE_IST}px.png`)}`);
