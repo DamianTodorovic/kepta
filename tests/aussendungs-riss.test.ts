@@ -107,7 +107,7 @@ describe("P129, der Wortschatz: ein benanntes Instrument ist ein Messzeug", () =
     expect(zeug.test(einheiten[0]), "das Messzeug steht im selben Satz, wird aber nicht gesehen").toBe(true);
   });
 
-  it("am echten Bestand: 76 von 181 absoluten Behauptungen nennen ihr Messzeug", () => {
+  it("am echten Bestand: 79 von 181 absoluten Behauptungen nennen ihr Messzeug", () => {
     let absoluten = 0;
     let mit = 0;
     for (const datei of DATEIEN) {
@@ -146,7 +146,7 @@ describe("P129, der Wortschatz: ein benanntes Instrument ist ein Messzeug", () =
     // Zugleich fiel README.md:181 aus der schmalen Klasse (34 -> 33): das Wort, das sie dort
     // hielt, war "as always" in "validated offline as always", und diese Formulierung war falsch.
     expect(absoluten, "der Nenner ist nicht mehr 181 — der Riss oder die Klasse hat sich bewegt").toBe(181);
-    expect(mit, `${mit} von ${absoluten} nennen ein Messzeug — erwartet war 76`).toBe(76);
+    expect(mit, `${mit} von ${absoluten} nennen ein Messzeug — erwartet war 79`).toBe(79);
     expect(mit / absoluten, "Anteil ohne Nenner ist ein Urteil").toBeGreaterThan(0.3);
     expect(maschine.source.length, "die schmale Klasse wurde nicht mitgeändert").toBeGreaterThan(10);
   });

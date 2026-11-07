@@ -1,3 +1,38 @@
+## [3.2.192]
+
+### Fixed
+
+- **The clipper's SSRF gate read IPv6 literals too narrowly, and an embedded
+  127.0.0.1 walked through.** The gate covered the five IPv4 notations and the
+  IPv4-mapped form; it did not cover IPv6 addresses that *carry* an IPv4:
+  `::7f00:1` (IPv4-compatible), `64:ff9b::7f00:1` and `64:ff9b:1::7f00:1`
+  (NAT64), `2002:7f00:1::` (6to4) and `2001:0::80ff:fffe` (Teredo, whose remote
+  half is the complement). Measured before the fix at 11:30:49 MEZ:
+  `POST /api/clip` with `http://[64:ff9b::7f00:1]/` answered **200** and fetched
+  it, while `::1`, `fe80::1` and `fc00::1` were already refused. `eingebettetesIpv4`
+  in `server/helfer/ssrf.ts` now lifts the carried address out of all four forms
+  (Teredo in both readings) and lets the existing private-range verdict decide,
+  so a genuinely public IPv6 target still opens. Held by
+  `tests/server.test.ts:1031` (eleven notations, plus the public control) and
+  `tests/server.test.ts:1111`/:1134 (three hops re-checked before each fetch;
+  five hops deep, then 508).
+- **The rebinding sentence had no machine.** README.md:262 has sold "a website
+  using DNS rebinding gets nothing" for weeks; nothing proved it, because no
+  test ever sent an `Origin`. What actually holds the door is
+  `server/app.ts:211-221`: a foreign origin receives no
+  `Access-Control-Allow-Origin`, so the browser blocks reading the body. That
+  branch is now measured in `tests/server-herkunft.test.ts:53` (foreign origin →
+  no CORS grant), `tests/server-herkunft.test.ts:59` (the app's own localhost
+  origin keeps its body) and `tests/server-herkunft.test.ts:65` (no Origin —
+  curl, MCP, the Electron main — is not slowed).
+
+### Documented
+
+- `README.md:108` and `README.md:263` now name those witnesses instead of saying
+  "every notation" and "every hop", and the census moved with them: 79 of 181
+  absolute claims name their instrument (measured 11:37:21 MEZ, was 76), 102
+  still do not.
+
 ## [3.2.191]
 
 ### Fixed

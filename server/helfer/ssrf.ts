@@ -42,6 +42,29 @@ export function ipv6Groups(ip: string): number[] | null {
   return groups.length === 8 ? groups : null;
 }
 
+/**
+ * Die IPv4-Adressen, die eine IPv6-Adresse traegt — vier Uebergangsformen, deren letztes
+ * Wort wie ein oeffentliches Adresspaar aussieht und doch 127.0.0.1 treffen kann:
+ * IPv4-kompatibel (::7f00:1), NAT64 (64:ff9b::/96 und 64:ff9b:1::/48), 6to4 (2002::/16,
+ * die Adresse steckt in den Gruppen 1-2) und Teredo (2001:0::/32, deren Counterpart die
+ * letzte Wortgruppe *komplementiert*). Teredo liefert beide Lesarten zurueck, weil die
+ * komplementierte die eigentliche Remote-Adresse ist: wer nur die eine prueft, laesst
+ * [2001:0::80ff:fffe] durch — dasselbe 127.0.0.1.
+ */
+export function eingebettetesIpv4(g: number[]): string[] {
+  const ausWortern = (hoch: number, tief: number) => `${hoch >>> 8}.${hoch & 255}.${tief >>> 8}.${tief & 255}`;
+  const g0 = g[0]!;
+  if (g.slice(0, 5).every((x) => x === 0) && (g[5] === 0 || g[5] === 0xffff)) {
+    return [ausWortern(g[6]!, g[7]!)]; // ::a.b.c.d und ::ffff:a.b.c.d
+  }
+  if (g0 === 0x0064 && g[1] === 0xff9b) return [ausWortern(g[6]!, g[7]!)] /* NAT64, beide Praefixe */;
+  if (g0 === 0x2002) return [ausWortern(g[1]!, g[2]!)]; // 6to4
+  if (g0 === 0x2001 && g[1] === 0x0000) {
+    return [ausWortern(g[6]!, g[7]!), ausWortern((~g[6]!) & 0xffff, (~g[7]!) & 0xffff)]; // Teredo
+  }
+  return [];
+}
+
 /** IP-Literal (v4/v6, kanonische Form) gegen Loopback/Privat/Link-Local/CGNAT/Unique-Local/Multicast/Reserved prüfen. */
 export function isPrivateIp(ip: string): boolean {
   if (/^\d{1,3}(\.\d{1,3}){3}$/.test(ip)) {
@@ -67,6 +90,10 @@ export function isPrivateIp(ip: string): boolean {
   if (h >= 0xfe80 && h <= 0xfebf) return true; // fe80::/10 link-local
   if (h >= 0xfc00 && h <= 0xfdff) return true; // fc00::/7 unique local
   if (h >= 0xff00) return true; // ff00::/8 multicast
+  // P157: Uebergangsformen, die eine IPv4-Adresse tragen — die Adresse selbst entscheiden lassen.
+  for (const eingebettet of eingebettetesIpv4(g)) {
+    if (isPrivateIp(eingebettet)) return true;
+  }
   return false;
 }
 

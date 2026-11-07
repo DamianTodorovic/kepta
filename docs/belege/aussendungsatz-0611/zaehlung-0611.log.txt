@@ -1,4 +1,4 @@
-Zeit: 7.11.2026, 11:36:24 MEZ
+Zeit: 7.11.2026, 12:38:18 MEZ
 Dateien: README.md, SECURITY.md, ROADMAP.md, .github/release-notes.md — Einheiten ueber 25 Zeichen.
 Riss: satz-riss.mjs (P128, markdown-fest). Vorher: Satzende + Leerzeichen ueber dem
 ganzen Text, wodurch Aufzaehlungen, Tabellenzeilen und `<summary>`-Kuelsen als EIN
@@ -9,11 +9,11 @@ Satz zaehlten. Unter beiden Naivlingen, in diesem Lauf nachgerechnet:
 
 | Datei | Saetze | absolute | mit Messzeug | ohne Messzeug | Anteil ohne |
 |---|---|---|---|---|---|
-| `README.md` | 420 | 136 | 63 | 73 | 53.7 % |
+| `README.md` | 420 | 136 | 66 | 70 | 51.5 % |
 | `SECURITY.md` | 33 | 9 | 4 | 5 | 55.6 % |
 | `ROADMAP.md` | 77 | 16 | 4 | 12 | 75.0 % |
 | `.github/release-notes.md` | 52 | 20 | 5 | 15 | 75.0 % |
-| **zusammen** | **582** | **181** | **76** | **105** | **58.0 %** |
+| **zusammen** | **582** | **181** | **79** | **102** | **56.4 %** |
 
 Nenner fuer den Anteil: 181 absolute Behauptungen in 582 Saetzen der vier Texte.
 
@@ -25,14 +25,14 @@ Zweite Lesung — der Zeuge darf im selben Abschnitt stehen (Absatz, Tabelle, Au
 | `ROADMAP.md` | 16 | 0 | 16 |
 | `.github/release-notes.md` | 20 | 8 | 12 |
 | zusammen | 181 | 72 | 109 |
-   mit Messzeug im selben Abschnitt: 72 von 181 = 39.8 % (gegen 76 von 181 = 42.0 % in der engen Lesung).
+   mit Messzeug im selben Abschnitt: 72 von 181 = 39.8 % (gegen 79 von 181 = 43.6 % in der engen Lesung).
 
 Die schmalere Klasse — Saetze, die ein Werkzeug widerlegen koennte (never/always/cannot/0 %/100 %):
-   README.md                  29 von 136 absoluten
+   README.md                  30 von 136 absoluten
    SECURITY.md                2 von 9 absoluten
    ROADMAP.md                 1 von 16 absoluten
    .github/release-notes.md   2 von 20 absoluten
-   zusammen 34 von 181 — der Rest ist Produktcopy ("no password to type"), keine Behauptung ueber eine Maschine.
+   zusammen 35 von 181 — der Rest ist Produktcopy ("no password to type"), keine Behauptung ueber eine Maschine.
    Die Liste, in Lesereihenfolge, mit dem Marker „Zeug", wenn derselbe Satz schon ein Messzeug nennt:
    [README.md] ZEUG While it cools at 3 000 notes a few pairs still touch for a moment; tests/lib/graphLayout.test.ts:2455-2458 pins that funnel at ≤ 40 pairs by step 250, ≤ 40 again by step 310 and zero by step 380, so no sentence here say
    [README.md] ZEUG On macOS the key never sits in a file; on Windows it is the DPAPI-sealed database-key.dpapi in the data folder, readable only under the same account, and a headless install with KEPTA_DB_KEY keeps it in the process envir
@@ -56,6 +56,7 @@ Die schmalere Klasse — Saetze, die ein Werkzeug widerlegen koennte (never/alwa
    [README.md] ZEUG HTML is turned into text before import, and content that carries no knowledge — markup scaffolding, repeated table rows — never becomes a note (tests/core/klassifikation.test.ts:112 strips script, style and tags into rea
    [README.md] ZEUG The list groups by file, by kind or by period, and *Load more* never cuts a group in half (tests/lib/gruppenfenster.test.ts pins the window rule: a group that starts is shown whole, so a five-part file never appears as t
    [README.md] ZEUG GET /api/memories/:id therefore stays unimplemented until a client needs a body it cannot already reach; until then this table names only the methods the server registers, and tests/doku-plattform.test.ts fails if the tw
+   [README.md] ZEUG - The server binds to 127.0.0.1 only (deliberate override via KEPTA_HOST), and answers only this computer — a website whose name rebinds to 127.0.0.1 still cannot read one byte back, because a foreign Origin gets no Acce
    [README.md] ZEUG Nothing is sent by the app itself, and the store never syncs on its own: the device sync hands you an AES-256-GCM bundle and stops at that answer (server/router/sync.ts:40 returns it to the window, it posts it nowhere), 
    [README.md] ZEUG There is nothing to activate and nothing to buy inside the window, so the app also never asks for it — no key field, no counter, no trial clock, no "first day free" and no message about a limit (tests/keine-grenzen.test.
    [README.md] ZEUG It was never a lock — but it was counting, and counting needed places to hide the tally: an AES-256-GCM blob in the store's settings, two keychain entries under app.kepta.plan, and a trial-anchor file in a per-user direc
@@ -73,7 +74,7 @@ Zwei von ihnen nachgegriffen, im selben Lauf:
    "no screenshot of it here yet" (Semantic-Ansicht): README nennt 20 Bilder (12 in Markdown, 8 als <img alt>), davon 0 mit "Semantic"; der Satz steht noch da — haltbar.
    "no embedding ever travels into the view": 8 von 8 benannten Flaechen-Dateien gelesen, zusammen 0 Nennung(en) "embedding"; das Wort liegt in 34 Test-Dateien des Repos. Fehlende Dateien: keine.
 
-Die 105 ohne Messzeug, in Lesereihenfolge der Dateien (erste 40):
+Die 102 ohne Messzeug, in Lesereihenfolge der Dateien (erste 40):
    [README.md] Your AI forgets you after every chat.
    [README.md] Desktop app · no cloud · no account · encrypted at rest SQLite · hybrid retrieval · knowledge graph · MCP
    [README.md] The time slider replays eighteen months of a fictional advisory firm, and because every note carries a validity window, past moments show exactly what was true then.
@@ -92,7 +93,6 @@ Die 105 ohne Messzeug, in Lesereihenfolge der Dateien (erste 40):
    [README.md] Changing the default would also mean re-embedding every stored note, because each chunk is keyed to the model that produced it (npm run eval:sprache reruns both sides).
    [README.md] Everything lives in ~/.kepta/, encrypted on disk, no account, no telemetry.
    [README.md] Files imported with an older extraction can be read again under *Settings → Data → Re-read imported files* — it counts first and writes only after you confirm
-   [README.md] URL clipper with SSRF protection (IP literals in every notation, DNS resolution, every redirect hop checked); navigation lines, "Skip to main content" and cookie banners are stripped on import
    [README.md] Import your AI history: bring your ChatGPT or Claude data export here (*Settings → Data management → Import your AI history*): every conversation with at least one answer becomes a searchable note with its original date,
    [README.md] Persistent embeddings via Ollama (nomic-embed-text), computed by a background queue instead of re-embedding on every query
    [README.md] - A concept in the picture is a shared one: a term that exists only because it repeats the title of the single note carrying it is an echo of your filing, not knowledge, and the graph leaves it out — the concept count is
@@ -113,4 +113,5 @@ Die 105 ohne Messzeug, in Lesereihenfolge der Dateien (erste 40):
    [README.md] There is no single-note GET.
    [README.md] DELETE /api/memories/:id and POST /api/memories/:id/restore are the only methods on that path — asking the door for one note by id answers 404, and that is the contract, not a bug to route around.
    [README.md] - All data in ~/.kepta/ — one SQLite file that belongs to you
-   [README.md] - The server binds to 127.0.0.1 only (deliberate override via KEPTA_HOST), and answers only this computer — a website using DNS rebinding gets nothing
+   [README.md] - No account, no telemetry, no phone-home — and nothing to activate: the app validates no key, so there is no check of any kind to call home for.
+   [README.md] - With no AI configured, not a single byte leaves the machine

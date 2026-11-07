@@ -1028,6 +1028,63 @@ describe("Clip-Route", () => {
     }
   });
 
+  it("POST /api/clip blockt IPv6-Loopback, Link-Local, Unique-Local und eingebettetes IPv4 (SSRF)", async () => {
+    // P157: die fuenf vorhandenen Schreibweisen decken IPv4 und die gemappte Form. Eine echte
+    // IPv6-Adresse in eckigen Klammern war nie gefordert — ::1 ist Loopback, fe80:: link-local
+    // (die metadata-Pfade vieler Cloud-Instance), fc00::/fd00:: privater Netz. Der Befund diese
+    // Runde: 64:ff9b::7f00:1 (NAT64, traegt 127.0.0.1) wurde AKZEPTIERT und bis zum Netz
+    // durchgelassen (11:30:49 MEZ, expected 200 to be 400). Deshalb die ganze Familie der
+    // eingebetteten Adressen: NAT64 wohlknown und lokal, 6to4, Teredo mit und ohne Komplement.
+    // Kein echter Ausgang: eine Fetch-Attrappe zaehlt mit, ob die Tuer durchlaesst.
+    let versuche = 0;
+    globalThis.fetch = (async (input: unknown) => {
+      versuche++;
+      return {
+        ok: true,
+        status: 200,
+        headers: { get: () => "text/html; charset=utf-8" },
+        text: async () => "<html><body>attrappe</body></html>",
+        url: String(input),
+      } as unknown as Response;
+    }) as unknown as typeof fetch;
+    const privatEingebettet = [
+      "http://[::1]/",
+      "http://[0:0:0:0:0:0:0:1]/",
+      "http://[fe80::1]/",
+      "http://[fc00::1]/",
+      "http://[fd00::1]/",
+      "http://[::7f00:1]/",
+      "http://[64:ff9b::7f00:1]/",
+      "http://[64:ff9b:1::7f00:1]/",
+      "http://[2002:7f00:1::]/",
+      "http://[2001:0::7f00:1]/",
+      "http://[2001:0::80ff:fffe]/",
+    ];
+    for (const url of privatEingebettet) {
+      const res = await request(app).post("/api/clip").send({ url });
+      expect(res.status, `${url} wurde nicht abgewiesen`).toBe(400);
+      expect(res.body.error, `${url} nennt keinen Grund`).toContain("SSRF");
+    }
+    expect(versuche, "die Tuer hat trotz Abweisung schon einen Fetch versucht").toBe(0);
+
+    // Gegenkontrolle: ein echtes oeffentliches Ziel darf die Tuer passieren — sonst ist die
+    // Heilung eine IPv6-Sperre, kein Schutz.
+    globalThis.fetch = (async (input: unknown) => {
+      versuche++;
+      return {
+        ok: true,
+        status: 200,
+        headers: { get: () => "text/html; charset=utf-8" },
+        text: async () => "<html><body>attrappe</body></html>",
+        url: String(input),
+      } as unknown as Response;
+    }) as unknown as typeof fetch;
+    const vorDemOeffentlichen = versuche;
+    const res = await request(app).post("/api/clip").send({ url: "http://[2001:4860:4860::8888]/" });
+    expect(res.status, "ein oeffentliches IPv6-Ziel wurde wie privat behandelt").not.toBe(400);
+    expect(versuche, "das oeffentliche Ziel wurde nie abgeholt").toBeGreaterThan(vorDemOeffentlichen);
+  });
+
   it("POST /api/clip blockt Hosts, deren DNS eine private IP liefert", async () => {
     lookupSpy.mockResolvedValue([{ address: "10.0.0.5", family: 4 }] as never);
     const res = await request(app).post("/api/clip").send({ url: "https://intranet.example.com/" });
@@ -1049,6 +1106,46 @@ describe("Clip-Route", () => {
     const res = await request(app).post("/api/clip").send({ url: "https://example.com/redirect" });
     expect(res.status).toBe(400);
     expect(calls).toBe(1); // zweiter Hop wird vor dem Fetch abgelehnt
+  });
+
+  it("POST /api/clip folgt drei Hops und blockt erst den dritten, bevor er geholt wird", async () => {
+    // P157: die vorhandene Fall prüft genau einen Hop (calls === 1). "jeder Redirect-Hop" ist
+    // erst bewiesen, wenn Hop 2 noch oeffentlich ist und Hop 3 privat wird — und dass der
+    // private Hop nicht mehr abgeholt wird, zaehlt die Attrappe.
+    const zielEinerKette = ["https://drei.example/zw", "https://drei.example/dr", "http://[64:ff9b::7f00:1]/"];
+    let calls = 0;
+    globalThis.fetch = (async () => {
+      const antwort = zielEinerKette[calls];
+      calls++;
+      return {
+        ok: true,
+        status: 302,
+        headers: { get: () => antwort },
+        text: async () => "",
+      } as unknown as Response;
+    }) as unknown as typeof fetch;
+    const res = await request(app).post("/api/clip").send({ url: "https://drei.example/anfang" });
+    expect(res.status).toBe(400);
+    expect(res.body.error).toContain("SSRF");
+    // Drei Hops wurden geholt (anfang, zw, dr); das vierte Ziel — das private — nie.
+    expect(calls, "der private Hop wurde trotz Abweisung abgeholt").toBe(3);
+  });
+
+  it("POST /api/clip endet nach fuenf Hops mit 508, nicht mit einer stillen Seite", async () => {
+    let calls = 0;
+    globalThis.fetch = (async () => {
+      calls++;
+      return {
+        ok: true,
+        status: 302,
+        headers: { get: () => "https://immer.example/naechster" },
+        text: async () => "",
+      } as unknown as Response;
+    }) as unknown as typeof fetch;
+    const res = await request(app).post("/api/clip").send({ url: "https://immer.example/anfang" });
+    expect(res.status).toBe(508);
+    expect(res.body.error).toContain("Too many redirects");
+    expect(calls, "die Hop-Grenze ist nicht die versprochene Zahl").toBe(6);
   });
 
   it("POST /api/clip mit nicht auflösbarem Host → 400 statt 500", async () => {

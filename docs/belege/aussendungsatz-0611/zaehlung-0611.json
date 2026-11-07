@@ -3,8 +3,8 @@
   "README.md": {
    "saetze": 420,
    "absolut": 136,
-   "mit_zeug": 63,
-   "ohne_zeug": 73
+   "mit_zeug": 66,
+   "ohne_zeug": 70
   },
   "SECURITY.md": {
    "saetze": 33,
@@ -28,8 +28,8 @@
  "zusammen": {
   "saetze": 582,
   "absolut": 181,
-  "mit_zeug": 76,
-  "ohne_zeug": 105
+  "mit_zeug": 79,
+  "ohne_zeug": 102
  },
  "abschnitt": {
   "README.md": {
@@ -61,7 +61,7 @@
  "maschinell_pruefbar": {
   "README.md": {
    "absolut": 136,
-   "maschinell": 29
+   "maschinell": 30
   },
   "SECURITY.md": {
    "absolut": 9,
@@ -76,7 +76,7 @@
    "maschinell": 2
   }
  },
- "summe_pruefbar": 34,
+ "summe_pruefbar": 35,
  "pruefbar_liste": [
   {
    "datei": "README.md",
@@ -186,6 +186,11 @@
   {
    "datei": "README.md",
    "satz": "GET /api/memories/:id therefore stays unimplemented until a client needs a body it cannot already reach; until then this table names only the methods the server registers, and tests/doku-plattform.test.ts fails if the tw",
+   "zeuge": true
+  },
+  {
+   "datei": "README.md",
+   "satz": "- The server binds to 127.0.0.1 only (deliberate override via KEPTA_HOST), and answers only this computer — a website whose name rebinds to 127.0.0.1 still cannot read one byte back, because a foreign Origin gets no Acce",
    "zeuge": true
   },
   {
@@ -374,10 +379,6 @@
   },
   {
    "datei": "README.md",
-   "satz": "URL clipper with SSRF protection (IP literals in every notation, DNS resolution, every redirect hop checked); navigation lines, \"Skip to main content\" and cookie banners are stripped on import"
-  },
-  {
-   "datei": "README.md",
    "satz": "Import your AI history: bring your ChatGPT or Claude data export here (*Settings → Data management → Import your AI history*): every conversation with at least one answer becomes a searchable note with its original date,"
   },
   {
@@ -455,14 +456,6 @@
   {
    "datei": "README.md",
    "satz": "- All data in ~/.kepta/ — one SQLite file that belongs to you"
-  },
-  {
-   "datei": "README.md",
-   "satz": "- The server binds to 127.0.0.1 only (deliberate override via KEPTA_HOST), and answers only this computer — a website using DNS rebinding gets nothing"
-  },
-  {
-   "datei": "README.md",
-   "satz": "SSRF protection in the URL clipper: normalised IP checks, DNS resolution, every redirect hop verified"
   },
   {
    "datei": "README.md",
