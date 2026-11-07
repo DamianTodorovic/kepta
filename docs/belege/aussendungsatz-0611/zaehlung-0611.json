@@ -2,8 +2,8 @@
  "dateien": {
   "README.md": {
    "saetze": 413,
-   "absolut": 132,
-   "mit_zeug": 49,
+   "absolut": 131,
+   "mit_zeug": 48,
    "ohne_zeug": 83
   },
   "SECURITY.md": {
@@ -27,14 +27,14 @@
  },
  "zusammen": {
   "saetze": 573,
-  "absolut": 175,
-  "mit_zeug": 58,
+  "absolut": 174,
+  "mit_zeug": 57,
   "ohne_zeug": 117
  },
  "abschnitt": {
   "README.md": {
-   "absolut": 132,
-   "mit_zeug": 58,
+   "absolut": 131,
+   "mit_zeug": 57,
    "ohne_zeug": 74
   },
   "SECURITY.md": {
@@ -54,13 +54,13 @@
   }
  },
  "zusammen_abschnitt": {
-  "absolut": 175,
-  "mit_zeug": 61,
+  "absolut": 174,
+  "mit_zeug": 60,
   "ohne_zeug": 114
  },
  "maschinell_pruefbar": {
   "README.md": {
-   "absolut": 132,
+   "absolut": 131,
    "maschinell": 29
   },
   "SECURITY.md": {

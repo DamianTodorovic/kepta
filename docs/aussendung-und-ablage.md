@@ -1131,15 +1131,50 @@ Zensus 00:47:11 MEZ, Exit 0: 573 Einheiten, **175** absolute Behauptungen, **58*
 Zeugen → **5 Arbeit**, unverändert.
 
 Dabei ein Fund am Muster selbst, und meine erste Reparatur war falsch: die Zahlen-Einheitensuche
-`\\d[\\d., ]*(%|ms|MiB|GiB|notes|queries|of|von)` begrenzt „of" nicht nach hinten, also zählt
+`\d[\d., ]*(%|ms|MiB|GiB|notes|queries|of|von)` begrenzt „of" nicht nach hinten, also zählt
 mein eignes Zitat „…:268 off the search hit" als Zahlenbehauptung (Gegenprobe: „off" → „beside",
-und der Satz ist nicht mehr absolut; gemessen 00:48:43). Die erste Annahme „`\\b` hinter die ganze
+und der Satz ist nicht mehr absolut; gemessen 00:48:43). Die erste Annahme „`\b` hinter die ganze
 Alternation" ist widerlegt: nachgezählt mit einer Vorsonde warft sie **8** Sätze aus dem Nenner
 (175 → 167), davon **6** echte Prozentbehauptungen („97 % of lines", „100, 115 or 130 %",
 „Hit@1 71 %"), weil `%` an einem Leerzeichen keine Wortgrenze findet. Der richtige Kandidat
-begrenzt nur die Wörter (`of\\b|von\\b|ms\\b|…`, `%` ohne Kante) und wirft genau einen Satz:
+begrenzt nur die Wörter (`of\b|von\b|ms\b|…`, `%` ohne Kante) und wirft genau einen Satz:
 meinen. P143 fährt das als eigne Arbeit — gemeldet, nicht heimlich gezogen, weil die 175 sonst
 eine Zahl enthielte, deren Grund ein Fehler im Muster ist.
+
+## 31. P143 — Das „of" in „off" war eine Zahlen-Einheit: die Regel bekommt Wortgrenzen (7.11. 00:56 MEZ)
+
+Der Zensus zählt absolute Behauptungen mit
+`/…|(\d[\d., ]*(%|ms|MiB|GiB|notes|queries|of|von))/i`. Die Wort-Einheiten waren nach hinten
+unbegrenzt, also traf „of" in „…:268 **of**f the search hit" und in „3 **of**fice links". Ein Satz
+galt als Zahlenbehauptung, ohne eine zu enthalten — und der Satz war meiner aus P142.
+
+**Die beiden Kandidaten, vor der Änderung gefahren** (`/tmp/p143-vorsonde.mjs`):
+
+| Kandidat | Uhr | Nenner | Verworfen weil |
+|---|---|---|---|
+| A: ein nacktes `\b` hinter der ganzen Alternation | 00:49:15 | 175 → **167** (8 raus) | 6 davon echte Prozentangaben („97 % of lines", „100, 115 or 130 %", „Hit@1 71 %") — `%` findet vor einem Leerzeichen keine Wortgrenze |
+| B: nur die Wörter begrenzt, `%` ohne Kante | 00:49:32 | 175 → **174** (1 raus) | — das ist der eine, und er ist meiner |
+
+**Test zuerst.** Vier Fälle in `tests/aussendungs-riss.test.ts:143`, vor der Änderung gefahren:
+00:56:05 **2 rot, 13 grün**. Der zweite rote war beim Schreiben des Tests gefunden, nicht geplant:
+ich wollte eine Negativ-Kontrolle („3 office links") bauen und baute einen weiteren Treffer
+derselben Art — die einzige Kontrolle, die den Fehler zeigt, ist die, die ihn selbst erwischt.
+Positiv-Kontrollen bleiben grün: „175 of 573 sentences" und „58 of 175 claims" zählen weiter, denn
+ein `of` als eignes Wort hinter einer Zahl ist genau die Behauptung, die der Zensus sucht.
+
+**Die Änderung** ist eine Zeile in `docs/belege/aussendungsatz-0611/messregel.mjs`:
+`(%|ms\b|MiB\b|GiB\b|notes\b|queries\b|of\b|von\b)` — Wörter mit Kante, Prozent ohne. Danach
+15 von 15 grün (00:57:03).
+
+### Die Zählung
+
+Zensus 00:56:45 MEZ, Exit 0: 573 Einheiten, **174** absolute Behauptungen, **57** mit Messzeug
+= **32,8 %** (vorher 58 von 175 = 33,1 %), 117 ohne. Schmale Klasse **34**, davon **29** mit
+Zeugen → **5 Arbeit**, unverändert. Pinne 174 / 57, Kante > 0,30 (gemessen 0,3276).
+
+Nenner −1, Zähler −1: der Satz, der fälschlich zählte, war bewaffnet. Eine Regel, die zu weit
+greift, zeichnet die Quote schlechter, als sie ist — ihre Korrektur macht sie nicht besser, sie
+macht sie wahr. Das ist die Richtung, die hier gemeldet werden muss, nicht eine Quote, die steigt.
 
 
 ## Fehler in diesem Schlag, die ich selbst gefunden habe
@@ -1322,3 +1357,31 @@ eine Zahl enthielte, deren Grund ein Fehler im Muster ist.
     echte Prozentbehauptungen, weil `%` an einem Leerzeichen keine Wortgrenze findet. Richtig ist
     die Begrenzung nur für die Wörter; gemessen wirft sie genau einen Satz. Der Fund bleibt in
     Abschnitt 30 stehen und wird P143, statt dass ich die Zahl still verbessere.
+36. **Sechs doppelte Backslash-Zeichen in eignen Code-Spannen.** In Abschnitt 30 schrieb ich die
+    Regelstellen mit je zwei statt einem Backslash — das Papier zeigte also eine Regel, die keine
+    Maschine so liest. Beim Schreiben von Abschnitt 31 aufgefallen, mit einem Zusatzlauf gezählt
+    (sechs Stellen), auf null gebracht; die Regel selbst steht jetzt in Abschnitt 31 mit je einem
+    Zeichen. Solche Stellen bleiben besser in Worten als in Escape-Folgen, wenn sie berichtet
+    werden — der Bericht darf nicht der Fehler sein.
+37. **Eine Zeilenangabe vor dem Messen geschrieben.** Im neuen Regelkommentar ließ ich die neuen
+    Fälle auf `aussendungs-riss.test.ts:131` zeigen; der `describe` sitzt auf `:143`. Vor dem
+    ersten Commit berichtigt — dasselbe Gesetz wie die Zahlen: ein Anker heißt erst, nachdem die
+    Datei ihn zeigt.
+38. **Drei Umlaute in meinem eignen Mappe-Papier** („grün", „zählte", „Gegenstück"), gefunden vom
+    Sweep nach dem Schreiben, alle drei vor dem Commit. Es sind der sechste bis achte
+    Zeichen-Gleiter dieses Abends; der Sweep ist die Reparatur, nicht das Aufpassen.
+39. **Meine Negativ-Kontrolle war selbst ein Treffer.** Der Fall „The panel shows 250 note-headers
+    and 3 office links" sollte beweisen, dass ein Nicht-Einheiten-Wort nicht zählt — und zählte
+    über das „of" in „office". Das ist kein Fehler am Test, sondern der beste Beweis, den die
+    Regel kriegen kann: der Fall fiel rot, bevor die Regel geändert war.
+40. **Der Datumskanal war wieder falsch — diesmal in die andere Richtung.** Beim Nachziehen der
+    drei README-Zähler setzte ich „measured" auf 2026-11-07, weil die UTC-Uhr des Berichts bald
+    Mitternacht überschreitet, und rechnete damit richtig über die Zeitzone — aber falsch darüber,
+    *welcher* Lauf der Prüfungsmeldung unterliegt. Der Prüfungslauf 01:00:06 → 01:02:40 MEZ fiel
+    deshalb rot: „nennt einen Messstand in der Zukunft (2026-11-07) — beglaubigt ist der Lauf vom
+    2026-11-06". Gelesen in `scripts/test-bericht.mjs:240-267`: ein Stempel darf nicht *nach* dem
+    Lauf liegen, älter sein ist erlaubt (die Untergrenze wurde am 12.10. absichtlich entfernt,
+    weil ein Prüfer, der um Mitternacht fällt, ein Los ist, keine Regel). Und der Lauf, den der
+    Fall beim Laufen liest, ist der auf der Platte — also der vorherige. Zurück auf 2026-11-06,
+    dritter Lauf als Prüfung. Zweite Instanz desselben Grundes wie P141-Fehler 5: eine Zahl nennt
+    ihren Kanal, und ihr Kanal ist das Artefakt, nicht mein Gefühl für die Uhr.

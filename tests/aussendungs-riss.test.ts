@@ -107,7 +107,7 @@ describe("P129, der Wortschatz: ein benanntes Instrument ist ein Messzeug", () =
     expect(zeug.test(einheiten[0]), "das Messzeug steht im selben Satz, wird aber nicht gesehen").toBe(true);
   });
 
-  it("am echten Bestand: 58 von 175 absoluten Behauptungen nennen ihr Messzeug", () => {
+  it("am echten Bestand: 57 von 174 absoluten Behauptungen nennen ihr Messzeug", () => {
     let absoluten = 0;
     let mit = 0;
     for (const datei of DATEIEN) {
@@ -118,12 +118,54 @@ describe("P129, der Wortschatz: ein benanntes Instrument ist ein Messzeug", () =
         if (zeug.test(s)) mit++;
       }
     }
-    // Gemessen 7.11. 00:47:11 MEZ mit dem Zaehler selbst (docs/belege/aussendungsatz-0611/
-    // zaehlung-0611.log.txt): P142 teilte README.md:86 — ein Bullet mit einer Ueber-behauptung und
-    // einem Halbsatz — in drei Saetze und bewaffnete alle drei. Nenner 173 -> 175, Zaehler 55 -> 58.
-    expect(absoluten, "der Nenner ist nicht mehr 175 — der Riss oder die Klasse hat sich bewegt").toBe(175);
-    expect(mit, `${mit} von ${absoluten} nennen ein Messzeug — erwartet war 58`).toBe(58);
+    // Gemessen 7.11. 00:56:45 MEZ mit dem Zaehler selbst (docs/belege/aussendungsatz-0611/
+    // zaehlung-0611.log.txt): P142 teilte README.md:86 in drei bewaffnete Saetze (173 -> 175,
+    // 55 -> 58), und P143 begrenzte die Zahlen-Einheiten der Regel — das of in "off" und in
+    // "office" zahlte als Einheit. Nenner 174, Zaehler 57: genau ein Satz fiel aus beiden
+    // Spalten, und das ist mein eignes Zitat in README.md:86.
+    expect(absoluten, "der Nenner ist nicht mehr 174 — der Riss oder die Klasse hat sich bewegt").toBe(174);
+    expect(mit, `${mit} von ${absoluten} nennen ein Messzeug — erwartet war 57`).toBe(57);
     expect(mit / absoluten, "Anteil ohne Nenner ist ein Urteil").toBeGreaterThan(0.3);
     expect(maschine.source.length, "die schmale Klasse wurde nicht mitgeändert").toBeGreaterThan(10);
+  });
+});
+
+/**
+ * P143 — die Zahlen-Einheit der absolut-Regel war nicht nach hinten begrenzt.
+ *
+ * Gemessen 6.11. 00:48:43 und 00:49:32: `\\d[\\d., ]*(...|of|von)` trifft in "tests/engine.test.ts:268
+ * off the search hit" das "of" in "off" — ein Satz, der gar keine Zahl behauptet, zaeilt als
+ * Zahlenbehauptung. Der erste Gegenentwurf (ein nacktes `\b` hinter der ganzen Alternation) ist
+ * widerlegt: er warf 8 Sätze aus dem Nenner, 6 davon echte Prozentangaben, weil `%` vor einem
+ * Leerzeichen keine Wortgrenze findet. Die Regel muss also **die Woerter** begrenzen und die
+ * Prozent-Marke frei lassen.
+ */
+describe("P143, die Zahlen-Einheit: ein of in einem groesseren Wort ist keine Einheit", () => {
+  it("ein of in 'off' macht keinen Satz zu einer Zahlenbehauptung", () => {
+    // Genau mein README-Satz aus P142: die Zahl ist eine Zeilennummer in einem Zitat.
+    const satz = "Contradictions supersede each other and expired facts are marked (tests/components/MemoryCard.test.tsx:47 and :52 read both marks off the rendered card, tests/engine.test.ts:268 off the search hit)";
+    expect(absolut.test(satz), "das of in 'off' zaehlt als Zahlen-Einheit — die Sonde ist zu weit").toBe(false);
+  });
+
+  it("ein of als eignes Wort nach einer Zahl zaehlt weiter — der Nenner darf nicht schmeicheln", () => {
+    expect(absolut.test("175 of 573 sentences carry an absolute claim.")).toBe(true);
+    expect(absolut.test("The share rose: 58 of 175 claims name their instrument.")).toBe(true);
+  });
+
+  it("die Prozent-Marke verliert ihre Kraft nicht an einem Leerzeichen", () => {
+    // Die Kontrollen gegen den naive `\b`-Entwurf: alle vier sind echte Zahl-Angaben und
+    // vier von den acht Saetzen, die der naive Wurf zu Unrecht aus dem Nenner warf.
+    expect(absolut.test("Text size — 100, 115 or 130 %, under Settings → Display.")).toBe(true);
+    expect(absolut.test("src/core must not fall under 97 % of lines and must hold 100 % of functions.")).toBe(true);
+    expect(absolut.test("Hit@1 71 % for the engine without a vector leg.")).toBe(true);
+    expect(absolut.test("The eval's third leg lands on the same 76 %.")).toBe(true);
+  });
+
+  it("ms, MiB, GiB, notes und queries bleiben Einheiten, 'off' und 'note' sind es nicht", () => {
+    expect(absolut.test("The answer took 612 ms and touched 4 notes.")).toBe(true);
+    expect(absolut.test("The database file holds 1,4 GiB of knowledge.")).toBe(true);
+    expect(absolut.test("Set the interval to 250 ms, never less.")).toBe(true);
+    // Ohne eine echte Einheit darf kein Wort mit einem Einheitsstamm den Satz zaehlen.
+    expect(absolut.test("The panel shows 250 note-headers and 3 office links.")).toBe(false);
   });
 });

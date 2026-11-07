@@ -4,8 +4,17 @@
    Und dieselbe Gefahr wie P124: ein Fall, der die Regel nachbaut statt importiert, wird bei
    jeder Aenderung der Regel still gruen. */
 
-/** Eine Behauptung, die ein Urteil ueber die Welt traegt — auch Produktcopy. */
-export const absolut = /\b(no|never|none|all|every|only|always|guarantee|keine[nr]?|nie|immer|alle|jeder|nur)\b|(\d[\d., ]*(%|ms|MiB|GiB|notes|queries|of|von))/i;
+/**
+ * Eine Behauptung, die ein Urteil ueber die Welt traegt — auch Produktcopy.
+ *
+ * P143 begrenzt die **Woerter** unter den Einheiten; die Prozent-Marke bleibt ohne Kante.
+ * Gemessen 6.11. 00:48:43 und 00:49:32: ohne Begrenzung traf `of` in "…:268 off the search hit"
+ * und in "3 office links" — Sätze, die gar keine Zahl behaupten, zählten mit. Der Gegenentwurf
+ * `\b` hinter der ganzen Alternation ist widerlegt: er warf 8 Sätze aus dem Nenner (175 → 167),
+ * davon 6 echte Prozentangaben ("97 % of lines", "100, 115 or 130 %"), weil `%` vor einem
+ * Leerzeichen keine Wortgrenze findet. Die Faelle stehen in `tests/aussendungs-riss.test.ts:143`.
+ */
+export const absolut = /\b(no|never|none|all|every|only|always|guarantee|keine[nr]?|nie|immer|alle|jeder|nur)\b|(\d[\d., ]*(%|ms\b|MiB\b|GiB\b|notes\b|queries\b|of\b|von\b))/i;
 
 /**
  * Das Messzeug im selben Satz. P129 erweitert den Wortschatz um benannte Konfig-Instrumente:
