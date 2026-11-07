@@ -107,7 +107,7 @@ describe("P129, der Wortschatz: ein benanntes Instrument ist ein Messzeug", () =
     expect(zeug.test(einheiten[0]), "das Messzeug steht im selben Satz, wird aber nicht gesehen").toBe(true);
   });
 
-  it("am echten Bestand: 82 von 184 absoluten Behauptungen nennen ihr Messzeug", () => {
+  it("am echten Bestand: 87 von 184 absoluten Behauptungen nennen ihr Messzeug", () => {
     let absoluten = 0;
     let mit = 0;
     for (const datei of DATEIEN) {
@@ -152,8 +152,13 @@ describe("P129, der Wortschatz: ein benanntes Instrument ist ein Messzeug", () =
     // der Punkt IN der zitierten Absage (`Forbidden origin.`) ist ein Satzende fuer den Riss,
     // also stand der Zeuge in der folgenden Einheit und der Satz galt als unbewaffnet.
     // Heilung war die Formulierung, nicht der Zaehler: "must come back 403" statt des Zitats.
+    // P159 (gemessen 7.11. 21:23:59 MEZ): die Namens-Zusage der Downloads war fuer 11 von
+    // 58 veroeffentlichten Dateien falsch (latest-mac.yml, SHA256SUMS.txt tragen keine
+    // Architektur). Zwei Saetze berichtigt, fuenf Traeger mit dem Release-Zensus bewaffnet:
+    // Zaehler 82 -> 87, Nenner 184 und Einheiten 585 bleiben, ohne Messzeug 102 -> 97
+    // (Anteil 55,4 -> 52,7 %). README allein 69 -> 71 mit, release-notes 5 -> 8 mit.
     expect(absoluten, "der Nenner ist nicht mehr 184 — der Riss oder die Klasse hat sich bewegt").toBe(184);
-    expect(mit, `${mit} von ${absoluten} nennen ein Messzeug — erwartet war 82`).toBe(82);
+    expect(mit, `${mit} von ${absoluten} nennen ein Messzeug — erwartet war 87`).toBe(87);
     expect(mit / absoluten, "Anteil ohne Nenner ist ein Urteil").toBeGreaterThan(0.3);
     expect(maschine.source.length, "die schmale Klasse wurde nicht mitgeändert").toBeGreaterThan(10);
   });

@@ -3,8 +3,8 @@
   "README.md": {
    "saetze": 423,
    "absolut": 139,
-   "mit_zeug": 69,
-   "ohne_zeug": 70
+   "mit_zeug": 71,
+   "ohne_zeug": 68
   },
   "SECURITY.md": {
    "saetze": 33,
@@ -21,21 +21,21 @@
   ".github/release-notes.md": {
    "saetze": 52,
    "absolut": 20,
-   "mit_zeug": 5,
-   "ohne_zeug": 15
+   "mit_zeug": 8,
+   "ohne_zeug": 12
   }
  },
  "zusammen": {
   "saetze": 585,
   "absolut": 184,
-  "mit_zeug": 82,
-  "ohne_zeug": 102
+  "mit_zeug": 87,
+  "ohne_zeug": 97
  },
  "abschnitt": {
   "README.md": {
    "absolut": 139,
-   "mit_zeug": 63,
-   "ohne_zeug": 76
+   "mit_zeug": 66,
+   "ohne_zeug": 73
   },
   "SECURITY.md": {
    "absolut": 9,
@@ -49,14 +49,14 @@
   },
   ".github/release-notes.md": {
    "absolut": 20,
-   "mit_zeug": 8,
-   "ohne_zeug": 12
+   "mit_zeug": 9,
+   "ohne_zeug": 11
   }
  },
  "zusammen_abschnitt": {
   "absolut": 184,
-  "mit_zeug": 74,
-  "ohne_zeug": 110
+  "mit_zeug": 78,
+  "ohne_zeug": 106
  },
  "maschinell_pruefbar": {
   "README.md": {
@@ -531,10 +531,6 @@
   },
   {
    "datei": "README.md",
-   "satz": "The desktop app is published only for macOS — Apple silicon and Intel."
-  },
-  {
-   "datei": "README.md",
    "satz": "No other platform has a downloadable app, and nothing here pretends otherwise."
   },
   {
@@ -544,10 +540,6 @@
   {
    "datei": "README.md",
    "satz": "The engine itself runs on all three (kepta-mcp on npm, or from source), so an MCP client on those systems talks to the same memory — only the window is missing."
-  },
-  {
-   "datei": "README.md",
-   "satz": "Every published file carries its platform and architecture in the name."
   },
   {
    "datei": "README.md",
@@ -655,14 +647,6 @@
   },
   {
    "datei": ".github/release-notes.md",
-   "satz": "Published installers are macOS only."
-  },
-  {
-   "datei": ".github/release-notes.md",
-   "satz": "Every file carries its platform and architecture in the name."
-  },
-  {
-   "datei": ".github/release-notes.md",
    "satz": "No license key is needed to run K3PTA."
   },
   {
@@ -692,10 +676,6 @@
   {
    "datei": ".github/release-notes.md",
    "satz": "All data stays local in ~/.kepta/ — no account, no cloud, no telemetry."
-  },
-  {
-   "datei": ".github/release-notes.md",
-   "satz": "Veröffentlichte Installer sind nur macOS."
   },
   {
    "datei": ".github/release-notes.md",

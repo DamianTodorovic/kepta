@@ -273,3 +273,111 @@ describe("die Privatzusage hat zwei Traeger, und beide nennen Zeugen", () => {
     expect(nackt, `${nackt.length} von ${traeger.length} Traegern nennen keinen Zeugen:\n  ${nackt.map((t) => `${t.datei}:${t.zeile} ${t.satz.slice(0, 120)}`).join("\n  ")}`).toHaveLength(0);
   });
 });
+
+// P159 — die Namens-Zusage der Downloads, gegen die veröffentlichten Namen selbst.
+//
+// README und Release-Notes sagten: "Every published file carries its platform and
+// architecture in the name." Gemessen am gesiegelten Release-Zensus
+// (docs/belege/aussendung-0611/github-releases-0611.json, 9 Releases, 58 Dateien):
+// 47 tragen mac-arm64 oder mac-x64, **11 tragen keine Architektur** — sechsmal
+// latest-mac.yml, fünfmal SHA256SUMS.txt. Die Zusage war für ein Fünftel der
+// veröffentlichten Dateien falsch, und niemand hätte es gemerkt, weil die vorhandene
+// Wache nur die *Abwesenheit* fremder Plattformen prüft, nicht die *Anwesenheit* der
+// Architektur im Namen.
+//
+// Dieser Block hält beides: die Namen im Artefakt (mit Biss gegen einen eingeschleusten
+// fremde Namen) und den Wortlaut der zwei Sätze, die daraus eine Zusage machen.
+const RELEASE_ZENSUS = "docs/belege/aussendung-0611/github-releases-0611.json";
+const OHNE_ARCHITEKTUR = ["latest-mac.yml", "SHA256SUMS.txt"];
+
+function veroeffentlicht(): { tag: string; name: string }[] {
+  const releases = JSON.parse(fs.readFileSync(path.join(process.cwd(), RELEASE_ZENSUS), "utf8")) as {
+    tag_name: string;
+    assets?: { name: string }[];
+  }[];
+  return releases.flatMap((r) => (r.assets ?? []).map((a) => ({ tag: r.tag_name, name: a.name })));
+}
+
+/** Namen, die die Zusage bricht: keine der zwei benannten Metadateien und ohne mac-arm64/x64. */
+function namenOhneArchitektur(dateien: { name: string }[]): string[] {
+  return dateien.filter((d) => !OHNE_ARCHITEKTUR.includes(d.name) && !/mac-(arm64|x64)/.test(d.name)).map((d) => d.name);
+}
+
+function zeilenMit(muster: RegExp): { datei: string; zeile: number; text: string }[] {
+  return ["README.md", ".github/release-notes.md"].flatMap((datei) =>
+    fs
+      .readFileSync(path.join(process.cwd(), datei), "utf8")
+      .split("\n")
+      .map((text, i) => ({ datei, zeile: i + 1, text }))
+      .filter((z) => muster.test(z.text)),
+  );
+}
+
+describe("P159: die veröffentlichten Namen und die Zusage darüber", () => {
+  it("kein veröffentlichtes Asset trägt eine fremde Plattform, und der Zensus ist nicht leer", () => {
+    const dateien = veroeffentlicht();
+    expect(dateien.length, "der Release-Zensus ist leer — die Sonde meldet Sauberkeit für Ungelesenes").toBeGreaterThan(40);
+    expect(dateien.some((d) => d.tag === "app-3.2.1"), "der neueste veröffentlichte Stand fehlt im Zensus").toBe(true);
+    const fremd = dateien.filter((d) => /win|linux|\.exe|\.deb|AppImage/i.test(d.name));
+    expect(fremd.map((d) => `${d.tag} ${d.name}`), "ein veröffentlichter Name trägt eine fremde Plattform").toEqual([]);
+  });
+
+  it("jede Datei ausser den zwei benannten Metadateien nennt Plattform und Architektur", () => {
+    const dateien = veroeffentlicht();
+    expect(namenOhneArchitektur(dateien), "eine Datei bricht die Namens-Zusage").toEqual([]);
+    for (const ausnahme of OHNE_ARCHITEKTUR) {
+      expect(dateien.some((d) => d.name === ausnahme), `${ausnahme} kommt im Zensus nie vor — die Ausnahme wäre erfunden`).toBe(true);
+    }
+  });
+
+  it("Biss: die Regel sieht einen fremden Namen und lässt einen echten durch", () => {
+    const probe = [
+      { name: "KEPTA-3.2.1-win-x64.exe" },
+      { name: "KEPTA-3.2.1-mac-arm64.dmg" },
+      { name: "KEPTA-3.2.1-mac-x64.zip.blockmap" },
+      { name: "latest-mac.yml" },
+    ];
+    expect(namenOhneArchitektur(probe), "die Regel ist blind oder sie verbietet alles").toEqual(["KEPTA-3.2.1-win-x64.exe"]);
+  });
+
+  // Die positive Haelfte von "Apple silicon and Intel": nicht nur die Abwesenheit fremder
+  // Plattformen, sondern die Anwesenheit beider Architekturen in jedem Release, der
+  // ueberhaupt Dateien traegt. Drei der neun Releases sind Engine-Tags ohne jedes Asset
+  // (v3.1.1, v3.0.0, v2.13.22) — sie zaehlen hier nicht mit, und das ist benannt.
+  it("jeder Release mit Dateien traegt beide Architekturen", () => {
+    const releases = JSON.parse(fs.readFileSync(path.join(process.cwd(), RELEASE_ZENSUS), "utf8")) as {
+      tag_name: string;
+      assets?: { name: string }[];
+    }[];
+    const mitDateien = releases.filter((r) => (r.assets ?? []).length > 0);
+    expect(mitDateien.length, "kein Release mit Dateien — die Sonde prueft nichts").toBeGreaterThanOrEqual(5);
+    const einseitig = mitDateien
+      .filter((r) => {
+        const namen = (r.assets ?? []).map((a) => a.name).join(" ");
+        return !/mac-arm64/.test(namen) || !/mac-x64/.test(namen);
+      })
+      .map((r) => r.tag_name);
+    expect(einseitig, "diese Releases versprechen eine Architektur, die sie nicht tragen").toEqual([]);
+  });
+
+  it("die zwei Namens-Sätze nennen die Ausnahmen und ihren Zeugen, nicht mehr 'every file'", () => {
+    const traeger = zeilenMit(/About This Mac/);
+    expect(traeger.length, "die Sonde findet die Namens-Sätze nicht — sonst meldet sie Erfolg für Ungelesenes").toBe(2);
+    for (const t of traeger) {
+      const wo = `${t.datei}:${t.zeile}`;
+      expect(t.text, `${wo} behauptet weiter, jede Datei trage die Architektur`).not.toMatch(/Every (published )?file carries/i);
+      for (const ausnahme of OHNE_ARCHITEKTUR) {
+        expect(t.text.includes(ausnahme), `${wo} nennt die Ausnahme ${ausnahme} nicht`).toBe(true);
+      }
+      expect(t.text.includes(RELEASE_ZENSUS) || /tests\/doku-plattform\.test\.ts:\d+/.test(t.text), `${wo} nennt keinen Zeugen`).toBe(true);
+    }
+  });
+
+  it("die vier macOS-only-Sätze nennen denselben Zeugen", () => {
+    const traeger = zeilenMit(/only for macOS|macOS only|nur macOS/);
+    expect(traeger.length, "die Sonde findet die Plattform-Sätze nicht").toBe(4);
+    for (const t of traeger) {
+      expect(t.text.includes(RELEASE_ZENSUS) || /tests\/doku-plattform\.test\.ts:\d+/.test(t.text), `${t.datei}:${t.zeile} nennt keinen Zeugen`).toBe(true);
+    }
+  });
+});
