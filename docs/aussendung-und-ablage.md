@@ -1656,6 +1656,86 @@ Testdateien, Exit 0** (353 → 354, eine neue Datei), doku-check beglaubigt dies
 **Keine Versionszahl, kein Bau:** an ausgelieferten Bytes ändert dieser Schlag nichts; die Parität
 lebt in der Suite.
 
+## 41. P153 — "no cap on the endpoints" war falsch: die App deckelt chat bei 20/min, clipper bei 12/min, Suche bei 240/min, Schreiben bei 600/min (7.11. 03:48 MEZ)
+
+**Die Frage vor der Arbeit.** P152 ließ 105 absolute Behauptungen ohne Messzeug und eine Liste von 26,
+deren Zeuge im *Nachbar*-Satz steht. Die ersten zwei Treffer dieser Liste waren Sätze, die ich selbst
+in P151 bewaffnet hatte — README.md:355 und `.github/release-notes.md:12/:75`. Beim Nachlesen der
+Nachbarn fiel etwas anderes auf: diese Sätze sind **als Aussage falsch**.
+
+**Der Befund, gemessen am Quelltext** (`server/helfer/limiter.ts:56-68`, 03:46:41 MEZ): die App hat
+Schutzkanten, und sie sind klein genug, dass ein Kunde sie spürt — `chat` max **20/min**, `clip` max
+**12/min**, `SCHREIB_KANTE` **600/min**, `SUCH_KAPPE` **240/min**, `DATEN_KANTE` **600/min** global vor
+`/api` und `/mcp`. Der Satz in der Aussendung hieß bis heute:
+
+    README.md:355            "Every tool in the app runs without bound: chat, clipper, …"
+    release-notes.md:12 (EN) "nothing in it is metered: no day count, no cap on the endpoints, …"
+    release-notes.md:75 (DE) "nichts darin ist begrenzt: kein Tageszähler, keine Kappe an den Endpunkten, …"
+
+"keine Kappe an den Endpunkten" ist widerlegt durch einen Endpunkt, der bei 20/min mit 429 antwortet.
+Das ist genau die Klasse, die P134 und P142 als die teurere ausgewiesen haben: nicht ein Satz ohne
+Beleg, sondern ein Satz, dessen Beleg eine Lüge ist — und P151 hatte ihn sogar bewaffnet, ohne ihn zu
+prüfen. **Mein eigener Arm von vor einer Stunde saß auf einer Ueber-behauptung.**
+
+**Guard zuerst, rot gesehen** (03:48:32 MEZ, vier rote Faelle in `tests/keine-grenzen.test.ts`):
+- *jede Kante des Limiters mit ihrer Minute-Zahl* — die Zahlen werden aus `limiter.ts` **abgeleitet**
+  (Regel auf den Quelltext), nicht nachgebaut; beide Aussendungs-Blaetter muessen sie nennen.
+- *Grenzenlosigkeit behauptet nur, wer dieselbe Stelle die Kante nennt* — Absatz-Kontrolle: ein
+  Absatz mit "runs without bound"/"no cap on the endpoints"/"nichts darin ist begrenzt" muss
+  Rate-Limit-Wort **und** Minute-Zahl im selben Absatz tragen.
+
+Drei Bisse danach: **D1** README nennt Suche 120/min -> 1 rot ("README.md verschweigt die
+Schutzkante: such=240"); **D2** `SUCH_KAPPE` auf 300 gesetzt, Papier bleibt bei 240 -> **2 rot**
+(beide Blaetter) — das ist die Paritaet, nicht ein Lesetest; beide Production-Dateien danach per
+`cmp` bytegleich zurueckgebaut.
+
+**Die Heilung, in allen drei Stellen, EN und DE symmetrisch.** Nicht "die App hat Grenzen", sondern
+die Unterscheidung, die der Kunde braucht: keine **Lizenz**-Grenze, und eine **Schutz**-Kante, deren
+Zahlen da stehen und die weit über normaler Arbeit am eignen Rechner liegen. README.md:355 sagt jetzt
+"runs without bound **by a licence**: … The one bound that remains is local protection, not commerce —
+chat 20/min, clipper 12/min, searches 240/min, writes 600/min, read off `server/helfer/limiter.ts:63-68`
+and checked by `tests/keine-grenzen.test.ts:140`". Die release-notes nennen dasselbe in beiden
+Sprachen, mit dem Zusatz, dass `:72`/`:85` zwolf Chat-Nachrichten und einundzwanzig
+Profil-Speicherungen in einer Minute durch die Tuer schicken, ohne Halt — also: die Kante ist für
+einen Menschen unter normaler Arbeit nicht erreichbar, und wer sie trotzdem erreicht, sieht eine
+Absage, die ihre Zahl nennt.
+
+**Zaehlung — und der ehrliche Satz dazu.** Zensus 03:50:51 MEZ, Exit 0: **577** Einheiten
+(574 -> 577), **177** absolute (174 -> 177), **72** mit Messzeug (69 -> 72), **105** ohne
+(105 -> 105). Die Berichtigung hat also **drei neue absolute Behauptungen erzeugt und drei alte
+bewaffnet**: der Zähler der Blinden *sinkt nicht*. Das ist kein Misserfolg, sondern die Wahrheit —
+ein Satz, der vorher "no cap" log und jetzt "20/min, 12/min, 240/min, 600/min" sagt, bringt drei
+Zahlen in die Welt, die gehalten werden müssen. Der Wert dieses Schlages liegt in der Wahrheit der
+Sätze und in einer Wache, die beide Seiten zusammenhält, nicht in einer Deckungszahl.
+
+Pin `tests/aussendungs-riss.test.ts` zuerst rot (03:51:04: "der Nenner ist nicht mehr 174 — expected
+177"), dann auf 177/72 nachgezogen, mit der Begruendung im Kommentar. Artefakte: JSON 29 413 B
+(sha 1f9baa6d94b4ec92), Log 15 967 B (sha ade26747a68f9d89) — Siegel im selben Schritt.
+
+**Laeufe.** Suite 3794 -> **3798** (vier neue it.each-Faelle, Dateien 354 unveraendert). Messung
+03:51:39 -> 03:54:08 = ein rot mit Namen (`tests/doku-zahlen.test.ts:52`, Bericht 02:42:03 UTC aelter
+als tests/ 02:51:15 UTC), Exit 1. Pruefung 03:54:14 -> 03:56:37 = **3798 von 3798 gruen, 354 Dateien,
+Exit 0**, doku-check beglaubigt diesen Lauf (02:56:37 UTC). Lint 0 Fehler, 82 Warnungen.
+Zahlen-Belege Exit 0: 972 Messbehauptungen, keine Pflicht-Zahl ohne Zitat.
+
+**Nachschlag 09:38–09:39 MEZ, zwei Funde an eignem Werk.** Beim Nachprüfen der Anker, die dieser
+Schlag gesetzt hatte, zeigte sich: mein eigner Kommentarzug in `tests/aussendungs-riss.test.ts` hatte
+die Zeilenzahl verschoben, die *andere* Dateien nennen — `docs/belege/aussendungsatz-0611/messregel.mjs:15`
+wies auf `:143`, der describe sitzt jetzt auf `:158` (09:38:47 berichtigt). Und weil das Siegel-Blatt
+auch `messregel.mjs` selbst versiegelt (Zeile 284), meldete der Guard kurz danach sha
+8d6ea53a42a2f825 gegen ausgewiesenes 2954f0bcd52e83ab — der **siebte** Siegel-Riss dieser Nacht, zum
+ersten Mal verursacht durch einen Kommentar statt durch einen Zahl-Lauf. Beides heilte im selben Zug;
+der Guard steht wieder 11 von 11 grün (09:39:38 MEZ). Die Zensus-Zahlen sind unverändert (577
+Einheiten, 177 absolute, 72 mit Messzeug, 105 ohne), nur die Log-Zeile hatte einen neuen Stand
+(15 967 B, sha ac94246b4c559bf0), weil der Zensus zweimal fuhr — die Siegel-Zeile des JSON blieb, wie
+gemessen, gültig (29 413 B, sha 1f9baa6d94b4ec92). Beide Dokument-Gates danach neu gefahren:
+doku-check nennt 3798 Faelle aus dem Lauf 02:56:37 UTC, Zahlen-Belege Exit 0 (972 Messbehauptungen)
+um 09:39:56 MEZ.
+
+
+**Keine Versionszahl, kein Bau** — README.md und `.github/release-notes.md` sind nicht im Buendel; sie
+gehen mit dem naechsten Release nach außen, und die Sätze sind jetzt so, dass ich sie vertreten kann.
+
 ## Fehler in diesem Schlag, die ich selbst gefunden habe
 
 
@@ -2062,3 +2142,17 @@ lebt in der Suite.
     Wort "encrypted" hingeschrieben, wäre eine falsche Behauptung mit einem wahren Fall belegt
     worden. Also: Paritaet an `tests/mcp-rest-paritaet.test.ts:66/:80`, Verschlüsselung an
     `tests/nebendateien.test.ts:22/:41`, und der Satz nennt beide getrennt.
+76. **Ich hatte eine Ueber-behauptung bewaffnet, statt sie zu pruefen.** P151 setzte Zeugen in
+   README.md:355 und ließ den Satz "Every tool in the app runs without bound" stehen — während
+   `server/helfer/limiter.ts:63` den Chat bei 20/min deckelt. Ein Beleg an einem falschen Satz ist
+   kein Beweis, sondern ein falsch beglaubigter Satz (P134, P142). Gesehen beim Lesen der
+   Nachbar-Zeugen-Liste in P153, nicht beim Schreiben.
+77. **Zwei Anker in der neuen Wache waren zu eng geraten, bevor sie gruen wurden.** Die erste Fassung
+   schrieb `windowMs: \d+` gegen einen Quelltext mit `60_000` — die Sonde warf ("der Limiter nennt
+   seine chat-Kante nicht im Quelltext") statt zu prüfen, und ein zweiter Fall war als Blindgänger
+   gebaut (`it.each(datei => datei)`), weil ich das Ende des Blocks aus dem Kopf schrieb. Beides vor
+   dem ersten gruen gesehen und ersetzt: `[\d_]+`, und der zweite Fall liest jetzt Absätze statt
+   Zeilen. Eine Wache, die wirft, ist keine Wache; eine, die ins Leere prüft, ist schlimmer.
+78. **Die Platte ist nicht mein Verdienst.** 8,46 GiB frei um 03:43:59 MEZ, 8,17 GiB um 03:45:36 —
+   die Bau-Kante von 9,90 GiB bleibt zu, und die 10,30 GiB im `release/`-Ordner sind Damians Wort,
+   nicht mein Räumgang.

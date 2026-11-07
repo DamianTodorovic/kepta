@@ -1,9 +1,9 @@
 {
  "dateien": {
   "README.md": {
-   "saetze": 414,
-   "absolut": 131,
-   "mit_zeug": 58,
+   "saetze": 415,
+   "absolut": 132,
+   "mit_zeug": 59,
    "ohne_zeug": 73
   },
   "SECURITY.md": {
@@ -19,22 +19,22 @@
    "ohne_zeug": 12
   },
   ".github/release-notes.md": {
-   "saetze": 50,
-   "absolut": 18,
-   "mit_zeug": 3,
+   "saetze": 52,
+   "absolut": 20,
+   "mit_zeug": 5,
    "ohne_zeug": 15
   }
  },
  "zusammen": {
-  "saetze": 574,
-  "absolut": 174,
-  "mit_zeug": 69,
+  "saetze": 577,
+  "absolut": 177,
+  "mit_zeug": 72,
   "ohne_zeug": 105
  },
  "abschnitt": {
   "README.md": {
-   "absolut": 131,
-   "mit_zeug": 58,
+   "absolut": 132,
+   "mit_zeug": 59,
    "ohne_zeug": 73
   },
   "SECURITY.md": {
@@ -48,19 +48,19 @@
    "ohne_zeug": 16
   },
   ".github/release-notes.md": {
-   "absolut": 18,
-   "mit_zeug": 6,
+   "absolut": 20,
+   "mit_zeug": 8,
    "ohne_zeug": 12
   }
  },
  "zusammen_abschnitt": {
-  "absolut": 174,
-  "mit_zeug": 67,
+  "absolut": 177,
+  "mit_zeug": 70,
   "ohne_zeug": 107
  },
  "maschinell_pruefbar": {
   "README.md": {
-   "absolut": 131,
+   "absolut": 132,
    "maschinell": 28
   },
   "SECURITY.md": {
@@ -72,7 +72,7 @@
    "maschinell": 1
   },
   ".github/release-notes.md": {
-   "absolut": 18,
+   "absolut": 20,
    "maschinell": 2
   }
  },
@@ -669,7 +669,7 @@
   },
   {
    "datei": ".github/release-notes.md",
-   "satz": "The download is K3PTA Core and it is free, and nothing in it is metered: no day count, no cap on the endpoints, no counter in the window."
+   "satz": "The download is K3PTA Core and it is free, and nothing in it is metered by a key: no day count, no cap on the endpoints that depends on a licence, no counter in the window."
   },
   {
    "datei": ".github/release-notes.md",
@@ -705,7 +705,7 @@
   },
   {
    "datei": ".github/release-notes.md",
-   "satz": "Der Download ist K3PTA Core und gratis, und nichts darin ist begrenzt: kein Tageszähler, keine Kappe an den Endpunkten, kein Zähler in der Fläche."
+   "satz": "Der Download ist K3PTA Core und gratis, und nichts darin ist begrenzt durch eine Lizenz: kein Tageszähler, keine Kappe an den Endpunkten, die von einem Schlüssel abhängt, kein Zähler in der Fläche."
   },
   {
    "datei": ".github/release-notes.md",

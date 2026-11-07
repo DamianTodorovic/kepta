@@ -12,7 +12,7 @@
  * und in "3 office links" — Sätze, die gar keine Zahl behaupten, zählten mit. Der Gegenentwurf
  * `\b` hinter der ganzen Alternation ist widerlegt: er warf 8 Sätze aus dem Nenner (175 → 167),
  * davon 6 echte Prozentangaben ("97 % of lines", "100, 115 or 130 %"), weil `%` vor einem
- * Leerzeichen keine Wortgrenze findet. Die Faelle stehen in `tests/aussendungs-riss.test.ts:143`.
+ * Leerzeichen keine Wortgrenze findet. Die Faelle stehen in `tests/aussendungs-riss.test.ts:158`.
  */
 export const absolut = /\b(no|never|none|all|every|only|always|guarantee|keine[nr]?|nie|immer|alle|jeder|nur)\b|(\d[\d., ]*(%|ms\b|MiB\b|GiB\b|notes\b|queries\b|of\b|von\b))/i;
 

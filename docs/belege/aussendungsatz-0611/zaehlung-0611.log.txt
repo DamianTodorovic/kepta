@@ -1,4 +1,4 @@
-Zeit: 7.11.2026, 03:36:00 MEZ
+Zeit: 7.11.2026, 09:38:47 MEZ
 Dateien: README.md, SECURITY.md, ROADMAP.md, .github/release-notes.md — Einheiten ueber 25 Zeichen.
 Riss: satz-riss.mjs (P128, markdown-fest). Vorher: Satzende + Leerzeichen ueber dem
 ganzen Text, wodurch Aufzaehlungen, Tabellenzeilen und `<summary>`-Kuelsen als EIN
@@ -9,30 +9,30 @@ Satz zaehlten. Unter beiden Naivlingen, in diesem Lauf nachgerechnet:
 
 | Datei | Saetze | absolute | mit Messzeug | ohne Messzeug | Anteil ohne |
 |---|---|---|---|---|---|
-| `README.md` | 414 | 131 | 58 | 73 | 55.7 % |
+| `README.md` | 415 | 132 | 59 | 73 | 55.3 % |
 | `SECURITY.md` | 33 | 9 | 4 | 5 | 55.6 % |
 | `ROADMAP.md` | 77 | 16 | 4 | 12 | 75.0 % |
-| `.github/release-notes.md` | 50 | 18 | 3 | 15 | 83.3 % |
-| **zusammen** | **574** | **174** | **69** | **105** | **60.3 %** |
+| `.github/release-notes.md` | 52 | 20 | 5 | 15 | 75.0 % |
+| **zusammen** | **577** | **177** | **72** | **105** | **59.3 %** |
 
-Nenner fuer den Anteil: 174 absolute Behauptungen in 574 Saetzen der vier Texte.
+Nenner fuer den Anteil: 177 absolute Behauptungen in 577 Saetzen der vier Texte.
 
 Zweite Lesung — der Zeuge darf im selben Abschnitt stehen (Absatz, Tabelle, Aufzaehlung):
 | Datei | absolute | mit Messzeug | ohne Messzeug |
 |---|---|---|---|
-| `README.md` | 131 | 58 | 73 |
+| `README.md` | 132 | 59 | 73 |
 | `SECURITY.md` | 9 | 3 | 6 |
 | `ROADMAP.md` | 16 | 0 | 16 |
-| `.github/release-notes.md` | 18 | 6 | 12 |
-| zusammen | 174 | 67 | 107 |
-   mit Messzeug im selben Abschnitt: 67 von 174 = 38.5 % (gegen 69 von 174 = 39.7 % in der engen Lesung).
+| `.github/release-notes.md` | 20 | 8 | 12 |
+| zusammen | 177 | 70 | 107 |
+   mit Messzeug im selben Abschnitt: 70 von 177 = 39.5 % (gegen 72 von 177 = 40.7 % in der engen Lesung).
 
 Die schmalere Klasse — Saetze, die ein Werkzeug widerlegen koennte (never/always/cannot/0 %/100 %):
-   README.md                  28 von 131 absoluten
+   README.md                  28 von 132 absoluten
    SECURITY.md                2 von 9 absoluten
    ROADMAP.md                 1 von 16 absoluten
-   .github/release-notes.md   2 von 18 absoluten
-   zusammen 33 von 174 — der Rest ist Produktcopy ("no password to type"), keine Behauptung ueber eine Maschine.
+   .github/release-notes.md   2 von 20 absoluten
+   zusammen 33 von 177 — der Rest ist Produktcopy ("no password to type"), keine Behauptung ueber eine Maschine.
    Die Liste, in Lesereihenfolge, mit dem Marker „Zeug", wenn derselbe Satz schon ein Messzeug nennt:
    [README.md] ZEUG While it cools at 3 000 notes a few pairs still touch for a moment; tests/lib/graphLayout.test.ts:2455-2458 pins that funnel at ≤ 40 pairs by step 250, ≤ 40 again by step 310 and zero by step 380, so no sentence here say
    [README.md] ZEUG On macOS the key never sits in a file; on Windows it is the DPAPI-sealed database-key.dpapi in the data folder, readable only under the same account, and a headless install with KEPTA_DB_KEY keeps it in the process envir

@@ -128,11 +128,18 @@ describe("P129, der Wortschatz: ein benanntes Instrument ist ein Messzeug", () =
     // for every AI tool" nennt jetzt die zwei Tueren, die auf demselben Leib lesen, und die
     // Gegenprobe (68 -> 69). Zaehler steigt, Nenner 174 bleibt; die Einheiten wuchsen von 573
     // auf 574, weil der bewaffnete Satz beim Umbau zwei wurde.
-    // Nenner 174 unveraendert — ein Satz, der sein Messzeug nennt, ist keine neue Behauptung.
+    // Nenner 174 -> 177 am 7.11. 03:50:51 MEZ: P153 berichtigt eine Ueber-behauptung
+    // ("runs without bound", "nothing in it is metered", "nichts darin ist begrenzt") durch eine
+    // Schutzkante mit Zahlen — chat 20/min, clipper 12/min, suche 240/min, schreiben 600/min. Die
+    // drei neuen Erklaerungen sind selbst absolute Behauptungen, also steigt der Nenner um 3 und
+    // der Zaehler um 3: ohne Messzeug bleiben 105. Der Wert dieses Schlages ist die Wahrheit der
+    // Saetze, nicht ihre Deckung — das steht so ins Papier.
+    // Zaehlung der Vorgeschichte: P146 (58 -> 62), P147 (62 -> 63), P148 (63 -> 64), P149
+    // (64 -> 65), P151 (65 -> 68), P152 (68 -> 69), P153 (69 -> 72 bei Nenner 177).
     // Zugleich fiel README.md:181 aus der schmalen Klasse (34 -> 33): das Wort, das sie dort
     // hielt, war "as always" in "validated offline as always", und diese Formulierung war falsch.
-    expect(absoluten, "der Nenner ist nicht mehr 174 — der Riss oder die Klasse hat sich bewegt").toBe(174);
-    expect(mit, `${mit} von ${absoluten} nennen ein Messzeug — erwartet war 69`).toBe(69);
+    expect(absoluten, "der Nenner ist nicht mehr 177 — der Riss oder die Klasse hat sich bewegt").toBe(177);
+    expect(mit, `${mit} von ${absoluten} nennen ein Messzeug — erwartet war 72`).toBe(72);
     expect(mit / absoluten, "Anteil ohne Nenner ist ein Urteil").toBeGreaterThan(0.3);
     expect(maschine.source.length, "die schmale Klasse wurde nicht mitgeändert").toBeGreaterThan(10);
   });

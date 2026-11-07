@@ -175,3 +175,59 @@ describe("die Aussendung nach aussen", () => {
       `${datei} lässt den customersatz über Schlüssel und Grenzen`).toBe(true);
   });
 });
+
+// P153 — die Schutzkante, die die Aussendung verschweigt.
+//
+// README.md:355 verspricht "Every tool in the app runs without bound",
+// .github/release-notes.md:12 (EN) und :75 (DE) versprechen "nothing in it is metered:
+// no day count, no cap on the endpoints". Beides ist als Satz falsch: server/helfer/limiter.ts
+// deckelt chat bei 20/min, clip bei 12/min, Schreiben bei SCHREIB_KANTE und Suche bei
+// SUCH_KAPPE, und der Begrenzer sitzt vor /api und /mcp. Ein Kunde kann das am eignen
+// Zugriff erfahren (429), und eine Zahl, die die Flaeche verschweigt, ist kein Formfehler,
+// sondern ein Versprechen, das die Maschine nicht hält (P134, P142: Ueber-behauptungen sind
+// die teurere Klasse als blinde Saetze).
+//
+// Die Zahlen werden hier ABGELEITET (Regel auf den Quelltext des Limiters), nicht nachgebaut:
+// wer eine Kante verschiebt und die Aussendung nicht nachzieht, sieht diesen Fall rot werden.
+describe("P153 — die Schutzkante steht in der Aussendung, mit der Zahl des Limiters", () => {
+  const wurzel = process.cwd();
+  const dateien = ["README.md", ".github/release-notes.md"];
+
+  function kantenAusLimiter(): { name: string; zahl: number }[] {
+    const quelltext = fs.readFileSync(path.join(wurzel, "server/helfer/limiter.ts"), "utf8");
+    const zahl = (muster: RegExp, wo: string) => {
+      const m = muster.exec(quelltext);
+      if (!m) throw new Error(`der Limiter nennt seine ${wo}-Kante nicht im Quelltext`);
+      return Number(m[1]);
+    };
+    return [
+      { name: "chat", zahl: zahl(/chat: rateLimit\(\{ windowMs: [\d_]+, max: (\d+)/, "chat") },
+      { name: "clip", zahl: zahl(/clip: rateLimit\(\{ windowMs: [\d_]+, max: (\d+)/, "clip") },
+      { name: "schreib", zahl: zahl(/export const SCHREIB_KANTE = (\d+)/, "Schreib") },
+      { name: "such", zahl: zahl(/export const SUCH_KAPPE = (\d+)/, "Such") },
+    ];
+  }
+
+  it.each(dateien)("%s nennt jede Kante des Limiters mit ihrer Minute-Zahl", (datei) => {
+    const t = fs.readFileSync(path.join(wurzel, datei), "utf8");
+    const fehlend = kantenAusLimiter().filter(({ zahl }) => {
+      // akzeptierte Formen: "20/min", "20 per minute", "20 pro Minute", "20 je Minute"
+      const muster = new RegExp(String.raw`${zahl}\s*(?:/|per |pro |je )\s*min(?:ute)?`, "i");
+      return !muster.test(t);
+    });
+    expect(fehlend.map((f) => `${f.name}=${f.zahl}`), `${datei} verschweigt die Schutzkante:\n` +
+      fehlend.map((f) => `  ${f.name}: ${f.zahl}/min`).join("\n")).toEqual([]);
+  });
+
+  it.each(dateien)("%s behauptet Grenzenlosigkeit nur, wenn dieselbe Stelle die Kante nennt", (datei) => {
+    const t = fs.readFileSync(path.join(wurzel, datei), "utf8");
+    const grenzenlos = /(runs without bound|no cap on the endpoints|nothing in it is metered|keine Kappe an den Endpunkten|nichts darin ist begrenzt)/i;
+    const dieKante = /(rate-limit|drossel|schutzkante|per minute|pro minute|je minute|\/min)/i;
+    const absaetze = t.split(/\n\s*\n/).filter((a) => grenzenlos.test(a));
+    expect(absaetze.length, `${datei} enthält keinen der grenzenlosen Sätze — die Sonde prüft ins Leere`).toBeGreaterThan(0);
+    const ohneKante = absaetze.filter((a) => !dieKante.test(a));
+    expect(ohneKante.map((a) => a.trim().split("\n")[0].slice(0, 96)),
+      `${datei} behauptet Grenzenlosigkeit, ohne die Schutzkante im selben Absatz:\n` +
+        ohneKante.map((a) => "  " + a.trim().split("\n")[0].slice(0, 120)).join("\n")).toEqual([]);
+  });
+});
