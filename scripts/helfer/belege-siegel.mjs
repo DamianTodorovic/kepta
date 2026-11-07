@@ -23,10 +23,12 @@ const SHA = /^`([0-9a-f]{16})\u2026`$/;
  * Die Siegel-Zeilen des Registers, in Lesereihenfolge, mit ihrer Zeilennummer.
  *
  * Gelesen wird nach BAUART, nicht nach Ueberschrift: das Register hat auch Ergebnis-
- * Tabellen (Hit@1 in Prozent), und seit dem 3.11. laufen die drei- und die vierspaltigen
- * Zeilen in einem Block — eine Kopfzeile zu verlangen würde die Siegel unter einer
- * fremden Tabelle übersehen. Also: genau drei Zellen, und jede muss ihre eigene Form
- * haben.
+ * Tabellen (Hit@1 in Prozent), und nach einer Ueberschrift zu suchen war bis zum 7.11.
+ * die uebersehene Stelle — genau dort liefen die Siegel unter einer fremden Tabelle
+ * weiter. Die Ueberschneidung ist geheilt und wird von `blockKopfFunde` gehalten; an
+ * der BAUART-Lesweise halte ich fest, weil ein Blatt mit mehreren Tabellen nicht
+ * verlaesslich nach Ueberschriften zu parieren ist. Also: genau drei Zellen, und jede
+ * muss ihre eigene Form haben.
  */
 export function siegelZeilen(text) {
   const zeilen = [];
@@ -42,6 +44,59 @@ export function siegelZeilen(text) {
     zeilen.push({ zeile: i + 1, pfad: pfad[1], bytes: Number(bytes[1].replace(/ /g, "")), sha: sha[1] });
   });
   return zeilen;
+}
+
+/** Zellen einer Markdown-Tabellenzeile, oder null, wenn es keine Tabellenzeile ist. */
+function zellen(roh) {
+  const t = (roh || "").trim();
+  if (!t.startsWith("|")) return null;
+  return t.replace(/^\|/, "").replace(/\|$/, "").split("|").map((z) => z.trim());
+}
+
+const TRENNZEILE = (z) => z.length > 0 && z.every((c) => /^:?-{2,}:?$/.test(c));
+
+/**
+ * Steht jede Siegel-Zeile unter ihrer eignen Kopfzeile?
+ *
+ * P145 meldete den Befund, P150 haelt ihn: seit dem 3.11. liefen die Siegel-Zeilen direkt unter
+ * einer Ergebnistabelle mit vier Zellen weiter (`docs/belege/REGISTER.md`, Sprachuebergriff-
+ * Abschnitt), und in Markdown hoeren sie damit fuer einen Leser nicht auf, Teil dieser Tabelle zu
+ * sein — er sieht sha256-Präfixe in einer Hit@1-Spalte. Der Inhalt war durch die BAUART-Lesart des
+ * Pruefers geschuetzt, das Blatt nicht. Ein Befund pro Block, der keine eigne Kopfzeile hat.
+ */
+export function blockKopfFunde(text) {
+  const zeilen = text.split("\n");
+  const siegel = new Set(siegelZeilen(text).map((z) => z.zeile));
+  const funde = [];
+  zeilen.forEach((roh, i) => {
+    const nr = i + 1;
+    if (!siegel.has(nr)) return;
+    if (siegel.has(nr - 1)) return; // kein Blockanfang, sondern die Fortsetzung
+    const vorher = zellen(zeilen[i - 1]);
+    if (vorher && TRENNZEILE(vorher) && vorher.length === 3) {
+      const kopf = zellen(zeilen[i - 2]);
+      if (kopf && kopf.length === 3 && !TRENNZEILE(kopf)) return; // Kopf + Trennzeile + Siegel
+      funde.push(`Zeile ${nr}: Siegelblock unter einer Trennzeile ohne dreizelligen Kopf (Zeile ${nr - 2})`);
+      return;
+    }
+    if (vorher && vorher.length !== 3) {
+      // fremde Tabelle: ihr Kopf ist die erste Zeile des zusammenhaengenden Blocks
+      let k = i - 1;
+      while (k > 0) {
+        const c = zellen(zeilen[k - 1]);
+        if (!c || c.length !== vorher.length) break;
+        k -= 1;
+      }
+      funde.push(
+        `Zeile ${nr}: Siegelblock beginnt unter Zeile ${k + 1}: Kopf bei Zeile ${k + 1} mit ${vorher.length} Zellen — ` +
+          "fuer einen Leser gehoeren die Siegel zu dieser Tabelle, nicht zu einer eignen",
+      );
+      return;
+    }
+    const vorgaenger = vorher ? `einer Tabellenzeile mit ${vorher.length} Zellen` : "Fliesstext";
+    funde.push(`Zeile ${nr}: Siegelblock ohne Kopfzeile, direkt unter ${vorgaenger} (Zeile ${i})`);
+  });
+  return funde;
 }
 
 /**

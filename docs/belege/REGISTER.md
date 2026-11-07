@@ -9,8 +9,9 @@ zitiert, und verlangt die Zahl dort; ein Beleg, den `git ls-files` nicht kennt, 
 Die Tabelle unten ist ein **Siegel** — Bytezahl und sha256 sagen, dass dieser Beleg dieser Lauf
 ist. Bis zum 7.11. hatte dieses Siegel keinen Pruefer. Seitdem vergleicht
 `scripts/helfer/belege-siegel.mjs` in jedem Suite-Lauf jede ausgewiesene Zeile gegen die Datei auf
-der Platte, gefahren von `tests/belege-siegel.test.ts:112` (Grundgesamtheit: 126 Siegel-Zeilen,
-gemessen 01:39:50 MEZ). Der erste Lauf dieses Pruefers fand 4 Befunde auf 2 Zeilen:
+der Platte, gefahren von `tests/belege-siegel.test.ts:112` (Grundgesamtheit: 128 Siegel-Zeilen,
+gemessen 02:57:57 MEZ von demselben Fall; zuvor 126 um 01:39:50, und die zwei neuen sind der
+Historien-Beleg P147 mit seinem Generierer). Der erste Lauf dieses Pruefers fand 4 Befunde auf 2 Zeilen:
 `tag-0311/eval-bge-m3-1404.log.txt` und `tag-0311/sprachuebergriff-bge-m3-1406.log.txt` wiesen
 6 144 B bzw. 2 631 B aus, waehrend auf der Platte 6 199 B bzw. 2 720 B lagen, und die
 ausgewiesenen Hashes passten zu keiner Datei im Ordner. Beide Zeilen und beide Dateien stammen
@@ -191,6 +192,17 @@ erfunden, in beiden Sprachen gemessen und mit dem Vektor-Bein auch allein:
 |---|---|---|---|
 | `sprachuebergriff-nomic-1406` (Standard-Embedder) | 60,0 % | **26,7 %** = 4 von 15 | 26,7 % |
 | `sprachuebergriff-bge-m3-1406` (mehrsprachig) | 60,0 % | **20,0 %** = 3 von 15 | 20,0 % |
+
+Die Liste darunter ist **nicht** Teil dieser Tabelle — sie ist die Fortsetzung des Siegels von
+oben (dieselben drei Spalten, derselbe Zweck: Bytezahl und sha256 sagen, dass dieser Beleg dieser
+Lauf ist). Bis zum 7.11. lief sie ohne eigne Kopfzeile unter der Ergebnistabelle weiter, und in
+Markdown las sich das wie eine vierte Spalte mit Hashes in einer Trefferquote-Spalte; seit diesem
+Schlag prueft `blockKopfFunde` aus `scripts/helfer/belege-siegel.mjs` genau das, gefahren von
+`tests/belege-siegel.test.ts:137` (der Biss an einer nachgebauten Ueberschneidung) und `:165`
+(dasselbe Urteil am echten Blatt).
+
+| Datei im Repo | Bytes | sha256 (16) |
+|---|---|---|
 | `tag-0511/einstellungen-tab-153-1040.log.txt` | 1573 B | `fc352a20adde1a31…` |
 | `tag-0511/einstellungen-tab-153-390.log.txt` | 1573 B | `8befa1a85b37e279…` |
 | `tag-0511/fenster-volllauf-153-1041.log.txt` | 20637 B | `38e4f6635ed13d0c…` |
@@ -271,7 +283,7 @@ erfunden, in beiden Sprachen gemessen und mit dem Vektor-Bein auch allein:
 | `aussendungsatz-0611/satz-riss.mjs` | 3005 B | `abedac906ac83c5f…` |
 | `aussendungsatz-0611/messregel.mjs` | 2218 B | `2954f0bcd52e83ab…` |
 | `aussendungsatz-0611/zaehlung-0611.json` | 30131 B | `a1e3428d77ab9bcd…` |
-| `aussendungsatz-0611/zaehlung-0611.log.txt` | 16036 B | `fcd9223a74e88cfe…` |
+| `aussendungsatz-0611/zaehlung-0611.log.txt` | 16036 B | `6369c24f5cb0dbf7…` |
 | `p147-0711/zeugen.mjs` | 3946 B | `8b5907643da5094d…` |
 | `p147-0711/zaehler-vor-3-1-5.log.txt` | 4963 B | `6d04606d49ac2e28…` |
 

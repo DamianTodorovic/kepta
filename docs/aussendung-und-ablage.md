@@ -1470,6 +1470,74 @@ Vergleichszahl neu gelten macht (58/45, die 76 %, die mem0- und chroma-Laeufe) �
 mit eigenem Lauf, nicht eine Zahl, die man nachstellt.
 
 
+## 38. P150 — Das Blatt, das seinen Lesern Hashes als Trefferquoten zeigte, hat jetzt eine Kopfzeile und zwei Wachen (7.11. 02:59 MEZ)
+
+**Die Frage vor der Arbeit.** P145 meldete den Defekt und lies ihn offen: `docs/belege/REGISTER.md`
+wies zu 128 Artefakten Bytes und sha256(16) aus, aber die letzten 83 dieser Zeilen standen ohne
+eigne Kopfzeile direkt unter einer Ergebnistabelle mit vier Zellen (Sprachuebergriff-Lauf,
+Kopf bei Zeile 190). In Markdown ist das **dieselbe Tabelle** — ein Kunde, der das Siegel-Blatt
+oeffnet, sieht in einer Spalte, deren Kopf „englisch Hit@1" heisst, einen Hash stehen. P145 heilte
+die *Ueberschneidung im Pruefer* (Lesart nach BAUART), nicht das Blatt.
+
+**Zuerst gemessen, was das Blatt wirklich hergibt** (node auf den Helfer, 02:57:57 MEZ): 128
+Siegel-Zeilen in **zwei** Bloecken — Block 1 ab Zeile 40 unter seinem Kopf (Zeile 38), Block 2 ab
+Zeile 194 ohne Kopf. Der Fliesstext des Blatts an Zeile 12 nannte dem Leser damals **126**
+Siegel-Zeilen: die Zahl stammte aus P145s erstem Lauf (01:39:50) und wurde von P147 nie nachgezogen,
+nachdem der Historien-Beleg und sein Generierer einzogen. Ein Blatt, das sich selbst beziffert, ist
+genau so vertrauenswuerdig wie seine letzte Zaehlung.
+
+**Zwei Wachen, test-first, beide erst rot gesehen.**
+1. `tests/belege-siegel.test.ts:121` — *der Satz, der auf den Pruefer verweist, nennt die gemessene
+   Grundgesamtheit*. Rot um 02:56:59: „das Blatt schreibt 126 Siegel-Zeilen, der Lauf haelt 128".
+   Berichtigt im Blatt: „Grundgesamtheit: 128 Siegel-Zeilen, gemessen 02:57:57 MEZ von demselben
+   Fall; zuvor 126 um 01:39:50". Die fruehere Zaehlung bleibt stehen, mit ihrem Moment — was neu
+   ist, ist dass die **operative** Zahl jetzt an einer Maschine haengt statt an meiner Erinnerung.
+2. `blockKopfFunde()` im Helfer, gefaehrt von `tests/belege-siegel.test.ts:137` (nachgebaute
+   Ueberschneidung), `:152` (saubere Bloecke), `:165` (am echten Blatt) und `:170` (Block hinter
+   Fliesstext, ohne jeden Kopf). Rot um 02:56:59 mit der stub-Regel („Ueberschneidung blieb
+   ungemeldet"), nach der Implementierung rot am echten Blatt: „Zeile 194: Siegelblock beginnt
+   unter Zeile 190: Kopf bei Zeile 190 mit 4 Zellen". Der Befund ist damit nicht nur gemeldet,
+   sondern **benannt** — Zeile, Kopf, Zellzahl.
+
+**Die Heilung des Blatts.** Vor die Siegel-Zeilen ab Zeile 194 gesetzt: ein Absatz, der sagt, dass
+diese Liste die Fortsetzung des Siegels von oben ist und **nicht** Teil der Tabelle darueber, dazu
+ihr eigner dreizelliger Kopf und die Trennzeile. Damit steht jeder der zwei Bloecke unter seinem
+Kopf, `blockKopfFunde` meldet nichts mehr, und die 128 Zeilen sind unveraendert viele (ein Kopf ist
+kein Siegel — die Form-Lesart des Helfers laesst ihn fallen, was `:99` seit P145 haelt).
+
+**Fuenf Bisse an der Produktion, nicht am Fixture** (cp nach /tmp/p150-biss, patchen, rot sehen,
+zurueck-cp, cmp bytegleich):
+
+    A   fremde Tabelle nur bei 4 Zellen erkannt   -> 1 rot: der Befund fiel in die falsche Meldung („unter Fliesstext")
+    A2  blockKopfFunde ganz abgeschaltet           -> 1 rot: „Ueberschneidung blieb ungemeldet: []"
+    C   das Blatt schreibt 127                     -> 1 rot: „expected 127 to be 128"
+    D   ein dreizelliger Kopf gilt nicht als Kopf  -> 2 rot: die sauberen Bloecke MELDEN etwas
+    E   der Kopf-lose Block wird nicht gemeldet    -> 1 rot: „Block ohne Kopf blieb ungemeldet"
+
+Biss A war kein Biss im geplanten Sinn: die Regel meldete weiter, nur mit einer **falschen
+Begruendung** — „direkt unter Fliesstext", waehrend der Vorgaenger eine Tabellenzeile war. Das ist
+ein Befund ueber meine Meldung, nicht ueber meine Sonde, also zwei Aenderungen: der Fall `:170`
+(Kopf-lose Liste hinter Prosa) und eine Meldung, die ihren Vorgaenger benennt (Tabellenzeile mit N
+Zellen oder Fliesstext). Ohne Biss A haette ich diese Luecke nicht gefunden — ein Biss, der etwas
+anderes bricht als erwartet, ist auch eine Auskunft.
+
+**Zaehlung und Laeufe.** Neue Faelle 5 (6 → 11 im Blatt, 3782 → **3787** ausgefuehrt), Dateien
+353 unveraendert (der Helfer lebt in `scripts/`, keine neue Testdatei). Messung 03:01:20→03:03:50:
+genau ein rot, mit Namen — `tests/doku-zahlen.test.ts:52`, „Bericht 01:45:01 UTC, tests/belege-
+siegel.test.ts 02:00:17 UTC", Exit 1. Pruefung 03:04:26→03:06:56: **3787 von 3787 gruen, 353
+Testdateien, Exit 0**, doku-check beglaubigt ebendiesen Lauf. Lint 0 Fehler, 82 Warnungen
+(03:07:07). Zahlen-Belege Exit 0: 22 Markdown-Dateien, 965 Messbehauptungen, keine Pflicht-Zahl ohne
+Zitat.
+
+**Zensus 03:07:45 MEZ, Exit 0:** 573 Einheiten, 174 absolute, 65 mit Messzeug = 37,4 %, 109 ohne,
+33 maschinell widerlegbar mit 33 Zeugen — unveraendert seit P149, weil dieser Schlag keine
+Aussendung-Zahl bewegt. Der Lauf schrieb `zaehlung-0611.log.txt` um (16 036 B, sha
+`6369c24f5cb0dbf7`), die JSON blieb bytegleich (30 131 B, sha `a1e3428d77ab9bcd`). Die Siegel-Zeile des Logs
+stand noch auf `fcd9223a74e88cfe` — der **fünfte** Riss dieser Nacht, diesmal von mir vor dem Guard
+gesehen und im selben Schritt nachgezogen; die Regel „wer einen Zaehler faehrt, setzt in demselben
+Schritt die Siegel-Zeile neu" ist damit erstmals vor dem Befund angewandt, nicht nach ihm.
+
+
 ## Fehler in diesem Schlag, die ich selbst gefunden habe
 
 
@@ -1810,3 +1878,31 @@ mit eigenem Lauf, nicht eine Zahl, die man nachstellt.
    Sweep vor dem ersten Lauf, ersetzt, bevor sie jemand zitierte. Und im Mappe-Papier standen
    zwei Gedankenstriche (U+2014) im ASCII-Pflichtbereich — der Sweep nach dem Schreiben fand sie,
    ersetzt durch die ASCII-Form mit einem Satz, der den Unterschied benennt.
+63. **P147 zog zwei Siegel-Zeilen ein und vergass die Zahl, die das Blatt darüber stehen hat.**
+    `docs/belege/REGISTER.md:12` schrieb dem Leser bis heute „Grundgesamtheit: 126 Siegel-Zeilen" —
+    gemessen 01:39:50, also vor P147. Die operative Zahl lebte nur in meinem Kopf und in einer
+    Zahl-Klammer eines Blatts, das niemand nachrechnet. Gesehen von `tests/belege-siegel.test.ts:121`
+    (02:56:59, rot: „126 gegen 128"), berichtigt mit ihrer Messzeit daneben. Lehre: **eine Zahl, die
+    ein Blatt über sich selbst nennt, braucht denselben Träger wie jede andere Zahl.**
+64. **Ein Biss, der nichts ändert, ist kein Biss — und ich hatte einen als Biss gezählt.** Biss B
+    („die Zellzahl des Kopfs ist dem Prüfer egal") ließ die Suite grün (10 von 10), weil die
+    Mutation an der nachgebauten Ueberschneidung nichts am Verhalten änderte: der Zweig mit dem
+    Kopf-Vergleich war von dieser Teststelle gar nicht erreichbar. Ich hätte „vier Bisse" gemeldet;
+    es sind **fünf**, und einer davon war blind. Ersetzt durch Biss D (Kopf muss 4 Zellen haben →
+    2 rot) und Biss E (Kopf-lose Liste wird nicht gemeldet → 1 rot).
+65. **Zwei Anker aus dem Kopf geschrieben, dann nachgemessen.** Ich setzte
+    `tests/belege-siegel.test.ts:158` ins Blatt; die Fälle sitzen bei `:137` und `:165`. Dasselbe
+    Loch zum dritten Mal in drei Nächten (`build.yml:177` → 173, P146). Der Anker-Lauf gehört vor
+    den Buchschlag, nicht in den Text.
+66. **Ein Edit, dessen Anker eine Überschrift war, löschte sie.** Beim Einfügen von §38 verschwand
+    die Zeile „## Fehler in diesem Schlag, die ich selbst gefunden habe" — exakt der Fehler aus
+    P145, den ich dort selbst aufgeschrieben habe. Gesehen durch `grep -n '^## '` direkt nach dem
+    Schreiben, Überschrift zurückgesetzt und die doppelten Leerzeilen mit ihr bereinigt.
+67. **Biss A meldete den rechten Fund mit der falschen Begründung.** Nach der Mutation hieß der
+    Befund „Siegelblock ohne Kopfzeile direkt unter Fliesstext", obwohl die Vorgängerzeile eine
+    Tabellenzeile war. Ein Befund, der den Grund verwechselt, ist halb so wertvoll wie einer, der
+    ihn nennt — die Meldung benennt jetzt ihren Vorgänger (Tabellenzeile mit N Zellen oder
+    Fließtext), und `:170` hält den Fall, dass eine Liste wirklich hinter Prosa beginnt.
+68. **Die Mappe trägt einen Tippfehler in ihrer Botschaft.** cbbeae4b nennt die App-Scheibe
+    „App-Scheidung" statt „App-Schnitt". Behoben wird das hier, nicht mit `--amend`: ein Commit, der
+    schon gesetzt ist, bleibt gesetzt, und die Chronik nennt die richtige Zahl.
