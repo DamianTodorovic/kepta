@@ -3,8 +3,8 @@
   "README.md": {
    "saetze": 413,
    "absolut": 131,
-   "mit_zeug": 54,
-   "ohne_zeug": 77
+   "mit_zeug": 57,
+   "ohne_zeug": 74
   },
   "SECURITY.md": {
    "saetze": 33,
@@ -28,8 +28,8 @@
  "zusammen": {
   "saetze": 573,
   "absolut": 174,
-  "mit_zeug": 65,
-  "ohne_zeug": 109
+  "mit_zeug": 68,
+  "ohne_zeug": 106
  },
  "abschnitt": {
   "README.md": {
@@ -405,14 +405,6 @@
   },
   {
    "datei": "README.md",
-   "satz": "Connect in one click — K3PTA finds the AI apps already installed (Claude Desktop, Claude Code, Cursor, Windsurf, VS Code, Gemini CLI, Cline, Roo Code) and adds itself to their MCP settings, pointing to the server inside "
-  },
-  {
-   "datei": "README.md",
-   "satz": "Zed, Codex CLI, Continue and every other MCP client get the exact snippet to paste."
-  },
-  {
-   "datei": "README.md",
    "satz": "Audit log — every access to the knowledge base, by you, by each AI app and by scripts, with exactly the notes an app got to see."
   },
   {
@@ -506,10 +498,6 @@
   {
    "datei": "README.md",
    "satz": "No keys, no limits, no upgrade panel."
-  },
-  {
-   "datei": "README.md",
-   "satz": "Every tool in the app runs without bound: chat, clipper, machine scan, dossiers, briefings, audit, Device Sync, all eight MCP tools."
   },
   {
    "datei": "README.md",

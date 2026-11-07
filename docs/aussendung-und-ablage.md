@@ -1538,6 +1538,64 @@ gesehen und im selben Schritt nachgezogen; die Regel „wer einen Zaehler faehrt
 Schritt die Siegel-Zeile neu" ist damit erstmals vor dem Befund angewandt, nicht nach ihm.
 
 
+## 39. P151 — Erst die Klassen gezählt, dann drei Sätze bewaffnet: 68 von 174 (39,1 %), und die Klientenliste ist jetzt eine Parität zwischen Papier und Code (7.11. 03:14 MEZ)
+
+**Die Frage vor der Arbeit.** P150 hinterließ **109** absolute Behauptungen ohne Messzeug. Die alte
+Fehlpraxis war: sechs davon aussuchen und bewaffnen. Diesmal zuerst die Frage, welche dieser 109
+überhaupt eine Maschine betreffen — ein Satz über eine UI-Emotion ist mit keinem Test der Welt zu
+halten, und ihn zu „bewaffnen" hieße, eine Reimwort-Kette als Beweis zu verkaufen.
+
+**Was die Maschine wirklich meldet** (Zensus-JSON, Felder `pruefbar_liste` und `ohne_zeug`,
+03:26:40 MEZ): von den **33** Sätzen, die ein Werkzeug widerlegen könnte, stehen **0** in der Liste
+ohne Messzeug. Die schmale Klasse ist seit P147 leer — „bewaffne die maschinellen" ist erledigt, es
+bleibt die weite Klasse. Also Zweitmessung, und dabei ein Befund, den niemand suchte: **29 der 109
+nennen ihr Messzeug wohl, aber im falschen Satz** — im *gleichen* Absatz, in einem anderen Satz. Die
+Regel des Zensus liest pro Satz (seit P122 mit Grund), das Blatt schreibt pro Absatz. Ein Kunde, der
+den ersten Satz liest, sieht eine Behauptung ohne Beleg; der Beleg steht zwei Sätze weiter, ohne
+Bindestrich zur Behauptung.
+
+**Die drei bewaffneten Sätze, alle aus dieser Klasse:**
+
+- README.md:177, erster Satz — „K3PTA finds the AI apps already installed (Claude Desktop, Claude
+  Code, Cursor, Windsurf, VS Code, Gemini CLI, Cline, Roo Code)". Nichts hielt diese Acht-Namen-Liste.
+- README.md:177, zweiter Satz — „Zed, Codex CLI, Continue and every other MCP client get the exact
+  snippet to paste".
+- README.md:355 — „Every tool in the app runs without bound: chat, clipper, machine scan, dossiers,
+  briefings, audit, Device Sync, all eight MCP tools". Die Acht war behauptet, nicht gezählt.
+
+**Neue Fälle, und ihr Rot war ein Rot der andern Art.** `tests/lib/einrichtung.test.ts:140`
+(Zwölf Klienten, id für id und name für name), `:159` (die vier Schnipsel-Klienten bieten nie einen
+Klick an, die acht andern haben eine Zieldatei) und `:169` (*liest README.md:177 und gleicht die
+Namen in beide Richtungen ab*). Diese drei Fälle waren im ersten Anlauf **grün** — sie prüfen ja
+eine bestehende Wahrheit. Grün ohne Biss ist kein Beweis, also drei Bisse an der Produktion
+(`cp` nach `/tmp/p150-biss/`, patchen, rot, `cp` zurück, `cmp` bytegleich):
+
+    B1  Maschine nennt "Roo Code" nur noch "Roo"        -> 2 rot: Namensliste und „README nennt Roo Code, die Maschine kennt es nicht"
+    B2  Zed bietet plötzlich einen Klick an             -> 2 rot: „Zed bietet einen Klick an, obwohl es nur einen Schnipsel hat"
+    B3  das Blatt nennt eine neunte App (Perplexity)    -> 1 rot: „das Blatt nennt 9 Apps, versprochen waren acht"
+
+B3 ist der Fall, um dessentwillen dieser Schlag geschrieben wurde: **eine Lüge im Papier allein**
+macht die Suite rot. Vorher konnte `src/lib/einrichtung.ts` einen Klienten verlieren oder gewinnen
+und README.md:177 blieb unbewacht stehen.
+
+**Zensus, Pinne, Siegel.** Zensus 03:19:28 MEZ, Exit 0: 573 Einheiten, 174 absolute, **68** mit
+Messzeug = **39,1 %** (vorher 65 = 37,4 %), **106** ohne; die schmale Klasse unverändert 33 mit 33
+Zeugen. Pin `tests/aussendungs-riss.test.ts:132` erst rot gesehen (03:19:57: „68 von 174 nennen ein
+Messzeug — erwartet war 65"), dann nachgezogen. Der Lauf schrieb **beide** Artefakte neu und
+kleiner: JSON 30 131 → 29 550 B (sha `68ddf1c2b0b5d5f1`), Log 16 036 → 15 992 B (sha
+`0297efe63877d5db`) — die Siegel-Zeilen im selben Schritt gesetzt, zum sechsten Mal in dieser Nacht
+und zum zweiten Mal, bevor der Guard rief.
+
+**Zwei Läufe.** Messung 03:20:46 → 03:23:16: 3790 ausgeführt, 353 Dateien, genau ein rot mit Namen
+(`tests/doku-zahlen.test.ts:52`, „Bericht 02:06:56 UTC, tests/aussendungs-riss.test.ts 02:20:09
+UTC"), Exit 1. Prüfung 03:23:22 → 03:25:51 = **3790 von 3790 grün, 353 Dateien, Exit 0**, doku-check
+beglaubigt ebendiesen Lauf. README-Zähler an drei Trägern 3787 → **3790**. Lint 0 Fehler, 82
+Warnungen. Zahlen-Belege Exit 0: 970 Messbehauptungen im Endstand dieses Schlages
+(der Lauf von 03:26:17 MEZ meldete 967 und zog nach, als dieses Blatt selbst Zahlen schrieb).
+
+**Keine Versionszahl, kein Bau:** an ausgelieferten Bytes ändert dieser Schlag nichts; die Parität
+lebt in der Suite, nicht im Bündel.
+
 ## Fehler in diesem Schlag, die ich selbst gefunden habe
 
 
@@ -1906,3 +1964,30 @@ Schritt die Siegel-Zeile neu" ist damit erstmals vor dem Befund angewandt, nicht
 68. **Die Mappe trägt einen Tippfehler in ihrer Botschaft.** cbbeae4b nennt die App-Scheibe
     „App-Scheidung" statt „App-Schnitt". Behoben wird das hier, nicht mit `--amend`: ein Commit, der
     schon gesetzt ist, bleibt gesetzt, und die Chronik nennt die richtige Zahl.
+69. **Eine Sonde meldete „0 von 109 nennen ein Werkzeug in Backticks" — und das war ein Befund über
+    meinen Riss, nicht über die Sätze.** Der Zensus-Riss (`satz-riss.mjs`) nimmt den Text aus
+    Markdown heraus und wirft die Zeichen mit weg; in `ohne_zeug` steht darum nie ein Backtick. Erst
+    das Lesen eines JSON-Eintrags zeigte es. Die Zahl 0 war richtig und bedeutungslos — eine Zahl aus
+    einer Sonde, deren Form die Welt nicht durchlässt, ist kein Maß. Berichtigt: Klassifizierung nach
+    Wörtern (`maschine`-Regel des Zensus, eigens nachgelesen), nicht nach Zeichen.
+70. **Drei Fälle waren im ersten Anlauf grün — und das ist die Form, in der eine Parität wohnt.**
+    `:140`, `:159` und `:169` prüfen bestehende Wahrheit, also kein Rot vor der Tat. Ohne die drei
+    Bisse in der Produktion (B1, B2, B3) hätte ich Regeln "geprüft", die nicht scheitern können. Der
+    Fall, der das Blatt allein betrifft (B3: neunte App im README) ist der einzige der Nacht, der eine
+    Lüge *im Papier* erwischt — vorher war das Blatt unbewacht.
+71. **Der sechste Zahlen-Lauf, der Siegel-Zeilen verschob — diesmal ohne Guard-Ruf.** Zensus
+    03:19:28 schrieb JSON *und* Log kleiner; beide Siegel-Zeilen setzte ich im selben Schritt
+    (`68ddf1c2b0b5d5f1`, `0297efe63877d5db`). Die P145-Regel wirkt jetzt vor dem Befund. Der
+    Unterschied zu den vier Fällen davor ist nicht Sorgfalt, sondern Reihenfolge: ich fuhr den Zensus,
+    bevor ich das Blatt schrieb.
+72. **Die 29-Funde sind ein Befund über die Regel, nicht über das Blatt.** Der Zensus verlangt den
+    Zeugen *im selben Satz* (seit P122, mit Grund). Zwanzig Sätze mehr als erwartet nannten ihr
+    Werkzeug im Nachbar-Satz — formal blind, für einen Leser aber belegt. Ich habe die Regel nicht
+    aufgeweicht (das wäre der verführerische Fehler gewesen: Zähler steigt, Beweiskraft sinkt),
+    sondern drei Sätze so umgebaut, dass der Beleg in ihrem Satz steht. Die andern 26 bleiben in der
+    offenen Liste und sind eine Arbeit nach Kaufwirkung, nicht nach Zählerstand.
+73. **Mappe-Commit f880072b wiederholt denselben Buchstaben-Fehler und macht daraus einen Satz mit
+    Selbstkorrektur.** „Scheibe zur App-Scheidung… nein: Scheibe zum App-Schnitt" — ein Satz, der sich
+    im selben Atemzug berichtigt, ist kein Satz, und „Scheidung" ist nicht das Wort. Beim nächsten
+    Mappe-Commit schreibe ich den Botschaftstext, bevor ich ihn einsetze, und prüfe ihn gegen
+    `git log -1` wie ein Artefakt.

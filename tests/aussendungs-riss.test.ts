@@ -118,17 +118,18 @@ describe("P129, der Wortschatz: ein benanntes Instrument ist ein Messzeug", () =
         if (zeug.test(s)) mit++;
       }
     }
-    // Gemessen 7.11. 02:26:48 MEZ mit dem Zaehler selbst (docs/belege/aussendungsatz-0611/
+    // Gemessen 7.11. 03:19:28 MEZ mit dem Zaehler selbst (docs/belege/aussendungsatz-0611/
     // zaehlung-0611.log.txt): P146 bewaffnete README.md:181 und :427 sowie die zweisprachige
     // Schluessel-Zeile in .github/release-notes.md:12 und :75 (58 -> 62), P147 bewaffnete
     // README.md:357 mit einem Historien-Beleg (62 -> 63), P148 gab zwei Saetzen ihren Nenner
-    // (63 -> 64), und P149 bewaffnete README.md:456 — die Zahl der Messstelle nennt jetzt ihre
-    // Verteilung und zwei Fallzeilen (64 -> 65). Zaehler steigt, Nenner 174 bleibt.
+    // (63 -> 64), P149 bewaffnete README.md:456 (64 -> 65) und P151 bewaffnete README.md:177 in
+    // beiden Saetzen und :355 (65 -> 68): die Klientenliste der Maschine wird jetzt gegen das
+    // Blatt gehalten, nicht gegen meine Aufzaehlung. Zaehler steigt, Nenner 174 bleibt.
     // Nenner 174 unveraendert — ein Satz, der sein Messzeug nennt, ist keine neue Behauptung.
     // Zugleich fiel README.md:181 aus der schmalen Klasse (34 -> 33): das Wort, das sie dort
     // hielt, war "as always" in "validated offline as always", und diese Formulierung war falsch.
     expect(absoluten, "der Nenner ist nicht mehr 174 — der Riss oder die Klasse hat sich bewegt").toBe(174);
-    expect(mit, `${mit} von ${absoluten} nennen ein Messzeug — erwartet war 65`).toBe(65);
+    expect(mit, `${mit} von ${absoluten} nennen ein Messzeug — erwartet war 68`).toBe(68);
     expect(mit / absoluten, "Anteil ohne Nenner ist ein Urteil").toBeGreaterThan(0.3);
     expect(maschine.source.length, "die schmale Klasse wurde nicht mitgeändert").toBeGreaterThan(10);
   });

@@ -129,4 +129,66 @@ describe("K3PTA mit KI-Apps verbinden", () => {
     // Kein Schnipsel verlangt einen Account oder eine Cloud: der App-Eintrag genügt.
     for (const k of [zed, codex, continueKlient, generisch]) expect(k.hint).toContain(APP.command);
   });
+
+  // P151 — README.md:177 verspricht acht KI-Apps mit einem Klick und drei mit Schnipsel.
+  // Bis heute hielt kein Fall diese Liste: die Maschine konnte einen Klienten verlieren,
+  // das Blatt ihn weiter nennen, und niemand sah es. Die Zeilen unten sind deshalb ein
+  // Paritaets-Fall zwischen ausgeliefertem Text und ausgeliefertem Code.
+  const AUTO = ["claude-desktop", "claude-code", "cursor", "windsurf", "vscode", "gemini", "cline", "roo"];
+  const SCHNIPSEL = ["zed", "codex-cli", "continue", "any-mcp"];
+
+  it("die Zwölf sind genau die Klienten der Maschine, in ihrer Reihenfolge", () => {
+    const alle = finde(mac(), APP);
+    expect(alle.map((c) => c.id), "die Klientenliste der Maschine hat sich bewegt").toEqual([...AUTO, ...SCHNIPSEL]);
+    expect(alle.map((c) => c.name)).toEqual([
+      "Claude Desktop",
+      "Claude Code",
+      "Cursor",
+      "Windsurf",
+      "VS Code",
+      "Gemini CLI",
+      "Cline",
+      "Roo Code",
+      "Zed",
+      "Codex CLI",
+      "Continue",
+      "Any other MCP client",
+    ]);
+  });
+
+  it("vier Klienten bekommen nur den Schnipsel — die Maschine schreibt nie in ihre Datei", () => {
+    const alle = finde(mac(), APP);
+    for (const id of SCHNIPSEL) {
+      const k = alle.find((c) => c.id === id)!;
+      expect(k.canConnect, `${k.name} bietet einen Klick an, obwohl es nur einen Schnipsel hat`).toBe(false);
+    }
+    // Die andern acht haben alle einen Schreib-Weg — sonst wäre "one click" eine leere Zeile.
+    for (const id of AUTO) expect(alle.some((c) => c.id === id && c.config !== ""), `${id} ohne Zieldatei`).toBe(true);
+  });
+
+  it("README.md:177 nennt keine KI, die die Maschine nicht kennt — und keine, die sie vergisst", () => {
+    const readme = fs
+      .readFileSync(path.resolve(import.meta.dirname, "..", "..", "README.md"), "utf8")
+      .split("\n")
+      .find((l) => l.includes("**Connect in one click**"));
+    expect(readme, "der Connect-Satz ist aus README.md verschwunden").toBeDefined();
+    const klammer = /\(([^)]*)\)/.exec(readme as string);
+    expect(klammer, "der Connect-Satz nennt keine Klammer mit den App-Namen").not.toBeNull();
+    const genannt = (klammer as RegExpMatchArray)[1]
+      .split(",")
+      .map((s) => s.trim())
+      .filter(Boolean);
+    const namen = finde(mac(), APP).map((c) => c.name);
+    // Acht Namen in der Klammer, und jeder muss die Maschine erreichen.
+    expect(genannt.length, `das Blatt nennt ${genannt.length} Apps, versprochen waren acht`).toBe(8);
+    for (const n of genannt) expect(namen, `README nennt "${n}", die Maschine kennt es nicht`).toContain(n);
+    // Umgekehrte Richtung: jeder Auto-Connect-Klient der Maschine steht im Blatt.
+    const autoNamen = finde(mac(), APP)
+      .filter((c) => AUTO.includes(c.id))
+      .map((c) => c.name);
+    for (const n of autoNamen) expect(genannt, `die Maschine kennt "${n}", das Blatt verschweigt es`).toContain(n);
+    // Die Schnipsel-Klienten stehen im Satz hinter der Klammer.
+    const schnipselSatz = (readme as string).split("Zed, Codex CLI, Continue").length - 1;
+    expect(schnipselSatz, "der Satz für die Klienten ohne Schreib-Weg fehlt").toBe(1);
+  });
 });

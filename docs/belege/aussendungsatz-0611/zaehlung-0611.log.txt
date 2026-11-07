@@ -1,4 +1,4 @@
-Zeit: 7.11.2026, 03:07:45 MEZ
+Zeit: 7.11.2026, 03:19:28 MEZ
 Dateien: README.md, SECURITY.md, ROADMAP.md, .github/release-notes.md — Einheiten ueber 25 Zeichen.
 Riss: satz-riss.mjs (P128, markdown-fest). Vorher: Satzende + Leerzeichen ueber dem
 ganzen Text, wodurch Aufzaehlungen, Tabellenzeilen und `<summary>`-Kuelsen als EIN
@@ -9,11 +9,11 @@ Satz zaehlten. Unter beiden Naivlingen, in diesem Lauf nachgerechnet:
 
 | Datei | Saetze | absolute | mit Messzeug | ohne Messzeug | Anteil ohne |
 |---|---|---|---|---|---|
-| `README.md` | 413 | 131 | 54 | 77 | 58.8 % |
+| `README.md` | 413 | 131 | 57 | 74 | 56.5 % |
 | `SECURITY.md` | 33 | 9 | 4 | 5 | 55.6 % |
 | `ROADMAP.md` | 77 | 16 | 4 | 12 | 75.0 % |
 | `.github/release-notes.md` | 50 | 18 | 3 | 15 | 83.3 % |
-| **zusammen** | **573** | **174** | **65** | **109** | **62.6 %** |
+| **zusammen** | **573** | **174** | **68** | **106** | **60.9 %** |
 
 Nenner fuer den Anteil: 174 absolute Behauptungen in 573 Saetzen der vier Texte.
 
@@ -25,7 +25,7 @@ Zweite Lesung — der Zeuge darf im selben Abschnitt stehen (Absatz, Tabelle, Au
 | `ROADMAP.md` | 16 | 0 | 16 |
 | `.github/release-notes.md` | 18 | 6 | 12 |
 | zusammen | 174 | 67 | 107 |
-   mit Messzeug im selben Abschnitt: 67 von 174 = 38.5 % (gegen 65 von 174 = 37.4 % in der engen Lesung).
+   mit Messzeug im selben Abschnitt: 67 von 174 = 38.5 % (gegen 68 von 174 = 39.1 % in der engen Lesung).
 
 Die schmalere Klasse — Saetze, die ein Werkzeug widerlegen koennte (never/always/cannot/0 %/100 %):
    README.md                  28 von 131 absoluten
@@ -72,7 +72,7 @@ Zwei von ihnen nachgegriffen, im selben Lauf:
    "no screenshot of it here yet" (Semantic-Ansicht): README nennt 20 Bilder (12 in Markdown, 8 als <img alt>), davon 0 mit "Semantic"; der Satz steht noch da — haltbar.
    "no embedding ever travels into the view": 8 von 8 benannten Flaechen-Dateien gelesen, zusammen 0 Nennung(en) "embedding"; das Wort liegt in 34 Test-Dateien des Repos. Fehlende Dateien: keine.
 
-Die 109 ohne Messzeug, in Lesereihenfolge der Dateien (erste 40):
+Die 106 ohne Messzeug, in Lesereihenfolge der Dateien (erste 40):
    [README.md] Your AI forgets you after every chat.
    [README.md] Desktop app · no cloud · no account · encrypted at rest SQLite · hybrid retrieval · knowledge graph · MCP
    [README.md] The time slider replays eighteen months of a fictional advisory firm, and because every note carries a validity window, past moments show exactly what was true then.
@@ -100,8 +100,6 @@ Die 109 ohne Messzeug, in Lesereihenfolge der Dateien (erste 40):
    [README.md] Settings live in the encrypted data directory, not in browser storage — the desktop shell binds to a free port that changes on every launch, and localStorage is keyed by origin, so anything kept there was gone after a re
    [README.md] Read straight from the local database: no AI involved, nothing leaves the computer
    [README.md] Careful on purpose: only facts and how-tos are compared, both sentences must share their meaningful words, notes from the same file stay out, and so do the parts of a split file (README — 5/17), a note's source line and 
-   [README.md] Connect in one click — K3PTA finds the AI apps already installed (Claude Desktop, Claude Code, Cursor, Windsurf, VS Code, Gemini CLI, Cline, Roo Code) and adds itself to their MCP settings, pointing to the server inside 
-   [README.md] Zed, Codex CLI, Continue and every other MCP client get the exact snippet to paste.
    [README.md] Audit log — every access to the knowledge base, by you, by each AI app and by scripts, with exactly the notes an app got to see.
    [README.md] Every entry is sealed with the SHA-256 of the one before it; *Check integrity* shows whether anything was changed, removed or cut off.
    [README.md] Both protections are on by default, and every cloud request is in the audit log
@@ -113,3 +111,5 @@ Die 109 ohne Messzeug, in Lesereihenfolge der Dateien (erste 40):
    [README.md] Every card shows where it came from and which part it is — a label like 2/5, where the 5 is the number of parts that one file was split into, not a share of the store — and a file source opens in its default application.
    [README.md] Text size — 100, 115 or 130 %, under *Settings → Display*.
    [README.md] There is no single-note GET.
+   [README.md] DELETE /api/memories/:id and POST /api/memories/:id/restore are the only methods on that path — asking the door for one note by id answers 404, and that is the contract, not a bug to route around.
+   [README.md] - All data in ~/.kepta/ — one SQLite file that belongs to you
