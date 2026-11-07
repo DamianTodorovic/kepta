@@ -1410,7 +1410,7 @@ einen Bruch oder ein Prozent ohne Nenner-Kuelsenwort im selben Satz.
 | Fund | Urteil |
 |---|---|
 | README.md:231 „Text size — 100, 115 or 130 %" | **schon ausgenommen, im Satz selbst** („not a measurement") — die Sonde flaggt trotzdem: ihr Raster kennt die Ausnahmedeklaration nicht. Kein Befund, ein Regel-Fehler |
-| README.md:230 „which part it is (2/5)" | **UI-Beispielzahl, nicht verständlich gemacht** — berichtigt zu „a label like `2/5`, where the 5 is the number of parts that one file was split into, not a share of the store" |
+| README.md:230 „which part it is … a label like `2/5`" | **UI-Beispielzahl, nicht verständlich gemacht** — berichtigt zu „a label like `2/5`, where the 5 is the number of parts that one file was split into, not a share of the store" |
 | README.md:458 „The status panel quotes the 71 %" | **die eigentliche Lücke** — 71 % ohne Maß und Grundgesamtheit im selben Satz. Jetzt: „Hit@1, 41 of the 45 queries of that corpus, drawn in `docs/belege/tag-13-10/ablation-beine-1144.log.txt:10`" |
 
 Die 71 % sind am Artefakt nachgelesen, nicht aus dem README zitiert (`grep`, 02:26:17 MEZ):
@@ -1673,9 +1673,9 @@ Schutzkanten, und sie sind klein genug, dass ein Kunde sie spürt — `chat` max
 **12/min**, `SCHREIB_KANTE` **600/min**, `SUCH_KAPPE` **240/min**, `DATEN_KANTE` **600/min** global vor
 `/api` und `/mcp`. Der Satz in der Aussendung hieß bis heute:
 
-    README.md:355            "Every tool in the app runs without bound: chat, clipper, …"
-    release-notes.md:12 (EN) "nothing in it is metered: no day count, no cap on the endpoints, …"
-    release-notes.md:75 (DE) "nichts darin ist begrenzt: kein Tageszähler, keine Kappe an den Endpunkten, …"
+    74f2269:README.md:355                   "Every tool in the app runs without bound — chat, clipper, …"
+    74f2269:.github/release-notes.md:12 (EN) "nothing in it is metered: no day count, no cap on the endpoints, …"
+    74f2269:.github/release-notes.md:75 (DE) "nichts darin ist begrenzt: kein Tageszähler, keine Kappe an den Endpunkten, …"
 
 "keine Kappe an den Endpunkten" ist widerlegt durch einen Endpunkt, der bei 20/min mit 429 antwortet.
 Das ist genau die Klasse, die P134 und P142 als die teurere ausgewiesen haben: nicht ein Satz ohne
@@ -2173,7 +2173,7 @@ belegen kann.
    zwei Gedankenstriche (U+2014) im ASCII-Pflichtbereich — der Sweep nach dem Schreiben fand sie,
    ersetzt durch die ASCII-Form mit einem Satz, der den Unterschied benennt.
 63. **P147 zog zwei Siegel-Zeilen ein und vergass die Zahl, die das Blatt darüber stehen hat.**
-    `docs/belege/REGISTER.md:12` schrieb dem Leser bis heute „Grundgesamtheit: 126 Siegel-Zeilen" —
+    `9bd6c62:docs/belege/REGISTER.md:12` schrieb dem Leser bis heute „Grundgesamtheit: 126 Siegel-Zeilen" —
     gemessen 01:39:50, also vor P147. Die operative Zahl lebte nur in meinem Kopf und in einer
     Zahl-Klammer eines Blatts, das niemand nachrechnet. Gesehen von `tests/belege-siegel.test.ts:121`
     (02:56:59, rot: „126 gegen 128"), berichtigt mit ihrer Messzeit daneben. Lehre: **eine Zahl, die

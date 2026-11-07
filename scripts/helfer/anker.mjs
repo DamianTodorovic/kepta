@@ -96,7 +96,7 @@ export function ankerInText(text) {
           start = Number(kurz);
           ende = kBis ? Number(kBis) : start;
         }
-        funde.push({ nennung, commit, zeile: start, bis: ende, imBlatt: i + 1, roh: ganz });
+        funde.push({ nennung, commit, zeile: start, bis: ende, imBlatt: i + 1, roh: ganz, stelle: anfang + ganz.length, blaett: zeile });
       }
     });
   return funde;
@@ -123,6 +123,123 @@ export function kurzformVerwaisungen(text) {
       }
     });
   return zahl;
+}
+
+/* P155 — das Zitat-Fenster. Ein Blatt, das einen Satz aus einem andern waertlich zitiert,
+   behauptet damit mehr als dass es die Zeile gibt: es behauptet, WAS dort steht.
+
+   Gezuegelt wird ein Zitat nur, wenn die Struktur des Blatts es wirklich an den Anker bindet:
+   das Zitat folgt ihm innerhalb von NAHE_ZIT Zeichen, es steht kein `|` (Zellgrenze) dazwischen,
+   und es haelt mindestens DREI Woerter — ein Ein-Wort-Zitat ist ein Begriff, kein Satz
+   ("encrypted", "no tests"), und ein fernes Zitat in derselben Zeile gehoert dem Anker nicht
+   (README.md:128 nennt sein :76-Beispiel 300 Zeichen vor "show everything"). Ein Anker im
+   Zitatleib kann nicht sein eigener Zeuge sein; er endet nicht vor dem Zitat.
+
+   Das Fenster ist nach Klasse gemessen, nicht erfunden: Markdown-Zeugen sind ein Satz (genannte
+   Zeile + 5 fuer Fortschreibung), Code-Zeugen ein Fall (genannte Zeile + 30 — der ehrliche
+   Abstand am Bestand betraegt 27 Zeilen in tests/components/Dashboard.test.tsx). Ein Zitat,
+   hinter dem ein Vorher-Marker des Blatts steht ("berichtigt zu", "Jetzt:", "bis heute",
+   "hiess", "frueher", "vormals"), zitiert eine fruehere Fassung und wird nicht gefordert;
+   `zitatBondungen` weist es als `vorher` aus, damit die Zahl der Ausnahmen sichtbar bleibt.
+   Eine Auslassung im Zitat ist erlaubt, wenn sie gezeichnet ist: `…` oder `...` teilen das
+   Zitat in Haelften, und jede muss treffen. */
+const NAHE_ZIT = 60;
+// Oeffner " „ “ ; Schliesser " “ ” — der Inhalt darf keine An- oder Abfuehrung enthalten,
+// sonst paart die Sonde zwei Zitatzeichen desselben Blatts zu einem Schein-Zitat.
+const ZITAT = /["\u201E\u201C]([^"\n\u201C\u201D\u201E\u201F]{3,400})["\u201C\u201D]/g;
+// Historisch ist ein Zitat durch seine Struktur, nicht durch ein guessed Wort: eine
+// Anklage-Ueberschrift („### README.md:297 — …") und ein Protokoll-Zitat (Uhrzeit davor)
+// zitieren eine Fassung, die der heutige Stand nicht mehr traegt. Wer es pruefbar will,
+// nennt den Commit: `74f2269:README.md:355` — dann faehrt das Zitat gegen genau den Blob.
+const UEBERSCHRIFT = /^\s*#{1,6}\s/;
+const PROTOKOLL = /\(\s*\d{1,2}:\d\d(?::\d\d)?\s*[:,–-]?\s*$/;
+// Ein Zitat gibt Woerter wieder, keine Formatierung: Backticks und Fett-/Kursiv-Marker traeegt
+// die Sonde von beiden Seiten ab, damit "**Text size**" und "Text size" dieselbe Aussage sind.
+const norm = (s) => String(s).replace(/[*`]/g, "").replace(/\s+/g, " ").trim();
+
+/**
+ * Die Zitate eines Blatts, die durch die Struktur an einen Anker gebunden sind, in
+ * Lesereihenfolge: mit der gemeinten Datei und Zeile, dem Zitatwortlaut und dem Vorher-Zweig.
+ */
+export function zitatBondungen(text) {
+  const bondungen = [];
+  String(text)
+    .split("\n")
+    .forEach((zeile, i) => {
+      const anker = ankerInText(zeile).filter((a) => a.stelle !== undefined);
+      if (!anker.length) return;
+      for (const m of zeile.matchAll(ZITAT)) {
+        const anfang = m.index;
+        const inhalt = (m[1] || "").trim();
+        if (!inhalt || inhalt.includes("|")) continue;
+        if (inhalt.split(/\s+/).length < 3) continue; // ein Begriff ist kein Satz
+        let best = null;
+        for (const a of anker) {
+          const abstand = anfang - a.stelle;
+          if (abstand < 0 || abstand > NAHE_ZIT) continue;
+          if (zeile.slice(a.stelle, anfang).includes("|")) continue; // ueber eine Zellgrenze hinweg bindet nichts
+          if (!best || abstand < best.abstand) best = { a, abstand };
+        }
+        if (!best) continue;
+        bondungen.push({
+          nennung: best.a.nennung,
+          commit: best.a.commit,
+          zeile: best.a.zeile,
+          bis: best.a.bis,
+          imBlatt: i + 1,
+          zitat: inhalt,
+          historisch: UEBERSCHRIFT.test(zeile) || PROTOKOLL.test(zeile.slice(0, anfang)),
+        });
+      }
+    });
+  return bondungen;
+}
+
+/** Die Zeilen eines Zeugen — Baum oder Blob; null, wenn der Zeuge hier nicht zu oeffnen ist. */
+function zeugenZeilen(wurzel, b, cache, alle) {
+  const schluesel = `${b.commit || ""}|${b.nennung}`;
+  if (cache.has(schluesel)) return cache.get(schluesel);
+  let zeilen = null;
+  if (b.commit) {
+    const ausDemBlob = blobText(wurzel, b.commit, b.nennung);
+    if (ausDemBlob !== null) zeilen = zeilenVon(ausDemBlob);
+  } else {
+    const kinder = kandidaten(wurzel, b.nennung, (basis) => alle(wurzel, basis));
+    if (kinder.length === 1) {
+      const relativ = path.relative(wurzel, kinder[0]);
+      zeilen = zeilenVon(fs.readFileSync(kinder[0], "utf8"));
+      zeilen.relativ = relativ;
+    }
+  }
+  cache.set(schluesel, zeilen);
+  return zeilen;
+}
+
+/**
+ * Befunde ueber die Zitate eines Blatts; ein leeres Feld ist das saubere Urteil. Ein Zitat gilt,
+ * wenn jede durch `…` oder `...` geteilte Haelfte im Fenster der genannten Zeile steht.
+ */
+export function zitatFunde(wurzel, text) {
+  const cache = new Map();
+  const alle = BAUMSUCHE();
+  const funde = [];
+  for (const b of zitatBondungen(text)) {
+    if (ausserHaus(b.nennung)) continue;
+    if (b.historisch && !b.commit) continue; // strukturell historisch: hier gilt kein heutiger Stand
+    const zeilen = zeugenZeilen(wurzel, b, cache, alle);
+    if (!zeilen) continue; // toter Anker: das ist die Nachricht der Anker-Wache, nicht diese
+    const tiefe = b.nennung.endsWith(".md") ? 5 : 30;
+    const fenster = norm(zeilen.slice(Math.max(0, b.zeile - 1), b.zeile - 1 + tiefe + 1).join(" "));
+    const relativ = zeilen.relativ || b.nennung;
+    for (const teil of b.zitat.split(/\s*(?:\u2026|\.\.\.)\s*/).map(norm).filter((t) => t.length > 2)) {
+      if (!fenster.includes(teil)) {
+        funde.push(
+          `Blattzeile ${b.imBlatt}: Zitat "${teil}" trifft ${relativ}:${b.zeile} nicht — dort steht "${fenster.slice(0, 160)}"`,
+        );
+      }
+    }
+  }
+  return funde;
 }
 
 /** Kandidaten für eine Baum-Nennung: exakt, dann unter bekannten Wurzeln, dann im ganzen Baum. */
