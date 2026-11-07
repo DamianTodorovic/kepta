@@ -3,8 +3,8 @@
   "README.md": {
    "saetze": 413,
    "absolut": 131,
-   "mit_zeug": 52,
-   "ohne_zeug": 79
+   "mit_zeug": 53,
+   "ohne_zeug": 78
   },
   "SECURITY.md": {
    "saetze": 33,
@@ -28,8 +28,8 @@
  "zusammen": {
   "saetze": 573,
   "absolut": 174,
-  "mit_zeug": 63,
-  "ohne_zeug": 111
+  "mit_zeug": 64,
+  "ohne_zeug": 110
  },
  "abschnitt": {
   "README.md": {
@@ -445,7 +445,7 @@
   },
   {
    "datei": "README.md",
-   "satz": "Every card shows where it came from and which part it is (2/5), and a file source opens in its default application."
+   "satz": "Every card shows where it came from and which part it is — a label like 2/5, where the 5 is the number of parts that one file was split into, not a share of the store — and a file source opens in its default application."
   },
   {
    "datei": "README.md",
@@ -594,10 +594,6 @@
   {
    "datei": "README.md",
    "satz": "- npm run eval — 58 notes, 45 queries, five categories, in three legs: the naive substring search it replaced, the engine without vectors, and the engine with vectors, which is what actually ships."
-  },
-  {
-   "datei": "README.md",
-   "satz": "The status panel quotes the 71 % because that branch of the panel is exactly the case where no embedder answers."
   },
   {
    "datei": "README.md",

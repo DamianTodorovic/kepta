@@ -1,4 +1,4 @@
-Zeit: 7.11.2026, 02:13:18 MEZ
+Zeit: 7.11.2026, 02:26:48 MEZ
 Dateien: README.md, SECURITY.md, ROADMAP.md, .github/release-notes.md — Einheiten ueber 25 Zeichen.
 Riss: satz-riss.mjs (P128, markdown-fest). Vorher: Satzende + Leerzeichen ueber dem
 ganzen Text, wodurch Aufzaehlungen, Tabellenzeilen und `<summary>`-Kuelsen als EIN
@@ -9,11 +9,11 @@ Satz zaehlten. Unter beiden Naivlingen, in diesem Lauf nachgerechnet:
 
 | Datei | Saetze | absolute | mit Messzeug | ohne Messzeug | Anteil ohne |
 |---|---|---|---|---|---|
-| `README.md` | 413 | 131 | 52 | 79 | 60.3 % |
+| `README.md` | 413 | 131 | 53 | 78 | 59.5 % |
 | `SECURITY.md` | 33 | 9 | 4 | 5 | 55.6 % |
 | `ROADMAP.md` | 77 | 16 | 4 | 12 | 75.0 % |
 | `.github/release-notes.md` | 50 | 18 | 3 | 15 | 83.3 % |
-| **zusammen** | **573** | **174** | **63** | **111** | **63.8 %** |
+| **zusammen** | **573** | **174** | **64** | **110** | **63.2 %** |
 
 Nenner fuer den Anteil: 174 absolute Behauptungen in 573 Saetzen der vier Texte.
 
@@ -25,7 +25,7 @@ Zweite Lesung — der Zeuge darf im selben Abschnitt stehen (Absatz, Tabelle, Au
 | `ROADMAP.md` | 16 | 0 | 16 |
 | `.github/release-notes.md` | 18 | 6 | 12 |
 | zusammen | 174 | 67 | 107 |
-   mit Messzeug im selben Abschnitt: 67 von 174 = 38.5 % (gegen 63 von 174 = 36.2 % in der engen Lesung).
+   mit Messzeug im selben Abschnitt: 67 von 174 = 38.5 % (gegen 64 von 174 = 36.8 % in der engen Lesung).
 
 Die schmalere Klasse — Saetze, die ein Werkzeug widerlegen koennte (never/always/cannot/0 %/100 %):
    README.md                  28 von 131 absoluten
@@ -72,7 +72,7 @@ Zwei von ihnen nachgegriffen, im selben Lauf:
    "no screenshot of it here yet" (Semantic-Ansicht): README nennt 20 Bilder (12 in Markdown, 8 als <img alt>), davon 0 mit "Semantic"; der Satz steht noch da — haltbar.
    "no embedding ever travels into the view": 8 von 8 benannten Flaechen-Dateien gelesen, zusammen 0 Nennung(en) "embedding"; das Wort liegt in 34 Test-Dateien des Repos. Fehlende Dateien: keine.
 
-Die 111 ohne Messzeug, in Lesereihenfolge der Dateien (erste 40):
+Die 110 ohne Messzeug, in Lesereihenfolge der Dateien (erste 40):
    [README.md] Your AI forgets you after every chat.
    [README.md] Desktop app · no cloud · no account · encrypted at rest SQLite · hybrid retrieval · knowledge graph · MCP
    [README.md] The time slider replays eighteen months of a fictional advisory firm, and because every note carries a validity window, past moments show exactly what was true then.
@@ -110,6 +110,6 @@ Die 111 ohne Messzeug, in Lesereihenfolge der Dateien (erste 40):
    [README.md] Model discovery for Ollama and LM Studio in one click, no key required
    [README.md] Source citations: every answer shows which memories it used
    [README.md] Duplicate review — every group side by side, one click to keep the richest copy or dismiss the pair for good.
-   [README.md] Every card shows where it came from and which part it is (2/5), and a file source opens in its default application.
+   [README.md] Every card shows where it came from and which part it is — a label like 2/5, where the 5 is the number of parts that one file was split into, not a share of the store — and a file source opens in its default application.
    [README.md] Text size — 100, 115 or 130 %, under *Settings → Display*.
    [README.md] There is no single-note GET.

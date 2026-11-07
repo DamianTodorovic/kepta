@@ -1392,6 +1392,41 @@ für `docs/belege/p147-0711/`. Und 111 absolute Behauptungen nennen weiterhin ke
 davon als nächste dran sind, wird in P148 zuerst gezählt, nicht vermutet.
 
 
+## 36. P148 — Zahl ohne Nenner: eine Sonde, drei Funde, zwei berichtigt (7.11. 02:24 MEZ)
+
+P147 ließ 111 absolute Behauptungen ohne Messzeug. Die naive Fortsetzung („dann bewaffne eben
+fünf") wirft eine Frage vorher auf: *welche tragen eine Zahl, deren Nenner in einem andern Blatt
+steht?* Eine Prozentzahl ohne Grundgesamtheit ist kein Messzeug, auch wenn sie eines nennt.
+
+Sonde (Wegwerf, `/tmp/p148-sonde.mjs`, 02:25:00 MEZ) über `ohne_zeug` des Zensus-JSON:
+**222** Einheiten (zwei Lesungen über 111 Sätze), davon **38** mit einer Zahl, und **3** führen
+einen Bruch oder ein Prozent ohne Nenner-Kuelsenwort im selben Satz.
+
+| Fund | Urteil |
+|---|---|
+| README.md:231 „Text size — 100, 115 or 130 %" | **schon ausgenommen, im Satz selbst** („not a measurement") — die Sonde flaggt trotzdem: ihr Raster kennt die Ausnahmedeklaration nicht. Kein Befund, ein Regel-Fehler |
+| README.md:230 „which part it is (2/5)" | **UI-Beispielzahl, nicht verständlich gemacht** — berichtigt zu „a label like `2/5`, where the 5 is the number of parts that one file was split into, not a share of the store" |
+| README.md:456 „The status panel quotes the 71 %" | **die eigentliche Lücke** — 71 % ohne Maß und Grundgesamtheit im selben Satz. Jetzt: „Hit@1, 41 of the 45 queries of that corpus, drawn in `docs/belege/tag-13-10/ablation-beine-1144.log.txt:10`" |
+
+Die 71 % sind am Artefakt nachgelesen, nicht aus dem README zitiert (`grep`, 02:26:17 MEZ):
+`BM25 allein 71 % 21 % 0.76 41/45` und `Alle drei (RRF) 76 % … 45/45`. Zwei Zeilen führen 71 %
+(`BM25 allein` und `BM25 + Graph`) — deshalb nennt der README jetzt die Zeile `:10`, nicht nur die
+Datei. Und `41/45` ist zugleich der Beweis für „leaves four unanswered".
+
+**Warum die Regel nicht in den Census einzieht.** Ein dritter Reading hätte einen von drei Funden
+aus einer Textstelle geholt, die sich selbst ausnimmt: eine Regel, die mehr Lügen malt, als sie
+findet. Dieselbe Lehre wie P143 (ein Muster, das die Welt nicht so schreibt, wie man es denkt) und
+P138 (eine Liste blinder Sätze ist keine Liste falscher Sätze). Bleibt sie ein Werkzeug für diesen
+Schlag, dann gehört ihr eine Ausnahme, die *pro Satz* gepflegt wird — nicht ein Kuelsenwort-Raster.
+
+**Zählung danach.** Zensus 02:26:48 MEZ, Exit 0: 174 absolute, **64 mit Messzeug = 36,8 %**
+(vorher 63 von 174 = 36,2 %), **110** ohne; schmale Klasse unverändert 33, davon 33 mit Zeugen.
+Pinne 174/64, Kante > 0,30 (gemessen 0,3678). Beide Guards erst rot (02:26:58: „erwartet war 63",
+erhalten 64; und vier Siegel-Befunde, weil der neue Zensuslauf beide Artefakte umschrieb —
+30 378 B / 16 036 B, `2540a646de1b76e4…` und `fb8f905cd1bbd6aa…`), nach dem Nachziehen 21 von 21
+grün (02:27 MEZ). Keine neuen Fälle: README bleibt 3779, Dateien 352.
+
+
 ## Fehler in diesem Schlag, die ich selbst gefunden habe
 
 
@@ -1693,3 +1728,27 @@ davon als nächste dran sind, wird in P148 zuerst gezählt, nicht vermutet.
 55. **Eine eigne Fehlermeldung, die ich zurücknehmen musste.** Im P147-Papier schrieb ich zuerst,
    ich hätte „geza ehlt" gehackt; der grep traf nur „Werkzeg". Die Fehlerliste ist eine Behauptung
    wie jede andere und wird nur gemeldet, was die Sonde findet — die Berichtigung steht im Papier.
+
+56. **Die Zahl-ohne-Nenner-Regel flaggte ihre eigne Ausnahme.** README.md:231 sagt im Satz selbst,
+   die drei Prozente seien Slider-Werte und *not a measurement* — meine Sonde kannte nur
+   Nenner-Kuelsenwoerter (`of|von|in|aus` plus Ziffer) und meldete den Satz trotzdem. Ein Fund, der
+   sich selbst widerlegt, ist eine Regel, die noch nicht ins Gate darf. Haette ich die Regel in den
+   Census eingezogen, waere seine Grundgesamtheit um eine Luege reicher gewesen.
+57. **Meine erste Sonde riet die Form des JSON-Feldes.** `ohne_zeug` ist ein Array aus
+   `{datei, satz}`-Eintraegen und enthaelt beide Lesungen — 222 fuer 111 Saetze. Wer das Feld
+   nach Namen liest (ohne_zeug = "nach Datei gruppiert"), zaehlt die doppelte Grundgesamtheit und
+   wuerde 222 Saetze melden. Geheilt, indem ich zuerst die Form fragte
+   (`node -e "…typeof, erste Eintraege"`), dann die Regel.
+58. **Vierter Siegel-Riss an diesem Abend, wieder vom Guard gemeldet, nicht von mir.** Nach dem
+   Zensuslauf 02:26:48 standen die zwei Registerzeilen abermals zu alt da (02:26:58, vier Befunde).
+   Der Grund ist strukturell, nicht fluchtig: jeder Zaehler-Lauf schreibt beide Artefakte um, weil
+   Zeile 1 die Uhrzeit traegt und die Listen sich mit dem Text aendern. Deshalb steht die
+   Arbeitsfolge jetzt im Register, nicht nur in meinem Vorsatz — und P149 prueft, ob der Zaehler
+   die Siegel-Zeilen im selben Zug mitziehen kann, ohne zum Artefakt-Schreiber beim Import zu
+   werden (P129).
+
+59. **Ich fuhr `doku-check` mitten in einen laufenden Suite-Lauf.** 02:31:44, waehrend die
+   Pruefung (02:31:08→02:33:38) ihren Bericht gerade schrieb: die Wache verweigerte mit dem
+   Hinweis auf fremde Last, und ihr Text war richtig — meine Reihenfolge war falsch. Die Zahl war
+   nie in Frage (3779 ausgefuehrte Faelle), aber ein Gate, das waehrend des Schreibens gelesen
+   wird, ist kein Urteil. Der ruhige gruen Befund kam vier Minuten spaeter aus dem Lauf selbst.
