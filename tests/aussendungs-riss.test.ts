@@ -107,7 +107,7 @@ describe("P129, der Wortschatz: ein benanntes Instrument ist ein Messzeug", () =
     expect(zeug.test(einheiten[0]), "das Messzeug steht im selben Satz, wird aber nicht gesehen").toBe(true);
   });
 
-  it("am echten Bestand: 57 von 174 absoluten Behauptungen nennen ihr Messzeug", () => {
+  it("am echten Bestand: 58 von 174 absoluten Behauptungen nennen ihr Messzeug", () => {
     let absoluten = 0;
     let mit = 0;
     for (const datei of DATEIEN) {
@@ -118,13 +118,13 @@ describe("P129, der Wortschatz: ein benanntes Instrument ist ein Messzeug", () =
         if (zeug.test(s)) mit++;
       }
     }
-    // Gemessen 7.11. 00:56:45 MEZ mit dem Zaehler selbst (docs/belege/aussendungsatz-0611/
-    // zaehlung-0611.log.txt): P142 teilte README.md:86 in drei bewaffnete Saetze (173 -> 175,
-    // 55 -> 58), und P143 begrenzte die Zahlen-Einheiten der Regel — das of in "off" und in
-    // "office" zahlte als Einheit. Nenner 174, Zaehler 57: genau ein Satz fiel aus beiden
-    // Spalten, und das ist mein eignes Zitat in README.md:86.
+    // Gemessen 7.11. 01:24:50 MEZ mit dem Zaehler selbst (docs/belege/aussendungsatz-0611/
+    // zaehlung-0611.log.txt): P144 bewaffnete README.md:17 — der Satz, der "mere similarity
+    // dashed" verspricht, nannte keinen Zeugen, und die einzige Sonde der Suite, die
+    // `setLineDash` las, las den Notiz-Ring, nicht eine Kante. Zaehler 57 -> 58, Nenner 174
+    // unveraendert: ein Satz, der sein Messzeug nennt, ist keine neue Behauptung.
     expect(absoluten, "der Nenner ist nicht mehr 174 — der Riss oder die Klasse hat sich bewegt").toBe(174);
-    expect(mit, `${mit} von ${absoluten} nennen ein Messzeug — erwartet war 57`).toBe(57);
+    expect(mit, `${mit} von ${absoluten} nennen ein Messzeug — erwartet war 58`).toBe(58);
     expect(mit / absoluten, "Anteil ohne Nenner ist ein Urteil").toBeGreaterThan(0.3);
     expect(maschine.source.length, "die schmale Klasse wurde nicht mitgeändert").toBeGreaterThan(10);
   });

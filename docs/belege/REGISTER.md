@@ -248,8 +248,8 @@ erfunden, in beiden Sprachen gemessen und mit dem Vektor-Bein auch allein:
 | `aussendungsatz-0611/zaehlen.mjs` | 13425 B | `28f5a607e0c2b7c3…` |
 | `aussendungsatz-0611/satz-riss.mjs` | 3005 B | `abedac906ac83c5f…` |
 | `aussendungsatz-0611/messregel.mjs` | 2218 B | `2954f0bcd52e83ab…` |
-| `aussendungsatz-0611/zaehlung-0611.json` | 31541 B | `b822d462c4d89a65…` |
-| `aussendungsatz-0611/zaehlung-0611.log.txt` | 16051 B | `db7bb35de7fac53c…` |
+| `aussendungsatz-0611/zaehlung-0611.json` | 31388 B | `b3d993124cffb7ce…` |
+| `aussendungsatz-0611/zaehlung-0611.log.txt` | 16008 B | `193e6e913d141c92…` |
 
 Drei Folgen, aufgeschrieben, weil sie die Zahl nicht schoener machen:
 

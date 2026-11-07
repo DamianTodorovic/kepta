@@ -3,8 +3,8 @@
   "README.md": {
    "saetze": 413,
    "absolut": 131,
-   "mit_zeug": 48,
-   "ohne_zeug": 83
+   "mit_zeug": 49,
+   "ohne_zeug": 82
   },
   "SECURITY.md": {
    "saetze": 33,
@@ -28,8 +28,8 @@
  "zusammen": {
   "saetze": 573,
   "absolut": 174,
-  "mit_zeug": 57,
-  "ohne_zeug": 117
+  "mit_zeug": 58,
+  "ohne_zeug": 116
  },
  "abschnitt": {
   "README.md": {
@@ -307,10 +307,6 @@
   {
    "datei": "README.md",
    "satz": "Desktop app · no cloud · no account · encrypted at rest SQLite · hybrid retrieval · knowledge graph · MCP"
-  },
-  {
-   "datei": "README.md",
-   "satz": "Every entry is a node, every connection an edge — real connections drawn solid, mere similarity dashed."
   },
   {
    "datei": "README.md",

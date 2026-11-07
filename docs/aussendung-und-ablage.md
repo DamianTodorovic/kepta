@@ -1176,6 +1176,73 @@ Nenner −1, Zähler −1: der Satz, der fälschlich zählte, war bewaffnet. Ein
 greift, zeichnet die Quote schlechter, als sie ist — ihre Korrektur macht sie nicht besser, sie
 macht sie wahr. Das ist die Richtung, die hier gemeldet werden muss, nicht eine Quote, die steigt.
 
+## 32. P144 — „mere similarity dashed": der Strich war versprochen, aber keine Sonde las ihn (7.11. 01:10 MEZ)
+
+README.md:17 trägt die Kantensprache in einem Satz: *real connections drawn solid, mere
+similarity dashed*. Die einzige Sonde der Suite, die `setLineDash` las
+(`tests/components/KnowledgeGraph.render.test.tsx:742`), las den abgelaufenen Notiz-Ring, nicht
+eine Kante. Der Satz nannte also kein Messzeug, und die Produktion entschied an
+`KnowledgeGraph.tsx:3807` (`!e.real` → Art `vermutung`) und `:3898-3903` (Dash-Muster nach Art).
+
+### Was die Leinwand hergibt, und was nicht
+
+Die Atrappe sammelt Aufrufe, keine Pixel. Ein `setLineDash` ohne folgenden `stroke()` malt
+nichts, also zählt der neue Helfer den Zug, nicht den Setz-Aufruf. Vier Messungen haben den Test
+umgebaut (je ein Scratch-Patch an `:3898-3903`, danach `cp` aus der eignen Sicherung, `cmp`
+bytegleich):
+
+- 01:12:57 — der ruhende letzte Rahmen enthält 0 `stroke`-Aufrufe: die Bildschleife malt nur,
+  solange sich etwas bewegt (`:5058`). Wer hier nicht nachschösst, misst eine Schleife, die
+  nichts mehr malt, und hält ein leeres Bild für eine Aussage (wieder 01:18:35 und 01:18:56).
+- 01:17:09 — Vermutung ohne Strich gemalt → Fall 2 fällt. Der Fall hat Biss.
+- 01:17:39 — **auch die echten Kanten mit Strich gemalt → beide Fälle bleiben grün.** Die
+  echten Verbindungen liegen als gefüllte Bänder im Bild; ihr Strich-Zustand erreicht keinen
+  `stroke()`-Aufruf. „solid" ist damit eine Aussage über das Bild, die diese Sonde nicht
+  prüfen *kann*.
+
+Der erste Ansatz wollte „solid" über die Akzent-Farbe messen und fiel viermal genau daran
+(01:12:10, 01:14:04, 01:14:38, 01:16:57): für gefüllte Bänder setzt die Produktion nie
+`strokeStyle`. Farbe ist hier kein Beweismittel. Also prüft der Fall die Kehrseite, die die
+Leinwand wirklich hergibt — solange niemand Aehnlichkeiten ruft, trägt das Bild überhaupt
+keinen Strich; und wenn sie gerufen werden, trägt jeder Strich dasselbe Muster — und der Test
+sagt, dass er die eine Hälfte nicht prüft, statt zu tun, als täte er es.
+
+Neu `tests/components/KnowledgeGraph.kanten-strich.test.tsx`, 2 Fälle, Biss: 01:19:58 Vermutung
+ohne Strich → Fall 2 rot; 01:20:00 auch echte Kanten gestrichelt → Fall 1 rot; 01:19:47
+ungepatcht 2 von 2 grün.
+
+### Bewaffnung und Zählung
+
+Der Satz nennt jetzt seine zwei Zeilen und was sie zählen (`:121` ohne Aehnlichkeits-Ruf,
+`:132` mit einem). Zensus 01:24:50 MEZ, Exit 0: 573 Einheiten, **174** absolute Behauptungen,
+**58** mit Messzeug = **33,3 %** (vorher 57 von 174 = 32,8 %), 116 ohne. Zweite Lesung
+(Zeuge im selben Abschnitt) 60 von 174 = 34,5 %. Schmale Klasse unverändert **34**, davon
+**29** mit Zeugen → **5** bleiben an der Wand. Pinne 174 / 58, Kante > 0,30 (gemessen 0,3333);
+vor der Korrektur war der Pin-Fall rot, wie er sein musste (01:25:05: „erwartet war 57",
+erhalten 58).
+
+### Am ausgelieferten Stück
+
+Kein ausgeliefertes Byte ändert sich, also keine Versionszahl und kein Bau (P141 bis P143 sind
+derselbe Fall). Die Aussage, die der Satz neu beglaubigt, war aber schon in 3.2.190 ausgeliefert,
+und das ist am Objekt nachgelesen, nicht am Quelltext — Grep durch den Bundle-Leib von
+`/Applications/K3PTA.app/Contents/Resources/app.asar` (Stand 6.11. 18:16:38):
+
+```
+setLineDash(m==="abgelaufen"?[4/jt,3/jt]:m==="vermutung"?[3/jt,5/jt]:[])
+```
+
+### Zwei neue offene Punkte, aus diesem Schlag geboren
+
+1. **„solid" bleibt ungeprüft.** Die eine Hälfte des Satzes hat keinen Zeugen, den diese
+   Leinwand liefern kann. Prüfbar wäre sie erst mit einer Bildstraße (echter Viewport, Pixel).
+2. **Ein Siegel, das niemand prüft.** `docs/belege/REGISTER.md` führt zu jedem Artefakt Bytes
+   und sha256, und kein Leser kontrolliert sie: dieser Lauf schrieb die zwei Zensus-Artefakte um
+   (01:24:50), die Registerzeilen blieben zehn Minuten alt, und `node scripts/zahlen-belege.mjs`
+   meldete dazu grün (01:33:43) — die Wache öffnet jedes zitierte Artefakt und verlangt *die
+   Zahl* dort, nicht das Siegel. Nachgezogen vor dem Commit; die Wache danach erneut grün
+   (01:35:11), mit json 31 388 B / `b3d993124cffb7ce…` und log 16 008 B / `193e6e913d141c92…`.
+
 
 ## Fehler in diesem Schlag, die ich selbst gefunden habe
 
@@ -1385,3 +1452,25 @@ macht sie wahr. Das ist die Richtung, die hier gemeldet werden muss, nicht eine 
     Fall beim Laufen liest, ist der auf der Platte — also der vorherige. Zurück auf 2026-11-06,
     dritter Lauf als Prüfung. Zweite Instanz desselben Grundes wie P141-Fehler 5: eine Zahl nennt
     ihren Kanal, und ihr Kanal ist das Artefakt, nicht mein Gefühl für die Uhr.
+
+41. **„solid" mit dem falschen Werkzeug gemessen.** Der erste Ansatz wollte die echten
+    Verbindungen an ihrer Akzent-Farbe erkennen und brauchte vier Läufe, um fallen gelassen zu
+    werden (01:12:10, 01:14:04, 01:14:38, 01:16:57), obwohl der erste schon meldete, dass die
+    Kopfzeile keine echte Verbindung nennt — der Fixture-Stummel war aus einem andern Fall
+    kopiert und passte von Anfang an nicht. Fünfte Instanz derselben Lehre: die Frage ist nicht
+    „was behaupte ich", sondern „was kann mein Messzeug überhaupt sehen".
+42. **Drei Läufe auf eigne Tippfehler, nicht auf Befunde:** `kopfZahlen is not defined`
+    (01:15:01), `ahmen is not defined` (01:16:26), `kopf is not defined` zweimal (01:19:12 und
+    01:19:22) — der letzte, weil ich den halben Helfer geflickt hatte. Gebrauchfehler, kein
+    Urteil; aber jeder dieser Läufe sah aus wie ein Messergebnis.
+43. **Die Sonde las ein leeres Bild und hielt es für eine Aussage.** Zweimal (01:13:00 und
+    01:18:35/01:18:56) maß sie den ruhenden Rahmen, obwohl die Bildschleife nur malt, solange
+    sich etwas bewegt (`KnowledgeGraph.tsx:5058`). Ohne den Nachschuss hätte der Fall grün
+    werden können, weil nichts gemalt wurde — dieselbe Sorte grün ohne Beweis wie ein Zähler,
+    der über einer leeren Liste läuft.
+44. **Ein Siegel, das niemand prüft, ist kein Siegel.** Die REGISTER-Zeilen der zwei
+    Zensus-Artefakte waren nach meinem Lauf um 01:24:50 zehn Minuten alt, und
+    `node scripts/zahlen-belege.mjs` meldete dazu grün (01:33:43): die Wache öffnet zwar jedes
+    zitierte Artefakt, aber sie vergleicht weder Bytes noch sha256 mit der Spalte, die sie
+    ausweist. Ich habe die Zeilen von Hand nachgezogen, bevor ich es meldete — die Lücke selbst
+    steht als offener Punkt über §32 und ist der Kandidat für den nächsten Schlag.
