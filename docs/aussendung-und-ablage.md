@@ -1241,8 +1241,61 @@ setLineDash(m==="abgelaufen"?[4/jt,3/jt]:m==="vermutung"?[3/jt,5/jt]:[])
    (01:24:50), die Registerzeilen blieben zehn Minuten alt, und `node scripts/zahlen-belege.mjs`
    meldete dazu grün (01:33:43) — die Wache öffnet jedes zitierte Artefakt und verlangt *die
    Zahl* dort, nicht das Siegel. Nachgezogen vor dem Commit; die Wache danach erneut grün
-   (01:35:11), mit json 31 388 B / `b3d993124cffb7ce…` und log 16 008 B / `193e6e913d141c92…`.
+   (01:35:11). Und der Ausweis selbst, den ich damals hinschrieb, war kurz darauf wieder falsch:
+   der nächste Zensuslauf 01:43:48 schrieb die Log-Datei um (nur die Zeitstempelzeile, Länge
+   gleich 16 008 B), und das Siegel heißt seitdem `912200af764b0cab…`. Das ist P145.
 
+
+## 33. P145 — Das Siegel des Beleg-Registers hatte keinen Prüfer (7.11. 01:39 MEZ)
+
+`docs/belege/REGISTER.md` weist zu jedem Artefakt Bytes und sha256(16) aus. Kontrolliert wurde
+keins von beiden: die Zahlen-Wache öffnet jedes zitierte Artefakt und verlangt die *Zahl* darin.
+Sonde vor der Änderung (01:39:50 MEZ): **126** Siegel-Zeilen, **2** falsch —
+`tag-0311/eval-bge-m3-1404.log.txt` (6144 B ausgewiesen, 6199 B auf der Platte) und
+`tag-0311/sprachuebergriff-bge-m3-1406.log.txt` (2631 B gegen 2720 B), in beiden Fällen auch der
+Hash, und die ausgewiesenen Hashes passen zu **keiner** Datei im Ordner.
+
+Die Wurzel ist nicht Verfall, sondern Zeitpunkt: beide Dateien *und* beide Zeilen stammen aus
+demselben Commit (`4895aa9`, 3.2.126, 3.11.). Der Ausweis wurde vor dem letzten Lauf des Zählers
+geschrieben und danach nie nachgemessen — ein Artefakt bezeugt nur den Stand, den es selbst trägt.
+Die Substanz war nie verloren: die Zahlen in diesen Artefakten prüft die Zahlen-Wache unabhängig,
+und sie meldete auch vorher grün.
+
+Neu `scripts/helfer/belege-siegel.mjs` (`siegelZeilen`, `siegelPruefen`) und
+`tests/belege-siegel.test.ts` (6 Fälle). Die Regel wohnt an einem Ort, der Fall importiert sie —
+P124 und P129: ein Fall, der die Regel nachbaut, wird bei jeder Änderung still grün.
+
+    01:41:20  Modul fehlt            -> "no tests" (Fehler, kein Urteil)
+    01:41:33  Rumpf meldet nur leer  -> 5 rot, 1 grün
+    01:42:07  Regel steht            -> 2 rot: mein eigner Fixture und das echte Register (4 Befunde)
+    01:42:57  Zeilen berichtigt      -> 6 von 6 grün
+
+Der Biss läuft auf Kratzerschicht: der ganze Beleg-Ordner nach `/tmp/p145-belege-kopie` kopiert,
+der Prüfer gegen die Kopie, das Register-Blatt wortgleich aus dem Repo gelesen (01:43:30).
+Grundstand leer; ein angehängtes Byte meldet Größe *und* sha; ein Byte an Ort und Stelle gewechselt
+(gleiche Länge) meldet **nur** sha; die Datei gelöscht meldet „fehlt auf der Platte"; Grundstand
+danach wieder leer, und „Repo unangetastet: true" per Bytevergleich — kein git-Rückweg.
+
+Der Prüfer biss noch am selben Abend an mir selbst: der Zensuslauf 01:43:48 schrieb die Log-Datei
+um (nur die Zeitstempelzeile), 01:43:57 meldete der Fall den neuen gegen den ausgewiesenen Hash.
+Seitdem steht im Register als Arbeitsfolge: **wer einen Zähler fährt, setzt in demselben Schritt
+die Siegel-Zeile neu.**
+
+Zahlen dieses Schlages: zwei Zeilen auf die gemessenen Bytes und Hashes gesetzt, Census
+unverändert (01:43:48: 174 absolute, 58 mit Messzeug = 33,3 %, schmale Klasse 34), README-Zähler
+3767 → **3773** (neue Fälle 6, Dateien 350 → 351), keine Versionszahl und kein Bau — Register und
+Suite leben nicht im Bündel.
+
+*Entschieden, weil:* `scripts/zahlen-belege.mjs` habe ich nicht angefasst, obwohl dort die Wache
+wohnt — das Blatt ist byte-identisch zum Kern (`docs/belege/REGISTER.md:6`), und jede Änderung
+daran zieht die Kern-Zwillinge nach, die seit W0-12K als eigene offene Liste laufen. Ein neuer
+Prüfer gehört an einen eigenen Ort und in die Suite, die ohnehin jedes Gate fährt.
+
+*Offen:* Das Register-Blatt ist kaputt gebaut. Ab Zeile 190 laufen Siegel-Zeilen (drei Zellen)
+unter einer Ergebnistabelle mit vier Zellen weiter (Kopf bei `:186`), also in Markdown in
+derselben Tabelle: ein Leser sieht Hashes als Trefferquoten. Der Prüfer liest deshalb nach Bauart,
+nicht nach Überschrift — die Überschneidung ist geheilt, das Blatt nicht. Umbauen wären ~120
+Zeilen, ein eigener Schlag.
 
 ## Fehler in diesem Schlag, die ich selbst gefunden habe
 
@@ -1474,3 +1527,29 @@ setLineDash(m==="abgelaufen"?[4/jt,3/jt]:m==="vermutung"?[3/jt,5/jt]:[])
     zitierte Artefakt, aber sie vergleicht weder Bytes noch sha256 mit der Spalte, die sie
     ausweist. Ich habe die Zeilen von Hand nachgezogen, bevor ich es meldete — die Lücke selbst
     steht als offener Punkt über §32 und ist der Kandidat für den nächsten Schlag.
+
+45. **Mein Groessen-Fall baute zwei Driften und erwartete einen Befund.** Ich wies im Fixture eine
+   fremde Bytezahl *und* den Hash eines fremden Inhalts aus — der Prüfer meldete korrekt zwei
+   Befunde, der Fall erwartete einen (01:42:07). Der Fall hat mich belehrt, was die Wirklichkeit
+   tut: jede Größen-Drift ist zugleich eine Inhalts-Drift. Seither prüft der Größen-Fall nur seinen
+   eignen Befund, und der reine Inhalts-Befund (gleiche Länge, anderer Inhalt) steht in einem
+   eignen Fall — 01:42:57, 6 von 6 grün.
+46. **Ich schrieb ein Siegel in ein Papier, das der nächste Lauf unleserlich machte.** In §32
+   stehen Bytes und sha zweier Zensus-Artefakte als Beweis; der Zensuslauf 01:43:48 schrieb die Log
+   um, und der Satz behauptete damit einen Ausweis, den es nicht mehr gab — dieselbe Klasse wie der
+   Fund selbst, nur in meiner eignen Prosa. Jetzt steht in §32 nur noch, *dass* der Ausweis zog und
+   wie er heute heißt, und im Register steht die Arbeitsfolge: wer einen Zähler fährt, setzt in
+   demselben Schritt die Siegel-Zeile neu.
+47. **Ein CJK-Fragment in meiner eignen Überschrift, und mein erster Reparaturversuch traf die
+   falschen Zeichen.** Im Mappe-Papier P145 stand ein Fragment, das ich selbst geschrieben
+   hatte: U+52A8 U+4E86, mitten in der Überschrift „Was sich … Zahlen dieses Laufs". Mein
+   Ersetzungsversuch schrieb U+52D5 U+4E86 — geraten statt gelesen, also ging die Reparatur
+   still ins Leere und ließ das Fragment stehen. Geheilt durch Ersetzen **nach Zeilenindex**, nicht
+   nach kopierten oder erratenen Zeichen; der Sweep danach meldet 0 Nicht-ASCII. Fünfte Instanz
+   der Zeichen-Regel, neue Form: auch ein erratener Codepunkt ist ein Kopieren.
+48. **Ein Edit, dessen Anker größer war als die Änderung, löschte eine Überschrift.** Beim Anhängen
+   von §32 an `docs/aussendung-und-ablage.md` ersetzte ich die Zeile „## Fehler in diesem Schlag,
+   die ich selbst gefunden habe" durch den neuen Abschnitt und vergaß sie zurückzuschreiben — die
+   Fehlerliste hing damit ohne Kopf unter §32. Gesehen durch den Struktur-Griff nach dem Schreiben
+   (`grep -n '^## ' …`), Kopf wieder eingesetzt, Zeile 1300. Das ist dieselbe Warnung, die schon
+   über dem Zurücklesen steht: die getroffene Region zurücklesen, nicht nur die neue.

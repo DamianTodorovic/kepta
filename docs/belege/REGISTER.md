@@ -6,6 +6,25 @@ Beleg.** Dieser Repo ignoriert `*.log` (`.gitignore:25`), also liegt jede Messda
 (`scripts/zahlen-belege.mjs`, byte-identisch zum Kern) oeffnet jedes Artefakt, das ein Satz
 zitiert, und verlangt die Zahl dort; ein Beleg, den `git ls-files` nicht kennt, gilt nicht.
 
+Die Tabelle unten ist ein **Siegel** — Bytezahl und sha256 sagen, dass dieser Beleg dieser Lauf
+ist. Bis zum 7.11. hatte dieses Siegel keinen Pruefer. Seitdem vergleicht
+`scripts/helfer/belege-siegel.mjs` in jedem Suite-Lauf jede ausgewiesene Zeile gegen die Datei auf
+der Platte, gefahren von `tests/belege-siegel.test.ts:112` (Grundgesamtheit: 126 Siegel-Zeilen,
+gemessen 01:39:50 MEZ). Der erste Lauf dieses Pruefers fand 4 Befunde auf 2 Zeilen:
+`tag-0311/eval-bge-m3-1404.log.txt` und `tag-0311/sprachuebergriff-bge-m3-1406.log.txt` wiesen
+6 144 B bzw. 2 631 B aus, waehrend auf der Platte 6 199 B bzw. 2 720 B lagen, und die
+ausgewiesenen Hashes passten zu keiner Datei im Ordner. Beide Zeilen und beide Dateien stammen
+aus demselben Commit (`4895aa9`, 3.2.126, 3.11.), die Siegel waren also schon im Augenblick des
+Schreibens falsch — die Laeufe wurden nach dem Notieren noch einmal gefahren. Die Zeilen stehen
+jetzt auf den gemessenen Bytes; die Substanz war nie verloren, denn die Zahlen *in* diesen
+Artefakten prueft die Zahlen-Wache unabhaengig und meldete schon damals gruen.
+
+Die Folge fuer die Arbeit: **wer einen Zaehler faehrt, setzt in demselben Schritt die
+Siegel-Zeile neu.** Der Pruefer hat das am Abend des 7.11. an mir selbst bewiesen — der
+Zensus-Lauf um 01:43:48 schrieb `aussendungsatz-0611/zaehlung-0611.log.txt` um (nur die
+Zeitstempel-Zeile, Laenge gleich), und 01:43:57 meldete der Fall: sha 912200af764b0cab gegen
+ausgewiesenes 193e6e913d141c92. Ein Artefakt bezeugt nur den Stand, den es selbst traegt.
+
 Was in diesem Ordner **nicht** steht: Messlaeufe des Kerns. Die App und die Engine sind zwei
 Baeume, und ein Satz nennt seinen Baum. Drei Kopien von Kern-Belegen lagen hier zeitweise
 ungetrackt (sie stammen aus der Nacht des 12.10., als dieselben Zahlen in beiden Raeumen
@@ -16,9 +35,9 @@ Laeufe liegt, korrekt gekuerzt, im Kern-Repo unter `docs/belege/`.
 | Datei im Repo | Bytes | sha256 (16) |
 |---|---|---|
 | `tag-0311/eval-drei-beine-1352.log.txt` | 6562 B | `e3cff29fc8384b3a…` |
-| `tag-0311/eval-bge-m3-1404.log.txt` | 6144 B | `e136f87d902ee5e2…` |
+| `tag-0311/eval-bge-m3-1404.log.txt` | 6199 B | `d2baafe12576212e…` |
 | `tag-0311/sprachuebergriff-nomic-1406.log.txt` | 2623 B | `390c15c2cf839f2c…` |
-| `tag-0311/sprachuebergriff-bge-m3-1406.log.txt` | 2631 B | `eb01ff875ec16b39…` |
+| `tag-0311/sprachuebergriff-bge-m3-1406.log.txt` | 2720 B | `dfe0634b6a1a1ba8…` |
 | `tag-0411/wortschatz-vor-3-2-138-2233.log.txt` | 1648 B | `7cf81827ff35447e…` |
 | `tag-0411/wortschatz-nach-3-2-139-0023.log.txt` | 959 B | `92084dce677a6844…` |
 | `tag-0411/tuer-48-vor-3-2-139-0123.log.txt` | 4355 B | `31bcebfde0182eb1…` |
@@ -249,7 +268,7 @@ erfunden, in beiden Sprachen gemessen und mit dem Vektor-Bein auch allein:
 | `aussendungsatz-0611/satz-riss.mjs` | 3005 B | `abedac906ac83c5f…` |
 | `aussendungsatz-0611/messregel.mjs` | 2218 B | `2954f0bcd52e83ab…` |
 | `aussendungsatz-0611/zaehlung-0611.json` | 31388 B | `b3d993124cffb7ce…` |
-| `aussendungsatz-0611/zaehlung-0611.log.txt` | 16008 B | `193e6e913d141c92…` |
+| `aussendungsatz-0611/zaehlung-0611.log.txt` | 16008 B | `912200af764b0cab…` |
 
 Drei Folgen, aufgeschrieben, weil sie die Zahl nicht schoener machen:
 
