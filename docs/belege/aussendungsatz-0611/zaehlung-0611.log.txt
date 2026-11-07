@@ -1,4 +1,4 @@
-Zeit: 7.11.2026, 01:43:48 MEZ
+Zeit: 7.11.2026, 02:00:59 MEZ
 Dateien: README.md, SECURITY.md, ROADMAP.md, .github/release-notes.md — Einheiten ueber 25 Zeichen.
 Riss: satz-riss.mjs (P128, markdown-fest). Vorher: Satzende + Leerzeichen ueber dem
 ganzen Text, wodurch Aufzaehlungen, Tabellenzeilen und `<summary>`-Kuelsen als EIN
@@ -9,30 +9,30 @@ Satz zaehlten. Unter beiden Naivlingen, in diesem Lauf nachgerechnet:
 
 | Datei | Saetze | absolute | mit Messzeug | ohne Messzeug | Anteil ohne |
 |---|---|---|---|---|---|
-| `README.md` | 413 | 131 | 49 | 82 | 62.6 % |
+| `README.md` | 413 | 131 | 51 | 80 | 61.1 % |
 | `SECURITY.md` | 33 | 9 | 4 | 5 | 55.6 % |
 | `ROADMAP.md` | 77 | 16 | 4 | 12 | 75.0 % |
-| `.github/release-notes.md` | 50 | 18 | 1 | 17 | 94.4 % |
-| **zusammen** | **573** | **174** | **58** | **116** | **66.7 %** |
+| `.github/release-notes.md` | 50 | 18 | 3 | 15 | 83.3 % |
+| **zusammen** | **573** | **174** | **62** | **112** | **64.4 %** |
 
 Nenner fuer den Anteil: 174 absolute Behauptungen in 573 Saetzen der vier Texte.
 
 Zweite Lesung — der Zeuge darf im selben Abschnitt stehen (Absatz, Tabelle, Aufzaehlung):
 | Datei | absolute | mit Messzeug | ohne Messzeug |
 |---|---|---|---|
-| `README.md` | 131 | 57 | 74 |
+| `README.md` | 131 | 58 | 73 |
 | `SECURITY.md` | 9 | 3 | 6 |
 | `ROADMAP.md` | 16 | 0 | 16 |
-| `.github/release-notes.md` | 18 | 0 | 18 |
-| zusammen | 174 | 60 | 114 |
-   mit Messzeug im selben Abschnitt: 60 von 174 = 34.5 % (gegen 58 von 174 = 33.3 % in der engen Lesung).
+| `.github/release-notes.md` | 18 | 6 | 12 |
+| zusammen | 174 | 67 | 107 |
+   mit Messzeug im selben Abschnitt: 67 von 174 = 38.5 % (gegen 62 von 174 = 35.6 % in der engen Lesung).
 
 Die schmalere Klasse — Saetze, die ein Werkzeug widerlegen koennte (never/always/cannot/0 %/100 %):
-   README.md                  29 von 131 absoluten
+   README.md                  28 von 131 absoluten
    SECURITY.md                2 von 9 absoluten
    ROADMAP.md                 1 von 16 absoluten
    .github/release-notes.md   2 von 18 absoluten
-   zusammen 34 von 174 — der Rest ist Produktcopy ("no password to type"), keine Behauptung ueber eine Maschine.
+   zusammen 33 von 174 — der Rest ist Produktcopy ("no password to type"), keine Behauptung ueber eine Maschine.
    Die Liste, in Lesereihenfolge, mit dem Marker „Zeug", wenn derselbe Satz schon ein Messzeug nennt:
    [README.md] ZEUG While it cools at 3 000 notes a few pairs still touch for a moment; tests/lib/graphLayout.test.ts:2455-2458 pins that funnel at ≤ 40 pairs by step 250, ≤ 40 again by step 310 and zero by step 380, so no sentence here say
    [README.md] ZEUG On macOS the key never sits in a file; on Windows it is the DPAPI-sealed database-key.dpapi in the data folder, readable only under the same account, and a headless install with KEPTA_DB_KEY keeps it in the process envir
@@ -51,7 +51,6 @@ Die schmalere Klasse — Saetze, die ein Werkzeug widerlegen koennte (never/alwa
    [README.md] ZEUG A backup of the old file sits right next to it, every other entry stays, and a file that is not plain JSON is never touched (tests/lib/einrichtung.test.ts:42 checks the backup and the untouched neighbours, :61 hands a co
    [README.md] ZEUG Private notes never reach an app or a cloud model — the same two checks apply here: tests/mcp.test.ts refuses a private note at the MCP door even when an agent asks for it by scope, and tests/enterprise-api.test.ts reads
    [README.md] ZEUG Card numbers must pass the Luhn check and IBANs the mod-97 check; dates are never taken for phone numbers (tests/lib/schild.test.ts:39 runs both validators head-on — one shifted IBAN digit and an all-zero card number fai
-   [README.md]      Managed deployment & central policies — IT deploys one managed-settings.json (the macOS MDM path, since the app ships macOS only; the Windows and Linux paths are in the same reader for self-built packages — or set KEPTA_
    [README.md] ZEUG Without a reachable local LLM it always degrades to ADD — the gate can never block you (tests/engine.test.ts:333 runs it with the embedding service at 503 and still lands on ADD without asking the model; :360 feeds it a 
    [README.md] ZEUG Settings can only narrow what is read, never widen it (tests/scan/regeln.test.ts:190 tries to talk the barrier into reading secrets by ticking file types and is refused; :199 allows a smaller size cap and refuses a bigge
    [README.md] ZEUG HTML is turned into text before import, and content that carries no knowledge — markup scaffolding, repeated table rows — never becomes a note (tests/core/klassifikation.test.ts:112 strips script, style and tags into rea
@@ -61,19 +60,19 @@ Die schmalere Klasse — Saetze, die ein Werkzeug widerlegen koennte (never/alwa
    [README.md] ZEUG There is nothing to activate and nothing to buy inside the window, so the app also never asks for it — no key field, no counter, no trial clock, no "first day free" and no message about a limit (tests/keine-grenzen.test.
    [README.md]      It was never a lock — but it was counting, and counting needed places to hide the tally (an authenticated state in the database, a keychain anchor, a hidden file).
    [README.md] ZEUG The data is never hostage (tests/keine-grenzen.test.ts:102-116 shows the licence route answers nothing, read or write, and no part of the surface asks it; tests/server.test.ts:327 writes the store out as Markdown files).
-   [README.md]      They are built from this source and never published here, so they are untested against a real installer download; treat them as source builds, not as shipped products.
+   [README.md] ZEUG They are built from this source and never published here — every electron-builder call in .github/workflows/build.yml carries --publish never (:111, :204, :310; driven by tests/ci-publish.test.ts:51), so they are unteste
    [README.md] ZEUG src/scan (machine-scan rules) | must not fall under 98 % of lines · must hold 100 % of functions (both in vitest.config.ts, key "src/scan/") | what may be read, and what never is
    [SECURITY.md] ZEUG The three keychain paths are covered by tests/core/schluessel.test.ts — :101 reads a Windows entry through the injected command runner with the path passed in the environment, :111 proves the key never sits in the argume
    [SECURITY.md] ZEUG It never leaves the keychain on its own — what that means is checked, not promised: tests/core/schluessel.test.ts:111 reads the argument list of every launch and finds the key absent there (it travels in the child's envi
    [ROADMAP.md] ZEUG Time-travel search | asOf on memory_search and POST /api/search — ask what was known at any moment; time-travelled queries never count as access (tests/engine.test.ts:254 shows the older note and hides the later one at t
-   [.github/release-notes.md]      A signed key is an artefact of a K3PTA Enterprise agreement, never something sold off a shelf.
-   [.github/release-notes.md]      Ein signierter Schlüssel ist Artefakt einer Enterprise-Vereinbarung, nie ein Kaufprodukt von der Liste.
+   [.github/release-notes.md] ZEUG A signed key is an artefact of a K3PTA Enterprise agreement, never something sold off a shelf — nothing in this app reads, sells or validates one: the licence route answers neither read nor write and no surface calls it 
+   [.github/release-notes.md] ZEUG Ein signierter Schlüssel ist Artefakt einer Enterprise-Vereinbarung, nie ein Kaufprodukt von der Liste — nichts in dieser App liest, verkauft oder prüft einen: die Lizenz-Route antwortet weder lesend noch schreibend, und
 
 Zwei von ihnen nachgegriffen, im selben Lauf:
    "no screenshot of it here yet" (Semantic-Ansicht): README nennt 20 Bilder (12 in Markdown, 8 als <img alt>), davon 0 mit "Semantic"; der Satz steht noch da — haltbar.
    "no embedding ever travels into the view": 8 von 8 benannten Flaechen-Dateien gelesen, zusammen 0 Nennung(en) "embedding"; das Wort liegt in 34 Test-Dateien des Repos. Fehlende Dateien: keine.
 
-Die 116 ohne Messzeug, in Lesereihenfolge der Dateien (erste 40):
+Die 112 ohne Messzeug, in Lesereihenfolge der Dateien (erste 40):
    [README.md] Your AI forgets you after every chat.
    [README.md] Desktop app · no cloud · no account · encrypted at rest SQLite · hybrid retrieval · knowledge graph · MCP
    [README.md] The time slider replays eighteen months of a fictional advisory firm, and because every note carries a validity window, past moments show exactly what was true then.
@@ -106,7 +105,6 @@ Die 116 ohne Messzeug, in Lesereihenfolge der Dateien (erste 40):
    [README.md] Audit log — every access to the knowledge base, by you, by each AI app and by scripts, with exactly the notes an app got to see.
    [README.md] Every entry is sealed with the SHA-256 of the one before it; *Check integrity* shows whether anything was changed, removed or cut off.
    [README.md] Both protections are on by default, and every cloud request is in the audit log
-   [README.md] Managed deployment & central policies — IT deploys one managed-settings.json (the macOS MDM path, since the app ships macOS only; the Windows and Linux paths are in the same reader for self-built packages — or set KEPTA_
    [README.md] No license server, no phone-home, no extra infrastructure — one file.
    [README.md] All eight tools ship an outputSchema and return structuredContent.
    [README.md] Model discovery for Ollama and LM Studio in one click, no key required
@@ -114,3 +112,4 @@ Die 116 ohne Messzeug, in Lesereihenfolge der Dateien (erste 40):
    [README.md] Duplicate review — every group side by side, one click to keep the richest copy or dismiss the pair for good.
    [README.md] Every card shows where it came from and which part it is (2/5), and a file source opens in its default application.
    [README.md] Text size — 100, 115 or 130 %, under *Settings → Display*.
+   [README.md] There is no single-note GET.

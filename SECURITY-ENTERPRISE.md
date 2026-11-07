@@ -58,7 +58,13 @@ Enforcement (verified by the test suite):
 | `machine_scan: "deny"` | The computer scan refuses to start |
 | `privacy_shield: "force_on"` | The shield cannot be switched off |
 
-The license in this file is **validated offline like any key** — management replaces typing, never verification. A missing or corrupt file changes nothing; the app falls back to normal behavior.
+A licence field in this file is **ignored by the downloadable app**, which has had no key to
+validate since 09.10.2026: the reader keeps exactly the three policies and the team roles
+(`tests/richtlinien.test.ts:106` keeps the policies beside old licence fields, `:122` treats a
+key-only file as no policy at all), and no path of the app reads a key
+(`tests/keine-grenzen.test.ts:102` — the licence route answers neither read nor write, `:116` —
+nothing in the surface calls it). A missing or corrupt file changes nothing; the app falls back to
+normal behavior.
 
 Enterprise editions (`business`, `enterprise`) are encoded in the signed license; every tier unlocks the same app today — team features ship as free updates during the license year.
 

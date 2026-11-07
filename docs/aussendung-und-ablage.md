@@ -1297,7 +1297,62 @@ derselben Tabelle: ein Leser sieht Hashes als Trefferquoten. Der Prüfer liest d
 nicht nach Überschrift — die Überschneidung ist geheilt, das Blatt nicht. Umbauen wären ~120
 Zeilen, ein eigener Schlag.
 
+## 34. P146 — Vier Sätze der schmalen Klasse bewaffnet, und der erste war eine falsche Zusage (7.11. 01:56 MEZ)
+
+P145 hinterließ eine Liste: von 34 Sätzen, die ein Werkzeug widerlegen könnte, nennen 29 keins —
+fünf. Fünf sind die teuerste Blindheit: eine Behauptung über eine Maschine, die niemand mit der
+Maschine prüft.
+
+**Der Fund beim Bewaffnen:** README.md:181 versprach, die Verwaltungsdatei trage die Lizenz
+vor und sie werde "validated offline as always" weitergeprüft. Drei Griffe widerlegen das:
+`grep -rln core/lizenz src/` ist **leer** (02:03:20 MEZ — kein Laufzeitpfad importiert das
+Signaturmodul), `src/lib/richtlinien.ts:86` lässt genau drei Schlüssel durch, und der Kopf
+desselben Blatts (`:10-13`) sagt seit dem 9.10., dass es kein Schlüsselsystem mehr gibt. Die
+Zeugen dafür waren seit dem 9.10. im Baum (`tests/richtlinien.test.ts:106`, `:122`) — es fehlte
+nur der Satz, der sie nannte. Berichtigt, nicht bewaffnet: eine Lizenzangabe in der Datei wird
+ignoriert. Dasselbe Loch an der zweiten Stelle: `SECURITY-ENTERPRISE.md:61` sagte es für die
+Beschaffungs-Doku.
+
+**Nebeneffekt auf die Klasse:** Das Wort, das README.md:181 in die schmale Klasse hielt, war
+"as always". Nach der Berichtigung verlässt er sie — 34 → **33**. Ein Satz kann eine Klasse
+verlassen, ohne zu verschwinden.
+
+**Neue Zeugen, die die Maschine fährt:** `tests/richtlinien.test.ts:197` ruft denselben Leser
+dreimal mit `process.platform` als Setting (darwin, linux, win32) und verlangt in jedem Lauf
+seinen eignen Zweig bis zur selben Datei; der Benutzerprofil-Pfad wird herausgehalten, sonst
+wäre „mindestens ein Pfad" auch ohne jeden Zweig erfüllt. `:220` misst `PROGRAMDATA` und seinen
+Default. Biss 01:57:49 MEZ: Linux-Zweig aus `src/lib/richtlinien.ts:52` entfernt → Fall rot
+(„der Linux-Zweig fehlt"), zurück per `cp` aus `/tmp/p146-richtlinien-original.ts`, `cmp`
+bytegleich. `tests/ci-publish.test.ts` (4 Fälle) liest `.github/workflows/build.yml`:
+**drei** Builder-Aufrufe (`:111`, `:204`, `:310`), alle mit `--publish never`; sein Biss sitzt
+im Blatt selbst (ein Aufruf ohne `never` und einer mit `always` müssen als Veröffentlichung
+gelten, derselbe Text mit `never` gilt als sauber), und ein Fall hält die deutschsprachigen
+Release-Notes an ihre eigne Nennung von `release-windows` (`:284`) und `release-linux` (`:173`).
+
+**Die Schlüssel-Zeile zweisprachig.** `.github/release-notes.md:12` und `:75` nennen jetzt
+`tests/keine-grenzen.test.ts:102` (die Lizenz-Route antwortet weder lesend noch schreibend) und
+`:116` (keine Fläche ruft sie).
+
+**Zählung.** Zensus 02:00:59 MEZ, Exit 0: 573 Einheiten, 174 absolute, **62 mit Messzeug =
+35,6 %** (vorher 58 von 174 = 32,8 %), **112** ohne; zweite Lesung 67 von 174 = 38,5 %; schmale
+Klasse 33, davon 32 mit Zeugen → **1** bleibt. Pinne 174 / 62, Kante > 0,30 (gemessen 0,3563);
+vorher rot, wie es sein musste (02:01:47: „erwartet war 58", erhalten 62). README-Zähler
+3773 → **3779**, Dateien 351 → 352. Keine Versionszahl, kein Bau.
+
+**Und P145 hielt, was es versprach:** nach der Zählung 02:00:59 waren die Siegel-Zeilen der
+beiden Zensus-Artefakte abermals zu alt (30 586 B / 15 870 B auf der Platte gegen 31 388 B /
+16 008 B ausgewiesen — die unbewaffnete Liste ist um vier Zeilen kürzer), und
+`tests/belege-siegel.test.ts:112` meldete es 02:02:21 MEZ, bevor irgendwer danach suchte.
+
+**Offen:** README.md:357 bleibt der letzte Satz der schmalen Klasse — eine Aussage über die Zeit
+vor 3.1.5, deren Zeuge kein Test ist, sondern ein Beleg aus der Historie (in diesem Repo gibt es
+keine v3.1.x-Tags, 0 Treffer, gemessen 02:04:32 MEZ). Und der Linux-Pfad streitet mit seinem
+eignen Kommentar: `src/lib/richtlinien.ts:4` verspricht `/etc/kepta/…`, der Code liefert
+`/etc/KEPTA/…`; der neue Fall hält den Code fest, nicht den Kommentar — die Heilung ist eine
+Zeile, braucht aber einen Bau.
+
 ## Fehler in diesem Schlag, die ich selbst gefunden habe
+
 
 1. `du -sk /tmp` meldete 0 GiB Stapel, weil `/tmp` ein Symlink ist; der erste Lauf schrieb diese Null.
    Berichtigt auf `du -sk /tmp/` (1,27 GiB) und in der Spur nachgemessen.
@@ -1553,3 +1608,30 @@ Zeilen, ein eigener Schlag.
    Fehlerliste hing damit ohne Kopf unter §32. Gesehen durch den Struktur-Griff nach dem Schreiben
    (`grep -n '^## ' …`), Kopf wieder eingesetzt, Zeile 1300. Das ist dieselbe Warnung, die schon
    über dem Zurücklesen steht: die getroffene Region zurücklesen, nicht nur die neue.
+
+49. **Eine falsche Zusage, gefunden beim Bewaffnen.** README.md:181 versprach, die
+   Verwaltungsdatei trage die Lizenz vor und sie werde "validated offline as always" geprüft.
+   Kein Laufzeitpfad importiert das Schlüsselmodul (`grep -rln core/lizenz src/` leer, gemessen
+   02:03:20 MEZ), der Leser lässt genau drei Schlüssel durch (`src/lib/richtlinien.ts:86`), und
+   der Kopf desselben Blatts sagt seit dem 9.10., dass es kein Schlüsselsystem mehr gibt. Ich
+   hätte den Satz bewaffnen *und damit stehen lassen* können — der Census meldet Zeugen, keine
+   Wahrheit. Dass die Zeugen schon seit dem 9.10. im Baum lagen, macht es schlimmer, nicht
+   besser. Zweite Stelle desselben Lochs: `SECURITY-ENTERPRISE.md:61`.
+50. **Zwei Entwürfe, die nichts gemessen hätten — beim Lesen gefunden, nicht beim Laufen.**
+   Erstens: „jeder Plattform-Zweig liefert mindestens einen Pfad" — der Benutzerprofil-Pfad
+   (`os.homedir()/.config`, auf jeder Plattform gesetzt) hätte die Bedingung auch ohne jeden
+   Zweig erfüllt. Zweitens: mein Helfer rief `kandidatenPfade()` ohne vorher `process.platform`
+   zu setzen, also wären alle drei Prüfungen auf der Runner-Plattform gelaufen und hätten dieselbe
+   Antwort gesehen. Beides fiel vor dem ersten Lauf auf, aber *vor dem Lauf* ist die schwächere
+   Beweiskategorie: ein Fall, den ich nicht rot gesehen habe, ist ein Fall, den ich nicht geprüft
+   habe. Der Biss 01:57:49 MEZ (Linux-Zweig entfernt → „der Linux-Zweig fehlt") ist der eigentliche
+   Beweis, und der gilt erst, nachdem beide Entwürfe umgeschrieben waren.
+51. **Ein Anker aus dem Kopf.** Für den Job `release-linux` schrieb ich `build.yml:177`; gemessen
+   steht er auf `:173` (`release-windows` auf `:284`). Nachgezogen, bevor der Commit lief.
+   Vierte Instanz derselben Warnung, die über jeder Zeilenangabe steht: ein Anker heißt erst,
+   nachdem die Datei ihn zeigt.
+52. **Ein Umlaut in meinem eignen Mappe-Papier** („müssen" in §3 des P146-Blatts), gefunden vom
+   Zeichen-Sweep nach dem Schreiben, vor dem Commit ersetzt. Und ein Anker, den ich aus einer
+   frühen Messung zitierte (`git tag` um 01:01 MEZ), wurde durch die spätere, klare Messung
+   ersetzt (0 Treffer, 02:04:32 MEZ) — eine Zahl, die ihren Moment nennt, muss den Moment haben,
+   der sie trägt.

@@ -23,7 +23,10 @@ Die Folge fuer die Arbeit: **wer einen Zaehler faehrt, setzt in demselben Schrit
 Siegel-Zeile neu.** Der Pruefer hat das am Abend des 7.11. an mir selbst bewiesen — der
 Zensus-Lauf um 01:43:48 schrieb `aussendungsatz-0611/zaehlung-0611.log.txt` um (nur die
 Zeitstempel-Zeile, Laenge gleich), und 01:43:57 meldete der Fall: sha 912200af764b0cab gegen
-ausgewiesenes 193e6e913d141c92. Ein Artefakt bezeugt nur den Stand, den es selbst traegt.
+ausgewiesenes 193e6e913d141c92. Dieselbe Folge trat am gleichen Abend noch einmal ein (Lauf
+02:00:59, Fall rot 02:02:21: 30 586 B / 15 870 B gegen die ausgewiesenen 31 388 B / 16 008 B) —
+der Pruefer haelt die Regel jetzt in jedem Suite-Lauf, nicht nur in diesem Papier. Ein Artefakt
+bezeugt nur den Stand, den es selbst traegt.
 
 Was in diesem Ordner **nicht** steht: Messlaeufe des Kerns. Die App und die Engine sind zwei
 Baeume, und ein Satz nennt seinen Baum. Drei Kopien von Kern-Belegen lagen hier zeitweise
@@ -267,8 +270,8 @@ erfunden, in beiden Sprachen gemessen und mit dem Vektor-Bein auch allein:
 | `aussendungsatz-0611/zaehlen.mjs` | 13425 B | `28f5a607e0c2b7c3…` |
 | `aussendungsatz-0611/satz-riss.mjs` | 3005 B | `abedac906ac83c5f…` |
 | `aussendungsatz-0611/messregel.mjs` | 2218 B | `2954f0bcd52e83ab…` |
-| `aussendungsatz-0611/zaehlung-0611.json` | 31388 B | `b3d993124cffb7ce…` |
-| `aussendungsatz-0611/zaehlung-0611.log.txt` | 16008 B | `912200af764b0cab…` |
+| `aussendungsatz-0611/zaehlung-0611.json` | 30586 B | `46c2c08be939b439…` |
+| `aussendungsatz-0611/zaehlung-0611.log.txt` | 15870 B | `ec7f9a6630857c16…` |
 
 Drei Folgen, aufgeschrieben, weil sie die Zahl nicht schoener machen:
 

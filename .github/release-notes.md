@@ -9,7 +9,7 @@ Published installers are **macOS only**. Windows and Linux targets exist in `ele
 
 Every file carries its platform and architecture in the name. On a Mac, if you are unsure: Apple menu → *About This Mac* — "Apple M…" means `arm64`, "Intel" means `x64`.
 
-**No license key is needed to run K3PTA.** The download is K3PTA Core and it is free, and nothing in it is metered: no day count, no cap on the endpoints, no counter in the window. What the app metered until 3.1.4 is taken out, not raised — the routes, the tally and the key field are gone, so there is nothing left to lift. A signed key is an artefact of a K3PTA Enterprise agreement, never something sold off a shelf.
+**No license key is needed to run K3PTA.** The download is K3PTA Core and it is free, and nothing in it is metered: no day count, no cap on the endpoints, no counter in the window. What the app metered until 3.1.4 is taken out, not raised — the routes, the tally and the key field are gone, so there is nothing left to lift. A signed key is an artefact of a K3PTA Enterprise agreement, never something sold off a shelf — nothing in this app reads, sells or validates one: the licence route answers neither read nor write and no surface calls it (`tests/keine-grenzen.test.ts:102`, `:116`).
 
 ## 🍎 First launch on macOS
 
@@ -72,7 +72,7 @@ All data stays local in `~/.kepta/` — no account, no cloud, no telemetry.
 
 Veröffentlichte Installer sind **nur macOS**. Windows- und Linux-Ziele gibt es in `electron-builder.json` und in CI (`release-windows`, `release-linux`), aber kein öffentlicher Installer dafür — für einen Piloten schneiden wir auf Anfrage einen. Die headless Engine mit MCP-Server läuft da, wo Node läuft: `npx -y kepta-mcp`.
 
-**K3PTA braucht keinen Schlüssel zum Laufen.** Der Download ist K3PTA Core und gratis, und nichts darin ist begrenzt: kein Tageszähler, keine Kappe an den Endpunkten, kein Zähler in der Fläche. Was die App bis 3.1.4 gemessen hat, ist ausgebaut, nicht heraufgesetzt — Routen, Zähler und Schlüsselfeld sind weg, es gibt nichts mehr, das man aufheben könnte. Ein signierter Schlüssel ist Artefakt einer Enterprise-Vereinbarung, nie ein Kaufprodukt von der Liste.
+**K3PTA braucht keinen Schlüssel zum Laufen.** Der Download ist K3PTA Core und gratis, und nichts darin ist begrenzt: kein Tageszähler, keine Kappe an den Endpunkten, kein Zähler in der Fläche. Was die App bis 3.1.4 gemessen hat, ist ausgebaut, nicht heraufgesetzt — Routen, Zähler und Schlüsselfeld sind weg, es gibt nichts mehr, das man aufheben könnte. Ein signierter Schlüssel ist Artefakt einer Enterprise-Vereinbarung, nie ein Kaufprodukt von der Liste — nichts in dieser App liest, verkauft oder prüft einen: die Lizenz-Route antwortet weder lesend noch schreibend, und keine Fläche ruft sie (`tests/keine-grenzen.test.ts:102`, `:116`).
 
 Die Builds sind **nicht notarisiert**. macOS: `xattr -dr com.apple.quarantine /Applications/K3PTA.app`, oder *Systemeinstellungen → Datenschutz & Sicherheit* → die K3PTA-Meldung → **Dennoch öffnen**. Einmal, dann nie wieder. Ältere Anleitungen empfehlen Rechtsklick → **Öffnen** — Apple hat den Weg mit macOS 15 entfernt, er tut auf aktuellen Systemen nichts.
 

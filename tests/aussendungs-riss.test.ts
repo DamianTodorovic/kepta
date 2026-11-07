@@ -107,7 +107,7 @@ describe("P129, der Wortschatz: ein benanntes Instrument ist ein Messzeug", () =
     expect(zeug.test(einheiten[0]), "das Messzeug steht im selben Satz, wird aber nicht gesehen").toBe(true);
   });
 
-  it("am echten Bestand: 58 von 174 absoluten Behauptungen nennen ihr Messzeug", () => {
+  it("am echten Bestand: 62 von 174 absoluten Behauptungen nennen ihr Messzeug", () => {
     let absoluten = 0;
     let mit = 0;
     for (const datei of DATEIEN) {
@@ -118,13 +118,14 @@ describe("P129, der Wortschatz: ein benanntes Instrument ist ein Messzeug", () =
         if (zeug.test(s)) mit++;
       }
     }
-    // Gemessen 7.11. 01:24:50 MEZ mit dem Zaehler selbst (docs/belege/aussendungsatz-0611/
-    // zaehlung-0611.log.txt): P144 bewaffnete README.md:17 — der Satz, der "mere similarity
-    // dashed" verspricht, nannte keinen Zeugen, und die einzige Sonde der Suite, die
-    // `setLineDash` las, las den Notiz-Ring, nicht eine Kante. Zaehler 57 -> 58, Nenner 174
-    // unveraendert: ein Satz, der sein Messzeug nennt, ist keine neue Behauptung.
+    // Gemessen 7.11. 02:00:59 MEZ mit dem Zaehler selbst (docs/belege/aussendungsatz-0611/
+    // zaehlung-0611.log.txt): P146 bewaffnete README.md:181 und README.md:427 sowie die
+    // zweisprachige Schluessel-Zeile in .github/release-notes.md:12 und :75. Zaehler 58 -> 62,
+    // Nenner 174 unveraendert — ein Satz, der sein Messzeug nennt, ist keine neue Behauptung.
+    // Zugleich fiel README.md:181 aus der schmalen Klasse (34 -> 33): das Wort, das sie dort
+    // hielt, war "as always" in "validated offline as always", und diese Formulierung war falsch.
     expect(absoluten, "der Nenner ist nicht mehr 174 — der Riss oder die Klasse hat sich bewegt").toBe(174);
-    expect(mit, `${mit} von ${absoluten} nennen ein Messzeug — erwartet war 58`).toBe(58);
+    expect(mit, `${mit} von ${absoluten} nennen ein Messzeug — erwartet war 62`).toBe(62);
     expect(mit / absoluten, "Anteil ohne Nenner ist ein Urteil").toBeGreaterThan(0.3);
     expect(maschine.source.length, "die schmale Klasse wurde nicht mitgeändert").toBeGreaterThan(10);
   });

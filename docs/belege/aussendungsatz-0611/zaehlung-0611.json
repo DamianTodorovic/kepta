@@ -3,8 +3,8 @@
   "README.md": {
    "saetze": 413,
    "absolut": 131,
-   "mit_zeug": 49,
-   "ohne_zeug": 82
+   "mit_zeug": 51,
+   "ohne_zeug": 80
   },
   "SECURITY.md": {
    "saetze": 33,
@@ -21,21 +21,21 @@
   ".github/release-notes.md": {
    "saetze": 50,
    "absolut": 18,
-   "mit_zeug": 1,
-   "ohne_zeug": 17
+   "mit_zeug": 3,
+   "ohne_zeug": 15
   }
  },
  "zusammen": {
   "saetze": 573,
   "absolut": 174,
-  "mit_zeug": 58,
-  "ohne_zeug": 116
+  "mit_zeug": 62,
+  "ohne_zeug": 112
  },
  "abschnitt": {
   "README.md": {
    "absolut": 131,
-   "mit_zeug": 57,
-   "ohne_zeug": 74
+   "mit_zeug": 58,
+   "ohne_zeug": 73
   },
   "SECURITY.md": {
    "absolut": 9,
@@ -49,19 +49,19 @@
   },
   ".github/release-notes.md": {
    "absolut": 18,
-   "mit_zeug": 0,
-   "ohne_zeug": 18
+   "mit_zeug": 6,
+   "ohne_zeug": 12
   }
  },
  "zusammen_abschnitt": {
   "absolut": 174,
-  "mit_zeug": 60,
-  "ohne_zeug": 114
+  "mit_zeug": 67,
+  "ohne_zeug": 107
  },
  "maschinell_pruefbar": {
   "README.md": {
    "absolut": 131,
-   "maschinell": 29
+   "maschinell": 28
   },
   "SECURITY.md": {
    "absolut": 9,
@@ -76,7 +76,7 @@
    "maschinell": 2
   }
  },
- "summe_pruefbar": 34,
+ "summe_pruefbar": 33,
  "pruefbar_liste": [
   {
    "datei": "README.md",
@@ -165,11 +165,6 @@
   },
   {
    "datei": "README.md",
-   "satz": "Managed deployment & central policies — IT deploys one managed-settings.json (the macOS MDM path, since the app ships macOS only; the Windows and Linux paths are in the same reader for self-built packages — or set KEPTA_",
-   "zeuge": false
-  },
-  {
-   "datei": "README.md",
    "satz": "Without a reachable local LLM it always degrades to ADD — the gate can never block you (tests/engine.test.ts:333 runs it with the embedding service at 503 and still lands on ADD without asking the model; :360 feeds it a ",
    "zeuge": true
   },
@@ -215,8 +210,8 @@
   },
   {
    "datei": "README.md",
-   "satz": "They are built from this source and never published here, so they are untested against a real installer download; treat them as source builds, not as shipped products.",
-   "zeuge": false
+   "satz": "They are built from this source and never published here — every electron-builder call in .github/workflows/build.yml carries --publish never (:111, :204, :310; driven by tests/ci-publish.test.ts:51), so they are unteste",
+   "zeuge": true
   },
   {
    "datei": "README.md",
@@ -240,13 +235,13 @@
   },
   {
    "datei": ".github/release-notes.md",
-   "satz": "A signed key is an artefact of a K3PTA Enterprise agreement, never something sold off a shelf.",
-   "zeuge": false
+   "satz": "A signed key is an artefact of a K3PTA Enterprise agreement, never something sold off a shelf — nothing in this app reads, sells or validates one: the licence route answers neither read nor write and no surface calls it ",
+   "zeuge": true
   },
   {
    "datei": ".github/release-notes.md",
-   "satz": "Ein signierter Schlüssel ist Artefakt einer Enterprise-Vereinbarung, nie ein Kaufprodukt von der Liste.",
-   "zeuge": false
+   "satz": "Ein signierter Schlüssel ist Artefakt einer Enterprise-Vereinbarung, nie ein Kaufprodukt von der Liste — nichts in dieser App liest, verkauft oder prüft einen: die Lizenz-Route antwortet weder lesend noch schreibend, und",
+   "zeuge": true
   }
  ],
  "beweise": {
@@ -430,10 +425,6 @@
   },
   {
    "datei": "README.md",
-   "satz": "Managed deployment & central policies — IT deploys one managed-settings.json (the macOS MDM path, since the app ships macOS only; the Windows and Linux paths are in the same reader for self-built packages — or set KEPTA_"
-  },
-  {
-   "datei": "README.md",
    "satz": "No license server, no phone-home, no extra infrastructure — one file."
   },
   {
@@ -590,10 +581,6 @@
   },
   {
    "datei": "README.md",
-   "satz": "They are built from this source and never published here, so they are untested against a real installer download; treat them as source builds, not as shipped products."
-  },
-  {
-   "datei": "README.md",
    "satz": "The server code lives in server/ — server/app.ts assembles the middleware chain and mounts the routers, server/router/ holds one module per feature area, server/helfer/ the shared helpers, and server.ts itself is only th"
   },
   {
@@ -714,10 +701,6 @@
   },
   {
    "datei": ".github/release-notes.md",
-   "satz": "A signed key is an artefact of a K3PTA Enterprise agreement, never something sold off a shelf."
-  },
-  {
-   "datei": ".github/release-notes.md",
    "satz": "The fastest way through, and the one that works on every macOS version:"
   },
   {
@@ -751,10 +734,6 @@
   {
    "datei": ".github/release-notes.md",
    "satz": "Der Download ist K3PTA Core und gratis, und nichts darin ist begrenzt: kein Tageszähler, keine Kappe an den Endpunkten, kein Zähler in der Fläche."
-  },
-  {
-   "datei": ".github/release-notes.md",
-   "satz": "Ein signierter Schlüssel ist Artefakt einer Enterprise-Vereinbarung, nie ein Kaufprodukt von der Liste."
   },
   {
    "datei": ".github/release-notes.md",

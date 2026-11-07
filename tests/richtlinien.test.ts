@@ -6,7 +6,7 @@
 // nicht mehr (09.10.2026) — sie wird ignoriert, nicht geahnt.
 // Fehlt oder ist die Datei kaputt, bleibt alles beim Alten.
 import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
-import { tmpdir } from "node:os";
+import { tmpdir, homedir } from "node:os";
 import path from "node:path";
 import fs from "node:fs";
 import crypto from "node:crypto";
@@ -186,5 +186,52 @@ describe("Kandidatenpfade", () => {
     const pfade = kandidatenPfade({ KEPTA_MANAGED_CONFIG: "/x/y.json" } as NodeJS.ProcessEnv);
     expect(pfade[0]).toBe("/x/y.json");
     expect(pfade.length).toBeGreaterThan(1);
+  });
+
+  // P146 — README.md:181 behauptet: "the Windows and Linux paths are in the same reader for
+  // self-built packages". Geprueft war nur der Zweig der Runner-Plattform; die anderen zwei
+  // waren nie gefahren. Also wird hier derselbe Leser drei Mal aufgerufen, mit der Plattform
+  // als Setting — und jeder Zweig muss seinen eignen Pfad auf dieselbe Datei liefern. Der
+  // benutzerprofil-Pfad (os.homedir(), auf jeder Plattform gleich) wird herausgehalten, sonst
+  // waere "mindestens ein Pfad" auch ohne jeden Plattform-Zweig erfuellt.
+  it("darwin, linux und win32 lesen dieselbe Datei in demselben Leser", () => {
+    const echt = process.platform;
+    const gesetzt = (p: string) => Object.defineProperty(process, "platform", { value: p, configurable: true });
+    const heimat = path.join(homedir(), ".config");
+    try {
+      const eignerPfad = (p: string) => {
+        gesetzt(p);
+        return kandidatenPfade({} as NodeJS.ProcessEnv).filter((x) => x.endsWith("managed-settings.json") && !x.startsWith(heimat));
+      };
+      expect(eignerPfad("darwin"), "der macOS-Zweig fehlt").toEqual(
+        expect.arrayContaining([expect.stringContaining(path.join("Application Support", "KEPTA"))])
+      );
+      expect(eignerPfad("linux").some((x) => x.startsWith("/etc")), `der Linux-Zweig fehlt: ${eignerPfad("linux").join(",")}`).toBe(true);
+      expect(eignerPfad("win32").some((x) => /ProgramData/.test(x)), `der Windows-Zweig fehlt: ${eignerPfad("win32").join(",")}`).toBe(true);
+      // Dieselbe Datei, nicht nur dasselbe Verzeichnis.
+      for (const p of ["darwin", "linux", "win32"]) {
+        for (const x of eignerPfad(p)) expect(x, `${p} endet nicht auf derselben Datei: ${x}`).toMatch(/[\\/]KEPTA[\\/]managed-settings\.json$/);
+      }
+    } finally {
+      gesetzt(echt);
+    }
+  });
+
+  it("win32 ehrt PROGRAMDATA, und ohne es bleibt C:\\ProgramData", () => {
+    const echt = process.platform;
+    const gesetzt = (p: string) => Object.defineProperty(process, "platform", { value: p, configurable: true });
+    try {
+      gesetzt("win32");
+      const mit = kandidatenPfade({ PROGRAMDATA: "/tmp/anderer-ordner" } as NodeJS.ProcessEnv);
+      const ohne = kandidatenPfade({} as NodeJS.ProcessEnv);
+      expect(mit.join("\n")).toContain("/tmp/anderer-ordner");
+      expect(ohne.join("\n")).toMatch(/ProgramData/);
+      // Der Leser baut den Pfad mit path.join, also trennt er auf einem POSIX-Runner mit
+      // "/": was hier gemessen wird, ist die Lage, nicht die Backslash-Form eines echten
+      // Windows-Laufwerks.
+      expect(ohne.some((x) => /ProgramData[\\/]KEPTA[\\/]managed-settings\.json$/.test(x)), JSON.stringify(ohne)).toBe(true);
+    } finally {
+      gesetzt(echt);
+    }
   });
 });
