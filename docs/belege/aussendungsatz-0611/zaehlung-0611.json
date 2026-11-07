@@ -1,9 +1,9 @@
 {
  "dateien": {
   "README.md": {
-   "saetze": 415,
-   "absolut": 132,
-   "mit_zeug": 59,
+   "saetze": 420,
+   "absolut": 136,
+   "mit_zeug": 63,
    "ohne_zeug": 73
   },
   "SECURITY.md": {
@@ -26,16 +26,16 @@
   }
  },
  "zusammen": {
-  "saetze": 577,
-  "absolut": 177,
-  "mit_zeug": 72,
+  "saetze": 582,
+  "absolut": 181,
+  "mit_zeug": 76,
   "ohne_zeug": 105
  },
  "abschnitt": {
   "README.md": {
-   "absolut": 132,
-   "mit_zeug": 59,
-   "ohne_zeug": 73
+   "absolut": 136,
+   "mit_zeug": 61,
+   "ohne_zeug": 75
   },
   "SECURITY.md": {
    "absolut": 9,
@@ -54,14 +54,14 @@
   }
  },
  "zusammen_abschnitt": {
-  "absolut": 177,
-  "mit_zeug": 70,
-  "ohne_zeug": 107
+  "absolut": 181,
+  "mit_zeug": 72,
+  "ohne_zeug": 109
  },
  "maschinell_pruefbar": {
   "README.md": {
-   "absolut": 132,
-   "maschinell": 28
+   "absolut": 136,
+   "maschinell": 29
   },
   "SECURITY.md": {
    "absolut": 9,
@@ -76,7 +76,7 @@
    "maschinell": 2
   }
  },
- "summe_pruefbar": 33,
+ "summe_pruefbar": 34,
  "pruefbar_liste": [
   {
    "datei": "README.md",
@@ -135,7 +135,7 @@
   },
   {
    "datei": "README.md",
-   "satz": "At phone width a readability floor can decide the size instead of the frame; when it does, the button says so in its own title, and tests/components/graph-fit-390-keine-verlust.test.ts:73 holds the one promise that survi",
+   "satz": "At phone width a readability floor can decide the size instead of the frame; when it does, the button says so in its own title, and tests/components/graph-fit-390-keine-verlust.test.tsx:73 holds the one promise that surv",
    "zeuge": true
   },
   {
@@ -211,6 +211,11 @@
   {
    "datei": "README.md",
    "satz": "They are built from this source and never published here — every electron-builder call in .github/workflows/build.yml carries --publish never (:111, :204, :310; driven by tests/ci-publish.test.ts:51), so they are unteste",
+   "zeuge": true
+  },
+  {
+   "datei": "README.md",
+   "satz": "One limit travels with the number: a short :165 with no file beside it on its own line cannot be attributed, so the guard counts those instead of guessing at a file — measured 2026-11-07 10:44 MEZ.",
    "zeuge": true
   },
   {

@@ -10,8 +10,9 @@ Die Tabelle unten ist ein **Siegel** — Bytezahl und sha256 sagen, dass dieser 
 ist. Bis zum 7.11. hatte dieses Siegel keinen Pruefer. Seitdem vergleicht
 `scripts/helfer/belege-siegel.mjs` in jedem Suite-Lauf jede ausgewiesene Zeile gegen die Datei auf
 der Platte, gefahren von `tests/belege-siegel.test.ts:112` (Grundgesamtheit: 128 Siegel-Zeilen,
-gemessen 02:57:57 MEZ von demselben Fall; zuvor 126 um 01:39:50, und die zwei neuen sind der
-Historien-Beleg P147 mit seinem Generierer). Der erste Lauf dieses Pruefers fand 4 Befunde auf 2 Zeilen:
+gemessen 10:53:35 MEZ von demselben Fall — dieselbe Zahl wie um 02:57:57, weil P154 nur Siegel
+nachzog; zuvor 126 um 01:39:50, und die zwei neuen sind der Historien-Beleg P147
+mit seinem Generierer). Der erste Lauf dieses Pruefers fand 4 Befunde auf 2 Zeilen:
 `tag-0311/eval-bge-m3-1404.log.txt` und `tag-0311/sprachuebergriff-bge-m3-1406.log.txt` wiesen
 6 144 B bzw. 2 631 B aus, waehrend auf der Platte 6 199 B bzw. 2 720 B lagen, und die
 ausgewiesenen Hashes passten zu keiner Datei im Ordner. Beide Zeilen und beide Dateien stammen
@@ -282,8 +283,8 @@ Schlag prueft `blockKopfFunde` aus `scripts/helfer/belege-siegel.mjs` genau das,
 | `aussendungsatz-0611/zaehlen.mjs` | 13425 B | `28f5a607e0c2b7c3…` |
 | `aussendungsatz-0611/satz-riss.mjs` | 3005 B | `abedac906ac83c5f…` |
 | `aussendungsatz-0611/messregel.mjs` | 2218 B | `8d6ea53a42a2f825…` |
-| `aussendungsatz-0611/zaehlung-0611.json` | 29413 B | `1f9baa6d94b4ec92…` |
-| `aussendungsatz-0611/zaehlung-0611.log.txt` | 15967 B | `ac94246b4c559bf0…` |
+| `aussendungsatz-0611/zaehlung-0611.json` | 29678 B | `b21f5aee04af7901…` |
+| `aussendungsatz-0611/zaehlung-0611.log.txt` | 16187 B | `57b6afe916cc9178…` |
 | `p147-0711/zeugen.mjs` | 3946 B | `8b5907643da5094d…` |
 | `p147-0711/zaehler-vor-3-1-5.log.txt` | 4963 B | `6d04606d49ac2e28…` |
 
@@ -294,11 +295,14 @@ Zaehlen habe drei Verstecke gebraucht. Fuer eine Aussage ueber eine fruehere Que
 ist kein heutiger Test ein zulassiger Zeuge, sondern nur der Quelltext selbst.
 `node docs/belege/p147-0711/zeugen.mjs` zieht ihn per `git show` aus `113093c` — dem Eltern-Commit
 von `c7cde55` (09.10.2026 01:41, "3.1.5: die app zaehlt nicht mehr") — und schreibt die drei
-Schichten mit Blob-Zeilennummern: AES-256-GCM-Blob in den Einstellungen
-(`server/helfer/planzustand.ts:101`, `:133`, `:165`), Schluesselbund-Anker unter
-`app.kepta.plan` (`:32`, `:33`; `server/helfer/plan-schluesselbund.ts:38`, `:48`), und die
-`trial-anchor`-Datei in einem Benutzerordner, den der Finder ausblendet
-(`:183-185`, geschrieben mit Flag `wx` = nie ueberschreiben, `:218`). Dasselbe Blatt nennt, was
+Schichten mit Blob-Zeilen. P154 verlangt dafuer die Form `Commit:Datei:Zeile`, damit ein
+Leser die Zeile oeffnen kann: AES-256-GCM-Blob in den Einstellungen
+(`113093c:server/helfer/planzustand.ts:101`, `:133`, `:165`), der Schluesselbund-Anker
+`app.kepta.plan` mit den Konten `kepta` und `probetag` (`113093c:server/helfer/planzustand.ts:32-33`),
+sein Lesen und Schreiben im macOS-Bund (`113093c:server/helfer/plan-schluesselbund.ts:38`, `:48`)
+und im Linux-Bund (`:68`, `:79`), und die `trial-anchor`-Datei in einem Benutzerordner, den der
+Finder ausblendet (`113093c:server/helfer/planzustand.ts:183-185`, geschrieben mit Flag `wx`, `:218`).
+Dasselbe Blatt nennt, was
 `c7cde55` loeschte: neun Dateien, von `planzustand.ts` (376 Zeilen) bis `probetag.ts` (31).
 
 Der Beleg ist reproduzierbar, aber nicht byte-stabil: die erste Zeile nennt die Uhrzeit des

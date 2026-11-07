@@ -250,8 +250,10 @@ written to a tamper-evident audit log you can check and export". Gemessen, nicht
 
 Der Mechanismus dazu: geschrieben wird die Kette aus zwei Quellen: der Regeltabelle in `server/router/audit.ts`
 (14 Mutationen, aufgerufen an Zeile 81; Zeile 101 protokolliert den CSV-Export selbst) und **neun**
-ausdrücklichen Schreibstellen in sechs Dateien — `audit.ts:81`, `audit.ts:101`, `briefing.ts:41/61/71`,
-`chat.ts:86`, `clients.ts:43`, `mcp.ts:80` (die Suche durch die HTTP-Tür), `schild.ts:47`. Dazu kommt
+ausdrücklichen Schreibstellen in sechs Dateien — `server/router/audit.ts:81`, `:101`,
+`server/router/briefing.ts:41`, `:61`, `:71`, `server/router/chat.ts:86`,
+`server/router/clients.ts:43`, `server/router/mcp.ts:80` (die Suche durch die HTTP-Tür),
+`server/router/schild.ts:47`. Dazu kommt
 `src/lib/mcpwache.ts:121` mit `protokolliereMcp` für jedes Ereignis durch die MCP-Tür.
 `src/core/store.ts:584` hätte einen Senk für Leseereignisse — die App setzt ihn nie, der Default
 ist `NOOP_SINK` (`src/core/extensions.ts:136`, `:162`). Also: **Lesen über HTTP hinterlässt nichts
@@ -542,7 +544,7 @@ längst: `tests/engine.test.ts:78-83` fragt nach einer abgelaufenen Notiz, bekom
 nennt ihn jetzt im selben Satz.
 
 **2) „*Load more* never cuts a group in half" (README.md:230).** Hier gab es **keinen** Zeugen: die
-Regel lebte nur im Baum (`src/components/Dashboard.tsx:1405-1419`), kein Fall fuhr sie. Gebaut:
+Regel lebte nur im Baum (`src/components/Dashboard.tsx:1411-1414`), kein Fall fuhr sie. Gebaut:
 `src/lib/gruppenfenster.ts` mit derselben Regel (Gruppe, die beginnt, wird ganz aufgenommen —
 `laufend >= fenster` bricht, nicht `laufend + groesse > fenster`), die Fläche ruft die Funktion,
 und `tests/lib/gruppenfenster.test.ts` (6 Faelle) faehrt sie. Rot zuerst gesehen: die ersten zwei
@@ -674,11 +676,11 @@ Zeugen.
 
 P132 hatte die Regel gesetzt: erst die vorhandenen Wachen durchsuchen, dann bauen. Die Queue
 lieferte damit einen Satz, der gar kein Instrument brauchte (README.md:180, Prüfziffern), einen
-neuen Fallblock (README.md:448) — und **eine Behauptung, die falsch war**.
+neuen Fallblock (README.md:450) — und **eine Behauptung, die falsch war**.
 
 ### Der Fund
 
-README.md:448 sagte nach aussen: *"the only exclusion is the bootstrap, which binds a port and never
+README.md:450 sagte nach aussen: *"the only exclusion is the bootstrap, which binds a port and never
 runs in a unit test"*. `vitest.config.ts` tut das nicht. Gemessen an der Datei (Zeilen 40-61):
 
 - `exclude:` enthält **drei** Einträge: `src/**/types.ts`, `**/*.d.ts`, `src/lib/pdfText.ts`.
@@ -904,7 +906,7 @@ verdächtigste Ort im Blatt — und die Prüfung fiel anders aus als erwartet.
 | Zeile | Was sie verspricht | Der Zeuge, den sie nicht nannte |
 |---|---|---|
 | ROADMAP.md:60 | ganzes File verschlüsselt, Suche intakt | `tests/core/store-verschluesselung.test.ts:76` liest die Rohdatei ab der ersten Seite (WAL mit) und `:163` findet nach dem Wiederöffnen Notizen, Suche und Einstellungen unverändert |
-| ROADMAP.md:62 | Umbau nur unter Vierhand, Kopie → Verschlüsselung → Prüfung → Austausch, alte Datei mit Nullen | `:180` lässt eine Datei, die ein anderes Programm hält, im Klartext; `:210` lässt beim scheiternden Austausch das Original heil und die Kopie verschwinden; `:196` findet in der alten Datei nur Nullen |
+| ROADMAP.md:62 | Umbau nur unter Vierhand, Kopie → Verschlüsselung → Prüfung → Austausch, alte Datei mit Nullen | `tests/core/store-verschluesselung.test.ts:180` lässt eine Datei, die ein anderes Programm hält, im Klartext; `:210` lässt beim scheiternden Austausch das Original heil und die Kopie verschwinden; `:196` findet in der alten Datei nur Nullen |
 | ROADMAP.md:84 | fremde `Host`-Köpfe und Schreibversuche von Webseiten abgewiesen | `tests/herkunft.test.ts:76` liest hinter einem fremden Host nichts mehr, auch nicht im Live-Stream; `:101` lässt ein Netzwerk-Host nur gelten, wenn `KEPTA_HOST` ihn ruft |
 
 **Die vierte falsche Aussage fiel aus, bevor ich sie schrieb.** ROADMAP.md:62 endete mit „overwrite
@@ -1361,11 +1363,14 @@ führt der Weg über Commits: gelesener Stand ist `113093c`, der Eltern-Commit v
 upgrade-panel").
 
 `node docs/belege/p147-0711/zeugen.mjs` schreibt `zaehler-vor-3-1-5.log.txt` (4 963 B,
-sha256(16) `6d04606d49ac2e28…`) und zeigt die drei Verstecke mit Blob-Zeilen: AES-256-GCM-Blob in
-den Einstellungen (`server/helfer/planzustand.ts:101`, `:133`, `:165`), Schlüsselbund-Anker unter
-`app.kepta.plan` mit den Konten `kepta` und `probetag` (`:32`, `:33`;
-`plan-schluesselbund.ts:38`, `:48`, `:68`, `:79`), und die `trial-anchor`-Datei in einem
-Benutzerordner, den der Finder ausblendet (`:183-185`, geschrieben mit Flag `wx`, `:218`).
+sha256(16) `6d04606d49ac2e28…`) und zeigt die drei Verstecke mit Blob-Zeilen — in der von P154
+verlangten Form `Commit:Datei:Zeile`, damit der Leser sie öffnen kann: AES-256-GCM-Blob in
+den Einstellungen (`113093c:server/helfer/planzustand.ts:101`, `:133`, `:165`), der
+Schlüsselbund-Anker `app.kepta.plan` mit den Konten `kepta` und `probetag`
+(`113093c:server/helfer/planzustand.ts:32-33`), sein Lesen und Schreiben im macOS-Bund
+(`113093c:server/helfer/plan-schluesselbund.ts:38`, `:48`) und im Linux-Bund (`:68`, `:79`), und die
+`trial-anchor`-Datei in einem Benutzerordner, den der Finder ausblendet
+(`113093c:server/helfer/planzustand.ts:183-185`, geschrieben mit Flag `wx`, `:218`).
 Dasselbe Blatt nennt die neun Dateien, die `c7cde55` löschte, sortiert nach Größe (376 Zeilen
 `planzustand.ts` bis 31 Zeilen `probetag.ts`).
 
@@ -1406,7 +1411,7 @@ einen Bruch oder ein Prozent ohne Nenner-Kuelsenwort im selben Satz.
 |---|---|
 | README.md:231 „Text size — 100, 115 or 130 %" | **schon ausgenommen, im Satz selbst** („not a measurement") — die Sonde flaggt trotzdem: ihr Raster kennt die Ausnahmedeklaration nicht. Kein Befund, ein Regel-Fehler |
 | README.md:230 „which part it is (2/5)" | **UI-Beispielzahl, nicht verständlich gemacht** — berichtigt zu „a label like `2/5`, where the 5 is the number of parts that one file was split into, not a share of the store" |
-| README.md:456 „The status panel quotes the 71 %" | **die eigentliche Lücke** — 71 % ohne Maß und Grundgesamtheit im selben Satz. Jetzt: „Hit@1, 41 of the 45 queries of that corpus, drawn in `docs/belege/tag-13-10/ablation-beine-1144.log.txt:10`" |
+| README.md:458 „The status panel quotes the 71 %" | **die eigentliche Lücke** — 71 % ohne Maß und Grundgesamtheit im selben Satz. Jetzt: „Hit@1, 41 of the 45 queries of that corpus, drawn in `docs/belege/tag-13-10/ablation-beine-1144.log.txt:10`" |
 
 Die 71 % sind am Artefakt nachgelesen, nicht aus dem README zitiert (`grep`, 02:26:17 MEZ):
 `BM25 allein 71 % 21 % 0.76 41/45` und `Alle drei (RRF) 76 % … 45/45`. Zwei Zeilen führen 71 %
@@ -1429,7 +1434,7 @@ grün (02:27 MEZ). Keine neuen Fälle: README bleibt 3779, Dateien 352.
 
 ## 37. P149 — Die Messstelle nennt ihre Verteilung, und drei Faelle halten sie (7.11. 02:36 MEZ)
 
-README.md:456 beschreibt `npm run eval` mit drei Zahlen — „58 notes, 45 queries, five
+README.md:458 beschreibt `npm run eval` mit drei Zahlen — „58 notes, 45 queries, five
 categories". Kein Fall sah den Korpus, also konnte jede kuenftige Aenderung an
 `scripts/eval-corpus.ts` die README-Zahl still luegen machen.
 
@@ -1736,6 +1741,97 @@ um 09:39:56 MEZ.
 **Keine Versionszahl, kein Bau** — README.md und `.github/release-notes.md` sind nicht im Buendel; sie
 gehen mit dem naechsten Release nach außen, und die Sätze sind jetzt so, dass ich sie vertreten kann.
 
+## 42. P154 — die Anker-Wache: 404 `Datei:Zeile`-Zeugen der sechs Blätter, zuerst 22 Befunde, zuletzt null (7.11. 10:39 MEZ)
+
+**Die Frage vor der Arbeit.** Sechs Nächte lang war der häufigste eigne Fehler der Zeiger, nicht
+die Heilung: P151 schrieb `:158` statt :137/:165, P152 :131 statt :132, P153 heilte einen Anker und
+verschob durch seinen eignen Kommentarzug einen andern. P153 hatte die Fläche in seiner offenen
+Liste vorbenannt (Abschnitt 8, Punkt 2); gebaut wurde sie jetzt.
+
+**Was die Maschine hält.** Neu: `scripts/helfer/anker.mjs` und `tests/anker-wache.test.ts` (9
+Fälle, describe auf Zeile 73; die drei Halter für die blinden Kurzformen sitzen auf Zeile 197,
+204 und 205. Gelesen werden README.md, SECURITY.md, ROADMAP.md, `.github/release-notes.md`,
+`docs/belege/REGISTER.md`, `docs/aussendung-und-ablage.md`. Gefordert wird je Anker: Datei im Baum,
+Zeile innerhalb der Länge (ein abschließender Umbruch zählt nicht), Inhalt auf der getroffenen
+Zeile — keine Leerzeile, kein nackter Schluss-Strich. Drei Formen: Baum-Anker `pfad:Zeile`,
+Kurzform `:Zeile` (erbt das Vorbild derselben Blattzeile, wenn das eine Zeile nannte, höchstens 120
+Zeichen entfernt und durch kein `|` getrennt), Blob-Anker `Commit:pfad:Zeile` (geprüft mit
+`git show`). Bereich: der Anfang gilt, das Ende darf den Block schließen.
+
+**Der erste Fund, und ein Fehler daran.** 22 Befunde über 404 Ankern, zuletzt 0 über 420. Aber der
+allererste Blob-Lauf meldete **nichts als Befunde, die meine eigne Software erfand**: `blobText`
+las `${ennung}` statt `${nennung}`, der ReferenceError lief in ein `catch { return null }`, und
+die Wache verwandelte ihren eigenen Bruch in die Aussage „diesen Blob gibt es in diesem Baum
+nicht". Zweimal an Kopien nachgemessen: 10:38:30 MEZ = 20 Blob-Befunde von 20 Befunden;
+10:41:26 MEZ = 22 von 23, und der eine echte zeigte in `src/components/Dashboard.tsx` auf eine
+Leerzeile (Zeile 1405). Mit dem
+neuen Fangzweig wirft die Kopie, statt zu urteilen; am berichtigten Stand meldet die Wache 0.
+Sie trennt jetzt git's eigne Absage (Exit-Code plus stderr → Befund) von einem eignen Fehler
+(wirft). Eine Wache, die ihren Crash als Urteil ausgibt, ist schädlicher als keine.
+
+**Die Heilung in den Blättern.** README.md:145 heißt jetzt `.test.tsx` (:73 und :88).
+README.md:261 verankert die Verschlüsselung an diesem Baum: `281f5a1:src/core/store.ts:992`
+(Erstcommit dieses Baums, per `git show` gemessen) und `src/core/store.ts:1929` heute; die
+Behauptung, der *Kern*-Erstcommit `2c942be` trage `package.json` 2.11.0, ist aus dem Satz
+herausgezogen — im Kern-Repo nachgemessen wahr (dessen Erstcommit `2c942be` trägt in
+`package.json` auf Zeile 3 die Version 2.11.0 und das Pragma auf Blob-Zeile 959), aber für einen
+Leser dieses Repos nicht zu öffnen, und ein Beleg, den ein Kunde
+nicht öffnen kann, ist keiner. README.md:265 nennt Helmet (`server/app.ts:200`), den globalen
+Limit (`:208`), die Schreibroute (`server/router/memories.ts:130`) und das 1mb-Limit
+(`server/app.ts:249`). Die sechs Historien-Zeugen in REGISTER und Ledger stehen in der Blob-Form
+`113093c:server/helfer/…`; der `trial-anchor`-Beleg (:183-185, Flag `wx` auf :218) gehört zu
+`planzustand.ts`, nicht zu `plan-schluesselbund.ts` (98 Zeilen, konnte :183 nicht liefern).
+Drei nackte Basenames im Ledger heißen jetzt vollständig, und der Bereich
+`src/components/Dashboard.tsx:1411-1414` — vorher begann er zwei Zeilen höher, auf einer Leerzeile.
+
+**Die Grenze, die kein Fall hält.** Mein eigner neuer Absatz verschob alle README-Zeilen ab 432
+um zwei; die Ledger-Zeugen `README.md:448` und `README.md:456` trafen dadurch Inhalt — aber den
+falschen. Die Wache prüft Existenz und Inhalt, nicht Sinn. Per Hand nachgemessen (10:26 MEZ),
+geheilt auf :450 und :458. Größenordnung, zuletzt gemessen 10:55:28 MEZ: 96 der 420 Anker zeigen
+Zeilen. P155: der Fall, der ein wörtlich zitiertes Satzstück gegen die genannte Zeile prüft.
+
+**Bisse.** Fünf Mutationen an der Helferkopie, einzeln, danach per `cmp` bytegleich
+zurückgebaut (10:16 MEZ): Erbschaft aus → 4 Fälle rot; Bereichsende meldend → 2 rot; Blob-Zweig
+tot → 2 rot; Leerzeile mitgezählt → 1 rot; Zellgrenze ignoriert → 1 rot. Für die drei Halter
+der blinden Kurzformen ebenfalls gebissen (10:46 MEZ): Decke 29 → auf 28 gesetzt, Anteil
+0,44 → auf 0,43, Gesamtdeckel 158 → auf 157; je ein Fall rot, Helfer und Fall danach
+bytegleich.
+tot → 2 rot; Leerzeile mitgezählt → 1 rot; Zellgrenze ignoriert → 1 rot.
+
+**Zählung.** Fälle 3798 → **3807** (neun neue), Testdateien 354 → 355. Zensus
+577/177/72/105 → **582/181/76/105** (zuletzt gemessen 10:53:35 MEZ): der neue Anker-Absatz bringt
+drei absolute Sätze, alle drei mit Messzeug, und die Umformulierung der Prozentzahl einen
+vierten — ohne Messzeug bleiben 105. Siegel nachgezogen, und der Prüfer meldete es selbst:
+`zaehlung-0611.json` 29 678 B sha b21f5aee04af7901, `zaehlung-0611.log.txt` 16 187 B
+sha 57b6afe916cc9178 (gesetzt 10:54:04 MEZ). Das sind der **achte, neunte und zehnte**
+Siegel-Riss dieser Nacht, gemeldet 10:17:29, 10:24:07 und 10:46:28 MEZ, alle drei von mir selbst
+verursacht, jeder durch einen Zensus-Lauf nach einer Wortkorrektur. Die Hausregel gilt weiter:
+wer einen Zähler fährt, setzt in demselben Schritt die Siegel-Zeile neu.
+
+**Läufe.** Messung 10:18:20 → 10:20:49 MEZ = 3806 von 3807 (ein rot: doku-zahlen meldet den
+Bericht älter als den neuen Fall — Absicht). Messung 10:24:27 → 10:26:55 = ebenso. Prüfung
+10:26:55 → 10:29:24 = **3807 von 3807 grün, 355 Testdateien**. Nach den Wortkorrekturen: Messung
+10:32:53 → 10:35:21 (rot auf Veralterung), Prüfung 10:35:30 → 10:37:50 = **3807 von 3807 grün**,
+doku-check nennt dieselbe Zahl und denselben Stand. Lint zuerst 10:38:08 mit **2 Fehlern in meinem
+eignen Helfer** (zwei unbenutzte Variablen in `kurzformVerwaisungen`), berichtigt, Lint 10:39:22
+MEZ Exit 0 mit 0 Fehlern.
+
+
+**Zweiter Nachtrag, aus den Berichtsdateien gelesen (11:02:23 MEZ).** Messung 10:57:07 →
+10:59:36 MEZ = 3806 von 3807 grün, ein rot — doku-zahlen meldet den Bericht älter als die Fälle,
+die ich gerade umgestellt habe; das ist die Absicht des Falles, nicht ein Fehler. Prüfung
+10:59:40 → 11:02:05 = **3807 von 3807 grün, 355 Testdateien, Exit 0**, und doku-check nennt
+dieselbe Zahl aus dem Bericht 10:02:05 UTC. Lint 11:02:17 Exit 0, 0 Fehler bei 83 Warnungen.
+Zahlen-Belege 11:02:23 Exit 0: 980 Messbehauptungen über 22 Markdown-Dateien, 30 bestätigt,
+keine Pflichtzahl ohne Zitat.
+
+Dieser Nachtrag setzt bewusst keinen neuen Anker: die Stunden stehen aus den Berichtsdateien ge-
+lesen da, und ein Zeiger, den niemand gemessen hat, wäre genau der Fehler, den P154 abstellt.
+
+**Keine Versionszahl, kein Bau.** An ausgelieferten Bytes ändert dieser Schlag nichts — Blätter,
+Wachen und ein Helfer; README.md und `.github/release-notes.md` sind nicht im Bündel und gehen
+mit dem nächsten Release nach außen, und die Sätze sind jetzt so, dass ich jeden ihrer Zeiger
+belegen kann.
 ## Fehler in diesem Schlag, die ich selbst gefunden habe
 
 
@@ -2156,3 +2252,42 @@ gehen mit dem naechsten Release nach außen, und die Sätze sind jetzt so, dass 
 78. **Die Platte ist nicht mein Verdienst.** 8,46 GiB frei um 03:43:59 MEZ, 8,17 GiB um 03:45:36 —
    die Bau-Kante von 9,90 GiB bleibt zu, und die 10,30 GiB im `release/`-Ordner sind Damians Wort,
    nicht mein Räumgang.
+
+79. **Ein Edit aus dem Kopf setzte meinen eignen Tippfehler zurück.** Beim Einbau der
+   `stdio`-Röhre schrieb ich `nennung` in den `old_string` und `ennung` in den `new_string`; der
+   Helfer war danach schlechter als vorher, und der nächste Lauf meldete „diesen Blob gibt es in
+   diesem Baum nicht" für einen Blob, der da war. Gegen Anker aus dem Kopf habe ich ein Werkzeug
+   gebaut; Quelltext aus dem Kopf schreibe ich weiter.
+80. **Ein `catch` verschluckte einen eignen Bruch und verkaufte ihn als Befund über ein Blatt.**
+   Zweimal an Kopien nachgemessen (10:38:30 und 10:41:26 MEZ): 20 von 20 Befunden erfunden, dann
+   22 von 23. Mit dem neuen Zweig wirft die Kopie. Eine Wache, die ihren Crash als Urteil ausgibt,
+   ist schädlicher als keine.
+81. **Mein eigner neuer Absatz verschob Zeilen und machte zwei Fremdanker falsch.**
+   `README.md:448` und `README.md:456` im Ledger trafen nach dem Eintragen Inhalt — aber den
+   falschen (Tabelle statt Ausnahmetext, Einleitung statt eval-Zahl). Die Wache kann das nicht
+   sehen: Existenz und Inhalt, nicht Sinn. Per Hand gefunden (10:26 MEZ), geheilt auf :450 und
+   :458; P155 ist der Fall, der ein wörtlich zitiertes Satzstück gegen die genannte Zeile prüft.
+82. **Ein Python-Splice rechnete mit den Zeilen vor eigner Einfügung** und überschrieb zwei
+   Kommentarzeilen des Riss-Falls, darunter den Hinweis auf README.md:181, und ließ zwei
+   erwartet-Zeilen übereinander stehen (179/74 unter 180/75). Gesehen, weil ich nach dem Schreiben
+   die getroffene Region zurücklas; Block neu gesetzt, Fall danach 15 von 15 grün.
+83. **Zwei Zahlen nannten die falsche Stunde.** Ich schrieb „09:22:48 MEZ", wo die Maschine
+   10:22:48 MEZ meldete — der Sitzungs-Stempel ist UTC, die Platte läuft CET. Berichtigt, und die
+   Uhr der Platte ist jetzt die einzige, die in meinen Sätzen steht.
+84. **Der erste Deckel war eine Zahl aus der halben Arbeit: 135.** Gezählt wurden 137, dann 152
+   verwaiste Kurzformen — mein eigner README-Absatz und mein eigner Ledger-Absatz brachten 15
+   davon mit. Der Fall wurde rot und lehrte mich, genau wie gedacht
+   (`tests/anker-wache.test.ts:205`).
+85. **Der zweite Satz über die Fundzahl war eine Über-behauptung: „two dead witnesses".** Der
+   erste echte Lauf fand vier Anker, mit der Kurzform sechs. Nachgemessen in den Läufen 09:49 und
+   10:11 MEZ, berichtigt im README-Absatz und im Papier.
+86. **Zwei Minuten nach dem Bauen der Anker-Wache setzte ich wieder einen Anker aus dem Kopf.**
+   Der Ledger-Satz nannte „:44 bis :196" für den neuen Fall; gemessen beginnt der describe auf
+   :73 und der letzte Fall schließt auf :194. Und mein eigner §42-Text zitierte beim Beschreiben
+   des Fehlers zwei tote Zeugen: einen Blob-Anker ins
+   Kern-Repo (`2c942be` in `package.json`, dort Zeile 3) und einen Bereich in
+   `src/components/Dashboard.tsx`, der bei Zeile 1405 anfing — die Wache fing beide, weil sie auch
+   das Blatt liest, das von ihr erzählt.
+   liest, das von ihr erzählt. Daraus die Regel für alle künftigen Fehlerberichte: eine tote Zeile, über die
+   berichtet wird, nennt man im Prosatext ("Zeile 1405"), nicht als Anker — sonst meldet die
+   Wache den Bericht, der von ihr handelt. Das Werkzeug hält die Fläche, nicht meinen Griff.

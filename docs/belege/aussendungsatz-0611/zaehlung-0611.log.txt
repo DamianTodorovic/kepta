@@ -1,4 +1,4 @@
-Zeit: 7.11.2026, 09:38:47 MEZ
+Zeit: 7.11.2026, 10:53:36 MEZ
 Dateien: README.md, SECURITY.md, ROADMAP.md, .github/release-notes.md — Einheiten ueber 25 Zeichen.
 Riss: satz-riss.mjs (P128, markdown-fest). Vorher: Satzende + Leerzeichen ueber dem
 ganzen Text, wodurch Aufzaehlungen, Tabellenzeilen und `<summary>`-Kuelsen als EIN
@@ -9,30 +9,30 @@ Satz zaehlten. Unter beiden Naivlingen, in diesem Lauf nachgerechnet:
 
 | Datei | Saetze | absolute | mit Messzeug | ohne Messzeug | Anteil ohne |
 |---|---|---|---|---|---|
-| `README.md` | 415 | 132 | 59 | 73 | 55.3 % |
+| `README.md` | 420 | 136 | 63 | 73 | 53.7 % |
 | `SECURITY.md` | 33 | 9 | 4 | 5 | 55.6 % |
 | `ROADMAP.md` | 77 | 16 | 4 | 12 | 75.0 % |
 | `.github/release-notes.md` | 52 | 20 | 5 | 15 | 75.0 % |
-| **zusammen** | **577** | **177** | **72** | **105** | **59.3 %** |
+| **zusammen** | **582** | **181** | **76** | **105** | **58.0 %** |
 
-Nenner fuer den Anteil: 177 absolute Behauptungen in 577 Saetzen der vier Texte.
+Nenner fuer den Anteil: 181 absolute Behauptungen in 582 Saetzen der vier Texte.
 
 Zweite Lesung — der Zeuge darf im selben Abschnitt stehen (Absatz, Tabelle, Aufzaehlung):
 | Datei | absolute | mit Messzeug | ohne Messzeug |
 |---|---|---|---|
-| `README.md` | 132 | 59 | 73 |
+| `README.md` | 136 | 61 | 75 |
 | `SECURITY.md` | 9 | 3 | 6 |
 | `ROADMAP.md` | 16 | 0 | 16 |
 | `.github/release-notes.md` | 20 | 8 | 12 |
-| zusammen | 177 | 70 | 107 |
-   mit Messzeug im selben Abschnitt: 70 von 177 = 39.5 % (gegen 72 von 177 = 40.7 % in der engen Lesung).
+| zusammen | 181 | 72 | 109 |
+   mit Messzeug im selben Abschnitt: 72 von 181 = 39.8 % (gegen 76 von 181 = 42.0 % in der engen Lesung).
 
 Die schmalere Klasse — Saetze, die ein Werkzeug widerlegen koennte (never/always/cannot/0 %/100 %):
-   README.md                  28 von 132 absoluten
+   README.md                  29 von 136 absoluten
    SECURITY.md                2 von 9 absoluten
    ROADMAP.md                 1 von 16 absoluten
    .github/release-notes.md   2 von 20 absoluten
-   zusammen 33 von 177 — der Rest ist Produktcopy ("no password to type"), keine Behauptung ueber eine Maschine.
+   zusammen 34 von 181 — der Rest ist Produktcopy ("no password to type"), keine Behauptung ueber eine Maschine.
    Die Liste, in Lesereihenfolge, mit dem Marker „Zeug", wenn derselbe Satz schon ein Messzeug nennt:
    [README.md] ZEUG While it cools at 3 000 notes a few pairs still touch for a moment; tests/lib/graphLayout.test.ts:2455-2458 pins that funnel at ≤ 40 pairs by step 250, ≤ 40 again by step 310 and zero by step 380, so no sentence here say
    [README.md] ZEUG On macOS the key never sits in a file; on Windows it is the DPAPI-sealed database-key.dpapi in the data folder, readable only under the same account, and a headless install with KEPTA_DB_KEY keeps it in the process envir
@@ -45,7 +45,7 @@ Die schmalere Klasse — Saetze, die ein Werkzeug widerlegen koennte (never/alwa
    [README.md] ZEUG Meaning search can be switched off, and the result slider runs 5 · 10 · 20 · 50 · 100 · 250 · All — tests/components/Dashboard.test.tsx:206 drives all seven positions of the rendered control and reads each label back, te
    [README.md] ZEUG npm run ablation divides by 5 and reports a real P@5 on the same corpus: two metrics, two names, never comparable (tests/eval-metrik.test.ts:37 pins the capped divisor, :55 pins the division by five and the P@5 name, :48
    [README.md] ZEUG It is computed on the server, so no embedding ever travels into the view (tests/rest-semantik.test.ts:70 reads the raw HTTP body and refuses any word like embedding, vektor or vector in it)
-   [README.md] ZEUG At phone width a readability floor can decide the size instead of the frame; when it does, the button says so in its own title, and tests/components/graph-fit-390-keine-verlust.test.ts:73 holds the one promise that survi
+   [README.md] ZEUG At phone width a readability floor can decide the size instead of the frame; when it does, the button says so in its own title, and tests/components/graph-fit-390-keine-verlust.test.tsx:73 holds the one promise that surv
    [README.md] ZEUG The second channel switches itself off with the reason when the base holds only one kind of arrival; it never paints everything grey (tests/components/KnowledgeGraph.render.test.tsx:3537 finds the Provenance control disa
    [README.md] ZEUG *Keep the newer*, *Keep the older* (the other is marked as replaced, never deleted — tests/enterprise-api.test.ts:215 reads the replaced note back with supersededBy set, and tests/engine.test.ts:167 counts both notes sti
    [README.md] ZEUG A backup of the old file sits right next to it, every other entry stays, and a file that is not plain JSON is never touched (tests/lib/einrichtung.test.ts:42 checks the backup and the untouched neighbours, :61 hands a co
@@ -61,6 +61,7 @@ Die schmalere Klasse — Saetze, die ein Werkzeug widerlegen koennte (never/alwa
    [README.md] ZEUG It was never a lock — but it was counting, and counting needed places to hide the tally: an AES-256-GCM blob in the store's settings, two keychain entries under app.kepta.plan, and a trial-anchor file in a per-user direc
    [README.md] ZEUG The data is never hostage (tests/keine-grenzen.test.ts:102-116 shows the licence route answers nothing, read or write, and no part of the surface asks it; tests/server.test.ts:327 writes the store out as Markdown files).
    [README.md] ZEUG They are built from this source and never published here — every electron-builder call in .github/workflows/build.yml carries --publish never (:111, :204, :310; driven by tests/ci-publish.test.ts:51), so they are unteste
+   [README.md] ZEUG One limit travels with the number: a short :165 with no file beside it on its own line cannot be attributed, so the guard counts those instead of guessing at a file — measured 2026-11-07 10:44 MEZ.
    [README.md] ZEUG src/scan (machine-scan rules) | must not fall under 98 % of lines · must hold 100 % of functions (both in vitest.config.ts, key "src/scan/") | what may be read, and what never is
    [SECURITY.md] ZEUG The three keychain paths are covered by tests/core/schluessel.test.ts — :101 reads a Windows entry through the injected command runner with the path passed in the environment, :111 proves the key never sits in the argume
    [SECURITY.md] ZEUG It never leaves the keychain on its own — what that means is checked, not promised: tests/core/schluessel.test.ts:111 reads the argument list of every launch and finds the key absent there (it travels in the child's envi

@@ -107,7 +107,7 @@ describe("P129, der Wortschatz: ein benanntes Instrument ist ein Messzeug", () =
     expect(zeug.test(einheiten[0]), "das Messzeug steht im selben Satz, wird aber nicht gesehen").toBe(true);
   });
 
-  it("am echten Bestand: 65 von 174 absoluten Behauptungen nennen ihr Messzeug", () => {
+  it("am echten Bestand: 76 von 181 absoluten Behauptungen nennen ihr Messzeug", () => {
     let absoluten = 0;
     let mit = 0;
     for (const datei of DATEIEN) {
@@ -136,10 +136,17 @@ describe("P129, der Wortschatz: ein benanntes Instrument ist ein Messzeug", () =
     // Saetze, nicht ihre Deckung — das steht so ins Papier.
     // Zaehlung der Vorgeschichte: P146 (58 -> 62), P147 (62 -> 63), P148 (63 -> 64), P149
     // (64 -> 65), P151 (65 -> 68), P152 (68 -> 69), P153 (69 -> 72 bei Nenner 177).
+    // P154 (zuletzt gemessen 10:30:54 MEZ mit dem Zaehler selbst): der neue Anker-Absatz in
+    // README.md:433 bringt vier absolute Saetze, alle vier mit Messzeug — Nenner 177 -> 181,
+    // Zaehler 72 -> 76, ohne Messzeug bleiben 105. Die Einheiten wuchsen 577 -> 582, weil der
+    // Riss den Absatz in fuenf Einheiten zerlegt. Zwei Zwischenstaende (179/74, dann 180/74 bei
+    // 106 ohne Messzeug) gingen auf meine eignen Umformulierungen zurueck: der Zahlensatz blieb
+    // ohne Messzeug im eignen Satz, und ein Punkt statt eines Semikolons machte aus einem zwei.
+    // Die 158 verwaisten Kurzformen halten tests/anker-wache.test.ts:197, :204 und :205.
     // Zugleich fiel README.md:181 aus der schmalen Klasse (34 -> 33): das Wort, das sie dort
     // hielt, war "as always" in "validated offline as always", und diese Formulierung war falsch.
-    expect(absoluten, "der Nenner ist nicht mehr 177 — der Riss oder die Klasse hat sich bewegt").toBe(177);
-    expect(mit, `${mit} von ${absoluten} nennen ein Messzeug — erwartet war 72`).toBe(72);
+    expect(absoluten, "der Nenner ist nicht mehr 181 — der Riss oder die Klasse hat sich bewegt").toBe(181);
+    expect(mit, `${mit} von ${absoluten} nennen ein Messzeug — erwartet war 76`).toBe(76);
     expect(mit / absoluten, "Anteil ohne Nenner ist ein Urteil").toBeGreaterThan(0.3);
     expect(maschine.source.length, "die schmale Klasse wurde nicht mitgeändert").toBeGreaterThan(10);
   });
