@@ -1,4 +1,4 @@
-Zeit: 7.11.2026, 03:19:28 MEZ
+Zeit: 7.11.2026, 03:36:00 MEZ
 Dateien: README.md, SECURITY.md, ROADMAP.md, .github/release-notes.md — Einheiten ueber 25 Zeichen.
 Riss: satz-riss.mjs (P128, markdown-fest). Vorher: Satzende + Leerzeichen ueber dem
 ganzen Text, wodurch Aufzaehlungen, Tabellenzeilen und `<summary>`-Kuelsen als EIN
@@ -9,13 +9,13 @@ Satz zaehlten. Unter beiden Naivlingen, in diesem Lauf nachgerechnet:
 
 | Datei | Saetze | absolute | mit Messzeug | ohne Messzeug | Anteil ohne |
 |---|---|---|---|---|---|
-| `README.md` | 413 | 131 | 57 | 74 | 56.5 % |
+| `README.md` | 414 | 131 | 58 | 73 | 55.7 % |
 | `SECURITY.md` | 33 | 9 | 4 | 5 | 55.6 % |
 | `ROADMAP.md` | 77 | 16 | 4 | 12 | 75.0 % |
 | `.github/release-notes.md` | 50 | 18 | 3 | 15 | 83.3 % |
-| **zusammen** | **573** | **174** | **68** | **106** | **60.9 %** |
+| **zusammen** | **574** | **174** | **69** | **105** | **60.3 %** |
 
-Nenner fuer den Anteil: 174 absolute Behauptungen in 573 Saetzen der vier Texte.
+Nenner fuer den Anteil: 174 absolute Behauptungen in 574 Saetzen der vier Texte.
 
 Zweite Lesung — der Zeuge darf im selben Abschnitt stehen (Absatz, Tabelle, Aufzaehlung):
 | Datei | absolute | mit Messzeug | ohne Messzeug |
@@ -25,7 +25,7 @@ Zweite Lesung — der Zeuge darf im selben Abschnitt stehen (Absatz, Tabelle, Au
 | `ROADMAP.md` | 16 | 0 | 16 |
 | `.github/release-notes.md` | 18 | 6 | 12 |
 | zusammen | 174 | 67 | 107 |
-   mit Messzeug im selben Abschnitt: 67 von 174 = 38.5 % (gegen 68 von 174 = 39.1 % in der engen Lesung).
+   mit Messzeug im selben Abschnitt: 67 von 174 = 38.5 % (gegen 69 von 174 = 39.7 % in der engen Lesung).
 
 Die schmalere Klasse — Saetze, die ein Werkzeug widerlegen koennte (never/always/cannot/0 %/100 %):
    README.md                  28 von 131 absoluten
@@ -72,7 +72,7 @@ Zwei von ihnen nachgegriffen, im selben Lauf:
    "no screenshot of it here yet" (Semantic-Ansicht): README nennt 20 Bilder (12 in Markdown, 8 als <img alt>), davon 0 mit "Semantic"; der Satz steht noch da — haltbar.
    "no embedding ever travels into the view": 8 von 8 benannten Flaechen-Dateien gelesen, zusammen 0 Nennung(en) "embedding"; das Wort liegt in 34 Test-Dateien des Repos. Fehlende Dateien: keine.
 
-Die 106 ohne Messzeug, in Lesereihenfolge der Dateien (erste 40):
+Die 105 ohne Messzeug, in Lesereihenfolge der Dateien (erste 40):
    [README.md] Your AI forgets you after every chat.
    [README.md] Desktop app · no cloud · no account · encrypted at rest SQLite · hybrid retrieval · knowledge graph · MCP
    [README.md] The time slider replays eighteen months of a fictional advisory firm, and because every note carries a validity window, past moments show exactly what was true then.
@@ -87,7 +87,6 @@ Die 106 ohne Messzeug, in Lesereihenfolge der Dateien (erste 40):
    [README.md] K3PTA stores the database key there, so there is no password to type.
    [README.md] No upload, no account, no telemetry.
    [README.md] One brain for every AI tool.
-   [README.md] Claude Desktop, Cursor, Gemini CLI, Cline, Codex — anything that speaks MCP shares the same encrypted knowledge base, plus anything that only speaks HTTP through the REST API.
    [README.md] On a four-note check (npm run embed:sprachtest) the default model answers 4 of 4 English paraphrase questions and 1 of 4 of the same questions translated into German.
    [README.md] Changing the default would also mean re-embedding every stored note, because each chunk is keyed to the model that produced it (npm run eval:sprache reruns both sides).
    [README.md] Everything lives in ~/.kepta/, encrypted on disk, no account, no telemetry.
@@ -113,3 +112,4 @@ Die 106 ohne Messzeug, in Lesereihenfolge der Dateien (erste 40):
    [README.md] There is no single-note GET.
    [README.md] DELETE /api/memories/:id and POST /api/memories/:id/restore are the only methods on that path — asking the door for one note by id answers 404, and that is the contract, not a bug to route around.
    [README.md] - All data in ~/.kepta/ — one SQLite file that belongs to you
+   [README.md] - The server binds to 127.0.0.1 only (deliberate override via KEPTA_HOST), and answers only this computer — a website using DNS rebinding gets nothing

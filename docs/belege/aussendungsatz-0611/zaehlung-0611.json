@@ -1,10 +1,10 @@
 {
  "dateien": {
   "README.md": {
-   "saetze": 413,
+   "saetze": 414,
    "absolut": 131,
-   "mit_zeug": 57,
-   "ohne_zeug": 74
+   "mit_zeug": 58,
+   "ohne_zeug": 73
   },
   "SECURITY.md": {
    "saetze": 33,
@@ -26,10 +26,10 @@
   }
  },
  "zusammen": {
-  "saetze": 573,
+  "saetze": 574,
   "absolut": 174,
-  "mit_zeug": 68,
-  "ohne_zeug": 106
+  "mit_zeug": 69,
+  "ohne_zeug": 105
  },
  "abschnitt": {
   "README.md": {
@@ -350,10 +350,6 @@
   {
    "datei": "README.md",
    "satz": "One brain for every AI tool."
-  },
-  {
-   "datei": "README.md",
-   "satz": "Claude Desktop, Cursor, Gemini CLI, Cline, Codex — anything that speaks MCP shares the same encrypted knowledge base, plus anything that only speaks HTTP through the REST API."
   },
   {
    "datei": "README.md",

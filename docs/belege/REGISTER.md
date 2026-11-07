@@ -282,8 +282,8 @@ Schlag prueft `blockKopfFunde` aus `scripts/helfer/belege-siegel.mjs` genau das,
 | `aussendungsatz-0611/zaehlen.mjs` | 13425 B | `28f5a607e0c2b7c3…` |
 | `aussendungsatz-0611/satz-riss.mjs` | 3005 B | `abedac906ac83c5f…` |
 | `aussendungsatz-0611/messregel.mjs` | 2218 B | `2954f0bcd52e83ab…` |
-| `aussendungsatz-0611/zaehlung-0611.json` | 29550 B | `68ddf1c2b0b5d5f1…` |
-| `aussendungsatz-0611/zaehlung-0611.log.txt` | 15992 B | `0297efe63877d5db…` |
+| `aussendungsatz-0611/zaehlung-0611.json` | 29325 B | `e220d07e31057498…` |
+| `aussendungsatz-0611/zaehlung-0611.log.txt` | 15967 B | `02d44f8e3f8ef82c…` |
 | `p147-0711/zeugen.mjs` | 3946 B | `8b5907643da5094d…` |
 | `p147-0711/zaehler-vor-3-1-5.log.txt` | 4963 B | `6d04606d49ac2e28…` |
 

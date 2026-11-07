@@ -1596,6 +1596,66 @@ Warnungen. Zahlen-Belege Exit 0: 970 Messbehauptungen im Endstand dieses Schlage
 **Keine Versionszahl, kein Bau:** an ausgelieferten Bytes ändert dieser Schlag nichts; die Parität
 lebt in der Suite, nicht im Bündel.
 
+## 40. P152 — "One brain for every AI tool" war eine Behauptung über zwei Türen, die keine Maschine zusammen sah (7.11. 03:34 MEZ)
+
+**Die Frage vor der Arbeit.** P151 ließ 106 Sätze ohne Messzeug und einen Hinweis zurück: README.md:85
+verspricht mehr als eine Route — *"anything that speaks MCP shares the same encrypted knowledge base,
+plus anything that only speaks HTTP through the REST API. What one assistant learns, the next already
+knows."* Ich suchte den Zeugen und fand **keinen für die Datenseite**: die Suite hatte
+`tests/mcp-behauptungen.test.ts:193` (dieselbe Absage an beiden Türen — ein Vertrag) und `:175` (die
+HTTP-Agententür `/api/mcp/save` mit einer Liste danach), aber niemand hatte je eine Notiz durch die
+eine Tür hineingeschickt und durch die andere **gefunden**. Der Verkaufssatz und die Maschine hatten
+sich nie berührt.
+
+**Beweis vor Behauptung.** Neu `tests/mcp-rest-paritaet.test.ts`, vier Fälle an **einem** Store, zwei
+Türen:
+- `:66` — `memory_save` durch MCP, danach HTTP-Liste und HTTP-Suche: beide müssen die Notiz zeigen.
+- `:80` — `POST /api/memories` durch REST, danach `memory_search`: der Agent muss sie finden.
+- `:93` — Kontrolle: ein **zweiter, getrennter** Bestand darf die Notiz *nicht* zeigen.
+- `:116` — Kontrolle der Kontrolle: zwei Stores auf **demselben Pfad** müssen sie zeigen.
+
+Der vierte Fall ist kein Schmuck. Ohne ihn wäre `:93` ein Blindgang: "nicht enthalten" bleibt auch
+dann true, wenn das Lesen aus einem ganz andern Grund nichts zurückgibt (Route tot, Filter zu eng,
+Titel vertippt). Erst `:116` macht die Negativprobe zur Aussage.
+
+Die drei Fälle waren im ersten Anlauf grün (03:34:35 MEZ, 3 von 3; nach dem vierten 4 von 4) — sie
+prüfen bestehende Wahrheit. Also ein Biss an der Produktion (`cp` nach /tmp/p150-biss, patchen, rot,
+zurück-cp, `cmp` bytegleich):
+
+    Biss A  createApp ignores the handed store and opens its own second DB
+            -> 3 rot: "die Agenten-Notiz fehlt in der HTTP-Liste",
+               "der Agent sieht die REST-Notiz nicht",
+               "zwei Stores auf demselben Pfad sehen sich nicht — dann verliert der
+                Negativ-Fall seine Beweiskraft"
+            (der Kontrollfall :93 bleibt grün — er behauptet ja die Trennung)
+
+Der dritte rote Fall ist die teeth-Demonstration für `:93`: genau der Fall, der die Negativprobe
+absichert, fällt, wenn das Lesen vom gereichten Leib abgekoppelt wird.
+
+**Satz und Zensus.** README.md:85 nennt jetzt in *einem* Satz beide Richtungen und beide Kontrollen
+(`:66`, `:80`, `:93`, `:116`) und — weil der Satz "encrypted" sagt, meine Fälle aber mit
+`KEPTA_ENCRYPTION=off` fahren — die Verschluesselungs-Hälfte ist sauber getrennt bezeugt:
+`tests/nebendateien.test.ts:22` (kein Klartext auf der Platte) und `:41` (falscher Schlüssel liest
+nichts, Manipulation fliegt auf). Das ist die Unterscheidung, die P142 und P134 lehrten: ein Wort wie
+"encrypted" darf nicht an einem Fall hängen, der die Verschlüsselung abschaltet.
+
+Zensus 03:36:00 MEZ, Exit 0: **574** Einheiten (573 -> 574, der umgebaute Satz wurde beim Umbau
+zwei), 174 absolute, **69** mit Messzeug = **39,7 %** (vorher 68 = 39,1 %), **105** ohne; schmale
+Klasse unverändert 33 mit 33 Zeugen (nachgemessen: 0 maschinell Widerlegbare stehen ohne Zeugen).
+Pin `tests/aussendungs-riss.test.ts:132` erst rot (03:36:11: "69 von 174 — erwartet war 68"), dann
+nachgezogen. Beide Artefakte kleiner: JSON 29 550 → 29 325 B (sha `e220d07e31057498`), Log 15 992 →
+15 967 B (sha `02d44f8e3f8ef82c`); Siegel-Zeilen im selben Schritt — siebter Zahlen-Lauf der Nacht,
+dritter ohne Guard-Ruf.
+
+**Zwei Läufe.** Messung 03:37:06 → 03:39:35: ein rot mit Namen (`tests/doku-zahlen.test.ts:52`,
+Bericht älter als `tests/`), Exit 1. Prüfung 03:39:41 → 03:42:04 = **3794 von 3794 grün, 354
+Testdateien, Exit 0** (353 → 354, eine neue Datei), doku-check beglaubigt diesen Lauf
+(02:42:03 UTC). Lint 03:42:33: 0 Fehler. Zahlen-Belege Exit 0: 970 Messbehauptungen. README-Zähler
+3790 → **3794**.
+
+**Keine Versionszahl, kein Bau:** an ausgelieferten Bytes ändert dieser Schlag nichts; die Parität
+lebt in der Suite.
+
 ## Fehler in diesem Schlag, die ich selbst gefunden habe
 
 
@@ -1991,3 +2051,14 @@ lebt in der Suite, nicht im Bündel.
     im selben Atemzug berichtigt, ist kein Satz, und „Scheidung" ist nicht das Wort. Beim nächsten
     Mappe-Commit schreibe ich den Botschaftstext, bevor ich ihn einsetze, und prüfe ihn gegen
     `git log -1` wie ein Artefakt.
+74. **Ich hatte "keine Faelle" gesucht, ohne die Datei zu lesen, die den Vertrag schon hält.**
+    `tests/mcp-behauptungen.test.ts:175` schreibt durch die HTTP-Agententür und liest danach die
+    REST-Liste — das *ist* ein Stueck Paritaet. Mein Bericht hätte also lauten müssen: die
+    Gegenrichtung und die Suche fehlen, nicht "alles". Berichtigt im Papier P152 (Abschnitt 1 nennt
+    beide Nachbarn), und die Kontrolle der Kontrolle (`:116`) ist die neue Substanz.
+75. **Ein Wort, das mein Fall abschaltet, darf nicht an diesem Fall haengen.** README.md:85 sagt
+    "encrypted knowledge base"; meine neuen Fälle setzen `KEPTA_ENCRYPTION=off` (wie die
+    Server-Suite seit dem Keychain-Lernfall). Hätte ich die Paritaets-Faelle als Zeugen fuer das
+    Wort "encrypted" hingeschrieben, wäre eine falsche Behauptung mit einem wahren Fall belegt
+    worden. Also: Paritaet an `tests/mcp-rest-paritaet.test.ts:66/:80`, Verschlüsselung an
+    `tests/nebendateien.test.ts:22/:41`, und der Satz nennt beide getrennt.
