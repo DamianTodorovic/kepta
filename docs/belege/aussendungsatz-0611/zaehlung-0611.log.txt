@@ -1,38 +1,38 @@
-Zeit: 7.11.2026, 12:38:18 MEZ
+Zeit: 7.11.2026, 21:08:23 MEZ
 Dateien: README.md, SECURITY.md, ROADMAP.md, .github/release-notes.md — Einheiten ueber 25 Zeichen.
 Riss: satz-riss.mjs (P128, markdown-fest). Vorher: Satzende + Leerzeichen ueber dem
 ganzen Text, wodurch Aufzaehlungen, Tabellenzeilen und `<summary>`-Kuelsen als EIN
 Satz zaehlten. Unter beiden Naivlingen, in diesem Lauf nachgerechnet:
-  52 Einheiten trugen nach dem Punkt-Naivling noch Block-Struktur,
-  116 nach dem zeilenweisen. Ein Zitat aus einer frueheren Runde stünde hier
+  53 Einheiten trugen nach dem Punkt-Naivling noch Block-Struktur,
+  117 nach dem zeilenweisen. Ein Zitat aus einer frueheren Runde stünde hier
   nicht — die Zahl soll diejenige sein, die dieser Stand der vier Texte hergibt.
 
 | Datei | Saetze | absolute | mit Messzeug | ohne Messzeug | Anteil ohne |
 |---|---|---|---|---|---|
-| `README.md` | 420 | 136 | 66 | 70 | 51.5 % |
+| `README.md` | 423 | 139 | 69 | 70 | 50.4 % |
 | `SECURITY.md` | 33 | 9 | 4 | 5 | 55.6 % |
 | `ROADMAP.md` | 77 | 16 | 4 | 12 | 75.0 % |
 | `.github/release-notes.md` | 52 | 20 | 5 | 15 | 75.0 % |
-| **zusammen** | **582** | **181** | **79** | **102** | **56.4 %** |
+| **zusammen** | **585** | **184** | **82** | **102** | **55.4 %** |
 
-Nenner fuer den Anteil: 181 absolute Behauptungen in 582 Saetzen der vier Texte.
+Nenner fuer den Anteil: 184 absolute Behauptungen in 585 Saetzen der vier Texte.
 
 Zweite Lesung — der Zeuge darf im selben Abschnitt stehen (Absatz, Tabelle, Aufzaehlung):
 | Datei | absolute | mit Messzeug | ohne Messzeug |
 |---|---|---|---|
-| `README.md` | 136 | 61 | 75 |
+| `README.md` | 139 | 63 | 76 |
 | `SECURITY.md` | 9 | 3 | 6 |
 | `ROADMAP.md` | 16 | 0 | 16 |
 | `.github/release-notes.md` | 20 | 8 | 12 |
-| zusammen | 181 | 72 | 109 |
-   mit Messzeug im selben Abschnitt: 72 von 181 = 39.8 % (gegen 79 von 181 = 43.6 % in der engen Lesung).
+| zusammen | 184 | 74 | 110 |
+   mit Messzeug im selben Abschnitt: 74 von 184 = 40.2 % (gegen 82 von 184 = 44.6 % in der engen Lesung).
 
 Die schmalere Klasse — Saetze, die ein Werkzeug widerlegen koennte (never/always/cannot/0 %/100 %):
-   README.md                  30 von 136 absoluten
+   README.md                  30 von 139 absoluten
    SECURITY.md                2 von 9 absoluten
    ROADMAP.md                 1 von 16 absoluten
    .github/release-notes.md   2 von 20 absoluten
-   zusammen 35 von 181 — der Rest ist Produktcopy ("no password to type"), keine Behauptung ueber eine Maschine.
+   zusammen 35 von 184 — der Rest ist Produktcopy ("no password to type"), keine Behauptung ueber eine Maschine.
    Die Liste, in Lesereihenfolge, mit dem Marker „Zeug", wenn derselbe Satz schon ein Messzeug nennt:
    [README.md] ZEUG While it cools at 3 000 notes a few pairs still touch for a moment; tests/lib/graphLayout.test.ts:2455-2458 pins that funnel at ≤ 40 pairs by step 250, ≤ 40 again by step 310 and zero by step 380, so no sentence here say
    [README.md] ZEUG On macOS the key never sits in a file; on Windows it is the DPAPI-sealed database-key.dpapi in the data folder, readable only under the same account, and a headless install with KEPTA_DB_KEY keeps it in the process envir
@@ -56,7 +56,7 @@ Die schmalere Klasse — Saetze, die ein Werkzeug widerlegen koennte (never/alwa
    [README.md] ZEUG HTML is turned into text before import, and content that carries no knowledge — markup scaffolding, repeated table rows — never becomes a note (tests/core/klassifikation.test.ts:112 strips script, style and tags into rea
    [README.md] ZEUG The list groups by file, by kind or by period, and *Load more* never cuts a group in half (tests/lib/gruppenfenster.test.ts pins the window rule: a group that starts is shown whole, so a five-part file never appears as t
    [README.md] ZEUG GET /api/memories/:id therefore stays unimplemented until a client needs a body it cannot already reach; until then this table names only the methods the server registers, and tests/doku-plattform.test.ts fails if the tw
-   [README.md] ZEUG - The server binds to 127.0.0.1 only (deliberate override via KEPTA_HOST), and answers only this computer — a website whose name rebinds to 127.0.0.1 still cannot read one byte back, because a foreign Origin gets no Acce
+   [README.md] ZEUG A page whose name rebinds to 127.0.0.1 is refused before any handler runs (tests/herkunft.test.ts:76), a page under another name gets no Access-Control-Allow-Origin and so cannot read a byte back (tests/server-herkunft.t
    [README.md] ZEUG Nothing is sent by the app itself, and the store never syncs on its own: the device sync hands you an AES-256-GCM bundle and stops at that answer (server/router/sync.ts:40 returns it to the window, it posts it nowhere), 
    [README.md] ZEUG There is nothing to activate and nothing to buy inside the window, so the app also never asks for it — no key field, no counter, no trial clock, no "first day free" and no message about a limit (tests/keine-grenzen.test.
    [README.md] ZEUG It was never a lock — but it was counting, and counting needed places to hide the tally: an AES-256-GCM blob in the store's settings, two keychain entries under app.kepta.plan, and a trial-anchor file in a per-user direc

@@ -107,7 +107,7 @@ describe("P129, der Wortschatz: ein benanntes Instrument ist ein Messzeug", () =
     expect(zeug.test(einheiten[0]), "das Messzeug steht im selben Satz, wird aber nicht gesehen").toBe(true);
   });
 
-  it("am echten Bestand: 79 von 181 absoluten Behauptungen nennen ihr Messzeug", () => {
+  it("am echten Bestand: 82 von 184 absoluten Behauptungen nennen ihr Messzeug", () => {
     let absoluten = 0;
     let mit = 0;
     for (const datei of DATEIEN) {
@@ -145,8 +145,15 @@ describe("P129, der Wortschatz: ein benanntes Instrument ist ein Messzeug", () =
     // Die 158 verwaisten Kurzformen halten tests/anker-wache.test.ts:197, :204 und :205.
     // Zugleich fiel README.md:181 aus der schmalen Klasse (34 -> 33): das Wort, das sie dort
     // hielt, war "as always" in "validated offline as always", und diese Formulierung war falsch.
-    expect(absoluten, "der Nenner ist nicht mehr 181 — der Riss oder die Klasse hat sich bewegt").toBe(181);
-    expect(mit, `${mit} von ${absoluten} nennen ein Messzeug — erwartet war 79`).toBe(79);
+    // P158 (gemessen 7.11. 21:08:23 MEZ mit dem Zaehler selbst): README.md:262 nennt jetzt
+    // beide Haelften der Herkunfts-Zusage und ihre Zeugen — 582/181/79/102 -> 585/184/82/102,
+    // Anteil ohne Messzeug 56,4 -> 55,4 %. Alle drei neuen absoluten Saetze tragen ihr Messzeug.
+    // Ein Zwischenstand (21:06:24 MEZ: 586/184/81/103) ging auf meinen eignen Satz zurueck:
+    // der Punkt IN der zitierten Absage (`Forbidden origin.`) ist ein Satzende fuer den Riss,
+    // also stand der Zeuge in der folgenden Einheit und der Satz galt als unbewaffnet.
+    // Heilung war die Formulierung, nicht der Zaehler: "must come back 403" statt des Zitats.
+    expect(absoluten, "der Nenner ist nicht mehr 184 — der Riss oder die Klasse hat sich bewegt").toBe(184);
+    expect(mit, `${mit} von ${absoluten} nennen ein Messzeug — erwartet war 82`).toBe(82);
     expect(mit / absoluten, "Anteil ohne Nenner ist ein Urteil").toBeGreaterThan(0.3);
     expect(maschine.source.length, "die schmale Klasse wurde nicht mitgeändert").toBeGreaterThan(10);
   });

@@ -1,9 +1,9 @@
 {
  "dateien": {
   "README.md": {
-   "saetze": 420,
-   "absolut": 136,
-   "mit_zeug": 66,
+   "saetze": 423,
+   "absolut": 139,
+   "mit_zeug": 69,
    "ohne_zeug": 70
   },
   "SECURITY.md": {
@@ -26,16 +26,16 @@
   }
  },
  "zusammen": {
-  "saetze": 582,
-  "absolut": 181,
-  "mit_zeug": 79,
+  "saetze": 585,
+  "absolut": 184,
+  "mit_zeug": 82,
   "ohne_zeug": 102
  },
  "abschnitt": {
   "README.md": {
-   "absolut": 136,
-   "mit_zeug": 61,
-   "ohne_zeug": 75
+   "absolut": 139,
+   "mit_zeug": 63,
+   "ohne_zeug": 76
   },
   "SECURITY.md": {
    "absolut": 9,
@@ -54,13 +54,13 @@
   }
  },
  "zusammen_abschnitt": {
-  "absolut": 181,
-  "mit_zeug": 72,
-  "ohne_zeug": 109
+  "absolut": 184,
+  "mit_zeug": 74,
+  "ohne_zeug": 110
  },
  "maschinell_pruefbar": {
   "README.md": {
-   "absolut": 136,
+   "absolut": 139,
    "maschinell": 30
   },
   "SECURITY.md": {
@@ -190,7 +190,7 @@
   },
   {
    "datei": "README.md",
-   "satz": "- The server binds to 127.0.0.1 only (deliberate override via KEPTA_HOST), and answers only this computer — a website whose name rebinds to 127.0.0.1 still cannot read one byte back, because a foreign Origin gets no Acce",
+   "satz": "A page whose name rebinds to 127.0.0.1 is refused before any handler runs (tests/herkunft.test.ts:76), a page under another name gets no Access-Control-Allow-Origin and so cannot read a byte back (tests/server-herkunft.t",
    "zeuge": true
   },
   {
