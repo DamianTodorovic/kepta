@@ -1,4 +1,4 @@
-Zeit: 7.11.2026, 02:00:59 MEZ
+Zeit: 7.11.2026, 02:13:18 MEZ
 Dateien: README.md, SECURITY.md, ROADMAP.md, .github/release-notes.md — Einheiten ueber 25 Zeichen.
 Riss: satz-riss.mjs (P128, markdown-fest). Vorher: Satzende + Leerzeichen ueber dem
 ganzen Text, wodurch Aufzaehlungen, Tabellenzeilen und `<summary>`-Kuelsen als EIN
@@ -9,11 +9,11 @@ Satz zaehlten. Unter beiden Naivlingen, in diesem Lauf nachgerechnet:
 
 | Datei | Saetze | absolute | mit Messzeug | ohne Messzeug | Anteil ohne |
 |---|---|---|---|---|---|
-| `README.md` | 413 | 131 | 51 | 80 | 61.1 % |
+| `README.md` | 413 | 131 | 52 | 79 | 60.3 % |
 | `SECURITY.md` | 33 | 9 | 4 | 5 | 55.6 % |
 | `ROADMAP.md` | 77 | 16 | 4 | 12 | 75.0 % |
 | `.github/release-notes.md` | 50 | 18 | 3 | 15 | 83.3 % |
-| **zusammen** | **573** | **174** | **62** | **112** | **64.4 %** |
+| **zusammen** | **573** | **174** | **63** | **111** | **63.8 %** |
 
 Nenner fuer den Anteil: 174 absolute Behauptungen in 573 Saetzen der vier Texte.
 
@@ -25,7 +25,7 @@ Zweite Lesung — der Zeuge darf im selben Abschnitt stehen (Absatz, Tabelle, Au
 | `ROADMAP.md` | 16 | 0 | 16 |
 | `.github/release-notes.md` | 18 | 6 | 12 |
 | zusammen | 174 | 67 | 107 |
-   mit Messzeug im selben Abschnitt: 67 von 174 = 38.5 % (gegen 62 von 174 = 35.6 % in der engen Lesung).
+   mit Messzeug im selben Abschnitt: 67 von 174 = 38.5 % (gegen 63 von 174 = 36.2 % in der engen Lesung).
 
 Die schmalere Klasse — Saetze, die ein Werkzeug widerlegen koennte (never/always/cannot/0 %/100 %):
    README.md                  28 von 131 absoluten
@@ -58,7 +58,7 @@ Die schmalere Klasse — Saetze, die ein Werkzeug widerlegen koennte (never/alwa
    [README.md] ZEUG GET /api/memories/:id therefore stays unimplemented until a client needs a body it cannot already reach; until then this table names only the methods the server registers, and tests/doku-plattform.test.ts fails if the tw
    [README.md] ZEUG Nothing is sent by the app itself, and the store never syncs on its own: the device sync hands you an AES-256-GCM bundle and stops at that answer (server/router/sync.ts:40 returns it to the window, it posts it nowhere), 
    [README.md] ZEUG There is nothing to activate and nothing to buy inside the window, so the app also never asks for it — no key field, no counter, no trial clock, no "first day free" and no message about a limit (tests/keine-grenzen.test.
-   [README.md]      It was never a lock — but it was counting, and counting needed places to hide the tally (an authenticated state in the database, a keychain anchor, a hidden file).
+   [README.md] ZEUG It was never a lock — but it was counting, and counting needed places to hide the tally: an AES-256-GCM blob in the store's settings, two keychain entries under app.kepta.plan, and a trial-anchor file in a per-user direc
    [README.md] ZEUG The data is never hostage (tests/keine-grenzen.test.ts:102-116 shows the licence route answers nothing, read or write, and no part of the surface asks it; tests/server.test.ts:327 writes the store out as Markdown files).
    [README.md] ZEUG They are built from this source and never published here — every electron-builder call in .github/workflows/build.yml carries --publish never (:111, :204, :310; driven by tests/ci-publish.test.ts:51), so they are unteste
    [README.md] ZEUG src/scan (machine-scan rules) | must not fall under 98 % of lines · must hold 100 % of functions (both in vitest.config.ts, key "src/scan/") | what may be read, and what never is
@@ -72,7 +72,7 @@ Zwei von ihnen nachgegriffen, im selben Lauf:
    "no screenshot of it here yet" (Semantic-Ansicht): README nennt 20 Bilder (12 in Markdown, 8 als <img alt>), davon 0 mit "Semantic"; der Satz steht noch da — haltbar.
    "no embedding ever travels into the view": 8 von 8 benannten Flaechen-Dateien gelesen, zusammen 0 Nennung(en) "embedding"; das Wort liegt in 34 Test-Dateien des Repos. Fehlende Dateien: keine.
 
-Die 112 ohne Messzeug, in Lesereihenfolge der Dateien (erste 40):
+Die 111 ohne Messzeug, in Lesereihenfolge der Dateien (erste 40):
    [README.md] Your AI forgets you after every chat.
    [README.md] Desktop app · no cloud · no account · encrypted at rest SQLite · hybrid retrieval · knowledge graph · MCP
    [README.md] The time slider replays eighteen months of a fictional advisory firm, and because every note carries a validity window, past moments show exactly what was true then.

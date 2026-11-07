@@ -270,8 +270,28 @@ erfunden, in beiden Sprachen gemessen und mit dem Vektor-Bein auch allein:
 | `aussendungsatz-0611/zaehlen.mjs` | 13425 B | `28f5a607e0c2b7c3…` |
 | `aussendungsatz-0611/satz-riss.mjs` | 3005 B | `abedac906ac83c5f…` |
 | `aussendungsatz-0611/messregel.mjs` | 2218 B | `2954f0bcd52e83ab…` |
-| `aussendungsatz-0611/zaehlung-0611.json` | 30586 B | `46c2c08be939b439…` |
-| `aussendungsatz-0611/zaehlung-0611.log.txt` | 15870 B | `ec7f9a6630857c16…` |
+| `aussendungsatz-0611/zaehlung-0611.json` | 30429 B | `7f03deea6028a882…` |
+| `aussendungsatz-0611/zaehlung-0611.log.txt` | 15927 B | `8229ec051819bfa0…` |
+| `p147-0711/zeugen.mjs` | 3946 B | `8b5907643da5094d…` |
+| `p147-0711/zaehler-vor-3-1-5.log.txt` | 4963 B | `6d04606d49ac2e28…` |
+
+### Der Historien-Beleg `p147-0711/` (7.11.)
+
+README.md:357 spricht ueber die Zeit **vor** 3.1.5: die App habe bis dahin gezaehlt, und das
+Zaehlen habe drei Verstecke gebraucht. Fuer eine Aussage ueber eine fruehere Quelltext-Fassung
+ist kein heutiger Test ein zulassiger Zeuge, sondern nur der Quelltext selbst.
+`node docs/belege/p147-0711/zeugen.mjs` zieht ihn per `git show` aus `113093c` — dem Eltern-Commit
+von `c7cde55` (09.10.2026 01:41, "3.1.5: die app zaehlt nicht mehr") — und schreibt die drei
+Schichten mit Blob-Zeilennummern: AES-256-GCM-Blob in den Einstellungen
+(`server/helfer/planzustand.ts:101`, `:133`, `:165`), Schluesselbund-Anker unter
+`app.kepta.plan` (`:32`, `:33`; `server/helfer/plan-schluesselbund.ts:38`, `:48`), und die
+`trial-anchor`-Datei in einem Benutzerordner, den der Finder ausblendet
+(`:183-185`, geschrieben mit Flag `wx` = nie ueberschreiben, `:218`). Dasselbe Blatt nennt, was
+`c7cde55` loeschte: neun Dateien, von `planzustand.ts` (376 Zeilen) bis `probetag.ts` (31).
+
+Der Beleg ist reproduzierbar, aber nicht byte-stabil: die erste Zeile nennt die Uhrzeit des
+Zuges. Wer ihn neu zieht, setzt in demselben Schritt seine Siegel-Zeile neu — der Pruefer
+(`tests/belege-siegel.test.ts:112`) erwischt ein Vergessen.
 
 Drei Folgen, aufgeschrieben, weil sie die Zahl nicht schoener machen:
 

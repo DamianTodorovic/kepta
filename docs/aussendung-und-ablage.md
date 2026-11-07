@@ -1351,6 +1351,47 @@ eignen Kommentar: `src/lib/richtlinien.ts:4` verspricht `/etc/kepta/…`, der Co
 `/etc/KEPTA/…`; der neue Fall hält den Code fest, nicht den Kommentar — die Heilung ist eine
 Zeile, braucht aber einen Bau.
 
+## 35. P147 — Der letzte Satz der schmalen Klasse: ein Zeuge aus der Historie (7.11. 02:10 MEZ)
+
+README.md:357 sprach über die Zeit vor 3.1.5 — „it was counting, and counting needed places to
+hide the tally". Ein Test auf dem heutigen Baum kann das nicht prüfen; der einzige zulässige Zeuge
+ist der Quelltext von damals. `git tag | grep -cE '^v?3\.1\.[0-9]'` = **0** (02:04:32 MEZ), also
+führt der Weg über Commits: gelesener Stand ist `113093c`, der Eltern-Commit von `c7cde55`
+(09.10.2026 01:41, „3.1.5: die app zählt nicht mehr — kein schlüssel, keine grenzen, kein
+upgrade-panel").
+
+`node docs/belege/p147-0711/zeugen.mjs` schreibt `zaehler-vor-3-1-5.log.txt` (4 963 B,
+sha256(16) `6d04606d49ac2e28…`) und zeigt die drei Verstecke mit Blob-Zeilen: AES-256-GCM-Blob in
+den Einstellungen (`server/helfer/planzustand.ts:101`, `:133`, `:165`), Schlüsselbund-Anker unter
+`app.kepta.plan` mit den Konten `kepta` und `probetag` (`:32`, `:33`;
+`plan-schluesselbund.ts:38`, `:48`, `:68`, `:79`), und die `trial-anchor`-Datei in einem
+Benutzerordner, den der Finder ausblendet (`:183-185`, geschrieben mit Flag `wx`, `:218`).
+Dasselbe Blatt nennt die neun Dateien, die `c7cde55` löschte, sortiert nach Größe (376 Zeilen
+`planzustand.ts` bis 31 Zeilen `probetag.ts`).
+
+Der Satz heißt jetzt schärfer und nennt den Beleg im selben Satz: *an AES-256-GCM blob in the
+store's settings, two keychain entries under `app.kepta.plan`, and a `trial-anchor` file in a
+per-user directory that the finder hides … in `docs/belege/p147-0711/zaehler-vor-3-1-5.log.txt`.*
+
+**Zählung.** Zensus 02:13:17 MEZ, Exit 0: 573 Einheiten, 174 absolute, **63** mit Messzeug =
+**36,2 %** (vorher 174/62 = 35,6 %), **111** ohne; zweite Lesung 67 von 174. Schmale Klasse **33**,
+davon **33 mit Zeugen → null.** Das ist der Punkt, an dem die Klasse, in der ein Werkzeug die
+Behauptung widerlegen könnte, zum ersten Mal vollständig beglaubigt ist (P122 zählte sie am 13.10.
+mit 30 von 129 ohne Zeugen). Pinne 174/63 und Siegel-Grundgesamtheit 126 → **128**; beide waren
+erst rot, wie sie sein mussten (02:14:13 MEZ), dann grün (02:14:30, 21 von 21).
+
+Keine neuen Fälle, also bleibt der README-Zähler bei **3779** und die Dateizahl bei 352 —
+bestätigt vom Lauf, nicht gefühlt: Messung 02:15:58→02:18:30 (3779 ausgeführt, 1 rot mit Namen: der
+Bericht war älter als `tests/`, Exit 1), Prüfung 02:19:00→02:21:30 = **3779 von 3779 grün, 352
+Dateien, Exit 0**, doku-check beglaubigt Stand 2026-11-07 01:21:29 UTC. Lint 0 Fehler (02:22:13),
+Zahlen-Belege Exit 0 (953 Messbehauptungen). Keine Versionszahl, kein Bau.
+
+*Offen und benannt:* Der Beleg ist der erste, der absichtlich nicht byte-stabil ist (Zeile 1 nennt
+die Uhrzeit des Zuges), also gilt „wer einen Zähler fährt, setzt die Siegel-Zeile neu" jetzt auch
+für `docs/belege/p147-0711/`. Und 111 absolute Behauptungen nennen weiterhin kein Messzeug; welche
+davon als nächste dran sind, wird in P148 zuerst gezählt, nicht vermutet.
+
+
 ## Fehler in diesem Schlag, die ich selbst gefunden habe
 
 
@@ -1635,3 +1676,20 @@ Zeile, braucht aber einen Bau.
    frühen Messung zitierte (`git tag` um 01:01 MEZ), wurde durch die spätere, klare Messung
    ersetzt (0 Treffer, 02:04:32 MEZ) — eine Zahl, die ihren Moment nennt, muss den Moment haben,
    der sie trägt.
+
+53. **Zwei eslint-Fehler in meinem eignen Generierer, gefunden vom Gate, nicht von mir.**
+   `docs/belege/p147-0711/zeugen.mjs` destructurete `i` (Zeile 32) und `zu` (Zeile 46) und
+   benutzte sie nicht — `npm run lint` meldete 02:14:57 zum ersten Mal seit P141 wieder Fehler
+   (2 statt 0). Ich hatte die Suite und die Zahlen-Wache gefahren, aber den Lint vor dem Census
+   nicht. Nach dem Fix (02:15:44) änderte sich die Bytezahl des Generierers, also musste seine
+   Siegel-Zeile ein zweites Mal nachgezogen werden (`8b5907643da5094d…`) — der P145-Prüfer hat
+   auch das erwischt, bevor jemand danach suchte.
+54. **Ein Beleg, der eine leere Sektion ausgab.** Mein first filter suchte Löschungen mit
+   `startsWith("-\t")` in `--numstat`; dieses Format schreibt eine Löschung als `0\t<zahl>\t<pfad>`,
+   also war die Löschliste im ersten Zug leer. Sichtbar wurde das nicht an einer roten Zahl, sondern
+   daran, dass das geschriebene Blatt eine Überschrift ohne Zeilen hatte. Nachgemessen am Format
+   (`git show --numstat c7cde55 | awk '$1=="0"'`) und berichtigt auf `zu === "0" && weg > 0` —
+   jetzt stehen neun Dateien mit ihren Zeilenzahlen im Beleg.
+55. **Eine eigne Fehlermeldung, die ich zurücknehmen musste.** Im P147-Papier schrieb ich zuerst,
+   ich hätte „geza ehlt" gehackt; der grep traf nur „Werkzeg". Die Fehlerliste ist eine Behauptung
+   wie jede andere und wird nur gemeldet, was die Sonde findet — die Berichtigung steht im Papier.

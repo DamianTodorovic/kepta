@@ -3,8 +3,8 @@
   "README.md": {
    "saetze": 413,
    "absolut": 131,
-   "mit_zeug": 51,
-   "ohne_zeug": 80
+   "mit_zeug": 52,
+   "ohne_zeug": 79
   },
   "SECURITY.md": {
    "saetze": 33,
@@ -28,8 +28,8 @@
  "zusammen": {
   "saetze": 573,
   "absolut": 174,
-  "mit_zeug": 62,
-  "ohne_zeug": 112
+  "mit_zeug": 63,
+  "ohne_zeug": 111
  },
  "abschnitt": {
   "README.md": {
@@ -200,8 +200,8 @@
   },
   {
    "datei": "README.md",
-   "satz": "It was never a lock — but it was counting, and counting needed places to hide the tally (an authenticated state in the database, a keychain anchor, a hidden file).",
-   "zeuge": false
+   "satz": "It was never a lock — but it was counting, and counting needed places to hide the tally: an AES-256-GCM blob in the store's settings, two keychain entries under app.kepta.plan, and a trial-anchor file in a per-user direc",
+   "zeuge": true
   },
   {
    "datei": "README.md",
@@ -510,10 +510,6 @@
   {
    "datei": "README.md",
    "satz": "Every tool in the app runs without bound: chat, clipper, machine scan, dossiers, briefings, audit, Device Sync, all eight MCP tools."
-  },
-  {
-   "datei": "README.md",
-   "satz": "It was never a lock — but it was counting, and counting needed places to hide the tally (an authenticated state in the database, a keychain anchor, a hidden file)."
   },
   {
    "datei": "README.md",
