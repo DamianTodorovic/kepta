@@ -270,8 +270,8 @@ erfunden, in beiden Sprachen gemessen und mit dem Vektor-Bein auch allein:
 | `aussendungsatz-0611/zaehlen.mjs` | 13425 B | `28f5a607e0c2b7c3…` |
 | `aussendungsatz-0611/satz-riss.mjs` | 3005 B | `abedac906ac83c5f…` |
 | `aussendungsatz-0611/messregel.mjs` | 2218 B | `2954f0bcd52e83ab…` |
-| `aussendungsatz-0611/zaehlung-0611.json` | 30378 B | `2540a646de1b76e4…` |
-| `aussendungsatz-0611/zaehlung-0611.log.txt` | 16036 B | `fb8f905cd1bbd6aa…` |
+| `aussendungsatz-0611/zaehlung-0611.json` | 30131 B | `a1e3428d77ab9bcd…` |
+| `aussendungsatz-0611/zaehlung-0611.log.txt` | 16036 B | `fcd9223a74e88cfe…` |
 | `p147-0711/zeugen.mjs` | 3946 B | `8b5907643da5094d…` |
 | `p147-0711/zaehler-vor-3-1-5.log.txt` | 4963 B | `6d04606d49ac2e28…` |
 

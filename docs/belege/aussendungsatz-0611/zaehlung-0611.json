@@ -3,8 +3,8 @@
   "README.md": {
    "saetze": 413,
    "absolut": 131,
-   "mit_zeug": 53,
-   "ohne_zeug": 78
+   "mit_zeug": 54,
+   "ohne_zeug": 77
   },
   "SECURITY.md": {
    "saetze": 33,
@@ -28,8 +28,8 @@
  "zusammen": {
   "saetze": 573,
   "absolut": 174,
-  "mit_zeug": 64,
-  "ohne_zeug": 110
+  "mit_zeug": 65,
+  "ohne_zeug": 109
  },
  "abschnitt": {
   "README.md": {
@@ -590,10 +590,6 @@
   {
    "datei": "README.md",
    "satz": "Every figure below is a run of this repository's own tools, kept whole next to the sentence that uses it — disagree with the numbers by rerunning them."
-  },
-  {
-   "datei": "README.md",
-   "satz": "- npm run eval — 58 notes, 45 queries, five categories, in three legs: the naive substring search it replaced, the engine without vectors, and the engine with vectors, which is what actually ships."
   },
   {
    "datei": "README.md",

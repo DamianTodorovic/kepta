@@ -1427,6 +1427,49 @@ erhalten 64; und vier Siegel-Befunde, weil der neue Zensuslauf beide Artefakte u
 grün (02:27 MEZ). Keine neuen Fälle: README bleibt 3779, Dateien 352.
 
 
+## 37. P149 — Die Messstelle nennt ihre Verteilung, und drei Faelle halten sie (7.11. 02:36 MEZ)
+
+README.md:456 beschreibt `npm run eval` mit drei Zahlen — „58 notes, 45 queries, five
+categories". Kein Fall sah den Korpus, also konnte jede kuenftige Aenderung an
+`scripts/eval-corpus.ts` die README-Zahl still luegen machen.
+
+**Zuerst gemessen** (tsx-Sonde, 02:36:46 und 02:37:05 MEZ): 58 Notizen, eindeutige ids, 45
+Anfragen, fuenf Kategorien, Verteilung `lexikalisch=25, umschreibung=10, ablenkung=4, graph=3,
+temporal=3`, 56 relevante Zeiger, **0** ins Leere. Der Satz stimmt. Was er verschweigt, ist die
+Duennheit: **von 45 Anfragen pruefen drei den Graphen und drei die Gueltigkeit** — genau die zwei
+Faehigkeiten, die unsre Verkauftszeile am lautesten nennt.
+
+**Neu** `tests/eval-korpus.test.ts` (3 Faelle): die Zaehlungen und die Zeiger-Intigritaet (`:15`),
+die Verteilung mit ihrer Summenkontrolle (`:27`), und die Duennheitsschwelle samt der
+Kategorie-Namen selbst (`:44`). Der erste Anlauf war gruen (02:37:44) — der Satz stimmte ja, also
+beweist gruene ohne Biss nichts. Drei Bisse an der Produktion (`cp` nach
+`/tmp/p149-korpus-original.ts`, zurueck per `cp`, `cmp` bytegleich, `git status` meldet die Datei
+unangetastet):
+
+    Biss A  eine lexikalische Anfrage entfernt  -> 2 rot (44 gegen 45; Verteilung 24 statt 25)
+    Biss B  eine temporal-Anfrage umgetauft     -> 2 rot (Verteilung; „temporal traegt nur 2")
+    Biss C  ein Zeiger auf m990                 -> 1 rot („Anfragen zeigen auf Notizen, die es nicht gibt: m990")
+
+Biss B ist der lehrreichste: die *Summenkontrolle bleibt gruen*, weil 44 + 1 = 45. Eine Umbenennung
+aendert die Summe nicht — deshalb prueft Fall 3 die Namen und die Schwelle, nicht nur die Zahl.
+
+**Der Satz nennt jetzt, was er meint:** „58 notes, 45 queries and five categories — a split of 25
+lexical, 10 paraphrase, 4 distractor, 3 graph and 3 temporal, held by
+`tests/eval-korpus.test.ts:15` and `:27` — in three legs …".
+
+**Zaehlung.** Zensus 02:38:57 MEZ, Exit 0: 573 Einheiten, 174 absolute, **65 mit Messzeug =
+37,4 %** (174/64 vorher), **109** ohne; schmale Klasse unveraendert 33 mit 33 Zeugen. Pinne
+174/65, Kante > 0,30 (gemessen 0,3736); Guard erst rot (02:39:06), Siegel meldete drei Befunde
+(der JSON mit Groesse und Hash, die Log nur mit Hash — die Liste der unbewaffneten Saetze wurde um
+einen kuerzer, ihre Zeilenzahl blieb 16 036 B). Nach dem Nachziehen 24 von 24 gruen (02:39:27).
+README-Zaehler 3779 → **3782**, Dateien 352 → 353.
+
+**Der Produktbefund hinter der Doku-Arbeit:** unsre Gueltigkeits- und Graph-Faehigkeit haengt an
+sechs von 45 Anfragen. Mehr Anfragen in diesen beiden Kategorien ist ein Korpus-Wechsel, der jede
+Vergleichszahl neu gelten macht (58/45, die 76 %, die mem0- und chroma-Laeufe) — ein eigner Schlag
+mit eigenem Lauf, nicht eine Zahl, die man nachstellt.
+
+
 ## Fehler in diesem Schlag, die ich selbst gefunden habe
 
 
@@ -1752,3 +1795,18 @@ grün (02:27 MEZ). Keine neuen Fälle: README bleibt 3779, Dateien 352.
    Hinweis auf fremde Last, und ihr Text war richtig — meine Reihenfolge war falsch. Die Zahl war
    nie in Frage (3779 ausgefuehrte Faelle), aber ein Gate, das waehrend des Schreibens gelesen
    wird, ist kein Urteil. Der ruhige gruen Befund kam vier Minuten spaeter aus dem Lauf selbst.
+
+60. **Mein erster Biss war ein falscher Biss.** Der Python-Flicken suchte `  {\n    query: `;
+   die Anfragen stehen einzeilig, also fand der Schnitt nichts, mein `assert` brach vor dem
+   Schreiben, **die Datei wurde nie gepatcht** — und der direkt danach gerufte Testlauf meldete
+   3 von 3 gruen, als haette der Biss nichts gefunden (02:37:54). Ein gruen nach einer Tat, die
+   nicht stattfand, ist kein Beweis; der Beweis war, dass *keine* Roette kam. Berichtigt mit
+   Biss A, B und C (02:38 MEZ), jeweils mit Meldung und Zahl.
+61. **Die Sonde riet ein Feld.** `q.category` existiert nicht — das Feld heisst `kategorie`
+   (`scripts/eval-corpus.ts:13-31`). Die erste Sonde meldete „kategorien: 1" mit leerem Namen, und
+   das sah aus wie ein Befund ueber den Korpus, war aber ein Befund ueber mein Raten. Zweite
+   Sonde nach dem Lesen der Schnittstelle: 5.
+62. **Zwei zerhackte Woerter im neuen Fall-Blatt** („Aenderoerung", „duemner"), gefunden vom
+   Sweep vor dem ersten Lauf, ersetzt, bevor sie jemand zitierte. Und im Mappe-Papier standen
+   zwei Gedankenstriche (U+2014) im ASCII-Pflichtbereich — der Sweep nach dem Schreiben fand sie,
+   ersetzt durch die ASCII-Form mit einem Satz, der den Unterschied benennt.
