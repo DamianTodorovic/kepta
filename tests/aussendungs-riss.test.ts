@@ -107,7 +107,7 @@ describe("P129, der Wortschatz: ein benanntes Instrument ist ein Messzeug", () =
     expect(zeug.test(einheiten[0]), "das Messzeug steht im selben Satz, wird aber nicht gesehen").toBe(true);
   });
 
-  it("am echten Bestand: 96 von 182 absoluten Behauptungen nennen ihr Messzeug", () => {
+  it("am echten Bestand: 100 von 182 absoluten Behauptungen nennen ihr Messzeug", () => {
     let absoluten = 0;
     let mit = 0;
     for (const datei of DATEIEN) {
@@ -184,8 +184,19 @@ describe("P129, der Wortschatz: ein benanntes Instrument ist ein Messzeug", () =
     // maschinell widerlegbar. Die Wache lebt in tests/doku-plattform.test.ts, describe
     // "P162: die zwei Zeit-Film-Saetze nennen ihre Zeugen" (liest mit dem Satz-Riss und
     // der zeug-Regel des Zensus, nicht mit einem zweiten Muster).
+    // P163 (gemessen 8.11. 12:40:07 MEZ mit dem Zaehler selbst): die vier staerksten
+    // Kaufwirkungs-Saetze nennen jetzt ihre Zeugen — das Audit-Log-Paar in README:179
+    // (Zugriff-Versprechen: Zeuge tests/lib/pruefprotokoll.test.ts:80, gelesenVon;
+    // Siegel-Kette: :36 Integritats-Pruefung, :39 Veraenderung, :49 Abschneiden), die
+    // Acht-Werkzeuge-Zusage in README:188 (Zeugen tests/mcp.test.ts:58 acht Tools,
+    // :61 outputSchema-Pflicht je Werkzeug, :102 strukturierter Treffer) und der
+    // Einzel-GET-Absage-Satz in README:253 (Zeuge tests/doku-plattform.test.ts,
+    // Route-Tafel gegen registrierte Routen). Zaehler 96 -> 100, ohne 86 -> 82
+    // (Anteil 47,3 -> 45,1 %). Nenner 182 und Einheiten 571 bleiben, schmale Klasse 35
+    // bleibt. Die Wache lebt in tests/doku-plattform.test.ts, describe "P163: ..."
+    // (gleiche Lesart wie P162: Satz-Riss und zeug-Regel importiert).
     expect(absoluten, "der Nenner ist nicht mehr 182 — der Riss oder die Klasse hat sich bewegt").toBe(182);
-    expect(mit, `${mit} von ${absoluten} nennen ein Messzeug — erwartet war 96`).toBe(96);
+    expect(mit, `${mit} von ${absoluten} nennen ein Messzeug — erwartet war 100`).toBe(100);
     expect(mit / absoluten, "Anteil ohne Nenner ist ein Urteil").toBeGreaterThan(0.3);
     expect(maschine.source.length, "die schmale Klasse wurde nicht mitgeändert").toBeGreaterThan(10);
   });

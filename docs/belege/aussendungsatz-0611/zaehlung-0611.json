@@ -3,8 +3,8 @@
   "README.md": {
    "saetze": 411,
    "absolut": 137,
-   "mit_zeug": 75,
-   "ohne_zeug": 62
+   "mit_zeug": 79,
+   "ohne_zeug": 58
   },
   "SECURITY.md": {
    "saetze": 33,
@@ -28,14 +28,14 @@
  "zusammen": {
   "saetze": 571,
   "absolut": 182,
-  "mit_zeug": 96,
-  "ohne_zeug": 86
+  "mit_zeug": 100,
+  "ohne_zeug": 82
  },
  "abschnitt": {
   "README.md": {
    "absolut": 137,
-   "mit_zeug": 65,
-   "ohne_zeug": 72
+   "mit_zeug": 64,
+   "ohne_zeug": 73
   },
   "SECURITY.md": {
    "absolut": 9,
@@ -55,8 +55,8 @@
  },
  "zusammen_abschnitt": {
   "absolut": 182,
-  "mit_zeug": 76,
-  "ohne_zeug": 106
+  "mit_zeug": 75,
+  "ohne_zeug": 107
  },
  "maschinell_pruefbar": {
   "README.md": {
@@ -399,23 +399,11 @@
   },
   {
    "datei": "README.md",
-   "satz": "Audit log — every access to the knowledge base, by you, by each AI app and by scripts, with exactly the notes an app got to see."
-  },
-  {
-   "datei": "README.md",
-   "satz": "Every entry is sealed with the SHA-256 of the one before it; *Check integrity* shows whether anything was changed, removed or cut off."
-  },
-  {
-   "datei": "README.md",
    "satz": "Both protections are on by default, and every cloud request is in the audit log"
   },
   {
    "datei": "README.md",
    "satz": "No license server, no phone-home, no extra infrastructure — one file."
-  },
-  {
-   "datei": "README.md",
-   "satz": "All eight tools ship an outputSchema and return structuredContent."
   },
   {
    "datei": "README.md",
@@ -436,10 +424,6 @@
   {
    "datei": "README.md",
    "satz": "Text size — 100, 115 or 130 %, under *Settings → Display*."
-  },
-  {
-   "datei": "README.md",
-   "satz": "There is no single-note GET."
   },
   {
    "datei": "README.md",

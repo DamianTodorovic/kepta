@@ -420,3 +420,25 @@ describe("P162: die zwei Zeit-Film-Saetze nennen ihre Zeugen", () => {
     expect(nackt, `diese Film-Saetze stehen ohne Zeugen da:\n  ${nackt.join("\n  ").slice(0, 400)}`).toEqual([]);
   });
 });
+
+// P163 — die vier staerksten Kaufwirkungs-Saetze der Aussendung: das Audit-Log-Paar
+// (README:179, Zugriff-Versprechen und Siegel-Kette), die Acht-Werkzeuge-Zusage
+// (README:188) und der Einzel-GET-Absage-Satz (README:253). Alle vier sind im Nenner
+// des Zensus (absolut via "every", "all", "no") und standen ohne Messzeug. Dieselbe
+// Lesart wie P162: Satz-Riss und zeug-Regel importiert, nicht nachgebaut — was hier
+// gruen ist, zaehlt `zaehlen.mjs` als bewaffnet.
+describe("P163: Audit-Log-Paar, Acht-Werkzeuge-Zusage und Einzel-GET-Absage nennen ihre Zeugen", () => {
+  const p163Saetze = () =>
+    satzeAusMarkdown(README).filter((s) =>
+      /every access to the knowledge base|sealed with the SHA-256 of the one before it|All eight tools ship an|no single-note GET/.test(s),
+    );
+
+  it("die vier Saetze werden gefunden — die Sonde meldet keinen Erfolg fuer Ungelesenes", () => {
+    expect(p163Saetze().length, `die Sonde findet ${p163Saetze().length} P163-Saetze`).toBe(4);
+  });
+
+  it("jeder der vier traegt sein Messzeug im selben Satz", () => {
+    const nackt = p163Saetze().filter((s) => !zeug.test(s));
+    expect(nackt, `diese Saetze stehen ohne Zeugen da:\n  ${nackt.join("\n  ").slice(0, 400)}`).toEqual([]);
+  });
+});
