@@ -68,12 +68,32 @@ function bloesche(text) {
   return out;
 }
 
+/**
+ * P161 — Zaehne (```-Bloecke) sind kein Lesestoff. Gemessen 11:03 MEZ: 14 Einheiten der vier
+ * Texte kamen aus Zaehnen, 2 davon trugen absolut-Woerter (der Mermaid-Plan "all on your
+ * machine", der Python-Rest "No cream.") und standen unbewaffnet im Nenner. Kein Mensch liest
+ * einen Zaun als Satz; der Riss liest nur, was ein Mensch als Prosa liest. Gekoppelt an
+ * Zeilenanfaenge, weil alle 20 Zaun-Zeilen der vier Texte am Spaltenanfang stehen (gemessen).
+ */
+function ohneZaun(text) {
+  const out = [];
+  let imZaun = false;
+  for (const zeile of text.split("\n")) {
+    if (/^```/.test(zeile)) {
+      imZaun = !imZaun;
+      continue;
+    }
+    if (!imZaun) out.push(zeile);
+  }
+  return out.join("\n");
+}
+
 export function satzeAusMarkdown(text) {
   // Erst Bloecke (Zeilen, die zusammen gelesen werden), dann Bullet fuer Bullet, dann Satz fuer
   // Satz. Getrennt wird nur vor einem Aufzaeicher mit Fett-Etikett, damit ein nackter
   // Bindestrich mitten im Satz keine Grenze ist — genau P109s Fund.
   const out = [];
-  for (const block of bloesche(text)) for (const e of einheitenAusZeile(block)) out.push(e);
+  for (const block of bloesche(ohneZaun(text))) for (const e of einheitenAusZeile(block)) out.push(e);
   return out;
 }
 

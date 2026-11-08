@@ -281,10 +281,10 @@ Schlag prueft `blockKopfFunde` aus `scripts/helfer/belege-siegel.mjs` genau das,
 | `aussendung-0611/beweisen-3-2-190-0611.txt` | 1094 B | `21c9789fca4692a5…` |
 | `aussendung-0611/github-releases-0611.json` | 153795 B | `56f94e5bd9c71d1c…` |
 | `aussendungsatz-0611/zaehlen.mjs` | 13425 B | `28f5a607e0c2b7c3…` |
-| `aussendungsatz-0611/satz-riss.mjs` | 3005 B | `abedac906ac83c5f…` |
-| `aussendungsatz-0611/messregel.mjs` | 2218 B | `8d6ea53a42a2f825…` |
-| `aussendungsatz-0611/zaehlung-0611.json` | 27791 B | `0e87478a65bef647…` |
-| `aussendungsatz-0611/zaehlung-0611.log.txt` | 16290 B | `366fd1048e9ea462…` |
+| `aussendungsatz-0611/satz-riss.mjs` | 3738 B | `61ad2df22ad6b2f3…` |
+| `aussendungsatz-0611/messregel.mjs` | 2458 B | `64c7499e6b02c517…` |
+| `aussendungsatz-0611/zaehlung-0611.json` | 27421 B | `38c3b59a7e337f06…` |
+| `aussendungsatz-0611/zaehlung-0611.log.txt` | 16290 B | `fee176ffac44cd15…` |
 | `p147-0711/zeugen.mjs` | 3946 B | `8b5907643da5094d…` |
 | `p147-0711/zaehler-vor-3-1-5.log.txt` | 4963 B | `6d04606d49ac2e28…` |
 

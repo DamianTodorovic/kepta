@@ -1,10 +1,10 @@
 {
  "dateien": {
   "README.md": {
-   "saetze": 423,
-   "absolut": 139,
+   "saetze": 411,
+   "absolut": 137,
    "mit_zeug": 73,
-   "ohne_zeug": 66
+   "ohne_zeug": 64
   },
   "SECURITY.md": {
    "saetze": 33,
@@ -19,23 +19,23 @@
    "ohne_zeug": 12
   },
   ".github/release-notes.md": {
-   "saetze": 52,
+   "saetze": 50,
    "absolut": 20,
    "mit_zeug": 13,
    "ohne_zeug": 7
   }
  },
  "zusammen": {
-  "saetze": 585,
-  "absolut": 184,
+  "saetze": 571,
+  "absolut": 182,
   "mit_zeug": 94,
-  "ohne_zeug": 90
+  "ohne_zeug": 88
  },
  "abschnitt": {
   "README.md": {
-   "absolut": 139,
+   "absolut": 137,
    "mit_zeug": 65,
-   "ohne_zeug": 74
+   "ohne_zeug": 72
   },
   "SECURITY.md": {
    "absolut": 9,
@@ -54,13 +54,13 @@
   }
  },
  "zusammen_abschnitt": {
-  "absolut": 184,
+  "absolut": 182,
   "mit_zeug": 76,
-  "ohne_zeug": 108
+  "ohne_zeug": 106
  },
  "maschinell_pruefbar": {
   "README.md": {
-   "absolut": 139,
+   "absolut": 137,
    "maschinell": 30
   },
   "SECURITY.md": {
@@ -467,19 +467,11 @@
   },
   {
    "datei": "README.md",
-   "satz": "mermaid flowchart LR subgraph Clients[\"Your AI apps — any of them\"] CD[\"Claude Desktop\"] CU[\"Cursor\"] GM[\"Gemini CLI · Cline · Codex Windsurf · VS Code · Zed · …\"] end subgraph App[\"K3PTA — all on your machine\"] UI[\"Desk"
-  },
-  {
-   "datei": "README.md",
    "satz": "No service in between, no account, no telemetry."
   },
   {
    "datei": "README.md",
    "satz": "Your memories are stored only in that encrypted SQLite file — there is no server of mine for them to reach."
-  },
-  {
-   "datei": "README.md",
-   "satz": "No cream.\", tags=[\"cooking\"])"
   },
   {
    "datei": "README.md",

@@ -107,7 +107,7 @@ describe("P129, der Wortschatz: ein benanntes Instrument ist ein Messzeug", () =
     expect(zeug.test(einheiten[0]), "das Messzeug steht im selben Satz, wird aber nicht gesehen").toBe(true);
   });
 
-  it("am echten Bestand: 94 von 184 absoluten Behauptungen nennen ihr Messzeug", () => {
+  it("am echten Bestand: 94 von 182 absoluten Behauptungen nennen ihr Messzeug", () => {
     let absoluten = 0;
     let mit = 0;
     for (const datei of DATEIEN) {
@@ -168,7 +168,14 @@ describe("P129, der Wortschatz: ein benanntes Instrument ist ein Messzeug", () =
     // 71 -> 73 mit, release-notes 8 -> 13 mit. Die Wache dafuer lebt in
     // tests/keine-grenzen.test.ts (fuenf Leitsaetze je genau einmal, jeder mit seiner Wache)
     // und tests/doku-plattform.test.ts (drei Rest-Traeger mit dem Zensus).
-    expect(absoluten, "der Nenner ist nicht mehr 184 — der Riss oder die Klasse hat sich bewegt").toBe(184);
+    // P161 (gemessen 8.11. 12:08:16 MEZ mit dem Zaehler selbst): der Riss las Code-Zaehne als
+    // Prosa — 14 Einheiten der vier Texte stammen aus Zaehnen, 2 davon trugen absolut-Woerter
+    // (der Mermaid-Plan "all on your machine", der Python-Rest "No cream.") und standen
+    // unbewaffnet im Nenner. satz-riss.mjs streicht Zaun-Zeilen jetzt vor dem Lesen: Saetze
+    // 585 -> 571, Nenner 184 -> 182, Zaehler 94 bleibt, ohne Messzeug 90 -> 88 (Anteil
+    // 48,9 -> 48,4 %). Kein bewaffneter Satz verliess den Zaehler. Die Wache lebt hier als
+    // describe "P161, der Zaun" (Fall fuer den mermaid-Zaun, Fall am echten Bestand).
+    expect(absoluten, "der Nenner ist nicht mehr 182 — der Riss oder die Klasse hat sich bewegt").toBe(182);
     expect(mit, `${mit} von ${absoluten} nennen ein Messzeug — erwartet war 94`).toBe(94);
     expect(mit / absoluten, "Anteil ohne Nenner ist ein Urteil").toBeGreaterThan(0.3);
     expect(maschine.source.length, "die schmale Klasse wurde nicht mitgeändert").toBeGreaterThan(10);
@@ -212,5 +219,38 @@ describe("P143, die Zahlen-Einheit: ein of in einem groesseren Wort ist keine Ei
     expect(absolut.test("Set the interval to 250 ms, never less.")).toBe(true);
     // Ohne eine echte Einheit darf kein Wort mit einem Einheitsstamm den Satz zaehlen.
     expect(absolut.test("The panel shows 250 note-headers and 3 office links.")).toBe(false);
+  });
+});
+
+/**
+ * P161 — der Riss sah Zaehne als Prosa.
+ *
+ * Gemessen 11:03 MEZ am Probe-Lauf gegen den Zaehler-Stand 585/184/94: 14 Einheiten der vier
+ * Texte stammen aus Code-Zaehnen — darunter der Mermaid-Plan ("K3PTA — all on your machine") und
+ * der Python-Beispielrest "No cream.", tags=["cooking"])", den der Punkt hinter der Code-Zeile
+ * zum eignen "Satz" machte. Zwei davon trugen absolut-Woerter und standen unbewaffnet im
+ * Nenner (184 -> 182). Kein Mensch liest einen Zaun als Satz; der Riss darf Zaun-Zeilen nicht
+ * mehr zaehlen. Die Sonde selbst liest weiter im ganzen Text — nur die Einheiten sind Prosa.
+ */
+describe("P161, der Zaun: ein Code-Zaun ist kein Satz", () => {
+  it("ein mermaid-Zaun wird keine Einheit — der Text davor und danach bleibt ganz", () => {
+    const text = "Before the fence nothing is ever rebuilt.\n\n```mermaid\nflowchart LR\n  A[\"all on your machine\"]\n  B[\"no cloud\"]\n```\n\nAfter the fence every word counts.";
+    const einheiten = satzeAusMarkdown(text);
+    expect(einheiten.some((e) => e.includes("flowchart")), "der Zaun ist als Satz gezaehlt").toBe(false);
+    expect(einheiten.some((e) => e.includes("Before the fence")), "der Text vor dem Zaun fiel weg").toBe(true);
+    expect(einheiten.some((e) => e.includes("After the fence")), "der Text nach dem Zaun fiel weg").toBe(true);
+  });
+
+  it("am echten Bestand: keine Einheit der vier Texte traegt Zaun-Inhalt", () => {
+    const funde = [];
+    for (const datei of DATEIEN) {
+      const text = fs.readFileSync(path.join(WURZEL, datei), "utf8");
+      for (const e of satzeAusMarkdown(text)) {
+        if (/flowchart|subgraph |-->|^bash |^python |^json |KeptaClient|No cream/.test(e)) {
+          funde.push(`${datei}: ${e.slice(0, 80)}`);
+        }
+      }
+    }
+    expect(funde, `${funde.length} Zaun-Einheiten sind noch Saetze:\n  ${funde.slice(0, 6).join("\n  ")}`).toHaveLength(0);
   });
 });
