@@ -3,8 +3,8 @@
   "README.md": {
    "saetze": 411,
    "absolut": 137,
-   "mit_zeug": 79,
-   "ohne_zeug": 58
+   "mit_zeug": 81,
+   "ohne_zeug": 56
   },
   "SECURITY.md": {
    "saetze": 33,
@@ -28,14 +28,14 @@
  "zusammen": {
   "saetze": 571,
   "absolut": 182,
-  "mit_zeug": 100,
-  "ohne_zeug": 82
+  "mit_zeug": 102,
+  "ohne_zeug": 80
  },
  "abschnitt": {
   "README.md": {
    "absolut": 137,
-   "mit_zeug": 64,
-   "ohne_zeug": 73
+   "mit_zeug": 63,
+   "ohne_zeug": 74
   },
   "SECURITY.md": {
    "absolut": 9,
@@ -55,8 +55,8 @@
  },
  "zusammen_abschnitt": {
   "absolut": 182,
-  "mit_zeug": 75,
-  "ohne_zeug": 107
+  "mit_zeug": 74,
+  "ohne_zeug": 108
  },
  "maschinell_pruefbar": {
   "README.md": {
@@ -399,10 +399,6 @@
   },
   {
    "datei": "README.md",
-   "satz": "Both protections are on by default, and every cloud request is in the audit log"
-  },
-  {
-   "datei": "README.md",
    "satz": "No license server, no phone-home, no extra infrastructure — one file."
   },
   {
@@ -424,10 +420,6 @@
   {
    "datei": "README.md",
    "satz": "Text size — 100, 115 or 130 %, under *Settings → Display*."
-  },
-  {
-   "datei": "README.md",
-   "satz": "DELETE /api/memories/:id and POST /api/memories/:id/restore are the only methods on that path — asking the door for one note by id answers 404, and that is the contract, not a bug to route around."
   },
   {
    "datei": "README.md",

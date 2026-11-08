@@ -107,7 +107,7 @@ describe("P129, der Wortschatz: ein benanntes Instrument ist ein Messzeug", () =
     expect(zeug.test(einheiten[0]), "das Messzeug steht im selben Satz, wird aber nicht gesehen").toBe(true);
   });
 
-  it("am echten Bestand: 100 von 182 absoluten Behauptungen nennen ihr Messzeug", () => {
+  it("am echten Bestand: 102 von 182 absoluten Behauptungen nennen ihr Messzeug", () => {
     let absoluten = 0;
     let mit = 0;
     for (const datei of DATEIEN) {
@@ -195,8 +195,18 @@ describe("P129, der Wortschatz: ein benanntes Instrument ist ein Messzeug", () =
     // (Anteil 47,3 -> 45,1 %). Nenner 182 und Einheiten 571 bleiben, schmale Klasse 35
     // bleibt. Die Wache lebt in tests/doku-plattform.test.ts, describe "P163: ..."
     // (gleiche Lesart wie P162: Satz-Riss und zeug-Regel importiert).
+    // P164 (gemessen 8.11. 13:08:55 MEZ mit dem Zaehler selbst): der DELETE/restore-Satz
+    // in README:253 Satz 2 (Zeuge tests/doku-plattform.test.ts:153/:155, Route-Tafel gegen
+    // registrierte Routen) und der Both-protections-Satz in README:180 (Default-Haelfte:
+    // Zeugen tests/lib/schild.test.ts:106/:108; Wolken-Haelfte: Zeuge
+    // tests/kette-deckt-nur-schreibwege.test.ts:92 — der Wolken-Chat schreibt die Kette,
+    // bevor der Anbieter gefragt wird, Zielhost .invalid stirbt am Namensaufloeser).
+    // Zaehler 100 -> 102, ohne 82 -> 80 (Anteil 45,1 -> 44,0 %). Nenner 182, Einheiten 571
+    // und schmale Klasse 35 bleiben. Die Wache lebt in tests/doku-plattform.test.ts,
+    // describe "P164: ..." (gleiche Lesart wie P162/P163: Satz-Riss und zeug-Regel
+    // importiert).
     expect(absoluten, "der Nenner ist nicht mehr 182 — der Riss oder die Klasse hat sich bewegt").toBe(182);
-    expect(mit, `${mit} von ${absoluten} nennen ein Messzeug — erwartet war 100`).toBe(100);
+    expect(mit, `${mit} von ${absoluten} nennen ein Messzeug — erwartet war 102`).toBe(102);
     expect(mit / absoluten, "Anteil ohne Nenner ist ein Urteil").toBeGreaterThan(0.3);
     expect(maschine.source.length, "die schmale Klasse wurde nicht mitgeändert").toBeGreaterThan(10);
   });

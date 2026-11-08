@@ -75,6 +75,26 @@ describe("die Kette schreibt, wo die Maschine schreibt", () => {
     expect(res.status, `Text: ${res.text.slice(0, 160)}`).toBeLessThan(300);
     expect(eintraege() - vorher, "POST /api/mcp/search protokolliert ausdruecklich (mcp.ts:80)").toBe(1);
   });
+
+  // P164 — README:180 haelt "every cloud request is in the audit log". Die Route
+  // protokolliert in chatSchutz (server/router/chat.ts:86), BEVOR der Anbieter
+  // gefragt wird. Ziel ist ein .invalid-Host (RFC 6761): der Upstream stirbt am
+  // Namensaufloeser, kein echtes Netz, und der Eintrag war schon vorher da.
+  it("der Wolken-Chat schreibt die Kette, bevor der Anbieter gefragt wird", async () => {
+    const vorher = eintraege();
+    const res = await request(app).post("/api/chat").send({
+      protocol: "openai",
+      baseUrl: "https://anbieter-unerreichbar.invalid/v1",
+      apiKey: "pruef-schluessel",
+      model: "pruef-modell",
+      messages: [{ role: "user", content: "hi" }],
+    });
+    expect(eintraege() - vorher, `Status ${res.status} — jede Wolken-Anfrage protokolliert (server/router/chat.ts:86)`).toBe(1);
+    const eintragliste = auditListe(store, { limit: 500 }).entries;
+    const letzte = eintragliste[eintragliste.length - 1];
+    expect(letzte.action, "das Protokoll nennt die Wolken-Anfrage als solche").toBe("cloud chat");
+    expect(letzte.target ?? "", "das Protokoll nennt den Anbieter").toContain("anbieter-unerreichbar.invalid");
+  });
 });
 
 describe("die Aussendung sagt nicht mehr als die Kette haelt", () => {

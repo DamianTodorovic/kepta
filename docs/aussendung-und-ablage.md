@@ -262,7 +262,7 @@ in der Kette**, und der README-Satz war breiter als die Maschine.
 Geheilt am Wort, nicht am Code (ein Code-Flicken wäre eine zweite ungetauschte Fassung): der Satz
 nennt jetzt die Kanäle, die gemessen sind — jede Änderung an der Wissensbasis und jeder Ruf durch
 die MCP-Tür, ihre Suchen eingeschlossen — und sagt offen, dass ein nackter HTTP-Leseweg keinen
-Ketten-Eintrag hinterlässt. Die Wache darüber (`tests/kette-deckt-nur-schreibwege.test.ts:80-99`)
+Ketten-Eintrag hinterlässt. Die Wache darüber (`tests/kette-deckt-nur-schreibwege.test.ts:100-119`)
 liest die vier Aussendungstexte, verlangt, dass der Satz überhaupt vorkommt (sonst ist sie taub),
 und verbietet die alte Form. Vor der Heilung rot: 1 Satz; nachher grün, und „every AI access"
 steht in keinem der vier Texte mehr — auch nicht im Kern-Repo (dort gemessen: 0 Funde).

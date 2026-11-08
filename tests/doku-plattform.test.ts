@@ -442,3 +442,26 @@ describe("P163: Audit-Log-Paar, Acht-Werkzeuge-Zusage und Einzel-GET-Absage nenn
     expect(nackt, `diese Saetze stehen ohne Zeugen da:\n  ${nackt.join("\n  ").slice(0, 400)}`).toEqual([]);
   });
 });
+
+// P164 — die zwei naechsten Kaufwirkungs-Saetze: der DELETE/restore-Satz (README:253,
+// Satz 2, "are the only methods on that path") und der Rest-Satz der Audit-Klasse
+// (README:180, "Both protections are on by default, and every cloud request is in the
+// audit log"). Der Wolken-Chat-Zeuge lebt neu in tests/kette-deckt-nur-schreibwege.
+// test.ts (chatSchutz protokolliert, bevor der Anbieter gefragt wird); der
+// Default-Zeuge stand schon in tests/lib/schild.test.ts:106. Gleiche Lesart wie
+// P162/P163: Satz-Riss und zeug-Regel importiert, nicht nachgebaut.
+describe("P164: DELETE/restore-Satz und Both-protections-Satz nennen ihre Zeugen", () => {
+  const p164Saetze = () =>
+    satzeAusMarkdown(README).filter((s) =>
+      /only methods on that path|Both protections are on by default/.test(s),
+    );
+
+  it("die zwei Saetze werden gefunden — die Sonde meldet keinen Erfolg fuer Ungelesenes", () => {
+    expect(p164Saetze().length, `die Sonde findet ${p164Saetze().length} P164-Saetze`).toBe(2);
+  });
+
+  it("jeder der zwei traegt sein Messzeug im selben Satz", () => {
+    const nackt = p164Saetze().filter((s) => !zeug.test(s));
+    expect(nackt, `diese Saetze stehen ohne Zeugen da:\n  ${nackt.join("\n  ").slice(0, 400)}`).toEqual([]);
+  });
+});
