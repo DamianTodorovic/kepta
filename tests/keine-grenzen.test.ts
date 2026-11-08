@@ -231,3 +231,55 @@ describe("P153 — die Schutzkante steht in der Aussendung, mit der Zahl des Lim
         ohneKante.map((a) => "  " + a.trim().split("\n")[0].slice(0, 120)).join("\n")).toEqual([]);
   });
 });
+
+// P160 — der Leitsatz trägt seinen Zeugen selbst.
+//
+// Die Absätze der Gratis-Zusage sind reich bewaffnet: README.md:355 nennt die zwölf
+// Nachrichten, die einundzwanzig Speicherungen, die Schutzkante und die tote Lizenzroute.
+// Aber der **Leitsatz** — "No keys, no limits, no upgrade panel." — steht als eigener Satz
+// da, und der Zensus zählt Sätze, nicht Absätze. Wer nur die Fettschrift liest (und das ist
+// die Lesart, für die sie gesetzt ist), bekommt eine Behauptung ohne Maschine. Dasselbe in
+// den Release-Notes, englisch und deutsch, und in ihrem jeweiligen Folgesatz.
+//
+// Dieser Block hält die fünf Leitsätze an derselben Regel, die der Zensus an alle legt:
+// ein Messzeug im **selben** Satz. Er fährt den importierten Riss und die importierte
+// Zeug-Regel, nicht einen Nachbau. Die Helfer werden im Fall geholt, nicht oben importiert:
+// vier Blätter zeigen auf Zeilen dieser Datei (:72, :85, :102, :116, :140), und zwei neue
+// Kopfzeilen würden jeden dieser Zeiger verrutschen (P158, Fehler 4).
+describe("P160: die Leitsätze der Gratis-Zusage nennen ihre Wache im selben Satz", () => {
+  const LEITSAETZE = [
+    { datei: "README.md", leder: /No keys, no limits, no upgrade panel/, zeuge: /tests\/keine-grenzen\.test\.ts:(102|116)/ },
+    { datei: ".github/release-notes.md", leder: /No license key is needed to run K3PTA/, zeuge: /tests\/keine-grenzen\.test\.ts:(102|116)/ },
+    { datei: ".github/release-notes.md", leder: /K3PTA braucht keinen Schl/, zeuge: /tests\/keine-grenzen\.test\.ts:(102|116)/ },
+    { datei: ".github/release-notes.md", leder: /The download is K3PTA Core and it is free/, zeuge: /tests\/keine-grenzen\.test\.ts:(72|85|107)/ },
+    { datei: ".github/release-notes.md", leder: /Der Download ist K3PTA Core und gratis/, zeuge: /tests\/keine-grenzen\.test\.ts:(72|85|107)/ },
+  ];
+
+  async function leitsaetze(): Promise<{ datei: string; satz: string; zeuge: RegExp }[]> {
+    const { satzeAusMarkdown } = await import("../docs/belege/aussendungsatz-0611/satz-riss.mjs");
+    const gefunden: { datei: string; satz: string; zeuge: RegExp }[] = [];
+    for (const eintrag of LEITSAETZE) {
+      const text = fs.readFileSync(path.join(process.cwd(), eintrag.datei), "utf8");
+      const treffer = (satzeAusMarkdown(text) as string[]).filter((s) => eintrag.leder.test(s));
+      expect(treffer.length, `${eintrag.datei}: der Leitsatz ${eintrag.leder} wird ${treffer.length}-mal gefunden — die Sonde darf nicht für Ungelesenes Erfolg melden`).toBe(1);
+      gefunden.push({ datei: eintrag.datei, satz: treffer[0]!, zeuge: eintrag.zeuge });
+    }
+    return gefunden;
+  }
+
+  it("die fünf Leitsätze werden gefunden, je genau einmal", async () => {
+    expect((await leitsaetze()).length, "die Liste der Leitsätze ist leer").toBe(5);
+  });
+
+  it("jeder Leitsatz nennt ein Messzeug im selben Satz — und die Wache, die ihn hält", async () => {
+    const { zeug } = await import("../docs/belege/aussendungsatz-0611/messregel.mjs");
+    const nackt: string[] = [];
+    const falsch: string[] = [];
+    for (const { datei, satz, zeuge } of await leitsaetze()) {
+      if (!zeug.test(satz)) nackt.push(`${datei}: ${satz.slice(0, 110)}`);
+      else if (!zeuge.test(satz)) falsch.push(`${datei}: ${satz.slice(0, 110)}`);
+    }
+    expect(nackt, `diese Leitsätze behaupten ohne Messzeug:\n  ${nackt.join("\n  ")}`).toEqual([]);
+    expect(falsch, `diese Leitsätze nennen ein Messzeug, aber nicht die Wache, die ihre Klausel hält:\n  ${falsch.join("\n  ")}`).toEqual([]);
+  });
+});

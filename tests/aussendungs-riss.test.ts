@@ -107,7 +107,7 @@ describe("P129, der Wortschatz: ein benanntes Instrument ist ein Messzeug", () =
     expect(zeug.test(einheiten[0]), "das Messzeug steht im selben Satz, wird aber nicht gesehen").toBe(true);
   });
 
-  it("am echten Bestand: 87 von 184 absoluten Behauptungen nennen ihr Messzeug", () => {
+  it("am echten Bestand: 94 von 184 absoluten Behauptungen nennen ihr Messzeug", () => {
     let absoluten = 0;
     let mit = 0;
     for (const datei of DATEIEN) {
@@ -157,8 +157,19 @@ describe("P129, der Wortschatz: ein benanntes Instrument ist ein Messzeug", () =
     // Architektur). Zwei Saetze berichtigt, fuenf Traeger mit dem Release-Zensus bewaffnet:
     // Zaehler 82 -> 87, Nenner 184 und Einheiten 585 bleiben, ohne Messzeug 102 -> 97
     // (Anteil 55,4 -> 52,7 %). README allein 69 -> 71 mit, release-notes 5 -> 8 mit.
+    // P160 (gemessen 8.11. 11:38:11 MEZ): der Census zaehlt Saetze, keine Absaetze — die
+    // Leitsaetze der Gratis-Zusage standen ohne EIGENES Messzeug, weil ihr Beweis hinter
+    // dem Punkt im Rest des Absatzes lag. Sieben Traeger bewaffnet: README.md:355 (die
+    // Gratis-Zusage, Zeugen tests/keine-grenzen.test.ts:102 und :116), README.md:403 und
+    // .github/release-notes.md:34 (die Rest-Downloads, Zeuge der Release-Zensus), die zwei
+    // Schluessel-Saetze in release-notes:12 und ihre deutschen Zwillinge in :73 (Zeugen
+    // tests/keine-grenzen.test.ts:107, :72 und :85). Zaehler 87 -> 94, Nenner 184 und
+    // Einheiten 585 bleiben, ohne Messzeug 97 -> 90 (Anteil 52,7 -> 48,9 %). README allein
+    // 71 -> 73 mit, release-notes 8 -> 13 mit. Die Wache dafuer lebt in
+    // tests/keine-grenzen.test.ts (fuenf Leitsaetze je genau einmal, jeder mit seiner Wache)
+    // und tests/doku-plattform.test.ts (drei Rest-Traeger mit dem Zensus).
     expect(absoluten, "der Nenner ist nicht mehr 184 — der Riss oder die Klasse hat sich bewegt").toBe(184);
-    expect(mit, `${mit} von ${absoluten} nennen ein Messzeug — erwartet war 87`).toBe(87);
+    expect(mit, `${mit} von ${absoluten} nennen ein Messzeug — erwartet war 94`).toBe(94);
     expect(mit / absoluten, "Anteil ohne Nenner ist ein Urteil").toBeGreaterThan(0.3);
     expect(maschine.source.length, "die schmale Klasse wurde nicht mitgeändert").toBeGreaterThan(10);
   });

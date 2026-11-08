@@ -3,8 +3,8 @@
   "README.md": {
    "saetze": 423,
    "absolut": 139,
-   "mit_zeug": 71,
-   "ohne_zeug": 68
+   "mit_zeug": 73,
+   "ohne_zeug": 66
   },
   "SECURITY.md": {
    "saetze": 33,
@@ -21,21 +21,21 @@
   ".github/release-notes.md": {
    "saetze": 52,
    "absolut": 20,
-   "mit_zeug": 8,
-   "ohne_zeug": 12
+   "mit_zeug": 13,
+   "ohne_zeug": 7
   }
  },
  "zusammen": {
   "saetze": 585,
   "absolut": 184,
-  "mit_zeug": 87,
-  "ohne_zeug": 97
+  "mit_zeug": 94,
+  "ohne_zeug": 90
  },
  "abschnitt": {
   "README.md": {
    "absolut": 139,
-   "mit_zeug": 66,
-   "ohne_zeug": 73
+   "mit_zeug": 65,
+   "ohne_zeug": 74
   },
   "SECURITY.md": {
    "absolut": 9,
@@ -49,14 +49,14 @@
   },
   ".github/release-notes.md": {
    "absolut": 20,
-   "mit_zeug": 9,
-   "ohne_zeug": 11
+   "mit_zeug": 8,
+   "ohne_zeug": 12
   }
  },
  "zusammen_abschnitt": {
   "absolut": 184,
-  "mit_zeug": 78,
-  "ohne_zeug": 106
+  "mit_zeug": 76,
+  "ohne_zeug": 108
  },
  "maschinell_pruefbar": {
   "README.md": {
@@ -491,10 +491,6 @@
   },
   {
    "datei": "README.md",
-   "satz": "No keys, no limits, no upgrade panel."
-  },
-  {
-   "datei": "README.md",
    "satz": "K3PTA's promise is a memory that is yours without supervision, so the whole mechanism was removed rather than tuned: no route, no header, no anchor, no strings."
   },
   {
@@ -532,10 +528,6 @@
   {
    "datei": "README.md",
    "satz": "No other platform has a downloadable app, and nothing here pretends otherwise."
-  },
-  {
-   "datei": "README.md",
-   "satz": "Windows or Linux | No app file is published."
   },
   {
    "datei": "README.md",
@@ -647,23 +639,11 @@
   },
   {
    "datei": ".github/release-notes.md",
-   "satz": "No license key is needed to run K3PTA."
-  },
-  {
-   "datei": ".github/release-notes.md",
-   "satz": "The download is K3PTA Core and it is free, and nothing in it is metered by a key: no day count, no cap on the endpoints that depends on a licence, no counter in the window."
-  },
-  {
-   "datei": ".github/release-notes.md",
    "satz": "The fastest way through, and the one that works on every macOS version:"
   },
   {
    "datei": ".github/release-notes.md",
    "satz": "Note: right-clicking the app and choosing *Open* no longer works — Apple removed that route in macOS 15."
-  },
-  {
-   "datei": ".github/release-notes.md",
-   "satz": "Nothing to install yet: no Windows or Linux installer is published."
   },
   {
    "datei": ".github/release-notes.md",
@@ -676,14 +656,6 @@
   {
    "datei": ".github/release-notes.md",
    "satz": "All data stays local in ~/.kepta/ — no account, no cloud, no telemetry."
-  },
-  {
-   "datei": ".github/release-notes.md",
-   "satz": "K3PTA braucht keinen Schlüssel zum Laufen."
-  },
-  {
-   "datei": ".github/release-notes.md",
-   "satz": "Der Download ist K3PTA Core und gratis, und nichts darin ist begrenzt durch eine Lizenz: kein Tageszähler, keine Kappe an den Endpunkten, die von einem Schlüssel abhängt, kein Zähler in der Fläche."
   },
   {
    "datei": ".github/release-notes.md",

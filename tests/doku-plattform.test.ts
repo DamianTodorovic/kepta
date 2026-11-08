@@ -381,3 +381,21 @@ describe("P159: die veröffentlichten Namen und die Zusage darüber", () => {
     }
   });
 });
+
+// P160 — die zwei Rest-Träger der Download-Klasse. P159 hat die Namens-Zusage berichtigt
+// und vier Plattform-Sätze bewaffnet; diese zwei standen weiter ohne Zeugen im Satz:
+// README.md:403 (die Tabellenzelle) und .github/release-notes.md:34. Die dritte Zeile, die
+// die Sonde findet (.github/release-notes.md:8), trägt den Zeugen schon — sie zählt mit,
+// damit die Grundgesamtheit nicht auf das bequeme Paar schrumpft.
+describe("P160: auch die Rest-Träger der Download-Klasse nennen den Release-Zensus", () => {
+  it("die drei Zeilen über den fehlenden fremden Installer werden gefunden", () => {
+    const traeger = zeilenMit(/No app file is published|no Windows or Linux installer is published/);
+    expect(traeger.length, "die Sonde findet die Rest-Träger nicht — sonst meldet sie Erfolg für Ungelesenes").toBe(3);
+  });
+
+  it("jede dieser Zeilen nennt den Release-Zensus im selben Satz", () => {
+    const traeger = zeilenMit(/No app file is published|no Windows or Linux installer is published/);
+    const nackt = traeger.filter((t) => !t.text.includes(RELEASE_ZENSUS));
+    expect(nackt.map((t) => `${t.datei}:${t.zeile}`), "diese Zeilen versprechen einen fehlenden Installer ohne Zeugen").toEqual([]);
+  });
+});

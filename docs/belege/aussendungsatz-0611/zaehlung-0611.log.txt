@@ -1,4 +1,4 @@
-Zeit: 7.11.2026, 21:23:59 MEZ
+Zeit: 8.11.2026, 11:38:11 MEZ
 Dateien: README.md, SECURITY.md, ROADMAP.md, .github/release-notes.md — Einheiten ueber 25 Zeichen.
 Riss: satz-riss.mjs (P128, markdown-fest). Vorher: Satzende + Leerzeichen ueber dem
 ganzen Text, wodurch Aufzaehlungen, Tabellenzeilen und `<summary>`-Kuelsen als EIN
@@ -9,23 +9,23 @@ Satz zaehlten. Unter beiden Naivlingen, in diesem Lauf nachgerechnet:
 
 | Datei | Saetze | absolute | mit Messzeug | ohne Messzeug | Anteil ohne |
 |---|---|---|---|---|---|
-| `README.md` | 423 | 139 | 71 | 68 | 48.9 % |
+| `README.md` | 423 | 139 | 73 | 66 | 47.5 % |
 | `SECURITY.md` | 33 | 9 | 4 | 5 | 55.6 % |
 | `ROADMAP.md` | 77 | 16 | 4 | 12 | 75.0 % |
-| `.github/release-notes.md` | 52 | 20 | 8 | 12 | 60.0 % |
-| **zusammen** | **585** | **184** | **87** | **97** | **52.7 %** |
+| `.github/release-notes.md` | 52 | 20 | 13 | 7 | 35.0 % |
+| **zusammen** | **585** | **184** | **94** | **90** | **48.9 %** |
 
 Nenner fuer den Anteil: 184 absolute Behauptungen in 585 Saetzen der vier Texte.
 
 Zweite Lesung — der Zeuge darf im selben Abschnitt stehen (Absatz, Tabelle, Aufzaehlung):
 | Datei | absolute | mit Messzeug | ohne Messzeug |
 |---|---|---|---|
-| `README.md` | 139 | 66 | 73 |
+| `README.md` | 139 | 65 | 74 |
 | `SECURITY.md` | 9 | 3 | 6 |
 | `ROADMAP.md` | 16 | 0 | 16 |
-| `.github/release-notes.md` | 20 | 9 | 11 |
-| zusammen | 184 | 78 | 106 |
-   mit Messzeug im selben Abschnitt: 78 von 184 = 42.4 % (gegen 87 von 184 = 47.3 % in der engen Lesung).
+| `.github/release-notes.md` | 20 | 8 | 12 |
+| zusammen | 184 | 76 | 108 |
+   mit Messzeug im selben Abschnitt: 76 von 184 = 41.3 % (gegen 94 von 184 = 51.1 % in der engen Lesung).
 
 Die schmalere Klasse — Saetze, die ein Werkzeug widerlegen koennte (never/always/cannot/0 %/100 %):
    README.md                  30 von 139 absoluten
@@ -74,7 +74,7 @@ Zwei von ihnen nachgegriffen, im selben Lauf:
    "no screenshot of it here yet" (Semantic-Ansicht): README nennt 20 Bilder (12 in Markdown, 8 als <img alt>), davon 0 mit "Semantic"; der Satz steht noch da — haltbar.
    "no embedding ever travels into the view": 8 von 8 benannten Flaechen-Dateien gelesen, zusammen 0 Nennung(en) "embedding"; das Wort liegt in 34 Test-Dateien des Repos. Fehlende Dateien: keine.
 
-Die 97 ohne Messzeug, in Lesereihenfolge der Dateien (erste 40):
+Die 90 ohne Messzeug, in Lesereihenfolge der Dateien (erste 40):
    [README.md] Your AI forgets you after every chat.
    [README.md] Desktop app · no cloud · no account · encrypted at rest SQLite · hybrid retrieval · knowledge graph · MCP
    [README.md] The time slider replays eighteen months of a fictional advisory firm, and because every note carries a validity window, past moments show exactly what was true then.
