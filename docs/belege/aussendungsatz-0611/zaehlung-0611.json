@@ -3,8 +3,8 @@
   "README.md": {
    "saetze": 411,
    "absolut": 137,
-   "mit_zeug": 73,
-   "ohne_zeug": 64
+   "mit_zeug": 75,
+   "ohne_zeug": 62
   },
   "SECURITY.md": {
    "saetze": 33,
@@ -28,8 +28,8 @@
  "zusammen": {
   "saetze": 571,
   "absolut": 182,
-  "mit_zeug": 94,
-  "ohne_zeug": 88
+  "mit_zeug": 96,
+  "ohne_zeug": 86
  },
  "abschnitt": {
   "README.md": {
@@ -312,14 +312,6 @@
   {
    "datei": "README.md",
    "satz": "Desktop app · no cloud · no account · encrypted at rest SQLite · hybrid retrieval · knowledge graph · MCP"
-  },
-  {
-   "datei": "README.md",
-   "satz": "The time slider replays eighteen months of a fictional advisory firm, and because every note carries a validity window, past moments show exactly what was true then."
-  },
-  {
-   "datei": "README.md",
-   "satz": "Both films were recorded on 18 September 2026 with npm run screenshots on an invented demo corpus — no real data, no real people."
   },
   {
    "datei": "README.md",

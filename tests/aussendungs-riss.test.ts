@@ -107,7 +107,7 @@ describe("P129, der Wortschatz: ein benanntes Instrument ist ein Messzeug", () =
     expect(zeug.test(einheiten[0]), "das Messzeug steht im selben Satz, wird aber nicht gesehen").toBe(true);
   });
 
-  it("am echten Bestand: 94 von 182 absoluten Behauptungen nennen ihr Messzeug", () => {
+  it("am echten Bestand: 96 von 182 absoluten Behauptungen nennen ihr Messzeug", () => {
     let absoluten = 0;
     let mit = 0;
     for (const datei of DATEIEN) {
@@ -175,8 +175,17 @@ describe("P129, der Wortschatz: ein benanntes Instrument ist ein Messzeug", () =
     // 585 -> 571, Nenner 184 -> 182, Zaehler 94 bleibt, ohne Messzeug 90 -> 88 (Anteil
     // 48,9 -> 48,4 %). Kein bewaffneter Satz verliess den Zaehler. Die Wache lebt hier als
     // describe "P161, der Zaun" (Fall fuer den mermaid-Zaun, Fall am echten Bestand).
+    // P162 (gemessen 8.11. 12:23:15 MEZ mit dem Zaehler selbst): die zwei Zeit-Film-Saetze
+    // in README:17 nennen jetzt ihre Zeugen — die Zeitreise-Zusage (Zeuge
+    // tests/engine.test.ts:260, asOf-Abfrage: alt kommt zurueck, neu nicht) und die
+    // Demo-Korpus-Zusage (Zeugen scripts/screenshots.mjs und scripts/demo-korpus.mjs).
+    // Zaehler 94 -> 96, Nenner 182 und Einheiten 571 bleiben, ohne Messzeug 88 -> 86
+    // (Anteil 48,4 -> 47,3 %). Die schmale Klasse bleibt 35 — kein Film-Satz ist
+    // maschinell widerlegbar. Die Wache lebt in tests/doku-plattform.test.ts, describe
+    // "P162: die zwei Zeit-Film-Saetze nennen ihre Zeugen" (liest mit dem Satz-Riss und
+    // der zeug-Regel des Zensus, nicht mit einem zweiten Muster).
     expect(absoluten, "der Nenner ist nicht mehr 182 — der Riss oder die Klasse hat sich bewegt").toBe(182);
-    expect(mit, `${mit} von ${absoluten} nennen ein Messzeug — erwartet war 94`).toBe(94);
+    expect(mit, `${mit} von ${absoluten} nennen ein Messzeug — erwartet war 96`).toBe(96);
     expect(mit / absoluten, "Anteil ohne Nenner ist ein Urteil").toBeGreaterThan(0.3);
     expect(maschine.source.length, "die schmale Klasse wurde nicht mitgeändert").toBeGreaterThan(10);
   });

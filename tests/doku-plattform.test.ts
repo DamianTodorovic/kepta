@@ -399,3 +399,24 @@ describe("P160: auch die Rest-Träger der Download-Klasse nennen den Release-Zen
     expect(nackt.map((t) => `${t.datei}:${t.zeile}`), "diese Zeilen versprechen einen fehlenden Installer ohne Zeugen").toEqual([]);
   });
 });
+
+// P162 — die zwei Zeit-Film-Saetze in README:17. Beide sind im Nenner des Zensus
+// (absolut via "every" und "no") und standen ohne Messzeug. Die Wache liest mit der
+// LESART DES ZENSUS selbst — Satz-Riss und zeug-Regel importiert, nicht nachgebaut
+// (Lehre P124/P128): was hier gruen ist, zaehlt `zaehlen.mjs` als bewaffnet.
+import { satzeAusMarkdown } from "../docs/belege/aussendungsatz-0611/satz-riss.mjs";
+import { zeug } from "../docs/belege/aussendungsatz-0611/messregel.mjs";
+
+describe("P162: die zwei Zeit-Film-Saetze nennen ihre Zeugen", () => {
+  const filmSaetze = () =>
+    satzeAusMarkdown(README).filter((s) => /past moments show exactly what was true then|recorded on 18 September 2026/.test(s));
+
+  it("die zwei Saetze werden gefunden — die Sonde meldet keinen Erfolg fuer Ungelesenes", () => {
+    expect(filmSaetze().length, `die Sonde findet ${filmSaetze().length} Film-Saetze`).toBe(2);
+  });
+
+  it("jeder der beiden traegt sein Messzeug im selben Satz", () => {
+    const nackt = filmSaetze().filter((s) => !zeug.test(s));
+    expect(nackt, `diese Film-Saetze stehen ohne Zeugen da:\n  ${nackt.join("\n  ").slice(0, 400)}`).toEqual([]);
+  });
+});

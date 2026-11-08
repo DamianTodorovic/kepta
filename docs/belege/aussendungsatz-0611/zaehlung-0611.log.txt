@@ -1,4 +1,4 @@
-Zeit: 8.11.2026, 12:08:16 MEZ
+Zeit: 8.11.2026, 12:23:15 MEZ
 Dateien: README.md, SECURITY.md, ROADMAP.md, .github/release-notes.md — Einheiten ueber 25 Zeichen.
 Riss: satz-riss.mjs (P128, markdown-fest). Vorher: Satzende + Leerzeichen ueber dem
 ganzen Text, wodurch Aufzaehlungen, Tabellenzeilen und `<summary>`-Kuelsen als EIN
@@ -9,11 +9,11 @@ Satz zaehlten. Unter beiden Naivlingen, in diesem Lauf nachgerechnet:
 
 | Datei | Saetze | absolute | mit Messzeug | ohne Messzeug | Anteil ohne |
 |---|---|---|---|---|---|
-| `README.md` | 411 | 137 | 73 | 64 | 46.7 % |
+| `README.md` | 411 | 137 | 75 | 62 | 45.3 % |
 | `SECURITY.md` | 33 | 9 | 4 | 5 | 55.6 % |
 | `ROADMAP.md` | 77 | 16 | 4 | 12 | 75.0 % |
 | `.github/release-notes.md` | 50 | 20 | 13 | 7 | 35.0 % |
-| **zusammen** | **571** | **182** | **94** | **88** | **48.4 %** |
+| **zusammen** | **571** | **182** | **96** | **86** | **47.3 %** |
 
 Nenner fuer den Anteil: 182 absolute Behauptungen in 571 Saetzen der vier Texte.
 
@@ -25,7 +25,7 @@ Zweite Lesung — der Zeuge darf im selben Abschnitt stehen (Absatz, Tabelle, Au
 | `ROADMAP.md` | 16 | 0 | 16 |
 | `.github/release-notes.md` | 20 | 8 | 12 |
 | zusammen | 182 | 76 | 106 |
-   mit Messzeug im selben Abschnitt: 76 von 182 = 41.8 % (gegen 94 von 182 = 51.6 % in der engen Lesung).
+   mit Messzeug im selben Abschnitt: 76 von 182 = 41.8 % (gegen 96 von 182 = 52.7 % in der engen Lesung).
 
 Die schmalere Klasse — Saetze, die ein Werkzeug widerlegen koennte (never/always/cannot/0 %/100 %):
    README.md                  30 von 137 absoluten
@@ -74,11 +74,9 @@ Zwei von ihnen nachgegriffen, im selben Lauf:
    "no screenshot of it here yet" (Semantic-Ansicht): README nennt 20 Bilder (12 in Markdown, 8 als <img alt>), davon 0 mit "Semantic"; der Satz steht noch da — haltbar.
    "no embedding ever travels into the view": 8 von 8 benannten Flaechen-Dateien gelesen, zusammen 0 Nennung(en) "embedding"; das Wort liegt in 34 Test-Dateien des Repos. Fehlende Dateien: keine.
 
-Die 88 ohne Messzeug, in Lesereihenfolge der Dateien (erste 40):
+Die 86 ohne Messzeug, in Lesereihenfolge der Dateien (erste 40):
    [README.md] Your AI forgets you after every chat.
    [README.md] Desktop app · no cloud · no account · encrypted at rest SQLite · hybrid retrieval · knowledge graph · MCP
-   [README.md] The time slider replays eighteen months of a fictional advisory firm, and because every note carries a validity window, past moments show exactly what was true then.
-   [README.md] Both films were recorded on 18 September 2026 with npm run screenshots on an invented demo corpus — no real data, no real people.
    [README.md] The machine state printed in the same artefacts says why no millisecond there is claimed as a verdict.
    [README.md] What a frame costs at each size is timed in [docs/graph-kosten.md](docs/graph-kosten.md), not claimed in this caption — a millisecond number is only worth the quiet machine that produced it.
    [README.md] The third view, *Semantic*, places the same notes by what their texts mean — no screenshot of it here yet.
@@ -115,3 +113,5 @@ Die 88 ohne Messzeug, in Lesereihenfolge der Dateien (erste 40):
    [README.md] - All data in ~/.kepta/ — one SQLite file that belongs to you
    [README.md] - No account, no telemetry, no phone-home — and nothing to activate: the app validates no key, so there is no check of any kind to call home for.
    [README.md] - With no AI configured, not a single byte leaves the machine
+   [README.md] No service in between, no account, no telemetry.
+   [README.md] Your memories are stored only in that encrypted SQLite file — there is no server of mine for them to reach.
