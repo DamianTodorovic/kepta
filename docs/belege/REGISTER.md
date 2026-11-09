@@ -9,7 +9,7 @@ zitiert, und verlangt die Zahl dort; ein Beleg, den `git ls-files` nicht kennt, 
 Die Tabelle unten ist ein **Siegel** — Bytezahl und sha256 sagen, dass dieser Beleg dieser Lauf
 ist. Bis zum 7.11. hatte dieses Siegel keinen Pruefer. Seitdem vergleicht
 `scripts/helfer/belege-siegel.mjs` in jedem Suite-Lauf jede ausgewiesene Zeile gegen die Datei auf
-der Platte, gefahren von `tests/belege-siegel.test.ts:112` (Grundgesamtheit: 143 Siegel-Zeilen,
+der Platte, gefahren von `tests/belege-siegel.test.ts:112` (Grundgesamtheit: 157 Siegel-Zeilen,
 gemessen 10:53:35 MEZ von demselben Fall — dieselbe Zahl wie um 02:57:57, weil P154 nur Siegel
 nachzog; zuvor 126 um 01:39:50, und die zwei neuen sind der Historien-Beleg P147
 mit seinem Generierer). Der erste Lauf dieses Pruefers fand 4 Befunde auf 2 Zeilen:
@@ -264,6 +264,20 @@ Schlag prueft `blockKopfFunde` aus `scripts/helfer/belege-siegel.mjs` genau das,
 | `konkurrenz-0911/t1-unsere-193-1952.log.txt` | 1130 B | `5d6efe2e951fd148…` |
 | `konkurrenz-0911b/ergebnis-mem0-bgem3-0911-eins.json` | 592 B | `0d764704f1311ef0…` |
 | `konkurrenz-0911b/ergebnis-mem0-bgem3-0911-zwei.json` | 591 B | `9d199857ba3014c4…` |
+| `konkurrenz-0911c/ergebnis-fts5-0911-oder-eins.json` | 631 B | `2954aeb7defd5c05…` |
+| `konkurrenz-0911c/ergebnis-fts5-0911-oder-zwei.json` | 631 B | `25209831124b5509…` |
+| `konkurrenz-0911c/ergebnis-fts5-0911-roh-eins.json` | 569 B | `477a9d9f948a7a2b…` |
+| `konkurrenz-0911c/ergebnis-fts5-0911-roh-zwei.json` | 569 B | `f1596f0c132b8750…` |
+| `konkurrenz-0911c/ergebnis-fts5-0911-stopp-eins.json` | 569 B | `7eb34f47ef1547f1…` |
+| `konkurrenz-0911c/ergebnis-fts5-0911-stopp-zwei.json` | 569 B | `f1596f0c132b8750…` |
+| `konkurrenz-0911c/korpus-aus-repo.json` | 16983 B | `982234a1ba4b50e7…` |
+| `konkurrenz-0911c/lauf-fts5.mjs` | 6019 B | `8c9aa69493139da4…` |
+| `konkurrenz-0911c/spur-fts5-0911-oder-eins.jsonl` | 7611 B | `a9ea40de39064b6b…` |
+| `konkurrenz-0911c/spur-fts5-0911-oder-zwei.jsonl` | 7607 B | `7ad930278c719414…` |
+| `konkurrenz-0911c/spur-fts5-0911-roh-eins.jsonl` | 7188 B | `1074c07e86cd10e2…` |
+| `konkurrenz-0911c/spur-fts5-0911-roh-zwei.jsonl` | 7192 B | `982e854ab389ab26…` |
+| `konkurrenz-0911c/spur-fts5-0911-stopp-eins.jsonl` | 7184 B | `0f547970bd9d121d…` |
+| `konkurrenz-0911c/spur-fts5-0911-stopp-zwei.jsonl` | 7192 B | `c683cfe90eb0114b…` |
 | `konkurrenz-0911b/korpus-aus-repo.json` | 16983 B | `982234a1ba4b50e7…` |
 | `konkurrenz-0911b/lauf-cognee-0911.log.txt` | 1270 B | `c86e61b9823f4077…` |
 | `konkurrenz-0911b/lauf-cognee.py` | 6375 B | `97f0e86d18799449…` |

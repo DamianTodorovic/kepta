@@ -1,0 +1,29 @@
+{
+ "lauf": "fts5-0911-zwei",
+ "zeit": "20:24:13",
+ "werkzeug": "SQLite FTS5 (3.53.2)",
+ "konfiguration": {
+  "tokenizer": "unicode61 (Standard)",
+  "semantics": "implizites UND",
+  "rang": "bm25 (Standard)",
+  "indexierter_text": "Notiz-Text",
+  "top_k": 5
+ },
+ "korpus": {
+  "notizen": 58,
+  "anfragen": 45
+ },
+ "hit1": 3,
+ "hit1_prozent": 6.7,
+ "recall5_in_den_5": 3,
+ "recall5_prozent": 6.7,
+ "leere_listen": 42,
+ "nach_kategorie": {
+  "lexikalisch": "0/25",
+  "umschreibung": "0/10",
+  "graph": "3/3",
+  "ablenkung": "0/4",
+  "temporal": "0/3"
+ },
+ "dauer_sek": 0
+}

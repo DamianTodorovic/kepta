@@ -1,0 +1,829 @@
+{
+ "korpus": [
+  {
+   "id": "m01",
+   "text": "Die Produktions-App läuft auf Hetzner CPX31, Deploy via PM2 und GitHub Actions. Domain kepta.app über Cloudflare.",
+   "titel": "Server Deployment",
+   "tags": [
+    "devops",
+    "server"
+   ]
+  },
+  {
+   "id": "m02",
+   "text": "PostgreSQL 17 für die Hauptdatenbank, Redis für Sessions und Caching. Backups täglich 3 Uhr.",
+   "titel": "Datenbank Auswahl",
+   "tags": [
+    "datenbank",
+    "devops"
+   ]
+  },
+  {
+   "id": "m03",
+   "text": "Alex wohnt in Hamburg Altona.",
+   "titel": "Wohnort",
+   "tags": [
+    "personal"
+   ]
+  },
+  {
+   "id": "m04",
+   "text": "Alex ist im August 2026 nach Leipzig umgezogen, Wohnort jetzt Leipzig Suedvorstadt.",
+   "titel": "Wohnort aktuell",
+   "tags": [
+    "personal"
+   ]
+  },
+  {
+   "id": "m05",
+   "text": "Axum Webserver mit Tokio Runtime, Fehlerbehandlung über anyhow und thiserror.",
+   "titel": "Rust Projekt Skeleton",
+   "tags": [
+    "rust",
+    "web"
+   ]
+  },
+  {
+   "id": "m06",
+   "text": "Spaghetti Carbonara: Guanciale, Pecorino Romano, Eigelb, schwarzer Pfeffer. Kein Sahne!",
+   "titel": "Rezept Carbonara",
+   "tags": [
+    "kochen",
+    "rezept"
+   ]
+  },
+  {
+   "id": "m07",
+   "text": "Umsatzsteuererklärung muss bis 31. Juli 2026 abgegeben werden.",
+   "titel": "Steuerabgabe Termin",
+   "tags": [
+    "finanzen",
+    " Deadlines"
+   ]
+  },
+  {
+   "id": "m08",
+   "text": "Frist der Umsatzsteuererklärung wurde auf 30. September 2026 verlängert, Steuerberater Weber kümmert sich.",
+   "titel": "Steuerabgabe verlängert",
+   "tags": [
+    "finanzen"
+   ]
+  },
+  {
+   "id": "m09",
+   "text": "Lexoffice wird für Rechnungen genutzt, API-Token im Passwort-Manager.",
+   "titel": "Buchhaltungssoftware",
+   "tags": [
+    "finanzen",
+    "tools"
+   ]
+  },
+  {
+   "id": "m10",
+   "text": "Bitwarden Vault, Master-Prompt 2FA via Yubikey. Notfall-Kit im Bankschließfach.",
+   "titel": "Passwort Manager",
+   "tags": [
+    "security",
+    "tools"
+   ]
+  },
+  {
+   "id": "m11",
+   "text": "KEPTA ist eine lokale Electron-App: React Frontend, Express Server, SQLite Speicher, MCP-Server für Agenten.",
+   "titel": "KEPTA Architektur",
+   "tags": [
+    "kepta",
+    "architektur"
+   ]
+  },
+  {
+   "id": "m12",
+   "text": "Model Context Protocol 2026-07-28: stateless core, server/discover, Streamable HTTP Transport, strukturierte Tool-Outputs.",
+   "titel": "MCP Protokoll",
+   "tags": [
+    "mcp",
+    "standards"
+   ]
+  },
+  {
+   "id": "m13",
+   "text": "nomic-embed-text für lokale Embeddings via Ollama, 1024 Dimensionen, 8k Kontext. Alternative: bge-m3 multilingual.",
+   "titel": "Embedding Modelle",
+   "tags": [
+    "ki",
+    "embeddings"
+   ]
+  },
+  {
+   "id": "m14",
+   "text": "Hybride Suche: BM25 aus FTS5 plus Vektor-KNN, fusioniert mit Reciprocal Rank Fusion k=60, Reranking via Cross-Encoder optional.",
+   "titel": "Suche Implementierung",
+   "tags": [
+    "kepta",
+    "suche"
+   ]
+  },
+  {
+   "id": "m15",
+   "text": "Entitäten und Relationen in SQLite, Wiki-Links [[So]] werden beim Speichern zu Knoten, Relationen haben Gültigkeit.",
+   "titel": "Knowledge Graph Setup",
+   "tags": [
+    "kepta",
+    "graph"
+   ]
+  },
+  {
+   "id": "m16",
+   "text": "Root-Passwort des Hetzner-Servers: im Bitwarden Eintrag 'Hetzner Prod'. SSH-Key-Login bevorzugt.",
+   "titel": "Server Passwort",
+   "tags": [
+    "security",
+    "server"
+   ]
+  },
+  {
+   "id": "m17",
+   "text": "Root-Passwort des Hetzner-Servers: im Bitwarden Eintrag 'Hetzner Prod'. SSH-Key-Login bevorzugt.",
+   "titel": "Server Passwort (Kopie)",
+   "tags": [
+    "security"
+   ]
+  },
+  {
+   "id": "m18",
+   "text": "Oma Hilde hat am 14. März Geburtstag, liebt Narzissen.",
+   "titel": "Oma's Geburtstag",
+   "tags": [
+    "familie"
+   ]
+  },
+  {
+   "id": "m19",
+   "text": "Montag Push, Dienstag Pull, Mittwoch Beine, Donnerstag Ruhetag. 5g Kreatin täglich.",
+   "titel": "Fitness Plan",
+   "tags": [
+    "sport",
+    "gesundheit"
+   ]
+  },
+  {
+   "id": "m20",
+   "text": "Tetanus-Auffrischung war 2019, nächste fällig 2029. Grippeimpfung jährlich im Oktober.",
+   "titel": "Impfpass",
+   "tags": [
+    "gesundheit"
+   ]
+  },
+  {
+   "id": "m21",
+   "text": "Für das CLI-Tool bleibt Rust, Go wurde verworfen weil Cross-Compilation zwar einfacher, aber Generics fehlen.",
+   "titel": "Go vs Rust Entscheidung",
+   "tags": [
+    "rust",
+    "go",
+    "entscheidung"
+   ]
+  },
+  {
+   "id": "m22",
+   "text": "Kfz-Versicherung bei HUK24, VW Golf, Kennzahl 4711, jährlich kündbar zum 31.12.",
+   "titel": "Autoversicherung",
+   "tags": [
+    "auto",
+    "finanzen"
+   ]
+  },
+  {
+   "id": "m23",
+   "text": "Vertragswerkstatt Nordring in Leipzig-Plagwitz, Terminvereinbarung online, Ersatzwagen auf Anfrage.",
+   "titel": "Auto Werkstatt",
+   "tags": [
+    "auto"
+   ]
+  },
+  {
+   "id": "m24",
+   "text": "Sperrmüll-Termin war am 15. Mai 2026, abgeschlossen.",
+   "titel": "Sperrmüll Abholung",
+   "tags": [
+    "haushalt"
+   ]
+  },
+  {
+   "id": "m25",
+   "text": "Keller wird im Oktober 2026 renoviert, Handwerker Anton Bauer, Kostenvoranschlag 8500 Euro.",
+   "titel": "Keller Renovierung",
+   "tags": [
+    "haushalt"
+   ]
+  },
+  {
+   "id": "m26",
+   "text": "Kontextfenster: GPT-5 400k Tokens, Claude Sonnet 1M, Gemini 2M. RAG reduziert Kosten um 90 Prozent.",
+   "titel": "LLM Kontext",
+   "tags": [
+    "ki",
+    "llm"
+   ]
+  },
+  {
+   "id": "m27",
+   "text": "Literaturnotizen und permanente Notizen, jede Notiz hat eine Quelle, Verlinkungen schlagen Kategorien.",
+   "titel": "Zettelkasten Methode",
+   "tags": [
+    "wissen",
+    "methode"
+   ]
+  },
+  {
+   "id": "m28",
+   "text": "Obsidian Vault liegt unter ~/Dokumente/Vault, Notizen als Markdown mit Frontmatter, Tags in YAML.",
+   "titel": "Obsidian Export",
+   "tags": [
+    "obsidian",
+    "tools"
+   ]
+  },
+  {
+   "id": "m29",
+   "text": "Server Components, use() Hook, Actions. Vite als Build-Tool, Tailwind 4 für Styling.",
+   "titel": "React 19 Features",
+   "tags": [
+    "web",
+    "react"
+   ]
+  },
+  {
+   "id": "m30",
+   "text": "Vermieterin Frau Scholz, Instandsetzungsmeldungen schriftlich per E-Mail, Kaution 3 Nettokaltmieten.",
+   "titel": "Vermieter Kontakt",
+   "tags": [
+    "wohnung",
+    "finanzen"
+   ]
+  },
+  {
+   "id": "m31",
+   "text": "Der Voranschlag fuer den Kellerausbau liegt bei 8500 Euro. Geprueft, freigegeben, Anzahlung 30 Prozent. [[Anton Bauer]]",
+   "titel": "Kostenvoranschlag freigegeben",
+   "tags": [
+    "haushalt",
+    "finanzen"
+   ]
+  },
+  {
+   "id": "m32",
+   "text": "Rueckruf wegen der Trockenbauwaende vereinbart, Dienstag vormittags. [[Anton Bauer]]",
+   "titel": "Termin Rueckruf",
+   "tags": [
+    "haushalt"
+   ]
+  },
+  {
+   "id": "m33",
+   "text": "Rigips, Daemmwolle, Dampfsperre. Wird vom Betrieb mitgebracht, steht nicht im Angebot. [[Anton Bauer]]",
+   "titel": "Materialliste Untergeschoss",
+   "tags": [
+    "haushalt"
+   ]
+  },
+  {
+   "id": "m34",
+   "text": "Fehlende Bewirtungsbelege bis Monatsende einreichen, sonst faellt die Abgabe auseinander. [[Weber]]",
+   "titel": "Belege nachreichen",
+   "tags": [
+    "finanzen"
+   ]
+  },
+  {
+   "id": "m35",
+   "text": "Quartalsabrechnung liegt vor, 640 Euro, faellig in 14 Tagen. [[Weber]]",
+   "titel": "Honorarnote Q3",
+   "tags": [
+    "finanzen"
+   ]
+  },
+  {
+   "id": "m36",
+   "text": "Alarm bei CPU ueber 80 Prozent fuenf Minuten lang, Benachrichtigung per Signal. [[Hetzner]]",
+   "titel": "Monitoring Alarme",
+   "tags": [
+    "devops"
+   ]
+  },
+  {
+   "id": "m37",
+   "text": "Taegliche Momentaufnahme um 4 Uhr, sieben Tage Aufbewahrung, monatlich eine Langzeitkopie. [[Hetzner]]",
+   "titel": "Snapshot Zeitplan",
+   "tags": [
+    "devops",
+    "backup"
+   ]
+  },
+  {
+   "id": "m38",
+   "text": "Private Fotos auf zwei externe Platten, eine davon beim Bruder. Keine Cloud.",
+   "titel": "Backup Strategie privat",
+   "tags": [
+    "backup",
+    "privat"
+   ]
+  },
+  {
+   "id": "m39",
+   "text": "Onlinekurs zu Datenbanken angefangen, Kapitel ueber Normalformen und Indizes noch offen.",
+   "titel": "Datenbank Kurs",
+   "tags": [
+    "lernen",
+    "datenbank"
+   ]
+  },
+  {
+   "id": "m40",
+   "text": "Die Pflanze neben dem Schreibtisch heisst Server, weil sie immer laeuft. Alle zwei Wochen giessen.",
+   "titel": "Server Zimmerpflanze",
+   "tags": [
+    "scherz",
+    "haushalt"
+   ]
+  },
+  {
+   "id": "m41",
+   "text": "Beim Kunden laeuft das Zuruecksetzen ueber die Hotline, nicht ueber Selbstbedienung. Dauert bis zu 48 Stunden.",
+   "titel": "Passwort Zurücksetzen Ablauf",
+   "tags": [
+    "arbeit",
+    "prozess"
+   ]
+  },
+  {
+   "id": "m42",
+   "text": "Kapitel ueber Lebenszeiten zweimal gelesen, immer noch unklar. Uebungsaufgaben im Anhang machen.",
+   "titel": "Rust Buch",
+   "tags": [
+    "rust",
+    "lernen"
+   ]
+  },
+  {
+   "id": "m43",
+   "text": "Waschanlage an der Tankstelle Suedstrasse, Programm 3 reicht, Felgen von Hand nacharbeiten.",
+   "titel": "Auto Waschen",
+   "tags": [
+    "auto"
+   ]
+  },
+  {
+   "id": "m44",
+   "text": "Im Team wird nur bis Ende des Jahres gesammelt, danach neue Regel.",
+   "titel": "Geburtstagsliste Kollegen",
+   "tags": [
+    "arbeit"
+   ]
+  },
+  {
+   "id": "m45",
+   "text": "Physiotherapie zweimal woechentlich, Uebungen fuer den unteren Ruecken, kein schweres Heben ueber 15 Kilo.",
+   "titel": "Bandscheibe",
+   "tags": [
+    "gesundheit"
+   ]
+  },
+  {
+   "id": "m46",
+   "text": "Winterbereifung ab Oktober, Sommersatz liegt eingelagert bei der Werkstatt, Profiltiefe noch 4,5 Millimeter.",
+   "titel": "Reifen",
+   "tags": [
+    "auto"
+   ]
+  },
+  {
+   "id": "m47",
+   "text": "Schoenheitsreparaturen sind Sache der Mietpartei, Fristen: Kueche alle drei Jahre, Wohnraeume alle fuenf.",
+   "titel": "Mietvertrag Abschnitt 7",
+   "tags": [
+    "wohnung"
+   ]
+  },
+  {
+   "id": "m48",
+   "text": "Ente mit Rotkohl und Kloessen, Ente vier Stunden bei 160 Grad, vorher trocken tupfen.",
+   "titel": "Weihnachtsessen",
+   "tags": [
+    "kochen",
+    "rezept"
+   ]
+  },
+  {
+   "id": "m49",
+   "text": "Monatlich 400 Euro in einen Welt-ETF, Ausfuehrung am zweiten Werktag, Kosten 0,2 Prozent.",
+   "titel": "Sparplan",
+   "tags": [
+    "finanzen"
+   ]
+  },
+  {
+   "id": "m50",
+   "text": "Hausarzt, Zahnarzt und der Bereitschaftsdienst stehen auf dem Zettel am Kuehlschrank.",
+   "titel": "Notfallnummern",
+   "tags": [
+    "gesundheit",
+    "familie"
+   ]
+  },
+  {
+   "id": "m51",
+   "text": "Zweitschluessel liegt bei den Nachbarn im dritten Stock, links.",
+   "titel": "Schluesseluebergabe",
+   "tags": [
+    "wohnung"
+   ]
+  },
+  {
+   "id": "m52",
+   "text": "Fuer Innenaufnahmen Blende 2.8, ISO 800, Weissabgleich manuell auf Kunstlicht.",
+   "titel": "Kamera Einstellungen",
+   "tags": [
+    "foto"
+   ]
+  },
+  {
+   "id": "m53",
+   "text": "Erreichbar unter der Festnetznummer im Buero, ab 9 Uhr.",
+   "titel": "Telefonnummer alt",
+   "tags": [
+    "kontakt"
+   ]
+  },
+  {
+   "id": "m54",
+   "text": "Nur noch mobil erreichbar, Festnetz abgemeldet seit Juni 2026.",
+   "titel": "Telefonnummer aktuell",
+   "tags": [
+    "kontakt"
+   ]
+  },
+  {
+   "id": "m55",
+   "text": "Modell aus 2024, Daempfung durchgelaufen, aussortiert.",
+   "titel": "Laufschuhe alt",
+   "tags": [
+    "sport"
+   ]
+  },
+  {
+   "id": "m56",
+   "text": "Seit August 2026 neues Paar, Groesse 44, bisher 60 Kilometer gelaufen.",
+   "titel": "Laufschuhe neu",
+   "tags": [
+    "sport"
+   ]
+  },
+  {
+   "id": "m57",
+   "text": "Testumgebung: Anmeldung ueber den gemeinsamen Zugang, Passwort rotiert monatlich.",
+   "titel": "Zugangsdaten Testsystem",
+   "tags": [
+    "arbeit",
+    "security"
+   ]
+  },
+  {
+   "id": "m58",
+   "text": "Produktivumgebung: persoenlicher Zugang mit zweitem Faktor, kein gemeinsames Passwort.",
+   "titel": "Zugangsdaten Produktivsystem",
+   "tags": [
+    "arbeit",
+    "security"
+   ]
+  }
+ ],
+ "fragen": [
+  {
+   "frage": "Wo läuft die Produktion?",
+   "erwartet": [
+    "m01"
+   ],
+   "kategorie": "lexikalisch"
+  },
+  {
+   "frage": "Welche Datenbank nutzen wir?",
+   "erwartet": [
+    "m02"
+   ],
+   "kategorie": "lexikalisch"
+  },
+  {
+   "frage": "Wo wohnt Alex gerade?",
+   "erwartet": [
+    "m04"
+   ],
+   "kategorie": "lexikalisch"
+  },
+  {
+   "frage": "Umsatzsteuer Frist",
+   "erwartet": [
+    "m08"
+   ],
+   "kategorie": "lexikalisch"
+  },
+  {
+   "frage": "Wie ist die hybride Suche implementiert?",
+   "erwartet": [
+    "m14"
+   ],
+   "kategorie": "lexikalisch"
+  },
+  {
+   "frage": "Welche Embedding-Modelle lokal?",
+   "erwartet": [
+    "m13"
+   ],
+   "kategorie": "lexikalisch"
+  },
+  {
+   "frage": "Wie funktioniert der Wissensgraph?",
+   "erwartet": [
+    "m15"
+   ],
+   "kategorie": "lexikalisch"
+  },
+  {
+   "frage": "Serverzugang und Passwort",
+   "erwartet": [
+    "m16",
+    "m17"
+   ],
+   "kategorie": "lexikalisch"
+  },
+  {
+   "frage": "Fitness Trainingsplan",
+   "erwartet": [
+    "m19"
+   ],
+   "kategorie": "lexikalisch"
+  },
+  {
+   "frage": "Impfungen Auffrischung",
+   "erwartet": [
+    "m20"
+   ],
+   "kategorie": "lexikalisch"
+  },
+  {
+   "frage": "Warum Rust statt Go?",
+   "erwartet": [
+    "m21"
+   ],
+   "kategorie": "lexikalisch"
+  },
+  {
+   "frage": "Autoversicherung kündigen",
+   "erwartet": [
+    "m22"
+   ],
+   "kategorie": "lexikalisch"
+  },
+  {
+   "frage": "Werkstatt Termin Auto",
+   "erwartet": [
+    "m23"
+   ],
+   "kategorie": "lexikalisch"
+  },
+  {
+   "frage": "Keller Umbau Kosten",
+   "erwartet": [
+    "m25"
+   ],
+   "kategorie": "lexikalisch"
+  },
+  {
+   "frage": "Welche LLM Kontextfenster?",
+   "erwartet": [
+    "m26"
+   ],
+   "kategorie": "lexikalisch"
+  },
+  {
+   "frage": "Obsidian Notizen Format",
+   "erwartet": [
+    "m28"
+   ],
+   "kategorie": "lexikalisch"
+  },
+  {
+   "frage": "React Build Setup",
+   "erwartet": [
+    "m29"
+   ],
+   "kategorie": "lexikalisch"
+  },
+  {
+   "frage": "Kaution Vermieter",
+   "erwartet": [
+    "m30"
+   ],
+   "kategorie": "lexikalisch"
+  },
+  {
+   "frage": "Carbonara Zutaten",
+   "erwartet": [
+    "m06"
+   ],
+   "kategorie": "lexikalisch"
+  },
+  {
+   "frage": "KEPTA MCP Architektur",
+   "erwartet": [
+    "m11",
+    "m12"
+   ],
+   "kategorie": "lexikalisch"
+  },
+  {
+   "frage": "Passwörter sicher verwalten",
+   "erwartet": [
+    "m10"
+   ],
+   "kategorie": "lexikalisch"
+  },
+  {
+   "frage": "Rechnungen Buchhaltung Tool",
+   "erwartet": [
+    "m09"
+   ],
+   "kategorie": "lexikalisch"
+  },
+  {
+   "frage": "Zettelkasten Notizen Methode",
+   "erwartet": [
+    "m27"
+   ],
+   "kategorie": "lexikalisch"
+  },
+  {
+   "frage": "Geburtstag Familie",
+   "erwartet": [
+    "m18"
+   ],
+   "kategorie": "lexikalisch"
+  },
+  {
+   "frage": "Deployment und Domain",
+   "erwartet": [
+    "m01"
+   ],
+   "kategorie": "lexikalisch"
+  },
+  {
+   "frage": "Was koche ich mit Nudeln?",
+   "erwartet": [
+    "m06"
+   ],
+   "kategorie": "umschreibung"
+  },
+  {
+   "frage": "Wie bewahre ich meine Zugangsdaten sicher auf?",
+   "erwartet": [
+    "m10"
+   ],
+   "kategorie": "umschreibung"
+  },
+  {
+   "frage": "Wo lasse ich mein Fahrzeug instand setzen?",
+   "erwartet": [
+    "m23"
+   ],
+   "kategorie": "umschreibung"
+  },
+  {
+   "frage": "Was mag meine Grossmutter?",
+   "erwartet": [
+    "m18"
+   ],
+   "kategorie": "umschreibung"
+  },
+  {
+   "frage": "Was tue ich fuer meinen Ruecken?",
+   "erwartet": [
+    "m45"
+   ],
+   "kategorie": "umschreibung"
+  },
+  {
+   "frage": "Wie lege ich Geld an?",
+   "erwartet": [
+    "m49"
+   ],
+   "kategorie": "umschreibung"
+  },
+  {
+   "frage": "Wer hilft bei einem medizinischen Notfall?",
+   "erwartet": [
+    "m50"
+   ],
+   "kategorie": "umschreibung"
+  },
+  {
+   "frage": "Wie fotografiere ich drinnen richtig?",
+   "erwartet": [
+    "m52"
+   ],
+   "kategorie": "umschreibung"
+  },
+  {
+   "frage": "Was muss ich beim Auszug renovieren?",
+   "erwartet": [
+    "m47"
+   ],
+   "kategorie": "umschreibung"
+  },
+  {
+   "frage": "Was gibt es an Heiligabend zu essen?",
+   "erwartet": [
+    "m48"
+   ],
+   "kategorie": "umschreibung"
+  },
+  {
+   "frage": "Anton Bauer",
+   "erwartet": [
+    "m25",
+    "m31",
+    "m32",
+    "m33"
+   ],
+   "kategorie": "graph"
+  },
+  {
+   "frage": "Weber",
+   "erwartet": [
+    "m08",
+    "m34",
+    "m35"
+   ],
+   "kategorie": "graph"
+  },
+  {
+   "frage": "Hetzner",
+   "erwartet": [
+    "m01",
+    "m16",
+    "m36",
+    "m37"
+   ],
+   "kategorie": "graph"
+  },
+  {
+   "frage": "Wie oft wird gesichert?",
+   "erwartet": [
+    "m02",
+    "m37"
+   ],
+   "kategorie": "ablenkung"
+  },
+  {
+   "frage": "Welches Passwort gilt in der Produktion?",
+   "erwartet": [
+    "m58"
+   ],
+   "kategorie": "ablenkung"
+  },
+  {
+   "frage": "Welcher Server ist gemeint?",
+   "erwartet": [
+    "m01"
+   ],
+   "kategorie": "ablenkung"
+  },
+  {
+   "frage": "Was steht zur Datenbank an?",
+   "erwartet": [
+    "m02"
+   ],
+   "kategorie": "ablenkung"
+  },
+  {
+   "frage": "Wie bin ich erreichbar?",
+   "erwartet": [
+    "m54"
+   ],
+   "kategorie": "temporal"
+  },
+  {
+   "frage": "Welche Laufschuhe habe ich?",
+   "erwartet": [
+    "m56"
+   ],
+   "kategorie": "temporal"
+  },
+  {
+   "frage": "Bis wann muss die Umsatzsteuer abgegeben werden?",
+   "erwartet": [
+    "m08"
+   ],
+   "kategorie": "temporal"
+  }
+ ]
+}

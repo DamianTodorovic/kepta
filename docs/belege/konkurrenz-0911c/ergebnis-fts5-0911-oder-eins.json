@@ -1,0 +1,30 @@
+{
+ "lauf": "fts5-0911-eins",
+ "zeit": "20:24:55",
+ "werkzeug": "SQLite FTS5 (3.53.2)",
+ "konfiguration": {
+  "tokenizer": "unicode61 (Standard)",
+  "modus": "oder",
+  "semantics": "ODER über die Begriffe (Fallback-Praxis), bm25-Rang",
+  "rang": "bm25 (Standard)",
+  "indexierter_text": "Notiz-Text",
+  "top_k": 5
+ },
+ "korpus": {
+  "notizen": 58,
+  "anfragen": 45
+ },
+ "hit1": 20,
+ "hit1_prozent": 44.4,
+ "recall5_in_den_5": 24,
+ "recall5_prozent": 53.3,
+ "leere_listen": 14,
+ "nach_kategorie": {
+  "lexikalisch": "16/25",
+  "umschreibung": "1/10",
+  "graph": "3/3",
+  "ablenkung": "0/4",
+  "temporal": "0/3"
+ },
+ "dauer_sek": 0
+}

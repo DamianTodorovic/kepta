@@ -1,0 +1,47 @@
+{"art":"start","zeit":"20:24:13","verfahren":"fts5-unicode61-bm25","notizen":58,"anfragen":45}
+{"art":"suche","frage":"Wo läuft die Produktion?","kategorie":"lexikalisch","erwartet":["m01"],"top":null,"treffer":false,"liste":[],"sek":0}
+{"art":"suche","frage":"Welche Datenbank nutzen wir?","kategorie":"lexikalisch","erwartet":["m02"],"top":null,"treffer":false,"liste":[],"sek":0}
+{"art":"suche","frage":"Wo wohnt Alex gerade?","kategorie":"lexikalisch","erwartet":["m04"],"top":null,"treffer":false,"liste":[],"sek":0}
+{"art":"suche","frage":"Umsatzsteuer Frist","kategorie":"lexikalisch","erwartet":["m08"],"top":null,"treffer":false,"liste":[],"sek":0}
+{"art":"suche","frage":"Wie ist die hybride Suche implementiert?","kategorie":"lexikalisch","erwartet":["m14"],"top":null,"treffer":false,"liste":[],"sek":0}
+{"art":"suche","frage":"Welche Embedding-Modelle lokal?","kategorie":"lexikalisch","erwartet":["m13"],"top":null,"treffer":false,"liste":[],"sek":0}
+{"art":"suche","frage":"Wie funktioniert der Wissensgraph?","kategorie":"lexikalisch","erwartet":["m15"],"top":null,"treffer":false,"liste":[],"sek":0}
+{"art":"suche","frage":"Serverzugang und Passwort","kategorie":"lexikalisch","erwartet":["m16","m17"],"top":null,"treffer":false,"liste":[],"sek":0}
+{"art":"suche","frage":"Fitness Trainingsplan","kategorie":"lexikalisch","erwartet":["m19"],"top":null,"treffer":false,"liste":[],"sek":0}
+{"art":"suche","frage":"Impfungen Auffrischung","kategorie":"lexikalisch","erwartet":["m20"],"top":null,"treffer":false,"liste":[],"sek":0}
+{"art":"suche","frage":"Warum Rust statt Go?","kategorie":"lexikalisch","erwartet":["m21"],"top":null,"treffer":false,"liste":[],"sek":0}
+{"art":"suche","frage":"Autoversicherung kündigen","kategorie":"lexikalisch","erwartet":["m22"],"top":null,"treffer":false,"liste":[],"sek":0}
+{"art":"suche","frage":"Werkstatt Termin Auto","kategorie":"lexikalisch","erwartet":["m23"],"top":null,"treffer":false,"liste":[],"sek":0.001}
+{"art":"suche","frage":"Keller Umbau Kosten","kategorie":"lexikalisch","erwartet":["m25"],"top":null,"treffer":false,"liste":[],"sek":0}
+{"art":"suche","frage":"Welche LLM Kontextfenster?","kategorie":"lexikalisch","erwartet":["m26"],"top":null,"treffer":false,"liste":[],"sek":0}
+{"art":"suche","frage":"Obsidian Notizen Format","kategorie":"lexikalisch","erwartet":["m28"],"top":null,"treffer":false,"liste":[],"sek":0}
+{"art":"suche","frage":"React Build Setup","kategorie":"lexikalisch","erwartet":["m29"],"top":null,"treffer":false,"liste":[],"sek":0}
+{"art":"suche","frage":"Kaution Vermieter","kategorie":"lexikalisch","erwartet":["m30"],"top":null,"treffer":false,"liste":[],"sek":0}
+{"art":"suche","frage":"Carbonara Zutaten","kategorie":"lexikalisch","erwartet":["m06"],"top":null,"treffer":false,"liste":[],"sek":0}
+{"art":"suche","frage":"KEPTA MCP Architektur","kategorie":"lexikalisch","erwartet":["m11","m12"],"top":null,"treffer":false,"liste":[],"sek":0}
+{"art":"suche","frage":"Passwörter sicher verwalten","kategorie":"lexikalisch","erwartet":["m10"],"top":null,"treffer":false,"liste":[],"sek":0}
+{"art":"suche","frage":"Rechnungen Buchhaltung Tool","kategorie":"lexikalisch","erwartet":["m09"],"top":null,"treffer":false,"liste":[],"sek":0}
+{"art":"suche","frage":"Zettelkasten Notizen Methode","kategorie":"lexikalisch","erwartet":["m27"],"top":null,"treffer":false,"liste":[],"sek":0}
+{"art":"suche","frage":"Geburtstag Familie","kategorie":"lexikalisch","erwartet":["m18"],"top":null,"treffer":false,"liste":[],"sek":0}
+{"art":"suche","frage":"Deployment und Domain","kategorie":"lexikalisch","erwartet":["m01"],"top":null,"treffer":false,"liste":[],"sek":0}
+{"art":"suche","frage":"Was koche ich mit Nudeln?","kategorie":"umschreibung","erwartet":["m06"],"top":null,"treffer":false,"liste":[],"sek":0}
+{"art":"suche","frage":"Wie bewahre ich meine Zugangsdaten sicher auf?","kategorie":"umschreibung","erwartet":["m10"],"top":null,"treffer":false,"liste":[],"sek":0}
+{"art":"suche","frage":"Wo lasse ich mein Fahrzeug instand setzen?","kategorie":"umschreibung","erwartet":["m23"],"top":null,"treffer":false,"liste":[],"sek":0}
+{"art":"suche","frage":"Was mag meine Grossmutter?","kategorie":"umschreibung","erwartet":["m18"],"top":null,"treffer":false,"liste":[],"sek":0}
+{"art":"suche","frage":"Was tue ich fuer meinen Ruecken?","kategorie":"umschreibung","erwartet":["m45"],"top":null,"treffer":false,"liste":[],"sek":0}
+{"art":"suche","frage":"Wie lege ich Geld an?","kategorie":"umschreibung","erwartet":["m49"],"top":null,"treffer":false,"liste":[],"sek":0}
+{"art":"suche","frage":"Wer hilft bei einem medizinischen Notfall?","kategorie":"umschreibung","erwartet":["m50"],"top":null,"treffer":false,"liste":[],"sek":0}
+{"art":"suche","frage":"Wie fotografiere ich drinnen richtig?","kategorie":"umschreibung","erwartet":["m52"],"top":null,"treffer":false,"liste":[],"sek":0}
+{"art":"suche","frage":"Was muss ich beim Auszug renovieren?","kategorie":"umschreibung","erwartet":["m47"],"top":null,"treffer":false,"liste":[],"sek":0}
+{"art":"suche","frage":"Was gibt es an Heiligabend zu essen?","kategorie":"umschreibung","erwartet":["m48"],"top":null,"treffer":false,"liste":[],"sek":0}
+{"art":"suche","frage":"Anton Bauer","kategorie":"graph","erwartet":["m25","m31","m32","m33"],"top":"m32","treffer":true,"liste":["m32","m25","m33","m31"],"sek":0}
+{"art":"suche","frage":"Weber","kategorie":"graph","erwartet":["m08","m34","m35"],"top":"m35","treffer":true,"liste":["m35","m34","m08"],"sek":0}
+{"art":"suche","frage":"Hetzner","kategorie":"graph","erwartet":["m01","m16","m36","m37"],"top":"m16","treffer":true,"liste":["m16","m17","m37","m36","m01"],"sek":0.001}
+{"art":"suche","frage":"Wie oft wird gesichert?","kategorie":"ablenkung","erwartet":["m02","m37"],"top":null,"treffer":false,"liste":[],"sek":0}
+{"art":"suche","frage":"Welches Passwort gilt in der Produktion?","kategorie":"ablenkung","erwartet":["m58"],"top":null,"treffer":false,"liste":[],"sek":0}
+{"art":"suche","frage":"Welcher Server ist gemeint?","kategorie":"ablenkung","erwartet":["m01"],"top":null,"treffer":false,"liste":[],"sek":0}
+{"art":"suche","frage":"Was steht zur Datenbank an?","kategorie":"ablenkung","erwartet":["m02"],"top":null,"treffer":false,"liste":[],"sek":0}
+{"art":"suche","frage":"Wie bin ich erreichbar?","kategorie":"temporal","erwartet":["m54"],"top":null,"treffer":false,"liste":[],"sek":0}
+{"art":"suche","frage":"Welche Laufschuhe habe ich?","kategorie":"temporal","erwartet":["m56"],"top":null,"treffer":false,"liste":[],"sek":0}
+{"art":"suche","frage":"Bis wann muss die Umsatzsteuer abgegeben werden?","kategorie":"temporal","erwartet":["m08"],"top":null,"treffer":false,"liste":[],"sek":0}
+{"art":"fertig","lauf":"fts5-0911-zwei","zeit":"20:24:13","werkzeug":"SQLite FTS5 (3.53.2)","konfiguration":{"tokenizer":"unicode61 (Standard)","semantics":"implizites UND","rang":"bm25 (Standard)","indexierter_text":"Notiz-Text","top_k":5},"korpus":{"notizen":58,"anfragen":45},"hit1":3,"hit1_prozent":6.7,"recall5_in_den_5":3,"recall5_prozent":6.7,"leere_listen":42,"nach_kategorie":{"lexikalisch":"0/25","umschreibung":"0/10","graph":"3/3","ablenkung":"0/4","temporal":"0/3"},"dauer_sek":0}
