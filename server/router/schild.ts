@@ -39,13 +39,18 @@ export function mountSchild(app: express.Express, ctx: AppKontext): void {
     if (typeof b.apps === "boolean") neu.apps = b.apps;
     // Zentrale Richtlinie privacy_shield=force_on: der Schutz bleibt an —
     // der Versuch, ihn abzuschalten, wird stillschweigend als "an" verbucht.
+    let erzwungen = false;
     if (richtlinie("privacy_shield") === "force_on") {
       neu.chat = true;
       neu.apps = true;
+      // P186: der Zwang wird benannt, nicht still verbucht — die Fläche zeigt
+      // ihn, sonst sieht der Nutzer nur einen Knopf, der zurück springt.
+      erzwungen = true;
     }
     store.setzeEinstellungen({ [SCHILD_SCHLUESSEL]: JSON.stringify(neu) });
-    protokolliere(store, { actor: werIst(req), action: "privacy shield", target: `cloud AI ${neu.chat ? "on" : "off"} · AI apps ${neu.apps ? "on" : "off"}` });
-    res.json(neu);
+    protokolliere(store, { actor: werIst(req), action: "privacy shield", target: `cloud AI ${neu.chat ? "on" : "off"} · AI apps ${neu.apps ? "on" : "off"}${erzwungen ? " (force_on)" : ""}` });
+    // Das Feld reist nur, wenn der Zwang griff — der Normalfall bleibt schmal.
+    res.json(erzwungen ? { ...neu, erzwungen: true } : neu);
   });
 
   // Verwaltete Konfiguration für das Organisations-Panel: welche Richtlinien

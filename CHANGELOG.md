@@ -1,3 +1,18 @@
+## [3.2.197]
+
+### Fixed
+
+- **A refused shield switch no longer goes unexplained.** With the central
+  policy `privacy_shield = force_on` the PUT route silently booked the switch
+  back to "on" — the user saw a button that "jumps back", without a word
+  (Damian's report, 9.11.). The answer now carries `erzwungen: true`, the
+  audit line names `force_on`, and the Settings surface shows "Your
+  organization keeps the shield on — the switch stays on." instead of a
+  silently bouncing switch. Held by `tests/schild-zwang.test.ts`.
+  The language-trigger repro (P185) ran 48 steps across Dashboard and
+  Settings at two widths with zero exceptions — the tracks toggle is
+  innocent in isolation; the report needs the real store (see the paper).
+
 ## [3.2.196]
 
 ### Added

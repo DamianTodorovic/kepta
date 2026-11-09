@@ -10,6 +10,7 @@ import { Schild, beschreibe } from '../lib/schild';
 interface Stand {
   chat: boolean;
   apps: boolean;
+  erzwungen?: boolean;
   privateNotes: number;
   week: { cloudChats: number; protectedChats: number };
 }
@@ -48,6 +49,7 @@ export function PrivacyShield() {
           setStand({
             chat: d.chat !== false,
             apps: d.apps !== false,
+            erzwungen: d.erzwungen === true,
             privateNotes: Number(d.privateNotes) || 0,
             week: { cloudChats: Number(d.week?.cloudChats) || 0, protectedChats: Number(d.week?.protectedChats) || 0 },
           });
@@ -67,7 +69,12 @@ export function PrivacyShield() {
       if (!d) throw new ApiFehler("The tally arrived without readable text.", r.status);
       // Ein Feld, das die Tuer nicht nennt, schreibt die Flaeche nicht auf undefined --
       // sonst sieht ein Schalter aus wie ausgeschaltet, ohne dass ihn jemand ausschaltete.
-      setStand((s) => (s ? { ...s, chat: d.chat ?? s.chat, apps: d.apps ?? s.apps } : s));
+      setStand((s) => (s ? { ...s, chat: d.chat ?? s.chat, apps: d.apps ?? s.apps, erzwungen: d.erzwungen === true || s.erzwungen } : s));
+      if (d.erzwungen === true) {
+        setFehler("Your organization keeps the shield on — the switch stays on. (privacy_shield = force_on)");
+      } else {
+        setFehler(null);
+      }
     } catch (e) {
       setStand((s) => (s ? { ...s, [feld]: !wert } : s));
       setFehler(absage("The switch did not stay — it is back where it was.", e));
@@ -94,6 +101,11 @@ export function PrivacyShield() {
         </p>
       </div>
       {fehler && <p className="fs-4 lh-lesbar" style={{ color: 'var(--warn)' }}>{fehler}</p>}
+      {stand?.erzwungen === true && (
+        <p className="fs-4 lh-lesbar" data-testid="schild-zwang" style={{ color: 'var(--text-2)' }}>
+          Your organization keeps the shield on — the switch stays on.
+        </p>
+      )}
       {stand && (
         <>
           <div className="hud-inset rounded-xl p-3 flex gap-3 items-start">
