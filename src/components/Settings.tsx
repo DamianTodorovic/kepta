@@ -267,6 +267,11 @@ export function Settings() {
   const [copied, setCopied] = useState<string | null>(null);
   const [health, setHealth] = useState<{ ok?: boolean; count?: number; uptime?: number; mcp?: { stdio?: { command: string; args: string[]; env: Record<string, string> } | null }; embeddings?: { total?: number; embedded?: number; models?: Record<string, number> } | null } | null>(null);
   const [healthError, setHealthError] = useState<string | null>(null);
+  // P184: der Such-Modell-Wechsel — Auswahl, Liste aus Ollama, Lauf-Status.
+  const [modellListe, setModellListe] = useState<string[]>([]);
+  const [modellWahl, setModellWahl] = useState<string>('');
+  const [modellWechselLaeuft, setModellWechselLaeuft] = useState(false);
+  const [modellMeldung, setModellMeldung] = useState<string | null>(null);
   const [werkzeuge, setWerkzeuge] = useState<McpWerkzeug[]>([]);
   const [werkzeugeFehler, setWerkzeugeFehler] = useState<string | null>(null);
 
@@ -416,6 +421,48 @@ export function Settings() {
     return () => { gueltig = false; };
   }, []);
 
+  useEffect(() => {
+    // P184: die Modell-Liste und die aktuelle Wahl — der Wechsel-Schalter liest sie.
+    if (activeTab !== 'mcp' && activeTab !== 'system') return;
+    let gueltigWechsel = true;
+    (async () => {
+      try {
+        const r = await fetch(`${API_BASE}/api/such-modell`);
+        if (!r.ok || !gueltigWechsel) return;
+        const j = await r.json() as { modell?: string; gewaehlt?: string | null; modelle?: string[] };
+        setModellListe(j.modelle ?? []);
+        setModellWahl(j.gewaehlt ?? j.modell ?? '');
+      } catch { /* die Liste bleibt leer — der Rest der Fläche steht */ }
+    })();
+    return () => { gueltigWechsel = false; };
+  }, [activeTab]);
+
+  const wechsleSuchModell = async () => {
+    if (!modellWahl || modellWechselLaeuft) return;
+    setModellWechselLaeuft(true);
+    setModellMeldung(null);
+    try {
+      const r = await fetch(`${API_BASE}/api/such-modell`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ modell: modellWahl }),
+      });
+      const j = await r.json() as { modell?: string; neuZuEinbetten?: number; error?: string };
+      if (!r.ok) {
+        setModellMeldung(tuerSatz(j.error, `HTTP ${r.status}`));
+      } else {
+        setModellMeldung(`Switched to ${j.modell}. Re-embedding ${j.neuZuEinbetten ?? 0} pieces in the background — meaning search fills as it goes.`);
+        // Health nachziehen, damit die Modell-Zeile den neuen Stand zeigt.
+        try {
+          const h = await fetch(`${API_BASE}/api/health`);
+          if (h.ok) setHealth(await h.json());
+        } catch { /* die alte Health bleibt stehen */ }
+      }
+    } catch {
+      setModellMeldung('The switch did not arrive — your notes are safe.');
+    }
+    setModellWechselLaeuft(false);
+  };
   useEffect(() => {
     // P183: auch der System-Tab liest die Health — die Search-Model-Zeile nennt
     // das Modell aus health.embeddings.models.
@@ -711,6 +758,35 @@ export function Settings() {
                       <div className="fs-2 lh-dicht" style={{ color: 'var(--text-3)' }}>
                         {profil ? profil.zeile : 'This search model has no measured profile on file yet.'}
                       </div>
+                      {modellListe.length > 0 && (
+                        <div className="flex items-center gap-2 mt-3" data-testid="such-modell-wechsel">
+                          <select
+                            value={modellListe.find((m) => m === modellWahl || m.startsWith(modellWahl + ':')) ?? modellWahl}
+                            onChange={(e) => setModellWahl(e.target.value.replace(/:latest$/, ''))}
+                            className="fs-2"
+                            aria-label="Search model"
+                            style={{ color: 'var(--text-1)' }}
+                          >
+                            {modellListe.map((m) => (
+                              <option key={m} value={m}>{m}</option>
+                            ))}
+                          </select>
+                          <button
+                            type="button"
+                            onClick={wechsleSuchModell}
+                            disabled={modellWechselLaeuft || !modellWahl}
+                            className="fs-2"
+                            style={{ color: 'var(--text-1)' }}
+                          >
+                            {modellWechselLaeuft ? 'Switching…' : 'Apply'}
+                          </button>
+                        </div>
+                      )}
+                      {modellMeldung && (
+                        <div className="fs-2 lh-dicht mt-2" style={{ color: 'var(--warn)' }} role="status">
+                          {modellMeldung}
+                        </div>
+                      )}
                     </div>
                   );
                 })()}

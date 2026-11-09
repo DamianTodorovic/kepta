@@ -1117,7 +1117,7 @@ Zeitreise blendet nach einem gesetzten Ende aus.
 | `clampConfidence` → `return 0.5` | 00:45:38 | 1 von 6 (Fall :67) |
 | Regeltyp → `"semantic"` | 00:45:44 | 1 von 6 (Fall :53) |
 | `?? r.createdAt` → `?? 0` (`engine.ts:475`) | 00:45:50 | 1 von 6 (Fall :87) |
-| `expired` → `false` (`engine.ts:618`) | 00:46:02 | 1 von 6 (Fall :102) |
+| `expired` → `false` (`engine.ts:629`) | 00:46:02 | 1 von 6 (Fall :102) |
 | Zeitreise-Ende → `if (false)` (`engine.ts:477`) | 00:46:02 | 1 von 6 (Fall :121) |
 | `validFrom ?? null` → `?? 0` (Schreibweg) | 00:46:09 | 2 von 6 (Fälle :75, :87) |
 
@@ -1778,7 +1778,7 @@ herausgezogen — im Kern-Repo nachgemessen wahr (dessen Erstcommit `2c942be` tr
 Leser dieses Repos nicht zu öffnen, und ein Beleg, den ein Kunde
 nicht öffnen kann, ist keiner. README.md:265 nennt Helmet (`server/app.ts:200`), den globalen
 Limit (`:208`), die Schreibroute (`server/router/memories.ts:130`) und das 1mb-Limit
-(`server/app.ts:249`). Die sechs Historien-Zeugen in REGISTER und Ledger stehen in der Blob-Form
+(`server/app.ts:251`). Die sechs Historien-Zeugen in REGISTER und Ledger stehen in der Blob-Form
 `113093c:server/helfer/…`; der `trial-anchor`-Beleg (:183-185, Flag `wx` auf :218) gehört zu
 `planzustand.ts`, nicht zu `plan-schluesselbund.ts` (98 Zeilen, konnte :183 nicht liefern).
 Drei nackte Basenames im Ledger heißen jetzt vollständig, und der Bereich
