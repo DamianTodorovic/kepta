@@ -1,3 +1,24 @@
+## [3.2.194]
+
+### Fixed
+
+- **A weak vector voice could outvote the word voice that was right.** P176
+  woke the vector leg below the absolute floor (3.2.193); the follow-up
+  measurement (`docs/belege/konkurrenz-0911d/`, P180) showed the price: in the
+  rank fusion that voice arrived with full weight even when its best cosine sat
+  below the floor, and two first places flipped („Was koche ich mit Nudeln?",
+  „React Build Setup"). The fusion now weights the vector voice by its standing:
+  above the floor it counts in full, below it only when no other leg speaks —
+  the leg itself never goes silent (it stays listed, tracked, counted in
+  Recall@5). Measured on the same corpus, twice each, byte-identical runs:
+  bge-m3 stage **36/45 = 80,0 %** Hit@1 (was 34/45; 35/45 before P176 — the
+  best first-place rate any ledger row ever held), R@5 94,4 % and MRR 0,836
+  unchanged-high, nomic stage untouched (34/45 = 75,6 %, null flips). With it,
+  K3PTA now leads or ties **every category** against mem0 on the same
+  embedding (umschreibung 6/6, the one category mem0 led after P178). Held by
+  the Nudeln rule in `tests/core/ablation.test.ts` (seen red before the rule)
+  and the competitor latte at [45, 36, 80].
+
 ## [3.2.193]
 
 ### Fixed

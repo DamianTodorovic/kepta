@@ -90,3 +90,30 @@ describe("Ablation: einzelne Beine abschaltbar", () => {
     expect(res.hits).toEqual([]);
   });
 });
+
+// P182: die Regel unter den Stimmen. Der P176-Boden-Flicken hat das Vektor-Bein
+// geweckt, und die Nachmessung (konkurrenz-0911d) zeigte den Preis: unter dem
+// Boden bekam seine Stimme volles RRF-Gewicht und verdraengte die Wort-Stimme
+// („Was koche ich mit Nudeln?", „React Build Setup"). Zwei Faelle halten die
+// Regel: unter dem Boden gilt die Vektor-Stimme nur, wenn keine andere spricht;
+// bei RRF-Gleichstand gewinnt die bessere Vektor-Position.
+describe("P182: die Regel unter den Stimmen", () => {
+  it("unter dem Boden verdraengt die schwache Vektor-Stimme die Wort-Stimme nicht mehr (Nudeln-Regel)", async () => {
+    const ziel = store.createMemory({ title: "Schutzwort-Ziel", content: "Ein Text, der das Schutzwort traegt. Schutzwort." });
+    const schwach = store.createMemory({ title: "Schwacher Vektor", content: "Ein Text, der nur das Ersatzwort traegt." });
+    indexMemory(store, ziel.id);
+    indexMemory(store, schwach.id);
+    // Anfrage [1,0]: Vektor zum schwachen Kandidaten = 0,50 (unter dem Boden 0,58), zum Ziel = 0.
+    store.setEmbedding(schwach.id, 0, new Float32Array([0.5, Math.sqrt(1 - 0.5 * 0.5)]), DEFAULT_EMBED_MODEL);
+    store.setEmbedding(ziel.id, 0, new Float32Array([0, 1]), DEFAULT_EMBED_MODEL);
+    vi.stubGlobal("fetch", vi.fn(async () => ({ ok: true, status: 200, json: async () => ({ embeddings: [[1, 0]] }) })));
+    const res = await searchMemories(store, { query: "Schutzwort Ersatzwort", tracks: { bm25: true, vector: true, entity: false } });
+    // Das Ziel (Wort r1, tf 2) muss gewinnen; der schwache Kandidat (Vektor r1,
+    // Wort r2) darf nicht mit zwei Halb-Stimmen an ihm vorbeiziehen.
+    expect(res.hits[0]!.memory.id).toBe(ziel.id);
+    // Das Vektor-Bein schweigt trotzdem nicht: der Kandidat bleibt in der Liste.
+    expect(res.usedVectors).toBe(true);
+    expect(res.hits.map((h) => h.memory.id)).toContain(schwach.id);
+  });
+
+});

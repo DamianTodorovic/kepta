@@ -509,6 +509,7 @@ export async function searchMemories(store: KeptaStore, params: SearchParams): P
 
   // --- Bein 2: Vektor-KNN (nur wenn Embeddings des aktuellen Modells existieren) ---
   let vectorRanked: string[] = [];
+  let vektorBestSim = 0;
   let queryVector: Float32Array | null = null;
   let usedVectors = false;
   const vectorSim = new Map<string, number>();
@@ -548,6 +549,7 @@ export async function searchMemories(store: KeptaStore, params: SearchParams): P
         for (const [id, sim] of bestPerMemory) vectorSim.set(id, sim);
         let bestSim = 0;
         for (const sim of bestPerMemory.values()) if (sim > bestSim) bestSim = sim;
+        vektorBestSim = bestSim;
         const untergrenze = bestSim > 0 ? Math.min(bestSim, Math.max(VECTOR_FLOOR, bestSim * VECTOR_BAND)) : VECTOR_FLOOR;
         vectorRanked = [...bestPerMemory.entries()]
           .filter(([, sim]) => sim >= untergrenze)
@@ -568,17 +570,24 @@ export async function searchMemories(store: KeptaStore, params: SearchParams): P
   }
 
   // --- RRF-Fusion ---
+  // P182: Das Vektor-Bein schweigt nie (es bleibt in der Liste, usedVectors und
+  // die Spuren tragen es); als STIMME in der Fusion zaehlt es aber nur mit seiner
+  // Abruf-Sicherheit: ueber dem Boden voll, unter ihm nur dann, wenn keine andere
+  // Stimme spricht — sonst verdraengt ein schwacher semantischer Kandidat die
+  // Wort-Stimme (der Nudeln-Fall aus der Nachmessung konkurrenz-0911d).
+  const andereStimmen = bm25Ranked.length > 0 || entityRanked.length > 0;
+  const vektorStimme = !andereStimmen || vektorBestSim >= VECTOR_FLOOR ? 1 : 0;
   const scores = new Map<string, { rrf: number; bm25Rank: number | null; vectorRank: number | null; entityRank: number | null }>();
-  const bump = (rankedList: string[], leg: "bm25Rank" | "vectorRank" | "entityRank") => {
+  const bump = (rankedList: string[], leg: "bm25Rank" | "vectorRank" | "entityRank", gewicht = 1) => {
     rankedList.forEach((id, idx) => {
       const entry = scores.get(id) ?? { rrf: 0, bm25Rank: null, vectorRank: null, entityRank: null };
-      entry.rrf += 1 / (RRF_K + idx + 1);
+      entry.rrf += gewicht / (RRF_K + idx + 1);
       if (entry[leg] === null) entry[leg] = idx + 1;
       scores.set(id, entry);
     });
   };
   bump(bm25Ranked, "bm25Rank");
-  bump(vectorRanked, "vectorRank");
+  bump(vectorRanked, "vectorRank", vektorStimme);
   bump(entityRanked, "entityRank");
 
   // Nur Treffer, die mindestens eine Bein getroffen haben; bei leerer Query Recency-Liste

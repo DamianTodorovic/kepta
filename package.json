@@ -1,7 +1,7 @@
 {
   "name": "kepta",
   "private": true,
-  "version": "3.2.193",
+  "version": "3.2.194",
   "description": "K3PTA — Keeps what matters. A local brain for AI agents: SQLite, hybrid retrieval, knowledge graph, MCP 2026-07-28 — no cloud.",
   "author": "Damian Todorovic",
   "type": "module",
