@@ -465,3 +465,26 @@ describe("P164: DELETE/restore-Satz und Both-protections-Satz nennen ihre Zeugen
     expect(nackt, `diese Saetze stehen ohne Zeugen da:\n  ${nackt.join("\n  ").slice(0, 400)}`).toEqual([]);
   });
 });
+
+// P165 — die zwei UI-Zusagen: die Quellen-Chips (README:211, "every answer shows which
+// memories it used") und die Karten-Teil-Marke (README:230, "the number of parts that one
+// file was split into"). Ihre Zeugen sind Komponenten-Wachen am gerenderten Objekt:
+// tests/components/quellen-chips-und-teil-marke.test.tsx haelt die Chips (Sources:,
+// sechs Titel, +N-Ueberlauf, leerer Fall) und die Teil-Marke (N = Chunk-Zahl derselben
+// Datei, Ein-Stueck ohne Teil). Gleiche Lesart wie P162-P164: Satz-Riss und zeug-Regel
+// importiert, nicht nachgebaut — was hier gruen ist, zaehlt `zaehlen.mjs` als bewaffnet.
+describe("P165: Quellen-Chips-Zusage und Karten-Teil-Marke nennen ihre Zeugen", () => {
+  const p165Saetze = () =>
+    satzeAusMarkdown(README).filter((s) =>
+      /every answer shows which memories it used|number of parts that one file was split into/.test(s),
+    );
+
+  it("die zwei Saetze werden gefunden — die Sonde meldet keinen Erfolg fuer Ungelesenes", () => {
+    expect(p165Saetze().length, `die Sonde findet ${p165Saetze().length} P165-Saetze`).toBe(2);
+  });
+
+  it("jeder der zwei traegt sein Messzeug im selben Satz", () => {
+    const nackt = p165Saetze().filter((s) => !zeug.test(s));
+    expect(nackt, `diese Saetze stehen ohne Zeugen da:\n  ${nackt.join("\n  ").slice(0, 400)}`).toEqual([]);
+  });
+});

@@ -1,4 +1,4 @@
-Zeit: 8.11.2026, 13:08:55 MEZ
+Zeit: 8.11.2026, 13:36:43 MEZ
 Dateien: README.md, SECURITY.md, ROADMAP.md, .github/release-notes.md — Einheiten ueber 25 Zeichen.
 Riss: satz-riss.mjs (P128, markdown-fest). Vorher: Satzende + Leerzeichen ueber dem
 ganzen Text, wodurch Aufzaehlungen, Tabellenzeilen und `<summary>`-Kuelsen als EIN
@@ -9,11 +9,11 @@ Satz zaehlten. Unter beiden Naivlingen, in diesem Lauf nachgerechnet:
 
 | Datei | Saetze | absolute | mit Messzeug | ohne Messzeug | Anteil ohne |
 |---|---|---|---|---|---|
-| `README.md` | 411 | 137 | 81 | 56 | 40.9 % |
+| `README.md` | 411 | 137 | 83 | 54 | 39.4 % |
 | `SECURITY.md` | 33 | 9 | 4 | 5 | 55.6 % |
 | `ROADMAP.md` | 77 | 16 | 4 | 12 | 75.0 % |
 | `.github/release-notes.md` | 50 | 20 | 13 | 7 | 35.0 % |
-| **zusammen** | **571** | **182** | **102** | **80** | **44.0 %** |
+| **zusammen** | **571** | **182** | **104** | **78** | **42.9 %** |
 
 Nenner fuer den Anteil: 182 absolute Behauptungen in 571 Saetzen der vier Texte.
 
@@ -25,7 +25,7 @@ Zweite Lesung — der Zeuge darf im selben Abschnitt stehen (Absatz, Tabelle, Au
 | `ROADMAP.md` | 16 | 0 | 16 |
 | `.github/release-notes.md` | 20 | 8 | 12 |
 | zusammen | 182 | 74 | 108 |
-   mit Messzeug im selben Abschnitt: 74 von 182 = 40.7 % (gegen 102 von 182 = 56.0 % in der engen Lesung).
+   mit Messzeug im selben Abschnitt: 74 von 182 = 40.7 % (gegen 104 von 182 = 57.1 % in der engen Lesung).
 
 Die schmalere Klasse — Saetze, die ein Werkzeug widerlegen koennte (never/always/cannot/0 %/100 %):
    README.md                  30 von 137 absoluten
@@ -72,9 +72,9 @@ Die schmalere Klasse — Saetze, die ein Werkzeug widerlegen koennte (never/alwa
 
 Zwei von ihnen nachgegriffen, im selben Lauf:
    "no screenshot of it here yet" (Semantic-Ansicht): README nennt 20 Bilder (12 in Markdown, 8 als <img alt>), davon 0 mit "Semantic"; der Satz steht noch da — haltbar.
-   "no embedding ever travels into the view": 8 von 8 benannten Flaechen-Dateien gelesen, zusammen 0 Nennung(en) "embedding"; das Wort liegt in 34 Test-Dateien des Repos. Fehlende Dateien: keine.
+   "no embedding ever travels into the view": 8 von 8 benannten Flaechen-Dateien gelesen, zusammen 0 Nennung(en) "embedding"; das Wort liegt in 35 Test-Dateien des Repos. Fehlende Dateien: keine.
 
-Die 80 ohne Messzeug, in Lesereihenfolge der Dateien (erste 40):
+Die 78 ohne Messzeug, in Lesereihenfolge der Dateien (erste 40):
    [README.md] Your AI forgets you after every chat.
    [README.md] Desktop app · no cloud · no account · encrypted at rest SQLite · hybrid retrieval · knowledge graph · MCP
    [README.md] The machine state printed in the same artefacts says why no millisecond there is claimed as a verdict.
@@ -100,9 +100,7 @@ Die 80 ohne Messzeug, in Lesereihenfolge der Dateien (erste 40):
    [README.md] Careful on purpose: only facts and how-tos are compared, both sentences must share their meaningful words, notes from the same file stay out, and so do the parts of a split file (README — 5/17), a note's source line and 
    [README.md] No license server, no phone-home, no extra infrastructure — one file.
    [README.md] Model discovery for Ollama and LM Studio in one click, no key required
-   [README.md] Source citations: every answer shows which memories it used
    [README.md] Duplicate review — every group side by side, one click to keep the richest copy or dismiss the pair for good.
-   [README.md] Every card shows where it came from and which part it is — a label like 2/5, where the 5 is the number of parts that one file was split into, not a share of the store — and a file source opens in its default application.
    [README.md] Text size — 100, 115 or 130 %, under *Settings → Display*.
    [README.md] - All data in ~/.kepta/ — one SQLite file that belongs to you
    [README.md] - No account, no telemetry, no phone-home — and nothing to activate: the app validates no key, so there is no check of any kind to call home for.
@@ -115,3 +113,5 @@ Die 80 ohne Messzeug, in Lesereihenfolge der Dateien (erste 40):
    [README.md] Without that file there is no team workspace — the app says so plainly instead of hiding a dead end.
    [README.md] No plugin store, and that is not a lock.
    [README.md] K3PTA loads no third-party code, so there is nothing to approve, nothing to buy and nothing an organisation could switch off for you: the app's own features run the same in the free download as in a managed deployment.
+   [README.md] There is no self-serve checkout anywhere, and there is no longer a key to issue for the app.
+   [README.md] The engine underneath this app is source-available — BUSL-1.1, at [DamianTodorovic/kepta](https://github.com/DamianTodorovic/kepta) (each release converts to AGPL-3.0-or-later after four years): storage with encryption a

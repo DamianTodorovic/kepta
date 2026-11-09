@@ -3,8 +3,8 @@
   "README.md": {
    "saetze": 411,
    "absolut": 137,
-   "mit_zeug": 81,
-   "ohne_zeug": 56
+   "mit_zeug": 83,
+   "ohne_zeug": 54
   },
   "SECURITY.md": {
    "saetze": 33,
@@ -28,8 +28,8 @@
  "zusammen": {
   "saetze": 571,
   "absolut": 182,
-  "mit_zeug": 102,
-  "ohne_zeug": 80
+  "mit_zeug": 104,
+  "ohne_zeug": 78
  },
  "abschnitt": {
   "README.md": {
@@ -302,7 +302,7 @@
    }
   ],
   "embedding_in_flaechen_dateien": 0,
-  "tests_mit_embedding_wort": 34
+  "tests_mit_embedding_wort": 35
  },
  "ohne_zeug": [
   {
@@ -407,15 +407,7 @@
   },
   {
    "datei": "README.md",
-   "satz": "Source citations: every answer shows which memories it used"
-  },
-  {
-   "datei": "README.md",
    "satz": "Duplicate review — every group side by side, one click to keep the richest copy or dismiss the pair for good."
-  },
-  {
-   "datei": "README.md",
-   "satz": "Every card shows where it came from and which part it is — a label like 2/5, where the 5 is the number of parts that one file was split into, not a share of the store — and a file source opens in its default application."
   },
   {
    "datei": "README.md",

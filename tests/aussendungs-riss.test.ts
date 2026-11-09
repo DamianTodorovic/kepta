@@ -107,7 +107,7 @@ describe("P129, der Wortschatz: ein benanntes Instrument ist ein Messzeug", () =
     expect(zeug.test(einheiten[0]), "das Messzeug steht im selben Satz, wird aber nicht gesehen").toBe(true);
   });
 
-  it("am echten Bestand: 102 von 182 absoluten Behauptungen nennen ihr Messzeug", () => {
+  it("am echten Bestand: 104 von 182 absoluten Behauptungen nennen ihr Messzeug", () => {
     let absoluten = 0;
     let mit = 0;
     for (const datei of DATEIEN) {
@@ -205,8 +205,18 @@ describe("P129, der Wortschatz: ein benanntes Instrument ist ein Messzeug", () =
     // und schmale Klasse 35 bleiben. Die Wache lebt in tests/doku-plattform.test.ts,
     // describe "P164: ..." (gleiche Lesart wie P162/P163: Satz-Riss und zeug-Regel
     // importiert).
+    // P165 (gemessen 8.11. 13:36:43 MEZ mit dem Zaehler selbst): die zwei UI-Zusagen
+    // nennen jetzt ihre Zeugen — die Quellen-Chips-Zusage in README:211 (Zeuge
+    // tests/components/quellen-chips-und-teil-marke.test.tsx:82, sendet eine Frage durch
+    // den Streaming-Chat und haelt Sources:-Zeile, sechs Titel und den +2-Ueberlauf;
+    // :100 der leere Fall ohne Zeile) und die Karten-Teil-Marke in README:230 (Zeuge
+    // :131, zwei Dateien in einem Wurf — Ein-Stueck ohne Teil, Mehr-Stueck mit der
+    // Stueckzahl DIESER Datei, nicht des Ladens). Zaehler 102 -> 104, ohne 80 -> 78
+    // (Anteil 44,0 -> 42,9 %). Nenner 182, Einheiten 571 und schmale Klasse 35 bleiben.
+    // Die Wache lebt in tests/doku-plattform.test.ts, describe "P165: ..." (gleiche
+    // Lesart wie P162-P164: Satz-Riss und zeug-Regel importiert).
     expect(absoluten, "der Nenner ist nicht mehr 182 — der Riss oder die Klasse hat sich bewegt").toBe(182);
-    expect(mit, `${mit} von ${absoluten} nennen ein Messzeug — erwartet war 102`).toBe(102);
+    expect(mit, `${mit} von ${absoluten} nennen ein Messzeug — erwartet war 104`).toBe(104);
     expect(mit / absoluten, "Anteil ohne Nenner ist ein Urteil").toBeGreaterThan(0.3);
     expect(maschine.source.length, "die schmale Klasse wurde nicht mitgeändert").toBeGreaterThan(10);
   });
