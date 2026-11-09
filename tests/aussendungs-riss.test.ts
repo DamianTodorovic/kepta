@@ -107,7 +107,7 @@ describe("P129, der Wortschatz: ein benanntes Instrument ist ein Messzeug", () =
     expect(zeug.test(einheiten[0]), "das Messzeug steht im selben Satz, wird aber nicht gesehen").toBe(true);
   });
 
-  it("am echten Bestand: 122 von 182 absoluten Behauptungen nennen ihr Messzeug", () => {
+  it("am echten Bestand: 134 von 182 absoluten Behauptungen nennen ihr Messzeug", () => {
     let absoluten = 0;
     let mit = 0;
     for (const datei of DATEIEN) {
@@ -274,8 +274,25 @@ describe("P129, der Wortschatz: ein benanntes Instrument ist ein Messzeug", () =
     // (README 93 -> 101), ohne 68 -> 60 (README 44 -> 36, Anteil 37,4 -> 33,0 %). Nenner 182,
     // Einheiten 571 und schmale Klasse 36 bleiben — Voraussage voll exakt. Die Wache lebt in
     // tests/doku-plattform.test.ts, describe "P170: ...".
+    // Nach P171 (9.11.): Zwoelf Lokal-, Keine-Grenzen-, Team- und Eval-Versprechen in README.md
+    // (:168 Today straight from local database, :181 No license server/phone-home/one file, :209
+    // Model discovery for Ollama and LM Studio without key, :260 All data in ~/.kepta/, :266
+    // No account/telemetry/nothing to activate, :297 No service in between & encrypted SQLite
+    // file, :353 K3PTA Core free & Enterprise by agreement, :357 no route/header/anchor/strings,
+    // :358 Without that file no team workspace, :362 no self-serve checkout/key, :459 eval's
+    // third leg lands on 76 %) nennen ihre Zeugen (tests/enterprise-api.test.ts:207,
+    // tests/electron-haertung.test.ts:107, tests/richtlinien.test.ts:106,
+    // tests/keine-telemetrie.test.ts:73, tests/components/chat-custom-verbunden.test.tsx:108,
+    // tests/lib/verbindung-lokal-ohne-schluessel.test.ts:12,
+    // tests/core/store-verschluesselung.test.ts:76, tests/testkapsel.test.ts:107,
+    // tests/keine-grenzen.test.ts:72/:92/:102/:107/:116, tests/herkunft.test.ts:151,
+    // tests/doku-zahlen.test.ts:223/:332/:338, tests/team.test.ts:161,
+    // tests/components/TeamView.test.tsx:30, docs/belege/tag-0311/eval-drei-beine-1352.log.txt).
+    // Zaehler 122 -> 134 (README 101 -> 113), ohne 60 -> 48 (README 36 -> 24, Anteil 33,0 ->
+    // 26,4 %). Nenner 182, Einheiten 571 und schmale Klasse 36 bleiben — Voraussage voll exakt.
+    // Die Wache lebt in tests/doku-plattform.test.ts, describe "P171: ...".
     expect(absoluten, "der Nenner ist nicht mehr 182 — der Riss oder die Klasse hat sich bewegt").toBe(182);
-    expect(mit, `${mit} von ${absoluten} nennen ein Messzeug — erwartet war 122`).toBe(122);
+    expect(mit, `${mit} von ${absoluten} nennen ein Messzeug — erwartet war 134`).toBe(134);
     expect(mit / absoluten, "Anteil ohne Nenner ist ein Urteil").toBeGreaterThan(0.3);
     expect(maschine.source.length, "die schmale Klasse wurde nicht mitgeändert").toBeGreaterThan(10);
   });

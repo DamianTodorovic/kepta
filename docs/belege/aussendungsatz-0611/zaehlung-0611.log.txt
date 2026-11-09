@@ -1,4 +1,4 @@
-Zeit: 9.11.2026, 16:12:45 MEZ
+Zeit: 9.11.2026, 16:29:02 MEZ
 Dateien: README.md, SECURITY.md, ROADMAP.md, .github/release-notes.md — Einheiten ueber 25 Zeichen.
 Riss: satz-riss.mjs (P128, markdown-fest). Vorher: Satzende + Leerzeichen ueber dem
 ganzen Text, wodurch Aufzaehlungen, Tabellenzeilen und `<summary>`-Kuelsen als EIN
@@ -9,11 +9,11 @@ Satz zaehlten. Unter beiden Naivlingen, in diesem Lauf nachgerechnet:
 
 | Datei | Saetze | absolute | mit Messzeug | ohne Messzeug | Anteil ohne |
 |---|---|---|---|---|---|
-| `README.md` | 411 | 137 | 101 | 36 | 26.3 % |
+| `README.md` | 411 | 137 | 113 | 24 | 17.5 % |
 | `SECURITY.md` | 33 | 9 | 4 | 5 | 55.6 % |
 | `ROADMAP.md` | 77 | 16 | 4 | 12 | 75.0 % |
 | `.github/release-notes.md` | 50 | 20 | 13 | 7 | 35.0 % |
-| **zusammen** | **571** | **182** | **122** | **60** | **33.0 %** |
+| **zusammen** | **571** | **182** | **134** | **48** | **26.4 %** |
 
 Nenner fuer den Anteil: 182 absolute Behauptungen in 571 Saetzen der vier Texte.
 
@@ -25,7 +25,7 @@ Zweite Lesung — der Zeuge darf im selben Abschnitt stehen (Absatz, Tabelle, Au
 | `ROADMAP.md` | 16 | 0 | 16 |
 | `.github/release-notes.md` | 20 | 8 | 12 |
 | zusammen | 182 | 75 | 107 |
-   mit Messzeug im selben Abschnitt: 75 von 182 = 41.2 % (gegen 122 von 182 = 67.0 % in der engen Lesung).
+   mit Messzeug im selben Abschnitt: 75 von 182 = 41.2 % (gegen 134 von 182 = 73.6 % in der engen Lesung).
 
 Die schmalere Klasse — Saetze, die ein Werkzeug widerlegen koennte (never/always/cannot/0 %/100 %):
    README.md                  31 von 137 absoluten
@@ -75,7 +75,7 @@ Zwei von ihnen nachgegriffen, im selben Lauf:
    "no screenshot of it here yet" (Semantic-Ansicht): README nennt 20 Bilder (12 in Markdown, 8 als <img alt>), davon 0 mit "Semantic"; der Satz steht noch da — haltbar.
    "no embedding ever travels into the view": 8 von 8 benannten Flaechen-Dateien gelesen, zusammen 0 Nennung(en) "embedding"; das Wort liegt in 37 Test-Dateien des Repos. Fehlende Dateien: keine.
 
-Die 60 ohne Messzeug, in Lesereihenfolge der Dateien (erste 40):
+Die 48 ohne Messzeug, in Lesereihenfolge der Dateien (erste 40):
    [README.md] Your AI forgets you after every chat.
    [README.md] Desktop app · no cloud · no account · encrypted at rest SQLite · hybrid retrieval · knowledge graph · MCP
    [README.md] The machine state printed in the same artefacts says why no millisecond there is claimed as a verdict.
@@ -84,20 +84,9 @@ Die 60 ohne Messzeug, in Lesereihenfolge der Dateien (erste 40):
    [README.md] The next day you open a fresh chat and it knows none of it.
    [README.md] Agent | An AI program that can use tools instead of only answering — Claude Desktop, Cursor or Gemini CLI, for instance.
    [README.md] One brain for every AI tool.
-   [README.md] Read straight from the local database: no AI involved, nothing leaves the computer
-   [README.md] No license server, no phone-home, no extra infrastructure — one file.
-   [README.md] Model discovery for Ollama and LM Studio in one click, no key required
-   [README.md] - All data in ~/.kepta/ — one SQLite file that belongs to you
-   [README.md] - No account, no telemetry, no phone-home — and nothing to activate: the app validates no key, so there is no check of any kind to call home for.
-   [README.md] No service in between, no account, no telemetry.
-   [README.md] Your memories are stored only in that encrypted SQLite file — there is no server of mine for them to reach.
    [README.md] Standard library only, no dependencies.
-   [README.md] There are two things in the world: K3PTA Core, free — the desktop app and the engine underneath it — and K3PTA Enterprise, memory for organizations, which exists only by agreement with Damian.
-   [README.md] K3PTA's promise is a memory that is yours without supervision, so the whole mechanism was removed rather than tuned: no route, no header, no anchor, no strings.
-   [README.md] Without that file there is no team workspace — the app says so plainly instead of hiding a dead end.
    [README.md] No plugin store, and that is not a lock.
    [README.md] K3PTA loads no third-party code, so there is nothing to approve, nothing to buy and nothing an organisation could switch off for you: the app's own features run the same in the free download as in a managed deployment.
-   [README.md] There is no self-serve checkout anywhere, and there is no longer a key to issue for the app.
    [README.md] The engine underneath this app is source-available — BUSL-1.1, at [DamianTodorovic/kepta](https://github.com/DamianTodorovic/kepta) (each release converts to AGPL-3.0-or-later after four years): storage with encryption a
    [README.md] No path, nothing to build — npx fetches the server the first time it is needed:
    [README.md] If you would rather not have npx check the registry on every start, install it once with npm i -g kepta-mcp and use "command": "kepta" instead.
@@ -110,9 +99,20 @@ Die 60 ohne Messzeug, in Lesereihenfolge der Dateien (erste 40):
    [README.md] The gates sit a little below what is reached, so they can only move up.
    [README.md] Obsidian is excellent for humans — but Markdown is not a memory: no types, no validity, no MCP.
    [README.md] Every figure below is a run of this repository's own tools, kept whole next to the sentence that uses it — disagree with the numbers by rerunning them.
-   [README.md] The eval's third leg, measured independently on 2026-11-03, lands on the same 76 %.
    [README.md] An explanation counts only if the sentence names the word itself and runs longer than eight words: "A written brief on one subject" does not explain *Dossier*, "A Dossier is a written brief on one subject, built from the
    [SECURITY.md] No public exploit before a fix exists.
    [SECURITY.md] The key is created on the first start and stored in the system keychain: the macOS Keychain (service app.kepta.database, account kepta), Windows DPAPI (database-key.dpapi in the data folder, readable only under the same 
    [SECURITY.md] Those cases replace the system command, so what is proven here is K3PTA's own side of the call; the round-trip against a real Keychain, DPAPI or Secret Service runs only on that operating system.
    [SECURITY.md] - A running K3PTA: the local API (127.0.0.1, no authentication) serves the decrypted knowledge to programs on the same machine, as before.
+   [SECURITY.md] Two deliberate exceptions: endpoint.json (port, PID, start time — no secret, and the discovery mechanism for local tools) and the inbox folder with its archive (files you dropped there yourself — user property, like the 
+   [ROADMAP.md] > As of September 2026 · Replaces WHITE-SPACE-ANALYSE.md (the v1.0 analysis, whose quick wins and big bets are all shipped).
+   [ROADMAP.md] Every user-facing string, the MCP tool descriptions, the starter pack and the native date controls are English.
+   [ROADMAP.md] Encryption at rest — evaluated | Honest assessment in docs/encryption-eval.md: SQLCipher needs a build switch, PRAGMA key silently does nothing on node:sqlite, the KeyProvider seam is free (~0 ms); recommendation: OS-lev
+   [ROADMAP.md] Interface: Die Akte | True-black dark theme, seal-red accent, serif display type, soft depth layers, Apple-style segmented controls, typographic sidebar with brand plate, type-colour strokes on cards — every surface rewo
+   [ROADMAP.md] Text size | 100/115/130 % (a German switch shipped here too and was removed in 2.11)
+   [ROADMAP.md] English only | The German interface switch from 2.10 is gone
+   [ROADMAP.md] Name and number | Activation stays name and key, offline, and every key carries a license number.
+   [ROADMAP.md] Since 3.1.1 the sidebar shows the licensee's name with no tier label — the number itself is no longer on screen (it travels with the license state and the activation answer)
+   [ROADMAP.md] Revocation | A revoked license number no longer unlocks K3PTA from the next update on — also where it was already activated
+   [ROADMAP.md] ## ✅ v2.13 — September 2026: your memory, every day
+   [ROADMAP.md] Readable by design: endpoint.json (no secret, it is how local tools find the port) and the inbox with the user's own source files

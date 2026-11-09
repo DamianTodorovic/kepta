@@ -627,3 +627,39 @@ describe("P170: Feature- und Pflege-Versprechen in README.md nennen ihre Zeugen"
   });
 });
 
+// P171 (09.11.2026): Zwoelf Lokal-, Keine-Grenzen-, Team- und Eval-Versprechen in
+// README.md (:168, :181, :209, :260, :266, :297 x2, :353, :357, :358, :362, :459)
+// waren im Aussendungssatz als "absolut, ohne_zeug" gezaehlt, obwohl ihre Zeugen im
+// Baum stehen:
+// - :168 (Today read straight from local database): tests/enterprise-api.test.ts:207 + tests/electron-haertung.test.ts:107
+// - :181 (No license server, no phone-home, one file): tests/richtlinien.test.ts:106 + tests/keine-telemetrie.test.ts:73
+// - :209 (Model discovery for Ollama and LM Studio, no key required): tests/components/chat-custom-verbunden.test.tsx:108 + tests/lib/verbindung-lokal-ohne-schluessel.test.ts:12
+// - :260 (All data in ~/.kepta/ — one SQLite file): tests/core/store-verschluesselung.test.ts:76 + tests/testkapsel.test.ts:107
+// - :266 Satz 1 (No account, no telemetry, nothing to activate): tests/keine-grenzen.test.ts:102/:116
+// - :297 Satz 1 (No service in between, no account, no telemetry): tests/keine-telemetrie.test.ts:73 + tests/herkunft.test.ts:151
+// - :297 Satz 3 (Your memories are stored only in that encrypted SQLite file): tests/core/store-verschluesselung.test.ts:76 + tests/keine-telemetrie.test.ts:73
+// - :353 Satz 1 (K3PTA Core free, K3PTA Enterprise by agreement): tests/doku-zahlen.test.ts:338 + tests/keine-grenzen.test.ts:72
+// - :357 Satz 4 (no route, no header, no anchor, no strings): tests/keine-grenzen.test.ts:92/:102/:107/:116
+// - :358 Satz 3 (Without that file there is no team workspace): tests/team.test.ts:161 + tests/components/TeamView.test.tsx:30
+// - :362 Satz 2 (no self-serve checkout, no longer a key to issue): tests/doku-zahlen.test.ts:332 + tests/keine-grenzen.test.ts:102
+// - :459 Satz 3 (eval's third leg lands on the same 76 %): docs/belege/tag-0311/eval-drei-beine-1352.log.txt + tests/doku-zahlen.test.ts:223
+// Gleiche Lesart wie P162-P170.
+describe("P171: Keine-Grenzen-, Lokal- und Eval-Versprechen in README.md nennen ihre Zeugen", () => {
+  const p171Saetze = () =>
+    satzeAusMarkdown(README).filter((s) =>
+      /Read straight from the local database: no AI involved|No license server, no phone-home, no extra infrastructure|Model discovery for Ollama and LM Studio in one click|All data in ~\/\.kepta\/ — one SQLite file that belongs to you|the app validates no key, so there is no check of any kind to call home for|No service in between, no account, no telemetry|there is no server of mine for them to reach|There are two things in the world: K3PTA Core, free|no route, no header, no anchor, no strings|Without that file there is no team workspace|There is no self-serve checkout anywhere|The eval's third leg, measured independently on 2026-11-03, lands on the same 76 %/.test(
+        s,
+      ),
+    );
+
+  it("die zwoelf Saetze werden gefunden — die Sonde meldet keinen Erfolg fuer Ungelesenes", () => {
+    expect(p171Saetze().length, `die Sonde findet ${p171Saetze().length} P171-Saetze`).toBe(12);
+  });
+
+  it("jeder der zwoelf traegt sein Messzeug im selben Satz", () => {
+    const nackt = p171Saetze().filter((s) => !zeug.test(s));
+    expect(nackt, `diese Saetze stehen ohne Zeugen da:\n  ${nackt.join("\n  ").slice(0, 1200)}`).toEqual([]);
+  });
+});
+
+
