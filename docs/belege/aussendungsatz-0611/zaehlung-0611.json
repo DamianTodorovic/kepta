@@ -3,8 +3,8 @@
   "README.md": {
    "saetze": 411,
    "absolut": 137,
-   "mit_zeug": 86,
-   "ohne_zeug": 51
+   "mit_zeug": 88,
+   "ohne_zeug": 49
   },
   "SECURITY.md": {
    "saetze": 33,
@@ -28,8 +28,8 @@
  "zusammen": {
   "saetze": 571,
   "absolut": 182,
-  "mit_zeug": 107,
-  "ohne_zeug": 75
+  "mit_zeug": 109,
+  "ohne_zeug": 73
  },
  "abschnitt": {
   "README.md": {
@@ -61,7 +61,7 @@
  "maschinell_pruefbar": {
   "README.md": {
    "absolut": 137,
-   "maschinell": 30
+   "maschinell": 31
   },
   "SECURITY.md": {
    "absolut": 9,
@@ -76,7 +76,7 @@
    "maschinell": 2
   }
  },
- "summe_pruefbar": 35,
+ "summe_pruefbar": 36,
  "pruefbar_liste": [
   {
    "datei": "README.md",
@@ -101,6 +101,11 @@
   {
    "datei": "README.md",
    "satz": "Keys, credentials, browser profiles, keychains and system folders are never read, and that cannot be switched off (tests/scan/regeln.test.ts tries to open the barrier with a widened file-type list and is refused) — becau",
+   "zeuge": true
+  },
+  {
+   "datei": "README.md",
+   "satz": "Everything lives in ~/.kepta/, encrypted on disk, no account, no telemetry (no unchosen foreign address travels in the shipped code — tests/keine-telemetrie.test.ts:73 — and the licence route answers nothing, read or wri",
    "zeuge": true
   },
   {
@@ -335,10 +340,6 @@
   },
   {
    "datei": "README.md",
-   "satz": "K3PTA stores the database key there, so there is no password to type."
-  },
-  {
-   "datei": "README.md",
    "satz": "One brain for every AI tool."
   },
   {
@@ -348,10 +349,6 @@
   {
    "datei": "README.md",
    "satz": "Changing the default would also mean re-embedding every stored note, because each chunk is keyed to the model that produced it (npm run eval:sprache reruns both sides)."
-  },
-  {
-   "datei": "README.md",
-   "satz": "Everything lives in ~/.kepta/, encrypted on disk, no account, no telemetry."
   },
   {
    "datei": "README.md",

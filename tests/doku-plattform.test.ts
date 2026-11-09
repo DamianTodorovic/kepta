@@ -516,3 +516,29 @@ describe("P166: asOf-Paar und Telemetrie-Triade nennen ihre Zeugen", () => {
     expect(nackt, `diese Saetze stehen ohne Zeugen da:\n  ${nackt.join("\n  ").slice(0, 400)}`).toEqual([]);
   });
 });
+
+// P167 — der Privat-Restcluster: die Keychain-Zelle (README:74, "K3PTA stores the
+// database key there, so there is no password to type") und der Private-provably-Satz
+// (README:91, "Everything lives in ~/.kepta/, encrypted on disk, no account, no
+// telemetry"). Zeugen: tests/core/schluessel.test.ts:150 waehlt je Betriebssystem den
+// eignen Geheimnis-Speicher (Keychain/DPAPI/Secret Service); tests/keine-telemetrie.test.ts:73
+// haelt jede ferne Adresse fuer gewaehlten Anbieter oder benannte Ausnahme,
+// tests/keine-grenzen.test.ts:102 haelt die Lizenzroute tot. Der dritte Kandidat
+// (README:267, "not a single byte leaves the machine") hat KEINE bereite Wache und
+// bleibt eigene Scheibe — hier wird nichts mit einem geborgten Zeugen bewaffnet.
+// Gleiche Lesart wie P162-P166: Satz-Riss und zeug-Regel importiert.
+describe("P167: Keychain-Zelle und Private-provably-Satz nennen ihre Zeugen", () => {
+  const p167Saetze = () =>
+    satzeAusMarkdown(README).filter((s) =>
+      /K3PTA stores the database key there, so there is no password to type|Everything lives in/.test(s),
+    );
+
+  it("die zwei Saetze werden gefunden — die Sonde meldet keinen Erfolg fuer Ungelesenes", () => {
+    expect(p167Saetze().length, `die Sonde findet ${p167Saetze().length} P167-Saetze`).toBe(2);
+  });
+
+  it("jeder der zwei traegt sein Messzeug im selben Satz", () => {
+    const nackt = p167Saetze().filter((s) => !zeug.test(s));
+    expect(nackt, `diese Saetze stehen ohne Zeugen da:\n  ${nackt.join("\n  ").slice(0, 400)}`).toEqual([]);
+  });
+});

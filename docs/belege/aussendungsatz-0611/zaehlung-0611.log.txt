@@ -1,4 +1,4 @@
-Zeit: 9.11.2026, 08:53:29 MEZ
+Zeit: 9.11.2026, 09:05:08 MEZ
 Dateien: README.md, SECURITY.md, ROADMAP.md, .github/release-notes.md — Einheiten ueber 25 Zeichen.
 Riss: satz-riss.mjs (P128, markdown-fest). Vorher: Satzende + Leerzeichen ueber dem
 ganzen Text, wodurch Aufzaehlungen, Tabellenzeilen und `<summary>`-Kuelsen als EIN
@@ -9,11 +9,11 @@ Satz zaehlten. Unter beiden Naivlingen, in diesem Lauf nachgerechnet:
 
 | Datei | Saetze | absolute | mit Messzeug | ohne Messzeug | Anteil ohne |
 |---|---|---|---|---|---|
-| `README.md` | 411 | 137 | 86 | 51 | 37.2 % |
+| `README.md` | 411 | 137 | 88 | 49 | 35.8 % |
 | `SECURITY.md` | 33 | 9 | 4 | 5 | 55.6 % |
 | `ROADMAP.md` | 77 | 16 | 4 | 12 | 75.0 % |
 | `.github/release-notes.md` | 50 | 20 | 13 | 7 | 35.0 % |
-| **zusammen** | **571** | **182** | **107** | **75** | **41.2 %** |
+| **zusammen** | **571** | **182** | **109** | **73** | **40.1 %** |
 
 Nenner fuer den Anteil: 182 absolute Behauptungen in 571 Saetzen der vier Texte.
 
@@ -25,20 +25,21 @@ Zweite Lesung — der Zeuge darf im selben Abschnitt stehen (Absatz, Tabelle, Au
 | `ROADMAP.md` | 16 | 0 | 16 |
 | `.github/release-notes.md` | 20 | 8 | 12 |
 | zusammen | 182 | 75 | 107 |
-   mit Messzeug im selben Abschnitt: 75 von 182 = 41.2 % (gegen 107 von 182 = 58.8 % in der engen Lesung).
+   mit Messzeug im selben Abschnitt: 75 von 182 = 41.2 % (gegen 109 von 182 = 59.9 % in der engen Lesung).
 
 Die schmalere Klasse — Saetze, die ein Werkzeug widerlegen koennte (never/always/cannot/0 %/100 %):
-   README.md                  30 von 137 absoluten
+   README.md                  31 von 137 absoluten
    SECURITY.md                2 von 9 absoluten
    ROADMAP.md                 1 von 16 absoluten
    .github/release-notes.md   2 von 20 absoluten
-   zusammen 35 von 182 — der Rest ist Produktcopy ("no password to type"), keine Behauptung ueber eine Maschine.
+   zusammen 36 von 182 — der Rest ist Produktcopy ("no password to type"), keine Behauptung ueber eine Maschine.
    Die Liste, in Lesereihenfolge, mit dem Marker „Zeug", wenn derselbe Satz schon ein Messzeug nennt:
    [README.md] ZEUG While it cools at 3 000 notes a few pairs still touch for a moment; tests/lib/graphLayout.test.ts:2455-2458 pins that funnel at ≤ 40 pairs by step 250, ≤ 40 again by step 310 and zero by step 380, so no sentence here say
    [README.md] ZEUG On macOS the key never sits in a file; on Windows it is the DPAPI-sealed database-key.dpapi in the data folder, readable only under the same account, and a headless install with KEPTA_DB_KEY keeps it in the process envir
    [README.md] ZEUG Every memory carries a type and a confidence score — the type is the rules' answer when nobody set one, never a silent fall-back to *fact*, and an unset confidence reads as 1 (tests/core/notiz-drei-felder.test.ts:53, :67
    [README.md] ZEUG The validity window is the one field a note really can lack: the row then holds null, and the reader decides — no start means the note's own creation date, no end means it never expires (:75 reads both nulls back, :87 an
    [README.md] ZEUG Keys, credentials, browser profiles, keychains and system folders are never read, and that cannot be switched off (tests/scan/regeln.test.ts tries to open the barrier with a widened file-type list and is refused) — becau
+   [README.md] ZEUG Everything lives in ~/.kepta/, encrypted on disk, no account, no telemetry (no unchosen foreign address travels in the shipped code — tests/keine-telemetrie.test.ts:73 — and the licence route answers nothing, read or wri
    [README.md] ZEUG Private notes — one switch in the editor: a private note is never shown to an AI app and never sent to a cloud model — in the app (tests/mcp.test.ts refuses it over MCP even when an agent asks by scope; tests/enterprise-
    [README.md] ZEUG Expired entries are marked, never quietly hidden (tests/engine.test.ts:78-83 asks for an expired note, gets it back with expired: true, and sees it ranked below the fresh one rather than missing)
    [README.md] ZEUG Local reranking: a deterministic reranker (term coverage, phrase hits, title, tags) refines the fused ranking and is exposed as rerankScore — no network, always on (tests/core/lokaler-rerank.test.ts scores with the embed
@@ -74,7 +75,7 @@ Zwei von ihnen nachgegriffen, im selben Lauf:
    "no screenshot of it here yet" (Semantic-Ansicht): README nennt 20 Bilder (12 in Markdown, 8 als <img alt>), davon 0 mit "Semantic"; der Satz steht noch da — haltbar.
    "no embedding ever travels into the view": 8 von 8 benannten Flaechen-Dateien gelesen, zusammen 0 Nennung(en) "embedding"; das Wort liegt in 35 Test-Dateien des Repos. Fehlende Dateien: keine.
 
-Die 75 ohne Messzeug, in Lesereihenfolge der Dateien (erste 40):
+Die 73 ohne Messzeug, in Lesereihenfolge der Dateien (erste 40):
    [README.md] Your AI forgets you after every chat.
    [README.md] Desktop app · no cloud · no account · encrypted at rest SQLite · hybrid retrieval · knowledge graph · MCP
    [README.md] The machine state printed in the same artefacts says why no millisecond there is claimed as a verdict.
@@ -82,11 +83,9 @@ Die 75 ohne Messzeug, in Lesereihenfolge der Dateien (erste 40):
    [README.md] The third view, *Semantic*, places the same notes by what their texts mean — no screenshot of it here yet.
    [README.md] The next day you open a fresh chat and it knows none of it.
    [README.md] Agent | An AI program that can use tools instead of only answering — Claude Desktop, Cursor or Gemini CLI, for instance.
-   [README.md] K3PTA stores the database key there, so there is no password to type.
    [README.md] One brain for every AI tool.
    [README.md] On a four-note check (npm run embed:sprachtest) the default model answers 4 of 4 English paraphrase questions and 1 of 4 of the same questions translated into German.
    [README.md] Changing the default would also mean re-embedding every stored note, because each chunk is keyed to the model that produced it (npm run eval:sprache reruns both sides).
-   [README.md] Everything lives in ~/.kepta/, encrypted on disk, no account, no telemetry.
    [README.md] Files imported with an older extraction can be read again under *Settings → Data → Re-read imported files* — it counts first and writes only after you confirm
    [README.md] Import your AI history: bring your ChatGPT or Claude data export here (*Settings → Data management → Import your AI history*): every conversation with at least one answer becomes a searchable note with its original date,
    [README.md] Persistent embeddings via Ollama (nomic-embed-text), computed by a background queue instead of re-embedding on every query
@@ -115,3 +114,5 @@ Die 75 ohne Messzeug, in Lesereihenfolge der Dateien (erste 40):
    [README.md] No path, nothing to build — npx fetches the server the first time it is needed:
    [README.md] If you would rather not have npx check the registry on every start, install it once with npm i -g kepta-mcp and use "command": "kepta" instead.
    [README.md] In the installed app that page offers a third way first: the MCP server that ships inside K3PTA, started by the app itself — no Node.js, no npm.
+   [README.md] No other platform has a downloadable app, and nothing here pretends otherwise.
+   [README.md] The engine itself runs on all three (kepta-mcp on npm, or from source), so an MCP client on those systems talks to the same memory — only the window is missing.
