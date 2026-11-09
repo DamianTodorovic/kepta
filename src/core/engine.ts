@@ -548,7 +548,7 @@ export async function searchMemories(store: KeptaStore, params: SearchParams): P
         for (const [id, sim] of bestPerMemory) vectorSim.set(id, sim);
         let bestSim = 0;
         for (const sim of bestPerMemory.values()) if (sim > bestSim) bestSim = sim;
-        const untergrenze = Math.max(VECTOR_FLOOR, bestSim * VECTOR_BAND);
+        const untergrenze = bestSim > 0 ? Math.min(bestSim, Math.max(VECTOR_FLOOR, bestSim * VECTOR_BAND)) : VECTOR_FLOOR;
         vectorRanked = [...bestPerMemory.entries()]
           .filter(([, sim]) => sim >= untergrenze)
           .sort((a, b) => b[1] - a[1])
