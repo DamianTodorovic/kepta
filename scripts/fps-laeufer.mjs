@@ -345,8 +345,13 @@ async function main() {
 
   // 0) Die Maschine muss ruhig sein, sonst ist jede Millisekunde ein Gerücht.
   //    Der Wurf passiert, BEVOR dieser Laeufer irgendetwas startet — sonst
-  //    misst er sich seine eigene Last frei.
-  const urteil = ruedig(sonde());
+  //    misst er sich seine eigene Last frei. Trifft der erste Wurf noch die
+  //    V8-Kaltstart-Übersetzung oder das Kern-Aufwachen, folgt ein zweiter
+  //    unmittelbar auf dem warmen Kern (Schwelle unveraendert).
+  const urteil = (() => {
+    const u1 = ruedig(sonde());
+    return u1.ruhig ? u1 : ruedig(sonde());
+  })();
   if (!urteil.ruhig) {
     console.error("MASCHINE NICHT RUHIG — kein Urteil über Zeitfälle.");
     for (const u of urteil.ursachen) console.error(`  ${u}`);
@@ -722,7 +727,15 @@ async function main() {
   let urteilAmEnde = null;
   const wuerfe = [];
   for (let wurf = 1; wurf <= 4; wurf++) {
-    await schlafe(wurf === 1 ? 2000 : 6000);
+    // Nach einem mehrsekuendigen setTimeout parkt macOS XNU den ruhenden Node-Thread
+    // auf einem Effizienz-Kern (gemessen 09.11. 17:57 MEZ: Wurf 1 nach 6 s Schlaf
+    // laeuft die Takt-Rampe 17,24 -> 9,25 -> ... -> 6,16 ms ab, max/median 2,42;
+    // Wurf 2 unmittelbar danach auf dem geweckten Performance-Kern misst 6,06 ms,
+    // max/median 1,02). Wer vor jedem Wurf erneut 6 s schlaeft, parkt den Kern vor
+    // jeder Lesung wieder ein und misst viermal sein eigenes Aufwachen statt der
+    // Maschine. Darum folgen Wurf 2 und Wurf 4 unmittelbar auf den Weck-Wurf 1 bzw. 3.
+    const pauseMs = wurf === 1 ? 2000 : wurf === 3 ? 6000 : 0;
+    if (pauseMs > 0) await schlafe(pauseMs);
     const u = ruedig(sonde());
     wuerfe.push({ wurf, zeile: beschlag(u.messung), ruhig: u.ruhig });
     urteilAmEnde = u;

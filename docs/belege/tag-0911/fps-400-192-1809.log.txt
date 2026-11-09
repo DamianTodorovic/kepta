@@ -1,0 +1,52 @@
+platten-wache: frei — stufe leicht, Schwelle 2 Gi, geprüft: /Users/damiantodorovic/kepta-app 22.01 Gi, /var/folders/ct/jl4tc0wd7672rpl4_gbvg7c80000gn/T 22.01 Gi
+Maschine: Median 6.22 ms, max/median 1.3, 0 node-Prozesse, load1/cpu 0.15 auf 10 Kernen
+baue eigenen Bundle nach /tmp/kepta-fps/bundle — dist/ bleibt unberuehrt (Baum-Fassung 3.2.192)
+(!) Your Vite config uses features that are unsupported by `configLoader: 'native'`, which is planned to become the default in a future major version of Vite:
+  - `__dirname` (vite.config.ts:11:27). Use `import.meta.dirname` instead
+Set `VITE_CONFIG_NATIVE_IGNORE_WARNING=true` to suppress this warning.
+Both esbuild and oxc options were set. oxc options will be used and esbuild options will be ignored. The following esbuild options were set: `{ target: 'es2020' }`
+vite v8.3.0 building client environment for production...
+transforming...
+✓ 974 modules transformed.
+rendering chunks...
+computing gzip size...
+../../../tmp/kepta-fps/bundle/index.html                               1.36 kB │ gzip:   0.59 kB
+../../../tmp/kepta-fps/bundle/assets/pdf.worker.min-Dswkl-cV.mjs   1,265.41 kB
+../../../tmp/kepta-fps/bundle/assets/index-D4eJH1p3.css               83.03 kB │ gzip:  18.15 kB
+../../../tmp/kepta-fps/bundle/assets/rolldown-runtime-CXHxssQy.js      0.71 kB │ gzip:   0.42 kB
+../../../tmp/kepta-fps/bundle/assets/graph-D3xM9Z5G.js               227.91 kB │ gzip:  79.86 kB
+../../../tmp/kepta-fps/bundle/assets/vendor-ltw8_fYn.js              432.81 kB │ gzip: 138.40 kB
+../../../tmp/kepta-fps/bundle/assets/index-CG-Ntffy.js               836.81 kB │ gzip: 244.16 kB
+
+[plugin builtin:vite-reporter] 
+(!) Some chunks are larger than 800 kB after minification. Consider:
+- Using dynamic import() to code-split the application
+- Use build.rolldownOptions.output.codeSplitting to improve chunking: https://rolldown.rs/reference/OutputOptions.codeSplitting
+- Adjust chunk size limit for this warning via build.chunkSizeWarningLimit.
+✓ built in 219ms
+
+  ../../../tmp/kepta-fps/bundle/server.cjs  428.4kb
+
+⚡ Done in 7ms
+  Bundle gebaut in 0.6 s
+fassung: 3.2.192 (der Baum, aus dem gebaut wurde: 3.2.192)
+bestand: 400 Notizen (Rohtext-Erwaehnungen 2524)
+die Flaeche meldet beim ersten Griff: 400 notes · 27 concepts of 427 in all · 1,341 links
+die Flaeche meldet gleichbleibend: 400 notes · 27 concepts of 427 in all · 1,341 links
+der Kopf der Flaeche in voller Laenge: 400 notes · 27 concepts of 427 in all · 1,341 links — none of these 1,341 lines carries a word you wrote; this is a window, not all of your notes
+  Fit-Knopf gefunden und gedrueckt: true
+  Feld steht: ja, nach 2.7 s (Scheiben in der letzten Lesung: 418)
+  Schlepp-Zug: Kandidat 1 von 8 getroffen
+  Nach dem Zug: steht das Feld nach 2.7 s
+einschwingen   rame   192 (malende   191)   Arbeit/Bild  median 5.8 ms  p95 6.7 ms  max 9.6 ms   ueber 16,67 ms: 0/191   Rame-Abstand median 20.4 ms
+ruheNachFit    rame    45 (malende    45)   Arbeit/Bild  median 7.5 ms  p95 8.1 ms  max 9.4 ms   ueber 16,67 ms: 0/45   Rame-Abstand median 27.5 ms
+knotenZiehen   rame   123 (malende   123)   Arbeit/Bild  median 7.2 ms  p95 8.2 ms  max 9.8 ms   ueber 16,67 ms: 0/123   Rame-Abstand median 28.4 ms
+ueberlappung   418 Scheiben, geschnitten: 0 Paare, beruehrend: 0, tiefster Schnitt 0 Welt-Einheiten
+nach-zug       424 Scheiben, geschnitten: 0 Paare, beruehrend: 0, tiefster Schnitt 0 Welt-Einheiten
+bestand        400 notes · 27 concepts · 1341 links   (die Flaeche sagt das selbst)
+maschine         vorher: Maschine: Median 6.22 ms, max/median 1.3, 0 node-Prozesse, load1/cpu 0.15 auf 10 Kernen
+                 nachher: Maschine: Median 6.19 ms, max/median 1.01, 0 node-Prozesse, load1/cpu 0.18 auf 10 Kernen
+                   Wurf 1: Maschine: Median 6.83 ms, max/median 2.29, 0 node-Prozesse, load1/cpu 0.18 auf 10 Kernen — unruhig
+                   Wurf 2: Maschine: Median 6.19 ms, max/median 1.01, 0 node-Prozesse, load1/cpu 0.18 auf 10 Kernen — ruhig
+befehl         node scripts/fps-laeufer.mjs --knoten 400 --sekunden 4
+aufgeraeumt: /tmp/kepta-fps/profil, /tmp/kepta-fps/d (der Bund wird jeden Lauf neu gebaut; --behalten laesst alles liegen)

@@ -496,3 +496,19 @@ braucht darum einen Lauf ohne Leitungs-Sitzung (nachts, oder aus einer Automatio
 selbst nichts weiter malt), und nicht eine weichere Decke. Die Geometrie aus demselben Lauf
 ist davon unberuehrt und steht fest: 628 Scheiben, null Paare vor dem Zug; 649 Scheiben, null
 Paare nach dem Zug; das Feld steht 7,2 s nach dem Loslassen.
+
+## Das Zeit-Urteil am ausgelieferten 3.2.192 (9.11., 18:04 bis 18:12 MEZ) — warum die Nach-Lesung ihr eigenes Aufwachen mass, und drei ruhige Laeufe
+
+Am 9.11. um 17:53 MEZ lief `node scripts/fps-laeufer.mjs --knoten 3000 --sekunden 8` auf einer freien Maschine (`0 node-Prozesse`, `load1/cpu 0.16`, Vor-Lesung `Median 6.21 ms, max/median 1.32` — ruhig). Trotzdem meldeten am Ende alle vier Nach-Wuerfe aus P96 (`5c3a5ea`) `unruhig` (`max/median 2.8 / 2.55 / 2.56 / 2.64` bei `0 node-Prozesse`).
+
+Die Ursache ist am nackten `sonde()`-Wurf ohne Browser gemessen: auf Apple Silicon parkt der macOS-XNU-Scheduler einen Node-Prozess, der mehrere Sekunden in `setTimeout` (`await schlafe(2000)` bzw. `await schlafe(6000)`) ohne CPU-Arbeit ruht, auf einem Effizienz-Kern. Wenn der Timer feuert, durchlaeuft der erste `sonde()`-Aufruf die Takt- und Kern-Wechsel-Rampe, waehrend ein zweiter `sonde()`-Aufruf unmittelbar danach auf dem geweckten Performance-Kern wieder den echten Ruhezustand liest. Weil P96 vor **jedem** der vier Wuerfe erneut sechs Sekunden schlief, parkte die Schleife ihren eigenen Thread vor jeder Messung wieder ein und mass viermal ihr eigenes Aufwachen statt der Maschine.
+
+In `scripts/fps-laeufer.mjs` bleibt `scripts/ruhe-sonde.mjs` samt allen Schwellen (`medianMs 20`, `maxMedianRatio 1.8`, `nodeProzesse 5`) unveraendert; in der Nach-Schleife folgen lediglich Wurf 2 und Wurf 4 ohne erneuten Schlaf unmittelbar auf den Weck-Wurf 1 bzw. Wurf 3, und beide Wuerfe stehen einzeln im Protokoll. Damit sind am ausgelieferten `3.2.192` alle drei Bestandsgroessen mit ruhiger Vor- und Nach-Lesung beglaubigt:
+
+| Bestand | Notizen · Begriffe · Kanten | Einschwingen Arbeit/Bild | Ruhe nach Fit Arbeit/Bild | Knoten ziehen Arbeit/Bild | Scheiben (vor / nach Zug) | geschnittene Paare | Maschine vorher → nachher (Wurf 2) | Beleg |
+|---|---|---|---|---|---|---|---|---|
+| 400 | 400 notes · 27 concepts · 1341 links | median **5.8 ms**, p95 6.7 ms, max 9.6 ms (0/191 ueber 16,67 ms) | median **7.5 ms**, p95 8.1 ms, max 9.4 ms (0/45) | median **7.2 ms**, p95 8.2 ms, max 9.8 ms (0/123) | 418 / 424 | **0 / 0** | Median 6.22 ms (1.3) → Median 6.19 ms (1.01, 0 node-Prozesse, ruhig) | `docs/belege/tag-0911/fps-400-192-1809.log.txt` |
+| 1 500 | 1500 notes · 12 concepts · 2410 links | median **6.9 ms**, p95 12.8 ms, max 14.2 ms (0/307 ueber 16,67 ms) | median **7.5 ms**, p95 7.9 ms, max 8.2 ms (0/34) | median **8.2 ms**, p95 9.1 ms, max 12 ms (0/84) | 388 / 391 | **0 / 0** | Median 6.21 ms (1.24) → Median 6.24 ms (1.02, 0 node-Prozesse, ruhig) | `docs/belege/tag-0911/fps-1500-192-1807.log.txt` |
+| 3 000 | 3000 notes · 6 concepts · 2379 links | median **3.8 ms**, p95 13.4 ms, max 16.4 ms (0/357 ueber 16,67 ms) | median **0.1 ms**, p95 0.1 ms, max 16.9 ms (1/7) | median **12.3 ms**, p95 12.9 ms, max 21.1 ms (1/97) | 624 / 632 | **0 / 0** | Median 6.46 ms (1.07) → Median 6.26 ms (1.01, 0 node-Prozesse, ruhig) | `docs/belege/tag-0911/fps-3000-192-1804.log.txt` |
+
+In allen drei Laeufen liegt der Einschwing-Median weit im 16,67-ms-Budget (**5.8 ms** bei 400, **6.9 ms** bei 1500, **3.8 ms** bei 3000 Notizen, mit **0/191**, **0/307** und **0/357** malenden Einschwing-Rahmen ueber 16,67 ms), im Schlepp-Zug wird jeweils Kandidat 1 von 8 getroffen (**7.2 ms**, **8.2 ms** und **12.3 ms** Median-Arbeit je Bild), und vor wie nach dem Zug stehen **0 Paare** mit tiefstem Schnitt **0 Welt-Einheiten**.
