@@ -1,4 +1,4 @@
-Zeit: 9.11.2026, 16:29:02 MEZ
+Zeit: 9.11.2026, 16:50:15 MEZ
 Dateien: README.md, SECURITY.md, ROADMAP.md, .github/release-notes.md — Einheiten ueber 25 Zeichen.
 Riss: satz-riss.mjs (P128, markdown-fest). Vorher: Satzende + Leerzeichen ueber dem
 ganzen Text, wodurch Aufzaehlungen, Tabellenzeilen und `<summary>`-Kuelsen als EIN
@@ -9,23 +9,23 @@ Satz zaehlten. Unter beiden Naivlingen, in diesem Lauf nachgerechnet:
 
 | Datei | Saetze | absolute | mit Messzeug | ohne Messzeug | Anteil ohne |
 |---|---|---|---|---|---|
-| `README.md` | 411 | 137 | 113 | 24 | 17.5 % |
+| `README.md` | 411 | 137 | 132 | 5 | 3.6 % |
 | `SECURITY.md` | 33 | 9 | 4 | 5 | 55.6 % |
 | `ROADMAP.md` | 77 | 16 | 4 | 12 | 75.0 % |
 | `.github/release-notes.md` | 50 | 20 | 13 | 7 | 35.0 % |
-| **zusammen** | **571** | **182** | **134** | **48** | **26.4 %** |
+| **zusammen** | **571** | **182** | **153** | **29** | **15.9 %** |
 
 Nenner fuer den Anteil: 182 absolute Behauptungen in 571 Saetzen der vier Texte.
 
 Zweite Lesung — der Zeuge darf im selben Abschnitt stehen (Absatz, Tabelle, Aufzaehlung):
 | Datei | absolute | mit Messzeug | ohne Messzeug |
 |---|---|---|---|
-| `README.md` | 137 | 64 | 73 |
+| `README.md` | 137 | 68 | 69 |
 | `SECURITY.md` | 9 | 3 | 6 |
 | `ROADMAP.md` | 16 | 0 | 16 |
 | `.github/release-notes.md` | 20 | 8 | 12 |
-| zusammen | 182 | 75 | 107 |
-   mit Messzeug im selben Abschnitt: 75 von 182 = 41.2 % (gegen 134 von 182 = 73.6 % in der engen Lesung).
+| zusammen | 182 | 79 | 103 |
+   mit Messzeug im selben Abschnitt: 79 von 182 = 43.4 % (gegen 153 von 182 = 84.1 % in der engen Lesung).
 
 Die schmalere Klasse — Saetze, die ein Werkzeug widerlegen koennte (never/always/cannot/0 %/100 %):
    README.md                  31 von 137 absoluten
@@ -75,31 +75,12 @@ Zwei von ihnen nachgegriffen, im selben Lauf:
    "no screenshot of it here yet" (Semantic-Ansicht): README nennt 20 Bilder (12 in Markdown, 8 als <img alt>), davon 0 mit "Semantic"; der Satz steht noch da — haltbar.
    "no embedding ever travels into the view": 8 von 8 benannten Flaechen-Dateien gelesen, zusammen 0 Nennung(en) "embedding"; das Wort liegt in 37 Test-Dateien des Repos. Fehlende Dateien: keine.
 
-Die 48 ohne Messzeug, in Lesereihenfolge der Dateien (erste 40):
+Die 29 ohne Messzeug, in Lesereihenfolge der Dateien (erste 40):
    [README.md] Your AI forgets you after every chat.
    [README.md] Desktop app · no cloud · no account · encrypted at rest SQLite · hybrid retrieval · knowledge graph · MCP
-   [README.md] The machine state printed in the same artefacts says why no millisecond there is claimed as a verdict.
-   [README.md] What a frame costs at each size is timed in [docs/graph-kosten.md](docs/graph-kosten.md), not claimed in this caption — a millisecond number is only worth the quiet machine that produced it.
-   [README.md] The third view, *Semantic*, places the same notes by what their texts mean — no screenshot of it here yet.
    [README.md] The next day you open a fresh chat and it knows none of it.
    [README.md] Agent | An AI program that can use tools instead of only answering — Claude Desktop, Cursor or Gemini CLI, for instance.
    [README.md] One brain for every AI tool.
-   [README.md] Standard library only, no dependencies.
-   [README.md] No plugin store, and that is not a lock.
-   [README.md] K3PTA loads no third-party code, so there is nothing to approve, nothing to buy and nothing an organisation could switch off for you: the app's own features run the same in the free download as in a managed deployment.
-   [README.md] The engine underneath this app is source-available — BUSL-1.1, at [DamianTodorovic/kepta](https://github.com/DamianTodorovic/kepta) (each release converts to AGPL-3.0-or-later after four years): storage with encryption a
-   [README.md] No path, nothing to build — npx fetches the server the first time it is needed:
-   [README.md] If you would rather not have npx check the registry on every start, install it once with npm i -g kepta-mcp and use "command": "kepta" instead.
-   [README.md] In the installed app that page offers a third way first: the MCP server that ships inside K3PTA, started by the app itself — no Node.js, no npm.
-   [README.md] No other platform has a downloadable app, and nothing here pretends otherwise.
-   [README.md] The engine itself runs on all three (kepta-mcp on npm, or from source), so an MCP client on those systems talks to the same memory — only the window is missing.
-   [README.md] The packages are self-contained; you only need Node ≥ 22.13 to build them yourself.
-   [README.md] The fastest way through, and the one that works on every macOS version:
-   [README.md] The server code lives in server/ — server/app.ts assembles the middleware chain and mounts the routers, server/router/ holds one module per feature area, server/helfer/ the shared helpers, and server.ts itself is only th
-   [README.md] The gates sit a little below what is reached, so they can only move up.
-   [README.md] Obsidian is excellent for humans — but Markdown is not a memory: no types, no validity, no MCP.
-   [README.md] Every figure below is a run of this repository's own tools, kept whole next to the sentence that uses it — disagree with the numbers by rerunning them.
-   [README.md] An explanation counts only if the sentence names the word itself and runs longer than eight words: "A written brief on one subject" does not explain *Dossier*, "A Dossier is a written brief on one subject, built from the
    [SECURITY.md] No public exploit before a fix exists.
    [SECURITY.md] The key is created on the first start and stored in the system keychain: the macOS Keychain (service app.kepta.database, account kepta), Windows DPAPI (database-key.dpapi in the data folder, readable only under the same 
    [SECURITY.md] Those cases replace the system command, so what is proven here is K3PTA's own side of the call; the round-trip against a real Keychain, DPAPI or Secret Service runs only on that operating system.
@@ -116,3 +97,11 @@ Die 48 ohne Messzeug, in Lesereihenfolge der Dateien (erste 40):
    [ROADMAP.md] Revocation | A revoked license number no longer unlocks K3PTA from the next update on — also where it was already activated
    [ROADMAP.md] ## ✅ v2.13 — September 2026: your memory, every day
    [ROADMAP.md] Readable by design: endpoint.json (no secret, it is how local tools find the port) and the inbox with the user's own source files
+   [ROADMAP.md] Git-based memory versioning (in the style of Letta context repositories) — every change as a commit in a bare repo next to the DB
+   [.github/release-notes.md] The fastest way through, and the one that works on every macOS version:
+   [.github/release-notes.md] Note: right-clicking the app and choosing *Open* no longer works — Apple removed that route in macOS 15.
+   [.github/release-notes.md] Before the first start of the new version, quit every agent that uses K3PTA over MCP (Claude Desktop, Cursor, …), so the app has the file to itself and can convert it — then start them again.
+   [.github/release-notes.md] K3PTA ships its own MCP server — no Node.js, no npm.
+   [.github/release-notes.md] All data stays local in ~/.kepta/ — no account, no cloud, no telemetry.
+   [.github/release-notes.md] Vor dem ersten Start alle Agenten schließen, die K3PTA über MCP nutzen (Claude Desktop, Cursor …), danach wieder starten.
+   [.github/release-notes.md] Alle Daten bleiben lokal in ~/.kepta/.

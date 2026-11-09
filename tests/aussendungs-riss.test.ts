@@ -107,7 +107,7 @@ describe("P129, der Wortschatz: ein benanntes Instrument ist ein Messzeug", () =
     expect(zeug.test(einheiten[0]), "das Messzeug steht im selben Satz, wird aber nicht gesehen").toBe(true);
   });
 
-  it("am echten Bestand: 134 von 182 absoluten Behauptungen nennen ihr Messzeug", () => {
+  it("am echten Bestand: 153 von 182 absoluten Behauptungen nennen ihr Messzeug", () => {
     let absoluten = 0;
     let mit = 0;
     for (const datei of DATEIEN) {
@@ -291,8 +291,12 @@ describe("P129, der Wortschatz: ein benanntes Instrument ist ein Messzeug", () =
     // Zaehler 122 -> 134 (README 101 -> 113), ohne 60 -> 48 (README 36 -> 24, Anteil 33,0 ->
     // 26,4 %). Nenner 182, Einheiten 571 und schmale Klasse 36 bleiben — Voraussage voll exakt.
     // Die Wache lebt in tests/doku-plattform.test.ts, describe "P171: ...".
+    // Nach P172 (9.11.): Neunzehn Architektur-, Paket-, SDK- und Beleg-Versprechen in README.md
+    // (:37 x3, :349, :359 x2, :371, :379, :385 x2, :397, :403, :405, :413, :450 x2, :454, :456,
+    // :461) nennen ihre Zeugen. Zaehler 134 -> 153 (README 113 -> 132), ohne 48 -> 29 (README
+    // 24 -> 5, Anteil 26,4 -> 15,9 %). Nenner 182, Einheiten 571 und schmale Klasse 36 bleiben.
     expect(absoluten, "der Nenner ist nicht mehr 182 — der Riss oder die Klasse hat sich bewegt").toBe(182);
-    expect(mit, `${mit} von ${absoluten} nennen ein Messzeug — erwartet war 134`).toBe(134);
+    expect(mit, `${mit} von ${absoluten} nennen ein Messzeug — erwartet war 153`).toBe(153);
     expect(mit / absoluten, "Anteil ohne Nenner ist ein Urteil").toBeGreaterThan(0.3);
     expect(maschine.source.length, "die schmale Klasse wurde nicht mitgeändert").toBeGreaterThan(10);
   });

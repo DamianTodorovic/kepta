@@ -3,8 +3,8 @@
   "README.md": {
    "saetze": 411,
    "absolut": 137,
-   "mit_zeug": 113,
-   "ohne_zeug": 24
+   "mit_zeug": 132,
+   "ohne_zeug": 5
   },
   "SECURITY.md": {
    "saetze": 33,
@@ -28,14 +28,14 @@
  "zusammen": {
   "saetze": 571,
   "absolut": 182,
-  "mit_zeug": 134,
-  "ohne_zeug": 48
+  "mit_zeug": 153,
+  "ohne_zeug": 29
  },
  "abschnitt": {
   "README.md": {
    "absolut": 137,
-   "mit_zeug": 64,
-   "ohne_zeug": 73
+   "mit_zeug": 68,
+   "ohne_zeug": 69
   },
   "SECURITY.md": {
    "absolut": 9,
@@ -55,8 +55,8 @@
  },
  "zusammen_abschnitt": {
   "absolut": 182,
-  "mit_zeug": 75,
-  "ohne_zeug": 107
+  "mit_zeug": 79,
+  "ohne_zeug": 103
  },
  "maschinell_pruefbar": {
   "README.md": {
@@ -320,18 +320,6 @@
   },
   {
    "datei": "README.md",
-   "satz": "The machine state printed in the same artefacts says why no millisecond there is claimed as a verdict."
-  },
-  {
-   "datei": "README.md",
-   "satz": "What a frame costs at each size is timed in [docs/graph-kosten.md](docs/graph-kosten.md), not claimed in this caption — a millisecond number is only worth the quiet machine that produced it."
-  },
-  {
-   "datei": "README.md",
-   "satz": "The third view, *Semantic*, places the same notes by what their texts mean — no screenshot of it here yet."
-  },
-  {
-   "datei": "README.md",
    "satz": "The next day you open a fresh chat and it knows none of it."
   },
   {
@@ -341,70 +329,6 @@
   {
    "datei": "README.md",
    "satz": "One brain for every AI tool."
-  },
-  {
-   "datei": "README.md",
-   "satz": "Standard library only, no dependencies."
-  },
-  {
-   "datei": "README.md",
-   "satz": "No plugin store, and that is not a lock."
-  },
-  {
-   "datei": "README.md",
-   "satz": "K3PTA loads no third-party code, so there is nothing to approve, nothing to buy and nothing an organisation could switch off for you: the app's own features run the same in the free download as in a managed deployment."
-  },
-  {
-   "datei": "README.md",
-   "satz": "The engine underneath this app is source-available — BUSL-1.1, at [DamianTodorovic/kepta](https://github.com/DamianTodorovic/kepta) (each release converts to AGPL-3.0-or-later after four years): storage with encryption a"
-  },
-  {
-   "datei": "README.md",
-   "satz": "No path, nothing to build — npx fetches the server the first time it is needed:"
-  },
-  {
-   "datei": "README.md",
-   "satz": "If you would rather not have npx check the registry on every start, install it once with npm i -g kepta-mcp and use \"command\": \"kepta\" instead."
-  },
-  {
-   "datei": "README.md",
-   "satz": "In the installed app that page offers a third way first: the MCP server that ships inside K3PTA, started by the app itself — no Node.js, no npm."
-  },
-  {
-   "datei": "README.md",
-   "satz": "No other platform has a downloadable app, and nothing here pretends otherwise."
-  },
-  {
-   "datei": "README.md",
-   "satz": "The engine itself runs on all three (kepta-mcp on npm, or from source), so an MCP client on those systems talks to the same memory — only the window is missing."
-  },
-  {
-   "datei": "README.md",
-   "satz": "The packages are self-contained; you only need Node ≥ 22.13 to build them yourself."
-  },
-  {
-   "datei": "README.md",
-   "satz": "The fastest way through, and the one that works on every macOS version:"
-  },
-  {
-   "datei": "README.md",
-   "satz": "The server code lives in server/ — server/app.ts assembles the middleware chain and mounts the routers, server/router/ holds one module per feature area, server/helfer/ the shared helpers, and server.ts itself is only th"
-  },
-  {
-   "datei": "README.md",
-   "satz": "The gates sit a little below what is reached, so they can only move up."
-  },
-  {
-   "datei": "README.md",
-   "satz": "Obsidian is excellent for humans — but Markdown is not a memory: no types, no validity, no MCP."
-  },
-  {
-   "datei": "README.md",
-   "satz": "Every figure below is a run of this repository's own tools, kept whole next to the sentence that uses it — disagree with the numbers by rerunning them."
-  },
-  {
-   "datei": "README.md",
-   "satz": "An explanation counts only if the sentence names the word itself and runs longer than eight words: \"A written brief on one subject\" does not explain *Dossier*, \"A Dossier is a written brief on one subject, built from the"
   },
   {
    "datei": "SECURITY.md",
