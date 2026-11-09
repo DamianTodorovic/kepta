@@ -9,7 +9,7 @@ zitiert, und verlangt die Zahl dort; ein Beleg, den `git ls-files` nicht kennt, 
 Die Tabelle unten ist ein **Siegel** — Bytezahl und sha256 sagen, dass dieser Beleg dieser Lauf
 ist. Bis zum 7.11. hatte dieses Siegel keinen Pruefer. Seitdem vergleicht
 `scripts/helfer/belege-siegel.mjs` in jedem Suite-Lauf jede ausgewiesene Zeile gegen die Datei auf
-der Platte, gefahren von `tests/belege-siegel.test.ts:112` (Grundgesamtheit: 162 Siegel-Zeilen,
+der Platte, gefahren von `tests/belege-siegel.test.ts:112` (Grundgesamtheit: 166 Siegel-Zeilen,
 gemessen 10:53:35 MEZ von demselben Fall — dieselbe Zahl wie um 02:57:57, weil P154 nur Siegel
 nachzog; zuvor 126 um 01:39:50, und die zwei neuen sind der Historien-Beleg P147
 mit seinem Generierer). Der erste Lauf dieses Pruefers fand 4 Befunde auf 2 Zeilen:
@@ -270,6 +270,10 @@ Schlag prueft `blockKopfFunde` aus `scripts/helfer/belege-siegel.mjs` genau das,
 | `konkurrenz-0911d/spur-uns-0911-bge-m3-zwei.jsonl` | 8834 B | `8913c40bebd2ab19…` |
 | `konkurrenz-0911d/spur-uns-0911-nomic-embed-text-eins.jsonl` | 9113 B | `5a8392cb14e7f6d0…` |
 | `konkurrenz-0911d/spur-uns-0911-nomic-embed-text-zwei.jsonl` | 9113 B | `fe09d52dca8cf2d3…` |
+| `tag-0911/sprache-bge-m3-193-eins.log.txt` | 1846 B | `a55dad09ce5782ab…` |
+| `tag-0911/sprache-bge-m3-193-zwei.log.txt` | 1846 B | `bea2fa719efdc413…` |
+| `tag-0911/sprache-nomic-embed-text-193-eins.log.txt` | 2101 B | `6a55ce292751aa38…` |
+| `tag-0911/sprache-nomic-embed-text-193-zwei.log.txt` | 2101 B | `831229855537dd81…` |
 | `konkurrenz-0911d/spur-uns-0911.ts` | 2801 B | `06224e9ce9118492…` |
 | `konkurrenz-0911c/ergebnis-fts5-0911-roh-eins.json` | 569 B | `477a9d9f948a7a2b…` |
 | `konkurrenz-0911c/ergebnis-fts5-0911-roh-zwei.json` | 569 B | `f1596f0c132b8750…` |

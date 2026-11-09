@@ -454,3 +454,32 @@ verbessert die Tiefe (R@5 +4,4) zum Preis eines ersten Platzes. Die Latten
 (`konkurrenz-mem0-latte`, drittes Bein: 5-Punkte-Grenze — Abstand jetzt 6,7;
 `konkurrenz-fts5-latte`: 10 Punkte über der ODER-Praxis — Abstand jetzt 31,2)
 halten weiter. Damian kann die Abwägung überstimmen; der Hebel ist `engine.ts:551`.
+
+## P181, 9.11. 20:56 MEZ: die Sprachlesung von P113 kippt am ausgelieferten Baum — der Sprachpreis ist (jetzt) eine Einbett-Frage
+
+P113s Lesung („das mehrsprachige Einbett ist kein Hebel für die Sprachgrenze",
+oben) wurde auf dem **kaputten** Motor gemessen: das Vektor-Bein war an 13 von 45
+bge-Anfragen stumm (P120), die Sprach-Messung traf es voll. Auf dem
+ausgelieferten 3.2.193 (P176-Boden-Flicken gelandet) ist es wach, und die
+Sprachmessung kehrt sich um — 15 Paare, englische Frage gegen deutsche Notizen,
+je Stufe zwei bytegleiche Läufe (20:53–20:56 MEZ):
+
+| Bein | Stufe | deutsch Hit@1 | englisch Hit@1 | Sprachpreis |
+|---|---|---|---|---|
+| v3, ausgeliefertes Retrieval | nomic-embed-text | 60,0 % | 26,7 % | **−33,3 Pp** |
+| v3, ausgeliefertes Retrieval | **bge-m3** | 53,3 % | **66,7 %** | **+13,3 Pp** |
+| nur das Vektor-Bein (Diagnose) | nomic-embed-text | 73,3 % | 26,7 % | −46,7 Pp |
+| nur das Vektor-Bein (Diagnose) | bge-m3 | 66,7 % | 60,0 % | **−6,7 Pp** |
+
+Am ausgelieferten Bein verliert nomic 33,3 Punkte über die Sprachgrenze und
+**bge-m3 gewinnt 13,3** (die englische Anfrage trifft besser als die deutsche —
+BM25 schwächelt auf der englischen Seite, das wache Vektor-Bein trägt). Der
+Unterschied zwischen den Stufen ist **46,6 Ppunkte Sprachpreis**. Berichtigt
+damit: **die Modell-Hypothese ist am shipped-Baum nicht widerlegt, sie ist die
+Antwort** — für mehrsprachige Bestände ist `KEPTA_EMBED_MODEL=bge-m3` der
+Embedder. Die Kosten-Seite bleibt P113s Wort: jeder Knoten muss neu eingebettet
+werden (Hintergrund-Queue; `engine.ts:294` filtert nach Modell). Die
+Gegenrichtung (deutsche Frage auf englischen Notizen) ist weiter nicht gemessen
+und wird nirgends behauptet. Zeugnisse:
+`docs/belege/tag-0911/sprache-nomic-embed-text-193-eins.log.txt`, `…-zwei.log.txt`, `sprache-bge-m3-193-eins.log.txt`, `…-zwei.log.txt`,
+gehalten von `tests/sprachuebergang.test.ts`.
