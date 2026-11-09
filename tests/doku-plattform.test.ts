@@ -542,3 +542,26 @@ describe("P167: Keychain-Zelle und Private-provably-Satz nennen ihre Zeugen", ()
     expect(nackt, `diese Saetze stehen ohne Zeugen da:\n  ${nackt.join("\n  ").slice(0, 400)}`).toEqual([]);
   });
 });
+
+// P168 — der in P167 vertagte Satz README:267 ("With no AI configured, not a single
+// byte leaves the machine"). Der Zeuge war doch bereit: tests/electron-haertung.test.ts:107
+// liest connect-src des Electron-Inhalts-Sicherheitsplans und weist jeden fremden Host
+// ab — die Oberfläche darf nur zu sich selbst und diesem Rechner verbinden. Kein Neubau,
+// sondern Bewaffnen. Die Server-Seite (Chat/Embed) ruft nur bei gewähltem Anbieter nach
+// aussen, der Clipper nur auf Nutzeraktion; das beschreibt der Zeuge nicht mit — die
+// Klammer nennt nur, was der Test hält. Gleiche Lesart wie P162-P167.
+describe("P168: 'kein Byte ohne KI' nennt seine Egress-Wache", () => {
+  const p168Saetze = () =>
+    satzeAusMarkdown(README).filter((s) =>
+      /With no AI configured, not a single byte leaves the machine/.test(s),
+    );
+
+  it("der Satz wird gefunden — die Sonde meldet keinen Erfolg fuer Ungelesenes", () => {
+    expect(p168Saetze().length, `die Sonde findet ${p168Saetze().length} P168-Saetze`).toBe(1);
+  });
+
+  it("er traegt sein Messzeug im selben Satz", () => {
+    const nackt = p168Saetze().filter((s) => !zeug.test(s));
+    expect(nackt, `dieser Satz steht ohne Zeugen da:\n  ${nackt.join("\n  ").slice(0, 400)}`).toEqual([]);
+  });
+});

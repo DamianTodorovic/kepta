@@ -1,4 +1,4 @@
-Zeit: 9.11.2026, 09:05:08 MEZ
+Zeit: 9.11.2026, 09:26:17 MEZ
 Dateien: README.md, SECURITY.md, ROADMAP.md, .github/release-notes.md — Einheiten ueber 25 Zeichen.
 Riss: satz-riss.mjs (P128, markdown-fest). Vorher: Satzende + Leerzeichen ueber dem
 ganzen Text, wodurch Aufzaehlungen, Tabellenzeilen und `<summary>`-Kuelsen als EIN
@@ -9,11 +9,11 @@ Satz zaehlten. Unter beiden Naivlingen, in diesem Lauf nachgerechnet:
 
 | Datei | Saetze | absolute | mit Messzeug | ohne Messzeug | Anteil ohne |
 |---|---|---|---|---|---|
-| `README.md` | 411 | 137 | 88 | 49 | 35.8 % |
+| `README.md` | 411 | 137 | 89 | 48 | 35.0 % |
 | `SECURITY.md` | 33 | 9 | 4 | 5 | 55.6 % |
 | `ROADMAP.md` | 77 | 16 | 4 | 12 | 75.0 % |
 | `.github/release-notes.md` | 50 | 20 | 13 | 7 | 35.0 % |
-| **zusammen** | **571** | **182** | **109** | **73** | **40.1 %** |
+| **zusammen** | **571** | **182** | **110** | **72** | **39.6 %** |
 
 Nenner fuer den Anteil: 182 absolute Behauptungen in 571 Saetzen der vier Texte.
 
@@ -25,7 +25,7 @@ Zweite Lesung — der Zeuge darf im selben Abschnitt stehen (Absatz, Tabelle, Au
 | `ROADMAP.md` | 16 | 0 | 16 |
 | `.github/release-notes.md` | 20 | 8 | 12 |
 | zusammen | 182 | 75 | 107 |
-   mit Messzeug im selben Abschnitt: 75 von 182 = 41.2 % (gegen 109 von 182 = 59.9 % in der engen Lesung).
+   mit Messzeug im selben Abschnitt: 75 von 182 = 41.2 % (gegen 110 von 182 = 60.4 % in der engen Lesung).
 
 Die schmalere Klasse — Saetze, die ein Werkzeug widerlegen koennte (never/always/cannot/0 %/100 %):
    README.md                  31 von 137 absoluten
@@ -75,7 +75,7 @@ Zwei von ihnen nachgegriffen, im selben Lauf:
    "no screenshot of it here yet" (Semantic-Ansicht): README nennt 20 Bilder (12 in Markdown, 8 als <img alt>), davon 0 mit "Semantic"; der Satz steht noch da — haltbar.
    "no embedding ever travels into the view": 8 von 8 benannten Flaechen-Dateien gelesen, zusammen 0 Nennung(en) "embedding"; das Wort liegt in 35 Test-Dateien des Repos. Fehlende Dateien: keine.
 
-Die 73 ohne Messzeug, in Lesereihenfolge der Dateien (erste 40):
+Die 72 ohne Messzeug, in Lesereihenfolge der Dateien (erste 40):
    [README.md] Your AI forgets you after every chat.
    [README.md] Desktop app · no cloud · no account · encrypted at rest SQLite · hybrid retrieval · knowledge graph · MCP
    [README.md] The machine state printed in the same artefacts says why no millisecond there is claimed as a verdict.
@@ -100,7 +100,6 @@ Die 73 ohne Messzeug, in Lesereihenfolge der Dateien (erste 40):
    [README.md] Text size — 100, 115 or 130 %, under *Settings → Display*.
    [README.md] - All data in ~/.kepta/ — one SQLite file that belongs to you
    [README.md] - No account, no telemetry, no phone-home — and nothing to activate: the app validates no key, so there is no check of any kind to call home for.
-   [README.md] - With no AI configured, not a single byte leaves the machine
    [README.md] No service in between, no account, no telemetry.
    [README.md] Your memories are stored only in that encrypted SQLite file — there is no server of mine for them to reach.
    [README.md] Standard library only, no dependencies.
@@ -116,3 +115,4 @@ Die 73 ohne Messzeug, in Lesereihenfolge der Dateien (erste 40):
    [README.md] In the installed app that page offers a third way first: the MCP server that ships inside K3PTA, started by the app itself — no Node.js, no npm.
    [README.md] No other platform has a downloadable app, and nothing here pretends otherwise.
    [README.md] The engine itself runs on all three (kepta-mcp on npm, or from source), so an MCP client on those systems talks to the same memory — only the window is missing.
+   [README.md] The packages are self-contained; you only need Node ≥ 22.13 to build them yourself.

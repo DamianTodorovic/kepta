@@ -107,7 +107,7 @@ describe("P129, der Wortschatz: ein benanntes Instrument ist ein Messzeug", () =
     expect(zeug.test(einheiten[0]), "das Messzeug steht im selben Satz, wird aber nicht gesehen").toBe(true);
   });
 
-  it("am echten Bestand: 109 von 182 absoluten Behauptungen nennen ihr Messzeug", () => {
+  it("am echten Bestand: 110 von 182 absoluten Behauptungen nennen ihr Messzeug", () => {
     let absoluten = 0;
     let mit = 0;
     for (const datei of DATEIEN) {
@@ -239,8 +239,18 @@ describe("P129, der Wortschatz: ein benanntes Instrument ist ein Messzeug", () =
     // war mit 35 vorausgesagt und wurde 36 (Ursache benannt). README:267 ("not a
     // single byte leaves") bleibt unbewaffnet — keine bereite Wache, eigene Scheibe
     // P168. Die Wache lebt in tests/doku-plattform.test.ts, describe "P167: ...".
+    // P168 (gemessen 9.11. 09:26:16 MEZ mit dem Zaehler selbst): der in P167 vertagte
+    // Satz README:267 ("With no AI configured, not a single byte leaves the machine")
+    // nennt jetzt seinen Zeugen — tests/electron-haertung.test.ts:107 liest connect-src
+    // des Electron-Inhalts-Sicherheitsplans (electron.js:169) und weist jeden fremden
+    // Host ab; die Oberfläche verbindet nur zu sich selbst und diesem Rechner. Kein
+    // Neubau, der Zeuge war bereit. Zaehler 109 -> 110, ohne 73 -> 72 (Anteil 40,1 ->
+    // 39,6 %). Nenner 182, Einheiten 571 und schmale Klasse 36 bleiben — Voraussage
+    // voll exakt. Die Klammer beschreibt nur die CSP-Sperre, nicht die Nutzer-Wege
+    // (Chat/Embed bei gewähltem Anbieter, Clipper auf Aktion); das steht im Papier.
+    // Die Wache lebt in tests/doku-plattform.test.ts, describe "P168: ...".
     expect(absoluten, "der Nenner ist nicht mehr 182 — der Riss oder die Klasse hat sich bewegt").toBe(182);
-    expect(mit, `${mit} von ${absoluten} nennen ein Messzeug — erwartet war 109`).toBe(109);
+    expect(mit, `${mit} von ${absoluten} nennen ein Messzeug — erwartet war 110`).toBe(110);
     expect(mit / absoluten, "Anteil ohne Nenner ist ein Urteil").toBeGreaterThan(0.3);
     expect(maschine.source.length, "die schmale Klasse wurde nicht mitgeändert").toBeGreaterThan(10);
   });

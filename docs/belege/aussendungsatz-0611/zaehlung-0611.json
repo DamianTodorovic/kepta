@@ -3,8 +3,8 @@
   "README.md": {
    "saetze": 411,
    "absolut": 137,
-   "mit_zeug": 88,
-   "ohne_zeug": 49
+   "mit_zeug": 89,
+   "ohne_zeug": 48
   },
   "SECURITY.md": {
    "saetze": 33,
@@ -28,8 +28,8 @@
  "zusammen": {
   "saetze": 571,
   "absolut": 182,
-  "mit_zeug": 109,
-  "ohne_zeug": 73
+  "mit_zeug": 110,
+  "ohne_zeug": 72
  },
  "abschnitt": {
   "README.md": {
@@ -405,10 +405,6 @@
   {
    "datei": "README.md",
    "satz": "- No account, no telemetry, no phone-home — and nothing to activate: the app validates no key, so there is no check of any kind to call home for."
-  },
-  {
-   "datei": "README.md",
-   "satz": "- With no AI configured, not a single byte leaves the machine"
   },
   {
    "datei": "README.md",
