@@ -9,7 +9,7 @@ zitiert, und verlangt die Zahl dort; ein Beleg, den `git ls-files` nicht kennt, 
 Die Tabelle unten ist ein **Siegel** — Bytezahl und sha256 sagen, dass dieser Beleg dieser Lauf
 ist. Bis zum 7.11. hatte dieses Siegel keinen Pruefer. Seitdem vergleicht
 `scripts/helfer/belege-siegel.mjs` in jedem Suite-Lauf jede ausgewiesene Zeile gegen die Datei auf
-der Platte, gefahren von `tests/belege-siegel.test.ts:112` (Grundgesamtheit: 128 Siegel-Zeilen,
+der Platte, gefahren von `tests/belege-siegel.test.ts:112` (Grundgesamtheit: 134 Siegel-Zeilen,
 gemessen 10:53:35 MEZ von demselben Fall — dieselbe Zahl wie um 02:57:57, weil P154 nur Siegel
 nachzog; zuvor 126 um 01:39:50, und die zwei neuen sind der Historien-Beleg P147
 mit seinem Generierer). Der erste Lauf dieses Pruefers fand 4 Befunde auf 2 Zeilen:
@@ -256,6 +256,12 @@ Schlag prueft `blockKopfFunde` aus `scripts/helfer/belege-siegel.mjs` genau das,
 | `konkurrenz-0611e/gleichstand-hetzner-0611.txt` | 1656 B | `6f8c2fd388bd862e…` |
 | `konkurrenz-0611e/gleichstand-hetzner.py` | 3294 B | `097293680c6d25ef…` |
 | `konkurrenz-0611e/korpus-aus-repo.json` | 16983 B | `982234a1ba4b50e7…` |
+| `konkurrenz-0911/t1-lauf-1-1440.png` | 159569 B | `1462da3447878431…` |
+| `konkurrenz-0911/t1-lauf-2-1440.png` | 160653 B | `9d39cd4b90f0b51a…` |
+| `konkurrenz-0911/t1-lauf-3-1440.png` | 160421 B | `87cbb7c87fda42f2…` |
+| `konkurrenz-0911/t1-lauf-4-1440.png` | 161304 B | `fa784e5ed55f85fe…` |
+| `konkurrenz-0911/t1-masse.json` | 891 B | `2293321f919caa4b…` |
+| `konkurrenz-0911/t1-unsere-193-1952.log.txt` | 1130 B | `5d6efe2e951fd148…` |
 | `konkurrenz-0611e/korpus-export.ts` | 991 B | `f0266f2ceb281862…` |
 | `konkurrenz-0611e/lauf-0611.log.txt` | 14607 B | `6a5771ae47cdc7c6…` |
 | `konkurrenz-0611e/lauf-chroma.py` | 9126 B | `c594a315b3fcaa08…` |

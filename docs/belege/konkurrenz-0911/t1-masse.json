@@ -1,0 +1,47 @@
+{
+  "port": 3861,
+  "breite": "1440x900",
+  "laeufe": [
+    {
+      "lauf": 1,
+      "bisTrefferMs": 284,
+      "klickMs": 302,
+      "treffer": 3,
+      "von": 1500,
+      "klickGelandet": true,
+      "LaengeVorher": 6563,
+      "LaengeNachher": 2737
+    },
+    {
+      "lauf": 2,
+      "bisTrefferMs": 239,
+      "klickMs": 250,
+      "treffer": 3,
+      "von": 1500,
+      "klickGelandet": true,
+      "LaengeVorher": 7084,
+      "LaengeNachher": 2741
+    },
+    {
+      "lauf": 3,
+      "bisTrefferMs": 213,
+      "klickMs": 222,
+      "treffer": 1,
+      "von": 1500,
+      "klickGelandet": true,
+      "LaengeVorher": 7057,
+      "LaengeNachher": 2741
+    },
+    {
+      "lauf": 4,
+      "bisTrefferMs": 209,
+      "klickMs": 217,
+      "treffer": 3,
+      "von": 1500,
+      "klickGelandet": true,
+      "LaengeVorher": 7057,
+      "LaengeNachher": 2741
+    }
+  ],
+  "medianMs": 239
+}

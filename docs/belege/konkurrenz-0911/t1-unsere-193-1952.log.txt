@@ -1,0 +1,11 @@
+P177 T1 unsre Seite (scripts/t1-finden-im-fenster.mjs), gefahren 09.11.2026 19:52:01 CET, kepta@3.2.193, Kapsel-Port 3861, CDP 3871, 1440x900, 4 Laeufe:
+  Import: 1500 Notizen in 1.0 s — {"imported":1500,"updated":0,"skipped":0,"errors":[],"teilzeiten":{"lesen":65.98,"einsetzen":212.26,"chunksetzen":84.61,
+  Bestand: 1500 Notizen, embedded 0/3000 (die semantische Warteschlange läuft im Hintergrund — T1 ist eine Wort-Aufgabe, BM25 braucht sie nicht)
+  Lauf 1: erster richtiger Treffer nach 284 ms (3 von 1500 Notizen), Klick bei 302 ms, gelandet: JA, Textlänge 6563→2737
+  Lauf 2: erster richtiger Treffer nach 239 ms (3 von 1500 Notizen), Klick bei 250 ms, gelandet: JA, Textlänge 7084→2741
+  Lauf 3: erster richtiger Treffer nach 213 ms (1 von 1500 Notizen), Klick bei 222 ms, gelandet: JA, Textlänge 7057→2741
+  Lauf 4: erster richtiger Treffer nach 209 ms (3 von 1500 Notizen), Klick bei 217 ms, gelandet: JA, Textlänge 7057→2741
+
+  T1 unsre Seite (1 500 Notizen, 1 440 x 900, 4 Läufe): Median 239 ms bis zum ersten richtigen Treffer, Klicks 1, Treffer-Kennung 3 von 1500
+  Protokoll-Ereignisse: 0
+EXIT=0
