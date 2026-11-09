@@ -714,5 +714,31 @@ describe("P173: Technische und historische Versprechen in SECURITY.md, ROADMAP.m
   });
 });
 
+// P174 (09.11.2026): Die letzten 7 verbleibenden All-Saetze ueber alle 4 Aussendungs-
+// Blaetter (README.md:3, :5, :45, :70, :85, SECURITY.md:5, ROADMAP.md:74) nennen ihre
+// Zeugen im selben Satz — damit stehen 182 von 182 (100,0 %, ohne_zeug = 0) mit Messzeug.
+describe("P174: Die letzten sieben Einheiten der vier Aussendungs-Blaetter nennen ihre Zeugen (182 von 182)", () => {
+  const alleVierBlatter = () =>
+    ["README.md", "SECURITY.md", "ROADMAP.md", ".github/release-notes.md"].flatMap((d) =>
+      satzeAusMarkdown(fs.readFileSync(path.join(process.cwd(), d), "utf8")),
+    );
+
+  const p174Saetze = () =>
+    alleVierBlatter().filter((s) =>
+      /Your AI forgets you after every chat|Desktop app · no cloud · no account · encrypted at rest SQLite|The next day you open a fresh chat and it knows none of it|Agent \| An AI program that can use tools instead of only answering|One brain for every AI tool|No public exploit before a fix exists|## ✅ v2\.13 — September 2026: your memory, every day/.test(
+        s,
+      ),
+    );
+
+  it("die sieben Saetze werden gefunden — die Sonde meldet keinen Erfolg fuer Ungelesenes", () => {
+    expect(p174Saetze().length, `die Sonde findet ${p174Saetze().length} P174-Saetze`).toBe(7);
+  });
+
+  it("jeder der sieben traegt sein Messzeug im selben Satz", () => {
+    const nackt = p174Saetze().filter((s) => !zeug.test(s));
+    expect(nackt, `diese Saetze stehen ohne Zeugen da:\n  ${nackt.join("\n  ").slice(0, 1500)}`).toEqual([]);
+  });
+});
+
 
 

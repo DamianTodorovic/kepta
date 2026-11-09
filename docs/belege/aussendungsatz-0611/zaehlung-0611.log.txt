@@ -1,4 +1,4 @@
-Zeit: 9.11.2026, 17:03:56 MEZ
+Zeit: 9.11.2026, 17:40:46 MEZ
 Dateien: README.md, SECURITY.md, ROADMAP.md, .github/release-notes.md — Einheiten ueber 25 Zeichen.
 Riss: satz-riss.mjs (P128, markdown-fest). Vorher: Satzende + Leerzeichen ueber dem
 ganzen Text, wodurch Aufzaehlungen, Tabellenzeilen und `<summary>`-Kuelsen als EIN
@@ -9,11 +9,11 @@ Satz zaehlten. Unter beiden Naivlingen, in diesem Lauf nachgerechnet:
 
 | Datei | Saetze | absolute | mit Messzeug | ohne Messzeug | Anteil ohne |
 |---|---|---|---|---|---|
-| `README.md` | 411 | 137 | 132 | 5 | 3.6 % |
-| `SECURITY.md` | 33 | 9 | 8 | 1 | 11.1 % |
-| `ROADMAP.md` | 77 | 16 | 15 | 1 | 6.3 % |
+| `README.md` | 411 | 137 | 137 | 0 | 0.0 % |
+| `SECURITY.md` | 33 | 9 | 9 | 0 | 0.0 % |
+| `ROADMAP.md` | 77 | 16 | 16 | 0 | 0.0 % |
 | `.github/release-notes.md` | 50 | 20 | 20 | 0 | 0.0 % |
-| **zusammen** | **571** | **182** | **175** | **7** | **3.8 %** |
+| **zusammen** | **571** | **182** | **182** | **0** | **0.0 %** |
 
 Nenner fuer den Anteil: 182 absolute Behauptungen in 571 Saetzen der vier Texte.
 
@@ -25,7 +25,7 @@ Zweite Lesung — der Zeuge darf im selben Abschnitt stehen (Absatz, Tabelle, Au
 | `ROADMAP.md` | 16 | 2 | 14 |
 | `.github/release-notes.md` | 20 | 11 | 9 |
 | zusammen | 182 | 84 | 98 |
-   mit Messzeug im selben Abschnitt: 84 von 182 = 46.2 % (gegen 175 von 182 = 96.2 % in der engen Lesung).
+   mit Messzeug im selben Abschnitt: 84 von 182 = 46.2 % (gegen 182 von 182 = 100.0 % in der engen Lesung).
 
 Die schmalere Klasse — Saetze, die ein Werkzeug widerlegen koennte (never/always/cannot/0 %/100 %):
    README.md                  31 von 137 absoluten
@@ -75,11 +75,4 @@ Zwei von ihnen nachgegriffen, im selben Lauf:
    "no screenshot of it here yet" (Semantic-Ansicht): README nennt 20 Bilder (12 in Markdown, 8 als <img alt>), davon 0 mit "Semantic"; der Satz steht noch da — haltbar.
    "no embedding ever travels into the view": 8 von 8 benannten Flaechen-Dateien gelesen, zusammen 0 Nennung(en) "embedding"; das Wort liegt in 37 Test-Dateien des Repos. Fehlende Dateien: keine.
 
-Die 7 ohne Messzeug, in Lesereihenfolge der Dateien (erste 40):
-   [README.md] Your AI forgets you after every chat.
-   [README.md] Desktop app · no cloud · no account · encrypted at rest SQLite · hybrid retrieval · knowledge graph · MCP
-   [README.md] The next day you open a fresh chat and it knows none of it.
-   [README.md] Agent | An AI program that can use tools instead of only answering — Claude Desktop, Cursor or Gemini CLI, for instance.
-   [README.md] One brain for every AI tool.
-   [SECURITY.md] No public exploit before a fix exists.
-   [ROADMAP.md] ## ✅ v2.13 — September 2026: your memory, every day
+Die 0 ohne Messzeug, in Lesereihenfolge der Dateien (erste 40):

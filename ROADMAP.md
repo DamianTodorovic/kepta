@@ -71,7 +71,7 @@ K3PTA's interface is English, one language done properly.
 | **Revocation** | A revoked license number no longer unlocks K3PTA from the next update on — also where it was already activated (`tests/core/boundary.test.ts:75` and `tests/keine-grenzen.test.ts:102`) |
 | **Copy buttons** | Chat, recovery key, system status and the MCP block copy again |
 
-## ✅ v2.13 — September 2026: your memory, every day
+## ✅ v2.13 — September 2026: your memory, every day (`tests/enterprise-api.test.ts:207`)
 
 | Feature | What shipped |
 |---|---|

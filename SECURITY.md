@@ -2,7 +2,7 @@
 
 ## Reporting
 
-Please report vulnerabilities privately to Damian Todorovic via [LinkedIn](https://www.linkedin.com/in/damian-todorovic-244235434). No public exploit before a fix exists.
+Please report vulnerabilities privately to Damian Todorovic via [LinkedIn](https://www.linkedin.com/in/damian-todorovic-244235434). No public exploit before a fix exists (`tests/herkunft.test.ts:66` and `tests/electron-haertung.test.ts:107` hold the active hardening suite).
 
 ## Hardening in place
 

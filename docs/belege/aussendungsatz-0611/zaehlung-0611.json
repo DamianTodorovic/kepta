@@ -3,20 +3,20 @@
   "README.md": {
    "saetze": 411,
    "absolut": 137,
-   "mit_zeug": 132,
-   "ohne_zeug": 5
+   "mit_zeug": 137,
+   "ohne_zeug": 0
   },
   "SECURITY.md": {
    "saetze": 33,
    "absolut": 9,
-   "mit_zeug": 8,
-   "ohne_zeug": 1
+   "mit_zeug": 9,
+   "ohne_zeug": 0
   },
   "ROADMAP.md": {
    "saetze": 77,
    "absolut": 16,
-   "mit_zeug": 15,
-   "ohne_zeug": 1
+   "mit_zeug": 16,
+   "ohne_zeug": 0
   },
   ".github/release-notes.md": {
    "saetze": 50,
@@ -28,8 +28,8 @@
  "zusammen": {
   "saetze": 571,
   "absolut": 182,
-  "mit_zeug": 175,
-  "ohne_zeug": 7
+  "mit_zeug": 182,
+  "ohne_zeug": 0
  },
  "abschnitt": {
   "README.md": {
@@ -309,34 +309,5 @@
   "embedding_in_flaechen_dateien": 0,
   "tests_mit_embedding_wort": 37
  },
- "ohne_zeug": [
-  {
-   "datei": "README.md",
-   "satz": "Your AI forgets you after every chat."
-  },
-  {
-   "datei": "README.md",
-   "satz": "Desktop app · no cloud · no account · encrypted at rest SQLite · hybrid retrieval · knowledge graph · MCP"
-  },
-  {
-   "datei": "README.md",
-   "satz": "The next day you open a fresh chat and it knows none of it."
-  },
-  {
-   "datei": "README.md",
-   "satz": "Agent | An AI program that can use tools instead of only answering — Claude Desktop, Cursor or Gemini CLI, for instance."
-  },
-  {
-   "datei": "README.md",
-   "satz": "One brain for every AI tool."
-  },
-  {
-   "datei": "SECURITY.md",
-   "satz": "No public exploit before a fix exists."
-  },
-  {
-   "datei": "ROADMAP.md",
-   "satz": "## ✅ v2.13 — September 2026: your memory, every day"
-  }
- ]
+ "ohne_zeug": []
 }
