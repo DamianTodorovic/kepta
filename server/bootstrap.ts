@@ -49,7 +49,7 @@ export async function startServer() {
   // derselbe Aufruf wie im Kern-Server (server.ts: aktiviereSuchCacheDelta).
   aktiviereSuchCacheDelta(store);
 
-  const app = createApp(store);
+  const app = createApp(store, { embeddingQueue });
 
   // Vite-Dev-Middleware: der tsx-Dev-Server (`npm run dev`) nutzt sie immer —
   // das gebündelte dist/server.cjs (`npm start`, Electron) dagegen nur, wenn KEIN

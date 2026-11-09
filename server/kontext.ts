@@ -11,6 +11,8 @@ export interface AppOptionen {
   umgebung?: Umgebung;
   /** The MCP entry „Connect“ writes — the server inside the app, else npx. */
   eintrag?: Eintrag;
+  /** P184: die Hintergrund-Einbett-Queue — der Such-Modell-Wechsel stellt sie um. */
+  embeddingQueue?: { wechselModell(model: string): void; tick(): Promise<number> };
 }
 
 export interface ActivityEvent {
@@ -22,6 +24,8 @@ export interface ActivityEvent {
 
 export interface AppKontext {
   store: KeptaStore;
+  /** P184: die Einbett-Queue (optional — Tests ohne). Der Wechsel-Schalter stellt sie um. */
+  embeddingQueue?: { wechselModell(model: string): void; tick(): Promise<number> };
   /** Datenordner (~/.kepta) — Profil, Einstellungen-Archiv, Inbox, Scan-Konfiguration. */
   datenOrdner: string;
   optionen: AppOptionen;

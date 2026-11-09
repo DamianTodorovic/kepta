@@ -3,7 +3,7 @@
 // (Recency, Konfidenz, Temporal-Abwertung) → Top-k. Ohne Vektoren rein lexikalisch stark.
 import type { KeptaStore } from "./store";
 import type { MemoryRecord, MemoryType, SearchHit, SearchResult, SearchParams } from "./types";
-import { chunkText, embedQuery, cosineSimilarity, ollamaBaseUrl, DEFAULT_EMBED_MODEL } from "./embeddings";
+import { chunkText, embedQuery, cosineSimilarity, ollamaBaseUrl, aktivesSuchModell, DEFAULT_EMBED_MODEL } from "./embeddings";
 import { erweitereQuery } from "./synonyme";
 
 const RRF_K = 60;
@@ -517,7 +517,9 @@ export async function searchMemories(store: KeptaStore, params: SearchParams): P
   const tVektor = process.hrtime.bigint();
   if (query && beine.vector) {
     const tEin = process.hrtime.bigint();
-    queryVector = await embedQuery(query);
+    // P184: der Anfrage-Vektor gehört in den Raum des AKTIVEN Modells — sonst
+    // sucht die Query im fremden Raum (engine filtert Chunks nach Modell).
+    queryVector = await embedQuery(query, aktivesSuchModell(store));
     einbettung = msSeit(tEin);
     if (queryVector) {
       // Vorgerechnete Spur (Chunk-Liste gefiltert auf das Abfragemodell + Normen
@@ -865,10 +867,11 @@ export async function findDuplicateForNew(
   title: string,
   content: string
 ): Promise<DuplicateWarning | null> {
-  const vec = await embedQuery(`${title}\n${content}`);
+  const modell = aktivesSuchModell(store);
+  const vec = await embedQuery(`${title}\n${content}`, modell);
   if (!vec) return null;
   // Nur Chunks des aktuellen Modells — Query-Vektor und Chunk-Vektor müssen gleiche Räume teilen
-  const chunks = embeddbareChunks(store).filter((c) => c.model === DEFAULT_EMBED_MODEL);
+  const chunks = embeddbareChunks(store).filter((c) => c.model === modell);
   const best = new Map<string, number>();
   for (const c of chunks) {
     const sim = cosineSimilarity(vec, c.embedding);

@@ -22,6 +22,13 @@ export function einbettModell(): string {
 
 export const DEFAULT_EMBED_MODEL = einbettModell();
 
+/** P184: das AKTIVE Such-Modell — die Wahl aus den Einstellungen (Settings-Schalter)
+ * schlägt die Umgebung; ohne beide gilt das ausgelieferte nomic. */
+export function aktivesSuchModell(store: { einstellungen(): Record<string, string> }): string {
+  const gewaehlt = store.einstellungen()["such_modell"];
+  return typeof gewaehlt === "string" && gewaehlt.length > 0 ? gewaehlt : einbettModell();
+}
+
 // ---------- Chunking ----------
 
 export interface ChunkOptions {
@@ -193,6 +200,13 @@ export class EmbeddingQueue {
       clearInterval(this.timer);
       this.timer = null;
     }
+  }
+
+  /** P184: das Queue-Modell wechseln — der nächste tick re-embeddet alle
+   * Chunks, deren embedding_model nicht mehr passt (chunksNeedingEmbedding
+   * zählt den Mismatch mit). Nicht-blockierend, Queue im Hintergrund. */
+  wechselModell(model: string): void {
+    this.opts.model = model;
   }
 
   /** Verarbeitet eine Runde nicht eingebettete Chunks. Liefert Anzahl. */

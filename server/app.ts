@@ -190,6 +190,7 @@ export function createApp(store: KeptaStore, optionen: AppOptionen = {}) {
     store,
     datenOrdner,
     optionen,
+    embeddingQueue: optionen.embeddingQueue,
     limiter,
     publishActivity: () => { /* wird von mountActivity ersetzt */ },
     markiereEigeneAenderung: () => { /* wird von mountActivity ersetzt */ },
@@ -242,6 +243,7 @@ export function createApp(store: KeptaStore, optionen: AppOptionen = {}) {
   //     einzelne am echten Horcher — ein viertes Limit kann nicht wieder als
   //     Absicht enden (es war genau so einer, /api/open, von der Sonde gefunden).
   app.use("/api/repair/imports", express.json({ limit: "16kb" }));
+  app.use("/api/such-modell", express.json({ limit: "4kb" }));
   app.use("/api/scan/config", express.json({ limit: "256kb" }));
   app.use("/api/open", express.json({ limit: "16kb" }));
 

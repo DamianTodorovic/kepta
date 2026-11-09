@@ -1,3 +1,23 @@
+## [3.2.196]
+
+### Added
+
+- **The search-model line is now a switch.** The Settings Search section grew
+  the model picker behind the P183 line: a select of the models Ollama
+  actually has (`GET /api/such-modell`), an Apply button (`POST
+  /api/such-modell`) that refuses a model Ollama does not know with the
+  existing tag list, persists the choice in the store's settings table, turns
+  the background embedding queue to the new model (its tick re-embeds every
+  chunk whose stored model no longer matches — the mismatch counter ships in
+  the answer as `neuZuEinbetten`), and the search, duplicate check and chat
+  query embeddings all move with it (`aktivesSuchModell`). During the
+  re-embed the existing "index is still filling" chip reports honestly.
+  Held by `tests/such-modell-wechsel.test.ts` (persistence, refusal,
+  env fallback, and the door on a listening server), the K-2 body-cap guard
+  (path-scoped cap like the repair route) and the surface guards.
+  The query embedding moves to the active model in
+  `src/core/engine.ts:520` and the duplicate check in `:867`.
+
 ## [3.2.195]
 
 ### Added

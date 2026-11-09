@@ -9,7 +9,7 @@ zitiert, und verlangt die Zahl dort; ein Beleg, den `git ls-files` nicht kennt, 
 Die Tabelle unten ist ein **Siegel** — Bytezahl und sha256 sagen, dass dieser Beleg dieser Lauf
 ist. Bis zum 7.11. hatte dieses Siegel keinen Pruefer. Seitdem vergleicht
 `scripts/helfer/belege-siegel.mjs` in jedem Suite-Lauf jede ausgewiesene Zeile gegen die Datei auf
-der Platte, gefahren von `tests/belege-siegel.test.ts:112` (Grundgesamtheit: 174 Siegel-Zeilen,
+der Platte, gefahren von `tests/belege-siegel.test.ts:112` (Grundgesamtheit: 176 Siegel-Zeilen,
 gemessen 10:53:35 MEZ von demselben Fall — dieselbe Zahl wie um 02:57:57, weil P154 nur Siegel
 nachzog; zuvor 126 um 01:39:50, und die zwei neuen sind der Historien-Beleg P147
 mit seinem Generierer). Der erste Lauf dieses Pruefers fand 4 Befunde auf 2 Zeilen:
@@ -275,6 +275,8 @@ Schlag prueft `blockKopfFunde` aus `scripts/helfer/belege-siegel.mjs` genau das,
 | `konkurrenz-0911e/sprache-bge-m3-regel-0911.log.txt` | 1797 B | `e263b913149ea6d0…` |
 | `tag-0911/modell-zeile-1440.png` | 141566 B | `310dfe6bdf957d61…` |
 | `tag-0911/modell-zeile-390.png` | 75356 B | `b27c8748631d6d30…` |
+| `tag-0911/wechsel-1440.png` | 132620 B | `65faf8e217acaecf…` |
+| `tag-0911/wechsel-390.png` | 73889 B | `7dbc09b579ac84b1…` |
 | `konkurrenz-0911e/spur-uns-0911-regel-bge-m3-eins.jsonl` | 8859 B | `f5bca3e40c9a8253…` |
 | `konkurrenz-0911e/spur-uns-0911-regel-bge-m3-zwei.jsonl` | 8859 B | `0e91677767f4119e…` |
 | `konkurrenz-0911e/spur-uns-0911-regel-nomic-embed-text-eins.jsonl` | 9146 B | `47da42c2a2b5f0b4…` |

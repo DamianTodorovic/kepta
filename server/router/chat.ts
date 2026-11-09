@@ -8,7 +8,7 @@ import { liesVerwaltet, richtlinie, istLokalerHost } from "../../src/lib/richtli
 import { schreibe as protokolliere } from "../../src/lib/pruefprotokoll";
 import { schildEinstellungen, privateIds } from "./schild";
 import { bodyOf } from "../helfer/body";
-import { einbettModell, ollamaBaseUrl } from "../../src/core/embeddings";
+import { aktivesSuchModell, einbettModell, ollamaBaseUrl } from "../../src/core/embeddings";
 import type { AppKontext } from "../kontext";
 
 export function mountChat(app: express.Express, ctx: AppKontext): void {
@@ -297,7 +297,7 @@ export function mountChat(app: express.Express, ctx: AppKontext): void {
     // der Einbett-Laeufer des Kerns nicht benutzt (Befund 3.11., Aufgabe #45): vorher las
     // diese Route ausschliesslich OLLAMA_HOST, waehrend src/core/embeddings.ts:8
     // KEPTA_OLLAMA_URL liest.
-    const modelName = model || einbettModell();
+    const modelName = model || aktivesSuchModell(store);
     const base = ollamaBaseUrl();
 
     try {

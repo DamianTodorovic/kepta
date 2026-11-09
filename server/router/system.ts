@@ -18,9 +18,44 @@ import { leseUmwelt, gewonneneUmweltNamen, ohneWert } from "../../src/core/umwel
 import { serverVerzeichnis, resolveDistDir } from "../helfer/pfad";
 import type { AppKontext } from "../kontext";
 
+import { aktivesSuchModell, ollamaBaseUrl } from "../../src/core/embeddings";
+import { suchModellWechseln, aktivesModellAusStore } from "../helfer/such-modell";
+import { absage } from "../../src/lib/absage";
+
 export function mountSystem(app: express.Express, ctx: AppKontext): void {
   const { store } = ctx;
   const activeCount = () => store.countMemories().active;
+
+  // --- P184: das aktive Such-Modell — lesen und wechseln (Settings-Schalter) ---
+  app.get("/api/such-modell", (_req, res) => {
+    const aktive = aktivesSuchModell(store);
+    const wahl = aktivesModellAusStore(store);
+    fetch(`${ollamaBaseUrl()}/api/tags`, { signal: AbortSignal.timeout(2_500) })
+      .then((r) => (r.ok ? r.json() : { models: [] }))
+      .then((j) => {
+        const modelle = ((j.models ?? []) as Array<{ name?: string }>).map((m) => String(m.name ?? "")).filter(Boolean);
+        res.json({ modell: aktive, gewaehlt: wahl ?? null, modelle });
+      })
+      .catch((e: unknown) => {
+        res.json({ modell: aktive, gewaehlt: wahl ?? null, modelle: [], hinweis: absage("Ollama is not reachable right now — the model list is empty, the current model still works.", e) });
+      });
+  });
+
+  app.post("/api/such-modell", ctx.limiter.write, express.json({ limit: "4kb" }), async (req, res) => {
+    const { modell } = (req.body ?? {}) as { modell?: unknown };
+    try {
+      const j = await fetch(`${ollamaBaseUrl()}/api/tags`, { signal: AbortSignal.timeout(2_500) }).then((r) => (r.ok ? r.json() : { models: [] }));
+      const tags = ((j.models ?? []) as Array<{ name?: string }>).map((m) => String(m.name ?? "")).filter(Boolean);
+      const ergebnis = suchModellWechseln(store, ctx.embeddingQueue ?? null, modell, tags);
+      if (!ergebnis.ok) {
+        res.status(400).json({ error: ergebnis.fehler ?? "Der Wechsel wurde abgewiesen." });
+        return;
+      }
+      res.json({ modell: ergebnis.modell, neuZuEinbetten: ergebnis.neuZuEinbetten ?? 0 });
+    } catch (e: unknown) {
+      res.status(503).json({ error: absage("Ollama did not answer — the model was not switched. Your notes are safe.", e) });
+    }
+  });
 
   // --- Health ---
   app.get("/api/health", (_req, res) => {
