@@ -1,0 +1,6 @@
+P178 cognee-Befund, 9.11.2026 20:03:24 MEZ, Kapsel /tmp/kepta-cognee (venv python3.11.16, cognee 1.6.7, ~200 Pakete, LanceDB), HOME gekapselt:
+Lauf: HOME=/tmp/kepta-cognee/home LLM_PROVIDER=ollama LLM_MODEL=llama3.2:3b LLM_ENDPOINT=http://127.0.0.1:11434/v1 LLM_API_KEY=ollama EMBEDDING_PROVIDER=ollama EMBEDDING_MODEL=nomic-embed-text EMBEDDING_ENDPOINT=http://127.0.0.1:11434 VECTOR_DB_PROVIDER=lancedb VECTOR_DB_URL=/tmp/kepta-cognee/lancedb venv/bin/python lauf-cognee.py
+Ergebnis: RuntimeError: Could not find lbug C API shared library. Set LBUG_C_API_LIB_PATH or download a shared lib (e.g. run LBUG_LIB_KIND=shared bash scripts/download_lbug.sh)
+gefolgt von cognee.modules.migrations.startup.MigrationError: Relational DB Migrations failed.
+Gemessen: PyPI ladybug 0.19.0 traegt die Bindung (_lbug.cpython-311-darwin.so) nicht aber liblbug.dylib (Suche im ganzen venv: 0 Treffer); PyPI-Paket "lbug": "No matching distribution found for lbug"; das Download-Skript liegt nicht im installierten Paket.
+Entschieden, weil: kein unversioniertes Fremd-Binary aus GitHub laeuft in einen Beweis-Lauf. cognee steht als auf diesem Rechner nicht lauffaehig; Kapsel geräumt (rm -rf /tmp/kepta-cognee). Der Lauf kam nie bis zur Sonde; dieses Zeugnis ist die ganze cognee-Spur.

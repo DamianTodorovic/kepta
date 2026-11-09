@@ -20,6 +20,7 @@ dasselbe: **Hit@1** — die erste Antwort nennt eine der Ziel-IDs der Anfrage.
 | K3PTA, **ausgeliefert** (v3-Bein), **zweites Einbett** | derselbe Aufbau und derselbe Suchweg, nur `bge-m3` (1024 D) statt nomic | **77,8 %** (35/45) | `docs/belege/konkurrenz-0611c/spur-uns-bge-m3-0611.jsonl` und `…-zwei.jsonl` |
 | **chroma 1.5.9**, reines Cosinus-KNN | dieselben Texte, dasselbe Einbett (nomic-embed-text, 768 D), k=5, Cosinus-Raum gesetzt und **gemessen**, nichts ausser Vektoren | **42,2 %** (19/45) | `docs/belege/konkurrenz-0611e/spur-chroma-nomic-eins.jsonl` und `…-zwei.jsonl` |
 | **chroma 1.5.9**, reines Cosinus-KNN, **zweites Einbett** | derselbe Lauf, nur `bge-m3` (1024 D) statt nomic | **68,9 %** (31/45) | `docs/belege/konkurrenz-0611e/spur-chroma-bge-m3-eins.jsonl` und `…-zwei.jsonl` |
+| **mem0 2.2.1**, fair gefahren, **zweites Einbett** | dieselbe faire Konfiguration wie die nomic-Zeile (ganzes Stueck, `infer=False`, mem0s eigne Rangfolge), nur `bge-m3` (1024 D) über Ollama statt nomic — 9.11.2026, 20:06/20:06:29 MEZ, zwei frische Speicher | **68,9 %** (31/45) | `docs/belege/konkurrenz-0911b/spur-mem0-bgem3-0911-eins.jsonl` und `…-zwei.jsonl` |
 
 ## Berichtigung 16:52 MEZ: die Kategorie-Zahl war eine Modell-Aussage, keine Verfahrensaussage
 
@@ -404,3 +405,23 @@ Das Skript liegt bei den Artefakten: `docs/belege/konkurrenz-0611/lauf-fair.py.t
 Ergebnis und Protokoll ebenso (`ergebnis-fair-0611*.json`, `lauf-fair.log.txt`).
 Dauer 2,4 und 2,6 Sekunden, Spitze 0,15 GiB — kein Netz nach aussen, nur lokale
 Ollama-Aufrufe auf 127.0.0.1.
+
+## P178 (9.11.2026): die Produkt-Zeile auf der zweiten Stufe — und der Abstand, der bleibt
+
+mem0 fair mit dem zweiten Einbett (9.11., 20:06:21 und 20:06:29 MEZ, zwei frische
+Speicher, `infer=False`, bge-m3 über Ollama): **68,9 % (31/45), zweimal identisch**,
+Recall@5 88,9 %. Der Einbett-Hebel hebt mem0 um **+17,8 Punkte** (51,1 → 68,9) —
+weniger als die Hebel der Verfahrens-Zeilen (+24,5 sqlite-vec, +26,7 chroma): mem0s
+eigne Rangfolge dämpft, was der Embedder bringt. Unsre eigne Spur auf derselben Stufe
+steht bei **77,8 % (35/45)** — der Abstand der Fusion zur Produkt-Zeile beträgt auf der
+zweiten Stufe **8,9 Punkte**, dasselbe Bild wie bei den Verfahrens-Zeilen nach der
+Berichtigung oben: **die Stufe (das Einbett) macht den großen Unterschied, die Fusion
+den verbleibenden.** K3PTA führt damit weiterhin jede Zeile des Ledgers, auf beiden
+Stufen, aber der ehrliche Abstand auf der zweiten Stufe ist 8,9 Punkte, nicht 24,5.
+Die Latte (`tests/konkurrenz-mem0-latte.test.ts`, drittes Bein) hält den Abstand mit
+einer Grenze von 5 Punkten und fällt bei Gleichstand.
+
+Nebenbefund: cognee 1.6.7 (der zweite Produkt-Kandidat dieser Welle) ist auf diesem
+Rechner nicht lauffähig — seine Graph-Engine (ladybug/lbug) fehlt die C-Bibliothek,
+die es nur als unversionierten Fremd-Download gibt; Zeugnis
+`docs/belege/konkurrenz-0911b/lauf-cognee-0911.log.txt`.

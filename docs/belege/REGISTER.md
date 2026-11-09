@@ -9,7 +9,7 @@ zitiert, und verlangt die Zahl dort; ein Beleg, den `git ls-files` nicht kennt, 
 Die Tabelle unten ist ein **Siegel** — Bytezahl und sha256 sagen, dass dieser Beleg dieser Lauf
 ist. Bis zum 7.11. hatte dieses Siegel keinen Pruefer. Seitdem vergleicht
 `scripts/helfer/belege-siegel.mjs` in jedem Suite-Lauf jede ausgewiesene Zeile gegen die Datei auf
-der Platte, gefahren von `tests/belege-siegel.test.ts:112` (Grundgesamtheit: 134 Siegel-Zeilen,
+der Platte, gefahren von `tests/belege-siegel.test.ts:112` (Grundgesamtheit: 143 Siegel-Zeilen,
 gemessen 10:53:35 MEZ von demselben Fall — dieselbe Zahl wie um 02:57:57, weil P154 nur Siegel
 nachzog; zuvor 126 um 01:39:50, und die zwei neuen sind der Historien-Beleg P147
 mit seinem Generierer). Der erste Lauf dieses Pruefers fand 4 Befunde auf 2 Zeilen:
@@ -262,6 +262,15 @@ Schlag prueft `blockKopfFunde` aus `scripts/helfer/belege-siegel.mjs` genau das,
 | `konkurrenz-0911/t1-lauf-4-1440.png` | 161304 B | `fa784e5ed55f85fe…` |
 | `konkurrenz-0911/t1-masse.json` | 891 B | `2293321f919caa4b…` |
 | `konkurrenz-0911/t1-unsere-193-1952.log.txt` | 1130 B | `5d6efe2e951fd148…` |
+| `konkurrenz-0911b/ergebnis-mem0-bgem3-0911-eins.json` | 592 B | `0d764704f1311ef0…` |
+| `konkurrenz-0911b/ergebnis-mem0-bgem3-0911-zwei.json` | 591 B | `9d199857ba3014c4…` |
+| `konkurrenz-0911b/korpus-aus-repo.json` | 16983 B | `982234a1ba4b50e7…` |
+| `konkurrenz-0911b/lauf-cognee-0911.log.txt` | 1270 B | `c86e61b9823f4077…` |
+| `konkurrenz-0911b/lauf-cognee.py` | 6375 B | `97f0e86d18799449…` |
+| `konkurrenz-0911b/lauf-mem0-bgem3.py` | 4223 B | `858980cb8f576493…` |
+| `konkurrenz-0911b/spur-cognee-0911.jsonl` | 87 B | `eac1359ad4141cf9…` |
+| `konkurrenz-0911b/spur-mem0-bgem3-0911-eins.jsonl` | 12566 B | `ba670a1d45749ad5…` |
+| `konkurrenz-0911b/spur-mem0-bgem3-0911-zwei.jsonl` | 12565 B | `3f6520f0c19698ac…` |
 | `konkurrenz-0611e/korpus-export.ts` | 991 B | `f0266f2ceb281862…` |
 | `konkurrenz-0611e/lauf-0611.log.txt` | 14607 B | `6a5771ae47cdc7c6…` |
 | `konkurrenz-0611e/lauf-chroma.py` | 9126 B | `c594a315b3fcaa08…` |

@@ -1,0 +1,105 @@
+{"art": "start", "zeit": "20:06:17", "einbett": "bge-m3", "infer": false, "heim": "/tmp/kepta-mem0/qdrant", "notizen": 58, "anfragen": 45}
+{"art": "setze", "i": 1, "note": "m01", "sek": 1.5}
+{"art": "setze", "i": 2, "note": "m02", "sek": 0.0}
+{"art": "setze", "i": 3, "note": "m03", "sek": 0.0}
+{"art": "setze", "i": 4, "note": "m04", "sek": 0.0}
+{"art": "setze", "i": 5, "note": "m05", "sek": 0.0}
+{"art": "setze", "i": 6, "note": "m06", "sek": 0.0}
+{"art": "setze", "i": 7, "note": "m07", "sek": 0.0}
+{"art": "setze", "i": 8, "note": "m08", "sek": 0.0}
+{"art": "setze", "i": 9, "note": "m09", "sek": 0.0}
+{"art": "setze", "i": 10, "note": "m10", "sek": 0.0}
+{"art": "setze", "i": 11, "note": "m11", "sek": 0.0}
+{"art": "setze", "i": 12, "note": "m12", "sek": 0.0}
+{"art": "setze", "i": 13, "note": "m13", "sek": 0.0}
+{"art": "setze", "i": 14, "note": "m14", "sek": 0.0}
+{"art": "setze", "i": 15, "note": "m15", "sek": 0.0}
+{"art": "setze", "i": 16, "note": "m16", "sek": 0.0}
+{"art": "setze", "i": 17, "note": "m17", "sek": 0.0}
+{"art": "setze", "i": 18, "note": "m18", "sek": 0.0}
+{"art": "setze", "i": 19, "note": "m19", "sek": 0.0}
+{"art": "setze", "i": 20, "note": "m20", "sek": 0.0}
+{"art": "setze", "i": 21, "note": "m21", "sek": 0.0}
+{"art": "setze", "i": 22, "note": "m22", "sek": 0.0}
+{"art": "setze", "i": 23, "note": "m23", "sek": 0.0}
+{"art": "setze", "i": 24, "note": "m24", "sek": 0.0}
+{"art": "setze", "i": 25, "note": "m25", "sek": 0.0}
+{"art": "setze", "i": 26, "note": "m26", "sek": 0.0}
+{"art": "setze", "i": 27, "note": "m27", "sek": 0.0}
+{"art": "setze", "i": 28, "note": "m28", "sek": 0.0}
+{"art": "setze", "i": 29, "note": "m29", "sek": 0.0}
+{"art": "setze", "i": 30, "note": "m30", "sek": 0.0}
+{"art": "setze", "i": 31, "note": "m31", "sek": 0.0}
+{"art": "setze", "i": 32, "note": "m32", "sek": 0.0}
+{"art": "setze", "i": 33, "note": "m33", "sek": 0.0}
+{"art": "setze", "i": 34, "note": "m34", "sek": 0.0}
+{"art": "setze", "i": 35, "note": "m35", "sek": 0.0}
+{"art": "setze", "i": 36, "note": "m36", "sek": 0.0}
+{"art": "setze", "i": 37, "note": "m37", "sek": 0.0}
+{"art": "setze", "i": 38, "note": "m38", "sek": 0.0}
+{"art": "setze", "i": 39, "note": "m39", "sek": 0.0}
+{"art": "setze", "i": 40, "note": "m40", "sek": 0.0}
+{"art": "setze", "i": 41, "note": "m41", "sek": 0.0}
+{"art": "setze", "i": 42, "note": "m42", "sek": 0.0}
+{"art": "setze", "i": 43, "note": "m43", "sek": 0.0}
+{"art": "setze", "i": 44, "note": "m44", "sek": 0.0}
+{"art": "setze", "i": 45, "note": "m45", "sek": 0.0}
+{"art": "setze", "i": 46, "note": "m46", "sek": 0.0}
+{"art": "setze", "i": 47, "note": "m47", "sek": 0.0}
+{"art": "setze", "i": 48, "note": "m48", "sek": 0.0}
+{"art": "setze", "i": 49, "note": "m49", "sek": 0.0}
+{"art": "setze", "i": 50, "note": "m50", "sek": 0.0}
+{"art": "setze", "i": 51, "note": "m51", "sek": 0.0}
+{"art": "setze", "i": 52, "note": "m52", "sek": 0.0}
+{"art": "setze", "i": 53, "note": "m53", "sek": 0.0}
+{"art": "setze", "i": 54, "note": "m54", "sek": 0.0}
+{"art": "setze", "i": 55, "note": "m55", "sek": 0.0}
+{"art": "setze", "i": 56, "note": "m56", "sek": 0.0}
+{"art": "setze", "i": 57, "note": "m57", "sek": 0.0}
+{"art": "setze", "i": 58, "note": "m58", "sek": 0.0}
+{"art": "suche", "frage": "Wo läuft die Produktion?", "kategorie": "lexikalisch", "erwartet": ["m01"], "top": "m01", "treffer": true, "liste": ["m01", "m44", "m55", "m41", "m03"], "sek": 0.0}
+{"art": "suche", "frage": "Welche Datenbank nutzen wir?", "kategorie": "lexikalisch", "erwartet": ["m02"], "top": "m39", "treffer": false, "liste": ["m39", "m02", "m09", "m57", "m15"], "sek": 0.0}
+{"art": "suche", "frage": "Wo wohnt Alex gerade?", "kategorie": "lexikalisch", "erwartet": ["m04"], "top": "m03", "treffer": false, "liste": ["m03", "m04", "m51", "m40", "m38"], "sek": 0.0}
+{"art": "suche", "frage": "Umsatzsteuer Frist", "kategorie": "lexikalisch", "erwartet": ["m08"], "top": "m08", "treffer": true, "liste": ["m08", "m07", "m34", "m47", "m24"], "sek": 0.0}
+{"art": "suche", "frage": "Wie ist die hybride Suche implementiert?", "kategorie": "lexikalisch", "erwartet": ["m14"], "top": "m14", "treffer": true, "liste": ["m14", "m39", "m57", "m21", "m58"], "sek": 0.0}
+{"art": "suche", "frage": "Welche Embedding-Modelle lokal?", "kategorie": "lexikalisch", "erwartet": ["m13"], "top": "m13", "treffer": true, "liste": ["m13", "m11", "m38", "m55", "m12"], "sek": 0.0}
+{"art": "suche", "frage": "Wie funktioniert der Wissensgraph?", "kategorie": "lexikalisch", "erwartet": ["m15"], "top": "m39", "treffer": false, "liste": ["m39", "m35", "m27", "m14", "m57"], "sek": 0.0}
+{"art": "suche", "frage": "Serverzugang und Passwort", "kategorie": "lexikalisch", "erwartet": ["m16", "m17"], "top": "m58", "treffer": false, "liste": ["m58", "m57", "m09", "m16", "m17"], "sek": 0.0}
+{"art": "suche", "frage": "Fitness Trainingsplan", "kategorie": "lexikalisch", "erwartet": ["m19"], "top": "m19", "treffer": true, "liste": ["m19", "m45", "m43", "m49", "m44"], "sek": 0.0}
+{"art": "suche", "frage": "Impfungen Auffrischung", "kategorie": "lexikalisch", "erwartet": ["m20"], "top": "m20", "treffer": true, "liste": ["m20", "m57", "m43", "m44", "m42"], "sek": 0.0}
+{"art": "suche", "frage": "Warum Rust statt Go?", "kategorie": "lexikalisch", "erwartet": ["m21"], "top": "m21", "treffer": true, "liste": ["m21", "m57", "m58", "m02", "m26"], "sek": 0.0}
+{"art": "suche", "frage": "Autoversicherung kündigen", "kategorie": "lexikalisch", "erwartet": ["m22"], "top": "m22", "treffer": true, "liste": ["m22", "m54", "m34", "m55", "m23"], "sek": 0.0}
+{"art": "suche", "frage": "Werkstatt Termin Auto", "kategorie": "lexikalisch", "erwartet": ["m23"], "top": "m23", "treffer": true, "liste": ["m23", "m46", "m24", "m43", "m53"], "sek": 0.0}
+{"art": "suche", "frage": "Keller Umbau Kosten", "kategorie": "lexikalisch", "erwartet": ["m25"], "top": "m25", "treffer": true, "liste": ["m25", "m31", "m35", "m30", "m41"], "sek": 0.0}
+{"art": "suche", "frage": "Welche LLM Kontextfenster?", "kategorie": "lexikalisch", "erwartet": ["m26"], "top": "m26", "treffer": true, "liste": ["m26", "m13", "m09", "m12", "m14"], "sek": 0.0}
+{"art": "suche", "frage": "Obsidian Notizen Format", "kategorie": "lexikalisch", "erwartet": ["m28"], "top": "m28", "treffer": true, "liste": ["m28", "m13", "m39", "m02", "m27"], "sek": 0.0}
+{"art": "suche", "frage": "React Build Setup", "kategorie": "lexikalisch", "erwartet": ["m29"], "top": "m29", "treffer": true, "liste": ["m29", "m21", "m11", "m57", "m02"], "sek": 0.0}
+{"art": "suche", "frage": "Kaution Vermieter", "kategorie": "lexikalisch", "erwartet": ["m30"], "top": "m30", "treffer": true, "liste": ["m30", "m47", "m31", "m35", "m34"], "sek": 0.0}
+{"art": "suche", "frage": "Carbonara Zutaten", "kategorie": "lexikalisch", "erwartet": ["m06"], "top": "m06", "treffer": true, "liste": ["m06", "m19", "m18", "m33", "m35"], "sek": 0.0}
+{"art": "suche", "frage": "KEPTA MCP Architektur", "kategorie": "lexikalisch", "erwartet": ["m11", "m12"], "top": "m11", "treffer": true, "liste": ["m11", "m01", "m26", "m31", "m33"], "sek": 0.0}
+{"art": "suche", "frage": "Passwörter sicher verwalten", "kategorie": "lexikalisch", "erwartet": ["m10"], "top": "m58", "treffer": false, "liste": ["m58", "m57", "m09", "m02", "m16"], "sek": 0.0}
+{"art": "suche", "frage": "Rechnungen Buchhaltung Tool", "kategorie": "lexikalisch", "erwartet": ["m09"], "top": "m09", "treffer": true, "liste": ["m09", "m35", "m50", "m34", "m10"], "sek": 0.0}
+{"art": "suche", "frage": "Zettelkasten Notizen Methode", "kategorie": "lexikalisch", "erwartet": ["m27"], "top": "m27", "treffer": true, "liste": ["m27", "m37", "m30", "m36", "m28"], "sek": 0.0}
+{"art": "suche", "frage": "Geburtstag Familie", "kategorie": "lexikalisch", "erwartet": ["m18"], "top": "m18", "treffer": true, "liste": ["m18", "m38", "m51", "m57", "m50"], "sek": 0.0}
+{"art": "suche", "frage": "Deployment und Domain", "kategorie": "lexikalisch", "erwartet": ["m01"], "top": "m01", "treffer": true, "liste": ["m01", "m58", "m29", "m57", "m02"], "sek": 0.0}
+{"art": "suche", "frage": "Was koche ich mit Nudeln?", "kategorie": "umschreibung", "erwartet": ["m06"], "top": "m06", "treffer": true, "liste": ["m06", "m48", "m50", "m18", "m51"], "sek": 0.0}
+{"art": "suche", "frage": "Wie bewahre ich meine Zugangsdaten sicher auf?", "kategorie": "umschreibung", "erwartet": ["m10"], "top": "m57", "treffer": false, "liste": ["m57", "m02", "m58", "m38", "m09"], "sek": 0.0}
+{"art": "suche", "frage": "Wo lasse ich mein Fahrzeug instand setzen?", "kategorie": "umschreibung", "erwartet": ["m23"], "top": "m23", "treffer": true, "liste": ["m23", "m41", "m43", "m46", "m53"], "sek": 0.0}
+{"art": "suche", "frage": "Was mag meine Grossmutter?", "kategorie": "umschreibung", "erwartet": ["m18"], "top": "m18", "treffer": true, "liste": ["m18", "m51", "m40", "m48", "m45"], "sek": 0.0}
+{"art": "suche", "frage": "Was tue ich fuer meinen Ruecken?", "kategorie": "umschreibung", "erwartet": ["m45"], "top": "m45", "treffer": true, "liste": ["m45", "m19", "m48", "m50", "m41"], "sek": 0.0}
+{"art": "suche", "frage": "Wie lege ich Geld an?", "kategorie": "umschreibung", "erwartet": ["m49"], "top": "m31", "treffer": false, "liste": ["m31", "m49", "m35", "m41", "m34"], "sek": 0.0}
+{"art": "suche", "frage": "Wer hilft bei einem medizinischen Notfall?", "kategorie": "umschreibung", "erwartet": ["m50"], "top": "m50", "treffer": true, "liste": ["m50", "m10", "m41", "m51", "m40"], "sek": 0.0}
+{"art": "suche", "frage": "Wie fotografiere ich drinnen richtig?", "kategorie": "umschreibung", "erwartet": ["m52"], "top": "m38", "treffer": false, "liste": ["m38", "m52", "m37", "m51", "m57"], "sek": 0.0}
+{"art": "suche", "frage": "Was muss ich beim Auszug renovieren?", "kategorie": "umschreibung", "erwartet": ["m47"], "top": "m47", "treffer": true, "liste": ["m47", "m25", "m31", "m50", "m34"], "sek": 0.0}
+{"art": "suche", "frage": "Was gibt es an Heiligabend zu essen?", "kategorie": "umschreibung", "erwartet": ["m48"], "top": "m06", "treffer": false, "liste": ["m06", "m50", "m18", "m33", "m48"], "sek": 0.0}
+{"art": "suche", "frage": "Anton Bauer", "kategorie": "graph", "erwartet": ["m25", "m31", "m32", "m33"], "top": "m32", "treffer": true, "liste": ["m32", "m25", "m31", "m33", "m03"], "sek": 0.0}
+{"art": "suche", "frage": "Weber", "kategorie": "graph", "erwartet": ["m08", "m34", "m35"], "top": "m35", "treffer": true, "liste": ["m35", "m08", "m34", "m53", "m29"], "sek": 0.0}
+{"art": "suche", "frage": "Hetzner", "kategorie": "graph", "erwartet": ["m01", "m16", "m36", "m37"], "top": "m16", "treffer": true, "liste": ["m16", "m17", "m37", "m36", "m01"], "sek": 0.0}
+{"art": "suche", "frage": "Wie oft wird gesichert?", "kategorie": "ablenkung", "erwartet": ["m02", "m37"], "top": "m20", "treffer": false, "liste": ["m20", "m22", "m57", "m44", "m40"], "sek": 0.0}
+{"art": "suche", "frage": "Welches Passwort gilt in der Produktion?", "kategorie": "ablenkung", "erwartet": ["m58"], "top": "m58", "treffer": true, "liste": ["m58", "m16", "m17", "m57", "m09"], "sek": 0.0}
+{"art": "suche", "frage": "Welcher Server ist gemeint?", "kategorie": "ablenkung", "erwartet": ["m01"], "top": "m40", "treffer": false, "liste": ["m40", "m12", "m29", "m02", "m11"], "sek": 0.0}
+{"art": "suche", "frage": "Was steht zur Datenbank an?", "kategorie": "ablenkung", "erwartet": ["m02"], "top": "m39", "treffer": false, "liste": ["m39", "m02", "m09", "m57", "m50"], "sek": 0.0}
+{"art": "suche", "frage": "Wie bin ich erreichbar?", "kategorie": "temporal", "erwartet": ["m54"], "top": "m53", "treffer": false, "liste": ["m53", "m50", "m54", "m51", "m41"], "sek": 0.0}
+{"art": "suche", "frage": "Welche Laufschuhe habe ich?", "kategorie": "temporal", "erwartet": ["m56"], "top": "m56", "treffer": true, "liste": ["m56", "m19", "m51", "m55", "m35"], "sek": 0.0}
+{"art": "suche", "frage": "Bis wann muss die Umsatzsteuer abgegeben werden?", "kategorie": "temporal", "erwartet": ["m08"], "top": "m07", "treffer": false, "liste": ["m07", "m08", "m34", "m35", "m41"], "sek": 0.0}
+{"art": "fertig", "lauf": "mem0-bgem3-0911", "zeit": "20:06:21", "werkzeug": "mem0 2.2.1", "konfiguration": {"ganzes_stueck": true, "infer": false, "einbett": "bge-m3 (1024 D)", "llm": "llama3.2:3b (nicht gerufen, infer=False)", "vektor_speicher": "qdrant lokal", "top_k": 5}, "korpus": {"notizen": 58, "anfragen": 45}, "hit1": 31, "hit1_prozent": 68.9, "recall5_in_den_5": 40, "recall5_prozent": 88.9, "nach_kategorie": {"lexikalisch": "20/25", "umschreibung": "6/10", "graph": "3/3", "ablenkung": "1/4", "temporal": "1/3"}, "dauer_sek": 4.7, "rss_gib": 0.11}

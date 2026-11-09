@@ -1,3 +1,31 @@
+## [3.2.193]
+
+### Fixed
+
+- **The vector leg went silent below an absolute floor, and the floor was tuned
+  to one model.** In `src/core/engine.ts:551` the candidate cut was
+  `Math.max(VECTOR_FLOOR, bestSim * VECTOR_BAND)` with `VECTOR_FLOOR = 0.58` —
+  a number tuned on nomic-embed-text. When the best cosine of a query sat below
+  it (measured in P120: 13 of 45 queries at the bge-m3 stage, 2 of them ending
+  with a completely empty answer), the whole candidate list fell through the
+  filter and the leg answered with silence and no reason. The cut now holds the
+  best candidate — `bestSim > 0 ? Math.min(bestSim, Math.max(VECTOR_FLOOR,
+  bestSim * VECTOR_BAND)) : VECTOR_FLOOR` — so the relative band still rules
+  above the floor (the 8-near/120-far contract of
+  `tests/core/suchbreite.test.ts` stayed green) and the floor only stops
+  deciding the outcome at the bottom. The search-width contract was re-tuned
+  with it: where the best cosine is *under* the floor, the best group is now
+  shown instead of an unexplained nothing (P176, decided against the 6.9.
+  "267 hits for carbonara" alarm, whose real protection — the band — is
+  untouched; the decision can be overridden at `engine.ts:551`). Held by
+  `tests/core/ablation.test.ts` (two P176 cases, seen red before the fix) and
+  the re-tuned `tests/core/suchbreite.test.ts:126`. Measured in the real
+  window at 1440/390 px: a query with best cosine 0.3436 now returns its best
+  hit with the vector track (`vektor: 1`) instead of the P47 "Nothing found"
+  notice, and a genuinely empty store still shows that notice, unobstructed
+  (`scripts/leerer-fall-im-fenster.mjs`,
+  `docs/belege/tag-0911/leerer-fall-193-1923.log.txt`).
+
 ## [3.2.192]
 
 ### Fixed

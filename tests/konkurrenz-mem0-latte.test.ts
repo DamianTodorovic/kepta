@@ -143,3 +143,54 @@ describe("Punkt 8, zweites Bein: der faire mem0-Lauf vom 6.11.2026", () => {
     expect(e.rss_gib, "0,15 GiB Spitze -- die 9,18 GiB vom 2.11. waren der Weg mit Fakt-Zerlegung").toBeLessThan(1);
   });
 });
+
+/* P178: die fehlende bge-m3-Stufe der Produkt-Zeile (9.11.2026, 20:06 und 20:06:29 MEZ).
+   Das Ledger hatte die zweite Einbett-Stufe fuer sqlite-vec (66,7), chroma (68,9) und
+   unsre Spur (77,8) -- nur mem0 stand nur bei nomic (51,1). Dieselbe faire Konfiguration
+   (ganzes Stueck, infer=False, mem0s eigne Rangfolge), jetzt bge-m3 (1024 D) ueber Ollama:
+   zweimal 31 von 45 Hit@1 = 68,9 %, zweimal 40 von 45 in den fuenf ersten. Dauer 4,7/3,4 s,
+   Spitze 0,11 GiB. Der ehrliche Befund steht im Ledger: der Einbett-Hebel hebt mem0 um
+   17,8 Punkte (weniger als die +24,5/+26,7 der Verfahrens-Zeilen -- mem0s Rangfolge
+   daempft), und der Abstand unsrer Fusion schrumpft auf der zweiten Stufe auf 8,9 Punkte
+   (77,8 gegen 68,9). K3PTA fuehrt jede Zeile, aber die Stufe, nicht die Fusion, macht
+   den Unterschied -- genau das, was die P118-Berichtigung vermutete. */
+describe("Punkt 8, drittes Bein: mem0 fair mit dem zweiten Einbett (bge-m3), 9.11.2026", () => {
+  const ladenBg = (name: string) => fs.readFileSync(path.join(WURZEL, "docs/belege/konkurrenz-0911b", name), "utf8");
+  const bgem3 = (name: string) => {
+    const s = ladenBg(name).split("\n").filter(Boolean).map((l) => JSON.parse(l) as Zeile)
+      .filter((z): z is Extract<Zeile, { art: "suche" }> => z.art === "suche");
+    return { n: s.length, hit1: s.filter((z) => z.treffer).length, in5: s.filter((z) => z.liste.slice(0, 5).some((id) => z.erwartet.includes(id))).length };
+  };
+
+  it("zwei frische Speicher, zweimal dieselbe Zahl -- die Stufe ist wiederholbar", () => {
+    const a = bgem3("spur-mem0-bgem3-0911-eins.jsonl");
+    const b = bgem3("spur-mem0-bgem3-0911-zwei.jsonl");
+    expect(a.n).toBe(QUERIES.length);
+    expect(b.n).toBe(QUERIES.length);
+    expect([a.hit1, b.hit1], `Lauf eins ${a.hit1}, Lauf zwei ${b.hit1} -- eine Zahl, die nicht wiederkehrt, ist kein Messwert`).toEqual([31, 31]);
+    expect([a.in5, b.in5]).toEqual([40, 40]);
+    expect(prozent(a.hit1, a.n)).toBe(68.9);
+  });
+
+  it("das Ergebnis-Protokoll nennt Konfiguration und Korpus", () => {
+    const e = JSON.parse(ladenBg("ergebnis-mem0-bgem3-0911-eins.json")) as { konfiguration: Record<string, unknown>; korpus: { notizen: number; anfragen: number }; hit1_prozent: number; dauer_sek: number; rss_gib: number };
+    expect(e.konfiguration.einbett).toBe("bge-m3 (1024 D)");
+    expect(e.konfiguration.infer).toBe(false);
+    expect(e.korpus).toEqual({ notizen: CORPUS.length, anfragen: QUERIES.length });
+    expect(e.hit1_prozent).toBe(68.9);
+    expect(e.rss_gib).toBeLessThan(1);
+  });
+
+  it("auf der zweiten Einbett-Stufe bleibt unsre Fusion ueber dem Produkt -- die Latte faellt bei Gleichstand", () => {
+    // Unsre eigene bge-m3-Spur (P113-Stand, konkurrenz-0611c), hier nachgerechnet.
+    const uns = fs.readFileSync(path.join(WURZEL, "docs/belege/konkurrenz-0611c", "spur-uns-bge-m3-0611.jsonl"), "utf8")
+      .split("\n").filter(Boolean).map((l) => JSON.parse(l) as { art: string; treffer: boolean })
+      .filter((z) => z.art === "suche");
+    const unsHit1 = uns.filter((z) => z.treffer).length;
+    expect([uns.length, unsHit1, prozent(unsHit1, uns.length)]).toEqual([45, 35, 77.8]);
+    const mem0Bg = prozent(bgem3("spur-mem0-bgem3-0911-eins.jsonl").hit1, QUERIES.length);
+    // Die Latte sitzt bei 5 Punkten: genau dann faellt sie, wenn unsre Fusion auf
+    // mem0s Niveau absinkt. Sie haelt den gemessenen Abstand von 8,9 Punkten.
+    expect(prozent(unsHit1, uns.length) - mem0Bg, `unsre bge-Stufe gegen mem0 bge ${mem0Bg}`).toBeGreaterThanOrEqual(5);
+  });
+});
