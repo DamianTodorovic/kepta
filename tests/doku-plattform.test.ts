@@ -488,3 +488,31 @@ describe("P165: Quellen-Chips-Zusage und Karten-Teil-Marke nennen ihre Zeugen", 
     expect(nackt, `diese Saetze stehen ohne Zeugen da:\n  ${nackt.join("\n  ").slice(0, 400)}`).toEqual([]);
   });
 });
+
+// P166 — die zwei asOf-/Zeitfenster-Saetze (README:41: das Gültigkeitsfenster mit
+// Zeitregler, und dieselbe Frage in Suche und Editor) plus die Telemetrie-Triade
+// (README:79, "No upload, no account, no telemetry"). Zeugen: die HTTP-Suche reicht
+// asOf durch (tests/server.test.ts, neuer Fall am Dateiende — die Aussendung ankert
+// auf diese Datei, darum wird nichts eingeschoben), die MCP-Tür prüft asOf echt
+// (tests/mcp-paritaet.test.ts:128), der Editor zeigt und speichert beide Felder
+// (tests/components/MemoryEditor.test.tsx:253), die Zeitregel nimmt nur auf, was zum
+// Zeitpunkt schon da war (tests/lib/graphTime.test.ts:102), der Regler zieht rückwärts
+// (tests/components/KnowledgeGraph.leiste.test.tsx:183), ferne Adressen sind nur
+// gewählte Anbieter (tests/keine-telemetrie.test.ts:73), die Lizenzroute ist tot
+// (tests/keine-grenzen.test.ts:102). Gleiche Lesart wie P162-P165: Satz-Riss und
+// zeug-Regel importiert, nicht nachgebaut.
+describe("P166: asOf-Paar und Telemetrie-Triade nennen ihre Zeugen", () => {
+  const p166Saetze = () =>
+    satzeAusMarkdown(README).filter((s) =>
+      /Every memory carries a validity window, so the graph can be replayed|The same question works in search|No upload, no account, no telemetry/.test(s),
+    );
+
+  it("die drei Saetze werden gefunden — die Sonde meldet keinen Erfolg fuer Ungelesenes", () => {
+    expect(p166Saetze().length, `die Sonde findet ${p166Saetze().length} P166-Saetze`).toBe(3);
+  });
+
+  it("jeder der drei traegt sein Messzeug im selben Satz", () => {
+    const nackt = p166Saetze().filter((s) => !zeug.test(s));
+    expect(nackt, `diese Saetze stehen ohne Zeugen da:\n  ${nackt.join("\n  ").slice(0, 400)}`).toEqual([]);
+  });
+});

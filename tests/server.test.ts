@@ -1426,3 +1426,23 @@ describe("Express-5-Härtung: Body ohne JSON-Content-Type", () => {
     }
   });
 });
+
+// P166 — die README sagt, dieselbe Zeitreise-Frage wirke in der HTTP-API wie in der
+// MCP-Tür. Die Tür reicht asOf durch (server/router/search.ts:105), aber kein Fall
+// hielt das bisher am HTTP-Weg. Dieser Describe steht am Dateiende, weil die
+// Aussendung auf Zeilen dieser Datei ankert (:162, :327, :1022 ff.) — Einschieben
+// würde sie verschieben.
+describe("POST /api/search — asOf reicht die Zeitreise durch die HTTP-Tür (P166)", () => {
+  it("eine Notiz von nach dem gefragten Zeitpunkt bleibt draussen, die von davor kommt zurück", async () => {
+    store.createMemory({ id: "alt", title: "Wohnort", content: "Berlin Mitte", createdAt: Date.parse("2025-01-01"), updatedAt: Date.parse("2025-01-01") });
+    store.createMemory({ id: "neu", title: "Wohnort", content: "München Schwabing", createdAt: Date.parse("2026-06-01"), updatedAt: Date.parse("2026-06-01") });
+    const frueh = await request(app).post("/api/search").send({ query: "Wohnort", topK: 5, asOf: Date.parse("2025-06-01") });
+    expect(frueh.status).toBe(200);
+    const ids = (frueh.body.results as { memory: { id: string } }[]).map((r) => r.memory.id);
+    expect(ids, "die Notiz von vor dem Zeitpunkt fehlt").toContain("alt");
+    expect(ids, "die Notiz von nach dem Zeitpunkt darf nicht zurückkommen").not.toContain("neu");
+    const jetzt = await request(app).post("/api/search").send({ query: "Wohnort", topK: 5 });
+    expect(jetzt.status).toBe(200);
+    expect((jetzt.body.results as { memory: { id: string } }[]).map((r) => r.memory.id), "ohne asOf ist die neue Notiz da").toContain("neu");
+  });
+});

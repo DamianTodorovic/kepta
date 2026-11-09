@@ -4,7 +4,7 @@
 
 <p align="center"><sub>Desktop app · no cloud · no account · encrypted at rest<br>SQLite · hybrid retrieval · knowledge graph · MCP</sub></p>
 
-<p align="center"><a href="https://github.com/DamianTodorovic/kepta/releases/latest"><img alt="Download" src="https://img.shields.io/github/v/release/DamianTodorovic/kepta?label=Download"></a> <a href="https://github.com/DamianTodorovic/kepta/actions/workflows/ci.yml"><img alt="Engine CI" src="https://github.com/DamianTodorovic/kepta/actions/workflows/ci.yml/badge.svg"></a> <a href="LICENSE"><img alt="License" src="https://img.shields.io/badge/license-Proprietary-black"></a> <img alt="Coverage gate" src="https://img.shields.io/badge/coverage%20gate-%E2%89%A5%2089%25%20of%20lines-brightgreen"> <img alt="Tests" src="https://img.shields.io/badge/tests-3863%20passing-brightgreen"> <img alt="Platform" src="https://img.shields.io/badge/platform-macOS-lightgrey"></p>
+<p align="center"><a href="https://github.com/DamianTodorovic/kepta/releases/latest"><img alt="Download" src="https://img.shields.io/github/v/release/DamianTodorovic/kepta?label=Download"></a> <a href="https://github.com/DamianTodorovic/kepta/actions/workflows/ci.yml"><img alt="Engine CI" src="https://github.com/DamianTodorovic/kepta/actions/workflows/ci.yml/badge.svg"></a> <a href="LICENSE"><img alt="License" src="https://img.shields.io/badge/license-Proprietary-black"></a> <img alt="Coverage gate" src="https://img.shields.io/badge/coverage%20gate-%E2%89%A5%2089%25%20of%20lines-brightgreen"> <img alt="Tests" src="https://img.shields.io/badge/tests-3866%20passing-brightgreen"> <img alt="Platform" src="https://img.shields.io/badge/platform-macOS-lightgrey"></p>
 
 <p align="center"><sub>The memory engine underneath is source-available (BUSL-1.1, converts to AGPL-3.0-or-later after four years): <a href="https://github.com/DamianTodorovic/kepta">DamianTodorovic/kepta</a> — the headless core with the MCP server. This repository is the full desktop application.</sub></p>
 
@@ -38,7 +38,7 @@
 
 ### Knowledge that has a date
 
-Every memory carries a validity window, so the graph can be replayed: pull the time slider back, and every note that was not true yet at that moment dims — not deleted, simply not true *yet*. The same question works in search (`asOf` in the HTTP API and MCP) and in the editor, where every note shows its *valid from / valid until*. Firms use this for rates, mandates, contacts and anything that legally changes.
+Every memory carries a validity window, so the graph can be replayed: pull the time slider back, and every note that was not true yet at that moment dims — not deleted, simply not true *yet* (the active-set rule is held by `tests/lib/graphTime.test.ts:102` — at a past moment only what already existed is admitted — and the slider's pull back into the past by `tests/components/KnowledgeGraph.leiste.test.tsx:183`, which reads the date field and refuses any stand beyond today). The same question works in search (`asOf` in the HTTP API and MCP) and in the editor, where every note shows its *valid from / valid until* (the HTTP leg is held by `tests/server.test.ts:1436` — a note written after the asked moment stays out, the one before comes back — the MCP leg by `tests/mcp-paritaet.test.ts:128`, where today finds the note and 1970 does not, and the editor's two date fields are set and saved in `tests/components/MemoryEditor.test.tsx:253`). Firms use this for rates, mandates, contacts and anything that legally changes.
 
 ## 🙋 New here? Start with this
 
@@ -76,7 +76,7 @@ Every memory carries a validity window, so the graph can be replayed: pull the t
 | **BM25 / full text** | Classic keyword search: it finds the words you actually typed. |
 | **Knowledge graph** | Your notes linked to one another, like `[[links]]` in a wiki. |
 | **RRF** | The formula that merges the three searches above into one ranking. |
-| **Local-first** | Everything happens on your machine. No upload, no account, no telemetry. |
+| **Local-first** | Everything happens on your machine. No upload, no account, no telemetry (every foreign address in the shipped code is a user-chosen provider or a named exception — `tests/keine-telemetrie.test.ts:73`; the licence route answers nothing, read or write — `tests/keine-grenzen.test.ts:102` — and no part of the surface asks it, `tests/keine-grenzen.test.ts:116`). |
 
 </details>
 
@@ -428,13 +428,13 @@ The app bundle itself **is** signed, ad-hoc. That is not notarisation and does n
 
 ## 🧪 Quality & tests
 
-**3863 tests** (measured 2026-11-08), run with Vitest and v8 coverage — the cases a run actually executed, skipped ones not included. The coverage thresholds are a hard gate: a commit that falls below any of them fails the run — and so does a README that names the wrong number of tests. `npm test` writes that run's JSON report and `node scripts/doku-check.mjs` holds the README to exactly that number; `tests/doku-zahlen.test.ts` listens to the same report and refuses to compare when it cannot be trusted — missing, older than the suite, or written by a partial run — instead of checking a value out of the drawer.
+**3866 tests** (measured 2026-11-09), run with Vitest and v8 coverage — the cases a run actually executed, skipped ones not included. The coverage thresholds are a hard gate: a commit that falls below any of them fails the run — and so does a README that names the wrong number of tests. `npm test` writes that run's JSON report and `node scripts/doku-check.mjs` holds the README to exactly that number; `tests/doku-zahlen.test.ts` listens to the same report and refuses to compare when it cannot be trusted — missing, older than the suite, or written by a partial run — instead of checking a value out of the drawer.
 
 **Line references are machine-checked too.** `tests/anker-wache.test.ts` opens every `file:line` witness in README.md, SECURITY.md, ROADMAP.md, `.github/release-notes.md`, `docs/belege/REGISTER.md` and `docs/aussendung-und-ablage.md`, requires the cited line to exist and to hold something, follows a short `:165` back to the witness standing before it on the same line, and reads blob citations (`113093c:server/helfer/planzustand.ts:101`) from git history instead of today's tree. Its first run found four anchors in this README that showed nothing — one naming a `.test.ts` whose file is `.test.tsx`, and three blank lines, one of them where the SQLCipher pragma sits; a fifth and sixth joined as soon as the short form began to count; all six are repaired above, and `tests/anker-wache.test.ts` holds them since. One limit travels with the number: a short `:165` with no file beside it on its own line cannot be attributed, so the guard counts those instead of guessing at a file — measured 2026-11-07 10:44 MEZ. The five outward sheets hold a ceiling of 29 such counts, one that may only fall; this repository's own work log holds a share of its anchors instead of a count, because that paper grows every stroke, and `tests/anker-wache.test.ts:204` fails when the share of careless short forms grows rather than when the log gets longer.
 
 ```bash
 npm run lint       # typecheck (tsc) + ESLint — 0 errors required
-npm test           # 3863 tests (vitest)
+npm test           # 3866 tests (vitest)
 npm run test:cov   # tests + coverage gate + test count in the README
 npm run eval       # retrieval quality (Hit@1)
 ```

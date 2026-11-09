@@ -107,7 +107,7 @@ describe("P129, der Wortschatz: ein benanntes Instrument ist ein Messzeug", () =
     expect(zeug.test(einheiten[0]), "das Messzeug steht im selben Satz, wird aber nicht gesehen").toBe(true);
   });
 
-  it("am echten Bestand: 104 von 182 absoluten Behauptungen nennen ihr Messzeug", () => {
+  it("am echten Bestand: 107 von 182 absoluten Behauptungen nennen ihr Messzeug", () => {
     let absoluten = 0;
     let mit = 0;
     for (const datei of DATEIEN) {
@@ -215,8 +215,20 @@ describe("P129, der Wortschatz: ein benanntes Instrument ist ein Messzeug", () =
     // (Anteil 44,0 -> 42,9 %). Nenner 182, Einheiten 571 und schmale Klasse 35 bleiben.
     // Die Wache lebt in tests/doku-plattform.test.ts, describe "P165: ..." (gleiche
     // Lesart wie P162-P164: Satz-Riss und zeug-Regel importiert).
+    // P166 (gemessen 9.11. 08:53:29 MEZ mit dem Zaehler selbst): die zwei asOf-/
+    // Zeitfenster-Saetze in README:41 und die Telemetrie-Triade in README:79 nennen
+    // jetzt ihre Zeugen — das Fenster+Regler-Paar (tests/lib/graphTime.test.ts:102
+    // activeIdsAt, tests/components/KnowledgeGraph.leiste.test.tsx:183 Regler zieht
+    // rueckwaerts), die Suche (HTTP: tests/server.test.ts:1436 NEU am Dateiende,
+    // weil die Aussendung auf diese Datei ankert; MCP: tests/mcp-paritaet.test.ts:128;
+    // Editor: tests/components/MemoryEditor.test.tsx:253) und die Triade (tests/
+    // keine-telemetrie.test.ts:73, tests/keine-grenzen.test.ts:102/:116). Zaehler
+    // 104 -> 107, ohne 78 -> 75 (Anteil 42,9 -> 41,2 %). Nenner 182, Einheiten 571
+    // und schmale Klasse 35 bleiben. Die Wache lebt in tests/doku-plattform.test.ts,
+    // describe "P166: ..." (gleiche Lesart wie P162-P165: Satz-Riss und zeug-Regel
+    // importiert).
     expect(absoluten, "der Nenner ist nicht mehr 182 — der Riss oder die Klasse hat sich bewegt").toBe(182);
-    expect(mit, `${mit} von ${absoluten} nennen ein Messzeug — erwartet war 104`).toBe(104);
+    expect(mit, `${mit} von ${absoluten} nennen ein Messzeug — erwartet war 107`).toBe(107);
     expect(mit / absoluten, "Anteil ohne Nenner ist ein Urteil").toBeGreaterThan(0.3);
     expect(maschine.source.length, "die schmale Klasse wurde nicht mitgeändert").toBeGreaterThan(10);
   });

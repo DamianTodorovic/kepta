@@ -3,8 +3,8 @@
   "README.md": {
    "saetze": 411,
    "absolut": 137,
-   "mit_zeug": 83,
-   "ohne_zeug": 54
+   "mit_zeug": 86,
+   "ohne_zeug": 51
   },
   "SECURITY.md": {
    "saetze": 33,
@@ -28,14 +28,14 @@
  "zusammen": {
   "saetze": 571,
   "absolut": 182,
-  "mit_zeug": 104,
-  "ohne_zeug": 78
+  "mit_zeug": 107,
+  "ohne_zeug": 75
  },
  "abschnitt": {
   "README.md": {
    "absolut": 137,
-   "mit_zeug": 63,
-   "ohne_zeug": 74
+   "mit_zeug": 64,
+   "ohne_zeug": 73
   },
   "SECURITY.md": {
    "absolut": 9,
@@ -55,8 +55,8 @@
  },
  "zusammen_abschnitt": {
   "absolut": 182,
-  "mit_zeug": 74,
-  "ohne_zeug": 108
+  "mit_zeug": 75,
+  "ohne_zeug": 107
  },
  "maschinell_pruefbar": {
   "README.md": {
@@ -327,14 +327,6 @@
   },
   {
    "datei": "README.md",
-   "satz": "Every memory carries a validity window, so the graph can be replayed: pull the time slider back, and every note that was not true yet at that moment dims — not deleted, simply not true *yet*."
-  },
-  {
-   "datei": "README.md",
-   "satz": "The same question works in search (asOf in the HTTP API and MCP) and in the editor, where every note shows its *valid from / valid until*."
-  },
-  {
-   "datei": "README.md",
    "satz": "The next day you open a fresh chat and it knows none of it."
   },
   {
@@ -344,10 +336,6 @@
   {
    "datei": "README.md",
    "satz": "K3PTA stores the database key there, so there is no password to type."
-  },
-  {
-   "datei": "README.md",
-   "satz": "No upload, no account, no telemetry."
   },
   {
    "datei": "README.md",
