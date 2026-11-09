@@ -1,3 +1,18 @@
+## [3.2.198]
+
+### Fixed
+
+- **A crash shows its text instead of a black window.** The React error screen
+  only catches render throws — a crash inside a click handler or a promise
+  flew past it, the window went black, and nobody (not even Damian, who
+  reported the Settings blackscreen on 9.11.) could read WHY. A window guard
+  (`spanneCrashWachter`, `src/lib/crashZeug.ts`) now hangs on `window.onerror`
+  and `unhandledrejection` and paints the error as raw DOM over the surface:
+  message, file:line, a copy button, and a close-and-continue button. Damian
+  photographs the text; the place is named. Held by
+  `tests/components/crach-zeug.test.tsx` (four cases: window error, rejected
+  promise, copy line, close).
+
 ## [3.2.197]
 
 ### Fixed
