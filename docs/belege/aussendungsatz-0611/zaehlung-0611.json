@@ -9,27 +9,27 @@
   "SECURITY.md": {
    "saetze": 33,
    "absolut": 9,
-   "mit_zeug": 4,
-   "ohne_zeug": 5
+   "mit_zeug": 8,
+   "ohne_zeug": 1
   },
   "ROADMAP.md": {
    "saetze": 77,
    "absolut": 16,
-   "mit_zeug": 4,
-   "ohne_zeug": 12
+   "mit_zeug": 15,
+   "ohne_zeug": 1
   },
   ".github/release-notes.md": {
    "saetze": 50,
    "absolut": 20,
-   "mit_zeug": 13,
-   "ohne_zeug": 7
+   "mit_zeug": 20,
+   "ohne_zeug": 0
   }
  },
  "zusammen": {
   "saetze": 571,
   "absolut": 182,
-  "mit_zeug": 153,
-  "ohne_zeug": 29
+  "mit_zeug": 175,
+  "ohne_zeug": 7
  },
  "abschnitt": {
   "README.md": {
@@ -44,19 +44,19 @@
   },
   "ROADMAP.md": {
    "absolut": 16,
-   "mit_zeug": 0,
-   "ohne_zeug": 16
+   "mit_zeug": 2,
+   "ohne_zeug": 14
   },
   ".github/release-notes.md": {
    "absolut": 20,
-   "mit_zeug": 8,
-   "ohne_zeug": 12
+   "mit_zeug": 11,
+   "ohne_zeug": 9
   }
  },
  "zusammen_abschnitt": {
   "absolut": 182,
-  "mit_zeug": 79,
-  "ohne_zeug": 103
+  "mit_zeug": 84,
+  "ohne_zeug": 98
  },
  "maschinell_pruefbar": {
   "README.md": {
@@ -335,96 +335,8 @@
    "satz": "No public exploit before a fix exists."
   },
   {
-   "datei": "SECURITY.md",
-   "satz": "The key is created on the first start and stored in the system keychain: the macOS Keychain (service app.kepta.database, account kepta), Windows DPAPI (database-key.dpapi in the data folder, readable only under the same "
-  },
-  {
-   "datei": "SECURITY.md",
-   "satz": "Those cases replace the system command, so what is proven here is K3PTA's own side of the call; the round-trip against a real Keychain, DPAPI or Secret Service runs only on that operating system."
-  },
-  {
-   "datei": "SECURITY.md",
-   "satz": "- A running K3PTA: the local API (127.0.0.1, no authentication) serves the decrypted knowledge to programs on the same machine, as before."
-  },
-  {
-   "datei": "SECURITY.md",
-   "satz": "Two deliberate exceptions: endpoint.json (port, PID, start time — no secret, and the discovery mechanism for local tools) and the inbox folder with its archive (files you dropped there yourself — user property, like the "
-  },
-  {
-   "datei": "ROADMAP.md",
-   "satz": "> As of September 2026 · Replaces WHITE-SPACE-ANALYSE.md (the v1.0 analysis, whose quick wins and big bets are all shipped)."
-  },
-  {
-   "datei": "ROADMAP.md",
-   "satz": "Every user-facing string, the MCP tool descriptions, the starter pack and the native date controls are English."
-  },
-  {
-   "datei": "ROADMAP.md",
-   "satz": "Encryption at rest — evaluated | Honest assessment in docs/encryption-eval.md: SQLCipher needs a build switch, PRAGMA key silently does nothing on node:sqlite, the KeyProvider seam is free (~0 ms); recommendation: OS-lev"
-  },
-  {
-   "datei": "ROADMAP.md",
-   "satz": "Interface: Die Akte | True-black dark theme, seal-red accent, serif display type, soft depth layers, Apple-style segmented controls, typographic sidebar with brand plate, type-colour strokes on cards — every surface rewo"
-  },
-  {
-   "datei": "ROADMAP.md",
-   "satz": "Text size | 100/115/130 % (a German switch shipped here too and was removed in 2.11)"
-  },
-  {
-   "datei": "ROADMAP.md",
-   "satz": "English only | The German interface switch from 2.10 is gone"
-  },
-  {
-   "datei": "ROADMAP.md",
-   "satz": "Name and number | Activation stays name and key, offline, and every key carries a license number."
-  },
-  {
-   "datei": "ROADMAP.md",
-   "satz": "Since 3.1.1 the sidebar shows the licensee's name with no tier label — the number itself is no longer on screen (it travels with the license state and the activation answer)"
-  },
-  {
-   "datei": "ROADMAP.md",
-   "satz": "Revocation | A revoked license number no longer unlocks K3PTA from the next update on — also where it was already activated"
-  },
-  {
    "datei": "ROADMAP.md",
    "satz": "## ✅ v2.13 — September 2026: your memory, every day"
-  },
-  {
-   "datei": "ROADMAP.md",
-   "satz": "Readable by design: endpoint.json (no secret, it is how local tools find the port) and the inbox with the user's own source files"
-  },
-  {
-   "datei": "ROADMAP.md",
-   "satz": "Git-based memory versioning (in the style of Letta context repositories) — every change as a commit in a bare repo next to the DB"
-  },
-  {
-   "datei": ".github/release-notes.md",
-   "satz": "The fastest way through, and the one that works on every macOS version:"
-  },
-  {
-   "datei": ".github/release-notes.md",
-   "satz": "Note: right-clicking the app and choosing *Open* no longer works — Apple removed that route in macOS 15."
-  },
-  {
-   "datei": ".github/release-notes.md",
-   "satz": "Before the first start of the new version, quit every agent that uses K3PTA over MCP (Claude Desktop, Cursor, …), so the app has the file to itself and can convert it — then start them again."
-  },
-  {
-   "datei": ".github/release-notes.md",
-   "satz": "K3PTA ships its own MCP server — no Node.js, no npm."
-  },
-  {
-   "datei": ".github/release-notes.md",
-   "satz": "All data stays local in ~/.kepta/ — no account, no cloud, no telemetry."
-  },
-  {
-   "datei": ".github/release-notes.md",
-   "satz": "Vor dem ersten Start alle Agenten schließen, die K3PTA über MCP nutzen (Claude Desktop, Cursor …), danach wieder starten."
-  },
-  {
-   "datei": ".github/release-notes.md",
-   "satz": "Alle Daten bleiben lokal in ~/.kepta/."
   }
  ]
 }

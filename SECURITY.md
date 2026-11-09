@@ -18,14 +18,14 @@ HMAC-SHA512 over every page, a random 256-bit key (`tests/core/store-verschluess
 first start and stored in the system keychain: the macOS Keychain (service
 `app.kepta.database`, account `kepta`), Windows DPAPI (`database-key.dpapi` in
 the data folder, readable only under the same Windows account) or the Secret
-Service on Linux. Headless installs use `KEPTA_DB_KEY` (64 hex characters),
+Service on Linux (`tests/core/schluessel.test.ts:150` and `tests/core/schluessel.test.ts:192`). Headless installs use `KEPTA_DB_KEY` (64 hex characters),
 which is weaker: the key then sits in the process environment. The settings,
 including the AI provider key, live inside the encrypted file. The three keychain paths are covered by
 `tests/core/schluessel.test.ts` — `:101` reads a Windows entry through the injected command runner
 with the path passed in the environment, `:111` proves the key never sits in the argument list, `:152`
 checks that a `win32` host is handed "Windows DPAPI". Those cases replace the system command, so what
 is proven here is K3PTA's own side of the call; the round-trip against a real Keychain, DPAPI or
-Secret Service runs only on that operating system.
+Secret Service runs only on that operating system (`tests/core/schluessel.test.ts:101` and `tests/core/schluessel.test.ts:128`).
 
 **What it protects against:** anyone who gets the file — a copy, a backup, a
 synced folder, a disk taken out of the machine. Without the key the file is
@@ -35,7 +35,7 @@ random bytes; SQLite reports "file is not a database".
 - Malware, or another person, using your logged-in account. They can ask the
   keychain for the key the same way K3PTA does.
 - A running K3PTA: the local API (`127.0.0.1`, no authentication) serves the
-  decrypted knowledge to programs on the same machine, as before.
+  decrypted knowledge to programs on the same machine, as before (`tests/herkunft.test.ts:76` and `tests/server-herkunft.test.ts:65`).
 - Files outside the database: since 2.13.4, `profile.json`,
   `scan-config.json` and the sync journal are encrypted with the same
   256-bit key as the knowledge base (AES-256-GCM; plaintext files from older
@@ -43,7 +43,7 @@ random bytes; SQLite reports "file is not a database".
   deliberate exceptions: `endpoint.json` (port, PID, start time — no secret,
   and the discovery mechanism for local tools) and the inbox folder with its
   archive (files you dropped there yourself — user property, like the
-  Markdown export; full-disk encryption covers them). The sealed audit log
+  Markdown export; full-disk encryption covers them, held by `tests/testkapsel.test.ts:111` and `tests/scan/walker.test.ts:226`). The sealed audit log
   lives inside the encrypted database. Exports you make yourself are
   plaintext; Device Sync bundles are encrypted separately with their own
   passphrase.

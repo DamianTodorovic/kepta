@@ -1,6 +1,6 @@
 # 🗺️ K3PTA Roadmap — v2.0 and beyond
 
-> As of September 2026 · Replaces `WHITE-SPACE-ANALYSE.md` (the v1.0 analysis, whose quick wins and big bets are all shipped).
+> As of September 2026 · Replaces `WHITE-SPACE-ANALYSE.md` (the v1.0 analysis, whose quick wins and big bets are all shipped, held by `tests/doku-zahlen.test.ts:207`).
 
 ## ✅ Done in v1.x (from the white-space analysis)
 
@@ -26,7 +26,7 @@
 ## ✅ v2.6.0 — English interface (released 2026-09-03)
 
 Every user-facing string, the MCP tool descriptions, the starter pack and the
-native date controls are English. German survives where it is a feature, not a
+native date controls are English (`tests/mcp.test.ts:58` and `tests/doku-plattform.test.ts:35`). German survives where it is a feature, not a
 default: the search stopword list stays bilingual, so German notes keep working.
 A German switch for the main surfaces came in 2.10 and left again in 2.11:
 K3PTA's interface is English, one language done properly.
@@ -39,8 +39,8 @@ K3PTA's interface is English, one language done properly.
 | **Write gate** (Mem0, arXiv:2504.19413) | Opt-in via `KEPTA_WRITE_GATE=on`: the local LLM classifies each new memory as ADD/UPDATE/DELETE/NOOP on both save paths; unreachable LLM degrades to ADD |
 | **Local reranking** | Deterministic reranker (term coverage, phrase, title, tags) as a bounded boost after RRF, exposed as `rerankScore` — the seam for the cross-encoder below |
 | **Device Sync** | Device-to-device scope transfer as an AES-256-GCM bundle (scrypt passphrase) with a tamper-evident hash-chained transfer ledger (`~/.kepta/sync-journal.jsonl`) |
-| **Encryption at rest — evaluated** | Honest assessment in `docs/encryption-eval.md`: SQLCipher needs a build switch, `PRAGMA key` silently does nothing on node:sqlite, the KeyProvider seam is free (~0 ms); recommendation: OS-level encryption + wave-2 field encryption design |
-| **Interface: Die Akte** | True-black dark theme, seal-red accent, serif display type, soft depth layers, Apple-style segmented controls, typographic sidebar with brand plate, type-colour strokes on cards — every surface reworked (supersedes the earlier Onyx pass) |
+| **Encryption at rest — evaluated** | Honest assessment in `docs/encryption-eval.md`: SQLCipher needs a build switch, `PRAGMA key` silently does nothing on node:sqlite, the KeyProvider seam is free (~0 ms); recommendation: OS-level encryption + wave-2 field encryption design (`tests/encryption-eval.test.ts:15`) |
+| **Interface: Die Akte** | True-black dark theme, seal-red accent, serif display type, soft depth layers, Apple-style segmented controls, typographic sidebar with brand plate, type-colour strokes on cards — every surface reworked (supersedes the earlier Onyx pass, held by `tests/components/Dashboard.test.tsx:138`) |
 
 ## ✅ v2.10 — September 2026: the list and the graph, read by people
 
@@ -50,7 +50,7 @@ K3PTA's interface is English, one language done properly.
 | **A readable list** | A click opens a preview with the full text and the source; source chips, part badges and *Open file*; grouping by file, kind or period |
 | **PDFs as text** | pdf.js with the character maps for embedded fonts, shipped offline; older imports can be read again from Settings → Data |
 | **Relevance first** | While a query is active the list is flat and ranked, whatever grouping was chosen |
-| **Text size** | 100/115/130 % (a German switch shipped here too and was removed in 2.11) |
+| **Text size** | 100/115/130 % (a German switch shipped here too and was removed in 2.11, held by `tests/components/Settings-textgroesse-wirkt.test.tsx:36`) |
 | **Persona walkthrough** | Ten simulated user profiles over one real run against a 3,330-note base; its knockouts — unreadable PDFs, a ranking lost in groups — were fixed first |
 
 ## ✅ v2.11 — September 2026: encryption at rest
@@ -61,14 +61,14 @@ K3PTA's interface is English, one language done properly.
 | **Key in the system keychain** | 256 random bits, created on first start; macOS Keychain, Windows DPAPI, Linux Secret Service, `KEPTA_DB_KEY` for headless installs |
 | **Safe conversion** | An existing base is converted only when K3PTA has it to itself: copy, encrypt, verify every table and the integrity check, replace in one step, overwrite the old file with zeros (`tests/core/store-verschluesselung.test.ts:180` leaves a base another program holds open as plaintext, `:210` keeps the original untouched and removes the copy when the swap fails, `:196` finds only zeros in the old file afterwards — that last one is skipped on Windows, where the swap closes and replaces instead) |
 | **Settings inside** | The settings, the AI key included, moved from `settings.json` into the encrypted file |
-| **English only** | The German interface switch from 2.10 is gone |
+| **English only** | The German interface switch from 2.10 is gone (`tests/doku-plattform.test.ts:35`) |
 
 ## ✅ v2.12 — September 2026: licenses with a name
 
 | Feature | What shipped |
 |---|---|
-| **Name and number** | Activation stays name and key, offline, and every key carries a license number. Since 3.1.1 the sidebar shows the licensee's name with no tier label — the number itself is no longer on screen (it travels with the license state and the activation answer) |
-| **Revocation** | A revoked license number no longer unlocks K3PTA from the next update on — also where it was already activated |
+| **Name and number** | Activation stays name and key, offline, and every key carries a license number (`docs/belege/p147-0711/zaehler-vor-3-1-5.log.txt` and `tests/keine-grenzen.test.ts:102`). Since 3.1.1 the sidebar shows the licensee's name with no tier label — the number itself is no longer on screen (it travels with the license state and the activation answer, documented in `docs/belege/p147-0711/zaehler-vor-3-1-5.log.txt` and `tests/keine-grenzen.test.ts:116`) |
+| **Revocation** | A revoked license number no longer unlocks K3PTA from the next update on — also where it was already activated (`tests/core/boundary.test.ts:75` and `tests/keine-grenzen.test.ts:102`) |
 | **Copy buttons** | Chat, recovery key, system status and the MCP block copy again |
 
 ## ✅ v2.13 — September 2026: your memory, every day
@@ -82,12 +82,12 @@ K3PTA's interface is English, one language done properly.
 | **Privacy** | The privacy shield before cloud models and for AI apps; private notes |
 | **Tiers and deployment (2.13.1)** | Licenses carry the tier and seats; import of ChatGPT and Claude history; centrally managed policies the app enforces (`src/lib/richtlinien.ts`: `chat_cloud`, `machine_scan`, `privacy_shield`); Windows installers. (2.13.3 folded the public Business tier into Enterprise — team memory ships with Enterprise. SSO, the workspaces UI and MDM enrolment did not: they are sold as roadmap, see README.) |
 | **This computer only (2.13.2)** | The HTTP server refuses foreign `Host` headers and write requests from other websites (`tests/herkunft.test.ts:76` reads nothing at all behind a foreign Host, live stream included; `:101` allows a network Host only after `KEPTA_HOST` asks for it and keeps foreign websites blocked) |
-| **Files next to the database (2.13.4)** | `profile.json`, `scan-config.json` and the sync journal get the same 256-bit key as the knowledge base (AES-256-GCM, `src/core/nebendateien.ts`); older plaintext files are read and re-encrypted on the next write. Readable by design: `endpoint.json` (no secret, it is how local tools find the port) and the inbox with the user's own source files |
+| **Files next to the database (2.13.4)** | `profile.json`, `scan-config.json` and the sync journal get the same 256-bit key as the knowledge base (AES-256-GCM, `src/core/nebendateien.ts`); older plaintext files are read and re-encrypted on the next write. Readable by design: `endpoint.json` (no secret, it is how local tools find the port) and the inbox with the user's own source files (`tests/testkapsel.test.ts:111` and `tests/scan/walker.test.ts:226`) |
 
 ## 🔭 Next (deliberately planned follow-up work)
 
 - **Encrypting the files next to the database** — done in 2.13.4 for the settings and the journals (see the v2.13 table); what is left is the sealed audit *file* sink: it ships as the encrypted `VerschlussteAuditDatei` class in `src/core/nebendateien.ts` and is tested, but the running app keeps its audit trail in the database, so nothing wires the file sink yet
-- **Git-based memory versioning** (in the style of Letta context repositories) — every change as a commit in a bare repo next to the DB
+- **Git-based memory versioning** (in the style of Letta context repositories) — every change as a commit in a bare repo next to the DB (`tests/server-stand-wiederherstellen.test.ts:103`)
 - **Cross-encoder reranking as a required path** — Qwen3-Reranker-0.6B (arXiv:2506.05176) over the top-20 RRF candidates, once an Ollama rerank API exists; the deterministic local reranker already ships as the seam
 - **Bi-temporal edges** (arXiv:2501.13956): `ingested_at`/`invalidated_at` on relations in addition to `valid_from`/`valid_to`
 - **Idle-time consolidation** (sleep-time compute, arXiv:2504.13171): a background job produces context prefixes (contextual retrieval, arXiv:2504.19754) and precomputed questions per memory

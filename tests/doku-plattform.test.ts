@@ -686,5 +686,33 @@ describe("P172: Architektur-, Paket-, SDK- und Beleg-Versprechen in README.md ne
   });
 });
 
+// P173 (09.11.2026): Alle 22 verbleibenden technischen und historischen Versprechen
+// in SECURITY.md (4), ROADMAP.md (11) und .github/release-notes.md (7) nennen ihre
+// Zeugen im selben Satz. (Danach bleiben ueber alle 4 Aussendungs-Blaetter nur noch
+// die 7 reinen Produktcopy-/Ueberschriften-/Glossar-Zeilen ohne Maschinen-Behauptung
+// offen: README.md:3, :5, :45, :70, :89, SECURITY.md:5, ROADMAP.md:74.)
+describe("P173: Technische und historische Versprechen in SECURITY.md, ROADMAP.md und .github/release-notes.md nennen ihre Zeugen", () => {
+  const weitereBlatter = () =>
+    ["SECURITY.md", "ROADMAP.md", ".github/release-notes.md"].flatMap((d) =>
+      satzeAusMarkdown(fs.readFileSync(path.join(process.cwd(), d), "utf8")),
+    );
+
+  const p173Saetze = () =>
+    weitereBlatter().filter((s) =>
+      /The key is created on the first start and stored in the system keychain|Those cases replace the system command, so what is proven here is K3PTA's own side of the call|A running K3PTA: the local API \(127\.0\.0\.1, no authentication\) serves the decrypted knowledge|Two deliberate exceptions: endpoint\.json \(port, PID, start time|Replaces WHITE-SPACE-ANALYSE\.md \(the v1\.0 analysis, whose quick wins and big bets are all shipped|Every user-facing string, the MCP tool descriptions, the starter pack and the native date controls are English|Encryption at rest — evaluated \| Honest assessment in docs\/encryption-eval\.md|Interface: Die Akte \| True-black dark theme, seal-red accent|Text size \| 100\/115\/130 % \(a German switch shipped here too and was removed in 2\.11|English only \| The German interface switch from 2\.10 is gone|Name and number \| Activation stays name and key, offline, and every key carries a license number|Since 3\.1\.1 the sidebar shows the licensee's name with no tier label|Revocation \| A revoked license number no longer unlocks K3PTA|Readable by design: endpoint\.json \(no secret, it is how local tools find the port\)|Git-based memory versioning \(in the style of Letta context repositories\)|The fastest way through, and the one that works on every macOS version|Note: right-clicking the app and choosing \*Open\* no longer works|Before the first start of the new version, quit every agent that uses K3PTA over MCP|K3PTA ships its own MCP server — no Node\.js, no npm|All data stays local in ~\/\.kepta\/ — no account, no cloud, no telemetry|Vor dem ersten Start alle Agenten schließen, die K3PTA über MCP nutzen|Alle Daten bleiben lokal in ~\/\.kepta\//.test(
+        s,
+      ),
+    );
+
+  it("die zweiundzwanzig Saetze werden gefunden — die Sonde meldet keinen Erfolg fuer Ungelesenes", () => {
+    expect(p173Saetze().length, `die Sonde findet ${p173Saetze().length} P173-Saetze`).toBe(22);
+  });
+
+  it("jeder der zweiundzwanzig traegt sein Messzeug im selben Satz", () => {
+    const nackt = p173Saetze().filter((s) => !zeug.test(s));
+    expect(nackt, `diese Saetze stehen ohne Zeugen da:\n  ${nackt.join("\n  ").slice(0, 1500)}`).toEqual([]);
+  });
+});
+
 
 

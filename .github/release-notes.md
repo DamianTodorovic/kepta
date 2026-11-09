@@ -17,7 +17,7 @@ These builds are **not notarised** (that needs an Apple developer certificate at
 99 EUR a year). macOS quarantines the download and says the developer cannot be
 verified. The app is fine.
 
-The fastest way through, and the one that works on every macOS version:
+The fastest way through, and the one that works on every macOS version (`docs/belege/aussendung-0611/beweisen-3-2-190-0611.txt` and `docs/aussendung-und-ablage.md:190`):
 
 ```bash
 xattr -dr com.apple.quarantine /Applications/K3PTA.app
@@ -27,7 +27,7 @@ Without the terminal: **System Settings → Privacy & Security** → scroll to t
 K3PTA message → **Open Anyway**. Once, then never again.
 
 Note: right-clicking the app and choosing *Open* no longer works — Apple removed
-that route in macOS 15.
+that route in macOS 15 (`docs/belege/aussendung-0611/beweisen-3-2-190-0611.txt` and `docs/aussendung-und-ablage.md:190`).
 
 ## 🪟 Windows and Linux
 
@@ -38,13 +38,13 @@ Nothing to install yet: no Windows or Linux installer is published (`docs/belege
 From 2.11 the knowledge base is encrypted on disk, with a key the app creates
 and keeps in your system keychain. Before the first start of the new version,
 **quit every agent that uses K3PTA over MCP** (Claude Desktop, Cursor, …), so
-the app has the file to itself and can convert it — then start them again.
+the app has the file to itself and can convert it — then start them again (`tests/core/store-verschluesselung.test.ts:180`).
 *Settings → System status* shows whether the file is encrypted. Keep a copy of
 the key: [SECURITY.md](https://github.com/DamianTodorovic/kepta/blob/main/SECURITY.md#encryption-at-rest).
 
 ## 🔌 Connect an agent (MCP)
 
-K3PTA ships its own MCP server — no Node.js, no npm. *Settings → MCP / API* connects Claude Desktop, Claude Code, Cursor, Windsurf and VS Code in one click, or shows the block to copy. For K3PTA in *Applications* on a Mac it is:
+K3PTA ships its own MCP server — no Node.js, no npm (`tests/lib/einrichtung.test.ts:42`). *Settings → MCP / API* connects Claude Desktop, Claude Code, Cursor, Windsurf and VS Code in one click, or shows the block to copy. For K3PTA in *Applications* on a Mac it is:
 
 ```json
 {
@@ -58,7 +58,7 @@ K3PTA ships its own MCP server — no Node.js, no npm. *Settings → MCP / API* 
 }
 ```
 
-All data stays local in `~/.kepta/` — no account, no cloud, no telemetry.
+All data stays local in `~/.kepta/` — no account, no cloud, no telemetry (`tests/keine-telemetrie.test.ts:73` and `tests/core/store-verschluesselung.test.ts:76`).
 
 ---
 
@@ -76,8 +76,8 @@ Veröffentlichte Installer sind **nur macOS**, und jeder Stand mit Dateien träg
 
 Die Builds sind **nicht notarisiert**. macOS: `xattr -dr com.apple.quarantine /Applications/K3PTA.app`, oder *Systemeinstellungen → Datenschutz & Sicherheit* → die K3PTA-Meldung → **Dennoch öffnen**. Einmal, dann nie wieder. Ältere Anleitungen empfehlen Rechtsklick → **Öffnen** — Apple hat den Weg mit macOS 15 entfernt, er tut auf aktuellen Systemen nichts.
 
-**Update von einer Version vor 2.11:** die Wissensbasis wird verschlüsselt. Vor dem ersten Start alle Agenten schließen, die K3PTA über MCP nutzen (Claude Desktop, Cursor …), danach wieder starten. Eine Kopie des Schlüssels aufbewahren: [SECURITY.md](https://github.com/DamianTodorovic/kepta/blob/main/SECURITY.md#encryption-at-rest).
+**Update von einer Version vor 2.11:** die Wissensbasis wird verschlüsselt. Vor dem ersten Start alle Agenten schließen, die K3PTA über MCP nutzen (Claude Desktop, Cursor …), danach wieder starten (`tests/core/store-verschluesselung.test.ts:180`). Eine Kopie des Schlüssels aufbewahren: [SECURITY.md](https://github.com/DamianTodorovic/kepta/blob/main/SECURITY.md#encryption-at-rest).
 
-Alle Daten bleiben lokal in `~/.kepta/`.
+Alle Daten bleiben lokal in `~/.kepta/` (`tests/core/store-verschluesselung.test.ts:76` und `tests/testkapsel.test.ts:107`).
 
 </details>
