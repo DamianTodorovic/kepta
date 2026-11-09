@@ -20,6 +20,19 @@ import { useSuchPrefs, leseTreffer, normalisiereTreffer, schreibeTreffer, SUCH_P
 import { tabLesen, tabSetzen, type EinstellungenTab } from '../lib/einstellungenTab';
 import { spurAria, spurLabel } from '../lib/spuren';
 
+// P183 (#44): das gemessene Sprach-Profil je Such-Modell (15 Anfrage-Paare,
+// englische Frage gegen deutsche Notizen; je Stufe zwei bytegleiche Läufe am
+// ausgelieferten Baum — P181/P182, `docs/belege/tag-0911/` und
+// `docs/belege/konkurrenz-0911e/`). Die Sprach-Wache verlangt die Zahl im Satz.
+const SPRACHPROFIL: Record<string, { zeile: string }> = {
+  'nomic-embed-text': {
+    zeile: 'Built for English notes. Asking across a language line finds 4 of 15 notes; in the same language it finds 9 of 15. For notes in mixed languages, bge-m3 finds 10 of 15 across the line — switching to it re-embeds your whole store once.',
+  },
+  'bge-m3': {
+    zeile: 'Built for mixed languages. Asking across a language line finds 10 of 15 notes; in the same language it finds 9 of 15. This profile was measured with your side of the line: English questions over German notes.',
+  },
+};
+
 /** Was die Import-Reparatur gefunden (Vorschau) oder getan hat (fertig). */
 type ReparaturStand = {
   geprueft: number; dateien: number; aktualisiert: number; entfernt: number;
@@ -252,7 +265,7 @@ export function Settings() {
 
   // --- MCP-Tab state ---
   const [copied, setCopied] = useState<string | null>(null);
-  const [health, setHealth] = useState<{ ok?: boolean; count?: number; uptime?: number; mcp?: { stdio?: { command: string; args: string[]; env: Record<string, string> } | null } } | null>(null);
+  const [health, setHealth] = useState<{ ok?: boolean; count?: number; uptime?: number; mcp?: { stdio?: { command: string; args: string[]; env: Record<string, string> } | null }; embeddings?: { total?: number; embedded?: number; models?: Record<string, number> } | null } | null>(null);
   const [healthError, setHealthError] = useState<string | null>(null);
   const [werkzeuge, setWerkzeuge] = useState<McpWerkzeug[]>([]);
   const [werkzeugeFehler, setWerkzeugeFehler] = useState<string | null>(null);
@@ -404,7 +417,9 @@ export function Settings() {
   }, []);
 
   useEffect(() => {
-    if (activeTab !== 'mcp') return;
+    // P183: auch der System-Tab liest die Health — die Search-Model-Zeile nennt
+    // das Modell aus health.embeddings.models.
+    if (activeTab !== 'mcp' && activeTab !== 'system') return;
     let cancelled = false;
     (async () => {
       try {
@@ -683,6 +698,22 @@ export function Settings() {
                 <h3 className="settings-h" style={{ color: 'var(--text-1)' }}>Search</h3>
               </div>
               <div className="space-y-5">
+                {(() => {
+                  // P183 (#44): die gemessene Wahrheit über das Such-Modell, mit
+                  // Zahlen (die Sprach-Wache verlangt sie) und ohne Button-Versprechen.
+                  const modelle = Object.keys(health?.embeddings?.models ?? {});
+                  const profil = modelle.map((m) => SPRACHPROFIL[m]).find(Boolean);
+                  return (
+                    <div data-testid="such-modell">
+                      <label className="fs-2 lh-dicht block mb-2" style={{ color: 'var(--text-3)' }}>
+                        Search model · <span className="tnum">{modelle.length > 0 ? modelle.join(', ') : '—'}</span>
+                      </label>
+                      <div className="fs-2 lh-dicht" style={{ color: 'var(--text-3)' }}>
+                        {profil ? profil.zeile : 'This search model has no measured profile on file yet.'}
+                      </div>
+                    </div>
+                  );
+                })()}
                 <div>
                   <label className="fs-2 lh-dicht block mb-2" htmlFor="such-tiefe" style={{ color: 'var(--text-3)' }}>
                     Search depth · <span className="tnum">{suchPrefs.tiefe}</span>

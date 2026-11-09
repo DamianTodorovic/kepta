@@ -109,12 +109,12 @@ describe("P145, das Siegel: was die REGISTER-Zeile ausweist, muss auf der Platte
     expect(siegelPruefen(BELEG, register)).toEqual([]);
   });
 
-  it("am echten Register: 134 Siegel-Zeilen, und keine ist falsch", () => {
+  it("am echten Register: 174 Siegel-Zeilen, und keine ist falsch", () => {
     const text = fs.readFileSync(path.join(BELEG, "REGISTER.md"), "utf8");
     // Gemessen 7.11. 02:14:13 MEZ von diesem Fall selbst (zuvor 126 um 01:39:50): 128 Zeilen
     // mit Pfad + Bytes + sha(16) — die zwei neuen sind der Historien-Beleg P147 und sein
     // Generierer. Wer ein Artefakt eintraegt oder loescht, zieht diese Zahl nach.
-    expect(siegelZeilen(text).length, "die Grundgesamtheit der Siegel hat sich bewegt").toBe(134);
+    expect(siegelZeilen(text).length, "die Grundgesamtheit der Siegel hat sich bewegt").toBe(174);
     expect(siegelPruefen(BELEG, text), "das Register weist Bytes aus, die nicht auf der Platte stehen").toEqual([]);
   });
 

@@ -1,3 +1,22 @@
+## [3.2.195]
+
+### Added
+
+- **The Settings page now tells you what your search model is — and what it
+  costs across a language line, in measured numbers.** The Search section grew
+  a "Search model" row, driven by the live embedding models from `/api/health`
+  (P183, #44): nomic-embed-text reads "Built for English notes. Asking across a
+  language line finds 4 of 15 notes; in the same language it finds 9 of 15.
+  For notes in mixed languages, bge-m3 finds 10 of 15 across the line —
+  switching to it re-embeds your whole store once." bge-m3 stores read their
+  own line (10 of 15 across, 9 of 15 within). Every number is measured on this
+  machine (15 request pairs, English question over German notes, two
+  byte-identical runs per stage — `docs/belege/tag-0911/sprache-*-193-*.log.txt`,
+  `docs/belege/konkurrenz-0911e/sprache-bge-m3-regel-0911.log.txt`), and the
+  health gate now also loads on the System tab. No button is promised: the
+  re-embed cost is named in the sentence. Held by
+  `tests/components/suche-modell-zeile.test.ts` and the language-line guard.
+
 ## [3.2.194]
 
 ### Fixed
