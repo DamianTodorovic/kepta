@@ -28,7 +28,7 @@ import { korpusAufbauen, v1Suche } from "./eval-store";
 import { QUERIES, CORPUS, EVAL_NOW, type EvalQuery } from "./eval-corpus";
 
 /** Englisch uebertragene Anfragen; `deutsch` ist der Schluessel zum geerbten Ziel. */
-const PAARE: { deutsch: string; englisch: string }[] = [
+export const PAARE: { deutsch: string; englisch: string }[] = [
   // lexikalisch — die Frage traegt die Woerter der Notiz (in jeder Sprache eigne)
   { deutsch: "Welche Datenbank nutzen wir?", englisch: "Which database do we use?" },
   { deutsch: "Wo wohnt Alex gerade?", englisch: "Where does Alex live right now?" },
@@ -61,7 +61,7 @@ interface Zeile {
  * oder dort ein anderes Ziel nennt, ist ein Messfehler. Also bricht der Lauf, statt eine
  * Zahl zu melden, die mit dem Korpus nichts zu tun hat.
  */
-function paarePruefen(): Zeile[] {
+export function paarePruefen(): Zeile[] {
   const zeilen: Zeile[] = [];
   const fehlend: string[] = [];
   for (const p of PAARE) {
@@ -168,4 +168,6 @@ function schliessen(store: KeptaStore): void {
   fs.rmSync(path.dirname(store.dbPath), { recursive: true, force: true });
 }
 
-void main();
+if (path.resolve(process.argv[1] ?? "") === import.meta.filename) {
+  void main();
+}

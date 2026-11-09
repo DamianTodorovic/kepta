@@ -1,4 +1,4 @@
-Zeit: 9.11.2026, 09:26:17 MEZ
+Zeit: 9.11.2026, 15:56:40 MEZ
 Dateien: README.md, SECURITY.md, ROADMAP.md, .github/release-notes.md — Einheiten ueber 25 Zeichen.
 Riss: satz-riss.mjs (P128, markdown-fest). Vorher: Satzende + Leerzeichen ueber dem
 ganzen Text, wodurch Aufzaehlungen, Tabellenzeilen und `<summary>`-Kuelsen als EIN
@@ -9,11 +9,11 @@ Satz zaehlten. Unter beiden Naivlingen, in diesem Lauf nachgerechnet:
 
 | Datei | Saetze | absolute | mit Messzeug | ohne Messzeug | Anteil ohne |
 |---|---|---|---|---|---|
-| `README.md` | 411 | 137 | 89 | 48 | 35.0 % |
+| `README.md` | 411 | 137 | 93 | 44 | 32.1 % |
 | `SECURITY.md` | 33 | 9 | 4 | 5 | 55.6 % |
 | `ROADMAP.md` | 77 | 16 | 4 | 12 | 75.0 % |
 | `.github/release-notes.md` | 50 | 20 | 13 | 7 | 35.0 % |
-| **zusammen** | **571** | **182** | **110** | **72** | **39.6 %** |
+| **zusammen** | **571** | **182** | **114** | **68** | **37.4 %** |
 
 Nenner fuer den Anteil: 182 absolute Behauptungen in 571 Saetzen der vier Texte.
 
@@ -25,7 +25,7 @@ Zweite Lesung — der Zeuge darf im selben Abschnitt stehen (Absatz, Tabelle, Au
 | `ROADMAP.md` | 16 | 0 | 16 |
 | `.github/release-notes.md` | 20 | 8 | 12 |
 | zusammen | 182 | 75 | 107 |
-   mit Messzeug im selben Abschnitt: 75 von 182 = 41.2 % (gegen 110 von 182 = 60.4 % in der engen Lesung).
+   mit Messzeug im selben Abschnitt: 75 von 182 = 41.2 % (gegen 114 von 182 = 62.6 % in der engen Lesung).
 
 Die schmalere Klasse — Saetze, die ein Werkzeug widerlegen koennte (never/always/cannot/0 %/100 %):
    README.md                  31 von 137 absoluten
@@ -73,9 +73,9 @@ Die schmalere Klasse — Saetze, die ein Werkzeug widerlegen koennte (never/alwa
 
 Zwei von ihnen nachgegriffen, im selben Lauf:
    "no screenshot of it here yet" (Semantic-Ansicht): README nennt 20 Bilder (12 in Markdown, 8 als <img alt>), davon 0 mit "Semantic"; der Satz steht noch da — haltbar.
-   "no embedding ever travels into the view": 8 von 8 benannten Flaechen-Dateien gelesen, zusammen 0 Nennung(en) "embedding"; das Wort liegt in 35 Test-Dateien des Repos. Fehlende Dateien: keine.
+   "no embedding ever travels into the view": 8 von 8 benannten Flaechen-Dateien gelesen, zusammen 0 Nennung(en) "embedding"; das Wort liegt in 36 Test-Dateien des Repos. Fehlende Dateien: keine.
 
-Die 72 ohne Messzeug, in Lesereihenfolge der Dateien (erste 40):
+Die 68 ohne Messzeug, in Lesereihenfolge der Dateien (erste 40):
    [README.md] Your AI forgets you after every chat.
    [README.md] Desktop app · no cloud · no account · encrypted at rest SQLite · hybrid retrieval · knowledge graph · MCP
    [README.md] The machine state printed in the same artefacts says why no millisecond there is claimed as a verdict.
@@ -84,11 +84,8 @@ Die 72 ohne Messzeug, in Lesereihenfolge der Dateien (erste 40):
    [README.md] The next day you open a fresh chat and it knows none of it.
    [README.md] Agent | An AI program that can use tools instead of only answering — Claude Desktop, Cursor or Gemini CLI, for instance.
    [README.md] One brain for every AI tool.
-   [README.md] On a four-note check (npm run embed:sprachtest) the default model answers 4 of 4 English paraphrase questions and 1 of 4 of the same questions translated into German.
-   [README.md] Changing the default would also mean re-embedding every stored note, because each chunk is keyed to the model that produced it (npm run eval:sprache reruns both sides).
    [README.md] Files imported with an older extraction can be read again under *Settings → Data → Re-read imported files* — it counts first and writes only after you confirm
    [README.md] Import your AI history: bring your ChatGPT or Claude data export here (*Settings → Data management → Import your AI history*): every conversation with at least one answer becomes a searchable note with its original date,
-   [README.md] Persistent embeddings via Ollama (nomic-embed-text), computed by a background queue instead of re-embedding on every query
    [README.md] - A concept in the picture is a shared one: a term that exists only because it repeats the title of the single note carrying it is an echo of your filing, not knowledge, and the graph leaves it out — the concept count is
    [README.md] Schema panel — what the store holds, counted: kinds of note, concepts, and every claim type by name.
    [README.md] Settings live in the encrypted data directory, not in browser storage — the desktop shell binds to a free port that changes on every launch, and localStorage is keyed by origin, so anything kept there was gone after a re
@@ -116,3 +113,6 @@ Die 72 ohne Messzeug, in Lesereihenfolge der Dateien (erste 40):
    [README.md] No other platform has a downloadable app, and nothing here pretends otherwise.
    [README.md] The engine itself runs on all three (kepta-mcp on npm, or from source), so an MCP client on those systems talks to the same memory — only the window is missing.
    [README.md] The packages are self-contained; you only need Node ≥ 22.13 to build them yourself.
+   [README.md] The fastest way through, and the one that works on every macOS version:
+   [README.md] The server code lives in server/ — server/app.ts assembles the middleware chain and mounts the routers, server/router/ holds one module per feature area, server/helfer/ the shared helpers, and server.ts itself is only th
+   [README.md] The gates sit a little below what is reached, so they can only move up.

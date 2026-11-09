@@ -3,8 +3,8 @@
   "README.md": {
    "saetze": 411,
    "absolut": 137,
-   "mit_zeug": 89,
-   "ohne_zeug": 48
+   "mit_zeug": 93,
+   "ohne_zeug": 44
   },
   "SECURITY.md": {
    "saetze": 33,
@@ -28,8 +28,8 @@
  "zusammen": {
   "saetze": 571,
   "absolut": 182,
-  "mit_zeug": 110,
-  "ohne_zeug": 72
+  "mit_zeug": 114,
+  "ohne_zeug": 68
  },
  "abschnitt": {
   "README.md": {
@@ -307,7 +307,7 @@
    }
   ],
   "embedding_in_flaechen_dateien": 0,
-  "tests_mit_embedding_wort": 35
+  "tests_mit_embedding_wort": 36
  },
  "ohne_zeug": [
   {
@@ -344,23 +344,11 @@
   },
   {
    "datei": "README.md",
-   "satz": "On a four-note check (npm run embed:sprachtest) the default model answers 4 of 4 English paraphrase questions and 1 of 4 of the same questions translated into German."
-  },
-  {
-   "datei": "README.md",
-   "satz": "Changing the default would also mean re-embedding every stored note, because each chunk is keyed to the model that produced it (npm run eval:sprache reruns both sides)."
-  },
-  {
-   "datei": "README.md",
    "satz": "Files imported with an older extraction can be read again under *Settings → Data → Re-read imported files* — it counts first and writes only after you confirm"
   },
   {
    "datei": "README.md",
    "satz": "Import your AI history: bring your ChatGPT or Claude data export here (*Settings → Data management → Import your AI history*): every conversation with at least one answer becomes a searchable note with its original date,"
-  },
-  {
-   "datei": "README.md",
-   "satz": "Persistent embeddings via Ollama (nomic-embed-text), computed by a background queue instead of re-embedding on every query"
   },
   {
    "datei": "README.md",
@@ -493,10 +481,6 @@
   {
    "datei": "README.md",
    "satz": "The eval's third leg, measured independently on 2026-11-03, lands on the same 76 %."
-  },
-  {
-   "datei": "README.md",
-   "satz": "- npm run eval:sprache — the same 58-note corpus, 15 pairs drawn from its 45 queries, where only the language of the question moves: an English question over German notes, with the answer set inherited from the corpus ra"
   },
   {
    "datei": "README.md",

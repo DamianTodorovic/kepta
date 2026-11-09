@@ -565,3 +565,34 @@ describe("P168: 'kein Byte ohne KI' nennt seine Egress-Wache", () => {
     expect(nackt, `dieser Satz steht ohne Zeugen da:\n  ${nackt.join("\n  ").slice(0, 400)}`).toEqual([]);
   });
 });
+
+// P169 — der Sprach- und Embedding-Cluster (README:88 Satz 2: "On a four-note check...",
+// README:88 letzter Satz: "Changing the default would also mean re-embedding every
+// stored note...", README:126: "Persistent embeddings via Ollama...", und README:460
+// Satz 1: "npm run eval:sprache — the same 58-note corpus, 15 pairs drawn from its 45
+// queries..."). Zeugen: scripts/embed-sprachtest.ts + tests/embeddings.test.ts:298
+// (vier zweisprachige Notiz-/Fragenpaare und Rang-1-Cosinus-Zählung auf nomic-embed-text),
+// tests/store.test.ts:129 (chunksNeedingEmbedding wählt Modell-Mismatch zum Re-Embed),
+// tests/engine.test.ts:115 (Fremdmodell-Chunks bleiben aus dem Vektor-Bein draussen),
+// tests/konkurrenz-sprachstufen.test.ts:93 (beide Seiten von eval:sprache),
+// tests/embeddings.test.ts:166/:229/:327 (Standardmodell nomic-embed-text, Queue-Tick
+// schreibt Vektoren, Suche bettet danach nur den Suchtext ein), und
+// scripts/eval-sprachuebergriff.ts + tests/embeddings.test.ts:354 (15 Paare aus 45
+// Anfragen des 58-Notizen-Korpus mit geerbten Antwort-Sets). Gleiche Lesart wie P162-P168.
+describe("P169: Sprach- und Embedding-Cluster nennt seine Zeugen", () => {
+  const p169Saetze = () =>
+    satzeAusMarkdown(README).filter((s) =>
+      /On a four-note check|Changing the default would also mean re-embedding every stored note|computed by a background queue instead of re-embedding on every query|15 pairs drawn from its 45 queries/.test(
+        s,
+      ),
+    );
+
+  it("die vier Saetze werden gefunden — die Sonde meldet keinen Erfolg fuer Ungelesenes", () => {
+    expect(p169Saetze().length, `die Sonde findet ${p169Saetze().length} P169-Saetze`).toBe(4);
+  });
+
+  it("jeder der vier traegt sein Messzeug im selben Satz", () => {
+    const nackt = p169Saetze().filter((s) => !zeug.test(s));
+    expect(nackt, `diese Saetze stehen ohne Zeugen da:\n  ${nackt.join("\n  ").slice(0, 600)}`).toEqual([]);
+  });
+});

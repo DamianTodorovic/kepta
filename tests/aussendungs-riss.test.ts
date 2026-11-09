@@ -107,7 +107,7 @@ describe("P129, der Wortschatz: ein benanntes Instrument ist ein Messzeug", () =
     expect(zeug.test(einheiten[0]), "das Messzeug steht im selben Satz, wird aber nicht gesehen").toBe(true);
   });
 
-  it("am echten Bestand: 110 von 182 absoluten Behauptungen nennen ihr Messzeug", () => {
+  it("am echten Bestand: 114 von 182 absoluten Behauptungen nennen ihr Messzeug", () => {
     let absoluten = 0;
     let mit = 0;
     for (const datei of DATEIEN) {
@@ -249,8 +249,19 @@ describe("P129, der Wortschatz: ein benanntes Instrument ist ein Messzeug", () =
     // voll exakt. Die Klammer beschreibt nur die CSP-Sperre, nicht die Nutzer-Wege
     // (Chat/Embed bei gewähltem Anbieter, Clipper auf Aktion); das steht im Papier.
     // Die Wache lebt in tests/doku-plattform.test.ts, describe "P168: ...".
+    // P169 (gemessen 9.11. 15:56:40 MEZ mit dem Zaehler selbst): der Sprach- und
+    // Embedding-Cluster in README.md (:88 Vier-Notizen-Sprachtest, :88 Re-Embed nach
+    // Modellwechsel, :126 persistente Embeddings via Hintergrund-Queue statt Re-Embed
+    // pro Query, :460 eval:sprache mit 15 geerbten Fragenpaaren aus den 45 Anfragen des
+    // 58-Notizen-Korpus) nennt seine Zeugen (scripts/embed-sprachtest.ts,
+    // tests/embeddings.test.ts:166/:229/:298/:327/:354, tests/store.test.ts:129,
+    // tests/engine.test.ts:115, tests/konkurrenz-sprachstufen.test.ts:93,
+    // scripts/eval-sprachuebergriff.ts). Zaehler 110 -> 114 (README 89 -> 93), ohne
+    // 72 -> 68 (README 48 -> 44, Anteil 39,6 -> 37,4 %). Nenner 182, Einheiten 571
+    // und schmale Klasse 36 bleiben — Voraussage voll exakt. Die Wache lebt in
+    // tests/doku-plattform.test.ts, describe "P169: ...".
     expect(absoluten, "der Nenner ist nicht mehr 182 — der Riss oder die Klasse hat sich bewegt").toBe(182);
-    expect(mit, `${mit} von ${absoluten} nennen ein Messzeug — erwartet war 110`).toBe(110);
+    expect(mit, `${mit} von ${absoluten} nennen ein Messzeug — erwartet war 114`).toBe(114);
     expect(mit / absoluten, "Anteil ohne Nenner ist ein Urteil").toBeGreaterThan(0.3);
     expect(maschine.source.length, "die schmale Klasse wurde nicht mitgeändert").toBeGreaterThan(10);
   });

@@ -293,3 +293,80 @@ describe("EmbeddingQueue", () => {
     expect(store.chunksNeedingEmbedding().length).toBe(0);
   });
 });
+
+describe("P169: Sprach- und Embedding-Cluster", () => {
+  it("embed-sprachtest fuehrt vier deutsche und vier englische Notizen und Fragenpaare und zaehlt Rang-1-Treffer auf dem Standardmodell", async () => {
+    const mod = (await import("../scripts/embed-sprachtest")) as Record<string, unknown>;
+    const deDok = mod.DEUTSCH_DOK as [string, string][] | undefined;
+    const deFragen = mod.DEUTSCH_FRAGEN as [string, string][] | undefined;
+    const enDok = mod.ENGLISCH_DOK as [string, string][] | undefined;
+    const enFragen = mod.ENGLISCH_FRAGEN as [string, string][] | undefined;
+    const durchlauf = mod.durchlauf as ((name: string, dok: [string, string][], fragen: [string, string][]) => Promise<number>) | undefined;
+    expect(deDok?.length, "DEUTSCH_DOK muss 4 Notizen tragen").toBe(4);
+    expect(deFragen?.length, "DEUTSCH_FRAGEN muss 4 Fragen tragen").toBe(4);
+    expect(enDok?.length, "ENGLISCH_DOK muss 4 Notizen tragen").toBe(4);
+    expect(enFragen?.length, "ENGLISCH_FRAGEN muss 4 Fragen tragen").toBe(4);
+    expect(typeof durchlauf, "durchlauf muss exportiert sein").toBe("function");
+    const geseheneModelle: string[] = [];
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async (_url: string, init?: { body?: string }) => {
+        const body = JSON.parse(init?.body ?? "{}") as { model: string; input: string[] };
+        geseheneModelle.push(body.model);
+        const embeddings = body.input.map((t, i) =>
+          t.includes("pasta") || t.includes("carbonara") ? [1, 0, 0, 0] : [0, i + 1, 1, 0],
+        );
+        return { ok: true, status: 200, json: async () => ({ embeddings }) } as unknown as Response;
+      }),
+    );
+    const treffer = await durchlauf!("Englisch", enDok!, enFragen!);
+    expect(geseheneModelle.every((m) => m === "nomic-embed-text")).toBe(true);
+    expect(treffer).toBeGreaterThanOrEqual(1);
+  });
+
+  it("eine Suche nach dem Queue-Tick bettet nur die Anfrage ein, keinen gespeicherten Chunk", async () => {
+    const { indexMemory, searchMemories } = await import("../src/core/engine");
+    const s = freshStore();
+    const m = s.createMemory({ title: "Carbonara", content: "Guanciale und Pecorino Romano ohne Sahne" });
+    indexMemory(s, m.id);
+    const aufrufe: string[][] = [];
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async (_url: string, init?: { body?: string }) => {
+        const body = JSON.parse(init?.body ?? "{}") as { input: string[] };
+        aufrufe.push(body.input);
+        const embeddings = body.input.map(() => [1, 0.5, 0.25, 0.1]);
+        return { ok: true, status: 200, json: async () => ({ embeddings }) } as unknown as Response;
+      }),
+    );
+    const q = new EmbeddingQueue(s, { batchSize: 10 });
+    expect(await q.tick()).toBeGreaterThan(0);
+    expect(s.chunksNeedingEmbedding().length).toBe(0);
+    aufrufe.length = 0;
+    const res = await searchMemories(s, { query: "Was koche ich mit Pecorino", limit: 5 });
+    expect(res.usedVectors).toBe(true);
+    expect(aufrufe.length).toBe(1);
+    expect(aufrufe[0]?.length).toBe(1);
+    expect(aufrufe[0]?.[0]).toContain("Was koche ich mit Pecorino");
+    expect(aufrufe[0]?.[0]).not.toContain("Guanciale");
+  });
+
+  it("eval-sprachuebergriff zieht 15 Fragenpaare aus den 45 Korpus-Anfragen und erbt jedes Antwort-Set", async () => {
+    const mod = (await import("../scripts/eval-sprachuebergriff")) as Record<string, unknown>;
+    const { CORPUS, QUERIES } = await import("../scripts/eval-corpus");
+    const paare = mod.PAARE as { deutsch: string; englisch: string }[] | undefined;
+    const paarePruefen = mod.paarePruefen as (() => { deutsch: string; englisch: string; relevant: string[] }[]) | undefined;
+    expect(CORPUS.length).toBe(58);
+    expect(QUERIES.length).toBe(45);
+    expect(paare?.length, "PAARE muss 15 Paare tragen").toBe(15);
+    expect(typeof paarePruefen, "paarePruefen muss exportiert sein").toBe("function");
+    const geerbt = paarePruefen!();
+    expect(geerbt.length).toBe(15);
+    for (const z of geerbt) {
+      const original = QUERIES.find((q) => q.query === z.deutsch);
+      expect(original, `keine Korpus-Anfrage fuer ${z.deutsch}`).toBeDefined();
+      expect(z.relevant).toEqual(original!.relevant);
+      expect(z.englisch.length).toBeGreaterThan(5);
+    }
+  });
+});
