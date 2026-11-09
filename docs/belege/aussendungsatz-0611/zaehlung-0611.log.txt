@@ -1,4 +1,4 @@
-Zeit: 9.11.2026, 15:56:40 MEZ
+Zeit: 9.11.2026, 16:12:45 MEZ
 Dateien: README.md, SECURITY.md, ROADMAP.md, .github/release-notes.md — Einheiten ueber 25 Zeichen.
 Riss: satz-riss.mjs (P128, markdown-fest). Vorher: Satzende + Leerzeichen ueber dem
 ganzen Text, wodurch Aufzaehlungen, Tabellenzeilen und `<summary>`-Kuelsen als EIN
@@ -9,11 +9,11 @@ Satz zaehlten. Unter beiden Naivlingen, in diesem Lauf nachgerechnet:
 
 | Datei | Saetze | absolute | mit Messzeug | ohne Messzeug | Anteil ohne |
 |---|---|---|---|---|---|
-| `README.md` | 411 | 137 | 93 | 44 | 32.1 % |
+| `README.md` | 411 | 137 | 101 | 36 | 26.3 % |
 | `SECURITY.md` | 33 | 9 | 4 | 5 | 55.6 % |
 | `ROADMAP.md` | 77 | 16 | 4 | 12 | 75.0 % |
 | `.github/release-notes.md` | 50 | 20 | 13 | 7 | 35.0 % |
-| **zusammen** | **571** | **182** | **114** | **68** | **37.4 %** |
+| **zusammen** | **571** | **182** | **122** | **60** | **33.0 %** |
 
 Nenner fuer den Anteil: 182 absolute Behauptungen in 571 Saetzen der vier Texte.
 
@@ -25,7 +25,7 @@ Zweite Lesung — der Zeuge darf im selben Abschnitt stehen (Absatz, Tabelle, Au
 | `ROADMAP.md` | 16 | 0 | 16 |
 | `.github/release-notes.md` | 20 | 8 | 12 |
 | zusammen | 182 | 75 | 107 |
-   mit Messzeug im selben Abschnitt: 75 von 182 = 41.2 % (gegen 114 von 182 = 62.6 % in der engen Lesung).
+   mit Messzeug im selben Abschnitt: 75 von 182 = 41.2 % (gegen 122 von 182 = 67.0 % in der engen Lesung).
 
 Die schmalere Klasse — Saetze, die ein Werkzeug widerlegen koennte (never/always/cannot/0 %/100 %):
    README.md                  31 von 137 absoluten
@@ -73,9 +73,9 @@ Die schmalere Klasse — Saetze, die ein Werkzeug widerlegen koennte (never/alwa
 
 Zwei von ihnen nachgegriffen, im selben Lauf:
    "no screenshot of it here yet" (Semantic-Ansicht): README nennt 20 Bilder (12 in Markdown, 8 als <img alt>), davon 0 mit "Semantic"; der Satz steht noch da — haltbar.
-   "no embedding ever travels into the view": 8 von 8 benannten Flaechen-Dateien gelesen, zusammen 0 Nennung(en) "embedding"; das Wort liegt in 36 Test-Dateien des Repos. Fehlende Dateien: keine.
+   "no embedding ever travels into the view": 8 von 8 benannten Flaechen-Dateien gelesen, zusammen 0 Nennung(en) "embedding"; das Wort liegt in 37 Test-Dateien des Repos. Fehlende Dateien: keine.
 
-Die 68 ohne Messzeug, in Lesereihenfolge der Dateien (erste 40):
+Die 60 ohne Messzeug, in Lesereihenfolge der Dateien (erste 40):
    [README.md] Your AI forgets you after every chat.
    [README.md] Desktop app · no cloud · no account · encrypted at rest SQLite · hybrid retrieval · knowledge graph · MCP
    [README.md] The machine state printed in the same artefacts says why no millisecond there is claimed as a verdict.
@@ -84,17 +84,9 @@ Die 68 ohne Messzeug, in Lesereihenfolge der Dateien (erste 40):
    [README.md] The next day you open a fresh chat and it knows none of it.
    [README.md] Agent | An AI program that can use tools instead of only answering — Claude Desktop, Cursor or Gemini CLI, for instance.
    [README.md] One brain for every AI tool.
-   [README.md] Files imported with an older extraction can be read again under *Settings → Data → Re-read imported files* — it counts first and writes only after you confirm
-   [README.md] Import your AI history: bring your ChatGPT or Claude data export here (*Settings → Data management → Import your AI history*): every conversation with at least one answer becomes a searchable note with its original date,
-   [README.md] - A concept in the picture is a shared one: a term that exists only because it repeats the title of the single note carrying it is an echo of your filing, not knowledge, and the graph leaves it out — the concept count is
-   [README.md] Schema panel — what the store holds, counted: kinds of note, concepts, and every claim type by name.
-   [README.md] Settings live in the encrypted data directory, not in browser storage — the desktop shell binds to a free port that changes on every launch, and localStorage is keyed by origin, so anything kept there was gone after a re
    [README.md] Read straight from the local database: no AI involved, nothing leaves the computer
-   [README.md] Careful on purpose: only facts and how-tos are compared, both sentences must share their meaningful words, notes from the same file stay out, and so do the parts of a split file (README — 5/17), a note's source line and 
    [README.md] No license server, no phone-home, no extra infrastructure — one file.
    [README.md] Model discovery for Ollama and LM Studio in one click, no key required
-   [README.md] Duplicate review — every group side by side, one click to keep the richest copy or dismiss the pair for good.
-   [README.md] Text size — 100, 115 or 130 %, under *Settings → Display*.
    [README.md] - All data in ~/.kepta/ — one SQLite file that belongs to you
    [README.md] - No account, no telemetry, no phone-home — and nothing to activate: the app validates no key, so there is no check of any kind to call home for.
    [README.md] No service in between, no account, no telemetry.
@@ -116,3 +108,11 @@ Die 68 ohne Messzeug, in Lesereihenfolge der Dateien (erste 40):
    [README.md] The fastest way through, and the one that works on every macOS version:
    [README.md] The server code lives in server/ — server/app.ts assembles the middleware chain and mounts the routers, server/router/ holds one module per feature area, server/helfer/ the shared helpers, and server.ts itself is only th
    [README.md] The gates sit a little below what is reached, so they can only move up.
+   [README.md] Obsidian is excellent for humans — but Markdown is not a memory: no types, no validity, no MCP.
+   [README.md] Every figure below is a run of this repository's own tools, kept whole next to the sentence that uses it — disagree with the numbers by rerunning them.
+   [README.md] The eval's third leg, measured independently on 2026-11-03, lands on the same 76 %.
+   [README.md] An explanation counts only if the sentence names the word itself and runs longer than eight words: "A written brief on one subject" does not explain *Dossier*, "A Dossier is a written brief on one subject, built from the
+   [SECURITY.md] No public exploit before a fix exists.
+   [SECURITY.md] The key is created on the first start and stored in the system keychain: the macOS Keychain (service app.kepta.database, account kepta), Windows DPAPI (database-key.dpapi in the data folder, readable only under the same 
+   [SECURITY.md] Those cases replace the system command, so what is proven here is K3PTA's own side of the call; the round-trip against a real Keychain, DPAPI or Secret Service runs only on that operating system.
+   [SECURITY.md] - A running K3PTA: the local API (127.0.0.1, no authentication) serves the decrypted knowledge to programs on the same machine, as before.

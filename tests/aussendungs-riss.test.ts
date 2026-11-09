@@ -107,7 +107,7 @@ describe("P129, der Wortschatz: ein benanntes Instrument ist ein Messzeug", () =
     expect(zeug.test(einheiten[0]), "das Messzeug steht im selben Satz, wird aber nicht gesehen").toBe(true);
   });
 
-  it("am echten Bestand: 114 von 182 absoluten Behauptungen nennen ihr Messzeug", () => {
+  it("am echten Bestand: 122 von 182 absoluten Behauptungen nennen ihr Messzeug", () => {
     let absoluten = 0;
     let mit = 0;
     for (const datei of DATEIEN) {
@@ -260,8 +260,22 @@ describe("P129, der Wortschatz: ein benanntes Instrument ist ein Messzeug", () =
     // 72 -> 68 (README 48 -> 44, Anteil 39,6 -> 37,4 %). Nenner 182, Einheiten 571
     // und schmale Klasse 36 bleiben — Voraussage voll exakt. Die Wache lebt in
     // tests/doku-plattform.test.ts, describe "P169: ...".
+    // Nach P170 (9.11.): Acht Feature-, Graph- und Pflege-Versprechen in README.md (:107
+    // Re-read imported files, :112 Import your AI history, :139 Single-note title-echo
+    // concept count, :150 Schema panel, :159 Settings live in encrypted data directory,
+    // :169 Contradictions careful filter rules, :228 Duplicate review, :231 Text size
+    // 100/115/130 %) nennen ihre Zeugen (tests/server.test.ts:556,
+    // tests/import-chat-api.test.ts:93/:110,
+    // tests/components/KnowledgeGraph.render.test.tsx:3415/:3430/:3840,
+    // tests/lib/graphLayout.begriffsaufnahme.test.ts:46, tests/lib/ai-settings.test.ts:48/:76,
+    // tests/lib/widersprueche.test.ts:32, tests/components/DuplicatesPanel.test.tsx:51/:98/:164,
+    // tests/components/Settings-textgroesse-wirkt.test.tsx:36,
+    // tests/components/Settings-textgroesse-ohne-ueberlauf.test.tsx:55). Zaehler 114 -> 122
+    // (README 93 -> 101), ohne 68 -> 60 (README 44 -> 36, Anteil 37,4 -> 33,0 %). Nenner 182,
+    // Einheiten 571 und schmale Klasse 36 bleiben — Voraussage voll exakt. Die Wache lebt in
+    // tests/doku-plattform.test.ts, describe "P170: ...".
     expect(absoluten, "der Nenner ist nicht mehr 182 — der Riss oder die Klasse hat sich bewegt").toBe(182);
-    expect(mit, `${mit} von ${absoluten} nennen ein Messzeug — erwartet war 114`).toBe(114);
+    expect(mit, `${mit} von ${absoluten} nennen ein Messzeug — erwartet war 122`).toBe(122);
     expect(mit / absoluten, "Anteil ohne Nenner ist ein Urteil").toBeGreaterThan(0.3);
     expect(maschine.source.length, "die schmale Klasse wurde nicht mitgeändert").toBeGreaterThan(10);
   });

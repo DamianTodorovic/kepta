@@ -596,3 +596,34 @@ describe("P169: Sprach- und Embedding-Cluster nennt seine Zeugen", () => {
     expect(nackt, `diese Saetze stehen ohne Zeugen da:\n  ${nackt.join("\n  ").slice(0, 600)}`).toEqual([]);
   });
 });
+
+// P170 (09.11.2026): Acht Feature-, Graph- und Pflege-Versprechen in README.md (:107,
+// :112, :139, :150, :159, :169, :228, :231) waren im Aussendungssatz als "absolut,
+// ohne_zeug" gezaehlt, obwohl ihre Zeugen im Baum stehen:
+// - :107 (Re-read imported files counts first, writes after confirm): tests/server.test.ts:556
+// - :112 (Import your AI history, searchable note with date and tag): tests/import-chat-api.test.ts:93/:110
+// - :139 (Single-note title-echo left out of concept count): tests/components/KnowledgeGraph.render.test.tsx:3840 + tests/lib/graphLayout.begriffsaufnahme.test.ts:46
+// - :150 (Schema panel counts kinds, concepts, claim types): tests/components/KnowledgeGraph.render.test.tsx:3415/:3430
+// - :159 (Settings live in encrypted data directory, survive port change): tests/lib/ai-settings.test.ts:48/:76
+// - :169 (Contradictions careful filter rules): tests/lib/widersprueche.test.ts:32
+// - :228 (Duplicate review side by side, keep richest or dismiss): tests/components/DuplicatesPanel.test.tsx:51/:98/:164
+// - :231 (Text size 100/115/130 % under Settings -> Display): tests/components/Settings-textgroesse-wirkt.test.tsx:36 + tests/components/Settings-textgroesse-ohne-ueberlauf.test.tsx:55
+// Gleiche Lesart wie P162-P169.
+describe("P170: Feature- und Pflege-Versprechen in README.md nennen ihre Zeugen", () => {
+  const p170Saetze = () =>
+    satzeAusMarkdown(README).filter((s) =>
+      /Files imported with an older extraction can be read again|every conversation with at least one answer becomes a searchable note|a term that exists only because it repeats the title of the single note carrying it|what the store holds, counted: kinds of note, concepts, and every claim type by name|the desktop shell binds to a free port that changes on every launch|only facts and how-tos are compared, both sentences must share their meaningful words|every group side by side, one click to keep the richest copy or dismiss the pair for good|under \*Settings → Display\*/.test(
+        s,
+      ),
+    );
+
+  it("die acht Saetze werden gefunden — die Sonde meldet keinen Erfolg fuer Ungelesenes", () => {
+    expect(p170Saetze().length, `die Sonde findet ${p170Saetze().length} P170-Saetze`).toBe(8);
+  });
+
+  it("jeder der acht traegt sein Messzeug im selben Satz", () => {
+    const nackt = p170Saetze().filter((s) => !zeug.test(s));
+    expect(nackt, `diese Saetze stehen ohne Zeugen da:\n  ${nackt.join("\n  ").slice(0, 900)}`).toEqual([]);
+  });
+});
+

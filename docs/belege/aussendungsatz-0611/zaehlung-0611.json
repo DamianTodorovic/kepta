@@ -3,8 +3,8 @@
   "README.md": {
    "saetze": 411,
    "absolut": 137,
-   "mit_zeug": 93,
-   "ohne_zeug": 44
+   "mit_zeug": 101,
+   "ohne_zeug": 36
   },
   "SECURITY.md": {
    "saetze": 33,
@@ -28,8 +28,8 @@
  "zusammen": {
   "saetze": 571,
   "absolut": 182,
-  "mit_zeug": 114,
-  "ohne_zeug": 68
+  "mit_zeug": 122,
+  "ohne_zeug": 60
  },
  "abschnitt": {
   "README.md": {
@@ -307,7 +307,7 @@
    }
   ],
   "embedding_in_flaechen_dateien": 0,
-  "tests_mit_embedding_wort": 36
+  "tests_mit_embedding_wort": 37
  },
  "ohne_zeug": [
   {
@@ -344,31 +344,7 @@
   },
   {
    "datei": "README.md",
-   "satz": "Files imported with an older extraction can be read again under *Settings → Data → Re-read imported files* — it counts first and writes only after you confirm"
-  },
-  {
-   "datei": "README.md",
-   "satz": "Import your AI history: bring your ChatGPT or Claude data export here (*Settings → Data management → Import your AI history*): every conversation with at least one answer becomes a searchable note with its original date,"
-  },
-  {
-   "datei": "README.md",
-   "satz": "- A concept in the picture is a shared one: a term that exists only because it repeats the title of the single note carrying it is an echo of your filing, not knowledge, and the graph leaves it out — the concept count is"
-  },
-  {
-   "datei": "README.md",
-   "satz": "Schema panel — what the store holds, counted: kinds of note, concepts, and every claim type by name."
-  },
-  {
-   "datei": "README.md",
-   "satz": "Settings live in the encrypted data directory, not in browser storage — the desktop shell binds to a free port that changes on every launch, and localStorage is keyed by origin, so anything kept there was gone after a re"
-  },
-  {
-   "datei": "README.md",
    "satz": "Read straight from the local database: no AI involved, nothing leaves the computer"
-  },
-  {
-   "datei": "README.md",
-   "satz": "Careful on purpose: only facts and how-tos are compared, both sentences must share their meaningful words, notes from the same file stay out, and so do the parts of a split file (README — 5/17), a note's source line and "
   },
   {
    "datei": "README.md",
@@ -377,14 +353,6 @@
   {
    "datei": "README.md",
    "satz": "Model discovery for Ollama and LM Studio in one click, no key required"
-  },
-  {
-   "datei": "README.md",
-   "satz": "Duplicate review — every group side by side, one click to keep the richest copy or dismiss the pair for good."
-  },
-  {
-   "datei": "README.md",
-   "satz": "Text size — 100, 115 or 130 %, under *Settings → Display*."
   },
   {
    "datei": "README.md",
