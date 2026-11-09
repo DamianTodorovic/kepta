@@ -1,3 +1,17 @@
+## [3.2.199]
+
+### Fixed
+
+- **The server leaves its last words when it crashes.** Damian's Settings
+  blackscreen (9.11./10.11.) survived the renderer crash screen — the failing
+  part is the server, not the surface, and a dead server left nothing to read.
+  The bootstrap now hangs `uncaughtException` and `unhandledrejection` guards
+  that append the full stack to `letzte-worte.log` in the data folder and keep
+  serving (the surface answers instead of staring black). Damian reproduces
+  once, sends the file — the place is named. Held by the bootstrap being
+  excluded from coverage but compiled into every bundle (`tsc` clean,
+  `pruefe-asar` path unchanged).
+
 ## [3.2.198]
 
 ### Fixed

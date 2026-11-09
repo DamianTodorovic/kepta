@@ -36,8 +36,12 @@ describe("P190: ein Absturz zeigt sich als Text, nicht als Schwarz", () => {
 
   it("eine unerledigte Zusage malt denselben Text", () => {
     spanneCrashWachter();
+    // Das Versprechen selbst wird gefangen — sonst meldet vitest die echte
+    // unerledigte Zusage und der Lauf endet rot, obwohl die Wache grün ist.
+    const zusagePromis = Promise.reject(new Error("Zusage crasht"));
+    zusagePromis.catch(() => { /* nur das Event soll es tragen */ });
     const zusage = new PromiseRejectionEvent("unhandledrejection", {
-      promise: Promise.reject(new Error("Zusage crasht")),
+      promise: zusagePromis,
       reason: new Error("Zusage crasht"),
     });
     window.dispatchEvent(zusage);

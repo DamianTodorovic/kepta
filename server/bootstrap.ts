@@ -30,6 +30,20 @@ export async function startServer() {
   // Beide Namensformen (Aufgabe #64) — derselbe Ordner wie vorher, wenn nur die
   // alte Form gesetzt ist.
   const datenOrdner = leseUmwelt("datenordner").wert || path.join(os.homedir(), ".kepta");
+
+  // P191: der letzte Atem — stirbt der Server, hinterlässt er seine Ursache als
+  // Text im Datenordner. Damian fotografiert/schickt die Datei, statt einen
+  // schwarzen Bildschirm zu starren; die Wache hält den Prozess oben, damit die
+  // Fläche weiter antwortet (der Nutzer sieht den Fehler statt nichts).
+  const letzteAtemDatei = path.join(datenOrdner, "letzte-worte.log");
+  process.on("uncaughtException", (fehler) => {
+    try { fs.appendFileSync(letzteAtemDatei, `${new Date().toISOString()} UNBEHANDELT\n${fehler.stack ?? String(fehler)}\n\n`); } catch { /* nichts zu holen */ }
+    console.error("K3PTA-Server: unbehandelter Fehler — weiter geht's, der Grund steht in letzte-worte.log:", fehler);
+  });
+  process.on("unhandledrejection", (grund) => {
+    try { fs.appendFileSync(letzteAtemDatei, `${new Date().toISOString()} ZUSAGE\n${String(grund instanceof Error ? grund.stack : grund)}\n\n`); } catch { /* nichts zu holen */ }
+    console.error("K3PTA-Server: unerledigte Zusage — weiter geht's, der Grund steht in letzte-worte.log:", grund);
+  });
   // Enterprise (Milestone E1): team:*-Scopes nach Rollen aus der verwalteten
   // Konfiguration durchsetzen. team:* ist allein durch die Rollen-Datei
   // geschaltet (eine Lizenz-Edition gibt es in dieser App nicht mehr);
