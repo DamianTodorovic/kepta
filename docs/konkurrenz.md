@@ -17,7 +17,7 @@ dasselbe: **Hit@1** — die erste Antwort nennt eine der Ziel-IDs der Anfrage.
 | mem0 2.2.1, **fair gefahren** | ganzes Stueck, `infer=False`, Wort-Suche an, nomic-embed-text lokal | **51,1 %** (23/45) | `docs/belege/konkurrenz-0611/spur-fair-0611.jsonl` und `…-zwei.jsonl` |
 | **sqlite-vec 0.1.9**, reines Cosinus-KNN | dieselben Texte, dasselbe Einbett (nomic-embed-text, 768 D), k=5, **nichts** ausser Vektoren | **42,2 %** (19/45) | `docs/belege/konkurrenz-0611b/spur-sqlitevec-0611.jsonl` und `…-zwei.jsonl` |
 | **sqlite-vec 0.1.9**, reines Cosinus-KNN, **zweites Einbett** | derselbe Lauf, nur `bge-m3` (1024 D) statt nomic | **66,7 %** (30/45) | `docs/belege/konkurrenz-0611b/spur-sqlitevec-bge-m3.jsonl` und `…-zwei.jsonl` |
-| K3PTA, **ausgeliefert** (v3-Bein), **zweites Einbett** | derselbe Aufbau und derselbe Suchweg, nur `bge-m3` (1024 D) statt nomic | **77,8 %** (35/45) | `docs/belege/konkurrenz-0611c/spur-uns-bge-m3-0611.jsonl` und `…-zwei.jsonl` |
+| K3PTA, **ausgeliefert** (v3-Bein), **zweites Einbett** — **Stand 9.11. (3.2.193, mit dem P176-Boden-Flicken)** | derselbe Aufbau und derselbe Suchweg, nur `bge-m3` (1024 D) statt nomic; R@5 94,4 %, MRR 0,836; Geschichte: 6.11. (vor dem Flicken) 77,8 % (35/45), R@5 90,0 — der Flicken rettete eine der beiden komplett-leeren Antworten („Was mag meine Grossmutter?" → m18, richtig), kostete aber zwei erste Plätze („React Build Setup", „Was koche ich mit Nudeln?"), netto −1 | **75,6 %** (34/45), zweimal identisch | `docs/belege/konkurrenz-0911d/spur-uns-0911-bge-m3-eins.jsonl` und `…-zwei.jsonl`; Geschichte: `konkurrenz-0611c/spur-uns-bge-m3-0611.jsonl` |
 | **chroma 1.5.9**, reines Cosinus-KNN | dieselben Texte, dasselbe Einbett (nomic-embed-text, 768 D), k=5, Cosinus-Raum gesetzt und **gemessen**, nichts ausser Vektoren | **42,2 %** (19/45) | `docs/belege/konkurrenz-0611e/spur-chroma-nomic-eins.jsonl` und `…-zwei.jsonl` |
 | **chroma 1.5.9**, reines Cosinus-KNN, **zweites Einbett** | derselbe Lauf, nur `bge-m3` (1024 D) statt nomic | **68,9 %** (31/45) | `docs/belege/konkurrenz-0611e/spur-chroma-bge-m3-eins.jsonl` und `…-zwei.jsonl` |
 | **mem0 2.2.1**, fair gefahren, **zweites Einbett** | dieselbe faire Konfiguration wie die nomic-Zeile (ganzes Stueck, `infer=False`, mem0s eigne Rangfolge), nur `bge-m3` (1024 D) über Ollama statt nomic — 9.11.2026, 20:06/20:06:29 MEZ, zwei frische Speicher | **68,9 %** (31/45) | `docs/belege/konkurrenz-0911b/spur-mem0-bgem3-0911-eins.jsonl` und `…-zwei.jsonl` |
@@ -415,11 +415,14 @@ Speicher, `infer=False`, bge-m3 über Ollama): **68,9 % (31/45), zweimal identis
 Recall@5 88,9 %. Der Einbett-Hebel hebt mem0 um **+17,8 Punkte** (51,1 → 68,9) —
 weniger als die Hebel der Verfahrens-Zeilen (+24,5 sqlite-vec, +26,7 chroma): mem0s
 eigne Rangfolge dämpft, was der Embedder bringt. Unsre eigne Spur auf derselben Stufe
-steht bei **77,8 % (35/45)** — der Abstand der Fusion zur Produkt-Zeile beträgt auf der
-zweiten Stufe **8,9 Punkte**, dasselbe Bild wie bei den Verfahrens-Zeilen nach der
-Berichtigung oben: **die Stufe (das Einbett) macht den großen Unterschied, die Fusion
-den verbleibenden.** K3PTA führt damit weiterhin jede Zeile des Ledgers, auf beiden
-Stufen, aber der ehrliche Abstand auf der zweiten Stufe ist 8,9 Punkte, nicht 24,5.
+steht auf dem ausgelieferten Baum (3.2.193, mit dem P176-Boden-Flicken) bei **75,6 %
+(34/45)** — der Abstand der Fusion zur Produkt-Zeile beträgt auf der zweiten Stufe
+**6,7 Punkte**, zu chroma ebenfalls 6,7, zu sqlite-vec 8,9 — dasselbe Bild wie bei den
+Verfahrens-Zeilen nach der Berichtigung oben: **die Stufe (das Einbett) macht den
+großen Unterschied, die Fusion den verbleibenden.** K3PTA führt damit weiterhin jede
+Zeile des Ledgers, auf beiden Stufen, aber der ehrliche Abstand auf der zweiten Stufe
+ist 6,7 Punkte, nicht 24,5. (Gemessen 20:39/20:40 MEZ, zweimal identisch; die
+gesamte Abwägung des Flicken-Preises steht im P180-Abschnitt unten.)
 Die Latte (`tests/konkurrenz-mem0-latte.test.ts`, drittes Bein) hält den Abstand mit
 einer Grenze von 5 Punkten und fällt bei Gleichstand.
 
@@ -427,3 +430,27 @@ Nebenbefund: cognee 1.6.7 (der zweite Produkt-Kandidat dieser Welle) ist auf die
 Rechner nicht lauffähig — seine Graph-Engine (ladybug/lbug) fehlt die C-Bibliothek,
 die es nur als unversionierten Fremd-Download gibt; Zeugnis
 `docs/belege/konkurrenz-0911b/lauf-cognee-0911.log.txt`.
+
+## P180 (9.11.2026): der Boden-Flicken am Ledger gemessen — die Abwägung, die der shipped-Baum trägt
+
+P176 (heute gelandet) öffnete die Vektor-Masche unter dem absoluten Boden. Der
+6.11-Stand des Ledgers (77,8 % / 35 von 45 an bge-m3) war VOR dem Flicken gemessen.
+Auf dem ausgelieferten 3.2.193, zweimal identisch (20:39 und 20:40 MEZ,
+`konkurrenz-0911d/spur-uns-0911-bge-m3-{eins,zwei}.jsonl`):
+
+- **Hit@1 75,6 % (34/45)** — netto −1: der Flicken rettete eine der beiden
+  komplett-leeren Antworten von P120 („Was mag meine Grossmutter?" war leer, nennt
+  jetzt **m18, richtig**) und warf zwei erste Plätze um („React Build Setup": top
+  m29 → m15; „Was koche ich mit Nudeln?": top m06 → m48 — die Vektor-Stimme, die
+  vorher schwieg, schiebt in der Fusion Kandidaten nach vorn).
+- **R@5 stieg 90,0 → 94,4 %** (die beste R@5 im ganzen Ledger), MRR 0,825 → 0,836 —
+  die Rangfolge unter den ersten fünf wurde besser, eine erste Plätze weniger.
+- **nomic: keine Änderung** (34/45 = 75,6 %, R@5 91,1, MRR 0,809, null Flips,
+  `spur-uns-0911-nomic-embed-text-{eins,zwei}.jsonl`).
+
+Abwägung, ehrlich benannt: der Flicken behebt den stillen Defekt (das Bein
+antwortete leer ohne Grund — 13 von 45 Anfragen an bge-m3, 2 komplett leer) und
+verbessert die Tiefe (R@5 +4,4) zum Preis eines ersten Platzes. Die Latten
+(`konkurrenz-mem0-latte`, drittes Bein: 5-Punkte-Grenze — Abstand jetzt 6,7;
+`konkurrenz-fts5-latte`: 10 Punkte über der ODER-Praxis — Abstand jetzt 31,2)
+halten weiter. Damian kann die Abwägung überstimmen; der Hebel ist `engine.ts:551`.

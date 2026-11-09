@@ -9,7 +9,7 @@ zitiert, und verlangt die Zahl dort; ein Beleg, den `git ls-files` nicht kennt, 
 Die Tabelle unten ist ein **Siegel** — Bytezahl und sha256 sagen, dass dieser Beleg dieser Lauf
 ist. Bis zum 7.11. hatte dieses Siegel keinen Pruefer. Seitdem vergleicht
 `scripts/helfer/belege-siegel.mjs` in jedem Suite-Lauf jede ausgewiesene Zeile gegen die Datei auf
-der Platte, gefahren von `tests/belege-siegel.test.ts:112` (Grundgesamtheit: 157 Siegel-Zeilen,
+der Platte, gefahren von `tests/belege-siegel.test.ts:112` (Grundgesamtheit: 162 Siegel-Zeilen,
 gemessen 10:53:35 MEZ von demselben Fall — dieselbe Zahl wie um 02:57:57, weil P154 nur Siegel
 nachzog; zuvor 126 um 01:39:50, und die zwei neuen sind der Historien-Beleg P147
 mit seinem Generierer). Der erste Lauf dieses Pruefers fand 4 Befunde auf 2 Zeilen:
@@ -266,6 +266,11 @@ Schlag prueft `blockKopfFunde` aus `scripts/helfer/belege-siegel.mjs` genau das,
 | `konkurrenz-0911b/ergebnis-mem0-bgem3-0911-zwei.json` | 591 B | `9d199857ba3014c4…` |
 | `konkurrenz-0911c/ergebnis-fts5-0911-oder-eins.json` | 631 B | `2954aeb7defd5c05…` |
 | `konkurrenz-0911c/ergebnis-fts5-0911-oder-zwei.json` | 631 B | `25209831124b5509…` |
+| `konkurrenz-0911d/spur-uns-0911-bge-m3-eins.jsonl` | 8834 B | `97b84249e8bcbde5…` |
+| `konkurrenz-0911d/spur-uns-0911-bge-m3-zwei.jsonl` | 8834 B | `8913c40bebd2ab19…` |
+| `konkurrenz-0911d/spur-uns-0911-nomic-embed-text-eins.jsonl` | 9113 B | `5a8392cb14e7f6d0…` |
+| `konkurrenz-0911d/spur-uns-0911-nomic-embed-text-zwei.jsonl` | 9113 B | `fe09d52dca8cf2d3…` |
+| `konkurrenz-0911d/spur-uns-0911.ts` | 2801 B | `06224e9ce9118492…` |
 | `konkurrenz-0911c/ergebnis-fts5-0911-roh-eins.json` | 569 B | `477a9d9f948a7a2b…` |
 | `konkurrenz-0911c/ergebnis-fts5-0911-roh-zwei.json` | 569 B | `f1596f0c132b8750…` |
 | `konkurrenz-0911c/ergebnis-fts5-0911-stopp-eins.json` | 569 B | `7eb34f47ef1547f1…` |

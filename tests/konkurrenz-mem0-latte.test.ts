@@ -182,15 +182,19 @@ describe("Punkt 8, drittes Bein: mem0 fair mit dem zweiten Einbett (bge-m3), 9.1
   });
 
   it("auf der zweiten Einbett-Stufe bleibt unsre Fusion ueber dem Produkt -- die Latte faellt bei Gleichstand", () => {
-    // Unsre eigene bge-m3-Spur (P113-Stand, konkurrenz-0611c), hier nachgerechnet.
-    const uns = fs.readFileSync(path.join(WURZEL, "docs/belege/konkurrenz-0611c", "spur-uns-bge-m3-0611.jsonl"), "utf8")
+    // Unsre eigene bge-m3-Spur auf dem AUSGELIEFERTEN Baum (3.2.193, mit dem
+    // P176-Boden-Flicken; konkurrenz-0911d), hier nachgerechnet. Geschichte:
+    // 6.11 (vor dem Flicken) 35/45 = 77,8 — der Flicken rettete eine der zwei
+    // komplett-leeren Antworten und warf zwei erste Plaetze um, netto -1
+    // (P180). R@5 stieg dabei 90,0 -> 94,4.
+    const uns = fs.readFileSync(path.join(WURZEL, "docs/belege/konkurrenz-0911d", "spur-uns-0911-bge-m3-eins.jsonl"), "utf8")
       .split("\n").filter(Boolean).map((l) => JSON.parse(l) as { art: string; treffer: boolean })
       .filter((z) => z.art === "suche");
     const unsHit1 = uns.filter((z) => z.treffer).length;
-    expect([uns.length, unsHit1, prozent(unsHit1, uns.length)]).toEqual([45, 35, 77.8]);
+    expect([uns.length, unsHit1, prozent(unsHit1, uns.length)]).toEqual([45, 34, 75.6]);
     const mem0Bg = prozent(bgem3("spur-mem0-bgem3-0911-eins.jsonl").hit1, QUERIES.length);
     // Die Latte sitzt bei 5 Punkten: genau dann faellt sie, wenn unsre Fusion auf
-    // mem0s Niveau absinkt. Sie haelt den gemessenen Abstand von 8,9 Punkten.
+    // mem0s Niveau absinkt. Sie haelt den gemessenen Abstand von 6,7 Punkten.
     expect(prozent(unsHit1, uns.length) - mem0Bg, `unsre bge-Stufe gegen mem0 bge ${mem0Bg}`).toBeGreaterThanOrEqual(5);
   });
 });
