@@ -103,19 +103,37 @@ async function echterKlick(cdp, auswahl) {
 }
 
 async function main() {
-  log(`Stillstands-Versuch startet (Kapsel ${ARBEIT}, Port ${PORT}, ${MINUTEN} Minuten).`);
-  const diener = spawn("node", [OBJEKT], {
-    cwd: WURZEL,
-    env: { ...process.env, HOME: path.join(ARBEIT, "h"), KEPTA_DATA_DIR: path.join(ARBEIT, "d"), KEPTA_ENCRYPTION: "off", PORT: String(PORT) },
-    stdio: ["ignore", "pipe", "pipe"],
-  });
+  log(`Stillstands-Versuch startet (Kapsel ${ARBEIT}, Port ${PORT}, ${MINUTEN} Minuten, Gestell ${process.env.REPRO_ELEKTRON === "1" ? "Electron" : "Brave"}).`);
+  let diener = null;
+  let basisUrl = `http://127.0.0.1:${PORT}`;
+  if (process.env.REPRO_ELEKTRON === "1") {
+    // Electron trägt den Server selbst: auf endpoint.json im Kapsel-Home warten.
+    diener = spawn(path.join(WURZEL, "node_modules", ".bin", "electron"), [".", `--remote-debugging-port=${CDP_PORT}`], {
+      cwd: WURZEL, env: { ...process.env, HOME: path.join(ARBEIT, "h"), KEPTA_DATA_DIR: path.join(ARBEIT, "d"), KEPTA_ENCRYPTION: "off", KEPTA_DB_KEY: "0".repeat(64) }, stdio: ["ignore", "pipe", "pipe"],
+    });
+    const endpoint = await warteBis(() => {
+      const p = path.join(ARBEIT, "h", ".kepta", "endpoint.json");
+      try { return JSON.parse(fs.readFileSync(p, "utf8")); } catch { return null; }
+    }, { maxMs: 90000 });
+    if (!endpoint) { log("KEIN endpoint.json — der Server im Electron kam nicht hoch."); diener.kill(); return; }
+    basisUrl = endpoint.url;
+    log(`App-Server aus dem Electron: ${basisUrl} (PID ${endpoint.pid})`);
+  } else {
+    diener = spawn("node", [OBJEKT], {
+      cwd: WURZEL,
+      env: { ...process.env, HOME: path.join(ARBEIT, "h"), KEPTA_DATA_DIR: path.join(ARBEIT, "d"), KEPTA_ENCRYPTION: "off", PORT: String(PORT) },
+      stdio: ["ignore", "pipe", "pipe"],
+    });
+  }
   diener.on("exit", (code, signal) => log(`!!! SERVER GESTORBEN code=${code} signal=${signal}`));
-  diener.stdout.pipe(fs.createWriteStream(path.join(ARBEIT, "diener.log")));
-  diener.stderr.pipe(fs.createWriteStream(path.join(ARBEIT, "diener-err.log"), { flags: "a" }), { end: true });
+  if (!process.env.REPRO_ELEKTRON) {
+    diener.stdout.pipe(fs.createWriteStream(path.join(ARBEIT, "diener.log")));
+    diener.stderr.pipe(fs.createWriteStream(path.join(ARBEIT, "diener-err.log"), { flags: "a" }), { end: true });
+  }
 
-  const bereit = await warteBis(async () => (await fetch(`http://127.0.0.1:${PORT}/api/health`)).ok, { maxMs: 60000 });
+  const bereit = await warteBis(async () => (await fetch(`${basisUrl}/api/health`)).ok, { maxMs: 60000 });
   if (!bereit) { log("SERVER KAM NICHT HOCH — Versuch endet."); diener.kill(); return; }
-  log(`Server bereit auf http://127.0.0.1:${PORT}`);
+  log(`Server bereit auf ${basisUrl}`);
 
   // Damians Datenmaß: 21 000 Notizen in 5000er-Häppchen.
   const gesamt = 21000;
@@ -130,14 +148,19 @@ async function main() {
           `Inhalt der Stillstand-Notiz ${i + 1} über Fristen, Suche und Klick. [[suche]]`].join("\n"),
       });
     }
-    const r = await fetch(`http://127.0.0.1:${PORT}/api/import/markdown`, {
+    const r = await fetch(`${basisUrl}/api/import/markdown`, {
       method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ files: haepchen }),
     });
     log(`  Import ${Math.min(basis + 5000, gesamt)}/${gesamt}: ${r.status} (${Math.round((Date.now() - anfang) / 1000)} s)`);
   }
 
-  const brave = spawn(BRAVE, ["--headless=new", `--remote-debugging-port=${CDP_PORT}`, `--user-data-dir=${path.join(ARBEIT, "profil")}`,
-    "--no-first-run", "--disable-gpu", "--hide-scrollbars", "--window-size=1440,900", "about:blank"], { stdio: ["ignore", "pipe", "pipe"] });
+  // Zwei Gestelle: REPRO_ELEKTRON=1 startet das echte Electron-Fenster (braucht das
+  // native Modul in der Electron-ABI — danach npm rebuild nicht vergessen!), sonst
+  // der kopflose Brave (kein Umbau, der bewährte Weg).
+  const brave = process.env.REPRO_ELEKTRON === "1"
+    ? diener
+    : spawn(BRAVE, ["--headless=new", `--remote-debugging-port=${CDP_PORT}`, `--user-data-dir=${path.join(ARBEIT, "profil")}`,
+      "--no-first-run", "--disable-gpu", "--hide-scrollbars", "--window-size=1440,900", "about:blank"], { stdio: ["ignore", "pipe", "pipe"] });
   const ziel = await warteBis(async () => {
     const l = await (await fetch(`http://127.0.0.1:${CDP_PORT}/json/list`)).json();
     return l.find((z) => z.type === "page" && z.webSocketDebuggerUrl) || null;
@@ -148,12 +171,12 @@ async function main() {
   await cdp.send("Runtime.enable");
   await cdp.send("Performance.enable");
   await cdp.send("Debugger.enable");
-  await cdp.send("Page.navigate", { url: `http://127.0.0.1:${PORT}/` });
+  await cdp.send("Page.navigate", { url: `${basisUrl}/` });
   await warteBis(async () => (await ausfuhren(cdp, `document.querySelectorAll('button').length`)) > 0 ? true : null, { maxMs: 120000 });
 
   // Damians Zustand: „All" (topK=0), Tiefe 32, words aus, Settings-Tab system, Assistent zu.
   await ausfuhren(cdp, `localStorage.setItem('ki_gehirn_topK','0');localStorage.setItem('ki_gehirn_such_tiefe','32');localStorage.setItem('ki_gehirn_spur_bm25','0');localStorage.setItem('kepta_einstellungen_tab','system');localStorage.setItem('ki_gehirn_wizard_dismissed','1');1`);
-  await cdp.send("Page.navigate", { url: `http://127.0.0.1:${PORT}/` });
+  await cdp.send("Page.navigate", { url: `${basisUrl}/` });
   await warteBis(async () => (await ausfuhren(cdp, `document.querySelectorAll('button').length`)) > 0 ? true : null, { maxMs: 120000 });
   await schlafe(3000);
 
