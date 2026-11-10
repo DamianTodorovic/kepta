@@ -865,6 +865,15 @@ label:has(.switch), label:has(input[type="checkbox"]), label:has(input[type="rad
   min-width: var(--ziel-boden);
 }
 
+/* P197: der Schalter selbst ist die Ausnahme, die der Kommentar oben meint —
+   ein 36 px hoher Schalter wäre ein kaputter Schalter. Die Taste trifft die
+   Zeile/den Knopf drumrum, die Pille bleibt 34×20 (Damians Bild 23:47: die
+   Tast-Boden-Regel pumpte button.switch auf 36×36 auf). */
+button.switch, label.switch {
+  min-height: 0;
+  min-width: 0;
+}
+
 @media (max-width: 440px) {
   :root { --ziel-boden: 44px; }
 }
