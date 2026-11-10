@@ -1,3 +1,22 @@
+## [3.2.204]
+
+### Fixed
+
+- **A colour pick is worn exactly — no more visible re-toning.** Damian
+  (22:32): "I can't take the colours I want." The first acceptance pass lifted
+  the pick itself onto the readability ladder, so a chosen `#ff3366` painted
+  `#ff7a9c` — visible change, still not the colour he chose. Now the raw pick
+  rides `--type-*` (graph dots, card ridge, swatch); only the type **label**
+  reads a derived `--type-*-text` that lifts itself just enough. The picker
+  shows exactly what was chosen.
+- **The two hand-rolled toggles are replaced by the house switch.** Damian's
+  screenshots (22:32/22:33): the Privacy-shield switch carried an 18 px knob at
+  `left: 18` inside a 40 px pill — the knob stood 14 px outside the pill; the
+  Auto-learn switch was a 44 px custom pill that wrapped below its own text.
+  Both now use the one `.switch` (34×20, knob inside, one design app-wide)
+  (`src/components/PrivacyShield.tsx`, `src/components/Settings.tsx`).
+  Held by `tests/lib/typ-farben.test.ts` (raw-on-surface contract).
+
 ## [3.2.203]
 
 ### Fixed

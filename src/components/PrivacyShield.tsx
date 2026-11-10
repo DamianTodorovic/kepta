@@ -18,6 +18,9 @@ interface Stand {
 const BEISPIEL = 'Send the invoice to anna@example.com — IBAN DE89 3704 0044 0532 0130 00, call +49 171 2345678, password: Hunter2!';
 
 function Schalter({ an, onChange, label }: { an: boolean; onChange: (v: boolean) => void; label: string }) {
+  // P197: der Haus-Schalter (`.switch`, 34×20) — der frühere Handbau trug einen
+  // 18-px-Knopf bei left:18 in einer 40-px-Pille; der Knopf stand 14 px über
+  // den Rand (Damians Bildschirmfoto, 22:32). Ein Schalter-Design für die ganze App.
   return (
     <button
       type="button"
@@ -25,10 +28,10 @@ function Schalter({ an, onChange, label }: { an: boolean; onChange: (v: boolean)
       aria-checked={an}
       aria-label={label}
       onClick={() => onChange(!an)}
-      className="relative w-10 h-6 rounded-full shrink-0 transition-colors"
-      style={{ background: an ? 'var(--accent)' : 'var(--bg-inset-strong)', border: '1px solid var(--border-subtle)' }}
+      className="switch shrink-0 p-0"
+      data-on={an}
     >
-      <span className="absolute top-0.5 w-4.5 h-4.5 rounded-full bg-knopf transition-all" style={{ left: an ? 18 : 2, width: 18, height: 18 }} />
+      <span className="knob" />
     </button>
   );
 }

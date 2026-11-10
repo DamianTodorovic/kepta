@@ -788,9 +788,8 @@ export function Settings() {
                 <h3 className="fs-4 font-semibold" style={{ color: 'var(--text-1)' }}>Colours</h3>
               </div>
               <p className="fs-2 mb-3" style={{ color: 'var(--text-3)' }}>
-                One colour per kind of knowledge. The graph dots, the card ridge and the
-                type label all wear it. Pick freely: dark picks get lifted just enough
-                to stay readable.
+                One colour per kind of knowledge. The graph dots and the card ridge wear
+                your exact pick; text that sits on it lightens itself to stay readable.
               </p>
               <TypFarbenReihe />
             </div>
@@ -1078,9 +1077,12 @@ export function Settings() {
                       <div className="fs-2 lh-dicht" style={{color:'var(--text-2)'}}>Save the key point of every chat answer as a note (tagged <code>auto-learn</code>). Duplicates are detected.</div>
                     </div>
                   </div>
-                  <label className="relative inline-flex h-6 w-11 items-center rounded-full transition-colors cursor-pointer shrink-0" style={{ background: autoLearn ? 'var(--accent)' : 'var(--bg-inset-strong)', border: autoLearn ? '1px solid transparent' : '1px solid var(--border-subtle)' }}>
+                  {/* P197: der Haus-Schalter statt des Eigenbaus (h-6 w-11 mit
+                      16-px-Knopf auf 24-px-Reise wirkte riesig und flog bei
+                      schmalem Fenster unter den Text — Damians Bild). */}
+                  <label className="switch shrink-0 cursor-pointer" data-on={autoLearn}>
                     <input type="checkbox" aria-label="Auto-learn" checked={autoLearn} onChange={e=>{ const v=e.target.checked; setAutoLearn(v); localStorage.setItem('ki_gehirn_autolearn', String(v)); setAutoLearnSaved(true); setTimeout(()=>setAutoLearnSaved(false),QUITTUNG_MS); }} className="sr-only" />
-                    <span className={`inline-block h-4 w-4 transform rounded-full bg-knopf shadow transition-transform ${autoLearn ? 'translate-x-6' : 'translate-x-1'}`} />
+                    <span className="knob" />
                   </label>
                 </div>
                 {autoLearnSaved && <div className="fs-2 lh-dicht mt-2 flex items-center gap-2" style={{color:'var(--ok)'}}><CheckCircle2 className="w-3.5 h-3.5"/> {autoLearn ? 'Auto-learn is on — a chat can leave a note behind' : 'Auto-learn off'}</div>}

@@ -355,7 +355,7 @@ anthropic 3, dann 14 Hosts je 1-mal: groq, mistral, deepseek, cohere, perplexity
 fireworks, cerebras, novita, x.ai, openrouter, huggingface-inference, azure-inference,
 generativelanguage). Die vier Ausnahmen stehen mit Grund in der Wache: `www.w3.org` ist der
 SVG-Namensraum in `src/components/KeptaMark.tsx`, `api.example.com` ein Platzhalter in
-`src/components/Settings.tsx:831`, `spur.example` eine Beispiel-URL in einem Kommentar
+`src/components/Settings.tsx:997`, `spur.example` eine Beispiel-URL in einem Kommentar
 (`src/lib/bild-politik.ts:7`), `kepta.local` ein User-Agent-Text in `server/router/clip.ts:31`.
 localhost-Ziele (2 der 18 `baseUrl`-Zeilen in `src/lib/ai.ts`) sind nicht fern und werden nicht
 mitgezählt.
@@ -1182,7 +1182,7 @@ macht sie wahr. Das ist die Richtung, die hier gemeldet werden muss, nicht eine 
 
 README.md:17 trägt die Kantensprache in einem Satz: *real connections drawn solid, mere
 similarity dashed*. Die einzige Sonde der Suite, die `setLineDash` las
-(`tests/components/KnowledgeGraph.render.test.tsx:742`), las den abgelaufenen Notiz-Ring, nicht
+(`tests/components/KnowledgeGraph.render.test.tsx:746`), las den abgelaufenen Notiz-Ring, nicht
 eine Kante. Der Satz nannte also kein Messzeug, und die Produktion entschied an
 `KnowledgeGraph.tsx:3807` (`!e.real` → Art `vermutung`) und `:3898-3903` (Dash-Muster nach Art).
 

@@ -1,41 +1,39 @@
 // @vitest-environment jsdom
 import { describe, it, expect, beforeEach } from "vitest";
-import { schreibeTypFarbe, leseTypFarben, tinteAufLeiter, tintetauglich, leuchtkraft } from "../../src/lib/typFarben";
+import { schreibeTypFarbe, leseTypFarben, tinteAufLeiter, tintetauglich, leuchtkraft, trageTypVar } from "../../src/lib/typFarben";
 
-// P196: der Fall von Damian (10.11.): „man kann die Farben nicht ändern" — der
-// alte Weg verwies still, was als Schrift 4,5:1 verfehlte (#cc00bb hielt 3,9:1,
-// #007bff 3,1:1 — gemessen 18.10.). Der neue Weg nimmt JEDE Wahl an und führt
-// nur die Helligkeit auf die Leiter; der Farbton bleibt erhalten.
+// P196b (Damian, 22:32): „ich kann nicht die Farben nehmen die ich möchte" — die
+// erste Fassung führte die Wahl selbst auf die Leiter und veränderte sie sichtbar.
+// Der neue Vertrag: der ROH-Ton gilt auf der Fläche (Punkte, Grat, Wähler), nur
+// die Schrift-Fassung (`--type-<rolle>-text`) wird automatisch lesbar geführt.
 
-beforeEach(() => { localStorage.clear(); });
+beforeEach(() => { localStorage.clear(); document.documentElement.removeAttribute("style"); });
 
-describe("P196: eine Farbwahl wird immer angenommen", () => {
-  it("nimmt #cc00bb an — und der Ton liest danach auf beiden Papieren", () => {
+describe("P196b: die Wahl gilt exakt auf der Fläche", () => {
+  it("trägt den Roh-Ton unverändert — kein Umbau, kein Verblassen", () => {
     const ton = schreibeTypFarbe("semantic", "#cc00bb");
-    expect(ton, "die Wahl wurde still verworfen — genau Damians Klage").not.toBeNull();
-    expect(tintetauglich(ton!), "der geführte Ton liest nicht").toBe(true);
+    expect(ton, "die Wahl wurde verändert").toBe("#cc00bb");
+    expect(document.documentElement.style.getPropertyValue("--type-semantic")).toBe("#cc00bb");
   });
 
-  it("erhält den Farbton (rot bleibt rot, blau bleibt blau)", () => {
-    const rot = schreibeTypFarbe("semantic", "#cc00bb")!;
-    const blau = schreibeTypFarbe("procedural", "#0a2a8a")!;
-    for (const [roh, ton] of [["#cc00bb", rot], ["#0a2a8a", blau]] as const) {
-      const p = (hex: string) => [1, 3, 5].map((i) => parseInt(hex.slice(i, i + 2), 16));
-      const [r1, g1, b1] = p(roh), [r2, g2, b2] = p(ton);
-      const dominanz = (r: number, g: number, b: number) => (r >= g && r >= b ? "rot" : b >= g && b >= r ? "blau" : "grün");
-      expect(dominanz(r2, g2, b2), `der Farbton kippte bei ${roh} → ${ton}`).toBe(dominanz(r1, g1, b1));
-    }
+  it("die Schrift-Fassung liest, während die Fläche den Roh-Ton trägt", () => {
+    schreibeTypFarbe("semantic", "#ff3366");
+    expect(document.documentElement.style.getPropertyValue("--type-semantic")).toBe("#ff3366");
+    const text = document.documentElement.style.getPropertyValue("--type-semantic-text");
+    expect(text, "keine lesbare Schrift-Fassung abgeleitet").not.toBe("");
+    expect(text.toLowerCase()).not.toBe("#ff3366");
+    expect(tintetauglich(text)).toBe(true);
   });
 
-  it("lässt eine lesbare Wahl unverändert", () => {
-    expect(tinteAufLeiter("#ffffff")).toBe("#ffffff");
+  it("eine lesbare Wahl bleibt auch in der Schrift-Fassung sich selbst", () => {
+    schreibeTypFarbe("procedural", "#ffee66");
+    expect(document.documentElement.style.getPropertyValue("--type-procedural")).toBe("#ffee66");
+    expect(document.documentElement.style.getPropertyValue("--type-procedural-text")).toBe("#ffee66");
   });
 
-  it("speichert die Wahl und liest sie zurück", () => {
+  it("speichert die Wahl und liest sie roh zurück", () => {
     schreibeTypFarbe("episodic", "#123456");
-    const gelesen = leseTypFarben();
-    expect(gelesen.episodic, "die Wahl überlebte den Neustart nicht").toBeDefined();
-    expect(tintetauglich(gelesen.episodic!)).toBe(true);
+    expect(leseTypFarben().episodic).toBe("#123456");
   });
 
   it("weist Unfug ab, ohne zu speichern", () => {
@@ -44,8 +42,17 @@ describe("P196: eine Farbwahl wird immer angenommen", () => {
     expect(Object.keys(leseTypFarben())).toHaveLength(0);
   });
 
-  it("macht aus einem Unding null und aus einem dunklen Ton etwas", () => {
+  it("der Leiter-Helfer: aus einem Unding null, aus einem dunklen Ton etwas Lesbares", () => {
     expect(leuchtkraft("kein-farbwert")).toBeNull();
     expect(leuchtkraft("#000000")).toBeCloseTo(0, 5);
+    expect(tintetauglich(tinteAufLeiter("#0a0a0a")!)).toBe(true);
+  });
+
+  it("trageTypVar setzt alle drei Variablen (roh, hex, text)", () => {
+    trageTypVar("reference", "#112233");
+    const stil = document.documentElement.style;
+    expect(stil.getPropertyValue("--type-reference")).toBe("#112233");
+    expect(stil.getPropertyValue("--type-reference-hex")).toBe("#112233");
+    expect(tintetauglich(stil.getPropertyValue("--type-reference-text"))).toBe(true);
   });
 });

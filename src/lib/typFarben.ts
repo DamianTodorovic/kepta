@@ -1,15 +1,11 @@
-// P196: die Typ-Farben — eine Wahl, die ANGENOMMEN wird, und ein Ton, der überall liest.
+// P196b: die Typ-Farben — die Wahl des Menschen gilt EXAKT auf der Fläche.
 //
-// Der alte Weg verwies still aus dem Regal, was die Lesbarkeits-Leiter (4,5:1 als
-// Schrift auf beiden dunklen Papieren) nicht hielt: ein großer Teil des Farbrads
-// (Beeren, Dunkles, Gesättigtes) wurde wortlos zurückgewiesen, der Regler sprang
-// sichtbar zurück — Damian: „man kann die Farben nicht ändern." Gemessen 18.10.:
-// #cc00bb hielt 3,9:1, #007bff 3,1:1 — die Wahl verschwand.
-//
-// Der neue Weg nimmt JEDE `#rrggbb`-Wahl an und führt nur ihre Helligkeit so weit,
-// bis der Ton auf beiden Papieren liest (Farbton bleibt, Wiedererkennen bleibt).
-// Der Ton trägt als CSS-Variable `--type-<rolle>` (+ `-hex`) app-weit: Graph-Punkte,
-// Karten-Grat, Typ-Etikett, Legende — eine Wahl, alle Flächen.
+// Erste Fassung (heute früh): jede Wahl wurde angenommen, aber ihre Helligkeit
+// wurde auf die Lesbarkeits-Leiter geführt — der gespeicherte Ton sah anders aus
+// als die Wahl. Damian, 22:32: „ich kann nicht die Farben nehmen die ich nehmen
+// möchte." Richtig: der PUNKT und der Karten-Grat tragen den Roh-Ton, exakt wie
+// gewählt; nur wo die Farbe als SCHRIFT steht (Typ-Etikett in der Liste), trägt
+// eine automatisch abgeleitete, lesbare Fassung (`--type-<rolle>-text`).
 
 export const TYP_ROLLEN = ["semantic", "episodic", "procedural", "reference"] as const;
 export type TypRolle = (typeof TYP_ROLLEN)[number];
@@ -55,9 +51,8 @@ function mischeNachWeiss(hex: string, anteil: number): string {
 }
 
 /**
- * Führt eine gewählte Farbe auf die Lesbarkeits-Leiter — der Farbton bleibt.
- * Eine Wahl, die schon liest, kommt unverändert zurück; eine zu dunkle wird
- * schrittweise mit Weiß angereichert, bis sie auf beiden Papieren 4,5:1 hält.
+ * Führt eine Farbe auf die Lesbarkeits-Leiter — NUR für die Schrift-Stellen.
+ * Der Farbton bleibt; die Fläche (Punkte, Grat, Wähler) trägt den Roh-Ton.
  */
 export function tinteAufLeiter(wert: string): string | null {
   const trio = kanäle(wert || "");
@@ -71,42 +66,47 @@ export function tinteAufLeiter(wert: string): string | null {
   return "#ffffff";
 }
 
-/** Die gespeicherten Wahlen — jede normalisiert, keine verworfen. */
+/** Die gespeicherten Wahlen — der Roh-Ton, exakt wie gewählt. */
 export function leseTypFarben(): Record<string, string> {
   try {
     const roh = JSON.parse(localStorage.getItem(SCHLUESSEL) || "{}") as Record<string, string>;
     const aus: Record<string, string> = {};
     for (const [rolle, wert] of Object.entries(roh)) {
       if (!TYP_ROLLEN.includes(rolle as TypRolle)) continue;
-      const ton = tinteAufLeiter(wert);
+      const ton = kanäle(wert) ? hexAus(kanäle(wert)!) : null;
       if (ton) aus[rolle] = ton;
     }
     return aus;
   } catch { return {}; }
 }
 
-/** Die Variable tragen — Graph-Punkte, Karten-Grat, Etikett und Legende lesen sie alle. */
-export function trageTypVar(rolle: string, wert: string): void {
+/**
+ * Die Variablen tragen: `--type-<rolle>` (+ `-hex`) = der ROH-Ton für Flächen
+ * (Graph-Punkte, Karten-Grat, Wähler); `--type-<rolle>-text` = die lesbare
+ * Fassung für Schrift (Typ-Etikett in der Liste).
+ */
+export function trageTypVar(rolle: string, roh: string): void {
   if (typeof document === "undefined") return;
-  document.documentElement.style.setProperty(`--type-${rolle}`, wert);
-  document.documentElement.style.setProperty(`--type-${rolle}-hex`, wert);
+  document.documentElement.style.setProperty(`--type-${rolle}`, roh);
+  document.documentElement.style.setProperty(`--type-${rolle}-hex`, roh);
+  document.documentElement.style.setProperty(`--type-${rolle}-text`, tinteAufLeiter(roh) ?? roh);
 }
 
-/** Eine Wahl annehmen, normalisieren, speichern und app-weit tragen. */
+/** Eine Wahl annehmen (roh!), speichern und tragen. Rückgabe: der Roh-Ton. */
 export function schreibeTypFarbe(rolle: string, wert: string): string | null {
   if (!TYP_ROLLEN.includes(rolle as TypRolle)) return null;
-  const ton = tinteAufLeiter(wert);
-  if (!ton) return null;
+  const trio = kanäle(wert);
+  if (!trio) return null;
+  const roh = hexAus(trio);
   try {
-    const bisher = leseTypFarben();
-    const neu = { ...bisher, [rolle]: ton };
+    const neu = { ...leseTypFarben(), [rolle]: roh };
     localStorage.setItem(SCHLUESSEL, JSON.stringify(neu));
   } catch { /* privates Fenster — die Var trägt trotzdem für diese Sitzung */ }
-  trageTypVar(rolle, ton);
-  return ton;
+  trageTypVar(rolle, roh);
+  return roh;
 }
 
-/** Beim Aufwachen alle gespeicherten Wahlen auf die Variablen tragen. */
+/** Beim Aufwachen alle gespeicherten Wahlen (roh + Text-Fassung) tragen. */
 export function trageGespeicherteTypFarben(): void {
   for (const [rolle, ton] of Object.entries(leseTypFarben())) trageTypVar(rolle, ton);
 }

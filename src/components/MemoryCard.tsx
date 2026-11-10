@@ -42,7 +42,11 @@ export const MemoryCard = memo(function MemoryCard({ memory, onClick, score, mat
   const superseded = !!memory.supersededBy;
   const meta = memory.type ? TYPE_META[memory.type] : undefined;
   const TypeIcon = meta?.icon;
+  // P196b: der Grat und die Flächen tragen den Roh-Ton (`--type-X`); die SCHRIFT
+  // (Etikett) liest die abgeleitete Fassung (`--type-X-text`), dunkle Wahlen
+  // bleiben also lesbar, ohne dass die Wahl selbst verändert wird.
   const typeColor = memory.type ? `var(--type-${memory.type})` : null;
+  const typeText = memory.type ? `var(--type-${memory.type}-text, var(--type-${memory.type}))` : null;
   // Zeile 1 und 2 — was der Nutzer auf der Karte liest. Ein Lauf durch dieselben
   // Regeln wie in den Tests; Traeger und Themen sind ableitbar, nicht gespeichert.
   const gruppe = gruppenVonNotiz(memory);
@@ -70,7 +74,7 @@ export const MemoryCard = memo(function MemoryCard({ memory, onClick, score, mat
       )}
 
       {/* Standarte: Glyph und Farbe aus der Rechen-Art, Wort aus Zeile 1 */}
-      <span className="row-type" style={{ color: typeColor ?? 'var(--text-2)' }} title={TRAEGER_HINWEISE[gruppe.traeger]}>
+      <span className="row-type" style={{ color: typeText ?? 'var(--text-2)' }} title={TRAEGER_HINWEISE[gruppe.traeger]}>
         {TypeIcon && <TypeIcon className="w-3.5 h-3.5 shrink-0" weight="duotone" />}
         <span className="row-type-label">{traegerEtikett}</span>
       </span>
