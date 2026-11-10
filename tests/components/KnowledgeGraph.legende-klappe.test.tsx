@@ -75,10 +75,11 @@ describe("#54: die Klappe an der Legende", () => {
     // fest, das der Griff sagt — nur nicht an dem Satz, der danach kommt.
     expect(k!.getAttribute("title"), "der Griff sagt nicht, was er oeffnet").toMatch(/^Show the legend/);
     expect(kopfZeile(view), "die Zahlenreihe ist weg — eingeklappt heisst nicht leer").toContain("notes");
-    expect(
-      view.container.querySelector('[data-testid="graph-farbgruppe-stand"]'),
-      "der Gruppenstand steht trotz Klappe im Bild"
-    ).toBeNull();
+    // P197: der Gruppenstand bleibt gemountet und hängt hinter der Klappe (die
+    // Klappe versteckt per CSS, sie wirft nichts aus dem Baum).
+    const stand = view.container.querySelector('[data-testid="graph-farbgruppe-stand"]');
+    expect(stand, "der Gruppenstand fehlt ganz aus dem Baum").toBeTruthy();
+    expect(stand!.closest(".legende-griffe"), "der Gruppenstand hängt nicht hinter der Klappe").toBeTruthy();
   });
 
   it("ein Klick oeffnet alles, der naechste klappt wieder zu", async () => {
@@ -93,7 +94,9 @@ describe("#54: die Klappe an der Legende", () => {
     ).toBeTruthy();
     await act(async () => { k.click(); await new Promise((r) => setTimeout(r, 120)); });
     expect(k.getAttribute("aria-expanded"), "zweiter Klick hat nicht wieder zugemacht").toBe("false");
-    expect(view.container.querySelector('[data-testid="graph-farbgruppe-stand"]')).toBeNull();
+    const stand = view.container.querySelector('[data-testid="graph-farbgruppe-stand"]');
+    expect(stand, "zugemacht, und der Gruppenstand ist ganz weg").toBeTruthy();
+    expect(stand!.closest(".legende-griffe"), "zugemacht hängt der Gruppenstand nicht hinter der Klappe").toBeTruthy();
   });
 
   it("die Wahl des Menschen bleibt, auch im naechsten Offnen", async () => {
@@ -108,13 +111,13 @@ describe("#54: die Klappe an der Legende", () => {
     expect(localStorage.getItem(SCHLUESSEL), "zumachen wird nicht gemerkt").toBe("zu");
   });
 
-  it("bei breiter Breite startet sie offen", async () => {
+  it("startet zu — auch breit; der erste Eindruck gehört dem Bild (P197)", async () => {
     installiereResizeObserver(1280, 800);
     const view = await zeichne();
     const k = knopf(view);
     expect(k, "auch breit ohne Griff").toBeTruthy();
-    expect(k!.getAttribute("aria-expanded"), "breit startet zu — die Klappe gilt nur dem schmalen Feld").toBe("true");
-    expect(k!.getAttribute("title")).toBe("Hide the legend");
+    expect(k!.getAttribute("aria-expanded"), "breit startet trotzdem zu — die Breite entscheidet nicht mehr").toBe("false");
+    expect(k!.getAttribute("title")).toBe("Show the legend — including what this view is missing");
   });
 
   it("der stille Ankuunfts-Zaehler faellt nie unter die Klappe", async () => {

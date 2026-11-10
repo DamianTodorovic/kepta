@@ -1699,6 +1699,13 @@ button.row-quiet { cursor: pointer; border-color: var(--kante-kontrolle); }
   }
 }
 
+/* P197: die Prosa fällt MIT der Klappe — der zugeklappte erste Eindruck ist die
+   Zahlenreihe, die Farb-Punkte und die Bilanz, kein Textblock (Damian: der erste
+   Eindruck gehört dem Bild). Die Regel steht absichtlich NACH der Mobil-Kappe:
+   deren Sonde liest den ERSTEN `.legende-prosa {`-Fund und erwartet die
+   440-px-Bedingung (tests/components/KnowledgeGraph.legende-schmal.test.tsx). */
+.graph-legende[data-legende="zu"] .legende-prosa { display: none; }
+
 /* #97 — bei Telefonbreite bekommt der Gruppen-Name seine volle Breite: die Zahlenreihe
    (Mitglieder, Prozent, painted, remove) ist breiter als 294 px und kappte ihn zu `#…`.
    Der Name schrumpft nicht mehr; was nicht mehr in die Zeile passt, bricht um.

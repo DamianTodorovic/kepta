@@ -219,8 +219,6 @@ const BEWEGUNG_KEY = "kepta_graph_bewegung";
  * seine Wahl gilt bis zu seinem naechsten Griff.
  */
 const LEGENDE_KEY = "kepta_graph_legende";
-/** Dieselbe Grenze, an der die Legende auch in zwei Kolonnen tritt (`min-[820px]`). */
-const LEGENDE_BRUCH_PX = 820;
 const TAG_FILTER_KEY = "kepta_graph_tag_filter";
 const NUR_MIT_KEY = "kepta_graph_nur_mit_verbindungen";
 /**
@@ -2718,7 +2716,10 @@ export function KnowledgeGraph({ memories: memoriesAusFenster, onSelectMemory, o
   const [legendeGewaehlt, setLegendeGewaehlt] = useState<string | null>(() => {
     try { return localStorage.getItem(LEGENDE_KEY); } catch { return null; }
   });
-  const legendeVoll = legendeGewaehlt === null ? dimensions.w >= LEGENDE_BRUCH_PX : legendeGewaehlt === "offen";
+  // P197 (Damian, Design-GO): die Legende startet ZU — der erste Eindruck gehört
+  // dem Bild, nicht einer Textwand. Erst die Wahl des Menschen öffnet sie (und
+  // wird gemerkt); die Fensterbreite entscheidet nicht mehr.
+  const legendeVoll = legendeGewaehlt === null ? false : legendeGewaehlt === "offen";
   const klappeUm = () => {
     const neu = legendeVoll ? "zu" : "offen";
     setLegendeGewaehlt(neu);
@@ -6886,7 +6887,7 @@ export function KnowledgeGraph({ memories: memoriesAusFenster, onSelectMemory, o
               eigne Eigenschaft: ohne sie ist es ein Wort, kein Knopf. Der Stand nennt die
               Zahl aus demselben Modellaufruf, der auch das Regal fuellt — und seine Null,
               wenn eine gesetzte Gruppe nichts trifft. */}
-          {legendeVoll && (
+          <div className={legendeVoll ? undefined : "legende-griffe"}>
           <div className="flex items-center gap-2 flex-wrap" style={{ pointerEvents: "none" }}>
             <button
               type="button"
@@ -6946,8 +6947,13 @@ export function KnowledgeGraph({ memories: memoriesAusFenster, onSelectMemory, o
               </span>
             )}
           </div>
-          )}
-          {legendeVoll && regal && <GraphRegal regal={regal} ansichtsName={ansicht === "dendrogram" ? "the tree" : "the field"} gruppen={farbgruppen} achsen={achsen} steuerung={gruppenSteuerung} gemalt={gemalt} />}
+          </div>
+          {/* P197: das Regal bleibt IMMER gemountet — die Klappe versteckt es nur
+              (`.legende-griffe`). Zuvor nahm es die Klappe ganz aus dem Baum:
+              die Gruppen-Wähler waren unauffindbar, bis jemand die Legende öffnete. */}
+          <div className={legendeVoll ? undefined : "legende-griffe"}>
+            {regal && <GraphRegal regal={regal} ansichtsName={ansicht === "dendrogram" ? "the tree" : "the field"} gruppen={farbgruppen} achsen={achsen} steuerung={gruppenSteuerung} gemalt={gemalt} />}
+          </div>
           {/* Die Griffe erklaert die Flaeche schon an den Werkzeugen selbst; auf dem
               Telefon sind sie teils nicht einmal vorhanden (kein Hover, kein Rad).
               Bei schmaler Breite tritt die Zeile zurueck — index.css, `.legende-prosa`.

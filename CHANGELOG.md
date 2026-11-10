@@ -1,3 +1,19 @@
+## [3.2.206]
+
+### Changed
+
+- **The graph's first impression belongs to the picture (P197 step 1).** The
+  legend starts **closed** everywhere — the width no longer decides
+  (`KnowledgeGraph.tsx`; the pick is remembered once made). The collapsed state
+  now folds the explanatory prose too: what stays is the numbers row, the four
+  kind dots with their names, and the honesty line. Held by the reworked
+  `legende-klappe` case ("starts closed — even wide").
+- **The group shelf and the "colour by group" controls stay mounted behind the
+  fold** instead of vanishing from the tree when the legend closes — the colour
+  pickers are reachable by opening the legend, and the group model never
+  unmounts mid-session (`KnowledgeGraph.tsx`; the #54 guards now assert the
+  fold-holder instead of a removed node).
+
 ## [3.2.205]
 
 ### Changed
