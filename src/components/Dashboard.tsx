@@ -1610,7 +1610,12 @@ export function Dashboard() {
         onOpenSetup={() => setWizardOpen(true)}
       />
 
-      <main className="flex-1 flex flex-col min-w-0 overflow-hidden my-3 mr-3 panel rounded-2xl relative z-10">
+      {/* P195: `clip` statt `hidden` — ein overflow-hidden-Feld bleibt IMMER
+          NOCH scrollbar (auch programmatisch). Genau davon lebte der Blackscreen:
+          ein Fokus außerhalb der sichtbaren Ansicht zog `main` um 1455 px weg,
+          die sichtbare Hülle fuhr aus dem Fenster, übrig blieb der leere
+          Panel-Rahmen. `clip` verweigert jedes Scrollen — die Bühne steht fest. */}
+      <main className="flex-1 flex flex-col min-w-0 overflow-clip my-3 mr-3 panel rounded-2xl relative z-10">
         {/**
          * #32: der Auf-Schalter lebte bisher nur in der Kopfzeile der memories-Ansicht.
          * Die andern Ansichten sitzen in denselben Rahmen, haben aber keine Kopfzeile —

@@ -1,3 +1,21 @@
+## [3.2.202]
+
+### Fixed
+
+- **The blank-panel blackscreen is dead: the main panel can no longer be scrolled away.**
+  The P195 live anatomy (10.11., 20:52) settled it: Damian saw an empty panel while
+  the DOM held the full Settings page (6938 characters, visible, 814 px). The tell
+  was `main.scrollTop = 1455` (scrollHeight 2269): a focus outside the visible view
+  made the browser scroll **every** scrollable ancestor — and `overflow: hidden`
+  refuses to show a scrollbar, not to scroll. The visible view was dragged out of
+  the window; what remained was the empty panel frame. Scrolling back to 0 brought
+  the page back instantly (screenshot-proven). The fix: `overflow-clip` on `main`
+  (`src/components/Dashboard.tsx:1613`) — `clip` refuses all scrolling, programmatic
+  included, so the stage can never be dragged away again. Held by
+  `tests/components/dashboard-main-clip.test.tsx`. The trigger (which code path
+  focuses outside the visible view) remains its own hunt — the stage, however, is
+  now unmovable.
+
 ## [3.2.201]
 
 ### Added
